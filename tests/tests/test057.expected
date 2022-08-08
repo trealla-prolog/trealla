@@ -1,0 +1,6 @@
+[pickup,the,small,white,box] 'OK!'
+[pickup,the,white,small,box] 'OK!'
+[pickup,the,small,box] 'OK!'
+[pickup,the,box] 'OK!'
+[pickup,box] '*** ERROR?'
+[paint,the,box] '*** ERROR?'

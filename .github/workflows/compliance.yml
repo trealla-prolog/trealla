@@ -1,0 +1,53 @@
+name: Standards compliance
+
+on:
+  push:
+    branches:
+      - testing
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Trealla Prolog
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Compile Trealla Prolog
+        run: |
+          make clean && make
+          sudo ln -s "$PWD/tpl" /usr/local/bin/tpl
+          tpl -g halt
+      - name: Install Logtalk
+        uses: logtalk-actions/setup-logtalk@master
+        with:
+          logtalk-version: git
+          logtalk-tool-dependencies: true
+      - name: Install Allure
+        run: |
+          wget https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline/2.17.3/allure-commandline-2.17.3.zip
+          unzip allure-commandline-2.17.3.zip
+          cd allure-2.17.3/bin
+          sudo ln -s "$PWD/allure" /usr/local/bin/allure
+          allure --version
+      - name: Define environment variable for the test results
+        run: |
+          echo "EXIT=0" >> $GITHUB_ENV
+          echo "LOGTALK_GIT_HASH=`git ls-remote https://github.com/LogtalkDotOrg/logtalk3 HEAD | cut -f1`" >> $GITHUB_ENV
+      - name: Run the Prolog standards compliance test suite
+        run: |
+          cd "$LOGTALKUSER"
+          logtalk_tester -p trealla -g "set_logtalk_flag(clean,off)" -t 180 -f xunit_net_v2 -s "$HOME/logtalk/" -u "https://github.com/LogtalkDotOrg/logtalk3/tree/$LOGTALK_GIT_HASH/" -w || EXIT=$?
+          echo "EXIT=$EXIT" >> $GITHUB_ENV
+      - name: Create Allure report
+        run: |
+          cd "$LOGTALKUSER"
+          logtalk_allure_report -t "Logtalk distribution full tests" -- Backend='Trealla Prolog' Commit=$GITHUB_SHA
+          mv allure-report $GITHUB_WORKSPACE/
+      - name: Upload Allure report
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./allure-report
+      - name: Set workflow exit status after the test results
+        run: exit $EXIT

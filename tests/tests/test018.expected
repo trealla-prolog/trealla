@@ -1,0 +1,7 @@
+ <==> abcdef
+a <==> bcdef
+ab <==> cdef
+abc <==> def
+abcd <==> ef
+abcde <==> f
+abcdef <==> 

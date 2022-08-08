@@ -1,0 +1,3 @@
+ok
+type_error(list,[_13,_14|a])
+term_variables/2
