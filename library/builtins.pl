@@ -142,6 +142,7 @@ setof(Template, Generator, Set) :-
     ; 	must_be(Set, list_or_partial_list, setof/3, _)
     ),
 	bagof_(Template, Generator, Bag),
+	is_list_or_partial_list(Set),
 	sort(Bag, Set).
 
 :- meta_predicate(setof(-,0,?)).
