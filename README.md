@@ -1,8 +1,7 @@
 Trealla Prolog
 ==============
 
-A compact, efficient Prolog interpreter with
-[ISO compliant](https://trealla-prolog.github.io/trealla/) aspirations.
+A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 
 	MIT licensed
 	Integers are unbounded
@@ -11,7 +10,6 @@ A compact, efficient Prolog interpreter with
 	Dynamic atoms are automatically garbage collected
 	Unlimited arity (system resources constrained)
 	Uses 1st & 2nd arg indexing
-	Atom garbage collection
 	DCGs
 	REPL with history
 	Compiles in <1s with *tcc*, or ~5s with *gcc* and *clang*
@@ -24,8 +22,8 @@ A compact, efficient Prolog interpreter with
 
 
 Trealla is not WAM-based. It uses tree-walking, structure-sharing and
-deep-binding. Source is compiled to an AST that is interpreted at
-runtime.
+deep-binding. Source is byte-code compiled to an AST that is interpreted
+at runtime.
 
 The name Trealla comes from the Liaden Universe books by Lee & Miller.
 It is also a nod to the Trealla region of Western Australia.
