@@ -647,7 +647,7 @@ void undo_me(query *q)
 bool try_me(query *q, unsigned nbr_vars)
 {
 	frame *f = GET_FRAME(q->st.fp);
-	f->nbr_slots = f->nbr_vars = nbr_vars;
+	f->initial_slots = f->actual_slots = nbr_vars;
 	f->is_active = false;
 	f->base = q->st.sp;
 	slot *e = GET_FIRST_SLOT(f);
@@ -727,8 +727,8 @@ bool retry_choice(query *q)
 		frame *f = GET_CURR_FRAME();
 		f->ugen = ch->ugen;
 		f->cgen = ch->frame_cgen;
-		f->nbr_vars = ch->nbr_vars;
-		f->nbr_slots = ch->nbr_slots;
+		f->actual_slots = ch->actual_slots;
+		f->initial_slots = ch->initial_slots;
 		f->overflow = ch->overflow;
 
 		if (ch->catchme_exception || ch->soft_cut || ch->did_cleanup)
@@ -780,8 +780,8 @@ static void reuse_frame(query *q, frame* f, clause *cl)
 	}
 
 	f->cgen = newf->cgen;
-	f->nbr_slots = cl->nbr_vars - cl->nbr_temporaries;
-	f->nbr_vars = cl->nbr_vars - cl->nbr_temporaries;
+	f->initial_slots = cl->nbr_vars - cl->nbr_temporaries;
+	f->actual_slots = cl->nbr_vars - cl->nbr_temporaries;
 	f->overflow = 0;
 
 	q->st.sp = f->base + (cl->nbr_vars - cl->nbr_temporaries);
@@ -814,11 +814,11 @@ static void trim_trail(query *q)
 static bool check_slots(const query *q, const frame *f, const clause *cl)
 {
 	if (cl != NULL) {
-		if (f->nbr_vars != cl->nbr_vars)
+		if (f->actual_slots != cl->nbr_vars)
 			return false;
 	}
 
-	for (unsigned i = 0; i < f->nbr_vars; i++) {
+	for (unsigned i = 0; i < f->actual_slots; i++) {
 		const slot *e = GET_SLOT(f, i);
 		const cell *c = &e->c;
 
@@ -996,8 +996,8 @@ bool push_choice(query *q)
 	ch->st = q->st;
 	ch->ugen = f->ugen;
 	ch->frame_cgen = ch->cgen = f->cgen;
-	ch->nbr_vars = f->nbr_vars;
-	ch->nbr_slots = f->nbr_slots;
+	ch->actual_slots = f->actual_slots;
+	ch->initial_slots = f->initial_slots;
 	ch->overflow = f->overflow;
 	return true;
 }
@@ -1196,42 +1196,42 @@ unsigned create_vars(query *q, unsigned cnt)
 	frame *f = GET_CURR_FRAME();
 
 	if (!cnt)
-		return f->nbr_vars;
+		return f->actual_slots;
 
 	if ((q->st.sp + cnt) > MAX_VARS) {
 		printf("*** Ooops %s %d\n", __FILE__, __LINE__);
 		return 0;
 	}
 
-	unsigned var_nbr = f->nbr_vars;
+	unsigned var_nbr = f->actual_slots;
 
 	if (!check_slot(q, var_nbr+cnt))
 		return 0;
 
-	if ((f->base + f->nbr_slots) >= q->st.sp) {
-		f->nbr_slots += cnt;
-		q->st.sp = f->base + f->nbr_slots;
+	if ((f->base + f->initial_slots) >= q->st.sp) {
+		f->initial_slots += cnt;
+		q->st.sp = f->base + f->initial_slots;
 	} else if (!f->overflow) {
 		f->overflow = q->st.sp;
 		q->st.sp += cnt;
-	} else if ((f->overflow + (f->nbr_vars - f->nbr_slots)) == q->st.sp) {
+	} else if ((f->overflow + (f->actual_slots - f->initial_slots)) == q->st.sp) {
 		q->st.sp += cnt;
 	} else {
 		pl_idx_t save_overflow = f->overflow;
 		f->overflow = q->st.sp;
-		pl_idx_t cnt2 = f->nbr_vars - f->nbr_slots;
+		pl_idx_t cnt2 = f->actual_slots - f->initial_slots;
 		memmove(q->slots+f->overflow, q->slots+save_overflow, sizeof(slot)*cnt2);
 		q->st.sp += cnt2 + cnt;
 	}
 
 	for (unsigned i = 0; i < cnt; i++) {
-		slot *e = GET_SLOT(f, f->nbr_vars+i);
+		slot *e = GET_SLOT(f, f->actual_slots+i);
 		e->c.tag = TAG_EMPTY;
 		e->c.attrs = NULL;
 		e->mark = false;
 	}
 
-	f->nbr_vars += cnt;
+	f->actual_slots += cnt;
 	return var_nbr;
 }
 
@@ -1917,8 +1917,8 @@ bool execute(query *q, cell *cells, unsigned nbr_vars)
 	q->cp = 0;
 
 	frame *f = q->frames + q->st.curr_frame;
-	f->nbr_vars = nbr_vars;
-	f->nbr_slots = nbr_vars;
+	f->actual_slots = nbr_vars;
+	f->initial_slots = nbr_vars;
 	f->ugen = ++q->pl->ugen;
 	return start(q);
 }
@@ -2060,9 +2060,9 @@ query *create_sub_query(query *q, cell *curr_cell)
 
 	frame *fsrc = GET_FRAME(q->st.curr_frame);
 	frame *fdst = subq->frames;
-	fdst->nbr_vars = fsrc->nbr_vars;
+	fdst->actual_slots = fsrc->actual_slots;
 
-	for (unsigned i = 0; i < fsrc->nbr_vars; i++) {
+	for (unsigned i = 0; i < fsrc->actual_slots; i++) {
 		slot *e = GET_FIRST_SLOT(fsrc+i);
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		cell tmp = (cell){0};
@@ -2072,7 +2072,7 @@ query *create_sub_query(query *q, cell *curr_cell)
 		set_var(subq, &tmp, 0, c, q->latest_ctx);
 	}
 
-	subq->st.sp = fsrc->nbr_vars;
+	subq->st.sp = fsrc->actual_slots;
 	return subq;
 }
 

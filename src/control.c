@@ -565,7 +565,7 @@ static cell *parse_to_heap(query *q, const char *src)
 	parser *p2 = create_parser(q->st.m);
 	check_error(p2);
 	frame *f = GET_CURR_FRAME();
-	p2->read_term = f->nbr_vars;
+	p2->read_term = f->actual_slots;
 	p2->skip = true;
 	p2->srcptr = ASTRING_cstr(s);
 	tokenize(p2, false, false);

@@ -1876,7 +1876,7 @@ static bool fn_iso_univ_2(query *q)
 cell *do_term_variables(query *q, cell *p1, pl_idx_t p1_ctx)
 {
 	frame *f = GET_CURR_FRAME();
-	q->varno = f->nbr_vars;
+	q->varno = f->actual_slots;
 	collect_vars(q, p1, p1_ctx);
 	const unsigned cnt = q->tab_idx;
 	if (!init_tmp_heap(q)) return NULL;
@@ -1938,7 +1938,7 @@ static bool fn_iso_term_variables_2(query *q)
 static cell *do_term_singletons(query *q, cell *p1, pl_idx_t p1_ctx)
 {
 	frame *f = GET_CURR_FRAME();
-	q->varno = f->nbr_vars;
+	q->varno = f->actual_slots;
 	collect_vars(q, p1, p1_ctx);
 	const unsigned cnt = q->tab_idx;
 	unsigned cnt2 = 0;
@@ -2026,7 +2026,7 @@ static bool fn_iso_copy_term_2(query *q)
 			check_heap_error(init_tmp_heap(q));
 			check_heap_error(q->vars = map_create(NULL, NULL, NULL));
 			frame *f = GET_CURR_FRAME();
-			q->varno = f->nbr_vars;
+			q->varno = f->actual_slots;
 			q->tab_idx = 0;
 			cell *tmp = deep_copy_to_heap_with_replacement(q, e1->c.attrs, e1->c.attrs_ctx, false, p1, p1_ctx, p2, p2_ctx);
 			check_heap_error(tmp);
@@ -2219,7 +2219,7 @@ static bool do_abolish(query *q, cell *c_orig, cell *c, bool hard)
 		return throw_error(q, c_orig, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
 	for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
-		if (!q->st.m->loading && dbe->owner->is_persist && !dbe->cl.ugen_erased)
+		if (!q->st.m->loading && dbe->owner->is_persist && !dbe->cl.dgen_erased)
 			db_log(q, dbe, LOG_ERASE);
 
 		retract_from_db(dbe);
@@ -3872,7 +3872,7 @@ static void save_db(FILE *fp, query *q, int logging)
 			continue;
 
 		for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
-			if (dbe->cl.ugen_erased)
+			if (dbe->cl.dgen_erased)
 				continue;
 
 			if (logging)
@@ -3917,7 +3917,7 @@ static void save_name(FILE *fp, query *q, pl_idx_t name, unsigned arity)
 			continue;
 
 		for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
-			if (dbe->cl.ugen_erased)
+			if (dbe->cl.dgen_erased)
 				continue;
 
 			print_term(q, fp, dbe->cl.cells, q->st.curr_frame, 0);

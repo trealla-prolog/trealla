@@ -135,10 +135,10 @@ inline static bool can_view(uint64_t ugen, const db_entry *dbe)
 	if (dbe->cl.is_deleted)
 		return false;
 
-	if (dbe->cl.ugen_created > ugen)
+	if (dbe->cl.dgen_created > ugen)
 		return false;
 
-	if (dbe->cl.ugen_erased && (dbe->cl.ugen_erased <= ugen))
+	if (dbe->cl.dgen_erased && (dbe->cl.dgen_erased <= ugen))
 		return false;
 
 	return true;

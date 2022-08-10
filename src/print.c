@@ -330,7 +330,7 @@ static int find_binding(query *q, pl_idx_t var_nbr, pl_idx_t tmp_ctx)
 	const frame *f = GET_FRAME(q->st.curr_frame);
 	const slot *e = GET_FIRST_SLOT(f);
 
-	for (pl_idx_t i = 0; i < f->nbr_vars; i++, e++) {
+	for (pl_idx_t i = 0; i < f->actual_slots; i++, e++) {
 		if (!is_variable(&e->c))
 			continue;
 

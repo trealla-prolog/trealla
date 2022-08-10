@@ -316,7 +316,7 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 cell *deep_raw_copy_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx)
 {
 	frame *f = GET_CURR_FRAME();
-	q->varno = f->nbr_vars;
+	q->varno = f->actual_slots;
 	q->tab_idx = 0;
 	q->cycle_error = false;
 	reflist nlist = {0};
@@ -376,11 +376,11 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx_t p1_c
 	cell *rec = deep_copy2_to_tmp(q, c, c_ctx, copy_attrs, from, from_ctx, to, to_ctx, 0, !q->lists_ok ? &nlist : NULL);
 	q->lists_ok = false;
 	if (!rec) return rec;
-	int cnt = q->varno - f->nbr_vars;
+	int cnt = q->varno - f->actual_slots;
 
 #if 0
-	printf("*** f=%u, f->nbr_vars=%u, f->nbr_slots=%u, q->varno=%u, cnt=%d\n",
-		(unsigned)q->st.fp, (unsigned)f->nbr_vars, (unsigned)f->nbr_slots, (unsigned)q->varno, cnt);
+	printf("*** f=%u, f->actual_slots=%u, f->initial_slots=%u, q->varno=%u, cnt=%d\n",
+		(unsigned)q->st.fp, (unsigned)f->actual_slots, (unsigned)f->initial_slots, (unsigned)q->varno, cnt);
 #endif
 
 	if (cnt) {
@@ -420,7 +420,7 @@ cell *deep_copy_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_attrs)
 	q->vars = map_create(NULL, NULL, NULL);
 	if (!q->vars) return NULL;
 	frame *f = GET_CURR_FRAME();
-	q->varno = f->nbr_vars;
+	q->varno = f->actual_slots;
 	q->tab_idx = 0;
 	cell *tmp = deep_copy_to_tmp_with_replacement(q, p1, p1_ctx, copy_attrs, NULL, 0, NULL, 0);
 	map_destroy(q->vars);
@@ -446,7 +446,7 @@ cell *deep_copy_to_heap_with_replacement(query *q, cell *p1, pl_idx_t p1_ctx, bo
 	q->vars = map_create(NULL, NULL, NULL);
 	if (!q->vars) return NULL;
 	frame *f = GET_CURR_FRAME();
-	q->varno = f->nbr_vars;
+	q->varno = f->actual_slots;
 	q->tab_idx = 0;
 	cell *tmp = deep_copy_to_tmp_with_replacement(q, p1, p1_ctx, copy_attrs, from, from_ctx, to, to_ctx);
 	map_destroy(q->vars);

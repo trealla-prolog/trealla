@@ -79,9 +79,9 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define GET_FIRST_FRAME() GET_FRAME(0)
 #define GET_CURR_FRAME() GET_FRAME(q->st.curr_frame)
 
-#define GET_SLOT(f,i) ((i) < (f)->nbr_slots ? 			\
+#define GET_SLOT(f,i) ((i) < (f)->initial_slots ? 			\
 	(q->slots+(f)->base+(i)) : 							\
-	(q->slots+(f)->overflow+((i)-(f)->nbr_slots)) 		\
+	(q->slots+(f)->overflow+((i)-(f)->initial_slots)) 		\
 	)
 
 #define GET_FIRST_SLOT(f) GET_SLOT(f, 0)
@@ -367,14 +367,14 @@ struct cell_ {
 		};
 
 		struct {
-			strbuf *val_strb;
-			uint32_t strb_off;			// slice offset
-			uint32_t strb_len;			// slice length
+			strbuf *val_strb;			// ref-counted string
+			uint32_t strb_off;			// ... offset
+			uint32_t strb_len;			// ... length
 		};
 
 		struct {
-			char *val_str;
-			uint64_t str_len;			// slice_length
+			char *val_str;				// static string
+			uint64_t str_len;			// ... length
 		};
 
 		struct {
@@ -406,11 +406,11 @@ struct cell_ {
 };
 
 typedef struct {
-	uint64_t u1, u2;
+	uint64_t u1, u2;					// TODO: proper uuid's
 } uuid;
 
 struct clause_ {
-	uint64_t ugen_created, ugen_erased;
+	uint64_t dgen_created, dgen_erased;
 	pl_idx_t nbr_cells, cidx;
 	uint32_t nbr_vars;
 	uint16_t nbr_temporaries;
@@ -502,16 +502,16 @@ struct slot_ {
 	bool mark:1;
 };
 
-// Where *nbr_slots* is the initial number allocated
-// Where *nbr_vars* is the actual number in use (some maybe created)
+// Where *initial_slots* is the initial number allocated
+// Where *actual_slots* is the actual number in use (some maybe created)
 // Where *base* is the offset to first slot in use
-// Where *overflow* is where new slots are allocated (nbr_vars > nbr_slots)
+// Where *overflow* is where new slots are allocated (actual_slots > initial_slots)
 
 struct frame_ {
 	cell *prev_cell;
 	uint64_t ugen, cgen;
 	pl_idx_t prev_frame, base, overflow;
-	uint32_t nbr_slots, nbr_vars;
+	uint32_t initial_slots, actual_slots;
 	uint16_t mid;
 	bool is_last:1;
 	bool is_active:1;
@@ -542,7 +542,7 @@ struct choice_ {
 	prolog_state st;
 	uint64_t cgen, frame_cgen, ugen;
 	pl_idx_t overflow;
-	uint32_t nbr_slots, nbr_vars;
+	uint32_t initial_slots, actual_slots;
 	bool is_tail_rec:1;
 	bool catchme_retry:1;
 	bool catchme_exception:1;

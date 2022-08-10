@@ -240,7 +240,7 @@ static bool any_attributed(const query *q)
 	const frame *f = GET_FIRST_FRAME();
 	bool any = false;
 
-	for (unsigned i = 0; i < f->nbr_vars; i++) {
+	for (unsigned i = 0; i < f->actual_slots; i++) {
 		const slot *e = GET_SLOT(f, i);
 
 		if (!is_empty(&e->c) || !e->c.attrs)

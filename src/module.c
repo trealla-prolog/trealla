@@ -354,7 +354,7 @@ db_entry *find_in_db(module *m, uuid *ref)
 {
 	for (predicate *pr = m->head; pr; pr = pr->next) {
 		for (db_entry *dbe = pr->head ; dbe; dbe = dbe->next) {
-			if (dbe->cl.ugen_erased)
+			if (dbe->cl.dgen_erased)
 				continue;
 
 			if (!memcmp(&dbe->u, ref, sizeof(uuid)))
@@ -381,7 +381,7 @@ db_entry *erase_from_db(module *m, uuid *ref)
 {
 	db_entry *dbe = find_in_db(m, ref);
 	if (!dbe) return 0;
-	dbe->cl.ugen_erased = ++m->pl->ugen;
+	dbe->cl.dgen_erased = ++m->pl->ugen;
 	return dbe;
 }
 
@@ -883,7 +883,7 @@ static void check_rule(module *m, db_entry *dbe_orig)
 		p3 = p2 + p2->nbr_cells;
 
 	for (db_entry *dbe = dbe_orig->next; dbe; dbe = dbe->next) {
-		if (dbe->cl.ugen_erased)
+		if (dbe->cl.dgen_erased)
 			continue;
 
 		cell *head2 = get_head(dbe->cl.cells);
@@ -932,7 +932,7 @@ void just_in_time_rebuild(predicate *pr)
 	pr->is_processed = true;
 
 	for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
-		if (dbe->cl.ugen_erased)
+		if (dbe->cl.dgen_erased)
 			continue;
 
 		check_rule(pr->m, dbe);
@@ -1009,7 +1009,7 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 	dbe->cl.nbr_vars = nbr_vars;
 	dbe->cl.nbr_cells = p1->nbr_cells;
 	dbe->cl.cidx = p1->nbr_cells+1;
-	dbe->cl.ugen_created = ++m->pl->ugen;
+	dbe->cl.dgen_created = ++m->pl->ugen;
 	dbe->filename = m->filename;
 	dbe->owner = pr;
 	return dbe;
@@ -1052,7 +1052,7 @@ static void assert_commit(module *m, db_entry *dbe, predicate *pr, bool append)
 		for (db_entry *cl2 = pr->head; cl2; cl2 = cl2->next) {
 			cell *c = get_head(cl2->cl.cells);
 
-			if (!cl2->cl.ugen_erased) {
+			if (!cl2->cl.dgen_erased) {
 				map_app(pr->idx, c, cl2);
 
 				cell *arg1 = c->arity ? c + 1 : NULL;
@@ -1147,12 +1147,12 @@ db_entry *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, 
 
 static bool retract_from_predicate(db_entry *dbe)
 {
-	if (dbe->cl.ugen_erased)
+	if (dbe->cl.dgen_erased)
 		return false;
 
 	predicate *pr = dbe->owner;
 	module *m = pr->m;
-	dbe->cl.ugen_erased = ++m->pl->ugen;
+	dbe->cl.dgen_erased = ++m->pl->ugen;
 	dbe->filename = NULL;
 	pr->cnt--;
 
@@ -1313,7 +1313,7 @@ static bool unload_realfile(module *m, const char *filename)
 {
 	for (predicate *pr = m->head; pr; pr = pr->next) {
 		for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
-			if (dbe->cl.ugen_erased)
+			if (dbe->cl.dgen_erased)
 				continue;
 
 			if (dbe->filename && !strcmp(dbe->filename, filename)) {
@@ -1567,7 +1567,7 @@ static void module_save_fp(module *m, FILE *fp, int canonical, int dq)
 			continue;
 
 		for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
-			if (dbe->cl.ugen_erased)
+			if (dbe->cl.dgen_erased)
 				continue;
 
 			if (canonical)

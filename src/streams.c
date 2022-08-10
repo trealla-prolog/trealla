@@ -1363,7 +1363,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx_t p1_ctx, cell *p2, pl
 		q->is_input = true;
 
 	frame *f = GET_CURR_FRAME();
-	p->read_term = f->nbr_vars;
+	p->read_term = f->actual_slots;
 	p->do_read_term = true;
 	tokenize(p, false, false);
 	p->read_term = 0;
