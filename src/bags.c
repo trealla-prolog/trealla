@@ -80,13 +80,14 @@ bool fn_iso_findall_3(query *q)
 
 	check_heap_error(push_choice(q));
 	frame *f = GET_CURR_FRAME();
-	unsigned vars = f->actual_slots < 128 ? 128 : f->actual_slots;
-
-	if (!check_slot(q, vars))
-		return false;
 
 	for (cell *c = solns; nbr_cells;
 		nbr_cells -= c->nbr_cells, c += c->nbr_cells) {
+		unsigned vars = f->actual_slots < 128 ? 128 : f->actual_slots;
+
+		if (!check_slot(q, vars))
+			return false;
+
 		check_heap_error(try_me(q, vars));
 
 		if (unify(q, p1, p1_ctx, c, q->st.fp)) {
