@@ -80,7 +80,7 @@ bool fn_iso_findall_3(query *q)
 
 	check_heap_error(push_choice(q));
 	frame *f = GET_CURR_FRAME();
-	unsigned vars = 128;
+	unsigned vars = f->actual_slots < 128 ? 128 : f->actual_slots;
 
 	if (!check_slot(q, vars))
 		return false;
