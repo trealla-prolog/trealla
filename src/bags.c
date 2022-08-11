@@ -79,10 +79,15 @@ bool fn_iso_findall_3(query *q)
 	// Now grab matching solutions
 
 	check_heap_error(push_choice(q));
+	frame *f = GET_CURR_FRAME();
+	unsigned vars = 128;
+
+	if (!check_slot(q, vars))
+		return false;
 
 	for (cell *c = solns; nbr_cells;
 		nbr_cells -= c->nbr_cells, c += c->nbr_cells) {
-		check_heap_error(try_me(q, 64));
+		check_heap_error(try_me(q, vars));
 
 		if (unify(q, p1, p1_ctx, c, q->st.fp)) {
 			check_heap_error(init_tmp_heap(q));
