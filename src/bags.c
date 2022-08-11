@@ -78,15 +78,17 @@ bool fn_iso_findall_3(query *q)
 
 	// Now grab matching solutions
 
-	check_heap_error(push_choice(q));
+	check_heap_error(push_choice(q), free(solns));
 	frame *f = GET_CURR_FRAME();
 
 	for (cell *c = solns; nbr_cells;
 		nbr_cells -= c->nbr_cells, c += c->nbr_cells) {
 		unsigned vars = f->actual_slots < 128 ? 128 : f->actual_slots;
 
-		if (!check_slot(q, vars))
+		if (!check_slot(q, vars)) {
+			free(solns);
 			return false;
+		}
 
 		check_heap_error(try_me(q, vars));
 
