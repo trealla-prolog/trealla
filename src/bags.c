@@ -93,7 +93,7 @@ bool fn_iso_findall_3(query *q)
 		check_heap_error(try_me(q, vars));
 
 		if (unify(q, p1, p1_ctx, c, q->st.fp)) {
-			check_heap_error(init_tmp_heap(q));
+			check_heap_error(init_tmp_heap(q), free(solns));
 			cell *tmp;
 
 			if (!is_atomic(c))
@@ -101,8 +101,8 @@ bool fn_iso_findall_3(query *q)
 			else
 				tmp = deep_clone_to_tmp(q, p1, p1_ctx);
 
-			check_heap_error(tmp);
-			check_heap_error(alloc_on_queuen_unsafe(q, q->st.qnbr, tmp));
+			check_heap_error(tmp, free(solns));
+			check_heap_error(alloc_on_queuen_unsafe(q, q->st.qnbr, tmp), free(solns));
 		}
 
 		undo_me(q);
