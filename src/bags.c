@@ -83,6 +83,9 @@ bool fn_iso_findall_3(query *q)
 
 	for (cell *c = solns; nbr_cells;
 		nbr_cells -= c->nbr_cells, c += c->nbr_cells) {
+
+		// Note: we need fresh variables for each solution
+
 		unsigned vars = f->actual_slots < 128 ? 128 : f->actual_slots;
 
 		if (!check_slot(q, vars)) {
