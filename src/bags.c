@@ -92,9 +92,6 @@ bool fn_iso_findall_3(query *q)
 
 		check_heap_error(try_me(q, vars));
 
-		// In case slots realloc'd...
-		GET_FIRST_ARG0(p1,any,p0);
-
 		if (unify(q, p1, p1_ctx, c, q->st.fp)) {
 			check_heap_error(init_tmp_heap(q));
 			cell *tmp;
@@ -117,11 +114,5 @@ bool fn_iso_findall_3(query *q)
 	free(solns);
 	cell *l = convert_to_list(q, get_queuen(q), queuen_used(q));
 	drop_queuen(q);
-
-	// In case slots realloc'd...
-	GET_FIRST_ARG(xxp1,any);
-	GET_NEXT_ARG(xxp2,any);
-	GET_NEXT_ARG(xxp3,any);
-
-	return unify(q, xxp3, xxp3_ctx, l, q->st.curr_frame);
+	return unify(q, xp3, xp3_ctx, l, q->st.curr_frame);
 }
