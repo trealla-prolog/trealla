@@ -121,8 +121,10 @@ bool fn_iso_findall_3(query *q)
 	return unify(q, xp3, xp3_ctx, l, q->st.curr_frame);
 }
 #else
-// This is sleeker fast version that *should* work, but has a
-// few Logtalk fails when meta-called...
+
+// This is a sleeker faster (100x) version that *should* work, but has
+// a few Logtalk fails when meta-called...
+
 bool fn_iso_findall_3(query *q)
 {
 	GET_FIRST_ARG(xp1,any);
