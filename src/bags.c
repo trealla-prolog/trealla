@@ -169,6 +169,12 @@ bool fn_iso_findall_3(query *q)
 	init_queuen(q);
 	frame *f = GET_CURR_FRAME();
 	unsigned vars = f->actual_slots < 128 ? 128 : f->actual_slots;
+
+	if (!check_slot(q, vars)) {
+		free(solns);
+		return false;
+	}
+
 	check_heap_error(try_me(q, vars));
 
 	// Now grab matching solutions
