@@ -68,6 +68,7 @@ bool check_list(query *q, cell *p1, pl_idx_t p1_ctx, bool *is_partial, pl_int_t 
 bool parse_write_params(query *q, cell *c, pl_idx_t c_ctx, cell **vnames, pl_idx_t *vnames_ctx);
 bool has_vars(query *q, cell *p1, pl_idx_t p1_ctx);
 bool accum_var(query *q, const cell *c, pl_idx_t c_ctx);
+bool check_frame(query *q);
 int new_stream(prolog *pl);
 
 #ifdef _WIN32

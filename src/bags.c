@@ -167,7 +167,9 @@ bool fn_iso_findall_3(query *q)
 	pl_idx_t nbr_cells = queuen_used(q);
 	cell *solns = take_queuen(q);
 	init_queuen(q);
-	frame *f = GET_CURR_FRAME();
+
+	check_heap_error(check_frame(q));
+	frame *f = GET_FRAME(q->st.fp);
 	unsigned vars = f->actual_slots < 128 ? 128 : f->actual_slots;
 
 	if (!check_slot(q, vars)) {
