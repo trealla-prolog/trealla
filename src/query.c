@@ -813,10 +813,8 @@ static void trim_trail(query *q)
 
 static bool check_slots(const query *q, const frame *f, const clause *cl)
 {
-	if (cl != NULL) {
-		if (f->actual_slots != cl->nbr_vars)
-			return false;
-	}
+	if (f->actual_slots != cl->nbr_vars)
+		return false;
 
 	for (unsigned i = 0; i < f->actual_slots; i++) {
 		const slot *e = GET_SLOT(f, i);
