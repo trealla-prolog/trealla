@@ -42,13 +42,15 @@ bool fn_iso_findall_3(query *q)
 	if (is_iso_list(xp3) && !check_list(q, xp3, xp3_ctx, &is_partial, NULL) && !is_partial)
 		return throw_error(q, xp3, xp3_ctx, "type_error", "list");
 
-	cell *p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, false);
-	check_heap_error(p0);
-	GET_FIRST_ARG0(p1,any,p0);
-	GET_NEXT_ARG(p2,callable);
-	GET_NEXT_ARG(p3,list_or_nil_or_var);
-
 	if (!q->retry) {
+		cell *p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, false);
+		check_heap_error(p0);
+		GET_FIRST_ARG0(p1,any,p0);
+		GET_NEXT_ARG(p2,callable);
+		GET_NEXT_ARG(p3,list_or_nil_or_var);
+
+		//printf("*** phase1\n");
+
 		grab_queuen(q);
 		assert(q->st.qnbr < MAX_QUEUES);
 		cell *tmp = clone_to_heap(q, true, p2, 2+p1->nbr_cells+2);
@@ -71,6 +73,8 @@ bool fn_iso_findall_3(query *q)
 	}
 
 	// Retry takes a copy
+
+	//printf("*** phase2\n");
 
 	pl_idx_t nbr_cells = queuen_used(q);
 	cell *solns = take_queuen(q);
