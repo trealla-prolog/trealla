@@ -484,8 +484,12 @@ cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth, re
 		return tmp;
 
 	bool cyclic = false;
+	bool is_partial = false;
 
-	if (is_iso_list(p1)) {
+	if (is_iso_list(p1) && !check_list(q, p1, p1_ctx, &is_partial, NULL))
+		is_partial = true;
+
+	if (!is_partial && is_iso_list(p1)) {
 		LIST_HANDLER(p1);
 
 		while (is_iso_list(p1)) {

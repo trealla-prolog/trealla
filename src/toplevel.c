@@ -237,10 +237,11 @@ static int varunformat(const char *s)
 
 static bool any_attributed(const query *q)
 {
-	const frame *f = GET_FIRST_FRAME();
+	parser *p = q->p;
+	frame *f = GET_FIRST_FRAME();
 	bool any = false;
 
-	for (unsigned i = 0; i < f->actual_slots; i++) {
+	for (unsigned i = 0; i < p->nbr_vars; i++) {
 		const slot *e = GET_SLOT(f, i);
 
 		if (!is_empty(&e->c) || !e->c.attrs)
