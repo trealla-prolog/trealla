@@ -932,8 +932,8 @@ static void commit_me(query *q)
 		tco = last_match && recursive && !choices && slots_ok;
 
 #if 0
-	printf("*** tco=%d, q->no_tco=%d, last_match=%d, rec=%d, any_choices=%d, slots_ok=%d, cl->nbr_vars=%u, cl->nbr_temporaries=%u\n",
-		tco, q->no_tco, last_match, recursive, choices, slots_ok, cl->nbr_vars, cl->nbr_temporaries);
+	printf("*** retry=%d, tco=%d, q->no_tco=%d, last_match=%d, rec=%d, any_choices=%d, slots_ok=%d, cl->nbr_vars=%u, cl->nbr_temporaries=%u\n",
+		q->retry, tco, q->no_tco, last_match, recursive, choices, slots_ok, cl->nbr_vars, cl->nbr_temporaries);
 #endif
 
 	if (tco && q->pl->opt)
