@@ -458,7 +458,7 @@ cell *deep_copy_to_heap_with_replacement(query *q, cell *p1, pl_idx_t p1_ctx, bo
 	return tmp2;
 }
 
-cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth, reflist *list)
+static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth, reflist *list)
 {
 	if (depth >= MAX_DEPTH) {
 		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
