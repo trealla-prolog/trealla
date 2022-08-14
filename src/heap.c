@@ -207,7 +207,7 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 	pl_idx_t save_p1_ctx = p1_ctx;
 	bool cyclic = false;
 
-	if (is_iso_list(p1)) {
+	if (q->lists_ok && is_iso_list(p1)) {
 		LIST_HANDLER(p1);
 
 		while (is_iso_list(p1)) {
