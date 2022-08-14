@@ -259,7 +259,7 @@ Non-standard predicates
 
 	get_unbuffered_code/1		# read a single unbuffered code
 	get_unbuffered_char/1		# read a single unbuffered character
-	read_term_from_atom/3       # read_term_from_atom(+atom,?term)
+	read_term_from_atom/3       # read_term_from_atom(+atom,?term,+list)
 	write_term_to_atom/3        # write_term_to_atom(?atom,?term,+list)
 	write_canonical_to_atom/3   # write_canonical_to_atom(?atom,?term,+list)
 	term_to_atom/2              # term_to_atom(?atom,?term)
