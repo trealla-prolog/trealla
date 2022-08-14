@@ -2229,6 +2229,7 @@ char *eat_space(parser *p)
 			if (p->comment && (src[0] == '*') && (src[1] == '/')) {
 				p->comment = false;
 				src += 2;
+				p->srcptr = (char*)src;
 				done = false;
 				continue;
 			}
