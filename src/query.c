@@ -813,9 +813,6 @@ static void trim_trail(query *q)
 
 static bool check_slots(const query *q, const frame *f, const clause *cl)
 {
-	if (f->actual_slots != cl->nbr_vars)
-		return false;
-
 	for (unsigned i = 0; i < f->actual_slots; i++) {
 		const slot *e = GET_SLOT(f, i);
 		const cell *c = &e->c;
@@ -823,7 +820,7 @@ static bool check_slots(const query *q, const frame *f, const clause *cl)
 		if (is_indirect(c) && (c->var_ctx != q->st.curr_frame))
 			return false;
 
-		if (is_managed(c) || is_variable(c))
+		if (is_managed(c) || is_empty(c))
 			return false;
 	}
 
@@ -921,17 +918,18 @@ static void commit_me(query *q)
 	bool last_match = implied_first_cut || cl->is_first_cut || !is_next_key(q);
 	bool recursive = is_tail_recursive(q->st.curr_cell);
 	bool slots_ok = check_slots(q, f, cl);
+	bool vars_ok = 	f->actual_slots == cl->nbr_vars;
 	bool choices = any_choices(q, f);
 	bool tco;
 
 	if (q->no_tco && (cl->nbr_vars != cl->nbr_temporaries))
 		tco = false;
 	else
-		tco = last_match && recursive && !choices && slots_ok;
+		tco = last_match && recursive && !choices && slots_ok && vars_ok;
 
 #if 0
-	printf("*** retry=%d, tco=%d, q->no_tco=%d, last_match=%d, rec=%d, any_choices=%d, slots_ok=%d, cl->nbr_vars=%u, cl->nbr_temporaries=%u\n",
-		q->retry, tco, q->no_tco, last_match, recursive, choices, slots_ok, cl->nbr_vars, cl->nbr_temporaries);
+	printf("*** retry=%d,tco=%d,q->no_tco=%d,last_match=%d,rec=%d,any_choices=%d,slots_ok=%d,vars_ok=%d,cl->nbr_vars=%u,cl->nbr_temps=%u\n",
+		q->retry, tco, q->no_tco, last_match, recursive, choices, slots_ok, vars_ok, cl->nbr_vars, cl->nbr_temporaries);
 #endif
 
 	if (tco && q->pl->opt)
