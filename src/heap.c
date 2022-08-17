@@ -305,7 +305,7 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 			nlist.ptr = save_p1;
 			nlist.ctx = save_p1_ctx;
 
-			cell *rec = deep_copy2_to_tmp(q, c, c_ctx, copy_attrs, from, from_ctx, to, to_ctx, depth+1, !q->lists_ok ? &nlist : NULL);
+			cell *rec = deep_copy2_to_tmp(q, c, c_ctx, copy_attrs, from, from_ctx, to, to_ctx, depth+1, &nlist);
 			if (!rec) return rec;
 		}
 
@@ -342,17 +342,6 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx_t p1_c
 	cell *c = deref(q, p1, p1_ctx);
 	pl_idx_t c_ctx = q->latest_ctx;
 	frame *f = GET_CURR_FRAME();
-
-	if (is_iso_list(c)) {
-		bool is_partial;
-
-		if (check_list(q, c, c_ctx, &is_partial, NULL))
-			q->lists_ok = true;
-		else
-			q->lists_ok = false;
-	} else
-		q->lists_ok = false;
-
 	q->cycle_error = false;
 
 	if (q->vars && is_variable(save_p1)) {
@@ -377,8 +366,7 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx_t p1_c
 	reflist nlist = {0};
 	nlist.ptr = c;
 	nlist.ctx = c_ctx;
-	cell *rec = deep_copy2_to_tmp(q, c, c_ctx, copy_attrs, from, from_ctx, to, to_ctx, 0, !q->lists_ok ? &nlist : NULL);
-	q->lists_ok = false;
+	cell *rec = deep_copy2_to_tmp(q, c, c_ctx, copy_attrs, from, from_ctx, to, to_ctx, 0, &nlist);
 	if (!rec) return rec;
 	int cnt = q->varno - f->actual_slots;
 
