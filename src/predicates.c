@@ -4521,7 +4521,8 @@ static bool fn_must_be_2(query *q)
 
 		if (!check_list(q, p1, p1_ctx, &is_partial, NULL) && !is_partial)
 			return throw_error(q, p1, p1_ctx, "type_error", "list");
-	}
+	} else
+		return throw_error(q, p2, p2_ctx, "type_error", "type");
 
 	return true;
 }
