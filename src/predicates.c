@@ -4496,6 +4496,9 @@ static bool fn_must_be_2(query *q)
 	} else if (!strcmp(src, "character")) {
 		if (!is_character(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "character");
+	} else if (!strcmp(src, "chars")) {
+		if (!is_character(p1))
+			return throw_error(q, p1, p1_ctx, "type_error", "character");
 	} else if (!strcmp(src, "boolean")) {
 		if (!is_boolean(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "boolean");
