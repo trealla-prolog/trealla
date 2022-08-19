@@ -147,7 +147,9 @@ bool fn_iso_call_n(query *q)
 	const char *functor = C_STR(q, tmp2);
 	bool found = false;
 
-	if ((tmp2->fn_ptr = get_builtin(q->pl, C_STR(q, tmp2), tmp2->arity, &found, NULL)), found) {
+	if ((tmp2->match = search_predicate(q->st.m, tmp2)) != NULL) {
+		tmp2->flags &= ~FLAG_BUILTIN;
+	} else if ((tmp2->fn_ptr = get_builtin(q->pl, C_STR(q, tmp2), tmp2->arity, &found, NULL)), found) {
 		tmp2->flags |= FLAG_BUILTIN;
 	}
 
