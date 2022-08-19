@@ -218,9 +218,9 @@ typedef struct {
 #define _CMP_SLICES(pl,c1,c2) slicecmp(_C_STR(pl, c1), _C_STRLEN(pl, c1), _C_STR(pl, c2), _C_STRLEN(pl, c2))
 #define _DUP_SLICE(pl,c) slicedup(_C_STR(pl, c), _C_STRLEN(pl, c))
 
-#define CMP_STR_CSTRN(x,c,str,len) _CMP_SLICE((x)->pl, c, str, len)
-#define CMP_STR_CSTR(x,c,str) _CMP_SLICE2((x)->pl, c, str)
-#define CMP_STR_STR(x,c1,c2) _CMP_SLICES((x)->pl, c1, c2)
+#define CMP_STR_TO_CSTRN(x,c,str,len) _CMP_SLICE((x)->pl, c, str, len)
+#define CMP_STR_TO_CSTR(x,c,str) _CMP_SLICE2((x)->pl, c, str)
+#define CMP_STR_TO_STR(x,c1,c2) _CMP_SLICES((x)->pl, c1, c2)
 #define DUP_STR(x,c) _DUP_SLICE((x)->pl, c)
 
 // If changing the order of these: see unify.c dispatch table

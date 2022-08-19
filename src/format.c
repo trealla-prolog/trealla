@@ -551,13 +551,13 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 		stream *str = &q->pl->streams[n];
 		net_write(tmpbuf, len, str);
 	} else if (is_structure(str)
-		&& ((CMP_STR_CSTR(q, str, "atom")
-		&& CMP_STR_CSTR(q, str, "chars")
-		&& CMP_STR_CSTR(q, str, "string"))
+		&& ((CMP_STR_TO_CSTR(q, str, "atom")
+		&& CMP_STR_TO_CSTR(q, str, "chars")
+		&& CMP_STR_TO_CSTR(q, str, "string"))
 		|| (str->arity > 1) || !is_variable(str+1))) {
 		free(tmpbuf);
 		return throw_error(q, str, str_ctx, "type_error", "structure");
-	} else if (is_structure(str) && !CMP_STR_CSTR(q, str, "atom")) {
+	} else if (is_structure(str) && !CMP_STR_TO_CSTR(q, str, "atom")) {
 		cell *c = deref(q, str+1, str_ctx);
 		cell tmp;
 		check_heap_error(make_cstringn(&tmp, tmpbuf, len), free(tmpbuf));
