@@ -449,6 +449,7 @@ struct predicate_ {
 	db_entry *dirty_list;
 	cell key;
 	uint64_t cnt, ref_cnt, db_id;
+	bool is_reload:1;
 	bool is_prebuilt:1;
 	bool is_public:1;
 	bool is_static:1;

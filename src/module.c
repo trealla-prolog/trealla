@@ -448,8 +448,8 @@ void set_dynamic_in_db(module *m, const char *name, unsigned arity)
 
 	if (pr) {
 		push_property(m, name, arity, "dynamic");
-		pr->is_dynamic = true;
 		pr->is_static = false;
+		pr->is_dynamic = true;
 	} else
 		m->error = true;
 }
@@ -493,8 +493,8 @@ void set_persist_in_db(module *m, const char *name, unsigned arity)
 	if (pr) {
 		push_property(m, name, arity, "dynamic");
 		push_property(m, name, arity, "persist");
-		pr->is_dynamic = true;
 		pr->is_static = false;
+		pr->is_dynamic = true;
 		pr->is_persist = true;
 		m->use_persist = true;
 	} else
@@ -842,10 +842,11 @@ static bool check_multifile(module *m, predicate *pr, db_entry *dbe)
 {
 	if (pr->head && !pr->is_multifile && !pr->is_dynamic
 		&& (C_STR(m, &pr->key)[0] != '$')) {
-		if (dbe->filename != pr->head->filename) {
+		if ((dbe->filename != pr->head->filename) || pr->is_reload) {
 			for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
 				retract_from_db(dbe);
 				pr->is_processed = false;
+				pr->is_reload = false;
 			}
 
 			if (dbe->owner->cnt)
@@ -970,8 +971,8 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 
 		if (!consulting) {
 			push_property(m, C_STR(m, c), c->arity, "dynamic");
-			pr->is_dynamic = true;
 			pr->is_static = false;
+			pr->is_dynamic = true;
 		} else {
 			if (m->prebuilt) {
 				push_property(m, C_STR(m, c), c->arity, "built_in");
@@ -1461,6 +1462,11 @@ module *load_file(module *m, const char *filename, bool including)
 
 			if (strcmp(str->name, "user_input"))
 				continue;
+
+			for (predicate *pr = m->head; pr; pr = pr->next)
+				pr->is_reload = true;
+
+			// Process extra input line text...
 
 			while (m->pl->p && m->pl->p->srcptr && *m->pl->p->srcptr) {
 				m->filename = filename;
