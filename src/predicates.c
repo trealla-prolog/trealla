@@ -7179,7 +7179,7 @@ builtins g_iso_bifs[] =
 	{"$ne", 2, fn_sys_ne_2, NULL, false, BLAH},
 	{"$incr", 2, fn_sys_incr_2, NULL, false, BLAH},
 
-	{"call", 1, fn_iso_call_1, NULL, false, BLAH},
+	{"call", 1, fn_iso_call_n, NULL, false, BLAH},
 	{"call", 2, fn_iso_call_n, NULL, false, BLAH},
 	{"call", 3, fn_iso_call_n, NULL, false, BLAH},
 	{"call", 4, fn_iso_call_n, NULL, false, BLAH},

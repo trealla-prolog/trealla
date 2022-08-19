@@ -129,10 +129,11 @@ bool fn_iso_call_n(query *q)
 	unsigned arity = p1->arity;
 	unsigned args = 1;
 
-	while (args++ < q->st.curr_cell->arity) {
+	while (args < q->st.curr_cell->arity) {
 		GET_NEXT_ARG(p2,any);
 		check_heap_error(deep_clone_to_tmp(q, p2, p2_ctx));
 		arity++;
+		args++;
 	}
 
 	cell *tmp2 = get_tmp_heap(q, 0);
@@ -153,45 +154,11 @@ bool fn_iso_call_n(query *q)
 		tmp2->flags |= FLAG_BUILTIN;
 	}
 
-	if (arity <= 2) {
+	if ((args > 1) && arity <= 2) {
 		unsigned specifier;
 
 		if (search_op(q->st.m, functor, &specifier, false))
 			SET_OP(tmp2, specifier);
-	}
-
-	if (check_body_callable(q->st.m->p, tmp2) != NULL)
-		return throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
-
-	cell *tmp = clone_to_heap(q, true, tmp2, 2);
-	check_heap_error(tmp);
-	pl_idx_t nbr_cells = 1+tmp2->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_sys_drop_barrier, fn_sys_drop_barrier, 0, 0);
-	make_return(q, tmp+nbr_cells);
-	check_heap_error(push_call_barrier(q));
-	q->st.curr_cell = tmp;
-	return true;
-}
-
-bool fn_iso_call_1(query *q)
-{
-	if (q->retry)
-		return false;
-
-	GET_FIRST_ARG(p1,callable);
-	check_heap_error(init_tmp_heap(q));
-	cell *tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
-	check_heap_error(tmp2);
-	const char *functor = C_STR(q, tmp2);
-
-	if (!p1->match) {
-		bool found = false;
-
-		if ((tmp2->match = search_predicate(q->st.m, tmp2)) != NULL) {
-			tmp2->flags &= ~FLAG_BUILTIN;
-		} else if ((tmp2->fn_ptr = get_builtin(q->pl, C_STR(q, tmp2), tmp2->arity, &found, NULL)), found) {
-			tmp2->flags |= FLAG_BUILTIN;
-		}
 	}
 
 	if (check_body_callable(q->st.m->p, tmp2) != NULL)
