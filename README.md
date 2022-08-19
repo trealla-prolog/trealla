@@ -13,7 +13,7 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	DCGs
 	REPL with history
 	Compiles in <1s with *tcc*, or ~5s with *gcc* and *clang*
-	Runs on Linux, FreeBSD and macOS
+	Runs on Linux, FreeBSD, macOS, and WebAssembly (WASI)
 	Foreign function interface (FFI) for calling out to user C code
 	Access SQLITE databases using builtin module (uses FFI)
 	Attributed variables with SICStus interface (*WIP*)
@@ -165,6 +165,22 @@ integers (aka. bigints) are for arithmetic purposes only and will give a
 type_error when used in places not expected. The *imath* library has a bug
 whereby printing large numbers becomes exponentially slower (100K+ digits)
 and will require a switch to *libtomath* at some point to remedy.
+
+
+WebAssembly (WASI)
+==================
+
+Trealla has support for WebAssembly System Interface (WASI).
+
+For an easy build envrionment, set up
+[wasi-sdk](https://github.com/WebAssembly/wasi-sdk).
+[Binaryen](https://github.com/WebAssembly/binaryen) is needed for optimization.
+
+To build the WebAssembinary binary, set CC to wasi-sdk's clang:
+
+	make CC=/opt/wasi-sdk/bin/clang wasm
+
+Setting WASI_CC also works as an alternative to CC.
 
 
 Contributions
