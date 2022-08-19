@@ -138,7 +138,7 @@ extern unsigned g_string_cnt, g_interned_cnt;
 
 #define is_smallint(c) (is_integer(c) && !((c)->flags & FLAG_MANAGED))
 #define is_bigint(c) (is_integer(c) && ((c)->flags & FLAG_MANAGED))
-#define is_boolean(c) ((is_interned(c) && !(c)->arity) && (c->val_off != g_true_s) && (c->val_off != g_false_s))
+#define is_boolean(c) ((is_interned(c) && !(c)->arity && ((c->val_off == g_true_s) || (c->val_off == g_false_s))))
 #define is_atom(c) ((is_interned(c) && !(c)->arity) || is_cstring(c))
 #define is_string(c) (is_cstring(c) && ((c)->flags & FLAG_CSTR_STRING))
 #define is_managed(c) ((c)->flags & FLAG_MANAGED)
