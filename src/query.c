@@ -552,6 +552,7 @@ size_t scan_is_chars_list2(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes, 
 		CHECK_INTERRUPT();
 		cell *h = LIST_HEAD(l);
 		cell *c = deref(q, h, l_ctx);
+		q->suspect = c;
 
 		if (is_variable(c)) {
 			*has_var = true;

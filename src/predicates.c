@@ -4500,10 +4500,15 @@ static bool fn_must_be_2(query *q)
 		bool is_partial;
 
 		if (!check_list(q, p1, p1_ctx, &is_partial, NULL) && !is_partial)
-			return throw_error(q, p1, p1_ctx, "type_error", "character");
+			return throw_error(q, p1, p1_ctx, "type_error", "list");
+
+		if (has_vars(q, p1, p1_ctx))
+			return throw_error(q, p1, p1_ctx, "instantiation_error", "not_sufficiently_instantiated");
+
+		q->suspect = p1;
 
 		if (!is_chars(q, p1, p1_ctx))
-			return throw_error(q, p1, p1_ctx, "type_error", "character");
+			return throw_error(q, q->suspect, p1_ctx, "type_error", "character");
 	} else if (!strcmp(src, "boolean")) {
 		if (!is_boolean(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "boolean");

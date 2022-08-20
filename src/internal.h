@@ -614,7 +614,7 @@ struct query_ {
 	slot *slots;
 	choice *choices;
 	trail *trails;
-	cell *tmp_heap, *last_arg, *variable_names, *key, *ball;
+	cell *tmp_heap, *last_arg, *variable_names, *key, *ball, *suspect;
 	cell *queue[MAX_QUEUES];
 	page *pages;
 	slot *save_e;
