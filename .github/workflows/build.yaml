@@ -1,0 +1,84 @@
+  name: Build
+
+  on:
+    create:
+      tags:
+    push:
+      branches:
+        - main
+    pull_request:
+
+  jobs:
+    build:
+      name: Native
+      runs-on: ${{ matrix.os }}
+      strategy:
+        fail-fast: false
+        matrix:
+          os:
+            - ubuntu-latest
+#            - macos-latest (TODO: currently broken, needs OpenSSL library path fixed)
+      steps:
+        - uses: actions/checkout@v1
+        - name: Install deps (Linux)
+          run: |
+            sudo apt-get install libreadline-dev xxd libffi-dev libssl-dev
+          if: matrix.os == 'ubuntu-latest'
+        - name: Install deps (macOS)
+          run: |
+            brew install readline vim libffi openssl make
+            echo "$(brew --prefix)/opt/make/libexec/gnubin" >> $GITHUB_PATH
+          if: matrix.os == 'macos-latest'
+        - name: Build
+          run: make release
+        - name: Test
+          run: make test
+        - name: Upload artifacts
+          uses: actions/upload-artifact@v1
+          with:
+            name: ${{ format( 'tpl-{0}', matrix.os) }}
+            path: tpl
+
+    # Roughly matches https://github.com/WebAssembly/wasi-sdk#install
+    wasm:
+      name: WebAssembly
+      runs-on: ubuntu-latest
+      env:
+        WASI_VERSION: 15
+        BINARYEN_VERSION: 109
+        WAPM_REGISTRY_TOKEN: ${{ secrets.WAPM_REGISTRY_TOKEN }}
+      steps:
+        - uses: actions/checkout@v1
+        - name: Set environment (1/3)
+          run: |
+            echo "WASI_VERSION_FULL=${WASI_VERSION}.0" >> $GITHUB_ENV
+            echo "RELEASE_VERSION=`git tag --points-at HEAD | sed 's/^v//'`" >> $GITHUB_ENV
+        - name: Set environment (2/3)
+          run: |
+            echo "WASI_SDK_PATH=`pwd`/wasi-sdk-${WASI_VERSION_FULL}" >> $GITHUB_ENV
+        - name: Set environment (3/3)
+          run: |
+            echo "WASI_CC=${WASI_SDK_PATH}/bin/clang --sysroot=${WASI_SDK_PATH}/share/wasi-sysroot" >> $GITHUB_ENV
+        - name: Install WASI SDK
+          run: |
+            wget https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_VERSION}/wasi-sdk-${WASI_VERSION_FULL}-linux.tar.gz
+            tar xvf wasi-sdk-${WASI_VERSION_FULL}-linux.tar.gz
+        - name: Install Binaryen
+          run: brew install binaryen
+        - name: Build
+          run: |
+            make clean
+            make wasm
+        - name: Upload artifacts
+          uses: actions/upload-artifact@v1
+          with:
+            name: tpl.wasm
+            path: tpl.wasm
+        - name: Release on WAPM
+          run: |
+            curl https://get.wasmer.io -sSfL | sh
+            source /home/runner/.wasmer/wasmer.sh
+            wapm login $WAPM_REGISTRY_TOKEN
+            sed -i "s/__RELEASE_VERSION__/$RELEASE_VERSION/" wapm.toml
+            wapm publish
+          if: ${{ env.WAPM_REGISTRY_TOKEN != '' && env.RELEASE_VERSION != '' }}

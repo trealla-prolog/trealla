@@ -1,0 +1,19 @@
+[package]
+name = "guregu/trealla"
+version = "__RELEASE_VERSION__"
+description = "Trealla Prolog"
+license = "MIT"
+repository = "https://github.com/trealla-prolog/trealla"
+wasmer-extra-flags = "--enable-bulk-memory"
+
+[[module]]
+name = "tpl"
+source = "tpl.wasm"
+abi = "wasi"
+
+[module.interfaces]
+wasi = "0.1.0-unstable"
+
+[[command]]
+name = "tpl"
+module = "tpl"

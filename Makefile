@@ -27,7 +27,7 @@ endif
 endif
 
 ifndef NOFFI
-CFLAGS += -DUSE_FFI=1 -I/usr/local/OPT/LIBFFI/include
+CFLAGS += -DUSE_FFI=1 -I/usr/local/opt/libffi/include
 LDFLAGS += -lffi -ldl
 endif
 
