@@ -1889,6 +1889,7 @@ void read_integer(parser *p, mp_int v2, int base, const char *src,  const char *
 			return;
 		}
 
+		spaces = 0;
 		*dst++ = *src++;
 
 		if ((size_t)(dst - p->tmpbuf) >= (p->tmpbuf_size-1)) {
@@ -1897,29 +1898,14 @@ void read_integer(parser *p, mp_int v2, int base, const char *src,  const char *
 			dst = p->tmpbuf + offset;
 		}
 
-		int last_ch = *src, cnt = 0;
+		int last_ch = *src;
 
-		while (isblank(*src) || (*src == '_')) {
-			if (cnt) {
-				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stdout, "Error: syntax error, illegal character\n");
-				*srcptr = src;
-				p->error = true;
-				return;
-			}
-
-			last_ch = *src++;
-
-			if (last_ch == '_')
-				cnt++;
+		while (*src == '_') {
+			spaces++;
+			src++;
 		}
 
 		if (last_ch == '_') {
-			p->srcptr = (char*)src;
-			src = eat_space(p);
-		}
-
-		if (last_ch == ' ') {
 			p->srcptr = (char*)src;
 			src = eat_space(p);
 		}
