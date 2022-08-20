@@ -82,6 +82,7 @@ LIBOBJECTS +=  \
 	library/format.o \
 	library/freeze.o \
 	library/http.o \
+	library/json.o \
 	library/lambda.o \
 	library/lists.o \
 	library/ordsets.o \
