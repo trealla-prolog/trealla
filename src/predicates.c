@@ -4500,10 +4500,10 @@ static bool fn_must_be_2(query *q)
 		bool is_partial;
 
 		if (!check_list(q, p1, p1_ctx, &is_partial, NULL) && !is_partial)
-			return throw_error(q, p1, p1_ctx, "type_error", "chars");
+			return throw_error(q, p1, p1_ctx, "type_error", "character");
 
 		if (!is_chars(q, p1, p1_ctx))
-			return throw_error(q, p1, p1_ctx, "type_error", "list");
+			return throw_error(q, p1, p1_ctx, "type_error", "character");
 	} else if (!strcmp(src, "boolean")) {
 		if (!is_boolean(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "boolean");
