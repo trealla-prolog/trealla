@@ -4526,7 +4526,7 @@ static bool fn_must_be_2(query *q)
 		if (!is_number(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "number");
 		if (is_negative(p1))
-			return throw_error(q, p1, p1_ctx, "domain_error", "not_less-than_zero");
+			return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
 	} else if (!strcmp(src, "ground")) {
 		if (has_vars(q, p1, p1_ctx))
 			return throw_error(q, p1, p1_ctx, "type_error", "ground");
