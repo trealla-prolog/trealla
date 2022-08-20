@@ -17,7 +17,7 @@
         matrix:
           os:
             - ubuntu-latest
-#            - macos-latest (TODO: currently broken, needs OpenSSL library path fixed)
+            - macos-latest
       steps:
         - uses: actions/checkout@v1
         - name: Install deps (Linux)

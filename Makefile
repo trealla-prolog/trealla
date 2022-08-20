@@ -32,7 +32,7 @@ LDFLAGS += -lffi -ldl
 endif
 
 ifndef NOSSL
-CFLAGS += -DUSE_OPENSSL=1
+CFLAGS += -DUSE_OPENSSL=1 -I/usr/local/opt/openssl/include
 LDFLAGS += -L/usr/local/opt/openssl/lib -lssl -lcrypto
 endif
 

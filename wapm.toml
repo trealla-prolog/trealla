@@ -1,5 +1,5 @@
 [package]
-name = "guregu/trealla"
+name = "trealla/trealla"
 version = "__RELEASE_VERSION__"
 description = "Trealla Prolog"
 license = "MIT"
