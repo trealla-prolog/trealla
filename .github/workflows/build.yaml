@@ -65,20 +65,25 @@
             tar xvf wasi-sdk-${WASI_VERSION_FULL}-linux.tar.gz
         - name: Install Binaryen
           run: brew install binaryen
+        - name: Setup Wasmer
+          uses: wasmerio/setup-wasmer@v1
         - name: Build
           run: |
             make clean
             make wasm
+        - name: Test
+          run: |
+            echo 'wasmer --dir . tpl.wasm -- $@' > tpl
+            chmod +x tpl
+            make test
         - name: Upload artifacts
           uses: actions/upload-artifact@v1
           with:
             name: tpl.wasm
             path: tpl.wasm
-        - name: Release on WAPM
+        - name: Publish on WAPM
           run: |
-            curl https://get.wasmer.io -sSfL | sh
-            source /home/runner/.wasmer/wasmer.sh
-            wapm login $WAPM_REGISTRY_TOKEN
             sed -i "s/__RELEASE_VERSION__/$RELEASE_VERSION/" wapm.toml
+            wapm login $WAPM_REGISTRY_TOKEN
             wapm publish
           if: ${{ env.WAPM_REGISTRY_TOKEN != '' && env.RELEASE_VERSION != '' }}
