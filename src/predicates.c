@@ -4068,6 +4068,14 @@ static bool fn_statistics_2(query *q)
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	}
 
+	if (!CMP_STR_TO_CSTR(q, p1, "walltime") && is_variable(p2)) {
+		uint64_t now = cpu_time_in_usec();
+		double elapsed = now - q->time_cpu_started;
+		cell tmp;
+		make_int(&tmp, elapsed/1000);
+		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	}
+
 	if (!CMP_STR_TO_CSTR(q, p1, "runtime")) {
 		uint64_t now = cpu_time_in_usec();
 		double elapsed = now - q->time_cpu_started;
