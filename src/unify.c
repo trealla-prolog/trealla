@@ -9,7 +9,7 @@ static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_id
 {
 	if (depth == MAX_DEPTH) {
 		q->cycle_error = true;
-		return ERR_CYCLE_CMP;
+		return 0;
 	}
 
 	if (is_variable(p1)) {
@@ -114,7 +114,7 @@ static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_id
 	}
 
 	int val = CMP_STR_TO_STR(q, p1, p2);
-	if (val) return val>0?1:-1;
+	if (val) return val;
 
 	int arity = p1->arity;
 	p1 = p1 + 1;

@@ -54,7 +54,6 @@ extern unsigned g_string_cnt, g_interned_cnt;
 // Sentinel Value
 #define ERR_IDX (~(pl_idx_t)0)
 #define IDX_MAX (ERR_IDX-1)
-#define ERR_CYCLE_CMP -2
 
 #define MAX_SMALL_STRING ((sizeof(void*)*2)-1)
 #define MAX_VAR_POOL_SIZE 4000

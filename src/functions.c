@@ -2077,7 +2077,7 @@ static bool fn_iso_seq_2(query *q)
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 	int res = compare(q, p1, p1_ctx, p2, p2_ctx);
-	return res == 0 || res == ERR_CYCLE_CMP;
+	return res == 0;
 }
 
 static bool fn_iso_sne_2(query *q)
@@ -2085,7 +2085,7 @@ static bool fn_iso_sne_2(query *q)
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 	int res = compare(q, p1, p1_ctx, p2, p2_ctx);
-	return res != 0 && res != ERR_CYCLE_CMP;
+	return res != 0;
 }
 
 static bool fn_iso_slt_2(query *q)
@@ -2093,7 +2093,7 @@ static bool fn_iso_slt_2(query *q)
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 	int res = compare(q, p1, p1_ctx, p2, p2_ctx);
-	return res != ERR_CYCLE_CMP && res < 0;
+	return res < 0;
 }
 
 static bool fn_iso_sle_2(query *q)
@@ -2101,7 +2101,7 @@ static bool fn_iso_sle_2(query *q)
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 	int res = compare(q, p1, p1_ctx, p2, p2_ctx);
-	return res != ERR_CYCLE_CMP && res <= 0;
+	return res <= 0;
 }
 
 static bool fn_iso_sgt_2(query *q)
@@ -2109,7 +2109,7 @@ static bool fn_iso_sgt_2(query *q)
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 	int res = compare(q, p1, p1_ctx, p2, p2_ctx);
-	return res != ERR_CYCLE_CMP && res > 0;
+	return res > 0;
 }
 
 static bool fn_iso_sge_2(query *q)
@@ -2117,7 +2117,7 @@ static bool fn_iso_sge_2(query *q)
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 	int res = compare(q, p1, p1_ctx, p2, p2_ctx);
-	return res != ERR_CYCLE_CMP && res >= 0;
+	return res >= 0;
 }
 
 static bool fn_iso_neq_2(query *q)

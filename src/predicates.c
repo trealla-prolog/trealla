@@ -6886,9 +6886,7 @@ static bool fn_iso_compare_3(query *q)
 	int status = compare(q, p2, p2_ctx, p3, p3_ctx);
 	cell tmp;
 
-	make_atom(&tmp,
-		     (status == ERR_CYCLE_CMP || status == 0)?
-		     g_eq_s:status<0?g_lt_s:g_gt_s);
+	make_atom(&tmp, (status == 0)?g_eq_s:status<0?g_lt_s:g_gt_s);
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
