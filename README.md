@@ -121,7 +121,7 @@ Building
 
 Written in plain-old C.
 
-	git clone https://github.com/infradig/trealla.git
+	git clone https://github.com/trealla-prolog/trealla.git
 	cd trealla
 
 On Debian+ systems you may need to install GNU readline, xxd & libffi
