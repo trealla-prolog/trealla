@@ -2841,6 +2841,8 @@ unsigned tokenize(parser *p, bool args, bool consing)
 #endif
 
 		if (!p->quote_char && !strcmp(p->token, ".")
+			&& !iswalpha(*p->srcptr)
+		    && (*p->srcptr != '"')
 		    && (*p->srcptr != '(')
 		    && (*p->srcptr != ',')
 		    && (*p->srcptr != ')')
