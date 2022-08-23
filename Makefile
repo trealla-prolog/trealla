@@ -91,6 +91,7 @@ LIBOBJECTS +=  \
 	library/sqlite3.o \
 	library/sqlite3_register.o \
 	library/ugraphs.o \
+	library/wasm_toplevel.o \
 	library/when.o
 
 SRCOBJECTS += src/imath/imath.o

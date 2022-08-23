@@ -42,6 +42,8 @@ extern unsigned char library_sqlite3_register_pl[];
 extern unsigned int library_sqlite3_register_pl_len;
 extern unsigned char library_json_pl[];
 extern unsigned int library_json_pl_len;
+extern unsigned char library_wasm_toplevel_pl[];
+extern unsigned int library_wasm_toplevel_pl_len;
 
 //extern unsigned char library_clpb_pl[];
 //extern unsigned int library_clpb_pl_len;
@@ -69,6 +71,7 @@ library g_libs[] = {
 	 {"sqlite3", library_sqlite3_pl, &library_sqlite3_pl_len},
 	 {"sqlite3_register", library_sqlite3_register_pl, &library_sqlite3_register_pl_len},
 	 {"ugraphs", library_ugraphs_pl, &library_ugraphs_pl_len},
+	 {"wasm_toplevel", library_wasm_toplevel_pl, &library_wasm_toplevel_pl_len},
 	 {"when", library_when_pl, &library_when_pl_len},
 
 	 //{"clpb", library_clpb_pl, &library_clpb_pl_len},

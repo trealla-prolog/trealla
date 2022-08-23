@@ -85,5 +85,5 @@
           run: |
             sed -i "s/__RELEASE_VERSION__/$RELEASE_VERSION/" wapm.toml
             wapm login $WAPM_REGISTRY_TOKEN
-            wapm publish
+            wapm publish || echo "Warning: WAPM publish failed"
           if: ${{ env.WAPM_REGISTRY_TOKEN != '' && env.RELEASE_VERSION != '' }}
