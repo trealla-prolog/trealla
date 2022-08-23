@@ -1,8 +1,9 @@
 :- module(random, [maybe/0, maybe/1, maybe/2, set_random/1]).
 
 set_random(seed(random)) :-
-	time(Seed),
-	set_seed(Seed).
+	wall_time(Seed),
+	set_seed(Seed),
+	!.
 set_random(seed(Seed)) :-
 	set_seed(Seed).
 
