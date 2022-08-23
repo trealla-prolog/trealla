@@ -95,9 +95,9 @@ static void trace_call(query *q, cell *c, pl_idx_t c_ctx, box_t box)
 		return;
 #endif
 
-	fprintf(stderr, " [%llu:f%u:fp:%u:cp%u:sp%u:hp%u] ",
+	fprintf(stderr, " [%llu:f%u:fp:%u:cp%u:sp%u:hp%u:tp%u] ",
 		(unsigned long long)q->step++,
-		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp);
+		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.tp);
 
 	fprintf(stderr, "%s ",
 		box == CALL ? "CALL" :
