@@ -6285,6 +6285,7 @@ static bool fn_sys_put_attributes_2(query *q)
 	GET_NEXT_ARG(p2,list_or_nil);
 	frame *f = GET_FRAME(p1_ctx);
 	slot *e = GET_SLOT(f, p1->var_nbr);
+	add_trail(q, p1_ctx, p1->var_nbr, e->c.attrs, e->c.attrs_ctx);
 	e->c.attrs = p2;
 	e->c.attrs_ctx = p2_ctx;
 	return true;
