@@ -27,12 +27,12 @@ endif
 endif
 
 ifndef NOFFI
-CFLAGS += -DUSE_FFI=1 -I/usr/local/OPT/LIBFFI/include
+CFLAGS += -DUSE_FFI=1 -I/usr/local/opt/libffi/include
 LDFLAGS += -lffi -ldl
 endif
 
 ifndef NOSSL
-CFLAGS += -DUSE_OPENSSL=1
+CFLAGS += -DUSE_OPENSSL=1 -I/usr/local/opt/openssl/include
 LDFLAGS += -L/usr/local/opt/openssl/lib -lssl -lcrypto
 endif
 
