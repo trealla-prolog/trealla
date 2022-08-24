@@ -52,7 +52,7 @@
         - name: Set environment (1/3)
           run: |
             echo "WASI_VERSION_FULL=${WASI_VERSION}.0" >> $GITHUB_ENV
-            echo "RELEASE_VERSION=`git tag --points-at HEAD | sed 's/^v//'`" >> $GITHUB_ENV
+            echo "RELEASE_VERSION=`git tag --points-at HEAD | head -n 1 | sed 's/^v//'`" >> $GITHUB_ENV
         - name: Set environment (2/3)
           run: |
             echo "WASI_SDK_PATH=`pwd`/wasi-sdk-${WASI_VERSION_FULL}" >> $GITHUB_ENV
