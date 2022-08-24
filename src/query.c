@@ -1631,7 +1631,7 @@ static bool consultall(query *q, cell *l, pl_idx_t l_ctx)
 		h = deref(q, h, l_ctx);
 		pl_idx_t h_ctx = q->latest_ctx;
 
-		if (is_list(h)) {
+		if (is_iso_list(h)) {
 			if (consultall(q, h, h_ctx) != true)
 				return false;
 		} else {
@@ -1742,7 +1742,7 @@ bool start(query *q)
 
 			Trace(q, save_cell, save_ctx, EXIT);
 			proceed(q);
-		} else if (is_list(q->st.curr_cell)) {
+		} else if (is_iso_list(q->st.curr_cell)) {
 			if (consultall(q, q->st.curr_cell, q->st.curr_frame) != true) {
 				q->retry = QUERY_RETRY;
 				q->tot_backtracks++;
