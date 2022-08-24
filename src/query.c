@@ -1613,12 +1613,15 @@ static bool consultall(query *q, cell *l, pl_idx_t l_ctx)
 
 		if (!load_file(q->p->m, s, false)) {
 			free(s);
-			return throw_error(q, l, q->st.curr_frame, "existence_error", "source_sink");
+			return throw_error(q, l, l_ctx, "existence_error", "source_sink");
 		}
 
 		free(s);
 		return true;
 	}
+
+	if (is_cyclic_term(q, l, l_ctx))
+		return throw_error(q, l, l_ctx, "type_error", "callable");
 
 	LIST_HANDLER(l);
 
