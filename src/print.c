@@ -63,7 +63,7 @@ bool needs_quoting(module *m, const char *src, int srclen)
 
 		if (iswalnum(ch) || (ch == '_'))
 			alphas++;
-		else if ((ch < 256) && isgraph(ch) && (ch != '%'))
+		else if ((ch < 256) && iswgraph(ch) && (ch != '%'))
 			graphs++;
 		else
 			nonalphas++;
