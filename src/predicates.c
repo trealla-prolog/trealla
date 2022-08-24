@@ -4500,6 +4500,9 @@ static bool fn_must_be_2(query *q)
 	if (!strcmp(src, "callable")) {
 		if (!is_callable(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "callable");
+	} else if (!strcmp(src, "acyclic")) {
+		if (!is_acyclic_term(q, p1, p1_ctx))
+			return throw_error(q, p1, p1_ctx, "domain_error", "acyclic_term");
 	} else if (!strcmp(src, "character")) {
 		if (!is_character(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "character");
