@@ -909,8 +909,8 @@ void unshare_predicate(query *q, predicate *pr)
 
 static void commit_me(query *q)
 {
-	clause *cl = &q->st.curr_dbe->cl;
 	q->in_commit = true;
+	clause *cl = &q->st.curr_dbe->cl;
 	frame *f = GET_CURR_FRAME();
 	f->mid = q->st.m->id;
 	q->st.m = q->st.curr_dbe->owner->m;
@@ -918,9 +918,9 @@ static void commit_me(query *q)
 	bool implied_first_cut = q->check_unique && !q->has_vars && cl->is_unique && !q->st.iter;
 	bool last_match = implied_first_cut || cl->is_first_cut || !is_next_key(q);
 	bool recursive = is_tail_recursive(q->st.curr_cell);
+	bool choices = any_choices(q, f);
 	bool slots_ok = check_slots(q, f, cl);
 	bool vars_ok = 	f->actual_slots == cl->nbr_vars;
-	bool choices = any_choices(q, f);
 	bool tco;
 
 	if (q->no_tco && (cl->nbr_vars != cl->nbr_temporaries))
