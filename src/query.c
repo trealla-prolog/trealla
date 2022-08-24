@@ -785,7 +785,7 @@ static void reuse_frame(query *q, frame* f, clause *cl)
 	f->actual_slots = cl->nbr_vars - cl->nbr_temporaries;
 	f->overflow = 0;
 
-	q->st.sp = f->base + (cl->nbr_vars - cl->nbr_temporaries);
+	q->st.sp = f->base + f->actual_slots;
 	q->tot_tcos++;
 }
 
@@ -1281,7 +1281,7 @@ void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
 
 	if (is_structure(v)) {
-		if ((c_ctx != q->st.curr_frame) && (v_ctx == q->st.curr_frame))
+		if ((c_ctx != q->st.curr_frame) /*&& (v_ctx == q->st.curr_frame)*/)
 			q->no_tco = true;
 
 		make_indirect(&e->c, v, v_ctx);
