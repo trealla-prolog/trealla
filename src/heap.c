@@ -458,11 +458,12 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 		return NULL;
 	}
 
-	pl_idx_t save_idx = tmp_heap_used(q);
 	cell *save_p1 = p1;
 	pl_idx_t save_p1_ctx = p1_ctx;
 	p1 = deref(q, p1, p1_ctx);
 	p1_ctx = q->latest_ctx;
+
+	pl_idx_t save_idx = tmp_heap_used(q);
 	cell *tmp = alloc_on_tmp(q, 1);
 	if (!tmp) return NULL;
 	copy_cells(tmp, p1, 1);
@@ -491,7 +492,8 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 			}
 
 			cell *h = LIST_HEAD(p1);
-			cell *c = deref(q, h, p1_ctx);
+			pl_idx_t h_ctx = p1_ctx;
+			cell *c = deref(q, h, h_ctx);
 			pl_idx_t c_ctx = q->latest_ctx;
 
 			if (is_in_ref_list2(c, c_ctx, list)) {

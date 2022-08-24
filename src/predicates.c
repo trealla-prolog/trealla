@@ -4500,6 +4500,9 @@ static bool fn_must_be_2(query *q)
 	if (!strcmp(src, "callable")) {
 		if (!is_callable(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "callable");
+	} else if (!strcmp(src, "acyclic")) {
+		if (!is_acyclic_term(q, p1, p1_ctx))
+			return throw_error(q, p1, p1_ctx, "domain_error", "acyclic_term");
 	} else if (!strcmp(src, "character")) {
 		if (!is_character(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "character");
@@ -6285,6 +6288,7 @@ static bool fn_sys_put_attributes_2(query *q)
 	GET_NEXT_ARG(p2,list_or_nil);
 	frame *f = GET_FRAME(p1_ctx);
 	slot *e = GET_SLOT(f, p1->var_nbr);
+	add_trail(q, p1_ctx, p1->var_nbr, e->c.attrs, e->c.attrs_ctx);
 	e->c.attrs = p2;
 	e->c.attrs_ctx = p2_ctx;
 	return true;

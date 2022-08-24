@@ -2812,7 +2812,7 @@ static bool process_term(parser *p, cell *p1)
 
 	if (!assertz_to_db(p->m, p->cl->nbr_vars, p->cl->nbr_temporaries, p1, 1)) {
 		if (DUMP_ERRS || !p->do_read_term)
-			printf("Error: '%s', line %u, '%s'\n", p->token, p->line_nbr, p->srcptr);
+			printf("Error: assertion failed '%s', line %u, '%s'\n", p->token, p->line_nbr, p->srcptr);
 
 		p->error = true;
 		return false;

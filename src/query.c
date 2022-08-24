@@ -95,9 +95,9 @@ static void trace_call(query *q, cell *c, pl_idx_t c_ctx, box_t box)
 		return;
 #endif
 
-	fprintf(stderr, " [%llu:f%u:fp:%u:cp%u:sp%u:hp%u] ",
+	fprintf(stderr, " [%llu:f%u:fp:%u:cp%u:sp%u:hp%u:tp%u] ",
 		(unsigned long long)q->step++,
-		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp);
+		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.tp);
 
 	fprintf(stderr, "%s ",
 		box == CALL ? "CALL" :
@@ -610,7 +610,7 @@ size_t scan_is_chars_list(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes)
 	return scan_is_chars_list2(q, l, l_ctx, allow_codes, &has_var, &is_partial);
 }
 
-static void add_trail(query *q, pl_idx_t c_ctx, unsigned c_var_nbr, cell *attrs, pl_idx_t attrs_ctx)
+void add_trail(query *q, pl_idx_t c_ctx, unsigned c_var_nbr, cell *attrs, pl_idx_t attrs_ctx)
 {
 	if (!check_trail(q)) {
 		q->error = false;
@@ -785,7 +785,7 @@ static void reuse_frame(query *q, frame* f, clause *cl)
 	f->actual_slots = cl->nbr_vars - cl->nbr_temporaries;
 	f->overflow = 0;
 
-	q->st.sp = f->base + (cl->nbr_vars - cl->nbr_temporaries);
+	q->st.sp = f->base + f->actual_slots;
 	q->tot_tcos++;
 }
 
@@ -909,8 +909,8 @@ void unshare_predicate(query *q, predicate *pr)
 
 static void commit_me(query *q)
 {
-	clause *cl = &q->st.curr_dbe->cl;
 	q->in_commit = true;
+	clause *cl = &q->st.curr_dbe->cl;
 	frame *f = GET_CURR_FRAME();
 	f->mid = q->st.m->id;
 	q->st.m = q->st.curr_dbe->owner->m;
@@ -918,9 +918,9 @@ static void commit_me(query *q)
 	bool implied_first_cut = q->check_unique && !q->has_vars && cl->is_unique && !q->st.iter;
 	bool last_match = implied_first_cut || cl->is_first_cut || !is_next_key(q);
 	bool recursive = is_tail_recursive(q->st.curr_cell);
+	bool choices = any_choices(q, f);
 	bool slots_ok = check_slots(q, f, cl);
 	bool vars_ok = 	f->actual_slots == cl->nbr_vars;
-	bool choices = any_choices(q, f);
 	bool tco;
 
 	if (q->no_tco && (cl->nbr_vars != cl->nbr_temporaries))
@@ -1281,7 +1281,7 @@ void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
 
 	if (is_structure(v)) {
-		if ((c_ctx != q->st.curr_frame) && (v_ctx == q->st.curr_frame))
+		if ((c_ctx != q->st.curr_frame) /*&& (v_ctx == q->st.curr_frame)*/)
 			q->no_tco = true;
 
 		make_indirect(&e->c, v, v_ctx);
@@ -1613,12 +1613,15 @@ static bool consultall(query *q, cell *l, pl_idx_t l_ctx)
 
 		if (!load_file(q->p->m, s, false)) {
 			free(s);
-			return throw_error(q, l, q->st.curr_frame, "existence_error", "source_sink");
+			return throw_error(q, l, l_ctx, "existence_error", "source_sink");
 		}
 
 		free(s);
 		return true;
 	}
+
+	if (is_cyclic_term(q, l, l_ctx))
+		return throw_error(q, l, l_ctx, "type_error", "callable");
 
 	LIST_HANDLER(l);
 
@@ -1628,7 +1631,7 @@ static bool consultall(query *q, cell *l, pl_idx_t l_ctx)
 		h = deref(q, h, l_ctx);
 		pl_idx_t h_ctx = q->latest_ctx;
 
-		if (is_list(h)) {
+		if (is_iso_list(h)) {
 			if (consultall(q, h, h_ctx) != true)
 				return false;
 		} else {
@@ -1739,7 +1742,7 @@ bool start(query *q)
 
 			Trace(q, save_cell, save_ctx, EXIT);
 			proceed(q);
-		} else if (is_list(q->st.curr_cell)) {
+		} else if (is_iso_list(q->st.curr_cell)) {
 			if (consultall(q, q->st.curr_cell, q->st.curr_frame) != true) {
 				q->retry = QUERY_RETRY;
 				q->tot_backtracks++;

@@ -58,15 +58,15 @@ append([L0|Ls0], Ls) :-
 append([], R, R).
 append([X|L], R, [X|S]) :- append(L, R, S).
 
+memberchk(X, Xs) :- member(X, Xs), !.
+
 member(X, [X|_]).
 member(X, [_|Xs]) :- member(X, Xs).
 
-memberchk(X, Xs) :- member(X, Xs), !.
+selectchk(X, L, Rest) :- select(X, L, Rest), !.
 
 select(X, [X|T], T).
 select(X, [H|T], [H|Rest]) :- select(X, T, Rest).
-
-selectchk(X, L, Rest) :- select(X, L, Rest), !.
 
 subtract([], _, []) :- !.
 subtract([H|T], L2, L3) :- memberchk(H, L2), !, subtract(T, L2, L3).
