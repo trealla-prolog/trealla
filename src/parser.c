@@ -2088,11 +2088,12 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 	if (s && (*s == '.') && isdigit(s[1])) {
 		p->v.tag = TAG_FLOAT;
+		errno = 0;
 		double v = strtod(tmpptr, &tmpptr);
 
-		if (errno == ERANGE) {
+		if ((int)v && (errno == ERANGE)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, float overflow, line %u\n", p->line_nbr);
+				fprintf(stdout, "Error: syntax error, float overflow %g, line %u\n", v, p->line_nbr);
 
 			p->error_desc = "float_overflow";
 			p->error = true;
