@@ -178,7 +178,7 @@ gen_assoc_(Key, t(_,_,_,_,R), Val) :-
 %   @error type_error(assoc, Assoc) if Assoc is not an association list.
 
 get_assoc(Key, Assoc, Val) :-
-    must_be(assoc, Assoc),
+    must_be_assoc(assoc, Assoc),
     get_assoc_(Key, Assoc, Val).
 
 /*
@@ -476,11 +476,11 @@ table2(< ,- ,> ).
 table2(> ,< ,- ).
 table2(- ,- ,- ).
 
-must_be(assoc, X) :-
+must_be_assoc(assoc, X) :-
     (   X == t
     ->  true
     ;   compound(X),
         functor(X, t, 5)
     ), !.
-must_be(assoc, X) :-
+must_be_assoc(assoc, X) :-
     throw(error(type_error(assoc, X), _)).
