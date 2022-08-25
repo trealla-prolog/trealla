@@ -2088,7 +2088,18 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 	if (s && (*s == '.') && isdigit(s[1])) {
 		p->v.tag = TAG_FLOAT;
+		errno = 0;
 		double v = strtod(tmpptr, &tmpptr);
+
+		if ((int)v && (errno == ERANGE)) {
+			if (DUMP_ERRS || !p->do_read_term)
+				fprintf(stdout, "Error: syntax error, float overflow %g, line %u\n", v, p->line_nbr);
+
+			p->error_desc = "float_overflow";
+			p->error = true;
+			return false;
+		}
+
 		set_float(&p->v, v);
 		if (neg) p->v.val_float = -p->v.val_float;
 		*srcptr = tmpptr;
