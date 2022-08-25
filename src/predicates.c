@@ -4439,11 +4439,13 @@ static bool fn_must_be_4(query *q)
 	else if (!strcmp(src, "nonvar") && is_variable(p1))
 		return throw_error2(q, p1, p1_ctx, "instantiation_error", "instantiated", p3);
 
-	if (is_variable(p1))
-		return throw_error2(q, p1, p1_ctx, "instantiation_error", "not_sufficiently_instantiated", p3);
+	if (strcmp(src, "ground") && is_variable(p1))
+		return throw_error(q, p1, p1_ctx, "instantiation_error", "not_sufficiently_instantiated");
 
 	if (!strcmp(src, "callable") && !is_callable(p1))
 		return throw_error2(q, p1, p1_ctx, "type_error", "callable", p3);
+	else if (!strcmp(src, "acyclic") && !is_acyclic_term(q, p1, p1_ctx))
+		return throw_error(q, p1, p1_ctx, "domain_error", "acyclic_term");
 	else if (!strcmp(src, "character") && !is_character(p1))
 		return throw_error2(q, p1, p1_ctx, "type_error", "character", p3);
 	else if (!strcmp(src, "boolean") && !is_boolean(p1))
@@ -4494,7 +4496,7 @@ static bool fn_must_be_2(query *q)
 	else if (!strcmp(src, "nonvar") && is_variable(p1))
 		return throw_error(q, p1, p1_ctx, "instantiation_error", "instantiated");
 
-	if (is_variable(p1))
+	if (strcmp(src, "ground") && is_variable(p1))
 		return throw_error(q, p1, p1_ctx, "instantiation_error", "not_sufficiently_instantiated");
 
 	if (!strcmp(src, "callable")) {
@@ -4558,8 +4560,7 @@ static bool fn_must_be_2(query *q)
 
 		if (!check_list(q, p1, p1_ctx, &is_partial, NULL) && !is_partial)
 			return throw_error(q, p1, p1_ctx, "type_error", "list");
-	} else
-		return throw_error(q, p2, p2_ctx, "type_error", "type");
+	}
 
 	return true;
 }
