@@ -4593,10 +4593,7 @@ static bool fn_can_be_4(query *q)
 		return throw_error2(q, p1, p1_ctx, "type_error", "float", p3);
 	else if (!strcmp(src, "number") && !is_number(p1))
 		return throw_error2(q, p1, p1_ctx, "type_error", "number", p3);
-	else if (!strcmp(src, "ground")) {
-		if (has_vars(q, p1, p1_ctx))
-			return throw_error2(q, p1, p1_ctx, "type_error", "ground", p3);
-	} else if (!strcmp(src, "compound") && !is_compound(p1))
+	else if (!strcmp(src, "compound") && !is_compound(p1))
 		return throw_error2(q, p1, p1_ctx, "type_error", "compound", p3);
 	else if (!strcmp(src, "list")) {
 		bool is_partial;
@@ -4608,7 +4605,8 @@ static bool fn_can_be_4(query *q)
 
 		if (!check_list(q, p1, p1_ctx, &is_partial, NULL) && !is_partial)
 			return throw_error2(q, p1, p1_ctx, "type_error", "list", p3);
-	}
+	} else
+		return throw_error2(q, p1, p1_ctx, "type_error", "type", p3);
 
 	return true;
 }
@@ -4639,10 +4637,7 @@ static bool fn_can_be_2(query *q)
 		return throw_error(q, p1, p1_ctx, "type_error", "float");
 	else if (!strcmp(src, "number") && !is_number(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "number");
-	else if (!strcmp(src, "ground")) {
-		if (has_vars(q, p1, p1_ctx))
-			return throw_error(q, p1, p1_ctx, "type_error", "ground");
-	} else if (!strcmp(src, "compound") && !is_compound(p1))
+	else if (!strcmp(src, "compound") && !is_compound(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "compound");
 	else if (!strcmp(src, "list")) {
 		bool is_partial;
@@ -4654,7 +4649,8 @@ static bool fn_can_be_2(query *q)
 
 		if (!check_list(q, p1, p1_ctx, &is_partial, NULL) && !is_partial)
 			return throw_error(q, p1, p1_ctx, "type_error", "list");
-	}
+	} else
+		return throw_error(q, p1, p1_ctx, "type_error", "type");
 
 	return true;
 }
