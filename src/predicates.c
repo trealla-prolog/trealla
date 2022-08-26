@@ -3905,6 +3905,7 @@ static bool fn_listing_0(query *q)
 static void save_name(FILE *fp, query *q, pl_idx_t name, unsigned arity)
 {
 	module *m = q->st.curr_dbe ? q->st.curr_dbe->owner->m : q->st.m;
+	q->listing = true;
 
 	for (predicate *pr = m->head; pr; pr = pr->next) {
 		if (pr->is_prebuilt && (arity == -1U))
@@ -3924,6 +3925,8 @@ static void save_name(FILE *fp, query *q, pl_idx_t name, unsigned arity)
 			fprintf(fp, ".\n");
 		}
 	}
+
+	q->listing = false;
 }
 
 static bool fn_listing_1(query *q)
