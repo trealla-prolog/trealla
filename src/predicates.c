@@ -3878,7 +3878,7 @@ static void save_db(FILE *fp, query *q, int logging)
 			if (logging)
 				fprintf(fp, "z_(");
 
-			print_term(q, fp, dbe->cl.cells, q->st.curr_frame, 0);
+			print_term(q, fp, dbe->cl.cells, 0, 0);
 
 			if (logging) {
 				char tmpbuf[256];
@@ -3920,7 +3920,7 @@ static void save_name(FILE *fp, query *q, pl_idx_t name, unsigned arity)
 			if (dbe->cl.dgen_erased)
 				continue;
 
-			print_term(q, fp, dbe->cl.cells, q->st.curr_frame, 0);
+			print_term(q, fp, dbe->cl.cells, 0, 0);
 			fprintf(fp, ".\n");
 		}
 	}
