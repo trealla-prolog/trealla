@@ -1412,7 +1412,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 	const char *functor = C_STR(p, goal);
 
-	if (get_builtin(p->pl, functor, goal->arity, NULL, NULL) || is_op(goal))
+	if (get_builtin(p->pl, functor, goal->arity, NULL, NULL) /*|| is_op(goal)*/)
 		return goal;
 
 	if (search_predicate(p->m, goal))

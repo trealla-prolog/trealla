@@ -944,8 +944,24 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 {
 	cell *c = p1;
 
-	if (!is_check_directive(c))
+	if (!is_check_directive(c)) {
 		c = get_head(p1);
+
+		// Remove module from head if present...
+
+		if ((p1->val_off == g_neck_s) && (c->val_off == g_pair_s)) {
+			const char *name = C_STR(m, c+1);
+			m = find_module(m->pl, name);
+			copy_cells(p1+1, p1+3, p1->nbr_cells-3);
+			p1->nbr_cells -= 2;
+			c = get_head(p1);
+		} else if (c->val_off == g_pair_s) {
+			const char *name = C_STR(m, c+1);
+			m = find_module(m->pl, name);
+			copy_cells(p1, p1+2, p1->nbr_cells-2);
+			c = get_head(p1);
+		}
+	}
 
 	if (!c)
 		return NULL;
