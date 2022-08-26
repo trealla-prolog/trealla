@@ -4469,7 +4469,50 @@ static bool fn_must_be_4(query *q)
 			return throw_error2(q, p1, p1_ctx, "type_error", "ground", p3);
 	} else if (!strcmp(src, "compound") && !is_compound(p1))
 		return throw_error2(q, p1, p1_ctx, "type_error", "compound", p3);
-	else if (!strcmp(src, "list")) {
+	else if (is_structure(p2) && (p2->arity == 1) && !strcmp(src, "list")) {
+		cell *c = p2+1;
+		c = deref(q, c, p2_ctx);
+		pl_idx_t c_ctx = q->latest_ctx;
+
+		if (!is_atom(c))
+			return throw_error(q, c, c_ctx, "type_error", "atom");
+
+		cell *l = p1;
+		pl_idx_t l_ctx = p1_ctx;
+		LIST_HANDLER(l);
+
+		while (is_iso_list(l)) {
+			cell *h = LIST_HEAD(l);
+			h = deref(q, h, l_ctx);
+			pl_idx_t h_ctx = q->latest_ctx;
+			src = C_STR(q, c);
+
+			if (!strcmp(src, "var" ) && !is_variable(h))
+				return throw_error(q, h, h_ctx, "type_error", "integer");
+			else if (!strcmp(src, "nonvar" ) && is_variable(h))
+				return throw_error(q, h, h_ctx, "type_error", "integer");
+			else if (!strcmp(src, "integer" ) && !is_integer(h))
+				return throw_error(q, h, h_ctx, "type_error", "integer");
+			else if (!strcmp(src, "float" ) && !is_float(h))
+				return throw_error(q, h, h_ctx, "type_error", "float");
+			else if (!strcmp(src, "number" ) && !is_number(h))
+				return throw_error(q, h, h_ctx, "type_error", "number");
+			else if (!strcmp(src, "not_less_than_zero" ) && !is_number(h))
+				return throw_error(q, h, h_ctx, "type_error", "number");
+			else if (!strcmp(src, "not_less_than_zero" ) && is_negative(h))
+				return throw_error(q, h, h_ctx, "domain_error", "not_less_than_zero");
+			else if (!strcmp(src, "atom" ) && !is_atom(h))
+				return throw_error(q, h, h_ctx, "type_error", "atom");
+			else if (!strcmp(src, "atomic" ) && !is_atomic(h))
+				return throw_error(q, h, h_ctx, "type_error", "atomic");
+			else if (!strcmp(src, "ground" ) && has_vars(q, h, h_ctx))
+				return throw_error(q, h, h_ctx, "type_error", "ground");
+
+			l = LIST_TAIL(l);
+			l = deref(q, l, l_ctx);
+			l_ctx = q->latest_ctx;
+		}
+	} else if (!strcmp(src, "list")) {
 		bool is_partial;
 
 		if (!check_list(q, p1, p1_ctx, &is_partial, NULL))
@@ -4486,7 +4529,7 @@ static bool fn_must_be_4(query *q)
 
 static bool fn_must_be_2(query *q)
 {
-	GET_FIRST_ARG(p2,atom);
+	GET_FIRST_ARG(p2,callable);
 	GET_NEXT_ARG(p1,any);
 
 	const char *src = C_STR(q, p2);
@@ -4550,6 +4593,49 @@ static bool fn_must_be_2(query *q)
 	} else if (!strcmp(src, "compound")) {
 		if (!is_compound(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "compound");
+	} else if (is_structure(p2) && (p2->arity == 1) && !strcmp(src, "list")) {
+		cell *c = p2+1;
+		c = deref(q, c, p2_ctx);
+		pl_idx_t c_ctx = q->latest_ctx;
+
+		if (!is_atom(c))
+			return throw_error(q, c, c_ctx, "type_error", "atom");
+
+		cell *l = p1;
+		pl_idx_t l_ctx = p1_ctx;
+		LIST_HANDLER(l);
+
+		while (is_iso_list(l)) {
+			cell *h = LIST_HEAD(l);
+			h = deref(q, h, l_ctx);
+			pl_idx_t h_ctx = q->latest_ctx;
+			src = C_STR(q, c);
+
+			if (!strcmp(src, "var" ) && !is_variable(h))
+				return throw_error(q, h, h_ctx, "type_error", "integer");
+			else if (!strcmp(src, "nonvar" ) && is_variable(h))
+				return throw_error(q, h, h_ctx, "type_error", "integer");
+			else if (!strcmp(src, "integer" ) && !is_integer(h))
+				return throw_error(q, h, h_ctx, "type_error", "integer");
+			else if (!strcmp(src, "float" ) && !is_float(h))
+				return throw_error(q, h, h_ctx, "type_error", "float");
+			else if (!strcmp(src, "number" ) && !is_number(h))
+				return throw_error(q, h, h_ctx, "type_error", "number");
+			else if (!strcmp(src, "not_less_than_zero" ) && !is_number(h))
+				return throw_error(q, h, h_ctx, "type_error", "number");
+			else if (!strcmp(src, "not_less_than_zero" ) && is_negative(h))
+				return throw_error(q, h, h_ctx, "domain_error", "not_less_than_zero");
+			else if (!strcmp(src, "atom" ) && !is_atom(h))
+				return throw_error(q, h, h_ctx, "type_error", "atom");
+			else if (!strcmp(src, "atomic" ) && !is_atomic(h))
+				return throw_error(q, h, h_ctx, "type_error", "atomic");
+			else if (!strcmp(src, "ground" ) && has_vars(q, h, h_ctx))
+				return throw_error(q, h, h_ctx, "type_error", "ground");
+
+			l = LIST_TAIL(l);
+			l = deref(q, l, l_ctx);
+			l_ctx = q->latest_ctx;
+		}
 	} else if (!strcmp(src, "list")) {
 		bool is_partial;
 
