@@ -4448,7 +4448,20 @@ static bool fn_must_be_4(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "acyclic_term");
 	else if (!strcmp(src, "character") && !is_character(p1))
 		return throw_error2(q, p1, p1_ctx, "type_error", "character", p3);
-	else if (!strcmp(src, "boolean") && !is_boolean(p1))
+	else if (!strcmp(src, "chars")) {
+		bool is_partial;
+
+		if (!check_list(q, p1, p1_ctx, &is_partial, NULL) && !is_partial)
+			return throw_error(q, p1, p1_ctx, "type_error", "list");
+
+		if (has_vars(q, p1, p1_ctx))
+			return throw_error(q, p1, p1_ctx, "instantiation_error", "not_sufficiently_instantiated");
+
+		q->suspect = p1;
+
+		if (!is_chars(q, p1, p1_ctx))
+			return throw_error2(q, q->suspect, p1_ctx, "type_error", "character", p3);
+	} else if (!strcmp(src, "boolean") && !is_boolean(p1))
 		return throw_error2(q, p1, p1_ctx, "type_error", "boolean", p3);
 	else if (!strcmp(src, "atom") && !is_atom(p1))
 		return throw_error2(q, p1, p1_ctx, "type_error", "atom", p3);
@@ -4477,6 +4490,11 @@ static bool fn_must_be_4(query *q)
 		if (!is_atom(c))
 			return throw_error(q, c, c_ctx, "type_error", "atom");
 
+		bool is_partial;
+
+		if (!check_list(q, p1, p1_ctx, &is_partial, NULL))
+			return throw_error(q, p1, p1_ctx, "type_error", "list");
+
 		cell *l = p1;
 		pl_idx_t l_ctx = p1_ctx;
 		LIST_HANDLER(l);
@@ -4488,9 +4506,13 @@ static bool fn_must_be_4(query *q)
 			src = C_STR(q, c);
 
 			if (!strcmp(src, "var" ) && !is_variable(h))
-				return throw_error(q, h, h_ctx, "type_error", "integer");
+				return throw_error(q, h, h_ctx, "type_error", "var");
 			else if (!strcmp(src, "nonvar" ) && is_variable(h))
-				return throw_error(q, h, h_ctx, "type_error", "integer");
+				return throw_error(q, h, h_ctx, "type_error", "nonvar");
+			else if (!strcmp(src, "character" ) && !is_character(h))
+				return throw_error(q, h, h_ctx, "type_error", "character");
+			else if (!strcmp(src, "boolean" ) && !is_boolean(h))
+				return throw_error(q, h, h_ctx, "type_error", "boolean");
 			else if (!strcmp(src, "integer" ) && !is_integer(h))
 				return throw_error(q, h, h_ctx, "type_error", "integer");
 			else if (!strcmp(src, "float" ) && !is_float(h))
@@ -4507,6 +4529,8 @@ static bool fn_must_be_4(query *q)
 				return throw_error(q, h, h_ctx, "type_error", "atomic");
 			else if (!strcmp(src, "ground" ) && has_vars(q, h, h_ctx))
 				return throw_error(q, h, h_ctx, "type_error", "ground");
+			else if (!strcmp(src, "compound" ) && !is_compound(h))
+				return throw_error(q, h, h_ctx, "type_error", "compound");
 
 			l = LIST_TAIL(l);
 			l = deref(q, l, l_ctx);
@@ -4601,6 +4625,11 @@ static bool fn_must_be_2(query *q)
 		if (!is_atom(c))
 			return throw_error(q, c, c_ctx, "type_error", "atom");
 
+		bool is_partial;
+
+		if (!check_list(q, p1, p1_ctx, &is_partial, NULL))
+			return throw_error(q, p1, p1_ctx, "type_error", "list");
+
 		cell *l = p1;
 		pl_idx_t l_ctx = p1_ctx;
 		LIST_HANDLER(l);
@@ -4612,9 +4641,13 @@ static bool fn_must_be_2(query *q)
 			src = C_STR(q, c);
 
 			if (!strcmp(src, "var" ) && !is_variable(h))
-				return throw_error(q, h, h_ctx, "type_error", "integer");
+				return throw_error(q, h, h_ctx, "type_error", "var");
 			else if (!strcmp(src, "nonvar" ) && is_variable(h))
-				return throw_error(q, h, h_ctx, "type_error", "integer");
+				return throw_error(q, h, h_ctx, "type_error", "nonvar");
+			else if (!strcmp(src, "character" ) && !is_character(h))
+				return throw_error(q, h, h_ctx, "type_error", "character");
+			else if (!strcmp(src, "boolean" ) && !is_boolean(h))
+				return throw_error(q, h, h_ctx, "type_error", "boolean");
 			else if (!strcmp(src, "integer" ) && !is_integer(h))
 				return throw_error(q, h, h_ctx, "type_error", "integer");
 			else if (!strcmp(src, "float" ) && !is_float(h))
@@ -4631,6 +4664,8 @@ static bool fn_must_be_2(query *q)
 				return throw_error(q, h, h_ctx, "type_error", "atomic");
 			else if (!strcmp(src, "ground" ) && has_vars(q, h, h_ctx))
 				return throw_error(q, h, h_ctx, "type_error", "ground");
+			else if (!strcmp(src, "compound" ) && !is_compound(h))
+				return throw_error(q, h, h_ctx, "type_error", "compound");
 
 			l = LIST_TAIL(l);
 			l = deref(q, l, l_ctx);
