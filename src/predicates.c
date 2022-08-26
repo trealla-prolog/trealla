@@ -4439,7 +4439,7 @@ static bool fn_must_be_4(query *q)
 	else if (!strcmp(src, "nonvar") && is_variable(p1))
 		return throw_error2(q, p1, p1_ctx, "instantiation_error", "instantiated", p3);
 
-	if (strcmp(src, "ground") && is_variable(p1))
+	if (strcmp(src, "ground") && strcmp(src, "acyclic") && is_variable(p1))
 		return throw_error(q, p1, p1_ctx, "instantiation_error", "not_sufficiently_instantiated");
 
 	if (!strcmp(src, "callable") && !is_callable(p1))
@@ -4496,7 +4496,7 @@ static bool fn_must_be_2(query *q)
 	else if (!strcmp(src, "nonvar") && is_variable(p1))
 		return throw_error(q, p1, p1_ctx, "instantiation_error", "instantiated");
 
-	if (strcmp(src, "ground") && is_variable(p1))
+	if (strcmp(src, "ground") && strcmp(src, "acyclic") && is_variable(p1))
 		return throw_error(q, p1, p1_ctx, "instantiation_error", "not_sufficiently_instantiated");
 
 	if (!strcmp(src, "callable")) {
@@ -4605,8 +4605,7 @@ static bool fn_can_be_4(query *q)
 
 		if (!check_list(q, p1, p1_ctx, &is_partial, NULL) && !is_partial)
 			return throw_error2(q, p1, p1_ctx, "type_error", "list", p3);
-	} else
-		return throw_error2(q, p1, p1_ctx, "type_error", "type", p3);
+	}
 
 	return true;
 }
@@ -4649,8 +4648,7 @@ static bool fn_can_be_2(query *q)
 
 		if (!check_list(q, p1, p1_ctx, &is_partial, NULL) && !is_partial)
 			return throw_error(q, p1, p1_ctx, "type_error", "list");
-	} else
-		return throw_error(q, p1, p1_ctx, "type_error", "type");
+	}
 
 	return true;
 }
