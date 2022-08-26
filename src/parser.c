@@ -1401,12 +1401,6 @@ static cell *goal_expansion(parser *p, cell *goal)
 	if (p->error || p->internal || !is_interned(goal))
 		return goal;
 
-	if (is_builtin(goal) || is_op(goal))
-		return goal;
-
-	if (search_predicate(p->m, goal))
-		return goal;
-
 	if ((goal->val_off == g_goal_expansion_s) || (goal->val_off == g_cut_s))
 		return goal;
 
@@ -1415,12 +1409,23 @@ static cell *goal_expansion(parser *p, cell *goal)
 	if (!pr || !pr->cnt)
 		return goal;
 
+	const char *functor = C_STR(p, goal);
+
+	if (get_builtin(p->pl, functor, goal->arity, NULL, NULL) || is_op(goal))
+		return goal;
+
+	if (search_predicate(p->m, goal))
+		return goal;
+
 	query *q = create_query(p->m, false);
 	check_error(q);
 	char *dst = print_canonical_to_strbuf(q, goal, 0, 0);
 	ASTRING(s);
 	ASTRING_sprintf(s, "goal_expansion((%s),_TermOut).", dst);
 	free(dst);
+
+	//printf("*** GE %s\n", src);
+
 	parser *p2 = create_parser(p->m);
 	check_error(p2, destroy_query(q));
 	p2->line_nbr = p->line_nbr;
