@@ -1415,8 +1415,8 @@ static cell *goal_expansion(parser *p, cell *goal)
 	if (get_builtin(p->pl, functor, goal->arity, NULL, NULL) /*|| is_op(goal)*/)
 		return goal;
 
-	if (search_predicate(p->m, goal))
-		return goal;
+	//if (search_predicate(p->m, goal))
+	//	return goal;
 
 	query *q = create_query(p->m, false);
 	check_error(q);
@@ -3480,7 +3480,7 @@ bool run(parser *p, const char *pSrc, bool dump)
 	}
 
 	ASTRING(src);
-	ASTRING_sprintf(src, "%s", pSrc);
+	ASTRING_sprintf(src, "true,%s", pSrc);
 	ASTRING_trim_ws(src);
 	ASTRING_trim(src, '.');
 	ASTRING_strcat(src, ".");
@@ -3525,10 +3525,10 @@ bool run(parser *p, const char *pSrc, bool dump)
 		term_assign_vars(p, 0, false);
 		term_to_body(p);
 
+		xref_rule(p->m, p->cl, NULL);
+
 		if (!p->command)
 			term_expansion(p);
-
-		xref_rule(p->m, p->cl, NULL);
 
 		query *q = create_query(p->m, false);
 
