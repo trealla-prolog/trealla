@@ -1338,6 +1338,7 @@ static bool dcg_expansion(parser *p)
 	ASTRING(s);
 	ASTRING_sprintf(s, "dcg_translate((%s),_TermOut).", dst);
 	free(dst);
+
 	parser *p2 = create_parser(p->m);
 	check_error(p2, destroy_query(q));
 	p2->line_nbr = p->line_nbr;
@@ -1423,8 +1424,6 @@ static cell *goal_expansion(parser *p, cell *goal)
 	ASTRING(s);
 	ASTRING_sprintf(s, "goal_expansion((%s),_TermOut).", dst);
 	free(dst);
-
-	//printf("*** GE %s\n", src);
 
 	parser *p2 = create_parser(p->m);
 	check_error(p2, destroy_query(q));
@@ -1535,6 +1534,7 @@ static bool term_expansion(parser *p)
 	ASTRING(s);
 	ASTRING_sprintf(s, "term_expansion((%s),_TermOut).", dst);
 	free(dst);
+
 	parser *p2 = create_parser(p->m);
 	check_error(p2, destroy_query(q));
 	p2->line_nbr = p->line_nbr;
@@ -1543,6 +1543,9 @@ static bool term_expansion(parser *p)
 	tokenize(p2, false, false);
 	xref_rule(p2->m, p2->cl, NULL);
 	execute(q, p2->cl->cells, p2->cl->nbr_vars);
+
+	//printf("*** TE1 %s\n", ASTRING_cstr(s));
+
 	ASTRING_free(s);
 
 	if (q->retry != QUERY_OK) {
@@ -1583,7 +1586,7 @@ static bool term_expansion(parser *p)
 		return false;
 	}
 
-	//printf("*** TE %s\n", src);
+	//printf("*** TE2 %s\n", src);
 
 	reset(p2);
 	p2->srcptr = src;
