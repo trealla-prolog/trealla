@@ -710,6 +710,8 @@ ssize_t print_variable(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t c_c
 		dst += snprintf(dst, dstlen, "%s", q->p->vartab.var_name[c->var_nbr]);
 	} else if (q->is_dump_vars) {
 		dst += snprintf(dst, dstlen, "_%s", get_slot_name(q, slot_idx));
+	} else if (q->listing) {
+		dst += snprintf(dst, dstlen, "%s", get_slot_name(q, slot_idx));
 	} else if (!running && !is_ref(c)) {
 		dst += snprintf(dst, dstlen, "%s", C_STR(q, c));
 	} else
