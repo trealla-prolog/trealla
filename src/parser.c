@@ -1404,6 +1404,9 @@ static cell *goal_expansion(parser *p, cell *goal)
 	if (is_builtin(goal) || is_op(goal))
 		return goal;
 
+	if (search_predicate(p->m, goal))
+		return goal;
+
 	if ((goal->val_off == g_goal_expansion_s) || (goal->val_off == g_cut_s))
 		return goal;
 
