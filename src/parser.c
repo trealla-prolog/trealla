@@ -2649,8 +2649,16 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 	int ch = peek_char_utf8(src);
 
-	if (iswalpha(ch) || (ch == '_')) {
-		while (iswalnum(ch) || (ch == '_')) {
+	if (iswalpha(ch)
+#ifdef __APPLE__
+		|| iswideogram(ch)
+#endif
+		|| (ch == '_')) {
+		while (iswalnum(ch)
+#ifdef __APPLE__
+			|| iswideogram(ch)
+#endif
+			|| (ch == '_')) {
 			get_char_utf8(&src);
 			size_t len = (dst + put_len_utf8(ch) + 1) - p->token;
 

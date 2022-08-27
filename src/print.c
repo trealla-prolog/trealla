@@ -37,7 +37,7 @@ bool needs_quoting(module *m, const char *src, int srclen)
 
 	int ch = peek_char_utf8(src);
 
-	if (!isalnum(ch) && strchr(src, '_'))
+	if (!iswalnum(ch) && strchr(src, '_'))
 		return true;
 
 	if (iswupper(ch) || isdigit(ch) || (ch == '_'))
@@ -61,7 +61,11 @@ bool needs_quoting(module *m, const char *src, int srclen)
 		int ch = get_char_utf8(&src);
 		cnt++;
 
-		if (iswalnum(ch) || (ch == '_'))
+		if (iswalnum(ch)
+#ifdef __APPLE__
+			|| iswideogram(ch)
+#endif
+			|| (ch == '_'))
 			alphas++;
 		else if ((ch < 256) && iswgraph(ch) && (ch != '%'))
 			graphs++;
