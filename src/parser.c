@@ -1675,7 +1675,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 				c = insert_here(p, c, lhs);
 				lhs = c + 1;
 			} else {
-				//if ((c->val_off != g_neck_s))
+				if ((c->val_off != g_neck_s))
 					lhs = goal_expansion(p, lhs);
 
 				lhs = term_to_body_conversion(p, lhs);
