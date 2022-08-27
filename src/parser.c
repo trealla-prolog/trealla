@@ -1338,6 +1338,7 @@ static bool dcg_expansion(parser *p)
 	ASTRING(s);
 	ASTRING_sprintf(s, "dcg_translate((%s),_TermOut).", dst);
 	free(dst);
+
 	parser *p2 = create_parser(p->m);
 	check_error(p2, destroy_query(q));
 	p2->line_nbr = p->line_nbr;
@@ -1401,9 +1402,6 @@ static cell *goal_expansion(parser *p, cell *goal)
 	if (p->error || p->internal || !is_interned(goal))
 		return goal;
 
-	if (is_builtin(goal) || is_op(goal))
-		return goal;
-
 	if ((goal->val_off == g_goal_expansion_s) || (goal->val_off == g_cut_s))
 		return goal;
 
@@ -1412,12 +1410,21 @@ static cell *goal_expansion(parser *p, cell *goal)
 	if (!pr || !pr->cnt)
 		return goal;
 
+	const char *functor = C_STR(p, goal);
+
+	if (get_builtin(p->pl, functor, goal->arity, NULL, NULL) /*|| is_op(goal)*/)
+		return goal;
+
+	//if (search_predicate(p->m, goal))
+	//	return goal;
+
 	query *q = create_query(p->m, false);
 	check_error(q);
 	char *dst = print_canonical_to_strbuf(q, goal, 0, 0);
 	ASTRING(s);
 	ASTRING_sprintf(s, "goal_expansion((%s),_TermOut).", dst);
 	free(dst);
+
 	parser *p2 = create_parser(p->m);
 	check_error(p2, destroy_query(q));
 	p2->line_nbr = p->line_nbr;
@@ -1527,6 +1534,7 @@ static bool term_expansion(parser *p)
 	ASTRING(s);
 	ASTRING_sprintf(s, "term_expansion((%s),_TermOut).", dst);
 	free(dst);
+
 	parser *p2 = create_parser(p->m);
 	check_error(p2, destroy_query(q));
 	p2->line_nbr = p->line_nbr;
@@ -1535,6 +1543,9 @@ static bool term_expansion(parser *p)
 	tokenize(p2, false, false);
 	xref_rule(p2->m, p2->cl, NULL);
 	execute(q, p2->cl->cells, p2->cl->nbr_vars);
+
+	//printf("*** TE1 %s\n", ASTRING_cstr(s));
+
 	ASTRING_free(s);
 
 	if (q->retry != QUERY_OK) {
@@ -1575,7 +1586,7 @@ static bool term_expansion(parser *p)
 		return false;
 	}
 
-	//printf("*** TE %s\n", src);
+	//printf("*** TE2 %s\n", src);
 
 	reset(p2);
 	p2->srcptr = src;
@@ -1664,7 +1675,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 				c = insert_here(p, c, lhs);
 				lhs = c + 1;
 			} else {
-				//if ((c->val_off != g_neck_s))
+				if ((c->val_off != g_neck_s))
 					lhs = goal_expansion(p, lhs);
 
 				lhs = term_to_body_conversion(p, lhs);
@@ -2638,8 +2649,16 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 	int ch = peek_char_utf8(src);
 
-	if (iswalpha(ch) || (ch == '_')) {
-		while (iswalnum(ch) || (ch == '_')) {
+	if (iswalpha(ch)
+#ifdef __APPLE__
+		|| iswideogram(ch)
+#endif
+		|| (ch == '_')) {
+		while (iswalnum(ch)
+#ifdef __APPLE__
+			|| iswideogram(ch)
+#endif
+			|| (ch == '_')) {
 			get_char_utf8(&src);
 			size_t len = (dst + put_len_utf8(ch) + 1) - p->token;
 
@@ -3469,7 +3488,7 @@ bool run(parser *p, const char *pSrc, bool dump)
 	}
 
 	ASTRING(src);
-	ASTRING_sprintf(src, "%s", pSrc);
+	ASTRING_sprintf(src, "true,%s", pSrc);
 	ASTRING_trim_ws(src);
 	ASTRING_trim(src, '.');
 	ASTRING_strcat(src, ".");
@@ -3514,10 +3533,10 @@ bool run(parser *p, const char *pSrc, bool dump)
 		term_assign_vars(p, 0, false);
 		term_to_body(p);
 
+		xref_rule(p->m, p->cl, NULL);
+
 		if (!p->command)
 			term_expansion(p);
-
-		xref_rule(p->m, p->cl, NULL);
 
 		query *q = create_query(p->m, false);
 

@@ -458,6 +458,9 @@ prolog *pl_create()
 
 	// In system space...
 
+	set_discontiguous_in_db(pl->system_m, "term_expansion", 2);
+	set_discontiguous_in_db(pl->system_m, "goal_expansion", 2);
+
 	set_multifile_in_db(pl->system_m, "term_expansion", 2);
 	set_multifile_in_db(pl->system_m, "goal_expansion", 2);
 
@@ -465,6 +468,9 @@ prolog *pl_create()
 	set_dynamic_in_db(pl->system_m, "goal_expansion", 2);
 
 	// In user space...
+
+	set_discontiguous_in_db(pl->user_m, "term_expansion", 2);
+	set_discontiguous_in_db(pl->user_m, "goal_expansion", 2);
 
 	set_multifile_in_db(pl->user_m, "term_expansion", 2);
 	set_multifile_in_db(pl->user_m, "goal_expansion", 2);

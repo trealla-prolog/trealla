@@ -37,7 +37,7 @@ bool needs_quoting(module *m, const char *src, int srclen)
 
 	int ch = peek_char_utf8(src);
 
-	if (!isalnum(ch) && strchr(src, '_'))
+	if (!iswalnum(ch) && strchr(src, '_'))
 		return true;
 
 	if (iswupper(ch) || isdigit(ch) || (ch == '_'))
@@ -61,7 +61,11 @@ bool needs_quoting(module *m, const char *src, int srclen)
 		int ch = get_char_utf8(&src);
 		cnt++;
 
-		if (iswalnum(ch) || (ch == '_'))
+		if (iswalnum(ch)
+#ifdef __APPLE__
+			|| iswideogram(ch)
+#endif
+			|| (ch == '_'))
 			alphas++;
 		else if ((ch < 256) && iswgraph(ch) && (ch != '%'))
 			graphs++;
@@ -710,6 +714,8 @@ ssize_t print_variable(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t c_c
 		dst += snprintf(dst, dstlen, "%s", q->p->vartab.var_name[c->var_nbr]);
 	} else if (q->is_dump_vars) {
 		dst += snprintf(dst, dstlen, "_%s", get_slot_name(q, slot_idx));
+	} else if (q->listing) {
+		dst += snprintf(dst, dstlen, "%s", get_slot_name(q, slot_idx));
 	} else if (!running && !is_ref(c)) {
 		dst += snprintf(dst, dstlen, "%s", C_STR(q, c));
 	} else
