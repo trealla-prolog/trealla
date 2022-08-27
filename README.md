@@ -93,7 +93,7 @@ requirements, like *get_char*, *get_code*, *sub_atom*, *atom_length*,
 Unicode atoms do not need to be quoted unless they contain breaking
 characters...
 
-```prolog
+```console
 ?- [user].
 是.            % be: means, approximately, "True".
 不是 :- \+ 是.  % not be: means, approximately, "False".
@@ -105,9 +105,15 @@ characters...
    false.
 ```
 
+```console
+?- X = 国字.
+   X = 国字.
+?-
+```
+
 Trealla accepts as a variable any atom beginning with Unicode uppercase...
 
-```prolog
+```console
 ?- atom_upper(δ,C).
    C = Δ.
 ?- Δ is 123456-123455.
@@ -607,7 +613,7 @@ Assuming the following C-code in *samples/foo.c*:
 
 Register a builtin function...
 
-```prolog
+```console
 	?- '$dlopen'('samples/libfoo.so', 0, H),
 		'$register_function'(H, foo, [fp64, int64], fp64).
 	   H = 94051868794416.
@@ -619,7 +625,7 @@ Register a builtin function...
 
 Register a builtin predicate...
 
-```prolog
+```console
 	?- '$dlopen'('samples/libfoo.so', 0, H),
 		'$register_predicate'(H, bar, [fp64, int64, -fp64], int64),
 		'$register_predicate'(H, baz, [cstr, cstr], cstr),
@@ -642,7 +648,7 @@ on your system, for example...
 
 Then, given the code in *samples/sqlite3.pl*...
 
-```prolog
+```console
 	:- use_module(library(sqlite3)).
 
 	run :-
@@ -692,7 +698,7 @@ ones complete.
 
 An example:
 
-```prolog
+```console
 :-use_module(library(http)).
 
 geturl(Url) :-
