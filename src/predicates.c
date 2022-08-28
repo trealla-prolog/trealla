@@ -2353,7 +2353,7 @@ static void do_term_assign_vars(parser *p)
 {
 	pl_idx_t nbr_cells = p->cl->cidx;
 	term_assign_vars(p, 0, true);
-	uint8_t vars[MAX_VARS] = {0};
+	memset(p->vartab.vars, 0, sizeof(p->vartab.vars));
 
 	for (pl_idx_t i = 0; i < nbr_cells; i++) {
 		cell *c = p->cl->cells+i;
@@ -2362,7 +2362,7 @@ static void do_term_assign_vars(parser *p)
 			continue;
 
 		assert(c->var_nbr < MAX_VARS);
-		vars[c->var_nbr]++;
+		p->vartab.vars[c->var_nbr]++;
 	}
 
 	for (pl_idx_t i = 0; i < nbr_cells; i++) {
@@ -2371,14 +2371,14 @@ static void do_term_assign_vars(parser *p)
 		if (!is_variable(c))
 			continue;
 
-		unsigned var_nbr = count_non_anons(vars, c->var_nbr);
+		unsigned var_nbr = count_non_anons(p->vartab.vars, c->var_nbr);
 
 		char ch = 'A';
 		ch += var_nbr % 26;
 		unsigned n = var_nbr / 26;
 		char tmpbuf[80];
 
-		if (vars[c->var_nbr] == 1)
+		if (p->vartab.vars[c->var_nbr] == 1)
 			snprintf(tmpbuf, sizeof(tmpbuf), "%s", "_");
 		else if (var_nbr < 26)
 			snprintf(tmpbuf, sizeof(tmpbuf), "%c", ch);

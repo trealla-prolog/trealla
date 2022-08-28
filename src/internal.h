@@ -56,7 +56,7 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define IDX_MAX (ERR_IDX-1)
 
 #define MAX_SMALL_STRING ((sizeof(void*)*2)-1)
-#define MAX_VAR_POOL_SIZE 8000
+#define MAX_VAR_POOL_SIZE 16000
 #define MAX_ARITY UINT8_MAX
 #define MAX_VARS 1024
 #define MAX_QUEUES 16
@@ -687,9 +687,10 @@ struct query_ {
 struct parser_ {
 	struct {
 		char var_pool[MAX_VAR_POOL_SIZE];
-		bool var_in_body[MAX_VARS];
 		unsigned var_used[MAX_VARS];
 		const char *var_name[MAX_VARS];
+		bool var_in_body[MAX_VARS];
+		uint8_t vars[MAX_VARS];
 	} vartab;
 
 	prolog *pl;

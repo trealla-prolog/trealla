@@ -348,9 +348,7 @@ static int find_binding(query *q, pl_idx_t var_nbr, pl_idx_t tmp_ctx)
 	return ERR_IDX;
 }
 
-static uint8_t s_mask1[MAX_VARS] = {0}, s_mask2[MAX_VARS] = {0};
-
-static unsigned count_non_anons(const uint8_t *mask, unsigned bit)
+static unsigned count_non_anons(const bool *mask, unsigned bit)
 {
 	unsigned bits = 0;
 
@@ -364,6 +362,8 @@ static unsigned count_non_anons(const uint8_t *mask, unsigned bit)
 
 ssize_t print_canonical_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t c_ctx, int running, bool cons, unsigned depth)
 {
+	bool s_mask1[MAX_VARS] = {0}, s_mask2[MAX_VARS] = {0};
+
 	//if (!running)
 	//	return print_term_to_buf(q, dst, dstlen, c, c_ctx, running, cons, depth);
 
