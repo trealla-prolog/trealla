@@ -1548,6 +1548,7 @@ bool print_term(query *q, FILE *fp, cell *c, pl_idx_t c_ctx, int running)
 
 void clear_write_options(query *q)
 {
+	q->print_idx = 0;
 	q->max_depth = q->quoted = 0;
 	q->nl = q->fullstop = q->varnames = q->ignore_ops = false;
 	q->parens = q->numbervars = false;
