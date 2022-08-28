@@ -1388,9 +1388,9 @@ static bool dcg_expansion(parser *p)
 
 	clear_rule(p->cl);
 	free(p->cl);
-	p->cl = p2->cl;			// Take the completed clause
-	p2->cl = NULL;
+	p->cl = p2->cl;					// Take the completed clause
 	p->nbr_vars = p2->nbr_vars;
+	p2->cl = NULL;
 
 	destroy_parser(p2);
 	destroy_query(q);
@@ -1506,6 +1506,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 	memcpy(goal, p2->cl->cells, sizeof(cell)*new_cells);
 	p->cl->cidx += new_cells;
+	p2->cl = NULL;
 
 	// done
 
@@ -1596,9 +1597,9 @@ static bool term_expansion(parser *p)
 
 	clear_rule(p->cl);
 	free(p->cl);
-	p->cl = p2->cl;				// Take the completed clause
-	p2->cl = NULL;
+	p->cl = p2->cl;					// Take the completed clause
 	p->nbr_vars = p2->nbr_vars;
+	p2->cl = NULL;
 
 	destroy_parser(p2);
 	destroy_query(q);
