@@ -1529,12 +1529,20 @@ static bool term_expansion(parser *p)
 	if (!pr || !pr->cnt)
 		return false;
 
+	cell *h = get_head(p->cl->cells);
+	const char *pred = C_STR(p, h);
+
+	if (!strcmp(pred, "term_expansion") || !strcmp(pred, "goal_expansion"))
+		return false;
+
 	query *q = create_query(p->m, false);
 	check_error(q);
 	char *dst = print_canonical_to_strbuf(q, p->cl->cells, 0, 0);
 	ASTRING(s);
 	ASTRING_sprintf(s, "term_expansion((%s),_TermOut).", dst);
 	free(dst);
+
+	//printf("*** TE0 %s\n", ASTRING_cstr(s));
 
 	parser *p2 = create_parser(p->m);
 	check_error(p2, destroy_query(q));
@@ -1580,6 +1588,8 @@ static bool term_expansion(parser *p)
 		break;
 	}
 
+	//printf("*** TE2 %s\n", src);
+
 	if (!src) {
 		destroy_parser(p2);
 		destroy_query(q);
@@ -1587,7 +1597,7 @@ static bool term_expansion(parser *p)
 		return false;
 	}
 
-	//printf("*** TE2 %s\n", src);
+	//printf("*** TE3 %s\n", src);
 
 	reset(p2);
 	p2->srcptr = src;

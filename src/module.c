@@ -1739,8 +1739,15 @@ module *create_module(prolog *pl, const char *name)
 
 	set_discontiguous_in_db(m, "term_expansion", 2);
 	set_discontiguous_in_db(m, "goal_expansion", 2);
+
+	set_multifile_in_db(m, "term_expansion", 2);
+	set_multifile_in_db(m, "goal_expansion", 2);
+	set_multifile_in_db(m, "initialization", 1);
+
+	set_dynamic_in_db(m, "term_expansion", 2);
 	set_dynamic_in_db(m, "goal_expansion", 2);
 	set_dynamic_in_db(m, "initialization", 1);
 	set_dynamic_in_db(m, ":-", 1);
+
 	return m;
 }
