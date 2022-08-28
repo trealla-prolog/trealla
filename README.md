@@ -359,7 +359,6 @@ Non-standard predicates
 	term_singletons/2
 	findall/4
 	sort/4
-	var_number/2
 	ignore/1
 	is_list/1
 	is_partial_list/1

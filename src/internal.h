@@ -631,7 +631,6 @@ struct query_ {
 	uint64_t time_started, get_started;
 	uint64_t time_cpu_started, time_cpu_last_started;
 	unsigned max_depth, print_idx, tab_idx, varno, tab0_varno;
-	int nv_start;
 	pl_idx_t tmphp, latest_ctx, popp, variable_names_ctx;
 	pl_idx_t frames_size, slots_size, trails_size, choices_size;
 	pl_idx_t max_choices, max_frames, max_slots, max_trails;
@@ -640,7 +639,6 @@ struct query_ {
 	pl_idx_t h_size, tmph_size, tot_heaps, tot_heapsize, undo_lo_tp, undo_hi_tp;
 	pl_idx_t q_size[MAX_QUEUES], tmpq_size[MAX_QUEUES], qp[MAX_QUEUES];
 	uint32_t mgen;
-	uint8_t nv_mask[MAX_VARS];
 	prolog_flags flags;
 	enum q_retry retry;
 	int8_t halt_code;

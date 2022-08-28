@@ -484,31 +484,6 @@ ssize_t print_canonical_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_i
 		}
 	}
 
-	if (is_variable(c) && running && (q->nv_start == -1)
-		&& ((var_nbr = find_binding(q, c->var_nbr, c_ctx)) != ERR_IDX)) {
-		if (!dstlen) {
-			if (!(s_mask1[var_nbr]))
-				s_mask1[var_nbr] = 1;
-			else
-				s_mask2[var_nbr] = 1;
-		}
-
-		unsigned nbr = count_non_anons(s_mask2, var_nbr);
-
-		char ch = 'A';
-		ch += nbr % 26;
-		unsigned n = (unsigned)nbr / 26;
-
-		if (dstlen && !(s_mask2[var_nbr]))
-			dst += snprintf(dst, dstlen, "%s", "_");
-		else if (nbr < 26)
-			dst += snprintf(dst, dstlen, "%c", ch);
-		else
-			dst += snprintf(dst, dstlen, "%c%u", ch, n);
-
-		return dst - save_dst;
-	}
-
 	if (is_variable(c) && !running && !q->cycle_error && !is_ref(c)) {
 		dst += snprintf(dst, dstlen, "%s", C_STR(q, c));
 		return dst - save_dst;
@@ -1001,8 +976,8 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 		cell *c1 = c->arity ? deref(q, c+1, c_ctx) : NULL;
 
 		if (running && is_interned(c) && c->arity && !strcmp(src, "$VAR") && c1
-			&& q->numbervars && is_integer(c1) && q->nv_start != -1) {
-			dst += snprintf(dst, dstlen, "%s", varformat2(q->pl->tmpbuf, sizeof(q->pl->tmpbuf), c1, q->nv_start));
+			&& q->numbervars && is_integer(c1)) {
+			dst += snprintf(dst, dstlen, "%s", varformat2(q->pl->tmpbuf, sizeof(q->pl->tmpbuf), c1, 0));
 			q->last_thing_was_symbol = false;
 			return dst - save_dst;
 		}
@@ -1349,15 +1324,10 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx_t c_ctx, i
 
 	ssize_t len = print_canonical_to_buf(q, NULL, 0, c, c_ctx, running, false, 1);
 
-	char *dst = malloc(len*2+1); //cehteh: why *2?
+	char *dst = malloc(len*2+1);
 	check_heap_error(dst);
 	len = print_canonical_to_buf(q, dst, len+1, c, c_ctx, running, false, 0);
 	const char *src = dst;
-
-	if (q->nv_start == -1) {
-		memset(q->nv_mask, 0, MAX_VARS);
-		q->nv_start = 0;
-	}
 
 	while (len) {
 		size_t nbytes = net_write(src, len, str);
@@ -1394,15 +1364,10 @@ bool print_canonical(query *q, FILE *fp, cell *c, pl_idx_t c_ctx, int running)
 	ssize_t len = print_canonical_to_buf(q, NULL, 0, c, c_ctx, running, false, 0);
 	q->did_quote = false;
 
-	char *dst = malloc(len*2+1); //cehteh: why *2?
+	char *dst = malloc(len*2+1);
 	check_heap_error(dst);
 	len = print_canonical_to_buf(q, dst, len+1, c, c_ctx, running, false, 0);
 	const char *src = dst;
-
-	if (q->nv_start == -1) {
-		memset(q->nv_mask, 0, MAX_VARS);
-		q->nv_start = 0;
-	}
 
 	while (len) {
 		size_t nbytes = fwrite(src, 1, len, fp);

@@ -5943,28 +5943,6 @@ static bool fn_sys_legacy_predicate_property_2(query *q)
 	return false;
 }
 
-static unsigned count_bits(const uint8_t *mask, unsigned bit)
-{
-	unsigned bits = 0;
-
-	for (unsigned i = 0; i < bit; i++) {
-		if (mask[i])
-			bits++;
-	}
-
-	return bits;
-}
-
-static bool fn_var_number_2(query *q)
-{
-	GET_FIRST_ARG(p1,variable);
-	GET_NEXT_ARG(p2,integer_or_var);
-	unsigned pos = count_bits(q->nv_mask, p1->var_nbr);
-	cell tmp;
-	make_int(&tmp, q->nv_start+pos);
-	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
-}
-
 static bool fn_char_type_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_int);
@@ -7475,7 +7453,6 @@ builtins g_other_bifs[] =
 	{"hex_bytes", 2, fn_hex_bytes_2, "?string,?list", false, BLAH},
 	{"hex_chars", 2, fn_hex_chars_2, "?integer,?string", false, BLAH},
 	{"octal_chars", 2, fn_octal_chars_2, "?integer,?string", false, BLAH},
-	{"var_number", 2, fn_var_number_2, "+term,?integer", false, BLAH},
 	{"char_type", 2, fn_char_type_2, "+char,+term", false, BLAH},
 	{"code_type", 2, fn_char_type_2, "+code,+term", false, BLAH},
 	{"uuid", 1, fn_uuid_1, "-string", false, BLAH},
