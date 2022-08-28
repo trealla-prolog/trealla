@@ -647,7 +647,7 @@ ssize_t print_canonical_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_i
 	return dst - save_dst;
 }
 
-static const char *varformat2(cell *c, unsigned nv_start)
+static const char *varformat2(char *tmpbuf, size_t tmpbuf_len, cell *c, unsigned nv_start)
 {
 	mpz_t tmp;
 
@@ -658,21 +658,19 @@ static const char *varformat2(cell *c, unsigned nv_start)
 
 	mp_small nbr;
 	mp_int_mod_value(&tmp, 26, &nbr);
-	static char tmpbuf[8192];
 	char *dst = tmpbuf;
 	dst += sprintf(dst, "%c", 'A'+(unsigned)(nbr));
 	mp_int_div_value(&tmp, 26, &tmp, NULL);
 
 	if (mp_int_compare_zero(&tmp) > 0)
-		dst += mp_int_to_string(&tmp, 10, dst, sizeof(tmpbuf));
+		dst += mp_int_to_string(&tmp, 10, dst, tmpbuf_len);
 
 	mp_int_clear(&tmp);
 	return tmpbuf;
 }
 
-static const char *varformat(unsigned long long nbr)
+static const char *varformat(char *tmpbuf, unsigned long long nbr)
 {
-	static char tmpbuf[80];
 	char *dst = tmpbuf;
 	dst += sprintf(dst, "%c", 'A'+(unsigned)(nbr%26));
 	if ((nbr/26) > 0) dst += sprintf(dst, "%llu", (nbr/26));
@@ -683,7 +681,7 @@ static const char *get_slot_name(query *q, pl_idx_t slot_idx)
 {
 	for (unsigned i = 0; i < q->print_idx; i++) {
 		if (q->pl->tab1[i] == slot_idx) {
-			return varformat(q->pl->tab2[i]);
+			return varformat(q->pl->tmpbuf, q->pl->tab2[i]);
 		}
 	}
 
@@ -698,7 +696,7 @@ static const char *get_slot_name(query *q, pl_idx_t slot_idx)
 	}
 
 	q->pl->tab2[i] = j;
-	return varformat(i);
+	return varformat(q->pl->tmpbuf, i);
 }
 
 ssize_t print_variable(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t c_ctx, bool running)
@@ -1004,7 +1002,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 
 		if (running && is_interned(c) && c->arity && !strcmp(src, "$VAR") && c1
 			&& q->numbervars && is_integer(c1) && q->nv_start != -1) {
-			dst += snprintf(dst, dstlen, "%s", varformat2(c1, q->nv_start));
+			dst += snprintf(dst, dstlen, "%s", varformat2(q->pl->tmpbuf, sizeof(q->pl->tmpbuf), c1, q->nv_start));
 			q->last_thing_was_symbol = false;
 			return dst - save_dst;
 		}
@@ -1357,7 +1355,7 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx_t c_ctx, i
 	const char *src = dst;
 
 	if (q->nv_start == -1) {
-		memset(q->nv_mask, 0, MAX_ARITY);
+		memset(q->nv_mask, 0, MAX_VARS);
 		q->nv_start = 0;
 	}
 
@@ -1402,7 +1400,7 @@ bool print_canonical(query *q, FILE *fp, cell *c, pl_idx_t c_ctx, int running)
 	const char *src = dst;
 
 	if (q->nv_start == -1) {
-		memset(q->nv_mask, 0, MAX_ARITY);
+		memset(q->nv_mask, 0, MAX_VARS);
 		q->nv_start = 0;
 	}
 
