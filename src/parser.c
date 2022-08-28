@@ -1532,7 +1532,7 @@ static bool term_expansion(parser *p)
 	cell *h = get_head(p->cl->cells);
 	const char *pred = C_STR(p, h);
 
-	if (!strcmp(pred, "term_expansion") || !strcmp(pred, "goal_expansion"))
+	if (h->val_off == g_term_expansion_s)
 		return false;
 
 	query *q = create_query(p->m, false);

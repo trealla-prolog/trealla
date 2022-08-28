@@ -21,7 +21,7 @@ pl_idx_t g_conjunction_s, g_disjunction_s, g_at_s, g_sys_ne_s, g_sys_incr_s;
 pl_idx_t g_dcg_s, g_throw_s, g_sys_block_catcher_s, g_sys_drop_barrier;
 pl_idx_t g_sys_soft_cut_s, g_if_then_s, g_soft_cut_s, g_negation_s;
 pl_idx_t g_error_s, g_slash_s, g_sys_cleanup_if_det_s, g_sys_table_s;
-pl_idx_t g_goal_expansion_s;
+pl_idx_t g_goal_expansion_s, g_term_expansion_s;
 
 unsigned g_cpu_count = 4;
 char *g_tpl_lib = NULL;
@@ -383,6 +383,7 @@ prolog *pl_create()
 	CHECK_SENTINEL(g_error_s = index_from_pool(pl, "error"), ERR_IDX);
 	CHECK_SENTINEL(g_slash_s = index_from_pool(pl, "/"), ERR_IDX);
 	CHECK_SENTINEL(g_goal_expansion_s = index_from_pool(pl, "goal_expansion"), ERR_IDX);
+	CHECK_SENTINEL(g_term_expansion_s = index_from_pool(pl, "term_expansion"), ERR_IDX);
 
 	CHECK_SENTINEL(g_sys_elapsed_s = index_from_pool(pl, "$elapsed"), ERR_IDX);
 	CHECK_SENTINEL(g_sys_queue_s = index_from_pool(pl, "$queue"), ERR_IDX);
