@@ -311,7 +311,7 @@ void pl_destroy(prolog *pl)
 prolog *pl_create()
 {
 	//printf("*** sizeof(cell) = %u bytes\n", (unsigned)sizeof(cell));
-	//assert(sizeof(cell) == 24);
+	assert(sizeof(cell) == 24);
 
 	prolog *pl = calloc(1, sizeof(prolog));
 
