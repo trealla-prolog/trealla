@@ -348,7 +348,7 @@ static int find_binding(query *q, pl_idx_t var_nbr, pl_idx_t tmp_ctx)
 	return ERR_IDX;
 }
 
-static uint8_t s_mask1[MAX_ARITY] = {0}, s_mask2[MAX_ARITY] = {0};
+static uint8_t s_mask1[MAX_VARS] = {0}, s_mask2[MAX_VARS] = {0};
 
 static unsigned count_non_anons(const uint8_t *mask, unsigned bit)
 {
@@ -1357,7 +1357,7 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx_t c_ctx, i
 	const char *src = dst;
 
 	if (q->nv_start == -1) {
-		memset(q->nv_mask, 0, MAX_ARITY);
+		memset(q->nv_mask, 0, MAX_VARS);
 		q->nv_start = 0;
 	}
 
@@ -1402,7 +1402,7 @@ bool print_canonical(query *q, FILE *fp, cell *c, pl_idx_t c_ctx, int running)
 	const char *src = dst;
 
 	if (q->nv_start == -1) {
-		memset(q->nv_mask, 0, MAX_ARITY);
+		memset(q->nv_mask, 0, MAX_VARS);
 		q->nv_start = 0;
 	}
 

@@ -2353,7 +2353,7 @@ static void do_term_assign_vars(parser *p)
 {
 	pl_idx_t nbr_cells = p->cl->cidx;
 	term_assign_vars(p, 0, true);
-	uint8_t vars[MAX_ARITY] = {0};
+	uint8_t vars[MAX_VARS] = {0};
 
 	for (pl_idx_t i = 0; i < nbr_cells; i++) {
 		cell *c = p->cl->cells+i;
@@ -2361,7 +2361,7 @@ static void do_term_assign_vars(parser *p)
 		if (!is_variable(c))
 			continue;
 
-		assert(c->var_nbr < MAX_ARITY);
+		assert(c->var_nbr < MAX_VARS);
 		vars[c->var_nbr]++;
 	}
 
@@ -2659,7 +2659,7 @@ static bool search_functor(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 
 	push_choice(q);
 	predicate *pr = NULL;
-	check_heap_error(check_slot(q, MAX_ARITY));
+	check_heap_error(check_slot(q, MAX_VARS));
 
 	while (map_next(q->st.f_iter, (void*)&pr)) {
 		CHECK_INTERRUPT();
@@ -2667,7 +2667,7 @@ static bool search_functor(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 		if (pr->is_abolished)
 			continue;
 
-		if (try_me(q, MAX_ARITY) != true) {
+		if (try_me(q, MAX_VARS) != true) {
 			map_done(q->st.f_iter);
 			q->st.f_iter = NULL;
 			return false;

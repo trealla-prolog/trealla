@@ -999,7 +999,7 @@ void term_assign_vars(parser *p, unsigned start, bool rebase)
 
 		c->var_nbr += start;
 
-		if (c->var_nbr == MAX_ARITY) {
+		if (c->var_nbr == MAX_VARS) {
 			fprintf(stdout, "Error: max vars reached\n");
 			p->error = true;
 			return;
@@ -1031,7 +1031,7 @@ void term_assign_vars(parser *p, unsigned start, bool rebase)
 
 		c->var_nbr += start;
 
-		if (c->var_nbr == MAX_ARITY) {
+		if (c->var_nbr == MAX_VARS) {
 			fprintf(stdout, "Error: max vars reached\n");
 			p->error = true;
 			return;
@@ -1541,8 +1541,6 @@ static bool term_expansion(parser *p)
 	ASTRING(s);
 	ASTRING_sprintf(s, "term_expansion((%s),_TermOut).", dst);
 	free(dst);
-
-	//printf("*** TE0 %s\n", ASTRING_cstr(s));
 
 	parser *p2 = create_parser(p->m);
 	check_error(p2, destroy_query(q));

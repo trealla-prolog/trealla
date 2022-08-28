@@ -56,8 +56,9 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define IDX_MAX (ERR_IDX-1)
 
 #define MAX_SMALL_STRING ((sizeof(void*)*2)-1)
-#define MAX_VAR_POOL_SIZE 4000
-#define MAX_ARITY UCHAR_MAX
+#define MAX_VAR_POOL_SIZE 8000
+#define MAX_ARITY UINT8_MAX
+#define MAX_VARS 1024
 #define MAX_QUEUES 16
 #define MAX_STREAMS 1024
 #define MAX_MODULES 1024
@@ -474,7 +475,7 @@ struct builtins_ {
 	const char *help;
 	bool function;
 	bool ffi;
-	uint8_t types[MAX_ARITY];
+	uint8_t types[MAX_VARS];
 	uint8_t ret_type;
 };
 
@@ -639,7 +640,7 @@ struct query_ {
 	pl_idx_t h_size, tmph_size, tot_heaps, tot_heapsize, undo_lo_tp, undo_hi_tp;
 	pl_idx_t q_size[MAX_QUEUES], tmpq_size[MAX_QUEUES], qp[MAX_QUEUES];
 	uint32_t mgen;
-	uint8_t nv_mask[MAX_ARITY];
+	uint8_t nv_mask[MAX_VARS];
 	prolog_flags flags;
 	enum q_retry retry;
 	int8_t halt_code;
@@ -686,9 +687,9 @@ struct query_ {
 struct parser_ {
 	struct {
 		char var_pool[MAX_VAR_POOL_SIZE];
-		bool var_in_body[MAX_ARITY];
-		unsigned var_used[MAX_ARITY];
-		const char *var_name[MAX_ARITY];
+		bool var_in_body[MAX_VARS];
+		unsigned var_used[MAX_VARS];
+		const char *var_name[MAX_VARS];
 	} vartab;
 
 	prolog *pl;
