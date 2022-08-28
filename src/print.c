@@ -1357,7 +1357,7 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx_t c_ctx, i
 	const char *src = dst;
 
 	if (q->nv_start == -1) {
-		memset(q->nv_mask, 0, MAX_VARS);
+		memset(q->nv_mask, 0, MAX_ARITY);
 		q->nv_start = 0;
 	}
 
@@ -1402,7 +1402,7 @@ bool print_canonical(query *q, FILE *fp, cell *c, pl_idx_t c_ctx, int running)
 	const char *src = dst;
 
 	if (q->nv_start == -1) {
-		memset(q->nv_mask, 0, MAX_VARS);
+		memset(q->nv_mask, 0, MAX_ARITY);
 		q->nv_start = 0;
 	}
 
