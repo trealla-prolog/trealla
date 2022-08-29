@@ -966,12 +966,13 @@ void term_assign_vars(parser *p, unsigned start, bool rebase)
 	// Any variable that only occurs in the head of
 	// a clause we consider a temporary variable...
 
+	cell *body = get_body(cl->cells);
 	bool in_body = false;
 
 	for (pl_idx_t i = 0; i < cl->cidx; i++) {
 		cell *c = cl->cells + i;
 
-		if (c->val_off == g_neck_s)
+		if (body && (c == body))
 			in_body = true;
 
 		if (!is_variable(c))
