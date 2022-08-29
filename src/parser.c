@@ -952,22 +952,26 @@ void term_assign_vars(parser *p, unsigned start, bool rebase)
 
 	p->start_term = true;
 	p->nbr_vars = 0;
-	memset(&p->vartab, 0, sizeof(p->vartab));
 	clause *cl = p->cl;
-	cl->nbr_vars = cl->nbr_temporaries = 0;
+
+	if (!p->reuse) {
+		memset(&p->vartab, 0, sizeof(p->vartab));
+		cl->nbr_vars = 0;
+	}
+
+	cl->nbr_temporaries = 0;
 	cl->is_first_cut = false;
 	cl->is_cut_only = false;
 
 	// Any variable that only occurs in the head of
 	// a clause we consider a temporary variable...
 
-	const cell *body = get_body(cl->cells);
 	bool in_body = false;
 
 	for (pl_idx_t i = 0; i < cl->cidx; i++) {
 		cell *c = cl->cells + i;
 
-		if (c == body)
+		if (c->val_off == g_neck_s)
 			in_body = true;
 
 		if (!is_variable(c))
@@ -1418,6 +1422,13 @@ static cell *goal_expansion(parser *p, cell *goal)
 	//if (search_predicate(p->m, goal))
 	//	return goal;
 
+	for (unsigned i = 0; i < goal->nbr_cells; i++) {
+		if (!is_variable(&goal[i]))
+			continue;
+
+		//printf("*** Var %s / %u\n", GET_POOL(p, goal[i].val_off), goal[i].var_nbr);
+	}
+
 	query *q = create_query(p->m, false);
 	check_error(q);
 	char *dst = print_canonical_to_strbuf(q, goal, 0, 0);
@@ -1425,16 +1436,20 @@ static cell *goal_expansion(parser *p, cell *goal)
 	ASTRING_sprintf(s, "goal_expansion((%s),_TermOut).", dst);
 	free(dst);
 
+	//printf("*** GE1 %s\n", ASTRING_cstr(s));
+
 	parser *p2 = create_parser(p->m);
 	check_error(p2, destroy_query(q));
+	q->p = p2;
+	p2->cl->nbr_vars = p->cl->nbr_vars;
+	p2->vartab = p->vartab;
+	p2->reuse = true;
 	p2->line_nbr = p->line_nbr;
 	p2->skip = true;
 	p2->srcptr = ASTRING_cstr(s);
 	tokenize(p2, false, false);
 	xref_rule(p2->m, p2->cl, NULL);
 	execute(q, p2->cl->cells, p2->cl->nbr_vars);
-
-	printf("*** GE1 %s\n", ASTRING_cstr(s));
 
 	ASTRING_free(s);
 
@@ -1448,6 +1463,8 @@ static cell *goal_expansion(parser *p, cell *goal)
 	char *src = NULL;
 
 	for (unsigned i = 0; i < p2->cl->nbr_vars; i++) {
+		//printf("*** vartab %u %s\n", i, p2->vartab.var_name[i]);
+
 		slot *e = GET_SLOT(f, i);
 
 		if (is_empty(&e->c))
@@ -1464,9 +1481,10 @@ static cell *goal_expansion(parser *p, cell *goal)
 		if (strcmp(p2->vartab.var_name[i], "_TermOut"))
 			continue;
 
-		src = print_canonical_to_strbuf(q, c, 0, 1);
+		q->varnames = true;
+		src = print_term_to_strbuf(q, c, q->latest_ctx, 1);
 		strcat(src, ".");
-		printf("*** GE2 %s\n", src);
+		//printf("*** GE2 %s\n", src);
 		break;
 	}
 

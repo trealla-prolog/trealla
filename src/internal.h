@@ -727,6 +727,7 @@ struct parser_ {
 	bool last_close:1;
 	bool no_fp:1;
 	bool symbol:1;
+	bool reuse:1;
 };
 
 typedef struct loaded_file_ loaded_file;
