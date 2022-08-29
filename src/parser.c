@@ -1434,7 +1434,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	check_error(q);
 	char *dst = print_canonical_to_strbuf(q, goal, 0, 0);
 	ASTRING(s);
-	ASTRING_sprintf(s, "goal_expansion((%s),_TermOut).", dst);
+	ASTRING_sprintf(s, "goal_expansion((%s),_TermOut), !.", dst);
 	free(dst);
 
 	//printf("*** GE1 %s\n", ASTRING_cstr(s));
@@ -1560,7 +1560,7 @@ static bool term_expansion(parser *p)
 	check_error(q);
 	char *dst = print_canonical_to_strbuf(q, p->cl->cells, 0, 0);
 	ASTRING(s);
-	ASTRING_sprintf(s, "term_expansion((%s),_TermOut).", dst);
+	ASTRING_sprintf(s, "term_expansion((%s),_TermOut), !.", dst);
 	free(dst);
 
 	parser *p2 = create_parser(p->m);
