@@ -194,10 +194,15 @@ char *history_readline_eol(const char *prompt, char eol)
 	fprintf(stdout, "%s", prompt);
 	fflush(stdout);
 
-	size_t len = 0;
+	ssize_t len = 0;
+	ssize_t got = 0;
 	char *line = NULL;
-	if (!(getline(&line, &len, stdin)))
+
+	got = getline(&line, &len, stdin);
+
+	if (got <= 0) {
 		return NULL;
+	}
 
 	return line;
 }
