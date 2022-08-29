@@ -1423,21 +1423,12 @@ static cell *goal_expansion(parser *p, cell *goal)
 	//if (search_predicate(p->m, goal))
 	//	return goal;
 
-	for (unsigned i = 0; i < goal->nbr_cells; i++) {
-		if (!is_variable(&goal[i]))
-			continue;
-
-		//printf("*** Var %s / %u\n", GET_POOL(p, goal[i].val_off), goal[i].var_nbr);
-	}
-
 	query *q = create_query(p->m, false);
 	check_error(q);
 	char *dst = print_canonical_to_strbuf(q, goal, 0, 0);
 	ASTRING(s);
 	ASTRING_sprintf(s, "goal_expansion((%s),_TermOut), !.", dst);
 	free(dst);
-
-	//printf("*** GE1 %s\n", ASTRING_cstr(s));
 
 	parser *p2 = create_parser(p->m);
 	check_error(p2, destroy_query(q));
@@ -1464,8 +1455,6 @@ static cell *goal_expansion(parser *p, cell *goal)
 	char *src = NULL;
 
 	for (unsigned i = 0; i < p2->cl->nbr_vars; i++) {
-		//printf("*** vartab %u %s\n", i, p2->vartab.var_name[i]);
-
 		slot *e = GET_SLOT(f, i);
 
 		if (is_empty(&e->c))
@@ -1483,9 +1472,9 @@ static cell *goal_expansion(parser *p, cell *goal)
 			continue;
 
 		q->varnames = true;
+		q->quoted = true;
 		src = print_term_to_strbuf(q, c, q->latest_ctx, 1);
 		strcat(src, ".");
-		//printf("*** GE2 %s\n", src);
 		break;
 	}
 
@@ -1572,8 +1561,6 @@ static bool term_expansion(parser *p)
 	xref_rule(p2->m, p2->cl, NULL);
 	execute(q, p2->cl->cells, p2->cl->nbr_vars);
 
-	//printf("*** TE1 %s\n", ASTRING_cstr(s));
-
 	ASTRING_free(s);
 
 	if (q->retry != QUERY_OK) {
@@ -1604,7 +1591,6 @@ static bool term_expansion(parser *p)
 
 		src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
 		strcat(src, ".");
-		//printf("*** TE2 %s\n", src);
 		break;
 	}
 
@@ -1614,8 +1600,6 @@ static bool term_expansion(parser *p)
 		p->error = true;
 		return false;
 	}
-
-	//printf("*** TE3 %s\n", src);
 
 	reset(p2);
 	p2->srcptr = src;
@@ -1698,7 +1682,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 
 			c->nbr_cells = 1 + lhs->nbr_cells + rhs->nbr_cells;
 		}
-	} else if (is_fx(c) || is_fy(c)) {
+	} else if (is_prefix(c)) {
 		if ((c->val_off == g_negation_s)
 			|| (c->val_off == g_neck_s)) {
 			cell *save_c = c;
@@ -2674,7 +2658,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		}
 	}
 
-	// Atoms...
+	// Atoms (including variables)...
 
 	int ch = peek_char_utf8(src);
 
