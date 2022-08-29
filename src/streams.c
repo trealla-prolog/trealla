@@ -1007,6 +1007,9 @@ static bool fn_iso_at_end_of_stream_0(query *q)
 		}
 	}
 
+	if (!str->ungetch && isatty(fileno(str->fp)))
+		return false;
+
 	if (!str->socket) {
 		int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
 		str->ungetch = ch;
@@ -1036,6 +1039,9 @@ static bool fn_iso_at_end_of_stream_1(query *q)
 			str->ungetch = ch;
 		}
 	}
+
+	if (!str->ungetch && isatty(fileno(str->fp)))
+		return false;
 
 	if (!str->socket) {
 		int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
