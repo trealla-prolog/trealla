@@ -1659,30 +1659,6 @@ static cell *insert_here(parser *p, cell *c, cell *p1)
 	return p->cl->cells + c_idx;
 }
 
-cell *check_body_callable(parser *p, cell *c)
-{
-	if (is_xfx(c) || is_xfy(c)) {
-		if (!strcmp(C_STR(p, c), ",")
-			|| !strcmp(C_STR(p, c), ";")
-			|| !strcmp(C_STR(p, c), "->")
-			|| !strcmp(C_STR(p, c), "*->")
-			|| !strcmp(C_STR(p, c), ":-")) {
-			cell *lhs = c + 1;
-			cell *tmp;
-
-			if ((tmp = check_body_callable(p, lhs)) != NULL)
-				return tmp;
-
-			cell *rhs = lhs + lhs->nbr_cells;
-
-			if ((tmp = check_body_callable(p, rhs)) != NULL)
-				return tmp;
-		}
-	}
-
-	return !is_callable(c) && !is_variable(c) ? c : NULL;
-}
-
 static cell *term_to_body_conversion(parser *p, cell *c)
 {
 	pl_idx_t c_idx = c - p->cl->cells;
@@ -1761,6 +1737,30 @@ void term_to_body(parser *p)
 {
 	term_to_body_conversion(p, p->cl->cells);
 	p->cl->cells->nbr_cells = p->cl->cidx - 1;	// Drops TAG_END
+}
+
+cell *check_body_callable(parser *p, cell *c)
+{
+	if (is_xfx(c) || is_xfy(c)) {
+		if (!strcmp(C_STR(p, c), ",")
+			|| !strcmp(C_STR(p, c), ";")
+			|| !strcmp(C_STR(p, c), "->")
+			|| !strcmp(C_STR(p, c), "*->")
+			|| !strcmp(C_STR(p, c), ":-")) {
+			cell *lhs = c + 1;
+			cell *tmp;
+
+			if ((tmp = check_body_callable(p, lhs)) != NULL)
+				return tmp;
+
+			cell *rhs = lhs + lhs->nbr_cells;
+
+			if ((tmp = check_body_callable(p, rhs)) != NULL)
+				return tmp;
+		}
+	}
+
+	return !is_callable(c) && !is_variable(c) ? c : NULL;
 }
 
 bool virtual_term(parser *p, const char *src)
