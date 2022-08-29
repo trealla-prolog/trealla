@@ -1433,6 +1433,9 @@ static cell *goal_expansion(parser *p, cell *goal)
 	tokenize(p2, false, false);
 	xref_rule(p2->m, p2->cl, NULL);
 	execute(q, p2->cl->cells, p2->cl->nbr_vars);
+
+	printf("*** GE1 %s\n", ASTRING_cstr(s));
+
 	ASTRING_free(s);
 
 	if (q->retry != QUERY_OK) {
@@ -1461,8 +1464,9 @@ static cell *goal_expansion(parser *p, cell *goal)
 		if (strcmp(p2->vartab.var_name[i], "_TermOut"))
 			continue;
 
-		src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
+		src = print_canonical_to_strbuf(q, c, 0, 1);
 		strcat(src, ".");
+		printf("*** GE2 %s\n", src);
 		break;
 	}
 
@@ -1472,8 +1476,6 @@ static cell *goal_expansion(parser *p, cell *goal)
 		p->error = true;
 		return goal;
 	}
-
-	//printf("*** GE %s\n", src);
 
 	reset(p2);
 	p2->srcptr = src;
@@ -1583,10 +1585,9 @@ static bool term_expansion(parser *p)
 
 		src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
 		strcat(src, ".");
+		//printf("*** TE2 %s\n", src);
 		break;
 	}
-
-	//printf("*** TE2 %s\n", src);
 
 	if (!src) {
 		destroy_parser(p2);
