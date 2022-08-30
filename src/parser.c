@@ -1513,6 +1513,8 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 	// make room for new goal...
 
+	assert(p2->cl->cells[p2->cl->cidx-1].tag == TAG_END);
+
 	const unsigned new_cells = p2->cl->cidx-1;	// -1 for TAG_END not copied
 	trailing = p->cl->cidx - goal_idx;
 
