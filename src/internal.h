@@ -411,7 +411,7 @@ typedef struct {
 
 struct clause_ {
 	uint64_t dgen_created, dgen_erased;
-	pl_idx_t nbr_cells, cidx;
+	pl_idx_t allocated_cells, cidx;
 	uint32_t nbr_vars;
 	uint16_t nbr_temporaries;
 	bool is_first_cut:1;

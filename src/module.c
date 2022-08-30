@@ -1026,7 +1026,7 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 	dbe->cl.cells[p1->nbr_cells].tag = TAG_END;
 	dbe->cl.nbr_temporaries = nbr_temporaries;
 	dbe->cl.nbr_vars = nbr_vars;
-	dbe->cl.nbr_cells = p1->nbr_cells;
+	dbe->cl.allocated_cells = p1->nbr_cells;
 	dbe->cl.cidx = p1->nbr_cells+1;
 	dbe->cl.dgen_created = ++m->pl->ugen;
 	dbe->filename = m->filename;

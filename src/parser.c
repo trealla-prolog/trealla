@@ -153,8 +153,8 @@ void clear_rule(clause *cl)
 
 static bool make_room(parser *p, unsigned nbr)
 {
-	while ((p->cl->cidx+nbr) >= p->cl->nbr_cells) {
-		pl_idx_t nbr_cells = p->cl->nbr_cells * 3 / 2;
+	while ((p->cl->cidx+nbr) >= p->cl->allocated_cells) {
+		pl_idx_t nbr_cells = p->cl->allocated_cells * 3 / 2;
 
 		clause *cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*nbr_cells));
 		if (!cl) {
@@ -163,7 +163,7 @@ static bool make_room(parser *p, unsigned nbr)
 		}
 
 		p->cl = cl;
-		p->cl->nbr_cells = nbr_cells;
+		p->cl->allocated_cells = nbr_cells;
 	}
 
 	return true;
@@ -198,7 +198,7 @@ parser *create_parser(module *m)
 	pl_idx_t nbr_cells = INITIAL_NBR_CELLS;
 	p->cl = calloc(1, sizeof(clause)+(sizeof(cell)*nbr_cells));
 	check_error(p->cl, (free(p->token), free(p)));
-	p->cl->nbr_cells = nbr_cells;
+	p->cl->allocated_cells = nbr_cells;
 	p->start_term = true;
 	p->flags = m->flags;
 	p->line_nbr = 1;
@@ -1506,24 +1506,23 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 	// snip the old goal...
 
-	unsigned goal_idx = goal - p->cl->cells;
-	unsigned old_cells = goal->nbr_cells;
-	unsigned rem_cells = p->cl->cidx - (goal_idx + old_cells);
-	memmove(goal, goal + old_cells, sizeof(cell)*rem_cells);
-	p->cl->cidx -= old_cells;
+	const unsigned goal_idx = goal - p->cl->cells;
+	unsigned trailing = p->cl->cidx - (goal_idx + goal->nbr_cells);
+	p->cl->cidx -= goal->nbr_cells;
+	memmove(goal, goal + goal->nbr_cells, sizeof(cell)*trailing);
 
 	// make room for new goal...
 
-	unsigned new_cells = p2->cl->cidx-1;
-	unsigned trailing_cells = p->cl->cidx - goal_idx;
+	const unsigned new_cells = p2->cl->cidx-1;	// -1 for TAG_END not copied
+	trailing = p->cl->cidx - goal_idx;
 
-	if ((p->cl->cidx + new_cells) > p->cl->nbr_cells) {
-		unsigned extra = (p->cl->cidx + new_cells) - p->cl->nbr_cells;
+	if ((p->cl->cidx + new_cells) > p->cl->allocated_cells) {
+		unsigned extra = (p->cl->cidx + new_cells) - p->cl->allocated_cells;
 		make_room(p, extra);
 		goal = p->cl->cells + goal_idx;	// in case of a realloc
 	}
 
-	memmove(goal+new_cells, goal, sizeof(cell)*trailing_cells);
+	memmove(goal+new_cells, goal, sizeof(cell)*trailing);
 
 	// paste the new goal...
 
