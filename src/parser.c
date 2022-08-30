@@ -1515,12 +1515,10 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 	assert(p2->cl->cells[p2->cl->cidx-1].tag == TAG_END);
 
-	const unsigned new_cells = p2->cl->cidx-1;	// -1 for TAG_END not copied
+	const unsigned new_cells = p2->cl->cidx-1;		// don't copyy TAG_END
 	trailing = p->cl->cidx - goal_idx;
-
 	make_room(p, new_cells);
-	goal = p->cl->cells + goal_idx;				// in case of a realloc
-
+	goal = p->cl->cells + goal_idx;							// realloc?
 	memmove(goal+new_cells, goal, sizeof(cell)*trailing);
 
 	// paste the new goal...
