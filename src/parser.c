@@ -1311,31 +1311,40 @@ void reset(parser *p)
 	p->error_desc = NULL;
 }
 
+static bool autoload_dcg_library(parser *p)
+{
+	if (p->m->pl->dcgs || find_module(p->m->pl, "dcgs"))
+		return true;
+
+	for (library *lib = g_libs; lib->name; lib++) {
+		if (strcmp(lib->name, "dcgs"))
+			continue;
+
+		char *src = malloc(*lib->len+1);
+		check_error(src);
+		memcpy(src, lib->start, *lib->len);
+		src[*lib->len] = '\0';
+		ASTRING(s);
+		ASTRING_sprintf(s, "library/%s", lib->name);
+		module *tmp_m = load_text(p->m, src, ASTRING_cstr(s));
+		ASTRING_free(s);
+
+		if (tmp_m) {
+			p->m->used[p->m->idx_used++] = tmp_m;
+			p->m->pl->dcgs = tmp_m;
+		}
+
+		free(src);
+		break;
+	}
+
+	return true;
+}
+
 static bool dcg_expansion(parser *p)
 {
-	if (!p->m->pl->dcgs && !find_module(p->m->pl, "dcgs")) {
-		for (library *lib = g_libs; lib->name; lib++) {
-			if (strcmp(lib->name, "dcgs"))
-				continue;
-
-			char *src = malloc(*lib->len+1);
-			check_error(src);
-			memcpy(src, lib->start, *lib->len);
-			src[*lib->len] = '\0';
-			ASTRING(s);
-			ASTRING_sprintf(s, "library/%s", lib->name);
-			module *tmp_m = load_text(p->m, src, ASTRING_cstr(s));
-			ASTRING_free(s);
-
-			if (tmp_m) {
-				p->m->used[p->m->idx_used++] = tmp_m;
-				p->m->pl->dcgs = tmp_m;
-			}
-
-			free(src);
-			break;
-		}
-	}
+	if (!autoload_dcg_library(p))
+		return false;
 
 	query *q = create_query(p->m, false);
 	check_error(q);
@@ -1389,6 +1398,10 @@ static bool dcg_expansion(parser *p)
 	p2->srcptr = src;
 	tokenize(p2, false, false);
 	xref_rule(p2->m, p2->cl, NULL);
+
+	//printf("[%s] *** GE %s\n", p2->m->name, src);
+	//DUMP_TERM("GE", p2->cl->cells, 0);
+
 	free(src);
 
 	clear_rule(p->cl);
@@ -2920,6 +2933,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 				}
 
 				term_assign_vars(p, p->read_term, false);
+				xref_rule(p->m, p->cl, NULL);
 				term_to_body(p);
 
 				if (p->consulting && !p->skip) {
@@ -2939,7 +2953,6 @@ unsigned tokenize(parser *p, bool args, bool consing)
 						return 0;
 					}
 
-					xref_rule(p->m, p->cl, NULL);
 					term_expansion(p);
 					cell *p1 = p->cl->cells;
 
