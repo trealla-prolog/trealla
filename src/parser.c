@@ -1518,11 +1518,8 @@ static cell *goal_expansion(parser *p, cell *goal)
 	const unsigned new_cells = p2->cl->cidx-1;	// -1 for TAG_END not copied
 	trailing = p->cl->cidx - goal_idx;
 
-	if ((p->cl->cidx + new_cells) > p->cl->allocated_cells) {
-		unsigned extra = (p->cl->cidx + new_cells) - p->cl->allocated_cells;
-		make_room(p, extra);
-		goal = p->cl->cells + goal_idx;	// in case of a realloc
-	}
+	make_room(p, new_cells);
+	goal = p->cl->cells + goal_idx;				// in case of a realloc
 
 	memmove(goal+new_cells, goal, sizeof(cell)*trailing);
 
