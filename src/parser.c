@@ -1485,8 +1485,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 			continue;
 
 		q->varnames = true;
-		q->quoted = true;
-		src = print_term_to_strbuf(q, c, q->latest_ctx, 1);
+		src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
 		strcat(src, ".");
 		break;
 	}

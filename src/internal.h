@@ -680,6 +680,7 @@ struct query_ {
 	bool in_commit:1;
 	bool did_quote:1;
 	bool is_input:1;
+	bool was_space:1;
 };
 
 struct parser_ {
