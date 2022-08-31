@@ -1522,6 +1522,8 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 	memcpy(goal, p2->cl->cells, sizeof(cell)*new_cells);
 	p->cl->cidx += new_cells;
+	clear_rule(p2->cl);
+	free(p2->cl);
 	p2->cl = NULL;
 
 	// done
