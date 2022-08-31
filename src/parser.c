@@ -153,8 +153,8 @@ void clear_rule(clause *cl)
 
 static bool make_room(parser *p, unsigned nbr)
 {
-	while ((p->cl->cidx+nbr) >= p->cl->nbr_cells) {
-		pl_idx_t nbr_cells = p->cl->nbr_cells * 3 / 2;
+	while ((p->cl->cidx+nbr) >= p->cl->allocated_cells) {
+		pl_idx_t nbr_cells = p->cl->allocated_cells * 3 / 2;
 
 		clause *cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*nbr_cells));
 		if (!cl) {
@@ -163,7 +163,7 @@ static bool make_room(parser *p, unsigned nbr)
 		}
 
 		p->cl = cl;
-		p->cl->nbr_cells = nbr_cells;
+		p->cl->allocated_cells = nbr_cells;
 	}
 
 	return true;
@@ -198,7 +198,7 @@ parser *create_parser(module *m)
 	pl_idx_t nbr_cells = INITIAL_NBR_CELLS;
 	p->cl = calloc(1, sizeof(clause)+(sizeof(cell)*nbr_cells));
 	check_error(p->cl, (free(p->token), free(p)));
-	p->cl->nbr_cells = nbr_cells;
+	p->cl->allocated_cells = nbr_cells;
 	p->start_term = true;
 	p->flags = m->flags;
 	p->line_nbr = 1;
@@ -952,22 +952,27 @@ void term_assign_vars(parser *p, unsigned start, bool rebase)
 
 	p->start_term = true;
 	p->nbr_vars = 0;
-	memset(&p->vartab, 0, sizeof(p->vartab));
 	clause *cl = p->cl;
-	cl->nbr_vars = cl->nbr_temporaries = 0;
+
+	if (!p->reuse) {
+		memset(&p->vartab, 0, sizeof(p->vartab));
+		cl->nbr_vars = 0;
+	}
+
+	cl->nbr_temporaries = 0;
 	cl->is_first_cut = false;
 	cl->is_cut_only = false;
 
 	// Any variable that only occurs in the head of
 	// a clause we consider a temporary variable...
 
-	const cell *body = get_body(cl->cells);
+	cell *body = get_body(cl->cells);
 	bool in_body = false;
 
 	for (pl_idx_t i = 0; i < cl->cidx; i++) {
 		cell *c = cl->cells + i;
 
-		if (c == body)
+		if (body && (c == body))
 			in_body = true;
 
 		if (!is_variable(c))
@@ -999,7 +1004,7 @@ void term_assign_vars(parser *p, unsigned start, bool rebase)
 
 		c->var_nbr += start;
 
-		if (c->var_nbr == MAX_ARITY) {
+		if (c->var_nbr == MAX_VARS) {
 			fprintf(stdout, "Error: max vars reached\n");
 			p->error = true;
 			return;
@@ -1031,7 +1036,7 @@ void term_assign_vars(parser *p, unsigned start, bool rebase)
 
 		c->var_nbr += start;
 
-		if (c->var_nbr == MAX_ARITY) {
+		if (c->var_nbr == MAX_VARS) {
 			fprintf(stdout, "Error: max vars reached\n");
 			p->error = true;
 			return;
@@ -1306,31 +1311,40 @@ void reset(parser *p)
 	p->error_desc = NULL;
 }
 
+static bool autoload_dcg_library(parser *p)
+{
+	if (p->m->pl->dcgs || find_module(p->m->pl, "dcgs"))
+		return true;
+
+	for (library *lib = g_libs; lib->name; lib++) {
+		if (strcmp(lib->name, "dcgs"))
+			continue;
+
+		char *src = malloc(*lib->len+1);
+		check_error(src);
+		memcpy(src, lib->start, *lib->len);
+		src[*lib->len] = '\0';
+		ASTRING(s);
+		ASTRING_sprintf(s, "library/%s", lib->name);
+		module *tmp_m = load_text(p->m, src, ASTRING_cstr(s));
+		ASTRING_free(s);
+
+		if (tmp_m) {
+			p->m->used[p->m->idx_used++] = tmp_m;
+			p->m->pl->dcgs = tmp_m;
+		}
+
+		free(src);
+		break;
+	}
+
+	return true;
+}
+
 static bool dcg_expansion(parser *p)
 {
-	if (!p->m->pl->dcgs && !find_module(p->m->pl, "dcgs")) {
-		for (library *lib = g_libs; lib->name; lib++) {
-			if (strcmp(lib->name, "dcgs"))
-				continue;
-
-			char *src = malloc(*lib->len+1);
-			check_error(src);
-			memcpy(src, lib->start, *lib->len);
-			src[*lib->len] = '\0';
-			ASTRING(s);
-			ASTRING_sprintf(s, "library/%s", lib->name);
-			module *tmp_m = load_text(p->m, src, ASTRING_cstr(s));
-			ASTRING_free(s);
-
-			if (tmp_m) {
-				p->m->used[p->m->idx_used++] = tmp_m;
-				p->m->pl->dcgs = tmp_m;
-			}
-
-			free(src);
-			break;
-		}
-	}
+	if (!autoload_dcg_library(p))
+		return false;
 
 	query *q = create_query(p->m, false);
 	check_error(q);
@@ -1384,13 +1398,17 @@ static bool dcg_expansion(parser *p)
 	p2->srcptr = src;
 	tokenize(p2, false, false);
 	xref_rule(p2->m, p2->cl, NULL);
+
+	//printf("[%s] *** GE %s\n", p2->m->name, src);
+	//DUMP_TERM("GE", p2->cl->cells, 0);
+
 	free(src);
 
 	clear_rule(p->cl);
 	free(p->cl);
-	p->cl = p2->cl;			// Take the completed clause
-	p2->cl = NULL;
+	p->cl = p2->cl;					// Take the completed clause
 	p->nbr_vars = p2->nbr_vars;
+	p2->cl = NULL;
 
 	destroy_parser(p2);
 	destroy_query(q);
@@ -1422,17 +1440,22 @@ static cell *goal_expansion(parser *p, cell *goal)
 	check_error(q);
 	char *dst = print_canonical_to_strbuf(q, goal, 0, 0);
 	ASTRING(s);
-	ASTRING_sprintf(s, "goal_expansion((%s),_TermOut).", dst);
+	ASTRING_sprintf(s, "goal_expansion((%s),_TermOut), !.", dst);
 	free(dst);
 
 	parser *p2 = create_parser(p->m);
 	check_error(p2, destroy_query(q));
+	q->p = p2;
+	p2->cl->nbr_vars = p->cl->nbr_vars;
+	p2->vartab = p->vartab;
+	p2->reuse = true;
 	p2->line_nbr = p->line_nbr;
 	p2->skip = true;
 	p2->srcptr = ASTRING_cstr(s);
 	tokenize(p2, false, false);
 	xref_rule(p2->m, p2->cl, NULL);
 	execute(q, p2->cl->cells, p2->cl->nbr_vars);
+
 	ASTRING_free(s);
 
 	if (q->retry != QUERY_OK) {
@@ -1461,6 +1484,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 		if (strcmp(p2->vartab.var_name[i], "_TermOut"))
 			continue;
 
+		q->varnames = true;
 		src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
 		strcat(src, ".");
 		break;
@@ -1473,8 +1497,6 @@ static cell *goal_expansion(parser *p, cell *goal)
 		return goal;
 	}
 
-	//printf("*** GE %s\n", src);
-
 	reset(p2);
 	p2->srcptr = src;
 	tokenize(p2, false, false);
@@ -1483,29 +1505,24 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 	// snip the old goal...
 
-	unsigned goal_idx = goal - p->cl->cells;
-	unsigned old_cells = goal->nbr_cells;
-	unsigned rem_cells = p->cl->cidx - (goal_idx + old_cells);
-	memmove(goal, goal + old_cells, sizeof(cell)*rem_cells);
-	p->cl->cidx -= old_cells;
+	const unsigned goal_idx = goal - p->cl->cells;
+	unsigned trailing = p->cl->cidx - (goal_idx + goal->nbr_cells);
+	p->cl->cidx -= goal->nbr_cells;
+	memmove(goal, goal + goal->nbr_cells, sizeof(cell)*trailing);
 
 	// make room for new goal...
 
-	unsigned new_cells = p2->cl->cidx-1;
-	unsigned trailing_cells = p->cl->cidx - goal_idx;
-
-	if ((p->cl->cidx + new_cells) > p->cl->nbr_cells) {
-		unsigned extra = (p->cl->cidx + new_cells) - p->cl->nbr_cells;
-		make_room(p, extra);
-		goal = p->cl->cells + goal_idx;	// in case of a realloc
-	}
-
-	memmove(goal+new_cells, goal, sizeof(cell)*trailing_cells);
+	const unsigned new_cells = p2->cl->cidx-1;		// skip TAG_END
+	trailing = p->cl->cidx - goal_idx;
+	make_room(p, new_cells);
+	goal = p->cl->cells + goal_idx;
+	memmove(goal+new_cells, goal, sizeof(cell)*trailing);
 
 	// paste the new goal...
 
 	memcpy(goal, p2->cl->cells, sizeof(cell)*new_cells);
 	p->cl->cidx += new_cells;
+	p2->cl = NULL;
 
 	// done
 
@@ -1528,11 +1545,17 @@ static bool term_expansion(parser *p)
 	if (!pr || !pr->cnt)
 		return false;
 
+	cell *h = get_head(p->cl->cells);
+	const char *pred = C_STR(p, h);
+
+	if (h->val_off == g_term_expansion_s)
+		return false;
+
 	query *q = create_query(p->m, false);
 	check_error(q);
 	char *dst = print_canonical_to_strbuf(q, p->cl->cells, 0, 0);
 	ASTRING(s);
-	ASTRING_sprintf(s, "term_expansion((%s),_TermOut).", dst);
+	ASTRING_sprintf(s, "term_expansion((%s),_TermOut), !.", dst);
 	free(dst);
 
 	parser *p2 = create_parser(p->m);
@@ -1543,8 +1566,6 @@ static bool term_expansion(parser *p)
 	tokenize(p2, false, false);
 	xref_rule(p2->m, p2->cl, NULL);
 	execute(q, p2->cl->cells, p2->cl->nbr_vars);
-
-	//printf("*** TE1 %s\n", ASTRING_cstr(s));
 
 	ASTRING_free(s);
 
@@ -1586,8 +1607,6 @@ static bool term_expansion(parser *p)
 		return false;
 	}
 
-	//printf("*** TE2 %s\n", src);
-
 	reset(p2);
 	p2->srcptr = src;
 	tokenize(p2, false, false);
@@ -1596,9 +1615,9 @@ static bool term_expansion(parser *p)
 
 	clear_rule(p->cl);
 	free(p->cl);
-	p->cl = p2->cl;				// Take the completed clause
-	p2->cl = NULL;
+	p->cl = p2->cl;					// Take the completed clause
 	p->nbr_vars = p2->nbr_vars;
+	p2->cl = NULL;
 
 	destroy_parser(p2);
 	destroy_query(q);
@@ -1628,30 +1647,6 @@ static cell *insert_here(parser *p, cell *c, cell *p1)
 
 	p->cl->cidx++;
 	return p->cl->cells + c_idx;
-}
-
-cell *check_body_callable(parser *p, cell *c)
-{
-	if (is_xfx(c) || is_xfy(c)) {
-		if (!strcmp(C_STR(p, c), ",")
-			|| !strcmp(C_STR(p, c), ";")
-			|| !strcmp(C_STR(p, c), "->")
-			|| !strcmp(C_STR(p, c), "*->")
-			|| !strcmp(C_STR(p, c), ":-")) {
-			cell *lhs = c + 1;
-			cell *tmp;
-
-			if ((tmp = check_body_callable(p, lhs)) != NULL)
-				return tmp;
-
-			cell *rhs = lhs + lhs->nbr_cells;
-
-			if ((tmp = check_body_callable(p, rhs)) != NULL)
-				return tmp;
-		}
-	}
-
-	return !is_callable(c) && !is_variable(c) ? c : NULL;
 }
 
 static cell *term_to_body_conversion(parser *p, cell *c)
@@ -1693,7 +1688,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 
 			c->nbr_cells = 1 + lhs->nbr_cells + rhs->nbr_cells;
 		}
-	} else if (is_fx(c) || is_fy(c)) {
+	} else if (is_prefix(c)) {
 		if ((c->val_off == g_negation_s)
 			|| (c->val_off == g_neck_s)) {
 			cell *save_c = c;
@@ -1732,6 +1727,30 @@ void term_to_body(parser *p)
 {
 	term_to_body_conversion(p, p->cl->cells);
 	p->cl->cells->nbr_cells = p->cl->cidx - 1;	// Drops TAG_END
+}
+
+cell *check_body_callable(parser *p, cell *c)
+{
+	if (is_xfx(c) || is_xfy(c)) {
+		if (!strcmp(C_STR(p, c), ",")
+			|| !strcmp(C_STR(p, c), ";")
+			|| !strcmp(C_STR(p, c), "->")
+			|| !strcmp(C_STR(p, c), "*->")
+			|| !strcmp(C_STR(p, c), ":-")) {
+			cell *lhs = c + 1;
+			cell *tmp;
+
+			if ((tmp = check_body_callable(p, lhs)) != NULL)
+				return tmp;
+
+			cell *rhs = lhs + lhs->nbr_cells;
+
+			if ((tmp = check_body_callable(p, rhs)) != NULL)
+				return tmp;
+		}
+	}
+
+	return !is_callable(c) && !is_variable(c) ? c : NULL;
 }
 
 bool virtual_term(parser *p, const char *src)
@@ -2645,7 +2664,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		}
 	}
 
-	// Atoms...
+	// Atoms (including variables)...
 
 	int ch = peek_char_utf8(src);
 
@@ -2907,6 +2926,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 				}
 
 				term_assign_vars(p, p->read_term, false);
+				xref_rule(p->m, p->cl, NULL);
 				term_to_body(p);
 
 				if (p->consulting && !p->skip) {
@@ -2926,7 +2946,6 @@ unsigned tokenize(parser *p, bool args, bool consing)
 						return 0;
 					}
 
-					xref_rule(p->m, p->cl, NULL);
 					term_expansion(p);
 					cell *p1 = p->cl->cells;
 

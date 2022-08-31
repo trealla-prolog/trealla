@@ -56,8 +56,9 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define IDX_MAX (ERR_IDX-1)
 
 #define MAX_SMALL_STRING ((sizeof(void*)*2)-1)
-#define MAX_VAR_POOL_SIZE 4000
-#define MAX_ARITY UCHAR_MAX
+#define MAX_VAR_POOL_SIZE 16000
+#define MAX_ARITY UINT8_MAX
+#define MAX_VARS 1024
 #define MAX_QUEUES 16
 #define MAX_STREAMS 1024
 #define MAX_MODULES 1024
@@ -410,7 +411,7 @@ typedef struct {
 
 struct clause_ {
 	uint64_t dgen_created, dgen_erased;
-	pl_idx_t nbr_cells, cidx;
+	pl_idx_t allocated_cells, cidx;
 	uint32_t nbr_vars;
 	uint16_t nbr_temporaries;
 	bool is_first_cut:1;
@@ -630,7 +631,6 @@ struct query_ {
 	uint64_t time_started, get_started;
 	uint64_t time_cpu_started, time_cpu_last_started;
 	unsigned max_depth, print_idx, tab_idx, varno, tab0_varno;
-	int nv_start;
 	pl_idx_t tmphp, latest_ctx, popp, variable_names_ctx;
 	pl_idx_t frames_size, slots_size, trails_size, choices_size;
 	pl_idx_t max_choices, max_frames, max_slots, max_trails;
@@ -639,7 +639,6 @@ struct query_ {
 	pl_idx_t h_size, tmph_size, tot_heaps, tot_heapsize, undo_lo_tp, undo_hi_tp;
 	pl_idx_t q_size[MAX_QUEUES], tmpq_size[MAX_QUEUES], qp[MAX_QUEUES];
 	uint32_t mgen;
-	uint8_t nv_mask[MAX_ARITY];
 	prolog_flags flags;
 	enum q_retry retry;
 	int8_t halt_code;
@@ -681,24 +680,26 @@ struct query_ {
 	bool in_commit:1;
 	bool did_quote:1;
 	bool is_input:1;
+	bool was_space:1;
 };
 
 struct parser_ {
 	struct {
 		char var_pool[MAX_VAR_POOL_SIZE];
-		bool var_in_body[MAX_ARITY];
-		unsigned var_used[MAX_ARITY];
-		const char *var_name[MAX_ARITY];
+		unsigned var_used[MAX_VARS];
+		const char *var_name[MAX_VARS];
+		bool var_in_body[MAX_VARS];
+		uint8_t vars[MAX_VARS];
 	} vartab;
 
 	prolog *pl;
 	FILE *fp;
 	module *m;
 	clause *cl;
-	char *token, *save_line, *srcptr, *error_desc, *tmpbuf;
 	cell v;
-	size_t token_size, n_line, toklen, pos_start, tmpbuf_size;
 	prolog_flags flags;
+	char *token, *save_line, *srcptr, *error_desc, *tmpbuf;
+	size_t token_size, n_line, toklen, pos_start, tmpbuf_size;
 	unsigned depth, read_term;
 	unsigned nesting_parens, nesting_braces, nesting_brackets;
 	int quote_char, line_nbr, line_nbr_start;
@@ -727,6 +728,7 @@ struct parser_ {
 	bool last_close:1;
 	bool no_fp:1;
 	bool symbol:1;
+	bool reuse:1;
 };
 
 typedef struct loaded_file_ loaded_file;
@@ -764,12 +766,13 @@ typedef struct {
 struct prolog_ {
 	stream streams[MAX_STREAMS];
 	module *modmap[MAX_MODULES];
+	struct { pl_idx_t tab1[MAX_IGNORES], tab2[MAX_IGNORES]; };
+	char tmpbuf[8192];
 	module *modules, *system_m, *user_m, *curr_m, *dcgs;
 	var_item *tabs;
 	parser *p;
 	map *symtab, *biftab, *keyval;
 	char *pool;
-	struct { pl_idx_t tab1[MAX_IGNORES], tab2[MAX_IGNORES]; };
 	size_t pool_offset, pool_size, tabs_size;
 	uint64_t s_last, s_cnt, seed, ugen;
 	unsigned next_mod_id;

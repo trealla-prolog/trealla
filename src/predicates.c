@@ -2353,7 +2353,7 @@ static void do_term_assign_vars(parser *p)
 {
 	pl_idx_t nbr_cells = p->cl->cidx;
 	term_assign_vars(p, 0, true);
-	uint8_t vars[MAX_ARITY] = {0};
+	memset(p->vartab.vars, 0, sizeof(p->vartab.vars));
 
 	for (pl_idx_t i = 0; i < nbr_cells; i++) {
 		cell *c = p->cl->cells+i;
@@ -2361,8 +2361,8 @@ static void do_term_assign_vars(parser *p)
 		if (!is_variable(c))
 			continue;
 
-		assert(c->var_nbr < MAX_ARITY);
-		vars[c->var_nbr]++;
+		assert(c->var_nbr < MAX_VARS);
+		p->vartab.vars[c->var_nbr]++;
 	}
 
 	for (pl_idx_t i = 0; i < nbr_cells; i++) {
@@ -2371,14 +2371,14 @@ static void do_term_assign_vars(parser *p)
 		if (!is_variable(c))
 			continue;
 
-		unsigned var_nbr = count_non_anons(vars, c->var_nbr);
+		unsigned var_nbr = count_non_anons(p->vartab.vars, c->var_nbr);
 
 		char ch = 'A';
 		ch += var_nbr % 26;
 		unsigned n = var_nbr / 26;
 		char tmpbuf[80];
 
-		if (vars[c->var_nbr] == 1)
+		if (p->vartab.vars[c->var_nbr] == 1)
 			snprintf(tmpbuf, sizeof(tmpbuf), "%s", "_");
 		else if (var_nbr < 26)
 			snprintf(tmpbuf, sizeof(tmpbuf), "%c", ch);
@@ -2423,10 +2423,10 @@ static bool fn_iso_asserta_1(query *q)
 	pl_idx_t nbr_cells = tmp->nbr_cells;
 	parser *p = q->st.m->p;
 
-	if (nbr_cells > p->cl->nbr_cells) {
+	if (nbr_cells > p->cl->allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(nbr_cells+1)));
 		check_heap_error(p->cl);
-		p->cl->nbr_cells = nbr_cells;
+		p->cl->allocated_cells = nbr_cells;
 	}
 
 	p->cl->cidx = safe_copy_cells(p->cl->cells, tmp, nbr_cells);
@@ -2486,10 +2486,10 @@ static bool fn_iso_assertz_1(query *q)
 	pl_idx_t nbr_cells = tmp->nbr_cells;
 	parser *p = q->st.m->p;
 
-	if (nbr_cells > p->cl->nbr_cells) {
+	if (nbr_cells > p->cl->allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(nbr_cells+1)));
 		check_heap_error(p->cl);
-		p->cl->nbr_cells = nbr_cells;
+		p->cl->allocated_cells = nbr_cells;
 	}
 
 	p->cl->cidx = safe_copy_cells(p->cl->cells, tmp, nbr_cells);
@@ -2659,7 +2659,7 @@ static bool search_functor(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 
 	push_choice(q);
 	predicate *pr = NULL;
-	check_heap_error(check_slot(q, MAX_ARITY));
+	check_heap_error(check_slot(q, MAX_VARS));
 
 	while (map_next(q->st.f_iter, (void*)&pr)) {
 		CHECK_INTERRUPT();
@@ -2667,7 +2667,7 @@ static bool search_functor(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 		if (pr->is_abolished)
 			continue;
 
-		if (try_me(q, MAX_ARITY) != true) {
+		if (try_me(q, MAX_VARS) != true) {
 			map_done(q->st.f_iter);
 			q->st.f_iter = NULL;
 			return false;
@@ -3688,10 +3688,10 @@ static bool do_asserta_2(query *q)
 	pl_idx_t nbr_cells = tmp->nbr_cells;
 	parser *p = q->st.m->p;
 
-	if (nbr_cells > p->cl->nbr_cells) {
+	if (nbr_cells > p->cl->allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(nbr_cells+1)));
 		check_heap_error(p->cl);
-		p->cl->nbr_cells = nbr_cells;
+		p->cl->allocated_cells = nbr_cells;
 	}
 
 	p->cl->cidx = safe_copy_cells(p->cl->cells, tmp, nbr_cells);
@@ -3789,10 +3789,10 @@ static bool do_assertz_2(query *q)
 	pl_idx_t nbr_cells = tmp->nbr_cells;
 	parser *p = q->st.m->p;
 
-	if (nbr_cells > p->cl->nbr_cells) {
+	if (nbr_cells > p->cl->allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(nbr_cells+1)));
 		check_heap_error(p->cl);
-		p->cl->nbr_cells = nbr_cells;
+		p->cl->allocated_cells = nbr_cells;
 	}
 
 	p->cl->cidx = safe_copy_cells(p->cl->cells, tmp, nbr_cells);
@@ -5943,28 +5943,6 @@ static bool fn_sys_legacy_predicate_property_2(query *q)
 	return false;
 }
 
-static unsigned count_bits(const uint8_t *mask, unsigned bit)
-{
-	unsigned bits = 0;
-
-	for (unsigned i = 0; i < bit; i++) {
-		if (mask[i])
-			bits++;
-	}
-
-	return bits;
-}
-
-static bool fn_var_number_2(query *q)
-{
-	GET_FIRST_ARG(p1,variable);
-	GET_NEXT_ARG(p2,integer_or_var);
-	unsigned pos = count_bits(q->nv_mask, p1->var_nbr);
-	cell tmp;
-	make_int(&tmp, q->nv_start+pos);
-	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
-}
-
 static bool fn_char_type_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_int);
@@ -6036,7 +6014,7 @@ static void restore_db(module *m, FILE *fp)
 		p->srcptr = p->save_line;
 		tokenize(p, false, false);
 		xref_rule(p->m, p->cl, NULL);
-		execute(q, p->cl->cells, p->cl->nbr_cells);
+		execute(q, p->cl->cells, p->cl->allocated_cells);
 		clear_rule(p->cl);
 	}
 
@@ -7475,7 +7453,6 @@ builtins g_other_bifs[] =
 	{"hex_bytes", 2, fn_hex_bytes_2, "?string,?list", false, BLAH},
 	{"hex_chars", 2, fn_hex_chars_2, "?integer,?string", false, BLAH},
 	{"octal_chars", 2, fn_octal_chars_2, "?integer,?string", false, BLAH},
-	{"var_number", 2, fn_var_number_2, "+term,?integer", false, BLAH},
 	{"char_type", 2, fn_char_type_2, "+char,+term", false, BLAH},
 	{"code_type", 2, fn_char_type_2, "+code,+term", false, BLAH},
 	{"uuid", 1, fn_uuid_1, "-string", false, BLAH},

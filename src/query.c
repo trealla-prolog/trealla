@@ -28,10 +28,10 @@ static void msleep(int ms)
 
 static const unsigned INITIAL_NBR_HEAP_CELLS = 16000;
 static const unsigned INITIAL_NBR_QUEUE_CELLS = 1000;
-static const unsigned INITIAL_NBR_GOALS = 4000;
-static const unsigned INITIAL_NBR_SLOTS = 4000;
-static const unsigned INITIAL_NBR_CHOICES = 4000;
-static const unsigned INITIAL_NBR_TRAILS = 4000;
+static const unsigned INITIAL_NBR_GOALS = 16000;
+static const unsigned INITIAL_NBR_SLOTS = 16000;
+static const unsigned INITIAL_NBR_TRAILS = 16000;
+static const unsigned INITIAL_NBR_CHOICES = 8000;
 
 unsigned g_string_cnt = 0, g_interned_cnt = 0;
 int g_tpl_interrupt = 0;
@@ -95,7 +95,8 @@ static void trace_call(query *q, cell *c, pl_idx_t c_ctx, box_t box)
 		return;
 #endif
 
-	fprintf(stderr, " [%llu:f%u:fp:%u:cp%u:sp%u:hp%u:tp%u] ",
+	fprintf(stderr, " [#%u:%s:%llu:f%u:fp:%u:cp%u:sp%u:hp%u:tp%u] ",
+		(unsigned)q->qid, q->st.m->name,
 		(unsigned long long)q->step++,
 		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.tp);
 
@@ -428,7 +429,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx_t key_ctx)
 	q->key = key;
 
 	if (!pr->idx) {
-		if (!pr->is_processed)
+		if (!pr->is_processed && !pr->is_multifile)
 			just_in_time_rebuild(pr);
 
 		q->st.curr_dbe = pr->head;
@@ -1186,7 +1187,7 @@ void make_indirect(cell *tmp, cell *v, pl_idx_t v_ctx)
 	tmp->var_ctx = v_ctx;
 }
 
-#define MAX_VARS (1L<<30)
+#define MAX_LOCAL_VARS (1L<<30)
 
 unsigned create_vars(query *q, unsigned cnt)
 {
@@ -1195,7 +1196,7 @@ unsigned create_vars(query *q, unsigned cnt)
 	if (!cnt)
 		return f->actual_slots;
 
-	if ((q->st.sp + cnt) > MAX_VARS) {
+	if ((q->st.sp + cnt) > MAX_LOCAL_VARS) {
 		printf("*** Ooops %s %d\n", __FILE__, __LINE__);
 		return 0;
 	}
@@ -1383,7 +1384,7 @@ bool match_rule(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract
 	cell *p1_body = deref(q, get_logical_body(p1), p1_ctx);
 	cell *orig_p1 = p1;
 	const frame *f = GET_FRAME(q->st.curr_frame);
-	check_heap_error(check_slot(q, MAX_ARITY));
+	check_heap_error(check_slot(q, MAX_VARS));
 
 	for (; q->st.curr_dbe; q->st.curr_dbe = q->st.curr_dbe->next) {
 		CHECK_INTERRUPT();
@@ -1486,7 +1487,7 @@ bool match_clause(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retra
 	check_heap_error(check_frame(q));
 	check_heap_error(push_choice(q));
 	const frame *f = GET_FRAME(q->st.curr_frame);
-	check_heap_error(check_slot(q, MAX_ARITY));
+	check_heap_error(check_slot(q, MAX_VARS));
 
 	for (; q->st.curr_dbe; q->st.curr_dbe = q->st.curr_dbe->next) {
 		CHECK_INTERRUPT();
@@ -1560,7 +1561,7 @@ static bool match_head(query *q)
 	check_heap_error(check_frame(q));
 	check_heap_error(push_choice(q));
 	const frame *f = GET_FRAME(q->st.curr_frame);
-	check_heap_error(check_slot(q, MAX_ARITY));
+	check_heap_error(check_slot(q, MAX_VARS));
 
 	for (; q->st.curr_dbe; next_key(q)) {
 		CHECK_INTERRUPT();
@@ -2063,7 +2064,7 @@ query *create_sub_query(query *q, cell *curr_cell)
 	fdst->actual_slots = fsrc->actual_slots;
 
 	for (unsigned i = 0; i < fsrc->actual_slots; i++) {
-		slot *e = GET_FIRST_SLOT(fsrc+i);
+		slot *e = GET_SLOT(fsrc, i);
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		cell tmp = (cell){0};
 		tmp.tag = TAG_VAR;
