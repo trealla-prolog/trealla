@@ -28,10 +28,10 @@ static void msleep(int ms)
 
 static const unsigned INITIAL_NBR_HEAP_CELLS = 16000;
 static const unsigned INITIAL_NBR_QUEUE_CELLS = 1000;
-static const unsigned INITIAL_NBR_GOALS = 4000;
-static const unsigned INITIAL_NBR_SLOTS = 4000;
-static const unsigned INITIAL_NBR_CHOICES = 4000;
-static const unsigned INITIAL_NBR_TRAILS = 4000;
+static const unsigned INITIAL_NBR_GOALS = 16000;
+static const unsigned INITIAL_NBR_SLOTS = 16000;
+static const unsigned INITIAL_NBR_TRAILS = 16000;
+static const unsigned INITIAL_NBR_CHOICES = 8000;
 
 unsigned g_string_cnt = 0, g_interned_cnt = 0;
 int g_tpl_interrupt = 0;
@@ -95,8 +95,8 @@ static void trace_call(query *q, cell *c, pl_idx_t c_ctx, box_t box)
 		return;
 #endif
 
-	fprintf(stderr, " [%s:%llu:f%u:fp:%u:cp%u:sp%u:hp%u:tp%u] ",
-			q->st.m->name,
+	fprintf(stderr, " [#%u:%s:%llu:f%u:fp:%u:cp%u:sp%u:hp%u:tp%u] ",
+		(unsigned)q->qid, q->st.m->name,
 		(unsigned long long)q->step++,
 		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.tp);
 
@@ -2064,7 +2064,7 @@ query *create_sub_query(query *q, cell *curr_cell)
 	fdst->actual_slots = fsrc->actual_slots;
 
 	for (unsigned i = 0; i < fsrc->actual_slots; i++) {
-		slot *e = GET_FIRST_SLOT(fsrc+i);
+		slot *e = GET_SLOT(fsrc, i);
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		cell tmp = (cell){0};
 		tmp.tag = TAG_VAR;
