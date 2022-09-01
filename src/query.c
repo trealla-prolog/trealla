@@ -873,9 +873,11 @@ void unshare_predicate(query *q, predicate *pr)
 	while (dbe) {
 		delink(pr, dbe);
 
-		predicate *pr = dbe->owner;
-		map_remove(pr->idx2, dbe);
-		map_remove(pr->idx, dbe);
+		if (pr->cnt) {
+			predicate *pr = dbe->owner;
+			map_remove(pr->idx2, dbe);
+			map_remove(pr->idx, dbe);
+		}
 
 		dbe->cl.is_deleted = true;
 		db_entry *save = dbe->dirty;

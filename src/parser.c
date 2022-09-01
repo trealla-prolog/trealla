@@ -1468,6 +1468,9 @@ static cell *goal_expansion(parser *p, cell *goal)
 	char *src = NULL;
 
 	for (unsigned i = 0; i < p2->cl->nbr_vars; i++) {
+		if (strcmp(p2->vartab.var_name[i], "_TermOut"))
+			continue;
+
 		slot *e = GET_SLOT(f, i);
 
 		if (is_empty(&e->c))
@@ -1480,9 +1483,6 @@ static cell *goal_expansion(parser *p, cell *goal)
 			c = e->c.val_ptr;
 		} else
 			c = deref(q, &e->c, e->c.var_ctx);
-
-		if (strcmp(p2->vartab.var_name[i], "_TermOut"))
-			continue;
 
 		q->varnames = true;
 		src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
@@ -1522,6 +1522,8 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 	memcpy(goal, p2->cl->cells, sizeof(cell)*new_cells);
 	p->cl->cidx += new_cells;
+	clear_rule(p2->cl);
+	free(p2->cl);
 	p2->cl = NULL;
 
 	// done
@@ -1579,6 +1581,9 @@ static bool term_expansion(parser *p)
 	char *src = NULL;
 
 	for (unsigned i = 0; i < p2->cl->nbr_vars; i++) {
+		if (strcmp(p2->vartab.var_name[i], "_TermOut"))
+			continue;
+
 		slot *e = GET_SLOT(f, i);
 
 		if (is_empty(&e->c))
@@ -1591,9 +1596,6 @@ static bool term_expansion(parser *p)
 			c = e->c.val_ptr;
 		} else
 			c = deref(q, &e->c, e->c.var_ctx);
-
-		if (strcmp(p2->vartab.var_name[i], "_TermOut"))
-			continue;
 
 		src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
 		strcat(src, ".");

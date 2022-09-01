@@ -893,19 +893,19 @@ bool throw_error2(query *q, cell *c, pl_idx_t c_ctx, const char *err_type, const
 
 bool throw_error(query *q, cell *c, pl_idx_t c_ctx, const char *err_type, const char *expected)
 {
-	cell top_level;
-	make_atom(&top_level, index_from_pool(q->pl, "top_level"));
+	cell top_level[2] = {{0}};
+	make_atom(top_level, index_from_pool(q->pl, "top_level"));
 	cell *goal;
 
 	if (q->st.curr_dbe && !is_builtin(q->st.curr_cell))
 		goal = get_head(q->st.curr_dbe->cl.cells);
 	else if (!q->last_arg)
-		goal = &top_level;
+		goal = top_level;
 	else
 		goal = q->st.curr_cell;
 
 	if (goal == c)
-		goal = &top_level;
+		goal = top_level;
 
 	return throw_error3(q, c, c_ctx, err_type, expected, goal);
 }
