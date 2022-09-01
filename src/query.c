@@ -29,7 +29,7 @@ static void msleep(int ms)
 static const unsigned INITIAL_NBR_HEAP_CELLS = 16000;
 static const unsigned INITIAL_NBR_QUEUE_CELLS = 1000;
 static const unsigned INITIAL_NBR_GOALS = 16000;
-static const unsigned INITIAL_NBR_SLOTS = 16000;
+static const unsigned INITIAL_NBR_SLOTS = 64000;
 static const unsigned INITIAL_NBR_TRAILS = 16000;
 static const unsigned INITIAL_NBR_CHOICES = 8000;
 
@@ -1386,7 +1386,7 @@ bool match_rule(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract
 	cell *p1_body = deref(q, get_logical_body(p1), p1_ctx);
 	cell *orig_p1 = p1;
 	const frame *f = GET_FRAME(q->st.curr_frame);
-	check_heap_error(check_slot(q, MAX_VARS));
+	check_heap_error(check_slot(q, MAX_ARITY));
 
 	for (; q->st.curr_dbe; q->st.curr_dbe = q->st.curr_dbe->next) {
 		CHECK_INTERRUPT();
@@ -1489,7 +1489,7 @@ bool match_clause(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retra
 	check_heap_error(check_frame(q));
 	check_heap_error(push_choice(q));
 	const frame *f = GET_FRAME(q->st.curr_frame);
-	check_heap_error(check_slot(q, MAX_VARS));
+	check_heap_error(check_slot(q, MAX_ARITY));
 
 	for (; q->st.curr_dbe; q->st.curr_dbe = q->st.curr_dbe->next) {
 		CHECK_INTERRUPT();
@@ -1563,7 +1563,7 @@ static bool match_head(query *q)
 	check_heap_error(check_frame(q));
 	check_heap_error(push_choice(q));
 	const frame *f = GET_FRAME(q->st.curr_frame);
-	check_heap_error(check_slot(q, MAX_VARS));
+	check_heap_error(check_slot(q, MAX_ARITY));
 
 	for (; q->st.curr_dbe; next_key(q)) {
 		CHECK_INTERRUPT();
