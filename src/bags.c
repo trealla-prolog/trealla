@@ -80,29 +80,19 @@ bool fn_iso_findall_3(query *q)
 	cell *solns = take_queuen(q);
 	init_queuen(q);
 
-	check_heap_error(check_frame(q));
-	frame *f = GET_FRAME(q->st.fp);
-	unsigned vars = f->actual_slots < 128 ? 128 : f->actual_slots;
+	// Now grab matching solutions
 
-	if (!check_slot(q, vars)) {
+	if (!check_slot(q, MAX_VARS)) {
 		free(solns);
 		return false;
 	}
 
-	check_heap_error(try_me(q, vars));
-
-	// Now grab matching solutions
+	check_heap_error(try_me(q, MAX_VARS));
 
 	for (cell *c = solns; nbr_cells;
 		nbr_cells -= c->nbr_cells, c += c->nbr_cells) {
 		check_heap_error(init_tmp_heap(q), free(solns));
-		cell *tmp;
-
-		if (!is_atomic(c))
-			tmp = deep_copy_to_tmp(q, c, q->st.fp, false);
-		else
-			tmp = deep_clone_to_tmp(q, c, q->st.fp);
-
+		cell *tmp = deep_copy_to_tmp(q, c, q->st.fp, false);
 		check_heap_error(tmp, free(solns));
 		check_heap_error(alloc_on_queuen(q, q->st.qnbr, tmp), free(solns));
 	}
