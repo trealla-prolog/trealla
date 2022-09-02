@@ -29,6 +29,18 @@ static void drop_queuen(query *q)
 	q->st.qnbr--;
 }
 
+static bool is_ground(cell *c)
+{
+	pl_idx_t nbr_cells = c->nbr_cells;
+
+	for (pl_idx_t i = 0; i < nbr_cells; i++, c++) {
+		if (is_variable(c))
+			return false;
+	}
+
+	return true;
+}
+
 bool fn_iso_findall_3(query *q)
 {
 	GET_FIRST_ARG(xp1,any);
@@ -66,6 +78,11 @@ bool fn_iso_findall_3(query *q)
 	}
 
 	if (!queuen_used(q)) {
+		if (q->end_findall) {
+			q->end_findall = false;
+			return false;
+		}
+
 		drop_queuen(q);
 		cell tmp;
 		make_atom(&tmp, g_nil_s);
@@ -87,6 +104,9 @@ bool fn_iso_findall_3(query *q)
 		return false;
 	}
 
+	push_choice(q);
+	choice *ch = GET_CURR_CHOICE();
+	ch->end_findall = true;
 	check_heap_error(try_me(q, MAX_VARS));
 
 	for (cell *c = solns; nbr_cells;
@@ -102,5 +122,11 @@ bool fn_iso_findall_3(query *q)
 	free(solns);
 	cell *l = convert_to_list(q, get_queuen(q), queuen_used(q));
 	drop_queuen(q);
+
+	if (is_ground(l)) {
+		q->end_findall = false;
+		drop_choice(q);
+	}
+
 	return unify(q, xp3, xp3_ctx, l, q->st.curr_frame);
 }

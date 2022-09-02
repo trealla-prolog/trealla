@@ -709,7 +709,7 @@ bool retry_choice(query *q)
 		pl_idx_t curr_choice = --q->cp;
 		const choice *ch = GET_CHOICE(curr_choice);
 		unwind_trail(q, ch);
-
+		q->end_findall = ch->end_findall;
 		q->st = ch->st;
 		q->save_m = NULL;
 		trim_heap(q);
