@@ -104,10 +104,10 @@ bool fn_iso_findall_3(query *q)
 		return false;
 	}
 
-	push_choice(q);
+	check_heap_error(push_choice(q), free(solns));
 	choice *ch = GET_CURR_CHOICE();
 	ch->end_findall = true;
-	check_heap_error(try_me(q, MAX_VARS));
+	check_heap_error(try_me(q, MAX_ARITY), free(solns));
 
 	for (cell *c = solns; nbr_cells;
 		nbr_cells -= c->nbr_cells, c += c->nbr_cells) {
@@ -122,11 +122,13 @@ bool fn_iso_findall_3(query *q)
 	free(solns);
 	cell *l = convert_to_list(q, get_queuen(q), queuen_used(q));
 	drop_queuen(q);
+	check_heap_error(l);
+	bool ok = unify(q, xp3, xp3_ctx, l, q->st.curr_frame);
 
-	if (is_ground(l)) {
+	if (is_ground(l) || !ok) {
 		q->end_findall = false;
 		drop_choice(q);
 	}
 
-	return unify(q, xp3, xp3_ctx, l, q->st.curr_frame);
+	return ok;
 }
