@@ -371,8 +371,10 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx_t p1_c
 	int cnt = q->varno - f->actual_slots;
 
 #if 0
-	printf("*** f=%u, f->actual_slots=%u, f->initial_slots=%u, q->varno=%u, cnt=%d\n",
-		(unsigned)q->st.fp, (unsigned)f->actual_slots, (unsigned)f->initial_slots, (unsigned)q->varno, cnt);
+	if (cnt) {
+		printf("*** f=%u, f->actual_slots=%u, f->initial_slots=%u, q->varno=%u, cnt=%d\n",
+			(unsigned)q->st.fp, (unsigned)f->actual_slots, (unsigned)f->initial_slots, (unsigned)q->varno, cnt);
+	}
 #endif
 
 	if (cnt) {
@@ -655,7 +657,7 @@ cell *clone_to_heap(query *q, bool prefix, cell *p1, pl_idx_t suffix)
 cell *alloc_on_queuen(query *q, int qnbr, const cell *c)
 {
 	if (!q->queue[qnbr]) {
-		q->queue[qnbr] = calloc(q->q_size[qnbr], sizeof(cell));
+		q->queue[qnbr] = malloc(sizeof(cell)*q->q_size[qnbr]);
 		check_error(q->queue[qnbr]);
 	}
 
@@ -673,7 +675,7 @@ cell *alloc_on_queuen(query *q, int qnbr, const cell *c)
 cell *alloc_on_queuen_unsafe(query *q, int qnbr, const cell *c)
 {
 	if (!q->queue[qnbr]) {
-		q->queue[qnbr] = calloc(q->q_size[qnbr], sizeof(cell));
+		q->queue[qnbr] = malloc(sizeof(cell)*q->q_size[qnbr]);
 		check_error(q->queue[qnbr]);
 	}
 

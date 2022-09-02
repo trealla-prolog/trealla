@@ -555,6 +555,7 @@ struct choice_ {
 	bool register_term:1;
 	bool block_catcher:1;
 	bool catcher:1;
+	bool end_findall:1;
 };
 
 enum { eof_action_eof_code, eof_action_error, eof_action_reset };
@@ -681,6 +682,7 @@ struct query_ {
 	bool did_quote:1;
 	bool is_input:1;
 	bool was_space:1;
+	bool end_findall:1;
 };
 
 struct parser_ {
