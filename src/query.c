@@ -304,18 +304,6 @@ char *chars_list_to_string(query *q, cell *p_chars, pl_idx_t p_chars_ctx, size_t
 	return tmp;
 }
 
-static bool is_ground(const cell *c)
-{
-	pl_idx_t nbr_cells = c->nbr_cells;
-
-	for (pl_idx_t i = 0; i < nbr_cells; i++, c++) {
-		if (is_variable(c))
-			return false;
-	}
-
-	return true;
-}
-
 static void setup_key(query *q)
 {
 	cell *arg1 = q->key + 1, *arg2 = NULL, *arg3 = NULL;
@@ -336,13 +324,13 @@ static void setup_key(query *q)
 			arg3 = deref(q, arg3, q->st.curr_frame);
 	}
 
-	if (q->pl->opt && is_ground(arg1))
+	if (q->pl->opt && is_atomic(arg1))
 		q->st.arg1_is_ground = true;
 
-	if (q->pl->opt && arg2 && is_ground(arg2))
+	if (q->pl->opt && arg2 && is_atomic(arg2))
 		q->st.arg2_is_ground = true;
 
-	if (q->pl->opt && arg3 && is_ground(arg3))
+	if (q->pl->opt && arg3 && is_atomic(arg3))
 		q->st.arg3_is_ground = true;
 }
 
@@ -402,7 +390,7 @@ bool is_next_key(query *q)
 	cl = &next->cl;
 
 	if (q->st.arg1_is_ground && !next->next
-		&& (q->key->arity == 1) && is_ground(cl->cells+1)) {
+		&& (q->key->arity == 1) && is_atomic(cl->cells+1)) {
 		if (compare(q, q->key, q->st.curr_frame, cl->cells, q->st.curr_frame)) {
 			return false;
 		}
