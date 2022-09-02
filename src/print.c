@@ -754,7 +754,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 		if (parens) dst += snprintf(dst, dstlen, "%s", ")");
 		bool possible_chars = false;
 
-		if (is_atomic(head) && (C_STRLEN_UTF8(head) == 1))
+		if (is_interned(head) && is_atomic(head) && (C_STRLEN_UTF8(head) == 1))
 			possible_chars = true;
 
 		cell *tail = LIST_TAIL(c);
@@ -928,7 +928,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 	int is_chars_list = is_string(c);
 	bool possible_chars = false;
 
-	if (is_atomic(c) && (C_STRLEN_UTF8(c) == 1))
+	if (is_interned(c) && (C_STRLEN_UTF8(c) == 1))
 		possible_chars = true;
 
 	if (!is_chars_list && running
