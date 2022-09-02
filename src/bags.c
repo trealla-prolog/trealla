@@ -80,7 +80,16 @@ bool fn_iso_findall_3(query *q)
 	cell *solns = take_queuen(q);
 	init_queuen(q);
 
-	check_heap_error(try_me(q, MAX_ARITY));
+	check_heap_error(check_frame(q));
+	frame *f = GET_FRAME(q->st.fp);
+	unsigned vars = f->actual_slots < 128 ? 128 : f->actual_slots;
+
+	if (!check_slot(q, vars)) {
+		free(solns);
+		return false;
+	}
+
+	check_heap_error(try_me(q, vars));
 
 	// Now grab matching solutions
 
