@@ -124,8 +124,9 @@ bool fn_iso_findall_3(query *q)
 	drop_queuen(q);
 	check_heap_error(l);
 	bool ok = unify(q, xp3, xp3_ctx, l, q->st.curr_frame);
+	frame *f = GET_CURR_FRAME();
 
-	if (is_ground(l) || !ok) {
+	if (!ok || !f->overflow || is_ground(l)) {
 		q->end_findall = false;
 		drop_choice(q);
 	}
