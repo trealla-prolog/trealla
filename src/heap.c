@@ -371,8 +371,10 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx_t p1_c
 	int cnt = q->varno - f->actual_slots;
 
 #if 0
-	printf("*** f=%u, f->actual_slots=%u, f->initial_slots=%u, q->varno=%u, cnt=%d\n",
-		(unsigned)q->st.fp, (unsigned)f->actual_slots, (unsigned)f->initial_slots, (unsigned)q->varno, cnt);
+	if (cnt) {
+		printf("*** f=%u, f->actual_slots=%u, f->initial_slots=%u, q->varno=%u, cnt=%d\n",
+			(unsigned)q->st.fp, (unsigned)f->actual_slots, (unsigned)f->initial_slots, (unsigned)q->varno, cnt);
+	}
 #endif
 
 	if (cnt) {
