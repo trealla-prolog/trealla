@@ -442,101 +442,17 @@ bool has_vars(query *q, cell *p1, pl_idx_t p1_ctx)
 
 static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx);
 
-static bool is_cyclic_list_internal(query *q, cell *p1, pl_idx_t p1_ctx)
-{
-	cell *l = p1;
-	pl_idx_t l_ctx = p1_ctx;
-	bool ret_val = false;
-	LIST_HANDLER(l);
-	unsigned depth = 0;
-
-	while (is_iso_list(l)) {
-		CHECK_INTERRUPT();
-		cell *c = LIST_HEAD(l);
-		pl_idx_t c_ctx = l_ctx;
-
-		if (is_variable(c)) {
-			const frame *f = GET_FRAME(c_ctx);
-			slot *e = GET_SLOT(f, c->var_nbr);
-
-			if (e->mark) {
-				e->mark = false;
-				ret_val = true;
-				break;
-			}
-
-			e->mark = true;
-
-			c = deref(q, c, c_ctx);
-			c_ctx = q->latest_ctx;
-
-			if (is_cyclic_term_internal(q, c, c_ctx)) {
-				e->mark = false;
-				ret_val = true;
-				break;
-			}
-
-			e->mark = false;
-		} else {
-			if (is_cyclic_term_internal(q, c, c_ctx)) {
-				ret_val = true;
-				break;
-			}
-		}
-
-		l = LIST_TAIL(l);
-
-		if (is_variable(l)) {
-			const frame *f = GET_FRAME(l_ctx);
-			slot *e = GET_SLOT(f, l->var_nbr);
-			l = deref(q, l, l_ctx);
-			l_ctx = q->latest_ctx;
-
-			if (e->mark) {
-				ret_val = true;
-				break;
-			}
-
-			e->mark = true;
-		}
-
-		depth++;
-	}
-
-	if (!ret_val)
-		ret_val = is_cyclic_term_internal(q, l, l_ctx);
-
-	l = p1;
-	l_ctx = p1_ctx;
-	unsigned depth2 = 0;
-
-	while (is_iso_list(l)) {
-		CHECK_INTERRUPT();
-		l = LIST_TAIL(l);
-
-		if (is_variable(l)) {
-			const frame *f = GET_FRAME(l_ctx);
-			slot *e = GET_SLOT(f, l->var_nbr);
-			e->mark = false;
-		}
-
-		l = deref(q, l, l_ctx);
-		l_ctx = q->latest_ctx;
-
-		if (depth2++ >= depth)
-			break;
-	}
-
-	return ret_val;
-}
-
 static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx)
 {
 	if (!is_structure(p1))
 		return false;
 
-	if (is_iso_list(p1))
-		return is_cyclic_list_internal(q, p1, p1_ctx);
+	// This checks for a valid list (it allows for partial but acyclic lists)...
+
+	bool is_partial = false;
+
+	if (is_iso_list(p1) && !check_list(q, p1, p1_ctx, &is_partial, NULL))
+		return true;
 
 	pl_idx_t nbr_cells = p1->nbr_cells - 1;
 	unsigned arity = p1->arity;
