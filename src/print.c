@@ -1067,8 +1067,10 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 
 			//if (dstlen) printf("*** literal '%s',  was=%d, is=%d\n", src, q->last_thing_was_symbol, is_symbol);
 
-			if (q->last_thing_was_symbol && is_symbol && !q->parens && !q->quoted)
+			if (!q->was_space && q->last_thing_was_symbol && is_symbol && !q->parens && !q->quoted) {
 				dst += snprintf(dst, dstlen, "%s", " ");
+				q->was_space = true;
+			}
 
 			dst += plain(dst, dstlen, src, len_str);
 			q->last_thing_was_symbol = is_symbol;
@@ -1161,8 +1163,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 		if (!q->was_space && space) {
 			dst += snprintf(dst, dstlen, "%s", " ");
 			q->was_space = true;
-		} else
-			q->was_space = false;
+		}
 
 		int quote = q->quoted && has_spaces(src, src_len);
 		if (quote) dst += snprintf(dst, dstlen, "%s", quote?" '":"");
@@ -1181,8 +1182,10 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 		unsigned my_priority = search_op(q->st.m, src, NULL, true);
 		unsigned rhs_pri = is_interned(rhs) ? search_op(q->st.m, C_STR(q, rhs), NULL, true) : 0;
 
-		if (!q->was_space && q->last_thing_was_symbol && !strcmp(src, "\\+"))
+		if (!q->was_space && q->last_thing_was_symbol && !strcmp(src, "\\+")) {
 			dst += snprintf(dst, dstlen, "%s", " ");
+			q->was_space = true;
+		}
 
 		bool space = (c->val_off == g_minus_s) && (is_number(rhs) || search_op(q->st.m, C_STR(q, rhs), NULL, true));
 		if ((c->val_off == g_plus_s) && search_op(q->st.m, C_STR(q, rhs), NULL, true) && rhs->arity) space = true;
@@ -1215,8 +1218,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 		if (/*!q->was_space &&*/ space) {
 			dst += snprintf(dst, dstlen, "%s", " ");
 			q->was_space = true;
-		} else
-			q->was_space = false;
+		}
 
 		if (parens) dst += snprintf(dst, dstlen, "%s", "(");
 		q->last_thing_was_symbol = false;
@@ -1255,8 +1257,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 	if (!q->was_space && lhs_space) {
 		dst += snprintf(dst, dstlen, "%s", " ");
 		q->was_space = true;
-	} else
-		q->was_space = false;
+	}
 
 	if (lhs_parens) dst += snprintf(dst, dstlen, "%s", "(");
 	q->parens = lhs_parens;
@@ -1278,8 +1279,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 	if (!q->was_space && space) {
 		dst += snprintf(dst, dstlen, "%s", " ");
 		q->was_space = true;
-	} else
-		q->was_space = false;
+	}
 
 	int ch = peek_char_utf8(src);
 	bool is_symbol = !needs_quoting(q->st.m, src, src_len)
@@ -1294,19 +1294,20 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 	if (!q->was_space && space) {
 		dst += snprintf(dst, dstlen, "%s", " ");
 		q->was_space = true;
-	} else
-		q->was_space = false;
+	}
 
 	// Print OP...
 
 	q->last_thing_was_symbol = is_symbol;
 	space = iswalpha(*src);
 
+	if (!depth && !strcmp(src, ":-"))
+		space = true;
+
 	if (!q->was_space && space) {
 		dst += snprintf(dst, dstlen, "%s", " ");
 		q->was_space = true;
-	} else
-		q->was_space = false;
+	}
 
 	int quote = q->quoted && has_spaces(src, src_len);
 	if (op_needs_quoting(q->st.m, src, src_len)) quote = 1;
@@ -1315,11 +1316,13 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 	if (quote) dst += snprintf(dst, dstlen, "%s", quote?"' ":"");
 	q->was_space = false;
 
+	if (!depth && !strcmp(src, ":-"))
+		space = true;
+
 	if (!q->was_space && space) {
 		dst += snprintf(dst, dstlen, "%s", " ");
 		q->was_space = true;
-	} else
-		q->was_space = false;
+	}
 
 	// Print RHS...
 
@@ -1343,8 +1346,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 	if (!q->was_space && space) {
 		dst += snprintf(dst, dstlen, "%s", " ");
 		q->was_space = true;
-	} else
-		q->was_space = false;
+	}
 
 	if (rhs_parens) dst += snprintf(dst, dstlen, "%s", "(");
 	q->parens = rhs_parens || space;
