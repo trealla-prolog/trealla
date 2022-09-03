@@ -3878,6 +3878,10 @@ static void save_db(FILE *fp, query *q, int logging)
 			if (logging)
 				fprintf(fp, "z_(");
 
+			for (unsigned i = 0; i < MAX_IGNORES; i++)
+				q->ignores[i] = false;
+
+			q->print_idx = 0;
 			print_term(q, fp, dbe->cl.cells, 0, 0);
 
 			if (logging) {
@@ -3921,6 +3925,10 @@ static void save_name(FILE *fp, query *q, pl_idx_t name, unsigned arity)
 			if (dbe->cl.dgen_erased)
 				continue;
 
+			for (unsigned i = 0; i < MAX_IGNORES; i++)
+				q->ignores[i] = false;
+
+			q->print_idx = 0;
 			print_term(q, fp, dbe->cl.cells, 0, 0);
 			fprintf(fp, ".\n");
 		}
@@ -3956,11 +3964,6 @@ static bool fn_listing_1(query *q)
 			arity += 2;
 	}
 
-	for (unsigned i = 0; i < MAX_IGNORES; i++)
-		q->ignores[i] = false;
-
-	q->print_idx = 0;
-	q->tab_idx = 0;
 	save_name(stdout, q, name, arity);
 	return true;
 }
