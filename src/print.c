@@ -707,6 +707,45 @@ ssize_t print_canonical_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_i
 	return dst - save_dst;
 }
 
+static ssize_t print_string_list(query *q, char *save_dst, char *dst, size_t dstlen, cell *c, pl_idx_t c_ctx, int running, bool cons, unsigned depth)
+{
+	unsigned print_list = 0, cnt = 1;
+	LIST_HANDLER(c);
+
+	dst += snprintf(dst, dstlen, "%s", "'.'(");
+
+	while (is_list(c)) {
+		cell *h = LIST_HEAD(c);
+
+		const char *src = C_STR(q, h);
+		int ch = peek_char_utf8(src);
+
+		if (needs_quoting(q->st.m, src, strlen(src))) {
+			dst += snprintf(dst, dstlen, "%s", "'");
+			dst += formatted(dst, dstlen, C_STR(q, h), C_STRLEN(q, h), false);
+			dst += snprintf(dst, dstlen, "%s", "'");
+		} else if (iswlower(ch))
+			dst += snprintf(dst, dstlen, "%s", C_STR(q, h));
+		else
+			dst += snprintf(dst, dstlen, "'%s'", C_STR(q, h));
+
+		c = LIST_TAIL(c);
+
+		if (!is_list(c)) {
+			dst += snprintf(dst, dstlen, "%s", ",[]");
+			break;
+		}
+
+		dst += snprintf(dst, dstlen, "%s", ",'.'(");
+		cnt++;
+	}
+
+	while (cnt--)
+		dst += snprintf(dst, dstlen, "%s", ")");
+
+	return dst - save_dst;
+}
+
 static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen, cell *c, pl_idx_t c_ctx, int running, bool cons, unsigned depth)
 {
 	unsigned print_list = 0, cnt = 0;
@@ -925,17 +964,17 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 		return dst - save_dst;
 	}
 
-	int is_chars_list = is_string(c);
+	int is_chars_list = is_string(c) && !q->ignore_ops;
 	bool possible_chars = false;
 
-	if (is_interned(c) && (C_STRLEN_UTF8(c) == 1))
+	if (is_interned(c) && (C_STRLEN_UTF8(c) == 1) && !q->ignore_ops)
 		possible_chars = true;
 
 	if (!is_chars_list && running
 		&& possible_chars && !is_cyclic_term(q, c, c_ctx))
 		is_chars_list += q->st.m->flags.double_quote_chars && scan_is_chars_list(q, c, c_ctx, false);
 
-	if (is_string(c)) {
+	if (is_string(c) && !q->ignore_ops) {
 		dst += snprintf(dst, dstlen, "%s", "\"");
 		dst += formatted(dst, dstlen, C_STR(q, c), C_STRLEN(q, c), true);
 		dst += snprintf(dst, dstlen, "%s", "\"");
@@ -966,6 +1005,12 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 		q->last_thing_was_symbol = false;
 		q->was_space = false;
 		return dst - save_dst;
+	}
+
+	if (is_string(c)) {
+		ssize_t n = print_string_list(q, save_dst, dst, dstlen, c, c_ctx, running, cons, depth+1);
+		q->was_space = false;
+		return n;
 	}
 
 	if (is_iso_list(c)) {
@@ -1045,7 +1090,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 
 		unsigned len_str = src_len;
 
-		if (braces)
+		if (braces && !q->ignore_ops)
 			;
 		else if (quote) {
 			if (is_blob(c) && q->max_depth && (len_str >= q->max_depth) && (src_len > 128))
@@ -1081,7 +1126,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 
 		if (is_structure(c) && !is_string(c)) {
 			pl_idx_t arity = c->arity;
-			dst += snprintf(dst, dstlen, "%s", braces?"{":"(");
+			dst += snprintf(dst, dstlen, "%s", braces&&!q->ignore_ops?"{":"(");
 			q->parens = true;
 
 #if 0
@@ -1137,7 +1182,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 				q->parens = false;
 			}
 
-			dst += snprintf(dst, dstlen, "%s", braces?"}":")");
+			dst += snprintf(dst, dstlen, "%s", braces&&!q->ignore_ops?"}":")");
 			q->parens = false;
 			q->last_thing_was_symbol = false;
 		}
