@@ -3956,6 +3956,11 @@ static bool fn_listing_1(query *q)
 			arity += 2;
 	}
 
+	for (unsigned i = 0; i < MAX_IGNORES; i++)
+		q->ignores[i] = false;
+
+	q->print_idx = 0;
+	q->tab_idx = 0;
 	save_name(stdout, q, name, arity);
 	return true;
 }
