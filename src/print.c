@@ -1301,7 +1301,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 	q->last_thing_was_symbol = is_symbol;
 	space = iswalpha(*src);
 
-	if (!depth && !strcmp(src, ":-"))
+	if (q->listing && !depth && !strcmp(src, ":-"))
 		space = true;
 
 	if (!q->was_space && space) {
@@ -1316,7 +1316,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 	if (quote) dst += snprintf(dst, dstlen, "%s", quote?"' ":"");
 	q->was_space = false;
 
-	if (!depth && !strcmp(src, ":-"))
+	if (q->listing && !depth && !strcmp(src, ":-"))
 		space = true;
 
 	if (!q->was_space && space) {
