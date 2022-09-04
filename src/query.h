@@ -85,7 +85,6 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_idx_t c_ctx, int ru
 char *print_term_to_strbuf(query *q, cell *c, pl_idx_t c_ctx, int running);
 void clear_write_options(query *q);
 
-ssize_t print_canonical_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t c_ctx, int running, bool unused, unsigned depth);
 bool print_canonical(query *q, FILE *fp, cell *c, pl_idx_t c_ctx, int running);
 char *print_canonical_to_strbuf(query *q, cell *c, pl_idx_t c_ctx, int running);
 bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx_t c_ctx, int running);

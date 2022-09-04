@@ -512,10 +512,12 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 			if (argval)
 				q->max_depth = argval;
 
-			if (canonical)
-				len = print_canonical_to_buf(q, NULL, 0, c, c_ctx, 1, false, 0);
-			else
-				len = print_term_to_buf(q, NULL, 0, c, c_ctx, 1, false, 0);
+			if (canonical) {
+				q->ignore_ops = true;
+				q->quoted = 1;
+			}
+
+			len = print_term_to_buf(q, NULL, 0, c, c_ctx, 1, false, 0);
 
 			if (q->cycle_error) {
 				free(tmpbuf);
@@ -523,12 +525,7 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
             }
 
 			CHECK_BUF(len*2);
-
-			if (canonical)
-				len = print_canonical_to_buf(q, dst, len+1, c, c_ctx, 1, false, 0);
-			else
-				len = print_term_to_buf(q, dst, len+1, c, c_ctx, 1, false, 0);
-
+			len = print_term_to_buf(q, dst, len+1, c, c_ctx, 1, false, 0);
 			clear_write_options(q);
 			q->quoted = saveq;
             break;

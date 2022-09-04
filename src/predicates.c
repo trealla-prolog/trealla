@@ -738,10 +738,16 @@ static bool fn_iso_number_chars_2(query *q)
 		return ok2;
 	}
 
-	ssize_t len = print_canonical_to_buf(q, NULL, 0, p1, p1_ctx, 1, 0, 0);
+	q->ignore_ops = true;
+	q->quoted = 1;
+	q->last_thing_was_symbol = false;
+	q->did_quote = false;
+	ssize_t len = print_term_to_buf(q, NULL, 0, p1, p1_ctx, 1, 0, 0);
 	char *dst = malloc(len+10);
 	check_heap_error(dst);
-	print_canonical_to_buf(q, dst, len+1, p1, p1_ctx, 1, 0, 0);
+	print_term_to_buf(q, dst, len+1, p1, p1_ctx, 1, 0, 0);
+	q->ignore_ops = false;
+	q->quoted = 0;
 	cell tmp;
 	check_heap_error(make_string(&tmp, dst));
 	free(dst);
@@ -1292,10 +1298,16 @@ static bool fn_iso_number_codes_2(query *q)
 		return ok2;
 	}
 
-	ssize_t len = print_canonical_to_buf(q, NULL, 0, p1, p1_ctx, 1, 0, 0);
+	q->ignore_ops = true;
+	q->quoted = 1;
+	q->last_thing_was_symbol = false;
+	q->did_quote = false;
+	ssize_t len = print_term_to_buf(q, NULL, 0, p1, p1_ctx, 1, 0, 0);
 	char *dst = malloc(len+10);
 	check_heap_error(dst);
-	print_canonical_to_buf(q, dst, len+1, p1, p1_ctx, 1, 0, 0);
+	print_term_to_buf(q, dst, len+1, p1, p1_ctx, 1, 0, 0);
+	q->ignore_ops = false;
+	q->quoted = 0;
 	const char *src = dst;
 	cell tmp;
 	make_int(&tmp, *src);
