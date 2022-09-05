@@ -1699,9 +1699,7 @@ bool start(query *q)
 		q->before_hook_tp = q->st.tp;
 
 		if (is_builtin(q->st.curr_cell)) {
-			if (!q->st.curr_cell->fn_ptr
-				|| !q->st.curr_cell->fn_ptr->fn) {		// NO-OP
-				q->tot_goals--;
+			if (!q->st.curr_cell->fn_ptr) {		// ??
 				q->st.curr_cell++;
 				continue;
 			}
