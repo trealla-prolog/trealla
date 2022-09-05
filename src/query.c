@@ -1718,6 +1718,11 @@ bool start(query *q)
 #endif
 				status = q->st.curr_cell->fn_ptr->fn(q);
 
+			if (q->retry == QUERY_SKIP) {
+				q->retry = QUERY_OK;
+				continue;
+			}
+
 			if ((status == false) && !q->is_oom) {
 				q->retry = QUERY_RETRY;
 

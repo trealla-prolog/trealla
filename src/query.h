@@ -97,6 +97,7 @@ bool fn_sys_call_cleanup_3(query *q);
 bool fn_iso_catch_3(query *q);
 bool fn_sys_block_catcher_0(query *q);
 bool fn_iso_negation_1(query *q);
+bool fn_iso_conjunction_2(query *q);
 bool fn_iso_disjunction_2(query *q);
 bool fn_if_3(query *q);
 bool fn_if_2(query *q);

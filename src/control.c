@@ -289,11 +289,8 @@ bool fn_if_2(query *q)
 static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 {
 	if (q->retry) {
-		cell *tmp = clone_to_heap(q, true, p3, 1);
-		check_heap_error(tmp);
-		pl_idx_t nbr_cells = 1 + p3->nbr_cells;
-		make_return(q, tmp+nbr_cells);
-		q->st.curr_cell = tmp;
+		q->retry = QUERY_SKIP;
+		q->st.curr_cell = p3;
 		return true;
 	}
 
@@ -313,11 +310,8 @@ static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 static bool do_if_else(query *q, cell *p1, cell *p2, cell *p3)
 {
 	if (q->retry) {
-		cell *tmp = clone_to_heap(q, true, p3, 1);
-		check_heap_error(tmp);
-		pl_idx_t nbr_cells = 1 + p3->nbr_cells;
-		make_return(q, tmp+nbr_cells);
-		q->st.curr_cell = tmp;
+		q->retry = QUERY_SKIP;
+		q->st.curr_cell = p3;
 		return true;
 	}
 
@@ -342,7 +336,12 @@ bool fn_if_3(query *q)
 	return do_if_else(q, p1, p2, p3);
 }
 
-// either ; or
+bool fn_iso_conjunction_2(query *q)
+{
+	q->retry = QUERY_SKIP;
+	q->st.curr_cell++;
+	return true;
+}
 
 bool fn_iso_disjunction_2(query *q)
 {
@@ -366,11 +365,8 @@ bool fn_iso_disjunction_2(query *q)
 	GET_NEXT_ARG(p2,callable);
 
 	if (q->retry) {
-		cell *tmp = clone_to_heap(q, true, p2, 1);
-		check_heap_error(tmp);
-		pl_idx_t nbr_cells = 1 + p2->nbr_cells;
-		make_return(q, tmp+nbr_cells);
-		q->st.curr_cell = tmp;
+		q->retry = QUERY_SKIP;
+		q->st.curr_cell = p2;
 		return true;
 	}
 
