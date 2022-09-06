@@ -534,6 +534,7 @@ Maps use atomic key/values only.
 	map_create/1				# map_create(-map)
 	map_set/3					# map_set(+map,+key,+value)
 	map_get/3					# map_get(+map,+key,?value)
+	map_list/2					# map_list(+map,?list)
 
 Vectors use positive integer (>= 0) keys & number values only.
 

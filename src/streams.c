@@ -5710,6 +5710,80 @@ static bool fn_map_get_3(query *q)
 	return ok;
 }
 
+static bool fn_map_list_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map || str->is_vec)
+		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec");
+
+	GET_NEXT_ARG(p1,list_or_var);
+	miter *iter = map_first(str->keyval);
+	union { double vd; int64_t vi; void *vp; } dummy;
+	bool first = true;
+	char *val = NULL;
+	char tmpbuf[128];
+
+	while (map_next(iter, (void**)&val)) {
+		void *key = map_key(iter);
+		cell tmpk, tmpv;
+		const char *src = key;
+		int all_digs = 1;
+
+		while (*src) {
+			if (!isdigit(*src)) {
+				all_digs = 0;
+				break;
+			}
+
+			src++;
+		}
+
+		if (all_digs) {
+			pl_int_t v = strtoll(key, NULL, 10);
+			make_int(&tmpk, v);
+		} else
+			check_heap_error(make_cstring(&tmpk, key));
+
+		src = val;
+		all_digs = 1;
+
+		while (*src) {
+			if (!isdigit(*src)) {
+				all_digs = 0;
+				break;
+			}
+
+			src++;
+		}
+
+		if (all_digs) {
+			pl_int_t v = strtoll(val, NULL, 10);
+			make_int(&tmpv, v);
+		} else
+			check_heap_error(make_cstring(&tmpv, val));
+
+		cell tmp2[3];
+		make_struct(tmp2+0, g_pair_s, NULL, 2, 2);
+		tmp2[1] = tmpk;
+		tmp2[2] = tmpv;
+		SET_OP(tmp2, OP_YFX);
+
+		if (first) {
+			allocate_list(q, tmp2);
+			first = false;
+		} else
+			append_list(q, tmp2);
+	}
+
+	cell *tmp = end_list(q);
+	map_done(iter);
+	bool ok = unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
+	return ok;
+}
+
 static bool fn_vec_create_1(query *q)
 {
 	GET_FIRST_ARG(p1,variable);
@@ -5952,6 +6026,7 @@ builtins g_files_bifs[] =
 	{"map_create", 1, fn_map_create_1, "-map", false, BLAH},
 	{"map_set", 3, fn_map_set_3, "+map,+key,+value", false, BLAH},
 	{"map_get", 3, fn_map_get_3, "+map,+key,-value", false, BLAH},
+	{"map_list", 2, fn_map_list_2, "+map,?list", false, BLAH},
 
 	{"vec_create", 1, fn_vec_create_1, "-map", false, BLAH},
 	{"vec_set", 3, fn_vec_set_3, "+map,+key,+value", false, BLAH},
