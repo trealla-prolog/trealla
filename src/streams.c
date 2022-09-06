@@ -5993,7 +5993,14 @@ static bool fn_vec_list_2(query *q)
 			append_list(q, tmp2);
 	}
 
-	cell *tmp = end_list(q);
+	cell tmp2, *tmp;
+
+	if (first) {
+		make_atom(&tmp2, g_nil_s);
+		tmp = &tmp2;
+	} else
+		tmp = end_list(q);
+
 	map_done(iter);
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
