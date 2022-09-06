@@ -6005,6 +6005,157 @@ static bool fn_vec_list_2(query *q)
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
 
+static bool fn_mat_create_2(query *q)
+{
+	GET_FIRST_ARG(p1,variable);
+	int n = new_stream(q->pl);
+
+	if (n < 0)
+		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
+
+	GET_NEXT_ARG(p2,smallint);
+	stream *str = &q->pl->streams[n];
+	str->keyval = map_create(NULL, NULL, NULL);
+	check_heap_error(str->keyval);
+	map_allow_dups(str->keyval, false);
+	str->is_map = str->is_vec = true;
+	str->cols = get_smallint(p2);
+
+	cell tmp ;
+	make_int(&tmp, n);
+	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool fn_mat_set_4(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map || !str->is_vec)
+		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec");
+
+	GET_NEXT_ARG(p1,smallint);
+	GET_NEXT_ARG(p2,smallint);
+	GET_NEXT_ARG(p3,number);
+
+	if (is_negative(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
+
+	if (is_negative(p2))
+		return throw_error(q, p2, p2_ctx, "domain_error", "not_less_than_zero");
+
+	int64_t row = get_smallint(p1);
+	int64_t col = get_smallint(p2);
+	void *key = (void*)((row * str->cols) + col);
+
+	if (is_zero(p3)) {
+		map_del(str->keyval, key);
+		return true;
+	}
+
+	union { double vd; int64_t vi; void *vp; } dummy;
+	void *val;
+
+	if (is_integer(p3)) {
+		dummy.vi = get_smallint(p3);
+		str->is_int = true;
+	} else {
+		dummy.vd = get_float(p3);
+		str->is_int = false;
+	}
+
+	val = dummy.vp;
+	map_set(str->keyval, key, val);
+	return true;
+}
+
+static bool fn_mat_get_4(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map || !str->is_vec)
+		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec");
+
+	GET_NEXT_ARG(p1,smallint);
+	GET_NEXT_ARG(p2,smallint);
+	GET_NEXT_ARG(p3,number_or_var);
+
+	if (is_negative(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
+
+	if (is_negative(p2))
+		return throw_error(q, p2, p2_ctx, "domain_error", "not_less_than_zero");
+
+	int64_t row = get_smallint(p1);
+	int64_t col = get_smallint(p2);
+	void *key = (void*)((row * str->cols) + col);
+	union { double vd; int64_t vi; void *vp; } dummy;
+
+	if (!map_get(str->keyval, key, (void*)&dummy.vp))
+		return false;
+
+	cell tmp;
+
+	if (str->is_int)
+		make_int(&tmp, dummy.vi);
+	else
+		make_float(&tmp, dummy.vd);
+
+	bool ok = unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
+	return ok;
+}
+
+static bool fn_mat_list_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map || !str->is_vec)
+		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec");
+
+	GET_NEXT_ARG(p1,list_or_var);
+	union { double vd; int64_t vi; void *vp; } dummy;
+	miter *iter = map_first(str->keyval);
+	bool first = true;
+
+	while (map_next(iter, (void**)&dummy.vp)) {
+		void *key = map_key(iter);
+
+		cell tmp2[3];
+		make_struct(tmp2+0, g_pair_s, NULL, 2, 2);
+		make_int(tmp2+1, (int64_t)(size_t)key);
+		SET_OP(tmp2, OP_YFX);
+
+		if (str->is_int)
+			make_int(tmp2+2, dummy.vi);
+		else
+			make_float(tmp2+2, dummy.vd);
+
+		if (first) {
+			allocate_list(q, tmp2);
+			first = false;
+		} else
+			append_list(q, tmp2);
+	}
+
+	cell tmp2, *tmp;
+
+	if (first) {
+		make_atom(&tmp2, g_nil_s);
+		tmp = &tmp2;
+	} else
+		tmp = end_list(q);
+
+	map_done(iter);
+	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
+}
+
 builtins g_files_bifs[] =
 {
 	// ISO...
@@ -6120,11 +6271,18 @@ builtins g_files_bifs[] =
 	{"map_list", 2, fn_map_list_2, "+map,?list", false, BLAH},
 
 	{"vec_create", 1, fn_vec_create_1, "-map", false, BLAH},
-	{"vec_set", 3, fn_vec_set_3, "+map,+key,+value", false, BLAH},
-	{"vec_get", 3, fn_vec_get_3, "+map,+key,-value", false, BLAH},
+	{"vec_set", 3, fn_vec_set_3, "+map,+col,+value", false, BLAH},
+	{"vec_get", 3, fn_vec_get_3, "+map,+col,-value", false, BLAH},
 	{"vec_sum", 2, fn_vec_sum_2, "+map,-total", false, BLAH},
 	{"vec_count", 2, fn_vec_count_2, "+map,-count", false, BLAH},
 	{"vec_list", 2, fn_vec_list_2, "+map,?list", false, BLAH},
+
+	{"mat_create", 2, fn_mat_create_2, "-map,+cols", false, BLAH},
+	{"mat_set", 4, fn_mat_set_4, "+map,+row,+col,+value", false, BLAH},
+	{"mat_get", 4, fn_mat_get_4, "+map,+row,+col,-value", false, BLAH},
+	{"mat_sum", 2, fn_vec_sum_2, "+map,-total", false, BLAH},
+	{"mat_count", 2, fn_vec_count_2, "+map,-count", false, BLAH},
+	{"mat_list", 2, fn_mat_list_2, "+map,?list", false, BLAH},
 
 #if !defined(_WIN32) && !defined(__wasi__)
 	{"popen", 4, fn_popen_4, "+atom,+atom,-stream,+list", false, BLAH},

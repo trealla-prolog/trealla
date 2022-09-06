@@ -537,22 +537,30 @@ Maps use atomic key/values only.
 	map_del/2					# map_del(+map,+key)
 	map_list/2					# map_list(+map,?list)
 
-Vectors use positive integer (>= 0) keys & number values only.
+Vector & matrix maps use positive integer (>= 0) keys (columns and
+rows) and number values only.
 
 	vec_create/1				# vec_create(-map)
-	vec_set/3					# vec_set(+map,+index,+number)
-	vec_get/3					# vec_get(+map,+index,?number)
+	vec_set/3					# vec_set(+map,+col,+number)
+	vec_get/3					# vec_get(+map,+col,?number)
 	vec_sum/2					# vec_sum(+map,-total)
 	vec_count/2					# vec_count(+map,-count)
 	vec_list/2					# vec_list(+map,?list)
 
+	mat_create/2				# mat_create(-map,+cols)
+	mat_set/4					# mat_set(+map,+row,+col,+number)
+	mat_get/4					# mat_get(+map,+row,+col,?number)
+	mat_sum/2					# mat_sum(+map,-total)
+	mat_count/2					# mat_count(+map,-count)
+	mat_list/2					# mat_list(+map,?list)
+
 The first call to vec_set/3 sets the value *type* of the vector,
-which can be integer or float.
+which can be integer or float. Ditto for mat_set/4.
 
-Only non-zero vec values are stored.
+Only non-zero vectoe & matrix values are stored.
 
-Maps are somewhat analogous to streams so to destroy a map or vector
-call close/1 on the handle.
+Maps are somewhat analogous to streams so to destroy a map, vector
+or matrix simply call close/1 on the handle.
 
 
 HTTP 1.1

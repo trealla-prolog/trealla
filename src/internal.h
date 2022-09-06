@@ -570,7 +570,7 @@ struct stream_ {
 	parser *p;
 	char srcbuf[STREAM_BUFLEN];
 	size_t data_len, alloc_nbytes;
-	int ungetch, srclen;
+	int ungetch, srclen, cols;
 	uint8_t level, eof_action;
 	bool ignore:1;
 	bool at_end_of_file:1;
