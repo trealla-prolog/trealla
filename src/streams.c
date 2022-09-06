@@ -5956,7 +5956,7 @@ builtins g_files_bifs[] =
 	{"vec_create", 1, fn_vec_create_1, "-map", false, BLAH},
 	{"vec_set", 3, fn_vec_set_3, "+map,+key,+value", false, BLAH},
 	{"vec_get", 3, fn_vec_get_3, "+map,+key,-value", false, BLAH},
-	{"vec_list", 2, fn_vec_list_2, "+map,-list", false, BLAH},
+	{"vec_list", 2, fn_vec_list_2, "+map,?list", false, BLAH},
 
 #if !defined(_WIN32) && !defined(__wasi__)
 	{"popen", 4, fn_popen_4, "+atom,+atom,-stream,+list", false, BLAH},
