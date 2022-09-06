@@ -5620,7 +5620,7 @@ static bool fn_map_set_3(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map)
+	if (!str->is_map || str->is_vec)
 		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_map");
 
 	GET_NEXT_ARG(p1,atomic);
@@ -5661,7 +5661,7 @@ static bool fn_map_get_3(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map)
+	if (!str->is_map || str->is_vec)
 		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_map");
 
 	GET_NEXT_ARG(p1,atomic);
@@ -5736,14 +5736,14 @@ static bool fn_vec_set_3(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map)
+	if (!str->is_map || !str->is_vec)
 		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec");
 
 	GET_NEXT_ARG(p1,smallint);
 	GET_NEXT_ARG(p2,number);
 
-	if (is_negative(p2))
-		return throw_error(q, p2, p2_ctx, "domain_error", "not_less_than_zero");
+	if (is_negative(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
 
 	void *key = (void*)get_smallint(p1);
 
@@ -5774,14 +5774,14 @@ static bool fn_vec_get_3(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map)
+	if (!str->is_map || !str->is_vec)
 		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec");
 
 	GET_NEXT_ARG(p1,integer);
 	GET_NEXT_ARG(p2,number_or_var);
 
-	if (is_negative(p2))
-		return throw_error(q, p2, p2_ctx, "domain_error", "not_less_than_zero");
+	if (is_negative(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
 
 	void *key = (void*)get_smallint(p1);
 	union { double vd; int64_t vi; void *vp; } dummy;
