@@ -5846,11 +5846,10 @@ static bool fn_vec_set_3(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
 
 	void *key = (void*)get_smallint(p1);
+	map_del(str->keyval, key);
 
-	if (is_zero(p2)) {
-		map_del(str->keyval, key);
+	if (is_zero(p2))
 		return true;
-	}
 
 	union { double vd; int64_t vi; void *vp; } dummy;
 	void *val;
@@ -6049,11 +6048,10 @@ static bool fn_mat_set_4(query *q)
 	int64_t row = get_smallint(p1);
 	int64_t col = get_smallint(p2);
 	void *key = (void*)((row * str->cols) + col);
+	map_del(str->keyval, key);
 
-	if (is_zero(p3)) {
-		map_del(str->keyval, key);
+	if (is_zero(p3))
 		return true;
-	}
 
 	union { double vd; int64_t vi; void *vp; } dummy;
 	void *val;

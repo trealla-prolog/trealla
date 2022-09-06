@@ -170,6 +170,37 @@ static int random_level(unsigned *seedp)
 	return lvl < MAX_LEVEL ? lvl : MAX_LEVEL;
 }
 
+
+bool sl_get(skiplist *l, const void *key, const void **val)
+{
+	int k;
+	slnode_t *p, *q = 0;
+	p = l->header;
+
+	for (k = l->level - 1; k >= 0; k--) {
+		while ((q = p->forward[k]) && (l->cmpkey(q->bkt[q->nbr - 1].key, key, l->p, l) < 0))
+			p = q;
+	}
+
+	if (!(q = p->forward[0]))
+		return false;
+
+	int imid;
+
+	for (imid = 0; imid < q->nbr; imid++) {
+		if (l->cmpkey(q->bkt[imid].key, key, l->p, l) == 0)
+			break;
+	}
+
+	if (imid >= q->nbr)
+		return NULL;
+
+	if (val)
+		*val = q->bkt[imid].val;
+
+	return true;
+}
+
 bool sl_set(skiplist *l, const void *key, const void *val)
 {
 	slnode_t *update[MAX_LEVELS];
@@ -320,36 +351,6 @@ bool sl_app(skiplist *l, const void *key, const void *val)
 		q->forward[k] = p->forward[k];
 		p->forward[k] = q;
 	}
-
-	return true;
-}
-
-bool sl_get(skiplist *l, const void *key, const void **val)
-{
-	int k;
-	slnode_t *p, *q = 0;
-	p = l->header;
-
-	for (k = l->level - 1; k >= 0; k--) {
-		while ((q = p->forward[k]) && (l->cmpkey(q->bkt[q->nbr - 1].key, key, l->p, l) < 0))
-			p = q;
-	}
-
-	if (!(q = p->forward[0]))
-		return false;
-
-	int imid;
-
-	for (imid = 0; imid < q->nbr; imid++) {
-		if (l->cmpkey(q->bkt[imid].key, key, l->p, l) == 0)
-			break;
-	}
-
-	if (imid >= q->nbr)
-		return NULL;
-
-	if (val)
-		*val = q->bkt[imid].val;
 
 	return true;
 }
