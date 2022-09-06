@@ -5829,6 +5829,8 @@ static bool fn_vec_create_2(query *q)
 	map_allow_dups(str->keyval, false);
 	str->is_map = str->is_vec = true;
 	str->cols = get_smallint(p2);
+	str->i_empty = 0;
+	str->d_empty = 0.0;
 
 	cell tmp ;
 	make_int(&tmp, n);
@@ -6040,6 +6042,8 @@ static bool fn_mat_create_3(query *q)
 	str->is_map = str->is_vec = true;
 	str->rows = get_smallint(p2);
 	str->cols = get_smallint(p3);
+	str->i_empty = 0;
+	str->d_empty = 0.0;
 
 	cell tmp ;
 	make_int(&tmp, n);
