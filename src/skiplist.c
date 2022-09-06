@@ -497,6 +497,7 @@ bool sl_is_next(sliter *iter, void **val)
 			if (val)
 				*val = iter->p->bkt[iter->idx].val;
 
+			iter->key = iter->p->bkt[iter->idx].key;
 			return true;
 		}
 
@@ -517,6 +518,7 @@ bool sl_next(sliter *iter, void **val)
 			if (val)
 				*val = iter->p->bkt[iter->idx].val;
 
+			iter->key = iter->p->bkt[iter->idx].key;
 			iter->idx++;
 			return true;
 		}
@@ -526,6 +528,14 @@ bool sl_next(sliter *iter, void **val)
 	}
 
 	return false;
+}
+
+void *sl_key(sliter *i)
+{
+	if (!i)
+		return NULL;
+
+	return (void*)i->key;
 }
 
 void sl_remove(skiplist *l, const void *v)

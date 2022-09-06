@@ -5801,6 +5801,46 @@ static bool fn_vec_get_3(query *q)
 	return ok;
 }
 
+static bool fn_vec_list_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map || !str->is_vec)
+		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec");
+
+	GET_NEXT_ARG(p1,list_or_var);
+	miter *iter = map_first(str->keyval);
+	union { double vd; int64_t vi; void *vp; } dummy;
+	bool first = true;
+
+	while (map_next(iter, (void**)&dummy.vp)) {
+		void *key = map_key(iter);
+
+		cell tmp2[3];
+		make_struct(tmp2+0, g_minus_s, NULL, 2, 2);
+		make_int(tmp2+1, (int64_t)(size_t)key);
+		SET_OP(tmp2, OP_YFX);
+
+		if (str->is_int)
+			make_int(tmp2+2, dummy.vi);
+		else
+			make_int(tmp2+2, dummy.vd);
+
+		if (first) {
+			allocate_list(q, tmp2);
+			first = false;
+		} else
+			append_list(q, tmp2);
+	}
+
+	cell *tmp = end_list(q);
+	map_done(iter);
+	bool ok = unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
+	return ok;
+}
+
 builtins g_files_bifs[] =
 {
 	// ISO...
@@ -5916,6 +5956,7 @@ builtins g_files_bifs[] =
 	{"vec_create", 1, fn_vec_create_1, "-map", false, BLAH},
 	{"vec_set", 3, fn_vec_set_3, "+map,+key,+value", false, BLAH},
 	{"vec_get", 3, fn_vec_get_3, "+map,+key,-value", false, BLAH},
+	{"vec_list", 2, fn_vec_list_2, "+map,-list", false, BLAH},
 
 #if !defined(_WIN32) && !defined(__wasi__)
 	{"popen", 4, fn_popen_4, "+atom,+atom,-stream,+list", false, BLAH},
