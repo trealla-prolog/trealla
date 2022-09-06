@@ -535,16 +535,19 @@ Maps use atomic key/values only.
 	map_set/3					# map_set(+map,+key,+value)
 	map_get/3					# map_get(+map,+key,?value)
 
-Vectors use integer key & number values only.
+Vectors use positive integer (>= 0) keys & number values only.
 
 	vec_create/1				# vec_create(-map)
-	vec_set/3					# vec_set(+map,+integer,+number)
-	vec_get/3					# vec_get(+map,+integer,?number)
+	vec_set/3					# vec_set(+map,+index,+number)
+	vec_get/3					# vec_get(+map,+index,?number)
 
 The first call to vec_set/3 sets the value *type* of the vector,
 which can be integer or float.
 
-To destroy a map or vector call close/1.
+Only non-zero values are stored.
+
+Map are somewhat analogous to streams so to destroy a map or vector
+call close/1 on the handle.
 
 
 HTTP 1.1

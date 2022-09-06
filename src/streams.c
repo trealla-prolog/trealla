@@ -5741,7 +5741,17 @@ static bool fn_vec_set_3(query *q)
 
 	GET_NEXT_ARG(p1,smallint);
 	GET_NEXT_ARG(p2,number);
+
+	if (is_negative(p2))
+		return throw_error(q, p2, p2_ctx, "domain_error", "not_less_than_zero");
+
 	void *key = (void*)get_smallint(p1);
+
+	if (is_zero(p2)) {
+		map_del(str->keyval, key);
+		return true;
+	}
+
 	union { double vd; int64_t vi; void *vp; } dummy;
 	void *val;
 
@@ -5769,6 +5779,10 @@ static bool fn_vec_get_3(query *q)
 
 	GET_NEXT_ARG(p1,integer);
 	GET_NEXT_ARG(p2,number_or_var);
+
+	if (is_negative(p2))
+		return throw_error(q, p2, p2_ctx, "domain_error", "not_less_than_zero");
+
 	void *key = (void*)get_smallint(p1);
 	union { double vd; int64_t vi; void *vp; } dummy;
 
