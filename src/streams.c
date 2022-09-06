@@ -5710,6 +5710,32 @@ static bool fn_map_get_3(query *q)
 	return ok;
 }
 
+static bool fn_map_del_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map || str->is_vec)
+		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_map");
+
+	GET_NEXT_ARG(p1,atomic);
+	char *key;
+
+	if (is_integer(p1)) {
+		char tmpbuf[128];
+		snprintf(tmpbuf, sizeof(tmpbuf), "%lld", (long long unsigned)get_smallint(p1));
+		key = strdup(tmpbuf);
+	} else if (is_atom(p1))
+		key = DUP_STR(q, p1);
+	else
+		return throw_error(q, p1, p1_ctx, "type_error", "integer");
+
+	check_heap_error(key);
+	map_del(str->keyval, key);
+	return true;
+}
+
 static bool fn_map_list_2(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
@@ -5851,7 +5877,7 @@ static bool fn_vec_get_3(query *q)
 	if (!str->is_map || !str->is_vec)
 		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec");
 
-	GET_NEXT_ARG(p1,integer);
+	GET_NEXT_ARG(p1,smallint);
 	GET_NEXT_ARG(p2,number_or_var);
 
 	if (is_negative(p1))
@@ -6026,6 +6052,7 @@ builtins g_files_bifs[] =
 	{"map_create", 1, fn_map_create_1, "-map", false, BLAH},
 	{"map_set", 3, fn_map_set_3, "+map,+key,+value", false, BLAH},
 	{"map_get", 3, fn_map_get_3, "+map,+key,-value", false, BLAH},
+	{"map_del", 2, fn_map_del_2, "+map,+key", false, BLAH},
 	{"map_list", 2, fn_map_list_2, "+map,?list", false, BLAH},
 
 	{"vec_create", 1, fn_vec_create_1, "-map", false, BLAH},
