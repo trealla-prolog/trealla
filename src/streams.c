@@ -5810,7 +5810,7 @@ static bool fn_map_list_2(query *q)
 	return ok;
 }
 
-static bool fn_vec_create_1(query *q)
+static bool fn_vec_create_2(query *q)
 {
 	GET_FIRST_ARG(p1,variable);
 	int n = new_stream(q->pl);
@@ -5818,11 +5818,17 @@ static bool fn_vec_create_1(query *q)
 	if (n < 0)
 		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
 
+	GET_NEXT_ARG(p2,smallint);
+
+	if (is_negative(p2) || is_zero(p2))
+		return throw_error(q, p2, p2_ctx, "domain_error", "not_greater_than_zero");
+
 	stream *str = &q->pl->streams[n];
 	str->keyval = map_create(NULL, NULL, NULL);
 	check_heap_error(str->keyval);
 	map_allow_dups(str->keyval, false);
 	str->is_map = str->is_vec = true;
+	str->cols = get_smallint(p2);
 
 	cell tmp ;
 	make_int(&tmp, n);
@@ -5844,6 +5850,9 @@ static bool fn_vec_set_3(query *q)
 
 	if (is_negative(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
+
+	if (get_smallint(p1) >= str->cols)
+		return throw_error(q, p1, p1_ctx, "domain_error", "index_range");
 
 	void *key = (void*)get_smallint(p1);
 	map_del(str->keyval, key);
@@ -5881,6 +5890,9 @@ static bool fn_vec_get_3(query *q)
 
 	if (is_negative(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
+
+	if (get_smallint(p1) >= str->cols)
+		return throw_error(q, p1, p1_ctx, "domain_error", "index_range");
 
 	void *key = (void*)get_smallint(p1);
 	union { double vd; int64_t vi; void *vp; } dummy;
@@ -6004,7 +6016,7 @@ static bool fn_vec_list_2(query *q)
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
 
-static bool fn_mat_create_2(query *q)
+static bool fn_mat_create_3(query *q)
 {
 	GET_FIRST_ARG(p1,variable);
 	int n = new_stream(q->pl);
@@ -6013,12 +6025,21 @@ static bool fn_mat_create_2(query *q)
 		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
 
 	GET_NEXT_ARG(p2,smallint);
+	GET_NEXT_ARG(p3,smallint);
+
+	if (is_negative(p2) || is_zero(p2))
+		return throw_error(q, p2, p2_ctx, "domain_error", "not_greater_than_zero");
+
+	if (is_negative(p3) || is_zero(p3))
+		return throw_error(q, p3, p3_ctx, "domain_error", "not_greater_than_zero");
+
 	stream *str = &q->pl->streams[n];
 	str->keyval = map_create(NULL, NULL, NULL);
 	check_heap_error(str->keyval);
 	map_allow_dups(str->keyval, false);
 	str->is_map = str->is_vec = true;
-	str->cols = get_smallint(p2);
+	str->rows = get_smallint(p2);
+	str->cols = get_smallint(p3);
 
 	cell tmp ;
 	make_int(&tmp, n);
@@ -6042,8 +6063,14 @@ static bool fn_mat_set_4(query *q)
 	if (is_negative(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
 
+	if (get_smallint(p1) >= str->rows)
+		return throw_error(q, p1, p1_ctx, "domain_error", "index_range");
+
 	if (is_negative(p2))
 		return throw_error(q, p2, p2_ctx, "domain_error", "not_less_than_zero");
+
+	if (get_smallint(p2) >= str->cols)
+		return throw_error(q, p2, p2_ctx, "domain_error", "index_range");
 
 	int64_t row = get_smallint(p1);
 	int64_t col = get_smallint(p2);
@@ -6085,8 +6112,14 @@ static bool fn_mat_get_4(query *q)
 	if (is_negative(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
 
+	if (get_smallint(p1) >= str->rows)
+		return throw_error(q, p1, p1_ctx, "domain_error", "index_range");
+
 	if (is_negative(p2))
 		return throw_error(q, p2, p2_ctx, "domain_error", "not_less_than_zero");
+
+	if (get_smallint(p2) >= str->cols)
+		return throw_error(q, p2, p2_ctx, "domain_error", "index_range");
 
 	int64_t row = get_smallint(p1);
 	int64_t col = get_smallint(p2);
@@ -6268,14 +6301,14 @@ builtins g_files_bifs[] =
 	{"map_del", 2, fn_map_del_2, "+map,+key", false, BLAH},
 	{"map_list", 2, fn_map_list_2, "+map,?list", false, BLAH},
 
-	{"vec_create", 1, fn_vec_create_1, "-map", false, BLAH},
+	{"vec_create", 2, fn_vec_create_2, "-map,+cols", false, BLAH},
 	{"vec_set", 3, fn_vec_set_3, "+map,+col,+value", false, BLAH},
 	{"vec_get", 3, fn_vec_get_3, "+map,+col,-value", false, BLAH},
 	{"vec_sum", 2, fn_vec_sum_2, "+map,-total", false, BLAH},
 	{"vec_count", 2, fn_vec_count_2, "+map,-count", false, BLAH},
 	{"vec_list", 2, fn_vec_list_2, "+map,?list", false, BLAH},
 
-	{"mat_create", 2, fn_mat_create_2, "-map,+cols", false, BLAH},
+	{"mat_create", 3, fn_mat_create_3, "-map,+rows,+cols", false, BLAH},
 	{"mat_set", 4, fn_mat_set_4, "+map,+row,+col,+value", false, BLAH},
 	{"mat_get", 4, fn_mat_get_4, "+map,+row,+col,-value", false, BLAH},
 	{"mat_sum", 2, fn_vec_sum_2, "+map,-total", false, BLAH},

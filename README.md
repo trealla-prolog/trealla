@@ -540,14 +540,14 @@ Maps use atomic key/values only.
 Vector & matrix maps use positive integer (>= 0) keys (columns and
 rows) and number values only.
 
-	vec_create/1				# vec_create(-map)
+	vec_create/2				# vec_create(-map,+cols)
 	vec_set/3					# vec_set(+map,+col,+number)
 	vec_get/3					# vec_get(+map,+col,?number)
 	vec_sum/2					# vec_sum(+map,-total)
 	vec_count/2					# vec_count(+map,-count)
 	vec_list/2					# vec_list(+map,?list)
 
-	mat_create/2				# mat_create(-map,+cols)
+	mat_create/3				# mat_create(-map,+rows,+cols)
 	mat_set/4					# mat_set(+map,+row,+col,+number)
 	mat_get/4					# mat_get(+map,+row,+col,?number)
 	mat_sum/2					# mat_sum(+map,-total)
