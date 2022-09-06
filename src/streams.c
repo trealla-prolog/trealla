@@ -5819,7 +5819,7 @@ static bool fn_vec_list_2(query *q)
 		void *key = map_key(iter);
 
 		cell tmp2[3];
-		make_struct(tmp2+0, g_minus_s, NULL, 2, 2);
+		make_struct(tmp2+0, g_pair_s, NULL, 2, 2);
 		make_int(tmp2+1, (int64_t)(size_t)key);
 		SET_OP(tmp2, OP_YFX);
 
