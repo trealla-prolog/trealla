@@ -399,13 +399,6 @@ Non-standard predicates
 	'$kv_set'(+key,+value,[create(Bool)])
 	'$kv_get'(+key,?value,[delete(Bool)])
 
-	# Application maps use atomic key/values only...
-
-	map_create/1				# map_create(-map)
-	map_set/3					# map_set(+map,+key,+value)
-	map_get/3					# map_get(+map,+key,?value)
-	map_close/1					# map_close(+map)
-
 	call_nth/2
 	offset/2
 	limit/2
@@ -531,6 +524,27 @@ Convert a hexadecimal string to a byte-list. At least one arg must be
 instantiated...
 
 	hex_bytes/2                 # hex_bytes(?hash,?bytes)
+
+
+Application maps
+================
+
+Maps use atomic key/values only.
+
+	map_create/1				# map_create(-map)
+	map_set/3					# map_set(+map,+key,+value)
+	map_get/3					# map_get(+map,+key,?value)
+
+Vectors use integer key & number values only.
+
+	vec_create/1				# vec_create(-map)
+	vec_set/3					# vec_set(+map,+integer,+number)
+	vec_get/3					# vec_get(+map,+integer,?number)
+
+The first call to vec_set/3 sets the value *type* of the vector,
+which can be integer or float.
+
+To destroy a map or vector call close/1.
 
 
 HTTP 1.1

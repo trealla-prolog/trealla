@@ -958,7 +958,9 @@ static bool fn_iso_close_1(query *q)
 	if (!str->socket)
 		del_stream_properties(q, n);
 
-	if (str->is_map) {
+	if (str->is_vec) {
+		str->keyval = NULL;
+	} else if (str->is_map) {
 		map_destroy(str->keyval);
 		str->keyval = NULL;
 	} else
@@ -5708,6 +5710,83 @@ static bool fn_map_get_3(query *q)
 	return ok;
 }
 
+static bool fn_vec_create_1(query *q)
+{
+	GET_FIRST_ARG(p1,variable);
+	int n = new_stream(q->pl);
+
+	if (n < 0)
+		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
+
+	stream *str = &q->pl->streams[n];
+	str->keyval = map_create(NULL, NULL, NULL);
+	check_heap_error(str->keyval);
+	map_allow_dups(str->keyval, false);
+	str->is_map = str->is_vec = true;
+
+	cell tmp ;
+	make_int(&tmp, n);
+	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool fn_vec_set_3(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map)
+		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec");
+
+	GET_NEXT_ARG(p1,smallint);
+	GET_NEXT_ARG(p2,number);
+	void *key = (void*)get_smallint(p1);
+	union { double vd; int64_t vi; void *vp; } dummy;
+	void *val;
+
+	if (is_integer(p2)) {
+		dummy.vi = get_smallint(p2);
+		str->is_int = true;
+	} else {
+		dummy.vd = get_float(p2);
+		str->is_int = false;
+	}
+
+	val = dummy.vp;
+	map_set(str->keyval, key, val);
+	return true;
+}
+
+static bool fn_vec_get_3(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map)
+		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec");
+
+	GET_NEXT_ARG(p1,integer);
+	GET_NEXT_ARG(p2,number_or_var);
+	void *key = (void*)get_smallint(p1);
+	union { double vd; int64_t vi; void *vp; } dummy;
+
+	if (!map_get(str->keyval, key, (void*)&dummy.vp))
+		return false;
+
+	cell tmp;
+
+	if (str->is_int)
+		make_int(&tmp, dummy.vi);
+	else
+		make_float(&tmp, dummy.vd);
+
+	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
+	return ok;
+}
+
 builtins g_files_bifs[] =
 {
 	// ISO...
@@ -5817,9 +5896,12 @@ builtins g_files_bifs[] =
 	{"bwrite", 2, fn_bwrite_2, "+stream,-string", false, BLAH},
 
 	{"map_create", 1, fn_map_create_1, "-map", false, BLAH},
-	{"map_close", 1, fn_iso_close_1, "+map", false, BLAH},
 	{"map_set", 3, fn_map_set_3, "+map,+key,+value", false, BLAH},
 	{"map_get", 3, fn_map_get_3, "+map,+key,-value", false, BLAH},
+
+	{"vec_create", 1, fn_vec_create_1, "-map", false, BLAH},
+	{"vec_set", 3, fn_vec_set_3, "+map,+key,+value", false, BLAH},
+	{"vec_get", 3, fn_vec_get_3, "+map,+key,-value", false, BLAH},
 
 #if !defined(_WIN32) && !defined(__wasi__)
 	{"popen", 4, fn_popen_4, "+atom,+atom,-stream,+list", false, BLAH},
