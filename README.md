@@ -544,9 +544,9 @@ Vectors use positive integer (>= 0) keys & number values only.
 The first call to vec_set/3 sets the value *type* of the vector,
 which can be integer or float.
 
-Only non-zero values are stored.
+Only non-zero vec values are stored.
 
-Map are somewhat analogous to streams so to destroy a map or vector
+Maps are somewhat analogous to streams so to destroy a map or vector
 call close/1 on the handle.
 
 
