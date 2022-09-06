@@ -542,6 +542,8 @@ Vectors use positive integer (>= 0) keys & number values only.
 	vec_create/1				# vec_create(-map)
 	vec_set/3					# vec_set(+map,+index,+number)
 	vec_get/3					# vec_get(+map,+index,?number)
+	vec_sum/2					# vec_sum(+map,-total)
+	vec_count/2					# vec_count(+map,-count)
 	vec_list/2					# vec_list(+map,?list)
 
 The first call to vec_set/3 sets the value *type* of the vector,

@@ -5901,6 +5901,64 @@ static bool fn_vec_get_3(query *q)
 	return ok;
 }
 
+static bool fn_vec_sum_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map || !str->is_vec)
+		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec");
+
+	GET_NEXT_ARG(p1,variable);
+	union { double vd; int64_t vi; void *vp; } dummy;
+	int64_t toti = 0;
+	double totd = 0.0;
+	bool first = true;
+	miter *iter = map_first(str->keyval);
+
+	while (map_next(iter, (void**)&dummy.vp)) {
+		if (str->is_int)
+			toti += dummy.vi;
+		else
+			totd += dummy.vd;
+	}
+
+	cell tmp;
+
+	if (str->is_int)
+		make_int(&tmp, toti);
+	else
+		make_float(&tmp, totd);
+
+	map_done(iter);
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool fn_vec_count_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map || !str->is_vec)
+		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec");
+
+	GET_NEXT_ARG(p1,variable);
+	int64_t count = 0;
+	bool first = true;
+	miter *iter = map_first(str->keyval);
+
+	while (map_next(iter, NULL)) {
+		count++;
+	}
+
+	map_done(iter);
+	cell tmp;
+	make_int(&tmp, count);
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
 static bool fn_vec_list_2(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
@@ -5911,8 +5969,8 @@ static bool fn_vec_list_2(query *q)
 		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec");
 
 	GET_NEXT_ARG(p1,list_or_var);
-	miter *iter = map_first(str->keyval);
 	union { double vd; int64_t vi; void *vp; } dummy;
+	miter *iter = map_first(str->keyval);
 	bool first = true;
 
 	while (map_next(iter, (void**)&dummy.vp)) {
@@ -5926,7 +5984,7 @@ static bool fn_vec_list_2(query *q)
 		if (str->is_int)
 			make_int(tmp2+2, dummy.vi);
 		else
-			make_int(tmp2+2, dummy.vd);
+			make_float(tmp2+2, dummy.vd);
 
 		if (first) {
 			allocate_list(q, tmp2);
@@ -5937,8 +5995,7 @@ static bool fn_vec_list_2(query *q)
 
 	cell *tmp = end_list(q);
 	map_done(iter);
-	bool ok = unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
-	return ok;
+	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
 
 builtins g_files_bifs[] =
@@ -6058,6 +6115,8 @@ builtins g_files_bifs[] =
 	{"vec_create", 1, fn_vec_create_1, "-map", false, BLAH},
 	{"vec_set", 3, fn_vec_set_3, "+map,+key,+value", false, BLAH},
 	{"vec_get", 3, fn_vec_get_3, "+map,+key,-value", false, BLAH},
+	{"vec_sum", 2, fn_vec_sum_2, "+map,-total", false, BLAH},
+	{"vec_count", 2, fn_vec_count_2, "+map,-count", false, BLAH},
 	{"vec_list", 2, fn_vec_list_2, "+map,?list", false, BLAH},
 
 #if !defined(_WIN32) && !defined(__wasi__)
