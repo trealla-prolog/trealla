@@ -241,8 +241,8 @@ enum {
 	FLAG_INT_HEX=1<<0,					// used with TAG_INTEGER
 	FLAG_INT_OCTAL=1<<1,				// used with TAG_INTEGER
 	FLAG_INT_BINARY=1<<2,				// used with TAG_INTEGER
-	FLAG_INT_STREAM=1<<3,				// used with TAG_INTEGER
-	FLAG_INT_HANDLE=1<<4,				// used with TAG_INTEGER
+	FLAG_INT_HANDLE=1<<3,				// used with TAG_INTEGER
+	FLAG_INT_STREAM=1<<4,				// used with TAG_INTEGER
 
 	FLAG_CSTR_BLOB=1<<0,				// used with TAG_CSTR
 	FLAG_CSTR_STRING=1<<1,				// used with TAG_CSTR
@@ -255,7 +255,6 @@ enum {
 	FLAG_HANDLE_DLL=1<<0,				// used with TAG_INT_HANDLE
 	FLAG_HANDLE_FUNC=1<<1,				// used with TAG_INT_HANDLE
 
-	FLAG_PROCESSED=1<<5,				// used by bagof
 	FLAG_FFI=1<<6,
 	FLAG_REF=1<<7,
 	FLAG_BUILTIN=1<<8,
@@ -561,7 +560,11 @@ struct choice_ {
 enum { eof_action_eof_code, eof_action_error, eof_action_reset };
 
 struct stream_ {
-	FILE *fp;
+	union {
+		FILE *fp;
+		map *keyval;
+	};
+
 	char *mode, *filename, *name, *data, *src;
 	void *sslptr;
 	parser *p;
@@ -581,6 +584,7 @@ struct stream_ {
 	bool udp:1;
 	bool ssl:1;
 	bool domain:1;
+	bool is_map:1;
 };
 
 struct page_ {

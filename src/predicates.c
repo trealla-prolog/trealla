@@ -141,23 +141,23 @@ void make_end(cell *tmp)
 	tmp->nbr_cells = 1;
 }
 
-void make_return(query *q, cell *tmp)
+void make_call(query *q, cell *tmp)
 {
 	make_end(tmp);
 	cell *c = q->st.curr_cell;
 	frame *f = GET_CURR_FRAME();
 	tmp->val_ret = c ? c + c->nbr_cells : NULL;	// save the return instruction
 	tmp->cgen = f->cgen;						// ... choice-generation
-	tmp->mid = q->st.m->id;					// ... current-module
+	tmp->mid = q->st.m->id;						// ... current-module
 }
 
-void make_return2(query *q, cell *tmp, cell *c_ret)
+void make_call_return(query *q, cell *tmp, cell *c_ret)
 {
 	make_end(tmp);
 	frame *f = GET_CURR_FRAME();
 	tmp->val_ret = q->st.curr_cell;				// save the return instruction
 	tmp->cgen = f->cgen;						// ... choice-generation
-	tmp->mid = q->st.m->id;					// ... current-module
+	tmp->mid = q->st.m->id;						// ... current-module
 }
 
 void make_atom(cell *tmp, pl_idx_t offset)
@@ -320,7 +320,7 @@ static bool fn_iso_notunify_2(query *q)
 	nbr_cells += p2->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_cut_s, fn_sys_inner_cut_0, 0, 0);
 	make_struct(tmp+nbr_cells++, g_fail_s, fn_iso_fail_0, 0, 0);
-	make_return(q, tmp+nbr_cells);
+	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
 	q->st.curr_cell = tmp;
 	return true;
@@ -4055,7 +4055,7 @@ static bool fn_time_1(query *q)
 	cell *tmp = clone_to_heap(q, true, p1, 2);
 	pl_idx_t nbr_cells = 1 + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_elapsed_s, fn_sys_elapsed_0, 0, 0);
-	make_return(q, tmp+nbr_cells);
+	make_call(q, tmp+nbr_cells);
 	q->st.curr_cell = tmp;
 	return true;
 }
@@ -6149,7 +6149,7 @@ static bool fn_limit_2(query *q)
 	make_struct(tmp+nbr_cells++, g_fail_s, fn_sys_lt_2, 2, 2);
 	make_int(tmp+nbr_cells++, 1);
 	make_int(tmp+nbr_cells++, get_smallint(p1));
-	make_return(q, tmp+nbr_cells);
+	make_call(q, tmp+nbr_cells);
 	q->st.curr_cell = tmp;
 	return true;
 }
@@ -6188,7 +6188,7 @@ static bool fn_offset_2(query *q)
 	make_struct(tmp+nbr_cells++, g_fail_s, fn_sys_gt_2, 2, 2);
 	make_int(tmp+nbr_cells++, 1);
 	make_int(tmp+nbr_cells++, get_smallint(p1));
-	make_return(q, tmp+nbr_cells);
+	make_call(q, tmp+nbr_cells);
 	q->st.curr_cell = tmp;
 	return true;
 }
@@ -6258,7 +6258,7 @@ static bool fn_call_nth_2(query *q)
 		tmp[nbr_cells] = *p2_raw;
 		tmp[nbr_cells++].nbr_cells = 1;
 		make_int(tmp+nbr_cells++, 0);
-		make_return(q, tmp+nbr_cells);
+		make_call(q, tmp+nbr_cells);
 		check_heap_error(push_call_barrier(q));
 		q->st.curr_cell = tmp;
 		return true;
@@ -6269,7 +6269,7 @@ static bool fn_call_nth_2(query *q)
 	make_struct(tmp+nbr_cells++, g_sys_ne_s, fn_sys_ne_2, 2, 2);
 	make_int(tmp+nbr_cells++, 1);
 	make_int(tmp+nbr_cells++, get_smallint(p2));
-	make_return(q, tmp+nbr_cells);
+	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_call_barrier(q));
 	q->st.curr_cell = tmp;
 	return true;
@@ -6970,7 +6970,7 @@ static bool fn_sys_register_cleanup_1(query *q)
 		pl_idx_t nbr_cells = 1 + p1->nbr_cells;
 		make_struct(tmp+nbr_cells++, g_cut_s, fn_sys_inner_cut_0, 0, 0);
 		make_struct(tmp+nbr_cells++, g_fail_s, fn_iso_fail_0, 0, 0);
-		make_return(q, tmp+nbr_cells);
+		make_call(q, tmp+nbr_cells);
 		q->st.curr_cell = tmp;
 		return true;
 	}

@@ -394,8 +394,17 @@ Non-standard predicates
 	b_getval(K,V)
 	b_delete(K)
 
-	'$kv_set'(+key,+value,[create(Bool)])	# use atomics only
-	'$kv_get'(+key,?value,[delete(Bool)])	# use atomics only
+	# The system map uses atomic key/values only...
+
+	'$kv_set'(+key,+value,[create(Bool)])
+	'$kv_get'(+key,?value,[delete(Bool)])
+
+	# Application maps use atomic key/values only...
+
+	map_create/1				# map_create(-map)
+	map_set/3					# map_set(+map,+key,+value)
+	map_get/3					# map_get(+map,+key,?value)
+	map_close/1					# map_close(+map)
 
 	call_nth/2
 	offset/2
@@ -458,10 +467,13 @@ Non-standard predicates
 	loadfile/2                  # loadfile(+filename,-string)
 	savefile/2                  # savefile(+filename,+string)
 	getfile/2                   # getfile(+filename,-strings)
+	getfile/3                   # getfile(+filename,-strings,+opts)
 	getline/1                   # getline(-string)
 	getline/2                   # getline(+stream,-string)
+	getline/3                   # getline(+stream,-string,+opts)
 	getlines/1                  # getlines(-strings)
 	getlines/2                  # getlines(+stream,-strings)
+	getlines/3                  # getlines(+stream,-strings,+opts)
 	read_line_to_codes/2	   	# removes terminator
 	read_line_to_string/2		# removes terminator
 	read_file_to_string/3

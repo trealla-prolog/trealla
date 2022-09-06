@@ -600,14 +600,12 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 		return -1;
 	}
 
-#if 1
 	if (q->is_dump_vars && is_stream(c)) {
 		dst += snprintf(dst, dstlen, "<$stream>(%d)", (int)get_smallint(c));
 		q->last_thing_was_symbol = false;
 		q->was_space = false;
 		return dst - save_dst;
 	}
-#endif
 
 	if (is_bigint(c)) {
 		int radix = 10;

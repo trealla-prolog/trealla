@@ -842,9 +842,9 @@ bool do_post_unification_hook(query *q, bool is_builtin)
 		return throw_error(q, tmp+1, q->st.curr_frame, "existence_error", "procedure");
 
 	if (is_builtin)
-		make_return(q, tmp+2);
+		make_call(q, tmp+2);
 	else
-		make_return2(q, tmp+2, q->st.curr_cell);
+		make_call_return(q, tmp+2, q->st.curr_cell);
 
 	q->st.curr_cell = tmp;
 	return true;

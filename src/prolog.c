@@ -146,7 +146,7 @@ static void keyfree(const void *key, const void *val, const void *p)
 	free((void*)key);
 }
 
-static void keyvalfree(const void *key, const void *val, const void *p)
+void keyvalfree(const void *key, const void *val, const void *p)
 {
 	free((void*)key);
 	free((void*)val);
@@ -290,8 +290,13 @@ void pl_destroy(prolog *pl)
 		if (str->fp) {
 			if ((str->fp != stdin)
 				&& (str->fp != stdout)
-				&& (str->fp != stderr))
-				fclose(str->fp);
+				&& (str->fp != stderr)
+			) {
+				if (str->is_map)
+					map_destroy(str->keyval);
+				else
+					fclose(str->fp);
+			}
 
 			if (str->p)
 				destroy_parser(str->p);

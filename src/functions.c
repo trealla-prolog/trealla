@@ -212,7 +212,7 @@ bool call_userfun(query *q, cell *c, pl_idx_t c_ctx)
 	cell *tmp = clone_to_heap(q, true, c, 2);
 	pl_idx_t nbr_cells = 1 + c->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier, fn_sys_drop_barrier, 0, 0);
-	make_return(q, tmp+nbr_cells);
+	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_call_barrier(q));
 	q->st.curr_cell = tmp;
 	bool ok = start(q);

@@ -1083,8 +1083,7 @@ void cut_me(query *q, bool inner_cut, bool soft_cut)
 			pl_idx_t c_ctx = ch->st.curr_frame;
 			c = deref(q, c+1, c_ctx);
 			c_ctx = q->latest_ctx;
-			cell *tmp = deep_clone_to_heap(q, c, c_ctx);
-			do_cleanup(q, tmp);
+			do_cleanup(q, c, c_ctx);
 			break;
 		}
 	}
