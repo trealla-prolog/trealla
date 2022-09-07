@@ -561,7 +561,7 @@ With *vec_create/2* a *cols* value <= 0 implies an unspecified number.
 The first call to vec_set/3 sets the value *type* of the vector,
 which can be integer or float. Ditto for mat_set/4.
 
-Only non-zero vector & matrix values are stored.
+Only non-empty (default is zero) vector & matrix values are stored.
 
 Maps are somewhat analogous to streams so to destroy a map, vector
 or matrix simply call close/1 on the handle.
