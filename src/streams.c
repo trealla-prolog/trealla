@@ -5997,17 +5997,8 @@ static bool fn_vec_count_2(query *q)
 		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_vector_or_mat");
 
 	GET_NEXT_ARG(p1,variable);
-	int64_t count = 0;
-	bool first = true;
-	miter *iter = map_first(str->keyval);
-
-	while (map_next(iter, NULL)) {
-		count++;
-	}
-
-	map_done(iter);
 	cell tmp;
-	make_int(&tmp, count);
+	make_int(&tmp, map_count(str->keyval));
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
