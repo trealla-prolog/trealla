@@ -5810,7 +5810,7 @@ static bool fn_map_list_2(query *q)
 	return ok;
 }
 
-static bool fn_vec_create_2(query *q)
+static bool fn_vec_create_3(query *q)
 {
 	GET_FIRST_ARG(p1,variable);
 	int n = new_stream(q->pl);
@@ -5819,7 +5819,46 @@ static bool fn_vec_create_2(query *q)
 		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
 
 	GET_NEXT_ARG(p2,smallint);
+	GET_NEXT_ARG(p4,list_or_nil);
+
 	stream *str = &q->pl->streams[n];
+	LIST_HANDLER(p4);
+
+	while (is_list(p4)) {
+		cell *h = LIST_HEAD(p4);
+		cell *c = deref(q, h, p4_ctx);
+		pl_idx_t c_ctx = q->latest_ctx;
+
+		if (is_variable(c))
+			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+
+		cell *name = c + 1;
+		name = deref(q, name, c_ctx);
+
+		if (!CMP_STR_TO_CSTR(q, c, "alias")) {
+			if (is_variable(name))
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+
+			if (!is_atom(name))
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+
+			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
+				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
+
+			free(str->name);
+			str->name = DUP_STR(q, name);
+		} else {
+			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+		}
+
+		p4 = LIST_TAIL(p4);
+		p4 = deref(q, p4, p4_ctx);
+		p4_ctx = q->latest_ctx;
+
+		if (is_variable(p4))
+			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+	}
+
 	str->keyval = map_create(NULL, NULL, NULL);
 	check_heap_error(str->keyval);
 	map_allow_dups(str->keyval, false);
@@ -6049,7 +6088,19 @@ static bool fn_vec_list_2(query *q)
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
 
-static bool fn_mat_create_3(query *q)
+static bool fn_vec_close_1(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_vec && !str->is_mat)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_vector_or_matrix");
+
+	return fn_iso_close_1(q);
+}
+
+static bool fn_mat_create_4(query *q)
 {
 	GET_FIRST_ARG(p1,variable);
 	int n = new_stream(q->pl);
@@ -6059,6 +6110,7 @@ static bool fn_mat_create_3(query *q)
 
 	GET_NEXT_ARG(p2,smallint);
 	GET_NEXT_ARG(p3,smallint);
+	GET_NEXT_ARG(p4,list_or_nil);
 
 	if (is_negative(p2) || is_zero(p2))
 		return throw_error(q, p2, p2_ctx, "domain_error", "not_greater_than_zero");
@@ -6067,6 +6119,43 @@ static bool fn_mat_create_3(query *q)
 		return throw_error(q, p3, p3_ctx, "domain_error", "not_greater_than_zero");
 
 	stream *str = &q->pl->streams[n];
+	LIST_HANDLER(p4);
+
+	while (is_list(p4)) {
+		cell *h = LIST_HEAD(p4);
+		cell *c = deref(q, h, p4_ctx);
+		pl_idx_t c_ctx = q->latest_ctx;
+
+		if (is_variable(c))
+			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+
+		cell *name = c + 1;
+		name = deref(q, name, c_ctx);
+
+		if (!CMP_STR_TO_CSTR(q, c, "alias")) {
+			if (is_variable(name))
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+
+			if (!is_atom(name))
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+
+			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
+				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
+
+			free(str->name);
+			str->name = DUP_STR(q, name);
+		} else {
+			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+		}
+
+		p4 = LIST_TAIL(p4);
+		p4 = deref(q, p4, p4_ctx);
+		p4_ctx = q->latest_ctx;
+
+		if (is_variable(p4))
+			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+	}
+
 	str->keyval = map_create(NULL, NULL, NULL);
 	check_heap_error(str->keyval);
 	map_allow_dups(str->keyval, false);
@@ -6363,21 +6452,23 @@ builtins g_files_bifs[] =
 	{"map_del", 2, fn_map_del_2, "+map,+key", false, BLAH},
 	{"map_list", 2, fn_map_list_2, "+map,?list", false, BLAH},
 
-	{"vec_create", 2, fn_vec_create_2, "-map,+cols", false, BLAH},
+	{"vec_create", 3, fn_vec_create_3, "-map,+cols,+opts", false, BLAH},
 	{"vec_empty", 2, fn_vec_empty_2, "+map,+number", false, BLAH},
 	{"vec_set", 3, fn_vec_set_3, "+map,+col,+value", false, BLAH},
 	{"vec_get", 3, fn_vec_get_3, "+map,+col,-value", false, BLAH},
 	{"vec_sum", 2, fn_vec_sum_2, "+map,-total", false, BLAH},
 	{"vec_count", 2, fn_vec_count_2, "+map,-count", false, BLAH},
 	{"vec_list", 2, fn_vec_list_2, "+map,?list", false, BLAH},
+	{"vec_close", 1, fn_vec_close_1, "+map", false, BLAH},
 
-	{"mat_create", 3, fn_mat_create_3, "-map,+rows,+cols", false, BLAH},
+	{"mat_create", 4, fn_mat_create_4, "-map,+rows,+cols,+opts", false, BLAH},
 	{"mat_empty", 2, fn_vec_empty_2, "+map,+number", false, BLAH},
 	{"mat_set", 4, fn_mat_set_4, "+map,+row,+col,+value", false, BLAH},
 	{"mat_get", 4, fn_mat_get_4, "+map,+row,+col,-value", false, BLAH},
 	{"mat_sum", 2, fn_vec_sum_2, "+map,-total", false, BLAH},
 	{"mat_count", 2, fn_vec_count_2, "+map,-count", false, BLAH},
 	{"mat_list", 2, fn_mat_list_2, "+map,?list", false, BLAH},
+	{"mat_close", 1, fn_vec_close_1, "+map", false, BLAH},
 
 #if !defined(_WIN32) && !defined(__wasi__)
 	{"popen", 4, fn_popen_4, "+atom,+atom,-stream,+list", false, BLAH},
