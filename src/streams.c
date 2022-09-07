@@ -5848,6 +5848,21 @@ static bool fn_map_list_2(query *q)
 	return ok;
 }
 
+static bool fn_map_count_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
+
+	GET_NEXT_ARG(p1,variable);
+	cell tmp;
+	make_int(&tmp, map_count(str->keyval));
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
 static bool fn_vec_create_3(query *q)
 {
 	GET_FIRST_ARG(p1,variable);
@@ -6061,21 +6076,6 @@ static bool fn_vec_sum_2(query *q)
 		make_float(&tmp, totd);
 
 	map_done(iter);
-	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-}
-
-static bool fn_vec_count_2(query *q)
-{
-	GET_FIRST_ARG(pstr,stream);
-	int n = get_stream(q, pstr);
-	stream *str = &q->pl->streams[n];
-
-	if (!str->is_map)
-		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
-
-	GET_NEXT_ARG(p1,variable);
-	cell tmp;
-	make_int(&tmp, map_count(str->keyval));
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
@@ -6488,7 +6488,7 @@ builtins g_files_bifs[] =
 	{"map_set", 3, fn_map_set_3, "+map,+key,+value", false, BLAH},
 	{"map_get", 3, fn_map_get_3, "+map,+key,-value", false, BLAH},
 	{"map_del", 2, fn_map_del_2, "+map,+key", false, BLAH},
-	{"map_count", 2, fn_vec_count_2, "+map,-count", false, BLAH},
+	{"map_count", 2, fn_map_count_2, "+map,-count", false, BLAH},
 	{"map_list", 2, fn_map_list_2, "+map,?list", false, BLAH},
 
 	{"vec_create", 3, fn_vec_create_3, "-map,+cols,+opts", false, BLAH},
@@ -6496,7 +6496,7 @@ builtins g_files_bifs[] =
 	{"vec_set", 3, fn_vec_set_3, "+map,+col,+value", false, BLAH},
 	{"vec_get", 3, fn_vec_get_3, "+map,+col,-value", false, BLAH},
 	{"vec_sum", 2, fn_vec_sum_2, "+map,-total", false, BLAH},
-	{"vec_count", 2, fn_vec_count_2, "+map,-count", false, BLAH},
+	{"vec_count", 2, fn_map_count_2, "+map,-count", false, BLAH},
 	{"vec_list", 2, fn_vec_list_2, "+map,?list", false, BLAH},
 	{"vec_close", 1, fn_vec_close_1, "+map", false, BLAH},
 
@@ -6505,7 +6505,7 @@ builtins g_files_bifs[] =
 	{"mat_set", 4, fn_mat_set_4, "+map,+row,+col,+value", false, BLAH},
 	{"mat_get", 4, fn_mat_get_4, "+map,+row,+col,-value", false, BLAH},
 	{"mat_sum", 2, fn_vec_sum_2, "+map,-total", false, BLAH},
-	{"mat_count", 2, fn_vec_count_2, "+map,-count", false, BLAH},
+	{"mat_count", 2, fn_map_count_2, "+map,-count", false, BLAH},
 	{"mat_list", 2, fn_mat_list_2, "+map,?list", false, BLAH},
 	{"mat_close", 1, fn_vec_close_1, "+map", false, BLAH},
 
