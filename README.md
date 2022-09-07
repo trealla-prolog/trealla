@@ -563,8 +563,8 @@ which can be integer or float. Ditto for mat_set/4.
 
 Only non-empty (default is zero) vector & matrix values are stored.
 
-Maps are somewhat analogous to streams so to destroy a map, vector
-or matrix simply call close/1 on the handle.
+Maps are somewhat analogous to streams so to destroy a map, simply
+call close/1 on the handle.
 
 ```console
 	$ tpl
