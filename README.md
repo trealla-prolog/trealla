@@ -572,19 +572,16 @@ Only non-empty (default is zero) vector & matrix values are stored.
 
 ```console
 	$ tpl
-	?- vec_create(S,-1,[alias(foo)]).
+	?- map_create(S,-1,[alias(foo)]).
 	   S = <$stream>(4).
-	?- vec_set(foo,1,111), vec_set(foo,2,222), vec_set(foo,3,333).
+	?- map_set(foo,1,111), map_set(foo,two,222), map_set(foo,3,333).
 	   true.
-	?- vec_set(foo,2,0).
+	?- map_del(foo,3).
 	   true.
-	?- vec_list(foo,L).
-	   L = [1=111,3=333].
-	?- close(foo).
+	?- map_list(foo,L).
+	   L = [1=111,two=222].
+	?- map_close(foo).
 	   true.
-	?- vec_list(foo,L).
-	   error(existence_error(stream,foo),vec_list/2).
-	?-
 ```
 
 
