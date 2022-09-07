@@ -536,6 +536,7 @@ Maps use atomic key/values only.
 	map_set/3					# map_set(+map,+key,+value)
 	map_get/3					# map_get(+map,+key,?value)
 	map_del/2					# map_del(+map,+key)
+	map_count/2					# mapc_count(+map,-count)
 	map_list/2					# map_list(+map,?list)
 
 Vector & matrix maps use positive integer (>= 0) keys (columns and

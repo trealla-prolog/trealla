@@ -6070,8 +6070,8 @@ static bool fn_vec_count_2(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_vec && !str->is_mat)
-		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_vector_or_mat");
+	if (!str->is_map)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
 
 	GET_NEXT_ARG(p1,variable);
 	cell tmp;
@@ -6488,6 +6488,7 @@ builtins g_files_bifs[] =
 	{"map_set", 3, fn_map_set_3, "+map,+key,+value", false, BLAH},
 	{"map_get", 3, fn_map_get_3, "+map,+key,-value", false, BLAH},
 	{"map_del", 2, fn_map_del_2, "+map,+key", false, BLAH},
+	{"map_count", 2, fn_vec_count_2, "+map,-count", false, BLAH},
 	{"map_list", 2, fn_map_list_2, "+map,?list", false, BLAH},
 
 	{"vec_create", 3, fn_vec_create_3, "-map,+cols,+opts", false, BLAH},
