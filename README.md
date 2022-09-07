@@ -571,7 +571,7 @@ Only non-empty (default is zero) vector & matrix values are stored.
 	$ tpl
 	?- vec_create(S,-1,[alias(foo)]).
 	   S = <$stream>(4).
-	?- vec_set(foo,1,111), vec_set(S,2,222), vec_set(S,3,333).
+	?- vec_set(foo,1,111), vec_set(foo,2,222), vec_set(foo,3,333).
 	   true.
 	?- vec_set(foo,2,0).
 	   true.
