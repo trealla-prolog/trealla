@@ -5828,6 +5828,7 @@ static bool fn_vec_create_2(query *q)
 	str->i_empty = 0;
 	str->d_empty = 0.0;
 	str->is_first = true;
+	str->is_int = true;
 
 	cell tmp ;
 	make_int(&tmp, n);
@@ -5933,8 +5934,12 @@ static bool fn_vec_get_3(query *q)
 	void *key = (void*)get_smallint(p1);
 	union { double vd; int64_t vi; void *vp; } dummy;
 
-	if (!map_get(str->keyval, key, (void*)&dummy.vp))
-		return false;
+	if (!map_get(str->keyval, key, (void*)&dummy.vp)) {
+		if (str->is_int)
+			dummy.vi = str->i_empty;
+		else
+			dummy.vd = str->d_empty;
+	}
 
 	cell tmp;
 
@@ -6080,6 +6085,7 @@ static bool fn_mat_create_3(query *q)
 	str->i_empty = 0;
 	str->d_empty = 0.0;
 	str->is_first = true;
+	str->is_int = true;
 
 	cell tmp ;
 	make_int(&tmp, n);
@@ -6181,8 +6187,12 @@ static bool fn_mat_get_4(query *q)
 	void *key = (void*)((row * str->cols) + col);
 	union { double vd; int64_t vi; void *vp; } dummy;
 
-	if (!map_get(str->keyval, key, (void*)&dummy.vp))
-		return false;
+	if (!map_get(str->keyval, key, (void*)&dummy.vp)) {
+		if (str->is_int)
+			dummy.vi = str->i_empty;
+		else
+			dummy.vd = str->d_empty;
+	}
 
 	cell tmp;
 
