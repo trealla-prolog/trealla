@@ -6022,11 +6022,12 @@ static bool fn_vec_list_2(query *q)
 
 	while (map_next(iter, (void**)&dummy.vp)) {
 		void *key = map_key(iter);
+		int64_t n = (int64_t)key;
 
 		cell tmp2[3];
 		make_struct(tmp2+0, g_pair_s, NULL, 2, 2);
-		make_int(tmp2+1, (int64_t)(size_t)key);
-		SET_OP(tmp2, OP_YFX);
+		make_int(tmp2+1, n);
+		SET_OP(tmp2+0, OP_YFX);
 
 		if (str->is_int)
 			make_int(tmp2+2, dummy.vi);
@@ -6211,16 +6212,22 @@ static bool fn_mat_list_2(query *q)
 
 	while (map_next(iter, (void**)&dummy.vp)) {
 		void *key = map_key(iter);
+		int64_t n = (int64_t)key;
+		int64_t row = n / str->cols;
+		int64_t col = n % str->cols;
 
-		cell tmp2[3];
-		make_struct(tmp2+0, g_pair_s, NULL, 2, 2);
-		make_int(tmp2+1, (int64_t)(size_t)key);
-		SET_OP(tmp2, OP_YFX);
+		cell tmp2[5];
+		make_struct(tmp2+0, g_pair_s, NULL, 2, 4);
+		make_struct(tmp2+1, g_conjunction_s, NULL, 2, 2);
+		make_int(tmp2+2, (int64_t)(size_t)row);
+		make_int(tmp2+3, (int64_t)(size_t)col);
+		SET_OP(tmp2+0, OP_YFX);
+		SET_OP(tmp2+1, OP_YFX);
 
 		if (str->is_int)
-			make_int(tmp2+2, dummy.vi);
+			make_int(tmp2+4, dummy.vi);
 		else
-			make_float(tmp2+2, dummy.vd);
+			make_float(tmp2+4, dummy.vd);
 
 		if (first) {
 			allocate_list(q, tmp2);
