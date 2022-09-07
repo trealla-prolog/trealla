@@ -554,6 +554,8 @@ rows) and number values only.
 	mat_count/2					# mat_count(+map,-count)
 	mat_list/2					# mat_list(+map,?list)
 
+With vec_create/2 a *cols* value <= 0 implies an unspecified number.
+
 The first call to vec_set/3 sets the value *type* of the vector,
 which can be integer or float. Ditto for mat_set/4.
 
@@ -561,6 +563,27 @@ Only non-zero vector & matrix values are stored.
 
 Maps are somewhat analogous to streams so to destroy a map, vector
 or matrix simply call close/1 on the handle.
+
+```console
+	$ tpl
+	?- vec_create(S,-1), assertz(s(S)).
+	   S = <$stream>(4).
+	?- s(S),vec_set(S,1,111).
+	   S = <$stream>(4).
+	?- s(S),vec_set(S,2,222).
+	   S = <$stream>(4).
+	?- s(S),vec_set(S,3,333).
+	   S = <$stream>(4).
+	?- s(S),vec_set(S,2,0).
+	   S = <$stream>(4).
+	?- s(S),vec_list(S,L).
+	   S = <$stream>(4), L = [1:111,3:333].
+	?- close(S).
+	   S = 4.
+	?- s(S),vec_list(S,L).
+	   error(existence_error(stream,4),vec_list/2).
+	?-
+```
 
 
 HTTP 1.1

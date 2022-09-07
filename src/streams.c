@@ -5819,10 +5819,6 @@ static bool fn_vec_create_2(query *q)
 		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
 
 	GET_NEXT_ARG(p2,smallint);
-
-	if (is_negative(p2) || is_zero(p2))
-		return throw_error(q, p2, p2_ctx, "domain_error", "not_greater_than_zero");
-
 	stream *str = &q->pl->streams[n];
 	str->keyval = map_create(NULL, NULL, NULL);
 	check_heap_error(str->keyval);
@@ -5854,7 +5850,7 @@ static bool fn_vec_set_3(query *q)
 	if (is_negative(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
 
-	if (get_smallint(p1) >= str->cols)
+	if ((str->cols > 0) && get_smallint(p1) >= str->cols)
 		return throw_error(q, p1, p1_ctx, "domain_error", "index_range");
 
 	void *key = (void*)get_smallint(p1);
