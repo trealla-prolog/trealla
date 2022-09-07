@@ -405,8 +405,6 @@ not(G) :- G, !, fail.
 not(_).
 
 map_create(S,Cs) :- map_create(S,Cs,[]).
-vec_create(S,Cs) :- vec_create(S,Cs,[]).
-mat_create(S,Rs,Cs) :- mat_create(S,Rs,Cs,[]).
 
 iso_dif(X, Y) :-
 	X \== Y,

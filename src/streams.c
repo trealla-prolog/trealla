@@ -6492,24 +6492,6 @@ builtins g_files_bifs[] =
 	{"map_list", 2, fn_map_list_2, "+map,?list", false, BLAH},
 	{"map_close", 1, fn_map_close_1, "+map", false, BLAH},
 
-	{"vec_create", 3, fn_vec_create_3, "-map,+cols,+opts", false, BLAH},
-	{"vec_empty", 2, fn_vec_empty_2, "+map,+number", false, BLAH},
-	{"vec_set", 3, fn_vec_set_3, "+map,+col,+value", false, BLAH},
-	{"vec_get", 3, fn_vec_get_3, "+map,+col,-value", false, BLAH},
-	{"vec_sum", 2, fn_vec_sum_2, "+map,-total", false, BLAH},
-	{"vec_count", 2, fn_map_count_2, "+map,-count", false, BLAH},
-	{"vec_list", 2, fn_vec_list_2, "+map,?list", false, BLAH},
-	{"vec_close", 1, fn_map_close_1, "+map", false, BLAH},
-
-	{"mat_create", 4, fn_mat_create_4, "-map,+rows,+cols,+opts", false, BLAH},
-	{"mat_empty", 2, fn_vec_empty_2, "+map,+number", false, BLAH},
-	{"mat_set", 4, fn_mat_set_4, "+map,+row,+col,+value", false, BLAH},
-	{"mat_get", 4, fn_mat_get_4, "+map,+row,+col,-value", false, BLAH},
-	{"mat_sum", 2, fn_vec_sum_2, "+map,-total", false, BLAH},
-	{"mat_count", 2, fn_map_count_2, "+map,-count", false, BLAH},
-	{"mat_list", 2, fn_mat_list_2, "+map,?list", false, BLAH},
-	{"mat_close", 1, fn_map_close_1, "+map", false, BLAH},
-
 #if !defined(_WIN32) && !defined(__wasi__)
 	{"popen", 4, fn_popen_4, "+atom,+atom,-stream,+list", false, BLAH},
 #endif
