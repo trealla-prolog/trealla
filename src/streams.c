@@ -5620,8 +5620,8 @@ static bool fn_map_set_3(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map || str->is_vec)
-		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_map");
+	if (!str->is_map || str->is_vec || str->is_mat)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
 
 	GET_NEXT_ARG(p1,atomic);
 	GET_NEXT_ARG(p2,atomic);
@@ -5661,8 +5661,8 @@ static bool fn_map_get_3(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map || str->is_vec)
-		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_map");
+	if (!str->is_map || str->is_vec || str->is_mat)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
 
 	GET_NEXT_ARG(p1,atomic);
 	GET_NEXT_ARG(p2,atomic_or_var);
@@ -5716,8 +5716,8 @@ static bool fn_map_del_2(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map || str->is_vec)
-		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_map");
+	if (!str->is_map || str->is_vec || str->is_mat)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
 
 	GET_NEXT_ARG(p1,atomic);
 	char *key;
@@ -5742,8 +5742,8 @@ static bool fn_map_list_2(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map || str->is_vec)
-		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec");
+	if (!str->is_map || str->is_vec || str->is_mat)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
 
 	GET_NEXT_ARG(p1,list_or_var);
 	miter *iter = map_first(str->keyval);
@@ -5841,8 +5841,8 @@ static bool fn_vec_empty_2(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map)
-		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec_or_mat");
+	if (!str->is_vec && !str->is_mat)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_vector_or_matrix");
 
 	GET_NEXT_ARG(p1,number);
 
@@ -5863,8 +5863,8 @@ static bool fn_vec_set_3(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map || !str->is_vec)
-		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec");
+	if (!str->is_vec)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_vector");
 
 	GET_NEXT_ARG(p1,smallint);
 	GET_NEXT_ARG(p2,number);
@@ -5918,8 +5918,8 @@ static bool fn_vec_get_3(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map || !str->is_vec)
-		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec");
+	if (!str->is_vec)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_vector");
 
 	GET_NEXT_ARG(p1,smallint);
 	GET_NEXT_ARG(p2,number_or_var);
@@ -5954,8 +5954,8 @@ static bool fn_vec_sum_2(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map)
-		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec_or_mat");
+	if (!str->is_vec && !str->is_mat)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_vector_or_mat");
 
 	GET_NEXT_ARG(p1,variable);
 	union { double vd; int64_t vi; void *vp; } dummy;
@@ -5988,8 +5988,8 @@ static bool fn_vec_count_2(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map)
-		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec_or_mat");
+	if (!str->is_vec && !str->is_mat)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_vector_or_mat");
 
 	GET_NEXT_ARG(p1,variable);
 	int64_t count = 0;
@@ -6012,8 +6012,8 @@ static bool fn_vec_list_2(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map || !str->is_vec)
-		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec");
+	if (!str->is_vec)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_vector");
 
 	GET_NEXT_ARG(p1,list_or_var);
 	union { double vd; int64_t vi; void *vp; } dummy;
@@ -6074,7 +6074,7 @@ static bool fn_mat_create_3(query *q)
 	str->keyval = map_create(NULL, NULL, NULL);
 	check_heap_error(str->keyval);
 	map_allow_dups(str->keyval, false);
-	str->is_map = str->is_vec = true;
+	str->is_map = str->is_mat = true;
 	str->rows = get_smallint(p2);
 	str->cols = get_smallint(p3);
 	str->i_empty = 0;
@@ -6093,8 +6093,8 @@ static bool fn_mat_set_4(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map || !str->is_vec)
-		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec");
+	if (!str->is_mat)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_matrix");
 
 	GET_NEXT_ARG(p1,smallint);
 	GET_NEXT_ARG(p2,smallint);
@@ -6157,8 +6157,8 @@ static bool fn_mat_get_4(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map || !str->is_vec)
-		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec");
+	if (!str->is_mat)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_matrix");
 
 	GET_NEXT_ARG(p1,smallint);
 	GET_NEXT_ARG(p2,smallint);
@@ -6202,8 +6202,8 @@ static bool fn_mat_list_2(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map || !str->is_vec)
-		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec");
+	if (!str->is_mat)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_matrix");
 
 	GET_NEXT_ARG(p1,list_or_var);
 	union { double vd; int64_t vi; void *vp; } dummy;
