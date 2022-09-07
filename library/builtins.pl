@@ -404,7 +404,7 @@ term_hash(Term, _Opts, Hash) :- term_hash(Term, Hash).
 not(G) :- G, !, fail.
 not(_).
 
-map_create(S,Cs) :- map_create(S,Cs,[]).
+map_create(S) :- map_create(S,[]).
 
 iso_dif(X, Y) :-
 	X \== Y,

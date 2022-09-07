@@ -5594,7 +5594,7 @@ static bool fn_sys_put_chars_2(query *q)
 	return !ferror(str->fp);
 }
 
-static bool fn_map_create_1(query *q)
+static bool fn_map_create_2(query *q)
 {
 	GET_FIRST_ARG(p1,variable);
 	int n = new_stream(q->pl);
@@ -5675,11 +5675,15 @@ static bool fn_map_set_3(query *q)
 		return throw_error(q, p1, p1_ctx, "type_error", "integer");
 
 	check_heap_error(key);
-	char *val;
+	char *val = NULL;
 
 	if (is_integer(p2)) {
 		char tmpbuf[128];
 		snprintf(tmpbuf, sizeof(tmpbuf), "%lld", (long long unsigned)get_smallint(p2));
+		val = strdup(tmpbuf);
+	} else if (is_float(p2)) {
+		char tmpbuf[128];
+		snprintf(tmpbuf, sizeof(tmpbuf), "%.*g", DBL_DIG, get_float(p2));
 		val = strdup(tmpbuf);
 	} else if (is_atom(p2))
 		val = DUP_STR(q, p2);
@@ -5725,10 +5729,16 @@ static bool fn_map_get_3(query *q)
 
 	cell tmp;
 	const char *src = val;
-	int all_digs = 1;
+	int all_digs = 1, floaties = 0;
+
+	if (*src == '-')
+		src++;
 
 	while (*src) {
-		if (!isdigit(*src)) {
+		if ((*src == '.') || (*src == 'e') || (*src == 'E')
+			|| (*src == '+') || (*src == '-'))
+			floaties++;
+		else if (!isdigit(*src)) {
 			all_digs = 0;
 			break;
 		}
@@ -5736,9 +5746,12 @@ static bool fn_map_get_3(query *q)
 		src++;
 	}
 
-	if (all_digs) {
+	if (all_digs && !floaties) {
 		pl_int_t v = strtoll(val, NULL, 10);
 		make_int(&tmp, v);
+	} else if (all_digs && floaties) {
+		double v = strtod(val, NULL);
+		make_float(&tmp, v);
 	} else
 		check_heap_error(make_cstring(&tmp, val));
 
@@ -6484,7 +6497,7 @@ builtins g_files_bifs[] =
 	{"bread", 3, fn_bread_3, "+stream,+integer,-string", false, BLAH},
 	{"bwrite", 2, fn_bwrite_2, "+stream,-string", false, BLAH},
 
-	{"map_create", 1, fn_map_create_1, "-map", false, BLAH},
+	{"map_create", 2, fn_map_create_2, "-map,+opts", false, BLAH},
 	{"map_set", 3, fn_map_set_3, "+map,+key,+value", false, BLAH},
 	{"map_get", 3, fn_map_get_3, "+map,+key,-value", false, BLAH},
 	{"map_del", 2, fn_map_del_2, "+map,+key", false, BLAH},
