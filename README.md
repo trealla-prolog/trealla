@@ -531,6 +531,7 @@ Application maps
 
 Maps use atomic key/values only.
 
+	map_create/2				# map_create(-map,+opts)
 	map_create/1				# map_create(-map)
 	map_set/3					# map_set(+map,+key,+value)
 	map_get/3					# map_get(+map,+key,?value)
