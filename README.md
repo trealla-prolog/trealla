@@ -569,18 +569,18 @@ Only non-empty (default is zero) vector & matrix values are stored.
 
 ```console
 	$ tpl
-	?- vec_create(S,-1), assertz(s(S)).
+	?- vec_create(S,-1,alias(foo)]).
 	   S = <$stream>(4).
-	?- s(S),vec_set(S,1,111), vec_set(S,2,222), vec_set(S,3,333).
-	   S = <$stream>(4).
-	?- s(S),vec_set(S,2,0).
-	   S = <$stream>(4).
-	?- s(S),vec_list(S,L).
-	   S = <$stream>(4), L = [1=111,3=333].
-	?- close(S).
-	   S = 4.
-	?- s(S),vec_list(S,L).
-	   error(existence_error(stream,4),vec_list/2).
+	?- vec_set(foo,1,111), vec_set(S,2,222), vec_set(S,3,333).
+	   true.
+	?- vec_set(foo,2,0).
+	   true.
+	?- vec_list(foo,L).
+	   L = [1=111,3=333].
+	?- close(foo).
+	   true.
+	?- vec_list(foo,L).
+	   error(existence_error(stream,foo),vec_list/2).
 	?-
 ```
 
