@@ -541,6 +541,7 @@ Vector & matrix maps use positive integer (>= 0) keys (columns and
 rows) and number values only.
 
 	vec_create/2				# vec_create(-map,+cols)
+	vec_empty/2					# vec_create(+map,+number)
 	vec_set/3					# vec_set(+map,+col,+number)
 	vec_get/3					# vec_get(+map,+col,?number)
 	vec_sum/2					# vec_sum(+map,-total)
@@ -548,13 +549,14 @@ rows) and number values only.
 	vec_list/2					# vec_list(+map,?list)
 
 	mat_create/3				# mat_create(-map,+rows,+cols)
+	mat_empty/2					# vec_create(+map,+number)
 	mat_set/4					# mat_set(+map,+row,+col,+number)
 	mat_get/4					# mat_get(+map,+row,+col,?number)
 	mat_sum/2					# mat_sum(+map,-total)
 	mat_count/2					# mat_count(+map,-count)
 	mat_list/2					# mat_list(+map,?list)
 
-With vec_create/2 a *cols* value <= 0 implies an unspecified number.
+With *vec_create/2* a *cols* value <= 0 implies an unspecified number.
 
 The first call to vec_set/3 sets the value *type* of the vector,
 which can be integer or float. Ditto for mat_set/4.

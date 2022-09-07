@@ -5835,6 +5835,28 @@ static bool fn_vec_create_2(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
+static bool fn_vec_empty_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map)
+		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec_or_mat");
+
+	GET_NEXT_ARG(p1,number);
+
+	if (is_integer(p1)) {
+		str->is_int = true;
+		str->i_empty = get_smallint(p1);
+	} else {
+		str->is_int = false;
+		str->d_empty = get_float(p1);
+	}
+
+	return true;
+}
+
 static bool fn_vec_set_3(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
@@ -5932,8 +5954,8 @@ static bool fn_vec_sum_2(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map || !str->is_vec)
-		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec");
+	if (!str->is_map)
+		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec_or_mat");
 
 	GET_NEXT_ARG(p1,variable);
 	union { double vd; int64_t vi; void *vp; } dummy;
@@ -5966,8 +5988,8 @@ static bool fn_vec_count_2(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map || !str->is_vec)
-		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec");
+	if (!str->is_map)
+		return throw_error(q, pstr, pstr_ctx, "resource_error", "not_a_vec_or_mat");
 
 	GET_NEXT_ARG(p1,variable);
 	int64_t count = 0;
@@ -6334,6 +6356,7 @@ builtins g_files_bifs[] =
 	{"map_list", 2, fn_map_list_2, "+map,?list", false, BLAH},
 
 	{"vec_create", 2, fn_vec_create_2, "-map,+cols", false, BLAH},
+	{"vec_empty", 2, fn_vec_empty_2, "+map,+number", false, BLAH},
 	{"vec_set", 3, fn_vec_set_3, "+map,+col,+value", false, BLAH},
 	{"vec_get", 3, fn_vec_get_3, "+map,+col,-value", false, BLAH},
 	{"vec_sum", 2, fn_vec_sum_2, "+map,-total", false, BLAH},
@@ -6341,6 +6364,7 @@ builtins g_files_bifs[] =
 	{"vec_list", 2, fn_vec_list_2, "+map,?list", false, BLAH},
 
 	{"mat_create", 3, fn_mat_create_3, "-map,+rows,+cols", false, BLAH},
+	{"mat_empty", 2, fn_vec_empty_2, "+map,+number", false, BLAH},
 	{"mat_set", 4, fn_mat_set_4, "+map,+row,+col,+value", false, BLAH},
 	{"mat_get", 4, fn_mat_get_4, "+map,+row,+col,-value", false, BLAH},
 	{"mat_sum", 2, fn_vec_sum_2, "+map,-total", false, BLAH},
