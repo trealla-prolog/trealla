@@ -6025,7 +6025,7 @@ static bool fn_vec_list_2(query *q)
 		int64_t n = (int64_t)key;
 
 		cell tmp2[3];
-		make_struct(tmp2+0, g_pair_s, NULL, 2, 2);
+		make_struct(tmp2+0, g_eq_s, NULL, 2, 2);
 		make_int(tmp2+1, n);
 		SET_OP(tmp2+0, OP_YFX);
 
@@ -6217,7 +6217,7 @@ static bool fn_mat_list_2(query *q)
 		int64_t col = n % str->cols;
 
 		cell tmp2[5];
-		make_struct(tmp2+0, g_pair_s, NULL, 2, 4);
+		make_struct(tmp2+0, g_eq_s, NULL, 2, 4);
 		make_struct(tmp2+1, g_conjunction_s, NULL, 2, 2);
 		make_int(tmp2+2, (int64_t)(size_t)row);
 		make_int(tmp2+3, (int64_t)(size_t)col);
