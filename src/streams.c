@@ -958,9 +958,7 @@ static bool fn_iso_close_1(query *q)
 	if (!str->socket)
 		del_stream_properties(q, n);
 
-	if (str->is_vec) {
-		str->keyval = NULL;
-	} else if (str->is_map) {
+	if (str->is_map) {
 		map_destroy(str->keyval);
 		str->keyval = NULL;
 	} else
@@ -5658,7 +5656,7 @@ static bool fn_map_set_3(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map || str->is_vec || str->is_mat)
+	if (!str->is_map)
 		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
 
 	GET_NEXT_ARG(p1,atomic);
@@ -5703,7 +5701,7 @@ static bool fn_map_get_3(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map || str->is_vec || str->is_mat)
+	if (!str->is_map)
 		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
 
 	GET_NEXT_ARG(p1,atomic);
@@ -5767,7 +5765,7 @@ static bool fn_map_del_2(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map || str->is_vec || str->is_mat)
+	if (!str->is_map)
 		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
 
 	GET_NEXT_ARG(p1,atomic);
@@ -5793,7 +5791,7 @@ static bool fn_map_list_2(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-	if (!str->is_map || str->is_vec || str->is_mat)
+	if (!str->is_map)
 		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
 
 	GET_NEXT_ARG(p1,list_or_var);
