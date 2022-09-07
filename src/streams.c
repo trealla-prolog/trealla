@@ -5825,10 +5825,17 @@ static bool fn_map_list_2(query *q)
 			check_heap_error(make_cstring(&tmpk, key));
 
 		src = val;
-		all_digs = 1;
+		src = val;
+		all_digs = 1; int floaties = 0;
+
+		if (*src == '-')
+			src++;
 
 		while (*src) {
-			if (!isdigit(*src)) {
+			if ((*src == '.') || (*src == 'e') || (*src == 'E')
+				|| (*src == '+') || (*src == '-'))
+				floaties++;
+			else if (!isdigit(*src)) {
 				all_digs = 0;
 				break;
 			}
@@ -5836,9 +5843,12 @@ static bool fn_map_list_2(query *q)
 			src++;
 		}
 
-		if (all_digs) {
+		if (all_digs && !floaties) {
 			pl_int_t v = strtoll(val, NULL, 10);
 			make_int(&tmpv, v);
+		} else if (all_digs && floaties) {
+			double v = strtod(val, NULL);
+			make_float(&tmpv, v);
 		} else
 			check_heap_error(make_cstring(&tmpv, val));
 
