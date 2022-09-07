@@ -589,6 +589,7 @@ struct stream_ {
 	bool is_map:1;
 	bool is_vec:1;
 	bool is_int:1;
+	bool is_first:1;
 };
 
 struct page_ {

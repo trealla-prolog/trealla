@@ -5831,6 +5831,7 @@ static bool fn_vec_create_2(query *q)
 	str->cols = get_smallint(p2);
 	str->i_empty = 0;
 	str->d_empty = 0.0;
+	str->is_first = true;
 
 	cell tmp ;
 	make_int(&tmp, n);
@@ -5859,19 +5860,34 @@ static bool fn_vec_set_3(query *q)
 	void *key = (void*)get_smallint(p1);
 	map_del(str->keyval, key);
 
-	if (is_zero(p2))
-		return true;
-
 	union { double vd; int64_t vi; void *vp; } dummy;
 	void *val;
 
-	if (is_integer(p2)) {
-		dummy.vi = get_smallint(p2);
-		str->is_int = true;
+	if (str->is_first) {
+		if (is_integer(p2))
+			str->is_int = true;
+		else
+			str->is_int = false;
+
+		str->is_first = false;
 	} else {
-		dummy.vd = get_float(p2);
-		str->is_int = false;
+		if (str->is_int && !is_integer(p2))
+			return throw_error(q, p1, p1_ctx, "domain_error", "type");
+
+		if (!str->is_int && is_integer(p2))
+			return throw_error(q, p1, p1_ctx, "domain_error", "type");
 	}
+
+	if (is_integer(p2))
+		dummy.vi = get_smallint(p2);
+	else
+		dummy.vd = get_float(p2);
+
+	if (str->is_int && (str->i_empty == get_smallint(p2)))
+		return true;
+
+	if (!str->is_int && (str->d_empty == get_float(p2)))
+		return true;
 
 	val = dummy.vp;
 	map_set(str->keyval, key, val);
@@ -6044,6 +6060,7 @@ static bool fn_mat_create_3(query *q)
 	str->cols = get_smallint(p3);
 	str->i_empty = 0;
 	str->d_empty = 0.0;
+	str->is_first = true;
 
 	cell tmp ;
 	make_int(&tmp, n);
@@ -6081,19 +6098,34 @@ static bool fn_mat_set_4(query *q)
 	void *key = (void*)((row * str->cols) + col);
 	map_del(str->keyval, key);
 
-	if (is_zero(p3))
-		return true;
-
 	union { double vd; int64_t vi; void *vp; } dummy;
 	void *val;
 
-	if (is_integer(p3)) {
-		dummy.vi = get_smallint(p3);
-		str->is_int = true;
+	if (str->is_first) {
+		if (is_integer(p3))
+			str->is_int = true;
+		else
+			str->is_int = false;
+
+		str->is_first = false;
 	} else {
-		dummy.vd = get_float(p3);
-		str->is_int = false;
+		if (str->is_int && !is_integer(p2))
+			return throw_error(q, p1, p1_ctx, "domain_error", "type");
+
+		if (!str->is_int && is_integer(p2))
+			return throw_error(q, p1, p1_ctx, "domain_error", "type");
 	}
+
+	if (is_integer(p3))
+		dummy.vi = get_smallint(p3);
+	else
+		dummy.vd = get_float(p3);
+
+	if (str->is_int && (str->i_empty == get_smallint(p3)))
+		return true;
+
+	if (!str->is_int && (str->d_empty == get_float(p3)))
+		return true;
 
 	val = dummy.vp;
 	map_set(str->keyval, key, val);
