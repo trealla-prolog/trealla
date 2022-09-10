@@ -11,11 +11,16 @@ frozen(Term, Goal) :-
 	flatten(Gs, Gs2),
 	toconjunction(Gs2, Goal).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 verify_attributes(Var, Other, Goals) :-
         get_atts(Var, frozen(Fa)), !,       % are we involved?
         (   var(Other) ->                   % must be attributed then
             (   get_atts(Other,  frozen(Fb)) % has a pending goal?
-            ->  put_atts(Other,  frozen((Fb,Fa))) % rescue conjunction
+            ->  ( var(Fb) ->
+				  put_atts(Other,  frozen(Fa))
+				; put_atts(Other,  frozen((Fb,Fa))) % rescue conjunction
+				)
             ;   put_atts(Other,  frozen(Fa)) % rescue the pending goal
             ),
             Goals = []
@@ -30,5 +35,5 @@ freeze(X, Goal) :-
 attribute_goals(Var) -->
     { get_atts(Var, frozen(Goals)),
       put_atts(Var, -frozen(_)) },
-    [freeze(Var, Goals)].
+    [freeze:freeze(Var, Goals)].
 
