@@ -3152,9 +3152,9 @@ static bool fn_iso_set_stream_position_2(query *q)
 
 static bool fn_read_term_from_chars_3(query *q)
 {
-	GET_FIRST_ARG(p_chars,any);
-	GET_NEXT_ARG(p_term,any);
+	GET_FIRST_ARG(p_term,any);
 	GET_NEXT_ARG(p_opts,list_or_nil);
+	GET_NEXT_ARG(p_chars,any);
 	int n = 3;
 	stream *str = &q->pl->streams[n];
 	char *src = NULL;
@@ -3229,9 +3229,9 @@ static bool fn_read_term_from_chars_3(query *q)
 
 static bool fn_read_term_from_atom_3(query *q)
 {
-	GET_FIRST_ARG(p_chars,any);
-	GET_NEXT_ARG(p_term,any);
+	GET_FIRST_ARG(p_term,any);
 	GET_NEXT_ARG(p_opts,list_or_nil);
+	GET_NEXT_ARG(p_chars,any);
 	int n = q->pl->current_input;
 	stream *str = &q->pl->streams[n];
 
@@ -3333,9 +3333,9 @@ static bool fn_write_canonical_to_atom_3(query *q)
 
 static bool fn_write_term_to_chars_3(query *q)
 {
-	GET_FIRST_ARG(p_chars,atom_or_var);
-	GET_NEXT_ARG(p_term,any);
+	GET_FIRST_ARG(p_term,any);
 	GET_NEXT_ARG(p2,list_or_nil);
+	GET_NEXT_ARG(p_chars,atom_or_var);
 	cell *vnames = NULL;
 	pl_idx_t vnames_ctx = 0;
 	q->flags = q->st.m->flags;
@@ -5988,8 +5988,8 @@ builtins g_files_bifs[] =
 	{"chdir", 1, fn_chdir_1, "+string", false, BLAH},
 	{"$put_chars", 1, fn_sys_put_chars_1, "+chars", false, BLAH},
 	{"$put_chars", 2, fn_sys_put_chars_2, "+stream,+chars", false, BLAH},
-	{"read_term_from_atom", 3, fn_read_term_from_atom_3, "+atom,?term,+list", false, BLAH},
-	{"read_term_from_chars", 3, fn_read_term_from_chars_3, "+chars,?term,+list", false, BLAH},
+	{"read_term_from_atom", 3, fn_read_term_from_atom_3, "?term,+list,+atom", false, BLAH},
+	{"read_term_from_chars", 3, fn_read_term_from_chars_3, "?term,+list,+chars", false, BLAH},
 	{"write_term_to_atom", 3, fn_write_term_to_atom_3, "?atom,?term,+list", false, BLAH},
 	{"write_canonical_to_atom", 3, fn_write_canonical_to_chars_3, "?atom,?term,+list", false, BLAH},
 	{"write_term_to_chars", 3, fn_write_term_to_chars_3, "?chars,?term,+list", false, BLAH},

@@ -390,13 +390,12 @@ term_to_atom(T, S) :- write_term_to_chars(S, T, []).
 absolute_file_name(R, A) :- absolute_file_name(R, A, []).
 client(U, H, P, S) :- client(U,H,P,S,[]).
 server(H, S) :- server(H,S,[]).
-prolog_load_context(module, Module) :- module(Module).
 load_files(Files) :- load_files(Files,[]).
 consult(Files) :- load_files(Files,[]).
 reconsult(Files) :- load_files(Files,[]).
 deconsult(Files) :- unload_files(Files).
 strip_module(T,M,P) :- T=M:P -> true ; P=T.
-read_from_chars(S,T) :- read_term_from_chars(S,T,[]).
+read_term_from_chars(T,S) :- read_term_from_chars(T,[],S).
 ?=(X,Y) :- \+ unifiable(X,Y,[_|_]).
 atom_number(A,N) :- atom_codes(A,Codes), number_codes(N,Codes).
 '$skip_list'(Skip,Xs0,Xs) :- '$skip_max_list'(Skip,_,Xs0,Xs).
@@ -636,11 +635,8 @@ put_atts(Var, [H|T]) :- !,
 put_atts(Var, -Attr) :- !,
 	var(Var),
 	'$get_attributes'(Var, D),
-	Attr =.. [Module,Value],
-	(	var(Value)
-	->	Functor = Value
-	; 	functor(Value, Functor, _)
-	),
+	functor(Attr, Functor, Arity),
+	attribute(Module, Functor, Arity),
 	dict:del(D, Module, D2),
 	(	D2 = []
 	->	'$erase_attributes'(Var)
@@ -650,14 +646,16 @@ put_atts(Var, -Attr) :- !,
 put_atts(Var, +Attr) :- !,
 	var(Var),
 	'$get_attributes'(Var, D),
-	Attr =.. [Module,_],
+	functor(Attr, Functor, Arity),
+	attribute(Module, Functor, Arity),
 	dict:set(D, Module, Attr, D2),
 	'$put_attributes'(Var, D2).
 
 put_atts(Var, Attr) :- !,
 	var(Var),
 	'$get_attributes'(Var, D),
-	Attr =.. [Module,_],
+	functor(Attr, Functor, Arity),
+	attribute(Module, Functor, Arity),
 	dict:set(D, Module, Attr, D2),
 	'$put_attributes'(Var, D2).
 
@@ -669,19 +667,22 @@ get_atts(Var, L) :- var(L), !,
 get_atts(Var, -Attr) :- !,
 	var(Var),
 	'$get_attributes'(Var, D),
-	Attr =.. [Module,_],
+	functor(Attr, Functor, Arity),
+	attribute(Module, Functor, Arity),
 	\+ dict:get(D, Module, _).
 
 get_atts(Var, +Attr) :- !,
 	var(Var),
 	'$get_attributes'(Var, D),
-	Attr =.. [Module,_],
+	functor(Attr, Functor, Arity),
+	attribute(Module, Functor, Arity),
 	dict:get(D, Module, Attr).
 
 get_atts(Var, Attr) :- !,
 	var(Var),
 	'$get_attributes'(Var, D),
-	Attr =.. [Module,_],
+	functor(Attr, Functor, Arity),
+	attribute(Module, Functor, Arity),
 	dict:get(D, Module, Attr).
 
 del_atts(Var) :-

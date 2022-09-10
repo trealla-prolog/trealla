@@ -477,11 +477,29 @@ static void directives(parser *p, cell *d)
 
 	if (!strcmp(dirname, "attribute") && (c->arity == 1)) {
 		cell *arg = c + 1;
-		cell *attr = arg+1;
-		const char *name = C_STR(p, attr);
 
-		if (strcmp(name, p->m->name))
-			duplicate_module(p->m->pl, p->m, name);
+		if (arg->val_off == g_slash_s) {
+			cell *f = arg;
+			char *name = C_STR(p->m, f+1);
+			unsigned arity = get_smallint(f+2);
+			duplicate_module(p->m->pl, p->m, name, arity);
+			return;
+		}
+
+		while (arg->val_off == g_conjunction_s) {
+			cell *f = arg + 1;
+
+			if (!is_structure(f))
+				break;
+
+			if (f->val_off != g_slash_s)
+				break;
+
+			char *name = C_STR(p->m, f+1);
+			unsigned arity = get_smallint(f+2);
+			duplicate_module(p->m->pl, p->m, name, arity);
+			arg += 4;
+		}
 
 		return;
 	}
@@ -1415,125 +1433,6 @@ static bool dcg_expansion(parser *p)
 	return true;
 }
 
-static cell *goal_expansion(parser *p, cell *goal)
-{
-	if (p->error || p->internal || !is_interned(goal))
-		return goal;
-
-	if ((goal->val_off == g_goal_expansion_s) || (goal->val_off == g_cut_s))
-		return goal;
-
-	predicate *pr = find_functor(p->m, "goal_expansion", 2);
-
-	if (!pr || !pr->cnt)
-		return goal;
-
-	const char *functor = C_STR(p, goal);
-
-	if (get_builtin(p->pl, functor, goal->arity, NULL, NULL) /*|| is_op(goal)*/)
-		return goal;
-
-	//if (search_predicate(p->m, goal))
-	//	return goal;
-
-	query *q = create_query(p->m, false);
-	check_error(q);
-	char *dst = print_canonical_to_strbuf(q, goal, 0, 0);
-	ASTRING(s);
-	ASTRING_sprintf(s, "goal_expansion((%s),_TermOut), !.", dst);
-	free(dst);
-
-	parser *p2 = create_parser(p->m);
-	check_error(p2, destroy_query(q));
-	q->p = p2;
-	p2->cl->nbr_vars = p->cl->nbr_vars;
-	p2->vartab = p->vartab;
-	p2->reuse = true;
-	p2->line_nbr = p->line_nbr;
-	p2->skip = true;
-	p2->srcptr = ASTRING_cstr(s);
-	tokenize(p2, false, false);
-	xref_rule(p2->m, p2->cl, NULL);
-	execute(q, p2->cl->cells, p2->cl->nbr_vars);
-
-	ASTRING_free(s);
-
-	if (q->retry != QUERY_OK) {
-		destroy_parser(p2);
-		destroy_query(q);
-		return goal;
-	}
-
-	frame *f = GET_FIRST_FRAME();
-	char *src = NULL;
-
-	for (unsigned i = 0; i < p2->cl->nbr_vars; i++) {
-		if (strcmp(p2->vartab.var_name[i], "_TermOut"))
-			continue;
-
-		slot *e = GET_SLOT(f, i);
-
-		if (is_empty(&e->c))
-			continue;
-
-		q->latest_ctx = e->c.var_ctx;
-		cell *c;
-
-		if (is_indirect(&e->c)) {
-			c = e->c.val_ptr;
-		} else
-			c = deref(q, &e->c, e->c.var_ctx);
-
-		q->varnames = true;
-		src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
-		strcat(src, ".");
-		break;
-	}
-
-	if (!src) {
-		destroy_parser(p2);
-		destroy_query(q);
-		p->error = true;
-		return goal;
-	}
-
-	reset(p2);
-	p2->srcptr = src;
-	tokenize(p2, false, false);
-	xref_rule(p2->m, p2->cl, NULL);
-	free(src);
-
-	// snip the old goal...
-
-	const unsigned goal_idx = goal - p->cl->cells;
-	unsigned trailing = p->cl->cidx - (goal_idx + goal->nbr_cells);
-	p->cl->cidx -= goal->nbr_cells;
-	memmove(goal, goal + goal->nbr_cells, sizeof(cell)*trailing);
-
-	// make room for new goal...
-
-	const unsigned new_cells = p2->cl->cidx-1;		// skip TAG_END
-	trailing = p->cl->cidx - goal_idx;
-	make_room(p, new_cells);
-	goal = p->cl->cells + goal_idx;
-	memmove(goal+new_cells, goal, sizeof(cell)*trailing);
-
-	// paste the new goal...
-
-	memcpy(goal, p2->cl->cells, sizeof(cell)*new_cells);
-	p->cl->cidx += new_cells;
-	clear_rule(p2->cl);
-	free(p2->cl);
-	p2->cl = NULL;
-
-	// done
-
-	destroy_parser(p2);
-	destroy_query(q);
-
-	return goal;
-}
-
 static bool term_expansion(parser *p)
 {
 	if (p->error || p->internal || !is_interned(p->cl->cells))
@@ -1568,7 +1467,6 @@ static bool term_expansion(parser *p)
 	tokenize(p2, false, false);
 	xref_rule(p2->m, p2->cl, NULL);
 	execute(q, p2->cl->cells, p2->cl->nbr_vars);
-
 	ASTRING_free(s);
 
 	if (q->retry != QUERY_OK) {
@@ -1627,7 +1525,127 @@ static bool term_expansion(parser *p)
 	return term_expansion(p);
 }
 
-static cell *insert_here(parser *p, cell *c, cell *p1)
+static cell *goal_expansion(parser *p, cell *goal)
+{
+	if (p->error || p->internal || !is_interned(goal))
+		return goal;
+
+	if ((goal->val_off == g_goal_expansion_s) || (goal->val_off == g_cut_s))
+		return goal;
+
+	predicate *pr = find_functor(p->m, "goal_expansion", 2);
+
+	if (!pr || !pr->cnt)
+		return goal;
+
+	const char *functor = C_STR(p, goal);
+
+	if (get_builtin(p->pl, functor, goal->arity, NULL, NULL) /*|| is_op(goal)*/)
+		return goal;
+
+	//if (search_predicate(p->m, goal))
+	//	return goal;
+
+	query *q = create_query(p->m, false);
+	check_error(q);
+	char *dst = print_canonical_to_strbuf(q, goal, 0, 0);
+	ASTRING(s);
+	ASTRING_sprintf(s, "goal_expansion((%s),_TermOut), !.", dst);
+	free(dst);
+
+	parser *p2 = create_parser(p->m);
+	check_error(p2, destroy_query(q));
+	q->p = p2;
+	p2->cl->nbr_vars = p->cl->nbr_vars;
+	p2->vartab = p->vartab;
+	p2->reuse = true;
+	p2->line_nbr = p->line_nbr;
+	p2->skip = true;
+	p2->srcptr = ASTRING_cstr(s);
+	tokenize(p2, false, false);
+	xref_rule(p2->m, p2->cl, NULL);
+	execute(q, p2->cl->cells, p2->cl->nbr_vars);
+	ASTRING_free(s);
+
+	if (q->retry != QUERY_OK) {
+		destroy_parser(p2);
+		destroy_query(q);
+		return goal;
+	}
+
+	frame *f = GET_FIRST_FRAME();
+	char *src = NULL;
+
+	for (unsigned i = 0; i < p2->cl->nbr_vars; i++) {
+		if (strcmp(p2->vartab.var_name[i], "_TermOut"))
+			continue;
+
+		slot *e = GET_SLOT(f, i);
+
+		if (is_empty(&e->c))
+			continue;
+
+		q->latest_ctx = e->c.var_ctx;
+		cell *c;
+
+		if (is_indirect(&e->c)) {
+			c = e->c.val_ptr;
+		} else
+			c = deref(q, &e->c, e->c.var_ctx);
+
+		q->varnames = true;
+		src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
+		q->varnames = false;
+		//printf("*** %s\n", src);
+		strcat(src, ".");
+		break;
+	}
+
+	if (!src) {
+		destroy_parser(p2);
+		destroy_query(q);
+		p->error = true;
+		return goal;
+	}
+
+	reset(p2);
+	p2->srcptr = src;
+	tokenize(p2, false, false);
+	xref_rule(p2->m, p2->cl, NULL);
+	free(src);
+
+	// snip the old goal...
+
+	const unsigned goal_idx = goal - p->cl->cells;
+	unsigned trailing = p->cl->cidx - (goal_idx + goal->nbr_cells);
+	p->cl->cidx -= goal->nbr_cells;
+	memmove(goal, goal + goal->nbr_cells, sizeof(cell)*trailing);
+
+	// make room for new goal...
+
+	const unsigned new_cells = p2->cl->cidx-1;		// skip TAG_END
+	trailing = p->cl->cidx - goal_idx;
+	make_room(p, new_cells);
+	goal = p->cl->cells + goal_idx;
+	memmove(goal+new_cells, goal, sizeof(cell)*trailing);
+
+	// paste the new goal...
+
+	memcpy(goal, p2->cl->cells, sizeof(cell)*new_cells);
+	p->cl->cidx += new_cells;
+	clear_rule(p2->cl);
+	free(p2->cl);
+	p2->cl = NULL;
+
+	// done
+
+	destroy_parser(p2);
+	destroy_query(q);
+
+	return goal;
+}
+
+static cell *insert_call_here(parser *p, cell *c, cell *p1)
 {
 	pl_idx_t c_idx = c - p->cl->cells, p1_idx = p1 - p->cl->cells;
 	make_room(p, 1);
@@ -1669,7 +1687,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			//	norhs = true;
 
 			if (is_variable(lhs)) {
-				c = insert_here(p, c, lhs);
+				c = insert_call_here(p, c, lhs);
 				lhs = c + 1;
 			} else {
 				if ((c->val_off != g_neck_s))
@@ -1682,7 +1700,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			c = p->cl->cells + c_idx;
 
 			if (is_variable(rhs) && !norhs)
-				c = insert_here(p, c, rhs);
+				c = insert_call_here(p, c, rhs);
 			else {
 				rhs = goal_expansion(p, rhs);
 				rhs = term_to_body_conversion(p, rhs);
@@ -1697,7 +1715,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			cell *rhs = c + 1;
 
 			if (is_variable(rhs)) {
-				c = insert_here(p, c, rhs);
+				c = insert_call_here(p, c, rhs);
 				rhs = c + 1;
 			} else {
 				rhs = goal_expansion(p, rhs);

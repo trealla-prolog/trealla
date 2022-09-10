@@ -253,6 +253,9 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 	const cell *p1 = (const cell*)ptr1;
 	const cell *p2 = (const cell*)ptr2;
 
+	if (m->max_depth && (depth > m->max_depth))
+		return 0;
+
 	if (is_smallint(p1)) {
 		if (is_smallint(p2)) {
 			if (get_smallint(p1) < get_smallint(p2))
@@ -864,17 +867,15 @@ static bool check_multifile(module *m, predicate *pr, db_entry *dbe)
 	return true;
 }
 
-static void check_rule(module *m, db_entry *dbe_orig)
+static void optimize_rule(module *m, db_entry *dbe_orig)
 {
 	predicate *pr = dbe_orig->owner;
 	clause *cl = &dbe_orig->cl;
-	bool matched = false;
-	bool p1_matched = false, p2_matched = false, p3_matched = false;
 	cell *head = get_head(cl->cells);
 	cell *p1 = head + 1, *p2 = NULL, *p3 = NULL;
-	cl->arg1_is_unique = false;
-	cl->arg2_is_unique = false;
-	cl->arg3_is_unique = false;
+	bool matched = false;
+	bool p1_matched = false, p2_matched = false, p3_matched = false;
+	cl->arg1_is_unique = cl->arg2_is_unique = cl->arg3_is_unique = false;
 	cl->is_unique = false;
 
 	if (pr->key.arity > 1)
@@ -882,6 +883,8 @@ static void check_rule(module *m, db_entry *dbe_orig)
 
 	if (pr->key.arity > 2)
 		p3 = p2 + p2->nbr_cells;
+
+	m->max_depth = 1;
 
 	for (db_entry *dbe = dbe_orig->next; dbe; dbe = dbe->next) {
 		if (dbe->cl.dgen_erased)
@@ -915,6 +918,9 @@ static void check_rule(module *m, db_entry *dbe_orig)
 		}
 	}
 
+
+	m->max_depth = 0;
+
 	if (!matched)
 		cl->is_unique = true;
 
@@ -936,7 +942,7 @@ void just_in_time_rebuild(predicate *pr)
 		if (dbe->cl.dgen_erased)
 			continue;
 
-		check_rule(pr->m, dbe);
+		optimize_rule(pr->m, dbe);
 	}
 }
 
@@ -1253,7 +1259,6 @@ void xref_rule(module *m, clause *cl, predicate *parent)
 
 	for (pl_idx_t i = 0; i < cl->cidx; i++) {
 		cell *c = cl->cells + i;
-
 		c->flags &= ~FLAG_TAIL_REC;
 
 		if (!is_interned(c))
@@ -1278,7 +1283,7 @@ void xref_db(module *m)
 			continue;
 
 		for (db_entry *dbe = pr->head; dbe; dbe = dbe->next)
-			check_rule(m, dbe);
+			optimize_rule(m, dbe);
 	}
 }
 
@@ -1682,10 +1687,11 @@ void destroy_module(module *m)
 	free(m);
 }
 
-void duplicate_module(prolog *pl, module *m, const char *name)
+void duplicate_module(prolog *pl, module *m, const char *name, unsigned arity)
 {
 	module *tmp_m = create_module(pl, name);
 	tmp_m->orig = m;
+	tmp_m->arity = arity;
 }
 
 module *create_module(prolog *pl, const char *name)

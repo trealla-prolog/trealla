@@ -522,7 +522,7 @@ struct prolog_state_ {
 	predicate *pr;
 	db_entry *curr_dbe;
 	miter *iter, *f_iter;
-	module *m;
+	module *m, *prev_m;
 
 	union {
 		int64_t cnt;
@@ -752,7 +752,7 @@ struct module_ {
 	FILE *fp;
 	map *index, *nbs, *ops, *defops;
 	loaded_file *loaded_files;
-	unsigned id, idx_used, indexing_threshold;
+	unsigned id, idx_used, indexing_threshold, arity, max_depth;
 	prolog_flags flags;
 	bool user_ops:1;
 	bool prebuilt:1;

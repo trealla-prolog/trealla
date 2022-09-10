@@ -420,11 +420,14 @@ ssize_t print_variable(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t c_c
 	slot *e = GET_SLOT(f, c->var_nbr);
 	pl_idx_t slot_idx = running ? e - q->slots : c->var_nbr;
 
-	if (q->varnames && !is_fresh(c) && !is_anon(c) && running
+	if (q->varnames && !is_fresh(c) && !is_anon(c) && running) {
+		if (q->p->vartab.var_name[c->var_nbr])
+			dst += snprintf(dst, dstlen, "%s", q->p->vartab.var_name[c->var_nbr]);
+		else
+			dst += snprintf(dst, dstlen, "%s", get_slot_name(q, slot_idx));
+	} else if (q->varnames && !is_fresh(c) && !is_anon(c) && running
 		&& c->val_off && !e->c.attrs && !is_ref(c)) {
 		dst += snprintf(dst, dstlen, "%s", C_STR(q, c));
-	} else if (q->varnames && !is_fresh(c) && !is_anon(c) && running) {
-		dst += snprintf(dst, dstlen, "%s", q->p->vartab.var_name[c->var_nbr]);
 	} else if (q->is_dump_vars) {
 		dst += snprintf(dst, dstlen, "_%s", get_slot_name(q, slot_idx));
 	} else if (q->listing) {

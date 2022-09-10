@@ -95,10 +95,18 @@ static void trace_call(query *q, cell *c, pl_idx_t c_ctx, box_t box)
 		return;
 #endif
 
-	fprintf(stderr, " [#%u:%s:%llu:f%u:fp:%u:cp%u:sp%u:hp%u:tp%u] ",
-		(unsigned)q->qid, q->st.m->name,
+#ifdef DEBUG
+	fprintf(stderr, "[%s:%llu:f%u:fp:%u:cp%u:sp%u:hp%u:tp%u] ",
+		q->st.m->name,
 		(unsigned long long)q->step++,
-		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.tp);
+		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.tp
+		);
+#else
+	fprintf(stderr, "[%s:%llu] ",
+		q->st.m->name,
+		(unsigned long long)q->step++
+		);
+#endif
 
 	fprintf(stderr, "%s ",
 		box == CALL ? "CALL" :
@@ -306,31 +314,32 @@ char *chars_list_to_string(query *q, cell *p_chars, pl_idx_t p_chars_ctx, size_t
 
 static void setup_key(query *q)
 {
+	if (!q->pl->opt)
+		return;
+
 	cell *arg1 = q->key + 1, *arg2 = NULL, *arg3 = NULL;
 
-	if (q->key->arity > 1) {
+	if (q->key->arity > 1)
 		arg2 = arg1 + arg1->nbr_cells;
 
-		if (q->key->arity > 2)
-			arg3 = arg2 + arg2->nbr_cells;
-	}
+	if (q->key->arity > 2)
+		arg3 = arg2 + arg2->nbr_cells;
 
 	arg1 = deref(q, arg1, q->st.curr_frame);
 
-	if (arg2) {
+	if (arg2)
 		arg2 = deref(q, arg2, q->st.curr_frame);
 
-		if (arg3)
-			arg3 = deref(q, arg3, q->st.curr_frame);
-	}
+	if (arg3)
+		arg3 = deref(q, arg3, q->st.curr_frame);
 
-	if (q->pl->opt && is_atomic(arg1))
+	if (is_atomic(arg1) || is_structure(arg1))
 		q->st.arg1_is_ground = true;
 
-	if (q->pl->opt && arg2 && is_atomic(arg2))
+	if (arg2 && is_atomic(arg2))
 		q->st.arg2_is_ground = true;
 
-	if (q->pl->opt && arg3 && is_atomic(arg3))
+	if (arg3 && is_atomic(arg3))
 		q->st.arg3_is_ground = true;
 }
 
@@ -904,7 +913,18 @@ static void commit_me(query *q)
 	clause *cl = &q->st.curr_dbe->cl;
 	frame *f = GET_CURR_FRAME();
 	f->mid = q->st.m->id;
-	q->st.m = q->st.curr_dbe->owner->m;
+
+	if (!q->st.curr_dbe->owner->is_prebuilt) {
+
+		//printf("*** q->st.m=%s, owner=%s, prev=%s\n",
+		//	q->st.m->name, q->st.curr_dbe->owner->m->name, q->st.prev_m->name);
+
+		if (q->st.m != q->st.curr_dbe->owner->m)
+			q->st.prev_m = q->st.m;
+
+		q->st.m = q->st.curr_dbe->owner->m;
+	}
+
 	cell *body = get_body(cl->cells);
 	bool implied_first_cut = q->check_unique && !q->has_vars && cl->is_unique && !q->st.iter;
 	bool last_match = implied_first_cut || cl->is_first_cut || !is_next_key(q);
@@ -1262,7 +1282,7 @@ void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 	slot *e = GET_SLOT(f, c->var_nbr);
 
 	cell *c_attrs = is_empty(&e->c) ? e->c.attrs : NULL;
-	pl_idx_t c_attrs_ctx = e->c.attrs_ctx;
+	pl_idx_t c_attrs_ctx = c_attrs ? e->c.attrs_ctx : 0;
 
 	if (c_attrs)
 		q->run_hook = true;
@@ -2000,7 +2020,7 @@ query *create_query(module *m, bool is_task)
 	ensure(q);
 	q->qid = g_query_id++;
 	q->pl = m->pl;
-	q->st.m = m;
+	q->st.prev_m = q->st.m = m;
 	q->trace = m->pl->trace;
 	q->flags = m->flags;
 	q->time_started = q->get_started = get_time_in_usec();

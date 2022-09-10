@@ -1,7 +1,7 @@
 :- op(300,xfx,\\).
 
 main :-
-	read_from_chars("arg(1,(\\) \\\\ '', Y).", X),
-	read_from_chars("arg(1,\\ \\\\ '', Y).", X).
+	read_term_from_chars(X, "arg(1,(\\) \\\\ '', Y)."),
+	read_term_from_chars(X, "arg(1,\\ \\\\ '', Y).").
 
 :- initialization(main).

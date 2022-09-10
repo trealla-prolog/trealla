@@ -4457,7 +4457,11 @@ static bool fn_must_be_4(query *q)
 
 	const char *src = C_STR(q, p2);
 
-	if (!strcmp(src, "var") && !is_variable(p1))
+	if (!strcmp(src, "var") && is_variable(p1))
+		return true;
+	else if (!strcmp(src, "nonvar") && !is_variable(p1))
+		return true;
+	else if (!strcmp(src, "var") && !is_variable(p1))
 		return throw_error2(q, p1, p1_ctx, "uninstantiation_error", "not_sufficiently_instantiated", p3);
 	else if (!strcmp(src, "nonvar") && is_variable(p1))
 		return throw_error2(q, p1, p1_ctx, "instantiation_error", "instantiated", p3);
@@ -4581,7 +4585,11 @@ static bool fn_must_be_2(query *q)
 
 	const char *src = C_STR(q, p2);
 
-	if (!strcmp(src, "var") && !is_variable(p1))
+	if (!strcmp(src, "var") && is_variable(p1))
+		return true;
+	else if (!strcmp(src, "nonvar") && !is_variable(p1))
+		return true;
+	else if (!strcmp(src, "var") && !is_variable(p1))
 		return throw_error(q, p1, p1_ctx, "uninstantiation_error", "not_sufficiently_instantiated");
 	else if (!strcmp(src, "nonvar") && is_variable(p1))
 		return throw_error(q, p1, p1_ctx, "instantiation_error", "instantiated");
@@ -6406,6 +6414,7 @@ static bool fn_sys_put_attributes_2(query *q)
 	frame *f = GET_FRAME(p1_ctx);
 	slot *e = GET_SLOT(f, p1->var_nbr);
 	add_trail(q, p1_ctx, p1->var_nbr, e->c.attrs, e->c.attrs_ctx);
+	//DUMP_TERM("$put_attr", p2, p2_ctx);
 	e->c.attrs = p2;
 	e->c.attrs_ctx = p2_ctx;
 	return true;
@@ -6877,14 +6886,50 @@ static bool fn_use_module_2(query *q)
 	return fn_use_module_1(q);
 }
 
+static bool fn_attribute_3(query *q)
+{
+	GET_FIRST_ARG(p1,atom_or_var);
+	GET_NEXT_ARG(p2,atom);
+	GET_NEXT_ARG(p3,integer);
+	module *m = q->pl->modules;
+	const char *name = C_STR(q, p2);
+	unsigned arity = get_smallint(p3);
+
+	while (m) {
+		if ((arity == m->arity) && !strcmp(name, m->name)) {
+			cell tmp;
+			make_atom(&tmp, index_from_pool(q->pl, m->orig->name));
+			return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+		}
+
+		m = m->next;
+	}
+
+	cell tmp;
+	make_atom(&tmp, index_from_pool(q->pl, q->st.m->name));
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool fn_prolog_load_context_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,atom_or_var);
+
+	if (CMP_STR_TO_CSTR(q, p1, "module"))
+		return false;
+
+	cell tmp;
+	make_atom(&tmp, index_from_pool(q->pl, q->st.prev_m->name));
+	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+}
+
 static bool fn_module_1(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_var);
 
 	if (is_variable(p1)) {
 		cell tmp;
-		make_atom(&tmp, index_from_pool(q->pl, (q->save_m?q->save_m:q->st.m)->name));
-		q->save_m = NULL;
+		make_atom(&tmp, index_from_pool(q->pl, q->st.m->name));
 		return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 	}
 
@@ -7402,7 +7447,9 @@ builtins g_other_bifs[] =
 
 	{"cyclic_term", 1, fn_cyclic_term_1, NULL, false, BLAH},
 	{"current_module", 1, fn_current_module_1, NULL, false, BLAH},
+	{"prolog_load_context", 2, fn_prolog_load_context_2, NULL, false, BLAH},
 	{"module", 1, fn_module_1, NULL, false, BLAH},
+	{"attribute", 3, fn_attribute_3, "?module,+attribute,+arity", false, BLAH},
 	{"using", 0, fn_using_0, NULL, false, BLAH},
 	{"use_module", 1, fn_use_module_1, NULL, false, BLAH},
 	{"use_module", 2, fn_use_module_2, NULL, false, BLAH},
