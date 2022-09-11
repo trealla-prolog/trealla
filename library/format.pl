@@ -1,5 +1,5 @@
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   Written 2020, 2021 by Markus Triska (triska@metalevel.at)
+   Written 2020, 2021, 2022 by Markus Triska (triska@metalevel.at)
    Part of Scryer Prolog.
 
    This library provides the nonterminal format_//2 to describe
@@ -28,9 +28,13 @@
            if N is 0 or omitted, no decimal point is used.
      ~ND   like ~Nd, separating digits to the left of the decimal point
            in groups of three, using the character "," (comma)
+     ~NU   like ~ND, using "_" (underscore) to separate groups of digits
+     ~NL   format an integer so that at most N digits appear on a line.
+           If N is 0 or omitted, it defaults to 72.
      ~Nr   where N is an integer between 2 and 36: format the
            next argument, which must be an integer, in radix N.
            The characters "a" to "z" are used for radices 10 to 36.
+           If N is omitted, it defaults to 8 (octal).
      ~NR   like ~Nr, except that "A" to "Z" are used for radices > 9
      ~|    place a tab stop at this position
      ~N|   where N is an integer: place a tab stop at text column N
@@ -55,7 +59,12 @@
 
    If at all possible, format_//2 should be used, to stress pure parts
    that enable easy testing etc. If necessary, you can emit the list Ls
-   with maplist(write, Ls).
+   with maplist(put_char, Ls) or, much faster, with format("~s", [Ls]).
+   Ideally, however, you use phrase_to_file/[2,3] or phrase_to_stream/2
+   from library(pio) to write the described list directly to a file
+   or stream, respectively: phrase_to_stream(format_(..., [...]), S).
+   The advantage of this is that an ideal implementation writes
+   the characters as they become known, without manifesting the list.
 
    The entire library only works if the Prolog flag double_quotes
    is set to chars, the default value in Scryer Prolog. This should
@@ -72,6 +81,7 @@
 :- module(format, [format_//2,
                    format/2,
                    format/3,
+                   portray_clause_//1,
                    portray_clause/1,
                    portray_clause/2,
                    listing/1
@@ -82,6 +92,7 @@
 :- use_module(library(error)).
 :- use_module(library(charsio)).
 :- use_module(library(between)).
+:- use_module(library(pio)).
 
 format_(Fs, Args) -->
         { must_be(list, Fs),
@@ -120,14 +131,11 @@ format_elements([E|Es]) -->
         format_element(E),
         format_elements(Es).
 
-format_element(chars(Cs)) --> list(Cs).
+format_element(chars(Cs)) --> seq(Cs).
 format_element(glue(Fill,Num)) -->
         { length(Ls, Num),
           maplist(=(Fill), Ls) },
-        list(Ls).
-
-list([]) --> [].
-list([L|Ls]) --> [L], list(Ls).
+        seq(Ls).
 
 elements_gluevars([], N, N) --> [].
 elements_gluevars([E|Es], N0, N) -->
@@ -164,10 +172,10 @@ cells([], Args, Tab, Es, _) --> !,
 cells([~,~|Fs], Args, Tab, Es, VNs) --> !,
         cells(Fs, Args, Tab, [chars("~")|Es], VNs).
 cells([~,w|Fs], [Arg|Args], Tab, Es, VNs) --> !,
-        { write_term_to_chars(Arg, [variable_names(VNs)], Chars) },
+        { write_term_to_chars(Arg, [numbervars(true),variable_names(VNs)], Chars) },
         cells(Fs, Args, Tab, [chars(Chars)|Es], VNs).
 cells([~,q|Fs], [Arg|Args], Tab, Es, VNs) --> !,
-        { write_term_to_chars(Arg, [quoted(true),variable_names(VNs)], Chars) },
+        { write_term_to_chars(Arg, [quoted(true),numbervars(true),variable_names(VNs)], Chars) },
         cells(Fs, Args, Tab, [chars(Chars)|Es], VNs).
 cells([~,a|Fs], [Arg|Args], Tab, Es, VNs) --> !,
         { atom_chars(Arg, Chars) },
@@ -184,25 +192,33 @@ cells([~|Fs0], Args0, Tab, Es, VNs) -->
                   Delta is Num - L,
                   length(Zs, Delta),
                   maplist(=('0'), Zs),
-                  phrase(("0.",list(Zs),list(Cs0)), Cs)
+                  phrase(("0.",seq(Zs),seq(Cs0)), Cs)
               ;   BeforeComma is L - Num,
                   length(Bs, BeforeComma),
                   append(Bs, Ds, Cs0),
-                  phrase((list(Bs),".",list(Ds)), Cs)
+                  phrase((seq(Bs),".",seq(Ds)), Cs)
               ) }
         ),
         cells(Fs, Args, Tab, [chars(Cs)|Es], VNs).
 cells([~|Fs0], Args0, Tab, Es, VNs) -->
         { numeric_argument(Fs0, Num, ['D'|Fs], Args0, [Arg|Args]) },
         !,
-        { number_chars(Num, NCs),
-          phrase(("~",list(NCs),"d"), FStr),
-          phrase(format_(FStr, [Arg]), Cs0),
-          phrase(upto_what(Bs0, .), Cs0, Ds),
-          reverse(Bs0, Bs1),
-          phrase(groups_of_three(Bs1), Bs2),
-          reverse(Bs2, Bs),
-          append(Bs, Ds, Cs) },
+        { separate_digits_fractional(Arg, ',', Num, Cs) },
+        cells(Fs, Args, Tab, [chars(Cs)|Es], VNs).
+cells([~|Fs0], Args0, Tab, Es, VNs) -->
+        { numeric_argument(Fs0, Num, ['U'|Fs], Args0, [Arg|Args]) },
+        !,
+        { separate_digits_fractional(Arg, '_', Num, Cs) },
+        cells(Fs, Args, Tab, [chars(Cs)|Es], VNs).
+cells([~|Fs0], Args0, Tab, Es, VNs) -->
+        { numeric_argument(Fs0, Num0, ['L'|Fs], Args0, [Arg|Args]) },
+        !,
+        { (   Num0 =:= 0 ->
+              Num = 72
+          ;   Num = Num0
+          ),
+          phrase(format_("~d", [Arg]), Cs0),
+          phrase(split_lines_width(Cs0, Num), Cs) },
         cells(Fs, Args, Tab, [chars(Cs)|Es], VNs).
 cells([~,i|Fs], [_|Args], Tab, Es, VNs) --> !,
         cells(Fs, Args, Tab, Es, VNs).
@@ -249,11 +265,15 @@ cells([~|Fs0], Args0, Tab, Es, VNs) -->
               append(Bs, ['.'|Ds], Chars)
           ) },
         cells(Fs, Args, Tab, [chars(Chars)|Es], VNs).
+cells([~,r|Fs], Args, Tab, Es, VNs) --> !,
+        cells([~,'8',r|Fs], Args, Tab, Es, VNs).
 cells([~|Fs0], Args0, Tab, Es, VNs) -->
         { numeric_argument(Fs0, Num, [r|Fs], Args0, [Arg|Args]) },
         !,
         { integer_to_radix(Arg, Num, lowercase, Cs) },
         cells(Fs, Args, Tab, [chars(Cs)|Es], VNs).
+cells([~,'R'|Fs], Args, Tab, Es, VNs) --> !,
+        cells([~,'8','R'|Fs], Args, Tab, Es, VNs).
 cells([~|Fs0], Args0, Tab, Es, VNs) -->
         { numeric_argument(Fs0, Num, ['R'|Fs], Args0, [Arg|Args]) },
         !,
@@ -279,9 +299,11 @@ cells([~|Fs0], Args0, Tab0, Es, VNs) -->
         { Tab is Tab0 + Num },
         cell(Tab0, Tab, Es),
         cells(Fs, Args, Tab, [], VNs).
-cells([~,C|_], _, _, _, _) -->
-        { atom_chars(A, [~,C]),
-          domain_error(format_string, A, format_//2) }.
+cells([~|Cs], Args, _, _, _) -->
+        (   { Args == [] } ->
+            { domain_error(non_empty_list, [], format_//2) }
+        ;   { domain_error(format_string, [~|Cs], format_//2) }
+        ).
 cells(Fs0, Args, Tab, Es, VNs) -->
         { phrase(upto_what(Fs1, ~), Fs0, Fs),
           Fs1 = [_|_] },
@@ -301,12 +323,30 @@ Cs = [a,b,c], Rest = [~,t,e,s,t].
 Cs = [a,b,c], Rest = [].
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+separate_digits_fractional(Arg, Sep, Num, Cs) :-
+        number_chars(Num, NCs),
+        phrase(("~",seq(NCs),"d"), FStr),
+        phrase(format_(FStr, [Arg]), Cs0),
+        phrase(upto_what(Bs0, .), Cs0, Ds),
+        reverse(Bs0, Bs1),
+        phrase(groups_of_three(Bs1,Sep), Bs2),
+        reverse(Bs2, Bs),
+        append(Bs, Ds, Cs).
+
 upto_what([], W), [W] --> [W], !.
 upto_what([C|Cs], W) --> [C], !, upto_what(Cs, W).
 upto_what([], _) --> [].
 
-groups_of_three([A,B,C,D|Rs]) --> !, [A,B,C], ",", groups_of_three([D|Rs]).
-groups_of_three(Ls) --> list(Ls).
+groups_of_three([A,B,C,D|Rs], Sep) --> !, [A,B,C,Sep], groups_of_three([D|Rs], Sep).
+groups_of_three(Ls, _) --> seq(Ls).
+
+split_lines_width(Cs, Num) -->
+        (   { length(Prefix, Num),
+              append(Prefix, [R|Rs], Cs) } ->
+            seq(Prefix), "_\n",
+            split_lines_width([R|Rs], Num)
+        ;   seq(Cs)
+        ).
 
 cell(From, To, Es0) -->
         (   { Es0 == [] } -> []
@@ -314,37 +354,39 @@ cell(From, To, Es0) -->
             [cell(From,To,Es)]
         ).
 
-%?- numeric_argument("2f", Num, ['f'|Fs], Args0, Args).
+%?- format:numeric_argument("2f", Num, [f|Fs], Args0, Args).
 
-%?- numeric_argument("100b", Num, Rs, Args0, Args).
+%?- format:numeric_argument("100b", Num, Rs, Args0, Args).
 
 numeric_argument(Ds, Num, Rest, Args0, Args) :-
         (   Ds = [*|Rest] ->
             Args0 = [Num|Args]
-        ;   numeric_argument_(Ds, [], Ns, Rest),
-            foldl(pow10, Ns, 0-0, Num-_),
+        ;   phrase(numeric_argument_(Ds, Rest), Ns),
+            foldl(plus_times10, Ns, 0, Num),
             Args0 = Args
         ).
 
-numeric_argument_([D|Ds], Ns0, Ns, Rest) :-
-        (   member(D, "0123456789") ->
-            number_chars(N, [D]),
-            numeric_argument_(Ds, [N|Ns0], Ns, Rest)
-        ;   Ns = Ns0,
-            Rest = [D|Ds]
+numeric_argument_([D|Ds], Rest) -->
+        (   { member(D, "0123456789") } ->
+            { number_chars(N, [D]) },
+            [N],
+            numeric_argument_(Ds, Rest)
+        ;   { Rest = [D|Ds] }
         ).
 
 
-pow10(D, N0-Pow0, N-Pow) :-
-        N is N0 + D*10^Pow0,
-        Pow is Pow0 + 1.
+plus_times10(D, N0, N) :- N is D + N0*10.
+
+radix_error(lowercase, R) --> format_("~~~dr", [R]).
+radix_error(uppercase, R) --> format_("~~~dR", [R]).
 
 integer_to_radix(I0, R, Which, Cs) :-
         I is I0, % evaluate compound expression
         must_be(integer, I),
         must_be(integer, R),
         (   \+ between(2, 36, R) ->
-            domain_error(radix, R, format_//2)
+            phrase(radix_error(Which,R), Es),
+            domain_error(format_string, Es, format_//2)
         ;   true
         ),
         digits(Which, Ds),
@@ -360,8 +402,7 @@ integer_to_radix_(0, _, _) --> !.
 integer_to_radix_(I0, R, Ds) -->
         { M is I0 mod R,
           nth0(M, Ds, D),
-          I is I0 // R
-          },
+          I is I0 // R },
         [D],
         integer_to_radix_(I, R, Ds).
 
@@ -378,11 +419,7 @@ format(Fs, Args) :-
         format(Stream, Fs, Args).
 
 format(Stream, Fs, Args) :-
-        phrase(format_(Fs, Args), Cs),
-        % we use a specialised internal predicate that uses only a
-        % single "write" operation for efficiency. It is equivalent to
-        % maplist(put_char(Stream), Cs). It also works for binary streams.
-        '$put_chars'(Stream, Cs),
+        phrase_to_stream(format_(Fs, Args), Stream),
         flush_output(Stream).
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -459,8 +496,8 @@ portray_clause(Term) :-
         portray_clause(Out, Term).
 
 portray_clause(Stream, Term) :-
-        phrase(portray_clause_(Term), Ls),
-        format(Stream, "~s", [Ls]).
+        phrase_to_stream(portray_clause_(Term), Stream),
+        flush_output(Stream).
 
 portray_clause_(Term) -->
         { unique_variable_names(Term, VNs) },
@@ -476,7 +513,7 @@ var_name(V, Name=V, Num0, Num) :-
 
 literal(Lit, VNs) -->
         { write_term_to_chars(Lit, [quoted(true),variable_names(VNs)], Ls) },
-        list(Ls).
+        seq(Ls).
 
 portray_(Var, VNs) --> { var(Var) }, !, literal(Var, VNs).
 portray_((Head :- Body), VNs) --> !,

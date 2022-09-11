@@ -4457,11 +4457,7 @@ static bool fn_must_be_4(query *q)
 
 	const char *src = C_STR(q, p2);
 
-	if (!strcmp(src, "var") && is_variable(p1))
-		return true;
-	else if (!strcmp(src, "nonvar") && !is_variable(p1))
-		return true;
-	else if (!strcmp(src, "var") && !is_variable(p1))
+	if (!strcmp(src, "var") && !is_variable(p1))
 		return throw_error2(q, p1, p1_ctx, "uninstantiation_error", "not_sufficiently_instantiated", p3);
 	else if (!strcmp(src, "nonvar") && is_variable(p1))
 		return throw_error2(q, p1, p1_ctx, "instantiation_error", "instantiated", p3);
@@ -4585,11 +4581,7 @@ static bool fn_must_be_2(query *q)
 
 	const char *src = C_STR(q, p2);
 
-	if (!strcmp(src, "var") && is_variable(p1))
-		return true;
-	else if (!strcmp(src, "nonvar") && !is_variable(p1))
-		return true;
-	else if (!strcmp(src, "var") && !is_variable(p1))
+	if (!strcmp(src, "var") && !is_variable(p1))
 		return throw_error(q, p1, p1_ctx, "uninstantiation_error", "not_sufficiently_instantiated");
 	else if (!strcmp(src, "nonvar") && is_variable(p1))
 		return throw_error(q, p1, p1_ctx, "instantiation_error", "instantiated");
