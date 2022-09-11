@@ -725,20 +725,23 @@ copy_term(Term, Copy, Gs) :-
 
 % Debugging...
 
-portray_atts_(Term) :-
-	copy_term(Term, _, Gs),
-	list_to_conjunction(Gs, Gs1),
-	write_term(Gs1, [varnames(true)]).
+print_goals([]) :- !.
+print_goals([Goal|Goals]) :-
+	write_term(Goal, [varnames(true)]),
+	(Goals == [] -> write('') ; write(',')),
+	print_goals(Goals).
 
-dump_attvars_([]) :- !.
-dump_attvars_([Var|Vars]) :-
-	portray_atts_(Var),
-	(Vars == [] -> write('') ; write(',')),
-	dump_attvars_(Vars).
+dump_attvars([], []) :- !.
+dump_attvars([Var|Vars], [V|Rest]) :-
+	copy_term(Var, _, Gs),
+	list_to_conjunction(Gs, V),
+	dump_attvars(Vars, Rest).
 
 dump_attvars :-
 	'$list_attributed'(Vars),
-	dump_attvars_(Vars).
+	dump_attvars(Vars, Gs0),
+	sort(Gs0, Gs),
+	print_goals(Gs).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
