@@ -727,13 +727,13 @@ copy_term(Term, Copy, Gs) :-
 
 portray_atts_(Term) :-
 	copy_term(Term, _, Gs),
-	(list(Gs) -> toconjunction(Gs, Gs1) ; Gs1 = Gs),
+	list_to_conjunction(Gs, Gs1),
 	write_term(Gs1, [varnames(true)]).
 
 dump_attvars_([]) :- !.
 dump_attvars_([Var|Vars]) :-
 	portray_atts_(Var),
-	(Vars == [] -> write('') ; write(', ')),
+	(Vars == [] -> write('') ; write(',')),
 	dump_attvars_(Vars).
 
 dump_attvars :-

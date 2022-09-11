@@ -6,7 +6,7 @@
 		nth1/3, nth0/3, nth1/4, nth0/4,
 		last/2, flatten/2, same_length/2,
 		sum_list/2, prod_list/2, max_list/2, min_list/2,
-		toconjunction/2, numlist/3,
+		list_to_conjunction/2, numlist/3,
 		length/2, reverse/2
 	]).
 
@@ -214,7 +214,7 @@ min_list_([H|T], Min0, Min) :-
 	Min1 is min(H, Min0),
 	min_list_(T, Min1, Min).
 
-toconjunction(List0, Goal) :-
+list_to_conjunction(List0, Goal) :-
 	reverse(List0, List),
 	toconjunction_(List, true, Goal).
 
