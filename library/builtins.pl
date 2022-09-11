@@ -731,7 +731,6 @@ print_goals([Goal|Goals]) :-
 	(Goals == [] -> write('') ; write(',')),
 	print_goals(Goals).
 
-dump_attvars([], []) :- !.
 dump_attvars([Var|Vars], [V|Rest]) :-
 	copy_term(Var, _, Gs),
 	list_to_conjunction(Gs, V),
@@ -739,8 +738,7 @@ dump_attvars([Var|Vars], [V|Rest]) :-
 
 dump_attvars :-
 	'$list_attributed'(Vars),
-	dump_attvars(Vars, Gs0),
-	sort(Gs0, Gs),
+	dump_attvars(Vars, Gs),
 	print_goals(Gs).
 
 %
