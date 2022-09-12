@@ -638,10 +638,7 @@ put_atts(Var, -Attr) :- !,
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
 	dict:del(D, Module, D2),
-	(	D2 = []
-	->	'$erase_attributes'(Var)
-	;	'$put_attributes'(Var, D2)
-	).
+	'$put_attributes'(Var, D2).
 
 put_atts(Var, +Attr) :- !,
 	var(Var),
