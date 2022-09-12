@@ -6415,7 +6415,7 @@ static bool fn_sys_put_attributes_2(query *q)
 static bool fn_sys_get_attributes_2(query *q)
 {
 	GET_FIRST_ARG(p1,variable);
-	GET_NEXT_ARG(p2,variable);
+	GET_NEXT_ARG(p2,list_or_nil_or_var);
 	frame *f = GET_FRAME(p1_ctx);
 	slot *e = GET_SLOT(f, p1->var_nbr);
 
