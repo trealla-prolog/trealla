@@ -7026,6 +7026,12 @@ static bool fn_sys_get_level_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
+static bool fn_abort_0(query *q)
+{
+	exit(0);
+	return false;
+}
+
 static bool fn_sys_choice_0(query *q)
 {
 	if (q->retry)
@@ -7467,6 +7473,7 @@ builtins g_other_bifs[] =
 
 	// Miscellaneous...
 
+	{"abort", 0, fn_abort_0, NULL, false, BLAH},
 	{"sort", 4, fn_sort_4, NULL, false, BLAH},
 	{"ignore", 1, fn_ignore_1, NULL, false, BLAH},
 	{"soft_abolish", 1, fn_soft_abolish_1, NULL, false, BLAH},
