@@ -416,14 +416,14 @@ static const char *get_slot_name(query *q, pl_idx_t slot_idx)
 ssize_t print_variable(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t c_ctx, bool running)
 {
 	char *save_dst = dst;
-	frame *f = GET_FRAME(c_ctx);
+	frame *f = GET_FRAME(running ? c_ctx : 0);
 	slot *e = GET_SLOT(f, c->var_nbr);
-	pl_idx_t slot_idx = e - q->slots;
+	pl_idx_t slot_idx = running ? e - q->slots : c->var_nbr;
 
-	if (q->varnames && !is_fresh(c) && !is_anon(c)
+	if (q->varnames && !is_fresh(c) && !is_anon(c) && running
 		&& c->val_off && !e->c.attrs && !is_ref(c)) {
 		dst += snprintf(dst, dstlen, "%s", C_STR(q, c));
-	} else if (q->varnames && !is_fresh(c) && !is_anon(c)) {
+	} else if (q->varnames && !is_fresh(c) && !is_anon(c) && running) {
 		dst += snprintf(dst, dstlen, "%s", q->p->vartab.var_name[c->var_nbr]);
 	} else if (q->is_dump_vars) {
 		dst += snprintf(dst, dstlen, "_%s", get_slot_name(q, slot_idx));
@@ -539,15 +539,15 @@ ssize_t print_canonical_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_i
 		while (is_iso_list(l)) {
 			CHECK_INTERRUPT();
 			cell *h = LIST_HEAD(l);
-			h = deref(q, h, l_ctx);
-			pl_idx_t h_ctx = q->latest_ctx;
-			cell *name = deref(q, h+1, h_ctx);
+			h = running ? deref(q, h, l_ctx) : h;
+			pl_idx_t h_ctx = running ? q->latest_ctx : 0;
+			cell *name = running ? deref(q, h+1, h_ctx) : h+1;
 			cell *var = h+2;
 			pl_idx_t tmp_ctx = h_ctx;
 
 			if (!q->is_dump_vars) {
-				var = deref(q, var, h_ctx);
-				tmp_ctx = q->latest_ctx;
+				var = running ? deref(q, var, h_ctx) : var;
+				tmp_ctx = running ? q->latest_ctx : 0;
 			}
 
 			if (is_variable(var) && (var->var_nbr == c->var_nbr) && (tmp_ctx = c_ctx)) {
@@ -556,8 +556,8 @@ ssize_t print_canonical_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_i
 			}
 
 			l = LIST_TAIL(l);
-			l = deref(q, l, l_ctx);
-			l_ctx = q->latest_ctx;
+			l = running ? deref(q, l, l_ctx) : l;
+			l_ctx = running ? q->latest_ctx : 0;
 		}
 	}
 
@@ -624,16 +624,16 @@ ssize_t print_canonical_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_i
 			cnt++;
 
 			cell *h = LIST_HEAD(c);
-			h = deref(q, h, c_ctx);
-			pl_idx_t h_ctx = q->latest_ctx;
+			h = running ? deref(q, h, c_ctx) : h;
+			pl_idx_t h_ctx = running ? q->latest_ctx : 0;
 
 			ssize_t res = print_canonical_to_buf(q, dst, dstlen, h, h_ctx, running, cons, depth+1);
 			if (res < 0) return -1;
 			dst += res;
 
 			c = LIST_TAIL(c);
-			c = deref(q, c, c_ctx);
-			c_ctx = q->latest_ctx;
+			c = running ? deref(q, c, c_ctx) : c;
+			c_ctx = running ? q->latest_ctx : 0;
 
 			if (is_iso_list(c)) {
 				if ((c == save_c) && (c_ctx == save_c_ctx) /*&& running*/) {
@@ -730,7 +730,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 			dst += snprintf(dst, dstlen, "%s", "[");
 
 		head = running ? deref(q, head, c_ctx) : head;
-		pl_idx_t head_ctx = q->latest_ctx;
+		pl_idx_t head_ctx = running ? q->latest_ctx : 0;
 		bool special_op = false;
 
 		if (is_interned(head)) {
@@ -760,7 +760,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 		cell *tail = LIST_TAIL(c);
 		cell *save_tail = tail;
 		tail = running ? deref(q, tail, c_ctx) : tail;
-		c_ctx = q->latest_ctx;
+		c_ctx = running ? q->latest_ctx : 0;
 		size_t tmp_len = 0;
 
 		if (is_interned(tail) && !is_structure(tail)) {
@@ -959,7 +959,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 			dst += formatted(dst, dstlen, C_STR(q, c), C_STRLEN(q, c), true);
 			l = LIST_TAIL(l);
 			l = running ? deref(q, l, c_ctx) : l;
-			c_ctx = q->latest_ctx;
+			c_ctx = running ? q->latest_ctx : 0;
 		}
 
 		dst += snprintf(dst, dstlen, "%s", "\"");
@@ -1010,9 +1010,9 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 
 			while (is_iso_list(l)) {
 				cell *h = LIST_HEAD(l);
-				h = deref(q, h, l_ctx);
-				pl_idx_t h_ctx = q->latest_ctx;
-				cell *name = deref(q, h+1, h_ctx);
+				h = running ? deref(q, h, l_ctx) : h;
+				pl_idx_t h_ctx = running ? q->latest_ctx : 0;
+				cell *name = running ? deref(q, h+1, h_ctx) : h+1;
 				cell *var = h+2;
 				pl_idx_t tmp_ctx = h_ctx;
 
@@ -1029,8 +1029,8 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 				}
 
 				l = LIST_TAIL(l);
-				l = deref(q, l, l_ctx);
-				l_ctx = q->latest_ctx;
+				l = running ? deref(q, l, l_ctx) : l;
+				l_ctx = running ? q->latest_ctx : 0;
 			}
 		}
 
@@ -1090,7 +1090,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 			for (c++; arity--; c += c->nbr_cells) {
 				CHECK_INTERRUPT();
 				cell *tmp = running ? deref(q, c, c_ctx) : c;
-				pl_idx_t tmp_ctx = q->latest_ctx;
+				pl_idx_t tmp_ctx = running ? q->latest_ctx : 0;
 
 #if 0
 				if ((tmp == save_c) && (tmp_ctx == save_ctx)) {
@@ -1149,7 +1149,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 	if (is_postfix(c)) {
 		cell *lhs = c + 1;
 		lhs = running ? deref(q, lhs, c_ctx) : lhs;
-		pl_idx_t lhs_ctx = q->latest_ctx;
+		pl_idx_t lhs_ctx = running ? q->latest_ctx : 0;
 		ssize_t res = print_term_to_buf(q, dst, dstlen, lhs, lhs_ctx, running, 0, depth+1);
 		if (res < 0) return -1;
 		dst += res;
@@ -1177,7 +1177,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 	if (is_prefix(c)) {
 		cell *rhs = c + 1;
 		rhs = running ? deref(q, rhs, c_ctx) : rhs;
-		pl_idx_t rhs_ctx = q->latest_ctx;
+		pl_idx_t rhs_ctx = running ? q->latest_ctx : 0;
 		unsigned my_priority = search_op(q->st.m, src, NULL, true);
 		unsigned rhs_pri = is_interned(rhs) ? search_op(q->st.m, C_STR(q, rhs), NULL, true) : 0;
 
@@ -1234,9 +1234,9 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 	cell *lhs = c + 1;
 	cell *rhs = lhs + lhs->nbr_cells;
 	lhs = running ? deref(q, lhs, c_ctx) : lhs;
-	pl_idx_t lhs_ctx = q->latest_ctx;
+	pl_idx_t lhs_ctx = running ? q->latest_ctx : 0;
 	rhs = running ? deref(q, rhs, c_ctx) : rhs;
-	pl_idx_t rhs_ctx = q->latest_ctx;
+	pl_idx_t rhs_ctx = running ? q->latest_ctx : 0;
 
 	unsigned lhs_pri_1 = is_interned(lhs) ? search_op(q->st.m, C_STR(q, lhs), NULL, false) : 0;
 	unsigned lhs_pri_2 = is_interned(lhs) && !lhs->arity ? search_op(q->st.m, C_STR(q, lhs), NULL, false) : 0;
