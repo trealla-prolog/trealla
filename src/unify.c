@@ -753,8 +753,7 @@ bool fn_sys_undo_trail_1(query *q)
 	GET_FIRST_ARG(p1,variable);
 	q->in_hook = true;
 
-	if (((q->undo_hi_tp - q->undo_lo_tp) == 0) ||
-		(q->undo_lo_tp > q->undo_hi_tp)) {
+	if (q->undo_hi_tp == q->undo_lo_tp) {
 		cell tmp;
 		make_atom(&tmp, g_nil_s);
 		set_var(q, p1, p1_ctx, &tmp, q->st.curr_frame);
