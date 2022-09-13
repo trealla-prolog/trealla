@@ -167,10 +167,10 @@ struct cycle_info_ {
 
 #define PROMPT ""
 
-#define DUMP_TERM(s,c,c_ctx) {						\
+#define DUMP_TERM(s,c,c_ctx,running) {				\
 	printf("*** %s ", s);							\
 	q->quoted = true;								\
-	print_term(q, stdout, c, c_ctx, 1);				\
+	print_term(q, stdout, c, c_ctx, running);		\
 	q->quoted = false;								\
 	printf("\n");									\
 }

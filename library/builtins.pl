@@ -634,7 +634,7 @@ put_atts(Var, [H|T]) :- !,
 
 put_atts(Var, -Attr) :- !,
 	var(Var),
-	'$get_attributes'(Var, D),
+	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
 	dict:del(D, Module, D2),
@@ -642,7 +642,7 @@ put_atts(Var, -Attr) :- !,
 
 put_atts(Var, +Attr) :- !,
 	var(Var),
-	'$get_attributes'(Var, D),
+	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
 	dict:set(D, Module, Attr, D2),
@@ -650,7 +650,7 @@ put_atts(Var, +Attr) :- !,
 
 put_atts(Var, Attr) :- !,
 	var(Var),
-	'$get_attributes'(Var, D),
+	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
 	dict:set(D, Module, Attr, D2),
@@ -688,8 +688,7 @@ del_atts(Var) :-
 
 attvar(Var) :-
 	var(Var),
-	'$get_attributes'(Var, D),
-	D \= [].
+	'$get_attributes'(Var, _).
 
 term_attvars_([], VsIn, VsIn) :- !.
 term_attvars_([H|T], VsIn, VsOut) :-

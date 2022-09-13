@@ -1537,9 +1537,10 @@ static bool match_head(query *q)
 		else if (is_cstring(c))
 			convert_to_literal(q->st.m, c);
 
-		if (!pr || is_function(c)) {
+		q->save_m = q->st.m;
+
+		if (!pr || is_function(c) || is_builtin(c)) {
 			pr = search_predicate(q->st.m, c);
-			q->save_m = q->st.m;
 
 			if (!pr) {
 				if (!is_end(c) && !(is_interned(c) && !strcmp(C_STR(q, c), "initialization"))) {

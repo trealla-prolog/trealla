@@ -941,7 +941,7 @@ static pl_idx_t get_varno(parser *p, const char *src)
 {
 	int anon = !strcmp(src, "_");
 	size_t offset = 0;
-	int i = 0;
+	unsigned i = 0;
 
 	while (p->vartab.var_pool[offset]) {
 		if (!strcmp(p->vartab.var_pool+offset, src) && !anon)
@@ -1548,10 +1548,19 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 	query *q = create_query(p->m, false);
 	check_error(q);
+	q->varnames = true;
 	char *dst = print_canonical_to_strbuf(q, goal, 0, 0);
+	q->varnames = false;
 	ASTRING(s);
 	ASTRING_sprintf(s, "goal_expansion((%s),_TermOut), !.", dst);
 	free(dst);
+
+	//DUMP_TERM("old", p->cl->cells, 0, 0);
+
+	// Note: since only parsing goals we need to preserve
+	// the varnames so they get reused. Only genuinely new
+	// variables should create anew. Hence we pull the
+	// vartab from the main parser...
 
 	parser *p2 = create_parser(p->m);
 	check_error(p2, destroy_query(q));
@@ -1573,6 +1582,10 @@ static cell *goal_expansion(parser *p, cell *goal)
 		return goal;
 	}
 
+	for (unsigned i = 0; i < p->cl->nbr_vars; i++)
+		q->ignores[i] = true;
+
+	p->cl->nbr_vars = p2->cl->nbr_vars;
 	frame *f = GET_FIRST_FRAME();
 	char *src = NULL;
 
@@ -1594,9 +1607,9 @@ static cell *goal_expansion(parser *p, cell *goal)
 			c = deref(q, &e->c, e->c.var_ctx);
 
 		q->varnames = true;
-		src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
+		src = print_term_to_strbuf(q, c, q->latest_ctx, 1);
+		//printf("*** newgoal=%s\n", src);
 		q->varnames = false;
-		//printf("*** %s\n", src);
 		strcat(src, ".");
 		break;
 	}
@@ -1609,10 +1622,18 @@ static cell *goal_expansion(parser *p, cell *goal)
 	}
 
 	reset(p2);
+	p2->cl->nbr_vars = p->cl->nbr_vars;
+	p2->vartab = p->vartab;
+	p2->reuse = true;
 	p2->srcptr = src;
 	tokenize(p2, false, false);
 	xref_rule(p2->m, p2->cl, NULL);
 	free(src);
+
+	// Push the updated vatab back...
+
+	p->cl->nbr_vars = p2->cl->nbr_vars;
+	p->vartab = p2->vartab;
 
 	// snip the old goal...
 
@@ -1636,6 +1657,8 @@ static cell *goal_expansion(parser *p, cell *goal)
 	clear_rule(p2->cl);
 	free(p2->cl);
 	p2->cl = NULL;
+
+	//DUMP_TERM("new", p->cl->cells, 0, 0);
 
 	// done
 
@@ -3562,20 +3585,6 @@ bool run(parser *p, const char *pSrc, bool dump)
 			ASTRING_free(src);
 			return true;
 		}
-
-		if (!analyze(p, 0, true)) {
-			p->srcptr = NULL;
-			ASTRING_free(src);
-			return false;
-		}
-
-		term_assign_vars(p, 0, false);
-		term_to_body(p);
-
-		xref_rule(p->m, p->cl, NULL);
-
-		if (!p->command)
-			term_expansion(p);
 
 		query *q = create_query(p->m, false);
 
