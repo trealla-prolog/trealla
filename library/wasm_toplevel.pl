@@ -40,13 +40,13 @@ write_result(success, Solutions0) :-
 		string("result")-string("success"),
 		string("answers")-list(Solutions)
 	])), JSON)),
-	format("~s~n", [JSON]).
+	maplist(write, JSON), nl.
 
 write_result(failure, _) :-
 	once(phrase(json_chars(pairs([
 		string("result")-string("failure")
 	])), JSON)),
-	format("~s~n", [JSON]).
+	maplist(write, JSON), nl.
 
 write_result(error, Error0) :-
 	term_json(Error0, Error),
@@ -54,7 +54,7 @@ write_result(error, Error0) :-
 		string("result")-string("error"),
 		string("error")-Error
 	])), JSON)),
-	format("~s~n", [JSON]).
+	maplist(write, JSON), nl.
 
 query(Query, Vars, Status, Solutions) :-
 	( setup_call_cleanup(
