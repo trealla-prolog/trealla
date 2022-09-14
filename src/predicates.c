@@ -3995,9 +3995,9 @@ static bool fn_help_1(query *q)
 
 		while (map_next_key(iter, (void**)&fn)) {
 			if (fn->arity)
-				fprintf(stdout, "%s/%u: %s(%s)\n", functor, fn->arity, functor, fn->help ? fn->help : "no args");
+				fprintf(stdout, "%s/%u: %s(%s) %s\n", functor, fn->arity, functor, fn->help ? fn->help : "no args", fn->iso?"ISO":"");
 			else
-				fprintf(stdout, "%s/%u: %s\n", functor, fn->arity, functor);
+				fprintf(stdout, "%s/%u: %s %s\n", functor, fn->arity, functor, fn->iso?"ISO":"");
 		}
 
 		return true;
@@ -4030,9 +4030,9 @@ static bool fn_help_1(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "existence");
 
 	if (arity)
-		fprintf(stdout, "%s/%u: %s(%s)\n", functor, arity, functor, fn->help ? fn->help : "no args");
+		fprintf(stdout, "%s/%u: %s(%s) %s\n", functor, arity, functor, fn->help ? fn->help : "no args", fn->iso?"ISO":"");
 	else
-		fprintf(stdout, "%s/%u: %s\n", functor, arity, functor);
+		fprintf(stdout, "%s/%u: %s %s\n", functor, arity, functor, fn->iso?"ISO":"");
 
 	return true;
 }
