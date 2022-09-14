@@ -20,7 +20,7 @@
 
 wasm_ask(Input) :-
 	catch(
-		read_term_from_chars(Input, Query, [variable_names(Vars)]),
+		read_term_from_chars(Query, [variable_names(Vars)], Input),
 		Error,
 		(
 			write('\x3\'),
