@@ -1,4 +1,15 @@
-:- module(charsio, [ fabricate_var_name/3 ]).
+:- module(charsio, [
+	read_line_to_chars/3,
+	get_n_chars/3,
+	fabricate_var_name/3
+    ]).
+
+read_line_to_chars(Stream, Cs0, Cs) :-
+    getline(Stream, Line,[terminator(true)]),
+    partial_string(Line,Cs0,Cs).
+
+get_n_chars(Stream, N, Cs) :-
+    bread(Stream, N, Cs).
 
 fabricate_var_name(VarType, VarName, N) :-
     char_code('A', AC),
@@ -6,15 +17,15 @@ fabricate_var_name(VarType, VarName, N) :-
     char_code(LC, LN),
     NN is N // 26,
     (  NN =:= 0 ->
-       (  VarType == fabricated ->
-          atom_chars(VarName, ['_', LC])
-       ;  VarType == numbervars ->
-          atom_chars(VarName, [LC])
-       )
+	( VarType == fabricated ->
+	    atom_chars(VarName, ['_', LC])
+	; VarType == numbervars ->
+	    atom_chars(VarName, [LC])
+	)
     ;  number_chars(NN, NNChars),
-       (  VarType == fabricated ->
-          atom_chars(VarName, ['_', LC | NNChars])
-       ;  VarType == numbervars ->
-          atom_chars(VarName, [LC | NNChars])
-       )
+	( VarType == fabricated ->
+	    atom_chars(VarName, ['_', LC | NNChars])
+	; VarType == numbervars ->
+	    atom_chars(VarName, [LC | NNChars])
+	)
     ).

@@ -25,13 +25,15 @@ bool fn_sys_drop_barrier(query *q)
 	return true;
 }
 
-void do_cleanup(query *q, cell *p1)
+void do_cleanup(query *q, cell *c, pl_idx_t c_ctx)
 {
-	cell *tmp = clone_to_heap(q, true, p1, 2);
+	cell *tmp2 = deep_clone_to_heap(q, c, c_ctx);
+	ensure(tmp2);
+	cell *tmp = clone_to_heap(q, true, tmp2, 2);
 	ensure(tmp);
-	pl_idx_t nbr_cells = 1 + p1->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_cut_s, fn_sys_inner_cut_0, 0, 0); // ???
-	make_return(q, tmp+nbr_cells);
+	pl_idx_t nbr_cells = 1 + tmp2->nbr_cells;
+	make_struct(tmp+nbr_cells++, g_cut_s, fn_sys_inner_cut_0, 0, 0);
+	make_call(q, tmp+nbr_cells);
 	q->st.curr_cell = tmp;
 }
 
@@ -60,7 +62,8 @@ bool fn_sys_cleanup_if_det_0(query *q)
 	cell *c = deref(q, ch->st.curr_cell, ch->st.curr_frame);
 	pl_idx_t c_ctx = q->latest_ctx;
 	c = deref(q, c+1, c_ctx);
-	do_cleanup(q, c);
+	c_ctx = q->latest_ctx;
+	do_cleanup(q, c, c_ctx);
 	return true;
 }
 
@@ -84,7 +87,7 @@ bool fn_iso_invoke_2(query *q)
 		tmp[nbr_cells].match = find_predicate(m, p2);
 
 	nbr_cells += p2->nbr_cells;
-	make_return(q, tmp+nbr_cells);
+	make_call(q, tmp+nbr_cells);
 	q->st.curr_cell = tmp;
 	q->st.curr_frame = p2_ctx;
 	q->st.m = q->save_m = m;
@@ -111,7 +114,7 @@ bool fn_call_0(query *q, cell *p1)
 	check_heap_error(tmp);
 	pl_idx_t nbr_cells = 0 + tmp->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier, fn_sys_drop_barrier, 0, 0);
-	make_return(q, tmp+nbr_cells);
+	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_call_barrier(q));
 	q->st.curr_cell = tmp;
 	q->st.curr_frame = p1_ctx;
@@ -168,7 +171,7 @@ bool fn_iso_call_n(query *q)
 	check_heap_error(tmp);
 	pl_idx_t nbr_cells = 1+tmp2->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier, fn_sys_drop_barrier, 0, 0);
-	make_return(q, tmp+nbr_cells);
+	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_call_barrier(q));
 	q->st.curr_cell = tmp;
 	return true;
@@ -203,7 +206,7 @@ bool fn_iso_once_1(query *q)
 	check_heap_error(tmp);
 	pl_idx_t nbr_cells = 1+tmp2->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_cut_s, fn_sys_inner_cut_0, 0, 0);
-	make_return(q, tmp+nbr_cells);
+	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_call_barrier(q));
 	q->st.curr_cell = tmp;
 	return true;
@@ -238,7 +241,7 @@ bool fn_ignore_1(query *q)
 	check_heap_error(tmp);
 	pl_idx_t nbr_cells = 1+tmp2->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_cut_s, fn_sys_inner_cut_0, 0, 0);
-	make_return(q, tmp+nbr_cells);
+	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_call_barrier(q));
 	q->st.curr_cell = tmp;
 	return true;
@@ -258,7 +261,7 @@ bool fn_iso_if_then_2(query *q)
 	pl_idx_t nbr_cells = 1 + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_cut_s, fn_sys_inner_cut_0, 0, 0);
 	nbr_cells += safe_copy_cells(tmp+nbr_cells, p2, p2->nbr_cells);
-	make_return(q, tmp+nbr_cells);
+	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
 	q->st.curr_cell = tmp;
 	return true;
@@ -278,7 +281,7 @@ bool fn_if_2(query *q)
 	pl_idx_t nbr_cells = 1 + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_soft_cut_s, fn_sys_soft_inner_cut_0, 0, 0);
 	nbr_cells += safe_copy_cells(tmp+nbr_cells, p2, p2->nbr_cells);
-	make_return(q, tmp+nbr_cells);
+	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
 	q->st.curr_cell = tmp;
 	return true;
@@ -289,11 +292,8 @@ bool fn_if_2(query *q)
 static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 {
 	if (q->retry) {
-		cell *tmp = clone_to_heap(q, true, p3, 1);
-		check_heap_error(tmp);
-		pl_idx_t nbr_cells = 1 + p3->nbr_cells;
-		make_return(q, tmp+nbr_cells);
-		q->st.curr_cell = tmp;
+		q->retry = QUERY_SKIP;
+		q->st.curr_cell = p3;
 		return true;
 	}
 
@@ -302,7 +302,7 @@ static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 	pl_idx_t nbr_cells = 1 + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_cut_s, fn_sys_inner_cut_0, 0, 0);
 	nbr_cells += safe_copy_cells(tmp+nbr_cells, p2, p2->nbr_cells);
-	make_return(q, tmp+nbr_cells);
+	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
 	q->st.curr_cell = tmp;
 	return true;
@@ -313,11 +313,8 @@ static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 static bool do_if_else(query *q, cell *p1, cell *p2, cell *p3)
 {
 	if (q->retry) {
-		cell *tmp = clone_to_heap(q, true, p3, 1);
-		check_heap_error(tmp);
-		pl_idx_t nbr_cells = 1 + p3->nbr_cells;
-		make_return(q, tmp+nbr_cells);
-		q->st.curr_cell = tmp;
+		q->retry = QUERY_SKIP;
+		q->st.curr_cell = p3;
 		return true;
 	}
 
@@ -326,7 +323,7 @@ static bool do_if_else(query *q, cell *p1, cell *p2, cell *p3)
 	pl_idx_t nbr_cells = 1 + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_soft_cut_s, fn_sys_soft_inner_cut_0, 0, 0);
 	nbr_cells += safe_copy_cells(tmp+nbr_cells, p2, p2->nbr_cells);
-	make_return(q, tmp+nbr_cells);
+	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
 	q->st.curr_cell = tmp;
 	return true;
@@ -342,7 +339,12 @@ bool fn_if_3(query *q)
 	return do_if_else(q, p1, p2, p3);
 }
 
-// either ; or
+bool fn_iso_conjunction_2(query *q)
+{
+	q->retry = QUERY_SKIP;
+	q->st.curr_cell++;
+	return true;
+}
 
 bool fn_iso_disjunction_2(query *q)
 {
@@ -366,18 +368,15 @@ bool fn_iso_disjunction_2(query *q)
 	GET_NEXT_ARG(p2,callable);
 
 	if (q->retry) {
-		cell *tmp = clone_to_heap(q, true, p2, 1);
-		check_heap_error(tmp);
-		pl_idx_t nbr_cells = 1 + p2->nbr_cells;
-		make_return(q, tmp+nbr_cells);
-		q->st.curr_cell = tmp;
+		q->retry = QUERY_SKIP;
+		q->st.curr_cell = p2;
 		return true;
 	}
 
 	cell *tmp = clone_to_heap(q, true, p1, 1);
 	check_heap_error(tmp);
 	pl_idx_t nbr_cells = 1 + p1->nbr_cells;
-	make_return(q, tmp+nbr_cells);
+	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_choice(q));
 	q->st.curr_cell = tmp;
 	return true;
@@ -396,7 +395,7 @@ bool fn_iso_negation_1(query *q)
 	pl_idx_t nbr_cells = 1 + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_cut_s, fn_sys_inner_cut_0, 0, 0);
 	make_struct(tmp+nbr_cells++, g_fail_s, fn_iso_fail_0, 0, 0);
-	make_return(q, tmp+nbr_cells);
+	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
 	q->st.curr_cell = tmp;
 	return true;
@@ -463,7 +462,7 @@ bool fn_iso_catch_3(query *q)
 		check_heap_error(tmp);
 		pl_idx_t nbr_cells = 1+p3->nbr_cells;
 		make_struct(tmp+nbr_cells++, g_sys_drop_barrier, fn_sys_drop_barrier, 0, 0);
-		make_return(q, tmp+nbr_cells);
+		make_call(q, tmp+nbr_cells);
 		check_heap_error(push_catcher(q, QUERY_EXCEPTION));
 		q->st.curr_cell = tmp;
 		return true;
@@ -480,7 +479,7 @@ bool fn_iso_catch_3(query *q)
 	pl_idx_t nbr_cells = 1+p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_block_catcher_s, fn_sys_block_catcher_1, 1, 1);
 	make_int(tmp+nbr_cells++, cp);
-	make_return(q, tmp+nbr_cells);
+	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_catcher(q, QUERY_RETRY));
 	q->st.curr_cell = tmp;
 	return true;
@@ -506,7 +505,7 @@ bool fn_sys_call_cleanup_3(query *q)
 		check_heap_error(tmp);
 		pl_idx_t nbr_cells = 1+p3->nbr_cells;
 		make_struct(tmp+nbr_cells++, g_sys_cleanup_if_det_s, fn_sys_cleanup_if_det_0, 0, 0);
-		make_return(q, tmp+nbr_cells);
+		make_call(q, tmp+nbr_cells);
 		check_heap_error(push_catcher(q, QUERY_EXCEPTION));
 		q->st.curr_cell = tmp;
 		return true;
@@ -521,7 +520,7 @@ bool fn_sys_call_cleanup_3(query *q)
 	check_heap_error(tmp);
 	pl_idx_t nbr_cells = 1+p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_cleanup_if_det_s, fn_sys_cleanup_if_det_0, 0, 0);
-	make_return(q, tmp+nbr_cells);
+	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_catcher(q, QUERY_RETRY));
 	q->st.curr_cell = tmp;
 	return true;

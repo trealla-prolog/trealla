@@ -61,7 +61,7 @@ size_t slicecpy(char *dst, size_t dstlen, const char *src, size_t len);
 int get_stream(query *q, cell *p1);
 void call_builtin(query *q, cell *c, pl_idx_t c_ctx);
 bool call_userfun(query *q, cell *c, pl_idx_t c_ctx);
-void do_cleanup(query *q, cell *p1);
+void do_cleanup(query *q, cell *p1, pl_idx_t c_ctx);
 bool drop_barrier(query *q);
 bool is_in_ref_list(cell *c, pl_idx_t c_ctx, reflist *rlist);
 void collect_vars(query *q, cell *p1, pl_idx_t p1_ctx);
@@ -85,7 +85,6 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_idx_t c_ctx, int ru
 char *print_term_to_strbuf(query *q, cell *c, pl_idx_t c_ctx, int running);
 void clear_write_options(query *q);
 
-ssize_t print_canonical_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t c_ctx, int running, bool unused, unsigned depth);
 bool print_canonical(query *q, FILE *fp, cell *c, pl_idx_t c_ctx, int running);
 char *print_canonical_to_strbuf(query *q, cell *c, pl_idx_t c_ctx, int running);
 bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx_t c_ctx, int running);
@@ -98,6 +97,7 @@ bool fn_sys_call_cleanup_3(query *q);
 bool fn_iso_catch_3(query *q);
 bool fn_sys_block_catcher_0(query *q);
 bool fn_iso_negation_1(query *q);
+bool fn_iso_conjunction_2(query *q);
 bool fn_iso_disjunction_2(query *q);
 bool fn_if_3(query *q);
 bool fn_if_2(query *q);
@@ -167,10 +167,10 @@ struct cycle_info_ {
 
 #define PROMPT ""
 
-#define DUMP_TERM(s,c,c_ctx) {						\
+#define DUMP_TERM(s,c,c_ctx,running) {				\
 	printf("*** %s ", s);							\
 	q->quoted = true;								\
-	print_term(q, stdout, c, c_ctx, 1);				\
+	print_term(q, stdout, c, c_ctx, running);		\
 	q->quoted = false;								\
 	printf("\n");									\
 }

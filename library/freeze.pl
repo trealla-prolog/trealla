@@ -9,18 +9,13 @@
 frozen(Term, Goal) :-
 	copy_term(Term, _, Gs),
 	flatten(Gs, Gs2),
-	toconjunction(Gs2, Goal).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	list_to_conjunction(Gs2, Goal).
 
 verify_attributes(Var, Other, Goals) :-
         get_atts(Var, frozen(Fa)), !,       % are we involved?
         (   var(Other) ->                   % must be attributed then
             (   get_atts(Other,  frozen(Fb)) % has a pending goal?
-            ->  ( var(Fb) ->
-				  put_atts(Other,  frozen(Fa))
-				; put_atts(Other,  frozen((Fb,Fa))) % rescue conjunction
-				)
+            ->  put_atts(Other,  frozen((Fb,Fa))) % rescue conjunction
             ;   put_atts(Other,  frozen(Fa)) % rescue the pending goal
             ),
             Goals = []

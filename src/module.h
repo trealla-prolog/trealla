@@ -3,7 +3,7 @@
 #include "internal.h"
 
 module *create_module(prolog *pl, const char *name);
-void duplicate_module(prolog *pl, module *m, const char *name);
+void duplicate_module(prolog *pl, module *m, const char *name, unsigned arity);
 void destroy_module(module *m);
 
 bool save_file(module *m, const char *filename);

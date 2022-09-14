@@ -237,8 +237,8 @@ static int varunformat(const char *s)
 
 static bool any_attributed(const query *q)
 {
-	parser *p = q->p;
-	frame *f = GET_FIRST_FRAME();
+	const parser *p = q->p;
+	const frame *f = GET_FIRST_FRAME();
 	bool any = false;
 
 	for (unsigned i = 0; i < p->nbr_vars; i++) {

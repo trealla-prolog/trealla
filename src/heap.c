@@ -60,7 +60,7 @@ cell *init_tmp_heap(query *q)
 	return q->tmp_heap;
 }
 
-cell *alloc_on_tmp(query *q, pl_idx_t nbr_cells)
+cell *alloc_on_tmp(query *q, unsigned nbr_cells)
 {
 	if (((uint64_t)q->tmphp + nbr_cells) > UINT32_MAX)
 		return NULL;
@@ -84,7 +84,7 @@ cell *alloc_on_tmp(query *q, pl_idx_t nbr_cells)
 // When more space is need allocate a new page and keep them in the
 // page list. Backtracking will garbage collect and free as needed.
 
-cell *alloc_on_heap(query *q, pl_idx_t nbr_cells)
+cell *alloc_on_heap(query *q, unsigned nbr_cells)
 {
 	if (((uint64_t)q->st.hp + nbr_cells) > UINT32_MAX)
 		return NULL;
@@ -624,9 +624,9 @@ cell *clone_to_tmp(query *q, cell *p1)
 	return append_to_tmp(q, p1);
 }
 
-cell *clone_to_heap(query *q, bool prefix, cell *p1, pl_idx_t suffix)
+cell *clone_to_heap(query *q, bool prefix, cell *p1, unsigned extras)
 {
-	cell *tmp = alloc_on_heap(q, (prefix?1:0)+p1->nbr_cells+suffix);
+	cell *tmp = alloc_on_heap(q, (prefix?1:0)+(unsigned)p1->nbr_cells+extras);
 	if (!tmp) return NULL;
 	frame *f = GET_CURR_FRAME();
 
@@ -654,7 +654,7 @@ cell *clone_to_heap(query *q, bool prefix, cell *p1, pl_idx_t suffix)
 	return tmp;
 }
 
-cell *alloc_on_queuen(query *q, int qnbr, const cell *c)
+cell *alloc_on_queuen(query *q, unsigned qnbr, const cell *c)
 {
 	if (!q->queue[qnbr]) {
 		q->queue[qnbr] = malloc(sizeof(cell)*q->q_size[qnbr]);
@@ -672,7 +672,7 @@ cell *alloc_on_queuen(query *q, int qnbr, const cell *c)
 	return dst;
 }
 
-cell *alloc_on_queuen_unsafe(query *q, int qnbr, const cell *c)
+cell *alloc_on_queuen_unsafe(query *q, unsigned qnbr, const cell *c)
 {
 	if (!q->queue[qnbr]) {
 		q->queue[qnbr] = malloc(sizeof(cell)*q->q_size[qnbr]);

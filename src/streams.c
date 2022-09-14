@@ -1124,7 +1124,12 @@ static bool fn_iso_close_1(query *q)
 	if (!str->socket)
 		del_stream_properties(q, n);
 
-	net_close(str);
+	if (str->is_map) {
+		map_destroy(str->keyval);
+		str->keyval = NULL;
+	} else
+		net_close(str);
+
 	free(str->mode);
 	free(str->filename);
 	free(str->name);
@@ -3313,9 +3318,9 @@ static bool fn_iso_set_stream_position_2(query *q)
 
 static bool fn_read_term_from_chars_3(query *q)
 {
-	GET_FIRST_ARG(p_chars,any);
-	GET_NEXT_ARG(p_term,any);
+	GET_FIRST_ARG(p_term,any);
 	GET_NEXT_ARG(p_opts,list_or_nil);
+	GET_NEXT_ARG(p_chars,any);
 	int n = 3;
 	stream *str = &q->pl->streams[n];
 	char *src = NULL;
@@ -3390,9 +3395,9 @@ static bool fn_read_term_from_chars_3(query *q)
 
 static bool fn_read_term_from_atom_3(query *q)
 {
-	GET_FIRST_ARG(p_chars,any);
-	GET_NEXT_ARG(p_term,any);
+	GET_FIRST_ARG(p_term,any);
 	GET_NEXT_ARG(p_opts,list_or_nil);
+	GET_NEXT_ARG(p_chars,any);
 	int n = q->pl->current_input;
 	stream *str = &q->pl->streams[n];
 
@@ -3494,9 +3499,9 @@ static bool fn_write_canonical_to_atom_3(query *q)
 
 static bool fn_write_term_to_chars_3(query *q)
 {
-	GET_FIRST_ARG(p_chars,atom_or_var);
-	GET_NEXT_ARG(p_term,any);
+	GET_FIRST_ARG(p_term,any);
 	GET_NEXT_ARG(p2,list_or_nil);
+	GET_NEXT_ARG(p_chars,atom_or_var);
 	cell *vnames = NULL;
 	pl_idx_t vnames_ctx = 0;
 	q->flags = q->st.m->flags;
@@ -4162,6 +4167,113 @@ static bool fn_getfile_2(query *q)
 	return true;
 }
 
+static bool get_terminator(query *q, cell *l, pl_idx_t l_ctx)
+{
+	bool terminator = false;
+	LIST_HANDLER(l);
+
+	while (is_iso_list(l)) {
+		cell *h = LIST_HEAD(l);
+		h = deref(q, h, l_ctx);
+		pl_idx_t h_ctx = q->latest_ctx;
+
+		if (is_structure(h)) {
+			if (!CMP_STR_TO_CSTR(q, h, "terminator")) {
+				h = h + 1;
+				h = deref(q, h, h_ctx);
+
+				if (is_atom(h))
+					terminator = !CMP_STR_TO_CSTR(q, h, "true");
+			}
+		}
+
+		l = LIST_TAIL(l);
+		l = deref(q, l, l_ctx);
+		l_ctx = q->latest_ctx;
+	}
+
+	return terminator;
+}
+
+static bool fn_getfile_3(query *q)
+{
+	GET_FIRST_ARG(p1,atom_or_list);
+	GET_NEXT_ARG(p2,variable);
+	GET_NEXT_ARG(p3,list_or_nil);
+	char *filename;
+	bool terminator = get_terminator(q, p3, p3_ctx);
+
+	if (is_iso_list(p1)) {
+		size_t len = scan_is_chars_list(q, p1, p1_ctx, true);
+
+		if (!len)
+			return throw_error(q, p1, p1_ctx, "type_error", "atom");
+
+		filename = chars_list_to_string(q, p1, p1_ctx, len);
+	} else
+		filename = DUP_STR(q, p1);
+
+	convert_path(filename);
+	FILE *fp = fopen(filename, "r");
+	free(filename);
+
+	if (!fp)
+		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_file");
+
+	// Check for a BOM
+
+	int ch = getc_utf8(fp);
+
+	if ((unsigned)ch != 0xFEFF)
+		fseek(fp, 0, SEEK_SET);
+
+	char *line = NULL;
+	size_t len = 0;
+	int nbr = 1, in_list = 0;
+
+	while (getline(&line, &len, fp) != -1) {
+		CHECK_INTERRUPT();
+		int len = strlen(line);
+
+		if (!terminator) {
+			if (len && (line[len-1] == '\n')) {
+				line[len-1] = '\0';
+				len--;
+			}
+
+			if (len && (line[len-1] == '\r')) {
+				line[len-1] = '\0';
+				len--;
+			}
+		}
+
+		cell tmp;
+		check_heap_error(make_stringn(&tmp, line, len));
+
+		if (nbr++ == 1)
+			allocate_list(q, &tmp);
+		else
+			append_list(q, &tmp);
+
+		in_list = 1;
+	}
+
+	free(line);
+	fclose(fp);
+
+	if (!in_list) {
+		cell tmp;
+		make_atom(&tmp, g_nil_s);
+		unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	} else {
+		cell *l = end_list(q);
+		check_heap_error(l);
+		unify(q, p2, p2_ctx, l, q->st.curr_frame);
+	}
+
+	return true;
+}
+
 static bool fn_getlines_1(query *q)
 {
 	GET_NEXT_ARG(p1,variable);
@@ -4233,6 +4345,60 @@ static bool fn_getlines_2(query *q)
 		if (len && (line[len-1] == '\r')) {
 			line[len-1] = '\0';
 			len--;
+		}
+
+		cell tmp;
+		check_heap_error(make_stringn(&tmp, line, len));
+
+		if (nbr++ == 1)
+			allocate_list(q, &tmp);
+		else
+			append_list(q, &tmp);
+
+		in_list = 1;
+	}
+
+	free(line);
+
+	if (!in_list) {
+		cell tmp;
+		make_atom(&tmp, g_nil_s);
+		unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+	} else {
+		cell *l = end_list(q);
+		check_heap_error(l);
+		unify(q, p1, p1_ctx, l, q->st.curr_frame);
+	}
+
+	return true;
+}
+
+static bool fn_getlines_3(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	GET_NEXT_ARG(p1,variable);
+	GET_NEXT_ARG(p2,list_or_nil);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+	char *line = NULL;
+	size_t len = 0;
+	int nbr = 1, in_list = 0;
+	bool terminator = get_terminator(q, p2, p2_ctx);
+
+	while (getline(&line, &len, str->fp) != -1) {
+		CHECK_INTERRUPT();
+		int len = strlen(line);
+
+		if (!terminator) {
+			if (len && (line[len-1] == '\n')) {
+				line[len-1] = '\0';
+				len--;
+			}
+
+			if (len && (line[len-1] == '\r')) {
+				line[len-1] = '\0';
+				len--;
+			}
 		}
 
 		cell tmp;
@@ -4502,6 +4668,51 @@ static bool fn_getline_2(query *q)
 
 	if (line[strlen(line)-1] == '\r')
 		line[strlen(line)-1] = '\0';
+
+	cell tmp;
+	check_heap_error(make_string(&tmp, line), free(line));
+	free(line);
+	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
+	return ok;
+}
+
+static bool fn_getline_3(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	GET_NEXT_ARG(p1,any);
+	GET_NEXT_ARG(p2,list_or_nil);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+	char *line = NULL;
+	size_t len = 0;
+	bool terminator = get_terminator(q, p2, p2_ctx);
+
+	if (isatty(fileno(str->fp))) {
+		fprintf(str->fp, "%s", PROMPT);
+		fflush(str->fp);
+	}
+
+	if (net_getline(&line, &len, str) == -1) {
+		free(line);
+
+		if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
+			clearerr(str->fp);
+			return do_yield_0(q, 1);
+		}
+
+		return false;
+	}
+
+	len = strlen(line);
+
+	if (!terminator) {
+		if (line[strlen(line)-1] == '\n')
+			line[strlen(line)-1] = '\0';
+
+		if (line[strlen(line)-1] == '\r')
+			line[strlen(line)-1] = '\0';
+	}
 
 	cell tmp;
 	check_heap_error(make_string(&tmp, line), free(line));
@@ -5547,55 +5758,359 @@ static bool fn_sys_put_chars_2(query *q)
 	return !ferror(str->fp);
 }
 
+static bool fn_map_create_2(query *q)
+{
+	GET_FIRST_ARG(p1,variable);
+	int n = new_stream(q->pl);
+
+	if (n < 0)
+		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
+
+	GET_NEXT_ARG(p4,list_or_nil);
+	stream *str = &q->pl->streams[n];
+	LIST_HANDLER(p4);
+
+	while (is_list(p4)) {
+		cell *h = LIST_HEAD(p4);
+		cell *c = deref(q, h, p4_ctx);
+		pl_idx_t c_ctx = q->latest_ctx;
+
+		if (is_variable(c))
+			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+
+		cell *name = c + 1;
+		name = deref(q, name, c_ctx);
+
+		if (!CMP_STR_TO_CSTR(q, c, "alias")) {
+			if (is_variable(name))
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+
+			if (!is_atom(name))
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+
+			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
+				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
+
+			free(str->name);
+			str->name = DUP_STR(q, name);
+		} else {
+			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+		}
+
+		p4 = LIST_TAIL(p4);
+		p4 = deref(q, p4, p4_ctx);
+		p4_ctx = q->latest_ctx;
+
+		if (is_variable(p4))
+			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+	}
+
+	str->keyval = map_create((void*)fake_strcmp, (void*)keyvalfree, NULL);
+	check_heap_error(str->keyval);
+	map_allow_dups(str->keyval, false);
+	str->is_map = true;
+
+	cell tmp ;
+	make_int(&tmp, n);
+	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool fn_map_set_3(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
+
+	GET_NEXT_ARG(p1,atomic);
+	GET_NEXT_ARG(p2,atomic);
+	char *key;
+
+	if (is_integer(p1)) {
+		char tmpbuf[128];
+		snprintf(tmpbuf, sizeof(tmpbuf), "%lld", (long long unsigned)get_smallint(p1));
+		key = strdup(tmpbuf);
+	} else if (is_atom(p1))
+		key = DUP_STR(q, p1);
+	else
+		return throw_error(q, p1, p1_ctx, "type_error", "integer");
+
+	check_heap_error(key);
+	char *val = NULL;
+
+	if (is_integer(p2)) {
+		char tmpbuf[128];
+		snprintf(tmpbuf, sizeof(tmpbuf), "%lld", (long long unsigned)get_smallint(p2));
+		val = strdup(tmpbuf);
+	} else if (is_float(p2)) {
+		char tmpbuf[128];
+		snprintf(tmpbuf, sizeof(tmpbuf), "%.*g", DBL_DIG, get_float(p2));
+		val = strdup(tmpbuf);
+	} else if (is_atom(p2))
+		val = DUP_STR(q, p2);
+	else {
+		free(key);
+		return throw_error(q, p2, p2_ctx, "type_error", "integer");
+	}
+
+	check_heap_error(val);
+	map_set(str->keyval, key, val);
+	return true;
+}
+
+static bool fn_map_get_3(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
+
+	GET_NEXT_ARG(p1,atomic);
+	GET_NEXT_ARG(p2,atomic_or_var);
+	char *key;
+	char tmpbuf[128];
+
+	if (is_integer(p1)) {
+		snprintf(tmpbuf, sizeof(tmpbuf), "%lld", (long long unsigned)get_smallint(p1));
+		key = tmpbuf;
+	} else if (is_atom(p1))
+		key = DUP_STR(q, p1);
+	else
+		return throw_error(q, p2, p2_ctx, "type_error", "integer");
+
+	check_heap_error(key);
+	char *val = NULL;
+
+	if (!map_get(str->keyval, key, (void*)&val)) {
+		if (key != tmpbuf) free(key);
+		return false;
+	}
+
+	cell tmp;
+	const char *src = val;
+	int all_digs = 1, floaties = 0;
+
+	if (*src == '-')
+		src++;
+
+	while (*src) {
+		if ((*src == '.') || (*src == 'e') || (*src == 'E')
+			|| (*src == '+') || (*src == '-'))
+			floaties++;
+		else if (!isdigit(*src)) {
+			all_digs = 0;
+			break;
+		}
+
+		src++;
+	}
+
+	if (all_digs && !floaties) {
+		pl_int_t v = strtoll(val, NULL, 10);
+		make_int(&tmp, v);
+	} else if (all_digs && floaties) {
+		double v = strtod(val, NULL);
+		make_float(&tmp, v);
+	} else
+		check_heap_error(make_cstring(&tmp, val));
+
+	if (key != tmpbuf) free(key);
+	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
+	return ok;
+}
+
+static bool fn_map_del_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
+
+	GET_NEXT_ARG(p1,atomic);
+	char *key;
+
+	if (is_integer(p1)) {
+		char tmpbuf[128];
+		snprintf(tmpbuf, sizeof(tmpbuf), "%lld", (long long unsigned)get_smallint(p1));
+		key = strdup(tmpbuf);
+	} else if (is_atom(p1))
+		key = DUP_STR(q, p1);
+	else
+		return throw_error(q, p1, p1_ctx, "type_error", "integer");
+
+	check_heap_error(key);
+	map_del(str->keyval, key);
+	return true;
+}
+
+static bool fn_map_list_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
+
+	GET_NEXT_ARG(p1,list_or_var);
+	miter *iter = map_first(str->keyval);
+	union { double vd; int64_t vi; void *vp; } dummy;
+	bool first = true;
+	char *val = NULL;
+	char tmpbuf[128];
+
+	while (map_next(iter, (void**)&val)) {
+		void *key = map_key(iter);
+		cell tmpk, tmpv;
+		const char *src = key;
+		int all_digs = 1;
+
+		while (*src) {
+			if (!isdigit(*src)) {
+				all_digs = 0;
+				break;
+			}
+
+			src++;
+		}
+
+		if (all_digs) {
+			pl_int_t v = strtoll(key, NULL, 10);
+			make_int(&tmpk, v);
+		} else
+			check_heap_error(make_cstring(&tmpk, key));
+
+		src = val;
+		src = val;
+		all_digs = 1; int floaties = 0;
+
+		if (*src == '-')
+			src++;
+
+		while (*src) {
+			if ((*src == '.') || (*src == 'e') || (*src == 'E')
+				|| (*src == '+') || (*src == '-'))
+				floaties++;
+			else if (!isdigit(*src)) {
+				all_digs = 0;
+				break;
+			}
+
+			src++;
+		}
+
+		if (all_digs && !floaties) {
+			pl_int_t v = strtoll(val, NULL, 10);
+			make_int(&tmpv, v);
+		} else if (all_digs && floaties) {
+			double v = strtod(val, NULL);
+			make_float(&tmpv, v);
+		} else
+			check_heap_error(make_cstring(&tmpv, val));
+
+		cell tmp2[3];
+		make_struct(tmp2+0, g_pair_s, NULL, 2, 2);
+		tmp2[1] = tmpk;
+		tmp2[2] = tmpv;
+		SET_OP(tmp2, OP_YFX);
+
+		if (first) {
+			allocate_list(q, tmp2);
+			first = false;
+		} else
+			append_list(q, tmp2);
+	}
+
+	cell *tmp = end_list(q);
+	map_done(iter);
+	bool ok = unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
+	return ok;
+}
+
+static bool fn_map_count_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
+
+	GET_NEXT_ARG(p1,variable);
+	cell tmp;
+	make_int(&tmp, map_count(str->keyval));
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool fn_map_close_1(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_vector_or_matrix");
+
+	return fn_iso_close_1(q);
+}
+
 builtins g_files_bifs[] =
 {
 	// ISO...
 
-	{"open", 4, fn_iso_open_4, NULL, false, BLAH},
-	{"close", 1, fn_iso_close_1, NULL, false, BLAH},
-	{"close", 2, fn_iso_close_2, NULL, false, BLAH},
-	{"read_term", 2, fn_iso_read_term_2, NULL, false, BLAH},
-	{"read_term", 3, fn_iso_read_term_3, NULL, false, BLAH},
-	{"read", 1, fn_iso_read_1, NULL, false, BLAH},
-	{"read", 2, fn_iso_read_2, NULL, false, BLAH},
-	{"write_canonical", 1, fn_iso_write_canonical_1, NULL, false, BLAH},
-	{"write_canonical", 2, fn_iso_write_canonical_2, NULL, false, BLAH},
-	{"write_term", 2, fn_iso_write_term_2, NULL, false, BLAH},
-	{"write_term", 3, fn_iso_write_term_3, NULL, false, BLAH},
-	{"writeq", 1, fn_iso_writeq_1, NULL, false, BLAH},
-	{"writeq", 2, fn_iso_writeq_2, NULL, false, BLAH},
-	{"write", 1, fn_iso_write_1, NULL, false, BLAH},
-	{"write", 2, fn_iso_write_2, NULL, false, BLAH},
+	{"open", 4, fn_iso_open_4, "+filename,+mode,-stream,+opts", false, BLAH},
+	{"close", 1, fn_iso_close_1, "+stream", false, BLAH},
+	{"close", 2, fn_iso_close_2, "+stream,+opts", false, BLAH},
+	{"read_term", 2, fn_iso_read_term_2, "+stream,-term", false, BLAH},
+	{"read_term", 3, fn_iso_read_term_3, "+stream,-term,+opts", false, BLAH},
+	{"read", 1, fn_iso_read_1, "-term", false, BLAH},
+	{"read", 2, fn_iso_read_2, "+stream,-term", false, BLAH},
+	{"write_canonical", 1, fn_iso_write_canonical_1, "+term", false, BLAH},
+	{"write_canonical", 2, fn_iso_write_canonical_2, "+stream,+term", false, BLAH},
+	{"write_term", 2, fn_iso_write_term_2, "+stream,+term", false, BLAH},
+	{"write_term", 3, fn_iso_write_term_3, "+stream,+term,+opts", false, BLAH},
+	{"writeq", 1, fn_iso_writeq_1, "+term", false, BLAH},
+	{"writeq", 2, fn_iso_writeq_2, "+stream,+term", false, BLAH},
+	{"write", 1, fn_iso_write_1, "+term", false, BLAH},
+	{"write", 2, fn_iso_write_2, "+stream,+term", false, BLAH},
 	{"nl", 0, fn_iso_nl_0, NULL, false, BLAH},
-	{"nl", 1, fn_iso_nl_1, NULL, false, BLAH},
+	{"nl", 1, fn_iso_nl_1, "+stream", false, BLAH},
 	{"at_end_of_stream", 0, fn_iso_at_end_of_stream_0, NULL, false, BLAH},
-	{"at_end_of_stream", 1, fn_iso_at_end_of_stream_1, NULL, false, BLAH},
-	{"set_stream_position", 2, fn_iso_set_stream_position_2, NULL, false, BLAH},
+	{"at_end_of_stream", 1, fn_iso_at_end_of_stream_1, "+stream", false, BLAH},
+	{"set_stream_position", 2, fn_iso_set_stream_position_2, "+stream,+integer", false, BLAH},
 	{"flush_output", 0, fn_iso_flush_output_0, NULL, false, BLAH},
-	{"flush_output", 1, fn_iso_flush_output_1, NULL, false, BLAH},
-	{"put_char", 1, fn_iso_put_char_1, NULL, false, BLAH},
-	{"put_char", 2, fn_iso_put_char_2, NULL, false, BLAH},
-	{"put_code", 1, fn_iso_put_code_1, NULL, false, BLAH},
-	{"put_code", 2, fn_iso_put_code_2, NULL, false, BLAH},
-	{"put_byte", 1, fn_iso_put_byte_1, NULL, false, BLAH},
-	{"put_byte", 2, fn_iso_put_byte_2, NULL, false, BLAH},
-	{"get_char", 1, fn_iso_get_char_1, NULL, false, BLAH},
-	{"get_char", 2, fn_iso_get_char_2, NULL, false, BLAH},
-	{"get_code", 1, fn_iso_get_code_1, NULL, false, BLAH},
-	{"get_code", 2, fn_iso_get_code_2, NULL, false, BLAH},
-	{"get_byte", 1, fn_iso_get_byte_1, NULL, false, BLAH},
-	{"get_byte", 2, fn_iso_get_byte_2, NULL, false, BLAH},
-	{"peek_char", 1, fn_iso_peek_char_1, NULL, false, BLAH},
-	{"peek_char", 2, fn_iso_peek_char_2, NULL, false, BLAH},
-	{"peek_code", 1, fn_iso_peek_code_1, NULL, false, BLAH},
-	{"peek_code", 2, fn_iso_peek_code_2, NULL, false, BLAH},
-	{"peek_byte", 1, fn_iso_peek_byte_1, NULL, false, BLAH},
-	{"peek_byte", 2, fn_iso_peek_byte_2, NULL, false, BLAH},
-	{"current_input", 1, fn_iso_current_input_1, NULL, false, BLAH},
-	{"current_output", 1, fn_iso_current_output_1, NULL, false, BLAH},
-	{"set_input", 1, fn_iso_set_input_1, NULL, false, BLAH},
-	{"set_output", 1, fn_iso_set_output_1, NULL, false, BLAH},
-	{"stream_property", 2, fn_iso_stream_property_2, NULL, false, BLAH},
+	{"flush_output", 1, fn_iso_flush_output_1, "+stream", false, BLAH},
+	{"put_char", 1, fn_iso_put_char_1, "+integer", false, BLAH},
+	{"put_char", 2, fn_iso_put_char_2, "+stream,+integer", false, BLAH},
+	{"put_code", 1, fn_iso_put_code_1, "+integer", false, BLAH},
+	{"put_code", 2, fn_iso_put_code_2, "+stream,+integer", false, BLAH},
+	{"put_byte", 1, fn_iso_put_byte_1, "+integer", false, BLAH},
+	{"put_byte", 2, fn_iso_put_byte_2, "+stream,+integer", false, BLAH},
+	{"get_char", 1, fn_iso_get_char_1, "-integer", false, BLAH},
+	{"get_char", 2, fn_iso_get_char_2, "+stream,-integer", false, BLAH},
+	{"get_code", 1, fn_iso_get_code_1, "-integer", false, BLAH},
+	{"get_code", 2, fn_iso_get_code_2, "+stream,-integer", false, BLAH},
+	{"get_byte", 1, fn_iso_get_byte_1, "-integer", false, BLAH},
+	{"get_byte", 2, fn_iso_get_byte_2, "+stream,-integer", false, BLAH},
+	{"peek_char", 1, fn_iso_peek_char_1, "-integer", false, BLAH},
+	{"peek_char", 2, fn_iso_peek_char_2, "+stream,-integer", false, BLAH},
+	{"peek_code", 1, fn_iso_peek_code_1, "-integer", false, BLAH},
+	{"peek_code", 2, fn_iso_peek_code_2, "+stream,-integer", false, BLAH},
+	{"peek_byte", 1, fn_iso_peek_byte_1, "-integer", false, BLAH},
+	{"peek_byte", 2, fn_iso_peek_byte_2, "+stream,-integer", false, BLAH},
+	{"current_input", 1, fn_iso_current_input_1, "-stream", false, BLAH},
+	{"current_output", 1, fn_iso_current_output_1, "-stream", false, BLAH},
+	{"set_input", 1, fn_iso_set_input_1, "+stream", false, BLAH},
+	{"set_output", 1, fn_iso_set_output_1, "+stream", false, BLAH},
+	{"stream_property", 2, fn_iso_stream_property_2, "+stream,+structure", false, BLAH},
 
 
 	// Edinburgh...
@@ -5609,13 +6124,18 @@ builtins g_files_bifs[] =
 	{"tab", 1, fn_edin_tab_1, "+integer", false, BLAH},
 	{"tab", 2, fn_edin_tab_2, "+stream,+integer", false, BLAH},
 
+	// Other...
+
 	{"getline", 1, fn_getline_1, "-string", false, BLAH},
 	{"getline", 2, fn_getline_2, "+stream,-string", false, BLAH},
+	{"getline", 3, fn_getline_3, "+stream,-string,+opts", false, BLAH},
 	{"getlines", 1, fn_getlines_1, "-list", false, BLAH},
 	{"getlines", 2, fn_getlines_2, "+stream,-list", false, BLAH},
-	{"load_files", 2, fn_load_files_2, NULL, false, BLAH},
-	{"unload_files", 1, fn_unload_files_1, NULL, false, BLAH},
+	{"getlines", 3, fn_getlines_3, "+stream,-list,+opts", false, BLAH},
+	{"load_files", 2, fn_load_files_2, "+file(s),+opts", false, BLAH},
+	{"unload_files", 1, fn_unload_files_1, "+file(s)", false, BLAH},
 	{"getfile", 2, fn_getfile_2, "+string,-list", false, BLAH},
+	{"getfile", 3, fn_getfile_3, "+string,-list,+opts", false, BLAH},
 	{"loadfile", 2, fn_loadfile_2, "+string,-string", false, BLAH},
 	{"savefile", 2, fn_savefile_2, "+string,+string", false, BLAH},
 	{"rename_file", 2, fn_rename_file_2, "+string,+string", false, BLAH},
@@ -5630,12 +6150,12 @@ builtins g_files_bifs[] =
 	{"make_directory", 1, fn_make_directory_1, "+string", false, BLAH},
 	{"make_directory_path", 1, fn_make_directory_path_1, "+string", false, BLAH},
 	{"working_directory", 2, fn_working_directory_2, "-string,+string", false, BLAH},
-	{"absolute_file_name", 3, fn_absolute_file_name_3, NULL, false, BLAH},
+	{"absolute_file_name", 3, fn_absolute_file_name_3, "+atom,-atom,+opts", false, BLAH},
 	{"chdir", 1, fn_chdir_1, "+string", false, BLAH},
 	{"$put_chars", 1, fn_sys_put_chars_1, "+chars", false, BLAH},
 	{"$put_chars", 2, fn_sys_put_chars_2, "+stream,+chars", false, BLAH},
-	{"read_term_from_atom", 3, fn_read_term_from_atom_3, "+atom,?term,+list", false, BLAH},
-	{"read_term_from_chars", 3, fn_read_term_from_chars_3, "+chars,?term,+list", false, BLAH},
+	{"read_term_from_atom", 3, fn_read_term_from_atom_3, "?term,+list,+atom", false, BLAH},
+	{"read_term_from_chars", 3, fn_read_term_from_chars_3, "?term,+list,+chars", false, BLAH},
 	{"write_term_to_atom", 3, fn_write_term_to_atom_3, "?atom,?term,+list", false, BLAH},
 	{"write_canonical_to_atom", 3, fn_write_canonical_to_chars_3, "?atom,?term,+list", false, BLAH},
 	{"write_term_to_chars", 3, fn_write_term_to_chars_3, "?chars,?term,+list", false, BLAH},
@@ -5646,9 +6166,17 @@ builtins g_files_bifs[] =
 	{"client", 5, fn_client_5, "+string,-string,-string,-stream,+list", false, BLAH},
 	{"server", 3, fn_server_3, "+string,-stream,+list", false, BLAH},
 	{"accept", 2, fn_accept_2, "+stream,-stream", false, BLAH},
+	{"$get_n_chars", 3, fn_bread_3, "+stream,?integer,-string", false, BLAH},
 	{"bread", 3, fn_bread_3, "+stream,+integer,-string", false, BLAH},
 	{"bwrite", 2, fn_bwrite_2, "+stream,-string", false, BLAH},
 
+	{"map_create", 2, fn_map_create_2, "-map,+opts", false, BLAH},
+	{"map_set", 3, fn_map_set_3, "+map,+key,+value", false, BLAH},
+	{"map_get", 3, fn_map_get_3, "+map,+key,-value", false, BLAH},
+	{"map_del", 2, fn_map_del_2, "+map,+key", false, BLAH},
+	{"map_count", 2, fn_map_count_2, "+map,-count", false, BLAH},
+	{"map_list", 2, fn_map_list_2, "+map,?list", false, BLAH},
+	{"map_close", 1, fn_map_close_1, "+map", false, BLAH},
 
 #if !defined(_WIN32) && !defined(__wasi__)
 	{"popen", 4, fn_popen_4, "+atom,+atom,-stream,+list", false, BLAH},

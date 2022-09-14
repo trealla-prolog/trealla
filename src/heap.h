@@ -6,7 +6,7 @@ size_t alloc_grow(void **addr, size_t elem_size, size_t min_elements, size_t max
 
 cell *append_to_tmp(query *q, cell *p1);
 cell *clone_to_tmp(query *q, cell *p1);
-cell *clone_to_heap(query *q, bool prefix, cell *p1, pl_idx_t suffix);
+cell *clone_to_heap(query *q, bool prefix, cell *p1, unsigned extras);
 
 cell *deep_clone_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx);
 cell *deep_clone_to_heap(query *q, cell *p1, pl_idx_t p1_ctx);
@@ -16,10 +16,10 @@ cell *deep_copy_to_heap(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_attrs);
 
 cell *deep_raw_copy_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx);
 
-cell *alloc_on_heap(query *q, pl_idx_t nbr_cells);
-cell *alloc_on_tmp(query *q, pl_idx_t nbr_cells);
-cell *alloc_on_queuen(query *q, int qnbr, const cell *c);
-cell *alloc_on_queuen_unsafe(query *q, int qnbr, const cell *c);
+cell *alloc_on_heap(query *q, unsigned nbr_cells);
+cell *alloc_on_tmp(query *q, unsigned nbr_cells);
+cell *alloc_on_queuen(query *q, unsigned qnbr, const cell *c);
+cell *alloc_on_queuen_unsafe(query *q, unsigned qnbr, const cell *c);
 
 cell *init_tmp_heap(query *q);
 

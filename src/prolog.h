@@ -10,6 +10,7 @@ pl_idx_t index_from_pool(prolog *pl, const char *name);
 bool is_multifile_in_db(prolog *pl, const char *mod, const char *name, unsigned arity);
 void load_builtins(prolog *pl);
 void uuid_gen(prolog *pl, uuid *u);
+void keyvalfree(const void *key, const void *val, const void *p);
 
 #if USE_FFI
 void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn, uint8_t *types, uint8_t ret_type, bool function);

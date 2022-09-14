@@ -262,6 +262,7 @@ where appropriate.
 Non-standard predicates
 =======================
 
+	help/1						# help(functor) or help(functor/arity)
 	between/3
 	forall/2
 	samsort/2                   # same as msort/2
@@ -394,8 +395,10 @@ Non-standard predicates
 	b_getval(K,V)
 	b_delete(K)
 
-	'$kv_set'(+key,+value,[create(Bool)])	# use atomics only
-	'$kv_get'(+key,?value,[delete(Bool)])	# use atomics only
+	# The system map uses atomic key/values only...
+
+	'$kv_set'(+key,+value,[create(Bool)])
+	'$kv_get'(+key,?value,[delete(Bool)])
 
 	call_nth/2
 	offset/2
@@ -458,10 +461,13 @@ Non-standard predicates
 	loadfile/2                  # loadfile(+filename,-string)
 	savefile/2                  # savefile(+filename,+string)
 	getfile/2                   # getfile(+filename,-strings)
+	getfile/3                   # getfile(+filename,-strings,+opts)
 	getline/1                   # getline(-string)
 	getline/2                   # getline(+stream,-string)
+	getline/3                   # getline(+stream,-string,+opts)
 	getlines/1                  # getlines(-strings)
 	getlines/2                  # getlines(+stream,-strings)
+	getlines/3                  # getlines(+stream,-strings,+opts)
 	read_line_to_codes/2	   	# removes terminator
 	read_line_to_string/2		# removes terminator
 	read_file_to_string/3
@@ -519,6 +525,35 @@ Convert a hexadecimal string to a byte-list. At least one arg must be
 instantiated...
 
 	hex_bytes/2                 # hex_bytes(?hash,?bytes)
+
+
+Application maps
+================
+
+Maps use atomic key/values only.
+
+	map_create/2				# map_create(-map,+opts)
+	map_create/1				# map_create(-map)
+	map_set/3					# map_set(+map,+key,+value)
+	map_get/3					# map_get(+map,+key,?value)
+	map_del/2					# map_del(+map,+key)
+	map_count/2					# map_count(+map,-count)
+	map_list/2					# map_list(+map,?list)
+	map_close/1					# map_close(+map)
+
+```console
+	$ tpl
+	?- map_create(S,-1,[alias(foo)]).
+	   S = <$stream>(4).
+	?- map_set(foo,1,111), map_set(foo,two,222), map_set(foo,3,333).
+	   true.
+	?- map_del(foo,3).
+	   true.
+	?- map_list(foo,L).
+	   L = [1=111,two=222].
+	?- map_close(foo).
+	   true.
+```
 
 
 HTTP 1.1

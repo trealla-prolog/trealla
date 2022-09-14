@@ -19,6 +19,7 @@
 #define map_first sl_first
 #define map_is_next sl_is_next
 #define map_next sl_next
+#define map_key sl_key
 
 #define map_find_key sl_find_key
 #define map_is_next_key sl_is_next_key

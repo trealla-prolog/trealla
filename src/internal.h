@@ -241,8 +241,8 @@ enum {
 	FLAG_INT_HEX=1<<0,					// used with TAG_INTEGER
 	FLAG_INT_OCTAL=1<<1,				// used with TAG_INTEGER
 	FLAG_INT_BINARY=1<<2,				// used with TAG_INTEGER
-	FLAG_INT_STREAM=1<<3,				// used with TAG_INTEGER
-	FLAG_INT_HANDLE=1<<4,				// used with TAG_INTEGER
+	FLAG_INT_HANDLE=1<<3,				// used with TAG_INTEGER
+	FLAG_INT_STREAM=1<<4,				// used with TAG_INTEGER
 
 	FLAG_CSTR_BLOB=1<<0,				// used with TAG_CSTR
 	FLAG_CSTR_STRING=1<<1,				// used with TAG_CSTR
@@ -255,7 +255,6 @@ enum {
 	FLAG_HANDLE_DLL=1<<0,				// used with TAG_INT_HANDLE
 	FLAG_HANDLE_FUNC=1<<1,				// used with TAG_INT_HANDLE
 
-	FLAG_PROCESSED=1<<5,				// used by bagof
 	FLAG_FFI=1<<6,
 	FLAG_REF=1<<7,
 	FLAG_BUILTIN=1<<8,
@@ -523,7 +522,7 @@ struct prolog_state_ {
 	predicate *pr;
 	db_entry *curr_dbe;
 	miter *iter, *f_iter;
-	module *m;
+	module *m, *prev_m;
 
 	union {
 		int64_t cnt;
@@ -561,13 +560,19 @@ struct choice_ {
 enum { eof_action_eof_code, eof_action_error, eof_action_reset };
 
 struct stream_ {
-	FILE *fp;
+	union {
+		FILE *fp;
+		map *keyval;
+	};
+
 	char *mode, *filename, *name, *data, *src;
 	void *sslptr;
 	parser *p;
 	char srcbuf[STREAM_BUFLEN];
 	size_t data_len, alloc_nbytes;
-	int ungetch, srclen;
+	int64_t i_empty;
+	double d_empty;
+	int ungetch, srclen, rows, cols;
 	uint8_t level, eof_action;
 	bool ignore:1;
 	bool at_end_of_file:1;
@@ -581,6 +586,7 @@ struct stream_ {
 	bool udp:1;
 	bool ssl:1;
 	bool domain:1;
+	bool is_map:1;
 };
 
 struct page_ {
@@ -590,7 +596,7 @@ struct page_ {
 	unsigned nbr;
 };
 
-enum q_retry { QUERY_OK=0, QUERY_RETRY=1, QUERY_EXCEPTION=2 };
+enum q_retry { QUERY_OK=0, QUERY_SKIP=1, QUERY_RETRY=2, QUERY_EXCEPTION=3 };
 enum unknowns { UNK_FAIL=0, UNK_ERROR=1, UNK_WARNING=2, UNK_CHANGEABLE=3 };
 enum occurs { OCCURS_CHECK_FALSE=0, OCCURS_CHECK_TRUE=1, OCCURS_CHECK_ERROR = 2 };
 
@@ -746,7 +752,7 @@ struct module_ {
 	FILE *fp;
 	map *index, *nbs, *ops, *defops;
 	loaded_file *loaded_files;
-	unsigned id, idx_used, indexing_threshold;
+	unsigned id, idx_used, indexing_threshold, arity, max_depth;
 	prolog_flags flags;
 	bool user_ops:1;
 	bool prebuilt:1;

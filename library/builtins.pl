@@ -390,19 +390,20 @@ term_to_atom(T, S) :- write_term_to_chars(S, T, []).
 absolute_file_name(R, A) :- absolute_file_name(R, A, []).
 client(U, H, P, S) :- client(U,H,P,S,[]).
 server(H, S) :- server(H,S,[]).
-prolog_load_context(module, Module) :- module(Module).
 load_files(Files) :- load_files(Files,[]).
 consult(Files) :- load_files(Files,[]).
 reconsult(Files) :- load_files(Files,[]).
 deconsult(Files) :- unload_files(Files).
 strip_module(T,M,P) :- T=M:P -> true ; P=T.
-read_from_chars(S,T) :- read_term_from_chars(S,T,[]).
+read_term_from_chars(T,S) :- read_term_from_chars(T,[],S).
 ?=(X,Y) :- \+ unifiable(X,Y,[_|_]).
 atom_number(A,N) :- atom_codes(A,Codes), number_codes(N,Codes).
 '$skip_list'(Skip,Xs0,Xs) :- '$skip_max_list'(Skip,_,Xs0,Xs).
 term_hash(Term, _Opts, Hash) :- term_hash(Term, Hash).
 not(G) :- G, !, fail.
 not(_).
+
+map_create(S) :- map_create(S,[]).
 
 iso_dif(X, Y) :-
 	X \== Y,
@@ -633,29 +634,25 @@ put_atts(Var, [H|T]) :- !,
 
 put_atts(Var, -Attr) :- !,
 	var(Var),
-	'$get_attributes'(Var, D),
-	Attr =.. [Module,Value],
-	(	var(Value)
-	->	Functor = Value
-	; 	functor(Value, Functor, _)
-	),
+	('$get_attributes'(Var, D) -> true ; D = []),
+	functor(Attr, Functor, Arity),
+	attribute(Module, Functor, Arity),
 	dict:del(D, Module, D2),
-	(	D2 = []
-	->	'$erase_attributes'(Var)
-	;	'$put_attributes'(Var, D2)
-	).
+	'$put_attributes'(Var, D2).
 
 put_atts(Var, +Attr) :- !,
 	var(Var),
-	'$get_attributes'(Var, D),
-	Attr =.. [Module,_],
+	('$get_attributes'(Var, D) -> true ; D = []),
+	functor(Attr, Functor, Arity),
+	attribute(Module, Functor, Arity),
 	dict:set(D, Module, Attr, D2),
 	'$put_attributes'(Var, D2).
 
 put_atts(Var, Attr) :- !,
 	var(Var),
-	'$get_attributes'(Var, D),
-	Attr =.. [Module,_],
+	('$get_attributes'(Var, D) -> true ; D = []),
+	functor(Attr, Functor, Arity),
+	attribute(Module, Functor, Arity),
 	dict:set(D, Module, Attr, D2),
 	'$put_attributes'(Var, D2).
 
@@ -667,19 +664,22 @@ get_atts(Var, L) :- var(L), !,
 get_atts(Var, -Attr) :- !,
 	var(Var),
 	'$get_attributes'(Var, D),
-	Attr =.. [Module,_],
+	functor(Attr, Functor, Arity),
+	attribute(Module, Functor, Arity),
 	\+ dict:get(D, Module, _).
 
 get_atts(Var, +Attr) :- !,
 	var(Var),
 	'$get_attributes'(Var, D),
-	Attr =.. [Module,_],
+	functor(Attr, Functor, Arity),
+	attribute(Module, Functor, Arity),
 	dict:get(D, Module, Attr).
 
 get_atts(Var, Attr) :- !,
 	var(Var),
 	'$get_attributes'(Var, D),
-	Attr =.. [Module,_],
+	functor(Attr, Functor, Arity),
+	attribute(Module, Functor, Arity),
 	dict:get(D, Module, Attr).
 
 del_atts(Var) :-
@@ -688,8 +688,7 @@ del_atts(Var) :-
 
 attvar(Var) :-
 	var(Var),
-	'$get_attributes'(Var, D),
-	D \= [].
+	'$get_attributes'(Var, _).
 
 term_attvars_([], VsIn, VsIn) :- !.
 term_attvars_([H|T], VsIn, VsOut) :-
@@ -722,21 +721,23 @@ copy_term(Term, Copy, Gs) :-
 
 % Debugging...
 
-portray_atts_(Term) :-
-	copy_term(Term, _, Gs),
-	Gs = [Gs0],
-	(list(Gs0) -> toconjunction(Gs0, Gs1) ; Gs1 = Gs0),
-	write_term(Gs1, [varnames(true)]).
+print_goals([]) :- !.
+print_goals([Goal|Goals]) :-
+	write_term(Goal, [varnames(true)]),
+	(Goals == [] -> write('') ; write(',')),
+	print_goals(Goals).
 
-dump_attvars_([]) :- !.
-dump_attvars_([Var|Vars]) :-
-	portray_atts_(Var),
-	(Vars == [] -> write('') ; write(', ')),
-	dump_attvars_(Vars).
+dump_attvars([], []) :- !.
+dump_attvars([Var|Vars], [V|Rest]) :-
+	copy_term(Var, _, V),
+	dump_attvars(Vars, Rest).
 
 dump_attvars :-
 	'$list_attributed'(Vars),
-	dump_attvars_(Vars).
+	dump_attvars(Vars, Gs0),
+	flatten(Gs0, Gs1),
+	sort(Gs1, Gs),
+	print_goals(Gs).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -753,8 +753,7 @@ bool fn_sys_undo_trail_1(query *q)
 	GET_FIRST_ARG(p1,variable);
 	q->in_hook = true;
 
-	if (((q->undo_hi_tp - q->undo_lo_tp) == 0) ||
-		(q->undo_lo_tp > q->undo_hi_tp)) {
+	if (q->undo_hi_tp == q->undo_lo_tp) {
 		cell tmp;
 		make_atom(&tmp, g_nil_s);
 		set_var(q, p1, p1_ctx, &tmp, q->st.curr_frame);
@@ -777,6 +776,7 @@ bool fn_sys_undo_trail_1(query *q)
 		cell lhs, rhs;
 		make_new_var(q, &lhs, tr->var_nbr, tr->var_ctx);
 		set_new_var(q, &rhs, &e->c, e->c.var_ctx);
+		//DUMP_TERM("$undo1 rhs", &e->c, e->c.var_ctx);
 
 		cell tmp[3];
 		make_struct(tmp, g_minus_s, NULL, 2, 2);
@@ -793,10 +793,12 @@ bool fn_sys_undo_trail_1(query *q)
 		e->c.tag = TAG_EMPTY;
 		e->c.attrs = tr->attrs;
 		e->c.attrs_ctx = tr->attrs_ctx;
+		//DUMP_TERM("$undo2", tr->attrs, tr->attrs_ctx);
 	}
 
 	cell *tmp = end_list(q);
 	check_heap_error(tmp);
+	//DUMP_TERM("$undo3 tmp", tmp, q->st.curr_frame);
 	set_var(q, p1, p1_ctx, tmp, q->st.curr_frame);
 	return true;
 }
@@ -842,9 +844,9 @@ bool do_post_unification_hook(query *q, bool is_builtin)
 		return throw_error(q, tmp+1, q->st.curr_frame, "existence_error", "procedure");
 
 	if (is_builtin)
-		make_return(q, tmp+2);
+		make_call(q, tmp+2);
 	else
-		make_return2(q, tmp+2, q->st.curr_cell);
+		make_call_return(q, tmp+2, q->st.curr_cell);
 
 	q->st.curr_cell = tmp;
 	return true;
