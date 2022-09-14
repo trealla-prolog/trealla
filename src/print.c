@@ -460,7 +460,7 @@ static ssize_t print_string_list(query *q, char *save_dst, char *dst, size_t dst
 		} else if (iswlower(ch))
 			dst += snprintf(dst, dstlen, "%s", C_STR(q, h));
 		else
-			dst += snprintf(dst, dstlen, "'%s'", C_STR(q, h));
+			dst += snprintf(dst, dstlen, "%s", C_STR(q, h));
 
 		c = LIST_TAIL(c);
 
