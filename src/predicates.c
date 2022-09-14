@@ -1846,8 +1846,8 @@ static bool fn_iso_univ_2(query *q)
 			if ((tmp->match = search_predicate(q->st.m, tmp)) != NULL) {
 				tmp->flags &= ~FLAG_BUILTIN;
 			} else if ((tmp->fn_ptr = get_builtin(q->pl, C_STR(q, tmp), tmp->arity, &found, NULL)), found) {
-				if (tmp->fn_ptr->function)
-					tmp->flags |= FLAG_FUNCTION;
+				if (tmp->fn_ptr->evaluable)
+					tmp->flags |= FLAG_EVALUABLE;
 				else
 					tmp->flags |= FLAG_BUILTIN;
 			}
@@ -2483,9 +2483,9 @@ static bool fn_iso_assertz_1(query *q)
 	if (!is_interned(head) && !is_cstring(head))
 		return throw_error(q, head, q->st.curr_frame, "type_error", "callable");
 
-	bool found = false, function = false;
+	bool found = false, evaluable = false;
 
-	if (get_builtin(q->pl, C_STR(q, head), head->arity, &found, &function), found && !function) {
+	if (get_builtin(q->pl, C_STR(q, head), head->arity, &found, &evaluable), found && !evaluable) {
 		if (!GET_OP(head))
 			return throw_error(q, head, q->st.curr_frame, "permission_error", "modify,static_procedure");
 	}
@@ -3983,7 +3983,7 @@ static bool fn_listing_1(query *q)
 static bool fn_help_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	bool found = false, function = false;
+	bool found = false, evaluable = false;
 
 	if (!p1->arity) {
 		if (!is_atom(p1))
@@ -4024,7 +4024,7 @@ static bool fn_help_1(query *q)
 
 	const char *functor = C_STR(q, f);
 	unsigned arity = get_smallint(a);
-	builtins *fn = get_builtin(q->pl, functor, arity, &found, &function);
+	builtins *fn = get_builtin(q->pl, functor, arity, &found, &evaluable);
 
 	if (!found || !fn)
 		return throw_error(q, p1, p1_ctx, "domain_error", "existence");
@@ -7224,16 +7224,16 @@ static void load_properties(module *m)
 	for (const builtins *ptr = g_iso_bifs; ptr->name; ptr++) {
 		map_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		if (ptr->function) continue;
+		if (ptr->evaluable) continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); ASTRING_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); ASTRING_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); ASTRING_strcat(pr, tmpbuf);
  	}
 
-	for (const builtins *ptr = g_functions_bifs; ptr->name; ptr++) {
+	for (const builtins *ptr = g_evaluable_bifs; ptr->name; ptr++) {
 		map_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		if (ptr->function) continue;
+		if (ptr->evaluable) continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); ASTRING_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); ASTRING_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); ASTRING_strcat(pr, tmpbuf);
@@ -7242,7 +7242,7 @@ static void load_properties(module *m)
 	for (const builtins *ptr = g_other_bifs; ptr->name; ptr++) {
 		map_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		if (ptr->function) continue;
+		if (ptr->evaluable) continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); ASTRING_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); ASTRING_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); ASTRING_strcat(pr, tmpbuf);
@@ -7251,7 +7251,7 @@ static void load_properties(module *m)
 	for (const builtins *ptr = g_ffi_bifs; ptr->name; ptr++) {
 		map_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		if (ptr->function) continue;
+		if (ptr->evaluable) continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); ASTRING_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); ASTRING_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); ASTRING_strcat(pr, tmpbuf);
@@ -7260,7 +7260,7 @@ static void load_properties(module *m)
 	for (const builtins *ptr = g_contrib_bifs; ptr->name; ptr++) {
 		map_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		if (ptr->function) continue;
+		if (ptr->evaluable) continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); ASTRING_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); ASTRING_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); ASTRING_strcat(pr, tmpbuf);

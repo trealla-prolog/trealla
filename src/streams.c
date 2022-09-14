@@ -5903,7 +5903,7 @@ builtins g_files_bifs[] =
 	{"open", 4, fn_iso_open_4, "+filename,+mode,-stream,+opts", true, false, BLAH},
 	{"close", 1, fn_iso_close_1, "+stream", true, false, BLAH},
 	{"close", 2, fn_iso_close_2, "+stream,+opts", true, false, BLAH},
-	{"read_term", 2, fn_iso_read_term_2, "+stream,-term", true, true, false, BLAH},
+	{"read_term", 2, fn_iso_read_term_2, "+stream,-term", true, false, BLAH},
 	{"read_term", 3, fn_iso_read_term_3, "+stream,-term,+opts", true, false, BLAH},
 	{"read", 1, fn_iso_read_1, "-term", true, false, BLAH},
 	{"read", 2, fn_iso_read_2, "+stream,-term", true, false, BLAH},

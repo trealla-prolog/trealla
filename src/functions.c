@@ -2555,7 +2555,7 @@ static bool fn_gcd_2(query *q)
 	return true;
 }
 
-builtins g_functions_bifs[] =
+builtins g_evaluable_bifs[] =
 {
 	// Predicate...
 
@@ -2584,13 +2584,12 @@ builtins g_functions_bifs[] =
 	{"random", 1, fn_random_1, "?integer", false, false, BLAH},
 	{"random_between", 3, fn_random_between_3, "?integer,?integer,-integer", false, false, BLAH},
 
-	{"return", 1, fn_return_1, "+number,-number", false, false, BLAH},
-
 	{"$set_prob", 1, fn_sys_set_prob_1, "+real", false, false, BLAH},
 	{"$get_prob", 1, fn_sys_get_prob_1, "-real", false, false, BLAH},
 
 	// Functions...
 
+	{"return", 1, fn_return_1, "+number,-number", false, true, BLAH},
 	{"+", 1, fn_iso_positive_1, "+number,-number", true, true, BLAH},
 	{"-", 1, fn_iso_negative_1, "+number,-number", true, true, BLAH},
 	{"abs", 1, fn_iso_abs_1, "+number,-number", true, true, BLAH},

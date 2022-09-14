@@ -152,7 +152,7 @@ void keyvalfree(const void *key, const void *val, const void *p)
 	free((void*)val);
 }
 
-builtins *get_builtin(prolog *pl, const char *name, unsigned arity, bool *found, bool *function)
+builtins *get_builtin(prolog *pl, const char *name, unsigned arity, bool *found, bool *evaluable)
 {
 	miter *iter = map_find_key(pl->biftab, name);
 	builtins *ptr;
@@ -160,14 +160,14 @@ builtins *get_builtin(prolog *pl, const char *name, unsigned arity, bool *found,
 	while (map_next_key(iter, (void**)&ptr)) {
 		if (ptr->arity == arity) {
 			if (found) *found = true;
-			if (function) *function = ptr->function;
+			if (evaluable) *evaluable = ptr->evaluable;
 			map_done(iter);
 			return ptr;
 		}
 	}
 
 	if (found) *found = false;
-	if (function) *function = false;
+	if (evaluable) *evaluable = false;
 	map_done(iter);
 	return NULL;
 }
@@ -179,7 +179,7 @@ builtins *get_fn_ptr(void *fn)
 			return ptr;
 	}
 
-	for (builtins *ptr = g_functions_bifs; ptr->name; ptr++) {
+	for (builtins *ptr = g_evaluable_bifs; ptr->name; ptr++) {
 		if (ptr->fn == fn)
 			return ptr;
 	}
@@ -209,14 +209,14 @@ builtins *get_fn_ptr(void *fn)
 
 static int max_ffi_idx = 0;
 
-void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn, uint8_t *types, uint8_t ret_type, bool function)
+void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn, uint8_t *types, uint8_t ret_type, bool evaluable)
 {
 	builtins *ptr = &g_ffi_bifs[max_ffi_idx++];
 	ptr->name = name;
 	ptr->arity = arity;
 	ptr->fn = fn;
 	ptr->help = NULL;
-	ptr->function = function;
+	ptr->evaluable = evaluable;
 	ptr->ffi = true;
 
 	for (unsigned i = 0; i < arity; i++)
@@ -232,7 +232,7 @@ void load_builtins(prolog *pl)
 		map_app(pl->biftab, ptr->name, ptr);
 	}
 
-	for (const builtins *ptr = g_functions_bifs; ptr->name; ptr++) {
+	for (const builtins *ptr = g_evaluable_bifs; ptr->name; ptr++) {
 		map_app(pl->biftab, ptr->name, ptr);
 		max_ffi_idx++;
 	}

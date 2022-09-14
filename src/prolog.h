@@ -2,7 +2,7 @@
 
 #include "internal.h"
 
-builtins *get_builtin(prolog *pl, const char *name, unsigned arity, bool *found, bool *function);
+builtins *get_builtin(prolog *pl, const char *name, unsigned arity, bool *found, bool *evaluable);
 builtins *get_fn_ptr(void *fn);
 module *find_module(prolog *pl, const char *name);
 module *find_next_module(prolog *pl, module *m);
@@ -13,7 +13,7 @@ void uuid_gen(prolog *pl, uuid *u);
 void keyvalfree(const void *key, const void *val, const void *p);
 
 #if USE_FFI
-void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn, uint8_t *types, uint8_t ret_type, bool function);
+void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn, uint8_t *types, uint8_t ret_type, bool evaluable);
 #endif
 
 extern pl_idx_t g_empty_s, g_pair_s, g_dot_s, g_cut_s, g_nil_s, g_true_s, g_fail_s;
@@ -36,5 +36,5 @@ extern builtins g_ffi_bifs[];
 extern builtins g_other_bifs[];
 extern builtins g_contrib_bifs[];
 extern builtins g_files_bifs[];
-extern builtins g_functions_bifs[];
+extern builtins g_evaluable_bifs[];
 
