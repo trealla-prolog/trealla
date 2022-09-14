@@ -472,6 +472,7 @@ struct builtins_ {
 	unsigned arity;
 	bool (*fn)(query*);
 	const char *help;
+	bool iso;
 	bool function;
 	bool ffi;
 	uint8_t types[MAX_ARITY];
