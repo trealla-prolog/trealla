@@ -543,7 +543,7 @@ Maps use atomic key/values only.
 
 ```console
 	$ tpl
-	?- map_create(S,-1,[alias(foo)]).
+	?- map_create(S,[alias(foo)]).
 	   S = <$stream>(4).
 	?- map_set(foo,1,111), map_set(foo,two,222), map_set(foo,3,333).
 	   true.
