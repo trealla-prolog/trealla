@@ -262,6 +262,7 @@ where appropriate.
 Non-standard predicates
 =======================
 
+	help/1						# help(functor) or help(functor/arity)
 	between/3
 	forall/2
 	samsort/2                   # same as msort/2
