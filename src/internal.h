@@ -151,7 +151,7 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define is_fresh(c) ((c)->flags & FLAG_VAR_FRESH)
 #define is_anon(c) ((c)->flags & FLAG_VAR_ANON)
 #define is_builtin(c) ((c)->flags & FLAG_BUILTIN)
-#define is_function(c) ((c)->flags & FLAG_FUNCTION)
+#define is_evaluable(c) ((c)->flags & FLAG_EVALUABLE)
 #define is_tail_recursive(c) ((c)->flags & FLAG_TAIL_REC)
 #define is_temporary(c) ((c)->flags & FLAG_VAR_TEMPORARY)
 #define is_ref(c) ((c)->flags & FLAG_REF)
@@ -261,7 +261,7 @@ enum {
 	FLAG_STATIC=1<<9,
 	FLAG_MANAGED=1<<10,					// any ref-counted object
 	FLAG_TAIL_REC=1<<11,
-	FLAG_FUNCTION=1<<12,
+	FLAG_EVALUABLE=1<<12,
 
 	FLAG_END=1<<13
 };
@@ -472,7 +472,8 @@ struct builtins_ {
 	unsigned arity;
 	bool (*fn)(query*);
 	const char *help;
-	bool function;
+	bool iso;
+	bool evaluable;
 	bool ffi;
 	uint8_t types[MAX_ARITY];
 	uint8_t ret_type;

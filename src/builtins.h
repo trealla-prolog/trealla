@@ -183,7 +183,7 @@ inline static cell *get_raw_arg(const query *q, int n)
 }
 
 #define eval(q,c)														\
-	is_function(c) || is_builtin(c) ? (call_builtin(q,c,c##_ctx), q->accum) : \
+	is_evaluable(c) || is_builtin(c) ? (call_builtin(q,c,c##_ctx), q->accum) : \
 	is_callable(c) ? (call_userfun(q, c, c##_ctx), q->accum) : *c;		\
 	q->accum.flags = 0;													\
 	if (q->did_throw)													\

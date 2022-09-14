@@ -170,10 +170,10 @@ static void clear_loaded(const module *m)
 
 predicate *create_predicate(module *m, cell *c)
 {
-	bool found, function;
+	bool found, evaluable;
 
 	if (strcmp(m->name, "format") && 0) {
-		if (get_builtin(m->pl, C_STR(m, c), c->arity, &found, &function), found && !function) {
+		if (get_builtin(m->pl, C_STR(m, c), c->arity, &found, &evaluable), found && !evaluable) {
 			fprintf(stdout, "Error: permission error modifying %s/%u\n", C_STR(m, c), c->arity);
 			return NULL;
 		}
@@ -978,10 +978,10 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 		return NULL;
 
 	if (!pr) {
-		bool found = false, function = false;
+		bool found = false, evaluable = false;
 
 		/*
-		if (get_builtin(m->pl, C_STR(m, c), c->arity, &found, &function), found && !function) {
+		if (get_builtin(m->pl, C_STR(m, c), c->arity, &found, &evaluable), found && !evaluable) {
 			//fprintf(stdout, "Error: permission error modifying %s/%u\n", C_STR(m, c), c->arity);
 			return NULL;
 		}
@@ -1223,12 +1223,12 @@ static void xref_cell(module *m, clause *cl, cell *c, predicate *parent)
 			SET_OP(c, specifier);
 	}
 
-	bool found = false, function = false;
-	c->fn_ptr = get_builtin(m->pl, functor, c->arity, &found, &function);
+	bool found = false, evaluable = false;
+	c->fn_ptr = get_builtin(m->pl, functor, c->arity, &found, &evaluable);
 
 	if (found) {
-		if (function)
-			c->flags |= FLAG_FUNCTION;
+		if (evaluable)
+			c->flags |= FLAG_EVALUABLE;
 		else
 			c->flags |= FLAG_BUILTIN;
 

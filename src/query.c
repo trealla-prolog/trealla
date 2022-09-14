@@ -1357,7 +1357,7 @@ bool match_rule(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract
 		else if (is_cstring(c))
 			convert_to_literal(q->st.m, c);
 
-		if (!pr || is_function(c) || is_builtin(c)) {
+		if (!pr || is_evaluable(c) || is_builtin(c)) {
 			pr = search_predicate(q->st.m, c);
 			c->match = pr;
 		}
@@ -1454,7 +1454,7 @@ bool match_clause(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retra
 		else if (is_cstring(c))
 			convert_to_literal(q->st.m, c);
 
-		if (!pr || is_function(c) || is_builtin(c)) {
+		if (!pr || is_evaluable(c) || is_builtin(c)) {
 			pr = search_predicate(q->st.m, c);
 			c->match = pr;
 		}
@@ -1539,7 +1539,7 @@ static bool match_head(query *q)
 
 		q->save_m = q->st.m;
 
-		if (!pr || is_function(c) || is_builtin(c)) {
+		if (!pr || is_evaluable(c) || is_builtin(c)) {
 			pr = search_predicate(q->st.m, c);
 
 			if (!pr) {
@@ -1728,7 +1728,7 @@ bool start(query *q)
 
 #if USE_FFI
 			if (q->st.curr_cell->fn_ptr && q->st.curr_cell->fn_ptr->ffi) {
-				if (q->st.curr_cell->fn_ptr->function)
+				if (q->st.curr_cell->fn_ptr->evaluable)
 					status = wrapper_for_function(q, q->st.curr_cell->fn_ptr);
 				else
 					status = wrapper_for_predicate(q, q->st.curr_cell->fn_ptr);
