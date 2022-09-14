@@ -140,7 +140,7 @@ escape_char('\t', 't').
 
 json_character(EscapeChar) -->
         { escape_char(EscapeChar, PrintChar) },
-        ['\\'],
+        "\\",
         [PrintChar].
 json_character(PrintChar)  -->
     [PrintChar],
@@ -149,7 +149,7 @@ json_character(PrintChar)  -->
       char_code(PrintChar, PrintCharCode),
       PrintCharCode >= 32 }.
 json_character(EscapeChar) -->
-        ['\\', u],
+        "\\u",
         json_hex(H1),
         json_hex(H2),
         json_hex(H3),
