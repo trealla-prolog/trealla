@@ -3980,6 +3980,22 @@ static bool fn_listing_1(query *q)
 	return true;
 }
 
+static bool fn_help_0(query *q)
+{
+	bool found = false, evaluable = false;
+	miter *iter = map_first(q->pl->help);
+	builtins *fn;
+
+	while (map_next(iter, (void**)&fn)) {
+		if (fn->arity)
+			fprintf(stdout, "%s/%u: %s(%s)%s%s\n", fn->name, fn->arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+		else
+			fprintf(stdout, "%s/%u: %s%s%s\n", fn->name, fn->arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+	}
+
+	return true;
+}
+
 static bool fn_help_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -3990,14 +4006,14 @@ static bool fn_help_1(query *q)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 		const char *functor = C_STR(q, p1);
-		miter *iter = map_find_key(q->pl->biftab, functor);
+		miter *iter = map_find_key(q->pl->help, functor);
 		builtins *fn;
 
 		while (map_next_key(iter, (void**)&fn)) {
 			if (fn->arity)
-				fprintf(stdout, "%s/%u: %s(%s) %s\n", functor, fn->arity, functor, fn->help ? fn->help : "no args", fn->iso?"[ISO]":"");
+				fprintf(stdout, "%s/%u: %s(%s)%s%s\n", fn->name, fn->arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
 			else
-				fprintf(stdout, "%s/%u: %s %s\n", functor, fn->arity, functor, fn->iso?"[ISO]":"");
+				fprintf(stdout, "%s/%u: %s%s%s\n", fn->name, fn->arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
 		}
 
 		return true;
@@ -4024,15 +4040,80 @@ static bool fn_help_1(query *q)
 
 	const char *functor = C_STR(q, f);
 	unsigned arity = get_smallint(a);
-	builtins *fn = get_builtin(q->pl, functor, arity, &found, &evaluable);
+	builtins *fn = get_help(q->pl, functor, arity, &found, &evaluable);
 
 	if (!found || !fn)
 		return throw_error(q, p1, p1_ctx, "domain_error", "existence");
 
 	if (arity)
-		fprintf(stdout, "%s/%u: %s(%s) %s\n", functor, arity, functor, fn->help ? fn->help : "no args", fn->iso?"[ISO]":"");
+		fprintf(stdout, "%s/%u: %s(%s)%s%s\n", fn->name, arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
 	else
-		fprintf(stdout, "%s/%u: %s %s\n", functor, arity, functor, fn->iso?"[ISO]":"");
+		fprintf(stdout, "%s/%u: %s%s%s\n", fn->name, arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+
+	return true;
+}
+
+static bool fn_help_2(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,atom);
+	bool found = false, evaluable = false;
+	const char *pr = C_STR(q, p2);
+	char url[1024];
+
+	if (!p1->arity) {
+		if (!is_atom(p1))
+			return throw_error(q, p1, p1_ctx, "type_error", "atom");
+
+		const char *functor = C_STR(q, p1);
+		miter *iter = map_find_key(q->pl->help, functor);
+		builtins *fn;
+
+		while (map_next_key(iter, (void**)&fn)) {
+			if (fn->arity)
+				fprintf(stdout, "%s/%u: %s(%s)%s%s\n", fn->name, fn->arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+			else
+				fprintf(stdout, "%s/%u: %s%s%s\n", fn->name, fn->arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+		}
+
+		return true;
+	}
+
+	if (!is_structure(p1))
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	if (p1->arity != 2)
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	if (p1->val_off != g_slash_s)
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	cell *f = p1 + 1;
+
+	if (!is_atom(f))
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	cell *a = p1 + 2;
+
+	if (!is_smallint(a))
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	const char *functor = C_STR(q, f);
+	unsigned arity = get_smallint(a);
+	builtins *fn = get_help(q->pl, functor, arity, &found, &evaluable);
+
+	if (!found || !fn)
+		return throw_error(q, p1, p1_ctx, "domain_error", "existence");
+
+	if (!strcmp(pr, "swi"))
+		snprintf(url, sizeof(url), "http://swi-prolog.org/pldoc/man?predicate=%s/%u", functor, arity);
+	else if (!strcmp(pr, "tau"))
+		snprintf(url, sizeof(url), "http://tau-prolog.org/documentation/prolog/builtin/%s/%u", functor, arity);
+
+	if (arity)
+		fprintf(stdout, "%s/%u: %s(%s)%s%s %s\n", fn->name, arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"", url);
+	else
+		fprintf(stdout, "%s/%u: %s%s%s %s\n", fn->name, arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"", url);
 
 	return true;
 }
@@ -7527,7 +7608,9 @@ builtins g_other_bifs[] =
 	{"listing", 1, fn_listing_1, "+predicateindicator", false, false, BLAH},
 	{"time", 1, fn_time_1, "+callable", false, false, BLAH},
 	{"trace", 0, fn_trace_0, NULL, false, false, BLAH},
+	{"help", 2, fn_help_2, "+predicateindicator,+atom", false, false, BLAH},
 	{"help", 1, fn_help_1, "+predicateindicator", false, false, BLAH},
+	{"help", 0, fn_help_0, NULL, false, false, BLAH},
 
 	// Miscellaneous...
 

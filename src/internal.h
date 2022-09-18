@@ -780,7 +780,7 @@ struct prolog_ {
 	module *modules, *system_m, *user_m, *curr_m, *dcgs;
 	var_item *tabs;
 	parser *p;
-	map *symtab, *biftab, *keyval;
+	map *symtab, *biftab, *keyval, *help;
 	char *pool;
 	size_t pool_offset, pool_size, tabs_size;
 	uint64_t s_last, s_cnt, seed, ugen;

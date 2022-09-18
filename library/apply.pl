@@ -1,11 +1,12 @@
 :- pragma(apply, [once(true)]).
 
-partition([X|L], Y, [X|L1], L2) :-
-	X @< Y, !,
-	partition(L, Y, L1, L2).
-partition([X|L], Y, L1, [X|L2]) :-
-	partition(L, Y, L1, L2).
-partition([], _, [], []).
+:- help(maplist(+callable,+list), [iso(true)]).
+:- help(maplist(+callable,+list1,+list2), [iso(true)]).
+:- help(maplist(+callable,+list1,+list2,+list3), [iso(true)]).
+:- help(maplist(+callable,+list1,+list2,+list3,+list4), [iso(true)]).
+:- help(maplist(+callable,+list1,+list2,+list3,+list4,+list5), [iso(true)]).
+:- help(maplist(+callable,+list1,+list2,+list3,+list4,+list5,+list6), [iso(true)]).
+:- help(maplist(+callable,+list1,+list2,+list3,+list4,+list5,+list6,+list7), [iso(true)]).
 
 :- meta_predicate(maplist(1, ?)).
 :- meta_predicate(maplist(2, ?, ?)).
@@ -175,7 +176,8 @@ include(G, L, Included) :-
 
 	include_([], _, []).
 	include_([X1|Xs1], P, Included) :-
-		(   call(P, X1) ->  Included = [X1|Included1]
+		(   call(P, X1) ->
+			Included = [X1|Included1]
 		;   Included = Included1
 		),
 		include_(Xs1, P, Included1).
@@ -185,7 +187,16 @@ exclude(G, L, Included) :-
 
 exclude_([], _, []).
 exclude_([X1|Xs1], P, Included) :-
-	(   call(P, X1) ->  Included = Included1
+	(   call(P, X1) ->
+		Included = Included1
 	;   Included = [X1|Included1]
 	),
 	exclude_(Xs1, P, Included1).
+
+partition([X|L], Y, [X|L1], L2) :-
+	X @< Y, !,
+	partition(L, Y, L1, L2).
+partition([X|L], Y, L1, [X|L2]) :-
+	partition(L, Y, L1, L2).
+partition([], _, [], []).
+

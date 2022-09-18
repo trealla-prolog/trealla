@@ -152,6 +152,26 @@ void keyvalfree(const void *key, const void *val, const void *p)
 	free((void*)val);
 }
 
+builtins *get_help(prolog *pl, const char *name, unsigned arity, bool *found, bool *evaluable)
+{
+	miter *iter = map_find_key(pl->help, name);
+	builtins *ptr;
+
+	while (map_next_key(iter, (void**)&ptr)) {
+		if (ptr->arity == arity) {
+			if (found) *found = true;
+			if (evaluable) *evaluable = ptr->evaluable;
+			map_done(iter);
+			return ptr;
+		}
+	}
+
+	if (found) *found = false;
+	if (evaluable) *evaluable = false;
+	map_done(iter);
+	return NULL;
+}
+
 builtins *get_builtin(prolog *pl, const char *name, unsigned arity, bool *found, bool *evaluable)
 {
 	miter *iter = map_find_key(pl->biftab, name);
@@ -230,27 +250,39 @@ void load_builtins(prolog *pl)
 {
 	for (const builtins *ptr = g_iso_bifs; ptr->name; ptr++) {
 		map_app(pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		map_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_evaluable_bifs; ptr->name; ptr++) {
 		map_app(pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		map_app(pl->help, ptr->name, ptr);
 		max_ffi_idx++;
 	}
 
 	for (const builtins *ptr = g_other_bifs; ptr->name; ptr++) {
 		map_app(pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		map_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_files_bifs; ptr->name; ptr++) {
 		map_app(pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		map_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_ffi_bifs; ptr->name; ptr++) {
 		map_app(pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		map_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_contrib_bifs; ptr->name; ptr++) {
 		map_app(pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		map_app(pl->help, ptr->name, ptr);
 	}
 }
 
@@ -277,6 +309,7 @@ void pl_destroy(prolog *pl)
 	map_destroy(pl->biftab);
 	map_destroy(pl->symtab);
 	map_destroy(pl->keyval);
+	map_destroy(pl->help);
 	free(pl->pool);
 	free(pl->tabs);
 	pl->pool_offset = 0;
@@ -426,6 +459,9 @@ prolog *pl_create()
 	pl->streams[2].eof_action = eof_action_reset;
 
 	pl->streams[3].ignore = true;;
+
+	pl->help = map_create((void*)fake_strcmp, NULL, NULL);
+	map_allow_dups(pl->help, false);
 
 	pl->biftab = map_create((void*)fake_strcmp, NULL, NULL);
 	map_allow_dups(pl->biftab, false);

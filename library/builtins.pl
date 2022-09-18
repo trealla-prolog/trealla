@@ -9,17 +9,17 @@ predicate_property(P, A) :-
 	'$legacy_predicate_property'(P, A).
 predicate_property(P, A) :-
 	'$load_properties',
-	(	var(A)
-	->	true
+	(	var(A) ->
+		true
 	; 	(	(Controls = [built_in,control_construct,discontiguous,private,static,dynamic,tabled,persist,multifile,meta_predicate(_)],
-			memberchk(A, Controls))
-		->	true
-		;	throw(error(domain_error(predicate_property, A), P))
+			memberchk(A, Controls)) ->
+				true
+			;	throw(error(domain_error(predicate_property, A), P))
 		)
 	),
 	must_be(P, callable, predicate_property/2, _),
-	(	P = (M:P2)
-	->	M:'$predicate_property'(P2, A)
+	(	P = (M:P2) ->
+		M:'$predicate_property'(P2, A)
 	;	'$predicate_property'(P, A)
 	).
 
@@ -30,6 +30,8 @@ current_prolog_flag(P, A) :-
 	'$load_flags',
 	'$current_prolog_flag'(P, A).
 
+:- help(current_prolog_flag(+callable,+term), [iso(true)]).
+
 subsumes_term(G, S) :-
 	\+ \+ (
 	 term_variables(S, V1),
@@ -38,15 +40,19 @@ subsumes_term(G, S) :-
 	 V2 == V1
 	).
 
+:- help(subsumes_term(+term,+term), [iso(true)]).
+
 forall(Cond, Action) :-
 	\+ (Cond, \+ Action).
 
 :- meta_predicate(forall(0,0)).
+:- help(forall(+term,+callable), [iso(false)]).
 
 catch(G, E, C) :-
 	'$catch'(call(G), E, call(C)).
 
 :- meta_predicate(catch(0,?,0)).
+:- help(catch(+callable,+template,+callable), [iso(true)]).
 
 call_cleanup(G, C) :-
 	'$register_cleanup'(ignore(C)),
@@ -57,6 +63,7 @@ call_cleanup(G, C) :-
 	).
 
 :- meta_predicate(call_cleanup(0,0)).
+:- help(call_cleanup(+callable,+callable), [iso(false)]).
 
 setup_call_cleanup(S, G, C) :-
 	once(S),
@@ -68,6 +75,7 @@ setup_call_cleanup(S, G, C) :-
 	).
 
 :- meta_predicate(setup_call_cleanup(0,0,0)).
+:- help(setup_call_cleanup(+callable,+callable,+callable), [iso(false)]).
 
 findall(T, G, B, Tail) :-
 	can_be(B, list, findall/4, _),
@@ -76,6 +84,7 @@ findall(T, G, B, Tail) :-
 	append(B0, Tail, B), !.
 
 :- meta_predicate(findall(?,0,-,?)).
+:- help(findall(+template,+callable,?list), [iso(true)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -137,8 +146,8 @@ keysort_(_, _, Sorted, _) :-
 % Derived from code by R.A. O'Keefe
 
 setof(Template, Generator, Set) :-
-    ( 	var(Set)
-    ->	true
+    ( 	var(Set) ->
+		true
     ; 	must_be(Set, list_or_partial_list, setof/3, _)
     ),
 	bagof_(Template, Generator, Bag),
@@ -146,15 +155,17 @@ setof(Template, Generator, Set) :-
 	sort(Bag, Set).
 
 :- meta_predicate(setof(-,0,?)).
+:- help(setof(+template,+callable,?list), [iso(true)]).
 
 bagof(Template, Generator, Bag) :-
-    (	var(Bag)
-    ->	true
+    (	var(Bag) ->
+		true
 	;	must_be(Bag, list_or_partial_list, bagof/3, _)
 	),
 	bagof_(Template, Generator, Bag).
 
 :- meta_predicate(bagof(-,0,?)).
+:- help(bagof(+template,+callable,?list), [iso(true)]).
 
 bagof_(Template, Generator, Bag) :-
 	acyclic_term(Generator),
@@ -211,7 +222,8 @@ replace_variables_(Term, Vars0, Vars) :-
 replace_variables_term_(0, _, Vars, Vars) :- !.
 replace_variables_term_(N, Term, Vars0, Vars) :-
 	arg(N, Term, Arg),
-	(	cyclic_term(Arg) ->	N1 is N-1,
+	(	cyclic_term(Arg) ->
+		N1 is N-1,
 		replace_variables_term_(N1, Term, Vars0, Vars)
 	;	replace_variables_(Arg, Vars0, Vars1),
 		N1 is N-1,
@@ -294,7 +306,8 @@ free_variables_(Term, Bound, OldList, NewList, _) :-
 free_variables_(0,    _,     _, VarList, VarList, _) :- !.
 free_variables_(N, Term, Bound, OldList, NewList, B) :-
 	arg(N, Term, Argument),
-	(	cyclic_term(Argument) -> M is N-1, !,
+	(	cyclic_term(Argument) ->
+		M is N-1, !,
 		free_variables_(M, Term, Bound, OldList, NewList, B)
 	;	free_variables_(Argument, Bound, OldList, MidList, B),
 		M is N-1, !,
@@ -362,20 +375,23 @@ recorded(K, V, R) :- nonvar(K), clause('$record_key'(K,V), _, R).
 call_with_time_limit(Time, Goal) :-
 	Time0 is truncate(Time * 1000),
 	'$alarm'(Time0),
-	(	catch(once(Goal), E, ('$alarm'(0), throw(E)))
-	->	'$alarm'(0)
-	;	('$alarm'(0), fail)
-	).
-
-time_out(Goal, Time, Result) :-
-	'$alarm'(Time),
-	(	catch(once(Goal), E, ('$alarm'(0), throw(E)))
-	->	('$alarm'(0), Result = success)
+	(	catch(once(Goal), E, ('$alarm'(0), throw(E))) ->
+		'$alarm'(0)
 	;	('$alarm'(0), fail)
 	).
 
 :- meta_predicate(call_with_time_limit(+,0)).
+:- help(call_with_time_limit(+millisecs,+callable), [iso(false)]).
+
+time_out(Goal, Time, Result) :-
+	'$alarm'(Time),
+	(	catch(once(Goal), E, ('$alarm'(0), throw(E))) ->
+		('$alarm'(0), Result = success)
+	;	('$alarm'(0), fail)
+	).
+
 :- meta_predicate(time_out(0,+,-)).
+:- help(time_out(+callable,+millisecs,?atom), [iso(false)]).
 
 writeln(T) :- write(T), nl.
 format(F) :- format(F, []).
@@ -404,11 +420,12 @@ not(G) :- G, !, fail.
 not(_).
 
 map_create(S) :- map_create(S,[]).
+:- help(map_create(+atom), [iso(false)]).
 
 iso_dif(X, Y) :-
 	X \== Y,
-	(	X \= Y
-	->	true
+	(	X \= Y ->
+		true
 	;	throw(error(instantiation_error,iso_dif/2))
 	).
 
@@ -419,6 +436,8 @@ numbervars(Term, N0, N) :-
    can_be(N, integer, numbervars/3, _),
    term_variables(Term, Vars),
    numberlist_(Vars, N0, N).
+
+:- help(numbervars(+term,+integer,?integer), [iso(true)]).
 
 numberlist_([], N, N).
 numberlist_(['$VAR'(N0)|Vars], N0, N) :-
@@ -437,6 +456,30 @@ domain_error(Type, Term, Context) :-
 
 type_error(Type, Term, Context) :-
     throw(error(type_error(Type, Term), Context)).
+
+% NOTE: this doesn't print variable names properly...
+
+pretty(PI) :-
+	use_module(library(format)),
+	nonvar(PI),
+	(   PI = Name/Arity0 ->
+		Arity = Arity0
+	;   PI = Name//Arity0 ->
+		Arity is Arity0 + 2
+	;   type_error(predicate_indicator, PI, listing/1)
+	),
+	functor(Head, Name, Arity),
+	\+ \+ clause(Head, _), % only true if there is at least one clause
+	(   clause(Head, Body),
+		(   Body == true ->
+			portray_clause(Head)
+		;   portray_clause((Head :- Body))
+		),
+		false
+	;   true
+	).
+
+:- help(pretty(+predicate_indicator), [iso(false)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SWI compatible
@@ -598,6 +641,8 @@ current_op(A, B, C) :-
 	'$load_ops',
 	'$current_op'(C, B, A).
 
+:- help(current_op(?priority,?precedence,?atom), [iso(true)]).
+
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -692,8 +737,8 @@ attvar(Var) :-
 
 term_attvars_([], VsIn, VsIn) :- !.
 term_attvars_([H|T], VsIn, VsOut) :-
-	(	attvar(H)
-	->	term_attvars_(T, [H|VsIn], VsOut)
+	(	attvar(H) ->
+		term_attvars_(T, [H|VsIn], VsOut)
 	;	term_attvars_(T, VsIn, VsOut)
 	).
 
@@ -705,8 +750,11 @@ collect_goals_(_, [], GsIn, GsIn) :- !.
 collect_goals_(V, [H|T], GsIn, GsOut) :-
 	H =.. [M, _],
 	catch(M:attribute_goals(V, Goal0, []), _, Goal0 = put_atts(V, +H)),
-	(Goal0 = [H2]-> Goal = H2 ; Goal = Goal0),
-	collect_goals_(V, T, [Goal|GsIn], GsOut).
+	(	Goal0 = [H2] ->
+		Goal = H2
+	;	Goal = Goal0),
+		collect_goals_(V, T, [Goal|GsIn], GsOut
+	).
 
 collect_goals_([], GsIn, GsIn) :- !.
 collect_goals_([V|T], GsIn, GsOut) :-
@@ -724,8 +772,11 @@ copy_term(Term, Copy, Gs) :-
 print_goals([]) :- !.
 print_goals([Goal|Goals]) :-
 	write_term(Goal, [varnames(true)]),
-	(Goals == [] -> write('') ; write(',')),
-	print_goals(Goals).
+	(	Goals == [] ->
+		write('')
+	; 	write(',')),
+		print_goals(Goals
+	).
 
 dump_attvars([], []) :- !.
 dump_attvars([Var|Vars], [V|Rest]) :-
@@ -754,17 +805,19 @@ plus(X,Y,S) :- var(X), nonvar(Y), nonvar(S),
 plus(_,_,_) :-
 	throw(error(instantiation_error, plus/3)).
 
+:- help(plus(?integer,?integer,?integer), [iso(false)]).
+
 succ(X,S) :- nonvar(X), Y=1, nonvar(Y),
 	must_be(X, integer, succ/2, _), must_be(Y, integer, succ/2, _), !,
-	(	X >= 0
-	->	true
+	(	X >= 0 ->
+		true
 	; 	throw(error(domain_error(not_less_than_zero, X), succ/2))
 	),
 	S is X + Y.
 succ(X,S) :- var(X), Y=1, nonvar(Y), nonvar(S),
 	must_be(S, integer, succ/2, _), must_be(Y, integer, succ/2, _), !,
-	(	S >= 0
-	->	true
+	(	S >= 0 ->
+		true
 	; 	throw(error(domain_error(not_less_than_zero, S), succ/2))
 	),
 	!,
@@ -772,3 +825,5 @@ succ(X,S) :- var(X), Y=1, nonvar(Y), nonvar(S),
 	X is S - Y.
 succ(_,_) :-
 	throw(error(instantiation_error, succ/2)).
+
+:- help(succ(?integer,?integer,?integer), [iso(false)]).

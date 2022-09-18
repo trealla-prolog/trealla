@@ -262,11 +262,16 @@ where appropriate.
 Non-standard predicates
 =======================
 
-	help/1						# help(functor) or help(functor/arity)
+	help/0
+	help/1						# help(+functor) or help(+PI)
+	help/2						# help(+PI,+atom) where *atom* can bw *swi* or *tau*
+	listing/0
+	listing/1					# listing(+PI)
+	pretty/1					# pretty-print version of listing/1
 	between/3
 	forall/2
+	msort/2						# unsorted version of sort/3
 	samsort/2                   # same as msort/2
-	msort/2
 	merge/3
 	format/[1-3]
 	predicate_property/2
@@ -482,10 +487,13 @@ Non-standard predicates
 Note: consult/1 and load_files/2 support lists of files as args. Also
 support loading into modules eg. *consult(MOD:FILE-SPEC)*.
 
+Use these *POSIX* system calls for interprocess creation and
+communication...
+
 	popen/3                     # popen(+cmd,+mode,-stream)
 	popen/4                     # popen(+cmd,+mode,-stream,+opts)
 
-Note: popen/[3,4] use the Unix popen() system call:
+For example...
 
 	tpl -g "use_module(library(apply)),popen('ps -a',read,S,[]),getlines(S,Ls),close(S),maplist(print,Ls),halt"
 		PID   TTY      TIME     CMD
