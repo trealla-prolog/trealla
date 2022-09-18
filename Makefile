@@ -71,6 +71,7 @@ SRCOBJECTS = tpl.o \
 	src/utf8.o
 
 LIBOBJECTS +=  \
+	library/abnf.o \
 	library/apply.o \
 	library/assoc.o \
 	library/atts.o \
