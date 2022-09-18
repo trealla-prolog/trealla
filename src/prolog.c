@@ -486,6 +486,9 @@ prolog *pl_create()
 			|| !strcmp(lib->name, "freeze")			// Common
 			|| !strcmp(lib->name, "dif")			// Common?
 			|| !strcmp(lib->name, "when")			// Common?
+#ifdef __wasi__
+			|| !strcmp(lib->name, "js_toplevel")
+#endif
 			) {
 			size_t len = *lib->len;
 			char *src = malloc(len+1);

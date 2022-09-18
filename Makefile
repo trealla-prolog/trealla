@@ -9,7 +9,7 @@ CFLAGS = -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' -O3 \
 LDFLAGS = -L/usr/local/lib -lm
 
 ifdef WASI
-CFLAGS += -o tpl.wasm -D_WASI_EMULATED_MMAN -D_WASI_EMULATED_SIGNAL -O0
+CFLAGS += -o tpl.wasm -D_WASI_EMULATED_MMAN -D_WASI_EMULATED_SIGNAL -Isrc/wasm -O0
 LDFLAGS += -o tpl.wasm -lwasi-emulated-mman -lwasi-emulated-signal
 NOFFI = 1
 NOSSL = 1
@@ -83,6 +83,7 @@ LIBOBJECTS +=  \
 	library/freeze.o \
 	library/http.o \
 	library/json.o \
+	library/js_toplevel.o \
 	library/lambda.o \
 	library/lists.o \
 	library/ordsets.o \
@@ -93,7 +94,6 @@ LIBOBJECTS +=  \
 	library/sqlite3.o \
 	library/sqlite3_register.o \
 	library/ugraphs.o \
-	library/wasm_toplevel.o \
 	library/when.o
 
 SRCOBJECTS += src/imath/imath.o
@@ -127,13 +127,14 @@ tpl.wasm:
 	$(MAKE) 'WASI=1 OPT=$(OPT) -O0 -DNDEBUG'
 
 wasm: tpl.wasm
-	wasm-opt tpl.wasm -o tpl.wasm -O4
+	$(WIZER) --allow-wasi --dir . -o tpl-wizened.wasm tpl.wasm
+	wasm-opt tpl-wizened.wasm -o tpl.wasm -O4
 
 test:
 	./tests/run.sh
 
 clean:
-	rm -f tpl tpl.wasm src/*.o src/imath/*.o src/isocline/src/*.o \
+	rm -f tpl tpl.wasm tpl-*.wasm src/*.o src/imath/*.o src/isocline/src/*.o \
 		library/*.o library/*.c *.o samples/*.o samples/*.so \
 		vgcore.* *.core core core.* *.exe gmon.*
 	rm -f *.itf *.po samples/*.itf samples/*.po

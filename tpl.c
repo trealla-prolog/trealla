@@ -20,6 +20,12 @@
 #else
 #include <sys/stat.h>
 #include <sys/types.h>
+
+#ifdef __wasi__
+#include "wizer.h"
+void *g_tpl = NULL;
+#endif
+
 #ifndef __wasi__
 #include <sys/wait.h>
 #endif
@@ -137,6 +143,15 @@ static int daemonize(int argc, char *argv[])
 }
 #endif
 
+#ifdef __wasi__
+bool initialized = false;
+static void init_func() {
+	g_tpl = pl_create();
+	initialized = true;
+}
+WIZER_INIT(init_func);
+#endif
+
 int main(int ac, char *av[])
 {
 	setlocale(LC_ALL, "");
@@ -154,7 +169,12 @@ int main(int ac, char *av[])
 	int i, do_goal = 0, do_lib = 0;
 	int version = 0, daemon = 0;
 	bool ns = false, no_res = false;
+#ifdef __wasi__
+    if (!initialized) init_func();
+	void *pl = g_tpl;
+#else
 	void *pl = pl_create();
+#endif
 	if (!pl) {
 		fprintf(stderr, "Failed to create the prolog system: %s\n", strerror(errno));
 		return 1;
@@ -339,7 +359,9 @@ int main(int ac, char *av[])
 		history_save();
 
 	int halt_code = get_halt_code(pl);
+#ifndef __wasi__
 	pl_destroy(pl);
+#endif
 
 	return halt_code;
 }

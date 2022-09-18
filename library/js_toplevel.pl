@@ -3,7 +3,7 @@
 	Very experimental and not in the upstream.
 
 	Current format:
-	stdout text as-is, then ASCII END OF TEXT (0x03), then a JSON response
+	ASCII START OF TEXT (0x02), stdout text as-is, then ASCII END OF TEXT (0x03), then a JSON response
 
 	{
 		"result": "success" | "failure" | "error",
@@ -11,28 +11,29 @@
 		"error": "<throw/1 exception term>"
 	}
 */
-
-:- module(wasm_toplevel, [wasm_ask/1]).
+:- module(js_toplevel, [js_toplevel/0, js_ask/1]).
 
 :- use_module(library(lists)).
 :- use_module(library(dcgs)).
 :- use_module(library(json)).
 
-wasm_ask(Input) :-
+js_toplevel :-
+	getline(Line),
+	js_ask(Line).
+
+js_ask(Input) :-
 	catch(
 		read_term_from_chars(Query, [variable_names(Vars)], Input),
 		Error,
 		(
-			write('\x3\'),
+			write('\x2\\x3\'),
 			write_result(error, Error),
-			flush_output,
-			halt
+			flush_output
 		)
 	),
 	query(Query, Vars, Status, Solutions),
 	write_result(Status, Solutions),
-	flush_output,
-	halt.
+	flush_output.
 
 write_result(success, Solutions0) :-
 	maplist(solution_json, Solutions0, Solutions),
@@ -58,9 +59,9 @@ write_result(error, Error0) :-
 
 query(Query, Vars, Status, Solutions) :-
 	( setup_call_cleanup(
-		true,
+		write('\x2\'), % START OF TEXT
 		catch(bagof(Vars, call(Query), Solutions), Error, true),
-		write('\x3\') % END OF TEXT
+		write('\x3\')  % END OF TEXT
 	) -> OK = true
 	  ;  OK = false
 	),  
