@@ -150,6 +150,9 @@ static void init_func() {
 	initialized = true;
 }
 WIZER_INIT(init_func);
+
+// Temporarily disable pl_destroy so we can re-use the pre-initialized interpreter
+#define pl_destroy(pl)
 #endif
 
 int main(int ac, char *av[])
@@ -359,9 +362,11 @@ int main(int ac, char *av[])
 		history_save();
 
 	int halt_code = get_halt_code(pl);
-#ifndef __wasi__
 	pl_destroy(pl);
-#endif
 
 	return halt_code;
 }
+
+#ifdef __wasi__
+#undef pl_destroy
+#endif

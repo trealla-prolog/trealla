@@ -18,6 +18,10 @@ CC = $(WASI_CC)
 endif
 endif
 
+ifndef WIZER
+WIZER = wizer
+endif
+
 ifdef ISOCLINE
 CFLAGS += -DUSE_ISOCLINE=1
 else
