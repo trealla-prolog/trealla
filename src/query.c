@@ -1280,12 +1280,24 @@ void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 {
 	frame *f = GET_FRAME(c_ctx);
 	slot *e = GET_SLOT(f, c->var_nbr);
-
 	cell *c_attrs = is_empty(&e->c) ? e->c.attrs : NULL;
 	pl_idx_t c_attrs_ctx = c_attrs ? e->c.attrs_ctx : 0;
 
-	if (c_attrs)
-		q->run_hook = true;
+	if (c_attrs) {
+		if (is_variable(v)) {
+			frame *f2 = GET_FRAME(v_ctx);
+			slot *e2 = GET_SLOT(f2, v->var_nbr);
+			cell *v_attrs = is_empty(&e2->c) ? e2->c.attrs : NULL;
+
+			if (v_attrs)
+				q->run_hook = true;
+			else {
+				e2->c.attrs = e->c.attrs;
+				e2->c.attrs_ctx = e->c.attrs_ctx;
+			}
+		} else
+			q->run_hook = true;
+	}
 
 	if ((q->cp || c_attrs) && (c_ctx < q->st.fp))
 		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
