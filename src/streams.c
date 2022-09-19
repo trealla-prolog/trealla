@@ -787,6 +787,7 @@ static bool fn_process_create_3(query *q)
 
 			} else if (!CMP_STR_TO_CSTR(q, c, "env") && is_list_or_nil(name)) {
 				LIST_HANDLER(name);
+				memset(environments, 0, sizeof(environments));
 				envs = 0;
 
 				while (is_iso_list(name)) {
