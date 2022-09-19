@@ -1,3 +1,4 @@
+#define _XOPEN_SOURCE
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
@@ -7,6 +8,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <signal.h>
+#include <spawn.h>
+#include <fcntl.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
 
 #ifdef _WIN32
@@ -28,6 +33,8 @@
 #include "prolog.h"
 #include "query.h"
 #include "utf8.h"
+
+#define MAX_ARGS 128
 
 #ifdef __wasi__
 #include <limits.h>
@@ -785,7 +792,7 @@ static bool fn_popen_4(query *q)
 	convert_path(filename);
 
 	stream *str = &q->pl->streams[n];
-	str->domain = true;
+	str->pipe = true;
 	check_heap_error(str->filename = strdup(filename));
 	check_heap_error(str->name = strdup(filename));
 	check_heap_error(str->mode = DUP_STR(q, p2));
@@ -857,6 +864,307 @@ static bool fn_popen_4(query *q)
 	make_int(&tmp, n);
 	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
 	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+}
+#endif
+
+extern char **g_envp;
+
+#if !defined(_WIN32) && !defined(__wasi__)
+static bool fn_process_create_3(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,list_or_nil);
+	GET_NEXT_ARG(p3,list_or_nil);
+	char *src = NULL;
+	char *filename;
+
+	if (is_atom(p1))
+		filename = src = DUP_STR(q, p1);
+	else
+		return throw_error(q, p1, p1_ctx, "domain_error", "source_sink");
+
+	if (is_iso_list(p1)) {
+		size_t len = scan_is_chars_list(q, p1, p1_ctx, true);
+
+		if (!len)
+			return throw_error(q, p1, p1_ctx, "type_error", "atom");
+
+		src = chars_list_to_string(q, p1, p1_ctx, len);
+		filename = src;
+	}
+
+	convert_path(filename);
+	bool binary = false;
+    int args = 0, envs = 0;
+    char *arguments[MAX_ARGS] = {NULL};
+    char *environments[MAX_ARGS] = {NULL};
+	arguments[args++] = strdup(filename);
+
+	for (int i = 0; g_envp[i] != NULL; i++)
+		environments[envs++] = strdup(g_envp[i]);
+
+	LIST_HANDLER(p2);
+
+	while (is_iso_list(p2)) {
+		cell *h = LIST_HEAD(p2);
+		cell *c = deref(q, h, p2_ctx);
+		pl_idx_t c_ctx = q->latest_ctx;
+
+		if (!is_atom(c))
+			return throw_error(q, c, c_ctx, "domain_error", "args");
+
+		arguments[args++] = DUP_STR(q, c);
+		p2 = LIST_TAIL(p2);
+		p2 = deref(q, p2, p2_ctx);
+		p2_ctx = q->latest_ctx;
+	}
+
+	arguments[args] = NULL;
+    posix_spawn_file_actions_t file_actions;
+    posix_spawn_file_actions_init(&file_actions);
+    posix_spawnattr_t attrp;
+    posix_spawnattr_init(&attrp);
+    cell *ppid = NULL;
+    const char *cwd = NULL;
+    pl_idx_t ppid_ctx = 0;
+	LIST_HANDLER(p3);
+
+	while (is_iso_list(p3)) {
+		cell *h = LIST_HEAD(p3);
+		cell *c = deref(q, h, p3_ctx);
+		pl_idx_t c_ctx = q->latest_ctx;
+
+		if (is_structure(c) && (c->arity == 1)) {
+			cell *name = c + 1;
+			name = deref(q, name, c_ctx);
+			pl_idx_t name_ctx = q->latest_ctx;
+
+			if (!CMP_STR_TO_CSTR(q, c, "process") || !CMP_STR_TO_CSTR(q, c, "pid")) {
+				ppid = name;
+				ppid_ctx = name_ctx;
+
+			} else if (!CMP_STR_TO_CSTR(q, c, "detached")) {
+				bool detached = !CMP_STR_TO_CSTR(q, c+1, "detached");
+				posix_spawnattr_setflags(&attrp, POSIX_SPAWN_SETSID);
+
+			} else if (!CMP_STR_TO_CSTR(q, c, "cwd")) {
+				cwd = C_STR(q, name);
+				posix_spawn_file_actions_addchdir_np(&file_actions, cwd);
+
+			} else if (!CMP_STR_TO_CSTR(q, c, "env") && is_list_or_nil(name)) {
+				LIST_HANDLER(name);
+				memset(environments, 0, sizeof(environments));
+				envs = 0;
+
+				while (is_iso_list(name)) {
+					cell *h = LIST_HEAD(name);
+					cell *c = deref(q, h, name_ctx);
+					pl_idx_t c_ctx = q->latest_ctx;
+
+					if (is_structure(c) && (c->arity == 2) && (c->val_off == g_eq_s)) {
+						cell *p1 = c + 1, *p2 = c + 2;
+						ASTRING(pr);
+
+						if (is_atom(p1) && is_atom(p2)) {
+							ASTRING_sprintf(pr, "%s=%s", C_STR(q, p1), C_STR(q, p2));
+						} else if (is_atom(p1) && is_smallint(p2)) {
+							ASTRING_sprintf(pr, "%s=%d", C_STR(q, p1), (int)get_smallint(p2));
+						}
+
+						environments[envs++] = ASTRING_cstr(pr);
+					}
+
+					name = LIST_TAIL(name);
+					name = deref(q, name, name_ctx);
+					name_ctx = q->latest_ctx;
+				}
+
+			} else if (!CMP_STR_TO_CSTR(q, c, "environment") && is_list_or_nil(name)) {
+				LIST_HANDLER(name);
+
+				while (is_iso_list(name)) {
+					cell *h = LIST_HEAD(name);
+					cell *c = deref(q, h, name_ctx);
+					pl_idx_t c_ctx = q->latest_ctx;
+
+					if (is_structure(c) && (c->arity == 2) && (c->val_off == g_eq_s)) {
+						cell *p1 = c + 1, *p2 = c + 2;
+						ASTRING(pr);
+
+						if (is_atom(p1) && is_atom(p2)) {
+							ASTRING_sprintf(pr, "%s=%s", C_STR(q, p1), C_STR(q, p2));
+						} else if (is_atom(p1) && is_smallint(p2)) {
+							ASTRING_sprintf(pr, "%s=%d", C_STR(q, p1), (int)get_smallint(p2));
+						}
+
+						environments[envs++] = ASTRING_cstr(pr);
+					}
+
+					name = LIST_TAIL(name);
+					name = deref(q, name, name_ctx);
+					name_ctx = q->latest_ctx;
+				}
+
+			} else if (!CMP_STR_TO_CSTR(q, c, "stdin") && !CMP_STR_TO_CSTR(q, name, "std")) {
+				posix_spawn_file_actions_adddup2(&file_actions, q->pl->current_input, 0);
+			} else if (!CMP_STR_TO_CSTR(q, c, "stdin") && !CMP_STR_TO_CSTR(q, name, "null")) {
+				posix_spawn_file_actions_addopen(&file_actions, 0, "/dev/null", O_RDONLY, 0);
+			} else if (!CMP_STR_TO_CSTR(q, c, "stdin") && !CMP_STR_TO_CSTR(q, name, "pipe")
+				&& is_structure(name) && (name->arity == 1) && is_variable(name+1)) {
+				cell *ns = deref(q, name+1, name_ctx);
+				pl_idx_t ns_ctx = q->latest_ctx;
+				int n = new_stream(q->pl);
+				int fds[2];
+				if (pipe(fds)) return false;
+				posix_spawn_file_actions_adddup2(&file_actions, fds[0], 0);
+				q->pl->streams[n].fp = fdopen(fds[1], "w");
+				q->pl->streams[n].pipe = true;
+				cell tmp;
+				make_int(&tmp, n);
+				tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+				unify(q, ns, ns_ctx, &tmp, q->st.curr_frame);
+
+			} else if (!CMP_STR_TO_CSTR(q, c, "stdin") && !CMP_STR_TO_CSTR(q, name, "stream")) {
+				cell *ns = deref(q, name, name_ctx);
+				int n = get_stream(q, ns);
+				posix_spawn_file_actions_adddup2(&file_actions, fileno(q->pl->streams[n].fp), 0);
+
+			} else if (!CMP_STR_TO_CSTR(q, c, "stdout") && !CMP_STR_TO_CSTR(q, name, "std")) {
+				posix_spawn_file_actions_adddup2(&file_actions, q->pl->current_output, 1);
+			} else if (!CMP_STR_TO_CSTR(q, c, "stdout") && !CMP_STR_TO_CSTR(q, name, "null")) {
+				posix_spawn_file_actions_addopen(&file_actions, 1, "/dev/null", O_WRONLY, 0);
+			} else if (!CMP_STR_TO_CSTR(q, c, "stdout") && !CMP_STR_TO_CSTR(q, name, "pipe")
+				&& is_structure(name) && (name->arity == 1) && is_variable(name+1)) {
+				cell *ns = deref(q, name+1, name_ctx);
+				pl_idx_t ns_ctx = q->latest_ctx;
+				int n = new_stream(q->pl);
+				int fds[2];
+				if (pipe(fds)) return false;
+				posix_spawn_file_actions_adddup2(&file_actions, fds[1], 1);
+				q->pl->streams[n].fp = fdopen(fds[0], "r");
+				q->pl->streams[n].pipe = true;
+				cell tmp;
+				make_int(&tmp, n);
+				tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+				unify(q, ns, ns_ctx, &tmp, q->st.curr_frame);
+
+			} else if (!CMP_STR_TO_CSTR(q, c, "stdout") && !CMP_STR_TO_CSTR(q, name, "stream")) {
+				cell *ns = deref(q, name, name_ctx);
+				int n = get_stream(q, ns);
+				posix_spawn_file_actions_adddup2(&file_actions, fileno(q->pl->streams[n].fp), 1);
+
+			} else if (!CMP_STR_TO_CSTR(q, c, "stderr") && !CMP_STR_TO_CSTR(q, name, "std")) {
+				posix_spawn_file_actions_adddup2(&file_actions, q->pl->current_error, 2);
+			} else if (!CMP_STR_TO_CSTR(q, c, "stderr") && !CMP_STR_TO_CSTR(q, name, "null")) {
+				posix_spawn_file_actions_addopen(&file_actions, 2, "/dev/null", O_WRONLY, 0);
+			} else if (!CMP_STR_TO_CSTR(q, c, "stderr") && !CMP_STR_TO_CSTR(q, name, "pipe")
+				&& is_structure(name) && (name->arity == 1) && is_variable(name+1)) {
+				cell *ns = deref(q, name+1, name_ctx);
+				pl_idx_t ns_ctx = q->latest_ctx;
+				int n = new_stream(q->pl);
+				int fds[2];
+				if (pipe(fds)) return false;
+				posix_spawn_file_actions_adddup2(&file_actions, fds[1], 2);
+				q->pl->streams[n].fp = fdopen(fds[0], "r");
+				q->pl->streams[n].pipe = true;
+				cell tmp;
+				make_int(&tmp, n);
+				tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+				unify(q, ns, ns_ctx, &tmp, q->st.curr_frame);
+
+			} else if (!CMP_STR_TO_CSTR(q, c, "stderr") && !CMP_STR_TO_CSTR(q, name, "stream")) {
+				cell *ns = deref(q, name, name_ctx);
+				int n = get_stream(q, ns);
+				posix_spawn_file_actions_adddup2(&file_actions, fileno(q->pl->streams[n].fp), 2);
+			}
+		} else
+			return throw_error(q, c, q->latest_ctx, "domain_error", "process_create_option");
+
+		p3 = LIST_TAIL(p3);
+		p3 = deref(q, p3, p3_ctx);
+		p3_ctx = q->latest_ctx;
+	}
+
+	pid_t pid;
+	int ok = posix_spawnp(&pid, C_STR(q, p1), &file_actions, &attrp, (char * const*)arguments, (char * const*)environments);
+	posix_spawn_file_actions_destroy(&file_actions);
+	posix_spawnattr_destroy(&attrp);
+	free(src);
+
+	for (int i = 0; i < args; i++)
+		free(arguments[i]);
+
+	for (int i = 0; i < envs; i++)
+		free(environments[i]);
+
+	if (ok != 0)
+		return throw_error(q, p1, p1_ctx, "system_error", "posix_spawnp");
+
+	if (ppid) {
+		cell tmp;
+		make_uint(&tmp, pid);
+		return unify(q, ppid, ppid_ctx, &tmp, q->st.curr_frame);
+	} else {
+		waitpid(pid, NULL, 0);
+	}
+
+	return true;
+}
+
+static bool fn_process_wait_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,list_or_nil);
+	LIST_HANDLER(p2);
+	int secs = -1;
+
+	while (is_iso_list(p2)) {
+		cell *h = LIST_HEAD(p2);
+		cell *c = deref(q, h, p2_ctx);
+		pl_idx_t c_ctx = q->latest_ctx;
+		cell *name = c + 1;
+
+		if (is_structure(c) && (c->arity == 1) && !CMP_STR_TO_CSTR(q, c, "timeout")) {
+			if (is_integer(c+1))
+				secs = get_smallint(c+1);
+			else if (is_atom(c+1) && !CMP_STR_TO_CSTR(q, c+1, "infinite"))
+				secs = -1;
+		} else
+			return throw_error(q, c, q->latest_ctx, "domain_error", "process_wait_option");
+
+		p2 = LIST_TAIL(p2);
+		p2 = deref(q, p2, p2_ctx);
+		p2_ctx = q->latest_ctx;
+	}
+
+	int status = 0, pid = get_smalluint(p1);
+	int ok = waitpid(pid, &status, secs != -1 ? WNOHANG : 0);
+	return ok == pid;
+}
+
+static bool fn_process_wait_1(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	int pid = get_smalluint(p1);
+	waitpid(pid, NULL, 0);
+	return true;
+}
+
+static bool fn_process_kill_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,integer);
+	int pid = get_smalluint(p1), sig = get_smallint(p2);
+	kill(pid, sig);
+	return true;
+}
+
+static bool fn_process_kill_1(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	int pid = get_smalluint(p1);
+	kill(pid, SIGKILL);
+	return true;
 }
 #endif
 
@@ -6177,6 +6485,14 @@ builtins g_files_bifs[] =
 	{"map_count", 2, fn_map_count_2, "+map,-count", false, false, BLAH},
 	{"map_list", 2, fn_map_list_2, "+map,?list", false, false, BLAH},
 	{"map_close", 1, fn_map_close_1, "+map", false, false, BLAH},
+
+#if !defined(_WIN32) && !defined(__wasi__)
+	{"process_create", 3, fn_process_create_3, "+atom,+args,+opts", false, false, BLAH},
+	{"process_wait", 2, fn_process_wait_2, "+pid,-status", false, false, BLAH},
+	{"process_wait", 1, fn_process_wait_1, "+pid", false, false, BLAH},
+	{"process_kill", 2, fn_process_kill_2, "+pid,+integer", false, false, BLAH},
+	{"process_kill", 1, fn_process_kill_1, "+pid", false, false, BLAH},
+#endif
 
 #if !defined(_WIN32) && !defined(__wasi__)
 	{"popen", 4, fn_popen_4, "+atom,+atom,-stream,+list", false, false, BLAH},

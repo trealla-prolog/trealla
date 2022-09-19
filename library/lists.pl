@@ -42,6 +42,17 @@
     POSSIBILITY OF SUCH DAMAGE.
 */
 
+:- help(reverse(?list,?list), [iso(false)]).
+:- help(append(?list,?list,?list), [iso(false)]).
+:- help(memberchk(?term,?list), [iso(false)]).
+:- help(member(?term,?list), [iso(false)]).
+:- help(selectchk(?term,?list), [iso(false)]).
+:- help(select(?term,?list,-list), [iso(false)]).
+:- help(numlist(?integer,?integer,-list), [iso(false)]).
+:- help(length(?integer,?list), [iso(true)]).
+:- help(nth0(?integer,?list,-term), [iso(false)]).
+:- help(nth1(?integer,?list,-term), [iso(false)]).
+
 reverse(Xs, Ys) :-
     (	nonvar(Xs)
 	->	reverse_(Xs, Ys, [], Xs)

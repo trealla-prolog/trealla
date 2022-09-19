@@ -48,8 +48,11 @@ extern unsigned char library_json_pl[];
 extern unsigned int library_json_pl_len;
 extern unsigned char library_js_toplevel_pl[];
 extern unsigned int library_js_toplevel_pl_len;
+extern unsigned char library_abnf_pl[];
+extern unsigned int library_abnf_pl_len;
 
 library g_libs[] = {
+	 {"apply", library_abnf_pl, &library_abnf_pl_len},
 	 {"apply", library_apply_pl, &library_apply_pl_len},
 	 {"assoc", library_assoc_pl, &library_assoc_pl_len},
 	 {"atts", library_atts_pl, &library_atts_pl_len},

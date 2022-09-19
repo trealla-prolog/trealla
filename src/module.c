@@ -64,7 +64,7 @@ static const op_table g_ops[] =
 	{":", OP_XFY, 600},
 	{"+", OP_YFX, 500},
 	{"-", OP_YFX, 500},
-	//{"?", OP_FX, 500},
+	{"?", OP_FX, 500},
 	{"/\\", OP_YFX, 500},
 	{"\\/", OP_YFX, 500},
 	{"*", OP_YFX, 400},

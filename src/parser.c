@@ -371,6 +371,49 @@ static void directives(parser *p, cell *d)
 
 	cell *p1 = c + 1;
 
+	if (!strcmp(dirname, "help") && (c->arity == 2)) {
+		if (!is_structure(p1)) return;
+		cell *p2 = p1 + p1->nbr_cells;
+		if (!is_iso_list_or_nil(p2)) return;
+		LIST_HANDLER(p2);
+		bool iso = false;
+
+		while (is_iso_list(p2)) {
+			cell *h = LIST_HEAD(p2);
+
+			if (is_structure(h) && is_atom(h+1)) {
+				cell *arg = h + 1;
+				iso = !strcmp(C_STR(p, arg), "true");
+			}
+
+			p2 = LIST_TAIL(p2);
+		}
+
+		pl_idx_t p1_ctx = 0;
+		query q = (query){0};
+		q.pl = p->pl;
+		q.st.m = p->m;
+		char *dst = print_term_to_strbuf(&q, p1, p1_ctx, 0);
+		builtins *ptr = calloc(1, sizeof(builtins));
+		ptr->name = C_STR(p, p1);
+		ptr->arity = p1->arity;
+		char *src = dst;
+
+		while (*src && (*src != '('))
+			src++;
+
+		if (*src == '(')
+			src++;
+
+		char *end = dst + strlen(dst) - 1;
+		*end = '\0';
+
+		ptr->help = *src ? src : dst;
+		ptr->iso = iso;
+		map_app(p->pl->help, ptr->name, ptr);
+		return;
+	}
+
 	if (!strcmp(dirname, "include") && (c->arity == 1)) {
 		if (!is_atom(p1)) return;
 		unsigned save_line_nbr = p->line_nbr;

@@ -76,6 +76,7 @@ SRCOBJECTS = tpl.o \
 	src/wasi.o
 
 LIBOBJECTS +=  \
+	library/abnf.o \
 	library/apply.o \
 	library/assoc.o \
 	library/atts.o \

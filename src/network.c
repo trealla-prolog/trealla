@@ -447,7 +447,7 @@ void net_close(stream *str)
 #endif
 
 #ifdef pclose
-	if (str->domain)
+	if (str->pipe)
 		pclose(str->fp);
 	else
 		fclose(str->fp);
