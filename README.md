@@ -495,12 +495,45 @@ communication...
 
 For example...
 
-	tpl -g "use_module(library(apply)),popen('ps -a',read,S,[]),getlines(S,Ls),close(S),maplist(print,Ls),halt"
-		PID   TTY      TIME     CMD
-		2806  tty2     00:00:00 gnome-session-b
-		31645 pts/0    00:00:00 tpl
-		31646 pts/0    00:00:00 sh
-		31647 pts/0    00:00:00 ps
+```
+tpl -g "use_module(library(apply)),popen('ps -a',read,S,[]),getlines(S,Ls),close(S),maplist(print,Ls),halt"
+	PID   TTY      TIME     CMD
+	2806  tty2     00:00:00 gnome-session-b
+	31645 pts/0    00:00:00 tpl
+	31646 pts/0    00:00:00 sh
+	31647 pts/0    00:00:00 ps
+```
+
+For general *POSIX* process creation use these *SWI-compatible* calls...
+
+	process_create/3			# process_create(+cmd,+args,+opts)
+	process_wait/2				# process_wait(+pid,+opts)
+	process_wait/1				# process_wait(+pid)
+	process_kill/2				# process_kill(+pid,+sigint)
+	process_kill/1				# process_kill(+pid)
+
+For example...
+
+```
+?- process_create('ls',['-l'],[process(Pid)]),process_wait(Pid).
+total 2552
+   4 -rw-rw-r-- 1 andrew andrew    1813 Aug 25 10:18 ATTRIBUTION
+   4 -rw-rw-r-- 1 andrew andrew    1093 Aug 25 10:18 LICENSE
+   8 -rw-rw-r-- 1 andrew andrew    7259 Sep 18 18:27 Makefile
+  24 -rw-rw-r-- 1 andrew andrew   23709 Sep 19 08:56 README.md
+   4 -rw-rw-r-- 1 andrew andrew      28 Aug 25 10:18 _config.yml
+   4 drwxrwxr-x 2 andrew andrew    4096 Sep 17 10:41 docs
+   4 drwxrwxr-x 2 andrew andrew    4096 Sep 18 21:29 library
+   4 drwxrwxr-x 2 andrew andrew    4096 Sep  3 13:02 samples
+   4 drwxrwxr-x 6 andrew andrew    4096 Sep 19 09:38 src
+   4 drwxrwxr-x 5 andrew andrew    4096 Sep 14 20:49 tests
+1448 -rwxrwxr-x 1 andrew andrew 1478712 Sep 19 09:38 tpl
+   8 -rw-rw-r-- 1 andrew andrew    7671 Aug 25 10:18 tpl.c
+  16 -rw-rw-r-- 1 andrew andrew   13928 Sep 18 18:28 tpl.o
+  36 -rw-rw-r-- 1 andrew andrew   33862 Aug 25 10:18 trealla.png
+   Pid = 735602.
+?-
+```
 
 Note: read_term/[2,3] supports the positions(Start,End) and the
 line_counts(Start,End) property options to report file information.

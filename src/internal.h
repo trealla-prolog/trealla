@@ -586,7 +586,7 @@ struct stream_ {
 	bool nonblock:1;
 	bool udp:1;
 	bool ssl:1;
-	bool domain:1;
+	bool pipe:1;
 	bool is_map:1;
 };
 
