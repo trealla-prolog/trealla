@@ -938,6 +938,8 @@ static bool fn_process_create_3(query *q)
 		cell tmp;
 		make_uint(&tmp, pid);
 		return unify(q, ppid, ppid_ctx, &tmp, q->st.curr_frame);
+	} else {
+		waitpid(pid, NULL, 0);
 	}
 
 	return true;
