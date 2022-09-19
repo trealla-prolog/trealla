@@ -853,7 +853,7 @@ static bool fn_process_create_3(query *q)
 				tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
 				unify(q, ns, ns_ctx, &tmp, q->st.curr_frame);
 
-		} else if (!CMP_STR_TO_CSTR(q, c, "stdin") && !CMP_STR_TO_CSTR(q, name, "stream")) {
+			} else if (!CMP_STR_TO_CSTR(q, c, "stdin") && !CMP_STR_TO_CSTR(q, name, "stream")) {
 				cell *ns = deref(q, name, name_ctx);
 				int n = get_stream(q, ns);
 				posix_spawn_file_actions_adddup2(&file_actions, fileno(q->pl->streams[n].fp), 0);
