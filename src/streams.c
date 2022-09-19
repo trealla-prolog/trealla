@@ -701,6 +701,8 @@ static bool fn_popen_4(query *q)
 }
 #endif
 
+extern char **g_envp;
+
 #if !defined(_WIN32) && !defined(__wasi__)
 static bool fn_process_create_3(query *q)
 {
@@ -731,6 +733,10 @@ static bool fn_process_create_3(query *q)
     char *arguments[MAX_ARGS] = {NULL};
     char *environments[MAX_ARGS] = {NULL};
 	arguments[args++] = strdup(filename);
+
+	for (int i = 0; g_envp[i] != NULL; i++)
+		environments[envs++] = strdup(g_envp[i]);
+
 	LIST_HANDLER(p2);
 
 	while (is_iso_list(p2)) {
@@ -781,6 +787,7 @@ static bool fn_process_create_3(query *q)
 
 			} else if (!CMP_STR_TO_CSTR(q, c, "env") && is_list_or_nil(name)) {
 				LIST_HANDLER(name);
+				envs = 0;
 
 				while (is_iso_list(name)) {
 					cell *h = LIST_HEAD(name);
@@ -806,8 +813,6 @@ static bool fn_process_create_3(query *q)
 				}
 
 			} else if (!CMP_STR_TO_CSTR(q, c, "environment") && is_list_or_nil(name)) {
-				// TODO: copy current env
-
 				LIST_HANDLER(name);
 
 				while (is_iso_list(name)) {
