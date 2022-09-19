@@ -840,7 +840,6 @@ static bool fn_process_create_3(query *q)
 			} else if (!CMP_STR_TO_CSTR(q, c, "stdin") && !CMP_STR_TO_CSTR(q, name, "pipe")
 				&& is_structure(name) && (name->arity == 1) && is_variable(name+1)) {
 				cell *ns = deref(q, name+1, name_ctx);
-				ns = deref(q, ns, name_ctx);
 				pl_idx_t ns_ctx = q->latest_ctx;
 				int n = new_stream(q->pl);
 				int fds[2];
@@ -865,7 +864,6 @@ static bool fn_process_create_3(query *q)
 			} else if (!CMP_STR_TO_CSTR(q, c, "stdout") && !CMP_STR_TO_CSTR(q, name, "pipe")
 				&& is_structure(name) && (name->arity == 1) && is_variable(name+1)) {
 				cell *ns = deref(q, name+1, name_ctx);
-				ns = deref(q, ns, name_ctx);
 				pl_idx_t ns_ctx = q->latest_ctx;
 				int n = new_stream(q->pl);
 				int fds[2];
@@ -890,7 +888,6 @@ static bool fn_process_create_3(query *q)
 			} else if (!CMP_STR_TO_CSTR(q, c, "stderr") && !CMP_STR_TO_CSTR(q, name, "pipe")
 				&& is_structure(name) && (name->arity == 1) && is_variable(name+1)) {
 				cell *ns = deref(q, name+1, name_ctx);
-				ns = deref(q, ns, name_ctx);
 				pl_idx_t ns_ctx = q->latest_ctx;
 				int n = new_stream(q->pl);
 				int fds[2];
