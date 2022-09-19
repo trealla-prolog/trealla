@@ -2,24 +2,44 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#ifdef __wasi__
+#define EXPORT(name) __attribute__((export_name(#name)))
+#else
+#define EXPORT(name)
+#endif
+
 typedef struct prolog_ prolog;
 
+EXPORT(pl_create)
 extern prolog *pl_create();
+EXPORT(pl_destroy)
 extern void pl_destroy(prolog*);
 
+EXPORT(pl_eval)
 extern bool pl_eval(prolog*, const char *expr);
+EXPORT(pl_consult)
 extern bool pl_consult(prolog*, const char *filename);
+EXPORT(pl_consult_fp)
 extern bool pl_consult_fp(prolog*, FILE *fp, const char *filename);
 
+EXPORT(get_halt_code)
 extern int get_halt_code(prolog*);
+EXPORT(get_halt)
 extern bool get_halt(prolog*);
+EXPORT(get_status)
 extern bool get_status(prolog*);
+EXPORT(get_redo)
 extern bool get_redo(prolog*);
+EXPORT(did_dump_vars)
 extern bool did_dump_vars(prolog*);
 
+EXPORT(set_trace)
 extern void set_trace(prolog*);
+EXPORT(set_quiet)
 extern void set_quiet(prolog*);
+EXPORT(set_noindex)
 extern void set_noindex(prolog*);
+EXPORT(set_opt)
 extern void set_opt(prolog*, int onoff);
 
 extern void convert_path(char *filename);
@@ -28,3 +48,5 @@ extern int g_tpl_interrupt, g_ac, g_avc;
 extern char **g_av, *g_argv0;
 extern char *g_tpl_lib;
 extern const char *g_version;
+
+#undef EXPORT

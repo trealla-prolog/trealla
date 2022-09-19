@@ -72,7 +72,8 @@ SRCOBJECTS = tpl.o \
 	src/streams.o \
 	src/toplevel.o \
 	src/unify.o \
-	src/utf8.o
+	src/utf8.o \
+	src/wasi.o
 
 LIBOBJECTS +=  \
 	library/apply.o \
@@ -205,6 +206,7 @@ src/unify.o: src/unify.c src/heap.h src/internal.h src/map.h src/skiplist.h \
   src/trealla.h src/cdebug.h src/imath/imath.h src/module.h src/query.h \
   src/builtins.h src/utf8.h
 src/utf8.o: src/utf8.c src/utf8.h
+src/wasi.o: src/wasi.c
 src/version.o: src/version.c
 src/imath.o: src/imath/imath.c src/imath/imath.h
 src/isocline.o: src/isocline/src/isocline.c src/isocline/src/attr.c \

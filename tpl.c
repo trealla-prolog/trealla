@@ -151,7 +151,9 @@ static void init_func() {
 }
 WIZER_INIT(init_func);
 
-// Temporarily disable pl_destroy so we can re-use the pre-initialized interpreter
+// Temporarily disable pl_destroy and spare the pre-initialized interpreter.
+// This is a little bit crazy but it allows the WASI build to both have really
+// good startup times via Wizer and keep its knowledge base between queries.
 #define pl_destroy(pl)
 #endif
 
@@ -369,4 +371,10 @@ int main(int ac, char *av[])
 
 #ifdef __wasi__
 #undef pl_destroy
+
+// WASI ports can use this as an argument to the pl_* APIs for a quickstart.
+__attribute__((export_name("pl_global")))
+void *pl_global() {
+	return g_tpl;
+}
 #endif
