@@ -837,8 +837,23 @@ static bool fn_process_create_3(query *q)
 				posix_spawn_file_actions_adddup2(&file_actions, q->pl->current_input, 0);
 			} else if (!CMP_STR_TO_CSTR(q, c, "stdin") && !CMP_STR_TO_CSTR(q, name, "null")) {
 				posix_spawn_file_actions_addopen(&file_actions, 0, "/dev/null", O_RDONLY, 0);
-			} else if (!CMP_STR_TO_CSTR(q, c, "stdin") && !CMP_STR_TO_CSTR(q, name, "pipe")) {
-			} else if (!CMP_STR_TO_CSTR(q, c, "stdin") && !CMP_STR_TO_CSTR(q, name, "stream")) {
+			} else if (!CMP_STR_TO_CSTR(q, c, "stdin") && !CMP_STR_TO_CSTR(q, name, "pipe")
+				&& is_structure(name) && (name->arity == 1) && is_variable(name+1)) {
+				cell *ns = deref(q, name+1, name_ctx);
+				ns = deref(q, ns, name_ctx);
+				pl_idx_t ns_ctx = q->latest_ctx;
+				int n = new_stream(q->pl);
+				int fds[2];
+				if (pipe(fds)) return false;
+				posix_spawn_file_actions_adddup2(&file_actions, fds[0], 0);
+				q->pl->streams[n].fp = fdopen(fds[1], "w");
+				q->pl->streams[n].pipe = true;
+				cell tmp;
+				make_int(&tmp, n);
+				tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+				unify(q, ns, ns_ctx, &tmp, q->st.curr_frame);
+
+		} else if (!CMP_STR_TO_CSTR(q, c, "stdin") && !CMP_STR_TO_CSTR(q, name, "stream")) {
 				cell *ns = deref(q, name, name_ctx);
 				int n = get_stream(q, ns);
 				posix_spawn_file_actions_adddup2(&file_actions, fileno(q->pl->streams[n].fp), 0);
@@ -847,7 +862,22 @@ static bool fn_process_create_3(query *q)
 				posix_spawn_file_actions_adddup2(&file_actions, q->pl->current_output, 1);
 			} else if (!CMP_STR_TO_CSTR(q, c, "stdout") && !CMP_STR_TO_CSTR(q, name, "null")) {
 				posix_spawn_file_actions_addopen(&file_actions, 1, "/dev/null", O_WRONLY, 0);
-			} else if (!CMP_STR_TO_CSTR(q, c, "stdout") && !CMP_STR_TO_CSTR(q, name, "pipe")) {
+			} else if (!CMP_STR_TO_CSTR(q, c, "stdout") && !CMP_STR_TO_CSTR(q, name, "pipe")
+				&& is_structure(name) && (name->arity == 1) && is_variable(name+1)) {
+				cell *ns = deref(q, name+1, name_ctx);
+				ns = deref(q, ns, name_ctx);
+				pl_idx_t ns_ctx = q->latest_ctx;
+				int n = new_stream(q->pl);
+				int fds[2];
+				if (pipe(fds)) return false;
+				posix_spawn_file_actions_adddup2(&file_actions, fds[1], 1);
+				q->pl->streams[n].fp = fdopen(fds[0], "r");
+				q->pl->streams[n].pipe = true;
+				cell tmp;
+				make_int(&tmp, n);
+				tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+				unify(q, ns, ns_ctx, &tmp, q->st.curr_frame);
+
 			} else if (!CMP_STR_TO_CSTR(q, c, "stdout") && !CMP_STR_TO_CSTR(q, name, "stream")) {
 				cell *ns = deref(q, name, name_ctx);
 				int n = get_stream(q, ns);
@@ -857,7 +887,22 @@ static bool fn_process_create_3(query *q)
 				posix_spawn_file_actions_adddup2(&file_actions, q->pl->current_error, 2);
 			} else if (!CMP_STR_TO_CSTR(q, c, "stderr") && !CMP_STR_TO_CSTR(q, name, "null")) {
 				posix_spawn_file_actions_addopen(&file_actions, 2, "/dev/null", O_WRONLY, 0);
-			} else if (!CMP_STR_TO_CSTR(q, c, "stderr") && !CMP_STR_TO_CSTR(q, name, "pipe")) {
+			} else if (!CMP_STR_TO_CSTR(q, c, "stderr") && !CMP_STR_TO_CSTR(q, name, "pipe")
+				&& is_structure(name) && (name->arity == 1) && is_variable(name+1)) {
+				cell *ns = deref(q, name+1, name_ctx);
+				ns = deref(q, ns, name_ctx);
+				pl_idx_t ns_ctx = q->latest_ctx;
+				int n = new_stream(q->pl);
+				int fds[2];
+				if (pipe(fds)) return false;
+				posix_spawn_file_actions_adddup2(&file_actions, fds[1], 2);
+				q->pl->streams[n].fp = fdopen(fds[0], "r");
+				q->pl->streams[n].pipe = true;
+				cell tmp;
+				make_int(&tmp, n);
+				tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+				unify(q, ns, ns_ctx, &tmp, q->st.curr_frame);
+
 			} else if (!CMP_STR_TO_CSTR(q, c, "stderr") && !CMP_STR_TO_CSTR(q, name, "stream")) {
 				cell *ns = deref(q, name, name_ctx);
 				int n = get_stream(q, ns);
