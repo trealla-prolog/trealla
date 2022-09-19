@@ -10,8 +10,8 @@
 #include <time.h>
 #include <signal.h>
 #include <spawn.h>
-#include <wait.h>
 #include <fcntl.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
 
 #ifdef _WIN32
