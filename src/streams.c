@@ -9,10 +9,13 @@
 #include <string.h>
 #include <time.h>
 #include <signal.h>
-#include <spawn.h>
 #include <fcntl.h>
-#include <sys/wait.h>
 #include <sys/stat.h>
+
+#if !defined(_WIN32) && !defined(__wasi__)
+#include <spawn.h>
+#include <sys/wait.h>
+#endif
 
 #ifdef _WIN32
 #define USE_MMAP 0
@@ -1188,7 +1191,9 @@ static bool fn_iso_open_4(query *q)
 			return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 	}
 
+#if USE_MMAP
 	size_t offset = 0;
+#endif
 
 	if (!strcmp(str->mode, "read") && !str->binary && (!bom_specified || use_bom)) {
 		int ch = xgetc_utf8(net_getc, str);
@@ -1198,7 +1203,9 @@ static bool fn_iso_open_4(query *q)
 
 		if ((unsigned)ch == 0xFEFF) {
 			str->bom = true;
+#if USE_MMAP
 			offset = 3;
+#endif
 		} else
 			fseek(str->fp, 0, SEEK_SET);
 	} else if (!strcmp(str->mode, "write") && !str->binary && use_bom) {
