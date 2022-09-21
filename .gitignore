@@ -2,7 +2,7 @@ library/*.c
 stuff
 core
 tpl
-tpl.wasm
+*.wasm
 *.db
 *.a
 *.o
