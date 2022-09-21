@@ -9,10 +9,13 @@
 #include <string.h>
 #include <time.h>
 #include <signal.h>
-#include <spawn.h>
 #include <fcntl.h>
-#include <sys/wait.h>
 #include <sys/stat.h>
+
+#ifndef __wasi__
+#include <spawn.h>
+#include <sys/wait.h>
+#endif
 
 #ifdef _WIN32
 #define USE_MMAP 0

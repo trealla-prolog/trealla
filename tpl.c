@@ -159,8 +159,14 @@ WIZER_INIT(init_func);
 
 char **g_envp = NULL;
 
+#ifdef __wasi__
+int main(int ac, char *av[])
+{
+	char **envp = NULL;
+#else
 int main(int ac, char *av[], char * envp[])
 {
+#endif
 	setlocale(LC_ALL, "");
 	setlocale(LC_NUMERIC, "C");
 	g_envp = envp;
