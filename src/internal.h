@@ -348,7 +348,7 @@ struct cell_ {
 		uint8_t val_uint8;
 		uint16_t val_uint16;
 		uint32_t val_uint32;
-		uint32_t val_uint64;
+		uint64_t val_uint64;
 		float val_float32;
 
 		// Proper types...
