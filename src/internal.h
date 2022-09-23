@@ -894,14 +894,14 @@ inline static int fake_strcmp(const void *ptr1, const void *ptr2, const void *pa
 typedef struct {
 	char *buf, *dst;
 	size_t size;
-} sb;
+} string_buffer_;
 
-#define SB(pr) sb pr##_buf;										\
+#define SB(pr) string_buffer_ pr##_buf;										\
 	pr##_buf.size = 0;											\
 	pr##_buf.buf = NULL;										\
 	pr##_buf.dst = pr##_buf.buf;
 
-#define SB_alloc(pr,len) sb pr##_buf; 							\
+#define SB_alloc(pr,len) string_buffer_ pr##_buf; 							\
 	pr##_buf.size = len;										\
 	pr##_buf.buf = malloc((len)+1);								\
 	ensure(pr##_buf.buf);										\
