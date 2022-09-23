@@ -800,15 +800,15 @@ static bool fn_process_create_3(query *q)
 
 					if (is_structure(c) && (c->arity == 2) && (c->val_off == g_eq_s)) {
 						cell *p1 = c + 1, *p2 = c + 2;
-						ASTRING(pr);
+						SB(pr);
 
 						if (is_atom(p1) && is_atom(p2)) {
-							ASTRING_sprintf(pr, "%s=%s", C_STR(q, p1), C_STR(q, p2));
+							SB_sprintf(pr, "%s=%s", C_STR(q, p1), C_STR(q, p2));
 						} else if (is_atom(p1) && is_smallint(p2)) {
-							ASTRING_sprintf(pr, "%s=%d", C_STR(q, p1), (int)get_smallint(p2));
+							SB_sprintf(pr, "%s=%d", C_STR(q, p1), (int)get_smallint(p2));
 						}
 
-						environments[envs++] = ASTRING_cstr(pr);
+						environments[envs++] = SB_cstr(pr);
 					}
 
 					name = LIST_TAIL(name);
@@ -826,15 +826,15 @@ static bool fn_process_create_3(query *q)
 
 					if (is_structure(c) && (c->arity == 2) && (c->val_off == g_eq_s)) {
 						cell *p1 = c + 1, *p2 = c + 2;
-						ASTRING(pr);
+						SB(pr);
 
 						if (is_atom(p1) && is_atom(p2)) {
-							ASTRING_sprintf(pr, "%s=%s", C_STR(q, p1), C_STR(q, p2));
+							SB_sprintf(pr, "%s=%s", C_STR(q, p1), C_STR(q, p2));
 						} else if (is_atom(p1) && is_smallint(p2)) {
-							ASTRING_sprintf(pr, "%s=%d", C_STR(q, p1), (int)get_smallint(p2));
+							SB_sprintf(pr, "%s=%d", C_STR(q, p1), (int)get_smallint(p2));
 						}
 
-						environments[envs++] = ASTRING_cstr(pr);
+						environments[envs++] = SB_cstr(pr);
 					}
 
 					name = LIST_TAIL(name);

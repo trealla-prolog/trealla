@@ -528,10 +528,10 @@ prolog *pl_create()
 			check_error(src, pl_destroy(pl));
 			memcpy(src, lib->start, len);
 			src[len] = '\0';
-			ASTRING(s1);
-			ASTRING_sprintf(s1, "library/%s", lib->name);
-			module *m = load_text(pl->user_m, src, ASTRING_cstr(s1));
-			ASTRING_free(s1);
+			SB(s1);
+			SB_sprintf(s1, "library/%s", lib->name);
+			module *m = load_text(pl->user_m, src, SB_cstr(s1));
+			SB_free(s1);
 			free(src);
 			check_error(m, pl_destroy(pl));
 		}

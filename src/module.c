@@ -1314,13 +1314,13 @@ module *load_text(module *m, const char *src, const char *filename)
 		if (p->run_init) {
 			p->consulting = false;
 			p->command = true;
-			ASTRING(src);
-			ASTRING_sprintf(src, "forall(%s:retract((:- initialization(__G_))), (__G_ -> true ; format('Warning: call(~w) failed~n', [__G_])))", p->m->name);
+			SB(src);
+			SB_sprintf(src, "forall(%s:retract((:- initialization(__G_))), (__G_ -> true ; format('Warning: call(~w) failed~n', [__G_])))", p->m->name);
 
-			if (run(p, ASTRING_cstr(src), false))
+			if (run(p, SB_cstr(src), false))
 				p->m->pl->status = false;
 
-			ASTRING_free(src);
+			SB_free(src);
 		}
 
 		p->command = p->directive = false;
@@ -1449,13 +1449,13 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including)
 		if (p->run_init) {
 			p->command = true;
 			p->consulting = false;
-			ASTRING(src);
-			ASTRING_sprintf(src, "forall(%s:retract((:- initialization(__G_))), (__G_ -> true ; format('Warning: call(~w) failed~n', [__G_])))", p->m->name);
+			SB(src);
+			SB_sprintf(src, "forall(%s:retract((:- initialization(__G_))), (__G_ -> true ; format('Warning: call(~w) failed~n', [__G_])))", p->m->name);
 
-			if (run(p, ASTRING_cstr(src), false))
+			if (run(p, SB_cstr(src), false))
 				p->m->pl->status = false;
 
-			ASTRING_free(src);
+			SB_free(src);
 		}
 
 		p->command = p->directive = false;

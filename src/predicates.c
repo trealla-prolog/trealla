@@ -548,7 +548,7 @@ static bool fn_iso_atom_chars_2(query *q)
 	}
 
 	if (!is_variable(p2) && is_variable(p1)) {
-		ASTRING_alloc(pr,256);
+		SB_alloc(pr,256);
 		LIST_HANDLER(p2);
 
 		while (is_list(p2)) {
@@ -557,7 +557,7 @@ static bool fn_iso_atom_chars_2(query *q)
 			head = deref(q, head, p2_ctx);
 
 			const char *src = C_STR(q, head);
-			ASTRING_strcatn(pr, src, len_char_utf8(src));
+			SB_strcatn(pr, src, len_char_utf8(src));
 
 			cell *tail = LIST_TAIL(p2);
 			p2 = deref(q, tail, p2_ctx);
@@ -568,8 +568,8 @@ static bool fn_iso_atom_chars_2(query *q)
 			return throw_error(q, p2, p2_ctx, "type_error", "list");
 
 		cell tmp;
-		check_heap_error(make_cstring(&tmp, ASTRING_cstr(pr)), ASTRING_free(pr));
-		ASTRING_free(pr);
+		check_heap_error(make_cstring(&tmp, SB_cstr(pr)), SB_free(pr));
+		SB_free(pr);
 		bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		return ok;
@@ -817,7 +817,7 @@ static bool fn_iso_atom_codes_2(query *q)
 	}
 
 	if (!is_variable(p2) && is_variable(p1)) {
-		ASTRING_alloc(pr,256);
+		SB_alloc(pr,256);
 		LIST_HANDLER(p2);
 
 		while (is_list(p2)) {
@@ -839,7 +839,7 @@ static bool fn_iso_atom_codes_2(query *q)
 			} else
 				len = put_char_utf8(ch, val);
 
-			ASTRING_strcatn(pr, ch, len);
+			SB_strcatn(pr, ch, len);
 			cell *tail = LIST_TAIL(p2);
 			p2 = deref(q, tail, p2_ctx);
 			p2_ctx = q->latest_ctx;
@@ -850,8 +850,8 @@ static bool fn_iso_atom_codes_2(query *q)
 			return throw_error(q, p2, p2_ctx, "type_error", "list");
 
 		cell tmp;
-		check_heap_error(make_cstringn(&tmp, ASTRING_cstr(pr), ASTRING_strlen(pr)), ASTRING_free(pr));
-		ASTRING_free(pr);
+		check_heap_error(make_cstringn(&tmp, SB_cstr(pr), SB_strlen(pr)), SB_free(pr));
+		SB_free(pr);
 		bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		return ok;
@@ -937,7 +937,7 @@ static bool fn_string_codes_2(query *q)
 	}
 
 	if (!is_variable(p2) && is_variable(p1)) {
-		ASTRING_alloc(pr,256);
+		SB_alloc(pr,256);
 		LIST_HANDLER(p2);
 
 		while (is_list(p2)) {
@@ -959,7 +959,7 @@ static bool fn_string_codes_2(query *q)
 			} else
 				len = put_char_utf8(ch, val);
 
-			ASTRING_strcatn(pr, ch, len);
+			SB_strcatn(pr, ch, len);
 			cell *tail = LIST_TAIL(p2);
 			p2 = deref(q, tail, p2_ctx);
 			p2_ctx = q->latest_ctx;
@@ -970,8 +970,8 @@ static bool fn_string_codes_2(query *q)
 			return throw_error(q, p2, p2_ctx, "type_error", "list");
 
 		cell tmp;
-		check_heap_error(make_cstringn(&tmp, ASTRING_cstr(pr), ASTRING_strlen(pr)), ASTRING_free(pr));
-		ASTRING_free(pr);
+		check_heap_error(make_cstringn(&tmp, SB_cstr(pr), SB_strlen(pr)), SB_free(pr));
+		SB_free(pr);
 		bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		return ok;
@@ -1048,7 +1048,7 @@ static bool fn_hex_bytes_2(query *q)
 	}
 
 	if (!is_variable(p2) && is_variable(p1)) {
-		ASTRING_alloc(pr,256);
+		SB_alloc(pr,256);
 		LIST_HANDLER(p2);
 
 		while (is_list(p2)) {
@@ -1063,7 +1063,7 @@ static bool fn_hex_bytes_2(query *q)
 
 			char ch[10];
 			snprintf(ch, sizeof(ch), "%02X", (unsigned)val);
-			ASTRING_strcat(pr, ch);
+			SB_strcat(pr, ch);
 			cell *tail = LIST_TAIL(p2);
 			p2 = deref(q, tail, p2_ctx);
 			p2_ctx = q->latest_ctx;
@@ -1074,8 +1074,8 @@ static bool fn_hex_bytes_2(query *q)
 			return throw_error(q, p2, p2_ctx, "type_error", "list");
 
 		cell tmp;
-		check_heap_error(make_string(&tmp, ASTRING_cstr(pr)), ASTRING_free(pr));
-		ASTRING_free(pr);
+		check_heap_error(make_string(&tmp, SB_cstr(pr)), SB_free(pr));
+		SB_free(pr);
 		bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		return ok;
@@ -1518,12 +1518,12 @@ static bool fn_iso_atom_concat_3(query *q)
 		if (!is_iso_atom(p2))
 			return throw_error(q, p2, p2_ctx, "type_error", "atom");
 
-		ASTRING_alloc(pr,256);
-		ASTRING_strcatn(pr, C_STR(q, p1), C_STRLEN(q, p1));
-		ASTRING_strcatn(pr, C_STR(q, p2), C_STRLEN(q, p2));
+		SB_alloc(pr,256);
+		SB_strcatn(pr, C_STR(q, p1), C_STRLEN(q, p1));
+		SB_strcatn(pr, C_STR(q, p2), C_STRLEN(q, p2));
 		cell tmp;
-		check_heap_error(make_cstring(&tmp, ASTRING_cstr(pr)), ASTRING_free(pr));
-		ASTRING_free(pr);
+		check_heap_error(make_cstring(&tmp, SB_cstr(pr)), SB_free(pr));
+		SB_free(pr);
 		bool ok = unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		return ok;
@@ -5891,12 +5891,12 @@ static bool fn_atomic_concat_3(query *q)
 	src1 = tmpbuf1;
 	len2 = print_term_to_buf(q, tmpbuf2, sizeof(tmpbuf2), p2, p2_ctx, 1, false, 0);
 	src2 = tmpbuf2;
-	ASTRING_alloc(pr, len1+len2);
-	ASTRING_strcatn(pr, src1, len1);
-	ASTRING_strcatn(pr, src2, len2);
+	SB_alloc(pr, len1+len2);
+	SB_strcatn(pr, src1, len1);
+	SB_strcatn(pr, src2, len2);
 	cell tmp;
-	check_heap_error(make_cstringn(&tmp, ASTRING_cstr(pr), ASTRING_strlen(pr)), ASTRING_free(pr));
-	ASTRING_free(pr);
+	check_heap_error(make_cstringn(&tmp, SB_cstr(pr), SB_strlen(pr)), SB_free(pr));
+	SB_free(pr);
 	bool ok = unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 	unshare_cell(&tmp);
 	return ok;
@@ -5908,7 +5908,7 @@ static bool fn_atomic_list_concat_3(query *q)
 	GET_NEXT_ARG(p2,atomic);
 	GET_NEXT_ARG(p3,atom_or_var);
 	LIST_HANDLER(p1);
-	ASTRING_alloc(pr,256);
+	SB_alloc(pr,256);
 
 	while (is_list(p1)) {
 		cell *h = LIST_HEAD(p1);
@@ -5923,7 +5923,7 @@ static bool fn_atomic_list_concat_3(query *q)
 		q->parens = true;
 		char *dst = print_term_to_strbuf(q, h, q->latest_ctx, 1);
 		q->parens = false;
-		ASTRING_strcat(pr, dst);
+		SB_strcat(pr, dst);
 		free(dst);
 
 		p1 = LIST_TAIL(p1);
@@ -5934,7 +5934,7 @@ static bool fn_atomic_list_concat_3(query *q)
 			q->parens = true;
 			dst = print_term_to_strbuf(q, p2, p2_ctx, 1);
 			q->parens = false;
-			ASTRING_strcat(pr, dst);
+			SB_strcat(pr, dst);
 			free(dst);
 		}
 	}
@@ -5943,8 +5943,8 @@ static bool fn_atomic_list_concat_3(query *q)
 		return throw_error(q, p1, p1_ctx, "instantiation_error", "atomic_list_concat/3");
 
 	cell tmp;
-	check_heap_error(make_cstring(&tmp, ASTRING_cstr(pr)), ASTRING_free(pr));
-	ASTRING_free(pr);
+	check_heap_error(make_cstring(&tmp, SB_cstr(pr)), SB_free(pr));
+	SB_free(pr);
 	bool ok = unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 	unshare_cell(&tmp);
 	return ok;
@@ -5963,15 +5963,15 @@ static bool fn_replace_4(query *q)
 	const char *s2 = C_STR(q, p3);
 	size_t s1len = C_STRLEN(q, p2);
 	size_t s2len = C_STRLEN(q, p3);
-	ASTRING_alloc(pr, dstlen);
+	SB_alloc(pr, dstlen);
 
 	while (srclen > 0) {
 		if (!strncmp(src, s1, s1len)) {
-			ASTRING_strcatn(pr, s2, s2len);
+			SB_strcatn(pr, s2, s2len);
 			src += s1len;
 			srclen -= s1len;
 		} else {
-			ASTRING_strcatn(pr, src, 1);
+			SB_strcatn(pr, src, 1);
 			src++;
 			srclen--;
 		}
@@ -5979,12 +5979,12 @@ static bool fn_replace_4(query *q)
 
 	cell tmp;
 
-	if (ASTRING_strlen(pr))
-		check_heap_error(make_stringn(&tmp, ASTRING_cstr(pr), ASTRING_strlen(pr)), ASTRING_free(pr));
+	if (SB_strlen(pr))
+		check_heap_error(make_stringn(&tmp, SB_cstr(pr), SB_strlen(pr)), SB_free(pr));
 	else
 		make_atom(&tmp, g_nil_s);
 
-	ASTRING_free(pr);
+	SB_free(pr);
 	bool ok = unify(q, p4, p4_ctx, &tmp, q->st.curr_frame);
 	unshare_cell(&tmp);
 	return ok;
@@ -6925,10 +6925,10 @@ static bool fn_use_module_1(query *q)
 			check_heap_error(src);
 			memcpy(src, lib->start, *lib->len);
 			src[*lib->len] = '\0';
-			ASTRING(s1);
-			ASTRING_sprintf(s1, "library%c%s", PATH_SEP_CHAR, lib->name);
-			m = load_text(q->st.m, src, ASTRING_cstr(s1));
-			ASTRING_free(s1);
+			SB(s1);
+			SB_sprintf(s1, "library%c%s", PATH_SEP_CHAR, lib->name);
+			m = load_text(q->st.m, src, SB_cstr(s1));
+			SB_free(s1);
 			free(src);
 
 			if (m != q->st.m)
@@ -6976,10 +6976,10 @@ static bool fn_use_module_1(query *q)
 			check_heap_error(src);
 			memcpy(src, lib->start, *lib->len);
 			src[*lib->len] = '\0';
-			ASTRING(s1);
-			ASTRING_sprintf(s1, "library/%s", lib->name);
-			m = load_text(q->st.m, src, ASTRING_cstr(s1));
-			ASTRING_free(s1);
+			SB(s1);
+			SB_sprintf(s1, "library/%s", lib->name);
+			m = load_text(q->st.m, src, SB_cstr(s1));
+			SB_free(s1);
 			free(src);
 
 			if (m != q->st.m)
@@ -7232,49 +7232,49 @@ static void load_properties(module *m)
 		return;
 
 	m->loaded_properties = true;
-	ASTRING_alloc(pr, 1024*64);
+	SB_alloc(pr, 1024*64);
 	char tmpbuf[1024];
 
-	format_property(m, tmpbuf, sizeof(tmpbuf), "!", 0, "control_construct"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "true", 0, "control_construct"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "fail", 0, "control_construct"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), ",", 2, "control_construct"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), ";", 2, "control_construct"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "->", 2, "control_construct"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "*->", 2, "control_construct"); ASTRING_strcat(pr, tmpbuf);
-	//format_property(m, tmpbuf, sizeof(tmpbuf), "call", 1, "control_construct"); ASTRING_strcat(pr, tmpbuf);
-	//format_property(m, tmpbuf, sizeof(tmpbuf), "bagof", 3, "control_construct"); ASTRING_strcat(pr, tmpbuf);
-	//format_property(m, tmpbuf, sizeof(tmpbuf), "setof", 3, "control_construct"); ASTRING_strcat(pr, tmpbuf);
-	//format_property(m, tmpbuf, sizeof(tmpbuf), "throw", 1, "control_construct"); ASTRING_strcat(pr, tmpbuf);
-	//format_property(m, tmpbuf, sizeof(tmpbuf), "findall", 3, "control_construct"); ASTRING_strcat(pr, tmpbuf);
-	//format_property(m, tmpbuf, sizeof(tmpbuf), "findall", 4, "control_construct"); ASTRING_strcat(pr, tmpbuf);
-	//format_property(m, tmpbuf, sizeof(tmpbuf), "forall", 2, "control_construct"); ASTRING_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "!", 0, "control_construct"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "true", 0, "control_construct"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "fail", 0, "control_construct"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), ",", 2, "control_construct"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), ";", 2, "control_construct"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "->", 2, "control_construct"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "*->", 2, "control_construct"); SB_strcat(pr, tmpbuf);
+	//format_property(m, tmpbuf, sizeof(tmpbuf), "call", 1, "control_construct"); SB_strcat(pr, tmpbuf);
+	//format_property(m, tmpbuf, sizeof(tmpbuf), "bagof", 3, "control_construct"); SB_strcat(pr, tmpbuf);
+	//format_property(m, tmpbuf, sizeof(tmpbuf), "setof", 3, "control_construct"); SB_strcat(pr, tmpbuf);
+	//format_property(m, tmpbuf, sizeof(tmpbuf), "throw", 1, "control_construct"); SB_strcat(pr, tmpbuf);
+	//format_property(m, tmpbuf, sizeof(tmpbuf), "findall", 3, "control_construct"); SB_strcat(pr, tmpbuf);
+	//format_property(m, tmpbuf, sizeof(tmpbuf), "findall", 4, "control_construct"); SB_strcat(pr, tmpbuf);
+	//format_property(m, tmpbuf, sizeof(tmpbuf), "forall", 2, "control_construct"); SB_strcat(pr, tmpbuf);
 
-	//format_property(m, tmpbuf, sizeof(tmpbuf), "catch", 3, "meta_predicate(catch(0,?,0))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), ",", 2, "meta_predicate((0,0))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), ";", 2, "meta_predicate((0;0))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "->", 2, "meta_predicate((0->0))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "*->", 2, "meta_predicate((0*->0))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "if", 3, "meta_predicate(if(0,0,0))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "once", 1, "meta_predicate(once(0))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "ignore", 1, "meta_predicate(ignore(0))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "call", 1, "meta_predicate(call(0))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "findall", 3, "meta_predicate(findall(?,0,-))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "|", 2, "meta_predicate((:|+))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "time", 1, "meta_predicate(time(0))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "call_nth", 2, "meta_predicate(call_nth(0,?))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "asserta", 1, "meta_predicate(asserta(:))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "asserta", 2, "meta_predicate(asserta(:,-))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "assertz", 1, "meta_predicate(assertz(:))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "assertz", 2, "meta_predicate(assertz(:,-))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "retract", 1, "meta_predicate(retract(:))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "retract", 2, "meta_predicate(retract(:,?))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "retractall", 1, "meta_predicate(retractall(:))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "current_predicate", 1, "meta_predicate(current_predicate(:))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "predicate_property", 1, "meta_predicate(predicate_property(:,?))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "abolish", 1, "meta_predicate(abolish(:))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "clause", 2, "meta_predicate(clause(:,?))"); ASTRING_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "clause", 3, "meta_predicate(clause(:,?,?))"); ASTRING_strcat(pr, tmpbuf);
+	//format_property(m, tmpbuf, sizeof(tmpbuf), "catch", 3, "meta_predicate(catch(0,?,0))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), ",", 2, "meta_predicate((0,0))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), ";", 2, "meta_predicate((0;0))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "->", 2, "meta_predicate((0->0))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "*->", 2, "meta_predicate((0*->0))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "if", 3, "meta_predicate(if(0,0,0))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "once", 1, "meta_predicate(once(0))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "ignore", 1, "meta_predicate(ignore(0))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "call", 1, "meta_predicate(call(0))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "findall", 3, "meta_predicate(findall(?,0,-))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "|", 2, "meta_predicate((:|+))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "time", 1, "meta_predicate(time(0))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "call_nth", 2, "meta_predicate(call_nth(0,?))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "asserta", 1, "meta_predicate(asserta(:))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "asserta", 2, "meta_predicate(asserta(:,-))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "assertz", 1, "meta_predicate(assertz(:))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "assertz", 2, "meta_predicate(assertz(:,-))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "retract", 1, "meta_predicate(retract(:))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "retract", 2, "meta_predicate(retract(:,?))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "retractall", 1, "meta_predicate(retractall(:))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "current_predicate", 1, "meta_predicate(current_predicate(:))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "predicate_property", 1, "meta_predicate(predicate_property(:,?))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "abolish", 1, "meta_predicate(abolish(:))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "clause", 2, "meta_predicate(clause(:,?))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "clause", 3, "meta_predicate(clause(:,?,?))"); SB_strcat(pr, tmpbuf);
 
 	for (int i = 2; i <= 7; i++) {
 		char metabuf[1024];
@@ -7286,7 +7286,7 @@ static void load_properties(module *m)
 
 
 		snprintf(dst2, sizeof(metabuf)-(dst2-metabuf), "))");
-		format_property(m, tmpbuf, sizeof(tmpbuf), "call", i, metabuf); ASTRING_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), "call", i, metabuf); SB_strcat(pr, tmpbuf);
 	}
 
 	for (int i = 2; i <= 7; i++) {
@@ -7299,69 +7299,69 @@ static void load_properties(module *m)
 
 
 		snprintf(dst2, sizeof(metabuf)-(dst2-metabuf), "))");
-		format_property(m, tmpbuf, sizeof(tmpbuf), "task", i, metabuf); ASTRING_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), "task", i, metabuf); SB_strcat(pr, tmpbuf);
 	}
 
 	for (const builtins *ptr = g_iso_bifs; ptr->name; ptr++) {
 		map_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		if (ptr->evaluable) continue;
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); ASTRING_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); ASTRING_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); ASTRING_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); SB_strcat(pr, tmpbuf);
  	}
 
 	for (const builtins *ptr = g_files_bifs; ptr->name; ptr++) {
 		map_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		if (ptr->evaluable) continue;
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); ASTRING_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); ASTRING_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); ASTRING_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); SB_strcat(pr, tmpbuf);
  	}
 
 	for (const builtins *ptr = g_evaluable_bifs; ptr->name; ptr++) {
 		map_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		if (ptr->evaluable) continue;
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); ASTRING_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); ASTRING_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); ASTRING_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); SB_strcat(pr, tmpbuf);
 	}
 
 	for (const builtins *ptr = g_other_bifs; ptr->name; ptr++) {
 		map_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		if (ptr->evaluable) continue;
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); ASTRING_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); ASTRING_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); ASTRING_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); SB_strcat(pr, tmpbuf);
 	}
 
 	for (const builtins *ptr = g_ffi_bifs; ptr->name; ptr++) {
 		map_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		if (ptr->evaluable) continue;
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); ASTRING_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); ASTRING_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); ASTRING_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); SB_strcat(pr, tmpbuf);
 	}
 
 	for (const builtins *ptr = g_contrib_bifs; ptr->name; ptr++) {
 		map_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		if (ptr->evaluable) continue;
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); ASTRING_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); ASTRING_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); ASTRING_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); SB_strcat(pr, tmpbuf);
 	}
 
 	parser *p = create_parser(m);
-	p->srcptr = ASTRING_cstr(pr);
+	p->srcptr = SB_cstr(pr);
 	p->consulting = true;
 	tokenize(p, false, false);
 	destroy_parser(p);
-	ASTRING_free(pr);
+	SB_free(pr);
 }
 
 static void load_flags(query *q)
@@ -7374,29 +7374,29 @@ static void load_flags(query *q)
 		return;
 
 	module *m = q->st.m;
-	ASTRING_alloc(pr, 1024);
+	SB_alloc(pr, 1024);
 
-	ASTRING_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "double_quotes", m->flags.double_quote_atom?"atom":m->flags.double_quote_chars?"chars":m->flags.double_quote_codes?"codes":"???");
-	ASTRING_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "char_conversion", m->flags.char_conversion?"on":"off");
-	ASTRING_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "occurs_check", m->flags.occurs_check==OCCURS_CHECK_TRUE?"true":m->flags.occurs_check==OCCURS_CHECK_FALSE?"false":"error");
-	ASTRING_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "character_escapes", m->flags.character_escapes?"true":"false");
-	ASTRING_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "strict_iso", !m->flags.not_strict_iso?"on":"off");
-	ASTRING_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "debug", m->flags.debug?"on":"off");
-	ASTRING_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "unknown", m->flags.unknown == UNK_ERROR?"error":m->flags.unknown == UNK_WARNING?"warning":m->flags.unknown == UNK_CHANGEABLE?"changeable":"fail");
-	ASTRING_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "encoding", "'UTF-8'");
-	ASTRING_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "unix", "true");
-	ASTRING_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "dialect", "trealla");
-	ASTRING_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "bounded", "false");
-	ASTRING_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "max_arity", MAX_ARITY);
-	ASTRING_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "cpu_count", g_cpu_count);
-	ASTRING_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "integer_rounding_function", "toward_zero");
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "double_quotes", m->flags.double_quote_atom?"atom":m->flags.double_quote_chars?"chars":m->flags.double_quote_codes?"codes":"???");
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "char_conversion", m->flags.char_conversion?"on":"off");
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "occurs_check", m->flags.occurs_check==OCCURS_CHECK_TRUE?"true":m->flags.occurs_check==OCCURS_CHECK_FALSE?"false":"error");
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "character_escapes", m->flags.character_escapes?"true":"false");
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "strict_iso", !m->flags.not_strict_iso?"on":"off");
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "debug", m->flags.debug?"on":"off");
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "unknown", m->flags.unknown == UNK_ERROR?"error":m->flags.unknown == UNK_WARNING?"warning":m->flags.unknown == UNK_CHANGEABLE?"changeable":"fail");
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "encoding", "'UTF-8'");
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "unix", "true");
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "dialect", "trealla");
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "bounded", "false");
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "max_arity", MAX_ARITY);
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "cpu_count", g_cpu_count);
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "integer_rounding_function", "toward_zero");
 
 	parser *p = create_parser(m);
-	p->srcptr = ASTRING_cstr(pr);
+	p->srcptr = SB_cstr(pr);
 	p->consulting = true;
 	tokenize(p, false, false);
 	destroy_parser(p);
-	ASTRING_free(pr);
+	SB_free(pr);
 }
 
 static void load_ops(query *q)
@@ -7412,7 +7412,7 @@ static void load_ops(query *q)
 		return;
 
 	q->st.m->loaded_ops = true;
-	ASTRING_alloc(pr, 1024*8);
+	SB_alloc(pr, 1024*8);
 	miter *iter = map_first(q->st.m->ops);
 	op_table *ptr;
 
@@ -7451,7 +7451,7 @@ static void load_ops(query *q)
 		else
 			snprintf(tmpbuf, sizeof(tmpbuf), "'$current_op'( (%s), %s, %u).\n", name, specifier, ptr->priority);
 
-		ASTRING_strcat(pr, tmpbuf);
+		SB_strcat(pr, tmpbuf);
 	}
 
 	map_done(iter);
@@ -7483,17 +7483,17 @@ static void load_ops(query *q)
 
 		snprintf(tmpbuf, sizeof(tmpbuf), "'$current_op'('%s', %s, %u).\n",
 			name, specifier, ptr->priority);
-		ASTRING_strcat(pr, tmpbuf);
+		SB_strcat(pr, tmpbuf);
 	}
 
-	//printf("%s", ASTRING_cstr(pr));
+	//printf("%s", SB_cstr(pr));
 
 	parser *p = create_parser(q->st.m);
-	p->srcptr = ASTRING_cstr(pr);
+	p->srcptr = SB_cstr(pr);
 	p->consulting = true;
 	tokenize(p, false, false);
 	destroy_parser(p);
-	ASTRING_free(pr);
+	SB_free(pr);
 }
 
 builtins g_iso_bifs[] =
