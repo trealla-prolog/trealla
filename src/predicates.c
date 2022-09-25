@@ -2158,10 +2158,6 @@ bool do_retract(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract
 	retract_from_db(dbe);
 	bool last_match = (is_retract == DO_RETRACT) && !is_next_key(q);
 	stash_me(q, &dbe->cl, last_match);
-
-	if (!q->st.m->loading && dbe->owner->is_persist)
-		db_log(q, dbe, LOG_ERASE);
-
 	return true;
 }
 
@@ -2230,12 +2226,8 @@ static bool do_abolish(query *q, cell *c_orig, cell *c, bool hard)
 	if (!pr->is_dynamic)
 		return throw_error(q, c_orig, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
-	for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
-		if (!q->st.m->loading && dbe->owner->is_persist && !dbe->cl.dgen_erased)
-			db_log(q, dbe, LOG_ERASE);
-
+	for (db_entry *dbe = pr->head; dbe; dbe = dbe->next)
 		retract_from_db(dbe);
-	}
 
 	purge_predicate_dirty_list(q, pr);
 	map_destroy(pr->idx2);
@@ -2458,10 +2450,6 @@ static bool fn_iso_asserta_1(query *q)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify_static_procedure");
 
 	p->cl->cidx = 0;
-
-	if (!q->st.m->loading && dbe->owner->is_persist)
-		db_log(q, dbe, LOG_ASSERTA);
-
 	return true;
 }
 
@@ -2521,10 +2509,6 @@ static bool fn_iso_assertz_1(query *q)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify_static_procedure");
 
 	p->cl->cidx = 0;
-
-	if (!q->st.m->loading && dbe->owner->is_persist)
-		db_log(q, dbe, LOG_ASSERTZ);
-
 	return true;
 }
 
@@ -3572,10 +3556,6 @@ static bool fn_erase_1(query *q)
 	uuid_from_buf(C_STR(q, p1), &u);
 	db_entry *dbe = erase_from_db(q->st.m, &u);
 	check_heap_error(dbe);
-
-	if (!q->st.m->loading && dbe->owner->is_persist)
-		db_log(q, dbe, LOG_ERASE);
-
 	return true;
 }
 
@@ -3738,9 +3718,6 @@ static bool do_asserta_2(query *q)
 		unshare_cell(&tmp2);
 	}
 
-	if (!q->st.m->loading && dbe->owner->is_persist)
-		db_log(q, dbe, LOG_ASSERTA);
-
 	return true;
 }
 
@@ -3839,9 +3816,6 @@ static bool do_assertz_2(query *q)
 		unshare_cell(&tmp2);
 	}
 
-	if (!q->st.m->loading && dbe->owner->is_persist)
-		db_log(q, dbe, LOG_ASSERTZ);
-
 	return true;
 }
 
@@ -3873,9 +3847,6 @@ static void save_db(FILE *fp, query *q, int logging)
 
 	for (predicate *pr = q->st.m->head; pr; pr = pr->next) {
 		if (pr->is_prebuilt)
-			continue;
-
-		if (logging && !pr->is_persist)
 			continue;
 
 		const char *src = C_STR(q, &pr->key);
@@ -6062,12 +6033,6 @@ static bool fn_sys_legacy_predicate_property_2(query *q)
 			return true;
 	}
 
-	if (pr && pr->is_persist) {
-		make_atom(&tmp, index_from_pool(q->pl, "persist"));
-		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame) == true)
-			return true;
-	}
-
 	if (pr && pr->is_public) {
 		make_atom(&tmp, index_from_pool(q->pl, "public"));
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame) == true)
@@ -6154,88 +6119,6 @@ static bool fn_char_type_2(query *q)
 		return (ch == '.') || (ch == '!') || (ch == '?');
 
 	return false;
-}
-
-static void restore_db(module *m, FILE *fp)
-{
-	parser *p = create_parser(m);
-	query *q = create_query(m, false);
-	ensure(q);
-	p->one_shot = true;
-	p->fp = fp;
-	m->loading = 1;
-
-	for (;;) {
-		if (getline(&p->save_line, &p->n_line, p->fp) == -1)
-			break;
-
-		p->srcptr = p->save_line;
-		tokenize(p, false, false);
-		xref_rule(p->m, p->cl, NULL);
-		execute(q, p->cl->cells, p->cl->allocated_cells);
-		clear_rule(p->cl);
-	}
-
-	m->loading = 0;
-	destroy_query(q);
-	destroy_parser(p);
-}
-
-void do_db_load(module *m)
-{
-	if (!m->use_persist)
-		return;
-
-	char filename[1024*4];
-	snprintf(filename, sizeof(filename), "%s.db", m->name);
-	char filename2[1024*4];
-	snprintf(filename2, sizeof(filename2), "%s.TMP", m->name);
-	struct stat st;
-
-	if (!stat(filename2, &st) && !stat(filename, &st))
-		remove(filename2);
-	else if (!stat(filename2, &st))
-		rename(filename2, filename);
-
-	if (!stat(filename, &st)) {
-		FILE *fp = fopen(filename, "rb");
-		ensure(fp);
-		restore_db(m, fp);
-		fclose(fp);
-	}
-
-	m->fp = fopen(filename, "ab");
-	ensure(m->fp);
-}
-
-static bool fn_sys_db_load_0(query *q)
-{
-	do_db_load(q->st.m);
-	return true;
-}
-
-static bool fn_sys_db_save_0(query *q)
-{
-	if (!q->st.m->fp)
-		return false;
-
-	if (strlen(q->st.m->name) >= 1024*4-4)
-		return false;
-
-	fclose(q->st.m->fp);
-	char filename[1024*4];
-	snprintf(filename, sizeof(filename), "%s.db", q->st.m->name);
-	char filename2[1024*4];
-	snprintf(filename2, sizeof(filename2), "%s.TMP", q->st.m->name);
-	FILE *fp = fopen(filename2, "wb");
-	check_heap_error(fp);
-	save_db(q->st.m->fp, q, 1);
-	fclose(fp);
-	remove(filename);
-	rename(filename2, filename);
-	q->st.m->fp = fopen(filename, "ab");
-	check_heap_error(q->st.m->fp);
-	return true;
 }
 
 static bool fn_abolish_2(query *q)
@@ -6900,9 +6783,6 @@ static bool fn_use_module_1(query *q)
 		module *m;
 
 		if ((m = find_module(q->pl, name)) != NULL) {
-			if (!m->fp)
-				do_db_load(m);
-
 			if (m != q->st.m)
 				q->st.m->used[q->st.m->idx_used++] = m;
 
@@ -6932,9 +6812,6 @@ static bool fn_use_module_1(query *q)
 			free(src);
 
 			if (m != q->st.m)
-				do_db_load(m);
-
-			if (m != q->st.m)
 				q->st.m->used[q->st.m->idx_used++] = m;
 
 			return true;
@@ -6951,9 +6828,6 @@ static bool fn_use_module_1(query *q)
 		module *m;
 
 		if ((m = find_module(q->pl, name)) != NULL) {
-			if (!m->fp)
-				do_db_load(m);
-
 			if (m != q->st.m)
 				q->st.m->used[q->st.m->idx_used++] = m;
 
@@ -6981,9 +6855,6 @@ static bool fn_use_module_1(query *q)
 			m = load_text(q->st.m, src, SB_cstr(s1));
 			SB_free(s1);
 			free(src);
-
-			if (m != q->st.m)
-				do_db_load(m);
 
 			if (m != q->st.m)
 				q->st.m->used[q->st.m->idx_used++] = m;
@@ -7603,15 +7474,6 @@ builtins g_other_bifs[] =
 	{"delay", 1, fn_delay_1, "+ms", false, false, BLAH},
 	{"shell", 1, fn_shell_1, "+atom", false, false, BLAH},
 	{"shell", 2, fn_shell_2, "+atom,-integer", false, false, BLAH},
-
-#	// Used for database log...
-
-	{"$a_", 2, fn_sys_asserta_2, "+term,+ref", false, false, BLAH},
-	{"$z_", 2, fn_sys_assertz_2, "+term,+ref", false, false, BLAH},
-	{"$e_", 1, fn_erase_1, "+ref", false, false, BLAH},
-	{"$db_load", 0, fn_sys_db_load_0, NULL, false, false, BLAH},
-	{"$db_save", 0, fn_sys_db_save_0, NULL, false, false, BLAH},
-
 
 	{"listing", 0, fn_listing_0, NULL, false, false, BLAH},
 	{"listing", 1, fn_listing_1, "+predicateindicator", false, false, BLAH},

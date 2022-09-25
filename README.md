@@ -744,18 +744,6 @@ Run...
 ```
 
 
-Persistence						##EXPERIMENTAL##
-===========
-
-Declaring something dynamic with the *persist* directive:
-
-	:- persist :predindicator
-
-causes that clause to be saved to a per-module database on update
-(asserta/assertz/retract). Maybe this should be an option to
-*dynamic/2*?
-
-
 Concurrency						##EXPERIMENTAL##
 ===========
 
@@ -769,7 +757,7 @@ or a timer)...
 
 Note: *tasklist* limits the number of concurrent tasks to a small
 pool (4?) of tasks active at one time. New tasks are scheduled as prior
-ones complete.
+ones complete (should this be optional?).
 
 An example:
 

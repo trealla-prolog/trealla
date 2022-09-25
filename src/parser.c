@@ -647,9 +647,6 @@ static void directives(parser *p, cell *d)
 			module *m;
 
 			if ((m = find_module(p->m->pl, name)) != NULL) {
-				if (!m->fp)
-					do_db_load(m);
-
 				if (m != p->m)
 					p->m->used[p->m->idx_used++] = m;
 
@@ -681,9 +678,6 @@ static void directives(parser *p, cell *d)
 				m = load_text(p->m, SB_cstr(src), SB_cstr(s1));
 				SB_free(s1);
 				SB_free(src);
-
-				if (m != p->m)
-					do_db_load(m);
 
 				if (m != p->m)
 					p->m->used[p->m->idx_used++] = m;
@@ -821,18 +815,6 @@ static void directives(parser *p, cell *d)
 				}
 
 				set_dynamic_in_db(p->m, C_STR(p, c_name), arity);
-			} else if (!strcmp(dirname, "persist")) {
-				predicate * pr = find_predicate(p->m, &tmp);
-
-				if (pr && !pr->is_dynamic && pr->cnt) {
-					if (DUMP_ERRS || !p->do_read_term)
-						fprintf(stdout, "Error: no permission to modify static predicate %s:%s/%u\n", p->m->name, C_STR(p->m, c_name), arity);
-
-					p->error = true;
-					return;
-				}
-
-				set_persist_in_db(p->m, C_STR(p, c_name), arity);
 			} else if (!strcmp(dirname, "public")) {
 			} else if (!strcmp(dirname, "table") && false) {
 				set_table_in_db(p->m, C_STR(p, c_name), arity);
@@ -916,16 +898,6 @@ static void directives(parser *p, cell *d)
 				}
 
 				set_dynamic_in_db(m, C_STR(p, c_name), arity);
-			} else if (!strcmp(dirname, "persist")) {
-				if (find_predicate(p->m, &tmp)) {
-					if (DUMP_ERRS || !p->do_read_term)
-						fprintf(stdout, "Error: no permission to modify static predicate %s:%s/%u\n", p->m->name, C_STR(p->m, c_name), arity);
-
-					p->error = true;
-					return;
-				}
-
-				set_persist_in_db(m, C_STR(p, c_name), arity);
 			} else {
 				if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
 					fprintf(stdout, "Warning: unknown directive: %s\n", dirname);

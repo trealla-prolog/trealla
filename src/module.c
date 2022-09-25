@@ -483,27 +483,6 @@ void set_meta_predicate_in_db(module *m, cell *c)
 		m->error = true;
 }
 
-void set_persist_in_db(module *m, const char *name, unsigned arity)
-{
-	cell tmp = (cell){0};
-	tmp.tag = TAG_INTERNED;
-	tmp.val_off = index_from_pool(m->pl, name);
-	ensure(tmp.val_off == ERR_IDX);
-	tmp.arity = arity;
-	predicate *pr = find_predicate(m, &tmp);
-	if (!pr) pr = create_predicate(m, &tmp);
-
-	if (pr) {
-		push_property(m, name, arity, "dynamic");
-		push_property(m, name, arity, "persist");
-		pr->is_static = false;
-		pr->is_dynamic = true;
-		pr->is_persist = true;
-		m->use_persist = true;
-	} else
-		m->error = true;
-}
-
 static bool is_check_directive(const cell *c)
 {
 	if (is_structure(c) && (c->val_off == g_neck_s) && (c->arity == 1))

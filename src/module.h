@@ -22,7 +22,6 @@ predicate *search_predicate(module *m, cell *c);
 predicate *create_predicate(module *m, cell *c);
 int index_cmpkey(const void *ptr1, const void *ptr2, const void *param, void *l);
 bool needs_quoting(module *m, const char *src, int srclen);
-void do_db_load(module *m);
 bool unload_file(module *m, const char *filename);
 void xref_rule(module *m, clause *t, predicate *parent);
 void xref_db(module *m);
