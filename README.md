@@ -479,7 +479,6 @@ Non-standard predicates
 	bread/3                     # bread(+stream,?len,-string)
 	bwrite/2                    # bwrite(+stream,+string)
 	replace/4                   # replace(+string,+old,+new,-string)
-	persist/1                   # directive 'persist funct/arity'
 
 	open(stream(Str),...)       # with open/4 reopen a stream
 	open(F,M,S,[mmap(Ls)])      # with open/4 mmap() the file to Ls
