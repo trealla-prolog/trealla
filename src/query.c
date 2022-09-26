@@ -1293,8 +1293,8 @@ void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 				q->run_hook = true;
 			else {
 				add_trail(q, v_ctx, v->var_nbr, NULL, 0);
-				e2->c.attrs = e->c.attrs;
-				e2->c.attrs_ctx = e->c.attrs_ctx;
+				e2->c.attrs = c_attrs;
+				e2->c.attrs_ctx = c_attrs_ctx;
 			}
 		} else
 			q->run_hook = true;
