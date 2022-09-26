@@ -11,7 +11,7 @@ predicate_property(P, A) :-
 	'$load_properties',
 	(	var(A) ->
 		true
-	; 	(	(Controls = [built_in,control_construct,discontiguous,private,static,dynamic,tabled,persist,multifile,meta_predicate(_)],
+	; 	(	(Controls = [built_in,control_construct,discontiguous,private,static,dynamic,tabled,multifile,meta_predicate(_)],
 			memberchk(A, Controls)) ->
 				true
 			;	throw(error(domain_error(predicate_property, A), P))
@@ -703,26 +703,26 @@ put_atts(Var, Attr) :- !,
 
 get_atts(Var, L) :- var(L), !,
 	var(Var),
-	'$get_attributes'(Var, D),
+	('$get_attributes'(Var, D) -> true ; D = []),
 	dict:match(D, _, L).
 
 get_atts(Var, -Attr) :- !,
 	var(Var),
-	'$get_attributes'(Var, D),
+	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
 	\+ dict:get(D, Module, _).
 
 get_atts(Var, +Attr) :- !,
 	var(Var),
-	'$get_attributes'(Var, D),
+	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
 	dict:get(D, Module, Attr).
 
 get_atts(Var, Attr) :- !,
 	var(Var),
-	'$get_attributes'(Var, D),
+	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
 	dict:get(D, Module, Attr).
@@ -774,9 +774,9 @@ print_goals([Goal|Goals]) :-
 	write_term(Goal, [varnames(true)]),
 	(	Goals == [] ->
 		write('')
-	; 	write(',')),
-		print_goals(Goals
-	).
+	; 	write(',')
+	),
+	print_goals(Goals).
 
 dump_attvars([], []) :- !.
 dump_attvars([Var|Vars], [V|Rest]) :-

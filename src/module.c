@@ -35,7 +35,6 @@ static const op_table g_ops[] =
 	//{"op", OP_FX, 1150},
 	//{"table", OP_FX, 1150},
 	//{"dynamic", OP_FX, 1150},
-	//{"persist", OP_FX, 1150},
 	//{"initialization", OP_FX, 1150},
 	//{"set_prolog_flag", OP_FX, 1150},
 	//{"module", OP_FX, 1150},
@@ -479,27 +478,6 @@ void set_meta_predicate_in_db(module *m, cell *c)
 		free(dst);
 		push_property(m, name, arity, tmpbuf);
 		pr->is_meta_predicate = true;
-	} else
-		m->error = true;
-}
-
-void set_persist_in_db(module *m, const char *name, unsigned arity)
-{
-	cell tmp = (cell){0};
-	tmp.tag = TAG_INTERNED;
-	tmp.val_off = index_from_pool(m->pl, name);
-	ensure(tmp.val_off == ERR_IDX);
-	tmp.arity = arity;
-	predicate *pr = find_predicate(m, &tmp);
-	if (!pr) pr = create_predicate(m, &tmp);
-
-	if (pr) {
-		push_property(m, name, arity, "dynamic");
-		push_property(m, name, arity, "persist");
-		pr->is_static = false;
-		pr->is_dynamic = true;
-		pr->is_persist = true;
-		m->use_persist = true;
 	} else
 		m->error = true;
 }
@@ -1314,13 +1292,13 @@ module *load_text(module *m, const char *src, const char *filename)
 		if (p->run_init) {
 			p->consulting = false;
 			p->command = true;
-			ASTRING(src);
-			ASTRING_sprintf(src, "forall(%s:retract((:- initialization(__G_))), (__G_ -> true ; format('Warning: call(~w) failed~n', [__G_])))", p->m->name);
+			SB(src);
+			SB_sprintf(src, "forall(%s:retract((:- initialization(__G_))), (__G_ -> true ; format('Warning: call(~w) failed~n', [__G_])))", p->m->name);
 
-			if (run(p, ASTRING_cstr(src), false))
+			if (run(p, SB_cstr(src), false))
 				p->m->pl->status = false;
 
-			ASTRING_free(src);
+			SB_free(src);
 		}
 
 		p->command = p->directive = false;
@@ -1449,13 +1427,13 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including)
 		if (p->run_init) {
 			p->command = true;
 			p->consulting = false;
-			ASTRING(src);
-			ASTRING_sprintf(src, "forall(%s:retract((:- initialization(__G_))), (__G_ -> true ; format('Warning: call(~w) failed~n', [__G_])))", p->m->name);
+			SB(src);
+			SB_sprintf(src, "forall(%s:retract((:- initialization(__G_))), (__G_ -> true ; format('Warning: call(~w) failed~n', [__G_])))", p->m->name);
 
-			if (run(p, ASTRING_cstr(src), false))
+			if (run(p, SB_cstr(src), false))
 				p->m->pl->status = false;
 
-			ASTRING_free(src);
+			SB_free(src);
 		}
 
 		p->command = p->directive = false;

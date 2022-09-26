@@ -384,8 +384,10 @@ void dump_vars(query *q, bool partial)
 
 	if (any && any_atts)
 		fprintf(stdout, ", ");
-	else if (any_atts)
+	else if (any_atts && !q->is_redo)
 		fprintf(stdout, "   ");
+	else if (any_atts)
+		fprintf(stdout, " ");
 
 	// Print residual goals of attributed variables...
 

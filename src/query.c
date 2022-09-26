@@ -1292,6 +1292,7 @@ void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 			if (v_attrs)
 				q->run_hook = true;
 			else {
+				add_trail(q, v_ctx, v->var_nbr, NULL, 0);
 				e2->c.attrs = e->c.attrs;
 				e2->c.attrs_ctx = e->c.attrs_ctx;
 			}
@@ -1320,7 +1321,7 @@ void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 		frame *vf = GET_FRAME(v_ctx);
 		vf->is_active = true;
 
-		if (c_ctx > q->st.curr_frame)
+		if (c_ctx >= q->st.curr_frame)
 			f->is_active = true;
 	} else if (!is_temporary(c))
 		f->is_active = true;
@@ -1753,7 +1754,7 @@ bool start(query *q)
 				continue;
 			}
 
-			if ((status == false) && !q->is_oom) {
+			if (!status && !q->is_oom) {
 				q->retry = QUERY_RETRY;
 
 				if (q->yielded)
@@ -1803,9 +1804,6 @@ bool start(query *q)
 				continue;
 			}
 		}
-
-		//if (g_tpl_interrupt)
-		//	continue;
 
 		q->resume = false;
 		q->retry = QUERY_OK;

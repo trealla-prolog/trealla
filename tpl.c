@@ -49,12 +49,17 @@ static int daemonize(int argc, char *argv[])
 {
 	char path[1024];
 	path[0] = '\0';
+
+#ifndef _WIN32
 	int watchdog = 0;
+#endif
 
 	for (int i = 0; i < argc; i++) {
-		if (!strcmp(argv[i], "-w") || !strcmp(argv[i], "--watchdog"))
+		if (!strcmp(argv[i], "-w") || !strcmp(argv[i], "--watchdog")) {
+#ifndef _WIN32
 			watchdog = 1;
-		else if (!strncmp(argv[i], "--cd=", 5))
+#endif
+		} else if (!strncmp(argv[i], "--cd=", 5))
 			strcpy(path, argv[i] + 5);
 	}
 

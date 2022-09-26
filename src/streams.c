@@ -12,7 +12,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-#ifndef __wasi__
+#if !defined(_WIN32) && !defined(__wasi__)
 #include <spawn.h>
 #include <sys/wait.h>
 #endif
@@ -966,15 +966,15 @@ static bool fn_process_create_3(query *q)
 
 					if (is_structure(c) && (c->arity == 2) && (c->val_off == g_eq_s)) {
 						cell *p1 = c + 1, *p2 = c + 2;
-						ASTRING(pr);
+						SB(pr);
 
 						if (is_atom(p1) && is_atom(p2)) {
-							ASTRING_sprintf(pr, "%s=%s", C_STR(q, p1), C_STR(q, p2));
+							SB_sprintf(pr, "%s=%s", C_STR(q, p1), C_STR(q, p2));
 						} else if (is_atom(p1) && is_smallint(p2)) {
-							ASTRING_sprintf(pr, "%s=%d", C_STR(q, p1), (int)get_smallint(p2));
+							SB_sprintf(pr, "%s=%d", C_STR(q, p1), (int)get_smallint(p2));
 						}
 
-						environments[envs++] = ASTRING_cstr(pr);
+						environments[envs++] = SB_cstr(pr);
 					}
 
 					name = LIST_TAIL(name);
@@ -992,15 +992,15 @@ static bool fn_process_create_3(query *q)
 
 					if (is_structure(c) && (c->arity == 2) && (c->val_off == g_eq_s)) {
 						cell *p1 = c + 1, *p2 = c + 2;
-						ASTRING(pr);
+						SB(pr);
 
 						if (is_atom(p1) && is_atom(p2)) {
-							ASTRING_sprintf(pr, "%s=%s", C_STR(q, p1), C_STR(q, p2));
+							SB_sprintf(pr, "%s=%s", C_STR(q, p1), C_STR(q, p2));
 						} else if (is_atom(p1) && is_smallint(p2)) {
-							ASTRING_sprintf(pr, "%s=%d", C_STR(q, p1), (int)get_smallint(p2));
+							SB_sprintf(pr, "%s=%d", C_STR(q, p1), (int)get_smallint(p2));
 						}
 
-						environments[envs++] = ASTRING_cstr(pr);
+						environments[envs++] = SB_cstr(pr);
 					}
 
 					name = LIST_TAIL(name);
@@ -1357,7 +1357,9 @@ static bool fn_iso_open_4(query *q)
 			return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 	}
 
+#if USE_MMAP
 	size_t offset = 0;
+#endif
 
 	if (!strcmp(str->mode, "read") && !str->binary && (!bom_specified || use_bom)) {
 		int ch = xgetc_utf8(net_getc, str);
@@ -1367,7 +1369,9 @@ static bool fn_iso_open_4(query *q)
 
 		if ((unsigned)ch == 0xFEFF) {
 			str->bom = true;
+#if USE_MMAP
 			offset = 3;
+#endif
 		} else
 			fseek(str->fp, 0, SEEK_SET);
 	} else if (!strcmp(str->mode, "write") && !str->binary && use_bom) {

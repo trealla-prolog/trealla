@@ -528,18 +528,18 @@ bool fn_sys_call_cleanup_3(query *q)
 
 static cell *parse_to_heap(query *q, const char *src)
 {
-	ASTRING(s);
-	ASTRING_sprintf(s, "%s.", src);
+	SB(s);
+	SB_sprintf(s, "%s.", src);
 	parser *p2 = create_parser(q->st.m);
 	check_error(p2);
 	frame *f = GET_CURR_FRAME();
 	p2->read_term = f->actual_slots;
 	p2->skip = true;
-	p2->srcptr = ASTRING_cstr(s);
+	p2->srcptr = SB_cstr(s);
 	tokenize(p2, false, false);
 	xref_rule(p2->m, p2->cl, NULL);
 	p2->read_term = 0;
-	ASTRING_free(s);
+	SB_free(s);
 
 	if (p2->nbr_vars) {
 		if (!create_vars(q, p2->nbr_vars)) {

@@ -348,7 +348,7 @@ struct cell_ {
 		uint8_t val_uint8;
 		uint16_t val_uint16;
 		uint32_t val_uint32;
-		uint32_t val_uint64;
+		uint64_t val_uint64;
 		float val_float32;
 
 		// Proper types...
@@ -455,7 +455,6 @@ struct predicate_ {
 	bool is_tabled:1;
 	bool is_dynamic:1;
 	bool is_meta_predicate:1;
-	bool is_persist:1;
 	bool is_multifile:1;
 	bool is_discontiguous:1;
 	bool is_abolished:1;
@@ -757,7 +756,6 @@ struct module_ {
 	prolog_flags flags;
 	bool user_ops:1;
 	bool prebuilt:1;
-	bool use_persist:1;
 	bool make_public:1;
 	bool loaded_properties:1;
 	bool loaded_ops:1;
@@ -889,83 +887,84 @@ inline static int fake_strcmp(const void *ptr1, const void *ptr2, const void *pa
 	return strcmp(ptr1, ptr2);
 }
 
-// A string builder...
+// A string builder
 
 typedef struct {
 	char *buf, *dst;
 	size_t size;
-} astring;
+} string_buffer_;
 
-#define ASTRING(pr) astring pr##_buf;									\
-	pr##_buf.size = 0;													\
-	pr##_buf.buf = NULL;												\
+#define SB(pr) string_buffer_ pr##_buf;										\
+	pr##_buf.size = 0;											\
+	pr##_buf.buf = NULL;										\
 	pr##_buf.dst = pr##_buf.buf;
 
-#define ASTRING_alloc(pr,len) astring pr##_buf; 						\
-	pr##_buf.size = len;												\
-	pr##_buf.buf = malloc((len)+1);										\
-	ensure(pr##_buf.buf);												\
-	pr##_buf.dst = pr##_buf.buf;										\
+#define SB_alloc(pr,len) string_buffer_ pr##_buf; 							\
+	pr##_buf.size = len;										\
+	pr##_buf.buf = malloc((len)+1);								\
+	ensure(pr##_buf.buf);										\
+	pr##_buf.dst = pr##_buf.buf;								\
 	*pr##_buf.dst = '\0';
 
-#define ASTRING_strlen(pr) (pr##_buf.dst - pr##_buf.buf)
+#define SB_strlen(pr) (pr##_buf.dst - pr##_buf.buf)
 
-#define ASTRING_trim(pr,ch) {											\
-	if (ASTRING_strlen(pr)) {											\
-		if (pr##_buf.dst[-1] == (ch)) 									\
-			*--pr##_buf.dst = '\0';										\
-	}																	\
+#define SB_trim(pr,ch) {										\
+	if (SB_strlen(pr)) {										\
+		if (pr##_buf.dst[-1] == (ch)) 							\
+			*--pr##_buf.dst = '\0';								\
+	}															\
 }
 
-#define ASTRING_trim_all(pr,ch) {										\
-	while (ASTRING_strlen(pr)) {										\
-		if (pr##_buf.dst[-1] != (ch)) 									\
-			break;														\
-		*--pr##_buf.dst = '\0';											\
-	}																	\
+#define SB_trim_all(pr,ch) {									\
+	while (SB_strlen(pr)) {										\
+		if (pr##_buf.dst[-1] != (ch)) 							\
+			break;												\
+		*--pr##_buf.dst = '\0';									\
+	}															\
 }
 
-#define ASTRING_trim_ws(pr) {											\
-	while (ASTRING_strlen(pr)) {										\
-		if (!isspace(pr##_buf.dst[-1]))									\
-			break;														\
-		*--pr##_buf.dst = '\0';											\
-	}																	\
+#define SB_trim_ws(pr) {										\
+	while (SB_strlen(pr)) {										\
+		if (!isspace(pr##_buf.dst[-1]))							\
+			break;												\
+		*--pr##_buf.dst = '\0';									\
+	}															\
 }
 
-#define ASTRING_check(pr,len) {											\
-	size_t rem = pr##_buf.size - ASTRING_strlen(pr);					\
-	if ((size_t)((len)+1) >= rem) {										\
-		size_t offset = ASTRING_strlen(pr);								\
-		pr##_buf.buf = realloc(pr##_buf.buf, (pr##_buf.size += ((len)-rem)) + 1); \
-		ensure(pr##_buf.buf);											\
-		pr##_buf.dst = pr##_buf.buf + offset;							\
-	}																	\
+#define SB_check(pr,len) {										\
+	size_t rem = pr##_buf.size - SB_strlen(pr);					\
+	if ((size_t)((len)+1) >= rem) {								\
+		size_t offset = SB_strlen(pr);							\
+		pr##_buf.buf = realloc(pr##_buf.buf, 					\
+			(pr##_buf.size += ((len)-rem)) + 1);				 \
+		ensure(pr##_buf.buf);									\
+		pr##_buf.dst = pr##_buf.buf + offset;					\
+	}															\
 }
 
-#define ASTRING_strcat(pr,s) ASTRING_strcatn(pr,s,strlen(s))
+#define SB_strcat(pr,s) SB_strcatn(pr,s,strlen(s))
 
-#define ASTRING_strcatn(pr,s,len) {										\
-	ASTRING_check(pr, len);												\
-	memcpy(pr##_buf.dst, s, len);										\
-	pr##_buf.dst += len;												\
-	*pr##_buf.dst = '\0';												\
+#define SB_strcatn(pr,s,len) {									\
+	SB_check(pr, len);											\
+	memcpy(pr##_buf.dst, s, len);								\
+	pr##_buf.dst += len;										\
+	*pr##_buf.dst = '\0';										\
 }
 
-#define ASTRING_sprintf(pr,fmt,...) {									\
-	size_t len = snprintf(NULL, 0, fmt, __VA_ARGS__);					\
-	ASTRING_check(pr, len);												\
-	sprintf(pr##_buf.dst, fmt, __VA_ARGS__);							\
-	pr##_buf.dst += len;												\
-	*pr##_buf.dst = '\0';												\
+#define SB_sprintf(pr,fmt,...) {								\
+	size_t len = snprintf(NULL, 0, fmt, __VA_ARGS__);			\
+	SB_check(pr, len);											\
+	sprintf(pr##_buf.dst, fmt, __VA_ARGS__);					\
+	pr##_buf.dst += len;										\
+	*pr##_buf.dst = '\0';										\
 }
 
-#define ASTRING_cstr(pr) pr##_buf.buf ? pr##_buf.buf : ""
-#define ASTRING_free(pr) { free(pr##_buf.buf); pr##_buf.buf = NULL; }
+#define SB_cstr(pr) pr##_buf.buf ? pr##_buf.buf : ""
+#define SB_free(pr) { free(pr##_buf.buf); pr##_buf.buf = NULL; }
 
-#define delink(l, e) {													\
-	if (e->prev) e->prev->next = e->next;								\
-	if (e->next) e->next->prev = e->prev;								\
-	if (l->head == e) l->head = e->next;								\
-	if (l->tail == e) l->tail = e->prev;								\
+#define delink(l, e) {											\
+	if (e->prev) e->prev->next = e->next;						\
+	if (e->next) e->next->prev = e->prev;						\
+	if (l->head == e) l->head = e->next;						\
+	if (l->tail == e) l->tail = e->prev;						\
 }

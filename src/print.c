@@ -236,13 +236,13 @@ static size_t plain(char *dst, size_t dstlen, const char *src, int srclen)
 	return srclen;
 }
 
-static size_t sprint_int_(char *dst, size_t size, pl_int_t n, int pbase)
+static size_t sprint_int_(char *dst, size_t dstlen, pl_int_t n, int pbase)
 {
 	int base = abs(pbase);
 	const char *save_dst = dst;
 
 	if ((n / base) > 0)
-		dst += sprint_int_(dst, size, n / base, pbase);
+		dst += sprint_int_(dst, dstlen, n / base, pbase);
 
 	int n2 = n % base;
 
@@ -252,7 +252,7 @@ static size_t sprint_int_(char *dst, size_t size, pl_int_t n, int pbase)
 	} else
 		n2 += '0';
 
-	if (size)
+	if (dstlen)
 		*dst++ = n2;
 	else
 		dst++;
@@ -260,12 +260,12 @@ static size_t sprint_int_(char *dst, size_t size, pl_int_t n, int pbase)
 	return dst - save_dst;
 }
 
-size_t sprint_int(char *dst, size_t size, pl_int_t n, int base)
+size_t sprint_int(char *dst, size_t dstlen, pl_int_t n, int base)
 {
 	const char *save_dst = dst;
 
 	if ((n < 0) && (base == 10)) {
-		if (size)
+		if (dstlen)
 			*dst++ = '-';
 		else
 			dst++;
@@ -283,20 +283,20 @@ size_t sprint_int(char *dst, size_t size, pl_int_t n, int base)
 	}
 
 	if (n == 0) {
-		if (size)
+		if (dstlen)
 			*dst++ = '0';
 		else
 			dst++;
 
-		if (size)
+		if (dstlen)
 			*dst = '\0';
 
 		return dst - save_dst;
 	}
 
-	dst += sprint_int_(dst, size, n, base);
+	dst += sprint_int_(dst, dstlen, n, base);
 
-	if (size)
+	if (dstlen)
 		*dst = '\0';
 
 	return dst - save_dst;
@@ -1153,7 +1153,7 @@ char *print_canonical_to_strbuf(query *q, cell *c, pl_idx_t c_ctx, int running)
 	q->last_thing_was_symbol = false;
 	q->did_quote = false;
 	ssize_t len = print_term_to_buf(q, NULL, 0, c, c_ctx, running, false, 1);
-	char *buf = malloc(len+10);
+	char *buf = malloc(len*2+10);
 	ensure(buf);
 	q->last_thing_was_symbol = false;
 	q->did_quote = false;
@@ -1279,7 +1279,7 @@ char *print_term_to_strbuf(query *q, cell *c, pl_idx_t c_ctx, int running)
 		len = print_term_to_buf(q, NULL, 0, c, c_ctx, running=0, false, 0);
 	}
 
-	char *buf = malloc(len+10);
+	char *buf = malloc(len*2+10);
 	ensure(buf);
 	q->last_thing_was_symbol = false;
 	q->did_quote = false;
@@ -1310,7 +1310,7 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_idx_t c_ctx, int ru
 		len = print_term_to_buf(q, NULL, 0, c, c_ctx, running=0, false, 0);
 	}
 
-	char *dst = malloc(len+10);
+	char *dst = malloc(len*2+10);
 	check_heap_error(dst);
 	q->last_thing_was_symbol = false;
 	q->did_quote = false;
@@ -1357,7 +1357,7 @@ bool print_term(query *q, FILE *fp, cell *c, pl_idx_t c_ctx, int running)
 		len = print_term_to_buf(q, NULL, 0, c, c_ctx, running=0, false, 0);
 	}
 
-	char *dst = malloc(len+10);
+	char *dst = malloc(len*2+10);
 	check_heap_error(dst);
 	q->last_thing_was_symbol = false;
 	q->did_quote = false;

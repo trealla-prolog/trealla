@@ -92,7 +92,6 @@ bool fn_sys_ffi_register_predicate_4(query *q);
 #endif
 
 bool fn_iso_add_2(query *q);
-bool fn_local_cut_0(query *q);
 bool fn_iso_float_1(query *q);
 bool fn_iso_integer_1(query *q);
 

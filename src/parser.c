@@ -647,9 +647,6 @@ static void directives(parser *p, cell *d)
 			module *m;
 
 			if ((m = find_module(p->m->pl, name)) != NULL) {
-				if (!m->fp)
-					do_db_load(m);
-
 				if (m != p->m)
 					p->m->used[p->m->idx_used++] = m;
 
@@ -674,16 +671,13 @@ static void directives(parser *p, cell *d)
 				if (strcmp(lib->name, name))
 					continue;
 
-				ASTRING(src);
-				ASTRING_strcatn(src, lib->start, *lib->len);
-				ASTRING(s1);
-				ASTRING_sprintf(s1, "library/%s", lib->name);
-				m = load_text(p->m, ASTRING_cstr(src), ASTRING_cstr(s1));
-				ASTRING_free(s1);
-				ASTRING_free(src);
-
-				if (m != p->m)
-					do_db_load(m);
+				SB(src);
+				SB_strcatn(src, lib->start, *lib->len);
+				SB(s1);
+				SB_sprintf(s1, "library/%s", lib->name);
+				m = load_text(p->m, SB_cstr(src), SB_cstr(s1));
+				SB_free(s1);
+				SB_free(src);
 
 				if (m != p->m)
 					p->m->used[p->m->idx_used++] = m;
@@ -821,18 +815,6 @@ static void directives(parser *p, cell *d)
 				}
 
 				set_dynamic_in_db(p->m, C_STR(p, c_name), arity);
-			} else if (!strcmp(dirname, "persist")) {
-				predicate * pr = find_predicate(p->m, &tmp);
-
-				if (pr && !pr->is_dynamic && pr->cnt) {
-					if (DUMP_ERRS || !p->do_read_term)
-						fprintf(stdout, "Error: no permission to modify static predicate %s:%s/%u\n", p->m->name, C_STR(p->m, c_name), arity);
-
-					p->error = true;
-					return;
-				}
-
-				set_persist_in_db(p->m, C_STR(p, c_name), arity);
 			} else if (!strcmp(dirname, "public")) {
 			} else if (!strcmp(dirname, "table") && false) {
 				set_table_in_db(p->m, C_STR(p, c_name), arity);
@@ -916,16 +898,6 @@ static void directives(parser *p, cell *d)
 				}
 
 				set_dynamic_in_db(m, C_STR(p, c_name), arity);
-			} else if (!strcmp(dirname, "persist")) {
-				if (find_predicate(p->m, &tmp)) {
-					if (DUMP_ERRS || !p->do_read_term)
-						fprintf(stdout, "Error: no permission to modify static predicate %s:%s/%u\n", p->m->name, C_STR(p->m, c_name), arity);
-
-					p->error = true;
-					return;
-				}
-
-				set_persist_in_db(m, C_STR(p, c_name), arity);
 			} else {
 				if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
 					fprintf(stdout, "Warning: unknown directive: %s\n", dirname);
@@ -1385,10 +1357,10 @@ static bool autoload_dcg_library(parser *p)
 		check_error(src);
 		memcpy(src, lib->start, *lib->len);
 		src[*lib->len] = '\0';
-		ASTRING(s);
-		ASTRING_sprintf(s, "library/%s", lib->name);
-		module *tmp_m = load_text(p->m, src, ASTRING_cstr(s));
-		ASTRING_free(s);
+		SB(s);
+		SB_sprintf(s, "library/%s", lib->name);
+		module *tmp_m = load_text(p->m, src, SB_cstr(s));
+		SB_free(s);
 
 		if (tmp_m) {
 			p->m->used[p->m->idx_used++] = tmp_m;
@@ -1410,19 +1382,19 @@ static bool dcg_expansion(parser *p)
 	query *q = create_query(p->m, false);
 	check_error(q);
 	char *dst = print_canonical_to_strbuf(q, p->cl->cells, 0, 0);
-	ASTRING(s);
-	ASTRING_sprintf(s, "dcg_translate((%s),_TermOut).", dst);
+	SB(s);
+	SB_sprintf(s, "dcg_translate((%s),_TermOut).", dst);
 	free(dst);
 
 	parser *p2 = create_parser(p->m);
 	check_error(p2, destroy_query(q));
 	p2->line_nbr = p->line_nbr;
 	p2->skip = true;
-	p2->srcptr = ASTRING_cstr(s);
+	p2->srcptr = SB_cstr(s);
 	tokenize(p2, false, false);
 	xref_rule(p2->m, p2->cl, NULL);
 	execute(q, p2->cl->cells, p2->cl->nbr_vars);
-	ASTRING_free(s);
+	SB_free(s);
 	frame *f = GET_FIRST_FRAME();
 	char *src = NULL;
 
@@ -1498,19 +1470,19 @@ static bool term_expansion(parser *p)
 	query *q = create_query(p->m, false);
 	check_error(q);
 	char *dst = print_canonical_to_strbuf(q, p->cl->cells, 0, 0);
-	ASTRING(s);
-	ASTRING_sprintf(s, "term_expansion((%s),_TermOut), !.", dst);
+	SB(s);
+	SB_sprintf(s, "term_expansion((%s),_TermOut), !.", dst);
 	free(dst);
 
 	parser *p2 = create_parser(p->m);
 	check_error(p2, destroy_query(q));
 	p2->line_nbr = p->line_nbr;
 	p2->skip = true;
-	p2->srcptr = ASTRING_cstr(s);
+	p2->srcptr = SB_cstr(s);
 	tokenize(p2, false, false);
 	xref_rule(p2->m, p2->cl, NULL);
 	execute(q, p2->cl->cells, p2->cl->nbr_vars);
-	ASTRING_free(s);
+	SB_free(s);
 
 	if (q->retry != QUERY_OK) {
 		destroy_parser(p2);
@@ -1594,8 +1566,8 @@ static cell *goal_expansion(parser *p, cell *goal)
 	q->varnames = true;
 	char *dst = print_canonical_to_strbuf(q, goal, 0, 0);
 	q->varnames = false;
-	ASTRING(s);
-	ASTRING_sprintf(s, "goal_expansion((%s),_TermOut), !.", dst);
+	SB(s);
+	SB_sprintf(s, "goal_expansion((%s),_TermOut), !.", dst);
 	free(dst);
 
 	//DUMP_TERM("old", p->cl->cells, 0, 0);
@@ -1613,11 +1585,11 @@ static cell *goal_expansion(parser *p, cell *goal)
 	p2->reuse = true;
 	p2->line_nbr = p->line_nbr;
 	p2->skip = true;
-	p2->srcptr = ASTRING_cstr(s);
+	p2->srcptr = SB_cstr(s);
 	tokenize(p2, false, false);
 	xref_rule(p2->m, p2->cl, NULL);
 	execute(q, p2->cl->cells, p2->cl->nbr_vars);
-	ASTRING_free(s);
+	SB_free(s);
 
 	if (q->retry != QUERY_OK) {
 		destroy_parser(p2);
@@ -3592,13 +3564,13 @@ bool run(parser *p, const char *pSrc, bool dump)
 		return false;
 	}
 
-	ASTRING(src);
-	ASTRING_sprintf(src, "true,%s", pSrc);
-	ASTRING_trim_ws(src);
-	ASTRING_trim(src, '.');
-	ASTRING_strcat(src, ".");
+	SB(src);
+	SB_sprintf(src, "true,%s", pSrc);
+	SB_trim_ws(src);
+	SB_trim(src, '.');
+	SB_strcat(src, ".");
 
-	p->srcptr = ASTRING_cstr(src);
+	p->srcptr = SB_cstr(src);
 	bool ok;
 
 	while (p->srcptr && *p->srcptr && !g_tpl_interrupt) {
@@ -3618,14 +3590,14 @@ bool run(parser *p, const char *pSrc, bool dump)
 		if (p->error) {
 			p->pl->did_dump_vars = true;
 			p->srcptr = NULL;
-			ASTRING_free(src);
+			SB_free(src);
 			return false;
 		}
 
 		if (p->skip) {
 			p->m->pl->status = true;
 			p->srcptr = NULL;
-			ASTRING_free(src);
+			SB_free(src);
 			return true;
 		}
 
@@ -3633,7 +3605,7 @@ bool run(parser *p, const char *pSrc, bool dump)
 
 		if (!q) {
 			p->srcptr = NULL;
-			ASTRING_free(src);
+			SB_free(src);
 			return false;
 		}
 
@@ -3656,6 +3628,6 @@ bool run(parser *p, const char *pSrc, bool dump)
 	}
 
 	p->srcptr = NULL;
-	ASTRING_free(src);
+	SB_free(src);
 	return ok;
 }
