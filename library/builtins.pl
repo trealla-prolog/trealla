@@ -774,9 +774,9 @@ print_goals([Goal|Goals]) :-
 	write_term(Goal, [varnames(true)]),
 	(	Goals == [] ->
 		write('')
-	; 	write(',')),
-		print_goals(Goals
-	).
+	; 	write(',')
+	),
+	print_goals(Goals).
 
 dump_attvars([], []) :- !.
 dump_attvars([Var|Vars], [V|Rest]) :-
