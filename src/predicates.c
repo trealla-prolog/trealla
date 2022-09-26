@@ -6388,7 +6388,7 @@ static bool fn_sys_list_attributed_1(query *q)
 		if (!is_empty(&e->c))
 			continue;
 
-		if (!e->c.attrs)
+		if (!e->c.attrs || is_nil(e->c.attrs))
 			continue;
 
 		cell v;
