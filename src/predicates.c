@@ -6440,11 +6440,8 @@ static bool fn_sys_get_attributes_2(query *q)
 	frame *f = GET_FRAME(p1_ctx);
 	slot *e = GET_SLOT(f, p1->var_nbr);
 
-	if (!e->c.attrs) {
-		cell tmp;
-		make_atom(&tmp, g_nil_s);
-		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
-	}
+	if (!e->c.attrs || is_nil(e->c.attrs))
+		return false;
 
 	return unify(q, p2, p2_ctx, e->c.attrs, e->c.attrs_ctx);
 }
