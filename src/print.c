@@ -591,7 +591,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 	return dst - save_dst;
 }
 
-static ssize_t print_canonical_list(query *q, char *save_dst, char *dst, size_t dstlen, cell *c, pl_idx_t c_ctx, int running, bool cons, unsigned depth)
+static ssize_t print_canonical_list(query *q, char *save_dst, char *dst, size_t dstlen, cell *c, pl_idx_t c_ctx, int running, unsigned depth)
 {
 	unsigned print_list = 0;
 
@@ -793,7 +793,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 	}
 
 	if (is_iso_list(c)) {
-		ssize_t n = print_canonical_list(q, save_dst, dst, dstlen, c, c_ctx, running, cons, depth+1);
+		ssize_t n = print_canonical_list(q, save_dst, dst, dstlen, c, c_ctx, running, depth+1);
 		q->was_space = false;
 		return n;
 	}
