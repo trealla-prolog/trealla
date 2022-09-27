@@ -7,6 +7,7 @@
 #include "module.h"
 #include "parser.h"
 #include "prolog.h"
+#include "query.h"
 
 void convert_path(char *filename);
 
@@ -124,6 +125,38 @@ bool pl_eval(prolog *pl, const char *s)
 	destroy_parser(pl->p);
 	pl->p = NULL;
 	return ok;
+}
+
+bool pl_query(prolog *pl, const char *s)
+{
+	if (!*s)
+		return false;
+
+	pl->p = create_parser(pl->curr_m);
+	if (!pl->p) return false;
+	pl->p->command = true;
+	pl->is_query = true;
+	bool ok = run(pl->p, s, true);
+	pl->curr_m = pl->p->m;
+	return ok;
+}
+
+bool pl_redo(prolog *pl)
+{
+	if (!pl->is_query)
+		return false;
+
+	query *q = pl->curr_query;
+
+	if (query_redo(q))
+		return true;
+
+	destroy_parser(pl->p);
+	pl->p = NULL;
+	destroy_query(q);
+	pl->curr_query = NULL;
+	pl->is_query = false;
+	return false;
 }
 
 bool pl_consult_fp(prolog *pl, FILE *fp, const char *filename)

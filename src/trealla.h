@@ -7,9 +7,12 @@ typedef struct prolog_ prolog;
 extern prolog *pl_create();
 extern void pl_destroy(prolog*);
 
-extern bool pl_eval(prolog*, const char *expr);
 extern bool pl_consult(prolog*, const char *filename);
 extern bool pl_consult_fp(prolog*, FILE *fp, const char *filename);
+extern bool pl_eval(prolog*, const char *expr);
+
+extern bool pl_query(prolog*, const char *expr);
+extern bool pl_redo(prolog*);
 
 extern int get_halt_code(prolog*);
 extern bool get_halt(prolog*);

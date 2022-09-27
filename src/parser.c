@@ -3609,6 +3609,7 @@ bool run(parser *p, const char *pSrc, bool dump)
 			return false;
 		}
 
+		p->pl->curr_query = q;
 		q->p = p;
 		q->do_dump_vars = dump;
 		q->run_init = p->run_init;
@@ -3621,6 +3622,10 @@ bool run(parser *p, const char *pSrc, bool dump)
 
 		ok = !q->error;
 		p->m = q->st.m;
+
+		if (q->pl->is_query)
+			break;
+
 		destroy_query(q);
 
 		if (!ok)

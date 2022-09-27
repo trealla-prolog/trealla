@@ -778,6 +778,7 @@ struct prolog_ {
 	module *modules, *system_m, *user_m, *curr_m, *dcgs;
 	var_item *tabs;
 	parser *p;
+	query *curr_query;
 	map *symtab, *biftab, *keyval, *help;
 	char *pool;
 	size_t pool_offset, pool_size, tabs_size;
@@ -786,6 +787,7 @@ struct prolog_ {
 	uint8_t current_input, current_output, current_error;
 	int8_t halt_code, opt;
 	bool is_redo:1;
+	bool is_query:1;
 	bool halt:1;
 	bool status:1;
 	bool did_dump_vars:1;

@@ -104,6 +104,9 @@ bool check_redo(query *q)
 
 	fflush(stdout);
 
+	if (q->pl->is_query)
+		return q->cp;
+
 	if (q->autofail) {
 		printf("\n; ");
 		fflush(stdout);
@@ -251,6 +254,17 @@ static bool any_attributed(const query *q)
 	}
 
 	return any;
+}
+
+bool query_redo(query *q)
+{
+	if (!q->cp)
+		return false;
+
+	q->is_redo = true;
+	q->retry = QUERY_RETRY;
+	q->pl->did_dump_vars = false;
+	return start(q);
 }
 
 void dump_vars(query *q, bool partial)
@@ -414,9 +428,9 @@ void dump_vars(query *q, bool partial)
 	if (any && !partial) {
 		if (space) fprintf(stdout, " ");
 		fprintf(stdout, ".\n");
-		fflush(stdout);
 	}
 
+	fflush(stdout);
 	q->pl->did_dump_vars = any;
 	clear_write_options(q);
 	clear_results();
