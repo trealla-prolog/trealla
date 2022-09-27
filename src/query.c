@@ -1280,28 +1280,33 @@ void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 {
 	frame *f = GET_FRAME(c_ctx);
 	slot *e = GET_SLOT(f, c->var_nbr);
-	cell *c_attrs = is_empty(&e->c) ? e->c.attrs : NULL;
+	cell *c_attrs = is_empty(&e->c) ? e->c.attrs : NULL, *v_attrs = NULL;
 	pl_idx_t c_attrs_ctx = c_attrs ? e->c.attrs_ctx : 0;
 
-	if (c_attrs) {
-		if (is_variable(v)) {
-			frame *f2 = GET_FRAME(v_ctx);
-			slot *e2 = GET_SLOT(f2, v->var_nbr);
-			cell *v_attrs = is_empty(&e2->c) ? e2->c.attrs : NULL;
-
-			if (v_attrs)
-				q->run_hook = true;
-			else {
-				add_trail(q, v_ctx, v->var_nbr, NULL, 0);
-				e2->c.attrs = c_attrs;
-				e2->c.attrs_ctx = c_attrs_ctx;
-			}
-		} else
-			q->run_hook = true;
+	if (is_variable(v)) {
+		frame *vf = GET_FRAME(v_ctx);
+		slot *ve = GET_SLOT(vf, v->var_nbr);
+		v_attrs = is_empty(&ve->c) ? ve->c.attrs : NULL;
 	}
 
-	if ((q->cp || c_attrs) && (c_ctx < q->st.fp))
+	//if (c_ctx < q->st.fp)
 		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
+
+	// If 'c' is an attvar and either 'v' is an attvar or nonvar then run the hook
+	// If 'c' is an attvar and 'v' is a plain variable then copy attributes to 'v'
+	// If 'c' is a plain variable and 'v' is an attvar then copy attributes to 'c'
+
+	if (c_attrs && (v_attrs || is_nonvar(v))) {
+		q->run_hook = true;
+	} else if (c_attrs && !v_attrs && is_variable(v)) {
+		frame *vf = GET_FRAME(v_ctx);
+		slot *ve = GET_SLOT(vf, v->var_nbr);
+		add_trail(q, v_ctx, v->var_nbr, NULL, 0);
+		ve->c.attrs = c_attrs;
+		ve->c.attrs_ctx = c_attrs_ctx;
+	} else if (!c_attrs && v_attrs) {
+		// attributes get copied below
+	}
 
 	if (is_structure(v)) {
 		if ((c_ctx != q->st.curr_frame) /*&& (v_ctx == q->st.curr_frame)*/)
