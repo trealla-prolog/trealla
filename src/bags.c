@@ -34,7 +34,7 @@ static bool is_ground(cell *c)
 	pl_idx_t nbr_cells = c->nbr_cells;
 
 	for (pl_idx_t i = 0; i < nbr_cells; i++, c++) {
-		if (is_variable(c))
+		if (is_var(c))
 			return false;
 	}
 

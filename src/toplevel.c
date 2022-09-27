@@ -264,7 +264,7 @@ void dump_vars(query *q, bool partial)
 	q->tab_idx = 0;
 	bool any = false;
 
-	// Build the ignore list for variable name clashes....
+	// Build the ignore list for var name clashes....
 
 	for (unsigned i = 0; i < MAX_IGNORES; i++)
 		q->ignores[i] = false;
@@ -278,7 +278,7 @@ void dump_vars(query *q, bool partial)
 			q->ignores[j] = true;
 	}
 
-	// Build the variable-names list for dumping vars...
+	// Build the var-names list for dumping vars...
 
 	for (unsigned i = 0; i < p->nbr_vars; i++) {
 		cell tmp[3];
@@ -316,7 +316,7 @@ void dump_vars(query *q, bool partial)
 			c_ctx = e->c.var_ctx;
 		}
 
-		if (is_variable(c) && is_anon(c))
+		if (is_var(c) && is_anon(c))
 			continue;
 
 		if (any)

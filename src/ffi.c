@@ -49,7 +49,7 @@ USE_RESULT bool fn_sys_dlopen_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,integer);
-	GET_NEXT_ARG(p3,variable);
+	GET_NEXT_ARG(p3,var);
 	const char *filename = C_STR(q, p1);
 
 #if __APPLE__
@@ -88,7 +88,7 @@ USE_RESULT bool fn_sys_dlsym_3(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,atom);
-	GET_NEXT_ARG(p3,variable);
+	GET_NEXT_ARG(p3,var);
 	uint64_t handle = get_smalluint(p1);
 	const char *symbol = C_STR(q, p2);
 
@@ -378,7 +378,7 @@ bool wrapper_for_function(query *q, builtins *ptr)
 			ptr->types[i] == TAG_PTR ? "stream" :
 			ptr->types[i] == TAG_CSTR ? "atom" :
 			ptr->types[i] == TAG_CCSTR ? "atom" :
-			ptr->types[i] == TAG_VAR ? "variable" :
+			ptr->types[i] == TAG_VAR ? "var" :
 			"invalid"
 			);
 
@@ -537,7 +537,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			;
 		else if ((ptr->types[i] == TAG_PTR) && is_smallint(c))
 			;
-		else if ((ptr->types[i] != c->tag) && !is_variable(c))
+		else if ((ptr->types[i] != c->tag) && !is_var(c))
 			return throw_error(q, c, c_ctx, "type_error",
 			ptr->types[i] == TAG_UINT8 ? "integer" :
 			ptr->types[i] == TAG_UINT16 ? "integer" :
@@ -552,7 +552,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			ptr->types[i] == TAG_CSTR ? "atom" :
 			ptr->types[i] == TAG_CCSTR ? "atom" :
 			ptr->types[i] == TAG_PTR ? "stream" :
-			ptr->types[i] == TAG_VAR ? "variable" :
+			ptr->types[i] == TAG_VAR ? "var" :
 			"invalid"
 			);
 
@@ -734,7 +734,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 	c_ctx = p11_ctx;
 
 	for (unsigned i = 0; i < (ptr->arity-1); i++) {
-		if (is_variable(c)) {
+		if (is_var(c)) {
 			cell tmp;
 
 			if (ptr->types[i] == MARK_OUT(TAG_INT8)) {

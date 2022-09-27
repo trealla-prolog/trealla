@@ -487,13 +487,13 @@ static bool do_stream_property(query *q)
 		return unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 	}
 
-	if (!CMP_STR_TO_CSTR(q, p1, "position") && !is_variable(pstr)) {
+	if (!CMP_STR_TO_CSTR(q, p1, "position") && !is_var(pstr)) {
 		cell tmp;
 		make_int(&tmp, ftello(str->fp));
 		return unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 	}
 
-	if (!CMP_STR_TO_CSTR(q, p1, "line_count") && !is_variable(pstr)) {
+	if (!CMP_STR_TO_CSTR(q, p1, "line_count") && !is_var(pstr)) {
 		cell tmp;
 		make_int(&tmp, str->p->line_nbr);
 		return unify(q, c, c_ctx, &tmp, q->st.curr_frame);
@@ -543,10 +543,10 @@ static bool fn_iso_stream_property_2(query *q)
 	if (p1->arity > 1)
 		return throw_error(q, p1, p1_ctx, "domain_error", "stream_property");
 
-	if (!is_variable(p1) && !is_callable(p1))
+	if (!is_var(p1) && !is_callable(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "stream_property");
 
-	if (!is_variable(pstr) && !is_variable(p1))
+	if (!is_var(pstr) && !is_var(p1))
 		return do_stream_property(q);
 
 	if (!q->retry) {
@@ -601,7 +601,7 @@ static bool fn_popen_4(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,atom);
-	GET_NEXT_ARG(p3,variable);
+	GET_NEXT_ARG(p3,var);
 	GET_NEXT_ARG(p4,list_or_nil);
 	int n = new_stream(q->pl);
 	char *src = NULL;
@@ -641,7 +641,7 @@ static bool fn_popen_4(query *q)
 		cell *h = LIST_HEAD(p4);
 		cell *c = deref(q, h, p4_ctx);
 
-		if (is_variable(c))
+		if (is_var(c))
 			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 
 		if (is_structure(c) && (c->arity == 1)) {
@@ -677,7 +677,7 @@ static bool fn_popen_4(query *q)
 		p4 = deref(q, p4, p4_ctx);
 		p4_ctx = q->latest_ctx;
 
-		if (is_variable(p4))
+		if (is_var(p4))
 			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 	}
 
@@ -847,7 +847,7 @@ static bool fn_process_create_3(query *q)
 			} else if (!CMP_STR_TO_CSTR(q, c, "stdin") && !CMP_STR_TO_CSTR(q, name, "null")) {
 				posix_spawn_file_actions_addopen(&file_actions, 0, "/dev/null", O_RDONLY, 0);
 			} else if (!CMP_STR_TO_CSTR(q, c, "stdin") && !CMP_STR_TO_CSTR(q, name, "pipe")
-				&& is_structure(name) && (name->arity == 1) && is_variable(name+1)) {
+				&& is_structure(name) && (name->arity == 1) && is_var(name+1)) {
 				cell *ns = deref(q, name+1, name_ctx);
 				pl_idx_t ns_ctx = q->latest_ctx;
 				int n = new_stream(q->pl);
@@ -871,7 +871,7 @@ static bool fn_process_create_3(query *q)
 			} else if (!CMP_STR_TO_CSTR(q, c, "stdout") && !CMP_STR_TO_CSTR(q, name, "null")) {
 				posix_spawn_file_actions_addopen(&file_actions, 1, "/dev/null", O_WRONLY, 0);
 			} else if (!CMP_STR_TO_CSTR(q, c, "stdout") && !CMP_STR_TO_CSTR(q, name, "pipe")
-				&& is_structure(name) && (name->arity == 1) && is_variable(name+1)) {
+				&& is_structure(name) && (name->arity == 1) && is_var(name+1)) {
 				cell *ns = deref(q, name+1, name_ctx);
 				pl_idx_t ns_ctx = q->latest_ctx;
 				int n = new_stream(q->pl);
@@ -895,7 +895,7 @@ static bool fn_process_create_3(query *q)
 			} else if (!CMP_STR_TO_CSTR(q, c, "stderr") && !CMP_STR_TO_CSTR(q, name, "null")) {
 				posix_spawn_file_actions_addopen(&file_actions, 2, "/dev/null", O_WRONLY, 0);
 			} else if (!CMP_STR_TO_CSTR(q, c, "stderr") && !CMP_STR_TO_CSTR(q, name, "pipe")
-				&& is_structure(name) && (name->arity == 1) && is_variable(name+1)) {
+				&& is_structure(name) && (name->arity == 1) && is_var(name+1)) {
 				cell *ns = deref(q, name+1, name_ctx);
 				pl_idx_t ns_ctx = q->latest_ctx;
 				int n = new_stream(q->pl);
@@ -1009,7 +1009,7 @@ static bool fn_iso_open_4(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_structure);
 	GET_NEXT_ARG(p2,atom);
-	GET_NEXT_ARG(p3,variable);
+	GET_NEXT_ARG(p3,var);
 	GET_NEXT_ARG(p4,list_or_nil);
 	int n = new_stream(q->pl);
 	char *src = NULL;
@@ -1063,7 +1063,7 @@ static bool fn_iso_open_4(query *q)
 		cell *c = deref(q, h, p4_ctx);
 		pl_idx_t c_ctx = q->latest_ctx;
 
-		if (is_variable(c))
+		if (is_var(c))
 			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 
 		cell *name = c + 1;
@@ -1076,13 +1076,13 @@ static bool fn_iso_open_4(query *q)
 			mmap_ctx = q->latest_ctx;
 #endif
 		} else if (!CMP_STR_TO_CSTR(q, c, "encoding")) {
-			if (is_variable(name))
+			if (is_var(name))
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 
 			if (!is_atom(name))
 				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 		} else if (!CMP_STR_TO_CSTR(q, c, "alias")) {
-			if (is_variable(name))
+			if (is_var(name))
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 
 			if (!is_atom(name))
@@ -1094,7 +1094,7 @@ static bool fn_iso_open_4(query *q)
 			free(str->name);
 			str->name = DUP_STR(q, name);
 		} else if (!CMP_STR_TO_CSTR(q, c, "type")) {
-			if (is_variable(name))
+			if (is_var(name))
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 
 			if (!is_atom(name))
@@ -1107,7 +1107,7 @@ static bool fn_iso_open_4(query *q)
 			else
 				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 		} else if (!CMP_STR_TO_CSTR(q, c, "bom")) {
-			if (is_variable(name))
+			if (is_var(name))
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 
 			if (!is_atom(name))
@@ -1120,7 +1120,7 @@ static bool fn_iso_open_4(query *q)
 			else if (is_atom(name) && !CMP_STR_TO_CSTR(q, name, "false"))
 				use_bom = false;
 		} else if (!CMP_STR_TO_CSTR(q, c, "reposition")) {
-			if (is_variable(name))
+			if (is_var(name))
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 
 			if (!is_atom(name))
@@ -1131,7 +1131,7 @@ static bool fn_iso_open_4(query *q)
 			else if (is_atom(name) && !CMP_STR_TO_CSTR(q, name, "false"))
 				str->repo = false;
 		} else if (!CMP_STR_TO_CSTR(q, c, "eof_action")) {
-			if (is_variable(name))
+			if (is_var(name))
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 
 			if (!is_atom(name))
@@ -1152,7 +1152,7 @@ static bool fn_iso_open_4(query *q)
 		p4 = deref(q, p4, p4_ctx);
 		p4_ctx = q->latest_ctx;
 
-		if (is_variable(p4))
+		if (is_var(p4))
 			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 	}
 
@@ -1224,7 +1224,7 @@ static bool fn_iso_open_4(query *q)
 	else
 		prot = PROT_WRITE;
 
-	if (mmap_var && is_variable(mmap_var)) {
+	if (mmap_var && is_var(mmap_var)) {
 		int fd = fileno(str->fp);
 		struct stat st = {0};
 		fstat(fd, &st);
@@ -1306,7 +1306,7 @@ static bool fn_iso_close_2(query *q)
 		p1_ctx = q->latest_ctx;
 	}
 
-	if (is_variable(p1))
+	if (is_var(p1))
 		return throw_error(q, p1, p1_ctx, "instantiation_error", "close_option");
 
 	if (!is_nil(p1))
@@ -1490,7 +1490,7 @@ static bool parse_read_params(query *q, stream *str, cell *c, pl_idx_t c_ctx, ce
 			}
 		}
 	} else if (!CMP_STR_TO_CSTR(q, c, "variables")) {
-		if (is_variable(c1)) {
+		if (is_var(c1)) {
 			if (vars) *vars = c1;
 			if (vars_ctx) *vars_ctx = c1_ctx;
 		} else {
@@ -1498,7 +1498,7 @@ static bool parse_read_params(query *q, stream *str, cell *c, pl_idx_t c_ctx, ce
 			return false;
 		}
 	} else if (!CMP_STR_TO_CSTR(q, c, "variable_names")) {
-		if (is_variable(c1)) {
+		if (is_var(c1)) {
 			if (varnames) *varnames = c1;
 			if (varnames_ctx) *varnames_ctx = c1_ctx;
 		} else {
@@ -1506,7 +1506,7 @@ static bool parse_read_params(query *q, stream *str, cell *c, pl_idx_t c_ctx, ce
 			return false;
 		}
 	} else if (!CMP_STR_TO_CSTR(q, c, "singletons")) {
-		if (is_variable(c1)) {
+		if (is_var(c1)) {
 			if (sings) *sings = c1;
 			if (sings_ctx) *sings_ctx = c1_ctx;
 		} else {
@@ -1549,7 +1549,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx_t p1_ctx, cell *p2, pl
 		h = deref(q, h, p21_ctx);
 		pl_idx_t h_ctx = q->latest_ctx;
 
-		if (is_variable(h))
+		if (is_var(h))
 			return throw_error(q, p2, p2_ctx, "instantiation_error", "read_option");
 
 		if (!parse_read_params(q, str, h, h_ctx, &vars, &vars_ctx, &varnames, &varnames_ctx, &sings, &sings_ctx))
@@ -1560,7 +1560,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx_t p1_ctx, cell *p2, pl
 		p21_ctx = q->latest_ctx;
 	}
 
-	if (is_variable(p21))
+	if (is_var(p21))
 		return throw_error(q, p2, p2_ctx, "instantiation_error", "read_option");
 
 	if (!is_nil(p21))
@@ -1636,7 +1636,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx_t p1_ctx, cell *p2, pl
 					h = deref(q, h, p22_ctx);
 					pl_idx_t h_ctx = q->latest_ctx;
 
-					if (is_variable(h))
+					if (is_var(h))
 						return throw_error(q, p2, p2_ctx, "instantiation_error", "read_option");
 
 					if (!CMP_STR_TO_CSTR(q, h, "positions") && (h->arity == 2)) {
@@ -1728,7 +1728,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx_t p1_ctx, cell *p2, pl
 		h = deref(q, h, p22_ctx);
 		pl_idx_t h_ctx = q->latest_ctx;
 
-		if (is_variable(h))
+		if (is_var(h))
 			return throw_error(q, p2, p2_ctx, "instantiation_error", "read_option");
 
 		if (!CMP_STR_TO_CSTR(q, h, "positions") && (h->arity == 2)) {
@@ -2133,7 +2133,7 @@ static bool fn_iso_write_canonical_2(query *q)
 
 bool parse_write_params(query *q, cell *c, pl_idx_t c_ctx, cell **vnames, pl_idx_t *vnames_ctx)
 {
-	if (is_variable(c)) {
+	if (is_var(c)) {
 		throw_error(q, c, c_ctx, "instantiation_error", "write_option");
 		return false;
 	}
@@ -2147,7 +2147,7 @@ bool parse_write_params(query *q, cell *c, pl_idx_t c_ctx, cell **vnames, pl_idx
 	pl_idx_t c1_ctx = q->latest_ctx;
 
 	if (!CMP_STR_TO_CSTR(q, c, "max_depth")) {
-		if (is_variable(c1)) {
+		if (is_var(c1)) {
 			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
 			return false;
 		}
@@ -2155,7 +2155,7 @@ bool parse_write_params(query *q, cell *c, pl_idx_t c_ctx, cell **vnames, pl_idx
 		if (is_integer(c1) && (get_smallint(&c[1]) >= 1))
 			q->max_depth = get_smallint(&c[1]);
 	} else if (!CMP_STR_TO_CSTR(q, c, "fullstop")) {
-		if (is_variable(c1)) {
+		if (is_var(c1)) {
 			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
 			return false;
 		}
@@ -2167,7 +2167,7 @@ bool parse_write_params(query *q, cell *c, pl_idx_t c_ctx, cell **vnames, pl_idx
 
 		q->fullstop = !CMP_STR_TO_CSTR(q, c1, "true");
 	} else if (!CMP_STR_TO_CSTR(q, c, "nl")) {
-		if (is_variable(c1)) {
+		if (is_var(c1)) {
 			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
 			return false;
 		}
@@ -2179,7 +2179,7 @@ bool parse_write_params(query *q, cell *c, pl_idx_t c_ctx, cell **vnames, pl_idx
 
 		q->nl = !CMP_STR_TO_CSTR(q, c1, "true");
 	} else if (!CMP_STR_TO_CSTR(q, c, "quoted")) {
-		if (is_variable(c1)) {
+		if (is_var(c1)) {
 			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
 			return false;
 		}
@@ -2191,7 +2191,7 @@ bool parse_write_params(query *q, cell *c, pl_idx_t c_ctx, cell **vnames, pl_idx
 
 		q->quoted = !CMP_STR_TO_CSTR(q, c1, "true");
 	} else if (!CMP_STR_TO_CSTR(q, c, "varnames")) {
-		if (is_variable(c1)) {
+		if (is_var(c1)) {
 			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
 			return false;
 		}
@@ -2203,7 +2203,7 @@ bool parse_write_params(query *q, cell *c, pl_idx_t c_ctx, cell **vnames, pl_idx
 
 		q->varnames = !CMP_STR_TO_CSTR(q, c1, "true");
 	} else if (!CMP_STR_TO_CSTR(q, c, "ignore_ops")) {
-		if (is_variable(c1)) {
+		if (is_var(c1)) {
 			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
 			return false;
 		}
@@ -2215,7 +2215,7 @@ bool parse_write_params(query *q, cell *c, pl_idx_t c_ctx, cell **vnames, pl_idx
 
 		q->ignore_ops = !CMP_STR_TO_CSTR(q, c1, "true");
 	} else if (!CMP_STR_TO_CSTR(q, c, "numbervars")) {
-		if (is_variable(c1)) {
+		if (is_var(c1)) {
 			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
 			return false;
 		}
@@ -2227,7 +2227,7 @@ bool parse_write_params(query *q, cell *c, pl_idx_t c_ctx, cell **vnames, pl_idx
 
 		q->numbervars = !CMP_STR_TO_CSTR(q, c1, "true");
 	} else if (!CMP_STR_TO_CSTR(q, c, "variable_names")) {
-		if (is_variable(c1)) {
+		if (is_var(c1)) {
 			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
 			return false;
 		}
@@ -2246,7 +2246,7 @@ bool parse_write_params(query *q, cell *c, pl_idx_t c_ctx, cell **vnames, pl_idx
 			h = deref(q, h, c1_ctx);
 			pl_idx_t h_ctx = q->latest_ctx;
 
-			if (is_variable(h)) {
+			if (is_var(h)) {
 				throw_error(q, h, h_ctx, "instantiation_error", "write_option");
 				return false;
 			}
@@ -2264,7 +2264,7 @@ bool parse_write_params(query *q, cell *c, pl_idx_t c_ctx, cell **vnames, pl_idx
 			if (is_interned(h)) {
 				cell *h1 = deref(q, h+1, h_ctx);
 
-				if (is_variable(h1)) {
+				if (is_var(h1)) {
 					throw_error(q, c, c_ctx, "instantiation_error", "write_option");
 					return false;
 				} else if (!is_atom(h1)) {
@@ -2275,7 +2275,7 @@ bool parse_write_params(query *q, cell *c, pl_idx_t c_ctx, cell **vnames, pl_idx
 #if 0
 				cell *h2 = deref(q, h+2, h_ctx);
 
-				if (!is_variable(h2)) {
+				if (!is_var(h2)) {
 					throw_error(q, c, c_ctx, "domain_error", "write_option");
 					return false;
 				}
@@ -2287,7 +2287,7 @@ bool parse_write_params(query *q, cell *c, pl_idx_t c_ctx, cell **vnames, pl_idx
 			c1_ctx = q->latest_ctx;
 		}
 
-		if (is_variable(c1)) {
+		if (is_var(c1)) {
 			throw_error(q, c1_orig, c_ctx, "instantiation_error", "write_option");
 			return false;
 		}
@@ -2342,7 +2342,7 @@ static bool fn_iso_write_term_2(query *q)
 		p2_ctx = q->latest_ctx;
 	}
 
-	if (is_variable(p2)) {
+	if (is_var(p2)) {
 		clear_write_options(q);
 		return throw_error(q, p2_orig, p2_orig_ctx, "instantiation_error", "write_option");
 	}
@@ -2411,7 +2411,7 @@ static bool fn_iso_write_term_3(query *q)
 		p2_ctx = q->latest_ctx;
 	}
 
-	if (is_variable(p2)) {
+	if (is_var(p2)) {
 		clear_write_options(q);
 		return throw_error(q, p2_orig, p2_orig_ctx, "instantiation_error", "write_option");
 	}
@@ -3386,7 +3386,7 @@ static bool fn_iso_current_input_1(query *q)
 {
 	GET_FIRST_ARG(pstr,any);
 
-	if (is_variable(pstr)) {
+	if (is_var(pstr)) {
 		cell tmp;
 		make_int(&tmp, q->pl->current_input);
 		tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
@@ -3404,7 +3404,7 @@ static bool fn_iso_current_output_1(query *q)
 {
 	GET_FIRST_ARG(pstr,any);
 
-	if (is_variable(pstr)) {
+	if (is_var(pstr)) {
 		cell tmp;
 		make_int(&tmp, q->pl->current_output);
 		tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
@@ -3498,7 +3498,7 @@ static bool fn_read_term_from_chars_3(query *q)
 		src = chars_list_to_string(q, p_chars, p_chars_ctx, len);
 	} else {
 		if (has_var)
-			return throw_error(q, p_chars, p_chars_ctx, "instantiation_error", "variable");
+			return throw_error(q, p_chars, p_chars_ctx, "instantiation_error", "var");
 
 		return throw_error(q, p_chars, p_chars_ctx, "type_error", "character");
 	}
@@ -3854,7 +3854,7 @@ static bool fn_edin_told_0(query *q)
 
 static bool fn_edin_seeing_1(query *q)
 {
-	GET_FIRST_ARG(p1,variable);
+	GET_FIRST_ARG(p1,var);
 	char *name = q->pl->current_input==0?"user":q->pl->streams[q->pl->current_input].name;
 	cell tmp;
 	check_heap_error(make_cstring(&tmp, name));
@@ -3865,7 +3865,7 @@ static bool fn_edin_seeing_1(query *q)
 
 static bool fn_edin_telling_1(query *q)
 {
-	GET_FIRST_ARG(p1,variable);
+	GET_FIRST_ARG(p1,var);
 	char *name =q->pl->current_output==1?"user":q->pl->streams[q->pl->current_output].name;
 	cell tmp;
 	check_heap_error(make_cstring(&tmp, name));
@@ -3924,7 +3924,7 @@ static bool fn_read_line_to_string_2(query *q)
 static bool fn_read_file_to_string_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_list);
-	GET_NEXT_ARG(p2,variable);
+	GET_NEXT_ARG(p2,var);
 	GET_NEXT_ARG(p3,list_or_nil);
 	char *filename;
 	char *src = NULL;
@@ -3949,7 +3949,7 @@ static bool fn_read_file_to_string_3(query *q)
 		cell *h = LIST_HEAD(p3);
 		cell *c = deref(q, h, p3_ctx);
 
-		if (is_variable(c))
+		if (is_var(c))
 			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 
 		if (is_structure(c) && (c->arity == 1)) {
@@ -3978,7 +3978,7 @@ static bool fn_read_file_to_string_3(query *q)
 		p3 = deref(q, p3, p3_ctx);
 		p3_ctx = q->latest_ctx;
 
-		if (is_variable(p3))
+		if (is_var(p3))
 			return throw_error(q, p3, p3_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 	}
 
@@ -4186,7 +4186,7 @@ static bool fn_savefile_2(query *q)
 static bool fn_loadfile_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_list);
-	GET_NEXT_ARG(p2,variable);
+	GET_NEXT_ARG(p2,var);
 	char *filename;
 
 	if (is_iso_list(p1)) {
@@ -4244,7 +4244,7 @@ static bool fn_loadfile_2(query *q)
 static bool fn_getfile_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_list);
-	GET_NEXT_ARG(p2,variable);
+	GET_NEXT_ARG(p2,var);
 	char *filename;
 
 	if (is_iso_list(p1)) {
@@ -4347,7 +4347,7 @@ static bool get_terminator(query *q, cell *l, pl_idx_t l_ctx)
 static bool fn_getfile_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_list);
-	GET_NEXT_ARG(p2,variable);
+	GET_NEXT_ARG(p2,var);
 	GET_NEXT_ARG(p3,list_or_nil);
 	char *filename;
 	bool terminator = get_terminator(q, p3, p3_ctx);
@@ -4425,7 +4425,7 @@ static bool fn_getfile_3(query *q)
 
 static bool fn_getlines_1(query *q)
 {
-	GET_NEXT_ARG(p1,variable);
+	GET_NEXT_ARG(p1,var);
 	int n = q->pl->current_input;
 	stream *str = &q->pl->streams[n];
 	char *line = NULL;
@@ -4475,7 +4475,7 @@ static bool fn_getlines_1(query *q)
 static bool fn_getlines_2(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
-	GET_NEXT_ARG(p1,variable);
+	GET_NEXT_ARG(p1,var);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	char *line = NULL;
@@ -4525,7 +4525,7 @@ static bool fn_getlines_2(query *q)
 static bool fn_getlines_3(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
-	GET_NEXT_ARG(p1,variable);
+	GET_NEXT_ARG(p1,var);
 	GET_NEXT_ARG(p2,list_or_nil);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
@@ -4959,7 +4959,7 @@ static bool fn_exists_file_1(query *q)
 static bool fn_directory_files_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_list);
-	GET_NEXT_ARG(p2,variable);
+	GET_NEXT_ARG(p2,var);
 	char *filename;
 
 	if (is_iso_list(p1)) {
@@ -5158,7 +5158,7 @@ static bool fn_copy_file_2(query *q)
 static bool fn_time_file_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_list);
-	GET_NEXT_ARG(p2,variable);
+	GET_NEXT_ARG(p2,var);
 	char *filename;
 
 	if (is_iso_list(p1)) {
@@ -5327,7 +5327,7 @@ static bool fn_make_directory_path_1(query *q)
 
 static bool fn_working_directory_2(query *q)
 {
-	GET_FIRST_ARG(p_old,variable);
+	GET_FIRST_ARG(p_old,var);
 	GET_NEXT_ARG(p_new,atom_or_list_or_var);
 	char tmpbuf[PATH_MAX], tmpbuf2[PATH_MAX];
 	char *oldpath = getcwd(tmpbuf, sizeof(tmpbuf));
@@ -5409,7 +5409,7 @@ static void parse_host(const char *src, char hostname[1024], char path[4096], un
 static bool fn_server_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
-	GET_NEXT_ARG(p2,variable);
+	GET_NEXT_ARG(p2,var);
 	GET_NEXT_ARG(p3,list_or_nil);
 	char hostname[1024], path[4096];
 	char *keyfile = "privkey.pem", *certfile = "fullchain.pem";
@@ -5525,7 +5525,7 @@ static bool fn_server_3(query *q)
 static bool fn_accept_2(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
-	GET_NEXT_ARG(p1,variable);
+	GET_NEXT_ARG(p1,var);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
@@ -5583,9 +5583,9 @@ static bool fn_accept_2(query *q)
 static bool fn_client_5(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
-	GET_NEXT_ARG(p2,variable);
-	GET_NEXT_ARG(p3,variable);
-	GET_NEXT_ARG(p4,variable);
+	GET_NEXT_ARG(p2,var);
+	GET_NEXT_ARG(p3,var);
+	GET_NEXT_ARG(p4,var);
 	GET_NEXT_ARG(p5,list_or_nil);
 	char hostname[1024], path[1024*4];
 	char *certfile = NULL;
@@ -5729,7 +5729,7 @@ static bool fn_bread_3(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
 	GET_NEXT_ARG(p1,integer_or_var);
-	GET_NEXT_ARG(p2,variable);
+	GET_NEXT_ARG(p2,var);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	size_t len;
@@ -5909,7 +5909,7 @@ static bool fn_sys_put_chars_2(query *q)
 
 static bool fn_map_create_2(query *q)
 {
-	GET_FIRST_ARG(p1,variable);
+	GET_FIRST_ARG(p1,var);
 	int n = new_stream(q->pl);
 
 	if (n < 0)
@@ -5924,14 +5924,14 @@ static bool fn_map_create_2(query *q)
 		cell *c = deref(q, h, p4_ctx);
 		pl_idx_t c_ctx = q->latest_ctx;
 
-		if (is_variable(c))
+		if (is_var(c))
 			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 
 		cell *name = c + 1;
 		name = deref(q, name, c_ctx);
 
 		if (!CMP_STR_TO_CSTR(q, c, "alias")) {
-			if (is_variable(name))
+			if (is_var(name))
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 
 			if (!is_atom(name))
@@ -5950,7 +5950,7 @@ static bool fn_map_create_2(query *q)
 		p4 = deref(q, p4, p4_ctx);
 		p4_ctx = q->latest_ctx;
 
-		if (is_variable(p4))
+		if (is_var(p4))
 			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 	}
 
@@ -6193,7 +6193,7 @@ static bool fn_map_count_2(query *q)
 	if (!str->is_map)
 		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
 
-	GET_NEXT_ARG(p1,variable);
+	GET_NEXT_ARG(p1,var);
 	cell tmp;
 	make_int(&tmp, map_count(str->keyval));
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);

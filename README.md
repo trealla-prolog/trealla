@@ -49,7 +49,7 @@ where options can be:
 	-l file            - load file (*~/.tplrc* loaded)
 	file               - load file (*~/.tplrc* loaded)
 	-g goal            - query goal (only used once)
-	--library path     - alt to TPL_LIBRARY_PATH env variable
+	--library path     - alt to TPL_LIBRARY_PATH env var
 	-t, --trace        - trace
 	-q, --quiet        - quiet mode (no banner)
 	-v, --version      - version
@@ -113,7 +113,7 @@ characters...
 ?-
 ```
 
-Trealla accepts as a variable any atom beginning with Unicode uppercase...
+Trealla accepts as a var any atom beginning with Unicode uppercase...
 
 ```console
 ?- atom_upper(δ,C).
@@ -557,7 +557,7 @@ Crypto functions
 Hash a plain-text data string to a hexadecimal byte string
 representing the cryptographic strength hashed value. The options
 are *algorithm(Name)* where *Name* can be *sha256*, *sha384* or *sha512*
-at the moment. If it is a variable it will be unified with the default
+at the moment. If it is a var it will be unified with the default
 *sha256* algorithm. This predicate is only available when compiled
 with OpenSSL...
 
@@ -637,7 +637,7 @@ The optional schemes 'unix://', 'http://' (the default) and 'https://'
 can be provided in the client URL.
 
 With *bread/3* the 'len' arg can be an integer > 0 meaning return that
-many bytes, = 0 meaning return what is there (if non-blocking) or a variable
+many bytes, = 0 meaning return what is there (if non-blocking) or a var
 meaning return all bytes until end end of file,
 
 

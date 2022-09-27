@@ -168,7 +168,7 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 	copy_cells(tmp, p1, 1);
 
 	if (!is_structure(p1) || is_string(p1)) {
-		if (!is_variable(p1))
+		if (!is_var(p1))
 			return tmp;
 
 		const frame *f = GET_FRAME(p1_ctx);
@@ -344,7 +344,7 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx_t p1_c
 	frame *f = GET_CURR_FRAME();
 	q->cycle_error = false;
 
-	if (q->vars && is_variable(save_p1)) {
+	if (q->vars && is_var(save_p1)) {
 		const frame *f = GET_FRAME(p1_ctx);
 		const slot *e = GET_SLOT(f, p1->var_nbr);
 		const pl_idx_t slot_nbr = e - q->slots;
@@ -358,7 +358,7 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx_t p1_c
 		q->varno++;
 	}
 
-	if (is_variable(p1)) {
+	if (is_var(p1)) {
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
 	}
@@ -384,7 +384,7 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx_t p1_c
 		}
 	}
 
-	if (is_variable(save_p1)) {
+	if (is_var(save_p1)) {
 		cell tmp;
 		tmp = *save_p1;
 		tmp.var_nbr = q->tab0_varno;
@@ -397,7 +397,7 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx_t p1_c
 	c = get_tmp_heap_start(q);
 
 	for (pl_idx_t i = 0; i < rec->nbr_cells; i++, c++) {
-		if (is_variable(c) && is_fresh(c) && c->tmp_attrs) {
+		if (is_var(c) && is_fresh(c) && c->tmp_attrs) {
 			//printf("*** got one var_nbr=%u / %u\n", c->var_nbr, c->var_ctx);
 			frame *f = GET_FRAME(c->var_ctx);
 			slot *e = GET_SLOT(f, c->var_nbr);
@@ -470,7 +470,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 	if (!tmp) return NULL;
 	copy_cells(tmp, p1, 1);
 
-	if (is_variable(tmp) && !is_ref(tmp)) {
+	if (is_var(tmp) && !is_ref(tmp)) {
 		tmp->flags |= FLAG_REF;
 		tmp->var_ctx = p1_ctx;
 	}
@@ -609,7 +609,7 @@ cell *append_to_tmp(query *q, cell *p1)
 	for (pl_idx_t i = 0; i < p1->nbr_cells; i++, dst++, src++) {
 		*dst = *src;
 
-		if (!is_variable(src) || is_ref(src))
+		if (!is_var(src) || is_ref(src))
 			continue;
 
 		dst->flags |= FLAG_REF;
@@ -644,7 +644,7 @@ cell *clone_to_heap(query *q, bool prefix, cell *p1, unsigned extras)
 		*dst = *src;
 		share_cell(src);
 
-		if (!is_variable(src) || is_ref(src))
+		if (!is_var(src) || is_ref(src))
 			continue;
 
 		dst->flags |= FLAG_REF;

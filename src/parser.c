@@ -461,7 +461,7 @@ static void directives(parser *p, cell *d)
 		const char *name = "";
 		char tmpbuf[1024];
 
-		if (is_variable(p1)) {
+		if (is_var(p1)) {
 			snprintf(tmpbuf, sizeof(tmpbuf), "%s", p->m->filename);
 			char *ptr = tmpbuf + strlen(tmpbuf) - 1;
 
@@ -552,7 +552,7 @@ static void directives(parser *p, cell *d)
 		const char *name = "";
 		char tmpbuf[1024];
 
-		if (is_variable(p1)) {
+		if (is_var(p1)) {
 			snprintf(tmpbuf, sizeof(tmpbuf), "%s", p->m->filename);
 			char *ptr = tmpbuf + strlen(tmpbuf) - 1;
 
@@ -969,7 +969,7 @@ static pl_idx_t get_varno(parser *p, const char *src)
 	size_t len = strlen(src);
 
 	if ((offset+len+1) >= MAX_VAR_POOL_SIZE) {
-		fprintf(stdout, "Error: variable pool exhausted\n");
+		fprintf(stdout, "Error: var pool exhausted\n");
 		p->error = true;
 		return 0;
 	}
@@ -996,8 +996,8 @@ void term_assign_vars(parser *p, unsigned start, bool rebase)
 	cl->is_first_cut = false;
 	cl->is_cut_only = false;
 
-	// Any variable that only occurs in the head of
-	// a clause we consider a temporary variable...
+	// Any var that only occurs in the head of
+	// a clause we consider a temporary var...
 
 	cell *body = get_body(cl->cells);
 	bool in_body = false;
@@ -1008,7 +1008,7 @@ void term_assign_vars(parser *p, unsigned start, bool rebase)
 		if (body && (c == body))
 			in_body = true;
 
-		if (!is_variable(c))
+		if (!is_var(c))
 			continue;
 
 		if (c->val_off == g_anon_s)
@@ -1025,7 +1025,7 @@ void term_assign_vars(parser *p, unsigned start, bool rebase)
 	for (pl_idx_t i = 0; i < cl->cidx; i++) {
 		cell *c = cl->cells + i;
 
-		if (!is_variable(c) || is_temporary(c))
+		if (!is_var(c) || is_temporary(c))
 			continue;
 
 		if (rebase) {
@@ -1057,7 +1057,7 @@ void term_assign_vars(parser *p, unsigned start, bool rebase)
 	for (pl_idx_t i = 0; i < cl->cidx; i++) {
 		cell *c = cl->cells + i;
 
-		if (!is_variable(c) || !is_temporary(c))
+		if (!is_var(c) || !is_temporary(c))
 			continue;
 
 		if (rebase) {
@@ -1724,7 +1724,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			//if (c->val_off == g_soft_cut_s)
 			//	norhs = true;
 
-			if (is_variable(lhs)) {
+			if (is_var(lhs)) {
 				c = insert_call_here(p, c, lhs);
 				lhs = c + 1;
 			} else {
@@ -1737,7 +1737,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			cell *rhs = lhs + lhs->nbr_cells;
 			c = p->cl->cells + c_idx;
 
-			if (is_variable(rhs) && !norhs)
+			if (is_var(rhs) && !norhs)
 				c = insert_call_here(p, c, rhs);
 			else {
 				rhs = goal_expansion(p, rhs);
@@ -1752,7 +1752,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			cell *save_c = c;
 			cell *rhs = c + 1;
 
-			if (is_variable(rhs)) {
+			if (is_var(rhs)) {
 				c = insert_call_here(p, c, rhs);
 				rhs = c + 1;
 			} else {
@@ -1808,7 +1808,7 @@ cell *check_body_callable(parser *p, cell *c)
 		}
 	}
 
-	return !is_callable(c) && !is_variable(c) ? c : NULL;
+	return !is_callable(c) && !is_var(c) ? c : NULL;
 }
 
 bool virtual_term(parser *p, const char *src)
@@ -2424,7 +2424,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 	p->v.flags = 0;
 	p->v.nbr_cells = 1;
 	p->quote_char = 0;
-	p->was_string = p->string = p->is_quoted = p->is_variable = p->is_op = p->symbol = false;
+	p->was_string = p->string = p->is_quoted = p->is_var = p->is_op = p->symbol = false;
 
 	if (p->dq_consing && (*src == '"') && (src[1] == '"')) {
 		src++;
@@ -2755,7 +2755,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		int ch_start = peek_char_utf8(p->token);
 
 		if (iswupper(ch_start) || (ch_start == '_'))
-			p->is_variable = true;
+			p->is_var = true;
 		else if (search_op(p->m, p->token, NULL, false))
 			p->is_op = true;
 
@@ -2887,7 +2887,7 @@ static bool process_term(parser *p, cell *p1)
 	directives(p, p1);
 	cell *h = get_head(p1);
 
-	if (is_variable(h)) {
+	if (is_var(h)) {
 		if (DUMP_ERRS || !p->do_read_term)
 			printf("Error: instantiation error, line %u\n", p->line_nbr);
 
@@ -2988,7 +2988,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 				term_to_body(p);
 
 				if (p->consulting && !p->skip) {
-					if (is_variable(p->cl->cells)) {
+					if (is_var(p->cl->cells)) {
 						if (DUMP_ERRS || !p->do_read_term)
 							printf("Error: instantiation error, line %u\n", p->line_nbr);
 
@@ -3362,9 +3362,9 @@ unsigned tokenize(parser *p, bool args, bool consing)
 
 		p->last_close = false;
 
-		if (p->is_variable && (*p->srcptr == '(')) {
+		if (p->is_var && (*p->srcptr == '(')) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, variable as functor, line %u\n", p->line_nbr);
+				fprintf(stdout, "Error: syntax error, var as functor, line %u\n", p->line_nbr);
 
 			p->error_desc = "variable_cannot_be_functor";
 			p->error = true;
@@ -3517,7 +3517,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			set_smallint(c, get_smallint(&p->v));
 		} else if (p->v.tag == TAG_FLOAT) {
 			set_float(c, get_float(&p->v));
-		} else if ((!p->is_quoted || is_func || p->is_op || p->is_variable
+		} else if ((!p->is_quoted || is_func || p->is_op || p->is_var
 			|| (get_builtin(p->m->pl, p->token, 0, &found, NULL), found)
 			//|| !strcmp(p->token, "[]")
 			) && !p->string) {
@@ -3525,7 +3525,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			if (is_func && !strcmp(p->token, "."))
 				c->priority = 0;
 
-			if (p->is_variable)
+			if (p->is_var)
 				c->tag = TAG_VAR;
 
 			if (p->is_quoted)
