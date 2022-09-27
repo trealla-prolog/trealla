@@ -127,9 +127,9 @@ bool pl_eval(prolog *pl, const char *s)
 	return ok;
 }
 
-bool pl_query(prolog *pl, const char *s)
+bool pl_query(prolog *pl, const char *s, pl_sub_query **subq)
 {
-	if (!*s)
+	if (!pl || !*s || !subq)
 		return false;
 
 	pl->p = create_parser(pl->curr_m);
@@ -137,27 +137,22 @@ bool pl_query(prolog *pl, const char *s)
 	pl->p->command = true;
 	pl->is_query = true;
 	bool ok = run(pl->p, s, true);
+	*subq = (pl_sub_query*)pl->curr_query;
 	pl->curr_m = pl->p->m;
 	return ok;
 }
 
-bool pl_redo(prolog *pl)
+bool pl_redo(pl_sub_query *subq)
 {
-	printf("*** pl_redo\n");
-
-	if (!pl->is_query)
+	if (!subq)
 		return false;
 
-	query *q = pl->curr_query;
+	query *q = (query*)subq;
 
 	if (query_redo(q))
 		return true;
 
-	destroy_parser(pl->p);
-	pl->p = NULL;
 	destroy_query(q);
-	pl->curr_query = NULL;
-	pl->is_query = false;
 	return false;
 }
 
