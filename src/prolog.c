@@ -156,6 +156,16 @@ bool pl_redo(pl_sub_query *subq)
 	return false;
 }
 
+bool pl_done(pl_sub_query *subq)
+{
+	if (!subq)
+		return false;
+
+	query *q = (query*)subq;
+	destroy_query(q);
+	return true;
+}
+
 bool pl_consult_fp(prolog *pl, FILE *fp, const char *filename)
 {
 	return load_fp(pl->user_m, fp, filename, false) != NULL;

@@ -14,6 +14,7 @@ extern bool pl_eval(prolog*, const char *expr);
 
 extern bool pl_query(prolog*, const char *expr, pl_sub_query **q);
 extern bool pl_redo(pl_sub_query *q);
+extern bool pl_done(pl_sub_query *q);	// only call if redo still active
 
 extern int get_halt_code(prolog*);
 extern bool get_halt(prolog*);
