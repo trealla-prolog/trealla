@@ -14,8 +14,6 @@
 :- module(js_toplevel, [js_toplevel/0, js_ask/1]).
 
 :- use_module(library(lists)).
-:- use_module(library(dcgs)).
-:- use_module(library(json)).
 
 js_toplevel :-
 	getline(Line),
@@ -42,25 +40,16 @@ js_ask(Input) :-
 
 write_result(success, Solution0, _) :-
 	solution_json(Solution0, Solution),
-	once(phrase(json_chars(pairs([
-		string("result")-string("success"),
-		string("answer")-Solution
-	])), JSON)),
-	maplist(write, JSON), nl.
+	write({"result":"success", "answer":Solution}),
+	nl.
 
 write_result(failure, _, _) :-
-	once(phrase(json_chars(pairs([
-		string("result")-string("failure")
-	])), JSON)),
-	maplist(write, JSON), nl.
+	'$put_chars'("{\"result\":\"failure\"}\n").
 
 write_result(error, _, Error0) :-
 	term_json(Error0, Error),
-	once(phrase(json_chars(pairs([
-		string("result")-string("error"),
-		string("error")-Error
-	])), JSON)),
-	maplist(write, JSON), nl.
+	write({"result":"error", "error":Error}),
+	nl.
 
 query(Query, Status) :-
 	write('\x2\'),  % START OF TEXT
@@ -69,32 +58,35 @@ query(Query, Status) :-
 	;   Status = failure
 	).  % END OF TEXT
 
-solution_json(Vars0, pairs(Vars)) :- maplist(var_json, Vars0, Vars).
+solution_json([], {}) :- !.
+solution_json(Vs, {Vars}) :- foldl(solution_json_, Vs, [], Vars).
+solution_json_(V0, [], V) :- var_json(V0, V), !.
+solution_json_(V0, Vs, (Vs, V)) :- var_json(V0, V).
 
-var_json(Var0=Value0, string(Var)-Value) :-
+var_json(Var0=Value0, Var:Value) :-
 	atom_chars(Var0, Var),
 	term_json(Value0, Value).
 
-term_json(Value0, string(Value)) :-
+term_json(Value0, Value) :-
 	atom(Value0),
 	atom_chars(Value0, Value),
 	!.
-term_json(Value, string(Value)) :-
+term_json(Value, Value) :-
 	string(Value),
 	!.
-term_json(Value, number(Value)) :-
+term_json(Value, Value) :-
 	number(Value),
 	!.
-term_json(Value0, list(Value)) :-
+term_json(Value0, Value) :-
 	is_list(Value0),
 	maplist(term_json, Value0, Value),
 	!.
-term_json(Value, pairs([string("functor")-string(Functor), string("args")-list(Args)])) :-
+term_json(Value, {"functor":Functor, "args":Args}) :-
 	compound(Value),
 	Value =.. [Functor0|Args0],
 	atom_chars(Functor0, Functor),
 	maplist(term_json, Args0, Args),
 	!.
-term_json(Value, pairs([string("var")-string("_")])) :-
+term_json(Value, {"var":"_"}) :-
 	var(Value),
 	!.
