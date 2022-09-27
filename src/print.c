@@ -542,7 +542,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 				if (res < 0) return -1;
 				dst += res;
 			}
-		} else if (q->st.m->flags.double_quote_chars && running
+		} else if (q->st.m->flags.double_quote_chars && running && !q->ignore_ops
 			&& possible_chars && !is_cyclic_term(q, c, c_ctx)
 			&& (tmp_len = scan_is_chars_list(q, tail, c_ctx, false)) > 0) {
 			char *tmp_src = chars_list_to_string(q, tail, c_ctx, tmp_len);
