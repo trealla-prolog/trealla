@@ -479,7 +479,7 @@ static ssize_t print_string_list(query *q, char *save_dst, char *dst, size_t dst
 
 static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen, cell *c, pl_idx_t c_ctx, int running, bool cons, unsigned depth)
 {
-	unsigned print_list = 0, cnt = 0;
+	unsigned print_list = 0;
 
 	while (is_iso_list(c)) {
 		CHECK_INTERRUPT();
@@ -593,7 +593,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 
 static ssize_t print_canonical_list(query *q, char *save_dst, char *dst, size_t dstlen, cell *c, pl_idx_t c_ctx, int running, bool cons, unsigned depth)
 {
-	unsigned print_list = 0, cnt = 0;
+	unsigned print_list = 0;
 
 	while (is_iso_list(c)) {
 		CHECK_INTERRUPT();
