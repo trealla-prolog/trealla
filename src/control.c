@@ -656,7 +656,7 @@ bool throw_error3(query *q, cell *c, pl_idx_t c_ctx, const char *err_type, const
 	if (!strcmp(expected, "smallint"))
 		expected = "integer";
 
-	if (!is_variable(c)) {
+	if (!is_var(c)) {
 		char *tmpbuf = DUP_STR(q, goal);
 		snprintf(functor, sizeof(functor), "%s", tmpbuf);
 		free(tmpbuf);
@@ -677,7 +677,7 @@ bool throw_error3(query *q, cell *c, pl_idx_t c_ctx, const char *err_type, const
 
 	cell *tmp;
 
-	if (is_variable(c)) {
+	if (is_var(c)) {
 		err_type = "instantiation_error";
 		//printf("error(%s,%s).\n", err_type, expected);
 		tmp = alloc_on_heap(q, 3);
@@ -686,7 +686,7 @@ bool throw_error3(query *q, cell *c, pl_idx_t c_ctx, const char *err_type, const
 		make_struct(tmp+nbr_cells++, g_error_s, NULL, 2, 2);
 		make_atom(tmp+nbr_cells++, index_from_pool(q->pl, err_type));
 		make_atom(tmp+nbr_cells, index_from_pool(q->pl, expected));
-	} else if (!strcmp(err_type, "type_error") && !strcmp(expected, "variable")) {
+	} else if (!strcmp(err_type, "type_error") && !strcmp(expected, "var")) {
 		err_type = "uninstantiation_error";
 		//printf("error(%s(%s),(%s)/%u).\n", err_type, C_STR(q, c), functor, goal->arity);
 		tmp = alloc_on_heap(q, 6+(c->nbr_cells-1));
@@ -719,7 +719,7 @@ bool throw_error3(query *q, cell *c, pl_idx_t c_ctx, const char *err_type, const
 		SET_OP(tmp+nbr_cells, OP_YFX); nbr_cells++;
 		make_atom(tmp+nbr_cells++, index_from_pool(q->pl, functor));
 		make_int(tmp+nbr_cells, !is_string(goal)?goal->arity:0);
-	} else if (!strcmp(err_type, "permission_error") && is_structure(c) && CMP_STR_TO_CSTR(q, c, "/") && is_variable(c+1)) {
+	} else if (!strcmp(err_type, "permission_error") && is_structure(c) && CMP_STR_TO_CSTR(q, c, "/") && is_var(c+1)) {
 		//printf("error(%s(%s,(%s)/%u),(%s)/%u).\n", err_type, expected, tmpbuf, c->arity, functor, goal->arity);
 		tmp = alloc_on_heap(q, 9+extra);
 		check_heap_error(tmp);

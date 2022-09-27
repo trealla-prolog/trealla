@@ -457,7 +457,7 @@ domain_error(Type, Term, Context) :-
 type_error(Type, Term, Context) :-
     throw(error(type_error(Type, Term), Context)).
 
-% NOTE: this doesn't print variable names properly...
+% NOTE: this doesn't print var names properly...
 
 pretty(PI) :-
 	use_module(library(format)),
@@ -498,7 +498,7 @@ nb_setval(K, V) :-
 
 nb_getval(K, V) :-
 	must_be(K, atom, nb_getval/2, _),
-	user:catch('$global_key'(K, V), _, throw(error(existence_error(variable, K), nb_getval/2))),
+	user:catch('$global_key'(K, V), _, throw(error(existence_error(var, K), nb_getval/2))),
 	!.
 
 nb_delete(K) :-
@@ -546,7 +546,7 @@ b_setval0(K, _) :-
 
 b_getval(K, V) :-
 	must_be(K, atom, b_getval/2, _),
-	user:catch('$global_key'(K, V), _, throw(error(existence_error(variable, K), b_getval/2))),
+	user:catch('$global_key'(K, V), _, throw(error(existence_error(var, K), b_getval/2))),
 	!.
 
 b_delete(K) :-
@@ -586,7 +586,7 @@ bb_put(K, V) :-
 
 bb_get(K, V) :-
 	must_be(K, atom, bb_get/2, _),
-	user:catch('$global_key'(K, V), _, throw(error(existence_error(variable, K), bb_get/2))),
+	user:catch('$global_key'(K, V), _, throw(error(existence_error(var, K), bb_get/2))),
 	!.
 
 bb_delete(K, V) :-

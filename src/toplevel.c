@@ -104,6 +104,9 @@ bool check_redo(query *q)
 
 	fflush(stdout);
 
+	if (q->pl->is_query)
+		return q->cp;
+
 	if (q->autofail) {
 		printf("\n; ");
 		fflush(stdout);
@@ -253,6 +256,17 @@ static bool any_attributed(const query *q)
 	return any;
 }
 
+bool query_redo(query *q)
+{
+	if (!q->cp)
+		return false;
+
+	q->is_redo = true;
+	q->retry = QUERY_RETRY;
+	q->pl->did_dump_vars = false;
+	return start(q);
+}
+
 void dump_vars(query *q, bool partial)
 {
 	if (q->in_attvar_print)
@@ -264,7 +278,7 @@ void dump_vars(query *q, bool partial)
 	q->tab_idx = 0;
 	bool any = false;
 
-	// Build the ignore list for variable name clashes....
+	// Build the ignore list for var name clashes....
 
 	for (unsigned i = 0; i < MAX_IGNORES; i++)
 		q->ignores[i] = false;
@@ -278,7 +292,7 @@ void dump_vars(query *q, bool partial)
 			q->ignores[j] = true;
 	}
 
-	// Build the variable-names list for dumping vars...
+	// Build the var-names list for dumping vars...
 
 	for (unsigned i = 0; i < p->nbr_vars; i++) {
 		cell tmp[3];
@@ -316,7 +330,7 @@ void dump_vars(query *q, bool partial)
 			c_ctx = e->c.var_ctx;
 		}
 
-		if (is_variable(c) && is_anon(c))
+		if (is_var(c) && is_anon(c))
 			continue;
 
 		if (any)
@@ -414,9 +428,9 @@ void dump_vars(query *q, bool partial)
 	if (any && !partial) {
 		if (space) fprintf(stdout, " ");
 		fprintf(stdout, ".\n");
-		fflush(stdout);
 	}
 
+	fflush(stdout);
 	q->pl->did_dump_vars = any;
 	clear_write_options(q);
 	clear_results();

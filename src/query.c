@@ -63,7 +63,7 @@ void dump_term(query *q, const char *s, const cell *c)
 
 		if (is_atom(c))
 			printf("%s ", C_STR(q, c));
-		else if (is_variable(c))
+		else if (is_var(c))
 			printf("_%u ", c->var_nbr);
 		else if (is_structure(c))
 			printf("%s/%u ", C_STR(q, c), c->arity);
@@ -271,7 +271,7 @@ bool check_list(query *q, cell *p1, pl_idx_t p1_ctx, bool *is_partial, pl_int_t 
 	if (is_nil(c))
 		return true;
 
-	if (is_variable(c)) {
+	if (is_var(c)) {
 		if (is_partial)
 			*is_partial = true;
 	} else {
@@ -446,7 +446,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx_t key_ctx)
 	cell *arg1 = key->arity ? key + 1 : NULL;
 	map *idx = pr->idx;
 
-	if (arg1 && (is_variable(arg1) || pr->is_var_in_first_arg)) {
+	if (arg1 && (is_var(arg1) || pr->is_var_in_first_arg)) {
 		if (!pr->idx2) {
 			q->st.curr_dbe = pr->head;
 			return true;
@@ -454,7 +454,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx_t key_ctx)
 
 		cell *arg2 = arg1 + arg1->nbr_cells;
 
-		if (is_variable(arg2)) {
+		if (is_var(arg2)) {
 			q->st.curr_dbe = pr->head;
 			return true;
 		}
@@ -552,7 +552,7 @@ size_t scan_is_chars_list2(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes, 
 		cell *c = deref(q, h, l_ctx);
 		q->suspect = c;
 
-		if (is_variable(c)) {
+		if (is_var(c)) {
 			*has_var = true;
 			return 0;
 		}
@@ -591,7 +591,7 @@ size_t scan_is_chars_list2(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes, 
 		cnt++;
 	}
 
-	if (is_variable(l)) {
+	if (is_var(l)) {
 		is_chars_list = 0;
 		*has_var = *is_partial = true;
 	} else if (is_string(l))
@@ -1250,7 +1250,7 @@ cell *get_var(query *q, cell *c, pl_idx_t c_ctx)
 	const frame *f = GET_FRAME(c_ctx);
 	slot *e = GET_SLOT(f, c->var_nbr);
 
-	while (is_variable(&e->c)) {
+	while (is_var(&e->c)) {
 		c_ctx = e->c.var_ctx;
 		c = &e->c;
 		f = GET_FRAME(c_ctx);
@@ -1267,7 +1267,7 @@ cell *get_var(query *q, cell *c, pl_idx_t c_ctx)
 		return e->c.val_ptr;
 	}
 
-	if (is_variable(&e->c)) {
+	if (is_var(&e->c)) {
 		q->latest_ctx = e->c.var_ctx;
 		return &e->c;
 	}
@@ -1280,35 +1280,40 @@ void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 {
 	frame *f = GET_FRAME(c_ctx);
 	slot *e = GET_SLOT(f, c->var_nbr);
-	cell *c_attrs = is_empty(&e->c) ? e->c.attrs : NULL;
+	cell *c_attrs = is_empty(&e->c) ? e->c.attrs : NULL, *v_attrs = NULL;
 	pl_idx_t c_attrs_ctx = c_attrs ? e->c.attrs_ctx : 0;
 
-	if (c_attrs) {
-		if (is_variable(v)) {
-			frame *f2 = GET_FRAME(v_ctx);
-			slot *e2 = GET_SLOT(f2, v->var_nbr);
-			cell *v_attrs = is_empty(&e2->c) ? e2->c.attrs : NULL;
-
-			if (v_attrs)
-				q->run_hook = true;
-			else {
-				add_trail(q, v_ctx, v->var_nbr, NULL, 0);
-				e2->c.attrs = c_attrs;
-				e2->c.attrs_ctx = c_attrs_ctx;
-			}
-		} else
-			q->run_hook = true;
+	if (is_var(v)) {
+		frame *vf = GET_FRAME(v_ctx);
+		slot *ve = GET_SLOT(vf, v->var_nbr);
+		v_attrs = is_empty(&ve->c) ? ve->c.attrs : NULL;
 	}
 
-	if ((q->cp || c_attrs) && (c_ctx < q->st.fp))
+	//if (c_ctx < q->st.fp)
 		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
+
+	// If 'c' is an attvar and either 'v' is an attvar or nonvar then run the hook
+	// If 'c' is an attvar and 'v' is a plain var then copy attributes to 'v'
+	// If 'c' is a plain var and 'v' is an attvar then copy attributes to 'c'
+
+	if (c_attrs && (v_attrs || is_nonvar(v))) {
+		q->run_hook = true;
+	} else if (c_attrs && !v_attrs && is_var(v)) {
+		frame *vf = GET_FRAME(v_ctx);
+		slot *ve = GET_SLOT(vf, v->var_nbr);
+		add_trail(q, v_ctx, v->var_nbr, NULL, 0);
+		ve->c.attrs = c_attrs;
+		ve->c.attrs_ctx = c_attrs_ctx;
+	} else if (!c_attrs && v_attrs) {
+		// attributes get copied below
+	}
 
 	if (is_structure(v)) {
 		if ((c_ctx != q->st.curr_frame) /*&& (v_ctx == q->st.curr_frame)*/)
 			q->no_tco = true;
 
 		make_indirect(&e->c, v, v_ctx);
-	} else if (is_variable(v)) {
+	} else if (is_var(v)) {
 		e->c = *v;
 		e->c.flags &= ~FLAG_REF;
 		e->c.var_ctx = v_ctx;
@@ -1340,7 +1345,7 @@ void reset_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx,
 
 	if (is_structure(v)) {
 		make_indirect(&e->c, v, v_ctx);
-	} else if (is_variable(v)) {
+	} else if (is_var(v)) {
 		e->c = *v;
 		e->c.flags &= ~FLAG_REF;
 		e->c.var_ctx = v_ctx;
@@ -1352,8 +1357,11 @@ void reset_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx,
 	if (is_structure(v)) {
 		frame *vf = GET_FRAME(v_ctx);
 		vf->is_active = true;
+
+		if (c_ctx >= q->st.curr_frame)
+			f->is_active = true;
+	} else if (!is_temporary(c))
 		f->is_active = true;
-	}
 }
 
 // Match HEAD :- BODY.
@@ -1420,7 +1428,7 @@ bool match_rule(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract
 		p1 = orig_p1;
 		cell *c_body = get_logical_body(c);
 
-		if (p1_body && is_variable(p1_body) && !c_body) {
+		if (p1_body && is_var(p1_body) && !c_body) {
 			p1 = deref(q, get_head(p1), p1_ctx);
 			c = get_head(c);
 			needs_true = true;
@@ -1718,7 +1726,7 @@ bool start(query *q)
 				break;
 		}
 
-		if (is_variable(q->st.curr_cell)) {
+		if (is_var(q->st.curr_cell)) {
 			if (!fn_call_0(q, q->st.curr_cell))
 				continue;
 		}

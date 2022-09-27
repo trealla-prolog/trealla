@@ -358,7 +358,16 @@ int main(int ac, char *av[], char * envp[])
 		}
 
 		g_tpl_interrupt = 0;
+
+#if 1
 		pl_eval(pl, src);
+#else
+		pl_query(pl, src);
+
+		do {
+		} while (pl_redo(pl));
+#endif
+
 		free(line);
 
 		if (get_halt(pl))

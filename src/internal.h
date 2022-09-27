@@ -89,7 +89,7 @@ extern unsigned g_string_cnt, g_interned_cnt;
 // Primary type...
 
 #define is_empty(c) ((c)->tag == TAG_EMPTY)
-#define is_variable(c) ((c)->tag == TAG_VAR)
+#define is_var(c) ((c)->tag == TAG_VAR)
 #define is_interned(c) ((c)->tag == TAG_INTERNED)
 #define is_cstring(c) ((c)->tag == TAG_CSTR)
 #define is_integer(c) ((c)->tag == TAG_INTEGER)
@@ -161,7 +161,7 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define is_compound(c) (is_structure(c) || is_string(c))
 #define is_number(c) (is_integer(c) || is_float(c))
 #define is_atomic(c) (is_atom(c) || is_number(c))
-#define is_nonvar(c) !is_variable(c)
+#define is_nonvar(c) !is_var(c)
 
 typedef struct {
 	int64_t refcnt;
@@ -317,7 +317,7 @@ typedef struct reflist_ reflist;
 typedef struct builtins_ builtins;
 
 // Using a fixed-size cell allows having arrays of cells, which is
-// basically what a Term is. A compound is a variable length array of
+// basically what a Term is. A compound is a var length array of
 // cells, the length specified by 'nbr_cells' field in the 1st cell.
 // A cell is a tagged union.
 // The size should be 24 bytes... (1 + 2) * 8
@@ -729,7 +729,7 @@ struct parser_ {
 	bool end_of_term:1;
 	bool comment:1;
 	bool is_quoted:1;
-	bool is_variable:1;
+	bool is_var:1;
 	bool is_op:1;
 	bool skip:1;
 	bool command:1;
@@ -778,6 +778,7 @@ struct prolog_ {
 	module *modules, *system_m, *user_m, *curr_m, *dcgs;
 	var_item *tabs;
 	parser *p;
+	query *curr_query;
 	map *symtab, *biftab, *keyval, *help;
 	char *pool;
 	size_t pool_offset, pool_size, tabs_size;
@@ -786,6 +787,7 @@ struct prolog_ {
 	uint8_t current_input, current_output, current_error;
 	int8_t halt_code, opt;
 	bool is_redo:1;
+	bool is_query:1;
 	bool halt:1;
 	bool status:1;
 	bool did_dump_vars:1;

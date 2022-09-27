@@ -12,8 +12,8 @@ static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_id
 		return 0;
 	}
 
-	if (is_variable(p1)) {
-		if (is_variable(p2)) {
+	if (is_var(p1)) {
+		if (is_var(p2)) {
 			if (p1_ctx < p2_ctx)
 				return -1;
 
@@ -26,7 +26,7 @@ static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_id
 		return -1;
 	}
 
-	if (is_variable(p2)) {
+	if (is_var(p2)) {
 		return 1;
 	}
 
@@ -130,7 +130,7 @@ static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_id
 		bool cycle1 = false, cycle2 = false;
 
 		if (q->info1) {
-			if (is_variable(p1)) {
+			if (is_var(p1)) {
 				if (is_in_ref_list(p1, p1_ctx, q->info1->r1)) {
 					c1 = p1;
 					c1_ctx = p1_ctx;
@@ -145,7 +145,7 @@ static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_id
 		}
 
 		if (q->info2) {
-			if (is_variable(p2)) {
+			if (is_var(p2)) {
 				if (is_in_ref_list(p2, p2_ctx, q->info2->r2)) {
 					c2 = p2;
 					c2_ctx = p2_ctx;
@@ -166,12 +166,12 @@ static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_id
 		if (val) return val;
 
 		if (q->info1) {
-			if (is_variable(p1))
+			if (is_var(p1))
 				q->info1->r1 = r1.next;		// restore
 		}
 
 		if (q->info2) {
-			if (is_variable(p2))
+			if (is_var(p2))
 				q->info2->r2 = r2.next;		// restore
 		}
 
@@ -248,16 +248,16 @@ static void collect_list_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx)
 		cell *c = LIST_HEAD(l);
 		pl_idx_t c_ctx = l_ctx;
 
-		if (is_variable(c)) {
+		if (is_var(c)) {
 			const frame *f = GET_FRAME(c_ctx);
 			slot *e = GET_SLOT(f, c->var_nbr);
 			c = deref(q, c, l_ctx);
 			c_ctx = q->latest_ctx;
 
-			if (is_variable(c))
+			if (is_var(c))
 				accum_var(q, c, c_ctx);
 
-			if (!is_variable(c) && (e->mgen != q->mgen)) {
+			if (!is_var(c) && (e->mgen != q->mgen)) {
 				e->mgen = q->mgen;
 				collect_vars_internal(q, c, c_ctx);
 			} else
@@ -268,13 +268,13 @@ static void collect_list_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx)
 
 		l = LIST_TAIL(l);
 
-		if (is_variable(l)) {
+		if (is_var(l)) {
 			const frame *f = GET_FRAME(l_ctx);
 			slot *e = GET_SLOT(f, l->var_nbr);
 			l = deref(q, l, l_ctx);
 			l_ctx = q->latest_ctx;
 
-			if (!is_variable(l) && (e->mgen == q->mgen))
+			if (!is_var(l) && (e->mgen == q->mgen))
 				return;
 
 			e->mgen = q->mgen;
@@ -286,7 +286,7 @@ static void collect_list_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx)
 
 static void collect_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx)
 {
-	if (is_variable(p1)) {
+	if (is_var(p1)) {
 		accum_var(q, p1, p1_ctx);
 		return;
 	}
@@ -305,16 +305,16 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx)
 	while (arity--) {
 		CHECK_INTERRUPT();
 
-		if (is_variable(p1)) {
+		if (is_var(p1)) {
 			const frame *f = GET_FRAME(p1_ctx);
 			slot *e = GET_SLOT(f, p1->var_nbr);
 			cell *c = deref(q, p1, p1_ctx);
 			pl_idx_t c_ctx = q->latest_ctx;
 
-			if (is_variable(c))
+			if (is_var(c))
 				accum_var(q, c, c_ctx);
 
-			if (!is_variable(c) && (e->mgen != q->mgen)) {
+			if (!is_var(c) && (e->mgen != q->mgen)) {
 				e->mgen = q->mgen;
 				collect_vars_internal(q, c, c_ctx);
 			} else
@@ -351,13 +351,13 @@ static bool has_list_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx)
 		cell *c = LIST_HEAD(l);
 		pl_idx_t c_ctx = l_ctx;
 
-		if (is_variable(c)) {
+		if (is_var(c)) {
 			const frame *f = GET_FRAME(l_ctx);
 			slot *e = GET_SLOT(f, c->var_nbr);
 			c = deref(q, c, l_ctx);
 			c_ctx = q->latest_ctx;
 
-			if (is_variable(c))
+			if (is_var(c))
 				return true;
 
 			if (e->mgen != q->mgen) {
@@ -374,13 +374,13 @@ static bool has_list_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx)
 
 		l = LIST_TAIL(l);
 
-		if (is_variable(l)) {
+		if (is_var(l)) {
 			const frame *f = GET_FRAME(l_ctx);
 			slot *e = GET_SLOT(f, l->var_nbr);
 			l = deref(q, l, l_ctx);
 			l_ctx = q->latest_ctx;
 
-			if (!is_variable(l) && (e->mgen == q->mgen))
+			if (!is_var(l) && (e->mgen == q->mgen))
 				return false;
 
 			e->mgen = q->mgen;
@@ -392,7 +392,7 @@ static bool has_list_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx)
 
 static bool has_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx)
 {
-	if (is_variable(p1))
+	if (is_var(p1))
 		return true;
 
 	if (!is_structure(p1))
@@ -407,13 +407,13 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx)
 	while (arity--) {
 		CHECK_INTERRUPT();
 
-		if (is_variable(p1)) {
+		if (is_var(p1)) {
 			frame *f = GET_FRAME(p1_ctx);
 			slot *e = GET_SLOT(f, p1->var_nbr);
 			cell *c = deref(q, p1, p1_ctx);
 			pl_idx_t c_ctx = q->latest_ctx;
 
-			if (is_variable(c))
+			if (is_var(c))
 				return true;
 
 			if (e->mgen != q->mgen) {
@@ -455,7 +455,7 @@ static bool is_cyclic_list_internal(query *q, cell *p1, pl_idx_t p1_ctx)
 		cell *c = LIST_HEAD(l);
 		pl_idx_t c_ctx = l_ctx;
 
-		if (is_variable(c)) {
+		if (is_var(c)) {
 			const frame *f = GET_FRAME(c_ctx);
 			slot *e = GET_SLOT(f, c->var_nbr);
 
@@ -486,7 +486,7 @@ static bool is_cyclic_list_internal(query *q, cell *p1, pl_idx_t p1_ctx)
 
 		l = LIST_TAIL(l);
 
-		if (is_variable(l)) {
+		if (is_var(l)) {
 			const frame *f = GET_FRAME(l_ctx);
 			slot *e = GET_SLOT(f, l->var_nbr);
 			l = deref(q, l, l_ctx);
@@ -514,7 +514,7 @@ static bool is_cyclic_list_internal(query *q, cell *p1, pl_idx_t p1_ctx)
 		CHECK_INTERRUPT();
 		l = LIST_TAIL(l);
 
-		if (is_variable(l)) {
+		if (is_var(l)) {
 			const frame *f = GET_FRAME(l_ctx);
 			slot *e = GET_SLOT(f, l->var_nbr);
 			e->mark = false;
@@ -545,13 +545,13 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx)
 	while (arity--) {
 		CHECK_INTERRUPT();
 
-		if (is_variable(p1)) {
+		if (is_var(p1)) {
 			const frame *f = GET_FRAME(p1_ctx);
 			slot *e = GET_SLOT(f, p1->var_nbr);
 			cell *c = deref(q, p1, p1_ctx);
 			pl_idx_t c_ctx = q->latest_ctx;
 
-			if (!is_variable(c)) {
+			if (!is_var(c)) {
 				if (e->mark) {
 					e->mark = false;
 					return true;
@@ -750,7 +750,7 @@ static void set_new_var(query *q, cell *tmp, cell *v, pl_idx_t ctx)
 
 bool fn_sys_undo_trail_1(query *q)
 {
-	GET_FIRST_ARG(p1,variable);
+	GET_FIRST_ARG(p1,var);
 	q->in_hook = true;
 
 	if (q->undo_hi_tp == q->undo_lo_tp) {
@@ -1013,10 +1013,10 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 	if (!p1 && !p2)
 		return true;
 
-	if (!p1 && is_variable(p2))
+	if (!p1 && is_var(p2))
 		return true;
 
-	if (!p2 && is_variable(p1))
+	if (!p2 && is_var(p1))
 		return true;
 
 	if (!p1 || !p2)
@@ -1052,7 +1052,7 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 		if (q->info1) {
 			int both = 0;
 
-			if (is_variable(p1)) {
+			if (is_var(p1)) {
 				if (is_in_ref_list(p1, p1_ctx, q->info1->r1)) {
 					//c1 = p1;
 					//c1_ctx = p1_ctx;
@@ -1065,7 +1065,7 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 				}
 			}
 
-			if (is_variable(p2)) {
+			if (is_var(p2)) {
 				if (is_in_ref_list(p2, p2_ctx, q->info2->r2)) {
 					//c2 = p2;
 					//c2_ctx = p2_ctx;
@@ -1087,12 +1087,12 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 			return false;
 
 		if (q->info1) {
-			if (is_variable(p1))
+			if (is_var(p1))
 				q->info1->r1 = r1.next;		// restore
 		}
 
 		if (q->info2) {
-			if (is_variable(p2))
+			if (is_var(p2))
 				q->info2->r2 = r2.next;		// restore
 		}
 
@@ -1113,7 +1113,7 @@ static bool unify_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 		return false;
 	}
 
-	if (is_variable(p1) && is_variable(p2)) {
+	if (is_var(p1) && is_var(p2)) {
 		if (p2_ctx > p1_ctx)
 			set_var(q, p2, p2_ctx, p1, p1_ctx);
 		else if (p2_ctx < p1_ctx)
@@ -1126,17 +1126,17 @@ static bool unify_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 		return true;
 	}
 
-	if (is_variable(p2)) {
+	if (is_var(p2)) {
 		cell *tmp = p2;
 		pl_idx_t tmp_ctx = p2_ctx;
 		p2 = p1;
 		p2_ctx = p1_ctx;
 		p1 = tmp;
 		p1_ctx = tmp_ctx;
-	} else if (is_variable(p1))
+	} else if (is_var(p1))
 		q->has_vars = true;
 
-	if (is_variable(p1)) {
+	if (is_var(p1)) {
 		bool was_cyclic = false;
 
 		if (q->flags.occurs_check == OCCURS_CHECK_TRUE) {
