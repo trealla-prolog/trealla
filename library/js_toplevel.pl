@@ -36,6 +36,7 @@ js_ask(Input) :-
 		Error,
 		Status = error
 	),
+	write('\x3\'),
 	write_result(Status, Vars, Error),
 	flush_output.
 
@@ -66,8 +67,7 @@ query(Query, Status) :-
 	(   call(Query)
 	*-> Status = success
 	;   Status = failure
-	),
-	write('\x3\').  % END OF TEXT
+	).  % END OF TEXT
 
 solution_json(Vars0, pairs(Vars)) :- maplist(var_json, Vars0, Vars).
 
