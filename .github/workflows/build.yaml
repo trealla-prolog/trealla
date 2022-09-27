@@ -78,6 +78,7 @@
             tar xvf wizer-${WIZER_VERSION_FULL}.tar.xz
         - name: Build
           run: |
+            eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
             make clean
             make wasm
         - name: Test
