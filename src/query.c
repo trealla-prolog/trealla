@@ -1352,8 +1352,11 @@ void reset_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx,
 	if (is_structure(v)) {
 		frame *vf = GET_FRAME(v_ctx);
 		vf->is_active = true;
+
+		if (c_ctx >= q->st.curr_frame)
+			f->is_active = true;
+	} else if (!is_temporary(c))
 		f->is_active = true;
-	}
 }
 
 // Match HEAD :- BODY.
