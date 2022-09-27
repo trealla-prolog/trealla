@@ -31,15 +31,15 @@ js_ask(Input) :-
 			flush_output
 		)
 	),
-	query(Query, Vars, Status, Solutions),
-	write_result(Status, Solutions),
+	query(Query, Vars, Status, Solution),
+	write_result(Status, Solution),
 	flush_output.
 
-write_result(success, Solutions0) :-
-	maplist(solution_json, Solutions0, Solutions),
+write_result(success, Solution0) :-
+	solution_json(Solution0, Solution),
 	once(phrase(json_chars(pairs([
 		string("result")-string("success"),
-		string("answers")-list(Solutions)
+		string("answer")-Solution
 	])), JSON)),
 	maplist(write, JSON), nl.
 
@@ -57,18 +57,17 @@ write_result(error, Error0) :-
 	])), JSON)),
 	maplist(write, JSON), nl.
 
-query(Query, Vars, Status, Solutions) :-
-	( setup_call_cleanup(
-		write('\x2\'), % START OF TEXT
-		catch(bagof(Vars, call(Query), Solutions), Error, true),
-		write('\x3\')  % END OF TEXT
-	) -> OK = true
-	  ;  OK = false
-	),  
+query(Query, Vars, Status, Solution) :-
+	write('\x2\'),
+	(   catch(call(Query), Error, true)
+	*-> OK = true
+	;   OK = false
+	),
+	write('\x3\'),  % END OF TEXT
 	query_status(OK, Error, Status),
 	(  nonvar(Error)
-	-> Solutions = Error
-	;  true
+	-> Solution = Error
+	;  Solution = Vars
 	).
 
 query_status(_OK, Error, error) :- nonvar(Error), !.
