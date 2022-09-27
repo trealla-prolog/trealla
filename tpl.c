@@ -333,9 +333,8 @@ int main(int ac, char *av[], char * envp[])
 #else
 		pl_query(pl, src);
 
-		while (pl_redo(pl)) {
-			// get vars from stdin
-		}
+		do {
+		} while (pl_redo(pl));
 #endif
 
 		free(line);

@@ -143,6 +143,8 @@ bool pl_query(prolog *pl, const char *s)
 
 bool pl_redo(prolog *pl)
 {
+	printf("*** pl_redo\n");
+
 	if (!pl->is_query)
 		return false;
 
