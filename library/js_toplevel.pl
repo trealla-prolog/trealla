@@ -31,11 +31,15 @@ js_ask(Input) :-
 			flush_output
 		)
 	),
-	query(Query, Vars, Status, Solution),
-	write_result(Status, Solution),
+	catch(
+		query(Query, Status),
+		Error,
+		Status = error
+	),
+	write_result(Status, Vars, Error),
 	flush_output.
 
-write_result(success, Solution0) :-
+write_result(success, Solution0, _) :-
 	solution_json(Solution0, Solution),
 	once(phrase(json_chars(pairs([
 		string("result")-string("success"),
@@ -43,13 +47,13 @@ write_result(success, Solution0) :-
 	])), JSON)),
 	maplist(write, JSON), nl.
 
-write_result(failure, _) :-
+write_result(failure, _, _) :-
 	once(phrase(json_chars(pairs([
 		string("result")-string("failure")
 	])), JSON)),
 	maplist(write, JSON), nl.
 
-write_result(error, Error0) :-
+write_result(error, _, Error0) :-
 	term_json(Error0, Error),
 	once(phrase(json_chars(pairs([
 		string("result")-string("error"),
@@ -57,22 +61,13 @@ write_result(error, Error0) :-
 	])), JSON)),
 	maplist(write, JSON), nl.
 
-query(Query, Vars, Status, Solution) :-
-	write('\x2\'),
-	(   catch(call(Query), Error, true)
-	*-> OK = true
-	;   OK = false
+query(Query, Status) :-
+	write('\x2\'),  % START OF TEXT
+	(   call(Query)
+	*-> Status = success
+	;   Status = failure
 	),
-	write('\x3\'),  % END OF TEXT
-	query_status(OK, Error, Status),
-	(  nonvar(Error)
-	-> Solution = Error
-	;  Solution = Vars
-	).
-
-query_status(_OK, Error, error) :- nonvar(Error), !.
-query_status(true, _, success).
-query_status(false, _, failure).
+	write('\x3\').  % END OF TEXT
 
 solution_json(Vars0, pairs(Vars)) :- maplist(var_json, Vars0, Vars).
 
