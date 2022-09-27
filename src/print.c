@@ -614,14 +614,9 @@ static ssize_t print_canonical_list(query *q, char *save_dst, char *dst, size_t 
 		print_list++;
 
 		dst += snprintf(dst, dstlen, "%s", "'.'(");
-		bool parens = false;
-		if (parens) dst += snprintf(dst, dstlen, "%s", "(");
-		q->parens = parens;
 		ssize_t res = print_term_to_buf(q, dst, dstlen, head, head_ctx, running, false, depth+1);
-		q->parens = false;
 		if (res < 0) return -1;
 		dst += res;
-		if (parens) dst += snprintf(dst, dstlen, "%s", ")");
 		dst += snprintf(dst, dstlen, "%s", ",");
 
 		cell *tail = LIST_TAIL(c);
