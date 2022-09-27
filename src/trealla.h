@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 typedef struct prolog_ prolog;
-typedef struct pl_sub_query_ pl_sub_query;
+typedef struct {} pl_sub_query;
 
 extern prolog *pl_create();
 extern void pl_destroy(prolog*);
