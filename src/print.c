@@ -630,12 +630,9 @@ static ssize_t print_canonical_list(query *q, char *save_dst, char *dst, size_t 
 		c_ctx = running ? q->latest_ctx : 0;
 	}
 
-	if (!is_nil(c)) {
-		ssize_t res = print_term_to_buf(q, dst, dstlen, c, c_ctx, running, false, depth+1);
-		if (res < 0) return -1;
-		dst += res;
-	} else
-		dst += snprintf(dst, dstlen, "%s", "[]");
+	ssize_t res = print_term_to_buf(q, dst, dstlen, c, c_ctx, running, false, depth+1);
+	if (res < 0) return -1;
+	dst += res;
 
 	while (print_list--)
 		dst += snprintf(dst, dstlen, "%s", ")");
