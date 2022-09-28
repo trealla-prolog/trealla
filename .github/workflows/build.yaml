@@ -62,13 +62,14 @@
         - name: Set environment (3/3)
           run: |
             echo "WASI_CC=${WASI_SDK_PATH}/bin/clang --sysroot=${WASI_SDK_PATH}/share/wasi-sysroot" >> $GITHUB_ENV
+        - name: Add Homebrew to $PATH
+          run: echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
         - name: Install WASI SDK
           run: |
             wget https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_VERSION}/wasi-sdk-${WASI_VERSION_FULL}-linux.tar.gz
             tar xvf wasi-sdk-${WASI_VERSION_FULL}-linux.tar.gz
         - name: Install Binaryen
           run: |
-            eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
             brew install binaryen
         - name: Install Wasmer
           uses: wasmerio/setup-wasmer@v1
@@ -78,7 +79,6 @@
             tar xvf wizer-${WIZER_VERSION_FULL}.tar.xz
         - name: Build
           run: |
-            eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
             make clean
             make wasm
         - name: Test

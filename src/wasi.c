@@ -1,7 +1,5 @@
 #ifdef __wasi__
 #include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 
 // WASI memory manipulation ABI
 

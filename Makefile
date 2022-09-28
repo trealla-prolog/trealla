@@ -21,6 +21,9 @@ endif
 ifndef WIZER
 WIZER = wizer
 endif
+ifndef WASMOPT
+WASMOPT = wasm-opt
+endif
 
 ifdef ISOCLINE
 CFLAGS += -DUSE_ISOCLINE=1
@@ -134,7 +137,8 @@ tpl.wasm:
 
 wasm: tpl.wasm
 	$(WIZER) --allow-wasi --dir . -o tpl-wizened.wasm tpl.wasm
-	wasm-opt tpl-wizened.wasm -o tpl.wasm -O4
+	$(WASMOPT) tpl-wizened.wasm -o tpl.wasm -O4
+	rm tpl-wizened.wasm
 
 test:
 	./tests/run.sh
