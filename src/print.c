@@ -724,7 +724,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 
 	if (is_float(c)) {
 		char tmpbuf[256];
-		sprintf(tmpbuf, "%.*g", DBL_DECIMAL_DIG-(q->ignore_ops?0:1), get_float(c));
+		sprintf(tmpbuf, "%.*g", DBL_DECIMAL_DIG, get_float(c));
 		reformat_float(tmpbuf);
 		dst += snprintf(dst, dstlen, "%s", tmpbuf);
 		q->last_thing_was_symbol = false;
