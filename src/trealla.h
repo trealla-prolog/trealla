@@ -9,6 +9,7 @@
 #endif
 
 typedef struct prolog_ prolog;
+typedef struct {} pl_sub_query;
 
 EXPORT(pl_create)
 extern prolog *pl_create();
@@ -23,9 +24,11 @@ EXPORT(pl_consult_fp)
 extern bool pl_consult_fp(prolog*, FILE *fp, const char *filename);
 
 EXPORT(pl_query)
-extern bool pl_query(prolog*, const char *expr);
+extern bool pl_query(prolog*, const char *expr, pl_sub_query **q);
 EXPORT(pl_redo)
-extern bool pl_redo(prolog*);
+extern bool pl_redo(pl_sub_query *q);
+EXPORT(pl_done)
+extern bool pl_done(pl_sub_query *q);	// only call if redo still active
 
 EXPORT(get_halt_code)
 extern int get_halt_code(prolog*);
