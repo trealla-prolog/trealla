@@ -17,6 +17,10 @@
 #include <sys/wait.h>
 #endif
 
+#ifndef DBL_DECIMAL_DIG
+#define DBL_DECIMAL_DIG DBL_DIG
+#endif
+
 #ifdef _WIN32
 #define USE_MMAP 0
 #define mkdir(p1,p2) mkdir(p1)
@@ -5996,7 +6000,7 @@ static bool fn_map_set_3(query *q)
 		val = strdup(tmpbuf);
 	} else if (is_float(p2)) {
 		char tmpbuf[128];
-		snprintf(tmpbuf, sizeof(tmpbuf), "%.*g", DBL_DIG, get_float(p2));
+		snprintf(tmpbuf, sizeof(tmpbuf), "%.*g", DBL_DECIMAL_DIG, get_float(p2));
 		val = strdup(tmpbuf);
 	} else if (is_atom(p2))
 		val = DUP_STR(q, p2);
