@@ -25,7 +25,7 @@ js_ask(Input) :-
 		Error,
 		(
 			write('\x2\\x3\'),
-			write_result(error, Error),
+			write_result(error, _, Error),
 			flush_output
 		)
 	),
