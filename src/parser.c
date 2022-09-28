@@ -1089,7 +1089,7 @@ void term_assign_vars(parser *p, unsigned start, bool rebase)
 			(p->vartab.var_name[i][strlen(p->vartab.var_name[i])-1] != '_') &&
 			(*p->vartab.var_name[i] != '_')) {
 			if (!p->m->pl->quiet)
-				fprintf(stdout, "Warning: singleton: %s, near line %d, file '%s'\n", p->vartab.var_name[i], p->line_nbr, get_filename(p->m->filename));
+				fprintf(stdout, "Warning: singleton: %s, near %s:%d\n", p->vartab.var_name[i], p->m->filename, p->line_nbr);
 		}
 	}
 
@@ -1210,7 +1210,7 @@ static bool reduce(parser *p, pl_idx_t start_idx, bool last_op)
 
 			if (off > end_idx) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stdout, "Error: syntax error, missing operand to '%s', line %d\n", C_STR(p, c), p->line_nbr);
+					fprintf(stdout, "Error: syntax error, missing operand to '%s', %s:%d\n", C_STR(p, c), p->m->filename, p->line_nbr);
 
 				p->error_desc = "operand_missing";
 				p->error = true;
@@ -1273,7 +1273,7 @@ static bool reduce(parser *p, pl_idx_t start_idx, bool last_op)
 
 		if (nolhs || (off > end_idx)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, missing operand to '%s', line %d\n", C_STR(p, c), p->line_nbr);
+				fprintf(stdout, "Error: syntax error, missing operand to '%s', %s:%d\n", C_STR(p, c), p->m->filename, p->line_nbr);
 
 			p->error_desc = "operand_missing";
 			p->error = true;
@@ -2181,7 +2181,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 		if ((int)v && (errno == ERANGE)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, float overflow %g, line %d\n", v, p->line_nbr);
+				fprintf(stdout, "Error: syntax error, float overflow %g, %s:%d\n", v, p->m->filename, p->line_nbr);
 
 			p->error_desc = "float_overflow";
 			p->error = true;
@@ -2384,7 +2384,7 @@ static bool check_space_before_function(parser *p, int ch, const char *src)
 
 		if (!p->is_op && (*src == '(')) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, operator expected before parens, line %d: %s\n", p->line_nbr, p->token);
+				fprintf(stdout, "Error: syntax error, operator expected before parens, %s:%d\n", p->m->filename, p->line_nbr);
 
 			p->error_desc = "operator_expected";
 			p->error = true;
@@ -2453,7 +2453,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 			if (p->error) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stdout, "Error: syntax error, illegal character escape <<%s>>, line %d\n", p->srcptr, p->line_nbr);
+					fprintf(stdout, "Error: syntax error, illegal character escape <<%s>>, %s:%d\n", p->srcptr, p->m->filename, p->line_nbr);
 
 				p->error_desc = "illegal_character_escape";
 				p->error = true;
@@ -2656,7 +2656,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 						}
 					} else {
 						if (DUMP_ERRS || !p->do_read_term)
-							fprintf(stdout, "Error: syntax error, illegal character escape <<%s>>, line %d\n", p->srcptr, p->line_nbr);
+							fprintf(stdout, "Error: syntax error, illegal character escape <<%s>>, %s:%d\n", p->srcptr, p->m->filename, p->line_nbr);
 
 						p->error_desc = "illegal_character_escape";
 						p->error = true;
@@ -2828,7 +2828,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		is_matching_pair(ch, next_ch, '}','(') ||
 		is_matching_pair(ch, next_ch, '}','(')) {
 		if (DUMP_ERRS || !p->do_read_term)
-			fprintf(stdout, "Error: syntax error, line %d: '%s'\n", p->line_nbr, p->srcptr);
+			fprintf(stdout, "Error: syntax error, %s:%d\n", p->m->filename, p->line_nbr);
 
 		p->error_desc = "operator_expected";
 		p->error = true;
@@ -2919,7 +2919,7 @@ static bool process_term(parser *p, cell *p1)
 
 	if (!assertz_to_db(p->m, p->cl->nbr_vars, p->cl->nbr_temporaries, p1, 1)) {
 		if (DUMP_ERRS || !p->do_read_term)
-			printf("Error: assertion failed '%s', line %d, '%s'\n", p->token, p->line_nbr, p->srcptr);
+			printf("Error: assertion failed '%s', %s:%d\n", p->token, p->m->filename, p->line_nbr);
 
 		p->error = true;
 		return false;
@@ -2977,7 +2977,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			if (analyze(p, 0, last_op)) {
 				if (p->cl->cells->nbr_cells <= (p->cl->cidx-1)) {
 					if (DUMP_ERRS || !p->do_read_term)
-						printf("Error: syntax error, operator expected unfinished input '%s', line %d\n", p->token, p->line_nbr);
+						printf("Error: syntax error, operator expected unfinished input '%s', %s:%d\n", p->token, p->m->filename, p->line_nbr);
 
 					p->error_desc = "operator_expected";
 					p->error = true;
@@ -3068,7 +3068,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 		if (!p->quote_char && !last_op &&
 			(!strcmp(p->token, "[") || !strcmp(p->token, "{"))) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, needs operator '%s', line %d\n", p->token, p->line_nbr);
+				fprintf(stdout, "Error: syntax error, needs operator '%s', %s:%d\n", p->token, p->m->filename, p->line_nbr);
 
 			p->error_desc = "needs_operator";
 			p->error = true;
@@ -3077,7 +3077,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 
 		if (!p->quote_char && p->last_close && !strcmp(p->token, "(")) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, needs operator '%s', line %d\n", p->token, p->line_nbr);
+				fprintf(stdout, "Error: syntax error, needs operator '%s', %s:%d\n", p->token, p->m->filename, p->line_nbr);
 
 			p->error_desc = "needs_operator";
 			p->error = true;
@@ -3155,7 +3155,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 
 		if (!p->quote_char && !args && !consing && last_op && !strcmp(p->token, ",")) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, quotes needed around operator '%s', line %d\n", p->token, p->line_nbr);
+				fprintf(stdout, "Error: syntax error, quotes needed around operator '%s', %s:%d\n", p->token, p->m->filename, p->line_nbr);
 
 			p->error_desc = "quotes_needed";
 			p->error = true;
@@ -3168,7 +3168,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 
 			if (!last_op && (priority > 999)) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stdout, "Error: syntax error, parens needed around operator '%s', line %d\n", p->token, p->line_nbr);
+					fprintf(stdout, "Error: syntax error, parens needed around operator '%s', %s:%d\n", p->token, p->m->filename, p->line_nbr);
 
 				p->error_desc = "parens_needed";
 				p->error = true;
@@ -3182,7 +3182,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 
 			if (!last_op && (priority > 999)) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stdout, "Error: syntax error, parens needed around operator '%s', line %d\n", p->token, p->line_nbr);
+					fprintf(stdout, "Error: syntax error, parens needed around operator '%s', %s:%d\n", p->token, p->m->filename, p->line_nbr);
 
 				p->error_desc = "parens_needed";
 				p->error = true;
