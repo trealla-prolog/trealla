@@ -17,17 +17,4 @@ __attribute__((weak, export_name("canonical_abi_free")))
 void canonical_abi_free(void *ptr, size_t size, size_t align) {
   free(ptr);
 }
-
-// Extras for the WASM shim libraries to use
-
-__attribute__((weak, export_name("memset")))
-void _memset(void *dest, int ch, size_t count) {
-  memset(dest, ch, count);
-}
-
-__attribute__((export_name("test_print")))
-void test_print(char* str) {
-  fprintf(stdout, "%s", str);
-  fflush(stdout);
-}
 #endif

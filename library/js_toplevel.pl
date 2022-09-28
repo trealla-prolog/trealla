@@ -56,7 +56,7 @@ query(Query, Status) :-
 	(   call(Query)
 	*-> Status = success
 	;   Status = failure
-	).  % END OF TEXT
+	).
 
 solution_json([], {}) :- !.
 solution_json(Vs, {Vars}) :- foldl(solution_json_, Vs, [], Vars).
