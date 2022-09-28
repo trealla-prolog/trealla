@@ -1277,7 +1277,7 @@ module *load_text(module *m, const char *src, const char *filename)
 
 	if (!p->error && !p->already_loaded && !p->end_of_term && p->cl->cidx) {
 		if (DUMP_ERRS || !p->do_read_term)
-			fprintf(stdout, "Error: syntax error, incomplete statement\n");
+			fprintf(stdout, "Error: syntax error, incomplete statement, %s:%d\n", filename, p->line_nbr);
 
 		p->error = true;
 	}
@@ -1411,7 +1411,7 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including)
 
 	if (!p->error && !p->already_loaded && !p->end_of_term && p->cl->cidx) {
 		if (DUMP_ERRS || !p->do_read_term)
-			fprintf(stdout, "Error: syntax error, incomplete statement\n");
+			fprintf(stdout, "Error: syntax error, incomplete statement, %s:%d\n", filename, p->line_nbr);
 
 		p->error = true;
 	}
