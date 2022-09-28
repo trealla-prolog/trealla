@@ -1404,7 +1404,9 @@ static bool fn_iso_powi_2(query *q)
 			return true;
 		}
 
-		q->accum.val_int = pow(p1.val_int, p2.val_int);
+		mp_small i;
+		mp_int_to_int(&q->tmp_ival, &i);
+		q->accum.val_int = i;
 		q->accum.tag = TAG_INTEGER;
 	} else if (is_smallint(&p1) && is_float(&p2)) {
 		q->accum.val_float = pow(p1.val_int, p2.val_float);
