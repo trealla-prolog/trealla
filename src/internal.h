@@ -92,7 +92,7 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define is_var(c) ((c)->tag == TAG_VAR)
 #define is_interned(c) ((c)->tag == TAG_INTERNED)
 #define is_cstring(c) ((c)->tag == TAG_CSTR)
-#define is_integer(c) ((c)->tag == TAG_INTEGER)
+#define is_integer(c) (((c)->tag == TAG_INTEGER) && !((c)->flags & FLAG_INT_STREAM))
 #define is_float(c) ((c)->tag == TAG_FLOAT)
 #define is_indirect(c) ((c)->tag == TAG_PTR)
 #define is_blob(c) ((c)->tag == TAG_BLOB)
