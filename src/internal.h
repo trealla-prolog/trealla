@@ -896,12 +896,11 @@ typedef struct {
 	size_t size;
 } string_buffer_;
 
-#define SB(pr) string_buffer_ pr##_buf;										\
+#define SB(pr) string_buffer_ pr##_buf;							\
 	pr##_buf.size = 0;											\
-	pr##_buf.buf = NULL;										\
-	pr##_buf.dst = pr##_buf.buf;
+	pr##_buf.buf = pr##_buf.dst = NULL;
 
-#define SB_alloc(pr,len) string_buffer_ pr##_buf; 							\
+#define SB_alloc(pr,len) string_buffer_ pr##_buf; 				\
 	pr##_buf.size = len;										\
 	pr##_buf.buf = malloc((len)+1);								\
 	ensure(pr##_buf.buf);										\
@@ -938,7 +937,7 @@ typedef struct {
 	if ((size_t)((len)+1) >= rem) {								\
 		size_t offset = SB_strlen(pr);							\
 		pr##_buf.buf = realloc(pr##_buf.buf, 					\
-			(pr##_buf.size += ((len)-rem)) + 1);				 \
+			(pr##_buf.size += ((len)-rem)) + 1);				\
 		ensure(pr##_buf.buf);									\
 		pr##_buf.dst = pr##_buf.buf + offset;					\
 	}															\
