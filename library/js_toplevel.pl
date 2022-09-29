@@ -3,11 +3,11 @@
 	Very experimental and not in the upstream.
 
 	Current format:
-	ASCII START OF TEXT (0x02), stdout text as-is, then ASCII END OF TEXT (0x03), then a JSON response
+	ASCII START OF TEXT (0x02), stdout text as-is, then ASCII END OF TEXT (0x03), then a JSON response, then a line break.
 
 	{
 		"result": "success" | "failure" | "error",
-		"answers": [{ "X": "<substitution for X>", ... }, ...],
+		"answer": { "X": "<substitution for X>", ... },
 		"error": "<throw/1 exception term>"
 	}
 */
