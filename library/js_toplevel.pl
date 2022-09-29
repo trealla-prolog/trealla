@@ -38,16 +38,16 @@ js_ask(Input) :-
 	write_result(Status, Vars, Error),
 	flush_output.
 
-write_result(success, Solution0, _) :-
-	solution_json(Solution0, Solution),
+write_result(success, Vars, _) :-
+	once(solution_json(Vars, Solution)),
 	write({"result":"success", "answer":Solution}),
 	nl.
 
 write_result(failure, _, _) :-
 	'$put_chars'("{\"result\":\"failure\"}\n").
 
-write_result(error, _, Error0) :-
-	term_json(Error0, Error),
+write_result(error, Vars, Error0) :-
+	once(term_json(Vars, Error0, Error)),
 	write({"result":"error", "error":Error}),
 	nl.
 
@@ -58,35 +58,58 @@ query(Query, Status) :-
 	;   Status = failure
 	).
 
-solution_json([], {}) :- !.
-solution_json(Vs, {Vars}) :- foldl(solution_json_, Vs, [], Vars).
-solution_json_(V0, [], V) :- var_json(V0, V), !.
-solution_json_(V0, Vs, (Vs, V)) :- var_json(V0, V).
+solution_json([], {}).
+solution_json(Vars, {Subs}) :- foldl(solution_json_(Vars), Vars, [], Subs).
+solution_json_(Vars, V0, [], V) :- sub_json(Vars, V0, V), !.
+solution_json_(Vars, V0, Vs, (Vs, V)) :- sub_json(Vars, V0, V).
 
-var_json(Var0=Value0, Var:Value) :-
+sub_json(Vars, Var0=Value0, Var:Value) :-
 	atom_chars(Var0, Var),
-	term_json(Value0, Value).
+	once(term_json_top(Vars, Value0, Value)).
 
-term_json(Value0, Value) :-
+term_json(_, Value, []) :- Value == [].
+
+term_json(_, Value0, {"functor":Value}) :-
 	atom(Value0),
-	atom_chars(Value0, Value),
-	!.
-term_json(Value, Value) :-
-	string(Value),
-	!.
-term_json(Value, Value) :-
-	number(Value),
-	!.
-term_json(Value0, Value) :-
+	atom_chars(Value0, Value).
+
+term_json(_, Value, Value) :- string(Value).
+
+term_json(_, Value, {"stream":Value}) :- is_stream(Value).
+
+term_json(_, Value, Value) :- number(Value).
+
+term_json(Vars, Value0, Value) :-
 	is_list(Value0),
-	maplist(term_json, Value0, Value),
-	!.
-term_json(Value, {"functor":Functor, "args":Args}) :-
+	once(maplist(term_json(Vars), Value0, Value)).
+
+term_json(Vars, Value, {"functor":Functor, "args":Args}) :-
 	compound(Value),
 	Value =.. [Functor0|Args0],
 	atom_chars(Functor0, Functor),
-	maplist(term_json, Args0, Args),
-	!.
-term_json(Value, {"var":"_"}) :-
+	once(maplist(term_json(Vars), Args0, Args)).
+
+term_json(Vars, Value, {"var":Name}) :-
 	var(Value),
-	!.
+	once(var_name(Vars, Value, Name)).
+
+term_json(_, Value, {"blob":Cs}) :-
+	write_term_to_chars(Value, [], Cs).
+
+term_json_top(Vars, Value, {"var":Name, "attr":Attr}) :-
+	var(Value),
+	once(var_name(Vars, Value, Name)),
+	attvar_json(Vars, Value, Attr).
+term_json_top(Vars, Value, JS) :- term_json(Vars, Value, JS).
+
+var_name([K=V|_], Var, Name) :-
+	V == Var,
+	atom_chars(K, Name).
+var_name([_=V|Vs], Var, Name) :-
+	V \== Var,
+	var_name(Vs, Var, Name).
+var_name([], _, "_").
+
+attvar_json(Vars, Var, JS) :-
+	copy_term(Var, _, Attr),
+	once(term_json(Vars, Attr, JS)).
