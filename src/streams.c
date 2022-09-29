@@ -17,6 +17,10 @@
 #include <sys/wait.h>
 #endif
 
+#ifndef DBL_DECIMAL_DIG
+#define DBL_DECIMAL_DIG DBL_DIG
+#endif
+
 #ifdef _WIN32
 #define USE_MMAP 0
 #define mkdir(p1,p2) mkdir(p1)
@@ -431,7 +435,7 @@ static int get_named_stream(prolog *pl, const char *name, size_t len)
 
 static bool is_closed_stream(prolog *pl, cell *p1)
 {
-	if (!(p1->flags&FLAG_INT_STREAM))
+	if (!(p1->flags & FLAG_INT_STREAM))
 		return false;
 
 	if (pl->streams[get_smallint(p1)].fp)
@@ -744,7 +748,7 @@ static bool fn_iso_stream_property_2(query *q)
 	}
 
 	clause *cl = &q->st.curr_dbe->cl;
-	GET_FIRST_ARG(pstrx,smallint);
+	GET_FIRST_ARG(pstrx,any);
 	pstrx->flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
 	stash_me(q, cl, false);
 	return true;
@@ -3536,10 +3540,10 @@ int get_stream(query *q, cell *p1)
 		return n;
 	}
 
-	if (!is_integer(p1))
+	if (p1->tag != TAG_INTEGER)
 		return -1;
 
-	if (!(p1->flags&FLAG_INT_STREAM))
+	if (!(p1->flags & FLAG_INT_STREAM))
 		return -1;
 
 	if (!q->pl->streams[get_smallint(p1)].fp)
@@ -6162,7 +6166,7 @@ static bool fn_map_set_3(query *q)
 		val = strdup(tmpbuf);
 	} else if (is_float(p2)) {
 		char tmpbuf[128];
-		snprintf(tmpbuf, sizeof(tmpbuf), "%.*g", DBL_DIG, get_float(p2));
+		snprintf(tmpbuf, sizeof(tmpbuf), "%.*g", DBL_DECIMAL_DIG, get_float(p2));
 		val = strdup(tmpbuf);
 	} else if (is_atom(p2))
 		val = DUP_STR(q, p2);

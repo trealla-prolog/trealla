@@ -92,7 +92,7 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define is_var(c) ((c)->tag == TAG_VAR)
 #define is_interned(c) ((c)->tag == TAG_INTERNED)
 #define is_cstring(c) ((c)->tag == TAG_CSTR)
-#define is_integer(c) ((c)->tag == TAG_INTEGER)
+#define is_integer(c) (((c)->tag == TAG_INTEGER) && !((c)->flags & FLAG_INT_STREAM))
 #define is_float(c) ((c)->tag == TAG_FLOAT)
 #define is_indirect(c) ((c)->tag == TAG_PTR)
 #define is_blob(c) ((c)->tag == TAG_BLOB)
@@ -896,12 +896,11 @@ typedef struct {
 	size_t size;
 } string_buffer_;
 
-#define SB(pr) string_buffer_ pr##_buf;										\
+#define SB(pr) string_buffer_ pr##_buf;							\
 	pr##_buf.size = 0;											\
-	pr##_buf.buf = NULL;										\
-	pr##_buf.dst = pr##_buf.buf;
+	pr##_buf.buf = pr##_buf.dst = NULL;
 
-#define SB_alloc(pr,len) string_buffer_ pr##_buf; 							\
+#define SB_alloc(pr,len) string_buffer_ pr##_buf; 				\
 	pr##_buf.size = len;										\
 	pr##_buf.buf = malloc((len)+1);								\
 	ensure(pr##_buf.buf);										\
@@ -938,7 +937,7 @@ typedef struct {
 	if ((size_t)((len)+1) >= rem) {								\
 		size_t offset = SB_strlen(pr);							\
 		pr##_buf.buf = realloc(pr##_buf.buf, 					\
-			(pr##_buf.size += ((len)-rem)) + 1);				 \
+			(pr##_buf.size += ((len)-rem)) + 1);				\
 		ensure(pr##_buf.buf);									\
 		pr##_buf.dst = pr##_buf.buf + offset;					\
 	}															\
