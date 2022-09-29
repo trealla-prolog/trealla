@@ -269,7 +269,7 @@ static int get_named_stream(prolog *pl, const char *name, size_t len)
 
 static bool is_closed_stream(prolog *pl, cell *p1)
 {
-	if (!(p1->flags&FLAG_INT_STREAM))
+	if (!(p1->flags & FLAG_INT_STREAM))
 		return false;
 
 	if (pl->streams[get_smallint(p1)].fp)
@@ -582,7 +582,7 @@ static bool fn_iso_stream_property_2(query *q)
 	}
 
 	clause *cl = &q->st.curr_dbe->cl;
-	GET_FIRST_ARG(pstrx,smallint);
+	GET_FIRST_ARG(pstrx,any);
 	pstrx->flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
 	stash_me(q, cl, false);
 	return true;
@@ -3374,10 +3374,10 @@ int get_stream(query *q, cell *p1)
 		return n;
 	}
 
-	if (!is_integer(p1))
+	if (p1->tag != TAG_INTEGER)
 		return -1;
 
-	if (!(p1->flags&FLAG_INT_STREAM))
+	if (!(p1->flags & FLAG_INT_STREAM))
 		return -1;
 
 	if (!q->pl->streams[get_smallint(p1)].fp)
