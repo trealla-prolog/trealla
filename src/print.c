@@ -192,6 +192,19 @@ size_t formatted(char *dst, size_t dstlen, const char *src, int srclen, bool dq)
 
 			len += 2;
 		} else if (ch < ' ') {
+#ifdef __wasi__
+			// This gives strings JSON compatibility :-)
+			if (dstlen) {
+				*dst++ = '\\';
+				*dst++ = 'u';
+			}
+
+			size_t n = snprintf(dst, dstlen, "000%x", ch);
+			len += n;
+			if (dstlen) dst += n;
+
+			len += 2;
+#else
 			if (dstlen) {
 				*dst++ = '\\';
 				*dst++ = 'x';
@@ -205,6 +218,7 @@ size_t formatted(char *dst, size_t dstlen, const char *src, int srclen, bool dq)
 				*dst++ = '\\';
 
 			len += 3;
+#endif
 		} else if (ch == '\\') {
 			if (dstlen) {
 				*dst++ = '\\';

@@ -98,6 +98,7 @@ LIBOBJECTS +=  \
 	library/ordsets.o \
 	library/pairs.o \
 	library/pio.o \
+	library/pseudojson.o \
 	library/random.o \
 	library/si.o \
 	library/sqlite3.o \

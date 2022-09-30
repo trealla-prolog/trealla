@@ -48,6 +48,8 @@ extern unsigned char library_json_pl[];
 extern unsigned int library_json_pl_len;
 extern unsigned char library_js_toplevel_pl[];
 extern unsigned int library_js_toplevel_pl_len;
+extern unsigned char library_pseudojson_pl[];
+extern unsigned int library_pseudojson_pl_len;
 extern unsigned char library_abnf_pl[];
 extern unsigned int library_abnf_pl_len;
 
@@ -71,6 +73,7 @@ library g_libs[] = {
 	 {"ordsets", library_ordsets_pl, &library_ordsets_pl_len},
 	 {"pairs", library_pairs_pl, &library_pairs_pl_len},
 	 {"pio", library_pio_pl, &library_pio_pl_len},
+	 {"pseudojson", library_pseudojson_pl, &library_pseudojson_pl_len},
 	 {"random", library_random_pl, &library_random_pl_len},
 	 {"si", library_si_pl, &library_si_pl_len},
 	 {"sqlite3", library_sqlite3_pl, &library_sqlite3_pl_len},
