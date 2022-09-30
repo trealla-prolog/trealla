@@ -307,8 +307,10 @@ static void reformat_float(char *tmpbuf, double v)
 	if (!strchr(tmpbuf, 'e')) {
 		char tmpbuf3[256];
 		sprintf(tmpbuf3, "%.*g", DBL_DECIMAL_DIG-1, v);
+		size_t len3 = strlen(tmpbuf3);
+		size_t len = strlen(tmpbuf);
 
-		if (strlen(tmpbuf3) < strlen(tmpbuf))
+		if ((len - len3) > 1)
 			strcpy(tmpbuf, tmpbuf3);
 	}
 
