@@ -304,7 +304,7 @@ size_t sprint_int(char *dst, size_t dstlen, pl_int_t n, int base)
 
 static void reformat_float(query * q, char *tmpbuf, double v)
 {
-	if (!strchr(tmpbuf, 'e')) {
+	if (!strchr(tmpbuf, 'e') && !q->ignore_ops) {
 		char tmpbuf3[256];
 		sprintf(tmpbuf3, "%.*g", DBL_DECIMAL_DIG-1, v);
 		size_t len3 = strlen(tmpbuf3);
