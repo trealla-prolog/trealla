@@ -316,9 +316,9 @@ size_t sprint_int(char *dst, size_t dstlen, pl_int_t n, int base)
 	return dst - save_dst;
 }
 
-static void reformat_float(char *tmpbuf, double v)
+static void reformat_float(query * q, char *tmpbuf, double v)
 {
-	if (!strchr(tmpbuf, 'e')) {
+	if (!strchr(tmpbuf, 'e') && !q->ignore_ops) {
 		char tmpbuf3[256];
 		sprintf(tmpbuf3, "%.*g", DBL_DECIMAL_DIG-1, v);
 		size_t len3 = strlen(tmpbuf3);
@@ -749,7 +749,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 	if (is_float(c)) {
 		char tmpbuf[256];
 		sprintf(tmpbuf, "%.*g", DBL_DECIMAL_DIG, get_float(c));
-		reformat_float(tmpbuf, c->val_float);
+		reformat_float(q, tmpbuf, c->val_float);
 		dst += snprintf(dst, dstlen, "%s", tmpbuf);
 		q->last_thing_was_symbol = false;
 		q->was_space = false;
