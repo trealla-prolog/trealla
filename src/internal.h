@@ -404,6 +404,13 @@ struct cell_ {
 	};
 };
 
+// A string builder
+
+typedef struct string_buffer_ {
+	char *buf, *dst;
+	size_t size;
+} string_buffer;
+
 typedef struct {
 	uint64_t u1, u2;					// TODO: proper uuid's
 } uuid;
@@ -565,6 +572,7 @@ struct stream_ {
 		map *keyval;
 	};
 
+	string_buffer sb_buf;
 	char *mode, *filename, *name, *data, *src;
 	void *sslptr;
 	parser *p;
@@ -586,6 +594,7 @@ struct stream_ {
 	bool udp:1;
 	bool ssl:1;
 	bool pipe:1;
+	bool is_memory:1;
 	bool is_map:1;
 };
 
@@ -889,23 +898,27 @@ inline static int fake_strcmp(const void *ptr1, const void *ptr2, const void *pa
 	return strcmp(ptr1, ptr2);
 }
 
-// A string builder
-
-typedef struct {
-	char *buf, *dst;
-	size_t size;
-} string_buffer_;
-
-#define SB(pr) string_buffer_ pr##_buf;							\
+#define SB(pr) string_buffer pr##_buf;							\
 	pr##_buf.size = 0;											\
 	pr##_buf.buf = pr##_buf.dst = NULL;
 
-#define SB_alloc(pr,len) string_buffer_ pr##_buf; 				\
+#define SB_alloc(pr,len) string_buffer pr##_buf; 				\
 	pr##_buf.size = len;										\
 	pr##_buf.buf = malloc((len)+1);								\
 	ensure(pr##_buf.buf);										\
 	pr##_buf.dst = pr##_buf.buf;								\
 	*pr##_buf.dst = '\0';
+
+#define SB_check(pr,len) {										\
+	size_t rem = pr##_buf.size - SB_strlen(pr);					\
+	if ((size_t)((len)+1) >= rem) {								\
+		size_t offset = SB_strlen(pr);							\
+		pr##_buf.buf = realloc(pr##_buf.buf, 					\
+			(pr##_buf.size += ((len)-rem)) + 1);				\
+		ensure(pr##_buf.buf);									\
+		pr##_buf.dst = pr##_buf.buf + offset;					\
+	}															\
+}
 
 #define SB_strlen(pr) (pr##_buf.dst - pr##_buf.buf)
 
@@ -932,22 +945,19 @@ typedef struct {
 	}															\
 }
 
-#define SB_check(pr,len) {										\
-	size_t rem = pr##_buf.size - SB_strlen(pr);					\
-	if ((size_t)((len)+1) >= rem) {								\
-		size_t offset = SB_strlen(pr);							\
-		pr##_buf.buf = realloc(pr##_buf.buf, 					\
-			(pr##_buf.size += ((len)-rem)) + 1);				\
-		ensure(pr##_buf.buf);									\
-		pr##_buf.dst = pr##_buf.buf + offset;					\
-	}															\
-}
-
 #define SB_strcat(pr,s) SB_strcatn(pr,s,strlen(s))
 
 #define SB_strcatn(pr,s,len) {									\
 	SB_check(pr, len);											\
 	memcpy(pr##_buf.dst, s, len);								\
+	pr##_buf.dst += len;										\
+	*pr##_buf.dst = '\0';										\
+}
+
+#define SB_fwrite(pr,ptr,size) {								\
+	size_t len = size;											\
+	SB_check(pr, len);											\
+	memcpy(pr##_buf.dst, ptr, len);								\
 	pr##_buf.dst += len;										\
 	*pr##_buf.dst = '\0';										\
 }
@@ -961,7 +971,12 @@ typedef struct {
 }
 
 #define SB_cstr(pr) pr##_buf.buf ? pr##_buf.buf : ""
-#define SB_free(pr) { free(pr##_buf.buf); pr##_buf.buf = NULL; }
+
+#define SB_free(pr) {											\
+	free(pr##_buf.buf);											\
+	pr##_buf.size = 0;											\
+	pr##_buf.buf = pr##_buf.dst = NULL;							\
+}
 
 #define delink(l, e) {											\
 	if (e->prev) e->prev->next = e->next;						\

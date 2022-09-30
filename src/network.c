@@ -327,7 +327,12 @@ size_t net_write(const void *ptr, size_t nbytes, stream *str)
 	if (str->ssl)
 		return SSL_write((SSL*)str->sslptr, ptr, nbytes);
 #endif
-	return fwrite(ptr, 1, nbytes, str->fp);
+
+	if (str->is_memory) {
+		SB_fwrite(str->sb, ptr, nbytes);
+		return nbytes;
+	} else
+		return fwrite(ptr, 1, nbytes, str->fp);
 }
 
 int net_getc(stream *str)
@@ -450,9 +455,15 @@ void net_close(stream *str)
 	if (str->pipe)
 		pclose(str->fp);
 	else
-		fclose(str->fp);
 #else
-	fclose(str->fp);
+	{
+		fclose(str->fp);
+
+		if (str->is_memory) {
+			SB_free(str->sb);
+			str->is_memory = false;
+		}
+	}
 #endif
 
 	str->fp = NULL;
