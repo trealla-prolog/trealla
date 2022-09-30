@@ -38,9 +38,8 @@ int check_interrupt(query *q)
 
 		fflush(stdout);
 		int ch = history_getch();
-#ifndef __wasi__
-		printf("%c\n", ch);
-#endif
+		if (!q->pl->is_query)
+			printf("%c\n", ch);
 
 		if (ch == 'h') {
 			printf("Action (a)ll, (e)nd, e(x)it, (r)etry, (c)ontinue, (t)race, cree(p): ");
@@ -93,10 +92,12 @@ bool check_redo(query *q)
 		dump_vars(q, true);
 
 		if (!q->pl->did_dump_vars) {
-			if (q->is_redo)
-				printf(" ");
-			else
-				printf("   ");
+			if (!q->pl->is_query) {
+				if (q->is_redo)
+					printf(" ");
+				else
+					printf("   ");
+			}
 
 			printf("true");
 		}
@@ -335,6 +336,8 @@ void dump_vars(query *q, bool partial)
 
 		if (any)
 			fprintf(stdout, ", ");
+		else if (q->pl->is_query)
+			;
 		else if (!q->is_redo || q->is_input)
 			fprintf(stdout, "   ");
 		else
@@ -398,6 +401,8 @@ void dump_vars(query *q, bool partial)
 
 	if (any && any_atts)
 		fprintf(stdout, ", ");
+	else if (q->pl->is_query)
+		;
 	else if (any_atts && !q->is_redo)
 		fprintf(stdout, "   ");
 	else if (any_atts)
@@ -425,9 +430,13 @@ void dump_vars(query *q, bool partial)
 	q->is_dump_vars = false;
 	q->is_input = false;
 
-	if (any && !partial) {
+	if (any) {
 		if (space) fprintf(stdout, " ");
-		fprintf(stdout, ".\n");
+
+		if (q->pl->is_query)
+			fprintf(stdout, ".");
+		else if (!partial)
+			fprintf(stdout, ".\n");
 	}
 
 	fflush(stdout);

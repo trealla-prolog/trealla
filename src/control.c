@@ -583,7 +583,9 @@ bool find_exception_handler(query *q, char *ball)
 	cell *e = parse_to_heap(q, ball);
 	pl_idx_t e_ctx = q->st.curr_frame;
 
-	if (!q->is_redo)
+	if (q->pl->is_query)
+		;
+	else if (!q->is_redo)
 		fprintf(stdout, "   ");
 	else
 		fprintf(stdout, "  ");
@@ -602,7 +604,11 @@ bool find_exception_handler(query *q, char *ball)
 	if (!is_interned(e) || strcmp(C_STR(q, e), "error"))
 		fprintf(stdout, ")");
 
-	fprintf(stdout, ".\n");
+	fprintf(stdout, ".");
+	if (!q->pl->is_query)
+		fprintf(stdout, "\n");
+
+	fflush(stdout);
 	q->quoted = 0;
 	q->pl->did_dump_vars = true;
 	q->ball = NULL;
