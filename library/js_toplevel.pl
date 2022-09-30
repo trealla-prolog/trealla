@@ -50,7 +50,8 @@ query(Query, Status) :-
 write_result(JSON) :-
 	json_value(JS, JSON),
 	json_chars(JS, Cs),
-	'$put_chars'(Cs).
+	'$put_chars'(Cs),
+	nl.
 
 result_json(success, Vars, _, pairs([string("result")-string("success"), string("answer")-Solution])) :-
 	once(solution_json(Vars, Solution)).
