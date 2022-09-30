@@ -419,6 +419,27 @@ term_hash(Term, _Opts, Hash) :- term_hash(Term, Hash).
 not(G) :- G, !, fail.
 not(_).
 
+with_output_to(chars(Cs), Goal) :-
+	setup_call_cleanup(
+		'$capture_output',
+		once(Goal),
+		'$capture_output_to_chars'(Cs)
+	), !.
+
+with_output_to(string(Cs), Goal) :-
+	setup_call_cleanup(
+		'$capture_output',
+		once(Goal),
+		'$capture_output_to_chars'(Cs)
+	), !.
+
+with_output_to(atom(Cs), Goal) :-
+	setup_call_cleanup(
+		'$capture_output',
+		once(Goal),
+		'$capture_output_to_atom'(Cs)
+	), !.
+
 map_create(S) :- map_create(S,[]).
 :- help(map_create(+atom), [iso(false)]).
 

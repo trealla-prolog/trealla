@@ -390,6 +390,10 @@ Non-standard predicates
 	strip_module/3
 	atom_number/2
 
+	with_output_to(chars(Cs), Goal)		# SWI-compatible
+	with_output_to(string(Cs), Goal)	# SWI-compatible
+	with_output_to(atom(Atom), Goal)	# SWI-compatible
+
 	call_with_time_limit/2		# SWI-compatible
 	time_out/3					# SICStus-compatible
 
