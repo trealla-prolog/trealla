@@ -326,7 +326,7 @@ void load_builtins(prolog *pl)
 	}
 }
 
-static void g_init()
+void g_init()
 {
 	char *ptr = getenv("TPL_LIBRARY_PATH");
 
@@ -394,7 +394,13 @@ prolog *pl_create()
 	prolog *pl = calloc(1, sizeof(prolog));
 
 	if (!g_tpl_count++)
+#ifdef __wasi__
+		;
+	// Wizer workaround: we need to avoid touching the environment until main
+	// is run, otherwise libc will cache the wrong environment.
+#else
 		g_init();
+#endif
 
 	if (!g_tpl_lib) {
 		g_tpl_lib = realpath(g_argv0, NULL);

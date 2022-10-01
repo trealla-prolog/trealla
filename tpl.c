@@ -23,6 +23,7 @@
 
 #ifdef __wasi__
 #include "wizer.h"
+#include "prolog.h"
 void *g_tpl = NULL;
 #endif
 
@@ -190,6 +191,7 @@ int main(int ac, char *av[], char * envp[])
 	bool ns = false, no_res = false;
 #ifdef __wasi__
     if (!initialized) init_func();
+	g_init(); // "lazy loading" the environment
 	void *pl = g_tpl;
 #else
 	void *pl = pl_create();
