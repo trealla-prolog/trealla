@@ -13,6 +13,7 @@
 struct loaded_file_ {
 	loaded_file *next;
 	char *filename;
+	time_t when_loaded;
 	bool is_loaded:1;
 };
 
@@ -103,6 +104,7 @@ static const char *set_loaded(module *m, const char *filename)
 	ptr = malloc(sizeof(*ptr));
 	ptr->next = m->loaded_files;
 	ptr->filename = strdup(filename);
+	ptr->when_loaded = time(0);
 	ptr->is_loaded = true;
 	m->loaded_files = ptr;
 	return ptr->filename;
