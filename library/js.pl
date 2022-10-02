@@ -48,7 +48,7 @@ js_toplevel :-
 
 js_ask(Input) :-
 	catch(
-		read_term_from_chars(Query, [variable_names(Vars)], Input),
+		read_term_from_chars(Input, Query, [variable_names(Vars)]),
 		Error,
 		(
 			write(stdout, '\x2\\x3\'),

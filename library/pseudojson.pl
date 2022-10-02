@@ -20,7 +20,7 @@ json_chars(JSON, Cs) :-
 	!.
 json_chars(JSON, Cs) :-
 	string(Cs),
-	read_term_from_chars(JSON, [], Cs),
+	read_term_from_chars(Cs, JSON, []),
 	ground(JSON),
 	once(json(JSON)).
 
