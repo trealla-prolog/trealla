@@ -11,7 +11,7 @@
 		"error": "<throw/1 exception term>"
 	}
 */
-:- module(js, [js_toplevel/0, js_ask/1, js_eval/2, js_eval_json/2, wasm_yield/0]).
+:- module(js, [js_toplevel/0, js_ask/1, js_eval/2, js_eval_json/2]).
 
 :- use_module(library(lists)).
 :- use_module(library(pseudojson)).
@@ -32,13 +32,8 @@ js_eval_json(Expr, Result) :-
 
 js_eval(Expr, Cs) :-
 	'$host_call'(Expr, Cs), !
-	; wasm_yield, fail
+	; yield, fail
 	; '$host_resume'(Cs).
-
-wasm_yield :-
-	write(stdout, '\x16\'),
-	flush_output(stdout),
-	yield.
 
 % Host (WASM) → Guest (Trealla)
 
