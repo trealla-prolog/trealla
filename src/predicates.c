@@ -239,7 +239,7 @@ bool make_stringn(cell *d, const char *s, size_t n)
 	return true;
 }
 
-static bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n)
+bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n)
 {
 	if (!n) {
 		make_atom(d, g_empty_s);

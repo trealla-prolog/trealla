@@ -3550,7 +3550,10 @@ static bool fn_sys_read_term_from_chars_3(query *q)
 
 	str->p->srcptr = eat_space(str->p);
 	src = str->p->srcptr;
-	check_heap_error(make_string(&tmp, src));
+
+	const char *ptr = strstr(C_STR(q,p_chars), src);
+	check_heap_error(make_slice(q, &tmp, p_chars, src-C_STR(q,p_chars), strlen(src)));
+
 	free(save_src);
 	destroy_parser(str->p);
 	str->p = NULL;
