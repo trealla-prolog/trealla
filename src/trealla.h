@@ -29,6 +29,8 @@ EXPORT(pl_redo)
 extern bool pl_redo(pl_sub_query *q);
 EXPORT(pl_done)
 extern bool pl_done(pl_sub_query *q);	// only call if redo still active
+EXPORT(query_did_yield)
+extern bool query_did_yield(pl_sub_query *q);
 
 EXPORT(get_halt_code)
 extern int get_halt_code(prolog*);
