@@ -8,9 +8,13 @@ CFLAGS = -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' -O3 \
 
 LDFLAGS = -L/usr/local/lib -lm
 
+ifndef TPL
+TPL = tpl
+endif
+
 ifdef WASI
-CFLAGS += -o tpl.wasm -D_WASI_EMULATED_MMAN -D_WASI_EMULATED_SIGNAL -Isrc/wasm -O0
-LDFLAGS += -o tpl.wasm -lwasi-emulated-mman -lwasi-emulated-signal -Wl,--stack-first -Wl,-zstack-size=8388608 -Wl,--initial-memory=100663296
+CFLAGS += -D_WASI_EMULATED_MMAN -D_WASI_EMULATED_SIGNAL -Isrc/wasm -O0
+LDFLAGS += -lwasi-emulated-mman -lwasi-emulated-signal -Wl,--stack-first -Wl,-zstack-size=8388608 -Wl,--initial-memory=100663296
 NOFFI = 1
 NOSSL = 1
 ifdef WASI_CC
@@ -92,7 +96,7 @@ LIBOBJECTS +=  \
 	library/freeze.o \
 	library/http.o \
 	library/json.o \
-	library/js_toplevel.o \
+	library/js.o \
 	library/lambda.o \
 	library/lists.o \
 	library/ordsets.o \
@@ -122,7 +126,7 @@ all: tpl
 tpl: $(OBJECTS) Makefile README.md LICENSE
 	rm src/version.o
 	$(CC) $(CFLAGS) -o src/version.o -c src/version.c
-	$(CC) -o tpl $(OBJECTS) $(OPT) $(LDFLAGS)
+	$(CC) -o $(TPL) $(OBJECTS) $(OPT) $(LDFLAGS)
 
 profile:
 	$(MAKE) 'OPT=$(OPT) -O0 -pg -DDEBUG'
@@ -134,18 +138,27 @@ release:
 	$(MAKE) 'OPT=$(OPT) -DNDEBUG'
 
 tpl.wasm:
-	$(MAKE) 'WASI=1 OPT=$(OPT) -O0 -DNDEBUG'
+	$(MAKE) WASI=1 TPL=tpl.wasm 'OPT=$(OPT) -O0 -DNDEBUG'
 
 wasm: tpl.wasm
 	$(WIZER) --allow-wasi --dir . -o tpl-wizened.wasm tpl.wasm
 	$(WASMOPT) tpl-wizened.wasm -o tpl.wasm -O4
 	rm tpl-wizened.wasm
 
+libtpl.wasm:
+	$(MAKE) WASI=1 TPL=libtpl.wasm 'OPT=$(OPT) -O0 -DNDEBUG -DWASI_IMPORTS'
+
+libtpl: libtpl.wasm
+	$(WIZER) --allow-wasi --dir . -o libtpl-wizened.wasm libtpl.wasm
+	$(WASMOPT) libtpl-wizened.wasm -o libtpl.wasm -O4
+	rm libtpl-wizened.wasm
+
 test:
 	./tests/run.sh
 
 clean:
-	rm -f tpl tpl.wasm tpl-*.wasm src/*.o src/imath/*.o src/isocline/src/*.o \
+	rm -f tpl tpl.wasm tpl*.wasm libtpl*.wasm \
+		src/*.o src/imath/*.o src/isocline/src/*.o \
 		library/*.o library/*.c *.o samples/*.o samples/*.so \
 		vgcore.* *.core core core.* *.exe gmon.*
 	rm -f *.itf *.po samples/*.itf samples/*.po
@@ -189,7 +202,7 @@ src/parser.o: src/parser.c src/heap.h src/internal.h src/map.h src/skiplist.h \
 src/predicates.o: src/predicates.c src/base64.h src/heap.h src/internal.h \
   src/map.h src/skiplist.h src/trealla.h src/cdebug.h src/imath/imath.h \
   src/history.h src/library.h src/module.h src/parser.h src/prolog.h \
-  src/query.h src/builtins.h src/utf8.h
+  src/query.h src/builtins.h src/utf8.h src/wasi.h
 src/print.o: src/print.c src/heap.h src/internal.h src/map.h src/skiplist.h \
   src/trealla.h src/cdebug.h src/imath/imath.h src/module.h \
   src/network.h src/parser.h src/query.h src/builtins.h src/utf8.h

@@ -46,8 +46,8 @@ extern unsigned char library_sqlite3_register_pl[];
 extern unsigned int library_sqlite3_register_pl_len;
 extern unsigned char library_json_pl[];
 extern unsigned int library_json_pl_len;
-extern unsigned char library_js_toplevel_pl[];
-extern unsigned int library_js_toplevel_pl_len;
+extern unsigned char library_js_pl[];
+extern unsigned int library_js_pl_len;
 extern unsigned char library_pseudojson_pl[];
 extern unsigned int library_pseudojson_pl_len;
 extern unsigned char library_abnf_pl[];
@@ -67,7 +67,7 @@ library g_libs[] = {
 	 {"freeze", library_freeze_pl, &library_freeze_pl_len},
 	 {"http", library_http_pl, &library_http_pl_len},
 	 {"json", library_json_pl, &library_json_pl_len},
-	 {"js_toplevel", library_js_toplevel_pl, &library_js_toplevel_pl_len},
+	 {"js", library_js_pl, &library_js_pl_len},
 	 {"lambda", library_lambda_pl, &library_lambda_pl_len},
 	 {"lists", library_lists_pl, &library_lists_pl_len},
 	 {"ordsets", library_ordsets_pl, &library_ordsets_pl_len},

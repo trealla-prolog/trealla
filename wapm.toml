@@ -14,6 +14,14 @@ abi = "wasi"
 [module.interfaces]
 wasi = "0.1.0-unstable"
 
+[[module]]
+name = "lib"
+source = "lib.wasm"
+abi = "wasi"
+
+[module.interfaces]
+wasi = "0.1.0-unstable"
+
 [[command]]
 name = "tpl"
 module = "tpl"

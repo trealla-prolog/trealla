@@ -11,7 +11,7 @@ You can grab WASM binary builds from [guregu/trealla on WAPM](https://wapm.io/gu
 These builds are uploaded automatically for each release.
 
 ## Differences from upstream
-- `library(js_toplevel)` JSON-based programmatic toplevel.
+- `library(js)` JSON-based programmatic toplevel and WASM host interop (WIP).
 - `library(pseudojson)` Very fast JSON parser/generator (but not validator).
 
 ![Trealla Logo](https://user-images.githubusercontent.com/131059/190109875-7eb65bf5-feef-41e1-b19c-7fbcab8887ae.png)

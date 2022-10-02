@@ -20,6 +20,10 @@
 #include "openssl/sha.h"
 #endif
 
+#ifdef __wasi__
+#include "wasi.h"
+#endif
+
 #ifdef _WIN32
 #include <windows.h>
 #define unsetenv(p1)
@@ -7067,6 +7071,43 @@ static bool fn_iso_compare_3(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
+#ifdef __wasi__
+static bool fn_sys_host_call_2(query *q) {
+#ifdef WASI_IMPORTS
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,var);
+
+	char *reply = NULL;
+	size_t reply_len;
+	size_t len;
+	if (is_cstring(p1)) {
+		const char *src = C_STR(q, p1);
+		len = C_STRLEN(q, p1);
+		reply = host_call(src, len, &reply_len);
+	} else if ((len = scan_is_chars_list(q, p1, p1_ctx, true)) > 0) {
+		char *src = chars_list_to_string(q, p1, p1_ctx, len);
+		reply = host_call(src, len, &reply_len);
+		free(src);
+	} else if (is_nil(p1)) {
+		;
+	} else
+		return throw_error(q, p1, p1_ctx, "type_error", "chars");
+
+	if (!reply)
+		return false;
+
+	cell tmp;
+	check_heap_error(make_stringn(&tmp, reply, reply_len), free(reply));
+	free(reply);
+	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
+	return ok;
+#else
+	return false;
+#endif
+}
+#endif
+
 void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type)
 {
 	char *dst = tmpbuf;
@@ -7577,6 +7618,9 @@ builtins g_other_bifs[] =
 	{"$list_attributed", 1, fn_sys_list_attributed_1, "-list", false, false, BLAH},
 	{"$dump_keys", 1, fn_sys_dump_keys_1, "+pi", false, false, BLAH},
 	{"$skip_max_list", 4, fn_sys_skip_max_list_4, NULL, false, false, BLAH},
+#if __wasi__
+	{"$host_call", 2, fn_sys_host_call_2, "+string,?string", false, false, BLAH},
+#endif
 
 #if USE_OPENSSL
 	{"crypto_data_hash", 3, fn_crypto_data_hash_3, "?string,?string,?list", false, false, BLAH},

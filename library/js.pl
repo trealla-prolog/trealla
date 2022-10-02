@@ -11,10 +11,22 @@
 		"error": "<throw/1 exception term>"
 	}
 */
-:- module(js_toplevel, [js_toplevel/0, js_ask/1]).
+:- module(js, [js_toplevel/0, js_ask/1, js_eval_json/2]).
 
 :- use_module(library(lists)).
 :- use_module(library(pseudojson)).
+
+js_eval_json(Expr, Result) :-
+	(  '$host_call'(Expr, Cs)
+	-> true
+	;  throw(error(wasm_error(host_call_failed), js_eval_json/2))
+	),
+	(  json_chars(Result, Cs)
+	-> true
+	;  throw(error(wasm_error(invalid_json, Cs), js_eval_json/2))
+	).
+	% json_value(JSON, V),
+	% term_json(_, Result, V).
 
 js_toplevel :-
 	getline(Line),
@@ -26,7 +38,8 @@ js_ask(Input) :-
 		Error,
 		(
 			write('\x2\\x3\'),
-			write_result(error, _, Error),
+			result_json(error, Vars, Error, JSON),
+			write_result(JSON),
 			flush_output
 		)
 	),

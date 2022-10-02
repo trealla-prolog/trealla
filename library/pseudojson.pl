@@ -72,6 +72,8 @@ json(V) :- json_object(V).
 json(V) :- json_list(V).
 json(null).
 
+% predicates for manipulating comma lists (_, _) 
+
 member_comma(X, (H,_)) :- member_comma(X, H).
 member_comma(X, (_,T)) :- !, member_comma(X, T).
 member_comma(X, X).
