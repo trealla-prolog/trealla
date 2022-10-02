@@ -11,13 +11,15 @@
 		"error": "<throw/1 exception term>"
 	}
 */
-:- module(js, [js_toplevel/0, js_ask/1, js_eval_json/2]).
+:- module(js, [js_toplevel/0, js_ask/1, js_eval/2, js_eval_json/2, wasm_yield/0]).
 
 :- use_module(library(lists)).
 :- use_module(library(pseudojson)).
 
+% Guest (Trealla) → Host (WASM)
+
 js_eval_json(Expr, Result) :-
-	(  '$host_call'(Expr, Cs)
+	(  js_eval(Expr, Cs)
 	-> true
 	;  throw(error(wasm_error(host_call_failed), js_eval_json/2))
 	),
@@ -28,6 +30,18 @@ js_eval_json(Expr, Result) :-
 	% json_value(JSON, V),
 	% term_json(_, Result, V).
 
+js_eval(Expr, Cs) :-
+	'$host_call'(Expr, Cs), !
+	; wasm_yield, fail
+	; '$host_resume'(Cs).
+
+wasm_yield :-
+	write(stdout, '\x16\'),
+	flush_output(stdout),
+	yield.
+
+% Host (WASM) → Guest (Trealla)
+
 js_toplevel :-
 	getline(Line),
 	js_ask(Line).
@@ -37,10 +51,10 @@ js_ask(Input) :-
 		read_term_from_chars(Query, [variable_names(Vars)], Input),
 		Error,
 		(
-			write('\x2\\x3\'),
+			write(stdout, '\x2\\x3\'),
 			result_json(error, Vars, Error, JSON),
 			write_result(JSON),
-			flush_output
+			flush_output(stdout)
 		)
 	),
 	catch(
@@ -48,13 +62,13 @@ js_ask(Input) :-
 		Error,
 		Status = error
 	),
-	write('\x3\'),
+	write(stdout, '\x3\'),
 	result_json(Status, Vars, Error, JSON),
 	write_result(JSON),
-	flush_output.
+	flush_output(stdout).
 
 query(Query, Status) :-
-	write('\x2\'),  % START OF TEXT
+	write(stdout, '\x2\'),  % START OF TEXT
 	(   call(Query)
 	*-> Status = success
 	;   Status = failure
@@ -63,7 +77,7 @@ query(Query, Status) :-
 write_result(JSON) :-
 	json_value(JS, JSON),
 	json_chars(JS, Cs),
-	'$put_chars'(Cs),
+	'$put_chars'(stdout, Cs),
 	nl.
 
 result_json(success, Vars, _, pairs([string("result")-string("success"), string("answer")-Solution])) :-

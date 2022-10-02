@@ -1,5 +1,6 @@
 #ifdef __wasi__
 #include <stdlib.h>
+#include <stdbool.h>
 
 // WASI memory manipulation ABI
 
@@ -17,9 +18,13 @@ void canonical_abi_free(void *ptr, size_t size, size_t align) {
 }
 
 #ifdef WASI_IMPORTS
-// Communication with host
+
+// Communication with host.
+// Host (WASM runtime) will allocate reply.
 // Guest (Trealla) is responsible for freeing msg and reply.
-char *host_call(const char *msg, size_t msg_size, size_t *reply_size);
+int32_t host_call(int32_t subquery, const char *msg, size_t msg_size, char **reply, size_t *reply_size);
+bool host_resume(int32_t subquery, char **reply, size_t *reply_size);
+
 #endif
 
 #endif

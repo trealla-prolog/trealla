@@ -7077,29 +7077,56 @@ static bool fn_sys_host_call_2(query *q) {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,var);
 
-	char *reply = NULL;
+	int32_t status = 0;
+	char *reply = {0};
 	size_t reply_len;
 	size_t len;
 	if (is_cstring(p1)) {
 		const char *src = C_STR(q, p1);
 		len = C_STRLEN(q, p1);
-		reply = host_call(src, len, &reply_len);
+		status = host_call((int32_t)q, src, len, &reply, &reply_len);
 	} else if ((len = scan_is_chars_list(q, p1, p1_ctx, true)) > 0) {
 		char *src = chars_list_to_string(q, p1, p1_ctx, len);
-		reply = host_call(src, len, &reply_len);
+		status = host_call((int32_t)q, src, len, &reply, &reply_len);
 		free(src);
 	} else if (is_nil(p1)) {
 		;
 	} else
 		return throw_error(q, p1, p1_ctx, "type_error", "chars");
 
-	if (!reply)
-		return false;
+	switch (status) {
+		case WASM_HOST_CALL_ERROR:
+			return throw_error(q, p1, p1_ctx, "system_error", "wasm_host_call_failed");
+		case WASM_HOST_CALL_YIELD:
+			return false;
+	}
 
 	cell tmp;
 	check_heap_error(make_stringn(&tmp, reply, reply_len), free(reply));
 	free(reply);
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
+	return ok;
+#else
+	return false;
+#endif
+}
+
+static bool fn_sys_host_resume_1(query *q) {
+#ifdef WASI_IMPORTS
+	GET_FIRST_ARG(p1,var);
+
+	char *reply = {0};
+	size_t reply_len;
+	bool ok = host_resume((int32_t)q, &reply, &reply_len);
+	if (!ok) {
+		return false;
+	}
+
+	cell tmp;
+	check_heap_error(make_stringn(&tmp, reply, reply_len), free(reply));
+	free(reply);
+	ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 	unshare_cell(&tmp);
 	return ok;
 #else
@@ -7619,7 +7646,8 @@ builtins g_other_bifs[] =
 	{"$dump_keys", 1, fn_sys_dump_keys_1, "+pi", false, false, BLAH},
 	{"$skip_max_list", 4, fn_sys_skip_max_list_4, NULL, false, false, BLAH},
 #if __wasi__
-	{"$host_call", 2, fn_sys_host_call_2, "+string,?string", false, false, BLAH},
+	{"$host_call", 2, fn_sys_host_call_2, "+string,-string", false, false, BLAH},
+	{"$host_resume", 1, fn_sys_host_resume_1, "-string", false, false, BLAH},
 #endif
 
 #if USE_OPENSSL
