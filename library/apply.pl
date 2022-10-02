@@ -1,13 +1,5 @@
 :- pragma(apply, [once(true)]).
 
-:- help(maplist(+callable,+list), [iso(true)]).
-:- help(maplist(+callable,+list1,+list2), [iso(true)]).
-:- help(maplist(+callable,+list1,+list2,+list3), [iso(true)]).
-:- help(maplist(+callable,+list1,+list2,+list3,+list4), [iso(true)]).
-:- help(maplist(+callable,+list1,+list2,+list3,+list4,+list5), [iso(true)]).
-:- help(maplist(+callable,+list1,+list2,+list3,+list4,+list5,+list6), [iso(true)]).
-:- help(maplist(+callable,+list1,+list2,+list3,+list4,+list5,+list6,+list7), [iso(true)]).
-
 :- meta_predicate(maplist(1, ?)).
 :- meta_predicate(maplist(2, ?, ?)).
 :- meta_predicate(maplist(3, ?, ?, ?)).
