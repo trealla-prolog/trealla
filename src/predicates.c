@@ -7074,7 +7074,7 @@ static bool fn_iso_compare_3(query *q)
 #ifdef __wasi__
 static bool fn_sys_host_call_2(query *q) {
 #ifdef WASI_IMPORTS
-	GET_FIRST_ARG(p1,atom);
+	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,var);
 
 	int32_t status = 0;
