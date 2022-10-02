@@ -3469,6 +3469,95 @@ static bool fn_iso_set_stream_position_2(query *q)
 	return true;
 }
 
+static bool fn_sys_read_term_from_chars_3(query *q)
+{
+	GET_FIRST_ARG(p_term,any);
+	GET_NEXT_ARG(p_chars,any);
+	GET_NEXT_ARG(p_rest,any);
+	int n = 3;
+	stream *str = &q->pl->streams[n];
+	char *src = NULL;
+	size_t len;
+	bool has_var, is_partial;
+	cell tmp;
+	make_atom(&tmp, g_nil_s);
+	cell *p_opts = &tmp;
+	pl_idx_t p_opts_ctx = q->st.curr_frame;
+
+	if (is_atom(p_chars) && !is_string(p_chars)) {
+		if (!strcmp(C_STR(q, p_chars), "[]")) {
+			cell tmp;
+			make_atom(&tmp, g_eof_s);
+			return unify(q, p_term, p_term_ctx, &tmp, q->st.curr_frame);
+		} else
+			return throw_error(q, p_chars, p_chars_ctx, "type_error", "character");
+	} else if (is_string(p_chars)) {
+		len = C_STRLEN(q, p_chars);
+		src = malloc(len+1+1);		// +1 is to allow adding a '.'
+		check_heap_error(src);
+		memcpy(src, C_STR(q, p_chars), len);
+		src[len] = '\0';
+	} else if (!check_list(q, p_chars, p_chars_ctx, &is_partial, NULL)) {
+		return throw_error(q, p_chars, p_chars_ctx, "type_error", "list");
+	} else if ((len = scan_is_chars_list2(q, p_chars, p_chars_ctx, false, &has_var, &is_partial)) > 0) {
+		if (!len)
+			return throw_error(q, p_chars, p_chars_ctx, "type_error", "character");
+
+		src = chars_list_to_string(q, p_chars, p_chars_ctx, len);
+	} else {
+		if (has_var)
+			return throw_error(q, p_chars, p_chars_ctx, "instantiation_error", "var");
+
+		return throw_error(q, p_chars, p_chars_ctx, "type_error", "character");
+	}
+
+	if (!str->p) {
+		str->p = create_parser(q->st.m);
+		str->p->flags = q->st.m->flags;
+		str->p->fp = str->fp;
+	} else
+		reset(str->p);
+
+	char *save_src = src;
+	str->p->srcptr = src;
+	src = eat_space(str->p);
+
+	if (!src || !*src) {
+		free(save_src);
+		cell tmp;
+		make_atom(&tmp, g_eof_s);
+		return unify(q, p_term, p_term_ctx, &tmp, q->st.curr_frame);
+	}
+
+	const char *end_ptr = src + strlen(src) - 1;
+
+	while (isspace(*end_ptr) && (end_ptr != src))
+		end_ptr--;
+
+	if (src[strlen(src)-1] != '.')
+		strcat(src, ".");
+
+	q->p->no_fp = true;
+	bool ok = do_read_term(q, str, p_term, p_term_ctx, p_opts, p_opts_ctx, src);
+	q->p->no_fp = false;
+
+	if (ok != true) {
+		free(save_src);
+		destroy_parser(str->p);
+		str->p = NULL;
+		return false;
+	}
+
+	src = str->p->srcptr;
+	check_heap_error(make_string(&tmp, src));
+	free(save_src);
+	destroy_parser(str->p);
+	str->p = NULL;
+	unify(q, p_rest, p_rest_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
+	return ok;
+}
+
 static bool fn_read_term_from_chars_3(query *q)
 {
 	GET_FIRST_ARG(p_chars,any);
@@ -6401,6 +6490,7 @@ builtins g_files_bifs[] =
 	{"$put_chars", 2, fn_sys_put_chars_2, "+stream,+chars", false, false, BLAH},
 	{"read_term_from_atom", 3, fn_read_term_from_atom_3, "+atom,?term,+list", false, false, BLAH},
 	{"read_term_from_chars", 3, fn_read_term_from_chars_3, "+chars,?term,+list", false, false, BLAH},
+	{"$read_term_from_chars", 3, fn_sys_read_term_from_chars_3, "?term,+chars,+rest", false, false, BLAH},
 	{"write_term_to_atom", 3, fn_write_term_to_atom_3, "?atom,?term,+list", false, false, BLAH},
 	{"write_canonical_to_atom", 3, fn_write_canonical_to_chars_3, "?atom,?term,+list", false, false, BLAH},
 	{"write_term_to_chars", 3, fn_write_term_to_chars_3, "?chars,?term,+list", false, false, BLAH},
