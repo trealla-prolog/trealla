@@ -65,12 +65,12 @@ json_object({Fields}) :-
 
 json_list(V) :- is_list(V).
 
+json(V) :- V == null.
 json(V) :- json_bool(V).
 json(V) :- json_string(V).
 json(V) :- json_number(V).
 json(V) :- json_object(V).
 json(V) :- json_list(V).
-json(null).
 
 % predicates for manipulating comma lists (_, _) 
 
