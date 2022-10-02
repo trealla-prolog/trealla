@@ -3548,6 +3548,7 @@ static bool fn_sys_read_term_from_chars_3(query *q)
 		return false;
 	}
 
+	str->p->srcptr = eat_space(str->p);
 	src = str->p->srcptr;
 	check_heap_error(make_string(&tmp, src));
 	free(save_src);
