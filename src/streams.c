@@ -3471,9 +3471,9 @@ static bool fn_iso_set_stream_position_2(query *q)
 
 static bool fn_read_term_from_chars_3(query *q)
 {
-	GET_FIRST_ARG(p_term,any);
+	GET_FIRST_ARG(p_chars,any);
+	GET_NEXT_ARG(p_term,any);
 	GET_NEXT_ARG(p_opts,list_or_nil);
-	GET_NEXT_ARG(p_chars,any);
 	int n = 3;
 	stream *str = &q->pl->streams[n];
 	char *src = NULL;
@@ -3548,9 +3548,9 @@ static bool fn_read_term_from_chars_3(query *q)
 
 static bool fn_read_term_from_atom_3(query *q)
 {
-	GET_FIRST_ARG(p_term,any);
+	GET_FIRST_ARG(p_chars,any);
+	GET_NEXT_ARG(p_term,any);
 	GET_NEXT_ARG(p_opts,list_or_nil);
-	GET_NEXT_ARG(p_chars,any);
 	int n = q->pl->current_input;
 	stream *str = &q->pl->streams[n];
 
@@ -6353,8 +6353,8 @@ builtins g_files_bifs[] =
 	{"chdir", 1, fn_chdir_1, "+string", false, false, BLAH},
 	{"$put_chars", 1, fn_sys_put_chars_1, "+chars", false, false, BLAH},
 	{"$put_chars", 2, fn_sys_put_chars_2, "+stream,+chars", false, false, BLAH},
-	{"read_term_from_atom", 3, fn_read_term_from_atom_3, "?term,+list,+atom", false, false, BLAH},
-	{"read_term_from_chars", 3, fn_read_term_from_chars_3, "?term,+list,+chars", false, false, BLAH},
+	{"read_term_from_atom", 3, fn_read_term_from_atom_3, "+atom,?term,+list", false, false, BLAH},
+	{"read_term_from_chars", 3, fn_read_term_from_chars_3, "+chars,?term,+list", false, false, BLAH},
 	{"write_term_to_atom", 3, fn_write_term_to_atom_3, "?atom,?term,+list", false, false, BLAH},
 	{"write_canonical_to_atom", 3, fn_write_canonical_to_chars_3, "?atom,?term,+list", false, false, BLAH},
 	{"write_term_to_chars", 3, fn_write_term_to_chars_3, "?chars,?term,+list", false, false, BLAH},

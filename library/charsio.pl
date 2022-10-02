@@ -7,10 +7,10 @@
     ]).
 
 read_from_chars(Cs, T) :-
-    read_term_from_chars(T, [], Cs).
+    read_term_from_chars(Cs, T, []).
 
 read_from_chars(Cs, T, Opts) :-
-    read_term_from_chars(T, Opts, Cs).
+    read_term_from_chars(Cs, T, Opts).
 
 read_line_to_chars(Stream, Cs0, Cs) :-
     getline(Stream, Line,[terminator(true)]),
