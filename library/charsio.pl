@@ -1,8 +1,12 @@
 :- module(charsio, [
 	read_line_to_chars/3,
 	get_n_chars/3,
+	read_from_chars/2,
 	fabricate_var_name/3
     ]).
+
+read_from_chars(Cs, T) :-
+    read_term_from_chars(T, [], Cs).
 
 read_line_to_chars(Stream, Cs0, Cs) :-
     getline(Stream, Line,[terminator(true)]),
