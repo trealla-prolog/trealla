@@ -410,14 +410,19 @@ load_files(Files) :- load_files(Files,[]).
 consult(Files) :- load_files(Files,[]).
 reconsult(Files) :- load_files(Files,[]).
 deconsult(Files) :- unload_files(Files).
-strip_module(T,M,P) :- T=M:P -> true ; P=T.
-read_term_from_chars(T,S) :- read_term_from_chars(T,[],S).
-?=(X,Y) :- \+ unifiable(X,Y,[_|_]).
-atom_number(A,N) :- atom_codes(A,Codes), number_codes(N,Codes).
-'$skip_list'(Skip,Xs0,Xs) :- '$skip_max_list'(Skip,_,Xs0,Xs).
+strip_module(T, M, P) :- T=M:P -> true ; P=T.
+?=(X, Y) :- \+ unifiable(X, Y, [_|_]).
+atom_number(A, N) :- atom_codes(A,Codes), number_codes(N, Codes).
+'$skip_list'(Skip, Xs0, Xs) :- '$skip_max_list'(Skip,_, Xs0, Xs).
 term_hash(Term, _Opts, Hash) :- term_hash(Term, Hash).
 not(G) :- G, !, fail.
 not(_).
+
+read_term_from_atom(A, T) :- read_term_from_atom(A, T, []).
+read_term_from_chars(Cs, T) :- read_term_from_chars(Cs, T, []).
+
+:- help(read_term_from_atom(+atom,?term), [iso(false)]).
+:- help(read_term_from_chars(+chars,?term), [iso(false)]).
 
 with_output_to(chars(Cs), Goal) :-
 	setup_call_cleanup(

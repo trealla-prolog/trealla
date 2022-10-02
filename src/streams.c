@@ -3637,9 +3637,9 @@ static bool fn_iso_set_stream_position_2(query *q)
 
 static bool fn_read_term_from_chars_3(query *q)
 {
-	GET_FIRST_ARG(p_term,any);
+	GET_FIRST_ARG(p_chars,any);
+	GET_NEXT_ARG(p_term,any);
 	GET_NEXT_ARG(p_opts,list_or_nil);
-	GET_NEXT_ARG(p_chars,any);
 	int n = 3;
 	stream *str = &q->pl->streams[n];
 	char *src = NULL;
@@ -3714,9 +3714,9 @@ static bool fn_read_term_from_chars_3(query *q)
 
 static bool fn_read_term_from_atom_3(query *q)
 {
-	GET_FIRST_ARG(p_term,any);
+	GET_FIRST_ARG(p_chars,any);
+	GET_NEXT_ARG(p_term,any);
 	GET_NEXT_ARG(p_opts,list_or_nil);
-	GET_NEXT_ARG(p_chars,any);
 	int n = q->pl->current_input;
 	stream *str = &q->pl->streams[n];
 
@@ -6427,6 +6427,52 @@ static bool fn_sys_capture_output_to_atom_1(query *q)
 	return ok;
 }
 
+static bool fn_sys_capture_error_0(query *q)
+{
+	int n = q->pl->current_error;
+	stream *str = &q->pl->streams[n];
+
+	if (str->is_memory) {
+		str->is_memory = false;
+		SB_free(str->sb);
+	} else
+		str->is_memory = true;
+
+	return true;
+}
+
+static bool fn_sys_capture_error_to_chars_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	int n = q->pl->current_error;
+	stream *str = &q->pl->streams[n];
+	const char *src = SB_cstr(str->sb);
+	size_t len = SB_strlen(str->sb);
+	cell tmp;
+	check_heap_error(make_stringn(&tmp, src, len));
+	str->is_memory = false;
+	SB_free(str->sb);
+	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);;
+	unshare_cell(&tmp);
+	return ok;
+}
+
+static bool fn_sys_capture_error_to_atom_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	int n = q->pl->current_error;
+	stream *str = &q->pl->streams[n];
+	const char *src = SB_cstr(str->sb);
+	size_t len = SB_strlen(str->sb);
+	cell tmp;
+	check_heap_error(make_cstringn(&tmp, src, len));
+	str->is_memory = false;
+	SB_free(str->sb);
+	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);;
+	unshare_cell(&tmp);
+	return ok;
+}
+
 builtins g_files_bifs[] =
 {
 	// ISO...
@@ -6519,8 +6565,8 @@ builtins g_files_bifs[] =
 	{"chdir", 1, fn_chdir_1, "+string", false, false, BLAH},
 	{"$put_chars", 1, fn_sys_put_chars_1, "+chars", false, false, BLAH},
 	{"$put_chars", 2, fn_sys_put_chars_2, "+stream,+chars", false, false, BLAH},
-	{"read_term_from_atom", 3, fn_read_term_from_atom_3, "?term,+list,+atom", false, false, BLAH},
-	{"read_term_from_chars", 3, fn_read_term_from_chars_3, "?term,+list,+chars", false, false, BLAH},
+	{"read_term_from_atom", 3, fn_read_term_from_atom_3, "+atom,?term,+list", false, false, BLAH},
+	{"read_term_from_chars", 3, fn_read_term_from_chars_3, "+chars,?term,+list", false, false, BLAH},
 	{"write_term_to_atom", 3, fn_write_term_to_atom_3, "?atom,?term,+list", false, false, BLAH},
 	{"write_canonical_to_atom", 3, fn_write_canonical_to_chars_3, "?atom,?term,+list", false, false, BLAH},
 	{"write_term_to_chars", 3, fn_write_term_to_chars_3, "?chars,?term,+list", false, false, BLAH},
@@ -6546,6 +6592,10 @@ builtins g_files_bifs[] =
 	{"$capture_output", 0, fn_sys_capture_output_0, NULL, false, false, BLAH},
 	{"$capture_output_to_chars", 1, fn_sys_capture_output_to_chars_1, "-chars", false, false, BLAH},
 	{"$capture_output_to_atom", 1, fn_sys_capture_output_to_atom_1, "-atom", false, false, BLAH},
+
+	{"$capture_error", 0, fn_sys_capture_error_0, NULL, false, false, BLAH},
+	{"$capture_error_to_chars", 1, fn_sys_capture_error_to_chars_1, "-chars", false, false, BLAH},
+	{"$capture_error_to_atom", 1, fn_sys_capture_error_to_atom_1, "-atom", false, false, BLAH},
 
 #if !defined(_WIN32) && !defined(__wasi__)
 	{"process_create", 3, fn_process_create_3, "+atom,+args,+opts", false, false, BLAH},

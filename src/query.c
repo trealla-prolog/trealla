@@ -6,6 +6,7 @@
 
 #include "heap.h"
 #include "module.h"
+#include "network.h"
 #include "parser.h"
 #include "prolog.h"
 #include "query.h"
@@ -95,20 +96,22 @@ static void trace_call(query *q, cell *c, pl_idx_t c_ctx, box_t box)
 		return;
 #endif
 
+	SB(pr);
+
 #ifdef DEBUG
-	fprintf(stderr, "[%s:%llu:f%u:fp:%u:cp%u:sp%u:hp%u:tp%u] ",
+	SB_sprintf(pr, "[%s:%llu:f%u:fp:%u:cp%u:sp%u:hp%u:tp%u] ",
 		q->st.m->name,
 		(unsigned long long)q->step++,
 		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.tp
 		);
 #else
-	fprintf(stderr, "[%s:%llu] ",
+	SB_sprintf(pr, "[%s:%llu] ",
 		q->st.m->name,
 		(unsigned long long)q->step++
 		);
 #endif
 
-	fprintf(stderr, "%s ",
+	SB_sprintf(pr, "%s ",
 		box == CALL ? "CALL" :
 		box == EXIT ? "EXIT" :
 		box == REDO ? "REDO" :
@@ -119,10 +122,17 @@ static void trace_call(query *q, cell *c, pl_idx_t c_ctx, box_t box)
 	int save_depth = q->max_depth;
 	q->max_depth = 10;
 	q->quoted = true;
-	print_term(q, stderr, c, c_ctx, -1);
+	char *dst = print_term_to_strbuf(q, c, c_ctx, -1);
+	SB_strcat(pr, dst);
+	free(dst);
 	q->quoted = false;
-	fprintf(stderr, "\n");
-	fflush(stderr);
+	SB_sprintf(pr, "%s", "\n");
+	src = SB_cstr(pr);
+	size_t srclen = srclen = SB_strlen(pr);
+	int n = q->pl->current_error;
+	stream *str = &q->pl->streams[n];
+	net_write(src, srclen, str);
+	SB_free(pr);
 	q->max_depth = save_depth;
 
 	if (q->creep) {
