@@ -3474,7 +3474,8 @@ static bool fn_sys_read_term_from_chars_3(query *q)
 	GET_FIRST_ARG(p_term,any);
 	GET_NEXT_ARG(p_chars,any);
 	GET_NEXT_ARG(p_rest,any);
-	stream *str = &q->pl->streams[3];
+	stream tmps = {0};
+	stream *str = &tmps;
 	cell tmp;
 	make_atom(&tmp, g_nil_s);
 	cell *p_opts = &tmp;
@@ -3505,9 +3506,7 @@ static bool fn_sys_read_term_from_chars_3(query *q)
 		return unify(q, p_term, p_term_ctx, &tmp, q->st.curr_frame);
 	}
 
-	q->p->no_fp = true;
 	bool ok = do_read_term(q, str, p_term, p_term_ctx, p_opts, p_opts_ctx, src);
-	q->p->no_fp = false;
 
 	if (ok != true) {
 		destroy_parser(str->p);
@@ -3532,8 +3531,8 @@ static bool fn_read_term_from_chars_3(query *q)
 	GET_FIRST_ARG(p_chars,any);
 	GET_NEXT_ARG(p_term,any);
 	GET_NEXT_ARG(p_opts,list_or_nil);
-	int n = 3;
-	stream *str = &q->pl->streams[n];
+	stream tmps = {0};
+	stream *str = &tmps;
 	char *src = NULL;
 	size_t len;
 	bool has_var, is_partial;
@@ -3591,9 +3590,7 @@ static bool fn_read_term_from_chars_3(query *q)
 	if (src[strlen(src)-1] != '.')
 		strcat(src, ".");
 
-	q->p->no_fp = true;
 	bool ok = do_read_term(q, str, p_term, p_term_ctx, p_opts, p_opts_ctx, src);
-	q->p->no_fp = false;
 	free(save_src);
 	destroy_parser(str->p);
 	str->p = NULL;
@@ -3609,8 +3606,8 @@ static bool fn_read_term_from_atom_3(query *q)
 	GET_FIRST_ARG(p_chars,any);
 	GET_NEXT_ARG(p_term,any);
 	GET_NEXT_ARG(p_opts,list_or_nil);
-	int n = q->pl->current_input;
-	stream *str = &q->pl->streams[n];
+	stream tmps = {0};
+	stream *str = &tmps;
 
 	char *src;
 	size_t len;
@@ -3637,9 +3634,7 @@ static bool fn_read_term_from_atom_3(query *q)
 	if (src[strlen(src)-1] != '.')
 		strcat(src, ".");
 
-	q->p->no_fp = true;
 	bool ok = do_read_term(q, str, p_term, p_term_ctx, p_opts, p_opts_ctx, src);
-	q->p->no_fp = false;
 	free(src);
 	return ok;
 }
