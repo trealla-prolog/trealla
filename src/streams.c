@@ -3469,17 +3469,16 @@ static bool fn_iso_set_stream_position_2(query *q)
 	return true;
 }
 
-static bool fn_sys_read_term_from_chars_3(query *q)
+static bool fn_sys_read_term_from_chars_4(query *q)
 {
 	GET_FIRST_ARG(p_term,any);
+	GET_NEXT_ARG(p_opts,list_or_nil);
 	GET_NEXT_ARG(p_chars,any);
 	GET_NEXT_ARG(p_rest,any);
 	stream tmps = {0};
 	stream *str = &tmps;
 	cell tmp;
 	make_atom(&tmp, g_nil_s);
-	cell *p_opts = &tmp;
-	pl_idx_t p_opts_ctx = q->st.curr_frame;
 	char *src = NULL;
 	bool has_var, is_partial;
 	size_t srclen;
@@ -6475,7 +6474,7 @@ builtins g_files_bifs[] =
 	{"$put_chars", 2, fn_sys_put_chars_2, "+stream,+chars", false, false, BLAH},
 	{"read_term_from_atom", 3, fn_read_term_from_atom_3, "+atom,?term,+list", false, false, BLAH},
 	{"read_term_from_chars", 3, fn_read_term_from_chars_3, "+chars,?term,+list", false, false, BLAH},
-	{"$read_term_from_chars", 3, fn_sys_read_term_from_chars_3, "?term,+chars,+rest", false, false, BLAH},
+	{"$read_term_from_chars", 4, fn_sys_read_term_from_chars_4, "?term,+list,+chars,-rest", false, false, BLAH},
 	{"write_term_to_atom", 3, fn_write_term_to_atom_3, "?atom,?term,+list", false, false, BLAH},
 	{"write_canonical_to_atom", 3, fn_write_canonical_to_chars_3, "?atom,?term,+list", false, false, BLAH},
 	{"write_term_to_chars", 3, fn_write_term_to_chars_3, "?chars,?term,+list", false, false, BLAH},
