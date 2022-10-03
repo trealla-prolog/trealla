@@ -3477,8 +3477,6 @@ static bool fn_sys_read_term_from_chars_4(query *q)
 	GET_NEXT_ARG(p_rest,any);
 	stream tmps = {0};
 	stream *str = &tmps;
-	cell tmp;
-	make_atom(&tmp, g_nil_s);
 	char *src = NULL;
 	bool has_var, is_partial;
 	size_t srclen;
@@ -3535,6 +3533,7 @@ static bool fn_sys_read_term_from_chars_4(query *q)
 	const char *ptr = strstr(src, rest);
 	size_t off = ptr - src;
 	size_t len = srclen - off;
+	cell tmp;
 
 	if (!is_string(p_chars))
 		check_heap_error(make_string(&tmp, rest));
