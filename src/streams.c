@@ -3474,11 +3474,7 @@ static bool fn_sys_read_term_from_chars_3(query *q)
 	GET_FIRST_ARG(p_term,any);
 	GET_NEXT_ARG(p_chars,any);
 	GET_NEXT_ARG(p_rest,any);
-	int n = 3;
-	stream *str = &q->pl->streams[n];
-	char *src = NULL;
-	size_t len;
-	bool has_var, is_partial;
+	stream *str = &q->pl->streams[3];
 	cell tmp;
 	make_atom(&tmp, g_nil_s);
 	cell *p_opts = &tmp;
@@ -3491,24 +3487,6 @@ static bool fn_sys_read_term_from_chars_3(query *q)
 			return unify(q, p_term, p_term_ctx, &tmp, q->st.curr_frame);
 		} else
 			return throw_error(q, p_chars, p_chars_ctx, "type_error", "character");
-	} else if (is_string(p_chars)) {
-		len = C_STRLEN(q, p_chars);
-		src = malloc(len+1+1);		// +1 is to allow adding a '.'
-		check_heap_error(src);
-		memcpy(src, C_STR(q, p_chars), len);
-		src[len] = '\0';
-	} else if (!check_list(q, p_chars, p_chars_ctx, &is_partial, NULL)) {
-		return throw_error(q, p_chars, p_chars_ctx, "type_error", "list");
-	} else if ((len = scan_is_chars_list2(q, p_chars, p_chars_ctx, false, &has_var, &is_partial)) > 0) {
-		if (!len)
-			return throw_error(q, p_chars, p_chars_ctx, "type_error", "character");
-
-		src = chars_list_to_string(q, p_chars, p_chars_ctx, len);
-	} else {
-		if (has_var)
-			return throw_error(q, p_chars, p_chars_ctx, "instantiation_error", "var");
-
-		return throw_error(q, p_chars, p_chars_ctx, "type_error", "character");
 	}
 
 	if (!str->p) {
@@ -3518,43 +3496,30 @@ static bool fn_sys_read_term_from_chars_3(query *q)
 	} else
 		reset(str->p);
 
-	char *save_src = src;
-	str->p->srcptr = src;
-	src = eat_space(str->p);
+	str->p->srcptr = C_STR(q, p_chars);
+	char *src = eat_space(str->p);
 
 	if (!src || !*src) {
-		free(save_src);
 		cell tmp;
 		make_atom(&tmp, g_eof_s);
 		return unify(q, p_term, p_term_ctx, &tmp, q->st.curr_frame);
 	}
-
-	const char *end_ptr = src + strlen(src) - 1;
-
-	while (isspace(*end_ptr) && (end_ptr != src))
-		end_ptr--;
-
-	if (src[strlen(src)-1] != '.')
-		strcat(src, ".");
 
 	q->p->no_fp = true;
 	bool ok = do_read_term(q, str, p_term, p_term_ctx, p_opts, p_opts_ctx, src);
 	q->p->no_fp = false;
 
 	if (ok != true) {
-		free(save_src);
 		destroy_parser(str->p);
 		str->p = NULL;
 		return false;
 	}
 
-	str->p->srcptr = eat_space(str->p);
-	src = str->p->srcptr;
-
+	src = str->p->srcptr = eat_space(str->p);
 	const char *ptr = strstr(C_STR(q,p_chars), src);
-	check_heap_error(make_slice(q, &tmp, p_chars, src-C_STR(q,p_chars), strlen(src)));
-
-	free(save_src);
+	size_t off = src-C_STR(q,p_chars);
+	size_t len = C_STRLEN(q,p_chars) - off;
+	check_heap_error(make_slice(q, &tmp, p_chars, off, len));
 	destroy_parser(str->p);
 	str->p = NULL;
 	unify(q, p_rest, p_rest_ctx, &tmp, q->st.curr_frame);
