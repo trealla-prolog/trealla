@@ -3490,17 +3490,15 @@ static bool fn_sys_read_term_from_chars_3(query *q)
 			return throw_error(q, p_chars, p_chars_ctx, "type_error", "character");
 	}
 
-	if (!str->p) {
-		str->p = create_parser(q->st.m);
-		str->p->flags = q->st.m->flags;
-		str->p->fp = str->fp;
-	} else
-		reset(str->p);
-
+	str->p = create_parser(q->st.m);
+	str->p->flags = q->st.m->flags;
+	str->p->fp = str->fp;
+	reset(str->p);
 	str->p->srcptr = C_STR(q, p_chars);
 	char *src = eat_space(str->p);
 
 	if (!src || !*src) {
+		destroy_parser(str->p);
 		cell tmp;
 		make_atom(&tmp, g_eof_s);
 		return unify(q, p_term, p_term_ctx, &tmp, q->st.curr_frame);
@@ -3564,18 +3562,16 @@ static bool fn_read_term_from_chars_3(query *q)
 		return throw_error(q, p_chars, p_chars_ctx, "type_error", "character");
 	}
 
-	if (!str->p) {
-		str->p = create_parser(q->st.m);
-		str->p->flags = q->st.m->flags;
-		str->p->fp = str->fp;
-	} else
-		reset(str->p);
-
+	str->p = create_parser(q->st.m);
+	str->p->flags = q->st.m->flags;
+	str->p->fp = str->fp;
+	reset(str->p);
 	char *save_src = src;
 	str->p->srcptr = src;
 	src = eat_space(str->p);
 
 	if (!src || !*src) {
+		destroy_parser(str->p);
 		free(save_src);
 		cell tmp;
 		make_atom(&tmp, g_eof_s);
@@ -3608,7 +3604,6 @@ static bool fn_read_term_from_atom_3(query *q)
 	GET_NEXT_ARG(p_opts,list_or_nil);
 	stream tmps = {0};
 	stream *str = &tmps;
-
 	char *src;
 	size_t len;
 
