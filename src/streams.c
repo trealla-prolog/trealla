@@ -3518,7 +3518,7 @@ static bool fn_sys_read_term_from_chars_4(query *q)
 		return unify(q, p_term, p_term_ctx, &tmp, q->st.curr_frame);
 	}
 
-	bool ok = do_read_term(q, str, p_term, p_term_ctx, p_opts, p_opts_ctx, src);
+	bool ok = do_read_term(q, str, p_term, p_term_ctx, p_opts, p_opts_ctx, NULL);
 
 	if (ok != true) {
 		if (!is_string(p_chars))
@@ -3611,7 +3611,7 @@ static bool fn_read_term_from_chars_3(query *q)
 	if (src[strlen(src)-1] != '.')
 		strcat(src, ".");
 
-	bool ok = do_read_term(q, str, p_term, p_term_ctx, p_opts, p_opts_ctx, src);
+	bool ok = do_read_term(q, str, p_term, p_term_ctx, p_opts, p_opts_ctx, NULL);
 	free(save_src);
 	destroy_parser(str->p);
 
