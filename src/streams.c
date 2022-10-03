@@ -3494,8 +3494,7 @@ static bool fn_sys_read_term_from_chars_3(query *q)
 	str->p->flags = q->st.m->flags;
 	str->p->fp = str->fp;
 	reset(str->p);
-	str->p->srcptr = C_STR(q, p_chars);
-	char *src = eat_space(str->p);
+	char *src = str->p->srcptr = C_STR(q, p_chars);
 
 	if (!src || !*src) {
 		destroy_parser(str->p);
@@ -3518,7 +3517,6 @@ static bool fn_sys_read_term_from_chars_3(query *q)
 	size_t len = C_STRLEN(q,p_chars) - off;
 	check_heap_error(make_slice(q, &tmp, p_chars, off, len));
 	destroy_parser(str->p);
-	str->p = NULL;
 	unify(q, p_rest, p_rest_ctx, &tmp, q->st.curr_frame);
 	unshare_cell(&tmp);
 	return ok;
@@ -3568,7 +3566,6 @@ static bool fn_read_term_from_chars_3(query *q)
 	reset(str->p);
 	char *save_src = src;
 	str->p->srcptr = src;
-	src = eat_space(str->p);
 
 	if (!src || !*src) {
 		destroy_parser(str->p);
@@ -3589,7 +3586,6 @@ static bool fn_read_term_from_chars_3(query *q)
 	bool ok = do_read_term(q, str, p_term, p_term_ctx, p_opts, p_opts_ctx, src);
 	free(save_src);
 	destroy_parser(str->p);
-	str->p = NULL;
 
 	if (ok != true)
 		return false;
