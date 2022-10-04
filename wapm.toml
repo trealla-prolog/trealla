@@ -10,15 +10,6 @@ wasmer-extra-flags = "--enable-bulk-memory"
 name = "tpl"
 source = "tpl.wasm"
 abi = "wasi"
-
-[module.interfaces]
-wasi = "0.1.0-unstable"
-
-[[module]]
-name = "lib"
-source = "lib.wasm"
-abi = "wasi"
-
 [module.interfaces]
 wasi = "0.1.0-unstable"
 
