@@ -7511,7 +7511,7 @@ builtins g_other_bifs[] =
 	{"replace", 4, fn_replace_4, "+orig,+from,+to,-new", false, false, BLAH},
 	{"busy", 1, fn_busy_1, "+integer", false, false, BLAH},
 	{"now", 0, fn_now_0, NULL, false, false, BLAH},
-	{"now", 1, fn_now_1, "now(-integer)", false, false, BLAH},
+	{"now", 1, fn_now_1, "-integer", false, false, BLAH},
 	{"get_time", 1, fn_get_time_1, "-var", false, false, BLAH},
 	{"cpu_time", 1, fn_cpu_time_1, "-var", false, false, BLAH},
 	{"wall_time", 1, fn_wall_time_1, "-integer", false, false, BLAH},

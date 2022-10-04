@@ -11,6 +11,76 @@
 #include "internal.h"
 #include "query.h"
 
+static bool fn_posix_strftime_3(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+    GET_NEXT_ARG(p2,compound);
+    GET_NEXT_ARG(p3,var);
+
+    if (strcmp(C_STR(q, p1), "time")) {
+        return false;
+    }
+
+    const char *format = C_STR(q, p1);
+    size_t length = C_STRLEN(q, p1);
+
+    // XXX: Is this check reasonable? May strftime() return non-empty
+    // result for empty format?
+
+    if (length == 0) {
+		cell tmp;
+		make_atom(&tmp, g_empty_s);
+        return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+    }
+
+    struct tm tm = {0};
+#if 0
+    cell *n = term_firstarg(term2); tm.tm_sec = VAL_INT(subst(q, n, term2_ctx));
+    n = term_next(n); tm.tm_min = VAL_INT(subst(q, n, term2_ctx));
+    n = term_next(n); tm.tm_hour = VAL_INT(subst(q, n, term2_ctx));
+    n = term_next(n); tm.tm_mday = VAL_INT(subst(q, n, term2_ctx));
+    n = term_next(n); tm.tm_mon = VAL_INT(subst(q, n, term2_ctx));
+    n = term_next(n); tm.tm_year = VAL_INT(subst(q, n, term2_ctx));
+    n = term_next(n); tm.tm_wday = VAL_INT(subst(q, n, term2_ctx));
+    n = term_next(n); tm.tm_yday = VAL_INT(subst(q, n, term2_ctx));
+    n = term_next(n); tm.tm_isdst = VAL_INT(subst(q, n, term2_ctx));
+#else
+	cell *arg = p2;
+	arg = deref(q, p2++, p2_ctx); tm.tm_sec = get_smallint(arg);
+	arg = deref(q, p2++, p2_ctx); tm.tm_min = get_smallint(arg);
+	arg = deref(q, p2++, p2_ctx); tm.tm_hour = get_smallint(arg);
+	arg = deref(q, p2++, p2_ctx); tm.tm_mday = get_smallint(arg);
+	arg = deref(q, p2++, p2_ctx); tm.tm_mon = get_smallint(arg);
+	arg = deref(q, p2++, p2_ctx); tm.tm_year = get_smallint(arg);
+	arg = deref(q, p2++, p2_ctx); tm.tm_wday = get_smallint(arg);
+	arg = deref(q, p2++, p2_ctx); tm.tm_yday = get_smallint(arg);
+	arg = deref(q, p2++, p2_ctx); tm.tm_isdst = get_smallint(arg);
+#endif
+
+    char *buffer = NULL;
+    int tries = 0;
+    const int max_tries = 5;
+
+    while (++tries <= max_tries) {
+        // make enough space for some long formats, e.g. `%c'
+        length = 128 + length * 2;
+        buffer = realloc(buffer, length);
+
+        // FIXME: `0' returned by strftime() does not always indicate
+        // an error, seems there is no easy way to check that.
+
+        if (strftime(buffer, length, format, &tm) > 0) {
+			cell tmp;
+			make_cstring(&tmp, buffer);
+			free(buffer);
+            return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+        }
+    }
+
+    free(buffer);
+    return false;
+}
+
 static bool fn_posix_time_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
@@ -21,7 +91,8 @@ static bool fn_posix_time_1(query *q)
 
 builtins g_posix_bifs[] =
 {
-	{"posix_time", 1, fn_posix_time_1, "posix-tim(-integer)", false, false, BLAH},
+    {"posix_strftime", 3, fn_posix_strftime_3, "+atom,+compound,-atom", false, false, BLAH},
+	{"posix_time", 1, fn_posix_time_1, "-integer", false, false, BLAH},
 	{0}
 };
 
