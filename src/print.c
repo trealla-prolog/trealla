@@ -428,7 +428,7 @@ ssize_t print_variable(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t c_c
 	char *save_dst = dst;
 	frame *f = GET_FRAME(running ? c_ctx : 0);
 	slot *e = GET_SLOT(f, c->var_nbr);
-	pl_idx_t slot_idx = running ? e - q->slots : c->var_nbr;
+	pl_idx_t slot_idx = running ? (unsigned)(e - q->slots) : (unsigned)c->var_nbr;
 
 	if (q->varnames && !is_fresh(c) && !is_anon(c) && running) {
 		if (q->p->vartab.var_name[c->var_nbr])
