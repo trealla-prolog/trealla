@@ -183,6 +183,19 @@ static bool fn_posix_localtime_2(query *q)
 	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 }
 
+static bool fn_posix_ctime_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,var);
+	time_t when = get_smallint(p1);
+	char tmpbuf[256];
+	cell tmp;
+	make_cstring(&tmp, ctime_r(&when, tmpbuf));
+	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
+	return ok;
+}
+
 static bool fn_posix_time_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
@@ -198,6 +211,7 @@ builtins g_posix_bifs[] =
 	{"posix_gmtime", 2, fn_posix_gmtime_2, "+integer,-compound", false, false, BLAH},
 	{"posix_localtime", 2, fn_posix_localtime_2, "+integer,-compound", false, false, BLAH},
 	{"posix_mktime", 2, fn_posix_mktime_2, "+compound,-integer", false, false, BLAH},
+	{"posix_ctime", 2, fn_posix_ctime_2, "+integer,-atom", false, false, BLAH},
 	{"posix_time", 1, fn_posix_time_1, "-integer", false, false, BLAH},
 	{0}
 };

@@ -408,6 +408,7 @@ Non-standard predicates
 	posix_mktime/2				# posix_mktime(+tm(NNN,...),-seconds)
 	posix_gmtime/2				# posix_gmtime(+seconds,-tm(NNN,...))
 	posix_localtime/2			# posix_localtime(+seconds,-tm(NNN,...))
+	posix_ctime/2				# posix_time(+seconds,-atom)
 	posix_time/1				# posix_time(-seconds)
 
 	nb_setval(K,V)
