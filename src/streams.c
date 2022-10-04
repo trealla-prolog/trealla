@@ -3535,15 +3535,20 @@ static bool fn_sys_read_term_from_chars_4(query *q)
 	}
 
 	char *rest = str->p->srcptr = eat_space(str->p);
-	const char *ptr = strstr(src, rest);
-	size_t off = ptr - src;
-	size_t len = srclen - off;
 	cell tmp;
 
-	if (!is_string(p_chars))
-		check_heap_error(make_string(&tmp, rest));
-	else
-		check_heap_error(make_slice(q, &tmp, p_chars, off, len));
+	if (*rest) {
+		const char *ptr = strstr(src, rest);
+		size_t off = ptr - src;
+		size_t len = srclen - off;
+
+		if (!is_string(p_chars))
+			check_heap_error(make_string(&tmp, rest));
+		else
+			check_heap_error(make_slice(q, &tmp, p_chars, off, len));
+	} else {
+		make_atom(&tmp, g_nil_s);
+	}
 
 	destroy_parser(str->p);
 
