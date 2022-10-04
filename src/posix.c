@@ -64,7 +64,9 @@ static bool fn_posix_strftime_3(query *q)
 			cell tmp;
 			make_cstring(&tmp, buffer);
 			free(buffer);
-			return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+			bool ok = unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+			unshare_cell(&tmp);
+			return ok;
 		}
 	}
 

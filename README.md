@@ -405,7 +405,7 @@ Non-standard predicates
 
 	posix_strftime/3			# posix_strftime(+format,-text,+tm(NNN,...))
 	posix_strptime/3			# posix_strptime(+format,+text,-tm(NNN,...))
-	posix_mktime/2				# posix_gmtime(+tm(NNN,...),-seconds)
+	posix_mktime/2				# posix_mktime(+tm(NNN,...),-seconds)
 	posix_gmtime/2				# posix_gmtime(+seconds,-tm(NNN,...))
 	posix_localtime/2			# posix_localtime(+seconds,-tm(NNN,...))
 	posix_time/1				# posix_time(-seconds)
