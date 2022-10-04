@@ -35,15 +35,15 @@ static bool fn_posix_strftime_3(query *q)
 
     struct tm tm = {0};
 	cell *arg = p2;
-	arg = deref(q, p2++, p2_ctx); tm.tm_sec = get_smallint(arg);
-	arg = deref(q, p2++, p2_ctx); tm.tm_min = get_smallint(arg);
-	arg = deref(q, p2++, p2_ctx); tm.tm_hour = get_smallint(arg);
-	arg = deref(q, p2++, p2_ctx); tm.tm_mday = get_smallint(arg);
-	arg = deref(q, p2++, p2_ctx); tm.tm_mon = get_smallint(arg);
-	arg = deref(q, p2++, p2_ctx); tm.tm_year = get_smallint(arg);
-	arg = deref(q, p2++, p2_ctx); tm.tm_wday = get_smallint(arg);
-	arg = deref(q, p2++, p2_ctx); tm.tm_yday = get_smallint(arg);
-	arg = deref(q, p2++, p2_ctx); tm.tm_isdst = get_smallint(arg);
+	arg = deref(q, p2++, p2_ctx); if (!is_smallint(arg)) return throw_error(q, arg, p2_ctx, "type_error", "integer"); tm.tm_sec = get_smallint(arg);
+	arg = deref(q, p2++, p2_ctx); if (!is_smallint(arg)) return throw_error(q, arg, p2_ctx, "type_error", "integer"); tm.tm_min = get_smallint(arg);
+	arg = deref(q, p2++, p2_ctx); if (!is_smallint(arg)) return throw_error(q, arg, p2_ctx, "type_error", "integer"); tm.tm_hour = get_smallint(arg);
+	arg = deref(q, p2++, p2_ctx); if (!is_smallint(arg)) return throw_error(q, arg, p2_ctx, "type_error", "integer"); tm.tm_mday = get_smallint(arg);
+	arg = deref(q, p2++, p2_ctx); if (!is_smallint(arg)) return throw_error(q, arg, p2_ctx, "type_error", "integer"); tm.tm_mon = get_smallint(arg);
+	arg = deref(q, p2++, p2_ctx); if (!is_smallint(arg)) return throw_error(q, arg, p2_ctx, "type_error", "integer"); tm.tm_year = get_smallint(arg);
+	arg = deref(q, p2++, p2_ctx); if (!is_smallint(arg)) return throw_error(q, arg, p2_ctx, "type_error", "integer"); tm.tm_wday = get_smallint(arg);
+	arg = deref(q, p2++, p2_ctx); if (!is_smallint(arg)) return throw_error(q, arg, p2_ctx, "type_error", "integer"); tm.tm_yday = get_smallint(arg);
+	arg = deref(q, p2++, p2_ctx); if (!is_smallint(arg)) return throw_error(q, arg, p2_ctx, "type_error", "integer"); tm.tm_isdst = get_smallint(arg);
 
     char *buffer = NULL;
     int tries = 0;
