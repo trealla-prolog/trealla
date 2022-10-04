@@ -3482,7 +3482,8 @@ static bool fn_sys_read_term_from_chars_4(query *q)
 	GET_NEXT_ARG(p_opts,list_or_nil);
 	GET_NEXT_ARG(p_chars,any);
 	GET_NEXT_ARG(p_rest,any);
-	stream tmps = {0};
+	stream tmps;
+	memset(&tmps, 0, sizeof(stream));
 	stream *str = &tmps;
 	char *src = NULL;
 	bool has_var, is_partial;
@@ -3567,7 +3568,8 @@ static bool fn_read_term_from_chars_3(query *q)
 	GET_FIRST_ARG(p_chars,any);
 	GET_NEXT_ARG(p_term,any);
 	GET_NEXT_ARG(p_opts,list_or_nil);
-	stream tmps = {0};
+	stream tmps;
+	memset(&tmps, 0, sizeof(stream));
 	stream *str = &tmps;
 	char *src = NULL;
 	size_t len;
