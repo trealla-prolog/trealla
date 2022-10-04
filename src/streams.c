@@ -791,7 +791,7 @@ static bool fn_process_create_3(query *q)
 				posix_spawnattr_setflags(&attrp, POSIX_SPAWN_SETSID);
 
 			} else if (!CMP_STR_TO_CSTR(q, c, "cwd")) {
-#if defined(__GLIBC__) && __GLIBC__ == 2 && __GLIBC_MINOR__ < 29
+#if defined(__GLIBC__) && (__GLIBC__ <= 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 29))
 				return throw_error(q, c, c_ctx, "not available", "posix_spawn_file_actions_addchdir_np");
 #else
 				cwd = C_STR(q, name);
