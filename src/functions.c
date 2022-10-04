@@ -180,7 +180,7 @@ bool call_builtin(query *q, cell *c, pl_idx_t c_ctx)
 	else
 #endif
 	if (!c->fn_ptr->evaluable && (c->val_off != g_float_s))
-		return throw_error(q, &q->accum, q->st.curr_frame, "system_error", "not_evaluable");
+		return throw_error(q, &q->accum, q->st.curr_frame, "type_error", "evaluable");
 	else
 		c->fn_ptr->fn(q);
 
