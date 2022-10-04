@@ -421,9 +421,9 @@ bool is_next_key(query *q)
 const char *dump_id(const void *k, const void *v, const void *p)
 {
 	const query *q = (query*)p;
-	uint64_t id = (uint64_t)k;
+	size_t id = (size_t)k;
 	static char tmpbuf[1024];
-	sprintf(tmpbuf, "%llu", (unsigned long long)id);
+	sprintf(tmpbuf, "%zu", (unsigned long long)id);
 	return tmpbuf;
 }
 

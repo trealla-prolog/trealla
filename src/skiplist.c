@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdint.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -54,8 +55,8 @@ inline static slnode_t *new_node_of_level(unsigned x)
 
 static int default_cmpkey(const void *p1, const void *p2, __attribute__((unused)) const void *p, void *l)
 {
-	int64_t i1 = (int64_t)p1;
-	int64_t i2 = (int64_t)p2;
+	ptrdiff_t i1 = (ptrdiff_t)p1;
+	ptrdiff_t i2 = (ptrdiff_t)p2;
 	return i1 < i2 ? -1 : i1 > i2 ? 1 : 0;
 }
 
