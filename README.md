@@ -403,8 +403,8 @@ Non-standard predicates
 	call_with_time_limit/2		# SWI-compatible
 	time_out/3					# SICStus-compatible
 
-	posix_strftime/3			# posix_strftime(Format,tm(Int,...),String)
-	posix_time/1				# posix_time(Seconds)
+	posix_strftime/3			# posix_strftime(+format,+tm(Int,...),-text)
+	posix_time/1				# posix_time(-seconds)
 
 	nb_setval(K,V)
 	nb_getval(K,V)
