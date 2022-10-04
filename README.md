@@ -403,6 +403,8 @@ Non-standard predicates
 	call_with_time_limit/2		# SWI-compatible
 	time_out/3					# SICStus-compatible
 
+	posix_time/1				# posix_time(Seconds)
+
 	nb_setval(K,V)
 	nb_getval(K,V)
 	nb_delete(K)
