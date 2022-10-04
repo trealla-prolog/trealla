@@ -1724,6 +1724,7 @@ bool start(query *q)
 					return true;
 				case -1:
 					q->retry = true;
+					continue;
 				default:
 					continue;
 			}
