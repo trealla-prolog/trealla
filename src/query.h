@@ -41,6 +41,7 @@ bool check_redo(query *q);
 void dump_vars(query *q, bool partial);
 int check_interrupt(query *q);
 void add_trail(query *q, pl_idx_t c_ctx, unsigned c_var_nbr, cell *attrs, pl_idx_t attrs_ctx);
+bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n);
 
 bool find_exception_handler(query *q, char *e);
 bool throw_error(query *q, cell *c, pl_idx_t c_ctx, const char *err_type, const char *expected);

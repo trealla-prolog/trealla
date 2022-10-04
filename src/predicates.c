@@ -243,7 +243,7 @@ bool make_stringn(cell *d, const char *s, size_t n)
 	return true;
 }
 
-static bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n)
+bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n)
 {
 	if (!n) {
 		make_atom(d, g_empty_s);
@@ -7283,6 +7283,15 @@ static void load_properties(module *m)
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); SB_strcat(pr, tmpbuf);
 	}
 
+	for (const builtins *ptr = g_posix_bifs; ptr->name; ptr++) {
+		map_app(m->pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		if (ptr->evaluable) continue;
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); SB_strcat(pr, tmpbuf);
+	}
+
 	for (const builtins *ptr = g_contrib_bifs; ptr->name; ptr++) {
 		map_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
@@ -7570,7 +7579,7 @@ builtins g_other_bifs[] =
 	{"replace", 4, fn_replace_4, "+orig,+from,+to,-new", false, false, BLAH},
 	{"busy", 1, fn_busy_1, "+integer", false, false, BLAH},
 	{"now", 0, fn_now_0, NULL, false, false, BLAH},
-	{"now", 1, fn_now_1, "now(-integer)", false, false, BLAH},
+	{"now", 1, fn_now_1, "-integer", false, false, BLAH},
 	{"get_time", 1, fn_get_time_1, "-var", false, false, BLAH},
 	{"cpu_time", 1, fn_cpu_time_1, "-var", false, false, BLAH},
 	{"wall_time", 1, fn_wall_time_1, "-integer", false, false, BLAH},

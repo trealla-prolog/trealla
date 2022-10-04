@@ -27,7 +27,7 @@ extern pl_idx_t g_conjunction_s, g_disjunction_s, g_at_s, g_sys_ne_s, g_sys_incr
 extern pl_idx_t g_dcg_s, g_throw_s, g_sys_block_catcher_s, g_sys_drop_barrier;
 extern pl_idx_t g_sys_soft_cut_s, g_if_then_s, g_soft_cut_s, g_negation_s;
 extern pl_idx_t g_error_s, g_slash_s, g_sys_cleanup_if_det_s, g_sys_table_s;
-extern pl_idx_t g_goal_expansion_s, g_term_expansion_s;
+extern pl_idx_t g_goal_expansion_s, g_term_expansion_s, g_tm_s;
 
 extern void convert_path(char *filename);
 
@@ -36,6 +36,7 @@ extern void sigfn(int s);
 extern builtins g_iso_bifs[];
 extern builtins g_ffi_bifs[];
 extern builtins g_other_bifs[];
+extern builtins g_posix_bifs[];
 extern builtins g_contrib_bifs[];
 extern builtins g_files_bifs[];
 extern builtins g_evaluable_bifs[];
