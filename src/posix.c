@@ -34,17 +34,6 @@ static bool fn_posix_strftime_3(query *q)
     }
 
     struct tm tm = {0};
-#if 0
-    cell *n = term_firstarg(term2); tm.tm_sec = VAL_INT(subst(q, n, term2_ctx));
-    n = term_next(n); tm.tm_min = VAL_INT(subst(q, n, term2_ctx));
-    n = term_next(n); tm.tm_hour = VAL_INT(subst(q, n, term2_ctx));
-    n = term_next(n); tm.tm_mday = VAL_INT(subst(q, n, term2_ctx));
-    n = term_next(n); tm.tm_mon = VAL_INT(subst(q, n, term2_ctx));
-    n = term_next(n); tm.tm_year = VAL_INT(subst(q, n, term2_ctx));
-    n = term_next(n); tm.tm_wday = VAL_INT(subst(q, n, term2_ctx));
-    n = term_next(n); tm.tm_yday = VAL_INT(subst(q, n, term2_ctx));
-    n = term_next(n); tm.tm_isdst = VAL_INT(subst(q, n, term2_ctx));
-#else
 	cell *arg = p2;
 	arg = deref(q, p2++, p2_ctx); tm.tm_sec = get_smallint(arg);
 	arg = deref(q, p2++, p2_ctx); tm.tm_min = get_smallint(arg);
@@ -55,7 +44,6 @@ static bool fn_posix_strftime_3(query *q)
 	arg = deref(q, p2++, p2_ctx); tm.tm_wday = get_smallint(arg);
 	arg = deref(q, p2++, p2_ctx); tm.tm_yday = get_smallint(arg);
 	arg = deref(q, p2++, p2_ctx); tm.tm_isdst = get_smallint(arg);
-#endif
 
     char *buffer = NULL;
     int tries = 0;
