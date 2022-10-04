@@ -61,7 +61,7 @@ bool is_acyclic_term(query *q, cell *p1, pl_idx_t p1_ctx);
 bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx);
 size_t slicecpy(char *dst, size_t dstlen, const char *src, size_t len);
 int get_stream(query *q, cell *p1);
-void call_builtin(query *q, cell *c, pl_idx_t c_ctx);
+bool call_builtin(query *q, cell *c, pl_idx_t c_ctx);
 bool call_userfun(query *q, cell *c, pl_idx_t c_ctx);
 void do_cleanup(query *q, cell *p1, pl_idx_t c_ctx);
 bool drop_barrier(query *q);
