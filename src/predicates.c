@@ -115,7 +115,7 @@ void make_ptr(cell *tmp, void *v)
 	*tmp = (cell){0};
 	tmp->tag = TAG_INTEGER;
 	tmp->nbr_cells = 1;
-	tmp->val_uint = (uint64_t)v;
+	tmp->val_uint = (size_t)v;
 }
 
 void make_struct(cell *tmp, pl_idx_t offset, void *fn, unsigned arity, pl_idx_t extra_cells)

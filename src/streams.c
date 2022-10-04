@@ -785,11 +785,13 @@ static bool fn_process_create_3(query *q)
 			if (!CMP_STR_TO_CSTR(q, c, "process") || !CMP_STR_TO_CSTR(q, c, "pid")) {
 				ppid = name;
 				ppid_ctx = name_ctx;
-
 			} else if (!CMP_STR_TO_CSTR(q, c, "detached")) {
-				bool detached = !CMP_STR_TO_CSTR(q, c+1, "detached");
+#if defined(__GLIBC__) && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 26))
+				return throw_error(q, c, c_ctx, "not available", "posix_spawnattr_setflags");
+#else
+				bool detached = !CMP_STR_TO_CSTR(q, c+1, "true");
 				posix_spawnattr_setflags(&attrp, POSIX_SPAWN_SETSID);
-
+#endif
 			} else if (!CMP_STR_TO_CSTR(q, c, "cwd")) {
 #if defined(__GLIBC__) && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 29))
 				return throw_error(q, c, c_ctx, "not available", "posix_spawn_file_actions_addchdir_np");

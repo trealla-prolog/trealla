@@ -133,7 +133,7 @@ inline static pl_idx_t queuen_used(const query *q) { return q->qp[q->st.qnbr]; }
 inline static cell *get_queuen(query *q) { return q->queue[q->st.qnbr]; }
 inline static cell *take_queuen(query *q) { cell *save = q->queue[q->st.qnbr]; q->queue[q->st.qnbr] = NULL; return save; }
 
-inline static bool can_view(uint64_t ugen, const db_entry *dbe)
+inline static bool can_view(size_t ugen, const db_entry *dbe)
 {
 	if (dbe->cl.is_deleted)
 		return false;
