@@ -17,7 +17,7 @@ static bool fn_posix_strftime_3(query *q)
     GET_NEXT_ARG(p2,compound);
     GET_NEXT_ARG(p3,var);
 
-    if (strcmp(C_STR(q, p1), "time")) {
+    if (strcmp(C_STR(q, p2), "tm") || (p2->arity != 9)) {
         return false;
     }
 
