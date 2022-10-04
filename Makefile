@@ -60,6 +60,7 @@ SRCOBJECTS = tpl.o \
 	src/module.o \
 	src/network.o \
 	src/parser.o \
+	src/posix.o \
 	src/predicates.o \
 	src/print.o \
 	src/prolog.o \
@@ -174,6 +175,9 @@ src/parser.o: src/parser.c src/heap.h src/internal.h src/map.h src/skiplist.h \
   src/trealla.h src/cdebug.h src/imath/imath.h src/library.h \
   src/module.h src/parser.h src/prolog.h src/query.h src/builtins.h \
   src/utf8.h
+src/posix.o: src/posix.c src/trealla.h src/internal.h src/map.h \
+  src/skiplist.h src/cdebug.h src/imath/imath.h src/query.h \
+  src/builtins.h
 src/predicates.o: src/predicates.c src/base64.h src/heap.h src/internal.h \
   src/map.h src/skiplist.h src/trealla.h src/cdebug.h src/imath/imath.h \
   src/history.h src/library.h src/module.h src/parser.h src/prolog.h \

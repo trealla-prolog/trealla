@@ -7215,6 +7215,15 @@ static void load_properties(module *m)
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); SB_strcat(pr, tmpbuf);
 	}
 
+	for (const builtins *ptr = g_posix_bifs; ptr->name; ptr++) {
+		map_app(m->pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		if (ptr->evaluable) continue;
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); SB_strcat(pr, tmpbuf);
+	}
+
 	for (const builtins *ptr = g_contrib_bifs; ptr->name; ptr++) {
 		map_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
