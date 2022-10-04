@@ -72,6 +72,34 @@ static bool fn_posix_strftime_3(query *q)
 	return false;
 }
 
+static bool fn_posix_mktime_2(query *q)
+{
+	GET_FIRST_ARG(p1,compound);
+	GET_NEXT_ARG(p2,var);
+
+	if ((p1->val_off != g_tm_s) || (p1->arity != 9)) {
+		return false;
+	}
+
+	struct tm tm = {0};
+	cell *arg;
+
+	arg = deref(q, p1+1, p2_ctx); if (!is_smallint(arg)) return throw_error(q, arg, p2_ctx, "type_error", "integer"); tm.tm_sec = get_smallint(arg);
+	arg = deref(q, p1+2, p2_ctx); if (!is_smallint(arg)) return throw_error(q, arg, p2_ctx, "type_error", "integer"); tm.tm_min = get_smallint(arg);
+	arg = deref(q, p1+3, p2_ctx); if (!is_smallint(arg)) return throw_error(q, arg, p2_ctx, "type_error", "integer"); tm.tm_hour = get_smallint(arg);
+	arg = deref(q, p1+4, p2_ctx); if (!is_smallint(arg)) return throw_error(q, arg, p2_ctx, "type_error", "integer"); tm.tm_mday = get_smallint(arg);
+	arg = deref(q, p1+5, p2_ctx); if (!is_smallint(arg)) return throw_error(q, arg, p2_ctx, "type_error", "integer"); tm.tm_mon = get_smallint(arg);
+	arg = deref(q, p1+6, p2_ctx); if (!is_smallint(arg)) return throw_error(q, arg, p2_ctx, "type_error", "integer"); tm.tm_year = get_smallint(arg);
+	arg = deref(q, p1+7, p2_ctx); if (!is_smallint(arg)) return throw_error(q, arg, p2_ctx, "type_error", "integer"); tm.tm_wday = get_smallint(arg);
+	arg = deref(q, p1+8, p2_ctx); if (!is_smallint(arg)) return throw_error(q, arg, p2_ctx, "type_error", "integer"); tm.tm_yday = get_smallint(arg);
+	arg = deref(q, p1+9, p2_ctx); if (!is_smallint(arg)) return throw_error(q, arg, p2_ctx, "type_error", "integer"); tm.tm_isdst = get_smallint(arg);
+
+	time_t now = mktime(&tm);
+	cell tmp;
+	make_int(&tmp, now);
+	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+}
+
 static bool fn_posix_gmtime_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
@@ -139,6 +167,7 @@ builtins g_posix_bifs[] =
     {"posix_strftime", 3, fn_posix_strftime_3, "+atom,+compound,-atom", false, false, BLAH},
 	{"posix_gmtime", 2, fn_posix_gmtime_2, "+integer,-compound", false, false, BLAH},
 	{"posix_localtime", 2, fn_posix_localtime_2, "+integer,-compound", false, false, BLAH},
+	{"posix_mktime", 2, fn_posix_mktime_2, "+compound,-integer", false, false, BLAH},
 	{"posix_time", 1, fn_posix_time_1, "-integer", false, false, BLAH},
 	{0}
 };

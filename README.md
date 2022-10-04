@@ -404,6 +404,7 @@ Non-standard predicates
 	time_out/3					# SICStus-compatible
 
 	posix_strftime/3			# posix_strftime(+format,+tm(NNN,...),-text)
+	posix_mktime/2				# posix_gmtime(+tm(NNN,...),-seconds)
 	posix_gmtime/2				# posix_gmtime(+seconds,-tm(NNN,...))
 	posix_localtime/2			# posix_localtime(+seconds,-tm(NNN,...))
 	posix_time/1				# posix_time(-seconds)
