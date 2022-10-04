@@ -403,7 +403,8 @@ Non-standard predicates
 	call_with_time_limit/2		# SWI-compatible
 	time_out/3					# SICStus-compatible
 
-	posix_strftime/3			# posix_strftime(+format,+tm(NNN,...),-text)
+	posix_strftime/3			# posix_strftime(+format,-text,+tm(NNN,...))
+	posix_strptime/3			# posix_strptime(+format,+text,-tm(NNN,...))
 	posix_mktime/2				# posix_gmtime(+tm(NNN,...),-seconds)
 	posix_gmtime/2				# posix_gmtime(+seconds,-tm(NNN,...))
 	posix_localtime/2			# posix_localtime(+seconds,-tm(NNN,...))

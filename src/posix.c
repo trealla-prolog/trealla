@@ -16,8 +16,8 @@
 static bool fn_posix_strftime_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
-	GET_NEXT_ARG(p2,compound);
 	GET_NEXT_ARG(p3,var);
+	GET_NEXT_ARG(p2,compound);
 
 	if ((p2->val_off != g_tm_s) || (p2->arity != 9)) {
 		return false;
@@ -70,6 +70,33 @@ static bool fn_posix_strftime_3(query *q)
 
 	free(buffer);
 	return false;
+}
+
+static bool fn_posix_strptime_3(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,atom);
+	GET_NEXT_ARG(p3,var);
+
+    struct tm tm = {0};
+
+	if (strptime(C_STR(q, p2), C_STR(q, p1), &tm) == NULL)
+		return false;
+
+	cell *tmp = alloc_on_heap(q, 10);
+	make_struct(tmp, g_tm_s, NULL, 9, 0);
+	pl_idx_t nbr_cells = 1;
+	make_int(tmp+nbr_cells++, tm.tm_sec);
+	make_int(tmp+nbr_cells++, tm.tm_min);
+	make_int(tmp+nbr_cells++, tm.tm_hour);
+	make_int(tmp+nbr_cells++, tm.tm_mday);
+	make_int(tmp+nbr_cells++, tm.tm_mon);
+	make_int(tmp+nbr_cells++, tm.tm_year);
+	make_int(tmp+nbr_cells++, tm.tm_wday);
+	make_int(tmp+nbr_cells++, tm.tm_yday);
+	make_int(tmp+nbr_cells++, tm.tm_isdst);
+
+	return unify(q, p3, p3_ctx, tmp, q->st.curr_frame);
 }
 
 static bool fn_posix_mktime_2(query *q)
@@ -164,7 +191,8 @@ static bool fn_posix_time_1(query *q)
 
 builtins g_posix_bifs[] =
 {
-    {"posix_strftime", 3, fn_posix_strftime_3, "+atom,+compound,-atom", false, false, BLAH},
+    {"posix_strftime", 3, fn_posix_strftime_3, "+atom,-atom,+compound", false, false, BLAH},
+    {"posix_strptime", 3, fn_posix_strptime_3, "+atom,+atom,-compound", false, false, BLAH},
 	{"posix_gmtime", 2, fn_posix_gmtime_2, "+integer,-compound", false, false, BLAH},
 	{"posix_localtime", 2, fn_posix_localtime_2, "+integer,-compound", false, false, BLAH},
 	{"posix_mktime", 2, fn_posix_mktime_2, "+compound,-integer", false, false, BLAH},
