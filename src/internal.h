@@ -416,7 +416,7 @@ typedef struct {
 } uuid;
 
 struct clause_ {
-	size_t dgen_created, dgen_erased;
+	uint64_t dgen_created, dgen_erased;
 	pl_idx_t allocated_cells, cidx;
 	uint32_t nbr_vars;
 	uint16_t nbr_temporaries;
@@ -440,7 +440,7 @@ struct db_entry_ {
 
 	union {
 		db_entry *dirty;
-		size_t db_id;
+		uint64_t db_id;
 	};
 
 	uuid u;
@@ -516,7 +516,7 @@ struct slot_ {
 
 struct frame_ {
 	cell *prev_cell;
-	size_t ugen, cgen;
+	uint64_t ugen, cgen;
 	pl_idx_t prev_frame, base, overflow;
 	uint32_t initial_slots, actual_slots;
 	uint16_t mid;
@@ -547,7 +547,7 @@ struct prolog_state_ {
 
 struct choice_ {
 	prolog_state st;
-	size_t cgen, frame_cgen, ugen;
+	uint64_t cgen, frame_cgen, ugen;
 	pl_idx_t overflow;
 	uint32_t initial_slots, actual_slots;
 	bool is_tail_rec:1;
