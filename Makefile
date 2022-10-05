@@ -1,6 +1,6 @@
 GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
 
-CFLAGS = -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' -O3 \
+CFLAGS =  -std=c99 -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' -O3 \
 	-funsigned-char $(OPT) -D_GNU_SOURCE -Wall -Wextra \
 	-Wno-deprecated-declarations \
 	-Wno-unused-function -Wno-unused-parameter \
@@ -127,7 +127,7 @@ all: tpl
 tpl: $(OBJECTS) Makefile README.md LICENSE
 	rm src/version.o
 	$(CC) $(CFLAGS) -o src/version.o -c src/version.c
-	$(CC) -o $(TPL) $(OBJECTS) $(OPT) $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $(TPL) $(OBJECTS) $(OPT) $(LDFLAGS)
 
 profile:
 	$(MAKE) 'OPT=$(OPT) -O0 -pg -DDEBUG'

@@ -421,7 +421,7 @@ bool is_next_key(query *q)
 const char *dump_id(const void *k, const void *v, const void *p)
 {
 	const query *q = (query*)p;
-	uint64_t id = (uint64_t)k;
+	size_t id = (size_t)k;
 	static char tmpbuf[1024];
 	sprintf(tmpbuf, "%llu", (unsigned long long)id);
 	return tmpbuf;
@@ -1010,7 +1010,7 @@ bool push_choice(query *q)
 	const frame *f = GET_CURR_FRAME();
 	pl_idx_t curr_choice = q->cp++;
 	choice *ch = GET_CHOICE(curr_choice);
-	*ch = (choice){0};
+	memset(ch, 0, sizeof(choice));
 	ch->st = q->st;
 	ch->ugen = f->ugen;
 	ch->frame_cgen = ch->cgen = f->cgen;

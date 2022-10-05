@@ -165,7 +165,7 @@ static mp_result mp_int_divx_value(mp_int a, mp_small b, mp_int q)
 	return mp_int_div_value(a, b, q, NULL);
 }
 
-void call_builtin(query *q, cell *c, pl_idx_t c_ctx)
+bool call_builtin(query *q, cell *c, pl_idx_t c_ctx)
 {
 	cell *save = q->st.curr_cell;
 	pl_idx_t save_ctx = q->st.curr_frame;
@@ -179,6 +179,9 @@ void call_builtin(query *q, cell *c, pl_idx_t c_ctx)
 		wrapper_for_function(q, c->fn_ptr);
 	else
 #endif
+	if (!c->fn_ptr->evaluable && (c->val_off != g_float_s))
+		return throw_error(q, &q->accum, q->st.curr_frame, "type_error", "evaluable");
+	else
 		c->fn_ptr->fn(q);
 
 	q->eval = save_calc;
@@ -187,6 +190,8 @@ void call_builtin(query *q, cell *c, pl_idx_t c_ctx)
 		q->st.curr_cell = save;
 		q->st.curr_frame = save_ctx;
 	}
+
+	return true;
 }
 
 bool call_userfun(query *q, cell *c, pl_idx_t c_ctx)

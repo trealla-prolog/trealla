@@ -61,7 +61,7 @@ bool is_acyclic_term(query *q, cell *p1, pl_idx_t p1_ctx);
 bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx);
 size_t slicecpy(char *dst, size_t dstlen, const char *src, size_t len);
 int get_stream(query *q, cell *p1);
-void call_builtin(query *q, cell *c, pl_idx_t c_ctx);
+bool call_builtin(query *q, cell *c, pl_idx_t c_ctx);
 bool call_userfun(query *q, cell *c, pl_idx_t c_ctx);
 void do_cleanup(query *q, cell *p1, pl_idx_t c_ctx);
 bool drop_barrier(query *q);
@@ -133,7 +133,7 @@ inline static pl_idx_t queuen_used(const query *q) { return q->qp[q->st.qnbr]; }
 inline static cell *get_queuen(query *q) { return q->queue[q->st.qnbr]; }
 inline static cell *take_queuen(query *q) { cell *save = q->queue[q->st.qnbr]; q->queue[q->st.qnbr] = NULL; return save; }
 
-inline static bool can_view(uint64_t ugen, const db_entry *dbe)
+inline static bool can_view(size_t ugen, const db_entry *dbe)
 {
 	if (dbe->cl.is_deleted)
 		return false;

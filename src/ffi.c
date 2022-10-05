@@ -78,7 +78,7 @@ USE_RESULT bool fn_sys_dlopen_3(query *q)
 	void *handle = dlopen(filename2, !flag ? RTLD_LAZY | RTLD_GLOBAL : flag);
 	if (!handle) return false;
 	cell tmp;
-	make_uint(&tmp, (uint64_t)handle);
+	make_uint(&tmp, (pl_int_t)(size_t)handle);
 	tmp.flags |= FLAG_INT_HANDLE | FLAG_HANDLE_DLL;
 	free(filename2);
 	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
@@ -89,7 +89,7 @@ USE_RESULT bool fn_sys_dlsym_3(query *q)
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,atom);
 	GET_NEXT_ARG(p3,var);
-	uint64_t handle = get_smalluint(p1);
+	size_t handle = get_smalluint(p1);
 	const char *symbol = C_STR(q, p2);
 
 	if (!(p1->flags & FLAG_INT_HANDLE) && !(p1->flags & FLAG_HANDLE_DLL))
@@ -98,7 +98,7 @@ USE_RESULT bool fn_sys_dlsym_3(query *q)
 	void *ptr = dlsym((void*)handle, symbol);
 	if (!ptr) return false;
 	cell tmp;
-	make_uint(&tmp, (uint64_t)ptr);
+	make_uint(&tmp, (pl_int_t)(size_t)ptr);
 	tmp.flags |= FLAG_INT_HANDLE | FLAG_INT_OCTAL;
 	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 }
@@ -106,7 +106,7 @@ USE_RESULT bool fn_sys_dlsym_3(query *q)
 USE_RESULT bool fn_sys_dlclose_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
-	uint64_t handle = get_smalluint(p1);
+	size_t handle = get_smalluint(p1);
 
 	if (!(p1->flags & FLAG_INT_HANDLE) && !(p1->flags & FLAG_HANDLE_DLL))
 		return throw_error(q, p1, p1_ctx, "existence_error", "handle");
@@ -124,7 +124,7 @@ USE_RESULT bool fn_sys_register_function_4(query *q)
 	if (!(p1->flags & FLAG_INT_HANDLE) && !(p1->flags & FLAG_HANDLE_DLL))
 		return throw_error(q, p1, p1_ctx, "existence_error", "handle");
 
-	uint64_t handle = get_smalluint(p1);
+	size_t handle = get_smalluint(p1);
 	const char *symbol = C_STR(q, p2);
 	void *func = dlsym((void*)handle, symbol);
 	if (!func) return false;
@@ -219,7 +219,7 @@ USE_RESULT bool fn_sys_register_predicate_4(query *q)
 	if (!(p1->flags & FLAG_INT_HANDLE) && !(p1->flags & FLAG_HANDLE_DLL))
 		return throw_error(q, p1, p1_ctx, "existence_error", "handle");
 
-	uint64_t handle = get_smalluint(p1);
+	size_t handle = get_smalluint(p1);
 	const char *symbol = C_STR(q, p2);
 	void *func = dlsym((void*)handle, symbol);
 	if (!func) return false;

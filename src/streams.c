@@ -949,11 +949,13 @@ static bool fn_process_create_3(query *q)
 			if (!CMP_STR_TO_CSTR(q, c, "process") || !CMP_STR_TO_CSTR(q, c, "pid")) {
 				ppid = name;
 				ppid_ctx = name_ctx;
-
 			} else if (!CMP_STR_TO_CSTR(q, c, "detached")) {
-				bool detached = !CMP_STR_TO_CSTR(q, c+1, "detached");
+#if defined(__GLIBC__) && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 26))
+				return throw_error(q, c, c_ctx, "not available", "posix_spawnattr_setflags");
+#else
+				bool detached = !CMP_STR_TO_CSTR(q, c+1, "true");
 				posix_spawnattr_setflags(&attrp, POSIX_SPAWN_SETSID);
-
+#endif
 			} else if (!CMP_STR_TO_CSTR(q, c, "cwd")) {
 #if defined(__GLIBC__) && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 29))
 				return throw_error(q, c, c_ctx, "not available", "posix_spawn_file_actions_addchdir_np");
@@ -3644,7 +3646,8 @@ static bool fn_sys_read_term_from_chars_4(query *q)
 	GET_NEXT_ARG(p_opts,list_or_nil);
 	GET_NEXT_ARG(p_chars,any);
 	GET_NEXT_ARG(p_rest,any);
-	stream tmps = {0};
+	stream tmps;
+	memset(&tmps, 0, sizeof(stream));
 	stream *str = &tmps;
 	char *src = NULL;
 	bool has_var, is_partial;
@@ -3699,15 +3702,20 @@ static bool fn_sys_read_term_from_chars_4(query *q)
 	}
 
 	char *rest = str->p->srcptr = eat_space(str->p);
-	const char *ptr = strstr(src, rest);
-	size_t off = ptr - src;
-	size_t len = srclen - off;
 	cell tmp;
 
-	if (!is_string(p_chars))
-		check_heap_error(make_string(&tmp, rest));
-	else
-		check_heap_error(make_slice(q, &tmp, p_chars, off, len));
+	if (*rest) {
+		const char *ptr = strstr(src, rest);
+		size_t off = ptr - src;
+		size_t len = srclen - off;
+
+		if (!is_string(p_chars))
+			check_heap_error(make_string(&tmp, rest));
+		else
+			check_heap_error(make_slice(q, &tmp, p_chars, off, len));
+	} else {
+		make_atom(&tmp, g_nil_s);
+	}
 
 	destroy_parser(str->p);
 
@@ -3724,7 +3732,8 @@ static bool fn_read_term_from_chars_3(query *q)
 	GET_FIRST_ARG(p_chars,any);
 	GET_NEXT_ARG(p_term,any);
 	GET_NEXT_ARG(p_opts,list_or_nil);
-	stream tmps = {0};
+	stream tmps;
+	memset(&tmps, 0, sizeof(stream));
 	stream *str = &tmps;
 	char *src = NULL;
 	size_t len;
@@ -3795,7 +3804,8 @@ static bool fn_read_term_from_atom_3(query *q)
 	GET_FIRST_ARG(p_chars,any);
 	GET_NEXT_ARG(p_term,any);
 	GET_NEXT_ARG(p_opts,list_or_nil);
-	stream tmps = {0};
+	stream tmps;
+	memset(&tmps, 0, sizeof(stream));
 	stream *str = &tmps;
 	char *src;
 	size_t len;
