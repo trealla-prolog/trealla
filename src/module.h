@@ -26,6 +26,7 @@ bool unload_file(module *m, const char *filename);
 void xref_rule(module *m, clause *t, predicate *parent);
 void xref_db(module *m);
 void just_in_time_rebuild(predicate *pr);
+const char *get_loaded(const module *m, const char *filename);
 
 db_entry *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting);
 db_entry *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting);

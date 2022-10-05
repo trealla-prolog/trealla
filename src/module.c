@@ -13,6 +13,7 @@
 struct loaded_file_ {
 	loaded_file *next;
 	char *filename;
+	char *orig_filename;
 	time_t when_loaded;
 	bool is_loaded:1;
 };
@@ -88,7 +89,7 @@ static const op_table g_ops[] =
 	{0,0,0}
 };
 
-static const char *set_loaded(module *m, const char *filename)
+static const char *set_loaded(module *m, const char *filename, const char *orig_filename)
 {
 	loaded_file *ptr = m->loaded_files;
 
@@ -103,6 +104,7 @@ static const char *set_loaded(module *m, const char *filename)
 
 	ptr = malloc(sizeof(*ptr));
 	ptr->next = m->loaded_files;
+	ptr->orig_filename = strdup(orig_filename);
 	ptr->filename = strdup(filename);
 	ptr->when_loaded = time(0);
 	ptr->is_loaded = true;
@@ -123,6 +125,7 @@ static const char *set_known(module *m, const char *filename)
 
 	ptr = malloc(sizeof(*ptr));
 	ptr->next = m->loaded_files;
+	ptr->orig_filename = strdup(filename);
 	ptr->filename = strdup(filename);
 	ptr->is_loaded = false;
 	m->loaded_files = ptr;
@@ -157,6 +160,20 @@ static bool is_loaded(const module *m, const char *filename)
 	return false;
 }
 
+const char *get_loaded(const module *m, const char *filename)
+{
+	loaded_file *ptr = m->loaded_files;
+
+	while (ptr) {
+		if (ptr->is_loaded && !strcmp(ptr->filename, filename))
+			return ptr->orig_filename;
+
+		ptr = ptr->next;
+	}
+
+	return filename;
+}
+
 static void clear_loaded(const module *m)
 {
 	loaded_file *ptr = m->loaded_files;
@@ -164,6 +181,7 @@ static void clear_loaded(const module *m)
 	while (ptr) {
 		loaded_file *save = ptr;
 		ptr = ptr->next;
+		free(save->orig_filename);
 		free(save->filename);
 		free(save);
 	}
@@ -1461,7 +1479,7 @@ module *load_file(module *m, const char *filename, bool including)
 			stream *str = &m->pl->streams[i];
 			char tmpbuf[256];
 			snprintf(tmpbuf, sizeof(tmpbuf), "user");
-			filename = set_loaded(m, tmpbuf);
+			filename = set_loaded(m, tmpbuf, orig_filename);
 
 			if (strcmp(str->name, "user_input"))
 				continue;
@@ -1528,7 +1546,7 @@ module *load_file(module *m, const char *filename, bool including)
 	if (is_loaded(m, realbuf))
 		return m;
 
-	filename = set_loaded(m, realbuf);
+	filename = set_loaded(m, realbuf, orig_filename);
 
 	struct stat st = {0};
 	stat(filename, &st);
