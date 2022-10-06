@@ -15,6 +15,9 @@ endif
 ifdef WASI
 CFLAGS += -D_WASI_EMULATED_MMAN -D_WASI_EMULATED_SIGNAL -Isrc/wasm -O0 -std=c11
 LDFLAGS += -lwasi-emulated-mman -lwasi-emulated-signal -Wl,--stack-first -Wl,-zstack-size=8388608 -Wl,--initial-memory=100663296
+# after WASI SDK upgrade add:
+# CFLAGS += -D_WASI_EMULATED_PROCESS_CLOCKS
+# LDFLAGS += lwasi-emulated-process-clocks
 NOFFI = 1
 NOSSL = 1
 ifdef WASI_CC
@@ -142,7 +145,8 @@ tpl.wasm:
 	$(MAKE) WASI=1 TPL=tpl.wasm 'OPT=$(OPT) -O0 -DNDEBUG'
 
 wasm: tpl.wasm
-	$(WIZER) --allow-wasi --dir . -o tpl-wizened.wasm tpl.wasm
+# TODO: add to wizer --wasm-bulk-memory true
+	$(WIZER)  --allow-wasi --dir . -o tpl-wizened.wasm tpl.wasm
 	$(WASMOPT) tpl-wizened.wasm -o tpl.wasm -O4
 	rm tpl-wizened.wasm
 
@@ -150,7 +154,8 @@ libtpl.wasm:
 	$(MAKE) WASI=1 TPL=libtpl.wasm 'OPT=$(OPT) -O0 -DNDEBUG -DWASI_IMPORTS'
 
 libtpl: libtpl.wasm
-	$(WIZER) --allow-wasi --dir . -o libtpl-wizened.wasm libtpl.wasm
+# TODO: add to wizer --wasm-bulk-memory true
+	$(WIZER)  --allow-wasi --dir . -o libtpl-wizened.wasm libtpl.wasm
 	$(WASMOPT) libtpl-wizened.wasm -o libtpl.wasm -O4
 	rm libtpl-wizened.wasm
 

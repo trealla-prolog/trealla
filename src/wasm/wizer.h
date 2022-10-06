@@ -280,6 +280,11 @@ Software.
  * If no initialization function is needed (i.e., only C++ global constructors
  * should be run), use `WIZER_DEFAULT_INIT()` instead.
  */
+
+#ifndef __original_main
+#define __original_main __main_argc_argv
+#endif
+
 #define WIZER_INIT(init_func)                                                  \
     __WIZER_EXTERN_C void __wasm_call_ctors();                                 \
     __WIZER_EXTERN_C void __wasm_call_dtors();                                 \
