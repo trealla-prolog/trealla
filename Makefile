@@ -91,8 +91,10 @@ LIBOBJECTS +=  \
 	library/apply.o \
 	library/assoc.o \
 	library/atts.o \
+	library/arithmetic.o \
 	library/builtins.o \
 	library/charsio.o \
+	library/clpz.o \
 	library/dcgs.o \
 	library/dict.o \
 	library/dif.o \
