@@ -74,14 +74,14 @@ json(V) :- json_list(V).
 
 % predicates for manipulating comma lists (_, _) 
 
-member_comma(X, (H,_)) :- member_comma(X, H).
-member_comma(X, (_,T)) :- !, member_comma(X, T).
+member_comma(X, (H, _)) :- member_comma(X, H).
+member_comma(X, (_, T)) :- !, member_comma(X, T).
 member_comma(X, X).
 
 list_comma([H|T1], (H, T2)) :- list_comma(T1, T2).
 list_comma([X], X).
 
 apply_comma(Goal, X) :- apply_comma(Goal, _, X).
-apply_comma(Goal, X, (H,_)) :- call(Goal, H), apply_comma(Goal, X, H).
-apply_comma(Goal, X, (_,T)) :- !, call(Goal, T), apply_comma(Goal, X, T).
+apply_comma(Goal, X, (H, _)) :- call(Goal, H), apply_comma(Goal, X, H).
+apply_comma(Goal, X, (_, T)) :- !, call(Goal, T), apply_comma(Goal, X, T).
 apply_comma(Goal, X, X) :- call(Goal, X).
