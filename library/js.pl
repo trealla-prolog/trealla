@@ -11,10 +11,11 @@
 		"error": "<throw/1 exception term>"
 	}
 */
-:- module(js, [js_toplevel/0, js_ask/1, js_eval/2, js_eval_json/2]).
+:- module(js, [js_toplevel/0, js_ask/1, js_eval/2, js_eval_json/2, js_fetch/3, http_consult/1]).
 
 :- use_module(library(lists)).
 :- use_module(library(pseudojson)).
+:- use_module(library(errors)).
 
 % Guest (Trealla) → Host (WASM)
 
@@ -35,6 +36,52 @@ js_eval(Expr, Cs) :-
 	; yield, fail
 	; '$host_resume'(Cs).
 
+% TODO: form encoding
+% TODO: content-type negotiation
+js_fetch(URL, Result, Opts) :-
+	must_be(chars, URL),
+	( memberchk(as(As), Opts) -> true ; As = string ),
+	( memberchk(method(Method), Opts) -> true ; Method = get ),
+	( memberchk(body(Body), Opts) -> true ; Body = '' ),
+	( memberchk(headers(Hdrs), Opts) -> true ; Hdrs = [] ),
+	( fetch_expr(URL, As, Method, Body, Hdrs, Expr) -> true
+	; domain_error(fetch, Opts, js_fetch/3)),
+	js_eval_json(Expr, Result),
+	!.
+
+fetch_expr(URL, As, Method, Body, Hdr, Expr) :-
+	fetch_then(As, Then),
+	fetch_obj(Method, Body, Hdr, Obj),
+	once(phrase(format_("return fetch(~q,~w).then(x => x.~a());", [URL, Obj, Then]), Expr)).
+
+fetch_obj(Method, Body, L0, Obj) :-
+	atom_string(Method, Ms0),
+	string_upper(Ms0, Ms),
+	maplist(fetch_header, L0, L),
+	json_value(HdrJS, pairs(L)),
+	once(body_js(Body, BodyJS)),
+	(  no_body(Ms)
+	-> Obj = {"method":Ms, "headers":HdrJS}
+	;  Obj = {"method":Ms, "headers":HdrJS, "body":BodyJS}
+	).
+
+fetch_header(K0-V0, string(Ks)-string(Vs)) :- atom_string(K0, Ks), atom_string(V0, Vs).
+
+fetch_then(string, text).
+fetch_then(json, json).
+
+body_js('', undefined).
+body_js(JS, Cs) :- json_chars(JS, Cs).
+
+no_body("GET").
+no_body("HEAD").
+
+% TODO: set module name to URL
+http_consult(URL) :-
+	( js_fetch(URL, Cs, [as(string)]) -> true
+	; throw(error(js_error(fetch_failed, URL)))),
+	consult_string(Cs).
+
 % Host (WASM) → Guest (Trealla)
 
 js_toplevel :-
@@ -46,7 +93,7 @@ js_ask(Input) :-
 		read_term_from_chars(Input, Query, [variable_names(Vars)]),
 		Error,
 		(
-			write(stdout, '\x2\\x3\'),
+			write(stdout, '\u0002\u0003'),
 			result_json(error, Vars, Error, JSON),
 			write_result(JSON),
 			flush_output(stdout)
@@ -57,13 +104,13 @@ js_ask(Input) :-
 		Error,
 		Status = error
 	),
-	write(stdout, '\x3\'),
+	write(stdout, '\u0003'),
 	result_json(Status, Vars, Error, JSON),
 	write_result(JSON),
 	flush_output(stdout).
 
 query(Query, Status) :-
-	write(stdout, '\x2\'),  % START OF TEXT
+	write(stdout, '\u0002'),  % START OF TEXT
 	(   call(Query)
 	*-> Status = success
 	;   Status = failure
@@ -136,3 +183,22 @@ var_name([], _, "_").
 attvar_json(Vars, Var, JS) :-
 	copy_term(Var, Var, Attr),
 	once(term_json(Vars, Attr, JS)).
+
+atom_string(X, X) :- string(X), !.
+atom_string(A, X) :- atom_chars(A, X).
+
+consult_string(Cs) :-
+	wall_time(T),
+	random(Rand),
+	once(phrase(format_("/tmp/consult_~w~w.pl", [T, Rand]), Filename)),
+	atom_chars(File, Filename),
+	setup_call_cleanup(
+		open(File, write, S),
+		(
+			'$put_chars'(S, Cs),
+			flush_output(S),
+			close(S),
+			consult(File)
+		),
+		delete_file(Filename)
+	).
