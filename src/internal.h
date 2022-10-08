@@ -970,6 +970,11 @@ inline static int fake_strcmp(const void *ptr1, const void *ptr2, const void *pa
 	*pr##_buf.dst = '\0';										\
 }
 
+#define SB_putchar(pr,ch) {										\
+	SB_check(pr, 6);											\
+	pr##_buf.dst += put_char_utf8(pr##_buf.dst, ch);			\
+}
+
 #define SB_cstr(pr) pr##_buf.buf ? pr##_buf.buf : ""
 
 #define SB_free(pr) {											\
