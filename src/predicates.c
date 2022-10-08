@@ -3885,7 +3885,9 @@ static void save_db(FILE *fp, query *q, int logging)
 
 static bool fn_listing_0(query *q)
 {
-	save_db(stdout, q, 0);
+	int n = q->pl->current_output;
+	stream *str = &q->pl->streams[n];
+	save_db(str->fp, q, 0);
 	return true;
 }
 
@@ -3947,7 +3949,9 @@ static bool fn_listing_1(query *q)
 			arity += 2;
 	}
 
-	save_name(stdout, q, name, arity);
+	int n = q->pl->current_output;
+	stream *str = &q->pl->streams[n];
+	save_name(str->fp, q, name, arity);
 	return true;
 }
 
