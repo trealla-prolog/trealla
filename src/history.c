@@ -196,7 +196,7 @@ char *history_readline_eol(const char *prompt, char eol)
 
 	size_t len = 0;
 	char *line = NULL;
-	if (!(getline(&line, &len, stdin)))
+	if (getline(&line, &len, stdin) <= 0)
 		return NULL;
 
 	return line;
