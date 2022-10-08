@@ -13,6 +13,12 @@
 #include "query.h"
 #include "utf8.h"
 
+#ifdef __wasi__
+#define WARN_FP stderr
+#else
+#define WARN_FP stdout
+#endif
+
 static const unsigned INITIAL_TOKEN_SIZE = 100;		// bytes
 const char *g_solo = "!(){}[]|,;`'\"";
 
@@ -750,7 +756,7 @@ static void directives(parser *p, cell *d)
 			else if (!strcmp(C_STR(p, p2), "false") || !strcmp(C_STR(p, p2), "off"))
 				p->m->flags.character_escapes = false;
 		} else {
-			//fprintf(stdout, "Warning: unknown flag: %s\n", C_STR(p, p1));
+			//fprintf(WARN_FP, "Warning: unknown flag: %s\n", C_STR(p, p1));
 		}
 
 		p->flags = p->m->flags;
@@ -764,21 +770,21 @@ static void directives(parser *p, cell *d)
 
 	if (!strcmp(dirname, "if") && (c->arity == 1)) {
 		if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-			fprintf(stdout, "Warning: unknown directive: %s\n", dirname);
+			fprintf(WARN_FP, "Warning: unknown directive: %s\n", dirname);
 
 		return;
 	}
 
 	if (!strcmp(dirname, "else") && (c->arity == 1)) {
 		if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-			fprintf(stdout, "Warning: unknown directive: %s\n", dirname);
+			fprintf(WARN_FP, "Warning: unknown directive: %s\n", dirname);
 
 		return;
 	}
 
 	if (!strcmp(dirname, "endif") && (c->arity == 1)) {
 		if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-			fprintf(stdout, "Warning: unknown directive: %s\n", dirname);
+			fprintf(WARN_FP, "Warning: unknown directive: %s\n", dirname);
 
 		return;
 	}
@@ -841,7 +847,7 @@ static void directives(parser *p, cell *d)
 				}
 			} else {
 				if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-					fprintf(stdout, "Warning: unknown directive: %s\n", dirname);
+					fprintf(WARN_FP, "Warning: unknown directive: %s\n", dirname);
 			}
 		}
 
@@ -900,7 +906,7 @@ static void directives(parser *p, cell *d)
 				set_dynamic_in_db(m, C_STR(p, c_name), arity);
 			} else {
 				if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-					fprintf(stdout, "Warning: unknown directive: %s\n", dirname);
+					fprintf(WARN_FP, "Warning: unknown directive: %s\n", dirname);
 			}
 
 			p1 += p1->nbr_cells;
@@ -911,7 +917,7 @@ static void directives(parser *p, cell *d)
 			p1 += 1;
 		else {
 			if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-				fprintf(stdout, "Warning: unknown directive: %s\n", dirname);
+				fprintf(WARN_FP, "Warning: unknown directive: %s\n", dirname);
 
 			break;
 		}
@@ -1089,7 +1095,7 @@ void term_assign_vars(parser *p, unsigned start, bool rebase)
 			(p->vartab.var_name[i][strlen(p->vartab.var_name[i])-1] != '_') &&
 			(*p->vartab.var_name[i] != '_')) {
 			if (!p->m->pl->quiet)
-				fprintf(stdout, "Warning: singleton: %s, near %s:%d\n", p->vartab.var_name[i], get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(WARN_FP, "Warning: singleton: %s, near %s:%d\n", p->vartab.var_name[i], get_loaded(p->m, p->m->filename), p->line_nbr);
 		}
 	}
 
