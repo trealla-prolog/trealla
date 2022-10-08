@@ -977,6 +977,8 @@ inline static int fake_strcmp(const void *ptr1, const void *ptr2, const void *pa
 
 #define SB_cstr(pr) pr##_buf.buf ? pr##_buf.buf : ""
 
+#define SB_strcmp(pr,s) return strcmp(pr##_buf.buf, s)
+
 #define SB_free(pr) {											\
 	free(pr##_buf.buf);											\
 	pr##_buf.size = 0;											\
