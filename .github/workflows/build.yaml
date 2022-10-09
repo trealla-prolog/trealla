@@ -44,7 +44,7 @@
       name: WebAssembly
       runs-on: ubuntu-latest
       env:
-        WASI_VERSION: 15
+        WASI_VERSION: 12
         BINARYEN_VERSION: 109
         WAPM_REGISTRY_TOKEN: ${{ secrets.WAPM_REGISTRY_TOKEN }}
       steps:
