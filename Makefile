@@ -9,8 +9,8 @@ CFLAGS =  -std=c99 -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' -O3 \
 LDFLAGS = -L/usr/local/lib -lm
 
 ifdef WASI
-CFLAGS += -o tpl.wasm -D_WASI_EMULATED_MMAN -D_WASI_EMULATED_SIGNAL -O0
-LDFLAGS += -o tpl.wasm -lwasi-emulated-mman -lwasi-emulated-signal
+CFLAGS += -D_WASI_EMULATED_MMAN -D_WASI_EMULATED_SIGNAL -Isrc/wasm -O0 -std=c11
+LDFLAGS += -o tpl.wasm -lwasi-emulated-mman -lwasi-emulated-signal -Wl,--stack-first -Wl,-zstack-size=8388608 -Wl,--initial-memory=100663296
 NOFFI = 1
 NOSSL = 1
 ifdef WASI_CC
@@ -125,7 +125,7 @@ release:
 	$(MAKE) 'OPT=$(OPT) -DNDEBUG'
 
 tpl.wasm:
-	$(MAKE) 'WASI=1 OPT=$(OPT) -O0 -DNDEBUG'
+	$(MAKE) WASI=1 'OPT=$(OPT) -O0 -DNDEBUG'
 
 wasm: tpl.wasm
 	wasm-opt tpl.wasm -o tpl.wasm -O4
