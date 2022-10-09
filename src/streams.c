@@ -10,8 +10,6 @@
 #include <time.h>
 #include <signal.h>
 #include <fcntl.h>
-#include <spawn.h>
-#include <sys/wait.h>
 #include <sys/stat.h>
 
 #if !defined(_WIN32) && !defined(__wasi__)
