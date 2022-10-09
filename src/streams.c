@@ -1877,7 +1877,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx_t p1_ctx, cell *p2, pl
 			p->fp = NULL;
 
 			while (get_token(p, false, false)
-				&& p->token[0] && strcmp(p->token, ".")) {
+				&& SB_strlen(p->token) && SB_strcmp(p->token, ".")) {
 				CHECK_INTERRUPT();
 			}
 

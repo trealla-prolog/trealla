@@ -181,7 +181,7 @@ typedef struct {
 
 #define SET_STR(c,s,n,off) {									\
 	strbuf *strb = malloc(sizeof(strbuf) + (n) + 1);			\
-	check_error(strb);										\
+	check_error(strb);											\
 	memcpy(strb->cstr, s, n); 									\
 	strb->cstr[n] = 0;											\
 	strb->len = n;												\
@@ -714,9 +714,10 @@ struct parser_ {
 	module *m;
 	clause *cl;
 	cell v;
+	string_buffer token_buf;
 	prolog_flags flags;
-	char *token, *save_line, *srcptr, *error_desc, *tmpbuf;
-	size_t token_size, n_line, toklen, pos_start, tmpbuf_size;
+	char *save_line, *srcptr, *error_desc, *tmpbuf;
+	size_t token_size, n_line, pos_start, tmpbuf_size;
 	unsigned depth, read_term;
 	unsigned nesting_parens, nesting_braces, nesting_brackets;
 	int quote_char, line_nbr, line_nbr_start;
@@ -920,6 +921,10 @@ inline static int fake_strcmp(const void *ptr1, const void *ptr2, const void *pa
 	}															\
 }
 
+#define SB_init(pr) 											\
+	pr##_buf.dst = pr##_buf.buf;								\
+	if (pr##_buf.buf) pr##_buf.dst[0] = '\0';
+
 #define SB_strlen(pr) (pr##_buf.dst - pr##_buf.buf)
 
 #define SB_trim(pr,ch) {										\
@@ -954,6 +959,11 @@ inline static int fake_strcmp(const void *ptr1, const void *ptr2, const void *pa
 	*pr##_buf.dst = '\0';										\
 }
 
+#define SB_strcpy(pr,s) {										\
+	pr##_buf.dst = pr##_buf.buf;								\
+	SB_strcatn(pr,s,strlen(s));									\
+}
+
 #define SB_fwrite(pr,ptr,size) {								\
 	size_t len = size;											\
 	SB_check(pr, len);											\
@@ -970,7 +980,14 @@ inline static int fake_strcmp(const void *ptr1, const void *ptr2, const void *pa
 	*pr##_buf.dst = '\0';										\
 }
 
+#define SB_putchar(pr,ch) {										\
+	SB_check(pr, 6);											\
+	pr##_buf.dst += put_char_utf8(pr##_buf.dst, ch);			\
+}
+
 #define SB_cstr(pr) pr##_buf.buf ? pr##_buf.buf : ""
+
+#define SB_strcmp(pr,s) strcmp(pr##_buf.buf, s)
 
 #define SB_free(pr) {											\
 	free(pr##_buf.buf);											\

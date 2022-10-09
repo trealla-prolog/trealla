@@ -1475,6 +1475,8 @@ module *load_file(module *m, const char *filename, bool including)
 	const char *orig_filename = filename;
 
 	if (!strcmp(filename, "user")) {
+		m = m->pl->user_m;
+
 		for (int i = 0; i < MAX_STREAMS; i++) {
 			stream *str = &m->pl->streams[i];
 			char tmpbuf[256];

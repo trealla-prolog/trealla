@@ -187,7 +187,6 @@ void destroy_parser(parser *p)
 {
 	free(p->tmpbuf);
 	free(p->save_line);
-	free(p->token);
 	clear_rule(p->cl);
 	free(p->cl);
 	free(p);
@@ -199,11 +198,9 @@ parser *create_parser(module *m)
 	check_error(p);
 	p->pl = m->pl;
 	p->m = m;
-	p->token = calloc(1, p->token_size=INITIAL_TOKEN_SIZE+1);
-	check_error(p->token, free(p));
 	pl_idx_t nbr_cells = INITIAL_NBR_CELLS;
 	p->cl = calloc(1, sizeof(clause)+(sizeof(cell)*nbr_cells));
-	check_error(p->cl, (free(p->token), free(p)));
+	check_error(p->cl, free(p));
 	p->cl->allocated_cells = nbr_cells;
 	p->start_term = true;
 	p->flags = m->flags;
@@ -2376,7 +2373,7 @@ static bool eat_comment(parser *p)
 
 static bool check_space_before_function(parser *p, int ch, const char *src)
 {
-	if (iswspace(ch) && strcmp(p->token, ".")) {
+	if (iswspace(ch) && SB_strcmp(p->token, ".")) {
 		p->srcptr = (char*)src;
 		src = eat_space(p);
 
@@ -2419,13 +2416,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 	const char *src = p->srcptr;
 
-	if (!p->token || (strlen(src) >= p->token_size)) {
-		p->token = realloc(p->token, p->token_size = strlen(src)+1);
-		check_error(p->token);
-	}
-
-	char *dst = p->token;
-	*dst = '\0';
+	SB_init(p->token);
 	bool neg = false;
 	p->v.tag = TAG_INTERNED;
 	p->v.flags = 0;
@@ -2436,19 +2427,15 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 	if (p->dq_consing && (*src == '"') && (src[1] == '"')) {
 		src++;
 	} else if (p->dq_consing && (*src == '"')) {
-		*dst++ = ']';
-		*dst = '\0';
+		SB_strcat(p->token, "]");
 		p->srcptr = (char*)++src;
 		p->dq_consing = 0;
-		p->toklen = dst - p->token;
 		return true;
 	}
 
 	if (p->dq_consing < 0) {
-		*dst++ = ',';
-		*dst = '\0';
+		SB_strcat(p->token, ",");
 		p->dq_consing = 1;
-		p->toklen = dst - p->token;
 		return true;
 	}
 
@@ -2468,13 +2455,11 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 			}
 		}
 
-		dst += snprintf(dst, 8, "%u", ch);
-		*dst = '\0';
+		SB_sprintf(p->token, "%u", ch);
 		p->srcptr = (char*)src;
 		set_smallint(&p->v, ch);
 		p->v.tag = TAG_INTEGER;
 		p->dq_consing = -1;
-		p->toklen = dst - p->token;
 		return true;
 	}
 
@@ -2535,19 +2520,12 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 	const char *tmpptr = src;
 
 	if ((*src != '-') && parse_number(p, &src, neg)) {
-		if ((size_t)(src-tmpptr) >= p->token_size) {
-			size_t offset = dst - p->token;
-			p->token = realloc(p->token, p->token_size = (src-tmpptr)+1);
-			check_error(p->token);
-			dst = p->token+offset;
-		}
-
-		strncpy(dst, tmpptr, src-tmpptr);
-		dst[src-tmpptr] = '\0';
+		SB_strcatn(p->token, tmpptr, src-tmpptr);
+		const char *dst = SB_cstr(p->token);
 
 		if ((dst[0] != '0') && (dst[1] != 'x')) {
 			if ((strchr(p->tmpbuf, '.') || strchr(p->tmpbuf, 'e') || strchr(dst, 'E')) && !strchr(p->tmpbuf, '\'')) {
-				if (!valid_float(p->token)) {
+				if (!valid_float(SB_cstr(p->token))) {
 					if (DUMP_ERRS || !p->do_read_term)
 						fprintf(stdout, "Error: syntax error, float, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
@@ -2559,7 +2537,6 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		}
 
 		p->srcptr = (char*)src;
-		p->toklen = dst - p->token;
 		int ch = peek_char_utf8(src);
 
 		if (!check_space_before_function(p, ch, src))
@@ -2586,34 +2563,27 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		p->is_quoted = true;
 
 		if ((p->quote_char == '"') && p->flags.double_quote_codes) {
-			*dst++ = '[';
+			SB_strcpy(p->token, "[");
 
 			if ((*src == '"') && (src[1] != '"')) {
-				*dst++ = ']';
-				*dst = '\0';
+				SB_strcat(p->token, "]");
 				p->srcptr = (char*)++src;
-				p->toklen = dst - p->token;
 				return true;
 			}
 
-			*dst = '\0';
 			p->dq_consing = 1;
 			p->quote_char = 0;
 			p->srcptr = (char*)src;
-			p->toklen = dst - p->token;
 			return true;
 		} else if ((p->quote_char == '"') && p->flags.double_quote_chars)
 			p->string = true;
 
 		if (p->string && (*src == p->quote_char) && (*src == '"')) {
-			*dst++ = '[';
-			*dst++ = ']';
-			*dst = '\0';
+			SB_strcpy(p->token, "[]");
 			src++;
 			p->was_string = true;
 			p->string = false;
 			p->srcptr = (char*)src;
-			p->toklen = dst - p->token;
 			int ch = peek_char_utf8(src);
 
 			if (!check_space_before_function(p, ch, src))
@@ -2672,19 +2642,8 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					}
 				}
 
-				size_t len = (dst - p->token) + put_len_utf8(ch) + 1;
-
-				if (len >= p->token_size) {
-					size_t offset = dst - p->token;
-					p->token = realloc(p->token, p->token_size*=2);
-					check_error(p->token);
-					dst = p->token + offset;
-				}
-
-				dst += put_char_utf8(dst, ch);
+				SB_putchar(p->token, ch);
 			}
-
-			*dst = '\0';
 
 			if (p->quote_char && p->fp) {
 				if (p->no_fp || getline(&p->save_line, &p->n_line, p->fp) == -1) {
@@ -2702,22 +2661,20 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 				continue;
 			}
 
-			p->toklen = dst - p->token;
-
 			if (!p->string
-				&& strcmp(p->token, "[")
-				&& strcmp(p->token, "(")
-				&& strcmp(p->token, "{")
-				&& strcmp(p->token, "]")
-				&& strcmp(p->token, ")")
-				&& strcmp(p->token, "}"))
+				&& SB_strcmp(p->token, "[")
+				&& SB_strcmp(p->token, "(")
+				&& SB_strcmp(p->token, "{")
+				&& SB_strcmp(p->token, "]")
+				&& SB_strcmp(p->token, ")")
+				&& SB_strcmp(p->token, "}"))
 			{
-				if (p->toklen && contains_null(p->token, p->toklen)) {
+				if (SB_strlen(p->token) && contains_null(SB_cstr(p->token), SB_strlen(p->token))) {
 					p->quote_char = -1;
-				} else if (search_op(p->m, p->token, NULL, false)) {
+				} else if (search_op(p->m, SB_cstr(p->token), NULL, false)) {
 					p->is_op = true;
 
-					if (!strcmp(p->token, ","))
+					if (!SB_strcmp(p->token, ","))
 						p->quote_char = -1;
 				} else
 					p->quote_char = -1;
@@ -2744,30 +2701,18 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 #endif
 			|| (ch == '_')) {
 			get_char_utf8(&src);
-			size_t len = (dst + put_len_utf8(ch) + 1) - p->token;
-
-			if (len >= p->token_size) {
-				size_t offset = dst - p->token;
-				p->token = realloc(p->token, p->token_size*=2);
-				check_error(p->token);
-				dst = p->token + offset;
-			}
-
-			dst += put_char_utf8(dst, ch);
+			SB_putchar(p->token, ch);
 			ch = peek_char_utf8(src);
 		}
 
-		*dst = '\0';
-
-		int ch_start = peek_char_utf8(p->token);
+		int ch_start = peek_char_utf8(SB_cstr(p->token));
 
 		if (iswupper(ch_start) || (ch_start == '_'))
 			p->is_var = true;
-		else if (search_op(p->m, p->token, NULL, false))
+		else if (search_op(p->m, SB_cstr(p->token), NULL, false))
 			p->is_op = true;
 
 		p->srcptr = (char*)src;
-		p->toklen = dst - p->token;
 		int ch = peek_char_utf8(src);
 
 		if (!check_space_before_function(p, ch, src))
@@ -2781,9 +2726,8 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 	int next_ch = peek_char_utf8(src);
 
 	if ((ch == '.') && iswspace(next_ch)) {
-		dst += put_char_utf8(dst, ch);
-		p->toklen = dst - p->token;
-		p->is_op = search_op(p->m, p->token, NULL, false);
+		SB_putchar(p->token, ch);
+		p->is_op = search_op(p->m, SB_cstr(p->token), NULL, false);
 		p->srcptr = (char*)src;
 		return true;
 	}
@@ -2795,9 +2739,8 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		src = eat_space(p);
 
 		if (!src || !*src) {
-			dst += put_char_utf8(dst, ch);
-			p->toklen = dst - p->token;
-			p->is_op = search_op(p->m, p->token, NULL, false);
+			SB_putchar(p->token, ch);
+			p->is_op = search_op(p->m, SB_cstr(p->token), NULL, false);
 			p->srcptr = (char*)src;
 			return true;
 		}
@@ -2805,8 +2748,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		next_ch = peek_char_utf8(src);
 
 		if (is_matching_pair(ch, next_ch, '[',']')) {
-			strcpy(p->token, "[]");
-			p->toklen = 2;
+			SB_strcpy(p->token, "[]");
 			get_char_utf8(&src);
 			p->srcptr = (char*)src;
 			int ch = peek_char_utf8(src);
@@ -2819,8 +2761,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		}
 
 		if (is_matching_pair(ch, next_ch, '{','}')) {
-			strcpy(p->token, "{}");
-			p->toklen = 2;
+			SB_strcpy(p->token, "{}");
 			get_char_utf8(&src);
 			p->srcptr = (char*)src;
 			return true;
@@ -2846,16 +2787,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 	p->symbol = true;
 
 	do {
-		size_t len = (dst + put_len_utf8(ch) + 1) - p->token;
-
-		if (len >= p->token_size) {
-			size_t offset = dst - p->token;
-			p->token = realloc(p->token, p->token_size*=2);
-			check_error(p->token);
-			dst = p->token + offset;
-		}
-
-		dst += put_char_utf8(dst, ch);
+		SB_putchar(p->token, ch);
 
 		if (((ch < 256) && strchr(g_solo, ch)) || iswspace(ch))
 			break;
@@ -2877,13 +2809,12 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 	}
 	 while (ch);
 
-	p->toklen = dst - p->token;
-	p->is_op = search_op(p->m, p->token, NULL, false);
+	p->is_op = search_op(p->m, SB_cstr(p->token), NULL, false);
 	p->srcptr = (char*)src;
 
 	ch = peek_char_utf8(src);
 
-	if (strcmp(p->token, "(") && !check_space_before_function(p, ch, src))
+	if (SB_strcmp(p->token, "(") && !check_space_before_function(p, ch, src))
 		return false;
 
 	return true;
@@ -2926,7 +2857,7 @@ static bool process_term(parser *p, cell *p1)
 
 	if (!assertz_to_db(p->m, p->cl->nbr_vars, p->cl->nbr_temporaries, p1, 1)) {
 		if (DUMP_ERRS || !p->do_read_term)
-			printf("Error: assertion failed '%s', %s:%d\n", p->token, get_loaded(p->m, p->m->filename), p->line_nbr);
+			printf("Error: assertion failed '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 
 		p->error = true;
 		return false;
@@ -2948,13 +2879,14 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			break;
 
 #if 0
-		int ch = peek_char_utf8(p->token);
+		int ch = peek_char_utf8(SB_cstr(p->token));
 		fprintf(stderr,
-			"Debug: token '%s' (%d) line_nbr=%d, symbol=%d, quoted=%d, tag=%u, op=%d, lastop=%d, string=%d\n",
-			p->token, ch, p->line_nbr, p->symbol, p->quote_char, p->v.tag, p->is_op, last_op, p->string);
+			"Debug: '%s' (%d) line_nbr=%d, symbol=%d, quoted=%d, tag=%u, op=%d, lastop=%d, string=%d\n",
+			SB_cstr(p->token), ch, p->line_nbr, p->symbol, p->quote_char, p->v.tag, p->is_op, last_op, p->string);
 #endif
 
-		if (!p->quote_char && !strcmp(p->token, ".")
+		if (!p->quote_char
+			&& !SB_strcmp(p->token, ".")
 			&& !iswalpha(*p->srcptr)
 		    && (*p->srcptr != '"')
 		    && (*p->srcptr != '(')
@@ -2984,7 +2916,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			if (analyze(p, 0, last_op)) {
 				if (p->cl->cells->nbr_cells <= (p->cl->cidx-1)) {
 					if (DUMP_ERRS || !p->do_read_term)
-						printf("Error: syntax error, operator expected unfinished input '%s', %s:%d\n", p->token, get_loaded(p->m, p->m->filename), p->line_nbr);
+						printf("Error: syntax error, operator expected unfinished input '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 
 					p->error_desc = "operator_expected";
 					p->error = true;
@@ -3073,25 +3005,25 @@ unsigned tokenize(parser *p, bool args, bool consing)
 		p->end_of_term = false;
 
 		if (!p->quote_char && !last_op &&
-			(!strcmp(p->token, "[") || !strcmp(p->token, "{"))) {
+			(!SB_strcmp(p->token, "[") || !SB_strcmp(p->token, "{"))) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, needs operator '%s', %s:%d\n", p->token, get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stdout, "Error: syntax error, needs operator '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error_desc = "needs_operator";
 			p->error = true;
 			break;
 		}
 
-		if (!p->quote_char && p->last_close && !strcmp(p->token, "(")) {
+		if (!p->quote_char && p->last_close && !SB_strcmp(p->token, "(")) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, needs operator '%s', %s:%d\n", p->token, get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stdout, "Error: syntax error, needs operator '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error_desc = "needs_operator";
 			p->error = true;
 			break;
 		}
 
-		if (!p->quote_char && !strcmp(p->token, "[")) {
+		if (!p->quote_char && !SB_strcmp(p->token, "[")) {
 			save_idx = p->cl->cidx;
 			cell *c = make_interned(p, g_dot_s);
 			c->arity = 2;
@@ -3118,7 +3050,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			continue;
 		}
 
-		if (!p->quote_char && !strcmp(p->token, "{")) {
+		if (!p->quote_char && !SB_strcmp(p->token, "{")) {
 			save_idx = p->cl->cidx;
 			cell *c = make_interned(p, g_braces_s);
 			check_error(c);
@@ -3139,7 +3071,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			continue;
 		}
 
-		if (!p->quote_char && !strcmp(p->token, "(")) {
+		if (!p->quote_char && !SB_strcmp(p->token, "(")) {
 			p->start_term = true;
 			p->nesting_parens++;
 			unsigned tmp_arity = tokenize(p, is_func, false);
@@ -3160,22 +3092,22 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			continue;
 		}
 
-		if (!p->quote_char && !args && !consing && last_op && !strcmp(p->token, ",")) {
+		if (!p->quote_char && !args && !consing && last_op && !SB_strcmp(p->token, ",")) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, quotes needed around operator '%s', %s:%d\n", p->token, get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stdout, "Error: syntax error, quotes needed around operator '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error_desc = "quotes_needed";
 			p->error = true;
 			break;
 		}
 
-		if (!p->quote_char && args && !consing && p->is_op /*&& last_op*/ && strcmp(p->token, ",")) {
+		if (!p->quote_char && args && !consing && p->is_op /*&& last_op*/ && SB_strcmp(p->token, ",")) {
 			unsigned specifier = 0;
-			unsigned priority = search_op(p->m, p->token, &specifier, last_op && !last_postfix);
+			unsigned priority = search_op(p->m, SB_cstr(p->token), &specifier, last_op && !last_postfix);
 
 			if (!last_op && (priority > 999)) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stdout, "Error: syntax error, parens needed around operator '%s', %s:%d\n", p->token, get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stdout, "Error: syntax error, parens needed around operator '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 
 				p->error_desc = "parens_needed";
 				p->error = true;
@@ -3183,13 +3115,13 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			}
 		}
 
-		if (!p->quote_char && consing && p->is_op && strcmp(p->token, ",") && strcmp(p->token, "|")) {
+		if (!p->quote_char && consing && p->is_op && SB_strcmp(p->token, ",") && SB_strcmp(p->token, "|")) {
 			unsigned specifier = 0;
-			unsigned priority = search_op(p->m, p->token, &specifier, last_op && !last_postfix);
+			unsigned priority = search_op(p->m, SB_cstr(p->token), &specifier, last_op && !last_postfix);
 
 			if (!last_op && (priority > 999)) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stdout, "Error: syntax error, parens needed around operator '%s', %s:%d\n", p->token, get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stdout, "Error: syntax error, parens needed around operator '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 
 				p->error_desc = "parens_needed";
 				p->error = true;
@@ -3197,7 +3129,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			}
 		}
 
-		if (!p->quote_char && consing && !strcmp(p->token, ",")) {
+		if (!p->quote_char && consing && !SB_strcmp(p->token, ",")) {
 			if ((arg_idx == p->cl->cidx) || !p->cl->cidx) {
 				if (DUMP_ERRS || !p->do_read_term)
 					fprintf(stdout, "Error: syntax error, missing arg '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
@@ -3234,8 +3166,8 @@ unsigned tokenize(parser *p, bool args, bool consing)
 		}
 
 		if (!p->quote_char &&
-			((args && !strcmp(p->token, ",")) ||
-			(consing && !p->was_consing && !p->start_term && (!strcmp(p->token, ",") || !strcmp(p->token, "|")))
+			((args && !SB_strcmp(p->token, ",")) ||
+			(consing && !p->was_consing && !p->start_term && (!SB_strcmp(p->token, ",") || !SB_strcmp(p->token, "|")))
 			)) {
 			if ((arg_idx == p->cl->cidx) || !p->cl->cidx) {
 				if (DUMP_ERRS || !p->do_read_term)
@@ -3271,7 +3203,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 				}
 			}
 
-			if (consing && !strcmp(p->token, "|")) {
+			if (consing && !SB_strcmp(p->token, "|")) {
 				p->was_consing = last_bar = true;
 				//consing = false;
 			}
@@ -3282,7 +3214,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			continue;
 		}
 
-		if (!p->is_quoted && consing && p->start_term && !strcmp(p->token, "|")) {
+		if (!p->is_quoted && consing && p->start_term && !SB_strcmp(p->token, "|")) {
 			if (DUMP_ERRS || !p->do_read_term)
 				fprintf(stdout, "Error: syntax error, parsing list '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
 
@@ -3291,7 +3223,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			break;
 		}
 
-		if (!p->is_quoted && p->was_consing && consing && !strcmp(p->token, "|")) {
+		if (!p->is_quoted && p->was_consing && consing && !SB_strcmp(p->token, "|")) {
 			if (DUMP_ERRS || !p->do_read_term)
 				fprintf(stdout, "Error: syntax error, parsing list '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
 
@@ -3300,7 +3232,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			break;
 		}
 
-		if (!p->is_quoted && p->was_consing && last_bar && !strcmp(p->token, "]")) {
+		if (!p->is_quoted && p->was_consing && last_bar && !SB_strcmp(p->token, "]")) {
 			if (DUMP_ERRS || !p->do_read_term)
 				fprintf(stdout, "Error: syntax error, parsing list '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
 
@@ -3310,7 +3242,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 		}
 
 		if (!p->quote_char && p->start_term &&
-			(!strcmp(p->token, "]") || !strcmp(p->token, ")") || !strcmp(p->token, "}"))) {
+			(!SB_strcmp(p->token, "]") || !SB_strcmp(p->token, ")") || !SB_strcmp(p->token, "}"))) {
 			if (DUMP_ERRS || !p->do_read_term)
 				fprintf(stdout, "Error: syntax error, start of rule expected, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
@@ -3319,7 +3251,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			break;
 		}
 
-		if (!p->quote_char && !strcmp(p->token, ")")) {
+		if (!p->quote_char && !SB_strcmp(p->token, ")")) {
 			if (arg_idx == p->cl->cidx) {
 				if (DUMP_ERRS || !p->do_read_term)
 					fprintf(stdout, "Error: syntax error, missing arg '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
@@ -3335,7 +3267,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			return arity;
 		}
 
-		if (!p->quote_char && !strcmp(p->token, "]")) {
+		if (!p->quote_char && !SB_strcmp(p->token, "]")) {
 			if (arg_idx == p->cl->cidx) {
 				if (DUMP_ERRS || !p->do_read_term)
 					fprintf(stdout, "Error: syntax error, missing arg '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
@@ -3351,7 +3283,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			return arity;
 		}
 
-		if (!p->quote_char && !strcmp(p->token, "}")) {
+		if (!p->quote_char && !SB_strcmp(p->token, "}")) {
 			if (arg_idx == p->cl->cidx) {
 				if (DUMP_ERRS || !p->do_read_term)
 					fprintf(stdout, "Error: syntax error, missing arg '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
@@ -3394,7 +3326,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			}
 
 			int nextch = *s;
-			bool noneg = (!strcmp(p->token, "-") || !strcmp(p->token, "+")) && (nextch == '='); // Hack
+			bool noneg = (!SB_strcmp(p->token, "-") || !SB_strcmp(p->token, "+")) && (nextch == '='); // Hack
 
 			if (noneg) {
 				if (DUMP_ERRS || !p->do_read_term)
@@ -3405,10 +3337,10 @@ unsigned tokenize(parser *p, bool args, bool consing)
 				break;
 			}
 
-			priority = search_op(p->m, p->token, &specifier, last_op && !last_postfix);
+			priority = search_op(p->m, SB_cstr(p->token), &specifier, last_op && !last_postfix);
 		}
 
-		if (!strcmp(p->token, "!") &&
+		if (!SB_strcmp(p->token, "!") &&
 			((*p->srcptr == ')') || (*p->srcptr == ';') || (*p->srcptr == ',') || (*p->srcptr == '.')))
 			p->quote_char = 1;
 
@@ -3466,13 +3398,13 @@ unsigned tokenize(parser *p, bool args, bool consing)
 		is_func = last_op && is_interned(&p->v) && !specifier && !last_num && (*p->srcptr == '(');
 
 #if 0
-		printf("*** token=%s, last_op=%d, p->is_op=%d, is_func=%d, prefix=%d\n",
-			p->token, last_op, p->is_op, is_func, IS_PREFIX(specifier));
+		printf("*** =%s, last_op=%d, p->is_op=%d, is_func=%d, prefix=%d\n",
+			SB_cstr(p->token), last_op, p->is_op, is_func, IS_PREFIX(specifier));
 #endif
 
 		if ((p->was_string || p->string) && is_func) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, near \"%s\", expected atom, %s:%d\n", p->token, get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stdout, "Error: syntax error, near \"%s\", expected atom, %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error_desc = "expected_atom";
 			p->error = true;
@@ -3487,7 +3419,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 
 		if (!p->is_op && !is_func && last_op && last_postfix) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, near '%s', operator expected postfix '%s', %s:%d\n", p->token, p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stdout, "Error: syntax error, near '%s', operator expected postfix '%s', %s:%d\n", SB_cstr(p->token), p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error_desc = "operator_expected";
 			p->error = true;
@@ -3496,7 +3428,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 
 		if ((!p->is_op || IS_PREFIX(specifier)) && !is_func && !last_op) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, near '%s', operator expected, %s:%d\n", p->token, get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stdout, "Error: syntax error, near '%s', operator expected, %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error_desc = "operator_expected";
 			p->error = true;
@@ -3504,7 +3436,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 		}
 
 		last_quoted = p->is_quoted;
-		last_op = strcmp(p->token, ")") && priority;
+		last_op = SB_strcmp(p->token, ")") && priority;
 		last_postfix = last_op && IS_POSTFIX(specifier);
 
 		p->start_term = false;
@@ -3525,11 +3457,11 @@ unsigned tokenize(parser *p, bool args, bool consing)
 		} else if (p->v.tag == TAG_FLOAT) {
 			set_float(c, get_float(&p->v));
 		} else if ((!p->is_quoted || is_func || p->is_op || p->is_var
-			|| (get_builtin(p->m->pl, p->token, 0, &found, NULL), found)
-			//|| !strcmp(p->token, "[]")
+			|| (get_builtin(p->m->pl, SB_cstr(p->token), 0, &found, NULL), found)
+			//|| !SB_strcmp(p->token, "[]")
 			) && !p->string) {
 
-			if (is_func && !strcmp(p->token, "."))
+			if (is_func && !SB_strcmp(p->token, "."))
 				c->priority = 0;
 
 			if (p->is_var)
@@ -3538,22 +3470,23 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			if (p->is_quoted)
 				c->flags |= FLAG_CSTR_QUOTED;
 
-			c->val_off = index_from_pool(p->m->pl, p->token);
+			c->val_off = index_from_pool(p->m->pl, SB_cstr(p->token));
 			ensure(c->val_off != ERR_IDX);
 		} else {
 			c->tag = TAG_CSTR;
+			size_t toklen =SB_strlen(p->token);
 
-			if ((p->toklen < MAX_SMALL_STRING) && !p->string) {
-				memcpy(c->val_chr, p->token, p->toklen);
-				c->val_chr[p->toklen] = '\0';
-				c->chr_len = p->toklen;
+			if ((toklen < MAX_SMALL_STRING) && !p->string) {
+				memcpy(c->val_chr, SB_cstr(p->token), toklen);
+				c->val_chr[toklen] = '\0';
+				c->chr_len = toklen;
 			} else {
 				if (p->string) {
 					c->flags |= FLAG_CSTR_STRING;
 					c->arity = 2;
 				}
 
-				SET_STR(c, p->token, p->toklen, 0);
+				SET_STR(c, SB_cstr(p->token), toklen, 0);
 			}
 		}
 
