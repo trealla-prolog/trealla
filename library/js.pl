@@ -29,7 +29,7 @@ js_eval_json(Expr, Result) :-
 
 js_eval(Expr) :-
 	catch(
-		js_eval_(Expr, Result, js_eval/1),
+		js_eval_(Expr, _, js_eval/1),
 		error(wasm_error(invalid_json, _), _),
 		true
 	).
