@@ -143,7 +143,15 @@ term_json(_, Value0, pairs([string("functor")-string(Value)])) :-
 
 term_json(_, Value, string(Value)) :- string(Value).
 
-term_json(_, Value, number(Value)) :- number(Value).
+term_json(_, Value, number(Value)) :- float(Value).
+term_json(_, Value, number(Value)) :-
+	number(Value),
+	% safe value range for JS integers
+	Value =< 9007199254740991,
+	Value >= -9007199254740991.
+term_json(_, Value, pairs([string("number")-string(Cs)])) :-
+	number(Value),
+	number_chars(Value, Cs).
 
 term_json(Vars, Value, list(L)) :-
 	is_list(Value),
