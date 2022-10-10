@@ -48,7 +48,7 @@ js_eval_(Expr, Result, Context) :-
 throw_if_error_result({"$error": Error}, Ctx) :-
 	nonvar(Error),
 	throw(error(js_error(Error), Ctx)).
-throw_if_error_result(_).
+throw_if_error_result(_, _).
 
 % TODO: form encoding
 % TODO: content-type negotiation
