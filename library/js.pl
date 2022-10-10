@@ -11,7 +11,7 @@
 		"error": "<throw/1 exception term>"
 	}
 */
-:- module(js, [js_toplevel/0, js_ask/1, js_eval/2, js_eval_json/2, js_fetch/3, http_consult/1]).
+:- module(js, [js_toplevel/0, js_ask/1, js_eval/1, js_eval/2, js_eval_json/2, js_fetch/3, http_consult/1]).
 
 :- use_module(library(lists)).
 :- use_module(library(pseudojson)).
@@ -19,22 +19,36 @@
 
 % Guest (Trealla) → Host (WASM)
 
-js_eval_json(Expr, Result) :-
-	(  js_eval(Expr, Cs)
-	-> true
-	;  throw(error(wasm_error(host_call_failed), js_eval_json/2))
-	),
-	(  json_chars(Result, Cs)
-	-> true
-	;  throw(error(wasm_error(invalid_json, Cs), js_eval_json/2))
-	).
-	% json_value(JSON, V),
-	% term_json(_, Result, V).
-
 js_eval(Expr, Cs) :-
 	'$host_call'(Expr, Cs), !
 	; yield, fail
 	; '$host_resume'(Cs).
+
+js_eval_json(Expr, Result) :-
+	js_eval_(Expr, Result, js_eval_json/2).
+
+js_eval(Expr) :-
+	catch(
+		js_eval_(Expr, Result, js_eval/1),
+		error(wasm_error(invalid_json, _), _),
+		true
+	).
+
+js_eval_(Expr, Result, Context) :-
+	(  js_eval(Expr, Cs)
+	-> true
+	;  throw(error(wasm_error(host_call_failed), Context))
+	),
+	(  json_chars(Result, Cs)
+	-> true
+	;  throw(error(wasm_error(invalid_json, Cs), Context))
+	),
+	throw_if_error_result(Result, Context).
+
+throw_if_error_result({"$error": Error}, Ctx) :-
+	nonvar(Error),
+	throw(error(js_error(Error), Ctx)).
+throw_if_error_result(_).
 
 % TODO: form encoding
 % TODO: content-type negotiation
@@ -46,7 +60,7 @@ js_fetch(URL, Result, Opts) :-
 	( memberchk(headers(Hdrs), Opts) -> true ; Hdrs = [] ),
 	( fetch_expr(URL, As, Method, Body, Hdrs, Expr) -> true
 	; domain_error(fetch, Opts, js_fetch/3)),
-	js_eval_json(Expr, Result),
+	js_eval_(Expr, Result, js_fetch/3),
 	!.
 
 fetch_expr(URL, As, Method, Body, Hdr, Expr) :-
