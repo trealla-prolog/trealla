@@ -422,7 +422,7 @@ bool is_next_key(query *q)
 const char *dump_id(const void *k, const void *v, const void *p)
 {
 	const query *q = (query*)p;
-	size_t id = (size_t)k;
+	uint64_t id = (uint64_t)(size_t)k;
 	static char tmpbuf[1024];
 	sprintf(tmpbuf, "%"PRIu64"", id);
 	return tmpbuf;
