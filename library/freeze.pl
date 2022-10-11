@@ -27,8 +27,9 @@ freeze(X, Goal) :-
     put_atts(Fresh, frozen(Goal)),
     Fresh = X.
 
-attribute_goals(Var) -->
-    { get_atts(Var, frozen(Goals)),
-      put_atts(Var, -frozen(_)) },
-    [freeze(Var, Goals)].
+attribute_goal(Var, freeze(Var,Goal)) :-     % interpretation as goal
+        get_atts(Var, frozen(Goal)).
 
+attribute_goals(Var) -->
+    { attribute_goal(Var, Goal) },
+    [Goal].
