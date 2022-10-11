@@ -100,15 +100,15 @@ static void trace_call(query *q, cell *c, pl_idx_t c_ctx, box_t box)
 	SB(pr);
 
 #ifdef DEBUG
-	SB_sprintf(pr, "[%s:%llu:f%u:fp:%u:cp%u:sp%u:hp%u:tp%u] ",
+	SB_sprintf(pr, "[%s:%"PRIu64":f%u:fp:%u:cp%u:sp%u:hp%u:tp%u] ",
 		q->st.m->name,
-		(unsigned long long)q->step++,
+		q->step++,
 		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.tp
 		);
 #else
-	SB_sprintf(pr, "[%s:%llu] ",
+	SB_sprintf(pr, "[%s:%"PRIu64"] ",
 		q->st.m->name,
-		(unsigned long long)q->step++
+		q->step++
 		);
 #endif
 
@@ -424,7 +424,7 @@ const char *dump_id(const void *k, const void *v, const void *p)
 	const query *q = (query*)p;
 	size_t id = (size_t)k;
 	static char tmpbuf[1024];
-	sprintf(tmpbuf, "%llu", (unsigned long long)id);
+	sprintf(tmpbuf, "%"PRIu64"", id);
 	return tmpbuf;
 }
 

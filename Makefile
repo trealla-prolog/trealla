@@ -5,7 +5,6 @@ CFLAGS =  -std=c99 -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' -O3 \
 	-Wall -Wextra \
 	-Wno-deprecated-declarations \
 	-Wno-unused-function -Wno-unused-parameter \
-	-Wformat=0 \
 	-Wno-unused-variable
 
 LDFLAGS = -L/usr/local/lib -lm

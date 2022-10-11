@@ -6,6 +6,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <inttypes.h>
 #include <unistd.h>
 
 #ifndef USE_OPENSSL

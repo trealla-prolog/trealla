@@ -1622,10 +1622,10 @@ void uuid_gen(prolog *pl, uuid *u)
 
 static char *uuid_to_buf(const uuid *u, char *buf, size_t buflen)
 {
-	snprintf(buf, buflen, "%016llX-%04llX-%012llX",
-		 (unsigned long long)u->u1,
-		 (unsigned long long)(u->u2 >> 48),
-		 (unsigned long long)(u->u2 & MASK_FINAL));
+	snprintf(buf, buflen, "%016"PRIx64"-%04"PRIx64"-%012"PRIx64"",
+		 u->u1,
+		 (u->u2 >> 48),
+		 (u->u2 & MASK_FINAL));
 
 	return buf;
 }
@@ -1638,9 +1638,9 @@ static int uuid_from_buf(const char *s, uuid *u)
 		return 0;
 	}
 
-	unsigned long long p1 = 0, p2 = 0, p3 = 0;
+	uint64_t p1 = 0, p2 = 0, p3 = 0;
 
-	if (sscanf(s, "%llX%*c%llX%*c%llX", &p1, &p2, &p3) != 3) {
+	if (sscanf(s, "%"PRIx64"%*c%"PRIx64"%*c%"PRIx64"", &p1, &p2, &p3) != 3) {
 		uuid tmp = {0};
 		*u = tmp;
 		return 0;
@@ -4176,11 +4176,11 @@ static bool fn_time_1(query *q)
 static bool fn_statistics_0(query *q)
 {
 	fprintf(stdout,
-		"Goals %llu, Matches %llu, Max frames %u, choices %u, trails %u, slots %u, heap: %u.\nBacktracks %llu, TCOs:%llu, Recovered frames: %llu, slots: %llu\n",
-		(unsigned long long)q->tot_goals, (unsigned long long)q->tot_matches,
+		"Goals %"PRIu64", Matches %"PRIu64", Max frames %u, choices %u, trails %u, slots %u, heap: %u.\nBacktracks %"PRIu64", TCOs:%"PRIu64", Recovered frames: %"PRIu64", slots: %"PRIu64"\n",
+		q->tot_goals, q->tot_matches,
 		q->hw_frames, q->hw_choices, q->hw_trails, q->hw_slots, q->st.hp,
-		(unsigned long long)q->tot_retries, (unsigned long long)q->tot_tcos,
-		(unsigned long long)q->tot_frecovs, (unsigned long long)q->tot_srecovs
+		q->tot_retries, q->tot_tcos,
+		q->tot_frecovs, q->tot_srecovs
 		);
 	return true;
 }
@@ -5665,7 +5665,7 @@ static bool fn_term_hash_2(query *q)
 
 	if (is_smallint(p1)) {
 		char tmpbuf[256];
-		snprintf(tmpbuf, sizeof(tmpbuf), "%lld", (long long)get_smallint(p1));
+		snprintf(tmpbuf, sizeof(tmpbuf), "%"PRId64"", get_smallint(p1));
 		make_int(&tmp, jenkins_one_at_a_time_hash(tmpbuf, strlen(tmpbuf)));
 	} else if (is_atom(p1)) {
 		make_int(&tmp, jenkins_one_at_a_time_hash(C_STR(q, p1), C_STRLEN(q, p1)));
@@ -5697,7 +5697,7 @@ static bool fn_hex_chars_2(query *q)
 			dst = malloc(len+10);
 			mp_int_to_string(&p1->val_bigint->ival, 16, dst, len+1);
 		} else {
-			snprintf(tmpbuf, sizeof(tmpbuf), "%llx", (long long)get_smallint(p1));
+			snprintf(tmpbuf, sizeof(tmpbuf), "%"PRIx64"", get_smallint(p1));
 		}
 
 		cell tmp;
@@ -5750,7 +5750,7 @@ static bool fn_octal_chars_2(query *q)
 			dst = malloc(len+10);
 			mp_int_to_string(&p1->val_bigint->ival, 8, dst, len+1);
 		} else {
-			snprintf(tmpbuf, sizeof(tmpbuf), "%llo", (long long)get_smallint(p1));
+			snprintf(tmpbuf, sizeof(tmpbuf), "%"PRIo64"", get_smallint(p1));
 		}
 
 		cell tmp;
@@ -6617,7 +6617,7 @@ static bool fn_kv_set_3(query *q)
 
 	if (is_integer(p1)) {
 		char tmpbuf[128];
-		snprintf(tmpbuf, sizeof(tmpbuf), "%lld", (long long unsigned)get_smallint(p1));
+		snprintf(tmpbuf, sizeof(tmpbuf), "%"PRId64"", get_smallint(p1));
 		key = strdup(tmpbuf);
 	} else if (is_atom(p1))
 		key = DUP_STR(q, p1);
@@ -6637,7 +6637,7 @@ static bool fn_kv_set_3(query *q)
 
 	if (is_integer(p2)) {
 		char tmpbuf[128];
-		snprintf(tmpbuf, sizeof(tmpbuf), "%lld", (long long unsigned)get_smallint(p2));
+		snprintf(tmpbuf, sizeof(tmpbuf), "%"PRId64"", get_smallint(p2));
 		val = strdup(tmpbuf);
 	} else if (is_atom(p2))
 		val = DUP_STR(q, p2);
@@ -6696,7 +6696,7 @@ static bool fn_kv_get_3(query *q)
 	char tmpbuf[128];
 
 	if (is_integer(p1)) {
-		snprintf(tmpbuf, sizeof(tmpbuf), "%lld", (long long unsigned)get_smallint(p1));
+		snprintf(tmpbuf, sizeof(tmpbuf), "%"PRId64"", get_smallint(p1));
 		key = tmpbuf;
 	} else if (is_atom(p1))
 		key = DUP_STR(q, p1);
