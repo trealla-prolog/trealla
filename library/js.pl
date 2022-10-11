@@ -139,7 +139,7 @@ write_result(JSON) :-
 result_json(success, Vars, _, pairs([string("result")-string("success"), string("answer")-Solution])) :-
 	once(solution_json(Vars, Solution)).
 result_json(failure, _, _, pairs([string("result")-string("failure")])).
-result_json(error, Vars, Error, pairs([string("result")-string("error"), string("answer")-ErrorJS])) :-
+result_json(error, Vars, Error, pairs([string("result")-string("error"), string("error")-ErrorJS])) :-
 	once(term_json(Vars, Error, ErrorJS)).
 
 solution_json([], pairs([])).
