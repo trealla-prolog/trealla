@@ -717,7 +717,9 @@ put_atts(Var, -Attr) :- !,
 	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
+	%write('*** put- '),write(Var),nl,tab(4),write(Attr),nl,tab(4),write(D),write(' ==> '),
 	dict:del(D, Module, D2),
+	%write(D2),nl,
 	'$put_attributes'(Var, D2).
 
 put_atts(Var, +Attr) :- !,
@@ -725,7 +727,9 @@ put_atts(Var, +Attr) :- !,
 	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
+	%write('*** put+ '),write(Var),nl,tab(4),write(Attr),nl,tab(4),write(D),write(' ==> '),
 	dict:set(D, Module, Attr, D2),
+	%write(D2),nl,
 	'$put_attributes'(Var, D2).
 
 put_atts(Var, Attr) :- !,
@@ -733,7 +737,9 @@ put_atts(Var, Attr) :- !,
 	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
+	%write('*** put '),write(Var),nl,tab(4),write(Attr),nl,tab(4),write(D),write(' ==> '),
 	dict:set(D, Module, Attr, D2),
+	%write(D2),nl,
 	'$put_attributes'(Var, D2).
 
 get_atts(Var, L) :- var(L), !,
@@ -746,21 +752,30 @@ get_atts(Var, -Attr) :- !,
 	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
-	\+ dict:get(D, Module, _).
+	%write('*** get- '),write(Var),nl,tab(4),write(Attr),nl,tab(4),write(D),nl,
+	\+ dict:get(D, Module, _),
+	%tab(4),write('ok'),nl,
+	true.
 
 get_atts(Var, +Attr) :- !,
 	var(Var),
-	('$get_attributes'(Var, D) -> true ; D = []),
+	('$get_attributes'(Var, D) -> true ; fail),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
-	dict:get(D, Module, Attr).
+	%write('*** get+ '),write(Var),nl,tab(4),write(Attr),nl,tab(4),write(D),nl,
+	dict:get(D, Module, Attr),
+	%tab(4),write('ok'),nl,
+	true.
 
 get_atts(Var, Attr) :- !,
 	var(Var),
-	('$get_attributes'(Var, D) -> true ; D = []),
+	('$get_attributes'(Var, D) -> true ; fail),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
-	dict:get(D, Module, Attr).
+	%write('*** get '),write(Var),nl,tab(4),write(Attr),nl,tab(4),write(D),nl,
+	dict:get(D, Module, Attr),
+	%tab(4),write('ok'),nl,
+	true.
 
 del_atts(Var) :-
 	var(Var),

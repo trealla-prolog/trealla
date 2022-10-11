@@ -30,5 +30,5 @@ freeze(X, Goal) :-
 attribute_goals(Var) -->
     { get_atts(Var, frozen(Goals)),
       put_atts(Var, -frozen(_)) },
-    [freeze:freeze(Var, Goals)].
+    [freeze(Var, Goals)].
 
