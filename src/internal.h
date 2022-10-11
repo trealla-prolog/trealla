@@ -48,8 +48,6 @@ typedef uint32_t pl_idx_t;
 char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #endif
 
-static const unsigned INITIAL_NBR_CELLS = 100;
-
 extern unsigned g_string_cnt, g_interned_cnt;
 
 // Sentinel Value

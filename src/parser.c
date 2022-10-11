@@ -13,7 +13,7 @@
 #include "query.h"
 #include "utf8.h"
 
-static const unsigned INITIAL_TOKEN_SIZE = 100;		// bytes
+static const unsigned INITIAL_NBR_CELLS = 1000;
 const char *g_solo = "!(){}[]|,;`'\"";
 
 char *slicedup(const char *s, size_t n)
@@ -153,8 +153,8 @@ void clear_rule(clause *cl)
 
 static bool make_room(parser *p, unsigned nbr)
 {
-	while ((p->cl->cidx+nbr) >= p->cl->allocated_cells) {
-		pl_idx_t nbr_cells = p->cl->allocated_cells * 3 / 2;
+	if ((p->cl->cidx+nbr) >= p->cl->allocated_cells) {
+		pl_idx_t nbr_cells = (p->cl->allocated_cells + nbr) * 3 / 2;
 
 		clause *cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*nbr_cells));
 		if (!cl) {
@@ -179,6 +179,7 @@ static cell *make_a_cell(parser *p)
 
 void destroy_parser(parser *p)
 {
+	SB_free(p->token);
 	free(p->tmpbuf);
 	free(p->save_line);
 	clear_rule(p->cl);
