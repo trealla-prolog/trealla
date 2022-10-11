@@ -30,10 +30,10 @@ verify_attributes(_, _, []).                % unification triggered
                                             % because of attributes
                                             % in other modules
 
-/*
+
 attribute_goal(Var, domain(Var,Dom)) :-     % interpretation as goal
         get_atts(Var, dom(Dom)).
-*/
+
 
 domain(X, Dom) :-
         var(Dom), !,
@@ -50,7 +50,5 @@ domain(X, List) :-
 
 
 attribute_goals(Var) -->
-    { get_atts(Var, dom(Doms)),
-      put_atts(Var, -dom(_)) },
-    [domain(Var, Doms)].
-
+    { attribute_goal(Var, Goal) },
+    [Goal].
