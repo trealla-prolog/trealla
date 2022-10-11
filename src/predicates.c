@@ -2841,13 +2841,13 @@ static bool fn_iso_current_prolog_flag_2(query *q)
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	} else if (!CMP_STR_TO_CSTR(q, p1, "version")) {
 		unsigned v1 = 0;
-		sscanf(VERSION, "v%u", &v1);
+		sscanf(g_version, "v%u", &v1);
 		cell tmp;
 		make_int(&tmp, v1);
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	} else if (!CMP_STR_TO_CSTR(q, p1, "version_data")) {
 		unsigned v1 = 0, v2 = 0, v3 = 0;
-		sscanf(VERSION, "v%u.%u.%u", &v1, &v2, &v3);
+		sscanf(g_version, "v%u.%u.%u", &v1, &v2, &v3);
 		cell *tmp = alloc_on_heap(q, 5);
 		check_heap_error(tmp);
 		make_atom(&tmp[0], index_from_pool(q->pl, "trealla"));
@@ -2860,7 +2860,7 @@ static bool fn_iso_current_prolog_flag_2(query *q)
 		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 	} else if (!CMP_STR_TO_CSTR(q, p1, "version_git")) {
 		cell tmp;
-		make_atom(&tmp, index_from_pool(q->pl, VERSION));
+		make_atom(&tmp, index_from_pool(q->pl, g_version));
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	} else if (!CMP_STR_TO_CSTR(q, p1, "argv")) {
 		if (g_avc >= g_ac) {
