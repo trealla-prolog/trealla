@@ -194,10 +194,7 @@ Setting WASI_CC also works as an alternative to CC.
 Contributions
 =============
 
-Contributions are welcome. Trealla coding style is snake-case (like
-original K&R). I consider camelCase to be an anti-pattern, probably
-because i'm dyslexic and it takes me twice as long to read and 4 times
-as long to write.
+Contributions are welcome.
 
 
 Cross-compile for Windows
