@@ -682,6 +682,27 @@ current_op(A, B, C) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SWI compatible
+
+get_attr(Var, Module, Value) :-
+	var(Var),
+	Access =.. [Module, Value],
+	get_atts(Var, Access).
+
+put_attr(Var, Module, Value) :-
+	Access =.. [Module,Value],
+	put_atts(Var, Access).
+
+del_attr(Var, Module) :-
+	(	var(Var)
+	->  (Access =.. [Module,_], put_atts(Var, -Access) )
+	;	true
+	).
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SICStus compatible
 
 :- use_module(library(dict)).

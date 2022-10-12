@@ -1801,9 +1801,9 @@ static bool fn_iso_univ_2(query *q)
 		while (is_list(p2)) {
 			CHECK_INTERRUPT();
 			cell *h = LIST_HEAD(p2);
-			cell *tmp = alloc_on_tmp(q, h->nbr_cells);
-			check_heap_error(tmp);
-			copy_cells(tmp, h, h->nbr_cells);
+			cell *tmp2 = alloc_on_tmp(q, h->nbr_cells);
+			check_heap_error(tmp2);
+			copy_cells(tmp2, h, h->nbr_cells);
 			p2 = LIST_TAIL(p2);
 			arity++;
 		}
