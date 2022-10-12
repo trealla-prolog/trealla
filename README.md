@@ -329,14 +329,6 @@ Non-standard predicates
 	b_setval0/2                 # SWI-compatible
 	b_delete/1                  # SWI-compatible
 
-	put_atts/2                  # SICStus-compatible
-	get_atts/2                  # SICStus-compatible
-	del_atts/1                  # SICStus-compatible
-
-	put_attr/3                  # SWI-compatible
-	get_attr/3                  # SWI-compatible
-	del_attr/2                  # SWI-compatible
-
 	freeze/2                    # auto-loaded from library(freeze)
 	frozen/2                    # auto-loaded from library(freeze)
 	when/2						# auto-loaded from library(when)

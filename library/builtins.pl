@@ -682,27 +682,6 @@ current_op(A, B, C) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% SWI compatible
-
-put_attr(Var, Module, Value) :-
-	Attr =.. [Module,Value],
-	put_atts(Var, Attr).
-
-get_attr(Var, Module, Value) :-
-	var(Var),
-	Attr =.. [Module,Value],
-	get_atts(Var, Attr).
-
-del_attr(Var, Module) :-
-	var(Var), !,
-	Attr =.. [Module,_],
-	put_atts(Var, -Attr).
-del_attr(_, _).
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SICStus compatible
 
 :- use_module(library(dict)).
@@ -776,6 +755,8 @@ get_atts(Var, Attr) :- !,
 	dict:get(D, Module, Attr),
 	%tab(4),write('ok'),nl,
 	true.
+
+% Ancilliary
 
 del_atts(Var) :-
 	var(Var),
