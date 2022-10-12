@@ -697,7 +697,7 @@ put_atts(Var, -Attr) :- !,
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
 	%write('*** put '),write(Var),tab(2),write(-Attr),nl,tab(4),write(D),write(' ==> '),
-	dict:del(D, Module, D2),
+	dict:del(D, Module, Attr, D2),
 	%write(D2),nl,
 	'$put_attributes'(Var, D2).
 
