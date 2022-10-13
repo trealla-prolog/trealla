@@ -5665,7 +5665,7 @@ static bool fn_term_hash_2(query *q)
 
 	if (is_smallint(p1)) {
 		char tmpbuf[256];
-		snprintf(tmpbuf, sizeof(tmpbuf), "%"PRId64"", get_smallint(p1));
+		snprintf(tmpbuf, sizeof(tmpbuf), "%"PRId64"", (int64_t)get_smallint(p1));
 		make_int(&tmp, jenkins_one_at_a_time_hash(tmpbuf, strlen(tmpbuf)));
 	} else if (is_atom(p1)) {
 		make_int(&tmp, jenkins_one_at_a_time_hash(C_STR(q, p1), C_STRLEN(q, p1)));
@@ -6617,7 +6617,7 @@ static bool fn_kv_set_3(query *q)
 
 	if (is_integer(p1)) {
 		char tmpbuf[128];
-		snprintf(tmpbuf, sizeof(tmpbuf), "%"PRId64"", get_smallint(p1));
+		snprintf(tmpbuf, sizeof(tmpbuf), "%"PRId64"", (int64_t)get_smallint(p1));
 		key = strdup(tmpbuf);
 	} else if (is_atom(p1))
 		key = DUP_STR(q, p1);
@@ -6637,7 +6637,7 @@ static bool fn_kv_set_3(query *q)
 
 	if (is_integer(p2)) {
 		char tmpbuf[128];
-		snprintf(tmpbuf, sizeof(tmpbuf), "%"PRId64"", get_smallint(p2));
+		snprintf(tmpbuf, sizeof(tmpbuf), "%"PRId64"", (int64_t)get_smallint(p2));
 		val = strdup(tmpbuf);
 	} else if (is_atom(p2))
 		val = DUP_STR(q, p2);
@@ -6696,7 +6696,7 @@ static bool fn_kv_get_3(query *q)
 	char tmpbuf[128];
 
 	if (is_integer(p1)) {
-		snprintf(tmpbuf, sizeof(tmpbuf), "%"PRId64"", get_smallint(p1));
+		snprintf(tmpbuf, sizeof(tmpbuf), "%"PRId64"", (int64_t)get_smallint(p1));
 		key = tmpbuf;
 	} else if (is_atom(p1))
 		key = DUP_STR(q, p1);
