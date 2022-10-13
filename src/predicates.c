@@ -5697,7 +5697,7 @@ static bool fn_hex_chars_2(query *q)
 			dst = malloc(len+10);
 			mp_int_to_string(&p1->val_bigint->ival, 16, dst, len+1);
 		} else {
-			snprintf(tmpbuf, sizeof(tmpbuf), "%"PRIx64"", get_smallint(p1));
+			snprintf(tmpbuf, sizeof(tmpbuf), "%"PRIx64"", (uint64_t)get_smallint(p1));
 		}
 
 		cell tmp;
@@ -5750,7 +5750,7 @@ static bool fn_octal_chars_2(query *q)
 			dst = malloc(len+10);
 			mp_int_to_string(&p1->val_bigint->ival, 8, dst, len+1);
 		} else {
-			snprintf(tmpbuf, sizeof(tmpbuf), "%"PRIo64"", get_smallint(p1));
+			snprintf(tmpbuf, sizeof(tmpbuf), "%"PRIo64"", (uint64_t)get_smallint(p1));
 		}
 
 		cell tmp;
