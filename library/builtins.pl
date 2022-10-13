@@ -684,20 +684,18 @@ current_op(A, B, C) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SWI compatible
 
-put_attr(Var, Module, Value) :-
-	Attr =.. [Module,Value],
-	put_atts(Var, Attr).
-
 get_attr(Var, Module, Value) :-
+	Access =.. [Module, Value],
 	var(Var),
-	Attr =.. [Module,Value],
-	get_atts(Var, Attr).
+	get_atts(Var, Access).
+
+put_attr(Var, Module, Value) :-
+	Access =.. [Module, Value],
+	put_atts(Var, Access).
 
 del_attr(Var, Module) :-
-	var(Var), !,
-	Attr =.. [Module,_],
-	put_atts(Var, -Attr).
-del_attr(_, _).
+	Access =.. [Module, _],
+	( var(Var) -> put_atts(Var, -Access) ; true ).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -717,7 +715,9 @@ put_atts(Var, -Attr) :- !,
 	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
-	dict:del(D, Module, D2),
+	%write('*** put '),write(Var),tab(2),write(-Attr),nl,tab(4),write(D),write(' ==> '),
+	dict:del(D, Module, Attr, D2),
+	%write(D2),nl,
 	'$put_attributes'(Var, D2).
 
 put_atts(Var, +Attr) :- !,
@@ -725,7 +725,9 @@ put_atts(Var, +Attr) :- !,
 	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
+	%write('*** put '),write(Var),tab(2),write(+Attr),nl,tab(4),write(D),write(' ==> '),
 	dict:set(D, Module, Attr, D2),
+	%write(D2),nl,
 	'$put_attributes'(Var, D2).
 
 put_atts(Var, Attr) :- !,
@@ -733,7 +735,9 @@ put_atts(Var, Attr) :- !,
 	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
+	%write('*** put '),write(Var),tab(2),write(Attr),nl,tab(4),write(D),write(' ==> '),
 	dict:set(D, Module, Attr, D2),
+	%write(D2),nl,
 	'$put_attributes'(Var, D2).
 
 get_atts(Var, L) :- var(L), !,
@@ -746,21 +750,32 @@ get_atts(Var, -Attr) :- !,
 	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
-	\+ dict:get(D, Module, _).
+	%write('*** get '),write(Var),tab(2),write(-Attr),nl,tab(4),write(D),nl,
+	\+ dict:get(D, Module, _),
+	%tab(4),write('ok'),nl,
+	true.
 
 get_atts(Var, +Attr) :- !,
 	var(Var),
-	('$get_attributes'(Var, D) -> true ; D = []),
+	('$get_attributes'(Var, D) -> true ; fail),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
-	dict:get(D, Module, Attr).
+	%write('*** get '),write(Var),tab(2),write(+Attr),nl,tab(4),write(D),nl,
+	dict:get(D, Module, Attr),
+	%tab(4),write('ok'),nl,
+	true.
 
 get_atts(Var, Attr) :- !,
 	var(Var),
-	('$get_attributes'(Var, D) -> true ; D = []),
+	('$get_attributes'(Var, D) -> true ; fail),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
-	dict:get(D, Module, Attr).
+	%write('*** get '),write(Var),tab(2),write(Attr),nl,tab(4),write(D),nl,
+	dict:get(D, Module, Attr),
+	%tab(4),write('ok'),nl,
+	true.
+
+% Ancilliary
 
 del_atts(Var) :-
 	var(Var),

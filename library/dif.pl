@@ -52,7 +52,7 @@ dif(X, Y) :-
 
 gather_dif_goals([]) --> [].
 gather_dif_goals([(X \== Y) | Goals]) -->
-    [dif:dif(X, Y)],
+    [dif(X, Y)],
     gather_dif_goals(Goals).
 
 attribute_goals(X) -->

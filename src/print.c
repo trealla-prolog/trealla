@@ -411,7 +411,7 @@ static const char *varformat(char *tmpbuf, unsigned long long nbr)
 {
 	char *dst = tmpbuf;
 	dst += sprintf(dst, "%c", 'A'+(unsigned)(nbr%26));
-	if ((nbr/26) > 0) dst += sprintf(dst, "%llu", (nbr/26));
+	if ((nbr/26) > 0) dst += sprintf(dst, "%"PRIu64"", (int64_t)(nbr/26));
 	return tmpbuf;
 }
 

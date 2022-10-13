@@ -30,13 +30,10 @@ verify_attributes(_, _, []).                % unification triggered
                                             % because of attributes
                                             % in other modules
 
+
 attribute_goal(Var, domain(Var,Dom)) :-     % interpretation as goal
         get_atts(Var, dom(Dom)).
 
-attribute_goals(Var) -->
-	{ get_atts(Var, dom(Goals)),
-		put_atts(Var, -dom(_)) },
-	[dom(Var, Goals)].
 
 domain(X, Dom) :-
         var(Dom), !,
@@ -50,3 +47,22 @@ domain(X, List) :-
             X = Fresh                       % may call
                                             % verify_attributes/3
         ).
+
+
+attribute_goals(Var) -->
+    { attribute_goal(Var, Goal) },
+    [Goal].
+
+/*
+
+?- domain(X,[5,6,7,1]),domain(Y,[3,4,5,6]),domain(Z,[1,6,7,8]).
+   domain(X,[1,5,6,7]),domain(Y,[3,4,5,6]),domain(Z,[1,6,7,8]).
+
+?- domain(X,[5,6,7,1]),domain(Y,[3,4,5,6]),domain(Z,[1,6,7,8]), X=Y.
+   Y = X, domain(X,[5,6]),domain(Z,[1,6,7,8]).
+
+?- domain(X,[5,6,7,1]),domain(Y,[3,4,5,6]),domain(Z,[1,6,7,8]), X=Y, Y=Z.
+   X = 6, Y = X, Z = X.
+
+*/
+

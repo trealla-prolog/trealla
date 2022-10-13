@@ -67,7 +67,9 @@ verify_attributes(Var, Other, Goals) :-
 	; Goals = [(VarCond -> VarGoal ; true)]
 	).
 
+attribute_goal(Var, when(Var,Goals)) :-     % interpretation as goal
+	get_atts(Var, when(Goals)).
+
 attribute_goals(Var) -->
-	{ get_atts(Var, when(Goals)),
-		put_atts(Var, -when(_)) },
-	[when:when(Var, Goals)].
+	{ attribute_goal(Var, Goals) },
+	[Goals].

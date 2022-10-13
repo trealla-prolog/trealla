@@ -12,23 +12,24 @@ frozen(Term, Goal) :-
 	list_to_conjunction(Gs2, Goal).
 
 verify_attributes(Var, Other, Goals) :-
-        get_atts(Var, frozen(Fa)), !,       % are we involved?
-        (   var(Other) ->                   % must be attributed then
-            (   get_atts(Other,  frozen(Fb)) % has a pending goal?
-            ->  put_atts(Other,  frozen((Fb,Fa))) % rescue conjunction
-            ;   put_atts(Other,  frozen(Fa)) % rescue the pending goal
-            ),
-            Goals = []
-        ;   Goals = [Fa]
-        ).
+	get_atts(Var, frozen(Fa)), !,       % are we involved?
+	(   var(Other) ->                   % must be attributed then
+		(   get_atts(Other,  frozen(Fb)) % has a pending goal?
+		->  put_atts(Other,  frozen((Fb,Fa))) % rescue conjunction
+		;   put_atts(Other,  frozen(Fa)) % rescue the pending goal
+		),
+		Goals = []
+	;   Goals = [Fa]
+	).
 verify_attributes(_, _, []).
 
 freeze(X, Goal) :-
-    put_atts(Fresh, frozen(Goal)),
-    Fresh = X.
+	put_atts(Fresh, frozen(Goal)),
+	Fresh = X.
+
+attribute_goal(Var, freeze(Var,Goal)) :-     % interpretation as goal
+	get_atts(Var, frozen(Goal)).
 
 attribute_goals(Var) -->
-    { get_atts(Var, frozen(Goals)),
-      put_atts(Var, -frozen(_)) },
-    [freeze:freeze(Var, Goals)].
-
+	{ attribute_goal(Var, Goal) },
+	[Goal].

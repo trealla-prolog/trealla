@@ -6,6 +6,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <inttypes.h>
 #include <unistd.h>
 
 #ifndef USE_OPENSSL
@@ -47,8 +48,6 @@ typedef uint32_t pl_idx_t;
 #if defined(_WIN32) || defined(__wasi__)
 char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #endif
-
-static const unsigned INITIAL_NBR_CELLS = 100;
 
 extern unsigned g_string_cnt, g_interned_cnt;
 

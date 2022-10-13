@@ -13,6 +13,12 @@
 #include "prolog.h"
 #include "query.h"
 
+#ifdef _WIN32
+#define ctime_r(p1,p2) ctime(p1)
+#define gmtime_r(p1,p2) gmtime(p1)
+#define localtime_r(p1,p2) localtime(p1)
+#endif
+
 static bool fn_posix_strftime_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -74,6 +80,7 @@ static bool fn_posix_strftime_3(query *q)
 	return false;
 }
 
+#ifndef _WIN32
 static bool fn_posix_strptime_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -100,6 +107,7 @@ static bool fn_posix_strptime_3(query *q)
 
 	return unify(q, p3, p3_ctx, tmp, q->st.curr_frame);
 }
+#endif
 
 static bool fn_posix_mktime_2(query *q)
 {
@@ -207,7 +215,9 @@ static bool fn_posix_time_1(query *q)
 builtins g_posix_bifs[] =
 {
     {"posix_strftime", 3, fn_posix_strftime_3, "+atom,-atom,+compound", false, false, BLAH},
+#ifndef _WIN32
     {"posix_strptime", 3, fn_posix_strptime_3, "+atom,+atom,-compound", false, false, BLAH},
+#endif
 	{"posix_gmtime", 2, fn_posix_gmtime_2, "+integer,-compound", false, false, BLAH},
 	{"posix_localtime", 2, fn_posix_localtime_2, "+integer,-compound", false, false, BLAH},
 	{"posix_mktime", 2, fn_posix_mktime_2, "+compound,-integer", false, false, BLAH},
