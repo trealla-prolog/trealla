@@ -5796,6 +5796,13 @@ static bool fn_atom_1(query *q)
 	return is_string(p1);
 }
 
+static bool fn_string_1(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	return is_cstring(p1) || is_nil(p1) ||
+		(scan_is_chars_list(q, p1, p1_ctx, true) > 0);
+}
+
 static bool fn_getenv_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -7578,7 +7585,7 @@ builtins g_other_bifs[] =
 	{"abolish", 2, fn_abolish_2, "+term,+list", false, false, BLAH},
 	{"assert", 1, fn_iso_assertz_1, "+term", false, false, BLAH},
 	{"copy_term_nat", 2, fn_copy_term_nat_2, "+term,-term", false, false, BLAH},
-	{"string", 1, fn_atom_1, "+term,+term", false, false, BLAH},
+	{"string", 1, fn_string_1, "+term", false, false, BLAH},
 	{"atomic_concat", 3, fn_atomic_concat_3, "+atomic,+atomic,?atomic", false, false, BLAH},
 	{"atomic_list_concat", 3, fn_atomic_list_concat_3, "+list,+list,-atomic", false, false, BLAH},
 	{"replace", 4, fn_replace_4, "+orig,+from,+to,-new", false, false, BLAH},
