@@ -18,7 +18,7 @@ CFLAGS += -D_WASI_EMULATED_MMAN -D_WASI_EMULATED_SIGNAL -Isrc/wasm -O0 -std=c11
 LDFLAGS += -lwasi-emulated-mman -lwasi-emulated-signal -Wl,--stack-first -Wl,-zstack-size=8388608 -Wl,--initial-memory=100663296
 # after WASI SDK upgrade add:
 # CFLAGS += -D_WASI_EMULATED_PROCESS_CLOCKS
-# LDFLAGS += lwasi-emulated-process-clocks
+# LDFLAGS += -lwasi-emulated-process-clocks
 NOFFI = 1
 NOSSL = 1
 ifdef WASI_CC
