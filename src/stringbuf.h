@@ -98,7 +98,7 @@ typedef struct string_buffer_ {
 
 #define SB_cstr(pr) pr##_buf.buf ? pr##_buf.buf : ""
 
-#define SB_strcmp(pr,s) strcmp(pr##_buf.buf, s)
+#define SB_strcmp(pr,s) strcmp(pr##_buf.buf?pr##_buf.buf:"", s)
 
 #define SB_free(pr) {											\
 	free(pr##_buf.buf);											\
