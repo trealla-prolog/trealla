@@ -2690,6 +2690,10 @@ static bool search_functor(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 static bool fn_iso_current_predicate_1(query *q)
 {
 	GET_FIRST_ARG(p_pi,any);
+
+	if (is_var(p_pi))
+		return false;
+
 	cell *p1, *p2;
 	pl_idx_t p1_ctx, p2_ctx;
 
@@ -2722,7 +2726,6 @@ static bool fn_iso_current_predicate_1(query *q)
 	tmp.arity = get_smallint(p2);
 	bool is_prebuilt = false;
 	bool ok = search_predicate(q->st.m, &tmp, &is_prebuilt) != NULL;
-	//printf("*** %s/%u ok=%d, prebuilt=%d\n", C_STR(q,p1), tmp.arity, ok, is_prebuilt);
 	return ok && !is_prebuilt;
 }
 
