@@ -1843,7 +1843,7 @@ static bool fn_iso_univ_2(query *q)
 		bool found = false;
 
 		if (is_callable(tmp)) {
-			if ((tmp->match = search_predicate(q->st.m, tmp)) != NULL) {
+			if ((tmp->match = search_predicate(q->st.m, tmp, NULL)) != NULL) {
 				tmp->flags &= ~FLAG_BUILTIN;
 			} else if ((tmp->fn_ptr = get_builtin(q->pl, C_STR(q, tmp), tmp->arity, &found, NULL)), found) {
 				if (tmp->fn_ptr->evaluable)
@@ -2171,7 +2171,7 @@ static bool fn_iso_retractall_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	cell *head = deref(q, get_head(p1), p1_ctx);
-	predicate *pr = search_predicate(q->st.m, head);
+	predicate *pr = search_predicate(q->st.m, head, NULL);
 
 	if (!pr) {
 		bool found = false;
@@ -2220,7 +2220,7 @@ static bool fn_iso_retractall_1(query *q)
 
 static bool do_abolish(query *q, cell *c_orig, cell *c, bool hard)
 {
-	predicate *pr = search_predicate(q->st.m, c);
+	predicate *pr = search_predicate(q->st.m, c, NULL);
 	if (!pr) return true;
 
 	if (!pr->is_dynamic)
@@ -2637,7 +2637,7 @@ static bool fn_iso_current_rule_1(query *q)
 	tmp.val_off = index_from_pool(q->pl, functor);
 	tmp.arity = arity;
 
-	if (search_predicate(q->st.m, &tmp))
+	if (search_predicate(q->st.m, &tmp, NULL))
 		return true;
 
 	bool found = false;
@@ -2720,8 +2720,10 @@ static bool fn_iso_current_predicate_1(query *q)
 	tmp.tag = TAG_INTERNED;
 	tmp.val_off = is_interned(p1) ? p1->val_off : index_from_pool(q->pl, C_STR(q, p1));
 	tmp.arity = get_smallint(p2);
-
-	return search_predicate(q->st.m, &tmp) != NULL;
+	bool is_prebuilt = false;
+	bool ok = search_predicate(q->st.m, &tmp, &is_prebuilt) != NULL;
+	//printf("*** %s/%u ok=%d, prebuilt=%d\n", C_STR(q,p1), tmp.arity, ok, is_prebuilt);
+	return ok && !is_prebuilt;
 }
 
 static bool fn_cyclic_term_1(query *q)
@@ -5113,7 +5115,7 @@ static bool fn_task_n(query *q)
 	tmp2->arity = arity;
 	bool found = false;
 
-	if ((tmp2->match = search_predicate(q->st.m, tmp2)) != NULL) {
+	if ((tmp2->match = search_predicate(q->st.m, tmp2, NULL)) != NULL) {
 		tmp2->flags &= ~FLAG_BUILTIN;
 	} else if ((tmp2->fn_ptr = get_builtin(q->pl, C_STR(q, tmp2), tmp2->arity, &found, NULL)), found) {
 		tmp2->flags |= FLAG_BUILTIN;

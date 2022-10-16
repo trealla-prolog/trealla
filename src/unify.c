@@ -838,7 +838,7 @@ bool do_post_unification_hook(query *q, bool is_builtin)
 	tmp[1].arity = 0;
 	tmp[1].flags = 0;
 	tmp[1].val_off = g_post_unify_hook_s;
-	tmp[1].match = search_predicate(q->pl->user_m, tmp+1);
+	tmp[1].match = search_predicate(q->pl->user_m, tmp+1, NULL);
 
 	if (!tmp[1].match)
 		return throw_error(q, tmp+1, q->st.curr_frame, "existence_error", "procedure");

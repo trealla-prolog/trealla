@@ -1390,7 +1390,7 @@ bool match_rule(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract
 			convert_to_literal(q->st.m, c);
 
 		if (!pr || is_evaluable(c) || is_builtin(c)) {
-			pr = search_predicate(q->st.m, c);
+			pr = search_predicate(q->st.m, c, NULL);
 			c->match = pr;
 		}
 
@@ -1487,7 +1487,7 @@ bool match_clause(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retra
 			convert_to_literal(q->st.m, c);
 
 		if (!pr || is_evaluable(c) || is_builtin(c)) {
-			pr = search_predicate(q->st.m, c);
+			pr = search_predicate(q->st.m, c, NULL);
 			c->match = pr;
 		}
 
@@ -1572,7 +1572,7 @@ static bool match_head(query *q)
 		q->save_m = q->st.m;
 
 		if (!pr || is_evaluable(c) || is_builtin(c)) {
-			pr = search_predicate(q->st.m, c);
+			pr = search_predicate(q->st.m, c, NULL);
 
 			if (!pr) {
 				if (!is_end(c) && !(is_interned(c) && !strcmp(C_STR(q, c), "initialization"))) {

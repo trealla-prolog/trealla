@@ -557,19 +557,30 @@ predicate *find_functor(module *m, const char *name, unsigned arity)
 	return find_predicate(m, &tmp);
 }
 
-predicate *search_predicate(module *m, cell *c)
+predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 {
+	if (prebuilt)
+		*prebuilt = false;
+
 	predicate *pr = find_predicate(m, c);
 
-	if (pr)
+	if (pr) {
+		if (pr->is_prebuilt && prebuilt)
+			*prebuilt = true;
+
 		return pr;
+	}
 
 	for (unsigned i = 0; i < m->idx_used; i++) {
 		module *tmp_m = m->used[i];
 		pr = find_predicate(tmp_m, c);
 
-		if (pr)
+		if (pr) {
+			if (pr->is_prebuilt && prebuilt)
+				*prebuilt = true;
+
 			return pr;
+		}
 	}
 
 	for (module *tmp_m = m->pl->modules; tmp_m; tmp_m = tmp_m->next) {
@@ -579,6 +590,9 @@ predicate *search_predicate(module *m, cell *c)
 		pr = find_predicate(tmp_m, c);
 
 		if (pr) {
+			if (pr->is_prebuilt && prebuilt)
+				*prebuilt = true;
+
 			m->used[m->idx_used++] = tmp_m;
 			return pr;
 		}
@@ -996,9 +1010,8 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 			pr->is_static = false;
 			pr->is_dynamic = true;
 		} else {
-			if (m->prebuilt) {
+			if (m->prebuilt)
 				push_property(m, C_STR(m, c), c->arity, "built_in");
-			}
 
 			push_property(m, C_STR(m, c), c->arity, "static");
 		}
