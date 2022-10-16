@@ -2660,7 +2660,7 @@ static bool search_functor(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 	while (map_next(q->st.f_iter, (void*)&pr)) {
 		CHECK_INTERRUPT();
 
-		if (pr->is_abolished)
+		if (pr->is_abolished || pr->is_prebuilt)
 			continue;
 
 		if (try_me(q, MAX_VARS) != true) {
