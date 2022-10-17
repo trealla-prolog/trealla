@@ -2711,6 +2711,7 @@ static bool fn_iso_current_predicate_1(query *q)
 		make_struct(tmp, g_slash_s, NULL, 2, 2);
 		tmp[1] = *p1;
 		tmp[2] = *p2;
+		SET_OP(tmp, OP_YFX);
 		return ok && unify(q, p_pi, p_pi_ctx, tmp, q->st.curr_frame);
 	}
 
