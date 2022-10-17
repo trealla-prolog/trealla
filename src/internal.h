@@ -542,7 +542,7 @@ struct choice_ {
 	prolog_state st;
 	uint64_t cgen, frame_cgen, ugen;
 	pl_idx_t overflow;
-	uint32_t actual_slots;
+	uint32_t initial_slots, actual_slots;
 	bool is_tail_rec:1;
 	bool catchme_retry:1;
 	bool catchme_exception:1;
