@@ -2660,6 +2660,11 @@ static bool search_functor(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 	while (map_next(q->st.f_iter, (void*)&pr)) {
 		CHECK_INTERRUPT();
 
+		const char *src = C_STR(q, &pr->key);
+
+		if (src[0] == '$')
+			continue;
+
 		if (pr->is_abolished || pr->is_prebuilt)
 			continue;
 
@@ -2691,8 +2696,23 @@ static bool fn_iso_current_predicate_1(query *q)
 {
 	GET_FIRST_ARG(p_pi,any);
 
-	if (is_var(p_pi))
-		return false;
+	if (is_var(p_pi)) {
+		cell tmp1, tmp2;
+		cell *p1 = &tmp1, *p2 = &tmp2;
+		pl_idx_t p1_ctx = q->st.curr_frame;
+		pl_idx_t p2_ctx = q->st.curr_frame;
+		frame *f = GET_CURR_FRAME();
+		unsigned var_nbr = f->actual_slots;
+		make_var(&tmp1, 0, var_nbr++);
+		make_var(&tmp2, 0, var_nbr++);
+		create_vars(q, 2);
+		bool ok = search_functor(q, p1, p1_ctx, p2, p2_ctx) ? true : false;
+		cell *tmp = alloc_on_heap(q, 3);
+		make_struct(tmp, g_slash_s, NULL, 2, 2);
+		tmp[1] = *p1;
+		tmp[2] = *p2;
+		return ok && unify(q, p_pi, p_pi_ctx, tmp, q->st.curr_frame);
+	}
 
 	if (p_pi->arity != 2)
 		return throw_error(q, p_pi, p_pi_ctx, "type_error", "predicate_indicator");
