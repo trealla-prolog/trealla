@@ -1299,6 +1299,7 @@ void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 		v_attrs = is_empty(&ve->c) ? ve->c.attrs : NULL;
 	}
 
+	if ((q->cp || c_attrs) && (c_ctx < q->st.fp))
 	//if (c_ctx < q->st.fp)
 		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
 
