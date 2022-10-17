@@ -5825,7 +5825,8 @@ static bool fn_atom_1(query *q)
 static bool fn_string_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	return (is_string(p1) || (scan_is_chars_list(q, p1, p1_ctx, true) > 0));
+	return is_cstring(p1) || is_nil(p1) ||
+		(scan_is_chars_list(q, p1, p1_ctx, true) > 0);
 }
 
 static bool fn_getenv_2(query *q)
