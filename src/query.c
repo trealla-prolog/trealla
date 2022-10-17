@@ -738,7 +738,6 @@ bool retry_choice(query *q)
 		f->ugen = ch->ugen;
 		f->cgen = ch->frame_cgen;
 		f->actual_slots = ch->actual_slots;
-		f->initial_slots = ch->initial_slots;
 		f->overflow = ch->overflow;
 
 		if (ch->catchme_exception || ch->soft_cut || ch->did_cleanup)
@@ -790,8 +789,7 @@ static void reuse_frame(query *q, frame* f, clause *cl)
 	}
 
 	f->cgen = newf->cgen;
-	f->initial_slots = cl->nbr_vars - cl->nbr_temporaries;
-	f->actual_slots = cl->nbr_vars - cl->nbr_temporaries;
+	f->initial_slots = f->actual_slots = cl->nbr_vars - cl->nbr_temporaries;
 	f->overflow = 0;
 
 	q->st.sp = f->base + f->actual_slots;
@@ -1016,7 +1014,6 @@ bool push_choice(query *q)
 	ch->ugen = f->ugen;
 	ch->frame_cgen = ch->cgen = f->cgen;
 	ch->actual_slots = f->actual_slots;
-	ch->initial_slots = f->initial_slots;
 	ch->overflow = f->overflow;
 	return true;
 }
@@ -1961,8 +1958,7 @@ bool execute(query *q, cell *cells, unsigned nbr_vars)
 	q->cp = 0;
 
 	frame *f = q->frames + q->st.curr_frame;
-	f->actual_slots = nbr_vars;
-	f->initial_slots = nbr_vars;
+	f->initial_slots = f->actual_slots = nbr_vars;
 	f->ugen = ++q->pl->ugen;
 	return start(q);
 }
