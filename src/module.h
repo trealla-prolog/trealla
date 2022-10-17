@@ -18,7 +18,7 @@ unsigned search_op(module *m, const char *name, unsigned *specifier, bool hint_p
 bool set_op(module *m, const char *name, unsigned specifier, unsigned priority);
 predicate *find_functor(module *m, const char *name, unsigned arity);
 predicate *find_predicate(module *m, cell *c);
-predicate *search_predicate(module *m, cell *c);
+predicate *search_predicate(module *m, cell *c, bool *prebuilt);
 predicate *create_predicate(module *m, cell *c);
 int index_cmpkey(const void *ptr1, const void *ptr2, const void *param, void *l);
 bool needs_quoting(module *m, const char *src, int srclen);

@@ -1847,7 +1847,7 @@ static bool fn_iso_univ_2(query *q)
 		bool found = false;
 
 		if (is_callable(tmp)) {
-			if ((tmp->match = search_predicate(q->st.m, tmp)) != NULL) {
+			if ((tmp->match = search_predicate(q->st.m, tmp, NULL)) != NULL) {
 				tmp->flags &= ~FLAG_BUILTIN;
 			} else if ((tmp->fn_ptr = get_builtin(q->pl, C_STR(q, tmp), tmp->arity, &found, NULL)), found) {
 				if (tmp->fn_ptr->evaluable)
@@ -2175,7 +2175,7 @@ static bool fn_iso_retractall_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	cell *head = deref(q, get_head(p1), p1_ctx);
-	predicate *pr = search_predicate(q->st.m, head);
+	predicate *pr = search_predicate(q->st.m, head, NULL);
 
 	if (!pr) {
 		bool found = false;
@@ -2224,7 +2224,7 @@ static bool fn_iso_retractall_1(query *q)
 
 static bool do_abolish(query *q, cell *c_orig, cell *c, bool hard)
 {
-	predicate *pr = search_predicate(q->st.m, c);
+	predicate *pr = search_predicate(q->st.m, c, NULL);
 	if (!pr) return true;
 
 	if (!pr->is_dynamic)
@@ -2641,7 +2641,7 @@ static bool fn_iso_current_rule_1(query *q)
 	tmp.val_off = index_from_pool(q->pl, functor);
 	tmp.arity = arity;
 
-	if (search_predicate(q->st.m, &tmp))
+	if (search_predicate(q->st.m, &tmp, NULL))
 		return true;
 
 	bool found = false;
@@ -2664,7 +2664,12 @@ static bool search_functor(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 	while (map_next(q->st.f_iter, (void*)&pr)) {
 		CHECK_INTERRUPT();
 
-		if (pr->is_abolished)
+		const char *src = C_STR(q, &pr->key);
+
+		if (src[0] == '$')
+			continue;
+
+		if (pr->is_abolished || pr->is_prebuilt)
 			continue;
 
 		if (try_me(q, MAX_VARS) != true) {
@@ -2694,14 +2699,34 @@ static bool search_functor(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 static bool fn_iso_current_predicate_1(query *q)
 {
 	GET_FIRST_ARG(p_pi,any);
-	cell *p1, *p2;
-	pl_idx_t p1_ctx, p2_ctx;
+
+	if (is_var(p_pi)) {
+		cell tmp1, tmp2;
+		cell *p1 = &tmp1, *p2 = &tmp2;
+		pl_idx_t p1_ctx = q->st.curr_frame;
+		pl_idx_t p2_ctx = q->st.curr_frame;
+		frame *f = GET_CURR_FRAME();
+		unsigned var_nbr = f->actual_slots;
+		make_var(&tmp1, 0, var_nbr++);
+		make_var(&tmp2, 0, var_nbr++);
+		create_vars(q, 2);
+		bool ok = search_functor(q, p1, p1_ctx, p2, p2_ctx) ? true : false;
+		cell *tmp = alloc_on_heap(q, 3);
+		make_struct(tmp, g_slash_s, NULL, 2, 2);
+		tmp[1] = *p1;
+		tmp[2] = *p2;
+		SET_OP(tmp, OP_YFX);
+		return ok && unify(q, p_pi, p_pi_ctx, tmp, q->st.curr_frame);
+	}
 
 	if (p_pi->arity != 2)
 		return throw_error(q, p_pi, p_pi_ctx, "type_error", "predicate_indicator");
 
 	if (CMP_STR_TO_CSTR(q, p_pi, "/"))
 		return throw_error(q, p_pi, p_pi_ctx, "type_error", "predicate_indicator");
+
+	cell *p1, *p2;
+	pl_idx_t p1_ctx, p2_ctx;
 
 	p1 = p_pi + 1;
 	p1 = deref(q, p1, p_pi_ctx);
@@ -2710,7 +2735,7 @@ static bool fn_iso_current_predicate_1(query *q)
 	if (!is_atom(p1) && !is_var(p1))
 		return throw_error(q, p_pi, p_pi_ctx, "type_error", "predicate_indicator");
 
-	p2 = p1 + 1;
+	p2 = p_pi + 2;
 	p2 = deref(q, p2, p_pi_ctx);
 	p2_ctx = q->latest_ctx;
 
@@ -2724,8 +2749,9 @@ static bool fn_iso_current_predicate_1(query *q)
 	tmp.tag = TAG_INTERNED;
 	tmp.val_off = is_interned(p1) ? p1->val_off : index_from_pool(q->pl, C_STR(q, p1));
 	tmp.arity = get_smallint(p2);
-
-	return search_predicate(q->st.m, &tmp) != NULL;
+	bool is_prebuilt = false;
+	bool ok = search_predicate(q->st.m, &tmp, &is_prebuilt) != NULL;
+	return ok && !is_prebuilt;
 }
 
 static bool fn_cyclic_term_1(query *q)
@@ -5117,7 +5143,7 @@ static bool fn_task_n(query *q)
 	tmp2->arity = arity;
 	bool found = false;
 
-	if ((tmp2->match = search_predicate(q->st.m, tmp2)) != NULL) {
+	if ((tmp2->match = search_predicate(q->st.m, tmp2, NULL)) != NULL) {
 		tmp2->flags &= ~FLAG_BUILTIN;
 	} else if ((tmp2->fn_ptr = get_builtin(q->pl, C_STR(q, tmp2), tmp2->arity, &found, NULL)), found) {
 		tmp2->flags |= FLAG_BUILTIN;

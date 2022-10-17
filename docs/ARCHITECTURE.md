@@ -7,6 +7,7 @@ following diagrams illustrate the cell layout on 64-bit systems.
 
 Literal
 =======
+
 ```
         +----------+---------+----------+---------+
     0   |   tag    |  arity  |       flags        |    CELL 1
@@ -59,6 +60,7 @@ Where *var_nbr* is the index into a frame's slots
 
 Integer
 =======
+
 ```
         +----------+---------+----------+---------+
     0   |   tag    |  arity  |       flags        |    CELL 1
@@ -83,6 +85,7 @@ Where *val_int* is a signed 64-bit integer.
 
 Bigint
 ======
+
 ```
         +----------+---------+----------+---------+
     0   |   tag    |  arity  |       flags        |    CELL 1
@@ -107,6 +110,7 @@ Where *val_bigint* is a pointer.
 
 Float
 =====
+
 ```
         +----------+---------+----------+---------+
     0   |   tag    |  arity  |       flags        |    CELL 1
@@ -133,6 +137,7 @@ Cstring
 =======
 
 A small string < 16 bytes.
+
 ```
         +----------+---------+----------+---------+
     0   |   tag    |  arity  |       flags        |    CELL 1
@@ -160,6 +165,7 @@ A Cstring may be used for atoms that are not functors and need quoting.
 
 Static BLOB
 ===========
+
 ```
         +----------+---------+----------+---------+
     0   |   tag    |  arity  |       flags        |    CELL 1
@@ -192,6 +198,7 @@ Non-static BLOB
 ===============
 
 A ref-counted string buffer.
+
 ```
         +----------+---------+----------+---------+
     0   |   tag    |  arity  |       flags        |    CELL 1
@@ -230,6 +237,7 @@ either type. The *arity* is 2 and the *flag* has FLAG_STRING set.
 
 Compound
 ========
+
 ```
         +----------+---------+----------+---------+
     0   |   tag    |  arity  |       flags        |    CELL 1
@@ -250,12 +258,15 @@ Compound
 Where *tag* is TAG_LITERAL.
 Where *arity* is > 0.
 Where *nbr_cells* is > 1 and includes the args.
-Where *val_off* is a byte-offset into the symbol table.
+Where *val_off* is a byte-offset into the symbol table of the functor name.
 Where args are the following cells (see *nbr_cells*).
 
 
 List
 ====
+
+A list is just a special instance of a compound.
+
 ```
         +----------+---------+----------+---------+
     0   |   tag    |  arity  |       flags        |    CELL 1
@@ -276,7 +287,7 @@ List
 Where *tag* is TAG_LITERAL.
 Where *arity* is always 2.
 Where *nbr_cells* is > 1 and includes head & tail args.
-Where *val_off* is a byte-offset into the symbol table to '.'.
+Where *val_off* is a byte-offset into the symbol table to the functor name '.'.
 Where args are the following cells (see *nbr_cells*).
 Where the tail arg is usually a list.
 Where the final tail arg is usually the atom *[]*.
@@ -325,8 +336,8 @@ this point. On backtracking excess space can be freed.
 
 It also contains the index number of the frame which created it and a
 record of the frame state (nbr of vars etc) at the time the choice
-was created. On backtracking vars (slots space) can be trimmed back,
-if possible, and the frame state restored.
+was created. On backtracking vars (slots space) can be trimmed back
+(if possible) and the frame state restored.
 
 It also contains flags related to managing cuts & call cleanup etc.
 
@@ -334,15 +345,17 @@ It also contains flags related to managing cuts & call cleanup etc.
 Trail
 =====
 
-Similar...
+Similar... TODO
 
 
 Heap
 ====
 
 A space for dynamically created terms (compounds). Heap space is
-allocated in pages as a linked list.
+allocated in variable-sized pages as a linked list.
 
-A term allocated on the heap must be fully contained within one arena,
+A term allocated on the heap must be fully contained within one page,
 to this end terms are first built in a temporary space and copied
-into a suitably sized arena.
+into a suitably sized page.
+
+Excess heap pages can be freed on backtracking.
