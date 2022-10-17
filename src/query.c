@@ -954,7 +954,7 @@ static void commit_me(query *q)
 		q->retry, tco, q->no_tco, last_match, recursive, choices, slots_ok, vars_ok, cl->nbr_vars, cl->nbr_temporaries);
 #endif
 
-	if (tco && q->pl->opt)
+	if (q->pl->opt && tco)
 		reuse_frame(q, f, cl);
 	else
 		f = push_frame(q, cl);
