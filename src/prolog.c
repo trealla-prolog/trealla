@@ -580,6 +580,7 @@ prolog *pl_create()
 	set_dynamic_in_db(pl->user_m, ":-", 1);
 
 	pl->user_m->prebuilt = true;
+	const char *save_filename = pl->user_m->filename;
 
 	// Load some common libraries...
 
@@ -609,6 +610,7 @@ prolog *pl_create()
 		}
 	}
 
+	pl->user_m->filename = save_filename;
 	pl->user_m->prebuilt = false;
 	return pl;
 }
