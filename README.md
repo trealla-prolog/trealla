@@ -679,9 +679,18 @@ For example...
 
 ```console```
 	$ tpl
-	?- sre_match("d.f","abcdefghi",S,T).
-	   S = "def", T = "ghi".
+	?- sre_match("d.f", "abcdefghi", M, T).
+	   M = "def", T = "ghi".
+
+	?- sre_compile("d.f", Reg), sre_matchp(Reg, "abcdefghi", M, T).
+	   Reg = <$blob>(0x6AC5AAF0), M = "def", T = "ghi".
 ```
+
+Note: if the input *text* arg is a string then the output *text* arg
+is a zero-copy slice of the string. So if the input is a memory-mapped
+file, for example, then regex searches can be performed quickly and
+efficiently over huge (giga-byte) files (just like with Prolog DCGs).
+
 
 Foreign Function Interface (FFI)		##EXPERIMENTAL##
 ================================
