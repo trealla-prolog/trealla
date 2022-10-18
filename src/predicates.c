@@ -7155,8 +7155,8 @@ static bool fn_sre_match_4(query *q)
 	make_string(&tmp2, text + off + len);
 	ok = unify(q, p4, p4_ctx, &tmp2, q->st.curr_frame);
 	if (!ok) return false;
-	share_cell(&tmp1);
-	share_cell(&tmp2);
+	unshare_cell(&tmp1);
+	unshare_cell(&tmp2);
 	return true;
 }
 

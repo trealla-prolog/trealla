@@ -74,7 +74,10 @@ static int ismetachar(char c);
 /* Public functions: */
 int re_match(const char* pattern, const char* text, int* matchlength)
 {
-  return re_matchp(re_compile(pattern), text, matchlength);
+  regex_t *tmp;
+  int ok = re_matchp(tmp = re_compile(pattern), text, matchlength);
+  free(tmp);
+  return ok;
 }
 
 int re_matchp(re_t pattern, const char* text, int* matchlength)
