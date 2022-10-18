@@ -7106,7 +7106,7 @@ static bool fn_sre_compile_2(query *q)
 	re_t reg = re_compile(pattern);
 	cell tmp = {0};
 	tmp.tag = TAG_BLOB;
-	tmp.flags = FLAG_MANAGED;
+	//tmp.flags = FLAG_MANAGED;
 	tmp.nbr_cells = 1;
 	tmp.val_blob = malloc(sizeof(blob));
 	tmp.val_blob->ptr = (void*)reg;
