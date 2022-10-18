@@ -7104,12 +7104,20 @@ static bool fn_sre_compile_2(query *q)
 	GET_NEXT_ARG(p2,var);
 	const char *pattern = C_STR(q, p1);
 	re_t reg = re_compile(pattern);
-	return false;
+	cell tmp = {0};
+	tmp.tag = TAG_BLOB;
+	tmp.flags = FLAG_MANAGED;
+	tmp.nbr_cells = 1;
+	tmp.val_blob = malloc(sizeof(blob));
+	tmp.val_blob->ptr = (void*)reg;
+	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	share_cell(&tmp);
+	return ok;
 }
 
 static bool fn_sre_matchp_3(query *q)
 {
-	GET_FIRST_ARG(p1,stream);
+	GET_FIRST_ARG(p1,blob);
 	GET_NEXT_ARG(p2,atom);
 	GET_NEXT_ARG(p3,atom_or_var);
 	re_t re = NULL;
