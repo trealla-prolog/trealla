@@ -7121,7 +7121,7 @@ static bool fn_sre_matchp_4(query *q)
 	GET_NEXT_ARG(p2,atom);
 	GET_NEXT_ARG(p3,atom_or_var);
 	GET_NEXT_ARG(p4,atom_or_var);
-	re_t re = NULL;
+	re_t re = (void*)p1->val_blob->ptr;
 	const char *text = C_STR(q, p2);
 	int len = 0;
 	int off = re_matchp(re, text, &len);
