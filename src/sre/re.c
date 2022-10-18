@@ -30,6 +30,8 @@
 
 
 #include "re.h"
+#include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 #include <ctype.h>
 
@@ -245,7 +247,9 @@ re_t re_compile(const char* pattern)
   /* 'UNUSED' is a sentinel used to indicate end-of-pattern */
   re_compiled[j].type = UNUSED;
 
-  return (re_t) re_compiled;
+  regex_t *tmp = malloc(sizeof(re_compiled));
+  memcpy(tmp, re_compiled, sizeof(re_compiled));
+  return (re_t) tmp;
 }
 
 void re_print(regex_t* pattern)

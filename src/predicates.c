@@ -7106,12 +7106,13 @@ static bool fn_sre_compile_2(query *q)
 	re_t reg = re_compile(pattern);
 	cell tmp = {0};
 	tmp.tag = TAG_BLOB;
-	//tmp.flags = FLAG_MANAGED;
+	tmp.flags = FLAG_MANAGED;
 	tmp.nbr_cells = 1;
 	tmp.val_blob = malloc(sizeof(blob));
 	tmp.val_blob->ptr = (void*)reg;
+	tmp.val_blob->refcnt = 1;
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
-	share_cell(&tmp);
+	unshare_cell(&tmp);
 	return ok;
 }
 
@@ -7132,8 +7133,8 @@ static bool fn_sre_matchp_4(query *q)
 	make_string(&tmp2, text + off + len);
 	ok = unify(q, p4, p4_ctx, &tmp2, q->st.curr_frame);
 	if (!ok) return false;
-	share_cell(&tmp1);
-	share_cell(&tmp2);
+	unshare_cell(&tmp1);
+	unshare_cell(&tmp2);
 	return true;
 }
 

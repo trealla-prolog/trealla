@@ -678,7 +678,6 @@ The *pattern*, *match* & *text* args may be atoms or strings.
 For example...
 
 ```console```
-	$ tpl
 	?- sre_match("d.f", "abcdefghi", M, T).
 	   M = "def", T = "ghi".
 
@@ -690,10 +689,6 @@ Note: if the input *text* arg is a string then the output *text* arg
 is a zero-copy slice of the string. So if the input is a memory-mapped
 file, for example, then regex searches can be performed quickly and
 efficiently over huge (giga-byte) files (just like with Prolog DCGs).
-
-Caveat: currently only one compiled regex pattern can be held at a time
-as it using a static object (this is in the original source). This
-should be fixed sometime.
 
 
 Foreign Function Interface (FFI)		##EXPERIMENTAL##

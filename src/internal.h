@@ -837,6 +837,7 @@ inline static void unshare_cell_(const cell *c)
 		}
 	} else if (is_blob(c)) {
 		if (--(c)->val_blob->refcnt == 0) {
+			free((c)->val_blob->ptr);
 			free((c)->val_blob);
 		}
 	}
