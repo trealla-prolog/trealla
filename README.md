@@ -469,10 +469,6 @@ Non-standard predicates
 	atom_upper/2
 	atom_lower/2
 
-	sre_compile/2				# sre_compile(+pattern,-reg)
-	sre_matchp/4				# sre_matchp(+reg,+text,-match,-text)
-	sre_match/4					# sre_match(+pattern,+text,-match,-text)
-
 	popcount/1                  # function returning number of 1 bits
 	lsb/1                       # function returning the least significant bit of a positive integer (count from zero)
 	msb/1                       # function returning the most significant bit of a positive integer (count from zero)
@@ -666,6 +662,26 @@ With *bread/3* the 'len' arg can be an integer > 0 meaning return that
 many bytes, = 0 meaning return what is there (if non-blocking) or a var
 meaning return all bytes until end end of file,
 
+
+Simple regular expressions				##EXPERIMENTAL##
+==========================
+
+This is meant as a place-holder until a proper regular expresion
+package (packages?) is included (https://github.com/kokke/tiny-regex-c)
+
+	sre_compile/2				# sre_compile(+pattern,-reg)
+	sre_matchp/4				# sre_matchp(+reg,+text,-match,-text)
+	sre_match/4					# sre_match(+pattern,+text,-match,-text)
+
+The *pattern*, *match* & *text* args may be atoms or strings.
+
+For example...
+
+```console```
+	$ tpl
+	?- sre_match("d.f","abcdefghi",S,T).
+	   S = "def", T = "ghi".
+```
 
 Foreign Function Interface (FFI)		##EXPERIMENTAL##
 ================================
