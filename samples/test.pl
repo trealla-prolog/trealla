@@ -1,5 +1,6 @@
 :- use_module(library(format)).
 :- use_module(library(http)).
+:- use_module(library(pio)).
 
 test1 :-
 	\+ \+ true,
