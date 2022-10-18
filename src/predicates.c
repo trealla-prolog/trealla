@@ -7102,6 +7102,8 @@ static bool fn_sre_compile_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,var);
+	const char *pattern = C_STR(q, p1);
+	re_t reg = re_compile(pattern);
 	return false;
 }
 
@@ -7110,7 +7112,13 @@ static bool fn_sre_matchp_3(query *q)
 	GET_FIRST_ARG(p1,stream);
 	GET_NEXT_ARG(p2,atom);
 	GET_NEXT_ARG(p3,atom_or_var);
-	return false;
+	re_t re = NULL;
+	const char *text = C_STR(q, p2);
+	int len = 0;
+	int off = re_matchp(re, text, &len);
+	cell tmp;
+	make_stringn(&tmp, text + off, len);
+	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 }
 
 static bool fn_sre_match_3(query *q)
@@ -7118,7 +7126,13 @@ static bool fn_sre_match_3(query *q)
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,atom);
 	GET_NEXT_ARG(p3,atom_or_var);
-	return false;
+	const char *pattern = C_STR(q, p1);
+	const char *text = C_STR(q, p2);
+	int len = 0;
+	int off = re_match(pattern, text, &len);
+	cell tmp;
+	make_stringn(&tmp, text + off, len);
+	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 }
 
 void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type)
