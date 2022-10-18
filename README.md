@@ -469,6 +469,10 @@ Non-standard predicates
 	atom_upper/2
 	atom_lower/2
 
+	sre_compile/2				# sre_compile(+pattern,-reg)
+	sre_matchp/3				# sre_matchp(+reg,+text,-text)
+	sre_match/3					# sre_match(+pattern,+text,-text)
+
 	popcount/1                  # function returning number of 1 bits
 	lsb/1                       # function returning the least significant bit of a positive integer (count from zero)
 	msb/1                       # function returning the most significant bit of a positive integer (count from zero)

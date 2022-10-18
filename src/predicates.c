@@ -7098,6 +7098,29 @@ static bool fn_iso_compare_3(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
+static bool fn_sre_compile_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,var);
+	return false;
+}
+
+static bool fn_sre_matchp_3(query *q)
+{
+	GET_FIRST_ARG(p1,stream);
+	GET_NEXT_ARG(p2,atom);
+	GET_NEXT_ARG(p3,atom_or_var);
+	return false;
+}
+
+static bool fn_sre_match_3(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,atom);
+	GET_NEXT_ARG(p3,atom_or_var);
+	return false;
+}
+
 void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type)
 {
 	char *dst = tmpbuf;
@@ -7594,6 +7617,10 @@ builtins g_other_bifs[] =
 	{"can_be", 4, fn_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"must_be", 2, fn_must_be_2, "+atom,+term", false, false, BLAH},
 	{"can_be", 2, fn_can_be_2, "+atom,+term,", false, false, BLAH},
+
+	{"sre_compile", 2, fn_sre_compile_2, "+atom,-reg,", false, false, BLAH},
+	{"sre_matchp", 3, fn_sre_matchp_3, "+reg,+string,-string,", false, false, BLAH},
+	{"sre_match", 3, fn_sre_match_3, "+pattern,+string,-string,", false, false, BLAH},
 
 	{"$register_cleanup", 1, fn_sys_register_cleanup_1, NULL, false, false, BLAH},
 	{"$register_term", 1, fn_sys_register_term_1, NULL, false, false, BLAH},
