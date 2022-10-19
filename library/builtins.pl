@@ -891,7 +891,7 @@ sre_matchall_pos_(Reg, TextIn, Offset, L0, L) :-
 	'$lengthchk'(TextOut, N2),
 	Pos is N0 - (N1 + N2) + Offset,
 	(	TextOut \= []
-	->	sre_matchall_pos_(Reg, TextOut, Pos, [Pos|L0], L)
+	->	sre_matchall_pos_(Reg, TextOut, Pos, [Pos-N1|L0], L)
 	;	L = L0
 	).
 

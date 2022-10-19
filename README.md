@@ -693,7 +693,7 @@ For example...
 	   L = ["daf","dbf","dcf"].
 
 	?- sre_matchall_pos("d.f", "xdafydbfzdcf-", L).
-	   L = [1,2,3].
+	   L = [1-3,2-3,3-3].
 
 	?- sre_subst("d.f", "xdafydbfzdcf-", P, L).
 	   P = "x", L = "ydbfzdcf-".
