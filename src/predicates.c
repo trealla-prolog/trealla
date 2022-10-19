@@ -6340,7 +6340,7 @@ static bool fn_sys_lengthchk_2(query *q)
 	LIST_HANDLER(p1);
 	pl_int_t n = 0;
 
-	while (is_list(p1)) {
+	while (is_iso_list(p1)) {
 		p1 = LIST_TAIL(p1);
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
