@@ -703,6 +703,9 @@ For example...
 
 	?- sre_match_all("\\S", "Needle In A Haystack", L).
 	   L = ["N","e","e","d","l","e","I","n","A",...].
+
+	?- sre_match_all_pos("\\s", "Needle In A Haystack", L).
+	   L = [6-1,9-1,11-1].
 ```
 
 Note: if no match is found the returned *match*, *text* (and *list*) is *[]*
