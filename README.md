@@ -698,7 +698,7 @@ For example...
 	   L = "x$y$z$-".
 ```
 
-Note: if no match is found the returned match, text (and list) is *[]*
+Note: if no match is found the returned *match*, *text* (and *list*) is *[]*
 indicating an empty string.
 
 Note: if the input *text* arg is a string then the output *text* arg
