@@ -865,7 +865,8 @@ succ(_,_) :-
 
 sre_matchall(Pat, Text, L) :-
 	sre_compile(Pat, Reg),
-	sre_matchall_(Reg, Text, [], L).
+	sre_matchall_(Reg, Text, [], L2),
+	reverse(L2, L).
 
 sre_matchall_(_, [], L, L) :- !.
 sre_matchall_(Reg, TextIn, L0, L) :-
@@ -876,6 +877,25 @@ sre_matchall_(Reg, TextIn, L0, L) :-
 	).
 
 :- help(sre_matchall(+pattern,+text,-list), [iso(false)]).
+
+sre_matchall_pos(Pat, Text, L) :-
+	sre_compile(Pat, Reg),
+	sre_matchall_pos_(Reg, Text, 0, [], L2),
+	reverse(L2, L).
+
+sre_matchall_pos_(_, [], _, L, L) :- !.
+sre_matchall_pos_(Reg, TextIn, Offset, L0, L) :-
+	sre_matchp(Reg, TextIn, Match, TextOut),
+	'$lengthchk'(TextIn, N0),
+	'$lengthchk'(Match, N1),
+	'$lengthchk'(TextOut, N2),
+	Pos is N0 - (N1 + N2) + Offset,
+	(	TextOut \= []
+	->	sre_matchall_pos_(Reg, TextOut, Pos, [Pos|L0], L)
+	;	L = L0
+	).
+
+:- help(sre_matchall_pos(+pattern,+text,-list), [iso(false)]).
 
 sre_substall(Pat, Text, Match, L) :-
 	sre_compile(Pat, Reg),

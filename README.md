@@ -675,6 +675,7 @@ package (packages?) is included.
 
 	sre_match/4					# sre_match(+pattern,+text,-match,-rest)
 	sre_matchall/3				# sre_matchall(+pattern,+text,-list]
+	sre_matchall_pos/3			# sre_matchall_pos(+pattern,+text,-list]
 
 	sre_subst/4					# sre_subst(+pattern,+text,-prefix,-rest)
 	sre_substall/4				# sre_subst(+pattern,+text,+subst,-text)
@@ -689,7 +690,10 @@ For example...
 	   M = "def", Rest = "ghi".
 
 	?- sre_matchall("d.f", "xdafydbfzdcf-", L).
-	   L = ["dcf","dbf","daf"].
+	   L = ["daf","dbf","dcf"].
+
+	?- sre_matchall_pos("d.f", "xdafydbfzdcf-", L).
+	   L = [1,2,3].
 
 	?- sre_subst("d.f", "xdafydbfzdcf-", P, L).
 	   P = "x", L = "ydbfzdcf-".
