@@ -6328,12 +6328,19 @@ static bool fn_call_nth_2(query *q)
 
 static bool fn_sys_lengthchk_2(query *q)
 {
-	GET_FIRST_ARG(p1,iso_list_or_nil);
+	GET_FIRST_ARG(p1,list_or_nil);
 	GET_NEXT_ARG(p2,integer_or_var);
+
+	if (is_string(p1)) {
+		cell tmp;
+		make_int(&tmp, C_STRLEN(q, p1));
+		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	}
+
 	LIST_HANDLER(p1);
 	pl_int_t n = 0;
 
-	while (is_iso_list(p1)) {
+	while (is_list(p1)) {
 		p1 = LIST_TAIL(p1);
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
