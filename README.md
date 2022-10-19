@@ -670,23 +670,32 @@ This is meant as a place-holder until a proper regular expresion
 package (packages?) is included (https://github.com/kokke/tiny-regex-c)
 
 	sre_compile/2				# sre_compile(+pattern,-reg)
-	sre_matchp/4				# sre_matchp(+reg,+text,-match,-text)
-	sre_match/4					# sre_match(+pattern,+text,-match,-text)
+	sre_matchp/4				# sre_matchp(+reg,+text,-match,-rest)
+	sre_substp/4				# sre_substp(+reg,+text,-prefix,-rest)
+
+	sre_match/4					# sre_match(+pattern,+text,-match,-rest)
 	sre_matchall/3				# sre_matchall(+pattern,+text,-list]
 
-The *pattern*, *match* & *text* args may be atoms or strings.
+	sre_subst/4					# sre_subst(+pattern,+text,-prefix,-rest)
+	sre_substall/4				# sre_subst(+pattern,+text,+match,-text)
 
 For example...
 
 ```console```
-	?- sre_match("d.f", "abcdefghi", M, T).
-	   M = "def", T = "ghi".
+	?- sre_compile("d.f", Reg), sre_matchp(Reg, "abcdefghi", M, Rest).
+	   Reg = <$blob>(0x6AC5AAF0), M = "def", Rest = "ghi".
 
-	?- sre_compile("d.f", Reg), sre_matchp(Reg, "abcdefghi", M, T).
-	   Reg = <$blob>(0x6AC5AAF0), M = "def", T = "ghi".
+	?- sre_match("d.f", "abcdefghi", M, Rest).
+	   M = "def", Rest = "ghi".
 
-	?- sre_matchall("d.f","xdafxdbfxdcfx",L).
+	?- sre_matchall("d.f","xdafxdbfxdcfx", L).
 	   L = ["dcf","dbf","daf"].
+
+	?- sre_subst("d.f","xdafxdbfxdcfx", P, L).
+	   P = "x", L = "xdbfxdcfx".
+
+	?- sre_substall("d.f","xdafxdbfxdcfx", ".", T).
+	   P = "x", T = "x.x.x.x".
 ```
 
 Note: if no match is found the returned match, text (and list) is *[]*
