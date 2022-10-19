@@ -197,12 +197,12 @@ Contributions
 Contributions are welcome.
 
 
-Cross-compile for Windows
-=========================
+Cross-compile for Windows x64
+=============================
 
-To cross-compile on Linux and produce a Windows executable...
+To cross-compile on Linux and produce a Windows/x86-64 executable...
 
-	sudo apt-get install mingw-w64
+	sudo apt-get install mingw-w64 wine wine64
 	make CC=x86_64-w64-mingw32-gcc NOSSL=1 NOFFI=1 ISOCLINE=1
 
 ```console
@@ -211,18 +211,18 @@ tpl.exe: PE32+ executable (console) x86-64, for MS Windows
 $ wine tpl.exe -g test5,halt -f samples/sieve.pl
 ```
 
-Cross-compile for 32-bits Linux
-===============================
+Cross-compile for Linux x86
+===========================
 
-To cross-compile on Linux (64-bits) and produce a 32-bit executable...
+To cross-compile on Linux and produce a Linux/x86-32 executable...
 
 	sudo apt install gcc-multilib
 	sudo apt install libssl-dev:i386 libffi-dev:i386 libreadline-dev:i386
 	make OPT=-m32
 
 ```console
-$ file ./tpl
-./tpl: ELF 32-bit LSB shared object, Intel 80386, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux.so.2, BuildID[sha1]=31f643d7a4cfacb0a34e81b7c12c78410493de60, for GNU/Linux 3.2.0, with debug_info, not stripped
+$ file tpl
+tpl: ELF 32-bit LSB shared object, Intel 80386, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux.so.2, BuildID[sha1]=31f643d7a4cfacb0a34e81b7c12c78410493de60, for GNU/Linux 3.2.0, with debug_info, not stripped
 ```
 
 
