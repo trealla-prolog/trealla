@@ -876,3 +876,19 @@ sre_matchall_(Reg, TextIn, L0, L) :-
 	).
 
 :- help(sre_matchall(+pattern,+text,-list), [iso(false)]).
+
+sre_substall(Pat, Text, Match, L) :-
+	sre_compile(Pat, Reg),
+	sre_substall_(Reg, Text, Match, [], L0),
+	reverse(L0, L1),
+	append(L1, L).
+
+sre_substall_(_, [], _, L, L) :- !.
+sre_substall_(Reg, TextIn, Match, L0, L) :-
+	sre_substp(Reg, TextIn, Prefix, TextOut),
+	(	TextOut \= []
+	->	sre_substall_(Reg, TextOut, Match, [Match,Prefix|L0], L)
+	;	L = [Prefix|L0]
+	).
+
+:- help(sre_substall(+pattern,+text,+subst,-text), [iso(false)]).
