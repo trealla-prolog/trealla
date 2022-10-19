@@ -116,8 +116,8 @@ re_t re_compile(const char* pattern)
   /* The sizes of the two static arrays below substantiates the static RAM usage of this module.
      MAX_REGEXP_OBJECTS is the max number of symbols in the expression.
      MAX_CHAR_CLASS_LEN determines the size of buffer for chars in all char-classes in the expression. */
-  static regex_t re_compiled[MAX_REGEXP_OBJECTS];
-  static unsigned char ccl_buf[MAX_CHAR_CLASS_LEN];
+  regex_t re_compiled[MAX_REGEXP_OBJECTS];
+  unsigned char ccl_buf[MAX_CHAR_CLASS_LEN];
   int ccl_bufidx = 1;
 
   char c;     /* current char in pattern   */
