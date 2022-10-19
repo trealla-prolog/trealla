@@ -688,13 +688,13 @@ For example...
 	?- sre_match("d.f", "abcdefghi", M, Rest).
 	   M = "def", Rest = "ghi".
 
-	?- sre_matchall("d.f","xdafydbfzdcf-", L).
+	?- sre_matchall("d.f", "xdafydbfzdcf-", L).
 	   L = ["dcf","dbf","daf"].
 
-	?- sre_subst("d.f","xdafydbfzdcf-", P, L).
+	?- sre_subst("d.f", "xdafydbfzdcf-", P, L).
 	   P = "x", L = "ydbfzdcf-".
 
-	?- sre_substall("d.f","xdafydbfzdcf-","$",L).
+	?- sre_substall("d.f", "xdafydbfzdcf-", "$", L).
 	   L = "x$y$z$-".
 ```
 
