@@ -7679,7 +7679,7 @@ builtins g_other_bifs[] =
 
 	{"sre_compile", 2, fn_sre_compile_2, "+pattern,-reg,", false, false, BLAH},
 	{"sre_matchp", 4, fn_sre_matchp_4, "+reg,+text,-match,-text,", false, false, BLAH},
-	{"sre_match", 4, fn_sre_match_4, "+pattern,+text,-string,-text,", false, false, BLAH},
+	{"sre_match", 4, fn_sre_match_4, "+pattern,+text,-match,-text,", false, false, BLAH},
 
 	{"$register_cleanup", 1, fn_sys_register_cleanup_1, NULL, false, false, BLAH},
 	{"$register_term", 1, fn_sys_register_term_1, NULL, false, false, BLAH},

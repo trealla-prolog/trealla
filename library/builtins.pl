@@ -874,3 +874,5 @@ sre_matchall_(Reg, TextIn, L0, L) :-
 	->	sre_matchall_(Reg, TextOut, [Match|L0], L)
 	;	L = L0
 	).
+
+:- help(sre_matchall(+pattern,+text,-list), [iso(false)]).
