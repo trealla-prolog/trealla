@@ -677,7 +677,7 @@ package (packages?) is included.
 	sre_matchall/3				# sre_matchall(+pattern,+text,-list]
 
 	sre_subst/4					# sre_subst(+pattern,+text,-prefix,-rest)
-	sre_substall/4				# sre_subst(+pattern,+text,+match,-text)
+	sre_substall/4				# sre_subst(+pattern,+text,+subst,-text)
 
 For example...
 

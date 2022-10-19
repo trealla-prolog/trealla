@@ -891,7 +891,7 @@ sre_substall_(Reg, TextIn, Match, L0, L) :-
 	;	L = [Prefix|L0]
 	).
 
-:- help(sre_substall(+pattern,+text,+match,-list), [iso(false)]).
+:- help(sre_substall(+pattern,+text,+subst,-text), [iso(false)]).
 
 fast_phrase_from_file(P, Filename) :-
 	fast_phrase_from_file(P, Filename, []).
