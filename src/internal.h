@@ -44,6 +44,7 @@ typedef uint32_t pl_idx_t;
 #include "cdebug.h"
 #include "stringbuf.h"
 #include "imath/imath.h"
+#include "sre/re.h"
 
 #if defined(_WIN32) || defined(__wasi__)
 char *realpath(const char *path, char resolved_path[PATH_MAX]);
@@ -542,7 +543,7 @@ struct choice_ {
 	prolog_state st;
 	uint64_t cgen, frame_cgen, ugen;
 	pl_idx_t overflow;
-	uint32_t actual_slots;
+	uint32_t initial_slots, actual_slots;
 	bool is_tail_rec:1;
 	bool catchme_retry:1;
 	bool catchme_exception:1;
@@ -836,6 +837,7 @@ inline static void unshare_cell_(const cell *c)
 		}
 	} else if (is_blob(c)) {
 		if (--(c)->val_blob->refcnt == 0) {
+			free((c)->val_blob->ptr);
 			free((c)->val_blob);
 		}
 	}

@@ -9,17 +9,17 @@ predicate_property(P, A) :-
 	'$legacy_predicate_property'(P, A).
 predicate_property(P, A) :-
 	'$load_properties',
-	(	var(A) ->
-		true
+	(	var(A)
+	->	true
 	; 	(	(Controls = [built_in,control_construct,discontiguous,private,static,dynamic,tabled,multifile,meta_predicate(_)],
-			memberchk(A, Controls)) ->
-				true
+			memberchk(A, Controls))
+			->	true
 			;	throw(error(domain_error(predicate_property, A), P))
 		)
 	),
 	must_be(P, callable, predicate_property/2, _),
-	(	P = (M:P2) ->
-		M:'$predicate_property'(P2, A)
+	(	P = (M:P2)
+	->	M:'$predicate_property'(P2, A)
 	;	'$predicate_property'(P, A)
 	).
 
@@ -146,8 +146,8 @@ keysort_(_, _, Sorted, _) :-
 % Derived from code by R.A. O'Keefe
 
 setof(Template, Generator, Set) :-
-    ( 	var(Set) ->
-		true
+    ( 	var(Set)
+    ->	true
     ; 	must_be(Set, list_or_partial_list, setof/3, _)
     ),
 	bagof_(Template, Generator, Bag),
@@ -158,8 +158,8 @@ setof(Template, Generator, Set) :-
 :- help(setof(+template,+callable,?list), [iso(true)]).
 
 bagof(Template, Generator, Bag) :-
-    (	var(Bag) ->
-		true
+    (	var(Bag)
+    ->	true
 	;	must_be(Bag, list_or_partial_list, bagof/3, _)
 	),
 	bagof_(Template, Generator, Bag).
@@ -222,8 +222,8 @@ replace_variables_(Term, Vars0, Vars) :-
 replace_variables_term_(0, _, Vars, Vars) :- !.
 replace_variables_term_(N, Term, Vars0, Vars) :-
 	arg(N, Term, Arg),
-	(	cyclic_term(Arg) ->
-		N1 is N-1,
+	(	cyclic_term(Arg)
+	->	N1 is N-1,
 		replace_variables_term_(N1, Term, Vars0, Vars)
 	;	replace_variables_(Arg, Vars0, Vars1),
 		N1 is N-1,
@@ -306,8 +306,8 @@ free_variables_(Term, Bound, OldList, NewList, _) :-
 free_variables_(0,    _,     _, VarList, VarList, _) :- !.
 free_variables_(N, Term, Bound, OldList, NewList, B) :-
 	arg(N, Term, Argument),
-	(	cyclic_term(Argument) ->
-		M is N-1, !,
+	(	cyclic_term(Argument)
+	->	M is N-1, !,
 		free_variables_(M, Term, Bound, OldList, NewList, B)
 	;	free_variables_(Argument, Bound, OldList, MidList, B),
 		M is N-1, !,
@@ -375,8 +375,8 @@ recorded(K, V, R) :- nonvar(K), clause('$record_key'(K,V), _, R).
 call_with_time_limit(Time, Goal) :-
 	Time0 is truncate(Time * 1000),
 	'$alarm'(Time0),
-	(	catch(once(Goal), E, ('$alarm'(0), throw(E))) ->
-		'$alarm'(0)
+	(	catch(once(Goal), E, ('$alarm'(0), throw(E)))
+	->	'$alarm'(0)
 	;	('$alarm'(0), fail)
 	).
 
@@ -385,8 +385,8 @@ call_with_time_limit(Time, Goal) :-
 
 time_out(Goal, Time, Result) :-
 	'$alarm'(Time),
-	(	catch(once(Goal), E, ('$alarm'(0), throw(E))) ->
-		('$alarm'(0), Result = success)
+	(	catch(once(Goal), E, ('$alarm'(0), throw(E)))
+	->	('$alarm'(0), Result = success)
 	;	('$alarm'(0), fail)
 	).
 
@@ -459,8 +459,8 @@ map_create(S) :- map_create(S,[]).
 
 iso_dif(X, Y) :-
 	X \== Y,
-	(	X \= Y ->
-		true
+	(	X \= Y
+	->	true
 	;	throw(error(instantiation_error,iso_dif/2))
 	).
 
@@ -497,17 +497,15 @@ type_error(Type, Term, Context) :-
 pretty(PI) :-
 	use_module(library(format)),
 	nonvar(PI),
-	(   PI = Name/Arity0 ->
-		Arity = Arity0
-	;   PI = Name//Arity0 ->
-		Arity is Arity0 + 2
+	(   PI = Name/Arity0 -> Arity = Arity0
+	;   PI = Name//Arity0 -> Arity is Arity0 + 2
 	;   type_error(predicate_indicator, PI, listing/1)
 	),
 	functor(Head, Name, Arity),
 	\+ \+ clause(Head, _), % only true if there is at least one clause
 	(   clause(Head, Body),
-		(   Body == true ->
-			portray_clause(Head)
+		(   Body == true
+		-> 	portray_clause(Head)
 		;   portray_clause((Head :- Body))
 		),
 		false
@@ -775,8 +773,8 @@ attvar(Var) :-
 
 term_attvars_([], VsIn, VsIn) :- !.
 term_attvars_([H|T], VsIn, VsOut) :-
-	(	attvar(H) ->
-		term_attvars_(T, [H|VsIn], VsOut)
+	(	attvar(H)
+	->	term_attvars_(T, [H|VsIn], VsOut)
 	;	term_attvars_(T, VsIn, VsOut)
 	).
 
@@ -788,10 +786,9 @@ collect_goals_(_, [], GsIn, GsIn) :- !.
 collect_goals_(V, [H|T], GsIn, GsOut) :-
 	H =.. [M, _],
 	catch(M:attribute_goals(V, Goal0, []), _, Goal0 = put_atts(V, +H)),
-	(	Goal0 = [H2] ->
-		Goal = H2
-	;	Goal = Goal0),
-		collect_goals_(V, T, [Goal|GsIn], GsOut
+	(	Goal0 = [H2]
+	->	Goal = H2
+	;	Goal = Goal0), collect_goals_(V, T, [Goal|GsIn], GsOut
 	).
 
 collect_goals_([], GsIn, GsIn) :- !.
@@ -810,8 +807,8 @@ copy_term(Term, Copy, Gs) :-
 print_goals([]) :- !.
 print_goals([Goal|Goals]) :-
 	write_term(Goal, [varnames(true)]),
-	(	Goals == [] ->
-		write('')
+	(	Goals == []
+	->	write('')
 	; 	write(',')
 	),
 	print_goals(Goals).
@@ -847,15 +844,15 @@ plus(_,_,_) :-
 
 succ(X,S) :- nonvar(X), Y=1, nonvar(Y),
 	must_be(X, integer, succ/2, _), must_be(Y, integer, succ/2, _), !,
-	(	X >= 0 ->
-		true
+	(	X >= 0
+	->	true
 	; 	throw(error(domain_error(not_less_than_zero, X), succ/2))
 	),
 	S is X + Y.
 succ(X,S) :- var(X), Y=1, nonvar(Y), nonvar(S),
 	must_be(S, integer, succ/2, _), must_be(Y, integer, succ/2, _), !,
-	(	S >= 0 ->
-		true
+	(	S >= 0
+	->	true
 	; 	throw(error(domain_error(not_less_than_zero, S), succ/2))
 	),
 	!,
@@ -865,3 +862,33 @@ succ(_,_) :-
 	throw(error(instantiation_error, succ/2)).
 
 :- help(succ(?integer,?integer,?integer), [iso(false)]).
+
+sre_matchall(Pat, Text, L) :-
+	sre_compile(Pat, Reg),
+	sre_matchall_(Reg, Text, [], L).
+
+sre_matchall_(_, [], L, L) :- !.
+sre_matchall_(Reg, TextIn, L0, L) :-
+	sre_matchp(Reg, TextIn, Match, TextOut),
+	(	TextOut \= []
+	->	sre_matchall_(Reg, TextOut, [Match|L0], L)
+	;	L = L0
+	).
+
+:- help(sre_matchall(+pattern,+text,-list), [iso(false)]).
+
+sre_substall(Pat, Text, Match, L) :-
+	sre_compile(Pat, Reg),
+	sre_substall_(Reg, Text, Match, [], L0),
+	reverse(L0, L1),
+	append(L1, L).
+
+sre_substall_(_, [], _, L, L) :- !.
+sre_substall_(Reg, TextIn, Match, L0, L) :-
+	sre_substp(Reg, TextIn, Prefix, TextOut),
+	(	TextOut \= []
+	->	sre_substall_(Reg, TextOut, Match, [Match,Prefix|L0], L)
+	;	L = [Prefix|L0]
+	).
+
+:- help(sre_substall(+pattern,+text,+subst,-text), [iso(false)]).

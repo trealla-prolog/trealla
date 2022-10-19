@@ -38,6 +38,7 @@
 phrase_from_file(NT, File) :-
     phrase_from_file(NT, File, []).
 
+/*
 phrase_from_file(NT, File, Options) :-
     (   var(File) -> instantiation_error(phrase_from_file/3)
     ;   must_be(list, Options),
@@ -66,6 +67,14 @@ reader_step(Stream, Pos, Xs0) :-
             partial_string(Cs, Xs0, Xs),
             stream_to_lazy_list(Stream, Xs)
         ).
+*/
+
+phrase_from_file(P, Filename, Opts) :-
+	setup_call_cleanup(
+		open(Filename, read, Str, [mmap(Ms)|Opts]),
+		(copy_term(P, P2), P2=P, phrase(P2, Ms, [])),
+		close(Str)
+	).
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
    phrase_to_stream(+GRBody, +Stream)
