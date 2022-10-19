@@ -83,9 +83,7 @@ cell *list_tail(cell *l, cell *tmp)
 	}
 
 	if (is_static(l)) {
-		tmp->flags = FLAG_CSTR_BLOB | FLAG_STATIC | FLAG_CSTR_STRING;
-		tmp->nbr_cells = 1;
-		tmp->arity = 2;
+		copy_cells(tmp, l, 1);
 		tmp->val_str = l->val_str + len;
 		tmp->str_len = l->str_len - len;
 		return tmp;
