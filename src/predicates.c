@@ -7127,10 +7127,20 @@ static bool fn_sre_matchp_4(query *q)
 	int len = 0;
 	int off = re_matchp(re, text, &len);
 	cell tmp1, tmp2;
-	make_stringn(&tmp1, text + off, len);
+
+	if (!len)
+		make_atom(&tmp1, g_nil_s);
+	else
+		make_stringn(&tmp1, text + off, len);
+
 	bool ok = unify(q, p3, p3_ctx, &tmp1, q->st.curr_frame);
 	if (!ok) return false;
-	make_string(&tmp2, text + off + len);
+
+	if (!strlen(text + off + len))
+		make_atom(&tmp2, g_nil_s);
+	else
+		make_string(&tmp2, text + off + len);
+
 	ok = unify(q, p4, p4_ctx, &tmp2, q->st.curr_frame);
 	if (!ok) return false;
 	unshare_cell(&tmp1);
@@ -7149,10 +7159,20 @@ static bool fn_sre_match_4(query *q)
 	int len = 0;
 	int off = re_match(pattern, text, &len);
 	cell tmp1, tmp2;
-	make_stringn(&tmp1, text + off, len);
+
+	if (!len)
+		make_atom(&tmp1, g_nil_s);
+	else
+		make_stringn(&tmp1, text + off, len);
+
 	bool ok = unify(q, p3, p3_ctx, &tmp1, q->st.curr_frame);
 	if (!ok) return false;
-	make_string(&tmp2, text + off + len);
+
+	if (!strlen(text + off + len))
+		make_atom(&tmp2, g_nil_s);
+	else
+		make_string(&tmp2, text + off + len);
+
 	ok = unify(q, p4, p4_ctx, &tmp2, q->st.curr_frame);
 	if (!ok) return false;
 	unshare_cell(&tmp1);

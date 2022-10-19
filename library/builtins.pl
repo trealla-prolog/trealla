@@ -862,3 +862,15 @@ succ(_,_) :-
 	throw(error(instantiation_error, succ/2)).
 
 :- help(succ(?integer,?integer,?integer), [iso(false)]).
+
+sre_matchall(Pat, Text, L) :-
+	sre_compile(Pat, Reg),
+	sre_matchall_(Reg, Text, [], L).
+
+sre_matchall_(_, [], L, L) :- !.
+sre_matchall_(Reg, TextIn, L0, L) :-
+	sre_matchp(Reg, TextIn, Match, TextOut),
+	(	TextOut == []
+	->	L = L0
+	;	sre_matchall_(Reg, TextOut, [Match|L0], L)
+	).

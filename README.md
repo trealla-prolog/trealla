@@ -672,6 +672,7 @@ package (packages?) is included (https://github.com/kokke/tiny-regex-c)
 	sre_compile/2				# sre_compile(+pattern,-reg)
 	sre_matchp/4				# sre_matchp(+reg,+text,-match,-text)
 	sre_match/4					# sre_match(+pattern,+text,-match,-text)
+	sre_matchall/3				# sre_matchall(+pattern,+text,-list]
 
 The *pattern*, *match* & *text* args may be atoms or strings.
 
@@ -683,12 +684,18 @@ For example...
 
 	?- sre_compile("d.f", Reg), sre_matchp(Reg, "abcdefghi", M, T).
 	   Reg = <$blob>(0x6AC5AAF0), M = "def", T = "ghi".
+
+	?- sre_matchall("d.f","xdafxdbfxdcfx",L).
+	   L = ["dcf","dbf","daf"].
 ```
+
+Note: if no match is found the returned match, text (and list) is *[]*
+indicating an empty string.
 
 Note: if the input *text* arg is a string then the output *text* arg
 is a zero-copy slice of the string. So if the input is a memory-mapped
 file, for example, then regex searches can be performed quickly and
-efficiently over huge (giga-byte) files (just like with Prolog DCGs).
+efficiently over huge files.
 
 
 Foreign Function Interface (FFI)		##EXPERIMENTAL##
