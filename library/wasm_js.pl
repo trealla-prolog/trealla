@@ -1,5 +1,12 @@
 
-:- module(wasm_js, [js_eval/1, js_eval/2, js_eval_json/2, js_fetch/3, http_consult/1, consult_string/1]).
+:- module(wasm_js, [js_eval/1, js_eval/2, js_eval_json/2,
+	js_fetch/3, http_consult/1, consult_string/1,
+	crypto_data_hash/3]).
+
+:- use_module(library(lists)).
+:- use_module(library(error)).
+:- use_module(library(format)).
+:- use_module(library(pseudojson)).
 
 % Guest (Trealla) → Host (Javascript)
 
@@ -95,3 +102,27 @@ consult_string(Cs) :-
 		),
 		delete_file(Filename)
 	).
+
+crypto_data_hash(Data, Hash, Options) :-
+	must_be(chars, Data),
+	must_be(list, Options),
+	memberchk(algorithm(Algo), Options),
+	js_subtle_hash(Data, Hash, Algo).
+
+hash_algo(sha256, "SHA-256").
+hash_algo(sha384, "SHA-384").
+hash_algo(sha512, "SHA-512").
+hash_algo(sha1, "SHA-1").
+
+js_subtle_hash(Data, Hash, Algo) :-
+	(  hash_algo(Algo, AlgoCs)
+	-> true
+	;  domain_error(algorithm, Algo, crypto_data_hash/3)
+	),
+	subtle_hash_digest_expr(Data, AlgoCs, Expr),
+	js_eval_json(Expr, Hash).
+
+subtle_hash_digest_expr(Data, Algo, Expr) :-
+	once(phrase(format_(
+		"return crypto.subtle.digest(~q, new TextEncoder().encode(~q)).then(sum => [...new Uint8Array(sum)].map(c => c.toString(16).padStart(2, '0')).join(''));",
+		[Algo, Data]), Expr)).

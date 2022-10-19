@@ -11,7 +11,7 @@
 		"error": "<throw/1 exception term>"
 	}
 */
-:- module(js, [js_toplevel/0, js_ask/1, js_eval/1, js_eval/2, js_eval_json/2, js_fetch/3, http_consult/1]).
+:- module(js, [js_toplevel/0, js_ask/1]).
 
 :- use_module(library(lists)).
 :- use_module(library(pseudojson)).
