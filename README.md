@@ -700,6 +700,9 @@ For example...
 
 	?- sre_subst_all("d.f", "xdafydbfzdcf-", "$", L).
 	   L = "x$y$z$-".
+
+	?- sre_match_all("\\S", "Needle In A Haystack", L).
+	   L = ["N","e","e","d","l","e","I","n","A",...].
 ```
 
 Note: if no match is found the returned *match*, *text* (and *list*) is *[]*
