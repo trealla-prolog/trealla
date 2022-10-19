@@ -876,3 +876,13 @@ sre_matchall_(Reg, TextIn, L0, L) :-
 	).
 
 :- help(sre_matchall(+pattern,+text,-list), [iso(false)]).
+
+fast_phrase_from_file(P, Filename) :-
+	fast_phrase_from_file(P, Filename, []).
+
+fast_phrase_from_file(P, Filename, Opts) :-
+	setup_call_cleanup(
+		open(Filename, read, Str, [mmap(Ms)|Opts]),
+		(copy_term(P, P2), P2=P, phrase(P2, Ms, [])),
+		close(Str)
+	).

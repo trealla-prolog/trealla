@@ -318,6 +318,6 @@ test91 :-
 	close(Str).
 
 test92 :-
-	phrase_from_file(list(Ls), "README.md"),
+	fast_phrase_from_file(list(Ls), "README.md"),
 	length(Ls,N), format("Ls length=~w~n", [N]).
 
