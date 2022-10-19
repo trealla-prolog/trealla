@@ -116,6 +116,7 @@ LIBOBJECTS +=  \
 	library/when.o
 
 SRCOBJECTS += src/imath/imath.o
+SRCOBJECTS += src/sre/re.o
 
 ifdef ISOCLINE
 SRCOBJECTS += src/isocline/src/isocline.o
@@ -165,12 +166,12 @@ test:
 
 clean:
 	rm -f tpl tpl.wasm tpl*.wasm libtpl*.wasm \
-		src/*.o src/imath/*.o src/isocline/src/*.o \
+		src/*.o src/imath/*.o src/isocline/src/*.o src/sre/*.o \
 		library/*.o library/*.c *.o samples/*.o samples/*.so \
 		vgcore.* *.core core core.* *.exe gmon.*
 	rm -f *.itf *.po samples/*.itf samples/*.po
 
-# from [gcc|clang] -MM src/*.c src/imath/*.c src/isocline/src/isocline.c
+# from [gcc|clang] -MM src/*.c src/imath/*.c src/isocline/src/*.c src/sre/*.c
 
 src/bags.o: src/bags.c src/heap.h src/internal.h src/map.h src/skiplist.h \
   src/trealla.h src/cdebug.h src/stringbuf.h src/imath/imath.h \
@@ -213,7 +214,7 @@ src/posix.o: src/posix.c src/trealla.h src/internal.h src/map.h \
   src/heap.h src/prolog.h src/query.h src/builtins.h
 src/predicates.o: src/predicates.c src/base64.h src/heap.h src/internal.h \
   src/map.h src/skiplist.h src/trealla.h src/cdebug.h src/stringbuf.h \
-  src/imath/imath.h src/history.h src/library.h src/module.h \
+  src/imath/imath.h src/history.h src/library.h src/module.h src/sre/re.h \
   src/parser.h src/prolog.h src/query.h src/builtins.h src/utf8.h
 src/print.o: src/print.c src/heap.h src/internal.h src/map.h src/skiplist.h \
   src/trealla.h src/cdebug.h src/stringbuf.h src/imath/imath.h \
@@ -242,6 +243,7 @@ src/utf8.o: src/utf8.c src/utf8.h
 src/wasi.o: src/wasi.c
 src/version.o: src/version.c
 src/imath.o: src/imath/imath.c src/imath/imath.h
+src/re.o: src/sre/re.c src/sre/re.h
 src/isocline.o: src/isocline/src/isocline.c src/isocline/src/attr.c \
   src/isocline/src/common.h src/isocline/src/../include/isocline.h \
   src/isocline/src/stringbuf.h src/isocline/src/attr.h \

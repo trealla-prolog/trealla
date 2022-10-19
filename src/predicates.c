@@ -7173,6 +7173,88 @@ static bool fn_sys_host_resume_1(query *q) {
 }
 #endif
 
+static bool fn_sre_compile_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,var);
+	const char *pattern = C_STR(q, p1);
+	re_t reg = re_compile(pattern);
+	cell tmp = {0};
+	tmp.tag = TAG_BLOB;
+	tmp.flags = FLAG_MANAGED;
+	tmp.nbr_cells = 1;
+	tmp.val_blob = malloc(sizeof(blob));
+	tmp.val_blob->ptr = (void*)reg;
+	tmp.val_blob->refcnt = 1;
+	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
+	return ok;
+}
+
+static bool fn_sre_matchp_4(query *q)
+{
+	GET_FIRST_ARG(p1,blob);
+	GET_NEXT_ARG(p2,atom);
+	GET_NEXT_ARG(p3,atom_or_var);
+	GET_NEXT_ARG(p4,atom_or_var);
+	re_t re = (void*)p1->val_blob->ptr;
+	const char *text = C_STR(q, p2);
+	int len = 0;
+	int off = re_matchp(re, text, &len);
+	cell tmp1, tmp2;
+
+	if (!len)
+		make_atom(&tmp1, g_nil_s);
+	else
+		make_stringn(&tmp1, text + off, len);
+
+	bool ok = unify(q, p3, p3_ctx, &tmp1, q->st.curr_frame);
+	if (!ok) return false;
+
+	if (!strlen(text + off + len))
+		make_atom(&tmp2, g_nil_s);
+	else
+		make_string(&tmp2, text + off + len);
+
+	ok = unify(q, p4, p4_ctx, &tmp2, q->st.curr_frame);
+	if (!ok) return false;
+	unshare_cell(&tmp1);
+	unshare_cell(&tmp2);
+	return true;
+}
+
+static bool fn_sre_match_4(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,atom);
+	GET_NEXT_ARG(p3,atom_or_var);
+	GET_NEXT_ARG(p4,atom_or_var);
+	const char *pattern = C_STR(q, p1);
+	const char *text = C_STR(q, p2);
+	int len = 0;
+	int off = re_match(pattern, text, &len);
+	cell tmp1, tmp2;
+
+	if (!len)
+		make_atom(&tmp1, g_nil_s);
+	else
+		make_stringn(&tmp1, text + off, len);
+
+	bool ok = unify(q, p3, p3_ctx, &tmp1, q->st.curr_frame);
+	if (!ok) return false;
+
+	if (!strlen(text + off + len))
+		make_atom(&tmp2, g_nil_s);
+	else
+		make_string(&tmp2, text + off + len);
+
+	ok = unify(q, p4, p4_ctx, &tmp2, q->st.curr_frame);
+	if (!ok) return false;
+	unshare_cell(&tmp1);
+	unshare_cell(&tmp2);
+	return true;
+}
+
 void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type)
 {
 	char *dst = tmpbuf;
@@ -7669,6 +7751,10 @@ builtins g_other_bifs[] =
 	{"can_be", 4, fn_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"must_be", 2, fn_must_be_2, "+atom,+term", false, false, BLAH},
 	{"can_be", 2, fn_can_be_2, "+atom,+term,", false, false, BLAH},
+
+	{"sre_compile", 2, fn_sre_compile_2, "+pattern,-reg,", false, false, BLAH},
+	{"sre_matchp", 4, fn_sre_matchp_4, "+reg,+text,-match,-text,", false, false, BLAH},
+	{"sre_match", 4, fn_sre_match_4, "+pattern,+text,-match,-text,", false, false, BLAH},
 
 	{"$register_cleanup", 1, fn_sys_register_cleanup_1, NULL, false, false, BLAH},
 	{"$register_term", 1, fn_sys_register_term_1, NULL, false, false, BLAH},

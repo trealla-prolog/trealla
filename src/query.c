@@ -737,6 +737,7 @@ bool retry_choice(query *q)
 		frame *f = GET_CURR_FRAME();
 		f->ugen = ch->ugen;
 		f->cgen = ch->frame_cgen;
+		f->initial_slots = ch->initial_slots;
 		f->actual_slots = ch->actual_slots;
 		f->overflow = ch->overflow;
 
@@ -953,7 +954,7 @@ static void commit_me(query *q)
 		q->retry, tco, q->no_tco, last_match, recursive, choices, slots_ok, vars_ok, cl->nbr_vars, cl->nbr_temporaries);
 #endif
 
-	if (tco && q->pl->opt)
+	if (q->pl->opt && tco)
 		reuse_frame(q, f, cl);
 	else
 		f = push_frame(q, cl);
@@ -1013,6 +1014,7 @@ bool push_choice(query *q)
 	ch->st = q->st;
 	ch->ugen = f->ugen;
 	ch->frame_cgen = ch->cgen = f->cgen;
+	ch->initial_slots = f->initial_slots;
 	ch->actual_slots = f->actual_slots;
 	ch->overflow = f->overflow;
 	return true;
@@ -1297,6 +1299,7 @@ void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 		v_attrs = is_empty(&ve->c) ? ve->c.attrs : NULL;
 	}
 
+	if ((q->cp || c_attrs) && (c_ctx < q->st.fp))
 	//if (c_ctx < q->st.fp)
 		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
 

@@ -1,0 +1,4 @@
+path(angers,nantes).
+path(paris,nantes).
+path(chartres,nantes).
+path(lemans,nantes).
