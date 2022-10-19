@@ -667,7 +667,7 @@ Simple regular expressions				##EXPERIMENTAL##
 ==========================
 
 This is meant as a place-holder until a proper regular expresion
-package (packages?) is included (https://github.com/kokke/tiny-regex-c)
+package (packages?) is included.
 
 	sre_compile/2				# sre_compile(+pattern,-reg)
 	sre_matchp/4				# sre_matchp(+reg,+text,-match,-rest)
