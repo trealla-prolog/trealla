@@ -870,7 +870,7 @@ sre_matchall(Pat, Text, L) :-
 sre_matchall_(_, [], L, L) :- !.
 sre_matchall_(Reg, TextIn, L0, L) :-
 	sre_matchp(Reg, TextIn, Match, TextOut),
-	(	TextOut == []
-	->	L = L0
-	;	sre_matchall_(Reg, TextOut, [Match|L0], L)
+	(	TextOut \= []
+	->	sre_matchall_(Reg, TextOut, [Match|L0], L)
+	;	L = L0
 	).
