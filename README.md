@@ -674,11 +674,11 @@ package (packages?) is included.
 	sre_substp/4				# sre_substp(+reg,+text,-prefix,-rest)
 
 	sre_match/4					# sre_match(+pattern,+text,-match,-rest)
-	sre_matchall/3				# sre_matchall(+pattern,+text,-list)
-	sre_matchall_pos/3			# sre_matchall_pos(+pattern,+text,-pairs)
+	sre_match_all/3				# sre_matchall(+pattern,+text,-list)
+	sre_match_all_pos/3			# sre_matchall_pos(+pattern,+text,-pairs)
 
 	sre_subst/4					# sre_subst(+pattern,+text,-prefix,-rest)
-	sre_substall/4				# sre_subst(+pattern,+text,+subst,-text)
+	sre_subst_all/4				# sre_subst(+pattern,+text,+subst,-text)
 
 For example...
 
@@ -689,16 +689,16 @@ For example...
 	?- sre_match("d.f", "abcdefghi", M, Rest).
 	   M = "def", Rest = "ghi".
 
-	?- sre_matchall("d.f", "xdafydbfzdcf-", L).
+	?- sre_match_all("d.f", "xdafydbfzdcf-", L).
 	   L = ["daf","dbf","dcf"].
 
-	?- sre_matchall_pos("d.f", "xdafydbfzdcf-", L).
+	?- sre_match_all_pos("d.f", "xdafydbfzdcf-", L).
 	   L = [1-3,2-3,3-3].
 
 	?- sre_subst("d.f", "xdafydbfzdcf-", P, L).
 	   P = "x", L = "ydbfzdcf-".
 
-	?- sre_substall("d.f", "xdafydbfzdcf-", "$", L).
+	?- sre_subst_all("d.f", "xdafydbfzdcf-", "$", L).
 	   L = "x$y$z$-".
 ```
 
