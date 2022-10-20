@@ -5191,17 +5191,15 @@ static bool fn_recv_1(query *q)
 	return unify(q, p1, p1_ctx, c, q->st.curr_frame);
 }
 
+#ifndef __wasi__
 static bool fn_pid_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
-#ifndef __wasi__
 	make_int(&tmp, getpid());
-#else
-	make_int(&tmp, 42);
-#endif
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
+#endif
 
 static bool fn_wall_time_1(query *q)
 {
@@ -5287,16 +5285,6 @@ static bool fn_shell_2(query *q)
 	cell tmp;
 	make_int(&tmp, status);
 	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
-}
-#else
-static bool fn_shell_1(query *q)
-{
-	return false;
-}
-
-static bool fn_shell_2(query *q)
-{
-	return false;
 }
 #endif
 
@@ -7737,8 +7725,11 @@ builtins g_other_bifs[] =
 
 	{"sleep", 1, fn_sleep_1, "+secs", false, false, BLAH},
 	{"delay", 1, fn_delay_1, "+ms", false, false, BLAH},
+#ifndef __wasi__
 	{"shell", 1, fn_shell_1, "+atom", false, false, BLAH},
 	{"shell", 2, fn_shell_2, "+atom,-integer", false, false, BLAH},
+	{"pid", 1, fn_pid_1, "-integer", false, false, BLAH},
+#endif
 
 	{"listing", 0, fn_listing_0, NULL, false, false, BLAH},
 	{"listing", 1, fn_listing_1, "+predicateindicator", false, false, BLAH},
@@ -7756,7 +7747,6 @@ builtins g_other_bifs[] =
 	{"soft_abolish", 1, fn_soft_abolish_1, "+term", false, false, BLAH},
 	{"string_codes", 2, fn_string_codes_2, "+string,-list", false, false, BLAH},
 	{"term_singletons", 2, fn_term_singletons_2, "+term,-list", false, false, BLAH},
-	{"pid", 1, fn_pid_1, "-integer", false, false, BLAH},
 	{"get_unbuffered_code", 1, fn_get_unbuffered_code_1, "?code", false, false, BLAH},
 	{"get_unbuffered_char", 1, fn_get_unbuffered_char_1, "?char", false, false, BLAH},
 	{"format", 2, fn_format_2, "+string,+list", false, false, BLAH},
@@ -7851,7 +7841,7 @@ builtins g_other_bifs[] =
 	{"$list_attributed", 1, fn_sys_list_attributed_1, "-list", false, false, BLAH},
 	{"$dump_keys", 1, fn_sys_dump_keys_1, "+pi", false, false, BLAH},
 	{"$skip_max_list", 4, fn_sys_skip_max_list_4, NULL, false, false, BLAH},
-#if __wasi__
+#ifdef __wasi__
 	{"$host_call", 2, fn_sys_host_call_2, "+string,-string", false, false, BLAH},
 	{"$host_resume", 1, fn_sys_host_resume_1, "-string", false, false, BLAH},
 #endif

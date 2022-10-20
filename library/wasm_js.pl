@@ -12,8 +12,7 @@
 
 js_eval(Expr, Cs) :-
 	'$host_call'(Expr, Cs), !
-	; yield, fail
-	; '$host_resume'(Cs).
+	; yield, '$host_resume'(Cs).
 
 js_eval_json(Expr, Result) :-
 	js_eval_(Expr, Result, js_eval_json/2).
@@ -119,10 +118,13 @@ js_subtle_hash(Data, Hash, Algo) :-
 	-> true
 	;  domain_error(algorithm, Algo, crypto_data_hash/3)
 	),
-	subtle_hash_digest_expr(Data, AlgoCs, Expr),
+	subtle_digest_expr(Data, AlgoCs, Expr),
 	js_eval_json(Expr, Hash).
 
-subtle_hash_digest_expr(Data, Algo, Expr) :-
+subtle_digest_expr(Data, Algo, Expr) :-
 	once(phrase(format_(
 		"return crypto.subtle.digest(~q, new TextEncoder().encode(~q)).then(sum => [...new Uint8Array(sum)].map(c => c.toString(16).padStart(2, '0')).join(''));",
 		[Algo, Data]), Expr)).
+
+atom_string(X, X) :- string(X), !.
+atom_string(A, X) :- atom_chars(A, X).

@@ -11,11 +11,10 @@
 		"error": "<throw/1 exception term>"
 	}
 */
-:- module(js, [js_toplevel/0, js_ask/1]).
+:- module(wasm, [js_toplevel/0, js_ask/1]).
 
 :- use_module(library(lists)).
 :- use_module(library(pseudojson)).
-:- use_module(library(errors)).
 
 % Host (WASM) → Guest (Trealla)
 
@@ -126,22 +125,3 @@ var_name([], _, "_").
 attvar_json(Vars, Var, JS) :-
 	copy_term(Var, Var, Attr),
 	once(term_json(Vars, Attr, JS)).
-
-atom_string(X, X) :- string(X), !.
-atom_string(A, X) :- atom_chars(A, X).
-
-consult_string(Cs) :-
-	wall_time(T),
-	random(Rand),
-	once(phrase(format_("/tmp/consult_~w~w.pl", [T, Rand]), Filename)),
-	atom_chars(File, Filename),
-	setup_call_cleanup(
-		open(File, write, S),
-		(
-			'$put_chars'(S, Cs),
-			flush_output(S),
-			close(S),
-			consult(File)
-		),
-		delete_file(Filename)
-	).

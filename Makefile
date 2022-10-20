@@ -101,7 +101,6 @@ LIBOBJECTS +=  \
 	library/freeze.o \
 	library/http.o \
 	library/json.o \
-	library/js.o \
 	library/lambda.o \
 	library/lists.o \
 	library/ordsets.o \
@@ -113,6 +112,7 @@ LIBOBJECTS +=  \
 	library/sqlite3.o \
 	library/sqlite3_register.o \
 	library/ugraphs.o \
+	library/wasm.o \
 	library/wasm_js.o \
 	library/when.o
 
