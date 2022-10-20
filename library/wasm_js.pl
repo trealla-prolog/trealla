@@ -105,7 +105,7 @@ consult_string(Cs) :-
 crypto_data_hash(Data, Hash, Options) :-
 	must_be(chars, Data),
 	must_be(list, Options),
-	memberchk(algorithm(Algo), Options),
+	ignore(member(algorithm(Algo), Options)),
 	js_subtle_hash(Data, Hash, Algo).
 
 hash_algo(sha256, "SHA-256").
