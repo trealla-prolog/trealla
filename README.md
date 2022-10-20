@@ -714,7 +714,8 @@ indicating an empty string.
 Note: if the input *text* arg is a string then the output *text* arg
 is a zero-copy slice of the string. So if the input is a memory-mapped
 file, for example, then regex searches can be performed quickly and
-efficiently over huge files.
+efficiently over huge files, with the only memory used being for the
+final results.
 
 
 Foreign Function Interface (FFI)		##EXPERIMENTAL##
