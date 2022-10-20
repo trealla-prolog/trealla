@@ -666,10 +666,11 @@ package (packages?) is included.
 	sre_substp/4				# sre_substp(+reg,+text,-prefix,-rest)
 
 	sre_match/4					# sre_match(+pattern,+text,-match,-rest)
-	sre_matchall/3				# sre_matchall(+pattern,+text,-list]
+	sre_match_all/3				# sre_matchall(+pattern,+text,-list)
+	sre_match_all_pos/3			# sre_matchall_pos(+pattern,+text,-pairs)
 
 	sre_subst/4					# sre_subst(+pattern,+text,-prefix,-rest)
-	sre_substall/4				# sre_subst(+pattern,+text,+subst,-text)
+	sre_subst_all/4				# sre_subst(+pattern,+text,+subst,-text)
 
 For example...
 
@@ -680,14 +681,23 @@ For example...
 	?- sre_match("d.f", "abcdefghi", M, Rest).
 	   M = "def", Rest = "ghi".
 
-	?- sre_matchall("d.f", "xdafydbfzdcf-", L).
-	   L = ["dcf","dbf","daf"].
+	?- sre_match_all("d.f", "xdafydbfzdcf-", L).
+	   L = ["daf","dbf","dcf"].
+
+	?- sre_match_all_pos("d.f", "xdafydbfzdcf-", L).
+	   L = [1-3,2-3,3-3].
 
 	?- sre_subst("d.f", "xdafydbfzdcf-", P, L).
 	   P = "x", L = "ydbfzdcf-".
 
-	?- sre_substall("d.f", "xdafydbfzdcf-", "$", L).
+	?- sre_subst_all("d.f", "xdafydbfzdcf-", "$", L).
 	   L = "x$y$z$-".
+
+	?- sre_match_all("\\S", "Needle In A Haystack", L).
+	   L = ["N","e","e","d","l","e","I","n","A",...].
+
+	?- sre_match_all_pos("\\s", "Needle In A Haystack", L).
+	   L = [6-1,9-1,11-1].
 ```
 
 Note: if no match is found the returned *match*, *text* (and *list*) is *[]*
@@ -696,7 +706,8 @@ indicating an empty string.
 Note: if the input *text* arg is a string then the output *text* arg
 is a zero-copy slice of the string. So if the input is a memory-mapped
 file, for example, then regex searches can be performed quickly and
-efficiently over huge files.
+efficiently over huge files, with the only memory used being for the
+final results.
 
 
 Foreign Function Interface (FFI)		##EXPERIMENTAL##

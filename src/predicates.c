@@ -456,7 +456,7 @@ static bool fn_iso_char_code_2(query *q)
 
 static bool fn_iso_atom_chars_2(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_var);
+	GET_FIRST_ARG(p1,iso_atom_or_var);
 	GET_NEXT_ARG(p2,list_or_nil_or_var);
 
 	if (is_var(p1) && is_var(p2))
@@ -468,9 +468,6 @@ static bool fn_iso_atom_chars_2(query *q)
 
 	if (is_iso_list(p2) && !check_list(q, p2, p2_ctx, &is_partial, NULL) && !is_partial)
 		return throw_error(q, p2, p2_ctx, "type_error", "list");
-
-	if (!is_iso_atom(p1) && !is_var(p1))
-		return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 	if (is_atom(p1) && !C_STRLEN(q, p1) && is_nil(p2))
 		return true;
@@ -762,7 +759,7 @@ static bool fn_iso_number_chars_2(query *q)
 
 static bool fn_iso_atom_codes_2(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_var);
+	GET_FIRST_ARG(p1,iso_atom_or_var);
 	GET_NEXT_ARG(p2,iso_list_or_nil_or_var);
 
 	if (is_var(p1) && is_var(p2))
@@ -774,9 +771,6 @@ static bool fn_iso_atom_codes_2(query *q)
 
 	if (is_iso_list(p2) && !check_list(q, p2, p2_ctx, &is_partial, NULL) && !is_partial)
 		return throw_error(q, p2, p2_ctx, "type_error", "list");
-
-	if (!is_iso_atom(p1) && !is_var(p1))
-		return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 	if (!is_var(p2) && is_nil(p2)) {
 		cell tmp;
@@ -1508,18 +1502,18 @@ static bool fn_iso_atom_concat_3(query *q)
 	if (q->retry)
 		return do_atom_concat_3(q);
 
-	GET_FIRST_ARG(p1,atom_or_var);
-	GET_NEXT_ARG(p2,atom_or_var);
-	GET_NEXT_ARG(p3,atom_or_var);
+	GET_FIRST_ARG(p1,iso_atom_or_var);
+	GET_NEXT_ARG(p2,iso_atom_or_var);
+	GET_NEXT_ARG(p3,iso_atom_or_var);
 
 	if (is_var(p1) && is_var(p2))
 		return do_atom_concat_3(q);
 
 	if (is_var(p3)) {
-		if (!is_iso_atom(p1))
+		if (!is_atom(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-		if (!is_iso_atom(p2))
+		if (!is_atom(p2))
 			return throw_error(q, p2, p2_ctx, "type_error", "atom");
 
 		SB_alloc(pr,256);
@@ -1584,11 +1578,8 @@ static bool fn_iso_atom_concat_3(query *q)
 
 static bool fn_iso_atom_length_2(query *q)
 {
-	GET_FIRST_ARG(p1,atom);
+	GET_FIRST_ARG(p1,iso_atom);
 	GET_NEXT_ARG(p2,smallint_or_var);
-
-	if (!is_iso_atom(p1))
-		return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 	if (is_negative(p2))
 		return throw_error(q, p2, p2_ctx, "domain_error", "not_less_than_zero");
@@ -7213,15 +7204,15 @@ static bool fn_sre_matchp_4(query *q)
 	if (!len)
 		make_atom(&tmp1, g_nil_s);
 	else
-		make_stringn(&tmp1, text + off, len);
+		make_slice(q, &tmp1, p2, off, len);
 
 	bool ok = unify(q, p3, p3_ctx, &tmp1, q->st.curr_frame);
 	if (!ok) return false;
 
-	if (!strlen(text + off + len))
+	if ((size_t)(off + len) >= C_STRLEN(q, p2))
 		make_atom(&tmp2, g_nil_s);
 	else
-		make_string(&tmp2, text + off + len);
+		make_slice(q, &tmp2, p2, off + len, C_STRLEN(q, p2)-(off+len));
 
 	ok = unify(q, p4, p4_ctx, &tmp2, q->st.curr_frame);
 	if (!ok) return false;
@@ -7245,15 +7236,15 @@ static bool fn_sre_match_4(query *q)
 	if (!len)
 		make_atom(&tmp1, g_nil_s);
 	else
-		make_stringn(&tmp1, text + off, len);
+		make_slice(q, &tmp1, p2, off, len);
 
 	bool ok = unify(q, p3, p3_ctx, &tmp1, q->st.curr_frame);
 	if (!ok) return false;
 
-	if (!strlen(text + off + len))
+	if ((size_t)(off + len) >= C_STRLEN(q, p2))
 		make_atom(&tmp2, g_nil_s);
 	else
-		make_string(&tmp2, text + off + len);
+		make_slice(q, &tmp2, p2, off + len, C_STRLEN(q, p2)-(off+len));
 
 	ok = unify(q, p4, p4_ctx, &tmp2, q->st.curr_frame);
 	if (!ok) return false;
@@ -7277,15 +7268,15 @@ static bool fn_sre_substp_4(query *q)
 	if (!len)
 		make_stringn(&tmp1, text, C_STRLEN(q, p2));
 	else
-		make_stringn(&tmp1, text, off);
+		make_slice(q, &tmp1, p2, 0, off);
 
 	bool ok = unify(q, p3, p3_ctx, &tmp1, q->st.curr_frame);
 	if (!ok) return false;
 
-	if (!strlen(text + off + len))
+	if ((size_t)(off + len) >= C_STRLEN(q, p2))
 		make_atom(&tmp2, g_nil_s);
 	else
-		make_string(&tmp2, text + off + len);
+		make_slice(q, &tmp2, p2, off + len, C_STRLEN(q, p2)-(off+len));
 
 	ok = unify(q, p4, p4_ctx, &tmp2, q->st.curr_frame);
 	if (!ok) return false;
@@ -7309,15 +7300,15 @@ static bool fn_sre_subst_4(query *q)
 	if (!len)
 		make_stringn(&tmp1, text, C_STRLEN(q, p2));
 	else
-		make_stringn(&tmp1, text, off);
+		make_slice(q, &tmp1, p2, 0, off);
 
 	bool ok = unify(q, p3, p3_ctx, &tmp1, q->st.curr_frame);
 	if (!ok) return false;
 
-	if (!strlen(text + off + len))
+	if ((size_t)(off + len) >= C_STRLEN(q, p2))
 		make_atom(&tmp2, g_nil_s);
 	else
-		make_string(&tmp2, text + off + len);
+		make_slice(q, &tmp2, p2, off + len, C_STRLEN(q, p2)-(off+len));
 
 	ok = unify(q, p4, p4_ctx, &tmp2, q->st.curr_frame);
 	if (!ok) return false;

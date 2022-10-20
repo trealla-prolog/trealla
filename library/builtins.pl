@@ -863,32 +863,53 @@ succ(_,_) :-
 
 :- help(succ(?integer,?integer,?integer), [iso(false)]).
 
-sre_matchall(Pat, Text, L) :-
+sre_match_all(Pat, Text, L) :-
 	sre_compile(Pat, Reg),
-	sre_matchall_(Reg, Text, [], L).
+	sre_match_all_(Reg, Text, [], L2),
+	reverse(L2, L).
 
-sre_matchall_(_, [], L, L) :- !.
-sre_matchall_(Reg, TextIn, L0, L) :-
+sre_match_all_(_, [], L, L) :- !.
+sre_match_all_(Reg, TextIn, L0, L) :-
 	sre_matchp(Reg, TextIn, Match, TextOut),
 	(	TextOut \= []
-	->	sre_matchall_(Reg, TextOut, [Match|L0], L)
+	->	sre_match_all_(Reg, TextOut, [Match|L0], L)
 	;	L = L0
 	).
 
-:- help(sre_matchall(+pattern,+text,-list), [iso(false)]).
+:- help(sre_match_all(+pattern,+text,-list), [iso(false)]).
 
-sre_substall(Pat, Text, Match, L) :-
+sre_match_all_pos(Pat, Text, L) :-
 	sre_compile(Pat, Reg),
-	sre_substall_(Reg, Text, Match, [], L0),
+	sre_match_all_pos_(Reg, Text, 0, [], L2),
+	reverse(L2, L).
+
+sre_match_all_pos_(_, [], _, L, L) :- !.
+sre_match_all_pos_(Reg, TextIn, Offset, L0, L) :-
+	sre_matchp(Reg, TextIn, Match, TextOut),
+	'$lengthchk'(TextIn, N0),
+	'$lengthchk'(Match, N1),
+	'$lengthchk'(TextOut, N2),
+	Pos is N0 - (N1 + N2) + Offset,
+	Pos2 is Pos + 1,
+	(	TextOut \= []
+	->	sre_match_all_pos_(Reg, TextOut, Pos2, [Pos-N1|L0], L)
+	;	L = L0
+	).
+
+:- help(sre_match_all_pos(+pattern,+text,-list), [iso(false)]).
+
+sre_subst_all(Pat, Text, Match, L) :-
+	sre_compile(Pat, Reg),
+	sre_subst_all_(Reg, Text, Match, [], L0),
 	reverse(L0, L1),
 	append(L1, L).
 
-sre_substall_(_, [], _, L, L) :- !.
-sre_substall_(Reg, TextIn, Match, L0, L) :-
+sre_subst_all_(_, [], _, L, L) :- !.
+sre_subst_all_(Reg, TextIn, Match, L0, L) :-
 	sre_substp(Reg, TextIn, Prefix, TextOut),
 	(	TextOut \= []
-	->	sre_substall_(Reg, TextOut, Match, [Match,Prefix|L0], L)
+	->	sre_subst_all_(Reg, TextOut, Match, [Match,Prefix|L0], L)
 	;	L = [Prefix|L0]
 	).
 
-:- help(sre_substall(+pattern,+text,+subst,-text), [iso(false)]).
+:- help(sre_subst_all(+pattern,+text,+subst,-text), [iso(false)]).
