@@ -145,8 +145,8 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define is_managed(c) ((c)->flags & FLAG_MANAGED)
 #define is_cstr_blob(c) (is_cstring(c) && ((c)->flags & FLAG_CSTR_BLOB))
 #define is_list(c) (is_iso_list(c) || is_string(c))
-#define is_static(c) (is_cstr_blob(c) && ((c)->flags & FLAG_STATIC))
-#define is_strbuf(c) (is_cstr_blob(c) && !((c)->flags & FLAG_STATIC))
+#define is_slice(c) (is_cstr_blob(c) && ((c)->flags & FLAG_SLICE))
+#define is_strbuf(c) (is_cstr_blob(c) && !((c)->flags & FLAG_SLICE))
 #define is_nil(c) (is_interned(c) && !(c)->arity && ((c)->val_off == g_nil_s))
 #define is_quoted(c) ((c)->flags & FLAG_CSTR_QUOTED)
 #define is_fresh(c) ((c)->flags & FLAG_VAR_FRESH)
@@ -197,14 +197,14 @@ typedef struct {
 #define _C_STR(pl,c) 											\
 	( !is_cstring(c) ? ((pl)->pool + (c)->val_off)				\
 	: is_strbuf(c) ? ((c)->val_strb->cstr + (c)->strb_off)		\
-	: is_static(c) ? (c)->val_str								\
+	: is_slice(c) ? (c)->val_str								\
 	: (char*)(c)->val_chr										\
 	)
 
 #define _C_STRLEN(pl,c) 										\
 	( !is_cstring(c) ? strlen((pl)->pool + (c)->val_off)		\
 	: is_strbuf(c) ? (c)->strb_len								\
-	: is_static(c) ? (c)->str_len								\
+	: is_slice(c) ? (c)->str_len								\
 	: (c)->chr_len												\
 	)
 
@@ -259,7 +259,7 @@ enum {
 	FLAG_FFI=1<<6,
 	FLAG_REF=1<<7,
 	FLAG_BUILTIN=1<<8,
-	FLAG_STATIC=1<<9,
+	FLAG_SLICE=1<<9,
 	FLAG_MANAGED=1<<10,					// any ref-counted object
 	FLAG_TAIL_REC=1<<11,
 	FLAG_EVALUABLE=1<<12,
@@ -452,7 +452,7 @@ struct predicate_ {
 	bool is_reload:1;
 	bool is_prebuilt:1;
 	bool is_public:1;
-	bool is_static:1;
+	bool is_slice:1;
 	bool is_tabled:1;
 	bool is_dynamic:1;
 	bool is_meta_predicate:1;

@@ -470,7 +470,7 @@ void set_dynamic_in_db(module *m, const char *name, unsigned arity)
 
 	if (pr) {
 		push_property(m, name, arity, "dynamic");
-		pr->is_static = false;
+		pr->is_slice = false;
 		pr->is_dynamic = true;
 	} else
 		m->error = true;
@@ -1007,7 +1007,7 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 
 		if (!consulting) {
 			push_property(m, C_STR(m, c), c->arity, "dynamic");
-			pr->is_static = false;
+			pr->is_slice = false;
 			pr->is_dynamic = true;
 		} else {
 			if (m->prebuilt)
@@ -1021,9 +1021,9 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 			pr->is_public = true;
 		}
 	} else {
-		if (pr->is_tabled && !pr->is_dynamic && !pr->is_static) {
+		if (pr->is_tabled && !pr->is_dynamic && !pr->is_slice) {
 			push_property(m, C_STR(m, c), c->arity, "static");
-			pr->is_static = true;
+			pr->is_slice = true;
 		}
 	}
 

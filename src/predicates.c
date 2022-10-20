@@ -230,6 +230,15 @@ bool make_stringn(cell *d, const char *s, size_t n)
 		return true;
 	}
 
+#if 0
+	if (n < MAX_SMALL_STRING) {
+		make_smalln(d, s, n);
+		d->flags |= FLAG_CSTR_STRING;
+		d->arity = 2;
+		return true;
+	}
+#endif
+
 	*d = (cell){0};
 	d->tag = TAG_CSTR;
 	d->flags = FLAG_CSTR_STRING;
@@ -246,7 +255,7 @@ bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n)
 		return true;
 	}
 
-	if (is_static(orig)) {
+	if (is_slice(orig)) {
 		*d = *orig;
 		d->val_str += off;
 		d->str_len = n;
@@ -256,10 +265,13 @@ bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n)
 	if (n < MAX_SMALL_STRING) {
 		const char *s = C_STR(q, orig);
 
-		if (is_string(orig))
-			return make_stringn(d, s+off, n);
-
 		make_smalln(d, s+off, n);
+
+		if (is_string(orig)) {
+			d->flags |= FLAG_CSTR_STRING;
+			d->arity = 2;
+		}
+
 		return true;
 	}
 
