@@ -46,8 +46,10 @@ extern unsigned char library_sqlite3_register_pl[];
 extern unsigned int library_sqlite3_register_pl_len;
 extern unsigned char library_json_pl[];
 extern unsigned int library_json_pl_len;
-extern unsigned char library_js_pl[];
-extern unsigned int library_js_pl_len;
+extern unsigned char library_wasm_pl[];
+extern unsigned int library_wasm_pl_len;
+extern unsigned char library_wasm_js_pl[];
+extern unsigned int library_wasm_js_pl_len;
 extern unsigned char library_pseudojson_pl[];
 extern unsigned int library_pseudojson_pl_len;
 extern unsigned char library_abnf_pl[];
@@ -67,7 +69,6 @@ library g_libs[] = {
 	 {"freeze", library_freeze_pl, &library_freeze_pl_len},
 	 {"http", library_http_pl, &library_http_pl_len},
 	 {"json", library_json_pl, &library_json_pl_len},
-	 {"js", library_js_pl, &library_js_pl_len},
 	 {"lambda", library_lambda_pl, &library_lambda_pl_len},
 	 {"lists", library_lists_pl, &library_lists_pl_len},
 	 {"ordsets", library_ordsets_pl, &library_ordsets_pl_len},
@@ -79,6 +80,8 @@ library g_libs[] = {
 	 {"sqlite3", library_sqlite3_pl, &library_sqlite3_pl_len},
 	 {"sqlite3_register", library_sqlite3_register_pl, &library_sqlite3_register_pl_len},
 	 {"ugraphs", library_ugraphs_pl, &library_ugraphs_pl_len},
+	 {"wasm", library_wasm_pl, &library_wasm_pl_len},
+	 {"wasm_js", library_wasm_js_pl, &library_wasm_js_pl_len},
 	 {"when", library_when_pl, &library_when_pl_len},
 
 	 {0}

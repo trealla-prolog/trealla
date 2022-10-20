@@ -101,7 +101,6 @@ LIBOBJECTS +=  \
 	library/freeze.o \
 	library/http.o \
 	library/json.o \
-	library/js.o \
 	library/lambda.o \
 	library/lists.o \
 	library/ordsets.o \
@@ -113,6 +112,8 @@ LIBOBJECTS +=  \
 	library/sqlite3.o \
 	library/sqlite3_register.o \
 	library/ugraphs.o \
+	library/wasm.o \
+	library/wasm_js.o \
 	library/when.o
 
 SRCOBJECTS += src/imath/imath.o
@@ -153,7 +154,7 @@ wasm: tpl.wasm
 	rm tpl-wizened.wasm
 
 libtpl.wasm:
-	$(MAKE) WASI=1 TPL=libtpl.wasm 'OPT=$(OPT) -O0 -DNDEBUG -DWASI_IMPORTS'
+	$(MAKE) WASI=1 TPL=libtpl.wasm 'OPT=$(OPT) -O0 -DNDEBUG -DWASI_IMPORTS -DWASI_TARGET_JS'
 
 libtpl: libtpl.wasm
 # TODO: add to wizer --wasm-bulk-memory true

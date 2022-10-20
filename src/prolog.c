@@ -592,8 +592,11 @@ prolog *pl_create()
 			|| !strcmp(lib->name, "dif")			// Common?
 			|| !strcmp(lib->name, "when")			// Common?
 #ifdef __wasi__
-			|| !strcmp(lib->name, "js")			// Needed for WASM toplevel
-			|| !strcmp(lib->name, "pseudojson") // Likewise
+			|| !strcmp(lib->name, "wasm")			// Needed for WASM toplevel
+			|| !strcmp(lib->name, "pseudojson")		// Likewise
+#endif
+#ifdef WASI_TARGET_JS
+			|| !strcmp(lib->name, "wasm_js")		// Used by trealla-js
 #endif
 			) {
 			size_t len = *lib->len;
