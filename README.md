@@ -463,6 +463,7 @@ Non-standard predicates
 	assertz/2
 	clause/3
 	erase/1
+	string_length/2
 
 	string_upper/2
 	string_lower/2

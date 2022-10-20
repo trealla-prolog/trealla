@@ -6332,10 +6332,10 @@ static bool fn_call_nth_2(query *q)
 
 static bool fn_sys_lengthchk_2(query *q)
 {
-	GET_FIRST_ARG(p1,list_or_nil);
+	GET_FIRST_ARG(p1,atom_or_list_or_nil);
 	GET_NEXT_ARG(p2,integer_or_var);
 
-	if (is_string(p1)) {
+	if (is_atom(p1)) {
 		cell tmp;
 		make_int(&tmp, C_STRLEN(q, p1));
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
@@ -7746,6 +7746,7 @@ builtins g_other_bifs[] =
 	{"kv_set", 3, fn_kv_set_3, "+atomic,+value,+list", false, false, BLAH},
 	{"kv_get", 3, fn_kv_get_3, "+atomic,-value,+list", false, false, BLAH},
 	{"between", 3, fn_between_3, "+integer,+integer,-integer", false, false, BLAH},
+	{"string_length", 2, fn_sys_lengthchk_2, "+atom,?integer", false, false, BLAH},
 
 	{"must_be", 4, fn_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"can_be", 4, fn_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},

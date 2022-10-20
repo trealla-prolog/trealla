@@ -886,9 +886,9 @@ sre_match_all_pos(Pat, Text, L) :-
 sre_match_all_pos_(_, [], _, L, L) :- !.
 sre_match_all_pos_(Reg, TextIn, Offset, L0, L) :-
 	sre_matchp(Reg, TextIn, Match, TextOut),
-	'$lengthchk'(TextIn, N0),
-	'$lengthchk'(Match, N1),
-	'$lengthchk'(TextOut, N2),
+	string_length(TextIn, N0),
+	string_length(Match, N1),
+	string_length(TextOut, N2),
 	Pos is N0 - (N1 + N2) + Offset,
 	Pos2 is Pos + 1,
 	(	TextOut \= []

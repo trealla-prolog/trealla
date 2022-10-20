@@ -37,6 +37,7 @@ bool wrapper_for_predicate(query *q, builtins *fn_ptr);
 #define is_atomic_or_var(c) (is_atomic(c) || is_var(c))
 #define is_atom_or_var(c) (is_atom(c) || is_var(c))
 #define is_atom_or_int(c) (is_atom(c) || is_integer(c))
+#define is_atom_or_list_or_nil(c) (is_atom(c) || is_list_or_nil(c))
 #define is_atom_or_structure(c) (is_atom(c) || is_structure(c))
 #define is_number_or_var(c) (is_number(c) || is_var(c))
 #define is_float_or_var(c) (is_float(c) || is_var(c))
