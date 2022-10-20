@@ -270,12 +270,16 @@ bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n)
 		return true;
 	}
 
+#if 0
 	const char *s = C_STR(q, orig);
 
 	if (is_string(orig))
 		return make_stringn(d, s+off, n);
 
 	return make_cstringn(d, s+off, n);
+#else
+	return make_slice(q, d, orig, off, n);
+#endif
 }
 
 static bool fn_iso_unify_with_occurs_check_2(query *q)
