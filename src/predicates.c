@@ -234,6 +234,15 @@ bool make_stringn(cell *d, const char *s, size_t n)
 		return true;
 	}
 
+#if 0
+	if (n < MAX_SMALL_STRING) {
+		make_smalln(d, s, n);
+		d->flags |= FLAG_CSTR_STRING;
+		d->arity = 2;
+		return true;
+	}
+#endif
+
 	*d = (cell){0};
 	d->tag = TAG_CSTR;
 	d->flags = FLAG_CSTR_STRING;
@@ -250,7 +259,7 @@ bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n)
 		return true;
 	}
 
-	if (is_static(orig)) {
+	if (is_slice(orig)) {
 		*d = *orig;
 		d->val_str += off;
 		d->str_len = n;
@@ -260,10 +269,14 @@ bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n)
 	if (n < MAX_SMALL_STRING) {
 		const char *s = C_STR(q, orig);
 
-		if (is_string(orig))
-			return make_stringn(d, s+off, n);
+		make_smalln(d, s+off, n);
 
-		return make_cstringn(d, s+off, n);
+		if (is_string(orig)) {
+			d->flags |= FLAG_CSTR_STRING;
+			d->arity = 2;
+		}
+
+		return true;
 	}
 
 	if (is_strbuf(orig)) {
@@ -6318,10 +6331,10 @@ static bool fn_call_nth_2(query *q)
 
 static bool fn_sys_lengthchk_2(query *q)
 {
-	GET_FIRST_ARG(p1,list_or_nil);
+	GET_FIRST_ARG(p1,atom_or_list_or_nil);
 	GET_NEXT_ARG(p2,integer_or_var);
 
-	if (is_string(p1)) {
+	if (is_atom(p1)) {
 		cell tmp;
 		make_int(&tmp, C_STRLEN(q, p1));
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
@@ -7798,6 +7811,7 @@ builtins g_other_bifs[] =
 	{"kv_set", 3, fn_kv_set_3, "+atomic,+value,+list", false, false, BLAH},
 	{"kv_get", 3, fn_kv_get_3, "+atomic,-value,+list", false, false, BLAH},
 	{"between", 3, fn_between_3, "+integer,+integer,-integer", false, false, BLAH},
+	{"string_length", 2, fn_sys_lengthchk_2, "+atom,?integer", false, false, BLAH},
 
 	{"must_be", 4, fn_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"can_be", 4, fn_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
@@ -7814,7 +7828,6 @@ builtins g_other_bifs[] =
 	{"$register_term", 1, fn_sys_register_term_1, NULL, false, false, BLAH},
 	{"$get_level", 1, fn_sys_get_level_1, "-var", false, false, BLAH},
 	{"$is_partial_string", 1, fn_sys_is_partial_string_1, "+string", false, false, BLAH},
-	{"$lengthchk", 2, fn_sys_lengthchk_2, NULL, false, false, BLAH},
 	{"$undo_trail", 1, fn_sys_undo_trail_1, NULL, false, false, BLAH},
 	{"$redo_trail", 0, fn_sys_redo_trail_0, NULL, false, false, BLAH},
 	{"$legacy_predicate_property", 2, fn_sys_legacy_predicate_property_2, "+callable,?string", false, false, BLAH},

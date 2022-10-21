@@ -30,18 +30,20 @@ static const op_table g_ops[] =
 	{"*->", OP_XFY, 1050},
 	{",", OP_XFY, 1000},
 
-	//{"public", OP_FX, 1150},
-	//{"discontiguous", OP_FX, 1150},
-	//{"multifile", OP_FX, 1150},
-	//{"attribute", OP_FX, 1150},
+#if 1
+	{"public", OP_FX, 1150},
+	{"discontiguous", OP_FX, 1150},
+	{"multifile", OP_FX, 1150},
+	{"attribute", OP_FX, 1150},
 	//{"op", OP_FX, 1150},
-	//{"table", OP_FX, 1150},
-	//{"dynamic", OP_FX, 1150},
-	//{"initialization", OP_FX, 1150},
-	//{"set_prolog_flag", OP_FX, 1150},
-	//{"module", OP_FX, 1150},
-	//{"use_module", OP_FX, 1150},
-	//{"ensure_loaded", OP_FX, 1150},
+	{"table", OP_FX, 1150},
+	{"dynamic", OP_FX, 1150},
+	{"initialization", OP_FX, 1150},
+	{"set_prolog_flag", OP_FX, 1150},
+	{"module", OP_FX, 1150},
+	{"use_module", OP_FX, 1150},
+	{"ensure_loaded", OP_FX, 1150},
+#endif
 
 	{"meta_predicate", OP_FX, 1150},
 
@@ -470,7 +472,7 @@ void set_dynamic_in_db(module *m, const char *name, unsigned arity)
 
 	if (pr) {
 		push_property(m, name, arity, "dynamic");
-		pr->is_static = false;
+		pr->is_slice = false;
 		pr->is_dynamic = true;
 	} else
 		m->error = true;
@@ -1007,7 +1009,7 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 
 		if (!consulting) {
 			push_property(m, C_STR(m, c), c->arity, "dynamic");
-			pr->is_static = false;
+			pr->is_slice = false;
 			pr->is_dynamic = true;
 		} else {
 			if (m->prebuilt)
@@ -1021,9 +1023,9 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 			pr->is_public = true;
 		}
 	} else {
-		if (pr->is_tabled && !pr->is_dynamic && !pr->is_static) {
+		if (pr->is_tabled && !pr->is_dynamic && !pr->is_slice) {
 			push_property(m, C_STR(m, c), c->arity, "static");
-			pr->is_static = true;
+			pr->is_slice = true;
 		}
 	}
 

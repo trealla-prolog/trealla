@@ -54,7 +54,7 @@ cell *list_head(cell *l, cell *tmp)
 	if (!is_string(l))
 		return l + 1;
 
-	const char *src = is_static(l) ? l->val_str : is_strbuf(l) ? (char*)l->val_strb->cstr + l->strb_off : (char*)l->val_chr + l->val_off;
+	const char *src = is_slice(l) ? l->val_str : is_strbuf(l) ? (char*)l->val_strb->cstr + l->strb_off : (char*)l->val_chr + l->val_off;
 	size_t len = len_char_utf8(src);
 	tmp->tag = TAG_CSTR;
 	tmp->nbr_cells = 1;
@@ -75,8 +75,8 @@ cell *list_tail(cell *l, cell *tmp)
 		return h + h->nbr_cells;
 	}
 
-	const char *src = is_static(l) ? l->val_str : is_strbuf(l) ? (char*)l->val_strb->cstr + l->strb_off : (char*)l->val_chr;
-	size_t str_len = is_static(l) ? (size_t)l->str_len : is_strbuf(l) ? (size_t)l->val_strb->len - l->strb_off : (unsigned)l->chr_len;
+	const char *src = is_slice(l) ? l->val_str : is_strbuf(l) ? (char*)l->val_strb->cstr + l->strb_off : (char*)l->val_chr;
+	size_t str_len = is_slice(l) ? (size_t)l->str_len : is_strbuf(l) ? (size_t)l->val_strb->len - l->strb_off : (unsigned)l->chr_len;
 	size_t len = len_char_utf8(src);
 
 	if (str_len == len) {
@@ -88,7 +88,7 @@ cell *list_tail(cell *l, cell *tmp)
 		return tmp;
 	}
 
-	if (is_static(l)) {
+	if (is_slice(l)) {
 		copy_cells(tmp, l, 1);
 		tmp->val_str = l->val_str + len;
 		tmp->str_len = l->str_len - len;
@@ -817,6 +817,8 @@ static void directives(parser *p, cell *d)
 				}
 
 				set_dynamic_in_db(p->m, C_STR(p, c_name), arity);
+			} else if (!strcmp(dirname, "create_prolog_flag")) {
+			} else if (!strcmp(dirname, "encoding")) {
 			} else if (!strcmp(dirname, "public")) {
 			} else if (!strcmp(dirname, "table") && false) {
 				set_table_in_db(p->m, C_STR(p, c_name), arity);
@@ -906,6 +908,10 @@ static void directives(parser *p, cell *d)
 			}
 
 			p1 += p1->nbr_cells;
+		} else if (!strcmp(dirname, "create_prolog_flag")) {
+			p1 += 1;
+		} else if (!strcmp(dirname, "encoding")) {
+			p1 += 1;
 		} else if (!strcmp(dirname, "meta_predicate")) {
 			set_meta_predicate_in_db(m, p1);
 			p1 += p1->nbr_cells;

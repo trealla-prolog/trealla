@@ -2136,18 +2136,22 @@ static bool fn_iso_neq_2(query *q)
 
 	if (is_smallint(&p1) && is_smallint(&p2))
 		return p1.val_int == p2.val_int;
-	else if (is_bigint(&p1) && is_bigint(&p2))
-		return mp_int_compare(&p1.val_bigint->ival, &p2.val_bigint->ival) == 0;
-	else if (is_bigint(&p1) && is_smallint(&p2))
-		return mp_int_compare_value(&p1.val_bigint->ival, p2.val_int) == 0;
-	else if (is_bigint(&p2) && is_smallint(&p1))
+	else if (is_smallint(&p1) && is_bigint(&p2))
 		return mp_int_compare_value(&p2.val_bigint->ival, p1.val_int) == 0;
 	else if (is_smallint(&p1) && is_float(&p2))
 		return p1.val_int == p2.val_float;
-	else if (is_float(&p1) && is_float(&p2))
-		return p1.val_float == p2.val_float;
+	else if (is_bigint(&p1) && is_smallint(&p2))
+		return mp_int_compare_value(&p1.val_bigint->ival, p2.val_int) == 0;
+	else if (is_bigint(&p1) && is_bigint(&p2))
+		return mp_int_compare(&p1.val_bigint->ival, &p2.val_bigint->ival) == 0;
+	else if (is_bigint(&p1) && is_float(&p2))
+		return BIGINT_TO_DOUBLE(&p1.val_bigint->ival) == p2.val_float;
 	else if (is_float(&p1) && is_smallint(&p2))
 		return p1.val_float == p2.val_int;
+	else if (is_float(&p1) && is_float(&p2))
+		return p1.val_float == p2.val_float;
+	else if (is_float(&p1) && is_bigint(&p2))
+		return p1.val_float == BIGINT_TO_DOUBLE(&p2.val_bigint->ival);
 
 	return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable");
 }
@@ -2161,18 +2165,22 @@ static bool fn_iso_nne_2(query *q)
 
 	if (is_smallint(&p1) && is_smallint(&p2))
 		return p1.val_int != p2.val_int;
-	else if (is_bigint(&p1) && is_bigint(&p2))
-		return mp_int_compare(&p1.val_bigint->ival, &p2.val_bigint->ival) != 0;
-	else if (is_bigint(&p1) && is_smallint(&p2))
-		return mp_int_compare_value(&p1.val_bigint->ival, p2.val_int) != 0;
-	else if (is_bigint(&p2) && is_smallint(&p1))
+	else if (is_smallint(&p1) && is_bigint(&p2))
 		return mp_int_compare_value(&p2.val_bigint->ival, p1.val_int) != 0;
 	else if (is_smallint(&p1) && is_float(&p2))
 		return p1.val_int != p2.val_float;
-	else if (is_float(&p1) && is_float(&p2))
-		return p1.val_float != p2.val_float;
+	else if (is_bigint(&p1) && is_smallint(&p2))
+		return mp_int_compare_value(&p1.val_bigint->ival, p2.val_int) != 0;
+	else if (is_bigint(&p1) && is_bigint(&p2))
+		return mp_int_compare(&p1.val_bigint->ival, &p2.val_bigint->ival) != 0;
+	else if (is_bigint(&p1) && is_float(&p2))
+		return BIGINT_TO_DOUBLE(&p1.val_bigint->ival) != p2.val_float;
 	else if (is_float(&p1) && is_smallint(&p2))
 		return p1.val_float != p2.val_int;
+	else if (is_float(&p1) && is_float(&p2))
+		return p1.val_float != p2.val_float;
+	else if (is_float(&p1) && is_bigint(&p2))
+		return p1.val_float != BIGINT_TO_DOUBLE(&p2.val_bigint->ival);
 
 	return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable");
 }
@@ -2186,18 +2194,22 @@ static bool fn_iso_nge_2(query *q)
 
 	if (is_smallint(&p1) && is_smallint(&p2))
 		return p1.val_int >= p2.val_int;
-	else if (is_bigint(&p1) && is_bigint(&p2))
-		return mp_int_compare(&p1.val_bigint->ival, &p2.val_bigint->ival) >= 0;
-	else if (is_bigint(&p1) && is_smallint(&p2))
-		return mp_int_compare_value(&p1.val_bigint->ival, p2.val_int) >= 0;
-	else if (is_bigint(&p2) && is_smallint(&p1))
+	else if (is_smallint(&p1) && is_bigint(&p2))
 		return mp_int_compare_value(&p2.val_bigint->ival, p1.val_int) < 0;
 	else if (is_smallint(&p1) && is_float(&p2))
 		return p1.val_int >= p2.val_float;
-	else if (is_float(&p1) && is_float(&p2))
-		return p1.val_float >= p2.val_float;
+	else if (is_bigint(&p1) && is_smallint(&p2))
+		return mp_int_compare_value(&p1.val_bigint->ival, p2.val_int) >= 0;
+	else if (is_bigint(&p1) && is_bigint(&p2))
+		return mp_int_compare(&p1.val_bigint->ival, &p2.val_bigint->ival) >= 0;
+	else if (is_bigint(&p1) && is_float(&p2))
+		return BIGINT_TO_DOUBLE(&p1.val_bigint->ival) >= p2.val_float;
 	else if (is_float(&p1) && is_smallint(&p2))
 		return p1.val_float >= p2.val_int;
+	else if (is_float(&p1) && is_float(&p2))
+		return p1.val_float >= p2.val_float;
+	else if (is_float(&p1) && is_bigint(&p2))
+		return p1.val_float >= BIGINT_TO_DOUBLE(&p2.val_bigint->ival);
 
 	return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable");
 }
@@ -2211,18 +2223,22 @@ static bool fn_iso_ngt_2(query *q)
 
 	if (is_smallint(&p1) && is_smallint(&p2))
 		return p1.val_int > p2.val_int;
-	else if (is_bigint(&p1) && is_bigint(&p2))
-		return mp_int_compare(&p1.val_bigint->ival, &p2.val_bigint->ival) > 0;
-	else if (is_bigint(&p1) && is_smallint(&p2))
-		return mp_int_compare_value(&p1.val_bigint->ival, p2.val_int) > 0;
-	else if (is_bigint(&p2) && is_smallint(&p1))
+	else if (is_smallint(&p1) && is_bigint(&p2))
 		return mp_int_compare_value(&p2.val_bigint->ival, p1.val_int) <= 0;
 	else if (is_smallint(&p1) && is_float(&p2))
 		return p1.val_int > p2.val_float;
-	else if (is_float(&p1) && is_float(&p2))
-		return p1.val_float > p2.val_float;
+	else if (is_bigint(&p1) && is_smallint(&p2))
+		return mp_int_compare_value(&p1.val_bigint->ival, p2.val_int) > 0;
+	else if (is_bigint(&p1) && is_bigint(&p2))
+		return mp_int_compare(&p1.val_bigint->ival, &p2.val_bigint->ival) > 0;
+	else if (is_bigint(&p1) && is_float(&p2))
+		return BIGINT_TO_DOUBLE(&p1.val_bigint->ival) > p2.val_float;
 	else if (is_float(&p1) && is_smallint(&p2))
 		return p1.val_float > p2.val_int;
+	else if (is_float(&p1) && is_float(&p2))
+		return p1.val_float > p2.val_float;
+	else if (is_float(&p1) && is_bigint(&p2))
+		return p1.val_float > BIGINT_TO_DOUBLE(&p2.val_bigint->ival);
 
 	return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable");
 }
@@ -2236,18 +2252,22 @@ static bool fn_iso_nle_2(query *q)
 
 	if (is_smallint(&p1) && is_smallint(&p2))
 		return p1.val_int <= p2.val_int;
-	else if (is_bigint(&p1) && is_bigint(&p2))
-		return mp_int_compare(&p1.val_bigint->ival, &p2.val_bigint->ival) <= 0;
-	else if (is_bigint(&p1) && is_smallint(&p2))
-		return mp_int_compare_value(&p1.val_bigint->ival, p2.val_int) <= 0;
-	else if (is_bigint(&p2) && is_smallint(&p1))
+	else if (is_smallint(&p1) && is_bigint(&p2))
 		return mp_int_compare_value(&p2.val_bigint->ival, p1.val_int) > 0;
 	else if (is_smallint(&p1) && is_float(&p2))
 		return p1.val_int <= p2.val_float;
-	else if (is_float(&p1) && is_float(&p2))
-		return p1.val_float <= p2.val_float;
+	else if (is_bigint(&p1) && is_smallint(&p2))
+		return mp_int_compare_value(&p1.val_bigint->ival, p2.val_int) <= 0;
+	else if (is_bigint(&p1) && is_bigint(&p2))
+		return mp_int_compare(&p1.val_bigint->ival, &p2.val_bigint->ival) <= 0;
+	else if (is_bigint(&p1) && is_float(&p2))
+		return BIGINT_TO_DOUBLE(&p1.val_bigint->ival) <= p2.val_float;
 	else if (is_float(&p1) && is_smallint(&p2))
 		return p1.val_float <= p2.val_int;
+	else if (is_float(&p1) && is_float(&p2))
+		return p1.val_float <= p2.val_float;
+	else if (is_float(&p1) && is_bigint(&p2))
+		return p1.val_float <= BIGINT_TO_DOUBLE(&p2.val_bigint->ival);
 
 	return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable");
 }
@@ -2261,18 +2281,22 @@ static bool fn_iso_nlt_2(query *q)
 
 	if (is_smallint(&p1) && is_smallint(&p2))
 		return p1.val_int < p2.val_int;
-	else if (is_bigint(&p1) && is_bigint(&p2))
-		return mp_int_compare(&p1.val_bigint->ival, &p2.val_bigint->ival) < 0;
-	else if (is_bigint(&p1) && is_smallint(&p2))
-		return mp_int_compare_value(&p1.val_bigint->ival, p2.val_int) < 0;
-	else if (is_bigint(&p2) && is_smallint(&p1))
+	else if (is_smallint(&p1) && is_bigint(&p2))
 		return mp_int_compare_value(&p2.val_bigint->ival, p1.val_int) >= 0;
 	else if (is_smallint(&p1) && is_float(&p2))
 		return p1.val_int < p2.val_float;
-	else if (is_float(&p1) && is_float(&p2))
-		return p1.val_float < p2.val_float;
+	else if (is_bigint(&p1) && is_smallint(&p2))
+		return mp_int_compare_value(&p1.val_bigint->ival, p2.val_int) < 0;
+	else if (is_bigint(&p1) && is_bigint(&p2))
+		return mp_int_compare(&p1.val_bigint->ival, &p2.val_bigint->ival) < 0;
+	else if (is_bigint(&p1) && is_float(&p2))
+		return BIGINT_TO_DOUBLE(&p1.val_bigint->ival) < p2.val_float;
 	else if (is_float(&p1) && is_smallint(&p2))
 		return p1.val_float < p2.val_int;
+	else if (is_float(&p1) && is_float(&p2))
+		return p1.val_float < p2.val_float;
+	else if (is_float(&p1) && is_bigint(&p2))
+		return p1.val_float < BIGINT_TO_DOUBLE(&p2.val_bigint->ival);
 
 	return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable");
 }
