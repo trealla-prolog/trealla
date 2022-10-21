@@ -4264,6 +4264,7 @@ static bool fn_statistics_2(query *q)
 	return false;
 }
 
+#ifndef WASI_TARGET_JS
 static bool fn_sleep_1(query *q)
 {
 	if (q->retry)
@@ -4280,6 +4281,7 @@ static bool fn_sleep_1(query *q)
 	sleep((unsigned)get_smallint(p1));
 	return true;
 }
+#endif
 
 static bool fn_delay_1(query *q)
 {
@@ -7727,7 +7729,9 @@ builtins g_other_bifs[] =
 	{"use_module", 1, fn_use_module_1, "+term", false, false, BLAH},
 	{"use_module", 2, fn_use_module_2, "+term,+term", false, false, BLAH},
 
+#ifndef WASI_TARGET_JS
 	{"sleep", 1, fn_sleep_1, "+secs", false, false, BLAH},
+#endif
 	{"delay", 1, fn_delay_1, "+ms", false, false, BLAH},
 #ifndef __wasi__
 	{"shell", 1, fn_shell_1, "+atom", false, false, BLAH},

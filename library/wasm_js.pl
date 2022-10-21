@@ -1,7 +1,7 @@
 
 :- module(wasm_js, [js_eval/1, js_eval/2, js_eval_json/2,
 	js_fetch/3, http_consult/1, consult_string/1,
-	crypto_data_hash/3]).
+	crypto_data_hash/3, sleep/1]).
 
 :- use_module(library(lists)).
 :- use_module(library(error)).
@@ -71,6 +71,9 @@ fetch_obj(Method, Body, L0, Obj) :-
 
 fetch_header(K0-V0, string(Ks)-string(Vs)) :- atom_string(K0, Ks), atom_string(V0, Vs).
 
+atom_string(X, X) :- string(X), !.
+atom_string(A, X) :- atom_chars(A, X).
+
 fetch_then(string, text).
 fetch_then(json, json).
 
@@ -126,5 +129,11 @@ subtle_digest_expr(Data, Algo, Expr) :-
 		"return crypto.subtle.digest(~q, new TextEncoder().encode(~q)).then(sum => [...new Uint8Array(sum)].map(c => c.toString(16).padStart(2, '0')).join(''));",
 		[Algo, Data]), Expr)).
 
-atom_string(X, X) :- string(X), !.
-atom_string(A, X) :- atom_chars(A, X).
+sleep(Seconds) :-
+	must_be(integer, Seconds),
+	sleep_expr(Seconds, Expr),
+	js_eval_(Expr, _, sleep/1).
+
+sleep_expr(Seconds, Expr) :-
+	Millis is Seconds * 1000,
+	once(phrase(format_("return new Promise((resolve) => { setTimeout(resolve, ~d) });", [Millis]), Expr)).
