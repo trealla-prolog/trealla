@@ -300,8 +300,8 @@ size_t sprint_int(char *dst, size_t dstlen, pl_int_t n, int base)
 
 static void reformat_float(query * q, char *tmpbuf, double v)
 {
-#if 1
-	if (!strchr(tmpbuf, 'e') && !q->ignore_ops) {
+	if ((!strchr(tmpbuf, 'e') || !strchr(tmpbuf, 'E'))
+		&& !q->ignore_ops) {
 		char tmpbuf3[256];
 		sprintf(tmpbuf3, "%.*g", 16, v);
 		size_t len3 = strlen(tmpbuf3);
@@ -310,7 +310,6 @@ static void reformat_float(query * q, char *tmpbuf, double v)
 		if ((len - len3) > 1)
 			strcpy(tmpbuf, tmpbuf3);
 	}
-#endif
 
 	char tmpbuf2[256];
 	strcpy(tmpbuf2, tmpbuf);
