@@ -811,6 +811,8 @@ static void directives(parser *p, cell *d)
 				}
 
 				set_dynamic_in_db(p->m, C_STR(p, c_name), arity);
+			} else if (!strcmp(dirname, "create_prolog_flag")) {
+			} else if (!strcmp(dirname, "encoding")) {
 			} else if (!strcmp(dirname, "public")) {
 			} else if (!strcmp(dirname, "table") && false) {
 				set_table_in_db(p->m, C_STR(p, c_name), arity);
@@ -900,6 +902,10 @@ static void directives(parser *p, cell *d)
 			}
 
 			p1 += p1->nbr_cells;
+		} else if (!strcmp(dirname, "create_prolog_flag")) {
+			p1 += 1;
+		} else if (!strcmp(dirname, "encoding")) {
+			p1 += 1;
 		} else if (!strcmp(dirname, "meta_predicate")) {
 			set_meta_predicate_in_db(m, p1);
 			p1 += p1->nbr_cells;
