@@ -14,10 +14,6 @@
 #include "query.h"
 #include "utf8.h"
 
-#ifndef DBL_DECIMAL_DIG
-#define DBL_DECIMAL_DIG DBL_DIG
-#endif
-
 bool needs_quoting(module *m, const char *src, int srclen)
 {
 	if (!*src)
@@ -304,10 +300,10 @@ size_t sprint_int(char *dst, size_t dstlen, pl_int_t n, int base)
 
 static void reformat_float(query * q, char *tmpbuf, double v)
 {
-#if 0
+#if 1
 	if (!strchr(tmpbuf, 'e') && !q->ignore_ops) {
 		char tmpbuf3[256];
-		sprintf(tmpbuf3, "%.*g", DBL_DECIMAL_DIG-1, v);
+		sprintf(tmpbuf3, "%.*g", 16, v);
 		size_t len3 = strlen(tmpbuf3);
 		size_t len = strlen(tmpbuf);
 
@@ -743,7 +739,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 
 	if (is_float(c)) {
 		char tmpbuf[256];
-		sprintf(tmpbuf, "%.*g", DBL_DECIMAL_DIG+1, get_float(c));
+		sprintf(tmpbuf, "%.*g", 17, get_float(c));
 		reformat_float(q, tmpbuf, c->val_float);
 		dst += snprintf(dst, dstlen, "%s", tmpbuf);
 		q->last_thing_was_symbol = false;
