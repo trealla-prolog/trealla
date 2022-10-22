@@ -7145,6 +7145,7 @@ static bool fn_sre_matchp_4(query *q)
 		make_slice(q, &tmp1, p2, off, len);
 
 	bool ok = unify(q, p3, p3_ctx, &tmp1, q->st.curr_frame);
+	unshare_cell(&tmp1);
 	if (!ok) return false;
 
 	if ((size_t)(off + len) >= C_STRLEN(q, p2))
@@ -7153,10 +7154,8 @@ static bool fn_sre_matchp_4(query *q)
 		make_slice(q, &tmp2, p2, off + len, C_STRLEN(q, p2)-(off+len));
 
 	ok = unify(q, p4, p4_ctx, &tmp2, q->st.curr_frame);
-	if (!ok) return false;
-	unshare_cell(&tmp1);
 	unshare_cell(&tmp2);
-	return true;
+	return ok;
 }
 
 static bool fn_sre_match_4(query *q)
@@ -7177,6 +7176,7 @@ static bool fn_sre_match_4(query *q)
 		make_slice(q, &tmp1, p2, off, len);
 
 	bool ok = unify(q, p3, p3_ctx, &tmp1, q->st.curr_frame);
+	unshare_cell(&tmp1);
 	if (!ok) return false;
 
 	if ((size_t)(off + len) >= C_STRLEN(q, p2))
@@ -7185,10 +7185,8 @@ static bool fn_sre_match_4(query *q)
 		make_slice(q, &tmp2, p2, off + len, C_STRLEN(q, p2)-(off+len));
 
 	ok = unify(q, p4, p4_ctx, &tmp2, q->st.curr_frame);
-	if (!ok) return false;
-	unshare_cell(&tmp1);
 	unshare_cell(&tmp2);
-	return true;
+	return ok;
 }
 
 static bool fn_sre_substp_4(query *q)
@@ -7209,6 +7207,7 @@ static bool fn_sre_substp_4(query *q)
 		make_slice(q, &tmp1, p2, 0, off);
 
 	bool ok = unify(q, p3, p3_ctx, &tmp1, q->st.curr_frame);
+	unshare_cell(&tmp1);
 	if (!ok) return false;
 
 	if ((size_t)(off + len) >= C_STRLEN(q, p2))
@@ -7217,10 +7216,8 @@ static bool fn_sre_substp_4(query *q)
 		make_slice(q, &tmp2, p2, off + len, C_STRLEN(q, p2)-(off+len));
 
 	ok = unify(q, p4, p4_ctx, &tmp2, q->st.curr_frame);
-	if (!ok) return false;
-	unshare_cell(&tmp1);
 	unshare_cell(&tmp2);
-	return true;
+	return ok;
 }
 
 static bool fn_sre_subst_4(query *q)
@@ -7241,6 +7238,7 @@ static bool fn_sre_subst_4(query *q)
 		make_slice(q, &tmp1, p2, 0, off);
 
 	bool ok = unify(q, p3, p3_ctx, &tmp1, q->st.curr_frame);
+	unshare_cell(&tmp1);
 	if (!ok) return false;
 
 	if ((size_t)(off + len) >= C_STRLEN(q, p2))
@@ -7249,10 +7247,8 @@ static bool fn_sre_subst_4(query *q)
 		make_slice(q, &tmp2, p2, off + len, C_STRLEN(q, p2)-(off+len));
 
 	ok = unify(q, p4, p4_ctx, &tmp2, q->st.curr_frame);
-	if (!ok) return false;
-	unshare_cell(&tmp1);
 	unshare_cell(&tmp2);
-	return true;
+	return ok;
 }
 
 void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type)
