@@ -177,7 +177,7 @@ typedef struct {
 
 typedef struct {
 	int64_t refcnt;
-	char *ptr;
+	char *ptr, *ptr2;
 } blob;
 
 #define SET_STR(c,s,n,off) {									\
@@ -837,6 +837,7 @@ inline static void unshare_cell_(const cell *c)
 		}
 	} else if (is_blob(c)) {
 		if (--(c)->val_blob->refcnt == 0) {
+			free((c)->val_blob->ptr2);
 			free((c)->val_blob->ptr);
 			free((c)->val_blob);
 		}

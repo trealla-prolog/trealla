@@ -7114,13 +7114,16 @@ static bool fn_sre_compile_2(query *q)
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,var);
 	const char *pattern = C_STR(q, p1);
-	re_t reg = re_compile(pattern);
+	unsigned char *buf;
+	re_t reg = re_compile(pattern, &buf);
+	if (!reg) return false;
 	cell tmp = {0};
 	tmp.tag = TAG_BLOB;
 	tmp.flags = FLAG_MANAGED;
 	tmp.nbr_cells = 1;
 	tmp.val_blob = malloc(sizeof(blob));
 	tmp.val_blob->ptr = (void*)reg;
+	tmp.val_blob->ptr2 = (void*)buf;
 	tmp.val_blob->refcnt = 1;
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	unshare_cell(&tmp);

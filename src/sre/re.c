@@ -75,7 +75,9 @@ static int ismetachar(char c);
 int re_match(const char* pattern, const char* text, int* matchlength)
 {
   regex_t *tmp;
-  int ok = re_matchp(tmp = re_compile(pattern), text, matchlength);
+  unsigned char *buf;
+  int ok = re_matchp(tmp = re_compile(pattern, &buf), text, matchlength);
+  free (buf);
   free(tmp);
   return ok;
 }
@@ -111,13 +113,14 @@ int re_matchp(re_t pattern, const char* text, int* matchlength)
   return -1;
 }
 
-re_t re_compile(const char* pattern)
+re_t re_compile(const char* pattern, unsigned char** buf)
 {
   /* The sizes of the two static arrays below substantiates the static RAM usage of this module.
      MAX_REGEXP_OBJECTS is the max number of symbols in the expression.
      MAX_CHAR_CLASS_LEN determines the size of buffer for chars in all char-classes in the expression. */
   regex_t re_compiled[MAX_REGEXP_OBJECTS];
-  unsigned char ccl_buf[MAX_CHAR_CLASS_LEN];
+  static unsigned char tmp_ccl_buf[MAX_CHAR_CLASS_LEN];
+  unsigned char *ccl_buf = malloc(sizeof(tmp_ccl_buf));
   int ccl_bufidx = 1;
 
   char c;     /* current char in pattern   */
@@ -252,6 +255,7 @@ re_t re_compile(const char* pattern)
 
   regex_t *tmp = malloc(sizeof(re_compiled));
   memcpy(tmp, re_compiled, sizeof(re_compiled));
+  *buf = ccl_buf;
   return (re_t) tmp;
 }
 
