@@ -863,6 +863,15 @@ succ(_,_) :-
 
 :- help(succ(?integer,?integer,?integer), [iso(false)]).
 
+sre_match_all_in_file(Pat, Filename, L) :-
+	setup_call_cleanup(
+		open(Filename, read, S, [mmap(Cs)]),
+		sre_match_all(Pat, Cs, L),
+		close(S)
+	).
+
+:- help(sre_match_all_in_file(+pattern,+filename,-list), [iso(false)]).
+
 sre_match_all(Pat, Text, L) :-
 	sre_compile(Pat, Reg),
 	sre_match_all_(Reg, Text, [], L2),
@@ -877,6 +886,15 @@ sre_match_all_(Reg, TextIn, L0, L) :-
 	).
 
 :- help(sre_match_all(+pattern,+text,-list), [iso(false)]).
+
+sre_match_all_pos_in_file(Pat, Filename, L) :-
+	setup_call_cleanup(
+		open(Filename, read, S, [mmap(Cs)]),
+		sre_match_all_pos(Pat, Cs, L),
+		close(S)
+	).
+
+:- help(sre_match_all_pos_in_file(+pattern,+filename,-list), [iso(false)]).
 
 sre_match_all_pos(Pat, Text, L) :-
 	sre_compile(Pat, Reg),
@@ -896,19 +914,28 @@ sre_match_all_pos_(Reg, TextIn, Offset, L0, L) :-
 	;	L = L0
 	).
 
-:- help(sre_match_all_pos(+pattern,+text,-list), [iso(false)]).
+:- help(sre_match_all_pos(+pattern,+subst,-list), [iso(false)]).
 
-sre_subst_all(Pat, Text, Match, L) :-
+sre_subst_all_in_file(Pat, Filename, Subst, L) :-
+	setup_call_cleanup(
+		open(Filename, read, S, [mmap(Cs)]),
+		sre_subst_all(Pat, Cs, Subst, L),
+		close(S)
+	).
+
+:- help(sre_subst_all_in_file(+pattern,+filename,+subst,-list), [iso(false)]).
+
+sre_subst_all(Pat, Text, Subst, L) :-
 	sre_compile(Pat, Reg),
-	sre_subst_all_(Reg, Text, Match, [], L0),
+	sre_subst_all_(Reg, Text, Subst, [], L0),
 	reverse(L0, L1),
 	append(L1, L).
 
 sre_subst_all_(_, [], _, L, L) :- !.
-sre_subst_all_(Reg, TextIn, Match, L0, L) :-
+sre_subst_all_(Reg, TextIn, Subst, L0, L) :-
 	sre_substp(Reg, TextIn, Prefix, TextOut),
 	(	TextOut \= []
-	->	sre_subst_all_(Reg, TextOut, Match, [Match,Prefix|L0], L)
+	->	sre_subst_all_(Reg, TextOut, Subst, [Subst,Prefix|L0], L)
 	;	L = [Prefix|L0]
 	).
 

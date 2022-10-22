@@ -678,10 +678,13 @@ package (packages?) is included.
 	sre_match_all/3				# sre_matchall(+pattern,+text,-list)
 	sre_match_all_pos/3			# sre_matchall_pos(+pattern,+text,-pairs)
 
+	sre_match_all_in_file/3		# sre_matchall_in_file(+pattern,+filename,-list)
+	sre_match_all_pos_in_file/3 # sre_matchall_pos_in_file(+pattern,+filename,-pairs)
+
 	sre_subst/4					# sre_subst(+pattern,+text,-prefix,-rest)
 	sre_subst_all/4				# sre_subst(+pattern,+text,+subst,-text)
 
-
+	sre_subst_all_in_file/4		# sre_subst_in_file(+pattern,+filename,+subst,-text)
 ```
  * Supports:
  * ---------
@@ -731,6 +734,13 @@ For example...
 
 	?- sre_match_all_pos("\\s", "Needle In A Haystack", L).
 	   L = [6-1,9-1,11-1].
+
+	?- time(sre_match_all_in_file("t\\We",'thesaurus.txt',L)),
+		length(L,Len),
+		format("Occurrs: ~w times~n",[Len]),
+		halt.
+	Time elapsed 0.0463s
+	Occurrs: 749 times
 ```
 
 Note: if no match is found the returned *match*, *text* (and *list*) is *[]*
