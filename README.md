@@ -717,6 +717,9 @@ For example...
 	?- sre_match_all_pos("d.f", "xdafydbfzdcf-", L).
 	   L = [1-3,2-3,3-3].
 
+	?- sre_match_all("d[^c]f", "xdafydbfzdcfxddf-", L).
+	   L = ["daf","dbf","ddf"].
+
 	?- sre_subst("d.f", "xdafydbfzdcf-", P, L).
 	   P = "x", L = "ydbfzdcf-".
 
@@ -734,10 +737,9 @@ Note: if no match is found the returned *match*, *text* (and *list*) is *[]*
 indicating an empty string.
 
 Note: if the input *text* arg is a string then the output *text* arg
-is a zero-copy slice of the string. So if the input is a memory-mapped
-file, for example, then regex searches can be performed quickly and
-efficiently over huge files, with the only memory used being for the
-final results.
+is a no-copy slice of the string. So if the input is a memory-mapped
+file then regex searches can be performed quickly and efficiently over
+huge files.
 
 
 Foreign Function Interface (FFI)		##EXPERIMENTAL##
