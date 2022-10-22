@@ -7119,7 +7119,7 @@ static bool fn_sre_compile_2(query *q)
 	if (!reg) return false;
 	cell tmp = {0};
 	tmp.tag = TAG_BLOB;
-	tmp.flags = FLAG_MANAGED;
+	tmp.flags = FLAG_MANAGED | FLAG_BLOB_SRE;
 	tmp.nbr_cells = 1;
 	tmp.val_blob = malloc(sizeof(blob));
 	tmp.val_blob->ptr = (void*)reg;
@@ -7132,7 +7132,7 @@ static bool fn_sre_compile_2(query *q)
 
 static bool fn_sre_matchp_4(query *q)
 {
-	GET_FIRST_ARG(p1,blob);
+	GET_FIRST_ARG(p1,sregex);
 	GET_NEXT_ARG(p2,atom);
 	GET_NEXT_ARG(p3,atom_or_var);
 	GET_NEXT_ARG(p4,atom_or_var);
@@ -7194,7 +7194,7 @@ static bool fn_sre_match_4(query *q)
 
 static bool fn_sre_substp_4(query *q)
 {
-	GET_FIRST_ARG(p1,blob);
+	GET_FIRST_ARG(p1,sregex);
 	GET_NEXT_ARG(p2,atom);
 	GET_NEXT_ARG(p3,atom_or_var);
 	GET_NEXT_ARG(p4,atom_or_var);

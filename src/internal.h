@@ -253,8 +253,10 @@ enum {
 	FLAG_VAR_FRESH=1<<1,				// used with TAG_VAR
 	FLAG_VAR_TEMPORARY=1<<2,			// used with TAG_VAR
 
-	FLAG_HANDLE_DLL=1<<0,				// used with TAG_INT_HANDLE
-	FLAG_HANDLE_FUNC=1<<1,				// used with TAG_INT_HANDLE
+	FLAG_HANDLE_DLL=1<<0,				// used with FLAG_INT_HANDLE
+	FLAG_HANDLE_FUNC=1<<1,				// used with FLAG_INT_HANDLE
+
+	FLAG_BLOB_SRE=1<<0,					// used with TAG_BLOB
 
 	FLAG_FFI=1<<6,
 	FLAG_REF=1<<7,
