@@ -660,9 +660,9 @@ bool try_me(query *q, unsigned nbr_vars)
 	f->initial_slots = f->actual_slots = nbr_vars;
 	f->is_active = false;
 	f->base = q->st.sp;
-	slot *e = GET_FIRST_SLOT(f);
 
-	for (unsigned i = 0; i < nbr_vars; i++, e++) {
+	for (unsigned i = 0; i < nbr_vars; i++) {
+		slot *e = GET_SLOT(f, i);
 		//unshare_cell(&e->c);
 		e->c.tag = TAG_EMPTY;
 		e->c.attrs = NULL;
@@ -2027,10 +2027,14 @@ void destroy_query(query *q)
 		free(q->queue[i]);
 	}
 
-	slot *e = q->slots;
+	for (pl_idx_t i = 0; i < q->st.fp; i++) {
+		const frame *f = GET_FRAME(i);
 
-	for (pl_idx_t i = 0; i < q->st.sp; i++, e++)
-		unshare_cell(&e->c);
+		for (pl_idx_t j = 0; j < f->actual_slots; j++) {
+			slot *e = GET_SLOT(f, j);
+			unshare_cell(&e->c);
+		}
+	}
 
 	mp_int_clear(&q->tmp_ival);
 	purge_dirty_list(q);

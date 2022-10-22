@@ -85,8 +85,6 @@ extern unsigned g_string_cnt, g_interned_cnt;
 	(q->slots+(f)->overflow+((i)-(f)->initial_slots)) 		\
 	)
 
-#define GET_FIRST_SLOT(f) GET_SLOT(f, 0)
-
 // Primary type...
 
 #define is_empty(c) ((c)->tag == TAG_EMPTY)
