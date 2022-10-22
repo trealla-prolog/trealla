@@ -47,7 +47,7 @@ typedef struct regex_t* re_t;
 
 
 /* Compile regex string pattern to a regex_t-array. */
-re_t re_compile(const char* pattern);
+re_t re_compile(const char* pattern, unsigned char** buf);
 
 
 /* Find matches of the compiled pattern inside text. */

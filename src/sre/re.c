@@ -75,7 +75,9 @@ static int ismetachar(char c);
 int re_match(const char* pattern, const char* text, int* matchlength)
 {
   regex_t *tmp;
-  int ok = re_matchp(tmp = re_compile(pattern), text, matchlength);
+  unsigned char *buf;
+  int ok = re_matchp(tmp = re_compile(pattern, &buf), text, matchlength);
+  free (buf);
   free(tmp);
   return ok;
 }
@@ -111,13 +113,14 @@ int re_matchp(re_t pattern, const char* text, int* matchlength)
   return -1;
 }
 
-re_t re_compile(const char* pattern)
+re_t re_compile(const char* pattern, unsigned char** buf)
 {
   /* The sizes of the two static arrays below substantiates the static RAM usage of this module.
      MAX_REGEXP_OBJECTS is the max number of symbols in the expression.
      MAX_CHAR_CLASS_LEN determines the size of buffer for chars in all char-classes in the expression. */
   regex_t re_compiled[MAX_REGEXP_OBJECTS];
-  unsigned char ccl_buf[MAX_CHAR_CLASS_LEN];
+  static unsigned char tmp_ccl_buf[MAX_CHAR_CLASS_LEN];
+  unsigned char *ccl_buf = malloc(sizeof(tmp_ccl_buf));
   int ccl_bufidx = 1;
 
   char c;     /* current char in pattern   */
@@ -188,6 +191,7 @@ re_t re_compile(const char* pattern)
           i += 1; /* Increment i to avoid including '^' in the char-buffer */
           if (pattern[i+1] == 0) /* incomplete pattern, missing non-zero char after '^' */
           {
+			free(ccl_buf);
             return 0;
           }
         }
@@ -205,10 +209,12 @@ re_t re_compile(const char* pattern)
             if (ccl_bufidx >= MAX_CHAR_CLASS_LEN - 1)
             {
               //fputs("exceeded internal buffer!\n", stderr);
+			  free(ccl_buf);
               return 0;
             }
             if (pattern[i+1] == 0) /* incomplete pattern, missing non-zero char after '\\' */
             {
+			  free(ccl_buf);
               return 0;
             }
             ccl_buf[ccl_bufidx++] = pattern[i++];
@@ -216,6 +222,7 @@ re_t re_compile(const char* pattern)
           else if (ccl_bufidx >= MAX_CHAR_CLASS_LEN)
           {
               //fputs("exceeded internal buffer!\n", stderr);
+			  free(ccl_buf);
               return 0;
           }
           ccl_buf[ccl_bufidx++] = pattern[i];
@@ -224,6 +231,7 @@ re_t re_compile(const char* pattern)
         {
             /* Catches cases such as [00000000000000000000000000000000000000][ */
             //fputs("exceeded internal buffer!\n", stderr);
+			free(ccl_buf);
             return 0;
         }
         /* Null-terminate string end */
@@ -241,6 +249,7 @@ re_t re_compile(const char* pattern)
     /* no buffer-out-of-bounds access on invalid patterns - see https://github.com/kokke/tiny-regex-c/commit/1a279e04014b70b0695fba559a7c05d55e6ee90b */
     if (pattern[i] == 0)
     {
+	  free(ccl_buf);
       return 0;
     }
 
@@ -252,6 +261,7 @@ re_t re_compile(const char* pattern)
 
   regex_t *tmp = malloc(sizeof(re_compiled));
   memcpy(tmp, re_compiled, sizeof(re_compiled));
+  *buf = ccl_buf;
   return (re_t) tmp;
 }
 
