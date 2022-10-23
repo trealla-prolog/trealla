@@ -4405,26 +4405,6 @@ static bool fn_between_3(query *q)
 	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 }
 
-#if 0
-static bool fn_forall_2(query *q)
-{
-	if (q->retry)
-		return true;
-
-	GET_FIRST_ARG(p1,callable);
-	GET_NEXT_ARG(p2,callable);
-	pl_idx_t off = heap_used(q);
-	check_heap_error(clone_to_heap(q, true, p1, 0));
-	check_heap_error(clone_to_heap(q, false, p2, 1));
-	cell *tmp = get_heap(q, off);
-	pl_idx_t nbr_cells = 1 + p1->nbr_cells + p2->nbr_cells;
-	make_struct(tmp+nbr_cells, g_fail_s, fn_iso_fail_0, 0, 0);
-	check_heap_error(push_choice(q));
-	q->st.curr_cell = tmp;
-	return true;
-}
-#endif
-
 static bool fn_split_atom_4(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -7303,7 +7283,6 @@ static void load_properties(module *m)
 	//format_property(m, tmpbuf, sizeof(tmpbuf), "throw", 1, "control_construct"); SB_strcat(pr, tmpbuf);
 	//format_property(m, tmpbuf, sizeof(tmpbuf), "findall", 3, "control_construct"); SB_strcat(pr, tmpbuf);
 	//format_property(m, tmpbuf, sizeof(tmpbuf), "findall", 4, "control_construct"); SB_strcat(pr, tmpbuf);
-	//format_property(m, tmpbuf, sizeof(tmpbuf), "forall", 2, "control_construct"); SB_strcat(pr, tmpbuf);
 
 	//format_property(m, tmpbuf, sizeof(tmpbuf), "catch", 3, "meta_predicate(catch(0,?,0))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), ",", 2, "meta_predicate((0,0))"); SB_strcat(pr, tmpbuf);
@@ -7712,7 +7691,6 @@ builtins g_other_bifs[] =
 	{"is_list", 1, fn_is_list_1, "+term", false, false, BLAH},
 	{"list", 1, fn_is_list_1, "+term", false, false, BLAH},
 	{"is_stream", 1, fn_is_stream_1, "+term", false, false, BLAH},
-	//{"forall", 2, fn_forall_2, "+term,+term", false, false, BLAH},
 	{"term_hash", 2, fn_term_hash_2, "+term,?integer", false, false, BLAH},
 	{"name", 2, fn_iso_atom_codes_2, "?string,?list", false, false, BLAH},
 	{"base64", 3, fn_base64_3, "?string,?string,+list", false, false, BLAH},
