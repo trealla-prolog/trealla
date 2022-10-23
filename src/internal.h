@@ -389,7 +389,7 @@ struct cell_ {
 
 			union {
 				uint32_t val_off;		// used with TAG_VAR & TAG_INTERNED
-				pl_idx_t var_ctx;		// used with TAG_VAR
+				pl_idx_t var_ctx;		// used with TAG_VAR & FLAG_REF
 			};
 		};
 
