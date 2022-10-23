@@ -1,7 +1,6 @@
 
 :- module(wasm_js, [js_eval/1, js_eval/2, js_eval_json/2,
-	js_fetch/3, http_consult/1, consult_string/1,
-	crypto_data_hash/3, sleep/1]).
+	js_fetch/3, http_consult/1, crypto_data_hash/3, sleep/1]).
 
 :- use_module(library(lists)).
 :- use_module(library(error)).

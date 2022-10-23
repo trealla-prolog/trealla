@@ -1,23 +1,33 @@
 :- module(wasm_generic, [host_rpc]).
 :- use_module(library(wasm)).
 :- use_module(library(pseudojson)).
+:- use_module(library(lists)).
 
 host_call(Expr, Cs) :-
 	'$host_call'(Expr, Cs), !
 	; yield, '$host_resume'(Cs).
 
 host_rpc(Goal) :-
-	unique_variable_names(Goal, VNs),
-	wasm:term_json(VNs, Goal, ArgValue),
+	unique_variable_names(Goal, Vars0),
+	wasm:term_json(Vars0, Goal, ArgValue),
 	json_value(JSON, ArgValue),
 	json_chars(JSON, Req),
 	host_call(Req, Resp),
-	read_term_from_chars(Resp, Reply, [variable_names(VNs1)]),
-	merge_vars(VNs, VNs1),
-	( Reply = throw(Ball) -> throw(Ball) ; true),
-	( Reply = fail -> fail ; true),
+	read_term_from_chars(Resp, Reply, [variable_names(Vars1)]),
 	!,
-	Goal = Reply.
+	host_rpc_eval(Reply, Goal, Vars0, Vars1).
+
+host_rpc_eval(throw(Ball), _, _, _) :- !, throw(Ball).
+host_rpc_eval(true, _, _, _) :- !.
+host_rpc_eval(fail, _, _, _) :- !, fail.
+host_rpc_eval(false, _, _, _) :- !, fail.
+host_rpc_eval(call(G), _, Vs0, Vs1) :-
+	merge_vars(Vs1, Vs0),
+	call(G).
+host_rpc_eval(G1, G0, Vs0, Vs1) :-
+	G1 \= call(_),
+	merge_vars(Vs0, Vs1),
+	G0 = G1.
 
 merge_vars(L0, L2) :-
 	maplist(merge_vars_(L2), L0).
