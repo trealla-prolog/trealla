@@ -83,27 +83,12 @@ body_js(JS, Cs) :- json_chars(JS, Cs).
 no_body("GET").
 no_body("HEAD").
 
-% TODO: set module name to URL
 http_consult(URL) :-
 	( js_fetch(URL, Cs, [as(string)]) -> true
 	; throw(error(js_error(fetch_failed, URL)))),
-	consult_string(Cs).
-
-consult_string(Cs) :-
-	wall_time(T),
-	random(Rand),
-	once(phrase(format_("/tmp/consult_~w~w.pl", [T, Rand]), Filename)),
-	atom_chars(File, Filename),
-	setup_call_cleanup(
-		open(File, write, S),
-		(
-			'$put_chars'(S, Cs),
-			flush_output(S),
-			close(S),
-			consult(File)
-		),
-		delete_file(Filename)
-	).
+	atom_chars(Module, URL),
+	Module:'$load_chars'(Cs),
+	use_module(Module).
 
 crypto_data_hash(Data, Hash, Options) :-
 	must_be(chars, Data),

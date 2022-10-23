@@ -113,6 +113,7 @@ LIBOBJECTS +=  \
 	library/sqlite3_register.o \
 	library/ugraphs.o \
 	library/wasm.o \
+	library/wasm_generic.o \
 	library/wasm_js.o \
 	library/when.o
 
@@ -154,12 +155,21 @@ wasm: tpl.wasm
 	rm tpl-wizened.wasm
 
 libtpl.wasm:
-	$(MAKE) WASI=1 TPL=libtpl.wasm 'OPT=$(OPT) -O0 -DNDEBUG -DWASI_IMPORTS -DWASI_TARGET_JS'
+	$(MAKE) WASI=1 TPL=libtpl.wasm 'OPT=$(OPT) -O0 -DNDEBUG -DWASI_IMPORTS -DWASI_TARGET_GENERIC'
+
+libtpl-js.wasm:
+	$(MAKE) WASI=1 TPL=libtpl-js.wasm 'OPT=$(OPT) -O0 -DNDEBUG -DWASI_IMPORTS -DWASI_TARGET_JS'
 
 libtpl: libtpl.wasm
 # TODO: add to wizer --wasm-bulk-memory true
 	$(WIZER)  --allow-wasi --dir . -o libtpl-wizened.wasm libtpl.wasm
 	$(WASMOPT) libtpl-wizened.wasm -o libtpl.wasm -O4
+	rm libtpl-wizened.wasm
+
+libtpl-js: libtpl-js.wasm
+# TODO: add to wizer --wasm-bulk-memory true
+	$(WIZER)  --allow-wasi --dir . -o libtpl-wizened.wasm libtpl-js.wasm
+	$(WASMOPT) libtpl-wizened.wasm -o libtpl-js.wasm -O4
 	rm libtpl-wizened.wasm
 
 test:

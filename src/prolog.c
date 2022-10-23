@@ -598,6 +598,9 @@ prolog *pl_create()
 #ifdef WASI_TARGET_JS
 			|| !strcmp(lib->name, "wasm_js")		// Used by trealla-js
 #endif
+#ifdef WASI_TARGET_GENERIC
+			|| !strcmp(lib->name, "wasm_generic")
+#endif
 			) {
 			size_t len = *lib->len;
 			char *src = malloc(len+1);

@@ -48,6 +48,8 @@ extern unsigned char library_json_pl[];
 extern unsigned int library_json_pl_len;
 extern unsigned char library_wasm_pl[];
 extern unsigned int library_wasm_pl_len;
+extern unsigned char library_wasm_generic_pl[];
+extern unsigned int library_wasm_generic_pl_len;
 extern unsigned char library_wasm_js_pl[];
 extern unsigned int library_wasm_js_pl_len;
 extern unsigned char library_pseudojson_pl[];
@@ -81,6 +83,7 @@ library g_libs[] = {
 	 {"sqlite3_register", library_sqlite3_register_pl, &library_sqlite3_register_pl_len},
 	 {"ugraphs", library_ugraphs_pl, &library_ugraphs_pl_len},
 	 {"wasm", library_wasm_pl, &library_wasm_pl_len},
+	 {"wasm_generic", library_wasm_generic_pl, &library_wasm_generic_pl_len},
 	 {"wasm_js", library_wasm_js_pl, &library_wasm_js_pl_len},
 	 {"when", library_when_pl, &library_when_pl_len},
 
