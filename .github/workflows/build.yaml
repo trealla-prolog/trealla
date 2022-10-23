@@ -79,11 +79,14 @@
             tar xvf wizer-${WIZER_VERSION_FULL}.tar.xz
         - name: Build
           run: |
-            mkdir -p build
+            rm -rf ./build
+            mkdir -p ./build
             make clean wasm
             mv tpl.wasm ./build
             make clean libtpl
-            mv ./build/tpl.wasm .
+            mv libtpl.wasm ./build
+            make clean libtpl-js
+            mv ./build/*.wasm .
         - name: Test
           run: |
             echo 'wasmer --dir . tpl.wasm -- $@' > tpl
@@ -99,6 +102,11 @@
           with:
             name: libtpl.wasm
             path: libtpl.wasm
+        - name: Upload artifacts
+          uses: actions/upload-artifact@v1
+          with:
+            name: libtpl-js.wasm
+            path: libtpl-js.wasm
         - name: Publish on WAPM
           run: |
             sed -i "s/__RELEASE_VERSION__/$RELEASE_VERSION/" wapm.toml
