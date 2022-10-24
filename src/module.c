@@ -30,7 +30,6 @@ static const op_table g_ops[] =
 	{"*->", OP_XFY, 1050},
 	{",", OP_XFY, 1000},
 
-#if 1
 	{"public", OP_FX, 1150},
 	{"discontiguous", OP_FX, 1150},
 	{"multifile", OP_FX, 1150},
@@ -39,11 +38,10 @@ static const op_table g_ops[] =
 	{"table", OP_FX, 1150},
 	{"dynamic", OP_FX, 1150},
 	{"initialization", OP_FX, 1150},
-	{"set_prolog_flag", OP_FX, 1150},
+	//{"set_prolog_flag", OP_FX, 1150},
 	{"module", OP_FX, 1150},
 	{"use_module", OP_FX, 1150},
 	{"ensure_loaded", OP_FX, 1150},
-#endif
 
 	{"meta_predicate", OP_FX, 1150},
 
