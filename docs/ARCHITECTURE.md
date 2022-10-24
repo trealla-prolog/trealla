@@ -35,6 +35,7 @@ A literal is always used for functor names.
 
 Var
 ===
+
 ```
         +----------+---------+----------+---------+
     0   |   tag    |  arity  |       flags        |    CELL 1
@@ -55,7 +56,33 @@ Where *tag* is TAG_VAR.
 Where *arity* is always 0.
 Where *nbr_cells* is always 1.
 Where *val_off* is a byte_offset into the symbol table.
-Where *var_nbr* is the index into a frame's slots
+Where *var_nbr* is the index into an environment
+
+Ref
+===
+
+```
+        +----------+---------+----------+---------+
+    0   |   tag    |  arity  |       flags        |    CELL 1
+        +----------+---------+----------+---------+
+    4   |                 nbr_cells               |
+        +----------+---------+----------+---------+
+    8   |                                         |
+        |               - UNUSED -                |
+   12   |                                         |
+        +----------+---------+----------+---------+
+   16   |                 var_ctx                 |
+        +----------+---------+----------+---------+
+   20   |       var_nbr      |      - UNUSED -    |
+        +----------+---------+----------+---------+
+```
+
+Where *tag* is TAG_VAR.
+Where *arity* is always 0.
+Where *flags* is FLAG_REF
+Where *nbr_cells* is always 1.
+Where *var_ctx* is the context (or environment)
+Where *var_nbr* is the index into an environment
 
 
 Integer
@@ -324,6 +351,8 @@ the slot space can be easily resized.
 During execution of a builtin predicate (a C function) active slot
 pointers (if any) may need to be refreshed after creating new variables
 (eg. in length/2, copy_term/2 etc).
+
+A collection of slots constitute an environment and belong to a frame.
 
 
 Choices
