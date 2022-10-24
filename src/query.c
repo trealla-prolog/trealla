@@ -2027,6 +2027,7 @@ void destroy_query(query *q)
 		free(q->queue[i]);
 	}
 
+#if 0
 	for (pl_idx_t i = 0; i < q->st.fp; i++) {
 		const frame *f = GET_FRAME(i);
 
@@ -2035,6 +2036,12 @@ void destroy_query(query *q)
 			unshare_cell(&e->c);
 		}
 	}
+#else
+	slot *e = q->slots;
+
+	for (pl_idx_t i = 0; i < q->st.sp; i++, e++)
+		unshare_cell(&e->c);
+#endif
 
 	mp_int_clear(&q->tmp_ival);
 	purge_dirty_list(q);
