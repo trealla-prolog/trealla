@@ -824,6 +824,7 @@ bool do_post_unification_hook(query *q, bool is_builtin)
 	q->run_hook = false;
 	q->undo_lo_tp = q->before_hook_tp;
 	q->undo_hi_tp = q->st.tp;
+	q->before_hook_tp = 0;
 
 	cell *tmp = alloc_on_heap(q, 3);
 	check_heap_error(tmp);

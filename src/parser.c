@@ -397,7 +397,7 @@ static void directives(parser *p, cell *d)
 		q.st.m = p->m;
 		char *dst = print_term_to_strbuf(&q, p1, p1_ctx, 0);
 		builtins *ptr = calloc(1, sizeof(builtins));
-		ptr->name = C_STR(p, p1);
+		ptr->name = strdup(C_STR(p, p1));
 		ptr->arity = p1->arity;
 		char *src = dst;
 
@@ -412,7 +412,9 @@ static void directives(parser *p, cell *d)
 
 		ptr->help = *src ? src : dst;
 		ptr->iso = iso;
+		ptr->via_directive = true;
 		map_app(p->pl->help, ptr->name, ptr);
+		free(dst);
 		return;
 	}
 

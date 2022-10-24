@@ -175,6 +175,12 @@ libtpl-js: libtpl-js.wasm
 test:
 	./tests/run.sh
 
+check:
+	./tests/run_valgrind.sh
+
+check-leaks:
+	./tests/run_valgrind_leaks.sh
+
 clean:
 	rm -f tpl tpl.wasm tpl*.wasm libtpl*.wasm \
 		src/*.o src/imath/*.o src/isocline/src/*.o src/sre/*.o \

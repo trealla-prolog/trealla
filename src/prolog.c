@@ -190,6 +190,16 @@ static void g_destroy()
 	free(g_tpl_lib);
 }
 
+static void ptrfree(const void *key, const void *val, const void *p)
+{
+	builtins *ptr = (void*)val;
+
+	if (ptr->via_directive) {
+		free((void*)ptr->name);
+		free((void*)ptr);
+	}
+}
+
 static void keyfree(const void *key, const void *val, const void *p)
 {
 	free((void*)key);
@@ -528,7 +538,7 @@ prolog *pl_create()
 
 	pl->streams[3].ignore = true;;
 
-	pl->help = map_create((void*)fake_strcmp, NULL, NULL);
+	pl->help = map_create((void*)fake_strcmp, (void*)ptrfree, NULL);
 	map_allow_dups(pl->help, false);
 
 	pl->biftab = map_create((void*)fake_strcmp, NULL, NULL);
