@@ -59,7 +59,7 @@ bool do_yield(query *q, int msecs)
 	return false;
 }
 
-static void make_ref(cell *tmp, pl_idx_t ctx, pl_idx_t off, unsigned var_nbr)
+static void make_ref(cell *tmp, pl_idx_t off, unsigned var_nbr, pl_idx_t ctx)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_VAR;
@@ -1907,7 +1907,7 @@ cell *do_term_variables(query *q, cell *p1, pl_idx_t p1_ctx)
 			tmp[idx].arity = 2;
 			tmp[idx].nbr_cells = ((cnt-done)*2)+1;
 			idx++;
-			make_ref(tmp+idx, q->pl->tabs[i].ctx, q->pl->tabs[i].val_off, q->pl->tabs[i].var_nbr);
+			make_ref(tmp+idx, q->pl->tabs[i].val_off, q->pl->tabs[i].var_nbr, q->pl->tabs[i].ctx);
 
 			if (q->pl->tabs[i].is_anon)
 				tmp[idx].flags |= FLAG_VAR_ANON;
@@ -1983,7 +1983,7 @@ static cell *do_term_singletons(query *q, cell *p1, pl_idx_t p1_ctx)
 			tmp[idx].arity = 2;
 			tmp[idx].nbr_cells = ((cnt2-done)*2)+1;
 			idx++;
-			make_ref(tmp+idx, q->pl->tabs[i].ctx, q->pl->tabs[i].val_off, q->pl->tabs[i].var_nbr);
+			make_ref(tmp+idx, q->pl->tabs[i].val_off, q->pl->tabs[i].var_nbr, q->pl->tabs[i].ctx);
 
 			if (q->pl->tabs[i].is_anon)
 				tmp[idx].flags |= FLAG_VAR_ANON;
