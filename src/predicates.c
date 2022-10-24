@@ -50,7 +50,7 @@ size_t slicecpy(char *dst, size_t dstlen, const char *src, size_t len)
 	return dst - save;
 }
 
-bool do_yield_0(query *q, int msecs)
+bool do_yield(query *q, int msecs)
 {
 	q->yielded = true;
 	q->tmo_msecs = get_time_in_usec() / 1000;
@@ -4271,7 +4271,7 @@ static bool fn_sleep_1(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
 
 	if (q->is_task)
-		return do_yield_0(q, get_smallint(p1)*1000);
+		return do_yield(q, get_smallint(p1)*1000);
 
 	sleep((unsigned)get_smallint(p1));
 	return true;
@@ -4288,7 +4288,7 @@ static bool fn_delay_1(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
 
 	if (q->is_task)
-		return do_yield_0(q, get_smallint(p1));
+		return do_yield(q, get_smallint(p1));
 
 	msleep((unsigned)get_smallint(p1));
 	return true;
@@ -5099,7 +5099,7 @@ static bool fn_yield_0(query *q)
 	if (q->retry)
 		return true;
 
-	return do_yield_0(q, 0);
+	return do_yield(q, 0);
 }
 
 static bool fn_task_n(query *q)
@@ -6500,7 +6500,7 @@ static bool fn_get_unbuffered_code_1(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
-		return do_yield_0(q, 1);
+		return do_yield(q, 1);
 	}
 
 	str->did_getc = true;
@@ -6560,7 +6560,7 @@ static bool fn_get_unbuffered_char_1(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
-		return do_yield_0(q, 1);
+		return do_yield(q, 1);
 	}
 
 	str->did_getc = true;

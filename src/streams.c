@@ -1745,7 +1745,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx_t p1_ctx, cell *p2, pl
 		if (p->no_fp || getline(&p->save_line, &p->n_line, str->fp) == -1) {
 			if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 				clearerr(str->fp);
-				return do_yield_0(q, 1);
+				return do_yield(q, 1);
 			}
 
 			p->srcptr = "";
@@ -1774,7 +1774,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx_t p1_ctx, cell *p2, pl
 			if (p->no_fp || getline(&p->save_line, &p->n_line, str->fp) == -1) {
 				if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 					clearerr(str->fp);
-					return do_yield_0(q, 1);
+					return do_yield(q, 1);
 				}
 
 				p->srcptr = "";
@@ -2827,7 +2827,7 @@ static bool fn_iso_get_char_1(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
-		return do_yield_0(q, 1);
+		return do_yield(q, 1);
 	}
 
 	str->did_getc = true;
@@ -2900,7 +2900,7 @@ static bool fn_iso_get_char_2(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
-		return do_yield_0(q, 1);
+		return do_yield(q, 1);
 	}
 
 	str->did_getc = true;
@@ -2975,7 +2975,7 @@ static bool fn_iso_get_code_1(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
-		return do_yield_0(q, 1);
+		return do_yield(q, 1);
 	}
 
 	str->did_getc = true;
@@ -3053,7 +3053,7 @@ static bool fn_iso_get_code_2(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
-		return do_yield_0(q, 1);
+		return do_yield(q, 1);
 	}
 
 	str->did_getc = true;
@@ -3120,7 +3120,7 @@ static bool fn_iso_get_byte_1(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
-		return do_yield_0(q, 1);
+		return do_yield(q, 1);
 	}
 
 	str->did_getc = true;
@@ -3184,7 +3184,7 @@ static bool fn_iso_get_byte_2(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
-		return do_yield_0(q, 1);
+		return do_yield(q, 1);
 	}
 
 	str->did_getc = true;
@@ -3238,7 +3238,7 @@ static bool fn_iso_peek_char_1(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
-		return do_yield_0(q, 1);
+		return do_yield(q, 1);
 	}
 
 
@@ -3293,7 +3293,7 @@ static bool fn_iso_peek_char_2(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
-		return do_yield_0(q, 1);
+		return do_yield(q, 1);
 	}
 
 	if (FEOF(str)) {
@@ -3349,7 +3349,7 @@ static bool fn_iso_peek_code_1(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
-		return do_yield_0(q, 1);
+		return do_yield(q, 1);
 	}
 
 	if (FEOF(str)) {
@@ -3407,7 +3407,7 @@ static bool fn_iso_peek_code_2(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
-		return do_yield_0(q, 1);
+		return do_yield(q, 1);
 	}
 
 	if (FEOF(str)) {
@@ -3455,7 +3455,7 @@ static bool fn_iso_peek_byte_1(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
-		return do_yield_0(q, 1);
+		return do_yield(q, 1);
 	}
 
 	if (FEOF(str)) {
@@ -3506,7 +3506,7 @@ static bool fn_iso_peek_byte_2(query *q)
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
-		return do_yield_0(q, 1);
+		return do_yield(q, 1);
 	}
 
 	if (FEOF(str)) {
@@ -4148,7 +4148,7 @@ static bool fn_read_line_to_string_2(query *q)
 
 		if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 			clearerr(str->fp);
-			return do_yield_0(q, 1);
+			return do_yield(q, 1);
 		}
 
 		cell tmp;
@@ -5059,7 +5059,7 @@ static bool fn_getline_2(query *q)
 
 		if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 			clearerr(str->fp);
-			return do_yield_0(q, 1);
+			return do_yield(q, 1);
 		}
 
 		return false;
@@ -5102,7 +5102,7 @@ static bool fn_getline_3(query *q)
 
 		if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 			clearerr(str->fp);
-			return do_yield_0(q, 1);
+			return do_yield(q, 1);
 		}
 
 		return false;
@@ -5788,7 +5788,7 @@ static bool fn_accept_2(query *q)
 
 	if (fd == -1) {
 		if (q->is_task)
-			return do_yield_0(q, 1);
+			return do_yield(q, 1);
 
 		return false;
 	}
@@ -6016,7 +6016,7 @@ static bool fn_bread_3(query *q)
 
 			if (q->is_task) {
 				clearerr(str->fp);
-				return do_yield_0(q, 1);
+				return do_yield(q, 1);
 			}
 		}
 
