@@ -1,4 +1,4 @@
-:- module(wasm_generic, [host_rpc]).
+:- module(wasm_generic, [host_rpc/1]).
 :- use_module(library(wasm)).
 :- use_module(library(pseudojson)).
 :- use_module(library(lists)).
