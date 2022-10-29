@@ -2863,14 +2863,6 @@ static mp_digit s_uand(mp_digit *da, mp_digit *db, mp_digit *dc, mp_size size_a,
     w = UPPER_HALF(w);
   }
 
-  /* Propagate carries as far as necessary */
-  for (/* */; pos < size_a; ++pos, ++da, ++dc) {
-    w = w & *da;
-
-    *dc = LOWER_HALF(w);
-    w = UPPER_HALF(w);
-  }
-
   /* Return carry out */
   return (mp_digit)w;
 }
@@ -2940,10 +2932,23 @@ mp_result mp_int_and(mp_int a, mp_int b, mp_int c) {
   mp_size ua = MP_USED(a);
   mp_size ub = MP_USED(b);
   mp_size min = MIN(ua, ub);
+  if (!s_pad(c, min + 1)) return MP_MEMORY;
 
-  s_uand(MP_DIGITS(a), MP_DIGITS(b), MP_DIGITS(c), ua, ub);
+  mp_digit carry = s_uand(MP_DIGITS(a), MP_DIGITS(b), MP_DIGITS(c), ua, ub);
+  mp_size uc = min;
 
-  c->used = min;
+  if (carry) {
+    if (!s_pad(c, min + 1)) return MP_MEMORY;
+
+    c->digits[min] = carry;
+    ++uc;
+  }
+
+  /* Drop those leading zeros */
+  while (min && c->digits[--min] == 0)
+	  uc--;
+
+  c->used = uc ? uc : 1;
   c->sign = a->sign;
   return MP_OK;
 }
