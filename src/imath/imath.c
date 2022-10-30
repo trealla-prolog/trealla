@@ -2915,10 +2915,10 @@ mp_result mp_int_xor(mp_int a, mp_int b, mp_int c) {
   }
 
   /* Drop those leading zeros */
-  while (c->digits[--max] == 0)
+  while (max && (c->digits[--max] == 0))
 	  uc--;
 
-  c->used = uc;
+  c->used = uc ? uc : 1;
   c->sign = a->sign;
   return MP_OK;
 }
