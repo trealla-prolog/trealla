@@ -544,6 +544,14 @@ static bool do_stream_property(query *q)
 		return ok;
 	}
 
+	if (!CMP_STR_TO_CSTR(q, p1, "file_no")) {
+		cell tmp;
+		make_int(&tmp, fileno(str->fp));
+		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
+		unshare_cell(&tmp);
+		return ok;
+	}
+
 	if (!CMP_STR_TO_CSTR(q, p1, "alias")) {
 		cell tmp;
 		check_heap_error(make_cstring(&tmp, str->name));
