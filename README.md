@@ -7,9 +7,9 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	Integers are unbounded
 	Atoms are UTF-8 of unlimited length
 	The default double-quoted representation is *chars* list
-	Dynamic atoms are automatically garbage collected
 	Unlimited arity (system resources constrained)
 	Uses 1st & 2nd arg indexing
+	Strings & slices are super-efficient (especially with mmap'd files)
 	DCGs
 	REPL with history
 	Compiles in <1s with *tcc*, or ~5s with *gcc* and *clang*
