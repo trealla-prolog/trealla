@@ -545,6 +545,9 @@ static bool do_stream_property(query *q)
 	}
 
 	if (!CMP_STR_TO_CSTR(q, p1, "file_no")) {
+		if (!str->fp)
+			return false;
+
 		cell tmp;
 		make_int(&tmp, fileno(str->fp));
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
