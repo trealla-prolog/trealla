@@ -13,7 +13,7 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	DCGs
 	REPL with history
 	Compiles in <1s with *tcc*, or ~5s with *gcc* and *clang*
-	Runs on Linux, FreeBSD, macOS, and WebAssembly (WASI)
+	Runs on Linux, Android, FreeBSD, macOS, and WebAssembly (WASI) & Go
 	Foreign function interface (FFI) for calling out to user C code
 	Access SQLITE databases using builtin module (uses FFI)
 	Attributed variables with SICStus interface (*WIP*)
