@@ -223,8 +223,13 @@ skip_readlink:
 		q = l + q-p;
 	}
 
-	if (resolved) return memcpy(resolved, output, q+1);
-	else return strdup(output);
+	struct stat st = {0};
+	if (resolved) {
+		if (stat(resolved, &st) == -1) return NULL;
+		return memcpy(resolved, output, q+1);
+	}
+	if (stat(output, &st) == -1) return NULL;
+	return strdup(output);
 
 toolong:
 	errno = ENAMETOOLONG;
