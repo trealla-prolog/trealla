@@ -148,7 +148,7 @@ Other systems may vary. On Debian+ systems you may need to install OpenSSL:
 
 	sudo apt install libssl-dev
 
-To build without OpenSSL (such as old versions of Ubuntu):
+To build without OpenSSL:
 
 	make NOSSL=1
 
