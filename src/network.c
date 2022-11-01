@@ -33,12 +33,6 @@
 #if USE_OPENSSL
 #include <openssl/ssl.h>
 #include <openssl/err.h>
-#endif
-
-#include "network.h"
-#include "query.h"
-
-#if USE_OPENSSL
 static int g_ctx_use_cnt = 0;
 static SSL_CTX *g_ctx = NULL;
 #if OPENSSL_VERSION_NUMBER > 0x10100000L
@@ -50,6 +44,9 @@ static SSL_CTX *g_ctx = NULL;
 #define TLS_CLIENT_METHOD_FUNC SSLv23_client_method
 #endif
 #endif
+
+#include "network.h"
+#include "query.h"
 
 int net_domain_connect(const char *name, bool udp)
 {
