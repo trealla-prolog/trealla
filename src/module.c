@@ -1567,22 +1567,6 @@ module *load_file(module *m, const char *filename, bool including)
 		}
 	}
 
-	if (!realbuf) {
-		if (!(realbuf = realpath(tmpbuf, NULL))) {
-			strcpy(tmpbuf, savebuf);
-			strcat(tmpbuf, ".p");
-			realbuf = realpath(tmpbuf, NULL);
-		}
-	}
-
-	if (!realbuf) {
-		if (!(realbuf = realpath(tmpbuf, NULL))) {
-			strcpy(tmpbuf, savebuf);
-			strcat(tmpbuf, ".P");
-			realbuf = realpath(tmpbuf, NULL);
-		}
-	}
-
 	free(savebuf);
 	free(tmpbuf);
 
