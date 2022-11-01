@@ -12,7 +12,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-#if !defined(_WIN32) && !defined(__wasi__)
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 #include <spawn.h>
 #include <sys/wait.h>
 #endif
@@ -550,6 +550,9 @@ static bool do_stream_property(query *q)
 	}
 
 	if (!CMP_STR_TO_CSTR(q, p1, "file_no")) {
+		if (!str->fp)
+			return false;
+
 		cell tmp;
 		make_int(&tmp, fileno(str->fp));
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
@@ -889,7 +892,7 @@ static bool fn_popen_4(query *q)
 
 extern char **g_envp;
 
-#if !defined(_WIN32) && !defined(__wasi__)
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 static bool fn_process_create_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -6715,7 +6718,7 @@ builtins g_files_bifs[] =
 	{"$capture_error_to_chars", 1, fn_sys_capture_error_to_chars_1, "-chars", false, false, BLAH},
 	{"$capture_error_to_atom", 1, fn_sys_capture_error_to_atom_1, "-atom", false, false, BLAH},
 
-#if !defined(_WIN32) && !defined(__wasi__)
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 	{"process_create", 3, fn_process_create_3, "+atom,+args,+opts", false, false, BLAH},
 	{"process_wait", 2, fn_process_wait_2, "+pid,-status", false, false, BLAH},
 	{"process_wait", 1, fn_process_wait_1, "+pid", false, false, BLAH},
