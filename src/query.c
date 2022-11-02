@@ -328,12 +328,12 @@ static void setup_key(query *q)
 	if (!q->pl->opt)
 		return;
 
-	cell *arg1 = q->key + 1, *arg2 = NULL, *arg3 = NULL;
+	cell *arg1 = q->st.key + 1, *arg2 = NULL, *arg3 = NULL;
 
-	if (q->key->arity > 1)
+	if (q->st.key->arity > 1)
 		arg2 = arg1 + arg1->nbr_cells;
 
-	if (q->key->arity > 2)
+	if (q->st.key->arity > 2)
 		arg3 = arg2 + arg2->nbr_cells;
 
 	arg1 = deref(q, arg1, q->st.curr_frame);
@@ -409,9 +409,9 @@ bool is_next_key(query *q)
 
 	cl = &next->cl;
 
-	if (q->st.arg1_is_ground && !next->next
-		&& (q->key->arity == 1) && is_atomic(cl->cells+1)) {
-		if (compare(q, q->key, q->st.curr_frame, cl->cells, q->st.curr_frame)) {
+	if (q->st.arg1_is_ground && !next->next && q->pl->opt
+		&& (q->st.key->arity == 1) && is_atomic(cl->cells+1)) {
+		if (compare(q, q->st.key, q->st.curr_frame, cl->cells, q->st.curr_frame)) {
 			return false;
 		}
 	}
@@ -434,7 +434,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx_t key_ctx)
 	q->st.arg1_is_ground = false;
 	q->st.arg2_is_ground = false;
 	q->st.arg3_is_ground = false;
-	q->key = key;
+	q->st.key = key;
 
 	if (!pr->idx) {
 		if (!pr->is_processed && !pr->is_multifile)
@@ -452,7 +452,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx_t key_ctx)
 	//sl_dump(pr->idx, dump_key, q);
 
 	check_heap_error(init_tmp_heap(q));
-	q->key = key = deep_clone_to_tmp(q, key, key_ctx);
+	q->st.key = key = deep_clone_to_tmp(q, key, key_ctx);
 
 	cell *arg1 = key->arity ? key + 1 : NULL;
 	map *idx = pr->idx;
@@ -470,7 +470,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx_t key_ctx)
 			return true;
 		}
 
-		q->key = key = arg2;
+		q->st.key = key = arg2;
 		idx = pr->idx2;
 	}
 

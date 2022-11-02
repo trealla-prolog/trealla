@@ -525,6 +525,7 @@ struct prolog_state_ {
 	db_entry *curr_dbe;
 	miter *iter, *f_iter;
 	module *m, *prev_m;
+	cell *key;
 
 	union {
 		int64_t cnt;
@@ -625,7 +626,7 @@ struct query_ {
 	slot *slots;
 	choice *choices;
 	trail *trails;
-	cell *tmp_heap, *last_arg, *variable_names, *key, *ball, *suspect;
+	cell *tmp_heap, *last_arg, *variable_names, *ball, *suspect;
 	cell *queue[MAX_QUEUES];
 	page *pages;
 	slot *save_e;
