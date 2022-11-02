@@ -1730,6 +1730,7 @@ module *create_module(prolog *pl, const char *name)
 	m->filename = set_known(m, name);
 	m->name = set_known(m, name);
 	m->flags.unknown = UNK_ERROR;
+	m->flags.syntax_error = UNK_ERROR;
 	m->flags.double_quote_chars = true;
 	m->flags.character_escapes = true;
 	m->error = false;

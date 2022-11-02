@@ -606,7 +606,7 @@ enum occurs { OCCURS_CHECK_FALSE=0, OCCURS_CHECK_TRUE=1, OCCURS_CHECK_ERROR = 2 
 
 struct prolog_flags_ {
 	enum occurs occurs_check;
-	enum unknowns unknown;
+	enum unknowns unknown, syntax_error;
 	bool double_quote_codes:1;
 	bool double_quote_chars:1;
 	bool double_quote_atom:1;
