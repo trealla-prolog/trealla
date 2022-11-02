@@ -3223,6 +3223,163 @@ static bool fn_iso_get_byte_2(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
+static bool fn_unget_char_1(query *q)
+{
+	GET_FIRST_ARG(p1,in_character);
+	int n = q->pl->current_input;
+	stream *str = &q->pl->streams[n];
+
+	if (str->binary) {
+		cell tmp;
+		make_int(&tmp, n);
+		tmp.flags |= FLAG_INT_HEX;
+		return throw_error(q, &tmp, q->st.curr_frame, "permission_error", "input,binary_stream");
+	}
+
+	if (str->at_end_of_file && (str->eof_action == eof_action_error)) {
+		cell tmp;
+		make_int(&tmp, n);
+		tmp.flags |= FLAG_INT_HEX;
+		return throw_error(q, &tmp, q->st.curr_frame, "permission_error", "input,past_end_of_stream");
+	}
+
+	str->did_getc = false;
+	str->at_end_of_file = false;
+	str->ungetch = get_smallint(p1);
+	return true;
+}
+
+static bool fn_unget_char_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+	GET_NEXT_ARG(p1,in_character);
+
+	if (strcmp(str->mode, "read"))
+		return throw_error(q, pstr, q->st.curr_frame, "permission_error", "input,stream");
+
+	if (str->binary) {
+		cell tmp;
+		make_int(&tmp, n);
+		tmp.flags |= FLAG_INT_HEX;
+		return throw_error(q, &tmp, q->st.curr_frame, "permission_error", "input,binary_stream");
+	}
+
+	if (!str->ungetch && str->p) {
+		if (str->p->srcptr && *str->p->srcptr) {
+			int ch = get_char_utf8((const char**)&str->p->srcptr);
+			str->ungetch = ch;
+		}
+	}
+
+	if (isatty(fileno(str->fp)) && !str->did_getc && !str->ungetch) {
+		fprintf(str->fp, "%s", PROMPT);
+		fflush(str->fp);
+	}
+
+	str->did_getc = false;
+	str->at_end_of_file = false;
+	str->ungetch = get_smallint(p1);
+	return true;
+}
+
+static bool fn_unget_code_1(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	int n = q->pl->current_input;
+	stream *str = &q->pl->streams[n];
+
+	if (is_bigint(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
+
+	if (is_integer(p1) && (get_smallint(p1) < -1))
+		return throw_error(q, p1, p1_ctx, "representation_error", "in_character_code");
+
+	if (str->binary) {
+		cell tmp;
+		make_int(&tmp, n);
+		tmp.flags |= FLAG_INT_HEX;
+		return throw_error(q, &tmp, q->st.curr_frame, "permission_error", "input,binary_stream");
+	}
+
+	str->did_getc = false;
+	str->at_end_of_file = false;
+	str->ungetch = get_smallint(p1);
+	return true;
+}
+
+static bool fn_unget_code_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+	GET_NEXT_ARG(p1,integer);
+
+	if (is_bigint(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
+
+	if (is_integer(p1) && (get_smallint(p1) < -1))
+		return throw_error(q, p1, p1_ctx, "representation_error", "in_character_code");
+
+	if (strcmp(str->mode, "read"))
+		return throw_error(q, pstr, q->st.curr_frame, "permission_error", "input,stream");
+
+	if (str->binary) {
+		cell tmp;
+		make_int(&tmp, n);
+		tmp.flags |= FLAG_INT_HEX;
+		return throw_error(q, &tmp, q->st.curr_frame, "permission_error", "input,binary_stream");
+	}
+
+	str->did_getc = false;
+	str->at_end_of_file = false;
+	str->ungetch = get_smallint(p1);
+	return true;
+}
+
+static bool fn_unget_byte_1(query *q)
+{
+	GET_FIRST_ARG(p1,in_byte);
+	int n = q->pl->current_input;
+	stream *str = &q->pl->streams[n];
+
+	if (!str->binary) {
+		cell tmp;
+		make_int(&tmp, n);
+		tmp.flags |= FLAG_INT_HEX;
+		return throw_error(q, &tmp, q->st.curr_frame, "permission_error", "input,text_stream");
+	}
+
+	str->did_getc = false;
+	str->at_end_of_file = false;
+	str->ungetch = get_smallint(p1);
+	return true;
+}
+
+static bool fn_unget_byte_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+	GET_NEXT_ARG(p1,in_byte);
+
+	if (strcmp(str->mode, "read"))
+		return throw_error(q, pstr, q->st.curr_frame, "permission_error", "input,stream");
+
+	if (!str->binary) {
+		cell tmp;
+		make_int(&tmp, n);
+		tmp.flags |= FLAG_INT_HEX;
+		return throw_error(q, &tmp, q->st.curr_frame, "permission_error", "input,text_stream");
+	}
+
+	str->did_getc = false;
+	str->at_end_of_file = false;
+	str->ungetch = get_smallint(p1);
+	return true;
+}
+
 static bool fn_iso_peek_char_1(query *q)
 {
 	GET_FIRST_ARG(p1,in_character_or_var);
@@ -6608,6 +6765,12 @@ builtins g_files_bifs[] =
 	{"get_code", 2, fn_iso_get_code_2, "+stream,-integer", true, false, BLAH},
 	{"get_byte", 1, fn_iso_get_byte_1, "-integer", true, false, BLAH},
 	{"get_byte", 2, fn_iso_get_byte_2, "+stream,-integer", true, false, BLAH},
+	{"unget_char", 1, fn_unget_char_1, "+integer", true, false, BLAH},
+	{"unget_char", 2, fn_unget_char_2, "+stream,+integer", true, false, BLAH},
+	{"unget_code", 1, fn_unget_code_1, "+integer", true, false, BLAH},
+	{"unget_code", 2, fn_unget_code_2, "+stream,+integer", true, false, BLAH},
+	{"unget_byte", 1, fn_unget_byte_1, "+integer", true, false, BLAH},
+	{"unget_byte", 2, fn_unget_byte_2, "+stream,+integer", true, false, BLAH},
 	{"peek_char", 1, fn_iso_peek_char_1, "-integer", true, false, BLAH},
 	{"peek_char", 2, fn_iso_peek_char_2, "+stream,-integer", true, false, BLAH},
 	{"peek_code", 1, fn_iso_peek_code_1, "-integer", true, false, BLAH},
