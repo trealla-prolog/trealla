@@ -3079,6 +3079,39 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 	return true;
 }
 
+static bool fn_create_prolog_flag_2(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,any);
+
+	if (!is_atom(p1))
+		return throw_error(q, p1, p1_ctx, "type_error", "atom");
+
+	if (!is_atom(p2) && !is_integer(p2))
+		return throw_error(q, p2, p2_ctx, "type_error", "atom");
+
+	if (!CMP_STR_TO_CSTR(q, p1, "syntax_error")) {
+		if (!CMP_STR_TO_CSTR(q, p2, "fail")) {
+			q->st.m->flags.syntax_error = UNK_FAIL;
+		} else if (!CMP_STR_TO_CSTR(q, p2, "error")) {
+			q->st.m->flags.syntax_error = UNK_ERROR;
+		} else if (!CMP_STR_TO_CSTR(q, p2, "warning")) {
+			q->st.m->flags.syntax_error = UNK_WARNING;
+		} else {
+			cell *tmp = alloc_on_heap(q, 3);
+			check_heap_error(tmp);
+			make_struct(tmp, g_plus_s, fn_iso_add_2, 2, 2);
+			SET_OP(tmp, OP_YFX);
+			tmp[1] = *p1; tmp[1].nbr_cells = 1;
+			tmp[2] = *p2; tmp[2].nbr_cells = 1;
+			return throw_error(q, tmp, q->st.curr_frame, "domain_error", "flag_value");
+		}
+	}
+
+	q->flags = q->st.m->flags;
+	return true;
+}
+
 typedef struct { cell *c; pl_idx_t c_ctx; query *q; bool ascending; int arg; } basepair;
 
 static int nodecmp(const void *ptr1, const void *ptr2)
@@ -7681,6 +7714,7 @@ builtins g_iso_bifs[] =
 	{"retractall", 1, fn_iso_retractall_1, "+term", true, false, BLAH},
 	{"$legacy_current_prolog_flag", 2, fn_iso_current_prolog_flag_2, "+atom,?term", true, false, BLAH},
 	{"set_prolog_flag", 2, fn_iso_set_prolog_flag_2, "+atom,+term", true, false, BLAH},
+	{"create_prolog_flag", 2, fn_create_prolog_flag_2, "+atom,+term", true, false, BLAH},
 	{"op", 3, fn_iso_op_3, "?priority,?type,+atom", true, false, BLAH},
 	{"findall", 3, fn_iso_findall_3, "+template,+callable,-list", true, false, BLAH},
 	{"current_predicate", 1, fn_iso_current_predicate_1, "+predicateindicator", true, false, BLAH},

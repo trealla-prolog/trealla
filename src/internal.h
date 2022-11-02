@@ -525,6 +525,7 @@ struct prolog_state_ {
 	db_entry *curr_dbe;
 	miter *iter, *f_iter;
 	module *m, *prev_m;
+	cell *key;
 
 	union {
 		int64_t cnt;
@@ -606,7 +607,7 @@ enum occurs { OCCURS_CHECK_FALSE=0, OCCURS_CHECK_TRUE=1, OCCURS_CHECK_ERROR = 2 
 
 struct prolog_flags_ {
 	enum occurs occurs_check;
-	enum unknowns unknown;
+	enum unknowns unknown, syntax_error;
 	bool double_quote_codes:1;
 	bool double_quote_chars:1;
 	bool double_quote_atom:1;
@@ -625,7 +626,7 @@ struct query_ {
 	slot *slots;
 	choice *choices;
 	trail *trails;
-	cell *tmp_heap, *last_arg, *variable_names, *key, *ball, *suspect;
+	cell *tmp_heap, *last_arg, *variable_names, *ball, *suspect;
 	cell *queue[MAX_QUEUES];
 	page *pages;
 	slot *save_e;

@@ -1542,20 +1542,36 @@ module *load_file(module *m, const char *filename, bool including)
 	char *savebuf = strdup(tmpbuf);
 	char *realbuf = NULL;
 	strcpy(tmpbuf, filename);
-	strcat(tmpbuf, ".pl");
 
-	if (!(realbuf = realpath(tmpbuf, NULL))) {
-		strcpy(tmpbuf, savebuf);
-
+	if (!realbuf) {
 		if (!(realbuf = realpath(tmpbuf, NULL))) {
-			free(savebuf);
-			free(tmpbuf);
-			return NULL;
+			strcpy(tmpbuf, savebuf);
+			strcat(tmpbuf, ".pl");
+			realbuf = realpath(tmpbuf, NULL);
+		}
+	}
+
+	if (!realbuf) {
+		if (!(realbuf = realpath(tmpbuf, NULL))) {
+			strcpy(tmpbuf, savebuf);
+			strcat(tmpbuf, ".pro");
+			realbuf = realpath(tmpbuf, NULL);
+		}
+	}
+
+	if (!realbuf) {
+		if (!(realbuf = realpath(tmpbuf, NULL))) {
+			strcpy(tmpbuf, savebuf);
+			strcat(tmpbuf, ".prolog");
+			realbuf = realpath(tmpbuf, NULL);
 		}
 	}
 
 	free(savebuf);
 	free(tmpbuf);
+
+	if (!realbuf)
+		return NULL;
 
 	if (is_loaded(m, realbuf))
 		return m;
@@ -1714,6 +1730,7 @@ module *create_module(prolog *pl, const char *name)
 	m->filename = set_known(m, name);
 	m->name = set_known(m, name);
 	m->flags.unknown = UNK_ERROR;
+	m->flags.syntax_error = UNK_ERROR;
 	m->flags.double_quote_chars = true;
 	m->flags.character_escapes = true;
 	m->error = false;
