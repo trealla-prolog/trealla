@@ -393,7 +393,7 @@ Non-standard predicates
 	code_type/2
 	uuid/1                      # generates non-standard UUID
 	load_files/[1,2]
-	split_atom/4
+	split_string/4				# SWI-compatible
 	plus/3
 	module/1
 	line_count/2

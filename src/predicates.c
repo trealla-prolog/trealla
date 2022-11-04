@@ -4438,7 +4438,7 @@ static bool fn_between_3(query *q)
 	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 }
 
-static bool fn_split_atom_4(query *q)
+static bool fn_split_string_4(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,atom);
@@ -7717,8 +7717,7 @@ builtins g_other_bifs[] =
 	{"wall_time", 1, fn_wall_time_1, "-integer", false, false, BLAH},
 	{"date_time", 6, fn_date_time_6, "-yyyy,-m,-d,-h,--m,-s", false, false, BLAH},
 	{"date_time", 7, fn_date_time_7, "-yyyy,-m,-d,-h,--m,-s,-ms", false, false, BLAH},
-	{"split_atom", 4, fn_split_atom_4, "+string,+sep,+pad,-list", false, false, BLAH},
-	{"split_string", 4, fn_split_atom_4, "+string,+sep,+pad,-list", false, false, BLAH},
+	{"split_string", 4, fn_split_string_4, "+string,+sep,+pad,-list", false, false, BLAH},
 	{"split", 4, fn_split_4, "+string,+string,?left,?right", false, false, BLAH},
 	{"is_list_or_partial_list", 1, fn_is_list_or_partial_list_1, "+term", false, false, BLAH},
 	{"is_partial_list", 1, fn_is_partial_list_1, "+term", false, false, BLAH},
