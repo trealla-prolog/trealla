@@ -819,7 +819,6 @@ static void directives(parser *p, cell *d)
 				}
 
 				set_dynamic_in_db(p->m, C_STR(p, c_name), arity);
-			} else if (!strcmp(dirname, "create_prolog_flag")) {
 			} else if (!strcmp(dirname, "encoding")) {
 			} else if (!strcmp(dirname, "public")) {
 			} else if (!strcmp(dirname, "table") && false) {
