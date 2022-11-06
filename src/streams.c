@@ -3881,7 +3881,11 @@ static bool fn_sys_read_term_from_chars_4(query *q)
 		const char *ptr = strstr(src, rest);
 		size_t off = ptr - src;
 		size_t len = srclen - off;
-		check_heap_error(make_slice(q, &tmp, p_chars, off, len));
+
+		if (!is_string(p_chars))
+			check_heap_error(make_string(&tmp, rest));
+		else
+			check_heap_error(make_slice(q, &tmp, p_chars, off, len));
 	} else {
 		make_atom(&tmp, g_nil_s);
 	}
