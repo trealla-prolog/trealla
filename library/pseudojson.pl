@@ -72,7 +72,7 @@ json(V) :- json_number(V).
 json(V) :- json_object(V).
 json(V) :- json_list(V).
 
-% predicates for manipulating comma lists (_, _) 
+% predicates for manipulating comma lists (_, _)
 
 member_comma(X, (H, _)) :- member_comma(X, H).
 member_comma(X, (_, T)) :- !, member_comma(X, T).

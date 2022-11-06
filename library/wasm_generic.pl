@@ -33,7 +33,7 @@ merge_vars(L0, L2) :-
 	maplist(merge_vars_(L2), L0).
 merge_vars_(L, Name=Var) :-
 	(  memberchk(Name=V1, L)
-	-> Var = V1 
+	-> Var = V1
 	;  true
 	).
 
