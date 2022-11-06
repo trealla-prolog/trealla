@@ -892,7 +892,7 @@ bool throw_error2(query *q, cell *c, pl_idx_t c_ctx, const char *err_type, const
 
 bool throw_error(query *q, cell *c, pl_idx_t c_ctx, const char *err_type, const char *expected)
 {
-	if ((q->st.m->flags.syntax_error == UNK_FAIL) /*&& !strcmp(err_type, "syntax_error")*/)
+	if ((q->st.m->flags.syntax_error == UNK_FAIL) && !strcmp(err_type, "syntax_error"))
 		return false;
 
 	cell top_level[2] = {{0}};
