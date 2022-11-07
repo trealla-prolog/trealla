@@ -107,7 +107,8 @@ bool check_redo(query *q)
 	if (q->pl->is_query)
 		return q->cp;
 
-	if (q->autofail) {
+	if (q->autofail && (q->autofail_n > 1)) {
+		q->autofail_n--;
 		printf("\n; ");
 		fflush(stdout);
 		q->is_redo = true;
@@ -115,6 +116,8 @@ bool check_redo(query *q)
 		q->pl->did_dump_vars = false;
 		return false;
 	}
+
+	q->autofail_n = 0;
 
 	for (;;) {
 		printf("\n;");
@@ -131,13 +134,14 @@ bool check_redo(query *q)
 	printf(" ");
 #endif
 
-		if (ch == 'a') {
+		if ((ch == 'a') || isdigit(ch)) {
 			printf(" ");
 			fflush(stdout);
 			q->is_redo = true;
 			q->retry = QUERY_RETRY;
 			q->pl->did_dump_vars = false;
 			q->autofail = true;
+			q->autofail_n = isdigit(ch) ? (unsigned)ch - '0' : UINT_MAX;
 			break;
 		}
 
