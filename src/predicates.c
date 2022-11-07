@@ -4181,7 +4181,7 @@ static bool fn_sys_elapsed_0(query *q)
 {
 	uint64_t elapsed = get_time_in_usec();
 	elapsed -= q->time_started;
-	fprintf(stdout, "Time elapsed %.03gs\n", (double)elapsed/1000/1000);
+	fprintf(stdout, "%% Time elapsed %.03gs\n", (double)elapsed/1000/1000);
 	return true;
 }
 
