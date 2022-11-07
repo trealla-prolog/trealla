@@ -17,7 +17,9 @@
 #include <termios.h>
 #endif
 
+#include "internal.h"
 #include "history.h"
+#include "prolog.h"
 #include "utf8.h"
 #include "cdebug.h"
 
@@ -104,11 +106,73 @@ LOOP:
 	return cmd;
 }
 
+static char *functor_name_generator(const char *text, int state)
+{
+    static int s_list_index, s_len;
+    char *name;
+
+    if (!state) {
+        s_list_index = 0;
+        s_len = strlen(text);
+    }
+
+    while ((name = g_iso_bifs[s_list_index++].name)) {
+        if (strncmp(name, text, s_len) == 0) {
+            return strdup(name);
+        }
+    }
+
+    while ((name = g_other_bifs[s_list_index++].name)) {
+        if (strncmp(name, text, s_len) == 0) {
+            return strdup(name);
+        }
+    }
+
+    while ((name = g_ffi_bifs[s_list_index++].name)) {
+        if (strncmp(name, text, s_len) == 0) {
+            return strdup(name);
+        }
+    }
+
+    while ((name = g_posix_bifs[s_list_index++].name)) {
+        if (strncmp(name, text, s_len) == 0) {
+            return strdup(name);
+        }
+    }
+
+    while ((name = g_contrib_bifs[s_list_index++].name)) {
+        if (strncmp(name, text, s_len) == 0) {
+            return strdup(name);
+        }
+    }
+
+    while ((name = g_files_bifs[s_list_index++].name)) {
+        if (strncmp(name, text, s_len) == 0) {
+            return strdup(name);
+        }
+    }
+
+    while ((name = g_evaluable_bifs[s_list_index++].name)) {
+        if (strncmp(name, text, s_len) == 0) {
+            return strdup(name);
+        }
+    }
+
+    return NULL;
+}
+
+static char **functor_name_completion(const char *text, int start, int end)
+{
+    rl_attempted_completion_over = 1;
+    return rl_completion_matches(text, functor_name_generator);
+}
+
 void history_load(const char *filename)
 {
 	snprintf(g_filename, sizeof(g_filename), "%s", filename);
 	using_history();
 	read_history(g_filename);
+	rl_attempted_completion_function = functor_name_completion;
 }
 
 void history_save(void)

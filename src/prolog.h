@@ -33,8 +33,8 @@ extern void convert_path(char *filename);
 extern void sigfn(int s);
 
 extern builtins g_iso_bifs[];
-extern builtins g_ffi_bifs[];
 extern builtins g_other_bifs[];
+extern builtins g_ffi_bifs[];
 extern builtins g_posix_bifs[];
 extern builtins g_contrib_bifs[];
 extern builtins g_files_bifs[];
