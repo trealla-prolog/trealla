@@ -43,7 +43,7 @@ int check_interrupt(query *q)
 #endif
 
 		if (ch == 'h') {
-			printf("Action (a)ll, (e)nd, e(x)it, (r)etry, (c)ontinue, (t)race, cree(p): ");
+			printf("Action (#digit), (a)ll, (e)nd, e(x)it, (r)etry, (c)ontinue, (t)race, cree(p): ");
 			goto LOOP;
 		}
 
@@ -125,7 +125,7 @@ bool check_redo(query *q)
 		int ch = history_getch();
 
 		if ((ch == 'h') || (ch == '?')) {
-			printf("Action (a)ll, e(x)it, (r)etry, (e)nd:\n");
+			printf("Action (#digit), (a)ll, e(x)it, (r)etry, (e)nd:\n");
 			fflush(stdout);
 			continue;
 		}
