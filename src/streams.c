@@ -6756,9 +6756,11 @@ static bool fn_set_stream_2(query *q)
 			q->pl->current_output = n;
 		else if (!CMP_STR_TO_CSTR(q, name, "current_error"))
 			q->pl->current_error = n;
+
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 builtins g_files_bifs[] =
