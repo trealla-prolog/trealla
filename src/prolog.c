@@ -112,6 +112,9 @@ void set_trace(prolog *pl) { pl->trace = true; }
 void set_quiet(prolog *pl) { pl->quiet = true; }
 void set_opt(prolog *pl, int level) { pl->opt = level; }
 
+bool pl_isatty(prolog* pl) { return isatty(pl->current_input); }
+FILE *pl_stdin(prolog *pl) { return pl->streams[0].fp; }
+
 bool pl_eval(prolog *pl, const char *s)
 {
 	if (!*s)
@@ -388,7 +391,7 @@ void pl_destroy(prolog *pl)
 			) {
 				if (str->is_map)
 					map_destroy(str->keyval);
-				else
+				else if (str->fp && (i > 2))
 					fclose(str->fp);
 			}
 
