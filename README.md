@@ -453,6 +453,7 @@ Non-standard predicates
 	chdir/1
 	absolute_file_name/[2,3]    # expand(Bool) & relative_to(file) options
 	access_file/2
+	set_stream/2				# only supports alias/1 property
 
 	current_key/1
 	recorda/2-3
