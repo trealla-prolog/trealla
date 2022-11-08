@@ -59,7 +59,7 @@ static char g_filename[1024];
 
 
 #if !USE_ISOCLINE && !defined(__wasi__)
-char *history_readline_eol(const char *prompt, char eol)
+char *history_readline_eol(prolog *pl, const char *prompt, char eol)
 {
 	char *cmd = NULL;
 	char *line;
@@ -202,7 +202,7 @@ void history_save(void)
 #endif
 
 #if USE_ISOCLINE && !defined(__wasi__)
-char *history_readline_eol(const char *prompt, char eol)
+char *history_readline_eol(prolog *pl, const char *prompt, char eol)
 {
 	char *cmd = NULL;
 	char *line;
@@ -271,7 +271,7 @@ void history_save(void)
 #endif
 
 #ifdef __wasi__
-char *history_readline_eol(const char *prompt, char eol)
+char *history_readline_eol(prolog *pl, const char *prompt, char eol)
 {
 	fprintf(stdout, "%s", prompt);
 	fflush(stdout);

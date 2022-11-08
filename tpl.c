@@ -323,7 +323,7 @@ int main(int ac, char *av[], char * envp[])
 		char *line = NULL;
 
 		if (pl_isatty(pl)) {
-			if ((line = history_readline_eol("?- ", '.')) == NULL)
+			if ((line = history_readline_eol(pl, "?- ", '.')) == NULL)
 				break;
 		} else {
 			size_t n = 0;
