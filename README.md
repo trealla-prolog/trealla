@@ -471,6 +471,7 @@ Non-standard predicates
 	atom_upper/2
 	atom_lower/2
 
+	divmod/4                    # SWI-compatible
 	popcount/1                  # function returning number of 1 bits
 	lsb/1                       # function returning the least significant bit of a positive integer (count from zero)
 	msb/1                       # function returning the most significant bit of a positive integer (count from zero)
