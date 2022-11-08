@@ -6731,6 +6731,36 @@ static bool fn_sys_capture_error_to_atom_1(query *q)
 	return ok;
 }
 
+static bool fn_set_stream_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+	GET_NEXT_ARG(p1,compound);
+	cell *name = p1 + 1;
+	name = deref(q, name, p1_ctx);
+
+	if (!CMP_STR_TO_CSTR(q, p1, "alias")) {
+		if (is_var(name))
+			return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+
+		if (!is_atom(name))
+			return throw_error(q, p1, p1_ctx, "domain_error", "stream_option");
+
+		free(str->name);
+		str->name = DUP_STR(q, name);
+
+		if (!CMP_STR_TO_CSTR(q, name, "current_input"))
+			q->pl->current_input = n;
+		else if (!CMP_STR_TO_CSTR(q, name, "current_output"))
+			q->pl->current_output = n;
+		else if (!CMP_STR_TO_CSTR(q, name, "current_error"))
+			q->pl->current_error = n;
+	}
+
+	return true;
+}
+
 builtins g_files_bifs[] =
 {
 	// ISO...
@@ -6769,12 +6799,6 @@ builtins g_files_bifs[] =
 	{"get_code", 2, fn_iso_get_code_2, "+stream,-integer", true, false, BLAH},
 	{"get_byte", 1, fn_iso_get_byte_1, "-integer", true, false, BLAH},
 	{"get_byte", 2, fn_iso_get_byte_2, "+stream,-integer", true, false, BLAH},
-	{"unget_char", 1, fn_unget_char_1, "+integer", true, false, BLAH},
-	{"unget_char", 2, fn_unget_char_2, "+stream,+integer", true, false, BLAH},
-	{"unget_code", 1, fn_unget_code_1, "+integer", true, false, BLAH},
-	{"unget_code", 2, fn_unget_code_2, "+stream,+integer", true, false, BLAH},
-	{"unget_byte", 1, fn_unget_byte_1, "+integer", true, false, BLAH},
-	{"unget_byte", 2, fn_unget_byte_2, "+stream,+integer", true, false, BLAH},
 	{"peek_char", 1, fn_iso_peek_char_1, "-integer", true, false, BLAH},
 	{"peek_char", 2, fn_iso_peek_char_2, "+stream,-integer", true, false, BLAH},
 	{"peek_code", 1, fn_iso_peek_code_1, "-integer", true, false, BLAH},
@@ -6801,6 +6825,13 @@ builtins g_files_bifs[] =
 
 	// Other...
 
+	{"unget_char", 1, fn_unget_char_1, "+integer", true, false, BLAH},
+	{"unget_char", 2, fn_unget_char_2, "+stream,+integer", true, false, BLAH},
+	{"unget_code", 1, fn_unget_code_1, "+integer", true, false, BLAH},
+	{"unget_code", 2, fn_unget_code_2, "+stream,+integer", true, false, BLAH},
+	{"unget_byte", 1, fn_unget_byte_1, "+integer", true, false, BLAH},
+	{"unget_byte", 2, fn_unget_byte_2, "+stream,+integer", true, false, BLAH},
+	{"set_stream", 2, fn_set_stream_2, "+stream,+term", true, false, BLAH},
 	{"getline", 1, fn_getline_1, "-string", false, false, BLAH},
 	{"getline", 2, fn_getline_2, "+stream,-string", false, false, BLAH},
 	{"getline", 3, fn_getline_3, "+stream,-string,+opts", false, false, BLAH},
