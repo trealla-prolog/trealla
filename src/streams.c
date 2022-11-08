@@ -6750,11 +6750,11 @@ static bool fn_set_stream_2(query *q)
 		free(str->name);
 		str->name = DUP_STR(q, name);
 
-		if (!CMP_STR_TO_CSTR(q, name, "current_input"))
+		if (!CMP_STR_TO_CSTR(q, name, "current_input") || !CMP_STR_TO_CSTR(q, name, "user_input"))
 			q->pl->current_input = n;
-		else if (!CMP_STR_TO_CSTR(q, name, "current_output"))
+		else if (!CMP_STR_TO_CSTR(q, name, "current_output") || !CMP_STR_TO_CSTR(q, name, "user_output"))
 			q->pl->current_output = n;
-		else if (!CMP_STR_TO_CSTR(q, name, "current_error"))
+		else if (!CMP_STR_TO_CSTR(q, name, "current_error") || !CMP_STR_TO_CSTR(q, name, "user_error"))
 			q->pl->current_error = n;
 
 		return true;
