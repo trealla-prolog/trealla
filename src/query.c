@@ -1397,7 +1397,7 @@ bool match_rule(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract
 		if (!pr) {
 			bool found = false;
 
-			if (get_builtin(q->pl, C_STR(q, head), C_STRLEN(q, head), head->arity, &found, NULL), found)
+			if (get_builtin_term(q->pl, head, &found, NULL), found)
 				return throw_error(q, head, q->latest_ctx, "permission_error", "modify,static_procedure");
 
 			q->st.curr_dbe = NULL;
@@ -1494,7 +1494,7 @@ bool match_clause(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retra
 		if (!pr) {
 			bool found = false;
 
-			if (get_builtin(q->pl, C_STR(q, p1), C_STRLEN(q, p1), p1->arity, &found, NULL), found) {
+			if (get_builtin_term(q->pl, p1, &found, NULL), found) {
 				if (is_retract != DO_CLAUSE)
 					return throw_error(q, p1, p1_ctx, "permission_error", "modify,static_procedure");
 				else

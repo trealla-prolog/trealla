@@ -191,7 +191,7 @@ predicate *create_predicate(module *m, cell *c)
 	bool found, evaluable;
 
 	if (strcmp(m->name, "format") && 0) {
-		if (get_builtin(m->pl, C_STR(m, c), C_STRLEN(m, c), c->arity, &found, &evaluable), found && !evaluable) {
+		if (get_builtin_term(m->pl, c, &found, &evaluable), found && !evaluable) {
 			fprintf(stdout, "Error: permission error modifying %s/%u\n", C_STR(m, c), c->arity);
 			return NULL;
 		}
@@ -991,7 +991,7 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 		bool found = false, evaluable = false;
 
 		/*
-		if (get_builtin(m->pl, C_STR(m, c), C_STRLEN(m, c), c->arity, &found, &evaluable), found && !evaluable) {
+		if (get_builtin_term(m->pl, c, &found, &evaluable), found && !evaluable) {
 			//fprintf(stdout, "Error: permission error modifying %s/%u\n", C_STR(m, c), c->arity);
 			return NULL;
 		}
