@@ -57,6 +57,13 @@ int check_interrupt(query *q)
 			break;
 		}
 
+		if (isdigit(ch)) {
+			q->autofail = true;
+			q->autofail_n = isdigit(ch) ? (unsigned)ch - '0' : UINT_MAX;
+			q->time_started = get_time_in_usec();
+			break;
+		}
+
 		if ((ch == ';') || (ch == ' ') || (ch == 'r') || (ch == 'c')) {
 			break;
 		}
