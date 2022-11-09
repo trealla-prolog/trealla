@@ -1557,7 +1557,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	if (!pr || !pr->cnt)
 		return goal;
 
-	if (get_builtin_term(p->pl, goal, NULL, NULL) /*|| is_op(goal)*/)
+	if (get_builtin_term(p->m, goal, NULL, NULL) /*|| is_op(goal)*/)
 		return goal;
 
 	//if (search_predicate(p->m, goal))

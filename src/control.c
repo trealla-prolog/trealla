@@ -153,7 +153,7 @@ bool fn_iso_call_n(query *q)
 
 	if ((tmp2->match = search_predicate(q->st.m, tmp2, NULL)) != NULL) {
 		tmp2->flags &= ~FLAG_BUILTIN;
-	} else if ((tmp2->fn_ptr = get_builtin_term(q->pl, tmp2, &found, NULL)), found) {
+	} else if ((tmp2->fn_ptr = get_builtin_term(q->st.m, tmp2, &found, NULL)), found) {
 		tmp2->flags |= FLAG_BUILTIN;
 	}
 
@@ -194,7 +194,7 @@ bool fn_iso_once_1(query *q)
 
 		if ((tmp2->match = search_predicate(q->st.m, tmp2, NULL)) != NULL) {
 			tmp2->flags &= ~FLAG_BUILTIN;
-		} else if ((tmp2->fn_ptr = get_builtin_term(q->pl, tmp2, &found, NULL)), found) {
+		} else if ((tmp2->fn_ptr = get_builtin_term(q->st.m, tmp2, &found, NULL)), found) {
 			tmp2->flags |= FLAG_BUILTIN;
 		}
 	}
@@ -229,7 +229,7 @@ bool fn_ignore_1(query *q)
 
 		if ((tmp2->match = search_predicate(q->st.m, tmp2, NULL)) != NULL) {
 			tmp2->flags &= ~FLAG_BUILTIN;
-		} else if ((tmp2->fn_ptr = get_builtin_term(q->pl, tmp2, &found, NULL)), found) {
+		} else if ((tmp2->fn_ptr = get_builtin_term(q->st.m, tmp2, &found, NULL)), found) {
 			tmp2->flags |= FLAG_BUILTIN;
 		}
 	}

@@ -246,10 +246,11 @@ builtins *get_builtin(prolog *pl, const char *name, size_t len, unsigned arity, 
 	return NULL;
 }
 
-builtins *get_builtin_term(prolog *pl, cell *c, bool *found, bool *evaluable)
+builtins *get_builtin_term(module *m, cell *c, bool *found, bool *evaluable)
 {
-	const char *name = C_STR(pl->user_m, c);
-	size_t len = C_STRLEN(pl->user_m, c);
+	prolog *pl = m->pl;
+	const char *name = C_STR(m, c);
+	size_t len = C_STRLEN(m, c);
 	unsigned arity = c->arity;
 	return get_builtin(pl, name, len, arity, found, evaluable);
 }

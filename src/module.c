@@ -191,7 +191,7 @@ predicate *create_predicate(module *m, cell *c)
 	bool found, evaluable;
 
 	if (strcmp(m->name, "format") && 0) {
-		if (get_builtin_term(m->pl, c, &found, &evaluable), found && !evaluable) {
+		if (get_builtin_term(m, c, &found, &evaluable), found && !evaluable) {
 			fprintf(stdout, "Error: permission error modifying %s/%u\n", C_STR(m, c), c->arity);
 			return NULL;
 		}
@@ -991,7 +991,7 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 		bool found = false, evaluable = false;
 
 		/*
-		if (get_builtin_term(m->pl, c, &found, &evaluable), found && !evaluable) {
+		if (get_builtin_term(m, c, &found, &evaluable), found && !evaluable) {
 			//fprintf(stdout, "Error: permission error modifying %s/%u\n", C_STR(m, c), c->arity);
 			return NULL;
 		}
@@ -1215,20 +1215,18 @@ void retract_from_db(db_entry *dbe)
 
 static void xref_cell(module *m, clause *cl, cell *c, predicate *parent)
 {
-	const char *functor = C_STR(m, c);
-	size_t functor_len = C_STRLEN(m, c);
 	unsigned specifier;
 
 	if ((c->arity == 2)
 		&& !GET_OP(c)
 		&& (c->val_off != g_braces_s)
-		&& search_op(m, functor, &specifier, false)) {
+		&& search_op(m, C_STR(m, c), &specifier, false)) {
 		if (IS_INFIX(specifier))
 			SET_OP(c, specifier);
 	}
 
 	bool found = false, evaluable = false;
-	c->fn_ptr = get_builtin(m->pl, functor, functor_len, c->arity, &found, &evaluable);
+	c->fn_ptr = get_builtin_term(m, c, &found, &evaluable);
 
 	if (found) {
 		if (evaluable)
