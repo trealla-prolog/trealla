@@ -225,8 +225,9 @@ builtins *get_help(prolog *pl, const char *name, unsigned arity, bool *found, bo
 	return NULL;
 }
 
-builtins *get_builtin(prolog *pl, const char *name, unsigned arity, bool *found, bool *evaluable)
+builtins *get_builtin(prolog *pl, const char *name, size_t len, unsigned arity, bool *found, bool *evaluable)
 {
+	// TODO: use 'len' in comparison
 	miter *iter = map_find_key(pl->biftab, name);
 	builtins *ptr;
 
