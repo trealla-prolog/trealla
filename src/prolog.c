@@ -251,24 +251,7 @@ builtins *get_builtin_term(prolog *pl, cell *c, bool *found, bool *evaluable)
 	const char *name = C_STR(pl->user_m, c);
 	size_t len = C_STRLEN(pl->user_m, c);
 	unsigned arity = c->arity;
-
-	// TODO: use 'len' in comparison
-	miter *iter = map_find_key(pl->biftab, name);
-	builtins *ptr;
-
-	while (map_next_key(iter, (void**)&ptr)) {
-		if (ptr->arity == arity) {
-			if (found) *found = true;
-			if (evaluable) *evaluable = ptr->evaluable;
-			map_done(iter);
-			return ptr;
-		}
-	}
-
-	if (found) *found = false;
-	if (evaluable) *evaluable = false;
-	map_done(iter);
-	return NULL;
+	return get_builtin(pl, name, len, arity, found, evaluable);
 }
 
 builtins *get_fn_ptr(void *fn)
