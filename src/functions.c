@@ -1610,8 +1610,8 @@ static bool fn_iso_mod_2(query *q)
 		mpz_t tmp;
 		mp_int_init_value(&tmp, p1.val_int);
 		mp_int_mod(&tmp, &p2.val_bigint->ival, &q->tmp_ival);
-		mp_int_clear(&tmp);
 		SET_ACCUM();
+		mp_int_clear(&tmp);
 	} else if (is_var(&p1) || is_var(&p2)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else if (!is_integer(&p1)) {
