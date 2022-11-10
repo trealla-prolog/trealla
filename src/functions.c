@@ -1632,26 +1632,39 @@ static bool fn_iso_div_2(query *q)
 	CLEANUP cell p2 = eval(q, p2_tmp);
 
 	if (is_bigint(&p1) && is_bigint(&p2)) {
-		mp_int_mod(&p1.val_bigint->ival, &p2.val_bigint->ival, &q->tmp_ival);
-		mp_int_sub(&p1.val_bigint->ival, &q->tmp_ival, &q->tmp_ival);
-		mp_int_div(&q->tmp_ival, &p2.val_bigint->ival, &q->tmp_ival, NULL);
+		mpz_t tmp3, tmp4;
+		mp_int_init(&tmp3);
+		mp_int_init(&tmp4);
+		mp_int_mod(&p1.val_bigint->ival, &p2.val_bigint->ival, &tmp3);
+		mp_int_sub(&p1.val_bigint->ival, &tmp3, &tmp4);
+		mp_int_div(&tmp4, &p2.val_bigint->ival, &q->tmp_ival, NULL);
 		SET_ACCUM();
+		mp_int_clear(&tmp3);
+		mp_int_clear(&tmp4);
 	} else if (is_bigint(&p1) && is_smallint(&p2)) {
-		mpz_t tmp;
-		mp_int_init_value(&tmp, p2.val_int);
-		mp_int_mod(&p1.val_bigint->ival, &tmp, &q->tmp_ival);
-		mp_int_sub(&p1.val_bigint->ival, &q->tmp_ival, &q->tmp_ival);
-		mp_int_div(&q->tmp_ival, &tmp, &q->tmp_ival, NULL);
+		mpz_t tmp2, tmp3, tmp4;
+		mp_int_init_value(&tmp2, p2.val_int);
+		mp_int_init(&tmp3);
+		mp_int_init(&tmp4);
+		mp_int_mod(&p1.val_bigint->ival, &tmp2, &tmp3);
+		mp_int_sub(&p1.val_bigint->ival, &tmp3, &tmp4);
+		mp_int_div(&tmp4, &tmp2, &q->tmp_ival, NULL);
 		SET_ACCUM();
-		mp_int_clear(&tmp);
+		mp_int_clear(&tmp2);
+		mp_int_clear(&tmp3);
+		mp_int_clear(&tmp4);
 	} else if (is_bigint(&p2) && is_smallint(&p1)) {
-		mpz_t tmp;
-		mp_int_init_value(&tmp, p1.val_int);
-		mp_int_mod(&tmp, &p2.val_bigint->ival, &q->tmp_ival);
-		mp_int_sub(&tmp, &q->tmp_ival, &q->tmp_ival);
-		mp_int_div(&q->tmp_ival, &p2.val_bigint->ival, &q->tmp_ival, NULL);
-		mp_int_clear(&tmp);
+		mpz_t tmp1, tmp3, tmp4;
+		mp_int_init_value(&tmp1, p1.val_int);
+		mp_int_init(&tmp3);
+		mp_int_init(&tmp4);
+		mp_int_mod(&tmp1, &p2.val_bigint->ival, &tmp3);
+		mp_int_sub(&tmp1, &tmp3, &tmp4);
+		mp_int_div(&tmp4, &p2.val_bigint->ival, &q->tmp_ival, NULL);
 		SET_ACCUM();
+		mp_int_clear(&tmp1);
+		mp_int_clear(&tmp3);
+		mp_int_clear(&tmp4);
 	} else if (is_smallint(&p1) && is_smallint(&p2)) {
 		if (p2.val_int == 0)
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "zero_divisor");
@@ -1732,15 +1745,12 @@ static bool fn_iso_max_2(query *q)
 	} else if (is_bigint(&p1)) {
 		if (is_bigint(&p2)) {
 			if (mp_int_compare(&p1.val_bigint->ival, &p2.val_bigint->ival) >= 0) {
-				mp_int_clear(&q->tmp_ival);
 				mp_int_init_copy(&q->tmp_ival, &p1.val_bigint->ival);
 			} else {
-				mp_int_clear(&q->tmp_ival);
 				mp_int_init_copy(&q->tmp_ival, &p2.val_bigint->ival);
 			}
 		} else if (is_smallint(&p2)) {
 			if (mp_int_compare_value(&p1.val_bigint->ival, p2.val_int) >= 0) {
-				mp_int_clear(&q->tmp_ival);
 				mp_int_init_copy(&q->tmp_ival, &p1.val_bigint->ival);
 			} else {
 				mp_int_set_value(&q->tmp_ival, p2.val_int);
@@ -1752,7 +1762,6 @@ static bool fn_iso_max_2(query *q)
 	} else if (is_bigint(&p2)) {
 		if (is_smallint(&p1)) {
 			if (mp_int_compare_value(&p2.val_bigint->ival, p1.val_int) >= 0) {
-				mp_int_clear(&q->tmp_ival);
 				mp_int_init_copy(&q->tmp_ival, &p2.val_bigint->ival);
 			} else {
 				mp_int_set_value(&q->tmp_ival, p1.val_int);
@@ -1809,7 +1818,6 @@ static bool fn_iso_min_2(query *q)
 	} if (is_bigint(&p1)) {
 		if (is_bigint(&p2)) {
 			if (mp_int_compare(&p1.val_bigint->ival, &p2.val_bigint->ival) <= 0) {
-				mp_int_clear(&q->tmp_ival);
 				mp_int_init_copy(&q->tmp_ival, &p1.val_bigint->ival);
 			} else {
 				mp_int_clear(&q->tmp_ival);
