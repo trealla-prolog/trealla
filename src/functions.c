@@ -2533,26 +2533,24 @@ static bool fn_gcd_2(query *q)
 	CLEANUP cell p1 = eval(q, p1_tmp);
 	CLEANUP cell p2 = eval(q, p2_tmp);
 
-	if (is_integer(&p1) && is_integer(&p2)) {
-		if (is_bigint(&p1) && is_bigint(&p2)) {
-			mp_int_gcd(&p1.val_bigint->ival, &p2.val_bigint->ival, &q->tmp_ival);
-			SET_ACCUM();
-		} else if (is_bigint(&p1)) {
-			mpz_t tmp;
-			mp_int_init_value(&tmp, p2.val_int);
-			mp_int_gcd(&p1.val_bigint->ival, &tmp, &q->tmp_ival);
-			mp_int_clear(&tmp);
-			SET_ACCUM();
-		} else if (is_bigint(&p2)) {
-			mpz_t tmp;
-			mp_int_init_value(&tmp, p1.val_int);
-			mp_int_gcd(&tmp, &p2.val_bigint->ival, &q->tmp_ival);
-			mp_int_clear(&tmp);
-			SET_ACCUM();
-		} else {
-			q->accum.val_int = gcd(p1.val_int, p2.val_int);
-			q->accum.tag = TAG_INTEGER;
-		}
+	if (is_bigint(&p1) && is_bigint(&p2)) {
+		mp_int_gcd(&p1.val_bigint->ival, &p2.val_bigint->ival, &q->tmp_ival);
+		SET_ACCUM();
+	} else if (is_bigint(&p1) && is_smallint(&p2)) {
+		mpz_t tmp;
+		mp_int_init_value(&tmp, p2.val_int);
+		mp_int_gcd(&p1.val_bigint->ival, &tmp, &q->tmp_ival);
+		mp_int_clear(&tmp);
+		SET_ACCUM();
+	} else if (is_bigint(&p2) && is_smallint(&p1)) {
+		mpz_t tmp;
+		mp_int_init_value(&tmp, p1.val_int);
+		mp_int_gcd(&tmp, &p2.val_bigint->ival, &q->tmp_ival);
+		mp_int_clear(&tmp);
+		SET_ACCUM();
+	} else if (is_smallint(&p1) && is_smallint(&p2)) {
+		q->accum.val_int = gcd(p1.val_int, p2.val_int);
+		q->accum.tag = TAG_INTEGER;
 	} else if (is_var(&p1) || is_var(&p2)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else if (!is_integer(&p1)) {
