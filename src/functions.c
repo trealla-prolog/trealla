@@ -36,8 +36,10 @@ void clr_accum(cell *p)
 	}
 
 	p->tag = TAG_INTEGER;
-	p->val_int = 0;
+	p->nbr_cells = 1;
+	p->arity = 0;
 	p->flags = 0;
+	p->val_int = 0;
 }
 
 #define CLEANUP __attribute__((cleanup (clr_accum)))
@@ -47,6 +49,7 @@ void clr_accum(cell *p)
 #define ON_OVERFLOW(op,v1,v2)									\
 	__int128_t tmp = (__int128_t)v1 op v2;						\
 	if ((tmp > INT64_MAX) || (tmp < INT64_MIN))
+
 #else
 
 #define ON_OVERFLOW(op,v1,v2)									\
@@ -59,8 +62,10 @@ void clr_accum(cell *p)
 #define DO_OP2(op,op2,p1,p2) \
 	if (is_smallint(&p1) && is_smallint(&p2)) { \
 		ON_OVERFLOW(op, p1.val_int, p2.val_int) { \
-			mp_int_set_value(&q->tmp_ival, p1.val_int); \
-			mp_int_##op2##_value(&q->tmp_ival, p2.val_int, &q->tmp_ival); \
+			mpz_t tmp; \
+			mp_int_init_value(&tmp, p1.val_int); \
+			mp_int_##op2##_value(&tmp, p2.val_int, &q->tmp_ival); \
+			mp_int_clear(&tmp); \
 			SET_ACCUM(); \
 		} else { \
 			q->accum.val_int = p1.val_int op p2.val_int; \
@@ -106,42 +111,6 @@ void clr_accum(cell *p)
 		q->accum.val_float = p1.val_float op p2.val_int; \
 		if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow"); \
 		q->accum.tag = TAG_FLOAT; \
-	} else if (is_var(&p1) || is_var(&p2)) { \
-		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated"); \
-	} else { \
-		return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable"); \
-	}
-
-#define DO_OP2int(op,op2,p1,p2) \
-	if (is_smallint(&p1) && is_smallint(&p2)) { \
-		ON_OVERFLOW(op, p1.val_int, p2.val_int) { \
-			mp_int_set_value(&q->tmp_ival, p1.val_int); \
-			mp_int_##op2##_value(&q->tmp_ival, p2.val_int, &q->tmp_ival); \
-			SET_ACCUM(); \
-		} else { \
-			q->accum.val_int = p1.val_int op p2.val_int; \
-			q->accum.tag = TAG_INTEGER; \
-		} \
-	} else if (is_bigint(&p1)) { \
-		if (is_bigint(&p2)) { \
-			mp_int_##op2(&p1.val_bigint->ival, &p2.val_bigint->ival, &q->tmp_ival); \
-			SET_ACCUM(); \
-		} else if (is_smallint(&p2)) { \
-			mp_int_##op2##_value(&p1.val_bigint->ival, p2.val_int, &q->tmp_ival); \
-			SET_ACCUM(); \
-		} else { \
-			return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable"); \
-		} \
-	} else if (is_bigint(&p2)) { \
-		if (is_smallint(&p1)) { \
-			mpz_t tmp; \
-			mp_int_init_value(&tmp, p1.val_int); \
-			mp_int_##op2(&tmp, &p2.val_bigint->ival, &q->tmp_ival); \
-			mp_int_clear(&tmp); \
-			SET_ACCUM(); \
-		} else { \
-			return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable"); \
-		} \
 	} else if (is_var(&p1) || is_var(&p2)) { \
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated"); \
 	} else { \
@@ -2010,7 +1979,10 @@ static bool fn_iso_shl_2(query *q)
 
 	if (is_bigint(&p1) && is_smallint(&p2)) {
 		mp_int_copy(&p1.val_bigint->ival, &q->tmp_ival);
-		mp_int_mul_pow2(&q->tmp_ival, p2.val_int, &q->tmp_ival);
+		mpz_t tmp;
+		mp_int_init_copy(&tmp, &q->tmp_ival);
+		mp_int_mul_pow2(&tmp, p2.val_int, &q->tmp_ival);
+		mp_int_clear(&tmp);
 		SET_ACCUM();
 	} else if (is_smallint(&p1) && is_smallint(&p2)) {
 		q->accum.val_int = p1.val_int << p2.val_int;
@@ -2020,8 +1992,10 @@ static bool fn_iso_shl_2(query *q)
 			return true;
 		}
 
-		mp_int_init_value(&q->tmp_ival, p1.val_int);
-		mp_int_mul_pow2(&q->tmp_ival, p2.val_int, &q->tmp_ival);
+		mpz_t tmp;
+		mp_int_init_value(&tmp, p1.val_int);
+		mp_int_mul_pow2(&tmp, p2.val_int, &q->tmp_ival);
+		mp_int_clear(&tmp);
 		SET_ACCUM();
 	} else if (is_var(&p1) || is_var(&p2)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
@@ -2045,7 +2019,10 @@ static bool fn_iso_shr_2(query *q)
 	if (is_bigint(&p1) && is_smallint(&p2)) {
 		int n = p2.val_int;
 		mp_int_copy(&p1.val_bigint->ival, &q->tmp_ival);
-		mp_int_div_pow2(&q->tmp_ival, n, &q->tmp_ival, NULL);
+		mpz_t tmp;
+		mp_int_init_copy(&tmp, &q->tmp_ival);
+		mp_int_div_pow2(&tmp, n, &q->tmp_ival, NULL);
+		mp_int_clear(&tmp);
 		SET_ACCUM();
 	} if (is_smallint(&p1) && is_smallint(&p2)) {
 		q->accum.val_int = p1.val_int >> p2.val_int;
@@ -2590,114 +2567,71 @@ static bool fn_divmod_4(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,integer);
-	GET_NEXT_ARG(p3,integer_or_var);
-	GET_NEXT_ARG(p4,integer_or_var);
+	GET_NEXT_ARG(p3,var);
+	GET_NEXT_ARG(p4,var);
 
 	if (is_bigint(p1) && is_bigint(p2)) {
 		mpz_t tmp1, tmp2;
-		mp_int_init_value(&tmp1, 0);
-		mp_int_init_value(&tmp2, 0);
+		mp_int_init(&tmp1);
+		mp_int_init(&tmp2);
 		mp_int_div(&p1->val_bigint->ival, &p2->val_bigint->ival, &tmp1, &tmp2);
-		q->tmp_ival = tmp1;
-
 		q->accum.tag = TAG_INTEGER;
 		q->accum.flags = FLAG_MANAGED;
 		q->accum.val_bigint = malloc(sizeof(bigint));
-		if (errno == ENOMEM)
-			return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory");
 		q->accum.val_bigint->refcnt = 0;
-		if (mp_int_init_copy(&q->accum.val_bigint->ival, &tmp1) == MP_MEMORY) {
-			return throw_error(q, &q->accum, q->st.curr_frame, "resource_error", "memory");
-		}
-		if (errno == ENOMEM)
-			return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory");
-
+		mp_int_init_copy(&q->accum.val_bigint->ival, &tmp1);
+		mp_int_clear(&tmp1);
         unify(q, p3, p3_ctx, &q->accum, q->st.curr_frame);
-
 		q->accum.tag = TAG_INTEGER;
 		q->accum.flags = FLAG_MANAGED;
 		q->accum.val_bigint = malloc(sizeof(bigint));
-		if (errno == ENOMEM)
-			return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory");
 		q->accum.val_bigint->refcnt = 0;
-		if (mp_int_init_copy(&q->accum.val_bigint->ival, &tmp2) == MP_MEMORY) {
-			return throw_error(q, &q->accum, q->st.curr_frame, "resource_error", "memory");
-		}
-		if (errno == ENOMEM)
-			return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory");
-
+		mp_int_init_copy(&q->accum.val_bigint->ival, &tmp2);
+		mp_int_clear(&tmp2);
         unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
 	} else if (is_bigint(p1) && is_smallint(p2)) {
 		mpz_t tmp;
 		mp_int_init_value(&tmp, p2->val_int);
 		mpz_t tmp1, tmp2;
-		mp_int_init_value(&tmp1, 0);
-		mp_int_init_value(&tmp2, 0);
+		mp_int_init(&tmp1);
+		mp_int_init(&tmp2);
 		mp_int_div(&p1->val_bigint->ival, &tmp, &tmp1, &tmp2);
 		mp_int_clear(&tmp);
-
 		q->accum.tag = TAG_INTEGER;
 		q->accum.flags = FLAG_MANAGED;
 		q->accum.val_bigint = malloc(sizeof(bigint));
-		if (errno == ENOMEM)
-			return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory");
 		q->accum.val_bigint->refcnt = 0;
-		if (mp_int_init_copy(&q->accum.val_bigint->ival, &tmp1) == MP_MEMORY) {
-			return throw_error(q, &q->accum, q->st.curr_frame, "resource_error", "memory");
-		}
-		if (errno == ENOMEM)
-			return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory");
-
+		mp_int_init_copy(&q->accum.val_bigint->ival, &tmp1);
+		mp_int_clear(&tmp1);
         unify(q, p3, p3_ctx, &q->accum, q->st.curr_frame);
-
 		q->accum.tag = TAG_INTEGER;
 		q->accum.flags = FLAG_MANAGED;
 		q->accum.val_bigint = malloc(sizeof(bigint));
-		if (errno == ENOMEM)
-			return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory");
 		q->accum.val_bigint->refcnt = 0;
-		if (mp_int_init_copy(&q->accum.val_bigint->ival, &tmp2) == MP_MEMORY) {
-			return throw_error(q, &q->accum, q->st.curr_frame, "resource_error", "memory");
-		}
-		if (errno == ENOMEM)
-			return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory");
-
+		mp_int_init_copy(&q->accum.val_bigint->ival, &tmp2);
+		mp_int_clear(&tmp2);
         unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
 	} else if (is_bigint(p2) && is_smallint(p1)) {
 		mpz_t tmp;
 		mp_int_init_value(&tmp, p1->val_int);
 		mpz_t tmp1, tmp2;
-		mp_int_init_value(&tmp1, 0);
-		mp_int_init_value(&tmp2, 0);
+		mp_int_init(&tmp1);
+		mp_int_init(&tmp2);
 		mp_int_div(&tmp, &p2->val_bigint->ival, &tmp1, &tmp2);
 		mp_int_clear(&tmp);
-
 		q->accum.tag = TAG_INTEGER;
 		q->accum.flags = FLAG_MANAGED;
 		q->accum.val_bigint = malloc(sizeof(bigint));
-		if (errno == ENOMEM)
-			return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory");
 		q->accum.val_bigint->refcnt = 0;
-		if (mp_int_init_copy(&q->accum.val_bigint->ival, &tmp1) == MP_MEMORY) {
-			return throw_error(q, &q->accum, q->st.curr_frame, "resource_error", "memory");
-		}
-		if (errno == ENOMEM)
-			return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory");
-
+		mp_int_init_copy(&q->accum.val_bigint->ival, &tmp1);
+		mp_int_clear(&tmp1);
         unify(q, p3, p3_ctx, &q->accum, q->st.curr_frame);
-
 		q->accum.tag = TAG_INTEGER;
 		q->accum.flags = FLAG_MANAGED;
 		q->accum.val_bigint = malloc(sizeof(bigint));
-		if (errno == ENOMEM)
-			return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory");
 		q->accum.val_bigint->refcnt = 0;
-		if (mp_int_init_copy(&q->accum.val_bigint->ival, &tmp2) == MP_MEMORY) {
-			return throw_error(q, &q->accum, q->st.curr_frame, "resource_error", "memory");
-		}
-		if (errno == ENOMEM)
-			return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory");
-
+		mp_int_init_copy(&q->accum.val_bigint->ival, &tmp2);
+		mp_int_clear(&tmp2);
         unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
 	} else if (is_smallint(p1) && is_smallint(p2)) {
 		if (p2->val_int == 0)
