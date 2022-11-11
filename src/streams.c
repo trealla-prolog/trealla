@@ -6750,15 +6750,18 @@ static bool fn_set_stream_2(query *q)
 		free(str->name);
 		str->name = DUP_STR(q, name);
 
-		if (!CMP_STR_TO_CSTR(q, name, "current_input") || !CMP_STR_TO_CSTR(q, name, "user_input")) {
-			q->pl->streams[0].fp = str->fp;
+		if (!CMP_STR_TO_CSTR(q, name, "current_input")) {
 			q->pl->current_input = n;
-		} else if (!CMP_STR_TO_CSTR(q, name, "current_output") || !CMP_STR_TO_CSTR(q, name, "user_output")) {
-			q->pl->streams[1].fp = str->fp;
+		} else if (!CMP_STR_TO_CSTR(q, name, "current_output")) {
 			q->pl->current_output = n;
-		} else if (!CMP_STR_TO_CSTR(q, name, "current_error") || !CMP_STR_TO_CSTR(q, name, "user_error")) {
-			q->pl->streams[2].fp = str->fp;
+		} else if (!CMP_STR_TO_CSTR(q, name, "current_error")) {
 			q->pl->current_error = n;
+		} else if (!CMP_STR_TO_CSTR(q, name, "user_input")) {
+			q->pl->streams[0].fp = str->fp;
+		} else if (!CMP_STR_TO_CSTR(q, name, "user_output")) {
+			q->pl->streams[1].fp = str->fp;
+		} else if (!CMP_STR_TO_CSTR(q, name, "user_error")) {
+			q->pl->streams[2].fp = str->fp;
 		}
 
 		return true;

@@ -112,7 +112,7 @@ void set_trace(prolog *pl) { pl->trace = true; }
 void set_quiet(prolog *pl) { pl->quiet = true; }
 void set_opt(prolog *pl, int level) { pl->opt = level; }
 
-bool pl_isatty(prolog* pl) { return isatty(pl->current_input); }
+bool pl_isatty(prolog* pl) { return isatty(fileno(pl->streams[0].fp)); }
 FILE *pl_stdin(prolog *pl) { return pl->streams[0].fp; }
 
 bool pl_eval(prolog *pl, const char *s)
