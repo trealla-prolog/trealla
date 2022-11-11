@@ -408,6 +408,7 @@ void pl_destroy(prolog *pl)
 			if (str->p)
 				destroy_parser(str->p);
 
+			map_destroy(str->alias);
 			free(str->mode);
 			free(str->filename);
 			free(str->name);
@@ -517,24 +518,30 @@ prolog *pl_create()
 		return NULL;
 
 	pl->streams[0].fp = stdin;
+	CHECK_SENTINEL(pl->streams[0].alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
 	CHECK_SENTINEL(pl->streams[0].filename = strdup("stdin"), NULL);
 	CHECK_SENTINEL(pl->streams[0].name = strdup("user_input"), NULL);
 	CHECK_SENTINEL(pl->streams[0].mode = strdup("read"), NULL);
+	map_set(pl->streams[0].alias, strdup("user_input"), NULL);
 	pl->streams[0].eof_action = eof_action_reset;
 
 	pl->streams[1].fp = stdout;
+	CHECK_SENTINEL(pl->streams[1].alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
 	CHECK_SENTINEL(pl->streams[1].filename = strdup("stdout"), NULL);
 	CHECK_SENTINEL(pl->streams[1].name = strdup("user_output"), NULL);
 	CHECK_SENTINEL(pl->streams[1].mode = strdup("append"), NULL);
+	map_set(pl->streams[1].alias, strdup("user_output"), NULL);
 	pl->streams[1].eof_action = eof_action_reset;
 
 	pl->streams[2].fp = stderr;
+	CHECK_SENTINEL(pl->streams[2].alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
 	CHECK_SENTINEL(pl->streams[2].filename = strdup("stderr"), NULL);
 	CHECK_SENTINEL(pl->streams[2].name = strdup("user_error"), NULL);
 	CHECK_SENTINEL(pl->streams[2].mode = strdup("append"), NULL);
+	map_set(pl->streams[2].alias, strdup("user_error"), NULL);
 	pl->streams[2].eof_action = eof_action_reset;
 
-	pl->streams[3].ignore = true;;
+	pl->streams[3].ignore = true;
 
 	pl->help = map_create((void*)fake_strcmp, (void*)ptrfree, NULL);
 	map_allow_dups(pl->help, false);
