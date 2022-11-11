@@ -112,6 +112,9 @@ void set_trace(prolog *pl) { pl->trace = true; }
 void set_quiet(prolog *pl) { pl->quiet = true; }
 void set_opt(prolog *pl, int level) { pl->opt = level; }
 
+bool pl_isatty(prolog* pl) { return isatty(fileno(pl->streams[0].fp)); }
+FILE *pl_stdin(prolog *pl) { return pl->streams[0].fp; }
+
 bool pl_eval(prolog *pl, const char *s)
 {
 	if (!*s)
@@ -231,8 +234,9 @@ builtins *get_help(prolog *pl, const char *name, unsigned arity, bool *found, bo
 	return NULL;
 }
 
-builtins *get_builtin(prolog *pl, const char *name, unsigned arity, bool *found, bool *evaluable)
+builtins *get_builtin(prolog *pl, const char *name, size_t len, unsigned arity, bool *found, bool *evaluable)
 {
+	// TODO: use 'len' in comparison
 	miter *iter = map_find_key(pl->biftab, name);
 	builtins *ptr;
 
@@ -249,6 +253,15 @@ builtins *get_builtin(prolog *pl, const char *name, unsigned arity, bool *found,
 	if (evaluable) *evaluable = false;
 	map_done(iter);
 	return NULL;
+}
+
+builtins *get_builtin_term(module *m, cell *c, bool *found, bool *evaluable)
+{
+	prolog *pl = m->pl;
+	const char *name = C_STR(m, c);
+	size_t len = C_STRLEN(m, c);
+	unsigned arity = c->arity;
+	return get_builtin(pl, name, len, arity, found, evaluable);
 }
 
 builtins *get_fn_ptr(void *fn)
@@ -397,7 +410,7 @@ void pl_destroy(prolog *pl)
 			) {
 				if (str->is_map)
 					map_destroy(str->keyval);
-				else
+				else if (str->fp && (i > 2))
 					fclose(str->fp);
 			}
 

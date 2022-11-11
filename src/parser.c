@@ -662,6 +662,7 @@ static void directives(parser *p, cell *d)
 			if (!strcmp(name, "between")
 				|| !strcmp(name, "error")
 				|| !strcmp(name, "samsort")
+				|| !strcmp(name, "time")
 				|| !strcmp(name, "terms")
 				|| !strcmp(name, "types")
 				|| !strcmp(name, "iso_ext")
@@ -1562,9 +1563,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	if (!pr || !pr->cnt)
 		return goal;
 
-	const char *functor = C_STR(p, goal);
-
-	if (get_builtin(p->pl, functor, goal->arity, NULL, NULL) /*|| is_op(goal)*/)
+	if (get_builtin_term(p->m, goal, NULL, NULL) /*|| is_op(goal)*/)
 		return goal;
 
 	//if (search_predicate(p->m, goal))
@@ -3463,7 +3462,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 		} else if (p->v.tag == TAG_FLOAT) {
 			set_float(c, get_float(&p->v));
 		} else if ((!p->is_quoted || is_func || p->is_op || p->is_var
-			|| (get_builtin(p->m->pl, SB_cstr(p->token), 0, &found, NULL), found)
+			|| (get_builtin(p->m->pl, SB_cstr(p->token), SB_strlen(p->token), 0, &found, NULL), found)
 			//|| !SB_strcmp(p->token, "[]")
 			) && !p->string) {
 

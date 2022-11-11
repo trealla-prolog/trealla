@@ -346,9 +346,23 @@ int main(int ac, char *av[], char * envp[])
 	if (isatty(0))
 		history_load(histfile);
 
-	char *line;
+	for (;;) {
+		char *line = NULL;
 
-	while ((line = history_readline_eol("?- ", '.')) != NULL) {
+		if (pl_isatty(pl)) {
+			if ((line = history_readline_eol(pl, "?- ", '.')) == NULL)
+				break;
+		} else {
+			size_t n = 0;
+
+			if (getline(&line, &n, pl_stdin(pl)) < 0) {
+				free(line);
+				break;
+			}
+
+			line[strlen(line)-1] = '\0';
+		}
+
 		const char *src = line;
 
 		while (isspace(*src))

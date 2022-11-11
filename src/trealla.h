@@ -22,6 +22,10 @@ EXPORT(pl_consult)
 extern bool pl_consult(prolog*, const char *filename);
 EXPORT(pl_consult_fp)
 extern bool pl_consult_fp(prolog*, FILE *fp, const char *filename);
+EXPORT(pl_isatty)
+extern bool pl_isatty(prolog*);
+EXPORT(pl_stdin)
+extern FILE *pl_stdin(prolog*);
 
 EXPORT(pl_query)
 extern bool pl_query(prolog*, const char *expr, pl_sub_query **q);

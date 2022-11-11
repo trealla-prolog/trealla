@@ -2,7 +2,8 @@
 
 #include "internal.h"
 
-builtins *get_builtin(prolog *pl, const char *name, unsigned arity, bool *found, bool *evaluable);
+builtins *get_builtin(prolog *pl, const char *name, size_t len, unsigned arity, bool *found, bool *evaluable);
+builtins *get_builtin_term(module *m, cell *c, bool *found, bool *evaluable);
 builtins *get_help(prolog *pl, const char *name, unsigned arity, bool *found, bool *evaluable);
 builtins *get_fn_ptr(void *fn);
 module *find_module(prolog *pl, const char *name);
@@ -34,8 +35,8 @@ extern void convert_path(char *filename);
 extern void sigfn(int s);
 
 extern builtins g_iso_bifs[];
-extern builtins g_ffi_bifs[];
 extern builtins g_other_bifs[];
+extern builtins g_ffi_bifs[];
 extern builtins g_posix_bifs[];
 extern builtins g_contrib_bifs[];
 extern builtins g_files_bifs[];

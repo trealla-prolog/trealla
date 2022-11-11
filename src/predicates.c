@@ -1853,7 +1853,7 @@ static bool fn_iso_univ_2(query *q)
 		if (is_callable(tmp)) {
 			if ((tmp->match = search_predicate(q->st.m, tmp, NULL)) != NULL) {
 				tmp->flags &= ~FLAG_BUILTIN;
-			} else if ((tmp->fn_ptr = get_builtin(q->pl, C_STR(q, tmp), tmp->arity, &found, NULL)), found) {
+			} else if ((tmp->fn_ptr = get_builtin_term(q->st.m, tmp, &found, NULL)), found) {
 				if (tmp->fn_ptr->evaluable)
 					tmp->flags |= FLAG_EVALUABLE;
 				else
@@ -2184,7 +2184,7 @@ static bool fn_iso_retractall_1(query *q)
 	if (!pr) {
 		bool found = false;
 
-		if (get_builtin(q->pl, C_STR(q, head), head->arity, &found, NULL), found)
+		if (get_builtin_term(q->st.m, head, &found, NULL), found)
 			return throw_error(q, head, q->latest_ctx, "permission_error", "modify,static_procedure");
 
 		return true;
@@ -2296,7 +2296,7 @@ static bool fn_iso_abolish_1(query *q)
 
 	bool found = false;
 
-	if (get_builtin(q->pl, C_STR(q, p1_name), get_smallint(p1_arity), &found, NULL), found)
+	if (get_builtin(q->pl, C_STR(q, p1_name), C_STRLEN(q, p1_name), get_smallint(p1_arity), &found, NULL), found)
 		return throw_error(q, p1, p1_ctx, "permission_error", "modify,static_procedure");
 
 	cell tmp;
@@ -2339,7 +2339,7 @@ static bool fn_soft_abolish_1(query *q)
 
 	bool found = false;
 
-	if (get_builtin(q->pl, C_STR(q, p1_name), get_smallint(p1_arity), &found, NULL), found)
+	if (get_builtin(q->pl, C_STR(q, p1_name), C_STRLEN(q, p1_name), get_smallint(p1_arity), &found, NULL), found)
 		return throw_error(q, p1, p1_ctx, "permission_error", "modify,static_procedure");
 
 	cell tmp;
@@ -2422,7 +2422,7 @@ static bool fn_iso_asserta_1(query *q)
 
 	bool found = false;
 
-	if (get_builtin(q->pl, C_STR(q, head), head->arity, &found, NULL), found) {
+	if (get_builtin_term(q->st.m, head, &found, NULL), found) {
 		if (!GET_OP(head))
 			return throw_error(q, head, q->st.curr_frame, "permission_error", "modify,static_procedure");
 	}
@@ -2481,7 +2481,7 @@ static bool fn_iso_assertz_1(query *q)
 
 	bool found = false, evaluable = false;
 
-	if (get_builtin(q->pl, C_STR(q, head), head->arity, &found, &evaluable), found && !evaluable) {
+	if (get_builtin_term(q->st.m, head, &found, &evaluable), found && !evaluable) {
 		if (!GET_OP(head))
 			return throw_error(q, head, q->st.curr_frame, "permission_error", "modify,static_procedure");
 	}
@@ -2624,6 +2624,7 @@ static bool fn_iso_current_rule_1(query *q)
 		return throw_error(q, p1, p1_ctx, "type_error", "integer");
 
 	const char *functor = C_STR(q, pf);
+	size_t functor_len = C_STRLEN(q, pf);
 	unsigned arity = get_smallint(pa) + add_two;
 
 	if (strchr(functor, ':')) {
@@ -2650,7 +2651,7 @@ static bool fn_iso_current_rule_1(query *q)
 
 	bool found = false;
 
-	if (get_builtin(q->pl, functor, arity, &found, NULL), found)
+	if (get_builtin(q->pl, functor, functor_len, arity, &found, NULL), found)
 		return true;
 
 	return false;
@@ -3689,7 +3690,7 @@ static bool do_asserta_2(query *q)
 
 	bool found = false;
 
-	if (get_builtin(q->pl, C_STR(q, head), head->arity, &found, NULL), found) {
+	if (get_builtin_term(q->st.m, head, &found, NULL), found) {
 		if (!GET_OP(head))
 			return throw_error(q, head, q->latest_ctx, "permission_error", "modify,static_procedure");
 	}
@@ -3787,7 +3788,7 @@ static bool do_assertz_2(query *q)
 
 	bool found = false;
 
-	if (get_builtin(q->pl, C_STR(q, head), head->arity, &found, NULL), found) {
+	if (get_builtin_term(q->st.m, head, &found, NULL), found) {
 		if (!GET_OP(head))
 			return throw_error(q, head, q->latest_ctx, "permission_error", "modify,static_procedure");
 	}
@@ -4185,7 +4186,11 @@ static bool fn_sys_elapsed_0(query *q)
 {
 	uint64_t elapsed = get_time_in_usec();
 	elapsed -= q->time_started;
-	fprintf(stdout, "Time elapsed %.03gs\n", (double)elapsed/1000/1000);
+	if (!q->is_redo) fprintf(stdout, "   ");
+	if (q->is_redo) fprintf(stdout, " ");
+	fprintf(stdout, "%% Time elapsed %.03gs\n", (double)elapsed/1000/1000);
+	if (q->is_redo) fprintf(stdout, "  ");
+	//else if (!q->redo) fprintf(stdout, "");
 	return true;
 }
 
@@ -5131,7 +5136,7 @@ static bool fn_task_n(query *q)
 
 	if ((tmp2->match = search_predicate(q->st.m, tmp2, NULL)) != NULL) {
 		tmp2->flags &= ~FLAG_BUILTIN;
-	} else if ((tmp2->fn_ptr = get_builtin(q->pl, C_STR(q, tmp2), tmp2->arity, &found, NULL)), found) {
+	} else if ((tmp2->fn_ptr = get_builtin_term(q->st.m, tmp2, &found, NULL)), found) {
 		tmp2->flags |= FLAG_BUILTIN;
 	}
 
@@ -6007,7 +6012,7 @@ static bool fn_sys_legacy_predicate_property_2(query *q)
 	cell tmp;
 	bool found = false;
 
-	if (get_builtin(q->pl, C_STR(q, p1), p1->arity, &found, NULL), found) {
+	if (get_builtin_term(q->st.m, p1, &found, NULL), found) {
 		make_atom(&tmp, index_from_pool(q->pl, "built_in"));
 
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame) == true)

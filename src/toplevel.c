@@ -42,7 +42,7 @@ int check_interrupt(query *q)
 			printf("%c\n", ch);
 
 		if (ch == 'h') {
-			printf("Action (a)ll, (e)nd, e(x)it, (r)etry, (c)ontinue, (t)race, cree(p): ");
+			printf("Action (#digit), (a)ll, (e)nd, e(x)it, (r)etry, (c)ontinue, (t)race, cree(p): ");
 			goto LOOP;
 		}
 
@@ -53,6 +53,13 @@ int check_interrupt(query *q)
 
 		if (ch == 'p') {
 			q->trace = q->creep = !q->creep;
+			break;
+		}
+
+		if (isdigit(ch)) {
+			q->autofail = true;
+			q->autofail_n = isdigit(ch) ? (unsigned)ch - '0' : UINT_MAX;
+			q->time_started = get_time_in_usec();
 			break;
 		}
 
@@ -108,14 +115,18 @@ bool check_redo(query *q)
 	if (q->pl->is_query)
 		return q->cp;
 
-	if (q->autofail) {
+	if (q->autofail && (q->autofail_n > 1)) {
+		q->autofail_n--;
 		printf("\n; ");
 		fflush(stdout);
 		q->is_redo = true;
 		q->retry = QUERY_RETRY;
 		q->pl->did_dump_vars = false;
+		q->time_started = get_time_in_usec();
 		return false;
 	}
+
+	q->autofail_n = 0;
 
 	for (;;) {
 		printf("\n;");
@@ -123,7 +134,7 @@ bool check_redo(query *q)
 		int ch = history_getch();
 
 		if ((ch == 'h') || (ch == '?')) {
-			printf("Action (a)ll, e(x)it, (r)etry, (e)nd:\n");
+			printf("Action (#digit), (a)ll, e(x)it, (r)etry, (e)nd:\n");
 			fflush(stdout);
 			continue;
 		}
@@ -132,13 +143,15 @@ bool check_redo(query *q)
 	printf(" ");
 #endif
 
-		if (ch == 'a') {
+		if ((ch == 'a') || isdigit(ch)) {
 			printf(" ");
 			fflush(stdout);
 			q->is_redo = true;
 			q->retry = QUERY_RETRY;
 			q->pl->did_dump_vars = false;
 			q->autofail = true;
+			q->autofail_n = isdigit(ch) ? (unsigned)ch - '0' : UINT_MAX;
+			q->time_started = get_time_in_usec();
 			break;
 		}
 
@@ -148,6 +161,7 @@ bool check_redo(query *q)
 			q->is_redo = true;
 			q->retry = QUERY_RETRY;
 			q->pl->did_dump_vars = false;
+			q->time_started = get_time_in_usec();
 			break;
 		}
 
