@@ -569,7 +569,8 @@ struct stream_ {
 	};
 
 	string_buffer sb_buf;
-	char *mode, *filename, *name, *data, *src;
+	char *mode, *filename, *data, *src;
+	map *alias;
 	void *sslptr;
 	parser *p;
 	char srcbuf[STREAM_BUFLEN];

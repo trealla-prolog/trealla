@@ -426,8 +426,7 @@ static int get_named_stream(prolog *pl, const char *name, size_t len)
 		if (!str->fp)
 			continue;
 
-		if (str->name && (strlen(str->name) == len)
-			&& !strncmp(str->name, name, len))
+		if (map_get(str->alias, name, NULL))
 			return i;
 
 		if (str->filename && (strlen(str->filename) == len)
@@ -479,9 +478,17 @@ static void add_stream_properties(query *q, int n)
 			str->ungetch = ch;
 	}
 
-	char tmpbuf2[1024];
-	formatted(tmpbuf2, sizeof(tmpbuf2), str->name, strlen(str->name), false);
-	dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, alias('%s')).\n", n, tmpbuf2);
+	char tmpbuf2[1024*4];
+	miter *iter = map_first(str->alias);
+
+	while (map_next(iter, NULL)) {
+		const char *alias = map_key(iter);
+		formatted(tmpbuf2, sizeof(tmpbuf2), alias, strlen(alias), false);
+		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, alias('%s')).\n", n, tmpbuf2);
+	}
+
+	map_done(iter);
+
 	formatted(tmpbuf2, sizeof(tmpbuf2), str->filename, strlen(str->filename), false);
 	dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, file_name('%s')).\n", n, tmpbuf2);
 	dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, mode(%s)).\n", n, str->mode);
@@ -503,7 +510,6 @@ static void add_stream_properties(query *q, int n)
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, output).\n", n);
 
 	dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, newline(%s)).\n", n, NEWLINE_MODE);
-
 	parser *p = create_parser(q->st.m);
 	p->srcptr = tmpbuf;
 	p->consulting = true;
@@ -562,9 +568,18 @@ static bool do_stream_property(query *q)
 
 	if (!CMP_STR_TO_CSTR(q, p1, "alias")) {
 		cell tmp;
-		check_heap_error(make_cstring(&tmp, str->name));
-		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
-		unshare_cell(&tmp);
+		miter *iter = map_first(str->alias);
+		bool ok = false;
+
+		while (map_next(iter, NULL)) {
+			const char *alias = map_key(iter);
+			check_heap_error(make_cstring(&tmp, alias));
+			ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
+			unshare_cell(&tmp);
+			if (ok) break;
+		}
+
+		map_done(iter);
 		return ok;
 	}
 
@@ -816,8 +831,8 @@ static bool fn_popen_4(query *q)
 
 	stream *str = &q->pl->streams[n];
 	str->pipe = true;
+	if (!str->alias) str->alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	check_heap_error(str->filename = strdup(filename));
-	check_heap_error(str->name = strdup(filename));
 	check_heap_error(str->mode = DUP_STR(q, p2));
 	str->eof_action = eof_action_eof_code;
 	bool binary = false;
@@ -839,8 +854,7 @@ static bool fn_popen_4(query *q)
 				return throw_error(q, c, q->latest_ctx, "permission_error", "open,source_sink");
 
 			if (!CMP_STR_TO_CSTR(q, c, "alias")) {
-				free(str->name);
-				str->name = DUP_STR(q, name);
+				map_set(str->alias, DUP_STR(q, name), NULL);
 			} else if (!CMP_STR_TO_CSTR(q, c, "type")) {
 				if (is_atom(name) && !CMP_STR_TO_CSTR(q, name, "binary")) {
 					str->binary = true;
@@ -1236,7 +1250,7 @@ static bool fn_iso_open_4(query *q)
 	convert_path(filename);
 	stream *str = &q->pl->streams[n];
 	check_heap_error(str->filename = strdup(filename));
-	check_heap_error(str->name = strdup(filename));
+	if (!str->alias) str->alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	check_heap_error(str->mode = DUP_STR(q, p2));
 	str->eof_action = eof_action_eof_code;
 	free(src);
@@ -1282,8 +1296,7 @@ static bool fn_iso_open_4(query *q)
 			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 
-			free(str->name);
-			str->name = DUP_STR(q, name);
+			map_set(str->alias, DUP_STR(q, name), NULL);
 		} else if (!CMP_STR_TO_CSTR(q, c, "type")) {
 			if (is_var(name))
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
@@ -1470,9 +1483,9 @@ static bool fn_iso_close_1(query *q)
 	} else
 		net_close(str);
 
+	map_destroy(str->alias);
 	free(str->mode);
 	free(str->filename);
-	free(str->name);
 	free(str->data);
 	return true;
 }
@@ -4251,9 +4264,9 @@ static bool fn_edin_seen_0(query *q)
 		&& (str->fp != stderr))
 		fclose(str->fp);
 
+	map_destroy(str->alias);
 	free(str->filename);
 	free(str->mode);
-	free(str->name);
 	memset(str, 0, sizeof(stream));
 	q->pl->current_input = 0;
 	return true;
@@ -4272,9 +4285,9 @@ static bool fn_edin_told_0(query *q)
 		&& (str->fp != stderr))
 		fclose(str->fp);
 
+	map_destroy(str->alias);
 	free(str->filename);
 	free(str->mode);
-	free(str->name);
 	memset(str, 0, sizeof(stream));
 	q->pl->current_output = 0;
 	return true;
@@ -4283,7 +4296,11 @@ static bool fn_edin_told_0(query *q)
 static bool fn_edin_seeing_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
-	char *name = q->pl->current_input==0?"user":q->pl->streams[q->pl->current_input].name;
+	miter *iter = map_first(q->pl->streams[q->pl->current_input].alias);
+	map_next(iter, NULL);
+	const char *alias = map_key(iter);
+	map_done(iter);
+	const char *name = q->pl->current_input==0?"user":alias;
 	cell tmp;
 	check_heap_error(make_cstring(&tmp, name));
 	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
@@ -4294,7 +4311,11 @@ static bool fn_edin_seeing_1(query *q)
 static bool fn_edin_telling_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
-	char *name =q->pl->current_output==1?"user":q->pl->streams[q->pl->current_output].name;
+	miter *iter = map_first(q->pl->streams[q->pl->current_output].alias);
+	map_next(iter, NULL);
+	const char *alias = map_key(iter);
+	map_done(iter);
+	const char *name =q->pl->current_output==1?"user":alias;
 	cell tmp;
 	check_heap_error(make_cstring(&tmp, name));
 	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
@@ -5925,8 +5946,9 @@ static bool fn_server_3(query *q)
 	}
 
 	stream *str = &q->pl->streams[n];
+	if (!str->alias) str->alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL);
+	map_set(str->alias, strdup(hostname), NULL);
 	check_heap_error(str->filename = DUP_STR(q, p1));
-	check_heap_error(str->name = strdup(hostname));
 	check_heap_error(str->mode = strdup("update"));
 	str->nodelay = nodelay;
 	str->nonblock = nonblock;
@@ -5974,10 +5996,10 @@ static bool fn_accept_2(query *q)
 	}
 
 	stream *str2 = &q->pl->streams[n];
+	map_set(str2->alias, strdup(str->filename), NULL);
 	check_heap_error(str2->filename = strdup(str->filename));
-	check_heap_error(str2->name = strdup(str->name));
 	check_heap_error(str2->mode = strdup("update"));
-	str->socket = true;
+	str2->socket = true;
 	str2->nodelay = str->nodelay;
 	str2->nonblock = str->nonblock;
 	str2->udp = str->udp;
@@ -5990,7 +6012,7 @@ static bool fn_accept_2(query *q)
 	}
 
 	if (str->ssl) {
-		str2->sslptr = net_enable_ssl(fd, str->name, 1, str->level, NULL);
+		str2->sslptr = net_enable_ssl(fd, str->filename, 1, str->level, NULL);
 
 		if (!str2->sslptr) {
 			close(fd);
@@ -6109,8 +6131,9 @@ static bool fn_client_5(query *q)
 	}
 
 	stream *str = &q->pl->streams[n];
+	if (!str->alias) str->alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL);
+	map_set(str->alias, DUP_STR(q, p1), NULL);
 	check_heap_error(str->filename = DUP_STR(q, p1));
-	check_heap_error(str->name = strdup(hostname));
 	check_heap_error(str->mode = strdup("update"));
 	str->socket = true;
 	str->nodelay = nodelay;
@@ -6120,9 +6143,9 @@ static bool fn_client_5(query *q)
 	str->level = level;
 	str->fp = fdopen(fd, "r+");
 
-	if (!str->filename || !str->name || !str->mode) {
+	if (!str->filename || !str->mode) {
+		map_destroy(str->alias);
 		free(str->filename);
-		free(str->name);
 		free(str->mode); //cehteh: maybe from pool?
 		return false;
 	}
@@ -6390,8 +6413,7 @@ static bool fn_map_create_2(query *q)
 			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 
-			free(str->name);
-			str->name = DUP_STR(q, name);
+			map_set(str->alias, DUP_STR(q, name), NULL);
 		} else {
 			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 		}
@@ -6769,8 +6791,7 @@ static bool fn_set_stream_2(query *q)
 		if (!is_atom(name))
 			return throw_error(q, p1, p1_ctx, "domain_error", "stream_option");
 
-		free(str->name);
-		str->name = DUP_STR(q, name);
+		map_set(str->alias, DUP_STR(q, name), NULL);
 
 		if (!CMP_STR_TO_CSTR(q, name, "current_input")) {
 			q->pl->current_input = n;

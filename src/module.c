@@ -1487,7 +1487,7 @@ module *load_file(module *m, const char *filename, bool including)
 			snprintf(tmpbuf, sizeof(tmpbuf), "user");
 			filename = set_loaded(m, tmpbuf, orig_filename);
 
-			if (strcmp(str->name, "user_input"))
+			if (map_get(str->alias, "user_input", NULL))
 				continue;
 
 			for (predicate *pr = m->head; pr; pr = pr->next)
