@@ -566,18 +566,6 @@ static bool do_stream_property(query *q)
 		return ok;
 	}
 
-	if (!CMP_STR_TO_CSTR(q, p1, "alias") && is_var(c)) {
-		cell tmp;
-		miter *iter = map_first(str->alias);
-		map_next(iter, NULL);
-		const char *alias = map_key(iter);
-		map_done(iter);
-		check_heap_error(make_cstring(&tmp, alias));
-		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
-		unshare_cell(&tmp);
-		return ok;
-	}
-
 	if (!CMP_STR_TO_CSTR(q, p1, "alias")) {
 		cell tmp;
 		miter *iter = map_first(str->alias);
