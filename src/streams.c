@@ -478,17 +478,17 @@ static void add_stream_properties(query *q, int n)
 			str->ungetch = ch;
 	}
 
-	char tmpbuf2[1024];
+	char tmpbuf2[1024*4];
 	miter *iter = map_first(str->alias);
 
 	while (map_next(iter, NULL)) {
 		const char *alias = map_key(iter);
 		formatted(tmpbuf2, sizeof(tmpbuf2), alias, strlen(alias), false);
+		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, alias('%s')).\n", n, tmpbuf2);
 	}
 
 	map_done(iter);
 
-	dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, alias('%s')).\n", n, tmpbuf2);
 	formatted(tmpbuf2, sizeof(tmpbuf2), str->filename, strlen(str->filename), false);
 	dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, file_name('%s')).\n", n, tmpbuf2);
 	dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, mode(%s)).\n", n, str->mode);
@@ -510,7 +510,6 @@ static void add_stream_properties(query *q, int n)
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, output).\n", n);
 
 	dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, newline(%s)).\n", n, NEWLINE_MODE);
-
 	parser *p = create_parser(q->st.m);
 	p->srcptr = tmpbuf;
 	p->consulting = true;
@@ -828,7 +827,6 @@ static bool fn_popen_4(query *q)
 	stream *str = &q->pl->streams[n];
 	str->pipe = true;
 	if (!str->alias) str->alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL);
-	map_set(str->alias, strdup(filename), NULL);
 	check_heap_error(str->filename = strdup(filename));
 	check_heap_error(str->mode = DUP_STR(q, p2));
 	str->eof_action = eof_action_eof_code;
@@ -1248,7 +1246,6 @@ static bool fn_iso_open_4(query *q)
 	stream *str = &q->pl->streams[n];
 	check_heap_error(str->filename = strdup(filename));
 	if (!str->alias) str->alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL);
-	map_set(str->alias, strdup(filename), NULL);
 	check_heap_error(str->mode = DUP_STR(q, p2));
 	str->eof_action = eof_action_eof_code;
 	free(src);
