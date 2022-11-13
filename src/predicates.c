@@ -4200,24 +4200,6 @@ static bool fn_trace_0(query *q)
 	return true;
 }
 
-static bool fn_time_1(query *q)
-{
-	if (q->retry) {
-		fn_sys_elapsed_0(q);
-		return false;
-	}
-
-	GET_FIRST_ARG(p1,callable);
-	fn_sys_timer_0(q);
-	cell *tmp = clone_to_heap(q, true, p1, 2);
-	pl_idx_t nbr_cells = 1 + p1->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_sys_elapsed_s, fn_sys_elapsed_0, 0, 0);
-	make_call(q, tmp+nbr_cells);
-	check_heap_error(push_choice(q));
-	q->st.curr_cell = tmp;
-	return true;
-}
-
 static bool fn_statistics_0(query *q)
 {
 	fprintf(stdout,
@@ -7371,7 +7353,6 @@ static void load_properties(module *m)
 	format_property(m, tmpbuf, sizeof(tmpbuf), "call", 1, "meta_predicate(call(0))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "findall", 3, "meta_predicate(findall(?,0,-))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "|", 2, "meta_predicate((:|+))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "time", 1, "meta_predicate(time(0))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "call_nth", 2, "meta_predicate(call_nth(0,?))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "asserta", 1, "meta_predicate(asserta(:))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "asserta", 2, "meta_predicate(asserta(:,-))"); SB_strcat(pr, tmpbuf);
@@ -7636,6 +7617,7 @@ builtins g_iso_bifs[] =
 	{"$soft_inner_cut", 0, fn_sys_soft_inner_cut_0, NULL, false, false, BLAH},
 	{"$inner_cut", 0, fn_sys_inner_cut_0, NULL, false, false, BLAH},
 	{"$drop_barrier", 0, fn_sys_drop_barrier, NULL, false, false, BLAH},
+	{"$timer", 0, fn_sys_timer_0, NULL, false, false, BLAH},
 	{"$elapsed", 0, fn_sys_elapsed_0, NULL, false, false, BLAH},
 	{"$lt", 2, fn_sys_lt_2, NULL, false, false, BLAH},
 	{"$gt", 2, fn_sys_gt_2, NULL, false, false, BLAH},
@@ -7730,7 +7712,6 @@ builtins g_other_bifs[] =
 
 	{"listing", 0, fn_listing_0, NULL, false, false, BLAH},
 	{"listing", 1, fn_listing_1, "+predicateindicator", false, false, BLAH},
-	{"time", 1, fn_time_1, "+callable", false, false, BLAH},
 	{"trace", 0, fn_trace_0, NULL, false, false, BLAH},
 	{"help", 2, fn_help_2, "+predicateindicator,+atom", false, false, BLAH},
 	{"help", 1, fn_help_1, "+predicateindicator", false, false, BLAH},
