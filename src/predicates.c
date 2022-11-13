@@ -7565,6 +7565,7 @@ builtins g_iso_bifs[] =
 	{"$soft_inner_cut", 0, fn_sys_soft_inner_cut_0, NULL, false, false, BLAH},
 	{"$inner_cut", 0, fn_sys_inner_cut_0, NULL, false, false, BLAH},
 	{"$drop_barrier", 0, fn_sys_drop_barrier, NULL, false, false, BLAH},
+	{"$timer", 0, fn_sys_timer_0, NULL, false, false, BLAH},
 	{"$elapsed", 0, fn_sys_elapsed_0, NULL, false, false, BLAH},
 	{"$lt", 2, fn_sys_lt_2, NULL, false, false, BLAH},
 	{"$gt", 2, fn_sys_gt_2, NULL, false, false, BLAH},
