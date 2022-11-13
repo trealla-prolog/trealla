@@ -4198,18 +4198,12 @@ static bool fn_trace_0(query *q)
 
 static bool fn_time_1(query *q)
 {
-	if (q->retry) {
-		fn_sys_elapsed_0(q);
-		return false;
-	}
-
 	GET_FIRST_ARG(p1,callable);
 	fn_sys_timer_0(q);
 	cell *tmp = clone_to_heap(q, true, p1, 2);
 	pl_idx_t nbr_cells = 1 + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_elapsed_s, fn_sys_elapsed_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
-	check_heap_error(push_choice(q));
 	q->st.curr_cell = tmp;
 	return true;
 }
