@@ -1085,21 +1085,18 @@ void cut_me(query *q, bool inner_cut, bool soft_cut)
 			ch--;
 		}
 
-		// A normal cut can't break out of a barrier, an inner cut can...
+		// A normal cut can't break out of a barrier...
 
-		if (inner_cut) {
-			if (ch->cgen < f->cgen) {
-				f->cgen = ch->cgen;
-				break;
-			}
-		} else if (ch->barrier) {
-			if (ch->cgen <= f->cgen) {
-				break;
-			}
-		} else {
-			if (ch->cgen < f->cgen) {
-				break;
-			}
+		if (!inner_cut && ch->barrier && (ch->cgen == f->cgen))
+			break;
+
+		// Whereas an inner cut can...
+
+		if (ch->cgen < f->cgen) {
+			if (inner_cut)
+				f->cgen--;
+
+			break;
 		}
 
 		if (ch->st.iter) {
@@ -1302,8 +1299,8 @@ void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 		v_attrs = is_empty(&ve->c) ? ve->c.attrs : NULL;
 	}
 
-	//if ((q->cp || c_attrs) && (c_ctx < q->st.fp))
-	if (c_ctx < q->st.fp)
+	if ((q->cp || c_attrs) && (c_ctx < q->st.fp))
+	//if (c_ctx < q->st.fp)
 		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
 
 	// If 'c' is an attvar and either 'v' is an attvar or nonvar then run the hook
@@ -1354,7 +1351,7 @@ void reset_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx,
 	frame *f = GET_FRAME(c_ctx);
 	slot *e = GET_SLOT(f, c->var_nbr);
 
-	if (/*q->cp && trailing &&*/ (c_ctx < q->st.fp))
+	if (q->cp && trailing && (c_ctx < q->st.fp))
 		add_trail(q, c_ctx, c->var_nbr, NULL, 0);
 
 	if (is_structure(v)) {

@@ -393,24 +393,6 @@ time_out(Goal, Time, Result) :-
 :- meta_predicate(time_out(0,+,-)).
 :- help(time_out(+callable,+millisecs,?atom), [iso(false)]).
 
-time(Goal) :-
-	'$timer',
-	call_cleanup(
-		Goal, %catch(Goal, E, ('$elapsed', throw(E))),
-		Det = true
-	),
-	'$elapsed',
-	(   Det == true
-	->  !
-	;   true
-	).
-time(_) :-
-	'$elapsed',
-	fail.
-
-:- meta_predicate(time(0)).
-:- help(time(+callable), [iso(false)]).
-
 writeln(T) :- write(T), nl.
 format(F) :- format(F, []).
 open(F, M, S) :- open(F, M, S, []).
