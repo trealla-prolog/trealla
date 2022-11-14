@@ -533,7 +533,7 @@ struct prolog_state_ {
 	};
 
 	float prob;
-	time_t timer_started;
+	uint64_t timer_started;
 	pl_idx_t curr_frame, fp, hp, tp, sp;
 	uint32_t curr_page;
 	uint8_t qnbr;
