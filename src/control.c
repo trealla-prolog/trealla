@@ -403,19 +403,19 @@ bool fn_iso_negation_1(query *q)
 
 bool fn_iso_cut_0(query *q)
 {
-	cut_me(q, false, false);
+	cut_me(q);
 	return true;
 }
 
 bool fn_sys_inner_cut_0(query *q)
 {
-	cut_me(q, true, false);
+	inner_cut(q, false);
 	return true;
 }
 
 bool fn_sys_soft_inner_cut_0(query *q)
 {
-	cut_me(q, true, true);
+	inner_cut(q, true);
 	return true;
 }
 

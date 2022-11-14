@@ -1061,7 +1061,49 @@ bool push_catcher(query *q, enum q_retry retry)
 	return true;
 }
 
-void cut_me(query *q, bool inner_cut, bool soft_cut)
+void cut_me(query *q)
+{
+	frame *f = GET_CURR_FRAME();
+
+	while (q->cp) {
+		choice *ch = GET_CURR_CHOICE();
+		const choice *save_ch = ch;
+
+		// A normal cut can't break out of a barrier...
+
+		if (ch->barrier && (ch->cgen == f->cgen))
+			break;
+
+		// Whereas an inner cut can...
+
+		if (ch->cgen < f->cgen) {
+			break;
+		}
+
+		if (ch->st.iter) {
+			map_done(ch->st.iter);
+			ch->st.iter = NULL;
+		}
+
+		unshare_predicate(q, ch->st.pr);
+		q->cp--;
+
+		if (ch->register_cleanup && !ch->did_cleanup) {
+			ch->did_cleanup = true;
+			cell *c = ch->st.curr_cell;
+			pl_idx_t c_ctx = ch->st.curr_frame;
+			c = deref(q, c+1, c_ctx);
+			c_ctx = q->latest_ctx;
+			do_cleanup(q, c, c_ctx);
+			break;
+		}
+	}
+
+	if (!q->cp && !q->undo_hi_tp)
+		q->st.tp = 0;
+}
+
+void inner_cut(query *q, bool soft_cut)
 {
 	frame *f = GET_CURR_FRAME();
 
@@ -1086,16 +1128,10 @@ void cut_me(query *q, bool inner_cut, bool soft_cut)
 		}
 
 		// A normal cut can't break out of a barrier...
-
-		if (!inner_cut && ch->barrier && (ch->cgen == f->cgen))
-			break;
-
 		// Whereas an inner cut can...
 
 		if (ch->cgen < f->cgen) {
-			if (inner_cut)
-				f->cgen--;
-
+			f->cgen--;
 			break;
 		}
 
