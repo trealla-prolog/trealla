@@ -67,6 +67,21 @@ bool fn_sys_cleanup_if_det_0(query *q)
 	return true;
 }
 
+bool fn_sys_cut_if_det_0(query *q)
+{
+	if (!q->cp)		// redundant
+		return true;
+
+	choice *ch = GET_CURR_CHOICE();
+	frame *f = GET_CURR_FRAME();
+
+	if (!ch->call_barrier || (ch->cgen != f->cgen))
+		return true;
+
+	drop_choice(q);
+	return true;
+}
+
 // module:goal
 
 bool fn_iso_invoke_2(query *q)
