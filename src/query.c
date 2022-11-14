@@ -2100,7 +2100,7 @@ query *create_query(module *m, bool is_task)
 	q->st.prev_m = q->st.m = m;
 	q->trace = m->pl->trace;
 	q->flags = m->flags;
-	q->time_started = q->get_started = get_time_in_usec();
+	q->get_started = get_time_in_usec();
 	q->time_cpu_last_started = q->time_cpu_started = cpu_time_in_usec();
 	q->st.prob = 1.0;
 	mp_int_init(&q->tmp_ival);

@@ -4174,19 +4174,21 @@ static bool fn_sys_dump_keys_1(query *q)
 
 static bool fn_sys_timer_0(query *q)
 {
-	q->time_started = get_time_in_usec();
+	q->st.timer_started = get_time_in_usec();
 	return true;
 }
 
 static bool fn_sys_elapsed_0(query *q)
 {
 	uint64_t elapsed = get_time_in_usec();
-	elapsed -= q->time_started;
+	elapsed -= q->st.timer_started;
 	if (!q->is_redo) fprintf(stdout, "   ");
 	if (q->is_redo) fprintf(stdout, " ");
 	fprintf(stdout, "%% Time elapsed %.03gs\n", (double)elapsed/1000/1000);
 	if (q->is_redo) fprintf(stdout, "  ");
 	//else if (!q->redo) fprintf(stdout, "");
+	choice *ch = GET_CURR_CHOICE();
+	ch->st.timer_started = get_time_in_usec();
 	return true;
 }
 
