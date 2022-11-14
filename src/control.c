@@ -67,6 +67,21 @@ bool fn_sys_cleanup_if_det_0(query *q)
 	return true;
 }
 
+bool fn_sys_cut_if_det_0(query *q)
+{
+	if (!q->cp)		// redundant
+		return true;
+
+	choice *ch = GET_CURR_CHOICE();
+	frame *f = GET_CURR_FRAME();
+
+	if (!ch->call_barrier || (ch->cgen != f->cgen))
+		return true;
+
+	drop_choice(q);
+	return true;
+}
+
 // module:goal
 
 bool fn_iso_invoke_2(query *q)
@@ -403,19 +418,19 @@ bool fn_iso_negation_1(query *q)
 
 bool fn_iso_cut_0(query *q)
 {
-	cut_me(q, false, false);
+	cut_me(q);
 	return true;
 }
 
 bool fn_sys_inner_cut_0(query *q)
 {
-	cut_me(q, true, false);
+	inner_cut(q, false);
 	return true;
 }
 
 bool fn_sys_soft_inner_cut_0(query *q)
 {
-	cut_me(q, true, true);
+	inner_cut(q, true);
 	return true;
 }
 

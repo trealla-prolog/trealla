@@ -59,7 +59,6 @@ int check_interrupt(query *q)
 		if (isdigit(ch)) {
 			q->autofail = true;
 			q->autofail_n = isdigit(ch) ? (unsigned)ch - '0' : UINT_MAX;
-			q->time_started = get_time_in_usec();
 			break;
 		}
 
@@ -122,7 +121,6 @@ bool check_redo(query *q)
 		q->is_redo = true;
 		q->retry = QUERY_RETRY;
 		q->pl->did_dump_vars = false;
-		q->time_started = get_time_in_usec();
 		return false;
 	}
 
@@ -151,7 +149,6 @@ bool check_redo(query *q)
 			q->pl->did_dump_vars = false;
 			q->autofail = true;
 			q->autofail_n = isdigit(ch) ? (unsigned)ch - '0' : UINT_MAX;
-			q->time_started = get_time_in_usec();
 			break;
 		}
 
@@ -161,7 +158,6 @@ bool check_redo(query *q)
 			q->is_redo = true;
 			q->retry = QUERY_RETRY;
 			q->pl->did_dump_vars = false;
-			q->time_started = get_time_in_usec();
 			break;
 		}
 

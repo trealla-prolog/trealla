@@ -4178,37 +4178,46 @@ static bool fn_sys_dump_keys_1(query *q)
 
 static bool fn_sys_timer_0(query *q)
 {
-	q->time_started = get_time_in_usec();
+	q->st.timer_started = get_time_in_usec();
 	return true;
 }
 
 static bool fn_sys_elapsed_0(query *q)
 {
 	uint64_t elapsed = get_time_in_usec();
-	elapsed -= q->time_started;
+	elapsed -= q->st.timer_started;
 	if (!q->is_redo) fprintf(stdout, "   ");
 	if (q->is_redo) fprintf(stdout, " ");
 	fprintf(stdout, "%% Time elapsed %.03gs\n", (double)elapsed/1000/1000);
 	if (q->is_redo) fprintf(stdout, "  ");
 	//else if (!q->redo) fprintf(stdout, "");
+	choice *ch = GET_CURR_CHOICE();
+	ch->st.timer_started = get_time_in_usec();
+	return true;
+}
+
+static bool fn_time_1(query *q)
+{
+	if (q->retry) {
+		fn_sys_elapsed_0(q);
+		return false;
+	}
+
+	GET_FIRST_ARG(p1,callable);
+	fn_sys_timer_0(q);
+	cell *tmp = clone_to_heap(q, true, p1, 3);
+	pl_idx_t nbr_cells = 1 + p1->nbr_cells;
+	make_struct(tmp+nbr_cells++, g_sys_elapsed_s, fn_sys_elapsed_0, 0, 0);
+	make_struct(tmp+nbr_cells++, g_sys_cut_if_det_s, fn_sys_cut_if_det_0, 0, 0);
+	make_call(q, tmp+nbr_cells);
+	check_heap_error(push_call_barrier(q));
+	q->st.curr_cell = tmp;
 	return true;
 }
 
 static bool fn_trace_0(query *q)
 {
 	q->trace = !q->trace;
-	return true;
-}
-
-static bool fn_time_1(query *q)
-{
-	GET_FIRST_ARG(p1,callable);
-	fn_sys_timer_0(q);
-	cell *tmp = clone_to_heap(q, true, p1, 2);
-	pl_idx_t nbr_cells = 1 + p1->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_sys_elapsed_s, fn_sys_elapsed_0, 0, 0);
-	make_call(q, tmp+nbr_cells);
-	q->st.curr_cell = tmp;
 	return true;
 }
 
@@ -7627,9 +7636,11 @@ builtins g_iso_bifs[] =
 	{"$block_catcher", 1, fn_sys_block_catcher_1, NULL, false, false, BLAH},
 	{"$queuen", 2, fn_sys_queuen_2, NULL, false, false, BLAH},
 	{"$cleanup_if_det", 0, fn_sys_cleanup_if_det_0, NULL, false, false, BLAH},
+	{"$cut_if_det", 0, fn_sys_cut_if_det_0, NULL, false, false, BLAH},
 	{"$soft_inner_cut", 0, fn_sys_soft_inner_cut_0, NULL, false, false, BLAH},
 	{"$inner_cut", 0, fn_sys_inner_cut_0, NULL, false, false, BLAH},
 	{"$drop_barrier", 0, fn_sys_drop_barrier, NULL, false, false, BLAH},
+	{"$timer", 0, fn_sys_timer_0, NULL, false, false, BLAH},
 	{"$elapsed", 0, fn_sys_elapsed_0, NULL, false, false, BLAH},
 	{"$lt", 2, fn_sys_lt_2, NULL, false, false, BLAH},
 	{"$gt", 2, fn_sys_gt_2, NULL, false, false, BLAH},

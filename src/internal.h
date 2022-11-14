@@ -533,6 +533,7 @@ struct prolog_state_ {
 	};
 
 	float prob;
+	time_t timer_started;
 	pl_idx_t curr_frame, fp, hp, tp, sp;
 	uint32_t curr_page;
 	uint8_t qnbr;
@@ -641,7 +642,7 @@ struct query_ {
 	uint64_t tot_goals, tot_backtracks, tot_retries, tot_matches;
 	uint64_t tot_tcos, tot_frecovs, tot_srecovs;
 	uint64_t step, qid, tmo_msecs, cgen;
-	uint64_t time_started, get_started, autofail_n;
+	uint64_t get_started, autofail_n;
 	uint64_t time_cpu_started, time_cpu_last_started;
 	unsigned max_depth, print_idx, tab_idx, varno, tab0_varno;
 	pl_idx_t tmphp, latest_ctx, popp, variable_names_ctx;

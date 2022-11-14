@@ -21,7 +21,8 @@ void next_key(query *q);
 void purge_predicate_dirty_list(query *q, predicate *pr);
 void purge_dirty_list(query *q);
 bool check_slot(query *q, unsigned cnt);
-void cut_me(query *q, bool inner_cut, bool soft_cut);
+void cut_me(query *q);
+void inner_cut(query *q, bool soft_cut);
 void set_var(query *q, const cell *c, pl_idx_t ctx, cell *v, pl_idx_t v_ctx);
 void reset_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx, bool trailing);
 bool execute(query *q, cell *cells, unsigned nbr_vars);
@@ -119,6 +120,7 @@ bool fn_sys_soft_inner_cut_0(query *q);
 bool fn_iso_unify_2(query *q);
 bool fn_sys_block_catcher_1(query *q);
 bool fn_sys_cleanup_if_det_0(query *q);
+bool fn_sys_cut_if_det_0(query *q);
 bool fn_sys_queuen_2(query *q);
 bool fn_iso_findall_3(query *q);
 
