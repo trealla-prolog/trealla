@@ -77,8 +77,8 @@ bool fn_iso_findall_3(query *q)
 	}
 
 	if (!queuen_used(q)) {
-		if (q->end_findall) {
-			q->end_findall = false;
+		if (q->st.end_findall) {
+			q->st.end_findall = false;
 			return false;
 		}
 
@@ -103,7 +103,7 @@ bool fn_iso_findall_3(query *q)
 
 	check_heap_error(push_choice(q), free(solns));
 	choice *ch = GET_CURR_CHOICE();
-	ch->end_findall = true;
+	ch->st.end_findall = true;
 	check_heap_error(try_me(q, MAX_ARITY), free(solns));
 
 	for (cell *c = solns; nbr_cells;
@@ -124,7 +124,7 @@ bool fn_iso_findall_3(query *q)
 	frame *f = GET_CURR_FRAME();
 
 	if (!ok || !f->overflow || is_ground(l)) {
-		q->end_findall = false;
+		q->st.end_findall = false;
 		drop_choice(q);
 	}
 
