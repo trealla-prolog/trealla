@@ -1494,10 +1494,10 @@ static bool do_atom_concat_3(query *q)
 	unshare_cell(p2);
 	cell tmp;
 	check_heap_error(make_slice(q, &tmp, p3, 0, len1+len));
-	reset_var(q, p1_raw, p1_raw_ctx, &tmp, q->st.curr_frame, true);
+	reset_var(q, p1_raw, p1_raw_ctx, &tmp, q->st.curr_frame);
 	unshare_cell(&tmp);
 	check_heap_error(make_slice(q, &tmp, p2, len, len2-len));
-	reset_var(q, p2_raw, p2_raw_ctx, &tmp, q->st.curr_frame, true);
+	reset_var(q, p2_raw, p2_raw_ctx, &tmp, q->st.curr_frame);
 	unshare_cell(&tmp);
 
 	if (!done)
@@ -2658,9 +2658,9 @@ static bool search_functor(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 	if (!q->retry)
 		q->st.f_iter = map_first(q->st.m->index);
 
-	push_choice(q);
-	predicate *pr = NULL;
+	check_heap_error(push_choice(q));
 	check_heap_error(check_slot(q, MAX_VARS));
+	predicate *pr = NULL;
 
 	while (map_next(q->st.f_iter, (void*)&pr)) {
 		CHECK_INTERRUPT();
@@ -6356,6 +6356,7 @@ static bool fn_sys_unifiable_3(query *q)
 	GET_NEXT_ARG(p2,any);
 	GET_NEXT_ARG(p3,list_or_nil_or_var);
 	check_heap_error(push_choice(q));
+	check_heap_error(try_me(q, MAX_VARS));
 	pl_idx_t before_hook_tp = q->st.tp;
 	bool save_hook = q->in_hook;
 	q->in_hook = true;

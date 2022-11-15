@@ -1331,8 +1331,7 @@ void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 		v_attrs = is_empty(&ve->c) ? ve->c.attrs : NULL;
 	}
 
-	if ((q->cp || c_attrs) && (c_ctx < q->st.fp))
-	//if (c_ctx < q->st.fp)
+	if (q->cp || c_attrs)
 		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
 
 	// If 'c' is an attvar and either 'v' is an attvar or nonvar then run the hook
@@ -1378,12 +1377,12 @@ void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 		e->mark = true;
 }
 
-void reset_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx, bool trailing)
+void reset_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 {
 	frame *f = GET_FRAME(c_ctx);
 	slot *e = GET_SLOT(f, c->var_nbr);
 
-	if (q->cp && trailing && (c_ctx < q->st.fp))
+	if (q->cp)
 		add_trail(q, c_ctx, c->var_nbr, NULL, 0);
 
 	if (is_structure(v)) {

@@ -24,7 +24,7 @@ bool check_slot(query *q, unsigned cnt);
 void cut_me(query *q);
 void inner_cut(query *q, bool soft_cut);
 void set_var(query *q, const cell *c, pl_idx_t ctx, cell *v, pl_idx_t v_ctx);
-void reset_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx, bool trailing);
+void reset_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx);
 bool execute(query *q, cell *cells, unsigned nbr_vars);
 bool fn_call_0(query *q, cell *p1);
 void undo_me(query *q);
