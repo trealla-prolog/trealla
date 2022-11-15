@@ -679,6 +679,9 @@ bool try_me(query *q, unsigned nbr_vars)
 
 static void trim_heap(query *q)
 {
+	// q->pages is a push-down stack and points to the
+	// most recent page of heap allocations...
+
 	for (page *a = q->pages; a;) {
 		if (a->nbr < q->st.curr_page)
 			break;
