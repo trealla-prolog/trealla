@@ -817,6 +817,13 @@ extern unsigned g_cpu_count;
 #define share_cell(c) if (is_managed(c)) share_cell_(c)
 #define unshare_cell(c) if (is_managed(c)) unshare_cell_(c)
 
+inline static void init_cell(cell *c)
+{
+	c->tag = TAG_EMPTY;
+	c->flags = 0;
+	c->attrs = NULL;
+}
+
 inline static void share_cell_(const cell *c)
 {
 	if (is_strbuf(c))

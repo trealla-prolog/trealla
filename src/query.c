@@ -640,7 +640,7 @@ static void unwind_trail(query *q, const choice *ch)
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
 		unshare_cell(&e->c);
-		e->c.tag = TAG_EMPTY;
+		init_cell(&e->c);
 		e->c.attrs = tr->attrs;
 		e->c.attrs_ctx = tr->attrs_ctx;
 		e->mark = false;
@@ -664,8 +664,7 @@ bool try_me(query *q, unsigned nbr_vars)
 	for (unsigned i = 0; i < nbr_vars; i++) {
 		slot *e = GET_SLOT(f, i);
 		//unshare_cell(&e->c);
-		e->c.tag = TAG_EMPTY;
-		e->c.attrs = NULL;
+		init_cell(&e->c);
 		e->mark = false;
 	}
 
@@ -697,12 +696,12 @@ static void trim_heap(query *q)
 
 #if 0
 	const page *a = q->pages;
+	const choice *ch = GET_CURR_CHOICE();
 
 	for (pl_idx_t i = ch->st.hp; a && (i < a->max_hp_used) && (i < q->st.hp); i++) {
 		cell *c = a->heap + i;
 		unshare_cell(c);
-		c->tag = TAG_EMPTY;
-		c->attrs = NULL;
+		init_cell(c);
 	}
 #endif
 }
@@ -1071,7 +1070,7 @@ void cut_me(query *q)
 
 		// A normal cut can't break out of a barrier...
 
-		if (ch->barrier && (ch->cgen == f->cgen))
+		if (ch->barrier && (ch->cgen <= f->cgen))
 			break;
 
 		if (ch->cgen < f->cgen) {
@@ -1128,7 +1127,7 @@ void inner_cut(query *q, bool soft_cut)
 		// An inner cut can break through a barrier...
 
 		if (ch->cgen < f->cgen) {
-			f->cgen--;
+			f->cgen = ch->cgen;
 			break;
 		}
 
@@ -1276,8 +1275,7 @@ unsigned create_vars(query *q, unsigned cnt)
 
 	for (unsigned i = 0; i < cnt; i++) {
 		slot *e = GET_SLOT(f, f->actual_slots+i);
-		e->c.tag = TAG_EMPTY;
-		e->c.attrs = NULL;
+		init_cell(&e->c);
 		e->mark = false;
 	}
 
