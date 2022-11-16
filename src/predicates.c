@@ -2792,17 +2792,13 @@ static bool fn_iso_current_prolog_flag_2(query *q)
 			make_atom(&tmp, g_off_s);
 
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	} else if (!CMP_STR_TO_CSTR(q, p1, "verbose")) {
+		cell tmp;
+		make_atom(&tmp, q->pl->quiet ? g_false_s : g_true_s);
+		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	} else if (!CMP_STR_TO_CSTR(q, p1, "unix")) {
 		cell tmp;
 		make_atom(&tmp, g_true_s);
-		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
-	} else if (!CMP_STR_TO_CSTR(q, p1, "dos")) {
-		cell tmp;
-		make_atom(&tmp, g_false_s);
-		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
-	} else if (!CMP_STR_TO_CSTR(q, p1, "windows")) {
-		cell tmp;
-		make_atom(&tmp, g_false_s);
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	} else if (!CMP_STR_TO_CSTR(q, p1, "occurs_check")) {
 		cell tmp;
@@ -3063,6 +3059,7 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 		|| !CMP_STR_TO_CSTR(q, p1, "version_git")
 		|| !CMP_STR_TO_CSTR(q, p1, "encoding")
 		|| !CMP_STR_TO_CSTR(q, p1, "unix")
+		|| !CMP_STR_TO_CSTR(q, p1, "verbose")
 		|| !CMP_STR_TO_CSTR(q, p1, "integer_rounding_function")
 		|| !CMP_STR_TO_CSTR(q, p1, "dialect")
 		) {
@@ -7443,6 +7440,7 @@ static void load_flags(query *q)
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "unknown", m->flags.unknown == UNK_ERROR?"error":m->flags.unknown == UNK_WARNING?"warning":m->flags.unknown == UNK_CHANGEABLE?"changeable":"fail");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "encoding", "'UTF-8'");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "unix", "true");
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "verbose", q->pl->quiet?"false":"true");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "dialect", "trealla");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "bounded", "false");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "max_arity", MAX_ARITY);
