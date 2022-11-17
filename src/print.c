@@ -654,7 +654,19 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 	}
 
 	if ((c->tag == TAG_INTEGER) && is_stream(c)) {
-		dst += snprintf(dst, dstlen, "<$stream>(%d)", (int)get_smallint(c));
+		int n = get_stream(q, c);
+		stream *str = &q->pl->streams[n];
+		miter *iter = map_first(str->alias);
+
+		if (!iter)
+			dst += snprintf(dst, dstlen, "<$stream>(%d)", (int)get_smallint(c));
+		else {
+			map_next(iter, NULL);
+			const char *alias = map_key(iter);
+			dst += formatted(dst, dstlen, alias, strlen(alias), false);
+			map_done(iter);
+		}
+
 		q->last_thing_was_symbol = false;
 		q->was_space = false;
 		return dst - save_dst;
