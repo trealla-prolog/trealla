@@ -659,7 +659,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 		miter *iter = map_first(str->alias);
 
 		if (!iter)
-			dst += snprintf(dst, dstlen, "<$stream>(%d)", (int)get_smallint(c));
+			dst += snprintf(dst, dstlen, "'<$stream>'(%d)", (int)get_smallint(c));
 		else {
 			map_next(iter, NULL);
 			const char *alias = map_key(iter);
@@ -667,7 +667,8 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 			if (strcmp(alias, "user_input") && strcmp(alias, "user_output") && strcmp(alias, "user_error"))
 				dst += formatted(dst, dstlen, alias, strlen(alias), false);
 			else
-				dst += snprintf(dst, dstlen, "<$stream>(%d)", (int)get_smallint(c));
+				dst += snprintf(dst, dstlen, "'<$stream>'(%d)", (int)get_smallint(c));
+
 			map_done(iter);
 		}
 

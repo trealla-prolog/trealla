@@ -1515,6 +1515,7 @@ static bool fn_iso_close_1(query *q)
 		net_close(str);
 
 	map_destroy(str->alias);
+	str->alias = NULL;
 	free(str->mode);
 	free(str->filename);
 	free(str->data);
