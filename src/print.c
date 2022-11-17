@@ -653,7 +653,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 		return -1;
 	}
 
-	if ((c->tag == TAG_INTEGER) && is_stream(c)) {
+	if (q->is_dump_vars && (c->tag == TAG_INTEGER) && is_stream(c)) {
 		int n = get_stream(q, c);
 		stream *str = &q->pl->streams[n];
 		miter *iter = map_first(str->alias);
