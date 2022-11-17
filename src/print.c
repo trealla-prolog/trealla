@@ -658,10 +658,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 		stream *str = &q->pl->streams[n];
 		miter *iter = map_first(str->alias);
 
-		if (!iter || str->closed)
-			dst += snprintf(dst, dstlen, "'<$stream>'(%d)", (int)get_smallint(c));
-		else {
-			map_next(iter, NULL);
+		if (iter && map_next(iter, NULL)) {
 			const char *alias = map_key(iter);
 
 			if (strcmp(alias, "user_input") && strcmp(alias, "user_output") && strcmp(alias, "user_error"))
@@ -670,7 +667,8 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 				dst += snprintf(dst, dstlen, "'<$stream>'(%d)", (int)get_smallint(c));
 
 			map_done(iter);
-		}
+		} else
+			dst += snprintf(dst, dstlen, "'<$stream>'(%d)", (int)get_smallint(c));
 
 		q->last_thing_was_symbol = false;
 		q->was_space = false;

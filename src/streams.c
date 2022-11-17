@@ -426,9 +426,6 @@ static int get_named_stream(prolog *pl, const char *name, size_t len)
 		if (!str->fp)
 			continue;
 
-		if (str->closed)
-			continue;
-
 		if (map_get(str->alias, name, NULL))
 			return i;
 
@@ -438,6 +435,41 @@ static int get_named_stream(prolog *pl, const char *name, size_t len)
 	}
 
 	return -1;
+}
+
+static int new_stream(prolog *pl)
+{
+	for (int i = 0; i < MAX_STREAMS; i++) {
+		if (!pl->streams[i].fp && !pl->streams[i].ignore) {
+			memset(&pl->streams[i], 0, sizeof(stream));
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+int get_stream(query *q, cell *p1)
+{
+	if (is_atom(p1)) {
+		int n = get_named_stream(q->pl, C_STR(q, p1), C_STRLEN(q, p1));
+
+		if (n < 0)
+			return -1;
+
+		return n;
+	}
+
+	if (p1->tag != TAG_INTEGER)
+		return -1;
+
+	if (!(p1->flags & FLAG_INT_STREAM))
+		return -1;
+
+	if (!q->pl->streams[get_smallint(p1)].fp)
+		return -1;
+
+	return get_smallint(p1);
 }
 
 static bool is_closed_stream(prolog *pl, cell *p1)
@@ -1475,7 +1507,6 @@ static bool fn_iso_close_1(query *q)
 	GET_FIRST_ARG(pstr,stream);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
-	str->closed = true;
 
 	if ((str->fp == stdin)
 		|| (str->fp == stdout)
@@ -1519,7 +1550,7 @@ static bool fn_iso_close_1(query *q)
 		net_close(str);
 
 	map_destroy(str->alias);
-	str->alias = NULL;
+	str->alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	free(str->mode);
 	free(str->filename);
 	free(str->data);
@@ -3742,41 +3773,6 @@ static bool fn_iso_peek_byte_2(query *q)
 	cell tmp;
 	make_int(&tmp, ch);
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-}
-
-int new_stream(prolog *pl)
-{
-	for (int i = 0; i < MAX_STREAMS; i++) {
-		if (!pl->streams[i].fp && !pl->streams[i].ignore) {
-			memset(&pl->streams[i], 0, sizeof(stream));
-			return i;
-		}
-	}
-
-	return -1;
-}
-
-int get_stream(query *q, cell *p1)
-{
-	if (is_atom(p1)) {
-		int n = get_named_stream(q->pl, C_STR(q, p1), C_STRLEN(q, p1));
-
-		if (n < 0)
-			return -1;
-
-		return n;
-	}
-
-	if (p1->tag != TAG_INTEGER)
-		return -1;
-
-	if (!(p1->flags & FLAG_INT_STREAM))
-		return -1;
-
-	if (!q->pl->streams[get_smallint(p1)].fp)
-		return -1;
-
-	return get_smallint(p1);
 }
 
 static bool fn_iso_current_input_1(query *q)
