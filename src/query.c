@@ -640,7 +640,7 @@ static void unwind_trail(query *q, const choice *ch)
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
 		unshare_cell(&e->c);
-		e->c.tag = TAG_EMPTY;
+		init_cell(&e->c);
 		e->c.attrs = tr->attrs;
 		e->c.attrs_ctx = tr->attrs_ctx;
 		e->mark = false;
@@ -664,8 +664,7 @@ bool try_me(query *q, unsigned nbr_vars)
 	for (unsigned i = 0; i < nbr_vars; i++) {
 		slot *e = GET_SLOT(f, i);
 		//unshare_cell(&e->c);
-		e->c.tag = TAG_EMPTY;
-		e->c.attrs = NULL;
+		init_cell(&e->c);
 		e->mark = false;
 	}
 
@@ -680,6 +679,9 @@ bool try_me(query *q, unsigned nbr_vars)
 
 static void trim_heap(query *q)
 {
+	// q->pages is a push-down stack and points to the
+	// most recent page of heap allocations...
+
 	for (page *a = q->pages; a;) {
 		if (a->nbr < q->st.curr_page)
 			break;
@@ -687,6 +689,7 @@ static void trim_heap(query *q)
 		for (pl_idx_t i = 0; i < a->max_hp_used; i++) {
 			cell *c = a->heap + i;
 			unshare_cell(c);
+			init_cell(c);
 		}
 
 		page *save = a;
@@ -697,12 +700,12 @@ static void trim_heap(query *q)
 
 #if 0
 	const page *a = q->pages;
+	const choice *ch = GET_CURR_CHOICE();
 
 	for (pl_idx_t i = ch->st.hp; a && (i < a->max_hp_used) && (i < q->st.hp); i++) {
 		cell *c = a->heap + i;
 		unshare_cell(c);
-		c->tag = TAG_EMPTY;
-		c->attrs = NULL;
+		init_cell(c);
 	}
 #endif
 }
@@ -729,7 +732,6 @@ bool retry_choice(query *q)
 		pl_idx_t curr_choice = --q->cp;
 		const choice *ch = GET_CHOICE(curr_choice);
 		unwind_trail(q, ch);
-		q->end_findall = ch->end_findall;
 		q->st = ch->st;
 		q->save_m = NULL;
 		trim_heap(q);
@@ -1071,10 +1073,8 @@ void cut_me(query *q)
 
 		// A normal cut can't break out of a barrier...
 
-		if (ch->barrier && (ch->cgen == f->cgen))
+		if (ch->barrier && (ch->cgen <= f->cgen))
 			break;
-
-		// Whereas an inner cut can...
 
 		if (ch->cgen < f->cgen) {
 			break;
@@ -1127,11 +1127,10 @@ void inner_cut(query *q, bool soft_cut)
 			ch--;
 		}
 
-		// A normal cut can't break out of a barrier...
-		// Whereas an inner cut can...
+		// An inner cut can break through a barrier...
 
 		if (ch->cgen < f->cgen) {
-			f->cgen--;
+			f->cgen = ch->cgen;
 			break;
 		}
 
@@ -1279,8 +1278,7 @@ unsigned create_vars(query *q, unsigned cnt)
 
 	for (unsigned i = 0; i < cnt; i++) {
 		slot *e = GET_SLOT(f, f->actual_slots+i);
-		e->c.tag = TAG_EMPTY;
-		e->c.attrs = NULL;
+		init_cell(&e->c);
 		e->mark = false;
 	}
 
@@ -1335,8 +1333,7 @@ void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 		v_attrs = is_empty(&ve->c) ? ve->c.attrs : NULL;
 	}
 
-	if ((q->cp || c_attrs) && (c_ctx < q->st.fp))
-	//if (c_ctx < q->st.fp)
+	if (q->cp || c_attrs)
 		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
 
 	// If 'c' is an attvar and either 'v' is an attvar or nonvar then run the hook
@@ -1382,12 +1379,12 @@ void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 		e->mark = true;
 }
 
-void reset_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx, bool trailing)
+void reset_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 {
 	frame *f = GET_FRAME(c_ctx);
 	slot *e = GET_SLOT(f, c->var_nbr);
 
-	if (q->cp && trailing && (c_ctx < q->st.fp))
+	if (q->cp)
 		add_trail(q, c_ctx, c->var_nbr, NULL, 0);
 
 	if (is_structure(v)) {

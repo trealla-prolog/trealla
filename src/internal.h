@@ -533,13 +533,14 @@ struct prolog_state_ {
 	};
 
 	float prob;
-	time_t timer_started;
+	uint64_t timer_started;
 	pl_idx_t curr_frame, fp, hp, tp, sp;
 	uint32_t curr_page;
 	uint8_t qnbr;
 	bool arg1_is_ground:1;
 	bool arg2_is_ground:1;
 	bool arg3_is_ground:1;
+	bool end_findall:1;
 };
 
 struct choice_ {
@@ -558,7 +559,6 @@ struct choice_ {
 	bool register_term:1;
 	bool block_catcher:1;
 	bool catcher:1;
-	bool end_findall:1;
 };
 
 enum { eof_action_eof_code, eof_action_error, eof_action_reset };
@@ -695,7 +695,6 @@ struct query_ {
 	bool did_quote:1;
 	bool is_input:1;
 	bool was_space:1;
-	bool end_findall:1;
 };
 
 struct parser_ {
@@ -817,6 +816,13 @@ extern unsigned g_cpu_count;
 #define share_cell(c) if (is_managed(c)) share_cell_(c)
 #define unshare_cell(c) if (is_managed(c)) unshare_cell_(c)
 
+inline static void init_cell(cell *c)
+{
+	c->tag = TAG_EMPTY;
+	c->flags = 0;
+	c->attrs = NULL;
+}
+
 inline static void share_cell_(const cell *c)
 {
 	if (is_strbuf(c))
@@ -827,23 +833,26 @@ inline static void share_cell_(const cell *c)
 		(c)->val_blob->refcnt++;
 }
 
-inline static void unshare_cell_(const cell *c)
+inline static void unshare_cell_(cell *c)
 {
 	if (is_strbuf(c)) {
 		if (--(c)->val_strb->refcnt == 0) {
 			free((c)->val_strb);
+			c->flags = 0;
 			g_string_cnt--;
 		}
 	} else if (is_bigint(c)) {
 		if (--(c)->val_bigint->refcnt == 0)	{
 			mp_int_clear(&(c)->val_bigint->ival);
 			free((c)->val_bigint);
+			c->flags = 0;
 		}
 	} else if (is_blob(c)) {
 		if (--(c)->val_blob->refcnt == 0) {
 			free((c)->val_blob->ptr2);
 			free((c)->val_blob->ptr);
 			free((c)->val_blob);
+			c->flags = 0;
 		}
 	}
 }
@@ -866,7 +875,7 @@ inline static pl_idx_t safe_copy_cells(cell *dst, const cell *src, pl_idx_t nbr_
 	return nbr_cells;
 }
 
-inline static void chk_cells(const cell *src, pl_idx_t nbr_cells)
+inline static void chk_cells(cell *src, pl_idx_t nbr_cells)
 {
 	for (pl_idx_t i = 0; i < nbr_cells; i++) {
 		unshare_cell(src);
