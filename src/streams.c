@@ -854,7 +854,15 @@ static bool fn_popen_4(query *q)
 				return throw_error(q, c, q->latest_ctx, "permission_error", "open,source_sink");
 
 			if (!CMP_STR_TO_CSTR(q, c, "alias")) {
-				map_set(str->alias, DUP_STR(q, name), NULL);
+				if (!CMP_STR_TO_CSTR(q, name, "current_input")) {
+					q->pl->current_input = n;
+				} else if (!CMP_STR_TO_CSTR(q, name, "current_output")) {
+					q->pl->current_output = n;
+				} else if (!CMP_STR_TO_CSTR(q, name, "current_error")) {
+					q->pl->current_error = n;
+				} else {
+					map_set(str->alias, DUP_STR(q, name), NULL);
+				}
 			} else if (!CMP_STR_TO_CSTR(q, c, "type")) {
 				if (is_atom(name) && !CMP_STR_TO_CSTR(q, name, "binary")) {
 					str->binary = true;
@@ -1296,7 +1304,15 @@ static bool fn_iso_open_4(query *q)
 			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 
-			map_set(str->alias, DUP_STR(q, name), NULL);
+			if (!CMP_STR_TO_CSTR(q, name, "current_input")) {
+				q->pl->current_input = n;
+			} else if (!CMP_STR_TO_CSTR(q, name, "current_output")) {
+				q->pl->current_output = n;
+			} else if (!CMP_STR_TO_CSTR(q, name, "current_error")) {
+				q->pl->current_error = n;
+			} else {
+				map_set(str->alias, DUP_STR(q, name), NULL);
+			}
 		} else if (!CMP_STR_TO_CSTR(q, c, "type")) {
 			if (is_var(name))
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
@@ -6391,7 +6407,15 @@ static bool fn_map_create_2(query *q)
 			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 
-			map_set(str->alias, DUP_STR(q, name), NULL);
+			if (!CMP_STR_TO_CSTR(q, name, "current_input")) {
+				q->pl->current_input = n;
+			} else if (!CMP_STR_TO_CSTR(q, name, "current_output")) {
+				q->pl->current_output = n;
+			} else if (!CMP_STR_TO_CSTR(q, name, "current_error")) {
+				q->pl->current_error = n;
+			} else {
+				map_set(str->alias, DUP_STR(q, name), NULL);
+			}
 		} else {
 			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 		}
@@ -6769,20 +6793,14 @@ static bool fn_set_stream_2(query *q)
 		if (!is_atom(name))
 			return throw_error(q, p1, p1_ctx, "domain_error", "stream_option");
 
-		map_set(str->alias, DUP_STR(q, name), NULL);
-
 		if (!CMP_STR_TO_CSTR(q, name, "current_input")) {
 			q->pl->current_input = n;
 		} else if (!CMP_STR_TO_CSTR(q, name, "current_output")) {
 			q->pl->current_output = n;
 		} else if (!CMP_STR_TO_CSTR(q, name, "current_error")) {
 			q->pl->current_error = n;
-		} else if (!CMP_STR_TO_CSTR(q, name, "user_input")) {
-			q->pl->streams[0].fp = str->fp;
-		} else if (!CMP_STR_TO_CSTR(q, name, "user_output")) {
-			q->pl->streams[1].fp = str->fp;
-		} else if (!CMP_STR_TO_CSTR(q, name, "user_error")) {
-			q->pl->streams[2].fp = str->fp;
+		} else {
+			map_set(str->alias, DUP_STR(q, name), NULL);
 		}
 
 		return true;
