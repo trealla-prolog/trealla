@@ -426,6 +426,9 @@ static int get_named_stream(prolog *pl, const char *name, size_t len)
 		if (!str->fp)
 			continue;
 
+		if (str->closed)
+			continue;
+
 		if (map_get(str->alias, name, NULL))
 			return i;
 
@@ -1472,6 +1475,7 @@ static bool fn_iso_close_1(query *q)
 	GET_FIRST_ARG(pstr,stream);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
+	str->closed = true;
 
 	if ((str->fp == stdin)
 		|| (str->fp == stdout)

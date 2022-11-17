@@ -581,6 +581,7 @@ struct stream_ {
 	int ungetch, srclen, rows, cols;
 	uint8_t level, eof_action;
 	bool ignore:1;
+	bool closed:1;
 	bool at_end_of_file:1;
 	bool bom:1;
 	bool repo:1;
