@@ -1487,6 +1487,21 @@ static bool fn_iso_close_1(query *q)
 	if (q->pl->current_error == n)
 		q->pl->current_error = 2;
 
+	if (map_get(str->alias, "user_input", NULL)) {
+		stream *str2 = &q->pl->streams[0];
+		map_set(str2->alias, strdup("user_input"), NULL);
+	}
+
+	if (map_get(str->alias, "user_output", NULL)) {
+		stream *str2 = &q->pl->streams[1];
+		map_set(str2->alias, strdup("user_output"), NULL);
+	}
+
+	if (map_get(str->alias, "user_error", NULL)) {
+		stream *str2 = &q->pl->streams[2];
+		map_set(str2->alias, strdup("user_error"), NULL);
+	}
+
 	if (str->p)
 		destroy_parser(str->p);
 
@@ -6800,6 +6815,13 @@ static bool fn_set_stream_2(query *q)
 		} else if (!CMP_STR_TO_CSTR(q, name, "current_error")) {
 			q->pl->current_error = n;
 		} else {
+			int n2 = get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name));
+
+			if (n2 >= 0) {
+				stream *str2 = &q->pl->streams[n2];
+				map_del(str2->alias, C_STR(q, name));
+			}
+
 			map_set(str->alias, DUP_STR(q, name), NULL);
 		}
 
