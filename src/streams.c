@@ -6798,16 +6798,19 @@ static bool fn_set_stream_2(query *q)
 	GET_FIRST_ARG(pstr,stream);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
-	GET_NEXT_ARG(p1,compound);
+	GET_NEXT_ARG(p1,any);
 	cell *name = p1 + 1;
 	name = deref(q, name, p1_ctx);
+
+	if (!is_compound(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "stream_property");
 
 	if (!CMP_STR_TO_CSTR(q, p1, "alias")) {
 		if (is_var(name))
 			return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 
 		if (!is_atom(name))
-			return throw_error(q, p1, p1_ctx, "domain_error", "stream_option");
+			return throw_error(q, p1, p1_ctx, "domain_error", "stream_property");
 
 		if (!CMP_STR_TO_CSTR(q, name, "current_input")) {
 			q->pl->current_input = n;
