@@ -677,7 +677,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 
 	if ((c->tag == TAG_INTEGER) && (c->flags & FLAG_INT_STREAM)) {
 		int n = get_stream(q, c);
-		dst += snprintf(dst, dstlen, "'<$stream>'(%p)", c);
+		dst += snprintf(dst, dstlen, "'<$closed_stream>'(%p)", c);
 		q->last_thing_was_symbol = false;
 		q->was_space = false;
 		return dst - save_dst;
