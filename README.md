@@ -19,7 +19,7 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	Attributed variables with SICStus interface (*WIP*)
 	Rational trees aka. cyclic terms (*WIP*)
 	Logtalk compatible
-	![Jupyter Notebooks](https://github.com/LogtalkDotOrg/logtalk-jupyter-kernel)
+	[[Jupyter Notebooks](https://github.com/LogtalkDotOrg/logtalk-jupyter-kernel)]
 
 
 Trealla is not WAM-based. It uses tree-walking, structure-sharing and
