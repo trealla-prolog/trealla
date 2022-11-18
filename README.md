@@ -19,7 +19,6 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	Attributed variables with SICStus interface (*WIP*)
 	Rational trees aka. cyclic terms (*WIP*)
 	Logtalk compatible
-	Runs under [Jupyter Notebooks](https://github.com/LogtalkDotOrg/logtalk-jupyter-kernel)
 
 
 Trealla is not WAM-based. It uses tree-walking, structure-sharing and
@@ -31,6 +30,7 @@ The name Trealla comes from the Liaden Universe books by Lee & Miller
 (where it doesn't seem to mean anything) and also a reference to the
 Trealla region of Western Australia.
 
+Runs under [Jupyter Notebooks](https://github.com/LogtalkDotOrg/logtalk-jupyter-kernel).
 
 Logo
 ====
