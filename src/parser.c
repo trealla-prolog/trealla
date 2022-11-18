@@ -634,7 +634,7 @@ static void directives(parser *p, cell *d)
 	}
 
 	if ((!strcmp(dirname, "use_module") || !strcmp(dirname, "autoload") || !strcmp(dirname, "reexport")) && (c->arity >= 1)) {
-		if (!is_atom(p1) && !is_structure(p1)) return;
+		if (!is_callable(p1)) return;
 		const char *name = C_STR(p, p1);
 		char dstbuf[1024*2];
 
