@@ -18,7 +18,8 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	Access SQLITE databases using builtin module (uses FFI)
 	Attributed variables with SICStus interface (*WIP*)
 	Rational trees aka. cyclic terms (*WIP*)
-	Logtalk compatible (*WIP*)
+	Logtalk compatible
+	[Jupyter Notebooks](https://github.com/LogtalkDotOrg/logtalk-jupyter-kernel)
 
 
 Trealla is not WAM-based. It uses tree-walking, structure-sharing and
