@@ -30,7 +30,7 @@ The name Trealla comes from the Liaden Universe books by Lee & Miller
 (where it doesn't seem to mean anything) and also a reference to the
 Trealla region of Western Australia.
 
-Runs under [Jupyter Notebooks](https://github.com/LogtalkDotOrg/logtalk-jupyter-kernel).
+Runs under [Jupyter Notebooks](https://github.com/LogtalkDotOrg/logtalk-jupyter-kernel#readme).
 
 Logo
 ====
