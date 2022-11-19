@@ -444,6 +444,11 @@ static void directives(parser *p, cell *d)
 		return;
 	}
 
+	if (!strcmp(dirname, "info") && (c->arity == 1)) {
+		printf("INFO: %s\n", C_STR(p, c+1));
+		return;
+	}
+
 	cell *p1 = c + 1;
 
 	if (!strcmp(dirname, "help") && (c->arity == 2)) {
