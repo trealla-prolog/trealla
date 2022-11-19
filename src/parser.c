@@ -383,7 +383,7 @@ static bool conditionals(parser *p, cell *d)
 		return true;
 	}
 
-	if (!strcmp(dirname, "elif") && (c->arity == 1) && p->m->if_depth && p->m->ifs[p->m->if_depth-1]) {
+	if (!strcmp(dirname, "elif") && (c->arity == 1) && p->m->if_depth && (p->m->ifs[p->m->if_depth-1] == 1)) {
 		p->m->ifs[p->m->if_depth-1] = goal_run(p, c+1) ? 0 : 2;
 		return true;
 	}
