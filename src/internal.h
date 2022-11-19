@@ -760,8 +760,9 @@ struct module_ {
 	FILE *fp;
 	map *index, *nbs, *ops, *defops;
 	loaded_file *loaded_files;
-	unsigned id, idx_used, indexing_threshold, arity, max_depth;
+	unsigned id, idx_used, indexing_threshold, arity, max_depth, if_depth;
 	prolog_flags flags;
+	bool ifs[MAX_ARITY];
 	bool user_ops:1;
 	bool prebuilt:1;
 	bool make_public:1;
