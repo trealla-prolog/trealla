@@ -45,6 +45,7 @@ static const op_table g_ops[] =
 	{"meta_predicate", OP_FX, 1150},
 
 	{"\\+", OP_FY, 900},
+	{"as", OP_XFX, 700},
 	{"is", OP_XFX, 700},
 	{"=", OP_XFX, 700},
 	{"\\=", OP_XFX, 700},

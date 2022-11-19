@@ -91,6 +91,7 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define is_var(c) ((c)->tag == TAG_VAR)
 #define is_interned(c) ((c)->tag == TAG_INTERNED)
 #define is_cstring(c) ((c)->tag == TAG_CSTR)
+#define is_basic_integer(c) ((c)->tag == TAG_INTEGER)
 #define is_integer(c) (((c)->tag == TAG_INTEGER) && !((c)->flags & FLAG_INT_STREAM))
 #define is_float(c) ((c)->tag == TAG_FLOAT)
 #define is_indirect(c) ((c)->tag == TAG_PTR)
@@ -720,7 +721,7 @@ struct parser_ {
 	int quote_char, line_nbr, line_nbr_start;
 	unsigned nbr_vars;
 	int8_t dq_consing;
-	bool error;
+	bool error, if_depth[MAX_ARITY];
 	bool was_consing:1;
 	bool was_string:1;
 	bool did_getline:1;
@@ -760,7 +761,10 @@ struct module_ {
 	map *index, *nbs, *ops, *defops;
 	loaded_file *loaded_files;
 	unsigned id, idx_used, indexing_threshold, arity, max_depth;
+	int if_depth;
 	prolog_flags flags;
+	bool ifs_blocked[MAX_ARITY];
+	bool ifs_done[MAX_ARITY];
 	bool user_ops:1;
 	bool prebuilt:1;
 	bool make_public:1;

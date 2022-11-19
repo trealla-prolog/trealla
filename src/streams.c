@@ -437,6 +437,41 @@ static int get_named_stream(prolog *pl, const char *name, size_t len)
 	return -1;
 }
 
+static int new_stream(prolog *pl)
+{
+	for (int i = 0; i < MAX_STREAMS; i++) {
+		if (!pl->streams[i].fp && !pl->streams[i].ignore) {
+			memset(&pl->streams[i], 0, sizeof(stream));
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+int get_stream(query *q, cell *p1)
+{
+	if (is_atom(p1)) {
+		int n = get_named_stream(q->pl, C_STR(q, p1), C_STRLEN(q, p1));
+
+		if (n < 0)
+			return -1;
+
+		return n;
+	}
+
+	if (p1->tag != TAG_INTEGER)
+		return -1;
+
+	if (!(p1->flags & FLAG_INT_STREAM))
+		return -1;
+
+	if (!q->pl->streams[get_smallint(p1)].fp)
+		return -1;
+
+	return get_smallint(p1);
+}
+
 static bool is_closed_stream(prolog *pl, cell *p1)
 {
 	if (!(p1->flags & FLAG_INT_STREAM))
@@ -854,7 +889,15 @@ static bool fn_popen_4(query *q)
 				return throw_error(q, c, q->latest_ctx, "permission_error", "open,source_sink");
 
 			if (!CMP_STR_TO_CSTR(q, c, "alias")) {
-				map_set(str->alias, DUP_STR(q, name), NULL);
+				if (!CMP_STR_TO_CSTR(q, name, "current_input")) {
+					q->pl->current_input = n;
+				} else if (!CMP_STR_TO_CSTR(q, name, "current_output")) {
+					q->pl->current_output = n;
+				} else if (!CMP_STR_TO_CSTR(q, name, "current_error")) {
+					q->pl->current_error = n;
+				} else {
+					map_set(str->alias, DUP_STR(q, name), NULL);
+				}
 			} else if (!CMP_STR_TO_CSTR(q, c, "type")) {
 				if (is_atom(name) && !CMP_STR_TO_CSTR(q, name, "binary")) {
 					str->binary = true;
@@ -1296,7 +1339,15 @@ static bool fn_iso_open_4(query *q)
 			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 
-			map_set(str->alias, DUP_STR(q, name), NULL);
+			if (!CMP_STR_TO_CSTR(q, name, "current_input")) {
+				q->pl->current_input = n;
+			} else if (!CMP_STR_TO_CSTR(q, name, "current_output")) {
+				q->pl->current_output = n;
+			} else if (!CMP_STR_TO_CSTR(q, name, "current_error")) {
+				q->pl->current_error = n;
+			} else {
+				map_set(str->alias, DUP_STR(q, name), NULL);
+			}
 		} else if (!CMP_STR_TO_CSTR(q, c, "type")) {
 			if (is_var(name))
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
@@ -1471,6 +1522,21 @@ static bool fn_iso_close_1(query *q)
 	if (q->pl->current_error == n)
 		q->pl->current_error = 2;
 
+	if (map_get(str->alias, "user_input", NULL)) {
+		stream *str2 = &q->pl->streams[0];
+		map_set(str2->alias, strdup("user_input"), NULL);
+	}
+
+	if (map_get(str->alias, "user_output", NULL)) {
+		stream *str2 = &q->pl->streams[1];
+		map_set(str2->alias, strdup("user_output"), NULL);
+	}
+
+	if (map_get(str->alias, "user_error", NULL)) {
+		stream *str2 = &q->pl->streams[2];
+		map_set(str2->alias, strdup("user_error"), NULL);
+	}
+
 	if (str->p)
 		destroy_parser(str->p);
 
@@ -1484,6 +1550,7 @@ static bool fn_iso_close_1(query *q)
 		net_close(str);
 
 	map_destroy(str->alias);
+	str->alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	free(str->mode);
 	free(str->filename);
 	free(str->data);
@@ -3706,41 +3773,6 @@ static bool fn_iso_peek_byte_2(query *q)
 	cell tmp;
 	make_int(&tmp, ch);
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-}
-
-int new_stream(prolog *pl)
-{
-	for (int i = 0; i < MAX_STREAMS; i++) {
-		if (!pl->streams[i].fp && !pl->streams[i].ignore) {
-			memset(&pl->streams[i], 0, sizeof(stream));
-			return i;
-		}
-	}
-
-	return -1;
-}
-
-int get_stream(query *q, cell *p1)
-{
-	if (is_atom(p1)) {
-		int n = get_named_stream(q->pl, C_STR(q, p1), C_STRLEN(q, p1));
-
-		if (n < 0)
-			return -1;
-
-		return n;
-	}
-
-	if (p1->tag != TAG_INTEGER)
-		return -1;
-
-	if (!(p1->flags & FLAG_INT_STREAM))
-		return -1;
-
-	if (!q->pl->streams[get_smallint(p1)].fp)
-		return -1;
-
-	return get_smallint(p1);
 }
 
 static bool fn_iso_current_input_1(query *q)
@@ -6413,7 +6445,15 @@ static bool fn_map_create_2(query *q)
 			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 
-			map_set(str->alias, DUP_STR(q, name), NULL);
+			if (!CMP_STR_TO_CSTR(q, name, "current_input")) {
+				q->pl->current_input = n;
+			} else if (!CMP_STR_TO_CSTR(q, name, "current_output")) {
+				q->pl->current_output = n;
+			} else if (!CMP_STR_TO_CSTR(q, name, "current_error")) {
+				q->pl->current_error = n;
+			} else {
+				map_set(str->alias, DUP_STR(q, name), NULL);
+			}
 		} else {
 			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 		}
@@ -6780,18 +6820,19 @@ static bool fn_set_stream_2(query *q)
 	GET_FIRST_ARG(pstr,stream);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
-	GET_NEXT_ARG(p1,compound);
+	GET_NEXT_ARG(p1,any);
 	cell *name = p1 + 1;
 	name = deref(q, name, p1_ctx);
+
+	if (!is_compound(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "stream_property");
 
 	if (!CMP_STR_TO_CSTR(q, p1, "alias")) {
 		if (is_var(name))
 			return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 
 		if (!is_atom(name))
-			return throw_error(q, p1, p1_ctx, "domain_error", "stream_option");
-
-		map_set(str->alias, DUP_STR(q, name), NULL);
+			return throw_error(q, p1, p1_ctx, "domain_error", "stream_property");
 
 		if (!CMP_STR_TO_CSTR(q, name, "current_input")) {
 			q->pl->current_input = n;
@@ -6799,12 +6840,15 @@ static bool fn_set_stream_2(query *q)
 			q->pl->current_output = n;
 		} else if (!CMP_STR_TO_CSTR(q, name, "current_error")) {
 			q->pl->current_error = n;
-		} else if (!CMP_STR_TO_CSTR(q, name, "user_input")) {
-			q->pl->streams[0].fp = str->fp;
-		} else if (!CMP_STR_TO_CSTR(q, name, "user_output")) {
-			q->pl->streams[1].fp = str->fp;
-		} else if (!CMP_STR_TO_CSTR(q, name, "user_error")) {
-			q->pl->streams[2].fp = str->fp;
+		} else {
+			int n2 = get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name));
+
+			if (n2 >= 0) {
+				stream *str2 = &q->pl->streams[n2];
+				map_del(str2->alias, C_STR(q, name));
+			}
+
+			map_set(str->alias, DUP_STR(q, name), NULL);
 		}
 
 		return true;

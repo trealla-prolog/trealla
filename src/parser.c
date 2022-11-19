@@ -343,6 +343,93 @@ static void do_op(parser *p, cell *c, bool make_public)
 	}
 }
 
+static bool goal_run(parser *p, cell *goal)
+{
+	if (p->error || p->internal || !is_interned(goal))
+		return false;
+
+	if ((goal->val_off == g_goal_expansion_s) || (goal->val_off == g_cut_s))
+		return false;
+
+	query *q = create_query(p->m, false);
+	execute(q, goal, MAX_ARITY);
+
+	if (q->retry != QUERY_OK) {
+		destroy_query(q);
+		return false;
+	}
+
+	return true;
+}
+
+static bool conditionals(parser *p, cell *d)
+{
+	p->skip = false;
+
+	if (!is_interned(d))
+		return false;
+
+	if (strcmp(C_STR(p, d), ":-"))
+		return false;
+
+	cell *c = d + 1;
+
+	if (!is_interned(c))
+		return false;
+
+	const char *dirname = C_STR(p, c);
+
+	if (!strcmp(dirname, "endif") && (c->arity == 0) && !p->m->ifs_blocked[p->m->if_depth]) {
+		--p->m->if_depth;
+		return true;
+	}
+
+	if (!strcmp(dirname, "endif") && (c->arity == 0)) {
+		--p->m->if_depth;
+		return true;
+	}
+
+	if (!strcmp(dirname, "if") && (c->arity == 1) && !p->m->ifs_done[p->m->if_depth] && !p->m->ifs_blocked[p->m->if_depth]) {
+		bool ok = goal_run(p, c+1);
+		p->m->ifs_blocked[++p->m->if_depth] = !ok;
+		p->m->ifs_done[p->m->if_depth] = ok;
+		return true;
+	}
+
+	if (!strcmp(dirname, "if") && (c->arity == 1)) {
+		bool save1 = p->m->ifs_blocked[p->m->if_depth];
+		bool save2 = p->m->ifs_done[p->m->if_depth];
+		p->m->ifs_blocked[++p->m->if_depth] = save1;
+		p->m->ifs_done[p->m->if_depth] = true;
+		return true;
+	}
+
+	if (!strcmp(dirname, "elif") && (c->arity == 1) && !p->m->ifs_done[p->m->if_depth] && p->m->ifs_blocked[p->m->if_depth]) {
+		bool ok = goal_run(p, c+1);
+		p->m->ifs_blocked[p->m->if_depth] = !ok;
+		p->m->ifs_done[p->m->if_depth] = ok;
+		return true;
+	}
+
+	if (!strcmp(dirname, "elif") && (c->arity == 1)) {
+		p->m->ifs_blocked[p->m->if_depth] = true;
+		return true;
+	}
+
+	if (!strcmp(dirname, "else") && (c->arity == 0) && !p->m->ifs_done[p->m->if_depth] && p->m->ifs_blocked[p->m->if_depth]) {
+		p->m->ifs_blocked[p->m->if_depth] = false;
+		p->m->ifs_done[p->m->if_depth] = true;
+		return true;
+	}
+
+	if (!strcmp(dirname, "else") && (c->arity == 0)) {
+		p->m->ifs_blocked[p->m->if_depth] = true;
+		return true;
+	}
+
+	return false;
+}
+
 static void directives(parser *p, cell *d)
 {
 	p->skip = false;
@@ -356,7 +443,7 @@ static void directives(parser *p, cell *d)
 		return;
 	}
 
-	if (strcmp(C_STR(p, d), ":-") || (d->arity != 1))
+	if (strcmp(C_STR(p, d), ":-"))
 		return;
 
 	cell *c = d + 1;
@@ -366,8 +453,16 @@ static void directives(parser *p, cell *d)
 
 	const char *dirname = C_STR(p, c);
 
+	if (d->arity != 1)
+		return;
+
 	if (!strcmp(dirname, "initialization") && (c->arity <= 2)) {
 		p->run_init = true;
+		return;
+	}
+
+	if (!strcmp(dirname, "info") && (c->arity == 1)) {
+		printf("INFO: %s\n", C_STR(p, c+1));
 		return;
 	}
 
@@ -551,8 +646,7 @@ static void directives(parser *p, cell *d)
 		return;
 	}
 
-	if (!strcmp(dirname, "module") && (c->arity == 2)) {
-		cell *p2 = c + 2;
+	if (!strcmp(dirname, "module") && (c->arity >= 1)) {
 		const char *name = "";
 		char tmpbuf[1024];
 
@@ -598,6 +692,11 @@ static void directives(parser *p, cell *d)
 		}
 
 		p->m = tmp_m;
+
+		if (c->arity == 1)
+			return;
+
+		cell *p2 = c + 2;
 		LIST_HANDLER(p2);
 
 		while (is_iso_list(p2) && !g_tpl_interrupt) {
@@ -640,7 +739,7 @@ static void directives(parser *p, cell *d)
 	}
 
 	if ((!strcmp(dirname, "use_module") || !strcmp(dirname, "autoload") || !strcmp(dirname, "reexport")) && (c->arity >= 1)) {
-		if (!is_atom(p1) && !is_structure(p1)) return;
+		if (!is_callable(p1)) return;
 		const char *name = C_STR(p, p1);
 		char dstbuf[1024*2];
 
@@ -767,27 +866,6 @@ static void directives(parser *p, cell *d)
 		return;
 	}
 
-	if (!strcmp(dirname, "if") && (c->arity == 1)) {
-		if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-			fprintf(WARN_FP, "Warning: unknown directive: %s\n", dirname);
-
-		return;
-	}
-
-	if (!strcmp(dirname, "else") && (c->arity == 1)) {
-		if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-			fprintf(WARN_FP, "Warning: unknown directive: %s\n", dirname);
-
-		return;
-	}
-
-	if (!strcmp(dirname, "endif") && (c->arity == 1)) {
-		if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-			fprintf(WARN_FP, "Warning: unknown directive: %s\n", dirname);
-
-		return;
-	}
-
 	LIST_HANDLER(p1);
 
 	while (is_list(p1) && !g_tpl_interrupt) {
@@ -822,6 +900,7 @@ static void directives(parser *p, cell *d)
 				set_dynamic_in_db(p->m, C_STR(p, c_name), arity);
 			} else if (!strcmp(dirname, "encoding")) {
 			} else if (!strcmp(dirname, "public")) {
+			} else if (!strcmp(dirname, "export")) {
 			} else if (!strcmp(dirname, "table") && false) {
 				set_table_in_db(p->m, C_STR(p, c_name), arity);
 			} else if (!strcmp(dirname, "discontiguous")) {
@@ -847,7 +926,7 @@ static void directives(parser *p, cell *d)
 				}
 			} else {
 				if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-					fprintf(WARN_FP, "Warning: unknown directive: %s\n", dirname);
+					fprintf(WARN_FP, "Warning: unknown directive: %s/%d\n", dirname, c->arity);
 			}
 		}
 
@@ -890,6 +969,8 @@ static void directives(parser *p, cell *d)
 				set_discontiguous_in_db(m, C_STR(p, c_name), arity);
 			else if (!strcmp(dirname, "public"))
 				;
+			else if (!strcmp(dirname, "export"))
+				;
 			else if (!strcmp(dirname, "table") && false)
 				set_table_in_db(m, C_STR(p, c_name), arity);
 			else if (!strcmp(dirname, "dynamic")) {
@@ -906,7 +987,7 @@ static void directives(parser *p, cell *d)
 				set_dynamic_in_db(m, C_STR(p, c_name), arity);
 			} else {
 				if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-					fprintf(WARN_FP, "Warning: unknown directive: %s\n", dirname);
+					fprintf(WARN_FP, "Warning: unknown directive: %s/%d\n", dirname, c->arity);
 			}
 
 			p1 += p1->nbr_cells;
@@ -921,7 +1002,7 @@ static void directives(parser *p, cell *d)
 			p1 += 1;
 		else {
 			if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-				fprintf(WARN_FP, "Warning: unknown directive: %s\n", dirname);
+				fprintf(WARN_FP, "Warning: unknown directive: %s/%d\n", dirname, c->arity);
 
 			break;
 		}
@@ -2827,7 +2908,14 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 static bool process_term(parser *p, cell *p1)
 {
+	if (conditionals(p, p1))
+		return true;
+
+	if (p->m->ifs_blocked[p->m->if_depth])
+		return true;
+
 	directives(p, p1);
+
 	cell *h = get_head(p1);
 
 	if (is_var(h)) {

@@ -178,6 +178,9 @@ static int random_level(unsigned *seedp)
 
 bool sl_get(skiplist *l, const void *key, const void **val)
 {
+	if (!l)
+		return false;
+
 	int k;
 	slnode_t *p, *q = 0;
 	p = l->header;
@@ -208,6 +211,9 @@ bool sl_get(skiplist *l, const void *key, const void **val)
 
 bool sl_set(skiplist *l, const void *key, const void *val)
 {
+	if (!l)
+		return false;
+
 	slnode_t *update[MAX_LEVELS];
 	slnode_t *p, *q;
 	slnode_t stash;
@@ -285,6 +291,9 @@ bool sl_set(skiplist *l, const void *key, const void *val)
 
 bool sl_app(skiplist *l, const void *key, const void *val)
 {
+	if (!l)
+		return false;
+
 	slnode_t *update[MAX_LEVELS];
 	slnode_t *p, *q;
 	slnode_t stash;
@@ -362,6 +371,9 @@ bool sl_app(skiplist *l, const void *key, const void *val)
 
 bool sl_del(skiplist *l, const void *key)
 {
+	if (!l)
+		return false;
+
 	int k, m;
 	slnode_t *update[MAX_LEVELS];
 	slnode_t *p, *q;
@@ -421,6 +433,9 @@ bool sl_del(skiplist *l, const void *key)
 
 void sl_iterate(const skiplist *l, int (*f)(const void*, const void*, const void*), const void *p1)
 {
+	if (!l)
+		return;
+
 	slnode_t *p;
 	p = l->header;
 	p = p->forward[0];
@@ -439,6 +454,9 @@ void sl_iterate(const skiplist *l, int (*f)(const void*, const void*, const void
 
 void sl_find(skiplist *l, const void *key, int (*f)(const void*, const void*, const void*), const void *p1)
 {
+	if (!l)
+		return;
+
 	slnode_t *p, *q = 0;
 	p = l->header;
 	l->wild_card = false;
@@ -473,6 +491,9 @@ void sl_find(skiplist *l, const void *key, int (*f)(const void*, const void*, co
 
 sliter *sl_first(skiplist *l)
 {
+	if (!l)
+		return NULL;
+
 	sliter *iter;
 	l->wild_card = false;
 
@@ -536,12 +557,12 @@ bool sl_next(sliter *iter, void **val)
 	return false;
 }
 
-void *sl_key(sliter *i)
+void *sl_key(sliter *iter)
 {
-	if (!i)
+	if (!iter)
 		return NULL;
 
-	return (void*)i->key;
+	return (void*)iter->key;
 }
 
 void sl_remove(skiplist *l, const void *v)
@@ -576,6 +597,9 @@ void sl_remove(skiplist *l, const void *v)
 
 sliter *sl_find_key(skiplist *l, const void *key)
 {
+	if (!l)
+		return NULL;
+
 	slnode_t *p, *q = 0;
 	p = l->header;
 	l->wild_card = false;
@@ -677,6 +701,9 @@ bool sl_next_key(sliter *iter, void **val)
 
 size_t sl_iter_count(const sliter *iter)
 {
+	if (!iter)
+		return 0;
+
 	return sl_count(iter->l);
 }
 

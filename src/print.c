@@ -667,20 +667,31 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 		return -1;
 	}
 
-	if ((c->tag == TAG_INTEGER) && is_stream(c)) {
+	if (q->is_dump_vars && (c->tag == TAG_INTEGER) && is_stream(c)) {
 		int n = get_stream(q, c);
 		stream *str = &q->pl->streams[n];
 		miter *iter = map_first(str->alias);
 
-		if (!iter)
-			dst += snprintf(dst, dstlen, "<$stream>(%d)", (int)get_smallint(c));
-		else {
-			map_next(iter, NULL);
+		if (iter && map_next(iter, NULL)) {
 			const char *alias = map_key(iter);
-			dst += formatted(dst, dstlen, alias, strlen(alias), false);
-			map_done(iter);
-		}
 
+			if (strcmp(alias, "user_input") && strcmp(alias, "user_output") && strcmp(alias, "user_error"))
+				dst += formatted(dst, dstlen, alias, strlen(alias), false);
+			else
+				dst += snprintf(dst, dstlen, "'<$stream>'(%d)", (int)get_smallint(c));
+
+			map_done(iter);
+		} else
+			dst += snprintf(dst, dstlen, "'<$stream>'(%d)", (int)get_smallint(c));
+
+		q->last_thing_was_symbol = false;
+		q->was_space = false;
+		return dst - save_dst;
+	}
+
+	if ((c->tag == TAG_INTEGER) && (c->flags & FLAG_INT_STREAM)) {
+		int n = get_stream(q, c);
+		dst += snprintf(dst, dstlen, "'<$closed_stream>'(%p)", c);
 		q->last_thing_was_symbol = false;
 		q->was_space = false;
 		return dst - save_dst;
