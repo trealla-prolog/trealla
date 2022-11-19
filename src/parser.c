@@ -545,8 +545,7 @@ static void directives(parser *p, cell *d)
 		return;
 	}
 
-	if (!strcmp(dirname, "module") && (c->arity == 2)) {
-		cell *p2 = c + 2;
+	if (!strcmp(dirname, "module") && (c->arity >= 1)) {
 		const char *name = "";
 		char tmpbuf[1024];
 
@@ -592,6 +591,11 @@ static void directives(parser *p, cell *d)
 		}
 
 		p->m = tmp_m;
+
+		if (c->arity == 1)
+			return;
+
+		cell *p2 = c + 2;
 		LIST_HANDLER(p2);
 
 		while (is_iso_list(p2) && !g_tpl_interrupt) {
@@ -816,6 +820,7 @@ static void directives(parser *p, cell *d)
 				set_dynamic_in_db(p->m, C_STR(p, c_name), arity);
 			} else if (!strcmp(dirname, "encoding")) {
 			} else if (!strcmp(dirname, "public")) {
+			} else if (!strcmp(dirname, "export")) {
 			} else if (!strcmp(dirname, "table") && false) {
 				set_table_in_db(p->m, C_STR(p, c_name), arity);
 			} else if (!strcmp(dirname, "discontiguous")) {
@@ -883,6 +888,8 @@ static void directives(parser *p, cell *d)
 			else if (!strcmp(dirname, "discontiguous"))
 				set_discontiguous_in_db(m, C_STR(p, c_name), arity);
 			else if (!strcmp(dirname, "public"))
+				;
+			else if (!strcmp(dirname, "export"))
 				;
 			else if (!strcmp(dirname, "table") && false)
 				set_table_in_db(m, C_STR(p, c_name), arity);
@@ -1346,6 +1353,7 @@ void reset(parser *p)
 	p->last_close = false;
 	p->nesting_parens = p->nesting_brackets = p->nesting_braces = 0;
 	p->error_desc = NULL;
+	memset(p->if_depth, 0, sizeof(p->if_depth[0])*MAX_ARITY);
 }
 
 static bool autoload_dcg_library(parser *p)

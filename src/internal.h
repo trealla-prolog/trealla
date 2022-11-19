@@ -721,7 +721,7 @@ struct parser_ {
 	int quote_char, line_nbr, line_nbr_start;
 	unsigned nbr_vars;
 	int8_t dq_consing;
-	bool error;
+	bool error, if_depth[MAX_ARITY];
 	bool was_consing:1;
 	bool was_string:1;
 	bool did_getline:1;
