@@ -374,33 +374,32 @@ static bool conditionals(parser *p, cell *d)
 	const char *dirname = C_STR(p, c);
 
 	if (!strcmp(dirname, "if") && (c->arity == 1)) {
-		p->m->ifs[p->m->if_depth++] = goal_run(p, c+1) ? 0 : 1;
+		p->m->ifs[++p->m->if_depth] = goal_run(p, c+1) ? 0 : 1;
 		return true;
 	}
 
-	if (!strcmp(dirname, "elif") && (c->arity == 1) && p->m->if_depth && !p->m->ifs[p->m->if_depth-1]) {
-		p->m->ifs[p->m->if_depth-1] = 2;
+	if (!strcmp(dirname, "elif") && (c->arity == 1) && !p->m->ifs[p->m->if_depth]) {
+		p->m->ifs[p->m->if_depth] = 2;
 		return true;
 	}
 
-	if (!strcmp(dirname, "elif") && (c->arity == 1) && p->m->if_depth && (p->m->ifs[p->m->if_depth-1] == 1)) {
-		p->m->ifs[p->m->if_depth-1] = goal_run(p, c+1) ? 0 : 2;
+	if (!strcmp(dirname, "elif") && (c->arity == 1) && (p->m->ifs[p->m->if_depth] == 1)) {
+		p->m->ifs[p->m->if_depth] = goal_run(p, c+1) ? 0 : 2;
 		return true;
 	}
 
-	if (!strcmp(dirname, "else") && (c->arity == 0) && p->m->if_depth && !p->m->ifs[p->m->if_depth-1]) {
-		p->m->ifs[p->m->if_depth-1] = 2;
+	if (!strcmp(dirname, "else") && (c->arity == 0) && !p->m->ifs[p->m->if_depth]) {
+		p->m->ifs[p->m->if_depth] = 2;
 		return true;
 	}
 
-	if (!strcmp(dirname, "else") && (c->arity == 0) && p->m->if_depth && (p->m->ifs[p->m->if_depth-1] == 1)) {
-		p->m->ifs[p->m->if_depth-1] = 0;
+	if (!strcmp(dirname, "else") && (c->arity == 0) && (p->m->ifs[p->m->if_depth] == 1)) {
+		p->m->ifs[p->m->if_depth] = 0;
 		return true;
 	}
 
-	if (!strcmp(dirname, "endif") && (c->arity == 0) && p->m->if_depth) {
-		p->m->ifs[p->m->if_depth-1] = false;
-		p->m->if_depth--;
+	if (!strcmp(dirname, "endif") && (c->arity == 0)) {
+		p->m->ifs[p->m->if_depth--] = false;
 		return true;
 	}
 
@@ -2888,7 +2887,7 @@ static bool process_term(parser *p, cell *p1)
 	if (conditionals(p, p1))
 		return true;
 
-	if (p->m->if_depth && p->m->ifs[p->m->if_depth-1])
+	if (p->m->ifs[p->m->if_depth])
 		return true;
 
 	directives(p, p1);
