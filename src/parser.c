@@ -373,33 +373,51 @@ static bool conditionals(parser *p, cell *d)
 
 	const char *dirname = C_STR(p, c);
 
-	if (!strcmp(dirname, "if") && (c->arity == 1)) {
-		p->m->ifs[++p->m->if_depth] = goal_run(p, c+1) ? 0 : 1;
-		return true;
-	}
-
-	if (!strcmp(dirname, "elif") && (c->arity == 1) && !p->m->ifs[p->m->if_depth]) {
-		p->m->ifs[p->m->if_depth] = 2;
-		return true;
-	}
-
-	if (!strcmp(dirname, "elif") && (c->arity == 1) && (p->m->ifs[p->m->if_depth] == 1)) {
-		p->m->ifs[p->m->if_depth] = goal_run(p, c+1) ? 0 : 2;
-		return true;
-	}
-
-	if (!strcmp(dirname, "else") && (c->arity == 0) && !p->m->ifs[p->m->if_depth]) {
-		p->m->ifs[p->m->if_depth] = 2;
-		return true;
-	}
-
-	if (!strcmp(dirname, "else") && (c->arity == 0) && (p->m->ifs[p->m->if_depth] == 1)) {
-		p->m->ifs[p->m->if_depth] = 0;
+	if (!strcmp(dirname, "endif") && (c->arity == 0) && !p->m->ifs_blocked[p->m->if_depth]) {
+		--p->m->if_depth;
 		return true;
 	}
 
 	if (!strcmp(dirname, "endif") && (c->arity == 0)) {
-		p->m->ifs[p->m->if_depth--] = false;
+		--p->m->if_depth;
+		return true;
+	}
+
+	if (!strcmp(dirname, "if") && (c->arity == 1) && !p->m->ifs_done[p->m->if_depth] && !p->m->ifs_blocked[p->m->if_depth]) {
+		bool ok = goal_run(p, c+1);
+		p->m->ifs_blocked[++p->m->if_depth] = !ok;
+		p->m->ifs_done[p->m->if_depth] = ok;
+		return true;
+	}
+
+	if (!strcmp(dirname, "if") && (c->arity == 1)) {
+		bool save1 = p->m->ifs_blocked[p->m->if_depth];
+		bool save2 = p->m->ifs_done[p->m->if_depth];
+		p->m->ifs_blocked[++p->m->if_depth] = save1;
+		p->m->ifs_done[p->m->if_depth] = true;
+		return true;
+	}
+
+	if (!strcmp(dirname, "elif") && (c->arity == 1) && !p->m->ifs_done[p->m->if_depth] && p->m->ifs_blocked[p->m->if_depth]) {
+		bool ok = goal_run(p, c+1);
+		p->m->ifs_blocked[p->m->if_depth] = !ok;
+		p->m->ifs_done[p->m->if_depth] = ok;
+		return true;
+	}
+
+	if (!strcmp(dirname, "elif") && (c->arity == 1)) {
+		p->m->ifs_blocked[p->m->if_depth] = true;
+		return true;
+	}
+
+	if (!strcmp(dirname, "else") && (c->arity == 0) && !p->m->ifs_done[p->m->if_depth] && p->m->ifs_blocked[p->m->if_depth]) {
+		p->m->ifs_blocked[p->m->if_depth] = false;
+		p->m->ifs_done[p->m->if_depth] = true;
+		return true;
+	}
+
+	if (!strcmp(dirname, "else") && (c->arity == 0)) {
+		p->m->ifs_blocked[p->m->if_depth] = true;
 		return true;
 	}
 
@@ -2887,7 +2905,7 @@ static bool process_term(parser *p, cell *p1)
 	if (conditionals(p, p1))
 		return true;
 
-	if (p->m->ifs[p->m->if_depth])
+	if (p->m->ifs_blocked[p->m->if_depth])
 		return true;
 
 	directives(p, p1);
