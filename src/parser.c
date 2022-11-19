@@ -356,61 +356,61 @@ static bool goal_run(parser *p, cell *goal)
 	return true;
 }
 
-static void conditionals(parser *p, cell *d)
+static bool conditionals(parser *p, cell *d)
 {
 	p->skip = false;
 
 	if (!is_interned(d))
-		return;
+		return false;
 
 	if (is_list(d) && p->command) {
 		consultall(p, d);
 		p->skip = true;
-		return;
+		return false;
 	}
 
 	if (strcmp(C_STR(p, d), ":-"))
-		return;
+		return false;
 
 	cell *c = d + 1;
 
 	if (!is_interned(c))
-		return;
+		return false;
 
 	const char *dirname = C_STR(p, c);
 
 	if (!strcmp(dirname, "if") && (c->arity == 1)) {
 		p->m->ifs[p->m->if_depth++] = !goal_run(p, c+1);
-		return;
+		return true;
 	}
 
 	if (!strcmp(dirname, "elif") && (c->arity == 1) && p->m->if_depth && !p->m->ifs[p->m->if_depth-1]) {
 		p->m->ifs[p->m->if_depth-1] = true;
-		return;
+		return true;
 	}
 
 	if (!strcmp(dirname, "elif") && (c->arity == 1) && p->m->if_depth && p->m->ifs[p->m->if_depth-1]) {
 		p->m->ifs[p->m->if_depth-1] = !goal_run(p, c+1);
-		return;
+		return true;
 	}
 
 	if (!strcmp(dirname, "else") && (c->arity == 0) && p->m->if_depth && !p->m->ifs[p->m->if_depth-1]) {
 		p->m->ifs[p->m->if_depth-1] = true;
-		return;
+		return true;
 	}
 
 	if (!strcmp(dirname, "else") && (c->arity == 0) && p->m->if_depth && p->m->ifs[p->m->if_depth-1]) {
 		p->m->ifs[p->m->if_depth-1] = false;
-		return;
+		return true;
 	}
 
 	if (!strcmp(dirname, "endif") && (c->arity == 0) && p->m->if_depth) {
 		p->m->ifs[p->m->if_depth-1] = false;
 		p->m->if_depth--;
-		return;
+		return true;
 	}
 
-	return;
+	return false;
 }
 
 static void directives(parser *p, cell *d)
@@ -904,7 +904,7 @@ static void directives(parser *p, cell *d)
 				}
 			} else {
 				if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-					fprintf(stdout, "Warning: unknown directive: %s\n", dirname);
+					fprintf(stdout, "Warning: unknown directive: %s/%d\n", dirname, c->arity);
 			}
 		}
 
@@ -965,7 +965,7 @@ static void directives(parser *p, cell *d)
 				set_dynamic_in_db(m, C_STR(p, c_name), arity);
 			} else {
 				if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-					fprintf(stdout, "Warning: unknown directive: %s\n", dirname);
+					fprintf(stdout, "Warning: unknown directive: %s/%d\n", dirname, c->arity);
 			}
 
 			p1 += p1->nbr_cells;
@@ -980,7 +980,7 @@ static void directives(parser *p, cell *d)
 			p1 += 1;
 		else {
 			if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-				fprintf(stdout, "Warning: unknown directive: %s\n", dirname);
+				fprintf(stdout, "Warning: unknown directive: %s/%d\n", dirname, c->arity);
 
 			break;
 		}
@@ -2886,7 +2886,8 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 static bool process_term(parser *p, cell *p1)
 {
-	conditionals(p, p1);
+	if (conditionals(p, p1))
+		return true;
 
 	if (p->m->if_depth && p->m->ifs[p->m->if_depth-1])
 		return true;
