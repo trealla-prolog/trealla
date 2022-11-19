@@ -363,12 +363,6 @@ static bool conditionals(parser *p, cell *d)
 	if (!is_interned(d))
 		return false;
 
-	if (is_list(d) && p->command) {
-		consultall(p, d);
-		p->skip = true;
-		return false;
-	}
-
 	if (strcmp(C_STR(p, d), ":-"))
 		return false;
 
