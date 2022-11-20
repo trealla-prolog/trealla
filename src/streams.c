@@ -5099,14 +5099,10 @@ static bool fn_absolute_file_name_3(query *q)
 	GET_NEXT_ARG(p_opts,list_or_nil);
 	bool expand = false;
 	char *filename = NULL;
-	char *here = strdup(q->st.m->filename);
+	char cwdbuf[1024*4];
+	char *here = strdup(getcwd(cwdbuf, sizeof(cwdbuf)));
 	check_heap_error(here);
 	char *ptr = here + strlen(here) - 1;
-
-	while ((ptr != here) && *ptr && (*ptr != '/') && (*ptr != '\\') && (*ptr != ':'))
-		ptr--;
-
-	ptr[1] = '\0';
 	char *cwd = here;
 
 	if (is_iso_list(p1)) {
