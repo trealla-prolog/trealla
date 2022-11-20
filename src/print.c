@@ -684,7 +684,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 	}
 
 	if (q->is_dump_vars && is_blob(c)) {
-		dst += snprintf(dst, dstlen, "<$blob>(0x%X)", (int)get_smallint(c));
+		dst += snprintf(dst, dstlen, "'<$blob>'(0x%X)", (int)get_smallint(c));
 		q->last_thing_was_symbol = false;
 		q->was_space = false;
 		return dst - save_dst;
