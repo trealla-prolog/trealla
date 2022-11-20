@@ -1595,6 +1595,9 @@ static bool fn_iso_mod_2(query *q)
 
 		q->accum.val_int = modulo_euclidean(p1.val_int, p2.val_int);
 
+		if (p2.val_int < 0)
+			q->accum.val_int *= -1;
+
 		q->accum.tag = TAG_INTEGER;
 	} else if (is_bigint(&p1) && is_bigint(&p2)) {
 		mp_int_mod(&p1.val_bigint->ival, &p2.val_bigint->ival, &q->tmp_ival);
