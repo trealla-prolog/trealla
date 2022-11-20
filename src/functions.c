@@ -1602,13 +1602,8 @@ static bool fn_iso_mod_2(query *q)
 	} else if (is_bigint(&p1) && is_bigint(&p2)) {
 		mp_int_mod(&p1.val_bigint->ival, &p2.val_bigint->ival, &q->tmp_ival);
 
-		if (mp_int_compare_zero(&p2.val_bigint->ival) < 0) {
-			mpz_t tmp;
-			mp_int_init(&tmp);
-			mp_int_mul_value(&q->tmp_ival, 2, &tmp);
-			mp_int_neg(&tmp, &q->tmp_ival);
-			mp_int_clear(&tmp);
-		}
+		if (mp_int_compare_zero(&p2.val_bigint->ival) < 0)
+			mp_int_neg(&q->tmp_ival, &q->tmp_ival);
 
 		SET_ACCUM();
 	} else if (is_bigint(&p1) && is_smallint(&p2)) {
@@ -1616,13 +1611,8 @@ static bool fn_iso_mod_2(query *q)
 		mp_int_mod_value(&p1.val_bigint->ival, p2.val_int, &n);
 		q->accum.val_int = n;
 
-		if (mp_int_compare_zero(&p2.val_bigint->ival) < 0) {
-			mpz_t tmp;
-			mp_int_init(&tmp);
-			mp_int_mul_value(&q->tmp_ival, 2, &tmp);
-			mp_int_neg(&tmp, &q->tmp_ival);
-			mp_int_clear(&tmp);
-		}
+		if (p2.val_int < 0)
+			q->accum.val_int *= -1;
 
 		q->accum.tag = TAG_INTEGER;
 	} else if (is_smallint(&p1) && is_bigint(&p2)) {
@@ -1630,13 +1620,8 @@ static bool fn_iso_mod_2(query *q)
 		mp_int_init_value(&tmp, p1.val_int);
 		mp_int_mod(&tmp, &p2.val_bigint->ival, &q->tmp_ival);
 
-		if (mp_int_compare_zero(&p2.val_bigint->ival) < 0) {
-			mpz_t tmp;
-			mp_int_init(&tmp);
-			mp_int_mul_value(&q->tmp_ival, 2, &tmp);
-			mp_int_neg(&tmp, &q->tmp_ival);
-			mp_int_clear(&tmp);
-		}
+		if (mp_int_compare_zero(&p2.val_bigint->ival) < 0)
+			mp_int_neg(&q->tmp_ival, &q->tmp_ival);
 
 		SET_ACCUM();
 		mp_int_clear(&tmp);
