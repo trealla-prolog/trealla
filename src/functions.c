@@ -1602,7 +1602,7 @@ static bool fn_iso_mod_2(query *q)
 	} else if (is_bigint(&p1) && is_bigint(&p2)) {
 		mp_int_mod(&p1.val_bigint->ival, &p2.val_bigint->ival, &q->tmp_ival);
 
-		if (mp_int_compare_zero(&p2.val_bigint->ival))
+		if (mp_int_compare_zero(&p2.val_bigint->ival) < 0)
 			mp_int_neg(&q->tmp_ival, &q->tmp_ival);
 
 		SET_ACCUM();
@@ -1620,7 +1620,7 @@ static bool fn_iso_mod_2(query *q)
 		mp_int_init_value(&tmp, p1.val_int);
 		mp_int_mod(&tmp, &p2.val_bigint->ival, &q->tmp_ival);
 
-		if (mp_int_compare_zero(&p2.val_bigint->ival))
+		if (mp_int_compare_zero(&p2.val_bigint->ival) < 0)
 			mp_int_neg(&q->tmp_ival, &q->tmp_ival);
 
 		SET_ACCUM();
