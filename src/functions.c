@@ -1570,6 +1570,17 @@ static bool fn_iso_divint_2(query *q)
 	return true;
 }
 
+static int modulo_euclidean(pl_int_t a, pl_int_t b)
+{
+  pl_int_t m = a % b;
+
+  if (m < 0) {
+    m = (b < 0) ? m - b : m + b;
+  }
+
+  return m;
+}
+
 static bool fn_iso_mod_2(query *q)
 {
 	CHECK_CALC();
@@ -1582,13 +1593,7 @@ static bool fn_iso_mod_2(query *q)
 		if (p2.val_int == 0)
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "zero_divisor");
 
-		q->accum.val_int = p1.val_int % p2.val_int;
-
-		if (p2.val_int < 0)
-			q->accum.val_int *= -1;
-
-		if (p1.val_int < 0)
-			q->accum.val_int *= -1;
+		q->accum.val_int = modulo_euclidean(p1.val_int, p2.val_int);
 
 		q->accum.tag = TAG_INTEGER;
 	} else if (is_bigint(&p1) && is_bigint(&p2)) {
