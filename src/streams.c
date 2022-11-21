@@ -3811,6 +3811,24 @@ static bool fn_iso_current_output_1(query *q)
 	return n == q->pl->current_output ? true : false;
 }
 
+static bool fn_iso_current_error_1(query *q)
+{
+	GET_FIRST_ARG(pstr,any);
+
+	if (is_var(pstr)) {
+		cell tmp;
+		make_int(&tmp, q->pl->current_error);
+		tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+		return unify(q, pstr, pstr_ctx, &tmp, q->st.curr_frame);
+	}
+
+	if (!is_stream(pstr))
+		return throw_error(q, pstr, q->st.curr_frame, "domain_error", "stream");
+
+	int n = get_stream(q, pstr);
+	return n == q->pl->current_error ? true : false;
+}
+
 static bool fn_iso_set_input_1(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
@@ -3834,6 +3852,19 @@ static bool fn_iso_set_output_1(query *q)
 		return throw_error(q, pstr, q->st.curr_frame, "permission_error", "output,stream");
 
 	q->pl->current_output = n;
+	return true;
+}
+
+static bool fn_iso_set_error_1(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!strcmp(str->mode, "read"))
+		return throw_error(q, pstr, q->st.curr_frame, "permission_error", "output,stream");
+
+	q->pl->current_error = n;
 	return true;
 }
 
@@ -6877,8 +6908,10 @@ builtins g_files_bifs[] =
 	{"peek_byte", 2, fn_iso_peek_byte_2, "+stream,-integer", true, false, BLAH},
 	{"current_input", 1, fn_iso_current_input_1, "-stream", true, false, BLAH},
 	{"current_output", 1, fn_iso_current_output_1, "-stream", true, false, BLAH},
+	{"current_error", 1, fn_iso_current_error_1, "-stream", true, false, BLAH},
 	{"set_input", 1, fn_iso_set_input_1, "+stream", true, false, BLAH},
 	{"set_output", 1, fn_iso_set_output_1, "+stream", true, false, BLAH},
+	{"set_error", 1, fn_iso_set_output_1, "+stream", true, false, BLAH},
 	{"stream_property", 2, fn_iso_stream_property_2, "+stream,+structure", true, false, BLAH},
 
 
