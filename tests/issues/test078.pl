@@ -26,5 +26,8 @@ main :-
 	X10 is (1 << 150) mod -(3 << 150),
 	write(X10), nl,
 
+	X11 is -5 mod -3,
+	write(X11), nl,
+
 	true.
 

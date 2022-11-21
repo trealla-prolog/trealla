@@ -1570,56 +1570,29 @@ static bool fn_iso_divint_2(query *q)
 	return true;
 }
 
-static pl_int_t modulo_euclidean(pl_int_t a, pl_int_t b)
+static pl_int_t mod(pl_int_t x, pl_int_t y)
 {
-	pl_int_t m = a % b;
+	pl_int_t r = x % y;
 
-	if (a < 0) {
-		m = (b < 0) ? m - b : m + b;
-	}
+	if ( (r != 0)
+		&& (r<0) != (y<0) )
+		r += y;
 
-	if (b < 0) {
-		m = (b < 0) ? m + b : m - b;
-	}
-
-	return m;
+  return r;
 }
 
-static mpz_t big_modulo_euclidean(mpz_t *a, mpz_t *b)
+static mpz_t big_mod(mpz_t *x, mpz_t *y)
 {
-	mpz_t m;
-	mp_int_init(&m);
-	mp_int_div(a, b, NULL, &m);
+	mpz_t r;
+	mp_int_init(&r);
+	mp_int_div(x, y, NULL, &r);
 
-	if (mp_int_compare_zero(a) < 0) {
-		mpz_t tmp;
-		mp_int_init(&tmp);
-
-		if (mp_int_compare_zero(b) < 0) {
-			mp_int_sub(&m, b, &tmp);
-		} else {
-			mp_int_add(&m, b, &tmp);
-		}
-
-		mp_int_clear(&m);
-		m = tmp;
+	if ((mp_int_compare_value(&r, 0) != 0)
+		&& (mp_int_compare_value(&r, 0) < 0) != (mp_int_compare_value(y, 0) < 0)) {
+		mp_int_add(&r, y, &r);
 	}
 
-	if (mp_int_compare_zero(b) < 0) {
-		mpz_t tmp;
-		mp_int_init(&tmp);
-
-		if (mp_int_compare_zero(b) < 0) {
-			mp_int_add(&m, b, &tmp);
-		} else {
-			mp_int_sub(&m, b, &tmp);
-		}
-
-		mp_int_clear(&m);
-		m = tmp;
-	}
-
-	return m;
+	return r;
 }
 
 static bool fn_iso_mod_2(query *q)
@@ -1634,20 +1607,20 @@ static bool fn_iso_mod_2(query *q)
 		if (p2.val_int == 0)
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "zero_divisor");
 
-		q->accum.val_int = modulo_euclidean(p1.val_int, p2.val_int);
+		q->accum.val_int = mod(p1.val_int, p2.val_int);
 		q->accum.tag = TAG_INTEGER;
 	} else if (is_bigint(&p1) && is_bigint(&p2)) {
-		q->tmp_ival = big_modulo_euclidean(&p1.val_bigint->ival, &p2.val_bigint->ival);
+		q->tmp_ival = big_mod(&p1.val_bigint->ival, &p2.val_bigint->ival);
 		SET_ACCUM();
 	} else if (is_bigint(&p1) && is_smallint(&p2)) {
 		mpz_t tmp;
 		mp_int_init_value(&tmp, p2.val_int);
-		q->tmp_ival = big_modulo_euclidean(&p1.val_bigint->ival, &tmp);
+		q->tmp_ival = big_mod(&p1.val_bigint->ival, &tmp);
 		SET_ACCUM();
 	} else if (is_smallint(&p1) && is_bigint(&p2)) {
 		mpz_t tmp;
 		mp_int_init_value(&tmp, p1.val_int);
-		q->tmp_ival = big_modulo_euclidean(&tmp, &p2.val_bigint->ival);
+		q->tmp_ival = big_mod(&tmp, &p2.val_bigint->ival);
 		SET_ACCUM();
 	} else if (is_var(&p1) || is_var(&p2)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
