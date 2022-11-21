@@ -96,7 +96,8 @@ LIBOBJECTS +=  \
 	library/sqlite3.o \
 	library/sqlite3_register.o \
 	library/ugraphs.o \
-	library/when.o
+	library/when.o \
+	library/yall.o
 
 SRCOBJECTS += src/imath/imath.o
 SRCOBJECTS += src/sre/re.o

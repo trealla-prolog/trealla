@@ -48,6 +48,8 @@ extern unsigned char library_json_pl[];
 extern unsigned int library_json_pl_len;
 extern unsigned char library_abnf_pl[];
 extern unsigned int library_abnf_pl_len;
+extern unsigned char library_yall_pl[];
+extern unsigned int library_yall_pl_len;
 
 library g_libs[] = {
 	 {"abnf", library_abnf_pl, &library_abnf_pl_len},
@@ -74,6 +76,7 @@ library g_libs[] = {
 	 {"sqlite3_register", library_sqlite3_register_pl, &library_sqlite3_register_pl_len},
 	 {"ugraphs", library_ugraphs_pl, &library_ugraphs_pl_len},
 	 {"when", library_when_pl, &library_when_pl_len},
+	 {"yall", library_yall_pl, &library_yall_pl_len},
 
 	 {0}
 };
