@@ -940,6 +940,10 @@ static void directives(parser *p, cell *d)
 			cell *c_mod = p1 + 1;
 			if (!is_atom(c_mod)) return;
 			m = find_module(p->m->pl, C_STR(p, c_mod));
+
+			if (!m)
+				m = create_module(p->pl, C_STR(p, c_mod));
+
 			c_id = p1 + 2;
 		}
 
