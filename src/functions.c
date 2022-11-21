@@ -2588,10 +2588,9 @@ static bool fn_divmod_4(query *q)
 	GET_NEXT_ARG(p4,var);
 
 	if (is_bigint(p1) && is_bigint(p2)) {
-		mpz_t tmp1, tmp2;
+		mpz_t tmp1;
 		mp_int_init(&tmp1);
-		mp_int_init(&tmp2);
-		mp_int_div(&p1->val_bigint->ival, &p2->val_bigint->ival, &tmp1, &tmp2);
+		mp_int_div(&p1->val_bigint->ival, &p2->val_bigint->ival, &tmp1, NULL);
 		q->accum.tag = TAG_INTEGER;
 		q->accum.flags = FLAG_MANAGED;
 		q->accum.val_bigint = malloc(sizeof(bigint));
@@ -2603,17 +2602,14 @@ static bool fn_divmod_4(query *q)
 		q->accum.flags = FLAG_MANAGED;
 		q->accum.val_bigint = malloc(sizeof(bigint));
 		q->accum.val_bigint->refcnt = 0;
-		mp_int_init_copy(&q->accum.val_bigint->ival, &tmp2);
-		mp_int_clear(&tmp2);
+		q->accum.val_bigint->ival = big_mod(&p1->val_bigint->ival, &p2->val_bigint->ival);
         unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
 	} else if (is_bigint(p1) && is_smallint(p2)) {
 		mpz_t tmp;
 		mp_int_init_value(&tmp, p2->val_int);
-		mpz_t tmp1, tmp2;
+		mpz_t tmp1;
 		mp_int_init(&tmp1);
-		mp_int_init(&tmp2);
-		mp_int_div(&p1->val_bigint->ival, &tmp, &tmp1, &tmp2);
-		mp_int_clear(&tmp);
+		mp_int_div(&p1->val_bigint->ival, &tmp, &tmp1, NULL);
 		q->accum.tag = TAG_INTEGER;
 		q->accum.flags = FLAG_MANAGED;
 		q->accum.val_bigint = malloc(sizeof(bigint));
@@ -2625,17 +2621,15 @@ static bool fn_divmod_4(query *q)
 		q->accum.flags = FLAG_MANAGED;
 		q->accum.val_bigint = malloc(sizeof(bigint));
 		q->accum.val_bigint->refcnt = 0;
-		mp_int_init_copy(&q->accum.val_bigint->ival, &tmp2);
-		mp_int_clear(&tmp2);
+		q->accum.val_bigint->ival = big_mod(&p1->val_bigint->ival, &tmp);
+		mp_int_clear(&tmp);
         unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
 	} else if (is_bigint(p2) && is_smallint(p1)) {
 		mpz_t tmp;
 		mp_int_init_value(&tmp, p1->val_int);
-		mpz_t tmp1, tmp2;
+		mpz_t tmp1;
 		mp_int_init(&tmp1);
-		mp_int_init(&tmp2);
-		mp_int_div(&tmp, &p2->val_bigint->ival, &tmp1, &tmp2);
-		mp_int_clear(&tmp);
+		mp_int_div(&tmp, &p2->val_bigint->ival, &tmp1, NULL);
 		q->accum.tag = TAG_INTEGER;
 		q->accum.flags = FLAG_MANAGED;
 		q->accum.val_bigint = malloc(sizeof(bigint));
@@ -2647,8 +2641,8 @@ static bool fn_divmod_4(query *q)
 		q->accum.flags = FLAG_MANAGED;
 		q->accum.val_bigint = malloc(sizeof(bigint));
 		q->accum.val_bigint->refcnt = 0;
-		mp_int_init_copy(&q->accum.val_bigint->ival, &tmp2);
-		mp_int_clear(&tmp2);
+		q->accum.val_bigint->ival = big_mod(&tmp, &p2->val_bigint->ival);
+		mp_int_clear(&tmp);
         unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
 	} else if (is_smallint(p1) && is_smallint(p2)) {
 		if (p2->val_int == 0)
@@ -2658,7 +2652,7 @@ static bool fn_divmod_4(query *q)
         q->accum.val_int = p1->val_int / p2->val_int;
         make_int(&tmp, q->accum.val_int);
         unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
-        q->accum.val_int = p1->val_int % p2->val_int;
+        q->accum.val_int = mod(p1->val_int, p2->val_int);
         make_int(&tmp, q->accum.val_int);
         unify(q, p4, p4_ctx, &tmp, q->st.curr_frame);
 	} else {
