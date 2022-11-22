@@ -1581,18 +1581,14 @@ static pl_int_t mod(pl_int_t x, pl_int_t y)
   return r;
 }
 
-static mpz_t big_mod(mpz_t *x, mpz_t *y)
+static void big_mod(mpz_t *x, mpz_t *y, mpz_t *r)
 {
-	mpz_t r;
-	mp_int_init(&r);
-	mp_int_div(x, y, NULL, &r);
+	mp_int_div(x, y, NULL, r);
 
-	if ((mp_int_compare_value(&r, 0) != 0)
-		&& (mp_int_compare_value(&r, 0) < 0) != (mp_int_compare_value(y, 0) < 0)) {
-		mp_int_add(&r, y, &r);
+	if ((mp_int_compare_value(r, 0) != 0)
+		&& (mp_int_compare_value(r, 0) < 0) != (mp_int_compare_value(y, 0) < 0)) {
+		mp_int_add(r, y, r);
 	}
-
-	return r;
 }
 
 static bool fn_iso_mod_2(query *q)
@@ -1610,31 +1606,18 @@ static bool fn_iso_mod_2(query *q)
 		q->accum.val_int = mod(p1.val_int, p2.val_int);
 		q->accum.tag = TAG_INTEGER;
 	} else if (is_bigint(&p1) && is_bigint(&p2)) {
-		q->tmp_ival = big_mod(&p1.val_bigint->ival, &p2.val_bigint->ival);
+		big_mod(&p1.val_bigint->ival, &p2.val_bigint->ival, &q->tmp_ival);
 		SET_ACCUM();
 	} else if (is_bigint(&p1) && is_smallint(&p2)) {
-#if 0
 		mpz_t tmp;
 		mp_int_init_value(&tmp, p2.val_int);
-		q->tmp_ival = big_mod(&p1.val_bigint->ival, &tmp);
+		big_mod(&p1.val_bigint->ival, &tmp, &q->tmp_ival);
 		mp_int_clear(&tmp);
 		SET_ACCUM();
-#else
-		if ((mp_int_compare_zero(&p1.val_bigint->ival) < 0) || (p2.val_int < 0)) {
-			mpz_t tmp;
-			mp_int_init_value(&tmp, p2.val_int);
-			q->tmp_ival = big_mod(&p1.val_bigint->ival, &tmp);
-			mp_int_clear(&tmp);
-			SET_ACCUM();
-		} else {
-			mp_int_mod_value(&p1.val_bigint->ival, p2.val_int, &q->accum.val_int);
-			q->accum.tag = TAG_INTEGER;
-		}
-#endif
 	} else if (is_smallint(&p1) && is_bigint(&p2)) {
 		mpz_t tmp;
 		mp_int_init_value(&tmp, p1.val_int);
-		q->tmp_ival = big_mod(&tmp, &p2.val_bigint->ival);
+		big_mod(&tmp, &p2.val_bigint->ival, &q->tmp_ival);
 		mp_int_clear(&tmp);
 		SET_ACCUM();
 	} else if (is_var(&p1) || is_var(&p2)) {
@@ -2620,7 +2603,7 @@ static bool fn_divmod_4(query *q)
 		q->accum.flags = FLAG_MANAGED;
 		q->accum.val_bigint = malloc(sizeof(bigint));
 		q->accum.val_bigint->refcnt = 0;
-		q->accum.val_bigint->ival = big_mod(&p1->val_bigint->ival, &p2->val_bigint->ival);
+		big_mod(&p1->val_bigint->ival, &p2->val_bigint->ival, &q->accum.val_bigint->ival);
 		return unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
 	} else if (is_bigint(p1) && is_smallint(p2)) {
 		mpz_t tmp;
@@ -2642,7 +2625,7 @@ static bool fn_divmod_4(query *q)
 		q->accum.flags = FLAG_MANAGED;
 		q->accum.val_bigint = malloc(sizeof(bigint));
 		q->accum.val_bigint->refcnt = 0;
-		q->accum.val_bigint->ival = big_mod(&p1->val_bigint->ival, &tmp);
+		big_mod(&p1->val_bigint->ival, &tmp, &q->accum.val_bigint->ival);
 		mp_int_clear(&tmp);
         return unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
 	} else if (is_bigint(p2) && is_smallint(p1)) {
@@ -2665,7 +2648,7 @@ static bool fn_divmod_4(query *q)
 		q->accum.flags = FLAG_MANAGED;
 		q->accum.val_bigint = malloc(sizeof(bigint));
 		q->accum.val_bigint->refcnt = 0;
-		q->accum.val_bigint->ival = big_mod(&tmp, &p2->val_bigint->ival);
+		big_mod(&tmp, &p2->val_bigint->ival, &q->accum.val_bigint->ival);
 		mp_int_clear(&tmp);
 		return unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
 	} else if (is_smallint(p1) && is_smallint(p2)) {
