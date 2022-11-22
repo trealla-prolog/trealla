@@ -1616,11 +1616,13 @@ static bool fn_iso_mod_2(query *q)
 		mpz_t tmp;
 		mp_int_init_value(&tmp, p2.val_int);
 		q->tmp_ival = big_mod(&p1.val_bigint->ival, &tmp);
+		mp_int_clear(&tmp);
 		SET_ACCUM();
 	} else if (is_smallint(&p1) && is_bigint(&p2)) {
 		mpz_t tmp;
 		mp_int_init_value(&tmp, p1.val_int);
 		q->tmp_ival = big_mod(&tmp, &p2.val_bigint->ival);
+		mp_int_clear(&tmp);
 		SET_ACCUM();
 	} else if (is_var(&p1) || is_var(&p2)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
