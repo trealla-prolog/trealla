@@ -115,7 +115,8 @@ LIBOBJECTS +=  \
 	library/wasm.o \
 	library/wasm_generic.o \
 	library/wasm_js.o \
-	library/when.o
+	library/when.o \
+	library/yall.o
 
 SRCOBJECTS += src/imath/imath.o
 SRCOBJECTS += src/sre/re.o
