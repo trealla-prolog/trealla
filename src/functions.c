@@ -1613,11 +1613,24 @@ static bool fn_iso_mod_2(query *q)
 		q->tmp_ival = big_mod(&p1.val_bigint->ival, &p2.val_bigint->ival);
 		SET_ACCUM();
 	} else if (is_bigint(&p1) && is_smallint(&p2)) {
+#if 0
 		mpz_t tmp;
 		mp_int_init_value(&tmp, p2.val_int);
 		q->tmp_ival = big_mod(&p1.val_bigint->ival, &tmp);
 		mp_int_clear(&tmp);
 		SET_ACCUM();
+#else
+		if ((mp_int_compare_zero(&p1.val_bigint->ival) < 0) || (p2.val_int < 0)) {
+			mpz_t tmp;
+			mp_int_init_value(&tmp, p2.val_int);
+			q->tmp_ival = big_mod(&p1.val_bigint->ival, &tmp);
+			mp_int_clear(&tmp);
+			SET_ACCUM();
+		} else {
+			mp_int_mod_value(&p1.val_bigint->ival, p2.val_int, &q->accum.val_int);
+			q->accum.tag = TAG_INTEGER;
+		}
+#endif
 	} else if (is_smallint(&p1) && is_bigint(&p2)) {
 		mpz_t tmp;
 		mp_int_init_value(&tmp, p1.val_int);
