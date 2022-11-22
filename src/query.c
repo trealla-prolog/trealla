@@ -1333,7 +1333,8 @@ void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 		v_attrs = is_empty(&ve->c) ? ve->c.attrs : NULL;
 	}
 
-	add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
+	if (c_ctx < q->st.fp)
+		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
 
 	// If 'c' is an attvar and either 'v' is an attvar or nonvar then run the hook
 	// If 'c' is an attvar and 'v' is a plain var then copy attributes to 'v'
@@ -1383,7 +1384,8 @@ void reset_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 	frame *f = GET_FRAME(c_ctx);
 	slot *e = GET_SLOT(f, c->var_nbr);
 
-	add_trail(q, c_ctx, c->var_nbr, NULL, 0);
+	if (c_ctx < q->st.fp)
+		add_trail(q, c_ctx, c->var_nbr, NULL, 0);
 
 	if (is_structure(v)) {
 		make_indirect(&e->c, v, v_ctx);
