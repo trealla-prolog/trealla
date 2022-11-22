@@ -1130,7 +1130,8 @@ void inner_cut(query *q, bool soft_cut)
 		// An inner cut can break through a barrier...
 
 		if (ch->cgen < f->cgen) {
-			f->cgen = ch->cgen;
+			//f->cgen = ch->cgen;
+			f->cgen--;
 			break;
 		}
 
