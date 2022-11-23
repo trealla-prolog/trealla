@@ -1966,7 +1966,12 @@ static int my_clock_gettime(clockid_t type, struct timespec *tp)
 uint64_t cpu_time_in_usec(void)
 {
 	struct timespec now = {0};
+#if !defined(CLOCK_PROCESS_CPUTIME_ID) || defined(__wasi__)
+	// CLOCK_PROCESS_CPUTIME_ID not yet part of WASI?
+	my_clock_gettime(CLOCK_MONOTONIC, &now);
+#else
 	my_clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &now);
+#endif
 	return (uint64_t)(now.tv_sec * 1000 * 1000) + (now.tv_nsec / 1000);
 }
 
