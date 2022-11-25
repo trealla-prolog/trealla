@@ -74,10 +74,6 @@ bool has_vars(query *q, cell *p1, pl_idx_t p1_ctx);
 bool accum_var(query *q, const cell *c, pl_idx_t c_ctx);
 bool check_frame(query *q);
 
-#ifdef _WIN32
-extern ssize_t getline(char **lineptr, size_t *n, FILE *stream);
-#endif
-
 int compare(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx);
 bool unify(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx);
 
@@ -166,6 +162,10 @@ struct cycle_info_ {
 
 #ifdef _WIN32
 #include <io.h>
+#endif
+
+#ifdef _WIN32
+extern ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 #endif
 
 #define PROMPT ""
