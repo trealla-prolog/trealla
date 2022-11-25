@@ -28,6 +28,22 @@
 		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
 }
 
+#define SET_ACCUM2() {											\
+	if (errno == ENOMEM)										\
+		return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory"); \
+	q->accum.tag = TAG_INTEGER;										\
+	q->accum.flags = FLAG_MANAGED;								\
+	q->accum.val_bigint = malloc(sizeof(bigint));				\
+	if (errno == ENOMEM)										\
+		return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory"); \
+	q->accum.val_bigint->refcnt = 0;							\
+	if (mp_int_init_copy(&q->accum.val_bigint->ival, &q->tmp_ival) == MP_MEMORY) {\
+		return throw_error(q, &q->accum, q->st.curr_frame, "resource_error", "memory"); \
+	} \
+	if (errno == ENOMEM)										\
+		return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory"); \
+}
+
 void clr_accum(cell *p)
 {
 	if (is_bigint(p) && !p->val_bigint->refcnt) {
@@ -2586,79 +2602,42 @@ static bool fn_divmod_4(query *q)
 	GET_NEXT_ARG(p4,integer_or_var);
 
 	if (is_bigint(p1) && is_bigint(p2)) {
-		mpz_t tmp1;
-		mp_int_init(&tmp1);
-		mp_int_div(&p1->val_bigint->ival, &p2->val_bigint->ival, &tmp1, NULL);
-		q->accum.tag = TAG_INTEGER;
-		q->accum.flags = FLAG_MANAGED;
-		q->accum.val_bigint = malloc(sizeof(bigint));
-		q->accum.val_bigint->refcnt = 0;
-		mp_int_init_copy(&q->accum.val_bigint->ival, &tmp1);
-		mp_int_clear(&tmp1);
+		mp_int_div(&p1->val_bigint->ival, &p2->val_bigint->ival, &q->tmp_ival, NULL);
+		SET_ACCUM2();
 
 		if (!unify(q, p3, p3_ctx, &q->accum, q->st.curr_frame))
 			return false;
 
-		mp_int_init(&tmp1);
-		q->accum.tag = TAG_INTEGER;
-		q->accum.flags = FLAG_MANAGED;
-		q->accum.val_bigint = malloc(sizeof(bigint));
-		q->accum.val_bigint->refcnt = 0;
-		big_mod(&p1->val_bigint->ival, &p2->val_bigint->ival, &tmp1);
-		mp_int_init_copy(&q->accum.val_bigint->ival, &tmp1);
-		mp_int_clear(&tmp1);
+		big_mod(&p1->val_bigint->ival, &p2->val_bigint->ival, &q->tmp_ival);
+		SET_ACCUM2();
 		return unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
 	} else if (is_bigint(p1) && is_smallint(p2)) {
-		mpz_t tmp;
-		mp_int_init_value(&tmp, p2->val_int);
-		mpz_t tmp1;
-		mp_int_init(&tmp1);
-		mp_int_div(&p1->val_bigint->ival, &tmp, &tmp1, NULL);
-		q->accum.tag = TAG_INTEGER;
-		q->accum.flags = FLAG_MANAGED;
-		q->accum.val_bigint = malloc(sizeof(bigint));
-		q->accum.val_bigint->refcnt = 0;
-		mp_int_init_copy(&q->accum.val_bigint->ival, &tmp1);
-		mp_int_clear(&tmp1);
+		mp_int_div_value(&p1->val_bigint->ival, p2->val_int, &q->tmp_ival, NULL);
+		SET_ACCUM2();
 
         if (!unify(q, p3, p3_ctx, &q->accum, q->st.curr_frame))
 			return false;
 
-		mp_int_init(&tmp1);
-		q->accum.tag = TAG_INTEGER;
-		q->accum.flags = FLAG_MANAGED;
-		q->accum.val_bigint = malloc(sizeof(bigint));
-		q->accum.val_bigint->refcnt = 0;
-		big_mod(&p1->val_bigint->ival, &tmp, &tmp1);
-		mp_int_init_copy(&q->accum.val_bigint->ival, &tmp1);
-		mp_int_clear(&tmp1);
+		mpz_t tmp;
+		mp_int_init_value(&tmp, p2->val_int);
+		big_mod(&p1->val_bigint->ival, &tmp, &q->tmp_ival);
 		mp_int_clear(&tmp);
+		SET_ACCUM2();
         return unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
 	} else if (is_bigint(p2) && is_smallint(p1)) {
 		mpz_t tmp;
 		mp_int_init_value(&tmp, p1->val_int);
-		mpz_t tmp1;
-		mp_int_init(&tmp1);
-		mp_int_div(&tmp, &p2->val_bigint->ival, &tmp1, NULL);
-		q->accum.tag = TAG_INTEGER;
-		q->accum.flags = FLAG_MANAGED;
-		q->accum.val_bigint = malloc(sizeof(bigint));
-		q->accum.val_bigint->refcnt = 0;
-		mp_int_init_copy(&q->accum.val_bigint->ival, &tmp1);
-		mp_int_clear(&tmp1);
+		mp_int_div(&tmp, &p2->val_bigint->ival, &q->tmp_ival, NULL);
+		SET_ACCUM2();
 
-		if (!unify(q, p3, p3_ctx, &q->accum, q->st.curr_frame))
+		if (!unify(q, p3, p3_ctx, &q->accum, q->st.curr_frame)) {
+			mp_int_clear(&tmp);
 			return false;
+		}
 
-		mp_int_init(&tmp1);
-		q->accum.tag = TAG_INTEGER;
-		q->accum.flags = FLAG_MANAGED;
-		q->accum.val_bigint = malloc(sizeof(bigint));
-		q->accum.val_bigint->refcnt = 0;
-		big_mod(&tmp, &p2->val_bigint->ival, &tmp1);
-		mp_int_init_copy(&q->accum.val_bigint->ival, &tmp1);
+		big_mod(&tmp, &p2->val_bigint->ival, &q->tmp_ival);
 		mp_int_clear(&tmp);
-		mp_int_clear(&tmp1);
+		SET_ACCUM2();
 		return unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
 	} else if (is_smallint(p1) && is_smallint(p2)) {
 		if (p2->val_int == 0)
