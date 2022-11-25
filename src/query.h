@@ -75,7 +75,7 @@ bool accum_var(query *q, const cell *c, pl_idx_t c_ctx);
 bool check_frame(query *q);
 
 #ifdef _WIN32
-ssize_t getline(char **lineptr, size_t *n, FILE *stream);
+extern ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 #endif
 
 int compare(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx);
