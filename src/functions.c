@@ -2610,20 +2610,26 @@ static bool fn_divmod_4(query *q)
 
 		big_mod(&p1->val_bigint->ival, &p2->val_bigint->ival, &q->tmp_ival);
 		SET_ACCUM2();
-		return unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
+		bool ok = unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
+		clr_accum(&q->accum);
+		return ok;
 	} else if (is_bigint(p1) && is_smallint(p2)) {
 		mp_int_div_value(&p1->val_bigint->ival, p2->val_int, &q->tmp_ival, NULL);
 		SET_ACCUM2();
 
-        if (!unify(q, p3, p3_ctx, &q->accum, q->st.curr_frame))
+        if (!unify(q, p3, p3_ctx, &q->accum, q->st.curr_frame)) {
+			clr_accum(&q->accum);
 			return false;
+		}
 
 		mpz_t tmp;
 		mp_int_init_value(&tmp, p2->val_int);
 		big_mod(&p1->val_bigint->ival, &tmp, &q->tmp_ival);
 		mp_int_clear(&tmp);
 		SET_ACCUM2();
-        return unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
+        bool ok = unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
+		clr_accum(&q->accum);
+		return ok;
 	} else if (is_bigint(p2) && is_smallint(p1)) {
 		mpz_t tmp;
 		mp_int_init_value(&tmp, p1->val_int);
@@ -2638,7 +2644,9 @@ static bool fn_divmod_4(query *q)
 		big_mod(&tmp, &p2->val_bigint->ival, &q->tmp_ival);
 		mp_int_clear(&tmp);
 		SET_ACCUM2();
-		return unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
+		bool ok = unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
+		clr_accum(&q->accum);
+		return ok;
 	} else if (is_smallint(p1) && is_smallint(p2)) {
 		if (p2->val_int == 0)
 			return throw_error(q, p2, q->st.curr_frame, "evaluation_error", "zero_divisor");

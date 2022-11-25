@@ -728,8 +728,6 @@ void drop_choice(query *q)
 
 bool retry_choice(query *q)
 {
-	clr_accum(&q->accum);
-
 	while (q->cp) {
 		pl_idx_t curr_choice = --q->cp;
 		const choice *ch = GET_CHOICE(curr_choice);
