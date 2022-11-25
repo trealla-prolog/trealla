@@ -1360,7 +1360,7 @@ void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 		make_indirect(&e->c, v, v_ctx);
 	} else if (is_var(v)) {
 		e->c = *v;
-		e->c.flags &= ~FLAG_REF;
+		e->c.flags |= FLAG_REF;
 		e->c.var_ctx = v_ctx;
 	} else {
 		share_cell(v);
@@ -1392,7 +1392,7 @@ void reset_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 		make_indirect(&e->c, v, v_ctx);
 	} else if (is_var(v)) {
 		e->c = *v;
-		e->c.flags &= ~FLAG_REF;
+		e->c.flags |= FLAG_REF;
 		e->c.var_ctx = v_ctx;
 	} else {
 		share_cell(v);
