@@ -11,4 +11,8 @@ extern void history_save(void);
 extern int history_getch_fd(int fd);
 extern int history_getch(void);
 
+#ifdef _WIN32
+extern ssize_t getline(char **lineptr, size_t *n, FILE *stream);
+#endif
+
 #endif

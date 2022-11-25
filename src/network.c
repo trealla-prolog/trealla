@@ -45,6 +45,7 @@ static SSL_CTX *g_ctx = NULL;
 #endif
 #endif
 
+#include "trealla.h"
 #include "network.h"
 #include "query.h"
 
