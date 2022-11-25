@@ -97,31 +97,31 @@ Unicode atoms do not need to be quoted unless they contain breaking
 characters...
 
 ```console
-?- [user].
-是.            % be: means, approximately, "True".
-不是 :- \+ 是.  % not be: means, approximately, "False".
-<CTRL-D>
-   true.
-?- 是.
-   true.
-?- 不是.
-   false.
-```
+	?- [user].
+	是.            % be: means, approximately, "True".
+	不是 :- \+ 是.  % not be: means, approximately, "False".
+	<CTRL-D>
+	   true.
+	?- 是.
+	   true.
+	?- 不是.
+	   false.
+	```
 
-```console
-?- X = 国字.
-   X = 国字.
-?-
+	```console
+	?- X = 国字.
+	   X = 国字.
+	?-
 ```
 
 Trealla accepts as a var any atom beginning with Unicode uppercase...
 
 ```console
-?- atom_upper(δ,C).
-   C = Δ.
-?- Δ is 123456-123455.
-   Δ = 1.
-?-
+	?- atom_upper(δ,C).
+	   C = Δ.
+	?- Δ is 123456-123455.
+	   Δ = 1.
+	?-
 ```
 
 
@@ -207,9 +207,9 @@ To cross-compile on Linux and produce a Windows/x86-64 executable...
 	make CC=x86_64-w64-mingw32-gcc NOSSL=1 NOFFI=1 ISOCLINE=1
 
 ```console
-$ file tpl.exe
-tpl.exe: PE32+ executable (console) x86-64, for MS Windows
-$ wine tpl.exe -g test5,halt -f samples/sieve.pl
+	$ file tpl.exe
+	tpl.exe: PE32+ executable (console) x86-64, for MS Windows
+	$ wine tpl.exe -g test5,halt -f samples/sieve.pl
 ```
 
 Cross-compile for Linux x86
@@ -222,8 +222,8 @@ To cross-compile on Linux and produce a Linux/x86-32 executable...
 	make OPT=-m32
 
 ```console
-$ file tpl
-tpl: ELF 32-bit LSB shared object, Intel 80386, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux.so.2, BuildID[sha1]=31f643d7a4cfacb0a34e81b7c12c78410493de60, for GNU/Linux 3.2.0, with debug_info, not stripped
+	$ file tpl
+	tpl: ELF 32-bit LSB shared object, Intel 80386, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux.so.2, BuildID[sha1]=31f643d7a4cfacb0a34e81b7c12c78410493de60, for GNU/Linux 3.2.0, with debug_info, not stripped
 ```
 
 
@@ -855,7 +855,7 @@ Run...
 
 ```console
 	$ tpl -g run,halt samples/sqlite3.pl
-[[1,'Paul',32,'California',20000.0],[2,'Allen',25,'Texas',15000.0],[3,'Teddy',23,'Norway',20000.0],[4,'Mark',25,'Rich-Mond ',65000.0],[5,'David',27,'Texas',85000.0],[6,'Kim',22,'South-Hall',45000.0]]
+	[[1,'Paul',32,'California',20000.0],[2,'Allen',25,'Texas',15000.0],[3,'Teddy',23,'Norway',20000.0],[4,'Mark',25,'Rich-Mond ',65000.0],[5,'David',27,'Texas',85000.0],[6,'Kim',22,'South-Hall',45000.0]]
 ```
 
 
@@ -877,41 +877,40 @@ ones complete (should this be optional?).
 An example:
 
 ```console
-:-use_module(library(http)).
+	:-use_module(library(http)).
 
-geturl(Url) :-
-	http_get(Url,_Data,[status_code(Code),final_url(Location)]),
-	format("Job [~w] ~w ==> ~w done~n",[Url,Code,Location]).
+	geturl(Url) :-
+		http_get(Url,_Data,[status_code(Code),final_url(Location)]),
+		format("Job [~w] ~w ==> ~w done~n",[Url,Code,Location]).
 
-% Fetch each URL in list sequentially...
+	% Fetch each URL in list sequentially...
 
-test54 :-
-	L = ['www.google.com','www.bing.com','www.duckduckgo.com'],
-	maplist(geturl,L),
-	writeln('Finished').
+	test54 :-
+		L = ['www.google.com','www.bing.com','www.duckduckgo.com'],
+		maplist(geturl,L),
+		writeln('Finished').
 
-```console
-$ tpl samples/test -g "time(test54),halt"
-Job [www.google.com] 200 ==> www.google.com done
-Job [www.bing.com] 200 ==> www.bing.com done
-Job [www.duckduckgo.com] 200 ==> https://duckduckgo.com done
-Finished
-Time elapsed 0.663 secs
+	$ tpl samples/test -g "time(test54),halt"
+	Job [www.google.com] 200 ==> www.google.com done
+	Job [www.bing.com] 200 ==> www.bing.com done
+	Job [www.duckduckgo.com] 200 ==> https://duckduckgo.com done
+	Finished
+	Time elapsed 0.663 secs
 
-% Fetch each URL in list concurrently...
+	% Fetch each URL in list concurrently...
 
-test56 :-
-	L = ['www.google.com','www.bing.com','www.duckduckgo.com'],
-	tasklist(geturl,L),
-	writeln('Finished').
-```
+	test56 :-
+		L = ['www.google.com','www.bing.com','www.duckduckgo.com'],
+		tasklist(geturl,L),
+		writeln('Finished').
+	```
 
-$ tpl samples/test -g "time(test56),halt"
-Job [www.duckduckgo.com] 200 ==> https://duckduckgo.com done
-Job [www.bing.com] 200 ==> www.bing.com done
-Job [www.google.com] 200 ==> www.google.com done
-Finished
-Time elapsed 0.33 secs
+	$ tpl samples/test -g "time(test56),halt"
+	Job [www.duckduckgo.com] 200 ==> https://duckduckgo.com done
+	Job [www.bing.com] 200 ==> www.bing.com done
+	Job [www.google.com] 200 ==> www.google.com done
+	Finished
+	Time elapsed 0.33 secs
 ```
 
 Multiple* high level *prolog* objects can be created and assigned to
