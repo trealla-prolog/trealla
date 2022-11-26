@@ -164,10 +164,6 @@ struct cycle_info_ {
 #include <io.h>
 #endif
 
-#ifdef _WIN32
-extern ssize_t getline(char **lineptr, size_t *n, FILE *stream);
-#endif
-
 #define PROMPT ""
 
 #define DUMP_TERM(s,c,c_ctx,running) {				\
