@@ -64,7 +64,7 @@ static void make_ref(cell *tmp, pl_idx_t off, unsigned var_nbr, pl_idx_t ctx)
 	*tmp = (cell){0};
 	tmp->tag = TAG_VAR;
 	tmp->nbr_cells = 1;
-	tmp->flags = FLAG_REF;
+	tmp->flags = FLAG_VAR_REF;
 	tmp->var_nbr = var_nbr;
 	tmp->var_ctx = ctx;
 }
@@ -2121,7 +2121,7 @@ static bool fn_iso_clause_2(query *q)
 		}
 
 		if (ok) {
-			bool last_match = !is_next_key(q);
+			bool last_match = !has_next_key(q);
 			stash_me(q, cl, last_match);
 			return true;
 		}
@@ -2160,7 +2160,7 @@ bool do_retract(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract
 
 	db_entry *dbe = q->st.curr_dbe;
 	retract_from_db(dbe);
-	bool last_match = (is_retract == DO_RETRACT) && !is_next_key(q);
+	bool last_match = (is_retract == DO_RETRACT) && !has_next_key(q);
 	stash_me(q, &dbe->cl, last_match);
 	return true;
 }
@@ -3653,7 +3653,7 @@ static bool fn_clause_3(query *q)
 			bool last_match;
 
 			if (is_var(p3)) {
-				last_match = !is_next_key(q);
+				last_match = !has_next_key(q);
 			} else {
 				last_match = true;
 			}

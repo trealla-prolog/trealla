@@ -1601,8 +1601,7 @@ static void big_mod(mpz_t *x, mpz_t *y, mpz_t *r)
 {
 	mp_int_div(x, y, NULL, r);
 
-	if ((mp_int_compare_value(r, 0) != 0)
-		&& (mp_int_compare_value(r, 0) < 0) != (mp_int_compare_value(y, 0) < 0)) {
+	if ((mp_int_compare_value(r, 0) < 0) != (mp_int_compare_value(y, 0) < 0)) {
 		mp_int_add(r, y, r);
 	}
 }
@@ -2610,9 +2609,7 @@ static bool fn_divmod_4(query *q)
 
 		big_mod(&p1->val_bigint->ival, &p2->val_bigint->ival, &q->tmp_ival);
 		SET_ACCUM2();
-		bool ok = unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
-		clr_accum(&q->accum);
-		return ok;
+		return unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
 	} else if (is_bigint(p1) && is_smallint(p2)) {
 		mp_int_div_value(&p1->val_bigint->ival, p2->val_int, &q->tmp_ival, NULL);
 		SET_ACCUM2();
@@ -2627,9 +2624,7 @@ static bool fn_divmod_4(query *q)
 		big_mod(&p1->val_bigint->ival, &tmp, &q->tmp_ival);
 		mp_int_clear(&tmp);
 		SET_ACCUM2();
-        bool ok = unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
-		clr_accum(&q->accum);
-		return ok;
+        return unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
 	} else if (is_bigint(p2) && is_smallint(p1)) {
 		mpz_t tmp;
 		mp_int_init_value(&tmp, p1->val_int);
@@ -2644,9 +2639,7 @@ static bool fn_divmod_4(query *q)
 		big_mod(&tmp, &p2->val_bigint->ival, &q->tmp_ival);
 		mp_int_clear(&tmp);
 		SET_ACCUM2();
-		bool ok = unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
-		clr_accum(&q->accum);
-		return ok;
+		return unify(q, p4, p4_ctx, &q->accum, q->st.curr_frame);
 	} else if (is_smallint(p1) && is_smallint(p2)) {
 		if (p2->val_int == 0)
 			return throw_error(q, p2, q->st.curr_frame, "evaluation_error", "zero_divisor");

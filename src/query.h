@@ -16,7 +16,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx_t p1_ctx, cell *p2, pl
 bool do_yield(query *q, int msecs);
 
 bool query_redo(query *q);
-bool is_next_key(query *q);
+bool has_next_key(query *q);
 void next_key(query *q);
 void purge_predicate_dirty_list(query *q, predicate *pr);
 void purge_dirty_list(query *q);
@@ -188,5 +188,36 @@ inline static bool make_cstring(cell *d, const char *s)
 inline static bool make_string(cell *d, const char *s)
 {
 	return make_stringn(d, s, strlen(s));
+}
+
+inline static bool is_a_rule(const cell *c)
+{
+	if (is_structure(c) && (c->val_off == g_neck_s) && (c->arity == 2))
+		return true;
+
+	return false;
+}
+
+inline static cell *get_head(cell *c)
+{
+	if (is_a_rule(c))
+		return c + 1;
+
+	return c;
+}
+
+inline static cell *get_body(cell *c)
+{
+	if (is_a_rule(c)) {
+		cell *h = c + 1;
+		cell *b = h + h->nbr_cells;
+
+		if (is_end(b))
+			return NULL;
+
+		return b;
+	}
+
+	return NULL;
 }
 

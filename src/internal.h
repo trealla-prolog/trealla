@@ -143,9 +143,9 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define is_string(c) (is_cstring(c) && ((c)->flags & FLAG_CSTR_STRING))
 #define is_managed(c) ((c)->flags & FLAG_MANAGED)
 #define is_cstr_blob(c) (is_cstring(c) && ((c)->flags & FLAG_CSTR_BLOB))
+#define is_slice(c) (is_cstr_blob(c) && ((c)->flags & FLAG_CSTR_SLICE))
+#define is_strbuf(c) (is_cstr_blob(c) && !((c)->flags & FLAG_CSTR_SLICE))
 #define is_list(c) (is_iso_list(c) || is_string(c))
-#define is_slice(c) (is_cstr_blob(c) && ((c)->flags & FLAG_SLICE))
-#define is_strbuf(c) (is_cstr_blob(c) && !((c)->flags & FLAG_SLICE))
 #define is_nil(c) (is_interned(c) && !(c)->arity && ((c)->val_off == g_nil_s))
 #define is_quoted(c) ((c)->flags & FLAG_CSTR_QUOTED)
 #define is_fresh(c) ((c)->flags & FLAG_VAR_FRESH)
@@ -153,8 +153,8 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define is_builtin(c) ((c)->flags & FLAG_BUILTIN)
 #define is_evaluable(c) ((c)->flags & FLAG_EVALUABLE)
 #define is_tail_recursive(c) ((c)->flags & FLAG_TAIL_REC)
-#define is_temporary(c) ((c)->flags & FLAG_VAR_TEMPORARY)
-#define is_ref(c) ((c)->flags & FLAG_REF)
+#define is_temporary(c) (is_var(c) && ((c)->flags & FLAG_VAR_TEMPORARY))
+#define is_ref(c) (is_var(c) && ((c)->flags & FLAG_VAR_REF))
 #define is_op(c) (c->flags & 0xE000)
 #define is_callable(c) (is_interned(c) || is_cstring(c))
 #define is_structure(c) (is_interned(c) && (c)->arity)
@@ -247,20 +247,20 @@ enum {
 	FLAG_CSTR_BLOB=1<<0,				// used with TAG_CSTR
 	FLAG_CSTR_STRING=1<<1,				// used with TAG_CSTR
 	FLAG_CSTR_QUOTED=1<<2,				// used with TAG_CSTR
+	FLAG_CSTR_SLICE=1<<3,				// used with TAG_CSTR
 
 	FLAG_VAR_ANON=1<<0,					// used with TAG_VAR
 	FLAG_VAR_FRESH=1<<1,				// used with TAG_VAR
 	FLAG_VAR_TEMPORARY=1<<2,			// used with TAG_VAR
+	FLAG_VAR_REF=1<<3,					// used with TAG_VAR
 
 	FLAG_HANDLE_DLL=1<<0,				// used with FLAG_INT_HANDLE
 	FLAG_HANDLE_FUNC=1<<1,				// used with FLAG_INT_HANDLE
 
 	FLAG_BLOB_SRE=1<<0,					// used with TAG_BLOB
 
-	FLAG_FFI=1<<6,
-	FLAG_REF=1<<7,
-	FLAG_BUILTIN=1<<8,
-	FLAG_SLICE=1<<9,
+	FLAG_FFI=1<<8,
+	FLAG_BUILTIN=1<<9,
 	FLAG_MANAGED=1<<10,					// any ref-counted object
 	FLAG_TAIL_REC=1<<11,
 	FLAG_EVALUABLE=1<<12,
@@ -390,7 +390,7 @@ struct cell_ {
 
 			union {
 				uint32_t val_off;		// used with TAG_VAR & TAG_INTERNED
-				pl_idx_t var_ctx;		// used with TAG_VAR & FLAG_REF
+				pl_idx_t var_ctx;		// used with TAG_VAR & FLAG_VAR_REF
 			};
 		};
 
@@ -517,7 +517,6 @@ struct frame_ {
 	uint32_t initial_slots, actual_slots;
 	uint16_t mid;
 	bool is_last:1;
-	bool is_active:1;
 };
 
 struct prolog_state_ {

@@ -366,7 +366,7 @@ void next_key(query *q)
 		q->st.curr_dbe = q->st.curr_dbe->next;
 }
 
-bool is_next_key(query *q)
+bool has_next_key(query *q)
 {
 	if (q->st.iter) {
 		db_entry *dbe;
@@ -658,7 +658,6 @@ bool try_me(query *q, unsigned nbr_vars)
 {
 	frame *f = GET_FRAME(q->st.fp);
 	f->initial_slots = f->actual_slots = nbr_vars;
-	f->is_active = false;
 	f->base = q->st.sp;
 
 	for (unsigned i = 0; i < nbr_vars; i++) {
@@ -778,7 +777,7 @@ static frame *push_frame(query *q, clause *cl)
 	return f;
 }
 
-static void reuse_frame(query *q, frame* f, clause *cl)
+static void reuse_frame(query *q, frame* f, const clause *cl)
 {
 	const frame *newf = GET_FRAME(q->st.fp);
 	const choice *ch = GET_CURR_CHOICE();
@@ -822,16 +821,13 @@ static void trim_trail(query *q)
 	}
 }
 
-static bool check_slots(const query *q, const frame *f, const clause *cl)
+static bool are_slots_ok(const query *q, const frame *f)
 {
 	for (unsigned i = 0; i < f->actual_slots; i++) {
 		const slot *e = GET_SLOT(f, i);
 		const cell *c = &e->c;
 
-		if (is_indirect(c) && (c->var_ctx != q->st.curr_frame))
-			return false;
-
-		if (is_managed(c) || is_empty(c))
+		if (is_var(c) && (c->var_ctx < q->st.curr_frame))	// Why?
 			return false;
 	}
 
@@ -845,7 +841,6 @@ void share_predicate(query *q, predicate *pr)
 
 	q->st.pr = pr;
 	pr->ref_cnt++;
-	//fprintf(stderr, "*** share [%u] '%s'/%u\n", (unsigned)pr->ref_cnt, C_STR(q, &pr->key), pr->key.arity);
 }
 
 void unshare_predicate(query *q, predicate *pr)
@@ -860,8 +855,6 @@ void unshare_predicate(query *q, predicate *pr)
 		return;
 
 	--pr->ref_cnt;
-
-	//fprintf(stderr, "*** unshare [%u] '%s'/%u\n", (unsigned)pr->ref_cnt, C_STR(q, &pr->key), pr->key.arity);
 
 	if (pr->ref_cnt != 0)
 		return;
@@ -896,8 +889,6 @@ void unshare_predicate(query *q, predicate *pr)
 		cnt++;
 	}
 
-	//fprintf(stderr, "*** add %u to query dirty_list\n", cnt);
-
 	pr->dirty_list = NULL;
 
 	if (pr->idx && !pr->cnt) {
@@ -927,10 +918,6 @@ static void commit_me(query *q)
 	f->mid = q->st.m->id;
 
 	if (!q->st.curr_dbe->owner->is_prebuilt) {
-
-		//printf("*** q->st.m=%s, owner=%s, prev=%s\n",
-		//	q->st.m->name, q->st.curr_dbe->owner->m->name, q->st.prev_m->name);
-
 		if (q->st.m != q->st.curr_dbe->owner->m)
 			q->st.prev_m = q->st.m;
 
@@ -939,20 +926,20 @@ static void commit_me(query *q)
 
 	cell *body = get_body(cl->cells);
 	bool implied_first_cut = q->check_unique && !q->has_vars && cl->is_unique && !q->st.iter;
-	bool last_match = implied_first_cut || cl->is_first_cut || !is_next_key(q);
+	bool last_match = implied_first_cut || cl->is_first_cut || !has_next_key(q);
 	bool recursive = is_tail_recursive(q->st.curr_cell);
+	bool vars_ok = f->actual_slots == cl->nbr_vars;
 	bool choices = any_choices(q, f);
-	bool slots_ok = check_slots(q, f, cl);
-	bool vars_ok = 	f->actual_slots == cl->nbr_vars;
+	bool slots_ok = are_slots_ok(q, f);
 	bool tco;
 
 	if (q->no_tco && (cl->nbr_vars != cl->nbr_temporaries))
 		tco = false;
 	else
-		tco = last_match && recursive && !choices && slots_ok && vars_ok;
+		tco = last_match && recursive && vars_ok && !choices && slots_ok;
 
 #if 0
-	printf("*** retry=%d,tco=%d,q->no_tco=%d,last_match=%d,rec=%d,any_choices=%d,slots_ok=%d,vars_ok=%d,cl->nbr_vars=%u,cl->nbr_temps=%u\n",
+	printf("*** retry=%d,tco=%d,q->no_tco=%d,last_match=%d,recursive=%d,choices=%d,slots_ok=%d,vars_ok=%d,cl->nbr_vars=%u,cl->nbr_temps=%u\n",
 		q->retry, tco, q->no_tco, last_match, recursive, choices, slots_ok, vars_ok, cl->nbr_vars, cl->nbr_temporaries);
 #endif
 
@@ -1200,7 +1187,7 @@ static void chop_frames(query *q, const frame *f)
 		pl_idx_t prev_frame = f->prev_frame;
 
 		while (q->st.fp > (prev_frame+1)) {
-			if (tmpf->is_active || any_choices(q, tmpf))
+			if (any_choices(q, tmpf))
 				break;
 
 			q->tot_srecovs += q->st.sp - tmpf->base;
@@ -1334,7 +1321,7 @@ void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 		v_attrs = is_empty(&ve->c) ? ve->c.attrs : NULL;
 	}
 
-	if ((q->cp || c_attrs) && (c_ctx < q->st.fp))
+	if (c_attrs || (q->cp && (c_ctx < q->st.fp)))
 		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
 
 	// If 'c' is an attvar and either 'v' is an attvar or nonvar then run the hook
@@ -1354,27 +1341,16 @@ void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 	}
 
 	if (is_structure(v)) {
-		if ((c_ctx != q->st.curr_frame) /*&& (v_ctx == q->st.curr_frame)*/)
-			q->no_tco = true;
-
+		q->no_tco = true;
 		make_indirect(&e->c, v, v_ctx);
 	} else if (is_var(v)) {
 		e->c = *v;
-		e->c.flags |= FLAG_REF;
+		e->c.flags |= FLAG_VAR_REF;
 		e->c.var_ctx = v_ctx;
 	} else {
 		share_cell(v);
 		e->c = *v;
 	}
-
-	if (is_structure(v)) {
-		frame *vf = GET_FRAME(v_ctx);
-		vf->is_active = true;
-
-		if (c_ctx >= q->st.curr_frame)
-			f->is_active = true;
-	} else if (!is_temporary(c))
-		f->is_active = true;
 
 	if (q->flags.occurs_check != OCCURS_CHECK_FALSE)
 		e->mark = true;
@@ -1385,28 +1361,18 @@ void reset_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
 	frame *f = GET_FRAME(c_ctx);
 	slot *e = GET_SLOT(f, c->var_nbr);
 
-	if (q->cp && (c_ctx < q->st.fp))
-		add_trail(q, c_ctx, c->var_nbr, NULL, 0);
+	add_trail(q, c_ctx, c->var_nbr, NULL, 0);
 
 	if (is_structure(v)) {
 		make_indirect(&e->c, v, v_ctx);
 	} else if (is_var(v)) {
 		e->c = *v;
-		e->c.flags |= FLAG_REF;
+		e->c.flags |= FLAG_VAR_REF;
 		e->c.var_ctx = v_ctx;
 	} else {
 		share_cell(v);
 		e->c = *v;
 	}
-
-	if (is_structure(v)) {
-		frame *vf = GET_FRAME(v_ctx);
-		vf->is_active = true;
-
-		if (c_ctx >= q->st.curr_frame)
-			f->is_active = true;
-	} else if (!is_temporary(c))
-		f->is_active = true;
 }
 
 // Match HEAD :- BODY.
