@@ -12,10 +12,6 @@
 #include "history.h"
 
 #ifdef _WIN32
-extern ssize_t getline(char **lineptr, size_t *n, FILE *stream);
-#endif
-
-#ifdef _WIN32
 #include <windows.h>
 #include <io.h>
 #define snprintf _snprintf

@@ -8,6 +8,7 @@
 #ifdef USE_ISOCLINE
 #include "isocline/include/isocline.h"
 #endif
+
 #if !defined(USE_ISOCLINE) && !defined(__wasi__)
 #include <readline/readline.h>
 #include <readline/history.h>

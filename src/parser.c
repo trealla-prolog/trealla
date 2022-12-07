@@ -6,6 +6,7 @@
 #include <time.h>
 
 #include "heap.h"
+#include "history.h"
 #include "library.h"
 #include "module.h"
 #include "parser.h"
@@ -55,31 +56,29 @@ cell *list_head(cell *l, cell *tmp)
 		return l + 1;
 
 	const char *src = is_slice(l) ? l->val_str : is_strbuf(l) ? (char*)l->val_strb->cstr + l->strb_off : (char*)l->val_chr + l->val_off;
-	size_t len = len_char_utf8(src);
+	size_t char_len = len_char_utf8(src);
 	tmp->tag = TAG_CSTR;
 	tmp->nbr_cells = 1;
 	tmp->flags = 0;
 	tmp->arity = 0;
-	memcpy(tmp->val_chr, src, len);
-	tmp->val_chr[len] = '\0';
-	tmp->chr_len = len;
+	memcpy(tmp->val_chr, src, char_len);
+	tmp->val_chr[char_len] = '\0';
+	tmp->chr_len = char_len;
 	return tmp;
 }
 
 cell *list_tail(cell *l, cell *tmp)
 {
-	if (!l) return NULL;
-
 	if (!is_string(l)) {
 		cell *h = l + 1;
 		return h + h->nbr_cells;
 	}
 
 	const char *src = is_slice(l) ? l->val_str : is_strbuf(l) ? (char*)l->val_strb->cstr + l->strb_off : (char*)l->val_chr;
+	size_t char_len = len_char_utf8(src);
 	size_t str_len = is_slice(l) ? (size_t)l->str_len : is_strbuf(l) ? (size_t)l->val_strb->len - l->strb_off : (unsigned)l->chr_len;
-	size_t len = len_char_utf8(src);
 
-	if (str_len == len) {
+	if (str_len == char_len) {
 		tmp->tag = TAG_INTERNED;
 		tmp->nbr_cells = 1;
 		tmp->arity = 0;
@@ -89,39 +88,24 @@ cell *list_tail(cell *l, cell *tmp)
 	}
 
 	if (is_slice(l)) {
-		copy_cells(tmp, l, 1);
-		tmp->val_str = l->val_str + len;
-		tmp->str_len = l->str_len - len;
+		*tmp = *l;
+		tmp->val_str = l->val_str + char_len;
+		tmp->str_len = l->str_len - char_len;
 		return tmp;
 	}
 
 	if (is_strbuf(l)) {
-		copy_cells(tmp, l, 1);
-		tmp->strb_off = l->strb_off + len;
-		tmp->strb_len = l->strb_len - len;
+		*tmp = *l;
+		tmp->strb_off = l->strb_off + char_len;
+		tmp->strb_len = l->strb_len - char_len;
 		return tmp;
 	}
 
-	copy_cells(tmp, l, 1);
-	memcpy(tmp->val_chr, l->val_chr + len, l->chr_len - len);
-	tmp->val_chr[l->chr_len - len] = '\0';
-	tmp->chr_len = l->chr_len - len;
+	*tmp = *l;
+	memcpy(tmp->val_chr, l->val_chr + char_len, l->chr_len - char_len);
+	tmp->val_chr[l->chr_len - char_len] = '\0';
+	tmp->chr_len = l->chr_len - char_len;
 	return tmp;
-}
-
-cell *get_body(cell *c)
-{
-	if (is_a_rule(c)) {
-		c = c + 1;
-		c += c->nbr_cells;
-
-		if (is_end(c))
-			return NULL;
-
-		return c;
-	}
-
-	return NULL;
 }
 
 cell *get_logical_body(cell *c)

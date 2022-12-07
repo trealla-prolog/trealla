@@ -188,7 +188,7 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 		tmp->flags = FLAG_VAR_FRESH;
 
 		if (from && (p1->var_nbr == from->var_nbr) && (p1_ctx == from_ctx)) {
-			tmp->flags |= FLAG_REF;
+			tmp->flags |= FLAG_VAR_REF;
 			tmp->val_off = to->val_off;
 			tmp->var_nbr = to->var_nbr;
 			tmp->var_ctx = to_ctx;
@@ -471,7 +471,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 	copy_cells(tmp, p1, 1);
 
 	if (is_var(tmp) && !is_ref(tmp)) {
-		tmp->flags |= FLAG_REF;
+		tmp->flags |= FLAG_VAR_REF;
 		tmp->var_ctx = p1_ctx;
 	}
 
@@ -612,7 +612,7 @@ cell *append_to_tmp(query *q, cell *p1)
 		if (!is_var(src) || is_ref(src))
 			continue;
 
-		dst->flags |= FLAG_REF;
+		dst->flags |= FLAG_VAR_REF;
 		dst->var_ctx = q->st.curr_frame;
 	}
 
@@ -647,7 +647,7 @@ cell *clone_to_heap(query *q, bool prefix, cell *p1, unsigned extras)
 		if (!is_var(src) || is_ref(src))
 			continue;
 
-		dst->flags |= FLAG_REF;
+		dst->flags |= FLAG_VAR_REF;
 		dst->var_ctx = q->st.curr_frame;
 	}
 

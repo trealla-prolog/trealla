@@ -1487,7 +1487,7 @@ static bool fn_iso_open_4(query *q)
 		void *addr = mmap(0, len, prot, MAP_PRIVATE, fd, offset);
 		cell tmp = {0};
 		tmp.tag = TAG_CSTR;
-		tmp.flags = FLAG_CSTR_BLOB | FLAG_CSTR_STRING | FLAG_SLICE;
+		tmp.flags = FLAG_CSTR_BLOB | FLAG_CSTR_STRING | FLAG_CSTR_SLICE;
 		tmp.nbr_cells = 1;
 		tmp.arity = 2;
 		tmp.val_str = addr;

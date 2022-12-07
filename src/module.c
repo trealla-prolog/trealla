@@ -6,6 +6,7 @@
 
 #include "module.h"
 #include "parser.h"
+#include "history.h"
 #include "prolog.h"
 #include "query.h"
 #include "utf8.h"
