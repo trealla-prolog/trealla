@@ -89,9 +89,6 @@ bool fn_iso_invoke_2(query *q)
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,callable);
 
-	if (is_string(p2))
-		return throw_error(q, p2, p2_ctx, "type_error", "callable");
-
 	module *m = find_module(q->pl, C_STR(q, p1));
 
 	if (!m)
