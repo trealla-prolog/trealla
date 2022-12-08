@@ -156,7 +156,7 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define is_temporary(c) (is_var(c) && ((c)->flags & FLAG_VAR_TEMPORARY))
 #define is_ref(c) (is_var(c) && ((c)->flags & FLAG_VAR_REF))
 #define is_op(c) (c->flags & 0xE000)
-#define is_callable(c) (is_interned(c) || is_cstring(c))
+#define is_callable(c) (is_interned(c) || (is_cstring(c) && !is_string(c)))
 #define is_structure(c) (is_interned(c) && (c)->arity)
 #define is_compound(c) (is_structure(c) || is_string(c))
 #define is_number(c) (is_integer(c) || is_float(c))
