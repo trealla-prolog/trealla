@@ -188,7 +188,7 @@ int main(int ac, char *av[], char * envp[])
 	//bool did_load = false;
 	int i, do_goal = 0, do_lib = 0;
 	int version = 0, daemon = 0;
-	bool ns = false, no_res = false;
+	bool ns = false, no_res = false, quiet = false;
 #ifdef __wasi__
     if (!initialized) init_func();
 	g_init(); // "lazy loading" the environment
@@ -216,6 +216,7 @@ int main(int ac, char *av[], char * envp[])
 		} else if (!strcmp(av[i], "-v") || !strcmp(av[i], "--version")) {
 			version = 1;
 		} else if (!strcmp(av[i], "-q") || !strcmp(av[i], "--quiet")) {
+			quiet = true;
 			set_quiet(pl);
 		} else if (!strcmp(av[i], "-O0") || !strcmp(av[i], "--noopt"))
 			set_opt(pl, 0);
@@ -317,7 +318,7 @@ int main(int ac, char *av[], char * envp[])
 		return halt_code;
 	}
 
-	if (version)
+	if (version || !quiet)
 		printf("Trealla Prolog (c) Infradig 2020-2022, %s\n", g_version);
 
 	if (version == 2) {

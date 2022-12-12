@@ -215,7 +215,6 @@ bool check_frame(query *q)
 				return false;
 			}
 
-			memset(q->frames+q->frames_size, 0, sizeof(frame) * (new_framessize - q->frames_size));
 			q->frames_size = new_framessize;
 		}
 
@@ -249,7 +248,6 @@ bool check_slot(query *q, unsigned cnt)
 				return false;
 			}
 
-			memset(q->slots+q->slots_size, 0, sizeof(slot) * (new_slotssize - q->slots_size));
 			q->slots_size = new_slotssize;
 		}
 
