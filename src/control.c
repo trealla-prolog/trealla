@@ -170,6 +170,8 @@ bool fn_iso_call_n(query *q)
 		tmp2->flags &= ~FLAG_BUILTIN;
 	} else if ((tmp2->fn_ptr = get_builtin_term(q->st.m, tmp2, &found, NULL)), found) {
 		tmp2->flags |= FLAG_BUILTIN;
+	} else {
+		tmp2->flags &= ~FLAG_BUILTIN;
 	}
 
 	if ((args > 1) && arity <= 2) {
