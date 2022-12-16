@@ -6925,8 +6925,9 @@ static bool fn_use_module_2(query *q)
 		if (is_interned(head) && (head->arity == 2) && (head->val_off == g_as_s)) {
 			cell *lhs = head + 1;
 			cell *rhs = lhs + lhs->nbr_cells;
-			predicate *pr = find_predicate(q->st.m, lhs);
 			cell tmp = *(lhs+1);
+			tmp.arity = get_smalluint(lhs+2);
+			predicate *pr = find_predicate(q->st.m->used[q->st.m->idx_used-1], &tmp);
 			tmp.val_off = rhs->val_off;
 			predicate *pr2 = create_predicate(q->st.m, &tmp);
 			pr2->alias = pr;

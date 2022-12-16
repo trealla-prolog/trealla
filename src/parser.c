@@ -741,8 +741,9 @@ static void directives(parser *p, cell *d)
 						if (is_interned(head) && (head->arity == 2) && (head->val_off == g_as_s)) {
 							cell *lhs = head + 1;
 							cell *rhs = lhs + lhs->nbr_cells;
-							predicate *pr = find_predicate(m, lhs);
 							cell tmp = *(lhs+1);
+							tmp.arity = get_smalluint(lhs+2);
+							predicate *pr = find_predicate(m, lhs);
 							tmp.val_off = rhs->val_off;
 							predicate *pr2 = create_predicate(p->m, &tmp);
 							pr2->alias = pr;
@@ -795,8 +796,9 @@ static void directives(parser *p, cell *d)
 						if (is_interned(head) && (head->arity == 2) && (head->val_off == g_as_s)) {
 							cell *lhs = head + 1;
 							cell *rhs = lhs + lhs->nbr_cells;
-							predicate *pr = find_predicate(m, lhs);
 							cell tmp = *(lhs+1);
+							tmp.arity = get_smalluint(lhs+2);
+							predicate *pr = find_predicate(m, lhs);
 							tmp.val_off = rhs->val_off;
 							predicate *pr2 = create_predicate(p->m, &tmp);
 							pr2->alias = pr;
