@@ -1583,6 +1583,11 @@ static bool match_head(query *q)
 				return false;
 			}
 
+			if (pr->alias) {
+				c->val_off = pr->alias->key.val_off;
+				pr = pr->alias;
+			}
+
 			c->match = pr;
 		}
 
