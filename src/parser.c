@@ -731,6 +731,27 @@ static void directives(parser *p, cell *d)
 				if (m != p->m)
 					p->m->used[p->m->idx_used++] = m;
 
+				if (!strcmp(dirname, "use_module") && (c->arity == 2)) {
+					cell *p2 = c + 2;
+					LIST_HANDLER(p2);
+
+					while (is_iso_list(p2)) {
+						cell *head = LIST_HEAD(p2);
+
+						if (is_interned(head) && (head->arity == 2) && (head->val_off == g_as_s)) {
+							cell *lhs = head + 1;
+							cell *rhs = lhs + lhs->nbr_cells;
+							predicate *pr = find_predicate(m, lhs);
+							cell tmp = *(lhs+1);
+							tmp.val_off = rhs->val_off;
+							predicate *pr2 = create_predicate(p->m, &tmp);
+							pr2->alias = pr;
+						}
+
+						p2 = LIST_TAIL(p2);
+					}
+				}
+
 				return;
 			}
 

@@ -443,7 +443,7 @@ struct db_entry_ {
 };
 
 struct predicate_ {
-	predicate *prev, *next;
+	predicate *prev, *next, *alias;
 	db_entry *head, *tail;
 	module *m;
 	map *idx, *idx2;

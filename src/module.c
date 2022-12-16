@@ -541,7 +541,7 @@ predicate *find_predicate(module *m, cell *c)
 			continue;
 
 		map_done(iter);
-		return pr;
+		return pr->alias ? pr->alias : pr;
 	}
 
 	map_done(iter);

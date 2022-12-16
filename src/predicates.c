@@ -6914,7 +6914,28 @@ static bool fn_use_module_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,list_or_nil);
-	return fn_use_module_1(q);
+	LIST_HANDLER(p2);
+
+	if (!fn_use_module_1(q))
+		return false;
+
+	while (is_iso_list(p2)) {
+		cell *head = LIST_HEAD(p2);
+
+		if (is_interned(head) && (head->arity == 2) && (head->val_off == g_as_s)) {
+			cell *lhs = head + 1;
+			cell *rhs = lhs + lhs->nbr_cells;
+			predicate *pr = find_predicate(q->st.m, lhs);
+			cell tmp = *(lhs+1);
+			tmp.val_off = rhs->val_off;
+			predicate *pr2 = create_predicate(q->st.m, &tmp);
+			pr2->alias = pr;
+		}
+
+		p2 = LIST_TAIL(p2);
+	}
+
+	return true;
 }
 
 static bool fn_attribute_3(query *q)
