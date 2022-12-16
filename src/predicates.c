@@ -6925,6 +6925,11 @@ static bool fn_use_module_2(query *q)
 		if (is_interned(head) && (head->arity == 2) && (head->val_off == g_as_s)) {
 			cell *lhs = head + 1;
 			cell *rhs = lhs + lhs->nbr_cells;
+
+			if (!is_compound(lhs) || (lhs->arity != 2)
+				|| (lhs->val_off != g_slash_s) || !is_atom(rhs))
+				return false;
+
 			cell tmp = *(lhs+1);
 			tmp.arity = get_smalluint(lhs+2);
 			predicate *pr = find_predicate(q->st.m->used[q->st.m->idx_used-1], &tmp);
