@@ -2701,6 +2701,9 @@ static bool fn_iso_current_predicate_1(query *q)
 {
 	GET_FIRST_ARG(p_pi,any);
 
+	if (!CMP_STR_TO_CSTR(q, p_pi, ":"))
+		p_pi++;
+
 	if (is_var(p_pi)) {
 		cell tmp1, tmp2;
 		cell *p1 = &tmp1, *p2 = &tmp2;
@@ -6803,111 +6806,7 @@ static bool fn_use_module_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	if (!is_atom(p1) && !is_structure(p1)) return false;
-	const char *name = C_STR(q, p1);
-	char dstbuf[1024*4];
-
-	if (is_structure(p1) && !strcmp(name, "library")) {
-		p1 = p1 + 1;
-		if (!is_interned(p1)) return false;
-		name = C_STR(q, p1);
-		module *m;
-
-		if ((m = find_module(q->pl, name)) != NULL) {
-			if (m != q->st.m)
-				q->st.m->used[q->st.m->idx_used++] = m;
-
-			return true;
-		}
-
-		if (!strcmp(name, "between")
-		    || !strcmp(name, "samsort")
-		    || !strcmp(name, "terms")
-		    || !strcmp(name, "types")
-			|| !strcmp(name, "iso_ext")
-		    || !strcmp(name, "files"))
-			return true;
-
-		for (library *lib = g_libs; lib->name; lib++) {
-			if (strcmp(lib->name, name))
-				continue;
-
-			char *src = malloc(*lib->len+1);
-			check_heap_error(src);
-			memcpy(src, lib->start, *lib->len);
-			src[*lib->len] = '\0';
-			SB(s1);
-			SB_sprintf(s1, "library%c%s", PATH_SEP_CHAR, lib->name);
-			m = load_text(q->st.m, src, SB_cstr(s1));
-			SB_free(s1);
-			free(src);
-
-			if (m != q->st.m)
-				q->st.m->used[q->st.m->idx_used++] = m;
-
-			return true;
-		}
-
-		snprintf(dstbuf, sizeof(dstbuf), "%s%c", g_tpl_lib, PATH_SEP_CHAR);
-		char *dst = dstbuf + strlen(dstbuf);
-		pl_idx_t ctx = 0;
-		print_term_to_buf(q, dst, sizeof(dstbuf)-strlen(g_tpl_lib), p1, ctx, 1, 0, 0);
-		name = dstbuf;
-	}
-
-	if (true) {
-		module *m;
-
-		if ((m = find_module(q->pl, name)) != NULL) {
-			if (m != q->st.m)
-				q->st.m->used[q->st.m->idx_used++] = m;
-
-			return true;
-		}
-
-		if (!strcmp(name, "between")
-		    || !strcmp(name, "samsort")
-		    || !strcmp(name, "terms")
-		    || !strcmp(name, "types")
-			|| !strcmp(name, "iso_ext")
-		    || !strcmp(name, "files"))
-			return true;
-
-		for (library *lib = g_libs; lib->name; lib++) {
-			if (strcmp(lib->name, name))
-				continue;
-
-			char *src = malloc(*lib->len+1);
-			check_heap_error(src);
-			memcpy(src, lib->start, *lib->len);
-			src[*lib->len] = '\0';
-			SB(s1);
-			SB_sprintf(s1, "library/%s", lib->name);
-			m = load_text(q->st.m, src, SB_cstr(s1));
-			SB_free(s1);
-			free(src);
-
-			if (m != q->st.m)
-				q->st.m->used[q->st.m->idx_used++] = m;
-
-			return true;
-		}
-	}
-
-	char *filename = relative_to(q->st.m->filename, name);
-	module *m;
-
-	if (!(m = load_file(q->st.m, filename, false))) {
-		fprintf(stdout, "Error: module file not found: %s\n", filename);
-		free(filename);
-		return false;
-	}
-
-	free(filename);
-
-	if (m != q->st.m)
-		q->st.m->used[q->st.m->idx_used++] = m;
-
-	return true;
+	return do_use_module_1(q->st.m, q->st.curr_cell);
 }
 
 static bool fn_use_module_2(query *q)
@@ -6916,32 +6815,10 @@ static bool fn_use_module_2(query *q)
 	GET_NEXT_ARG(p2,list_or_nil);
 	LIST_HANDLER(p2);
 
-	if (!fn_use_module_1(q))
+	if (!do_use_module_1(q->st.m, q->st.curr_cell))
 		return false;
 
-	while (is_iso_list(p2)) {
-		cell *head = LIST_HEAD(p2);
-
-		if (is_interned(head) && (head->arity == 2) && (head->val_off == g_as_s)) {
-			cell *lhs = head + 1;
-			cell *rhs = lhs + lhs->nbr_cells;
-
-			if (!is_compound(lhs) || (lhs->arity != 2)
-				|| (lhs->val_off != g_slash_s) || !is_atom(rhs))
-				return false;
-
-			cell tmp = *(lhs+1);
-			tmp.arity = get_smalluint(lhs+2);
-			predicate *pr = find_predicate(q->st.m->used[q->st.m->idx_used-1], &tmp);
-			tmp.val_off = rhs->val_off;
-			predicate *pr2 = create_predicate(q->st.m, &tmp);
-			pr2->alias = pr;
-		}
-
-		p2 = LIST_TAIL(p2);
-	}
-
-	return true;
+	return do_use_module_2(q->st.m, q->st.curr_cell);
 }
 
 static bool fn_attribute_3(query *q)

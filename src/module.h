@@ -28,6 +28,9 @@ void xref_db(module *m);
 void just_in_time_rebuild(predicate *pr);
 const char *get_loaded(const module *m, const char *filename);
 
+bool do_use_module_1(module *curr_m, cell *p);
+bool do_use_module_2(module *curr_m, cell *p);
+
 db_entry *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting);
 db_entry *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting);
 db_entry *find_in_db(module *m, uuid *ref);
