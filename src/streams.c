@@ -4545,7 +4545,7 @@ static bool do_consult(query *q, cell *p1, pl_idx_t p1_ctx)
 		char *src = DUP_STR(q, p1);
 		char *filename = relative_to(q->st.m->filename, src);
 		convert_path(filename);
-		//unload_file(q->st.m, filename);
+		unload_file(q->st.m, filename);
 		free(src);
 
 		if (!load_file(q->st.m, filename, false)) {
