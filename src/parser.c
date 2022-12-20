@@ -463,7 +463,6 @@ bool do_use_module_1(module *curr_m, cell *p)
 
 		snprintf(dstbuf, sizeof(dstbuf), "%s%c%s", g_tpl_lib, PATH_SEP_CHAR, C_STR(curr_m, p1));
 		name = dstbuf;
-		return true;
 	}
 
 	if (true) {
