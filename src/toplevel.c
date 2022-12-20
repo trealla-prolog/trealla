@@ -222,9 +222,8 @@ static int check_duplicate_result(query *q, int nbr, cell *c, pl_idx_t c_ctx)
 	const item *ptr = g_items;
 
 	while (ptr) {
-		if (!compare(q, c, c_ctx, ptr->c, ptr->c_ctx)) {
+		if (!compare(q, c, c_ctx, ptr->c, ptr->c_ctx))
 			return ptr->nbr;
-		}
 
 		ptr = ptr->next;
 	}
