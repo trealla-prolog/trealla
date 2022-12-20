@@ -82,6 +82,7 @@ LIBOBJECTS +=  \
 	library/dcgs.o \
 	library/dict.o \
 	library/dif.o \
+	library/error.o \
 	library/format.o \
 	library/freeze.o \
 	library/http.o \
