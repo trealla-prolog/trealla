@@ -125,7 +125,7 @@ bool pl_eval(prolog *pl, const char *s)
 	if (!pl->p) return false;
 	pl->p->command = true;
 	bool ok = run(pl->p, s, true);
-	pl->curr_m = pl->p->m;
+	if (get_status(pl)) pl->curr_m = pl->p->m;
 	destroy_parser(pl->p);
 	pl->p = NULL;
 	return ok;
@@ -142,7 +142,7 @@ bool pl_query(prolog *pl, const char *s, pl_sub_query **subq)
 	pl->is_query = true;
 	bool ok = run(pl->p, s, true);
 	*subq = (pl_sub_query*)pl->curr_query;
-	pl->curr_m = pl->p->m;
+	if (get_status(pl)) pl->curr_m = pl->p->m;
 	return ok;
 }
 
