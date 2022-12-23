@@ -6421,12 +6421,13 @@ static bool fn_map_create_2(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	int n = new_stream(q->pl);
+	GET_NEXT_ARG(p4,list_or_nil);
 
 	if (n < 0)
 		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
 
-	GET_NEXT_ARG(p4,list_or_nil);
 	stream *str = &q->pl->streams[n];
+	if (!str->alias) str->alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	LIST_HANDLER(p4);
 
 	while (is_list(p4)) {
