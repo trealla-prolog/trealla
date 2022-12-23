@@ -523,7 +523,7 @@ communication...
 For example...
 
 ```
-tpl -g "use_module(library(apply)),popen('ps -a',read,S,[]),getlines(S,Ls),close(S),maplist(print,Ls),halt"
+tpl -g "use_module(library(apply)),popen('ps -a',read,S,[]),getlines(S,Ls),close(S),maplist(writeln,Ls),halt"
 	PID   TTY      TIME     CMD
 	2806  tty2     00:00:00 gnome-session-b
 	31645 pts/0    00:00:00 tpl
