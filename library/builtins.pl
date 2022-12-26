@@ -393,6 +393,8 @@ time_out(Goal, Time, Result) :-
 :- meta_predicate(time_out(0,+,-)).
 :- help(time_out(+callable,+millisecs,?atom), [iso(false)]).
 
+print(T) :- bwrite(user_output, T), nl.
+print(S, T) :- bwrite(S, T), nl.
 writeln(T) :- write(T), nl.
 format(F) :- format(F, []).
 open(F, M, S) :- open(F, M, S, []).
