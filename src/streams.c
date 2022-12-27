@@ -518,13 +518,13 @@ static void add_stream_properties(query *q, int n)
 
 	while (map_next(iter, NULL)) {
 		const char *alias = map_key(iter);
-		formatted(tmpbuf2, sizeof(tmpbuf2), alias, strlen(alias), false);
+		formatted(tmpbuf2, sizeof(tmpbuf2), alias, strlen(alias), false, false);
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, alias('%s')).\n", n, tmpbuf2);
 	}
 
 	map_done(iter);
 
-	formatted(tmpbuf2, sizeof(tmpbuf2), str->filename, strlen(str->filename), false);
+	formatted(tmpbuf2, sizeof(tmpbuf2), str->filename, strlen(str->filename), false, false);
 	dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, file_name('%s')).\n", n, tmpbuf2);
 	dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, mode(%s)).\n", n, str->mode);
 	dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, type(%s)).\n", n, str->binary ? "binary" : "text");
@@ -2449,6 +2449,18 @@ bool parse_write_params(query *q, cell *c, pl_idx_t c_ctx, cell **vnames, pl_idx
 		}
 
 		q->nl = !CMP_STR_TO_CSTR(q, c1, "true");
+	} else if (!CMP_STR_TO_CSTR(q, c, "json")) {
+		if (is_var(c1)) {
+			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
+			return false;
+		}
+
+		if (!is_interned(c1) || (CMP_STR_TO_CSTR(q, c1, "true") && CMP_STR_TO_CSTR(q, c1, "false"))) {
+			throw_error(q, c, c_ctx, "domain_error", "write_option");
+			return false;
+		}
+
+		q->json = !CMP_STR_TO_CSTR(q, c1, "true");
 	} else if (!CMP_STR_TO_CSTR(q, c, "quoted")) {
 		if (is_var(c1)) {
 			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");

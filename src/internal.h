@@ -680,6 +680,7 @@ struct query_ {
 	bool eval:1;
 	bool yielded:1;
 	bool is_task:1;
+	bool json:1;
 	bool nl:1;
 	bool fullstop:1;
 	bool ignore_ops:1;
@@ -895,7 +896,7 @@ cell *list_tail(cell *l, cell *tmp);
 
 enum clause_type { DO_CLAUSE, DO_RETRACT, DO_RETRACTALL };
 
-size_t formatted(char *dst, size_t dstlen, const char *src, int srclen, bool dq);
+size_t formatted(char *dst, size_t dstlen, const char *src, int srclen, bool dq, bool json);
 char *slicedup(const char *s, size_t n);
 int slicecmp(const char *s1, size_t len1, const char *s2, size_t len2);
 uint64_t get_time_in_usec(void);
