@@ -1747,6 +1747,9 @@ static bool parse_read_params(query *q, stream *str, cell *c, pl_idx_t c_ctx, ce
 	if (!CMP_STR_TO_CSTR(q, c, "character_escapes")) {
 		if (is_interned(c1))
 			p->flags.character_escapes = !CMP_STR_TO_CSTR(q, c1, "true");
+	} else if (!CMP_STR_TO_CSTR(q, c, "json")) {
+		if (is_interned(c1))
+			p->flags.json = !CMP_STR_TO_CSTR(q, c1, "true");
 	} else if (!CMP_STR_TO_CSTR(q, c, "double_quotes")) {
 		if (is_interned(c1)) {
 			if (!CMP_STR_TO_CSTR(q, c1, "atom")) {

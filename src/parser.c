@@ -3026,6 +3026,9 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		if ((ch == '.') && iswspace(ch_next))
 			break;
 
+		if (p->flags.json && (ch_next == '-'))
+			break;
+
 		ch = ch_next;
 
 		if (((ch < 256) && strchr(g_solo, ch)) || iswspace(ch) || iswalnum(ch) || (ch == '_'))
