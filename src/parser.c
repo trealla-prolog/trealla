@@ -2804,7 +2804,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		} else if ((p->quote_char == '"') && p->flags.double_quote_chars)
 			p->string = true;
 
-		if (p->string && (*src == p->quote_char) && (*src == '"')) {
+		if (p->string && !p->flags.json && (*src == p->quote_char) && (*src == '"')) {
 			SB_strcpy(p->token, "[]");
 			src++;
 			p->was_string = true;
