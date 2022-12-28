@@ -210,21 +210,21 @@ size_t formatted(char *dst, size_t dstlen, const char *src, int srclen, bool dq,
 			case '"':
 			case '\\':
 			case '/':
-			case 'b':
-			case 'n':
-			case 'f':
-			case 'r':
-			case 't':
+			case '\b':
+			case '\n':
+			case '\f':
+			case '\r':
+			case '\t':
 				if (dstlen) {
 					*dst++ = ch;
 				}
 				break;
 			default: {
-				size_t n = snprintf(dst, dstlen, "%04x", ch);
+				size_t n = snprintf(dst, dstlen, "u%04x", ch);
 				len += n;
 				if (dstlen) dst += n;
 
-				len += 1;
+				len += 2;
 			}
 		}
 		} else if (ch == '\\') {
