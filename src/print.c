@@ -173,7 +173,7 @@ size_t formatted(char *dst, size_t dstlen, const char *src, int srclen, bool dq,
 			}
 
 			len += 2;
-		} else if (!dq && (ch == '\'')) {
+		} else if (!json && !dq && (ch == '\'')) {
 			if (dstlen) {
 				*dst++ = '\'';
 				*dst++ = ch;
