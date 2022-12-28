@@ -2136,17 +2136,17 @@ static int get_escape(const char **_src, bool *error, bool number)
 #endif
 		)
 		&& !number) {
-		int unicode = 0;
+		bool unicode = false;
 
 		if (ch == 'x')
 			ch = get_hex(&src, UINT_MAX, error);
 #if ALLOW_UNICODE_ESCAPE
 		else if (ch == 'U') {
 			ch = get_hex(&src, 8, error);
-			unicode = 1;
+			unicode = true;
 		} else if (ch == 'u') {
 			ch = get_hex(&src, 4, error);
-			unicode = 1;
+			unicode = true;
 		}
 #endif
 		else {
@@ -2810,7 +2810,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		} else if ((p->quote_char == '"') && p->flags.double_quote_chars)
 			p->string = true;
 
-		if (p->string && (*src == p->quote_char) && (*src == '"')) {
+		if (p->string && !p->flags.json && (*src == p->quote_char) && (*src == '"')) {
 			SB_strcpy(p->token, "[]");
 			src++;
 			p->was_string = true;
@@ -3030,6 +3030,9 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 			break;
 
 		if ((ch == '.') && iswspace(ch_next))
+			break;
+
+		if (p->flags.json && (ch_next == '-'))
 			break;
 
 		ch = ch_next;

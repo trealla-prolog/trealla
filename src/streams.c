@@ -518,13 +518,13 @@ static void add_stream_properties(query *q, int n)
 
 	while (map_next(iter, NULL)) {
 		const char *alias = map_key(iter);
-		formatted(tmpbuf2, sizeof(tmpbuf2), alias, strlen(alias), false);
+		formatted(tmpbuf2, sizeof(tmpbuf2), alias, strlen(alias), false, false);
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, alias('%s')).\n", n, tmpbuf2);
 	}
 
 	map_done(iter);
 
-	formatted(tmpbuf2, sizeof(tmpbuf2), str->filename, strlen(str->filename), false);
+	formatted(tmpbuf2, sizeof(tmpbuf2), str->filename, strlen(str->filename), false, false);
 	dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, file_name('%s')).\n", n, tmpbuf2);
 	dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, mode(%s)).\n", n, str->mode);
 	dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, type(%s)).\n", n, str->binary ? "binary" : "text");
@@ -1747,6 +1747,9 @@ static bool parse_read_params(query *q, stream *str, cell *c, pl_idx_t c_ctx, ce
 	if (!CMP_STR_TO_CSTR(q, c, "character_escapes")) {
 		if (is_interned(c1))
 			p->flags.character_escapes = !CMP_STR_TO_CSTR(q, c1, "true");
+	} else if (!CMP_STR_TO_CSTR(q, c, "json")) {
+		if (is_interned(c1))
+			p->flags.json = !CMP_STR_TO_CSTR(q, c1, "true");
 	} else if (!CMP_STR_TO_CSTR(q, c, "double_quotes")) {
 		if (is_interned(c1)) {
 			if (!CMP_STR_TO_CSTR(q, c1, "atom")) {
@@ -2449,6 +2452,18 @@ bool parse_write_params(query *q, cell *c, pl_idx_t c_ctx, cell **vnames, pl_idx
 		}
 
 		q->nl = !CMP_STR_TO_CSTR(q, c1, "true");
+	} else if (!CMP_STR_TO_CSTR(q, c, "json")) {
+		if (is_var(c1)) {
+			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
+			return false;
+		}
+
+		if (!is_interned(c1) || (CMP_STR_TO_CSTR(q, c1, "true") && CMP_STR_TO_CSTR(q, c1, "false"))) {
+			throw_error(q, c, c_ctx, "domain_error", "write_option");
+			return false;
+		}
+
+		q->json = !CMP_STR_TO_CSTR(q, c1, "true");
 	} else if (!CMP_STR_TO_CSTR(q, c, "quoted")) {
 		if (is_var(c1)) {
 			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
@@ -6443,12 +6458,13 @@ static bool fn_map_create_2(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	int n = new_stream(q->pl);
+	GET_NEXT_ARG(p4,list_or_nil);
 
 	if (n < 0)
 		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
 
-	GET_NEXT_ARG(p4,list_or_nil);
 	stream *str = &q->pl->streams[n];
+	if (!str->alias) str->alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	LIST_HANDLER(p4);
 
 	while (is_list(p4)) {

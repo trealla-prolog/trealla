@@ -149,7 +149,7 @@ static bool has_spaces(const char *src, int srclen)
 	return false;
 }
 
-size_t formatted(char *dst, size_t dstlen, const char *src, int srclen, bool dq)
+size_t formatted(char *dst, size_t dstlen, const char *src, int srclen, bool dq, bool json)
 {
 	extern const char *g_escapes;
 	extern const char *g_anti_escapes;
@@ -173,7 +173,7 @@ size_t formatted(char *dst, size_t dstlen, const char *src, int srclen, bool dq)
 			}
 
 			len += 2;
-		} else if (!dq && (ch == '\'')) {
+		} else if (!json && !dq && (ch == '\'')) {
 			if (dstlen) {
 				*dst++ = '\'';
 				*dst++ = ch;
@@ -187,20 +187,7 @@ size_t formatted(char *dst, size_t dstlen, const char *src, int srclen, bool dq)
 			}
 
 			len += 2;
-		} else if (ch < ' ') {
-#ifdef __wasi__
-			// This gives strings JSON compatibility :-)
-			if (dstlen) {
-				*dst++ = '\\';
-				*dst++ = 'u';
-			}
-
-			size_t n = snprintf(dst, dstlen, "000%x", ch);
-			len += n;
-			if (dstlen) dst += n;
-
-			len += 2;
-#else
+		} else if (!json && (ch < ' ')) {
 			if (dstlen) {
 				*dst++ = '\\';
 				*dst++ = 'x';
@@ -214,7 +201,25 @@ size_t formatted(char *dst, size_t dstlen, const char *src, int srclen, bool dq)
 				*dst++ = '\\';
 
 			len += 3;
-#endif
+		} else if (json && (ch < ' ')) {
+			if (dstlen) {
+				*dst++ = '\\';
+			}
+
+			switch (ch) {
+			case '\b': if (dstlen) *dst++ = 'b'; break;
+			case '\n': if (dstlen) *dst++ = 'n'; break;
+			case '\f': if (dstlen) *dst++ = 'f'; break;
+			case '\r': if (dstlen) *dst++ = 'r'; break;
+			case '\t': if (dstlen) *dst++ = 't'; break;
+			default: {
+				size_t n = snprintf(dst, dstlen, "u%04x", ch);
+				len += n;
+				if (dstlen) dst += n;
+
+				len += 2;
+			}
+		}
 		} else if (ch == '\\') {
 			if (dstlen) {
 				*dst++ = '\\';
@@ -477,7 +482,7 @@ static ssize_t print_string_list(query *q, char *save_dst, char *dst, size_t dst
 
 		if (needs_quoting(q->st.m, src, strlen(src))) {
 			dst += snprintf(dst, dstlen, "%s", "'");
-			dst += formatted(dst, dstlen, C_STR(q, h), C_STRLEN(q, h), false);
+			dst += formatted(dst, dstlen, C_STR(q, h), C_STRLEN(q, h), false, false);
 			dst += snprintf(dst, dstlen, "%s", "'");
 		} else
 			dst += snprintf(dst, dstlen, "%s", C_STR(q, h));
@@ -593,7 +598,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 			}
 		} else if (is_string(tail)) {
 			dst+= snprintf(dst, dstlen, "%s", "|\"");
-			dst += formatted(dst, dstlen, C_STR(q, tail), C_STRLEN(q, tail), true);
+			dst += formatted(dst, dstlen, C_STR(q, tail), C_STRLEN(q, tail), true, false);
 			dst += snprintf(dst, dstlen, "%s", "\"");
 			print_list++;
 			q->last_thing_was_symbol = false;
@@ -676,7 +681,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 			const char *alias = map_key(iter);
 
 			if (strcmp(alias, "user_input") && strcmp(alias, "user_output") && strcmp(alias, "user_error"))
-				dst += formatted(dst, dstlen, alias, strlen(alias), false);
+				dst += formatted(dst, dstlen, alias, strlen(alias), false, q->json);
 			else
 				dst += snprintf(dst, dstlen, "'<$stream>'(%d)", (int)get_smallint(c));
 
@@ -796,7 +801,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 
 	if (is_string(c) && !q->ignore_ops) {
 		dst += snprintf(dst, dstlen, "%s", "\"");
-		dst += formatted(dst, dstlen, C_STR(q, c), C_STRLEN(q, c), true);
+		dst += formatted(dst, dstlen, C_STR(q, c), C_STRLEN(q, c), true, q->json);
 		dst += snprintf(dst, dstlen, "%s", "\"");
 		q->last_thing_was_symbol = false;
 		q->was_space = false;
@@ -815,7 +820,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 
 			cell *h = LIST_HEAD(l);
 			cell *c = running ? deref(q, h, c_ctx) : h;
-			dst += formatted(dst, dstlen, C_STR(q, c), C_STRLEN(q, c), true);
+			dst += formatted(dst, dstlen, C_STR(q, c), C_STRLEN(q, c), true, q->json);
 			l = LIST_TAIL(l);
 			l = running ? deref(q, l, c_ctx) : l;
 			c_ctx = running ? q->latest_ctx : 0;
@@ -922,7 +927,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 			if (is_blob(c) && q->max_depth && (len_str >= q->max_depth) && (src_len > 128))
 				len_str = q->max_depth;
 
-			dst += formatted(dst, dstlen, src, len_str, dq);
+			dst += formatted(dst, dstlen, src, len_str, dq, q->json);
 
 			if (is_blob(c) && q->max_depth && (len_str >= q->max_depth) && (src_len > 128)) {
 				dst--;
@@ -1488,7 +1493,7 @@ void clear_write_options(query *q)
 	q->print_idx = 0;
 	q->max_depth = q->quoted = 0;
 	q->nl = q->fullstop = q->varnames = q->ignore_ops = false;
-	q->parens = q->numbervars = false;
+	q->parens = q->numbervars = q->json = false;
 	q->last_thing_was_symbol = false;
 	q->variable_names = NULL;
 }

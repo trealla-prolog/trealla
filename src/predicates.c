@@ -7221,7 +7221,7 @@ void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, u
 
 	if (needs_quoting(m, name, strlen(name))) {
 		char tmpbuf2[1024];
-		formatted(tmpbuf2, sizeof(tmpbuf2), name, strlen(name), false);
+		formatted(tmpbuf2, sizeof(tmpbuf2), name, strlen(name), false, false);
 		dst += snprintf(dst, buflen-(dst-tmpbuf), "'$predicate_property'('%s'", tmpbuf2);
 	} else
 		dst += snprintf(dst, buflen-(dst-tmpbuf), "'$predicate_property'(%s", name);
@@ -7465,7 +7465,7 @@ static void load_ops(query *q)
 		bool quote = needs_quoting(q->st.m, ptr->name, strlen(ptr->name));
 
 		if (quote)
-			formatted(name, sizeof(name), ptr->name, strlen(ptr->name), false);
+			formatted(name, sizeof(name), ptr->name, strlen(ptr->name), false, false);
 		else
 			snprintf(name, sizeof(name), "%s", ptr->name);
 
@@ -7503,7 +7503,7 @@ static void load_ops(query *q)
 		else if (ptr->specifier == OP_XFX)
 			strcpy(specifier, "xfx");
 
-		formatted(name, sizeof(name), ptr->name, strlen(ptr->name), false);
+		formatted(name, sizeof(name), ptr->name, strlen(ptr->name), false, false);
 		char tmpbuf[1024];
 
 		snprintf(tmpbuf, sizeof(tmpbuf), "'$current_op'('%s', %s, %u).\n",
