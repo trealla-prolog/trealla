@@ -217,9 +217,9 @@ size_t formatted(char *dst, size_t dstlen, const char *src, int srclen, bool dq,
 				len += n;
 				if (dstlen) dst += n;
 
-				len += 2;
+				len++;
 			}
-		}
+			}
 		} else if (ch == '\\') {
 			if (dstlen) {
 				*dst++ = '\\';
