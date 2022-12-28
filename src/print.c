@@ -207,18 +207,11 @@ size_t formatted(char *dst, size_t dstlen, const char *src, int srclen, bool dq,
 			}
 
 			switch (ch) {
-			case '"':
-			case '\\':
-			case '/':
-			case '\b':
-			case '\n':
-			case '\f':
-			case '\r':
-			case '\t':
-				if (dstlen) {
-					*dst++ = ch;
-				}
-				break;
+			case '\b': if (dstlen) *dst++ = 'b'; break;
+			case '\n': if (dstlen) *dst++ = 'n'; break;
+			case '\f': if (dstlen) *dst++ = 'f'; break;
+			case '\r': if (dstlen) *dst++ = 'r'; break;
+			case '\t': if (dstlen) *dst++ = 't'; break;
 			default: {
 				size_t n = snprintf(dst, dstlen, "u%04x", ch);
 				len += n;
