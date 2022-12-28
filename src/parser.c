@@ -2130,17 +2130,17 @@ static int get_escape(const char **_src, bool *error, bool number)
 #endif
 		)
 		&& !number) {
-		int unicode = 0;
+		bool unicode = false;
 
 		if (ch == 'x')
 			ch = get_hex(&src, UINT_MAX, error);
 #if ALLOW_UNICODE_ESCAPE
 		else if (ch == 'U') {
 			ch = get_hex(&src, 8, error);
-			unicode = 1;
+			unicode = true;
 		} else if (ch == 'u') {
 			ch = get_hex(&src, 4, error);
-			unicode = 1;
+			unicode = true;
 		}
 #endif
 		else {
