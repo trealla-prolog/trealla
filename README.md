@@ -567,6 +567,10 @@ line_counts(Start,End) property options to report file information.
 This is analogous to stream_property/2 use of position(Pos) and
 line_count(Line) options.
 
+Note: read_term, write_term & friends support the *json(Boolean)*
+option to make more sympathetic support for JSON using the builtin
+parsing and printing mechanisms.
+
 
 Definite Clause Grammars
 ========================
