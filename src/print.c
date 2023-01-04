@@ -343,7 +343,7 @@ static void reformat_float(query * q, char *tmpbuf, double v)
 	if ((!strchr(tmpbuf, 'e') && !strchr(tmpbuf, 'E'))
 		&& !q->ignore_ops) {
 		char tmpbuf3[256];
-		sprintf(tmpbuf3, "%.*g", 16, v);
+		sprintf(tmpbuf3, "%.*g", 15, v);
 		size_t len3 = strlen(tmpbuf3);
 		size_t len = strlen(tmpbuf);
 
