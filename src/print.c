@@ -625,9 +625,12 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 			q->last_thing_was_symbol = false;
 		} else {
 			dst += snprintf(dst, dstlen, "%s", "|");
+			bool parens = is_op(tail) && !CMP_STR_TO_CSTR(q, tail, "|");
+			if (parens) dst += snprintf(dst, dstlen, "%s", "(");
 			ssize_t res = print_term_to_buf(q, dst, dstlen, tail, c_ctx, running, true, depth+1);
 			if (res < 0) return -1;
 			dst += res;
+			if (parens) dst += snprintf(dst, dstlen, "%s", ")");
 		}
 
 		if (!cons || print_list)
