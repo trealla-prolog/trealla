@@ -130,51 +130,51 @@ static char *functor_name_generator(const char *text, int state)
 
 	while ((name = g_iso_bifs[s_iso_list_index].name)) {
 		s_iso_list_index++;
-		if (strncmp(name, text, s_iso_len) == 0) {
+
+		if (strncmp(name, text, s_iso_len) == 0)
 			return strdup(name);
-		}
 	}
 
 	while ((name = g_other_bifs[s_other_list_index].name)) {
 		s_other_list_index++;
-		if (strncmp(name, text, s_other_len) == 0) {
+
+		if (strncmp(name, text, s_other_len) == 0)
 			return strdup(name);
-		}
 	}
 
 	while ((name = g_ffi_bifs[s_ffi_list_index].name)) {
 		s_ffi_list_index++;
-		if (strncmp(name, text, s_ffi_len) == 0) {
+
+		if (strncmp(name, text, s_ffi_len) == 0)
 			return strdup(name);
-		}
 	}
 
 	while ((name = g_posix_bifs[s_posix_list_index].name)) {
 		s_posix_list_index++;
-		if (strncmp(name, text, s_posix_len) == 0) {
+
+		if (strncmp(name, text, s_posix_len) == 0)
 			return strdup(name);
-		}
 	}
 
 	while ((name = g_contrib_bifs[s_contrib_list_index].name)) {
 		s_contrib_list_index++;
-		if (strncmp(name, text, s_contrib_len) == 0) {
+
+		if (strncmp(name, text, s_contrib_len) == 0)
 			return strdup(name);
-		}
 	}
 
 	while ((name = g_files_bifs[s_files_list_index].name)) {
 		s_files_list_index++;
-		if (strncmp(name, text, s_files_len) == 0) {
+
+		if (strncmp(name, text, s_files_len) == 0)
 			return strdup(name);
-		}
 	}
 
 	while ((name = g_evaluable_bifs[s_evaluable_list_index].name)) {
 		s_evaluable_list_index++;
-		if (strncmp(name, text, s_evaluable_len) == 0) {
+
+		if (strncmp(name, text, s_evaluable_len) == 0)
 			return strdup(name);
-		}
 	}
 
     return NULL;
@@ -279,6 +279,7 @@ char *history_readline_eol(prolog *pl, const char *prompt, char eol)
 
 	size_t len = 0;
 	char *line = NULL;
+
 	if (getline(&line, &len, stdin) <= 0)
 		return NULL;
 
