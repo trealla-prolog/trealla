@@ -236,7 +236,7 @@ tolist_((T1,T2), [T1|Rest]) :- !,
 tolist_(T, [T|[]]).
 
 list_to_set(Ls0, Ls) :-
-        maplist(with_var, Ls0, LVs0),
+        maplist(lists:with_var, Ls0, LVs0),
         keysort(LVs0, LVs),
         same_elements(LVs),
         pick_firsts(LVs0, Ls).
@@ -254,7 +254,7 @@ with_var(E, E-_).
 
 same_elements([]).
 same_elements([EV|EVs]) :-
-        foldl(unify_same, EVs, EV, _).
+        foldl(lists:unify_same, EVs, EV, _).
 
 unify_same(E-V, Prev-Var, E-V) :-
         (   Prev == E ->
