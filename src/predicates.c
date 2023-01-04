@@ -2186,17 +2186,12 @@ static bool fn_iso_retractall_1(query *q)
 		return true;
 	}
 
-	unsigned cnt = 0;
-
 	while (do_retract(q, p1, p1_ctx, DO_RETRACTALL)) {
 		if (q->did_throw) return true;
 		q->retry = QUERY_RETRY;
 		q->tot_backtracks++;
 		retry_choice(q);
-		cnt++;
 	}
-
-	//printf("*** retracted %s/%u %u of %u clauses\n", C_STR(q, &pr->key), pr->key.arity, cnt, (unsigned)pr->cnt);
 
 	//purge_predicate_dirty_list(q, pr);
 

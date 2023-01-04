@@ -452,7 +452,6 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx_t key_ctx)
 
 	map *tmp_idx = NULL;
 	const db_entry *dbe;
-	unsigned cnt = 0;
 
 	while (map_next_key(iter, (void*)&dbe)) {
 		CHECK_INTERRUPT();
@@ -468,12 +467,9 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx_t key_ctx)
 		}
 
 		map_app(tmp_idx, (void*)(size_t)dbe->db_id, (void*)dbe);
-		cnt++;
 	}
 
 	map_done(iter);
-
-	//printf("*** cnt=%u\n", cnt);
 
 	if (!tmp_idx)
 		return false;
@@ -496,7 +492,6 @@ size_t scan_is_chars_list2(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes, 
 	*is_partial = *has_var = false;
 	size_t is_chars_list = 0;
 	LIST_HANDLER(l);
-	int cnt = 0;
 
 	while (is_iso_list(l)
 		&& (q->st.m->flags.double_quote_chars || allow_codes)) {
@@ -541,7 +536,6 @@ size_t scan_is_chars_list2(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes, 
 		l = LIST_TAIL(l);
 		l = deref(q, l, l_ctx);
 		l_ctx = q->latest_ctx;
-		cnt++;
 	}
 
 	if (is_var(l)) {
@@ -812,7 +806,6 @@ void unshare_predicate(query *q, predicate *pr)
 	// dirty-list. They will be freed up at end of the query.
 
 	db_entry *dbe = pr->dirty_list;
-	unsigned cnt = 0;
 
 	while (dbe) {
 		delink(pr, dbe);
@@ -828,7 +821,6 @@ void unshare_predicate(query *q, predicate *pr)
 		dbe->dirty = q->dirty_list;
 		q->dirty_list = dbe;
 		dbe = save;
-		cnt++;
 	}
 
 	pr->dirty_list = NULL;
@@ -1948,17 +1940,12 @@ void purge_predicate_dirty_list(query *q, predicate *pr)
 
 void purge_dirty_list(query *q)
 {
-	int cnt = 0;
-
 	while (q->dirty_list) {
 		db_entry *dbe = q->dirty_list;
 		q->dirty_list = dbe->dirty;
 		clear_rule(&dbe->cl);
 		free(dbe);
-		cnt++;
 	}
-
-	//if (cnt) printf("Info: query purged %d\n", cnt);
 }
 
 void destroy_query(query *q)
