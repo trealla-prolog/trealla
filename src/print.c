@@ -14,6 +14,36 @@
 #include "query.h"
 #include "utf8.h"
 
+char *chars_list_to_string(query *q, cell *p_chars, pl_idx_t p_chars_ctx, size_t len)
+{
+	char *tmp = malloc(len+1+1);
+	ensure(tmp);
+	char *dst = tmp;
+	LIST_HANDLER(p_chars);
+
+	while (is_list(p_chars)) {
+		CHECK_INTERRUPT();
+		cell *h = LIST_HEAD(p_chars);
+		h = deref(q, h, p_chars_ctx);
+
+		if (is_integer(h)) {
+			int ch = get_smallint(h);
+			dst += put_char_utf8(dst, ch);
+		} else {
+			const char *p = C_STR(q, h);
+			int ch = peek_char_utf8(p);
+			dst += put_char_utf8(dst, ch);
+		}
+
+		p_chars = LIST_TAIL(p_chars);
+		p_chars = deref(q, p_chars, p_chars_ctx);
+		p_chars_ctx = q->latest_ctx;
+	}
+
+	*dst = '\0';
+	return tmp;
+}
+
 bool needs_quoting(module *m, const char *src, int srclen)
 {
 	if (!*src)
