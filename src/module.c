@@ -1576,7 +1576,7 @@ module *load_file(module *m, const char *filename, bool including)
 	stat(filename, &st);
 
 	if ((st.st_mode & S_IFMT) == S_IFDIR) {
-		char *tmpbuf = malloc(strlen(orig_filename+20));
+		char *tmpbuf = malloc(strlen(orig_filename)+20);
 		strcpy(tmpbuf, orig_filename);
 		strcat(tmpbuf, ".pl");
 		m = load_file(m, tmpbuf, including);
