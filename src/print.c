@@ -614,7 +614,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 				dst += snprintf(dst, dstlen, "%s", ",");
 				c = tail;
 				print_list++;
-				cons = 1;
+				cons = true;
 				continue;
 			}
 		} else if (is_string(tail)) {
