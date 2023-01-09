@@ -167,7 +167,7 @@ int main(int ac, char *av[], char * envp[])
 	//bool did_load = false;
 	int i, do_goal = 0, do_lib = 0;
 	int version = 0, daemon = 0;
-	bool ns = false, no_res = false, quiet = false;
+	bool no_res = false, quiet = false;
 	void *pl = pl_create();
 
 	if (!pl) {
@@ -196,8 +196,6 @@ int main(int ac, char *av[], char * envp[])
 			set_opt(pl, 0);
 		else if (!strcmp(av[i], "-t") || !strcmp(av[i], "--trace"))
 			set_trace(pl);
-		else if (!strcmp(av[i], "--ns"))
-			ns = true;
 		else if (!strcmp(av[i], "-d") || !strcmp(av[i], "--daemon"))
 			daemon = 1;
 	}
@@ -286,7 +284,7 @@ int main(int ac, char *av[], char * envp[])
 		}
 	}
 
-	if (get_halt(pl) || ns) {
+	if (get_halt(pl)) {
 		int halt_code = get_halt_code(pl);
 		pl_destroy(pl);
 		return halt_code;
