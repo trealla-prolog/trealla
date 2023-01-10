@@ -1331,6 +1331,42 @@ static bool fn_iso_number_codes_2(query *q)
 	return unify(q, p2, p2_ctx, l, q->st.curr_frame);
 }
 
+static bool do_sub_atom(query *q, cell *p1, cell *p2, pl_idx_t p2_ctx, cell *p3, pl_idx_t p3_ctx, cell *p4, pl_idx_t p4_ctx, cell *p5)
+{
+	if (!q->retry) {
+		q->st.v1 = 0;
+	}
+
+	const char *src = C_STR(q, p1), *s = C_STR(q, p5);
+	pl_int_t srclen = C_STRLEN(q, p1), before = (int)q->st.v1, len = C_STRLEN(q, p5);
+	const char *src2 = src + before;
+	src2 = strstr(src2, s);
+
+	if (q->retry && !srclen)
+		return false;
+
+	if (!src2)
+		return false;
+
+	pl_int_t after = srclen - (src2 - src) - len;
+	before = src2 - src;
+
+	if (after < 0)
+		return false;
+
+	q->st.v1 = before + (len ? len : 1);
+	check_heap_error(push_choice(q));
+
+	cell tmp;
+	make_int(&tmp, before);
+	unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	make_int(&tmp, len);
+	unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+	make_int(&tmp, after);
+	unify(q, p4, p4_ctx, &tmp, q->st.curr_frame);
+	return true;
+}
+
 static bool fn_iso_sub_atom_5(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -1338,8 +1374,6 @@ static bool fn_iso_sub_atom_5(query *q)
 	GET_NEXT_ARG(p3,integer_or_var);		// len
 	GET_NEXT_ARG(p4,integer_or_var);		// after
 	GET_NEXT_ARG(p5,atom_or_var);
-	const size_t len_p1 = C_STRLEN_UTF8(p1);
-	size_t before = 0, len = 0, after = 0;
 
 	if (is_integer(p2) && is_negative(p2))
 		return throw_error(q, p2, p2_ctx, "domain_error", "not_less_than_zero");
@@ -1350,6 +1384,12 @@ static bool fn_iso_sub_atom_5(query *q)
 	if (is_integer(p4) && is_negative(p4))
 		return throw_error(q, p4, p4_ctx, "domain_error", "not_less_than_zero");
 
+	if (!is_var(p1) && is_var(p2) && is_var(p3) && is_var(p4) && !is_var(p5)) {
+		return do_sub_atom(q, p1, p2, p2_ctx, p3, p3_ctx, p4, p4_ctx, p5);
+	}
+
+	const size_t len_p1 = C_STRLEN_UTF8(p1);
+	size_t before = 0, len = 0, after = 0;
 	bool fixed = ((is_integer(p2) ? 1: 0) + (is_integer(p3) ? 1 : 0) + (is_integer(p4) ? 1 : 0)) >= 2;
 
 	if ((!is_var(p2) || !is_var(p4)) && !is_var(p5))
@@ -4179,7 +4219,7 @@ static bool fn_sys_elapsed_0(query *q)
 	elapsed -= q->st.timer_started;
 	if (!q->is_redo) fprintf(stdout, "   ");
 	if (q->is_redo) fprintf(stdout, " ");
-	fprintf(stdout, "%% Time elapsed %.03gs\n", (double)elapsed/1000/1000);
+	fprintf(stdout, "%% Time elapsed %fs\n", (double)elapsed/1000/1000);
 	if (q->is_redo) fprintf(stdout, "  ");
 	//else if (!q->redo) fprintf(stdout, "");
 	choice *ch = GET_CURR_CHOICE();
