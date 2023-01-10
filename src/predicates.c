@@ -1369,7 +1369,7 @@ static bool do_sub_atom(query *q, cell *p1, cell *p2, pl_idx_t p2_ctx, cell *p3,
 	return true;
 }
 
-static bool fn_iso_sub_atom_5(query *q)
+static bool fn_iso_sub_string_5(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,integer_or_var);		// before
@@ -1497,6 +1497,17 @@ static bool fn_iso_sub_atom_5(query *q)
 
 	drop_choice(q);
 	return false;
+}
+
+static bool fn_iso_sub_atom_5(query *q)
+{
+	GET_FIRST_ARG(p1,iso_atom);
+	GET_NEXT_ARG(p2,integer_or_var);		// before
+	GET_NEXT_ARG(p3,integer_or_var);		// len
+	GET_NEXT_ARG(p4,integer_or_var);		// after
+	GET_NEXT_ARG(p5,iso_atom_or_var);
+
+	return fn_iso_sub_string_5(q);
 }
 
 // NOTE: this just handles the mode(-,-,+) case...
@@ -7558,6 +7569,7 @@ builtins g_iso_bifs[] =
 	{"atom_length", 2, fn_iso_atom_length_2, "?list,?integer", true, false, BLAH},
 	{"atom_concat", 3, fn_iso_atom_concat_3, "+atom,+atom,?atom", true, false, BLAH},
 	{"sub_atom", 5, fn_iso_sub_atom_5, "+atom,?before,?length,?after,?atom", true, false, BLAH},
+	{"sub_string", 5, fn_iso_sub_string_5, "+string,?before,?length,?after,?string", true, false, BLAH},
 	{"current_rule", 1, fn_iso_current_rule_1, "-term", true, false, BLAH},
 	{"sort", 2, fn_iso_sort_2, "+list,?list", true, false, BLAH},
 	{"msort", 2, fn_iso_msort_2, "+list,?list", true, false, BLAH},

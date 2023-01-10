@@ -353,6 +353,7 @@ Non-standard predicates
 	expand_term/2               # expand_term(+rule,-Term)
 	memberchk/2                 # memberchk(+rule,+list).
 	nonmember/2                 # \+ memberchk(+rule,+list)
+	sub_string/5				# sub_string(+string,?before,?len,?after,?substring)
 	atomic_concat/3             # atomic_concat(+atom,+list,-list)
 	atomic_list_concat/2	    # atomic_list_concat(L,Atom)
 	atomic_list_concat/3	    # atomic_list_concat(L,Sep,Atom)
