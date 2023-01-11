@@ -265,62 +265,6 @@ bool check_slot(query *q, unsigned cnt)
 	return true;
 }
 
-bool check_list(query *q, cell *p1, pl_idx_t p1_ctx, bool *is_partial, pl_int_t *skip_)
-{
-	pl_int_t skip = 0, max = 1000000000;
-	pl_idx_t c_ctx = p1_ctx;
-	cell tmp = {0};
-
-	cell *c = skip_max_list(q, p1, &c_ctx, max, &skip, &tmp);
-	unshare_cell(&tmp);
-
-	if (skip_)
-		*skip_ = skip;
-
-	if (is_nil(c))
-		return true;
-
-	if (is_var(c)) {
-		if (is_partial)
-			*is_partial = true;
-	} else {
-		if (is_partial)
-			*is_partial = false;
-	}
-
-	return false;
-}
-
-char *chars_list_to_string(query *q, cell *p_chars, pl_idx_t p_chars_ctx, size_t len)
-{
-	char *tmp = malloc(len+1+1);
-	ensure(tmp);
-	char *dst = tmp;
-	LIST_HANDLER(p_chars);
-
-	while (is_list(p_chars)) {
-		CHECK_INTERRUPT();
-		cell *h = LIST_HEAD(p_chars);
-		h = deref(q, h, p_chars_ctx);
-
-		if (is_integer(h)) {
-			int ch = get_smallint(h);
-			dst += put_char_utf8(dst, ch);
-		} else {
-			const char *p = C_STR(q, h);
-			int ch = peek_char_utf8(p);
-			dst += put_char_utf8(dst, ch);
-		}
-
-		p_chars = LIST_TAIL(p_chars);
-		p_chars = deref(q, p_chars, p_chars_ctx);
-		p_chars_ctx = q->latest_ctx;
-	}
-
-	*dst = '\0';
-	return tmp;
-}
-
 static void setup_key(query *q)
 {
 	if (!q->pl->opt)
@@ -508,7 +452,6 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx_t key_ctx)
 
 	map *tmp_idx = NULL;
 	const db_entry *dbe;
-	unsigned cnt = 0;
 
 	while (map_next_key(iter, (void*)&dbe)) {
 		CHECK_INTERRUPT();
@@ -524,12 +467,9 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx_t key_ctx)
 		}
 
 		map_app(tmp_idx, (void*)(size_t)dbe->db_id, (void*)dbe);
-		cnt++;
 	}
 
 	map_done(iter);
-
-	//printf("*** cnt=%u\n", cnt);
 
 	if (!tmp_idx)
 		return false;
@@ -552,7 +492,6 @@ size_t scan_is_chars_list2(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes, 
 	*is_partial = *has_var = false;
 	size_t is_chars_list = 0;
 	LIST_HANDLER(l);
-	int cnt = 0;
 
 	while (is_iso_list(l)
 		&& (q->st.m->flags.double_quote_chars || allow_codes)) {
@@ -597,7 +536,6 @@ size_t scan_is_chars_list2(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes, 
 		l = LIST_TAIL(l);
 		l = deref(q, l, l_ctx);
 		l_ctx = q->latest_ctx;
-		cnt++;
 	}
 
 	if (is_var(l)) {
@@ -868,7 +806,6 @@ void unshare_predicate(query *q, predicate *pr)
 	// dirty-list. They will be freed up at end of the query.
 
 	db_entry *dbe = pr->dirty_list;
-	unsigned cnt = 0;
 
 	while (dbe) {
 		delink(pr, dbe);
@@ -884,7 +821,6 @@ void unshare_predicate(query *q, predicate *pr)
 		dbe->dirty = q->dirty_list;
 		q->dirty_list = dbe;
 		dbe = save;
-		cnt++;
 	}
 
 	pr->dirty_list = NULL;
@@ -2009,17 +1945,12 @@ void purge_predicate_dirty_list(query *q, predicate *pr)
 
 void purge_dirty_list(query *q)
 {
-	int cnt = 0;
-
 	while (q->dirty_list) {
 		db_entry *dbe = q->dirty_list;
 		q->dirty_list = dbe->dirty;
 		clear_rule(&dbe->cl);
 		free(dbe);
-		cnt++;
 	}
-
-	//if (cnt) printf("Info: query purged %d\n", cnt);
 }
 
 void destroy_query(query *q)

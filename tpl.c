@@ -222,8 +222,6 @@ int main(int ac, char *av[], char * envp[])
 			set_opt(pl, 0);
 		else if (!strcmp(av[i], "-t") || !strcmp(av[i], "--trace"))
 			set_trace(pl);
-		else if (!strcmp(av[i], "--ns"))
-			ns = true;
 		else if (!strcmp(av[i], "-d") || !strcmp(av[i], "--daemon"))
 			daemon = 1;
 	}

@@ -6721,7 +6721,7 @@ static bool fn_map_list_2(query *q)
 			check_heap_error(make_cstring(&tmpv, val));
 
 		cell tmp2[3];
-		make_struct(tmp2+0, g_pair_s, NULL, 2, 2);
+		make_struct(tmp2+0, g_colon_s, NULL, 2, 2);
 		tmp2[1] = tmpk;
 		tmp2[2] = tmpv;
 		SET_OP(tmp2, OP_YFX);

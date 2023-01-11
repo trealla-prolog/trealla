@@ -6,8 +6,8 @@
 		nth1/3, nth0/3, nth1/4, nth0/4,
 		last/2, flatten/2, same_length/2,
 		sum_list/2, prod_list/2, max_list/2, min_list/2,
-		list_to_conjunction/2,
-		conjunction_to_list/2,
+		list_to_conjunction/2, conjunction_to_list/2,
+		list_to_set/2,
 		numlist/3,
 		length/2, reverse/2
 	]).
@@ -234,6 +234,33 @@ conjunction_to_list(T, List) :-
 tolist_((T1,T2), [T1|Rest]) :- !,
 	tolist_(T2, Rest).
 tolist_(T, [T|[]]).
+
+list_to_set(Ls0, Ls) :-
+        maplist(lists:with_var, Ls0, LVs0),
+        keysort(LVs0, LVs),
+        same_elements(LVs),
+        pick_firsts(LVs0, Ls).
+
+pick_firsts([], []).
+pick_firsts([E-V|EVs], Fs0) :-
+        (   V == visited ->
+            Fs0 = Fs
+        ;   V = visited,
+            Fs0 = [E|Fs]
+        ),
+        pick_firsts(EVs, Fs).
+
+with_var(E, E-_).
+
+same_elements([]).
+same_elements([EV|EVs]) :-
+        foldl(lists:unify_same, EVs, EV, _).
+
+unify_same(E-V, Prev-Var, E-V) :-
+        (   Prev == E ->
+            Var = V
+        ;   true
+        ).
 
 numlist(L, U, Ns) :-
 	must_be(L, integer, numlist/3, _),

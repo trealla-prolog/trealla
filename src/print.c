@@ -14,6 +14,36 @@
 #include "query.h"
 #include "utf8.h"
 
+char *chars_list_to_string(query *q, cell *p_chars, pl_idx_t p_chars_ctx, size_t len)
+{
+	char *tmp = malloc(len+1+1);
+	ensure(tmp);
+	char *dst = tmp;
+	LIST_HANDLER(p_chars);
+
+	while (is_list(p_chars)) {
+		CHECK_INTERRUPT();
+		cell *h = LIST_HEAD(p_chars);
+		h = deref(q, h, p_chars_ctx);
+
+		if (is_integer(h)) {
+			int ch = get_smallint(h);
+			dst += put_char_utf8(dst, ch);
+		} else {
+			const char *p = C_STR(q, h);
+			int ch = peek_char_utf8(p);
+			dst += put_char_utf8(dst, ch);
+		}
+
+		p_chars = LIST_TAIL(p_chars);
+		p_chars = deref(q, p_chars, p_chars_ctx);
+		p_chars_ctx = q->latest_ctx;
+	}
+
+	*dst = '\0';
+	return tmp;
+}
+
 bool needs_quoting(module *m, const char *src, int srclen)
 {
 	if (!*src)
@@ -50,7 +80,7 @@ bool needs_quoting(module *m, const char *src, int srclen)
 			return true;
 	}
 
-	int cnt = 0, alphas = 0, nonalphas = 0, graphs = 0;
+	int cnt = 0, alphas = 0, graphs = 0;
 
 	while (srclen > 0) {
 		srclen -= len_char_utf8(src);
@@ -65,8 +95,6 @@ bool needs_quoting(module *m, const char *src, int srclen)
 			alphas++;
 		else if ((ch < 256) && iswgraph(ch) && (ch != '%'))
 			graphs++;
-		else
-			nonalphas++;
 	}
 
 	if (cnt == alphas)
@@ -74,11 +102,6 @@ bool needs_quoting(module *m, const char *src, int srclen)
 
 	if (cnt == graphs)
 		return false;
-
-#if 0
-	if (cnt == nonalphas)
-		return false;
-#endif
 
 	return true;
 }
@@ -154,13 +177,11 @@ size_t formatted(char *dst, size_t dstlen, const char *src, int srclen, bool dq,
 	extern const char *g_escapes;
 	extern const char *g_anti_escapes;
 	size_t len = 0;
-	int chars = 0;
 
 	while (srclen > 0) {
 		int lench = len_char_utf8(src);
 		int ch = get_char_utf8(&src);
 		srclen -= lench;
-		chars++;
 		const char *ptr = (lench == 1) && (ch != ' ') ? strchr(g_escapes, ch) : NULL;
 
 		if ((ch == '\'') && dq)
@@ -319,10 +340,10 @@ size_t sprint_int(char *dst, size_t dstlen, pl_int_t n, int base)
 
 static void reformat_float(query * q, char *tmpbuf, double v)
 {
-	if ((!strchr(tmpbuf, 'e') || !strchr(tmpbuf, 'E'))
+	if ((!strchr(tmpbuf, 'e') && !strchr(tmpbuf, 'E'))
 		&& !q->ignore_ops) {
 		char tmpbuf3[256];
-		sprintf(tmpbuf3, "%.*g", 16, v);
+		sprintf(tmpbuf3, "%.*g", 15, v);
 		size_t len3 = strlen(tmpbuf3);
 		size_t len = strlen(tmpbuf);
 
@@ -593,7 +614,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 				dst += snprintf(dst, dstlen, "%s", ",");
 				c = tail;
 				print_list++;
-				cons = 1;
+				cons = true;
 				continue;
 			}
 		} else if (is_string(tail)) {
@@ -604,9 +625,12 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 			q->last_thing_was_symbol = false;
 		} else {
 			dst += snprintf(dst, dstlen, "%s", "|");
+			bool parens = is_op(tail);
+			if (parens) dst += snprintf(dst, dstlen, "%s", "(");
 			ssize_t res = print_term_to_buf(q, dst, dstlen, tail, c_ctx, running, true, depth+1);
 			if (res < 0) return -1;
 			dst += res;
+			if (parens) dst += snprintf(dst, dstlen, "%s", ")");
 		}
 
 		if (!cons || print_list)
