@@ -408,7 +408,7 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 			break;
 
 		case 'f':
-			if (!is_float(c)) {
+			if (!is_float(c) && !is_smallint(c)) {
 				free(tmpbuf);
 				return throw_error(q, c, q->st.curr_frame, "type_error", "float");
 			}
@@ -417,9 +417,9 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 			CHECK_BUF(len);
 
 			if (argval)
-				len = sprintf(dst, "%.*f", argval, get_float(c));
+				len = sprintf(dst, "%.*f", argval, is_float(c) ? get_float(c) : get_smallint(c));
 			else
-				len = sprintf(dst, "%f", get_float(c));
+				len = sprintf(dst, "%f", is_float(c) ? get_float(c) : get_smallint(c));
 
 			break;
 

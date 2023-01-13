@@ -930,7 +930,6 @@ static void optimize_rule(module *m, db_entry *dbe_orig)
 		}
 	}
 
-
 	m->max_depth = 0;
 
 	if (!matched)
