@@ -139,6 +139,11 @@ keysort_(_, _, Sorted, _) :-
 '$key_partition'(_, _, List, _, _, _, _) :-
 	throw(error(type_error(list,List), keysort/2)).
 
+permutation([], []).
+permutation([X|Rest], L) :-
+    permutation(Rest, L1),
+    select(X, L, L1).
+
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -543,7 +548,8 @@ nb_delete(K) :-
 nb_delete(_).
 
 nb_current(K, V) :-
-	user:clause('$global_key'(K, V), nb_current/2).
+	can_be(K, atom, nb_current/2, _),
+	user:clause('$global_key'(K, V), _).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

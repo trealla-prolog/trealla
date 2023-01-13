@@ -579,15 +579,17 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 		while (len) {
 			size_t nbytes = net_write(tmpsrc, len, str);
 
-			if (!nbytes) {
-				if (feof(str->fp) || ferror(str->fp)) {
-					free(tmpbuf);
-					fprintf(stdout, "Error: end of file on write\n");
-					return false;
+			if (str->fp) {
+				if (!nbytes) {
+					if (feof(str->fp) || ferror(str->fp)) {
+						free(tmpbuf);
+						fprintf(stdout, "Error: end of file on write\n");
+						return false;
+					}
 				}
+				clearerr(str->fp);
 			}
 
-			clearerr(str->fp);
 			len -= nbytes;
 			tmpsrc += nbytes;
 		}

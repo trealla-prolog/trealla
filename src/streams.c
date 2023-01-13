@@ -423,7 +423,7 @@ static int get_named_stream(prolog *pl, const char *name, size_t len)
 	for (int i = 0; i < MAX_STREAMS; i++) {
 		stream *str = &pl->streams[i];
 
-		if (!str->fp)
+		if (!is_live_stream(str))
 			continue;
 
 		if (map_get(str->alias, name, NULL))
@@ -440,8 +440,9 @@ static int get_named_stream(prolog *pl, const char *name, size_t len)
 static int new_stream(prolog *pl)
 {
 	for (int i = 0; i < MAX_STREAMS; i++) {
-		if (!pl->streams[i].fp && !pl->streams[i].ignore) {
-			memset(&pl->streams[i], 0, sizeof(stream));
+		stream *str = &pl->streams[i];
+		if (!is_live_stream(str) && !str->ignore) {
+			memset(str, 0, sizeof(stream));
 			return i;
 		}
 	}
@@ -466,7 +467,8 @@ int get_stream(query *q, cell *p1)
 	if (!(p1->flags & FLAG_INT_STREAM))
 		return -1;
 
-	if (!q->pl->streams[get_smallint(p1)].fp)
+	stream *str = &q->pl->streams[get_smallint(p1)];
+	if (!is_live_stream(str))
 		return -1;
 
 	return get_smallint(p1);
@@ -478,6 +480,9 @@ static bool is_closed_stream(prolog *pl, cell *p1)
 		return false;
 
 	if (pl->streams[get_smallint(p1)].fp)
+		return false;
+
+	if (pl->streams[get_smallint(p1)].is_memory)
 		return false;
 
 	return true;
@@ -789,10 +794,10 @@ static bool fn_iso_stream_property_2(query *q)
 		clear_streams_properties(q);
 
 		for (int i = 0; i < MAX_STREAMS; i++) {
-			if (!q->pl->streams[i].fp)
-				continue;
-
 			stream *str = &q->pl->streams[i];
+
+			if (!is_live_stream(str))
+				continue;
 
 			if (!str->socket)
 				add_stream_properties(q, i);
@@ -1546,6 +1551,9 @@ static bool fn_iso_close_1(query *q)
 	if (str->is_map) {
 		map_destroy(str->keyval);
 		str->keyval = NULL;
+	} else if (str->is_memory) {
+		SB_free(str->sb);
+		str->is_memory = false;
 	} else
 		net_close(str);
 
@@ -1652,6 +1660,10 @@ static bool fn_iso_flush_output_0(query *q)
 {
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
+
+	if (is_memory_stream(str))
+		return true;
+
 	fflush(str->fp);
 	return !ferror(str->fp);
 }
@@ -1664,6 +1676,9 @@ static bool fn_iso_flush_output_1(query *q)
 
 	if (!strcmp(str->mode, "read"))
 		return throw_error(q, pstr, q->st.curr_frame, "permission_error", "output,stream");
+	
+	if (is_memory_stream(str))
+		return true;
 
 	fflush(str->fp);
 	return !ferror(str->fp);
@@ -1673,6 +1688,13 @@ static bool fn_iso_nl_0(query *q)
 {
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
+	
+	if (!net_write("\n", 1, str))
+		return false;
+
+	if (is_memory_stream(str))
+		return true;
+	
 	fputc('\n', str->fp);
 	//fflush(str->fp);
 	return !ferror(str->fp);
@@ -1686,6 +1708,12 @@ static bool fn_iso_nl_1(query *q)
 
 	if (!strcmp(str->mode, "read"))
 		return throw_error(q, pstr, q->st.curr_frame, "permission_error", "output,stream");
+
+	if (!net_write("\n", 1, str))
+		return false;
+
+	if (is_memory_stream(str))
+		return true;
 
 	fputc('\n', str->fp);
 	//fflush(str->fp);
@@ -2272,6 +2300,9 @@ static bool fn_iso_write_1(query *q)
 	print_term_to_stream(q, str, p1, p1_ctx, 1);
 	q->numbervars = false;
 
+	if (is_memory_stream(str))
+		return true;
+
 	if (isatty(fileno(str->fp)))
 		fflush(str->fp);
 
@@ -2299,6 +2330,9 @@ static bool fn_iso_write_2(query *q)
 	print_term_to_stream(q, str, p1, p1_ctx, 1);
 	q->numbervars = false;
 
+	if (is_memory_stream(str))
+		return true;
+
 	if (isatty(fileno(str->fp)))
 		fflush(str->fp);
 
@@ -2323,6 +2357,9 @@ static bool fn_iso_writeq_1(query *q)
 	print_term_to_stream(q, str, p1, p1_ctx, 1);
 	q->numbervars = false;
 	q->quoted = 0;
+
+	if (is_memory_stream(str))
+		return true;
 
 	if (isatty(fileno(str->fp)))
 		fflush(str->fp);
@@ -2353,6 +2390,9 @@ static bool fn_iso_writeq_2(query *q)
 	q->numbervars = false;
 	q->quoted = 0;
 
+	if (is_memory_stream(str))
+		return true;
+
 	if (isatty(fileno(str->fp)))
 		fflush(str->fp);
 
@@ -2373,6 +2413,9 @@ static bool fn_iso_write_canonical_1(query *q)
 	}
 
 	print_canonical(q, str->fp, p1, p1_ctx, 1);
+
+	if (is_memory_stream(str))
+		return true;
 
 	if (isatty(fileno(str->fp)))
 		fflush(str->fp);
@@ -2398,6 +2441,9 @@ static bool fn_iso_write_canonical_2(query *q)
 	}
 
 	print_canonical(q, str->fp, p1, p1_ctx, 1);
+
+	if (is_memory_stream(str))
+		return true;
 
 	if (isatty(fileno(str->fp)))
 		fflush(str->fp);
@@ -2655,6 +2701,10 @@ static bool fn_iso_write_term_2(query *q)
 	}
 
 	clear_write_options(q);
+
+	if (is_memory_stream(str))
+		return true;
+
 	return !ferror(str->fp);
 }
 
@@ -2725,6 +2775,10 @@ static bool fn_iso_write_term_3(query *q)
 	}
 
 	clear_write_options(q);
+
+	if (is_memory_stream(str))
+		return true;
+
 	return !ferror(str->fp);
 }
 
@@ -2750,6 +2804,10 @@ static bool fn_iso_put_char_1(query *q)
 	char tmpbuf[80];
 	put_char_utf8(tmpbuf, ch);
 	net_write(tmpbuf, strlen(tmpbuf), str);
+
+	if (is_memory_stream(str))
+		return true;
+
 	return !ferror(str->fp);
 }
 
@@ -2779,6 +2837,10 @@ static bool fn_iso_put_char_2(query *q)
 	char tmpbuf[80];
 	put_char_utf8(tmpbuf, ch);
 	net_write(tmpbuf, strlen(tmpbuf), str);
+	
+	if (is_memory_stream(str))
+		return true;
+
 	return !ferror(str->fp);
 }
 
@@ -2841,6 +2903,10 @@ static bool fn_iso_put_code_2(query *q)
 	char tmpbuf[80];
 	put_char_utf8(tmpbuf, ch);
 	net_write(tmpbuf, strlen(tmpbuf), str);
+	
+	if (is_memory_stream(str))
+		return true;
+
 	return !ferror(str->fp);
 }
 
@@ -2870,6 +2936,10 @@ static bool fn_iso_put_byte_1(query *q)
 	char tmpbuf[80];
 	snprintf(tmpbuf, sizeof(tmpbuf), "%c", ch);
 	net_write(tmpbuf, 1, str);
+	
+	if (is_memory_stream(str))
+		return true;
+
 	return !ferror(str->fp);
 }
 
@@ -2899,6 +2969,10 @@ static bool fn_iso_put_byte_2(query *q)
 	char tmpbuf[80];
 	snprintf(tmpbuf, sizeof(tmpbuf), "%c", ch);
 	net_write(tmpbuf, 1, str);
+	
+	if (is_memory_stream(str))
+		return true;
+
 	return !ferror(str->fp);
 }
 
@@ -6371,13 +6445,15 @@ static bool fn_bwrite_2(query *q)
 		size_t nbytes = net_write(src, len, str);
 
 		if (!nbytes) {
-			if (feof(str->fp) || ferror(str->fp))
+			if (str->fp && (feof(str->fp) || ferror(str->fp)))
 				return false; // can feof() happen on writing?
 		}
 
 		// TODO: make this yieldable
 
-		clearerr(str->fp);
+		if (str->fp)
+			clearerr(str->fp);
+
 		len -= nbytes;
 		src += nbytes;
 	}
@@ -6405,6 +6481,9 @@ static bool fn_sys_put_chars_1(query *q)
 	} else
 		return throw_error(q, p1, p1_ctx, "type_error", "chars");
 
+	if (!str->fp)
+		return false;
+
 	return !ferror(str->fp);
 }
 
@@ -6428,6 +6507,9 @@ static bool fn_sys_put_chars_2(query *q)
 		;
 	} else
 		return throw_error(q, p1, p1_ctx, "type_error", "chars");
+
+	if (!str->fp)
+		return false;
 
 	return !ferror(str->fp);
 }
@@ -6858,6 +6940,138 @@ static bool fn_sys_capture_error_to_atom_1(query *q)
 	return ok;
 }
 
+#ifdef WASI_TARGET_SPIN
+static bool fn_sys_capture_buffer_0(query *q)
+{
+	int n = q->pl->current_buffer;
+	stream *str = &q->pl->streams[n];
+
+	if (str->is_memory) {
+		str->is_memory = false;
+		SB_free(str->sb);
+	} else
+		str->is_memory = true;
+
+	return true;
+}
+
+static bool fn_sys_capture_buffer_to_chars_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	int n = q->pl->current_buffer;
+	stream *str = &q->pl->streams[n];
+	const char *src = SB_cstr(str->sb);
+	size_t len = SB_strlen(str->sb);
+	cell tmp;
+	check_heap_error(make_stringn(&tmp, src, len));
+	str->is_memory = false;
+	SB_free(str->sb);
+	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);;
+	unshare_cell(&tmp);
+	return ok;
+}
+
+static bool fn_sys_capture_buffer_to_atom_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	int n = q->pl->current_buffer;
+	stream *str = &q->pl->streams[n];
+	const char *src = SB_cstr(str->sb);
+	size_t len = SB_strlen(str->sb);
+	cell tmp;
+	check_heap_error(make_cstringn(&tmp, src, len));
+	str->is_memory = false;
+	SB_free(str->sb);
+	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);;
+	unshare_cell(&tmp);
+	return ok;
+}
+#endif
+
+static bool fn_sys_memory_stream_create_2(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	int n = new_stream(q->pl);
+	GET_NEXT_ARG(p4,list_or_nil);
+
+	if (n < 0)
+		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
+
+	stream *str = &q->pl->streams[n];
+	if (!str->alias) str->alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL);
+	LIST_HANDLER(p4);
+
+	while (is_list(p4)) {
+		cell *h = LIST_HEAD(p4);
+		cell *c = deref(q, h, p4_ctx);
+		pl_idx_t c_ctx = q->latest_ctx;
+
+		if (is_var(c))
+			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+
+		cell *name = c + 1;
+		name = deref(q, name, c_ctx);
+
+		if (!CMP_STR_TO_CSTR(q, c, "alias")) {
+			if (is_var(name))
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+
+			if (!is_atom(name))
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+
+			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
+				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
+
+			if (!CMP_STR_TO_CSTR(q, name, "current_input")) {
+				q->pl->current_input = n;
+			} else if (!CMP_STR_TO_CSTR(q, name, "current_output")) {
+				q->pl->current_output = n;
+			} else if (!CMP_STR_TO_CSTR(q, name, "current_error")) {
+				q->pl->current_error = n;
+			} else {
+				map_set(str->alias, DUP_STR(q, name), NULL);
+			}
+		} else {
+			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+		}
+
+		p4 = LIST_TAIL(p4);
+		p4 = deref(q, p4, p4_ctx);
+		p4_ctx = q->latest_ctx;
+
+		if (is_var(p4))
+			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+	}
+
+
+	str->is_memory = true;
+	str->mode = strdup("append");
+	str->eof_action = eof_action_reset;
+	
+	cell tmp ;
+	make_int(&tmp, n);
+	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool fn_sys_memory_stream_to_chars_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	GET_NEXT_ARG(p2,var);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+	const char *src = SB_cstr(str->sb);
+	size_t len = SB_strlen(str->sb);
+	cell tmp;
+	check_heap_error(make_stringn(&tmp, src, len));
+	// str->is_memory = false;
+	SB_free(str->sb);
+	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);;
+	unshare_cell(&tmp);
+	return ok;
+}
+
+
 static bool fn_set_stream_2(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
@@ -7034,6 +7248,9 @@ builtins g_files_bifs[] =
 	{"$capture_error", 0, fn_sys_capture_error_0, NULL, false, false, BLAH},
 	{"$capture_error_to_chars", 1, fn_sys_capture_error_to_chars_1, "-chars", false, false, BLAH},
 	{"$capture_error_to_atom", 1, fn_sys_capture_error_to_atom_1, "-atom", false, false, BLAH},
+
+	{"$memory_stream_create", 2, fn_sys_memory_stream_create_2, "-stream,+options", false, false, BLAH},
+	{"$memory_stream_to_chars", 2, fn_sys_memory_stream_to_chars_2, "+stream,-string", false, false, BLAH},
 
 #if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 	{"process_create", 3, fn_process_create_3, "+atom,+args,+opts", false, false, BLAH},

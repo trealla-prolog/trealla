@@ -403,13 +403,15 @@ void pl_destroy(prolog *pl)
 	for (int i = 0; i < MAX_STREAMS; i++) {
 		stream *str = &pl->streams[i];
 
-		if (str->fp) {
+		if (is_live_stream(str)) {
 			if ((str->fp != stdin)
 				&& (str->fp != stdout)
 				&& (str->fp != stderr)
 			) {
 				if (str->is_map)
 					map_destroy(str->keyval);
+				if (str->is_memory)
+					SB_free(str->sb)
 				else if (str->fp && (i > 2))
 					fclose(str->fp);
 			}

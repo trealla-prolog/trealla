@@ -1,9 +1,11 @@
 #ifdef __wasi__
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 // WASI memory manipulation ABI
 
+#ifndef WASI_TARGET_SPIN
 __attribute__((weak, export_name("canonical_abi_realloc")))
 void *canonical_abi_realloc(void *ptr, size_t orig_size, size_t org_align, size_t new_size) {
   void *ret = realloc(ptr, new_size);
@@ -16,6 +18,8 @@ __attribute__((weak, export_name("canonical_abi_free")))
 void canonical_abi_free(void *ptr, size_t size, size_t align) {
   free(ptr);
 }
+#endif
+
 
 #ifdef WASI_IMPORTS
 

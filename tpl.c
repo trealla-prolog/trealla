@@ -27,6 +27,10 @@
 void *g_tpl = NULL;
 #endif
 
+#ifdef WASI_TARGET_SPIN
+#include "spin-http.h"
+#endif
+
 #ifndef __wasi__
 #include <sys/wait.h>
 #endif
@@ -407,6 +411,98 @@ int main(int ac, char *av[], char * envp[])
 
 	return halt_code;
 }
+
+
+#ifdef WASI_TARGET_SPIN
+extern void spin_http_handle_http_request(spin_http_request_t *request, spin_http_response_t *response) {
+	g_tpl_lib = strdup("/lib");
+	convert_path(g_tpl_lib);
+	if (!initialized) init_func();
+	g_init();
+	prolog* pl = g_tpl;
+
+	bool ok = false;
+	if (request->body.is_some && request->body.val.len > 0) {
+		const char *prefix = "'$capture_output', '$capture_error',";
+		int32_t prefix_len = strlen(prefix);
+		char* q = malloc(request->body.val.len + prefix_len + 1);
+		memcpy(q, prefix, prefix_len);
+		memcpy(q + prefix_len, request->body.val.ptr, request->body.val.len);
+		q[request->body.val.len + prefix_len] = 0;
+		printf("QUERY: %s (sz: %d)\n", q, request->body.val.len);
+		ok = pl_eval(pl, q);
+		free(q);
+	} else {
+		ok = pl_eval(pl, "'$capture_output', write(test), nl.");
+	}
+
+	if (!ok || !get_status(pl)) {
+		int n = pl->current_error;
+		stream *str = &pl->streams[n];
+		const char *src = SB_cstr(str->sb);
+		size_t len = SB_strlen(str->sb);
+		char* body = (len > 0) ? strdup(src) : strdup("query failed :(\n");
+		int32_t body_length = strlen(body);
+		response->status = 500;
+		response->body.is_some = true;
+		response->body.val.ptr = body;
+		response->body.val.len = body_length;
+
+		pl_reset(pl);
+		return;
+	}
+
+	int n = pl->current_output;
+	stream *str = &pl->streams[n];
+	const char *src = SB_cstr(str->sb);
+	size_t len = SB_strlen(str->sb);
+
+	printf("got: %s %d\n", src, len);
+
+
+	spin_http_string_t header_name;
+	spin_http_string_dup(&header_name, "Content-Type");
+	spin_http_string_t header_value;
+	spin_http_string_dup(&header_value, "text/plain; charset=utf-8");
+	spin_http_tuple2_string_string_t *header = (spin_http_tuple2_string_string_t *)(
+		malloc(sizeof(spin_http_tuple2_string_string_t)));
+	header->f0 = header_name;
+	header->f1 = header_value;
+
+//	 char* body_string = "Hello, Fermyon!\n";
+	char* body_string = src;
+	int32_t body_length = len;
+	// int32_t body_length = strlen(body_string);
+	char* body = malloc(body_length);
+	memcpy(body, body_string, body_length);
+	
+	response->status = 200;
+	response->headers.is_some = true;
+	response->headers.val.ptr = header;
+	response->headers.val.len = 1;
+	response->body.is_some = true;
+	response->body.val.ptr = body;
+	response->body.val.len = body_length;
+
+	pl_reset(pl);
+}
+
+static void pl_reset(prolog* pl) {
+	int n = pl->current_output;
+	stream *str = &pl->streams[n];
+	if (str->is_memory) {
+		str->is_memory = false;
+		SB_free(str->sb);
+	}
+	n = pl->current_error;
+	str = &pl->streams[n];
+	if (str->is_memory) {
+		str->is_memory = false;
+		SB_free(str->sb);
+	}
+}
+
+#endif
 
 #ifdef __wasi__
 #undef pl_destroy

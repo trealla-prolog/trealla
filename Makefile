@@ -122,6 +122,10 @@ LIBOBJECTS +=  \
 SRCOBJECTS += src/imath/imath.o
 SRCOBJECTS += src/sre/re.o
 
+ifdef WASI
+SRCOBJECTS += src/wasm/spin-http.o
+endif
+
 ifdef ISOCLINE
 SRCOBJECTS += src/isocline/src/isocline.o
 endif
@@ -162,6 +166,9 @@ libtpl.wasm:
 libtpl-js.wasm:
 	$(MAKE) WASI=1 TPL=libtpl-js.wasm 'OPT=$(OPT) -O0 -DNDEBUG -DWASI_IMPORTS -DWASI_TARGET_JS'
 
+libtpl-spin.wasm:
+	$(MAKE) WASI=1 TPL=libtpl-spin.wasm 'OPT=$(OPT) -O0 -DNDEBUG -DWASI_TARGET_SPIN'
+
 libtpl: libtpl.wasm
 # TODO: add to wizer --wasm-bulk-memory true
 	$(WIZER)  --allow-wasi --dir . -o libtpl-wizened.wasm libtpl.wasm
@@ -174,6 +181,15 @@ libtpl-js: libtpl-js.wasm
 	$(WASMOPT) libtpl-wizened.wasm -o libtpl-js.wasm -O4
 	rm libtpl-wizened.wasm
 
+libtpl-spin: libtpl-spin.wasm
+# TODO: add to wizer --wasm-bulk-memory true
+	$(WIZER)  --allow-wasi --dir . -o libtpl-wizened.wasm libtpl-spin.wasm
+	$(WASMOPT) libtpl-wizened.wasm -o libtpl-spin.wasm -O4
+	rm libtpl-wizened.wasm
+
+wit:
+	wit-bindgen guest c --export ../spin/wit/ephemeral/spin-http.wit --out-dir ./src/wasm/
+
 test:
 	./tests/run.sh
 
@@ -185,7 +201,7 @@ check-leaks:
 
 clean:
 	rm -f tpl tpl.wasm tpl*.wasm libtpl*.wasm \
-		src/*.o src/imath/*.o src/isocline/src/*.o src/sre/*.o \
+		src/*.o src/imath/*.o src/isocline/src/*.o src/sre/*.o src/wasm/*.o \
 		library/*.o library/*.c *.o samples/*.o samples/*.so \
 		vgcore.* *.core core core.* *.exe gmon.*
 	rm -f *.itf *.po samples/*.itf samples/*.po
@@ -263,6 +279,7 @@ src/wasi.o: src/wasi.c
 src/version.o: src/version.c
 src/imath.o: src/imath/imath.c src/imath/imath.h
 src/re.o: src/sre/re.c src/sre/re.h
+src/spin-http.o: src/wasm/spin-http.c src/wasm/spin-http.h
 src/isocline.o: src/isocline/src/isocline.c src/isocline/src/attr.c \
   src/isocline/src/common.h src/isocline/src/../include/isocline.h \
   src/isocline/src/stringbuf.h src/isocline/src/attr.h \
