@@ -1149,27 +1149,41 @@ static void directives(parser *p, cell *d)
 	}
 }
 
-static void check_first_cut(parser *p)
+static void check_first_cut(clause *cl)
 {
-	cell *c = get_body(p->cl->cells);
+	cell *c = get_body(cl->cells);
 	int is_cut_only = true;
 
 	if (!c)
 		return;
 
+	if (c->val_off == g_cut_s) {
+		cl->is_first_cut = true;
+		return;
+	}
+
+	if (c->val_off == g_conjunction_s) {
+		c += 1;
+
+		if (c->val_off == g_cut_s) {
+			cl->is_first_cut = true;
+			return;
+		}
+	}
+
 	while (!is_end(c)) {
 		if (!(c->flags&FLAG_BUILTIN))
 			break;
 
-		if (!strcmp(C_STR(p, c), ",")
-			|| !strcmp(C_STR(p, c), ";")
-			|| !strcmp(C_STR(p, c), "->")
-			|| !strcmp(C_STR(p, c), "*->")
-			|| !strcmp(C_STR(p, c), "-->")
+		if ((c->val_off == g_conjunction_s)
+			|| (c->val_off == g_disjunction_s)
+			|| (c->val_off == g_if_then_s)
+			|| (c->val_off == g_soft_cut_s)
+			|| (c->val_off == g_dcg_s)
 			)
 			;
-		else if (!IS_OP(c) && !strcmp(C_STR(p, c), "!")) {
-			p->cl->is_first_cut = true;
+		else if (!IS_OP(c) && (c->val_off == g_cut_s)) {
+			cl->is_first_cut = true;
 			break;
 		} else {
 			is_cut_only = false;
@@ -1179,8 +1193,8 @@ static void check_first_cut(parser *p)
 		c += c->nbr_cells;
 	}
 
-	if (p->cl->is_first_cut && is_cut_only)
-		p->cl->is_cut_only = true;
+	if (cl->is_first_cut && is_cut_only)
+		cl->is_cut_only = true;
 }
 
 static pl_idx_t get_varno(parser *p, const char *src)
@@ -1328,8 +1342,6 @@ void term_assign_vars(parser *p, unsigned start, bool rebase)
 	ensure(c);
 	c->tag = TAG_END;
 	c->nbr_cells = 1;
-	check_first_cut(p);
-	p->cl->is_fact = !get_logical_body(p->cl->cells);
 }
 
 static bool reduce(parser *p, pl_idx_t start_idx, bool last_op)
@@ -3091,7 +3103,9 @@ static bool process_term(parser *p, cell *p1)
 		h->arity = 0;
 	}
 
-	if (!assertz_to_db(p->m, p->cl->nbr_vars, p->cl->nbr_temporaries, p1, 1)) {
+	db_entry *dbe;
+
+	if ((dbe = assertz_to_db(p->m, p->cl->nbr_vars, p->cl->nbr_temporaries, p1, 1)) == NULL) {
 		if (DUMP_ERRS || !p->do_read_term)
 			printf("Error: assertion failed '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 
@@ -3099,6 +3113,8 @@ static bool process_term(parser *p, cell *p1)
 		return false;
 	}
 
+	check_first_cut(&dbe->cl);
+	dbe->cl.is_fact = !get_logical_body(dbe->cl.cells);
 	return true;
 }
 
