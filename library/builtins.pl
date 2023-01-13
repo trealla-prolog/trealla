@@ -139,6 +139,13 @@ keysort_(_, _, Sorted, _) :-
 '$key_partition'(_, _, List, _, _, _, _) :-
 	throw(error(type_error(list,List), keysort/2)).
 
+permutation([], []).
+permutation([X|Rest], L) :-
+    permutation(Rest, L1),
+    select(X, L, L1).
+
+% :- help(permutation(?list,?list), [iso(false)]).
+
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
