@@ -990,7 +990,6 @@ void cut_me(query *q)
 
 	while (q->cp) {
 		choice *ch = GET_CURR_CHOICE();
-		const choice *save_ch = ch;
 
 		// A normal cut can't break out of a barrier...
 
