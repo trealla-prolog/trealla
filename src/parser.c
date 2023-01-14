@@ -1152,13 +1152,13 @@ static void directives(parser *p, cell *d)
 static void check_first_cut(clause *cl)
 {
 	cell *c = get_body(cl->cells);
-	int is_cut_only = true;
 
 	if (!c)
 		return;
 
 	if (c->val_off == g_cut_s) {
 		cl->is_first_cut = true;
+		cl->is_cut_only = true;
 		return;
 	}
 
@@ -1170,31 +1170,6 @@ static void check_first_cut(clause *cl)
 			return;
 		}
 	}
-
-	while (!is_end(c)) {
-		if (!(c->flags&FLAG_BUILTIN))
-			break;
-
-		if ((c->val_off == g_conjunction_s)
-			|| (c->val_off == g_disjunction_s)
-			|| (c->val_off == g_if_then_s)
-			|| (c->val_off == g_soft_cut_s)
-			|| (c->val_off == g_dcg_s)
-			)
-			;
-		else if (!IS_OP(c) && (c->val_off == g_cut_s)) {
-			cl->is_first_cut = true;
-			break;
-		} else {
-			is_cut_only = false;
-			break;
-		}
-
-		c += c->nbr_cells;
-	}
-
-	if (cl->is_first_cut && is_cut_only)
-		cl->is_cut_only = true;
 }
 
 static pl_idx_t get_varno(parser *p, const char *src)

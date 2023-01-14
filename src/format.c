@@ -142,7 +142,7 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 	save_fmt2 = fmt2;
 
 	while (is_more_data(q, &fmt1)) {
-		int argval = 0, noargval = 1;
+		int argval = 0, noargval = 1, argval_specified = 0;
 		int pos = dst - tmpbuf + 1;
         list_reader_t tmp_fmt1 = fmt1, tmp_fmt2 = fmt2;
 
@@ -167,6 +167,7 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 			}
 
 			argval = get_smallint(c);
+			argval_specified = 1;
 			ch = get_next_char(q, &fmt1);
 		} else if (ch == '`') {
 			ch = get_next_char(q, &fmt1);
@@ -174,6 +175,7 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 			ch = get_next_char(q, &fmt1);
 		} else {
 			while (isdigit(ch)) {
+				argval_specified = 1;
 				noargval = 0;
 				argval *= 10;
 				argval += ch - '0';
@@ -416,7 +418,7 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 			len = 40;
 			CHECK_BUF(len);
 
-			if (argval)
+			if (argval || argval_specified)
 				len = sprintf(dst, "%.*f", argval, is_float(c) ? get_float(c) : get_smallint(c));
 			else
 				len = sprintf(dst, "%f", is_float(c) ? get_float(c) : get_smallint(c));
