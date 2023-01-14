@@ -363,7 +363,7 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 
 		case 'e':
 		case 'E':
-			if (!is_float(c)) {
+			if (!is_float(c) && !is_smallint(c)) {
 				free(tmpbuf);
 				return throw_error(q, c, q->st.curr_frame, "type_error", "float");
 			}
@@ -373,21 +373,21 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 
 			if (argval) {
 				if (ch == 'e')
-					len = sprintf(dst, "%.*e", argval, get_float(c));
+					len = sprintf(dst, "%.*e", argval, is_float(c) ? get_float(c) : get_smallint(c));
 				else
-					len = sprintf(dst, "%.*E", argval, get_float(c));
+					len = sprintf(dst, "%.*E", argval, is_float(c) ? get_float(c) : get_smallint(c));
 			} else {
 				if (ch == 'e')
-					len = sprintf(dst, "%e", get_float(c));
+					len = sprintf(dst, "%e", is_float(c) ? get_float(c) : get_smallint(c));
 				else
-					len = sprintf(dst, "%E", get_float(c));
+					len = sprintf(dst, "%E", is_float(c) ? get_float(c) : get_smallint(c));
 			}
 
 			break;
 
 		case 'g':
 		case 'G':
-			if (!is_float(c)) {
+			if (!is_float(c) && !is_smallint(c)) {
 				free(tmpbuf);
 				return throw_error(q, c, q->st.curr_frame, "type_error", "float");
 			}
@@ -397,14 +397,14 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 
 			if (argval) {
 				if (ch == 'g')
-					len = sprintf(dst, "%.*g", argval, get_float(c));
+					len = sprintf(dst, "%.*g", argval, is_float(c) ? get_float(c) : get_smallint(c));
 				else
-					len = sprintf(dst, "%.*G", argval, get_float(c));
+					len = sprintf(dst, "%.*G", argval, is_float(c) ? get_float(c) : get_smallint(c));
 			} else {
 				if (ch == 'g')
-					len = sprintf(dst, "%g", get_float(c));
+					len = sprintf(dst, "%g", is_float(c) ? get_float(c) : get_smallint(c));
 				else
-					len = sprintf(dst, "%G", get_float(c));
+					len = sprintf(dst, "%G", is_float(c) ? get_float(c) : get_smallint(c));
 			}
 
 			break;
