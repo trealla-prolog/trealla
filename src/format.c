@@ -8,9 +8,21 @@
 
 static int format_integer(char *dst, cell *c, int grouping, int sep, int decimals, int radix)
 {
-	pl_int_t v = get_smallint(c);
-	char tmpbuf1[1024], tmpbuf2[1024];
-	sprint_int(tmpbuf1, sizeof(tmpbuf1), v, radix);
+	char *tmpbuf1 = NULL, *tmpbuf2 = NULL;
+	char xtmpbuf1[256], xtmpbuf2[256];
+
+	if (is_smallint(c)) {
+		pl_int_t v = get_smallint(c);
+		sprint_int(xtmpbuf1, sizeof(xtmpbuf1), v, radix);
+		tmpbuf1 = xtmpbuf1;
+		tmpbuf2 = xtmpbuf2;
+	} else {
+		size_t len = mp_int_string_len(&c->val_bigint->ival, radix) - 1;
+		tmpbuf1 = malloc(len+1);
+		tmpbuf2 = malloc(len+1);
+		mp_int_to_string(&c->val_bigint->ival, radix, tmpbuf1, len+1);
+	}
+
 	const char *src = tmpbuf1 + strlen(tmpbuf1) - 1;	// start from back
 	char *dst2 = tmpbuf2;
 	int i = 1, j = 1;
@@ -36,6 +48,12 @@ static int format_integer(char *dst, cell *c, int grouping, int sep, int decimal
 		*dst2++ = *src--;
 
 	*dst2 = '\0';
+
+	if (!is_smallint(c)) {
+		free(tmpbuf1);
+		free(tmpbuf2);
+	}
+
 	return dst2 - dst;
 }
 
@@ -432,8 +450,8 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 				return throw_error(q, c, q->st.curr_frame, "type_error", "integer");
 			}
 
-			len = 40;
-			CHECK_BUF(len);
+			len = print_term_to_buf(q, NULL, 0, c, 0, 0, false, 0);
+			CHECK_BUF(len*10);
 			len = format_integer(dst, c, noargval?3:argval, '_', 0, 10);
 			break;
 
@@ -443,8 +461,8 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 				return throw_error(q, c, q->st.curr_frame, "type_error", "integer");
 			}
 
-			len = 40;
-			CHECK_BUF(len);
+			len = print_term_to_buf(q, NULL, 0, c, 0, 0, false, 0);
+			CHECK_BUF(len*10);
 			len = format_integer(dst, c, 0, ',', noargval?0:argval, 10);
 			break;
 
@@ -454,8 +472,8 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 				return throw_error(q, c, q->st.curr_frame, "type_error", "integer");
 			}
 
-			len = 40;
-			CHECK_BUF(len);
+			len = print_term_to_buf(q, NULL, 0, c, 0, 0, false, 0);
+			CHECK_BUF(len*10);
 			len = format_integer(dst, c, 3, ',', noargval?0:argval, 10);
 			break;
 
@@ -470,8 +488,8 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 				return throw_error(q, c, q->st.curr_frame, "type_error", "integer");
 			}
 
-			len = 40;
-			CHECK_BUF(len);
+			len = print_term_to_buf(q, NULL, 0, c, 0, 0, false, 0);
+			CHECK_BUF(len*10);
 			len = format_integer(dst, c, 0, ',', 0, !argval?8:argval);
 			break;
 
@@ -486,8 +504,8 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 				return throw_error(q, c, q->st.curr_frame, "type_error", "integer");
 			}
 
-			len = 40;
-			CHECK_BUF(len);
+			len = print_term_to_buf(q, NULL, 0, c, 0, 0, false, 0);
+			CHECK_BUF(len*10);
 			len = format_integer(dst, c, 0, ',', 0, !argval?-8:-argval);
 			break;
 
