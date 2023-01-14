@@ -5554,10 +5554,10 @@ static bool do_urlencode_2(query *q)
 	url_encode(str, len, dstbuf);
 	cell tmp;
 
-	if (is_string(p1))
-		check_heap_error(make_string(&tmp, dstbuf), free(dstbuf));
-	else
+	if (!is_list(p1))
 		check_heap_error(make_cstring(&tmp, dstbuf), free(dstbuf));
+	else
+		check_heap_error(make_string(&tmp, dstbuf), free(dstbuf));
 
 	free(dstbuf);
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
@@ -5576,10 +5576,10 @@ static bool do_urldecode_2(query *q)
 	url_decode(str, dstbuf);
 	cell tmp;
 
-	if (is_string(p1))
-		check_heap_error(make_string(&tmp, dstbuf), free(dstbuf));
-	else
+	if (!is_list(p2))
 		check_heap_error(make_cstring(&tmp, dstbuf), free(dstbuf));
+	else
+		check_heap_error(make_string(&tmp, dstbuf), free(dstbuf));
 
 	free(dstbuf);
 	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
