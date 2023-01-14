@@ -543,7 +543,8 @@ nb_delete(K) :-
 nb_delete(_).
 
 nb_current(K, V) :-
-	user:clause('$global_key'(K, V), nb_current/2).
+	can_be(K, atom, nb_current/2, _),
+	user:clause('$global_key'(K, V), true).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
