@@ -3948,6 +3948,9 @@ static void save_db(FILE *fp, query *q, int logging)
 				q->ignores[i] = false;
 
 			q->print_idx = 0;
+
+			//printf("*** %d/%d ", dbe->cl.is_first_cut, dbe->cl.is_cut_only);
+
 			print_term(q, fp, dbe->cl.cells, 0, 0);
 
 			if (logging) {
