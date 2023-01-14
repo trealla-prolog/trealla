@@ -6,8 +6,9 @@
 #include "query.h"
 #include "utf8.h"
 
-static int format_integer(char *dst, pl_int_t v, int grouping, int sep, int decimals, int radix)
+static int format_integer(char *dst, cell *c, int grouping, int sep, int decimals, int radix)
 {
+	pl_int_t v = get_smallint(c);
 	char tmpbuf1[1024], tmpbuf2[1024];
 	sprint_int(tmpbuf1, sizeof(tmpbuf1), v, radix);
 	const char *src = tmpbuf1 + strlen(tmpbuf1) - 1;	// start from back
@@ -433,7 +434,7 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 
 			len = 40;
 			CHECK_BUF(len);
-			len = format_integer(dst, get_smallint(c), noargval?3:argval, '_', 0, 10);
+			len = format_integer(dst, c, noargval?3:argval, '_', 0, 10);
 			break;
 
 		case 'd':
@@ -444,7 +445,7 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 
 			len = 40;
 			CHECK_BUF(len);
-			len = format_integer(dst, get_smallint(c), 0, ',', noargval?0:argval, 10);
+			len = format_integer(dst, c, 0, ',', noargval?0:argval, 10);
 			break;
 
 		case 'D':
@@ -455,7 +456,7 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 
 			len = 40;
 			CHECK_BUF(len);
-			len = format_integer(dst, get_smallint(c), 3, ',', noargval?0:argval, 10);
+			len = format_integer(dst, c, 3, ',', noargval?0:argval, 10);
 			break;
 
 		case 'r':
@@ -471,7 +472,7 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 
 			len = 40;
 			CHECK_BUF(len);
-			len = format_integer(dst, get_smallint(c), 0, ',', 0, !argval?8:argval);
+			len = format_integer(dst, c, 0, ',', 0, !argval?8:argval);
 			break;
 
 		case 'R':
@@ -487,7 +488,7 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 
 			len = 40;
 			CHECK_BUF(len);
-			len = format_integer(dst, get_smallint(c), 0, ',', 0, !argval?-8:-argval);
+			len = format_integer(dst, c, 0, ',', 0, !argval?-8:-argval);
 			break;
 
 		case 'k':
