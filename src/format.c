@@ -390,7 +390,7 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 			len = 40;
 			CHECK_BUF(len);
 
-			if (argval) {
+			if (argval || argval_specified) {
 				if (ch == 'e')
 					len = sprintf(dst, "%.*e", argval, is_float(c) ? get_float(c) : get_smallint(c));
 				else
@@ -414,7 +414,7 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 			len = 40;
 			CHECK_BUF(len);
 
-			if (argval) {
+			if (argval || argval_specified) {
 				if (ch == 'g')
 					len = sprintf(dst, "%.*g", argval, is_float(c) ? get_float(c) : get_smallint(c));
 				else
