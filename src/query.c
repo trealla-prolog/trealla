@@ -1005,6 +1005,14 @@ void cut_me(query *q)
 			ch->st.iter = NULL;
 		}
 
+		frame *f = GET_FRAME(ch->st.curr_frame);
+
+		if ((ch->st.fp == (q->st.curr_frame + 1))
+			&& (f->actual_slots == 0)
+			) {
+				q->st.fp = ch->st.fp;
+			}
+
 		unshare_predicate(q, ch->st.pr);
 		q->cp--;
 
