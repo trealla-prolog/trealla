@@ -392,14 +392,14 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 
 			if (argval || argval_specified) {
 				if (ch == 'e')
-					len = sprintf(dst, "%.*e", argval, is_float(c) ? get_float(c) : get_smallint(c));
+					len = snprintf(dst, 40, "%.*e", argval, is_float(c) ? get_float(c) : get_smallint(c));
 				else
-					len = sprintf(dst, "%.*E", argval, is_float(c) ? get_float(c) : get_smallint(c));
+					len = snprintf(dst, 40, "%.*E", argval, is_float(c) ? get_float(c) : get_smallint(c));
 			} else {
 				if (ch == 'e')
-					len = sprintf(dst, "%e", is_float(c) ? get_float(c) : get_smallint(c));
+					len = snprintf(dst, 40, "%e", is_float(c) ? get_float(c) : get_smallint(c));
 				else
-					len = sprintf(dst, "%E", is_float(c) ? get_float(c) : get_smallint(c));
+					len = snprintf(dst, 40, "%E", is_float(c) ? get_float(c) : get_smallint(c));
 			}
 
 			break;
@@ -416,14 +416,14 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 
 			if (argval || argval_specified) {
 				if (ch == 'g')
-					len = sprintf(dst, "%.*g", argval, is_float(c) ? get_float(c) : get_smallint(c));
+					len = snprintf(dst, 40, "%.*g", argval, is_float(c) ? get_float(c) : get_smallint(c));
 				else
-					len = sprintf(dst, "%.*G", argval, is_float(c) ? get_float(c) : get_smallint(c));
+					len = snprintf(dst, 40, "%.*G", argval, is_float(c) ? get_float(c) : get_smallint(c));
 			} else {
 				if (ch == 'g')
-					len = sprintf(dst, "%g", is_float(c) ? get_float(c) : get_smallint(c));
+					len = snprintf(dst, 40, "%g", is_float(c) ? get_float(c) : get_smallint(c));
 				else
-					len = sprintf(dst, "%G", is_float(c) ? get_float(c) : get_smallint(c));
+					len = snprintf(dst, 40, "%G", is_float(c) ? get_float(c) : get_smallint(c));
 			}
 
 			break;
@@ -438,9 +438,9 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 			CHECK_BUF(len);
 
 			if (argval || argval_specified)
-				len = sprintf(dst, "%.*f", argval, is_float(c) ? get_float(c) : get_smallint(c));
+				len = snprintf(dst, 40, "%.*f", argval, is_float(c) ? get_float(c) : get_smallint(c));
 			else
-				len = sprintf(dst, "%f", is_float(c) ? get_float(c) : get_smallint(c));
+				len = snprintf(dst, 40, "%f", is_float(c) ? get_float(c) : get_smallint(c));
 
 			break;
 
