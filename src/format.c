@@ -563,6 +563,13 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 
 	*dst = '\0';
 	size_t len = dst - tmpbuf;
+	cell *save_l = fmt2.p;
+	pl_idx_t save_l_ctx = fmt2.p_ctx;
+
+	cell *c = get_next_cell(q, &fmt2);
+
+	if (c)
+		return throw_error(q, save_l, save_l_ctx, "domain_error", "empty_list");
 
 	if (str == NULL) {
 		int n = q->st.m->pl->current_output;
