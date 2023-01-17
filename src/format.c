@@ -131,7 +131,7 @@ static bool is_more_data(query *q, list_reader_t *fmt)
 		size_t save = dst - tmpbuf;							\
 		bufsiz += len;										\
 		tmpbuf = realloc(tmpbuf, bufsiz*=2);				\
-		check_heap_error(tmpbuf);								\
+		check_heap_error(tmpbuf);							\
 		dst = tmpbuf + save;								\
 		nbytes = bufsiz - save;								\
 	}                                                       \
@@ -317,13 +317,13 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 		if (!p2 || !is_list(p2)) {
 			cell tmp;
 			make_atom(&tmp, g_nil_s);
-			return throw_error(q, &tmp, q->st.curr_frame, "domain_error", "missing_args");
+			return throw_error(q, &tmp, q->st.curr_frame, "domain_error", "non_empty_list");
 		}
 
 		cell *c = get_next_cell(q, &fmt2);
 
 		if (!c)
-			return throw_error(q, p2, p2_ctx, "domain_error", "missing_args");
+			return throw_error(q, p2, p2_ctx, "domain_error", "non_empty_list");
 
 		if (ch == 'i')
 			continue;
