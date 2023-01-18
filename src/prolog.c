@@ -570,11 +570,6 @@ prolog *pl_create()
 	}
 
 	pl->curr_m = pl->user_m;
-	pl->tabs_size = 0;
-	pl->tabs = NULL;
-	pl->s_last = 0;
-	pl->s_cnt = 0;
-	pl->seed = 0;
 
 	pl->current_input = 0;		// STDIN
 	pl->current_output = 1;		// STDOUT
