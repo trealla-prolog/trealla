@@ -2038,7 +2038,7 @@ bool virtual_term(parser *p, const char *src)
 	return true;
 }
 
-static cell *make_interned(parser *p, pl_idx_t offset)
+cell *make_interned(parser *p, pl_idx_t offset)
 {
 	cell *c = make_a_cell(p);
 	c->tag = TAG_INTERNED;

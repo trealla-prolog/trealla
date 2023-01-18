@@ -322,8 +322,11 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 
 		cell *c = get_next_cell(q, &fmt2);
 
-		if (!c)
-			return throw_error(q, p2, p2_ctx, "domain_error", "non_empty_list");
+		if (!c) {
+			cell tmp;
+			make_atom(&tmp, g_nil_s);
+			return throw_error(q, &tmp, p2_ctx, "domain_error", "non_empty_list");
+		}
 
 		if (ch == 'i')
 			continue;
