@@ -505,6 +505,7 @@ struct slot_ {
 	bool mark:1;
 };
 
+// Where 'prev_frame_offset' is the number of frames back
 // Where *initial_slots* is the initial number allocated
 // Where *actual_slots* is the actual number in use (some maybe created)
 // Where *base* is the offset to first slot in use
