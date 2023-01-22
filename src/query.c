@@ -727,7 +727,6 @@ static void reuse_frame(query *q, frame* f, const clause *cl)
 	}
 
 	f->cgen = ++q->cgen;
-	//f->cgen = newf->cgen;
 	f->initial_slots = f->actual_slots = cl->nbr_vars - cl->nbr_temporaries;
 	f->overflow = 0;
 
