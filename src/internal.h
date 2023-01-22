@@ -505,7 +505,7 @@ struct slot_ {
 	bool mark:1;
 };
 
-// Where 'prev_frame_offset' is the number of frames back
+// Where 'prev_offset' is the number of frames back
 // Where *initial_slots* is the initial number allocated
 // Where *actual_slots* is the actual number in use (some maybe created)
 // Where *base* is the offset to first slot in use
@@ -514,7 +514,7 @@ struct slot_ {
 struct frame_ {
 	cell *prev_cell;
 	uint64_t ugen, cgen;
-	pl_idx_t prev_frame_offset, base, overflow;
+	pl_idx_t prev_offset, base, overflow;
 	uint32_t initial_slots, actual_slots;
 	uint16_t mid;
 	bool is_last:1;

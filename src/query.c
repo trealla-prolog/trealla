@@ -697,10 +697,10 @@ static frame *push_frame(query *q, clause *cl)
 	// Avoid long chains of useless returns...
 
 	if (is_end(next_cell) && !next_cell->val_ret && curr_f->prev_cell) {
-		f->prev_frame_offset = (new_frame - q->st.curr_frame) + curr_f->prev_frame_offset;
+		f->prev_offset = (new_frame - q->st.curr_frame) + curr_f->prev_offset;
 		f->prev_cell = curr_f->prev_cell;
 	} else {
-		f->prev_frame_offset = new_frame - q->st.curr_frame;
+		f->prev_offset = new_frame - q->st.curr_frame;
 		f->prev_cell = q->st.curr_cell;
 	}
 
@@ -917,7 +917,7 @@ void stash_me(query *q, const clause *cl, bool last_match)
 		pl_idx_t new_frame = q->st.fp++;
 		frame *f = GET_FRAME(new_frame);
 		f->is_last = last_match;
-		f->prev_frame_offset = new_frame - q->st.curr_frame;
+		f->prev_offset = new_frame - q->st.curr_frame;
 		f->prev_cell = NULL;
 		f->cgen = cgen;
 		f->overflow = 0;
@@ -1126,7 +1126,7 @@ static void chop_frames(query *q, const frame *f)
 {
 	if (q->st.curr_frame == (q->st.fp-1)) {
 		const frame *tmpf = f;
-		pl_idx_t prev_frame = q->st.curr_frame - f->prev_frame_offset;
+		pl_idx_t prev_frame = q->st.curr_frame - f->prev_offset;
 
 		while (q->st.fp > (prev_frame+1)) {
 			if (any_choices(q, tmpf))
@@ -1155,7 +1155,7 @@ static bool resume_frame(query *q)
 		chop_frames(q, f);
 
 	q->st.curr_cell = f->prev_cell;
-	q->st.curr_frame = q->st.curr_frame - f->prev_frame_offset;
+	q->st.curr_frame = q->st.curr_frame - f->prev_offset;
 	f = GET_CURR_FRAME();
 	q->st.m = q->pl->modmap[f->mid];
 	return true;
