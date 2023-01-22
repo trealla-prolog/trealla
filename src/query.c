@@ -726,7 +726,8 @@ static void reuse_frame(query *q, frame* f, const clause *cl)
 		*to = *from;
 	}
 
-	f->cgen = newf->cgen;
+	f->cgen = ++q->cgen;
+	//f->cgen = newf->cgen;
 	f->initial_slots = f->actual_slots = cl->nbr_vars - cl->nbr_temporaries;
 	f->overflow = 0;
 
@@ -993,11 +994,12 @@ void cut_me(query *q)
 
 		// A normal cut can't break out of a barrier...
 
-		if (ch->barrier && (ch->cgen <= f->cgen))
-			break;
-
-		if (ch->cgen < f->cgen) {
-			break;
+		if (ch->barrier) {
+			if (ch->cgen <= f->cgen)
+				break;
+		} else {
+			if (ch->cgen < f->cgen)
+				break;
 		}
 
 		if (ch->st.iter) {
