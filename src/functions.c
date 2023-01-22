@@ -1778,6 +1778,13 @@ static bool fn_iso_max_2(query *q)
 			} else {
 				mp_int_set_value(&q->tmp_ival, p2.val_int);
 			}
+		} else if (is_float(&p2)) {
+			double f1 = BIGINT_TO_DOUBLE(&p1.val_bigint->ival);
+
+			if (f1 > p2.val_float)
+				q->accum = p1;
+			else
+				q->accum = p2;
 		} else
 			return throw_error(q, &p2, q->st.curr_frame, "type_error", "integer");
 
@@ -1789,6 +1796,13 @@ static bool fn_iso_max_2(query *q)
 			} else {
 				mp_int_set_value(&q->tmp_ival, p1.val_int);
 			}
+		} else if (is_float(&p1)) {
+			double f2 = BIGINT_TO_DOUBLE(&p2.val_bigint->ival);
+
+			if (f2 > p1.val_float)
+				q->accum = p2;
+			else
+				q->accum = p1;
 		} else
 			return throw_error(q, &p2, q->st.curr_frame, "type_error", "integer");
 
@@ -1853,6 +1867,13 @@ static bool fn_iso_min_2(query *q)
 			} else {
 				mp_int_set_value(&q->tmp_ival, p2.val_int);
 			}
+		} else if (is_float(&p2)) {
+			double f1 = BIGINT_TO_DOUBLE(&p1.val_bigint->ival);
+
+			if (f1 < p2.val_float)
+				q->accum = p1;
+			else
+				q->accum = p2;
 		} else
 			return throw_error(q, &p2, q->st.curr_frame, "type_error", "integer");
 
@@ -1865,6 +1886,13 @@ static bool fn_iso_min_2(query *q)
 			} else {
 				mp_int_set_value(&q->tmp_ival, p1.val_int);
 			}
+		} else if (is_float(&p1)) {
+			double f2 = BIGINT_TO_DOUBLE(&p2.val_bigint->ival);
+
+			if (f2 < p1.val_float)
+				q->accum = p2;
+			else
+				q->accum = p1;
 		} else
 			return throw_error(q, &p2, q->st.curr_frame, "type_error", "integer");
 
