@@ -419,14 +419,14 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 
 			if (argval || argval_specified) {
 				if (ch == 'g')
-					len = snprintf(dst, len, "%.*lg", argval, is_float(c) ? get_float(c) : get_smallint(c));
+					len = snprintf(dst, len, "%.*g", argval, is_float(c) ? get_float(c) : get_smallint(c));
 				else
-					len = snprintf(dst, len, "%.*lG", argval, is_float(c) ? get_float(c) : get_smallint(c));
+					len = snprintf(dst, len, "%.*G", argval, is_float(c) ? get_float(c) : get_smallint(c));
 			} else {
 				if (ch == 'g')
-					len = snprintf(dst, len, "%lg", is_float(c) ? get_float(c) : get_smallint(c));
+					len = snprintf(dst, len, "%g", is_float(c) ? get_float(c) : get_smallint(c));
 				else
-					len = snprintf(dst, len, "%lG", is_float(c) ? get_float(c) : get_smallint(c));
+					len = snprintf(dst, len, "%G", is_float(c) ? get_float(c) : get_smallint(c));
 			}
 
 			break;
