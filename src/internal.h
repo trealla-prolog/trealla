@@ -17,6 +17,7 @@
 #define USE_THREADS 0
 #endif
 
+typedef double pl_flt_t;
 typedef intmax_t pl_int_t;
 typedef uintmax_t pl_uint_t;
 typedef uint32_t pl_idx_t;
@@ -357,7 +358,7 @@ struct cell_ {
 
 		pl_uint_t val_uint;
 		pl_int_t val_int;
-		double val_float;
+		pl_flt_t val_float;
 		bigint *val_bigint;
 		blob *val_blob;
 		uint16_t priority;				// used in parsing operators
