@@ -353,6 +353,7 @@ struct cell_ {
 		uint32_t val_uint32;
 		uint64_t val_uint64;
 		float val_float32;
+		double val_float64;
 
 		// Proper types...
 
@@ -534,9 +535,9 @@ struct prolog_state_ {
 		struct { uint32_t v1, v2; };
 	};
 
-	float prob;
 	uint64_t timer_started;
 	pl_idx_t curr_frame, fp, hp, tp, sp;
+	float prob;
 	uint32_t curr_page;
 	uint8_t qnbr;
 	bool arg1_is_ground:1;
