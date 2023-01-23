@@ -2158,7 +2158,7 @@ static bool fn_iso_neq_2(query *q)
 		return mp_int_compare(&p1.val_bigint->ival, &p2.val_bigint->ival) == 0;
 	else if (is_bigint(&p1) && is_float(&p2)) {
 		pl_flt_t f1 = BIGINT_TO_DOUBLE(&p1.val_bigint->ival);
-		if (isinf(f1)) return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "float_overflow"); \
+		if (isinf(f1)) return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "float_overflow");
 		return p2.val_float == f1;
 	} else if (is_float(&p1) && is_smallint(&p2))
 		return p1.val_float == p2.val_int;
@@ -2166,7 +2166,7 @@ static bool fn_iso_neq_2(query *q)
 		return p1.val_float == p2.val_float;
 	else if (is_float(&p1) && is_bigint(&p2)) {
 		pl_flt_t f2 = BIGINT_TO_DOUBLE(&p2.val_bigint->ival);
-		if (isinf(f2)) return throw_error(q, &p2, q->st.curr_frame, "evaluation_error", "float_overflow"); \
+		if (isinf(f2)) return throw_error(q, &p2, q->st.curr_frame, "evaluation_error", "float_overflow");
 		return p1.val_float == f2;
 	}
 
@@ -2192,7 +2192,7 @@ static bool fn_iso_nne_2(query *q)
 		return mp_int_compare(&p1.val_bigint->ival, &p2.val_bigint->ival) != 0;
 	else if (is_bigint(&p1) && is_float(&p2)) {
 		pl_flt_t f1 = BIGINT_TO_DOUBLE(&p1.val_bigint->ival);
-		if (isinf(f1)) return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "float_overflow"); \
+		if (isinf(f1)) return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "float_overflow");
 		return p2.val_float != f1;
 	} else if (is_float(&p1) && is_smallint(&p2))
 		return p1.val_float != p2.val_int;
@@ -2200,7 +2200,7 @@ static bool fn_iso_nne_2(query *q)
 		return p1.val_float != p2.val_float;
 	else if (is_float(&p1) && is_bigint(&p2)) {
 		pl_flt_t f2 = BIGINT_TO_DOUBLE(&p2.val_bigint->ival);
-		if (isinf(f2)) return throw_error(q, &p2, q->st.curr_frame, "evaluation_error", "float_overflow"); \
+		if (isinf(f2)) return throw_error(q, &p2, q->st.curr_frame, "evaluation_error", "float_overflow");
 		return p1.val_float != f2;
 	}
 
@@ -2226,7 +2226,7 @@ static bool fn_iso_nge_2(query *q)
 		return mp_int_compare(&p1.val_bigint->ival, &p2.val_bigint->ival) >= 0;
 	else if (is_bigint(&p1) && is_float(&p2)) {
 		pl_flt_t f1 = BIGINT_TO_DOUBLE(&p1.val_bigint->ival);
-		if (isinf(f1)) return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "float_overflow"); \
+		if (isinf(f1)) return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "float_overflow");
 		return p2.val_float >= f1;
 	} else if (is_float(&p1) && is_smallint(&p2))
 		return p1.val_float >= p2.val_int;
@@ -2234,7 +2234,7 @@ static bool fn_iso_nge_2(query *q)
 		return p1.val_float >= p2.val_float;
 	else if (is_float(&p1) && is_bigint(&p2)) {
 		pl_flt_t f2 = BIGINT_TO_DOUBLE(&p2.val_bigint->ival);
-		if (isinf(f2)) return throw_error(q, &p2, q->st.curr_frame, "evaluation_error", "float_overflow"); \
+		if (isinf(f2)) return throw_error(q, &p2, q->st.curr_frame, "evaluation_error", "float_overflow");
 		return p1.val_float >= f2;
 	}
 
@@ -2260,7 +2260,7 @@ static bool fn_iso_ngt_2(query *q)
 		return mp_int_compare(&p1.val_bigint->ival, &p2.val_bigint->ival) > 0;
 	else if (is_bigint(&p1) && is_float(&p2)) {
 		pl_flt_t f1 = BIGINT_TO_DOUBLE(&p1.val_bigint->ival);
-		if (isinf(f1)) return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "float_overflow"); \
+		if (isinf(f1)) return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "float_overflow");
 		return p2.val_float > f1;
 	} else if (is_float(&p1) && is_smallint(&p2))
 		return p1.val_float > p2.val_int;
@@ -2268,7 +2268,7 @@ static bool fn_iso_ngt_2(query *q)
 		return p1.val_float > p2.val_float;
 	else if (is_float(&p1) && is_bigint(&p2)) {
 		pl_flt_t f2 = BIGINT_TO_DOUBLE(&p2.val_bigint->ival);
-		if (isinf(f2)) return throw_error(q, &p2, q->st.curr_frame, "evaluation_error", "float_overflow"); \
+		if (isinf(f2)) return throw_error(q, &p2, q->st.curr_frame, "evaluation_error", "float_overflow");
 		return p1.val_float > f2;
 	}
 
@@ -2294,7 +2294,7 @@ static bool fn_iso_nle_2(query *q)
 		return mp_int_compare(&p1.val_bigint->ival, &p2.val_bigint->ival) <= 0;
 	else if (is_bigint(&p1) && is_float(&p2)) {
 		pl_flt_t f1 = BIGINT_TO_DOUBLE(&p1.val_bigint->ival);
-		if (isinf(f1)) return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "float_overflow"); \
+		if (isinf(f1)) return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "float_overflow");
 		return p2.val_float <= f1;
 	} else if (is_float(&p1) && is_smallint(&p2))
 		return p1.val_float <= p2.val_int;
@@ -2302,7 +2302,7 @@ static bool fn_iso_nle_2(query *q)
 		return p1.val_float <= p2.val_float;
 	else if (is_float(&p1) && is_bigint(&p2)) {
 		pl_flt_t f2 = BIGINT_TO_DOUBLE(&p2.val_bigint->ival);
-		if (isinf(f2)) return throw_error(q, &p2, q->st.curr_frame, "evaluation_error", "float_overflow"); \
+		if (isinf(f2)) return throw_error(q, &p2, q->st.curr_frame, "evaluation_error", "float_overflow");
 		return p1.val_float <= f2;
 	}
 
@@ -2328,7 +2328,7 @@ static bool fn_iso_nlt_2(query *q)
 		return mp_int_compare(&p1.val_bigint->ival, &p2.val_bigint->ival) < 0;
 	else if (is_bigint(&p1) && is_float(&p2)) {
 		pl_flt_t f1 = BIGINT_TO_DOUBLE(&p1.val_bigint->ival);
-		if (isinf(f1)) return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "float_overflow"); \
+		if (isinf(f1)) return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "float_overflow");
 		return p2.val_float < f1;
 	} else if (is_float(&p1) && is_smallint(&p2))
 		return p1.val_float < p2.val_int;
@@ -2336,7 +2336,7 @@ static bool fn_iso_nlt_2(query *q)
 		return p1.val_float < p2.val_float;
 	else if (is_float(&p1) && is_bigint(&p2)) {
 		pl_flt_t f2 = BIGINT_TO_DOUBLE(&p2.val_bigint->ival);
-		if (isinf(f2)) return throw_error(q, &p2, q->st.curr_frame, "evaluation_error", "float_overflow"); \
+		if (isinf(f2)) return throw_error(q, &p2, q->st.curr_frame, "evaluation_error", "float_overflow");
 		return p1.val_float < f2;
 	}
 
