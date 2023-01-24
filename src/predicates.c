@@ -90,7 +90,7 @@ void make_var2(cell *tmp, pl_idx_t off)
 	tmp->val_off = off;
 }
 
-void make_float(cell *tmp, double v)
+void make_float(cell *tmp, pl_flt_t v)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_FLOAT;
@@ -4423,7 +4423,7 @@ static bool fn_cpu_time_1(query *q)
 	GET_FIRST_ARG(p1,var);
 	double v = ((double)cpu_time_in_usec()-q->time_cpu_started) / 1000 / 1000;
 	cell tmp;
-	make_float(&tmp, (double)v);
+	make_float(&tmp, (pl_flt_t)v);
 	return unify (q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 

@@ -17,6 +17,7 @@
 #define USE_THREADS 0
 #endif
 
+typedef double pl_flt_t;
 typedef intmax_t pl_int_t;
 typedef uintmax_t pl_uint_t;
 typedef uint32_t pl_idx_t;
@@ -352,12 +353,13 @@ struct cell_ {
 		uint32_t val_uint32;
 		uint64_t val_uint64;
 		float val_float32;
+		double val_float64;
 
 		// Proper types...
 
 		pl_uint_t val_uint;
 		pl_int_t val_int;
-		double val_float;
+		pl_flt_t val_float;
 		bigint *val_bigint;
 		blob *val_blob;
 		uint16_t priority;				// used in parsing operators
@@ -505,6 +507,7 @@ struct slot_ {
 	bool mark:1;
 };
 
+// Where 'prev_offset' is the number of frames back
 // Where *initial_slots* is the initial number allocated
 // Where *actual_slots* is the actual number in use (some maybe created)
 // Where *base* is the offset to first slot in use
@@ -513,7 +516,7 @@ struct slot_ {
 struct frame_ {
 	cell *prev_cell;
 	uint64_t ugen, cgen;
-	pl_idx_t prev_frame, base, overflow;
+	pl_idx_t prev_offset, base, overflow;
 	uint32_t initial_slots, actual_slots;
 	uint16_t mid;
 	bool is_last:1;
@@ -532,9 +535,9 @@ struct prolog_state_ {
 		struct { uint32_t v1, v2; };
 	};
 
-	float prob;
 	uint64_t timer_started;
 	pl_idx_t curr_frame, fp, hp, tp, sp;
+	float prob;
 	uint32_t curr_page;
 	uint8_t qnbr;
 	bool arg1_is_ground:1;

@@ -69,7 +69,7 @@ bool wrapper_for_predicate(query *q, builtins *fn_ptr);
 
 void make_uint(cell *tmp, pl_uint_t v);
 void make_int(cell *tmp, pl_int_t v);
-void make_float(cell *tmp, double v);
+void make_float(cell *tmp, pl_flt_t v);
 void make_ptr(cell *tmp, void *v);
 void make_struct(cell *tmp, pl_idx_t offset, void *fn, unsigned arity, pl_idx_t extra_cells);
 void make_var(cell *tmp, pl_idx_t off, unsigned var_nbr);

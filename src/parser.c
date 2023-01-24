@@ -2044,7 +2044,7 @@ bool virtual_term(parser *p, const char *src)
 	return true;
 }
 
-static cell *make_interned(parser *p, pl_idx_t offset)
+cell *make_interned(parser *p, pl_idx_t offset)
 {
 	cell *c = make_a_cell(p);
 	c->tag = TAG_INTERNED;
@@ -2400,7 +2400,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 	if (s && (*s == '.') && isdigit(s[1])) {
 		p->v.tag = TAG_FLOAT;
 		errno = 0;
-		double v = strtod(tmpptr, &tmpptr);
+		pl_flt_t v = strtod(tmpptr, &tmpptr);
 
 		if ((int)v && (errno == ERANGE)) {
 			if (DUMP_ERRS || !p->do_read_term)

@@ -1322,7 +1322,7 @@ module *load_text(module *m, const char *src, const char *filename)
 	if (!p->error) {
 		xref_db(p->m);
 		int save = p->m->pl->quiet;
-		p->m->pl->quiet = true;
+		//p->m->pl->quiet = true;
 		p->m->pl->halt = false;
 		p->directive = true;
 
@@ -1458,7 +1458,7 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including)
 	if (!p->error && !p->already_loaded) {
 		xref_db(p->m);
 		int save = p->m->pl->quiet;
-		p->m->pl->quiet = true;
+		//p->m->pl->quiet = true;
 		p->directive = true;
 
 		if (p->run_init) {

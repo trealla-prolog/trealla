@@ -131,7 +131,7 @@ static bool is_more_data(query *q, list_reader_t *fmt)
 		size_t save = dst - tmpbuf;							\
 		bufsiz += len;										\
 		tmpbuf = realloc(tmpbuf, bufsiz*=2);				\
-		check_heap_error(tmpbuf);								\
+		check_heap_error(tmpbuf);							\
 		dst = tmpbuf + save;								\
 		nbytes = bufsiz - save;								\
 	}                                                       \
@@ -317,13 +317,16 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 		if (!p2 || !is_list(p2)) {
 			cell tmp;
 			make_atom(&tmp, g_nil_s);
-			return throw_error(q, &tmp, q->st.curr_frame, "domain_error", "missing_args");
+			return throw_error(q, &tmp, q->st.curr_frame, "domain_error", "non_empty_list");
 		}
 
 		cell *c = get_next_cell(q, &fmt2);
 
-		if (!c)
-			return throw_error(q, p2, p2_ctx, "domain_error", "missing_args");
+		if (!c) {
+			cell tmp;
+			make_atom(&tmp, g_nil_s);
+			return throw_error(q, &tmp, p2_ctx, "domain_error", "non_empty_list");
+		}
 
 		if (ch == 'i')
 			continue;
@@ -390,16 +393,16 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 			len = 40;
 			CHECK_BUF(len);
 
-			if (argval) {
+			if (argval || argval_specified) {
 				if (ch == 'e')
-					len = sprintf(dst, "%.*e", argval, is_float(c) ? get_float(c) : get_smallint(c));
+					len = snprintf(dst, len, "%.*e", argval, is_float(c) ? get_float(c) : get_smallint(c));
 				else
-					len = sprintf(dst, "%.*E", argval, is_float(c) ? get_float(c) : get_smallint(c));
+					len = snprintf(dst, len, "%.*E", argval, is_float(c) ? get_float(c) : get_smallint(c));
 			} else {
 				if (ch == 'e')
-					len = sprintf(dst, "%e", is_float(c) ? get_float(c) : get_smallint(c));
+					len = snprintf(dst, len, "%e", is_float(c) ? get_float(c) : get_smallint(c));
 				else
-					len = sprintf(dst, "%E", is_float(c) ? get_float(c) : get_smallint(c));
+					len = snprintf(dst, len, "%E", is_float(c) ? get_float(c) : get_smallint(c));
 			}
 
 			break;
@@ -414,16 +417,16 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 			len = 40;
 			CHECK_BUF(len);
 
-			if (argval) {
+			if (argval || argval_specified) {
 				if (ch == 'g')
-					len = sprintf(dst, "%.*g", argval, is_float(c) ? get_float(c) : get_smallint(c));
+					len = snprintf(dst, len, "%.*g", argval, is_float(c) ? get_float(c) : get_smallint(c));
 				else
-					len = sprintf(dst, "%.*G", argval, is_float(c) ? get_float(c) : get_smallint(c));
+					len = snprintf(dst, len, "%.*G", argval, is_float(c) ? get_float(c) : get_smallint(c));
 			} else {
 				if (ch == 'g')
-					len = sprintf(dst, "%g", is_float(c) ? get_float(c) : get_smallint(c));
+					len = snprintf(dst, len, "%g", is_float(c) ? get_float(c) : get_smallint(c));
 				else
-					len = sprintf(dst, "%G", is_float(c) ? get_float(c) : get_smallint(c));
+					len = snprintf(dst, len, "%G", is_float(c) ? get_float(c) : get_smallint(c));
 			}
 
 			break;
@@ -438,9 +441,9 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 			CHECK_BUF(len);
 
 			if (argval || argval_specified)
-				len = sprintf(dst, "%.*f", argval, is_float(c) ? get_float(c) : get_smallint(c));
+				len = snprintf(dst, len, "%.*f", argval, is_float(c) ? get_float(c) : get_smallint(c));
 			else
-				len = sprintf(dst, "%f", is_float(c) ? get_float(c) : get_smallint(c));
+				len = snprintf(dst, len, "%f", is_float(c) ? get_float(c) : get_smallint(c));
 
 			break;
 
@@ -563,6 +566,16 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 
 	*dst = '\0';
 	size_t len = dst - tmpbuf;
+
+	if (fmt2.p) {
+		cell *save_l = fmt2.p;
+		pl_idx_t save_l_ctx = fmt2.p_ctx;
+
+		cell *c = get_next_cell(q, &fmt2);
+
+		if (c)
+			return throw_error(q, save_l, save_l_ctx, "domain_error", "empty_list");
+	}
 
 	if (str == NULL) {
 		int n = q->st.m->pl->current_output;

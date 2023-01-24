@@ -338,7 +338,7 @@ size_t sprint_int(char *dst, size_t dstlen, pl_int_t n, int base)
 	return dst - save_dst;
 }
 
-static void reformat_float(query * q, char *tmpbuf, double v)
+static void reformat_float(query * q, char *tmpbuf, pl_flt_t v)
 {
 	if ((!strchr(tmpbuf, 'e') && !strchr(tmpbuf, 'E'))
 		&& !q->ignore_ops) {
