@@ -5,7 +5,7 @@
 
 // WASI memory manipulation ABI
 
-#ifndef WASI_TARGET_SPIN
+#ifndef canonical_abi_realloc
 __attribute__((weak, export_name("canonical_abi_realloc")))
 void *canonical_abi_realloc(void *ptr, size_t orig_size, size_t org_align, size_t new_size) {
   void *ret = realloc(ptr, new_size);

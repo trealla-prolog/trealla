@@ -6486,8 +6486,11 @@ static bool fn_sys_put_chars_1(query *q)
 	} else
 		return throw_error(q, p1, p1_ctx, "type_error", "chars");
 
-	if (!str->fp)
+	if (!is_live_stream(str))
 		return false;
+
+	if (is_memory_stream(str))
+		return true;
 
 	return !ferror(str->fp);
 }
@@ -6513,8 +6516,11 @@ static bool fn_sys_put_chars_2(query *q)
 	} else
 		return throw_error(q, p1, p1_ctx, "type_error", "chars");
 
-	if (!str->fp)
+	if (!is_live_stream(str))
 		return false;
+
+	if (is_memory_stream(str))
+		return true;
 
 	return !ferror(str->fp);
 }

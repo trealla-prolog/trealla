@@ -7118,6 +7118,79 @@ static bool fn_sys_host_resume_1(query *q) {
 }
 #endif
 
+#ifdef WASI_TARGET_SPIN
+#include "spin.h"
+#include "wasi-outbound-http.h"
+
+static bool fn_sys_wasi_outbound_http_3(query *q) {
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,any);
+	GET_NEXT_ARG(p3,var);
+
+	wasi_outbound_http_request_t request = {0};
+	wasi_outbound_http_response_t response = {0};
+
+	uint16_t method = 0;
+	const char *methodstr = C_STR(q, p1);
+	for (uint16_t i = 0; i < SPIN_HTTP_METHODS_MAX; i++) {
+		if (!strcmp(SPIN_METHODS[i], methodstr)) {
+			method = i;
+			break;
+		}
+	}
+	// TODO: check valid method name
+	request.method = method;
+
+	char *url = NULL;
+	if (is_iso_list(p2)) {
+		size_t len = scan_is_chars_list(q, p2, p2_ctx, true);
+
+		if (!len)
+			return throw_error(q, p2, p2_ctx, "type_error", "atom");
+
+		url = chars_list_to_string(q, p2, p2_ctx, len);
+	} else {
+		url = DUP_STR(q, p2);
+	}
+	wasi_outbound_http_string_dup(&request.uri, url);
+	free(url);
+
+	wasi_outbound_http_http_error_t code = wasi_outbound_http_request(&request, &response);
+	switch (code) {
+	case WASI_OUTBOUND_HTTP_HTTP_ERROR_SUCCESS:
+	case 255:
+		// 255 is success (WASI_OUTBOUND_HTTP_HTTP_ERROR_SUCCESS is unused?)
+		// see: https://discord.com/channels/926888690310053918/950022897160839248/1026482038028648558
+		break;
+	case WASI_OUTBOUND_HTTP_HTTP_ERROR_DESTINATION_NOT_ALLOWED:
+		return throw_error(q, p2, p2_ctx, "spin_error", "destination_not_allowed");
+	case WASI_OUTBOUND_HTTP_HTTP_ERROR_INVALID_URL:
+		return throw_error(q, p2, p2_ctx, "spin_error", "invalid_url");
+	case WASI_OUTBOUND_HTTP_HTTP_ERROR_REQUEST_ERROR:
+		return throw_error(q, p2, p2_ctx, "spin_error", "request_error");
+	case WASI_OUTBOUND_HTTP_HTTP_ERROR_RUNTIME_ERROR:
+		return throw_error(q, p2, p2_ctx, "spin_error", "runtime_error");
+	case WASI_OUTBOUND_HTTP_HTTP_ERROR_TOO_MANY_REQUESTS:
+		return throw_error(q, p2, p2_ctx, "spin_error", "too_many_requests");
+	default:
+		fprintf(stderr, "wasi-outbound-http unknown error code: %d\n", code);
+		return throw_error(q, p2, p2_ctx, "spin_error", "unknown_error");
+	}
+
+	// TODO: check response.body.is_some
+
+	cell tmp;
+	check_heap_error(make_stringn(&tmp, (const char *)response.body.val.ptr, response.body.val.len));
+
+	wasi_outbound_http_request_free(&request);
+	wasi_outbound_http_response_free(&response);
+
+	bool ok = unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
+	return ok;
+}
+#endif
+
 static bool fn_sre_compile_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -7796,6 +7869,10 @@ builtins g_other_bifs[] =
 #ifdef __wasi__
 	{"$host_call", 2, fn_sys_host_call_2, "+string,-string", false, false, BLAH},
 	{"$host_resume", 1, fn_sys_host_resume_1, "-string", false, false, BLAH},
+#endif
+#ifdef WASI_TARGET_SPIN
+// TODO: move these to contrib
+	{"$wasi_outbound_http", 3, fn_sys_wasi_outbound_http_3, "+string,+string,-string", false, false, BLAH},
 #endif
 
 #if USE_OPENSSL

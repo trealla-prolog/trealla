@@ -124,8 +124,9 @@ SRCOBJECTS += src/imath/imath.o
 SRCOBJECTS += src/sre/re.o
 
 ifdef WASI_TARGET_SPIN
-SRCOBJECTS += src/wasm/spin-http.o
 SRCOBJECTS += src/wasm/spin.o
+SRCOBJECTS += src/wasm/spin-http.o
+SRCOBJECTS += src/wasm/wasi-outbound-http.o
 endif
 
 ifdef ISOCLINE
@@ -169,7 +170,7 @@ libtpl-js.wasm:
 	$(MAKE) WASI=1 TPL=libtpl-js.wasm 'OPT=$(OPT) -O0 -DNDEBUG -DWASI_IMPORTS -DWASI_TARGET_JS'
 
 libtpl-spin.wasm:
-	$(MAKE) WASI=1 TPL=libtpl-spin.wasm 'OPT=$(OPT) -O0 -DNDEBUG -DWASI_TARGET_SPIN'
+	$(MAKE) WASI=1 WASI_TARGET_SPIN=1 TPL=libtpl-spin.wasm 'OPT=$(OPT) -O0 -DNDEBUG -DWASI_TARGET_SPIN'
 
 libtpl: libtpl.wasm
 # TODO: add to wizer --wasm-bulk-memory true
@@ -191,6 +192,9 @@ libtpl-spin: libtpl-spin.wasm
 
 wit:
 	wit-bindgen guest c --export ../spin/wit/ephemeral/spin-http.wit --out-dir ./src/wasm/
+	wit-bindgen guest c --import ../spin/wit/ephemeral/wasi-outbound-http.wit --out-dir ./src/wasm/
+	sed -i 's/<spin-http.h>/"spin-http.h"/' ./src/wasm/spin-http.c
+	sed -i 's/<wasi-outbound-http.h>/"wasi-outbound-http.h"/' ./src/wasm/wasi-outbound-http.c
 
 test:
 	./tests/run.sh

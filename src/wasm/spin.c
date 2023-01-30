@@ -13,7 +13,9 @@
 #include "stringbuf.h"
 #include "map.h"
 
-const char* spin_methods[] = {
+#include "spin.h"
+
+const char* SPIN_METHODS[] = {
 	[SPIN_HTTP_METHOD_GET] 		= "get",
 	[SPIN_HTTP_METHOD_POST] 	= "post",
 	[SPIN_HTTP_METHOD_PUT] 		= "put",
@@ -22,8 +24,12 @@ const char* spin_methods[] = {
 	[SPIN_HTTP_METHOD_HEAD]		= "head",
 	[SPIN_HTTP_METHOD_OPTIONS]	= "options"
 };
-#define SPIN_HTTP_METHODS_MAX (sizeof(spin_methods) / sizeof(const char*))
 
+// The Spin HTTP component handler.
+// Using the pre-initialized global interpreter, it asserts a bunch of HTTP-related info
+// and then calls spin:http_handle_request/2.
+// The response body is read from a memory stream with the alias "http_body".
+// The response headers are read from a map stream with the alias "http_headers".
 extern void spin_http_handle_http_request(spin_http_request_t *request, spin_http_response_t *response) {
 	pl_global_init();
 	prolog* pl = pl_global();
@@ -41,7 +47,7 @@ BADMETHOD:
 		response->status = 405;
 		return;
 	}
-	const char *method = spin_methods[request->method];
+	const char *method = SPIN_METHODS[request->method];
 	if (!method) goto BADMETHOD;
 
 	char *tmpbuf = malloc(1024);
@@ -54,7 +60,8 @@ BADMETHOD:
 			tmpbuf = realloc(tmpbuf, fmt_len);
 			fmt_len = tmpbuf_len;
 		}
-		size_t len = pl_format_string(tmpbuf, tmpbuf_len, header.f1.ptr, header.f1.len, true);
+		size_t len = pl_format_string(tmpbuf, tmpbuf_len,
+			header.f1.ptr, header.f1.len, true);
 		SB_strcat(s, "assertz(http_header(\"");
 		SB_strcatn(s, header.f0.ptr, header.f0.len);
 		SB_strcat(s, "\",\"");
@@ -68,7 +75,8 @@ BADMETHOD:
 			tmpbuf = realloc(tmpbuf, body_size);
 			tmpbuf_len = body_size;
 		}
-		size_t len = pl_format_string(tmpbuf, tmpbuf_len, (const char*)request->body.val.ptr, request->body.val.len, true);
+		size_t len = pl_format_string(tmpbuf, tmpbuf_len,
+			(const char *)request->body.val.ptr, request->body.val.len, true);
 		SB_strcat(s, "assertz(http_body(\"");
 		SB_strcatn(s, tmpbuf, len);
 		SB_strcat(s, "\")), ");
@@ -82,21 +90,23 @@ BADMETHOD:
 	SB_strcat(s, ").");
 
 	bool ok = pl_eval(pl, SB_cstr(s));
-	SB_free(s);
-
 	if (!ok || !get_status(pl)) {
+		fprintf(stderr, "Error: query failed (ok = %d, status = %d): %s\n",
+			ok, get_status(pl), SB_cstr(s));
 		int n = pl->current_error;
 		stream *str = &pl->streams[n];
 		const char *src = SB_cstr(str->sb);
 		size_t len = SB_strlen(str->sb);
-		char* body = (len > 0) ? strdup(src) : strdup("query failed :(\n");
+		char* body = (len > 0) ? strdup(src) : 
+			strdup("Internal server error: query failed.\n");
 		int32_t body_length = strlen(body);
 		response->status = 500;
 		response->body.is_some = true;
-		response->body.val.ptr = (uint8_t*)body;
+		response->body.val.ptr = (uint8_t *)body;
 		response->body.val.len = body_length;
 		return;
 	}
+	SB_free(s);
 
 	int status = 0;
 	const char *body_string;
@@ -108,32 +118,31 @@ BADMETHOD:
 		body_string = SB_cstr(str->sb);
 		body_len = SB_strlen(str->sb);
 	}
-	
 
 	n = pl_get_stream(pl, "http_headers");
 	str = &pl->streams[n];
-	spin_http_headers_t hdrs = {0};
+	spin_http_headers_t response_headers = {0};
 	if (str->is_map) {
 		map *m = str->keyval;
 
 		const char *sch;
-		if (map_get(m, "status", (const void**)&sch)) {
+		if (map_get(m, "status", (const void **)&sch)) {
 			status = atoi(sch);
 			map_del(m, "status");
 		}
 
 		size_t count = map_count(m);
-		hdrs.len = count;
-		spin_http_tuple2_string_string_t *headers = calloc(count, sizeof(spin_http_tuple2_string_string_t));
-		hdrs.ptr = headers;
+		response_headers.len = count;
+		spin_http_tuple2_string_string_t *headers = calloc(count,
+			sizeof(spin_http_tuple2_string_string_t));
+		response_headers.ptr = headers;
 		if (count > 0)
 			response->headers.is_some = true;
 
 		miter *iter = map_first(m);
 		char *value;
-		char *key;
 		size_t i = 0;
-		while (map_next(iter, (void**)&value)) {
+		while (map_next(iter, (void **)&value)) {
 			spin_http_tuple2_string_string_t *header = &headers[i++];
 			const char *key = map_key(iter);
 			spin_http_string_t header_name, header_value;
@@ -144,7 +153,7 @@ BADMETHOD:
 		}
 		map_done(iter);
 	}
-	response->headers.val = hdrs;
+	response->headers.val = response_headers;
 
 	if (!status)
 		status = 500;
