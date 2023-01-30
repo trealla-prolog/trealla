@@ -22,7 +22,7 @@ const char* spin_methods[] = {
 	[SPIN_HTTP_METHOD_HEAD]		= "head",
 	[SPIN_HTTP_METHOD_OPTIONS]	= "options"
 };
-#define SPIN_HTTP_METHOD_MAX (sizeof(spin_methods) / sizeof(const char*))
+#define SPIN_HTTP_METHODS_MAX (sizeof(spin_methods) / sizeof(const char*))
 
 extern void spin_http_handle_http_request(spin_http_request_t *request, spin_http_response_t *response) {
 	pl_global_init();
@@ -35,7 +35,7 @@ extern void spin_http_handle_http_request(spin_http_request_t *request, spin_htt
 	SB_strcatn(s, request->uri.ptr, request->uri.len);
 	SB_strcat(s, "\")), ");
 
-	if (request->method > SPIN_HTTP_METHOD_MAX) {
+	if (request->method >= SPIN_HTTP_METHODS_MAX) {
 BADMETHOD:
 		fprintf(stderr, "Unhandled method: %d\n", request->method);
 		response->status = 405;
@@ -102,7 +102,7 @@ BADMETHOD:
 	const char *body_string;
 	size_t body_len = 0;
 	
-	int n = pl_get_stream(pl, "http_body", strlen("http_body"));
+	int n = pl_get_stream(pl, "http_body");
 	stream *str = &pl->streams[n];
 	if (str->is_memory) {
 		body_string = SB_cstr(str->sb);
@@ -110,11 +110,12 @@ BADMETHOD:
 	}
 	
 
-	n = pl_get_stream(pl, "http_headers", strlen("http_headers"));
+	n = pl_get_stream(pl, "http_headers");
 	str = &pl->streams[n];
 	spin_http_headers_t hdrs = {0};
 	if (str->is_map) {
 		map *m = str->keyval;
+
 		const char *sch;
 		if (map_get(m, "status", (const void**)&sch)) {
 			status = atoi(sch);
@@ -133,11 +134,11 @@ BADMETHOD:
 		char *key;
 		size_t i = 0;
 		while (map_next(iter, (void**)&value)) {
+			spin_http_tuple2_string_string_t *header = &headers[i++];
 			const char *key = map_key(iter);
 			spin_http_string_t header_name, header_value;
 			spin_http_string_dup(&header_name, key);
 			spin_http_string_dup(&header_value, value);
-			spin_http_tuple2_string_string_t *header = &headers[i++];
 			header->f0 = header_name;
 			header->f1 = header_value;
 		}

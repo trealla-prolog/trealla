@@ -39,7 +39,7 @@ extern bool query_did_yield(pl_sub_query *q);
 EXPORT(pl_format_string)
 size_t pl_format_string(char *dst, size_t dstlen, const char *src, int srclen, bool double_quotes);
 
-int pl_get_stream(prolog*, const char *nane, int len);
+int pl_get_stream(prolog*, const char *nane);
 
 EXPORT(get_halt_code)
 extern int get_halt_code(prolog*);
