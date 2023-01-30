@@ -418,7 +418,7 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
 }
 #endif
 
-static int get_named_stream(prolog *pl, const char *name, size_t len)
+int get_named_stream(prolog *pl, const char *name, size_t len)
 {
 	for (int i = 0; i < MAX_STREAMS; i++) {
 		stream *str = &pl->streams[i];
@@ -6939,54 +6939,6 @@ static bool fn_sys_capture_error_to_atom_1(query *q)
 	unshare_cell(&tmp);
 	return ok;
 }
-
-#ifdef WASI_TARGET_SPIN
-static bool fn_sys_capture_buffer_0(query *q)
-{
-	int n = q->pl->current_buffer;
-	stream *str = &q->pl->streams[n];
-
-	if (str->is_memory) {
-		str->is_memory = false;
-		SB_free(str->sb);
-	} else
-		str->is_memory = true;
-
-	return true;
-}
-
-static bool fn_sys_capture_buffer_to_chars_1(query *q)
-{
-	GET_FIRST_ARG(p1,var);
-	int n = q->pl->current_buffer;
-	stream *str = &q->pl->streams[n];
-	const char *src = SB_cstr(str->sb);
-	size_t len = SB_strlen(str->sb);
-	cell tmp;
-	check_heap_error(make_stringn(&tmp, src, len));
-	str->is_memory = false;
-	SB_free(str->sb);
-	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);;
-	unshare_cell(&tmp);
-	return ok;
-}
-
-static bool fn_sys_capture_buffer_to_atom_1(query *q)
-{
-	GET_FIRST_ARG(p1,var);
-	int n = q->pl->current_buffer;
-	stream *str = &q->pl->streams[n];
-	const char *src = SB_cstr(str->sb);
-	size_t len = SB_strlen(str->sb);
-	cell tmp;
-	check_heap_error(make_cstringn(&tmp, src, len));
-	str->is_memory = false;
-	SB_free(str->sb);
-	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);;
-	unshare_cell(&tmp);
-	return ok;
-}
-#endif
 
 static bool fn_sys_memory_stream_create_2(query *q)
 {

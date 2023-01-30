@@ -61,6 +61,11 @@ extern unsigned int library_abnf_pl_len;
 extern unsigned char library_yall_pl[];
 extern unsigned int library_yall_pl_len;
 
+#ifdef WASI_TARGET_SPIN
+	extern unsigned char library_spin_pl[];
+	extern unsigned int library_spin_pl_len;
+#endif
+
 library g_libs[] = {
 	 {"abnf", library_abnf_pl, &library_abnf_pl_len},
 	 {"apply", library_apply_pl, &library_apply_pl_len},
@@ -84,6 +89,9 @@ library g_libs[] = {
 	 {"pseudojson", library_pseudojson_pl, &library_pseudojson_pl_len},
 	 {"random", library_random_pl, &library_random_pl_len},
 	 {"si", library_si_pl, &library_si_pl_len},
+#ifdef WASI_TARGET_SPIN
+	 {"spin", library_spin_pl, &library_spin_pl_len},
+#endif
 	 {"sqlite3", library_sqlite3_pl, &library_sqlite3_pl_len},
 	 {"sqlite3_register", library_sqlite3_register_pl, &library_sqlite3_register_pl_len},
 	 {"ugraphs", library_ugraphs_pl, &library_ugraphs_pl_len},

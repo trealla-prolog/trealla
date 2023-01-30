@@ -110,6 +110,7 @@ LIBOBJECTS +=  \
 	library/pseudojson.o \
 	library/random.o \
 	library/si.o \
+	library/spin.o \
 	library/sqlite3.o \
 	library/sqlite3_register.o \
 	library/ugraphs.o \
