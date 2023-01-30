@@ -182,10 +182,6 @@ size_t pl_format_string(char *dst, size_t dstlen, const char *src, int srclen, b
 	return formatted(dst, dstlen, src, srclen, double_quotes, false);
 }
 
-int pl_get_stream(prolog *pl, const char *name, int len) {
-	return get_named_stream(pl, name, len);
-}
-
 bool pl_consult_fp(prolog *pl, FILE *fp, const char *filename)
 {
 	return load_fp(pl->user_m, fp, filename, false) != NULL;

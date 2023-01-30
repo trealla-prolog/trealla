@@ -123,8 +123,9 @@ LIBOBJECTS +=  \
 SRCOBJECTS += src/imath/imath.o
 SRCOBJECTS += src/sre/re.o
 
-ifdef WASI
+ifdef WASI_TARGET_SPIN
 SRCOBJECTS += src/wasm/spin-http.o
+SRCOBJECTS += src/wasm/spin.o
 endif
 
 ifdef ISOCLINE
@@ -280,7 +281,6 @@ src/wasi.o: src/wasi.c
 src/version.o: src/version.c
 src/imath.o: src/imath/imath.c src/imath/imath.h
 src/re.o: src/sre/re.c src/sre/re.h
-src/spin-http.o: src/wasm/spin-http.c src/wasm/spin-http.h
 src/isocline.o: src/isocline/src/isocline.c src/isocline/src/attr.c \
   src/isocline/src/common.h src/isocline/src/../include/isocline.h \
   src/isocline/src/stringbuf.h src/isocline/src/attr.h \
