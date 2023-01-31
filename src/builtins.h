@@ -66,6 +66,7 @@ bool wrapper_for_predicate(query *q, builtins *fn_ptr);
 #define is_iso_list_or_nil_or_var(c) (is_iso_list_or_nil(c) || is_var(c))
 #define is_iso_list_or_var(c) (is_iso_list(c) || is_var(c))
 #define is_iso_atom_or_var(c) (is_iso_atom(c) || is_var(c))
+#define is_iso_atomic_or_var(c) (is_iso_atom(c) || is_number(c) || is_var(c))
 
 void make_uint(cell *tmp, pl_uint_t v);
 void make_int(cell *tmp, pl_int_t v);
