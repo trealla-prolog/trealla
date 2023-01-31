@@ -7731,7 +7731,6 @@ builtins g_other_bifs[] =
 	{"list", 1, fn_is_list_1, "+term", false, false, BLAH},
 	{"is_stream", 1, fn_is_stream_1, "+term", false, false, BLAH},
 	{"term_hash", 2, fn_term_hash_2, "+term,?integer", false, false, BLAH},
-	{"name", 2, fn_iso_atom_codes_2, "?string,?list", false, false, BLAH},
 	{"base64", 3, fn_base64_3, "?string,?string,+list", false, false, BLAH},
 	{"urlenc", 3, fn_urlenc_3, "?string,?string,+list", false, false, BLAH},
 	{"atom_lower", 2, fn_atom_lower_2, "?atom,?atom", false, false, BLAH},

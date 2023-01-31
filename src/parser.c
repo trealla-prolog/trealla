@@ -3124,8 +3124,10 @@ unsigned tokenize(parser *p, bool args, bool consing)
 		    && (*p->srcptr != '"')
 		    && (*p->srcptr != '(')
 		    && (*p->srcptr != ',')
+		    && (*p->srcptr != ';')
 		    && (*p->srcptr != ')')
 		    && (*p->srcptr != ']')
+		    && (*p->srcptr != '}')
 		    && (*p->srcptr != '|')) {
 
 			if (p->nesting_parens || p->nesting_brackets || p->nesting_braces) {

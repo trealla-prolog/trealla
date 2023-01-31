@@ -55,8 +55,8 @@ bool fn_iso_findall_3(query *q)
 		return throw_error(q, xp3, xp3_ctx, "type_error", "list");
 
 	if (!q->retry) {
-		//cell *p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, false);	// 226
-		cell *p0 = deep_clone_to_heap(q, q->st.curr_cell, q->st.curr_frame);			// 229
+		cell *p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, true);
+		unify(q, q->st.curr_cell, q->st.curr_frame, p0, q->st.curr_frame);
 		check_heap_error(p0);
 		GET_FIRST_ARG0(p1,any,p0);
 		GET_NEXT_ARG(p2,callable);
