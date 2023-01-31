@@ -36,16 +36,16 @@ http_fetch(URL, Result, Options) :-
 			map_create(ResponseMap, []),
 			map_create(ResponseHeaders, [])
 		),
-		http_fetch_(URL, RequestMap, RequestHeaders, ResponseMap, ResponseHeaders, Result),
+		http_fetch_(URL, Options, RequestMap, RequestHeaders, ResponseMap, ResponseHeaders, Result),
 		(
 			map_close(RequestMap),
 			map_close(RequestHeaders),
 			map_close(ResponseMap),
-			map_close(ResponseHeader)
+			map_close(ResponseHeaders)
 		)
 	).
 
-http_fetch_(URL, RequestMap, RequestHeaders, ResponseMap, ResponseHeaders, Result) :-
+http_fetch_(URL, Options, RequestMap, RequestHeaders, ResponseMap, ResponseHeaders, Result) :-
 	outbound_request_options(Options, RequestMap, RequestHeaders),
 	'$wasi_outbound_http'(URL, RequestMap, RequestHeaders, ResponseMap, ResponseHeaders),
 	spin_http_result(ResponseMap, ResponseHeaders, Result).
@@ -54,11 +54,11 @@ outbound_request_options(Options, Map, HeaderMap) :-
 	( memberchk(method(Method), Options) ; Method = get ),
 	must_be(atom, Method),
 	map_set(Map, method, Method),
-	(  memberchk(body(Body)), Body \= []
+	(  memberchk(body(Body), Options), Body \= []
 	-> must_be(chars, Body), map_set(Map, body, Body)
 	;  true
 	),
-	( memberchk(headers(Headers)) ; Headers = [] ),
+	( memberchk(headers(Headers), Options) ; Headers = [] ),
 	must_be(list, Headers),
 	maplist(map_set_kv(HeaderMap), Headers).
 
@@ -68,7 +68,8 @@ map_set_kv(Map, Key-Value) :-
 
 spin_http_result(Map, HeaderMap, response(Status, Headers, Body)) :-
 	map_get(Map, status, Status),
-	map_get(Map, body, Body),
+	map_get(Map, body, Body0),
+	atom_chars(Body0, Body),
 	map_list(HeaderMap, Headers).
 
 try_consult(Name) :-

@@ -6,10 +6,23 @@
 #include "query.h"
 #include "utf8.h"
 
-static int format_integer(char *dst, pl_int_t v, int grouping, int sep, int decimals, int radix)
+static int format_integer(char *dst, cell *c, int grouping, int sep, int decimals, int radix)
 {
-	char tmpbuf1[1024], tmpbuf2[1024];
-	sprint_int(tmpbuf1, sizeof(tmpbuf1), v, radix);
+	char *tmpbuf1 = NULL, *tmpbuf2 = NULL;
+	char xtmpbuf1[256], xtmpbuf2[256];
+
+	if (is_smallint(c)) {
+		pl_int_t v = get_smallint(c);
+		sprint_int(xtmpbuf1, sizeof(xtmpbuf1), v, radix);
+		tmpbuf1 = xtmpbuf1;
+		tmpbuf2 = xtmpbuf2;
+	} else {
+		size_t len = mp_int_string_len(&c->val_bigint->ival, radix) - 1;
+		tmpbuf1 = malloc(len+1);
+		tmpbuf2 = malloc(len+1);
+		mp_int_to_string(&c->val_bigint->ival, radix, tmpbuf1, len+1);
+	}
+
 	const char *src = tmpbuf1 + strlen(tmpbuf1) - 1;	// start from back
 	char *dst2 = tmpbuf2;
 	int i = 1, j = 1;
@@ -35,6 +48,12 @@ static int format_integer(char *dst, pl_int_t v, int grouping, int sep, int deci
 		*dst2++ = *src--;
 
 	*dst2 = '\0';
+
+	if (!is_smallint(c)) {
+		free(tmpbuf1);
+		free(tmpbuf2);
+	}
+
 	return dst2 - dst;
 }
 
@@ -112,7 +131,7 @@ static bool is_more_data(query *q, list_reader_t *fmt)
 		size_t save = dst - tmpbuf;							\
 		bufsiz += len;										\
 		tmpbuf = realloc(tmpbuf, bufsiz*=2);				\
-		check_heap_error(tmpbuf);								\
+		check_heap_error(tmpbuf);							\
 		dst = tmpbuf + save;								\
 		nbytes = bufsiz - save;								\
 	}                                                       \
@@ -142,7 +161,7 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 	save_fmt2 = fmt2;
 
 	while (is_more_data(q, &fmt1)) {
-		int argval = 0, noargval = 1;
+		int argval = 0, noargval = 1, argval_specified = 0;
 		int pos = dst - tmpbuf + 1;
         list_reader_t tmp_fmt1 = fmt1, tmp_fmt2 = fmt2;
 
@@ -167,6 +186,7 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 			}
 
 			argval = get_smallint(c);
+			argval_specified = 1;
 			ch = get_next_char(q, &fmt1);
 		} else if (ch == '`') {
 			ch = get_next_char(q, &fmt1);
@@ -174,6 +194,7 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 			ch = get_next_char(q, &fmt1);
 		} else {
 			while (isdigit(ch)) {
+				argval_specified = 1;
 				noargval = 0;
 				argval *= 10;
 				argval += ch - '0';
@@ -296,13 +317,16 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 		if (!p2 || !is_list(p2)) {
 			cell tmp;
 			make_atom(&tmp, g_nil_s);
-			return throw_error(q, &tmp, q->st.curr_frame, "domain_error", "missing_args");
+			return throw_error(q, &tmp, q->st.curr_frame, "domain_error", "non_empty_list");
 		}
 
 		cell *c = get_next_cell(q, &fmt2);
 
-		if (!c)
-			return throw_error(q, p2, p2_ctx, "domain_error", "missing_args");
+		if (!c) {
+			cell tmp;
+			make_atom(&tmp, g_nil_s);
+			return throw_error(q, &tmp, p2_ctx, "domain_error", "non_empty_list");
+		}
 
 		if (ch == 'i')
 			continue;
@@ -361,7 +385,7 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 
 		case 'e':
 		case 'E':
-			if (!is_float(c)) {
+			if (!is_float(c) && !is_smallint(c)) {
 				free(tmpbuf);
 				return throw_error(q, c, q->st.curr_frame, "type_error", "float");
 			}
@@ -369,23 +393,23 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 			len = 40;
 			CHECK_BUF(len);
 
-			if (argval) {
+			if (argval || argval_specified) {
 				if (ch == 'e')
-					len = sprintf(dst, "%.*e", argval, get_float(c));
+					len = snprintf(dst, len, "%.*e", argval, is_float(c) ? get_float(c) : get_smallint(c));
 				else
-					len = sprintf(dst, "%.*E", argval, get_float(c));
+					len = snprintf(dst, len, "%.*E", argval, is_float(c) ? get_float(c) : get_smallint(c));
 			} else {
 				if (ch == 'e')
-					len = sprintf(dst, "%e", get_float(c));
+					len = snprintf(dst, len, "%e", is_float(c) ? get_float(c) : get_smallint(c));
 				else
-					len = sprintf(dst, "%E", get_float(c));
+					len = snprintf(dst, len, "%E", is_float(c) ? get_float(c) : get_smallint(c));
 			}
 
 			break;
 
 		case 'g':
 		case 'G':
-			if (!is_float(c)) {
+			if (!is_float(c) && !is_smallint(c)) {
 				free(tmpbuf);
 				return throw_error(q, c, q->st.curr_frame, "type_error", "float");
 			}
@@ -393,22 +417,22 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 			len = 40;
 			CHECK_BUF(len);
 
-			if (argval) {
+			if (argval || argval_specified) {
 				if (ch == 'g')
-					len = sprintf(dst, "%.*g", argval, get_float(c));
+					len = snprintf(dst, len, "%.*g", argval, is_float(c) ? get_float(c) : get_smallint(c));
 				else
-					len = sprintf(dst, "%.*G", argval, get_float(c));
+					len = snprintf(dst, len, "%.*G", argval, is_float(c) ? get_float(c) : get_smallint(c));
 			} else {
 				if (ch == 'g')
-					len = sprintf(dst, "%g", get_float(c));
+					len = snprintf(dst, len, "%g", is_float(c) ? get_float(c) : get_smallint(c));
 				else
-					len = sprintf(dst, "%G", get_float(c));
+					len = snprintf(dst, len, "%G", is_float(c) ? get_float(c) : get_smallint(c));
 			}
 
 			break;
 
 		case 'f':
-			if (!is_float(c)) {
+			if (!is_float(c) && !is_smallint(c)) {
 				free(tmpbuf);
 				return throw_error(q, c, q->st.curr_frame, "type_error", "float");
 			}
@@ -416,10 +440,10 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 			len = 40;
 			CHECK_BUF(len);
 
-			if (argval)
-				len = sprintf(dst, "%.*f", argval, get_float(c));
+			if (argval || argval_specified)
+				len = snprintf(dst, len, "%.*f", argval, is_float(c) ? get_float(c) : get_smallint(c));
 			else
-				len = sprintf(dst, "%f", get_float(c));
+				len = snprintf(dst, len, "%f", is_float(c) ? get_float(c) : get_smallint(c));
 
 			break;
 
@@ -429,9 +453,9 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 				return throw_error(q, c, q->st.curr_frame, "type_error", "integer");
 			}
 
-			len = 40;
-			CHECK_BUF(len);
-			len = format_integer(dst, get_smallint(c), noargval?3:argval, '_', 0, 10);
+			len = print_term_to_buf(q, NULL, 0, c, 0, 0, false, 0);
+			CHECK_BUF(len*10);
+			len = format_integer(dst, c, noargval?3:argval, '_', 0, 10);
 			break;
 
 		case 'd':
@@ -440,9 +464,9 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 				return throw_error(q, c, q->st.curr_frame, "type_error", "integer");
 			}
 
-			len = 40;
-			CHECK_BUF(len);
-			len = format_integer(dst, get_smallint(c), 0, ',', noargval?0:argval, 10);
+			len = print_term_to_buf(q, NULL, 0, c, 0, 0, false, 0);
+			CHECK_BUF(len*10);
+			len = format_integer(dst, c, 0, ',', noargval?0:argval, 10);
 			break;
 
 		case 'D':
@@ -451,9 +475,9 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 				return throw_error(q, c, q->st.curr_frame, "type_error", "integer");
 			}
 
-			len = 40;
-			CHECK_BUF(len);
-			len = format_integer(dst, get_smallint(c), 3, ',', noargval?0:argval, 10);
+			len = print_term_to_buf(q, NULL, 0, c, 0, 0, false, 0);
+			CHECK_BUF(len*10);
+			len = format_integer(dst, c, 3, ',', noargval?0:argval, 10);
 			break;
 
 		case 'r':
@@ -467,9 +491,9 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 				return throw_error(q, c, q->st.curr_frame, "type_error", "integer");
 			}
 
-			len = 40;
-			CHECK_BUF(len);
-			len = format_integer(dst, get_smallint(c), 0, ',', 0, !argval?8:argval);
+			len = print_term_to_buf(q, NULL, 0, c, 0, 0, false, 0);
+			CHECK_BUF(len*10);
+			len = format_integer(dst, c, 0, ',', 0, !argval?8:argval);
 			break;
 
 		case 'R':
@@ -483,9 +507,9 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 				return throw_error(q, c, q->st.curr_frame, "type_error", "integer");
 			}
 
-			len = 40;
-			CHECK_BUF(len);
-			len = format_integer(dst, get_smallint(c), 0, ',', 0, !argval?-8:-argval);
+			len = print_term_to_buf(q, NULL, 0, c, 0, 0, false, 0);
+			CHECK_BUF(len*10);
+			len = format_integer(dst, c, 0, ',', 0, !argval?-8:-argval);
 			break;
 
 		case 'k':
@@ -542,6 +566,16 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 
 	*dst = '\0';
 	size_t len = dst - tmpbuf;
+
+	if (fmt2.p) {
+		cell *save_l = fmt2.p;
+		pl_idx_t save_l_ctx = fmt2.p_ctx;
+
+		cell *c = get_next_cell(q, &fmt2);
+
+		if (c)
+			return throw_error(q, save_l, save_l_ctx, "domain_error", "empty_list");
+	}
 
 	if (str == NULL) {
 		int n = q->st.m->pl->current_output;

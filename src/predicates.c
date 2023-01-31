@@ -90,7 +90,7 @@ void make_var2(cell *tmp, pl_idx_t off)
 	tmp->val_off = off;
 }
 
-void make_float(cell *tmp, double v)
+void make_float(cell *tmp, pl_flt_t v)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_FLOAT;
@@ -3948,6 +3948,9 @@ static void save_db(FILE *fp, query *q, int logging)
 				q->ignores[i] = false;
 
 			q->print_idx = 0;
+
+			//printf("*** %d/%d ", dbe->cl.is_first_cut, dbe->cl.is_cut_only);
+
 			print_term(q, fp, dbe->cl.cells, 0, 0);
 
 			if (logging) {
@@ -4420,7 +4423,7 @@ static bool fn_cpu_time_1(query *q)
 	GET_FIRST_ARG(p1,var);
 	double v = ((double)cpu_time_in_usec()-q->time_cpu_started) / 1000 / 1000;
 	cell tmp;
-	make_float(&tmp, (double)v);
+	make_float(&tmp, (pl_flt_t)v);
 	return unify (q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
@@ -5554,10 +5557,10 @@ static bool do_urlencode_2(query *q)
 	url_encode(str, len, dstbuf);
 	cell tmp;
 
-	if (is_string(p1))
-		check_heap_error(make_string(&tmp, dstbuf), free(dstbuf));
-	else
+	if (!is_list(p1))
 		check_heap_error(make_cstring(&tmp, dstbuf), free(dstbuf));
+	else
+		check_heap_error(make_string(&tmp, dstbuf), free(dstbuf));
 
 	free(dstbuf);
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
@@ -5576,10 +5579,10 @@ static bool do_urldecode_2(query *q)
 	url_decode(str, dstbuf);
 	cell tmp;
 
-	if (is_string(p1))
-		check_heap_error(make_string(&tmp, dstbuf), free(dstbuf));
-	else
+	if (!is_list(p2))
 		check_heap_error(make_cstring(&tmp, dstbuf), free(dstbuf));
+	else
+		check_heap_error(make_string(&tmp, dstbuf), free(dstbuf));
 
 	free(dstbuf);
 	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
@@ -7122,40 +7125,89 @@ static bool fn_sys_host_resume_1(query *q) {
 #include "spin.h"
 #include "wasi-outbound-http.h"
 
-static bool fn_sys_wasi_outbound_http_3(query *q) {
+static bool fn_sys_wasi_outbound_http_5(query *q) {
+	// "+string,+map,+map,-map,-map"
 	GET_FIRST_ARG(p1,atom);
-	GET_NEXT_ARG(p2,any);
-	GET_NEXT_ARG(p3,var);
+	GET_NEXT_ARG(p2,stream);
+	int n = get_stream(q, p2);
+	stream *req_str = &q->pl->streams[n];
+	GET_NEXT_ARG(p3,stream);
+	n = get_stream(q, p3);
+	stream *req_hdr_str = &q->pl->streams[n];
+	GET_NEXT_ARG(p4,stream);
+	n = get_stream(q, p4);
+	stream *resp_str = &q->pl->streams[n];
+	GET_NEXT_ARG(p5,stream);
+	n = get_stream(q, p5);
+	stream *resp_hdr_str = &q->pl->streams[n];
 
-	wasi_outbound_http_request_t request = {0};
-	wasi_outbound_http_response_t response = {0};
+	if (!is_map_stream(req_str))
+		return throw_error(q, p2, q->st.curr_frame, "domain_error", "map_stream");
+	if (!is_map_stream(req_hdr_str))
+		return throw_error(q, p3, q->st.curr_frame, "domain_error", "map_stream");
+	if (!is_map_stream(resp_str))
+		return throw_error(q, p4, q->st.curr_frame, "domain_error", "map_stream");
+	if (!is_map_stream(resp_hdr_str))
+		return throw_error(q, p5, q->st.curr_frame, "domain_error", "map_stream");
 
-	uint16_t method = 0;
-	const char *methodstr = C_STR(q, p1);
-	for (uint16_t i = 0; i < SPIN_HTTP_METHODS_MAX; i++) {
-		if (!strcmp(SPIN_METHODS[i], methodstr)) {
-			method = i;
-			break;
-		}
-	}
-	// TODO: check valid method name
-	request.method = method;
+	__attribute__((cleanup(wasi_outbound_http_request_free)))
+		wasi_outbound_http_request_t request = {0};
+	__attribute__((cleanup(wasi_outbound_http_response_free)))
+		wasi_outbound_http_response_t response = {0};
 
-	char *url = NULL;
-	if (is_iso_list(p2)) {
-		size_t len = scan_is_chars_list(q, p2, p2_ctx, true);
+	// Request URL
+	char *url;
+	if (is_iso_list(p1)) {
+		size_t len = scan_is_chars_list(q, p1, p1_ctx, true);
 
 		if (!len)
-			return throw_error(q, p2, p2_ctx, "type_error", "atom");
+			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-		url = chars_list_to_string(q, p2, p2_ctx, len);
+		url = chars_list_to_string(q, p1, p1_ctx, len);
 	} else {
-		url = DUP_STR(q, p2);
+		url = DUP_STR(q, p1);
 	}
-	wasi_outbound_http_string_dup(&request.uri, url);
-	free(url);
+	wasi_outbound_http_string_set(&request.uri, url);
+
+	// Request method
+	const char *tmpstr;
+	if (map_get(req_str->keyval, "method", (const void **)&tmpstr)) {
+		if (!spin_http_method_for(tmpstr, &request.method))
+			return throw_error(q, p2, q->st.curr_frame, "domain_error", "http_method");
+	}
+
+	// Request body
+	if (map_get(req_str->keyval, "body", (const void **)&tmpstr)) {
+		request.body.is_some = true;
+		request.body.val.len = strlen(tmpstr);
+		request.body.val.ptr = (uint8_t *)strdup(tmpstr);
+	}
+
+	// Request headers
+	size_t req_hdr_ct = map_count(req_hdr_str->keyval);
+	if (req_hdr_ct > 0) {
+		request.headers.len = req_hdr_ct;
+		wasi_outbound_http_tuple2_string_string_t *headers = calloc(req_hdr_ct,
+			sizeof(wasi_outbound_http_tuple2_string_string_t));
+		request.headers.ptr = headers;
+
+		miter *iter = map_first(req_hdr_str->keyval);
+		char *value;
+		size_t i = 0;
+		while (map_next(iter, (void **)&value)) {
+			wasi_outbound_http_tuple2_string_string_t *header = &headers[i++];
+			const char *key = map_key(iter);
+			wasi_outbound_http_string_t header_name, header_value;
+			wasi_outbound_http_string_dup(&header_name, key);
+			wasi_outbound_http_string_dup(&header_value, value);
+			header->f0 = header_name;
+			header->f1 = header_value;
+		}
+		map_done(iter);
+	}
 
 	wasi_outbound_http_http_error_t code = wasi_outbound_http_request(&request, &response);
+	// fprintf(stderr, "GOT: code = %d, ok? = %d, status = %d, url = %s\n", code, response.body.is_some, response.status, request.uri.ptr);
 	switch (code) {
 	case WASI_OUTBOUND_HTTP_HTTP_ERROR_SUCCESS:
 	case 255:
@@ -7163,31 +7215,53 @@ static bool fn_sys_wasi_outbound_http_3(query *q) {
 		// see: https://discord.com/channels/926888690310053918/950022897160839248/1026482038028648558
 		break;
 	case WASI_OUTBOUND_HTTP_HTTP_ERROR_DESTINATION_NOT_ALLOWED:
-		return throw_error(q, p2, p2_ctx, "spin_error", "destination_not_allowed");
+		return throw_error(q, p1, p1_ctx, "spin_error", "destination_not_allowed");
 	case WASI_OUTBOUND_HTTP_HTTP_ERROR_INVALID_URL:
-		return throw_error(q, p2, p2_ctx, "spin_error", "invalid_url");
+		return throw_error(q, p1, p1_ctx, "spin_error", "invalid_url");
 	case WASI_OUTBOUND_HTTP_HTTP_ERROR_REQUEST_ERROR:
-		return throw_error(q, p2, p2_ctx, "spin_error", "request_error");
+		return throw_error(q, p1, p1_ctx, "spin_error", "request_error");
 	case WASI_OUTBOUND_HTTP_HTTP_ERROR_RUNTIME_ERROR:
-		return throw_error(q, p2, p2_ctx, "spin_error", "runtime_error");
+		return throw_error(q, p1, p1_ctx, "spin_error", "runtime_error");
 	case WASI_OUTBOUND_HTTP_HTTP_ERROR_TOO_MANY_REQUESTS:
-		return throw_error(q, p2, p2_ctx, "spin_error", "too_many_requests");
+		return throw_error(q, p1, p1_ctx, "spin_error", "too_many_requests");
 	default:
 		fprintf(stderr, "wasi-outbound-http unknown error code: %d\n", code);
-		return throw_error(q, p2, p2_ctx, "spin_error", "unknown_error");
+		return throw_error(q, p1, p1_ctx, "spin_error", "unknown_error");
+	}
+	// wasi_outbound_http_request_free(&request);
+
+	// Response status
+	char tmpbuf[32];
+	snprintf(tmpbuf, sizeof(tmpbuf), "%d", response.status);
+	map_set(resp_str->keyval, strdup("status"), strdup(tmpbuf));
+
+	// Response body
+	if (response.body.is_some) {
+		char *body = malloc(response.body.val.len) + 1;
+		body[response.body.val.len] = 0;
+		memcpy(body, response.body.val.ptr, response.body.val.len);
+		map_set(resp_str->keyval, strdup("body"), body);
 	}
 
-	// TODO: check response.body.is_some
+	// Response headers
+	if (response.headers.is_some) {
+		char *k, *v;
+		for (size_t i = 0; i < response.headers.val.len; i++) {
+			wasi_outbound_http_tuple2_string_string_t *header = &response.headers.val.ptr[i];
 
-	cell tmp;
-	check_heap_error(make_stringn(&tmp, (const char *)response.body.val.ptr, response.body.val.len));
+			k = malloc(header->f0.len + 1);
+			k[header->f0.len] = 0;
+			memcpy(k, header->f0.ptr, header->f0.len);
 
-	wasi_outbound_http_request_free(&request);
-	wasi_outbound_http_response_free(&response);
+			v = malloc(header->f1.len + 1);
+			v[header->f1.len] = 0;
+			memcpy(v, header->f1.ptr, header->f1.len);
 
-	bool ok = unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
-	unshare_cell(&tmp);
-	return ok;
+			map_set(resp_hdr_str->keyval, k, v);
+		}
+	}
+
+	return true;
 }
 #endif
 
@@ -7801,7 +7875,6 @@ builtins g_other_bifs[] =
 	{"list", 1, fn_is_list_1, "+term", false, false, BLAH},
 	{"is_stream", 1, fn_is_stream_1, "+term", false, false, BLAH},
 	{"term_hash", 2, fn_term_hash_2, "+term,?integer", false, false, BLAH},
-	{"name", 2, fn_iso_atom_codes_2, "?string,?list", false, false, BLAH},
 	{"base64", 3, fn_base64_3, "?string,?string,+list", false, false, BLAH},
 	{"urlenc", 3, fn_urlenc_3, "?string,?string,+list", false, false, BLAH},
 	{"atom_lower", 2, fn_atom_lower_2, "?atom,?atom", false, false, BLAH},
@@ -7872,7 +7945,7 @@ builtins g_other_bifs[] =
 #endif
 #ifdef WASI_TARGET_SPIN
 // TODO: move these to contrib
-	{"$wasi_outbound_http", 3, fn_sys_wasi_outbound_http_3, "+string,+string,-string", false, false, BLAH},
+	{"$wasi_outbound_http", 5, fn_sys_wasi_outbound_http_5, "+string,+map,+map,-map,-map", false, false, BLAH},
 #endif
 
 #if USE_OPENSSL

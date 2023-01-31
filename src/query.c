@@ -697,10 +697,10 @@ static frame *push_frame(query *q, clause *cl)
 	// Avoid long chains of useless returns...
 
 	if (is_end(next_cell) && !next_cell->val_ret && curr_f->prev_cell) {
-		f->prev_frame = curr_f->prev_frame;
+		f->prev_offset = (new_frame - q->st.curr_frame) + curr_f->prev_offset;
 		f->prev_cell = curr_f->prev_cell;
 	} else {
-		f->prev_frame = q->st.curr_frame;
+		f->prev_offset = new_frame - q->st.curr_frame;
 		f->prev_cell = q->st.curr_cell;
 	}
 
@@ -726,7 +726,7 @@ static void reuse_frame(query *q, frame* f, const clause *cl)
 		*to = *from;
 	}
 
-	f->cgen = newf->cgen;
+	f->cgen = ++q->cgen;
 	f->initial_slots = f->actual_slots = cl->nbr_vars - cl->nbr_temporaries;
 	f->overflow = 0;
 
@@ -873,8 +873,8 @@ static void commit_me(query *q)
 		tco = last_match && recursive && vars_ok && !choices && slots_ok;
 
 #if 0
-	printf("*** retry=%d,tco=%d,q->no_tco=%d,last_match=%d,recursive=%d,choices=%d,slots_ok=%d,vars_ok=%d,cl->nbr_vars=%u,cl->nbr_temps=%u\n",
-		q->retry, tco, q->no_tco, last_match, recursive, choices, slots_ok, vars_ok, cl->nbr_vars, cl->nbr_temporaries);
+	printf("*** retry=%d,tco=%d,q->no_tco=%d,last_match=%d (%d/%d),recursive=%d,choices=%d,slots_ok=%d,vars_ok=%d,cl->nbr_vars=%u,cl->nbr_temps=%u\n",
+		q->retry, tco, q->no_tco, last_match, implied_first_cut, cl->is_first_cut, recursive, choices, slots_ok, vars_ok, cl->nbr_vars, cl->nbr_temporaries);
 #endif
 
 	if (q->pl->opt && tco)
@@ -917,7 +917,7 @@ void stash_me(query *q, const clause *cl, bool last_match)
 		pl_idx_t new_frame = q->st.fp++;
 		frame *f = GET_FRAME(new_frame);
 		f->is_last = last_match;
-		f->prev_frame = q->st.curr_frame;
+		f->prev_offset = new_frame - q->st.curr_frame;
 		f->prev_cell = NULL;
 		f->cgen = cgen;
 		f->overflow = 0;
@@ -990,21 +990,29 @@ void cut_me(query *q)
 
 	while (q->cp) {
 		choice *ch = GET_CURR_CHOICE();
-		const choice *save_ch = ch;
 
 		// A normal cut can't break out of a barrier...
 
-		if (ch->barrier && (ch->cgen <= f->cgen))
-			break;
-
-		if (ch->cgen < f->cgen) {
-			break;
+		if (ch->barrier) {
+			if (ch->cgen <= f->cgen)
+				break;
+		} else {
+			if (ch->cgen < f->cgen)
+				break;
 		}
 
 		if (ch->st.iter) {
 			map_done(ch->st.iter);
 			ch->st.iter = NULL;
 		}
+
+		frame *f = GET_FRAME(ch->st.curr_frame);
+
+		if ((ch->st.fp == (q->st.curr_frame + 1))
+			&& (f->actual_slots == 0)
+			) {
+				q->st.fp = ch->st.fp;
+			}
 
 		unshare_predicate(q, ch->st.pr);
 		q->cp--;
@@ -1118,7 +1126,7 @@ static void chop_frames(query *q, const frame *f)
 {
 	if (q->st.curr_frame == (q->st.fp-1)) {
 		const frame *tmpf = f;
-		pl_idx_t prev_frame = f->prev_frame;
+		pl_idx_t prev_frame = q->st.curr_frame - f->prev_offset;
 
 		while (q->st.fp > (prev_frame+1)) {
 			if (any_choices(q, tmpf))
@@ -1147,7 +1155,7 @@ static bool resume_frame(query *q)
 		chop_frames(q, f);
 
 	q->st.curr_cell = f->prev_cell;
-	q->st.curr_frame = f->prev_frame;
+	q->st.curr_frame = q->st.curr_frame - f->prev_offset;
 	f = GET_CURR_FRAME();
 	q->st.m = q->pl->modmap[f->mid];
 	return true;

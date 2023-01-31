@@ -25,6 +25,16 @@ const char* SPIN_METHODS[] = {
 	[SPIN_HTTP_METHOD_OPTIONS]	= "options"
 };
 
+bool spin_http_method_for(const char *name, uint8_t *id) {
+	for (uint8_t i = 0; i < SPIN_HTTP_METHODS_MAX; i++) {
+		if (!strcmp(name, SPIN_METHODS[i])) {
+			*id = i;
+			return true;
+		}
+	}
+	return false;
+}
+
 // The Spin HTTP component handler.
 // Using the pre-initialized global interpreter, it asserts a bunch of HTTP-related info
 // and then calls spin:http_handle_request/2.

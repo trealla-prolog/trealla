@@ -549,7 +549,7 @@ nb_delete(_).
 
 nb_current(K, V) :-
 	can_be(K, atom, nb_current/2, _),
-	user:clause('$global_key'(K, V), _).
+	user:clause('$global_key'(K, V), true).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -948,3 +948,9 @@ sre_subst_all_(Reg, TextIn, Subst, L0, L) :-
 	).
 
 :- help(sre_subst_all(+pattern,+text,+subst,-text), [iso(false)]).
+
+name(N, L) :-
+	( number(N) -> number_codes(N, L) ; atom_codes(N, L) ).
+
+:- help(name(+atomic,?chars), [iso(false)]).
+

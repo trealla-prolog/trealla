@@ -1155,38 +1155,27 @@ static void directives(parser *p, cell *d)
 	}
 }
 
-static void check_first_cut(parser *p)
+static void check_first_cut(clause *cl)
 {
-	cell *c = get_body(p->cl->cells);
-	int is_cut_only = true;
+	cell *c = get_body(cl->cells);
 
 	if (!c)
 		return;
 
-	while (!is_end(c)) {
-		if (!(c->flags&FLAG_BUILTIN))
-			break;
-
-		if (!strcmp(C_STR(p, c), ",")
-			|| !strcmp(C_STR(p, c), ";")
-			|| !strcmp(C_STR(p, c), "->")
-			|| !strcmp(C_STR(p, c), "*->")
-			|| !strcmp(C_STR(p, c), "-->")
-			)
-			;
-		else if (!IS_OP(c) && !strcmp(C_STR(p, c), "!")) {
-			p->cl->is_first_cut = true;
-			break;
-		} else {
-			is_cut_only = false;
-			break;
-		}
-
-		c += c->nbr_cells;
+	if (c->val_off == g_cut_s) {
+		cl->is_first_cut = true;
+		cl->is_cut_only = true;
+		return;
 	}
 
-	if (p->cl->is_first_cut && is_cut_only)
-		p->cl->is_cut_only = true;
+	if (c->val_off == g_conjunction_s) {
+		c += 1;
+
+		if (c->val_off == g_cut_s) {
+			cl->is_first_cut = true;
+			return;
+		}
+	}
 }
 
 static pl_idx_t get_varno(parser *p, const char *src)
@@ -1334,8 +1323,6 @@ void term_assign_vars(parser *p, unsigned start, bool rebase)
 	ensure(c);
 	c->tag = TAG_END;
 	c->nbr_cells = 1;
-	check_first_cut(p);
-	p->cl->is_fact = !get_logical_body(p->cl->cells);
 }
 
 static bool reduce(parser *p, pl_idx_t start_idx, bool last_op)
@@ -2057,7 +2044,7 @@ bool virtual_term(parser *p, const char *src)
 	return true;
 }
 
-static cell *make_interned(parser *p, pl_idx_t offset)
+cell *make_interned(parser *p, pl_idx_t offset)
 {
 	cell *c = make_a_cell(p);
 	c->tag = TAG_INTERNED;
@@ -2413,7 +2400,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 	if (s && (*s == '.') && isdigit(s[1])) {
 		p->v.tag = TAG_FLOAT;
 		errno = 0;
-		double v = strtod(tmpptr, &tmpptr);
+		pl_flt_t v = strtod(tmpptr, &tmpptr);
 
 		if ((int)v && (errno == ERANGE)) {
 			if (DUMP_ERRS || !p->do_read_term)
@@ -3097,7 +3084,9 @@ static bool process_term(parser *p, cell *p1)
 		h->arity = 0;
 	}
 
-	if (!assertz_to_db(p->m, p->cl->nbr_vars, p->cl->nbr_temporaries, p1, 1)) {
+	db_entry *dbe;
+
+	if ((dbe = assertz_to_db(p->m, p->cl->nbr_vars, p->cl->nbr_temporaries, p1, 1)) == NULL) {
 		if (DUMP_ERRS || !p->do_read_term)
 			printf("Error: assertion failed '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 
@@ -3105,6 +3094,8 @@ static bool process_term(parser *p, cell *p1)
 		return false;
 	}
 
+	check_first_cut(&dbe->cl);
+	dbe->cl.is_fact = !get_logical_body(dbe->cl.cells);
 	return true;
 }
 
@@ -3133,8 +3124,10 @@ unsigned tokenize(parser *p, bool args, bool consing)
 		    && (*p->srcptr != '"')
 		    && (*p->srcptr != '(')
 		    && (*p->srcptr != ',')
+		    && (*p->srcptr != ';')
 		    && (*p->srcptr != ')')
 		    && (*p->srcptr != ']')
+		    && (*p->srcptr != '}')
 		    && (*p->srcptr != '|')) {
 
 			if (p->nesting_parens || p->nesting_brackets || p->nesting_braces) {

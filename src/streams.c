@@ -6644,7 +6644,7 @@ static bool fn_map_set_3(query *q)
 		val = strdup(tmpbuf);
 	} else if (is_float(p2)) {
 		char tmpbuf[128];
-		snprintf(tmpbuf, sizeof(tmpbuf), "%.*g", DBL_DECIMAL_DIG, get_float(p2));
+		snprintf(tmpbuf, sizeof(tmpbuf), "%.*lg", DBL_DECIMAL_DIG, get_float(p2));
 		val = strdup(tmpbuf);
 	} else if (is_atom(p2))
 		val = DUP_STR(q, p2);
@@ -6711,7 +6711,7 @@ static bool fn_map_get_3(query *q)
 		pl_int_t v = strtoll(val, NULL, 10);
 		make_int(&tmp, v);
 	} else if (all_digs && floaties) {
-		double v = strtod(val, NULL);
+		pl_flt_t v = strtod(val, NULL);
 		make_float(&tmp, v);
 	} else
 		check_heap_error(make_cstring(&tmp, val));
@@ -6759,7 +6759,7 @@ static bool fn_map_list_2(query *q)
 
 	GET_NEXT_ARG(p1,list_or_var);
 	miter *iter = map_first(str->keyval);
-	union { double vd; int64_t vi; void *vp; } dummy;
+	union { pl_flt_t vd; int64_t vi; void *vp; } dummy;
 	bool first = true;
 	char *val = NULL;
 	char tmpbuf[128];
@@ -6808,7 +6808,7 @@ static bool fn_map_list_2(query *q)
 			pl_int_t v = strtoll(val, NULL, 10);
 			make_int(&tmpv, v);
 		} else if (all_digs && floaties) {
-			double v = strtod(val, NULL);
+			pl_flt_t v = strtod(val, NULL);
 			make_float(&tmpv, v);
 		} else
 			check_heap_error(make_cstring(&tmpv, val));
