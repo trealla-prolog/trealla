@@ -1,10 +1,15 @@
-:- module(spin, [http_handler/3]).
+:- module(spin, [http_handler/3, current_http_uri/1, current_http_method/1, current_http_body/1,
+	current_http_param/2, current_http_header/2]).
 
-:- dynamic(http_header/2).
-:- dynamic(http_body/1).
+:- dynamic(current_http_uri/1).
+:- dynamic(current_http_method/1).
+:- dynamic(current_http_body/1).
 
-:- dynamic(http_handler/3).
-:- multifile([http_handler/3]).
+:- dynamic(current_http_param/2).
+:- dynamic(current_http_header/2).
+
+:- dynamic(http_handler/4).
+:- multifile([http_handler/4]).
 
 init :-
 	map_create(_, [alias(http_headers)]),
@@ -12,20 +17,36 @@ init :-
 
 :- initialization(init).	
 
-http_handle_request(_, Method) :-
-	assertz(http_method(Method)),
-	(try_consult(lib) ; try_consult(init)),
+http_handle_request(URI, Method) :-
+	assertz(current_http_uri(URI)),
+	assertz(current_http_method(Method)),
+	( try_consult(lib) ; try_consult(init) ),
 	fail.
 http_handle_request(URI, Method) :-
-	http_handle_(Method, URI, Status),
+	findall(K:V, current_http_param(K, V), Params),
+	findall(K:V, current_http_header(K, V), Headers),
+	(  current_http_body(Body)
+	-> true
+	;  Body = []
+	),
+	% get("/index.pl", [foo:bar])
+	Handle =.. [Method, URI, Params],
+	http_handle_(Handle, Headers, Body, Status),
 	map_set(http_headers, "status", Status).
-	
-http_handle_(Method, URI, Status) :-
-	http_handler(Method, URI, Status),
-	!.
-http_handle_(_, _, 404) :-
-	write(http_body, 'Not found\n').
 
+http_handle_(Handle, Headers, Body, Status) :-
+	catch(
+		http_handler(Handle, Headers, Body, Status),
+		Error,
+		(
+			Status = 500,
+			write(http_body, 'Internal server error'),
+			format(stderr, "Unhandled exception: ~w in ~w", [Error, Handle])
+		)
+	),
+	!.
+http_handle_(_, _, _, 404) :-
+	write(http_body, 'Not found\n').
 
 http_fetch(URL, Result, Options) :-
 	must_be(chars, URL),
@@ -62,8 +83,7 @@ outbound_request_options(Options, Map, HeaderMap) :-
 	must_be(list, Headers),
 	maplist(map_set_kv(HeaderMap), Headers).
 
-% todo: change to K:V?
-map_set_kv(Map, Key-Value) :-
+map_set_kv(Map, Key:Value) :-
 	map_set(Map, Key, Value).
 
 spin_http_result(Map, HeaderMap, response(Status, Headers, Body)) :-

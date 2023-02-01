@@ -14,9 +14,7 @@
 #ifdef WASI_TARGET_SPIN
 #include "spin.h"
 #include "wasi-outbound-http.h"
-#endif
 
-#ifdef WASI_TARGET_SPIN
 static bool fn_sys_wasi_outbound_http_5(query *q) {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,stream);
@@ -113,10 +111,9 @@ static bool fn_sys_wasi_outbound_http_5(query *q) {
 	default:
 		return throw_error(q, p1, p1_ctx, "spin_error", "unknown_error");
 	}
-	// wasi_outbound_http_request_free(&request);
 
 	// Response status
-	char tmpbuf[32];
+	char tmpbuf[8];
 	snprintf(tmpbuf, sizeof(tmpbuf), "%d", response.status);
 	map_set(resp_str->keyval, strdup("status"), strdup(tmpbuf));
 

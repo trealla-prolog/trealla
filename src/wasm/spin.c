@@ -35,6 +35,13 @@ bool spin_http_method_for(const char *name, uint8_t *id) {
 	return false;
 }
 
+#define RESIZE_TMPBUF(size) \
+		if (size > tmpbuf_len) { \
+			tmpbuf = realloc(tmpbuf, size); \
+			if (!tmpbuf) abort(); \
+			tmpbuf_len = size; \
+		}
+
 // The Spin HTTP component handler.
 // Using the pre-initialized global interpreter, it asserts a bunch of HTTP-related info
 // and then calls spin:http_handle_request/2.
@@ -47,7 +54,7 @@ extern void spin_http_handle_http_request(spin_http_request_t *request, spin_htt
 	// s will be the query sent to Prolog
 	SB(s);
 
-	SB_strcat(s, "assertz(http_uri(\"");
+	SB_strcat(s, "trace, spin:assertz(current_http_uri(\"");
 	SB_strcatn(s, request->uri.ptr, request->uri.len);
 	SB_strcat(s, "\")), ");
 
@@ -63,31 +70,50 @@ BADMETHOD:
 	char *tmpbuf = malloc(1024);
 	size_t tmpbuf_len = 1024;
 
+	for (size_t i = 0; i < request->params.len; i++) {
+		spin_http_tuple2_string_string_t param = request->params.ptr[i];
+
+		size_t fmt_len = param.f0.len*3;
+		RESIZE_TMPBUF(fmt_len);
+		size_t len = pl_format_string(tmpbuf, tmpbuf_len,
+			param.f0.ptr, param.f0.len, true);
+		SB_strcat(s, "spin:assertz(current_http_param(\"");
+		SB_strcatn(s, tmpbuf, len);
+		SB_strcat(s, "\",\"");
+
+		fmt_len = param.f1.len*3;
+		RESIZE_TMPBUF(fmt_len);
+		len = pl_format_string(tmpbuf, tmpbuf_len,
+			param.f1.ptr, param.f1.len, true);
+		SB_strcatn(s, tmpbuf, len);
+		SB_strcat(s, "\")), ");
+	}
+
 	for (size_t i = 0; i < request->headers.len; i++) {
 		spin_http_tuple2_string_string_t header = request->headers.ptr[i];
-		size_t fmt_len = header.f1.len*3;
-		if (fmt_len > tmpbuf_len) {
-			tmpbuf = realloc(tmpbuf, fmt_len);
-			fmt_len = tmpbuf_len;
-		}
+
+		size_t fmt_len = header.f0.len*3;
+		RESIZE_TMPBUF(fmt_len);
 		size_t len = pl_format_string(tmpbuf, tmpbuf_len,
-			header.f1.ptr, header.f1.len, true);
-		SB_strcat(s, "assertz(http_header(\"");
-		SB_strcatn(s, header.f0.ptr, header.f0.len);
+			header.f0.ptr, header.f0.len, true);
+		SB_strcat(s, "spin:assertz(current_http_header(\"");
+		SB_strcatn(s, tmpbuf, len);
 		SB_strcat(s, "\",\"");
+
+		fmt_len = header.f1.len*3;
+		RESIZE_TMPBUF(fmt_len);
+		len = pl_format_string(tmpbuf, tmpbuf_len,
+			header.f1.ptr, header.f1.len, true);
 		SB_strcatn(s, tmpbuf, len);
 		SB_strcat(s, "\")), ");
 	}
 
 	if (request->body.is_some && request->body.val.len > 0) {
-		size_t body_size = request->body.val.len*3;
-		if (body_size > tmpbuf_len) {
-			tmpbuf = realloc(tmpbuf, body_size);
-			tmpbuf_len = body_size;
-		}
+		size_t body_len = request->body.val.len*3;
+		RESIZE_TMPBUF(body_len);
 		size_t len = pl_format_string(tmpbuf, tmpbuf_len,
 			(const char *)request->body.val.ptr, request->body.val.len, true);
-		SB_strcat(s, "assertz(http_body(\"");
+		SB_strcat(s, "spin:assertz(current_http_body(\"");
 		SB_strcatn(s, tmpbuf, len);
 		SB_strcat(s, "\")), ");
 	}
@@ -150,7 +176,7 @@ BADMETHOD:
 			response->headers.is_some = true;
 
 		miter *iter = map_first(m);
-		char *value;
+		const char *value;
 		size_t i = 0;
 		while (map_next(iter, (void **)&value)) {
 			spin_http_tuple2_string_string_t *header = &headers[i++];
@@ -177,5 +203,7 @@ BADMETHOD:
 		response->body.val.len = body_len;
 	}
 }
+
+#undef RESIZE_TMPBUF
 
 #endif
