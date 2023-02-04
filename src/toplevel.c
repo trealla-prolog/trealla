@@ -365,6 +365,10 @@ void dump_vars(query *q, bool partial)
 		if (is_structure(c)) {
 			unsigned pri = find_op(q->st.m, C_STR(q, c), GET_OP(c));
 
+			if (!pri) {
+				pri = search_op(q->st.m, C_STR(q, c), NULL, false);
+			}
+
 			if (pri >= 700)
 				parens = true;
 		}
