@@ -1425,6 +1425,15 @@ static bool reduce(parser *p, pl_idx_t start_idx, bool last_op)
 				p->error = true;
 				return false;
 			}
+
+			if (is_prefix(rhs) && !rhs->arity && (rhs->priority > c->priority) && !is_quoted(rhs)) {
+				if (DUMP_ERRS || !p->do_read_term)
+					fprintf(stdout, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+
+				p->error_desc = "operator_clash";
+				p->error = true;
+				return false;
+			}
 		}
 
 		if (is_prefix(c)) {
