@@ -5,7 +5,9 @@
 :- dynamic(current_http_method/1).
 :- dynamic(current_http_body/1).
 
-:- dynamic(current_http_param/2).
+% param is currently unused?
+% :- dynamic(current_http_param/2).
+
 :- dynamic(current_http_header/2).
 
 :- dynamic(http_handler/4).
@@ -23,14 +25,14 @@ http_handle_request(URI, Method) :-
 	( try_consult(lib) ; try_consult(init) ),
 	fail.
 http_handle_request(URI, Method) :-
-	findall(K:V, current_http_param(K, V), Params),
+	% findall(K:V, current_http_param(K, V), Params),
 	findall(K:V, current_http_header(K, V), Headers),
 	(  current_http_body(Body)
 	-> true
 	;  Body = []
 	),
-	% get("/index.pl", [foo:bar])
-	Handle =.. [Method, URI, Params],
+	% get("/index.pl")
+	Handle =.. [Method, URI/*, Params*/],
 	http_handle_(Handle, Headers, Body, Status),
 	map_set(http_headers, "status", Status).
 

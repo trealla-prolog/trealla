@@ -178,10 +178,6 @@ bool query_did_yield(pl_sub_query *subq)
 	return q->yielded;
 }
 
-size_t pl_format_string(char *dst, size_t dstlen, const char *src, int srclen, bool double_quotes) {
-	return formatted(dst, dstlen, src, srclen, double_quotes, false);
-}
-
 bool pl_consult_fp(prolog *pl, FILE *fp, const char *filename)
 {
 	return load_fp(pl->user_m, fp, filename, false) != NULL;

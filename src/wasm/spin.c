@@ -12,6 +12,7 @@
 #include "spin-http.h"
 #include "stringbuf.h"
 #include "map.h"
+#include "internal.h"
 
 #include "spin.h"
 
@@ -25,7 +26,8 @@ const char* SPIN_METHODS[] = {
 	[SPIN_HTTP_METHOD_OPTIONS]	= "options"
 };
 
-bool spin_http_method_for(const char *name, uint8_t *id) {
+bool spin_http_method_lookup(const char *name, uint8_t *id)
+{
 	for (uint8_t i = 0; i < SPIN_HTTP_METHODS_MAX; i++) {
 		if (!strcmp(name, SPIN_METHODS[i])) {
 			*id = i;
@@ -35,11 +37,11 @@ bool spin_http_method_for(const char *name, uint8_t *id) {
 	return false;
 }
 
-#define RESIZE_TMPBUF(size) \
-		if (size > tmpbuf_len) { \
-			tmpbuf = realloc(tmpbuf, size); \
-			if (!tmpbuf) abort(); \
-			tmpbuf_len = size; \
+#define RESIZE_TMPBUF(size) 				\
+		if (size > tmpbuf_len) {			\
+			tmpbuf = realloc(tmpbuf, size);	\
+			if (!tmpbuf) abort();			\
+			tmpbuf_len = size; 				\
 		}
 
 // The Spin HTTP component handler.
@@ -60,6 +62,7 @@ extern void spin_http_handle_http_request(spin_http_request_t *request, spin_htt
 
 	if (request->method >= SPIN_HTTP_METHODS_MAX) {
 BADMETHOD:
+		SB_free(s);
 		fprintf(stderr, "Unhandled method: %d\n", request->method);
 		response->status = 405;
 		return;
@@ -75,16 +78,16 @@ BADMETHOD:
 
 		size_t fmt_len = param.f0.len*3;
 		RESIZE_TMPBUF(fmt_len);
-		size_t len = pl_format_string(tmpbuf, tmpbuf_len,
-			param.f0.ptr, param.f0.len, true);
+		size_t len = formatted(tmpbuf, tmpbuf_len,
+			param.f0.ptr, param.f0.len, true, false);
 		SB_strcat(s, "spin:assertz(current_http_param(\"");
 		SB_strcatn(s, tmpbuf, len);
 		SB_strcat(s, "\",\"");
 
 		fmt_len = param.f1.len*3;
 		RESIZE_TMPBUF(fmt_len);
-		len = pl_format_string(tmpbuf, tmpbuf_len,
-			param.f1.ptr, param.f1.len, true);
+		len = formatted(tmpbuf, tmpbuf_len,
+			param.f1.ptr, param.f1.len, true, false);
 		SB_strcatn(s, tmpbuf, len);
 		SB_strcat(s, "\")), ");
 	}
@@ -94,16 +97,16 @@ BADMETHOD:
 
 		size_t fmt_len = header.f0.len*3;
 		RESIZE_TMPBUF(fmt_len);
-		size_t len = pl_format_string(tmpbuf, tmpbuf_len,
-			header.f0.ptr, header.f0.len, true);
+		size_t len = formatted(tmpbuf, tmpbuf_len,
+			header.f0.ptr, header.f0.len, true, false);
 		SB_strcat(s, "spin:assertz(current_http_header(\"");
 		SB_strcatn(s, tmpbuf, len);
 		SB_strcat(s, "\",\"");
 
 		fmt_len = header.f1.len*3;
 		RESIZE_TMPBUF(fmt_len);
-		len = pl_format_string(tmpbuf, tmpbuf_len,
-			header.f1.ptr, header.f1.len, true);
+		len = formatted(tmpbuf, tmpbuf_len,
+			header.f1.ptr, header.f1.len, true, false);
 		SB_strcatn(s, tmpbuf, len);
 		SB_strcat(s, "\")), ");
 	}
@@ -111,8 +114,9 @@ BADMETHOD:
 	if (request->body.is_some && request->body.val.len > 0) {
 		size_t body_len = request->body.val.len*3;
 		RESIZE_TMPBUF(body_len);
-		size_t len = pl_format_string(tmpbuf, tmpbuf_len,
-			(const char *)request->body.val.ptr, request->body.val.len, true);
+		size_t len = formatted(tmpbuf, tmpbuf_len,
+			(const char *)request->body.val.ptr, request->body.val.len,
+			true, false);
 		SB_strcat(s, "spin:assertz(current_http_body(\"");
 		SB_strcatn(s, tmpbuf, len);
 		SB_strcat(s, "\")), ");
@@ -129,6 +133,8 @@ BADMETHOD:
 	if (!ok || !get_status(pl)) {
 		fprintf(stderr, "Error: query failed (ok = %d, status = %d): %s\n",
 			ok, get_status(pl), SB_cstr(s));
+		SB_free(s);
+
 		int n = pl->current_error;
 		stream *str = &pl->streams[n];
 		const char *src = SB_cstr(str->sb);
@@ -148,14 +154,14 @@ BADMETHOD:
 	const char *body_string;
 	size_t body_len = 0;
 	
-	int n = pl_get_stream(pl, "http_body");
+	int n = get_named_stream(pl, "http_body", strlen("http_body"));
 	stream *str = &pl->streams[n];
 	if (str->is_memory) {
 		body_string = SB_cstr(str->sb);
 		body_len = SB_strlen(str->sb);
 	}
 
-	n = pl_get_stream(pl, "http_headers");
+	n = get_named_stream(pl, "http_headers", strlen("http_headers"));
 	str = &pl->streams[n];
 	spin_http_headers_t response_headers = {0};
 	if (str->is_map) {

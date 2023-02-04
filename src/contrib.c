@@ -15,7 +15,8 @@
 #include "spin.h"
 #include "wasi-outbound-http.h"
 
-static bool fn_sys_wasi_outbound_http_5(query *q) {
+static bool fn_sys_wasi_outbound_http_5(query *q)
+{
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,stream);
 	stream *req_str = &q->pl->streams[get_stream(q, p2)];
@@ -41,7 +42,7 @@ static bool fn_sys_wasi_outbound_http_5(query *q) {
 		wasi_outbound_http_response_t response = {0};
 
 	// Request URL
-	char *url;
+	const char *url;
 	if (is_iso_list(p1)) {
 		size_t len = scan_is_chars_list(q, p1, p1_ctx, true);
 
@@ -57,7 +58,7 @@ static bool fn_sys_wasi_outbound_http_5(query *q) {
 	// Request method
 	const char *tmpstr;
 	if (map_get(req_str->keyval, "method", (const void **)&tmpstr)) {
-		if (!spin_http_method_for(tmpstr, &request.method))
+		if (!spin_http_method_lookup(tmpstr, &request.method))
 			return throw_error(q, p2, q->st.curr_frame, "domain_error", "http_method");
 	}
 
@@ -119,7 +120,7 @@ static bool fn_sys_wasi_outbound_http_5(query *q) {
 
 	// Response body
 	if (response.body.is_some) {
-		char *body = malloc(response.body.val.len) + 1;
+		char *body = malloc(response.body.val.len + 1);
 		body[response.body.val.len] = 0;
 		memcpy(body, response.body.val.ptr, response.body.val.len);
 		map_set(resp_str->keyval, strdup("body"), body);

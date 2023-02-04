@@ -437,11 +437,6 @@ int get_named_stream(prolog *pl, const char *name, size_t len)
 	return -1;
 }
 
-int pl_get_stream(prolog *pl, const char *name) {
-	int len = strlen(name);
-	return get_named_stream(pl, name, len);
-}
-
 static int new_stream(prolog *pl)
 {
 	for (int i = 0; i < MAX_STREAMS; i++) {
