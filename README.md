@@ -18,15 +18,35 @@ These builds are uploaded automatically for each release.
 
 ## Compile targets
 
-There are two compile targets for WASM builds.
+There's a bunch of new compile targets for WASM.
 
 ### wasm
 
-`make wasm` will build a pure WASI version of Trealla: `tpl.wasm`. This binary can be executed by any runtime that supports WASI. For example, you can use it [with Spin to serve webpages](https://github.com/guregu/php/blob/519031a86a02b812962c264dd7037b82dc77e02d/spin.toml#L10). Currently the Go port of Trealla uses this.
+`make wasm` will build a pure WASI version of Trealla: `tpl.wasm`. This binary can be executed by any runtime that supports WASI. (Mostly) upstreamed.
 
 ### libtpl
 
-`make libtpl` will build a WASM binary with host calls enabled: `libtpl.wasm`. This adds host-guest interop exports and imports that break pure WASI compatibility. This is currently used by trealla-js. When WASI libraries for browsers improve, we can get rid of this and use standard WASI APIs instead.
+`make libtpl` will build a WASM binary with host calls enabled: `libtpl.wasm`. This adds host-guest interop exports and imports that break pure WASI compatibility. This is currently used by the Go port.
+
+### libtpl-js
+
+`make libtpl-js` builds the trealla-js version of libtpl. Includes [JS-specific predicates](https://github.com/guregu/trealla-js#predicate-reference).
+
+### libtpl-spin
+
+`make libtpl-spin` builds the [Spin](https://github.com/fermyon/spin)-flavored libtpl.
+
+`make SPINDIR=path/to/spin/source wit` to generate the WASM component code via wit-bindgen.
+
+#### Spin Components
+
+See `library/spin.pl`.
+
+- [x] Inbound HTTP (via `http_handler/4` multifile predicate)
+- [x] Outbound HTTP (via `http_fetch/3`)
+- [ ] Outbound PostgreSQL
+- [ ] Inbound Redis
+- [ ] Outbound Redis
 
 ## See also
 

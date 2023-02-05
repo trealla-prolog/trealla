@@ -2412,7 +2412,7 @@ static bool fn_iso_write_canonical_1(query *q)
 		return throw_error(q, &tmp, q->st.curr_frame, "permission_error", "output,binary_stream");
 	}
 
-	print_canonical(q, str->fp, p1, p1_ctx, 1);
+	print_canonical_to_stream(q, str, p1, p1_ctx, 1);
 
 	if (is_memory_stream(str))
 		return true;
@@ -2440,7 +2440,7 @@ static bool fn_iso_write_canonical_2(query *q)
 		return throw_error(q, &tmp, q->st.curr_frame, "permission_error", "output,binary_stream");
 	}
 
-	print_canonical(q, str->fp, p1, p1_ctx, 1);
+	print_canonical_to_stream(q, str, p1, p1_ctx, 1);
 
 	if (is_memory_stream(str))
 		return true;

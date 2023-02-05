@@ -56,7 +56,7 @@ extern void spin_http_handle_http_request(spin_http_request_t *request, spin_htt
 	// s will be the query sent to Prolog
 	SB(s);
 
-	SB_strcat(s, "trace, spin:assertz(current_http_uri(\"");
+	SB_strcat(s, "spin:assertz(current_http_uri(\"");
 	SB_strcatn(s, request->uri.ptr, request->uri.len);
 	SB_strcat(s, "\")), ");
 

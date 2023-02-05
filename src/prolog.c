@@ -403,27 +403,29 @@ void pl_destroy(prolog *pl)
 	for (int i = 0; i < MAX_STREAMS; i++) {
 		stream *str = &pl->streams[i];
 
-		if (is_live_stream(str)) {
-			if ((str->fp != stdin)
-				&& (str->fp != stdout)
-				&& (str->fp != stderr)
-			) {
-				if (str->is_map)
-					map_destroy(str->keyval);
-				if (str->is_memory)
-					SB_free(str->sb)
-				else if (str->fp && (i > 2))
-					fclose(str->fp);
-			}
+		if (!is_live_stream(str))
+			continue;
 
-			if (str->p)
+		if (is_map_stream(str))
+			map_destroy(str->keyval);
+
+		if (is_memory_stream(str))
+			SB_free(str->sb);
+
+		if (!is_virtual_stream(str) && (i > 2) &&
+				((str->fp != stdin)
+				&& (str->fp != stdout)
+				&& (str->fp != stderr))) {
+			fclose(str->fp);
+		}
+
+		if (str->p)
 				destroy_parser(str->p);
 
-			map_destroy(str->alias);
-			free(str->mode);
-			free(str->filename);
-			free(str->data);
-		}
+		map_destroy(str->alias);
+		free(str->mode);
+		free(str->filename);
+		free(str->data);
 	}
 
 	memset(pl->streams, 0, sizeof(pl->streams));
