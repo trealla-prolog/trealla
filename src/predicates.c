@@ -2723,7 +2723,7 @@ static bool search_functor(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 
 		if (try_me(q, MAX_VARS) != true) {
 			map_done(q->st.f_iter);
-			q->st.f_iter = NULL;
+			drop_choice(q);
 			return false;
 		}
 
@@ -2741,7 +2741,6 @@ static bool search_functor(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 
 	map_done(q->st.f_iter);
 	drop_choice(q);
-	q->st.f_iter = NULL;
 	return false;
 }
 
