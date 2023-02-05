@@ -527,12 +527,8 @@ struct prolog_state_ {
 	predicate *pr;
 	db_entry *curr_dbe;
 	module *m, *prev_m;
+	miter *iter;
 	cell *key;
-
-	union {
-		miter *iter;
-		miter *f_iter;
-	};
 
 	union {
 		int64_t cnt;

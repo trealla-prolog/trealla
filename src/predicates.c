@@ -2704,13 +2704,13 @@ static bool fn_iso_current_rule_1(query *q)
 static bool search_functor(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx)
 {
 	if (!q->retry)
-		q->st.f_iter = map_first(q->st.m->index);
+		q->st.iter = map_first(q->st.m->index);
 
 	check_heap_error(push_choice(q));
 	check_heap_error(check_slot(q, MAX_VARS));
 	predicate *pr = NULL;
 
-	while (map_next(q->st.f_iter, (void*)&pr)) {
+	while (map_next(q->st.iter, (void*)&pr)) {
 		CHECK_INTERRUPT();
 
 		const char *src = C_STR(q, &pr->key);
@@ -2722,8 +2722,8 @@ static bool search_functor(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 			continue;
 
 		if (try_me(q, MAX_VARS) != true) {
-			map_done(q->st.f_iter);
-			q->st.f_iter = NULL;
+			map_done(q->st.iter);
+			q->st.iter = NULL;
 			return false;
 		}
 
@@ -2739,9 +2739,9 @@ static bool search_functor(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 		undo_me(q);
 	}
 
-	map_done(q->st.f_iter);
+	map_done(q->st.iter);
 	drop_choice(q);
-	q->st.f_iter = NULL;
+	q->st.iter = NULL;
 	return false;
 }
 
