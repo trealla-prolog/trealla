@@ -58,6 +58,13 @@ extern void set_opt(prolog*, int onoff);
 
 extern void convert_path(char *filename);
 
+#ifdef __wasi__
+EXPORT(pl_global_init)
+extern void pl_global_init();
+EXPORT(pl_global)
+extern void *pl_global();
+#endif
+
 extern int g_tpl_interrupt, g_ac, g_avc;
 extern char **g_av, *g_argv0;
 extern char *g_tpl_lib;

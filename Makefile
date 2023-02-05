@@ -32,6 +32,9 @@ endif
 ifndef WASMOPT
 WASMOPT = wasm-opt
 endif
+ifndef SPINDIR
+SPINDIR = ../spin
+endif
 
 ifdef ISOCLINE
 CFLAGS += -DUSE_ISOCLINE=1
@@ -111,6 +114,7 @@ LIBOBJECTS +=  \
 	library/pseudojson.o \
 	library/random.o \
 	library/si.o \
+	library/spin.o \
 	library/sqlite3.o \
 	library/sqlite3_register.o \
 	library/ugraphs.o \
@@ -122,6 +126,12 @@ LIBOBJECTS +=  \
 
 SRCOBJECTS += src/imath/imath.o
 SRCOBJECTS += src/sre/re.o
+
+ifdef WASI_TARGET_SPIN
+SRCOBJECTS += src/wasm/spin.o
+SRCOBJECTS += src/wasm/spin-http.o
+SRCOBJECTS += src/wasm/wasi-outbound-http.o
+endif
 
 ifdef ISOCLINE
 SRCOBJECTS += src/isocline/src/isocline.o
@@ -163,6 +173,9 @@ libtpl.wasm:
 libtpl-js.wasm:
 	$(MAKE) WASI=1 TPL=libtpl-js.wasm 'OPT=$(OPT) -O0 -DNDEBUG -DWASI_IMPORTS -DWASI_TARGET_JS'
 
+libtpl-spin.wasm:
+	$(MAKE) WASI=1 WASI_TARGET_SPIN=1 TPL=libtpl-spin.wasm 'OPT=$(OPT) -O0 -DNDEBUG -DWASI_TARGET_SPIN'
+
 libtpl: libtpl.wasm
 # TODO: add to wizer --wasm-bulk-memory true
 	$(WIZER)  --allow-wasi --dir . -o libtpl-wizened.wasm libtpl.wasm
@@ -175,6 +188,20 @@ libtpl-js: libtpl-js.wasm
 	$(WASMOPT) libtpl-wizened.wasm -o libtpl-js.wasm -O4
 	rm libtpl-wizened.wasm
 
+libtpl-spin: libtpl-spin.wasm
+# TODO: add to wizer --wasm-bulk-memory true
+	$(WIZER)  --allow-wasi --dir . -o libtpl-wizened.wasm libtpl-spin.wasm
+	$(WASMOPT) libtpl-wizened.wasm -o libtpl-spin.wasm -O4
+	rm libtpl-wizened.wasm
+
+wit:
+	wit-bindgen guest c --export $(SPINDIR)/wit/ephemeral/spin-http.wit --out-dir ./src/wasm/
+	wit-bindgen guest c --import $(SPINDIR)/wit/ephemeral/wasi-outbound-http.wit --out-dir ./src/wasm/
+	wit-bindgen guest c --import $(SPINDIR)/wit/ephemeral/outbound-pg.wit --out-dir ./src/wasm/
+	sed -i 's/<spin-http.h>/"spin-http.h"/' ./src/wasm/spin-http.c
+	sed -i 's/<wasi-outbound-http.h>/"wasi-outbound-http.h"/' ./src/wasm/wasi-outbound-http.c
+	sed -i 's/<outbound-pg.h>/"outbound-pg.h"/' ./src/wasm/outbound-pg.c
+
 test:
 	./tests/run.sh
 
@@ -186,7 +213,7 @@ check-leaks:
 
 clean:
 	rm -f tpl tpl.wasm tpl*.wasm libtpl*.wasm \
-		src/*.o src/imath/*.o src/isocline/src/*.o src/sre/*.o \
+		src/*.o src/imath/*.o src/isocline/src/*.o src/sre/*.o src/wasm/*.o \
 		library/*.o library/*.c *.o samples/*.o samples/*.so \
 		vgcore.* *.core core core.* *.exe gmon.*
 	rm -f *.itf *.po samples/*.itf samples/*.po
