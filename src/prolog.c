@@ -403,25 +403,29 @@ void pl_destroy(prolog *pl)
 	for (int i = 0; i < MAX_STREAMS; i++) {
 		stream *str = &pl->streams[i];
 
-		if (str->fp) {
-			if ((str->fp != stdin)
-				&& (str->fp != stdout)
-				&& (str->fp != stderr)
-			) {
-				if (str->is_map)
-					map_destroy(str->keyval);
-				else if (str->fp && (i > 2))
-					fclose(str->fp);
-			}
+		if (!is_live_stream(str))
+			continue;
 
-			if (str->p)
+		if (is_map_stream(str))
+			map_destroy(str->keyval);
+
+		if (is_memory_stream(str))
+			SB_free(str->sb);
+
+		if (!is_virtual_stream(str) && (i > 2) &&
+				((str->fp != stdin)
+				&& (str->fp != stdout)
+				&& (str->fp != stderr))) {
+			fclose(str->fp);
+		}
+
+		if (str->p)
 				destroy_parser(str->p);
 
-			map_destroy(str->alias);
-			free(str->mode);
-			free(str->filename);
-			free(str->data);
-		}
+		map_destroy(str->alias);
+		free(str->mode);
+		free(str->filename);
+		free(str->data);
 	}
 
 	memset(pl->streams, 0, sizeof(pl->streams));
@@ -623,6 +627,9 @@ prolog *pl_create()
 #endif
 #ifdef WASI_TARGET_GENERIC
 			|| !strcmp(lib->name, "wasm_generic")
+#endif
+#ifdef WASI_TARGET_SPIN
+			|| !strcmp(lib->name, "spin")
 #endif
 			) {
 			size_t len = *lib->len;

@@ -144,8 +144,6 @@ permutation([X|Rest], L) :-
     permutation(Rest, L1),
     select(X, L, L1).
 
-% :- help(permutation(?list,?list), [iso(false)]).
-
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -411,9 +411,13 @@ int main(int ac, char *av[], char * envp[])
 #ifdef __wasi__
 #undef pl_destroy
 
+extern void pl_global_init() {
+	if (!initialized) init_func();
+	g_init();
+}
+
 // WASI ports can use this as an argument to the pl_* APIs for a quickstart.
-__attribute__((export_name("pl_global")))
-void *pl_global() {
+extern void *pl_global() {
 	return g_tpl;
 }
 #endif

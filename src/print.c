@@ -708,10 +708,10 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 				dst += formatted(dst, dstlen, alias, strlen(alias), false, q->json);
 			else
 				dst += snprintf(dst, dstlen, "'<$stream>'(%d)", (int)get_smallint(c));
-
-			map_done(iter);
 		} else
 			dst += snprintf(dst, dstlen, "'<$stream>'(%d)", (int)get_smallint(c));
+		
+		map_done(iter);
 
 		q->last_thing_was_symbol = false;
 		q->was_space = false;
@@ -720,7 +720,11 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 
 	if ((c->tag == TAG_INTEGER) && (c->flags & FLAG_INT_STREAM)) {
 		int n = get_stream(q, c);
-		dst += snprintf(dst, dstlen, "'<$closed_stream>'(%p)", c);
+		stream *str = &q->pl->streams[n];
+		if (is_map_stream(str))
+			dst += snprintf(dst, dstlen, "'<$map_stream>'(%p)", c);
+		else
+			dst += snprintf(dst, dstlen, "'<$closed_stream>'(%p)", c);
 		q->last_thing_was_symbol = false;
 		q->was_space = false;
 		return dst - save_dst;
@@ -1326,7 +1330,7 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx_t c_ctx, i
 	while (len) {
 		size_t nbytes = net_write(src, len, str);
 
-		if (feof(str->fp)) {
+		if (str->fp && feof(str->fp)) {
 			q->error = true;
 			free(dst);
 			return false;
@@ -1451,7 +1455,7 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_idx_t c_ctx, int ru
 	while (len) {
 		size_t nbytes = net_write(src, len, str);
 
-		if (feof(str->fp)) {
+		if (str->fp && feof(str->fp)) {
 			q->error = true;
 			free(dst);
 			return false;

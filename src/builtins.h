@@ -68,6 +68,11 @@ bool wrapper_for_predicate(query *q, builtins *fn_ptr);
 #define is_iso_atom_or_var(c) (is_iso_atom(c) || is_var(c))
 #define is_iso_atomic_or_var(c) (is_iso_atom(c) || is_number(c) || is_var(c))
 
+#define is_memory_stream(str) (str->is_memory)
+#define is_map_stream(str) (str->is_map)
+#define is_virtual_stream(str) (is_memory_stream(str) || is_map_stream(str))
+#define is_live_stream(str) (str->fp || is_virtual_stream(str))
+
 void make_uint(cell *tmp, pl_uint_t v);
 void make_int(cell *tmp, pl_int_t v);
 void make_float(cell *tmp, pl_flt_t v);
