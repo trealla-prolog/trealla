@@ -24,7 +24,7 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 Trealla is not WAM-based. It uses tree-walking, structure-sharing and
 deep-binding. Source is byte-code compiled to an AST that is interpreted
 at runtime. The intent and continued aim of Trealla is to be a small,
-easily ported Prolog core.
+easily ported, Prolog core.
 
 The name Trealla comes from the Liaden Universe books by Lee & Miller
 (where it doesn't seem to mean anything) and also a reference to the
