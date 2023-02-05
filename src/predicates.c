@@ -2263,8 +2263,6 @@ static bool fn_iso_retractall_1(query *q)
 			ensure(pr->idx2);
 			map_allow_dups(pr->idx2, true);
 		}
-
-		q->st.iter = NULL;
 	}
 
 	return true;
@@ -2286,7 +2284,6 @@ static bool do_abolish(query *q, cell *c_orig, cell *c, bool hard)
 	map_destroy(pr->idx);
 	pr->idx2 = pr->idx = NULL;
 	pr->is_processed = false;
-	q->st.iter = NULL;
 
 	if (hard) {
 		pr->is_abolished = true;

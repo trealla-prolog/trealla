@@ -839,8 +839,6 @@ void unshare_predicate(query *q, predicate *pr)
 			ensure(pr->idx2);
 			map_allow_dups(pr->idx2, true);
 		}
-
-		q->st.iter = NULL;
 	}
 }
 
