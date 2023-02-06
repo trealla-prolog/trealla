@@ -417,30 +417,99 @@ time_out(Goal, Time, Result) :-
 
 print(T) :- bwrite(user_output, T), nl.
 print(S, T) :- bwrite(S, T), nl.
+
+:- help(print(+term), [iso(false)]).
+:- help(print(+stream,+term), [iso(false)]).
+
 writeln(T) :- write(T), nl.
+
+:- help(writeln(+term), [iso(false)]).
+
 format(F) :- format(F, []).
+
+:- help(format(+term), [iso(false)]).
+
 open(F, M, S) :- open(F, M, S, []).
+
+:- help(open(+atom,+atom,-stream), [iso(true)]).
+
 samsort(L, R) :- msort(L, R).
+
+:- help(samsort(+list,?list), [iso(false)]).
+
 atomic_list_concat(L, Atom) :- atomic_list_concat(L, '', Atom).
+
+:- help(atomic_list_concat(+list,+atomic), [iso(false)]).
+
 partial_string(S, P) :- append(S, _, P).
 partial_string(S, P, V) :- append(S, V, P).
+
 chars_base64(Plain, Base64, Opts) :- base64(Plain, Base64, Opts).
+
+:- help(chars_base64(+atom,?atom,+list), [iso(false)]).
+
 chars_urlenc(Plain, Url, Opts) :- urlenc(Plain, Url, Opts).
+
+:- help(chars_urlenc(+atom,?atom,+list), [iso(false)]).
+
 term_to_atom(T, S) :- write_term_to_chars(S, T, []).
+
+:- help(term_to_atom(+term,?atom), [iso(false)]).
+
 absolute_file_name(R, A) :- absolute_file_name(R, A, []).
+
+:- help(absolute_filename(+atom,?atom), [iso(false)]).
+
 client(U, H, P, S) :- client(U,H,P,S,[]).
+
+:- help(client(+atom,-atom,-atom,-stream), [iso(false)]).
+
 server(H, S) :- server(H,S,[]).
+
+:- help(server(+atom,-stream), [iso(false)]).
+
 load_files(Files) :- load_files(Files,[]).
+
+:- help(load_files(+list), [iso(false)]).
+
 consult(Files) :- load_files(Files,[]).
+
+:- help(consult(+list), [iso(false)]).
+
 reconsult(Files) :- load_files(Files,[]).
+
+:- help(reconsult(+list), [iso(false)]).
+
 deconsult(Files) :- unload_files(Files).
+
+:- help(deconsult(+list), [iso(false)]).
+
 strip_module(T, M, P) :- T=M:P -> true ; P=T.
+
+:- help(strip_module(+term,-module,-term), [iso(false)]).
+
 ?=(X, Y) :- \+ unifiable(X, Y, [_|_]).
+
+:- help('?='(+term,+term), [iso(false)]).
+
 atom_number(A, N) :- atom_codes(A,Codes), number_codes(N, Codes).
+
+:- help(atom_number(+atom,-number), [iso(false)]).
+
 '$skip_list'(Skip, Xs0, Xs) :- '$skip_max_list'(Skip,_, Xs0, Xs).
+
+:- help('$skip_list'(+p1,?p2,?p3,-p4), [iso(false)]).
+
 term_hash(Term, _Opts, Hash) :- term_hash(Term, Hash).
+
+:- help(term_hash(+term,+list,-integer), [iso(false)]).
+
 not(G) :- G, !, fail.
 not(_).
+
+:- meta_predicate(not(0)).
+:- help(not(+callable), [iso(false)]).
+
 
 read_term_from_chars_(T, Cs, Rest) :-
 	'$read_term_from_chars'(T, [], Cs, Rest).
@@ -479,6 +548,7 @@ with_output_to(atom(Cs), Goal) :-
 	), !.
 
 map_create(S) :- map_create(S,[]).
+
 :- help(map_create(+atom), [iso(false)]).
 
 iso_dif(X, Y) :-
