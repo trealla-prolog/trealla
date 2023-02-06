@@ -820,13 +820,19 @@ get_attr(Var, Module, Value) :-
 	var(Var),
 	get_atts(Var, Access).
 
+:- help(get_attr(+var,+atom,-term), [iso(false)]).
+
 put_attr(Var, Module, Value) :-
 	Access =.. [Module, Value],
 	put_atts(Var, Access).
 
+:- help(put_attr(+var,+atom,+term), [iso(false)]).
+
 del_attr(Var, Module) :-
 	Access =.. [Module, _],
 	( var(Var) -> put_atts(Var, -Access) ; true ).
+
+:- help(del_attr(+var,+atom), [iso(false)]).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -865,6 +871,8 @@ put_atts(Var, Attr) :- !,
 	dict:set(D, Module, Attr, D2),
 	'$put_attributes'(Var, D2).
 
+:- help(put_atts(+var,+term), [iso(false)]).
+
 get_atts(Var, L) :- var(L), !,
 	var(Var),
 	('$get_attributes'(Var, D) -> true ; D = []),
@@ -894,15 +902,21 @@ get_atts(Var, Attr) :- !,
 	dict:get(D, Module, Attr),
 	true.
 
+:- help(get_atts(+var,-term), [iso(false)]).
+
 % Ancilliary
 
 del_atts(Var) :-
 	var(Var),
 	'$erase_attribute'(Var).
 
+:- help(del_atts(+var), [iso(false)]).
+
 attvar(Var) :-
 	var(Var),
 	'$get_attributes'(Var, _).
+
+:- help(attvar(+var), [iso(false)]).
 
 term_attvars_([], VsIn, VsIn) :- !.
 term_attvars_([H|T], VsIn, VsOut) :-
@@ -914,6 +928,8 @@ term_attvars_([H|T], VsIn, VsOut) :-
 term_attvars(Term, Vs) :-
 	term_variables(Term, Vs0),
 	term_attvars_(Vs0, [], Vs).
+
+:- help(term_attvars(+term,-list), [iso(false)]).
 
 collect_goals_(_, [], GsIn, GsIn) :- !.
 collect_goals_(V, [H|T], GsIn, GsOut) :-
@@ -935,28 +951,30 @@ copy_term(Term, Copy, Gs) :-
 	term_attvars(Term, Vs),
 	collect_goals_(Vs, [], Gs).
 
+:- help(copy_term(+term,-term,+list), [iso(false)]).
+
 % Debugging...
 
-print_goals([]) :- !.
-print_goals([Goal|Goals]) :-
+print_goals_([]) :- !.
+print_goals_([Goal|Goals]) :-
 	write_term(Goal, [varnames(true)]),
 	(	Goals == []
 	->	write('')
 	; 	write(',')
 	),
-	print_goals(Goals).
+	print_goals_(Goals).
 
-dump_attvars([], []) :- !.
-dump_attvars([Var|Vars], [V|Rest]) :-
+dump_attvars_([], []) :- !.
+dump_attvars_([Var|Vars], [V|Rest]) :-
 	copy_term(Var, _, V),
-	dump_attvars(Vars, Rest).
+	dump_attvars_(Vars, Rest).
 
 dump_attvars :-
 	'$list_attributed'(Vars),
-	dump_attvars(Vars, Gs0),
+	dump_attvars_(Vars, Gs0),
 	flatten(Gs0, Gs1),
 	sort(Gs1, Gs),
-	print_goals(Gs).
+	print_goals_(Gs).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
