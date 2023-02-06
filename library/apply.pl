@@ -146,6 +146,10 @@ tasklist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], [E6|T6], [E7|T7], G) :-
 
 
 
+:- help(foldl(+callable,+list,+var,-var), [iso(false)]).
+:- help(foldl(+callable,+list,+list,+var,-var), [iso(false)]).
+:- help(foldl(+callable,+list,+list,+list,+var,-var), [iso(false)]).
+:- help(foldl(+callable,+list,+list,+list,+list,+var,-var), [iso(false)]).
 
 foldl(G, L, V0, V) :-
 	foldl_(L, G, V0, V).
@@ -179,6 +183,9 @@ foldl_([H1|T1], [H2|T2], [H3|T3], [H4|T4], G, V0, V) :-
 	call(G, H1, H2, H3, H4, V0, V1),
 	foldl_(T1, T2, T3, T4, G, V1, V).
 
+
+
+
 include(G, L, Included) :-
 	include_(L, G, Included).
 
@@ -189,6 +196,8 @@ include(G, L, Included) :-
 		;   Included = Included1
 		),
 		include_(Xs1, P, Included1).
+
+:- help(include(+callable,?list), [iso(false)]).
 
 exclude(G, L, Included) :-
 	exclude_(L, G, Included).
@@ -201,6 +210,8 @@ exclude_([X1|Xs1], P, Included) :-
 	),
 	exclude_(Xs1, P, Included1).
 
+:- help(exclude(+callable,?list), [iso(false)]).
+
 partition([X|L], Y, [X|L1], L2) :-
 	X @< Y, !,
 	partition(L, Y, L1, L2).
@@ -208,3 +219,4 @@ partition([X|L], Y, L1, [X|L2]) :-
 	partition(L, Y, L1, L2).
 partition([], _, [], []).
 
+:- help(partition(+callable,?list,?list), [iso(false)]).
