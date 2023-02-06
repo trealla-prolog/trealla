@@ -677,6 +677,8 @@ b_setval(K, _) :-
 	user:retract('$global_key'(K, _)),
 	!, fail.
 
+:- help(b_setval(+atom,+term), [iso(false)]).
+
 b_setval0(K, _) :-
 	must_be(K, atom, b_setval0/2, _),
 	\+ user:clause('$global_key'(K, _), _), asserta('$global_key'(K, 0)),
@@ -688,16 +690,22 @@ b_setval0(K, _) :-
 	user:retract('$global_key'(K, _)),
 	!, fail.
 
+:- help(b_setval0(+atom,+term), [iso(false)]).
+
 b_getval(K, V) :-
 	must_be(K, atom, b_getval/2, _),
 	user:catch('$global_key'(K, V), _, throw(error(existence_error(var, K), b_getval/2))),
 	!.
+
+:- help(b_getval(+atom,?term), [iso(false)]).
 
 b_delete(K) :-
 	must_be(K, atom, b_delete/1, _),
 	user:retractall('$global_key'(K, _)),
 	!.
 b_delete(_).
+
+:- help(b_delete(+atom), [iso(false)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SICStus compatible
@@ -714,11 +722,15 @@ bb_b_put(K, _) :-
 	user:retract('$global_key'(K, _)),
 	!, fail.
 
+:- help(bb_b_put(+atom,+term), [iso(false)]).
+
 bb_b_del(K) :-
 	must_be(K, atom, bb_b_del/1, _),
 	user:retract('$global_key'(K, _)),
 	!.
 bb_b_del(_).
+
+:- help(bb_b_del(+atom), [iso(false)]).
 
 bb_put(K, _) :-
 	must_be(K, atom, bb_put/2, _),
@@ -728,15 +740,21 @@ bb_put(K, V) :-
 	must_be(K, atom, bb_put/2, _),
 	user:assertz('$global_key'(K, V)).
 
+:- help(bb_put(+atom,+term), [iso(false)]).
+
 bb_get(K, V) :-
 	must_be(K, atom, bb_get/2, _),
 	user:catch('$global_key'(K, V), _, throw(error(existence_error(var, K), bb_get/2))),
 	!.
 
+:- help(bb_get(+atom,?term), [iso(false)]).
+
 bb_delete(K, V) :-
 	must_be(K, atom, bb_delete/2, _),
 	user:retract('$global_key'(K, V)),
 	!.
+
+:- help(bb_delete(+atom,+term), [iso(false)]).
 
 bb_update(K, O, V) :-
 	must_be(K, atom, bb_update/3, _),
@@ -744,11 +762,15 @@ bb_update(K, O, V) :-
 	user:assertz('$global_key'(K, V)),
 	!.
 
+:- help(bb_update(+atom,+term,+term), [iso(false)]).
+
 bb_del(K) :-
 	must_be(K, atom, bb_del/1, _),
 	user:retractall('$global_key'(K, _)),
 	!.
 bb_del(_).
+
+:- help(bb_del(+atom), [iso(false)]).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
