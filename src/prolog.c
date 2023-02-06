@@ -185,7 +185,7 @@ static void g_destroy()
 	free(g_tpl_lib);
 }
 
-static void ptrfree(const void *key, const void *val, const void *p)
+void ptrfree(const void *key, const void *val, const void *p)
 {
 	builtins *ptr = (void*)val;
 
@@ -209,6 +209,26 @@ void keyvalfree(const void *key, const void *val, const void *p)
 builtins *get_help(prolog *pl, const char *name, unsigned arity, bool *found, bool *evaluable)
 {
 	miter *iter = map_find_key(pl->help, name);
+	builtins *ptr;
+
+	while (map_next_key(iter, (void**)&ptr)) {
+		if (ptr->arity == arity) {
+			if (found) *found = true;
+			if (evaluable) *evaluable = ptr->evaluable;
+			map_done(iter);
+			return ptr;
+		}
+	}
+
+	if (found) *found = false;
+	if (evaluable) *evaluable = false;
+	map_done(iter);
+	return NULL;
+}
+
+builtins *get_module_help(module *m, const char *name, unsigned arity, bool *found, bool *evaluable)
+{
+	miter *iter = map_find_key(m->help, name);
 	builtins *ptr;
 
 	while (map_next_key(iter, (void**)&ptr)) {

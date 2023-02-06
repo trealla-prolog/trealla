@@ -762,7 +762,7 @@ struct module_ {
 	predicate *head, *tail;
 	parser *p;
 	FILE *fp;
-	map *index, *nbs, *ops, *defops;
+	map *index, *nbs, *ops, *defops, *help;
 	loaded_file *loaded_files;
 	unsigned id, idx_used, indexing_threshold, arity, max_depth;
 	int if_depth;

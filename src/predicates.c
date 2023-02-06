@@ -4171,6 +4171,160 @@ static bool fn_help_2(query *q)
 	return true;
 }
 
+static bool fn_module_help_1(query *q)
+{
+	GET_FIRST_ARG(pm,atom);
+	bool found = false, evaluable = false;
+	module *m = find_module(q->pl, C_STR(q, pm));
+
+	if (!m)
+		return false;
+
+	miter *iter = map_first(m->help);
+	builtins *fn;
+
+	while (map_next(iter, (void**)&fn)) {
+		if (fn->arity)
+			fprintf(stdout, "%s/%u: %s(%s)%s%s\n", fn->name, fn->arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+		else
+			fprintf(stdout, "%s/%u: %s%s%s\n", fn->name, fn->arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+	}
+
+	return true;
+}
+
+static bool fn_module_help_2(query *q)
+{
+	GET_FIRST_ARG(pm,atom);
+	GET_NEXT_ARG(p1,any);
+	bool found = false, evaluable = false;
+	module *m = find_module(q->pl, C_STR(q, pm));
+
+	if (!m)
+		return false;
+
+	if (!p1->arity) {
+		if (!is_atom(p1))
+			return throw_error(q, p1, p1_ctx, "type_error", "atom");
+
+		const char *functor = C_STR(q, p1);
+		miter *iter = map_find_key(m->help, functor);
+		builtins *fn;
+
+		while (map_next_key(iter, (void**)&fn)) {
+			if (fn->arity)
+				fprintf(stdout, "%s/%u: %s(%s)%s%s\n", fn->name, fn->arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+			else
+				fprintf(stdout, "%s/%u: %s%s%s\n", fn->name, fn->arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+		}
+
+		return true;
+	}
+
+	if (!is_structure(p1))
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	if (p1->arity != 2)
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	if (p1->val_off != g_slash_s)
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	cell *f = p1 + 1;
+
+	if (!is_atom(f))
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	cell *a = p1 + 2;
+
+	if (!is_smallint(a))
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	const char *functor = C_STR(q, f);
+	unsigned arity = get_smallint(a);
+	builtins *fn = get_module_help(m, functor, arity, &found, &evaluable);
+
+	if (!found || !fn)
+		return throw_error(q, p1, p1_ctx, "domain_error", "existence");
+
+	if (arity)
+		fprintf(stdout, "%s/%u: %s(%s)%s%s\n", fn->name, arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+	else
+		fprintf(stdout, "%s/%u: %s%s%s\n", fn->name, arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+
+	return true;
+}
+
+static bool fn_module_help_3(query *q)
+{
+	GET_FIRST_ARG(pm,atom);
+	GET_NEXT_ARG(p1,any);
+	GET_NEXT_ARG(p2,atom);
+	bool found = false, evaluable = false;
+	const char *pr = C_STR(q, p2);
+	char url[1024];
+	module *m = find_module(q->pl, C_STR(q, pm));
+
+	if (!m)
+		return false;
+
+	if (!p1->arity) {
+		if (!is_atom(p1))
+			return throw_error(q, p1, p1_ctx, "type_error", "atom");
+
+		const char *functor = C_STR(q, p1);
+		miter *iter = map_find_key(m->help, functor);
+		builtins *fn;
+
+		while (map_next_key(iter, (void**)&fn)) {
+			if (fn->arity)
+				fprintf(stdout, "%s/%u: %s(%s)%s%s\n", fn->name, fn->arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+			else
+				fprintf(stdout, "%s/%u: %s%s%s\n", fn->name, fn->arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+		}
+
+		return true;
+	}
+
+	if (!is_structure(p1))
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	if (p1->arity != 2)
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	if (p1->val_off != g_slash_s)
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	cell *f = p1 + 1;
+
+	if (!is_atom(f))
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	cell *a = p1 + 2;
+
+	if (!is_smallint(a))
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	const char *functor = C_STR(q, f);
+	unsigned arity = get_smallint(a);
+	builtins *fn = get_module_help(m, functor, arity, &found, &evaluable);
+
+	if (!found || !fn)
+		return throw_error(q, p1, p1_ctx, "domain_error", "existence");
+
+	if (!strcmp(pr, "swi"))
+		snprintf(url, sizeof(url), "http://swi-prolog.org/pldoc/man?predicate=%s/%u", functor, arity);
+	else if (!strcmp(pr, "tau"))
+		snprintf(url, sizeof(url), "http://tau-prolog.org/documentation/prolog/builtin/%s/%u", functor, arity);
+
+	if (arity)
+		fprintf(stdout, "%s/%u: %s(%s)%s%s %s\n", fn->name, arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"", url);
+	else
+		fprintf(stdout, "%s/%u: %s%s%s %s\n", fn->name, arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"", url);
+
+	return true;
+}
+
 const char *dump_key(const void *k, const void *v, const void *p)
 {
 	query *q = (query*)p;
@@ -6929,6 +7083,29 @@ static bool fn_module_1(query *q)
 	return true;
 }
 
+static bool fn_modules_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	bool first = true;
+
+	for (module *m = q->pl->modules; m; m = m->next) {
+		if (m->orig)
+			continue;
+
+		cell tmp;
+		make_string(&tmp,  m->name);
+
+		if (first) {
+			allocate_list(q, &tmp);
+			first = false;
+		} else
+			append_list(q, &tmp);
+	}
+
+	cell *tmp = end_list(q);
+	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
+}
+
 static bool fn_using_0(query *q)
 {
 	module *m = q->st.m;
@@ -7560,9 +7737,9 @@ builtins g_iso_bifs[] =
 	{"atom_codes", 2, fn_iso_atom_codes_2, "?number,?list", true, false, BLAH},
 	{"number_chars", 2, fn_iso_number_chars_2, "?number,?list", true, false, BLAH},
 	{"number_codes", 2, fn_iso_number_codes_2, "?number,?list", true, false, BLAH},
-	{"clause", 2, fn_iso_clause_2, "+head,?body", true, false, BLAH},
+	{"clause", 2, fn_iso_clause_2, "+term,?term", true, false, BLAH},
 	{"arg", 3, fn_iso_arg_3, "+arg,+term,?term", true, false, BLAH},
-	{"functor", 3, fn_iso_functor_3, "?term,?functor,?arity", true, false, BLAH},
+	{"functor", 3, fn_iso_functor_3, "?term,?atom,?integer", true, false, BLAH},
 	{"copy_term", 2, fn_iso_copy_term_2, "+term,?term", true, false, BLAH},
 	{"term_variables", 2, fn_iso_term_variables_2, "+term,-list", true, false, BLAH},
 	{"atom_length", 2, fn_iso_atom_length_2, "?list,?integer", true, false, BLAH},
@@ -7603,7 +7780,8 @@ builtins g_other_bifs[] =
 	{"cyclic_term", 1, fn_cyclic_term_1, "+term", false, false, BLAH},
 	{"current_module", 1, fn_current_module_1, "-module", false, false, BLAH},
 	{"prolog_load_context", 2, fn_prolog_load_context_2, "+atom,?term", false, false, BLAH},
-	{"module", 1, fn_module_1, "?module", false, false, BLAH},
+	{"module", 1, fn_module_1, "?atom", false, false, BLAH},
+	{"modules", 1, fn_modules_1, "-list", false, false, BLAH},
 	{"attribute", 3, fn_attribute_3, "?module,+attribute,+arity", false, false, BLAH},
 	{"using", 0, fn_using_0, NULL, false, false, BLAH},
 	{"use_module", 1, fn_use_module_1, "+term", false, false, BLAH},
@@ -7621,6 +7799,9 @@ builtins g_other_bifs[] =
 	{"help", 2, fn_help_2, "+predicateindicator,+atom", false, false, BLAH},
 	{"help", 1, fn_help_1, "+predicateindicator", false, false, BLAH},
 	{"help", 0, fn_help_0, NULL, false, false, BLAH},
+	{"module_help", 3, fn_module_help_3, "+atom,+predicateindicator,+atom", false, false, BLAH},
+	{"module_help", 2, fn_module_help_2, "+atom,+predicateindicator", false, false, BLAH},
+	{"module_help", 1, fn_module_help_1, "+atom", false, false, BLAH},
 
 	// Miscellaneous...
 
