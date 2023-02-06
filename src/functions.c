@@ -1755,8 +1755,10 @@ static bool fn_iso_max_2(query *q)
 
 			if (f1 > p2.val_float)
 				q->accum = p1;
-			else
+			else {
 				q->accum = p2;
+				return true;
+			}
 		} else
 			return throw_error(q, &p2, q->st.curr_frame, "type_error", "integer");
 
@@ -1774,8 +1776,10 @@ static bool fn_iso_max_2(query *q)
 
 			if (f2 > p1.val_float)
 				q->accum = p2;
-			else
+			else {
 				q->accum = p1;
+				return true;
+			}
 		} else
 			return throw_error(q, &p2, q->st.curr_frame, "type_error", "integer");
 
@@ -1846,8 +1850,10 @@ static bool fn_iso_min_2(query *q)
 
 			if (f1 < p2.val_float)
 				q->accum = p1;
-			else
+			else {
 				q->accum = p2;
+				return true;
+			}
 		} else
 			return throw_error(q, &p2, q->st.curr_frame, "type_error", "integer");
 
@@ -1866,8 +1872,10 @@ static bool fn_iso_min_2(query *q)
 
 			if (f2 < p1.val_float)
 				q->accum = p2;
-			else
+			else {
 				q->accum = p1;
+				return true;
+			}
 		} else
 			return throw_error(q, &p2, q->st.curr_frame, "type_error", "integer");
 
