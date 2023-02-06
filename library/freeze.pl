@@ -11,6 +11,8 @@ frozen(Term, Goal) :-
 	flatten(Gs, Gs2),
 	list_to_conjunction(Gs2, Goal).
 
+:- help(frozen(+callable,-callable), [iso(false)]).
+
 verify_attributes(Var, Other, Goals) :-
 	get_atts(Var, frozen(Fa)), !,       % are we involved?
 	(   var(Other) ->                   % must be attributed then
@@ -26,6 +28,8 @@ verify_attributes(_, _, []).
 freeze(X, Goal) :-
 	put_atts(Fresh, frozen(Goal)),
 	Fresh = X.
+
+:- help(freeze(+var,+callable), [iso(false)]).
 
 attribute_goal(Var, freeze(Var,Goal)) :-     % interpretation as goal
 	get_atts(Var, frozen(Goal)).

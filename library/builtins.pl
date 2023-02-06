@@ -89,6 +89,8 @@ findall(T, G, B, Tail) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 
+:- help(keysort(+list,?list), [iso(true)]).
+
 keysort_(List, Sorted) :-
 	keysort_(List, List, Sorted, []).
 
@@ -160,7 +162,7 @@ setof(Template, Generator, Set) :-
 	sort(Bag, Set).
 
 :- meta_predicate(setof(-,0,?)).
-:- help(setof(+template,+callable,?list), [iso(true)]).
+:- help(setof(+term,+callable,?list), [iso(true)]).
 
 bagof(Template, Generator, Bag) :-
     (	var(Bag)
@@ -170,7 +172,7 @@ bagof(Template, Generator, Bag) :-
 	bagof_(Template, Generator, Bag).
 
 :- meta_predicate(bagof(-,0,?)).
-:- help(bagof(+template,+callable,?list), [iso(true)]).
+:- help(bagof(+term,+callable,?list), [iso(true)]).
 
 bagof_(Template, Generator, Bag) :-
 	acyclic_term(Generator),
@@ -366,6 +368,18 @@ append(F) :- open(F, append, S), set_output(S).
 file_exists(F) :- exists_file(F).
 directory_exists(F) :- exists_directory(F).
 
+:- help(get0(?integer), [iso(false),deprecated(true)]).
+:- help(get0(+stream,?integer), [iso(false),deprecated(true)]).
+:- help(get0(+term), [iso(false),deprecated(true)]).
+:- help(get0(+stream,+term), [iso(false),deprecated(true)]).
+:- help(put(+integer), [iso(false),deprecated(true)]).
+:- help(put(+stream,+integer), [iso(false),deprecated(true)]).
+:- help(see(+filename), [iso(false),deprecated(true)]).
+:- help(tell(+filename), [iso(false),deprecated(true)]).
+:- help(append(+filename), [iso(false),deprecated(true)]).
+:- help(file_exists(+filename), [iso(false),deprecated(true)]).
+:- help(directory_exists(+filename), [iso(false),deprecated(true)]).
+
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -376,6 +390,14 @@ recorded(K, V) :- nonvar(K), '$record_key'(K,V).
 recorda(K, V, R) :- nonvar(K), nonvar(V), asserta('$record_key'(K,V), R).
 recordz(K, V, R) :- nonvar(K), nonvar(V), assertz('$record_key'(K,V), R).
 recorded(K, V, R) :- nonvar(K), clause('$record_key'(K,V), _, R).
+
+:- help(current_key(-term), [iso(false)]).
+:- help(recorda(+term,+term), [iso(false)]).
+:- help(recorda(+term,+term,-ref), [iso(false)]).
+:- help(recordz(+term,+term), [iso(false)]).
+:- help(recordz(+term,+term,-ref), [iso(false)]).
+:- help(recorded(+term,?term), [iso(false)]).
+:- help(recorded(+term,?term,-ref), [iso(false)]).
 
 call_with_time_limit(Time, Goal) :-
 	Time0 is truncate(Time * 1000),
@@ -400,30 +422,99 @@ time_out(Goal, Time, Result) :-
 
 print(T) :- bwrite(user_output, T), nl.
 print(S, T) :- bwrite(S, T), nl.
+
+:- help(print(+term), [iso(false)]).
+:- help(print(+stream,+term), [iso(false)]).
+
 writeln(T) :- write(T), nl.
+
+:- help(writeln(+term), [iso(false)]).
+
 format(F) :- format(F, []).
+
+:- help(format(+term), [iso(false)]).
+
 open(F, M, S) :- open(F, M, S, []).
+
+:- help(open(+atom,+atom,-stream), [iso(true)]).
+
 samsort(L, R) :- msort(L, R).
+
+:- help(samsort(+list,?list), [iso(false)]).
+
 atomic_list_concat(L, Atom) :- atomic_list_concat(L, '', Atom).
+
+:- help(atomic_list_concat(+list,+atomic), [iso(false)]).
+
 partial_string(S, P) :- append(S, _, P).
 partial_string(S, P, V) :- append(S, V, P).
+
 chars_base64(Plain, Base64, Opts) :- base64(Plain, Base64, Opts).
+
+:- help(chars_base64(+atom,?atom,+list), [iso(false)]).
+
 chars_urlenc(Plain, Url, Opts) :- urlenc(Plain, Url, Opts).
+
+:- help(chars_urlenc(+atom,?atom,+list), [iso(false)]).
+
 term_to_atom(T, S) :- write_term_to_chars(T, [], S).
+
+:- help(term_to_atom(+term,?atom), [iso(false)]).
+
 absolute_file_name(R, A) :- absolute_file_name(R, A, []).
+
+:- help(absolute_filename(+atom,?atom), [iso(false)]).
+
 client(U, H, P, S) :- client(U,H,P,S,[]).
+
+:- help(client(+atom,-atom,-atom,-stream), [iso(false)]).
+
 server(H, S) :- server(H,S,[]).
+
+:- help(server(+atom,-stream), [iso(false)]).
+
 load_files(Files) :- load_files(Files,[]).
+
+:- help(load_files(+list), [iso(false)]).
+
 consult(Files) :- load_files(Files,[]).
+
+:- help(consult(+list), [iso(false)]).
+
 reconsult(Files) :- load_files(Files,[]).
+
+:- help(reconsult(+list), [iso(false)]).
+
 deconsult(Files) :- unload_files(Files).
+
+:- help(deconsult(+list), [iso(false)]).
+
 strip_module(T, M, P) :- T=M:P -> true ; P=T.
+
+:- help(strip_module(+term,-module,-term), [iso(false)]).
+
 ?=(X, Y) :- \+ unifiable(X, Y, [_|_]).
+
+:- help('?='(+term,+term), [iso(false)]).
+
 atom_number(A, N) :- atom_codes(A,Codes), number_codes(N, Codes).
+
+:- help(atom_number(+atom,-number), [iso(false)]).
+
 '$skip_list'(Skip, Xs0, Xs) :- '$skip_max_list'(Skip,_, Xs0, Xs).
+
+:- help('$skip_list'(+p1,?p2,?p3,-p4), [iso(false)]).
+
 term_hash(Term, _Opts, Hash) :- term_hash(Term, Hash).
+
+:- help(term_hash(+term,+list,-integer), [iso(false)]).
+
 not(G) :- G, !, fail.
 not(_).
+
+:- meta_predicate(not(0)).
+:- help(not(+callable), [iso(false)]).
+
 
 read_term_from_chars_(T, Cs, Rest) :-
 	'$read_term_from_chars'(T, [], Cs, Rest).
@@ -462,6 +553,7 @@ with_output_to(atom(Cs), Goal) :-
 	), !.
 
 map_create(S) :- map_create(S,[]).
+
 :- help(map_create(+atom), [iso(false)]).
 
 iso_dif(X, Y) :-
@@ -471,33 +563,41 @@ iso_dif(X, Y) :-
 	;	throw(error(instantiation_error,iso_dif/2))
 	).
 
-:- meta_predicate(not(0)).
-
 numbervars(Term, N0, N) :-
    must_be(N0, integer, numbervars/3, _),
    can_be(N, integer, numbervars/3, _),
    term_variables(Term, Vars),
    numberlist_(Vars, N0, N).
 
-:- help(numbervars(+term,+integer,?integer), [iso(true)]).
+:- help(numbervars(+term,+integer,?integer), [iso(false)]).
 
 numberlist_([], N, N).
 numberlist_(['$VAR'(N0)|Vars], N0, N) :-
    N1 is N0+1,
    numberlist_(Vars, N1, N).
 
+:- help(numberlist(+list,?integer,?integer), [iso(false)]).
+
 read_line_to_codes(Stream, Codes) :-
 	read_line_to_string(Stream, String),
 	string_codes(String, Codes).
 
+:- help(read_line_to_codes(+stream,?list), [iso(false)]).
+
 instantiation_error(Context) :-
     throw(error(instantiation_error, Context)).
+
+:- help(instantiation_error(+term), [iso(false)]).
 
 domain_error(Type, Term, Context) :-
     throw(error(domain_error(Type, Term), Context)).
 
+:- help(domain_error(+atom,+term,+term), [iso(false)]).
+
 type_error(Type, Term, Context) :-
     throw(error(type_error(Type, Term), Context)).
+
+:- help(type_error(+atom,+term,+term), [iso(false)]).
 
 % NOTE: this doesn't print var names properly...
 
@@ -536,10 +636,14 @@ nb_setval(K, V) :-
 	must_be(K, atom, nb_setval/2, _),
 	user:assertz('$global_key'(K, V)).
 
+:- help(nb_setval(+atom,+term), [iso(false)]).
+
 nb_getval(K, V) :-
 	must_be(K, atom, nb_getval/2, _),
 	user:catch('$global_key'(K, V), _, throw(error(existence_error(var, K), nb_getval/2))),
 	!.
+
+:- help(nb_getval(+atom,?term), [iso(false)]).
 
 nb_delete(K) :-
 	must_be(K, atom, nb_delete/1, _),
@@ -547,9 +651,13 @@ nb_delete(K) :-
 	!.
 nb_delete(_).
 
+:- help(nb_delete(+atom), [iso(false)]).
+
 nb_current(K, V) :-
 	can_be(K, atom, nb_current/2, _),
 	user:clause('$global_key'(K, V), true).
+
+:- help(nb_current(+atom,+term), [iso(false)]).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -574,6 +682,8 @@ b_setval(K, _) :-
 	user:retract('$global_key'(K, _)),
 	!, fail.
 
+:- help(b_setval(+atom,+term), [iso(false)]).
+
 b_setval0(K, _) :-
 	must_be(K, atom, b_setval0/2, _),
 	\+ user:clause('$global_key'(K, _), _), asserta('$global_key'(K, 0)),
@@ -585,16 +695,22 @@ b_setval0(K, _) :-
 	user:retract('$global_key'(K, _)),
 	!, fail.
 
+:- help(b_setval0(+atom,+term), [iso(false)]).
+
 b_getval(K, V) :-
 	must_be(K, atom, b_getval/2, _),
 	user:catch('$global_key'(K, V), _, throw(error(existence_error(var, K), b_getval/2))),
 	!.
+
+:- help(b_getval(+atom,?term), [iso(false)]).
 
 b_delete(K) :-
 	must_be(K, atom, b_delete/1, _),
 	user:retractall('$global_key'(K, _)),
 	!.
 b_delete(_).
+
+:- help(b_delete(+atom), [iso(false)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SICStus compatible
@@ -611,11 +727,15 @@ bb_b_put(K, _) :-
 	user:retract('$global_key'(K, _)),
 	!, fail.
 
+:- help(bb_b_put(+atom,+term), [iso(false)]).
+
 bb_b_del(K) :-
 	must_be(K, atom, bb_b_del/1, _),
 	user:retract('$global_key'(K, _)),
 	!.
 bb_b_del(_).
+
+:- help(bb_b_del(+atom), [iso(false)]).
 
 bb_put(K, _) :-
 	must_be(K, atom, bb_put/2, _),
@@ -625,15 +745,21 @@ bb_put(K, V) :-
 	must_be(K, atom, bb_put/2, _),
 	user:assertz('$global_key'(K, V)).
 
+:- help(bb_put(+atom,+term), [iso(false)]).
+
 bb_get(K, V) :-
 	must_be(K, atom, bb_get/2, _),
 	user:catch('$global_key'(K, V), _, throw(error(existence_error(var, K), bb_get/2))),
 	!.
 
+:- help(bb_get(+atom,?term), [iso(false)]).
+
 bb_delete(K, V) :-
 	must_be(K, atom, bb_delete/2, _),
 	user:retract('$global_key'(K, V)),
 	!.
+
+:- help(bb_delete(+atom,+term), [iso(false)]).
 
 bb_update(K, O, V) :-
 	must_be(K, atom, bb_update/3, _),
@@ -641,11 +767,15 @@ bb_update(K, O, V) :-
 	user:assertz('$global_key'(K, V)),
 	!.
 
+:- help(bb_update(+atom,+term,+term), [iso(false)]).
+
 bb_del(K) :-
 	must_be(K, atom, bb_del/1, _),
 	user:retractall('$global_key'(K, _)),
 	!.
 bb_del(_).
+
+:- help(bb_del(+atom), [iso(false)]).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -695,13 +825,19 @@ get_attr(Var, Module, Value) :-
 	var(Var),
 	get_atts(Var, Access).
 
+:- help(get_attr(+var,+atom,-term), [iso(false)]).
+
 put_attr(Var, Module, Value) :-
 	Access =.. [Module, Value],
 	put_atts(Var, Access).
 
+:- help(put_attr(+var,+atom,+term), [iso(false)]).
+
 del_attr(Var, Module) :-
 	Access =.. [Module, _],
 	( var(Var) -> put_atts(Var, -Access) ; true ).
+
+:- help(del_attr(+var,+atom), [iso(false)]).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -740,6 +876,8 @@ put_atts(Var, Attr) :- !,
 	dict:set(D, Module, Attr, D2),
 	'$put_attributes'(Var, D2).
 
+:- help(put_atts(+var,+term), [iso(false)]).
+
 get_atts(Var, L) :- var(L), !,
 	var(Var),
 	('$get_attributes'(Var, D) -> true ; D = []),
@@ -769,15 +907,21 @@ get_atts(Var, Attr) :- !,
 	dict:get(D, Module, Attr),
 	true.
 
+:- help(get_atts(+var,-term), [iso(false)]).
+
 % Ancilliary
 
 del_atts(Var) :-
 	var(Var),
 	'$erase_attribute'(Var).
 
+:- help(del_atts(+var), [iso(false)]).
+
 attvar(Var) :-
 	var(Var),
 	'$get_attributes'(Var, _).
+
+:- help(attvar(+var), [iso(false)]).
 
 term_attvars_([], VsIn, VsIn) :- !.
 term_attvars_([H|T], VsIn, VsOut) :-
@@ -789,6 +933,8 @@ term_attvars_([H|T], VsIn, VsOut) :-
 term_attvars(Term, Vs) :-
 	term_variables(Term, Vs0),
 	term_attvars_(Vs0, [], Vs).
+
+:- help(term_attvars(+term,-list), [iso(false)]).
 
 collect_goals_(_, [], GsIn, GsIn) :- !.
 collect_goals_(V, [H|T], GsIn, GsOut) :-
@@ -810,28 +956,40 @@ copy_term(Term, Copy, Gs) :-
 	term_attvars(Term, Vs),
 	collect_goals_(Vs, [], Gs).
 
+:- help(copy_term(+term,-term,+list), [iso(false)]).
+
 % Debugging...
 
-print_goals([]) :- !.
-print_goals([Goal|Goals]) :-
+print_goals_([]) :- !.
+print_goals_([Goal|Goals]) :-
 	write_term(Goal, [varnames(true)]),
 	(	Goals == []
 	->	write('')
 	; 	write(',')
 	),
-	print_goals(Goals).
+	print_goals_(Goals).
 
-dump_attvars([], []) :- !.
-dump_attvars([Var|Vars], [V|Rest]) :-
+:- help(print_goals(+list), [iso(false)]).
+
+dump_attvars_([], []) :- !.
+dump_attvars_([Var|Vars], [V|Rest]) :-
 	copy_term(Var, _, V),
-	dump_attvars(Vars, Rest).
+	dump_attvars_(Vars, Rest).
 
 dump_attvars :-
 	'$list_attributed'(Vars),
-	dump_attvars(Vars, Gs0),
+	dump_attvars_(Vars, Gs0),
 	flatten(Gs0, Gs1),
 	sort(Gs1, Gs),
-	print_goals(Gs).
+	print_goals_(Gs).
+
+%:- help(dump_attvars, [iso(false)]).
+
+call_residue_vars(Goal, Atts) :-
+	call(Goal),
+	term_attvars(Goal, Atts).
+
+:- help(call_residue_vars(+goal, -list), [iso(false)]).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -952,5 +1110,5 @@ sre_subst_all_(Reg, TextIn, Subst, L0, L) :-
 name(N, L) :-
 	( number(N) -> number_codes(N, L) ; atom_codes(N, L) ).
 
-:- help(name(+atomic,?chars), [iso(false)]).
+:- help(name(+atomic,?chars), [iso(false),deprecated(true)]).
 

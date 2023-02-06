@@ -2267,8 +2267,6 @@ static bool fn_iso_retractall_1(query *q)
 			ensure(pr->idx2);
 			map_allow_dups(pr->idx2, true);
 		}
-
-		q->st.iter = NULL;
 	}
 
 	return true;
@@ -2290,7 +2288,6 @@ static bool do_abolish(query *q, cell *c_orig, cell *c, bool hard)
 	map_destroy(pr->idx);
 	pr->idx2 = pr->idx = NULL;
 	pr->is_processed = false;
-	q->st.iter = NULL;
 
 	if (hard) {
 		pr->is_abolished = true;
@@ -2727,7 +2724,7 @@ static bool search_functor(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 
 		if (try_me(q, MAX_VARS) != true) {
 			map_done(q->st.f_iter);
-			q->st.f_iter = NULL;
+			drop_choice(q);
 			return false;
 		}
 
@@ -2745,7 +2742,6 @@ static bool search_functor(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 
 	map_done(q->st.f_iter);
 	drop_choice(q);
-	q->st.f_iter = NULL;
 	return false;
 }
 

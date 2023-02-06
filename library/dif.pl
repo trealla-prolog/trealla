@@ -50,6 +50,8 @@ dif(X, Y) :-
         )
     ).
 
+:- help(dif(+term,+term), [iso(false)]).
+
 gather_dif_goals([]) --> [].
 gather_dif_goals([(X \== Y) | Goals]) -->
     [dif(X, Y)],
