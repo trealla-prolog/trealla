@@ -452,7 +452,7 @@ chars_urlenc(Plain, Url, Opts) :- urlenc(Plain, Url, Opts).
 
 :- help(chars_urlenc(+atom,?atom,+list), [iso(false)]).
 
-term_to_atom(T, S) :- write_term_to_chars(S, T, []).
+term_to_atom(T, S) :- write_term_to_chars(T, [], S).
 
 :- help(term_to_atom(+term,?atom), [iso(false)]).
 
