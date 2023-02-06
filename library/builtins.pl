@@ -363,17 +363,17 @@ append(F) :- open(F, append, S), set_output(S).
 file_exists(F) :- exists_file(F).
 directory_exists(F) :- exists_directory(F).
 
-:- help(get0(?integer), [iso(false)]).
-:- help(get0(+stream,?integer), [iso(false)]).
-:- help(get0(+term), [iso(false)]).
-:- help(get0(+stream,+term), [iso(false)]).
-:- help(put(+integer), [iso(false)]).
-:- help(put(+stream,+integer), [iso(false)]).
-:- help(see(+filename), [iso(false)]).
-:- help(tell(+filename), [iso(false)]).
-:- help(append(+filename), [iso(false)]).
-:- help(file_exists(+filename), [iso(false)]).
-:- help(directory_exists(+filename), [iso(false)]).
+:- help(get0(?integer), [iso(false),deprecated(true)]).
+:- help(get0(+stream,?integer), [iso(false),deprecated(true)]).
+:- help(get0(+term), [iso(false),deprecated(true)]).
+:- help(get0(+stream,+term), [iso(false),deprecated(true)]).
+:- help(put(+integer), [iso(false),deprecated(true)]).
+:- help(put(+stream,+integer), [iso(false),deprecated(true)]).
+:- help(see(+filename), [iso(false),deprecated(true)]).
+:- help(tell(+filename), [iso(false),deprecated(true)]).
+:- help(append(+filename), [iso(false),deprecated(true)]).
+:- help(file_exists(+filename), [iso(false),deprecated(true)]).
+:- help(directory_exists(+filename), [iso(false),deprecated(true)]).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1095,5 +1095,5 @@ sre_subst_all_(Reg, TextIn, Subst, L0, L) :-
 name(N, L) :-
 	( number(N) -> number_codes(N, L) ; atom_codes(N, L) ).
 
-:- help(name(+atomic,?chars), [iso(false)]).
+:- help(name(+atomic,?chars), [iso(false),deprecated(true)]).
 
