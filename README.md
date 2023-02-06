@@ -289,8 +289,8 @@ Non-standard predicates
 	module_help/2				# help(+module,+functor) or help(+module,+PI)
 	module_help/3				# help(+module,+PI,+atom) where *atom* can bw *swi* or *tau*
 
-	module/1					# module(-atom)
-	modules/1					# module(-list)
+	module/1					# module(?atom)
+	modules/1					# modules(-list)
 	listing/0
 	listing/1					# listing(+PI)
 	pretty/1					# pretty-print version of listing/1
