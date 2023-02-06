@@ -89,6 +89,8 @@ findall(T, G, B, Tail) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 
+:- help(keysort(+list,?list), [iso(true)]).
+
 keysort_(List, Sorted) :-
 	keysort_(List, List, Sorted, []).
 
@@ -155,7 +157,7 @@ setof(Template, Generator, Set) :-
 	sort(Bag, Set).
 
 :- meta_predicate(setof(-,0,?)).
-:- help(setof(+template,+callable,?list), [iso(true)]).
+:- help(setof(+term,+callable,?list), [iso(true)]).
 
 bagof(Template, Generator, Bag) :-
     (	var(Bag)
@@ -165,7 +167,7 @@ bagof(Template, Generator, Bag) :-
 	bagof_(Template, Generator, Bag).
 
 :- meta_predicate(bagof(-,0,?)).
-:- help(bagof(+template,+callable,?list), [iso(true)]).
+:- help(bagof(+term,+callable,?list), [iso(true)]).
 
 bagof_(Template, Generator, Bag) :-
 	acyclic_term(Generator),
@@ -361,6 +363,18 @@ append(F) :- open(F, append, S), set_output(S).
 file_exists(F) :- exists_file(F).
 directory_exists(F) :- exists_directory(F).
 
+:- help(get0(?integer), [iso(false)]).
+:- help(get0(+stream,?integer), [iso(false)]).
+:- help(get0(+term), [iso(false)]).
+:- help(get0(+stream,+term), [iso(false)]).
+:- help(put(+integer), [iso(false)]).
+:- help(put(+stream,+integer), [iso(false)]).
+:- help(see(+filename), [iso(false)]).
+:- help(tell(+filename), [iso(false)]).
+:- help(append(+filename), [iso(false)]).
+:- help(file_exists(+filename), [iso(false)]).
+:- help(directory_exists(+filename), [iso(false)]).
+
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -371,6 +385,14 @@ recorded(K, V) :- nonvar(K), '$record_key'(K,V).
 recorda(K, V, R) :- nonvar(K), nonvar(V), asserta('$record_key'(K,V), R).
 recordz(K, V, R) :- nonvar(K), nonvar(V), assertz('$record_key'(K,V), R).
 recorded(K, V, R) :- nonvar(K), clause('$record_key'(K,V), _, R).
+
+:- help(current_key(-term), [iso(false)]).
+:- help(recorda(+term,+term), [iso(false)]).
+:- help(recorda(+term,+term,-ref), [iso(false)]).
+:- help(recordz(+term,+term), [iso(false)]).
+:- help(recordz(+term,+term,-ref), [iso(false)]).
+:- help(recorded(+term,?term), [iso(false)]).
+:- help(recorded(+term,?term,-ref), [iso(false)]).
 
 call_with_time_limit(Time, Goal) :-
 	Time0 is truncate(Time * 1000),
