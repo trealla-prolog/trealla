@@ -350,6 +350,7 @@ Non-standard predicates
 	when/2						# auto-loaded from library(when)
 	dif/2						# auto-loaded from library(dif)
 
+	call_residue_vars/2
 	must_be/4                   # must_be(+term,+type,+goal,?arg)
 	can_be/4                    # can_be(+term,+type,+goal,?arg)
 	must_be/2                   # must_be(+type,+term)

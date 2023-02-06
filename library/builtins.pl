@@ -964,6 +964,8 @@ print_goals_([Goal|Goals]) :-
 	),
 	print_goals_(Goals).
 
+:- help(print_goals(+list), [iso(false)]).
+
 dump_attvars_([], []) :- !.
 dump_attvars_([Var|Vars], [V|Rest]) :-
 	copy_term(Var, _, V),
@@ -976,10 +978,13 @@ dump_attvars :-
 	sort(Gs1, Gs),
 	print_goals_(Gs).
 
+%:- help(dump_attvars, [iso(false)]).
+
 call_residue_vars(Goal, Atts) :-
 	call(Goal),
-	term_variables(Goal, Vars),
-	'$list_attributed'(Vars, Atts).
+	term_attvars(Goal, Atts).
+
+:- help(call_residue_vars(+goal, -list), [iso(false)]).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
