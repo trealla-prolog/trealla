@@ -558,33 +558,41 @@ iso_dif(X, Y) :-
 	;	throw(error(instantiation_error,iso_dif/2))
 	).
 
-:- meta_predicate(not(0)).
-
 numbervars(Term, N0, N) :-
    must_be(N0, integer, numbervars/3, _),
    can_be(N, integer, numbervars/3, _),
    term_variables(Term, Vars),
    numberlist_(Vars, N0, N).
 
-:- help(numbervars(+term,+integer,?integer), [iso(true)]).
+:- help(numbervars(+term,+integer,?integer), [iso(false)]).
 
 numberlist_([], N, N).
 numberlist_(['$VAR'(N0)|Vars], N0, N) :-
    N1 is N0+1,
    numberlist_(Vars, N1, N).
 
+:- help(numberlist(+list,?integer,?integer), [iso(false)]).
+
 read_line_to_codes(Stream, Codes) :-
 	read_line_to_string(Stream, String),
 	string_codes(String, Codes).
 
+:- help(read_line_to_codes(+stream,?list), [iso(false)]).
+
 instantiation_error(Context) :-
     throw(error(instantiation_error, Context)).
+
+:- help(instantiation_error(+term), [iso(false)]).
 
 domain_error(Type, Term, Context) :-
     throw(error(domain_error(Type, Term), Context)).
 
+:- help(domain_error(+atom,+term,+term), [iso(false)]).
+
 type_error(Type, Term, Context) :-
     throw(error(type_error(Type, Term), Context)).
+
+:- help(type_error(+atom,+term,+term), [iso(false)]).
 
 % NOTE: this doesn't print var names properly...
 
@@ -623,10 +631,14 @@ nb_setval(K, V) :-
 	must_be(K, atom, nb_setval/2, _),
 	user:assertz('$global_key'(K, V)).
 
+:- help(nb_setval(+atom,+term), [iso(false)]).
+
 nb_getval(K, V) :-
 	must_be(K, atom, nb_getval/2, _),
 	user:catch('$global_key'(K, V), _, throw(error(existence_error(var, K), nb_getval/2))),
 	!.
+
+:- help(nb_getval(+atom,?term), [iso(false)]).
 
 nb_delete(K) :-
 	must_be(K, atom, nb_delete/1, _),
@@ -634,9 +646,13 @@ nb_delete(K) :-
 	!.
 nb_delete(_).
 
+:- help(nb_delete(+atom), [iso(false)]).
+
 nb_current(K, V) :-
 	can_be(K, atom, nb_current/2, _),
 	user:clause('$global_key'(K, V), true).
+
+:- help(nb_current(+atom,+term), [iso(false)]).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
