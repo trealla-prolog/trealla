@@ -976,6 +976,11 @@ dump_attvars :-
 	sort(Gs1, Gs),
 	print_goals_(Gs).
 
+call_residue_vars(Goal, Atts) :-
+	call(Goal),
+	term_variables(Goal, Vars),
+	'$list_attributed'(Vars, Atts).
+
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -6494,6 +6494,39 @@ static bool fn_sys_list_attributed_1(query *q)
 	return unify(q, p1, p1_ctx, l, 0);
 }
 
+static bool fn_sys_list_attributed_2(query *q)
+{
+	GET_FIRST_ARG(p1,list);
+	GET_NEXT_ARG(p2,var);
+	bool first = true;
+	LIST_HANDLER(p1);
+
+	while (is_iso_list(p1)) {
+		CHECK_INTERRUPT();
+		cell *h = LIST_HEAD(p1);
+		h = deref(q, h, p1_ctx);
+		pl_idx_t h_ctx = q->latest_ctx;
+
+		if (first) {
+			allocate_list(q, h);
+			first = false;
+		} else
+			append_list(q, h);
+
+		p1 = LIST_TAIL(p1);
+		p1 = deref(q, p1, p1_ctx);
+	}
+
+	if (first) {
+		cell tmp;
+		make_atom(&tmp, g_nil_s);
+		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	}
+
+	cell *l = end_list(q);
+	return unify(q, p2, p2_ctx, l, q->st.curr_frame);
+}
+
 static bool fn_sys_erase_attributes_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
@@ -7720,6 +7753,7 @@ builtins g_other_bifs[] =
 	{"$get_attributes", 2, fn_sys_get_attributes_2, "+var,-list", false, false, BLAH},
 	{"$erase_attributes", 1, fn_sys_erase_attributes_1, "+var", false, false, BLAH},
 	{"$list_attributed", 1, fn_sys_list_attributed_1, "-list", false, false, BLAH},
+	{"$list_attributed", 2, fn_sys_list_attributed_2, "+list-list", false, false, BLAH},
 	{"$dump_keys", 1, fn_sys_dump_keys_1, "+pi", false, false, BLAH},
 	{"$skip_max_list", 4, fn_sys_skip_max_list_4, NULL, false, false, BLAH},
 
