@@ -4180,10 +4180,13 @@ static bool fn_module_help_1(query *q)
 	if (!m)
 		return false;
 
-	miter *iter = map_first(m->help);
+	miter *iter = map_first(q->pl->help);
 	builtins *fn;
 
 	while (map_next(iter, (void**)&fn)) {
+		if (fn->m != m)
+			continue;
+
 		if (fn->arity)
 			fprintf(stdout, "%s/%u: %s(%s)%s%s\n", fn->name, fn->arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
 		else
@@ -4208,10 +4211,13 @@ static bool fn_module_help_2(query *q)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 		const char *functor = C_STR(q, p1);
-		miter *iter = map_find_key(m->help, functor);
+		miter *iter = map_find_key(q->pl->help, functor);
 		builtins *fn;
 
 		while (map_next_key(iter, (void**)&fn)) {
+			if (fn->m != m)
+				continue;
+
 			if (fn->arity)
 				fprintf(stdout, "%s/%u: %s(%s)%s%s\n", fn->name, fn->arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
 			else
@@ -4273,10 +4279,13 @@ static bool fn_module_help_3(query *q)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 		const char *functor = C_STR(q, p1);
-		miter *iter = map_find_key(m->help, functor);
+		miter *iter = map_find_key(q->pl->help, functor);
 		builtins *fn;
 
 		while (map_next_key(iter, (void**)&fn)) {
+			if (fn->m != m)
+				continue;
+
 			if (fn->arity)
 				fprintf(stdout, "%s/%u: %s(%s)%s%s\n", fn->name, fn->arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
 			else

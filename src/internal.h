@@ -468,7 +468,7 @@ struct predicate_ {
 	bool is_var_in_first_arg:1;
 };
 
-#define BLAH false, 0, {0}, 0
+#define BLAH false, 0, {0}, 0, NULL
 
 struct builtins_ {
 	const char *name;
@@ -481,6 +481,7 @@ struct builtins_ {
 	bool via_directive;
 	uint8_t types[MAX_ARITY];
 	uint8_t ret_type;
+	module *m;
 };
 
 typedef struct {
@@ -762,7 +763,7 @@ struct module_ {
 	predicate *head, *tail;
 	parser *p;
 	FILE *fp;
-	map *index, *nbs, *ops, *defops, *help;
+	map *index, *nbs, *ops, *defops;
 	loaded_file *loaded_files;
 	unsigned id, idx_used, indexing_threshold, arity, max_depth;
 	int if_depth;

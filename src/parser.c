@@ -705,6 +705,7 @@ static void directives(parser *p, cell *d)
 		builtins *ptr = calloc(1, sizeof(builtins));
 		ptr->name = strdup(C_STR(p, p1));
 		ptr->arity = p1->arity;
+		ptr->m = p->m;
 		char *src = dst;
 
 		while (*src && (*src != '('))
@@ -720,12 +721,6 @@ static void directives(parser *p, cell *d)
 		ptr->iso = iso;
 		ptr->via_directive = true;
 		map_app(p->pl->help, ptr->name, ptr);
-		builtins *ptr2 = calloc(1, sizeof(builtins));
-		*ptr2 = *ptr;
-		ptr2->name = strdup(ptr->name);
-		ptr2->help = strdup(ptr->help);
-		map_app(p->m->help, ptr2->name, ptr2);
-		free(dst);
 		return;
 	}
 

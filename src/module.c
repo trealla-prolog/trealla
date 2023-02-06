@@ -1714,7 +1714,6 @@ void destroy_module(module *m)
 	if (m->fp)
 		fclose(m->fp);
 
-	map_destroy(m->help);
 	map_destroy(m->index);
 	destroy_parser(m->p);
 	clear_loaded(m);
@@ -1745,8 +1744,6 @@ module *create_module(prolog *pl, const char *name)
 	map_allow_dups(m->defops, false);
 	m->indexing_threshold = 1500;
 	pl->modmap[m->id] = m;
-	m->help = map_create((void*)fake_strcmp, (void*)ptrfree, NULL);
-	map_allow_dups(m->help, false);
 
 	if (strcmp(name, "system")) {
 		for (const op_table *ptr = g_ops; ptr->name; ptr++) {
