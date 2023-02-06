@@ -16,6 +16,7 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	Runs on Linux, Android, FreeBSD, macOS, and WebAssembly (WASI) & Go
 	Foreign function interface (FFI) for calling out to user C code
 	Access SQLITE databases using builtin module (uses FFI)
+	API for calling from C (or by using WASM from Go & JS)
 	Attributed variables with SICStus interface (*WIP*)
 	Rational trees aka. cyclic terms (*WIP*)
 	Logtalk compatible
