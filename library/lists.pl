@@ -52,36 +52,53 @@ reverse_([], [], YsRev, YsRev).
 reverse_([_|Xs], [Y1|Ys], YsPreludeRev, Xss) :-
     reverse_(Xs, Ys, [Y1|YsPreludeRev], Xss).
 
+:- help(reverse(?list,?list), [iso(false)]).
+
 append([], []).
 append([L0|Ls0], Ls) :-
     append(L0, Rest, Ls),
     append(Ls0, Rest).
 
+:- help(append(+list,?list), [iso(false)]).
+
 append([], R, R).
 append([X|L], R, [X|S]) :- append(L, R, S).
+
+:- help(append(?list,?list,?list), [iso(false)]).
 
 memberchk(X, Xs) :- member(X, Xs), !.
 
 member(X, [X|_]).
 member(X, [_|Xs]) :- member(X, Xs).
 
+:- help(member(?term,?list), [iso(false)]).
+
 selectchk(X, L, Rest) :- select(X, L, Rest), !.
+
+:- help(selectchk(+term,+list,-rest), [iso(false)]).
 
 select(X, [X|T], T).
 select(X, [H|T], [H|Rest]) :- select(X, T, Rest).
+
+:- help(select(+term,+list), [iso(false)]).
 
 subtract([], _, []) :- !.
 subtract([H|T], L2, L3) :- memberchk(H, L2), !, subtract(T, L2, L3).
 subtract([H|T1], L2, [H|T3]) :- subtract(T1, L2, T3).
 
+:- help(subtract(+list,+list,-list), [iso(false)]).
+
 union([], L, L).
 union([H|T], Y, Z):- member(H, Y), !, union(T, Y, Z).
 union([H|T], Y, [H|Z]):- union(T, Y, Z).
+
+:- help(union(+list,+list,-list), [iso(false)]).
 
 intersection([], _, []).
 intersection([H|T], Y, [H|Z]) :- member(H, Y), !, intersection(T, Y, Z).
 intersection([_|T], Y, Z) :- intersection(T, Y, Z).
 
+:- help(intersection(+list,+list,-list), [iso(false)]).
 
 nth1_orig(N, Es, E) :-
 	can_be(integer, N),
@@ -127,6 +144,8 @@ nth1(N, Es0, E) :-
 nth1(N, Es, E) :-
 	nth1_orig(N, Es, E).
 
+:- help(nth1(+integer,+list,-term), [iso(false)]).
+
 nth0(N, Es0, E) :-
 	nonvar(N),
 	'$skip_max_list'(N, N, Es0,Es),
@@ -135,11 +154,17 @@ nth0(N, Es0, E) :-
 nth0(N, Es, E) :-
 	nth0_orig(N, Es, E).
 
+:- help(nth0(+integer,+list,-term), [iso(false)]).
+
 nth1(Nth, List, Element, Rest) :-
 	nth(Element, List, 1, Nth, Rest).
 
+:- help(nth1(+integer,+list,-term,-list), [iso(false)]).
+
 nth0(Nth, List, Element, Rest) :-
 	nth(Element, List, 0, Nth, Rest).
+
+:- help(nth0(+integer,+list,-term,-list), [iso(false)]).
 
 nth(Element, List, Acc, Nth, Rest) :-
 	(	integer(Nth),
@@ -160,6 +185,8 @@ last([X|Xs], Last) :- last_(Xs, X, Last).
 last_([], Last, Last).
 last_([X|Xs], _, Last) :- last_(Xs, X, Last).
 
+:- help(last(+list,-term), [iso(false)]).
+
 flatten(List, FlatList) :-
     flatten_(List, [], FlatList0),
     !,
@@ -175,8 +202,12 @@ flatten_([Hd|Tl], Tail, List) :-
     flatten_(Tl, Tail, FlatHeadTail).
 flatten_(NonList, Tl, [NonList|Tl]).
 
+:- help(flatten(+list,-list), [iso(false)]).
+
 same_length([], []).
 same_length([_|As], [_|Bs]) :- same_length(As, Bs).
+
+:- help(same_length(?list,?list), [iso(false)]).
 
 sum_list(Xs, Sum) :-
 	sum_list_(Xs, 0, Sum).
@@ -187,6 +218,8 @@ sum_list_([X|Xs], Sum0, Sum) :-
 	Sum1 is Sum0 + X,
 	sum_list_(Xs, Sum1, Sum).
 
+:- help(sum_list(+list,?integer), [iso(false)]).
+
 prod_list(Xs, Prod) :-
 	prod_list_(Xs, 1, Prod).
 
@@ -195,6 +228,8 @@ prod_list_([], Prod0, Prod) :-
 prod_list_([X|Xs], Prod0, Prod) :-
 	Prod1 is Prod0 * X,
 	prod_list_(Xs, Prod1, Prod).
+
+:- help(prod_list(+list,?integer), [iso(false)]).
 
 max_list([H|T], Max) :-
 	max_list_(T, H, Max).
@@ -206,6 +241,8 @@ max_list_([H|T], Max0, Max) :-
 	Max1 is max(H, Max0),
 	max_list_(T, Max1, Max).
 
+:- help(max_list(+list,?integer), [iso(false)]).
+
 min_list([H|T], Min) :-
 	min_list_(T, H, Min).
 min_list([], _) :- fail.
@@ -215,6 +252,8 @@ min_list_([], Min0, Min) :-
 min_list_([H|T], Min0, Min) :-
 	Min1 is min(H, Min0),
 	min_list_(T, Min1, Min).
+
+:- help(min_list(+list,?integer), [iso(false)]).
 
 list_to_conjunction(List0, T) :-
 	reverse(List0, List),
@@ -275,12 +314,16 @@ numlist_(L, U, [L|Ns]) :-
 	L2 is L+1,
 	numlist_(L2, U, Ns).
 
+:- help(numlist(+integer,+integer,?list), [iso(false)]).
+
 is_set(Set) :-
 	'$skip_list'(Len, Set, Tail),
 	Tail == [],
 	sort(Set, Sorted),
 	length(Sorted, Len)
   .
+:- help(is_set(+list), [iso(false)]).
+
 length(Xs0, N) :-
    '$skip_max_list'(M, N, Xs0, Xs),
    !,
@@ -305,3 +348,5 @@ length_rundown(Xs, 0) :- !, Xs = [].
 length_rundown([_|Xs], N) :-
     N1 is N-1,
     length_rundown(Xs, N1).
+
+:- help(length(?list,?integer), [iso(true)]).
