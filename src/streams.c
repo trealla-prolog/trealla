@@ -1695,7 +1695,6 @@ static bool fn_iso_nl_0(query *q)
 	if (is_memory_stream(str))
 		return true;
 	
-	fputc('\n', str->fp);
 	//fflush(str->fp);
 	return !ferror(str->fp);
 }
@@ -1715,7 +1714,6 @@ static bool fn_iso_nl_1(query *q)
 	if (is_memory_stream(str))
 		return true;
 
-	fputc('\n', str->fp);
 	//fflush(str->fp);
 	return !ferror(str->fp);
 }
