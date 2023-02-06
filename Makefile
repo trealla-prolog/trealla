@@ -14,7 +14,7 @@ TPL = tpl
 endif
 
 ifdef WASI
-CFLAGS += -D_WASI_EMULATED_MMAN -D_WASI_EMULATED_SIGNAL -Isrc/wasm -O0 -std=c11
+CFLAGS += -D_WASI_EMULATED_MMAN -D_WASI_EMULATED_SIGNAL -Isrc/wasm -std=c11
 LDFLAGS += -lwasi-emulated-mman -lwasi-emulated-signal -Wl,--stack-first -Wl,-zstack-size=8388608 -Wl,--initial-memory=100663296
 # after WASI SDK upgrade add:
 # CFLAGS += -D_WASI_EMULATED_PROCESS_CLOCKS
@@ -159,7 +159,7 @@ release:
 	$(MAKE) 'OPT=$(OPT) -DNDEBUG'
 
 tpl.wasm:
-	$(MAKE) WASI=1 TPL=tpl.wasm 'OPT=$(OPT) -O0 -DNDEBUG'
+	$(MAKE) WASI=1 TPL=tpl.wasm 'OPT=$(OPT) -DNDEBUG'
 
 wasm: tpl.wasm
 # TODO: add to wizer --wasm-bulk-memory true
@@ -168,13 +168,13 @@ wasm: tpl.wasm
 	rm tpl-wizened.wasm
 
 libtpl.wasm:
-	$(MAKE) WASI=1 TPL=libtpl.wasm 'OPT=$(OPT) -O0 -DNDEBUG -DWASI_IMPORTS -DWASI_TARGET_GENERIC'
+	$(MAKE) WASI=1 TPL=libtpl.wasm 'OPT=$(OPT) -DNDEBUG -DWASI_IMPORTS -DWASI_TARGET_GENERIC'
 
 libtpl-js.wasm:
-	$(MAKE) WASI=1 TPL=libtpl-js.wasm 'OPT=$(OPT) -O0 -DNDEBUG -DWASI_IMPORTS -DWASI_TARGET_JS'
+	$(MAKE) WASI=1 TPL=libtpl-js.wasm 'OPT=$(OPT) -DNDEBUG -DWASI_IMPORTS -DWASI_TARGET_JS'
 
 libtpl-spin.wasm:
-	$(MAKE) WASI=1 WASI_TARGET_SPIN=1 TPL=libtpl-spin.wasm 'OPT=$(OPT) -O0 -DNDEBUG -DWASI_TARGET_SPIN'
+	$(MAKE) WASI=1 WASI_TARGET_SPIN=1 TPL=libtpl-spin.wasm 'OPT=$(OPT) -DNDEBUG -DWASI_TARGET_SPIN'
 
 libtpl: libtpl.wasm
 # TODO: add to wizer --wasm-bulk-memory true
