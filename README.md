@@ -658,6 +658,7 @@ Networking					##EXPERIMENTAL##
 	server/2                # server(+host,-stream)
 	server/3                # server(+host,-stream,+list)
 	accept/2                # accept(+stream,-stream)
+	client/2                # client(+url,-stream)
 	client/4                # client(+url,-host,-path,-stream)
 	client/5                # client(+url,-host,-path,-stream,+list)
 

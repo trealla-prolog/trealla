@@ -460,11 +460,15 @@ absolute_file_name(R, A) :- absolute_file_name(R, A, []).
 
 :- help(absolute_filename(+atom,?atom), [iso(false)]).
 
-client(U, H, P, S) :- client(U,H,P,S,[]).
+client(Url, S) :- client(Url, _, _, S, []).
 
 :- help(client(+atom,-atom,-atom,-stream), [iso(false)]).
 
-server(H, S) :- server(H,S,[]).
+client(Url, Host, Path, S) :- client(Url, Host, Path, S, []).
+
+:- help(client(+atom,-atom,-atom,-stream), [iso(false)]).
+
+server(Host, S) :- server(Host, S, []).
 
 :- help(server(+atom,-stream), [iso(false)]).
 
