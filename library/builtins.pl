@@ -84,7 +84,7 @@ findall(T, G, B, Tail) :-
 	append(B0, Tail, B), !.
 
 :- meta_predicate(findall(?,0,-,?)).
-:- help(findall(+term,:callable,?list), [iso(true)]).
+:- help(findall(+term,:callable,?list,?list), [iso(true)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
