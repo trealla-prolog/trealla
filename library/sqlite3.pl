@@ -16,6 +16,8 @@ sqlite3_query(Conn, Sql, Cols, Names) :-
 		;	( !, sqlite3_finalize(Statement, _Ret), fail )
 		).
 
+:- help(sqlite3_query(--stream, +string, +integer, +list), [iso(false)]).
+
 get_col(_, 0, Cols, Cols, Names, Names) :- !.
 get_col(Statement, Count, Col, Cols, Name, Names) :-
 	flag('SQLITE_INTEGER', SQLITE_INTEGER),
