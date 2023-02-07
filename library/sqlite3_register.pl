@@ -23,14 +23,14 @@
 :- help(sqlite3_open(+atom, --stream,-integer), [iso(false),desc('Open an Sqlite3 database returning a connection (as a stream).')]).
 :- help(sqlite3_exec(+stream,+atom,+integer,+integer,-integer,-integer), [iso(false),desc('Execute an SQL statement on an Sqlite3 database connection')]).
 :- help(sqlite3_prepare_v2(+stream,+atom,+integer,-integer,-integer,-integer), [iso(false)]).
-:- help(sqlite3_step(+integer,-integer), [iso(false)]).
-:- help(sqlite3_finalize(+integer,-integer), [iso(false)]).
-:- help(sqlite3_column_count(+integer,-integer), [iso(false)]).
-:- help(sqlite3_column_name(+integer,+integer,-atom), [iso(false)]).
-:- help(sqlite3_column_type(+integer,+integer,-integer), [iso(false)]).
-:- help(sqlite3_column_int64(+integer,+integer,-integer), [iso(false)]).
-:- help(sqlite3_column_double(+integer,+integer,-float), [iso(false)]).
-:- help(sqlite3_column_text(+integer,+integer,-string), [iso(false)]).
+:- help(sqlite3_step(+stream,-integer), [iso(false)]).
+:- help(sqlite3_finalize(+stream,-integer), [iso(false)]).
+:- help(sqlite3_column_count(+stream,-integer), [iso(false)]).
+:- help(sqlite3_column_name(+stream,+integer,-atom), [iso(false)]).
+:- help(sqlite3_column_type(+stream,+integer,-integer), [iso(false)]).
+:- help(sqlite3_column_int64(+stream,+integer,-integer), [iso(false)]).
+:- help(sqlite3_column_double(+stream,+integer,-float), [iso(false)]).
+:- help(sqlite3_column_text(+stream,+integer,-string), [iso(false)]).
 :- help(sqlite3_close(+stream,-integer), [iso(false),desc('Close an Sqlite3 database connection.')]).
 
 sqlite_flag('SQLITE_OK', 0).
