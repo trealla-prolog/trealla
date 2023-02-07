@@ -6882,7 +6882,7 @@ builtins g_files_bifs[] =
 {
 	// ISO...
 
-	{"open", 4, fn_iso_open_4, "+atom,+mode,-stream,+list", true, false, BLAH},
+	{"open", 4, fn_iso_open_4, "+atom,+mode,--stream,+list", true, false, BLAH},
 	{"close", 1, fn_iso_close_1, "+stream", true, false, BLAH},
 	{"close", 2, fn_iso_close_2, "+stream,+opts", true, false, BLAH},
 	{"read_term", 2, fn_iso_read_term_2, "+stream,-term", true, false, BLAH},
@@ -6922,9 +6922,9 @@ builtins g_files_bifs[] =
 	{"peek_code", 2, fn_iso_peek_code_2, "+stream,-integer", true, false, BLAH},
 	{"peek_byte", 1, fn_iso_peek_byte_1, "-integer", true, false, BLAH},
 	{"peek_byte", 2, fn_iso_peek_byte_2, "+stream,-integer", true, false, BLAH},
-	{"current_input", 1, fn_iso_current_input_1, "-stream", true, false, BLAH},
-	{"current_output", 1, fn_iso_current_output_1, "-stream", true, false, BLAH},
-	{"current_error", 1, fn_iso_current_error_1, "-stream", true, false, BLAH},
+	{"current_input", 1, fn_iso_current_input_1, "--stream", true, false, BLAH},
+	{"current_output", 1, fn_iso_current_output_1, "--stream", true, false, BLAH},
+	{"current_error", 1, fn_iso_current_error_1, "--stream", true, false, BLAH},
 	{"set_input", 1, fn_iso_set_input_1, "+stream", true, false, BLAH},
 	{"set_output", 1, fn_iso_set_output_1, "+stream", true, false, BLAH},
 	{"set_error", 1, fn_iso_set_output_1, "+stream", true, false, BLAH},
@@ -6990,13 +6990,13 @@ builtins g_files_bifs[] =
 	{"read_file_to_string", 3, fn_read_file_to_string_3, "+string,-string,+options", false, false, BLAH},
 
 	{"client", 5, fn_client_5, "+atom,-atom,-atom,-atom,+list", false, false, BLAH},
-	{"server", 3, fn_server_3, "+atom,-stream,+list", false, false, BLAH},
-	{"accept", 2, fn_accept_2, "+stream,-stream", false, false, BLAH},
+	{"server", 3, fn_server_3, "+atom,--stream,+list", false, false, BLAH},
+	{"accept", 2, fn_accept_2, "+stream,--stream", false, false, BLAH},
 	{"$get_n_chars", 3, fn_bread_3, "+stream,?integer,-string", false, false, BLAH},
 	{"bread", 3, fn_bread_3, "+stream,+integer,-string", false, false, BLAH},
 	{"bwrite", 2, fn_bwrite_2, "+stream,-string", false, false, BLAH},
 
-	{"map_create", 2, fn_map_create_2, "-stream,+list", false, false, BLAH},
+	{"map_create", 2, fn_map_create_2, "--stream,+list", false, false, BLAH},
 	{"map_set", 3, fn_map_set_3, "+stream,+atomic,+value", false, false, BLAH},
 	{"map_get", 3, fn_map_get_3, "+stream,+atomic,-value", false, false, BLAH},
 	{"map_del", 2, fn_map_del_2, "+stream,+atomic", false, false, BLAH},
@@ -7021,7 +7021,7 @@ builtins g_files_bifs[] =
 #endif
 
 #if !defined(_WIN32) && !defined(__wasi__)
-	{"popen", 4, fn_popen_4, "+atom,+atom,-stream,+list", false, false, BLAH},
+	{"popen", 4, fn_popen_4, "+atom,+atom,--stream,+list", false, false, BLAH},
 #endif
 
 	{0}

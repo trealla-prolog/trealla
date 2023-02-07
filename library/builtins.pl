@@ -431,7 +431,7 @@ format(F) :- format(F, []).
 
 open(F, M, S) :- open(F, M, S, []).
 
-:- help(open(+atom,+atom,-stream), [iso(true)]).
+:- help(open(+atom,+atom,--stream), [iso(true)]).
 
 samsort(L, R) :- msort(L, R).
 
@@ -462,15 +462,15 @@ absolute_file_name(R, A) :- absolute_file_name(R, A, []).
 
 client(Url, S) :- client(Url, _, _, S, []).
 
-:- help(client(+atom,-atom,-atom,-stream), [iso(false)]).
+:- help(client(+atom,-atom,-atom,--stream), [iso(false)]).
 
 client(Url, Host, Path, S) :- client(Url, Host, Path, S, []).
 
-:- help(client(+atom,-atom,-atom,-stream), [iso(false)]).
+:- help(client(+atom,-atom,-atom,--stream), [iso(false)]).
 
 server(Host, S) :- server(Host, S, []).
 
-:- help(server(+atom,-stream), [iso(false)]).
+:- help(server(+atom,--stream), [iso(false)]).
 
 load_files(Files) :- load_files(Files,[]).
 
@@ -824,19 +824,19 @@ get_attr(Var, Module, Value) :-
 	var(Var),
 	get_atts(Var, Access).
 
-:- help(get_attr(+var,+atom,-term), [iso(false)]).
+:- help(get_attr(@var,+atom,-term), [iso(false)]).
 
 put_attr(Var, Module, Value) :-
 	Access =.. [Module, Value],
 	put_atts(Var, Access).
 
-:- help(put_attr(+var,+atom,+term), [iso(false)]).
+:- help(put_attr(@var,+atom,+term), [iso(false)]).
 
 del_attr(Var, Module) :-
 	Access =.. [Module, _],
 	( var(Var) -> put_atts(Var, -Access) ; true ).
 
-:- help(del_attr(+var,+atom), [iso(false)]).
+:- help(del_attr(@var,+atom), [iso(false)]).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -875,7 +875,7 @@ put_atts(Var, Attr) :- !,
 	dict:set(D, Module, Attr, D2),
 	'$put_attributes'(Var, D2).
 
-:- help(put_atts(+var,+term), [iso(false)]).
+:- help(put_atts(@var,+term), [iso(false)]).
 
 get_atts(Var, L) :- var(L), !,
 	var(Var),
@@ -906,7 +906,7 @@ get_atts(Var, Attr) :- !,
 	dict:get(D, Module, Attr),
 	true.
 
-:- help(get_atts(+var,-term), [iso(false)]).
+:- help(get_atts(@var,-term), [iso(false)]).
 
 % Ancilliary
 
@@ -914,13 +914,13 @@ del_atts(Var) :-
 	var(Var),
 	'$erase_attribute'(Var).
 
-:- help(del_atts(+var), [iso(false)]).
+:- help(del_atts(@var), [iso(false)]).
 
 attvar(Var) :-
 	var(Var),
 	'$get_attributes'(Var, _).
 
-:- help(attvar(+var), [iso(false)]).
+:- help(attvar(@var), [iso(false)]).
 
 term_attvars_([], VsIn, VsIn) :- !.
 term_attvars_([H|T], VsIn, VsOut) :-
