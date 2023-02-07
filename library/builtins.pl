@@ -46,7 +46,7 @@ forall(Cond, Action) :-
 	\+ (Cond, \+ Action).
 
 :- meta_predicate(forall(0,0)).
-:- help(forall(+term,:callable), [iso(false)]).
+:- help(forall(:callable,:callable), [iso(false)]).
 
 catch(G, E, C) :-
 	'$catch'(call(G), E, call(C)).
