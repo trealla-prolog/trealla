@@ -16,7 +16,7 @@ sqlite3_query(Conn, Sql, Cols, Names) :-
 		;	( !, sqlite3_finalize(Statement, _Ret), fail )
 		).
 
-:- help(sqlite3_query(+stream,+string,-list,-list), [iso(false),desc('Query an Sqlite3 database connection and return a row as a list of column values and a list of column names.')]).
+:- help(sqlite3_query(+stream,+string,-list,-list), [iso(false),desc('Query an Sqlite3 database connection and return a row as a list of column values and a list of column names. Bactracking may return more rows.')]).
 
 get_col(_, 0, Cols, Cols, Names, Names) :- !.
 get_col(Statement, Count, Col, Cols, Name, Names) :-
