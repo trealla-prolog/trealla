@@ -46,13 +46,13 @@ forall(Cond, Action) :-
 	\+ (Cond, \+ Action).
 
 :- meta_predicate(forall(0,0)).
-:- help(forall(+term,+callable), [iso(false)]).
+:- help(forall(+term,:callable), [iso(false)]).
 
 catch(G, E, C) :-
 	'$catch'(call(G), E, call(C)).
 
 :- meta_predicate(catch(0,?,0)).
-:- help(catch(+callable,+template,+callable), [iso(true)]).
+:- help(catch(:callable,+term,:callable), [iso(true)]).
 
 call_cleanup(G, C) :-
 	'$register_cleanup'(ignore(C)),
@@ -63,7 +63,7 @@ call_cleanup(G, C) :-
 	).
 
 :- meta_predicate(call_cleanup(0,0)).
-:- help(call_cleanup(+callable,+callable), [iso(false)]).
+:- help(call_cleanup(:callable,:callable), [iso(false)]).
 
 setup_call_cleanup(S, G, C) :-
 	once(S),
@@ -75,7 +75,7 @@ setup_call_cleanup(S, G, C) :-
 	).
 
 :- meta_predicate(setup_call_cleanup(0,0,0)).
-:- help(setup_call_cleanup(+callable,+callable,+callable), [iso(false)]).
+:- help(setup_call_cleanup(:callable,:callable,:callable), [iso(false)]).
 
 findall(T, G, B, Tail) :-
 	can_be(B, list, findall/4, _),
@@ -84,7 +84,7 @@ findall(T, G, B, Tail) :-
 	append(B0, Tail, B), !.
 
 :- meta_predicate(findall(?,0,-,?)).
-:- help(findall(+template,+callable,?list), [iso(true)]).
+:- help(findall(+term,:callable,?list), [iso(true)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -167,7 +167,7 @@ bagof(Template, Generator, Bag) :-
 	bagof_(Template, Generator, Bag).
 
 :- meta_predicate(bagof(-,0,?)).
-:- help(bagof(+term,+callable,?list), [iso(true)]).
+:- help(bagof(+term,:callable,?list), [iso(true)]).
 
 bagof_(Template, Generator, Bag) :-
 	acyclic_term(Generator),
@@ -403,7 +403,7 @@ call_with_time_limit(Time, Goal) :-
 	).
 
 :- meta_predicate(call_with_time_limit(+,0)).
-:- help(call_with_time_limit(+millisecs,+callable), [iso(false)]).
+:- help(call_with_time_limit(+millisecs,:callable), [iso(false)]).
 
 time_out(Goal, Time, Result) :-
 	'$alarm'(Time),
@@ -413,7 +413,7 @@ time_out(Goal, Time, Result) :-
 	).
 
 :- meta_predicate(time_out(0,+,-)).
-:- help(time_out(+callable,+millisecs,?atom), [iso(false)]).
+:- help(time_out(:callable,+integer,?atom), [iso(false)]).
 
 print(T) :- bwrite(user_output, T), nl.
 print(S, T) :- bwrite(S, T), nl.
@@ -490,7 +490,7 @@ deconsult(Files) :- unload_files(Files).
 
 strip_module(T, M, P) :- T=M:P -> true ; P=T.
 
-:- help(strip_module(+term,-module,-term), [iso(false)]).
+:- help(strip_module(+term,-atom,-term), [iso(false)]).
 
 ?=(X, Y) :- \+ unifiable(X, Y, [_|_]).
 
@@ -512,7 +512,7 @@ not(G) :- G, !, fail.
 not(_).
 
 :- meta_predicate(not(0)).
-:- help(not(+callable), [iso(false)]).
+:- help(not(:callable), [iso(false)]).
 
 
 read_term_from_chars_(T, Cs, Rest) :-
@@ -553,7 +553,7 @@ with_output_to(atom(Cs), Goal) :-
 
 map_create(S) :- map_create(S,[]).
 
-:- help(map_create(+atom), [iso(false)]).
+:- help(map_create(--stream), [iso(false)]).
 
 iso_dif(X, Y) :-
 	X \== Y,
@@ -618,7 +618,7 @@ pretty(PI) :-
 	;   true
 	).
 
-:- help(pretty(+predicate_indicator), [iso(false)]).
+:- help(pretty(+predicateindicator), [iso(false)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SWI compatible
@@ -811,7 +811,7 @@ current_op(A, B, C) :-
 	'$load_ops',
 	'$current_op'(C, B, A).
 
-:- help(current_op(?priority,?precedence,?atom), [iso(true)]).
+:- help(current_op(?integer,?atom,?atom), [iso(true)]).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -988,7 +988,7 @@ call_residue_vars(Goal, Atts) :-
 	call(Goal),
 	term_attvars(Goal, Atts).
 
-:- help(call_residue_vars(+goal, -list), [iso(false)]).
+:- help(call_residue_vars(:callable, -list), [iso(false),desc('Find residual attributed variables left by Goal. This predicate is intended for reasoning about and debugging programs that use coroutining or constraints. To see why this predicate is necessary, consider a predicate that poses contradicting constraints on a variable, and where that variable does not appear in any argument of the predicate and hence does not yield any residual goals on the toplevel when the predicate is invoked. Such programs should fail, but sometimes succeed because the constraint solver is too weak to detect the contradiction. Ideally, delayed goals and constraints are all executed at the end of the computation. The meta predicate call_residue_vars/2 finds variables that are given attributes or whose attributes are modified by Goal, regardless of whether or not these variables are reachable from the arguments of Goal.')]).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

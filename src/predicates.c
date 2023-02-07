@@ -4099,9 +4099,9 @@ static bool fn_help_1(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "existence");
 
 	if (arity)
-		fprintf(stdout, "%s/%u: %s(%s)%s%s\n", fn->name, arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+		fprintf(stdout, "%s/%u: %s(%s)%s%s\n%s\n", fn->name, arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"", fn->desc?fn->desc:"");
 	else
-		fprintf(stdout, "%s/%u: %s%s%s\n", fn->name, arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+		fprintf(stdout, "%s/%u: %s%s%s\n%s\n", fn->name, arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"", fn->desc?fn->desc:"");
 
 	return true;
 }
@@ -7691,13 +7691,13 @@ static void load_ops(query *q)
 
 builtins g_iso_bifs[] =
 {
-	{",", 2, fn_iso_conjunction_2, "+callable,+callable", true, false, BLAH},
-	{";", 2, fn_iso_disjunction_2, "+callable,+callable", true, false, BLAH},
+	{",", 2, fn_iso_conjunction_2, ":callable,:callable", true, false, BLAH},
+	{";", 2, fn_iso_disjunction_2, ":callable,:callable", true, false, BLAH},
 	{"!", 0, fn_iso_cut_0, NULL, true, false, BLAH},
-	{":", 2, fn_iso_invoke_2, "+atom,+callable", true, false, BLAH},
+	{":", 2, fn_iso_invoke_2, "+atom,:callable", true, false, BLAH},
 	{"=..", 2, fn_iso_univ_2, "+term,?list", true, false, BLAH},
-	{"->", 2, fn_iso_if_then_2, "+callable,+callable", true, false, BLAH},
-	{"\\+", 1, fn_iso_negation_1, "+callable", true, false, BLAH},
+	{"->", 2, fn_iso_if_then_2, ":callable,:callable", true, false, BLAH},
+	{"\\+", 1, fn_iso_negation_1, ":callable", true, false, BLAH},
 	{"=", 2, fn_iso_unify_2, "+term,+term", true, false, BLAH},
 	{"\\=", 2, fn_iso_notunify_2, "+term,+term", true, false, BLAH},
 	{"-->", 2, fn_iso_dcgs_2, "+term,+term", true, false, BLAH},
@@ -7718,17 +7718,17 @@ builtins g_iso_bifs[] =
 	{"$ne", 2, fn_sys_ne_2, NULL, false, false, BLAH},
 	{"$incr", 2, fn_sys_incr_2, NULL, false, false, BLAH},
 
-	{"call", 1, fn_iso_call_n, "+callable", true, false, BLAH},
-	{"call", 2, fn_iso_call_n, "+callable,term", true, false, BLAH},
-	{"call", 3, fn_iso_call_n, "+callable,term,term", true, false, BLAH},
-	{"call", 4, fn_iso_call_n, "+callable,term,term,term", true, false, BLAH},
-	{"call", 5, fn_iso_call_n, "+callable,term,term,term,term", true, false, BLAH},
-	{"call", 6, fn_iso_call_n, "+callable,term,term,term,term,term", true, false, BLAH},
-	{"call", 7, fn_iso_call_n, "+callable,term,term,term,term,term,term", true, false, BLAH},
-	{"call", 8, fn_iso_call_n, "+callable,term,term,term,term,term,term,term", true, false, BLAH},
+	{"call", 1, fn_iso_call_n, ":callable", true, false, BLAH},
+	{"call", 2, fn_iso_call_n, ":callable,term", true, false, BLAH},
+	{"call", 3, fn_iso_call_n, ":callable,term,term", true, false, BLAH},
+	{"call", 4, fn_iso_call_n, ":callable,term,term,term", true, false, BLAH},
+	{"call", 5, fn_iso_call_n, ":callable,term,term,term,term", true, false, BLAH},
+	{"call", 6, fn_iso_call_n, ":callable,term,term,term,term,term", true, false, BLAH},
+	{"call", 7, fn_iso_call_n, ":callable,term,term,term,term,term,term", true, false, BLAH},
+	{"call", 8, fn_iso_call_n, ":callable,term,term,term,term,term,term,term", true, false, BLAH},
 
 	{"throw", 1, fn_iso_throw_1, "+term", true, false, BLAH},
-	{"once", 1, fn_iso_once_1, "+callable", true, false, BLAH},
+	{"once", 1, fn_iso_once_1, ":callable", true, false, BLAH},
 	{"repeat", 0, fn_iso_repeat_0, NULL, true, false, BLAH},
 	{"true", 0, fn_iso_true_0, NULL, true, false, BLAH},
 	{"fail", 0, fn_iso_fail_0, NULL, true, false, BLAH},
@@ -7770,7 +7770,7 @@ builtins g_iso_bifs[] =
 	{"$legacy_current_prolog_flag", 2, fn_iso_current_prolog_flag_2, "+atom,?term", true, false, BLAH},
 	{"set_prolog_flag", 2, fn_iso_set_prolog_flag_2, "+atom,+term", true, false, BLAH},
 	{"op", 3, fn_iso_op_3, "?integer,?atom,+atom", true, false, BLAH},
-	{"findall", 3, fn_iso_findall_3, "+term,+callable,-list", true, false, BLAH},
+	{"findall", 3, fn_iso_findall_3, "+term,:callable,-list", true, false, BLAH},
 	{"current_predicate", 1, fn_iso_current_predicate_1, "+predicateindicator", true, false, BLAH},
 	{"acyclic_term", 1, fn_iso_acyclic_term_1, "+term", true, false, BLAH},
 	{"compare", 3, fn_iso_compare_3, "+atom,+term,+term", true, false, BLAH},
@@ -7803,7 +7803,7 @@ builtins g_other_bifs[] =
 
 	{"listing", 0, fn_listing_0, NULL, false, false, BLAH},
 	{"listing", 1, fn_listing_1, "+predicateindicator", false, false, BLAH},
-	{"time", 1, fn_time_1, "+callable", false, false, BLAH},
+	{"time", 1, fn_time_1, ":callable", false, false, BLAH},
 	{"trace", 0, fn_trace_0, NULL, false, false, BLAH},
 	{"help", 2, fn_help_2, "+predicateindicator,+atom", false, false, BLAH},
 	{"help", 1, fn_help_1, "+predicateindicator", false, false, BLAH},
@@ -7816,7 +7816,7 @@ builtins g_other_bifs[] =
 
 	{"abort", 0, fn_abort_0, NULL, false, false, BLAH},
 	{"sort", 4, fn_sort_4, "+integer,+atom,+list,?list", false, false, BLAH},
-	{"ignore", 1, fn_ignore_1, "+callable", false, false, BLAH},
+	{"ignore", 1, fn_ignore_1, ":callable", false, false, BLAH},
 	{"soft_abolish", 1, fn_soft_abolish_1, "+term", false, false, BLAH},
 	{"string_codes", 2, fn_string_codes_2, "+string,-list", false, false, BLAH},
 	{"term_singletons", 2, fn_term_singletons_2, "+term,-list", false, false, BLAH},
@@ -7871,8 +7871,8 @@ builtins g_other_bifs[] =
 	{"statistics", 0, fn_statistics_0, NULL, false, false, BLAH},
 	{"statistics", 2, fn_statistics_2, "+atom,-var", false, false, BLAH},
 	{"duplicate_term", 2, fn_iso_copy_term_2, "+term,-var", false, false, BLAH},
-	{"call_nth", 2, fn_call_nth_2, "+callable,+integer", false, false, BLAH},
-	{"limit", 2, fn_limit_2, "+integer,+callable", false, false, BLAH},
+	{"call_nth", 2, fn_call_nth_2, ":callable,+integer", false, false, BLAH},
+	{"limit", 2, fn_limit_2, "+integer,:callable", false, false, BLAH},
 	{"offset", 2, fn_offset_2, "+integer,+callable", false, false, BLAH},
 	{"unifiable", 3, fn_sys_unifiable_3, "+term,+term,-list", false, false, BLAH},
 	{"kv_set", 3, fn_kv_set_3, "+atomic,+term,+list", false, false, BLAH},
@@ -7917,14 +7917,14 @@ builtins g_other_bifs[] =
 	{"crypto_data_hash", 3, fn_crypto_data_hash_3, "?string,?string,?list", false, false, BLAH},
 #endif
 
-	{"task", 1, fn_task_n, "+callable", false, false, BLAH},
-	{"task", 2, fn_task_n, "+callable,+term,...", false, false, BLAH},
-	{"task", 3, fn_task_n, "+callable,+term,...", false, false, BLAH},
-	{"task", 4, fn_task_n, "+callable,+term,...", false, false, BLAH},
-	{"task", 5, fn_task_n, "+callable,+term,...", false, false, BLAH},
-	{"task", 6, fn_task_n, "+callable,+term,...", false, false, BLAH},
-	{"task", 7, fn_task_n, "+callable,+term,...", false, false, BLAH},
-	{"task", 8, fn_task_n, "+callable,+term,...", false, false, BLAH},
+	{"task", 1, fn_task_n, ":callable", false, false, BLAH},
+	{"task", 2, fn_task_n, ":callable,+term,...", false, false, BLAH},
+	{"task", 3, fn_task_n, ":callable,+term,...", false, false, BLAH},
+	{"task", 4, fn_task_n, ":callable,+term,...", false, false, BLAH},
+	{"task", 5, fn_task_n, ":callable,+term,...", false, false, BLAH},
+	{"task", 6, fn_task_n, ":callable,+term,...", false, false, BLAH},
+	{"task", 7, fn_task_n, ":callable,+term,...", false, false, BLAH},
+	{"task", 8, fn_task_n, ":callable,+term,...", false, false, BLAH},
 
 	{"wait", 0, fn_wait_0, NULL, false, false, BLAH},
 	{"await", 0, fn_await_0, NULL, false, false, BLAH},

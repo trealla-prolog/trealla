@@ -684,14 +684,20 @@ static void directives(parser *p, cell *d)
 		cell *p2 = p1 + p1->nbr_cells;
 		if (!is_iso_list_or_nil(p2)) return;
 		LIST_HANDLER(p2);
+		char *desc = NULL;
 		bool iso = false;
 
 		while (is_iso_list(p2)) {
 			cell *h = LIST_HEAD(p2);
 
-			if (is_structure(h) && is_atom(h+1)) {
+			if (is_structure(h) && is_atom(h+1) && !strcmp(C_STR(p, h), "iso")) {
 				cell *arg = h + 1;
 				iso = !strcmp(C_STR(p, arg), "true");
+			}
+
+			if (is_structure(h) && is_atom(h+1) && !strcmp(C_STR(p, h), "desc")) {
+				cell *arg = h + 1;
+				desc = DUP_STR(p, arg);
 			}
 
 			p2 = LIST_TAIL(p2);
@@ -706,6 +712,7 @@ static void directives(parser *p, cell *d)
 		ptr->name = strdup(C_STR(p, p1));
 		ptr->arity = p1->arity;
 		ptr->m = p->m;
+		ptr->desc = desc;
 		char *src = dst;
 
 		while (*src && (*src != '('))

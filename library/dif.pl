@@ -50,7 +50,7 @@ dif(X, Y) :-
         )
     ).
 
-:- help(dif(+term,+term), [iso(false)]).
+:- help(dif(@term,@term), [iso(false),desc('The dif/2 predicate is a constraint that is true if and only if A and B are different terms.')]).
 
 gather_dif_goals([]) --> [].
 gather_dif_goals([(X \== Y) | Goals]) -->

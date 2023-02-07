@@ -33,7 +33,7 @@ when(Cond, Goal) :-
 	process_var_(Var1, Cond, Goal),
 	process_var_(Var2, Cond, Goal).
 
-:- help(when(+term,+callable), [iso(false)]).
+:- help(when(+term,+callable), [iso(false),desc('Execute Goal when Condition becomes true.')]).
 
 process_var_(Var, Cond, Goal) :-
 	(	get_atts(Var, when(OldCond-OldGoal)) ->
