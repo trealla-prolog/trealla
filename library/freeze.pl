@@ -11,7 +11,7 @@ frozen(Term, Goal) :-
 	flatten(Gs, Gs2),
 	list_to_conjunction(Gs2, Goal).
 
-:- help(frozen(+callable,-callable), [iso(false)]).
+:- help(frozen(@term,-callable), [iso(false),desc('Unify Goal with the goal or conjunction of goals delayed on some attributed variable in Term.')]).
 
 verify_attributes(Var, Other, Goals) :-
 	get_atts(Var, frozen(Fa)), !,       % are we involved?
@@ -29,7 +29,7 @@ freeze(X, Goal) :-
 	put_atts(Fresh, frozen(Goal)),
 	Fresh = X.
 
-:- help(freeze(+var,+callable), [iso(false)]).
+:- help(freeze(+var,:callable), [iso(false),desc('Delay the execution of Goal until Var is bound (i.e., is not a variable or attributed variable).')]).
 
 attribute_goal(Var, freeze(Var,Goal)) :-     % interpretation as goal
 	get_atts(Var, frozen(Goal)).

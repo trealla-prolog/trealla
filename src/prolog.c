@@ -193,7 +193,7 @@ static void g_destroy()
 	free(g_tpl_lib);
 }
 
-static void ptrfree(const void *key, const void *val, const void *p)
+void ptrfree(const void *key, const void *val, const void *p)
 {
 	builtins *ptr = (void*)val;
 
@@ -220,6 +220,29 @@ builtins *get_help(prolog *pl, const char *name, unsigned arity, bool *found, bo
 	builtins *ptr;
 
 	while (map_next_key(iter, (void**)&ptr)) {
+		if (ptr->arity == arity) {
+			if (found) *found = true;
+			if (evaluable) *evaluable = ptr->evaluable;
+			map_done(iter);
+			return ptr;
+		}
+	}
+
+	if (found) *found = false;
+	if (evaluable) *evaluable = false;
+	map_done(iter);
+	return NULL;
+}
+
+builtins *get_module_help(module *m, const char *name, unsigned arity, bool *found, bool *evaluable)
+{
+	miter *iter = map_find_key(m->pl->help, name);
+	builtins *ptr;
+
+	while (map_next_key(iter, (void**)&ptr)) {
+		if (ptr->m != m)
+			continue;
+
 		if (ptr->arity == arity) {
 			if (found) *found = true;
 			if (evaluable) *evaluable = ptr->evaluable;
@@ -613,8 +636,8 @@ prolog *pl_create()
 
 	for (library *lib = g_libs; lib->name; lib++) {
 		if (!strcmp(lib->name, "builtins")			// Always need this
-			|| !strcmp(lib->name, "lists")			// Common
 			|| !strcmp(lib->name, "apply")			// Common
+			|| !strcmp(lib->name, "lists")			// Common
 			|| !strcmp(lib->name, "freeze")			// Common
 			|| !strcmp(lib->name, "dif")			// Common?
 			|| !strcmp(lib->name, "when")			// Common?

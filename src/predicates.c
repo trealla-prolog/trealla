@@ -3124,7 +3124,7 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 	return true;
 }
 
-typedef struct { cell *c; pl_idx_t c_ctx; query *q; bool ascending; int arg; } basepair;
+typedef struct { cell tmp; cell *c; pl_idx_t c_ctx; query *q; bool ascending; int arg; } basepair;
 
 static int nodecmp(const void *ptr1, const void *ptr2)
 {
@@ -3170,30 +3170,34 @@ static cell *nodesort(query *q, cell *p1, pl_idx_t p1_ctx, bool dedup, bool keys
 	size_t cnt = skip;
 	basepair *base = malloc(sizeof(basepair)*cnt);
 	LIST_HANDLER(p1);
-	size_t idx = 0;
+		size_t idx = 0;
 
 	while (is_list(p1)) {
 		CHECK_INTERRUPT();
-		cell *h = deref(q, LIST_HEAD(p1), p1_ctx);
+		cell *h = LIST_HEAD(p1);
+		h = deref(q, h, p1_ctx);
 		pl_idx_t h_ctx = q->latest_ctx;
 
 		if (keysort) {
-			cell *tmp = deref(q, h, h_ctx);
-			pl_idx_t tmp_ctx = q->latest_ctx;
-
-			if (!is_structure(tmp) || strcmp(C_STR(q, tmp), "-")) {
-				*status = throw_error(q, tmp, tmp_ctx, "type_error", "pair");
+			if (!is_structure(h) || strcmp(C_STR(q, h), "-")) {
+				*status = throw_error(q, h, h_ctx, "type_error", "pair");
 				free(base);
 				return NULL;
 			}
 		}
 
-		base[idx].c = h;
+		if (is_string(p1)) {
+			base[idx].tmp = *h;
+			base[idx].c = &base[idx].tmp;
+		} else
+			base[idx].c = h;
+
 		base[idx].c_ctx = h_ctx;
 		base[idx].q = q;
 		base[idx].ascending = true;
 		base[idx].arg = keysort ? 1 : 0;
 		idx++;
+
 		p1 = LIST_TAIL(p1);
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
@@ -4103,9 +4107,9 @@ static bool fn_help_1(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "existence");
 
 	if (arity)
-		fprintf(stdout, "%s/%u: %s(%s)%s%s\n", fn->name, arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+		fprintf(stdout, "%s/%u: %s(%s)%s%s\n%s\n", fn->name, arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"", fn->desc?fn->desc:"");
 	else
-		fprintf(stdout, "%s/%u: %s%s%s\n", fn->name, arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+		fprintf(stdout, "%s/%u: %s%s%s\n%s\n", fn->name, arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"", fn->desc?fn->desc:"");
 
 	return true;
 }
@@ -4158,6 +4162,169 @@ static bool fn_help_2(query *q)
 	const char *functor = C_STR(q, f);
 	unsigned arity = get_smallint(a);
 	builtins *fn = get_help(q->pl, functor, arity, &found, &evaluable);
+
+	if (!found || !fn)
+		return throw_error(q, p1, p1_ctx, "domain_error", "existence");
+
+	if (!strcmp(pr, "swi"))
+		snprintf(url, sizeof(url), "http://swi-prolog.org/pldoc/man?predicate=%s/%u", functor, arity);
+	else if (!strcmp(pr, "tau"))
+		snprintf(url, sizeof(url), "http://tau-prolog.org/documentation/prolog/builtin/%s/%u", functor, arity);
+
+	if (arity)
+		fprintf(stdout, "%s/%u: %s(%s)%s%s %s\n", fn->name, arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"", url);
+	else
+		fprintf(stdout, "%s/%u: %s%s%s %s\n", fn->name, arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"", url);
+
+	return true;
+}
+
+static bool fn_module_help_1(query *q)
+{
+	GET_FIRST_ARG(pm,atom);
+	bool found = false, evaluable = false;
+	module *m = find_module(q->pl, C_STR(q, pm));
+
+	if (!m)
+		return false;
+
+	miter *iter = map_first(q->pl->help);
+	builtins *fn;
+
+	while (map_next(iter, (void**)&fn)) {
+		if (fn->m != m)
+			continue;
+
+		if (fn->arity)
+			fprintf(stdout, "%s/%u: %s(%s)%s%s\n", fn->name, fn->arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+		else
+			fprintf(stdout, "%s/%u: %s%s%s\n", fn->name, fn->arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+	}
+
+	return true;
+}
+
+static bool fn_module_help_2(query *q)
+{
+	GET_FIRST_ARG(pm,atom);
+	GET_NEXT_ARG(p1,any);
+	bool found = false, evaluable = false;
+	module *m = find_module(q->pl, C_STR(q, pm));
+
+	if (!m)
+		return false;
+
+	if (!p1->arity) {
+		if (!is_atom(p1))
+			return throw_error(q, p1, p1_ctx, "type_error", "atom");
+
+		const char *functor = C_STR(q, p1);
+		miter *iter = map_find_key(q->pl->help, functor);
+		builtins *fn;
+
+		while (map_next_key(iter, (void**)&fn)) {
+			if (fn->m != m)
+				continue;
+
+			if (fn->arity)
+				fprintf(stdout, "%s/%u: %s(%s)%s%s\n", fn->name, fn->arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+			else
+				fprintf(stdout, "%s/%u: %s%s%s\n", fn->name, fn->arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+		}
+
+		return true;
+	}
+
+	if (!is_structure(p1))
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	if (p1->arity != 2)
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	if (p1->val_off != g_slash_s)
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	cell *f = p1 + 1;
+
+	if (!is_atom(f))
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	cell *a = p1 + 2;
+
+	if (!is_smallint(a))
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	const char *functor = C_STR(q, f);
+	unsigned arity = get_smallint(a);
+	builtins *fn = get_module_help(m, functor, arity, &found, &evaluable);
+
+	if (!found || !fn)
+		return throw_error(q, p1, p1_ctx, "domain_error", "existence");
+
+	if (arity)
+		fprintf(stdout, "%s/%u: %s(%s)%s%s\n", fn->name, arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+	else
+		fprintf(stdout, "%s/%u: %s%s%s\n", fn->name, arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+
+	return true;
+}
+
+static bool fn_module_help_3(query *q)
+{
+	GET_FIRST_ARG(pm,atom);
+	GET_NEXT_ARG(p1,any);
+	GET_NEXT_ARG(p2,atom);
+	bool found = false, evaluable = false;
+	const char *pr = C_STR(q, p2);
+	char url[1024];
+	module *m = find_module(q->pl, C_STR(q, pm));
+
+	if (!m)
+		return false;
+
+	if (!p1->arity) {
+		if (!is_atom(p1))
+			return throw_error(q, p1, p1_ctx, "type_error", "atom");
+
+		const char *functor = C_STR(q, p1);
+		miter *iter = map_find_key(q->pl->help, functor);
+		builtins *fn;
+
+		while (map_next_key(iter, (void**)&fn)) {
+			if (fn->m != m)
+				continue;
+
+			if (fn->arity)
+				fprintf(stdout, "%s/%u: %s(%s)%s%s\n", fn->name, fn->arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+			else
+				fprintf(stdout, "%s/%u: %s%s%s\n", fn->name, fn->arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
+		}
+
+		return true;
+	}
+
+	if (!is_structure(p1))
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	if (p1->arity != 2)
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	if (p1->val_off != g_slash_s)
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	cell *f = p1 + 1;
+
+	if (!is_atom(f))
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	cell *a = p1 + 2;
+
+	if (!is_smallint(a))
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	const char *functor = C_STR(q, f);
+	unsigned arity = get_smallint(a);
+	builtins *fn = get_module_help(m, functor, arity, &found, &evaluable);
 
 	if (!found || !fn)
 		return throw_error(q, p1, p1_ctx, "domain_error", "existence");
@@ -6930,6 +7097,29 @@ static bool fn_module_1(query *q)
 	return true;
 }
 
+static bool fn_modules_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	bool first = true;
+
+	for (module *m = q->pl->modules; m; m = m->next) {
+		if (m->orig)
+			continue;
+
+		cell tmp;
+		make_string(&tmp,  m->name);
+
+		if (first) {
+			allocate_list(q, &tmp);
+			first = false;
+		} else
+			append_list(q, &tmp);
+	}
+
+	cell *tmp = end_list(q);
+	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
+}
+
 static bool fn_using_0(query *q)
 {
 	module *m = q->st.m;
@@ -7570,13 +7760,13 @@ static void load_ops(query *q)
 
 builtins g_iso_bifs[] =
 {
-	{",", 2, fn_iso_conjunction_2, "+callable,+callable", true, false, BLAH},
-	{";", 2, fn_iso_disjunction_2, "+callable,+callable", true, false, BLAH},
+	{",", 2, fn_iso_conjunction_2, ":callable,:callable", true, false, BLAH},
+	{";", 2, fn_iso_disjunction_2, ":callable,:callable", true, false, BLAH},
 	{"!", 0, fn_iso_cut_0, NULL, true, false, BLAH},
-	{":", 2, fn_iso_invoke_2, "+module,+callable", true, false, BLAH},
+	{":", 2, fn_iso_invoke_2, "+atom,:callable", true, false, BLAH},
 	{"=..", 2, fn_iso_univ_2, "+term,?list", true, false, BLAH},
-	{"->", 2, fn_iso_if_then_2, "+callable,+callable", true, false, BLAH},
-	{"\\+", 1, fn_iso_negation_1, "+callable", true, false, BLAH},
+	{"->", 2, fn_iso_if_then_2, ":callable,:callable", true, false, BLAH},
+	{"\\+", 1, fn_iso_negation_1, ":callable", true, false, BLAH},
 	{"=", 2, fn_iso_unify_2, "+term,+term", true, false, BLAH},
 	{"\\=", 2, fn_iso_notunify_2, "+term,+term", true, false, BLAH},
 	{"-->", 2, fn_iso_dcgs_2, "+term,+term", true, false, BLAH},
@@ -7597,17 +7787,17 @@ builtins g_iso_bifs[] =
 	{"$ne", 2, fn_sys_ne_2, NULL, false, false, BLAH},
 	{"$incr", 2, fn_sys_incr_2, NULL, false, false, BLAH},
 
-	{"call", 1, fn_iso_call_n, "+callable", true, false, BLAH},
-	{"call", 2, fn_iso_call_n, "+callable,...", true, false, BLAH},
-	{"call", 3, fn_iso_call_n, "+callable,...", true, false, BLAH},
-	{"call", 4, fn_iso_call_n, "+callable,...", true, false, BLAH},
-	{"call", 5, fn_iso_call_n, "+callable,...", true, false, BLAH},
-	{"call", 6, fn_iso_call_n, "+callable,...", true, false, BLAH},
-	{"call", 7, fn_iso_call_n, "+callable,...", true, false, BLAH},
-	{"call", 8, fn_iso_call_n, "+callable,...", true, false, BLAH},
+	{"call", 1, fn_iso_call_n, ":callable", true, false, BLAH},
+	{"call", 2, fn_iso_call_n, ":callable,term", true, false, BLAH},
+	{"call", 3, fn_iso_call_n, ":callable,term,term", true, false, BLAH},
+	{"call", 4, fn_iso_call_n, ":callable,term,term,term", true, false, BLAH},
+	{"call", 5, fn_iso_call_n, ":callable,term,term,term,term", true, false, BLAH},
+	{"call", 6, fn_iso_call_n, ":callable,term,term,term,term,term", true, false, BLAH},
+	{"call", 7, fn_iso_call_n, ":callable,term,term,term,term,term,term", true, false, BLAH},
+	{"call", 8, fn_iso_call_n, ":callable,term,term,term,term,term,term,term", true, false, BLAH},
 
 	{"throw", 1, fn_iso_throw_1, "+term", true, false, BLAH},
-	{"once", 1, fn_iso_once_1, "+callable", true, false, BLAH},
+	{"once", 1, fn_iso_once_1, ":callable", true, false, BLAH},
 	{"repeat", 0, fn_iso_repeat_0, NULL, true, false, BLAH},
 	{"true", 0, fn_iso_true_0, NULL, true, false, BLAH},
 	{"fail", 0, fn_iso_fail_0, NULL, true, false, BLAH},
@@ -7625,9 +7815,9 @@ builtins g_iso_bifs[] =
 	{"atom_codes", 2, fn_iso_atom_codes_2, "?number,?list", true, false, BLAH},
 	{"number_chars", 2, fn_iso_number_chars_2, "?number,?list", true, false, BLAH},
 	{"number_codes", 2, fn_iso_number_codes_2, "?number,?list", true, false, BLAH},
-	{"clause", 2, fn_iso_clause_2, "+head,?body", true, false, BLAH},
-	{"arg", 3, fn_iso_arg_3, "+arg,+term,?term", true, false, BLAH},
-	{"functor", 3, fn_iso_functor_3, "?term,?functor,?arity", true, false, BLAH},
+	{"clause", 2, fn_iso_clause_2, "+term,?term", true, false, BLAH},
+	{"arg", 3, fn_iso_arg_3, "+integer,+term,?term", true, false, BLAH},
+	{"functor", 3, fn_iso_functor_3, "?term,?atom,?integer", true, false, BLAH},
 	{"copy_term", 2, fn_iso_copy_term_2, "+term,?term", true, false, BLAH},
 	{"term_variables", 2, fn_iso_term_variables_2, "+term,-list", true, false, BLAH},
 	{"atom_length", 2, fn_iso_atom_length_2, "?list,?integer", true, false, BLAH},
@@ -7648,8 +7838,8 @@ builtins g_iso_bifs[] =
 	{"retractall", 1, fn_iso_retractall_1, "+term", true, false, BLAH},
 	{"$legacy_current_prolog_flag", 2, fn_iso_current_prolog_flag_2, "+atom,?term", true, false, BLAH},
 	{"set_prolog_flag", 2, fn_iso_set_prolog_flag_2, "+atom,+term", true, false, BLAH},
-	{"op", 3, fn_iso_op_3, "?priority,?type,+atom", true, false, BLAH},
-	{"findall", 3, fn_iso_findall_3, "+template,+callable,-list", true, false, BLAH},
+	{"op", 3, fn_iso_op_3, "?integer,?atom,+atom", true, false, BLAH},
+	{"findall", 3, fn_iso_findall_3, "+term,:callable,-list", true, false, BLAH},
 	{"current_predicate", 1, fn_iso_current_predicate_1, "+predicateindicator", true, false, BLAH},
 	{"acyclic_term", 1, fn_iso_acyclic_term_1, "+term", true, false, BLAH},
 	{"compare", 3, fn_iso_compare_3, "+atom,+term,+term", true, false, BLAH},
@@ -7662,14 +7852,15 @@ builtins g_iso_bifs[] =
 
 builtins g_other_bifs[] =
 {
-	{"*->", 2, fn_if_2, "+if,+then", false, false, BLAH},
-	{"if", 3, fn_if_3, "+if,+then,+else", false, false, BLAH},
+	{"*->", 2, fn_if_2, "+term,+term", false, false, BLAH},
+	{"if", 3, fn_if_3, "+term,+term,+term", false, false, BLAH},
 
 	{"cyclic_term", 1, fn_cyclic_term_1, "+term", false, false, BLAH},
-	{"current_module", 1, fn_current_module_1, "-module", false, false, BLAH},
+	{"current_module", 1, fn_current_module_1, "-atom", false, false, BLAH},
 	{"prolog_load_context", 2, fn_prolog_load_context_2, "+atom,?term", false, false, BLAH},
-	{"module", 1, fn_module_1, "?module", false, false, BLAH},
-	{"attribute", 3, fn_attribute_3, "?module,+attribute,+arity", false, false, BLAH},
+	{"module", 1, fn_module_1, "?atom", false, false, BLAH},
+	{"modules", 1, fn_modules_1, "-list", false, false, BLAH},
+	{"attribute", 3, fn_attribute_3, "?atom,+atom,+integer", false, false, BLAH},
 	{"using", 0, fn_using_0, NULL, false, false, BLAH},
 	{"use_module", 1, fn_use_module_1, "+term", false, false, BLAH},
 	{"use_module", 2, fn_use_module_2, "+term,+term", false, false, BLAH},
@@ -7686,22 +7877,25 @@ builtins g_other_bifs[] =
 
 	{"listing", 0, fn_listing_0, NULL, false, false, BLAH},
 	{"listing", 1, fn_listing_1, "+predicateindicator", false, false, BLAH},
-	{"time", 1, fn_time_1, "+callable", false, false, BLAH},
+	{"time", 1, fn_time_1, ":callable", false, false, BLAH},
 	{"trace", 0, fn_trace_0, NULL, false, false, BLAH},
 	{"help", 2, fn_help_2, "+predicateindicator,+atom", false, false, BLAH},
 	{"help", 1, fn_help_1, "+predicateindicator", false, false, BLAH},
 	{"help", 0, fn_help_0, NULL, false, false, BLAH},
+	{"module_help", 3, fn_module_help_3, "+atom,+predicateindicator,+atom", false, false, BLAH},
+	{"module_help", 2, fn_module_help_2, "+atom,+predicateindicator", false, false, BLAH},
+	{"module_help", 1, fn_module_help_1, "+atom", false, false, BLAH},
 
 	// Miscellaneous...
 
 	{"abort", 0, fn_abort_0, NULL, false, false, BLAH},
 	{"sort", 4, fn_sort_4, "+integer,+atom,+list,?list", false, false, BLAH},
-	{"ignore", 1, fn_ignore_1, "+callable", false, false, BLAH},
+	{"ignore", 1, fn_ignore_1, ":callable", false, false, BLAH},
 	{"soft_abolish", 1, fn_soft_abolish_1, "+term", false, false, BLAH},
 	{"string_codes", 2, fn_string_codes_2, "+string,-list", false, false, BLAH},
 	{"term_singletons", 2, fn_term_singletons_2, "+term,-list", false, false, BLAH},
-	{"get_unbuffered_code", 1, fn_get_unbuffered_code_1, "?code", false, false, BLAH},
-	{"get_unbuffered_char", 1, fn_get_unbuffered_char_1, "?char", false, false, BLAH},
+	{"get_unbuffered_code", 1, fn_get_unbuffered_code_1, "?integer", false, false, BLAH},
+	{"get_unbuffered_char", 1, fn_get_unbuffered_char_1, "?character", false, false, BLAH},
 	{"format", 2, fn_format_2, "+string,+list", false, false, BLAH},
 	{"format", 3, fn_format_3, "+stream,+string,+list", false, false, BLAH},
 	{"abolish", 2, fn_abolish_2, "+term,+list", false, false, BLAH},
@@ -7710,17 +7904,17 @@ builtins g_other_bifs[] =
 	{"string", 1, fn_string_1, "+term", false, false, BLAH},
 	{"atomic_concat", 3, fn_atomic_concat_3, "+atomic,+atomic,?atomic", false, false, BLAH},
 	{"atomic_list_concat", 3, fn_atomic_list_concat_3, "+list,+list,-atomic", false, false, BLAH},
-	{"replace", 4, fn_replace_4, "+orig,+from,+to,-new", false, false, BLAH},
+	{"replace", 4, fn_replace_4, "+string,+integer,+integer,-string", false, false, BLAH},
 	{"busy", 1, fn_busy_1, "+integer", false, false, BLAH},
 	{"now", 0, fn_now_0, NULL, false, false, BLAH},
 	{"now", 1, fn_now_1, "-integer", false, false, BLAH},
 	{"get_time", 1, fn_get_time_1, "-var", false, false, BLAH},
 	{"cpu_time", 1, fn_cpu_time_1, "-var", false, false, BLAH},
 	{"wall_time", 1, fn_wall_time_1, "-integer", false, false, BLAH},
-	{"date_time", 6, fn_date_time_6, "-yyyy,-m,-d,-h,--m,-s", false, false, BLAH},
-	{"date_time", 7, fn_date_time_7, "-yyyy,-m,-d,-h,--m,-s,-ms", false, false, BLAH},
-	{"split_string", 4, fn_split_string_4, "+string,+sep,+pad,-list", false, false, BLAH},
-	{"split", 4, fn_split_4, "+string,+string,?left,?right", false, false, BLAH},
+	{"date_time", 6, fn_date_time_6, "-integer,-integer,-integer,-integer,-integer,-integer", false, false, BLAH},
+	{"date_time", 7, fn_date_time_7, "-integer,-integer,-integer,-integer,-integer,-integer,-integer", false, false, BLAH},
+	{"split_string", 4, fn_split_string_4, "+string,+atom,+atom,-list", false, false, BLAH},
+	{"split", 4, fn_split_4, "+string,+string,?string,?string", false, false, BLAH},
 	{"is_list_or_partial_list", 1, fn_is_list_or_partial_list_1, "+term", false, false, BLAH},
 	{"is_partial_list", 1, fn_is_partial_list_1, "+term", false, false, BLAH},
 	{"is_list", 1, fn_is_list_1, "+term", false, false, BLAH},
@@ -7736,26 +7930,26 @@ builtins g_other_bifs[] =
 	{"hex_bytes", 2, fn_hex_bytes_2, "?string,?list", false, false, BLAH},
 	{"hex_chars", 2, fn_hex_chars_2, "?integer,?string", false, false, BLAH},
 	{"octal_chars", 2, fn_octal_chars_2, "?integer,?string", false, false, BLAH},
-	{"char_type", 2, fn_char_type_2, "+char,+term", false, false, BLAH},
-	{"code_type", 2, fn_char_type_2, "+code,+term", false, false, BLAH},
+	{"char_type", 2, fn_char_type_2, "+character,+term", false, false, BLAH},
+	{"code_type", 2, fn_char_type_2, "+integer,+term", false, false, BLAH},
 	{"uuid", 1, fn_uuid_1, "-string", false, false, BLAH},
-	{"asserta", 2, fn_asserta_2, "+term,-ref", false, false, BLAH},
-	{"assertz", 2, fn_assertz_2, "+term,-ref", false, false, BLAH},
-	{"instance", 2, fn_instance_2, "+ref,?clause", false, false, BLAH},
-	{"erase", 1, fn_erase_1, "+ref", false, false, BLAH},
-	{"clause", 3, fn_clause_3, "?head,?body,-ref", false, false, BLAH},
+	{"asserta", 2, fn_asserta_2, "+term,-string", false, false, BLAH},
+	{"assertz", 2, fn_assertz_2, "+term,-string", false, false, BLAH},
+	{"instance", 2, fn_instance_2, "+string,?term", false, false, BLAH},
+	{"erase", 1, fn_erase_1, "+string", false, false, BLAH},
+	{"clause", 3, fn_clause_3, "?term,?term,-string", false, false, BLAH},
 	{"getenv", 2, fn_getenv_2, "+atom,-atom", false, false, BLAH},
 	{"setenv", 2, fn_setenv_2, "+atom,+atom", false, false, BLAH},
 	{"unsetenv", 1, fn_unsetenv_1, "+atom", false, false, BLAH},
 	{"statistics", 0, fn_statistics_0, NULL, false, false, BLAH},
-	{"statistics", 2, fn_statistics_2, "+string,-var", false, false, BLAH},
+	{"statistics", 2, fn_statistics_2, "+atom,-var", false, false, BLAH},
 	{"duplicate_term", 2, fn_iso_copy_term_2, "+term,-var", false, false, BLAH},
-	{"call_nth", 2, fn_call_nth_2, "+callable,+integer", false, false, BLAH},
-	{"limit", 2, fn_limit_2, "+integer,+callable", false, false, BLAH},
+	{"call_nth", 2, fn_call_nth_2, ":callable,+integer", false, false, BLAH},
+	{"limit", 2, fn_limit_2, "+integer,:callable", false, false, BLAH},
 	{"offset", 2, fn_offset_2, "+integer,+callable", false, false, BLAH},
 	{"unifiable", 3, fn_sys_unifiable_3, "+term,+term,-list", false, false, BLAH},
-	{"kv_set", 3, fn_kv_set_3, "+atomic,+value,+list", false, false, BLAH},
-	{"kv_get", 3, fn_kv_get_3, "+atomic,-value,+list", false, false, BLAH},
+	{"kv_set", 3, fn_kv_set_3, "+atomic,+term,+list", false, false, BLAH},
+	{"kv_get", 3, fn_kv_get_3, "+atomic,-term,+list", false, false, BLAH},
 	{"between", 3, fn_between_3, "+integer,+integer,-integer", false, false, BLAH},
 	{"string_length", 2, fn_sys_lengthchk_2, "+atom,?integer", false, false, BLAH},
 
@@ -7772,7 +7966,7 @@ builtins g_other_bifs[] =
 
 	{"$register_cleanup", 1, fn_sys_register_cleanup_1, NULL, false, false, BLAH},
 	{"$register_term", 1, fn_sys_register_term_1, NULL, false, false, BLAH},
-	{"$get_level", 1, fn_sys_get_level_1, "-var", false, false, BLAH},
+	{"$get_level", 1, fn_sys_get_level_1, "?var", false, false, BLAH},
 	{"$is_partial_string", 1, fn_sys_is_partial_string_1, "+string", false, false, BLAH},
 	{"$undo_trail", 1, fn_sys_undo_trail_1, NULL, false, false, BLAH},
 	{"$redo_trail", 0, fn_sys_redo_trail_0, NULL, false, false, BLAH},
@@ -7782,14 +7976,14 @@ builtins g_other_bifs[] =
 	{"$load_ops", 0, fn_sys_load_ops_0, NULL, false, false, BLAH},
 	{"$list", 1, fn_sys_list_1, "-list", false, false, BLAH},
 	{"$queue", 1, fn_sys_queue_1, "+term", false, false, BLAH},
-	{"$incr", 2, fn_sys_incr_2, "?var", false, false, BLAH},
+	{"$incr", 2, fn_sys_incr_2, "@var", false, false, BLAH},
 	{"$choice", 0, fn_sys_choice_0, NULL, false, false, BLAH},
 	{"$alarm", 1, fn_sys_alarm_1, "+integer", false, false, BLAH},
-	{"$put_attributes", 2, fn_sys_put_attributes_2, "+var,+list", false, false, BLAH},
-	{"$get_attributes", 2, fn_sys_get_attributes_2, "+var,-list", false, false, BLAH},
-	{"$erase_attributes", 1, fn_sys_erase_attributes_1, "+var", false, false, BLAH},
+	{"$put_attributes", 2, fn_sys_put_attributes_2, "@var,+list", false, false, BLAH},
+	{"$get_attributes", 2, fn_sys_get_attributes_2, "@var,-list", false, false, BLAH},
+	{"$erase_attributes", 1, fn_sys_erase_attributes_1, "@var", false, false, BLAH},
 	{"$list_attributed", 1, fn_sys_list_attributed_1, "-list", false, false, BLAH},
-	{"$dump_keys", 1, fn_sys_dump_keys_1, "+pi", false, false, BLAH},
+	{"$dump_keys", 1, fn_sys_dump_keys_1, NULL, false, false, BLAH},
 	{"$skip_max_list", 4, fn_sys_skip_max_list_4, NULL, false, false, BLAH},
 #ifdef __wasi__
 	{"$host_call", 2, fn_sys_host_call_2, "+string,-string", false, false, BLAH},
@@ -7800,21 +7994,21 @@ builtins g_other_bifs[] =
 	{"crypto_data_hash", 3, fn_crypto_data_hash_3, "?string,?string,?list", false, false, BLAH},
 #endif
 
-	{"task", 1, fn_task_n, "+callable", false, false, BLAH},
-	{"task", 2, fn_task_n, "+callable,+term,...", false, false, BLAH},
-	{"task", 3, fn_task_n, "+callable,+term,...", false, false, BLAH},
-	{"task", 4, fn_task_n, "+callable,+term,...", false, false, BLAH},
-	{"task", 5, fn_task_n, "+callable,+term,...", false, false, BLAH},
-	{"task", 6, fn_task_n, "+callable,+term,...", false, false, BLAH},
-	{"task", 7, fn_task_n, "+callable,+term,...", false, false, BLAH},
-	{"task", 8, fn_task_n, "+callable,+term,...", false, false, BLAH},
+	{"task", 1, fn_task_n, ":callable", false, false, BLAH},
+	{"task", 2, fn_task_n, ":callable,+term,...", false, false, BLAH},
+	{"task", 3, fn_task_n, ":callable,+term,...", false, false, BLAH},
+	{"task", 4, fn_task_n, ":callable,+term,...", false, false, BLAH},
+	{"task", 5, fn_task_n, ":callable,+term,...", false, false, BLAH},
+	{"task", 6, fn_task_n, ":callable,+term,...", false, false, BLAH},
+	{"task", 7, fn_task_n, ":callable,+term,...", false, false, BLAH},
+	{"task", 8, fn_task_n, ":callable,+term,...", false, false, BLAH},
 
 	{"wait", 0, fn_wait_0, NULL, false, false, BLAH},
 	{"await", 0, fn_await_0, NULL, false, false, BLAH},
 	{"yield", 0, fn_yield_0, NULL, false, false, BLAH},
 	{"fork", 0, fn_fork_0, NULL, false, false, BLAH},
 	{"send", 1, fn_send_1, "+term", false, false, BLAH},
-	{"recv", 1, fn_recv_1, "?clause", false, false, BLAH},
+	{"recv", 1, fn_recv_1, "?term", false, false, BLAH},
 
 	{0}
 };

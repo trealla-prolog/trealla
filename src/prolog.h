@@ -5,6 +5,7 @@
 builtins *get_builtin(prolog *pl, const char *name, size_t len, unsigned arity, bool *found, bool *evaluable);
 builtins *get_builtin_term(module *m, cell *c, bool *found, bool *evaluable);
 builtins *get_help(prolog *pl, const char *name, unsigned arity, bool *found, bool *evaluable);
+builtins *get_module_help(module *m, const char *name, unsigned arity, bool *found, bool *evaluable);
 builtins *get_fn_ptr(void *fn);
 module *find_module(prolog *pl, const char *name);
 module *find_next_module(prolog *pl, module *m);
@@ -13,6 +14,7 @@ bool is_multifile_in_db(prolog *pl, const char *mod, const char *name, unsigned 
 void load_builtins(prolog *pl);
 void uuid_gen(prolog *pl, uuid *u);
 void keyvalfree(const void *key, const void *val, const void *p);
+void ptrfree(const void *key, const void *val, const void *p);
 void g_init();
 
 #if USE_FFI
