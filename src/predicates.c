@@ -3120,7 +3120,7 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 	return true;
 }
 
-typedef struct { cell *c; pl_idx_t c_ctx; query *q; bool ascending; int arg; } basepair;
+typedef struct { cell tmp; cell *c; pl_idx_t c_ctx; query *q; bool ascending; int arg; } basepair;
 
 static int nodecmp(const void *ptr1, const void *ptr2)
 {
@@ -3166,30 +3166,34 @@ static cell *nodesort(query *q, cell *p1, pl_idx_t p1_ctx, bool dedup, bool keys
 	size_t cnt = skip;
 	basepair *base = malloc(sizeof(basepair)*cnt);
 	LIST_HANDLER(p1);
-	size_t idx = 0;
+		size_t idx = 0;
 
 	while (is_list(p1)) {
 		CHECK_INTERRUPT();
-		cell *h = deref(q, LIST_HEAD(p1), p1_ctx);
+		cell *h = LIST_HEAD(p1);
+		h = deref(q, h, p1_ctx);
 		pl_idx_t h_ctx = q->latest_ctx;
 
 		if (keysort) {
-			cell *tmp = deref(q, h, h_ctx);
-			pl_idx_t tmp_ctx = q->latest_ctx;
-
-			if (!is_structure(tmp) || strcmp(C_STR(q, tmp), "-")) {
-				*status = throw_error(q, tmp, tmp_ctx, "type_error", "pair");
+			if (!is_structure(h) || strcmp(C_STR(q, h), "-")) {
+				*status = throw_error(q, h, h_ctx, "type_error", "pair");
 				free(base);
 				return NULL;
 			}
 		}
 
-		base[idx].c = h;
+		if (is_string(p1)) {
+			base[idx].tmp = *h;
+			base[idx].c = &base[idx].tmp;
+		} else
+			base[idx].c = h;
+
 		base[idx].c_ctx = h_ctx;
 		base[idx].q = q;
 		base[idx].ascending = true;
 		base[idx].arg = keysort ? 1 : 0;
 		idx++;
+
 		p1 = LIST_TAIL(p1);
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
