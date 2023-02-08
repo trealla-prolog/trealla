@@ -3240,9 +3240,15 @@ static cell *nodesort(query *q, cell *p1, pl_idx_t p1_ctx, bool dedup, bool keys
 static bool fn_iso_sort_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	GET_NEXT_ARG(p2,list_or_nil_or_var);
+	GET_NEXT_ARG(p2,any);
 	bool is_partial = false;
 	pl_int_t skip1 = 0, skip2 = 0;
+
+	if (is_number(p1))
+		return throw_error(q, p1, p1_ctx, "type_error", "list");
+
+	if (is_number(p2))
+		return throw_error(q, p2, p2_ctx, "type_error", "list");
 
 	if (is_iso_list(p1) && !check_list(q, p1, p1_ctx, &is_partial, &skip1) && !is_partial)
 		return throw_error(q, p1, p1_ctx, "type_error", "list");
@@ -3262,11 +3268,17 @@ static bool fn_iso_sort_2(query *q)
 	if (!is_list_or_nil(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "list");
 
+	if (!is_list_or_nil_or_var(p2))
+		return throw_error(q, p2, p2_ctx, "type_error", "list");
+
 	if (skip1 && skip2 && (skip2 > skip1))
 		return false;
 
 	if (is_string(p1))
 		p1 = string_to_chars_list(q, p1, p1_ctx);
+
+	if (is_string(p2))
+		p2 = string_to_chars_list(q, p2, p2_ctx);
 
 	bool status = false;
 	cell *l = nodesort(q, p1, p1_ctx, true, false, &status);
@@ -3277,9 +3289,15 @@ static bool fn_iso_sort_2(query *q)
 static bool fn_iso_msort_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	GET_NEXT_ARG(p2,list_or_nil_or_var);
+	GET_NEXT_ARG(p2,any);
 	bool is_partial = false;
 	pl_int_t skip1 = 0, skip2 = 0;
+
+	if (is_number(p1))
+		return throw_error(q, p1, p1_ctx, "type_error", "list");
+
+	if (is_number(p2))
+		return throw_error(q, p2, p2_ctx, "type_error", "list");
 
 	if (is_iso_list(p1) && !check_list(q, p1, p1_ctx, &is_partial, &skip1) && !is_partial)
 		return throw_error(q, p1, p1_ctx, "type_error", "list");
@@ -3299,11 +3317,17 @@ static bool fn_iso_msort_2(query *q)
 	if (!is_list_or_nil(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "list");
 
+	if (!is_list_or_nil_or_var(p2))
+		return throw_error(q, p2, p2_ctx, "type_error", "list");
+
 	if (skip1 && skip2 && (skip2 > skip1))
 		return false;
 
 	if (is_string(p1))
 		p1 = string_to_chars_list(q, p1, p1_ctx);
+
+	if (is_string(p2))
+		p2 = string_to_chars_list(q, p2, p2_ctx);
 
 	bool status = false;
 	cell *l = nodesort(q, p1, p1_ctx, false, false, &status);
