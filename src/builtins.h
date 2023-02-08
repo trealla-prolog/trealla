@@ -29,7 +29,7 @@ bool wrapper_for_predicate(query *q, builtins *fn_ptr);
 #endif
 
 #define is_callable_or_var(c) (is_interned(c) || is_cstring(c) || is_var(c))
-#define is_nil(c) (is_interned(c) && !(c)->arity && ((c)->val_off == g_nil_s))
+#define is_nil_string(q, c) (is_cstring(c) && !strcmp(C_STR(q, c),"[]"))
 #define is_list_or_nil(c) (is_list(c) || is_nil(c))
 #define is_list_or_atom_or_var(c) (is_list(c) || is_atom(c) || is_var(c))
 #define is_list_or_nil_or_var(c) (is_list_or_nil(c) || is_var(c))

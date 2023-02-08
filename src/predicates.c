@@ -3244,10 +3244,10 @@ static bool fn_iso_sort_2(query *q)
 	bool is_partial = false;
 	pl_int_t skip1 = 0, skip2 = 0;
 
-	if (is_number(p1))
+	if (!is_list(p1) && !is_nil(p1) && !is_nil_string(q, p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "list");
 
-	if (is_number(p2))
+	if (!is_list(p2) && !is_nil(p2) && !is_nil_string(q, p2) && !is_var(p2))
 		return throw_error(q, p2, p2_ctx, "type_error", "list");
 
 	if (is_iso_list(p1) && !check_list(q, p1, p1_ctx, &is_partial, &skip1) && !is_partial)
@@ -3259,7 +3259,7 @@ static bool fn_iso_sort_2(query *q)
 	if (is_iso_list(p2) && !check_list(q, p2, p2_ctx, &is_partial, &skip2) && !is_partial)
 		return throw_error(q, p2, p2_ctx, "type_error", "list");
 
-	if ((is_cstring(p1) && !strcmp(C_STR(q, p1),"[]")) || is_nil(p1)) {
+	if (is_nil_string(q, p1) || is_nil(p1)) {
 		cell tmp;
 		make_atom(&tmp, g_nil_s);
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
@@ -3293,10 +3293,10 @@ static bool fn_iso_msort_2(query *q)
 	bool is_partial = false;
 	pl_int_t skip1 = 0, skip2 = 0;
 
-	if (is_number(p1))
+	if (!is_list(p1) && !is_nil(p1) && !is_nil_string(q, p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "list");
 
-	if (is_number(p2))
+	if (!is_list(p2) && !is_nil(p2) && !is_nil_string(q, p2) && !is_var(p2))
 		return throw_error(q, p2, p2_ctx, "type_error", "list");
 
 	if (is_iso_list(p1) && !check_list(q, p1, p1_ctx, &is_partial, &skip1) && !is_partial)
@@ -3308,7 +3308,7 @@ static bool fn_iso_msort_2(query *q)
 	if (is_iso_list(p2) && !check_list(q, p2, p2_ctx, &is_partial, &skip2) && !is_partial)
 		return throw_error(q, p2, p2_ctx, "type_error", "list");
 
-	if ((is_cstring(p1) && !strcmp(C_STR(q, p1),"[]")) || is_nil(p1)) {
+	if (is_nil_string(q, p1) || is_nil(p1)) {
 		cell tmp;
 		make_atom(&tmp, g_nil_s);
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
