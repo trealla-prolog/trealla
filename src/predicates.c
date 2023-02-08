@@ -3266,6 +3266,9 @@ static bool fn_iso_sort_2(query *q)
 	if (skip1 && skip2 && (skip2 > skip1))
 		return false;
 
+	if (is_string(p1))
+		p1 = string_to_chars_list(q, p1, p1_ctx);
+
 	bool status = false;
 	cell *l = nodesort(q, p1, p1_ctx, true, false, &status);
 	if (!l) return status;

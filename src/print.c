@@ -14,6 +14,26 @@
 #include "query.h"
 #include "utf8.h"
 
+cell *string_to_chars_list(query *q, cell *p, pl_idx_t p_ctx)
+{
+	LIST_HANDLER(p);
+	int i = 0;
+
+	while (is_list(p)) {
+		cell *h = LIST_HEAD(p);
+
+		if (i == 0)
+			allocate_list(q, h);
+		else
+			append_list(q, h);
+
+		p = LIST_TAIL(p);
+		i++;
+	}
+
+	return end_list(q);
+}
+
 char *chars_list_to_string(query *q, cell *p_chars, pl_idx_t p_chars_ctx, size_t len)
 {
 	char *tmp = malloc(len+1+1);
