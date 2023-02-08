@@ -3159,7 +3159,6 @@ static cell *nodesort(query *q, cell *p1, pl_idx_t p1_ctx, bool dedup, bool keys
 {
 	pl_int_t max = PL_INT_MAX, skip = 0;
 	pl_idx_t tmp_ctx = p1_ctx;
-	bool was_string = is_list(p1);
 	cell tmp = {0};
 
 	skip_max_list(q, p1, &tmp_ctx, max, &skip, &tmp);
@@ -3183,7 +3182,7 @@ static cell *nodesort(query *q, cell *p1, pl_idx_t p1_ctx, bool dedup, bool keys
 			}
 		}
 
-		if (was_string) {
+		if (is_string(p1)) {
 			base[idx].tmp = *h;
 			base[idx].c = &base[idx].tmp;
 		} else
@@ -3262,6 +3261,9 @@ static bool fn_iso_sort_2(query *q)
 
 	if (skip1 && skip2 && (skip2 > skip1))
 		return false;
+
+	if (is_string(p1))
+		p1 = string_to_chars_list(q, p1, p1_ctx);
 
 	bool status = false;
 	cell *l = nodesort(q, p1, p1_ctx, true, false, &status);

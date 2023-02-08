@@ -52,6 +52,7 @@ bool throw_error2(query *q, cell *c, pl_idx_t c_ctx, const char *err_type, const
 size_t scan_is_chars_list2(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes, bool *has_var, bool *is_partial);
 size_t scan_is_chars_list(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes);
 char *chars_list_to_string(query *q, cell *p_chars, pl_idx_t p_chars_ctx, size_t len);
+cell *string_to_chars_list(query *q, cell *p, pl_idx_t p_ctx);
 
 unsigned create_vars(query *q, unsigned nbr);
 void share_predicate(query *q, predicate *pr);
