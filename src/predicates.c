@@ -3239,7 +3239,7 @@ static cell *nodesort(query *q, cell *p1, pl_idx_t p1_ctx, bool dedup, bool keys
 
 static bool fn_iso_sort_2(query *q)
 {
-	GET_FIRST_ARG(p1,list_or_nil);
+	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,list_or_nil_or_var);
 	bool is_partial = false;
 	pl_int_t skip1 = 0, skip2 = 0;
@@ -3253,11 +3253,14 @@ static bool fn_iso_sort_2(query *q)
 	if (is_iso_list(p2) && !check_list(q, p2, p2_ctx, &is_partial, &skip2) && !is_partial)
 		return throw_error(q, p2, p2_ctx, "type_error", "list");
 
-	if (is_nil(p1)) {
+	if ((is_cstring(p1) && !strcmp(C_STR(q, p1),"[]")) || is_nil(p1)) {
 		cell tmp;
 		make_atom(&tmp, g_nil_s);
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	}
+
+	if (!is_list_or_nil(p1))
+		return throw_error(q, p1, p1_ctx, "type_error", "list");
 
 	if (skip1 && skip2 && (skip2 > skip1))
 		return false;
@@ -3273,7 +3276,7 @@ static bool fn_iso_sort_2(query *q)
 
 static bool fn_iso_msort_2(query *q)
 {
-	GET_FIRST_ARG(p1,list_or_nil);
+	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,list_or_nil_or_var);
 	bool is_partial = false;
 	pl_int_t skip1 = 0, skip2 = 0;
@@ -3287,14 +3290,20 @@ static bool fn_iso_msort_2(query *q)
 	if (is_iso_list(p2) && !check_list(q, p2, p2_ctx, &is_partial, &skip2) && !is_partial)
 		return throw_error(q, p2, p2_ctx, "type_error", "list");
 
-	if (is_nil(p1)) {
+	if ((is_cstring(p1) && !strcmp(C_STR(q, p1),"[]")) || is_nil(p1)) {
 		cell tmp;
 		make_atom(&tmp, g_nil_s);
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	}
 
+	if (!is_list_or_nil(p1))
+		return throw_error(q, p1, p1_ctx, "type_error", "list");
+
 	if (skip1 && skip2 && (skip2 > skip1))
 		return false;
+
+	if (is_string(p1))
+		p1 = string_to_chars_list(q, p1, p1_ctx);
 
 	bool status = false;
 	cell *l = nodesort(q, p1, p1_ctx, false, false, &status);
