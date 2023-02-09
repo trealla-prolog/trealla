@@ -3124,7 +3124,7 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 	return true;
 }
 
-typedef struct { cell tmp; cell *c; pl_idx_t c_ctx; query *q; bool ascending; int arg; } basepair;
+typedef struct { query *q; cell *c; pl_idx_t c_ctx; int8_t arg; bool ascending:1; } basepair;
 
 static int nodecmp(const void *ptr1, const void *ptr2)
 {
@@ -3186,12 +3186,7 @@ static cell *nodesort(query *q, cell *p1, pl_idx_t p1_ctx, bool dedup, bool keys
 			}
 		}
 
-		if (is_string(p1)) {
-			base[idx].tmp = *h;
-			base[idx].c = &base[idx].tmp;
-		} else
-			base[idx].c = h;
-
+		base[idx].c = h;
 		base[idx].c_ctx = h_ctx;
 		base[idx].q = q;
 		base[idx].ascending = true;
@@ -3243,16 +3238,10 @@ static cell *nodesort(query *q, cell *p1, pl_idx_t p1_ctx, bool dedup, bool keys
 
 static bool fn_iso_sort_2(query *q)
 {
-	GET_FIRST_ARG(p1,any);
-	GET_NEXT_ARG(p2,any);
+	GET_FIRST_ARG(p1,list_or_nil);
+	GET_NEXT_ARG(p2,list_or_nil_or_var);
 	bool is_partial = false;
 	pl_int_t skip1 = 0, skip2 = 0;
-
-	if (is_number(p1))
-		return throw_error(q, p1, p1_ctx, "type_error", "list");
-
-	if (is_number(p2))
-		return throw_error(q, p2, p2_ctx, "type_error", "list");
 
 	if (is_iso_list(p1) && !check_list(q, p1, p1_ctx, &is_partial, &skip1) && !is_partial)
 		return throw_error(q, p1, p1_ctx, "type_error", "list");
@@ -3263,7 +3252,7 @@ static bool fn_iso_sort_2(query *q)
 	if (is_iso_list(p2) && !check_list(q, p2, p2_ctx, &is_partial, &skip2) && !is_partial)
 		return throw_error(q, p2, p2_ctx, "type_error", "list");
 
-	if ((is_cstring(p1) && !strcmp(C_STR(q, p1),"[]")) || is_nil(p1)) {
+	if (is_nil(p1)) {
 		cell tmp;
 		make_atom(&tmp, g_nil_s);
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
@@ -3292,16 +3281,10 @@ static bool fn_iso_sort_2(query *q)
 
 static bool fn_iso_msort_2(query *q)
 {
-	GET_FIRST_ARG(p1,any);
-	GET_NEXT_ARG(p2,any);
+	GET_FIRST_ARG(p1,list_or_nil);
+	GET_NEXT_ARG(p2,list_or_nil_or_var);
 	bool is_partial = false;
 	pl_int_t skip1 = 0, skip2 = 0;
-
-	if (is_number(p1))
-		return throw_error(q, p1, p1_ctx, "type_error", "list");
-
-	if (is_number(p2))
-		return throw_error(q, p2, p2_ctx, "type_error", "list");
 
 	if (is_iso_list(p1) && !check_list(q, p1, p1_ctx, &is_partial, &skip1) && !is_partial)
 		return throw_error(q, p1, p1_ctx, "type_error", "list");
@@ -3312,7 +3295,7 @@ static bool fn_iso_msort_2(query *q)
 	if (is_iso_list(p2) && !check_list(q, p2, p2_ctx, &is_partial, &skip2) && !is_partial)
 		return throw_error(q, p2, p2_ctx, "type_error", "list");
 
-	if ((is_cstring(p1) && !strcmp(C_STR(q, p1),"[]")) || is_nil(p1)) {
+	if (is_nil(p1)) {
 		cell tmp;
 		make_atom(&tmp, g_nil_s);
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);

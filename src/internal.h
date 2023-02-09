@@ -194,18 +194,26 @@ typedef struct {
 	(c)->flags |= FLAG_MANAGED | FLAG_CSTR_BLOB;				\
 	}
 
-#define _C_STR(pl,c) 											\
-	( !is_cstring(c) ? ((pl)->pool + (c)->val_off)				\
-	: is_strbuf(c) ? ((c)->val_strb->cstr + (c)->strb_off)		\
+#define _CSTRING_STR(c) 										\
+	( is_strbuf(c) ? ((c)->val_strb->cstr + (c)->strb_off)		\
 	: is_slice(c) ? (c)->val_str								\
 	: (char*)(c)->val_chr										\
 	)
 
-#define _C_STRLEN(pl,c) 										\
-	( !is_cstring(c) ? strlen((pl)->pool + (c)->val_off)		\
-	: is_strbuf(c) ? (c)->strb_len								\
+#define _CSTRING_LEN(c) 										\
+	( is_strbuf(c) ? (c)->strb_len								\
 	: is_slice(c) ? (c)->str_len								\
 	: (c)->chr_len												\
+	)
+
+#define _C_STR(pl,c) 											\
+	( !is_cstring(c) ? ((pl)->pool + (c)->val_off)				\
+	: _CSTRING_STR(c) 											\
+	)
+
+#define _C_STRLEN(pl,c) 										\
+	( !is_cstring(c) ? strlen((pl)->pool + (c)->val_off)		\
+	: _CSTRING_LEN(c)											\
 	)
 
 #define C_STR(x,c) _C_STR((x)->pl, c)
