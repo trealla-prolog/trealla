@@ -90,9 +90,9 @@ static void trace_call(query *q, cell *c, pl_idx_t c_ctx, box_t box)
 	if (box == CALL)
 		box = q->retry?REDO:CALL;
 
-#if 1
 	const char *src = C_STR(q, c);
 
+#if 1
 	if (!strcmp(src, ",") || !strcmp(src, ";") || !strcmp(src, "->") || !strcmp(src, "*->"))
 		return;
 #endif
@@ -102,7 +102,7 @@ static void trace_call(query *q, cell *c, pl_idx_t c_ctx, box_t box)
 #ifdef DEBUG
 	SB_sprintf(pr, "[%s:%"PRIu64":f%u:fp:%u:cp%u:sp%u:hp%u:tp%u] ",
 		q->st.m->name,
-		q->step++,
+		q->step++
 		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.tp
 		);
 #else
