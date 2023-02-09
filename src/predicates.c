@@ -3120,7 +3120,7 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 	return true;
 }
 
-typedef struct { cell tmp; cell *c; pl_idx_t c_ctx; query *q; bool ascending; int arg; } basepair;
+typedef struct { query *q; cell *c; pl_idx_t c_ctx; int8_t arg; bool ascending:1; } basepair;
 
 static int nodecmp(const void *ptr1, const void *ptr2)
 {
@@ -3182,12 +3182,7 @@ static cell *nodesort(query *q, cell *p1, pl_idx_t p1_ctx, bool dedup, bool keys
 			}
 		}
 
-		if (is_string(p1)) {
-			base[idx].tmp = *h;
-			base[idx].c = &base[idx].tmp;
-		} else
-			base[idx].c = h;
-
+		base[idx].c = h;
 		base[idx].c_ctx = h_ctx;
 		base[idx].q = q;
 		base[idx].ascending = true;
