@@ -59,12 +59,12 @@ append([L0|Ls0], Ls) :-
     append(L0, Rest, Ls),
     append(Ls0, Rest).
 
-:- help(append(+list,?list), [iso(false),desc('The concatention of a list of lists to make one list.')]).
+:- help(append(+list,?list), [iso(false),desc('The concatention of a list of lists to make a new one.')]).
 
 append([], R, R).
 append([X|L], R, [X|S]) :- append(L, R, S).
 
-:- help(append(?list,?list,?list), [iso(false),desc('The concatenation of to two lists to make a third.')]).
+:- help(append(?list,?list,?list), [iso(false),desc('The concatenation of two lists to make a third.')]).
 
 memberchk(X, Xs) :- member(X, Xs), !.
 
@@ -75,18 +75,18 @@ member(X, [_|Xs]) :- member(X, Xs).
 
 selectchk(X, L, Rest) :- select(X, L, Rest), !.
 
-:- help(selectchk(+term,+list,-rest), [iso(false),desc('Deterministically remove element from list to make another list.')]).
+:- help(selectchk(+term,+list,-rest), [iso(false),desc('Deterministically remove element from list to make a new one.')]).
 
 select(X, [X|T], T).
 select(X, [H|T], [H|Rest]) :- select(X, T, Rest).
 
-:- help(select(+term,+list), [iso(false),desc('Remove element from a list to make another list.')]).
+:- help(select(+term,+list), [iso(false),desc('Remove element from a list to make a new one.')]).
 
 subtract([], _, []) :- !.
 subtract([H|T], L2, L3) :- memberchk(H, L2), !, subtract(T, L2, L3).
 subtract([H|T1], L2, [H|T3]) :- subtract(T1, L2, T3).
 
-:- help(subtract(+list,+list,-list), [iso(false),desc('Delete all elements from set to make another.')]).
+:- help(subtract(+list,+list,-list), [iso(false),desc('Delete all elements from set to make a new one.')]).
 
 union([], L, L).
 union([H|T], Y, Z):- member(H, Y), !, union(T, Y, Z).
