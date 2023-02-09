@@ -514,7 +514,7 @@ size_t scan_is_chars_list2(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes, 
 		}
 
 		if (is_integer(c)
-			&& ((get_smallint(c) > 9) || (get_smallint(c) < 0))
+			//&& ((get_smallint(c) > 9) || (get_smallint(c) < 0))
 			&& !allow_codes) {
 			is_chars_list = 0;
 			return 0;
