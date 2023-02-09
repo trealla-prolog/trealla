@@ -898,7 +898,7 @@ static bool fn_string_codes_2(query *q)
 	if (is_iso_list(p2) && !check_list(q, p2, p2_ctx, &is_partial, NULL) && !is_partial)
 		return throw_error(q, p2, p2_ctx, "type_error", "list");
 
-	if (!is_atom(p1) && !is_var(p1))
+	if (!is_cstring(p1) && !is_var(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 	if (!is_var(p2) && is_nil(p2)) {
