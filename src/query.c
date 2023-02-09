@@ -501,8 +501,6 @@ size_t scan_is_chars_list2(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes, 
 		cell *c = deref(q, h, l_ctx);
 		q->suspect = c;
 
-		//printf("*** GOT %s\n", C_STR(q, c));
-
 		if (is_var(c)) {
 			*has_var = true;
 			return 0;
@@ -513,9 +511,7 @@ size_t scan_is_chars_list2(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes, 
 			return 0;
 		}
 
-		if (is_integer(c)
-			//&& ((get_smallint(c) > 9) || (get_smallint(c) < 0))
-			&& !allow_codes) {
+		if (is_integer(c) && !allow_codes) {
 			is_chars_list = 0;
 			return 0;
 		}
