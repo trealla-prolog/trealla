@@ -152,7 +152,7 @@
         - name: Display structure of downloaded files
           run: ls -R
         - name: Zip releases
-          run: for i in artifacts/*; do dir=${i%/}; zip -r "${dir,,}.zip" "$i"; done
+          run: cd artifacts; for i in */; do dir=${i%/}; zip -r "${dir,,}.zip" "$i"; done
         - name: Publish
           uses: skx/github-action-publish-binaries@master
           env:
