@@ -6,11 +6,15 @@ For more info on Trealla, check out the parent repository.
 We endeavor to keep this fork as close as possible to the upstream and contribute all stable changes upstream.
 Ideally, when WASM support is better stablized, this fork won't need to exist.
 
+## Download
+
+You can find binaries on [the Releases page](https://github.com/guregu/trealla/releases).
+
 ## Binaries on WAPM
 ~~You can grab WASM binary builds from [guregu/trealla on WAPM](https://wapm.io/guregu/trealla).~~
 ~~These builds are uploaded automatically for each release.~~
 
-**Note**: currently WAPM builds are [temporarily disabled](https://github.com/guregu/trealla/issues/11), but you can find binaries from [the Github CI](https://github.com/guregu/trealla/actions).
+**Note**: currently WAPM builds are [temporarily disabled](https://github.com/guregu/trealla/issues/11).
 
 ## Differences from upstream
 - `library(wasm)` JSON-based programmatic toplevel.
