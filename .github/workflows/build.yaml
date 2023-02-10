@@ -7,6 +7,8 @@
       branches:
         - main
     pull_request:
+    release:
+      types: [created]
 
   jobs:
     build:
@@ -36,12 +38,11 @@
         - name: Upload artifacts
           uses: actions/upload-artifact@v3
           with:
-            name: ${{ format( 'tpl-{0}', matrix.os) }}
+            name: ${{ format('tpl-{0}-{1}', runner.os, runner.arch) }}
             path: |
               tpl
               LICENSE
               ATTRIBUTION
-              README.md
 
     # Roughly matches https://github.com/WebAssembly/wasi-sdk#install
     wasm:
@@ -101,7 +102,7 @@
         - name: Upload artifacts
           uses: actions/upload-artifact@v3
           with:
-            name: tpl.wasm
+            name: tpl-wasm-wasi
             path: |
               tpl.wasm
               LICENSE
@@ -109,7 +110,7 @@
         - name: Upload artifacts
           uses: actions/upload-artifact@v3
           with:
-            name: libtpl.wasm
+            name: libtpl-wasm
             path: |
               libtpl.wasm
               LICENSE
@@ -117,7 +118,7 @@
         - name: Upload artifacts
           uses: actions/upload-artifact@v3
           with:
-            name: libtpl-js.wasm
+            name: libtpl-wasm-js
             path: |
               libtpl-js.wasm
               LICENSE
@@ -125,7 +126,7 @@
         - name: Upload artifacts
           uses: actions/upload-artifact@v3
           with:
-            name: libtpl-spin.wasm
+            name: libtpl-wasm-spin
             path: |
               libtpl-spin.wasm
               LICENSE
@@ -137,3 +138,24 @@
         #     wapm login $WAPM_REGISTRY_TOKEN
         #     wapm publish || echo "Warning: WAPM publish failed"
         #   if: ${{ env.WAPM_REGISTRY_TOKEN != '' && env.RELEASE_VERSION != '' }}
+
+    release:
+      if: github.event_name == 'release' && github.event.action == 'created'
+      needs: [build, wasm]
+      name: Release binaries
+      runs-on: ubuntu-latest
+      steps:
+        - name: Download artifacts
+          uses: actions/download-artifact@v3
+          with:
+            path: artifacts
+        - name: Display structure of downloaded files
+          run: ls -R
+        - name: Zip releases
+          run: for i in artifacts/*; do dir=${i%/}; zip -r "${dir,,}.zip" "$i"; done
+        - name: Publish
+          uses: skx/github-action-publish-binaries@master
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            args: 'artifacts/*.zip'
