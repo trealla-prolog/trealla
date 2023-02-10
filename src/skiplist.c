@@ -9,10 +9,6 @@
 
 #include "skiplist.h"
 
-#ifdef __wasi__
-#include "wasm/compat.h"
-#endif
-
 typedef struct keyval_ keyval_t;
 typedef struct slnode_ slnode_t;
 

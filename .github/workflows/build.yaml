@@ -34,20 +34,24 @@
         - name: Test
           run: make test
         - name: Upload artifacts
-          uses: actions/upload-artifact@v1
+          uses: actions/upload-artifact@v3
           with:
             name: ${{ format( 'tpl-{0}', matrix.os) }}
-            path: tpl
+            path: |
+              tpl
+              LICENSE
+              ATTRIBUTION
+              README.md
 
     # Roughly matches https://github.com/WebAssembly/wasi-sdk#install
     wasm:
       name: WebAssembly
       runs-on: ubuntu-latest
       env:
-        WASI_VERSION: 12
+        WASI_VERSION: 19
         BINARYEN_VERSION: 109
         WAPM_REGISTRY_TOKEN: ${{ secrets.WAPM_REGISTRY_TOKEN }}
-        WIZER_VERSION: dev
+        WIZER_VERSION: "v1.6.0"
       steps:
         - uses: actions/checkout@v1
         - name: Set environment (1/3)
@@ -75,7 +79,7 @@
           uses: wasmerio/setup-wasmer@v1
         - name: Install Wizer
           run: |
-            wget https://github.com/bytecodealliance/wizer/releases/download/dev/wizer-${WIZER_VERSION_FULL}.tar.xz
+            wget https://github.com/bytecodealliance/wizer/releases/download/${WIZER_VERSION}/wizer-${WIZER_VERSION_FULL}.tar.xz
             tar xvf wizer-${WIZER_VERSION_FULL}.tar.xz
         - name: Build
           run: |
@@ -86,6 +90,8 @@
             make clean libtpl
             mv libtpl.wasm ./build
             make clean libtpl-js
+            mv libtpl-js.wasm ./build
+            make clean libtpl-spin
             mv ./build/*.wasm .
         - name: Test
           run: |
@@ -93,20 +99,37 @@
             chmod +x tpl
             make test
         - name: Upload artifacts
-          uses: actions/upload-artifact@v1
+          uses: actions/upload-artifact@v3
           with:
             name: tpl.wasm
-            path: tpl.wasm
+            path: |
+              tpl.wasm
+              LICENSE
+              ATTRIBUTION
         - name: Upload artifacts
-          uses: actions/upload-artifact@v1
+          uses: actions/upload-artifact@v3
           with:
             name: libtpl.wasm
-            path: libtpl.wasm
+            path: |
+              libtpl.wasm
+              LICENSE
+              ATTRIBUTION
         - name: Upload artifacts
-          uses: actions/upload-artifact@v1
+          uses: actions/upload-artifact@v3
           with:
             name: libtpl-js.wasm
-            path: libtpl-js.wasm
+            path: |
+              libtpl-js.wasm
+              LICENSE
+              ATTRIBUTION
+        - name: Upload artifacts
+          uses: actions/upload-artifact@v3
+          with:
+            name: libtpl-spin.wasm
+            path: |
+              libtpl-spin.wasm
+              LICENSE
+              ATTRIBUTION
         - name: Publish on WAPM
           run: |
             sed -i "s/__RELEASE_VERSION__/$RELEASE_VERSION/" wapm.toml

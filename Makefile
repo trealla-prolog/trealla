@@ -17,8 +17,8 @@ ifdef WASI
 CFLAGS += -D_WASI_EMULATED_MMAN -D_WASI_EMULATED_SIGNAL -Isrc/wasm -std=c11
 LDFLAGS += -lwasi-emulated-mman -lwasi-emulated-signal -Wl,--stack-first -Wl,-zstack-size=8388608 -Wl,--initial-memory=100663296
 # after WASI SDK upgrade add:
-# CFLAGS += -D_WASI_EMULATED_PROCESS_CLOCKS
-# LDFLAGS += -lwasi-emulated-process-clocks
+CFLAGS += -D_WASI_EMULATED_PROCESS_CLOCKS
+LDFLAGS += -lwasi-emulated-process-clocks
 NOFFI = 1
 NOSSL = 1
 ifdef WASI_CC
@@ -162,9 +162,8 @@ tpl.wasm:
 	$(MAKE) WASI=1 TPL=tpl.wasm 'OPT=$(OPT) -DNDEBUG'
 
 wasm: tpl.wasm
-# TODO: add to wizer --wasm-bulk-memory true
-	$(WIZER)  --allow-wasi --dir . -o tpl-wizened.wasm tpl.wasm
-	$(WASMOPT) tpl-wizened.wasm -o tpl.wasm -O4
+	$(WIZER) --wasm-bulk-memory true --allow-wasi --dir . -o tpl-wizened.wasm tpl.wasm
+	$(WASMOPT) --enable-bulk-memory tpl-wizened.wasm -o tpl.wasm -O4
 	rm tpl-wizened.wasm
 
 libtpl.wasm:
@@ -177,21 +176,18 @@ libtpl-spin.wasm:
 	$(MAKE) WASI=1 WASI_TARGET_SPIN=1 TPL=libtpl-spin.wasm 'OPT=$(OPT) -DNDEBUG -DWASI_TARGET_SPIN'
 
 libtpl: libtpl.wasm
-# TODO: add to wizer --wasm-bulk-memory true
-	$(WIZER)  --allow-wasi --dir . -o libtpl-wizened.wasm libtpl.wasm
-	$(WASMOPT) libtpl-wizened.wasm -o libtpl.wasm -O4
+	$(WIZER) --wasm-bulk-memory true --allow-wasi --dir . -o libtpl-wizened.wasm libtpl.wasm
+	$(WASMOPT) --enable-bulk-memory libtpl-wizened.wasm -o libtpl.wasm -O4
 	rm libtpl-wizened.wasm
 
 libtpl-js: libtpl-js.wasm
-# TODO: add to wizer --wasm-bulk-memory true
-	$(WIZER)  --allow-wasi --dir . -o libtpl-wizened.wasm libtpl-js.wasm
-	$(WASMOPT) libtpl-wizened.wasm -o libtpl-js.wasm -O4
+	$(WIZER) --wasm-bulk-memory true --allow-wasi --dir . -o libtpl-wizened.wasm libtpl-js.wasm
+	$(WASMOPT) --enable-bulk-memory libtpl-wizened.wasm -o libtpl-js.wasm -Oz
 	rm libtpl-wizened.wasm
 
 libtpl-spin: libtpl-spin.wasm
-# TODO: add to wizer --wasm-bulk-memory true
-	$(WIZER)  --allow-wasi --dir . -o libtpl-wizened.wasm libtpl-spin.wasm
-	$(WASMOPT) libtpl-wizened.wasm -o libtpl-spin.wasm -O4
+	$(WIZER) --wasm-bulk-memory true --allow-wasi --dir . -o libtpl-wizened.wasm libtpl-spin.wasm
+	$(WASMOPT) --enable-bulk-memory libtpl-wizened.wasm -o libtpl-spin.wasm -O4
 	rm libtpl-wizened.wasm
 
 wit:
