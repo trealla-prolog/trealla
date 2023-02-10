@@ -130,9 +130,10 @@
               libtpl-spin.wasm
               LICENSE
               ATTRIBUTION
-        - name: Publish on WAPM
-          run: |
-            sed -i "s/__RELEASE_VERSION__/$RELEASE_VERSION/" wapm.toml
-            wapm login $WAPM_REGISTRY_TOKEN
-            wapm publish || echo "Warning: WAPM publish failed"
-          if: ${{ env.WAPM_REGISTRY_TOKEN != '' && env.RELEASE_VERSION != '' }}
+        # TODO: temporarily disabled, see: https://github.com/guregu/trealla/issues/11
+        # - name: Publish on WAPM
+        #   run: |
+        #     sed -i "s/__RELEASE_VERSION__/$RELEASE_VERSION/" wapm.toml
+        #     wapm login $WAPM_REGISTRY_TOKEN
+        #     wapm publish || echo "Warning: WAPM publish failed"
+        #   if: ${{ env.WAPM_REGISTRY_TOKEN != '' && env.RELEASE_VERSION != '' }}
