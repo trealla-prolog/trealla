@@ -44,6 +44,32 @@
               LICENSE
               ATTRIBUTION
 
+    windows:
+      name: Windows
+      runs-on: windows-latest
+      defaults:
+        run:
+          shell: msys2 {0}
+      steps:
+        - uses: msys2/setup-msys2@v2
+        - uses: actions/checkout@v1
+        - name: Install deps (Linux)
+          run: |
+            pacman --noconfirm -S libreadline-devel vim libffi openssl
+        - name: Build
+          run: make release
+        - name: Test
+          run: make test
+        - run: mv tpl tpl.exe
+        - name: Upload artifacts
+          uses: actions/upload-artifact@v3
+          with:
+            name: ${{ format('tpl-{0}-{1}', runner.os, runner.arch) }}
+            path: |
+              tpl.exe
+              LICENSE
+              ATTRIBUTION
+
     # Roughly matches https://github.com/WebAssembly/wasi-sdk#install
     wasm:
       name: WebAssembly
@@ -141,7 +167,7 @@
 
     release:
       if: github.event_name == 'release' && github.event.action == 'created'
-      needs: [build, wasm]
+      needs: [build, windows, wasm]
       name: Release binaries
       runs-on: ubuntu-latest
       steps:
@@ -154,7 +180,7 @@
         - name: Zip releases
           run: |
             cd artifacts
-            chmod +x */tpl */*.wasm
+            chmod +x */tpl* */*.wasm
             for i in */; do
               dir=${i%/}
               lower=${dir,,}
