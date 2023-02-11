@@ -152,10 +152,21 @@
         - name: Display structure of downloaded files
           run: ls -R
         - name: Zip releases
-          run: cd artifacts; for i in */; do dir=${i%/}; zip -r "${dir,,}.zip" "$i"; done
+          run: |
+            cd artifacts
+            chmod +x */tpl */*.wasm
+            for i in */; do
+              dir=${i%/}
+              lower=${dir,,}
+              if [ "$dir" != "$lower" ]
+              then
+                mv "$dir" "${dir,,}"
+              fi
+            done
+            find . -maxdepth 1 -mindepth 1 -type d -exec tar czf {}.tar.gz {} \;
         - name: Publish
           uses: skx/github-action-publish-binaries@master
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           with:
-            args: 'artifacts/*.zip'
+            args: 'artifacts/*.tar.gz'
