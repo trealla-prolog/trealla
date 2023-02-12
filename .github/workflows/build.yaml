@@ -34,25 +34,69 @@
         - name: Test
           run: make test
         - name: Upload artifacts
-          uses: actions/upload-artifact@v1
+          uses: actions/upload-artifact@v3
           with:
-            name: ${{ format( 'tpl-{0}', matrix.os) }}
-            path: tpl
+            name: ${{ format('tpl-{0}-{1}', runner.os, runner.arch) }}
+            path: |
+              tpl
+              LICENSE
+              ATTRIBUTION
+              README.md
+
+    windows:
+      name: Windows
+      runs-on: windows-latest
+      defaults:
+        run:
+          shell: msys2 {0}
+      steps:
+        - uses: msys2/setup-msys2@v2
+        - uses: actions/checkout@v1
+        - name: Install deps
+          run: |
+            pacman --noconfirm -S make mingw-w64-x86_64-gcc mingw-w64-x86_64-headers-git mingw-w64-x86_64-libffi mingw-w64-x86_64-dlfcn
+            pacman --noconfirm -S mingw-w64-x86_64-openssl mingw-w64-x86_64-readline vim diffutils
+        - name: Build
+          run: make ISOCLINE=1 release
+        - name: Test
+          run: make test
+        - name: Make Windows-friendly
+          run: |
+            cp ${MINGW_PREFIX}/bin/{libcrypto-3-x64.dll,libssl-3-x64.dll,libffi-8.dll} .
+            echo -e "\n\nOpenSSL (libcrypto-3-x64.dll, libssl-3-x64.dll):\n" >> ATTRIBUTION
+            cat ${MINGW_PREFIX}/share/licenses/openssl/LICENSE >> ATTRIBUTION
+            echo -e "\n\nlibffi: (libffi-8.dll)\n" >> ATTRIBUTION
+            cat ${MINGW_PREFIX}/share/licenses/libffi/LICENSE >> ATTRIBUTION
+            echo -e "\n\nisocline:\n" >> ATTRIBUTION
+            cat src/isocline/LICENSE >> ATTRIBUTION
+            mv tpl tpl.exe
+            mv ATTRIBUTION ATTRIBUTION.txt
+            mv LICENSE LICENSE.txt
+        - name: Upload artifacts
+          uses: actions/upload-artifact@v3
+          with:
+            name: ${{ format('tpl-{0}-{1}', runner.os, runner.arch) }}
+            path: |
+              tpl.exe
+              LICENSE.txt
+              ATTRIBUTION.txt
+              README.md
+              libcrypto-3-x64.dll
+              libssl-3-x64.dll
+              libffi-8.dll
 
     # Roughly matches https://github.com/WebAssembly/wasi-sdk#install
     wasm:
       name: WebAssembly
       runs-on: ubuntu-latest
       env:
-        WASI_VERSION: 12
+        WASI_VERSION: 19
         BINARYEN_VERSION: 109
-        WAPM_REGISTRY_TOKEN: ${{ secrets.WAPM_REGISTRY_TOKEN }}
       steps:
         - uses: actions/checkout@v1
         - name: Set environment (1/3)
           run: |
             echo "WASI_VERSION_FULL=${WASI_VERSION}.0" >> $GITHUB_ENV
-            echo "RELEASE_VERSION=`git tag --points-at HEAD | sed 's/^v//'`" >> $GITHUB_ENV
         - name: Set environment (2/3)
           run: |
             echo "WASI_SDK_PATH=`pwd`/wasi-sdk-${WASI_VERSION_FULL}" >> $GITHUB_ENV
@@ -66,26 +110,53 @@
             wget https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_VERSION}/wasi-sdk-${WASI_VERSION_FULL}-linux.tar.gz
             tar xvf wasi-sdk-${WASI_VERSION_FULL}-linux.tar.gz
         - name: Install Binaryen
-          run: brew install binaryen
-        - name: Setup Wasmer
+          run: |
+            brew install binaryen
+        - name: Install Wasmer
           uses: wasmerio/setup-wasmer@v1
         - name: Build
-          run: |
-            make clean
-            make wasm
+          run: make clean wasm
         - name: Test
           run: |
             echo 'wasmer --dir . tpl.wasm -- $@' > tpl
             chmod +x tpl
             make test
         - name: Upload artifacts
-          uses: actions/upload-artifact@v1
+          uses: actions/upload-artifact@v3
           with:
-            name: tpl.wasm
-            path: tpl.wasm
-        - name: Publish on WAPM
+            name: tpl-wasm-wasi
+            path: |
+              tpl.wasm
+              LICENSE
+              ATTRIBUTION
+              README.md
+
+    release:
+      if: startsWith(github.ref, 'refs/tags/')
+      needs: [build, windows, wasm]
+      name: Release binaries
+      runs-on: ubuntu-latest
+      steps:
+        - name: Download artifacts
+          uses: actions/download-artifact@v3
+          with:
+            path: artifacts
+        - name: List files
+          run: ls -R
+        - name: Zip releases
           run: |
-            sed -i "s/__RELEASE_VERSION__/$RELEASE_VERSION/" wapm.toml
-            wapm login $WAPM_REGISTRY_TOKEN
-            wapm publish
-          if: ${{ env.WAPM_REGISTRY_TOKEN != '' && env.RELEASE_VERSION != '' }}
+            cd artifacts
+            chmod +x */tpl* */*.wasm
+            for i in */; do
+              dir=${i%/}
+              lower=${dir,,}
+              if [ "$dir" != "$lower" ]
+              then
+                mv "$dir" "$lower"
+              fi
+              zip -r "${lower}.zip" "$lower"
+            done
+        - name: Publish
+          uses: softprops/action-gh-release@v1
+          with:
+            files: 'artifacts/*.zip'
