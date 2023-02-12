@@ -331,10 +331,10 @@ void dump_vars(query *q, bool partial)
 		if (is_empty(&e->c))
 			continue;
 
-		cell *c = deref(q, &e->c, e->c.var_ctx);
+		cell *c = deref(q, &e->c, 0);
 		pl_idx_t c_ctx = q->latest_ctx;
 
-		if (is_indirect(&e->c)) {
+		if (is_indirect(c)) {
 			c = e->c.val_ptr;
 			c_ctx = e->c.var_ctx;
 		}
