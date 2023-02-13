@@ -6583,6 +6583,12 @@ static bool fn_sys_lengthchk_2(query *q)
 	GET_FIRST_ARG(p1,atom_or_list_or_nil);
 	GET_NEXT_ARG(p2,integer_or_var);
 
+	if (is_interned(p1) && !CMP_STR_TO_CSTR(q, p1, "[]")) {
+		cell tmp;
+		make_int(&tmp, 0);
+		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	}
+
 	if (is_atom(p1)) {
 		cell tmp;
 		make_int(&tmp, C_STRLEN(q, p1));
