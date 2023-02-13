@@ -6595,19 +6595,17 @@ static bool fn_string_length_2(query *q)
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	}
 
-	LIST_HANDLER(p1);
-	pl_int_t n = 0;
+	size_t tmp_len;
 
-	while (is_iso_list(p1)) {
-		p1 = LIST_TAIL(p1);
-		p1 = deref(q, p1, p1_ctx);
-		p1_ctx = q->latest_ctx;
-		n++;
+	if (q->st.m->flags.double_quote_chars
+		&& !is_cyclic_term(q, p1, p1_ctx)
+		&& (tmp_len = scan_is_chars_list(q, p1, p1_ctx, false)) > 0) {
+		cell tmp;
+		make_int(&tmp, tmp_len);
+		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	}
 
-	cell tmp;
-	make_int(&tmp, n);
-	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	return throw_error(q, p1, p1_ctx, "type_error", "chars");
 }
 
 static bool fn_sys_unifiable_3(query *q)
