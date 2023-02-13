@@ -259,6 +259,9 @@ Special thanks to [Ulrich Neumerkel](https://github.com/uwn) for his
 DCG reference library, for his drive towards ISO standardization and for
 being himself.
 
+Special thanks to [Guregu](https://github.com/guregu) for his heroic
+efforts with JS / WASM / WASI and other acronyms I know nothing about.
+
 
 Strings
 =======
