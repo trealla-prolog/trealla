@@ -3984,6 +3984,27 @@ static void save_db(FILE *fp, query *q, int logging)
 	q->listing = false;
 }
 
+static bool fn_load_all_modules_0(query *q)
+{
+	prolog *pl = q->pl;
+
+	for (library *lib = g_libs; lib->name; lib++) {
+		size_t len = *lib->len;
+		char *src = malloc(len+1);
+		check_error(src, pl_destroy(pl));
+		memcpy(src, lib->start, len);
+		src[len] = '\0';
+		SB(s1);
+		SB_sprintf(s1, "library/%s", lib->name);
+		module *m = load_text(pl->user_m, src, SB_cstr(s1));
+		SB_free(s1);
+		free(src);
+		check_error(m, pl_destroy(pl));
+	}
+
+	return true;
+}
+
 static bool fn_listing_0(query *q)
 {
 	int n = q->pl->current_output;
@@ -7834,6 +7855,7 @@ builtins g_other_bifs[] =
 	{"module_help", 3, fn_module_help_3, "+atom,+predicateindicator,+atom", false, false, BLAH},
 	{"module_help", 2, fn_module_help_2, "+atom,+predicateindicator", false, false, BLAH},
 	{"module_help", 1, fn_module_help_1, "+atom", false, false, BLAH},
+	{"load_all_modules", 0, fn_load_all_modules_0, NULL, false, false, BLAH},
 
 	// Miscellaneous...
 

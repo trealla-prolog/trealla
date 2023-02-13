@@ -75,7 +75,6 @@ SRCOBJECTS = tpl.o \
 LIBOBJECTS +=  \
 	library/abnf.o \
 	library/apply.o \
-	library/apply_macros.o \
 	library/assoc.o \
 	library/atts.o \
 	library/builtins.o \
@@ -98,8 +97,7 @@ LIBOBJECTS +=  \
 	library/sqlite3.o \
 	library/sqlite3_register.o \
 	library/ugraphs.o \
-	library/when.o \
-	library/yall.o
+	library/when.o
 
 SRCOBJECTS += src/imath/imath.o
 SRCOBJECTS += src/sre/re.o

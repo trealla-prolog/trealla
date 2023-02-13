@@ -291,8 +291,11 @@ Non-standard predicates
 
 	module/1					# module(?atom)
 	modules/1					# modules(-list)
+	load_all_modules/0			#
+
 	listing/0
 	listing/1					# listing(+PI)
+
 	pretty/1					# pretty-print version of listing/1
 	between/3
 	forall/2
