@@ -10,8 +10,13 @@ CFLAGS =  -std=gnu99 -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' -O3 \
 LDFLAGS = -L/usr/local/lib -lm
 
 ifdef WASI
-CFLAGS += -D_WASI_EMULATED_MMAN -D_WASI_EMULATED_SIGNAL -Isrc/wasm -O0 -std=c11
-LDFLAGS += -o tpl.wasm -lwasi-emulated-mman -lwasi-emulated-signal -Wl,--stack-first -Wl,-zstack-size=8388608 -Wl,--initial-memory=100663296
+CFLAGS += -std=c11 -Isrc/wasm \
+	-D_WASI_EMULATED_MMAN -D_WASI_EMULATED_SIGNAL \
+	-D_WASI_EMULATED_PROCESS_CLOCKS
+LDFLAGS += -lwasi-emulated-mman -lwasi-emulated-signal \
+	-lwasi-emulated-process-clocks -Wl,--stack-first \
+	-Wl,-zstack-size=8388608 -Wl,--initial-memory=100663296 \
+	-o tpl.wasm
 NOFFI = 1
 NOSSL = 1
 ifdef WASI_CC
@@ -45,6 +50,10 @@ endif
 ifdef LTO
 CFLAGS += -flto=$(LTO)
 LDFLAGS += -flto=$(LTO)
+endif
+
+ifndef WASMOPT
+WASMOPT = wasm-opt
 endif
 
 SRCOBJECTS = tpl.o \
@@ -128,10 +137,11 @@ release:
 	$(MAKE) 'OPT=$(OPT) -DNDEBUG'
 
 tpl.wasm:
-	$(MAKE) WASI=1 'OPT=$(OPT) -O0 -DNDEBUG'
+	$(MAKE) WASI=1 'OPT=$(OPT) -DNDEBUG'
 
 wasm: tpl.wasm
-	wasm-opt tpl.wasm -o tpl.wasm -O4
+	$(WASMOPT) --enable-bulk-memory tpl.wasm -o tpl-opt.wasm -O4
+	mv tpl-opt.wasm tpl.wasm
 
 test:
 	./tests/run.sh
