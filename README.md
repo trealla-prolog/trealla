@@ -33,7 +33,7 @@ Trealla region of Western Australia.
 
 Available from: [trealla-prolog.org](https://trealla-prolog.org).
 
-Runs under [Jupyter Notebooks](https://github.com/LogtalkDotOrg/logtalk-jupyter-kernel#readme).
+Runs with [Jupyter Notebooks](https://github.com/LogtalkDotOrg/logtalk-jupyter-kernel#readme).
 
 
 Logo
