@@ -44,8 +44,6 @@ extern unsigned char library_ugraphs_pl[];
 extern unsigned int library_ugraphs_pl_len;
 extern unsigned char library_sqlite3_pl[];
 extern unsigned int library_sqlite3_pl_len;
-extern unsigned char library_sqlite3_register_pl[];
-extern unsigned int library_sqlite3_register_pl_len;
 extern unsigned char library_json_pl[];
 extern unsigned int library_json_pl_len;
 extern unsigned char library_abnf_pl[];
@@ -74,7 +72,6 @@ library g_libs[] = {
 	 {"random", library_random_pl, &library_random_pl_len},
 	 {"si", library_si_pl, &library_si_pl_len},
 	 {"sqlite3", library_sqlite3_pl, &library_sqlite3_pl_len},
-	 {"sqlite3_register", library_sqlite3_register_pl, &library_sqlite3_register_pl_len},
 	 {"ugraphs", library_ugraphs_pl, &library_ugraphs_pl_len},
 	 {"when", library_when_pl, &library_when_pl_len},
 

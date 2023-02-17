@@ -750,7 +750,7 @@ bool do_use_module_2(module *curr_m, cell *p)
 }
 
 #if USE_FFI
-bool do_use_foreign_module_2(module *m, cell *p)
+bool do_use_foreign_module(module *m, cell *p)
 {
 	cell *p1 = p + 1;
 	cell *p2 = p1 + p1->nbr_cells;
