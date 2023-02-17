@@ -7855,7 +7855,7 @@ builtins g_other_bifs[] =
 	{"using", 0, fn_using_0, NULL, false, false, BLAH},
 	{"use_module", 1, fn_use_module_1, "+term", false, false, BLAH},
 	{"use_module", 2, fn_use_module_2, "+term,+term", false, false, BLAH},
-	{"use_foreign_module", 2, fn_use_foreign_module_2, "+atom,+term", false, false, BLAH},
+	//{"use_foreign_module", 2, fn_use_foreign_module_2, "+atom,+term", false, false, BLAH},
 
 	{"sleep", 1, fn_sleep_1, "+secs", false, false, BLAH},
 	{"delay", 1, fn_delay_1, "+ms", false, false, BLAH},
