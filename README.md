@@ -853,7 +853,7 @@ Register a builtin predicate...
 ```
 
 Note: the foreign function return value is passed as an extra argument
-to the predicate call.
+to the predicate call, unless it was specified to be of type *void*.
 
 Or use the *use_foreign_module/2* directive based on the work of
 Adrián Arroyo Calle in Scryer Prolog, this simplifies the interface.
@@ -893,6 +893,14 @@ Run...
 ```console
 	$ tpl -g run,halt samples/sqlite3.pl
 	[[1,'Paul',32,'California',20000.0],[2,'Allen',25,'Texas',15000.0],[3,'Teddy',23,'Norway',20000.0],[4,'Mark',25,'Rich-Mond ',65000.0],[5,'David',27,'Texas',85000.0],[6,'Kim',22,'South-Hall',45000.0]]
+```
+
+Or to use RayLib (if installed)...
+
+```console
+	?- use_foreign_module('libraylib.so', ['InitWindow'([int64,int64,cstr], void)]).
+	   true.
+	?- 'InitWindow'(400,400,"Hello from Trealla").
 ```
 
 
