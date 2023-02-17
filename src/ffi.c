@@ -25,7 +25,8 @@ enum {
 	TAG_UINT32,
 	TAG_UINT64,
 	TAG_FLOAT32,
-	TAG_CCSTR
+	TAG_CCSTR,
+	TAG_VOID
 };
 
 #define MARK_OUT(t) (((unsigned)(t) << 2) | 1)
@@ -349,7 +350,8 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 		arg_types[idx++] = MARK_OUT(TAG_CCSTR);
 		ret_type = TAG_CCSTR;
 	} else {
-		ret_type = TAG_INT64;
+		arg_types[idx++] = MARK_OUT(TAG_VOID);
+		ret_type = TAG_VOID;
 	}
 
 	register_ffi(m->pl, symbol, idx, (void*)func, arg_types, ret_type, false);
@@ -743,6 +745,8 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 		ret_type = &ffi_type_pointer;
 	else if (ptr->ret_type == TAG_CCSTR)
 		ret_type = &ffi_type_pointer;
+	else if (ptr->ret_type == TAG_VOID)
+		ret_type = &ffi_type_void;
 	else
 		return false;
 
