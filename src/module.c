@@ -750,123 +750,25 @@ bool do_use_module_2(module *curr_m, cell *p)
 }
 
 #if USE_FFI
-bool do_use_foreign_module_2(module *curr_m, cell *p)
+bool do_use_foreign_module_2(module *m, cell *p)
 {
 	cell *p1 = p + 1;
 	cell *p2 = p1 + p1->nbr_cells;
 	LIST_HANDLER(p2);
 
+	const char *name = C_STR(m, p1);
+	void *handle = do_dlopen(name, 0);
+
+	if (!handle)
+		return false;
+
 	while (is_iso_list(p2)) {
-		cell *head = LIST_HEAD(p2);
-
-		//printf("*** %s\n", C_STR(curr_m, head+1));
-
-		if (is_interned(head) && (head->arity == 2)
-			&& ((head->val_off == g_as_s) || (head->val_off == g_colon_s))) {
-			cell *lhs = head + 1;
-			cell *rhs = lhs + lhs->nbr_cells;
-
-			if (is_compound(lhs) && (lhs->arity == 2)
-				&& (lhs->val_off == g_slash_s)
-				&& is_atom(rhs)) {
-				cell tmp = *(lhs+1);
-				tmp.arity = get_smalluint(lhs+2);
-				predicate *pr = find_predicate(curr_m->used[curr_m->idx_used-1], &tmp);
-				tmp.val_off = rhs->val_off;
-				predicate *pr2 = create_predicate(curr_m, &tmp);
-				pr2->alias = pr;
-			} else if (is_compound(lhs) && (lhs->arity == 2)
-				&& (lhs->val_off == g_slash_s)
-				&& is_compound(lhs) && (lhs->arity == rhs->arity)) {
-				cell tmp = *(lhs+1);
-				tmp.arity = get_smalluint(lhs+2);
-				predicate *pr = find_predicate(curr_m->used[curr_m->idx_used-1], &tmp);
-				tmp.val_off = (rhs+1)->val_off;
-				predicate *pr2 = create_predicate(curr_m, &tmp);
-				pr2->alias = pr;
-			} else if (is_compound(lhs) && is_compound(rhs)) {
-				// assertz(goal_expansion(rhs, module:lhs))
-				query *q = create_query(curr_m, false);
-				check_error(q);
-				q->varnames = true;
-				char *dst1 = print_canonical_to_strbuf(q, rhs, 0, 0);
-				char *dst2 = print_canonical_to_strbuf(q, lhs, 0, 0);
-				q->varnames = false;
-				SB(s);
-				module *mod = curr_m->used[curr_m->idx_used-1];
-				SB_sprintf(s, "assertz(goal_expansion(%s,%s:%s)).", dst1, mod->name, dst2);
-				free(dst2);
-				free(dst1);
-
-				//printf("*** %s\n", SB_cstr(s));
-
-				parser *p2 = create_parser(curr_m);
-				check_error(p2, destroy_query(q));
-				q->p = p2;
-				p2->skip = true;
-				p2->srcptr = SB_cstr(s);
-				tokenize(p2, false, false);
-				xref_rule(p2->m, p2->cl, NULL);
-				execute(q, p2->cl->cells, p2->cl->nbr_vars);
-				SB_free(s);
-			}
-#if 0
-		} else {
-			cell *lhs = head;
-
-			if (is_compound(lhs) && (lhs->arity == 2) && (lhs->val_off == g_slash_s)) {
-				// assertz(goal_expansion(rhs, module:lhs))
-				query *q = create_query(curr_m, false);
-				check_error(q);
-				q->varnames = true;
-				char *dst1 = print_canonical_to_strbuf(q, lhs+1, 0, 0);
-				q->varnames = false;
-				SB(s);
-				module *mod = curr_m->used[curr_m->idx_used-1];
-				SB_sprintf(s, "assertz(goal_expansion(%s", dst1);
-				unsigned arity = get_smalluint(lhs+2);
-				unsigned i = 0;
-
-				while (arity--) {
-					if (i) { SB_sprintf(s, "%s", ","); }
-					else { SB_sprintf(s, "%s", "("); }
-					SB_sprintf(s, "_%u", i);
-					i++;
-				}
-
-				if (i) { SB_sprintf(s, "%s", ")"); }
-				SB_sprintf(s, ",%s:%s", mod->name, dst1);
-
-				arity = get_smalluint(lhs+2);
-				i = 0;
-
-				while (arity--) {
-					if (i) { SB_sprintf(s, "%s", ","); }
-					else { SB_sprintf(s, "%s", "("); }
-					SB_sprintf(s, "_%u", i);
-					i++;
-				}
-
-				if (i) { SB_sprintf(s, "%s", ")"); }
-
-				SB_sprintf(s, "%s", ")).");
-				free(dst1);
-
-				//printf("*** %s\n", SB_cstr(s));
-
-				parser *p2 = create_parser(curr_m);
-				check_error(p2, destroy_query(q));
-				q->p = p2;
-				p2->skip = true;
-				p2->srcptr = SB_cstr(s);
-				tokenize(p2, false, false);
-				xref_rule(p2->m, p2->cl, NULL);
-				execute(q, p2->cl->cells, p2->cl->nbr_vars);
-				SB_free(s);
-			}
-#endif
-		}
-
+		cell *h = LIST_HEAD(p2);
+		const char *symbol = C_STR(m, h);
+		cell *l = h + 1;
+		cell *r = l + l->nbr_cells;
+		const char *ret_type = C_STR(m, r);
+		do_register_predicate(m, NULL, handle, symbol, l, 0, ret_type);
 		p2 = LIST_TAIL(p2);
 	}
 
