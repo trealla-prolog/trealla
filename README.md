@@ -855,9 +855,10 @@ Register a builtin predicate...
 Note: the foreign function return value is passed as an extra argument
 to the predicate call, unless it was specified to be of type *void*.
 
-Or use the *use_foreign_module/2* directive based on the work of
-Adrián Arroyo Calle in Scryer Prolog, this simplifies the interface.
-Trealla now uses this interface as the preferred style:
+Or use the *use_foreign_module/2* directive & predicate based on the
+work of Adrián Arroyo Calle in Scryer Prolog, this simplifies the
+interface. NOTE: Trealla now uses this interface as the preferred
+style:
 
 ```console
 	:- use_foreign_module('samples/libfoo.so', [
@@ -865,15 +866,8 @@ Trealla now uses this interface as the preferred style:
 		baz([cstr, cstr], cstr)
 	]).
 ```
-
 There is an example using SQLITE. First make sure SQLITE is installed
-on your system, for example...
-
-```console
-	$ sudo apt install sqlite3
-```
-
-Then, given the code in *samples/sqlite3.pl*...
+on your system, then, given the code in *samples/sqlite3.pl*...
 
 ```console
 	:- use_module(library(sqlite3)).
