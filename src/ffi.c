@@ -10,6 +10,7 @@
 #endif
 
 #include "prolog.h"
+#include "module.h"
 #include "query.h"
 
 // These are pseudo tags just used here...
@@ -217,19 +218,9 @@ USE_RESULT bool fn_sys_register_function_4(query *q)
 	return true;
 }
 
-USE_RESULT bool fn_sys_register_predicate_4(query *q)
+bool do_register_predicate(module *m, query *q, void *handle, const char *symbol, cell *p3, pl_idx_t p3_ctx, const char *ret)
 {
-	GET_FIRST_ARG(p1,integer);
-	GET_NEXT_ARG(p2,atom);
-	GET_NEXT_ARG(p3,iso_list);
-	GET_NEXT_ARG(p4,atom);
-
-	if (!(p1->flags & FLAG_INT_HANDLE) && !(p1->flags & FLAG_HANDLE_DLL))
-		return throw_error(q, p1, p1_ctx, "existence_error", "handle");
-
-	size_t handle = get_smalluint(p1);
-	const char *symbol = C_STR(q, p2);
-	void *func = dlsym((void*)handle, symbol);
+	void *func = dlsym(handle, symbol);
 	if (!func) return false;
 
 	uint8_t arg_types[MAX_ARITY], ret_type = 0;
@@ -241,70 +232,70 @@ USE_RESULT bool fn_sys_register_predicate_4(query *q)
 
 	while (is_iso_list(l) && (idx < MAX_ARITY)) {
 		cell *h = LIST_HEAD(l);
-		h = deref(q, h, l_ctx);
-		const char *src = C_STR(q, h);
+		h = q ? deref(q, h, l_ctx) : h;
+		const char *src = C_STR(m, h);
 
 		if (!strcmp(src, "uint8"))
 			arg_types[idx++] = TAG_UINT8;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(q, h+1), "uint8"))
+		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint8"))
 			arg_types[idx++] = MARK_OUT(TAG_UINT8);
 		else if (!strcmp(src, "uint16"))
 			arg_types[idx++] = TAG_UINT16;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(q, h+1), "uint16"))
+		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint16"))
 			arg_types[idx++] = MARK_OUT(TAG_UINT16);
 		else if (!strcmp(src, "uint32"))
 			arg_types[idx++] = TAG_UINT32;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(q, h+1), "uint32"))
+		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint32"))
 			arg_types[idx++] = MARK_OUT(TAG_UINT32);
 		else if (!strcmp(src, "uint64"))
 			arg_types[idx++] = TAG_UINT64;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(q, h+1), "uint64"))
+		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint64"))
 			arg_types[idx++] = MARK_OUT(TAG_UINT64);
 		else if (!strcmp(src, "int8"))
 			arg_types[idx++] = TAG_INT8;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(q, h+1), "int8"))
+		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "int8"))
 			arg_types[idx++] = MARK_OUT(TAG_INT8);
 		else if (!strcmp(src, "int16"))
 			arg_types[idx++] = TAG_INT16;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(q, h+1), "int16"))
+		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "int16"))
 			arg_types[idx++] = MARK_OUT(TAG_INT16);
 		else if (!strcmp(src, "int32"))
 			arg_types[idx++] = TAG_INT32;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(q, h+1), "int32"))
+		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "int32"))
 			arg_types[idx++] = MARK_OUT(TAG_INT32);
 		else if (!strcmp(src, "int64"))
 			arg_types[idx++] = TAG_INT64;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(q, h+1), "int64"))
+		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "int64"))
 			arg_types[idx++] = MARK_OUT(TAG_INT64);
 		else if (!strcmp(src, "fp32"))
 			arg_types[idx++] = TAG_FLOAT32;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(q, h+1), "fp32"))
+		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "fp32"))
 			arg_types[idx++] = MARK_OUT(TAG_FLOAT32);
 		else if (!strcmp(src, "fp64"))
 			arg_types[idx++] = TAG_FLOAT;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(q, h+1), "fp64"))
+		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "fp64"))
 			arg_types[idx++] = MARK_OUT(TAG_FLOAT);
 		else if (!strcmp(src, "ptr"))
 			arg_types[idx++] = TAG_PTR;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(q, h+1), "ptr"))
+		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ptr"))
 			arg_types[idx++] = MARK_OUT(TAG_PTR);
 		else if (!strcmp(src, "cstr"))
 			arg_types[idx++] = TAG_CSTR;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(q, h+1), "cstr"))
+		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "cstr"))
 			arg_types[idx++] = MARK_OUT(TAG_CSTR);
 		else if (!strcmp(src, "const_cstr"))
 			arg_types[idx++] = TAG_CCSTR;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(q, h+1), "const_cstr"))
+		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "const_cstr"))
 			arg_types[idx++] = MARK_OUT(TAG_CCSTR);
 		else
 			arg_types[idx++] = 0;
 
 		l = LIST_TAIL(l);
-		l = deref(q, l, l_ctx);
-		l_ctx = q->latest_ctx;
+		l = q ? deref(q, l, l_ctx) : l;
+		l_ctx = q ? q->latest_ctx : 0;
 	}
 
-	const char *src = C_STR(q, p4);
+	const char *src = ret;
 
 	if (!strcmp(src, "uint8")) {
 		arg_types[idx++] = MARK_OUT(TAG_UINT8);
@@ -350,8 +341,21 @@ USE_RESULT bool fn_sys_register_predicate_4(query *q)
 		ret_type = 0;
 	}
 
-	register_ffi(q->pl, symbol, idx, (void*)func, arg_types, ret_type, false);
+	register_ffi(m->pl, symbol, idx, (void*)func, arg_types, ret_type, false);
 	return true;
+}
+
+USE_RESULT bool fn_sys_register_predicate_4(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,atom);
+	GET_NEXT_ARG(p3,iso_list);
+	GET_NEXT_ARG(p4,atom);
+
+	if (!(p1->flags & FLAG_INT_HANDLE) && !(p1->flags & FLAG_HANDLE_DLL))
+		return throw_error(q, p1, p1_ctx, "existence_error", "handle");
+
+	return do_register_predicate(q->st.m, q, (void*)(size_t)get_smallint(p1), C_STR(q, p2), p3, p3_ctx, C_STR(q, p4));
 }
 
 bool wrapper_for_function(query *q, builtins *ptr)
@@ -852,6 +856,20 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 }
 #endif
 
+#if USE_FFI
+static bool fn_use_foreign_module_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,list_or_nil);
+	LIST_HANDLER(p2);
+
+	if (!do_use_module_1(q->st.m, q->st.curr_cell))
+		return false;
+
+	return do_use_foreign_module_2(q->st.m, q->st.curr_cell);
+}
+#endif
+
 builtins g_ffi_bifs[MAX_FFI] =
 {
 #if USE_FFI
@@ -860,6 +878,7 @@ builtins g_ffi_bifs[MAX_FFI] =
 	{"$dlclose", 1, fn_sys_dlclose_1, "+handle", false, false, BLAH},
 	{"$register_function", 4, fn_sys_register_function_4, "+handle, +symbol, +arglist,+result", false, false, BLAH},
 	{"$register_predicate", 4, fn_sys_register_predicate_4, "+handle, +symbol, +arglist,+result", false, false, BLAH},
+	{"use_foreign_module", 2, fn_use_foreign_module_2, "+atom,+list", false, false, BLAH},
 #endif
 
 	{0}

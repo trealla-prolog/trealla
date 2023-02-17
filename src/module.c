@@ -749,14 +749,12 @@ bool do_use_module_2(module *curr_m, cell *p)
 	return true;
 }
 
+#if USE_FFI
 bool do_use_foreign_module_2(module *curr_m, cell *p)
 {
 	cell *p1 = p + 1;
 	cell *p2 = p1 + p1->nbr_cells;
 	LIST_HANDLER(p2);
-
-	if (!do_use_module_1(curr_m, p))
-		return false;
 
 	while (is_iso_list(p2)) {
 		cell *head = LIST_HEAD(p2);
@@ -874,6 +872,7 @@ bool do_use_foreign_module_2(module *curr_m, cell *p)
 
 	return true;
 }
+#endif
 
 void convert_to_literal(module *m, cell *c)
 {
