@@ -149,6 +149,9 @@ USE_RESULT bool fn_sys_register_function_4(query *q)
 		h = deref(q, h, l_ctx);
 		const char *src = C_STR(q, h);
 
+		if (*src == 's')
+			src++;
+
 		if (!strcmp(src, "uint8"))
 			arg_types[idx++] = TAG_UINT8;
 		else if (!strcmp(src, "uint16"))
@@ -184,6 +187,9 @@ USE_RESULT bool fn_sys_register_function_4(query *q)
 	}
 
 	const char *src = C_STR(q, p4);
+
+	if (*src == 's')
+		src++;
 
 	if (!strcmp(src, "uint8"))
 		ret_type = TAG_UINT8;
@@ -234,6 +240,9 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 		cell *h = LIST_HEAD(l);
 		h = q ? deref(q, h, l_ctx) : h;
 		const char *src = C_STR(m, h);
+
+		if (*src == 's')
+			src++;
 
 		if (!strcmp(src, "uint8"))
 			arg_types[idx++] = TAG_UINT8;
@@ -297,6 +306,9 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 
 	const char *src = ret;
 
+	if (*src == 's')
+		src++;
+
 	if (!strcmp(src, "uint8")) {
 		arg_types[idx++] = MARK_OUT(TAG_UINT8);
 		ret_type = TAG_INT8;
@@ -337,8 +349,7 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 		arg_types[idx++] = MARK_OUT(TAG_CCSTR);
 		ret_type = TAG_CCSTR;
 	} else {
-		arg_types[idx++] = 0;
-		ret_type = 0;
+		ret_type = TAG_INT64;
 	}
 
 	register_ffi(m->pl, symbol, idx, (void*)func, arg_types, ret_type, false);

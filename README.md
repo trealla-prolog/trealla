@@ -855,6 +855,17 @@ Register a builtin predicate...
 Note: the foreign function return value is passed as an extra argument
 to the predicate call.
 
+Or use the *use_foreign_module/2* directive based on the work of
+Adrián Arroyo Calle in Scryer Prolog, this simplifies the interface.
+Trealla now uses this interface as the preferred style:
+
+```console
+	:- use_foreign_module('samples/libfoo.so', [
+		bar([fp64, int64, -fp64], int64),
+		baz([cstr, cstr], cstr)
+	]).
+```
+
 There is an example using SQLITE. First make sure SQLITE is installed
 on your system, for example...
 
