@@ -736,7 +736,7 @@ package (packages?) is included.
 
 For example...
 
-```console```
+```console
 	?- sre_compile("d.f", Reg), sre_matchp(Reg, "abcdefghi", M, Rest).
 	   Reg = <$blob>(0x6AC5AAF0), M = "def", Rest = "ghi".
 
