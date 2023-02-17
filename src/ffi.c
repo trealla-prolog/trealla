@@ -45,13 +45,8 @@ union result_ {
 };
 
 #if USE_FFI
-USE_RESULT bool fn_sys_dlopen_3(query *q)
+USE_RESULT void *do_dlopen(const char *filename, int flag)
 {
-	GET_FIRST_ARG(p1,atom);
-	GET_NEXT_ARG(p2,integer);
-	GET_NEXT_ARG(p3,var);
-	const char *filename = C_STR(q, p1);
-
 #if __APPLE__
 	char *filename2 = malloc((strlen(filename)-2)+5+1);
 	const char *ptr = strstr(filename, ".so");
@@ -74,13 +69,23 @@ USE_RESULT bool fn_sys_dlopen_3(query *q)
 	char *filename2 = strdup(filename);
 #endif
 
-	int flag = get_smallint(p2);
 	void *handle = dlopen(filename2, !flag ? RTLD_LAZY | RTLD_GLOBAL : flag);
+	free(filename2);
+	return handle;
+}
+#endif
+
+#if USE_FFI
+USE_RESULT bool fn_sys_dlopen_3(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,integer);
+	GET_NEXT_ARG(p3,var);
+	void *handle = do_dlopen(C_STR(q, p1), get_smallint(p2));
 	if (!handle) return false;
 	cell tmp;
 	make_uint(&tmp, (pl_int_t)(size_t)handle);
 	tmp.flags |= FLAG_INT_HANDLE | FLAG_HANDLE_DLL;
-	free(filename2);
 	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 }
 

@@ -7,6 +7,7 @@
 #include "module.h"
 #include "parser.h"
 #include "history.h"
+#include "library.h"
 #include "prolog.h"
 #include "query.h"
 #include "utf8.h"
@@ -513,6 +514,365 @@ static bool is_check_directive(const cell *c)
 		return true;
 
 	return false;
+}
+
+bool do_use_module_1(module *curr_m, cell *p)
+{
+	cell *p1 = p + 1;
+	const char *name = C_STR(curr_m, p1);
+	char dstbuf[1024*4];
+
+	if (is_structure(p1) && !strcmp(name, "library")) {
+		p1 = p1 + 1;
+		if (!is_interned(p1)) return false;
+		name = C_STR(curr_m, p1);
+		module *m;
+
+		if ((m = find_module(curr_m->pl, name)) != NULL) {
+			if (m != curr_m)
+				curr_m->used[curr_m->idx_used++] = m;
+
+			return true;
+		}
+
+		if (!strcmp(name, "between")
+		    || !strcmp(name, "samsort")
+		    || !strcmp(name, "terms")
+		    || !strcmp(name, "types")
+			|| !strcmp(name, "iso_ext")
+		    || !strcmp(name, "files"))
+			return true;
+
+		for (library *lib = g_libs; lib->name; lib++) {
+			if (strcmp(lib->name, name))
+				continue;
+
+			char *src = malloc(*lib->len+1);
+			check_heap_error(src);
+			memcpy(src, lib->start, *lib->len);
+			src[*lib->len] = '\0';
+			SB(s1);
+			SB_sprintf(s1, "library%c%s", PATH_SEP_CHAR, lib->name);
+			m = load_text(curr_m, src, SB_cstr(s1));
+			SB_free(s1);
+			free(src);
+
+			if (m != curr_m)
+				curr_m->used[curr_m->idx_used++] = m;
+
+			return true;
+		}
+
+		snprintf(dstbuf, sizeof(dstbuf), "%s%c%s", g_tpl_lib, PATH_SEP_CHAR, C_STR(curr_m, p1));
+		name = dstbuf;
+	}
+
+	if (true) {
+		module *m;
+
+		if ((m = find_module(curr_m->pl, name)) != NULL) {
+			if (m != curr_m)
+				curr_m->used[curr_m->idx_used++] = m;
+
+			return true;
+		}
+
+		if (!strcmp(name, "between")
+		    || !strcmp(name, "samsort")
+		    || !strcmp(name, "terms")
+		    || !strcmp(name, "types")
+			|| !strcmp(name, "iso_ext")
+		    || !strcmp(name, "files"))
+			return true;
+
+		for (library *lib = g_libs; lib->name; lib++) {
+			if (strcmp(lib->name, name))
+				continue;
+
+			char *src = malloc(*lib->len+1);
+			check_heap_error(src);
+			memcpy(src, lib->start, *lib->len);
+			src[*lib->len] = '\0';
+			SB(s1);
+			SB_sprintf(s1, "library/%s", lib->name);
+			m = load_text(curr_m, src, SB_cstr(s1));
+			SB_free(s1);
+			free(src);
+
+			if (m != curr_m)
+				curr_m->used[curr_m->idx_used++] = m;
+
+			return true;
+		}
+	}
+
+	char *filename = relative_to(curr_m->filename, name);
+	module *m;
+
+	if (!(m = load_file(curr_m, filename, false))) {
+		fprintf(stdout, "Error: module file not found: %s\n", filename);
+		free(filename);
+		return false;
+	}
+
+	free(filename);
+
+	if (m != curr_m)
+		curr_m->used[curr_m->idx_used++] = m;
+
+	return true;
+}
+
+bool do_use_module_2(module *curr_m, cell *p)
+{
+	cell *p1 = p + 1;
+	cell *p2 = p1 + p1->nbr_cells;
+	LIST_HANDLER(p2);
+
+	if (!do_use_module_1(curr_m, p))
+		return false;
+
+	while (is_iso_list(p2)) {
+		cell *head = LIST_HEAD(p2);
+
+		//printf("*** %s\n", C_STR(curr_m, head+1));
+
+		if (is_interned(head) && (head->arity == 2)
+			&& ((head->val_off == g_as_s) || (head->val_off == g_colon_s))) {
+			cell *lhs = head + 1;
+			cell *rhs = lhs + lhs->nbr_cells;
+
+			if (is_compound(lhs) && (lhs->arity == 2)
+				&& (lhs->val_off == g_slash_s)
+				&& is_atom(rhs)) {
+				cell tmp = *(lhs+1);
+				tmp.arity = get_smalluint(lhs+2);
+				predicate *pr = find_predicate(curr_m->used[curr_m->idx_used-1], &tmp);
+				tmp.val_off = rhs->val_off;
+				predicate *pr2 = create_predicate(curr_m, &tmp);
+				pr2->alias = pr;
+			} else if (is_compound(lhs) && (lhs->arity == 2)
+				&& (lhs->val_off == g_slash_s)
+				&& is_compound(lhs) && (lhs->arity == rhs->arity)) {
+				cell tmp = *(lhs+1);
+				tmp.arity = get_smalluint(lhs+2);
+				predicate *pr = find_predicate(curr_m->used[curr_m->idx_used-1], &tmp);
+				tmp.val_off = (rhs+1)->val_off;
+				predicate *pr2 = create_predicate(curr_m, &tmp);
+				pr2->alias = pr;
+			} else if (is_compound(lhs) && is_compound(rhs)) {
+				// assertz(goal_expansion(rhs, module:lhs))
+				query *q = create_query(curr_m, false);
+				check_error(q);
+				q->varnames = true;
+				char *dst1 = print_canonical_to_strbuf(q, rhs, 0, 0);
+				char *dst2 = print_canonical_to_strbuf(q, lhs, 0, 0);
+				q->varnames = false;
+				SB(s);
+				module *mod = curr_m->used[curr_m->idx_used-1];
+				SB_sprintf(s, "assertz(goal_expansion(%s,%s:%s)).", dst1, mod->name, dst2);
+				free(dst2);
+				free(dst1);
+
+				//printf("*** %s\n", SB_cstr(s));
+
+				parser *p2 = create_parser(curr_m);
+				check_error(p2, destroy_query(q));
+				q->p = p2;
+				p2->skip = true;
+				p2->srcptr = SB_cstr(s);
+				tokenize(p2, false, false);
+				xref_rule(p2->m, p2->cl, NULL);
+				execute(q, p2->cl->cells, p2->cl->nbr_vars);
+				SB_free(s);
+			}
+#if 0
+		} else {
+			cell *lhs = head;
+
+			if (is_compound(lhs) && (lhs->arity == 2) && (lhs->val_off == g_slash_s)) {
+				// assertz(goal_expansion(rhs, module:lhs))
+				query *q = create_query(curr_m, false);
+				check_error(q);
+				q->varnames = true;
+				char *dst1 = print_canonical_to_strbuf(q, lhs+1, 0, 0);
+				q->varnames = false;
+				SB(s);
+				module *mod = curr_m->used[curr_m->idx_used-1];
+				SB_sprintf(s, "assertz(goal_expansion(%s", dst1);
+				unsigned arity = get_smalluint(lhs+2);
+				unsigned i = 0;
+
+				while (arity--) {
+					if (i) { SB_sprintf(s, "%s", ","); }
+					else { SB_sprintf(s, "%s", "("); }
+					SB_sprintf(s, "_%u", i);
+					i++;
+				}
+
+				if (i) { SB_sprintf(s, "%s", ")"); }
+				SB_sprintf(s, ",%s:%s", mod->name, dst1);
+
+				arity = get_smalluint(lhs+2);
+				i = 0;
+
+				while (arity--) {
+					if (i) { SB_sprintf(s, "%s", ","); }
+					else { SB_sprintf(s, "%s", "("); }
+					SB_sprintf(s, "_%u", i);
+					i++;
+				}
+
+				if (i) { SB_sprintf(s, "%s", ")"); }
+
+				SB_sprintf(s, "%s", ")).");
+				free(dst1);
+
+				//printf("*** %s\n", SB_cstr(s));
+
+				parser *p2 = create_parser(curr_m);
+				check_error(p2, destroy_query(q));
+				q->p = p2;
+				p2->skip = true;
+				p2->srcptr = SB_cstr(s);
+				tokenize(p2, false, false);
+				xref_rule(p2->m, p2->cl, NULL);
+				execute(q, p2->cl->cells, p2->cl->nbr_vars);
+				SB_free(s);
+			}
+#endif
+		}
+
+		p2 = LIST_TAIL(p2);
+	}
+
+	return true;
+}
+
+bool do_use_foreign_module_2(module *curr_m, cell *p)
+{
+	cell *p1 = p + 1;
+	cell *p2 = p1 + p1->nbr_cells;
+	LIST_HANDLER(p2);
+
+	if (!do_use_module_1(curr_m, p))
+		return false;
+
+	while (is_iso_list(p2)) {
+		cell *head = LIST_HEAD(p2);
+
+		//printf("*** %s\n", C_STR(curr_m, head+1));
+
+		if (is_interned(head) && (head->arity == 2)
+			&& ((head->val_off == g_as_s) || (head->val_off == g_colon_s))) {
+			cell *lhs = head + 1;
+			cell *rhs = lhs + lhs->nbr_cells;
+
+			if (is_compound(lhs) && (lhs->arity == 2)
+				&& (lhs->val_off == g_slash_s)
+				&& is_atom(rhs)) {
+				cell tmp = *(lhs+1);
+				tmp.arity = get_smalluint(lhs+2);
+				predicate *pr = find_predicate(curr_m->used[curr_m->idx_used-1], &tmp);
+				tmp.val_off = rhs->val_off;
+				predicate *pr2 = create_predicate(curr_m, &tmp);
+				pr2->alias = pr;
+			} else if (is_compound(lhs) && (lhs->arity == 2)
+				&& (lhs->val_off == g_slash_s)
+				&& is_compound(lhs) && (lhs->arity == rhs->arity)) {
+				cell tmp = *(lhs+1);
+				tmp.arity = get_smalluint(lhs+2);
+				predicate *pr = find_predicate(curr_m->used[curr_m->idx_used-1], &tmp);
+				tmp.val_off = (rhs+1)->val_off;
+				predicate *pr2 = create_predicate(curr_m, &tmp);
+				pr2->alias = pr;
+			} else if (is_compound(lhs) && is_compound(rhs)) {
+				// assertz(goal_expansion(rhs, module:lhs))
+				query *q = create_query(curr_m, false);
+				check_error(q);
+				q->varnames = true;
+				char *dst1 = print_canonical_to_strbuf(q, rhs, 0, 0);
+				char *dst2 = print_canonical_to_strbuf(q, lhs, 0, 0);
+				q->varnames = false;
+				SB(s);
+				module *mod = curr_m->used[curr_m->idx_used-1];
+				SB_sprintf(s, "assertz(goal_expansion(%s,%s:%s)).", dst1, mod->name, dst2);
+				free(dst2);
+				free(dst1);
+
+				//printf("*** %s\n", SB_cstr(s));
+
+				parser *p2 = create_parser(curr_m);
+				check_error(p2, destroy_query(q));
+				q->p = p2;
+				p2->skip = true;
+				p2->srcptr = SB_cstr(s);
+				tokenize(p2, false, false);
+				xref_rule(p2->m, p2->cl, NULL);
+				execute(q, p2->cl->cells, p2->cl->nbr_vars);
+				SB_free(s);
+			}
+#if 0
+		} else {
+			cell *lhs = head;
+
+			if (is_compound(lhs) && (lhs->arity == 2) && (lhs->val_off == g_slash_s)) {
+				// assertz(goal_expansion(rhs, module:lhs))
+				query *q = create_query(curr_m, false);
+				check_error(q);
+				q->varnames = true;
+				char *dst1 = print_canonical_to_strbuf(q, lhs+1, 0, 0);
+				q->varnames = false;
+				SB(s);
+				module *mod = curr_m->used[curr_m->idx_used-1];
+				SB_sprintf(s, "assertz(goal_expansion(%s", dst1);
+				unsigned arity = get_smalluint(lhs+2);
+				unsigned i = 0;
+
+				while (arity--) {
+					if (i) { SB_sprintf(s, "%s", ","); }
+					else { SB_sprintf(s, "%s", "("); }
+					SB_sprintf(s, "_%u", i);
+					i++;
+				}
+
+				if (i) { SB_sprintf(s, "%s", ")"); }
+				SB_sprintf(s, ",%s:%s", mod->name, dst1);
+
+				arity = get_smalluint(lhs+2);
+				i = 0;
+
+				while (arity--) {
+					if (i) { SB_sprintf(s, "%s", ","); }
+					else { SB_sprintf(s, "%s", "("); }
+					SB_sprintf(s, "_%u", i);
+					i++;
+				}
+
+				if (i) { SB_sprintf(s, "%s", ")"); }
+
+				SB_sprintf(s, "%s", ")).");
+				free(dst1);
+
+				//printf("*** %s\n", SB_cstr(s));
+
+				parser *p2 = create_parser(curr_m);
+				check_error(p2, destroy_query(q));
+				q->p = p2;
+				p2->skip = true;
+				p2->srcptr = SB_cstr(s);
+				tokenize(p2, false, false);
+				xref_rule(p2->m, p2->cl, NULL);
+				execute(q, p2->cl->cells, p2->cl->nbr_vars);
+				SB_free(s);
+			}
+#endif
+		}
+
+		p2 = LIST_TAIL(p2);
+	}
+
+	return true;
 }
 
 void convert_to_literal(module *m, cell *c)

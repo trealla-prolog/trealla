@@ -1,4 +1,4 @@
-:- module(sqlite3_register, [flag/2]).
+:- module(sqlite3_register, [sqlite_flag/2]).
 
 % Note on Linux & FreeBSD systems *.so is fine for dynamic libs. On
 % MacOS systems Trealla will automatically replace '.so' with '.dylib'

@@ -7079,6 +7079,18 @@ static bool fn_use_module_2(query *q)
 	return do_use_module_2(q->st.m, q->st.curr_cell);
 }
 
+static bool fn_use_foreign_module_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,list_or_nil);
+	LIST_HANDLER(p2);
+
+	if (!do_use_module_1(q->st.m, q->st.curr_cell))
+		return false;
+
+	return do_use_foreign_module_2(q->st.m, q->st.curr_cell);
+}
+
 static bool fn_attribute_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_var);
@@ -7843,6 +7855,7 @@ builtins g_other_bifs[] =
 	{"using", 0, fn_using_0, NULL, false, false, BLAH},
 	{"use_module", 1, fn_use_module_1, "+term", false, false, BLAH},
 	{"use_module", 2, fn_use_module_2, "+term,+term", false, false, BLAH},
+	{"use_foreign_module", 2, fn_use_foreign_module_2, "+atom,+term", false, false, BLAH},
 
 	{"sleep", 1, fn_sleep_1, "+secs", false, false, BLAH},
 	{"delay", 1, fn_delay_1, "+ms", false, false, BLAH},
