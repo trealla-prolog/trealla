@@ -45,7 +45,7 @@ union result_ {
 };
 
 #if USE_FFI
-USE_RESULT void *do_dlopen(const char *filename, int flag)
+void *do_dlopen(const char *filename, int flag)
 {
 #if __APPLE__
 	char *filename2 = malloc((strlen(filename)-2)+5+1);
@@ -73,9 +73,7 @@ USE_RESULT void *do_dlopen(const char *filename, int flag)
 	free(filename2);
 	return handle;
 }
-#endif
 
-#if USE_FFI
 USE_RESULT bool fn_sys_dlopen_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -108,6 +106,11 @@ USE_RESULT bool fn_sys_dlsym_3(query *q)
 	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 }
 
+int do_dlclose(void *handle)
+{
+	return dlclose(handle);
+}
+
 USE_RESULT bool fn_sys_dlclose_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
@@ -116,7 +119,7 @@ USE_RESULT bool fn_sys_dlclose_1(query *q)
 	if (!(p1->flags & FLAG_INT_HANDLE) && !(p1->flags & FLAG_HANDLE_DLL))
 		return throw_error(q, p1, p1_ctx, "existence_error", "handle");
 
-	return dlclose((void*)handle) ? false : true;
+	return do_dlclose((void*)handle) ? false : true;
 }
 
 USE_RESULT bool fn_sys_register_function_4(query *q)
