@@ -25,8 +25,7 @@ enum {
 	TAG_UINT32,
 	TAG_UINT64,
 	TAG_FLOAT32,
-	TAG_CCSTR,
-	TAG_VOID
+	TAG_CCSTR
 };
 
 #define MARK_OUT(t) (((unsigned)(t) << 2) | 1)
@@ -556,8 +555,12 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 	void *arg_values[MAX_ARITY];
 	void *s_args[MAX_ARITY];
 	cell cells[MAX_ARITY];
+	unsigned arity = ptr->arity - 1;
 
-	for (unsigned i = 0; i < (ptr->arity-1); i++) {
+	if (ptr->ret_type == TAG_VOID)
+		arity++;
+
+	for (unsigned i = 0; i < arity; i++) {
 		if ((ptr->types[i] == TAG_INT64) && is_smallint(c))
 			;
 		else if ((ptr->types[i] == TAG_PTR) && is_smallint(c))
@@ -750,7 +753,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 	else
 		return false;
 
-	if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, ptr->arity-1, ret_type, arg_types) != FFI_OK)
+	if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, arity, ret_type, arg_types) != FFI_OK)
 		return false;
 
 	union result_ result;
@@ -760,7 +763,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 	c = p11;
 	c_ctx = p11_ctx;
 
-	for (unsigned i = 0; i < (ptr->arity-1); i++) {
+	for (unsigned i = 0; i < arity; i++) {
 		if (is_var(c)) {
 			cell tmp;
 

@@ -331,6 +331,9 @@ void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn, uint8_
 	ptr->evaluable = evaluable;
 	ptr->ffi = true;
 
+	if (ret_type == TAG_VOID)
+		ptr->arity--;
+
 	for (unsigned i = 0; i < arity; i++)
 		ptr->types[i] = types[i];
 

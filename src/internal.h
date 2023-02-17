@@ -243,7 +243,8 @@ enum {
 	TAG_FLOAT=5,
 	TAG_PTR=6,
 	TAG_BLOB=7,
-	TAG_END=8
+	TAG_VOID=8,
+	TAG_END=9
 };
 
 enum {
