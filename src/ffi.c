@@ -176,6 +176,10 @@ USE_RESULT bool fn_sys_register_function_4(query *q)
 				arg_types[idx++] = TAG_INT64;
 			else if (!strcmp(src, "sint"))
 				arg_types[idx++] = TAG_INT;
+			else if (!strcmp(src, "ushort"))
+				arg_types[idx++] = TAG_UINT16;
+			else if (!strcmp(src, "sshort"))
+				arg_types[idx++] = TAG_INT16;
 			else if (!strcmp(src, "float"))
 				arg_types[idx++] = TAG_FLOAT32;
 			else if (!strcmp(src, "double"))
@@ -274,6 +278,10 @@ bool do_register_struct(module *m, query *q, void *handle, const char *symbol, c
 				arg_types[idx++] = TAG_UINT;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint"))
 				arg_types[idx++] = MARK_OUT(TAG_UINT);
+			else if (!strcmp(src, "ushort"))
+				arg_types[idx++] = TAG_UINT16;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ushort"))
+				arg_types[idx++] = MARK_OUT(TAG_UINT16);
 			else if (!strcmp(src, "sint8"))
 				arg_types[idx++] = TAG_INT8;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint8"))
@@ -294,6 +302,10 @@ bool do_register_struct(module *m, query *q, void *handle, const char *symbol, c
 				arg_types[idx++] = TAG_INT;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint"))
 				arg_types[idx++] = MARK_OUT(TAG_INT);
+			else if (!strcmp(src, "sshort"))
+				arg_types[idx++] = TAG_INT16;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sshort"))
+				arg_types[idx++] = MARK_OUT(TAG_INT16);
 			else if (!strcmp(src, "float"))
 				arg_types[idx++] = TAG_FLOAT32;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "float"))
@@ -368,6 +380,10 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 				arg_types[idx++] = TAG_UINT;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint"))
 				arg_types[idx++] = MARK_OUT(TAG_UINT);
+			else if (!strcmp(src, "ushort"))
+				arg_types[idx++] = TAG_UINT16;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ushort"))
+				arg_types[idx++] = MARK_OUT(TAG_UINT16);
 			else if (!strcmp(src, "sint8"))
 				arg_types[idx++] = TAG_INT8;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint8"))
@@ -388,6 +404,10 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 				arg_types[idx++] = TAG_INT;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint"))
 				arg_types[idx++] = MARK_OUT(TAG_INT);
+			else if (!strcmp(src, "sshort"))
+				arg_types[idx++] = TAG_INT16;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sshort"))
+				arg_types[idx++] = MARK_OUT(TAG_INT16);
 			else if (!strcmp(src, "float"))
 				arg_types[idx++] = TAG_FLOAT32;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "float"))
@@ -444,6 +464,9 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 	} else if (!strcmp(src, "uint")) {
 		arg_types[idx++] = MARK_OUT(TAG_UINT);
 		ret_type = TAG_INT;
+	} else if (!strcmp(src, "ushort")) {
+		arg_types[idx++] = MARK_OUT(TAG_UINT16);
+		ret_type = TAG_INT;
 	} else if (!strcmp(src, "sint8")) {
 		arg_types[idx++] = MARK_OUT(TAG_INT8);
 		ret_type = TAG_INT8;
@@ -458,6 +481,9 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 		ret_type = TAG_INT64;
 	} else if (!strcmp(src, "sint")) {
 		arg_types[idx++] = MARK_OUT(TAG_INT);
+		ret_type = TAG_INT;
+	} else if (!strcmp(src, "sshort")) {
+		arg_types[idx++] = MARK_OUT(TAG_INT16);
 		ret_type = TAG_INT;
 	} else if (!strcmp(src, "float")) {
 		arg_types[idx++] = MARK_OUT(TAG_FLOAT32);
