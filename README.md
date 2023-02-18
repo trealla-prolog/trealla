@@ -897,9 +897,9 @@ Or to use RayLib (if installed)...
 
 ```console
 	?- use_foreign_module('libraylib.so', [
-		'InitWindow'([sint32,sint32,cstr], void)
+		'InitWindow'([sint64,sint64,cstr], void)
 		'BeginDrawing'([], void),
-		'DrawText'([cstr,sint32,sint32,sint32,[uint8,uint8,uint8,uint8]], void), # STRUCTS not yet implemented
+		'DrawText'([cstr,sint64,sint64,sint64,[uint8,uint8,uint8,uint8]], void), # STRUCTS not yet implemented
 		'EndDrawing'([], void),
 		'CloseWindow'([], void)
 		]).
