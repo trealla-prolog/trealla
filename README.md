@@ -796,8 +796,8 @@ wrapper to validate arg types at call/runtime...
 	'$register_predicate'/4		# '$ffi_reg'(+handle,+symbol,+types,+ret_type)
 
 The allowed types are
-*sint8*, *sint16*, *sint32*, *sint64*,
-*uint8*, *uint16*, *uint32*, *uint64*,
+*sint8*, *sint16*, *sint32*, *sint64*, *sint*,
+*uint8*, *uint16*, *uint32*, *uint64*, *uint*,
 *float*, *double*,
 *bool*, *void* (a return type only),
 *cstr* (a char pointer), *ccstr* (a *const* char pointer)
@@ -897,9 +897,9 @@ Or to use RayLib (if installed)...
 
 ```console
 	?- use_foreign_module('libraylib.so', [
-		'InitWindow'([sint64,sint64,cstr], void)
+		'InitWindow'([sint,sint,cstr], void)
 		'BeginDrawing'([], void),
-		'DrawText'([cstr,sint64,sint64,sint64,[uint8,uint8,uint8,uint8]], void), # STRUCTS not yet implemented
+		'DrawText'([cstr,sint,sint,sint,[sint,sint,sint,sint]], void), # STRUCTS not yet implemented
 		'EndDrawing'([], void),
 		'CloseWindow'([], void)
 		]).

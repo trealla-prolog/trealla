@@ -4,18 +4,18 @@
 	]).
 
 :- use_foreign_module('libsqlite3.so', [
-	sqlite3_open([cstr,-ptr], sint64),
-	sqlite3_exec([ptr,cstr,ptr,ptr,-ptr], sint64),
-	sqlite3_prepare_v2([ptr,cstr,ptr,-ptr,-ccstr], sint64),
-	sqlite3_step([ptr], sint64),
-	sqlite3_finalize([ptr], sint64),
-	sqlite3_column_count([ptr], sint64),
-	sqlite3_column_name([ptr,sint64], ccstr),
-	sqlite3_column_type([ptr,sint64], sint64),
-	sqlite3_column_int64([ptr,sint64], sint64),
-	sqlite3_column_double([ptr,sint64], double),
-	sqlite3_column_text([ptr,sint64], ccstr),
-	sqlite3_close([ptr], sint64)
+	sqlite3_open([cstr,-ptr], sint),
+	sqlite3_exec([ptr,cstr,ptr,ptr,-ptr], sint),
+	sqlite3_prepare_v2([ptr,cstr,ptr,-ptr,-ccstr], sint),
+	sqlite3_step([ptr], sint),
+	sqlite3_finalize([ptr], sint),
+	sqlite3_column_count([ptr], sint),
+	sqlite3_column_name([ptr,sint], ccstr),
+	sqlite3_column_type([ptr,sint], sint),
+	sqlite3_column_int64([ptr,sint], sint),
+	sqlite3_column_double([ptr,sint], double),
+	sqlite3_column_text([ptr,sint], ccstr),
+	sqlite3_close([ptr], sint)
 	]).
 
 :- help(sqlite3_open(+atom, --stream,-integer), [iso(false),desc('Open an Sqlite3 database returning a connection (as a stream).')]).
