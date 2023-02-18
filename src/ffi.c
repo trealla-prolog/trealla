@@ -149,9 +149,6 @@ USE_RESULT bool fn_sys_register_function_4(query *q)
 		h = deref(q, h, l_ctx);
 		const char *src = C_STR(q, h);
 
-		if (*src == 's')
-			src++;
-
 		if (!strcmp(src, "uint8"))
 			arg_types[idx++] = TAG_UINT8;
 		else if (!strcmp(src, "uint16"))
@@ -160,18 +157,14 @@ USE_RESULT bool fn_sys_register_function_4(query *q)
 			arg_types[idx++] = TAG_UINT32;
 		else if (!strcmp(src, "uint64"))
 			arg_types[idx++] = TAG_UINT64;
-		else if (!strcmp(src, "int8"))
+		else if (!strcmp(src, "sint8"))
 			arg_types[idx++] = TAG_INT8;
-		else if (!strcmp(src, "int16"))
+		else if (!strcmp(src, "sint16"))
 			arg_types[idx++] = TAG_INT16;
-		else if (!strcmp(src, "int32"))
+		else if (!strcmp(src, "sint32"))
 			arg_types[idx++] = TAG_INT32;
-		else if (!strcmp(src, "int64"))
+		else if (!strcmp(src, "sint64"))
 			arg_types[idx++] = TAG_INT64;
-		else if (!strcmp(src, "fp32"))
-			arg_types[idx++] = TAG_FLOAT32;
-		else if (!strcmp(src, "fp64"))
-			arg_types[idx++] = TAG_FLOAT;
 		else if (!strcmp(src, "float"))
 			arg_types[idx++] = TAG_FLOAT32;
 		else if (!strcmp(src, "double"))
@@ -192,9 +185,6 @@ USE_RESULT bool fn_sys_register_function_4(query *q)
 
 	const char *src = C_STR(q, p4);
 
-	if (*src == 's')
-		src++;
-
 	if (!strcmp(src, "uint8"))
 		ret_type = TAG_UINT8;
 	else if (!strcmp(src, "uint16"))
@@ -203,18 +193,14 @@ USE_RESULT bool fn_sys_register_function_4(query *q)
 		ret_type = TAG_UINT32;
 	else if (!strcmp(src, "uint64"))
 		ret_type = TAG_UINT64;
-	else if (!strcmp(src, "int8"))
+	else if (!strcmp(src, "sint8"))
 		ret_type = TAG_INT8;
-	else if (!strcmp(src, "int16"))
+	else if (!strcmp(src, "sint16"))
 		ret_type = TAG_INT16;
-	else if (!strcmp(src, "int32"))
+	else if (!strcmp(src, "sint32"))
 		ret_type = TAG_INT32;
-	else if (!strcmp(src, "int64"))
+	else if (!strcmp(src, "sint64"))
 		ret_type = TAG_INT64;
-	else if (!strcmp(src, "fp32"))
-		ret_type = TAG_FLOAT32;
-	else if (!strcmp(src, "fp64"))
-		ret_type = TAG_FLOAT;
 	else if (!strcmp(src, "float"))
 		ret_type = TAG_FLOAT32;
 	else if (!strcmp(src, "double"))
@@ -249,9 +235,6 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 		h = q ? deref(q, h, l_ctx) : h;
 		const char *src = C_STR(m, h);
 
-		if (*src == 's')
-			src++;
-
 		if (!strcmp(src, "uint8"))
 			arg_types[idx++] = TAG_UINT8;
 		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint8"))
@@ -268,30 +251,22 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 			arg_types[idx++] = TAG_UINT64;
 		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint64"))
 			arg_types[idx++] = MARK_OUT(TAG_UINT64);
-		else if (!strcmp(src, "int8"))
+		else if (!strcmp(src, "sint8"))
 			arg_types[idx++] = TAG_INT8;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "int8"))
+		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint8"))
 			arg_types[idx++] = MARK_OUT(TAG_INT8);
-		else if (!strcmp(src, "int16"))
+		else if (!strcmp(src, "sint16"))
 			arg_types[idx++] = TAG_INT16;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "int16"))
+		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint16"))
 			arg_types[idx++] = MARK_OUT(TAG_INT16);
-		else if (!strcmp(src, "int32"))
+		else if (!strcmp(src, "sint32"))
 			arg_types[idx++] = TAG_INT32;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "int32"))
+		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint32"))
 			arg_types[idx++] = MARK_OUT(TAG_INT32);
-		else if (!strcmp(src, "int64"))
+		else if (!strcmp(src, "sint64"))
 			arg_types[idx++] = TAG_INT64;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "int64"))
+		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint64"))
 			arg_types[idx++] = MARK_OUT(TAG_INT64);
-		else if (!strcmp(src, "fp32"))
-			arg_types[idx++] = TAG_FLOAT32;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "fp32"))
-			arg_types[idx++] = MARK_OUT(TAG_FLOAT32);
-		else if (!strcmp(src, "fp64"))
-			arg_types[idx++] = TAG_FLOAT;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "fp64"))
-			arg_types[idx++] = MARK_OUT(TAG_FLOAT);
 		else if (!strcmp(src, "float"))
 			arg_types[idx++] = TAG_FLOAT32;
 		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "float"))
@@ -316,8 +291,10 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 			arg_types[idx++] = TAG_INT64;
 		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "bool"))
 			arg_types[idx++] = MARK_OUT(TAG_INT64);
-		else
+		else if (!strcmp(src, "void"))
 			arg_types[idx++] = 0;
+		else
+			printf("invalid arg_type: %s\n", src);
 
 		l = LIST_TAIL(l);
 		l = q ? deref(q, l, l_ctx) : l;
@@ -325,9 +302,6 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 	}
 
 	const char *src = ret;
-
-	if (*src == 's')
-		src++;
 
 	if (!strcmp(src, "uint8")) {
 		arg_types[idx++] = MARK_OUT(TAG_UINT8);
@@ -341,24 +315,18 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 	} else if (!strcmp(src, "uint64")) {
 		arg_types[idx++] = MARK_OUT(TAG_UINT64);
 		ret_type = TAG_INT64;
-	} else if (!strcmp(src, "int8")) {
+	} else if (!strcmp(src, "sint8")) {
 		arg_types[idx++] = MARK_OUT(TAG_INT8);
 		ret_type = TAG_INT8;
-	} else if (!strcmp(src, "int16")) {
+	} else if (!strcmp(src, "sint16")) {
 		arg_types[idx++] = MARK_OUT(TAG_INT16);
 		ret_type = TAG_INT16;
-	} else if (!strcmp(src, "int32")) {
+	} else if (!strcmp(src, "sint32")) {
 		arg_types[idx++] = MARK_OUT(TAG_INT32);
 		ret_type = TAG_INT32;
-	} else if (!strcmp(src, "int64")) {
+	} else if (!strcmp(src, "sint64")) {
 		arg_types[idx++] = MARK_OUT(TAG_INT64);
 		ret_type = TAG_INT64;
-	} else if (!strcmp(src, "fp32")) {
-		arg_types[idx++] = MARK_OUT(TAG_FLOAT32);
-		ret_type = TAG_FLOAT32;
-	} else if (!strcmp(src, "fp64")) {
-		arg_types[idx++] = MARK_OUT(TAG_FLOAT);
-		ret_type = TAG_FLOAT;
 	} else if (!strcmp(src, "float")) {
 		arg_types[idx++] = MARK_OUT(TAG_FLOAT32);
 		ret_type = TAG_FLOAT32;
@@ -377,9 +345,11 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 	} else if (!strcmp(src, "bool")) {
 		arg_types[idx++] = MARK_OUT(TAG_INT64);
 		ret_type = TAG_INT64;
-	} else {
+	} else if (!strcmp(src, "void")) {
 		arg_types[idx++] = MARK_OUT(TAG_VOID);
 		ret_type = TAG_VOID;
+	} else {
+		printf("invalid ret_type: %s\n", src);
 	}
 
 	register_ffi(m->pl, symbol, idx, (void*)func, arg_types, ret_type, false);

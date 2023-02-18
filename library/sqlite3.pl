@@ -4,7 +4,7 @@
 	]).
 
 :- use_foreign_module('libsqlite3.so', [
-	sqlite3_open([cstr, -ptr], sint64),
+	sqlite3_open([cstr,-ptr], sint64),
 	sqlite3_exec([ptr,cstr,ptr,ptr,-ptr], sint64),
 	sqlite3_prepare_v2([ptr,cstr,ptr,-ptr,-ccstr], sint64),
 	sqlite3_step([ptr], sint64),
