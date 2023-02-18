@@ -870,8 +870,8 @@ style:
 		baz([cstr, cstr], cstr)
 	]).
 ```
-There is an example using SQLITE. First make sure SQLITE is installed
-on your system, then, given the code in *samples/sqlite3.pl*...
+This is an example using SQLITE. Given the code in
+*samples/sqlite3.pl*...
 
 ```console
 	:- use_module(library(sqlite3)).
@@ -896,7 +896,13 @@ Run...
 Or to use RayLib (if installed)...
 
 ```console
-	?- use_foreign_module('libraylib.so', ['InitWindow'([sint64,sint64,cstr], void)]).
+	?- use_foreign_module('libraylib.so', [
+		'InitWindow'([sint32,sint32,cstr], void)
+		'BeginDrawing'([], void),
+		'DrawText'([cstr,sint32,sint32,sint32,[uint8,uint8,uint8,uint8]], void), # STRUCTS not yet implemented
+		'EndDrawing'([], void),
+		'CloseWindow'([], void)
+		]).
 	   true.
 	?- 'InitWindow'(400,400,"Hello from Trealla").
 ```
