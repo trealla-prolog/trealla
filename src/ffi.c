@@ -172,11 +172,15 @@ USE_RESULT bool fn_sys_register_function_4(query *q)
 			arg_types[idx++] = TAG_FLOAT32;
 		else if (!strcmp(src, "fp64"))
 			arg_types[idx++] = TAG_FLOAT;
+		else if (!strcmp(src, "float"))
+			arg_types[idx++] = TAG_FLOAT32;
+		else if (!strcmp(src, "double"))
+			arg_types[idx++] = TAG_FLOAT;
 		else if (!strcmp(src, "ptr"))
 			arg_types[idx++] = TAG_PTR;
 		else if (!strcmp(src, "cstr"))
 			arg_types[idx++] = TAG_CSTR;
-		else if (!strcmp(src, "const_cstr"))
+		else if (!strcmp(src, "ccstr"))
 			arg_types[idx++] = TAG_CCSTR;
 		else
 			arg_types[idx++] = 0;
@@ -211,11 +215,15 @@ USE_RESULT bool fn_sys_register_function_4(query *q)
 		ret_type = TAG_FLOAT32;
 	else if (!strcmp(src, "fp64"))
 		ret_type = TAG_FLOAT;
+	else if (!strcmp(src, "float"))
+		ret_type = TAG_FLOAT32;
+	else if (!strcmp(src, "double"))
+		ret_type = TAG_FLOAT;
 	else if (!strcmp(src, "ptr"))
 		ret_type = TAG_PTR;
 	else if (!strcmp(src, "cstr"))
 		ret_type = TAG_CSTR;
-	else if (!strcmp(src, "const_cstr"))
+	else if (!strcmp(src, "ccstr"))
 		ret_type = TAG_CCSTR;
 	else
 		ret_type = 0;
@@ -284,6 +292,14 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 			arg_types[idx++] = TAG_FLOAT;
 		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "fp64"))
 			arg_types[idx++] = MARK_OUT(TAG_FLOAT);
+		else if (!strcmp(src, "float"))
+			arg_types[idx++] = TAG_FLOAT32;
+		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "float"))
+			arg_types[idx++] = MARK_OUT(TAG_FLOAT32);
+		else if (!strcmp(src, "double"))
+			arg_types[idx++] = TAG_FLOAT;
+		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "double"))
+			arg_types[idx++] = MARK_OUT(TAG_FLOAT);
 		else if (!strcmp(src, "ptr"))
 			arg_types[idx++] = TAG_PTR;
 		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ptr"))
@@ -292,10 +308,14 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 			arg_types[idx++] = TAG_CSTR;
 		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "cstr"))
 			arg_types[idx++] = MARK_OUT(TAG_CSTR);
-		else if (!strcmp(src, "const_cstr"))
+		else if (!strcmp(src, "ccstr"))
 			arg_types[idx++] = TAG_CCSTR;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "const_cstr"))
+		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ccstr"))
 			arg_types[idx++] = MARK_OUT(TAG_CCSTR);
+		else if (!strcmp(src, "bool"))
+			arg_types[idx++] = TAG_INT64;
+		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "bool"))
+			arg_types[idx++] = MARK_OUT(TAG_INT64);
 		else
 			arg_types[idx++] = 0;
 
@@ -339,15 +359,24 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 	} else if (!strcmp(src, "fp64")) {
 		arg_types[idx++] = MARK_OUT(TAG_FLOAT);
 		ret_type = TAG_FLOAT;
+	} else if (!strcmp(src, "float")) {
+		arg_types[idx++] = MARK_OUT(TAG_FLOAT32);
+		ret_type = TAG_FLOAT32;
+	} else if (!strcmp(src, "double")) {
+		arg_types[idx++] = MARK_OUT(TAG_FLOAT);
+		ret_type = TAG_FLOAT;
 	} else if (!strcmp(src, "ptr")) {
 		arg_types[idx++] = MARK_OUT(TAG_PTR);
 		ret_type = TAG_FLOAT;
 	} else if (!strcmp(src, "cstr")) {
 		arg_types[idx++] = MARK_OUT(TAG_CSTR);
 		ret_type = TAG_CSTR;
-	} else if (!strcmp(src, "const_cstr")) {
+	} else if (!strcmp(src, "ccstr")) {
 		arg_types[idx++] = MARK_OUT(TAG_CCSTR);
 		ret_type = TAG_CCSTR;
+	} else if (!strcmp(src, "bool")) {
+		arg_types[idx++] = MARK_OUT(TAG_INT64);
+		ret_type = TAG_INT64;
 	} else {
 		arg_types[idx++] = MARK_OUT(TAG_VOID);
 		ret_type = TAG_VOID;

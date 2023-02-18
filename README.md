@@ -795,8 +795,9 @@ wrapper to validate arg types at call/runtime...
 	'$register_function'/4		# '$ffi_reg'(+handle,+symbol,+types,+ret_type)
 	'$register_predicate'/4		# '$ffi_reg'(+handle,+symbol,+types,+ret_type)
 
-The allowed types are *int8*, *int16*, *int32*, *int64*, *uint8*,
-*uint16*, *uint32*, *uint64*, *fp32*, *fp64*, *cstr*, *const_cstr*
+The allowed types are *int8* (or *sint8*), *int16* (or *sint16*), *int32* (or *sint32*),
+*int64* (or *sint64*), *uint8*, *uint16*, *uint32*, *uint64*, *fp32* (or *float*),
+*fp64* (or *double*), *bool*, *void* (a return type only), *cstr*, *ccstr* (a *const* cstr)
 and *ptr* (for arbitrary pointers/handles).
 
 Assuming the following C-code in *samples/foo.c*:
@@ -831,7 +832,7 @@ Register a builtin function...
 
 ```console
 	?- '$dlopen'('samples/libfoo.so', 0, H),
-		'$register_function'(H, foo, [fp64, int64], fp64).
+		'$register_function'(H, foo, [fp64, sint64], fp64).
 	   H = 94051868794416.
 	?- R is foo(2.0, 3).
 	   R = 8.0.
@@ -843,7 +844,7 @@ Register a builtin predicate...
 
 ```console
 	?- '$dlopen'('samples/libfoo.so', 0, H),
-		'$register_predicate'(H, bar, [fp64, int64, -fp64], int64),
+		'$register_predicate'(H, bar, [fp64, sint64, -fp64], sint64),
 		'$register_predicate'(H, baz, [cstr, cstr], cstr),
 	   H = 94051868794416.
 	?- bar(2.0, 3, X, Return).
@@ -862,7 +863,7 @@ style:
 
 ```console
 	:- use_foreign_module('samples/libfoo.so', [
-		bar([fp64, int64, -fp64], int64),
+		bar([fp64, sint64, -fp64], sint64),
 		baz([cstr, cstr], cstr)
 	]).
 ```
@@ -892,7 +893,7 @@ Run...
 Or to use RayLib (if installed)...
 
 ```console
-	?- use_foreign_module('libraylib.so', ['InitWindow'([int64,int64,cstr], void)]).
+	?- use_foreign_module('libraylib.so', ['InitWindow'([sint64,sint64,cstr], void)]).
 	   true.
 	?- 'InitWindow'(400,400,"Hello from Trealla").
 ```
