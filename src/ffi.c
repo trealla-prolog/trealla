@@ -24,8 +24,12 @@ enum {
 	TAG_UINT16,
 	TAG_UINT32,
 	TAG_UINT64,
+	TAG_USHORT,
+	TAG_SHORT,
 	TAG_UINT,
 	TAG_INT,
+	TAG_ULONG,
+	TAG_LONG,
 	TAG_FLOAT32,
 	TAG_CCSTR,
 	TAG_STRUCT
@@ -44,8 +48,12 @@ union result_ {
 	int16_t i16;
 	int32_t i32;
 	int64_t i64;
-	unsigned uint;
-	int sint;
+	unsigned short ushort;
+	signed short sshort;
+	unsigned int uint;
+	signed int sint;
+	unsigned long ulong;
+	signed long slong;
 	char *s;
 	void *p;
 };
@@ -177,9 +185,13 @@ USE_RESULT bool fn_sys_register_function_4(query *q)
 			else if (!strcmp(src, "sint"))
 				arg_types[idx++] = TAG_INT;
 			else if (!strcmp(src, "ushort"))
-				arg_types[idx++] = TAG_UINT16;
+				arg_types[idx++] = TAG_USHORT;
 			else if (!strcmp(src, "sshort"))
-				arg_types[idx++] = TAG_INT16;
+				arg_types[idx++] = TAG_SHORT;
+			else if (!strcmp(src, "ulong"))
+				arg_types[idx++] = TAG_ULONG;
+			else if (!strcmp(src, "slong"))
+				arg_types[idx++] = TAG_LONG;
 			else if (!strcmp(src, "float"))
 				arg_types[idx++] = TAG_FLOAT32;
 			else if (!strcmp(src, "double"))
@@ -279,9 +291,13 @@ bool do_register_struct(module *m, query *q, void *handle, const char *symbol, c
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint"))
 				arg_types[idx++] = MARK_OUT(TAG_UINT);
 			else if (!strcmp(src, "ushort"))
-				arg_types[idx++] = TAG_UINT16;
+				arg_types[idx++] = TAG_USHORT;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ushort"))
-				arg_types[idx++] = MARK_OUT(TAG_UINT16);
+				arg_types[idx++] = MARK_OUT(TAG_USHORT);
+			else if (!strcmp(src, "ulong"))
+				arg_types[idx++] = TAG_ULONG;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ulong"))
+				arg_types[idx++] = MARK_OUT(TAG_ULONG);
 			else if (!strcmp(src, "sint8"))
 				arg_types[idx++] = TAG_INT8;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint8"))
@@ -306,6 +322,10 @@ bool do_register_struct(module *m, query *q, void *handle, const char *symbol, c
 				arg_types[idx++] = TAG_INT16;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sshort"))
 				arg_types[idx++] = MARK_OUT(TAG_INT16);
+			else if (!strcmp(src, "slong"))
+				arg_types[idx++] = TAG_LONG;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "slong"))
+				arg_types[idx++] = MARK_OUT(TAG_LONG);
 			else if (!strcmp(src, "float"))
 				arg_types[idx++] = TAG_FLOAT32;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "float"))
@@ -381,9 +401,13 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint"))
 				arg_types[idx++] = MARK_OUT(TAG_UINT);
 			else if (!strcmp(src, "ushort"))
-				arg_types[idx++] = TAG_UINT16;
+				arg_types[idx++] = TAG_USHORT;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ushort"))
-				arg_types[idx++] = MARK_OUT(TAG_UINT16);
+				arg_types[idx++] = MARK_OUT(TAG_USHORT);
+			else if (!strcmp(src, "ulong"))
+				arg_types[idx++] = TAG_ULONG;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ulong"))
+				arg_types[idx++] = MARK_OUT(TAG_ULONG);
 			else if (!strcmp(src, "sint8"))
 				arg_types[idx++] = TAG_INT8;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint8"))
@@ -405,9 +429,13 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint"))
 				arg_types[idx++] = MARK_OUT(TAG_INT);
 			else if (!strcmp(src, "sshort"))
-				arg_types[idx++] = TAG_INT16;
+				arg_types[idx++] = TAG_SHORT;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sshort"))
-				arg_types[idx++] = MARK_OUT(TAG_INT16);
+				arg_types[idx++] = MARK_OUT(TAG_SHORT);
+			else if (!strcmp(src, "slong"))
+				arg_types[idx++] = TAG_LONG;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "slong"))
+				arg_types[idx++] = MARK_OUT(TAG_LONG);
 			else if (!strcmp(src, "float"))
 				arg_types[idx++] = TAG_FLOAT32;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "float"))
@@ -463,10 +491,13 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 		ret_type = TAG_INT64;
 	} else if (!strcmp(src, "uint")) {
 		arg_types[idx++] = MARK_OUT(TAG_UINT);
-		ret_type = TAG_INT;
+		ret_type = TAG_UINT;
 	} else if (!strcmp(src, "ushort")) {
-		arg_types[idx++] = MARK_OUT(TAG_UINT16);
-		ret_type = TAG_INT;
+		arg_types[idx++] = MARK_OUT(TAG_USHORT);
+		ret_type = TAG_USHORT;
+	} else if (!strcmp(src, "ulong")) {
+		arg_types[idx++] = MARK_OUT(TAG_ULONG);
+		ret_type = TAG_ULONG;
 	} else if (!strcmp(src, "sint8")) {
 		arg_types[idx++] = MARK_OUT(TAG_INT8);
 		ret_type = TAG_INT8;
@@ -483,8 +514,11 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 		arg_types[idx++] = MARK_OUT(TAG_INT);
 		ret_type = TAG_INT;
 	} else if (!strcmp(src, "sshort")) {
-		arg_types[idx++] = MARK_OUT(TAG_INT16);
-		ret_type = TAG_INT;
+		arg_types[idx++] = MARK_OUT(TAG_SHORT);
+		ret_type = TAG_SHORT;
+	} else if (!strcmp(src, "slong")) {
+		arg_types[idx++] = MARK_OUT(TAG_LONG);
+		ret_type = TAG_LONG;
 	} else if (!strcmp(src, "float")) {
 		arg_types[idx++] = MARK_OUT(TAG_FLOAT32);
 		ret_type = TAG_FLOAT32;
@@ -550,6 +584,10 @@ bool wrapper_for_function(query *q, builtins *ptr)
 			;
 		else if ((ptr->types[i] == TAG_UINT) && is_smallint(c))
 			;
+		else if ((ptr->types[i] == TAG_USHORT) && is_smallint(c))
+			;
+		else if ((ptr->types[i] == TAG_ULONG) && is_smallint(c))
+			;
 		else if ((ptr->types[i] == TAG_INT8) && is_smallint(c))
 			;
 		else if ((ptr->types[i] == TAG_INT16) && is_smallint(c))
@@ -559,6 +597,10 @@ bool wrapper_for_function(query *q, builtins *ptr)
 		else if ((ptr->types[i] == TAG_INT64) && is_smallint(c))
 			;
 		else if ((ptr->types[i] == TAG_INT) && is_smallint(c))
+			;
+		else if ((ptr->types[i] == TAG_SHORT) && is_smallint(c))
+			;
+		else if ((ptr->types[i] == TAG_LONG) && is_smallint(c))
 			;
 		else if ((ptr->types[i] == TAG_PTR) && is_smallint(c))
 			;
@@ -595,6 +637,10 @@ bool wrapper_for_function(query *q, builtins *ptr)
 			arg_types[i] = &ffi_type_uint64;
 		else if (ptr->types[i] == TAG_UINT)
 			arg_types[i] = &ffi_type_uint;
+		else if (ptr->types[i] == TAG_USHORT)
+			arg_types[i] = &ffi_type_ushort;
+		else if (ptr->types[i] == TAG_ULONG)
+			arg_types[i] = &ffi_type_ulong;
 		else if (ptr->types[i] == TAG_INT8)
 			arg_types[i] = &ffi_type_sint8;
 		else if (ptr->types[i] == TAG_INT16)
@@ -605,6 +651,10 @@ bool wrapper_for_function(query *q, builtins *ptr)
 			arg_types[i] = &ffi_type_sint64;
 		else if (ptr->types[i] == TAG_INT)
 			arg_types[i] = &ffi_type_sint;
+		else if (ptr->types[i] == TAG_SHORT)
+			arg_types[i] = &ffi_type_sshort;
+		else if (ptr->types[i] == TAG_LONG)
+			arg_types[i] = &ffi_type_slong;
 		else if (ptr->types[i] == TAG_FLOAT32)
 			arg_types[i] = &ffi_type_float;
 		else if (ptr->types[i] == TAG_FLOAT)
@@ -628,6 +678,10 @@ bool wrapper_for_function(query *q, builtins *ptr)
 			arg_values[i] = &c->val_uint64;
 		else if (ptr->types[i] == TAG_UINT)
 			arg_values[i] = &c->val_uint;
+		else if (ptr->types[i] == TAG_USHORT)
+			arg_values[i] = &c->val_ushort;
+		else if (ptr->types[i] == TAG_ULONG)
+			arg_values[i] = &c->val_ulong;
 		else if (ptr->types[i] == TAG_INT8)
 			arg_values[i] = &c->val_int8;
 		else if (ptr->types[i] == TAG_INT16)
@@ -668,6 +722,10 @@ bool wrapper_for_function(query *q, builtins *ptr)
 		ret_type = &ffi_type_uint64;
 	else if (ptr->ret_type == TAG_UINT)
 		ret_type = &ffi_type_uint;
+	else if (ptr->ret_type == TAG_USHORT)
+		ret_type = &ffi_type_ushort;
+	else if (ptr->ret_type == TAG_ULONG)
+		ret_type = &ffi_type_ulong;
 	else if (ptr->ret_type == TAG_INT8)
 		ret_type = &ffi_type_sint8;
 	else if (ptr->ret_type == TAG_INT16)
@@ -678,6 +736,10 @@ bool wrapper_for_function(query *q, builtins *ptr)
 		ret_type = &ffi_type_sint64;
 	else if (ptr->ret_type == TAG_INT)
 		ret_type = &ffi_type_sint;
+	else if (ptr->ret_type == TAG_SHORT)
+		ret_type = &ffi_type_sshort;
+	else if (ptr->ret_type == TAG_LONG)
+		ret_type = &ffi_type_slong;
 	else if (ptr->ret_type == TAG_FLOAT32)
 		ret_type = &ffi_type_float;
 	else if (ptr->ret_type == TAG_FLOAT)
@@ -709,6 +771,10 @@ bool wrapper_for_function(query *q, builtins *ptr)
 		make_int(&tmp, result.u64);
 	else if (ptr->ret_type == TAG_UINT)
 		make_int(&tmp, result.uint);
+	else if (ptr->ret_type == TAG_USHORT)
+		make_int(&tmp, result.ushort);
+	else if (ptr->ret_type == TAG_ULONG)
+		make_int(&tmp, result.ulong);
 	else if (ptr->ret_type == TAG_INT8)
 		make_int(&tmp, result.i8);
 	else if (ptr->ret_type == TAG_INT16)
@@ -719,6 +785,10 @@ bool wrapper_for_function(query *q, builtins *ptr)
 		make_int(&tmp, result.i64);
 	else if (ptr->ret_type == TAG_INT)
 		make_int(&tmp, result.sint);
+	else if (ptr->ret_type == TAG_SHORT)
+		make_int(&tmp, result.sshort);
+	else if (ptr->ret_type == TAG_LONG)
+		make_int(&tmp, result.slong);
 	else if (ptr->ret_type == TAG_FLOAT32)
 		make_float(&tmp, result.f32);
 	else if (ptr->ret_type == TAG_FLOAT)
@@ -764,6 +834,10 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			;
 		else if ((ptr->types[i] == TAG_UINT) && is_smallint(c))
 			;
+		else if ((ptr->types[i] == TAG_USHORT) && is_smallint(c))
+			;
+		else if ((ptr->types[i] == TAG_ULONG) && is_smallint(c))
+			;
 		else if ((ptr->types[i] == TAG_INT8) && is_smallint(c))
 			;
 		else if ((ptr->types[i] == TAG_INT16) && is_smallint(c))
@@ -773,6 +847,10 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 		else if ((ptr->types[i] == TAG_INT64) && is_smallint(c))
 			;
 		else if ((ptr->types[i] == TAG_INT) && is_smallint(c))
+			;
+		else if ((ptr->types[i] == TAG_SHORT) && is_smallint(c))
+			;
+		else if ((ptr->types[i] == TAG_LONG) && is_smallint(c))
 			;
 		else if ((ptr->types[i] == TAG_PTR) && is_smallint(c))
 			;
@@ -789,11 +867,15 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			ptr->types[i] == TAG_UINT32 ? "integer" :
 			ptr->types[i] == TAG_UINT64 ? "integer" :
 			ptr->types[i] == TAG_UINT ? "integer" :
+			ptr->types[i] == TAG_USHORT ? "integer" :
+			ptr->types[i] == TAG_ULONG ? "integer" :
 			ptr->types[i] == TAG_INT8 ? "integer" :
 			ptr->types[i] == TAG_INT16 ? "integer" :
 			ptr->types[i] == TAG_INT32 ? "integer" :
 			ptr->types[i] == TAG_INT64 ? "integer" :
 			ptr->types[i] == TAG_INT ? "integer" :
+			ptr->types[i] == TAG_SHORT ? "integer" :
+			ptr->types[i] == TAG_LONG ? "integer" :
 			ptr->types[i] == TAG_FLOAT32 ? "float" :
 			ptr->types[i] == TAG_FLOAT ? "float" :
 			ptr->types[i] == TAG_CSTR ? "atom" :
@@ -825,6 +907,14 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			arg_types[i] = &ffi_type_uint;
 		else if (ptr->types[i] == MARK_OUT(TAG_UINT))
 			arg_types[i] = &ffi_type_pointer;
+		else if (ptr->types[i] == TAG_USHORT)
+			arg_types[i] = &ffi_type_ushort;
+		else if (ptr->types[i] == MARK_OUT(TAG_USHORT))
+			arg_types[i] = &ffi_type_pointer;
+		else if (ptr->types[i] == TAG_ULONG)
+			arg_types[i] = &ffi_type_ulong;
+		else if (ptr->types[i] == MARK_OUT(TAG_ULONG))
+			arg_types[i] = &ffi_type_pointer;
 		else if (ptr->types[i] == TAG_INT8)
 			arg_types[i] = &ffi_type_sint8;
 		else if (ptr->types[i] == MARK_OUT(TAG_INT8))
@@ -844,6 +934,14 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 		else if (ptr->types[i] == TAG_INT)
 			arg_types[i] = &ffi_type_sint32;
 		else if (ptr->types[i] == MARK_OUT(TAG_INT))
+			arg_types[i] = &ffi_type_pointer;
+		else if (ptr->types[i] == TAG_SHORT)
+			arg_types[i] = &ffi_type_sshort;
+		else if (ptr->types[i] == MARK_OUT(TAG_SHORT))
+			arg_types[i] = &ffi_type_pointer;
+		else if (ptr->types[i] == TAG_LONG)
+			arg_types[i] = &ffi_type_slong;
+		else if (ptr->types[i] == MARK_OUT(TAG_LONG))
 			arg_types[i] = &ffi_type_pointer;
 		else if (ptr->types[i] == TAG_FLOAT32)
 			arg_types[i] = &ffi_type_float;
@@ -895,6 +993,16 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT)) {
 			s_args[i] = &cells[i].val_uint;
 			arg_values[i] = &cells[i].val_uint;
+		} else if (ptr->types[i] == TAG_USHORT) {
+			arg_values[i] = &c->val_ushort;
+		} else if (ptr->types[i] == MARK_OUT(TAG_USHORT)) {
+			s_args[i] = &cells[i].val_ushort;
+			arg_values[i] = &cells[i].val_ushort;
+		} else if (ptr->types[i] == TAG_ULONG) {
+			arg_values[i] = &c->val_ulong;
+		} else if (ptr->types[i] == MARK_OUT(TAG_ULONG)) {
+			s_args[i] = &cells[i].val_ulong;
+			arg_values[i] = &cells[i].val_ulong;
 		} else if (ptr->types[i] == TAG_INT8) {
 			arg_values[i] = &c->val_int8;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT8)) {
@@ -920,6 +1028,16 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT)) {
 			s_args[i] = &cells[i].val_int;
 			arg_values[i] = &cells[i].val_int;
+		} else if (ptr->types[i] == TAG_SHORT) {
+			arg_values[i] = &c->val_sshort;
+		} else if (ptr->types[i] == MARK_OUT(TAG_SHORT)) {
+			s_args[i] = &cells[i].val_sshort;
+			arg_values[i] = &cells[i].val_sshort;
+		} else if (ptr->types[i] == TAG_LONG) {
+			arg_values[i] = &c->val_slong;
+		} else if (ptr->types[i] == MARK_OUT(TAG_LONG)) {
+			s_args[i] = &cells[i].val_slong;
+			arg_values[i] = &cells[i].val_slong;
 		} else if (ptr->types[i] == TAG_FLOAT32) {
 			arg_values[i] = &c->val_float32;
 		} else if (ptr->types[i] == MARK_OUT(TAG_FLOAT32)) {
@@ -974,6 +1092,10 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 		ret_type = &ffi_type_uint64;
 	else if (ptr->ret_type == TAG_UINT)
 		ret_type = &ffi_type_uint;
+	else if (ptr->ret_type == TAG_USHORT)
+		ret_type = &ffi_type_ushort;
+	else if (ptr->ret_type == TAG_ULONG)
+		ret_type = &ffi_type_ulong;
 	else if (ptr->ret_type == TAG_INT8)
 		ret_type = &ffi_type_sint8;
 	else if (ptr->ret_type == TAG_INT16)
@@ -984,6 +1106,10 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 		ret_type = &ffi_type_sint64;
 	else if (ptr->ret_type == TAG_INT)
 		ret_type = &ffi_type_sint;
+	else if (ptr->ret_type == TAG_SHORT)
+		ret_type = &ffi_type_sshort;
+	else if (ptr->ret_type == TAG_LONG)
+		ret_type = &ffi_type_slong;
 	else if (ptr->ret_type == TAG_FLOAT32)
 		ret_type = &ffi_type_float;
 	else if (ptr->ret_type == TAG_FLOAT)
@@ -1038,6 +1164,16 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
+			} else if (ptr->types[i] == MARK_OUT(TAG_USHORT)) {
+				make_int(&tmp, cells[i].val_ushort);
+				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
+				unshare_cell(&tmp);
+				if (ok != true) return ok;
+			} else if (ptr->types[i] == MARK_OUT(TAG_ULONG)) {
+				make_int(&tmp, cells[i].val_ulong);
+				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
+				unshare_cell(&tmp);
+				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(TAG_INT8)) {
 				make_int(&tmp, cells[i].val_int8);
 				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
@@ -1060,6 +1196,16 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(TAG_INT)) {
 				make_int(&tmp, cells[i].val_int);
+				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
+				unshare_cell(&tmp);
+				if (ok != true) return ok;
+			} else if (ptr->types[i] == MARK_OUT(TAG_SHORT)) {
+				make_int(&tmp, cells[i].val_sshort);
+				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
+				unshare_cell(&tmp);
+				if (ok != true) return ok;
+			} else if (ptr->types[i] == MARK_OUT(TAG_LONG)) {
+				make_int(&tmp, cells[i].val_slong);
 				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
@@ -1123,6 +1269,16 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		if (ok != true) return ok;
+	} else if (ptr->ret_type == TAG_USHORT) {
+		make_int(&tmp, result.ushort);
+		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
+		unshare_cell(&tmp);
+		if (ok != true) return ok;
+	} else if (ptr->ret_type == TAG_ULONG) {
+		make_int(&tmp, result.ulong);
+		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
+		unshare_cell(&tmp);
+		if (ok != true) return ok;
 	} else if (ptr->ret_type == TAG_INT8) {
 		make_int(&tmp, result.i8);
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
@@ -1145,6 +1301,16 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 		if (ok != true) return ok;
 	} else if (ptr->ret_type == TAG_INT) {
 		make_int(&tmp, result.sint);
+		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
+		unshare_cell(&tmp);
+		if (ok != true) return ok;
+	} else if (ptr->ret_type == TAG_SHORT) {
+		make_int(&tmp, result.sshort);
+		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
+		unshare_cell(&tmp);
+		if (ok != true) return ok;
+	} else if (ptr->ret_type == TAG_LONG) {
+		make_int(&tmp, result.slong);
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		if (ok != true) return ok;

@@ -361,6 +361,10 @@ struct cell_ {
 		uint16_t val_uint16;
 		uint32_t val_uint32;
 		uint64_t val_uint64;
+		unsigned short val_ushort;
+		unsigned long val_ulong;
+		signed short val_sshort;
+		signed long val_slong;
 		float val_float32;
 		double val_float64;
 
