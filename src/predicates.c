@@ -7253,8 +7253,7 @@ static bool fn_sys_get_level_1(query *q)
 
 static bool fn_abort_0(query *q)
 {
-	exit(0);
-	return false;
+	return throw_error(q, q->st.curr_cell, q->st.curr_frame, "$aborted", "abort_error");
 }
 
 static bool fn_sys_choice_0(query *q)
