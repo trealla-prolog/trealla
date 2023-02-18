@@ -795,9 +795,12 @@ wrapper to validate arg types at call/runtime...
 	'$register_function'/4		# '$ffi_reg'(+handle,+symbol,+types,+ret_type)
 	'$register_predicate'/4		# '$ffi_reg'(+handle,+symbol,+types,+ret_type)
 
-The allowed types are *int8* (or *sint8*), *int16* (or *sint16*), *int32* (or *sint32*),
-*int64* (or *sint64*), *uint8*, *uint16*, *uint32*, *uint64*, *fp32* (or *float*),
-*fp64* (or *double*), *bool*, *void* (a return type only), *cstr*, *ccstr* (a *const* cstr)
+The allowed types are
+*sint8*, *sint16*, *sint32*, *sint64*,
+*uint8*, *uint16*, *uint32*, *uint64*,
+*float*, *double*,
+*bool*, *void* (a return type only),
+*cstr* (a char pointer), *ccstr* (a *const* char pointer)
 and *ptr* (for arbitrary pointers/handles).
 
 Assuming the following C-code in *samples/foo.c*:
@@ -832,7 +835,7 @@ Register a builtin function...
 
 ```console
 	?- '$dlopen'('samples/libfoo.so', 0, H),
-		'$register_function'(H, foo, [fp64, sint64], fp64).
+		'$register_function'(H, foo, [double, sint64], double).
 	   H = 94051868794416.
 	?- R is foo(2.0, 3).
 	   R = 8.0.
@@ -844,7 +847,7 @@ Register a builtin predicate...
 
 ```console
 	?- '$dlopen'('samples/libfoo.so', 0, H),
-		'$register_predicate'(H, bar, [fp64, sint64, -fp64], sint64),
+		'$register_predicate'(H, bar, [double, sint64, -double], sint64),
 		'$register_predicate'(H, baz, [cstr, cstr], cstr),
 	   H = 94051868794416.
 	?- bar(2.0, 3, X, Return).
@@ -863,7 +866,7 @@ style:
 
 ```console
 	:- use_foreign_module('samples/libfoo.so', [
-		bar([fp64, sint64, -fp64], sint64),
+		bar([double, sint64, -double], sint64),
 		baz([cstr, cstr], cstr)
 	]).
 ```
