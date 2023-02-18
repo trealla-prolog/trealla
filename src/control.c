@@ -621,6 +621,14 @@ bool find_exception_handler(query *q, char *ball)
 	cell *e = parse_to_heap(q, ball);
 	pl_idx_t e_ctx = q->st.curr_frame;
 
+	if (!strcmp(C_STR(q, e+1), "$aborted")) {
+		fprintf(stdout, "%% Execution aborted\n");
+		q->pl->did_dump_vars = true;
+		q->ball = NULL;
+		q->error = true;
+		return false;
+	}
+
 	if (!q->is_redo)
 		fprintf(stdout, "   ");
 	else
