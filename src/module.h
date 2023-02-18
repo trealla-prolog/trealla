@@ -32,6 +32,7 @@ bool do_use_module_1(module *curr_m, cell *p);
 bool do_use_module_2(module *curr_m, cell *p);
 
 #if USE_FFI
+bool do_foreign_struct(module *m, cell *p);
 bool do_use_foreign_module(module *m, cell *p);
 #endif
 

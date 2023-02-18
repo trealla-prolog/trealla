@@ -896,10 +896,12 @@ Run...
 Or to use RayLib (if installed)...
 
 ```console
+	?- foreign_struct(color, [sint,sint,sint,sint]).
 	?- use_foreign_module('libraylib.so', [
-		'InitWindow'([sint,sint,cstr], void)
+		'InitWindow'([sint,sint,cstr], void),
 		'BeginDrawing'([], void),
-		'DrawText'([cstr,sint,sint,sint,[sint,sint,sint,sint]], void), # STRUCTS not yet implemented
+		'ClearBackground'([color], void),
+		'DrawText'([cstr,sint,sint,sint,color], void),
 		'EndDrawing'([], void),
 		'CloseWindow'([], void)
 		]).

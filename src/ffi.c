@@ -27,7 +27,8 @@ enum {
 	TAG_UINT,
 	TAG_INT,
 	TAG_FLOAT32,
-	TAG_CCSTR
+	TAG_CCSTR,
+	TAG_STRUCT
 };
 
 #define MARK_OUT(t) (((unsigned)(t) << 2) | 1)
@@ -151,40 +152,49 @@ USE_RESULT bool fn_sys_register_function_4(query *q)
 	while (is_iso_list(l) && (idx < MAX_ARITY)) {
 		cell *h = LIST_HEAD(l);
 		h = deref(q, h, l_ctx);
-		const char *src = C_STR(q, h);
 
-		if (!strcmp(src, "uint8"))
-			arg_types[idx++] = TAG_UINT8;
-		else if (!strcmp(src, "uint16"))
-			arg_types[idx++] = TAG_UINT16;
-		else if (!strcmp(src, "uint32"))
-			arg_types[idx++] = TAG_UINT32;
-		else if (!strcmp(src, "uint64"))
-			arg_types[idx++] = TAG_UINT64;
-		else if (!strcmp(src, "uint"))
-			arg_types[idx++] = TAG_UINT;
-		else if (!strcmp(src, "sint8"))
-			arg_types[idx++] = TAG_INT8;
-		else if (!strcmp(src, "sint16"))
-			arg_types[idx++] = TAG_INT16;
-		else if (!strcmp(src, "sint32"))
-			arg_types[idx++] = TAG_INT32;
-		else if (!strcmp(src, "sint64"))
-			arg_types[idx++] = TAG_INT64;
-		else if (!strcmp(src, "sint"))
-			arg_types[idx++] = TAG_INT;
-		else if (!strcmp(src, "float"))
-			arg_types[idx++] = TAG_FLOAT32;
-		else if (!strcmp(src, "double"))
-			arg_types[idx++] = TAG_FLOAT;
-		else if (!strcmp(src, "ptr"))
-			arg_types[idx++] = TAG_PTR;
-		else if (!strcmp(src, "cstr"))
-			arg_types[idx++] = TAG_CSTR;
-		else if (!strcmp(src, "ccstr"))
-			arg_types[idx++] = TAG_CCSTR;
-		else
-			arg_types[idx++] = 0;
+		if (is_interned(h)) {
+			const char *src = C_STR(q, h);
+
+			if (!strcmp(src, "uint8"))
+				arg_types[idx++] = TAG_UINT8;
+			else if (!strcmp(src, "uint16"))
+				arg_types[idx++] = TAG_UINT16;
+			else if (!strcmp(src, "uint32"))
+				arg_types[idx++] = TAG_UINT32;
+			else if (!strcmp(src, "uint64"))
+				arg_types[idx++] = TAG_UINT64;
+			else if (!strcmp(src, "uint"))
+				arg_types[idx++] = TAG_UINT;
+			else if (!strcmp(src, "sint8"))
+				arg_types[idx++] = TAG_INT8;
+			else if (!strcmp(src, "sint16"))
+				arg_types[idx++] = TAG_INT16;
+			else if (!strcmp(src, "sint32"))
+				arg_types[idx++] = TAG_INT32;
+			else if (!strcmp(src, "sint64"))
+				arg_types[idx++] = TAG_INT64;
+			else if (!strcmp(src, "sint"))
+				arg_types[idx++] = TAG_INT;
+			else if (!strcmp(src, "float"))
+				arg_types[idx++] = TAG_FLOAT32;
+			else if (!strcmp(src, "double"))
+				arg_types[idx++] = TAG_FLOAT;
+			else if (!strcmp(src, "ptr"))
+				arg_types[idx++] = TAG_PTR;
+			else if (!strcmp(src, "cstr"))
+				arg_types[idx++] = TAG_CSTR;
+			else if (!strcmp(src, "ccstr"))
+				arg_types[idx++] = TAG_CCSTR;
+			else {
+				builtins *ptr = NULL;
+
+				if (map_get(q->pl->biftab, src, (void*)&ptr))
+					arg_types[idx++] = TAG_STRUCT;
+				else
+					printf("invalid arg_type: %s\n", src);
+			}
+		}
 
 		l = LIST_TAIL(l);
 		l = deref(q, l, l_ctx);
@@ -224,13 +234,104 @@ USE_RESULT bool fn_sys_register_function_4(query *q)
 	else if (!strcmp(src, "ccstr"))
 		ret_type = TAG_CCSTR;
 	else
-		ret_type = 0;
+		printf("invalid ret_type: %s\n", src);
 
 	register_ffi(q->pl, symbol, idx, (void*)func, arg_types, ret_type, true);
 	return true;
 }
 
-bool do_register_predicate(module *m, query *q, void *handle, const char *symbol, cell *p3, pl_idx_t p3_ctx, const char *ret)
+bool do_register_struct(module *m, query *q, void *handle, const char *symbol, cell *l, pl_idx_t l_ctx, const char *ret)
+{
+	uint8_t arg_types[MAX_ARITY], ret_type = 0;
+	bool arg_vars[MAX_ARITY];
+	LIST_HANDLER(l);
+	int idx = 0;
+
+	while (is_iso_list(l) && (idx < MAX_ARITY)) {
+		cell *h = LIST_HEAD(l);
+		h = q ? deref(q, h, l_ctx) : h;
+
+		if (is_interned(h)) {
+			const char *src = C_STR(m, h);
+
+			if (!strcmp(src, "uint8"))
+				arg_types[idx++] = TAG_UINT8;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint8"))
+				arg_types[idx++] = MARK_OUT(TAG_UINT8);
+			else if (!strcmp(src, "uint16"))
+				arg_types[idx++] = TAG_UINT16;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint16"))
+				arg_types[idx++] = MARK_OUT(TAG_UINT16);
+			else if (!strcmp(src, "uint32"))
+				arg_types[idx++] = TAG_UINT32;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint32"))
+				arg_types[idx++] = MARK_OUT(TAG_UINT32);
+			else if (!strcmp(src, "uint64"))
+				arg_types[idx++] = TAG_UINT64;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint64"))
+				arg_types[idx++] = MARK_OUT(TAG_UINT64);
+			else if (!strcmp(src, "uint"))
+				arg_types[idx++] = TAG_UINT;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint"))
+				arg_types[idx++] = MARK_OUT(TAG_UINT);
+			else if (!strcmp(src, "sint8"))
+				arg_types[idx++] = TAG_INT8;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint8"))
+				arg_types[idx++] = MARK_OUT(TAG_INT8);
+			else if (!strcmp(src, "sint16"))
+				arg_types[idx++] = TAG_INT16;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint16"))
+				arg_types[idx++] = MARK_OUT(TAG_INT16);
+			else if (!strcmp(src, "sint32"))
+				arg_types[idx++] = TAG_INT32;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint32"))
+				arg_types[idx++] = MARK_OUT(TAG_INT32);
+			else if (!strcmp(src, "sint64"))
+				arg_types[idx++] = TAG_INT64;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint64"))
+				arg_types[idx++] = MARK_OUT(TAG_INT64);
+			else if (!strcmp(src, "sint"))
+				arg_types[idx++] = TAG_INT;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint"))
+				arg_types[idx++] = MARK_OUT(TAG_INT);
+			else if (!strcmp(src, "float"))
+				arg_types[idx++] = TAG_FLOAT32;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "float"))
+				arg_types[idx++] = MARK_OUT(TAG_FLOAT32);
+			else if (!strcmp(src, "double"))
+				arg_types[idx++] = TAG_FLOAT;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "double"))
+				arg_types[idx++] = MARK_OUT(TAG_FLOAT);
+			else if (!strcmp(src, "ptr"))
+				arg_types[idx++] = TAG_PTR;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ptr"))
+				arg_types[idx++] = MARK_OUT(TAG_PTR);
+			else if (!strcmp(src, "cstr"))
+				arg_types[idx++] = TAG_CSTR;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "cstr"))
+				arg_types[idx++] = MARK_OUT(TAG_CSTR);
+			else if (!strcmp(src, "ccstr"))
+				arg_types[idx++] = TAG_CCSTR;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ccstr"))
+				arg_types[idx++] = MARK_OUT(TAG_CCSTR);
+			else if (!strcmp(src, "bool"))
+				arg_types[idx++] = TAG_INT64;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "bool"))
+				arg_types[idx++] = MARK_OUT(TAG_INT64);
+			else
+				printf("invalid arg_type: %s\n", src);
+		}
+
+		l = LIST_TAIL(l);
+		l = q ? deref(q, l, l_ctx) : l;
+		l_ctx = q ? q->latest_ctx : 0;
+	}
+
+	register_struct(m->pl, symbol, idx, NULL, arg_types);
+	return true;
+}
+
+bool do_register_predicate(module *m, query *q, void *handle, const char *symbol, cell *l, pl_idx_t l_ctx, const char *ret)
 {
 	void *func = dlsym(handle, symbol);
 	if (!func) return false;
@@ -238,83 +339,88 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 	uint8_t arg_types[MAX_ARITY], ret_type = 0;
 	bool arg_vars[MAX_ARITY];
 	LIST_HANDLER(l);
-	cell *l = p3;
-	pl_idx_t l_ctx = p3_ctx;
 	int idx = 0;
 
 	while (is_iso_list(l) && (idx < MAX_ARITY)) {
 		cell *h = LIST_HEAD(l);
 		h = q ? deref(q, h, l_ctx) : h;
-		const char *src = C_STR(m, h);
 
-		if (!strcmp(src, "uint8"))
-			arg_types[idx++] = TAG_UINT8;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint8"))
-			arg_types[idx++] = MARK_OUT(TAG_UINT8);
-		else if (!strcmp(src, "uint16"))
-			arg_types[idx++] = TAG_UINT16;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint16"))
-			arg_types[idx++] = MARK_OUT(TAG_UINT16);
-		else if (!strcmp(src, "uint32"))
-			arg_types[idx++] = TAG_UINT32;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint32"))
-			arg_types[idx++] = MARK_OUT(TAG_UINT32);
-		else if (!strcmp(src, "uint64"))
-			arg_types[idx++] = TAG_UINT64;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint64"))
-			arg_types[idx++] = MARK_OUT(TAG_UINT64);
-		else if (!strcmp(src, "uint"))
-			arg_types[idx++] = TAG_UINT;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint"))
-			arg_types[idx++] = MARK_OUT(TAG_UINT);
-		else if (!strcmp(src, "sint8"))
-			arg_types[idx++] = TAG_INT8;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint8"))
-			arg_types[idx++] = MARK_OUT(TAG_INT8);
-		else if (!strcmp(src, "sint16"))
-			arg_types[idx++] = TAG_INT16;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint16"))
-			arg_types[idx++] = MARK_OUT(TAG_INT16);
-		else if (!strcmp(src, "sint32"))
-			arg_types[idx++] = TAG_INT32;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint32"))
-			arg_types[idx++] = MARK_OUT(TAG_INT32);
-		else if (!strcmp(src, "sint64"))
-			arg_types[idx++] = TAG_INT64;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint64"))
-			arg_types[idx++] = MARK_OUT(TAG_INT64);
-		else if (!strcmp(src, "sint"))
-			arg_types[idx++] = TAG_INT;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint"))
-			arg_types[idx++] = MARK_OUT(TAG_INT);
-		else if (!strcmp(src, "float"))
-			arg_types[idx++] = TAG_FLOAT32;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "float"))
-			arg_types[idx++] = MARK_OUT(TAG_FLOAT32);
-		else if (!strcmp(src, "double"))
-			arg_types[idx++] = TAG_FLOAT;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "double"))
-			arg_types[idx++] = MARK_OUT(TAG_FLOAT);
-		else if (!strcmp(src, "ptr"))
-			arg_types[idx++] = TAG_PTR;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ptr"))
-			arg_types[idx++] = MARK_OUT(TAG_PTR);
-		else if (!strcmp(src, "cstr"))
-			arg_types[idx++] = TAG_CSTR;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "cstr"))
-			arg_types[idx++] = MARK_OUT(TAG_CSTR);
-		else if (!strcmp(src, "ccstr"))
-			arg_types[idx++] = TAG_CCSTR;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ccstr"))
-			arg_types[idx++] = MARK_OUT(TAG_CCSTR);
-		else if (!strcmp(src, "bool"))
-			arg_types[idx++] = TAG_INT64;
-		else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "bool"))
-			arg_types[idx++] = MARK_OUT(TAG_INT64);
-		else if (!strcmp(src, "void"))
-			arg_types[idx++] = 0;
-		else
-			printf("invalid arg_type: %s\n", src);
+		if (is_interned(h)) {
+			const char *src = C_STR(m, h);
+
+			if (!strcmp(src, "uint8"))
+				arg_types[idx++] = TAG_UINT8;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint8"))
+				arg_types[idx++] = MARK_OUT(TAG_UINT8);
+			else if (!strcmp(src, "uint16"))
+				arg_types[idx++] = TAG_UINT16;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint16"))
+				arg_types[idx++] = MARK_OUT(TAG_UINT16);
+			else if (!strcmp(src, "uint32"))
+				arg_types[idx++] = TAG_UINT32;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint32"))
+				arg_types[idx++] = MARK_OUT(TAG_UINT32);
+			else if (!strcmp(src, "uint64"))
+				arg_types[idx++] = TAG_UINT64;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint64"))
+				arg_types[idx++] = MARK_OUT(TAG_UINT64);
+			else if (!strcmp(src, "uint"))
+				arg_types[idx++] = TAG_UINT;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint"))
+				arg_types[idx++] = MARK_OUT(TAG_UINT);
+			else if (!strcmp(src, "sint8"))
+				arg_types[idx++] = TAG_INT8;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint8"))
+				arg_types[idx++] = MARK_OUT(TAG_INT8);
+			else if (!strcmp(src, "sint16"))
+				arg_types[idx++] = TAG_INT16;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint16"))
+				arg_types[idx++] = MARK_OUT(TAG_INT16);
+			else if (!strcmp(src, "sint32"))
+				arg_types[idx++] = TAG_INT32;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint32"))
+				arg_types[idx++] = MARK_OUT(TAG_INT32);
+			else if (!strcmp(src, "sint64"))
+				arg_types[idx++] = TAG_INT64;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint64"))
+				arg_types[idx++] = MARK_OUT(TAG_INT64);
+			else if (!strcmp(src, "sint"))
+				arg_types[idx++] = TAG_INT;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint"))
+				arg_types[idx++] = MARK_OUT(TAG_INT);
+			else if (!strcmp(src, "float"))
+				arg_types[idx++] = TAG_FLOAT32;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "float"))
+				arg_types[idx++] = MARK_OUT(TAG_FLOAT32);
+			else if (!strcmp(src, "double"))
+				arg_types[idx++] = TAG_FLOAT;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "double"))
+				arg_types[idx++] = MARK_OUT(TAG_FLOAT);
+			else if (!strcmp(src, "ptr"))
+				arg_types[idx++] = TAG_PTR;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ptr"))
+				arg_types[idx++] = MARK_OUT(TAG_PTR);
+			else if (!strcmp(src, "cstr"))
+				arg_types[idx++] = TAG_CSTR;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "cstr"))
+				arg_types[idx++] = MARK_OUT(TAG_CSTR);
+			else if (!strcmp(src, "ccstr"))
+				arg_types[idx++] = TAG_CCSTR;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ccstr"))
+				arg_types[idx++] = MARK_OUT(TAG_CCSTR);
+			else if (!strcmp(src, "bool"))
+				arg_types[idx++] = TAG_INT64;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "bool"))
+				arg_types[idx++] = MARK_OUT(TAG_INT64);
+			else {
+				builtins *ptr = NULL;
+
+				if (map_get(m->pl->biftab, src, (void*)&ptr))
+					arg_types[idx++] = TAG_STRUCT;
+				else
+					printf("invalid arg_type: %s\n", src);
+			}
+		}
 
 		l = LIST_TAIL(l);
 		l = q ? deref(q, l, l_ctx) : l;
@@ -644,6 +750,12 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			;
 		else if ((ptr->types[i] == TAG_PTR) && is_smallint(c))
 			;
+		else if ((ptr->types[i] == TAG_FLOAT32) && is_float(c))
+			;
+		else if ((ptr->types[i] == TAG_FLOAT) && is_float(c))
+			;
+		else if ((ptr->types[i] == TAG_STRUCT) && is_iso_list(c))
+			;
 		else if ((ptr->types[i] != c->tag) && !is_var(c))
 			return throw_error(q, c, c_ctx, "type_error",
 			ptr->types[i] == TAG_UINT8 ? "integer" :
@@ -726,6 +838,8 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 		else if (ptr->types[i] == TAG_CCSTR)
 			arg_types[i] = &ffi_type_pointer;
 		else if (ptr->types[i] == MARK_OUT(TAG_CCSTR))
+			arg_types[i] = &ffi_type_pointer;
+		else if (ptr->types[i] == TAG_STRUCT)
 			arg_types[i] = &ffi_type_pointer;
 		else
 			arg_types[i] = &ffi_type_void;
@@ -811,6 +925,9 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			cells[i].val_str = C_STR(q, c);
 			s_args[i] = &cells[i].val_str;
 			arg_values[i] = &s_args[i];
+		} else if (ptr->types[i] == TAG_STRUCT) {
+			// pack the struct here
+			arg_values[i] = c;
 		} else
 			arg_values[i] = NULL;
 
@@ -1035,9 +1152,15 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 
 	return true;
 }
-#endif
 
-#if USE_FFI
+static bool fn_foreign_struct_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,list_or_nil);
+
+	return do_foreign_struct(q->st.m, q->st.curr_cell);
+}
+
 static bool fn_use_foreign_module_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -1055,6 +1178,8 @@ builtins g_ffi_bifs[MAX_FFI] =
 	{"$dlclose", 1, fn_sys_dlclose_1, "+handle", false, false, BLAH},
 	{"$register_function", 4, fn_sys_register_function_4, "+handle, +symbol, +arglist,+result", false, false, BLAH},
 	{"$register_predicate", 4, fn_sys_register_predicate_4, "+handle, +symbol, +arglist,+result", false, false, BLAH},
+
+	{"foreign_struct", 2, fn_foreign_struct_2, "+atom,+list", false, false, BLAH},
 	{"use_foreign_module", 2, fn_use_foreign_module_2, "+atom,+list", false, false, BLAH},
 #endif
 

@@ -750,6 +750,20 @@ bool do_use_module_2(module *curr_m, cell *p)
 }
 
 #if USE_FFI
+bool do_foreign_struct(module *m, cell *p)
+{
+	cell *p1 = p + 1;
+	cell *p2 = p1 + p1->nbr_cells;
+	LIST_HANDLER(p2);
+	const char *symbol = C_STR(m, p1);
+	cell *l = p2;
+	pl_idx_t l_ctx = 0;
+
+	void *handle = NULL;
+	do_register_struct(m, NULL, handle, symbol, l, 0, "invalid");
+	return true;
+}
+
 bool do_use_foreign_module(module *m, cell *p)
 {
 	cell *p1 = p + 1;
