@@ -798,7 +798,7 @@ wrapper to validate arg types at call/runtime...
 The allowed types are
 *sint8*, *sint16*, *sint32*, *sint64*, *sint* (native *signed int*),
 *uint8*, *uint16*, *uint32*, *uint64*, *uint* (native *unsigned int*),
-*float*, *double*,
+*ushort*, *sshort*, *float*, *double*,
 *bool*, *void* (a return type only),
 *cstr* (a char pointer), *ccstr* (a *const* char pointer)
 and *ptr* (for arbitrary pointers/handles).
