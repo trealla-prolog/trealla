@@ -968,8 +968,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 		else if (ptr->types[i] == TAG_STRUCT) {
 			cell *l = c;
 			pl_idx_t l_ctx = c_ctx;
-			int cnt = 0;
-			const char *name = NULL;
+			const char *name = "invalid";
 			LIST_HANDLER(l);
 
 			while (is_iso_list(l)) {
@@ -979,78 +978,62 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 				l = deref(q, l, l_ctx);
 				l_ctx = q->latest_ctx;
 
-				if (cnt == 0)
-					name = C_STR(q, h);
-
-				cnt++;
+				name = C_STR(q, h);
+				break;
 			}
 
-			cnt--;		// Drop head which is the name
+			printf("wrapper struct: %s\n", name);
 
-			printf("wrapper struct: %s, len=%d\n", name, cnt);
+			builtins *sptr = NULL;
 
-			builtins *ptr = NULL;
-
-			if (!map_get(q->pl->biftab, name, (void*)&ptr)) {
+			if (!map_get(q->pl->biftab, name, (void*)&sptr)) {
 				printf("wrapper: not found struct: %s\n", name);
 				return false;
 			}
 
+			unsigned sarity = sptr->arity;
 			ffi_type tm_type;
-			ffi_type *tm_type_elements[cnt+1];
-			int j = 0;
+			ffi_type *tm_type_elements[sarity+1];
 			tm_type.size = tm_type.alignment = 0;
 			tm_type.type = FFI_TYPE_STRUCT;
 			tm_type.elements = tm_type_elements;
-			l = c;
-			l_ctx = c_ctx;
 
-			while (is_iso_list(l)) {
-				cell *h = LIST_HEAD(l);
-				h = deref(q, h, l_ctx);
+			printf("wrapper: struct arity = %u\n", sarity);
 
-				if (i > 0) {
-					src = C_STR(q, h);
-
-					if (!strcmp(src, "uint8"))
-						tm_type_elements[j] = &ffi_type_uint8;
-					else if (!strcmp(src, "uint16"))
-						tm_type_elements[j] = &ffi_type_uint16;
-					else if (!strcmp(src, "uint32"))
-						tm_type_elements[j] = &ffi_type_uint32;
-					else if (!strcmp(src, "uint64"))
-						tm_type_elements[j] = &ffi_type_uint64;
-					else if (!strcmp(src, "uint"))
-						tm_type_elements[j] = &ffi_type_uint;
-					else if (!strcmp(src, "ushort"))
-						tm_type_elements[j] = &ffi_type_ushort;
-					else if (!strcmp(src, "ulong"))
-						tm_type_elements[j] = &ffi_type_ulong;
-					else if (!strcmp(src, "int8"))
-						tm_type_elements[j] = &ffi_type_sint8;
-					else if (!strcmp(src, "int16"))
-						tm_type_elements[j] = &ffi_type_sint16;
-					else if (!strcmp(src, "int32"))
-						tm_type_elements[j] = &ffi_type_sint32;
-					else if (!strcmp(src, "int64"))
-						tm_type_elements[j] = &ffi_type_sint64;
-					else if (!strcmp(src, "sint"))
-						tm_type_elements[j] = &ffi_type_sint;
-					else if (!strcmp(src, "sshort"))
-						tm_type_elements[j] = &ffi_type_sshort;
-					else if (!strcmp(src, "slong"))
-						tm_type_elements[j] = &ffi_type_slong;
-					else
-						tm_type_elements[j] = &ffi_type_pointer;
-				}
-
-				l = LIST_TAIL(l);
-				l = deref(q, l, l_ctx);
-				l_ctx = q->latest_ctx;
-				i++;
+			for (unsigned i = 0; i < sarity; i++) {
+				if (sptr->types[i] == TAG_UINT8)
+					tm_type_elements[i] = &ffi_type_uint8;
+				else if (sptr->types[i] == TAG_UINT16)
+					tm_type_elements[i] = &ffi_type_uint16;
+				else if (sptr->types[i] == TAG_UINT32)
+					tm_type_elements[i] = &ffi_type_uint32;
+				else if (sptr->types[i] == TAG_UINT64)
+					tm_type_elements[i] = &ffi_type_uint64;
+				else if (sptr->types[i] == TAG_UINT)
+					tm_type_elements[i] = &ffi_type_uint;
+				else if (sptr->types[i] == TAG_USHORT)
+					tm_type_elements[i] = &ffi_type_ushort;
+				else if (sptr->types[i] == TAG_ULONG)
+					tm_type_elements[i] = &ffi_type_ulong;
+				else if (sptr->types[i] == TAG_INT8)
+					tm_type_elements[i] = &ffi_type_sint8;
+				else if (sptr->types[i] == TAG_INT16)
+					tm_type_elements[i] = &ffi_type_sint16;
+				else if (sptr->types[i] == TAG_INT32)
+					tm_type_elements[i] = &ffi_type_sint32;
+				else if (sptr->types[i] == TAG_INT64)
+					tm_type_elements[i] = &ffi_type_sint64;
+				else if (sptr->types[i] == TAG_INT)
+					tm_type_elements[i] = &ffi_type_sint;
+				else if (sptr->types[i] == TAG_SHORT)
+					tm_type_elements[i] = &ffi_type_sshort;
+				else if (ptr->types[i] == TAG_LONG)
+					tm_type_elements[i] = &ffi_type_slong;
+				else
+					tm_type_elements[i] = &ffi_type_sint;
 			}
 
-			tm_type_elements[j] = NULL;
+			tm_type_elements[sarity] = NULL;
 			arg_types[i] = &tm_type;
 		}
 
@@ -1105,7 +1088,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			s_args[offset+i] = &cells[i].val_int32;
 			arg_values[offset+i] = &cells[i].val_int32;
 		} else if (ptr->types[i] == TAG_INT64) {
-			arg_values[i] = &c->val_int64;
+			arg_values[offset+i] = &c->val_int64;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT64)) {
 			s_args[offset+i] = &cells[i].val_int64;
 			arg_values[offset+i] = &cells[i].val_int64;
@@ -1142,11 +1125,11 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 		} else if (ptr->types[i] == TAG_CSTR) {
 			cells[offset+i].val_str = C_STR(q, c);
 			s_args[offset+i] = &cells[i].val_str;
-			arg_values[i] = &cells[i].val_str;
+			arg_values[offset+i] = &cells[i].val_str;
 		} else if (ptr->types[i] == MARK_OUT(TAG_CSTR)) {
 			cells[offset+i].val_str = C_STR(q, c);
 			s_args[offset+i] = &cells[i].val_str;
-			arg_values[i] = &s_args[offset+i];
+			arg_values[offset+i] = &s_args[offset+i];
 		} else if (ptr->types[i] == TAG_CCSTR) {
 			cells[offset+i].val_str = C_STR(q, c);
 			s_args[offset+i] = &cells[i].val_str;
@@ -1154,26 +1137,28 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 		} else if (ptr->types[i] == MARK_OUT(TAG_CCSTR)) {
 			cells[offset+i].val_str = C_STR(q, c);
 			s_args[offset+i] = &cells[i].val_str;
-			arg_values[i] = &s_args[offset+i];
+			arg_values[offset+i] = &s_args[offset+i];
 		} else if (ptr->types[i] == TAG_STRUCT) {
 			cell *l = c;
 			pl_idx_t l_ctx = c_ctx;
 			int cnt = 0;
-			const char *name = NULL;
 			LIST_HANDLER(l);
+
+			printf("values\n");
 
 			while (is_iso_list(l)) {
 				cell *h = LIST_HEAD(l);
 				h = deref(q, h, l_ctx);
-				l = LIST_TAIL(l);
-				l = deref(q, l, l_ctx);
-				l_ctx = q->latest_ctx;
 
 				if (cnt > 0) {
-					arg_values[offset+i] = &c->val_ptr;
+					printf(" values %lld\n", (long long)h->val_int);
+					arg_values[offset+i] = &h->val_int;
 					offset++;
 				}
 
+				l = LIST_TAIL(l);
+				l = deref(q, l, l_ctx);
+				l_ctx = q->latest_ctx;
 				cnt++;
 			}
 		}
@@ -1228,11 +1213,18 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 	else
 		return false;
 
+	printf("*** here1\n");
+
 	if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, arity, ret_type, arg_types) != FFI_OK)
 		return false;
 
+	printf("*** here2\n");
+
 	union result_ result;
 	ffi_call(&cif, FFI_FN(ptr->fn), &result, arg_values);
+
+	printf("*** here3\n");
+
 
 	GET_FIRST_ARG(p11, any);
 	c = p11;
