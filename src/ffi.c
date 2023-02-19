@@ -527,7 +527,7 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 		ret_type = TAG_FLOAT;
 	} else if (!strcmp(src, "ptr")) {
 		arg_types[idx++] = MARK_OUT(TAG_PTR);
-		ret_type = TAG_FLOAT;
+		ret_type = TAG_PTR;
 	} else if (!strcmp(src, "cstr")) {
 		arg_types[idx++] = MARK_OUT(TAG_CSTR);
 		ret_type = TAG_CSTR;
