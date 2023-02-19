@@ -800,7 +800,7 @@ The allowed types are
 *uint8*, *uint16*, *uint32*, *uint64*, *uint* (native *unsigned int*),
 *ushort*, *sshort*, *float*, *double*,
 *bool*, *void* (a return type only),
-*cstr* (a char pointer), *ccstr* (a *const* char pointer)
+*cstr* (a char pointer),
 and *ptr* (for arbitrary pointers/handles).
 
 Assuming the following C-code in *samples/foo.c*:
