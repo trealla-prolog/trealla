@@ -1037,8 +1037,8 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			cells[offset+i].val_uint8 = c->val_uint8;
 			arg_values[offset+i] = &cells[offset+i].val_uint8;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT8)) {
-			s_args[offset+i] = &cells[i].val_uint8;
-			arg_values[offset+i] = &cells[i].val_uint8;
+			s_args[offset+i] = &cells[offset+i].val_uint8;
+			arg_values[offset+i] = &cells[offset+i].val_uint8;
 		} else if (ptr->types[i] == TAG_UINT16) {
 			cells[offset+i].val_uint16 = c->val_uint16;
 			arg_values[offset+i] = &cells[offset+i].val_uint16;
