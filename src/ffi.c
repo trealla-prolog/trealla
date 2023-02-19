@@ -347,9 +347,9 @@ bool do_register_struct(module *m, query *q, void *handle, const char *symbol, c
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ccstr"))
 				arg_types[idx++] = MARK_OUT(TAG_CCSTR);
 			else if (!strcmp(src, "bool"))
-				arg_types[idx++] = TAG_INT64;
+				arg_types[idx++] = TAG_INT;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "bool"))
-				arg_types[idx++] = MARK_OUT(TAG_INT64);
+				arg_types[idx++] = MARK_OUT(TAG_INT);
 			else
 				printf("invalid arg_type: %s\n", src);
 		}
@@ -457,9 +457,9 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ccstr"))
 				arg_types[idx++] = MARK_OUT(TAG_CCSTR);
 			else if (!strcmp(src, "bool"))
-				arg_types[idx++] = TAG_INT64;
+				arg_types[idx++] = TAG_INT;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "bool"))
-				arg_types[idx++] = MARK_OUT(TAG_INT64);
+				arg_types[idx++] = MARK_OUT(TAG_INT);
 			else {
 				builtins *ptr = NULL;
 
@@ -535,8 +535,8 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 		arg_types[idx++] = MARK_OUT(TAG_CCSTR);
 		ret_type = TAG_CCSTR;
 	} else if (!strcmp(src, "bool")) {
-		arg_types[idx++] = MARK_OUT(TAG_INT64);
-		ret_type = TAG_INT64;
+		arg_types[idx++] = MARK_OUT(TAG_INT);
+		ret_type = TAG_INT;
 	} else if (!strcmp(src, "void")) {
 		arg_types[idx++] = MARK_OUT(TAG_VOID);
 		ret_type = TAG_VOID;
