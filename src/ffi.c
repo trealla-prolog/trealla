@@ -823,6 +823,8 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 	if (ptr->ret_type == TAG_VOID)
 		arity++;
 
+	unsigned offset = 0;
+
 	for (unsigned i = 0; i < arity; i++) {
 		if ((ptr->types[i] == TAG_UINT8) && is_smallint(c))
 			;
@@ -963,117 +965,218 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			arg_types[i] = &ffi_type_pointer;
 		else if (ptr->types[i] == MARK_OUT(TAG_CCSTR))
 			arg_types[i] = &ffi_type_pointer;
-		else if (ptr->types[i] == TAG_STRUCT)
-			arg_types[i] = &ffi_type_pointer;
-		else
-			arg_types[i] = &ffi_type_void;
+		else if (ptr->types[i] == TAG_STRUCT) {
+			cell *l = c;
+			pl_idx_t l_ctx = c_ctx;
+			int cnt = 0;
+			const char *name = NULL;
+			LIST_HANDLER(l);
+
+			while (is_iso_list(l)) {
+				cell *h = LIST_HEAD(l);
+				h = deref(q, h, l_ctx);
+				l = LIST_TAIL(l);
+				l = deref(q, l, l_ctx);
+				l_ctx = q->latest_ctx;
+
+				if (cnt == 0)
+					name = C_STR(q, h);
+
+				cnt++;
+			}
+
+			cnt--;		// Drop head which is the name
+
+			printf("wrapper struct: %s, len=%d\n", name, cnt);
+
+			builtins *ptr = NULL;
+
+			if (!map_get(q->pl->biftab, name, (void*)&ptr)) {
+				printf("wrapper: not found struct: %s\n", name);
+				return false;
+			}
+
+			ffi_type tm_type;
+			ffi_type *tm_type_elements[cnt+1];
+			int j = 0;
+			tm_type.size = tm_type.alignment = 0;
+			tm_type.type = FFI_TYPE_STRUCT;
+			tm_type.elements = tm_type_elements;
+			l = c;
+			l_ctx = c_ctx;
+
+			while (is_iso_list(l)) {
+				cell *h = LIST_HEAD(l);
+				h = deref(q, h, l_ctx);
+
+				if (i > 0) {
+					src = C_STR(q, h);
+
+					if (!strcmp(src, "uint8"))
+						tm_type_elements[j] = &ffi_type_uint8;
+					else if (!strcmp(src, "uint16"))
+						tm_type_elements[j] = &ffi_type_uint16;
+					else if (!strcmp(src, "uint32"))
+						tm_type_elements[j] = &ffi_type_uint32;
+					else if (!strcmp(src, "uint64"))
+						tm_type_elements[j] = &ffi_type_uint64;
+					else if (!strcmp(src, "uint"))
+						tm_type_elements[j] = &ffi_type_uint;
+					else if (!strcmp(src, "ushort"))
+						tm_type_elements[j] = &ffi_type_ushort;
+					else if (!strcmp(src, "ulong"))
+						tm_type_elements[j] = &ffi_type_ulong;
+					else if (!strcmp(src, "int8"))
+						tm_type_elements[j] = &ffi_type_sint8;
+					else if (!strcmp(src, "int16"))
+						tm_type_elements[j] = &ffi_type_sint16;
+					else if (!strcmp(src, "int32"))
+						tm_type_elements[j] = &ffi_type_sint32;
+					else if (!strcmp(src, "int64"))
+						tm_type_elements[j] = &ffi_type_sint64;
+					else if (!strcmp(src, "sint"))
+						tm_type_elements[j] = &ffi_type_sint;
+					else if (!strcmp(src, "sshort"))
+						tm_type_elements[j] = &ffi_type_sshort;
+					else if (!strcmp(src, "slong"))
+						tm_type_elements[j] = &ffi_type_slong;
+					else
+						tm_type_elements[j] = &ffi_type_pointer;
+				}
+
+				l = LIST_TAIL(l);
+				l = deref(q, l, l_ctx);
+				l_ctx = q->latest_ctx;
+				i++;
+			}
+
+			tm_type_elements[j] = NULL;
+			arg_types[i] = &tm_type;
+		}
 
 		if (ptr->types[i] == TAG_UINT8) {
-			arg_values[i] = &c->val_uint8;
+			arg_values[offset+i] = &c->val_uint8;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT8)) {
-			s_args[i] = &cells[i].val_uint8;
-			arg_values[i] = &cells[i].val_uint8;
+			s_args[offset+i] = &cells[i].val_uint8;
+			arg_values[offset+i] = &cells[i].val_uint8;
 		} else if (ptr->types[i] == TAG_UINT16) {
-			arg_values[i] = &c->val_uint16;
+			arg_values[offset+i] = &c->val_uint16;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT16)) {
-			s_args[i] = &cells[i].val_uint16;
-			arg_values[i] = &cells[i].val_uint16;
+			s_args[offset+i] = &cells[i].val_uint16;
+			arg_values[offset+i] = &cells[i].val_uint16;
 		} else if (ptr->types[i] == TAG_UINT32) {
-			arg_values[i] = &c->val_uint32;
+			arg_values[offset+i] = &c->val_uint32;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT32)) {
-			s_args[i] = &cells[i].val_uint32;
-			arg_values[i] = &cells[i].val_uint32;
+			s_args[offset+i] = &cells[i].val_uint32;
+			arg_values[offset+i] = &cells[i].val_uint32;
 		} else if (ptr->types[i] == TAG_UINT64) {
-			arg_values[i] = &c->val_uint64;
+			arg_values[offset+i] = &c->val_uint64;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT64)) {
-			s_args[i] = &cells[i].val_uint64;
-			arg_values[i] = &cells[i].val_uint64;
+			s_args[offset+i] = &cells[i].val_uint64;
+			arg_values[offset+i] = &cells[i].val_uint64;
 		} else if (ptr->types[i] == TAG_UINT) {
-			arg_values[i] = &c->val_uint;
+			arg_values[offset+i] = &c->val_uint;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT)) {
-			s_args[i] = &cells[i].val_uint;
-			arg_values[i] = &cells[i].val_uint;
+			s_args[offset+i] = &cells[i].val_uint;
+			arg_values[offset+i] = &cells[i].val_uint;
 		} else if (ptr->types[i] == TAG_USHORT) {
-			arg_values[i] = &c->val_ushort;
+			arg_values[offset+i] = &c->val_ushort;
 		} else if (ptr->types[i] == MARK_OUT(TAG_USHORT)) {
-			s_args[i] = &cells[i].val_ushort;
-			arg_values[i] = &cells[i].val_ushort;
+			s_args[offset+i] = &cells[i].val_ushort;
+			arg_values[offset+i] = &cells[i].val_ushort;
 		} else if (ptr->types[i] == TAG_ULONG) {
-			arg_values[i] = &c->val_ulong;
+			arg_values[offset+i] = &c->val_ulong;
 		} else if (ptr->types[i] == MARK_OUT(TAG_ULONG)) {
-			s_args[i] = &cells[i].val_ulong;
-			arg_values[i] = &cells[i].val_ulong;
+			s_args[offset+i] = &cells[i].val_ulong;
+			arg_values[offset+i] = &cells[i].val_ulong;
 		} else if (ptr->types[i] == TAG_INT8) {
-			arg_values[i] = &c->val_int8;
+			arg_values[offset+i] = &c->val_int8;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT8)) {
-			s_args[i] = &cells[i].val_int8;
-			arg_values[i] = &cells[i].val_int8;
+			s_args[offset+i] = &cells[i].val_int8;
+			arg_values[offset+i] = &cells[i].val_int8;
 		} else if (ptr->types[i] == TAG_INT16) {
-			arg_values[i] = &c->val_int16;
+			arg_values[offset+i] = &c->val_int16;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT16)) {
-			s_args[i] = &cells[i].val_int16;
-			arg_values[i] = &cells[i].val_int16;
+			s_args[offset+i] = &cells[i].val_int16;
+			arg_values[offset+i] = &cells[i].val_int16;
 		} else if (ptr->types[i] == TAG_INT32) {
-			arg_values[i] = &c->val_int32;
+			arg_values[offset+i] = &c->val_int32;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT32)) {
-			s_args[i] = &cells[i].val_int32;
-			arg_values[i] = &cells[i].val_int32;
+			s_args[offset+i] = &cells[i].val_int32;
+			arg_values[offset+i] = &cells[i].val_int32;
 		} else if (ptr->types[i] == TAG_INT64) {
 			arg_values[i] = &c->val_int64;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT64)) {
-			s_args[i] = &cells[i].val_int64;
-			arg_values[i] = &cells[i].val_int64;
+			s_args[offset+i] = &cells[i].val_int64;
+			arg_values[offset+i] = &cells[i].val_int64;
 		} else if (ptr->types[i] == TAG_INT) {
-			arg_values[i] = &c->val_int;
+			arg_values[offset+i] = &c->val_int;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT)) {
-			s_args[i] = &cells[i].val_int;
-			arg_values[i] = &cells[i].val_int;
+			s_args[offset+i] = &cells[i].val_int;
+			arg_values[offset+i] = &cells[i].val_int;
 		} else if (ptr->types[i] == TAG_SHORT) {
-			arg_values[i] = &c->val_sshort;
+			arg_values[offset+i] = &c->val_sshort;
 		} else if (ptr->types[i] == MARK_OUT(TAG_SHORT)) {
-			s_args[i] = &cells[i].val_sshort;
-			arg_values[i] = &cells[i].val_sshort;
+			s_args[offset+i] = &cells[i].val_sshort;
+			arg_values[offset+i] = &cells[i].val_sshort;
 		} else if (ptr->types[i] == TAG_LONG) {
-			arg_values[i] = &c->val_slong;
+			arg_values[offset+i] = &c->val_slong;
 		} else if (ptr->types[i] == MARK_OUT(TAG_LONG)) {
-			s_args[i] = &cells[i].val_slong;
-			arg_values[i] = &cells[i].val_slong;
+			s_args[offset+i] = &cells[i].val_slong;
+			arg_values[offset+i] = &cells[i].val_slong;
 		} else if (ptr->types[i] == TAG_FLOAT32) {
-			arg_values[i] = &c->val_float32;
+			arg_values[offset+i] = &c->val_float32;
 		} else if (ptr->types[i] == MARK_OUT(TAG_FLOAT32)) {
-			s_args[i] = &cells[i].val_float32;
-			arg_values[i] = &s_args[i];
+			s_args[offset+i] = &cells[i].val_float32;
+			arg_values[offset+i] = &s_args[offset+i];
 		} else if (ptr->types[i] == TAG_FLOAT) {
-			arg_values[i] = &c->val_float;
+			arg_values[offset+i] = &c->val_float;
 		} else if (ptr->types[i] == MARK_OUT(TAG_FLOAT)) {
-			s_args[i] = &cells[i].val_float;
-			arg_values[i] = &s_args[i];
+			s_args[offset+i] = &cells[i].val_float;
+			arg_values[offset+i] = &s_args[offset+i];
 		} else if (ptr->types[i] == TAG_PTR) {
-			arg_values[i] = &c->val_ptr;
+			arg_values[offset+i] = &c->val_ptr;
 		} else if (ptr->types[i] == MARK_OUT(TAG_PTR)) {
-			s_args[i] = &cells[i].val_ptr;
-			arg_values[i] = &s_args[i];
+			s_args[offset+i] = &cells[i].val_ptr;
+			arg_values[offset+i] = &s_args[offset+i];
 		} else if (ptr->types[i] == TAG_CSTR) {
-			cells[i].val_str = C_STR(q, c);
-			s_args[i] = &cells[i].val_str;
+			cells[offset+i].val_str = C_STR(q, c);
+			s_args[offset+i] = &cells[i].val_str;
 			arg_values[i] = &cells[i].val_str;
 		} else if (ptr->types[i] == MARK_OUT(TAG_CSTR)) {
-			cells[i].val_str = C_STR(q, c);
-			s_args[i] = &cells[i].val_str;
-			arg_values[i] = &s_args[i];
+			cells[offset+i].val_str = C_STR(q, c);
+			s_args[offset+i] = &cells[i].val_str;
+			arg_values[i] = &s_args[offset+i];
 		} else if (ptr->types[i] == TAG_CCSTR) {
-			cells[i].val_str = C_STR(q, c);
-			s_args[i] = &cells[i].val_str;
-			arg_values[i] = &cells[i].val_str;
+			cells[offset+i].val_str = C_STR(q, c);
+			s_args[offset+i] = &cells[i].val_str;
+			arg_values[offset+i] = &cells[i].val_str;
 		} else if (ptr->types[i] == MARK_OUT(TAG_CCSTR)) {
-			cells[i].val_str = C_STR(q, c);
-			s_args[i] = &cells[i].val_str;
-			arg_values[i] = &s_args[i];
+			cells[offset+i].val_str = C_STR(q, c);
+			s_args[offset+i] = &cells[i].val_str;
+			arg_values[i] = &s_args[offset+i];
 		} else if (ptr->types[i] == TAG_STRUCT) {
-			// pack the struct here
-			arg_values[i] = c;
-		} else
-			arg_values[i] = NULL;
+			cell *l = c;
+			pl_idx_t l_ctx = c_ctx;
+			int cnt = 0;
+			const char *name = NULL;
+			LIST_HANDLER(l);
+
+			while (is_iso_list(l)) {
+				cell *h = LIST_HEAD(l);
+				h = deref(q, h, l_ctx);
+				l = LIST_TAIL(l);
+				l = deref(q, l, l_ctx);
+				l_ctx = q->latest_ctx;
+
+				if (cnt > 0) {
+					arg_values[offset+i] = &c->val_ptr;
+					offset++;
+				}
+
+				cnt++;
+			}
+		}
 
 		GET_NEXT_ARG(p2, any);
 		c = p2;
