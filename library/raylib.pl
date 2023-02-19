@@ -1,6 +1,6 @@
 :- module(raylib, [
 	'InitWindow'/3,
-	'WindowShouldClose'/0,
+	'WindowShouldClose'/1,
 	'BeginDrawing'/0,
 	'ClearBackground'/1,
 	'DrawText'/5,
