@@ -1,5 +1,6 @@
 :- module(raylib, [
 	'InitWindow'/3,
+	'WindowShouldClose'/0,
 	'BeginDrawing'/0,
 	'ClearBackground'/1,
 	'DrawText'/5,
@@ -11,6 +12,7 @@
 
 :- use_foreign_module('libraylib.so', [
 	'InitWindow'([sint,sint,cstr], void),
+	'WindowShouldClose'([], void),
 	'BeginDrawing'([], void),
 	'ClearBackground'([color], void),
 	'DrawText'([cstr,sint,sint,sint,color], void),
