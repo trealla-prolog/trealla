@@ -792,6 +792,7 @@ written in C from within Prolog...
 These predicates register a foreign function as a builtin and use a
 wrapper to validate arg types at call/runtime...
 
+	'$register_function'/4		# '$ffi_reg'(+handle,+symbol,+types,+ret_type)
 	'$register_predicate'/4		# '$ffi_reg'(+handle,+symbol,+types,+ret_type)
 
 The allowed types are
@@ -834,7 +835,7 @@ Register a builtin function...
 
 ```console
 	?- '$dlopen'('samples/libfoo.so', 0, H),
-		'$register_predicate'(H, foo, [double, sint64], double).
+		'$register_function'(H, foo, [double, sint64], double).
 	   H = 94051868794416.
 	?- R is foo(2.0, 3).
 	   R = 8.0.
@@ -842,9 +843,21 @@ Register a builtin function...
 	   error(type_error(float,abc),foo/2).
 ```
 
-If the return type is *void* the foreign function will be registered
-as a normal predicate, otherwise it is registered as an evaluable
-function.
+Register a builtin predicate...
+
+```console
+	?- '$dlopen'('samples/libfoo.so', 0, H),
+		'$register_predicate'(H, bar, [double, sint64, -double], sint64),
+		'$register_predicate'(H, baz, [cstr, cstr], cstr),
+	   H = 94051868794416.
+	?- bar(2.0, 3, X, Return).
+	   X = 8.0, Return = 0.
+	?- baz('abc', '123', Return).
+	   Return = abc123.
+```
+
+Note: the foreign function return value is passed as an extra argument
+to the predicate call, unless it was specified to be of type *void*.
 
 Or use the *use_foreign_module/2* directive & predicate based on the
 work of Adrián Arroyo Calle in Scryer Prolog, this simplifies the
@@ -853,7 +866,7 @@ style:
 
 ```console
 	:- use_foreign_module('samples/libfoo.so', [
-		bar([double, sint64, -double], sint),
+		bar([double, sint64, -double], sint64),
 		baz([cstr, cstr], cstr)
 	]).
 ```
@@ -883,7 +896,15 @@ Run...
 Or to use RayLib (if installed)...
 
 ```console
-	?- use_module(library(raylib)).
+	?- foreign_struct(color, [sint,sint,sint,sint]).
+	?- use_foreign_module('libraylib.so', [
+		'InitWindow'([sint,sint,cstr], void),
+		'BeginDrawing'([], void),
+		'ClearBackground'([color], void),
+		'DrawText'([cstr,sint,sint,sint,color], void),
+		'EndDrawing'([], void),
+		'CloseWindow'([], void)
+		]).
 	   true.
 	?- 'InitWindow'(400,400,"Hello from Trealla").
 ```

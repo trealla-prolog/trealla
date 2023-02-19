@@ -136,6 +136,126 @@ USE_RESULT bool fn_sys_dlclose_1(query *q)
 	return do_dlclose((void*)handle) ? false : true;
 }
 
+USE_RESULT bool fn_sys_register_function_4(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,atom);
+	GET_NEXT_ARG(p3,iso_list);
+	GET_NEXT_ARG(p4,atom);
+
+	if (!(p1->flags & FLAG_INT_HANDLE) && !(p1->flags & FLAG_HANDLE_DLL))
+		return throw_error(q, p1, p1_ctx, "existence_error", "handle");
+
+	size_t handle = get_smalluint(p1);
+	const char *symbol = C_STR(q, p2);
+	void *func = dlsym((void*)handle, symbol);
+	if (!func) return false;
+
+	uint8_t arg_types[MAX_ARITY], ret_type = 0;
+	LIST_HANDLER(l);
+	cell *l = p3;
+	pl_idx_t l_ctx = p3_ctx;
+	int idx = 0;
+
+	while (is_iso_list(l) && (idx < MAX_ARITY)) {
+		cell *h = LIST_HEAD(l);
+		h = deref(q, h, l_ctx);
+
+		if (is_interned(h)) {
+			const char *src = C_STR(q, h);
+
+			if (!strcmp(src, "uint8"))
+				arg_types[idx++] = TAG_UINT8;
+			else if (!strcmp(src, "uint16"))
+				arg_types[idx++] = TAG_UINT16;
+			else if (!strcmp(src, "uint32"))
+				arg_types[idx++] = TAG_UINT32;
+			else if (!strcmp(src, "uint64"))
+				arg_types[idx++] = TAG_UINT64;
+			else if (!strcmp(src, "uint"))
+				arg_types[idx++] = TAG_UINT;
+			else if (!strcmp(src, "sint8"))
+				arg_types[idx++] = TAG_INT8;
+			else if (!strcmp(src, "sint16"))
+				arg_types[idx++] = TAG_INT16;
+			else if (!strcmp(src, "sint32"))
+				arg_types[idx++] = TAG_INT32;
+			else if (!strcmp(src, "sint64"))
+				arg_types[idx++] = TAG_INT64;
+			else if (!strcmp(src, "sint"))
+				arg_types[idx++] = TAG_INT;
+			else if (!strcmp(src, "ushort"))
+				arg_types[idx++] = TAG_USHORT;
+			else if (!strcmp(src, "sshort"))
+				arg_types[idx++] = TAG_SHORT;
+			else if (!strcmp(src, "ulong"))
+				arg_types[idx++] = TAG_ULONG;
+			else if (!strcmp(src, "slong"))
+				arg_types[idx++] = TAG_LONG;
+			else if (!strcmp(src, "float"))
+				arg_types[idx++] = TAG_FLOAT32;
+			else if (!strcmp(src, "double"))
+				arg_types[idx++] = TAG_FLOAT;
+			else if (!strcmp(src, "ptr"))
+				arg_types[idx++] = TAG_PTR;
+			else if (!strcmp(src, "cstr"))
+				arg_types[idx++] = TAG_CSTR;
+			else if (!strcmp(src, "ccstr"))
+				arg_types[idx++] = TAG_CCSTR;
+			else {
+				builtins *ptr = NULL;
+
+				if (map_get(q->pl->biftab, src, (void*)&ptr))
+					arg_types[idx++] = TAG_STRUCT;
+				else
+					printf("invalid arg_type: %s\n", src);
+			}
+		}
+
+		l = LIST_TAIL(l);
+		l = deref(q, l, l_ctx);
+		l_ctx = q->latest_ctx;
+	}
+
+	const char *src = C_STR(q, p4);
+
+	if (!strcmp(src, "uint8"))
+		ret_type = TAG_UINT8;
+	else if (!strcmp(src, "uint16"))
+		ret_type = TAG_UINT16;
+	else if (!strcmp(src, "uint32"))
+		ret_type = TAG_UINT32;
+	else if (!strcmp(src, "uint64"))
+		ret_type = TAG_UINT64;
+	else if (!strcmp(src, "uint"))
+		ret_type = TAG_UINT;
+	else if (!strcmp(src, "sint8"))
+		ret_type = TAG_INT8;
+	else if (!strcmp(src, "sint16"))
+		ret_type = TAG_INT16;
+	else if (!strcmp(src, "sint32"))
+		ret_type = TAG_INT32;
+	else if (!strcmp(src, "sint64"))
+		ret_type = TAG_INT64;
+	else if (!strcmp(src, "sint"))
+		ret_type = TAG_INT;
+	else if (!strcmp(src, "float"))
+		ret_type = TAG_FLOAT32;
+	else if (!strcmp(src, "double"))
+		ret_type = TAG_FLOAT;
+	else if (!strcmp(src, "ptr"))
+		ret_type = TAG_PTR;
+	else if (!strcmp(src, "cstr"))
+		ret_type = TAG_CSTR;
+	else if (!strcmp(src, "ccstr"))
+		ret_type = TAG_CCSTR;
+	else
+		printf("invalid ret_type: %s\n", src);
+
+	register_ffi(q->pl, symbol, idx, (void*)func, arg_types, ret_type, true);
+	return true;
+}
+
 bool do_register_struct(module *m, query *q, void *handle, const char *symbol, cell *l, pl_idx_t l_ctx, const char *ret)
 {
 	uint8_t arg_types[MAX_ARITY], ret_type = 0;
@@ -424,11 +544,7 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 		printf("invalid ret_type: %s\n", src);
 	}
 
-	if (strcmp(src, "void"))
-		register_ffi(m->pl, symbol, idx-1, (void*)func, arg_types, ret_type, true);
-	else
-		register_ffi(m->pl, symbol, idx, (void*)func, arg_types, ret_type, false);
-
+	register_ffi(m->pl, symbol, idx, (void*)func, arg_types, ret_type, false);
 	return true;
 }
 
@@ -1349,6 +1465,7 @@ builtins g_ffi_bifs[MAX_FFI] =
 	{"$dlopen", 3, fn_sys_dlopen_3, "+filename,+flag,-handle", false, false, BLAH},
 	{"$dlsym", 3, fn_sys_dlsym_3, "+handle,+symbol,-function", false, false, BLAH},
 	{"$dlclose", 1, fn_sys_dlclose_1, "+handle", false, false, BLAH},
+	{"$register_function", 4, fn_sys_register_function_4, "+handle, +symbol, +arglist,+result", false, false, BLAH},
 	{"$register_predicate", 4, fn_sys_register_predicate_4, "+handle, +symbol, +arglist,+result", false, false, BLAH},
 
 	{"foreign_struct", 2, fn_foreign_struct_2, "+atom,+list", false, false, BLAH},
