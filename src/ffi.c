@@ -1034,93 +1034,109 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 		}
 
 		if (ptr->types[i] == TAG_UINT8) {
-			arg_values[offset+i] = &c->val_uint8;
+			cells[offset+i].val_uint8 = c->val_uint8;
+			arg_values[offset+i] = &cells[offset+i].val_uint8;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT8)) {
 			s_args[offset+i] = &cells[i].val_uint8;
 			arg_values[offset+i] = &cells[i].val_uint8;
 		} else if (ptr->types[i] == TAG_UINT16) {
-			arg_values[offset+i] = &c->val_uint16;
+			cells[offset+i].val_uint16 = c->val_uint16;
+			arg_values[offset+i] = &cells[offset+i].val_uint16;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT16)) {
 			s_args[offset+i] = &cells[i].val_uint16;
 			arg_values[offset+i] = &cells[i].val_uint16;
 		} else if (ptr->types[i] == TAG_UINT32) {
-			arg_values[offset+i] = &c->val_uint32;
+			cells[offset+i].val_uint32 = c->val_uint32;
+			arg_values[offset+i] = &cells[offset+i].val_uint32;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT32)) {
 			s_args[offset+i] = &cells[i].val_uint32;
 			arg_values[offset+i] = &cells[i].val_uint32;
 		} else if (ptr->types[i] == TAG_UINT64) {
-			arg_values[offset+i] = &c->val_uint64;
+			cells[offset+i].val_uint64 = c->val_uint64;
+			arg_values[offset+i] = &cells[offset+i].val_uint64;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT64)) {
 			s_args[offset+i] = &cells[i].val_uint64;
 			arg_values[offset+i] = &cells[i].val_uint64;
 		} else if (ptr->types[i] == TAG_UINT) {
-			arg_values[offset+i] = &c->val_uint;
+			cells[offset+i].val_uint = c->val_uint;
+			arg_values[offset+i] = &cells[offset+i].val_uint;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT)) {
 			s_args[offset+i] = &cells[i].val_uint;
 			arg_values[offset+i] = &cells[i].val_uint;
 		} else if (ptr->types[i] == TAG_USHORT) {
-			arg_values[offset+i] = &c->val_ushort;
+			cells[offset+i].val_ushort = c->val_ushort;
+			arg_values[offset+i] = &cells[offset+i].val_ushort;
 		} else if (ptr->types[i] == MARK_OUT(TAG_USHORT)) {
 			s_args[offset+i] = &cells[i].val_ushort;
 			arg_values[offset+i] = &cells[i].val_ushort;
 		} else if (ptr->types[i] == TAG_ULONG) {
-			arg_values[offset+i] = &c->val_ulong;
+			cells[offset+i].val_ulong = c->val_ulong;
+			arg_values[offset+i] = &cells[offset+i].val_ulong;
 		} else if (ptr->types[i] == MARK_OUT(TAG_ULONG)) {
 			s_args[offset+i] = &cells[i].val_ulong;
 			arg_values[offset+i] = &cells[i].val_ulong;
 		} else if (ptr->types[i] == TAG_INT8) {
-			arg_values[offset+i] = &c->val_int8;
+			cells[offset+i].val_int8 = c->val_int8;
+			arg_values[offset+i] = &cells[offset+i].val_int8;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT8)) {
 			s_args[offset+i] = &cells[i].val_int8;
 			arg_values[offset+i] = &cells[i].val_int8;
 		} else if (ptr->types[i] == TAG_INT16) {
-			arg_values[offset+i] = &c->val_int16;
+			cells[offset+i].val_int16 = c->val_int16;
+			arg_values[offset+i] = &cells[offset+i].val_int16;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT16)) {
 			s_args[offset+i] = &cells[i].val_int16;
 			arg_values[offset+i] = &cells[i].val_int16;
 		} else if (ptr->types[i] == TAG_INT32) {
-			arg_values[offset+i] = &c->val_int32;
+			cells[offset+i].val_int32 = c->val_int32;
+			arg_values[offset+i] = &cells[offset+i].val_int32;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT32)) {
 			s_args[offset+i] = &cells[i].val_int32;
 			arg_values[offset+i] = &cells[i].val_int32;
 		} else if (ptr->types[i] == TAG_INT64) {
-			arg_values[offset+i] = &c->val_int64;
+			cells[offset+i].val_int64 = c->val_int64;
+			arg_values[offset+i] = &cells[offset+i].val_int64;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT64)) {
 			s_args[offset+i] = &cells[i].val_int64;
 			arg_values[offset+i] = &cells[i].val_int64;
 		} else if (ptr->types[i] == TAG_INT) {
-			arg_values[offset+i] = &c->val_int;
+			cells[offset+i].val_int = c->val_int;
+			arg_values[offset+i] = &cells[offset+i].val_int;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT)) {
 			s_args[offset+i] = &cells[i].val_int;
-			arg_values[offset+i] = &cells[i].val_int;
+			arg_values[offset+i] = &cells[offset+i].val_int;
 		} else if (ptr->types[i] == TAG_SHORT) {
-			arg_values[offset+i] = &c->val_sshort;
+			cells[offset+i].val_sshort = c->val_sshort;
+			arg_values[offset+i] = &cells[offset+i].val_sshort;
 		} else if (ptr->types[i] == MARK_OUT(TAG_SHORT)) {
 			s_args[offset+i] = &cells[i].val_sshort;
 			arg_values[offset+i] = &cells[i].val_sshort;
 		} else if (ptr->types[i] == TAG_LONG) {
-			arg_values[offset+i] = &c->val_slong;
+			cells[offset+i].val_slong = c->val_slong;
+			arg_values[offset+i] = &cells[offset+i].val_slong;
 		} else if (ptr->types[i] == MARK_OUT(TAG_LONG)) {
 			s_args[offset+i] = &cells[i].val_slong;
 			arg_values[offset+i] = &cells[i].val_slong;
 		} else if (ptr->types[i] == TAG_FLOAT32) {
-			arg_values[offset+i] = &c->val_float32;
+			cells[offset+i].val_float32= c->val_float32;
+			arg_values[offset+i] = &cells[offset+i].val_int8;
 		} else if (ptr->types[i] == MARK_OUT(TAG_FLOAT32)) {
 			s_args[offset+i] = &cells[i].val_float32;
 			arg_values[offset+i] = &s_args[offset+i];
 		} else if (ptr->types[i] == TAG_FLOAT) {
-			arg_values[offset+i] = &c->val_float;
+			cells[offset+i].val_float64 = c->val_float64;
+			arg_values[offset+i] = &cells[offset+i].val_float64;
 		} else if (ptr->types[i] == MARK_OUT(TAG_FLOAT)) {
 			s_args[offset+i] = &cells[i].val_float;
 			arg_values[offset+i] = &s_args[offset+i];
 		} else if (ptr->types[i] == TAG_PTR) {
-			arg_values[offset+i] = &c->val_ptr;
+			cells[offset+i].val_ptr = c->val_ptr;
+			arg_values[offset+i] = &cells[offset+i].val_ptr;
 		} else if (ptr->types[i] == MARK_OUT(TAG_PTR)) {
 			s_args[offset+i] = &cells[i].val_ptr;
 			arg_values[offset+i] = &s_args[offset+i];
 		} else if (ptr->types[i] == TAG_CSTR) {
 			cells[offset+i].val_str = C_STR(q, c);
-			s_args[offset+i] = &cells[i].val_str;
 			arg_values[offset+i] = &cells[i].val_str;
 		} else if (ptr->types[i] == MARK_OUT(TAG_CSTR)) {
 			cells[offset+i].val_str = C_STR(q, c);
@@ -1128,7 +1144,6 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			arg_values[offset+i] = &s_args[offset+i];
 		} else if (ptr->types[i] == TAG_CCSTR) {
 			cells[offset+i].val_str = C_STR(q, c);
-			s_args[offset+i] = &cells[i].val_str;
 			arg_values[offset+i] = &cells[i].val_str;
 		} else if (ptr->types[i] == MARK_OUT(TAG_CCSTR)) {
 			cells[offset+i].val_str = C_STR(q, c);
@@ -1145,7 +1160,8 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 				h = deref(q, h, l_ctx);
 
 				if (cnt > 0) {
-					arg_values[offset+i] = &h->val_int;
+					cells[offset+i].val_int = h->val_int;
+					arg_values[offset+i] = &cells[i].val_int;
 					offset++;
 				}
 
