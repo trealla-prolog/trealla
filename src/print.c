@@ -968,8 +968,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 				h = running ? deref(q, h, l_ctx) : h;
 				pl_idx_t h_ctx = running ? q->latest_ctx : 0;
 				cell *name = running ? deref(q, h+1, h_ctx) : h+1;
-				cell *var = h+2;
-				var = running ? deref(q, var, l_ctx) : 0;
+				cell *var = running ? deref(q, h+2, l_ctx) : h+2;
 				pl_idx_t tmp_ctx = running ? q->latest_ctx : l_ctx;
 
 				if (is_var(var) && (var->var_nbr == c->var_nbr) && (tmp_ctx == c_ctx)) {
