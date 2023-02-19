@@ -12,7 +12,7 @@
 
 :- use_foreign_module('libraylib.so', [
 	'InitWindow'([sint,sint,cstr], void),
-	'WindowShouldClose'([], void),
+	'WindowShouldClose'([], bool),
 	'BeginDrawing'([], void),
 	'ClearBackground'([color], void),
 	'DrawText'([cstr,sint,sint,sint,color], void),
