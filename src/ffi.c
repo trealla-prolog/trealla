@@ -930,7 +930,9 @@ bool wrapper_for_function(query *q, builtins *ptr)
 		c_ctx = p2_ctx;
 	}
 
-	if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, ptr->arity, NULL, arg_types) != FFI_OK)
+	ffi_type *ret_type = NULL;
+
+	if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, ptr->arity, ret_type, arg_types) != FFI_OK)
 		return false;
 
 	union result_ result;
