@@ -893,23 +893,6 @@ Run...
 	[[1,'Paul',32,'California',20000.0],[2,'Allen',25,'Texas',15000.0],[3,'Teddy',23,'Norway',20000.0],[4,'Mark',25,'Rich-Mond ',65000.0],[5,'David',27,'Texas',85000.0],[6,'Kim',22,'South-Hall',45000.0]]
 ```
 
-Or to use RayLib (if installed)...
-
-```console
-	?- foreign_struct(color, [uint8,uint8,uint8,uint8]).
-	?- use_foreign_module('libraylib.so', [
-		'InitWindow'([sint,sint,cstr], void),
-		'BeginDrawing'([], void),
-		'ClearBackground'([color], void),
-		'DrawText'([cstr,sint,sint,sint,color], void),
-		'EndDrawing'([], void),
-		'CloseWindow'([], void)
-		]).
-	   true.
-	?- 'InitWindow'(400,400,"Hello from Trealla").
-```
-
-
 Concurrency						##EXPERIMENTAL##
 ===========
 
