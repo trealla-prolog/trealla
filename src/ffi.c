@@ -813,6 +813,8 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 	pl_idx_t c_ctx = p1_ctx;
 
 	ffi_cif cif;
+	ffi_type tm_type;
+	ffi_type *tm_type_elements[MAX_ARITY];
 	ffi_type *arg_types[MAX_ARITY];
 	ffi_status status;
 	void *arg_values[MAX_ARITY];
@@ -982,8 +984,6 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 				break;
 			}
 
-			printf("wrapper struct: %s\n", name);
-
 			builtins *sptr = NULL;
 
 			if (!map_get(q->pl->biftab, name, (void*)&sptr)) {
@@ -992,13 +992,9 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			}
 
 			unsigned sarity = sptr->arity;
-			ffi_type tm_type;
-			ffi_type *tm_type_elements[sarity+1];
 			tm_type.size = tm_type.alignment = 0;
 			tm_type.type = FFI_TYPE_STRUCT;
 			tm_type.elements = tm_type_elements;
-
-			printf("wrapper: struct arity = %u\n", sarity);
 
 			for (unsigned i = 0; i < sarity; i++) {
 				if (sptr->types[i] == TAG_UINT8)
@@ -1144,14 +1140,11 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			int cnt = 0;
 			LIST_HANDLER(l);
 
-			printf("values\n");
-
 			while (is_iso_list(l)) {
 				cell *h = LIST_HEAD(l);
 				h = deref(q, h, l_ctx);
 
 				if (cnt > 0) {
-					printf(" values %lld\n", (long long)h->val_int);
 					arg_values[offset+i] = &h->val_int;
 					offset++;
 				}
@@ -1213,18 +1206,11 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 	else
 		return false;
 
-	printf("*** here1\n");
-
 	if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, arity, ret_type, arg_types) != FFI_OK)
 		return false;
 
-	printf("*** here2\n");
-
 	union result_ result;
 	ffi_call(&cif, FFI_FN(ptr->fn), &result, arg_values);
-
-	printf("*** here3\n");
-
 
 	GET_FIRST_ARG(p11, any);
 	c = p11;
