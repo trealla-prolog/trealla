@@ -351,26 +351,6 @@ struct cell_ {
 
 	union {
 
-		// These are pseudo types used in FFI...
-
-		int8_t val_ffi_sint8;
-		int16_t val_ffi_sint16;
-		int32_t val_ffi_sint32;
-		int64_t val_ffi_sint64;
-		uint8_t val_ffi_uint8;
-		uint16_t val_ffi_uint16;
-		uint32_t val_ffi_uint32;
-		uint64_t val_ffi_uint64;
-		unsigned short val_ffi_ushort;
-		unsigned long val_ffi_ulong;
-		signed short val_ffi_short;
-		signed long val_ffi_slong;
-		float val_ffi_float;
-		double val_ffi_double;
-		unsigned val_ffi_uint;
-		int val_ffi_sint;
-		void *val_ffi_pointer;
-
 		// Proper types...
 
 		pl_uint_t val_uint;

@@ -718,7 +718,7 @@ bool wrapper_for_function(query *q, builtins *ptr)
 			s_args[i] = &cells[i].val_ffi_uint16;
 			arg_values[i] = &cells[i].val_ffi_uint16;
 		} else if (ptr->types[i] == TAG_UINT32) {
-			cells[i].val_ffi_uint32 = c->val_ffi_uint;
+			cells[i].val_ffi_uint32 = c->val_uint;
 			arg_values[i] = &cells[i].val_ffi_uint32;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT32)) {
 			s_args[i] = &cells[i].val_ffi_uint32;
@@ -778,7 +778,7 @@ bool wrapper_for_function(query *q, builtins *ptr)
 			s_args[i] = &cells[i].val_ffi_sint;
 			arg_values[i] = &cells[i].val_ffi_sint;
 		} else if (ptr->types[i] == TAG_SHORT) {
-			cells[i].val_ffi_sshort = c->val_ffi_short;
+			cells[i].val_ffi_sshort = c->val_int;
 			arg_values[i] = &cells[i].val_ffi_sshort;
 		} else if (ptr->types[i] == MARK_OUT(TAG_SHORT)) {
 			s_args[i] = &cells[i].val_ffi_sshort;
@@ -958,45 +958,59 @@ static void handle_struct2(query *q, nested_elements *nested, unsigned depth, un
 {
 	size_t bytes_offset = *boff;
 	unsigned pos = *p_pos;
+	result r;
 
 	if (nested[depth].elements[cnt-1] == &ffi_type_uint8) {
-		memcpy(bytes+bytes_offset, &h->val_ffi_uint8, 1);
+		r.val_ffi_uint8 = h->val_uint;
+		memcpy(bytes+bytes_offset, &r.val_ffi_uint8, 1);
 		bytes_offset += 1;
 	} else if (nested[depth].elements[cnt-1] == &ffi_type_uint16) {
-		memcpy(bytes+bytes_offset, &h->val_ffi_uint16, 2);
+		r.val_ffi_uint16 = h->val_uint;
+		memcpy(bytes+bytes_offset, &r.val_ffi_uint16, 2);
 		bytes_offset += 2;
 	} else if (nested[depth].elements[cnt-1] == &ffi_type_uint32) {
-		memcpy(bytes+bytes_offset, &h->val_ffi_uint32, 4);
+		r.val_ffi_uint32 = h->val_uint;
+		memcpy(bytes+bytes_offset, &r.val_ffi_uint32, 4);
 		bytes_offset += 4;
 	} else if (nested[depth].elements[cnt-1] == &ffi_type_uint64) {
-		memcpy(bytes+bytes_offset, &h->val_ffi_uint64, 8);
+		r.val_ffi_uint64 = h->val_uint;
+		memcpy(bytes+bytes_offset, &r.val_ffi_uint64, 1);
 		bytes_offset += 8;
 	} else if (nested[depth].elements[cnt-1] == &ffi_type_uint) {
-		memcpy(bytes+bytes_offset, &h->val_ffi_uint64, sizeof(unsigned));
+		r.val_ffi_uint = h->val_uint;
+		memcpy(bytes+bytes_offset, &r.val_ffi_uint, sizeof(unsigned));
 		bytes_offset += sizeof(unsigned);
 	} else if (nested[depth].elements[cnt-1] == &ffi_type_sint8) {
-		memcpy(bytes+bytes_offset, &h->val_ffi_sint, 1);
+		r.val_ffi_sint8 = h->val_int;
+		memcpy(bytes+bytes_offset, &r.val_ffi_sint8, 1);
 		bytes_offset += 1;
 	} else if (nested[depth].elements[cnt-1] == &ffi_type_sint16) {
-		memcpy(bytes+bytes_offset, &h->val_ffi_sint16, 2);
+		r.val_ffi_sint16 = h->val_int;
+		memcpy(bytes+bytes_offset, &r.val_ffi_sint16, 2);
 		bytes_offset += 2;
 	} else if (nested[depth].elements[cnt-1] == &ffi_type_sint32) {
-		memcpy(bytes+bytes_offset, &h->val_ffi_sint32, 4);
+		r.val_ffi_sint32 = h->val_int;
+		memcpy(bytes+bytes_offset, &r.val_ffi_sint32, 4);
 		bytes_offset += 4;
 	} else if (nested[depth].elements[cnt-1] == &ffi_type_sint64) {
-		memcpy(bytes+bytes_offset, &h->val_ffi_sint64, 8);
+		r.val_ffi_sint64 = h->val_int;
+		memcpy(bytes+bytes_offset, &r.val_ffi_sint64, 8);
 		bytes_offset += 8;
 	} else if (nested[depth].elements[cnt-1] == &ffi_type_sint) {
-		memcpy(bytes+bytes_offset, &h->val_ffi_sint64, sizeof(unsigned));
-		bytes_offset += sizeof(unsigned);
+		r.val_ffi_sint = h->val_int;
+		memcpy(bytes+bytes_offset, &r.val_ffi_sint, sizeof(int));
+		bytes_offset += sizeof(int);
 	} else if (nested[depth].elements[cnt-1] == &ffi_type_float) {
-		memcpy(bytes+bytes_offset, &h->val_ffi_float, 4);
+		r.val_ffi_float = h->val_float;
+		memcpy(bytes+bytes_offset, &r.val_ffi_float, 4);
 		bytes_offset += 4;
 	} else if (nested[depth].elements[cnt-1] == &ffi_type_double) {
-		memcpy(bytes+bytes_offset, &h->val_ffi_double, 8);
+		r.val_ffi_double = h->val_float;
+		memcpy(bytes+bytes_offset, &r.val_ffi_double, 8);
 		bytes_offset += 8;
 	} else if (nested[depth].elements[cnt-1] == &ffi_type_pointer) {
-		memcpy(bytes+bytes_offset, &h->val_ffi_pointer, sizeof(void*));
+		r.val_ffi_pointer = h->val_ptr;
+		memcpy(bytes+bytes_offset, &r.val_ffi_pointer, sizeof(void*));
 		bytes_offset += sizeof(void*);
 	} else {
 		cell *l = h;
