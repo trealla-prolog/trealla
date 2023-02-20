@@ -907,9 +907,9 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 	void *s_args[MAX_FFI_ARGS];
 	cell cells[MAX_FFI_ARGS];
 	uint8_t bytes[MAX_FFI_ARGS];
+	ffi_type st_type[MAX_FFI_ARGS];
 
 	ffi_cif cif;
-	ffi_type st_type;
 	ffi_status status;
 	unsigned arity = ptr->arity - 1, depth = 0;
 	size_t bytes_offset = 0;
@@ -1082,9 +1082,9 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			//printf("wrapper: found struct: %s, arity=%u\n", name, sptr->arity);
 
 			unsigned sarity = sptr->arity;
-			st_type.size = st_type.alignment = 0;
-			st_type.type = FFI_TYPE_STRUCT;
-			st_type.elements = nested[depth].elements;
+			st_type[depth].size = st_type[depth].alignment = 0;
+			st_type[depth].type = FFI_TYPE_STRUCT;
+			st_type[depth].elements = nested[depth].elements;
 
 			for (unsigned cnt = 0; cnt < sarity; cnt++) {
 				//printf("*** [%u] %u\n", cnt, sptr->types[cnt]);
@@ -1122,7 +1122,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			}
 
 			nested[depth].elements[sarity] = NULL;
-			arg_types[i] = &st_type;
+			arg_types[i] = &st_type[depth];
 		}
 
 		if (ptr->types[i] == TAG_UINT8) {
@@ -1340,6 +1340,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			}
 
 			arg_values[pos] = &bytes[bytes_offset_start];
+			depth++;
 			pos++;
 		}
 
