@@ -1385,9 +1385,10 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			while (is_iso_list(l)) {
 				cell *h = LIST_HEAD(l);
 				h = deref(q, h, l_ctx);
+				pl_idx_t h_ctx = q->latest_ctx;
 
 				if (cnt > 0) {
-					handle_struct2(q, nested, depth+1, cnt, bytes, &bytes_offset, h, arg_values, &pos);
+					handle_struct2(q, nested, depth, cnt, bytes, &bytes_offset, h, h_ctx, arg_values, &pos);
 				}
 
 				l = LIST_TAIL(l);
