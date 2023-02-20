@@ -54,8 +54,7 @@ typedef union result_ {
 	signed int val_ffi_sint;
 	unsigned long val_ffi_ulong;
 	signed long val_ffi_slong;
-	char *s;
-	void *p;
+	void *val_ffi_pointer;
 }
  result;
 
@@ -872,11 +871,11 @@ bool wrapper_for_function(query *q, builtins *ptr)
 	else if (ptr->ret_type == TAG_FLOAT)
 		make_float(&tmp, r.val_ffi_double);
 	else if (ptr->ret_type == TAG_PTR)
-		make_cstring(&tmp, r.p);
+		make_cstring(&tmp, r.val_ffi_pointer);
 	else if (ptr->ret_type == TAG_CSTR)
-		make_cstring(&tmp, r.p);
+		make_cstring(&tmp, r.val_ffi_pointer);
 	else if (ptr->ret_type == TAG_CCSTR)
-		make_cstring(&tmp, r.p);
+		make_cstring(&tmp, r.val_ffi_pointer);
 	else
 		return false;
 
@@ -1655,18 +1654,18 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 		unshare_cell(&tmp);
 		if (ok != true) return ok;
 	} else if (ptr->ret_type == TAG_PTR) {
-		make_ptr(&tmp, r.p);
+		make_ptr(&tmp, r.val_ffi_pointer);
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		if (ok != true) return ok;
 	} else if (ptr->ret_type == TAG_CSTR) {
-		check_heap_error(make_cstring(&tmp, r.s));
-		free(r.s);
+		check_heap_error(make_cstring(&tmp, r.val_ffi_pointer));
+		free(r.val_ffi_pointer);
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		if (ok != true) return ok;
 	} else if (ptr->ret_type == TAG_CCSTR) {
-		check_heap_error(make_cstring(&tmp, r.s));
+		check_heap_error(make_cstring(&tmp, r.val_ffi_pointer));
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		if (ok != true) return ok;
