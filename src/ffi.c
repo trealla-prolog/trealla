@@ -1381,7 +1381,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 
 				if (cnt > 0) {
 					if (st_type_elements[cnt-1] == &ffi_type_uint8) {
-						bytes[bytes_offset] = h->val_uint8;
+						memcpy(bytes+bytes_offset, &h->val_uint8, 1);
 						bytes_offset += 1;
 					}
 				}
