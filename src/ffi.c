@@ -1040,7 +1040,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 	ffi_type *arg_types[MAX_FFI_ARGS];
 	void *arg_values[MAX_FFI_ARGS];
 	void *s_args[MAX_FFI_ARGS];
-	cell cells[MAX_FFI_ARGS];
+	result cells[MAX_FFI_ARGS];
 	uint8_t bytes[MAX_FFI_ARGS];
 	ffi_type types[MAX_FFI_ARGS];
 
@@ -1240,7 +1240,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			pos++;
 		} else if (ptr->types[i] == TAG_UINT32) {
 			cells[pos].val_ffi_uint32 = c->val_uint;
-			arg_values[pos] = &cells[pos].val_uint;
+			arg_values[pos] = &cells[pos].val_ffi_uint32;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT32)) {
 			s_args[pos] = &cells[pos].val_ffi_uint32;
@@ -1319,12 +1319,12 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			arg_values[pos] = &cells[pos].val_ffi_sint;
 			pos++;
 		} else if (ptr->types[i] == TAG_SHORT) {
-			cells[pos].val_ffi_short = c->val_int;
-			arg_values[pos] = &cells[pos].val_ffi_short;
+			cells[pos].val_ffi_sshort = c->val_int;
+			arg_values[pos] = &cells[pos].val_ffi_sshort;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_SHORT)) {
-			s_args[pos] = &cells[pos].val_ffi_short;
-			arg_values[pos] = &cells[pos].val_ffi_short;
+			s_args[pos] = &cells[pos].val_ffi_sshort;
+			arg_values[pos] = &cells[pos].val_ffi_sshort;
 			pos++;
 		} else if (ptr->types[i] == TAG_LONG) {
 			cells[pos].val_ffi_slong = c->val_int;
@@ -1347,7 +1347,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			arg_values[pos] = &cells[pos].val_ffi_double;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_FLOAT)) {
-			s_args[pos] = &cells[pos].val_float;
+			s_args[pos] = &cells[pos].val_ffi_float;
 			arg_values[pos] = &s_args[pos];
 			pos++;
 		} else if (ptr->types[i] == TAG_PTR) {
@@ -1529,7 +1529,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(TAG_SHORT)) {
-				make_int(&tmp, cells[i].val_ffi_short);
+				make_int(&tmp, cells[i].val_ffi_sshort);
 				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
