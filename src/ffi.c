@@ -942,13 +942,88 @@ static bool handle_struct1(query *q, builtins *sptr, nested_elements *nested, ff
 
 			//printf("wrapper: found struct: %s, arity=%u\n", name, sptr->arity);
 
-			handle_struct1(q, sptr, nested, types, depth+1);
+			if (!handle_struct1(q, sptr, nested, types, depth+1))
+				return false;
+
 			nested[depth].elements[cnt] = &types[depth+1];
 		}
 	}
 
 	nested[depth].elements[sarity] = NULL;
 	return true;
+}
+
+static void handle_struct2(query *q, nested_elements *nested, unsigned depth, unsigned cnt, uint8_t *bytes, size_t *boff, cell *h, pl_idx_t h_ctx, void **arg_values, unsigned *p_pos)
+{
+	size_t bytes_offset = *boff;
+	unsigned pos = *p_pos;
+
+	if (nested[depth].elements[cnt-1] == &ffi_type_uint8) {
+		memcpy(bytes+bytes_offset, &h->val_ffi_uint8, 1);
+		bytes_offset += 1;
+	} else if (nested[depth].elements[cnt-1] == &ffi_type_uint16) {
+		memcpy(bytes+bytes_offset, &h->val_ffi_uint16, 2);
+		bytes_offset += 2;
+	} else if (nested[depth].elements[cnt-1] == &ffi_type_uint32) {
+		memcpy(bytes+bytes_offset, &h->val_ffi_uint32, 4);
+		bytes_offset += 4;
+	} else if (nested[depth].elements[cnt-1] == &ffi_type_uint64) {
+		memcpy(bytes+bytes_offset, &h->val_ffi_uint64, 8);
+		bytes_offset += 8;
+	} else if (nested[depth].elements[cnt-1] == &ffi_type_uint) {
+		memcpy(bytes+bytes_offset, &h->val_ffi_uint64, sizeof(unsigned));
+		bytes_offset += sizeof(unsigned);
+	} else if (nested[depth].elements[cnt-1] == &ffi_type_sint8) {
+		memcpy(bytes+bytes_offset, &h->val_ffi_sint, 1);
+		bytes_offset += 1;
+	} else if (nested[depth].elements[cnt-1] == &ffi_type_sint16) {
+		memcpy(bytes+bytes_offset, &h->val_ffi_sint16, 2);
+		bytes_offset += 2;
+	} else if (nested[depth].elements[cnt-1] == &ffi_type_sint32) {
+		memcpy(bytes+bytes_offset, &h->val_ffi_sint32, 4);
+		bytes_offset += 4;
+	} else if (nested[depth].elements[cnt-1] == &ffi_type_sint64) {
+		memcpy(bytes+bytes_offset, &h->val_ffi_sint64, 8);
+		bytes_offset += 8;
+	} else if (nested[depth].elements[cnt-1] == &ffi_type_sint) {
+		memcpy(bytes+bytes_offset, &h->val_ffi_sint64, sizeof(unsigned));
+		bytes_offset += sizeof(unsigned);
+	} else if (nested[depth].elements[cnt-1] == &ffi_type_float) {
+		memcpy(bytes+bytes_offset, &h->val_ffi_float, 4);
+		bytes_offset += 4;
+	} else if (nested[depth].elements[cnt-1] == &ffi_type_double) {
+		memcpy(bytes+bytes_offset, &h->val_ffi_double, 8);
+		bytes_offset += 8;
+	} else if (nested[depth].elements[cnt-1] == &ffi_type_pointer) {
+		memcpy(bytes+bytes_offset, &h->val_ffi_pointer, sizeof(void*));
+		bytes_offset += sizeof(void*);
+	} else {
+		cell *l = h;
+		pl_idx_t l_ctx = h_ctx;
+		int cnt = 0;
+		LIST_HANDLER(l);
+		size_t bytes_offset_start = bytes_offset;
+
+		while (is_iso_list(l)) {
+			cell *h = LIST_HEAD(l);
+			h = deref(q, h, l_ctx);
+			pl_idx_t h_ctx = q->latest_ctx;
+
+			if (cnt > 0) {
+				handle_struct2(q, nested, depth, cnt, bytes, &bytes_offset, h, h_ctx, arg_values, &pos);
+			}
+
+			l = LIST_TAIL(l);
+			l = deref(q, l, l_ctx);
+			l_ctx = q->latest_ctx;
+			cnt++;
+		}
+
+		arg_values[pos] = &bytes[bytes_offset_start];
+		*p_pos = ++pos;
+	}
+
+	*boff = bytes_offset;
 }
 
 bool wrapper_for_predicate(query *q, builtins *ptr)
@@ -1140,7 +1215,9 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 
 			//printf("wrapper: found struct: %s, arity=%u\n", name, sptr->arity);
 
-			handle_struct1(q, sptr, nested, types, depth);
+			if (!handle_struct1(q, sptr, nested, types, depth))
+				return false;
+
 			arg_types[i] = &types[depth];
 		}
 
@@ -1310,46 +1387,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 				h = deref(q, h, l_ctx);
 
 				if (cnt > 0) {
-					if (nested[depth].elements[cnt-1] == &ffi_type_uint8) {
-						memcpy(bytes+bytes_offset, &h->val_ffi_uint8, 1);
-						bytes_offset += 1;
-					} else if (nested[depth].elements[cnt-1] == &ffi_type_uint16) {
-						memcpy(bytes+bytes_offset, &h->val_ffi_uint16, 2);
-						bytes_offset += 2;
-					} else if (nested[depth].elements[cnt-1] == &ffi_type_uint32) {
-						memcpy(bytes+bytes_offset, &h->val_ffi_uint32, 4);
-						bytes_offset += 4;
-					} else if (nested[depth].elements[cnt-1] == &ffi_type_uint64) {
-						memcpy(bytes+bytes_offset, &h->val_ffi_uint64, 8);
-						bytes_offset += 8;
-					} else if (nested[depth].elements[cnt-1] == &ffi_type_uint) {
-						memcpy(bytes+bytes_offset, &h->val_ffi_uint64, sizeof(unsigned));
-						bytes_offset += sizeof(unsigned);
-					} else if (nested[depth].elements[cnt-1] == &ffi_type_sint8) {
-						memcpy(bytes+bytes_offset, &h->val_ffi_sint, 1);
-						bytes_offset += 1;
-					} else if (nested[depth].elements[cnt-1] == &ffi_type_sint16) {
-						memcpy(bytes+bytes_offset, &h->val_ffi_sint16, 2);
-						bytes_offset += 2;
-					} else if (nested[depth].elements[cnt-1] == &ffi_type_sint32) {
-						memcpy(bytes+bytes_offset, &h->val_ffi_sint32, 4);
-						bytes_offset += 4;
-					} else if (nested[depth].elements[cnt-1] == &ffi_type_sint64) {
-						memcpy(bytes+bytes_offset, &h->val_ffi_sint64, 8);
-						bytes_offset += 8;
-					} else if (nested[depth].elements[cnt-1] == &ffi_type_sint) {
-						memcpy(bytes+bytes_offset, &h->val_ffi_sint64, sizeof(unsigned));
-						bytes_offset += sizeof(unsigned);
-					} else if (nested[depth].elements[cnt-1] == &ffi_type_float) {
-						memcpy(bytes+bytes_offset, &h->val_ffi_float, 4);
-						bytes_offset += 4;
-					} else if (nested[depth].elements[cnt-1] == &ffi_type_double) {
-						memcpy(bytes+bytes_offset, &h->val_ffi_double, 8);
-						bytes_offset += 8;
-					} else if (nested[depth].elements[cnt-1] == &ffi_type_pointer) {
-						memcpy(bytes+bytes_offset, &h->val_ffi_pointer, sizeof(void*));
-						bytes_offset += sizeof(void*);
-					}
+					handle_struct2(q, nested, depth+1, cnt, bytes, &bytes_offset, h, arg_values, &pos);
 				}
 
 				l = LIST_TAIL(l);
@@ -1359,7 +1397,6 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			}
 
 			arg_values[pos] = &bytes[bytes_offset_start];
-			depth++;
 			pos++;
 		}
 
