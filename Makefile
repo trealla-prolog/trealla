@@ -102,7 +102,6 @@ LIBOBJECTS +=  \
 	library/pairs.o \
 	library/pio.o \
 	library/random.o \
-	library/raylib.o \
 	library/si.o \
 	library/sqlite3.o \
 	library/ugraphs.o \
