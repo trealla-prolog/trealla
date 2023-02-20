@@ -1000,6 +1000,8 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 	void *s_args[MAX_ARITY];
 	cell cells[MAX_ARITY];
 	unsigned arity = ptr->arity - 1;
+	uint8_t bytes[MAX_ARITY];
+	size_t bytes_offset = 0;
 
 	if (ptr->ret_type == TAG_VOID)
 		arity++;
@@ -1166,7 +1168,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 				return false;
 			}
 
-			printf("wrapper: found struct: %s, arity=%u\n", name, sptr->arity);
+			//printf("wrapper: found struct: %s, arity=%u\n", name, sptr->arity);
 
 			unsigned sarity = sptr->arity;
 			st_type.size = st_type.alignment = 0;
@@ -1174,7 +1176,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			st_type.elements = st_type_elements;
 
 			for (unsigned i = 0; i < sarity; i++) {
-				printf("*** [%u] %u\n", i, sptr->types[i]);
+				//printf("*** [%u] %u\n", i, sptr->types[i]);
 
 				if (sptr->types[i] == TAG_UINT8)
 					st_type_elements[i] = &ffi_type_uint8;
@@ -1371,6 +1373,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			pl_idx_t l_ctx = c_ctx;
 			int cnt = 0;
 			LIST_HANDLER(l);
+			size_t bytes_offset_start = bytes_offset;
 
 			while (is_iso_list(l)) {
 				cell *h = LIST_HEAD(l);
@@ -1378,12 +1381,9 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 
 				if (cnt > 0) {
 					if (st_type_elements[cnt-1] == &ffi_type_uint8) {
-						cells[pos].val_uint8 = h->val_uint;
-						printf("*** %u %llu\n", cnt-1, (unsigned long long)cells[pos].val_uint8);
-						arg_values[pos] = &cells[pos].val_uint8;
-						pos++;
+						bytes[bytes_offset] = h->val_uint8;
+						bytes_offset += 1;
 					}
-
 				}
 
 				l = LIST_TAIL(l);
@@ -1391,6 +1391,9 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 				l_ctx = q->latest_ctx;
 				cnt++;
 			}
+
+			arg_values[pos] = &bytes[bytes_offset_start];
+			pos++;
 		}
 
 		GET_NEXT_ARG(p2, any);
@@ -1443,7 +1446,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 	else
 		return false;
 
-	printf("*** fn arity = %u, values = %u\n", arity, pos);
+	//printf("*** fn arity = %u, values = %u\n", arity, pos);
 
 	if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, arity, ret_type, arg_types) != FFI_OK)
 		return false;
