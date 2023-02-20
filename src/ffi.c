@@ -898,8 +898,8 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 	cell *c = p1;
 	pl_idx_t c_ctx = p1_ctx;
 
-	// NOTE: only handle simple nested for now. Nested nested
-	// will require better management of elements...
+	// NOTE: only handle simple structs for now. Nesting
+	// will require more work...
 
 	nested_elements nested[MAX_FFI_ARGS];
 	ffi_type *arg_types[MAX_FFI_ARGS];
