@@ -992,8 +992,8 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 	pl_idx_t c_ctx = p1_ctx;
 
 	ffi_cif cif;
-	ffi_type tm_type;
-	ffi_type *tm_type_elements[MAX_ARITY];
+	ffi_type st_type;
+	ffi_type *st_type_elements[MAX_ARITY];
 	ffi_type *arg_types[MAX_ARITY];
 	ffi_status status;
 	void *arg_values[MAX_ARITY];
@@ -1004,7 +1004,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 	if (ptr->ret_type == TAG_VOID)
 		arity++;
 
-	unsigned offset = 0;
+	unsigned pos = 0;
 
 	for (unsigned i = 0; i < arity; i++) {
 		if ((ptr->types[i] == TAG_UINT8) && is_smallint(c))
@@ -1155,10 +1155,6 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			while (is_iso_list(l)) {
 				cell *h = LIST_HEAD(l);
 				h = deref(q, h, l_ctx);
-				l = LIST_TAIL(l);
-				l = deref(q, l, l_ctx);
-				l_ctx = q->latest_ctx;
-
 				name = C_STR(q, h);
 				break;
 			}
@@ -1170,164 +1166,206 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 				return false;
 			}
 
+			printf("wrapper: found struct: %s, arity=%u\n", name, sptr->arity);
+
 			unsigned sarity = sptr->arity;
-			tm_type.size = tm_type.alignment = 0;
-			tm_type.type = FFI_TYPE_STRUCT;
-			tm_type.elements = tm_type_elements;
+			st_type.size = st_type.alignment = 0;
+			st_type.type = FFI_TYPE_STRUCT;
+			st_type.elements = st_type_elements;
 
 			for (unsigned i = 0; i < sarity; i++) {
+				printf("*** [%u] %u\n", i, sptr->types[i]);
+
 				if (sptr->types[i] == TAG_UINT8)
-					tm_type_elements[i] = &ffi_type_uint8;
+					st_type_elements[i] = &ffi_type_uint8;
 				else if (sptr->types[i] == TAG_UINT16)
-					tm_type_elements[i] = &ffi_type_uint16;
+					st_type_elements[i] = &ffi_type_uint16;
 				else if (sptr->types[i] == TAG_UINT32)
-					tm_type_elements[i] = &ffi_type_uint32;
+					st_type_elements[i] = &ffi_type_uint32;
 				else if (sptr->types[i] == TAG_UINT64)
-					tm_type_elements[i] = &ffi_type_uint64;
+					st_type_elements[i] = &ffi_type_uint64;
 				else if (sptr->types[i] == TAG_UINT)
-					tm_type_elements[i] = &ffi_type_uint;
+					st_type_elements[i] = &ffi_type_uint;
 				else if (sptr->types[i] == TAG_USHORT)
-					tm_type_elements[i] = &ffi_type_ushort;
+					st_type_elements[i] = &ffi_type_ushort;
 				else if (sptr->types[i] == TAG_ULONG)
-					tm_type_elements[i] = &ffi_type_ulong;
+					st_type_elements[i] = &ffi_type_ulong;
 				else if (sptr->types[i] == TAG_INT8)
-					tm_type_elements[i] = &ffi_type_sint8;
+					st_type_elements[i] = &ffi_type_sint8;
 				else if (sptr->types[i] == TAG_INT16)
-					tm_type_elements[i] = &ffi_type_sint16;
+					st_type_elements[i] = &ffi_type_sint16;
 				else if (sptr->types[i] == TAG_INT32)
-					tm_type_elements[i] = &ffi_type_sint32;
+					st_type_elements[i] = &ffi_type_sint32;
 				else if (sptr->types[i] == TAG_INT64)
-					tm_type_elements[i] = &ffi_type_sint64;
+					st_type_elements[i] = &ffi_type_sint64;
 				else if (sptr->types[i] == TAG_INT)
-					tm_type_elements[i] = &ffi_type_sint;
+					st_type_elements[i] = &ffi_type_sint;
 				else if (sptr->types[i] == TAG_SHORT)
-					tm_type_elements[i] = &ffi_type_sshort;
+					st_type_elements[i] = &ffi_type_sshort;
 				else if (ptr->types[i] == TAG_LONG)
-					tm_type_elements[i] = &ffi_type_slong;
+					st_type_elements[i] = &ffi_type_slong;
 				else
-					tm_type_elements[i] = &ffi_type_sint;
+					st_type_elements[i] = &ffi_type_sint;
 			}
 
-			tm_type_elements[sarity] = NULL;
-			arg_types[i] = &tm_type;
+			st_type_elements[sarity] = NULL;
+			arg_types[i] = &st_type;
 		}
 
 		if (ptr->types[i] == TAG_UINT8) {
-			cells[offset+i].val_uint8 = c->val_uint;
-			arg_values[offset+i] = &cells[offset+i].val_uint8;
+			cells[pos].val_uint8 = c->val_uint;
+			arg_values[pos] = &cells[pos].val_uint8;
+			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT8)) {
-			s_args[offset+i] = &cells[offset+i].val_uint8;
-			arg_values[offset+i] = &cells[offset+i].val_uint8;
+			s_args[pos] = &cells[pos].val_uint8;
+			arg_values[pos] = &cells[pos].val_uint8;
+			pos++;
 		} else if (ptr->types[i] == TAG_UINT16) {
-			cells[offset+i].val_uint16 = c->val_uint;
-			arg_values[offset+i] = &cells[offset+i].val_uint16;
+			cells[pos].val_uint16 = c->val_uint;
+			arg_values[pos] = &cells[pos].val_uint16;
+			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT16)) {
-			s_args[offset+i] = &cells[offset+i].val_uint16;
-			arg_values[offset+i] = &cells[offset+i].val_uint16;
+			s_args[pos] = &cells[pos].val_uint16;
+			arg_values[pos] = &cells[pos].val_uint16;
+			pos++;
 		} else if (ptr->types[i] == TAG_UINT32) {
-			cells[offset+i].val_uint32 = c->val_uint;
-			arg_values[offset+i] = &cells[offset+i].val_uint;
+			cells[pos].val_uint32 = c->val_uint;
+			arg_values[pos] = &cells[pos].val_uint;
+			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT32)) {
-			s_args[offset+i] = &cells[offset+i].val_uint32;
-			arg_values[offset+i] = &cells[offset+i].val_uint32;
+			s_args[pos] = &cells[pos].val_uint32;
+			arg_values[pos] = &cells[pos].val_uint32;
+			pos++;
 		} else if (ptr->types[i] == TAG_UINT64) {
-			cells[offset+i].val_uint64 = c->val_uint;
-			arg_values[offset+i] = &cells[offset+i].val_uint64;
+			cells[pos].val_uint64 = c->val_uint;
+			arg_values[pos] = &cells[pos].val_uint64;
+			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT64)) {
-			s_args[offset+i] = &cells[offset+i].val_uint64;
-			arg_values[offset+i] = &cells[offset+i].val_uint64;
+			s_args[pos] = &cells[pos].val_uint64;
+			arg_values[pos] = &cells[pos].val_uint64;
+			pos++;
 		} else if (ptr->types[i] == TAG_UINT) {
-			cells[offset+i].val_uint = c->val_uint;
-			arg_values[offset+i] = &cells[offset+i].val_uint;
+			cells[pos].val_uint = c->val_uint;
+			arg_values[pos] = &cells[pos].val_uint;
+			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT)) {
-			s_args[offset+i] = &cells[offset+i].val_uint;
-			arg_values[offset+i] = &cells[offset+i].val_uint;
+			s_args[pos] = &cells[pos].val_uint;
+			arg_values[pos] = &cells[pos].val_uint;
+			pos++;
 		} else if (ptr->types[i] == TAG_USHORT) {
-			cells[offset+i].val_ushort = c->val_uint;
-			arg_values[offset+i] = &cells[offset+i].val_ushort;
+			cells[pos].val_ushort = c->val_uint;
+			arg_values[pos] = &cells[pos].val_ushort;
+			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_USHORT)) {
-			s_args[offset+i] = &cells[offset+i].val_ushort;
-			arg_values[offset+i] = &cells[offset+i].val_ushort;
+			s_args[pos] = &cells[pos].val_ushort;
+			arg_values[pos] = &cells[pos].val_ushort;
+			pos++;
 		} else if (ptr->types[i] == TAG_ULONG) {
-			cells[offset+i].val_ulong = c->val_uint;
-			arg_values[offset+i] = &cells[offset+i].val_ulong;
+			cells[pos].val_ulong = c->val_uint;
+			arg_values[pos] = &cells[pos].val_ulong;
+			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_ULONG)) {
-			s_args[offset+i] = &cells[offset+i].val_ulong;
-			arg_values[offset+i] = &cells[offset+i].val_ulong;
+			s_args[pos] = &cells[pos].val_ulong;
+			arg_values[pos] = &cells[pos].val_ulong;
+			pos++;
 		} else if (ptr->types[i] == TAG_INT8) {
-			cells[offset+i].val_int8 = c->val_int;
-			arg_values[offset+i] = &cells[offset+i].val_int8;
+			cells[pos].val_int8 = c->val_int;
+			arg_values[pos] = &cells[pos].val_int8;
+			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT8)) {
-			s_args[offset+i] = &cells[offset+i].val_int8;
-			arg_values[offset+i] = &cells[offset+i].val_int8;
+			s_args[pos] = &cells[pos].val_int8;
+			arg_values[pos] = &cells[pos].val_int8;
+			pos++;
 		} else if (ptr->types[i] == TAG_INT16) {
-			cells[offset+i].val_int16 = c->val_int;
-			arg_values[offset+i] = &cells[offset+i].val_int16;
+			cells[pos].val_int16 = c->val_int;
+			arg_values[pos] = &cells[pos].val_int16;
+			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT16)) {
-			s_args[offset+i] = &cells[offset+i].val_int16;
-			arg_values[offset+i] = &cells[offset+i].val_int16;
+			s_args[pos] = &cells[pos].val_int16;
+			arg_values[pos] = &cells[pos].val_int16;
+			pos++;
 		} else if (ptr->types[i] == TAG_INT32) {
-			cells[offset+i].val_int32 = c->val_int;
-			arg_values[offset+i] = &cells[offset+i].val_int32;
+			cells[pos].val_int32 = c->val_int;
+			arg_values[pos] = &cells[pos].val_int32;
+			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT32)) {
-			s_args[offset+i] = &cells[offset+i].val_int32;
-			arg_values[offset+i] = &cells[offset+i].val_int32;
+			s_args[pos] = &cells[pos].val_int32;
+			arg_values[pos] = &cells[pos].val_int32;
+			pos++;
 		} else if (ptr->types[i] == TAG_INT64) {
-			cells[offset+i].val_int64 = c->val_int;
-			arg_values[offset+i] = &cells[offset+i].val_int64;
+			cells[pos].val_int64 = c->val_int;
+			arg_values[pos] = &cells[pos].val_int64;
+			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT64)) {
-			s_args[offset+i] = &cells[offset+i].val_int64;
-			arg_values[offset+i] = &cells[offset+i].val_int64;
+			s_args[pos] = &cells[pos].val_int64;
+			arg_values[pos] = &cells[pos].val_int64;
+			pos++;
 		} else if (ptr->types[i] == TAG_INT) {
-			cells[offset+i].val_int = c->val_int;
-			arg_values[offset+i] = &cells[offset+i].val_int;
+			cells[pos].val_int = c->val_int;
+			arg_values[pos] = &cells[pos].val_int;
+			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT)) {
-			s_args[offset+i] = &cells[offset+i].val_int;
-			arg_values[offset+i] = &cells[offset+i].val_int;
+			s_args[pos] = &cells[pos].val_int;
+			arg_values[pos] = &cells[pos].val_int;
+			pos++;
 		} else if (ptr->types[i] == TAG_SHORT) {
-			cells[offset+i].val_sshort = c->val_int;
-			arg_values[offset+i] = &cells[offset+i].val_sshort;
+			cells[pos].val_sshort = c->val_int;
+			arg_values[pos] = &cells[pos].val_sshort;
+			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_SHORT)) {
-			s_args[offset+i] = &cells[offset+i].val_sshort;
-			arg_values[offset+i] = &cells[offset+i].val_sshort;
+			s_args[pos] = &cells[pos].val_sshort;
+			arg_values[pos] = &cells[pos].val_sshort;
+			pos++;
 		} else if (ptr->types[i] == TAG_LONG) {
-			cells[offset+i].val_slong = c->val_int;
-			arg_values[offset+i] = &cells[offset+i].val_slong;
+			cells[pos].val_slong = c->val_int;
+			arg_values[pos] = &cells[pos].val_slong;
+			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_LONG)) {
-			s_args[offset+i] = &cells[offset+i].val_slong;
-			arg_values[offset+i] = &cells[offset+i].val_slong;
+			s_args[pos] = &cells[pos].val_slong;
+			arg_values[pos] = &cells[pos].val_slong;
+			pos++;
 		} else if (ptr->types[i] == TAG_FLOAT32) {
-			cells[offset+i].val_float32= c->val_float;
-			arg_values[offset+i] = &cells[offset+i].val_int8;
+			cells[pos].val_float32= c->val_float;
+			arg_values[pos] = &cells[pos].val_int8;
+			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_FLOAT32)) {
-			s_args[offset+i] = &cells[offset+i].val_float32;
-			arg_values[offset+i] = &s_args[offset+i];
+			s_args[pos] = &cells[pos].val_float32;
+			arg_values[pos] = &s_args[pos];
+			pos++;
 		} else if (ptr->types[i] == TAG_FLOAT) {
-			cells[offset+i].val_float64 = c->val_float;
-			arg_values[offset+i] = &cells[offset+i].val_float64;
+			cells[pos].val_float64 = c->val_float;
+			arg_values[pos] = &cells[pos].val_float64;
+			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_FLOAT)) {
-			s_args[offset+i] = &cells[offset+i].val_float;
-			arg_values[offset+i] = &s_args[offset+i];
+			s_args[pos] = &cells[pos].val_float;
+			arg_values[pos] = &s_args[pos];
+			pos++;
 		} else if (ptr->types[i] == TAG_PTR) {
-			cells[offset+i].val_ptr = c->val_ptr;
-			arg_values[offset+i] = &cells[offset+i].val_ptr;
+			cells[pos].val_ptr = c->val_ptr;
+			arg_values[pos] = &cells[pos].val_ptr;
+			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_PTR)) {
-			s_args[offset+i] = &cells[offset+i].val_ptr;
-			arg_values[offset+i] = &s_args[offset+i];
+			s_args[pos] = &cells[pos].val_ptr;
+			arg_values[pos] = &s_args[pos];
+			pos++;
 		} else if (ptr->types[i] == TAG_CSTR) {
-			cells[offset+i].val_str = C_STR(q, c);
-			arg_values[offset+i] = &cells[offset+i].val_str;
+			cells[pos].val_str = C_STR(q, c);
+			arg_values[pos] = &cells[pos].val_str;
+			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_CSTR)) {
-			cells[offset+i].val_str = C_STR(q, c);
-			s_args[offset+i] = &cells[offset+i].val_str;
-			arg_values[offset+i] = &s_args[offset+i];
+			cells[pos].val_str = C_STR(q, c);
+			s_args[pos] = &cells[pos].val_str;
+			arg_values[pos] = &s_args[pos];
+			pos++;
 		} else if (ptr->types[i] == TAG_CCSTR) {
-			cells[offset+i].val_str = C_STR(q, c);
-			arg_values[offset+i] = &cells[offset+i].val_str;
+			cells[pos].val_str = C_STR(q, c);
+			arg_values[pos] = &cells[pos].val_str;
+			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_CCSTR)) {
-			cells[offset+i].val_str = C_STR(q, c);
-			s_args[offset+i] = &cells[offset+i].val_str;
-			arg_values[offset+i] = &s_args[offset+i];
+			cells[pos].val_str = C_STR(q, c);
+			s_args[pos] = &cells[pos].val_str;
+			arg_values[pos] = &s_args[pos];
+			pos++;
 		} else if (ptr->types[i] == TAG_STRUCT) {
 			cell *l = c;
 			pl_idx_t l_ctx = c_ctx;
@@ -1339,9 +1377,13 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 				h = deref(q, h, l_ctx);
 
 				if (cnt > 0) {
-					cells[offset+i].val_int = h->val_int;
-					arg_values[offset+i] = &cells[offset+i].val_int;
-					offset++;
+					if (st_type_elements[cnt-1] == &ffi_type_uint8) {
+						cells[pos].val_uint8 = h->val_uint;
+						printf("*** %u %llu\n", cnt-1, (unsigned long long)cells[pos].val_uint8);
+						arg_values[pos] = &cells[pos].val_uint8;
+						pos++;
+					}
+
 				}
 
 				l = LIST_TAIL(l);
@@ -1400,6 +1442,8 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 		ret_type = &ffi_type_void;
 	else
 		return false;
+
+	printf("*** fn arity = %u, values = %u\n", arity, pos);
 
 	if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, arity, ret_type, arg_types) != FFI_OK)
 		return false;
