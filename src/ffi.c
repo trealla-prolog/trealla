@@ -58,6 +58,8 @@ union result_ {
 	void *p;
 };
 
+#define MAX_FFI_ARGS 16
+
 #if USE_FFI
 void *do_dlopen(const char *filename, int flag)
 {
@@ -151,13 +153,13 @@ USE_RESULT bool fn_sys_register_function_4(query *q)
 	void *func = dlsym((void*)handle, symbol);
 	if (!func) return false;
 
-	uint8_t arg_types[MAX_ARITY], ret_type = 0;
+	uint8_t arg_types[MAX_FFI_ARGS], ret_type = 0;
 	LIST_HANDLER(l);
 	cell *l = p3;
 	pl_idx_t l_ctx = p3_ctx;
 	int idx = 0;
 
-	while (is_iso_list(l) && (idx < MAX_ARITY)) {
+	while (is_iso_list(l) && (idx < MAX_FFI_ARGS)) {
 		cell *h = LIST_HEAD(l);
 		h = deref(q, h, l_ctx);
 
@@ -250,12 +252,12 @@ USE_RESULT bool fn_sys_register_function_4(query *q)
 
 bool do_register_struct(module *m, query *q, void *handle, const char *symbol, cell *l, pl_idx_t l_ctx, const char *ret)
 {
-	uint8_t arg_types[MAX_ARITY], ret_type = 0;
-	bool arg_vars[MAX_ARITY];
+	uint8_t arg_types[MAX_FFI_ARGS], ret_type = 0;
+	bool arg_vars[MAX_FFI_ARGS];
 	LIST_HANDLER(l);
 	int idx = 0;
 
-	while (is_iso_list(l) && (idx < MAX_ARITY)) {
+	while (is_iso_list(l) && (idx < MAX_FFI_ARGS)) {
 		cell *h = LIST_HEAD(l);
 		h = q ? deref(q, h, l_ctx) : h;
 
@@ -360,12 +362,12 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 	void *func = dlsym(handle, symbol);
 	if (!func) return false;
 
-	uint8_t arg_types[MAX_ARITY], ret_type = 0;
-	bool arg_vars[MAX_ARITY];
+	uint8_t arg_types[MAX_FFI_ARGS], ret_type = 0;
+	bool arg_vars[MAX_FFI_ARGS];
 	LIST_HANDLER(l);
 	int idx = 0;
 
-	while (is_iso_list(l) && (idx < MAX_ARITY)) {
+	while (is_iso_list(l) && (idx < MAX_FFI_ARGS)) {
 		cell *h = LIST_HEAD(l);
 		h = q ? deref(q, h, l_ctx) : h;
 
@@ -561,11 +563,11 @@ bool wrapper_for_function(query *q, builtins *ptr)
 	pl_idx_t c_ctx = p1_ctx;
 
 	ffi_cif cif;
-	ffi_type *arg_types[MAX_ARITY];
+	ffi_type *arg_types[MAX_FFI_ARGS];
 	ffi_status status;
-	void *arg_values[MAX_ARITY];
-	void *s_args[MAX_ARITY];
-	cell cells[MAX_ARITY];
+	void *arg_values[MAX_FFI_ARGS];
+	void *s_args[MAX_FFI_ARGS];
+	cell cells[MAX_FFI_ARGS];
 	unsigned arity = ptr->arity - 1;
 
 	for (unsigned i = 0; i < arity; i++) {
@@ -885,6 +887,11 @@ bool wrapper_for_function(query *q, builtins *ptr)
 	return true;
 }
 
+typedef struct ffi_structs_ {
+	ffi_type *elements[MAX_FFI_ARGS];
+}
+ ffi_structs;
+
 bool wrapper_for_predicate(query *q, builtins *ptr)
 {
 	GET_FIRST_ARG(p1, any);
@@ -894,16 +901,16 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 	// NOTE: only handle simple structs for now. Nested structs
 	// will require better management of elements...
 
+	ffi_structs structs[MAX_FFI_ARGS];
 	ffi_cif cif;
 	ffi_type st_type;
-	ffi_type *st_type_elements[MAX_ARITY];
-	ffi_type *arg_types[MAX_ARITY];
+	ffi_type *arg_types[MAX_FFI_ARGS];
 	ffi_status status;
-	void *arg_values[MAX_ARITY];
-	void *s_args[MAX_ARITY];
-	cell cells[MAX_ARITY];
-	unsigned arity = ptr->arity - 1;
-	uint8_t bytes[MAX_ARITY];
+	void *arg_values[MAX_FFI_ARGS];
+	void *s_args[MAX_FFI_ARGS];
+	cell cells[MAX_FFI_ARGS];
+	unsigned arity = ptr->arity - 1, depth = 0;
+	uint8_t bytes[MAX_FFI_ARGS];
 	size_t bytes_offset = 0;
 
 	if (ptr->ret_type == TAG_VOID)
@@ -1076,44 +1083,44 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			unsigned sarity = sptr->arity;
 			st_type.size = st_type.alignment = 0;
 			st_type.type = FFI_TYPE_STRUCT;
-			st_type.elements = st_type_elements;
+			st_type.elements = structs[depth].elements;
 
-			for (unsigned i = 0; i < sarity; i++) {
-				//printf("*** [%u] %u\n", i, sptr->types[i]);
+			for (unsigned cnt = 0; cnt < sarity; cnt++) {
+				//printf("*** [%u] %u\n", cnt, sptr->types[cnt]);
 
-				if (sptr->types[i] == TAG_UINT8)
-					st_type_elements[i] = &ffi_type_uint8;
-				else if (sptr->types[i] == TAG_UINT16)
-					st_type_elements[i] = &ffi_type_uint16;
-				else if (sptr->types[i] == TAG_UINT32)
-					st_type_elements[i] = &ffi_type_uint32;
-				else if (sptr->types[i] == TAG_UINT64)
-					st_type_elements[i] = &ffi_type_uint64;
-				else if (sptr->types[i] == TAG_UINT)
-					st_type_elements[i] = &ffi_type_uint;
-				else if (sptr->types[i] == TAG_USHORT)
-					st_type_elements[i] = &ffi_type_ushort;
-				else if (sptr->types[i] == TAG_ULONG)
-					st_type_elements[i] = &ffi_type_ulong;
-				else if (sptr->types[i] == TAG_INT8)
-					st_type_elements[i] = &ffi_type_sint8;
-				else if (sptr->types[i] == TAG_INT16)
-					st_type_elements[i] = &ffi_type_sint16;
-				else if (sptr->types[i] == TAG_INT32)
-					st_type_elements[i] = &ffi_type_sint32;
-				else if (sptr->types[i] == TAG_INT64)
-					st_type_elements[i] = &ffi_type_sint64;
-				else if (sptr->types[i] == TAG_INT)
-					st_type_elements[i] = &ffi_type_sint;
-				else if (sptr->types[i] == TAG_SHORT)
-					st_type_elements[i] = &ffi_type_sshort;
-				else if (ptr->types[i] == TAG_LONG)
-					st_type_elements[i] = &ffi_type_slong;
+				if (sptr->types[cnt] == TAG_UINT8)
+					structs[depth].elements[cnt] = &ffi_type_uint8;
+				else if (sptr->types[cnt] == TAG_UINT16)
+					structs[depth].elements[cnt] = &ffi_type_uint16;
+				else if (sptr->types[cnt] == TAG_UINT32)
+					structs[depth].elements[cnt] = &ffi_type_uint32;
+				else if (sptr->types[cnt] == TAG_UINT64)
+					structs[depth].elements[cnt] = &ffi_type_uint64;
+				else if (sptr->types[cnt] == TAG_UINT)
+					structs[depth].elements[cnt] = &ffi_type_uint;
+				else if (sptr->types[cnt] == TAG_USHORT)
+					structs[depth].elements[cnt] = &ffi_type_ushort;
+				else if (sptr->types[cnt] == TAG_ULONG)
+					structs[depth].elements[cnt] = &ffi_type_ulong;
+				else if (sptr->types[cnt] == TAG_INT8)
+					structs[depth].elements[cnt] = &ffi_type_sint8;
+				else if (sptr->types[cnt] == TAG_INT16)
+					structs[depth].elements[cnt] = &ffi_type_sint16;
+				else if (sptr->types[cnt] == TAG_INT32)
+					structs[depth].elements[cnt] = &ffi_type_sint32;
+				else if (sptr->types[cnt] == TAG_INT64)
+					structs[depth].elements[cnt] = &ffi_type_sint64;
+				else if (sptr->types[cnt] == TAG_INT)
+					structs[depth].elements[cnt] = &ffi_type_sint;
+				else if (sptr->types[cnt] == TAG_SHORT)
+					structs[depth].elements[cnt] = &ffi_type_sshort;
+				else if (ptr->types[cnt] == TAG_LONG)
+					structs[depth].elements[cnt] = &ffi_type_slong;
 				else
-					st_type_elements[i] = &ffi_type_pointer;
+					structs[depth].elements[cnt] = &ffi_type_pointer;
 			}
 
-			st_type_elements[sarity] = NULL;
+			structs[depth].elements[sarity] = NULL;
 			arg_types[i] = &st_type;
 		}
 
@@ -1283,43 +1290,43 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 				h = deref(q, h, l_ctx);
 
 				if (cnt > 0) {
-					if (st_type_elements[cnt-1] == &ffi_type_uint8) {
+					if (structs[depth].elements[cnt-1] == &ffi_type_uint8) {
 						memcpy(bytes+bytes_offset, &h->val_ffi_uint8, 1);
 						bytes_offset += 1;
-					} else if (st_type_elements[cnt-1] == &ffi_type_uint16) {
+					} else if (structs[depth].elements[cnt-1] == &ffi_type_uint16) {
 						memcpy(bytes+bytes_offset, &h->val_ffi_uint16, 2);
 						bytes_offset += 2;
-					} else if (st_type_elements[cnt-1] == &ffi_type_uint32) {
+					} else if (structs[depth].elements[cnt-1] == &ffi_type_uint32) {
 						memcpy(bytes+bytes_offset, &h->val_ffi_uint32, 4);
 						bytes_offset += 4;
-					} else if (st_type_elements[cnt-1] == &ffi_type_uint64) {
+					} else if (structs[depth].elements[cnt-1] == &ffi_type_uint64) {
 						memcpy(bytes+bytes_offset, &h->val_ffi_uint64, 8);
 						bytes_offset += 8;
-					} else if (st_type_elements[cnt-1] == &ffi_type_uint) {
+					} else if (structs[depth].elements[cnt-1] == &ffi_type_uint) {
 						memcpy(bytes+bytes_offset, &h->val_ffi_uint64, sizeof(unsigned));
 						bytes_offset += sizeof(unsigned);
-					} else if (st_type_elements[cnt-1] == &ffi_type_sint8) {
+					} else if (structs[depth].elements[cnt-1] == &ffi_type_sint8) {
 						memcpy(bytes+bytes_offset, &h->val_ffi_sint, 1);
 						bytes_offset += 1;
-					} else if (st_type_elements[cnt-1] == &ffi_type_sint16) {
+					} else if (structs[depth].elements[cnt-1] == &ffi_type_sint16) {
 						memcpy(bytes+bytes_offset, &h->val_ffi_sint16, 2);
 						bytes_offset += 2;
-					} else if (st_type_elements[cnt-1] == &ffi_type_sint32) {
+					} else if (structs[depth].elements[cnt-1] == &ffi_type_sint32) {
 						memcpy(bytes+bytes_offset, &h->val_ffi_sint32, 4);
 						bytes_offset += 4;
-					} else if (st_type_elements[cnt-1] == &ffi_type_sint64) {
+					} else if (structs[depth].elements[cnt-1] == &ffi_type_sint64) {
 						memcpy(bytes+bytes_offset, &h->val_ffi_sint64, 8);
 						bytes_offset += 8;
-					} else if (st_type_elements[cnt-1] == &ffi_type_sint) {
+					} else if (structs[depth].elements[cnt-1] == &ffi_type_sint) {
 						memcpy(bytes+bytes_offset, &h->val_ffi_sint64, sizeof(unsigned));
 						bytes_offset += sizeof(unsigned);
-					} else if (st_type_elements[cnt-1] == &ffi_type_float) {
+					} else if (structs[depth].elements[cnt-1] == &ffi_type_float) {
 						memcpy(bytes+bytes_offset, &h->val_ffi_float, 4);
 						bytes_offset += 4;
-					} else if (st_type_elements[cnt-1] == &ffi_type_double) {
+					} else if (structs[depth].elements[cnt-1] == &ffi_type_double) {
 						memcpy(bytes+bytes_offset, &h->val_ffi_double, 8);
 						bytes_offset += 8;
-					} else if (st_type_elements[cnt-1] == &ffi_type_pointer) {
+					} else if (structs[depth].elements[cnt-1] == &ffi_type_pointer) {
 						memcpy(bytes+bytes_offset, &h->val_ffi_pointer, sizeof(void*));
 						bytes_offset += sizeof(void*);
 					}

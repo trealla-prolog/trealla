@@ -2,6 +2,7 @@
 
 run :-
 	'InitWindow'(800, 450, "Trealla Prolog Raylib"),
+	'SetTargetFPS'(60),
 	loop.
 
 loop :-
@@ -14,7 +15,6 @@ loop :-
 		'ClearBackground'([color,255,255,255,255]),
 		'DrawText'("Congrats! You created your first window!", 198, 200, 20, [color,200,200,200,255]),
 		'EndDrawing',
-		delay(10),
 		loop
 		)
 	).
