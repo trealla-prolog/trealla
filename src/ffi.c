@@ -1410,6 +1410,12 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 					} else if (st_type_elements[cnt-1] == &ffi_type_sint) {
 						memcpy(bytes+bytes_offset, &h->val_int64, sizeof(unsigned));
 						bytes_offset += sizeof(unsigned);
+					} else if (st_type_elements[cnt-1] == &ffi_type_float) {
+						memcpy(bytes+bytes_offset, &h->val_float32, 4);
+						bytes_offset += 4;
+					} else if (st_type_elements[cnt-1] == &ffi_type_double) {
+						memcpy(bytes+bytes_offset, &h->val_float, 8);
+						bytes_offset += 8;
 					}
 				}
 
