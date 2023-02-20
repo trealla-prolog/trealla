@@ -454,14 +454,8 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 				arg_types[idx++] = TAG_INT;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "bool"))
 				arg_types[idx++] = MARK_OUT(TAG_INT);
-			else {
-				builtins *ptr = NULL;
-
-				if (map_get(m->pl->biftab, src, (void*)&ptr))
-					arg_types[idx++] = TAG_STRUCT;
-				else
-					printf("invalid arg_type: %s\n", src);
-			}
+			else
+				arg_types[idx++] = TAG_STRUCT;
 		}
 
 		l = LIST_TAIL(l);
@@ -892,6 +886,57 @@ typedef struct nested_elements {
 }
  nested_elements;
 
+static void handle_struct1(query *q, builtins *sptr, nested_elements *nested, ffi_type *types, unsigned depth)
+{
+	unsigned sarity = sptr->arity;
+	types[depth].size = types[depth].alignment = 0;
+	types[depth].type = FFI_TYPE_STRUCT;
+	types[depth].elements = nested[depth].elements;
+
+	for (unsigned cnt = 0; cnt < sarity; cnt++) {
+		//printf("*** [%u] %u\n", cnt, sptr->types[cnt]);
+
+		if (sptr->types[cnt] == TAG_UINT8)
+			nested[depth].elements[cnt] = &ffi_type_uint8;
+		else if (sptr->types[cnt] == TAG_UINT16)
+			nested[depth].elements[cnt] = &ffi_type_uint16;
+		else if (sptr->types[cnt] == TAG_UINT32)
+			nested[depth].elements[cnt] = &ffi_type_uint32;
+		else if (sptr->types[cnt] == TAG_UINT64)
+			nested[depth].elements[cnt] = &ffi_type_uint64;
+		else if (sptr->types[cnt] == TAG_UINT)
+			nested[depth].elements[cnt] = &ffi_type_uint;
+		else if (sptr->types[cnt] == TAG_USHORT)
+			nested[depth].elements[cnt] = &ffi_type_ushort;
+		else if (sptr->types[cnt] == TAG_ULONG)
+			nested[depth].elements[cnt] = &ffi_type_ulong;
+		else if (sptr->types[cnt] == TAG_INT8)
+			nested[depth].elements[cnt] = &ffi_type_sint8;
+		else if (sptr->types[cnt] == TAG_INT16)
+			nested[depth].elements[cnt] = &ffi_type_sint16;
+		else if (sptr->types[cnt] == TAG_INT32)
+			nested[depth].elements[cnt] = &ffi_type_sint32;
+		else if (sptr->types[cnt] == TAG_INT64)
+			nested[depth].elements[cnt] = &ffi_type_sint64;
+		else if (sptr->types[cnt] == TAG_INT)
+			nested[depth].elements[cnt] = &ffi_type_sint;
+		else if (sptr->types[cnt] == TAG_SHORT)
+			nested[depth].elements[cnt] = &ffi_type_sshort;
+		else if (sptr->types[cnt] == TAG_LONG)
+			nested[depth].elements[cnt] = &ffi_type_slong;
+		else if (sptr->types[cnt] == TAG_CSTR)
+			nested[depth].elements[cnt] = &ffi_type_pointer;
+		else if (sptr->types[cnt] == TAG_CCSTR)
+			nested[depth].elements[cnt] = &ffi_type_pointer;
+		else if (sptr->types[cnt] == TAG_PTR)
+			nested[depth].elements[cnt] = &ffi_type_pointer;
+		else {
+		}
+	}
+
+	nested[depth].elements[sarity] = NULL;
+}
+
 bool wrapper_for_predicate(query *q, builtins *ptr)
 {
 	GET_FIRST_ARG(p1, any);
@@ -907,7 +952,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 	void *s_args[MAX_FFI_ARGS];
 	cell cells[MAX_FFI_ARGS];
 	uint8_t bytes[MAX_FFI_ARGS];
-	ffi_type st_type[MAX_FFI_ARGS];
+	ffi_type types[MAX_FFI_ARGS];
 
 	ffi_cif cif;
 	ffi_status status;
@@ -1079,50 +1124,12 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 				return false;
 			}
 
+			ptr->types[i] = TAG_STRUCT;
+
 			//printf("wrapper: found struct: %s, arity=%u\n", name, sptr->arity);
 
-			unsigned sarity = sptr->arity;
-			st_type[depth].size = st_type[depth].alignment = 0;
-			st_type[depth].type = FFI_TYPE_STRUCT;
-			st_type[depth].elements = nested[depth].elements;
-
-			for (unsigned cnt = 0; cnt < sarity; cnt++) {
-				//printf("*** [%u] %u\n", cnt, sptr->types[cnt]);
-
-				if (sptr->types[cnt] == TAG_UINT8)
-					nested[depth].elements[cnt] = &ffi_type_uint8;
-				else if (sptr->types[cnt] == TAG_UINT16)
-					nested[depth].elements[cnt] = &ffi_type_uint16;
-				else if (sptr->types[cnt] == TAG_UINT32)
-					nested[depth].elements[cnt] = &ffi_type_uint32;
-				else if (sptr->types[cnt] == TAG_UINT64)
-					nested[depth].elements[cnt] = &ffi_type_uint64;
-				else if (sptr->types[cnt] == TAG_UINT)
-					nested[depth].elements[cnt] = &ffi_type_uint;
-				else if (sptr->types[cnt] == TAG_USHORT)
-					nested[depth].elements[cnt] = &ffi_type_ushort;
-				else if (sptr->types[cnt] == TAG_ULONG)
-					nested[depth].elements[cnt] = &ffi_type_ulong;
-				else if (sptr->types[cnt] == TAG_INT8)
-					nested[depth].elements[cnt] = &ffi_type_sint8;
-				else if (sptr->types[cnt] == TAG_INT16)
-					nested[depth].elements[cnt] = &ffi_type_sint16;
-				else if (sptr->types[cnt] == TAG_INT32)
-					nested[depth].elements[cnt] = &ffi_type_sint32;
-				else if (sptr->types[cnt] == TAG_INT64)
-					nested[depth].elements[cnt] = &ffi_type_sint64;
-				else if (sptr->types[cnt] == TAG_INT)
-					nested[depth].elements[cnt] = &ffi_type_sint;
-				else if (sptr->types[cnt] == TAG_SHORT)
-					nested[depth].elements[cnt] = &ffi_type_sshort;
-				else if (ptr->types[cnt] == TAG_LONG)
-					nested[depth].elements[cnt] = &ffi_type_slong;
-				else
-					nested[depth].elements[cnt] = &ffi_type_pointer;
-			}
-
-			nested[depth].elements[sarity] = NULL;
-			arg_types[i] = &st_type[depth];
+			handle_struct1(q, sptr, nested, types, depth);
+			arg_types[i] = &types[depth];
 		}
 
 		if (ptr->types[i] == TAG_UINT8) {
