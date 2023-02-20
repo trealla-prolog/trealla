@@ -254,6 +254,7 @@ USE_RESULT bool fn_sys_register_function_4(query *q)
 bool do_register_struct(module *m, query *q, void *handle, const char *symbol, cell *l, pl_idx_t l_ctx, const char *ret)
 {
 	uint8_t arg_types[MAX_FFI_ARGS], ret_type = 0;
+	const char *arg_names[MAX_FFI_ARGS];
 	bool arg_vars[MAX_FFI_ARGS];
 	LIST_HANDLER(l);
 	int idx = 0;
@@ -264,6 +265,7 @@ bool do_register_struct(module *m, query *q, void *handle, const char *symbol, c
 
 		if (is_interned(h)) {
 			const char *src = C_STR(m, h);
+			arg_names[idx] = src;
 
 			if (!strcmp(src, "uint8"))
 				arg_types[idx++] = TAG_UINT8;
@@ -354,7 +356,7 @@ bool do_register_struct(module *m, query *q, void *handle, const char *symbol, c
 		l_ctx = q ? q->latest_ctx : 0;
 	}
 
-	register_struct(m->pl, symbol, idx, NULL, arg_types);
+	register_struct(m->pl, symbol, idx, NULL, arg_types, arg_names);
 	return true;
 }
 
@@ -932,7 +934,7 @@ static bool handle_struct1(query *q, builtins *sptr, nested_elements *nested, ff
 		else if (sptr->types[cnt] == TAG_PTR)
 			nested[depth].elements[cnt] = &ffi_type_pointer;
 		else if (sptr->types[cnt] == TAG_STRUCT) {
-			const char *name = "invalid"; //sptr->names[cnt];
+			const char *name = sptr->names[cnt];
 			builtins *sptr = NULL;
 
 			if (!map_get(q->pl->biftab, name, (void*)&sptr)) {

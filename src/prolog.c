@@ -322,7 +322,7 @@ builtins *get_fn_ptr(void *fn)
 #if USE_FFI
 static int max_ffi_idx = 0;
 
-void register_struct(prolog *pl, const char *name, unsigned arity, void *fn, uint8_t *types)
+void register_struct(prolog *pl, const char *name, unsigned arity, void *fn, uint8_t *types, const char **names)
 {
 	builtins *ptr = &g_ffi_bifs[max_ffi_idx++];
 	ptr->name = name;
@@ -333,8 +333,10 @@ void register_struct(prolog *pl, const char *name, unsigned arity, void *fn, uin
 	ptr->is_struct = true;
 	ptr->ffi = true;
 
-	for (unsigned i = 0; i < arity; i++)
+	for (unsigned i = 0; i < arity; i++) {
 		ptr->types[i] = types[i];
+		ptr->names[i] = names[i];
+	}
 
 	//printf("*** reg struct '%s'\n", name);
 

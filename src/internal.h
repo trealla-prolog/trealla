@@ -484,7 +484,7 @@ struct predicate_ {
 	bool is_var_in_first_arg:1;
 };
 
-#define BLAH false, false, false, {0}, 0, NULL, NULL
+#define BLAH false, false, false, {0}, {0}, 0, NULL, NULL
 
 struct builtins_ {
 	const char *name;
@@ -497,6 +497,7 @@ struct builtins_ {
 	bool ffi;
 	bool via_directive;
 	uint8_t types[MAX_ARITY];
+	const char *names[MAX_ARITY];
 	uint8_t ret_type;
 	module *m;
 	char *desc;
