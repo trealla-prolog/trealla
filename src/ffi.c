@@ -345,7 +345,7 @@ bool do_register_struct(module *m, query *q, void *handle, const char *symbol, c
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "bool"))
 				arg_types[idx++] = MARK_OUT(TAG_INT);
 			else
-				printf("invalid arg_type: %s\n", src);
+				arg_types[idx++] = TAG_STRUCT;
 		}
 
 		l = LIST_TAIL(l);
@@ -886,7 +886,7 @@ typedef struct nested_elements {
 }
  nested_elements;
 
-static void handle_struct1(query *q, builtins *sptr, nested_elements *nested, ffi_type *types, unsigned depth)
+static bool handle_struct1(query *q, builtins *sptr, nested_elements *nested, ffi_type *types, unsigned depth)
 {
 	unsigned sarity = sptr->arity;
 	types[depth].size = types[depth].alignment = 0;
@@ -930,11 +930,24 @@ static void handle_struct1(query *q, builtins *sptr, nested_elements *nested, ff
 			nested[depth].elements[cnt] = &ffi_type_pointer;
 		else if (sptr->types[cnt] == TAG_PTR)
 			nested[depth].elements[cnt] = &ffi_type_pointer;
-		else {
+		else if (sptr->types[cnt] == TAG_STRUCT) {
+			const char *name = "invalid"; //sptr->names[cnt];
+			builtins *sptr = NULL;
+
+			if (!map_get(q->pl->biftab, name, (void*)&sptr)) {
+				printf("wrapper: not found struct: %s\n", name);
+				return false;
+			}
+
+			//printf("wrapper: found struct: %s, arity=%u\n", name, sptr->arity);
+
+			handle_struct1(q, sptr, nested, types, depth+1);
+			nested[depth].elements[cnt] = &types[depth+1];
 		}
 	}
 
 	nested[depth].elements[sarity] = NULL;
+	return true;
 }
 
 bool wrapper_for_predicate(query *q, builtins *ptr)
