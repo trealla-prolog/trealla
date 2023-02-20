@@ -1138,8 +1138,6 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 				return false;
 			}
 
-			ptr->types[i] = TAG_STRUCT;
-
 			//printf("wrapper: found struct: %s, arity=%u\n", name, sptr->arity);
 
 			handle_struct1(q, sptr, nested, types, depth);
