@@ -1210,7 +1210,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 				else if (ptr->types[i] == TAG_LONG)
 					st_type_elements[i] = &ffi_type_slong;
 				else
-					st_type_elements[i] = &ffi_type_sint;
+					st_type_elements[i] = &ffi_type_pointer;
 			}
 
 			st_type_elements[sarity] = NULL;
@@ -1419,6 +1419,9 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 					} else if (st_type_elements[cnt-1] == &ffi_type_double) {
 						memcpy(bytes+bytes_offset, &h->val_float, 8);
 						bytes_offset += 8;
+					} else if (st_type_elements[cnt-1] == &ffi_type_pointer) {
+						memcpy(bytes+bytes_offset, &h->val_ptr, sizeof(void*));
+						bytes_offset += sizeof(void*);
 					}
 				}
 
