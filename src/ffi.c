@@ -40,10 +40,10 @@ enum {
 typedef union result_ {
 	float val_ffi_float;
 	double val_ffi_double;
-	uint8_t val_ffi_u8;
-	uint16_t val_ffi_u16;
-	uint32_t val_ffi_u32;
-	uint64_t val_ffi_u64;
+	uint8_t val_ffi_uint8;
+	uint16_t val_ffi_uint16;
+	uint32_t val_ffi_uint32;
+	uint64_t val_ffi_uint64;
 	int8_t val_ffi_sint8;
 	int16_t val_ffi_sint16;
 	int32_t val_ffi_sint32;
@@ -563,7 +563,7 @@ bool wrapper_for_function(query *q, builtins *ptr)
 	ffi_status status;
 	void *arg_values[MAX_FFI_ARGS];
 	void *s_args[MAX_FFI_ARGS];
-	cell cells[MAX_FFI_ARGS];
+	result cells[MAX_FFI_ARGS];
 	unsigned arity = ptr->arity - 1;
 
 	for (unsigned i = 0; i < arity; i++) {
@@ -707,7 +707,7 @@ bool wrapper_for_function(query *q, builtins *ptr)
 
 		if (ptr->types[i] == TAG_UINT8) {
 			cells[i].val_ffi_uint8 = c->val_uint;
-			arg_values[i] = &cells[i].val_ffi_uint8;
+			arg_values[i] = &cells[i].val_ffi_uint;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT8)) {
 			s_args[i] = &cells[i].val_ffi_uint8;
 			arg_values[i] = &cells[i].val_ffi_uint8;
@@ -718,8 +718,8 @@ bool wrapper_for_function(query *q, builtins *ptr)
 			s_args[i] = &cells[i].val_ffi_uint16;
 			arg_values[i] = &cells[i].val_ffi_uint16;
 		} else if (ptr->types[i] == TAG_UINT32) {
-			cells[i].val_ffi_uint32 = c->val_uint;
-			arg_values[i] = &cells[i].val_uint;
+			cells[i].val_ffi_uint32 = c->val_ffi_uint;
+			arg_values[i] = &cells[i].val_ffi_uint32;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT32)) {
 			s_args[i] = &cells[i].val_ffi_uint32;
 			arg_values[i] = &cells[i].val_ffi_uint32;
@@ -778,11 +778,11 @@ bool wrapper_for_function(query *q, builtins *ptr)
 			s_args[i] = &cells[i].val_ffi_sint;
 			arg_values[i] = &cells[i].val_ffi_sint;
 		} else if (ptr->types[i] == TAG_SHORT) {
-			cells[i].val_ffi_short = c->val_int;
-			arg_values[i] = &cells[i].val_ffi_short;
+			cells[i].val_ffi_sshort = c->val_ffi_short;
+			arg_values[i] = &cells[i].val_ffi_sshort;
 		} else if (ptr->types[i] == MARK_OUT(TAG_SHORT)) {
-			s_args[i] = &cells[i].val_ffi_short;
-			arg_values[i] = &cells[i].val_ffi_short;
+			s_args[i] = &cells[i].val_ffi_sshort;
+			arg_values[i] = &cells[i].val_ffi_sshort;
 		} else if (ptr->types[i] == TAG_LONG) {
 			cells[i].val_ffi_slong = c->val_int;
 			arg_values[i] = &cells[i].val_ffi_slong;
@@ -799,7 +799,7 @@ bool wrapper_for_function(query *q, builtins *ptr)
 			cells[i].val_ffi_double = c->val_float;
 			arg_values[i] = &cells[i].val_ffi_double;
 		} else if (ptr->types[i] == MARK_OUT(TAG_FLOAT)) {
-			s_args[i] = &cells[i].val_float;
+			s_args[i] = &cells[i].val_ffi_float;
 			arg_values[i] = &s_args[i];
 		} else if (ptr->types[i] == TAG_PTR) {
 			cells[i].val_ffi_pointer = c->val_ptr;
@@ -839,13 +839,13 @@ bool wrapper_for_function(query *q, builtins *ptr)
 	cell tmp;
 
 	if (ptr->ret_type == TAG_UINT8)
-		make_int(&tmp, r.val_ffi_u8);
+		make_int(&tmp, r.val_ffi_uint8);
 	else if (ptr->ret_type == TAG_UINT16)
-		make_int(&tmp, r.val_ffi_u16);
+		make_int(&tmp, r.val_ffi_uint16);
 	else if (ptr->ret_type == TAG_UINT32)
-		make_int(&tmp, r.val_ffi_u32);
+		make_int(&tmp, r.val_ffi_uint32);
 	else if (ptr->ret_type == TAG_UINT64)
-		make_int(&tmp, r.val_ffi_u64);
+		make_int(&tmp, r.val_ffi_uint64);
 	else if (ptr->ret_type == TAG_UINT)
 		make_int(&tmp, r.val_ffi_uint);
 	else if (ptr->ret_type == TAG_USHORT)
@@ -1574,22 +1574,22 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 	cell tmp;
 
 	if (ptr->ret_type == TAG_UINT8) {
-		make_int(&tmp, r.val_ffi_u8);
+		make_int(&tmp, r.val_ffi_uint8);
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		if (ok != true) return ok;
 	} else if (ptr->ret_type == TAG_UINT16) {
-		make_int(&tmp, r.val_ffi_u16);
+		make_int(&tmp, r.val_ffi_uint16);
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		if (ok != true) return ok;
 	} else if (ptr->ret_type == TAG_UINT32) {
-		make_int(&tmp, r.val_ffi_u32);
+		make_int(&tmp, r.val_ffi_uint32);
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		if (ok != true) return ok;
 	} else if (ptr->ret_type == TAG_UINT64) {
-		make_int(&tmp, r.val_ffi_u64);
+		make_int(&tmp, r.val_ffi_uint64);
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		if (ok != true) return ok;
