@@ -804,24 +804,24 @@ bool wrapper_for_function(query *q, builtins *ptr)
 			s_args[i] = &cells[i].val_float;
 			arg_values[i] = &s_args[i];
 		} else if (ptr->types[i] == TAG_PTR) {
-			cells[i].val_ptr = c->val_ptr;
-			arg_values[i] = &cells[i].val_ptr;
+			cells[i].val_ffi_pointer = c->val_ptr;
+			arg_values[i] = &cells[i].val_ffi_pointer;
 		} else if (ptr->types[i] == MARK_OUT(TAG_PTR)) {
-			s_args[i] = &cells[i].val_ptr;
+			s_args[i] = &cells[i].val_ffi_pointer;
 			arg_values[i] = &s_args[i];
 		} else if (ptr->types[i] == TAG_CSTR) {
-			cells[i].val_str = C_STR(q, c);
-			arg_values[i] = &cells[i].val_str;
+			cells[i].val_ffi_pointer = C_STR(q, c);
+			arg_values[i] = &cells[i].val_ffi_pointer;
 		} else if (ptr->types[i] == MARK_OUT(TAG_CSTR)) {
-			cells[i].val_str = C_STR(q, c);
-			s_args[i] = &cells[i].val_str;
+			cells[i].val_ffi_pointer = C_STR(q, c);
+			s_args[i] = &cells[i].val_ffi_pointer;
 			arg_values[i] = &s_args[i];
 		} else if (ptr->types[i] == TAG_CCSTR) {
-			cells[i].val_str = C_STR(q, c);
-			arg_values[i] = &cells[i].val_str;
+			cells[i].val_ffi_pointer = C_STR(q, c);
+			arg_values[i] = &cells[i].val_ffi_pointer;
 		} else if (ptr->types[i] == MARK_OUT(TAG_CCSTR)) {
-			cells[i].val_str = C_STR(q, c);
-			s_args[i] = &cells[i].val_str;
+			cells[i].val_ffi_pointer = C_STR(q, c);
+			s_args[i] = &cells[i].val_ffi_pointer;
 			arg_values[i] = &s_args[i];
 		}
 
@@ -1246,29 +1246,29 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			arg_values[pos] = &s_args[pos];
 			pos++;
 		} else if (ptr->types[i] == TAG_PTR) {
-			cells[pos].val_ptr = c->val_ptr;
-			arg_values[pos] = &cells[pos].val_ptr;
+			cells[pos].val_ffi_pointer = c->val_ptr;
+			arg_values[pos] = &cells[pos].val_ffi_pointer;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_PTR)) {
-			s_args[pos] = &cells[pos].val_ptr;
+			s_args[pos] = &cells[pos].val_ffi_pointer;
 			arg_values[pos] = &s_args[pos];
 			pos++;
 		} else if (ptr->types[i] == TAG_CSTR) {
-			cells[pos].val_str = C_STR(q, c);
-			arg_values[pos] = &cells[pos].val_str;
+			cells[pos].val_ffi_pointer = C_STR(q, c);
+			arg_values[pos] = &cells[pos].val_ffi_pointer;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_CSTR)) {
-			cells[pos].val_str = C_STR(q, c);
-			s_args[pos] = &cells[pos].val_str;
+			cells[pos].val_ffi_pointer = C_STR(q, c);
+			s_args[pos] = &cells[pos].val_ffi_pointer;
 			arg_values[pos] = &s_args[pos];
 			pos++;
 		} else if (ptr->types[i] == TAG_CCSTR) {
-			cells[pos].val_str = C_STR(q, c);
-			arg_values[pos] = &cells[pos].val_str;
+			cells[pos].val_ffi_pointer = C_STR(q, c);
+			arg_values[pos] = &cells[pos].val_ffi_pointer;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_CCSTR)) {
-			cells[pos].val_str = C_STR(q, c);
-			s_args[pos] = &cells[pos].val_str;
+			cells[pos].val_ffi_pointer = C_STR(q, c);
+			s_args[pos] = &cells[pos].val_ffi_pointer;
 			arg_values[pos] = &s_args[pos];
 			pos++;
 		} else if (ptr->types[i] == TAG_STRUCT) {
@@ -1317,10 +1317,10 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 						memcpy(bytes+bytes_offset, &h->val_ffi_float, 4);
 						bytes_offset += 4;
 					} else if (st_type_elements[cnt-1] == &ffi_type_double) {
-						memcpy(bytes+bytes_offset, &h->val_float, 8);
+						memcpy(bytes+bytes_offset, &h->val_ffi_double, 8);
 						bytes_offset += 8;
 					} else if (st_type_elements[cnt-1] == &ffi_type_pointer) {
-						memcpy(bytes+bytes_offset, &h->val_ptr, sizeof(void*));
+						memcpy(bytes+bytes_offset, &h->val_ffi_pointer, sizeof(void*));
 						bytes_offset += sizeof(void*);
 					}
 				}
@@ -1477,22 +1477,22 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(TAG_FLOAT)) {
-				make_float(&tmp, cells[i].val_float);
+				make_float(&tmp, cells[i].val_ffi_double);
 				bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(TAG_PTR)) {
-				make_ptr(&tmp, cells[i].val_ptr);
+				make_ptr(&tmp, cells[i].val_ffi_pointer);
 				bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(TAG_CSTR)) {
-				check_heap_error(make_cstring(&tmp, cells[i].val_str));
+				check_heap_error(make_cstring(&tmp, cells[i].val_ffi_pointer));
 				bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(TAG_CCSTR)) {
-				check_heap_error(make_cstring(&tmp, cells[i].val_str));
+				check_heap_error(make_cstring(&tmp, cells[i].val_ffi_pointer));
 				bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 				if (ok != true) return ok;

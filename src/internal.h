@@ -369,6 +369,7 @@ struct cell_ {
 		double val_ffi_double;
 		unsigned val_ffi_uint;
 		int val_ffi_sint;
+		void *val_ffi_pointer;
 
 		// Proper types...
 
