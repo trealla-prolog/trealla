@@ -59,7 +59,10 @@ call_cleanup(G, C) :-
 	'$call_cleanup'(
 		call(G),
 		Err,
-		(catch(ignore(C), _, true), throw(Err))
+		(
+			(var(C) -> throw(error(instantiation_error, call_cleanup/2)) ; true),
+			catch(ignore(C), _, true), throw(Err)
+		)
 	).
 
 :- meta_predicate(call_cleanup(0,0)).
@@ -71,7 +74,10 @@ setup_call_cleanup(S, G, C) :-
 	'$call_cleanup'(
 		call(G),
 		Err,
-		(catch(ignore(C), _, true), throw(Err))
+		(
+			(var(C) -> throw(error(instantiation_error, setup_call_cleanup/3)) ; true),
+			catch(ignore(C), _, true), throw(Err)
+		)
 	).
 
 :- meta_predicate(setup_call_cleanup(0,0,0)).
