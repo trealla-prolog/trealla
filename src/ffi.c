@@ -50,8 +50,8 @@ typedef union result_ {
 	int64_t val_ffi_sint64;
 	unsigned short val_ffi_ushort;
 	signed short val_ffi_sshort;
-	unsigned int uint;
-	signed int sint;
+	unsigned int val_ffi_uint;
+	signed int val_ffi_sint;
 	unsigned long val_ffi_ulong;
 	signed long val_ffi_slong;
 	char *s;
@@ -848,7 +848,7 @@ bool wrapper_for_function(query *q, builtins *ptr)
 	else if (ptr->ret_type == TAG_UINT64)
 		make_int(&tmp, r.val_ffi_u64);
 	else if (ptr->ret_type == TAG_UINT)
-		make_int(&tmp, r.uint);
+		make_int(&tmp, r.val_ffi_uint);
 	else if (ptr->ret_type == TAG_USHORT)
 		make_int(&tmp, r.val_ffi_ushort);
 	else if (ptr->ret_type == TAG_ULONG)
@@ -862,7 +862,7 @@ bool wrapper_for_function(query *q, builtins *ptr)
 	else if (ptr->ret_type == TAG_INT64)
 		make_int(&tmp, r.val_ffi_sint64);
 	else if (ptr->ret_type == TAG_INT)
-		make_int(&tmp, r.sint);
+		make_int(&tmp, r.val_ffi_sint);
 	else if (ptr->ret_type == TAG_SHORT)
 		make_int(&tmp, r.val_ffi_sshort);
 	else if (ptr->ret_type == TAG_LONG)
@@ -1595,7 +1595,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 		unshare_cell(&tmp);
 		if (ok != true) return ok;
 	} else if (ptr->ret_type == TAG_UINT) {
-		make_int(&tmp, r.uint);
+		make_int(&tmp, r.val_ffi_uint);
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		if (ok != true) return ok;
@@ -1630,7 +1630,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 		unshare_cell(&tmp);
 		if (ok != true) return ok;
 	} else if (ptr->ret_type == TAG_INT) {
-		make_int(&tmp, r.sint);
+		make_int(&tmp, r.val_ffi_sint);
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		if (ok != true) return ok;
