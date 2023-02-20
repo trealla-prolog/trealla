@@ -787,98 +787,98 @@ bool wrapper_for_function(query *q, builtins *ptr)
 		}
 
 		if (ptr->types[i] == TAG_UINT8) {
-			cells[offset+i].val_uint8 = c->val_uint;
-			arg_values[offset+i] = &cells[offset+i].val_uint8;
+			cells[offset+i].val_ffi_uint8 = c->val_uint;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_uint8;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT8)) {
-			s_args[offset+i] = &cells[offset+i].val_uint8;
-			arg_values[offset+i] = &cells[offset+i].val_uint8;
+			s_args[offset+i] = &cells[offset+i].val_ffi_uint8;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_uint8;
 		} else if (ptr->types[i] == TAG_UINT16) {
-			cells[offset+i].val_uint16 = c->val_uint;
-			arg_values[offset+i] = &cells[offset+i].val_uint16;
+			cells[offset+i].val_ffi_uint16 = c->val_uint;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_uint16;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT16)) {
-			s_args[offset+i] = &cells[offset+i].val_uint16;
-			arg_values[offset+i] = &cells[offset+i].val_uint16;
+			s_args[offset+i] = &cells[offset+i].val_ffi_uint16;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_uint16;
 		} else if (ptr->types[i] == TAG_UINT32) {
-			cells[offset+i].val_uint32 = c->val_uint;
+			cells[offset+i].val_ffi_uint32 = c->val_uint;
 			arg_values[offset+i] = &cells[offset+i].val_uint;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT32)) {
-			s_args[offset+i] = &cells[offset+i].val_uint32;
-			arg_values[offset+i] = &cells[offset+i].val_uint32;
+			s_args[offset+i] = &cells[offset+i].val_ffi_uint32;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_uint32;
 		} else if (ptr->types[i] == TAG_UINT64) {
-			cells[offset+i].val_uint64 = c->val_uint;
-			arg_values[offset+i] = &cells[offset+i].val_uint64;
+			cells[offset+i].val_ffi_uint64 = c->val_uint;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_uint64;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT64)) {
-			s_args[offset+i] = &cells[offset+i].val_uint64;
-			arg_values[offset+i] = &cells[offset+i].val_uint64;
+			s_args[offset+i] = &cells[offset+i].val_ffi_uint64;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_uint64;
 		} else if (ptr->types[i] == TAG_UINT) {
-			cells[offset+i].val_uint = c->val_uint;
-			arg_values[offset+i] = &cells[offset+i].val_uint;
+			cells[offset+i].val_ffi_uint = c->val_uint;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_uint;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT)) {
-			s_args[offset+i] = &cells[offset+i].val_uint;
-			arg_values[offset+i] = &cells[offset+i].val_uint;
+			s_args[offset+i] = &cells[offset+i].val_ffi_uint;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_uint;
 		} else if (ptr->types[i] == TAG_USHORT) {
-			cells[offset+i].val_ushort = c->val_uint;
-			arg_values[offset+i] = &cells[offset+i].val_ushort;
+			cells[offset+i].val_ffi_ushort = c->val_uint;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_ushort;
 		} else if (ptr->types[i] == MARK_OUT(TAG_USHORT)) {
-			s_args[offset+i] = &cells[offset+i].val_ushort;
-			arg_values[offset+i] = &cells[offset+i].val_ushort;
+			s_args[offset+i] = &cells[offset+i].val_ffi_ushort;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_ushort;
 		} else if (ptr->types[i] == TAG_ULONG) {
-			cells[offset+i].val_ulong = c->val_uint;
-			arg_values[offset+i] = &cells[offset+i].val_ulong;
+			cells[offset+i].val_ffi_ulong = c->val_uint;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_ulong;
 		} else if (ptr->types[i] == MARK_OUT(TAG_ULONG)) {
-			s_args[offset+i] = &cells[offset+i].val_ulong;
-			arg_values[offset+i] = &cells[offset+i].val_ulong;
+			s_args[offset+i] = &cells[offset+i].val_ffi_ulong;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_ulong;
 		} else if (ptr->types[i] == TAG_INT8) {
-			cells[offset+i].val_int8 = c->val_int;
-			arg_values[offset+i] = &cells[offset+i].val_int8;
+			cells[offset+i].val_ffi_sint8 = c->val_int;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_sint;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT8)) {
-			s_args[offset+i] = &cells[offset+i].val_int8;
-			arg_values[offset+i] = &cells[offset+i].val_int8;
+			s_args[offset+i] = &cells[offset+i].val_ffi_sint;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_sint;
 		} else if (ptr->types[i] == TAG_INT16) {
-			cells[offset+i].val_int16 = c->val_int;
-			arg_values[offset+i] = &cells[offset+i].val_int16;
+			cells[offset+i].val_ffi_sint16 = c->val_int;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_sint16;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT16)) {
-			s_args[offset+i] = &cells[offset+i].val_int16;
-			arg_values[offset+i] = &cells[offset+i].val_int16;
+			s_args[offset+i] = &cells[offset+i].val_ffi_sint16;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_sint16;
 		} else if (ptr->types[i] == TAG_INT32) {
-			cells[offset+i].val_int32 = c->val_int;
-			arg_values[offset+i] = &cells[offset+i].val_int32;
+			cells[offset+i].val_ffi_sint32 = c->val_int;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_sint32;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT32)) {
-			s_args[offset+i] = &cells[offset+i].val_int32;
-			arg_values[offset+i] = &cells[offset+i].val_int32;
+			s_args[offset+i] = &cells[offset+i].val_ffi_sint32;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_sint32;
 		} else if (ptr->types[i] == TAG_INT64) {
-			cells[offset+i].val_int64 = c->val_int;
-			arg_values[offset+i] = &cells[offset+i].val_int64;
+			cells[offset+i].val_ffi_sint64 = c->val_int;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_sint64;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT64)) {
-			s_args[offset+i] = &cells[offset+i].val_int64;
-			arg_values[offset+i] = &cells[offset+i].val_int64;
+			s_args[offset+i] = &cells[offset+i].val_ffi_sint64;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_sint64;
 		} else if (ptr->types[i] == TAG_INT) {
-			cells[offset+i].val_int = c->val_int;
-			arg_values[offset+i] = &cells[offset+i].val_int;
+			cells[offset+i].val_ffi_sint = c->val_int;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_sint;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT)) {
-			s_args[offset+i] = &cells[offset+i].val_int;
-			arg_values[offset+i] = &cells[offset+i].val_int;
+			s_args[offset+i] = &cells[offset+i].val_ffi_sint;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_sint;
 		} else if (ptr->types[i] == TAG_SHORT) {
-			cells[offset+i].val_sshort = c->val_int;
-			arg_values[offset+i] = &cells[offset+i].val_sshort;
+			cells[offset+i].val_ffi_short = c->val_int;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_short;
 		} else if (ptr->types[i] == MARK_OUT(TAG_SHORT)) {
-			s_args[offset+i] = &cells[offset+i].val_sshort;
-			arg_values[offset+i] = &cells[offset+i].val_sshort;
+			s_args[offset+i] = &cells[offset+i].val_ffi_short;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_short;
 		} else if (ptr->types[i] == TAG_LONG) {
-			cells[offset+i].val_slong = c->val_int;
-			arg_values[offset+i] = &cells[offset+i].val_slong;
+			cells[offset+i].val_ffi_slong = c->val_int;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_slong;
 		} else if (ptr->types[i] == MARK_OUT(TAG_LONG)) {
-			s_args[offset+i] = &cells[offset+i].val_slong;
-			arg_values[offset+i] = &cells[offset+i].val_slong;
+			s_args[offset+i] = &cells[offset+i].val_ffi_slong;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_slong;
 		} else if (ptr->types[i] == TAG_FLOAT32) {
-			cells[offset+i].val_float32= c->val_float;
-			arg_values[offset+i] = &cells[offset+i].val_int8;
+			cells[offset+i].val_ffi_float = c->val_float;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_float;
 		} else if (ptr->types[i] == MARK_OUT(TAG_FLOAT32)) {
-			s_args[offset+i] = &cells[offset+i].val_float32;
+			s_args[offset+i] = &cells[offset+i].val_ffi_float;
 			arg_values[offset+i] = &s_args[offset+i];
 		} else if (ptr->types[i] == TAG_FLOAT) {
-			cells[offset+i].val_float64 = c->val_float;
-			arg_values[offset+i] = &cells[offset+i].val_float64;
+			cells[offset+i].val_ffi_double = c->val_float;
+			arg_values[offset+i] = &cells[offset+i].val_ffi_double;
 		} else if (ptr->types[i] == MARK_OUT(TAG_FLOAT)) {
 			s_args[offset+i] = &cells[offset+i].val_float;
 			arg_values[offset+i] = &s_args[offset+i];
@@ -913,8 +913,8 @@ bool wrapper_for_function(query *q, builtins *ptr)
 				h = deref(q, h, l_ctx);
 
 				if (cnt > 0) {
-					cells[offset+i].val_int = h->val_int;
-					arg_values[offset+i] = &cells[offset+i].val_int;
+					cells[offset+i].val_ffi_sint = h->val_int;
+					arg_values[offset+i] = &cells[offset+i].val_ffi_sint;
 					offset++;
 				}
 
@@ -1218,128 +1218,128 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 		}
 
 		if (ptr->types[i] == TAG_UINT8) {
-			cells[pos].val_uint8 = c->val_uint;
-			arg_values[pos] = &cells[pos].val_uint8;
+			cells[pos].val_ffi_uint8 = c->val_uint;
+			arg_values[pos] = &cells[pos].val_ffi_uint8;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT8)) {
-			s_args[pos] = &cells[pos].val_uint8;
-			arg_values[pos] = &cells[pos].val_uint8;
+			s_args[pos] = &cells[pos].val_ffi_uint8;
+			arg_values[pos] = &cells[pos].val_ffi_uint8;
 			pos++;
 		} else if (ptr->types[i] == TAG_UINT16) {
-			cells[pos].val_uint16 = c->val_uint;
-			arg_values[pos] = &cells[pos].val_uint16;
+			cells[pos].val_ffi_uint16 = c->val_uint;
+			arg_values[pos] = &cells[pos].val_ffi_uint16;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT16)) {
-			s_args[pos] = &cells[pos].val_uint16;
-			arg_values[pos] = &cells[pos].val_uint16;
+			s_args[pos] = &cells[pos].val_ffi_uint16;
+			arg_values[pos] = &cells[pos].val_ffi_uint16;
 			pos++;
 		} else if (ptr->types[i] == TAG_UINT32) {
-			cells[pos].val_uint32 = c->val_uint;
+			cells[pos].val_ffi_uint32 = c->val_uint;
 			arg_values[pos] = &cells[pos].val_uint;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT32)) {
-			s_args[pos] = &cells[pos].val_uint32;
-			arg_values[pos] = &cells[pos].val_uint32;
+			s_args[pos] = &cells[pos].val_ffi_uint32;
+			arg_values[pos] = &cells[pos].val_ffi_uint32;
 			pos++;
 		} else if (ptr->types[i] == TAG_UINT64) {
-			cells[pos].val_uint64 = c->val_uint;
-			arg_values[pos] = &cells[pos].val_uint64;
+			cells[pos].val_ffi_uint64 = c->val_uint;
+			arg_values[pos] = &cells[pos].val_ffi_uint64;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT64)) {
-			s_args[pos] = &cells[pos].val_uint64;
-			arg_values[pos] = &cells[pos].val_uint64;
+			s_args[pos] = &cells[pos].val_ffi_uint64;
+			arg_values[pos] = &cells[pos].val_ffi_uint64;
 			pos++;
 		} else if (ptr->types[i] == TAG_UINT) {
-			cells[pos].val_uint = c->val_uint;
-			arg_values[pos] = &cells[pos].val_uint;
+			cells[pos].val_ffi_uint = c->val_uint;
+			arg_values[pos] = &cells[pos].val_ffi_uint;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_UINT)) {
-			s_args[pos] = &cells[pos].val_uint;
-			arg_values[pos] = &cells[pos].val_uint;
+			s_args[pos] = &cells[pos].val_ffi_uint;
+			arg_values[pos] = &cells[pos].val_ffi_uint;
 			pos++;
 		} else if (ptr->types[i] == TAG_USHORT) {
-			cells[pos].val_ushort = c->val_uint;
-			arg_values[pos] = &cells[pos].val_ushort;
+			cells[pos].val_ffi_ushort = c->val_uint;
+			arg_values[pos] = &cells[pos].val_ffi_ushort;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_USHORT)) {
-			s_args[pos] = &cells[pos].val_ushort;
-			arg_values[pos] = &cells[pos].val_ushort;
+			s_args[pos] = &cells[pos].val_ffi_ushort;
+			arg_values[pos] = &cells[pos].val_ffi_ushort;
 			pos++;
 		} else if (ptr->types[i] == TAG_ULONG) {
-			cells[pos].val_ulong = c->val_uint;
-			arg_values[pos] = &cells[pos].val_ulong;
+			cells[pos].val_ffi_ulong = c->val_uint;
+			arg_values[pos] = &cells[pos].val_ffi_ulong;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_ULONG)) {
-			s_args[pos] = &cells[pos].val_ulong;
-			arg_values[pos] = &cells[pos].val_ulong;
+			s_args[pos] = &cells[pos].val_ffi_ulong;
+			arg_values[pos] = &cells[pos].val_ffi_ulong;
 			pos++;
 		} else if (ptr->types[i] == TAG_INT8) {
-			cells[pos].val_int8 = c->val_int;
-			arg_values[pos] = &cells[pos].val_int8;
+			cells[pos].val_ffi_sint8 = c->val_int;
+			arg_values[pos] = &cells[pos].val_ffi_sint8;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT8)) {
-			s_args[pos] = &cells[pos].val_int8;
-			arg_values[pos] = &cells[pos].val_int8;
+			s_args[pos] = &cells[pos].val_ffi_sint8;
+			arg_values[pos] = &cells[pos].val_ffi_sint8;
 			pos++;
 		} else if (ptr->types[i] == TAG_INT16) {
-			cells[pos].val_int16 = c->val_int;
-			arg_values[pos] = &cells[pos].val_int16;
+			cells[pos].val_ffi_sint16 = c->val_int;
+			arg_values[pos] = &cells[pos].val_ffi_sint16;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT16)) {
-			s_args[pos] = &cells[pos].val_int16;
-			arg_values[pos] = &cells[pos].val_int16;
+			s_args[pos] = &cells[pos].val_ffi_sint16;
+			arg_values[pos] = &cells[pos].val_ffi_sint16;
 			pos++;
 		} else if (ptr->types[i] == TAG_INT32) {
-			cells[pos].val_int32 = c->val_int;
-			arg_values[pos] = &cells[pos].val_int32;
+			cells[pos].val_ffi_sint32 = c->val_int;
+			arg_values[pos] = &cells[pos].val_ffi_sint32;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT32)) {
-			s_args[pos] = &cells[pos].val_int32;
-			arg_values[pos] = &cells[pos].val_int32;
+			s_args[pos] = &cells[pos].val_ffi_sint32;
+			arg_values[pos] = &cells[pos].val_ffi_sint32;
 			pos++;
 		} else if (ptr->types[i] == TAG_INT64) {
-			cells[pos].val_int64 = c->val_int;
-			arg_values[pos] = &cells[pos].val_int64;
+			cells[pos].val_ffi_sint64 = c->val_int;
+			arg_values[pos] = &cells[pos].val_ffi_sint64;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT64)) {
-			s_args[pos] = &cells[pos].val_int64;
-			arg_values[pos] = &cells[pos].val_int64;
+			s_args[pos] = &cells[pos].val_ffi_sint64;
+			arg_values[pos] = &cells[pos].val_ffi_sint64;
 			pos++;
 		} else if (ptr->types[i] == TAG_INT) {
-			cells[pos].val_int = c->val_int;
-			arg_values[pos] = &cells[pos].val_int;
+			cells[pos].val_ffi_sint = c->val_int;
+			arg_values[pos] = &cells[pos].val_ffi_sint;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_INT)) {
-			s_args[pos] = &cells[pos].val_int;
-			arg_values[pos] = &cells[pos].val_int;
+			s_args[pos] = &cells[pos].val_ffi_sint;
+			arg_values[pos] = &cells[pos].val_ffi_sint;
 			pos++;
 		} else if (ptr->types[i] == TAG_SHORT) {
-			cells[pos].val_sshort = c->val_int;
-			arg_values[pos] = &cells[pos].val_sshort;
+			cells[pos].val_ffi_short = c->val_int;
+			arg_values[pos] = &cells[pos].val_ffi_short;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_SHORT)) {
-			s_args[pos] = &cells[pos].val_sshort;
-			arg_values[pos] = &cells[pos].val_sshort;
+			s_args[pos] = &cells[pos].val_ffi_short;
+			arg_values[pos] = &cells[pos].val_ffi_short;
 			pos++;
 		} else if (ptr->types[i] == TAG_LONG) {
-			cells[pos].val_slong = c->val_int;
-			arg_values[pos] = &cells[pos].val_slong;
+			cells[pos].val_ffi_slong = c->val_int;
+			arg_values[pos] = &cells[pos].val_ffi_slong;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_LONG)) {
-			s_args[pos] = &cells[pos].val_slong;
-			arg_values[pos] = &cells[pos].val_slong;
+			s_args[pos] = &cells[pos].val_ffi_slong;
+			arg_values[pos] = &cells[pos].val_ffi_slong;
 			pos++;
 		} else if (ptr->types[i] == TAG_FLOAT32) {
-			cells[pos].val_float32= c->val_float;
-			arg_values[pos] = &cells[pos].val_int8;
+			cells[pos].val_ffi_float= c->val_float;
+			arg_values[pos] = &cells[pos].val_ffi_sint;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_FLOAT32)) {
-			s_args[pos] = &cells[pos].val_float32;
+			s_args[pos] = &cells[pos].val_ffi_float;
 			arg_values[pos] = &s_args[pos];
 			pos++;
 		} else if (ptr->types[i] == TAG_FLOAT) {
-			cells[pos].val_float64 = c->val_float;
-			arg_values[pos] = &cells[pos].val_float64;
+			cells[pos].val_ffi_double = c->val_float;
+			arg_values[pos] = &cells[pos].val_ffi_double;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_FLOAT)) {
 			s_args[pos] = &cells[pos].val_float;
@@ -1384,37 +1384,37 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 
 				if (cnt > 0) {
 					if (st_type_elements[cnt-1] == &ffi_type_uint8) {
-						memcpy(bytes+bytes_offset, &h->val_uint8, 1);
+						memcpy(bytes+bytes_offset, &h->val_ffi_uint8, 1);
 						bytes_offset += 1;
 					} else if (st_type_elements[cnt-1] == &ffi_type_uint16) {
-						memcpy(bytes+bytes_offset, &h->val_uint16, 2);
+						memcpy(bytes+bytes_offset, &h->val_ffi_uint16, 2);
 						bytes_offset += 2;
 					} else if (st_type_elements[cnt-1] == &ffi_type_uint32) {
-						memcpy(bytes+bytes_offset, &h->val_uint32, 4);
+						memcpy(bytes+bytes_offset, &h->val_ffi_uint32, 4);
 						bytes_offset += 4;
 					} else if (st_type_elements[cnt-1] == &ffi_type_uint64) {
-						memcpy(bytes+bytes_offset, &h->val_uint64, 8);
+						memcpy(bytes+bytes_offset, &h->val_ffi_uint64, 8);
 						bytes_offset += 8;
 					} else if (st_type_elements[cnt-1] == &ffi_type_uint) {
-						memcpy(bytes+bytes_offset, &h->val_uint64, sizeof(unsigned));
+						memcpy(bytes+bytes_offset, &h->val_ffi_uint64, sizeof(unsigned));
 						bytes_offset += sizeof(unsigned);
 					} else if (st_type_elements[cnt-1] == &ffi_type_sint8) {
-						memcpy(bytes+bytes_offset, &h->val_int8, 1);
+						memcpy(bytes+bytes_offset, &h->val_ffi_sint, 1);
 						bytes_offset += 1;
 					} else if (st_type_elements[cnt-1] == &ffi_type_sint16) {
-						memcpy(bytes+bytes_offset, &h->val_int16, 2);
+						memcpy(bytes+bytes_offset, &h->val_ffi_sint16, 2);
 						bytes_offset += 2;
 					} else if (st_type_elements[cnt-1] == &ffi_type_sint32) {
-						memcpy(bytes+bytes_offset, &h->val_int32, 4);
+						memcpy(bytes+bytes_offset, &h->val_ffi_sint32, 4);
 						bytes_offset += 4;
 					} else if (st_type_elements[cnt-1] == &ffi_type_sint64) {
-						memcpy(bytes+bytes_offset, &h->val_int64, 8);
+						memcpy(bytes+bytes_offset, &h->val_ffi_sint64, 8);
 						bytes_offset += 8;
 					} else if (st_type_elements[cnt-1] == &ffi_type_sint) {
-						memcpy(bytes+bytes_offset, &h->val_int64, sizeof(unsigned));
+						memcpy(bytes+bytes_offset, &h->val_ffi_sint64, sizeof(unsigned));
 						bytes_offset += sizeof(unsigned);
 					} else if (st_type_elements[cnt-1] == &ffi_type_float) {
-						memcpy(bytes+bytes_offset, &h->val_float32, 4);
+						memcpy(bytes+bytes_offset, &h->val_ffi_float, 4);
 						bytes_offset += 4;
 					} else if (st_type_elements[cnt-1] == &ffi_type_double) {
 						memcpy(bytes+bytes_offset, &h->val_float, 8);
@@ -1502,77 +1502,77 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 			cell tmp;
 
 			if (ptr->types[i] == MARK_OUT(TAG_UINT8)) {
-				make_int(&tmp, cells[i].val_uint8);
+				make_int(&tmp, cells[i].val_ffi_uint8);
 				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(TAG_UINT16)) {
-				make_int(&tmp, cells[i].val_uint16);
+				make_int(&tmp, cells[i].val_ffi_uint16);
 				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(TAG_UINT32)) {
-				make_int(&tmp, cells[i].val_uint32);
+				make_int(&tmp, cells[i].val_ffi_uint32);
 				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(TAG_UINT64)) {
-				make_int(&tmp, cells[i].val_uint64);
+				make_int(&tmp, cells[i].val_ffi_uint64);
 				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(TAG_UINT)) {
-				make_int(&tmp, cells[i].val_uint);
+				make_int(&tmp, cells[i].val_ffi_uint);
 				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(TAG_USHORT)) {
-				make_int(&tmp, cells[i].val_ushort);
+				make_int(&tmp, cells[i].val_ffi_ushort);
 				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(TAG_ULONG)) {
-				make_int(&tmp, cells[i].val_ulong);
+				make_int(&tmp, cells[i].val_ffi_ulong);
 				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(TAG_INT8)) {
-				make_int(&tmp, cells[i].val_int8);
+				make_int(&tmp, cells[i].val_ffi_sint);
 				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(TAG_INT16)) {
-				make_int(&tmp, cells[i].val_int16);
+				make_int(&tmp, cells[i].val_ffi_sint16);
 				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(TAG_INT32)) {
-				make_int(&tmp, cells[i].val_int32);
+				make_int(&tmp, cells[i].val_ffi_sint32);
 				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(TAG_INT64)) {
-				make_int(&tmp, cells[i].val_int64);
+				make_int(&tmp, cells[i].val_ffi_sint64);
 				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(TAG_INT)) {
-				make_int(&tmp, cells[i].val_int);
+				make_int(&tmp, cells[i].val_ffi_sint);
 				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(TAG_SHORT)) {
-				make_int(&tmp, cells[i].val_sshort);
+				make_int(&tmp, cells[i].val_ffi_short);
 				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(TAG_LONG)) {
-				make_int(&tmp, cells[i].val_slong);
+				make_int(&tmp, cells[i].val_ffi_slong);
 				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(TAG_FLOAT32)) {
-				make_float(&tmp, cells[i].val_float32);
+				make_float(&tmp, cells[i].val_ffi_float);
 				bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 				if (ok != true) return ok;
