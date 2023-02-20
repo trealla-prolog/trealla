@@ -1383,6 +1383,33 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 					if (st_type_elements[cnt-1] == &ffi_type_uint8) {
 						memcpy(bytes+bytes_offset, &h->val_uint8, 1);
 						bytes_offset += 1;
+					} else if (st_type_elements[cnt-1] == &ffi_type_uint16) {
+						memcpy(bytes+bytes_offset, &h->val_uint16, 2);
+						bytes_offset += 2;
+					} else if (st_type_elements[cnt-1] == &ffi_type_uint32) {
+						memcpy(bytes+bytes_offset, &h->val_uint32, 4);
+						bytes_offset += 4;
+					} else if (st_type_elements[cnt-1] == &ffi_type_uint64) {
+						memcpy(bytes+bytes_offset, &h->val_uint64, 8);
+						bytes_offset += 8;
+					} else if (st_type_elements[cnt-1] == &ffi_type_uint) {
+						memcpy(bytes+bytes_offset, &h->val_uint64, sizeof(unsigned));
+						bytes_offset += sizeof(unsigned);
+					} else if (st_type_elements[cnt-1] == &ffi_type_sint8) {
+						memcpy(bytes+bytes_offset, &h->val_int8, 1);
+						bytes_offset += 1;
+					} else if (st_type_elements[cnt-1] == &ffi_type_sint16) {
+						memcpy(bytes+bytes_offset, &h->val_int16, 2);
+						bytes_offset += 2;
+					} else if (st_type_elements[cnt-1] == &ffi_type_sint32) {
+						memcpy(bytes+bytes_offset, &h->val_int32, 4);
+						bytes_offset += 4;
+					} else if (st_type_elements[cnt-1] == &ffi_type_sint64) {
+						memcpy(bytes+bytes_offset, &h->val_int64, 8);
+						bytes_offset += 8;
+					} else if (st_type_elements[cnt-1] == &ffi_type_sint) {
+						memcpy(bytes+bytes_offset, &h->val_int64, sizeof(unsigned));
+						bytes_offset += sizeof(unsigned);
 					}
 				}
 
