@@ -991,6 +991,9 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 	cell *c = p1;
 	pl_idx_t c_ctx = p1_ctx;
 
+	// NOTE: only handle simple structs for now. Nested structs
+	// will require better management of elements...
+
 	ffi_cif cif;
 	ffi_type st_type;
 	ffi_type *st_type_elements[MAX_ARITY];
