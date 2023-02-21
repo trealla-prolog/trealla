@@ -48,8 +48,8 @@ extern unsigned char library_json_pl[];
 extern unsigned int library_json_pl_len;
 extern unsigned char library_abnf_pl[];
 extern unsigned int library_abnf_pl_len;
-//extern unsigned char library_raylib_pl[];
-//extern unsigned int library_raylib_pl_len;
+extern unsigned char library_raylib_pl[];
+extern unsigned int library_raylib_pl_len;
 
 library g_libs[] = {
 	 {"abnf", library_abnf_pl, &library_abnf_pl_len},
