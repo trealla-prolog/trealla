@@ -1,8 +1,8 @@
-#include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #if USE_FFI
 #include <dlfcn.h>
@@ -12,6 +12,7 @@
 #include "prolog.h"
 #include "module.h"
 #include "query.h"
+#include "heap.h"
 
 // These are pseudo tags just used here...
 
@@ -55,6 +56,7 @@ typedef union result_ {
 	unsigned long val_ffi_ulong;
 	signed long val_ffi_slong;
 	void *val_ffi_pointer;
+	char bytes[256];
 }
  result;
 
@@ -246,7 +248,7 @@ USE_RESULT bool fn_sys_register_function_4(query *q)
 	else
 		printf("invalid ret_type: %s\n", src);
 
-	register_ffi(q->pl, symbol, idx, (void*)func, arg_types, ret_type, true);
+	register_ffi(q->pl, symbol, idx, (void*)func, arg_types, ret_type, NULL, true);
 	return true;
 }
 
@@ -531,10 +533,11 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 		arg_types[idx++] = MARK_OUT(TAG_VOID);
 		ret_type = TAG_VOID;
 	} else {
-		printf("invalid ret_type: %s\n", src);
+		arg_types[idx++] = MARK_OUT(TAG_STRUCT);
+		ret_type = TAG_STRUCT;
 	}
 
-	register_ffi(m->pl, symbol, idx, (void*)func, arg_types, ret_type, false);
+	register_ffi(m->pl, symbol, idx, (void*)func, arg_types, ret_type, src, false);
 	return true;
 }
 
@@ -888,9 +891,9 @@ typedef struct nested_elements {
 }
  nested_elements;
 
-static bool handle_struct1(query *q, builtins *sptr, nested_elements *nested, ffi_type *types, unsigned depth)
+static bool handle_struct1(query *q, builtins *sptr, nested_elements *nested, ffi_type *types, unsigned *pdepth)
 {
-	unsigned sarity = sptr->arity;
+	unsigned sarity = sptr->arity, depth = *pdepth++;
 	types[depth].size = types[depth].alignment = 0;
 	types[depth].type = FFI_TYPE_STRUCT;
 	types[depth].elements = nested[depth].elements;
@@ -926,6 +929,10 @@ static bool handle_struct1(query *q, builtins *sptr, nested_elements *nested, ff
 			nested[depth].elements[cnt] = &ffi_type_sshort;
 		else if (sptr->types[cnt] == TAG_LONG)
 			nested[depth].elements[cnt] = &ffi_type_slong;
+		else if (sptr->types[cnt] == TAG_FLOAT32)
+			nested[depth].elements[cnt] = &ffi_type_float;
+		else if (sptr->types[cnt] == TAG_FLOAT)
+			nested[depth].elements[cnt] = &ffi_type_double;
 		else if (sptr->types[cnt] == TAG_CSTR)
 			nested[depth].elements[cnt] = &ffi_type_pointer;
 		else if (sptr->types[cnt] == TAG_CCSTR)
@@ -943,7 +950,7 @@ static bool handle_struct1(query *q, builtins *sptr, nested_elements *nested, ff
 
 			//printf("wrapper: found struct: %s, arity=%u\n", name, sptr->arity);
 
-			if (!handle_struct1(q, sptr, nested, types, depth+1))
+			if (!handle_struct1(q, sptr, nested, types, pdepth))
 				return false;
 
 			nested[depth].elements[cnt] = &types[depth+1];
@@ -951,12 +958,13 @@ static bool handle_struct1(query *q, builtins *sptr, nested_elements *nested, ff
 	}
 
 	nested[depth].elements[sarity] = NULL;
+	nested[depth].elements[sarity] = NULL;
 	return true;
 }
 
-static void handle_struct2(query *q, nested_elements *nested, unsigned depth, unsigned cnt, uint8_t *bytes, size_t *boff, cell *h, pl_idx_t h_ctx, void **arg_values, unsigned *p_pos)
+static void handle_struct2(query *q, nested_elements *nested, unsigned *pdepth, unsigned cnt, uint8_t *bytes, size_t *boff, cell *h, pl_idx_t h_ctx, void **arg_values, unsigned *p_pos)
 {
-	size_t bytes_offset = *boff;
+	size_t bytes_offset = *boff, depth = *pdepth++;
 	unsigned pos = *p_pos;
 	result r;
 
@@ -1025,7 +1033,7 @@ static void handle_struct2(query *q, nested_elements *nested, unsigned depth, un
 			pl_idx_t h_ctx = q->latest_ctx;
 
 			if (cnt > 0) {
-				handle_struct2(q, nested, depth, cnt, bytes, &bytes_offset, h, h_ctx, arg_values, &pos);
+				handle_struct2(q, nested, pdepth, cnt, bytes, &bytes_offset, h, h_ctx, arg_values, &pos);
 			}
 
 			l = LIST_TAIL(l);
@@ -1047,26 +1055,21 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 	cell *c = p1;
 	pl_idx_t c_ctx = p1_ctx;
 
-	// NOTE: only handle simple structs for now. Nesting
-	// will require more work...
+	nested_elements nested[MAX_FFI_ARGS] = {0};
+	ffi_type *arg_types[MAX_FFI_ARGS] = {0};
+	void *arg_values[MAX_FFI_ARGS] = {0};
+	void *s_args[MAX_FFI_ARGS] = {0};
+	result cells[MAX_FFI_ARGS] = {0};
+	uint8_t bytes[MAX_FFI_ARGS] = {0};
+	ffi_type types[MAX_FFI_ARGS] = {0};
 
-	nested_elements nested[MAX_FFI_ARGS];
-	ffi_type *arg_types[MAX_FFI_ARGS];
-	void *arg_values[MAX_FFI_ARGS];
-	void *s_args[MAX_FFI_ARGS];
-	result cells[MAX_FFI_ARGS];
-	uint8_t bytes[MAX_FFI_ARGS];
-	ffi_type types[MAX_FFI_ARGS];
-
-	ffi_cif cif;
+	ffi_cif cif = {0};
 	ffi_status status;
-	unsigned arity = ptr->arity - 1, depth = 0;
+	unsigned arity = ptr->arity - 1, pdepth = 0, depth = 0, pos = 0;
 	size_t bytes_offset = 0;
 
 	if (ptr->ret_type == TAG_VOID)
 		arity++;
-
-	unsigned pos = 0;
 
 	for (unsigned i = 0; i < arity; i++) {
 		if ((ptr->types[i] == TAG_UINT8) && is_smallint(c))
@@ -1230,7 +1233,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 
 			//printf("wrapper: found struct: %s, arity=%u\n", name, sptr->arity);
 
-			if (!handle_struct1(q, sptr, nested, types, depth))
+			if (!handle_struct1(q, sptr, nested, types, &pdepth))
 				return false;
 
 			arg_types[i] = &types[depth];
@@ -1403,7 +1406,7 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 				pl_idx_t h_ctx = q->latest_ctx;
 
 				if (cnt > 0) {
-					handle_struct2(q, nested, depth, cnt, bytes, &bytes_offset, h, h_ctx, arg_values, &pos);
+					handle_struct2(q, nested, &pdepth, cnt, bytes, &bytes_offset, h, h_ctx, arg_values, &pos);
 				}
 
 				l = LIST_TAIL(l);
@@ -1463,13 +1466,33 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 		ret_type = &ffi_type_pointer;
 	else if (ptr->ret_type == TAG_VOID)
 		ret_type = &ffi_type_void;
-	else
+	else if (ptr->ret_type == TAG_STRUCT) {
+		const char *name = ptr->ret_name;
+		builtins *sptr = NULL;
+
+		if (!map_get(q->pl->biftab, name, (void*)&sptr)) {
+			printf("wrapper: not found struct: %s\n", name);
+			return false;
+		}
+
+		//printf("wrapper: arity=%u, found struct return type: %s, arity=%u, depth=%u, pdepth=%u\n", arity, name, sptr->arity, depth, pdepth);
+		unsigned save_depth = ++pdepth;
+
+		if (!handle_struct1(q, sptr, nested, types, &pdepth))
+			return false;
+
+		ret_type = &types[save_depth];
+	} else
 		return false;
 
-	//printf("*** fn arity = %u, values = %u\n", arity, pos);
+	//printf("*** fn values = %u, ret-type=%u\n", pos, (unsigned)ret_type->type);
 
-	if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, arity, ret_type, arg_types) != FFI_OK)
+	ffi_status ok;
+
+	if ((ok = ffi_prep_cif(&cif, FFI_DEFAULT_ABI, arity, ret_type, arg_types)) != FFI_OK) {
+		printf("Error: ffi_prep_cif status=%d\n", ok);
 		return false;
+	}
 
 	result r;
 	ffi_call(&cif, FFI_FN(ptr->fn), &r, arg_values);
@@ -1682,6 +1705,69 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 		check_heap_error(make_cstring(&tmp, r.val_ffi_pointer));
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
+		if (ok != true) return ok;
+	} else if (ptr->ret_type == TAG_STRUCT) {
+		ffi_type *p = ret_type;
+		//printf("*** struct ffi_type=%u\n", p->type);
+		int i = 0, cnt = 0;
+		ffi_type *e = p->elements[i++];
+		const char *bytes = r.bytes;
+
+		while (e) {
+			//printf("*** ffi_type=%u\n", e->type);
+			cell tmp;
+
+			if (e == &ffi_type_uint8) {
+				make_uint(&tmp, *((uint8_t*)bytes));
+				bytes += 1;
+			} else if (e == &ffi_type_uint16) {
+				make_uint(&tmp, *((uint16_t*)bytes));
+				bytes += 2;
+			} else if (e == &ffi_type_uint32) {
+				make_uint(&tmp, *((uint32_t*)bytes));
+				bytes += 4;
+			} else if (e == &ffi_type_uint64) {
+				make_uint(&tmp, *((uint64_t*)bytes));
+				bytes += 8;
+			} else if (e == &ffi_type_sint8) {
+				make_int(&tmp, *((int8_t*)bytes));
+				bytes += 1;
+			} else if (e == &ffi_type_sint16) {
+				make_int(&tmp, *((int16_t*)bytes));
+				bytes += 2;
+			} else if (e == &ffi_type_sint32) {
+				make_int(&tmp, *((int32_t*)bytes));
+				bytes += 4;
+			} else if (e == &ffi_type_sint64) {
+				make_int(&tmp, *((int64_t*)bytes));
+				bytes += 8;
+			} else if (e == &ffi_type_uint) {
+				make_uint(&tmp, *((unsigned*)bytes));
+				bytes += sizeof(unsigned);
+			} else if (e == &ffi_type_sint) {
+				make_int(&tmp, *((signed*)bytes));
+				bytes += sizeof(signed);
+			} else if (e == &ffi_type_float) {
+				make_float(&tmp, *((float*)bytes));
+				bytes += 4;
+			} else if (e == &ffi_type_double) {
+				make_float(&tmp, *((double*)bytes));
+				bytes += 8;
+			} else
+				return false;
+
+			if (cnt == 0)
+				allocate_list(q, &tmp);
+			else
+				append_list(q, &tmp);
+
+			e = p->elements[i++];
+			cnt++;
+		}
+
+		cell *tmp = end_list(q);
+		bool ok = unify(q, c, c_ctx, tmp, q->st.curr_frame);
+		unshare_cell(tmp);
 		if (ok != true) return ok;
 	}
 

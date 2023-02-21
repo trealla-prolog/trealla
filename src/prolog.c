@@ -344,7 +344,7 @@ void register_struct(prolog *pl, const char *name, unsigned arity, void *fn, uin
 	map_app(pl->biftab, ptr->name, ptr);
 }
 
-void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn, uint8_t *types, uint8_t ret_type, bool evaluable)
+void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn, uint8_t *types, uint8_t ret_type, const char *ret_name, bool evaluable)
 {
 	builtins *ptr = &g_ffi_bifs[max_ffi_idx++];
 	ptr->name = name;
@@ -362,6 +362,7 @@ void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn, uint8_
 		ptr->types[i] = types[i];
 
 	ptr->ret_type = ret_type;
+	ptr->ret_name = ret_name;
 	map_app(pl->biftab, ptr->name, ptr);
 }
 #endif
