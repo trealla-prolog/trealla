@@ -884,9 +884,9 @@ bool wrap_ffi_function(query *q, builtins *ptr)
 		c_ctx = p2_ctx;
 	}
 
-	ffi_type *ret_type = NULL;
+	ffi_type *ffi_ret_type = NULL;
 
-	if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, ptr->arity, ret_type, arg_types) != FFI_OK)
+	if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, ptr->arity, ffi_ret_type, arg_types) != FFI_OK)
 		return false;
 
 	result r;
@@ -1477,48 +1477,48 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 		c_ctx = p2_ctx;
 	}
 
-	ffi_type *ret_type = NULL;
+	ffi_type *ffi_ret_type = NULL;
 
 	if (ptr->ret_type == TAG_UINT8)
-		ret_type = &ffi_type_uint8;
+		ffi_ret_type = &ffi_type_uint8;
 	else if (ptr->ret_type == TAG_UINT16)
-		ret_type = &ffi_type_uint16;
+		ffi_ret_type = &ffi_type_uint16;
 	else if (ptr->ret_type == TAG_UINT32)
-		ret_type = &ffi_type_uint32;
+		ffi_ret_type = &ffi_type_uint32;
 	else if (ptr->ret_type == TAG_UINT64)
-		ret_type = &ffi_type_uint64;
+		ffi_ret_type = &ffi_type_uint64;
 	else if (ptr->ret_type == TAG_UINT)
-		ret_type = &ffi_type_uint;
+		ffi_ret_type = &ffi_type_uint;
 	else if (ptr->ret_type == TAG_USHORT)
-		ret_type = &ffi_type_ushort;
+		ffi_ret_type = &ffi_type_ushort;
 	else if (ptr->ret_type == TAG_ULONG)
-		ret_type = &ffi_type_ulong;
+		ffi_ret_type = &ffi_type_ulong;
 	else if (ptr->ret_type == TAG_INT8)
-		ret_type = &ffi_type_sint8;
+		ffi_ret_type = &ffi_type_sint8;
 	else if (ptr->ret_type == TAG_INT16)
-		ret_type = &ffi_type_sint16;
+		ffi_ret_type = &ffi_type_sint16;
 	else if (ptr->ret_type == TAG_INT32)
-		ret_type = &ffi_type_sint32;
+		ffi_ret_type = &ffi_type_sint32;
 	else if (ptr->ret_type == TAG_INT64)
-		ret_type = &ffi_type_sint64;
+		ffi_ret_type = &ffi_type_sint64;
 	else if (ptr->ret_type == TAG_INT)
-		ret_type = &ffi_type_sint;
+		ffi_ret_type = &ffi_type_sint;
 	else if (ptr->ret_type == TAG_SHORT)
-		ret_type = &ffi_type_sshort;
+		ffi_ret_type = &ffi_type_sshort;
 	else if (ptr->ret_type == TAG_LONG)
-		ret_type = &ffi_type_slong;
+		ffi_ret_type = &ffi_type_slong;
 	else if (ptr->ret_type == TAG_FLOAT32)
-		ret_type = &ffi_type_float;
+		ffi_ret_type = &ffi_type_float;
 	else if (ptr->ret_type == TAG_FLOAT)
-		ret_type = &ffi_type_double;
+		ffi_ret_type = &ffi_type_double;
 	else if (ptr->ret_type == TAG_PTR)
-		ret_type = &ffi_type_pointer;
+		ffi_ret_type = &ffi_type_pointer;
 	else if (ptr->ret_type == TAG_CSTR)
-		ret_type = &ffi_type_pointer;
+		ffi_ret_type = &ffi_type_pointer;
 	else if (ptr->ret_type == TAG_CCSTR)
-		ret_type = &ffi_type_pointer;
+		ffi_ret_type = &ffi_type_pointer;
 	else if (ptr->ret_type == TAG_VOID)
-		ret_type = &ffi_type_void;
+		ffi_ret_type = &ffi_type_void;
 	else if (ptr->ret_type == TAG_STRUCT) {
 		const char *name = ptr->ret_name;
 		foreign_struct *sptr = NULL;
@@ -1534,15 +1534,15 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 		if (!handle_struct1(q, sptr, nested, types, &pdepth))
 			return false;
 
-		ret_type = &types[save_depth];
+		ffi_ret_type = &types[save_depth];
 	} else
 		return false;
 
-	//printf("*** fn values = %u, ret-type=%u\n", pos, (unsigned)ret_type->type);
+	//printf("*** fn values = %u, ret-type=%u\n", pos, (unsigned)ffi_ret_type->type);
 
 	ffi_status ok;
 
-	if ((ok = ffi_prep_cif(&cif, FFI_DEFAULT_ABI, arity, ret_type, arg_types)) != FFI_OK) {
+	if ((ok = ffi_prep_cif(&cif, FFI_DEFAULT_ABI, arity, ffi_ret_type, arg_types)) != FFI_OK) {
 		printf("Error: ffi_prep_cif status=%d\n", ok);
 		return false;
 	}
@@ -1760,7 +1760,7 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 		unshare_cell(&tmp);
 		if (ok != true) return ok;
 	} else if (ptr->ret_type == TAG_STRUCT) {
-		ffi_type *p = ret_type;
+		ffi_type *p = ffi_ret_type;
 		//printf("*** struct ffi_type=%u\n", p->type);
 		int i = 0, cnt = 0;
 		ffi_type *e = p->elements[i++];
