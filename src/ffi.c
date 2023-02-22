@@ -1476,6 +1476,8 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 		c_ctx = p2_ctx;
 	}
 
+	// Can pre-compile the return type...
+
 	if (!ptr->ffi_ret_type) {
 		switch(ptr->ret_type) {
 		case(TAG_UINT8):
