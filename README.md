@@ -781,8 +781,8 @@ file then regex searches can be performed quickly and efficiently over
 huge files.
 
 
-Foreign Function Interface (FFI)		##EXPERIMENTAL##
-================================
+Foreign Function Interface (libffi)		##EXPERIMENTAL##
+===================================
 
 Allows the loading of dynamic libraries and calling of foreign functions
 written in C from within Prolog...
@@ -859,17 +859,30 @@ Register a builtin predicate...
 Note: the foreign function return value is passed as an extra argument
 to the predicate call, unless it was specified to be of type *void*.
 
-Or use the *use_foreign_module/2* directive & predicate based on the
-work of Adrián Arroyo Calle in Scryer Prolog, this simplifies the
-interface. NOTE: Trealla now uses this interface as the preferred
-style:
 
-```console
+Foreign Module Interface (libffi)		##EXPERIMENTAL##
+=================================
+
+This is a simplied interface to FFIs inspired by Adrián Arroyo Calle
+and largely supercedes the implementation given above.
+
+```
+	foreign_struct(+atom, +list)
+	use_foreign_module(+atom, +list)
+```
+
+For example...
+
+```
 	:- use_foreign_module('samples/libfoo.so', [
 		bar([double, sint64, -double], sint64),
 		baz([cstr, cstr], cstr)
 	]).
 ```
+
+See the *library/raylib.pl* and *samples/testraylib.pl* for an example
+usage including passing and returning structs by value.
+
 This is an example using SQLITE. Given the code in
 *samples/sqlite3.pl*...
 
