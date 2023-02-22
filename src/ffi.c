@@ -1476,88 +1476,93 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 		c_ctx = p2_ctx;
 	}
 
-	switch(ptr->ret_type) {
-	case(TAG_UINT8):
-		ffi_ret_type = &ffi_type_uint8;
-		break;
-	case(TAG_UINT16):
-		ffi_ret_type = &ffi_type_uint16;
-		break;
-	case(TAG_UINT32):
-		ffi_ret_type = &ffi_type_uint32;
-		break;
-	case(TAG_UINT64):
-		ffi_ret_type = &ffi_type_uint64;
-		break;
-	case(TAG_UINT):
-		ffi_ret_type = &ffi_type_uint;
-		break;
-	case(TAG_USHORT):
-		ffi_ret_type = &ffi_type_ushort;
-		break;
-	case(TAG_ULONG):
-		ffi_ret_type = &ffi_type_ulong;
-		break;
-	case(TAG_INT8):
-		ffi_ret_type = &ffi_type_sint8;
-		break;
-	case(TAG_INT16):
-		ffi_ret_type = &ffi_type_sint16;
-		break;
-	case(TAG_INT32):
-		ffi_ret_type = &ffi_type_sint32;
-		break;
-	case(TAG_INT64):
-		ffi_ret_type = &ffi_type_sint64;
-		break;
-	case(TAG_INT):
-		ffi_ret_type = &ffi_type_sint;
-		break;
-	case(TAG_SHORT):
-		ffi_ret_type = &ffi_type_sshort;
-		break;
-	case(TAG_LONG):
-		ffi_ret_type = &ffi_type_slong;
-		break;
-	case(TAG_FLOAT32):
-		ffi_ret_type = &ffi_type_float;
-		break;
-	case(TAG_FLOAT):
-		ffi_ret_type = &ffi_type_double;
-		break;
-	case(TAG_PTR):
-		ffi_ret_type = &ffi_type_pointer;
-		break;
-	case(TAG_CSTR):
-		ffi_ret_type = &ffi_type_pointer;
-		break;
-	case(TAG_CCSTR):
-		ffi_ret_type = &ffi_type_pointer;
-		break;
-	case(TAG_VOID):
-		ffi_ret_type = &ffi_type_void;
-		break;
-	case(TAG_STRUCT): {
-		const char *name = ptr->ret_name;
-		foreign_struct *sptr = NULL;
+	if (!ptr->ffi_ret_type) {
+		switch(ptr->ret_type) {
+		case(TAG_UINT8):
+			ffi_ret_type = &ffi_type_uint8;
+			break;
+		case(TAG_UINT16):
+			ffi_ret_type = &ffi_type_uint16;
+			break;
+		case(TAG_UINT32):
+			ffi_ret_type = &ffi_type_uint32;
+			break;
+		case(TAG_UINT64):
+			ffi_ret_type = &ffi_type_uint64;
+			break;
+		case(TAG_UINT):
+			ffi_ret_type = &ffi_type_uint;
+			break;
+		case(TAG_USHORT):
+			ffi_ret_type = &ffi_type_ushort;
+			break;
+		case(TAG_ULONG):
+			ffi_ret_type = &ffi_type_ulong;
+			break;
+		case(TAG_INT8):
+			ffi_ret_type = &ffi_type_sint8;
+			break;
+		case(TAG_INT16):
+			ffi_ret_type = &ffi_type_sint16;
+			break;
+		case(TAG_INT32):
+			ffi_ret_type = &ffi_type_sint32;
+			break;
+		case(TAG_INT64):
+			ffi_ret_type = &ffi_type_sint64;
+			break;
+		case(TAG_INT):
+			ffi_ret_type = &ffi_type_sint;
+			break;
+		case(TAG_SHORT):
+			ffi_ret_type = &ffi_type_sshort;
+			break;
+		case(TAG_LONG):
+			ffi_ret_type = &ffi_type_slong;
+			break;
+		case(TAG_FLOAT32):
+			ffi_ret_type = &ffi_type_float;
+			break;
+		case(TAG_FLOAT):
+			ffi_ret_type = &ffi_type_double;
+			break;
+		case(TAG_PTR):
+			ffi_ret_type = &ffi_type_pointer;
+			break;
+		case(TAG_CSTR):
+			ffi_ret_type = &ffi_type_pointer;
+			break;
+		case(TAG_CCSTR):
+			ffi_ret_type = &ffi_type_pointer;
+			break;
+		case(TAG_VOID):
+			ffi_ret_type = &ffi_type_void;
+			break;
+		case(TAG_STRUCT): {
+			const char *name = ptr->ret_name;
+			foreign_struct *sptr = NULL;
 
-		if (!map_get(q->pl->fortab, name, (void*)&sptr)) {
-			printf("wrapper: not found struct: %s\n", name);
+			if (!map_get(q->pl->fortab, name, (void*)&sptr)) {
+				printf("wrapper: not found struct: %s\n", name);
+				return false;
+			}
+
+			//printf("wrapper: arity=%u, found struct return type: %s, arity=%u, depth=%u, pdepth=%u\n", arity, name, sptr->arity, depth, pdepth);
+			unsigned save_depth = ++pdepth;
+
+			if (!handle_struct1(q, sptr, nested, types, &pdepth))
+				return false;
+
+			ffi_ret_type = &types[save_depth];
+			break;
+		}
+		default:
 			return false;
 		}
 
-		//printf("wrapper: arity=%u, found struct return type: %s, arity=%u, depth=%u, pdepth=%u\n", arity, name, sptr->arity, depth, pdepth);
-		unsigned save_depth = ++pdepth;
-
-		if (!handle_struct1(q, sptr, nested, types, &pdepth))
-			return false;
-
-		ffi_ret_type = &types[save_depth];
-		break;
-	}
-	default:
-		return false;
-	}
+		ptr->ffi_ret_type = ffi_ret_type;
+	} else
+		ffi_ret_type = ptr->ffi_ret_type;
 
 	//printf("*** fn values = %u, ret-type=%u\n", pos, (unsigned)ffi_ret_type->type);
 
