@@ -60,6 +60,19 @@ typedef union result_ {
 }
  result;
 
+typedef struct foreign_struct_ {
+	const char *name;
+	unsigned arity;
+	uint8_t types[MAX_ARITY];
+	const char *names[MAX_ARITY];
+}
+ foreign_struct;
+
+static foreign_struct g_ffi_structs[MAX_FFI] =
+{
+	{0}
+};
+
 #define MAX_FFI_ARGS 16
 
 #if USE_FFI
@@ -144,24 +157,16 @@ static int max_ffi_idx = 0;
 
 void register_struct(prolog *pl, const char *name, unsigned arity, void *fn, uint8_t *types, const char **names)
 {
-	builtins *ptr = &g_ffi_bifs[max_ffi_idx++];
+	foreign_struct *ptr = &g_ffi_structs[max_ffi_idx++];
 	ptr->name = name;
 	ptr->arity = arity;
-	ptr->fn = fn;
-	ptr->help = NULL;
-	ptr->evaluable = false;
-	ptr->is_struct = true;
-	ptr->ffi = true;
 
 	for (unsigned i = 0; i < arity; i++) {
 		ptr->types[i] = types[i];
 		ptr->names[i] = names[i];
 	}
 
-	//printf("*** reg struct '%s'\n", name);
-
-	ptr->ret_type = TAG_VOID;
-	map_app(pl->biftab, ptr->name, ptr);
+	map_app(pl->fortab, ptr->name, ptr);
 }
 
 void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn, uint8_t *types, uint8_t ret_type, const char *ret_name, bool evaluable)
@@ -172,7 +177,6 @@ void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn, uint8_
 	ptr->fn = fn;
 	ptr->help = NULL;
 	ptr->evaluable = evaluable;
-	ptr->is_struct = false;
 	ptr->ffi = true;
 
 	if (ret_type == TAG_VOID)
@@ -937,7 +941,7 @@ typedef struct nested_elements {
 }
  nested_elements;
 
-static bool handle_struct1(query *q, builtins *sptr, nested_elements *nested, ffi_type *types, unsigned *pdepth)
+static bool handle_struct1(query *q, foreign_struct *sptr, nested_elements *nested, ffi_type *types, unsigned *pdepth)
 {
 	unsigned sarity = sptr->arity, depth = *pdepth++;
 	types[depth].size = types[depth].alignment = 0;
@@ -987,9 +991,9 @@ static bool handle_struct1(query *q, builtins *sptr, nested_elements *nested, ff
 			nested[depth].elements[cnt] = &ffi_type_pointer;
 		else if (sptr->types[cnt] == TAG_STRUCT) {
 			const char *name = sptr->names[cnt];
-			builtins *sptr = NULL;
+			foreign_struct *sptr = NULL;
 
-			if (!map_get(q->pl->biftab, name, (void*)&sptr)) {
+			if (!map_get(q->pl->fortab, name, (void*)&sptr)) {
 				printf("wrapper: not found struct: %s\n", name);
 				return false;
 			}
@@ -1270,9 +1274,9 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 				break;
 			}
 
-			builtins *sptr = NULL;
+			foreign_struct *sptr = NULL;
 
-			if (!map_get(q->pl->biftab, name, (void*)&sptr)) {
+			if (!map_get(q->pl->fortab, name, (void*)&sptr)) {
 				printf("wrapper: not found struct: %s\n", name);
 				return false;
 			}
@@ -1514,9 +1518,9 @@ bool wrapper_for_predicate(query *q, builtins *ptr)
 		ret_type = &ffi_type_void;
 	else if (ptr->ret_type == TAG_STRUCT) {
 		const char *name = ptr->ret_name;
-		builtins *sptr = NULL;
+		foreign_struct *sptr = NULL;
 
-		if (!map_get(q->pl->biftab, name, (void*)&sptr)) {
+		if (!map_get(q->pl->fortab, name, (void*)&sptr)) {
 			printf("wrapper: not found struct: %s\n", name);
 			return false;
 		}

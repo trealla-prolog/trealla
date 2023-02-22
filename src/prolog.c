@@ -384,6 +384,7 @@ void pl_destroy(prolog *pl)
 	while (pl->modules)
 		destroy_module(pl->modules);
 
+	map_destroy(pl->fortab);
 	map_destroy(pl->biftab);
 	map_destroy(pl->symtab);
 	map_destroy(pl->keyval);
@@ -547,6 +548,9 @@ prolog *pl_create()
 
 	pl->help = map_create((void*)fake_strcmp, (void*)ptrfree, NULL);
 	map_allow_dups(pl->help, false);
+
+	pl->fortab = map_create((void*)fake_strcmp, NULL, NULL);
+	map_allow_dups(pl->fortab, false);
 
 	pl->biftab = map_create((void*)fake_strcmp, NULL, NULL);
 	map_allow_dups(pl->biftab, false);

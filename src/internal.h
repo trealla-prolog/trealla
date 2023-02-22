@@ -464,7 +464,7 @@ struct predicate_ {
 	bool is_var_in_first_arg:1;
 };
 
-#define BLAH false, false, false, {0}, {0}, 0, NULL, NULL, NULL
+#define BLAH false, false, {0}, {0}, 0, NULL, NULL, NULL
 
 struct builtins_ {
 	const char *name;
@@ -473,7 +473,6 @@ struct builtins_ {
 	const char *help;
 	bool iso;
 	bool evaluable;
-	bool is_struct;
 	bool ffi;
 	bool via_directive;
 	uint8_t types[MAX_ARITY];
@@ -795,7 +794,7 @@ struct prolog_ {
 	var_item *tabs;
 	parser *p;
 	query *curr_query;
-	map *symtab, *biftab, *keyval, *help;
+	map *symtab, *biftab, *keyval, *help, *fortab;
 	char *pool;
 	size_t pool_offset, pool_size, tabs_size;
 	uint64_t s_last, s_cnt, seed, ugen;
