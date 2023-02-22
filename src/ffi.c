@@ -166,11 +166,11 @@ static void register_struct(prolog *pl, const char *name, unsigned arity, void *
 		ptr->names[i] = names[i];
 	}
 
-	// TODO: pre-compile the type definitions so it doesn't have
-	// to be done on each registered FFI function call.
-
 	map_app(pl->fortab, ptr->name, ptr);
 }
+
+// TODO: pre-compile the type definitions so it doesn't have
+// to be done on each registered FFI function call.
 
 static void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn, uint8_t *types, uint8_t ret_type, const char *ret_name, bool evaluable)
 {
