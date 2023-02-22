@@ -89,7 +89,7 @@ void make_var2(cell *tmp, pl_idx_t off)
 void make_float(cell *tmp, pl_flt_t v)
 {
 	*tmp = (cell){0};
-	tmp->tag = TAG_FLOAT;
+	tmp->tag = TAG_DOUBLE;
 	tmp->nbr_cells = 1;
 	tmp->val_float = v;
 }

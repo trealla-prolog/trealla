@@ -94,7 +94,7 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define is_cstring(c) ((c)->tag == TAG_CSTR)
 #define is_basic_integer(c) ((c)->tag == TAG_INTEGER)
 #define is_integer(c) (((c)->tag == TAG_INTEGER) && !((c)->flags & FLAG_INT_STREAM))
-#define is_float(c) ((c)->tag == TAG_FLOAT)
+#define is_float(c) ((c)->tag == TAG_DOUBLE)
 #define is_indirect(c) ((c)->tag == TAG_PTR)
 #define is_blob(c) ((c)->tag == TAG_BLOB)
 #define is_end(c) ((c)->tag == TAG_END)
@@ -240,7 +240,7 @@ enum {
 	TAG_INTERNED=2,
 	TAG_CSTR=3,
 	TAG_INTEGER=4,
-	TAG_FLOAT=5,
+	TAG_DOUBLE=5,
 	TAG_PTR=6,
 	TAG_BLOB=7,
 	TAG_VOID=8,
