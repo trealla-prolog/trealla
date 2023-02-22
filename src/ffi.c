@@ -1116,6 +1116,7 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 	uint8_t bytes[MAX_FFI_ARGS] = {0};
 	ffi_type types[MAX_FFI_ARGS] = {0};
 
+	ffi_type *ffi_ret_type = NULL;
 	ffi_cif cif = {0};
 	ffi_status status;
 	unsigned arity = ptr->arity - 1, pdepth = 0, depth = 0, pos = 0;
@@ -1476,8 +1477,6 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 		c = p2;
 		c_ctx = p2_ctx;
 	}
-
-	ffi_type *ffi_ret_type = NULL;
 
 	if (ptr->ret_type == TAG_UINT8)
 		ffi_ret_type = &ffi_type_uint8;
