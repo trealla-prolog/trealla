@@ -1476,47 +1476,68 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 		c_ctx = p2_ctx;
 	}
 
-	if (ptr->ret_type == TAG_UINT8)
+	switch(ptr->ret_type) {
+	case(TAG_UINT8):
 		ffi_ret_type = &ffi_type_uint8;
-	else if (ptr->ret_type == TAG_UINT16)
+		break;
+	case(TAG_UINT16):
 		ffi_ret_type = &ffi_type_uint16;
-	else if (ptr->ret_type == TAG_UINT32)
+		break;
+	case(TAG_UINT32):
 		ffi_ret_type = &ffi_type_uint32;
-	else if (ptr->ret_type == TAG_UINT64)
+		break;
+	case(TAG_UINT64):
 		ffi_ret_type = &ffi_type_uint64;
-	else if (ptr->ret_type == TAG_UINT)
+		break;
+	case(TAG_UINT):
 		ffi_ret_type = &ffi_type_uint;
-	else if (ptr->ret_type == TAG_USHORT)
+		break;
+	case(TAG_USHORT):
 		ffi_ret_type = &ffi_type_ushort;
-	else if (ptr->ret_type == TAG_ULONG)
+		break;
+	case(TAG_ULONG):
 		ffi_ret_type = &ffi_type_ulong;
-	else if (ptr->ret_type == TAG_INT8)
+		break;
+	case(TAG_INT8):
 		ffi_ret_type = &ffi_type_sint8;
-	else if (ptr->ret_type == TAG_INT16)
+		break;
+	case(TAG_INT16):
 		ffi_ret_type = &ffi_type_sint16;
-	else if (ptr->ret_type == TAG_INT32)
+		break;
+	case(TAG_INT32):
 		ffi_ret_type = &ffi_type_sint32;
-	else if (ptr->ret_type == TAG_INT64)
+		break;
+	case(TAG_INT64):
 		ffi_ret_type = &ffi_type_sint64;
-	else if (ptr->ret_type == TAG_INT)
+		break;
+	case(TAG_INT):
 		ffi_ret_type = &ffi_type_sint;
-	else if (ptr->ret_type == TAG_SHORT)
+		break;
+	case(TAG_SHORT):
 		ffi_ret_type = &ffi_type_sshort;
-	else if (ptr->ret_type == TAG_LONG)
+		break;
+	case(TAG_LONG):
 		ffi_ret_type = &ffi_type_slong;
-	else if (ptr->ret_type == TAG_FLOAT32)
+		break;
+	case(TAG_FLOAT32):
 		ffi_ret_type = &ffi_type_float;
-	else if (ptr->ret_type == TAG_FLOAT)
+		break;
+	case(TAG_FLOAT):
 		ffi_ret_type = &ffi_type_double;
-	else if (ptr->ret_type == TAG_PTR)
+		break;
+	case(TAG_PTR):
 		ffi_ret_type = &ffi_type_pointer;
-	else if (ptr->ret_type == TAG_CSTR)
+		break;
+	case(TAG_CSTR):
 		ffi_ret_type = &ffi_type_pointer;
-	else if (ptr->ret_type == TAG_CCSTR)
+		break;
+	case(TAG_CCSTR):
 		ffi_ret_type = &ffi_type_pointer;
-	else if (ptr->ret_type == TAG_VOID)
+		break;
+	case(TAG_VOID):
 		ffi_ret_type = &ffi_type_void;
-	else if (ptr->ret_type == TAG_STRUCT) {
+		break;
+	case(TAG_STRUCT): {
 		const char *name = ptr->ret_name;
 		foreign_struct *sptr = NULL;
 
@@ -1532,8 +1553,11 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 			return false;
 
 		ffi_ret_type = &types[save_depth];
-	} else
+		break;
+	}
+	default:
 		return false;
+	}
 
 	//printf("*** fn values = %u, ret-type=%u\n", pos, (unsigned)ffi_ret_type->type);
 
