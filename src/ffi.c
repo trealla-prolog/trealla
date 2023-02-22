@@ -607,7 +607,7 @@ USE_RESULT bool fn_sys_register_predicate_4(query *q)
 	return do_register_predicate(q->st.m, q, (void*)(size_t)get_smallint(p1), C_STR(q, p2), p3, p3_ctx, C_STR(q, p4));
 }
 
-bool wrapper_for_function(query *q, builtins *ptr)
+bool wrap_ffi_function(query *q, builtins *ptr)
 {
 	CHECK_CALC();
 	GET_FIRST_ARG(p1, any);
@@ -1102,7 +1102,7 @@ static void handle_struct2(query *q, nested_elements *nested, unsigned *pdepth, 
 	*boff = bytes_offset;
 }
 
-bool wrapper_for_predicate(query *q, builtins *ptr)
+bool wrap_ffi_predicate(query *q, builtins *ptr)
 {
 	GET_FIRST_ARG(p1, any);
 	cell *c = p1;

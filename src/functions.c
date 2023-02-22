@@ -161,7 +161,7 @@ bool call_builtin(query *q, cell *c, pl_idx_t c_ctx)
 
 #if USE_FFI
 	if (c->fn_ptr && c->fn_ptr->ffi)
-		wrapper_for_function(q, c->fn_ptr);
+		wrap_ffi_function(q, c->fn_ptr);
 	else
 #endif
 	if (!c->fn_ptr->evaluable && (c->val_off != g_float_s))

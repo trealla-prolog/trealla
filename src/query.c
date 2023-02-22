@@ -1716,11 +1716,11 @@ bool start(query *q)
 			bool status;
 
 #if USE_FFI
-			if (q->st.curr_cell->fn_ptr && q->st.curr_cell->fn_ptr->ffi) {
+			if (q->st.curr_cell->fn_ptr->ffi) {
 				if (q->st.curr_cell->fn_ptr->evaluable)
-					status = wrapper_for_function(q, q->st.curr_cell->fn_ptr);
+					status = wrap_ffi_function(q, q->st.curr_cell->fn_ptr);
 				else
-					status = wrapper_for_predicate(q, q->st.curr_cell->fn_ptr);
+					status = wrap_ffi_predicate(q, q->st.curr_cell->fn_ptr);
 			} else
 #endif
 				status = q->st.curr_cell->fn_ptr->fn(q);

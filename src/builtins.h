@@ -24,8 +24,8 @@
 void clr_accum(cell *p);
 
 #if USE_FFI
-bool wrapper_for_function(query *q, builtins *fn_ptr);
-bool wrapper_for_predicate(query *q, builtins *fn_ptr);
+bool wrap_ffi_function(query *q, builtins *fn_ptr);
+bool wrap_ffi_predicate(query *q, builtins *fn_ptr);
 #endif
 
 #define is_callable_or_var(c) (is_interned(c) || is_cstring(c) || is_var(c))
