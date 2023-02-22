@@ -153,11 +153,11 @@ USE_RESULT bool fn_sys_dlclose_1(query *q)
 	return do_dlclose((void*)handle) ? false : true;
 }
 
-static int max_ffi_idx = 0;
+static int max_struct_idx = 0, max_ffi_idx = 0;
 
 void register_struct(prolog *pl, const char *name, unsigned arity, void *fn, uint8_t *types, const char **names)
 {
-	foreign_struct *ptr = &g_ffi_structs[max_ffi_idx++];
+	foreign_struct *ptr = &g_ffi_structs[max_struct_idx++];
 	ptr->name = name;
 	ptr->arity = arity;
 
