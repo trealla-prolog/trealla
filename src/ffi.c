@@ -140,6 +140,52 @@ USE_RESULT bool fn_sys_dlclose_1(query *q)
 	return do_dlclose((void*)handle) ? false : true;
 }
 
+static int max_ffi_idx = 0;
+
+void register_struct(prolog *pl, const char *name, unsigned arity, void *fn, uint8_t *types, const char **names)
+{
+	builtins *ptr = &g_ffi_bifs[max_ffi_idx++];
+	ptr->name = name;
+	ptr->arity = arity;
+	ptr->fn = fn;
+	ptr->help = NULL;
+	ptr->evaluable = false;
+	ptr->is_struct = true;
+	ptr->ffi = true;
+
+	for (unsigned i = 0; i < arity; i++) {
+		ptr->types[i] = types[i];
+		ptr->names[i] = names[i];
+	}
+
+	//printf("*** reg struct '%s'\n", name);
+
+	ptr->ret_type = TAG_VOID;
+	map_app(pl->biftab, ptr->name, ptr);
+}
+
+void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn, uint8_t *types, uint8_t ret_type, const char *ret_name, bool evaluable)
+{
+	builtins *ptr = &g_ffi_bifs[max_ffi_idx++];
+	ptr->name = name;
+	ptr->arity = arity;
+	ptr->fn = fn;
+	ptr->help = NULL;
+	ptr->evaluable = evaluable;
+	ptr->is_struct = false;
+	ptr->ffi = true;
+
+	if (ret_type == TAG_VOID)
+		ptr->arity--;
+
+	for (unsigned i = 0; i < arity; i++)
+		ptr->types[i] = types[i];
+
+	ptr->ret_type = ret_type;
+	ptr->ret_name = ret_name;
+	map_app(pl->biftab, ptr->name, ptr);
+}
+
 USE_RESULT bool fn_sys_register_function_4(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
