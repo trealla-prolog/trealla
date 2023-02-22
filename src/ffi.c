@@ -155,7 +155,7 @@ USE_RESULT bool fn_sys_dlclose_1(query *q)
 
 static int max_struct_idx = 0, max_ffi_idx = 0;
 
-void register_struct(prolog *pl, const char *name, unsigned arity, void *fn, uint8_t *types, const char **names)
+static void register_struct(prolog *pl, const char *name, unsigned arity, void *fn, uint8_t *types, const char **names)
 {
 	foreign_struct *ptr = &g_ffi_structs[max_struct_idx++];
 	ptr->name = name;
@@ -172,7 +172,7 @@ void register_struct(prolog *pl, const char *name, unsigned arity, void *fn, uin
 	map_app(pl->fortab, ptr->name, ptr);
 }
 
-void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn, uint8_t *types, uint8_t ret_type, const char *ret_name, bool evaluable)
+static void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn, uint8_t *types, uint8_t ret_type, const char *ret_name, bool evaluable)
 {
 	builtins *ptr = &g_ffi_bifs[max_ffi_idx++];
 	ptr->name = name;

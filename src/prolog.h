@@ -16,11 +16,6 @@ void uuid_gen(prolog *pl, uuid *u);
 void keyvalfree(const void *key, const void *val, const void *p);
 void ptrfree(const void *key, const void *val, const void *p);
 
-#if USE_FFI
-void register_struct(prolog *pl, const char *name, unsigned arity, void *fn, uint8_t *types, const char **names);
-void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn, uint8_t *types, uint8_t ret_type, const char *ret_name, bool evaluable);
-#endif
-
 extern pl_idx_t g_empty_s, g_dot_s, g_cut_s, g_nil_s, g_true_s, g_fail_s;
 extern pl_idx_t g_anon_s, g_neck_s, g_eof_s, g_lt_s, g_gt_s, g_eq_s, g_false_s;
 extern pl_idx_t g_sys_elapsed_s, g_sys_queue_s, g_braces_s, g_call_s, g_braces_s;
