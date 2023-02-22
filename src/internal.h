@@ -622,6 +622,7 @@ struct prolog_flags_ {
 	bool not_strict_iso:1;
 	bool debug:1;
 	bool json:1;
+	bool var_prefix:1;
 };
 
 struct query_ {
