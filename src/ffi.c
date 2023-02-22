@@ -1117,8 +1117,6 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 	ffi_type types[MAX_FFI_ARGS] = {0};
 
 	ffi_type *ffi_ret_type = NULL;
-	ffi_cif cif = {0};
-	ffi_status status;
 	unsigned arity = ptr->arity - 1, pdepth = 0, depth = 0, pos = 0;
 	size_t bytes_offset = 0;
 
@@ -1539,6 +1537,7 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 
 	//printf("*** fn values = %u, ret-type=%u\n", pos, (unsigned)ffi_ret_type->type);
 
+	ffi_cif cif = {0};
 	ffi_status ok;
 
 	if ((ok = ffi_prep_cif(&cif, FFI_DEFAULT_ABI, arity, ffi_ret_type, arg_types)) != FFI_OK) {
