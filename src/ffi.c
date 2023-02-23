@@ -1183,8 +1183,6 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 			"invalid"
 			);
 
-		const char *src = C_STR(q, c);
-
 		if (ptr->types[i] == TAG_UINT8)
 			arg_types[i] = &ffi_type_uint8;
 		else if (ptr->types[i] == MARK_OUT(TAG_UINT8))
