@@ -93,13 +93,19 @@ static int get_next_char(query *q, list_reader_t *fmt)
 	return ch;
 }
 
-static cell *get_next_cell(query *q, list_reader_t *fmt)
+static cell *get_next_cell(query *q, list_reader_t *fmt, bool *is_var)
 {
+	*is_var = false;
+
 	if (fmt->src)
 		return NULL;
 
-	if (!is_list(fmt->p))
+	if (!is_list(fmt->p)) {
+		if (is_var(fmt->p))
+			*is_var = true;
+
 		return NULL;
+	}
 
 	cell *head = fmt->p + 1;
 	cell *tail = head + head->nbr_cells;
@@ -177,7 +183,12 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 		ch = get_next_char(q, &fmt1);
 
 		if (ch == '*') {
-			cell *c = get_next_cell(q, &fmt2);
+			bool is_var;
+			cell *c = get_next_cell(q, &fmt2, &is_var);
+
+			if (is_var)
+				return throw_error(q, p2, p2_ctx, "instantiation_error", "atom");
+
 			noargval = 0;
 
 			if (!c || !is_integer(c)) {
@@ -320,7 +331,11 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 			return throw_error(q, &tmp, q->st.curr_frame, "domain_error", "non_empty_list");
 		}
 
-		cell *c = get_next_cell(q, &fmt2);
+		bool is_var;
+		cell *c = get_next_cell(q, &fmt2, &is_var);
+
+		if (is_var)
+			return throw_error(q, p2, p2_ctx, "instantiation_error", "atom");
 
 		if (!c) {
 			cell tmp;
@@ -570,8 +585,11 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 	if (fmt2.p) {
 		cell *save_l = fmt2.p;
 		pl_idx_t save_l_ctx = fmt2.p_ctx;
+		bool is_var;
+		cell *c = get_next_cell(q, &fmt2, &is_var);
 
-		cell *c = get_next_cell(q, &fmt2);
+		if (is_var)
+			return throw_error(q, p2, p2_ctx, "instantiation_error", "atom");
 
 		if (c)
 			return throw_error(q, save_l, save_l_ctx, "domain_error", "empty_list");
