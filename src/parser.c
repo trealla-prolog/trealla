@@ -2717,7 +2717,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 		int ch_start = peek_char_utf8(SB_cstr(p->token));
 
-		if ((!p->flags.var_prefix && iswupper(ch_start)) || (ch_start == '_'))
+		if ((!p->flags.var_prefix && !p->flags.json && iswupper(ch_start)) || (ch_start == '_'))
 			p->is_var = true;
 		else if (search_op(p->m, SB_cstr(p->token), NULL, false))
 			p->is_op = true;
