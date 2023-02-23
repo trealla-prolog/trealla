@@ -57,16 +57,14 @@ typedef union result_ {
 	signed long val_ffi_slong;
 	void *val_ffi_pointer;
 	char bytes[256];
-}
- result;
+} result;
 
 typedef struct foreign_struct_ {
 	const char *name;
 	unsigned arity;
 	uint8_t types[MAX_ARITY];
 	const char *names[MAX_ARITY];
-}
- foreign_struct;
+} foreign_struct;
 
 static foreign_struct g_ffi_structs[MAX_FFI] =
 {
