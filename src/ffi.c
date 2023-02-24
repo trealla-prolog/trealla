@@ -1398,7 +1398,7 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 			arg_values[pos] = &cells[pos].val_ffi_slong;
 			pos++;
 		} else if (ptr->types[i] == TAG_FLOAT) {
-			cells[pos].val_ffi_float= c->val_float;
+			cells[pos].val_ffi_float = c->val_float;
 			arg_values[pos] = &cells[pos].val_ffi_float;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_FLOAT)) {
