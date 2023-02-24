@@ -1399,7 +1399,7 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 			pos++;
 		} else if (ptr->types[i] == TAG_FLOAT) {
 			cells[pos].val_ffi_float= c->val_float;
-			arg_values[pos] = &cells[pos].val_ffi_sint;
+			arg_values[pos] = &cells[pos].val_ffi_float;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_FLOAT)) {
 			s_args[pos] = &cells[pos].val_ffi_float;
