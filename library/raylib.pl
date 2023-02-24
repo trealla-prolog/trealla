@@ -12,7 +12,7 @@
 
 :- foreign_struct(float2, [float,float]).
 :- foreign_struct(float4, [float,float,float,float]).
-:- foreign_struct(matrix2, [matrix]).
+:- foreign_struct(matrix2, [matrix,matrix]).
 :- foreign_struct(char32, [uint64,uint64,uint64,uint64]).
 
 :- foreign_struct(color, [uint8,uint8,uint8,uint8]).
