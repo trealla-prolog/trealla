@@ -7,9 +7,8 @@ run :-
 
 	P1 is ScreenWidth / 2.0,
 	P2 is ScreenHeight / 2.0,
-    BallPosition = [P1,P2],
-
-    BallSpeed = [5.0,4.0],
+    BallPosition = [vector2,P1,P2],
+    BallSpeed = [vector2,5.0,4.0],
     BallRadius = 20,
 
 	'SetTargetFPS'(60),
@@ -21,8 +20,8 @@ loop(BallPosition, BallSpeed, BallRadius) :-
 		Close =\= 0 ->
 		'CloseWindow'
 	;	(
-		BallPosition = [PosX,PosY],
-		BallSpeed = [SpeedX,SpeedY],
+		BallPosition = [vector2,PosX,PosY],
+		BallSpeed = [vector2,SpeedX,SpeedY],
 
 		X is PosX + SpeedX,
 		Y is PosY + SpeedY,
@@ -44,9 +43,8 @@ loop(BallPosition, BallSpeed, BallRadius) :-
 			Speed2Y is SpeedY
 		),
 
-		BallPosition2 = [X,Y],
-		BallPosition2Vec2D = [vector2,X,Y],
-		BallSpeed2 = [Speed2X,Speed2Y],
+		BallPosition2 = [vector2,X,Y],
+		BallSpeed2 = [vector2,Speed2X,Speed2Y],
 		BallRadius2 is float(BallRadius),
 
 		RAYWHITE = [color,245,245,245,245],
@@ -54,7 +52,7 @@ loop(BallPosition, BallSpeed, BallRadius) :-
 
 		'BeginDrawing',
 		'ClearBackground'(RAYWHITE),
-		'DrawCircleV'(BallPosition2Vec2D, BallRadius2, MAROON),
+		'DrawCircleV'(BallPosition2, BallRadius2, MAROON),
 		'DrawFPS'(10, 10),
 		'EndDrawing',
 
