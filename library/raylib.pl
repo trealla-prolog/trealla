@@ -69,4 +69,3 @@
 	'EndDrawing'([], void),
 	'CloseWindow'([], void)
 	]).
-
