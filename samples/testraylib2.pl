@@ -47,15 +47,14 @@ loop(BallPosition, BallSpeed, BallRadius) :-
 		BallPosition2 = [X,Y],
 		BallPosition2Vec2D = [vector2,X,Y],
 		BallSpeed2 = [Speed2X,Speed2Y],
+		BallRadius2 is float(BallRadius),
+
+		RAYWHITE = [color,245,245,245,245],
+		MAROON = [color,190,33,55,255],
 
 		'BeginDrawing',
-		RAYWHITE = [color,245,245,245,245],
 		'ClearBackground'(RAYWHITE),
-
-		MAROON = [color,190,33,55,255],
-		BallRadius2 is float(BallRadius),
 		'DrawCircleV'(BallPosition2Vec2D, BallRadius2, MAROON),
-
 		'DrawFPS'(10, 10),
 		'EndDrawing',
 
