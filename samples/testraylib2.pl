@@ -21,9 +21,6 @@ loop(BallPosition, BallSpeed, BallRadius) :-
 		Close =\= 0 ->
 		'CloseWindow'
 	;	(
-		'GetScreenWidth'(ScreenWidth),
-		'GetScreenHeight'(ScreenHeight),
-
 		BallPosition = [PosX,PosY],
 		BallSpeed = [SpeedX,SpeedY],
 
@@ -31,6 +28,9 @@ loop(BallPosition, BallSpeed, BallRadius) :-
 		Y is PosY + SpeedY,
 
 		% Check walls collision for bouncing
+
+		'GetScreenWidth'(ScreenWidth),
+		'GetScreenHeight'(ScreenHeight),
 
 		(
 			X >= (ScreenWidth - BallRadius) -> Speed2X is SpeedX * -1.0 ;
@@ -44,8 +44,8 @@ loop(BallPosition, BallSpeed, BallRadius) :-
 			Speed2Y is SpeedY
 		),
 
-		BallPosition2a = [X,Y],
-		BallPosition2b = [vector2,X,Y],
+		BallPosition2 = [X,Y],
+		BallPosition2Vec2D = [vector2,X,Y],
 		BallSpeed2 = [Speed2X,Speed2Y],
 
 		'BeginDrawing',
@@ -54,11 +54,11 @@ loop(BallPosition, BallSpeed, BallRadius) :-
 
 		MAROON = [color,190,33,55,255],
 		BallRadius2 is float(BallRadius),
-		'DrawCircleV'(BallPosition2b, BallRadius2, MAROON),
+		'DrawCircleV'(BallPosition2Vec2D, BallRadius2, MAROON),
 
 		'DrawFPS'(10, 10),
 		'EndDrawing',
 
-		loop(BallPosition2a, BallSpeed2, BallRadius)
+		loop(BallPosition2, BallSpeed2, BallRadius)
 		)
 	).
