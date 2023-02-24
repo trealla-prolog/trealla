@@ -34,14 +34,14 @@ loop(BallPosition, BallSpeed, BallRadius) :-
 
 		(
 			X >= (ScreenWidth - BallRadius) -> Speed2X is SpeedX * -1.0 ;
-			X =< BallRadius -> Speed2X is X * -1.0 ;
-			Speed2X is X
+			X =< BallRadius -> Speed2X is SpeedX * -1.0 ;
+			Speed2X is SpeedX
 		),
 
 		(
 			Y >= (ScreenHeight - BallRadius) -> Speed2Y is SpeedY * -1.0 ;
-			Y =< BallRadius -> Speed2Y is Y * -1.0 ;
-			Speed2Y is Y
+			Y =< BallRadius -> Speed2Y is SpeedY * -1.0 ;
+			Speed2Y is SpeedY
 		),
 
 		BallPosition2a = [X,Y],
