@@ -26,24 +26,25 @@ loop(BallPosition, BallSpeed, BallRadius) :-
 
 		BallPosition = [PosX,PosY],
 		BallSpeed = [SpeedX,SpeedY],
+
 		X is PosX + SpeedX,
 		Y is PosY + SpeedY,
 
 		% Check walls collision for bouncing
 
 		(
-			X >= ScreenWidth - BallRadius -> Speed2X is X * -1.0 ;
-			X < BallRadius -> Speed2X is X * -1.0 ;
+			X >= (ScreenWidth - BallRadius) -> Speed2X is SpeedX * -1.0 ;
+			X =< BallRadius -> Speed2X is X * -1.0 ;
 			Speed2X is X
 		),
 
 		(
-			Y >= ScreenHeight - BallRadius -> Speed2Y is Y * -1.0 ;
-			Y < BallRadius -> Speed2Y is Y * -1.0 ;
-			Speed2Y is X
+			Y >= (ScreenHeight - BallRadius) -> Speed2Y is SpeedY * -1.0 ;
+			Y =< BallRadius -> Speed2Y is Y * -1.0 ;
+			Speed2Y is Y
 		),
 
-		BallPosition2a = [X, Y],
+		BallPosition2a = [X,Y],
 		BallPosition2b = [vector2,X,Y],
 		BallSpeed2 = [Speed2X,Speed2Y],
 
@@ -57,6 +58,6 @@ loop(BallPosition, BallSpeed, BallRadius) :-
 		'DrawFPS'(10, 10),
 		'EndDrawing',
 
-		loop(BallPosition2a, BallSpeed, BallRadius)
+		loop(BallPosition2a, BallSpeed2, BallRadius)
 		)
 	).
