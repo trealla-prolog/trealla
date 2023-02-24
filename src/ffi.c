@@ -71,8 +71,6 @@ static foreign_struct g_ffi_structs[MAX_FFI] =
 	{0}
 };
 
-#define MAX_FFI_ARGS 16
-
 #if USE_FFI
 void *do_dlopen(const char *filename, int flag)
 {

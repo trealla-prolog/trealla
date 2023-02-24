@@ -465,6 +465,7 @@ struct predicate_ {
 };
 
 #define BLAH false, false, {0}, {0}, 0, NULL, NULL, NULL, NULL
+#define MAX_FFI_ARGS 16
 
 struct builtins_ {
 	const char *name;
@@ -475,8 +476,8 @@ struct builtins_ {
 	bool evaluable;
 	bool ffi;
 	bool via_directive;
-	uint8_t types[MAX_ARITY];
-	const char *names[MAX_ARITY];
+	uint8_t types[MAX_FFI_ARGS];
+	const char *names[MAX_FFI_ARGS];
 	uint8_t ret_type;
 	void *ffi_ret_type;
 	const char *ret_name;
