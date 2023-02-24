@@ -3,9 +3,14 @@
 	'WindowShouldClose'/1,
 	'SetTargetFPS'/1,
 	'GetWindowPosition'/1,
+	'GetScreenWidth'/1,
+	'GetScreenHeight'/1,
+	'IsKeyPressed'/2,
 	'BeginDrawing'/0,
 	'ClearBackground'/1,
 	'DrawText'/5,
+	'DrawFPS'/2,
+	'DrawCircleV'/3,
 	'EndDrawing'/0,
 	'CloseWindow'/0
 	]).
@@ -63,9 +68,14 @@
 	'SetTargetFPS'([sint], void),
 	'WindowShouldClose'([], bool),
 	'GetWindowPosition'([], vector2),
+	'GetScreenWidth'([], sint),
+	'GetScreenHeight'([], sint),
+	'IsKeyPressed'([sint], bool),
 	'BeginDrawing'([], void),
 	'ClearBackground'([color], void),
 	'DrawText'([cstr,sint,sint,sint,color], void),
+	'DrawFPS'([sint,sint], void),
+	'DrawCircleV'([vector2,float,color], void),
 	'EndDrawing'([], void),
 	'CloseWindow'([], void)
 	]).
