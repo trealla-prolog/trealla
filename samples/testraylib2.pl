@@ -10,7 +10,7 @@ run :-
     BallPosition = [P1,P2],
 
     BallSpeed = [5.0,4.0],
-    BallRadius = 20.0,
+    BallRadius = 20,
 
 	'SetTargetFPS'(60),
 	loop(BallPosition, BallSpeed, BallRadius).
@@ -53,7 +53,8 @@ loop(BallPosition, BallSpeed, BallRadius) :-
 		'ClearBackground'(RAYWHITE),
 
 		MAROON = [color,190,33,55,255],
-		'DrawCircleV'(BallPosition2b, BallRadius, MAROON),
+		BallRadius2 is float(BallRadius),
+		'DrawCircleV'(BallPosition2b, BallRadius2, MAROON),
 
 		'DrawFPS'(10, 10),
 		'EndDrawing',
