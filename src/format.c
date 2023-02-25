@@ -93,7 +93,7 @@ static int get_next_char(query *q, list_reader_t *fmt)
 	return ch;
 }
 
-static cell *get_next_cell(query *q, list_reader_t *fmt, bool *is_var)
+static cell *get_next_cell(query *q, list_reader_t *fmt, bool *is_var, pl_idx_t *ctx)
 {
 	*is_var = false;
 
@@ -109,12 +109,13 @@ static cell *get_next_cell(query *q, list_reader_t *fmt, bool *is_var)
 
 	cell *head = fmt->p + 1;
 	cell *tail = head + head->nbr_cells;
+
 	head = deref(q, head, fmt->p_ctx);
-	pl_idx_t save_ctx = q->latest_ctx;
+	*ctx = q->latest_ctx;
+
 	tail = deref(q, tail, fmt->p_ctx);
 	fmt->p = tail;
 	fmt->p_ctx = q->latest_ctx;
-	q->latest_ctx = save_ctx;
 	return head;
 }
 
@@ -181,10 +182,11 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 		}
 
 		ch = get_next_char(q, &fmt1);
+		pl_idx_t c_ctx;
 
 		if (ch == '*') {
 			bool is_var;
-			cell *c = get_next_cell(q, &fmt2, &is_var);
+			cell *c = get_next_cell(q, &fmt2, &is_var, &c_ctx);
 
 			if (is_var)
 				return throw_error(q, p2, p2_ctx, "instantiation_error", "atom");
@@ -332,7 +334,7 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 		}
 
 		bool is_var;
-		cell *c = get_next_cell(q, &fmt2, &is_var);
+		cell *c = get_next_cell(q, &fmt2, &is_var, &c_ctx);
 
 		if (is_var)
 			return throw_error(q, p2, p2_ctx, "instantiation_error", "atom");
@@ -346,7 +348,6 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 		if (ch == 'i')
 			continue;
 
-        pl_idx_t c_ctx = q->latest_ctx;
 		start_of_line = false;
 		size_t len = 0;
 
@@ -584,9 +585,9 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 
 	if (fmt2.p) {
 		cell *save_l = fmt2.p;
-		pl_idx_t save_l_ctx = fmt2.p_ctx;
+		pl_idx_t save_l_ctx = fmt2.p_ctx, c_ctx;
 		bool is_var;
-		cell *c = get_next_cell(q, &fmt2, &is_var);
+		cell *c = get_next_cell(q, &fmt2, &is_var, &c_ctx);
 
 		if (is_var)
 			return throw_error(q, p2, p2_ctx, "instantiation_error", "atom");
