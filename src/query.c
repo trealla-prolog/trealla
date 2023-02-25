@@ -51,7 +51,7 @@ static bool any_choices(const query *q, const frame *f)
 		return false;
 
 	const choice *ch = q->in_commit ? GET_PREV_CHOICE() : GET_CURR_CHOICE();
-	return ch->cgen > f->cgen;
+	return ch->cgen >= f->cgen;
 }
 
 void dump_term(query *q, const char *s, const cell *c)
