@@ -347,8 +347,6 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 		if (ch == 'i')
 			continue;
 
-		//DUMP_TERM("c", c, c_ctx, 1);
-
 		start_of_line = false;
 		size_t len = 0;
 
