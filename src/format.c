@@ -113,8 +113,7 @@ static cell *get_next_cell(query *q, list_reader_t *fmt, bool *is_var, pl_idx_t 
 	head = deref(q, head, fmt->p_ctx);
 	*ctx = q->latest_ctx;
 
-	tail = deref(q, tail, fmt->p_ctx);
-	fmt->p = tail;
+	fmt->p = deref(q, tail, fmt->p_ctx);
 	fmt->p_ctx = q->latest_ctx;
 	return head;
 }
@@ -182,7 +181,7 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 		}
 
 		ch = get_next_char(q, &fmt1);
-		pl_idx_t c_ctx;
+		pl_idx_t c_ctx = p2_ctx;
 
 		if (ch == '*') {
 			bool is_var;
@@ -347,6 +346,8 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 
 		if (ch == 'i')
 			continue;
+
+		//DUMP_TERM("c", c, c_ctx, 1);
 
 		start_of_line = false;
 		size_t len = 0;
@@ -557,15 +558,17 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 				q->quoted = 1;
 			}
 
-			len = print_term_to_buf(q, NULL, 0, c, c_ctx, 1, false, 0);
+			char *tmpbuf = print_term_to_strbuf(q, c, c_ctx, 1);
 
 			if (q->cycle_error) {
 				free(tmpbuf);
 				return throw_error(q, c, q->st.curr_frame, "resource_error", "cyclic");
             }
 
+			len = strlen(tmpbuf);
 			CHECK_BUF(len*2);
-			len = print_term_to_buf(q, dst, len+1, c, c_ctx, 1, false, 0);
+			strcpy(dst, tmpbuf);
+			free(tmpbuf);
 			clear_write_options(q);
 			q->quoted = saveq;
             break;
