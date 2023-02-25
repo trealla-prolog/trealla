@@ -682,6 +682,12 @@ bool retry_choice(query *q)
 		if (ch->catchme_exception || ch->soft_cut || ch->did_cleanup)
 			continue;
 
+		if (!ch->register_cleanup && q->noretry)
+			continue;
+
+		if (ch->register_cleanup && q->noretry)
+			q->noretry = false;
+
 		return true;
 	}
 

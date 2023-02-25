@@ -168,9 +168,11 @@ bool check_redo(query *q)
 #endif
 			//printf(";  ... .\n");
 			printf("  ... .\n");
-			q->pl->did_dump_vars = true;
-			q->abort = true;
-			return true;
+			q->is_redo = true;
+			q->retry = QUERY_RETRY;
+			q->pl->did_dump_vars = false;
+			q->noretry = true;
+			break;
 		}
 
 		if (ch == 'x') {

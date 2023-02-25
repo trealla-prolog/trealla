@@ -669,6 +669,7 @@ struct query_ {
 	bool in_attvar_print:1;
 	bool lists_ok:1;
 	bool autofail:1;
+	bool noretry:1;
 	bool is_oom:1;
 	bool is_redo:1;
 	bool run_hook:1;
