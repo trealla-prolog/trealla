@@ -714,6 +714,7 @@ static frame *push_frame(query *q, clause *cl)
 	f->cgen = ++q->cgen;
 	f->is_last = false;
 	f->overflow = 0;
+	f->hp = q->st.hp;
 
 	q->st.sp += cl->nbr_vars;
 	q->st.curr_frame = new_frame;
@@ -738,6 +739,7 @@ static void reuse_frame(query *q, frame* f, const clause *cl)
 	f->overflow = 0;
 
 	q->st.sp = f->base + f->actual_slots;
+	q->st.hp = f->hp;
 	q->tot_tcos++;
 }
 
