@@ -7,22 +7,17 @@ run :-
 
 	P1 is ScreenWidth / 2.0,
 	P2 is ScreenHeight / 2.0,
-    BallPosition = [vector2,P1,P2],
-    BallSpeed = [vector2,5.0,4.0],
     BallRadius = 20,
 
 	'SetTargetFPS'(60),
-	loop(BallPosition, BallSpeed, BallRadius).
+	loop(P1, P2, 5.0, 4.0, BallRadius).
 
-loop(BallPosition, BallSpeed, BallRadius) :-
+loop(PosX, PosY, SpeedX, SpeedY, BallRadius) :-
+	'WindowShouldClose'(Close),
 	(
-		'WindowShouldClose'(Close),
-		Close =\= 0 ->
-		'CloseWindow'
+		Close =\= 0
+	-> 'CloseWindow'
 	;	(
-		BallPosition = [vector2,PosX,PosY],
-		BallSpeed = [vector2,SpeedX,SpeedY],
-
 		X is PosX + SpeedX,
 		Y is PosY + SpeedY,
 
@@ -44,7 +39,6 @@ loop(BallPosition, BallSpeed, BallRadius) :-
 		),
 
 		BallPosition2 = [vector2,X,Y],
-		BallSpeed2 = [vector2,Speed2X,Speed2Y],
 		BallRadius2 is float(BallRadius),
 
 		RAYWHITE = [color,245,245,245,245],
@@ -60,6 +54,6 @@ loop(BallPosition, BallSpeed, BallRadius) :-
 		'DrawFPS'(10, 10),
 		'EndDrawing',
 
-		loop(BallPosition2, BallSpeed2, BallRadius)
+		loop(X, Y, Speed2X, Speed2Y, BallRadius)
 		)
 	).
