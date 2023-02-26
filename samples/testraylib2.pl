@@ -5,12 +5,12 @@ run :-
 	ScreenHeight = 450,
 	'InitWindow'(ScreenWidth, ScreenHeight, "Trealla Prolog Raylib"),
 
-	P1 is ScreenWidth / 2.0,
-	P2 is ScreenHeight / 2.0,
+	X is ScreenWidth / 2.0,
+	Y is ScreenHeight / 2.0,
     BallRadius = 20,
 
 	'SetTargetFPS'(60),
-	loop(P1, P2, 5.0, 4.0, BallRadius).
+	loop(X, Y, 5.0, 4.0, BallRadius).
 
 loop(PosX, PosY, SpeedX, SpeedY, BallRadius) :-
 	'WindowShouldClose'(Close),
