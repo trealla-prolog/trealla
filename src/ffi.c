@@ -237,13 +237,13 @@ USE_RESULT bool fn_sys_register_function_4(query *q)
 				arg_types[idx++] = TAG_INT64;
 			else if (!strcmp(src, "sint"))
 				arg_types[idx++] = TAG_INT;
-			else if (!strcmp(src, "val_ffi_ushort"))
+			else if (!strcmp(src, "ushort"))
 				arg_types[idx++] = TAG_USHORT;
-			else if (!strcmp(src, "val_ffi_sshort"))
+			else if (!strcmp(src, "sshort"))
 				arg_types[idx++] = TAG_SHORT;
-			else if (!strcmp(src, "val_ffi_ulong"))
+			else if (!strcmp(src, "ulong"))
 				arg_types[idx++] = TAG_ULONG;
-			else if (!strcmp(src, "val_ffi_slong"))
+			else if (!strcmp(src, "slong"))
 				arg_types[idx++] = TAG_LONG;
 			else if (!strcmp(src, "float"))
 				arg_types[idx++] = TAG_FLOAT;
@@ -337,13 +337,13 @@ bool do_register_struct(module *m, query *q, void *handle, const char *symbol, c
 				arg_types[idx++] = TAG_UINT;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint"))
 				arg_types[idx++] = MARK_OUT(TAG_UINT);
-			else if (!strcmp(src, "val_ffi_ushort"))
+			else if (!strcmp(src, "ushort"))
 				arg_types[idx++] = TAG_USHORT;
-			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "val_ffi_ushort"))
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ushort"))
 				arg_types[idx++] = MARK_OUT(TAG_USHORT);
-			else if (!strcmp(src, "val_ffi_ulong"))
+			else if (!strcmp(src, "ulong"))
 				arg_types[idx++] = TAG_ULONG;
-			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "val_ffi_ulong"))
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ulong"))
 				arg_types[idx++] = MARK_OUT(TAG_ULONG);
 			else if (!strcmp(src, "sint8"))
 				arg_types[idx++] = TAG_INT8;
@@ -365,13 +365,13 @@ bool do_register_struct(module *m, query *q, void *handle, const char *symbol, c
 				arg_types[idx++] = TAG_INT;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint"))
 				arg_types[idx++] = MARK_OUT(TAG_INT);
-			else if (!strcmp(src, "val_ffi_sshort"))
+			else if (!strcmp(src, "sshort"))
 				arg_types[idx++] = TAG_INT16;
-			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "val_ffi_sshort"))
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sshort"))
 				arg_types[idx++] = MARK_OUT(TAG_INT16);
-			else if (!strcmp(src, "val_ffi_slong"))
+			else if (!strcmp(src, "slong"))
 				arg_types[idx++] = TAG_LONG;
-			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "val_ffi_slong"))
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "slong"))
 				arg_types[idx++] = MARK_OUT(TAG_LONG);
 			else if (!strcmp(src, "float"))
 				arg_types[idx++] = TAG_FLOAT;
@@ -447,13 +447,13 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 				arg_types[idx++] = TAG_UINT;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint"))
 				arg_types[idx++] = MARK_OUT(TAG_UINT);
-			else if (!strcmp(src, "val_ffi_ushort"))
+			else if (!strcmp(src, "ushort"))
 				arg_types[idx++] = TAG_USHORT;
-			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "val_ffi_ushort"))
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ushort"))
 				arg_types[idx++] = MARK_OUT(TAG_USHORT);
-			else if (!strcmp(src, "val_ffi_ulong"))
+			else if (!strcmp(src, "ulong"))
 				arg_types[idx++] = TAG_ULONG;
-			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "val_ffi_ulong"))
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ulong"))
 				arg_types[idx++] = MARK_OUT(TAG_ULONG);
 			else if (!strcmp(src, "sint8"))
 				arg_types[idx++] = TAG_INT8;
@@ -475,13 +475,13 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 				arg_types[idx++] = TAG_INT;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sint"))
 				arg_types[idx++] = MARK_OUT(TAG_INT);
-			else if (!strcmp(src, "val_ffi_sshort"))
+			else if (!strcmp(src, "sshort"))
 				arg_types[idx++] = TAG_SHORT;
-			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "val_ffi_sshort"))
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "sshort"))
 				arg_types[idx++] = MARK_OUT(TAG_SHORT);
-			else if (!strcmp(src, "val_ffi_slong"))
+			else if (!strcmp(src, "slong"))
 				arg_types[idx++] = TAG_LONG;
-			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "val_ffi_slong"))
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "slong"))
 				arg_types[idx++] = MARK_OUT(TAG_LONG);
 			else if (!strcmp(src, "float"))
 				arg_types[idx++] = TAG_FLOAT;
@@ -533,10 +533,10 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 	} else if (!strcmp(src, "uint")) {
 		arg_types[idx++] = MARK_OUT(TAG_UINT);
 		ret_type = TAG_UINT;
-	} else if (!strcmp(src, "val_ffi_ushort")) {
+	} else if (!strcmp(src, "ushort")) {
 		arg_types[idx++] = MARK_OUT(TAG_USHORT);
 		ret_type = TAG_USHORT;
-	} else if (!strcmp(src, "val_ffi_ulong")) {
+	} else if (!strcmp(src, "ulong")) {
 		arg_types[idx++] = MARK_OUT(TAG_ULONG);
 		ret_type = TAG_ULONG;
 	} else if (!strcmp(src, "sint8")) {
@@ -554,10 +554,10 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 	} else if (!strcmp(src, "sint")) {
 		arg_types[idx++] = MARK_OUT(TAG_INT);
 		ret_type = TAG_INT;
-	} else if (!strcmp(src, "val_ffi_sshort")) {
+	} else if (!strcmp(src, "sshort")) {
 		arg_types[idx++] = MARK_OUT(TAG_SHORT);
 		ret_type = TAG_SHORT;
-	} else if (!strcmp(src, "val_ffi_slong")) {
+	} else if (!strcmp(src, "slong")) {
 		arg_types[idx++] = MARK_OUT(TAG_LONG);
 		ret_type = TAG_LONG;
 	} else if (!strcmp(src, "float")) {
