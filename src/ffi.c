@@ -217,7 +217,11 @@ USE_RESULT bool fn_sys_register_function_4(query *q)
 		if (is_interned(h)) {
 			const char *src = C_STR(q, h);
 
-			if (!strcmp(src, "uint8"))
+			if (!strcmp(src, "uchar"))
+				arg_types[idx++] = TAG_UINT8;
+			else if (!strcmp(src, "schar"))
+				arg_types[idx++] = TAG_INT8;
+			else if (!strcmp(src, "uint8"))
 				arg_types[idx++] = TAG_UINT8;
 			else if (!strcmp(src, "uint16"))
 				arg_types[idx++] = TAG_UINT16;
@@ -264,7 +268,11 @@ USE_RESULT bool fn_sys_register_function_4(query *q)
 
 	const char *src = C_STR(q, p4);
 
-	if (!strcmp(src, "uint8"))
+	if (!strcmp(src, "uchar"))
+		ret_type = TAG_UINT8;
+	else if (!strcmp(src, "schar"))
+		ret_type = TAG_INT8;
+	else if (!strcmp(src, "uint8"))
 		ret_type = TAG_UINT8;
 	else if (!strcmp(src, "uint16"))
 		ret_type = TAG_UINT16;
@@ -317,7 +325,15 @@ bool do_register_struct(module *m, query *q, void *handle, const char *symbol, c
 			const char *src = C_STR(m, h);
 			arg_names[idx] = src;
 
-			if (!strcmp(src, "uint8"))
+			if (!strcmp(src, "uchar"))
+				arg_types[idx++] = TAG_UINT8;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uchar"))
+				arg_types[idx++] = MARK_OUT(TAG_UINT8);
+			else if (!strcmp(src, "schar"))
+				arg_types[idx++] = TAG_INT8;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "schar"))
+				arg_types[idx++] = MARK_OUT(TAG_INT8);
+			else if (!strcmp(src, "uint8"))
 				arg_types[idx++] = TAG_UINT8;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint8"))
 				arg_types[idx++] = MARK_OUT(TAG_UINT8);
@@ -427,7 +443,15 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 		if (is_interned(h)) {
 			const char *src = C_STR(m, h);
 
-			if (!strcmp(src, "uint8"))
+			if (!strcmp(src, "uchar"))
+				arg_types[idx++] = TAG_UINT8;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uchar"))
+				arg_types[idx++] = MARK_OUT(TAG_UINT8);
+			else if (!strcmp(src, "schar"))
+				arg_types[idx++] = TAG_INT8;
+			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "schar"))
+				arg_types[idx++] = MARK_OUT(TAG_INT8);
+			else if (!strcmp(src, "uint8"))
 				arg_types[idx++] = TAG_UINT8;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "uint8"))
 				arg_types[idx++] = MARK_OUT(TAG_UINT8);
@@ -518,18 +542,24 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 
 	const char *src = ret;
 
-	if (!strcmp(src, "uint8")) {
+	if (!strcmp(src, "uchar")) {
 		arg_types[idx++] = MARK_OUT(TAG_UINT8);
+		ret_type = TAG_UINT8;
+	} else if (!strcmp(src, "schar")) {
+		arg_types[idx++] = MARK_OUT(TAG_INT8);
 		ret_type = TAG_INT8;
+	} else if (!strcmp(src, "uint8")) {
+		arg_types[idx++] = MARK_OUT(TAG_UINT8);
+		ret_type = TAG_UINT8;
 	} else if (!strcmp(src, "uint16")) {
 		arg_types[idx++] = MARK_OUT(TAG_UINT16);
-		ret_type = TAG_INT16;
+		ret_type = TAG_UINT16;
 	} else if (!strcmp(src, "uint32")) {
 		arg_types[idx++] = MARK_OUT(TAG_UINT32);
-		ret_type = TAG_INT32;
+		ret_type = TAG_UINT32;
 	} else if (!strcmp(src, "uint64")) {
 		arg_types[idx++] = MARK_OUT(TAG_UINT64);
-		ret_type = TAG_INT64;
+		ret_type = TAG_UINT64;
 	} else if (!strcmp(src, "uint")) {
 		arg_types[idx++] = MARK_OUT(TAG_UINT);
 		ret_type = TAG_UINT;
