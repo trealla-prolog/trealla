@@ -653,6 +653,7 @@ bool find_exception_handler(query *q, char *ball)
 	q->pl->did_dump_vars = true;
 	q->ball = NULL;
 	//q->error = true;
+	q->abort = true;
 	return false;
 }
 
