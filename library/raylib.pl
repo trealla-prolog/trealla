@@ -10,6 +10,7 @@
 	'ClearBackground'/1,
 	'DrawText'/5,
 	'DrawFPS'/2,
+	'DrawCircle'/4,
 	'DrawCircleV'/3,
 	'EndDrawing'/0,
 	'CloseWindow'/0
@@ -75,6 +76,7 @@
 	'ClearBackground'([color], void),
 	'DrawText'([cstr,sint,sint,sint,color], void),
 	'DrawFPS'([sint,sint], void),
+	'DrawCircle'([sint,sint,float,color], void),
 	'DrawCircleV'([vector2,float,color], void),
 	'EndDrawing'([], void),
 	'CloseWindow'([], void)

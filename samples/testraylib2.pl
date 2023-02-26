@@ -50,9 +50,13 @@ loop(BallPosition, BallSpeed, BallRadius) :-
 		RAYWHITE = [color,245,245,245,245],
 		MAROON = [color,190,33,55,255],
 
+		NewX is floor(X),
+		NewY is floor(Y),
+
 		'BeginDrawing',
 		'ClearBackground'(RAYWHITE),
-		'DrawCircleV'(BallPosition2, BallRadius2, MAROON),
+		'DrawCircle'(NewX, NewY, BallRadius2, MAROON),
+		%'DrawCircleV'(BallPosition2, BallRadius2, MAROON),
 		'DrawFPS'(10, 10),
 		'EndDrawing',
 
