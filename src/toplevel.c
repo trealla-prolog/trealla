@@ -68,8 +68,15 @@ int check_interrupt(query *q)
 		}
 
 #ifndef __wasi__
-		if (ch == '\n')
-			return -1;
+		if (ch == '\n') {
+			//printf(";  ... .\n");
+			printf("  ... .\n");
+			q->is_redo = true;
+			q->retry = QUERY_RETRY;
+			q->pl->did_dump_vars = false;
+			q->noretry = true;
+			break;
+		}
 #endif
 
 		if (ch == 'e') {
