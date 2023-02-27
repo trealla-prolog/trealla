@@ -49,8 +49,8 @@ loop(PosX, PosY, SpeedX, SpeedY, BallRadius) :-
 
 		'BeginDrawing',
 		'ClearBackground'(RAYWHITE),
-		%'DrawCircle'(NewX, NewY, BallRadius2, MAROON),
-		'DrawCircleV'(BallPosition2, BallRadius2, MAROON),
+		'DrawCircle'(NewX, NewY, BallRadius2, MAROON),
+		%'DrawCircleV'(BallPosition2, BallRadius2, MAROON),
 		'DrawFPS'(10, 10),
 		'EndDrawing',
 
