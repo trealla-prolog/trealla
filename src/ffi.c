@@ -413,8 +413,12 @@ bool do_register_struct(module *m, query *q, void *handle, const char *symbol, c
 				arg_types[idx++] = TAG_UINT8;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "bool"))
 				arg_types[idx++] = MARK_OUT(TAG_UINT8);
-			else
+			else {
 				arg_types[idx++] = TAG_STRUCT;
+			}
+		} else {
+			printf("Warning: register struct\n");
+			return false;
 		}
 
 		l = LIST_TAIL(l);
@@ -972,7 +976,8 @@ typedef struct nested_elements {
 
 static bool handle_struct1(query *q, foreign_struct *sptr, nested_elements *nested, ffi_type *types, unsigned *pdepth)
 {
-	unsigned sarity = sptr->arity, depth = *pdepth++;
+	unsigned sarity = sptr->arity, depth = *pdepth + 1;
+	*pdepth = depth;
 	types[depth].size = types[depth].alignment = 0;
 	types[depth].type = FFI_TYPE_STRUCT;
 	types[depth].elements = nested[depth].elements;
@@ -1307,11 +1312,12 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 				return false;
 			}
 
-			//printf("wrapper: found struct: %s, arity=%u\n", name, sptr->arity);
+			//printf("wrapper: [%d] found struct: %s, arity=%u, depth=%u, pdepth=%u\n", i, name, sptr->arity, depth, pdepth);
 
 			if (!handle_struct1(q, sptr, nested, types, &pdepth))
 				return false;
 
+			depth = pdepth;
 			arg_types[i] = &types[depth];
 		} else {
 			printf("Warning: struct ptr->type=%u\n", ptr->types[i]);
@@ -1507,6 +1513,41 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 	}
 
 	//printf("*** args=%u\n", pos);
+
+#if 0
+	ffi_type **t = arg_types;
+	int i = 0, jpos = 0;
+	printf("*** ");
+
+	while (t[i]) {
+		pos = jpos;
+		printf(" [%d]", i);
+		if (t[i] == &ffi_type_uint8) printf("   uint8=%u", *(uint8_t*)arg_values[pos]);
+		else if (t[i] == &ffi_type_sint) printf("   sint=%d", *(int*)arg_values[pos]);
+		else if (t[i] == &ffi_type_float) printf("   float=%f", *(float*)arg_values[pos]);
+		else if (t[i]->type == FFI_TYPE_STRUCT) {
+			printf("   struct ==>");
+
+			ffi_type **t2 = t[i]->elements;
+
+			int j = 0;
+
+			while (t2[j]) {
+				printf(" [%d]", j);
+				if (t2[j]->type == FFI_TYPE_UINT8) printf("   uint8"/*, *(uint8_t*)arg_values[pos] */);
+				else if (t2[j]->type == FFI_TYPE_INT) printf("   sint"/*, *(int*)arg_values[pos] */);
+				else if (t2[j]->type == FFI_TYPE_FLOAT) printf("   float"/*, *(float*)arg_values[pos] */);
+				pos++;
+				j++;
+			}
+		}
+
+		jpos++;
+		i++;
+	}
+
+	printf("\n");
+#endif
 
 	// Can pre-compile the return type...
 

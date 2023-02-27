@@ -38,19 +38,21 @@ loop(PosX, PosY, SpeedX, SpeedY, BallRadius) :-
 			Speed2Y is SpeedY
 		),
 
-		BallPosition2 = [vector2,X,Y],
 		BallRadius2 is float(BallRadius),
 
 		RAYWHITE = [color,245,245,245,245],
 		MAROON = [color,190,33,55,255],
 
-		NewX is floor(X),
-		NewY is floor(Y),
-
 		'BeginDrawing',
 		'ClearBackground'(RAYWHITE),
-		'DrawCircle'(NewX, NewY, BallRadius2, MAROON),
-		%'DrawCircleV'(BallPosition2, BallRadius2, MAROON),
+
+		%NewX is floor(X),
+		%NewY is floor(Y),
+		%'DrawCircle'(NewX, NewY, BallRadius2, MAROON),
+
+		BallPosition2 = [vector2,X,Y],
+		'DrawCircleV'(BallPosition2, BallRadius2, MAROON),
+
 		'DrawFPS'(10, 10),
 		'EndDrawing',
 
