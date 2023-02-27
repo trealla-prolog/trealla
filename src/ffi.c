@@ -1506,6 +1506,8 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 		c_ctx = p2_ctx;
 	}
 
+	//printf("*** args=%u\n", pos);
+
 	// Can pre-compile the return type...
 
 	if (!ptr->ffi_ret_type) {
