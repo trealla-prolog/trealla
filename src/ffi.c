@@ -1313,6 +1313,9 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 				return false;
 
 			arg_types[i] = &types[depth];
+		} else {
+			printf("Warning: struct ptr->type=%u\n", ptr->types[i]);
+			return false;
 		}
 
 		if (ptr->types[i] == TAG_UINT8) {
@@ -1493,6 +1496,9 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 
 			arg_values[pos] = &bytes[bytes_offset_start];
 			pos++;
+		} else {
+			printf("Warning: struct ptr->type=%u\n", ptr->types[i]);
+			return false;
 		}
 
 		GET_NEXT_ARG(p2, any);
@@ -1583,6 +1589,7 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 			break;
 		}
 		default:
+			printf("Warning: struct ptr->ret_type=%u\n", ptr->ret_type);
 			return false;
 		}
 

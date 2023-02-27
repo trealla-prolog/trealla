@@ -465,7 +465,7 @@ struct predicate_ {
 };
 
 #define BLAH false, false, {0}, {0}, 0, NULL, NULL, NULL, NULL
-#define MAX_FFI_ARGS 16
+#define MAX_FFI_ARGS 64
 
 struct builtins_ {
 	const char *name;
