@@ -7,55 +7,62 @@ run :-
 
 	X is ScreenWidth / 2.0,
 	Y is ScreenHeight / 2.0,
-    BallRadius = 20,
 
 	'SetTargetFPS'(60),
-	loop(X, Y, 5.0, 4.0, BallRadius).
+	loop(X, Y, 5.0, 4.0, 20, 0).
 
-loop(PosX, PosY, SpeedX, SpeedY, BallRadius) :-
+loop(PosX, PosY, SpeedX, SpeedY, BallRadius, Paused) :-
 	'WindowShouldClose'(Close),
-	(
-		Close =\= 0
+
+	( Close =\= 0
 	-> 'CloseWindow'
-	;	(
-		X is PosX + SpeedX,
-		Y is PosY + SpeedY,
+	; (
+		KEY_SPACE = 32,
 
-		% Check walls collision for bouncing
+		'IsKeyPressed'(KEY_SPACE, Pressed),
 
-		'GetScreenWidth'(ScreenWidth),
-		'GetScreenHeight'(ScreenHeight),
+		( Pressed =\= 0 -> Paused2 is \Paused ; Paused2 is Paused ),
 
 		(
-			X >= (ScreenWidth - BallRadius) -> Speed2X is SpeedX * -1.0 ;
-			X =< BallRadius -> Speed2X is SpeedX * -1.0 ;
-			Speed2X is SpeedX
-		),
+			Paused2 =\= 0
+			-> (BallPosition2 = [vector2,PosX,PosY], X = PosX, Y = PosY, Speed2X = SpeedX, Speed2Y = SpeedY)
+			; (
+				X is PosX + SpeedX,
+				Y is PosY + SpeedY,
 
-		(
-			Y >= (ScreenHeight - BallRadius) -> Speed2Y is SpeedY * -1.0 ;
-			Y =< BallRadius -> Speed2Y is SpeedY * -1.0 ;
-			Speed2Y is SpeedY
+				% Check walls collision for bouncing
+
+				'GetScreenWidth'(ScreenWidth),
+				'GetScreenHeight'(ScreenHeight),
+
+				(
+					X >= (ScreenWidth - BallRadius) -> Speed2X is SpeedX * -1.0 ;
+					X =< BallRadius -> Speed2X is SpeedX * -1.0 ;
+					Speed2X is SpeedX
+				),
+
+				(
+					Y >= (ScreenHeight - BallRadius) -> Speed2Y is SpeedY * -1.0 ;
+					Y =< BallRadius -> Speed2Y is SpeedY * -1.0 ;
+					Speed2Y is SpeedY
+				),
+
+				BallPosition2 = [vector2,X,Y]
+			)
 		),
 
 		BallRadius2 is float(BallRadius),
-
 		RAYWHITE = [color,245,245,245,245],
 		MAROON = [color,190,33,55,255],
 
 		'BeginDrawing',
 		'ClearBackground'(RAYWHITE),
 
-		%NewX is floor(X),
-		%NewY is floor(Y),
-		%'DrawCircle'(NewX, NewY, BallRadius2, MAROON),
-
-		BallPosition2 = [vector2,X,Y],
 		'DrawCircleV'(BallPosition2, BallRadius2, MAROON),
 
 		'DrawFPS'(10, 10),
 		'EndDrawing',
 
-		loop(X, Y, Speed2X, Speed2Y, BallRadius)
-		)
+		loop(X, Y, Speed2X, Speed2Y, BallRadius, Paused2)
+	 )
 	).

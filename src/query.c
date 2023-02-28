@@ -739,7 +739,7 @@ static void reuse_frame(query *q, frame* f, const clause *cl)
 	f->overflow = 0;
 
 	q->st.sp = f->base + f->actual_slots;
-	q->st.hp = f->hp;
+	if (q->pl->opt) q->st.hp = f->hp;
 	q->tot_tcos++;
 }
 
