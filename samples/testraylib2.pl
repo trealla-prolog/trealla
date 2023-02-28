@@ -17,6 +17,9 @@ loop(PosX, PosY, SpeedX, SpeedY, BallRadius, Paused) :-
 	( Close =\= 0
 	-> 'CloseWindow'
 	; (
+		'GetScreenWidth'(ScreenWidth),
+		'GetScreenHeight'(ScreenHeight),
+
 		KEY_SPACE = 32,
 		'IsKeyPressed'(KEY_SPACE, Pressed),
 
@@ -30,9 +33,6 @@ loop(PosX, PosY, SpeedX, SpeedY, BallRadius, Paused) :-
 				Y is PosY + SpeedY,
 
 				% Check walls collision for bouncing
-
-				'GetScreenWidth'(ScreenWidth),
-				'GetScreenHeight'(ScreenHeight),
 
 				(
 					X >= (ScreenWidth - BallRadius) -> Speed2X is SpeedX * -1.0 ;
@@ -49,6 +49,8 @@ loop(PosX, PosY, SpeedX, SpeedY, BallRadius, Paused) :-
 		),
 
 		BallRadius2 is float(BallRadius),
+		LIGHTGRAY = [color,200,200,200,255],
+		GRAY = [color,130,130,130,255],
 		RAYWHITE = [color,245,245,245,245],
 		MAROON = [color,190,33,55,255],
 
@@ -56,6 +58,9 @@ loop(PosX, PosY, SpeedX, SpeedY, BallRadius, Paused) :-
 		'ClearBackground'(RAYWHITE),
 
 		'DrawCircleV'([vector2,X,Y], BallRadius2, MAROON),
+		Height is ScreenHeight - 25,
+		'DrawText'("PRESS SPACE to PAUSE BALL MOVEMENT", 10, Height, 20, LIGHTGRAY),
+         (Paused2 =\= 0 -> 'DrawText'("PAUSED", 350, 200, 30, GRAY) ; true),
 
 		'DrawFPS'(10, 10),
 		'EndDrawing',
