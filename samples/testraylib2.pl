@@ -18,14 +18,13 @@ loop(PosX, PosY, SpeedX, SpeedY, BallRadius, Paused) :-
 	-> 'CloseWindow'
 	; (
 		KEY_SPACE = 32,
-
 		'IsKeyPressed'(KEY_SPACE, Pressed),
 
 		( Pressed =\= 0 -> Paused2 is \Paused ; Paused2 is Paused ),
 
 		(
 			Paused2 =\= 0
-			-> (BallPosition2 = [vector2,PosX,PosY], X = PosX, Y = PosY, Speed2X = SpeedX, Speed2Y = SpeedY)
+			-> ( X = PosX, Y = PosY, Speed2X = SpeedX, Speed2Y = SpeedY )
 			; (
 				X is PosX + SpeedX,
 				Y is PosY + SpeedY,
@@ -45,9 +44,7 @@ loop(PosX, PosY, SpeedX, SpeedY, BallRadius, Paused) :-
 					Y >= (ScreenHeight - BallRadius) -> Speed2Y is SpeedY * -1.0 ;
 					Y =< BallRadius -> Speed2Y is SpeedY * -1.0 ;
 					Speed2Y is SpeedY
-				),
-
-				BallPosition2 = [vector2,X,Y]
+				)
 			)
 		),
 
@@ -58,7 +55,7 @@ loop(PosX, PosY, SpeedX, SpeedY, BallRadius, Paused) :-
 		'BeginDrawing',
 		'ClearBackground'(RAYWHITE),
 
-		'DrawCircleV'(BallPosition2, BallRadius2, MAROON),
+		'DrawCircleV'([vector2,X,Y], BallRadius2, MAROON),
 
 		'DrawFPS'(10, 10),
 		'EndDrawing',
