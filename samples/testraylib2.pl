@@ -49,6 +49,7 @@ loop(PosX, PosY, SpeedX, SpeedY, BallRadius, Paused) :-
 		),
 
 		BallRadius2 is float(BallRadius),
+
 		LIGHTGRAY = [color,200,200,200,255],
 		GRAY = [color,130,130,130,255],
 		RAYWHITE = [color,245,245,245,245],
