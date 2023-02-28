@@ -799,7 +799,8 @@ The allowed types are
 *sint8*, *sint16*, *sint32*, *sint64*, *sint* (native *signed int*),
 *uint8*, *uint16*, *uint32*, *uint64*, *uint* (native *unsigned int*),
 *ushort*, *sshort*, *float*, *double*,
-*bool*, *void* (a return type only),
+*bool*, (use integer 0/1 to align with C *bool* pseudo-type)
+*void* (a return type only),
 *cstr* (a char pointer),
 and *ptr* (for arbitrary pointers/handles).
 
@@ -863,7 +864,7 @@ to the predicate call, unless it was specified to be of type *void*.
 Foreign Module Interface (libffi)		##EXPERIMENTAL##
 =================================
 
-This is a simplied interface to FFIs inspired by Adrián Arroyo Calle
+This is a simplified interface to FFIs inspired by Adrián Arroyo Calle
 and largely supercedes the implementation given above.
 
 ```
