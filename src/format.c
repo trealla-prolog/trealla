@@ -372,9 +372,6 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 					CHECK_BUF(MAX_BYTES_PER_CODEPOINT);
 					dst += put_char_utf8(dst, ch);
 					cnt++;
-
-					if (cnt == argval)
-						break;
 				}
 
 				len = 0;
