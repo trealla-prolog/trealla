@@ -44,16 +44,9 @@ size_t alloc_grow(void **addr, size_t elem_size, size_t min_elements, size_t max
 
 cell *init_tmp_heap(query *q)
 {
-	if (q->tmp_heap && (q->tmph_size > 1024)) {
-		free(q->tmp_heap);
-		q->tmp_heap = NULL;
-		q->tmph_size = 100;
-	}
-
 	if (!q->tmp_heap) {
 		q->tmp_heap = malloc(q->tmph_size * sizeof(cell));
 		if (!q->tmp_heap) return NULL;
-		*q->tmp_heap = (cell){0};
 	}
 
 	q->tmphp = 0;
@@ -742,6 +735,13 @@ cell *end_list(query *q)
 	safe_copy_cells(tmp, get_tmp_heap(q, 0), nbr_cells);
 	tmp->nbr_cells = nbr_cells;
 	fix_list(tmp);
+
+	if (q->tmp_heap && (q->tmph_size > 1024)) {
+		free(q->tmp_heap);
+		q->tmp_heap = NULL;
+		q->tmph_size = 100;
+	}
+
 	return tmp;
 }
 
