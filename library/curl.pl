@@ -7,7 +7,7 @@
 
 :- use_foreign_module('libcurl.so', [
 	curl_easy_init([], ptr),
-	curl_easy_setopt([ptr,sint,cstr], sint),
+	curl_easy_setopt([ptr,uint,cstr], sint),
 	curl_easy_perform([ptr], sint),
 	curl_easy_cleanup([ptr], void)
 	]).
@@ -15,10 +15,12 @@
 % Zero return status means everything was ok, non-zero means an error occured.
 
 /* This is the FILE * or void * the regular output should be written to. */
-curlopt(xCURLOPT_WRITEDATA, xCURLOPTTYPE_CBPOINT, 1).
+%curlopt(xCURLOPT_WRITEDATA, xCURLOPTTYPE_CBPOINT, 1).
+curlopt(xCURLOPT_WRITEDATA, xCURLOPTTYPE_CBPOINT, 10001).		% HACK
 
 /* The full URL to get/put */
-curlopt(xCURLOPT_URL, xCURLOPTTYPE_STRINGPOINT, 2).
+%curlopt(xCURLOPT_URL, xCURLOPTTYPE_STRINGPOINT, 2).
+curlopt(xCURLOPT_URL, xCURLOPTTYPE_STRINGPOINT, 10002).			% HACK
 
 /* Port number to connect to, if other than default. */
 curlopt(xCURLOPT_PORT, xCURLOPTTYPE_LONG, 3).
