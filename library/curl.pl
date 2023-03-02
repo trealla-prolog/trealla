@@ -14,6 +14,8 @@
 
 % Zero return status means everything was ok, non-zero means an error occured.
 
+% TODO: fix this...
+
 /* This is the FILE * or void * the regular output should be written to. */
 %curlopt(xCURLOPT_WRITEDATA, xCURLOPTTYPE_CBPOINT, 1).
 curlopt(xCURLOPT_WRITEDATA, xCURLOPTTYPE_CBPOINT, 10001).		% HACK
