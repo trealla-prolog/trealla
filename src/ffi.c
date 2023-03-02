@@ -1185,6 +1185,8 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 			;
 		else if ((ptr->types[i] == TAG_PTR) && is_smallint(c))
 			;
+		else if ((ptr->types[i] == TAG_PTR) && is_atom(c))
+			;
 		else if ((ptr->types[i] == TAG_FLOAT) && is_float(c))
 			;
 		else if ((ptr->types[i] == TAG_DOUBLE) && is_float(c))
@@ -1453,7 +1455,7 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 			arg_values[pos] = &s_args[pos];
 			pos++;
 		} else if (ptr->types[i] == TAG_PTR) {
-			cells[pos].val_ffi_pointer = c->val_ptr;
+			cells[pos].val_ffi_pointer = is_atom(c) ? (void*)C_STR(q, c) : (void*)c->val_ptr;
 			arg_values[pos] = &cells[pos].val_ffi_pointer;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_PTR)) {
@@ -1461,7 +1463,7 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 			arg_values[pos] = &s_args[pos];
 			pos++;
 		} else if (ptr->types[i] == TAG_CSTR) {
-			cells[pos].val_ffi_pointer = C_STR(q, c);
+			cells[pos].val_ffi_pointer = is_atom(c) ? (void*)C_STR(q, c) : (void*)c->val_ptr;
 			arg_values[pos] = &cells[pos].val_ffi_pointer;
 			pos++;
 		} else if (ptr->types[i] == MARK_OUT(TAG_CSTR)) {

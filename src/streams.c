@@ -526,6 +526,8 @@ static void add_stream_properties(query *q, int n)
 
 	formatted(tmpbuf2, sizeof(tmpbuf2), str->filename, strlen(str->filename), false, false);
 	dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, file_name('%s')).\n", n, tmpbuf2);
+	dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, file_no(%u)).\n", n, fileno(str->fp));
+	dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, file(%llu)).\n", n, (unsigned long long)(size_t)str->fp);
 	dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, mode(%s)).\n", n, str->mode);
 	dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, type(%s)).\n", n, str->binary ? "binary" : "text");
 	dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, line_count(%d)).\n", n, str->p ? str->p->line_nbr : 1);
@@ -596,6 +598,17 @@ static bool do_stream_property(query *q)
 
 		cell tmp;
 		make_int(&tmp, fileno(str->fp));
+		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
+		unshare_cell(&tmp);
+		return ok;
+	}
+
+	if (!CMP_STR_TO_CSTR(q, p1, "file")) {
+		if (!str->fp)
+			return false;
+
+		cell tmp;
+		make_int(&tmp, (size_t)str->fp);
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		return ok;
