@@ -60,6 +60,7 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define MAX_SMALL_STRING ((sizeof(void*)*2)-1)
 #define MAX_VAR_POOL_SIZE 16000
 #define MAX_ARITY UINT8_MAX
+#define MAX_IF_DEPTH 255
 #define MAX_VARS 1024
 #define MAX_QUEUES 16
 #define MAX_STREAMS 1024
@@ -243,8 +244,7 @@ enum {
 	TAG_DOUBLE=5,
 	TAG_PTR=6,
 	TAG_BLOB=7,
-	TAG_VOID=8,
-	TAG_END=9
+	TAG_END=8
 };
 
 enum {
@@ -343,7 +343,7 @@ struct cell_ {
 	uint16_t flags;
 
 	union {
-		pl_idx_t nbr_cells;
+		uint32_t nbr_cells;
 		uint16_t mid;				// used with TAG_EMPTY so not counted
 	};
 
@@ -729,7 +729,7 @@ struct parser_ {
 	int quote_char, line_nbr, line_nbr_start;
 	unsigned nbr_vars;
 	int8_t dq_consing;
-	bool error, if_depth[MAX_ARITY];
+	bool error, if_depth[MAX_IF_DEPTH];
 	bool was_consing:1;
 	bool was_string:1;
 	bool did_getline:1;
@@ -771,8 +771,8 @@ struct module_ {
 	unsigned id, idx_used, indexing_threshold, arity, max_depth;
 	int if_depth;
 	prolog_flags flags;
-	bool ifs_blocked[MAX_ARITY];
-	bool ifs_done[MAX_ARITY];
+	bool ifs_blocked[MAX_IF_DEPTH];
+	bool ifs_done[MAX_IF_DEPTH];
 	bool user_ops:1;
 	bool prebuilt:1;
 	bool make_public:1;

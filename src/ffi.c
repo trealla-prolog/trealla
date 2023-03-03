@@ -17,7 +17,8 @@
 // These are pseudo tags just used here...
 
 enum {
-	TAG_INT8=TAG_END+1,
+	TAG_VOID=TAG_END+1,
+	TAG_INT8,
 	TAG_INT16,
 	TAG_INT32,
 	TAG_INT64,
