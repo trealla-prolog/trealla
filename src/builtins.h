@@ -100,8 +100,9 @@ bool fn_iso_integer_1(query *q);
 
 cell *get_var(query *q, cell *c, pl_idx_t c_ctx);
 
-#define deref(q,c,c_ctx)									\
-	!is_var(c) ? q->latest_ctx = (c_ctx), (c) :		\
+#define deref(q,c,c_ctx) \
+	is_indirect(c) ? q->latest_ctx = (c)->var_ctx, (c)->val_ptr : \
+	!is_var(c) ? q->latest_ctx = (c_ctx), (c) : \
 	get_var(q, c, c_ctx)
 
 #define GET_RAW_ARG(n,p) \

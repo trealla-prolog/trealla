@@ -1423,13 +1423,7 @@ static bool dcg_expansion(parser *p)
 			break;
 
 		q->latest_ctx = e->c.var_ctx;
-		cell *c;
-
-		if (is_indirect(&e->c)) {
-			c = e->c.val_ptr;
-		} else
-			c = deref(q, &e->c, e->c.var_ctx);
-
+		cell *c = deref(q, &e->c, e->c.var_ctx);
 		src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
 		strcat(src, ".");
 		break;
@@ -1518,13 +1512,7 @@ static bool term_expansion(parser *p)
 			continue;
 
 		q->latest_ctx = e->c.var_ctx;
-		cell *c;
-
-		if (is_indirect(&e->c)) {
-			c = e->c.val_ptr;
-		} else
-			c = deref(q, &e->c, e->c.var_ctx);
-
+		cell *c = deref(q, &e->c, e->c.var_ctx);
 		src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
 		strcat(src, ".");
 		break;
@@ -1627,13 +1615,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 			continue;
 
 		q->latest_ctx = e->c.var_ctx;
-		cell *c;
-
-		if (is_indirect(&e->c)) {
-			c = e->c.val_ptr;
-		} else
-			c = deref(q, &e->c, e->c.var_ctx);
-
+		cell *c = deref(q, &e->c, e->c.var_ctx);
 		q->varnames = true;
 		src = print_term_to_strbuf(q, c, q->latest_ctx, 1);
 		//printf("*** newgoal=%s\n", src);

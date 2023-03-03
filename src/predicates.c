@@ -6636,10 +6636,6 @@ static bool fn_sys_unifiable_3(query *q)
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
 		cell *c = deref(q, &e->c, e->c.var_ctx);
-
-		if (is_indirect(c))
-			c = c->val_ptr;
-
 		cell *tmp = malloc(sizeof(cell)*(2+c->nbr_cells));
 		check_heap_error(tmp);
 		make_struct(tmp, g_unify_s, fn_iso_unify_2, 2, 1+c->nbr_cells);
