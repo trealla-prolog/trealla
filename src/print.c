@@ -396,26 +396,6 @@ static void reformat_float(query * q, char *tmpbuf, pl_flt_t v)
 	*dst = '\0';
 }
 
-static int find_binding(query *q, pl_idx_t var_nbr, pl_idx_t tmp_ctx)
-{
-	const frame *f = GET_FRAME(q->st.curr_frame);
-
-	for (pl_idx_t i = 0; i < f->actual_slots; i++) {
-		const slot *e = GET_SLOT(f, i);
-
-		if (!is_var(&e->c))
-			continue;
-
-		if (e->c.var_ctx != tmp_ctx)
-			continue;
-
-		if (e->c.var_nbr == var_nbr)
-			return i;
-	}
-
-	return ERR_IDX;
-}
-
 static unsigned count_non_anons(const bool *mask, unsigned bit)
 {
 	unsigned bits = 0;
@@ -427,7 +407,6 @@ static unsigned count_non_anons(const bool *mask, unsigned bit)
 
 	return bits;
 }
-
 
 static const char *varformat2(char *tmpbuf, size_t tmpbuf_len, cell *c, unsigned nv_start)
 {
