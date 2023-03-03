@@ -608,7 +608,7 @@ static bool do_stream_property(query *q)
 			return false;
 
 		cell tmp;
-		make_int(&tmp, (size_t)str->fp);
+		make_uint(&tmp, (size_t)str->fp);
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		return ok;
