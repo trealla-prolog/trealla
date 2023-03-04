@@ -530,9 +530,9 @@ struct prolog_state_ {
 	db_entry *curr_dbe;
 	miter *iter, *f_iter;
 	module *m, *prev_m;
-	cell *key;
 
 	union {
+		cell *key;
 		int64_t cnt;
 		struct { uint32_t v1, v2; };
 	};
