@@ -1422,7 +1422,6 @@ static bool dcg_expansion(parser *p)
 		if (is_empty(&e->c))
 			break;
 
-		q->latest_ctx = e->c.var_ctx;
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
 		strcat(src, ".");
