@@ -1206,6 +1206,62 @@ static bool fn_atanh_1(query *q)
 	return true;
 }
 
+static bool fn_erf_1(query *q)
+{
+	CHECK_CALC();
+	GET_FIRST_ARG(p1_tmp,any);
+	CLEANUP cell p1 = eval(q, p1_tmp);
+
+	if (is_smallint(&p1)) {
+		q->accum.val_float = erf((pl_flt_t)p1.val_int);
+		q->accum.tag = TAG_DOUBLE;
+	} else if (is_float(&p1)) {
+		q->accum.val_float = erf(p1.val_float);
+		if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "undefined");
+		q->accum.tag = TAG_DOUBLE;
+	} else if (is_var(&p1)) {
+		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
+	} else {
+		return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable");
+	}
+
+	if (is_float(&q->accum) && isinf(q->accum.val_float))
+		return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "undefined");
+
+	if (is_float(&q->accum) && isnan(q->accum.val_float))
+		return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "undefined");
+
+	return true;
+}
+
+static bool fn_erfc_1(query *q)
+{
+	CHECK_CALC();
+	GET_FIRST_ARG(p1_tmp,any);
+	CLEANUP cell p1 = eval(q, p1_tmp);
+
+	if (is_smallint(&p1)) {
+		q->accum.val_float = 1.0 - erf((pl_flt_t)p1.val_int);
+		q->accum.tag = TAG_DOUBLE;
+	} else if (is_float(&p1)) {
+		q->accum.val_float = 1.0 - erf(p1.val_float);
+		if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "undefined");
+		q->accum.tag = TAG_DOUBLE;
+	} else if (is_var(&p1)) {
+		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
+	} else {
+		return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable");
+	}
+
+	if (is_float(&q->accum) && isinf(q->accum.val_float))
+		return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "undefined");
+
+	if (is_float(&q->accum) && isnan(q->accum.val_float))
+		return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "undefined");
+
+	return true;
+}
+
 static bool fn_iso_copysign_2(query *q)
 {
 	CHECK_CALC();
@@ -2779,6 +2835,9 @@ builtins g_evaluable_bifs[] =
 	{"asinh", 1, fn_asinh_1, "+number,-float", false, true, BLAH},
 	{"acosh", 1, fn_acosh_1, "+number,-float", false, true, BLAH},
 	{"atanh", 1, fn_atanh_1, "+number,-float", false, true, BLAH},
+
+	{"erf", 1, fn_erf_1, "+number,-float", false, true, BLAH},
+	{"erfc", 1, fn_erfc_1, "+number,-float", false, true, BLAH},
 
 	{"atan2", 2, fn_iso_atan2_2, "+number,+number,-float", true, true, BLAH},
 	{"copysign", 2, fn_iso_copysign_2, "+number,-number", true, true, BLAH},
