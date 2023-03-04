@@ -7,9 +7,9 @@
 		... //0
 	]).
 
-:- use_module(library(apply)).
-:- use_module(library(lists)).
 :- use_module(library(error)).
+:- use_module(library(iso_ext)).
+:- use_module(library(lists), [append/3, member/2]).
 
 expand_term((H --> B), Out) :- !,
 	dcg_translate((H --> B), Out), !.
@@ -152,15 +152,31 @@ user:term_expansion(Term0, Term) :-
     dcg_rule(Term0, Term).
 */
 
+%% seq(Seq)//
+%
 % Describes a sequence
+seq(Xs, Cs0,Cs) :-
+   var(Xs),
+   Cs0 == [],
+   !,
+   Xs = [],
+   Cs0 = Cs.
 seq([]) --> [].
 seq([E|Es]) --> [E], seq(Es).
 
+%% seqq(SeqOfSeqs)//
+%
 % Describes a sequence of sequences
 seqq([]) --> [].
 seqq([Es|Ess]) --> seq(Es), seqq(Ess).
 
+%% ...//
+%
 % Describes an arbitrary number of elements
+...(Cs0,Cs) :-
+   Cs0 == [],
+   !,
+   Cs0 = Cs.
 ... --> [] | [_], ... .
 
 /*

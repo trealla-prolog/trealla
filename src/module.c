@@ -540,6 +540,7 @@ bool do_use_module_1(module *curr_m, cell *p)
 		    || !strcmp(name, "terms")
 		    || !strcmp(name, "types")
 			|| !strcmp(name, "iso_ext")
+			|| !strcmp(name, "loader")
 		    || !strcmp(name, "files"))
 			return true;
 
