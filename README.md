@@ -502,7 +502,7 @@ Non-standard predicates
 	cpu_time/1                  # cpu_time(-Var) elapsed CPU time in secs as float
 
 	sleep/1                     # sleep time in secs
-	delay/1                     # sleep time for ms
+	delay/1                     # sleep time in ms
 	split/4                     # split(+string,+sep,?left,?right)
 	pid/1
 	shell/1

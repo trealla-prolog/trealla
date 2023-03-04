@@ -4533,15 +4533,25 @@ static bool fn_sleep_1(query *q)
 	if (q->retry)
 		return true;
 
-	GET_FIRST_ARG(p1,integer);
+	GET_FIRST_ARG(p1,number);
+
+	if (is_negative(p1))
+		return true;
 
 	if (is_bigint(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
 
-	if (q->is_task)
-		return do_yield(q, get_smallint(p1)*1000);
+	unsigned ms = 0;
 
-	sleep((unsigned)get_smallint(p1));
+	if (is_float(p1))
+		ms = (unsigned)(get_float(p1) * 1000);
+	else
+		ms = get_smalluint(p1) * 1000;
+
+	if (q->is_task)
+		return do_yield(q, ms);
+
+	msleep(ms);
 	return true;
 }
 
@@ -7839,8 +7849,8 @@ builtins g_other_bifs[] =
 	{"use_module", 1, fn_use_module_1, "+term", false, false, BLAH},
 	{"use_module", 2, fn_use_module_2, "+term,+list", false, false, BLAH},
 
-	{"sleep", 1, fn_sleep_1, "+secs", false, false, BLAH},
-	{"delay", 1, fn_delay_1, "+ms", false, false, BLAH},
+	{"sleep", 1, fn_sleep_1, "+number", false, false, BLAH},
+	{"delay", 1, fn_delay_1, "+number", false, false, BLAH},
 	{"shell", 1, fn_shell_1, "+atom", false, false, BLAH},
 	{"shell", 2, fn_shell_2, "+atom,-integer", false, false, BLAH},
 
