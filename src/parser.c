@@ -1396,53 +1396,29 @@ static bool dcg_expansion(parser *p)
 
 	query *q = create_query(p->m, false);
 	check_error(q);
-	char *dst = print_canonical_to_strbuf(q, p->cl->cells, 0, 0);
-	SB(s);
-	SB_sprintf(s, "dcg_translate((%s),_TermOut).", dst);
-	free(dst);
 
-	parser *p2 = create_parser(p->m);
-	check_error(p2, destroy_query(q));
-	p2->line_nbr = p->line_nbr;
-	p2->skip = true;
-	p2->srcptr = SB_cstr(s);
-	tokenize(p2, false, false);
-	xref_rule(p2->m, p2->cl, NULL);
-	execute(q, p2->cl->cells, p2->cl->nbr_vars);
-	SB_free(s);
-	frame *f = GET_FIRST_FRAME();
-	char *src = NULL;
+	cell tmp[1+p->cl->cells->nbr_cells+1+1];
+	make_struct(tmp, index_from_pool(p->pl, "dcg_translate"), 0, 2, p->cl->cells->nbr_cells+1);
+	copy_cells(tmp+1, p->cl->cells, p->cl->cells->nbr_cells);
+	make_var(tmp+1+p->cl->cells->nbr_cells, g_anon_s, p->cl->nbr_vars);
+	make_end(tmp+1+p->cl->cells->nbr_cells+1);
+	execute(q, tmp, p->cl->nbr_vars+1);
 
-	for (unsigned i = 0; i < p2->cl->nbr_vars; i++) {
-		if (strcmp(p2->vartab.var_name[i], "_TermOut"))
-			continue;
-
-		slot *e = GET_SLOT(f, i);
-
-		if (is_empty(&e->c))
-			break;
-
-		cell *c = deref(q, &e->c, e->c.var_ctx);
-		src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
-		strcat(src, ".");
-		break;
-	}
+	cell *c = deref(q, &tmp[1+p->cl->cells->nbr_cells], 0);
+	char *src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
+	strcat(src, ".");
 
 	if (!src) {
-		destroy_parser(p2);
 		destroy_query(q);
 		p->error = true;
 		return false;
 	}
 
-	reset(p2);
+	parser *p2 = create_parser(p->m);
+	check_error(p2, destroy_query(q));
 	p2->srcptr = src;
 	tokenize(p2, false, false);
-	xref_rule(p2->m, p2->cl, NULL);
-
-	//printf("[%s] *** GE %s\n", p2->m->name, src);
-	//DUMP_TERM("GE", p2->cl->cells, 0);
-
+	//xref_rule(p2->m, p2->cl, NULL);
 	free(src);
 
 	clear_rule(p->cl);
