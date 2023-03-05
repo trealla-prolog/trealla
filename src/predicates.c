@@ -5363,7 +5363,7 @@ static bool fn_await_0(query *q)
 		}
 
 		if (!did_something)
-			msleep(1);
+			msleep(0);
 		else
 			break;
 	}
