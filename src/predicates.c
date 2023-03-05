@@ -4565,8 +4565,11 @@ static bool fn_delay_1(query *q)
 
 	GET_FIRST_ARG(p1,integer);
 
-	if (is_negative(p1))
+	if (is_zero(p1))
 		return true;
+
+	if (is_negative(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
 
 	if (is_bigint(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
