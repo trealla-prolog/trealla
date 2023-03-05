@@ -4562,6 +4562,9 @@ static bool fn_delay_1(query *q)
 
 	GET_FIRST_ARG(p1,integer);
 
+	if (is_negative(p1))
+		return true;
+
 	if (is_bigint(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
 
@@ -5310,7 +5313,7 @@ static bool fn_wait_0(query *q)
 		}
 
 		if (!did_something)
-			msleep(1);
+			msleep(0);
 	}
 
 	return true;
