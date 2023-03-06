@@ -2840,7 +2840,6 @@ static bool process_term(parser *p, cell *p1)
 		return false;
 	}
 
-	dbe->pl = p->pl;
 	check_first_cut(&dbe->cl);
 	dbe->cl.is_fact = !get_logical_body(dbe->cl.cells);
 	return true;

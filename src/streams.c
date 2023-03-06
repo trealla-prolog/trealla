@@ -6890,6 +6890,7 @@ static bool fn_set_stream_2(query *q)
 	return false;
 }
 
+#if 0
 static bool fn_engine_create_4(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -6945,12 +6946,33 @@ static bool fn_engine_create_4(query *q)
 	str->is_engine = true;
 	str->pat = deep_clone_to_heap(q, p1, p1_ctx);
 	str->goal = deep_clone_to_heap(q, p2, p2_ctx);
-	str->q = create_query(str->engine->user_m, true);
+	str->q = create_query(str->engine->user_m, false);
+	str->q->pl = str->engine;
 
 	cell tmp ;
 	make_int(&tmp, n);
 	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
 	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool fn_engine_call_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	GET_NEXT_ARG(p1,callable);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_engine)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
+
+	cell *tmp = clone_to_heap(str->q, true, p1, 2);
+	check_heap_error(tmp);
+	pl_idx_t nbr_cells = 1+p1->nbr_cells;
+	make_struct(tmp+nbr_cells++, g_sys_drop_barrier, fn_sys_drop_barrier, 0, 0);
+	make_call(str->q, tmp+nbr_cells);
+	check_heap_error(push_call_barrier(str->q));
+	execute(str->q, tmp, MAX_ARITY);
+	return true;
 }
 
 static bool fn_engine_next_2(query *q)
@@ -6977,6 +6999,7 @@ static bool fn_engine_destroy_1(query *q)
 
 	return fn_iso_close_1(q);
 }
+#endif
 
 builtins g_files_bifs[] =
 {
@@ -7104,9 +7127,12 @@ builtins g_files_bifs[] =
 	{"map_list", 2, fn_map_list_2, "+stream,?list", false, false, BLAH},
 	{"map_close", 1, fn_map_close_1, "+stream", false, false, BLAH},
 
+#if 0
 	{"engine_create", 4, fn_engine_create_4, "+term,:callable,--stream,+list", false, false, BLAH},
+	{"engine_call", 2, fn_engine_call_2, "+stream,+callable", false, false, BLAH},
 	{"engine_next", 2, fn_engine_next_2, "+stream,-term", false, false, BLAH},
 	{"engine_destroy", 1, fn_engine_destroy_1, "+stream", false, false, BLAH},
+#endif
 
 	{"$capture_output", 0, fn_sys_capture_output_0, NULL, false, false, BLAH},
 	{"$capture_output_to_chars", 1, fn_sys_capture_output_to_chars_1, "-chars", false, false, BLAH},

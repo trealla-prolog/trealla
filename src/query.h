@@ -142,17 +142,7 @@ inline static bool can_view(query *q, size_t ugen, const db_entry *dbe)
 	if (dbe->cl.dgen_erased && (dbe->cl.dgen_erased <= ugen))
 		return false;
 
-	// Prolog engine can see itself...
-
-	if (dbe->pl == q->pl)
-		return true;
-
-	// and it's parent (all of it???)...
-
-	if (dbe->pl == q->pl->parent)
-		return true;
-
-	return false;
+	return true;
 }
 
 struct reflist_ {

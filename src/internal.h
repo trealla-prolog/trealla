@@ -428,7 +428,6 @@ struct clause_ {
 
 struct db_entry_ {
 	predicate *owner;
-	prolog *pl;
 	db_entry *prev, *next;
 	const char *filename;
 
@@ -805,7 +804,6 @@ struct prolog_ {
 	module *modmap[MAX_MODULES];
 	struct { pl_idx_t tab1[MAX_IGNORES], tab2[MAX_IGNORES]; };
 	char tmpbuf[8192];
-	prolog *parent;
 	module *modules, *system_m, *user_m, *curr_m, *dcgs;
 	var_item *tabs;
 	parser *p;
