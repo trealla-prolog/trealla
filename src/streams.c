@@ -1560,7 +1560,6 @@ static bool fn_iso_close_1(query *q)
 		map_destroy(str->keyval);
 		str->keyval = NULL;
 	} else if (str->is_engine) {
-		pl_destroy(str->engine);
 		destroy_query(str->q);
 		str->keyval = NULL;
 	} else
@@ -6890,7 +6889,7 @@ static bool fn_set_stream_2(query *q)
 	return false;
 }
 
-#if 0
+#if 1
 static bool fn_engine_create_4(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -6941,13 +6940,10 @@ static bool fn_engine_create_4(query *q)
 			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 	}
 
-	str->engine = pl_clone(q->pl);
-	check_heap_error(str->engine);
 	str->is_engine = true;
 	str->pat = deep_clone_to_heap(q, p1, p1_ctx);
 	str->goal = deep_clone_to_heap(q, p2, p2_ctx);
-	str->q = create_query(str->engine->user_m, false);
-	str->q->pl = str->engine;
+	str->q = create_query(q->st.m, false);
 
 	cell tmp ;
 	make_int(&tmp, n);
@@ -7127,7 +7123,7 @@ builtins g_files_bifs[] =
 	{"map_list", 2, fn_map_list_2, "+stream,?list", false, false, BLAH},
 	{"map_close", 1, fn_map_close_1, "+stream", false, false, BLAH},
 
-#if 0
+#if 1
 	{"engine_create", 4, fn_engine_create_4, "+term,:callable,--stream,+list", false, false, BLAH},
 	{"engine_call", 2, fn_engine_call_2, "+stream,+callable", false, false, BLAH},
 	{"engine_next", 2, fn_engine_next_2, "+stream,-term", false, false, BLAH},

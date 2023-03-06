@@ -572,7 +572,6 @@ struct stream_ {
 	union {
 		FILE *fp;
 		map *keyval;
-		prolog *engine;
 	};
 
 	string_buffer sb_buf;
