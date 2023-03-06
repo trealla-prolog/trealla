@@ -6959,7 +6959,7 @@ static bool fn_engine_call_2(query *q)
 	stream *str = &q->pl->streams[n];
 
 	if (!str->is_engine)
-		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_an_engine");
 
 	cell *tmp = clone_to_heap(str->q, true, p1, 2);
 	check_heap_error(tmp);
@@ -6979,7 +6979,7 @@ static bool fn_engine_next_2(query *q)
 	stream *str = &q->pl->streams[n];
 
 	if (!str->is_engine)
-		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_an_engine");
 
 	return false;
 }
@@ -6991,7 +6991,7 @@ static bool fn_engine_destroy_1(query *q)
 	stream *str = &q->pl->streams[n];
 
 	if (!str->is_engine)
-		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_an_engine");
 
 	return fn_iso_close_1(q);
 }
