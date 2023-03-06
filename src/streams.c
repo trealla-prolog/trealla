@@ -6889,7 +6889,7 @@ static bool fn_set_stream_2(query *q)
 	return false;
 }
 
-#if 1
+#if 0
 static bool fn_engine_create_4(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -7123,7 +7123,7 @@ builtins g_files_bifs[] =
 	{"map_list", 2, fn_map_list_2, "+stream,?list", false, false, BLAH},
 	{"map_close", 1, fn_map_close_1, "+stream", false, false, BLAH},
 
-#if 1
+#if 0
 	{"engine_create", 4, fn_engine_create_4, "+term,:callable,--stream,+list", false, false, BLAH},
 	{"engine_call", 2, fn_engine_call_2, "+stream,+callable", false, false, BLAH},
 	{"engine_next", 2, fn_engine_next_2, "+stream,-term", false, false, BLAH},
