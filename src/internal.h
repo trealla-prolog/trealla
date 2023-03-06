@@ -428,6 +428,7 @@ struct clause_ {
 
 struct db_entry_ {
 	predicate *owner;
+	prolog *pl;
 	db_entry *prev, *next;
 	const char *filename;
 
@@ -580,7 +581,15 @@ struct stream_ {
 	map *alias;
 	void *sslptr;
 	parser *p;
-	char srcbuf[STREAM_BUFLEN];
+
+	union {
+		char srcbuf[STREAM_BUFLEN];
+		struct {
+			cell *pat, *goal;
+			query *q;
+		};
+	};
+
 	size_t data_len, alloc_nbytes;
 	int64_t i_empty;
 	double d_empty;

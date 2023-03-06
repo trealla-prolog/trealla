@@ -2505,6 +2505,7 @@ static bool fn_iso_asserta_1(query *q)
 	if (!dbe)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify_static_procedure");
 
+	dbe->pl = p->pl;
 	p->cl->cidx = 0;
 	return true;
 }
@@ -2564,6 +2565,7 @@ static bool fn_iso_assertz_1(query *q)
 	if (!dbe)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify_static_procedure");
 
+	dbe->pl = p->pl;
 	p->cl->cidx = 0;
 	return true;
 }
@@ -3807,6 +3809,7 @@ static bool do_asserta_2(query *q)
 	if (!dbe)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify_static_procedure");
 
+	dbe->pl = p->pl;
 	p->cl->cidx = 0;
 
 	if (!is_var(p2)) {
@@ -3905,6 +3908,7 @@ static bool do_assertz_2(query *q)
 	if (!dbe)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify_static_procedure");
 
+	dbe->pl = p->pl;
 	p->cl->cidx = 0;
 
 	if (!is_var(p2)) {

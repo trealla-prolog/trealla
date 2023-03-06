@@ -1561,6 +1561,7 @@ static bool fn_iso_close_1(query *q)
 		str->keyval = NULL;
 	} else if (str->is_engine) {
 		pl_destroy(str->engine);
+		destroy_query(str->q);
 		str->keyval = NULL;
 	} else
 		net_close(str);
@@ -6891,8 +6892,8 @@ static bool fn_set_stream_2(query *q)
 
 static bool fn_engine_create_4(query *q)
 {
-	GET_FIRST_ARG(xp1,any);
-	GET_NEXT_ARG(xp2,callable);
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,callable);
 	GET_NEXT_ARG(p3,var);
 	GET_NEXT_ARG(p4,list_or_nil);
 
@@ -6939,16 +6940,30 @@ static bool fn_engine_create_4(query *q)
 			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 	}
 
-	// This checks for a valid list (it allows for partial but acyclic lists)...
-
 	str->engine = pl_clone(q->pl);
 	check_heap_error(str->engine);
 	str->is_engine = true;
+	str->pat = deep_clone_to_heap(q, p1, p1_ctx);
+	str->goal = deep_clone_to_heap(q, p2, p2_ctx);
+	str->q = create_query(str->engine->user_m, true);
 
 	cell tmp ;
 	make_int(&tmp, n);
 	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
 	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool fn_engine_next_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	GET_NEXT_ARG(p1,any);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_engine)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
+
+	return false;
 }
 
 static bool fn_engine_destroy_1(query *q)
@@ -7090,6 +7105,7 @@ builtins g_files_bifs[] =
 	{"map_close", 1, fn_map_close_1, "+stream", false, false, BLAH},
 
 	{"engine_create", 4, fn_engine_create_4, "+term,:callable,--stream,+list", false, false, BLAH},
+	{"engine_next", 2, fn_engine_next_2, "+stream,-term", false, false, BLAH},
 	{"engine_destroy", 1, fn_engine_destroy_1, "+stream", false, false, BLAH},
 
 	{"$capture_output", 0, fn_sys_capture_output_0, NULL, false, false, BLAH},
