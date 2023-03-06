@@ -572,6 +572,7 @@ struct stream_ {
 	union {
 		FILE *fp;
 		map *keyval;
+		prolog *engine;
 	};
 
 	string_buffer sb_buf;
@@ -599,6 +600,7 @@ struct stream_ {
 	bool pipe:1;
 	bool is_memory:1;
 	bool is_map:1;
+	bool is_engine:1;
 };
 
 struct page_ {
@@ -794,6 +796,7 @@ struct prolog_ {
 	module *modmap[MAX_MODULES];
 	struct { pl_idx_t tab1[MAX_IGNORES], tab2[MAX_IGNORES]; };
 	char tmpbuf[8192];
+	prolog *parent;
 	module *modules, *system_m, *user_m, *curr_m, *dcgs;
 	var_item *tabs;
 	parser *p;

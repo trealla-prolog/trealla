@@ -364,106 +364,19 @@ void load_builtins(prolog *pl)
 	}
 }
 
-static void g_init()
+static bool g_init(prolog *pl)
 {
 	char *ptr = getenv("TPL_LIBRARY_PATH");
+	bool error = false;
 
 	if (ptr) {
 		g_tpl_lib = strdup(ptr);
 		convert_path(g_tpl_lib);
 	}
-}
-
-void pl_destroy(prolog *pl)
-{
-	if (!pl) return;
-
-	destroy_module(pl->system_m);
-	destroy_module(pl->user_m);
-
-	while (pl->modules)
-		destroy_module(pl->modules);
-
-	map_destroy(pl->fortab);
-	map_destroy(pl->biftab);
-	map_destroy(pl->symtab);
-	map_destroy(pl->keyval);
-	map_destroy(pl->help);
-	free(pl->pool);
-	free(pl->tabs);
-	pl->pool_offset = 0;
-
-	if (!--g_tpl_count)
-		g_destroy();
-
-	for (int i = 0; i < MAX_STREAMS; i++) {
-		stream *str = &pl->streams[i];
-
-		if (str->fp) {
-			if ((str->fp != stdin)
-				&& (str->fp != stdout)
-				&& (str->fp != stderr)
-			) {
-				if (str->is_map)
-					map_destroy(str->keyval);
-				else if (str->fp && (i > 2))
-					fclose(str->fp);
-			}
-
-			if (str->p)
-				destroy_parser(str->p);
-
-			map_destroy(str->alias);
-			free(str->mode);
-			free(str->filename);
-			free(str->data);
-		}
-	}
-
-	memset(pl->streams, 0, sizeof(pl->streams));
-
-	free(pl);
-}
-
-prolog *pl_create()
-{
-	//printf("*** sizeof(cell) = %u bytes\n", (unsigned)sizeof(cell));
-	//assert(sizeof(cell) == 24);
-
-	prolog *pl = calloc(1, sizeof(prolog));
-
-	if (!g_tpl_count++)
-		g_init();
-
-	if (!g_tpl_lib) {
-		g_tpl_lib = realpath(g_argv0, NULL);
-
-		if (g_tpl_lib) {
-			char *src = g_tpl_lib + strlen(g_tpl_lib) - 1;
-
-			while ((src != g_tpl_lib) && (*src != PATH_SEP_CHAR))
-				src--;
-
-			*src = '\0';
-			g_tpl_lib = realloc(g_tpl_lib, strlen(g_tpl_lib)+40);
-			strcat(g_tpl_lib, "/library");
-		} else
-			g_tpl_lib = strdup("../library");
-	}
 
 	pl->pool = calloc(1, pl->pool_size=INITIAL_POOL_SIZE);
-	if (!pl->pool) return NULL;
-	bool error = false;
-
 	CHECK_SENTINEL(pl->symtab = map_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
-	CHECK_SENTINEL(pl->keyval = map_create((void*)fake_strcmp, (void*)keyvalfree, NULL), NULL);
 	map_allow_dups(pl->symtab, false);
-	map_allow_dups(pl->keyval, false);
-
-	if (error) {
-		free(pl->pool);
-		return NULL;
-	}
 
 	CHECK_SENTINEL(index_from_pool(pl, "dummy"), ERR_IDX);
 	CHECK_SENTINEL(g_false_s = index_from_pool(pl, "false"), ERR_IDX);
@@ -520,8 +433,100 @@ prolog *pl_create()
 	CHECK_SENTINEL(g_as_s = index_from_pool(pl, "as"), ERR_IDX);
 	CHECK_SENTINEL(g_colon_s = index_from_pool(pl, ":"), ERR_IDX);
 
-	if (error)
+	return error;
+}
+
+void pl_destroy(prolog *pl)
+{
+	if (!pl) return;
+
+	if (!pl->parent) {
+		destroy_module(pl->system_m);
+		destroy_module(pl->user_m);
+		map_destroy(pl->biftab);
+		map_destroy(pl->symtab);
+		free(pl->pool);
+	}
+
+	while (pl->modules)
+		destroy_module(pl->modules);
+
+	map_destroy(pl->fortab);
+	map_destroy(pl->keyval);
+	map_destroy(pl->help);
+	free(pl->tabs);
+	pl->pool_offset = 0;
+
+	if (!--g_tpl_count)
+		g_destroy();
+
+	for (int i = 0; i < MAX_STREAMS; i++) {
+		stream *str = &pl->streams[i];
+
+		if (str->fp) {
+			if ((str->fp != stdin)
+				&& (str->fp != stdout)
+				&& (str->fp != stderr)
+			) {
+				if (str->is_map)
+					map_destroy(str->keyval);
+				else if (str->is_engine)
+					pl_destroy(str->engine);
+				else if (str->fp && (i > 2))
+					fclose(str->fp);
+			}
+
+			if (str->p)
+				destroy_parser(str->p);
+
+			map_destroy(str->alias);
+			free(str->mode);
+			free(str->filename);
+			free(str->data);
+		}
+	}
+
+	memset(pl->streams, 0, sizeof(pl->streams));
+	free(pl);
+}
+
+prolog *pl_clone(prolog *parent)
+{
+	//printf("*** sizeof(cell) = %u bytes\n", (unsigned)sizeof(cell));
+	//assert(sizeof(cell) == 24);
+
+	prolog *pl = calloc(1, sizeof(prolog));
+	if (!pl) return NULL;
+
+	pl->parent = parent;
+	bool error = false;
+
+	if (!g_tpl_count++)
+		g_init(pl);
+
+	if (!g_tpl_lib) {
+		g_tpl_lib = realpath(g_argv0, NULL);
+
+		if (g_tpl_lib) {
+			char *src = g_tpl_lib + strlen(g_tpl_lib) - 1;
+
+			while ((src != g_tpl_lib) && (*src != PATH_SEP_CHAR))
+				src--;
+
+			*src = '\0';
+			g_tpl_lib = realloc(g_tpl_lib, strlen(g_tpl_lib)+40);
+			strcat(g_tpl_lib, "/library");
+		} else
+			g_tpl_lib = strdup("../library");
+	}
+
+	CHECK_SENTINEL(pl->keyval = map_create((void*)fake_strcmp, (void*)keyvalfree, NULL), NULL);
+	map_allow_dups(pl->keyval, false);
+
+	if (error) {
+		free(pl->pool);
 		return NULL;
+	}
 
 	pl->streams[0].fp = stdin;
 	CHECK_SENTINEL(pl->streams[0].alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
@@ -552,31 +557,40 @@ prolog *pl_create()
 	pl->fortab = map_create((void*)fake_strcmp, NULL, NULL);
 	map_allow_dups(pl->fortab, false);
 
-	pl->biftab = map_create((void*)fake_strcmp, NULL, NULL);
-	map_allow_dups(pl->biftab, false);
+	if (!parent) {
+		pl->biftab = map_create((void*)fake_strcmp, NULL, NULL);
+		map_allow_dups(pl->biftab, false);
 
-	if (pl->biftab)
-		load_builtins(pl);
+		if (pl->biftab)
+			load_builtins(pl);
+	} else {
+		pl->biftab = parent->biftab;
+	}
 
 	//printf("Library: %s\n", g_tpl_lib);
 
-	pl->system_m = create_module(pl, "system");
+	if (!parent) {
+		pl->system_m = create_module(pl, "system");
 
-	if (!pl->system_m || pl->system_m->error) {
-		pl_destroy(pl);
-		pl = NULL;
-		return pl;
+		if (!pl->system_m || pl->system_m->error) {
+			pl_destroy(pl);
+			pl = NULL;
+			return pl;
+		}
+
+		pl->user_m = create_module(pl, "user");
+
+		if (!pl->user_m || pl->user_m->error) {
+			pl_destroy(pl);
+			pl = NULL;
+			return pl;
+		}
+
+		pl->curr_m = pl->user_m;
+	} else {
+		pl->system_m = parent->system_m;
+		pl->user_m = parent->user_m;
 	}
-
-	pl->user_m = create_module(pl, "user");
-
-	if (!pl->user_m || pl->user_m->error) {
-		pl_destroy(pl);
-		pl = NULL;
-		return pl;
-	}
-
-	pl->curr_m = pl->user_m;
 
 	pl->current_input = 0;		// STDIN
 	pl->current_output = 1;		// STDOUT
@@ -584,45 +598,53 @@ prolog *pl_create()
 
 	// In user space...
 
-	set_multifile_in_db(pl->user_m, "$predicate_property", 2);
-	set_multifile_in_db(pl->user_m, ":-", 1);
+	if (!parent) {
+		set_multifile_in_db(pl->user_m, "$predicate_property", 2);
+		set_multifile_in_db(pl->user_m, ":-", 1);
 
-	set_dynamic_in_db(pl->user_m, "$record_key", 2);
-	set_dynamic_in_db(pl->user_m, "$current_op", 3);
-	set_dynamic_in_db(pl->user_m, "$predicate_property", 2);
-	set_dynamic_in_db(pl->user_m, "$current_prolog_flag", 2);
-	set_dynamic_in_db(pl->user_m, "$stream_property", 2);
-	set_dynamic_in_db(pl->user_m, "initialization", 1);
-	set_dynamic_in_db(pl->user_m, ":-", 1);
+		set_dynamic_in_db(pl->user_m, "$record_key", 2);
+		set_dynamic_in_db(pl->user_m, "$current_op", 3);
+		set_dynamic_in_db(pl->user_m, "$predicate_property", 2);
+		set_dynamic_in_db(pl->user_m, "$current_prolog_flag", 2);
+		set_dynamic_in_db(pl->user_m, "$stream_property", 2);
+		set_dynamic_in_db(pl->user_m, "initialization", 1);
+		set_dynamic_in_db(pl->user_m, ":-", 1);
 
-	pl->user_m->prebuilt = true;
-	const char *save_filename = pl->user_m->filename;
+		pl->user_m->prebuilt = true;
+		const char *save_filename = pl->user_m->filename;
 
-	// Load some common libraries...
+		// Load some common libraries...
 
-	for (library *lib = g_libs; lib->name; lib++) {
-		if (!strcmp(lib->name, "builtins")			// Always need this
-			|| !strcmp(lib->name, "apply")			// Common
-			|| !strcmp(lib->name, "lists")			// Common
-			|| !strcmp(lib->name, "freeze")			// Common
-			|| !strcmp(lib->name, "dif")			// Common?
-			|| !strcmp(lib->name, "when")			// Common?
-			) {
-			size_t len = *lib->len;
-			char *src = malloc(len+1);
-			check_error(src, pl_destroy(pl));
-			memcpy(src, lib->start, len);
-			src[len] = '\0';
-			SB(s1);
-			SB_sprintf(s1, "library/%s", lib->name);
-			module *m = load_text(pl->user_m, src, SB_cstr(s1));
-			SB_free(s1);
-			free(src);
-			check_error(m, pl_destroy(pl));
+		for (library *lib = g_libs; lib->name; lib++) {
+			if (!strcmp(lib->name, "builtins")			// Always need this
+				|| !strcmp(lib->name, "apply")			// Common
+				|| !strcmp(lib->name, "lists")			// Common
+				|| !strcmp(lib->name, "freeze")			// Common
+				|| !strcmp(lib->name, "dif")			// Common?
+				|| !strcmp(lib->name, "when")			// Common?
+				) {
+				size_t len = *lib->len;
+				char *src = malloc(len+1);
+				check_error(src, pl_destroy(pl));
+				memcpy(src, lib->start, len);
+				src[len] = '\0';
+				SB(s1);
+				SB_sprintf(s1, "library/%s", lib->name);
+				module *m = load_text(pl->user_m, src, SB_cstr(s1));
+				SB_free(s1);
+				free(src);
+				check_error(m, pl_destroy(pl));
+			}
 		}
+
+		pl->user_m->filename = save_filename;
+		pl->user_m->prebuilt = false;
 	}
 
-	pl->user_m->filename = save_filename;
-	pl->user_m->prebuilt = false;
 	return pl;
+}
+
+prolog *pl_create()
+{
+	return pl_clone(NULL);
 }

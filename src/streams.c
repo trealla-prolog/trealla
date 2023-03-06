@@ -1559,11 +1559,14 @@ static bool fn_iso_close_1(query *q)
 	if (str->is_map) {
 		map_destroy(str->keyval);
 		str->keyval = NULL;
+	} else if (str->is_engine) {
+		pl_destroy(str->engine);
+		str->keyval = NULL;
 	} else
 		net_close(str);
 
 	map_destroy(str->alias);
-	str->alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL);
+	str->alias = NULL; //map_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	free(str->mode);
 	free(str->filename);
 	free(str->data);
@@ -6894,6 +6897,80 @@ static bool fn_set_stream_2(query *q)
 	return false;
 }
 
+static bool fn_engine_create_4(query *q)
+{
+	GET_FIRST_ARG(xp1,any);
+	GET_NEXT_ARG(xp2,callable);
+	GET_NEXT_ARG(p3,var);
+	GET_NEXT_ARG(p4,list_or_nil);
+
+	int n = new_stream(q->pl);
+
+	if (n < 0)
+		return throw_error(q, q->st.curr_cell, q->st.curr_frame, "resource_error", "too_many_streams");
+
+	stream *str = &q->pl->streams[n];
+	if (!str->alias) str->alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL);
+	LIST_HANDLER(p4);
+
+	while (is_list(p4)) {
+		cell *h = LIST_HEAD(p4);
+		cell *c = deref(q, h, p4_ctx);
+		pl_idx_t c_ctx = q->latest_ctx;
+
+		if (is_var(c))
+			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+
+		cell *name = c + 1;
+		name = deref(q, name, c_ctx);
+
+		if (!CMP_STR_TO_CSTR(q, c, "alias")) {
+			if (is_var(name))
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+
+			if (!is_atom(name))
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+
+			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
+				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
+
+			map_set(str->alias, DUP_STR(q, name), NULL);
+		} else {
+			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+		}
+
+		p4 = LIST_TAIL(p4);
+		p4 = deref(q, p4, p4_ctx);
+		p4_ctx = q->latest_ctx;
+
+		if (is_var(p4))
+			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+	}
+
+	// This checks for a valid list (it allows for partial but acyclic lists)...
+
+	str->engine = pl_clone(q->pl);
+	check_heap_error(str->engine);
+	str->is_engine = true;
+
+	cell tmp ;
+	make_int(&tmp, n);
+	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool fn_engine_destroy_1(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_engine)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
+
+	return fn_iso_close_1(q);
+}
+
 builtins g_files_bifs[] =
 {
 	// ISO...
@@ -7019,6 +7096,9 @@ builtins g_files_bifs[] =
 	{"map_count", 2, fn_map_count_2, "+stream,-integer", false, false, BLAH},
 	{"map_list", 2, fn_map_list_2, "+stream,?list", false, false, BLAH},
 	{"map_close", 1, fn_map_close_1, "+stream", false, false, BLAH},
+
+	{"xengine_create", 4, fn_engine_create_4, "+term,:callable,--stream,+list", false, false, BLAH},
+	{"xengine_destroy", 1, fn_engine_destroy_1, "+stream", false, false, BLAH},
 
 	{"$capture_output", 0, fn_sys_capture_output_0, NULL, false, false, BLAH},
 	{"$capture_output_to_chars", 1, fn_sys_capture_output_to_chars_1, "-chars", false, false, BLAH},

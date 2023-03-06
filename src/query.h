@@ -131,7 +131,7 @@ inline static pl_idx_t queuen_used(const query *q) { return q->qp[q->st.qnbr]; }
 inline static cell *get_queuen(query *q) { return q->queue[q->st.qnbr]; }
 inline static cell *take_queuen(query *q) { cell *save = q->queue[q->st.qnbr]; q->queue[q->st.qnbr] = NULL; return save; }
 
-inline static bool can_view(size_t ugen, const db_entry *dbe)
+inline static bool can_view(query *q, size_t ugen, const db_entry *dbe)
 {
 	if (dbe->cl.is_deleted)
 		return false;
@@ -142,7 +142,22 @@ inline static bool can_view(size_t ugen, const db_entry *dbe)
 	if (dbe->cl.dgen_erased && (dbe->cl.dgen_erased <= ugen))
 		return false;
 
-	return true;
+	// Prolog engine can itself...
+
+	if (dbe->owner->m->pl == q->pl)
+		return true;
+
+	// and it's parent (all of it???)...
+
+	if (dbe->owner->m->pl == q->pl->parent)
+		return true;
+
+	// and the root...
+
+	if (!dbe->owner->m->pl->parent)
+		return true;
+
+	return false;
 }
 
 struct reflist_ {

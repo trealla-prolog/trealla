@@ -315,7 +315,7 @@ bool has_next_key(query *q)
 		const frame *f = GET_CURR_FRAME();
 
 		while (map_is_next(q->st.iter, (void**)&dbe)) {
-			if (!can_view(f->ugen, dbe)) {
+			if (!can_view(q, f->ugen, dbe)) {
 				db_entry *save_dbe = q->st.curr_dbe;
 				next_key(q);
 				q->st.curr_dbe = save_dbe;
@@ -1384,7 +1384,7 @@ bool match_rule(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract
 	for (; q->st.curr_dbe; q->st.curr_dbe = q->st.curr_dbe->next) {
 		CHECK_INTERRUPT();
 
-		if (!can_view(f->ugen, q->st.curr_dbe))
+		if (!can_view(q, f->ugen, q->st.curr_dbe))
 			continue;
 
 		clause *cl = &q->st.curr_dbe->cl;
@@ -1492,7 +1492,7 @@ bool match_clause(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retra
 	for (; q->st.curr_dbe; q->st.curr_dbe = q->st.curr_dbe->next) {
 		CHECK_INTERRUPT();
 
-		if (!can_view(f->ugen, q->st.curr_dbe))
+		if (!can_view(q, f->ugen, q->st.curr_dbe))
 			continue;
 
 		clause *cl = &q->st.curr_dbe->cl;
@@ -1572,7 +1572,7 @@ static bool match_head(query *q)
 	for (; q->st.curr_dbe; next_key(q)) {
 		CHECK_INTERRUPT();
 
-		if (!can_view(f->ugen, q->st.curr_dbe))
+		if (!can_view(q, f->ugen, q->st.curr_dbe))
 			continue;
 
 		clause *cl = &q->st.curr_dbe->cl;

@@ -5,6 +5,7 @@
 typedef struct prolog_ prolog;
 typedef struct {} pl_sub_query;
 
+extern prolog *pl_clone(prolog*);
 extern prolog *pl_create();
 extern void pl_destroy(prolog*);
 

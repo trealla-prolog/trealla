@@ -975,4 +975,4 @@ operating system threads in a C-wrapper program by calling
 ```
 
 Each such *prolog* instance is thread-safe. Such instances could use
-Unix domain sockets for IPC.
+Unix domain sockets for IPC. See *src/trealla.h* for API.

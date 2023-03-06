@@ -2212,6 +2212,10 @@ bool do_retract(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract
 		return match;
 
 	db_entry *dbe = q->st.curr_dbe;
+
+	if (dbe->owner->m->pl != q->pl)
+		return throw_error(q, p1, p1_ctx, "permission_error", "modify,static_procedure");
+
 	retract_from_db(dbe);
 	bool last_match = (is_retract == DO_RETRACT) && !has_next_key(q);
 	stash_me(q, &dbe->cl, last_match);
@@ -2274,6 +2278,9 @@ static bool do_abolish(query *q, cell *c_orig, cell *c, bool hard)
 	if (!pr) return true;
 
 	if (!pr->is_dynamic)
+		return throw_error(q, c_orig, q->st.curr_frame, "permission_error", "modify,static_procedure");
+
+	if (pr->m->pl != q->pl)
 		return throw_error(q, c_orig, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
 	for (db_entry *dbe = pr->head; dbe; dbe = dbe->next)
@@ -7505,6 +7512,7 @@ static void load_properties(module *m)
 	format_property(m, tmpbuf, sizeof(tmpbuf), "ignore", 1, "meta_predicate(ignore(0))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "call", 1, "meta_predicate(call(0))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "findall", 3, "meta_predicate(findall(?,0,-))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "engine_create", 4, "meta_predicate(engine_create(?,0,-,?))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "|", 2, "meta_predicate((:|+))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "time", 1, "meta_predicate(time(0))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "call_nth", 2, "meta_predicate(call_nth(0,?))"); SB_strcat(pr, tmpbuf);
