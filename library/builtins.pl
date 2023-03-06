@@ -435,9 +435,9 @@ open(F, M, S) :- open(F, M, S, []).
 
 :- help(open(+atom,+atom,--stream), [iso(true)]).
 
-xengine_create(T, G, S) :- engine_create(T, G, S, []).
+engine_create(T, G, S) :- engine_create(T, G, S, []).
 
-:- help(xengine_create(+term,+callable,--stream), [iso(false)]).
+:- help(engine_create(+term,+callable,--stream), [iso(false)]).
 
 samsort(L, R) :- msort(L, R).
 

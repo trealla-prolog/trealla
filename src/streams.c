@@ -6485,15 +6485,7 @@ static bool fn_map_create_2(query *q)
 			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 
-			if (!CMP_STR_TO_CSTR(q, name, "current_input")) {
-				q->pl->current_input = n;
-			} else if (!CMP_STR_TO_CSTR(q, name, "current_output")) {
-				q->pl->current_output = n;
-			} else if (!CMP_STR_TO_CSTR(q, name, "current_error")) {
-				q->pl->current_error = n;
-			} else {
-				map_set(str->alias, DUP_STR(q, name), NULL);
-			}
+			map_set(str->alias, DUP_STR(q, name), NULL);
 		} else {
 			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 		}
@@ -7097,8 +7089,8 @@ builtins g_files_bifs[] =
 	{"map_list", 2, fn_map_list_2, "+stream,?list", false, false, BLAH},
 	{"map_close", 1, fn_map_close_1, "+stream", false, false, BLAH},
 
-	{"xengine_create", 4, fn_engine_create_4, "+term,:callable,--stream,+list", false, false, BLAH},
-	{"xengine_destroy", 1, fn_engine_destroy_1, "+stream", false, false, BLAH},
+	{"engine_create", 4, fn_engine_create_4, "+term,:callable,--stream,+list", false, false, BLAH},
+	{"engine_destroy", 1, fn_engine_destroy_1, "+stream", false, false, BLAH},
 
 	{"$capture_output", 0, fn_sys_capture_output_0, NULL, false, false, BLAH},
 	{"$capture_output_to_chars", 1, fn_sys_capture_output_to_chars_1, "-chars", false, false, BLAH},
