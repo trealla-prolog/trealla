@@ -466,10 +466,12 @@ int get_stream(query *q, cell *p1)
 	if (!(p1->flags & FLAG_INT_STREAM))
 		return -1;
 
-	if (!q->pl->streams[get_smallint(p1)].fp)
+	int n = get_smallint(p1);
+
+	if (!q->pl->streams[n].fp)
 		return -1;
 
-	return get_smallint(p1);
+	return n;
 }
 
 static bool is_closed_stream(prolog *pl, cell *p1)
@@ -1560,7 +1562,7 @@ static bool fn_iso_close_1(query *q)
 		map_destroy(str->keyval);
 		str->keyval = NULL;
 	} else if (str->is_engine) {
-		destroy_query(str->q);
+		destroy_query(str->engine);
 		str->keyval = NULL;
 	} else
 		net_close(str);
@@ -6941,9 +6943,7 @@ static bool fn_engine_create_4(query *q)
 	}
 
 	str->is_engine = true;
-	str->pat = deep_clone_to_heap(q, p1, p1_ctx);
-	str->goal = deep_clone_to_heap(q, p2, p2_ctx);
-	str->q = create_query(q->st.m, false);
+	str->engine = create_query(q->st.m, true);
 
 	cell tmp ;
 	make_int(&tmp, n);
@@ -6961,13 +6961,10 @@ static bool fn_engine_call_2(query *q)
 	if (!str->is_engine)
 		return throw_error(q, pstr, pstr_ctx, "type_error", "not_an_engine");
 
-	cell *tmp = clone_to_heap(str->q, true, p1, 2);
-	check_heap_error(tmp);
-	pl_idx_t nbr_cells = 1+p1->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_sys_drop_barrier, fn_sys_drop_barrier, 0, 0);
-	make_call(str->q, tmp+nbr_cells);
-	check_heap_error(push_call_barrier(str->q));
-	execute(str->q, tmp, MAX_ARITY);
+	cell *tmp = deep_clone_to_heap(q, p1, p1_ctx);
+	cell *tmp2 = clone_to_heap(q, 0, tmp, 1);
+	make_end(tmp2+tmp2->nbr_cells);
+	execute(str->engine, tmp2, MAX_ARITY);
 	return true;
 }
 

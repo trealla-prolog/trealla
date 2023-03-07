@@ -572,7 +572,7 @@ struct stream_ {
 	union {
 		FILE *fp;
 		map *keyval;
-		query *q;
+		query *engine;
 	};
 
 	string_buffer sb_buf;
@@ -580,12 +580,7 @@ struct stream_ {
 	map *alias;
 	void *sslptr;
 	parser *p;
-
-	union {
-		char srcbuf[STREAM_BUFLEN];
-		struct { cell *pat, *goal; };
-	};
-
+	char srcbuf[STREAM_BUFLEN];
 	size_t data_len, alloc_nbytes;
 	int64_t i_empty;
 	double d_empty;

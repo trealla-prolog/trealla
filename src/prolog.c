@@ -480,7 +480,7 @@ void pl_destroy(prolog *pl)
 				if (str->is_map)
 					map_destroy(str->keyval);
 				else if (str->is_engine)
-					destroy_query(str->q);
+					destroy_query(str->engine);
 				else if (str->fp && (i > 2))
 					fclose(str->fp);
 			}
