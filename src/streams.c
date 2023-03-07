@@ -6943,8 +6943,9 @@ static bool fn_engine_create_4(query *q)
 
 	str->first_time = str->is_engine = true;
 	str->engine = create_query(q->st.m, true);
-	str->engine->cur_engine = n;
+	str->engine->curr_engine = n;
 	str->engine->is_engine = true;
+	str->engine->trace = q->trace;
 
 	cell *p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, false);
 	unify(q, q->st.curr_cell, q->st.curr_frame, p0, q->st.curr_frame);
@@ -6981,6 +6982,12 @@ static bool fn_engine_next_2(query *q)
 	if (!str->is_engine)
 		return throw_error(q, pstr, pstr_ctx, "type_error", "not_an_engine");
 
+	if (str->curr_yield && 0) {
+		cell *tmp = deep_copy_to_heap(q, str->curr_yield, 0, false);
+		str->curr_yield = NULL;
+		return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
+	}
+
 	if (str->first_time) {
 		str->first_time = false;
 
@@ -7002,7 +7009,8 @@ static bool fn_engine_yield_1(query *q)
 	if (!q->is_engine)
 		return throw_error(q, q->st.curr_cell, q->st.curr_frame, "permission_error", "not_an_engine");
 
-	q->cur_yield = deep_clone_to_heap(q, p1, p1_ctx);
+	stream *str = &q->pl->streams[q->curr_engine];
+	str->curr_yield = deep_clone_to_heap(q, p1, p1_ctx);
 	return true;
 }
 
@@ -7014,7 +7022,7 @@ static bool fn_engine_self_1(query *q)
 		return false;
 
 	cell tmp2;
-	make_int(&tmp2, q->cur_engine);
+	make_int(&tmp2, q->curr_engine);
 	tmp2.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
 	return unify(q, p1, p1_ctx, &tmp2, q->st.curr_frame);
 }

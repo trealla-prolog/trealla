@@ -583,7 +583,7 @@ struct stream_ {
 
 	union {
 		char srcbuf[STREAM_BUFLEN];
-		cell *pattern;
+		cell *pattern, *curr_yield;
 	};
 
 	size_t data_len, alloc_nbytes;
@@ -643,7 +643,7 @@ struct query_ {
 	slot *slots;
 	choice *choices;
 	trail *trails;
-	cell *tmp_heap, *last_arg, *variable_names, *ball, *suspect, *cur_yield;
+	cell *tmp_heap, *last_arg, *variable_names, *ball, *suspect;
 	cell *queue[MAX_QUEUES];
 	page *pages;
 	slot *save_e;
@@ -659,7 +659,7 @@ struct query_ {
 	uint64_t step, qid, tmo_msecs, cgen;
 	uint64_t get_started, autofail_n;
 	uint64_t time_cpu_started, time_cpu_last_started;
-	unsigned max_depth, print_idx, tab_idx, varno, tab0_varno, cur_engine;
+	unsigned max_depth, print_idx, tab_idx, varno, tab0_varno, curr_engine;
 	pl_idx_t tmphp, latest_ctx, popp, variable_names_ctx;
 	pl_idx_t frames_size, slots_size, trails_size, choices_size;
 	pl_idx_t max_choices, max_frames, max_slots, max_trails;
