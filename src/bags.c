@@ -10,25 +10,6 @@
 #include "prolog.h"
 #include "query.h"
 
-static void init_queuen(query *q)
-{
-	free(q->queue[q->st.qnbr]);
-	q->queue[q->st.qnbr] = NULL;
-	q->qp[q->st.qnbr] = 0;
-}
-
-static void grab_queuen(query *q)
-{
-	q->st.qnbr++;
-	init_queuen(q);
-}
-
-static void drop_queuen(query *q)
-{
-	init_queuen(q);
-	q->st.qnbr--;
-}
-
 static bool is_ground(cell *c)
 {
 	pl_idx_t nbr_cells = c->nbr_cells;

@@ -1563,7 +1563,7 @@ static bool fn_iso_close_1(query *q)
 		str->keyval = NULL;
 	} else if (str->is_engine) {
 		destroy_query(str->engine);
-		str->keyval = NULL;
+		str->engine = NULL;
 	} else
 		net_close(str);
 
@@ -6891,11 +6891,10 @@ static bool fn_set_stream_2(query *q)
 	return false;
 }
 
-#if 0
 static bool fn_engine_create_4(query *q)
 {
-	GET_FIRST_ARG(p1,any);
-	GET_NEXT_ARG(p2,callable);
+	GET_FIRST_ARG(xp1,any);
+	GET_NEXT_ARG(xp2,callable);
 	GET_NEXT_ARG(p3,var);
 	GET_NEXT_ARG(p4,list_or_nil);
 
@@ -6942,30 +6941,32 @@ static bool fn_engine_create_4(query *q)
 			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 	}
 
-	str->is_engine = true;
+	str->first_time = str->is_engine = true;
 	str->engine = create_query(q->st.m, true);
 
-	cell tmp ;
-	make_int(&tmp, n);
-	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
-	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
-}
+	cell *p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, false);
+	unify(q, q->st.curr_cell, q->st.curr_frame, p0, q->st.curr_frame);
+	check_heap_error(p0);
 
-static bool fn_engine_call_2(query *q)
-{
-	GET_FIRST_ARG(pstr,stream);
-	GET_NEXT_ARG(p1,callable);
-	int n = get_stream(q, pstr);
-	stream *str = &q->pl->streams[n];
+	query *saveq = q;
+	q = str->engine;
 
-	if (!str->is_engine)
-		return throw_error(q, pstr, pstr_ctx, "type_error", "not_an_engine");
+	// Operating in engine from here...
 
-	cell *tmp = deep_clone_to_heap(q, p1, p1_ctx);
-	cell *tmp2 = clone_to_heap(q, 0, tmp, 1);
-	make_end(tmp2+tmp2->nbr_cells);
-	execute(str->engine, tmp2, MAX_ARITY);
-	return true;
+	GET_FIRST_ARG0(p1,any,p0);
+	GET_NEXT_ARG(p2,callable);
+
+	cell *tmp = clone_to_heap(q, true, p2, 1);
+	pl_idx_t nbr_cells = 1 + p2->nbr_cells;
+	make_call(q, tmp+nbr_cells);
+	check_heap_error(push_barrier(q));
+	q->st.curr_cell = tmp;
+	str->pattern = deep_clone_to_heap(q, p1, p1_ctx);
+
+	cell tmp2;
+	make_int(&tmp2, n);
+	tmp2.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+	return unify(saveq, p3, p3_ctx, &tmp2, saveq->st.curr_frame);
 }
 
 static bool fn_engine_next_2(query *q)
@@ -6978,7 +6979,18 @@ static bool fn_engine_next_2(query *q)
 	if (!str->is_engine)
 		return throw_error(q, pstr, pstr_ctx, "type_error", "not_an_engine");
 
-	return false;
+	if (str->first_time) {
+		str->first_time = false;
+
+		if (!execute(str->engine, str->engine->st.curr_cell, MAX_ARITY))
+			return false;
+	} else {
+		if (!query_redo(str->engine))
+			return false;
+	}
+
+	cell *tmp = deep_copy_to_heap(str->engine, str->pattern, 0, false);
+	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
 
 static bool fn_engine_destroy_1(query *q)
@@ -6992,7 +7004,6 @@ static bool fn_engine_destroy_1(query *q)
 
 	return fn_iso_close_1(q);
 }
-#endif
 
 builtins g_files_bifs[] =
 {
@@ -7120,12 +7131,9 @@ builtins g_files_bifs[] =
 	{"map_list", 2, fn_map_list_2, "+stream,?list", false, false, BLAH},
 	{"map_close", 1, fn_map_close_1, "+stream", false, false, BLAH},
 
-#if 0
 	{"engine_create", 4, fn_engine_create_4, "+term,:callable,--stream,+list", false, false, BLAH},
-	{"engine_call", 2, fn_engine_call_2, "+stream,+callable", false, false, BLAH},
 	{"engine_next", 2, fn_engine_next_2, "+stream,-term", false, false, BLAH},
 	{"engine_destroy", 1, fn_engine_destroy_1, "+stream", false, false, BLAH},
-#endif
 
 	{"$capture_output", 0, fn_sys_capture_output_0, NULL, false, false, BLAH},
 	{"$capture_output_to_chars", 1, fn_sys_capture_output_to_chars_1, "-chars", false, false, BLAH},

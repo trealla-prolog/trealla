@@ -580,7 +580,12 @@ struct stream_ {
 	map *alias;
 	void *sslptr;
 	parser *p;
-	char srcbuf[STREAM_BUFLEN];
+
+	union {
+		char srcbuf[STREAM_BUFLEN];
+		cell *pattern;
+	};
+
 	size_t data_len, alloc_nbytes;
 	int64_t i_empty;
 	double d_empty;
@@ -598,6 +603,7 @@ struct stream_ {
 	bool udp:1;
 	bool ssl:1;
 	bool pipe:1;
+	bool first_time:1;
 	bool is_memory:1;
 	bool is_map:1;
 	bool is_engine:1;
