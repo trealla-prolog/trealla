@@ -265,6 +265,20 @@ bool check_slot(query *q, unsigned cnt)
 	return true;
 }
 
+static bool can_view(query *q, size_t ugen, const db_entry *dbe)
+{
+	if (dbe->cl.is_deleted)
+		return false;
+
+	if (dbe->cl.dgen_created > ugen)
+		return false;
+
+	if (dbe->cl.dgen_erased && (dbe->cl.dgen_erased <= ugen))
+		return false;
+
+	return true;
+}
+
 static void setup_key(query *q)
 {
 	if (!q->pl->opt)
