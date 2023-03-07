@@ -6993,8 +6993,6 @@ static bool fn_engine_create_4(query *q)
 	q->st.curr_cell = tmp;
 	str->pattern = deep_clone_to_heap(q, p1, p1_ctx);
 
-	execute(str->engine, str->engine->st.curr_cell, MAX_ARITY);
-
 	cell tmp2;
 	make_int(&tmp2, n);
 	tmp2.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
@@ -7019,6 +7017,7 @@ static bool fn_engine_next_2(query *q)
 
 	if (str->first_time) {
 		str->first_time = false;
+		execute(str->engine, str->engine->st.curr_cell, MAX_ARITY);
 	} else {
 		if (!query_redo(str->engine))
 			return false;
