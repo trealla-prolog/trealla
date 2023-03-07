@@ -160,14 +160,13 @@ bool pl_redo(pl_sub_query *subq)
 	return false;
 }
 
-bool pl_yield(pl_sub_query *subq)
+bool pl_yield(pl_sub_query *subq, unsigned ms)
 {
 	if (!subq)
 		return false;
 
 	query *q = (query*)subq;
-
-	do_yield(q, 0);
+	do_yield(q, ms);
 	return true;
 }
 
