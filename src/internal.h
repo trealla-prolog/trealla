@@ -583,7 +583,9 @@ struct stream_ {
 
 	union {
 		char srcbuf[STREAM_BUFLEN];
-		cell *pattern, *curr_yield;
+		struct {
+			cell *pattern, *curr_yield;
+		};
 	};
 
 	size_t data_len, alloc_nbytes;

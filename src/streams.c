@@ -6942,6 +6942,8 @@ static bool fn_engine_create_4(query *q)
 	}
 
 	str->first_time = str->is_engine = true;
+	str->curr_yield = NULL;
+
 	str->engine = create_query(q->st.m, true);
 	str->engine->curr_engine = n;
 	str->engine->is_engine = true;
@@ -6966,6 +6968,8 @@ static bool fn_engine_create_4(query *q)
 	q->st.curr_cell = tmp;
 	str->pattern = deep_clone_to_heap(q, p1, p1_ctx);
 
+	execute(str->engine, str->engine->st.curr_cell, MAX_ARITY);
+
 	cell tmp2;
 	make_int(&tmp2, n);
 	tmp2.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
@@ -6982,7 +6986,7 @@ static bool fn_engine_next_2(query *q)
 	if (!str->is_engine)
 		return throw_error(q, pstr, pstr_ctx, "type_error", "not_an_engine");
 
-	if (str->curr_yield && 0) {
+	if (str->curr_yield) {
 		cell *tmp = deep_copy_to_heap(q, str->curr_yield, 0, false);
 		str->curr_yield = NULL;
 		return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
@@ -6990,9 +6994,6 @@ static bool fn_engine_next_2(query *q)
 
 	if (str->first_time) {
 		str->first_time = false;
-
-		if (!execute(str->engine, str->engine->st.curr_cell, MAX_ARITY))
-			return false;
 	} else {
 		if (!query_redo(str->engine))
 			return false;
