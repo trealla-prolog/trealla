@@ -459,6 +459,8 @@ Non-standard predicates
 
 	engine_create/[3-4]
 	engine_next/2
+	engine_yield/1
+	engine_self/1
 	is_engine/1
 	engine_destroy/1
 
