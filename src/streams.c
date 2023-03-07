@@ -650,6 +650,22 @@ static bool do_stream_property(query *q)
 		return ok;
 	}
 
+	if (!CMP_STR_TO_CSTR(q, p1, "engine")) {
+		cell tmp;
+		check_heap_error(make_cstring(&tmp, str->is_engine?"true":"false"));
+		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
+		unshare_cell(&tmp);
+		return ok;
+	}
+
+	if (!CMP_STR_TO_CSTR(q, p1, "map")) {
+		cell tmp;
+		check_heap_error(make_cstring(&tmp, str->is_map?"true":"false"));
+		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
+		unshare_cell(&tmp);
+		return ok;
+	}
+
 	if (!CMP_STR_TO_CSTR(q, p1, "bom") && !str->binary) {
 		cell tmp;
 		check_heap_error(make_cstring(&tmp, str->bom?"true":"false"));
@@ -786,7 +802,7 @@ static void clear_streams_properties(query *q)
 static const char *s_properties =
 	"alias,file_name,mode,encoding,type,line_count,"			\
 	"position,reposition,end_of_stream,eof_action,"				\
-	"input,output,newline";
+	"input,output,newline,engine,map";
 
 static bool fn_iso_stream_property_2(query *q)
 {
