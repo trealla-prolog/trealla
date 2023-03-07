@@ -464,6 +464,7 @@ Non-standard predicates
 	engine_fetch/1
 	engine_self/1
 	is_engine/1
+	current_engine/1
 	engine_destroy/1
 
 	directory_files/2

@@ -443,6 +443,9 @@ engine_post(E, T, R) :-
 	engine_post(E, T),
 	engine_next(E, R).
 
+current_engine(E) :-
+	stream_property(E, engine(true)).
+
 samsort(L, R) :- msort(L, R).
 
 :- help(samsort(+list,?list), [iso(false)]).
