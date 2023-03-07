@@ -160,14 +160,25 @@ bool pl_redo(pl_sub_query *subq)
 	return false;
 }
 
-bool pl_yield(pl_sub_query *subq, unsigned ms)
+bool pl_yield_at(pl_sub_query *subq, uint64_t time_in_ms)
 {
 	if (!subq)
 		return false;
 
 	query *q = (query*)subq;
-	do_yield(q, ms);
+	q->yield_at = get_time_in_usec() / 1000;
+	q->yield_at += time_in_ms > 0 ? time_in_ms : 1;
 	return true;
+}
+
+bool pl_did_yield(pl_sub_query *subq)
+{
+	if (!subq)
+		return false;
+
+	query *q = (query*)subq;
+	uint64_t now = get_time_in_usec() / 1000;
+	return now > q->yield_at;
 }
 
 bool pl_done(pl_sub_query *subq)

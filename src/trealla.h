@@ -1,5 +1,6 @@
 #pragma once
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 
 typedef struct prolog_ prolog;
@@ -15,7 +16,8 @@ extern bool pl_isatty(prolog*);
 extern FILE *pl_stdin(prolog*);
 
 extern bool pl_query(prolog*, const char *expr, pl_sub_query **q);
-extern bool pl_yield(pl_sub_query *q, unsigned ms);
+extern bool pl_yield_at(pl_sub_query *q, uint64_t time_in_ms);
+extern bool pl_did_yield(pl_sub_query *q);
 extern bool pl_redo(pl_sub_query *q);
 extern bool pl_done(pl_sub_query *q);	// only call if redo still active
 
