@@ -6984,7 +6984,7 @@ static bool fn_engine_next_2(query *q)
 	stream *str = &q->pl->streams[n];
 
 	if (!str->is_engine)
-		return throw_error(q, pstr, pstr_ctx, "type_error", "not_an_engine");
+		return throw_error(q, pstr, pstr_ctx, "existence_error", "not_an_engine");
 
 	if (str->curr_yield) {
 		cell *tmp = deep_copy_to_heap(q, str->curr_yield, 0, false);
@@ -7013,6 +7013,37 @@ static bool fn_engine_yield_1(query *q)
 	stream *str = &q->pl->streams[q->curr_engine];
 	str->curr_yield = deep_clone_to_heap(q, p1, p1_ctx);
 	return true;
+}
+
+static bool fn_engine_post_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	GET_NEXT_ARG(p1,any);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_engine)
+		return throw_error(q, pstr, pstr_ctx, "existence_error", "not_an_engine");
+
+	str->curr_yield = deep_clone_to_heap(q, p1, p1_ctx);
+	return true;
+}
+
+static bool fn_engine_fetch_1(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+
+	if (!q->is_engine)
+		return throw_error(q, q->st.curr_cell, q->st.curr_frame, "existence_error", "not_an_engine");
+
+	stream *str = &q->pl->streams[q->curr_engine];
+
+	if (!str->curr_yield)
+		return throw_error(q, q->st.curr_cell, q->st.curr_frame, "existence_error", "no_data");
+
+	cell *tmp = deep_copy_to_heap(q, str->curr_yield, 0, false);
+	str->curr_yield = NULL;
+	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
 
 static bool fn_engine_self_1(query *q)
@@ -7047,7 +7078,7 @@ static bool fn_engine_destroy_1(query *q)
 	stream *str = &q->pl->streams[n];
 
 	if (!str->is_engine)
-		return throw_error(q, pstr, pstr_ctx, "type_error", "not_an_engine");
+		return throw_error(q, pstr, pstr_ctx, "existence_error", "not_an_engine");
 
 	return fn_iso_close_1(q);
 }
@@ -7183,6 +7214,8 @@ builtins g_files_bifs[] =
 	{"is_engine", 1, fn_is_engine_1, "+term", false, false, BLAH},
 	{"engine_self", 1, fn_engine_self_1, "--stream", false, false, BLAH},
 	{"engine_yield", 1, fn_engine_yield_1, "+term", false, false, BLAH},
+	{"engine_post", 2, fn_engine_post_2, "+stream,+term", false, false, BLAH},
+	{"engine_fetch", 1, fn_engine_fetch_1, "-term", false, false, BLAH},
 	{"engine_destroy", 1, fn_engine_destroy_1, "+stream", false, false, BLAH},
 
 	{"$capture_output", 0, fn_sys_capture_output_0, NULL, false, false, BLAH},

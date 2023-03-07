@@ -439,6 +439,10 @@ engine_create(T, G, S) :- engine_create(T, G, S, []).
 
 :- help(engine_create(+term,+callable,--stream), [iso(false)]).
 
+engine_post(E, T, R) :-
+	engine_post(E, T),
+	engine_next(E, R).
+
 samsort(L, R) :- msort(L, R).
 
 :- help(samsort(+list,?list), [iso(false)]).

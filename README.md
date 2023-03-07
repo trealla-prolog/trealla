@@ -457,9 +457,11 @@ Non-standard predicates
 	setenv/2
 	unsetenv/1
 
-	engine_create/[3-4]
+	engine_create/[3,4]
 	engine_next/2
 	engine_yield/1
+	engine_post/[2,3]
+	engine_fetch/1
 	engine_self/1
 	is_engine/1
 	engine_destroy/1
