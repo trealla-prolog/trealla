@@ -7008,18 +7008,13 @@ static bool fn_engine_destroy_1(query *q)
 static bool fn_is_engine_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-
 	int n = get_stream(q, p1);
 
 	if (n < 0)
 		return false;
 
 	stream *str = &q->pl->streams[n];
-
-	if (!str->is_engine)
-		return false;
-
-	return true;
+	return str->is_engine;
 }
 
 builtins g_files_bifs[] =

@@ -457,6 +457,11 @@ Non-standard predicates
 	setenv/2
 	unsetenv/1
 
+	engine_create/[3-4]
+	engine_next/2
+	is_engine/1
+	engine_destroy/1
+
 	directory_files/2
 	delete_file/1
 	exists_file/1               # also file_exists/1
