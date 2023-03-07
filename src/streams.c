@@ -7005,6 +7005,23 @@ static bool fn_engine_destroy_1(query *q)
 	return fn_iso_close_1(q);
 }
 
+static bool fn_is_engine_1(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+
+	int n = get_stream(q, p1);
+
+	if (n < 0)
+		return false;
+
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_engine)
+		return false;
+
+	return true;
+}
+
 builtins g_files_bifs[] =
 {
 	// ISO...
@@ -7133,6 +7150,7 @@ builtins g_files_bifs[] =
 
 	{"engine_create", 4, fn_engine_create_4, "+term,:callable,--stream,+list", false, false, BLAH},
 	{"engine_next", 2, fn_engine_next_2, "+stream,-term", false, false, BLAH},
+	{"is_engine", 1, fn_is_engine_1, "+term", false, false, BLAH},
 	{"engine_destroy", 1, fn_engine_destroy_1, "+stream", false, false, BLAH},
 
 	{"$capture_output", 0, fn_sys_capture_output_0, NULL, false, false, BLAH},
