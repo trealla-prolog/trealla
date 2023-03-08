@@ -7242,6 +7242,15 @@ builtins g_files_bifs[] =
 	{"engine_fetch", 1, fn_engine_fetch_1, "-term", false, false, BLAH},
 	{"engine_destroy", 1, fn_engine_destroy_1, "+stream", false, false, BLAH},
 
+	{"mutex_create", 1, fn_iso_true_0, "+stream", false, false, BLAH},
+	{"mutex_create", 2, fn_iso_true_0, "+stream", false, false, BLAH},
+	{"with_mutex", 2, fn_iso_true_0, "+stream", false, false, BLAH},
+	{"mutex_lock", 1, fn_iso_true_0, "+stream", false, false, BLAH},
+	{"mutex_trylock", 1, fn_iso_true_0, "+stream", false, false, BLAH},
+	{"mutex_unlock", 1, fn_iso_true_0, "+stream", false, false, BLAH},
+	{"mutex_unlockall", 0, fn_iso_true_0, "+stream", false, false, BLAH},
+	{"mutex_destroy", 1, fn_iso_true_0, "+stream", false, false, BLAH},
+
 	{"$capture_output", 0, fn_sys_capture_output_0, NULL, false, false, BLAH},
 	{"$capture_output_to_chars", 1, fn_sys_capture_output_to_chars_1, "-chars", false, false, BLAH},
 	{"$capture_output_to_atom", 1, fn_sys_capture_output_to_atom_1, "-atom", false, false, BLAH},
