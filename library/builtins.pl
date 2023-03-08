@@ -437,6 +437,7 @@ open(F, M, S) :- open(F, M, S, []).
 
 engine_create(T, G, S) :- engine_create(T, G, S, []).
 
+:- meta_predicate(engine_create(?,0,-)).
 :- help(engine_create(+term,+callable,--stream), [iso(false)]).
 
 engine_post(E, T, R) :-
