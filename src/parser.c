@@ -3478,7 +3478,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 	return !p->error;
 }
 
-bool run(parser *p, const char *pSrc, bool dump)
+bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yield_time_in_ms)
 {
 	if ((*pSrc == '.') && !pSrc[1]) {
 		fprintf(stdout, "Error: syntax error, unexpected end of rule, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
@@ -3529,6 +3529,12 @@ bool run(parser *p, const char *pSrc, bool dump)
 			SB_free(src);
 			return false;
 		}
+
+		if (subq)
+			*subq = q;
+
+		if (yield_time_in_ms > 0)
+			do_yield_at(q, yield_time_in_ms);
 
 		p->pl->curr_query = q;
 		q->p = p;

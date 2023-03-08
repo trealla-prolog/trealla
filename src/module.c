@@ -1613,7 +1613,7 @@ module *load_text(module *m, const char *src, const char *filename)
 			SB(src);
 			SB_sprintf(src, "forall(%s:retract((:- initialization(__G_))), (__G_ -> true ; format('Warning: call(~w) failed~n', [__G_])))", p->m->name);
 
-			if (run(p, SB_cstr(src), false))
+			if (run(p, SB_cstr(src), false, NULL, 0))
 				p->m->pl->status = false;
 
 			SB_free(src);
@@ -1748,7 +1748,7 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including)
 			SB(src);
 			SB_sprintf(src, "forall(%s:retract((:- initialization(__G_))), (__G_ -> true ; format('Warning: call(~w) failed~n', [__G_])))", p->m->name);
 
-			if (run(p, SB_cstr(src), false))
+			if (run(p, SB_cstr(src), false, NULL, 0))
 				p->m->pl->status = false;
 
 			SB_free(src);
