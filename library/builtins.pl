@@ -447,7 +447,7 @@ engine_post(E, T, R) :-
 current_engine(E) :-
 	stream_property(E, engine(true)).
 
-mutex_proprty(M, P) :-
+mutex_property(M, P) :-
 	stream_property(M, mutex(true)),
 	stream_property(M, P).
 
