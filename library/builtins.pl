@@ -447,6 +447,10 @@ engine_post(E, T, R) :-
 current_engine(E) :-
 	stream_property(E, engine(true)).
 
+mutex_proprty(M, P) :-
+	stream_property(M, mutex(true)),
+	stream_property(M, P).
+
 samsort(L, R) :- msort(L, R).
 
 :- help(samsort(+list,?list), [iso(false)]).
