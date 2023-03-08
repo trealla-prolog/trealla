@@ -52,6 +52,7 @@ size_t slicecpy(char *dst, size_t dstlen, const char *src, size_t len)
 
 bool do_yield(query *q, int msecs)
 {
+	q->yield_at = 0;
 	q->yielded = true;
 	q->tmo_msecs = get_time_in_usec() / 1000;
 	q->tmo_msecs += msecs > 0 ? msecs : 1;
