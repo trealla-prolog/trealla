@@ -7017,6 +7017,8 @@ static bool fn_engine_next_2(query *q)
 	if (!str->is_engine)
 		return throw_error(q, pstr, pstr_ctx, "existence_error", "not_an_engine");
 
+	bool was_first_time = str->first_time;
+
 	if (str->first_time) {
 		str->first_time = false;
 		execute(str->engine, str->engine->st.curr_cell, MAX_ARITY);
@@ -7028,8 +7030,10 @@ static bool fn_engine_next_2(query *q)
 		return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 	}
 
-	if (!query_redo(str->engine))
-		return false;
+	if (!was_first_time) {
+		if (!query_redo(str->engine))
+			return false;
+	}
 
 	cell *tmp = deep_copy_to_heap(str->engine, str->pattern, 0, false);
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
