@@ -7017,19 +7017,19 @@ static bool fn_engine_next_2(query *q)
 	if (!str->is_engine)
 		return throw_error(q, pstr, pstr_ctx, "existence_error", "not_an_engine");
 
+	if (str->first_time) {
+		str->first_time = false;
+		execute(str->engine, str->engine->st.curr_cell, MAX_ARITY);
+	}
+
 	if (str->curr_yield) {
 		cell *tmp = deep_copy_to_heap(q, str->curr_yield, 0, false);
 		str->curr_yield = NULL;
 		return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 	}
 
-	if (str->first_time) {
-		str->first_time = false;
-		execute(str->engine, str->engine->st.curr_cell, MAX_ARITY);
-	} else {
-		if (!query_redo(str->engine))
-			return false;
-	}
+	if (!query_redo(str->engine))
+		return false;
 
 	cell *tmp = deep_copy_to_heap(str->engine, str->pattern, 0, false);
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
@@ -7043,8 +7043,14 @@ static bool fn_engine_yield_1(query *q)
 		return throw_error(q, q->st.curr_cell, q->st.curr_frame, "permission_error", "not_an_engine");
 
 	stream *str = &q->pl->streams[q->curr_engine];
+
+	if (q->retry && str->curr_yield)
+		return do_yield(q, 0);
+	else if (q->retry)
+		return true;
+
 	str->curr_yield = deep_clone_to_heap(q, p1, p1_ctx);
-	return true;
+	return do_yield(q, 0);
 }
 
 static bool fn_engine_post_2(query *q)
