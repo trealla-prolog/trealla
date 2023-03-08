@@ -14,6 +14,7 @@ bool push_catcher(query *q, enum q_retry type);
 bool do_retract(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract);
 bool do_read_term(query *q, stream *str, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, char *src);
 bool do_yield(query *q, int msecs);
+void do_yield_at(query *q, unsigned int time_in_ms);
 
 bool query_redo(query *q);
 bool has_next_key(query *q);

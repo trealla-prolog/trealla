@@ -9,6 +9,11 @@ CFLAGS =  -std=gnu99 -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' -O3 \
 
 LDFLAGS = -L/usr/local/lib -lm
 
+ifdef HOMEBREW_PREFIX
+LDFLAGS += -L$(HOMEBREW_PREFIX)/opt/libffi/lib -L$(HOMEBREW_PREFIX)/opt/openssl@3/lib
+CFLAGS += -I$(HOMEBREW_PREFIX)/opt/libffi/include -I$(HOMEBREW_PREFIX)/opt/openssl@3/include
+endif
+
 ifdef WASI
 CFLAGS += -std=c11 -Isrc/wasm \
 	-D_WASI_EMULATED_MMAN -D_WASI_EMULATED_SIGNAL \

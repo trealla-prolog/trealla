@@ -71,6 +71,8 @@ extern unsigned g_string_cnt, g_interned_cnt;
 
 #define STREAM_BUFLEN 1024
 
+#define YIELD_INTERVAL 10000	// Goal interval between yield checks
+
 #define MAX_OF(a,b) (a) > (b) ? (a) : (b)
 #define MIN_OF(a,b) (a) < (b) ? (a) : (b)
 
