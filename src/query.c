@@ -1730,7 +1730,8 @@ bool start(query *q)
 		q->before_hook_tp = q->st.tp;
 
 		if (is_builtin(q->st.curr_cell)) {
-			if (!q->st.curr_cell->fn_ptr) {		// ??
+			if (!q->st.curr_cell->fn_ptr
+				|| (q->st.curr_cell->fn_ptr == (void*)fn_iso_conjunction_2)) {
 				q->tot_goals--;
 				q->st.curr_cell++;
 				continue;

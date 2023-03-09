@@ -23,6 +23,7 @@ bool fn_iso_fail_0(query *q)
 
 bool fn_sys_drop_barrier(query *q)
 {
+	q->tot_goals--;
 	drop_barrier(q);
 	return true;
 }
@@ -41,6 +42,8 @@ void do_cleanup(query *q, cell *c, pl_idx_t c_ctx)
 
 bool fn_sys_cleanup_if_det_0(query *q)
 {
+	q->tot_goals--;
+
 	if (!q->cp)		// redundant
 		return true;
 
@@ -71,6 +74,8 @@ bool fn_sys_cleanup_if_det_0(query *q)
 
 bool fn_sys_cut_if_det_0(query *q)
 {
+	q->tot_goals--;
+
 	if (!q->cp)		// redundant
 		return true;
 
@@ -88,6 +93,7 @@ bool fn_sys_cut_if_det_0(query *q)
 
 bool fn_iso_invoke_2(query *q)
 {
+	q->tot_goals--;
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,callable);
 
@@ -108,7 +114,6 @@ bool fn_iso_invoke_2(query *q)
 	q->st.curr_cell = tmp;
 	q->st.curr_frame = p2_ctx;
 	q->st.m = q->save_m = m;
-	q->tot_goals--;
 	return true;
 }
 
@@ -341,8 +346,6 @@ bool fn_if_2(query *q)
 
 static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 {
-	q->tot_goals--;
-
 	if (q->retry) {
 		q->retry = QUERY_SKIP;
 		q->st.curr_cell = p3;
@@ -364,8 +367,6 @@ static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 
 static bool do_if_else(query *q, cell *p1, cell *p2, cell *p3)
 {
-	q->tot_goals--;
-
 	if (q->retry) {
 		q->retry = QUERY_SKIP;
 		q->st.curr_cell = p3;
@@ -387,6 +388,7 @@ static bool do_if_else(query *q, cell *p1, cell *p2, cell *p3)
 
 bool fn_if_3(query *q)
 {
+	q->tot_goals--;
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,callable);
 	GET_NEXT_ARG(p3,callable);
@@ -512,7 +514,6 @@ bool fn_sys_block_catcher_1(query *q)
 
 bool fn_iso_catch_3(query *q)
 {
-	q->tot_goals--;
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 
@@ -554,7 +555,6 @@ bool fn_iso_catch_3(query *q)
 
 bool fn_sys_call_cleanup_3(query *q)
 {
-	q->tot_goals--;
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 
@@ -689,7 +689,6 @@ bool find_exception_handler(query *q, char *ball)
 
 bool fn_iso_throw_1(query *q)
 {
-	q->tot_goals--;
 	GET_FIRST_ARG(p1,nonvar);
 	q->parens = q->numbervars = true;
 	q->quoted = true;
