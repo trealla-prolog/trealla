@@ -37,8 +37,8 @@ bool fn_iso_findall_3(query *q)
 
 	if (!q->retry) {
 		cell *p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, true);
-		unify(q, q->st.curr_cell, q->st.curr_frame, p0, q->st.curr_frame);
 		check_heap_error(p0);
+		unify(q, q->st.curr_cell, q->st.curr_frame, p0, q->st.curr_frame);
 		GET_FIRST_ARG0(p1,any,p0);
 		GET_NEXT_ARG(p2,callable);
 		GET_NEXT_ARG(p3,list_or_nil_or_var);
@@ -46,6 +46,7 @@ bool fn_iso_findall_3(query *q)
 		grab_queuen(q);
 		assert(q->st.qnbr < MAX_QUEUES);
 		cell *tmp = clone_to_heap(q, true, p2, 2+p1->nbr_cells+2);
+		check_heap_error(tmp);
 		pl_idx_t nbr_cells = 1 + p2->nbr_cells;
 		make_struct(tmp+nbr_cells++, g_sys_queue_s, fn_sys_queuen_2, 2, 1+p1->nbr_cells);
 		make_int(tmp+nbr_cells++, q->st.qnbr);
@@ -102,7 +103,7 @@ bool fn_iso_findall_3(query *q)
 	drop_queuen(q);
 	check_heap_error(l);
 	bool ok = unify(q, xp3, xp3_ctx, l, q->st.curr_frame);
-	frame *f = GET_CURR_FRAME();
+	const frame *f = GET_CURR_FRAME();
 
 	if (!ok || !f->overflow || is_ground(l)) {
 		q->st.end_findall = false;

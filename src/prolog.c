@@ -462,7 +462,6 @@ void pl_destroy(prolog *pl)
 	destroy_module(pl->user_m);
 	map_destroy(pl->biftab);
 	map_destroy(pl->symtab);
-	free(pl->pool);
 
 	while (pl->modules)
 		destroy_module(pl->modules);
@@ -503,6 +502,7 @@ void pl_destroy(prolog *pl)
 	}
 
 	memset(pl->streams, 0, sizeof(pl->streams));
+	free(pl->pool);
 	free(pl);
 }
 
