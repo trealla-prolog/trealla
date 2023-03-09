@@ -68,7 +68,6 @@ bool call_builtin(query *q, cell *c, pl_idx_t c_ctx);
 bool call_userfun(query *q, cell *c, pl_idx_t c_ctx);
 void do_cleanup(query *q, cell *p1, pl_idx_t c_ctx);
 bool drop_barrier(query *q);
-bool is_in_ref_list(cell *c, pl_idx_t c_ctx, reflist *rlist);
 void collect_vars(query *q, cell *p1, pl_idx_t p1_ctx);
 bool check_list(query *q, cell *p1, pl_idx_t p1_ctx, bool *is_partial, pl_int_t *skip);
 bool parse_write_params(query *q, cell *c, pl_idx_t c_ctx, cell **vnames, pl_idx_t *vnames_ctx);

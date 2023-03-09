@@ -122,19 +122,6 @@ cell *alloc_on_heap(query *q, unsigned nbr_cells)
 	return c;
 }
 
-bool is_in_ref_list(cell *c, pl_idx_t c_ctx, reflist *rlist)
-{
-	while (rlist) {
-		if ((c->var_nbr == rlist->var_nbr)
-			&& (c_ctx == rlist->ctx))
-			return true;
-
-		rlist = rlist->next;
-	}
-
-	return false;
-}
-
 static bool is_in_ref_list2(cell *c, pl_idx_t c_ctx, reflist *rlist)
 {
 	while (rlist) {
