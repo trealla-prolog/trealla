@@ -346,6 +346,8 @@ bool fn_if_2(query *q)
 
 static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 {
+	q->tot_goals--;
+
 	if (q->retry) {
 		q->retry = QUERY_SKIP;
 		q->st.curr_cell = p3;
@@ -367,6 +369,8 @@ static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 
 static bool do_if_else(query *q, cell *p1, cell *p2, cell *p3)
 {
+	q->tot_goals--;
+
 	if (q->retry) {
 		q->retry = QUERY_SKIP;
 		q->st.curr_cell = p3;
@@ -388,7 +392,6 @@ static bool do_if_else(query *q, cell *p1, cell *p2, cell *p3)
 
 bool fn_if_3(query *q)
 {
-	q->tot_goals--;
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,callable);
 	GET_NEXT_ARG(p3,callable);
@@ -405,7 +408,6 @@ bool fn_iso_conjunction_2(query *q)
 
 bool fn_iso_disjunction_2(query *q)
 {
-	q->tot_goals--;
 	cell *c = q->st.curr_cell+1;
 
 	if (is_cstring(c) && !CMP_STR_TO_CSTR(q, c, "[]"))
@@ -425,6 +427,7 @@ bool fn_iso_disjunction_2(query *q)
 		return do_if_else(q, p1, p2, p3);
 	}
 
+	q->tot_goals--;
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,callable);
 
