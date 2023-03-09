@@ -37,8 +37,6 @@
 %   g1f3    b8c6
 %   f1b5    a7a6
 
-:- set_prolog_flag(occurs_check, false).
-
 main :-
     init_board(InBoard),
     test_play(InBoard, _),
