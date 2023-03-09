@@ -1731,6 +1731,7 @@ bool start(query *q)
 
 		if (is_builtin(q->st.curr_cell)) {
 			if (!q->st.curr_cell->fn_ptr) {		// ??
+				q->tot_goals--;
 				q->st.curr_cell++;
 				continue;
 			}
