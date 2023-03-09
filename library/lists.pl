@@ -127,18 +127,18 @@ nth0_index(N, [_|Es], E) :-
 	nth0_index(N1, Es, E).
 
 nth0_search(N, Es, E) :-
-        nth0_search(0, N, Es, E).
+	nth0_search(0, N, Es, E).
 
 nth0_search(N, N, [E|_], E).
 nth0_search(N0, N, [_|Es], E) :-
-        N1 is N0 + 1,
-        nth0_search(N1, N, Es, E).
+	N1 is N0 + 1,
+	nth0_search(N1, N, Es, E).
 
 nth1(N, Es0, E) :-
 	nonvar(N),
 	N > 0,
 	N1 is N - 1,
-	'$skip_max_list'(N1, N1, Es0,Es),
+	'$skip_max_list'(N1, N1, Es0, Es),
 	!,
 	Es = [E|_].
 nth1(N, Es, E) :-
@@ -148,7 +148,7 @@ nth1(N, Es, E) :-
 
 nth0(N, Es0, E) :-
 	nonvar(N),
-	'$skip_max_list'(N, N, Es0,Es),
+	'$skip_max_list'(N, N, Es0, Es),
 	!,
 	Es = [E|_].
 nth0(N, Es, E) :-
