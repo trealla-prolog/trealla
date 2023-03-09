@@ -200,14 +200,14 @@ int compare(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx)
 	q->cycle_error = false;
 	bool is_partial;
 
-	if (is_iso_list(p1) && is_iso_list(p2)) {
+	if (q->flags.occurs_check && is_iso_list(p1) && is_iso_list(p2)) {
 		if (check_list(q, p1, p1_ctx, &is_partial, NULL) && check_list(q, p2, p2_ctx, &is_partial, NULL))
 			return compare_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
 	}
 
 	cycle_info info1 = {0}, info2 = {0};
-	q->info1 = &info1;
-	q->info2 = &info2;
+	q->info1 = q->flags.occurs_check ? &info1 : NULL;
+	q->info2 = q->flags.occurs_check ? &info2 : NULL;
 	int ok = compare_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
 	q->info1 = q->info2 = NULL;
 	return ok;
@@ -1208,7 +1208,7 @@ bool unify(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx)
 {
 	q->cycle_error = false;
 
-	if (is_iso_list(p1) && is_iso_list(p2)) {
+	if (q->flags.occurs_check && is_iso_list(p1) && is_iso_list(p2)) {
 		bool is_partial;
 
 		if (check_list(q, p1, p1_ctx, &is_partial, NULL) && check_list(q, p2, p2_ctx, &is_partial, NULL)) {
@@ -1221,8 +1221,8 @@ bool unify(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx)
 		q->lists_ok = true;
 
 	cycle_info info1 = {0}, info2 = {0};
-	q->info1 = &info1;
-	q->info2 = &info2;
+	q->info1 = q->flags.occurs_check ? &info1 : NULL;
+	q->info2 = q->flags.occurs_check ? &info2 : NULL;
 	bool ok = unify_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
 	q->info1 = q->info2 = NULL;
 	q->lists_ok = false;
