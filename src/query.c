@@ -1262,10 +1262,10 @@ cell *get_var(query *q, cell *c, pl_idx_t c_ctx)
 		return e->c.val_ptr;
 	}
 
-	if (is_var(&e->c)) {
-		q->latest_ctx = e->c.var_ctx;
-		return &e->c;
-	}
+	//if (is_var(&e->c)) {
+	//	q->latest_ctx = e->c.var_ctx;
+	//	return &e->c;
+	//}
 
 	q->latest_ctx = c_ctx;
 	return &e->c;
