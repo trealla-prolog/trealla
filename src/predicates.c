@@ -5308,7 +5308,7 @@ static bool fn_wait_0(query *q)
 			if (task->spawned) {
 				spawn_cnt++;
 
-				if (spawn_cnt >= /*g_cpu_count*/16)
+				if (spawn_cnt >= /*g_cpu_count*/64)
 					break;
 			}
 
@@ -5355,7 +5355,7 @@ static bool fn_await_0(query *q)
 			if (task->spawned) {
 				spawn_cnt++;
 
-				if (spawn_cnt >= /*g_cpu_count*/16)
+				if (spawn_cnt >= /*g_cpu_count*/64)
 					break;
 			}
 
