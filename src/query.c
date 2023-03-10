@@ -1254,23 +1254,17 @@ cell *get_var(query *q, cell *c, pl_idx_t c_ctx)
 		e = GET_SLOT(f, c->var_nbr);
 	}
 
-	if (is_empty(&e->c)) {
-		q->latest_ctx = c_ctx;
-		return c;
-	}
-
 	if (is_indirect(&e->c)) {
 		q->latest_ctx = e->c.var_ctx;
 		return e->c.val_ptr;
 	}
 
-	//if (is_var(&e->c)) {
-	//	q->latest_ctx = e->c.var_ctx;
-	//	return &e->c;
-	//}
-
 	q->latest_ctx = c_ctx;
-	return &e->c;
+
+	if (!is_empty(&e->c))
+		return &e->c;
+
+	return c;
 }
 
 void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
