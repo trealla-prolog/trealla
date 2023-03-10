@@ -3,9 +3,7 @@
 #include "internal.h"
 
 builtins *get_builtin(prolog *pl, const char *name, size_t len, unsigned arity, bool *found, bool *evaluable);
-builtins *get_builtin_term(module *m, cell *c, bool *found, bool *evaluable);
 builtins *get_help(prolog *pl, const char *name, unsigned arity, bool *found, bool *evaluable);
-builtins *get_module_help(module *m, const char *name, unsigned arity, bool *found, bool *evaluable);
 builtins *get_fn_ptr(void *fn);
 module *find_module(prolog *pl, const char *name);
 module *find_next_module(prolog *pl, module *m);

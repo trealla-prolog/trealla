@@ -27,6 +27,8 @@ void xref_rule(module *m, clause *t, predicate *parent);
 void xref_db(module *m);
 void just_in_time_rebuild(predicate *pr);
 const char *get_loaded(const module *m, const char *filename);
+builtins *get_module_help(module *m, const char *name, unsigned arity, bool *found, bool *evaluable);
+builtins *get_builtin_term(module *m, cell *c, bool *found, bool *evaluable);
 
 bool do_use_module_1(module *curr_m, cell *p);
 bool do_use_module_2(module *curr_m, cell *p);
