@@ -616,6 +616,7 @@ bool try_me(query *q, unsigned nbr_vars)
 		//unshare_cell(&e->c);
 		init_cell(&e->c);
 		e->mark = false;
+		e->mgen = 0;
 	}
 
 	q->run_hook = false;
@@ -1231,6 +1232,7 @@ unsigned create_vars(query *q, unsigned cnt)
 		slot *e = GET_SLOT(f, f->actual_slots+i);
 		init_cell(&e->c);
 		e->mark = false;
+		e->mgen = 0;
 	}
 
 	f->actual_slots += cnt;

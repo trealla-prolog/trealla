@@ -600,8 +600,8 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 		if (is_var(tail) && running) {
 			const frame *f = GET_FRAME(c_ctx);
 			e = GET_SLOT(f, tail->var_nbr);
-			tail = running ? deref(q, tail, c_ctx) : tail;
-			c_ctx = running ? q->latest_ctx : 0;
+			tail = deref(q, tail, c_ctx);
+			c_ctx = q->latest_ctx;
 
 			if (!is_var(tail)) {
 				if (e->mgen == q->mgen) {
