@@ -155,7 +155,7 @@ test:
 check:
 	./tests/run_valgrind.sh
 
-check-leaks:
+leaks:
 	./tests/run_valgrind_leaks.sh
 
 clean:
