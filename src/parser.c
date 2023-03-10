@@ -492,6 +492,7 @@ static void directives(parser *p, cell *d)
 		*end = '\0';
 
 		ptr->help = *src ? src : dst;
+		ptr->help2 = dst;
 		ptr->iso = iso;
 		ptr->via_directive = true;
 		map_app(p->pl->help, ptr->name, ptr);
