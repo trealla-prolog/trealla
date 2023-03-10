@@ -52,10 +52,7 @@ void clr_accum(cell *p)
 	}
 
 	p->tag = TAG_INTEGER;
-	p->nbr_cells = 1;
-	p->arity = 0;
 	p->flags = 0;
-	p->val_int = 0;
 }
 
 #define CLEANUP __attribute__((cleanup (clr_accum)))
