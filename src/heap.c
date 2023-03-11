@@ -134,6 +134,7 @@ bool is_in_ref_list(cell *c, pl_idx_t c_ctx, reflist *rlist)
 
 	return false;
 }
+
 static bool is_in_ref_list2(cell *c, pl_idx_t c_ctx, reflist *rlist)
 {
 	while (rlist) {
@@ -147,7 +148,7 @@ static bool is_in_ref_list2(cell *c, pl_idx_t c_ctx, reflist *rlist)
 	return false;
 }
 
-// FIXME: rewrite this using efficient sweep/mark methodology...
+// FIXME: rewrite this to be efficient...
 
 static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_attrs, cell *from, pl_idx_t from_ctx, cell *to, pl_idx_t to_ctx, unsigned depth, reflist *list)
 {
@@ -458,6 +459,8 @@ cell *deep_copy_to_heap_with_replacement(query *q, cell *p1, pl_idx_t p1_ctx, bo
 	safe_copy_cells(tmp2, tmp, tmp->nbr_cells);
 	return tmp2;
 }
+
+// FIXME: rewrite this to be efficient...
 
 static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth, reflist *list)
 {

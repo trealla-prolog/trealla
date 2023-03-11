@@ -107,6 +107,9 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define is_iso_atom(c) ((is_interned(c) || is_cstring(c)) && !(c)->arity)
 #define is_iso_list(c) (is_interned(c) && ((c)->arity == 2) && ((c)->val_off == g_dot_s))
 
+#define get_list_head(c) ((c) + 1)
+#define get_list_tail(c) (get_list_head(c) + get_list_head(c)->nbr_cells)
+
 #define get_float(c) (c)->val_float
 #define set_float(c,v) (c)->val_float = (v)
 #define get_smallint(c) (c)->val_int
