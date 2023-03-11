@@ -51,6 +51,7 @@ struct heap_save {
 	q->tmphp = _s.hp;
 
 void fix_list(cell *c);
+bool is_in_ref_list(cell *c, pl_idx_t c_ctx, reflist *rlist);
 
 void allocate_list(query *q, const cell *c);
 void append_list(query *q, const cell *c);
