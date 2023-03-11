@@ -975,9 +975,9 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 		return false;
 	}
 
-	q->mgen++;
 	LIST_HANDLER(p1);
 	LIST_HANDLER(p2);
+	q->mgen++;
 
 	while (is_iso_list(p1) && is_iso_list(p2)) {
 		cell *h1 = LIST_HEAD(p1);
@@ -1011,10 +1011,12 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 		pl_idx_t h1_ctx = q->latest_ctx;
 		h2 = deref(q, h2, p2_ctx);
 		pl_idx_t h2_ctx = q->latest_ctx;
+		uint32_t save_mgen = q->mgen;
 
 		if (!unify_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1))
 			return false;
 
+		q->mgen = save_mgen;
 		if (e1) e1->mgen = 0;
 		if (e2) e2->mgen = 0;
 
