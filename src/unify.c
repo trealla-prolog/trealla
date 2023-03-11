@@ -187,6 +187,7 @@ static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_id
 int compare(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx)
 {
 	q->cycle_error = false;
+
 	if (is_iso_list(p1) && is_iso_list(p2)) {
 		bool is_partial;
 
