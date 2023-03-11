@@ -125,20 +125,7 @@ cell *alloc_on_heap(query *q, unsigned nbr_cells)
 bool is_in_ref_list(cell *c, pl_idx_t c_ctx, reflist *rlist)
 {
 	while (rlist) {
-		if ((c->var_nbr == rlist->var_nbr)
-			&& (c_ctx == rlist->ctx))
-			return true;
-
-		rlist = rlist->next;
-	}
-
-	return false;
-}
-
-static bool is_in_ref_list2(cell *c, pl_idx_t c_ctx, reflist *rlist)
-{
-	while (rlist) {
-		if ((c == rlist->ptr)
+		if (((c->var_nbr == rlist->var_nbr) || (c == rlist->ptr))
 			&& (c_ctx == rlist->ctx))
 			return true;
 
@@ -227,7 +214,7 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 			c = deref(q, c, c_ctx);
 			c_ctx = q->latest_ctx;
 
-			if (is_in_ref_list2(c, c_ctx, list)) {
+			if (is_in_ref_list(c, c_ctx, list)) {
 				cell *tmp = alloc_on_tmp(q, 1);
 				if (!tmp) return NULL;
 				*tmp = *h;
@@ -252,7 +239,7 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 			nlist.ptr = save_p1;
 			nlist.ctx = save_p1_ctx;
 
-			if (is_in_ref_list2(p1, p1_ctx, &nlist)) {
+			if (is_in_ref_list(p1, p1_ctx, &nlist)) {
 				cell *tmp = alloc_on_tmp(q, 1);
 				if (!tmp) return NULL;
 				tmp->tag = TAG_VAR;
@@ -294,7 +281,7 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 		c_ctx = q->latest_ctx;
 		reflist nlist = {0};
 
-		if (is_in_ref_list2(c, c_ctx, list)) {
+		if (is_in_ref_list(c, c_ctx, list)) {
 			cell *tmp = alloc_on_tmp(q, 1);
 			if (!tmp) return NULL;
 			*tmp = *p1;
@@ -509,7 +496,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 			cell *c = deref(q, h, h_ctx);
 			pl_idx_t c_ctx = q->latest_ctx;
 
-			if (is_in_ref_list2(c, c_ctx, list)) {
+			if (is_in_ref_list(c, c_ctx, list)) {
 				cell *tmp = alloc_on_tmp(q, 1);
 				if (!tmp) return NULL;
 				*tmp = *h;
@@ -532,7 +519,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 			nlist.ptr = save_p1;
 			nlist.ctx = save_p1_ctx;
 
-			if (is_in_ref_list2(p1, p1_ctx, &nlist)) {
+			if (is_in_ref_list(p1, p1_ctx, &nlist)) {
 				cell *tmp = alloc_on_tmp(q, 1);
 				if (!tmp) return NULL;
 				*tmp = *tmp_p1;
@@ -565,7 +552,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 		pl_idx_t c_ctx = q->latest_ctx;
 		reflist nlist = {0};
 
-		if (is_in_ref_list2(c, c_ctx, list)) {
+		if (is_in_ref_list(c, c_ctx, list)) {
 			cell *tmp = alloc_on_tmp(q, 1);
 			if (!tmp) return NULL;
 			*tmp = *p1;
