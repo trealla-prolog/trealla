@@ -1024,10 +1024,9 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 			const frame *f1 = GET_FRAME(p1_ctx);
 			e1 = GET_SLOT(f1, p1->var_nbr);
 
-			if (e1->mgen == q->mgen) {
+			if (e1->mgen == q->mgen)
 				p1 = NULL;
-				q->lists_ok = false;
-			} else
+			else
 				e1->mgen = q->mgen;
 		}
 
@@ -1035,10 +1034,9 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 			const frame *f2 = GET_FRAME(p2_ctx);
 			e2 = GET_SLOT(f2, p2->var_nbr);
 
-			if (e2->mgen == q->mgen) {
+			if (e2->mgen == q->mgen)
 				p2 = NULL;
-				q->lists_ok = false;
-			} else
+			else
 				e2->mgen = q->mgen;
 		}
 
