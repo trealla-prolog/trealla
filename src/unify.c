@@ -1218,18 +1218,13 @@ bool unify(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx)
 	if (is_iso_list(p1) && is_iso_list(p2)) {
 		bool is_partial;
 
-		if (check_list(q, p1, p1_ctx, &is_partial, NULL) && check_list(q, p2, p2_ctx, &is_partial, NULL)) {
+		if (check_list(q, p1, p1_ctx, &is_partial, NULL) && check_list(q, p2, p2_ctx, &is_partial, NULL))
 			q->lists_ok = true;
-			bool ok = unify_lists(q, p1, p1_ctx, p2, p2_ctx, 0);
-			q->lists_ok = false;
-			return ok;
-		}
-	} else
-		q->lists_ok = true;
+	}
 
 	cycle_info info1 = {0}, info2 = {0};
-	q->info1 = &info1;
-	q->info2 = &info2;
+	q->info1 = !q->lists_ok ? &info1 : NULL;
+	q->info2 = !q->lists_ok ? &info2 : NULL;
 	bool ok = unify_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
 	q->info1 = q->info2 = NULL;
 	q->lists_ok = false;
