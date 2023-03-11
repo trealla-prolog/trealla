@@ -984,7 +984,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 		cell *h2 = LIST_HEAD(p2);
 		slot *e1 = NULL, *e2 = NULL;
 
-		if (is_var(h1)) {
+		if (is_var(h1) && (h1 != h2)) {
 			const frame *f1 = GET_FRAME(p1_ctx);
 			e1 = GET_SLOT(f1, h1->var_nbr);
 
@@ -994,7 +994,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 				e1->mgen = q->mgen;
 		}
 
-		if (is_var(h2)) {
+		if (is_var(h2) && (h1 != h2)) {
 			const frame *f2 = GET_FRAME(p2_ctx);
 			e2 = GET_SLOT(f2, h2->var_nbr);
 
