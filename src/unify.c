@@ -975,6 +975,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 		return false;
 	}
 
+	q->mgen++;
 	LIST_HANDLER(p1);
 	LIST_HANDLER(p2);
 
