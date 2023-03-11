@@ -12,6 +12,6 @@ main :-
 	\B1=A1, C1=[B1|A1], acyclic_term([C1,C1]),
 	write(ok6), nl,
 	\D2=A2, C2=[B2|A2], \+ unify_with_occurs_check(B2,[C2|A2]),
-	write(ok), nl.
+	write(ok7), nl.
 
 :- initialization(main).
