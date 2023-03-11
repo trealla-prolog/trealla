@@ -975,8 +975,6 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 		return false;
 	}
 
-	cell *save_p1 = p1, *save_p2 = p2;
-	pl_idx_t save_p1_ctx = p1_ctx, save_p2_ctx = p2_ctx;
 	LIST_HANDLER(p1);
 	LIST_HANDLER(p2);
 	q->lists_ok = true;
