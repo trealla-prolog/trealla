@@ -15,13 +15,40 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 	while (is_iso_list(p1) && is_iso_list(p2)) {
 		cell *h1 = LIST_HEAD(p1);
 		cell *h2 = LIST_HEAD(p2);
+
+		slot *e1 = NULL, *e2 = NULL;
+		int both = 0;
+
+		if (is_var(h1)) {
+			const frame *f1 = GET_FRAME(p1_ctx);
+			e1 = GET_SLOT(f1, h1->var_nbr);
+
+			if (e1->mgen == q->mgen)
+				both++;
+			else
+				e1->mgen = q->mgen;
+		}
+
+		if (is_var(h2)) {
+			const frame *f2 = GET_FRAME(p2_ctx);
+			e2 = GET_SLOT(f2, h2->var_nbr);
+
+			if (e2->mgen == q->mgen)
+				both++;
+			else
+				e2->mgen = q->mgen;
+		}
+
 		h1 = deref(q, h1, p1_ctx);
 		pl_idx_t h1_ctx = q->latest_ctx;
 		h2 = deref(q, h2, p2_ctx);
 		pl_idx_t h2_ctx = q->latest_ctx;
 
-		int val = compare_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
-		if (val) return val;
+		if (!both) {
+			int val = compare_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
+			if (val) return val;
+		} else
+			return 0;
 
 		p1 = LIST_TAIL(p1);
 		p2 = LIST_TAIL(p2);
@@ -45,13 +72,44 @@ static int compare_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 	p2 = p2 + 1;
 
 	while (arity--) {
+		slot *e1 = NULL, *e2 = NULL;
+		int both = 0;
+
+		if (is_var(p1)) {
+			const frame *f1 = GET_FRAME(p1_ctx);
+			e1 = GET_SLOT(f1, p1->var_nbr);
+
+			if (e1->mgen == q->mgen)
+				both++;
+			else
+				e1->mgen = q->mgen;
+		}
+
+		if (is_var(p2)) {
+			const frame *f2 = GET_FRAME(p2_ctx);
+			e2 = GET_SLOT(f2, p2->var_nbr);
+
+			if (e2->mgen == q->mgen)
+				both++;
+			else
+				e2->mgen = q->mgen;
+		}
+
 		cell *c1 = deref(q, p1, p1_ctx);
 		pl_idx_t c1_ctx = q->latest_ctx;
 		cell *c2 = deref(q, p2, p2_ctx);
 		pl_idx_t c2_ctx = q->latest_ctx;
 
-		int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
-		if (val) return val;
+		if (!both) {
+			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
+			if (val) return val;
+		}
+
+		if (e1)
+			e1->mgen = 0;
+
+		if (e2)
+			e2->mgen = 0;
 
 		p1 += p1->nbr_cells;
 		p2 += p2->nbr_cells;
@@ -176,20 +234,8 @@ static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_id
 int compare(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx)
 {
 	q->cycle_error = false;
-
-	if (is_iso_list(p1) && is_iso_list(p2)) {
-		bool is_partial;
-
-		if (check_list(q, p1, p1_ctx, &is_partial, NULL) && check_list(q, p2, p2_ctx, &is_partial, NULL))
-			q->lists_ok = true;
-	}
-
-	cycle_info info1 = {0}, info2 = {0};
-	q->info1 = !q->lists_ok ? &info1 : NULL;
-	q->info2 = !q->lists_ok ? &info2 : NULL;
-	int ok = compare_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
-	q->info1 = q->info2 = NULL;
-	return ok;
+	q->mgen++;
+	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
 }
 
 bool accum_var(query *q, const cell *c, pl_idx_t c_ctx)
