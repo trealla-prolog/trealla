@@ -40,7 +40,7 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 				e2->mgen = q->mgen;
 		}
 
-		if (!both || 1) {
+		if (both != 2) {
 			h1 = deref(q, h1, p1_ctx);
 			pl_idx_t h1_ctx = q->latest_ctx;
 			h2 = deref(q, h2, p2_ctx);
@@ -79,7 +79,7 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 				e2->mgen = q->mgen;
 		}
 
-		if (both)
+		if (both == 2)
 			return 0;
 
 		p1 = deref(q, p1, p1_ctx);
@@ -129,7 +129,7 @@ static int compare_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 		cell *c2 = deref(q, p2, p2_ctx);
 		pl_idx_t c2_ctx = q->latest_ctx;
 
-		if (!both) {
+		if (both != 2) {
 			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
 			if (val) return val;
 		}
