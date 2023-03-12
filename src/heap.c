@@ -21,6 +21,10 @@ static int accum_slot(const query *q, pl_idx_t slot_nbr, unsigned var_nbr)
 size_t alloc_grow(void **addr, size_t elem_size, size_t min_elements, size_t max_elements)
 {
 	//assert(min_elements <= max_elements);
+
+	if (min_elements > max_elements)
+		max_elements = min_elements;
+
 	size_t elements = max_elements;
 	void *mem;
 
