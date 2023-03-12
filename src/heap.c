@@ -319,9 +319,7 @@ cell *deep_raw_copy_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx)
 	nlist.ptr = p1;
 	nlist.ctx = p1_ctx;
 
-	if (!q->vars)
-		q->vars = map_create(NULL, NULL, NULL);
-
+	q->vars = map_create(NULL, NULL, NULL);
 	if (!q->vars) return NULL;
 	cell *rec = deep_copy2_to_tmp(q, p1, p1_ctx, false, NULL, 0, NULL, 0, 0, &nlist);
 	map_destroy(q->vars);
@@ -406,9 +404,7 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx_t p1_c
 
 cell *deep_copy_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_attrs)
 {
-	if (!q->vars)
-		q->vars = map_create(NULL, NULL, NULL);
-
+	q->vars = map_create(NULL, NULL, NULL);
 	if (!q->vars) return NULL;
 	frame *f = GET_CURR_FRAME();
 	q->varno = f->actual_slots;
@@ -434,9 +430,7 @@ cell *deep_copy_to_heap(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_attrs)
 
 cell *deep_copy_to_heap_with_replacement(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_attrs, cell *from, pl_idx_t from_ctx, cell *to, pl_idx_t to_ctx)
 {
-	if (!q->vars)
-		q->vars = map_create(NULL, NULL, NULL);
-
+	q->vars = map_create(NULL, NULL, NULL);
 	if (!q->vars) return NULL;
 	frame *f = GET_CURR_FRAME();
 	q->varno = f->actual_slots;
