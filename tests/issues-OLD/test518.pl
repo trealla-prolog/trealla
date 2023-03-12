@@ -9,9 +9,9 @@ main :-
 	write(ok4), nl,
 	V5=V5-X5, unify_with_occurs_check(V5,W5),
 	write(ok5), nl,
-	\B=A, C=[B|A], acyclic_term([C,C]),
+	\B1=A1, C1=[B1|A1], acyclic_term([C1,C1]),
 	write(ok6), nl,
-	\D=A, C=[B|A], \+ unify_with_occurs_check(B,[C|A]),
-	write(ok), nl.
+	\D2=A2, C2=[B2|A2], \+ unify_with_occurs_check(B2,[C2|A2]),
+	write(ok7), nl.
 
 :- initialization(main).
