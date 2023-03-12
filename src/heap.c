@@ -7,6 +7,20 @@
 #include "heap.h"
 #include "query.h"
 
+struct reflist_ {
+	reflist *next;
+	pl_idx_t ctx;
+
+	union {
+		cell *ptr;
+		pl_idx_t var_nbr;
+	};
+};
+
+struct cycle_info_ {
+	reflist *r1, *r2;
+};
+
 static int accum_slot(const query *q, pl_idx_t slot_nbr, unsigned var_nbr)
 {
 	const void *vnbr;

@@ -131,20 +131,6 @@ inline static pl_idx_t queuen_used(const query *q) { return q->qp[q->st.qnbr]; }
 inline static cell *get_queuen(query *q) { return q->queue[q->st.qnbr]; }
 inline static cell *take_queuen(query *q) { cell *save = q->queue[q->st.qnbr]; q->queue[q->st.qnbr] = NULL; return save; }
 
-struct reflist_ {
-	reflist *next;
-	pl_idx_t ctx;
-
-	union {
-		cell *ptr;
-		pl_idx_t var_nbr;
-	};
-};
-
-struct cycle_info_ {
-	reflist *r1, *r2;
-};
-
 #define FEOF(str) feof(str->fp) && !str->ungetch
 
 #ifdef _WIN32
