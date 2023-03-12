@@ -117,15 +117,12 @@ bool fn_iso_invoke_2(query *q)
 	return true;
 }
 
-bool fn_call_0(query *q, cell *p1)
+bool fn_call_0(query *q, cell *p1, pl_idx_t p1_ctx)
 {
 	q->tot_goals--;
 
 	if (q->retry)
 		return false;
-
-	p1 = deref(q, p1, q->st.curr_frame);
-	pl_idx_t p1_ctx = q->latest_ctx;
 
 	if (!is_callable(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "callable");

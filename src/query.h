@@ -27,7 +27,7 @@ void inner_cut(query *q, bool soft_cut);
 void set_var(query *q, const cell *c, pl_idx_t ctx, cell *v, pl_idx_t v_ctx);
 void reset_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx);
 bool execute(query *q, cell *cells, unsigned nbr_vars);
-bool fn_call_0(query *q, cell *p1);
+bool fn_call_0(query *q, cell *p1, pl_idx_t p1_ctx);
 void undo_me(query *q);
 void drop_choice(query *q);
 bool retry_choice(query *q);

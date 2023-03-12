@@ -1713,8 +1713,11 @@ bool start(query *q)
 		}
 
 		if (is_var(q->st.curr_cell)) {
-			if (!fn_call_0(q, q->st.curr_cell)) {
-				if (q->did_throw)
+			cell *p1 = deref(q, q->st.curr_cell, q->st.curr_frame);
+			pl_idx_t p1_ctx = q->latest_ctx;
+
+			if (!fn_call_0(q, p1, p1_ctx)) {
+				if (is_var(p1))
 					break;
 
 				continue;
