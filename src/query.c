@@ -1713,8 +1713,12 @@ bool start(query *q)
 		}
 
 		if (is_var(q->st.curr_cell)) {
-			if (!fn_call_0(q, q->st.curr_cell))
-				break;
+			if (!fn_call_0(q, q->st.curr_cell)) {
+				if (q->did_throw)
+					break;
+
+				continue;
+			}
 		}
 
 		q->tot_goals++;
