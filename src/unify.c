@@ -7,7 +7,7 @@
 
 static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth);
 
-static int compare_list_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
+static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
 {
 	LIST_HANDLER(p1);
 	LIST_HANDLER(p2);
@@ -35,7 +35,7 @@ static int compare_list_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, 
 	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 }
 
-static int compare_struct_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
+static int compare_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
 {
 	int val = CMP_STR_TO_STR(q, p1, p2);
 	if (val) return val;
@@ -166,9 +166,9 @@ static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_id
 	}
 
 	if (is_iso_list(p1) && is_iso_list(p2))
-		return compare_list_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1);
+		return compare_lists(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 
-	return compare_struct_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1);
+	return compare_structs(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 }
 
 // FIXME: rewrite this to be efficient
