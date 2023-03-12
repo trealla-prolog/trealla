@@ -40,17 +40,17 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 				e2->mgen = q->mgen;
 		}
 
-		if (both != 2) {
-			h1 = deref(q, h1, p1_ctx);
-			pl_idx_t h1_ctx = q->latest_ctx;
-			h2 = deref(q, h2, p2_ctx);
-			pl_idx_t h2_ctx = q->latest_ctx;
-			uint64_t save_mgen = q->mgen;
-			int val = compare_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
-			if (val) return val;
-			q->mgen = save_mgen;
-		} else
+		if (both == 2)
 			return 0;
+
+		h1 = deref(q, h1, p1_ctx);
+		pl_idx_t h1_ctx = q->latest_ctx;
+		h2 = deref(q, h2, p2_ctx);
+		pl_idx_t h2_ctx = q->latest_ctx;
+		uint64_t save_mgen = q->mgen;
+		int val = compare_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
+		if (val) return val;
+		q->mgen = save_mgen;
 
 		if (e1) e1->mgen = 0;
 		if (e2) e2->mgen = 0;
