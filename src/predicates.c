@@ -2100,7 +2100,6 @@ static bool fn_iso_copy_term_2(query *q)
 
 		if (e1->c.attrs) {
 			check_heap_error(init_tmp_heap(q));
-			check_heap_error(q->vars = map_create(NULL, NULL, NULL));
 			frame *f = GET_CURR_FRAME();
 			q->varno = f->actual_slots;
 			q->tab_idx = 0;
