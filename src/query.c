@@ -1714,7 +1714,7 @@ bool start(query *q)
 
 		if (is_var(q->st.curr_cell)) {
 			if (!fn_call_0(q, q->st.curr_cell))
-				continue;
+				break;
 		}
 
 		q->tot_goals++;
