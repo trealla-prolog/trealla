@@ -30,26 +30,6 @@ cell *deep_copy_to_heap_with_replacement(query *q, cell *p1, pl_idx_t p1_ctx, bo
 #define get_tmp_heap(q,i) ((q)->tmp_heap + (i))
 #define tmp_heap_used(q) (q)->tmphp
 
-struct heap_save {
-	cell *heap;
-	pl_idx_t size, hp;
-};
-
-#define push_tmp_heap(q) 								\
-	struct heap_save _s;								\
-	_s.heap = q->tmp_heap;								\
-	_s.size = q->tmph_size;								\
-	_s.hp = q->tmphp;									\
-	q->tmp_heap = NULL;									\
-	q->tmphp = 0;										\
-	if (!init_tmp_heap(q)) return NULL;
-
-#define pop_tmp_heap(q)									\
-	free(q->tmp_heap);									\
-	q->tmp_heap = _s.heap;								\
-	q->tmph_size = _s.size;								\
-	q->tmphp = _s.hp;
-
 void fix_list(cell *c);
 bool is_in_ref_list(cell *c, pl_idx_t c_ctx, reflist *rlist);
 
