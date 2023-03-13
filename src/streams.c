@@ -5192,6 +5192,13 @@ static char *fixup(const char *srcptr)
 	return tmpbuf;
 }
 
+static bool fn_is_absolute_file_name_1(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	const char *filename = C_STR(q, p1);
+	return *filename == '/';
+}
+
 static bool fn_absolute_file_name_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -7223,6 +7230,7 @@ builtins g_files_bifs[] =
 	{"make_directory_path", 1, fn_make_directory_path_1, "+atom", false, false, BLAH},
 	{"working_directory", 2, fn_working_directory_2, "-atom,+atom", false, false, BLAH},
 	{"absolute_file_name", 3, fn_absolute_file_name_3, "+atom,-atom,+list", false, false, BLAH},
+	{"is_absolute_file_name", 1, fn_is_absolute_file_name_1, "+atom", false, false, BLAH},
 	{"chdir", 1, fn_chdir_1, "+string", false, false, BLAH},
 	{"$put_chars", 1, fn_sys_put_chars_1, "+chars", false, false, BLAH},
 	{"$put_chars", 2, fn_sys_put_chars_2, "+stream,+chars", false, false, BLAH},

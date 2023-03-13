@@ -481,7 +481,8 @@ Non-standard predicates
 	working_directory/2
 
 	chdir/1
-	absolute_file_name/[2,3]    # expand(Bool) & relative_to(file) options
+	absolute_file_name/[2,3]	# expand(Bool) & relative_to(file) options
+	is_absolute_file_name/1
 	access_file/2
 	set_stream/2				# only supports alias/1 property
 
