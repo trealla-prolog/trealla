@@ -21,14 +21,13 @@ future(X, Goal, F) :-
 	copy_term(Task0, Task),
 	task(Task).
 
-future_all(_Fs, _Fall) :-
-	true.
+future_all(Fs, Fs).
 
-await(_Fs, Vars) :-
-	is_list(Vars),
+await(Fs, Vars) :-
+	is_list(Fs),
 	!,
 	wait,
-	findall(Msg, (member(_,Vars), recv(Msg)), L0),
+	findall([F-Msg], (member(F,Fs), recv([F-Msg])), L0),
 	msort(L0, Msgs),
 	strip_prefix_(Msgs, [], L),
 	L = Vars.

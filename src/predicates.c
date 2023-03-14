@@ -5468,16 +5468,19 @@ static bool fn_send_1(query *q)
 static bool fn_recv_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	cell *c = pop_queue(q);
-	if (!c) return false;
-	bool ok = unify(q, p1, p1_ctx, c, q->st.curr_frame);
 
-	if (!ok) {
+	while (true) {
+		CHECK_INTERRUPT();
+		cell *c = pop_queue(q);
+		if (!c) break;
+
+		if (unify(q, p1, p1_ctx, c, q->st.curr_frame))
+			return true;
+
 		check_heap_error(alloc_on_queuen(q, 0, c));
-		return false;
 	}
 
-	return true;
+	return false;
 }
 
 static bool fn_pid_1(query *q)
