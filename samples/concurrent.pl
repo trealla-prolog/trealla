@@ -11,17 +11,17 @@
 
 '$concurrent_count'(0).
 
-future(X, Goal, Future) :-
+future(X, Goal, F) :-
 	retract('$concurrent_count'(N)),
 	N1 is N + 1,
 	assertz('$concurrent_count'(N1)),
-	Future = N1,
-	Goal2 = [Future,X,Goal],
-	Future0 = (Goal2=[Future,X2,GoalX],call(GoalX),send([Future-X2])),
-	copy_term(Future0, Future1),
-	task(Future1).
+	F = N1,
+	Goal2 = [F,X,Goal],
+	Task0 = (Goal2=[F,X2,GoalX],call(GoalX),send([F-X2])),
+	copy_term(Task0, Task),
+	task(Task).
 
-future_all(_Goals, _Fs) :-
+future_all(_Fs, _Fall) :-
 	true.
 
 await(_Fs, Vars) :-
@@ -33,10 +33,10 @@ await(_Fs, Vars) :-
 	strip_prefix_(Msgs, [], L),
 	L = Vars.
 
-await(Future, Var) :-
+await(F, Var) :-
 	repeat,
 		wait,
-		recv([Future-Var]),
+		recv([F-Var]),
 		!.
 
 strip_prefix_([], L0, L) :- reverse(L0, L).

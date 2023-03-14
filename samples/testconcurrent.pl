@@ -1,4 +1,4 @@
-:- use_module('../tpl-stuff/concurrent.pl').
+:- use_module('samples/concurrent.pl').
 
 test1(C) :-
     future(X, slow_predicate(X), F1),
