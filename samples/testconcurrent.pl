@@ -1,4 +1,4 @@
-:- use_module('samples/concurrent.pl').
+:- use_module(library(concurrent)).
 
 test1(C) :-
 	future(X, slow_predicate(X), F1),
