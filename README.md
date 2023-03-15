@@ -921,8 +921,8 @@ Run...
 	[[1,'Paul',32,'California',20000.0],[2,'Allen',25,'Texas',15000.0],[3,'Teddy',23,'Norway',20000.0],[4,'Mark',25,'Rich-Mond ',65000.0],[5,'David',27,'Texas',85000.0],[6,'Kim',22,'South-Hall',45000.0]]
 ```
 
-Concurrency						##EXPERIMENTAL##
-===========
+Concurrency (tasks)						##EXPERIMENTAL##
+===================
 
 Trealla is single-threaded internally but cooperative multitasking is
 available in the form of light-weight coroutines that run until they
@@ -988,6 +988,20 @@ operating system threads in a C-wrapper program by calling
 Each such *prolog* instance is thread-safe. Such instances could use
 Unix domain sockets for IPC. See *src/trealla.h* for API.
 
-See also the experimental library `concurrent` for Tau-Prolog inspired
-futures (also `samples/testconcurrent.pl`).
+
+Concurrency (futures)						##EXPERIMENTAL##
+=====================
+
+Implements [Tau-Prolog](http://tau-prolog.org/documentation#concurrent)
+inspired futures.
+
+```
+await/2 – Wait for a Future.
+future/3 – Make a Future from a Prolog goal.
+future_all/2 – Make a Future that resolves to a list of the results of an input list of futures.
+future_any/2 – Make a Future that resolves as soon as any of the futures in a list succeeds.
+future_done/1 – Check if a future finished. (NOT YET IMPLEMENTED)
+```
+
+See also `samples/testconcurrent.pl`.
 
