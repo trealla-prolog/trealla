@@ -55,6 +55,9 @@ strip_prefix_([], L0, L) :- reverse(L0, L).
 strip_prefix_([[_-V]|Rest], Init, L) :-
 	strip_prefix_(Rest, [V|Init], L).
 
+% NOTE: going via an atom through callgoal/1 is to get around a bug to
+% do with passing variables in task/1. Maybe it will get fixed one day.
+
 callgoal(A) :-
 	read_term_from_atom(A, T, []),
 	T.
