@@ -2098,22 +2098,9 @@ query *create_sub_query(query *q, cell *curr_cell)
 	pl_idx_t nbr_cells = tmp->nbr_cells;
 	make_end(tmp+nbr_cells);
 	subq->st.curr_cell = tmp;
-
-	frame *fsrc = GET_FRAME(q->st.curr_frame);
 	frame *fdst = subq->frames;
-	fdst->initial_slots = fdst->actual_slots = fsrc->actual_slots;
-
-	for (unsigned i = 0; i < fsrc->actual_slots; i++) {
-		slot *e = GET_SLOT(fsrc, i);
-		cell *c = deref(q, &e->c, e->c.var_ctx);
-		cell tmp = (cell){0};
-		tmp.tag = TAG_VAR;
-		tmp.var_nbr = i;
-		tmp.val_off = g_anon_s;
-		set_var(subq, &tmp, 0, c, q->latest_ctx);
-	}
-
-	subq->st.sp = fsrc->actual_slots;
+	fdst->initial_slots = fdst->actual_slots = 64;
+	subq->st.sp = fdst->actual_slots;
 	return subq;
 }
 
