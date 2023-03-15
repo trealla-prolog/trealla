@@ -33,7 +33,7 @@ await(all(Fs), Templates) :-
 
 await(any(Fs), Template) :-
 	!,
-	wait, recv([F-Template0]),
+	await, recv([F-Template0]),
 	member(F, Fs),
 	!,
 	Template = Template0.
