@@ -2094,14 +2094,14 @@ query *create_sub_query(query *q, cell *curr_cell)
 	subq->is_task = true;
 	subq->p = q->p;
 
-	cell *tmp = deep_clone_to_heap(subq, 0, curr_cell, 1);
+	cell *tmp = clone_to_heap(subq, 0, curr_cell, 1);
 	pl_idx_t nbr_cells = tmp->nbr_cells;
 	make_end(tmp+nbr_cells);
 	subq->st.curr_cell = tmp;
 
 	frame *fsrc = GET_FRAME(q->st.curr_frame);
 	frame *fdst = subq->frames;
-	fdst->actual_slots = fsrc->actual_slots;
+	fdst->initial_slots = fdst->actual_slots = fsrc->actual_slots;
 
 	for (unsigned i = 0; i < fsrc->actual_slots; i++) {
 		slot *e = GET_SLOT(fsrc, i);
