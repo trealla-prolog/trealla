@@ -21,8 +21,14 @@ future(Template, Goal, F) :-
 	write_term_to_atom(A, Task, []),
 	task(callgoal(A)).
 
+:- meta_predicate(future(-,0,?)).
+:- help(future(+term,+callable,?list), [iso(false)]).
+
 future_all(Fs, all(Fs)).
 future_any(Fs, any(Fs)).
+
+:- help(future_all(+list,-term), [iso(false)]).
+:- help(future_any(+list,-term), [iso(false)]).
 
 await(all(Fs), Templates) :-
 	!,
@@ -42,6 +48,8 @@ await(F, Template) :-
 	repeat,
 		wait, recv([F-Template]),
 		!.
+
+:- help(await(+term,+term), [iso(false)]).
 
 strip_prefix_([], L0, L) :- reverse(L0, L).
 strip_prefix_([[_-V]|Rest], Init, L) :-

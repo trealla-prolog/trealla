@@ -21,9 +21,8 @@ test3(C) :-
 	await(F, V),
 	C = V.
 
-slow_predicate(X) :- delay(3000), X = 41.
+slow_predicate(X) :- delay(900), X = 41.
 other_slow_thing(X) :- delay(100), X = 1.
-
 
 :- use_module(library(http)).
 
