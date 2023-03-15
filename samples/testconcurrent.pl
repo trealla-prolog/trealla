@@ -38,5 +38,5 @@ test4(C) :-
 geturl(Url, Status) :-
 	http_get(Url, _Data, [status_code(Code),final_url(Location)]),
 	!,
-	format("Job [~w] ~w ==> ~w done~n", [Url,Code,Location]),
+	format("Job [~s] ~d ==> ~s done~n", [Url,Code,Location]),
 	Status = Code.
