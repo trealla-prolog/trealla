@@ -11,35 +11,35 @@
 
 '$concurrent_count'(0).
 
-future(X, Goal, F) :-
+future(Template, Goal, F) :-
 	retract('$concurrent_count'(N)),
 	N1 is N + 1,
 	assertz('$concurrent_count'(N1)),
 	F = N,
-	Task0 = (Goal, send([F-X])),
+	Task0 = (Goal, send([F-Template])),
 	copy_term(Task0, Task),
 	task(Task).
 
 future_all(Fs, all(Fs)).
 future_any(Fs, any(Fs)).
 
-await(all(Fs), Vars) :-
+await(all(Fs), Templates) :-
 	!,
-	findall([F-X], (member(F, Fs), wait, recv([F-X])), Msgs),
+	findall([F-Template], (member(F, Fs), wait, recv([F-Template])), Msgs),
 	msort(Msgs, Msgs1),
-	strip_prefix_(Msgs1, [], Xs),
-	Vars = Xs.
+	strip_prefix_(Msgs1, [], Templates0),
+	Templates = Templates0.
 
-await(any(Fs), Var) :-
+await(any(Fs), Template) :-
 	!,
-	wait, recv([F-X]),
+	wait, recv([F-Template0]),
 	member(F, Fs),
 	!,
-	Var = X.
+	Template = Template0.
 
-await(F, Var) :-
+await(F, Template) :-
 	repeat,
-		wait, recv([F-Var]),
+		wait, recv([F-Template]),
 		!.
 
 strip_prefix_([], L0, L) :- reverse(L0, L).
