@@ -49,7 +49,7 @@ await(F, Template) :-
 		wait, recv([F-Template]),
 		!.
 
-:- help(await(+term,+term), [iso(false)]).
+:- help(await(+term,?term), [iso(false)]).
 
 strip_prefix_([], L0, L) :- reverse(L0, L).
 strip_prefix_([[_-V]|Rest], Init, L) :-
