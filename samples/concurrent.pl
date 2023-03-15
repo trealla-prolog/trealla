@@ -25,17 +25,17 @@ future_any(Fs, any(Fs)).
 
 await(all(Fs), Vars) :-
 	!,
-	findall([F-Msg], (member(F, Fs), wait, recv([F-Msg])), L0),
-	msort(L0, Msgs),
-	strip_prefix_(Msgs, [], L),
-	L = Vars.
+	findall([F-X], (member(F, Fs), wait, recv([F-X])), Msgs),
+	msort(Msgs, Msgs1),
+	strip_prefix_(Msgs1, [], Xs),
+	Vars = Xs.
 
 await(any(Fs), Var) :-
 	!,
-	wait, recv([F-Msg]),
+	wait, recv([F-X]),
 	member(F, Fs),
 	!,
-	Var = Msg.
+	Var = X.
 
 await(F, Var) :-
 	repeat,
