@@ -24,20 +24,3 @@ test3(C) :-
 slow_predicate(X) :- delay(900), X = 41.
 other_slow_thing(X) :- delay(500), X = 1.
 
-
-:- use_module(library(format)).
-:- use_module(library(http)).
-:- use_module(library(pio)).
-
-test4(C) :-
-	future(Status1, geturl("www.google.com", Status1), F1),
-	future(Status2, geturl("www.bing.com", Status2), F2),
-	future(Status3, geturl("www.duckduckgo.com", Status3), F3),
-    future_all([F1,F2,F3], F),
-    await(F, StatusCodes),
-    C = StatusCodes.
-
-geturl(Url,Code) :-
-	http_get(Url,_Data,[status_code(Code),final_url(Location)]), !,
-	format("Job [~w] ~w ==> ~w done~n",[Url,Code,Location]).
-

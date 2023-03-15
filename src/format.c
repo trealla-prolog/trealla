@@ -357,11 +357,17 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 
 		switch(ch) {
 		case 's':
-			if (is_string(c)) {
-				len = noargval ? (int)C_STRLEN_UTF8(c) : MIN_OF(argval, (int)C_STRLEN(q, c));
-				CHECK_BUF(len);
-				memcpy(dst, C_STR(q, c), len);
-				dst += len;
+			if (is_atom(c)) {
+				int len = noargval ? (int)C_STRLEN_UTF8(c) : MIN_OF(argval, (int)C_STRLEN_UTF8(c));
+				const char *src = C_STR(q, c);
+
+				while (len--) {
+					int ch = get_char_utf8(&src);
+					CHECK_BUF(MAX_BYTES_PER_CODEPOINT);
+					dst += put_char_utf8(dst, ch);
+					argval--;
+				}
+
 				argval -= len;
 			} else {
 				list_reader_t fmt3 = {0};
