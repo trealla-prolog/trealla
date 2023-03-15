@@ -18,7 +18,8 @@ future(Template, Goal, F) :-
 	F = N,
 	Task0 = (Goal, send([F-Template])),
 	copy_term(Task0, Task),
-	task(Task).
+	write_term_to_atom(A, Task, []),
+	task(callgoal(A)).
 
 future_all(Fs, all(Fs)).
 future_any(Fs, any(Fs)).
@@ -45,3 +46,7 @@ await(F, Template) :-
 strip_prefix_([], L0, L) :- reverse(L0, L).
 strip_prefix_([[_-V]|Rest], Init, L) :-
 	strip_prefix_(Rest, [V|Init], L).
+
+callgoal(A) :-
+	read_term_from_atom(A, T, []),
+	T.
