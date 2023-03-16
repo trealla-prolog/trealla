@@ -1003,5 +1003,19 @@ future_any/2 – Make a Future that resolves as soon as any of the futures in a 
 future_done/1 – Check if a future finished.
 ```
 
-See also `samples/testconcurrent.pl`.
+For example:
+
+:- use_module(library(http)).
+
+```
+test9(C) :-
+	future(Status, geturl("www.google.com", Status), F1),
+	future(Status, geturl("www.bing.com", Status), F2),
+	future(Status, geturl("www.duckduckgo.com", Status), F3),
+	future_all([F1,F2,F3], F),
+	await(F, StatusCodes),
+	C = StatusCodes.
+```
+
+See `samples/testconcurrent.pl`.
 
