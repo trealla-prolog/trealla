@@ -1000,7 +1000,7 @@ await/2 – Wait for a Future.
 future/3 – Make a Future from a Prolog goal.
 future_all/2 – Make a Future that resolves to a list of the results of an input list of futures.
 future_any/2 – Make a Future that resolves as soon as any of the futures in a list succeeds.
-future_done/1 – Check if a future finished. (NOT YET IMPLEMENTED)
+future_done/1 – Check if a future finished.
 ```
 
 See also `samples/testconcurrent.pl`.

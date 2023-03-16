@@ -8,6 +8,7 @@
 
 :- use_module(library(apply)).
 :- dynamic('$concurrent_count'/1).
+:- dynamic('$future'/1).
 
 '$concurrent_count'(0).
 
@@ -16,7 +17,8 @@ future(Template, Goal, F) :-
 	N1 is N + 1,
 	assertz('$concurrent_count'(N1)),
 	F = '$future'(N),
-	Task0 = (Goal, send([F-Template])),
+	assertz(F),
+	Task0 = (Goal, retract(F), send([F-Template])),
 	copy_term(Task0, Task),
 	write_term_to_atom(A, Task, [quoted(true)]),
 	task(callgoal(A)).
@@ -29,25 +31,47 @@ future_any(Fs, any(Fs)).
 
 :- help(future_all(+list,-term), [iso(false)]).
 :- help(future_any(+list,-term), [iso(false)]).
+:- help(future_any(+list,-term), [iso(false)]).
 
 await(all(Fs), Templates) :-
 	!,
-	findall([F-Template], (member(F, Fs), wait, recv([F-Template])), Msgs),
+	findall([F-Template], (
+		member(F, Fs),
+		wait,
+		recv([F-Template])
+		), Msgs),
 	msort(Msgs, Msgs1),
 	strip_prefix_(Msgs1, [], Templates0),
 	Templates = Templates0.
 
 await(any(Fs), Template) :-
 	!,
-	await, recv([F-Template0]),
+	await,
+	recv([F-Template0]),
 	member(F, Fs),
 	!,
 	Template = Template0.
 
 await(F, Template) :-
 	repeat,
-		wait, recv([F-Template]),
+		wait,
+		recv([F-Template]),
 		!.
+
+future_done(all(Fs)) :-
+	Fs = [F|Rest],
+	future_done(F),
+	future_done(Rest).
+
+future_done(any(Fs)) :-
+	Fs = [F|Rest],
+	future_done(F)
+	-> true
+	; future_done(any(Rest)).
+
+future_done([]).
+future_done(F) :-
+	\+ clause(F, _).
 
 :- help(await(+term,?term), [iso(false)]).
 
