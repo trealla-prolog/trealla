@@ -1992,6 +1992,8 @@ void purge_dirty_list(query *q)
 
 void destroy_query(query *q)
 {
+	q->done = true;
+
 	for (page *a = q->pages; a;) {
 		for (pl_idx_t i = 0; i < a->max_hp_used; i++) {
 			cell *c = a->heap + i;

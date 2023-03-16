@@ -5450,7 +5450,7 @@ static bool fn_fork_0(query *q)
 static bool fn_send_1(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
-	query *dstq = q->parent ? q->parent : q;
+	query *dstq = q->parent && !q->parent->done ? q->parent : q;
 	check_heap_error(init_tmp_heap(q));
 	cell *c = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(c);
