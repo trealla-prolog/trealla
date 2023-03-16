@@ -2037,16 +2037,19 @@ void destroy_query(query *q)
 		q->tasks = task;
 	}
 
+#if 0
 	module *m = find_module(q->pl, "concurrent");
 
 	if (m) {
 		predicate *pr = find_functor(m, "$future", 1);
 
 		if (pr) {
-			for (db_entry *dbe = pr->head; dbe; dbe = dbe->next)
+			for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
 				retract_from_db(dbe);
+			}
 		}
 	}
+#endif
 
 	mp_int_clear(&q->tmp_ival);
 	purge_dirty_list(q);
