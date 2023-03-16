@@ -5268,17 +5268,17 @@ static bool fn_is_stream_1(query *q)
 	return is_stream(p1);
 }
 
-static void push_task(module *m, query *task)
+static void push_task(query *q, query *task)
 {
-	task->next = m->tasks;
+	task->next = q->tasks;
 
-	if (m->tasks)
-		m->tasks->prev = task;
+	if (q->tasks)
+		q->tasks->prev = task;
 
-	m->tasks = task;
+	q->tasks = task;
 }
 
-static query *pop_task(module *m, query *task)
+static query *pop_task(query *q, query *task)
 {
 	if (task->prev)
 		task->prev->next = task->next;
@@ -5286,18 +5286,18 @@ static query *pop_task(module *m, query *task)
 	if (task->next)
 		task->next->prev = task->prev;
 
-	if (task == m->tasks)
-		m->tasks = task->next;
+	if (task == q->tasks)
+		q->tasks = task->next;
 
 	return task->next;
 }
 
 static bool fn_wait_0(query *q)
 {
-	while (q->st.m->tasks) {
+	while (q->tasks) {
 		CHECK_INTERRUPT();
 		uint64_t now = get_time_in_usec() / 1000;
-		query *task = q->st.m->tasks;
+		query *task = q->tasks;
 		unsigned spawn_cnt = 0;
 		bool did_something = false;
 
@@ -5322,7 +5322,7 @@ static bool fn_wait_0(query *q)
 
 			if (!task->yielded || !task->st.curr_cell) {
 				query *save = task;
-				task = pop_task(q->st.m, task);
+				task = pop_task(q, task);
 				destroy_query(save);
 				continue;
 			}
@@ -5341,10 +5341,10 @@ static bool fn_wait_0(query *q)
 
 static bool fn_await_0(query *q)
 {
-	while (q->st.m->tasks) {
+	while (q->tasks) {
 		CHECK_INTERRUPT();
 		pl_uint_t now = get_time_in_usec() / 1000;
-		query *task = q->st.m->tasks;
+		query *task = q->tasks;
 		unsigned spawn_cnt = 0;
 		bool did_something = false;
 
@@ -5369,7 +5369,7 @@ static bool fn_await_0(query *q)
 
 			if (!task->yielded || !q->st.curr_cell) {
 				query *save = task;
-				task = pop_task(q->st.m, task);
+				task = pop_task(q, task);
 				destroy_query(save);
 				continue;
 			}
@@ -5388,7 +5388,7 @@ static bool fn_await_0(query *q)
 			break;
 	}
 
-	if (!q->st.m->tasks)
+	if (!q->tasks)
 		return false;
 
 	check_heap_error(push_choice(q));
@@ -5434,7 +5434,7 @@ static bool fn_task_n(query *q)
 	cell *tmp = clone_to_heap(q, false, tmp2, 0);
 	query *task = create_sub_query(q, tmp);
 	task->yielded = task->spawned = true;
-	push_task(q->st.m, task);
+	push_task(q, task);
 	return true;
 }
 
@@ -5443,7 +5443,7 @@ static bool fn_fork_0(query *q)
 	cell *curr_cell = q->st.curr_cell + q->st.curr_cell->nbr_cells;
 	query *task = create_sub_query(q, curr_cell);
 	task->yielded = true;
-	push_task(q->st.m, task);
+	push_task(q, task);
 	return false;
 }
 

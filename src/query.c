@@ -2031,6 +2031,12 @@ void destroy_query(query *q)
 		unshare_cell(&e->c);
 #endif
 
+	while (q->tasks) {
+		query *task = q->tasks->next;
+		destroy_query(q->tasks);
+		q->tasks = task;
+	}
+
 	mp_int_clear(&q->tmp_ival);
 	purge_dirty_list(q);
 	free(q->trails);

@@ -653,6 +653,7 @@ struct query_ {
 	slot *save_e;
 	db_entry *dirty_list;
 	cycle_info *info1, *info2;
+	query *tasks;
 	map *vars;
 	cell accum;
 	mpz_t tmp_ival;
@@ -775,7 +776,6 @@ struct module_ {
 	module *used[MAX_MODULES];
 	module *next, *orig;
 	prolog *pl;
-	query *tasks;
 	const char *filename, *name;
 	predicate *head, *tail;
 	parser *p;

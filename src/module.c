@@ -1985,12 +1985,6 @@ static void make_rule(module *m, const char *src)
 
 void destroy_module(module *m)
 {
-	while (m->tasks) {
-		query *task = m->tasks->next;
-		destroy_query(m->tasks);
-		m->tasks = task;
-	}
-
 	miter *iter = map_first(m->defops);
 	op_table *opptr;
 
