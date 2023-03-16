@@ -36,7 +36,7 @@ static const unsigned INITIAL_NBR_CHOICES = 8000;
 static const unsigned INITIAL_NBR_CELLS = 1000;
 
 unsigned g_string_cnt = 0, g_interned_cnt = 0;
-int g_tpl_interrupt = 0;
+volatile int g_tpl_interrupt = 0;
 
 typedef enum { CALL, EXIT, REDO, NEXT, FAIL } box_t;
 
@@ -2035,6 +2035,17 @@ void destroy_query(query *q)
 		query *task = q->tasks->next;
 		destroy_query(q->tasks);
 		q->tasks = task;
+	}
+
+	module *m = find_module(q->pl, "concurrent");
+
+	if (m) {
+		predicate *pr = find_functor(m, "$future", 1);
+
+		if (pr) {
+			for (db_entry *dbe = pr->head; dbe; dbe = dbe->next)
+				retract_from_db(dbe);
+		}
 	}
 
 	mp_int_clear(&q->tmp_ival);

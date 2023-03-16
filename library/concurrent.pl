@@ -18,7 +18,7 @@ future(Template, Goal, F) :-
 	assertz('$concurrent_count'(N1)),
 	F = '$future'(N),
 	assertz(F),
-	Task0 = (Goal, retract(F), send([F-Template])),
+	Task0 = ((Goal -> (retract(F), send([F-Template])) ; (retract(F), fail))),
 	copy_term(Task0, Task),
 	write_term_to_atom(A, Task, [quoted(true)]),
 	task(callgoal(A)).
