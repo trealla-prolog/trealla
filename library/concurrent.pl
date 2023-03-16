@@ -15,10 +15,10 @@ future(Template, Goal, F) :-
 	retract('$concurrent_count'(N)),
 	N1 is N + 1,
 	assertz('$concurrent_count'(N1)),
-	F = N,
+	F = '$future'(N),
 	Task0 = (Goal, send([F-Template])),
 	copy_term(Task0, Task),
-	write_term_to_atom(A, Task, []),
+	write_term_to_atom(A, Task, [quoted(true)]),
 	task(callgoal(A)).
 
 :- meta_predicate(future(-,0,?)).
