@@ -7992,7 +7992,7 @@ builtins g_other_bifs[] =
 	{"$load_ops", 0, fn_sys_load_ops_0, NULL, false, false, BLAH},
 	{"$list", 1, fn_sys_list_1, "-list", false, false, BLAH},
 	{"$queue", 1, fn_sys_queue_1, "+term", false, false, BLAH},
-	{"$incr", 2, fn_sys_incr_2, "@var", false, false, BLAH},
+	{"$incr", 2, fn_sys_incr_2, "@var,+integer", false, false, BLAH},
 	{"$choice", 0, fn_sys_choice_0, NULL, false, false, BLAH},
 	{"$alarm", 1, fn_sys_alarm_1, "+integer", false, false, BLAH},
 	{"$put_attributes", 2, fn_sys_put_attributes_2, "@var,+list", false, false, BLAH},

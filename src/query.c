@@ -884,7 +884,7 @@ static void commit_me(query *q)
 	bool last_match = implied_first_cut || cl->is_first_cut || !has_next_key(q);
 	bool recursive = is_tail_recursive(q->st.curr_cell);
 	bool vars_ok = f->actual_slots == cl->nbr_vars;
-	bool choices = any_choices(q, f);
+	bool choices = false;//any_choices(q, f);
 	bool slots_ok = are_slots_ok(q, f);
 	bool tco;
 
