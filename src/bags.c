@@ -30,18 +30,18 @@ bool fn_iso_findall_3(query *q)
 
 	// This checks for a valid list (it allows for partial but acyclic lists)...
 
-	bool is_partial = false;
-
-	if (is_iso_list(xp3) && !check_list(q, xp3, xp3_ctx, &is_partial, NULL) && !is_partial)
-		return throw_error(q, xp3, xp3_ctx, "type_error", "list");
-
 	if (!q->retry) {
+		bool is_partial = false;
+
+		if (is_iso_list(xp3) && !check_list(q, xp3, xp3_ctx, &is_partial, NULL) && !is_partial)
+			return throw_error(q, xp3, xp3_ctx, "type_error", "list");
+
 		cell *p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, true);
 		check_heap_error(p0);
 		unify(q, q->st.curr_cell, q->st.curr_frame, p0, q->st.curr_frame);
 		GET_FIRST_ARG0(p1,any,p0);
-		GET_NEXT_ARG(p2,callable);
-		GET_NEXT_ARG(p3,list_or_nil_or_var);
+		GET_NEXT_ARG(p2,any);
+		GET_NEXT_ARG(p3,any);
 
 		grab_queuen(q);
 		assert(q->st.qnbr < MAX_QUEUES);
