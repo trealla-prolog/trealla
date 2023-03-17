@@ -5311,7 +5311,7 @@ static bool fn_wait_0(query *q)
 					break;
 			}
 
-			if (task->tmo_msecs) {
+			if (task->tmo_msecs && !task->error) {
 				if (now <= task->tmo_msecs) {
 					task = task->next;
 					continue;
@@ -5320,7 +5320,7 @@ static bool fn_wait_0(query *q)
 				task->tmo_msecs = 0;
 			}
 
-			if (!task->yielded || !task->st.curr_cell) {
+			if (!task->yielded || !task->st.curr_cell || task->error) {
 				query *save = task;
 				task = pop_task(q, task);
 				destroy_query(save);
@@ -5358,7 +5358,7 @@ static bool fn_await_0(query *q)
 					break;
 			}
 
-			if (task->tmo_msecs) {
+			if (task->tmo_msecs && !task->error) {
 				if (now <= task->tmo_msecs) {
 					task = task->next;
 					continue;
@@ -5367,7 +5367,7 @@ static bool fn_await_0(query *q)
 				task->tmo_msecs = 0;
 			}
 
-			if (!task->yielded || !q->st.curr_cell) {
+			if (!task->yielded || !task->st.curr_cell || task->error) {
 				query *save = task;
 				task = pop_task(q, task);
 				destroy_query(save);
