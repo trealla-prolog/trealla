@@ -2,6 +2,7 @@
 	future/3,
 	future_all/2,
 	future_any/2,
+	future_cancel/1,
 	future_done/1,
 	await/2
 	]).
@@ -21,7 +22,7 @@ future(Template, Goal, F) :-
 	Task0 = ((Goal -> (retract(F), send([F-Template])) ; (retract(F), fail))),
 	copy_term(Task0, Task),
 	write_term_to_atom(A, Task, [quoted(true)]),
-	task(callgoal(A)).
+	task(callgoal_, A, F).
 
 :- meta_predicate(future(-,0,?)).
 :- help(future(+term,+callable,?list), [iso(false)]).
@@ -58,6 +59,21 @@ await(F, Template) :-
 		recv([F-Template]),
 		!.
 
+future_cancel(all(Fs)) :-
+	Fs = [F|Rest],
+	future_cancel(F),
+	future_cancel(Rest).
+
+future_cancel(any(Fs)) :-
+	Fs = [F|Rest],
+	future_cancel(F)
+	-> true
+	; future_cancel(any(Rest)).
+
+future_cancel([]).
+future_cancel('$future'(N)) :-
+	'$cancel_future'(N).
+
 future_done(all(Fs)) :-
 	Fs = [F|Rest],
 	future_done(F),
@@ -82,6 +98,7 @@ strip_prefix_([[_-V]|Rest], Init, L) :-
 % NOTE: going via an atom through callgoal/1 is to get around a bug to
 % do with passing variables in task/1. Maybe it will get fixed one day.
 
-callgoal(A) :-
+callgoal_(A, '$future'(N)) :-
 	read_term_from_atom(A, T, []),
+	'$set_future'(N),
 	T.

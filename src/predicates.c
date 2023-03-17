@@ -5483,6 +5483,28 @@ static bool fn_recv_1(query *q)
 	return false;
 }
 
+static bool fn_sys_cancel_future_1(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	uint64_t future = get_smalluint(p1);
+
+	for (query *task = q->tasks; task; task = task->next) {
+		if (task->future == future) {
+			task->error = true;
+			break;
+		}
+	}
+
+	return true;
+}
+
+static bool fn_sys_set_future_1(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	q->future = get_smalluint(p1);
+	return true;
+}
+
 static bool fn_pid_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
@@ -8021,6 +8043,8 @@ builtins g_other_bifs[] =
 	{"fork", 0, fn_fork_0, NULL, false, false, BLAH},
 	{"send", 1, fn_send_1, "+term", false, false, BLAH},
 	{"recv", 1, fn_recv_1, "?term", false, false, BLAH},
+	{"$cancel_future", 1, fn_sys_cancel_future_1, "+integer", false, false, BLAH},
+	{"$set_future", 1, fn_sys_set_future_1, "+integer", false, false, BLAH},
 
 	{0}
 };
