@@ -93,7 +93,12 @@ static void trace_call(query *q, cell *c, pl_idx_t c_ctx, box_t box)
 	const char *src = C_STR(q, c);
 
 #if 1
-	if (!strcmp(src, ",") || !strcmp(src, ";") || !strcmp(src, "->") || !strcmp(src, "*->"))
+	if (!strcmp(src, ","))
+		return;
+#endif
+
+#if 0
+	if (!strcmp(src, ";") || !strcmp(src, "->") || !strcmp(src, "*->"))
 		return;
 #endif
 

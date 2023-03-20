@@ -331,7 +331,7 @@ bool fn_if_2(query *q)
 	cell *tmp = clone_to_heap(q, true, p1, 1+p2->nbr_cells+1);
 	check_heap_error(tmp);
 	pl_idx_t nbr_cells = 1 + p1->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_sys_soft_cut_s, fn_sys_soft_inner_cut_0, 0, 0);
+	make_struct(tmp+nbr_cells++, g_sys_soft_inner_cut_s, fn_sys_soft_inner_cut_0, 0, 0);
 	nbr_cells += safe_copy_cells(tmp+nbr_cells, p2, p2->nbr_cells);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
@@ -377,7 +377,7 @@ static bool do_if_else(query *q, cell *p1, cell *p2, cell *p3)
 	cell *tmp = clone_to_heap(q, true, p1, 1+p2->nbr_cells+1);
 	check_heap_error(tmp);
 	pl_idx_t nbr_cells = 1 + p1->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_sys_soft_cut_s, fn_sys_soft_inner_cut_0, 0, 0);
+	make_struct(tmp+nbr_cells++, g_sys_soft_inner_cut_s, fn_sys_soft_inner_cut_0, 0, 0);
 	nbr_cells += safe_copy_cells(tmp+nbr_cells, p2, p2->nbr_cells);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));

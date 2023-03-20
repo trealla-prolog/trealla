@@ -835,7 +835,7 @@ extern pl_idx_t g_anon_s, g_neck_s, g_eof_s, g_lt_s, g_false_s, g_once_s;
 extern pl_idx_t g_gt_s, g_eq_s, g_sys_elapsed_s, g_sys_queue_s, g_braces_s;
 extern pl_idx_t g_sys_stream_property_s, g_unify_s, g_on_s, g_off_s, g_sys_var_s;
 extern pl_idx_t g_call_s, g_braces_s, g_plus_s, g_minus_s, g_post_unify_hook_s;
-extern pl_idx_t g_sys_soft_cut_s;
+extern pl_idx_t g_sys_soft_inner_cut_s;
 
 extern unsigned g_cpu_count;
 
