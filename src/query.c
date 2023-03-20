@@ -715,10 +715,10 @@ bool retry_choice(query *q)
 
 static frame *push_frame(query *q, clause *cl)
 {
-	pl_idx_t new_frame = q->st.fp++;
-	frame *f = GET_FRAME(new_frame);
 	const frame *curr_f = GET_CURR_FRAME();
 	const cell *next_cell = q->st.curr_cell + q->st.curr_cell->nbr_cells;
+	pl_idx_t new_frame = q->st.fp++;
+	frame *f = GET_FRAME(new_frame);
 
 	// Avoid long chains of useless returns...
 
@@ -740,8 +740,9 @@ static frame *push_frame(query *q, clause *cl)
 	return f;
 }
 
-static void reuse_frame(query *q, frame* f, const clause *cl)
+static void reuse_frame(query *q, const clause *cl)
 {
+	frame *f = GET_CURR_FRAME();
 	const frame *newf = GET_FRAME(q->st.fp);
 	const choice *ch = GET_CURR_CHOICE();
 	q->st.sp = ch->st.sp;
@@ -904,7 +905,7 @@ static void commit_me(query *q)
 #endif
 
 	if (q->pl->opt && tco)
-		reuse_frame(q, f, cl);
+		reuse_frame(q, cl);
 	else
 		f = push_frame(q, cl);
 
