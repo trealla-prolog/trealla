@@ -156,6 +156,7 @@ void make_call(query *q, cell *tmp)
 	tmp->val_ret = c ? c + c->nbr_cells : NULL;	// save the return instruction
 	tmp->cgen = f->cgen;						// ... choice-generation
 	tmp->mid = q->st.m->id;						// ... current-module
+	//printf("*** make_call f->cgen=%u\n", (unsigned)f->cgen);
 }
 
 void make_call_return(query *q, cell *tmp, cell *c_ret)
@@ -165,6 +166,7 @@ void make_call_return(query *q, cell *tmp, cell *c_ret)
 	tmp->val_ret = q->st.curr_cell;				// save the return instruction
 	tmp->cgen = f->cgen;						// ... choice-generation
 	tmp->mid = q->st.m->id;						// ... current-module
+	//printf("*** make_call_return f->cgen=%u\n", (unsigned)f->cgen);
 }
 
 void make_atom(cell *tmp, pl_idx_t offset)
@@ -338,7 +340,7 @@ static bool fn_iso_notunify_2(query *q)
 	nbr_cells += p1->nbr_cells;
 	safe_copy_cells(tmp+nbr_cells, p2, p2->nbr_cells);
 	nbr_cells += p2->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_cut_s, fn_sys_inner_cut_0, 0, 0);
+	make_struct(tmp+nbr_cells++, g_sys_inner_cut_s, fn_sys_inner_cut_0, 0, 0);
 	make_struct(tmp+nbr_cells++, g_fail_s, fn_iso_fail_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
@@ -7292,7 +7294,7 @@ static bool fn_sys_register_cleanup_1(query *q)
 		GET_FIRST_ARG(p1,callable);
 		cell *tmp = clone_to_heap(q, true, p1, 3);
 		pl_idx_t nbr_cells = 1 + p1->nbr_cells;
-		make_struct(tmp+nbr_cells++, g_cut_s, fn_sys_inner_cut_0, 0, 0);
+		make_struct(tmp+nbr_cells++, g_sys_inner_cut_s, fn_sys_inner_cut_0, 0, 0);
 		make_struct(tmp+nbr_cells++, g_fail_s, fn_iso_fail_0, 0, 0);
 		make_call(q, tmp+nbr_cells);
 		q->st.curr_cell = tmp;
@@ -7820,6 +7822,7 @@ builtins g_iso_bifs[] =
 	{"$cut_if_det", 0, fn_sys_cut_if_det_0, NULL, false, false, BLAH},
 	{"$soft_inner_cut", 0, fn_sys_soft_inner_cut_0, NULL, false, false, BLAH},
 	{"$inner_cut", 0, fn_sys_inner_cut_0, NULL, false, false, BLAH},
+	{"$inner_cut", 1, fn_sys_inner_cut_1, NULL, false, false, BLAH},
 	{"$drop_barrier", 0, fn_sys_drop_barrier, NULL, false, false, BLAH},
 	{"$timer", 0, fn_sys_timer_0, NULL, false, false, BLAH},
 	{"$elapsed", 0, fn_sys_elapsed_0, NULL, false, false, BLAH},

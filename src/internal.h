@@ -403,8 +403,8 @@ struct cell_ {
 		};
 
 		struct {
-			cell *val_ret;				// used with TAG_EMPTY returns
-			uint64_t cgen;				// choice generation
+			cell *val_ret;				// used with TAG_EMPTY saves
+			uint64_t cgen;				// choice generation on call
 		};
 	};
 };

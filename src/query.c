@@ -730,7 +730,8 @@ static frame *push_frame(query *q, clause *cl)
 		f->prev_cell = q->st.curr_cell;
 	}
 
-	f->cgen = ++q->cgen;
+	choice *ch = GET_CURR_CHOICE();
+	f->cgen = ch->cgen = ++q->cgen;
 	f->is_last = false;
 	f->overflow = 0;
 	f->hp = q->st.hp;
@@ -754,7 +755,7 @@ static void reuse_frame(query *q, const clause *cl)
 		*to = *from;
 	}
 
-	f->cgen = ++q->cgen;
+	//f->cgen = ++q->cgen;
 	f->initial_slots = f->actual_slots = cl->nbr_vars - cl->nbr_temporaries;
 	f->overflow = 0;
 
@@ -1020,6 +1021,8 @@ void cut_me(query *q)
 
 		// A normal cut can't break out of a barrier...
 
+		//printf("*** ch->cgen=%u, f->cgen=%u, curr_frame=%u, ch->barrier=%d, ch->call_barrier=%d, ch->register_cleanup=%d\n", (unsigned)ch->cgen, (unsigned)f->cgen, (unsigned)q->st.curr_frame, ch->barrier, ch->call_barrier, ch->register_cleanup);
+
 		if (ch->barrier) {
 			if (ch->cgen <= f->cgen)
 				break;
@@ -1083,11 +1086,12 @@ void inner_cut(query *q, bool soft_cut)
 			ch--;
 		}
 
+		//printf("*** ch->frame_cgen=%u, ch->cgen=%u, f->cgen=%u, curr_frame=%u, ch->barrier=%d, ch->call_barrier=%d, ch->register_cleanup=%d\n", (unsigned)ch->frame_cgen, (unsigned)ch->cgen, (unsigned)f->cgen, (unsigned)q->st.curr_frame, ch->barrier, ch->call_barrier, ch->register_cleanup);
+
 		// An inner cut can break through a barrier...
 
 		if (ch->cgen < f->cgen) {
-			//f->cgen = ch->cgen;
-			f->cgen--;
+			f->cgen = ch->cgen;
 			break;
 		}
 
@@ -1139,6 +1143,7 @@ static void proceed(query *q)
 		if (q->st.curr_cell->val_ret) {
 			frame *f = GET_CURR_FRAME();
 			f->cgen = q->st.curr_cell->cgen;
+			//printf("*** proceed f->cgen=%u\n", (unsigned)f->cgen);
 			q->st.m = q->pl->modmap[q->st.curr_cell->mid];
 		}
 
