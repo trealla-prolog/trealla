@@ -190,22 +190,24 @@ bool fn_iso_call_n(query *q)
 		convert_to_literal(q->st.m, tmp2);
 	}
 
-	const char *functor = C_STR(q, tmp2);
-	bool found = false;
+	if (args > 1) {
+		const char *functor = C_STR(q, tmp2);
+		bool found = false;
 
-	if ((tmp2->match = search_predicate(q->st.m, tmp2, NULL)) != NULL) {
-		tmp2->flags &= ~FLAG_BUILTIN;
-	} else if ((tmp2->fn_ptr = get_builtin_term(q->st.m, tmp2, &found, NULL)), found) {
-		tmp2->flags |= FLAG_BUILTIN;
-	} else {
-		tmp2->flags &= ~FLAG_BUILTIN;
-	}
+		if ((tmp2->match = search_predicate(q->st.m, tmp2, NULL)) != NULL) {
+			tmp2->flags &= ~FLAG_BUILTIN;
+		} else if ((tmp2->fn_ptr = get_builtin_term(q->st.m, tmp2, &found, NULL)), found) {
+			tmp2->flags |= FLAG_BUILTIN;
+		} else {
+			tmp2->flags &= ~FLAG_BUILTIN;
+		}
 
-	if ((args > 1) && arity <= 2) {
-		unsigned specifier;
+		if (arity <= 2) {
+			unsigned specifier;
 
-		if (search_op(q->st.m, functor, &specifier, false))
-			SET_OP(tmp2, specifier);
+			if (search_op(q->st.m, functor, &specifier, false))
+				SET_OP(tmp2, specifier);
+		}
 	}
 
 	if (check_body_callable(q->st.m->p, tmp2) != NULL)
@@ -233,18 +235,6 @@ bool fn_iso_once_1(query *q)
 	cell *tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(tmp2);
 
-	const char *functor = C_STR(q, tmp2);
-
-	if (!p1->match) {
-		bool found = false;
-
-		if ((tmp2->match = search_predicate(q->st.m, tmp2, NULL)) != NULL) {
-			tmp2->flags &= ~FLAG_BUILTIN;
-		} else if ((tmp2->fn_ptr = get_builtin_term(q->st.m, tmp2, &found, NULL)), found) {
-			tmp2->flags |= FLAG_BUILTIN;
-		}
-	}
-
 	if (check_body_callable(q->st.m->p, tmp2) != NULL)
 		return throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
 
@@ -269,18 +259,6 @@ bool fn_ignore_1(query *q)
 	check_heap_error(init_tmp_heap(q));
 	cell *tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(tmp2);
-
-	const char *functor = C_STR(q, tmp2);
-
-	if (!p1->match) {
-		bool found = false;
-
-		if ((tmp2->match = search_predicate(q->st.m, tmp2, NULL)) != NULL) {
-			tmp2->flags &= ~FLAG_BUILTIN;
-		} else if ((tmp2->fn_ptr = get_builtin_term(q->st.m, tmp2, &found, NULL)), found) {
-			tmp2->flags |= FLAG_BUILTIN;
-		}
-	}
 
 	if (check_body_callable(q->st.m->p, tmp2) != NULL)
 		return throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
