@@ -534,12 +534,11 @@ bool fn_iso_catch_3(query *q)
 
 	// First time through? Try the primary goal...
 
-	pl_idx_t cp = q->cp;
 	cell *tmp = clone_to_heap(q, true, p1, 3);
 	check_heap_error(tmp);
 	pl_idx_t nbr_cells = 1+p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_block_catcher_s, fn_sys_block_catcher_1, 1, 1);
-	make_int(tmp+nbr_cells++, cp);
+	make_int(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_catcher(q, QUERY_RETRY));
 	q->st.curr_cell = tmp;
