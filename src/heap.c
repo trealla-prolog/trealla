@@ -345,7 +345,7 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 
 cell *deep_raw_copy_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx)
 {
-	frame *f = GET_CURR_FRAME();
+	const frame *f = GET_CURR_FRAME();
 	q->varno = f->actual_slots;
 	q->tab_idx = 0;
 	q->cycle_error = false;
@@ -368,7 +368,7 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx_t p1_c
 	pl_idx_t save_p1_ctx = p1_ctx;
 	cell *c = deref(q, p1, p1_ctx);
 	pl_idx_t c_ctx = q->latest_ctx;
-	frame *f = GET_CURR_FRAME();
+	const frame *f = GET_CURR_FRAME();
 	q->cycle_error = false;
 
 	if (q->vars && is_var(save_p1)) {
@@ -426,7 +426,7 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx_t p1_c
 	for (pl_idx_t i = 0; i < rec->nbr_cells; i++, c++) {
 		if (is_var(c) && is_fresh(c) && c->tmp_attrs) {
 			//printf("*** got one var_nbr=%u / %u\n", c->var_nbr, c->var_ctx);
-			frame *f = GET_FRAME(c->var_ctx);
+			const frame *f = GET_FRAME(c->var_ctx);
 			slot *e = GET_SLOT(f, c->var_nbr);
 			e->c.attrs = c->tmp_attrs;
 			e->c.attrs_ctx = c->var_ctx;
@@ -440,7 +440,7 @@ cell *deep_copy_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_attrs)
 {
 	q->vars = map_create(NULL, NULL, NULL);
 	if (!q->vars) return NULL;
-	frame *f = GET_CURR_FRAME();
+	const frame *f = GET_CURR_FRAME();
 	q->varno = f->actual_slots;
 	q->tab_idx = 0;
 	cell *tmp = deep_copy_to_tmp_with_replacement(q, p1, p1_ctx, copy_attrs, NULL, 0, NULL, 0);
@@ -466,7 +466,7 @@ cell *deep_copy_to_heap_with_replacement(query *q, cell *p1, pl_idx_t p1_ctx, bo
 {
 	q->vars = map_create(NULL, NULL, NULL);
 	if (!q->vars) return NULL;
-	frame *f = GET_CURR_FRAME();
+	const frame *f = GET_CURR_FRAME();
 	q->varno = f->actual_slots;
 	q->tab_idx = 0;
 	cell *tmp = deep_copy_to_tmp_with_replacement(q, p1, p1_ctx, copy_attrs, from, from_ctx, to, to_ctx);
@@ -658,7 +658,7 @@ cell *clone_to_heap(query *q, bool prefix, cell *p1, unsigned extras)
 {
 	cell *tmp = alloc_on_heap(q, (prefix?1:0)+(unsigned)p1->nbr_cells+extras);
 	if (!tmp) return NULL;
-	frame *f = GET_CURR_FRAME();
+	const frame *f = GET_CURR_FRAME();
 
 	if (prefix) {
 		// Needed for follow() to work
