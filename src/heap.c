@@ -662,19 +662,19 @@ cell *clone_to_heap(query *q, bool prefix, cell *p1, unsigned extras)
 
 	if (prefix) {
 		// Needed for follow() to work
-		*tmp = (cell){0};
 		tmp->tag = TAG_EMPTY;
 		tmp->nbr_cells = 1;
+		tmp->arity = 0;
 		tmp->flags = FLAG_BUILTIN;
 	}
 
 	cell *src = p1, *dst = tmp+(prefix?1:0);
 
-	for (pl_idx_t i = 0; i < p1->nbr_cells; i++, dst++, src++) {
-		*dst = *src;
-		share_cell(src);
+	for (pl_idx_t i = 0; i < p1->nbr_cells; i++, dst++) {
+		*dst = *src++;
+		share_cell(dst);
 
-		if (!is_var(src) || is_ref(src))
+		if (!is_var(dst) || is_ref(dst))
 			continue;
 
 		dst->flags |= FLAG_VAR_REF;
