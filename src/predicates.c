@@ -7831,7 +7831,7 @@ builtins g_iso_bifs[] =
 	{"$ne", 2, fn_sys_ne_2, NULL, false, false, BLAH},
 	{"$incr", 2, fn_sys_incr_2, NULL, false, false, BLAH},
 
-	{"call", 1, fn_iso_call_n, ":callable", true, false, BLAH},
+	{"call", 1, fn_iso_call_1, ":callable", true, false, BLAH},
 	{"call", 2, fn_iso_call_n, ":callable,term", true, false, BLAH},
 	{"call", 3, fn_iso_call_n, ":callable,term,term", true, false, BLAH},
 	{"call", 4, fn_iso_call_n, ":callable,term,term,term", true, false, BLAH},
