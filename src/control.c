@@ -486,7 +486,7 @@ bool fn_sys_block_catcher_1(query *q)
 		return true;
 
 	GET_FIRST_ARG(p1,integer);
-	pl_idx_t cp = get_smallint(p1);
+	pl_idx_t cp = get_smalluint(p1);
 	choice *ch = GET_CHOICE(cp);
 
 	if (!ch->catchme_retry)
@@ -538,7 +538,7 @@ bool fn_iso_catch_3(query *q)
 	check_heap_error(tmp);
 	pl_idx_t nbr_cells = 1+p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_block_catcher_s, fn_sys_block_catcher_1, 1, 1);
-	make_int(tmp+nbr_cells++, q->cp);
+	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_catcher(q, QUERY_RETRY));
 	q->st.curr_cell = tmp;
