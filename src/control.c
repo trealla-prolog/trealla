@@ -211,14 +211,10 @@ bool fn_iso_call_1(query *q)
 		return false;
 
 	GET_FIRST_ARG(p1,callable);
-	cell *tmp2;
 
-	if (p1_ctx != q->st.curr_frame) {
-		check_heap_error(init_tmp_heap(q));
-		tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
-		check_heap_error(tmp2);
-	} else
-		tmp2 = p1;
+	check_heap_error(init_tmp_heap(q));
+	cell *tmp2 = p1_ctx != q->st.curr_frame ? deep_clone_to_tmp(q, p1, p1_ctx) : p1;
+	check_heap_error(tmp2);
 
 	if (is_cstring(tmp2)) {
 		share_cell(tmp2);
@@ -246,14 +242,9 @@ bool fn_iso_once_1(query *q)
 		return false;
 
 	GET_FIRST_ARG(p1,callable);
-	cell *tmp2;
-
-	if (p1_ctx != q->st.curr_frame) {
-		check_heap_error(init_tmp_heap(q));
-		tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
-		check_heap_error(tmp2);
-	} else
-		tmp2 = p1;
+	check_heap_error(init_tmp_heap(q));
+	cell *tmp2 = p1_ctx != q->st.curr_frame ? deep_clone_to_tmp(q, p1, p1_ctx) : p1;
+	check_heap_error(tmp2);
 
 	if (check_body_callable(q->st.m->p, tmp2) != NULL)
 		return throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
@@ -276,14 +267,9 @@ bool fn_ignore_1(query *q)
 		return true;
 
 	GET_FIRST_ARG(p1,callable);
-	cell *tmp2;
-
-	if (p1_ctx != q->st.curr_frame) {
-		check_heap_error(init_tmp_heap(q));
-		tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
-		check_heap_error(tmp2);
-	} else
-		tmp2 = p1;
+	check_heap_error(init_tmp_heap(q));
+	cell *tmp2 = p1_ctx != q->st.curr_frame ? deep_clone_to_tmp(q, p1, p1_ctx) : p1;
+	check_heap_error(tmp2);
 
 	if (check_body_callable(q->st.m->p, tmp2) != NULL)
 		return throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");

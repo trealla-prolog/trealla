@@ -547,7 +547,6 @@ struct prolog_state_ {
 	bool arg2_is_ground:1;
 	bool arg3_is_ground:1;
 	bool end_findall:1;
-	bool skip:1;
 };
 
 struct choice_ {
