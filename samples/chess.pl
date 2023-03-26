@@ -253,7 +253,7 @@ in_check(Board, Color) :-
 %:- entry((move(Board,From,To,Color,Piece) :- nonvar(Board), atom(Color))).
 
 collect_moves(Board, Color, Moves) :-
-    '$bagof'(move(From,To), Piece^move(Board,From,To,Color,Piece), Moves).
+    bagof(move(From,To), Piece^move(Board,From,To,Color,Piece), Moves).
 
 make_move(Board, From, To, OutBoard) :-
     make_move(Board, From, To, Color, Type, NewBoard),
