@@ -7543,6 +7543,7 @@ static void load_properties(module *m)
 	format_property(m, tmpbuf, sizeof(tmpbuf), "ignore", 1, "meta_predicate(ignore(0))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "call", 1, "meta_predicate(call(0))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "findall", 3, "meta_predicate(findall(?,0,-))"); SB_strcat(pr, tmpbuf);
+	//format_property(m, tmpbuf, sizeof(tmpbuf), "bagof", 3, "meta_predicate(bagof(?,0,-))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "with_mutex", 2, "meta_predicate(with_mutex(+,0))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "engine_create", 4, "meta_predicate(engine_create(?,0,?,+))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "|", 2, "meta_predicate((:|+))"); SB_strcat(pr, tmpbuf);
@@ -7877,7 +7878,7 @@ builtins g_iso_bifs[] =
 	{"compare", 3, fn_iso_compare_3, "+atom,+term,+term", true, false, BLAH},
 	{"unify_with_occurs_check", 2, fn_iso_unify_with_occurs_check_2, "+term,+term", true, false, BLAH},
 
-	//{"$bagof", 3, fn_sys_bagof_3, NULL, true, false, BLAH},
+	{"$bagof", 3, fn_iso_bagof_3, NULL, true, false, BLAH},
 
 	{0}
 };

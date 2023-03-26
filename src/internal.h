@@ -279,6 +279,7 @@ enum {
 	FLAG_MANAGED=1<<10,					// any ref-counted object
 	FLAG_TAIL_REC=1<<11,
 	FLAG_EVALUABLE=1<<12,
+	FLAG_PROCESSED=1<<12,				// used by bagof
 
 	FLAG_END=1<<13
 };
@@ -551,7 +552,7 @@ struct prolog_state_ {
 
 struct choice_ {
 	prolog_state st;
-	uint64_t cgen, frame_cgen, ugen;
+	uint64_t cgen, frame_cgen, ugen, pins;
 	pl_idx_t overflow, initial_slots, actual_slots;
 	bool is_tail_rec:1;
 	bool catchme_retry:1;
@@ -648,7 +649,7 @@ struct query_ {
 	choice *choices;
 	trail *trails;
 	cell *tmp_heap, *last_arg, *variable_names, *ball, *suspect;
-	cell *queue[MAX_QUEUES];
+	cell *queue[MAX_QUEUES], *tmpq[MAX_QUEUES];
 	page *pages;
 	slot *save_e;
 	db_entry *dirty_list;

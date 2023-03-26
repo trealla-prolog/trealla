@@ -16,6 +16,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx_t p1_ctx, cell *p2, pl
 bool do_yield(query *q, int msecs);
 void do_yield_at(query *q, unsigned int time_in_ms);
 
+cell *do_term_variables(query *q, cell *p1, pl_idx_t p1_ctx);
 bool query_redo(query *q);
 bool has_next_key(query *q);
 void next_key(query *q);
@@ -121,6 +122,7 @@ bool fn_sys_cleanup_if_det_0(query *q);
 bool fn_sys_cut_if_det_0(query *q);
 bool fn_sys_queuen_2(query *q);
 bool fn_iso_findall_3(query *q);
+bool fn_iso_bagof_3(query *q);
 
 cell *convert_to_list(query *q, cell *c, pl_idx_t nbr_cells);
 
