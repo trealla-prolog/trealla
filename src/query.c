@@ -876,16 +876,17 @@ static void commit_me(query *q)
 	cell *body = get_body(cl->cells);
 	bool implied_first_cut = q->check_unique && !q->has_vars && cl->is_unique && !q->st.iter;
 	bool last_match = implied_first_cut || cl->is_first_cut || !has_next_key(q);
-	bool recursive = is_tail_recursive(q->st.curr_cell);
-	bool vars_ok = f->actual_slots == cl->nbr_vars;
-	bool choices = false;//any_choices(q, f);
-	bool slots_ok = are_slots_ok(q, f);
-	bool tco;
+	bool tco = false;
 
 	if (q->no_tco && (cl->nbr_vars != cl->nbr_temporaries))
-		tco = false;
-	else
-		tco = last_match && recursive && vars_ok && !choices && slots_ok;
+		;
+	else if (last_match){
+		bool recursive = is_tail_recursive(q->st.curr_cell);
+		bool vars_ok = f->actual_slots == cl->nbr_vars;
+		bool choices = false;//any_choices(q, f);
+		bool slots_ok = are_slots_ok(q, f);
+		tco = recursive && vars_ok && !choices && slots_ok;
+	}
 
 #if 0
 	printf("*** retry=%d,tco=%d,q->no_tco=%d,last_match=%d (%d/%d),recursive=%d,choices=%d,slots_ok=%d,vars_ok=%d,cl->nbr_vars=%u,cl->nbr_temps=%u\n",
