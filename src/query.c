@@ -206,7 +206,7 @@ static bool check_choice(query *q)
 	return true;
 }
 
-bool check_frame(query *q)
+static bool check_frame(query *q)
 {
 	if (q->st.fp > q->max_frames) {
 		if (q->st.fp > q->hw_frames)
