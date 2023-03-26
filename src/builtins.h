@@ -81,7 +81,6 @@ void make_end(cell *tmp);
 
 void make_atom(cell *tmp, pl_idx_t offset);
 void make_smalln(cell *tmp, const char *s, size_t n);
-void make_indirect(cell *tmp, cell *v, pl_idx_t v_ctx);
 
 bool make_cstringn(cell *d, const char *s, size_t n);
 bool make_stringn(cell *d, const char *s, size_t n);
@@ -97,6 +96,16 @@ bool fn_sys_ffi_register_predicate_4(query *q);
 bool fn_iso_add_2(query *q);
 bool fn_iso_float_1(query *q);
 bool fn_iso_integer_1(query *q);
+
+inline static void make_indirect(cell *tmp, cell *v, pl_idx_t v_ctx)
+{
+	tmp->tag = TAG_PTR;
+	tmp->nbr_cells = 1;
+	tmp->arity = 0;
+	tmp->flags = 0;
+	tmp->val_ptr = v;
+	tmp->var_ctx = v_ctx;
+}
 
 inline static cell *get_var(query *q, cell *c, pl_idx_t c_ctx)
 {

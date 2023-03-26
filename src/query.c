@@ -447,23 +447,6 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx_t key_ctx)
 	if (!(iter = map_find_key(idx, key)))
 		return false;
 
-#define TESTINGIDX 0
-
-#if TESTINGIDX
-
-	// This returns results in index order but not database order
-	// as is required for normal Prolog operations. Just used
-	// for testing purposes only...
-
-	if (!map_next_key(iter, (void*)&q->st.curr_dbe)) {
-		map_done(iter);
-		return false;
-	}
-
-	q->st.iter = iter;
-	return true;
-#endif
-
 	// If the index search has found just one (definite) solution
 	// then we can use it with no problems. If more than one then
 	// results must be returned in database order, so prefetch all
@@ -787,7 +770,7 @@ static bool are_slots_ok(const query *q, const frame *f)
 	return true;
 }
 
-void share_predicate(query *q, predicate *pr)
+static void share_predicate(query *q, predicate *pr)
 {
 	if (!pr->is_dynamic)
 		return;
@@ -796,7 +779,7 @@ void share_predicate(query *q, predicate *pr)
 	pr->ref_cnt++;
 }
 
-void unshare_predicate(query *q, predicate *pr)
+static void unshare_predicate(query *q, predicate *pr)
 {
 	if (!pr)
 		return;
@@ -1174,16 +1157,6 @@ static bool resume_frame(query *q)
 	f = GET_CURR_FRAME();
 	q->st.m = q->pl->modmap[f->mid];
 	return true;
-}
-
-void make_indirect(cell *tmp, cell *v, pl_idx_t v_ctx)
-{
-	tmp->tag = TAG_PTR;
-	tmp->nbr_cells = 1;
-	tmp->arity = 0;
-	tmp->flags = 0;
-	tmp->val_ptr = v;
-	tmp->var_ctx = v_ctx;
 }
 
 #define MAX_LOCAL_VARS (1L<<30)

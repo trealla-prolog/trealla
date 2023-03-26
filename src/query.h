@@ -54,8 +54,6 @@ char *chars_list_to_string(query *q, cell *p_chars, pl_idx_t p_chars_ctx, size_t
 cell *string_to_chars_list(query *q, cell *p, pl_idx_t p_ctx);
 
 unsigned create_vars(query *q, unsigned nbr);
-void share_predicate(query *q, predicate *pr);
-void unshare_predicate(query *q, predicate *pr);
 cell *skip_max_list(query *q, cell *head, pl_idx_t *head_ctx, pl_int_t max, pl_int_t *skip, cell *tmp);
 bool is_cyclic_term(query *q, cell *p1, pl_idx_t p1_ctx);
 bool is_acyclic_term(query *q, cell *p1, pl_idx_t p1_ctx);
