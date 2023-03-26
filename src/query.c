@@ -1100,24 +1100,6 @@ bool drop_barrier(query *q)
 	return false;
 }
 
-// Proceed to next goal in frame...
-
-static void proceed(query *q)
-{
-	q->st.curr_cell += q->st.curr_cell->nbr_cells;
-
-	while (is_end(q->st.curr_cell)) {
-		if (q->st.curr_cell->val_ret) {
-			frame *f = GET_CURR_FRAME();
-			f->cgen = q->st.curr_cell->cgen;
-			q->st.m = q->pl->modmap[q->st.curr_cell->mid];
-		}
-
-		if (!(q->st.curr_cell = q->st.curr_cell->val_ret))
-			break;
-	}
-}
-
 // Prune dead frames from the top down...
 
 static void chop_frames(query *q, const frame *f)
@@ -1157,6 +1139,24 @@ static bool resume_frame(query *q)
 	f = GET_CURR_FRAME();
 	q->st.m = q->pl->modmap[f->mid];
 	return true;
+}
+
+// Proceed to next goal in frame...
+
+static void proceed(query *q)
+{
+	q->st.curr_cell += q->st.curr_cell->nbr_cells;
+
+	while (is_end(q->st.curr_cell)) {
+		if (q->st.curr_cell->val_ret) {
+			frame *f = GET_CURR_FRAME();
+			f->cgen = q->st.curr_cell->cgen;
+			q->st.m = q->pl->modmap[q->st.curr_cell->mid];
+		}
+
+		if (!(q->st.curr_cell = q->st.curr_cell->val_ret))
+			break;
+	}
 }
 
 #define MAX_LOCAL_VARS (1L<<30)
@@ -1602,13 +1602,13 @@ bool start(query *q)
 			}
 		}
 
-		q->tot_goals++;
-		q->did_throw = false;
 		Trace(q, q->st.curr_cell, q->st.curr_frame, CALL);
 		cell *save_cell = q->st.curr_cell;
 		pl_idx_t save_ctx = q->st.curr_frame;
 		q->run_hook = q->cycle_error = false;
 		q->before_hook_tp = q->st.tp;
+		q->tot_goals++;
+		q->did_throw = false;
 
 		if (is_builtin(q->st.curr_cell)) {
 			if (!q->st.curr_cell->fn_ptr || !q->st.curr_cell->fn_ptr->fn) {
