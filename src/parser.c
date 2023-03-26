@@ -159,7 +159,7 @@ static cell *make_a_cell(parser *p)
 	return ret;
 }
 
-void destroy_parser(parser *p)
+void parser_destroy(parser *p)
 {
 	SB_free(p->token);
 	free(p->tmpbuf);
@@ -169,7 +169,7 @@ void destroy_parser(parser *p)
 	free(p);
 }
 
-parser *create_parser(module *m)
+parser *parser_create(module *m)
 {
 	parser *p = calloc(1, sizeof(parser));
 	check_error(p);
@@ -329,11 +329,11 @@ static bool goal_run(parser *p, cell *goal)
 	if ((goal->val_off == g_goal_expansion_s) || (goal->val_off == g_cut_s))
 		return false;
 
-	query *q = create_query(p->m, false);
+	query *q = query_create(p->m, false);
 	execute(q, goal, MAX_ARITY);
 
 	if (q->retry != QUERY_OK) {
-		destroy_query(q);
+		query_destroy(q);
 		return false;
 	}
 
@@ -581,7 +581,7 @@ static void directives(parser *p, cell *d)
 			return;
 		}
 
-		tmp_m = create_module(p->m->pl, name);
+		tmp_m = module_create(p->m->pl, name);
 		if (!tmp_m) {
 			if (DUMP_ERRS || !p->do_read_term)
 				fprintf(stdout, "Error: module creation failed: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_nbr);
@@ -610,7 +610,7 @@ static void directives(parser *p, cell *d)
 			cell *f = arg;
 			char *name = C_STR(p->m, f+1);
 			unsigned arity = get_smallint(f+2);
-			duplicate_module(p->m->pl, p->m, name, arity);
+			module_duplicate(p->m->pl, p->m, name, arity);
 			return;
 		}
 
@@ -625,7 +625,7 @@ static void directives(parser *p, cell *d)
 
 			char *name = C_STR(p->m, f+1);
 			unsigned arity = get_smallint(f+2);
-			duplicate_module(p->m->pl, p->m, name, arity);
+			module_duplicate(p->m->pl, p->m, name, arity);
 			arg += 4;
 		}
 
@@ -667,7 +667,7 @@ static void directives(parser *p, cell *d)
 			return;
 		}
 
-		tmp_m = create_module(p->m->pl, name);
+		tmp_m = module_create(p->m->pl, name);
 
 		if (!tmp_m) {
 			if (DUMP_ERRS || !p->do_read_term)
@@ -703,7 +703,7 @@ static void directives(parser *p, cell *d)
 					predicate *pr = find_predicate(p->m, &tmp);
 					if (!pr) pr = create_predicate(p->m, &tmp);
 					if (!pr) {
-						destroy_module(p->m);
+						module_destroy(p->m);
 						p->m = NULL;
 						if (DUMP_ERRS || !p->do_read_term)
 							fprintf(stdout, "Error: predicate creation failed, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
@@ -809,8 +809,6 @@ static void directives(parser *p, cell *d)
 			cell tmp = *c_name;
 			tmp.arity = arity;
 
-			//printf("*** %s => %s / %u\n", dirname, C_STR(p, c_name), arity);
-
 			if (!strcmp(dirname, "dynamic")) {
 				predicate * pr = find_predicate(p->m, &tmp);
 
@@ -861,8 +859,6 @@ static void directives(parser *p, cell *d)
 	if (is_nil(p1))
 		return;
 
-	//printf("*** %s\n", dirname);
-
 	while (is_interned(p1) && !g_tpl_interrupt) {
 		module *m = p->m;
 		cell *c_id = p1;
@@ -873,7 +869,7 @@ static void directives(parser *p, cell *d)
 			m = find_module(p->m->pl, C_STR(p, c_mod));
 
 			if (!m)
-				m = create_module(p->pl, C_STR(p, c_mod));
+				m = module_create(p->pl, C_STR(p, c_mod));
 
 			c_id = p1 + 2;
 		}
@@ -886,8 +882,6 @@ static void directives(parser *p, cell *d)
 			unsigned arity = get_smallint(c_arity);
 			cell tmp = *c_name;
 			tmp.arity = arity;
-
-			//printf("*** *** *** %s : %s / %u\n", m->name, C_STR(p, c_name), arity);
 
 			if (!strcmp(C_STR(p, c_id), "//"))
 				arity += 2;
@@ -1395,7 +1389,7 @@ static bool dcg_expansion(parser *p)
 	if (!autoload_dcg_library(p))
 		return false;
 
-	query *q = create_query(p->m, false);
+	query *q = query_create(p->m, false);
 	check_error(q);
 
 	cell tmp[1+p->cl->cells->nbr_cells+1+1];
@@ -1410,13 +1404,13 @@ static bool dcg_expansion(parser *p)
 	strcat(src, ".");
 
 	if (!src) {
-		destroy_query(q);
+		query_destroy(q);
 		p->error = true;
 		return false;
 	}
 
-	parser *p2 = create_parser(p->m);
-	check_error(p2, destroy_query(q));
+	parser *p2 = parser_create(p->m);
+	check_error(p2, query_destroy(q));
 	p2->srcptr = src;
 	tokenize(p2, false, false);
 	//xref_rule(p2->m, p2->cl, NULL);
@@ -1428,8 +1422,8 @@ static bool dcg_expansion(parser *p)
 	p->nbr_vars = p2->nbr_vars;
 	p2->cl = NULL;
 
-	destroy_parser(p2);
-	destroy_query(q);
+	parser_destroy(p2);
+	query_destroy(q);
 	return true;
 }
 
@@ -1452,15 +1446,15 @@ static bool term_expansion(parser *p)
 	if (h->val_off == g_term_expansion_s)
 		return false;
 
-	query *q = create_query(p->m, false);
+	query *q = query_create(p->m, false);
 	check_error(q);
 	char *dst = print_canonical_to_strbuf(q, p->cl->cells, 0, 0);
 	SB(s);
 	SB_sprintf(s, "term_expansion((%s),_TermOut), !.", dst);
 	free(dst);
 
-	parser *p2 = create_parser(p->m);
-	check_error(p2, destroy_query(q));
+	parser *p2 = parser_create(p->m);
+	check_error(p2, query_destroy(q));
 	p2->line_nbr = p->line_nbr;
 	p2->skip = true;
 	p2->srcptr = SB_cstr(s);
@@ -1470,8 +1464,8 @@ static bool term_expansion(parser *p)
 	SB_free(s);
 
 	if (q->retry != QUERY_OK) {
-		destroy_parser(p2);
-		destroy_query(q);
+		parser_destroy(p2);
+		query_destroy(q);
 		return false;
 	}
 
@@ -1494,8 +1488,8 @@ static bool term_expansion(parser *p)
 	}
 
 	if (!src) {
-		destroy_parser(p2);
-		destroy_query(q);
+		parser_destroy(p2);
+		query_destroy(q);
 		p->error = true;
 		return false;
 	}
@@ -1512,8 +1506,8 @@ static bool term_expansion(parser *p)
 	p->nbr_vars = p2->nbr_vars;
 	p2->cl = NULL;
 
-	destroy_parser(p2);
-	destroy_query(q);
+	parser_destroy(p2);
+	query_destroy(q);
 
 	return term_expansion(p);
 }
@@ -1537,7 +1531,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	//if (search_predicate(p->m, goal))
 	//	return goal;
 
-	query *q = create_query(p->m, false);
+	query *q = query_create(p->m, false);
 	check_error(q);
 	q->varnames = true;
 	char *dst = print_canonical_to_strbuf(q, goal, 0, 0);
@@ -1553,8 +1547,8 @@ static cell *goal_expansion(parser *p, cell *goal)
 	// variables should create anew. Hence we pull the
 	// vartab from the main parser...
 
-	parser *p2 = create_parser(p->m);
-	check_error(p2, destroy_query(q));
+	parser *p2 = parser_create(p->m);
+	check_error(p2, query_destroy(q));
 	q->p = p2;
 	p2->cl->nbr_vars = p->cl->nbr_vars;
 	p2->vartab = p->vartab;
@@ -1568,8 +1562,8 @@ static cell *goal_expansion(parser *p, cell *goal)
 	SB_free(s);
 
 	if (q->retry != QUERY_OK) {
-		destroy_parser(p2);
-		destroy_query(q);
+		parser_destroy(p2);
+		query_destroy(q);
 		return goal;
 	}
 
@@ -1592,15 +1586,14 @@ static cell *goal_expansion(parser *p, cell *goal)
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		q->varnames = true;
 		src = print_term_to_strbuf(q, c, q->latest_ctx, 1);
-		//printf("*** newgoal=%s\n", src);
 		q->varnames = false;
 		strcat(src, ".");
 		break;
 	}
 
 	if (!src) {
-		destroy_parser(p2);
-		destroy_query(q);
+		parser_destroy(p2);
+		query_destroy(q);
 		p->error = true;
 		return goal;
 	}
@@ -1646,8 +1639,8 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 	// done
 
-	destroy_parser(p2);
-	destroy_query(q);
+	parser_destroy(p2);
+	query_destroy(q);
 
 	return goal;
 }
@@ -1758,12 +1751,12 @@ void term_to_body(parser *p)
 
 cell *check_body_callable(parser *p, cell *c)
 {
-	if (is_xfx(c) || is_xfy(c)) {
-		if (!strcmp(C_STR(p, c), ",")
-			|| !strcmp(C_STR(p, c), ";")
-			|| !strcmp(C_STR(p, c), "->")
-			|| !strcmp(C_STR(p, c), "*->")
-			|| !strcmp(C_STR(p, c), ":-")) {
+	if ((c->arity == 2) && (is_xfx(c) || is_xfy(c))) {
+		if ((c->val_off == g_conjunction_s)
+			|| (c->val_off == g_disjunction_s)
+			|| (c->val_off == g_if_then_s)
+			|| (c->val_off == g_soft_cut_s)
+			|| (c->val_off == g_neck_s)) {
 			cell *lhs = c + 1;
 			cell *tmp;
 
@@ -1782,12 +1775,12 @@ cell *check_body_callable(parser *p, cell *c)
 
 bool virtual_term(parser *p, const char *src)
 {
-	parser *p2 = create_parser(p->m);
+	parser *p2 = parser_create(p->m);
 	check_error(p2);
 	p2->consulting = true;
 	p2->srcptr = (char*)src;
 	tokenize(p2, false, false);
-	destroy_parser(p2);
+	parser_destroy(p2);
 	return true;
 }
 
@@ -2158,8 +2151,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 			return false;
 		}
 
-		set_float(&p->v, v);
-		if (neg) p->v.val_float = -p->v.val_float;
+		set_float(&p->v, neg?-v:v);
 		*srcptr = tmpptr;
 		mp_int_clear(&v2);
 		return true;
@@ -3523,7 +3515,7 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 			return true;
 		}
 
-		query *q = create_query(p->m, false);
+		query *q = query_create(p->m, false);
 
 		if (!q) {
 			p->srcptr = NULL;
@@ -3554,7 +3546,7 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 		if (q->pl->is_query)
 			break;
 
-		destroy_query(q);
+		query_destroy(q);
 
 		if (!ok)
 			break;

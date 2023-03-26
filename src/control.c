@@ -21,7 +21,7 @@ bool fn_iso_fail_0(query *q)
 	return false;
 }
 
-bool fn_sys_drop_barrier(query *q)
+bool fn_sys_drop_barrier_0(query *q)
 {
 	q->tot_goals--;
 	drop_barrier(q);
@@ -100,7 +100,7 @@ bool fn_iso_invoke_2(query *q)
 	module *m = find_module(q->pl, C_STR(q, p1));
 
 	if (!m)
-		m = create_module(q->pl, C_STR(q, p1));
+		m = module_create(q->pl, C_STR(q, p1));
 
 	cell *tmp = clone_to_heap(q, true, p2, 1);
 	check_heap_error(tmp);
@@ -121,9 +121,6 @@ bool fn_call_0(query *q, cell *p1, pl_idx_t p1_ctx)
 {
 	q->tot_goals--;
 
-	if (q->retry)
-		return false;
-
 	if (!is_callable(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "callable");
 
@@ -135,9 +132,11 @@ bool fn_call_0(query *q, cell *p1, pl_idx_t p1_ctx)
 	cell *tmp = clone_to_heap(q, false, p1, 2);
 	check_heap_error(tmp);
 	pl_idx_t nbr_cells = 0 + tmp->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_sys_drop_barrier, fn_sys_drop_barrier, 0, 0);
+	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_call_barrier(q));
+	choice *ch = GET_CURR_CHOICE();
+	ch->fail_on_retry = true;
 	q->st.curr_cell = tmp;
 	q->st.curr_frame = p1_ctx;
 	return true;
@@ -146,10 +145,6 @@ bool fn_call_0(query *q, cell *p1, pl_idx_t p1_ctx)
 bool fn_iso_call_n(query *q)
 {
 	q->tot_goals--;
-
-	if (q->retry)
-		return false;
-
 	GET_FIRST_ARG(p1,callable);
 	check_heap_error(init_tmp_heap(q));
 	check_heap_error(deep_clone_to_tmp(q, p1, p1_ctx));
@@ -196,9 +191,11 @@ bool fn_iso_call_n(query *q)
 	cell *tmp = clone_to_heap(q, true, tmp2, 2);
 	check_heap_error(tmp);
 	pl_idx_t nbr_cells = 1+tmp2->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_sys_drop_barrier, fn_sys_drop_barrier, 0, 0);
+	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_call_barrier(q));
+	choice *ch = GET_CURR_CHOICE();
+	ch->fail_on_retry = true;
 	q->st.curr_cell = tmp;
 	return true;
 }
@@ -206,20 +203,15 @@ bool fn_iso_call_n(query *q)
 bool fn_iso_call_1(query *q)
 {
 	q->tot_goals--;
-
-	if (q->retry)
-		return false;
-
 	GET_FIRST_ARG(p1,callable);
+	cell *tmp2;
 
-	check_heap_error(init_tmp_heap(q));
-	cell *tmp2 = p1_ctx != q->st.curr_frame ? deep_clone_to_tmp(q, p1, p1_ctx) : p1;
-	check_heap_error(tmp2);
-
-	if (is_cstring(tmp2)) {
-		share_cell(tmp2);
-		convert_to_literal(q->st.m, tmp2);
-	}
+	if (p1_ctx != q->st.curr_frame) {
+		check_heap_error(init_tmp_heap(q));
+		tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
+		check_heap_error(tmp2);
+	} else
+		tmp2 = p1;
 
 	if (check_body_callable(q->st.m->p, tmp2) != NULL)
 		return throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
@@ -227,9 +219,11 @@ bool fn_iso_call_1(query *q)
 	cell *tmp = clone_to_heap(q, true, tmp2, 2);
 	check_heap_error(tmp);
 	pl_idx_t nbr_cells = 1+tmp2->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_sys_drop_barrier, fn_sys_drop_barrier, 0, 0);
+	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_call_barrier(q));
+	choice *ch = GET_CURR_CHOICE();
+	ch->fail_on_retry = true;
 	q->st.curr_cell = tmp;
 	return true;
 }
@@ -237,14 +231,15 @@ bool fn_iso_call_1(query *q)
 bool fn_iso_once_1(query *q)
 {
 	q->tot_goals--;
-
-	if (q->retry)
-		return false;
-
 	GET_FIRST_ARG(p1,callable);
-	check_heap_error(init_tmp_heap(q));
-	cell *tmp2 = p1_ctx != q->st.curr_frame ? deep_clone_to_tmp(q, p1, p1_ctx) : p1;
-	check_heap_error(tmp2);
+	cell *tmp2;
+
+	if (p1_ctx != q->st.curr_frame) {
+		check_heap_error(init_tmp_heap(q));
+		tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
+		check_heap_error(tmp2);
+	} else
+		tmp2 = p1;
 
 	if (check_body_callable(q->st.m->p, tmp2) != NULL)
 		return throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
@@ -254,7 +249,9 @@ bool fn_iso_once_1(query *q)
 	pl_idx_t nbr_cells = 1+tmp2->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_inner_cut_s, fn_sys_inner_cut_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
-	check_heap_error(push_call_barrier(q));
+	check_heap_error(push_barrier(q));
+	choice *ch = GET_CURR_CHOICE();
+	ch->fail_on_retry = true;
 	q->st.curr_cell = tmp;
 	return true;
 }
@@ -262,14 +259,15 @@ bool fn_iso_once_1(query *q)
 bool fn_ignore_1(query *q)
 {
 	q->tot_goals--;
-
-	if (q->retry)
-		return true;
-
 	GET_FIRST_ARG(p1,callable);
-	check_heap_error(init_tmp_heap(q));
-	cell *tmp2 = p1_ctx != q->st.curr_frame ? deep_clone_to_tmp(q, p1, p1_ctx) : p1;
-	check_heap_error(tmp2);
+	cell *tmp2;
+
+	if (p1_ctx != q->st.curr_frame) {
+		check_heap_error(init_tmp_heap(q));
+		tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
+		check_heap_error(tmp2);
+	} else
+		tmp2 = p1;
 
 	if (check_body_callable(q->st.m->p, tmp2) != NULL)
 		return throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
@@ -279,7 +277,9 @@ bool fn_ignore_1(query *q)
 	pl_idx_t nbr_cells = 1+tmp2->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_inner_cut_s, fn_sys_inner_cut_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
-	check_heap_error(push_call_barrier(q));
+	check_heap_error(push_barrier(q));
+	choice *ch = GET_CURR_CHOICE();
+	ch->succeed_on_retry = true;
 	q->st.curr_cell = tmp;
 	return true;
 }
@@ -289,10 +289,6 @@ bool fn_ignore_1(query *q)
 bool fn_iso_if_then_2(query *q)
 {
 	q->tot_goals--;
-
-	if (q->retry)
-		return false;
-
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,callable);
 	const frame *f = GET_CURR_FRAME();
@@ -304,6 +300,8 @@ bool fn_iso_if_then_2(query *q)
 	nbr_cells += safe_copy_cells(tmp+nbr_cells, p2, p2->nbr_cells);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
+	choice *ch = GET_CURR_CHOICE();
+	ch->fail_on_retry = true;
 	q->st.curr_cell = tmp;
 	return true;
 }
@@ -313,10 +311,6 @@ bool fn_iso_if_then_2(query *q)
 bool fn_if_2(query *q)
 {
 	q->tot_goals--;
-
-	if (q->retry)
-		return false;
-
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,callable);
 	const frame *f = GET_CURR_FRAME();
@@ -327,6 +321,8 @@ bool fn_if_2(query *q)
 	nbr_cells += safe_copy_cells(tmp+nbr_cells, p2, p2->nbr_cells);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
+	choice *ch = GET_CURR_CHOICE();
+	ch->fail_on_retry = true;
 	q->st.curr_cell = tmp;
 	return true;
 }
@@ -442,10 +438,6 @@ bool fn_iso_disjunction_2(query *q)
 bool fn_iso_negation_1(query *q)
 {
 	q->tot_goals--;
-
-	if (q->retry)
-		return true;
-
 	GET_FIRST_ARG(p1,callable);
 	cell *tmp = clone_to_heap(q, true, p1, 3);
 	check_heap_error(tmp);
@@ -454,6 +446,8 @@ bool fn_iso_negation_1(query *q)
 	make_struct(tmp+nbr_cells++, g_fail_s, fn_iso_fail_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
+	choice *ch = GET_CURR_CHOICE();
+	ch->succeed_on_retry = true;
 	q->st.curr_cell = tmp;
 	return true;
 }
@@ -519,21 +513,22 @@ bool fn_sys_block_catcher_1(query *q)
 bool fn_iso_catch_3(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	GET_NEXT_ARG(p2,any);
 
 	if (q->retry && q->ball) {
+		GET_NEXT_ARG(p2,any);
 		return unify(q, p2, p2_ctx, q->ball, q->st.curr_frame);
 	}
 
 	// Second time through? Try the recover goal...
 
 	if (q->retry == QUERY_EXCEPTION) {
+		GET_NEXT_ARG(p2,any);
 		GET_NEXT_ARG(p3,callable);
 		q->retry = QUERY_OK;
 		cell *tmp = clone_to_heap(q, true, p3, 2);
 		check_heap_error(tmp);
 		pl_idx_t nbr_cells = 1+p3->nbr_cells;
-		make_struct(tmp+nbr_cells++, g_sys_drop_barrier, fn_sys_drop_barrier, 0, 0);
+		make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_0, 0, 0);
 		make_call(q, tmp+nbr_cells);
 		check_heap_error(push_catcher(q, QUERY_EXCEPTION));
 		q->st.curr_cell = tmp;
@@ -559,9 +554,9 @@ bool fn_iso_catch_3(query *q)
 bool fn_sys_call_cleanup_3(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	GET_NEXT_ARG(p2,any);
 
 	if (q->retry && q->ball) {
+		GET_NEXT_ARG(p2,any);
 		cell *tmp = deep_clone_to_heap(q, q->ball, q->st.curr_frame);
 		check_heap_error(tmp);
 		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
@@ -570,6 +565,7 @@ bool fn_sys_call_cleanup_3(query *q)
 	// Second time through? Try the recover goal...
 
 	if (q->retry == QUERY_EXCEPTION) {
+		GET_NEXT_ARG(p2,any);
 		GET_NEXT_ARG(p3,callable);
 		q->retry = QUERY_OK;
 		cell *tmp = clone_to_heap(q, true, p3, 2);
@@ -601,7 +597,7 @@ static cell *parse_to_heap(query *q, const char *src)
 {
 	SB(s);
 	SB_sprintf(s, "%s.", src);
-	parser *p2 = create_parser(q->st.m);
+	parser *p2 = parser_create(q->st.m);
 	check_error(p2);
 	frame *f = GET_CURR_FRAME();
 	p2->read_term = f->actual_slots;
@@ -614,14 +610,14 @@ static cell *parse_to_heap(query *q, const char *src)
 
 	if (p2->nbr_vars) {
 		if (!create_vars(q, p2->nbr_vars)) {
-			destroy_parser(p2);
+			parser_destroy(p2);
 			return false;
 		}
 	}
 
 	cell *tmp = deep_clone_to_heap(q, p2->cl->cells, q->st.curr_frame);
-	check_error(tmp, destroy_parser(p2));
-	destroy_parser(p2);
+	check_error(tmp, parser_destroy(p2));
+	parser_destroy(p2);
 	return tmp;
 }
 

@@ -4,8 +4,8 @@
 
 #define DUMP_ERRS 0
 
-parser *create_parser(module *m);
-void destroy_parser(parser *p);
+parser *parser_create(module *m);
+void parser_destroy(parser *p);
 
 unsigned tokenize(parser *p, bool args, bool consing);
 void reset(parser *p);

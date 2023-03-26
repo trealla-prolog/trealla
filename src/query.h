@@ -2,9 +2,9 @@
 
 #include "builtins.h"
 
-query *create_query(module *m, bool sub_query);
-query *create_sub_query(query *q, cell *curr_cell);
-void destroy_query(query *q);
+query *query_create(module *m, bool sub_query);
+query *query_create_subquery(query *q, cell *curr_cell);
+void query_destroy(query *q);
 
 bool push_choice(query *q);
 bool push_barrier(query *q);
@@ -30,12 +30,12 @@ bool execute(query *q, cell *cells, unsigned nbr_vars);
 bool fn_call_0(query *q, cell *p1, pl_idx_t p1_ctx);
 void undo_me(query *q);
 void drop_choice(query *q);
-bool retry_choice(query *q);
+int retry_choice(query *q);
 void term_assign_vars(parser *p, unsigned start, bool rebase);
 bool start(query *q);
 bool match_rule(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract);
 bool match_clause(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type retract);
-bool try_me(query *q, unsigned vars);
+void try_me(query *q, unsigned vars);
 void call_attrs(query *q, cell *attrs);
 void stash_me(query *q, const clause *cl, bool last_match);
 bool do_post_unification_hook(query *q, bool is_builtin);
@@ -90,7 +90,7 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx_t c_ctx, i
 
 void dump_term(query *q, const char *s, const cell *c);
 
-bool fn_sys_drop_barrier(query *q);
+bool fn_sys_drop_barrier_0(query *q);
 bool fn_iso_throw_1(query *q);
 bool fn_sys_call_cleanup_3(query *q);
 bool fn_iso_catch_3(query *q);

@@ -254,12 +254,6 @@ predicate *create_predicate(module *m, cell *c)
 	pr->key.tag = TAG_INTERNED;
 	pr->key.nbr_cells = 1;
 	pr->is_noindex = m->pl->noindex || !pr->key.arity;
-
-	//printf("*** create %s ==> %s/%u\n", m->filename, C_STR(m, &pr->key), pr->key.arity);
-
-	//if (C_STR(m, c)[0] == '$')
-	//	pr->is_noindex = true;
-
 	map_app(m->index, &pr->key, pr);
 	return pr;
 }
@@ -430,12 +424,12 @@ static void push_property(module *m, const char *name, unsigned arity, const cha
 {
 	char tmpbuf[1024];
 	format_property(m, tmpbuf, sizeof(tmpbuf), name, arity, type);
-	parser *p = create_parser(m);
+	parser *p = parser_create(m);
 	p->srcptr = tmpbuf;
 	p->consulting = true;
 	p->internal = true;
 	tokenize(p, false, false);
-	destroy_parser(p);
+	parser_destroy(p);
 }
 
 db_entry *erase_from_db(module *m, uuid *ref)
@@ -668,8 +662,6 @@ bool do_use_module_2(module *curr_m, cell *p)
 	while (is_iso_list(p2)) {
 		cell *head = LIST_HEAD(p2);
 
-		//printf("*** %s\n", C_STR(curr_m, head+1));
-
 		if (is_interned(head) && (head->arity == 2)
 			&& ((head->val_off == g_as_s) || (head->val_off == g_colon_s))) {
 			cell *lhs = head + 1;
@@ -695,7 +687,7 @@ bool do_use_module_2(module *curr_m, cell *p)
 				pr2->alias = pr;
 			} else if (is_compound(lhs) && is_compound(rhs)) {
 				// assertz(goal_expansion(rhs, module:lhs))
-				query *q = create_query(curr_m, false);
+				query *q = query_create(curr_m, false);
 				check_error(q);
 				q->varnames = true;
 				char *dst1 = print_canonical_to_strbuf(q, rhs, 0, 0);
@@ -707,10 +699,8 @@ bool do_use_module_2(module *curr_m, cell *p)
 				free(dst2);
 				free(dst1);
 
-				//printf("*** %s\n", SB_cstr(s));
-
-				parser *p2 = create_parser(curr_m);
-				check_error(p2, destroy_query(q));
+				parser *p2 = parser_create(curr_m);
+				check_error(p2, query_destroy(q));
 				q->p = p2;
 				p2->skip = true;
 				p2->srcptr = SB_cstr(s);
@@ -725,7 +715,7 @@ bool do_use_module_2(module *curr_m, cell *p)
 
 			if (is_compound(lhs) && (lhs->arity == 2) && (lhs->val_off == g_slash_s)) {
 				// assertz(goal_expansion(rhs, module:lhs))
-				query *q = create_query(curr_m, false);
+				query *q = query_create(curr_m, false);
 				check_error(q);
 				q->varnames = true;
 				char *dst1 = print_canonical_to_strbuf(q, lhs+1, 0, 0);
@@ -761,10 +751,8 @@ bool do_use_module_2(module *curr_m, cell *p)
 				SB_sprintf(s, "%s", ")).");
 				free(dst1);
 
-				//printf("*** %s\n", SB_cstr(s));
-
-				parser *p2 = create_parser(curr_m);
-				check_error(p2, destroy_query(q));
+				parser *p2 = parser_create(curr_m);
+				check_error(p2, query_destroy(q));
 				q->p = p2;
 				p2->skip = true;
 				p2->srcptr = SB_cstr(s);
@@ -1284,7 +1272,7 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 			module *tmp_m = find_module(m->pl, name);
 
 			if (!tmp_m)
-				m = create_module(m->pl, name);
+				m = module_create(m->pl, name);
 			else
 				m = tmp_m;
 
@@ -1296,7 +1284,7 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 			module *tmp_m = find_module(m->pl, name);
 
 			if (!tmp_m)
-				m = create_module(m->pl, name);
+				m = module_create(m->pl, name);
 			else
 				m = tmp_m;
 
@@ -1617,7 +1605,7 @@ void xref_db(module *m)
 
 module *load_text(module *m, const char *src, const char *filename)
 {
-	parser *p = create_parser(m);
+	parser *p = parser_create(m);
 	check_error(p);
 	const char *save_filename = p->m->filename;
 	p->m->filename = set_known(m, filename);
@@ -1657,7 +1645,7 @@ module *load_text(module *m, const char *src, const char *filename)
 
 	module *save_m = p->m;
 	p->m->filename = save_filename;
-	destroy_parser(p);
+	parser_destroy(p);
 	return save_m;
 }
 
@@ -1733,7 +1721,7 @@ bool unload_file(module *m, const char *filename)
 
 module *load_fp(module *m, FILE *fp, const char *filename, bool including)
 {
-	parser *p = create_parser(m);
+	parser *p = parser_create(m);
 	if (!p) return NULL;
 	const char *save_filename = m->filename;
 	if (!including) m->filename = set_known(m, filename);
@@ -1791,7 +1779,7 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including)
 	}
 
 	ok = !p->error;
-	destroy_parser(p);
+	parser_destroy(p);
 	m->filename = save_filename;
 
 	if (!ok)
@@ -1823,7 +1811,7 @@ module *load_file(module *m, const char *filename, bool including)
 
 			while (m->pl->p && m->pl->p->srcptr && *m->pl->p->srcptr) {
 				m->filename = filename;
-				parser *p = create_parser(m);
+				parser *p = parser_create(m);
 				if (!p) return NULL;
 				p->srcptr = m->pl->p->srcptr;
 				p->consulting = true;
@@ -1833,7 +1821,7 @@ module *load_file(module *m, const char *filename, bool including)
 					break;
 
 				m->pl->p->srcptr = p->srcptr;
-				destroy_parser(p);
+				parser_destroy(p);
 			}
 
 			module *save_m = load_fp(m, str->fp, filename, including);
@@ -1983,7 +1971,7 @@ static void make_rule(module *m, const char *src)
 }
 #endif
 
-void destroy_module(module *m)
+void module_destroy(module *m)
 {
 	miter *iter = map_first(m->defops);
 	op_table *opptr;
@@ -2022,19 +2010,19 @@ void destroy_module(module *m)
 		fclose(m->fp);
 
 	map_destroy(m->index);
-	destroy_parser(m->p);
+	parser_destroy(m->p);
 	clear_loaded(m);
 	free(m);
 }
 
-void duplicate_module(prolog *pl, module *m, const char *name, unsigned arity)
+void module_duplicate(prolog *pl, module *m, const char *name, unsigned arity)
 {
-	module *tmp_m = create_module(pl, name);
+	module *tmp_m = module_create(pl, name);
 	tmp_m->orig = m;
 	tmp_m->arity = arity;
 }
 
-module *create_module(prolog *pl, const char *name)
+module *module_create(prolog *pl, const char *name)
 {
 	module *m = calloc(1, sizeof(module));
 	check_error(m);
@@ -2064,20 +2052,20 @@ module *create_module(prolog *pl, const char *name)
 	map_allow_dups(m->ops, false);
 	m->index = map_create(predicate_cmpkey, NULL, m);
 	map_allow_dups(m->index, false);
-	m->p = create_parser(m);
+	m->p = parser_create(m);
 	check_error(m->p);
 	set_multifile_in_db(m, "$predicate_property", 2);
 	set_multifile_in_db(m, ":-", 1);
 
-	parser *p = create_parser(m);
+	parser *p = parser_create(m);
 	if (p) {
 		p->consulting = true;
 		xref_db(p->m);
-		destroy_parser(p);
+		parser_destroy(p);
 	}
 
 	if (!m->name || !m->p || m->error || !p) {
-		destroy_module(m);
+		module_destroy(m);
 		m = NULL;
 	}
 

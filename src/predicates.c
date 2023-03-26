@@ -156,7 +156,6 @@ void make_call(query *q, cell *tmp)
 	tmp->val_ret = c ? c + c->nbr_cells : NULL;	// save the return instruction
 	tmp->cgen = f->cgen;						// ... choice-generation
 	tmp->mid = q->st.m->id;						// ... current-module
-	//printf("*** make_call f->cgen=%u\n", (unsigned)f->cgen);
 }
 
 void make_call_return(query *q, cell *tmp, cell *c_ret)
@@ -166,7 +165,6 @@ void make_call_return(query *q, cell *tmp, cell *c_ret)
 	tmp->val_ret = q->st.curr_cell;				// save the return instruction
 	tmp->cgen = f->cgen;						// ... choice-generation
 	tmp->mid = q->st.m->id;						// ... current-module
-	//printf("*** make_call_return f->cgen=%u\n", (unsigned)f->cgen);
 }
 
 void make_atom(cell *tmp, pl_idx_t offset)
@@ -325,9 +323,6 @@ bool fn_iso_unify_2(query *q)
 
 static bool fn_iso_notunify_2(query *q)
 {
-	if (q->retry)
-		return true;
-
 	GET_FIRST_RAW_ARG(p1,any);
 	GET_NEXT_RAW_ARG(p2,any);
 	cell tmp2;
@@ -344,6 +339,8 @@ static bool fn_iso_notunify_2(query *q)
 	make_struct(tmp+nbr_cells++, g_fail_s, fn_iso_fail_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
+	choice *ch = GET_CURR_CHOICE();
+	ch->succeed_on_retry = true;
 	q->st.curr_cell = tmp;
 	return true;
 }
@@ -567,7 +564,7 @@ static bool fn_iso_atom_chars_2(query *q)
 	}
 
 	if (!is_var(p2) && is_var(p1)) {
-		SB_alloc(pr,256);
+		SB(pr);
 		LIST_HANDLER(p2);
 
 		while (is_list(p2)) {
@@ -726,7 +723,7 @@ static bool fn_iso_number_chars_2(query *q)
 		stream *str = &q->pl->streams[n];
 
 		if (!str->p)
-			str->p = create_parser(q->st.m);
+			str->p = parser_create(q->st.m);
 
 		parser *p = str->p;
 		reset(p);
@@ -833,7 +830,7 @@ static bool fn_iso_atom_codes_2(query *q)
 	}
 
 	if (!is_var(p2) && is_var(p1)) {
-		SB_alloc(pr,256);
+		SB(pr);
 		LIST_HANDLER(p2);
 
 		while (is_list(p2)) {
@@ -953,7 +950,7 @@ static bool fn_string_codes_2(query *q)
 	}
 
 	if (!is_var(p2) && is_var(p1)) {
-		SB_alloc(pr,256);
+		SB(pr);
 		LIST_HANDLER(p2);
 
 		while (is_list(p2)) {
@@ -1064,7 +1061,7 @@ static bool fn_hex_bytes_2(query *q)
 	}
 
 	if (!is_var(p2) && is_var(p1)) {
-		SB_alloc(pr,256);
+		SB(pr);
 		LIST_HANDLER(p2);
 
 		while (is_list(p2)) {
@@ -1283,7 +1280,7 @@ static bool fn_iso_number_codes_2(query *q)
 		stream *str = &q->pl->streams[n];
 
 		if (!str->p)
-			str->p = create_parser(q->st.m);
+			str->p = parser_create(q->st.m);
 
 		parser *p = str->p;
 		reset(p);
@@ -1587,7 +1584,7 @@ static bool fn_iso_atom_concat_3(query *q)
 		if (!is_atom(p2))
 			return throw_error(q, p2, p2_ctx, "type_error", "atom");
 
-		SB_alloc(pr,256);
+		SB(pr);
 		SB_strcatn(pr, C_STR(q, p1), C_STRLEN(q, p1));
 		SB_strcatn(pr, C_STR(q, p2), C_STRLEN(q, p2));
 		cell tmp;
@@ -2733,12 +2730,7 @@ static bool search_functor(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 		if (pr->is_abolished || pr->is_prebuilt)
 			continue;
 
-		if (try_me(q, MAX_VARS) != true) {
-			map_done(q->st.f_iter);
-			drop_choice(q);
-			return false;
-		}
-
+		try_me(q, MAX_VARS);
 		cell tmpn, tmpa;
 		make_atom(&tmpn, pr->key.val_off);
 		make_int(&tmpa, pr->key.arity);
@@ -3978,9 +3970,6 @@ static void save_db(FILE *fp, query *q, int logging)
 				q->ignores[i] = false;
 
 			q->print_idx = 0;
-
-			//printf("*** %d/%d ", dbe->cl.is_first_cut, dbe->cl.is_cut_only);
-
 			print_term(q, fp, dbe->cl.cells, 0, 0);
 
 			if (logging) {
@@ -4476,7 +4465,7 @@ static bool fn_time_1(query *q)
 	make_struct(tmp+nbr_cells++, g_sys_elapsed_s, fn_sys_elapsed_0, 0, 0);
 	make_struct(tmp+nbr_cells++, g_sys_cut_if_det_s, fn_sys_cut_if_det_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
-	check_heap_error(push_call_barrier(q));
+	check_heap_error(push_barrier(q));
 	q->st.curr_cell = tmp;
 	return true;
 }
@@ -5325,7 +5314,7 @@ static bool fn_wait_0(query *q)
 			if (!task->yielded || !task->st.curr_cell || task->error) {
 				query *save = task;
 				task = pop_task(q, task);
-				destroy_query(save);
+				query_destroy(save);
 				continue;
 			}
 
@@ -5372,7 +5361,7 @@ static bool fn_await_0(query *q)
 			if (!task->yielded || !task->st.curr_cell || task->error) {
 				query *save = task;
 				task = pop_task(q, task);
-				destroy_query(save);
+				query_destroy(save);
 				continue;
 			}
 
@@ -5434,7 +5423,7 @@ static bool fn_task_n(query *q)
 
 	q->st.hp = save_hp;
 	cell *tmp = clone_to_heap(q, false, tmp2, 0);
-	query *task = create_sub_query(q, tmp);
+	query *task = query_create_subquery(q, tmp);
 	task->yielded = task->spawned = true;
 	push_task(q, task);
 	return true;
@@ -5443,7 +5432,7 @@ static bool fn_task_n(query *q)
 static bool fn_fork_0(query *q)
 {
 	cell *curr_cell = q->st.curr_cell + q->st.curr_cell->nbr_cells;
-	query *task = create_sub_query(q, curr_cell);
+	query *task = query_create_subquery(q, curr_cell);
 	task->yielded = true;
 	push_task(q, task);
 	return false;
@@ -6212,7 +6201,7 @@ static bool fn_atomic_concat_3(query *q)
 	src1 = tmpbuf1;
 	len2 = print_term_to_buf(q, tmpbuf2, sizeof(tmpbuf2), p2, p2_ctx, 1, false, 0);
 	src2 = tmpbuf2;
-	SB_alloc(pr, len1+len2);
+	SB(pr);
 	SB_strcatn(pr, src1, len1);
 	SB_strcatn(pr, src2, len2);
 	cell tmp;
@@ -6229,7 +6218,7 @@ static bool fn_atomic_list_concat_3(query *q)
 	GET_NEXT_ARG(p2,atomic);
 	GET_NEXT_ARG(p3,atom_or_var);
 	LIST_HANDLER(p1);
-	SB_alloc(pr,256);
+	SB(pr);
 
 	while (is_list(p1)) {
 		cell *h = LIST_HEAD(p1);
@@ -6284,7 +6273,7 @@ static bool fn_replace_4(query *q)
 	const char *s2 = C_STR(q, p3);
 	size_t s1len = C_STRLEN(q, p2);
 	size_t s2len = C_STRLEN(q, p3);
-	SB_alloc(pr, dstlen);
+	SB(pr);
 
 	while (srclen > 0) {
 		if (!strncmp(src, s1, s1len)) {
@@ -6606,9 +6595,6 @@ static bool fn_sys_incr_2(query *q)
 
 static bool fn_call_nth_2(query *q)
 {
-	if (q->retry)
-		return false;
-
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,integer_or_var);
 
@@ -6630,7 +6616,9 @@ static bool fn_call_nth_2(query *q)
 		tmp[nbr_cells++].nbr_cells = 1;
 		make_int(tmp+nbr_cells++, 0);
 		make_call(q, tmp+nbr_cells);
-		check_heap_error(push_call_barrier(q));
+		check_heap_error(push_barrier(q));
+		choice *ch = GET_CURR_CHOICE();
+		ch->fail_on_retry = true;
 		q->st.curr_cell = tmp;
 		return true;
 	}
@@ -6641,7 +6629,9 @@ static bool fn_call_nth_2(query *q)
 	make_int(tmp+nbr_cells++, 1);
 	make_int(tmp+nbr_cells++, get_smallint(p2));
 	make_call(q, tmp+nbr_cells);
-	check_heap_error(push_call_barrier(q));
+	check_heap_error(push_barrier(q));
+	choice *ch = GET_CURR_CHOICE();
+	ch->fail_on_retry = true;
 	q->st.curr_cell = tmp;
 	return true;
 }
@@ -6682,7 +6672,7 @@ static bool fn_sys_unifiable_3(query *q)
 	GET_NEXT_ARG(p2,any);
 	GET_NEXT_ARG(p3,list_or_nil_or_var);
 	check_heap_error(push_choice(q));
-	check_heap_error(try_me(q, MAX_VARS));
+	try_me(q, MAX_VARS);
 	pl_idx_t before_hook_tp = q->st.tp;
 	bool save_hook = q->in_hook;
 	q->in_hook = true;
@@ -7197,7 +7187,7 @@ static bool fn_module_1(query *q)
 		if (q->p->command)
 			fprintf(stdout, "Info: created module '%s'\n", name);
 
-		m = create_module(q->pl, name);
+		m = module_create(q->pl, name);
 	}
 
 	q->st.m = m;
@@ -7322,10 +7312,9 @@ static bool fn_abort_0(query *q)
 
 static bool fn_sys_choice_0(query *q)
 {
-	if (q->retry)
-		return false;
-
 	check_heap_error(push_choice(q));
+	choice *ch = GET_CURR_CHOICE();
+	ch->fail_on_retry = true;
 	return true;
 }
 
@@ -7554,7 +7543,8 @@ static void load_properties(module *m)
 	format_property(m, tmpbuf, sizeof(tmpbuf), "ignore", 1, "meta_predicate(ignore(0))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "call", 1, "meta_predicate(call(0))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "findall", 3, "meta_predicate(findall(?,0,-))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "engine_create", 4, "meta_predicate(engine_create(?,0,-,+))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "with_mutex", 2, "meta_predicate(with_mutex(+,0))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "engine_create", 4, "meta_predicate(engine_create(?,0,?,+))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "|", 2, "meta_predicate((:|+))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "time", 1, "meta_predicate(time(0))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "call_nth", 2, "meta_predicate(call_nth(0,?))"); SB_strcat(pr, tmpbuf);
@@ -7660,11 +7650,11 @@ static void load_properties(module *m)
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); SB_strcat(pr, tmpbuf);
 	}
 
-	parser *p = create_parser(m);
+	parser *p = parser_create(m);
 	p->srcptr = SB_cstr(pr);
 	p->consulting = true;
 	tokenize(p, false, false);
-	destroy_parser(p);
+	parser_destroy(p);
 	SB_free(pr);
 }
 
@@ -7678,7 +7668,7 @@ static void load_flags(query *q)
 		return;
 
 	module *m = q->st.m;
-	SB_alloc(pr, 1024);
+	SB_alloc(pr, 1024*8);
 
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "double_quotes", m->flags.double_quote_atom?"atom":m->flags.double_quote_chars?"chars":m->flags.double_quote_codes?"codes":"???");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "char_conversion", m->flags.char_conversion?"on":"off");
@@ -7696,11 +7686,11 @@ static void load_flags(query *q)
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "cpu_count", g_cpu_count);
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "integer_rounding_function", "toward_zero");
 
-	parser *p = create_parser(m);
+	parser *p = parser_create(m);
 	p->srcptr = SB_cstr(pr);
 	p->consulting = true;
 	tokenize(p, false, false);
-	destroy_parser(p);
+	parser_destroy(p);
 	SB_free(pr);
 }
 
@@ -7791,19 +7781,17 @@ static void load_ops(query *q)
 		SB_strcat(pr, tmpbuf);
 	}
 
-	//printf("%s", SB_cstr(pr));
-
-	parser *p = create_parser(q->st.m);
+	parser *p = parser_create(q->st.m);
 	p->srcptr = SB_cstr(pr);
 	p->consulting = true;
 	tokenize(p, false, false);
-	destroy_parser(p);
+	parser_destroy(p);
 	SB_free(pr);
 }
 
 builtins g_iso_bifs[] =
 {
-	{",", 2, fn_iso_conjunction_2, ":callable,:callable", true, false, BLAH},
+	{",", 2, NULL, ":callable,:callable", true, false, BLAH},
 	{";", 2, fn_iso_disjunction_2, ":callable,:callable", true, false, BLAH},
 	{"!", 0, fn_iso_cut_0, NULL, true, false, BLAH},
 	{":", 2, fn_iso_invoke_2, "+atom,:callable", true, false, BLAH},
@@ -7823,7 +7811,7 @@ builtins g_iso_bifs[] =
 	{"$soft_inner_cut", 0, fn_sys_soft_inner_cut_0, NULL, false, false, BLAH},
 	{"$inner_cut", 0, fn_sys_inner_cut_0, NULL, false, false, BLAH},
 	{"$inner_cut", 1, fn_sys_inner_cut_1, NULL, false, false, BLAH},
-	{"$drop_barrier", 0, fn_sys_drop_barrier, NULL, false, false, BLAH},
+	{"$drop_barrier", 0, fn_sys_drop_barrier_0, NULL, false, false, BLAH},
 	{"$timer", 0, fn_sys_timer_0, NULL, false, false, BLAH},
 	{"$elapsed", 0, fn_sys_elapsed_0, NULL, false, false, BLAH},
 	{"$lt", 2, fn_sys_lt_2, NULL, false, false, BLAH},

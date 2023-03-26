@@ -31,7 +31,7 @@ cell *deep_copy_to_heap_with_replacement(query *q, cell *p1, pl_idx_t p1_ctx, bo
 #define tmp_heap_used(q) (q)->tmphp
 
 void fix_list(cell *c);
-bool is_in_ref_list(cell *c, pl_idx_t c_ctx, reflist *rlist);
+bool is_in_ref_list(const cell *c, pl_idx_t c_ctx, const reflist *rlist);
 
 void allocate_list(query *q, const cell *c);
 void append_list(query *q, const cell *c);

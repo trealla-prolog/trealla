@@ -19,7 +19,7 @@ pl_idx_t g_sys_elapsed_s, g_sys_queue_s, g_braces_s, g_call_s, g_braces_s;
 pl_idx_t g_sys_stream_property_s, g_unify_s, g_on_s, g_off_s, g_sys_var_s;
 pl_idx_t g_plus_s, g_minus_s, g_once_s, g_post_unify_hook_s, g_sys_record_key_s;
 pl_idx_t g_conjunction_s, g_disjunction_s, g_at_s, g_sys_ne_s, g_sys_incr_s;
-pl_idx_t g_dcg_s, g_throw_s, g_sys_block_catcher_s, g_sys_drop_barrier;
+pl_idx_t g_dcg_s, g_throw_s, g_sys_block_catcher_s, g_sys_drop_barrier_s;
 pl_idx_t g_sys_soft_inner_cut_s, g_if_then_s, g_soft_cut_s, g_negation_s;
 pl_idx_t g_error_s, g_slash_s, g_sys_cleanup_if_det_s, g_sys_table_s;
 pl_idx_t g_goal_expansion_s, g_term_expansion_s, g_tm_s, g_float_s;
@@ -121,12 +121,12 @@ bool pl_eval(prolog *pl, const char *s)
 	if (!*s)
 		return false;
 
-	pl->p = create_parser(pl->curr_m);
+	pl->p = parser_create(pl->curr_m);
 	if (!pl->p) return false;
 	pl->p->command = true;
 	bool ok = run(pl->p, s, true, NULL, 0);
 	if (get_status(pl)) pl->curr_m = pl->p->m;
-	destroy_parser(pl->p);
+	parser_destroy(pl->p);
 	pl->p = NULL;
 	return ok;
 }
@@ -136,7 +136,7 @@ bool pl_query(prolog *pl, const char *s, pl_sub_query **subq, unsigned int yield
 	if (!pl || !*s || !subq)
 		return false;
 
-	pl->p = create_parser(pl->curr_m);
+	pl->p = parser_create(pl->curr_m);
 	if (!pl->p) return false;
 	pl->p->command = true;
 	pl->is_query = true;
@@ -155,7 +155,7 @@ bool pl_redo(pl_sub_query *subq)
 	if (query_redo(q))
 		return true;
 
-	destroy_query(q);
+	query_destroy(q);
 	return false;
 }
 
@@ -184,7 +184,7 @@ bool pl_done(pl_sub_query *subq)
 		return false;
 
 	query *q = (query*)subq;
-	destroy_query(q);
+	query_destroy(q);
 	return true;
 }
 
@@ -415,7 +415,7 @@ static bool g_init(prolog *pl)
 	CHECK_SENTINEL(g_sys_block_catcher_s = index_from_pool(pl, "$block_catcher"), ERR_IDX);
 	CHECK_SENTINEL(g_sys_soft_inner_cut_s = index_from_pool(pl, "$soft_inner_cut"), ERR_IDX);
 	CHECK_SENTINEL(g_sys_inner_cut_s = index_from_pool(pl, "$inner_cut"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_drop_barrier = index_from_pool(pl, "$drop_barrier"), ERR_IDX);
+	CHECK_SENTINEL(g_sys_drop_barrier_s = index_from_pool(pl, "$drop_barrier"), ERR_IDX);
 	CHECK_SENTINEL(g_sys_cleanup_if_det_s = index_from_pool(pl, "$cleanup_if_det"), ERR_IDX);
 	CHECK_SENTINEL(g_sys_cut_if_det_s = index_from_pool(pl, "$cut_if_det"), ERR_IDX);
 	CHECK_SENTINEL(g_sys_table_s = index_from_pool(pl, "$table"), ERR_IDX);
@@ -429,13 +429,13 @@ void pl_destroy(prolog *pl)
 {
 	if (!pl) return;
 
-	destroy_module(pl->system_m);
-	destroy_module(pl->user_m);
+	module_destroy(pl->system_m);
+	module_destroy(pl->user_m);
 	map_destroy(pl->biftab);
 	map_destroy(pl->symtab);
 
 	while (pl->modules)
-		destroy_module(pl->modules);
+		module_destroy(pl->modules);
 
 	map_destroy(pl->fortab);
 	map_destroy(pl->keyval);
@@ -457,13 +457,13 @@ void pl_destroy(prolog *pl)
 				if (str->is_map)
 					map_destroy(str->keyval);
 				else if (str->is_engine)
-					destroy_query(str->engine);
+					query_destroy(str->engine);
 				else if (str->fp && (i > 2))
 					fclose(str->fp);
 			}
 
 			if (str->p)
-				destroy_parser(str->p);
+				parser_destroy(str->p);
 
 			map_destroy(str->alias);
 			free(str->mode);
@@ -550,7 +550,7 @@ prolog *pl_create()
 
 	//printf("Library: %s\n", g_tpl_lib);
 
-	pl->system_m = create_module(pl, "system");
+	pl->system_m = module_create(pl, "system");
 
 	if (!pl->system_m || pl->system_m->error) {
 		pl_destroy(pl);
@@ -558,7 +558,7 @@ prolog *pl_create()
 		return pl;
 	}
 
-	pl->user_m = create_module(pl, "user");
+	pl->user_m = module_create(pl, "user");
 
 	if (!pl->user_m || pl->user_m->error) {
 		pl_destroy(pl);

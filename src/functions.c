@@ -198,7 +198,7 @@ bool call_userfun(query *q, cell *c, pl_idx_t c_ctx)
 	pl_idx_t save_ctx = q->st.curr_frame;
 	cell *tmp = clone_to_heap(q, true, c, 2);
 	pl_idx_t nbr_cells = 1 + c->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_sys_drop_barrier, fn_sys_drop_barrier, 0, 0);
+	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_call_barrier(q));
 	q->st.curr_cell = tmp;

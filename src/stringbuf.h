@@ -5,14 +5,19 @@
 
 // A string buffer
 
+#define SB_LEN 256
+
 typedef struct string_buffer_ {
+	char tmpbuf[SB_LEN];
 	char *buf, *dst;
 	size_t size;
 } string_buffer;
 
 #define SB(pr) string_buffer pr##_buf;							\
-	pr##_buf.size = 0;											\
-	pr##_buf.buf = pr##_buf.dst = NULL;
+	pr##_buf.size = SB_LEN;										\
+	pr##_buf.buf = pr##_buf.tmpbuf;								\
+	pr##_buf.dst = pr##_buf.buf;								\
+	*pr##_buf.dst = '\0';
 
 #define SB_alloc(pr,len) string_buffer pr##_buf; 				\
 	pr##_buf.size = len;										\
@@ -25,8 +30,13 @@ typedef struct string_buffer_ {
 	size_t rem = pr##_buf.size - SB_strlen(pr);					\
 	if ((size_t)((len)+1) >= rem) {								\
 		size_t offset = SB_strlen(pr);							\
-		pr##_buf.buf = realloc(pr##_buf.buf, 					\
-			(pr##_buf.size += ((len)-rem)) + 1);				\
+		if (pr##_buf.buf != pr##_buf.tmpbuf) {					\
+			pr##_buf.buf = realloc(pr##_buf.buf, 				\
+				(pr##_buf.size += ((len)-rem)) + 256 + 1);		\
+		} else {												\
+			pr##_buf.buf = malloc((pr##_buf.size += ((len)-rem)) + 256 + 1); \
+			memcpy(pr##_buf.buf, pr##_buf.tmpbuf, offset+1);	\
+		}														\
 		ensure(pr##_buf.buf);									\
 		pr##_buf.dst = pr##_buf.buf + offset;					\
 	}															\
@@ -71,8 +81,10 @@ typedef struct string_buffer_ {
 }
 
 #define SB_strcpy(pr,s) {										\
+	size_t len = strlen(s);										\
+	SB_check(pr, len);											\
 	pr##_buf.dst = pr##_buf.buf;								\
-	SB_strcatn(pr,s,strlen(s));									\
+	SB_strcatn(pr,s,len);										\
 }
 
 #define SB_fwrite(pr,ptr,size) {								\
@@ -101,7 +113,8 @@ typedef struct string_buffer_ {
 #define SB_strcmp(pr,s) strcmp(pr##_buf.buf?pr##_buf.buf:"", s)
 
 #define SB_free(pr) {											\
-	free(pr##_buf.buf);											\
+	if (pr##_buf.buf != pr##_buf.tmpbuf)						\
+		free(pr##_buf.buf);											\
 	pr##_buf.size = 0;											\
 	pr##_buf.buf = pr##_buf.dst = NULL;							\
 }

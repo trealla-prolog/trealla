@@ -86,7 +86,7 @@ bool fn_iso_findall_3(query *q)
 	check_heap_error(push_choice(q), free(solns));
 	choice *ch = GET_CURR_CHOICE();
 	ch->st.end_findall = true;
-	check_heap_error(try_me(q, MAX_ARITY), free(solns));
+	try_me(q, MAX_ARITY);
 
 	for (cell *c = solns; nbr_cells;
 		nbr_cells -= c->nbr_cells, c += c->nbr_cells) {

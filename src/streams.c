@@ -558,11 +558,11 @@ static void add_stream_properties(query *q, int n)
 	else if (str->is_map)
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, map(true)).\n", n);
 
-	parser *p = create_parser(q->st.m);
+	parser *p = parser_create(q->st.m);
 	p->srcptr = tmpbuf;
 	p->consulting = true;
 	tokenize(p, false, false);
-	destroy_parser(p);
+	parser_destroy(p);
 }
 
 static void del_stream_properties(query *q, int n)
@@ -1586,7 +1586,7 @@ static bool fn_iso_close_1(query *q)
 	}
 
 	if (str->p)
-		destroy_parser(str->p);
+		parser_destroy(str->p);
 
 	if (!str->socket)
 		del_stream_properties(q, n);
@@ -1595,7 +1595,7 @@ static bool fn_iso_close_1(query *q)
 		map_destroy(str->keyval);
 		str->keyval = NULL;
 	} else if (str->is_engine) {
-		destroy_query(str->engine);
+		query_destroy(str->engine);
 		str->engine = NULL;
 	} else
 		net_close(str);
@@ -1855,7 +1855,7 @@ static bool parse_read_params(query *q, stream *str, cell *c, pl_idx_t c_ctx, ce
 bool do_read_term(query *q, stream *str, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, char *src)
 {
 	if (!str->p) {
-		str->p = create_parser(q->st.m);
+		str->p = parser_create(q->st.m);
 		str->p->flags = q->st.m->flags;
 		str->p->fp = str->fp;
 		str->p->no_fp = q->p->no_fp;
@@ -3995,14 +3995,14 @@ static bool fn_sys_read_term_from_chars_4(query *q)
 		return throw_error(q, p_chars, p_chars_ctx, "type_error", "character");
 	}
 
-	str->p = create_parser(q->st.m);
+	str->p = parser_create(q->st.m);
 	str->p->flags = q->st.m->flags;
 	str->p->fp = str->fp;
 	reset(str->p);
 	str->p->srcptr = src;
 
 	if (!src || !*src) {
-		destroy_parser(str->p);
+		parser_destroy(str->p);
 		cell tmp;
 		make_atom(&tmp, g_eof_s);
 		return unify(q, p_term, p_term_ctx, &tmp, q->st.curr_frame);
@@ -4014,7 +4014,7 @@ static bool fn_sys_read_term_from_chars_4(query *q)
 		if (!is_string(p_chars))
 			free(src);
 
-		destroy_parser(str->p);
+		parser_destroy(str->p);
 		str->p = NULL;
 		return false;
 	}
@@ -4035,7 +4035,7 @@ static bool fn_sys_read_term_from_chars_4(query *q)
 		make_atom(&tmp, g_nil_s);
 	}
 
-	destroy_parser(str->p);
+	parser_destroy(str->p);
 
 	if (!is_string(p_chars))
 		free(src);
@@ -4084,7 +4084,7 @@ static bool fn_read_term_from_chars_3(query *q)
 		return throw_error(q, p_chars, p_chars_ctx, "type_error", "character");
 	}
 
-	str->p = create_parser(q->st.m);
+	str->p = parser_create(q->st.m);
 	str->p->flags = q->st.m->flags;
 	str->p->fp = str->fp;
 	reset(str->p);
@@ -4092,7 +4092,7 @@ static bool fn_read_term_from_chars_3(query *q)
 	str->p->srcptr = src;
 
 	if (!src || !*src) {
-		destroy_parser(str->p);
+		parser_destroy(str->p);
 		free(save_src);
 		cell tmp;
 		make_atom(&tmp, g_eof_s);
@@ -4109,7 +4109,7 @@ static bool fn_read_term_from_chars_3(query *q)
 
 	bool ok = do_read_term(q, str, p_term, p_term_ctx, p_opts, p_opts_ctx, NULL);
 	free(save_src);
-	destroy_parser(str->p);
+	parser_destroy(str->p);
 
 	if (ok != true)
 		return false;
@@ -4638,7 +4638,7 @@ static bool do_consult(query *q, cell *p1, pl_idx_t p1_ctx)
 	if (!is_atom(mod) || !is_atom(file))
 		return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-	module *tmp_m = create_module(q->pl, C_STR(q, mod));
+	module *tmp_m = module_create(q->pl, C_STR(q, mod));
 	char *filename = C_STR(q, file);
 	tmp_m->make_public = 1;
 	filename = relative_to(q->st.m->filename, filename);
@@ -4646,7 +4646,7 @@ static bool do_consult(query *q, cell *p1, pl_idx_t p1_ctx)
 	unload_file(q->st.m, filename);
 
 	if (!load_file(tmp_m, filename, false)) {
-		destroy_module(tmp_m);
+		module_destroy(tmp_m);
 		free(filename);
 		return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 	}
@@ -4679,7 +4679,7 @@ static bool do_deconsult(query *q, cell *p1, pl_idx_t p1_ctx)
 	if (!is_atom(mod) || !is_atom(file))
 		return throw_error(q, p1, p1_ctx, "type_error", "source_sink");
 
-	module *tmp_m = create_module(q->pl, C_STR(q, mod));
+	module *tmp_m = module_create(q->pl, C_STR(q, mod));
 	char *filename = C_STR(q, file);
 	tmp_m->make_public = 1;
 	filename = relative_to(q->st.m->filename, filename);
@@ -5249,7 +5249,6 @@ static bool fn_absolute_file_name_3(query *q)
 
 	char *tmpbuf = NULL;
 	const char *s = filename;
-	//printf("*** from=%s, cwd=%s", filename, cwd);
 
 	if (expand && (*s == '$')) {
 		char envbuf[PATH_MAX];
@@ -5311,7 +5310,6 @@ static bool fn_absolute_file_name_3(query *q)
 		}
 	}
 
-	//printf(", to=%s\n", tmpbuf);
 	free(filename);
 
 	if (cwd != here)
@@ -5527,7 +5525,6 @@ static bool fn_exists_file_1(query *q)
 	struct stat st = {0};
 
 	if (stat(filename, &st)) {
-		//printf("*** here %s\n", filename);
 		free(filename);
 		return false;
 	}
@@ -6931,11 +6928,40 @@ static bool fn_set_stream_2(query *q)
 	return false;
 }
 
+static bool fn_with_mutex_2(query *q)
+{
+	GET_FIRST_ARG(pstr,any);
+	GET_NEXT_ARG(p1,callable);
+	q->tot_goals--;
+	cell *tmp2;
+
+	if (p1_ctx != q->st.curr_frame) {
+		check_heap_error(init_tmp_heap(q));
+		tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
+		check_heap_error(tmp2);
+	} else
+		tmp2 = p1;
+
+	if (check_body_callable(q->st.m->p, tmp2) != NULL)
+		return throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
+
+	cell *tmp = clone_to_heap(q, true, tmp2, 2);
+	check_heap_error(tmp);
+	pl_idx_t nbr_cells = 1+tmp2->nbr_cells;
+	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_0, 0, 0);
+	make_call(q, tmp+nbr_cells);
+	check_heap_error(push_call_barrier(q));
+	choice *ch = GET_CURR_CHOICE();
+	ch->fail_on_retry = true;
+	q->st.curr_cell = tmp;
+	return true;
+}
+
 static bool fn_engine_create_4(query *q)
 {
-	GET_FIRST_ARG(xp1,any);
-	GET_NEXT_ARG(xp2,callable);
-	GET_NEXT_ARG(p3,var);
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,callable);
+	GET_NEXT_ARG(p3,atom_or_var);
 	GET_NEXT_ARG(p4,list_or_nil);
 
 	int n = new_stream(q->pl);
@@ -6981,10 +7007,22 @@ static bool fn_engine_create_4(query *q)
 			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 	}
 
+	if (is_atom(p3)) {
+		if (get_named_stream(q->pl, C_STR(q, p3), C_STRLEN(q, p3)) >= 0)
+			return throw_error(q, q->st.curr_cell, q->st.curr_frame, "permission_error", "open,source_sink");
+
+		map_set(str->alias, DUP_STR(q, p3), NULL);
+	} else {
+		cell tmp2;
+		make_int(&tmp2, n);
+		tmp2.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+		unify(q, p3, p3_ctx, &tmp2, q->st.curr_frame);
+	}
+
 	str->first_time = str->is_engine = true;
 	str->curr_yield = NULL;
 
-	str->engine = create_query(q->st.m, true);
+	str->engine = query_create(q->st.m, true);
 	str->engine->curr_engine = n;
 	str->engine->is_engine = true;
 	str->engine->trace = q->trace;
@@ -6993,25 +7031,18 @@ static bool fn_engine_create_4(query *q)
 	unify(q, q->st.curr_cell, q->st.curr_frame, p0, q->st.curr_frame);
 	check_heap_error(p0);
 
-	query *saveq = q;
-	q = str->engine;
+	q = str->engine;		// Operating in engine now
 
-	// Operating in engine from here...
+	GET_FIRST_ARG0(xp1,any,p0);
+	GET_NEXT_ARG(xp2,callable);
 
-	GET_FIRST_ARG0(p1,any,p0);
-	GET_NEXT_ARG(p2,callable);
-
-	cell *tmp = clone_to_heap(q, true, p2, 1);
-	pl_idx_t nbr_cells = 1 + p2->nbr_cells;
+	cell *tmp = clone_to_heap(q, true, xp2, 1);
+	pl_idx_t nbr_cells = 1 + xp2->nbr_cells;
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
 	q->st.curr_cell = tmp;
-	str->pattern = deep_clone_to_heap(q, p1, p1_ctx);
-
-	cell tmp2;
-	make_int(&tmp2, n);
-	tmp2.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
-	return unify(saveq, p3, p3_ctx, &tmp2, saveq->st.curr_frame);
+	str->pattern = deep_clone_to_heap(q, xp1, xp1_ctx);
+	return true;
 }
 
 static bool fn_engine_next_2(query *q)
@@ -7259,7 +7290,7 @@ builtins g_files_bifs[] =
 	{"map_list", 2, fn_map_list_2, "+stream,?list", false, false, BLAH},
 	{"map_close", 1, fn_map_close_1, "+stream", false, false, BLAH},
 
-	{"engine_create", 4, fn_engine_create_4, "+term,:callable,--stream,+list", false, false, BLAH},
+	{"engine_create", 4, fn_engine_create_4, "+term,:callable,?stream,+list", false, false, BLAH},
 	{"engine_next", 2, fn_engine_next_2, "+stream,-term", false, false, BLAH},
 	{"is_engine", 1, fn_is_engine_1, "+term", false, false, BLAH},
 	{"engine_self", 1, fn_engine_self_1, "--stream", false, false, BLAH},
@@ -7270,7 +7301,7 @@ builtins g_files_bifs[] =
 
 	{"mutex_create", 1, fn_iso_true_0, "+stream", false, false, BLAH},
 	{"mutex_create", 2, fn_iso_true_0, "+stream", false, false, BLAH},
-	{"with_mutex", 2, fn_iso_true_0, "+stream", false, false, BLAH},
+	{"with_mutex", 2, fn_with_mutex_2, "+stream,+callable", false, false, BLAH},
 	{"mutex_lock", 1, fn_iso_true_0, "+stream", false, false, BLAH},
 	{"mutex_trylock", 1, fn_iso_true_0, "+stream", false, false, BLAH},
 	{"mutex_unlock", 1, fn_iso_true_0, "+stream", false, false, BLAH},

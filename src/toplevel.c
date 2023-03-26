@@ -58,7 +58,7 @@ int check_interrupt(query *q)
 		}
 
 		if (isdigit(ch)) {
-			q->autofail = true;
+			q->fail_on_retry = true;
 			q->autofail_n = isdigit(ch) ? (unsigned)ch - '0' : UINT_MAX;
 			break;
 		}
@@ -115,7 +115,7 @@ bool check_redo(query *q)
 	if (q->pl->is_query)
 		return q->cp;
 
-	if (q->autofail && (q->autofail_n > 1)) {
+	if (q->fail_on_retry && (q->autofail_n > 1)) {
 		q->autofail_n--;
 		printf("\n; ");
 		fflush(stdout);
@@ -148,7 +148,7 @@ bool check_redo(query *q)
 			q->is_redo = true;
 			q->retry = QUERY_RETRY;
 			q->pl->did_dump_vars = false;
-			q->autofail = true;
+			q->fail_on_retry = true;
 			q->autofail_n = isdigit(ch) ? (unsigned)ch - '0' : UINT_MAX;
 			break;
 		}
