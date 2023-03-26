@@ -146,7 +146,7 @@ static void trace_call(query *q, cell *c, pl_idx_t c_ctx, box_t box)
 	}
 }
 
-static bool check_trail(query *q)
+bool check_trail(query *q)
 {
 	if (q->st.tp > q->max_trails) {
 		if (q->st.tp > q->hw_trails)
@@ -573,20 +573,6 @@ size_t scan_is_chars_list(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes)
 {
 	bool has_var, is_partial;
 	return scan_is_chars_list2(q, l, l_ctx, allow_codes, &has_var, &is_partial);
-}
-
-void add_trail(query *q, pl_idx_t c_ctx, unsigned c_var_nbr, cell *attrs, pl_idx_t attrs_ctx)
-{
-	if (!check_trail(q)) {
-		q->error = false;
-		return;
-	}
-
-	trail *tr = q->trails + q->st.tp++;
-	tr->var_ctx = c_ctx;
-	tr->var_nbr = c_var_nbr;
-	tr->attrs = attrs;
-	tr->attrs_ctx = attrs_ctx;
 }
 
 static void unwind_trail(query *q, const choice *ch)
@@ -1242,97 +1228,6 @@ unsigned create_vars(query *q, unsigned cnt)
 
 	f->actual_slots += cnt;
 	return var_nbr;
-}
-
-cell *get_var(query *q, cell *c, pl_idx_t c_ctx)
-{
-	if (is_ref(c))
-		c_ctx = c->var_ctx;
-
-	const frame *f = GET_FRAME(c_ctx);
-	slot *e = GET_SLOT(f, c->var_nbr);
-
-	while (is_var(&e->c)) {
-		c_ctx = e->c.var_ctx;
-		c = &e->c;
-		f = GET_FRAME(c_ctx);
-		e = GET_SLOT(f, c->var_nbr);
-	}
-
-	if (is_indirect(&e->c)) {
-		q->latest_ctx = e->c.var_ctx;
-		return e->c.val_ptr;
-	}
-
-	q->latest_ctx = c_ctx;
-
-	if (!is_empty(&e->c))
-		return &e->c;
-
-	return c;
-}
-
-void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
-{
-	const frame *f = GET_FRAME(c_ctx);
-	slot *e = GET_SLOT(f, c->var_nbr);
-	cell *c_attrs = is_empty(&e->c) ? e->c.attrs : NULL, *v_attrs = NULL;
-	pl_idx_t c_attrs_ctx = c_attrs ? e->c.attrs_ctx : 0;
-
-	if (c_attrs || (q->cp && (c_ctx < q->st.fp)))
-		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
-
-	if (c_attrs && is_var(v)) {
-		const frame *vf = GET_FRAME(v_ctx);
-		const slot *ve = GET_SLOT(vf, v->var_nbr);
-		v_attrs = is_empty(&ve->c) ? ve->c.attrs : NULL;
-	}
-
-	// If 'c' is an attvar and either 'v' is an attvar or nonvar then run the hook
-	// If 'c' is an attvar and 'v' is a plain var then copy attributes to 'v'
-	// If 'c' is a plain var and 'v' is an attvar then copy attributes to 'c'
-
-	if (c_attrs && (v_attrs || is_nonvar(v))) {
-		q->run_hook = true;
-	} else if (c_attrs && !v_attrs && is_var(v)) {
-		const frame *vf = GET_FRAME(v_ctx);
-		slot *ve = GET_SLOT(vf, v->var_nbr);
-		add_trail(q, v_ctx, v->var_nbr, NULL, 0);
-		ve->c.attrs = c_attrs;
-		ve->c.attrs_ctx = c_attrs_ctx;
-	}
-
-	if (is_structure(v)) {
-		q->no_tco = true;
-		make_indirect(&e->c, v, v_ctx);
-	} else if (is_var(v)) {
-		e->c = *v;
-		e->c.flags |= FLAG_VAR_REF;
-		e->c.var_ctx = v_ctx;
-	} else {
-		share_cell(v);
-		e->c = *v;
-	}
-}
-
-void reset_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
-{
-	const frame *f = GET_FRAME(c_ctx);
-	slot *e = GET_SLOT(f, c->var_nbr);
-
-	if (q->cp && (c_ctx < q->st.fp))
-		add_trail(q, c_ctx, c->var_nbr, NULL, 0);
-
-	if (is_structure(v)) {
-		make_indirect(&e->c, v, v_ctx);
-	} else if (is_var(v)) {
-		e->c = *v;
-		e->c.flags |= FLAG_VAR_REF;
-		e->c.var_ctx = v_ctx;
-	} else {
-		share_cell(v);
-		e->c = *v;
-	}
 }
 
 // Match HEAD :- BODY.

@@ -25,8 +25,6 @@ void purge_dirty_list(query *q);
 bool check_slot(query *q, unsigned cnt);
 void cut_me(query *q);
 void inner_cut(query *q, bool soft_cut);
-void set_var(query *q, const cell *c, pl_idx_t ctx, cell *v, pl_idx_t v_ctx);
-void reset_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx);
 bool execute(query *q, cell *cells, unsigned nbr_vars);
 bool fn_call_0(query *q, cell *p1, pl_idx_t p1_ctx);
 void undo_me(query *q);
@@ -43,7 +41,6 @@ bool do_post_unification_hook(query *q, bool is_builtin);
 bool check_redo(query *q);
 void dump_vars(query *q, bool partial);
 int check_interrupt(query *q);
-void add_trail(query *q, pl_idx_t c_ctx, unsigned c_var_nbr, cell *attrs, pl_idx_t attrs_ctx);
 bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n);
 
 bool find_exception_handler(query *q, char *e);
@@ -211,4 +208,3 @@ inline static void drop_queuen(query *q)
 	init_queuen(q);
 	q->st.qnbr--;
 }
-
