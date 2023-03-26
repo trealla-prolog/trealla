@@ -994,11 +994,6 @@ static const struct dispatch g_disp[] =
 
 static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
 {
-	if (depth > MAX_DEPTH) {
-		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
-		return false;
-	}
-
 	LIST_HANDLER(p1);
 	LIST_HANDLER(p2);
 	q->mgen++;
@@ -1099,11 +1094,6 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 	if (p1->val_off != p2->val_off)
 		return false;
 
-	if (depth > MAX_DEPTH) {
-		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
-		return false;
-	}
-
 	unsigned arity = p1->arity;
 	p1++; p2++;
 
@@ -1153,14 +1143,6 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 
 static bool unify_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
 {
-	if ((p1 == p2) && (p1_ctx == p2_ctx))
-		return true;
-
-	if (depth > MAX_DEPTH) {
-		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
-		return false;
-	}
-
 	if (is_var(p1) && is_var(p2)) {
 		if (p2_ctx > p1_ctx)
 			set_var(q, p2, p2_ctx, p1, p1_ctx);
