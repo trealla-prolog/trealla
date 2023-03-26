@@ -7878,8 +7878,6 @@ builtins g_iso_bifs[] =
 	{"compare", 3, fn_iso_compare_3, "+atom,+term,+term", true, false, BLAH},
 	{"unify_with_occurs_check", 2, fn_iso_unify_with_occurs_check_2, "+term,+term", true, false, BLAH},
 
-	{"$bagof", 3, fn_iso_bagof_3, NULL, true, false, BLAH},
-
 	{0}
 };
 
