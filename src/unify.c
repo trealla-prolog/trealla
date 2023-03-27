@@ -526,7 +526,7 @@ static bool is_cyclic_list_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigne
 
 			e->mgen = 0;
 		} else {
-			if (is_cyclic_term_internal(q, c, p1_ctx, depth))
+			if (is_cyclic_term_internal(q, c, p1_ctx, depth+1))
 				return true;
 		}
 
@@ -581,7 +581,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigne
 
 			e->mgen = 0;
 		} else {
-			if (is_cyclic_term_internal(q, p1, p1_ctx, depth))
+			if (is_cyclic_term_internal(q, p1, p1_ctx, depth+1))
 				return true;
 		}
 
