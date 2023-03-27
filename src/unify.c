@@ -499,9 +499,9 @@ bool has_vars(query *q, cell *p1, pl_idx_t p1_ctx)
 	return has_vars_internal(q, p1, p1_ctx);
 }
 
-static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx);
+static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth);
 
-static bool is_cyclic_list_internal(query *q, cell *p1, pl_idx_t p1_ctx)
+static bool is_cyclic_list_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 {
 	LIST_HANDLER(p1);
 	q->mgen++;
@@ -521,12 +521,12 @@ static bool is_cyclic_list_internal(query *q, cell *p1, pl_idx_t p1_ctx)
 			c = deref(q, c, p1_ctx);
 			pl_idx_t c_ctx = q->latest_ctx;
 
-			if (is_cyclic_term_internal(q, c, c_ctx))
+			if (is_cyclic_term_internal(q, c, c_ctx, depth+1))
 				return true;
 
 			e->mgen = 0;
 		} else {
-			if (is_cyclic_term_internal(q, c, p1_ctx))
+			if (is_cyclic_term_internal(q, c, p1_ctx, depth))
 				return true;
 		}
 
@@ -550,13 +550,16 @@ static bool is_cyclic_list_internal(query *q, cell *p1, pl_idx_t p1_ctx)
 	return false;
 }
 
-static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx)
+static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 {
+	if (depth >MAX_DEPTH)
+		return true;
+
 	if (!is_structure(p1))
 		return false;
 
 	if (is_iso_list(p1))
-		return is_cyclic_list_internal(q, p1, p1_ctx);
+		return is_cyclic_list_internal(q, p1, p1_ctx, depth);
 
 	unsigned arity = p1->arity;
 	const frame *f = GET_FRAME(p1_ctx);
@@ -573,12 +576,12 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx)
 			cell *c = deref(q, p1, p1_ctx);
 			pl_idx_t c_ctx = q->latest_ctx;
 
-			if (is_cyclic_term_internal(q, c, c_ctx))
+			if (is_cyclic_term_internal(q, c, c_ctx, depth+1))
 				return true;
 
 			e->mgen = 0;
 		} else {
-			if (is_cyclic_term_internal(q, p1, p1_ctx))
+			if (is_cyclic_term_internal(q, p1, p1_ctx, depth))
 				return true;
 		}
 
@@ -591,13 +594,13 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx)
 bool is_cyclic_term(query *q, cell *p1, pl_idx_t p1_ctx)
 {
 	q->mgen++;
-	return is_cyclic_term_internal(q, p1, p1_ctx);
+	return is_cyclic_term_internal(q, p1, p1_ctx, 0);
 }
 
 bool is_acyclic_term(query *q, cell *p1, pl_idx_t p1_ctx)
 {
 	q->mgen++;
-	return !is_cyclic_term_internal(q, p1, p1_ctx);
+	return !is_cyclic_term_internal(q, p1, p1_ctx, 0);
 }
 
 static cell *term_next(query *q, cell *c, pl_idx_t *c_ctx, bool *done)
