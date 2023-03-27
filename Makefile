@@ -1,7 +1,7 @@
 GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
 
-CFLAGS =  -std=gnu99 -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' -O3 \
-	-funsigned-char $(OPT) -D_GNU_SOURCE \
+CFLAGS = -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' \
+	-std=gnu99 -O3 $(OPT) -D_GNU_SOURCE \
 	-Wall -Wextra \
 	-Wno-deprecated-declarations \
 	-Wno-unused-function -Wno-unused-parameter \
@@ -179,7 +179,7 @@ src/control.o: src/control.c src/heap.h src/internal.h src/map.h \
   src/skiplist.h src/trealla.h src/cdebug.h src/stringbuf.h \
   src/imath/imath.h src/module.h src/parser.h src/prolog.h src/query.h \
   src/builtins.h
-src/ffi.o: src/ffi.c src/prolog.h src/internal.h src/map.h src/skiplist.h \
+src/ffi.o: src/ffi.c src/heap.h src/prolog.h src/internal.h src/map.h src/skiplist.h \
   src/trealla.h src/cdebug.h src/stringbuf.h src/imath/imath.h \
   src/query.h src/builtins.h
 src/format.o: src/format.c src/network.h src/internal.h src/map.h \

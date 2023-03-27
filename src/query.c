@@ -932,13 +932,18 @@ bool push_choice(query *q)
 	const frame *f = GET_CURR_FRAME();
 	pl_idx_t curr_choice = q->cp++;
 	choice *ch = GET_CHOICE(curr_choice);
-	memset(ch, 0, sizeof(choice));
 	ch->st = q->st;
 	ch->ugen = f->ugen;
 	ch->frame_cgen = ch->cgen = f->cgen;
 	ch->initial_slots = f->initial_slots;
 	ch->actual_slots = f->actual_slots;
 	ch->overflow = f->overflow;
+	ch->catchme_retry =
+		ch->catchme_exception = ch->barrier =
+		ch->call_barrier = ch->soft_cut =
+		ch->did_cleanup = ch->register_cleanup =
+		ch->block_catcher = ch->catcher =
+		ch->fail_on_retry = ch->succeed_on_retry = false;
 	return true;
 }
 

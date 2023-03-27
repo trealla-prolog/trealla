@@ -7231,15 +7231,6 @@ static bool fn_using_0(query *q)
 	return true;
 }
 
-static bool fn_sys_register_term_1(query *q)
-{
-	GET_FIRST_ARG(p1,callable);
-	check_heap_error(push_choice(q));
-	choice *ch = GET_CURR_CHOICE();
-	ch->register_term = true;
-	return true;
-}
-
 static bool fn_sys_alarm_1(query *q)
 {
 #if defined(_WIN32) || !defined(ITIMER_REAL)
@@ -7993,7 +7984,6 @@ builtins g_other_bifs[] =
 	{"sre_subst", 4, fn_sre_subst_4, "+pattern,+text,-prefix,-rest,", false, false, BLAH},
 
 	{"$register_cleanup", 1, fn_sys_register_cleanup_1, NULL, false, false, BLAH},
-	{"$register_term", 1, fn_sys_register_term_1, NULL, false, false, BLAH},
 	{"$get_level", 1, fn_sys_get_level_1, "?var", false, false, BLAH},
 	{"$is_partial_string", 1, fn_sys_is_partial_string_1, "+string", false, false, BLAH},
 	{"$undo_trail", 1, fn_sys_undo_trail_1, NULL, false, false, BLAH},
