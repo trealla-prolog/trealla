@@ -491,8 +491,6 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx_t key_ctx)
 
 static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes, bool *has_var, bool *is_partial)
 {
-	cell *save_l = l;
-	pl_idx_t save_l_ctx = l_ctx;
 	*is_partial = *has_var = false;
 	size_t is_chars_list = 0;
 	LIST_HANDLER(l);
@@ -500,16 +498,6 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx_t l_ctx, boo
 	while (is_list(l) && (q->st.m->flags.double_quote_chars || allow_codes)) {
 		CHECK_INTERRUPT();
 		cell *h = LIST_HEAD(l);
-
-		if (is_var(h)) {
-			frame *f = GET_FRAME(l_ctx);
-			slot *e = GET_SLOT(f, h->var_nbr);
-
-			if (e->mgen == q->mgen)
-				return 0;
-
-		}
-
 		cell *c = deref(q, h, l_ctx);
 		q->suspect = c;
 
@@ -553,13 +541,9 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx_t l_ctx, boo
 				return 0;
 
 			e->mgen = q->mgen;
+			l = deref(q, l, l_ctx);
+			l_ctx = q->latest_ctx;
 		}
-
-		l = deref(q, l, l_ctx);
-		l_ctx = q->latest_ctx;
-
-		if ((l == save_l) && (l_ctx == save_l_ctx))
-			return 0;
 	}
 
 	if (is_var(l)) {
