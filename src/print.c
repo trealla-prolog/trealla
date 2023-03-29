@@ -624,9 +624,10 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 				if (res < 0) return -1;
 				dst += res;
 			}
-		} else if (q->st.m->flags.double_quote_chars && running && !q->ignore_ops
-			&& possible_chars && !is_cyclic_term(q, c, c_ctx)
-			&& (tmp_len = scan_is_chars_list(q, tail, c_ctx, false)) > 0) {
+		} else if (q->st.m->flags.double_quote_chars && running
+			&& !q->ignore_ops && possible_chars
+			&& (tmp_len = scan_is_chars_list(q, tail, c_ctx, false) > 0))
+			{
 			char *tmp_src = chars_list_to_string(q, tail, c_ctx, tmp_len);
 
 			if ((strlen(tmp_src) == 1) && (*tmp_src == '\''))
@@ -847,16 +848,6 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 		return dst - save_dst;
 	}
 
-	int is_chars_list = is_string(c) && !q->ignore_ops;
-	bool possible_chars = false;
-
-	if (is_interned(c) && (C_STRLEN_UTF8(c) == 1) && !q->ignore_ops)
-		possible_chars = true;
-
-	if (!is_chars_list && running
-		&& possible_chars && !is_cyclic_term(q, c, c_ctx))
-		is_chars_list += q->st.m->flags.double_quote_chars && scan_is_chars_list(q, c, c_ctx, false);
-
 	if (is_string(c) && !q->ignore_ops) {
 		dst += snprintf(dst, dstlen, "%s", "\"");
 		dst += formatted(dst, dstlen, C_STR(q, c), C_STRLEN(q, c), true, q->json);
@@ -864,7 +855,31 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 		q->last_thing_was_symbol = false;
 		q->was_space = false;
 		return dst - save_dst;
-	} else if (is_chars_list) {
+	}
+
+	if (is_string(c) && q->ignore_ops) {
+		ssize_t n = print_string_list(q, save_dst, dst, dstlen, c, c_ctx, running, cons, depth+1);
+		q->was_space = false;
+		return n;
+	}
+
+	if (is_iso_list(c) && q->ignore_ops) {
+		ssize_t n = print_canonical_list(q, save_dst, dst, dstlen, c, c_ctx, running, depth+1);
+		q->was_space = false;
+		return n;
+	}
+
+	int is_chars_list = is_string(c);
+	bool possible_chars = false;
+
+	if (is_interned(c) && (C_STRLEN_UTF8(c) == 1) && !q->ignore_ops)
+		possible_chars = true;
+
+	if (!is_chars_list && running && possible_chars
+		&& (scan_is_chars_list(q, c, c_ctx, false) > 0))
+		is_chars_list += q->st.m->flags.double_quote_chars && scan_is_chars_list(q, c, c_ctx, false);
+
+	if (is_chars_list) {
 		cell *l = c;
 		dst += snprintf(dst, dstlen, "%s", "\"");
 		unsigned cnt = 0;
@@ -890,20 +905,8 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 		return dst - save_dst;
 	}
 
-	if (is_string(c) && q->ignore_ops) {
-		ssize_t n = print_string_list(q, save_dst, dst, dstlen, c, c_ctx, running, cons, depth+1);
-		q->was_space = false;
-		return n;
-	}
-
 	if (is_iso_list(c) && !q->ignore_ops) {
 		ssize_t n = print_iso_list(q, save_dst, dst, dstlen, c, c_ctx, running, cons, depth+1);
-		q->was_space = false;
-		return n;
-	}
-
-	if (is_iso_list(c)) {
-		ssize_t n = print_canonical_list(q, save_dst, dst, dstlen, c, c_ctx, running, depth+1);
 		q->was_space = false;
 		return n;
 	}

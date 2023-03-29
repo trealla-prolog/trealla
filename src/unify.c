@@ -49,8 +49,8 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 		pl_idx_t h2_ctx = q->latest_ctx;
 		uint64_t save_mgen = q->mgen;
 		int val = compare_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
-		if (val) return val;
 		q->mgen = save_mgen;
+		if (val) return val;
 
 		if (e1) e1->mgen = 0;
 		if (e2) e2->mgen = 0;
@@ -552,8 +552,9 @@ static bool is_cyclic_list_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigne
 
 static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 {
-	if (depth >MAX_DEPTH)
+	if (depth >MAX_DEPTH) {
 		return true;
+	}
 
 	if (!is_structure(p1))
 		return false;
@@ -593,12 +594,14 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigne
 
 bool is_cyclic_term(query *q, cell *p1, pl_idx_t p1_ctx)
 {
+	q->cycle_error = false;
 	q->mgen++;
 	return is_cyclic_term_internal(q, p1, p1_ctx, 0);
 }
 
 bool is_acyclic_term(query *q, cell *p1, pl_idx_t p1_ctx)
 {
+	q->cycle_error = false;
 	q->mgen++;
 	return !is_cyclic_term_internal(q, p1, p1_ctx, 0);
 }
@@ -1034,11 +1037,10 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 		h2 = deref(q, h2, p2_ctx);
 		pl_idx_t h2_ctx = q->latest_ctx;
 		uint64_t save_mgen = q->mgen;
-
-		if (!unify_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1))
-			return false;
-
+		bool ok = unify_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
 		q->mgen = save_mgen;
+		if (!ok) return false;
+
 		if (e1) e1->mgen = 0;
 		if (e2) e2->mgen = 0;
 

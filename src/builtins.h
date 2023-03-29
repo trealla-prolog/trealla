@@ -78,12 +78,10 @@ void make_var2(cell *tmp, pl_idx_t off);
 void make_call(query *q, cell *tmp);
 void make_call_return(query *q, cell *tmp, cell *ret);
 void make_end(cell *tmp);
-
 void make_atom(cell *tmp, pl_idx_t offset);
 void make_smalln(cell *tmp, const char *s, size_t n);
-
-bool make_cstringn(cell *d, const char *s, size_t n);
-bool make_stringn(cell *d, const char *s, size_t n);
+bool make_cstringn(cell *tmp, const char *s, size_t n);
+bool make_stringn(cell *tmp, const char *s, size_t n);
 
 #if USE_FFI
 bool fn_sys_dlopen_3(query *q);
@@ -105,6 +103,25 @@ inline static void make_indirect(cell *tmp, cell *v, pl_idx_t v_ctx)
 	tmp->flags = 0;
 	tmp->val_ptr = v;
 	tmp->var_ctx = v_ctx;
+}
+
+inline static void init_queuen(query *q)
+{
+	free(q->queue[q->st.qnbr]);
+	q->queue[q->st.qnbr] = NULL;
+	q->qp[q->st.qnbr] = 0;
+}
+
+inline static void grab_queuen(query *q)
+{
+	q->st.qnbr++;
+	init_queuen(q);
+}
+
+inline static void drop_queuen(query *q)
+{
+	init_queuen(q);
+	q->st.qnbr--;
 }
 
 inline static cell *get_var(query *q, cell *c, pl_idx_t c_ctx)

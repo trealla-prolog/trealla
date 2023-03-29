@@ -489,17 +489,27 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx_t key_ctx)
 	return true;
 }
 
-size_t scan_is_chars_list2(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes, bool *has_var, bool *is_partial)
+static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes, bool *has_var, bool *is_partial)
 {
+	cell *save_l = l;
+	pl_idx_t save_l_ctx = l_ctx;
 	*is_partial = *has_var = false;
 	size_t is_chars_list = 0;
 	LIST_HANDLER(l);
 
-	while (is_list(l)
-		&& (q->st.m->flags.double_quote_chars || allow_codes)
-		) {
+	while (is_list(l) && (q->st.m->flags.double_quote_chars || allow_codes)) {
 		CHECK_INTERRUPT();
 		cell *h = LIST_HEAD(l);
+
+		if (is_var(h)) {
+			frame *f = GET_FRAME(l_ctx);
+			slot *e = GET_SLOT(f, h->var_nbr);
+
+			if (e->mgen == q->mgen)
+				return 0;
+
+		}
+
 		cell *c = deref(q, h, l_ctx);
 		q->suspect = c;
 
@@ -509,12 +519,10 @@ size_t scan_is_chars_list2(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes, 
 		}
 
 		if (!is_integer(c) && !is_iso_atom(c)) {
-			is_chars_list = 0;
 			return 0;
 		}
 
 		if (is_integer(c) && !allow_codes) {
-			is_chars_list = 0;
 			return 0;
 		}
 
@@ -529,7 +537,6 @@ size_t scan_is_chars_list2(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes, 
 			size_t len = len_char_utf8(src);
 
 			if (len != C_STRLEN(q, c)) {
-				is_chars_list = 0;
 				return 0;
 			}
 
@@ -537,8 +544,22 @@ size_t scan_is_chars_list2(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes, 
 		}
 
 		l = LIST_TAIL(l);
+
+		if (is_var(l)) {
+			frame *f = GET_FRAME(l_ctx);
+			slot *e = GET_SLOT(f, l->var_nbr);
+
+			if (e->mgen == q->mgen)
+				return 0;
+
+			e->mgen = q->mgen;
+		}
+
 		l = deref(q, l, l_ctx);
 		l_ctx = q->latest_ctx;
+
+		if ((l == save_l) && (l_ctx == save_l_ctx))
+			return 0;
 	}
 
 	if (is_var(l)) {
@@ -552,8 +573,15 @@ size_t scan_is_chars_list2(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes, 
 	return is_chars_list;
 }
 
+size_t scan_is_chars_list2(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes, bool *has_var, bool *is_partial)
+{
+	q->mgen++;
+	return scan_is_chars_list_internal(q, l, l_ctx, allow_codes, has_var, is_partial);
+}
+
 size_t scan_is_chars_list(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes)
 {
+	q->mgen++;
 	bool has_var, is_partial;
 	return scan_is_chars_list2(q, l, l_ctx, allow_codes, &has_var, &is_partial);
 }
@@ -1582,7 +1610,6 @@ bool start(query *q)
 
 		if (q->retry) {
 			Trace(q, q->st.curr_cell, q->st.curr_frame, FAIL);
-
 			int ok = retry_choice(q);
 
 			if (!ok)
@@ -1610,10 +1637,9 @@ bool start(query *q)
 		Trace(q, q->st.curr_cell, q->st.curr_frame, CALL);
 		cell *save_cell = q->st.curr_cell;
 		pl_idx_t save_ctx = q->st.curr_frame;
-		q->run_hook = q->cycle_error = false;
+		q->run_hook = q->did_throw = false;
 		q->before_hook_tp = q->st.tp;
 		q->tot_goals++;
-		q->did_throw = false;
 
 		if (is_builtin(q->st.curr_cell)) {
 			if (!q->st.curr_cell->fn_ptr || !q->st.curr_cell->fn_ptr->fn) {
@@ -1701,38 +1727,34 @@ bool start(query *q)
 
 		MORE:
 
-		q->resume = false;
 		q->retry = QUERY_OK;
 
 		while (!q->st.curr_cell || is_end(q->st.curr_cell)) {
-			if (!resume_frame(q)) {
-				while (q->cp) {
-					choice *ch = GET_CURR_CHOICE();
-
-					if (!ch->barrier)
-						break;
-
-					drop_choice(q);
-				}
-
-				if (q->p && !q->run_init && any_outstanding_choices(q)) {
-					if (!check_redo(q))
-						break;
-
-					return true;
-				}
-
-				done = q->status = true;
-				break;
+			if (resume_frame(q)) {
+				proceed(q);
+				continue;
 			}
 
-			q->resume = true;
-			proceed(q);
+			while (q->cp) {
+				choice *ch = GET_CURR_CHOICE();
+
+				if (!ch->barrier)
+					break;
+
+				drop_choice(q);
+			}
+
+			if (q->p && !q->run_init && any_outstanding_choices(q)) {
+				if (!check_redo(q))
+					break;
+
+				return true;
+			}
+
+			done = q->status = true;
+			break;
 		}
 	}
-
-	if (!q->p)
-		return true;
 
 	if (q->halt)
 		q->error = false;

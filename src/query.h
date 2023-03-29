@@ -186,22 +186,3 @@ inline static cell *get_body(cell *c)
 
 	return NULL;
 }
-
-inline static void init_queuen(query *q)
-{
-	free(q->queue[q->st.qnbr]);
-	q->queue[q->st.qnbr] = NULL;
-	q->qp[q->st.qnbr] = 0;
-}
-
-inline static void grab_queuen(query *q)
-{
-	q->st.qnbr++;
-	init_queuen(q);
-}
-
-inline static void drop_queuen(query *q)
-{
-	init_queuen(q);
-	q->st.qnbr--;
-}
