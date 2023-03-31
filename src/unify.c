@@ -149,7 +149,7 @@ static int compare_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 
 static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
 {
-	if (depth == MAX_DEPTH) {
+	if (depth > MAX_DEPTH) {
 		q->cycle_error = true;
 		return 0;
 	}
@@ -552,7 +552,8 @@ static bool is_cyclic_list_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigne
 
 static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 {
-	if (depth >MAX_DEPTH) {
+	if (depth > MAX_DEPTH) {
+		q->cycle_error = true;
 		return true;
 	}
 
@@ -1148,6 +1149,10 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 
 static bool unify_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
 {
+	if (depth > MAX_DEPTH) {
+		return true;
+	}
+
 	if (is_var(p1) && is_var(p2)) {
 		if (p2_ctx > p1_ctx)
 			set_var(q, p2, p2_ctx, p1, p1_ctx);
