@@ -565,7 +565,6 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigne
 	if (depth > MAX_DEPTH) {
 		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		q->cycle_error = true;
-		q->cycle_error = true;
 		return true;
 	}
 
