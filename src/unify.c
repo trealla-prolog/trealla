@@ -518,17 +518,17 @@ static bool is_cyclic_list_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigne
 	LIST_HANDLER(p1);
 
 	while (is_iso_list(p1)) {
-		cell *c = LIST_HEAD(p1);
+		cell *h = LIST_HEAD(p1);
 
-		if (is_var(c)) {
+		if (is_var(h)) {
 			const frame *f = GET_FRAME(p1_ctx);
-			slot *e = GET_SLOT(f, c->var_nbr);
+			slot *e = GET_SLOT(f, h->var_nbr);
 
 			if (e->mgen == q->mgen)
 				return true;
 
 			e->mgen = q->mgen;
-			c = deref(q, c, p1_ctx);
+			cell *c = deref(q, h, p1_ctx);
 			pl_idx_t c_ctx = q->latest_ctx;
 
 			if (is_cyclic_term_internal(q, c, c_ctx, depth+1))
@@ -536,7 +536,7 @@ static bool is_cyclic_list_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigne
 
 			e->mgen = 0;
 		} else {
-			if (is_cyclic_term_internal(q, c, p1_ctx, depth+1))
+			if (is_cyclic_term_internal(q, h, p1_ctx, depth+1))
 				return true;
 		}
 
