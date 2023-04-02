@@ -92,7 +92,7 @@ static int compare_lists_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2,
 
 static int compare_structs_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
 {
-	int val = p1->val_off < p2->val_off ? -1 : p1->val_off > p2->val_off ? 1 : 0;
+	int val = CMP_STR_TO_STR(q, p1, p2);
 	if (val) return val;
 
 	int arity = p1->arity;
