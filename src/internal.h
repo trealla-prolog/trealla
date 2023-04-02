@@ -509,7 +509,7 @@ struct trail_ {
 
 struct slot_ {
 	cell c;
-	uint64_t mgen;
+	uint64_t mgen, mgen2;
 };
 
 // Where 'prev_offset' is the number of frames back

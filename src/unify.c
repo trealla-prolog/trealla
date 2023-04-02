@@ -33,26 +33,26 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 			const frame *f2 = GET_FRAME(p2_ctx);
 			e2 = GET_SLOT(f2, h2->var_nbr);
 
-			if (e2->mgen == q->mgen)
+			if (e2->mgen2 == q->mgen)
 				both++;
 			else
-				e2->mgen = q->mgen;
+				e2->mgen2 = q->mgen;
 		}
 
-		if (both == 2)
-			return 0;
+		if (!both) {
+			h1 = deref(q, h1, p1_ctx);
+			pl_idx_t h1_ctx = q->latest_ctx;
+			h2 = deref(q, h2, p2_ctx);
+			pl_idx_t h2_ctx = q->latest_ctx;
+			uint64_t save_mgen = q->mgen;
+			int val = compare_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
+			q->mgen = save_mgen;
+			if (val) return val;
 
-		h1 = deref(q, h1, p1_ctx);
-		pl_idx_t h1_ctx = q->latest_ctx;
-		h2 = deref(q, h2, p2_ctx);
-		pl_idx_t h2_ctx = q->latest_ctx;
-		uint64_t save_mgen = q->mgen;
-		int val = compare_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
-		q->mgen = save_mgen;
-		if (val) return val;
-
-		if (e1) e1->mgen = 0;
-		if (e2) e2->mgen = 0;
+			if (e1) e1->mgen = 0;
+			if (e2) e2->mgen2 = 0;
+		} else if (both == 1)
+			break;
 
 		p1 = LIST_TAIL(p1);
 		p2 = LIST_TAIL(p2);
@@ -72,14 +72,14 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 			const frame *f2 = GET_FRAME(p2_ctx);
 			e2 = GET_SLOT(f2, p2->var_nbr);
 
-			if (e2->mgen == q->mgen)
+			if (e2->mgen2 == q->mgen)
 				both++;
 			else
-				e2->mgen = q->mgen;
+				e2->mgen2 = q->mgen;
 		}
 
-		if (both == 2)
-			return 0;
+		if (both)
+			break;
 
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
@@ -117,25 +117,25 @@ static int compare_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 			const frame *f2 = GET_FRAME(p2_ctx);
 			e2 = GET_SLOT(f2, p2->var_nbr);
 
-			if (e2->mgen == q->mgen)
+			if (e2->mgen2 == q->mgen)
 				both++;
 			else
-				e2->mgen = q->mgen;
+				e2->mgen2 = q->mgen;
 		}
 
-		if (both)
-			return 0;
+		if (!both) {
+			cell *c1 = deref(q, p1, p1_ctx);
+			pl_idx_t c1_ctx = q->latest_ctx;
+			cell *c2 = deref(q, p2, p2_ctx);
+			pl_idx_t c2_ctx = q->latest_ctx;
 
-		cell *c1 = deref(q, p1, p1_ctx);
-		pl_idx_t c1_ctx = q->latest_ctx;
-		cell *c2 = deref(q, p2, p2_ctx);
-		pl_idx_t c2_ctx = q->latest_ctx;
+			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
+			if (val) return val;
 
-		int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
-		if (val) return val;
-
-		if (e1) e1->mgen = 0;
-		if (e2) e2->mgen = 0;
+			if (e1) e1->mgen = 0;
+			if (e2) e2->mgen2 = 0;
+		} else if (both == 1)
+			break;
 
 		p1 += p1->nbr_cells;
 		p2 += p2->nbr_cells;
