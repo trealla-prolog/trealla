@@ -7,7 +7,7 @@
 
 static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth);
 
-static int compare_lists_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
+static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
 {
 	LIST_HANDLER(p1);
 	LIST_HANDLER(p2);
@@ -90,7 +90,7 @@ static int compare_lists_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2,
 	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 }
 
-static int compare_structs_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
+static int compare_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
 {
 	int val = CMP_STR_TO_STR(q, p1, p2);
 	if (val) return val;
@@ -251,9 +251,9 @@ static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_id
 	}
 
 	if (is_iso_list(p1) && is_iso_list(p2))
-		return compare_lists_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1);
+		return compare_lists(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 
-	return compare_structs_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1);
+	return compare_structs(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 }
 
 // FIXME: rewrite this to be efficient
@@ -300,7 +300,7 @@ bool accum_var(query *q, const cell *c, pl_idx_t c_ctx)
 
 static void collect_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth);
 
-static void collect_list_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
+static void collect_var_list(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 {
 	cell *l = p1;
 	pl_idx_t l_ctx = p1_ctx;
@@ -363,7 +363,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned 
 		return;
 
 	if (is_iso_list(p1)) {
-		collect_list_vars_internal(q, p1, p1_ctx, depth+1);
+		collect_var_list(q, p1, p1_ctx, depth+1);
 		return;
 	}
 
@@ -406,7 +406,7 @@ void collect_vars(query *q, cell *p1, pl_idx_t p1_ctx)
 
 static bool has_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth);
 
-static bool has_list_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
+static bool has_vars_list(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 {
 	cell *l = p1;
 	pl_idx_t l_ctx = p1_ctx;
@@ -470,7 +470,7 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned dept
 		return false;
 
 	if (is_iso_list(p1))
-		return has_list_vars_internal(q, p1, p1_ctx, depth+1);
+		return has_vars_list(q, p1, p1_ctx, depth+1);
 
 	unsigned arity = p1->arity;
 	p1++;
@@ -511,7 +511,7 @@ bool has_vars(query *q, cell *p1, pl_idx_t p1_ctx)
 
 static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth);
 
-static bool is_cyclic_list_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
+static bool is_cyclic_term_list(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 {
 	LIST_HANDLER(p1);
 
@@ -570,7 +570,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigne
 		return false;
 
 	if (is_iso_list(p1))
-		return is_cyclic_list_internal(q, p1, p1_ctx, depth);
+		return is_cyclic_term_list(q, p1, p1_ctx, depth);
 
 	unsigned arity = p1->arity;
 	const frame *f = GET_FRAME(p1_ctx);
