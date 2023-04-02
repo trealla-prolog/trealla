@@ -123,6 +123,9 @@ static int compare_structs_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p
 				e2->mgen = q->mgen;
 		}
 
+		if (both)
+			return 0;
+
 		cell *c1 = deref(q, p1, p1_ctx);
 		pl_idx_t c1_ctx = q->latest_ctx;
 		cell *c2 = deref(q, p2, p2_ctx);
