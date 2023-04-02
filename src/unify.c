@@ -131,10 +131,8 @@ static int compare_structs_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p
 		cell *c2 = deref(q, p2, p2_ctx);
 		pl_idx_t c2_ctx = q->latest_ctx;
 
-		if (both != 2) {
-			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
-			if (val) return val;
-		}
+		int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
+		if (val) return val;
 
 		if (e1) e1->mgen = 0;
 		if (e2) e2->mgen = 0;
