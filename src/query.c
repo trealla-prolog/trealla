@@ -537,10 +537,10 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx_t l_ctx, boo
 			frame *f = GET_FRAME(l_ctx);
 			slot *e = GET_SLOT(f, l->var_nbr);
 
-			if (e->mgen == q->mgen)
+			if (e->vgen == q->vgen)
 				return 0;
 
-			e->mgen = q->mgen;
+			e->vgen = q->vgen;
 			l = deref(q, l, l_ctx);
 			l_ctx = q->latest_ctx;
 		}
@@ -559,13 +559,13 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx_t l_ctx, boo
 
 size_t scan_is_chars_list2(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes, bool *has_var, bool *is_partial)
 {
-	q->mgen++;
+	q->vgen++;
 	return scan_is_chars_list_internal(q, l, l_ctx, allow_codes, has_var, is_partial);
 }
 
 size_t scan_is_chars_list(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes)
 {
-	q->mgen++;
+	q->vgen++;
 	bool has_var, is_partial;
 	return scan_is_chars_list2(q, l, l_ctx, allow_codes, &has_var, &is_partial);
 }
@@ -580,7 +580,7 @@ static void unwind_trail(query *q, const choice *ch)
 		init_cell(&e->c);
 		e->c.attrs = tr->attrs;
 		e->c.attrs_ctx = tr->attrs_ctx;
-		//e->mgen = 0;
+		//e->vgen = 0;
 	}
 }
 
@@ -601,7 +601,7 @@ void try_me(query *q, unsigned nbr_vars)
 		slot *e = GET_SLOT(f, i);
 		//unshare_cell(&e->c);
 		init_cell(&e->c);
-		//e->mgen = 0;
+		//e->vgen = 0;
 	}
 
 	q->run_hook = false;
@@ -1214,7 +1214,7 @@ unsigned create_vars(query *q, unsigned cnt)
 	for (unsigned i = 0; i < cnt; i++) {
 		slot *e = GET_SLOT(f, f->actual_slots+i);
 		init_cell(&e->c);
-		//e->mgen = 0;
+		//e->vgen = 0;
 	}
 
 	f->actual_slots += cnt;

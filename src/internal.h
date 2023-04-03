@@ -509,7 +509,7 @@ struct trail_ {
 
 struct slot_ {
 	cell c;
-	uint64_t mgen, mgen2;
+	uint64_t vgen, vgen2;	// visit generation
 };
 
 // Where 'prev_offset' is the number of frames back
@@ -660,7 +660,7 @@ struct query_ {
 	bool ignores[MAX_IGNORES];
 	uint64_t tot_goals, tot_backtracks, tot_retries, tot_matches;
 	uint64_t tot_tcos, tot_frecovs, tot_srecovs;
-	uint64_t step, qid, tmo_msecs, cgen, mgen;
+	uint64_t step, qid, tmo_msecs, cgen, vgen;
 	uint64_t get_started, autofail_n, yield_at;
 	uint64_t time_cpu_started, time_cpu_last_started, future;
 	unsigned max_depth, print_idx, tab_idx, varno, tab0_varno, curr_engine;
