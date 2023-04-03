@@ -146,6 +146,21 @@ bool fn_iso_call_n(query *q)
 {
 	q->tot_goals--;
 	GET_FIRST_ARG(p1,callable);
+
+	if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
+		cell *pm = p1 + 1;
+		pm = deref(q, pm, p1_ctx);
+
+		if (!is_atom(pm) && !is_var(pm))
+			return throw_error(q, pm, p1_ctx, "type_error", "callable");
+
+		module *m = find_module(q->pl, C_STR(q, pm));
+		if (m) q->st.m = m;
+		p1 += 2;
+		p1 = deref(q, p1, p1_ctx);
+		p1_ctx = q->latest_ctx;
+	}
+
 	check_heap_error(init_tmp_heap(q));
 	check_heap_error(deep_clone_to_tmp(q, p1, p1_ctx));
 	unsigned arity = p1->arity;
