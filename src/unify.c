@@ -1033,10 +1033,10 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 			const frame *f2 = GET_FRAME(p2_ctx);
 			e2 = GET_SLOT(f2, h2->var_nbr);
 
-			if (e2->vgen == q->vgen)
+			if (e2->vgen2 == q->vgen)
 				p2 = NULL;
 			else
-				e2->vgen = q->vgen;
+				e2->vgen2 = q->vgen;
 		}
 
 		if (!p1 || !p2)
@@ -1052,7 +1052,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 		if (!ok) return false;
 
 		if (e1) e1->vgen = 0;
-		if (e2) e2->vgen = 0;
+		if (e2) e2->vgen2 = 0;
 
 		p1 = LIST_TAIL(p1);
 		p2 = LIST_TAIL(p2);
@@ -1071,10 +1071,10 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 			const frame *f2 = GET_FRAME(p2_ctx);
 			e2 = GET_SLOT(f2, p2->var_nbr);
 
-			if (e2->vgen == q->vgen)
+			if (e2->vgen2 == q->vgen)
 				p2 = NULL;
 			else
-				e2->vgen = q->vgen;
+				e2->vgen2 = q->vgen;
 		}
 
 		if (!p1 || !p2)
@@ -1134,10 +1134,10 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 			const frame *f2 = GET_FRAME(p2_ctx);
 			e2 = GET_SLOT(f2, p2->var_nbr);
 
-			if (e2->vgen == q->vgen)
+			if (e2->vgen2 == q->vgen)
 				both++;
 			else
-				e2->vgen = q->vgen;
+				e2->vgen2 = q->vgen;
 		}
 
 		if (both == 2)
@@ -1147,7 +1147,7 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 			return false;
 
 		if (e1) e1->vgen = 0;
-		if (e2) e2->vgen = 0;
+		if (e2) e2->vgen2 = 0;
 
 		p1 += p1->nbr_cells;
 		p2 += p2->nbr_cells;
