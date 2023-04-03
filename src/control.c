@@ -218,6 +218,12 @@ bool fn_iso_call_1(query *q)
 
 	cell *tmp = clone_to_heap(q, true, tmp2, 2);
 	check_heap_error(tmp);
+
+	if (is_cstring(tmp)) {
+		share_cell(tmp);
+		convert_to_literal(q->st.m, tmp);
+	}
+
 	pl_idx_t nbr_cells = 1+tmp2->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
@@ -246,6 +252,12 @@ bool fn_iso_once_1(query *q)
 
 	cell *tmp = clone_to_heap(q, true, tmp2, 2);
 	check_heap_error(tmp);
+
+	if (is_cstring(tmp)) {
+		share_cell(tmp);
+		convert_to_literal(q->st.m, tmp);
+	}
+
 	pl_idx_t nbr_cells = 1+tmp2->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_inner_cut_s, fn_sys_inner_cut_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
@@ -274,6 +286,12 @@ bool fn_ignore_1(query *q)
 
 	cell *tmp = clone_to_heap(q, true, tmp2, 2);
 	check_heap_error(tmp);
+
+	if (is_cstring(tmp)) {
+		share_cell(tmp);
+		convert_to_literal(q->st.m, tmp);
+	}
+
 	pl_idx_t nbr_cells = 1+tmp2->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_inner_cut_s, fn_sys_inner_cut_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
