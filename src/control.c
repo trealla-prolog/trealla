@@ -182,7 +182,6 @@ bool fn_iso_call_n(query *q)
 		convert_to_literal(q->st.m, tmp2);
 	}
 
-	const char *functor = C_STR(q, tmp2);
 	bool found = false;
 
 	if ((tmp2->match = search_predicate(q->st.m, tmp2, NULL)) != NULL) {
@@ -194,6 +193,7 @@ bool fn_iso_call_n(query *q)
 	}
 
 	if (arity <= 2) {
+		const char *functor = C_STR(q, tmp2);
 		unsigned specifier;
 
 		if (search_op(q->st.m, functor, &specifier, false))
@@ -228,7 +228,6 @@ bool fn_iso_call_1(query *q)
 	} else
 		tmp2 = p1;
 
-	const char *functor = C_STR(q, tmp2);
 	bool found = false;
 
 	if ((tmp2->match = search_predicate(q->st.m, tmp2, NULL)) != NULL) {
@@ -273,7 +272,6 @@ bool fn_iso_once_1(query *q)
 	} else
 		tmp2 = p1;
 
-	const char *functor = C_STR(q, tmp2);
 	bool found = false;
 
 	if ((tmp2->match = search_predicate(q->st.m, tmp2, NULL)) != NULL) {
@@ -318,7 +316,6 @@ bool fn_ignore_1(query *q)
 	} else
 		tmp2 = p1;
 
-	const char *functor = C_STR(q, tmp2);
 	bool found = false;
 
 	if ((tmp2->match = search_predicate(q->st.m, tmp2, NULL)) != NULL) {
