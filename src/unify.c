@@ -48,7 +48,6 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 			int val = compare_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
 			q->vgen = save_mgen;
 			if (val) return val;
-
 			if (e1) e1->vgen = 0;
 			if (e2) e2->vgen2 = 0;
 		} else if (both == 1)
@@ -1039,20 +1038,20 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 				e2->vgen2 = q->vgen;
 		}
 
-		if (!p1 || !p2)
+		if (p1 && p2) {
+			h1 = deref(q, h1, p1_ctx);
+			pl_idx_t h1_ctx = q->latest_ctx;
+			h2 = deref(q, h2, p2_ctx);
+			pl_idx_t h2_ctx = q->latest_ctx;
+			uint64_t save_mgen = q->vgen;
+			bool ok = unify_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
+			q->vgen = save_mgen;
+			if (!ok) return false;
+
+			if (e1) e1->vgen = 0;
+			if (e2) e2->vgen2 = 0;
+		} else if (!p1 || !p2)
 			break;
-
-		h1 = deref(q, h1, p1_ctx);
-		pl_idx_t h1_ctx = q->latest_ctx;
-		h2 = deref(q, h2, p2_ctx);
-		pl_idx_t h2_ctx = q->latest_ctx;
-		uint64_t save_mgen = q->vgen;
-		bool ok = unify_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
-		q->vgen = save_mgen;
-		if (!ok) return false;
-
-		if (e1) e1->vgen = 0;
-		if (e2) e2->vgen2 = 0;
 
 		p1 = LIST_TAIL(p1);
 		p2 = LIST_TAIL(p2);
