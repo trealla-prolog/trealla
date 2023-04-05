@@ -2604,7 +2604,7 @@ static bool fn_iso_functor_3(query *q)
 				return throw_error(q, p3, p3_ctx, "resource_error", "stack");
 		}
 
-		if (is_number(p2)) {
+		if (!arity) {
 			unify(q, p1, p1_ctx, p2, p2_ctx);
 		} else {
 			cell *tmp = alloc_on_heap(q, 1+arity);
