@@ -29,9 +29,9 @@ static void msleep(int ms)
 
 static const unsigned INITIAL_NBR_QUEUE_CELLS = 1000;
 static const unsigned INITIAL_NBR_HEAP_CELLS = 16000;
-static const unsigned INITIAL_NBR_GOALS = 64000;
-static const unsigned INITIAL_NBR_SLOTS = 64000;
-static const unsigned INITIAL_NBR_TRAILS = 64000;
+static const unsigned INITIAL_NBR_GOALS = 32000;
+static const unsigned INITIAL_NBR_SLOTS = 32000;
+static const unsigned INITIAL_NBR_TRAILS = 32000;
 static const unsigned INITIAL_NBR_CHOICES = 8000;
 static const unsigned INITIAL_NBR_CELLS = 1000;
 
