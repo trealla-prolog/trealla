@@ -1017,8 +1017,6 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 		cell *h1 = LIST_HEAD(p1);
 		cell *h2 = LIST_HEAD(p2);
 		slot *e1 = NULL, *e2 = NULL;
-		pl_idx_t c1_ctx, c2_ctx;
-		cell *c1 , *c2;
 		int both = 0;
 
 		if (is_var(h1) && (h1 != h2)) {

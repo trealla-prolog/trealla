@@ -5,7 +5,9 @@
 		subtract/3, union/3, intersection/3, is_set/1,
 		nth1/3, nth0/3, nth1/4, nth0/4,
 		last/2, flatten/2, same_length/2,
-		sum_list/2, prod_list/2, max_list/2, min_list/2,
+		sum_list/2, prod_list/2,
+		max_list/2, min_list/2,
+		list_max/2, list_min/2,
 		list_to_conjunction/2, conjunction_to_list/2,
 		list_to_set/2,
 		numlist/3,
@@ -231,6 +233,10 @@ prod_list_([X|Xs], Prod0, Prod) :-
 
 :- help(prod_list(+list,?integer), [iso(false),desc('Multiplay all values of a list.')]).
 
+list_max([H|T], Max) :-
+	max_list_(T, H, Max).
+list_max([], _) :- fail.
+
 max_list([H|T], Max) :-
 	max_list_(T, H, Max).
 max_list([], _) :- fail.
@@ -242,6 +248,11 @@ max_list_([H|T], Max0, Max) :-
 	max_list_(T, Max1, Max).
 
 :- help(max_list(+list,?integer), [iso(false),desc('Highest value in list.')]).
+:- help(list_max(+list,?integer), [iso(false),desc('Highest value in list.')]).
+
+list_min([H|T], Min) :-
+	min_list_(T, H, Min).
+list_min([], _) :- fail.
 
 min_list([H|T], Min) :-
 	min_list_(T, H, Min).
@@ -254,6 +265,7 @@ min_list_([H|T], Min0, Min) :-
 	min_list_(T, Min1, Min).
 
 :- help(min_list(+list,?integer), [iso(false),desc('Lowest value in list.')]).
+:- help(list_min(+list,?integer), [iso(false),desc('Lowest value in list.')]).
 
 list_to_conjunction(List0, T) :-
 	reverse(List0, List),
