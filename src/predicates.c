@@ -2596,16 +2596,15 @@ static bool fn_iso_functor_3(query *q)
 			return throw_error(q, p2, p2_ctx, "type_error", "atom");
 
 		unsigned arity = get_smallint(p3);
-		unsigned var_nbr = 0;
-
-		if (arity) {
-			if (!(var_nbr = create_vars(q, arity)))
-				return throw_error(q, p3, p3_ctx, "resource_error", "stack");
-		}
 
 		if (!arity) {
 			unify(q, p1, p1_ctx, p2, p2_ctx);
 		} else {
+			unsigned var_nbr = 0;
+
+			if (!(var_nbr = create_vars(q, arity)))
+				return throw_error(q, p3, p3_ctx, "resource_error", "stack");
+
 			cell *tmp = alloc_on_heap(q, 1+arity);
 			check_heap_error(tmp);
 			*tmp = (cell){0};
