@@ -44,9 +44,7 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 			pl_idx_t h1_ctx = q->latest_ctx;
 			h2 = deref(q, h2, p2_ctx);
 			pl_idx_t h2_ctx = q->latest_ctx;
-			uint64_t save_mgen = q->vgen;
 			int val = compare_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
-			q->vgen = save_mgen;
 			if (val) return val;
 			if (e1) e1->vgen = 0;
 			if (e2) e2->vgen2 = 0;
@@ -1011,7 +1009,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 {
 	LIST_HANDLER(p1);
 	LIST_HANDLER(p2);
-	q->vgen++;
+	q->vgen++;	// ????
 
 	while (is_iso_list(p1) && is_iso_list(p2)) {
 		cell *h1 = LIST_HEAD(p1);
