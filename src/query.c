@@ -42,6 +42,12 @@ typedef enum { CALL, EXIT, REDO, NEXT, FAIL } box_t;
 
 #define TRACE_MEM 0
 
+inline static void init_cell(cell *c)
+{
+	c->tag = TAG_EMPTY;
+	c->attrs = NULL;
+}
+
 // Note: when in commit there is a provisional choice point
 // that we should skip over, hence the '1' ...
 
@@ -577,7 +583,7 @@ static void unwind_trail(query *q, const choice *ch)
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
 		unshare_cell(&e->c);
-		init_cell(&e->c);
+		e->c.tag = TAG_EMPTY;
 		e->c.attrs = tr->attrs;
 		e->c.attrs_ctx = tr->attrs_ctx;
 		//e->vgen = 0;

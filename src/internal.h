@@ -837,13 +837,6 @@ extern pl_idx_t g_sys_soft_inner_cut_s;
 
 extern unsigned g_cpu_count;
 
-inline static void init_cell(cell *c)
-{
-	c->tag = TAG_EMPTY;
-	c->flags = 0;
-	c->attrs = NULL;
-}
-
 #define share_cell(c) if (is_managed(c)) share_cell_(c)
 #define unshare_cell(c) if (is_managed(c)) unshare_cell_(c)
 
