@@ -42,10 +42,9 @@ typedef enum { CALL, EXIT, REDO, NEXT, FAIL } box_t;
 
 #define TRACE_MEM 0
 
-inline static void init_cell(cell *c)
-{
-	c->tag = TAG_EMPTY;
-	c->attrs = NULL;
+#define init_cell(c) { 				\
+	(c)->tag = TAG_EMPTY;			\
+	(c)->attrs = NULL;				\
 }
 
 // Note: when in commit there is a provisional choice point
