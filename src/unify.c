@@ -1017,6 +1017,8 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 		cell *h1 = LIST_HEAD(p1);
 		cell *h2 = LIST_HEAD(p2);
 		slot *e1 = NULL, *e2 = NULL;
+		pl_idx_t c1_ctx, c2_ctx;
+		cell *c1 , *c2;
 		int both = 0;
 
 		if (is_var(h1) && (h1 != h2)) {
@@ -1103,6 +1105,8 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 
 	while (arity--) {
 		slot *e1 = NULL, *e2 = NULL;
+		pl_idx_t c1_ctx, c2_ctx;
+		cell *c1 , *c2;
 		int both = 0;
 
 		if (is_var(p1)) {
@@ -1113,6 +1117,12 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 				both++;
 			else
 				e1->vgen = q->vgen;
+
+			c1 = deref(q, p1, p1_ctx);
+			c1_ctx = q->latest_ctx;
+		} else {
+			c1 = p1;
+			c1_ctx = p1_ctx;
 		}
 
 		if (is_var(p2)) {
@@ -1123,15 +1133,16 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 				both++;
 			else
 				e2->vgen2 = q->vgen;
+
+			c2 = deref(q, p2, p2_ctx);
+			c2_ctx = q->latest_ctx;
+		} else {
+			c2 = p2;
+			c2_ctx = p2_ctx;
 		}
 
 		if (both == 2)
 			return true;
-
-		cell *c1 = deref(q, p1, p1_ctx);
-		pl_idx_t c1_ctx = q->latest_ctx;
-		cell *c2 = deref(q, p2, p2_ctx);
-		pl_idx_t c2_ctx = q->latest_ctx;
 
 		if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
 			return false;
