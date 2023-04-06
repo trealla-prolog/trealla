@@ -156,11 +156,6 @@ static void trace_call(query *q, cell *c, pl_idx_t c_ctx, box_t box)
 
 static void check_pressure(query *q)
 {
-	static unsigned s_cnt = 0;
-
-	if (!(s_cnt++ % 100))
-		return;
-
 #if REDUCE_PRESSURE
 	if ((q->trails_size > (INITIAL_NBR_TRAILS*PRESSURE_FACTOR)) && (q->st.tp < INITIAL_NBR_TRAILS)) {
 #if TRACE_MEM
@@ -1648,7 +1643,10 @@ bool start(query *q)
 			}
 
 			if (q->tot_goals % YIELD_INTERVAL == 0) {
-				check_pressure(q);
+				static unsigned s_cnt = 0;
+
+				if (!(s_cnt++ % 100))
+					check_pressure(q);
 
 				if (q->yield_at) {
 					uint64_t now = get_time_in_usec() / 1000;

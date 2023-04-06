@@ -1156,7 +1156,9 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 static bool unify_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
 {
 	if (depth > MAX_DEPTH) {
-		return true;
+		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		q->cycle_error = true;
+		return false;
 	}
 
 	if (is_var(p1) && is_var(p2)) {
