@@ -71,8 +71,6 @@ extern unsigned g_string_cnt, g_interned_cnt;
 
 #define STREAM_BUFLEN 1024
 
-#define YIELD_INTERVAL 10000	// Goal interval between yield checks
-
 #define MAX_OF(a,b) (a) > (b) ? (a) : (b)
 #define MIN_OF(a,b) (a) < (b) ? (a) : (b)
 
@@ -666,7 +664,6 @@ struct query_ {
 	unsigned max_depth, print_idx, tab_idx, varno, tab0_varno, curr_engine;
 	pl_idx_t tmphp, latest_ctx, popp, variable_names_ctx;
 	pl_idx_t frames_size, slots_size, trails_size, choices_size;
-	pl_idx_t max_choices, max_frames, max_slots, max_trails;
 	pl_idx_t hw_choices, hw_frames, hw_slots, hw_trails;
 	pl_idx_t cp, before_hook_tp;
 	pl_idx_t h_size, tmph_size, tot_heaps, tot_heapsize, undo_lo_tp, undo_hi_tp;

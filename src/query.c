@@ -30,9 +30,9 @@ static void msleep(int ms)
 static const unsigned INITIAL_NBR_QUEUE_CELLS = 1000;
 static const unsigned INITIAL_NBR_HEAP_CELLS = 16000;
 static const unsigned INITIAL_NBR_FRAMES = 32000;
-static const unsigned INITIAL_NBR_SLOTS = 32000;
-static const unsigned INITIAL_NBR_TRAILS = 32000;
-static const unsigned INITIAL_NBR_CHOICES = 8000;
+static const unsigned INITIAL_NBR_SLOTS = 256000;
+static const unsigned INITIAL_NBR_TRAILS = 256000;
+static const unsigned INITIAL_NBR_CHOICES = 32000;
 static const unsigned INITIAL_NBR_CELLS = 1000;
 
 unsigned g_string_cnt = 0, g_interned_cnt = 0;
@@ -40,6 +40,9 @@ volatile int g_tpl_interrupt = 0;
 
 typedef enum { CALL, EXIT, REDO, NEXT, FAIL } box_t;
 
+#define YIELD_INTERVAL 10000	// Goal interval between yield checks
+#define REDUCE_PRESSURE 1
+#define PRESSURE_FACTOR 16
 #define TRACE_MEM 0
 
 #define init_cell(c) { 				\
@@ -151,31 +154,57 @@ static void trace_call(query *q, cell *c, pl_idx_t c_ctx, box_t box)
 	}
 }
 
-bool check_trail(query *q)
+static void check_pressure(query *q)
 {
-	if (q->st.tp > q->max_trails) {
-		if (q->st.tp > q->hw_trails)
-			q->hw_trails = q->st.tp;
+	static unsigned s_cnt = 0;
 
-		if (q->st.tp >= q->trails_size) {
-			pl_idx_t new_trailssize = alloc_grow((void**)&q->trails, sizeof(trail), q->st.tp, q->trails_size*4/3);
-			if (!new_trailssize) {
-				q->is_oom = q->error = true;
-				return false;
-			}
+	if (!(s_cnt++ % 100))
+		return;
 
-			q->trails_size = new_trailssize;
-		}
-
-		q->max_trails = q->st.tp;
-	}
-
-	if ((q->trails_size > INITIAL_NBR_TRAILS) && (q->st.tp < (q->trails_size / 2))) {
+#if REDUCE_PRESSURE
+	if ((q->trails_size > (INITIAL_NBR_TRAILS*PRESSURE_FACTOR)) && (q->st.tp < INITIAL_NBR_TRAILS)) {
 #if TRACE_MEM
 		printf("*** q->st.tp=%u, q->trails_size=%u\n", (unsigned)q->st.tp, (unsigned)q->trails_size);
 #endif
-		q->trails_size = alloc_grow((void**)&q->trails, sizeof(trail), q->st.tp, q->trails_size / 2);
-		q->max_trails = q->st.tp;
+		q->trails_size = alloc_grow((void**)&q->trails, sizeof(trail), q->st.tp, INITIAL_NBR_TRAILS);
+	}
+
+	if ((q->choices_size > (INITIAL_NBR_CHOICES*PRESSURE_FACTOR)) && (q->cp < INITIAL_NBR_CHOICES)) {
+#if TRACE_MEM
+		printf("*** q->st.cp=%u, q->choices_size=%u\n", (unsigned)q->cp, (unsigned)q->choices_size);
+#endif
+		q->choices_size = alloc_grow((void**)&q->choices, sizeof(choice), q->cp, INITIAL_NBR_CHOICES);
+	}
+
+	if ((q->frames_size > (INITIAL_NBR_FRAMES*PRESSURE_FACTOR)) && (q->st.fp < INITIAL_NBR_FRAMES)) {
+#if TRACE_MEM
+		printf("*** q->st.fp=%u, q->frames_size=%u\n", (unsigned)q->st.fp, (unsigned)q->frames_size);
+#endif
+		q->frames_size = alloc_grow((void**)&q->frames, sizeof(frame), q->st.fp, q->frames_size / INITIAL_NBR_FRAMES);
+	}
+
+	if ((q->slots_size > (INITIAL_NBR_SLOTS*PRESSURE_FACTOR)) && (q->st.sp < INITIAL_NBR_SLOTS)) {
+#if TRACE_MEM
+		printf("*** q->st.sp=%u, q->slots_size=%u\n", (unsigned)q->st.sp, (unsigned)q->slots_size);
+#endif
+		q->slots_size = alloc_grow((void**)&q->slots, sizeof(slot), q->st.sp, q->slots_size / INITIAL_NBR_SLOTS);
+	}
+#endif
+}
+
+bool check_trail(query *q)
+{
+	if (q->st.tp > q->hw_trails)
+		q->hw_trails = q->st.tp;
+
+	if (q->st.tp >= q->trails_size) {
+		pl_idx_t new_trailssize = alloc_grow((void**)&q->trails, sizeof(trail), q->st.tp, q->trails_size*2);
+		if (!new_trailssize) {
+			q->is_oom = q->error = true;
+			return false;
+		}
+
+		q->trails_size = new_trailssize;
 	}
 
 	return true;
@@ -183,29 +212,17 @@ bool check_trail(query *q)
 
 static bool check_choice(query *q)
 {
-	if (q->cp > q->max_choices) {
-		if (q->cp > q->hw_choices)
-			q->hw_choices = q->cp;
+	if (q->cp > q->hw_choices)
+		q->hw_choices = q->cp;
 
-		if (q->cp >= q->choices_size) {
-			pl_idx_t new_choicessize = alloc_grow((void**)&q->choices, sizeof(choice), q->cp, q->choices_size*4/3);
-			if (!new_choicessize) {
-				q->is_oom = q->error = true;
-				return false;
-			}
-
-			q->choices_size = new_choicessize;
+	if (q->cp >= q->choices_size) {
+		pl_idx_t new_choicessize = alloc_grow((void**)&q->choices, sizeof(choice), q->cp, q->choices_size*2);
+		if (!new_choicessize) {
+			q->is_oom = q->error = true;
+			return false;
 		}
 
-		q->max_choices = q->cp;
-	}
-
-	if ((q->choices_size > INITIAL_NBR_CHOICES) && (q->cp < (q->choices_size / 2))) {
-#if TRACE_MEM
-		printf("*** q->st.cp=%u, q->choices_size=%u\n", (unsigned)q->cp, (unsigned)q->choices_size);
-#endif
-		q->choices_size = alloc_grow((void**)&q->choices, sizeof(choice), q->cp, q->choices_size / 2);
-		q->max_choices = q->cp;
+		q->choices_size = new_choicessize;
 	}
 
 	return true;
@@ -213,30 +230,18 @@ static bool check_choice(query *q)
 
 static bool check_frame(query *q)
 {
-	if (q->st.fp > q->max_frames) {
-		if (q->st.fp > q->hw_frames)
-			q->hw_frames = q->st.fp;
+	if (q->st.fp > q->hw_frames)
+		q->hw_frames = q->st.fp;
 
-		if (q->st.fp >= q->frames_size) {
-			pl_idx_t new_framessize = alloc_grow((void**)&q->frames, sizeof(frame), q->st.fp, q->frames_size*4/3);
+	if (q->st.fp >= q->frames_size) {
+		pl_idx_t new_framessize = alloc_grow((void**)&q->frames, sizeof(frame), q->st.fp, q->frames_size*2);
 
-			if (!new_framessize) {
-				q->is_oom = q->error = true;
-				return false;
-			}
-
-			q->frames_size = new_framessize;
+		if (!new_framessize) {
+			q->is_oom = q->error = true;
+			return false;
 		}
 
-		q->max_frames = q->st.fp;
-	}
-
-	if ((q->frames_size > INITIAL_NBR_FRAMES) && (q->st.fp < (q->frames_size / 2))) {
-#if TRACE_MEM
-		printf("*** q->st.fp=%u, q->frames_size=%u\n", (unsigned)q->st.fp, (unsigned)q->frames_size);
-#endif
-		q->frames_size = alloc_grow((void**)&q->frames, sizeof(frame), q->st.fp, q->frames_size / 2);
-		q->max_frames = q->st.fp;
+		q->frames_size = new_framessize;
 	}
 
 	return true;
@@ -246,30 +251,18 @@ bool check_slot(query *q, unsigned cnt)
 {
 	pl_idx_t nbr = q->st.sp + cnt;
 
-	if (nbr > q->max_slots) {
-		if (q->st.sp > q->hw_slots)
-			q->hw_slots = q->st.sp;
+	if (q->st.sp > q->hw_slots)
+		q->hw_slots = q->st.sp;
 
-		while (nbr >= q->slots_size) {
-			pl_idx_t new_slotssize = alloc_grow((void**)&q->slots, sizeof(slot), nbr, q->slots_size*4/3);
+	while (nbr >= q->slots_size) {
+		pl_idx_t new_slotssize = alloc_grow((void**)&q->slots, sizeof(slot), nbr, q->slots_size*2);
 
-			if (!new_slotssize) {
-				q->is_oom = q->error = true;
-				return false;
-			}
-
-			q->slots_size = new_slotssize;
+		if (!new_slotssize) {
+			q->is_oom = q->error = true;
+			return false;
 		}
 
-		q->max_slots = nbr;
-	}
-
-	if ((q->slots_size > INITIAL_NBR_SLOTS) && (q->st.sp < (q->slots_size / 2))) {
-#if TRACE_MEM
-		printf("*** q->st.sp=%u, q->slots_size=%u\n", (unsigned)q->st.sp, (unsigned)q->slots_size);
-#endif
-		q->slots_size = alloc_grow((void**)&q->slots, sizeof(slot), q->st.sp, q->slots_size / 2);
-		q->max_slots = nbr;
+		q->slots_size = new_slotssize;
 	}
 
 	return true;
@@ -1654,12 +1647,16 @@ bool start(query *q)
 				continue;
 			}
 
-			if (q->yield_at && q->tot_goals % YIELD_INTERVAL == 0) {
-				uint64_t now = get_time_in_usec() / 1000;
+			if (q->tot_goals % YIELD_INTERVAL == 0) {
+				check_pressure(q);
 
-				if (now > q->yield_at)  {
-					do_yield(q, 0);
-					break;
+				if (q->yield_at) {
+					uint64_t now = get_time_in_usec() / 1000;
+
+					if (now > q->yield_at)  {
+						do_yield(q, 0);
+						break;
+					}
 				}
 			}
 
