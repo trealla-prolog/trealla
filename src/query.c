@@ -29,7 +29,7 @@ static void msleep(int ms)
 
 static const unsigned INITIAL_NBR_QUEUE_CELLS = 1000;
 static const unsigned INITIAL_NBR_HEAP_CELLS = 16000;
-static const unsigned INITIAL_NBR_GOALS = 32000;
+static const unsigned INITIAL_NBR_FRAMES = 32000;
 static const unsigned INITIAL_NBR_SLOTS = 32000;
 static const unsigned INITIAL_NBR_TRAILS = 32000;
 static const unsigned INITIAL_NBR_CHOICES = 8000;
@@ -170,7 +170,7 @@ bool check_trail(query *q)
 		q->max_trails = q->st.tp;
 	}
 
-	if ((q->trails_size > INITIAL_NBR_TRAILS) && (q->st.tp < (q->trails_size / 3))) {
+	if ((q->trails_size > INITIAL_NBR_TRAILS) && (q->st.tp < (q->trails_size / 2))) {
 #if TRACE_MEM
 		printf("*** q->st.tp=%u, q->trails_size=%u\n", (unsigned)q->st.tp, (unsigned)q->trails_size);
 #endif
@@ -200,7 +200,7 @@ static bool check_choice(query *q)
 		q->max_choices = q->cp;
 	}
 
-	if ((q->choices_size > INITIAL_NBR_CHOICES) && (q->cp < (q->choices_size / 3))) {
+	if ((q->choices_size > INITIAL_NBR_CHOICES) && (q->cp < (q->choices_size / 2))) {
 #if TRACE_MEM
 		printf("*** q->st.cp=%u, q->choices_size=%u\n", (unsigned)q->cp, (unsigned)q->choices_size);
 #endif
@@ -231,7 +231,7 @@ static bool check_frame(query *q)
 		q->max_frames = q->st.fp;
 	}
 
-	if ((q->frames_size > INITIAL_NBR_GOALS) && (q->st.fp < (q->frames_size / 3))) {
+	if ((q->frames_size > INITIAL_NBR_FRAMES) && (q->st.fp < (q->frames_size / 2))) {
 #if TRACE_MEM
 		printf("*** q->st.fp=%u, q->frames_size=%u\n", (unsigned)q->st.fp, (unsigned)q->frames_size);
 #endif
@@ -264,7 +264,7 @@ bool check_slot(query *q, unsigned cnt)
 		q->max_slots = nbr;
 	}
 
-	if ((q->slots_size > INITIAL_NBR_SLOTS) && (q->st.sp < (q->slots_size / 3))) {
+	if ((q->slots_size > INITIAL_NBR_SLOTS) && (q->st.sp < (q->slots_size / 2))) {
 #if TRACE_MEM
 		printf("*** q->st.sp=%u, q->slots_size=%u\n", (unsigned)q->st.sp, (unsigned)q->slots_size);
 #endif
@@ -1980,7 +1980,7 @@ query *query_create(module *m, bool is_task)
 
 	// Allocate these now...
 
-	q->frames_size = is_task ? INITIAL_NBR_GOALS/10 : INITIAL_NBR_GOALS;
+	q->frames_size = is_task ? INITIAL_NBR_FRAMES/10 : INITIAL_NBR_FRAMES;
 	q->slots_size = is_task ? INITIAL_NBR_SLOTS/10 : INITIAL_NBR_SLOTS;
 	q->choices_size = is_task ? INITIAL_NBR_CHOICES/10 : INITIAL_NBR_CHOICES;
 	q->trails_size = is_task ? INITIAL_NBR_TRAILS/10 : INITIAL_NBR_TRAILS;
