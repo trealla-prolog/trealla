@@ -2288,8 +2288,10 @@ char *eat_space(parser *p)
 				src++;
 
 			if (!*src && p->comment && p->fp) {
-				if (p->no_fp || getline(&p->save_line, &p->n_line, p->fp) == -1)
-					return p->srcptr = "";
+				if (p->no_fp || getline(&p->save_line, &p->n_line, p->fp) == -1) {
+					p->error = true;
+					return NULL;
+				}
 
 				p->did_getline = true;
 				src = p->srcptr = p->save_line;

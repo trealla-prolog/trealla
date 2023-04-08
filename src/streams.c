@@ -1908,6 +1908,10 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx_t p1_ctx, cell *p2, pl
 
 	if (p->srcptr) {
 		char *src = (char*)eat_space(p);
+
+		if (p->error)
+			return throw_error(q, q->st.curr_cell, q->st.curr_frame, "syntax_error", p->error_desc?p->error_desc:"read_term");
+
 		p->line_nbr_start = p->line_nbr;
 		p->srcptr = src;
 	}
@@ -4020,6 +4024,10 @@ static bool fn_sys_read_term_from_chars_4(query *q)
 	}
 
 	char *rest = str->p->srcptr = eat_space(str->p);
+
+	if (str->p->error)
+		return throw_error(q, q->st.curr_cell, q->st.curr_frame, "syntax_error", str->p->error_desc?str->p->error_desc:"read_term");
+
 	cell tmp;
 
 	if (*rest) {
