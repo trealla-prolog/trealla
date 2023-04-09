@@ -158,18 +158,12 @@ inline static bool make_string(cell *d, const char *s)
 
 inline static bool is_a_rule(const cell *c)
 {
-	if (is_structure(c) && (c->val_off == g_neck_s) && (c->arity == 2))
-		return true;
-
-	return false;
+	return is_interned(c) && (c->arity == 2) && (c->val_off == g_neck_s);
 }
 
 inline static cell *get_head(cell *c)
 {
-	if (is_a_rule(c))
-		return c + 1;
-
-	return c;
+	return is_a_rule(c) ? c + 1 : c;
 }
 
 inline static cell *get_body(cell *c)
