@@ -42,7 +42,7 @@ typedef enum { CALL, EXIT, REDO, NEXT, FAIL } box_t;
 
 #define YIELD_INTERVAL 10000	// Goal interval between yield checks
 #define REDUCE_PRESSURE 1
-#define PRESSURE_FACTOR 16
+#define PRESSURE_FACTOR 4
 #define TRACE_MEM 0
 
 #define init_cell(c) { 				\
@@ -175,14 +175,14 @@ static void check_pressure(query *q)
 #if TRACE_MEM
 		printf("*** q->st.fp=%u, q->frames_size=%u\n", (unsigned)q->st.fp, (unsigned)q->frames_size);
 #endif
-		q->frames_size = alloc_grow((void**)&q->frames, sizeof(frame), q->st.fp, q->frames_size / INITIAL_NBR_FRAMES);
+		q->frames_size = alloc_grow((void**)&q->frames, sizeof(frame), q->st.fp, INITIAL_NBR_FRAMES);
 	}
 
 	if ((q->slots_size > (INITIAL_NBR_SLOTS*PRESSURE_FACTOR)) && (q->st.sp < INITIAL_NBR_SLOTS)) {
 #if TRACE_MEM
 		printf("*** q->st.sp=%u, q->slots_size=%u\n", (unsigned)q->st.sp, (unsigned)q->slots_size);
 #endif
-		q->slots_size = alloc_grow((void**)&q->slots, sizeof(slot), q->st.sp, q->slots_size / INITIAL_NBR_SLOTS);
+		q->slots_size = alloc_grow((void**)&q->slots, sizeof(slot), q->st.sp, INITIAL_NBR_SLOTS);
 	}
 #endif
 }
