@@ -1215,10 +1215,10 @@ static bool unify_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 	if (is_string(p1) && is_string(p2))
 		return unify_cstrings(q, p1, p2);
 
-	if (is_string(p1) && is_list(p2))
+	if (is_string(p1) && is_iso_list(p2))
 		return unify_string_to_list(q, p1, p1_ctx, p2, p2_ctx);
 
-	if (is_string(p2) && is_list(p1))
+	if (is_string(p2) && is_iso_list(p1))
 		return unify_string_to_list(q, p2, p2_ctx, p1, p1_ctx);
 
 	if (is_iso_list(p1) && is_iso_list(p2))
