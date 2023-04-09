@@ -861,7 +861,6 @@ static void commit_me(query *q)
 		q->st.m = q->st.curr_dbe->owner->m;
 	}
 
-	cell *body = get_body(cl->cells);
 	bool implied_first_cut = q->check_unique && !q->has_vars && cl->is_unique && !q->st.iter;
 	bool last_match = implied_first_cut || cl->is_first_cut || !has_next_key(q);
 	bool tco = false;
@@ -897,9 +896,9 @@ static void commit_me(query *q)
 		ch->cgen = f->cgen;
 	}
 
-	q->st.iter = NULL;
-	q->st.curr_cell = body;
+	q->st.curr_cell = get_body(cl->cells);
 	q->in_commit = false;
+	q->st.iter = NULL;
 }
 
 void stash_me(query *q, const clause *cl, bool last_match)
