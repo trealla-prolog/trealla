@@ -204,8 +204,10 @@ inline static void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_
 		q->no_tco = true;
 		make_indirect(&e->c, v, v_ctx);
 	} else if (is_var(v)) {
-		e->c = *v;
+		e->c.tag = TAG_VAR;
+		e->c.nbr_cells = 1;
 		e->c.flags |= FLAG_VAR_REF;
+		e->c.var_nbr = v->var_nbr;
 		e->c.var_ctx = v_ctx;
 	} else {
 		share_cell(v);
@@ -222,10 +224,13 @@ inline static void reset_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, p
 		add_trail(q, c_ctx, c->var_nbr, NULL, 0);
 
 	if (is_structure(v)) {
+		q->no_tco = true;
 		make_indirect(&e->c, v, v_ctx);
 	} else if (is_var(v)) {
-		e->c = *v;
+		e->c.tag = TAG_VAR;
+		e->c.nbr_cells = 1;
 		e->c.flags |= FLAG_VAR_REF;
+		e->c.var_nbr = v->var_nbr;
 		e->c.var_ctx = v_ctx;
 	} else {
 		share_cell(v);
