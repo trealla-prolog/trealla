@@ -907,9 +907,6 @@ static bool unify_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 
 static bool unify_string_to_list(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx)
 {
-	if (p1->arity != p2->arity)
-		return false;
-
 	LIST_HANDLER(p1);
 	LIST_HANDLER(p2);
 
@@ -1223,11 +1220,12 @@ static bool unify_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 	if (is_string(p2) && is_iso_list(p1))
 		return unify_string_to_list(q, p2, p2_ctx, p1, p1_ctx);
 
-	if (is_iso_list(p1) && is_iso_list(p2))
-		return unify_lists(q, p1, p1_ctx, p2, p2_ctx, depth+1);
-
-	if (p1->arity || p2->arity)
-		return unify_structs(q, p1, p1_ctx, p2, p2_ctx, depth+1);
+	if (p1->arity || p2->arity) {
+		if (is_iso_list(p1) && is_iso_list(p2))
+			return unify_lists(q, p1, p1_ctx, p2, p2_ctx, depth+1);
+		else
+			return unify_structs(q, p1, p1_ctx, p2, p2_ctx, depth+1);
+	}
 
 	return g_disp[p1->tag].fn(q, p1, p2);
 }
