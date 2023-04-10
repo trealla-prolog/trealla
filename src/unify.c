@@ -1100,7 +1100,7 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 	p1++; p2++;
 
 	while (arity--) {
-		slot *e1 = NULL, *e2 = NULL;
+		slot *e1, *e2;
 		pl_idx_t c1_ctx, c2_ctx;
 		cell *c1 , *c2;
 		int both = 0;
@@ -1117,6 +1117,7 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 			c1 = deref(q, p1, p1_ctx);
 			c1_ctx = q->latest_ctx;
 		} else {
+			e1 = NULL;
 			c1 = p1;
 			c1_ctx = p1_ctx;
 		}
@@ -1133,6 +1134,7 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 			c2 = deref(q, p2, p2_ctx);
 			c2_ctx = q->latest_ctx;
 		} else {
+			e2 = NULL;
 			c2 = p2;
 			c2_ctx = p2_ctx;
 		}
