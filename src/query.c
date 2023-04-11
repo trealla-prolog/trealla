@@ -1670,9 +1670,7 @@ bool start(query *q)
 			Trace(q, save_cell, save_ctx, EXIT);
 			proceed(q);
 		} else {
-			if (!is_callable(q->st.curr_cell)) {
-				throw_error(q, q->st.curr_cell, q->st.curr_frame, "type_error", "callable");
-			} else if ((match_head(q) != true) && !q->is_oom) {
+			if (!match_head(q) && !q->is_oom) {
 				q->retry = QUERY_RETRY;
 				q->tot_backtracks++;
 				continue;
