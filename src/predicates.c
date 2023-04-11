@@ -6712,6 +6712,13 @@ static bool fn_sys_unifiable_3(query *q)
 	drop_choice(q);
 
 	cell *l = end_list(q);
+	cell tmp;
+
+	if (!l) {
+		make_atom(&tmp, g_nil_s);
+		l = &tmp;
+	}
+
 	return unify(q, p3, p3_ctx, l, q->st.curr_frame);
 }
 
