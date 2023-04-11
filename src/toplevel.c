@@ -28,6 +28,18 @@ static void msleep(int ms)
 
 int check_interrupt(query *q)
 {
+#ifndef _WIN32
+	if (g_tpl_interrupt == SIGALRM) {
+		signal(SIGINT, &sigfn);
+		g_tpl_interrupt = 0;
+
+		if (!throw_error(q, q->st.curr_cell, q->st.curr_frame, "time_limit_exceeded", "timed_out"))
+			q->retry = true;
+
+		return 0;
+	}
+#endif
+
 	signal(SIGINT, &sigfn);
 	g_tpl_interrupt = 0;
 
