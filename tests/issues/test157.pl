@@ -1,0 +1,4 @@
+:-initialization(main).
+
+main :-
+	"X".

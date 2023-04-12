@@ -1,0 +1,1 @@
+   error(existence_error(procedure,'X'/2),main/0).
