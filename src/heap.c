@@ -250,7 +250,7 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 					tmp->tmp_attrs = NULL;
 				} else {
 					reflist nlist;
-					nlist.next = list;
+					nlist.next = NULL;//list;
 					nlist.ptr = save_p1;
 					nlist.ctx = save_p1_ctx;
 					cell *rec = deep_copy2_to_tmp(q, h, h_ctx, copy_attrs, from, from_ctx, to, to_ctx, depth+1, &nlist);
@@ -328,7 +328,7 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 				tmp->tmp_attrs = NULL;
 			} else {
 				reflist nlist;
-				nlist.next = list;
+				nlist.next = NULL;//list;
 				nlist.ptr = save_p1;
 				nlist.ctx = save_p1_ctx;
 
