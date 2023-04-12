@@ -234,20 +234,14 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 		LIST_HANDLER(p1);
 
 		while (is_iso_list(p1)) {
-			if (g_tpl_interrupt) {
-				if (check_interrupt(q))
-					break;
-			}
-
 			cell *h = LIST_HEAD(p1);
 
 			if (is_var(h)) {
-				cell *c = h;
-				pl_idx_t c_ctx = p1_ctx;
-				c = deref(q, c, c_ctx);
-				c_ctx = q->latest_ctx;
+				pl_idx_t h_ctx = p1_ctx;
+				h = deref(q, h, h_ctx);
+				h_ctx = q->latest_ctx;
 
-				if (is_in_ref_list(c, c_ctx, list)) {
+				if (is_in_ref_list(h, h_ctx, list)) {
 					cell *tmp = alloc_on_tmp(q, 1);
 					if (!tmp) return NULL;
 					*tmp = *h;
@@ -259,7 +253,7 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 					nlist.next = list;
 					nlist.ptr = save_p1;
 					nlist.ctx = save_p1_ctx;
-					cell *rec = deep_copy2_to_tmp(q, c, c_ctx, copy_attrs, from, from_ctx, to, to_ctx, depth+1, &nlist);
+					cell *rec = deep_copy2_to_tmp(q, h, h_ctx, copy_attrs, from, from_ctx, to, to_ctx, depth+1, &nlist);
 					if (!rec) return rec;
 				}
 			} else {
