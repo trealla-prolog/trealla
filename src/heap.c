@@ -241,7 +241,7 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 				h = deref(q, h, h_ctx);
 				h_ctx = q->latest_ctx;
 
-				if ((h == save_p1) && (h_ctx == save_p1_ctx)) {
+				if (is_in_ref_list(h, h_ctx, list)) {
 					cell *tmp = alloc_on_tmp(q, 1);
 					if (!tmp) return NULL;
 					*tmp = *h;
@@ -268,11 +268,11 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 				p1_ctx = q->latest_ctx;
 
 				reflist nlist;
-				nlist.next = list;
+				nlist.next = NULL;//list;
 				nlist.ptr = save_p1;
 				nlist.ctx = save_p1_ctx;
 
-				if ((p1 == save_p1) && (p1_ctx == save_p1_ctx)) {
+				if (is_in_ref_list(p1, p1_ctx, &nlist)) {
 					cell *tmp = alloc_on_tmp(q, 1);
 					if (!tmp) return NULL;
 					tmp->tag = TAG_VAR;
@@ -319,7 +319,7 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 			c = deref(q, c, c_ctx);
 			c_ctx = q->latest_ctx;
 
-			if ((c == save_p1) && (c_ctx == save_p1_ctx)) {
+			if (is_in_ref_list(c, c_ctx, list)) {
 				cell *tmp = alloc_on_tmp(q, 1);
 				if (!tmp) return NULL;
 				*tmp = *p1;
