@@ -240,48 +240,58 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 			}
 
 			cell *h = LIST_HEAD(p1);
-			cell *c = h;
-			pl_idx_t c_ctx = p1_ctx;
-			c = deref(q, c, c_ctx);
-			c_ctx = q->latest_ctx;
 
-			if (is_in_ref_list(c, c_ctx, list)) {
-				cell *tmp = alloc_on_tmp(q, 1);
-				if (!tmp) return NULL;
-				*tmp = *h;
-				tmp->var_nbr = q->tab0_varno;
-				tmp->flags |= FLAG_VAR_FRESH;
-				tmp->tmp_attrs = NULL;
+			if (is_var(h)) {
+				cell *c = h;
+				pl_idx_t c_ctx = p1_ctx;
+				c = deref(q, c, c_ctx);
+				c_ctx = q->latest_ctx;
+
+				if (is_in_ref_list(c, c_ctx, list)) {
+					cell *tmp = alloc_on_tmp(q, 1);
+					if (!tmp) return NULL;
+					*tmp = *h;
+					tmp->var_nbr = q->tab0_varno;
+					tmp->flags |= FLAG_VAR_FRESH;
+					tmp->tmp_attrs = NULL;
+				} else {
+					reflist nlist;
+					nlist.next = list;
+					nlist.ptr = save_p1;
+					nlist.ctx = save_p1_ctx;
+					cell *rec = deep_copy2_to_tmp(q, c, c_ctx, copy_attrs, from, from_ctx, to, to_ctx, depth+1, &nlist);
+					if (!rec) return rec;
+				}
 			} else {
-				reflist nlist;
-				nlist.next = list;
-				nlist.ptr = save_p1;
-				nlist.ctx = save_p1_ctx;
-				cell *rec = deep_copy2_to_tmp(q, c, c_ctx, copy_attrs, from, from_ctx, to, to_ctx, depth+1, &nlist);
+				cell *rec = deep_copy2_to_tmp(q, h, p1_ctx, copy_attrs, from, from_ctx, to, to_ctx, depth+1, list);
 				if (!rec) return rec;
 			}
 
 			p1 = LIST_TAIL(p1);
-			p1 = deref(q, p1, p1_ctx);
-			p1_ctx = q->latest_ctx;
 
-			reflist nlist;
-			nlist.next = list;
-			nlist.ptr = save_p1;
-			nlist.ctx = save_p1_ctx;
+			if (is_var(p1)) {
+				p1 = deref(q, p1, p1_ctx);
+				p1_ctx = q->latest_ctx;
 
-			if (is_in_ref_list(p1, p1_ctx, &nlist)) {
-				cell *tmp = alloc_on_tmp(q, 1);
-				if (!tmp) return NULL;
-				tmp->tag = TAG_VAR;
-				tmp->flags = 0;
-				tmp->nbr_cells = 1;
-				tmp->val_off = g_anon_s;
-				tmp->var_nbr = q->tab0_varno;
-				tmp->flags |= FLAG_VAR_FRESH;
-				tmp->tmp_attrs = NULL;
-				cyclic = true;
-				break;
+				reflist nlist;
+				nlist.next = list;
+				nlist.ptr = save_p1;
+				nlist.ctx = save_p1_ctx;
+
+				if (is_in_ref_list(p1, p1_ctx, &nlist)) {
+					cell *tmp = alloc_on_tmp(q, 1);
+					if (!tmp) return NULL;
+					tmp->tag = TAG_VAR;
+					tmp->flags = 0;
+					tmp->nbr_cells = 1;
+					tmp->val_off = g_anon_s;
+					tmp->var_nbr = q->tab0_varno;
+					tmp->flags |= FLAG_VAR_FRESH;
+					tmp->tmp_attrs = NULL;
+					cyclic = true;
+					break;
+				}
+			} else {
 			}
 
 			if (is_iso_list(p1)) {
@@ -292,6 +302,8 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 		}
 
 		if (!cyclic) {
+			q->vgen++; // ????
+
 			cell *rec = deep_copy2_to_tmp(q, p1, p1_ctx, copy_attrs, from, from_ctx, to, to_ctx, depth+1, list);
 			if (!rec) return rec;
 		}
@@ -307,24 +319,30 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 
 	while (arity--) {
 		cell *c = p1;
-		pl_idx_t c_ctx = p1_ctx;
-		c = deref(q, c, c_ctx);
-		c_ctx = q->latest_ctx;
 
-		if (is_in_ref_list(c, c_ctx, list)) {
-			cell *tmp = alloc_on_tmp(q, 1);
-			if (!tmp) return NULL;
-			*tmp = *p1;
-			tmp->var_nbr = q->tab0_varno;
-			tmp->flags |= FLAG_VAR_FRESH;
-			tmp->tmp_attrs = NULL;
+		if (is_var(c)) {
+			pl_idx_t c_ctx = p1_ctx;
+			c = deref(q, c, c_ctx);
+			c_ctx = q->latest_ctx;
+
+			if (is_in_ref_list(c, c_ctx, list)) {
+				cell *tmp = alloc_on_tmp(q, 1);
+				if (!tmp) return NULL;
+				*tmp = *p1;
+				tmp->var_nbr = q->tab0_varno;
+				tmp->flags |= FLAG_VAR_FRESH;
+				tmp->tmp_attrs = NULL;
+			} else {
+				reflist nlist;
+				nlist.next = list;
+				nlist.ptr = save_p1;
+				nlist.ctx = save_p1_ctx;
+
+				cell *rec = deep_copy2_to_tmp(q, c, c_ctx, copy_attrs, from, from_ctx, to, to_ctx, depth+1, &nlist);
+				if (!rec) return rec;
+			}
 		} else {
-			reflist nlist;
-			nlist.next = list;
-			nlist.ptr = save_p1;
-			nlist.ctx = save_p1_ctx;
-
-			cell *rec = deep_copy2_to_tmp(q, c, c_ctx, copy_attrs, from, from_ctx, to, to_ctx, depth+1, &nlist);
+			cell *rec = deep_copy2_to_tmp(q, c, p1_ctx, copy_attrs, from, from_ctx, to, to_ctx, depth+1, list);
 			if (!rec) return rec;
 		}
 
