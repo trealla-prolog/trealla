@@ -341,6 +341,7 @@ cell *deep_raw_copy_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx)
 	const frame *f = GET_CURR_FRAME();
 	q->varno = f->actual_slots;
 	q->tab_idx = 0;
+	q->vgen++;
 	q->cycle_error = false;
 	reflist nlist;
 	nlist.next = NULL;
@@ -430,6 +431,7 @@ cell *deep_copy_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_attrs)
 	const frame *f = GET_CURR_FRAME();
 	q->varno = f->actual_slots;
 	q->tab_idx = 0;
+	q->vgen++;
 	cell *tmp = deep_copy_to_tmp_with_replacement(q, p1, p1_ctx, copy_attrs, NULL, 0, NULL, 0);
 	map_destroy(q->vars);
 	q->vars = NULL;
@@ -456,6 +458,7 @@ cell *deep_copy_to_heap_with_replacement(query *q, cell *p1, pl_idx_t p1_ctx, bo
 	const frame *f = GET_CURR_FRAME();
 	q->varno = f->actual_slots;
 	q->tab_idx = 0;
+	q->vgen++;
 	cell *tmp = deep_copy_to_tmp_with_replacement(q, p1, p1_ctx, copy_attrs, from, from_ctx, to, to_ctx);
 	map_destroy(q->vars);
 	q->vars = NULL;
