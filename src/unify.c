@@ -39,7 +39,7 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 				e2->vgen2 = q->vgen;
 		}
 
-		if (!both) {
+		if (both != 2) {
 			h1 = deref(q, h1, p1_ctx);
 			pl_idx_t h1_ctx = q->latest_ctx;
 			h2 = deref(q, h2, p2_ctx);
@@ -48,8 +48,7 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 			if (val) return val;
 			if (e1) e1->vgen = 0;
 			if (e2) e2->vgen2 = 0;
-		} else if (both == 1)
-			break;
+		}
 
 		p1 = LIST_TAIL(p1);
 		p2 = LIST_TAIL(p2);
@@ -75,7 +74,7 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 				e2->vgen2 = q->vgen;
 		}
 
-		if (both)
+		if (both == 2)
 			return 0;
 
 		p1 = deref(q, p1, p1_ctx);
@@ -1006,7 +1005,6 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 {
 	LIST_HANDLER(p1);
 	LIST_HANDLER(p2);
-	q->vgen++;	// ????
 
 	while (is_iso_list(p1) && is_iso_list(p2)) {
 		cell *h1 = LIST_HEAD(p1);
@@ -1034,7 +1032,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 				e2->vgen2 = q->vgen;
 		}
 
-		if (!both) {
+		if (both != 2) {
 			h1 = deref(q, h1, p1_ctx);
 			pl_idx_t h1_ctx = q->latest_ctx;
 			h2 = deref(q, h2, p2_ctx);
@@ -1046,8 +1044,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 
 			if (e1) e1->vgen = 0;
 			if (e2) e2->vgen2 = 0;
-		} else if (both == 1)
-			break;
+		}
 
 		p1 = LIST_TAIL(p1);
 		p2 = LIST_TAIL(p2);
@@ -1073,7 +1070,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 				e2->vgen2 = q->vgen;
 		}
 
-		if (both)
+		if (both == 2)
 			break;
 
 		p1 = deref(q, p1, p1_ctx);
