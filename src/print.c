@@ -42,7 +42,6 @@ char *chars_list_to_string(query *q, cell *p_chars, pl_idx_t p_chars_ctx, size_t
 	LIST_HANDLER(p_chars);
 
 	while (is_list(p_chars)) {
-		CHECK_INTERRUPT();
 		cell *h = LIST_HEAD(p_chars);
 		h = deref(q, h, p_chars_ctx);
 
@@ -530,7 +529,6 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 	LIST_HANDLER(c);
 
 	while (is_iso_list(c)) {
-		CHECK_INTERRUPT();
 		cell *save_c = c;
 		pl_idx_t save_c_ctx = c_ctx;
 
@@ -682,7 +680,6 @@ static ssize_t print_canonical_list(query *q, char *save_dst, char *dst, size_t 
 	unsigned print_list = 0;
 
 	while (is_iso_list(c)) {
-		CHECK_INTERRUPT();
 		cell *save_c = c;
 		pl_idx_t save_c_ctx = c_ctx;
 
@@ -1022,7 +1019,6 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 #endif
 
 			for (c++; arity--; c += c->nbr_cells) {
-				CHECK_INTERRUPT();
 				cell *tmp = running ? deref(q, c, c_ctx) : c;
 				pl_idx_t tmp_ctx = running ? q->latest_ctx : 0;
 

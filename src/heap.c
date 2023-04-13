@@ -234,11 +234,6 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 		LIST_HANDLER(p1);
 
 		while (is_iso_list(p1)) {
-			if (g_tpl_interrupt) {
-				if (check_interrupt(q))
-					break;
-			}
-
 			cell *h = LIST_HEAD(p1);
 			cell *c = h;
 			pl_idx_t c_ctx = p1_ctx;
@@ -503,11 +498,6 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 		LIST_HANDLER(p1);
 
 		while (is_iso_list(p1)) {
-			if (g_tpl_interrupt) {
-				if (check_interrupt(q))
-					break;
-			}
-
 			cell *h = LIST_HEAD(p1);
 			pl_idx_t h_ctx = p1_ctx;
 			cell *c = deref(q, h, h_ctx);

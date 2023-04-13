@@ -449,8 +449,6 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx_t key_ctx)
 	const db_entry *dbe;
 
 	while (map_next_key(iter, (void*)&dbe)) {
-		CHECK_INTERRUPT();
-
 #if DEBUGIDX
 		DUMP_TERM("   got, key = ", dbe->cl.cells, q->st.curr_frame);
 #endif
@@ -489,7 +487,6 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx_t l_ctx, boo
 	LIST_HANDLER(l);
 
 	while (is_list(l) && (q->st.m->flags.double_quote_chars || allow_codes)) {
-		CHECK_INTERRUPT();
 		cell *h = LIST_HEAD(l);
 		cell *c = deref(q, h, l_ctx);
 		q->suspect = c;
@@ -1271,8 +1268,6 @@ bool match_rule(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract
 	check_heap_error(check_slot(q, MAX_ARITY));
 
 	for (; q->st.curr_dbe; q->st.curr_dbe = q->st.curr_dbe->next) {
-		CHECK_INTERRUPT();
-
 		if (!can_view(q, f->ugen, q->st.curr_dbe))
 			continue;
 
@@ -1379,8 +1374,6 @@ bool match_clause(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retra
 	check_heap_error(check_slot(q, MAX_ARITY));
 
 	for (; q->st.curr_dbe; q->st.curr_dbe = q->st.curr_dbe->next) {
-		CHECK_INTERRUPT();
-
 		if (!can_view(q, f->ugen, q->st.curr_dbe))
 			continue;
 
@@ -1459,8 +1452,6 @@ static bool match_head(query *q)
 	check_heap_error(check_slot(q, MAX_ARITY));
 
 	for (; q->st.curr_dbe; next_key(q)) {
-		CHECK_INTERRUPT();
-
 		if (!can_view(q, f->ugen, q->st.curr_dbe))
 			continue;
 
@@ -1522,7 +1513,6 @@ static bool consultall(query *q, cell *l, pl_idx_t l_ctx)
 	LIST_HANDLER(l);
 
 	while (is_list(l)) {
-		CHECK_INTERRUPT();
 		cell *h = LIST_HEAD(l);
 		h = deref(q, h, l_ctx);
 		pl_idx_t h_ctx = q->latest_ctx;
