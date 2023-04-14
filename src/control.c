@@ -499,8 +499,6 @@ bool fn_iso_disjunction_2(query *q)
 	return true;
 }
 
-// \+ goal
-
 bool fn_iso_negation_1(query *q)
 {
 	q->tot_goals--;
