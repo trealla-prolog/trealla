@@ -950,7 +950,7 @@ bool push_choice(query *q)
 
 // A barrier is used when making a call, it sets a
 // new choice generation so that normal cuts are contained.
-// An '$inner_cut' though will also remove the barrier...
+// An '$prune_me' though will also remove the barrier...
 
 bool push_barrier(query *q)
 {
@@ -1037,7 +1037,7 @@ void cut_me(query *q)
 		q->st.tp = 0;
 }
 
-void inner_cut(query *q, bool soft_cut)
+void prune_me(query *q, bool soft_cut)
 {
 	frame *f = GET_CURR_FRAME();
 
@@ -1061,7 +1061,7 @@ void inner_cut(query *q, bool soft_cut)
 			ch--;
 		}
 
-		// An inner cut can break through a barrier...
+		// An prune can break through a barrier...
 
 		if (ch->cgen < f->cgen) {
 			f->cgen = ch->cgen;

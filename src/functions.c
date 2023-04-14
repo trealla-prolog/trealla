@@ -218,7 +218,7 @@ static bool fn_return_1(query *q)
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 	q->accum = p1;
-	inner_cut(q, false);
+	prune_me(q, false);
 	drop_choice(q);
 	q->error = true;
 	return true;
