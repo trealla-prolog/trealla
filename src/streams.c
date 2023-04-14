@@ -6930,7 +6930,7 @@ static bool fn_with_mutex_2(query *q)
 	} else
 		tmp2 = p1;
 
-	if (check_body_callable(q->st.m->p, tmp2) != NULL)
+	if (check_body_callable(tmp2) != NULL)
 		return throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
 
 	cell *tmp = clone_to_heap(q, true, tmp2, 2);

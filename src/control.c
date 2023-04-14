@@ -124,11 +124,6 @@ bool fn_call_0(query *q, cell *p1, pl_idx_t p1_ctx)
 	if (!is_callable(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "callable");
 
-	cell *tmp2;
-
-	if ((tmp2 = check_body_callable(q->st.m->p, p1)) != NULL)
-		return throw_error(q, p1, p1_ctx, "type_error", "callable");
-
 	cell *tmp = clone_to_heap(q, false, p1, 2);
 	check_heap_error(tmp);
 	pl_idx_t nbr_cells = 0 + tmp->nbr_cells;
@@ -202,7 +197,7 @@ bool fn_iso_call_n(query *q)
 			SET_OP(tmp2, specifier);
 	}
 
-	if (check_body_callable(q->st.m->p, tmp2) != NULL)
+	if (check_body_callable(tmp2) != NULL)
 		return throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
 
 	cell *tmp = clone_to_heap(q, true, tmp2, 2);
@@ -242,7 +237,7 @@ bool fn_iso_call_1(query *q)
 		}
 	}
 
-	if (check_body_callable(q->st.m->p, tmp2) != NULL)
+	if (check_body_callable(tmp2) != NULL)
 		return throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
 
 	cell *tmp = clone_to_heap(q, true, tmp2, 2);
@@ -288,7 +283,7 @@ bool fn_iso_once_1(query *q)
 		}
 	}
 
-	if (check_body_callable(q->st.m->p, tmp2) != NULL)
+	if (check_body_callable(tmp2) != NULL)
 		return throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
 
 	cell *tmp = clone_to_heap(q, true, tmp2, 2);
@@ -334,7 +329,7 @@ bool fn_ignore_1(query *q)
 		}
 	}
 
-	if (check_body_callable(q->st.m->p, tmp2) != NULL)
+	if (check_body_callable(tmp2) != NULL)
 		return throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
 
 	cell *tmp = clone_to_heap(q, true, tmp2, 2);

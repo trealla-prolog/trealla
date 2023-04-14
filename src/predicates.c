@@ -2467,7 +2467,7 @@ static bool fn_iso_asserta_1(query *q)
 
 	cell *tmp2, *body = get_body(tmp);
 
-	if (body && ((tmp2 = check_body_callable(q->st.m->p, body)) != NULL))
+	if (body && ((tmp2 = check_body_callable(body)) != NULL))
 		return throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
 
 	pl_idx_t nbr_cells = tmp->nbr_cells;
@@ -2526,7 +2526,7 @@ static bool fn_iso_assertz_1(query *q)
 
 	cell *tmp2, *body = get_body(tmp);
 
-	if (body && ((tmp2 = check_body_callable(q->st.m->p, body)) != NULL))
+	if (body && ((tmp2 = check_body_callable(body)) != NULL))
 		return throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
 
 	pl_idx_t nbr_cells = tmp->nbr_cells;
@@ -3749,7 +3749,7 @@ static bool do_asserta_2(query *q)
 
 	cell *tmp2;
 
-	if (body && ((tmp2 = check_body_callable(q->st.m->p, body)) != NULL))
+	if (body && ((tmp2 = check_body_callable(body)) != NULL))
 		return throw_error(q, tmp2, q->latest_ctx, "type_error", "callable");
 
 	GET_NEXT_ARG(p2,atom_or_var);
@@ -3847,7 +3847,7 @@ static bool do_assertz_2(query *q)
 
 	cell *tmp2;
 
-	if (body && ((tmp2 = check_body_callable(q->st.m->p, body)) != NULL))
+	if (body && ((tmp2 = check_body_callable(body)) != NULL))
 		return throw_error(q, tmp2, q->latest_ctx, "type_error", "callable");
 
 	GET_NEXT_ARG(p2,atom_or_var);

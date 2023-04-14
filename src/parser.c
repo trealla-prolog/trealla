@@ -1749,7 +1749,7 @@ void term_to_body(parser *p)
 	p->cl->cells->nbr_cells = p->cl->cidx - 1;	// Drops TAG_END
 }
 
-cell *check_body_callable(parser *p, cell *c)
+cell *check_body_callable(cell *c)
 {
 	if ((c->arity == 2) && (is_xfx(c) || is_xfy(c))) {
 		if ((c->val_off == g_conjunction_s)
@@ -1760,14 +1760,16 @@ cell *check_body_callable(parser *p, cell *c)
 			cell *lhs = c + 1;
 			cell *tmp;
 
-			if ((tmp = check_body_callable(p, lhs)) != NULL)
+			if ((tmp = check_body_callable(lhs)) != NULL)
 				return tmp;
 
 			cell *rhs = lhs + lhs->nbr_cells;
 
-			if ((tmp = check_body_callable(p, rhs)) != NULL)
+			if ((tmp = check_body_callable(rhs)) != NULL)
 				return tmp;
 		}
+
+		return NULL;
 	}
 
 	return !is_callable(c) && !is_var(c) ? c : NULL;
