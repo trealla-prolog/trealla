@@ -507,7 +507,7 @@ struct trail_ {
 
 struct slot_ {
 	cell c;
-	uint64_t vgen, vgen2;	// visit generation
+	uint32_t vgen, vgen2;	// visit generation
 };
 
 // Where 'prev_offset' is the number of frames back
@@ -658,7 +658,7 @@ struct query_ {
 	bool ignores[MAX_IGNORES];
 	uint64_t tot_goals, tot_backtracks, tot_retries, tot_matches;
 	uint64_t tot_tcos, tot_frecovs, tot_srecovs;
-	uint64_t step, qid, tmo_msecs, cgen, vgen;
+	uint64_t step, qid, tmo_msecs, cgen;
 	uint64_t get_started, autofail_n, yield_at;
 	uint64_t time_cpu_started, time_cpu_last_started, future;
 	unsigned max_depth, print_idx, tab_idx, varno, tab0_varno, curr_engine;
@@ -670,6 +670,7 @@ struct query_ {
 	pl_idx_t q_size[MAX_QUEUES], tmpq_size[MAX_QUEUES], qp[MAX_QUEUES];
 	prolog_flags flags;
 	enum q_retry retry;
+	uint32_t vgen;
 	int8_t halt_code;
 	int8_t quoted;
 	bool done:1;
