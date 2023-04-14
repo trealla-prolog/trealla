@@ -1750,7 +1750,6 @@ static bool fn_iso_arg_3(query *q)
 
 	if (is_list(p2)) {
 		LIST_HANDLER(p2);
-
 		cell *c = LIST_HEAD(p2);
 		c = deref(q, c, p2_ctx);
 		pl_idx_t c_ctx = q->latest_ctx;
