@@ -591,7 +591,8 @@ void try_me(query *q, unsigned nbr_vars)
 	for (unsigned i = 0; i < nbr_vars; i++, e++) {
 		//unshare_cell(&e->c);
 		init_cell(&e->c);
-		//e->vgen = 0;
+		e->vgen2 = 0;
+		e->vgen = 0;
 	}
 
 	q->run_hook = false;
