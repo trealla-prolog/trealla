@@ -570,7 +570,6 @@ static void unwind_trail(query *q, const choice *ch)
 		e->c.tag = TAG_EMPTY;
 		e->c.attrs = tr->attrs;
 		e->c.attrs_ctx = tr->attrs_ctx;
-		//e->vgen = 0;
 	}
 }
 
@@ -591,8 +590,7 @@ void try_me(query *q, unsigned nbr_vars)
 	for (unsigned i = 0; i < nbr_vars; i++, e++) {
 		//unshare_cell(&e->c);
 		init_cell(&e->c);
-		e->vgen2 = 0;
-		e->vgen = 0;
+		e->vgen2 = e->vgen = 0;
 	}
 
 	q->run_hook = false;
@@ -1204,7 +1202,7 @@ unsigned create_vars(query *q, unsigned cnt)
 	for (unsigned i = 0; i < cnt; i++) {
 		slot *e = GET_SLOT(f, f->actual_slots+i);
 		init_cell(&e->c);
-		//e->vgen = 0;
+		e->vgen2 = e->vgen = 0;
 	}
 
 	f->actual_slots += cnt;
