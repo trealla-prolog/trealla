@@ -1596,6 +1596,12 @@ bool start(query *q)
 		q->tot_goals++;
 
 		if (is_builtin(q->st.curr_cell)) {
+			if (!q->st.curr_cell->fn_ptr || !q->st.curr_cell->fn_ptr->fn) {
+				q->tot_goals--;
+				q->st.curr_cell++;
+				continue;
+			}
+
 			bool status;
 
 #if USE_FFI
