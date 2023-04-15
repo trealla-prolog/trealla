@@ -2278,7 +2278,7 @@ char *eat_space(parser *p)
 			if (p->comment && (src[0] == '*') && (src[1] == '/')) {
 				p->comment = false;
 				src += 2;
-				p->srcptr = (char*)src;
+				//p->srcptr = (char*)src;
 				done = false;
 				continue;
 			}
@@ -2518,7 +2518,8 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 			p->error = true;
 			return false;
 		}
-		return eat_comment(p);
+
+		return true; //eat_comment(p);
 	}
 
 	// Quoted...
