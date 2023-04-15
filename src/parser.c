@@ -1836,6 +1836,9 @@ static int get_hex(const char **srcptr, unsigned n, bool *error)
 			v += 10 + (ch - 'A');
 		else
 			v += ch - '0';
+
+		if (!n)
+			break;
 	}
 
 	if (n && ((orig_n == 4) || (orig_n == 8))) {
@@ -1849,9 +1852,8 @@ static int get_hex(const char **srcptr, unsigned n, bool *error)
 
 const char *g_escapes = "\e\a\f\b\t\v\r\n\x20\x7F\'\\\"`";
 const char *g_anti_escapes = "eafbtvrnsd'\\\"`";
-#define ALLOW_UNICODE_ESCAPE true
 
-static int get_escape(const char **_src, bool *error, bool number)
+static int get_escape(parser *p, const char **_src, bool *error, bool number)
 {
 	const char *src = *_src;
 	int ch = *src++;
@@ -1860,30 +1862,27 @@ static int get_escape(const char **_src, bool *error, bool number)
 	if (ptr)
 		ch = g_escapes[ptr-g_anti_escapes];
 	else if ((isdigit(ch) || (ch == 'x')
-#if ALLOW_UNICODE_ESCAPE
 		|| (ch == 'u') || (ch == 'U')
-#endif
 		)
 		&& !number) {
 		bool unicode = false;
 
 		if (ch == 'x')
 			ch = get_hex(&src, UINT_MAX, error);
-#if ALLOW_UNICODE_ESCAPE
 		else if (ch == 'U') {
 			ch = get_hex(&src, 8, error);
 			unicode = true;
 		} else if (ch == 'u') {
 			ch = get_hex(&src, 4, error);
 			unicode = true;
-		}
-#endif
-		else {
+		} else {
 			src--;
 			ch = get_octal(&src);
 		}
 
-		if (!unicode && (*src++ != '\\')) {
+		if ((*src != '\\') && unicode && p->flags.json)
+			src--;
+		else if (!unicode && (*src++ != '\\')) {
 			//if (DUMP_ERRS || !p->do_read_term)
 			//	fprintf(stdout, "Error: syntax error, closing \\ missing\n");
 			*_src = src;
@@ -2031,7 +2030,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 				return false;
 			}
 
-			v = get_escape(&s, &p->error, true);
+			v = get_escape(p, &s, &p->error, true);
 		} else if ((*s == '\'') && s[1] == '\'') {
 			s++;
 			v = *s++;
@@ -2411,7 +2410,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		int ch = get_char_utf8(&src);
 
 		if ((ch == '\\') && p->flags.character_escapes) {
-			ch = get_escape(&src, &p->error, false);
+			ch = get_escape(p, &src, &p->error, false);
 
 			if (p->error) {
 				if (DUMP_ERRS || !p->do_read_term)
@@ -2593,7 +2592,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 				if ((ch == '\\') && p->flags.character_escapes) {
 					int ch2 = *src;
-					ch = get_escape(&src, &p->error, false);
+					ch = get_escape(p, &src, &p->error, false);
 
 					if (!p->error) {
 						if (ch2 == '\n') {
