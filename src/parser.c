@@ -2291,6 +2291,9 @@ char *eat_space(parser *p)
 
 			if (!*src && p->comment && p->fp) {
 				if (p->no_fp || getline(&p->save_line, &p->n_line, p->fp) == -1) {
+					if (DUMP_ERRS || !p->do_read_term)
+						fprintf(stdout, "Error: syntax error, parsing number1, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+
 					p->error = true;
 					return NULL;
 				}
