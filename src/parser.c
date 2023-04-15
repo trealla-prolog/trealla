@@ -2138,6 +2138,26 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 	read_integer(p, &v2, 10, s, &s);
 
+	if (p->flags.json && s && ((*s == 'e') || (*s == 'E')) && isdigit(s[1])) {
+		p->v.tag = TAG_DOUBLE;
+		errno = 0;
+		pl_flt_t v = strtod(tmpptr, &tmpptr);
+
+		if ((int)v && (errno == ERANGE)) {
+			if (DUMP_ERRS || !p->do_read_term)
+				fprintf(stdout, "Error: syntax error, float overflow %g, %s:%d\n", v, get_loaded(p->m, p->m->filename), p->line_nbr);
+
+			p->error_desc = "float_overflow";
+			p->error = true;
+			return false;
+		}
+
+		set_float(&p->v, neg?-v:v);
+		*srcptr = tmpptr;
+		mp_int_clear(&v2);
+		return true;
+	}
+
 	if (s && (*s == '.') && isdigit(s[1])) {
 		p->v.tag = TAG_DOUBLE;
 		errno = 0;
