@@ -95,7 +95,10 @@ bool needs_quoting(module *m, const char *src, int srclen)
 		slen -= len_char_utf8(s);
 		int ch = get_char_utf8(&s);
 
-		if (((ch < 256) && strchr(g_solo, ch)) || iswspace(ch))
+		if (((ch < 256) && strchr(g_solo, ch))
+			|| iswspace(ch)
+			|| (ch == 0xA0)
+			)
 			return true;
 	}
 
@@ -110,7 +113,8 @@ bool needs_quoting(module *m, const char *src, int srclen)
 #ifdef __APPLE__
 			|| iswideogram(ch)
 #endif
-			|| (ch == '_'))
+			|| (ch == '_')
+			)
 			alphas++;
 		else if ((ch < 256) && iswgraph(ch) && (ch != '%'))
 			graphs++;
