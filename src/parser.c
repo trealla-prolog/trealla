@@ -1880,7 +1880,7 @@ static int get_escape(parser *p, const char **_src, bool *error, bool number)
 			ch = get_octal(&src);
 		}
 
-		if ((*src != '\\') && unicode && p->flags.json)
+		if (!p->error && (*src != '\\') && unicode && p->flags.json)
 			src--;
 		else if (!unicode && (*src++ != '\\')) {
 			//if (DUMP_ERRS || !p->do_read_term)
