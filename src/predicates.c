@@ -2627,7 +2627,7 @@ static bool fn_iso_functor_3(query *q)
 		tmp.flags = 0;
 	}
 
-	if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame) != true)
+	if (!unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 		return false;
 
 	make_int(&tmp, p1->arity);

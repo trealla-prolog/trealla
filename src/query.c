@@ -731,7 +731,7 @@ static void reuse_frame(query *q, const clause *cl)
 	}
 
 	const choice *ch = GET_CURR_CHOICE();
-	q->st.sp = f->base + f->actual_slots;
+	q->st.sp = f->base + f->initial_slots;
 	q->st.hp = f->hp;
 	q->tot_tcos++;
 }
@@ -991,7 +991,7 @@ bool push_catcher(query *q, enum q_retry retry)
 
 void cut_me(query *q)
 {
-	frame *f = GET_CURR_FRAME();
+	const frame *f = GET_CURR_FRAME();
 
 	while (q->cp) {
 		choice *ch = GET_CURR_CHOICE();
@@ -1011,10 +1011,10 @@ void cut_me(query *q)
 			ch->st.iter = NULL;
 		}
 
-		frame *f = GET_FRAME(ch->st.curr_frame);
+		const frame *f2 = GET_FRAME(ch->st.curr_frame);
 
 		if ((ch->st.fp == (q->st.curr_frame + 1))
-			&& (f->actual_slots == 0)
+			&& (f2->actual_slots == 0)
 			) {
 				q->st.fp = ch->st.fp;
 			}
@@ -1135,7 +1135,7 @@ static bool resume_frame(query *q)
 		return false;
 
 	Trace(q, get_head(q->st.curr_dbe->cl.cells), q->st.curr_frame, EXIT);
-	frame *f = GET_CURR_FRAME();
+	const frame *f = GET_CURR_FRAME();
 
 	if (q->pl->opt && 0)
 		chop_frames(q, f);

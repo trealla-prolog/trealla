@@ -8,11 +8,11 @@
 
 when(Cond, Goal) :-
 	Cond = nonvar(Var), !,
-	process_var_(Var, Cond, Goal).
+	(Cond -> Goal ; process_var_(Var, Cond, Goal)).
 
 when(Cond, Goal) :-
 	Cond = ground(Var), !,
-	process_var_(Var, Cond, Goal).
+	(Cond -> Goal ; process_var_(Var, Cond, Goal)).
 
 when(Cond, Goal) :-
 	Cond = ?=(Var1, Var2), !,
@@ -23,15 +23,19 @@ when(Cond, Goal) :-
 	Cond = (Cond1,Cond2), !,
 	arg(1, Cond1, Var1),
 	arg(1, Cond2, Var2),
-	process_var_(Var1, Cond, Goal),
-	process_var_(Var2, Cond, Goal).
+	(Cond -> Goal ; (
+		(var(Var1) -> process_var_(Var1, Cond, Goal) ; true),
+		(var(Var2) -> process_var_(Var2, Cond, Goal) ; true))
+	).
 
 when(Cond, Goal) :-
 	Cond = (Cond1;Cond2), !,
 	arg(1, Cond1, Var1),
 	arg(1, Cond2, Var2),
-	process_var_(Var1, Cond, Goal),
-	process_var_(Var2, Cond, Goal).
+	(Cond -> Goal ; (
+		(var(Var1) -> process_var_(Var1, Cond, Goal) ; true),
+		(var(Var2) -> process_var_(Var2, Cond, Goal) ; true))
+	).
 
 :- help(when(+term,+callable), [iso(false),desc('Execute Goal when Condition becomes true.')]).
 
