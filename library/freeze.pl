@@ -9,7 +9,8 @@
 frozen(Term, Goal) :-
 	copy_term(Term, _, Gs),
 	flatten(Gs, Gs2),
-	list_to_conjunction(Gs2, Goal).
+	list_to_conjunction(Gs2, Fresh),
+	Fresh = Goal.
 
 :- help(frozen(@term,-callable), [iso(false),desc('Unify Goal with the goal or conjunction of goals delayed on some attributed variable in Term.')]).
 
