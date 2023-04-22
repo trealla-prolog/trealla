@@ -881,7 +881,7 @@ static void commit_me(query *q)
 		f->is_last = true;
 		unshare_predicate(q, q->st.pr);
 		drop_choice(q);
-		trim_trail(q);
+		//trim_trail(q);
 	} else {
 		choice *ch = GET_CURR_CHOICE();
 		ch->st.curr_dbe = q->st.curr_dbe;
