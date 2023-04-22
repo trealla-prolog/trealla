@@ -78,7 +78,7 @@ bool fn_iso_findall_3(query *q)
 
 	// Now grab matching solutions
 
-	if (!check_slot(q, MAX_VARS)) {
+	if (!check_slot(q, MAX_ARITY)) {
 		free(solns);
 		return false;
 	}
