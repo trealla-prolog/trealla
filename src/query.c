@@ -47,6 +47,7 @@ typedef enum { CALL, EXIT, REDO, NEXT, FAIL } box_t;
 
 #define init_cell(c) { 				\
 	(c)->tag = TAG_EMPTY;			\
+	(c)->flags = 0;					\
 	(c)->attrs = NULL;				\
 }
 
@@ -182,7 +183,7 @@ static void check_pressure(query *q)
 #if TRACE_MEM
 		printf("*** q->st.sp=%u, q->slots_size=%u\n", (unsigned)q->st.sp, (unsigned)q->slots_size);
 #endif
-		q->slots_size = alloc_grow((void**)&q->slots, sizeof(slot), q->st.sp, INITIAL_NBR_SLOTS, true);
+		q->slots_size = alloc_grow((void**)&q->slots, sizeof(slot), q->st.sp, INITIAL_NBR_SLOTS, false);
 		q->vgen = 0;
 	}
 #endif
@@ -251,7 +252,7 @@ bool check_slot(query *q, unsigned cnt)
 		q->hw_slots = q->st.sp;
 
 	while (nbr >= q->slots_size) {
-		pl_idx_t new_slotssize = alloc_grow((void**)&q->slots, sizeof(slot), nbr, q->slots_size*2, true);
+		pl_idx_t new_slotssize = alloc_grow((void**)&q->slots, sizeof(slot), nbr, q->slots_size*2, false);
 
 		if (!new_slotssize) {
 			q->is_oom = q->error = true;
@@ -589,7 +590,6 @@ void try_me(query *q, unsigned nbr_vars)
 	slot *e = GET_SLOT(f, 0);
 
 	for (unsigned i = 0; i < nbr_vars; i++, e++) {
-		//unshare_cell(&e->c);
 		init_cell(&e->c);
 		e->vgen2 = e->vgen = 0;
 	}
