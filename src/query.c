@@ -85,7 +85,7 @@ static void trace_call(query *q, cell *c, pl_idx_t c_ctx, box_t box)
 	if (c->fn_ptr && !c->fn_ptr->fn)
 		return;
 
-#if 0
+#if 1
 	if (is_builtin(c))
 		return;
 #endif
