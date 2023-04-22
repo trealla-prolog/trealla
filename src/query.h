@@ -180,3 +180,10 @@ inline static cell *get_body(cell *c)
 
 	return NULL;
 }
+
+#define init_cell(c) { 				\
+	(c)->tag = TAG_EMPTY;			\
+	(c)->flags = 0;					\
+	(c)->attrs = NULL;				\
+}
+

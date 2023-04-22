@@ -45,12 +45,6 @@ typedef enum { CALL, EXIT, REDO, NEXT, FAIL } box_t;
 #define PRESSURE_FACTOR 4
 #define TRACE_MEM 0
 
-#define init_cell(c) { 				\
-	(c)->tag = TAG_EMPTY;			\
-	(c)->flags = 0;					\
-	(c)->attrs = NULL;				\
-}
-
 // Note: when in commit there is a provisional choice point
 // that we should skip over, hence the '1' ...
 

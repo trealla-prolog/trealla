@@ -78,11 +78,6 @@ bool fn_iso_findall_3(query *q)
 
 	// Now grab matching solutions
 
-	if (!check_slot(q, MAX_ARITY)) {
-		free(solns);
-		return false;
-	}
-
 	check_heap_error(push_choice(q), free(solns));
 	choice *ch = GET_CURR_CHOICE();
 	ch->st.end_findall = true;
