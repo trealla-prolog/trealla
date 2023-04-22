@@ -609,7 +609,7 @@ static void trim_heap(query *q)
 		for (pl_idx_t i = 0; i < a->max_hp_used; i++) {
 			cell *c = a->heap + i;
 			unshare_cell(c);
-			init_cell(c);
+			//init_cell(c);
 		}
 
 		page *save = a;
