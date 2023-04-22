@@ -19,6 +19,7 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	API for calling from C (or by using WASM from Go & JS)
 	Attributed variables with SICStus interface (*WIP*)
 	Rational trees aka. cyclic terms (*WIP*)
+	Concurrency via tasks / futures / engines (generators)
 	Logtalk compatible
 
 
