@@ -675,10 +675,10 @@ int retry_choice(query *q)
 		if (ch->register_cleanup && q->noretry)
 			q->noretry = false;
 
-		return true;
+		return 1;
 	}
 
-	return false;
+	return 0;
 }
 
 static frame *push_frame(query *q, clause *cl)
