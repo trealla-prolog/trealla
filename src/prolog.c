@@ -136,7 +136,11 @@ bool pl_query(prolog *pl, const char *s, pl_sub_query **subq, unsigned int yield
 	if (!pl || !*s || !subq)
 		return false;
 
-	pl->p = parser_create(pl->curr_m);
+	if (!pl->p)
+		pl->p = parser_create(pl->curr_m);
+	else
+		reset(pl->p);
+
 	if (!pl->p) return false;
 	pl->p->command = true;
 	pl->is_query = true;

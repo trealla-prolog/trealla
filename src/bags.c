@@ -81,10 +81,10 @@ bool fn_iso_findall_3(query *q)
 	//check_heap_error(push_choice(q), free(solns));
 	//choice *ch = GET_CURR_CHOICE();
 	//ch->st.end_findall = true;
+
 	try_me(q, MAX_ARITY);
 
-	for (cell *c = solns; nbr_cells;
-		nbr_cells -= c->nbr_cells, c += c->nbr_cells) {
+	for (cell *c = solns; nbr_cells; nbr_cells -= c->nbr_cells, c += c->nbr_cells) {
 		check_heap_error(init_tmp_heap(q), free(solns));
 		cell *tmp = deep_copy_to_tmp(q, c, q->st.fp, false);
 		check_heap_error(tmp, free(solns));
