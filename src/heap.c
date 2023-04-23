@@ -177,7 +177,6 @@ void trim_heap(query *q)
 		for (pl_idx_t i = 0; i < a->hp; i++) {
 			cell *c = a->heap + i;
 			unshare_cell(c);
-			//init_cell(c);
 		}
 
 		page *save = a;
@@ -196,7 +195,6 @@ void trim_heap(query *q)
 		cell *c = a->heap + i;
 		if (DEBUG_TRIM) if (is_managed(c)) printf("*** got one\n");
 		unshare_cell(c);
-		if (DEBUG_TRIM) init_cell(c);
 	}
 
 	if (DEBUG_TRIM) printf("\n");
