@@ -161,6 +161,7 @@ static cell *make_a_cell(parser *p)
 
 void parser_destroy(parser *p)
 {
+	if (!p) return;
 	SB_free(p->token);
 	free(p->tmpbuf);
 	free(p->save_line);

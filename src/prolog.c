@@ -473,6 +473,7 @@ void pl_destroy(prolog *pl)
 	}
 
 	memset(pl->streams, 0, sizeof(pl->streams));
+	parser_destroy(pl->p);
 	free(pl->pool);
 	free(pl);
 }
