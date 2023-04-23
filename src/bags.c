@@ -59,10 +59,10 @@ bool fn_iso_findall_3(query *q)
 	}
 
 	if (!queuen_used(q)) {
-		if (q->st.end_findall) {
-			q->st.end_findall = false;
-			return false;
-		}
+		//if (q->st.end_findall) {
+		//	q->st.end_findall = false;
+		//	return false;
+		//}
 
 		drop_queuen(q);
 		cell tmp;
@@ -78,9 +78,9 @@ bool fn_iso_findall_3(query *q)
 
 	// Now grab matching solutions
 
-	check_heap_error(push_choice(q), free(solns));
-	choice *ch = GET_CURR_CHOICE();
-	ch->st.end_findall = true;
+	//check_heap_error(push_choice(q), free(solns));
+	//choice *ch = GET_CURR_CHOICE();
+	//ch->st.end_findall = true;
 	try_me(q, MAX_ARITY);
 
 	for (cell *c = solns; nbr_cells;
@@ -98,12 +98,12 @@ bool fn_iso_findall_3(query *q)
 	drop_queuen(q);
 	check_heap_error(l);
 	bool ok = unify(q, xp3, xp3_ctx, l, q->st.curr_frame);
-	const frame *f = GET_CURR_FRAME();
+	//const frame *f = GET_CURR_FRAME();
 
-	if (!ok || !f->overflow || is_ground(l)) {
-		q->st.end_findall = false;
-		drop_choice(q);
-	}
+	//if (!ok || !f->overflow || is_ground(l)) {
+	//	q->st.end_findall = false;
+	//	drop_choice(q);
+	//}
 
 	return ok;
 }
