@@ -159,24 +159,19 @@ cell *alloc_on_heap(query *q, unsigned nbr_cells)
 	return c;
 }
 
-#define DEBUG_TRIM 0
-
 void trim_heap(query *q)
 {
 	// q->pages is a push-down stack and points to the
 	// most recent page of heap allocations...
 
 	for (page *a = q->pages; a;) {
-		if (DEBUG_TRIM) printf("*** %u %u\n", a->nbr, q->st.pp);
-
 		if (a->nbr < q->st.pp)
 			break;
-
-		if (DEBUG_TRIM) printf("*** %u %u -> %u\n", a->nbr, 0, a->hp);
 
 		for (pl_idx_t i = 0; i < a->hp; i++) {
 			cell *c = a->heap + i;
 			unshare_cell(c);
+			init_cell(c);
 		}
 
 		page *save = a;
@@ -185,16 +180,18 @@ void trim_heap(query *q)
 		free(save);
 	}
 
-#if 0
+#if 1
+#define DEBUG_TRIM 0
+
 	const page *a = q->pages;
-	const choice *ch = GET_CURR_CHOICE();
 
-	if (DEBUG_TRIM) printf("*** %u : %u -> %u : %u\n", a->nbr, ch->st.hp, a->max_hp_used, q->st.hp);
+	if (DEBUG_TRIM) printf("*** %u : %u -> %u\n", a->nbr, q->st.hp, a->hp);
 
-	for (pl_idx_t i = ch->st.hp; a && (i < a->max_hp_used) && (i < q->st.hp); i++) {
+	for (pl_idx_t i = q->st.hp; a && (i < a->hp); i++) {
 		cell *c = a->heap + i;
 		if (DEBUG_TRIM) if (is_managed(c)) printf("*** got one\n");
 		unshare_cell(c);
+		init_cell(c);
 	}
 
 	if (DEBUG_TRIM) printf("\n");

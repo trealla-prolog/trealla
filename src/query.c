@@ -565,7 +565,7 @@ static void unwind_trail(query *q)
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
 		unshare_cell(&e->c);
-		e->c.tag = TAG_EMPTY;
+		init_cell(&e->c);
 		e->c.attrs = tr->attrs;
 		e->c.attrs_ctx = tr->attrs_ctx;
 	}
@@ -1859,8 +1859,9 @@ void query_destroy(query *q)
 #else
 	slot *e = q->slots;
 
-	for (pl_idx_t i = 0; i < q->st.sp; i++, e++)
+	for (pl_idx_t i = 0; i < q->st.sp; i++, e++) {
 		unshare_cell(&e->c);
+	}
 #endif
 
 	while (q->tasks) {
