@@ -603,10 +603,14 @@ static void trim_heap(query *q)
 	// most recent page of heap allocations...
 
 	for (page *a = q->pages; a;) {
+		//printf("*** %u %u\n", a->nbr, q->st.curr_page);
+
 		if (a->nbr < q->st.curr_page)
 			break;
 
-		for (pl_idx_t i = 0; i < a->max_hp_used; i++) {
+		//printf("*** %u %u -> %u\n", a->nbr, 0, a->hp);
+
+		for (pl_idx_t i = 0; i < a->hp; i++) {
 			cell *c = a->heap + i;
 			unshare_cell(c);
 			//init_cell(c);
@@ -622,11 +626,16 @@ static void trim_heap(query *q)
 	const page *a = q->pages;
 	const choice *ch = GET_CURR_CHOICE();
 
+	printf("*** %u : %u -> %u : %u\n", a->nbr, ch->st.hp, a->max_hp_used, q->st.hp);
+
 	for (pl_idx_t i = ch->st.hp; a && (i < a->max_hp_used) && (i < q->st.hp); i++) {
 		cell *c = a->heap + i;
+		if (is_managed(c)) printf("*** got one\n");
 		unshare_cell(c);
 		//init_cell(c);
 	}
+
+	printf("\n");
 #endif
 }
 
