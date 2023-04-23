@@ -69,7 +69,7 @@ SRCOBJECTS = tpl.o \
 	src/ffi.o \
 	src/format.o \
 	src/functions.o \
-	src/heap.c \
+	src/heap.o \
 	src/history.o \
 	src/library.o \
 	src/module.o \

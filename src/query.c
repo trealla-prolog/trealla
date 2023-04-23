@@ -597,48 +597,6 @@ void try_me(query *q, unsigned nbr_vars)
 	q->tot_matches++;
 }
 
-static void trim_heap(query *q)
-{
-	// q->pages is a push-down stack and points to the
-	// most recent page of heap allocations...
-
-	for (page *a = q->pages; a;) {
-		//printf("*** %u %u\n", a->nbr, q->st.curr_page);
-
-		if (a->nbr < q->st.curr_page)
-			break;
-
-		//printf("*** %u %u -> %u\n", a->nbr, 0, a->hp);
-
-		for (pl_idx_t i = 0; i < a->hp; i++) {
-			cell *c = a->heap + i;
-			unshare_cell(c);
-			//init_cell(c);
-		}
-
-		page *save = a;
-		q->pages = a = a->next;
-		free(save->heap);
-		free(save);
-	}
-
-#if 0
-	const page *a = q->pages;
-	const choice *ch = GET_CURR_CHOICE();
-
-	//printf("*** %u : %u -> %u : %u\n", a->nbr, ch->st.hp, a->max_hp_used, q->st.hp);
-
-	for (pl_idx_t i = ch->st.hp; a && (i < a->max_hp_used) && (i < q->st.hp); i++) {
-		cell *c = a->heap + i;
-		//if (is_managed(c)) printf("*** got one\n");
-		unshare_cell(c);
-		//init_cell(c);
-	}
-
-	//printf("\n");
-#endif
-}
-
 void drop_choice(query *q)
 {
 	if (!q->cp)

@@ -21,6 +21,8 @@ cell *alloc_on_tmp(query *q, unsigned nbr_cells);
 cell *alloc_on_queuen(query *q, unsigned qnbr, const cell *c);
 cell *alloc_on_queuen_unsafe(query *q, unsigned qnbr, const cell *c);
 
+void trim_heap(query *q);
+
 cell *init_tmp_heap(query *q);
 
 // Used for copying attributes and doesn't init tmp heap...
