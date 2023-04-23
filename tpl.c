@@ -352,7 +352,7 @@ int main(int ac, char *av[], char * envp[])
 		pl_eval(pl, src);
 #else
 		pl_sub_query *subq;
-		pl_query(pl, src, &subq);
+		pl_query(pl, src, &subq, 0);
 
 		do {
 		} while (pl_redo(subq));
