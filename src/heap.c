@@ -180,7 +180,6 @@ void trim_heap(query *q)
 		free(save);
 	}
 
-#if 1
 #define DEBUG_TRIM 0
 
 	const page *a = q->pages;
@@ -195,7 +194,6 @@ void trim_heap(query *q)
 	}
 
 	if (DEBUG_TRIM) printf("\n");
-#endif
 }
 
 bool is_in_ref_list(const cell *c, pl_idx_t c_ctx, const reflist *rlist)
