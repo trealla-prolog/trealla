@@ -1555,6 +1555,8 @@ static bool fn_iso_close_1(query *q)
 	GET_FIRST_ARG(pstr,stream);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
+	parser_destroy(str->p);
+	str->p = NULL;
 
 	if ((str->fp == stdin)
 		|| (str->fp == stdout)
@@ -1584,9 +1586,6 @@ static bool fn_iso_close_1(query *q)
 		stream *str2 = &q->pl->streams[2];
 		map_set(str2->alias, strdup("user_error"), NULL);
 	}
-
-	if (str->p)
-		parser_destroy(str->p);
 
 	if (!str->socket)
 		del_stream_properties(q, n);
@@ -4021,8 +4020,10 @@ static bool fn_sys_read_term_from_chars_4(query *q)
 
 	char *rest = str->p->srcptr = eat_space(str->p);
 
-	if (str->p->error)
+	if (str->p->error) {
+		parser_destroy(str->p);
 		return throw_error(q, q->st.curr_cell, q->st.curr_frame, "syntax_error", str->p->error_desc?str->p->error_desc:"read_term");
+	}
 
 	cell tmp;
 
@@ -4155,6 +4156,7 @@ static bool fn_read_term_from_atom_3(query *q)
 		strcat(src, ".");
 
 	bool ok = do_read_term(q, str, p_term, p_term_ctx, p_opts, p_opts_ctx, src);
+	parser_destroy(str->p);
 	free(src);
 	return ok;
 }

@@ -466,9 +466,8 @@ void pl_destroy(prolog *pl)
 					fclose(str->fp);
 			}
 
-			if (str->p)
-				parser_destroy(str->p);
-
+			parser_destroy(str->p);
+			str->p = NULL;
 			map_destroy(str->alias);
 			free(str->mode);
 			free(str->filename);
