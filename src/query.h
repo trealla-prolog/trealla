@@ -184,6 +184,8 @@ inline static cell *get_body(cell *c)
 #define init_cell(c) { 				\
 	(c)->tag = TAG_EMPTY;			\
 	(c)->flags = 0;					\
+	(c)->nbr_cells = 0;				\
+	(c)->arity = 0;					\
 	(c)->attrs = NULL;				\
 }
 
