@@ -474,23 +474,6 @@ void set_multifile_in_db(module *m, const char *name, pl_idx_t arity)
 		m->error = true;
 }
 
-void set_table_in_db(module *m, const char *name, unsigned arity)
-{
-	cell tmp = (cell){0};
-	tmp.tag = TAG_INTERNED;
-	tmp.val_off = index_from_pool(m->pl, name);
-	ensure(tmp.val_off != ERR_IDX);
-	tmp.arity = arity;
-	predicate *pr = find_predicate(m, &tmp);
-	if (!pr) pr = create_predicate(m, &tmp);
-
-	if (pr) {
-		push_property(m, name, arity, "tabled");
-		pr->is_tabled = true;
-	} else
-		m->error = true;
-}
-
 void set_dynamic_in_db(module *m, const char *name, unsigned arity)
 {
 	cell tmp = (cell){0};

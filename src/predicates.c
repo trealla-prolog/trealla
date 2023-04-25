@@ -6339,12 +6339,6 @@ static bool fn_sys_legacy_predicate_property_2(query *q)
 			return true;
 	}
 
-	if (pr && pr->is_tabled) {
-		make_atom(&tmp, index_from_pool(q->pl, "tabled"));
-		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame) == true)
-			return true;
-	}
-
 	if (pr && pr->is_public) {
 		make_atom(&tmp, index_from_pool(q->pl, "public"));
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame) == true)
