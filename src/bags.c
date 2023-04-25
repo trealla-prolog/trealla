@@ -69,7 +69,6 @@ bool fn_iso_findall_3(query *q)
 
 	pl_idx_t nbr_cells = queuen_used(q);
 	cell *solns = take_queuen(q);
-	init_queuen(q);
 
 	// Now grab matching solutions
 
