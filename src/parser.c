@@ -163,7 +163,6 @@ void parser_destroy(parser *p)
 {
 	if (!p) return;
 	SB_free(p->token);
-	free(p->tmpbuf);
 	free(p->save_line);
 	clear_rule(p->cl);
 	free(p->cl);
@@ -1911,11 +1910,6 @@ static int get_escape(parser *p, const char **_src, bool *error, bool number)
 void read_integer(parser *p, mp_int v2, int base, const char **srcptr)
 {
 	const char *src = *srcptr;
-
-	if (!p->tmpbuf)
-		p->tmpbuf = malloc(p->tmpbuf_size=256);
-
-	char *dst = p->tmpbuf;
 	int spaces = 0;
 
 	while (*src) {
@@ -1941,13 +1935,8 @@ void read_integer(parser *p, mp_int v2, int base, const char **srcptr)
 		}
 
 		spaces = 0;
-		*dst++ = *src++;
-
-		if ((size_t)(dst - p->tmpbuf) >= (p->tmpbuf_size-1)) {
-			size_t offset = dst - p->tmpbuf;
-			p->tmpbuf = realloc(p->tmpbuf, p->tmpbuf_size*=2);
-			dst = p->tmpbuf + offset;
-		}
+		SB_putchar(p->token, *src);
+		src++;
 
 		int last_ch = *src;
 
@@ -1962,14 +1951,13 @@ void read_integer(parser *p, mp_int v2, int base, const char **srcptr)
 		}
 	}
 
-	*dst = '\0';
-
 	if ((base != 16) && !isdigit(src[-1]))
 		src--;
 	else if ((base == 16) && !isxdigit(src[-1]))
 		src--;
 
-	mp_int_read_cstring(v2, base, (char*)p->tmpbuf, NULL);
+	mp_int_read_cstring(v2, base, (char*)SB_cstr(p->token), NULL);
+	SB_free(p->token);
 	*srcptr = src;
 }
 
@@ -2510,7 +2498,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		const char *dst = SB_cstr(p->token);
 
 		if ((dst[0] != '0') && (dst[1] != 'x')) {
-			if ((strchr(p->tmpbuf, '.') || strchr(p->tmpbuf, 'e') || strchr(dst, 'E')) && !strchr(p->tmpbuf, '\'')) {
+			if ((strchr(dst, '.') || strchr(dst, 'e') || strchr(dst, 'E')) && !strchr(dst, '\'')) {
 				if (!valid_float(SB_cstr(p->token))) {
 					if (DUMP_ERRS || !p->do_read_term)
 						fprintf(stdout, "Error: syntax error, float, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);

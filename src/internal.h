@@ -729,7 +729,7 @@ struct parser_ {
 	cell v;
 	string_buffer token_buf;
 	prolog_flags flags;
-	char *save_line, *srcptr, *error_desc, *tmpbuf;
+	char *save_line, *srcptr, *error_desc;
 	size_t token_size, n_line, pos_start, tmpbuf_size;
 	unsigned depth, read_term;
 	unsigned nesting_parens, nesting_braces, nesting_brackets;
