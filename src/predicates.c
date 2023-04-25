@@ -6021,7 +6021,7 @@ static bool fn_hex_chars_2(query *q)
 	mpz_t v2;
 	mp_int_init(&v2);
 	mp_small val;
-	read_integer(q->p, &v2, 16, s, &s);
+	read_integer(q->p, &v2, 16, &s);
 	free(src);
 	cell tmp = {0};
 
@@ -6074,7 +6074,7 @@ static bool fn_octal_chars_2(query *q)
 	mpz_t v2;
 	mp_int_init(&v2);
 	mp_small val;
-	read_integer(q->p, &v2, 16, s, &s);
+	read_integer(q->p, &v2, 16, &s);
 	free(src);
 	cell tmp = {0};
 

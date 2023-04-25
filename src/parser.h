@@ -15,7 +15,7 @@ bool run(parser *p, const char *src, bool dump, query **subq, unsigned int yield
 char *eat_space(parser *p);
 bool virtual_term(parser *p, const char *src);
 bool get_token(parser *p, bool last_op, bool was_postfix);
-void read_integer(parser *p, mp_int v2, int base, const char *src,  const char **srcptr);
+void read_integer(parser *p, mp_int v2, int base, const char **srcptr);
 
 void clear_rule(clause *t);
 void do_reduce(cell *n);

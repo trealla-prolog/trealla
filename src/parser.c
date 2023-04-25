@@ -1908,8 +1908,10 @@ static int get_escape(parser *p, const char **_src, bool *error, bool number)
 #define isbdigit(ch) (((ch) >= '0') && ((ch) <= '1'))
 #define isodigit(ch) (((ch) >= '0') && ((ch) <= '7'))
 
-void read_integer(parser *p, mp_int v2, int base, const char *src,  const char **srcptr)
+void read_integer(parser *p, mp_int v2, int base, const char **srcptr)
 {
+	const char *src = *srcptr;
+
 	if (!p->tmpbuf)
 		p->tmpbuf = malloc(p->tmpbuf_size=256);
 
@@ -2067,7 +2069,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 	if ((*s == '0') && (s[1] == 'b')) {
 		s += 2;
 
-		read_integer(p, &v2, 2, s, &s);
+		read_integer(p, &v2, 2, &s);
 
 		if (mp_int_to_int(&v2, &val) == MP_RANGE) {
 			p->v.val_bigint = malloc(sizeof(bigint));
@@ -2090,7 +2092,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 	if ((*s == '0') && (s[1] == 'o')) {
 		s += 2;
 
-		read_integer(p, &v2, 8, s, &s);
+		read_integer(p, &v2, 8, &s);
 
 		if (mp_int_to_int(&v2, &val) == MP_RANGE) {
 			p->v.val_bigint = malloc(sizeof(bigint));
@@ -2113,7 +2115,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 	if ((*s == '0') && (s[1] == 'x')) {
 		s += 2;
 
-		read_integer(p, &v2, 16, s, &s);
+		read_integer(p, &v2, 16, &s);
 
 		if (mp_int_to_int(&v2, &val) == MP_RANGE) {
 			p->v.val_bigint = malloc(sizeof(bigint));
@@ -2133,7 +2135,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 		return true;
 	}
 
-	read_integer(p, &v2, 10, s, &s);
+	read_integer(p, &v2, 10, &s);
 
 	if (p->flags.json && s && ((*s == 'e') || (*s == 'E')) && isdigit(s[1])) {
 		p->v.tag = TAG_DOUBLE;
