@@ -730,7 +730,7 @@ struct parser_ {
 	string_buffer token_buf;
 	prolog_flags flags;
 	char *save_line, *srcptr, *error_desc;
-	size_t token_size, n_line, pos_start, tmpbuf_size;
+	size_t token_size, n_line, pos_start;
 	unsigned depth, read_term;
 	unsigned nesting_parens, nesting_braces, nesting_brackets;
 	int quote_char, line_nbr, line_nbr_start;
