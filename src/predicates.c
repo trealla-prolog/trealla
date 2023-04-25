@@ -681,10 +681,8 @@ static bool fn_iso_number_chars_2(query *q)
 		return throw_error(q, p1, p1_ctx, "instantiation_error", "not_sufficiently_instantiated");
 
 	if (!is_var(p2) && !any_vars) {
-		char *tmpbuf = malloc(cnt+1+1);
-		check_heap_error(tmpbuf);
-		char *dst = tmpbuf;
-		*dst = '\0';
+		SB(pr);
+		SB_check(pr, cnt+1+1);
 		LIST_HANDLER(p2);
 
 		while (is_list(p2)) {
@@ -692,7 +690,7 @@ static bool fn_iso_number_chars_2(query *q)
 			head = deref(q, head, p2_ctx);
 
 			if (!is_atom(head)) {
-				free(tmpbuf);
+				SB_free(pr);
 				return throw_error(q, head, q->latest_ctx, "type_error", "atom");
 			}
 
@@ -702,18 +700,16 @@ static bool fn_iso_number_chars_2(query *q)
 			if (!ch)
 				return throw_error(q, head, q->latest_ctx, "type_error", "character");
 
-			*dst++ = ch;
+			SB_putchar(pr, ch);
 			cell *tail = LIST_TAIL(p2);
 			p2 = deref(q, tail, p2_ctx);
 			p2_ctx = q->latest_ctx;
 		}
 
 		if (!is_nil(p2)) {
-			free(tmpbuf);
+			SB_free(pr);
 			return throw_error(q, orig_p2, p2_ctx, "type_error", "list");
 		}
-
-		*dst = '\0';
 
 		int n = q->pl->current_input;
 		stream *str = &q->pl->streams[n];
@@ -725,25 +721,25 @@ static bool fn_iso_number_chars_2(query *q)
 		reset(p);
 		p->error = false;
 		p->flags = q->st.m->flags;
-		p->srcptr = tmpbuf;
+		p->srcptr = SB_cstr(pr);
 		p->do_read_term = true;
 		bool ok = get_token(p, true, false);
 		p->do_read_term = false;
 
 		if (q->did_throw) {
 			p->srcptr = NULL;
-			free(tmpbuf);
+			SB_free(pr);
 			return ok;
 		}
 
 		if (!is_number(&p->v) || *p->srcptr) {
 			p->srcptr = NULL;
-			free(tmpbuf);
+			SB_free(pr);
 			return throw_error(q, orig_p2, p2_ctx, "syntax_error", p->error&&p->error_desc?p->error_desc:"number");
 		}
 
 		p->srcptr = NULL;
-		free(tmpbuf);
+		SB_free(pr);
 		cell tmp = p->v;
 		bool ok2 = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
@@ -1227,10 +1223,8 @@ static bool fn_iso_number_codes_2(query *q)
 		return throw_error(q, p1, p1_ctx, "instantiation_error", "not_sufficiently_instantiated");
 
 	if (!is_var(p2) && !any_vars) {
-		char *tmpbuf = malloc((cnt*6)+1+1);
-		check_heap_error(tmpbuf);
-		char *dst = tmpbuf;
-		*dst = '\0';
+		SB(pr);
+		SB_check(pr, (cnt*6)+1+1);
 		LIST_HANDLER(p2);
 
 		while (is_list(p2)) {
@@ -1238,30 +1232,27 @@ static bool fn_iso_number_codes_2(query *q)
 			head = deref(q, head, p2_ctx);
 
 			if (!is_integer(head)) {
-				free(tmpbuf);
+				SB_free(pr);
 				return throw_error(q, head, q->latest_ctx, "type_error", "integer");
 			}
 
 			int val = get_smallint(head);
 
 			if (val < 0) {
-				free(tmpbuf);
+				SB_free(pr);
 				return throw_error(q, head, q->latest_ctx, "representation_error", "character_code");
 			}
 
-			dst += put_char_utf8(dst, val);
-
+			SB_putchar(pr, val);
 			cell *tail = LIST_TAIL(p2);
 			p2 = deref(q, tail, p2_ctx);
 			p2_ctx = q->latest_ctx;
 		}
 
 		if (!is_nil(p2)) {
-			free(tmpbuf);
+			SB_free(pr);
 			return throw_error(q, orig_p2, p2_ctx, "type_error", "list");
 		}
-
-		*dst = '\0';
 
 		int n = q->pl->current_input;
 		stream *str = &q->pl->streams[n];
@@ -1273,25 +1264,25 @@ static bool fn_iso_number_codes_2(query *q)
 		reset(p);
 		p->error = false;
 		p->flags = q->st.m->flags;
-		p->srcptr = tmpbuf;
+		p->srcptr = SB_cstr(pr);
 		p->do_read_term = true;
 		bool ok = get_token(p, true, false);
 		p->do_read_term = false;
 
 		if (q->did_throw) {
 			p->srcptr = NULL;
-			free(tmpbuf);
+			SB_free(pr);
 			return ok;
 		}
 
 		if (!is_number(&p->v) || *p->srcptr) {
 			p->srcptr = NULL;
-			free(tmpbuf);
+			SB_free(pr);
 			return throw_error(q, orig_p2, p2_ctx, "syntax_error", p->error?p->error_desc:"number");
 		}
 
 		p->srcptr = NULL;
-		free(tmpbuf);
+		SB_free(pr);
 		cell tmp = p->v;
 		bool ok2 = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
