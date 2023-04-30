@@ -365,6 +365,10 @@ Non-standard predicates
 	dif/2						# auto-loaded from library(dif)
 
 	call_residue_vars/2
+
+	parse_csv_line/2			# parse_csv_line(+atom,-list)
+	parse_csv_line/3			# parse_csv_line(+atom,-list,+list)   options: trim(Boolean),sep(Char)
+
 	must_be/4                   # must_be(+term,+type,+goal,?arg)
 	can_be/4                    # can_be(+term,+type,+goal,?arg)
 	must_be/2                   # must_be(+type,+term)

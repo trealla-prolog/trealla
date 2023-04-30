@@ -7436,6 +7436,147 @@ static bool fn_sre_subst_4(query *q)
 	return ok;
 }
 
+static bool do_parse_csv_line(query *q, int sep, bool trim, cell *p1, cell *p2, pl_idx_t p2_ctx)
+{
+	const char *src = C_STR(q, p1);
+	bool quoted = false, was_quoted = false, first = true, was_sep = false;
+	unsigned chars = 0;
+	SB(pr);
+
+	if (trim) {
+		while (iswspace(*src))
+			get_char_utf8(&src);
+	}
+
+	while (*src) {
+		int ch = get_char_utf8(&src);
+
+		if (trim) {
+			while (!quoted && !chars && iswspace(ch))
+				ch = get_char_utf8(&src);
+		}
+
+		if (!quoted && (ch == '"')) {
+			was_quoted = quoted = 1;
+			continue;
+		}
+
+		if (quoted && (ch == sep)) {
+			SB_putchar(pr, ch);
+			continue;
+		}
+
+		if (quoted && (ch == '"')) {
+			quoted = 0;
+			ch = get_char_utf8(&src);
+		}
+
+		was_sep = ch == sep;
+
+		if ((ch != sep) && ch) {
+			SB_putchar(pr, ch);
+			chars++;
+
+			if (*src)
+				continue;
+		}
+
+		if (!ch)
+			src--;
+
+		if (trim)
+			SB_trim_ws(pr);
+
+		cell tmpc;
+
+		if (is_string(p1)) {
+			if (SB_strlen(pr))
+				check_heap_error(make_stringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
+			else
+				make_atom(&tmpc, g_nil_s);
+		} else {
+			check_heap_error(make_cstringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
+		}
+
+		chars = 0;
+
+		if (first) {
+			allocate_list(q, &tmpc);
+			first = false;
+		} else
+			append_list(q, &tmpc);
+
+		quoted = was_quoted = false;
+		SB_init(pr);
+
+		if (trim) {
+			while (iswspace(*src))
+				get_char_utf8(&src);
+		}
+	}
+
+	if (was_sep && !trim) {
+		cell tmpc;
+
+		if (is_string(p1)) {
+			if (SB_strlen(pr))
+				check_heap_error(make_stringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
+			else
+				make_atom(&tmpc, g_nil_s);
+		} else {
+			check_heap_error(make_cstringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
+		}
+
+		if (first) {
+			allocate_list(q, &tmpc);
+			first = false;
+		} else
+			append_list(q, &tmpc);
+	}
+
+	SB_free(pr);
+	cell *l = end_list(q);
+	check_heap_error(l);
+	return unify(q, p2, p2_ctx, l, q->st.curr_frame);
+}
+
+static bool fn_parse_csv_line_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,var);
+	return do_parse_csv_line(q, ',', false, p1, p2, p2_ctx);
+}
+
+static bool fn_parse_csv_line_3(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,var);
+	GET_NEXT_ARG(p3,list_or_nil);
+	LIST_HANDLER(p3);
+	bool trim = false;
+	int sep = ',';
+
+	while (is_list(p3)) {
+		cell *h = LIST_HEAD(p3);
+		h = deref(q,h,p3_ctx);
+
+		if (is_structure(h) && (h->arity == 1)) {
+			cell *c = h + 1;
+
+			if (!strcmp("trim", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))
+				trim = true;
+			else if (!strcmp("sep", C_STR(q, h)) && is_atom(c) && (C_STRLEN(q,c) == 1))
+				sep = peek_char_utf8(C_STR(q, c));
+		}
+
+		p3 = LIST_TAIL(p3);
+		p3 = deref(q,p3,p3_ctx);
+		p3_ctx = q->latest_ctx;
+	}
+
+	return do_parse_csv_line(q, sep, trim, p1, p2, p2_ctx);
+}
+
 void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type)
 {
 	char *dst = tmpbuf;
@@ -7867,6 +8008,9 @@ builtins g_other_bifs[] =
 	{"load_all_modules", 0, fn_load_all_modules_0, NULL, false, false, BLAH},
 
 	// Miscellaneous...
+
+	{"parse_csv_line", 2, fn_parse_csv_line_2, "+atom,-list", false, false, BLAH},
+	{"parse_csv_line", 3, fn_parse_csv_line_3, "+atom,-list,+list", false, false, BLAH},
 
 	{"abort", 0, fn_abort_0, NULL, false, false, BLAH},
 	{"sort", 4, fn_sort_4, "+integer,+atom,+list,?list", false, false, BLAH},
