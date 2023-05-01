@@ -10,9 +10,8 @@
 #include "prolog.h"
 #include "query.h"
 
-bool do_parse_csv_line(query *q, int sep, bool trim, bool numbers, cell *p1, cell *p2, pl_idx_t p2_ctx)
+bool do_parse_csv_line(query *q, int sep, bool trim, bool numbers, bool use_strings, const char *src, cell *p2, pl_idx_t p2_ctx)
 {
-	const char *src = C_STR(q, p1);
 	bool quoted = false, was_quoted = false, first = true, was_sep = false;
 	unsigned chars = 0;
 	SB(pr);
@@ -89,7 +88,7 @@ bool do_parse_csv_line(query *q, int sep, bool trim, bool numbers, cell *p1, cel
 				make_float(&tmpc,strtod(SB_cstr(pr), NULL));
 			else
 				make_int(&tmpc, strtoll(SB_cstr(pr), NULL, 10));
-		} else if (is_string(p1)) {
+		} else if (use_strings) {
 			if (SB_strlen(pr)) {
 				unsigned vnbr = create_vars(q, 1);
 				make_var(&tmpc, g_anon_s, vnbr);
@@ -128,7 +127,7 @@ bool do_parse_csv_line(query *q, int sep, bool trim, bool numbers, cell *p1, cel
 	if (was_sep && !trim) {
 		cell tmpc;
 
-		if (is_string(p1)) {
+		if (use_strings) {
 			if (SB_strlen(pr)) {
 				unsigned vnbr = create_vars(q, 1);
 				make_var(&tmpc, g_anon_s, vnbr);

@@ -363,11 +363,7 @@ Non-standard predicates
 	frozen/2                    # auto-loaded from library(freeze)
 	when/2						# auto-loaded from library(when)
 	dif/2						# auto-loaded from library(dif)
-
 	call_residue_vars/2
-
-	parse_csv_line/2			# parse_csv_line(+atom,-list)
-	parse_csv_line/3			# parse_csv_line(+atom,-list,+list)   options: trim(Boolean),sep(Char),numbers(Boolean)
 
 	must_be/4                   # must_be(+term,+type,+goal,?arg)
 	can_be/4                    # can_be(+term,+type,+goal,?arg)
@@ -634,6 +630,20 @@ Convert a hexadecimal string to a byte-list. At least one arg must be
 instantiated...
 
 	hex_bytes/2                 # hex_bytes(?hash,?bytes)
+
+
+Parsing CSV with builtins
+=========================
+
+	parse_csv_line/2			# parse_csv_line(+atom,-list)
+	parse_csv_line/3			# parse_csv_line(+atom,-list,+options)
+
+Where options can be:
+
+	trim(Boolean)				# default false
+	numbers(Boolean)			# default false
+	strings(Boolean)			# default depends on type of input (atom ot string)
+	sep(Char)					# default comma
 
 
 Application maps
