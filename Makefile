@@ -66,6 +66,7 @@ SRCOBJECTS = tpl.o \
 	src/base64.o \
 	src/contrib.o \
 	src/control.o \
+	src/csv.o \
 	src/ffi.o \
 	src/format.o \
 	src/functions.o \
@@ -179,6 +180,9 @@ src/control.o: src/control.c src/heap.h src/internal.h src/map.h \
   src/skiplist.h src/trealla.h src/cdebug.h src/stringbuf.h \
   src/imath/imath.h src/module.h src/parser.h src/prolog.h src/query.h \
   src/builtins.h
+src/csv.o: src/csv.c src/heap.h src/prolog.h src/internal.h src/map.h src/skiplist.h \
+  src/trealla.h src/cdebug.h src/stringbuf.h src/imath/imath.h \
+  src/query.h src/builtins.h
 src/ffi.o: src/ffi.c src/heap.h src/prolog.h src/internal.h src/map.h src/skiplist.h \
   src/trealla.h src/cdebug.h src/stringbuf.h src/imath/imath.h \
   src/query.h src/builtins.h
