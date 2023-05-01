@@ -35,6 +35,10 @@ cell *deep_copy_to_heap_with_replacement(query *q, cell *p1, pl_idx_t p1_ctx, bo
 void fix_list(cell *c);
 bool is_in_ref_list(const cell *c, pl_idx_t c_ctx, const reflist *rlist);
 
+void allocate_structure(query *q, const char *functor, const cell *c);
+void append_structure(query *q, const cell *c);
+cell *end_structure(query *q);
+
 void allocate_list(query *q, const cell *c);
 void append_list(query *q, const cell *c);
 cell *end_list(query *q);

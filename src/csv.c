@@ -10,7 +10,7 @@
 #include "prolog.h"
 #include "query.h"
 
-bool do_parse_csv_line(query *q, int sep, bool trim, bool numbers, bool use_strings, const char *src, cell *p2, pl_idx_t p2_ctx)
+bool do_parse_csv_line(query *q, int sep, bool trim, bool numbers, bool use_strings, const char *functor, const char *src, cell *p2, pl_idx_t p2_ctx)
 {
 	bool quoted = false, was_quoted = false, first = true, was_sep = false;
 	unsigned chars = 0;
@@ -110,10 +110,18 @@ bool do_parse_csv_line(query *q, int sep, bool trim, bool numbers, bool use_stri
 		chars = 0;
 
 		if (first) {
-			allocate_list(q, &tmpc);
+			if (functor)
+				allocate_structure(q, functor, &tmpc);
+			else
+				allocate_list(q, &tmpc);
+
 			first = false;
-		} else
-			append_list(q, &tmpc);
+		} else {
+			if (functor)
+				append_structure(q, &tmpc);
+			else
+				append_list(q, &tmpc);
+		}
 
 		quoted = was_quoted = false;
 		SB_init(pr);
@@ -147,14 +155,22 @@ bool do_parse_csv_line(query *q, int sep, bool trim, bool numbers, bool use_stri
 		}
 
 		if (first) {
-			allocate_list(q, &tmpc);
+			if (functor)
+				allocate_structure(q, functor, &tmpc);
+			else
+				allocate_list(q, &tmpc);
+
 			first = false;
-		} else
-			append_list(q, &tmpc);
+		} else {
+			if (functor)
+				append_structure(q, &tmpc);
+			else
+				append_list(q, &tmpc);
+		}
 	}
 
 	SB_free(pr);
-	cell *l = end_list(q);
+	cell *l = functor ? end_structure(q) : end_list(q);
 	check_heap_error(l);
 	return unify(q, p2, p2_ctx, l, q->st.curr_frame);
 }

@@ -7439,7 +7439,7 @@ static bool fn_parse_csv_line_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,var);
-	return do_parse_csv_line(q, ',', false, false, is_string(p1), C_STR(q,p1), p2, p2_ctx);
+	return do_parse_csv_line(q, ',', false, false, is_string(p1), NULL, C_STR(q,p1), p2, p2_ctx);
 }
 
 static bool fn_parse_csv_line_3(query *q)
@@ -7448,6 +7448,7 @@ static bool fn_parse_csv_line_3(query *q)
 	GET_NEXT_ARG(p2,var);
 	GET_NEXT_ARG(p3,list_or_nil);
 	bool trim = false, numbers = false, use_strings = is_string(p1);
+	const char *functor = NULL;
 	int sep = ',';
 	LIST_HANDLER(p3);
 
@@ -7466,6 +7467,8 @@ static bool fn_parse_csv_line_3(query *q)
 				use_strings = true;
 			else if (!strcmp("strings", C_STR(q, h)) && is_atom(c) && (c->val_off == g_false_s))
 				use_strings = false;
+			else if (!strcmp("functor", C_STR(q, h)) && is_atom(c))
+				functor = C_STR(q, c);
 			else if (!strcmp("sep", C_STR(q, h)) && is_atom(c) && (C_STRLEN(q,c) == 1))
 				sep = peek_char_utf8(C_STR(q, c));
 		}
@@ -7475,7 +7478,7 @@ static bool fn_parse_csv_line_3(query *q)
 		p3_ctx = q->latest_ctx;
 	}
 
-	return do_parse_csv_line(q, sep, trim, numbers, use_strings, C_STR(q,p1), p2, p2_ctx);
+	return do_parse_csv_line(q, sep, trim, numbers, use_strings, functor, C_STR(q,p1), p2, p2_ctx);
 }
 
 void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type)

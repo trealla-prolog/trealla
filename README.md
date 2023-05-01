@@ -635,16 +635,31 @@ instantiated...
 Parsing CSV with builtins
 =========================
 
-	parse_csv_line/2			# parse_csv_line(+atom,-list)
-	parse_csv_line/3			# parse_csv_line(+atom,-list,+options)
+	parse_csv_line/2			# parse_csv_line(+atom,-var)
+	parse_csv_line/3			# parse_csv_line(+atom,-var,+options)
 
 Where options can be:
 
 	trim(Boolean)				# default false, trims leading and trailing whitespace
 	numbers(Boolean)			# default false, converts integers and floats
 	strings(Boolean)			# default depends on type of input (atom ot string)
+	functor(Atom)				# default output is a list, creates a structure
 	sep(Char)					# default to comma
 
+Examples...
+
+```
+	?- parse_csv_line('123,2.345,3456789',T).
+	   T = ['123','2.345','3456789'].
+	?- parse_csv_line('123,2.345,3456789',T,[functor(f)]).
+	   T = f('123','2.345','3456789').
+	?- parse_csv_line('123,2.345,3456789',T,[functor(f),numbers(true)]).
+	   T = f(123,2.345,3456789).
+	?- parse_csv_line('abc, abc, a b c ',T).
+	   T = [abc,' abc',' a b c '].
+	?- parse_csv_line('abc, abc, a b c ',T,[trim(true)]).
+	   T = [abc,abc,'a b c'].
+```
 
 Application maps
 ================

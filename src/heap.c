@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "heap.h"
+#include "prolog.h"
 #include "query.h"
 
 struct heap_save {
@@ -814,5 +815,50 @@ cell *end_list_unsafe(query *q)
 	copy_cells(tmp, get_tmp_heap(q, 0), nbr_cells);
 	tmp->nbr_cells = nbr_cells;
 	fix_list(tmp);
+	return tmp;
+}
+
+// Defer check until end_list()
+
+void allocate_structure(query *q, const char *functor, const cell *c)
+{
+	if (!init_tmp_heap(q))
+		return;
+
+	cell *tmp = alloc_on_tmp(q, 1);
+	if (!tmp) return;
+	tmp->tag = TAG_INTERNED;
+	tmp->nbr_cells = 1;
+	tmp->val_off = index_from_pool(q->pl, functor);
+	tmp->arity = 0;
+	tmp->flags = 0;
+	append_structure(q, c);
+}
+
+// Defer check until end_list()
+
+void append_structure(query *q, const cell *c)
+{
+	cell *tmp = alloc_on_tmp(q, c->nbr_cells);
+	if (!tmp) return;
+	copy_cells(tmp, c, c->nbr_cells);
+	tmp = q->tmp_heap;
+	tmp->arity++;
+}
+
+cell *end_structure(query *q)
+{
+	pl_idx_t nbr_cells = tmp_heap_used(q);
+	cell *tmp = alloc_on_heap(q, nbr_cells);
+	if (!tmp) return NULL;
+	safe_copy_cells(tmp, get_tmp_heap(q, 0), nbr_cells);
+	tmp->nbr_cells = nbr_cells;
+
+	if (q->tmp_heap && (q->tmph_size > 1024)) {
+		free(q->tmp_heap);
+		q->tmp_heap = NULL;
+		q->tmph_size = 100;
+	}
+
 	return tmp;
 }
