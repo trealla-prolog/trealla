@@ -643,6 +643,7 @@ Where options can be:
 
 	trim(Boolean)				# default false, trims leading and trailing whitespace
 	numbers(Boolean)			# default false, converts integers and floats
+	header(Boolean)				# default false, skip first (header) line
 	strings(Boolean)			# default depends on type of input (atom ot string)
 	assert(Boolean)				# default false, assertz to database instead (assumed for files, needs a functor)
 	functor(Atom)				# default output is a list, create a structure (mandatory for files and with assert)

@@ -7489,7 +7489,8 @@ static bool fn_parse_csv_file_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p3,list_or_nil);
-	bool trim = false, numbers = false, use_strings = is_string(p1), do_assert = true;
+	bool trim = false, numbers = false, use_strings = is_string(p1);
+	bool header = false, do_assert = true;
 	const char *functor = NULL;
 	int sep = ',', quote = '"';
 	LIST_HANDLER(p3);
@@ -7505,6 +7506,8 @@ static bool fn_parse_csv_file_2(query *q)
 				trim = true;
 			else if (!strcmp("numbers", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))
 				numbers = true;
+			else if (!strcmp("header", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))
+				header = true;
 			else if (!strcmp("strings", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))
 				use_strings = true;
 			else if (!strcmp("strings", C_STR(q, h)) && is_atom(c) && (c->val_off == g_false_s))
@@ -7543,6 +7546,11 @@ static bool fn_parse_csv_file_2(query *q)
 			len--;
 
 		line[len] = '\0';
+
+		if (header) {
+			header = false;
+			continue;
+		}
 
 		if (!do_parse_csv_line(q, sep, quote, trim, numbers, use_strings, functor, line, NULL, 0))
 			fprintf(stderr, "Error: line %u\n", line_nbr+1);
