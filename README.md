@@ -640,10 +640,10 @@ Parsing CSV with builtins
 
 Where options can be:
 
-	trim(Boolean)				# default false
-	numbers(Boolean)			# default false
+	trim(Boolean)				# default false, trims leading and trailing whitespace
+	numbers(Boolean)			# default false, converts integers and floats
 	strings(Boolean)			# default depends on type of input (atom ot string)
-	sep(Char)					# default comma
+	sep(Char)					# default to comma
 
 
 Application maps
