@@ -7516,12 +7516,22 @@ static bool do_parse_csv_line(query *q, int sep, bool trim, bool numbers, cell *
 			else
 				make_int(&tmpc, strtoll(SB_cstr(pr), NULL, 10));
 		} else if (is_string(p1)) {
-			if (SB_strlen(pr))
-				check_heap_error(make_stringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
-			else
+			if (SB_strlen(pr)) {
+				unsigned vnbr = create_vars(q, 1);
+				make_var(&tmpc, g_anon_s, vnbr);
+				cell tmp;
+				check_heap_error(make_stringn(&tmp, SB_cstr(pr), SB_strlen(pr)));
+				unify(q, &tmpc, q->st.curr_frame, &tmp, q->st.curr_frame);
+				unshare_cell(&tmp);
+			} else
 				make_atom(&tmpc, g_nil_s);
 		} else {
-			check_heap_error(make_cstringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
+			unsigned vnbr = create_vars(q, 1);
+			make_var(&tmpc, g_anon_s, vnbr);
+			cell tmp;
+			check_heap_error(make_cstringn(&tmp, SB_cstr(pr), SB_strlen(pr)));
+			unify(q, &tmpc, q->st.curr_frame, &tmp, q->st.curr_frame);
+			unshare_cell(&tmp);
 		}
 
 		chars = 0;
@@ -7545,12 +7555,22 @@ static bool do_parse_csv_line(query *q, int sep, bool trim, bool numbers, cell *
 		cell tmpc;
 
 		if (is_string(p1)) {
-			if (SB_strlen(pr))
-				check_heap_error(make_stringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
-			else
+			if (SB_strlen(pr)) {
+				unsigned vnbr = create_vars(q, 1);
+				make_var(&tmpc, g_anon_s, vnbr);
+				cell tmp;
+				check_heap_error(make_stringn(&tmp, SB_cstr(pr), SB_strlen(pr)));
+				unify(q, &tmpc, q->st.curr_frame, &tmp, q->st.curr_frame);
+				unshare_cell(&tmp);
+			} else
 				make_atom(&tmpc, g_nil_s);
 		} else {
-			check_heap_error(make_cstringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
+			unsigned vnbr = create_vars(q, 1);
+			make_var(&tmpc, g_anon_s, vnbr);
+			cell tmp;
+			check_heap_error(make_cstringn(&tmp, SB_cstr(pr), SB_strlen(pr)));
+			unify(q, &tmpc, q->st.curr_frame, &tmp, q->st.curr_frame);
+			unshare_cell(&tmp);
 		}
 
 		if (first) {
