@@ -7480,7 +7480,7 @@ static bool fn_parse_csv_line_3(query *q)
 		p3_ctx = q->latest_ctx;
 	}
 
-	return do_parse_csv_line(q, sep, trim, numbers, use_strings, functor, C_STR(q,p1), !do_assert ? p2 : NULL, p2_ctx);
+	return do_parse_csv_line(q, sep, trim, numbers, use_strings, functor, C_STR(q,p1), !do_assert||!functor ? p2 : NULL, p2_ctx);
 }
 
 void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type)
