@@ -7494,7 +7494,6 @@ static bool fn_parse_csv_file_2(query *q)
 	int sep = ',', quote = '"';
 	LIST_HANDLER(p3);
 
-
 	while (is_list(p3)) {
 		cell *h = LIST_HEAD(p3);
 		h = deref(q,h,p3_ctx);
@@ -7526,17 +7525,17 @@ static bool fn_parse_csv_file_2(query *q)
 	if (!functor)
 		return throw_error(q, p3, p3_ctx, "domain_error", "missing_functor");
 
-	FILE *fp = fopen(C_STR(q, p1), "r");
-	if (!fp) return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
-	char *line = NULL;
+	q->p->fp = fopen(C_STR(q, p1), "r");
+	if (!q->p->fp) return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 	unsigned line_nbr = 0;
-	ssize_t len;
-	size_t n;
 	pl_idx_t save_hp = q->st.hp;
 	frame *f = GET_CURR_FRAME();
 	frame save_f = *f;
+	ssize_t len;
 
-	while ((len = getline(&line, &n, fp)) != -1) {
+	while ((len = getline(&q->p->save_line, &q->p->n_line, q->p->fp)) != -1) {
+		char *line = q->p->save_line;
+
 		if (line[len-1] == '\n')
 			len--;
 
@@ -7554,8 +7553,10 @@ static bool fn_parse_csv_file_2(query *q)
 		line_nbr++;
 	}
 
-	free(line);
-	fclose(fp);
+	free(q->p->save_line);
+	q->p->save_line = NULL;
+	fclose(q->p->fp);
+	q->p->fp = NULL;
 
 	if (!q->pl->quiet)
 		printf("%% Parsed %u lines\n", line_nbr);
