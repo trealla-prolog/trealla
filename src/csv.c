@@ -56,9 +56,8 @@ bool do_parse_csv_line(query *q, int sep, int quote, bool trim, bool numbers, bo
 			if (quoted && q->p->fp) {
 				ssize_t len;
 
-				if ((len = getline(&q->p->save_line, &q->p->n_line, q->p->fp)) == -1) {
+				if ((len = getline(&q->p->save_line, &q->p->n_line, q->p->fp)) == -1)
 					return true;
-				}
 
 				char *line = q->p->save_line;
 				src = q->p->save_line;
