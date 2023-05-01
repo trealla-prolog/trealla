@@ -12,7 +12,6 @@
 #include "parser.h"
 #include "prolog.h"
 #include "query.h"
-#include "utf8.h"
 
 static const unsigned INITIAL_NBR_CELLS = 1000;
 const char *g_solo = "!(){}[]|,;`'\"";

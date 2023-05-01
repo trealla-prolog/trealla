@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <unistd.h>
+#include "utf8.h"
 
 #ifndef USE_OPENSSL
 #define USE_OPENSSL 0

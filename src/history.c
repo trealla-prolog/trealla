@@ -21,8 +21,6 @@
 #include "internal.h"
 #include "history.h"
 #include "prolog.h"
-#include "utf8.h"
-#include "cdebug.h"
 
 int history_getch(void)
 {

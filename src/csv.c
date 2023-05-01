@@ -9,7 +9,6 @@
 #include "parser.h"
 #include "prolog.h"
 #include "query.h"
-#include "utf8.h"
 
 bool do_parse_csv_line(query *q, int sep, bool trim, bool numbers, cell *p1, cell *p2, pl_idx_t p2_ctx)
 {

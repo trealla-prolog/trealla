@@ -12,7 +12,6 @@
 #include "network.h"
 #include "parser.h"
 #include "query.h"
-#include "utf8.h"
 
 cell *string_to_chars_list(query *q, cell *p, pl_idx_t p_ctx)
 {

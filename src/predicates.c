@@ -14,7 +14,6 @@
 #include "parser.h"
 #include "prolog.h"
 #include "query.h"
-#include "utf8.h"
 
 #if USE_OPENSSL
 #include "openssl/sha.h"
@@ -7448,9 +7447,9 @@ static bool fn_parse_csv_line_3(query *q)
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,var);
 	GET_NEXT_ARG(p3,list_or_nil);
-	LIST_HANDLER(p3);
 	bool trim = false, numbers = false;
 	int sep = ',';
+	LIST_HANDLER(p3);
 
 	while (is_list(p3)) {
 		cell *h = LIST_HEAD(p3);

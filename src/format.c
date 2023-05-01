@@ -4,7 +4,6 @@
 
 #include "network.h"
 #include "query.h"
-#include "utf8.h"
 
 static int format_integer(char *dst, cell *c, int grouping, int sep, int decimals, int radix)
 {

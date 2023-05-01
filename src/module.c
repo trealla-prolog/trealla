@@ -10,7 +10,6 @@
 #include "library.h"
 #include "prolog.h"
 #include "query.h"
-#include "utf8.h"
 
 struct loaded_file_ {
 	loaded_file *next;

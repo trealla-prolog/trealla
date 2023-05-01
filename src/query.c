@@ -10,7 +10,6 @@
 #include "parser.h"
 #include "prolog.h"
 #include "query.h"
-#include "utf8.h"
 
 #ifdef _WIN32
 #include <windows.h>

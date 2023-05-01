@@ -39,7 +39,6 @@
 #include "parser.h"
 #include "prolog.h"
 #include "query.h"
-#include "utf8.h"
 
 #define MAX_ARGS 128
 
