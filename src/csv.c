@@ -160,4 +160,3 @@ bool do_parse_csv_line(query *q, int sep, bool trim, bool numbers, cell *p1, cel
 	check_heap_error(l);
 	return unify(q, p2, p2_ctx, l, q->st.curr_frame);
 }
-
