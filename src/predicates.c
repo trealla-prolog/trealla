@@ -7436,7 +7436,7 @@ static bool fn_sre_subst_4(query *q)
 	return ok;
 }
 
-static bool do_parse_csv_line(query *q, int sep, bool trim, cell *p1, cell *p2, pl_idx_t p2_ctx)
+static bool do_parse_csv_line(query *q, int sep, bool trim, bool numbers, cell *p1, cell *p2, pl_idx_t p2_ctx)
 {
 	const char *src = C_STR(q, p1);
 	bool quoted = false, was_quoted = false, first = true, was_sep = false;
@@ -7487,9 +7487,35 @@ static bool do_parse_csv_line(query *q, int sep, bool trim, cell *p1, cell *p2, 
 		if (trim)
 			SB_trim_ws(pr);
 
-		cell tmpc;
+		cell tmpc = {0};
+        int dots = 0, bad = 0;
+		bool num = numbers && !was_quoted;
 
-		if (is_string(p1)) {
+		if (num && !was_quoted) {
+			const char *tmp_src = SB_cstr(pr);
+
+			if (*tmp_src == '-')
+				tmp_src++;
+
+			while (*tmp_src) {
+				if (*tmp_src == '.')
+					dots++;
+				else if (!isdigit(*tmp_src))
+					bad++;
+
+				tmp_src++;
+			}
+
+			if (was_quoted || bad || (dots > 1))
+				num = false;
+		}
+
+		if (num) {
+			if (dots)
+				make_float(&tmpc,strtod(SB_cstr(pr), NULL));
+			else
+				make_int(&tmpc, strtoll(SB_cstr(pr), NULL, 10));
+		} else if (is_string(p1)) {
 			if (SB_strlen(pr))
 				check_heap_error(make_stringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
 			else
@@ -7544,7 +7570,7 @@ static bool fn_parse_csv_line_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,var);
-	return do_parse_csv_line(q, ',', false, p1, p2, p2_ctx);
+	return do_parse_csv_line(q, ',', false, false, p1, p2, p2_ctx);
 }
 
 static bool fn_parse_csv_line_3(query *q)
@@ -7553,7 +7579,7 @@ static bool fn_parse_csv_line_3(query *q)
 	GET_NEXT_ARG(p2,var);
 	GET_NEXT_ARG(p3,list_or_nil);
 	LIST_HANDLER(p3);
-	bool trim = false;
+	bool trim = false, numbers = false;
 	int sep = ',';
 
 	while (is_list(p3)) {
@@ -7567,6 +7593,8 @@ static bool fn_parse_csv_line_3(query *q)
 				trim = true;
 			else if (!strcmp("sep", C_STR(q, h)) && is_atom(c) && (C_STRLEN(q,c) == 1))
 				sep = peek_char_utf8(C_STR(q, c));
+			else if (!strcmp("numbers", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))
+				numbers = peek_char_utf8(C_STR(q, c));
 		}
 
 		p3 = LIST_TAIL(p3);
@@ -7574,7 +7602,7 @@ static bool fn_parse_csv_line_3(query *q)
 		p3_ctx = q->latest_ctx;
 	}
 
-	return do_parse_csv_line(q, sep, trim, p1, p2, p2_ctx);
+	return do_parse_csv_line(q, sep, trim, numbers, p1, p2, p2_ctx);
 }
 
 void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type)
