@@ -7529,7 +7529,7 @@ static bool fn_parse_csv_file_2(query *q)
 	FILE *fp = fopen(C_STR(q, p1), "r");
 	if (!fp) return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 	char *line = NULL;
-	unsigned line_nbr = 1;
+	unsigned line_nbr = 0;
 	size_t len;
 
 	while (getline(&line, &len, fp) != -1) {
@@ -7544,12 +7544,16 @@ static bool fn_parse_csv_file_2(query *q)
 		line[len] = '\0';
 
 		if (!do_parse_csv_line(q, sep, quote, trim, numbers, use_strings, functor, line, NULL, 0))
-			fprintf(stderr, "Error: line %u\n", line_nbr);
+			fprintf(stderr, "Error: line %u\n", line_nbr+1);
 
 		line_nbr++;
 	}
 
 	fclose(fp);
+
+	if (!q->pl->quiet)
+		printf("%% Parsed %u lines\n", line_nbr);
+
 	return true;
 }
 

@@ -666,6 +666,13 @@ Examples...
 	   true.
 	?- f(A,B,C).
 	   A = 123, B = 2.345, C = 3456789.
+	?- time(parse_csv_file('/home/andrew/lgt3git/library/csv/test_files/tickers.csv',[functor(f),quote('\'')])).
+	% Parsed 35193 lines
+	% Time elapsed 0.096s, 3 Inferences, 0.000 MLips)
+		  true.
+	?- f(A,B,C,D,E,F).
+	   A = '1125:HK', B = 'OTCGREY', C = 'Stock', D = 'USD', E = '1999-06-22', F = '2019-10-22'
+	;
 ```
 
 
