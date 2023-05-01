@@ -643,6 +643,7 @@ Where options can be:
 	trim(Boolean)				# default false, trims leading and trailing whitespace
 	numbers(Boolean)			# default false, converts integers and floats
 	strings(Boolean)			# default depends on type of input (atom ot string)
+	assert(Boolean)				# default false, assertz to database
 	functor(Atom)				# default output is a list, creates a structure
 	sep(Char)					# default to comma
 

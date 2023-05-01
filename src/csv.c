@@ -172,5 +172,21 @@ bool do_parse_csv_line(query *q, int sep, bool trim, bool numbers, bool use_stri
 	SB_free(pr);
 	cell *l = functor ? end_structure(q) : end_list(q);
 	check_heap_error(l);
-	return unify(q, p2, p2_ctx, l, q->st.curr_frame);
+
+	if (p2)
+		return unify(q, p2, p2_ctx, l, q->st.curr_frame);
+
+	bool found = false, evaluable = false;
+
+	if (get_builtin_term(q->st.m, l, &found, &evaluable), found && !evaluable) {
+		if (!GET_OP(l))
+			return throw_error(q, l, q->st.curr_frame, "permission_error", "modify,static_procedure");
+	}
+
+	db_entry *dbe = assertz_to_db(q->st.m, 0, 0, l, 0);
+
+	if (!dbe)
+		return throw_error(q, l, q->st.curr_frame, "permission_error", "modify_static_procedure");
+
+	return true;
 }
