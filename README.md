@@ -660,6 +660,10 @@ Examples...
 	   T = [abc,' abc',' a b c '].
 	?- parse_csv_line('abc, abc, a b c ',T,[trim(true)]).
 	   T = [abc,abc,'a b c'].
+	?- parse_csv_line('123,2.345,3456789',T,[functor(f),numbers(true),assert(true)]).
+	   true.
+	?- f(A,B,C).
+	   A = 123, B = 2.345, C = 3456789.
 ```
 
 Application maps
