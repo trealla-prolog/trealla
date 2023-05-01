@@ -7439,7 +7439,7 @@ static bool fn_parse_csv_line_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,var);
-	return do_parse_csv_line(q, ',', false, false, is_string(p1), NULL, C_STR(q,p1), p2, p2_ctx);
+	return do_parse_csv_line(q, ',', '"', false, false, is_string(p1), NULL, C_STR(q,p1), p2, p2_ctx);
 }
 
 static bool fn_parse_csv_line_3(query *q)
@@ -7449,7 +7449,7 @@ static bool fn_parse_csv_line_3(query *q)
 	GET_NEXT_ARG(p3,list_or_nil);
 	bool trim = false, numbers = false, use_strings = is_string(p1), do_assert = false;
 	const char *functor = NULL;
-	int sep = ',';
+	int sep = ',', quote = '"';
 	LIST_HANDLER(p3);
 
 	while (is_list(p3)) {
@@ -7471,8 +7471,10 @@ static bool fn_parse_csv_line_3(query *q)
 				do_assert = true;
 			else if (!strcmp("functor", C_STR(q, h)) && is_atom(c))
 				functor = C_STR(q, c);
-			else if (!strcmp("sep", C_STR(q, h)) && is_atom(c) && (C_STRLEN(q,c) == 1))
+			else if (!strcmp("sep", C_STR(q, h)) && is_atom(c) && (C_STRLEN_UTF8(c) == 1))
 				sep = peek_char_utf8(C_STR(q, c));
+			else if (!strcmp("quote", C_STR(q, h)) && is_atom(c) && (C_STRLEN_UTF8(c) == 1))
+				quote = peek_char_utf8(C_STR(q, c));
 		}
 
 		p3 = LIST_TAIL(p3);
@@ -7480,7 +7482,75 @@ static bool fn_parse_csv_line_3(query *q)
 		p3_ctx = q->latest_ctx;
 	}
 
-	return do_parse_csv_line(q, sep, trim, numbers, use_strings, functor, C_STR(q,p1), !do_assert||!functor ? p2 : NULL, p2_ctx);
+	return do_parse_csv_line(q, sep, quote, trim, numbers, use_strings, functor, C_STR(q,p1), !do_assert||!functor ? p2 : NULL, p2_ctx);
+}
+
+static bool fn_parse_csv_file_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p3,list_or_nil);
+	bool trim = false, numbers = false, use_strings = is_string(p1), do_assert = true;
+	const char *functor = NULL;
+	int sep = ',', quote = '"';
+	LIST_HANDLER(p3);
+
+
+	while (is_list(p3)) {
+		cell *h = LIST_HEAD(p3);
+		h = deref(q,h,p3_ctx);
+
+		if (is_structure(h) && (h->arity == 1)) {
+			cell *c = h + 1;
+
+			if (!strcmp("trim", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))
+				trim = true;
+			else if (!strcmp("numbers", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))
+				numbers = true;
+			else if (!strcmp("strings", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))
+				use_strings = true;
+			else if (!strcmp("strings", C_STR(q, h)) && is_atom(c) && (c->val_off == g_false_s))
+				use_strings = false;
+			else if (!strcmp("functor", C_STR(q, h)) && is_atom(c))
+				functor = C_STR(q, c);
+			else if (!strcmp("sep", C_STR(q, h)) && is_atom(c) && (C_STRLEN_UTF8(c) == 1))
+				sep = peek_char_utf8(C_STR(q, c));
+			else if (!strcmp("quote", C_STR(q, h)) && is_atom(c) && (C_STRLEN_UTF8(c) == 1))
+				quote = peek_char_utf8(C_STR(q, c));
+		}
+
+		p3 = LIST_TAIL(p3);
+		p3 = deref(q,p3,p3_ctx);
+		p3_ctx = q->latest_ctx;
+	}
+
+	if (!functor)
+		return throw_error(q, p3, p3_ctx, "domain_error", "missing_functor");
+
+	FILE *fp = fopen(C_STR(q, p1), "r");
+	if (!fp) return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
+	char *line = NULL;
+	unsigned line_nbr = 1;
+	size_t len;
+
+	while (getline(&line, &len, fp) != -1) {
+		len = strlen(line);
+
+		if (line[len-1] == '\n')
+			len--;
+
+		if (line[len-1] == '\r')
+			len--;
+
+		line[len] = '\0';
+
+		if (!do_parse_csv_line(q, sep, quote, trim, numbers, use_strings, functor, line, NULL, 0))
+			fprintf(stderr, "Error: line %u\n", line_nbr);
+
+		line_nbr++;
+	}
+
+	fclose(fp);
+	return true;
 }
 
 void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type)
@@ -7917,6 +7987,7 @@ builtins g_other_bifs[] =
 
 	{"parse_csv_line", 2, fn_parse_csv_line_2, "+atom,-list", false, false, BLAH},
 	{"parse_csv_line", 3, fn_parse_csv_line_3, "+atom,-list,+list", false, false, BLAH},
+	{"parse_csv_file", 2, fn_parse_csv_file_2, "+atom,+list", false, false, BLAH},
 
 	{"abort", 0, fn_abort_0, NULL, false, false, BLAH},
 	{"sort", 4, fn_sort_4, "+integer,+atom,+list,?list", false, false, BLAH},

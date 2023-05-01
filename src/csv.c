@@ -10,7 +10,7 @@
 #include "prolog.h"
 #include "query.h"
 
-bool do_parse_csv_line(query *q, int sep, bool trim, bool numbers, bool use_strings, const char *functor, const char *src, cell *p2, pl_idx_t p2_ctx)
+bool do_parse_csv_line(query *q, int sep, int quote, bool trim, bool numbers, bool use_strings, const char *functor, const char *src, cell *p2, pl_idx_t p2_ctx)
 {
 	bool quoted = false, was_quoted = false, first = true, was_sep = false;
 	unsigned chars = 0;
@@ -29,7 +29,7 @@ bool do_parse_csv_line(query *q, int sep, bool trim, bool numbers, bool use_stri
 				ch = get_char_utf8(&src);
 		}
 
-		if (!quoted && (ch == '"')) {
+		if (!quoted && (ch == quote)) {
 			was_quoted = quoted = 1;
 			continue;
 		}
@@ -39,9 +39,9 @@ bool do_parse_csv_line(query *q, int sep, bool trim, bool numbers, bool use_stri
 			continue;
 		}
 
-		if (quoted && (ch == '"')) {
-			quoted = 0;
+		if (quoted && (ch == quote)) {
 			ch = get_char_utf8(&src);
+			quoted = 0;
 		}
 
 		was_sep = ch == sep;
@@ -90,19 +90,19 @@ bool do_parse_csv_line(query *q, int sep, bool trim, bool numbers, bool use_stri
 				make_int(&tmpc, strtoll(SB_cstr(pr), NULL, 10));
 		} else if (use_strings) {
 			if (SB_strlen(pr)) {
-				unsigned vnbr = create_vars(q, 1);
-				make_var(&tmpc, g_anon_s, vnbr);
 				cell tmp;
-				check_heap_error(make_stringn(&tmp, SB_cstr(pr), SB_strlen(pr)));
+				unsigned vnbr = create_vars(q, 1);
+				make_var(&tmp, g_anon_s, vnbr);
+				check_heap_error(make_stringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
 				unify(q, &tmpc, q->st.curr_frame, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 			} else
 				make_atom(&tmpc, g_nil_s);
 		} else {
-			unsigned vnbr = create_vars(q, 1);
-			make_var(&tmpc, g_anon_s, vnbr);
 			cell tmp;
-			check_heap_error(make_cstringn(&tmp, SB_cstr(pr), SB_strlen(pr)));
+			unsigned vnbr = create_vars(q, 1);
+			make_var(&tmp, g_anon_s, vnbr);
+			check_heap_error(make_cstringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
 			unify(q, &tmpc, q->st.curr_frame, &tmp, q->st.curr_frame);
 			unshare_cell(&tmp);
 		}
@@ -137,19 +137,19 @@ bool do_parse_csv_line(query *q, int sep, bool trim, bool numbers, bool use_stri
 
 		if (use_strings) {
 			if (SB_strlen(pr)) {
-				unsigned vnbr = create_vars(q, 1);
-				make_var(&tmpc, g_anon_s, vnbr);
 				cell tmp;
-				check_heap_error(make_stringn(&tmp, SB_cstr(pr), SB_strlen(pr)));
+				unsigned vnbr = create_vars(q, 1);
+				make_var(&tmp, g_anon_s, vnbr);
+				check_heap_error(make_stringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
 				unify(q, &tmpc, q->st.curr_frame, &tmp, q->st.curr_frame);
 				unshare_cell(&tmp);
 			} else
 				make_atom(&tmpc, g_nil_s);
 		} else {
-			unsigned vnbr = create_vars(q, 1);
-			make_var(&tmpc, g_anon_s, vnbr);
 			cell tmp;
-			check_heap_error(make_cstringn(&tmp, SB_cstr(pr), SB_strlen(pr)));
+			unsigned vnbr = create_vars(q, 1);
+			make_var(&tmp, g_anon_s, vnbr);
+			check_heap_error(make_cstringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
 			unify(q, &tmpc, q->st.curr_frame, &tmp, q->st.curr_frame);
 			unshare_cell(&tmp);
 		}

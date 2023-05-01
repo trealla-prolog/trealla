@@ -637,14 +637,16 @@ Parsing CSV with builtins
 
 	parse_csv_line/2			# parse_csv_line(+atom,-var)
 	parse_csv_line/3			# parse_csv_line(+atom,-var,+options)
+	parse_csv_file/2			# parse_csv_file(+filename,+options)
 
 Where options can be:
 
 	trim(Boolean)				# default false, trims leading and trailing whitespace
 	numbers(Boolean)			# default false, converts integers and floats
 	strings(Boolean)			# default depends on type of input (atom ot string)
-	assert(Boolean)				# default false, assertz to database instead if functor(Atom)
-	functor(Atom)				# default output is a list, creates a structure
+	assert(Boolean)				# default false, assertz to database instead (assumed for files, needs a functor)
+	functor(Atom)				# default output is a list, create a structure (mandatory for files and with assert)
+	quote(Char)					# default to double-quote
 	sep(Char)					# default to comma
 
 Examples...
@@ -665,6 +667,7 @@ Examples...
 	?- f(A,B,C).
 	   A = 123, B = 2.345, C = 3456789.
 ```
+
 
 Application maps
 ================
