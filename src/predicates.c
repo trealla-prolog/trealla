@@ -7439,7 +7439,7 @@ static bool fn_parse_csv_line_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,var);
-	return do_parse_csv_line(q, ',', '"', false, false, is_string(p1), NULL, C_STR(q,p1), p2, p2_ctx);
+	return do_parse_csv_line(q, ',', '"', false, false, is_string(p1), 0, NULL, C_STR(q,p1), p2, p2_ctx);
 }
 
 static bool fn_parse_csv_line_3(query *q)
@@ -7482,7 +7482,7 @@ static bool fn_parse_csv_line_3(query *q)
 		p3_ctx = q->latest_ctx;
 	}
 
-	return do_parse_csv_line(q, sep, quote, trim, numbers, use_strings, functor, C_STR(q,p1), !do_assert||!functor ? p2 : NULL, p2_ctx);
+	return do_parse_csv_line(q, sep, quote, trim, numbers, use_strings, 0, functor, C_STR(q,p1), !do_assert||!functor ? p2 : NULL, p2_ctx);
 }
 
 static bool fn_parse_csv_file_2(query *q)
@@ -7493,6 +7493,7 @@ static bool fn_parse_csv_file_2(query *q)
 	bool header = false, do_assert = true, comments = false;
 	const char *functor = NULL;
 	int sep = ',', quote = '"', comment = '#';
+	unsigned arity = 0;
 	LIST_HANDLER(p3);
 
 	while (is_list(p3)) {
@@ -7514,6 +7515,8 @@ static bool fn_parse_csv_file_2(query *q)
 				use_strings = true;
 			else if (!strcmp("strings", C_STR(q, h)) && is_atom(c) && (c->val_off == g_false_s))
 				use_strings = false;
+			else if (!strcmp("arity", C_STR(q, h)) && is_smallint(c))
+				arity = get_smallint(c);
 			else if (!strcmp("functor", C_STR(q, h)) && is_atom(c))
 				functor = C_STR(q, c);
 			else if (!strcmp("comment", C_STR(q, h)) && is_atom(c) && (C_STRLEN_UTF8(c) == 1))
@@ -7560,7 +7563,7 @@ static bool fn_parse_csv_file_2(query *q)
 		if ((comments && (line[0] == comment)) || !line[0])
 			continue;
 
-		if (!do_parse_csv_line(q, sep, quote, trim, numbers, use_strings, functor, line, NULL, 0))
+		if (!do_parse_csv_line(q, sep, quote, trim, numbers, use_strings, arity, functor, line, NULL, 0))
 			fprintf(stderr, "Error: line %u\n", line_nbr);
 
 		*f = save_f;

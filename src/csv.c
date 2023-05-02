@@ -10,10 +10,10 @@
 #include "prolog.h"
 #include "query.h"
 
-bool do_parse_csv_line(query *q, int sep, int quote, bool trim, bool numbers, bool use_strings, const char *functor, const char *src, cell *p2, pl_idx_t p2_ctx)
+bool do_parse_csv_line(query *q, int sep, int quote, bool trim, bool numbers, bool use_strings, unsigned arity, const char *functor, const char *src, cell *p2, pl_idx_t p2_ctx)
 {
 	bool quoted = false, was_quoted = false, first = true, was_sep = false;
-	unsigned chars = 0;
+	unsigned chars = 0, args = 0;
 	SB(pr);
 
 	if (trim) {
@@ -142,6 +142,7 @@ bool do_parse_csv_line(query *q, int sep, int quote, bool trim, bool numbers, bo
 				append_list(q, &tmpc);
 		}
 
+		args++;
 		quoted = was_quoted = false;
 		SB_init(pr);
 
@@ -186,9 +187,15 @@ bool do_parse_csv_line(query *q, int sep, int quote, bool trim, bool numbers, bo
 			else
 				append_list(q, &tmpc);
 		}
+
+		args++;
 	}
 
 	SB_free(pr);
+
+	if ((arity > 0) && (args != arity))
+		return false;
+
 	cell *l = functor ? end_structure(q) : end_list(q);
 	check_heap_error(l);
 
