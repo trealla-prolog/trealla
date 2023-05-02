@@ -647,7 +647,7 @@ Where options can be:
 	comments(Boolean)			# default false, skip lines beginning with comment character
 	comment(Char)				# default '#', set the comment character
 	strings(Boolean)			# default depends on type of input (atom ot string)
-	arity(Integer)				# default to not checking arity, otherwise fail if > 0
+	arity(Integer)				# default to not checking arity, otherwise throw domain_error
 	assert(Boolean)				# default false, assertz to database instead (assumed for files, needs a functor)
 	functor(Atom)				# default output is a list, create a structure (mandatory for files and with assert)
 	quote(Char)					# default to double-quote

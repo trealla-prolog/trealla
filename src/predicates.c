@@ -7563,8 +7563,14 @@ static bool fn_parse_csv_file_2(query *q)
 		if ((comments && (line[0] == comment)) || !line[0])
 			continue;
 
-		if (!do_parse_csv_line(q, sep, quote, trim, numbers, use_strings, arity, functor, line, NULL, 0))
+		if (!do_parse_csv_line(q, sep, quote, trim, numbers, use_strings, arity, functor, line, NULL, 0)) {
 			fprintf(stderr, "Error: line %u\n", line_nbr);
+			free(q->p->save_line);
+			q->p->save_line = NULL;
+			fclose(q->p->fp);
+			q->p->fp = NULL;
+			return false;
+		}
 
 		*f = save_f;
 		q->st.hp = save_hp;

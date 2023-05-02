@@ -194,7 +194,7 @@ bool do_parse_csv_line(query *q, int sep, int quote, bool trim, bool numbers, bo
 	SB_free(pr);
 
 	if ((arity > 0) && (args != arity))
-		return false;
+		return throw_error(q, p2, p2_ctx, "domain_error", "row_arity");
 
 	cell *l = functor ? end_structure(q) : end_list(q);
 	check_heap_error(l);
