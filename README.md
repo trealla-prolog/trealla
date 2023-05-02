@@ -644,6 +644,8 @@ Where options can be:
 	trim(Boolean)				# default false, trims leading and trailing whitespace
 	numbers(Boolean)			# default false, converts integers and floats
 	header(Boolean)				# default false, skip first (header) line
+	comments(Boolean)			# default false, skip lines beginning with comment character
+	comment(Char)				# default '#', set the comment character
 	strings(Boolean)			# default depends on type of input (atom ot string)
 	assert(Boolean)				# default false, assertz to database instead (assumed for files, needs a functor)
 	functor(Atom)				# default output is a list, create a structure (mandatory for files and with assert)
