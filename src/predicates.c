@@ -7557,7 +7557,7 @@ static bool fn_parse_csv_file_2(query *q)
 			continue;
 		}
 
-		if (comments && (line[0] == comment))
+		if ((comments && (line[0] == comment)) || !line[0])
 			continue;
 
 		if (!do_parse_csv_line(q, sep, quote, trim, numbers, use_strings, functor, line, NULL, 0))
