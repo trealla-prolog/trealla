@@ -583,10 +583,8 @@ void try_me(query *q, unsigned nbr_vars)
 	f->base = q->st.sp;
 	slot *e = GET_SLOT(f, 0);
 
-	for (unsigned i = 0; i < nbr_vars; i++, e++) {
+	for (unsigned i = 0; i < nbr_vars; i++, e++)
 		init_cell(&e->c);
-		e->vgen2 = e->vgen = 0;
-	}
 
 	q->run_hook = false;
 	q->cycle_error = false;
