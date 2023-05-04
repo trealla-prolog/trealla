@@ -21,7 +21,7 @@ bool do_parse_csv_line(query *q, int sep, int quote, bool trim, bool numbers, bo
 			get_char_utf8(&src);
 	}
 
-	while (*src) {
+	while (*src && (*src != '\r') && (*src != '\n')) {
 		int ch = get_char_utf8(&src);
 
 		if (trim) {
@@ -46,11 +46,11 @@ bool do_parse_csv_line(query *q, int sep, int quote, bool trim, bool numbers, bo
 
 		was_sep = ch == sep;
 
-		if ((ch != sep) && ch) {
+		if ((ch != sep) && ch && (ch != '\r') && (ch != '\n')) {
 			SB_putchar(pr, ch);
 			chars++;
 
-			if (*src)
+			if (*src && (*src != '\r') && (*src != '\n'))
 				continue;
 
 			if (quoted && q->p->fp) {
@@ -61,19 +61,11 @@ bool do_parse_csv_line(query *q, int sep, int quote, bool trim, bool numbers, bo
 
 				char *line = q->p->save_line;
 				src = q->p->save_line;
-
-				if (line[len-1] == '\n')
-					len--;
-
-				if (line[len-1] == '\r')
-					len--;
-
-				line[len] = '\0';
 				continue;
 			}
 		}
 
-		if (!ch)
+		if (!ch || (ch == '\r') || (ch == '\n'))
 			src--;
 
 		if (trim)

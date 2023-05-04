@@ -7547,20 +7547,12 @@ static bool fn_parse_csv_file_2(query *q)
 		char *line = q->p->save_line;
 		line_nbr++;
 
-		if (line[len-1] == '\n')
-			len--;
-
-		if (line[len-1] == '\r')
-			len--;
-
-		line[len] = '\0';
-
 		if (header) {
 			header = false;
 			continue;
 		}
 
-		if ((comments && (line[0] == comment)) || !line[0])
+		if ((comments && (line[0] == comment)) || !line[0] || (line[0] == '\r') || (line[0] == '\n'))
 			continue;
 
 		if (!do_parse_csv_line(q, sep, quote, trim, numbers, use_strings, arity, functor, line, NULL, 0)) {
