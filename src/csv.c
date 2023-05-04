@@ -187,7 +187,7 @@ bool do_parse_csv_line(query *q, int sep, int quote, bool trim, bool numbers, bo
 
 	if ((arity > 0) && (args != arity)) {
 		cell tmp;
-		make_int(&tmp, args);
+		make_int(&tmp, arity);
 		return throw_error(q, &tmp, q->st.curr_frame, "domain_error", "row_arity");
 	}
 
