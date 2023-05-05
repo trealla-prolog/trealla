@@ -2,6 +2,13 @@
 
 #include "builtins.h"
 
+typedef struct {
+	int sep, quote;
+	unsigned arity;
+	bool trim, numbers, use_strings, term[MAX_ARITY];
+	const char *functor;
+} csv;
+
 query *query_create(module *m, bool sub_query);
 query *query_create_subquery(query *q, cell *curr_cell);
 void query_destroy(query *q);
@@ -69,7 +76,7 @@ bool check_list(query *q, cell *p1, pl_idx_t p1_ctx, bool *is_partial, pl_int_t 
 bool parse_write_params(query *q, cell *c, pl_idx_t c_ctx, cell **vnames, pl_idx_t *vnames_ctx);
 bool has_vars(query *q, cell *p1, pl_idx_t p1_ctx);
 bool accum_var(query *q, const cell *c, pl_idx_t c_ctx);
-bool do_parse_csv_line(query *q, int sep, int quote, bool trim, bool numbers, bool use_strings, unsigned arity, const char *functor, const char *src, cell *p2, pl_idx_t p2_ctx);
+bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx_t p2_ctx);
 
 int compare(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx);
 bool unify(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx);
@@ -185,4 +192,3 @@ inline static cell *get_body(cell *c)
 	(c)->arity = 0;					\
 	(c)->attrs = NULL;				\
 }
-
