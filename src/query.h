@@ -5,7 +5,7 @@
 typedef struct {
 	int sep, quote;
 	unsigned arity;
-	bool trim, numbers, use_strings, term[MAX_ARITY];
+	bool trim, numbers, use_strings;
 	const char *functor;
 } csv;
 

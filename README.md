@@ -651,7 +651,7 @@ Where options can be:
 	assert(Boolean)				# default false, assertz to database instead (assumed for files, needs a functor)
 	functor(Atom)				# default output is a list, create a structure (mandatory for files and with assert)
 	quote(Char)					# default to double-quote
-	sep(Char)					# default to comma
+	sep(Char)					# default to comma for .csv or unknown files & TAB for .tsv files
 
 Examples...
 

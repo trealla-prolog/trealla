@@ -7439,7 +7439,7 @@ static bool fn_parse_csv_line_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,var);
-	csv params = {',', '"', 0, false, false, is_string(p1), {false}, NULL};
+	csv params = {.sep=',', .quote='"', .arity=0, .trim=false, .numbers=false, .use_strings=is_string(p1), .functor=NULL};
 	return do_parse_csv_line(q, &params, C_STR(q,p1), p2, p2_ctx);
 }
 
@@ -7449,7 +7449,6 @@ static bool fn_parse_csv_line_3(query *q)
 	GET_NEXT_ARG(p2,var);
 	GET_NEXT_ARG(p3,list_or_nil);
 	bool trim = false, numbers = false, use_strings = is_string(p1), do_assert = false;
-	bool term[MAX_ARITY] = {false};
 	const char *functor = NULL;
 	int sep = ',', quote = '"';
 	unsigned arity = 0;
@@ -7472,14 +7471,7 @@ static bool fn_parse_csv_line_3(query *q)
 				use_strings = false;
 			else if (!strcmp("arity", C_STR(q, h)) && is_smallint(c))
 				arity = get_smallint(c);
-			else if (!strcmp("term", C_STR(q, h)) && is_smallint(c)) {
-				int n = get_smallint(c);
-
-				if ((n < 0) || (n >= MAX_ARITY))
-					return throw_error(q, p3, p3_ctx, "domain_error", "range");
-
-				term[n] = true;
-			} else if (!strcmp("functor", C_STR(q, h)) && is_atom(c))
+			else if (!strcmp("functor", C_STR(q, h)) && is_atom(c))
 				functor = C_STR(q, c);
 			else if (!strcmp("assert", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))
 				do_assert = true;
@@ -7494,8 +7486,7 @@ static bool fn_parse_csv_line_3(query *q)
 		p3_ctx = q->latest_ctx;
 	}
 
-	csv params = {sep, quote, arity, trim, numbers, use_strings, {false}, functor};
-	*params.term = *term;
+	csv params = {.sep=sep, .quote=quote, .arity=arity, .trim=trim, .numbers=numbers, .use_strings=use_strings, .functor=functor};
 	return do_parse_csv_line(q, &params, C_STR(q,p1), !do_assert||!functor ? p2 : NULL, p2_ctx);
 }
 
@@ -7505,11 +7496,15 @@ static bool fn_parse_csv_file_2(query *q)
 	GET_NEXT_ARG(p3,list_or_nil);
 	bool trim = false, numbers = false, use_strings = false;
 	bool header = false, do_assert = true, comments = false;
-	bool term[MAX_ARITY] = {false};
 	const char *functor = NULL;
 	int sep = ',', quote = '"', comment = '#';
 	unsigned arity = 0;
 	LIST_HANDLER(p3);
+
+	const char *ext = strrchr(C_STR(q, p1), '.');
+
+	if (ext && !strcmp(ext, ".tsv"))
+		sep = '\t';
 
 	while (is_list(p3)) {
 		cell *h = LIST_HEAD(p3);
@@ -7532,14 +7527,7 @@ static bool fn_parse_csv_file_2(query *q)
 				use_strings = false;
 			else if (!strcmp("arity", C_STR(q, h)) && is_smallint(c))
 				arity = get_smallint(c);
-			else if (!strcmp("term", C_STR(q, h)) && is_smallint(c)) {
-				int n = get_smallint(c);
-
-				if ((n < 0) || (n >= MAX_ARITY))
-					return throw_error(q, p3, p3_ctx, "domain_error", "range");
-
-				term[n] = true;
-			} else if (!strcmp("functor", C_STR(q, h)) && is_atom(c))
+			else if (!strcmp("functor", C_STR(q, h)) && is_atom(c))
 				functor = C_STR(q, c);
 			else if (!strcmp("comment", C_STR(q, h)) && is_atom(c) && (C_STRLEN_UTF8(c) == 1))
 				comment = peek_char_utf8(C_STR(q, c));
@@ -7564,8 +7552,7 @@ static bool fn_parse_csv_file_2(query *q)
 	frame *f = GET_CURR_FRAME();
 	frame save_f = *f;
 	ssize_t len;
-	csv params = {sep, quote, arity, trim, numbers, use_strings, {false}, functor};
-	*params.term = *term;
+	csv params = {.sep=sep, .quote=quote, .arity=arity, .trim=trim, .numbers=numbers, .use_strings=use_strings, .functor=functor};
 
 	while ((len = getline(&q->p->save_line, &q->p->n_line, q->p->fp)) != -1) {
 		char *line = q->p->save_line;
