@@ -578,13 +578,15 @@ void undo_me(query *q)
 
 void try_me(query *q, unsigned nbr_vars)
 {
-	frame *f = GET_FRAME(q->st.fp);
+	frame *f = GET_NEW_FRAME();
 	f->initial_slots = f->actual_slots = nbr_vars;
 	f->base = q->st.sp;
 	slot *e = GET_SLOT(f, 0);
 
-	for (unsigned i = 0; i < nbr_vars; i++, e++)
+	while (nbr_vars--) {
 		init_cell(&e->c);
+		e++;
+	}
 
 	q->run_hook = false;
 	q->cycle_error = false;
