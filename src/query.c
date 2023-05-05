@@ -645,7 +645,7 @@ int retry_choice(query *q)
 	return 0;
 }
 
-static frame *push_frame(query *q, clause *cl)
+static frame *push_frame(query *q, const clause *cl)
 {
 	const frame *curr_f = GET_CURR_FRAME();
 	const cell *next_cell = q->st.curr_cell + q->st.curr_cell->nbr_cells;
