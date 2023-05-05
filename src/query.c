@@ -647,7 +647,7 @@ int retry_choice(query *q)
 	return 0;
 }
 
-static frame *push_frame(query *q, const clause *cl)
+static frame *push_frame(query *q, unsigned nbr_vars)
 {
 	const frame *curr_f = GET_CURR_FRAME();
 	const cell *next_cell = q->st.curr_cell + q->st.curr_cell->nbr_cells;
@@ -670,7 +670,7 @@ static frame *push_frame(query *q, const clause *cl)
 	f->overflow = 0;
 	f->hp = q->st.hp;
 
-	q->st.sp += cl->nbr_vars;
+	q->st.sp += nbr_vars;
 	q->st.curr_frame = new_frame;
 	return f;
 }
@@ -841,7 +841,7 @@ static void commit_me(query *q)
 	if (q->pl->opt && tco)
 		reuse_frame(q, cl);
 	else
-		f = push_frame(q, cl);
+		f = push_frame(q, cl->nbr_vars);
 
 	if (last_match) {
 		f->is_last = true;
