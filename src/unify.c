@@ -508,10 +508,8 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigne
 
 static bool is_cyclic_term_list(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 {
-	LIST_HANDLER(p1);
-
 	while (is_iso_list(p1)) {
-		cell *h = LIST_HEAD(p1);
+		cell *h = p1 + 1;
 
 		if (is_var(h)) {
 			const frame *f = GET_FRAME(p1_ctx);
@@ -533,7 +531,7 @@ static bool is_cyclic_term_list(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 				return true;
 		}
 
-		p1 = LIST_TAIL(p1);
+		p1 = p1 + 1; p1 += p1->nbr_cells;
 
 		if (is_var(p1)) {
 			const frame *f = GET_FRAME(p1_ctx);
@@ -618,9 +616,8 @@ static cell *term_next(query *q, cell *c, pl_idx_t *c_ctx, bool *done)
 		return c;
 	}
 
-	LIST_HANDLER(c);
-	LIST_HEAD(c);
-	c = LIST_TAIL(c);
+	c += 1;
+	c += c->nbr_cells;
 	c = deref(q, c, *c_ctx);
 	*c_ctx = q->latest_ctx;
 	return c;
@@ -1002,12 +999,9 @@ static const struct dispatch g_disp[] =
 
 static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
 {
-	LIST_HANDLER(p1);
-	LIST_HANDLER(p2);
-
 	while (is_iso_list(p1) && is_iso_list(p2)) {
-		cell *h1 = LIST_HEAD(p1);
-		cell *h2 = LIST_HEAD(p2);
+		cell *h1 = p1 + 1;
+		cell *h2 = p2 + 1;
 		slot *e1 = NULL, *e2 = NULL;
 		int both = 0;
 
@@ -1045,8 +1039,8 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 			if (e2) e2->vgen2 = 0;
 		}
 
-		p1 = LIST_TAIL(p1);
-		p2 = LIST_TAIL(p2);
+		p1 = p1 + 1; p1 += p1->nbr_cells;
+		p2 = p2 + 1; p2 += p2->nbr_cells;
 		both = 0;
 
 		if (is_var(p1)) {
