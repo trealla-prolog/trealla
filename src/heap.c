@@ -664,9 +664,7 @@ cell *clone_to_heap(query *q, bool prefix, cell *p1, unsigned extras)
 
 	if (prefix) {
 		// Needed for follow() to work
-		*tmp = (cell){0};
-		tmp->tag = TAG_EMPTY;
-		tmp->nbr_cells = 1;
+		init_cell(tmp);
 		tmp->flags = FLAG_BUILTIN;
 	}
 
