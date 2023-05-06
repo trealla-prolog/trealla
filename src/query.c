@@ -1827,10 +1827,10 @@ void query_destroy(query *q)
 	q->done = true;
 
 	for (page *a = q->pages; a;) {
-		for (pl_idx_t i = 0; i < a->max_hp_used; i++) {
-			cell *c = a->heap + i;
+		cell *c = a->heap;
+
+		for (pl_idx_t i = 0; i < a->max_hp_used; i++, c++)
 			unshare_cell(c);
-		}
 
 		page *save = a;
 		a = a->next;
@@ -1839,10 +1839,10 @@ void query_destroy(query *q)
 	}
 
 	for (int i = 0; i < MAX_QUEUES; i++) {
-		for (pl_idx_t j = 0; j < q->qp[i]; j++) {
-			cell *c = q->queue[i]+j;
+		cell *c = q->queue[i];
+
+		for (pl_idx_t j = 0; j < q->qp[i]; j++, c++)
 			unshare_cell(c);
-		}
 
 		free(q->queue[i]);
 	}
