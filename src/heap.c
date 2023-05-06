@@ -169,32 +169,16 @@ void trim_heap(query *q)
 		if (a->nbr < q->st.pp)
 			break;
 
-		for (pl_idx_t i = 0; i < a->hp; i++) {
-			cell *c = a->heap + i;
+		cell *c = a->heap;
+
+		for (pl_idx_t i = 0; i < a->hp; i++, c++)
 			unshare_cell(c);
-			init_cell(c);
-		}
 
 		page *save = a;
 		q->pages = a = a->next;
 		free(save->heap);
 		free(save);
 	}
-
-#define DEBUG_TRIM 0
-
-	const page *a = q->pages;
-
-	if (DEBUG_TRIM) printf("*** %u : %u -> %u\n", a->nbr, q->st.hp, a->hp);
-
-	for (pl_idx_t i = q->st.hp; a && (i < a->hp); i++) {
-		cell *c = a->heap + i;
-		if (DEBUG_TRIM) if (is_managed(c)) printf("*** got one\n");
-		unshare_cell(c);
-		init_cell(c);
-	}
-
-	if (DEBUG_TRIM) printf("\n");
 }
 
 bool is_in_ref_list(const cell *c, pl_idx_t c_ctx, const reflist *rlist)
