@@ -670,15 +670,14 @@ cell *clone_to_heap(query *q, bool prefix, cell *p1, unsigned extras)
 
 	cell *src = p1, *dst = tmp+(prefix?1:0);
 
-	for (pl_idx_t i = 0; i < p1->nbr_cells; i++, dst++, src++) {
-		*dst = *src;
-		share_cell(src);
+	for (pl_idx_t i = 0; i < p1->nbr_cells; i++, dst++) {
+		*dst = *src++;
+		share_cell(dst);
 
-		if (!is_var(src) || is_ref(src))
-			continue;
-
-		dst->flags |= FLAG_VAR_REF;
-		dst->var_ctx = q->st.curr_frame;
+		if (is_var(dst) && !is_ref(dst)) {
+			dst->flags |= FLAG_VAR_REF;
+			dst->var_ctx = q->st.curr_frame;
+		}
 	}
 
 	return tmp;
