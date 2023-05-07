@@ -181,7 +181,7 @@ void trim_heap(query *q)
 	}
 }
 
-bool is_in_ref_list(const cell *c, pl_idx_t c_ctx, const reflist *rlist)
+static bool is_in_ref_list(const cell *c, pl_idx_t c_ctx, const reflist *rlist)
 {
 	while (rlist) {
 		if ((c == rlist->ptr) && (c_ctx == rlist->ctx))
