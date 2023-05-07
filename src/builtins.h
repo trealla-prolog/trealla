@@ -73,6 +73,7 @@ void make_int(cell *tmp, pl_int_t v);
 void make_float(cell *tmp, pl_flt_t v);
 void make_ptr(cell *tmp, void *v);
 void make_struct(cell *tmp, pl_idx_t offset, void *fn, unsigned arity, pl_idx_t extra_cells);
+void make_ref(cell *tmp, pl_idx_t off, unsigned var_nbr, pl_idx_t ctx);
 void make_var(cell *tmp, pl_idx_t off, unsigned var_nbr);
 void make_var2(cell *tmp, pl_idx_t off);
 void make_call(query *q, cell *tmp);

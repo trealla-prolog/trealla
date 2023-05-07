@@ -65,7 +65,7 @@ void do_yield_at(query *q, unsigned int time_in_ms)
 	q->yield_at += time_in_ms > 0 ? time_in_ms : 1;
 }
 
-static void make_ref(cell *tmp, pl_idx_t off, unsigned var_nbr, pl_idx_t ctx)
+void make_ref(cell *tmp, pl_idx_t off, unsigned var_nbr, pl_idx_t ctx)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_VAR;
