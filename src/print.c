@@ -328,7 +328,7 @@ size_t sprint_int(char *dst, size_t dstlen, pl_int_t n, int base)
 		else
 			dst++;
 
-		// NOTE: according to the man pages...
+		// NOTE: according to the man pages:
 		//
 		//		"Trying to take the absolute value of
 		// 		the most negative integer is not defined."
@@ -537,7 +537,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 
 		if (q->max_depth && (print_list >= q->max_depth)) {
 			dst--;
-			dst += snprintf(dst, dstlen, "%s", ",...]");
+			dst += snprintf(dst, dstlen, "%s", "|...]");
 			q->last_thing_was_symbol = false;
 			return dst - save_dst;
 		}
@@ -688,7 +688,7 @@ static ssize_t print_canonical_list(query *q, char *save_dst, char *dst, size_t 
 
 		if (q->max_depth && (print_list >= q->max_depth)) {
 			dst--;
-			dst += snprintf(dst, dstlen, "%s", ",...)");
+			dst += snprintf(dst, dstlen, "%s", "|...)");
 			q->last_thing_was_symbol = false;
 			break;
 		}
@@ -887,7 +887,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 
 		while (is_list(l)) {
 			if (q->max_depth && (cnt++ >= q->max_depth)) {
-				dst += snprintf(dst, dstlen, "%s", "...");
+				dst += snprintf(dst, dstlen, "%s", "|...");
 				break;
 			}
 
@@ -987,7 +987,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 
 			if (is_blob(c) && q->max_depth && (len_str >= q->max_depth) && (src_len > 128)) {
 				dst--;
-				dst += snprintf(dst, dstlen, "%s", ",...");
+				dst += snprintf(dst, dstlen, "%s", "|...");
 			}
 
 			q->last_thing_was_symbol = false;
@@ -1162,7 +1162,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 		return dst - save_dst;
 	}
 
-	// Infix...
+	// Infix..
 
 	cell *lhs = c + 1;
 	cell *rhs = lhs + lhs->nbr_cells;
@@ -1177,7 +1177,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 	unsigned rhs_pri_2 = is_interned(rhs) && !rhs->arity ? search_op(q->st.m, C_STR(q, rhs), NULL, false) : 0;
 	unsigned my_priority = search_op(q->st.m, src, NULL, false);
 
-	// Print LHS...
+	// Print LHS..
 
 	bool lhs_parens = lhs_pri_1 >= my_priority;
 	if ((lhs_pri_1 == my_priority) && is_yfx(c)) lhs_parens = false;
@@ -1227,7 +1227,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 		q->was_space = true;
 	}
 
-	// Print OP...
+	// Print OP..
 
 	q->last_thing_was_symbol = is_symbol;
 	space = iswalpha(*src);
@@ -1255,7 +1255,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 		q->was_space = true;
 	}
 
-	// Print RHS...
+	// Print RHS..
 
 	bool rhs_parens = rhs_pri_1 >= my_priority;
 	space = is_number(rhs) && is_negative(rhs);
