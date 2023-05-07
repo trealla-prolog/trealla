@@ -497,8 +497,8 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 
 	cell *save_p1 = p1;
 	pl_idx_t save_p1_ctx = p1_ctx;
-	p1 = deref(q, p1, p1_ctx);
-	p1_ctx = q->latest_ctx;
+	//p1 = deref(q, p1, p1_ctx);
+	//p1_ctx = q->latest_ctx;
 
 	pl_idx_t save_idx = tmp_heap_used(q);
 	cell *tmp = alloc_on_tmp(q, 1);
