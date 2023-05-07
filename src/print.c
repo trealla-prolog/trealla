@@ -987,7 +987,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 
 			if (is_blob(c) && q->max_depth && (len_str >= q->max_depth) && (src_len > 128)) {
 				dst--;
-				dst += snprintf(dst, dstlen, "%s", "|...");
+				dst += snprintf(dst, dstlen, "%s", "...");
 			}
 
 			q->last_thing_was_symbol = false;
