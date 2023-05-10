@@ -1861,6 +1861,11 @@ static bool fn_iso_univ_2(query *q)
 		cell *tmp2 = get_tmp_heap(q, 0);
 		pl_idx_t nbr_cells = tmp_heap_used(q);
 
+		if (is_cstring(tmp2) && !is_string(save_p2)) {
+			share_cell(tmp2);
+			convert_to_literal(q->st.m, tmp2);
+		}
+
 		if (!is_interned(tmp2) && arity)
 			return throw_error(q, tmp2, q->st.curr_frame, "type_error", "atom");
 
