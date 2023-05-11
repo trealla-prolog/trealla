@@ -181,24 +181,9 @@ void trim_heap(query *q)
 		free(save->heap);
 		free(save);
 	}
-
-#define DEBUG_TRIM 0
-
-	const page *a = q->pages;
-
-	if (DEBUG_TRIM) printf("*** %u : %u -> %u\n", a->nbr, q->st.hp, a->hp);
-
-	for (pl_idx_t i = q->st.hp; a && (i < a->hp); i++) {
-		cell *c = a->heap + i;
-		if (DEBUG_TRIM) if (is_managed(c)) printf("*** got one\n");
-		unshare_cell(c);
-		init_cell(c);
-	}
-
-	if (DEBUG_TRIM) printf("\n");
 }
 
-bool is_in_ref_list(const cell *c, pl_idx_t c_ctx, const reflist *rlist)
+static bool is_in_ref_list(const cell *c, pl_idx_t c_ctx, const reflist *rlist)
 {
 	while (rlist) {
 		if ((c == rlist->ptr) && (c_ctx == rlist->ctx))
@@ -514,8 +499,8 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 
 	cell *save_p1 = p1;
 	pl_idx_t save_p1_ctx = p1_ctx;
-	p1 = deref(q, p1, p1_ctx);
-	p1_ctx = q->latest_ctx;
+	//p1 = deref(q, p1, p1_ctx);
+	//p1_ctx = q->latest_ctx;
 
 	pl_idx_t save_idx = tmp_heap_used(q);
 	cell *tmp = alloc_on_tmp(q, 1);
@@ -681,23 +666,29 @@ cell *clone_to_heap(query *q, bool prefix, cell *p1, unsigned extras)
 
 	if (prefix) {
 		// Needed for follow() to work
-		*tmp = (cell){0};
-		tmp->tag = TAG_EMPTY;
+		tmp->tag = TAG_INTERNED;
+		tmp->arity = 0;
 		tmp->nbr_cells = 1;
 		tmp->flags = FLAG_BUILTIN;
+
+		static builtins *s_fn_ptr = NULL;
+
+		if (!s_fn_ptr)
+			s_fn_ptr = get_fn_ptr(fn_iso_true_0);
+
+		tmp->fn_ptr = s_fn_ptr;
 	}
 
 	cell *src = p1, *dst = tmp+(prefix?1:0);
 
-	for (pl_idx_t i = 0; i < p1->nbr_cells; i++, dst++, src++) {
-		*dst = *src;
-		share_cell(src);
+	for (pl_idx_t i = 0; i < p1->nbr_cells; i++, dst++) {
+		*dst = *src++;
+		share_cell(dst);
 
-		if (!is_var(src) || is_ref(src))
-			continue;
-
-		dst->flags |= FLAG_VAR_REF;
-		dst->var_ctx = q->st.curr_frame;
+		if (is_var(dst) && !is_ref(dst)) {
+			dst->flags |= FLAG_VAR_REF;
+			dst->var_ctx = q->st.curr_frame;
+		}
 	}
 
 	return tmp;
