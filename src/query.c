@@ -1597,16 +1597,7 @@ bool start(query *q)
 
 			Trace(q, save_cell, save_ctx, EXIT);
 			proceed(q);
-		} else if (is_iso_list(q->st.curr_cell)) {
-			if (consultall(q, q->st.curr_cell, q->st.curr_frame) != true) {
-				q->retry = QUERY_RETRY;
-				q->tot_backtracks++;
-				continue;
-			}
-
-			Trace(q, save_cell, save_ctx, EXIT);
-			proceed(q);
-		} else {
+		} else if (!is_iso_list(q->st.curr_cell)) {
 			if (!match_head(q) && !q->is_oom) {
 				q->retry = QUERY_RETRY;
 				q->tot_backtracks++;
@@ -1615,8 +1606,16 @@ bool start(query *q)
 
 			if (q->run_hook && !q->in_hook)
 				do_post_unification_hook(q, false);
-
+		} else {
 			//Trace(q, save_cell, save_ctx, EXIT);
+			if (consultall(q, q->st.curr_cell, q->st.curr_frame) != true) {
+				q->retry = QUERY_RETRY;
+				q->tot_backtracks++;
+				continue;
+			}
+
+			Trace(q, save_cell, save_ctx, EXIT);
+			proceed(q);
 		}
 
 		q->run_hook = false;
