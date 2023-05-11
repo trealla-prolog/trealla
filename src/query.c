@@ -1508,19 +1508,10 @@ bool start(query *q)
 
 	while (!done && !q->error) {
 		if (g_tpl_interrupt) {
-			int ok = check_interrupt(q);
-
-			if (!q->st.curr_cell)
-				break;
-
-			switch (ok) {
-				case 1:
-					return true;
-				case -1:
-					q->retry = true;
-					continue;
-				default:
-					continue;
+			switch (check_interrupt(q)) {
+				case 1: return true;
+				case -1: q->retry = true; continue;
+				default: continue;
 			}
 		}
 
