@@ -7905,8 +7905,7 @@ static void load_ops(query *q)
 
 builtins g_iso_bifs[] =
 {
-	//{",", 2, fn_iso_conjunction_2, ":callable,:callable", true, false, BLAH},
-	{",", 2, NULL, ":callable,:callable", true, false, BLAH},
+	{",", 2, fn_iso_conjunction_2, ":callable,:callable", true, false, BLAH},
 	{";", 2, fn_iso_disjunction_2, ":callable,:callable", true, false, BLAH},
 	{"!", 0, fn_iso_cut_0, NULL, true, false, BLAH},
 	{":", 2, fn_iso_invoke_2, "+atom,:callable", true, false, BLAH},
