@@ -1634,6 +1634,9 @@ module *load_text(module *m, const char *src, const char *filename)
 static bool unload_realfile(module *m, const char *filename)
 {
 	for (predicate *pr = m->head; pr; pr = pr->next) {
+		if (pr->is_multifile || pr->is_dynamic)
+			continue;
+
 		for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
 			if (dbe->cl.dgen_erased)
 				continue;
