@@ -391,7 +391,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx_t key_ctx)
 
 		q->st.curr_dbe = pr->head;
 
-		if (!key->arity || pr->is_multifile)
+		if (!key->arity || pr->is_multifile || pr->is_dynamic)
 			return true;
 
 		setup_key(q);
