@@ -1836,14 +1836,21 @@ static bool fn_iso_univ_2(query *q)
 		cell *save_p2 = p2;
 		LIST_HANDLER(p2);
 
+		// Because we will reset the heap pointer later we have
+		// to undo what the deep_clone_to_heap did above...
+
+		if (is_string(p2))
+			unshare_cell(p2);
+
 		while (is_list(p2)) {
 			cell *h = LIST_HEAD(p2);
+
+			if (is_cstring(h) && is_string(save_p2))
+				convert_to_literal(q->st.m, h);
+
 			cell *tmp2 = alloc_on_tmp(q, h->nbr_cells);
 			check_heap_error(tmp2);
 			copy_cells(tmp2, h, h->nbr_cells);
-
-			if (is_cstring(tmp2) && is_string(save_p2))
-				convert_to_literal(q->st.m, tmp2);
 
 			p2 = LIST_TAIL(p2);
 			arity++;
