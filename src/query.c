@@ -1551,6 +1551,12 @@ bool start(query *q)
 		if (is_builtin(q->st.curr_cell)) {
 			bool status;
 
+			if (!q->st.curr_cell->fn_ptr) {					// NO-OP
+				q->tot_goals--;
+				q->st.curr_cell++;
+				continue;
+			}
+
 #if USE_FFI
 			if (q->st.curr_cell->fn_ptr->ffi) {
 				if (q->st.curr_cell->fn_ptr->evaluable)
