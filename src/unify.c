@@ -872,10 +872,16 @@ bool do_post_unification_hook(query *q, bool is_builtin)
 	cell *tmp = alloc_on_heap(q, 3);
 	check_heap_error(tmp);
 	// Needed for follow() to work
-	*tmp = (cell){0};
-	tmp[0].tag = TAG_EMPTY;
+	tmp[0].tag = TAG_INTERNED;
+	tmp[0].arity = 0;
 	tmp[0].nbr_cells = 1;
 	tmp[0].flags = FLAG_BUILTIN;
+	static builtins *s_fn_ptr = NULL;
+
+	if (!s_fn_ptr)
+		s_fn_ptr = get_fn_ptr(fn_iso_true_0);
+
+	tmp[0].fn_ptr = s_fn_ptr;
 
 	tmp[1].tag = TAG_INTERNED;
 	tmp[1].nbr_cells = 1;

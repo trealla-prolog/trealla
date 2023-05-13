@@ -129,6 +129,8 @@ bool fn_iso_bagof_3(query *q);
 
 cell *convert_to_list(query *q, cell *c, pl_idx_t nbr_cells);
 
+builtins *get_fn_ptr(void *fn);
+
 #define FEOF(str) feof(str->fp) && !str->ungetch
 
 #ifdef _WIN32
