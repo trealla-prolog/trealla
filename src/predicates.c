@@ -1842,10 +1842,8 @@ static bool fn_iso_univ_2(query *q)
 			check_heap_error(tmp2);
 			copy_cells(tmp2, h, h->nbr_cells);
 
-			if (is_cstring(tmp2) && is_string(save_p2)) {
-				share_cell(tmp2);
+			if (is_cstring(tmp2) && is_string(save_p2))
 				convert_to_literal(q->st.m, tmp2);
-			}
 
 			p2 = LIST_TAIL(p2);
 			arity++;
@@ -1861,10 +1859,8 @@ static bool fn_iso_univ_2(query *q)
 		cell *tmp2 = get_tmp_heap(q, 0);
 		pl_idx_t nbr_cells = tmp_heap_used(q);
 
-		if (is_cstring(tmp2) && !is_string(save_p2)) {
-			share_cell(tmp2);
+		if (is_cstring(tmp2) && !is_string(save_p2))
 			convert_to_literal(q->st.m, tmp2);
-		}
 
 		if (!is_interned(tmp2) && arity)
 			return throw_error(q, tmp2, q->st.curr_frame, "type_error", "atom");
