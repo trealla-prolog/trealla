@@ -743,7 +743,7 @@ static void share_predicate(query *q, predicate *pr)
 	pr->ref_cnt++;
 }
 
-static void unshare_predicate(query *q, predicate *pr)
+void unshare_predicate(query *q, predicate *pr)
 {
 	if (!pr)
 		return;

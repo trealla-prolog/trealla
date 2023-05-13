@@ -2285,6 +2285,16 @@ static bool do_abolish(query *q, cell *c_orig, cell *c, bool hard)
 	for (db_entry *dbe = pr->head; dbe; dbe = dbe->next)
 		retract_from_db(dbe);
 
+	if (!pr->ref_cnt)
+		pr->ref_cnt++;
+
+	while (pr->dirty_list) {
+		db_entry *dbe = pr->dirty_list;
+		pr->dirty_list = dbe->dirty;
+		dbe->dirty = q->dirty_list;
+		q->dirty_list = dbe;
+	}
+
 	purge_predicate_dirty_list(q, pr);
 	map_destroy(pr->idx2);
 	map_destroy(pr->idx);
