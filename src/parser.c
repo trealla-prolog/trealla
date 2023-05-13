@@ -1387,9 +1387,9 @@ static bool dcg_expansion(parser *p)
 	query *q = query_create(p->m, false);
 	check_error(q);
 
-	cell tmp[1+p->cl->cells->nbr_cells+1+1];
-	make_struct(tmp, index_from_pool(p->pl, "dcg_translate"), 0, 2, p->cl->cells->nbr_cells+1);
-	copy_cells(tmp+1, p->cl->cells, p->cl->cells->nbr_cells);
+	cell *tmp = alloc_on_heap(q, 1+p->cl->cells->nbr_cells+1+1);
+	make_struct(tmp, index_from_pool(p->pl, "dcg_translate"), NULL, 2, p->cl->cells->nbr_cells+1);
+	safe_copy_cells(tmp+1, p->cl->cells, p->cl->cells->nbr_cells);
 	make_var(tmp+1+p->cl->cells->nbr_cells, g_anon_s, p->cl->nbr_vars);
 	make_end(tmp+1+p->cl->cells->nbr_cells+1);
 	execute(q, tmp, p->cl->nbr_vars+1);
@@ -1397,15 +1397,15 @@ static bool dcg_expansion(parser *p)
 	cell *c = deref(q, &tmp[1+p->cl->cells->nbr_cells], 0);
 	char *src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
 	strcat(src, ".");
+	query_destroy(q);
 
 	if (!src) {
-		query_destroy(q);
 		p->error = true;
 		return false;
 	}
 
 	parser *p2 = parser_create(p->m);
-	check_error(p2, query_destroy(q));
+	check_error(p2);
 	p2->srcptr = src;
 	tokenize(p2, false, false);
 	//xref_rule(p2->m, p2->cl, NULL);
@@ -1416,9 +1416,7 @@ static bool dcg_expansion(parser *p)
 	p->cl = p2->cl;					// Take the completed clause
 	p->nbr_vars = p2->nbr_vars;
 	p2->cl = NULL;
-
 	parser_destroy(p2);
-	query_destroy(q);
 	return true;
 }
 
