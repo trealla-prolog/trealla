@@ -681,9 +681,17 @@ cell *clone_to_heap(query *q, bool prefix, cell *p1, unsigned extras)
 
 	if (prefix) {
 		// Needed for follow() to work
-		init_cell(tmp);
+		tmp->tag = TAG_INTERNED;
+		tmp->arity = 0;
+		tmp->nbr_cells = 1;
 		tmp->flags = FLAG_BUILTIN;
-		tmp->fn_ptr = NULL;
+
+		static builtins *s_fn_ptr = NULL;
+
+		if (!s_fn_ptr)
+			s_fn_ptr = get_fn_ptr(fn_iso_true_0);
+
+		tmp->fn_ptr = s_fn_ptr;
 	}
 
 	cell *src = p1, *dst = tmp+(prefix?1:0);
