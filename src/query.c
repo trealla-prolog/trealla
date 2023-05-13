@@ -1256,7 +1256,13 @@ bool match_rule(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract
 				cell tmp = (cell){0};
 				tmp.tag = TAG_INTERNED;
 				tmp.nbr_cells = 1;
-				tmp.val_off = g_true_s;
+				tmp.flags = FLAG_BUILTIN;
+				static builtins *s_fn_ptr = NULL;
+
+				if (!s_fn_ptr)
+					s_fn_ptr = get_fn_ptr(fn_iso_true_0);
+
+				tmp.fn_ptr = s_fn_ptr;
 				ok = unify(q, p1_body, p1_body_ctx, &tmp, q->st.curr_frame);
 			} else
 				ok = true;
