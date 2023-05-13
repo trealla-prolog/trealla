@@ -902,7 +902,7 @@ bool set_op(module *m, const char *name, unsigned specifier, unsigned priority)
 	//printf("*** %s set_op %s / %u / %u\n", m->name, name, specifier, priority);
 	miter *iter = map_find_key(m->ops, name);
 	op_table *ptr;
-	m->loaded_ops = false;
+	m->did_set_op = true;
 
 	while (map_next_key(iter, (void**)&ptr)) {
 		if (IS_INFIX(ptr->specifier) != IS_INFIX(specifier))

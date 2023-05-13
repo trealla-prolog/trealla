@@ -7834,7 +7834,7 @@ static void load_flags(query *q)
 
 static void load_ops(query *q)
 {
-	if (q->st.m->loaded_ops)
+	if (!q->st.m->did_set_op)
 		return;
 
 	cell tmp;
@@ -7844,7 +7844,7 @@ static void load_ops(query *q)
 	if (do_abolish(q, &tmp, &tmp, false) != true)
 		return;
 
-	q->st.m->loaded_ops = true;
+	q->st.m->did_set_op = false;
 	SB_alloc(pr, 1024*8);
 	miter *iter = map_first(q->st.m->ops);
 	op_table *ptr;
