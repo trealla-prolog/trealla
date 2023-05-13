@@ -820,11 +820,6 @@ current_op(A, _, _) :- nonvar(A),
 current_op(A, _, _) :- nonvar(A),
 	\+ (A =< 1200),
 	!, throw(error(domain_error(operator_priority, A), current_op/3)).
-current_op(A, B, C) :- nonvar(A), nonvar(B), nonvar(C),
-	!,
-	'$load_ops',
-	'$current_op'(C, B, A),
-	!.
 current_op(A, B, C) :-
 	'$load_ops',
 	'$current_op'(C, B, A).

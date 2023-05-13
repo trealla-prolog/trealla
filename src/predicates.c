@@ -7835,7 +7835,7 @@ static void load_ops(query *q)
 	op_table *ptr;
 
 	while (map_next(iter, (void**)&ptr)) {
-		char specifier[80], name[256];
+		char specifier[80], name[1024];
 
 		if (!ptr->specifier)
 			continue;
@@ -7862,21 +7862,18 @@ static void load_ops(query *q)
 		else
 			snprintf(name, sizeof(name), "%s", ptr->name);
 
-		char tmpbuf[1024];
-
-		if (quote)
-			snprintf(tmpbuf, sizeof(tmpbuf), "'$current_op'( '%s', %s, %u).\n", name, specifier, ptr->priority);
-		else
-			snprintf(tmpbuf, sizeof(tmpbuf), "'$current_op'( (%s), %s, %u).\n", name, specifier, ptr->priority);
-
-		SB_strcat(pr, tmpbuf);
+		if (quote) {
+			SB_sprintf(pr, "'$current_op'( '%s', %s, %u).\n", name, specifier, ptr->priority);
+		} else {
+			SB_sprintf(pr, "'$current_op'( (%s), %s, %u).\n", name, specifier, ptr->priority);
+		}
 	}
 
 	map_done(iter);
 	iter = map_first(q->st.m->defops);
 
 	while (map_next(iter, (void**)&ptr)) {
-		char specifier[80], name[256];
+		char specifier[80], name[1024];
 
 		if (!ptr->specifier)
 			continue;
@@ -7897,11 +7894,7 @@ static void load_ops(query *q)
 			strcpy(specifier, "xfx");
 
 		formatted(name, sizeof(name), ptr->name, strlen(ptr->name), false, false);
-		char tmpbuf[1024];
-
-		snprintf(tmpbuf, sizeof(tmpbuf), "'$current_op'('%s', %s, %u).\n",
-			name, specifier, ptr->priority);
-		SB_strcat(pr, tmpbuf);
+		SB_sprintf(pr, "'$current_op'('%s', %s, %u).\n", name, specifier, ptr->priority);
 	}
 
 	parser *p = parser_create(q->st.m);
@@ -7909,6 +7902,7 @@ static void load_ops(query *q)
 	p->consulting = true;
 	tokenize(p, false, false);
 	parser_destroy(p);
+	//printf("*** %s load_ops %s\n", q->st.m->name, SB_cstr(pr));
 	SB_free(pr);
 }
 
