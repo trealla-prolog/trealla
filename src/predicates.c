@@ -1848,6 +1848,7 @@ static bool fn_iso_univ_2(query *q)
 			if (is_cstring(h) && is_string(save_p2))
 				convert_to_literal(q->st.m, h);
 
+			unshare_cell(h);
 			cell *tmp2 = alloc_on_tmp(q, h->nbr_cells);
 			check_heap_error(tmp2);
 			copy_cells(tmp2, h, h->nbr_cells);
