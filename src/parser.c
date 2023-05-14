@@ -1392,8 +1392,8 @@ static bool dcg_expansion(parser *p)
 	make_var(tmp+1+p->cl->cells->nbr_cells, g_anon_s, p->cl->nbr_vars);
 	make_end(tmp+1+p->cl->cells->nbr_cells+1);
 	execute(q, tmp, p->cl->nbr_vars+1);
-
-	cell *c = deref(q, &tmp[1+p->cl->cells->nbr_cells], 0);
+	cell *arg2 = tmp+1+p->cl->cells->nbr_cells;
+	cell *c = deref(q, arg2, 0);
 	char *src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
 	strcat(src, ".");
 	query_destroy(q);
