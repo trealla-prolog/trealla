@@ -357,9 +357,10 @@ bool has_next_key(query *q)
 	// Attempt look-ahead on 1st arg...
 
 	cl = &next->cl;
+	const cell *arg1 = cl->cells + 1;
 
 	if (q->st.arg1_is_ground && !next->next && q->pl->opt
-		&& (q->st.key->arity == 1) && is_atomic(cl->cells+1)) {
+		&& (q->st.key->arity == 1) && is_atomic(arg1)) {
 		if (compare(q, q->st.key, q->st.curr_frame, cl->cells, q->st.curr_frame)) {
 			return false;
 		}
