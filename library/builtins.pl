@@ -42,6 +42,18 @@ subsumes_term(G, S) :-
 
 :- help(subsumes_term(+term,+term), [iso(true)]).
 
+% definition taken from the SWI-Prolog documentation
+variant(Term1, Term2) :-
+	% avoid trouble in any shared variables
+	copy_term(Term1, Term1Copy),
+	copy_term(Term2, Term2Copy),
+	% ground and compare the term copies
+	numbervars(Term1Copy, 0, N),
+	numbervars(Term2Copy, 0, N),
+	Term1Copy == Term2Copy.
+
+:- help(variant(+term,+term), [iso(false)]).
+
 forall(Cond, Action) :-
 	\+ (Cond, \+ Action).
 
