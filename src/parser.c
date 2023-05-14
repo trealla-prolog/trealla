@@ -125,8 +125,7 @@ void clear_rule(clause *cl)
 	for (pl_idx_t i = 0; i < cl->cidx; i++) {
 		cell *c = cl->cells + i;
 		unshare_cell(c);
-		*c = (cell){0};
-		//c->tag = TAG_EMPTY;
+		init_cell(c);
 	}
 
 	cl->cidx = 0;

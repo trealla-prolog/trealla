@@ -1253,10 +1253,12 @@ bool match_rule(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract
 			if (needs_true) {
 				p1_body = deref(q, p1_body, p1_ctx);
 				pl_idx_t p1_body_ctx = q->latest_ctx;
-				cell tmp = (cell){0};
+				cell tmp;
 				tmp.tag = TAG_INTERNED;
+				tmp.arity = 0;
 				tmp.nbr_cells = 1;
 				tmp.flags = FLAG_BUILTIN;
+				tmp.val_off = g_true_s;
 				static builtins *s_fn_ptr = NULL;
 
 				if (!s_fn_ptr)
