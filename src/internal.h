@@ -776,7 +776,7 @@ struct module_ {
 	FILE *fp;
 	map *index, *nbs, *ops, *defops;
 	loaded_file *loaded_files;
-	unsigned id, idx_used, indexing_threshold, arity, max_depth;
+	unsigned id, idx_used, indexing_threshold, arity;
 	int if_depth;
 	prolog_flags flags;
 	bool ifs_blocked[MAX_IF_DEPTH];
