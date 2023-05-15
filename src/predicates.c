@@ -1836,19 +1836,12 @@ static bool fn_iso_univ_2(query *q)
 		cell *save_p2 = p2;
 		LIST_HANDLER(p2);
 
-		// Because we will reset the heap pointer later we have
-		// to undo what the deep_clone_to_heap did above...
-
-		if (is_string(p2))
-			unshare_cell(p2);
-
 		while (is_list(p2)) {
 			cell *h = LIST_HEAD(p2);
 
 			if (is_cstring(h) && is_string(save_p2))
 				convert_to_literal(q->st.m, h);
 
-			unshare_cell(h);
 			cell *tmp2 = alloc_on_tmp(q, h->nbr_cells);
 			check_heap_error(tmp2);
 			copy_cells(tmp2, h, h->nbr_cells);
@@ -1884,7 +1877,6 @@ static bool fn_iso_univ_2(query *q)
 		if (arity > MAX_ARITY)
 			return throw_error(q, tmp2, q->st.curr_frame, "representation_error", "max_arity");
 
-		q->st.hp = save_hp;
 		check_heap_error(tmp = alloc_on_heap(q, nbr_cells));
 		safe_copy_cells(tmp, tmp2, nbr_cells);
 		tmp->nbr_cells = nbr_cells;
