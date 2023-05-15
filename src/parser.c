@@ -723,36 +723,45 @@ static void directives(parser *p, cell *d)
 	}
 
 	if ((!strcmp(dirname, "use_module") || !strcmp(dirname, "autoload") || !strcmp(dirname, "reexport")) && (c->arity >= 1)) {
-		if (!is_callable(p1)) return;
+		if (!is_callable(p1))
+			return;
+
 		c->arity == 1 ? do_use_module_1(p->m, c) : do_use_module_2(p->m, c);
 		return;
 	}
 
 #if USE_FFI
 	if (!strcmp(dirname, "foreign_struct") && (c->arity == 2)) {
-		if (!is_iso_atom(p1)) { p->error = true; return; }
+		if (!is_iso_atom(p1)) {
+			p->error = true;
+			return;
+		}
+
 		do_foreign_struct(p->m, c);
 		return;
 	}
 
 	if (!strcmp(dirname, "use_foreign_module") && (c->arity == 2)) {
-		if (!is_atom(p1)) { p->error = true; return; }
+		if (!is_atom(p1)) {
+			p->error = true;
+			return;
+		}
+
 		do_use_foreign_module(p->m, c);
 		return;
 	}
 #endif
 
 	if (!strcmp(dirname, "meta_predicate") && (c->arity == 1)) {
-		if (!is_structure(p1)) return;
+		if (!is_structure(p1))
+			return;
 	}
 
 	if (!strcmp(dirname, "set_prolog_flag") && (c->arity == 2)) {
 		cell *p2 = c + 2;
 
-		if (!strcmp(C_STR(p, p1), "indexing_threshold") && is_smallint(p2))
-			p->m->indexing_threshold = get_smallint(p2);
-
-		if (!is_interned(p2)) return;
+		if (!is_interned(p2))
+			return;
 
 		if (!strcmp(C_STR(p, p1), "double_quotes")) {
 			if (!strcmp(C_STR(p, p2), "atom")) {
@@ -796,9 +805,15 @@ static void directives(parser *p, cell *d)
 
 		if (is_interned(h) && (!strcmp(C_STR(p, h), "/") || !strcmp(C_STR(p, h), "//")) && (h->arity == 2)) {
 			cell *c_name = h + 1;
-			if (!is_atom(c_name)) continue;
+
+			if (!is_atom(c_name))
+				continue;
+
 			cell *c_arity = h + 2;
-			if (!is_integer(c_arity)) continue;
+
+			if (!is_integer(c_arity))
+				continue;
+
 			unsigned arity = get_smallint(c_arity);
 
 			if (!strcmp(C_STR(p, h), "//"))
@@ -861,7 +876,10 @@ static void directives(parser *p, cell *d)
 
 		if (!strcmp(C_STR(p, p1), ":") && (p1->arity == 2)) {
 			cell *c_mod = p1 + 1;
-			if (!is_atom(c_mod)) return;
+
+			if (!is_atom(c_mod))
+				return;
+
 			m = find_module(p->m->pl, C_STR(p, c_mod));
 
 			if (!m)
@@ -872,9 +890,15 @@ static void directives(parser *p, cell *d)
 
 		if (!strcmp(C_STR(p, c_id), "/") && (p1->arity == 2)) {
 			cell *c_name = c_id + 1;
-			if (!is_atom(c_name)) return;
+
+			if (!is_atom(c_name))
+				return;
+
 			cell *c_arity = c_id + 2;
-			if (!is_integer(c_arity)) return;
+
+			if (!is_integer(c_arity))
+				return;
+
 			unsigned arity = get_smallint(c_arity);
 			cell tmp = *c_name;
 			tmp.arity = arity;

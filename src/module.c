@@ -1350,7 +1350,7 @@ static void assert_commit(module *m, db_entry *dbe, predicate *pr, bool append)
 	if (!pr->idx) {
 		bool sys = C_STR(m, &pr->key)[0] == '$';
 
-		if (pr->cnt < (!pr->is_dynamic || sys ? m->indexing_threshold : 50))
+		if (pr->cnt < 1500)
 			return;
 
 		pr->idx = map_create(index_cmpkey, NULL, m);
@@ -2012,7 +2012,6 @@ module *module_create(prolog *pl, const char *name)
 	m->id = ++pl->next_mod_id;
 	m->defops = map_create((void*)fake_strcmp, NULL, NULL);
 	map_allow_dups(m->defops, false);
-	m->indexing_threshold = 1500;
 	pl->modmap[m->id] = m;
 
 	if (strcmp(name, "system")) {
