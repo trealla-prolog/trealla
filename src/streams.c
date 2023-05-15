@@ -1754,9 +1754,7 @@ static bool fn_iso_read_1(query *q)
 		return throw_error(q, &tmp, q->st.curr_frame, "permission_error", "input,binary_stream");
 	}
 
-	cell tmp;
-	make_atom(&tmp, g_nil_s);
-	return do_read_term(q, str, p1, p1_ctx, &tmp, q->st.curr_frame, NULL);
+	return do_read_term(q, str, p1, p1_ctx, make_nil(), q->st.curr_frame, NULL);
 }
 
 static bool fn_iso_read_2(query *q)
@@ -1776,9 +1774,7 @@ static bool fn_iso_read_2(query *q)
 		return throw_error(q, &tmp, q->st.curr_frame, "permission_error", "input,binary_stream");
 	}
 
-	cell tmp;
-	make_atom(&tmp, g_nil_s);
-	return do_read_term(q, str, p1, p1_ctx, &tmp, q->st.curr_frame, NULL);
+	return do_read_term(q, str, p1, p1_ctx, make_nil(), q->st.curr_frame, NULL);
 }
 
 static bool parse_read_params(query *q, stream *str, cell *c, pl_idx_t c_ctx, cell **vars, pl_idx_t *vars_ctx, cell **varnames, pl_idx_t *varnames_ctx, cell **sings, pl_idx_t *sings_ctx)
@@ -1937,23 +1933,14 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx_t p1_ctx, cell *p2, pl
 				if (str->eof_action == eof_action_reset)
 					clearerr(str->fp);
 
-				if (vars) {
-					cell tmp;
-					make_atom(&tmp, g_nil_s);
-					unify(q, vars, vars_ctx, &tmp, q->st.curr_frame);
-				}
+				if (vars)
+					unify(q, vars, vars_ctx, make_nil(), q->st.curr_frame);
 
-				if (varnames) {
-					cell tmp;
-					make_atom(&tmp, g_nil_s);
-					unify(q, varnames, varnames_ctx, &tmp, q->st.curr_frame);
-				}
+				if (varnames)
+					unify(q, varnames, varnames_ctx, make_nil(), q->st.curr_frame);
 
-				if (sings) {
-					cell tmp;
-					make_atom(&tmp, g_nil_s);
-					unify(q, sings, sings_ctx, &tmp, q->st.curr_frame);
-				}
+				if (sings)
+					unify(q, sings, sings_ctx, make_nil(), q->st.curr_frame);
 
 				cell *p22 = p2;
 				pl_idx_t p22_ctx = p2_ctx;
@@ -2037,10 +2024,8 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx_t p1_ctx, cell *p2, pl
 			p->did_getline = false;
 		}
 
-		cell tmp;
-		make_atom(&tmp, g_nil_s);
 		p->do_read_term = false;
-		return throw_error(q, &tmp, q->st.curr_frame, "syntax_error", p->error_desc?p->error_desc:"read_term");
+		return throw_error(q, make_nil(), q->st.curr_frame, "syntax_error", p->error_desc?p->error_desc:"read_term");
 	}
 
 	p->do_read_term = false;
@@ -2136,11 +2121,8 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx_t p1_ctx, cell *p2, pl
 			safe_copy_cells(tmp, save, idx);
 			tmp->nbr_cells = idx;
 			unify(q, vars, vars_ctx, tmp, q->st.curr_frame);
-		} else {
-			cell tmp;
-			make_atom(&tmp, g_nil_s);
-			unify(q, vars, vars_ctx, &tmp, q->st.curr_frame);
-		}
+		} else
+			unify(q, vars, vars_ctx, make_nil(), q->st.curr_frame);
 	}
 
 	if (varnames) {
@@ -2192,11 +2174,8 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx_t p1_ctx, cell *p2, pl
 			safe_copy_cells(tmp, save, idx);
 			tmp->nbr_cells = idx;
 			unify(q, varnames, varnames_ctx, tmp, q->st.curr_frame);
-		} else {
-			cell tmp;
-			make_atom(&tmp, g_nil_s);
-			unify(q, varnames, varnames_ctx, &tmp, q->st.curr_frame);
-		}
+		} else
+			unify(q, varnames, varnames_ctx, make_nil(), q->st.curr_frame);
 	}
 
 	if (sings) {
@@ -2254,11 +2233,8 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx_t p1_ctx, cell *p2, pl
 			safe_copy_cells(tmp, save, idx);
 			tmp->nbr_cells = idx;
 			unify(q, sings, sings_ctx, tmp, q->st.curr_frame);
-		} else {
-			cell tmp;
-			make_atom(&tmp, g_nil_s);
-			unify(q, sings, sings_ctx, &tmp, q->st.curr_frame);
-		}
+		} else
+			unify(q, sings, sings_ctx, make_nil(), q->st.curr_frame);
 	}
 
 	cell *tmp = alloc_on_heap(q, p->cl->cidx-1);
@@ -4882,11 +4858,9 @@ static bool fn_getfile_2(query *q)
 	free(line);
 	fclose(fp);
 
-	if (!in_list) {
-		cell tmp;
-		make_atom(&tmp, g_nil_s);
-		unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
-	} else {
+	if (!in_list)
+		unify(q, p2, p2_ctx, make_nil(), q->st.curr_frame);
+	else {
 		cell *l = end_list(q);
 		check_heap_error(l);
 		unify(q, p2, p2_ctx, l, q->st.curr_frame);
@@ -4988,11 +4962,9 @@ static bool fn_getfile_3(query *q)
 	free(line);
 	fclose(fp);
 
-	if (!in_list) {
-		cell tmp;
-		make_atom(&tmp, g_nil_s);
-		unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
-	} else {
+	if (!in_list)
+		unify(q, p2, p2_ctx, make_nil(), q->st.curr_frame);
+	else {
 		cell *l = end_list(q);
 		check_heap_error(l);
 		unify(q, p2, p2_ctx, l, q->st.curr_frame);
@@ -5036,11 +5008,9 @@ static bool fn_getlines_1(query *q)
 
 	free(line);
 
-	if (!in_list) {
-		cell tmp;
-		make_atom(&tmp, g_nil_s);
-		unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-	} else {
+	if (!in_list)
+		unify(q, p1, p1_ctx, make_nil(), q->st.curr_frame);
+	else {
 		cell *l = end_list(q);
 		check_heap_error(l);
 		unify(q, p1, p1_ctx, l, q->st.curr_frame);
@@ -5085,11 +5055,9 @@ static bool fn_getlines_2(query *q)
 
 	free(line);
 
-	if (!in_list) {
-		cell tmp;
-		make_atom(&tmp, g_nil_s);
-		unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-	} else {
+	if (!in_list)
+		unify(q, p1, p1_ctx, make_nil(), q->st.curr_frame);
+	else {
 		cell *l = end_list(q);
 		check_heap_error(l);
 		unify(q, p1, p1_ctx, l, q->st.curr_frame);
@@ -5138,11 +5106,9 @@ static bool fn_getlines_3(query *q)
 
 	free(line);
 
-	if (!in_list) {
-		cell tmp;
-		make_atom(&tmp, g_nil_s);
-		unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-	} else {
+	if (!in_list)
+		unify(q, p1, p1_ctx, make_nil(), q->st.curr_frame);
+	else {
 		cell *l = end_list(q);
 		check_heap_error(l);
 		unify(q, p1, p1_ctx, l, q->st.curr_frame);

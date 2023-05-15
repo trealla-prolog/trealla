@@ -59,9 +59,7 @@ bool fn_iso_findall_3(query *q)
 
 	if (!queuen_used(q)) {
 		drop_queuen(q);
-		cell tmp;
-		make_atom(&tmp, g_nil_s);
-		return unify(q, xp3, xp3_ctx, &tmp, q->st.curr_frame);
+		return unify(q, xp3, xp3_ctx, make_nil(), q->st.curr_frame);
 	}
 
 	// Retry takes the queue

@@ -80,6 +80,7 @@ void make_call(query *q, cell *tmp);
 void make_call_return(query *q, cell *tmp, cell *ret);
 void make_end(cell *tmp);
 void make_atom(cell *tmp, pl_idx_t offset);
+cell *make_nil(void);
 void make_smalln(cell *tmp, const char *s, size_t n);
 bool make_cstringn(cell *tmp, const char *s, size_t n);
 bool make_stringn(cell *tmp, const char *s, size_t n);

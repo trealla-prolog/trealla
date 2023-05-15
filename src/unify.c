@@ -797,9 +797,7 @@ bool fn_sys_undo_trail_1(query *q)
 	q->in_hook = true;
 
 	if (q->undo_hi_tp <= q->undo_lo_tp) {
-		cell tmp;
-		make_atom(&tmp, g_nil_s);
-		set_var(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+		set_var(q, p1, p1_ctx, make_nil(), q->st.curr_frame);
 		return true;
 	}
 

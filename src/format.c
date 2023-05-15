@@ -325,11 +325,8 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 			continue;
 		}
 
-		if (!p2 || !is_list(p2)) {
-			cell tmp;
-			make_atom(&tmp, g_nil_s);
-			return throw_error(q, &tmp, q->st.curr_frame, "domain_error", "non_empty_list");
-		}
+		if (!p2 || !is_list(p2))
+			return throw_error(q, make_nil(), q->st.curr_frame, "domain_error", "non_empty_list");
 
 		bool is_var;
 		cell *c = get_next_cell(q, &fmt2, &is_var, &c_ctx);
@@ -337,11 +334,8 @@ bool do_format(query *q, cell *str, pl_idx_t str_ctx, cell *p1, pl_idx_t p1_ctx,
 		if (is_var)
 			return throw_error(q, p2, p2_ctx, "instantiation_error", "atom");
 
-		if (!c) {
-			cell tmp;
-			make_atom(&tmp, g_nil_s);
-			return throw_error(q, &tmp, p2_ctx, "domain_error", "non_empty_list");
-		}
+		if (!c)
+			return throw_error(q, make_nil(), p2_ctx, "domain_error", "non_empty_list");
 
 		if (ch == 'i')
 			continue;
