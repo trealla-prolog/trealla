@@ -964,6 +964,11 @@ static bool unify_reals(query *q, cell *p1, cell *p2)
 	return false;
 }
 
+static bool unify_rationals(query *q, cell *p1, cell *p2)
+{
+	return false;
+}
+
 static bool unify_literals(query *q, cell *p1, cell *p2)
 {
 	if (is_interned(p2))
@@ -999,6 +1004,7 @@ static const struct dispatch g_disp[] =
 	{TAG_CSTR, unify_cstrings},
 	{TAG_INTEGER, unify_integers},
 	{TAG_DOUBLE, unify_reals},
+	{TAG_RATIONAL, unify_rationals},
 	{0}
 };
 

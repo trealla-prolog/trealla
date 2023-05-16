@@ -98,6 +98,7 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define is_basic_integer(c) ((c)->tag == TAG_INTEGER)
 #define is_integer(c) (((c)->tag == TAG_INTEGER) && !((c)->flags & FLAG_INT_STREAM))
 #define is_float(c) ((c)->tag == TAG_DOUBLE)
+#define is_rational(c) ((c)->tag == TAG_RATIONAL)
 #define is_indirect(c) ((c)->tag == TAG_PTR)
 #define is_blob(c) ((c)->tag == TAG_BLOB)
 #define is_end(c) ((c)->tag == TAG_END)
@@ -166,7 +167,7 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define is_callable(c) (is_interned(c) || (is_cstring(c) && !is_string(c)))
 #define is_structure(c) (is_interned(c) && (c)->arity)
 #define is_compound(c) (is_structure(c) || is_string(c))
-#define is_number(c) (is_integer(c) || is_float(c))
+#define is_number(c) (is_integer(c) || is_float(c) || is_rational(c))
 #define is_atomic(c) (is_atom(c) || is_number(c))
 #define is_nonvar(c) !is_var(c)
 
@@ -247,9 +248,10 @@ enum {
 	TAG_CSTR=3,
 	TAG_INTEGER=4,
 	TAG_DOUBLE=5,
-	TAG_PTR=6,
-	TAG_BLOB=7,
-	TAG_END=8
+	TAG_RATIONAL=6,
+	TAG_PTR=7,
+	TAG_BLOB=8,
+	TAG_END=9
 };
 
 enum {
@@ -365,6 +367,11 @@ struct cell_ {
 		bigint *val_bigint;
 		blob *val_blob;
 		uint16_t priority;				// used in parsing operators
+
+		struct {
+			bigint *val_num;
+			bigint *val_den;
+		};
 
 		struct {
 			uint8_t	chr_len;
