@@ -4951,7 +4951,7 @@ static bool fn_must_be_2(query *q)
 	else if (!strcmp(src, "nonvar") && is_var(p1))
 		return throw_error(q, p1, p1_ctx, "instantiation_error", "instantiated");
 
-	if (strcmp(src, "ground") && strcmp(src, "acyclic") && is_var(p1))
+	if (strcmp(src, "var") && strcmp(src, "ground") && strcmp(src, "acyclic") && is_var(p1))
 		return throw_error(q, p1, p1_ctx, "instantiation_error", "not_sufficiently_instantiated");
 
 	if (!strcmp(src, "callable")) {
@@ -7419,6 +7419,26 @@ static bool fn_sre_subst_4(query *q)
 	return ok;
 }
 
+static bool fn_gensym_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,var);
+	SB(pr);
+	q->pl->gensym++;
+	SB_sprintf(pr, "%s%llu", C_STR(q, p1), (unsigned long long)q->pl->gensym);
+	cell tmp;
+	make_cstring(&tmp, SB_cstr(pr));
+	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
+	return ok;
+}
+
+static bool fn_reset_gensym_1(query *q)
+{
+	q->pl->gensym = 0;
+	return true;
+}
+
 static bool fn_parse_csv_line_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -8070,6 +8090,8 @@ builtins g_other_bifs[] =
 	{"kv_get", 3, fn_kv_get_3, "+atomic,-term,+list", false, false, BLAH},
 	{"between", 3, fn_between_3, "+integer,+integer,-integer", false, false, BLAH},
 	{"string_length", 2, fn_string_length_2, "+string,?integer", false, false, BLAH},
+	{"gensym", 2, fn_gensym_2, "+atom,-atom", false, false, BLAH},
+	{"reset_gensym", 1, fn_reset_gensym_1, "+integer", false, false, BLAH},
 
 	{"must_be", 4, fn_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"can_be", 4, fn_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},

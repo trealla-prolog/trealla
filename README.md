@@ -365,6 +365,9 @@ Non-standard predicates
 	dif/2						# auto-loaded from library(dif)
 	call_residue_vars/2
 
+	gensym/2					# gensym(+atom,-atom)
+	reset_gensym/1				# reset_gensym(+atom)
+
 	must_be/4                   # must_be(+term,+type,+goal,?arg)
 	can_be/4                    # can_be(+term,+type,+goal,?arg)
 	must_be/2                   # must_be(+type,+term)
