@@ -350,14 +350,16 @@ Non-standard predicates
 	bb_delete/2                 # SICStus-compatible
 	bb_update/3                 # SICStus-compatible
 	bb_del/1                    # SICStus-compatible
-
 	bb_b_put/2                  # SICStus-compatible
 	bb_b_del/1                  # SICStus-compatible
 
 	b_getval/2                  # SWI-compatible
 	b_setval/2                  # SWI-compatible
-	b_setval0/2                 # SWI-compatible
 	b_delete/1                  # SWI-compatible
+	nb_getval/2                 # SWI-compatible
+	nb_setval/2                 # SWI-compatible
+	nb_delete/1                 # SWI-compatible
+	nb_current/2                # SWI-compatible
 
 	freeze/2                    # auto-loaded from library(freeze)
 	frozen/2                    # auto-loaded from library(freeze)
