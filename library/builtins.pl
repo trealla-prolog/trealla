@@ -785,14 +785,14 @@ bb_get(K, V) :-
 
 bb_delete(K, V) :-
 	must_be(K, atom, bb_delete/2, _),
-	user_catch(user:retract('$bb_global_key'(K, V), _, fail)),
+	user:catch(user:retract('$bb_global_key'(K, V), _, fail)),
 	!.
 
 :- help(bb_delete(+atom,+term), [iso(false)]).
 
 bb_update(K, O, V) :-
 	must_be(K, atom, bb_update/3, _),
-	user:retract('$bb_global_key'(K, O)),
+	user:catch(user:retract('$bb_global_key'(K, O)), _, true),
 	user:assertz('$bb_global_key'(K, V)),
 	!.
 
