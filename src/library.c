@@ -54,6 +54,8 @@ extern unsigned char library_curl_pl[];
 extern unsigned int library_curl_pl_len;
 extern unsigned char library_concurrent_pl[];
 extern unsigned int library_concurrent_pl_len;
+extern unsigned char library_gensym_pl[];
+extern unsigned int library_gensym_pl_len;
 
 library g_libs[] = {
 	 {"abnf", library_abnf_pl, &library_abnf_pl_len},
@@ -70,6 +72,7 @@ library g_libs[] = {
 	 {"error", library_error_pl, &library_error_pl_len},
 	 {"format", library_format_pl, &library_format_pl_len},
 	 {"freeze", library_freeze_pl, &library_freeze_pl_len},
+	 {"gensym", library_gensym_pl, &library_gensym_pl_len},
 	 {"http", library_http_pl, &library_http_pl_len},
 	 {"json", library_json_pl, &library_json_pl_len},
 	 {"lambda", library_lambda_pl, &library_lambda_pl_len},

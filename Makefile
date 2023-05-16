@@ -102,6 +102,7 @@ LIBOBJECTS +=  \
 	library/error.o \
 	library/format.o \
 	library/freeze.o \
+	library/gensym.o \
 	library/http.o \
 	library/json.o \
 	library/lambda.o \

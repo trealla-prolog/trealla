@@ -7419,7 +7419,7 @@ static bool fn_sre_subst_4(query *q)
 	return ok;
 }
 
-static bool fn_gensym_2(query *q)
+static bool fn_sys_gensym_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,var);
@@ -7433,7 +7433,7 @@ static bool fn_gensym_2(query *q)
 	return ok;
 }
 
-static bool fn_reset_gensym_1(query *q)
+static bool fn_sys_reset_gensym_1(query *q)
 {
 	q->pl->gensym = 0;
 	return true;
@@ -8090,8 +8090,6 @@ builtins g_other_bifs[] =
 	{"kv_get", 3, fn_kv_get_3, "+atomic,-term,+list", false, false, BLAH},
 	{"between", 3, fn_between_3, "+integer,+integer,-integer", false, false, BLAH},
 	{"string_length", 2, fn_string_length_2, "+string,?integer", false, false, BLAH},
-	{"gensym", 2, fn_gensym_2, "+atom,-atom", false, false, BLAH},
-	{"reset_gensym", 1, fn_reset_gensym_1, "+integer", false, false, BLAH},
 
 	{"must_be", 4, fn_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"can_be", 4, fn_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
@@ -8124,6 +8122,8 @@ builtins g_other_bifs[] =
 	{"$list_attributed", 1, fn_sys_list_attributed_1, "-list", false, false, BLAH},
 	{"$dump_keys", 1, fn_sys_dump_keys_1, NULL, false, false, BLAH},
 	{"$skip_max_list", 4, fn_sys_skip_max_list_4, NULL, false, false, BLAH},
+	{"$gensym", 2, fn_sys_gensym_2, "+atom,-atom", false, false, BLAH},
+	{"$reset_gensym", 1, fn_sys_reset_gensym_1, "+integer", false, false, BLAH},
 
 #if USE_OPENSSL
 	{"crypto_data_hash", 3, fn_crypto_data_hash_3, "?string,?string,?list", false, false, BLAH},
