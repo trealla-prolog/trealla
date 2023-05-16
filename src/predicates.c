@@ -7419,26 +7419,6 @@ static bool fn_sre_subst_4(query *q)
 	return ok;
 }
 
-static bool fn_sys_gensym_2(query *q)
-{
-	GET_FIRST_ARG(p1,atom);
-	GET_NEXT_ARG(p2,var);
-	SB(pr);
-	q->pl->gensym++;
-	SB_sprintf(pr, "%s%llu", C_STR(q, p1), (unsigned long long)q->pl->gensym);
-	cell tmp;
-	make_cstring(&tmp, SB_cstr(pr));
-	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
-	unshare_cell(&tmp);
-	return ok;
-}
-
-static bool fn_sys_reset_gensym_1(query *q)
-{
-	q->pl->gensym = 0;
-	return true;
-}
-
 static bool fn_parse_csv_line_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -8122,8 +8102,6 @@ builtins g_other_bifs[] =
 	{"$list_attributed", 1, fn_sys_list_attributed_1, "-list", false, false, BLAH},
 	{"$dump_keys", 1, fn_sys_dump_keys_1, NULL, false, false, BLAH},
 	{"$skip_max_list", 4, fn_sys_skip_max_list_4, NULL, false, false, BLAH},
-	{"$gensym", 2, fn_sys_gensym_2, "+atom,-atom", false, false, BLAH},
-	{"$reset_gensym", 1, fn_sys_reset_gensym_1, "+integer", false, false, BLAH},
 
 #if USE_OPENSSL
 	{"crypto_data_hash", 3, fn_crypto_data_hash_3, "?string,?string,?list", false, false, BLAH},

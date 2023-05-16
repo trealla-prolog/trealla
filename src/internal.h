@@ -809,7 +809,7 @@ struct prolog_ {
 	map *symtab, *biftab, *keyval, *help, *fortab;
 	char *pool;
 	size_t pool_offset, pool_size, tabs_size;
-	uint64_t s_last, s_cnt, seed, ugen, gensym;
+	uint64_t s_last, s_cnt, seed, ugen;
 	unsigned next_mod_id;
 	uint8_t current_input, current_output, current_error;
 	int8_t halt_code, opt;
