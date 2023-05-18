@@ -1876,6 +1876,7 @@ void query_destroy(query *q)
 #endif
 
 	mp_int_clear(&q->tmp_ival);
+	mp_rat_clear(&q->tmp_irat);
 	purge_dirty_list(q);
 	free(q->trails);
 	free(q->choices);
@@ -1901,6 +1902,7 @@ query *query_create(module *m, bool is_task)
 	q->time_cpu_last_started = q->time_cpu_started = cpu_time_in_usec();
 	q->st.prob = 1.0;
 	mp_int_init(&q->tmp_ival);
+	mp_rat_init(&q->tmp_irat);
 
 	// Allocate these now...
 

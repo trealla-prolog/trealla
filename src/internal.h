@@ -46,6 +46,7 @@ typedef uint32_t pl_idx_t;
 #include "cdebug.h"
 #include "stringbuf.h"
 #include "imath/imath.h"
+#include "imath/imrat.h"
 #include "sre/re.h"
 
 #if defined(_WIN32) || defined(__wasi__)
@@ -179,7 +180,7 @@ typedef struct {
 
 typedef struct {
 	int64_t refcnt;
-	mpz_t ival;
+	union { mpz_t ival; mpq_t irat; };
 } bigint;
 
 typedef struct {
@@ -367,11 +368,6 @@ struct cell_ {
 		bigint *val_bigint;
 		blob *val_blob;
 		uint16_t priority;				// used in parsing operators
-
-		struct {
-			bigint *val_num;
-			bigint *val_den;
-		};
 
 		struct {
 			uint8_t	chr_len;
@@ -659,6 +655,7 @@ struct query_ {
 	map *vars;
 	cell accum;
 	mpz_t tmp_ival;
+	mpq_t tmp_irat;
 	prolog_state st;
 	bool ignores[MAX_IGNORES];
 	uint64_t tot_goals, tot_backtracks, tot_retries, tot_matches;
@@ -849,6 +846,8 @@ inline static void share_cell_(const cell *c)
 		(c)->val_strb->refcnt++;
 	else if (is_bigint(c))
 		(c)->val_bigint->refcnt++;
+	else if (is_rational(c))
+		(c)->val_bigint->refcnt++;
 	else if (is_blob(c))
 		(c)->val_blob->refcnt++;
 }
@@ -864,6 +863,12 @@ inline static void unshare_cell_(cell *c)
 	} else if (is_bigint(c)) {
 		if (--(c)->val_bigint->refcnt == 0)	{
 			mp_int_clear(&(c)->val_bigint->ival);
+			free((c)->val_bigint);
+			c->flags = 0;
+		}
+	} else if (is_rational(c)) {
+		if (--(c)->val_bigint->refcnt == 0)	{
+			mp_rat_clear(&(c)->val_bigint->irat);
 			free((c)->val_bigint);
 			c->flags = 0;
 		}

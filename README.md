@@ -4,7 +4,7 @@ Trealla Prolog
 A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 
 	MIT licensed
-	Integers are unbounded
+	Integers & Rationals are unbounded
 	Atoms are UTF-8 of unlimited length
 	The default double-quoted representation is *chars* list
 	Unlimited arity (system resources constrained)
@@ -425,6 +425,10 @@ Non-standard predicates
 	line_count/2
 	strip_module/3
 	atom_number/2
+
+	rdiv/2						# evaluable
+	numerator/1					# evaluable
+	denominator/1				# evaluable
 
 	with_output_to(chars(Cs), Goal)		# SWI-compatible
 	with_output_to(string(Cs), Goal)	# SWI-compatible

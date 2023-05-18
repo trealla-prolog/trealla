@@ -10,7 +10,6 @@
 #define MAX_FFI 1000
 
 #define CHECK_CALC()								\
-	clr_accum(&q->accum);							\
 	errno = 0;										\
 													\
 	if (!q->eval) {									\

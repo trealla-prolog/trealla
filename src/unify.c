@@ -164,17 +164,53 @@ static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_id
 	if (is_var(p2))
 		return 1;
 
+	if (is_rational(p1) && is_rational(p2))
+		return mp_rat_compare(&p1->val_bigint->irat, &p2->val_bigint->irat);
+
+	if (is_rational(p1) && is_bigint(p2)) {
+		mpq_t tmp;
+		mp_int_init_copy(&tmp.num, &p2->val_bigint->ival);
+		mp_int_init_value(&tmp.den, 1);
+		int ok = mp_rat_compare(&p1->val_bigint->irat, &tmp);
+		mp_rat_clear(&tmp);
+		return ok;
+	}
+
+	if (is_rational(p1) && is_smallint(p2))
+		return mp_rat_compare_value(&p1->val_bigint->irat, p2->val_int, 1);
+
+	if (is_rational(p1))
+		return 1;
+
+	if (is_bigint(p1) && is_rational(p2)) {
+		mpq_t tmp;
+		mp_int_init_copy(&tmp.num, &p1->val_bigint->ival);
+		mp_int_init_value(&tmp.den, 1);
+		int ok = mp_rat_compare(&p2->val_bigint->irat, &tmp);
+		mp_rat_clear(&tmp);
+		return ok;
+	}
+
 	if (is_bigint(p1) && is_bigint(p2))
 		return mp_int_compare(&p1->val_bigint->ival, &p2->val_bigint->ival);
 
-	if (is_bigint(p1) && is_basic_integer(p2))
+	if (is_bigint(p1) && is_smallint(p2))
 		return mp_int_compare_value(&p1->val_bigint->ival, p2->val_int);
 
-	if (is_bigint(p2) && is_basic_integer(p1))
+	if (is_bigint(p1) && is_float(p2))
+		return 1;
+
+	if (is_bigint(p2))
+		return 1;
+
+	if (is_smallint(p1) && is_rational(p2))
+		return -mp_rat_compare_value(&p2->val_bigint->irat, p1->val_int, 1);
+
+	if (is_smallint(p1) && is_bigint(p2))
 		return -mp_int_compare_value(&p2->val_bigint->ival, p1->val_int);
 
-	if (is_basic_integer(p1)) {
-		if (is_basic_integer(p2))
+	if (is_smallint(p1)) {
+		if (is_smallint(p2))
 			return p1->val_int < p2->val_int ? -1 : p1->val_int > p2->val_int ? 1 : 0;
 
 		if (is_float(p2))
@@ -250,8 +286,6 @@ static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_id
 
 	return compare_structs(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 }
-
-// FIXME: rewrite this to be efficient
 
 int compare(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx)
 {
@@ -941,17 +975,49 @@ static bool unify_string_to_list(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, 
 
 static bool unify_integers(query *q, cell *p1, cell *p2)
 {
+	if (is_bigint(p1) && is_rational(p2)) {
+		mpq_t tmp;
+		mp_int_init_copy(&tmp.num, &p1->val_bigint->ival);
+		mp_int_init_value(&tmp.den, 1);
+		bool ok = !mp_rat_compare(&p2->val_bigint->irat, &tmp);
+		mp_rat_clear(&tmp);
+		return ok;
+	}
+
 	if (is_bigint(p1) && is_bigint(p2))
 		return !mp_int_compare(&p1->val_bigint->ival, &p2->val_bigint->ival);
 
 	if (is_bigint(p1) && is_integer(p2))
 		return !mp_int_compare_value(&p1->val_bigint->ival, p2->val_int);
 
-	if (is_bigint(p2))
+	if (is_integer(p1) && is_rational(p2))
 		return !mp_int_compare_value(&p2->val_bigint->ival, p1->val_int);
 
-	if (is_integer(p2))
+	if (is_integer(p1) && is_bigint(p2))
+		return !mp_int_compare_value(&p2->val_bigint->ival, p1->val_int);
+
+	if (is_integer(p2) && is_integer(p2))
 		return (get_smallint(p1) == get_smallint(p2));
+
+	return false;
+}
+
+static bool unify_rationals(query *q, cell *p1, cell *p2)
+{
+	if (is_rational(p1) && is_rational(p2))
+		return !mp_rat_compare(&p1->val_bigint->irat, &p2->val_bigint->irat);
+
+	if (is_rational(p1) && is_bigint(p2)) {
+		mpq_t tmp;
+		mp_int_init_copy(&tmp.num, &p2->val_bigint->ival);
+		mp_int_init_value(&tmp.den, 1);
+		bool ok = !mp_rat_compare(&p1->val_bigint->irat, &tmp);
+		mp_rat_clear(&tmp);
+		return ok;
+	}
+
+	if (is_rational(p1) && is_integer(p2))
+		return !mp_rat_compare_value(&p1->val_bigint->irat, p2->val_int, 1);
 
 	return false;
 }
@@ -961,11 +1027,6 @@ static bool unify_reals(query *q, cell *p1, cell *p2)
 	if (is_float(p2))
 		return get_float(p1) == get_float(p2);
 
-	return false;
-}
-
-static bool unify_rationals(query *q, cell *p1, cell *p2)
-{
 	return false;
 }
 

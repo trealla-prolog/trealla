@@ -768,6 +768,33 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 		return dst - save_dst;
 	}
 
+	if (is_rational(c)) {
+		int radix = 10;
+
+		if (!dstlen)
+			dst += mp_int_string_len(&c->val_bigint->irat.num, radix) - 1;
+		else {
+			size_t len = mp_int_string_len(&c->val_bigint->irat.num, radix) - 1;
+			mp_int_to_string(&c->val_bigint->irat.num, radix, dst, len+1);
+			dst += strlen(dst);
+		}
+
+		dst += snprintf(dst, dstlen, " div ");
+
+		if (!dstlen)
+			dst += mp_int_string_len(&c->val_bigint->irat.den, radix) - 1;
+		else {
+			size_t len = mp_int_string_len(&c->val_bigint->irat.den, radix) - 1;
+			mp_int_to_string(&c->val_bigint->irat.den, radix, dst, len+1);
+			dst += strlen(dst);
+		}
+
+		if (dstlen) *dst = 0;
+		q->last_thing_was_symbol = false;
+		q->was_space = false;
+		return dst - save_dst;
+	}
+
 	if (is_bigint(c)) {
 		int radix = 10;
 
