@@ -518,13 +518,19 @@ static bool fn_numerator_1(query *q)
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
-	if (!is_rational(&p1))
+	if (!is_integer(&p1) && !is_rational(&p1))
 		return throw_error(q, &p1, q->st.curr_frame, "type_error", "rational"); \
 
-	mp_small n, d;
-	mp_rat_to_ints(&p1.val_bigint->irat, &n, &d);
+	if (is_integer(&p1)) {
+		q->accum = p1;
+		return true;
+	}
+
 	q->accum.tag = TAG_INTEGER;
-	q->accum.val_int = n;
+	q->accum.flags = FLAG_MANAGED;
+	q->accum.val_bigint = malloc(sizeof(bigint));
+	mp_int_init_copy(&q->accum.val_bigint->ival, &p1.val_bigint->irat.num);
+	q->accum.val_bigint->refcnt = 0;
 	return true;
 }
 
@@ -534,13 +540,21 @@ static bool fn_denominator_1(query *q)
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
-	if (!is_rational(&p1))
+	if (!is_integer(&p1) && !is_rational(&p1))
 		return throw_error(q, &p1, q->st.curr_frame, "type_error", "rational"); \
 
-	mp_small n, d;
-	mp_rat_to_ints(&p1.val_bigint->irat, &n, &d);
+	if (is_integer(&p1)) {
+		cell tmp;
+		make_int(&tmp, 1);
+		q->accum = tmp;
+		return true;
+	}
+
 	q->accum.tag = TAG_INTEGER;
-	q->accum.val_int = d;
+	q->accum.flags = FLAG_MANAGED;
+	q->accum.val_bigint = malloc(sizeof(bigint));
+	mp_int_init_copy(&q->accum.val_bigint->ival, &p1.val_bigint->irat.den);
+	q->accum.val_bigint->refcnt = 0;
 	return true;
 }
 
