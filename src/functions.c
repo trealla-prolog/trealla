@@ -547,7 +547,7 @@ static bool fn_denominator_1(query *q)
 static bool fn_rational_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	return is_rational(p1);
+	return is_rational(p1) || is_integer(p1);
 }
 
 static bool fn_rdiv_2(query *q)
