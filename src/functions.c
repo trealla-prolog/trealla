@@ -512,7 +512,7 @@ static bool fn_iso_e_0(query *q)
 	return true;
 }
 
-bool fn_numerator_1(query *q)
+static bool fn_numerator_1(query *q)
 {
 	CHECK_CALC();
 	GET_FIRST_ARG(p1_tmp,any);
@@ -528,7 +528,7 @@ bool fn_numerator_1(query *q)
 	return true;
 }
 
-bool fn_denominator_1(query *q)
+static bool fn_denominator_1(query *q)
 {
 	CHECK_CALC();
 	GET_FIRST_ARG(p1_tmp,any);
@@ -544,7 +544,13 @@ bool fn_denominator_1(query *q)
 	return true;
 }
 
-bool fn_rdiv_2(query *q)
+static bool fn_rational_1(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	return is_rational(p1);
+}
+
+static bool fn_rdiv_2(query *q)
 {
 	CHECK_CALC();
 	GET_FIRST_ARG(p1_tmp,any);
@@ -3023,6 +3029,7 @@ builtins g_evaluable_bifs[] =
 
 	{"numerator", 1, fn_numerator_1, "+rational,-integer", false, true, BLAH},
 	{"denominator", 1, fn_denominator_1, "+rational,-integer", false, true, BLAH},
+	{"rational", 1, fn_rational_1, "+term", false, false, BLAH},
 	{"rdiv", 2, fn_rdiv_2, "+number,+number,-rational", false, true, BLAH},
 	{"divmod", 4, fn_divmod_4, "+integer,+integer,?integer,?integer", false, false, BLAH},
 	{"log", 2, fn_log_2, "+number,+number,-float", false, true, BLAH},
