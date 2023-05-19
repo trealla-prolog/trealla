@@ -940,14 +940,21 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 
 	const char *src = !is_ref(c) ? C_STR(q, c) : "_";
 	size_t src_len = !is_ref(c) ? C_STRLEN(q, c) : 1;
-	unsigned specifier = 0, pri = 0;
+	unsigned specifier = 0, pri = 0, spec = 0;
+	unsigned my_priority = search_op(q->st.m, src, &specifier, false);
+	bool is_op = IS_OP(c);
 
-	if (!IS_OP(c) && !is_var(c)
-		&& (pri = search_op(q->st.m, src, &specifier, true) && (c->arity == 1))) {
-		if (IS_PREFIX(specifier)) {
-			SET_OP(c, specifier);
+	if (!is_op && !is_var(c) && (c->arity == 1)
+		&& (pri = search_op(q->st.m, src, &spec, true))) {
+		if (IS_PREFIX(spec)) {
+			SET_OP(c, spec);
+			specifier = spec;
+			my_priority = pri;
 		}
 	}
+
+	if (!specifier)
+		CLR_OP(c);
 
 	if (q->ignore_ops || !IS_OP(c) || !c->arity) {
 		int quote = ((running <= 0) || q->quoted) && !is_var(c) && needs_quoting(q->st.m, src, src_len);
@@ -1185,7 +1192,6 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 	unsigned lhs_pri_2 = is_interned(lhs) && !lhs->arity ? search_op(q->st.m, C_STR(q, lhs), NULL, false) : 0;
 	unsigned rhs_pri_1 = is_interned(rhs) ? search_op(q->st.m, C_STR(q, rhs), NULL, is_prefix(rhs)) : 0;
 	unsigned rhs_pri_2 = is_interned(rhs) && !rhs->arity ? search_op(q->st.m, C_STR(q, rhs), NULL, false) : 0;
-	unsigned my_priority = search_op(q->st.m, src, NULL, false);
 
 	// Print LHS..
 
