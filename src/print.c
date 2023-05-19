@@ -940,18 +940,16 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 
 	const char *src = !is_ref(c) ? C_STR(q, c) : "_";
 	size_t src_len = !is_ref(c) ? C_STRLEN(q, c) : 1;
-	int optype = GET_OP(c);
 	unsigned specifier = 0, pri = 0;
 
-	if (!optype && !is_var(c)
+	if (!IS_OP(c) && !is_var(c)
 		&& (pri = search_op(q->st.m, src, &specifier, true) && (c->arity == 1))) {
 		if (IS_PREFIX(specifier)) {
 			SET_OP(c, specifier);
-			optype = specifier;
 		}
 	}
 
-	if (q->ignore_ops || !optype || !c->arity) {
+	if (q->ignore_ops || !IS_OP(c) || !c->arity) {
 		int quote = ((running <= 0) || q->quoted) && !is_var(c) && needs_quoting(q->st.m, src, src_len);
 		int dq = 0, braces = 0;
 		if (is_string(c)) dq = quote = 1;
