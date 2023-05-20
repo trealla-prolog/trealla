@@ -13,5 +13,5 @@ testmem(Lim) :- findall(Z,(between(1,Lim,N), isl({X}, N),
                 length(F,Lf), write(Lf), nl, false.
 
 
-main :- testmem(50000);true.
+main :- testmem(1000000);true.
 

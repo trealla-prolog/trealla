@@ -196,7 +196,7 @@ inline static void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_
 	cell *c_attrs = is_empty(&e->c) ? e->c.attrs : NULL, *v_attrs = NULL;
 	pl_idx_t c_attrs_ctx = c_attrs ? e->c.attrs_ctx : 0;
 
-	if (c_attrs || (q->cp && (c_ctx < q->st.fp)) || is_managed(v))
+	//if (c_attrs || q->cp || (c_ctx < q->st.fp) || is_managed(v))
 		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
 
 	if (c_attrs && is_var(v)) {
@@ -239,7 +239,7 @@ inline static void reset_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, p
 	const frame *f = GET_FRAME(c_ctx);
 	slot *e = GET_SLOT(f, c->var_nbr);
 
-	if ((q->cp && (c_ctx < q->st.fp)) || is_managed(v))
+	//if (q->cp || (c_ctx < q->st.fp) || is_managed(v))
 		add_trail(q, c_ctx, c->var_nbr, NULL, 0);
 
 	if (is_structure(v)) {
