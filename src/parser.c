@@ -122,8 +122,9 @@ void clear_rule(clause *cl)
 	if (!cl)
 		return;
 
-	for (pl_idx_t i = 0; i < cl->cidx; i++) {
-		cell *c = cl->cells + i;
+	cell *c = cl->cells;
+
+	for (pl_idx_t i = 0; i < cl->cidx; i++, c++) {
 		unshare_cell(c);
 		init_cell(c);
 	}
