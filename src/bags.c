@@ -66,23 +66,24 @@ bool fn_iso_findall_3(query *q)
 
 	pl_idx_t nbr_cells = queuen_used(q);
 	cell *solns = take_queuen(q);
+	drop_queuen(q);
 
 	// Now grab matching solutions
 
 	try_me(q, MAX_ARITY);
+	check_heap_error(init_tmp_heap(q), free(solns));
 
 	for (cell *c = solns; nbr_cells; nbr_cells -= c->nbr_cells, c += c->nbr_cells) {
-		check_heap_error(init_tmp_heap(q), free(solns), drop_queuen(q));
-		cell *tmp = deep_copy_to_tmp(q, c, q->st.fp, false);
-		check_heap_error(tmp, free(solns), drop_queuen(q));
-		check_heap_error(alloc_on_queuen(q, q->st.qnbr, tmp), free(solns), drop_queuen(q));
+		cell *tmp = alloc_on_tmp(q, 1);
+		check_heap_error(tmp, free(solns));
+		make_struct(tmp, g_dot_s, NULL, 2, c->nbr_cells);
+		tmp = deep_copy_to_tmp(q, c, q->st.fp, false);
+		check_heap_error(tmp, free(solns));
 	}
 
-	// Return matching solutions
-
-	free(solns);
-	cell *l = convert_to_list(q, get_queuen(q), queuen_used(q));
-	drop_queuen(q);
+	cell *l = end_list(q);
 	check_heap_error(l);
+	fix_list(l);
+	free(solns);
 	return unify(q, xp3, xp3_ctx, l, q->st.curr_frame);
 }
