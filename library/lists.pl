@@ -67,8 +67,12 @@ append([X|L], R, [X|S]) :- append(L, R, S).
 
 memberchk(X, Xs) :- member(X, Xs), !.
 
-member(X, [X|_]).
-member(X, [_|Xs]) :- member(X, Xs).
+member(El, [H|T]) :-
+    member_(T, El, H).
+
+member_(_, El, El).
+member_([H|T], El, _) :-
+    member_(T, El, H).
 
 :- help(member(?term,?list), [iso(false),desc('Is element a member of the list.')]).
 
