@@ -2252,9 +2252,9 @@ static bool fn_iso_retractall_1(query *q)
 	return true;
 }
 
-static bool do_abolish(query *q, cell *c_orig, cell *c, bool hard)
+static bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 {
-	predicate *pr = search_predicate(q->st.m, c, NULL);
+	predicate *pr = search_predicate(q->st.m, c_pi, NULL);
 	if (!pr) return true;
 
 	if (!pr->is_dynamic)
