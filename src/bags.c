@@ -36,7 +36,6 @@ bool fn_iso_findall_3(query *q)
 		if (is_iso_list(xp3) && !check_list(q, xp3, xp3_ctx, &is_partial, NULL) && !is_partial)
 			return throw_error(q, xp3, xp3_ctx, "type_error", "list");
 
-
 #if 0
 		cell *p0 = deep_clone_to_heap(q, q->st.curr_cell, q->st.curr_frame);
 		check_heap_error(p0);
