@@ -52,7 +52,7 @@ bool fn_iso_findall_3(query *q)
 		nbr_cells += safe_copy_cells(tmp+nbr_cells, p1, p1->nbr_cells);
 		make_struct(tmp+nbr_cells++, g_fail_s, fn_iso_fail_0, 0, 0);
 		make_call(q, tmp+nbr_cells);
-		check_heap_error(push_barrier(q));		// Creates choice-point
+		check_heap_error(push_barrier(q));
 		q->st.curr_cell = tmp;
 		return true;
 	}
@@ -68,7 +68,7 @@ bool fn_iso_findall_3(query *q)
 	cell *solns = take_queuen(q);
 	drop_queuen(q);
 
-	// Now grab matching solutions
+	// Now grab matching solutions with fresh variables...
 
 	try_me(q, MAX_ARITY);
 	check_heap_error(init_tmp_heap(q), free(solns));
