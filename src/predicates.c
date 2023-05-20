@@ -7806,7 +7806,7 @@ static void load_ops(query *q)
 	while (map_next(iter, (void**)&ptr)) {
 		char specifier[80], name[1024];
 
-		if (!ptr->specifier)
+		if (!ptr->priority || !ptr->specifier)
 			continue;
 
 		if (ptr->specifier == OP_FX)
