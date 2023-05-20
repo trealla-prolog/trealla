@@ -789,7 +789,6 @@ struct module_ {
 	bool prebuilt:1;
 	bool make_public:1;
 	bool loaded_properties:1;
-	bool did_set_op:1;
 	bool loading:1;
 	bool error:1;
 	bool ignore_vars:1;

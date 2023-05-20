@@ -814,6 +814,7 @@ bb_del(_).
 
 current_op(A, B, C) :- var(A), var(B), var(C),
 	!,
+	retractall('$op'(_,_,_)),
 	'$load_ops',
 	'$op'(C, B, A).
 current_op(_, _, C) :- nonvar(C), \+ atom(C),
@@ -833,6 +834,7 @@ current_op(A, _, _) :- nonvar(A),
 	\+ (A =< 1200),
 	!, throw(error(domain_error(operator_priority, A), current_op/3)).
 current_op(A, B, C) :-
+	retractall('$op'(_,_,_)),
 	'$load_ops',
 	'$op'(C, B, A).
 
