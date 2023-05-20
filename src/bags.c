@@ -36,9 +36,15 @@ bool fn_iso_findall_3(query *q)
 		if (is_iso_list(xp3) && !check_list(q, xp3, xp3_ctx, &is_partial, NULL) && !is_partial)
 			return throw_error(q, xp3, xp3_ctx, "type_error", "list");
 
-		cell *p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, true);
+
+#if 0
+		cell *p0 = deep_clone_to_heap(q, q->st.curr_cell, q->st.curr_frame);
+		check_heap_error(p0);
+#else
+		cell *p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, false);
 		check_heap_error(p0);
 		unify(q, q->st.curr_cell, q->st.curr_frame, p0, q->st.curr_frame);
+#endif
 		GET_FIRST_ARG0(p1,any,p0);
 		GET_NEXT_ARG(p2,any);
 
