@@ -7792,7 +7792,7 @@ static void load_ops(query *q)
 		return;
 
 	cell tmp;
-	make_atom(&tmp, index_from_pool(q->pl, "$current_op"));
+	make_atom(&tmp, index_from_pool(q->pl, "$op"));
 	tmp.arity = 3;
 
 	if (do_abolish(q, &tmp, &tmp, false) != true)
@@ -7832,9 +7832,9 @@ static void load_ops(query *q)
 			snprintf(name, sizeof(name), "%s", ptr->name);
 
 		if (quote) {
-			SB_sprintf(pr, "'$current_op'( '%s', %s, %u).\n", name, specifier, ptr->priority);
+			SB_sprintf(pr, "'$op'( '%s', %s, %u).\n", name, specifier, ptr->priority);
 		} else {
-			SB_sprintf(pr, "'$current_op'( (%s), %s, %u).\n", name, specifier, ptr->priority);
+			SB_sprintf(pr, "'$op'( (%s), %s, %u).\n", name, specifier, ptr->priority);
 		}
 	}
 
@@ -7863,7 +7863,7 @@ static void load_ops(query *q)
 			strcpy(specifier, "xfx");
 
 		formatted(name, sizeof(name), ptr->name, strlen(ptr->name), false, false);
-		SB_sprintf(pr, "'$current_op'('%s', %s, %u).\n", name, specifier, ptr->priority);
+		SB_sprintf(pr, "'$op'('%s', %s, %u).\n", name, specifier, ptr->priority);
 	}
 
 	parser *p = parser_create(q->st.m);
