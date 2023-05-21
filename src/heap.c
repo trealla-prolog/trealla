@@ -185,7 +185,7 @@ void trim_heap(query *q)
 	for (pl_idx_t i = q->st.hp; a && (i < a->hp); i++) {
 		cell *c = a->heap + i;
 		unshare_cell(c);
-		//init_cell(c);
+		init_cell(c);
 	}
 }
 
