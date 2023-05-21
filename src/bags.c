@@ -10,18 +10,6 @@
 #include "prolog.h"
 #include "query.h"
 
-static bool is_ground(cell *c)
-{
-	pl_idx_t nbr_cells = c->nbr_cells;
-
-	for (pl_idx_t i = 0; i < nbr_cells; i++, c++) {
-		if (is_var(c))
-			return false;
-	}
-
-	return true;
-}
-
 bool fn_iso_findall_3(query *q)
 {
 	GET_FIRST_ARG(xp1,any);

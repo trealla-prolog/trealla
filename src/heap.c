@@ -171,10 +171,8 @@ void trim_heap(query *q)
 
 		cell *c = a->heap;
 
-		for (pl_idx_t i = 0; i < a->hp; i++, c++) {
+		for (pl_idx_t i = 0; i < a->hp; i++, c++)
 			unshare_cell(c);
-			init_cell(c);
-		}
 
 		page *save = a;
 		q->pages = a = a->next;
@@ -187,7 +185,7 @@ void trim_heap(query *q)
 	for (pl_idx_t i = q->st.hp; a && (i < a->hp); i++) {
 		cell *c = a->heap + i;
 		unshare_cell(c);
-		init_cell(c);
+		//init_cell(c);
 	}
 }
 

@@ -596,7 +596,7 @@ void try_me(query *q, unsigned nbr_vars)
 
 	while (nbr_vars--) {
 		init_cell(&e->c);
-		e->vgen = e->vgen2 = 0;
+		//e->vgen = e->vgen2 = 0;
 		e++;
 	}
 
