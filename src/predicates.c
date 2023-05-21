@@ -3583,10 +3583,10 @@ static bool fn_iso_op_3(query *q)
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,atom);
 	GET_NEXT_ARG(p3,list_or_atom);
-
 	if (is_negative(p1) || is_gt(p1,1200))
 		return throw_error(q, p1, p1_ctx, "domain_error", "operator_priority");
 
+	q->ops_dirty = true;
 	LIST_HANDLER(p3);
 
 	while (is_list(p3)) {
@@ -6274,6 +6274,13 @@ static bool fn_sys_load_ops_0(query *q)
 	return true;
 }
 
+static bool fn_sys_ops_dirty_0(query *q)
+{
+	bool ok = q->ops_dirty;
+	q->ops_dirty = false;
+	return ok;
+}
+
 static bool fn_sys_legacy_predicate_property_2(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
@@ -8080,6 +8087,7 @@ builtins g_other_bifs[] =
 	{"$load_properties", 0, fn_sys_load_properties_0, NULL, false, false, BLAH},
 	{"$load_flags", 0, fn_sys_load_flags_0, NULL, false, false, BLAH},
 	{"$load_ops", 0, fn_sys_load_ops_0, NULL, false, false, BLAH},
+	{"$ops_dirty", 0, fn_sys_ops_dirty_0, NULL, false, false, BLAH},
 	{"$list", 1, fn_sys_list_1, "-list", false, false, BLAH},
 	{"$queue", 1, fn_sys_queue_1, "+term", false, false, BLAH},
 	{"$incr", 2, fn_sys_incr_2, "@var,+integer", false, false, BLAH},
