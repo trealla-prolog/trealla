@@ -728,6 +728,9 @@ static void trim_trail(query *q)
 		if (tr->var_ctx != q->st.curr_frame)
 			break;
 
+		const frame *f = GET_FRAME(tr->var_ctx);
+		slot *e = GET_SLOT(f, tr->var_nbr);
+		unshare_cell(&e->c);
 		q->st.tp--;
 	}
 }
