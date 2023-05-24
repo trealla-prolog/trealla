@@ -105,8 +105,8 @@ cell *alloc_on_tmp(query *q, unsigned nbr_cells)
 
 	pl_idx_t new_size = q->tmphp + nbr_cells;
 
-	while (new_size >= q->tmph_size) {
-		size_t elements = alloc_grow((void**)&q->tmp_heap, sizeof(cell), new_size, (new_size*4)/3, false);
+	if (new_size >= q->tmph_size) {
+		size_t elements = alloc_grow((void**)&q->tmp_heap, sizeof(cell), new_size, (new_size*4)/3, true);
 		if (!elements) return NULL;
 		q->tmph_size = elements;
 	}

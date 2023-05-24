@@ -188,7 +188,7 @@ bool check_trail(query *q)
 		q->hw_trails = q->st.tp;
 
 	if (q->st.tp >= q->trails_size) {
-		pl_idx_t new_trailssize = alloc_grow((void**)&q->trails, sizeof(trail), q->st.tp, q->trails_size*2, false);
+		pl_idx_t new_trailssize = alloc_grow((void**)&q->trails, sizeof(trail), q->st.tp, q->trails_size*4/3, false);
 		if (!new_trailssize) {
 			q->is_oom = q->error = true;
 			return false;
@@ -206,7 +206,7 @@ static bool check_choice(query *q)
 		q->hw_choices = q->cp;
 
 	if (q->cp >= q->choices_size) {
-		pl_idx_t new_choicessize = alloc_grow((void**)&q->choices, sizeof(choice), q->cp, q->choices_size*2, false);
+		pl_idx_t new_choicessize = alloc_grow((void**)&q->choices, sizeof(choice), q->cp, q->choices_size*4/3, false);
 		if (!new_choicessize) {
 			q->is_oom = q->error = true;
 			return false;
@@ -224,7 +224,7 @@ static bool check_frame(query *q)
 		q->hw_frames = q->st.fp;
 
 	if (q->st.fp >= q->frames_size) {
-		pl_idx_t new_framessize = alloc_grow((void**)&q->frames, sizeof(frame), q->st.fp, q->frames_size*2, false);
+		pl_idx_t new_framessize = alloc_grow((void**)&q->frames, sizeof(frame), q->st.fp, q->frames_size*4/3, false);
 
 		if (!new_framessize) {
 			q->is_oom = q->error = true;
@@ -244,8 +244,8 @@ bool check_slot(query *q, unsigned cnt)
 	if (q->st.sp > q->hw_slots)
 		q->hw_slots = q->st.sp;
 
-	while (nbr >= q->slots_size) {
-		pl_idx_t new_slotssize = alloc_grow((void**)&q->slots, sizeof(slot), nbr, q->slots_size*2, false);
+	if (nbr >= q->slots_size) {
+		pl_idx_t new_slotssize = alloc_grow((void**)&q->slots, sizeof(slot), nbr, q->slots_size*4/3, false);
 
 		if (!new_slotssize) {
 			q->is_oom = q->error = true;
@@ -1034,7 +1034,7 @@ void prune_me(query *q, bool soft_cut)
 			ch--;
 		}
 
-		// An prune can break through a barrier...
+		// A prune can break through a barrier...
 
 		if (ch->cgen < f->cgen) {
 			f->cgen = ch->cgen;

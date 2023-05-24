@@ -43,12 +43,8 @@ void do_cleanup(query *q, cell *c, pl_idx_t c_ctx)
 bool fn_sys_cleanup_if_det_0(query *q)
 {
 	q->tot_goals--;
-
-	if (!q->cp)		// redundant
-		return true;
-
+	const frame *f = GET_CURR_FRAME();
 	choice *ch = GET_CURR_CHOICE();
-	frame *f = GET_CURR_FRAME();
 
 	if (!ch->call_barrier || (ch->cgen != f->cgen))
 		return true;
@@ -75,12 +71,8 @@ bool fn_sys_cleanup_if_det_0(query *q)
 bool fn_sys_cut_if_det_0(query *q)
 {
 	q->tot_goals--;
-
-	if (!q->cp)		// redundant
-		return true;
-
+	const frame *f = GET_CURR_FRAME();
 	choice *ch = GET_CURR_CHOICE();
-	frame *f = GET_CURR_FRAME();
 
 	if (!ch->call_barrier || (ch->cgen != f->cgen))
 		return true;
@@ -550,10 +542,6 @@ bool fn_sys_soft_prune_0(query *q)
 bool fn_sys_block_catcher_1(query *q)
 {
 	q->tot_goals--;
-
-	if (!q->cp)
-		return true;
-
 	GET_FIRST_ARG(p1,integer);
 	pl_idx_t cp = get_smalluint(p1);
 	choice *ch = GET_CHOICE(cp);
@@ -688,7 +676,7 @@ static cell *parse_to_heap(query *q, const char *src)
 bool find_exception_handler(query *q, char *ball)
 {
 	while (retry_choice(q)) {
-		choice *ch = GET_CHOICE(q->cp);
+		const choice *ch = GET_CHOICE(q->cp);
 
 		if (ch->block_catcher)
 			continue;
