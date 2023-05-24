@@ -5475,9 +5475,10 @@ static bool fn_date_time_7(query *q)
 	GET_NEXT_ARG(p5,var);
 	GET_NEXT_ARG(p6,var);
 	GET_NEXT_ARG(p7,var);
+	struct timeval cur_time;
+	gettimeofday(&cur_time, NULL);
 	struct tm tm = {0};
-	time_t now = time(NULL);
-	localtime_r(&now, &tm);
+	localtime_r(&cur_time.tv_sec, &tm);
 	cell tmp;
 	make_int(&tmp, tm.tm_year+1900);
 	unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
@@ -5491,7 +5492,7 @@ static bool fn_date_time_7(query *q)
 	unify(q, p5, p5_ctx, &tmp, q->st.curr_frame);
 	make_int(&tmp, tm.tm_sec);
 	unify(q, p6, p6_ctx, &tmp, q->st.curr_frame);
-	make_int(&tmp, 0);
+	make_int(&tmp, cur_time.tv_usec/1000);
 	unify(q, p7, p7_ctx, &tmp, q->st.curr_frame);
 	return true;
 }
