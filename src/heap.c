@@ -106,7 +106,7 @@ cell *alloc_on_tmp(query *q, unsigned nbr_cells)
 	pl_idx_t new_size = q->tmphp + nbr_cells;
 
 	if (new_size >= q->tmph_size) {
-		size_t elements = alloc_grow((void**)&q->tmp_heap, sizeof(cell), new_size, (new_size*4)/3, true);
+		size_t elements = alloc_grow((void**)&q->tmp_heap, sizeof(cell), new_size, new_size*4/3, true);
 		if (!elements) return NULL;
 		q->tmph_size = elements;
 	}
@@ -269,9 +269,8 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 		while (is_iso_list(p1)) {
 			cell *h = LIST_HEAD(p1);
 			cell *c = h;
-			pl_idx_t c_ctx = p1_ctx;
-			c = deref(q, c, c_ctx);
-			c_ctx = q->latest_ctx;
+			c = deref(q, c, p1_ctx);
+			pl_idx_t c_ctx = q->latest_ctx;
 
 			if (is_in_ref_list(c, c_ctx, list)) {
 				cell *tmp = alloc_on_tmp(q, 1);
@@ -335,9 +334,8 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 
 	while (arity--) {
 		cell *c = p1;
-		pl_idx_t c_ctx = p1_ctx;
-		c = deref(q, c, c_ctx);
-		c_ctx = q->latest_ctx;
+		c = deref(q, c, p1_ctx);
+		pl_idx_t c_ctx = q->latest_ctx;
 
 		if (is_in_ref_list(c, c_ctx, list)) {
 			cell *tmp = alloc_on_tmp(q, 1);

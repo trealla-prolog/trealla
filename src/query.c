@@ -1154,24 +1154,23 @@ unsigned create_vars(query *q, unsigned cnt)
 
 	unsigned var_nbr = f->actual_slots;
 
-	if (!check_slot(q, var_nbr+cnt))
+	if (!check_slot(q, cnt))
 		return 0;
 
 	if ((f->base + f->initial_slots) >= q->st.sp) {
 		f->initial_slots += cnt;
-		q->st.sp = f->base + f->initial_slots;
 	} else if (!f->overflow) {
 		f->overflow = q->st.sp;
-		q->st.sp += cnt;
 	} else if ((f->overflow + (f->actual_slots - f->initial_slots)) == q->st.sp) {
-		q->st.sp += cnt;
 	} else {
 		pl_idx_t save_overflow = f->overflow;
 		f->overflow = q->st.sp;
 		pl_idx_t cnt2 = f->actual_slots - f->initial_slots;
 		memmove(q->slots+f->overflow, q->slots+save_overflow, sizeof(slot)*cnt2);
-		q->st.sp += cnt2 + cnt;
+		q->st.sp += cnt2;
 	}
+
+	q->st.sp += cnt;
 
 	for (unsigned i = 0; i < cnt; i++) {
 		slot *e = GET_SLOT(f, f->actual_slots+i);
