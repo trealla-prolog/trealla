@@ -1135,7 +1135,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 		}
 
 		if (both == 2)
-			break;
+			return true;
 
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
