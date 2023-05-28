@@ -351,8 +351,8 @@ static void collect_var_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned dept
 			if (!is_var(c) && (e->vgen != q->vgen)) {
 				e->vgen = q->vgen;
 				collect_vars_internal(q, c, c_ctx, depth+1);
-			} else
-				e->vgen = q->vgen;
+				e->vgen = 0;
+			}
 		} else {
 			collect_vars_internal(q, c, c_ctx, depth+1);
 		}
@@ -412,8 +412,8 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned 
 			if (!is_var(c) && (e->vgen != q->vgen)) {
 				e->vgen = q->vgen;
 				collect_vars_internal(q, c, c_ctx, depth+1);
-			} else
-				e->vgen = q->vgen;
+				e->vgen = 0;
+			}
 		} else {
 			collect_vars_internal(q, p1, p1_ctx, depth+1);
 		}
@@ -459,8 +459,9 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 
 				if (has_vars_internal(q, c, c_ctx, depth+1))
 					return true;
-			} else
-				e->vgen = q->vgen;
+
+				e->vgen = 0;
+			}
 		} else {
 			if (has_vars_internal(q, c, c_ctx, depth+1))
 				return true;
@@ -1104,10 +1105,10 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 			pl_idx_t h2_ctx = q->latest_ctx;
 			bool ok = unify_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
 			if (!ok) return false;
-
-			if (e1) e1->vgen = 0;
-			if (e2) e2->vgen2 = 0;
 		}
+
+		if (e1) e1->vgen = 0;
+		if (e2) e2->vgen2 = 0;
 
 		p1 = p1 + 1; p1 += p1->nbr_cells;
 		p2 = p2 + 1; p2 += p2->nbr_cells;
