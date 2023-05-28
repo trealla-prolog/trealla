@@ -329,7 +329,7 @@ bool accum_var(query *q, const cell *c, pl_idx_t c_ctx)
 
 static void collect_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth);
 
-static void collect_var_list(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
+static void collect_var_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 {
 	cell *l = p1;
 	pl_idx_t l_ctx = p1_ctx;
@@ -392,7 +392,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned 
 		return;
 
 	if (is_iso_list(p1)) {
-		collect_var_list(q, p1, p1_ctx, depth+1);
+		collect_var_lists(q, p1, p1_ctx, depth+1);
 		return;
 	}
 
@@ -435,7 +435,7 @@ void collect_vars(query *q, cell *p1, pl_idx_t p1_ctx)
 
 static bool has_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth);
 
-static bool has_vars_list(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
+static bool has_vars_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 {
 	cell *l = p1;
 	pl_idx_t l_ctx = p1_ctx;
@@ -499,7 +499,7 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned dept
 		return false;
 
 	if (is_iso_list(p1))
-		return has_vars_list(q, p1, p1_ctx, depth+1);
+		return has_vars_lists(q, p1, p1_ctx, depth+1);
 
 	unsigned arity = p1->arity;
 	p1++;
@@ -540,7 +540,7 @@ bool has_vars(query *q, cell *p1, pl_idx_t p1_ctx)
 
 static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth);
 
-static bool is_cyclic_term_list(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
+static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 {
 	while (is_iso_list(p1)) {
 		cell *h = p1 + 1;
@@ -597,7 +597,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigne
 		return false;
 
 	if (is_iso_list(p1))
-		return is_cyclic_term_list(q, p1, p1_ctx, depth);
+		return is_cyclic_term_lists(q, p1, p1_ctx, depth);
 
 	unsigned arity = p1->arity;
 	const frame *f = GET_FRAME(p1_ctx);
@@ -1102,9 +1102,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 			pl_idx_t h1_ctx = q->latest_ctx;
 			h2 = deref(q, h2, p2_ctx);
 			pl_idx_t h2_ctx = q->latest_ctx;
-			uint64_t save_vgen = q->vgen;
 			bool ok = unify_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
-			q->vgen = save_vgen;
 			if (!ok) return false;
 
 			if (e1) e1->vgen = 0;
