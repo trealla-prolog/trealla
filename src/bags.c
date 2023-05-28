@@ -40,11 +40,10 @@ bool fn_iso_findall_3(query *q)
 
 		grab_queuen(q);
 		assert(q->st.qnbr < MAX_QUEUES);
-		cell *tmp = clone_to_heap(q, true, p2, 2+p1->nbr_cells+2);
+		cell *tmp = clone_to_heap(q, true, p2, 1+p1->nbr_cells+2);
 		check_heap_error(tmp);
 		pl_idx_t nbr_cells = 1 + p2->nbr_cells;
-		make_struct(tmp+nbr_cells++, g_sys_queue_s, fn_sys_queuen_2, 2, 1+p1->nbr_cells);
-		make_int(tmp+nbr_cells++, q->st.qnbr);
+		make_struct(tmp+nbr_cells++, g_sys_queue_s, fn_sys_queue_1, 1, p1->nbr_cells);
 		nbr_cells += safe_copy_cells(tmp+nbr_cells, p1, p1->nbr_cells);
 		make_struct(tmp+nbr_cells++, g_fail_s, fn_iso_fail_0, 0, 0);
 		make_call(q, tmp+nbr_cells);

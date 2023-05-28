@@ -3498,24 +3498,13 @@ static bool fn_sys_list_1(query *q)
 	return unify(q, p1, p1_ctx, l, q->st.curr_frame);
 }
 
-static bool fn_sys_queue_1(query *q)
+bool fn_sys_queue_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	check_heap_error(init_tmp_heap(q));
 	cell *tmp = deep_raw_copy_to_tmp(q, p1, p1_ctx);
 	check_heap_error(tmp);
-	check_heap_error(alloc_on_queuen(q, 0, tmp));
-	return true;
-}
-
-bool fn_sys_queuen_2(query *q)
-{
-	GET_FIRST_ARG(p1,integer);
-	GET_NEXT_ARG(p2,any);
-	check_heap_error(init_tmp_heap(q));
-	cell *tmp = deep_raw_copy_to_tmp(q, p2, p2_ctx);
-	check_heap_error(tmp);
-	check_heap_error(alloc_on_queuen(q, get_smallint(p1), tmp));
+	check_heap_error(alloc_on_queuen(q, q->st.qnbr, tmp));
 	return true;
 }
 
@@ -7897,7 +7886,6 @@ builtins g_iso_bifs[] =
 	{"$catch", 3, fn_iso_catch_3, NULL, true, false, BLAH},
 	{"$call_cleanup", 3, fn_sys_call_cleanup_3, NULL, false, false, BLAH},
 	{"$block_catcher", 1, fn_sys_block_catcher_1, NULL, false, false, BLAH},
-	{"$queuen", 2, fn_sys_queuen_2, NULL, false, false, BLAH},
 	{"$cleanup_if_det", 0, fn_sys_cleanup_if_det_0, NULL, false, false, BLAH},
 	{"$cut_if_det", 0, fn_sys_cut_if_det_0, NULL, false, false, BLAH},
 	{"$soft_prune", 0, fn_sys_soft_prune_0, NULL, false, false, BLAH},
