@@ -393,7 +393,7 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx_t p1_c
 
 	if (q->vars && is_var(save_p1)) {
 		const frame *f = GET_FRAME(p1_ctx);
-		const slot *e = GET_SLOT(f, p1->var_nbr);
+		const slot *e = GET_SLOT(f, save_p1->var_nbr);
 		const pl_idx_t slot_nbr = e - q->slots;
 
 		if (!q->tab_idx) {
