@@ -1905,8 +1905,12 @@ static bool fn_iso_univ_2(query *q)
 	cell tmp = *p1;
 	tmp.nbr_cells = 1;
 	tmp.arity = 0;
-	tmp.flags &= ~FLAG_BUILTIN;
-	tmp.fn_ptr = NULL;
+
+	if (is_builtin(p1)) {
+		tmp.flags &= ~FLAG_BUILTIN;
+		tmp.fn_ptr = NULL;
+	}
+
 	CLR_OP(&tmp);
 	allocate_list(q, &tmp);
 	unsigned arity = p1->arity;
