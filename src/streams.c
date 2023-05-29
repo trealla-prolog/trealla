@@ -2048,24 +2048,34 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx_t p1_ctx, cell *p2, pl
 			pl_idx_t p_ctx = q->latest_ctx;
 			cell tmp;
 			make_int(&tmp, str->p->pos_start);
-			unify(q, p, p_ctx, &tmp, q->st.curr_frame);
+
+			if (!unify(q, p, p_ctx, &tmp, q->st.curr_frame))
+				return false;
+
 			p = h+2;
 			p = deref(q, p, h_ctx);
 			p_ctx = q->latest_ctx;
 			make_int(&tmp, ftello(str->fp));
-			unify(q, p, p_ctx, &tmp, q->st.curr_frame);
+
+			if (!unify(q, p, p_ctx, &tmp, q->st.curr_frame))
+				return false;
 		} else if (!CMP_STR_TO_CSTR(q, h, "line_counts") && (h->arity == 2)) {
 			cell *p = h+1;
 			p = deref(q, p, h_ctx);
 			pl_idx_t p_ctx = q->latest_ctx;
 			cell tmp;
 			make_int(&tmp, str->p->line_nbr_start);
-			unify(q, p, p_ctx, &tmp, q->st.curr_frame);
+
+			if (!unify(q, p, p_ctx, &tmp, q->st.curr_frame))
+				return false;
+
 			p = h+2;
 			p = deref(q, p, h_ctx);
 			p_ctx = q->latest_ctx;
 			make_int(&tmp, str->p->line_nbr);
-			unify(q, p, p_ctx, &tmp, q->st.curr_frame);
+
+			if (!unify(q, p, p_ctx, &tmp, q->st.curr_frame))
+				return false;
 		}
 
 		p22 = LIST_TAIL(p22);
