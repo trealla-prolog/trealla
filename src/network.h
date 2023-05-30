@@ -14,6 +14,7 @@ extern void net_set_nonblocking(stream *str);
 extern void *net_enable_ssl(int fd, const char *hostname, bool is_server, int level, const char *certfile);
 extern size_t net_read(void *ptr, size_t len, stream *str);
 extern int net_getline(char **lineptr, size_t *n, stream *str);
+extern int net_peekc(stream *str);
 extern int net_getc(stream *str);
 extern size_t net_write(const void *ptr, size_t nbytes, stream *str);
 extern void net_close(stream *str);

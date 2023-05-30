@@ -493,13 +493,14 @@ static void add_stream_properties(query *q, int n)
 	off_t pos = !str->is_map && !str->is_engine ? ftello(str->fp) : 0;
 	bool at_end_of_file = false;
 
-	if (!str->at_end_of_file && (n > 2) && !str->is_engine && !str->is_map) {
+	if (!str->at_end_of_file && (n > 2) && !str->is_engine && !str->is_map && !str->p) {
+#if 0
 		if (str->p) {
 			if (str->p->srcptr && *str->p->srcptr) {
-				int ch = get_char_utf8((const char**)&str->p->srcptr);
-				str->ungetch = ch;
+				str->ungetch = get_char_utf8((const char**)&str->p->srcptr);
 			}
 		}
+#endif
 
 		int ch = str->ungetch ? str->ungetch : net_getc(str);
 
