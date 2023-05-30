@@ -439,10 +439,8 @@ static int get_named_stream(prolog *pl, const char *name, size_t len)
 static int new_stream(prolog *pl)
 {
 	for (int i = 0; i < MAX_STREAMS; i++) {
-		if (!pl->streams[i].fp && !pl->streams[i].ignore) {
-			memset(&pl->streams[i], 0, sizeof(stream));
+		if (!pl->streams[i].fp && !pl->streams[i].ignore)
 			return i;
-		}
 	}
 
 	return -1;
@@ -916,9 +914,8 @@ static bool fn_popen_4(query *q)
 	if (!str->alias) str->alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	check_heap_error(str->filename = strdup(filename));
 	check_heap_error(str->mode = DUP_STR(q, p2));
-	str->eof_action = eof_action_eof_code;
 	bool binary = false;
-	uint8_t eof_action = 0;
+	uint8_t eof_action = eof_action_eof_code;
 	LIST_HANDLER(p4);
 
 	while (is_list(p4)) {
@@ -1345,9 +1342,8 @@ static bool fn_iso_open_4(query *q)
 	check_heap_error(str->filename = strdup(filename));
 	if (!str->alias) str->alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	check_heap_error(str->mode = DUP_STR(q, p2));
-	str->eof_action = eof_action_eof_code;
 	bool binary = false, repo = false;
-	uint8_t eof_action = 0;
+	uint8_t eof_action = eof_action_eof_code;
 	free(src);
 
 #if USE_MMAP
@@ -1466,6 +1462,10 @@ static bool fn_iso_open_4(query *q)
 	str->repo = repo;
 	str->binary = binary;
 	str->eof_action = eof_action;
+	str->bom = false;
+	str->did_getc = false;
+	str->srclen = str->ungetch = 0;
+	str->at_end_of_file = false;
 
 	if (oldstr) {
 		int fd = fileno(oldstr->fp);
