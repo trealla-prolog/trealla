@@ -2344,33 +2344,6 @@ char *eat_space(parser *p)
 	return (char*)src;
 }
 
-static bool eat_comment(parser *p)
-{
-	char *src = p->srcptr;
-
-	if (*src != '/')
-		return true;
-
-	src++;
-
-	if (*src != '*')
-		return true;
-
-	src++;
-
-	while (*src) {
-		if ((src[0] == '*') && (src[1] == '/')) {
-			src += 2;
-			p->srcptr = src;
-			return true;
-		}
-
-		src++;
-	}
-
-	return true;
-}
-
 static bool check_space_before_function(parser *p, int ch, const char *src)
 {
 	if (iswspace(ch) && SB_strcmp(p->token, ".")) {
@@ -2554,7 +2527,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 			return false;
 		}
 
-		return true; //eat_comment(p);
+		return true;
 	}
 
 	// Quoted...
