@@ -918,6 +918,7 @@ static bool fn_popen_4(query *q)
 	check_heap_error(str->mode = DUP_STR(q, p2));
 	str->eof_action = eof_action_eof_code;
 	bool binary = false;
+	uint8_t eof_action = 0;
 	LIST_HANDLER(p4);
 
 	while (is_list(p4)) {
@@ -947,17 +948,16 @@ static bool fn_popen_4(query *q)
 				}
 			} else if (!CMP_STR_TO_CSTR(q, c, "type")) {
 				if (is_atom(name) && !CMP_STR_TO_CSTR(q, name, "binary")) {
-					str->binary = true;
 					binary = true;
 				} else if (is_atom(name) && !CMP_STR_TO_CSTR(q, name, "text"))
 					binary = false;
 			} else if (!CMP_STR_TO_CSTR(q, c, "eof_action")) {
 				if (is_atom(name) && !CMP_STR_TO_CSTR(q, name, "error")) {
-					str->eof_action = eof_action_error;
+					eof_action = eof_action_error;
 				} else if (is_atom(name) && !CMP_STR_TO_CSTR(q, name, "eof_code")) {
-					str->eof_action = eof_action_eof_code;
+					eof_action = eof_action_eof_code;
 				} else if (is_atom(name) && !CMP_STR_TO_CSTR(q, name, "reset")) {
-					str->eof_action = eof_action_reset;
+					eof_action = eof_action_reset;
 				}
 			}
 		} else
@@ -970,6 +970,9 @@ static bool fn_popen_4(query *q)
 		if (is_var(p4))
 			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 	}
+
+	str->binary = binary;
+	str->eof_action = eof_action;
 
 	if (!strcmp(str->mode, "read"))
 		str->fp = popen(filename, binary?"rb":"r");
@@ -1343,6 +1346,8 @@ static bool fn_iso_open_4(query *q)
 	if (!str->alias) str->alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	check_heap_error(str->mode = DUP_STR(q, p2));
 	str->eof_action = eof_action_eof_code;
+	bool binary = false, repo = false;
+	uint8_t eof_action = 0;
 	free(src);
 
 #if USE_MMAP
@@ -1403,9 +1408,9 @@ static bool fn_iso_open_4(query *q)
 				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 
 			if (is_atom(name) && !CMP_STR_TO_CSTR(q, name, "binary")) {
-				str->binary = true;
+				binary = true;
 			} else if (is_atom(name) && !CMP_STR_TO_CSTR(q, name, "text"))
-				str->binary = false;
+				binary = false;
 			else
 				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 		} else if (!CMP_STR_TO_CSTR(q, c, "bom")) {
@@ -1429,9 +1434,9 @@ static bool fn_iso_open_4(query *q)
 				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 
 			if (is_atom(name) && !CMP_STR_TO_CSTR(q, name, "true"))
-				str->repo = true;
+				repo = true;
 			else if (is_atom(name) && !CMP_STR_TO_CSTR(q, name, "false"))
-				str->repo = false;
+				repo = false;
 		} else if (!CMP_STR_TO_CSTR(q, c, "eof_action")) {
 			if (is_var(name))
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
@@ -1440,11 +1445,11 @@ static bool fn_iso_open_4(query *q)
 				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 
 			if (is_atom(name) && !CMP_STR_TO_CSTR(q, name, "error")) {
-				str->eof_action = eof_action_error;
+				eof_action = eof_action_error;
 			} else if (is_atom(name) && !CMP_STR_TO_CSTR(q, name, "eof_code")) {
-				str->eof_action = eof_action_eof_code;
+				eof_action = eof_action_eof_code;
 			} else if (is_atom(name) && !CMP_STR_TO_CSTR(q, name, "reset")) {
-				str->eof_action = eof_action_reset;
+				eof_action = eof_action_reset;
 			}
 		} else {
 			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
@@ -1457,6 +1462,10 @@ static bool fn_iso_open_4(query *q)
 		if (is_var(p4))
 			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 	}
+
+	str->repo = repo;
+	str->binary = binary;
+	str->eof_action = eof_action;
 
 	if (oldstr) {
 		int fd = fileno(oldstr->fp);
