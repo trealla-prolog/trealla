@@ -422,7 +422,7 @@ static int get_named_stream(prolog *pl, const char *name, size_t len)
 	for (int i = 0; i < MAX_STREAMS; i++) {
 		stream *str = &pl->streams[i];
 
-		if (!str->fp)
+		if (!str->fp || str->ignore)
 			continue;
 
 		if (map_get(str->alias, name, NULL))
@@ -439,7 +439,9 @@ static int get_named_stream(prolog *pl, const char *name, size_t len)
 static int new_stream(prolog *pl)
 {
 	for (int i = 0; i < MAX_STREAMS; i++) {
-		if (!pl->streams[i].fp && !pl->streams[i].ignore)
+		stream *str = &pl->streams[i];
+
+		if (!str->fp && !str->ignore)
 			return i;
 	}
 
@@ -1321,7 +1323,7 @@ static bool fn_iso_open_4(query *q)
 		if (oldn < 0)
 			return throw_error(q, p1, p1_ctx, "type_error", "not_a_stream");
 
-		stream *oldstr = &q->pl->streams[oldn];
+		oldstr = &q->pl->streams[oldn];
 		filename = oldstr->filename;
 	} else if (is_atom(p1))
 		filename = src = DUP_STR(q, p1);
@@ -1364,6 +1366,8 @@ static bool fn_iso_open_4(query *q)
 
 		cell *name = c + 1;
 		name = deref(q, name, c_ctx);
+
+		//printf("*** %s %s : %s\n", str->filename, C_STR(q, c), C_STR(q, name));
 
 		if (!CMP_STR_TO_CSTR(q, c, "mmap")) {
 #if USE_MMAP
@@ -1566,6 +1570,8 @@ static bool fn_iso_close_1(query *q)
 	parser_destroy(str->p);
 	str->p = NULL;
 
+	//printf("*** close %s\n", str->filename);
+
 	if ((str->fp == stdin)
 		|| (str->fp == stdout)
 		|| (str->fp == stderr))
@@ -1612,6 +1618,7 @@ static bool fn_iso_close_1(query *q)
 	free(str->mode);
 	free(str->filename);
 	free(str->data);
+	str->filename = NULL;
 	str->at_end_of_file = true;
 	return true;
 }
