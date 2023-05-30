@@ -1612,6 +1612,7 @@ static bool fn_iso_close_1(query *q)
 	free(str->mode);
 	free(str->filename);
 	free(str->data);
+	str->at_end_of_file = true;
 	return true;
 }
 
