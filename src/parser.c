@@ -2939,7 +2939,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 					p->error = true;
 				}
 
-				term_assign_vars(p, p->read_term, false);
+				term_assign_vars(p, p->read_term_slots, false);
 				xref_rule(p->m, p->cl, NULL);
 				term_to_body(p);
 

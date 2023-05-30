@@ -2003,10 +2003,10 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx_t p1_ctx, cell *p2, pl
 		q->is_input = true;
 
 	frame *f = GET_CURR_FRAME();
-	str->p->read_term = f->actual_slots;
+	str->p->read_term_slots = f->actual_slots;
 	str->p->do_read_term = true;
 	tokenize(str->p, false, false);
-	str->p->read_term = 0;
+	str->p->read_term_slots = 0;
 
 	if (str->p->error || !str->p->end_of_term) {
 		str->p->error = false;
