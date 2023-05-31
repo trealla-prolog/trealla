@@ -1,3 +1,9 @@
+:- initialization(main).
+:- set_prolog_flag(double_quotes, codes).
+
+name(N, L) :-
+	( number(N) -> number_codes(N, L) ; atom_codes(N, L) ).
+
 /*
 
 Perl Style Regular Expressions in Prolog
@@ -42,9 +48,6 @@ DCG Parser for Regular Expressions
 
 Constructing the DCG parser requires apply the left recursion removal techniques illustrated earlier for both the <RE> and <basic-RE> productions. We also left factor the <simple-RE> production to avoid backtracking.
 */
-
-:- initialization(main).
-:- set_prolog_flag(double_quotes, codes).
 
 re(Z) --> basicRE(W), reTail(W, Z).
 reTail(W, Z) --> "|", basicRE(X), reTail(union(W,X), Z).

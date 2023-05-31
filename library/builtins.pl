@@ -1130,9 +1130,3 @@ sre_subst_all_(Reg, TextIn, Subst, L0, L) :-
 	).
 
 :- help(sre_subst_all(+pattern,+text,+subst,-text), [iso(false)]).
-
-name(N, L) :-
-	( number(N) -> number_codes(N, L) ; atom_codes(N, L) ).
-
-:- help(name(+atomic,?chars), [iso(false),deprecated(true)]).
-
