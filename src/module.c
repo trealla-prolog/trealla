@@ -127,6 +127,26 @@ builtins *get_module_help(module *m, const char *name, unsigned arity, bool *fou
 	return NULL;
 }
 
+static const char *set_known(module *m, const char *filename)
+{
+	loaded_file *ptr = m->loaded_files;
+
+	while (ptr) {
+		if (!strcmp(ptr->filename, filename))
+			return ptr->filename;
+
+		ptr = ptr->next;
+	}
+
+	ptr = malloc(sizeof(*ptr));
+	ptr->next = m->loaded_files;
+	ptr->orig_filename = strdup(filename);
+	ptr->filename = strdup(filename);
+	ptr->is_loaded = false;
+	m->loaded_files = ptr;
+	return ptr->filename;
+}
+
 static const char *set_loaded(module *m, const char *filename, const char *orig_filename)
 {
 	loaded_file *ptr = m->loaded_files;
@@ -146,26 +166,6 @@ static const char *set_loaded(module *m, const char *filename, const char *orig_
 	ptr->filename = strdup(filename);
 	ptr->when_loaded = time(0);
 	ptr->is_loaded = true;
-	m->loaded_files = ptr;
-	return ptr->filename;
-}
-
-static const char *set_known(module *m, const char *filename)
-{
-	loaded_file *ptr = m->loaded_files;
-
-	while (ptr) {
-		if (!strcmp(ptr->filename, filename))
-			return ptr->filename;
-
-		ptr = ptr->next;
-	}
-
-	ptr = malloc(sizeof(*ptr));
-	ptr->next = m->loaded_files;
-	ptr->orig_filename = strdup(filename);
-	ptr->filename = strdup(filename);
-	ptr->is_loaded = false;
 	m->loaded_files = ptr;
 	return ptr->filename;
 }
@@ -912,7 +912,6 @@ static const char *dump_key(const void *k, const void *v, const void *p)
 
 bool set_op(module *m, const char *name, unsigned specifier, unsigned priority)
 {
-	//printf("*** %s set_op %s / %u / %u\n", m->name, name, specifier, priority);
 	miter *iter = map_find_key(m->ops, name);
 	op_table *ptr;
 
@@ -1676,7 +1675,6 @@ bool unload_file(module *m, const char *filename)
 	size_t len = strlen(filename);
 	char *tmpbuf = malloc(len + 20);
 	memcpy(tmpbuf, filename, len+1);
-	strcat(tmpbuf, ".pl");
 
 	if (tmpbuf[0] == '~') {
 		const char *ptr = getenv("HOME");
@@ -1694,6 +1692,8 @@ bool unload_file(module *m, const char *filename)
 
 	if (!(realbuf = realpath(tmpbuf, NULL))) {
 		strcpy(tmpbuf, savebuf);
+
+		strcat(tmpbuf, ".pl");
 
 		if (!(realbuf = realpath(tmpbuf, NULL))) {
 			free(tmpbuf);
