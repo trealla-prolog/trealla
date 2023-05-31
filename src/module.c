@@ -248,6 +248,7 @@ predicate *create_predicate(module *m, cell *c)
 	if (!m->head)
 		m->head = pr;
 
+	pr->filename = m->filename;
 	pr->m = m;
 	pr->key = *c;
 	pr->key.tag = TAG_INTERNED;
@@ -1639,6 +1640,9 @@ static bool unload_realfile(module *m, const char *filename)
 {
 	for (predicate *pr = m->head; pr; pr = pr->next) {
 		if (pr->is_multifile || pr->is_dynamic)
+			continue;
+
+		if (pr->filename && strcmp(pr->filename, filename))
 			continue;
 
 		for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {

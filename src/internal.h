@@ -455,6 +455,7 @@ struct predicate_ {
 	module *m;
 	map *idx, *idx2;
 	db_entry *dirty_list;
+	const char *filename;
 	cell key;
 	uint64_t cnt, ref_cnt, db_id;
 	bool is_reload:1;
