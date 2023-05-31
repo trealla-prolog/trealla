@@ -453,24 +453,23 @@ bool fn_iso_disjunction_2(query *q)
 {
 	cell *c = q->st.curr_cell+1;
 
-	if (!is_callable(c))
-		return throw_error(q, c, q->st.curr_frame, "type_error", "callable");
+	if (is_callable(c)) {
+		if (is_cstring(c) && !CMP_STR_TO_CSTR(q, c, "[]"))
+			return throw_error(q, c, q->st.curr_frame, "type_error", "callable");
 
-	if (is_cstring(c) && !CMP_STR_TO_CSTR(q, c, "[]"))
-		return throw_error(q, c, q->st.curr_frame, "type_error", "callable");
+		if (c->fn_ptr && (c->fn_ptr->fn == fn_iso_if_then_2)) {
+			cell *p1 = q->st.curr_cell + 2;
+			cell *p2 = p1 + p1->nbr_cells;
+			cell *p3 = p2 + p2->nbr_cells;
+			return do_if_then_else(q, p1, p2, p3);
+		}
 
-	if (c->fn_ptr && (c->fn_ptr->fn == fn_iso_if_then_2)) {
-		cell *p1 = q->st.curr_cell + 2;
-		cell *p2 = p1 + p1->nbr_cells;
-		cell *p3 = p2 + p2->nbr_cells;
-		return do_if_then_else(q, p1, p2, p3);
-	}
-
-	if (c->fn_ptr && (c->fn_ptr->fn == fn_if_2)) {
-		cell *p1 = q->st.curr_cell + 2;
-		cell *p2 = p1 + p1->nbr_cells;
-		cell *p3 = p2 + p2->nbr_cells;
-		return do_if_else(q, p1, p2, p3);
+		if (c->fn_ptr && (c->fn_ptr->fn == fn_if_2)) {
+			cell *p1 = q->st.curr_cell + 2;
+			cell *p2 = p1 + p1->nbr_cells;
+			cell *p3 = p2 + p2->nbr_cells;
+			return do_if_else(q, p1, p2, p3);
+		}
 	}
 
 	q->tot_goals--;
