@@ -474,7 +474,10 @@ bool fn_iso_disjunction_2(query *q)
 
 	q->tot_goals--;
 	GET_FIRST_ARG(p1,callable);
-	GET_NEXT_ARG(p2,callable);
+	GET_NEXT_ARG(p2,any);
+
+	if (!is_callable(p2))
+		return throw_error(q, q->st.curr_cell, q->st.curr_frame, "type_error", "callable");
 
 	if (q->retry) {
 		q->retry = QUERY_SKIP;
@@ -717,8 +720,8 @@ bool find_exception_handler(query *q, char *ball)
 	else
 		fprintf(stdout, "  ");
 
-	if (!q->run_init/*!is_interned(e) || strcmp(C_STR(q, e), "error")*/)
-		fprintf(stdout, "throw(");
+	//if (!q->run_init/*!is_interned(e) || strcmp(C_STR(q, e), "error")*/)
+	//	fprintf(stdout, "throw(");
 
 	if (is_cyclic_term(q, e, e_ctx)) {
 		q->quoted = 1;
@@ -728,8 +731,8 @@ bool find_exception_handler(query *q, char *ball)
 		print_term(q, stdout, e, e_ctx, 1);
 	}
 
-	if (!q->run_init/*!is_interned(e) || strcmp(C_STR(q, e), "error")*/)
-		fprintf(stdout, ")");
+	//if (!q->run_init/*!is_interned(e) || strcmp(C_STR(q, e), "error")*/)
+	//	fprintf(stdout, ")");
 
 	fprintf(stdout, ".\n");
 	q->quoted = 0;
