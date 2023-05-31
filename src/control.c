@@ -453,6 +453,9 @@ bool fn_iso_disjunction_2(query *q)
 {
 	cell *c = q->st.curr_cell+1;
 
+	if (!is_callable(c))
+		return throw_error(q, c, q->st.curr_frame, "type_error", "callable");
+
 	if (is_cstring(c) && !CMP_STR_TO_CSTR(q, c, "[]"))
 		return throw_error(q, c, q->st.curr_frame, "type_error", "callable");
 
