@@ -934,7 +934,7 @@ bool throw_error3(query *q, cell *c, pl_idx_t c_ctx, const char *err_type, const
 		SET_OP(tmp+nbr_cells, OP_YFX); nbr_cells++;
 		make_atom(tmp+nbr_cells++, index_from_pool(q->pl, functor));
 		make_int(tmp+nbr_cells, !is_string(goal)?goal->arity:0);
-	} else if (!strcmp(err_type, "existence_error") && !strcmp(expected, "procedure")) {
+	} else if (!strcmp(err_type, "existence_error") && !strcmp(expected, "procedure") && is_callable(c)) {
 		//printf("error(%s(%s,(%s)/%u),(%s)/%u).\n", err_type, expected, tmpbuf, c->arity, functor, goal->arity);
 		tmp = alloc_on_heap(q, 9);
 		check_heap_error(tmp);
