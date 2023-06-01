@@ -3495,10 +3495,10 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 	}
 
 	SB(src);
-	SB_sprintf(src, "true,(%s", pSrc);
+	SB_sprintf(src, "true. %s", pSrc);
 	SB_trim_ws(src);
 	SB_trim(src, '.');
-	SB_strcat(src, ").");
+	SB_strcat(src, ".");
 
 	p->srcptr = SB_cstr(src);
 	bool ok;
