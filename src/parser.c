@@ -2910,9 +2910,20 @@ unsigned tokenize(parser *p, bool args, bool consing)
 
 					p->error_desc = "operator_expected";
 					p->error = true;
+					return 0;
 				}
 
 				term_assign_vars(p, p->read_term_slots, false);
+
+				if (p->consulting && check_body_callable(p->cl->cells)) {
+					if (DUMP_ERRS || !p->do_read_term)
+						printf("Error: type error, not callable, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+
+					p->error_desc = "operator_expected";
+					p->error = true;
+					return 0;
+				}
+
 				xref_rule(p->m, p->cl, NULL);
 				term_to_body(p);
 

@@ -1,1 +1,1 @@
-   error(existence_error(procedure,'X'/2),main/0).
+Error: type error, not callable, tests/issues/test157.pl:4
