@@ -1359,6 +1359,8 @@ static void assert_commit(module *m, db_entry *dbe, predicate *pr, bool append)
 
 	uuid_gen(m->pl, &dbe->u);
 
+	// Note: indexing here refers to the dynamic index...
+
 	if (pr->is_noindex)
 		return;
 

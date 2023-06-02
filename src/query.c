@@ -311,8 +311,11 @@ void next_key(query *q)
 			map_done(q->st.iter);
 			q->st.iter = NULL;
 		}
-	} else
-		q->st.curr_dbe = q->st.curr_dbe->next;
+
+		return;
+	}
+
+	q->st.curr_dbe = q->st.curr_dbe->next;
 }
 
 bool has_next_key(query *q)
