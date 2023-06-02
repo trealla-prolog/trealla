@@ -7241,7 +7241,7 @@ static bool fn_sys_register_cleanup_1(query *q)
 
 static bool fn_sys_get_level_1(query *q)
 {
-	GET_FIRST_ARG(p1,var);
+	GET_FIRST_ARG(p1,any);
 	cell tmp;
 	make_int(&tmp, q->cp);
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);

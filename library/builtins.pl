@@ -66,6 +66,14 @@ catch(G, E, C) :-
 :- meta_predicate(catch(0,?,0)).
 :- help(catch(:callable,+term,:callable), [iso(true)]).
 
+call_det(G, Det) :-
+	'$get_level'(L),
+	G,
+	'$get_level'(L).
+
+:- meta_predicate(call_det(0,?)).
+:- help(call_det(:callable,?boolean), [iso(false)]).
+
 call_cleanup(G, C) :-
 	(var(C) -> throw(error(instantiation_error, call_cleanup/3)) ; true),
 	'$register_cleanup'(ignore(C)),
