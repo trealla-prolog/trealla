@@ -390,6 +390,7 @@ Non-standard predicates
 	partial_string/2            # partial_string(+string,-String)
 	partial_string/3            # partial_string(+string,-String,-Var)
 	if/3, (*->)/2               # soft-cut
+	call_det/2					# call_det(+call,?boolean)
 	setup_call_cleanup/3        # setup_call_cleanup(+setup,+call,+cleanup)
 	call_cleanup/2              # call_cleanup(+call,+cleanup)
 	term_attvars/2              # term_attvars(+term,-Vs)
