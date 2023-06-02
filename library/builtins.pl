@@ -67,9 +67,10 @@ catch(G, E, C) :-
 :- help(catch(:callable,+term,:callable), [iso(true)]).
 
 call_det(G, Det) :-
-	'$get_level'(L),
+	'$get_level'(L1),
 	G,
-	'$get_level'(L).
+	'$get_level'(L2),
+	(L1 = L2 -> Det = true ; Det = false).
 
 :- meta_predicate(call_det(0,?)).
 :- help(call_det(:callable,?boolean), [iso(false)]).

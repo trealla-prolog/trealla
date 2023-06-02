@@ -1042,7 +1042,7 @@ void prune_me(query *q, bool soft_cut, pl_idx_t cp)
 
 		// A prune can break through a barrier...
 
-		if ((ch-q->choices) < cp) {
+		if (ch->cgen < f->cgen) {
 			f->cgen = ch->cgen;
 			break;
 		}
