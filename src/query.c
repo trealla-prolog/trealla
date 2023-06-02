@@ -1016,7 +1016,7 @@ void cut_me(query *q)
 		q->st.tp = 0;
 }
 
-void prune_me(query *q, bool soft_cut)
+void prune_me(query *q, bool soft_cut, pl_idx_t cp)
 {
 	frame *f = GET_CURR_FRAME();
 
@@ -1025,7 +1025,7 @@ void prune_me(query *q, bool soft_cut)
 		const choice *save_ch = ch;
 
 		while (soft_cut && (ch >= q->choices)) {
-			if (ch->barrier && (ch->cgen == f->cgen)) {
+			if ((q->cp-1) == cp) {
 				if (ch == save_ch) {
 					drop_choice(q);
 					f->cgen--;
