@@ -940,9 +940,9 @@ bool push_barrier(query *q)
 }
 
 // Note: since there is no separate control stack a call will
-// create a choice on the stack. This sets a special flag so
-// that '$drop_barrier' knows to also remove the barrier (choice)
-// if the call is det.
+// create a choice. This sets a special flag so that
+// '$drop_barrier' knows to also remove the choice if the
+// call is det.
 
 bool push_call_barrier(query *q)
 {
@@ -1070,12 +1070,12 @@ void prune_me(query *q, bool soft_cut)
 
 // If the call is det then the barrier can be dropped...
 
-bool drop_barrier(query *q)
+bool drop_barrier(query *q, pl_idx_t cp)
 {
 	const frame *f = GET_CURR_FRAME();
 	const choice *ch = GET_CURR_CHOICE();
 
-	if (ch->call_barrier && (ch->cgen == f->cgen)) {
+	if ((q->cp-1) == cp) {
 		drop_choice(q);
 		return true;
 	}

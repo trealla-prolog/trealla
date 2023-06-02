@@ -71,7 +71,7 @@ int get_stream(query *q, cell *p1);
 bool call_builtin(query *q, cell *c, pl_idx_t c_ctx);
 bool call_userfun(query *q, cell *c, pl_idx_t c_ctx);
 void do_cleanup(query *q, cell *p1, pl_idx_t c_ctx);
-bool drop_barrier(query *q);
+bool drop_barrier(query *q, pl_idx_t cp);
 void collect_vars(query *q, cell *p1, pl_idx_t p1_ctx);
 bool check_list(query *q, cell *p1, pl_idx_t p1_ctx, bool *is_partial, pl_int_t *skip);
 bool parse_write_params(query *q, cell *c, pl_idx_t c_ctx, cell **vnames, pl_idx_t *vnames_ctx);
@@ -94,7 +94,7 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx_t c_ctx, i
 
 void dump_term(query *q, const char *s, const cell *c);
 
-bool fn_sys_drop_barrier_0(query *q);
+bool fn_sys_drop_barrier_1(query *q);
 bool fn_iso_throw_1(query *q);
 bool fn_sys_call_cleanup_3(query *q);
 bool fn_iso_catch_3(query *q);

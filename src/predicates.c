@@ -7891,7 +7891,7 @@ builtins g_iso_bifs[] =
 	{"$soft_prune", 0, fn_sys_soft_prune_0, NULL, false, false, BLAH},
 	{"$prune", 0, fn_sys_prune_0, NULL, false, false, BLAH},
 	{"$prune", 1, fn_sys_prune_1, NULL, false, false, BLAH},
-	{"$drop_barrier", 0, fn_sys_drop_barrier_0, NULL, false, false, BLAH},
+	{"$drop_barrier", 1, fn_sys_drop_barrier_1, NULL, false, false, BLAH},
 	{"$timer", 0, fn_sys_timer_0, NULL, false, false, BLAH},
 	{"$elapsed", 0, fn_sys_elapsed_0, NULL, false, false, BLAH},
 	{"$lt", 2, fn_sys_lt_2, NULL, false, false, BLAH},
