@@ -1466,17 +1466,16 @@ static bool match_head(query *q)
 
 static bool any_outstanding_choices(query *q)
 {
-	if (!q->cp)
-		return false;
+	while (q->cp) {
+		const choice *ch = GET_CURR_CHOICE();
 
-	const choice *ch = GET_CURR_CHOICE();
+		if (!ch->barrier)
+			break;
 
-	while (ch->barrier) {
-		drop_choice(q);
-		ch--;
+		q->cp--;
 	}
 
-	return q->cp ? true : false;
+	return q->cp > 0;
 }
 
 static bool consultall(query *q, cell *l, pl_idx_t l_ctx)
