@@ -4414,10 +4414,11 @@ static bool fn_time_1(query *q)
 
 	GET_FIRST_ARG(p1,callable);
 	fn_sys_timer_0(q);
-	cell *tmp = clone_to_heap(q, true, p1, 3);
+	cell *tmp = clone_to_heap(q, true, p1, 4);
 	pl_idx_t nbr_cells = 1 + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_elapsed_s, fn_sys_elapsed_0, 0, 0);
-	make_struct(tmp+nbr_cells++, g_sys_cut_if_det_s, fn_sys_cut_if_det_0, 0, 0);
+	make_struct(tmp+nbr_cells++, g_sys_cut_if_det_s, fn_sys_cut_if_det_1, 1, 1);
+	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
 	q->st.curr_cell = tmp;
@@ -7886,8 +7887,8 @@ builtins g_iso_bifs[] =
 	{"$catch", 3, fn_iso_catch_3, NULL, true, false, BLAH},
 	{"$call_cleanup", 3, fn_sys_call_cleanup_3, NULL, false, false, BLAH},
 	{"$block_catcher", 1, fn_sys_block_catcher_1, NULL, false, false, BLAH},
-	{"$cleanup_if_det", 0, fn_sys_cleanup_if_det_0, NULL, false, false, BLAH},
-	{"$cut_if_det", 0, fn_sys_cut_if_det_0, NULL, false, false, BLAH},
+	{"$cleanup_if_det", 1, fn_sys_cleanup_if_det_1, NULL, false, false, BLAH},
+	{"$cut_if_det", 1, fn_sys_cut_if_det_1, NULL, false, false, BLAH},
 	{"$soft_prune", 0, fn_sys_soft_prune_0, NULL, false, false, BLAH},
 	{"$prune", 0, fn_sys_prune_0, NULL, false, false, BLAH},
 	{"$prune", 1, fn_sys_prune_1, NULL, false, false, BLAH},

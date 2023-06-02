@@ -41,13 +41,14 @@ void do_cleanup(query *q, cell *c, pl_idx_t c_ctx)
 	q->st.curr_cell = tmp;
 }
 
-bool fn_sys_cleanup_if_det_0(query *q)
+bool fn_sys_cleanup_if_det_1(query *q)
 {
 	q->tot_goals--;
+	GET_FIRST_ARG(p1,integer);
 	const frame *f = GET_CURR_FRAME();
 	choice *ch = GET_CURR_CHOICE();
 
-	if (!ch->call_barrier || (ch->cgen != f->cgen))
+	if ((q->cp-1) != get_smallint(p1))
 		return true;
 
 	drop_choice(q);
@@ -69,13 +70,14 @@ bool fn_sys_cleanup_if_det_0(query *q)
 	return true;
 }
 
-bool fn_sys_cut_if_det_0(query *q)
+bool fn_sys_cut_if_det_1(query *q)
 {
 	q->tot_goals--;
+	GET_FIRST_ARG(p1,integer);
 	const frame *f = GET_CURR_FRAME();
 	choice *ch = GET_CURR_CHOICE();
 
-	if (!ch->call_barrier || (ch->cgen != f->cgen))
+	if ((q->cp-1) != get_smallint(p1))
 		return true;
 
 	drop_choice(q);
@@ -627,10 +629,11 @@ bool fn_sys_call_cleanup_3(query *q)
 		GET_NEXT_ARG(p2,any);
 		GET_NEXT_ARG(p3,callable);
 		q->retry = QUERY_OK;
-		cell *tmp = clone_to_heap(q, true, p3, 2);
+		cell *tmp = clone_to_heap(q, true, p3, 3);
 		check_heap_error(tmp);
 		pl_idx_t nbr_cells = 1+p3->nbr_cells;
-		make_struct(tmp+nbr_cells++, g_sys_cleanup_if_det_s, fn_sys_cleanup_if_det_0, 0, 0);
+		make_struct(tmp+nbr_cells++, g_sys_cleanup_if_det_s, fn_sys_cleanup_if_det_1, 1, 1);
+		make_uint(tmp+nbr_cells++, q->cp);
 		make_call(q, tmp+nbr_cells);
 		check_heap_error(push_catcher(q, QUERY_EXCEPTION));
 		q->st.curr_cell = tmp;
@@ -642,10 +645,11 @@ bool fn_sys_call_cleanup_3(query *q)
 
 	// First time through? Try the primary goal...
 
-	cell *tmp = clone_to_heap(q, true, p1, 2);
+	cell *tmp = clone_to_heap(q, true, p1, 3);
 	check_heap_error(tmp);
 	pl_idx_t nbr_cells = 1+p1->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_sys_cleanup_if_det_s, fn_sys_cleanup_if_det_0, 0, 0);
+	make_struct(tmp+nbr_cells++, g_sys_cleanup_if_det_s, fn_sys_cleanup_if_det_1, 1, 1);
+	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_catcher(q, QUERY_RETRY));
 	q->st.curr_cell = tmp;
