@@ -2194,6 +2194,7 @@ bool do_retract(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract
 	if (dbe->owner->m->pl != q->pl)
 		return throw_error(q, p1, p1_ctx, "permission_error", "modify,static_procedure");
 
+#if 0
 	if (dbe->owner->is_multifile
 		&& (is_retract == DO_RETRACTALL)
 		&& strcmp(q->st.m->filename, dbe->filename)
@@ -2202,6 +2203,7 @@ bool do_retract(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract
 		//printf("*** RETRACT? %s : %s/%u multifile=%d, dynamic=%d, m->filename=%s\n", dbe->filename, C_STR(q->st.m, &dbe->owner->key), dbe->owner->key.arity, dbe->owner->is_multifile, dbe->owner->is_dynamic, q->st.m->filename);
 		return true;
 	}
+#endif
 
 	retract_from_db(dbe);
 	bool last_match = (is_retract == DO_RETRACT) && !has_next_key(q);

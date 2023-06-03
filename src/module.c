@@ -1641,8 +1641,10 @@ module *load_text(module *m, const char *src, const char *filename)
 static bool unload_realfile(module *m, const char *filename)
 {
 	for (predicate *pr = m->head; pr; pr = pr->next) {
+#if 0
 		if (pr->is_multifile || pr->is_dynamic)
 			continue;
+#endif
 
 		if (pr->filename && strcmp(pr->filename, filename))
 			continue;
