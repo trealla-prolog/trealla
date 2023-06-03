@@ -360,8 +360,27 @@ bool has_next_key(query *q)
 	if (!next)
 		return false;
 
-	if (!q->st.arg1_is_ground)
+	if (next->next || !q->st.arg1_is_ground)
 		return true;
+
+	// Attempt look-ahead on 1st arg...
+
+	cl = &next->cl;
+	cell *darg1 = cl->cells->val_off == g_neck_s ? cl->cells + 1+1 : cl->cells + 1;
+
+	if (is_var(darg1))
+		return true;
+
+	cell *karg1 = deref(q, q->st.key + 1, q->st.curr_frame);
+
+	//DUMP_TERM("key", q->st.key, q->st.curr_frame, 1);
+	//DUMP_TERM("next", cl->cells, q->st.curr_frame, 0);
+
+	if (q->pl->opt && is_atomic(karg1)) {
+		if (compare(q, karg1, q->st.curr_frame, darg1, q->st.curr_frame)) {
+			return false;
+		}
+	}
 
 	return true;
 }
