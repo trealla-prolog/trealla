@@ -360,7 +360,10 @@ bool has_next_key(query *q)
 	if (!next)
 		return false;
 
-	if (next->next || !q->st.arg1_is_ground)
+	predicate *pr = next->owner;
+
+	if ((next->next && !pr->is_multifile && !pr->is_dynamic)
+		|| !q->st.arg1_is_ground)
 		return true;
 
 	// Attempt look-ahead on 1st arg...
