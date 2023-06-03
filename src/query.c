@@ -403,15 +403,14 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx_t key_ctx)
 	q->st.key = key;
 
 	if (!pr->idx) {
-		if (!pr->is_processed && !pr->is_multifile)
+		if (!pr->is_processed && !pr->is_multifile && !pr->is_dynamic)
 			just_in_time_rebuild(pr);
 
 		q->st.curr_dbe = pr->head;
 
-		if (!key->arity || pr->is_multifile || pr->is_dynamic)
-			return true;
+		if (key->arity && !pr->is_multifile && !pr->is_dynamic)
+			setup_key(q);
 
-		setup_key(q);
 		return true;
 	}
 
