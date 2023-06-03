@@ -1147,8 +1147,10 @@ unsigned search_op(module *m, const char *name, unsigned *specifier, bool hint_p
 
 static bool check_multifile(module *m, predicate *pr, db_entry *dbe)
 {
-	if (pr->head && !pr->is_multifile && !pr->is_dynamic
-		&& (C_STR(m, &pr->key)[0] != '$')) {
+	if (pr->head
+		&& !pr->is_multifile && !pr->is_dynamic
+		&& (C_STR(m, &pr->key)[0] != '$')
+		) {
 		if ((dbe->filename != pr->head->filename) || pr->is_reload) {
 			for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
 				retract_from_db(dbe);
