@@ -574,7 +574,7 @@ static void directives(parser *p, cell *d)
 			//if (DUMP_ERRS || !p->do_read_term)
 			//	fprintf(stdout, "Error: module already loaded: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_nbr);
 			//
-			p->already_loaded = true;
+			p->already_loaded_error = true;
 			p->m = tmp_m;
 
 			if (tmp_m != p->m)
@@ -664,7 +664,7 @@ static void directives(parser *p, cell *d)
 			//if (DUMP_ERRS || !p->do_read_term)
 			//	fprintf(stdout, "Error: module already loaded: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_nbr);
 			//
-			p->already_loaded = true;
+			p->already_loaded_error = true;
 			p->m = tmp_m;
 			return;
 		}
@@ -2974,7 +2974,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 						if (!process_term(p, h))
 							return false;
 
-						if (p->already_loaded)
+						if (p->already_loaded_error)
 							return false;
 
 						p1 = LIST_TAIL(p1);
@@ -2986,7 +2986,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 					if (!tail && !process_term(p, p1))
 						return false;
 
-					if (p->already_loaded)
+					if (p->already_loaded_error)
 						return false;
 
 					p->cl->cidx = 0;

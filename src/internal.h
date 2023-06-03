@@ -748,7 +748,7 @@ struct parser_ {
 	bool was_consing:1;
 	bool was_string:1;
 	bool did_getline:1;
-	bool already_loaded:1;
+	bool already_loaded_error:1;
 	bool do_read_term:1;
 	bool string:1;
 	bool run_init:1;

@@ -1481,6 +1481,7 @@ static bool consultall(query *q, cell *l, pl_idx_t l_ctx)
 {
 	if (is_string(l)) {
 		char *s = DUP_STR(q, l);
+		unload_file(q->p->m, s);
 
 		if (!load_file(q->p->m, s, false)) {
 			free(s);
@@ -1506,6 +1507,7 @@ static bool consultall(query *q, cell *l, pl_idx_t l_ctx)
 				return false;
 		} else {
 			char *s = DUP_STR(q, h);
+			unload_file(q->p->m, s);
 
 			if (!load_file(q->p->m, s, false)) {
 				free(s);

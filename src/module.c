@@ -153,6 +153,7 @@ static const char *set_loaded(module *m, const char *filename, const char *orig_
 
 	while (ptr) {
 		if (!strcmp(ptr->filename, filename)) {
+			//printf("*** set_loaded '%s'\n", filename);
 			ptr->is_loaded = true;
 			return ptr->filename;
 		}
@@ -167,6 +168,7 @@ static const char *set_loaded(module *m, const char *filename, const char *orig_
 	ptr->when_loaded = time(0);
 	ptr->is_loaded = true;
 	m->loaded_files = ptr;
+	//printf("*** set_loaded '%s'\n", filename);
 	return ptr->filename;
 }
 
@@ -176,6 +178,7 @@ static void set_unloaded(module *m, const char *filename)
 
 	while (ptr) {
 		if (!strcmp(ptr->filename, filename)) {
+			//printf("*** set_unloaded '%s'\n", filename);
 			ptr->is_loaded = false;
 			return;
 		}
@@ -1604,7 +1607,7 @@ module *load_text(module *m, const char *src, const char *filename)
 	p->srcptr = (char*)src;
 	tokenize(p, false, false);
 
-	if (!p->error && !p->already_loaded && !p->end_of_term && p->cl->cidx) {
+	if (!p->error && !p->already_loaded_error && !p->end_of_term && p->cl->cidx) {
 		if (DUMP_ERRS || !p->do_read_term)
 			fprintf(stdout, "Error: syntax error, incomplete statement, %s:%d\n", filename, p->line_nbr);
 
@@ -1682,6 +1685,7 @@ static bool unload_realfile(module *m, const char *filename)
 
 bool unload_file(module *m, const char *filename)
 {
+	//printf("*** unload_file '%s'\n", filename);
 	size_t len = strlen(filename);
 	char *tmpbuf = malloc(len + 20);
 	memcpy(tmpbuf, filename, len+1);
@@ -1745,9 +1749,9 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including)
 
 		ok = !p->error;
 	}
-	 while (ok && !p->already_loaded && !g_tpl_interrupt);
+	 while (ok && !p->already_loaded_error && !g_tpl_interrupt);
 
-	if (!p->error && !p->already_loaded && !p->end_of_term && p->cl->cidx) {
+	if (!p->error && !p->already_loaded_error && !p->end_of_term && p->cl->cidx) {
 		if (DUMP_ERRS || !p->do_read_term)
 			fprintf(stdout, "Error: syntax error, incomplete statement, %s:%d\n", filename, p->line_nbr);
 
@@ -1756,7 +1760,7 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including)
 
 	module *save_m = p->m;
 
-	if (!p->error && !p->already_loaded) {
+	if (!p->error && !p->already_loaded_error) {
 		xref_db(p->m);
 		int save = p->m->pl->quiet;
 		//p->m->pl->quiet = true;
@@ -1790,6 +1794,7 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including)
 
 module *load_file(module *m, const char *filename, bool including)
 {
+	//printf("*** load_file '%s'\n", filename);
 	const char *orig_filename = filename;
 
 	if (!strcmp(filename, "user")) {
