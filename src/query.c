@@ -285,8 +285,8 @@ static void setup_key(query *q)
 	if (q->st.key->arity > 1)
 		arg2 = arg1 + arg1->nbr_cells;
 
-	//if (q->st.key->arity > 2)
-	//	arg3 = arg2 + arg2->nbr_cells;
+	if (arg2 && (q->st.key->arity > 2))
+		arg3 = arg2 + arg2->nbr_cells;
 
 	arg1 = deref(q, arg1, q->st.curr_frame);
 
