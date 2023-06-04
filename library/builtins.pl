@@ -550,6 +550,9 @@ term_hash(Term, _Opts, Hash) :- term_hash(Term, Hash).
 not(G) :- G, !, fail.
 not(_).
 
+\+ G :- G, !, fail.
+\+ _.
+
 :- meta_predicate(not(0)).
 :- help(not(:callable), [iso(false)]).
 

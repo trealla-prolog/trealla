@@ -7883,7 +7883,7 @@ builtins g_iso_bifs[] =
 	{":", 2, fn_iso_invoke_2, "+atom,:callable", true, false, BLAH},
 	{"=..", 2, fn_iso_univ_2, "+term,?list", true, false, BLAH},
 	{"->", 2, fn_iso_if_then_2, ":callable,:callable", true, false, BLAH},
-	{"\\+", 1, fn_iso_negation_1, ":callable", true, false, BLAH},
+	//{"\\+", 1, fn_iso_negation_1, ":callable", true, false, BLAH},
 	{"=", 2, fn_iso_unify_2, "+term,+term", true, false, BLAH},
 	{"\\=", 2, fn_iso_notunify_2, "+term,+term", true, false, BLAH},
 	{"-->", 2, fn_iso_dcgs_2, "+term,+term", true, false, BLAH},
