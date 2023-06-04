@@ -323,9 +323,10 @@ void next_key(query *q)
 
 bool has_next_key(query *q)
 {
+	const frame *f = GET_CURR_FRAME();
+
 	if (q->st.iter) {
 		db_entry *dbe;
-		const frame *f = GET_CURR_FRAME();
 
 		while (map_is_next(q->st.iter, (void**)&dbe)) {
 			if (!can_view(q, f->ugen, dbe)) {
@@ -355,34 +356,35 @@ bool has_next_key(query *q)
 	if (q->st.arg3_is_ground && cl->arg3_is_unique)
 		return false;
 
-	db_entry *next = q->st.curr_dbe->next;
-
-	if (!next)
-		return false;
-
-	if (next->next || !q->st.arg1_is_ground)
-		return true;
-
 	// Attempt look-ahead on 1st arg...
 
-	cl = &next->cl;
-	cell *darg1 = cl->cells->val_off == g_neck_s ? cl->cells + 1+1 : cl->cells + 1;
+	for (db_entry *next = q->st.curr_dbe->next; next; next = next->next) {
+		if (!can_view(q, f->ugen, next))
+			continue;
 
-	if (is_var(darg1))
-		return true;
+		if (!q->st.arg1_is_ground)
+			return true;
 
-	cell *karg1 = deref(q, q->st.key + 1, q->st.curr_frame);
+		cl = &next->cl;
+		cell *darg1 = cl->cells->val_off == g_neck_s ? cl->cells+1+1 : cl->cells+1;
 
-	//DUMP_TERM("key", q->st.key, q->st.curr_frame, 1);
-	//DUMP_TERM("next", cl->cells, q->st.curr_frame, 0);
+		if (is_var(darg1))
+			return true;
 
-	if (q->pl->opt && is_atomic(karg1)) {
-		if (compare(q, karg1, q->st.curr_frame, darg1, q->st.curr_frame)) {
-			return false;
-		}
+		cell *karg1 = deref(q, q->st.key+1, q->st.curr_frame);
+		pl_idx_t karg1_ctx = q->latest_ctx;
+
+		//DUMP_TERM("key", q->st.key, q->st.curr_frame, 1);
+		//DUMP_TERM("next", cl->cells, q->st.curr_frame, 0);
+
+		if (is_var(karg1) || !is_atomic(karg1))
+			return true;
+
+		if (compare(q, karg1, karg1_ctx, darg1, q->st.curr_frame) == 0)
+			return true;
 	}
 
-	return true;
+	return false;
 }
 
 const char *dump_id(const void *k, const void *v, const void *p)
@@ -403,6 +405,9 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx_t key_ctx)
 	q->st.key = key;
 
 	if (!pr->idx) {
+		// The just_in_time_rebuild of the index is currently disabled
+		// for multifile/dynamic predicates because of why???
+
 		if (!pr->is_processed && !pr->is_multifile && !pr->is_dynamic)
 			just_in_time_rebuild(pr);
 
