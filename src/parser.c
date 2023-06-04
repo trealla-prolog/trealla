@@ -1731,7 +1731,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			c->nbr_cells = 1 + lhs->nbr_cells + rhs->nbr_cells;
 		}
 	} else if (is_prefix(c)) {
-		if (c->val_off == g_neck_s) {
+		if ((c->val_off == g_neck_s) || (c->val_off == g_negation_s)) {
 			cell *save_c = c;
 			cell *rhs = c + 1;
 

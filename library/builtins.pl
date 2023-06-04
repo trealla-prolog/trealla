@@ -547,16 +547,6 @@ term_hash(Term, _Opts, Hash) :- term_hash(Term, Hash).
 
 :- help(term_hash(+term,+list,-integer), [iso(false)]).
 
-not(G) :- G, !, fail.
-not(_).
-
-\+ G :- G, !, fail.
-\+ _.
-
-:- meta_predicate(not(0)).
-:- help(not(:callable), [iso(false)]).
-
-
 read_term_from_chars_(T, Cs, Rest) :-
 	'$read_term_from_chars'(T, [], Cs, Rest).
 

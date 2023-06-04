@@ -7625,14 +7625,11 @@ static void load_properties(module *m)
 	format_property(m, tmpbuf, sizeof(tmpbuf), ";", 2, "control_construct"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "->", 2, "control_construct"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "*->", 2, "control_construct"); SB_strcat(pr, tmpbuf);
-	//format_property(m, tmpbuf, sizeof(tmpbuf), "call", 1, "control_construct"); SB_strcat(pr, tmpbuf);
-	//format_property(m, tmpbuf, sizeof(tmpbuf), "bagof", 3, "control_construct"); SB_strcat(pr, tmpbuf);
-	//format_property(m, tmpbuf, sizeof(tmpbuf), "setof", 3, "control_construct"); SB_strcat(pr, tmpbuf);
-	//format_property(m, tmpbuf, sizeof(tmpbuf), "throw", 1, "control_construct"); SB_strcat(pr, tmpbuf);
-	//format_property(m, tmpbuf, sizeof(tmpbuf), "findall", 3, "control_construct"); SB_strcat(pr, tmpbuf);
-	//format_property(m, tmpbuf, sizeof(tmpbuf), "findall", 4, "control_construct"); SB_strcat(pr, tmpbuf);
 
+	format_property(m, tmpbuf, sizeof(tmpbuf), "not", 1, "meta_predicate(not(0))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "\\+", 1, "meta_predicate((\\+0))"); SB_strcat(pr, tmpbuf);
 	//format_property(m, tmpbuf, sizeof(tmpbuf), "catch", 3, "meta_predicate(catch(0,?,0))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "", 2, "meta_predicate((0,0))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), ",", 2, "meta_predicate((0,0))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), ";", 2, "meta_predicate((0;0))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "->", 2, "meta_predicate((0->0))"); SB_strcat(pr, tmpbuf);
@@ -7883,7 +7880,8 @@ builtins g_iso_bifs[] =
 	{":", 2, fn_iso_invoke_2, "+atom,:callable", true, false, BLAH},
 	{"=..", 2, fn_iso_univ_2, "+term,?list", true, false, BLAH},
 	{"->", 2, fn_iso_if_then_2, ":callable,:callable", true, false, BLAH},
-	//{"\\+", 1, fn_iso_negation_1, ":callable", true, false, BLAH},
+	{"\\+", 1, fn_iso_negation_1, ":callable", true, false, BLAH},
+	{"not", 1, fn_iso_negation_1, ":callable", false, false, BLAH},
 	{"=", 2, fn_iso_unify_2, "+term,+term", true, false, BLAH},
 	{"\\=", 2, fn_iso_notunify_2, "+term,+term", true, false, BLAH},
 	{"-->", 2, fn_iso_dcgs_2, "+term,+term", true, false, BLAH},
