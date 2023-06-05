@@ -1243,7 +1243,7 @@ void just_in_time_rebuild(predicate *pr)
 	pr->is_processed = true;
 
 	for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
-		if (dbe->cl.dgen_erased)
+		if (dbe->cl.is_deleted)
 			continue;
 
 		optimize_rule(pr->m, dbe);

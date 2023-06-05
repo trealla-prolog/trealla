@@ -359,16 +359,6 @@ static bool conditionals(parser *p, cell *d)
 
 	const char *dirname = C_STR(p, c);
 
-	if (!strcmp(dirname, "endif") && (c->arity == 0) && !p->m->ifs_blocked[p->m->if_depth]) {
-		--p->m->if_depth;
-		return true;
-	}
-
-	if (!strcmp(dirname, "endif") && (c->arity == 0)) {
-		--p->m->if_depth;
-		return true;
-	}
-
 	if (!strcmp(dirname, "if") && (c->arity == 1) && !p->m->ifs_done[p->m->if_depth] && !p->m->ifs_blocked[p->m->if_depth]) {
 		bool ok = goal_run(p, c+1);
 		p->m->ifs_blocked[++p->m->if_depth] = !ok;
@@ -404,6 +394,16 @@ static bool conditionals(parser *p, cell *d)
 
 	if (!strcmp(dirname, "else") && (c->arity == 0)) {
 		p->m->ifs_blocked[p->m->if_depth] = true;
+		return true;
+	}
+
+	if (!strcmp(dirname, "endif") && (c->arity == 0) && !p->m->ifs_blocked[p->m->if_depth]) {
+		--p->m->if_depth;
+		return true;
+	}
+
+	if (!strcmp(dirname, "endif") && (c->arity == 0)) {
+		--p->m->if_depth;
 		return true;
 	}
 
