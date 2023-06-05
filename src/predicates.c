@@ -7654,7 +7654,7 @@ static void load_properties(module *m)
 	format_property(m, tmpbuf, sizeof(tmpbuf), "retract", 2, "meta_predicate(retract(:,?))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "retractall", 1, "meta_predicate(retractall(:))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "current_predicate", 1, "meta_predicate(current_predicate(:))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "predicate_property", 1, "meta_predicate(predicate_property(:,?))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "predicate_property", 2, "meta_predicate(predicate_property(:,?))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "abolish", 1, "meta_predicate(abolish(:))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "clause", 2, "meta_predicate(clause(:,?))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "clause", 3, "meta_predicate(clause(:,?,?))"); SB_strcat(pr, tmpbuf);
