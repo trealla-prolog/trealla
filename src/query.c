@@ -326,7 +326,7 @@ bool has_next_key(query *q)
 	const frame *f = GET_CURR_FRAME();
 
 	if (q->st.iter) {
-		db_entry *dbe;
+		const db_entry *dbe;
 
 		while (map_is_next(q->st.iter, (void**)&dbe)) {
 			if (!can_view(q, f->ugen, dbe)) {
