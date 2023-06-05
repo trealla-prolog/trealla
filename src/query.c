@@ -762,7 +762,7 @@ static void share_predicate(query *q, predicate *pr)
 		return;
 
 	q->st.pr = pr;
-	pr->ref_cnt++;
+	pr->refcnt++;
 }
 
 void unshare_predicate(query *q, predicate *pr)
@@ -773,12 +773,12 @@ void unshare_predicate(query *q, predicate *pr)
 	if (!pr->is_dynamic)
 		return;
 
-	if (!pr->ref_cnt)
+	if (!pr->refcnt)
 		return;
 
-	--pr->ref_cnt;
+	--pr->refcnt;
 
-	if (pr->ref_cnt != 0)
+	if (pr->refcnt != 0)
 		return;
 
 	// Predicate is no longer being used
@@ -1805,7 +1805,7 @@ bool execute(query *q, cell *cells, unsigned nbr_vars)
 
 void purge_predicate_dirty_list(query *q, predicate *pr)
 {
-	if (pr->ref_cnt)
+	if (pr->refcnt)
 		return;
 
 	db_entry *save = NULL;

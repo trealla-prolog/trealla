@@ -2275,8 +2275,8 @@ static bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 	for (db_entry *dbe = pr->head; dbe; dbe = dbe->next)
 		retract_from_db(dbe);
 
-	if (!pr->ref_cnt)
-		pr->ref_cnt++;
+	if (!pr->refcnt)
+		pr->refcnt++;
 
 	while (pr->dirty_list) {
 		db_entry *dbe = pr->dirty_list;

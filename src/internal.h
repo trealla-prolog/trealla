@@ -457,7 +457,7 @@ struct predicate_ {
 	db_entry *dirty_list;
 	const char *filename;
 	cell key;
-	uint64_t cnt, ref_cnt, db_id;
+	uint64_t cnt, refcnt, db_id;
 	bool is_reload:1;
 	bool is_prebuilt:1;
 	bool is_public:1;
