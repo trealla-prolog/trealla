@@ -542,7 +542,7 @@ struct prolog_state_ {
 	};
 
 	uint64_t timer_started;
-	pl_idx_t curr_frame, fp, hp, tp, sp, pp;
+	pl_idx_t curr_frame, fp, hp, tp, sp, pp, key_ctx;
 	float prob;
 	uint8_t qnbr;
 	bool arg1_is_ground:1;

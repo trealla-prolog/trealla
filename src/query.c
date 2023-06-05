@@ -288,13 +288,13 @@ static void setup_key(query *q)
 	if (arg2 && (q->st.key->arity > 2))
 		arg3 = arg2 + arg2->nbr_cells;
 
-	arg1 = deref(q, arg1, q->st.curr_frame);
+	arg1 = deref(q, arg1, q->st.key_ctx);
 
 	if (arg2)
-		arg2 = deref(q, arg2, q->st.curr_frame);
+		arg2 = deref(q, arg2, q->st.key_ctx);
 
 	if (arg3)
-		arg3 = deref(q, arg3, q->st.curr_frame);
+		arg3 = deref(q, arg3, q->st.key_ctx);
 
 	if (is_atomic(arg1) || is_structure(arg1))
 		q->st.arg1_is_ground = true;
@@ -371,10 +371,10 @@ bool has_next_key(query *q)
 		if (is_var(darg1))
 			return true;
 
-		cell *karg1 = deref(q, q->st.key+1, q->st.curr_frame);
+		cell *karg1 = deref(q, q->st.key+1, q->st.key_ctx);
 		pl_idx_t karg1_ctx = q->latest_ctx;
 
-		//DUMP_TERM("key", q->st.key, q->st.curr_frame, 1);
+		//DUMP_TERM("key", q->st.key, q->st.key_ctx, 1);
 		//DUMP_TERM("next", cl->cells, q->st.curr_frame, 0);
 
 		if (is_var(karg1) || !is_atomic(karg1))
@@ -403,6 +403,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx_t key_ctx)
 	q->st.arg2_is_ground = false;
 	q->st.arg3_is_ground = false;
 	q->st.key = key;
+	q->st.key_ctx = key_ctx;
 
 	if (!pr->idx) {
 		// The just_in_time_rebuild of the index is currently disabled
