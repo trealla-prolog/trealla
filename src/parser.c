@@ -1667,6 +1667,30 @@ static cell *goal_expansion(parser *p, cell *goal)
 	return goal;
 }
 
+static cell *insert_syscall_here(parser *p, cell *c, cell *p1)
+{
+	pl_idx_t c_idx = c - p->cl->cells, p1_idx = p1 - p->cl->cells;
+	make_room(p, 1);
+
+	cell *last = p->cl->cells + (p->cl->cidx - 1);
+	pl_idx_t cells_to_move = p->cl->cidx - p1_idx;
+	cell *dst = last + 1;
+
+	while (cells_to_move--)
+		*dst-- = *last--;
+
+	p1 = p->cl->cells + p1_idx;
+	p1->tag = TAG_INTERNED;
+	p1->flags = FLAG_BUILTIN;
+	p1->fn_ptr = get_fn_ptr(fn_iso_call_1);
+	p1->val_off = g_syscall_s;
+	p1->nbr_cells = 2;
+	p1->arity = 1;
+
+	p->cl->cidx++;
+	return p->cl->cells + c_idx;
+}
+
 static cell *insert_call_here(parser *p, cell *c, cell *p1)
 {
 	pl_idx_t c_idx = c - p->cl->cells, p1_idx = p1 - p->cl->cells;
@@ -1736,7 +1760,11 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			cell *rhs = c + 1;
 
 			if (is_var(rhs)) {
-				c = insert_call_here(p, c, rhs);
+				if (c->val_off == g_negation_s)
+					c = insert_syscall_here(p, c, rhs);
+				else
+					c = insert_call_here(p, c, rhs);
+
 				rhs = c + 1;
 			} else {
 				rhs = goal_expansion(p, rhs);

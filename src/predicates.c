@@ -7637,6 +7637,7 @@ static void load_properties(module *m)
 	format_property(m, tmpbuf, sizeof(tmpbuf), "if", 3, "meta_predicate(if(0,0,0))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "once", 1, "meta_predicate(once(0))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "ignore", 1, "meta_predicate(ignore(0))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "$call", 1, "meta_predicate('$call'(0))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "call", 1, "meta_predicate(call(0))"); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "findall", 3, "meta_predicate(findall(?,0,-))"); SB_strcat(pr, tmpbuf);
 	//format_property(m, tmpbuf, sizeof(tmpbuf), "bagof", 3, "meta_predicate(bagof(?,0,-))"); SB_strcat(pr, tmpbuf);
@@ -7902,6 +7903,7 @@ builtins g_iso_bifs[] =
 	{"$ne", 2, fn_sys_ne_2, NULL, false, false, BLAH},
 	{"$incr", 2, fn_sys_incr_2, NULL, false, false, BLAH},
 
+	{"$call", 1, fn_iso_call_1, ":callable", true, false, BLAH},
 	{"call", 1, fn_iso_call_1, ":callable", true, false, BLAH},
 	{"call", 2, fn_iso_call_n, ":callable,term", true, false, BLAH},
 	{"call", 3, fn_iso_call_n, ":callable,term,term", true, false, BLAH},
