@@ -4101,7 +4101,7 @@ static bool fn_help_1(query *q)
 	builtins *fn = get_help(q->pl, functor, arity, &found, &evaluable);
 
 	if (!found || !fn)
-		return throw_error(q, p1, p1_ctx, "domain_error", "existence");
+		return false;
 
 	if (arity)
 		fprintf(stdout, "%s/%u: %s(%s)%s%s\n%s\n", fn->name, arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"", fn->desc?fn->desc:"");
@@ -4161,7 +4161,7 @@ static bool fn_help_2(query *q)
 	builtins *fn = get_help(q->pl, functor, arity, &found, &evaluable);
 
 	if (!found || !fn)
-		return throw_error(q, p1, p1_ctx, "domain_error", "existence");
+		return false;
 
 	if (!strcmp(pr, "swi"))
 		snprintf(url, sizeof(url), "http://swi-prolog.org/pldoc/man?predicate=%s/%u", functor, arity);
@@ -4256,7 +4256,7 @@ static bool fn_module_help_2(query *q)
 	builtins *fn = get_module_help(m, functor, arity, &found, &evaluable);
 
 	if (!found || !fn)
-		return throw_error(q, p1, p1_ctx, "domain_error", "existence");
+		return false;
 
 	if (arity)
 		fprintf(stdout, "%s/%u: %s(%s)%s%s\n", fn->name, arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
@@ -4324,7 +4324,7 @@ static bool fn_module_help_3(query *q)
 	builtins *fn = get_module_help(m, functor, arity, &found, &evaluable);
 
 	if (!found || !fn)
-		return throw_error(q, p1, p1_ctx, "domain_error", "existence");
+		return false;
 
 	if (!strcmp(pr, "swi"))
 		snprintf(url, sizeof(url), "http://swi-prolog.org/pldoc/man?predicate=%s/%u", functor, arity);
