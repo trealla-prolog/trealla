@@ -2872,6 +2872,10 @@ static bool process_term(parser *p, cell *p1)
 
 	check_first_cut(&dbe->cl);
 	dbe->cl.is_fact = !get_logical_body(dbe->cl.cells);
+	dbe->line_nbr_start = p->line_nbr_start;
+	dbe->line_nbr_end = p->line_nbr;
+	//printf("*** %s/%u => '%s' : %u:%u\n", C_STR(p, &dbe->owner->key), dbe->owner->key.arity, dbe->filename, dbe->line_nbr_start, dbe->line_nbr_end);
+	p->line_nbr_start = 0;
 	return true;
 }
 
@@ -3023,6 +3027,9 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			last_num = false;
 			continue;
 		}
+
+		if (!p->line_nbr_start)
+			p->line_nbr_start = p->line_nbr;
 
 		p->end_of_term = false;
 
@@ -3537,6 +3544,7 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 
 	while (p->srcptr && *p->srcptr && !g_tpl_interrupt) {
 		reset(p);
+		p->line_nbr_start = 0;
 		p->line_nbr = 1;
 		p->one_shot = true;
 		p->consulting = false;

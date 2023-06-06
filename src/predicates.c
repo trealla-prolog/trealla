@@ -4054,6 +4054,65 @@ static bool fn_help_0(query *q)
 	return true;
 }
 
+static bool fn_source_info_2(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,var);
+	bool found = false, evaluable = false;
+
+	if (!is_structure(p1))
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	if (p1->arity != 2)
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	if (p1->val_off != g_slash_s)
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	cell *f = p1 + 1;
+
+	if (!is_atom(f))
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	cell *a = p1 + 2;
+
+	if (!is_smallint(a))
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	const char *functor = C_STR(q, f);
+	unsigned arity = get_smallint(a);
+	cell key;
+	key.val_off = f->val_off;
+	key.arity = get_smalluint(a);
+	predicate *pr = find_predicate(q->st.m, &key);
+
+	if (!pr || pr->is_dynamic)
+		return false;
+
+	bool first_time = true;
+
+	for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
+		cell tmp[8];
+		make_struct(tmp+0, g_dot_s, NULL, 2, 7);
+		make_struct(tmp+1, index_from_pool(q->pl, "filename"), NULL, 1, 1);
+		make_cstring(tmp+2, dbe->filename);
+		make_struct(tmp+3, g_dot_s, NULL, 2, 4);
+		make_struct(tmp+4, index_from_pool(q->pl, "lines"), NULL, 2, 2);
+		make_uint(tmp+5, dbe->line_nbr_start);
+		make_uint(tmp+6, dbe->line_nbr_end);
+		make_atom(tmp+7, g_nil_s);
+
+		if (first_time) {
+			allocate_list(q, tmp);
+			first_time = false;
+		} else
+			append_list(q, tmp);
+	}
+
+	cell *l = end_list(q);
+	return unify(q, p2, p2_ctx, l, q->st.curr_frame);
+}
+
 static bool fn_help_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -7987,6 +8046,7 @@ builtins g_other_bifs[] =
 	{"listing", 1, fn_listing_1, "+predicateindicator", false, false, BLAH},
 	{"time", 1, fn_time_1, ":callable", false, false, BLAH},
 	{"trace", 0, fn_trace_0, NULL, false, false, BLAH},
+	{"source_info", 2, fn_source_info_2, "+predicateindicator,-list", false, false, BLAH},
 	{"help", 2, fn_help_2, "+predicateindicator,+atom", false, false, BLAH},
 	{"help", 1, fn_help_1, "+predicateindicator", false, false, BLAH},
 	{"help", 0, fn_help_0, NULL, false, false, BLAH},

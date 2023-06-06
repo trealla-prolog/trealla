@@ -439,13 +439,10 @@ struct db_entry_ {
 	predicate *owner;
 	db_entry *prev, *next;
 	const char *filename;
-
-	union {
-		db_entry *dirty;
-		uint64_t db_id;
-	};
-
+	db_entry *dirty;
 	uuid u;
+	uint64_t db_id;
+	unsigned line_nbr_start, line_nbr_end;
 	clause cl;
 };
 
@@ -739,10 +736,10 @@ struct parser_ {
 	prolog_flags flags;
 	char *save_line, *srcptr, *error_desc;
 	size_t token_size, n_line, pos_start;
-	unsigned depth, read_term_slots;
+	unsigned line_nbr, line_nbr_start;
+	unsigned depth, read_term_slots, nbr_vars;
 	unsigned nesting_parens, nesting_braces, nesting_brackets;
-	int quote_char, line_nbr, line_nbr_start;
-	unsigned nbr_vars;
+	int quote_char;
 	int8_t dq_consing;
 	bool error, if_depth[MAX_IF_DEPTH];
 	bool was_consing:1;

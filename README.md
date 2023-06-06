@@ -287,11 +287,13 @@ Non-standard predicates
 
 	help/0
 	help/1						# help(+functor) or help(+PI)
-	help/2						# help(+PI,+atom) where *atom* can bw *swi* or *tau*
+	help/2						# help(+PI,+atom) where *atom* can be *swi* or *tau*
 
 	module_help/1				# help(+module)
 	module_help/2				# help(+module,+functor) or help(+module,+PI)
 	module_help/3				# help(+module,+PI,+atom) where *atom* can bw *swi* or *tau*
+
+	source_info/2				# source_info(+PI, -list)
 
 	module/1					# module(?atom)
 	modules/1					# modules(-list)
