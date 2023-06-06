@@ -4054,6 +4054,39 @@ static bool fn_help_0(query *q)
 	return true;
 }
 
+static bool fn_module_info_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,var);
+	const char *name = C_STR(q, p1);
+	module *m = find_module(q->pl, name);
+
+	if (!m)
+		return false;
+
+	bool first_time = true;
+
+	for (predicate *pr = m->head; pr; pr = pr->next) {
+		if (!pr->is_public)
+			continue;
+
+		cell tmp[3];
+		make_struct(tmp+0, g_slash_s, NULL, 2, 2);
+		SET_OP(tmp, OP_YFX);
+		make_atom(tmp+1, pr->key.val_off);
+		make_int(tmp+2, pr->key.arity);
+
+		if (first_time) {
+			allocate_list(q, tmp);
+			first_time = false;
+		} else
+			append_list(q, tmp);
+	}
+
+	cell *l = end_list(q);
+	return unify(q, p2, p2_ctx, l, q->st.curr_frame);
+}
+
 static bool fn_source_info_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -8046,6 +8079,7 @@ builtins g_other_bifs[] =
 	{"listing", 1, fn_listing_1, "+predicateindicator", false, false, BLAH},
 	{"time", 1, fn_time_1, ":callable", false, false, BLAH},
 	{"trace", 0, fn_trace_0, NULL, false, false, BLAH},
+	{"module_info", 2, fn_module_info_2, "+atom,-list", false, false, BLAH},
 	{"source_info", 2, fn_source_info_2, "+predicateindicator,-list", false, false, BLAH},
 	{"help", 2, fn_help_2, "+predicateindicator,+atom", false, false, BLAH},
 	{"help", 1, fn_help_1, "+predicateindicator", false, false, BLAH},

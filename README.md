@@ -294,6 +294,7 @@ Non-standard predicates
 	module_help/3				# help(+module,+PI,+atom) where *atom* can bw *swi* or *tau*
 
 	source_info/2				# source_info(+PI, -list)
+	module_info/2				# module_info(+atom, -list)
 
 	module/1					# module(?atom)
 	modules/1					# modules(-list)
