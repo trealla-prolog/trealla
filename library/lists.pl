@@ -12,51 +12,51 @@
 	]).
 
 /*  Author:        Andrew Davison, Mark Thom, Jan Wielemaker, and Richard O'Keefe
-    Copyright (c)  2022,      Andrew Davison
-    Copyright (c)  2018-2021, Mark Thom
-    Copyright (c)  2002-2020, University of Amsterdam
-                              VU University Amsterdam
-                              SWI-Prolog Solutions b.v.
-    All rights reserved.
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions
-    are met:
-    1. Redistributions of source code must retain the above copyright
-       notice, this list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright
-       notice, this list of conditions and the following disclaimer in
-       the documentation and/or other materials provided with the
-       distribution.
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-    FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-    COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-    INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-    BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-    LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-    ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-    POSSIBILITY OF SUCH DAMAGE.
+	Copyright (c)  2022,      Andrew Davison
+	Copyright (c)  2018-2021, Mark Thom
+	Copyright (c)  2002-2020, University of Amsterdam
+							  VU University Amsterdam
+							  SWI-Prolog Solutions b.v.
+	All rights reserved.
+	Redistribution and use in source and binary forms, with or without
+	modification, are permitted provided that the following conditions
+	are met:
+	1. Redistributions of source code must retain the above copyright
+	   notice, this list of conditions and the following disclaimer.
+	2. Redistributions in binary form must reproduce the above copyright
+	   notice, this list of conditions and the following disclaimer in
+	   the documentation and/or other materials provided with the
+	   distribution.
+	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+	"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+	LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+	FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+	COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+	INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+	BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+	LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+	CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+	LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+	ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+	POSSIBILITY OF SUCH DAMAGE.
 */
 
 reverse(Xs, Ys) :-
-    (	nonvar(Xs)
+	(	nonvar(Xs)
 	->	reverse_(Xs, Ys, [], Xs)
-    ;	reverse_(Ys, Xs, [], Ys)
-    ).
+	;	reverse_(Ys, Xs, [], Ys)
+	).
 
 reverse_([], [], YsRev, YsRev).
 reverse_([_|Xs], [Y1|Ys], YsPreludeRev, Xss) :-
-    reverse_(Xs, Ys, [Y1|YsPreludeRev], Xss).
+	reverse_(Xs, Ys, [Y1|YsPreludeRev], Xss).
 
 :- help(reverse(?list,?list), [iso(false),desc('Reverse one list to make another.')]).
 
 append([], []).
 append([L0|Ls0], Ls) :-
-    append(L0, Rest, Ls),
-    append(Ls0, Rest).
+	append(L0, Rest, Ls),
+	append(Ls0, Rest).
 
 :- help(append(+list,?list), [iso(false),desc('The concatention of a list of lists to make a new one.')]).
 
@@ -68,11 +68,11 @@ append([X|L], R, [X|S]) :- append(L, R, S).
 memberchk(X, Xs) :- member(X, Xs), !.
 
 member(El, [H|T]) :-
-    member_(T, El, H).
+	member_(T, El, H).
 
 member_(_, El, El).
 member_([H|T], El, _) :-
-    member_(T, El, H).
+	member_(T, El, H).
 
 :- help(member(?term,?list), [iso(false),desc('Is element a member of the list.')]).
 
@@ -191,18 +191,18 @@ last_([X|Xs], _, Last) :- last_(Xs, X, Last).
 :- help(last(+list,-term), [iso(false)]).
 
 flatten(List, FlatList) :-
-    flatten_(List, [], FlatList0),
-    !,
-    FlatList = FlatList0.
+	flatten_(List, [], FlatList0),
+	!,
+	FlatList = FlatList0.
 
 flatten_(Var, Tl, [Var|Tl]) :-
-    var(Var),
-    !.
+	var(Var),
+	!.
 flatten_([], Tl, Tl) :- !.
 flatten_([Hd|Tl], Tail, List) :-
-    !,
-    flatten_(Hd, FlatHeadTail, List),
-    flatten_(Tl, Tail, FlatHeadTail).
+	!,
+	flatten_(Hd, FlatHeadTail, List),
+	flatten_(Tl, Tail, FlatHeadTail).
 flatten_(NonList, Tl, [NonList|Tl]).
 
 :- help(flatten(+list,-list), [iso(false)]).
@@ -296,31 +296,31 @@ tolist_((T1,T2), [T1|Rest]) :- !,
 tolist_(T, [T|[]]).
 
 list_to_set(Ls0, Ls) :-
-        maplist(lists:with_var, Ls0, LVs0),
-        keysort(LVs0, LVs),
-        same_elements(LVs),
-        pick_firsts(LVs0, Ls).
+		maplist(lists:with_var, Ls0, LVs0),
+		keysort(LVs0, LVs),
+		same_elements(LVs),
+		pick_firsts(LVs0, Ls).
 
 pick_firsts([], []).
 pick_firsts([E-V|EVs], Fs0) :-
-        (   V == visited ->
-            Fs0 = Fs
-        ;   V = visited,
-            Fs0 = [E|Fs]
-        ),
-        pick_firsts(EVs, Fs).
+		(   V == visited ->
+			Fs0 = Fs
+		;   V = visited,
+			Fs0 = [E|Fs]
+		),
+		pick_firsts(EVs, Fs).
 
 with_var(E, E-_).
 
 same_elements([]).
 same_elements([EV|EVs]) :-
-        foldl(lists:unify_same, EVs, EV, _).
+		foldl(lists:unify_same, EVs, EV, _).
 
 unify_same(E-V, Prev-Var, E-V) :-
-        (   Prev == E ->
-            Var = V
-        ;   true
-        ).
+		(   Prev == E ->
+			Var = V
+		;   true
+		).
 
 numlist(L, U, Ns) :-
 	must_be(L, integer, numlist/3, _),
@@ -362,12 +362,12 @@ length(_, N) :-
 
 length_addendum([], N, N).
 length_addendum([_|Xs], N, M) :-
-    M1 is M + 1,
-    length_addendum(Xs, N, M1).
+	M1 is M + 1,
+	length_addendum(Xs, N, M1).
 
 length_rundown(Xs, 0) :- !, Xs = [].
 length_rundown([_|Xs], N) :-
-    N1 is N-1,
-    length_rundown(Xs, N1).
+	N1 is N-1,
+	length_rundown(Xs, N1).
 
 :- help(length(?list,?integer), [iso(true),desc('Number of elements in list.')]).

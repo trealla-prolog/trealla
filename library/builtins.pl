@@ -171,10 +171,10 @@ keysort_(_, _, Sorted, _) :-
 % Derived from code by R.A. O'Keefe
 
 setof(Template, Generator, Set) :-
-    ( 	var(Set)
-    ->	true
-    ; 	must_be(Set, list_or_partial_list, setof/3, _)
-    ),
+	( 	var(Set)
+	->	true
+	; 	must_be(Set, list_or_partial_list, setof/3, _)
+	),
 	bagof_(Template, Generator, Bag),
 	is_list_or_partial_list(Set),
 	sort(Bag, Set).
@@ -183,8 +183,8 @@ setof(Template, Generator, Set) :-
 :- help(setof(+term,+callable,?list), [iso(true)]).
 
 bagof(Template, Generator, Bag) :-
-    (	var(Bag)
-    ->	true
+	(	var(Bag)
+	->	true
 	;	must_be(Bag, list_or_partial_list, bagof/3, _)
 	),
 	bagof_(Template, Generator, Bag).
@@ -616,17 +616,17 @@ read_line_to_codes(Stream, Codes) :-
 :- help(read_line_to_codes(+stream,?list), [iso(false)]).
 
 instantiation_error(Context) :-
-    throw(error(instantiation_error, Context)).
+	throw(error(instantiation_error, Context)).
 
 :- help(instantiation_error(+term), [iso(false)]).
 
 domain_error(Type, Term, Context) :-
-    throw(error(domain_error(Type, Term), Context)).
+	throw(error(domain_error(Type, Term), Context)).
 
 :- help(domain_error(+atom,+term,+term), [iso(false)]).
 
 type_error(Type, Term, Context) :-
-    throw(error(type_error(Type, Term), Context)).
+	throw(error(type_error(Type, Term), Context)).
 
 :- help(type_error(+atom,+term,+term), [iso(false)]).
 
