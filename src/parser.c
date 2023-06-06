@@ -368,7 +368,6 @@ static bool conditionals(parser *p, cell *d)
 
 	if (!strcmp(dirname, "if") && (c->arity == 1)) {
 		bool save1 = p->m->ifs_blocked[p->m->if_depth];
-		bool save2 = p->m->ifs_done[p->m->if_depth];
 		p->m->ifs_blocked[++p->m->if_depth] = save1;
 		p->m->ifs_done[p->m->if_depth] = true;
 		return true;
