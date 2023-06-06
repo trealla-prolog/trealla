@@ -777,11 +777,11 @@ struct module_ {
 	predicate *head, *tail;
 	parser *p;
 	FILE *fp;
-	map *index, *nbs, *ops, *defops;
+	map *index, *ops, *defops;
 	loaded_file *loaded_files;
+	prolog_flags flags;
 	unsigned id, idx_used, arity;
 	int if_depth;
-	prolog_flags flags;
 	bool ifs_blocked[MAX_IF_DEPTH];
 	bool ifs_done[MAX_IF_DEPTH];
 	bool user_ops:1;
