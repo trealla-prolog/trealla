@@ -397,11 +397,6 @@ static bool conditionals(parser *p, cell *d)
 		return true;
 	}
 
-	if (!strcmp(dirname, "endif") && (c->arity == 0) && !p->m->ifs_blocked[p->m->if_depth]) {
-		--p->m->if_depth;
-		return true;
-	}
-
 	if (!strcmp(dirname, "endif") && (c->arity == 0)) {
 		--p->m->if_depth;
 		return true;
