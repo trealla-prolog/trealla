@@ -2058,7 +2058,7 @@ module *module_create(prolog *pl, const char *name)
 	map_allow_dups(m->index, false);
 	m->p = parser_create(m);
 	check_error(m->p);
-	set_multifile_in_db(m, "$predicate_property", 2);
+	set_multifile_in_db(m, "$predicate_property", 3);
 	set_multifile_in_db(m, ":-", 1);
 
 	parser *p = parser_create(m);

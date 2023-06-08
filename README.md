@@ -303,6 +303,7 @@ Non-standard predicates
 	listing/0
 	listing/1					# listing(+PI)
 
+	function_property/2
 	pretty/1					# pretty-print version of listing/1
 	between/3
 	forall/2

@@ -7681,9 +7681,9 @@ void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, u
 	if (needs_quoting(m, name, strlen(name))) {
 		char tmpbuf2[1024];
 		formatted(tmpbuf2, sizeof(tmpbuf2), name, strlen(name), false, false);
-		dst += snprintf(dst, buflen-(dst-tmpbuf), "'$predicate_property'('%s'", tmpbuf2);
+		dst += snprintf(dst, buflen-(dst-tmpbuf), "'$predicate_property'(predicate, '%s'", tmpbuf2);
 	} else
-		dst += snprintf(dst, buflen-(dst-tmpbuf), "'$predicate_property'(%s", name);
+		dst += snprintf(dst, buflen-(dst-tmpbuf), "'$predicate_property'(predicate, %s", name);
 
 	if (arity) {
 		dst += snprintf(dst, buflen-(dst-tmpbuf), "(");
