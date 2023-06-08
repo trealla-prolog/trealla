@@ -7674,16 +7674,16 @@ static bool fn_parse_csv_file_2(query *q)
 	return true;
 }
 
-void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type)
+void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type, bool function)
 {
 	char *dst = tmpbuf;
 
 	if (needs_quoting(m, name, strlen(name))) {
 		char tmpbuf2[1024];
 		formatted(tmpbuf2, sizeof(tmpbuf2), name, strlen(name), false, false);
-		dst += snprintf(dst, buflen-(dst-tmpbuf), "'$predicate_property'(predicate, '%s'", tmpbuf2);
+		dst += snprintf(dst, buflen-(dst-tmpbuf), "'$predicate_property'(%s, '%s'", function?"function":"predicate", tmpbuf2);
 	} else
-		dst += snprintf(dst, buflen-(dst-tmpbuf), "'$predicate_property'(predicate, %s", name);
+		dst += snprintf(dst, buflen-(dst-tmpbuf), "'$predicate_property'(%s, %s", function?"function":"predicate", name);
 
 	if (arity) {
 		dst += snprintf(dst, buflen-(dst-tmpbuf), "(");
@@ -7710,46 +7710,46 @@ static void load_properties(module *m)
 	SB_alloc(pr, 1024*64);
 	char tmpbuf[1024];
 
-	format_property(m, tmpbuf, sizeof(tmpbuf), "!", 0, "control_construct"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "true", 0, "control_construct"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "fail", 0, "control_construct"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), ",", 2, "control_construct"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), ";", 2, "control_construct"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "->", 2, "control_construct"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "*->", 2, "control_construct"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "!", 0, "control_construct", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "true", 0, "control_construct", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "fail", 0, "control_construct", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), ",", 2, "control_construct", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), ";", 2, "control_construct", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "->", 2, "control_construct", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "*->", 2, "control_construct", false); SB_strcat(pr, tmpbuf);
 
-	format_property(m, tmpbuf, sizeof(tmpbuf), "not", 1, "meta_predicate(not(0))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "\\+", 1, "meta_predicate((\\+0))"); SB_strcat(pr, tmpbuf);
-	//format_property(m, tmpbuf, sizeof(tmpbuf), "catch", 3, "meta_predicate(catch(0,?,0))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "", 2, "meta_predicate((0,0))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), ",", 2, "meta_predicate((0,0))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), ";", 2, "meta_predicate((0;0))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "->", 2, "meta_predicate((0->0))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "*->", 2, "meta_predicate((0*->0))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "if", 3, "meta_predicate(if(0,0,0))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "once", 1, "meta_predicate(once(0))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "ignore", 1, "meta_predicate(ignore(0))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "$call", 1, "meta_predicate('$call'(0))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "call", 1, "meta_predicate(call(0))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "findall", 3, "meta_predicate(findall(?,0,-))"); SB_strcat(pr, tmpbuf);
-	//format_property(m, tmpbuf, sizeof(tmpbuf), "bagof", 3, "meta_predicate(bagof(?,0,-))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "with_mutex", 2, "meta_predicate(with_mutex(+,0))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "engine_create", 4, "meta_predicate(engine_create(?,0,?,+))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "|", 2, "meta_predicate((:|+))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "time", 1, "meta_predicate(time(0))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "call_nth", 2, "meta_predicate(call_nth(0,?))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "asserta", 1, "meta_predicate(asserta(:))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "asserta", 2, "meta_predicate(asserta(:,-))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "assertz", 1, "meta_predicate(assertz(:))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "assertz", 2, "meta_predicate(assertz(:,-))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "retract", 1, "meta_predicate(retract(:))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "retract", 2, "meta_predicate(retract(:,?))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "retractall", 1, "meta_predicate(retractall(:))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "current_predicate", 1, "meta_predicate(current_predicate(:))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "predicate_property", 2, "meta_predicate(predicate_property(:,?))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "abolish", 1, "meta_predicate(abolish(:))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "clause", 2, "meta_predicate(clause(:,?))"); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "clause", 3, "meta_predicate(clause(:,?,?))"); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "not", 1, "meta_predicate(not(0))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "\\+", 1, "meta_predicate((\\+0))", false); SB_strcat(pr, tmpbuf);
+	//format_property(m, tmpbuf, sizeof(tmpbuf), "catch", 3, "meta_predicate(catch(0,?,0))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "", 2, "meta_predicate((0,0))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), ",", 2, "meta_predicate((0,0))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), ";", 2, "meta_predicate((0;0))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "->", 2, "meta_predicate((0->0))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "*->", 2, "meta_predicate((0*->0))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "if", 3, "meta_predicate(if(0,0,0))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "once", 1, "meta_predicate(once(0))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "ignore", 1, "meta_predicate(ignore(0))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "$call", 1, "meta_predicate('$call'(0))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "call", 1, "meta_predicate(call(0))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "findall", 3, "meta_predicate(findall(?,0,-))", false); SB_strcat(pr, tmpbuf);
+	//format_property(m, tmpbuf, sizeof(tmpbuf), "bagof", 3, "meta_predicate(bagof(?,0,-))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "with_mutex", 2, "meta_predicate(with_mutex(+,0))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "engine_create", 4, "meta_predicate(engine_create(?,0,?,+))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "|", 2, "meta_predicate((:|+))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "time", 1, "meta_predicate(time(0))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "call_nth", 2, "meta_predicate(call_nth(0,?))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "asserta", 1, "meta_predicate(asserta(:))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "asserta", 2, "meta_predicate(asserta(:,-))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "assertz", 1, "meta_predicate(assertz(:))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "assertz", 2, "meta_predicate(assertz(:,-))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "retract", 1, "meta_predicate(retract(:))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "retract", 2, "meta_predicate(retract(:,?))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "retractall", 1, "meta_predicate(retractall(:))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "current_predicate", 1, "meta_predicate(current_predicate(:))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "predicate_property", 2, "meta_predicate(predicate_property(:,?))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "abolish", 1, "meta_predicate(abolish(:))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "clause", 2, "meta_predicate(clause(:,?))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "clause", 3, "meta_predicate(clause(:,?,?))", false); SB_strcat(pr, tmpbuf);
 
 	for (int i = 2; i <= 7; i++) {
 		char metabuf[1024];
@@ -7761,7 +7761,7 @@ static void load_properties(module *m)
 
 
 		snprintf(dst2, sizeof(metabuf)-(dst2-metabuf), "))");
-		format_property(m, tmpbuf, sizeof(tmpbuf), "call", i, metabuf); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), "call", i, metabuf, false); SB_strcat(pr, tmpbuf);
 	}
 
 	for (int i = 2; i <= 7; i++) {
@@ -7774,70 +7774,63 @@ static void load_properties(module *m)
 
 
 		snprintf(dst2, sizeof(metabuf)-(dst2-metabuf), "))");
-		format_property(m, tmpbuf, sizeof(tmpbuf), "task", i, metabuf); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), "task", i, metabuf, false); SB_strcat(pr, tmpbuf);
 	}
 
 	for (const builtins *ptr = g_iso_bifs; ptr->name; ptr++) {
 		map_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		if (ptr->evaluable) continue;
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); SB_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); SB_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
  	}
 
 	for (const builtins *ptr = g_files_bifs; ptr->name; ptr++) {
 		map_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		if (ptr->evaluable) continue;
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); SB_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); SB_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
  	}
 
 	for (const builtins *ptr = g_evaluable_bifs; ptr->name; ptr++) {
 		map_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		if (ptr->evaluable) continue;
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); SB_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); SB_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 	}
 
 	for (const builtins *ptr = g_other_bifs; ptr->name; ptr++) {
 		map_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		if (ptr->evaluable) continue;
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); SB_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); SB_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 	}
 
 	for (const builtins *ptr = g_ffi_bifs; ptr->name; ptr++) {
 		map_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		if (ptr->evaluable) continue;
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); SB_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); SB_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 	}
 
 	for (const builtins *ptr = g_posix_bifs; ptr->name; ptr++) {
 		map_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		if (ptr->evaluable) continue;
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); SB_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); SB_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 	}
 
 	for (const builtins *ptr = g_contrib_bifs; ptr->name; ptr++) {
 		map_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		if (ptr->evaluable) continue;
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in"); SB_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static"); SB_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code"); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 	}
 
 	parser *p = parser_create(m);

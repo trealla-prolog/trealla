@@ -439,7 +439,7 @@ db_entry *find_in_db(module *m, uuid *ref)
 static void push_property(module *m, const char *name, unsigned arity, const char *type)
 {
 	char tmpbuf[1024];
-	format_property(m, tmpbuf, sizeof(tmpbuf), name, arity, type);
+	format_property(m, tmpbuf, sizeof(tmpbuf), name, arity, type, false);
 	parser *p = parser_create(m);
 	p->srcptr = tmpbuf;
 	p->consulting = true;

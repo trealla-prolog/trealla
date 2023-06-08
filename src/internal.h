@@ -918,7 +918,7 @@ uint64_t get_time_in_usec(void);
 uint64_t cpu_time_in_usec(void);
 char *relative_to(const char *basefile, const char *relfile);
 size_t sprint_int(char *dst, size_t size, pl_int_t n, int base);
-void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type);
+void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type, bool function);
 const char *dump_key(const void *k, const void *v, const void *p);
 
 #define slicecmp2(s1,l1,s2) slicecmp(s1,l1,s2,strlen(s2))
