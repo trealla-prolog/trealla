@@ -554,7 +554,6 @@ struct choice_ {
 	bool catchme_retry:1;
 	bool catchme_exception:1;
 	bool barrier:1;
-	bool call_barrier:1;
 	bool soft_cut:1;
 	bool did_cleanup:1;
 	bool register_cleanup:1;

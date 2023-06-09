@@ -15,7 +15,6 @@ void query_destroy(query *q);
 
 bool push_choice(query *q);
 bool push_barrier(query *q);
-bool push_call_barrier(query *q);
 bool push_catcher(query *q, enum q_retry type);
 
 bool do_retract(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract);

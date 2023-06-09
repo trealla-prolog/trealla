@@ -277,7 +277,7 @@ bool call_userfun(query *q, cell *c, pl_idx_t c_ctx)
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
-	check_heap_error(push_call_barrier(q));
+	check_heap_error(push_barrier(q));
 	q->st.curr_cell = tmp;
 	bool ok = start(q);
 	q->error = false;

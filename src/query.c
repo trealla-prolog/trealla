@@ -924,8 +924,7 @@ bool push_choice(query *q)
 	ch->actual_slots = f->actual_slots;
 	ch->overflow = f->overflow;
 	ch->catchme_retry =
-		ch->catchme_exception = ch->barrier =
-		ch->call_barrier = ch->soft_cut =
+		ch->catchme_exception = ch->barrier = ch->soft_cut =
 		ch->did_cleanup = ch->register_cleanup =
 		ch->block_catcher = ch->catcher =
 		ch->fail_on_retry = ch->succeed_on_retry = false;
@@ -946,22 +945,9 @@ bool push_barrier(query *q)
 	return true;
 }
 
-// Note: since there is no separate control stack a call will
-// create a choice. This sets a special flag so that
-// '$drop_barrier' knows to also remove the choice if the
-// call is det.
-
-bool push_call_barrier(query *q)
-{
-	check_error(push_barrier(q));
-	choice *ch = GET_CURR_CHOICE();
-	ch->call_barrier = true;
-	return true;
-}
-
 bool push_catcher(query *q, enum q_retry retry)
 {
-	check_error(push_call_barrier(q));
+	check_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->catcher = true;
 
