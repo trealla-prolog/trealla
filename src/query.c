@@ -1455,7 +1455,6 @@ static bool match_head(query *q)
 
 	choice *ch = GET_CURR_CHOICE();
 	ch->st.iter = NULL;
-
 	drop_choice(q);
 	unshare_predicate(q, q->st.pr);
 	return false;
