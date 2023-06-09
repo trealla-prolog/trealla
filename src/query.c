@@ -1018,6 +1018,12 @@ void prune_me(query *q, bool soft_cut, pl_idx_t cp)
 		while (soft_cut && (ch >= q->choices)) {
 			if ((q->cp-1) == cp) {
 				if (ch == save_ch) {
+					if (ch->st.iter) {
+						map_done(ch->st.iter);
+						ch->st.iter = NULL;
+					}
+
+					unshare_predicate(q, ch->st.pr);
 					drop_choice(q);
 					f->cgen--;
 					return;
