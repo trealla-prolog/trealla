@@ -577,6 +577,78 @@ size_t scan_is_chars_list(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes)
 	return scan_is_chars_list2(q, l, l_ctx, allow_codes, &has_var, &is_partial);
 }
 
+static void share_predicate(query *q, predicate *pr)
+{
+	if (!pr->is_dynamic)
+		return;
+
+	q->st.pr = pr;
+	pr->refcnt++;
+}
+
+static void unshare_predicate(query *q, predicate *pr)
+{
+	if (!pr)
+		return;
+
+	if (!pr->is_dynamic)
+		return;
+
+	if (!pr->refcnt)
+		return;
+
+	--pr->refcnt;
+
+	if (pr->refcnt != 0)
+		return;
+
+	// Predicate is no longer being used
+
+	if (!pr->dirty_list)
+		return;
+
+	// Just because this predicate is no longer in use doesn't
+	// mean there are no shared references to terms contained
+	// within. So move items on the dirty-list to the query
+	// dirty-list. They will be freed up at end of the query.
+
+	db_entry *dbe = pr->dirty_list;
+
+	while (dbe) {
+		delink(pr, dbe);
+
+		if (pr->cnt) {
+			predicate *pr = dbe->owner;
+			map_remove(pr->idx2, dbe);
+			map_remove(pr->idx, dbe);
+		}
+
+		dbe->cl.is_deleted = true;
+		db_entry *save = dbe->dirty;
+		dbe->dirty = q->dirty_list;
+		q->dirty_list = dbe;
+		dbe = save;
+	}
+
+	pr->dirty_list = NULL;
+
+	if (pr->idx && !pr->cnt) {
+		map_destroy(pr->idx2);
+		map_destroy(pr->idx);
+		pr->idx2 = NULL;
+
+		pr->idx = map_create(index_cmpkey, NULL, pr->m);
+		ensure(pr->idx);
+		map_allow_dups(pr->idx, true);
+
+		if (pr->key.arity > 1) {
+			pr->idx2 = map_create(index_cmpkey, NULL, pr->m);
+			ensure(pr->idx2);
+			map_allow_dups(pr->idx2, true);
+		}
+	}
+}
+
 static void unwind_trail(query *q)
 {
 	const choice *ch = GET_CURR_CHOICE();
@@ -756,78 +828,6 @@ static bool are_slots_ok(const query *q, const frame *f)
 	return true;
 }
 
-static void share_predicate(query *q, predicate *pr)
-{
-	if (!pr->is_dynamic)
-		return;
-
-	q->st.pr = pr;
-	pr->refcnt++;
-}
-
-void unshare_predicate(query *q, predicate *pr)
-{
-	if (!pr)
-		return;
-
-	if (!pr->is_dynamic)
-		return;
-
-	if (!pr->refcnt)
-		return;
-
-	--pr->refcnt;
-
-	if (pr->refcnt != 0)
-		return;
-
-	// Predicate is no longer being used
-
-	if (!pr->dirty_list)
-		return;
-
-	// Just because this predicate is no longer in use doesn't
-	// mean there are no shared references to terms contained
-	// within. So move items on the dirty-list to the query
-	// dirty-list. They will be freed up at end of the query.
-
-	db_entry *dbe = pr->dirty_list;
-
-	while (dbe) {
-		delink(pr, dbe);
-
-		if (pr->cnt) {
-			predicate *pr = dbe->owner;
-			map_remove(pr->idx2, dbe);
-			map_remove(pr->idx, dbe);
-		}
-
-		dbe->cl.is_deleted = true;
-		db_entry *save = dbe->dirty;
-		dbe->dirty = q->dirty_list;
-		q->dirty_list = dbe;
-		dbe = save;
-	}
-
-	pr->dirty_list = NULL;
-
-	if (pr->idx && !pr->cnt) {
-		map_destroy(pr->idx2);
-		map_destroy(pr->idx);
-		pr->idx2 = NULL;
-
-		pr->idx = map_create(index_cmpkey, NULL, pr->m);
-		ensure(pr->idx);
-		map_allow_dups(pr->idx, true);
-
-		if (pr->key.arity > 1) {
-			pr->idx2 = map_create(index_cmpkey, NULL, pr->m);
-			ensure(pr->idx2);
-			map_allow_dups(pr->idx2, true);
-		}
-	}
-}
-
 static void commit_me(query *q)
 {
 	q->in_commit = true;
@@ -976,11 +976,6 @@ void cut_me(query *q)
 				break;
 		}
 
-		if (ch->st.iter) {
-			map_done(ch->st.iter);
-			ch->st.iter = NULL;
-		}
-
 		const frame *f2 = GET_FRAME(ch->st.curr_frame);
 
 		if ((ch->st.fp == (q->st.curr_frame + 1))
@@ -1018,11 +1013,6 @@ void prune_me(query *q, bool soft_cut, pl_idx_t cp)
 		while (soft_cut && (ch >= q->choices)) {
 			if ((q->cp-1) == cp) {
 				if (ch == save_ch) {
-					if (ch->st.iter) {
-						map_done(ch->st.iter);
-						ch->st.iter = NULL;
-					}
-
 					unshare_predicate(q, ch->st.pr);
 					drop_choice(q);
 					f->cgen--;
@@ -1042,11 +1032,6 @@ void prune_me(query *q, bool soft_cut, pl_idx_t cp)
 		if (ch->cgen < f->cgen) {
 			f->cgen = ch->cgen;
 			break;
-		}
-
-		if (ch->st.iter) {
-			map_done(ch->st.iter);
-			ch->st.iter = NULL;
 		}
 
 		unshare_predicate(q, ch->st.pr);
@@ -1288,8 +1273,8 @@ bool match_rule(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract
 		undo_me(q);
 	}
 
-	drop_choice(q);
 	unshare_predicate(q, q->st.pr);
+	drop_choice(q);
 	return false;
 }
 
@@ -1377,8 +1362,8 @@ bool match_clause(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retra
 		undo_me(q);
 	}
 
-	drop_choice(q);
 	unshare_predicate(q, q->st.pr);
+	drop_choice(q);
 	return false;
 }
 
@@ -1455,8 +1440,8 @@ static bool match_head(query *q)
 
 	choice *ch = GET_CURR_CHOICE();
 	ch->st.iter = NULL;
-	drop_choice(q);
 	unshare_predicate(q, q->st.pr);
+	drop_choice(q);
 	return false;
 }
 
