@@ -7676,6 +7676,7 @@ static bool fn_parse_csv_file_2(query *q)
 
 void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type, bool function)
 {
+	tmpbuf[0] = '\0';
 	char *dst = tmpbuf;
 
 	if (needs_quoting(m, name, strlen(name))) {
@@ -7701,12 +7702,9 @@ void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, u
 	dst += snprintf(dst, buflen-(dst-tmpbuf), ", %s).\n", type);
 }
 
-static void format_template(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const builtins *ptr, bool function, bool alt)
+void format_template(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const builtins *ptr, bool function, bool alt)
 {
 	tmpbuf[0] = '\0';
-
-	if (!ptr->evaluable)
-		return;
 
 	if (!ptr->help || !*ptr->help)
 		return;

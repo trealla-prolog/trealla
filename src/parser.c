@@ -496,6 +496,7 @@ static void directives(parser *p, cell *d)
 		if (ptr->iso)
 			push_property(p->m, ptr->name, ptr->arity, "iso");
 
+		push_template(p->m, ptr->name, ptr->arity, ptr);
 		return;
 	}
 

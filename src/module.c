@@ -448,6 +448,18 @@ void push_property(module *m, const char *name, unsigned arity, const char *type
 	parser_destroy(p);
 }
 
+void push_template(module *m, const char *name, unsigned arity, const builtins *ptr)
+{
+	char tmpbuf[1024];
+	format_template(m, tmpbuf, sizeof(tmpbuf), name, arity, ptr, false, NULL);
+	parser *p = parser_create(m);
+	p->srcptr = tmpbuf;
+	p->consulting = true;
+	p->internal = true;
+	tokenize(p, false, false);
+	parser_destroy(p);
+}
+
 db_entry *erase_from_db(module *m, uuid *ref)
 {
 	db_entry *dbe = find_in_db(m, ref);

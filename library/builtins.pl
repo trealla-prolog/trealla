@@ -33,7 +33,7 @@ function_property(P, A) :-
 	'$load_properties',
 	(	var(A)
 	->	true
-	; 	(	(Controls = [built_in,control_construct,discontiguous,private,static,dynamic,tabled,multifile,meta_predicate(_)],
+	; 	(	(Controls = [iso,built_in,control_construct,discontiguous,private,static,dynamic,public,visible,tabled,multifile,meta_predicate(_),template(_),template(_,_)],
 			memberchk(A, Controls))
 			->	true
 			;	throw(error(domain_error(function_property, A), P))
