@@ -7701,6 +7701,79 @@ void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, u
 	dst += snprintf(dst, buflen-(dst-tmpbuf), ", %s).\n", type);
 }
 
+static void format_template(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const builtins *ptr, bool function, bool alt)
+{
+	tmpbuf[0] = '\0';
+
+	if (!ptr->evaluable)
+		return;
+
+	if (!ptr->help || !*ptr->help)
+		return;
+
+	if (alt && (!ptr->help_alt || !*ptr->help_alt))
+		return;
+
+	char *dst = tmpbuf;
+	bool quote = needs_quoting(m, name, strlen(name));
+
+	if (quote) {
+		char tmpbuf2[1024];
+		formatted(tmpbuf2, sizeof(tmpbuf2), name, strlen(name), false, false);
+		dst += snprintf(dst, buflen-(dst-tmpbuf), "'$predicate_property'(%s, '%s'", function?"function":"predicate", tmpbuf2);
+	} else
+		dst += snprintf(dst, buflen-(dst-tmpbuf), "'$predicate_property'(%s, %s", function?"function":"predicate", name);
+
+	if (arity) {
+		dst += snprintf(dst, buflen-(dst-tmpbuf), "(");
+
+		for (unsigned i = 0; i < arity; i++) {
+			if (i > 0)
+				dst += snprintf(dst, buflen-(dst-tmpbuf), ",");
+
+			dst += snprintf(dst, buflen-(dst-tmpbuf), "_");
+		}
+
+		dst += snprintf(dst, buflen-(dst-tmpbuf), ")");
+	}
+
+	SB(t);
+
+	if (quote) {
+		SB_sprintf(t, "template('%s'", name);
+	} else {
+		SB_sprintf(t, "template(%s", name);
+	}
+
+	if (ptr->arity)
+		SB_strcat(t, "(");
+
+	char tmpbuf1[256], tmpbuf2[256], tmpbuf3[256];
+	const char *src = (alt ? ptr->help_alt : ptr->help) + (function?1:0);
+
+	for (unsigned i = 0; i < ptr->arity; i++) {
+		sscanf(src, "%255[^,],%s255", tmpbuf1, tmpbuf2);
+		tmpbuf1[sizeof(tmpbuf1)-1] = tmpbuf2[sizeof(tmpbuf2)-1] = 0;
+
+		if (i > 0)
+			SB_strcat(t, ",");
+
+		SB_strcat(t, tmpbuf1);
+		strcpy(tmpbuf3, tmpbuf2);
+		src = tmpbuf3 + (function?1:0);
+	}
+
+	if (ptr->arity)
+		SB_strcat(t, ")");
+
+	if (function) {
+		SB_sprintf(t, ",%s", src);
+	}
+
+	dst += snprintf(dst, buflen-(dst-tmpbuf), ", %s)).\n", SB_cstr(t));
+	SB_free(t);
+}
+
 static void load_properties(module *m)
 {
 	if (m->loaded_properties)
@@ -7732,7 +7805,6 @@ static void load_properties(module *m)
 	format_property(m, tmpbuf, sizeof(tmpbuf), "$call", 1, "meta_predicate('$call'(0))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "call", 1, "meta_predicate(call(0))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "findall", 3, "meta_predicate(findall(?,0,-))", false); SB_strcat(pr, tmpbuf);
-	//format_property(m, tmpbuf, sizeof(tmpbuf), "bagof", 3, "meta_predicate(bagof(?,0,-))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "with_mutex", 2, "meta_predicate(with_mutex(+,0))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "engine_create", 4, "meta_predicate(engine_create(?,0,?,+))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "|", 2, "meta_predicate((:|+))", false); SB_strcat(pr, tmpbuf);
@@ -7782,7 +7854,9 @@ static void load_properties(module *m)
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		if (ptr->iso) { format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "iso", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf); }
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, false); SB_strcat(pr, tmpbuf);
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, true); SB_strcat(pr, tmpbuf);
  	}
 
 	for (const builtins *ptr = g_files_bifs; ptr->name; ptr++) {
@@ -7790,7 +7864,9 @@ static void load_properties(module *m)
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		if (ptr->iso) { format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "iso", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf); }
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, false); SB_strcat(pr, tmpbuf);
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, true); SB_strcat(pr, tmpbuf);
  	}
 
 	for (const builtins *ptr = g_evaluable_bifs; ptr->name; ptr++) {
@@ -7798,7 +7874,9 @@ static void load_properties(module *m)
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		if (ptr->iso) { format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "iso", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf); }
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, false); SB_strcat(pr, tmpbuf);
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, true); SB_strcat(pr, tmpbuf);
 	}
 
 	for (const builtins *ptr = g_other_bifs; ptr->name; ptr++) {
@@ -7806,7 +7884,9 @@ static void load_properties(module *m)
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		if (ptr->iso) { format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "iso", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf); }
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, false); SB_strcat(pr, tmpbuf);
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, true); SB_strcat(pr, tmpbuf);
 	}
 
 	for (const builtins *ptr = g_ffi_bifs; ptr->name; ptr++) {
@@ -7814,7 +7894,9 @@ static void load_properties(module *m)
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		if (ptr->iso) { format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "iso", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf); }
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, false); SB_strcat(pr, tmpbuf);
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, true); SB_strcat(pr, tmpbuf);
 	}
 
 	for (const builtins *ptr = g_posix_bifs; ptr->name; ptr++) {
@@ -7822,7 +7904,9 @@ static void load_properties(module *m)
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		if (ptr->iso) { format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "iso", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf); }
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, false); SB_strcat(pr, tmpbuf);
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, true); SB_strcat(pr, tmpbuf);
 	}
 
 	for (const builtins *ptr = g_contrib_bifs; ptr->name; ptr++) {
@@ -7830,7 +7914,9 @@ static void load_properties(module *m)
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
-		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "native_code", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		if (ptr->iso) { format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "iso", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf); }
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, false); SB_strcat(pr, tmpbuf);
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, true); SB_strcat(pr, tmpbuf);
 	}
 
 	parser *p = parser_create(m);
@@ -8023,7 +8109,7 @@ builtins g_iso_bifs[] =
 	{"atom_length", 2, fn_iso_atom_length_2, "?list,?integer", true, false, BLAH},
 	{"atom_concat", 3, fn_iso_atom_concat_3, "+atom,+atom,?atom", true, false, BLAH},
 	{"sub_atom", 5, fn_iso_sub_atom_5, "+atom,?before,?length,?after,?atom", true, false, BLAH},
-	{"sub_string", 5, fn_iso_sub_string_5, "+string,?before,?length,?after,?string", true, false, BLAH},
+	{"sub_string", 5, fn_iso_sub_string_5, "+character_list,?before,?length,?after,?character_list", true, false, BLAH},
 	{"current_rule", 1, fn_iso_current_rule_1, "-term", true, false, BLAH},
 	{"sort", 2, fn_iso_sort_2, "+list,?list", true, false, BLAH},
 	{"msort", 2, fn_iso_msort_2, "+list,?list", true, false, BLAH},
@@ -8031,7 +8117,7 @@ builtins g_iso_bifs[] =
 	{"end_of_file", 0, fn_iso_halt_0, NULL, true, false, BLAH},
 	{"halt", 0, fn_iso_halt_0, NULL, true, false, BLAH},
 	{"halt", 1, fn_iso_halt_1, "+integer", true, false, BLAH},
-	{"abolish", 1, fn_iso_abolish_1, "+predicateindicator", true, false, BLAH},
+	{"abolish", 1, fn_iso_abolish_1, "+predicate_indicator", true, false, BLAH},
 	{"asserta", 1, fn_iso_asserta_1, "+term", true, false, BLAH},
 	{"assertz", 1, fn_iso_assertz_1, "+term", true, false, BLAH},
 	{"retract", 1, fn_iso_retract_1, "+term", true, false, BLAH},
@@ -8040,7 +8126,7 @@ builtins g_iso_bifs[] =
 	{"set_prolog_flag", 2, fn_iso_set_prolog_flag_2, "+atom,+term", true, false, BLAH},
 	{"op", 3, fn_iso_op_3, "?integer,?atom,+atom", true, false, BLAH},
 	{"findall", 3, fn_iso_findall_3, "+term,:callable,-list", true, false, BLAH},
-	{"current_predicate", 1, fn_iso_current_predicate_1, "+predicateindicator", true, false, BLAH},
+	{"current_predicate", 1, fn_iso_current_predicate_1, "+predicate_indicator", true, false, BLAH},
 	{"acyclic_term", 1, fn_iso_acyclic_term_1, "+term", true, false, BLAH},
 	{"compare", 3, fn_iso_compare_3, "+atom,+term,+term", true, false, BLAH},
 	{"unify_with_occurs_check", 2, fn_iso_unify_with_occurs_check_2, "+term,+term", true, false, BLAH},
@@ -8069,16 +8155,16 @@ builtins g_other_bifs[] =
 	{"shell", 2, fn_shell_2, "+atom,-integer", false, false, BLAH},
 
 	{"listing", 0, fn_listing_0, NULL, false, false, BLAH},
-	{"listing", 1, fn_listing_1, "+predicateindicator", false, false, BLAH},
+	{"listing", 1, fn_listing_1, "+predicate_indicator", false, false, BLAH},
 	{"time", 1, fn_time_1, ":callable", false, false, BLAH},
 	{"trace", 0, fn_trace_0, NULL, false, false, BLAH},
 	{"module_info", 2, fn_module_info_2, "+atom,-list", false, false, BLAH},
-	{"source_info", 2, fn_source_info_2, "+predicateindicator,-list", false, false, BLAH},
-	{"help", 2, fn_help_2, "+predicateindicator,+atom", false, false, BLAH},
-	{"help", 1, fn_help_1, "+predicateindicator", false, false, BLAH},
+	{"source_info", 2, fn_source_info_2, "+predicate_indicator,-list", false, false, BLAH},
+	{"help", 2, fn_help_2, "+predicate_indicator,+atom", false, false, BLAH},
+	{"help", 1, fn_help_1, "+predicate_indicator", false, false, BLAH},
 	{"help", 0, fn_help_0, NULL, false, false, BLAH},
-	{"module_help", 3, fn_module_help_3, "+atom,+predicateindicator,+atom", false, false, BLAH},
-	{"module_help", 2, fn_module_help_2, "+atom,+predicateindicator", false, false, BLAH},
+	{"module_help", 3, fn_module_help_3, "+atom,+predicate_indicator,+atom", false, false, BLAH},
+	{"module_help", 2, fn_module_help_2, "+atom,+predicate_indicator", false, false, BLAH},
 	{"module_help", 1, fn_module_help_1, "+atom", false, false, BLAH},
 	{"load_all_modules", 0, fn_load_all_modules_0, NULL, false, false, BLAH},
 
@@ -8092,59 +8178,59 @@ builtins g_other_bifs[] =
 	{"sort", 4, fn_sort_4, "+integer,+atom,+list,?list", false, false, BLAH},
 	{"ignore", 1, fn_ignore_1, ":callable", false, false, BLAH},
 	{"soft_abolish", 1, fn_soft_abolish_1, "+term", false, false, BLAH},
-	{"string_codes", 2, fn_string_codes_2, "+string,-list", false, false, BLAH},
+	{"string_codes", 2, fn_string_codes_2, "+character_list,-list", false, false, BLAH},
 	{"term_singletons", 2, fn_term_singletons_2, "+term,-list", false, false, BLAH},
 	{"pid", 1, fn_pid_1, "-integer", false, false, BLAH},
 	{"get_unbuffered_code", 1, fn_get_unbuffered_code_1, "?integer", false, false, BLAH},
 	{"get_unbuffered_char", 1, fn_get_unbuffered_char_1, "?character", false, false, BLAH},
-	{"format", 2, fn_format_2, "+string,+list", false, false, BLAH},
-	{"format", 3, fn_format_3, "+stream,+string,+list", false, false, BLAH},
+	{"format", 2, fn_format_2, "+character_list,+list", false, false, BLAH},
+	{"format", 3, fn_format_3, "+stream,+character_list,+list", false, false, BLAH},
 	{"abolish", 2, fn_abolish_2, "+term,+list", false, false, BLAH},
 	{"assert", 1, fn_iso_assertz_1, "+term", false, false, BLAH},
 	{"copy_term_nat", 2, fn_copy_term_nat_2, "+term,-term", false, false, BLAH},
 	{"string", 1, fn_atom_1, "+term,+term", false, false, BLAH},
 	{"atomic_concat", 3, fn_atomic_concat_3, "+atomic,+atomic,?atomic", false, false, BLAH},
 	{"atomic_list_concat", 3, fn_atomic_list_concat_3, "+list,+list,-atomic", false, false, BLAH},
-	{"replace", 4, fn_replace_4, "+string,+integer,+integer,-string", false, false, BLAH},
+	{"replace", 4, fn_replace_4, "+character_list,+integer,+integer,-character_list", false, false, BLAH},
 	{"busy", 1, fn_busy_1, "+integer", false, false, BLAH},
 	{"now", 0, fn_now_0, NULL, false, false, BLAH},
 	{"now", 1, fn_now_1, "-integer", false, false, BLAH},
-	{"get_time", 1, fn_get_time_1, "-var", false, false, BLAH},
-	{"cpu_time", 1, fn_cpu_time_1, "-var", false, false, BLAH},
+	{"get_time", 1, fn_get_time_1, "-integer", false, false, BLAH},
+	{"cpu_time", 1, fn_cpu_time_1, "-integer", false, false, BLAH},
 	{"wall_time", 1, fn_wall_time_1, "-integer", false, false, BLAH},
 	{"date_time", 6, fn_date_time_6, "-integer,-integer,-integer,-integer,-integer,-integer", false, false, BLAH},
 	{"date_time", 7, fn_date_time_7, "-integer,-integer,-integer,-integer,-integer,-integer,-integer", false, false, BLAH},
-	{"split_string", 4, fn_split_string_4, "+string,+atom,+atom,-list", false, false, BLAH},
-	{"split", 4, fn_split_4, "+string,+string,?string,?string", false, false, BLAH},
+	{"split_string", 4, fn_split_string_4, "+character_list,+atom,+atom,-list", false, false, BLAH},
+	{"split", 4, fn_split_4, "+character_list,+character_list,?character_list,?character_list", false, false, BLAH},
 	{"is_list_or_partial_list", 1, fn_is_list_or_partial_list_1, "+term", false, false, BLAH},
 	{"is_partial_list", 1, fn_is_partial_list_1, "+term", false, false, BLAH},
 	{"is_list", 1, fn_is_list_1, "+term", false, false, BLAH},
 	{"list", 1, fn_is_list_1, "+term", false, false, BLAH},
 	{"is_stream", 1, fn_is_stream_1, "+term", false, false, BLAH},
 	{"term_hash", 2, fn_term_hash_2, "+term,?integer", false, false, BLAH},
-	{"base64", 3, fn_base64_3, "?string,?string,+list", false, false, BLAH},
-	{"urlenc", 3, fn_urlenc_3, "?string,?string,+list", false, false, BLAH},
+	{"base64", 3, fn_base64_3, "?character_list,?character_list,+list", false, false, BLAH},
+	{"urlenc", 3, fn_urlenc_3, "?character_list,?character_list,+list", false, false, BLAH},
 	{"atom_lower", 2, fn_atom_lower_2, "?atom,?atom", false, false, BLAH},
 	{"atom_upper", 2, fn_atom_upper_2, "?atom,?atom", false, false, BLAH},
-	{"string_lower", 2, fn_string_lower_2, "?string,?string", false, false, BLAH},
-	{"string_upper", 2, fn_string_upper_2, "?string,?string", false, false, BLAH},
-	{"hex_bytes", 2, fn_hex_bytes_2, "?string,?list", false, false, BLAH},
-	{"hex_chars", 2, fn_hex_chars_2, "?integer,?string", false, false, BLAH},
-	{"octal_chars", 2, fn_octal_chars_2, "?integer,?string", false, false, BLAH},
+	{"string_lower", 2, fn_string_lower_2, "?character_list,?character_list", false, false, BLAH},
+	{"string_upper", 2, fn_string_upper_2, "?character_list,?character_list", false, false, BLAH},
+	{"hex_bytes", 2, fn_hex_bytes_2, "?character_list,?list", false, false, BLAH},
+	{"hex_chars", 2, fn_hex_chars_2, "?integer,?character_list", false, false, BLAH},
+	{"octal_chars", 2, fn_octal_chars_2, "?integer,?character_list", false, false, BLAH},
 	{"char_type", 2, fn_char_type_2, "+character,+term", false, false, BLAH},
 	{"code_type", 2, fn_char_type_2, "+integer,+term", false, false, BLAH},
-	{"uuid", 1, fn_uuid_1, "-string", false, false, BLAH},
-	{"asserta", 2, fn_asserta_2, "+term,-string", false, false, BLAH},
-	{"assertz", 2, fn_assertz_2, "+term,-string", false, false, BLAH},
-	{"instance", 2, fn_instance_2, "+string,?term", false, false, BLAH},
-	{"erase", 1, fn_erase_1, "+string", false, false, BLAH},
-	{"clause", 3, fn_clause_3, "?term,?term,-string", false, false, BLAH},
+	{"uuid", 1, fn_uuid_1, "-character_list", false, false, BLAH},
+	{"asserta", 2, fn_asserta_2, "+term,-character_list", false, false, BLAH},
+	{"assertz", 2, fn_assertz_2, "+term,-character_list", false, false, BLAH},
+	{"instance", 2, fn_instance_2, "+character_list,?term", false, false, BLAH},
+	{"erase", 1, fn_erase_1, "+character_list", false, false, BLAH},
+	{"clause", 3, fn_clause_3, "?term,?term,-character_list", false, false, BLAH},
 	{"getenv", 2, fn_getenv_2, "+atom,-atom", false, false, BLAH},
 	{"setenv", 2, fn_setenv_2, "+atom,+atom", false, false, BLAH},
 	{"unsetenv", 1, fn_unsetenv_1, "+atom", false, false, BLAH},
 	{"statistics", 0, fn_statistics_0, NULL, false, false, BLAH},
-	{"statistics", 2, fn_statistics_2, "+atom,-var", false, false, BLAH},
-	{"duplicate_term", 2, fn_iso_copy_term_2, "+term,-var", false, false, BLAH},
+	{"statistics", 2, fn_statistics_2, "+atom,-term", false, false, BLAH},
+	{"duplicate_term", 2, fn_iso_copy_term_2, "+term,-term", false, false, BLAH},
 	{"call_nth", 2, fn_call_nth_2, ":callable,+integer", false, false, BLAH},
 	{"limit", 2, fn_limit_2, "+integer,:callable", false, false, BLAH},
 	{"offset", 2, fn_offset_2, "+integer,+callable", false, false, BLAH},
@@ -8152,43 +8238,43 @@ builtins g_other_bifs[] =
 	{"kv_set", 3, fn_kv_set_3, "+atomic,+term,+list", false, false, BLAH},
 	{"kv_get", 3, fn_kv_get_3, "+atomic,-term,+list", false, false, BLAH},
 	{"between", 3, fn_between_3, "+integer,+integer,-integer", false, false, BLAH},
-	{"string_length", 2, fn_string_length_2, "+string,?integer", false, false, BLAH},
+	{"string_length", 2, fn_string_length_2, "+character_list,?integer", false, false, BLAH},
 
 	{"must_be", 4, fn_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"can_be", 4, fn_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"must_be", 2, fn_must_be_2, "+atom,+term", false, false, BLAH},
 	{"can_be", 2, fn_can_be_2, "+atom,+term,", false, false, BLAH},
 
-	{"sre_compile", 2, fn_sre_compile_2, "+pattern,-reg,", false, false, BLAH},
-	{"sre_matchp", 4, fn_sre_matchp_4, "+reg,+text,-match,-rest,", false, false, BLAH},
-	{"sre_match", 4, fn_sre_match_4, "+pattern,+text,-match,-rest,", false, false, BLAH},
-	{"sre_substp", 4, fn_sre_substp_4, "+reg,+text,-prefix,-rest,", false, false, BLAH},
-	{"sre_subst", 4, fn_sre_subst_4, "+pattern,+text,-prefix,-rest,", false, false, BLAH},
+	{"sre_compile", 2, fn_sre_compile_2, "+character_list,-character_list,", false, false, BLAH},
+	{"sre_matchp", 4, fn_sre_matchp_4, "+character_list,+character_list,-character_list,-character_list,", false, false, BLAH},
+	{"sre_match", 4, fn_sre_match_4, "+character_list,+character_list,-character_list,-character_list,", false, false, BLAH},
+	{"sre_substp", 4, fn_sre_substp_4, "+character_list,+character_list,-character_list,-character_list,", false, false, BLAH},
+	{"sre_subst", 4, fn_sre_subst_4, "+character_list,+character_list,-character_list,-character_list,", false, false, BLAH},
 
 	{"$register_cleanup", 1, fn_sys_register_cleanup_1, NULL, false, false, BLAH},
-	{"$get_level", 1, fn_sys_get_level_1, "?var", false, false, BLAH},
-	{"$is_partial_string", 1, fn_sys_is_partial_string_1, "+string", false, false, BLAH},
+	{"$get_level", 1, fn_sys_get_level_1, "?integer", false, false, BLAH},
+	{"$is_partial_string", 1, fn_sys_is_partial_string_1, "+character_list", false, false, BLAH},
 	{"$undo_trail", 1, fn_sys_undo_trail_1, NULL, false, false, BLAH},
 	{"$redo_trail", 0, fn_sys_redo_trail_0, NULL, false, false, BLAH},
-	{"$legacy_predicate_property", 2, fn_sys_legacy_predicate_property_2, "+callable,?string", false, false, BLAH},
+	{"$legacy_predicate_property", 2, fn_sys_legacy_predicate_property_2, "+callable,?character_list", false, false, BLAH},
 	{"$load_properties", 0, fn_sys_load_properties_0, NULL, false, false, BLAH},
 	{"$load_flags", 0, fn_sys_load_flags_0, NULL, false, false, BLAH},
 	{"$load_ops", 0, fn_sys_load_ops_0, NULL, false, false, BLAH},
 	{"$ops_dirty", 0, fn_sys_ops_dirty_0, NULL, false, false, BLAH},
 	{"$list", 1, fn_sys_list_1, "-list", false, false, BLAH},
 	{"$queue", 1, fn_sys_queue_1, "+term", false, false, BLAH},
-	{"$incr", 2, fn_sys_incr_2, "@var,+integer", false, false, BLAH},
+	{"$incr", 2, fn_sys_incr_2, "@integer,+integer", false, false, BLAH},
 	{"$choice", 0, fn_sys_choice_0, NULL, false, false, BLAH},
 	{"$alarm", 1, fn_sys_alarm_1, "+integer", false, false, BLAH},
-	{"$put_attributes", 2, fn_sys_put_attributes_2, "@var,+list", false, false, BLAH},
-	{"$get_attributes", 2, fn_sys_get_attributes_2, "@var,-list", false, false, BLAH},
-	{"$erase_attributes", 1, fn_sys_erase_attributes_1, "@var", false, false, BLAH},
+	{"$put_attributes", 2, fn_sys_put_attributes_2, "@variable,+list", false, false, BLAH},
+	{"$get_attributes", 2, fn_sys_get_attributes_2, "@variable,-list", false, false, BLAH},
+	{"$erase_attributes", 1, fn_sys_erase_attributes_1, "@variable", false, false, BLAH},
 	{"$list_attributed", 1, fn_sys_list_attributed_1, "-list", false, false, BLAH},
 	{"$dump_keys", 1, fn_sys_dump_keys_1, NULL, false, false, BLAH},
 	{"$skip_max_list", 4, fn_sys_skip_max_list_4, NULL, false, false, BLAH},
 
 #if USE_OPENSSL
-	{"crypto_data_hash", 3, fn_crypto_data_hash_3, "?string,?string,?list", false, false, BLAH},
+	{"crypto_data_hash", 3, fn_crypto_data_hash_3, "?character_list,?character_list,?list", false, false, BLAH},
 #endif
 
 	{"task", 1, fn_task_n, ":callable", false, false, BLAH},

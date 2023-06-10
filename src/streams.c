@@ -7283,7 +7283,7 @@ builtins g_files_bifs[] =
 	{"engine_destroy", 1, fn_engine_destroy_1, "+stream", false, false, BLAH},
 
 	{"mutex_create", 1, fn_iso_true_0, "+stream", false, false, BLAH},
-	{"mutex_create", 2, fn_iso_true_0, "+stream", false, false, BLAH},
+	{"mutex_create", 2, fn_iso_true_0, "+stream,+list", false, false, BLAH},
 	{"with_mutex", 2, fn_with_mutex_2, "+stream,+callable", false, false, BLAH},
 	{"mutex_lock", 1, fn_iso_true_0, "+stream", false, false, BLAH},
 	{"mutex_trylock", 1, fn_iso_true_0, "+stream", false, false, BLAH},

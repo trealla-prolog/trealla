@@ -492,6 +492,10 @@ static void directives(parser *p, cell *d)
 		ptr->iso = iso;
 		ptr->via_directive = true;
 		map_app(p->pl->help, ptr->name, ptr);
+
+		if (ptr->iso)
+			push_property(p->m, ptr->name, ptr->arity, "iso");
+
 		return;
 	}
 
@@ -698,6 +702,7 @@ static void directives(parser *p, cell *d)
 
 					predicate *pr = find_predicate(p->m, &tmp);
 					if (!pr) pr = create_predicate(p->m, &tmp);
+
 					if (!pr) {
 						module_destroy(p->m);
 						p->m = NULL;
@@ -708,6 +713,9 @@ static void directives(parser *p, cell *d)
 						return;
 					}
 
+					push_property(p->m, C_STR(p, &tmp), tmp.arity, "static");
+					push_property(p->m, C_STR(p, &tmp), tmp.arity, "visible");
+					push_property(p->m, C_STR(p, &tmp), tmp.arity, "interpreted");
 					pr->is_public = true;
 				} else if (!strcmp(C_STR(p, head), "op") && (head->arity == 3)) {
 					do_op(p, head, true);

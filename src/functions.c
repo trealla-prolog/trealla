@@ -2989,7 +2989,7 @@ builtins g_evaluable_bifs[] =
 	{"return", 1, fn_return_1, "+number,-number", false, true, BLAH},
 	{"+", 1, fn_iso_positive_1, "+number,-number", true, true, BLAH},
 	{"-", 1, fn_iso_negative_1, "+number,-number", true, true, BLAH},
-	{"abs", 1, fn_iso_abs_1, "+number,-number", true, true, BLAH},
+	{"abs", 1, fn_iso_abs_1, "+integer,-integer", true, true, BLAH1,"+float,-float"},
 	{"sign", 1, fn_iso_sign_1, "+number,-integer", true, true, BLAH},
 	{"epsilon", 0, fn_iso_epsilon_0, "-float", true, true, BLAH},
 	{"pi", 0, fn_iso_pi_0, "-float", true, true, BLAH},

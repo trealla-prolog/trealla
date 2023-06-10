@@ -436,7 +436,7 @@ db_entry *find_in_db(module *m, uuid *ref)
 	return NULL;
 }
 
-static void push_property(module *m, const char *name, unsigned arity, const char *type)
+void push_property(module *m, const char *name, unsigned arity, const char *type)
 {
 	char tmpbuf[1024];
 	format_property(m, tmpbuf, sizeof(tmpbuf), name, arity, type, false);
@@ -1294,15 +1294,6 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 		return NULL;
 
 	if (!pr) {
-		bool found = false, evaluable = false;
-
-		/*
-		if (get_builtin_term(m, c, &found, &evaluable), found && !evaluable) {
-			//fprintf(stdout, "Error: permission error modifying %s/%u\n", C_STR(m, c), c->arity);
-			return NULL;
-		}
-		*/
-
 		pr = create_predicate(m, c);
 		check_error(pr);
 
@@ -1317,6 +1308,7 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 				push_property(m, C_STR(m, c), c->arity, "built_in");
 
 			push_property(m, C_STR(m, c), c->arity, "static");
+			push_property(m, C_STR(m, c), c->arity, "interpreted");
 		}
 
 		if (consulting && m->make_public) {

@@ -469,7 +469,9 @@ struct predicate_ {
 	bool is_var_in_first_arg:1;
 };
 
-#define BLAH false, false, {0}, {0}, 0, NULL, NULL, NULL, NULL, NULL
+#define BLAH1 false, false, {0}, {0}, 0, NULL, NULL, NULL, NULL, NULL
+#define BLAH false, false, {0}, {0}, 0, NULL, NULL, NULL, NULL, NULL, NULL
+
 #define MAX_FFI_ARGS 64
 
 struct builtins_ {
@@ -489,6 +491,7 @@ struct builtins_ {
 	module *m;
 	char *desc;
 	char *help2;
+	char *help_alt;
 };
 
 typedef struct {
