@@ -4271,9 +4271,9 @@ static bool fn_help_2(query *q)
 		snprintf(url, sizeof(url), "http://tau-prolog.org/documentation/prolog/builtin/%s/%u", functor, arity);
 
 	if (arity)
-		fprintf(stdout, "%s/%u: %s(%s)%s%s %s\n", fn->name, arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"", url);
+		fprintf(stdout, "%s/%u: %s\n", fn->name, arity, url);
 	else
-		fprintf(stdout, "%s/%u: %s%s%s %s\n", fn->name, arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"", url);
+		fprintf(stdout, "%s/%u: %s\n", fn->name, arity, url);
 
 	return true;
 }
