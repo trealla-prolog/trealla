@@ -1,3 +1,5 @@
+:- use_module(library(lists)).
+
 % PVR 20/07/92: Added entry declaration for move/5 (it is used in a bagof).
 
 % ------------------------------------------------------------------------------
