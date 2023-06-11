@@ -1914,11 +1914,11 @@ static bool fn_use_foreign_module_2(query *q)
 builtins g_ffi_bifs[MAX_FFI] =
 {
 #if USE_FFI
-	{"$dlopen", 3, fn_sys_dlopen_3, "+filename,+flag,-handle", false, false, BLAH},
-	{"$dlsym", 3, fn_sys_dlsym_3, "+handle,+symbol,-function", false, false, BLAH},
-	{"$dlclose", 1, fn_sys_dlclose_1, "+handle", false, false, BLAH},
-	{"$register_function", 4, fn_sys_register_function_4, "+handle, +symbol, +arglist,+result", false, false, BLAH},
-	{"$register_predicate", 4, fn_sys_register_predicate_4, "+handle, +symbol, +arglist,+result", false, false, BLAH},
+	{"$dlopen", 3, fn_sys_dlopen_3, "+atom,+atom,-term", false, false, BLAH},
+	{"$dlsym", 3, fn_sys_dlsym_3, "+atom,+symbol,-term", false, false, BLAH},
+	{"$dlclose", 1, fn_sys_dlclose_1, "+term", false, false, BLAH},
+	{"$register_function", 4, fn_sys_register_function_4, "+term, +atom, +list,+atom", false, false, BLAH},
+	{"$register_predicate", 4, fn_sys_register_predicate_4, "+term, +atom, +list,+atom", false, false, BLAH},
 
 	{"foreign_struct", 2, fn_foreign_struct_2, "+atom,+list", false, false, BLAH},
 	{"use_foreign_module", 2, fn_use_foreign_module_2, "+atom,+list", false, false, BLAH},
