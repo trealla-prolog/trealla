@@ -251,6 +251,8 @@ bool fn_iso_call_1(query *q)
 	return true;
 }
 
+// goal, !
+
 bool fn_iso_once_1(query *q)
 {
 	q->tot_goals--;
@@ -293,6 +295,8 @@ bool fn_iso_once_1(query *q)
 	q->st.curr_cell = tmp;
 	return true;
 }
+
+// if -> ! ; true
 
 bool fn_ignore_1(query *q)
 {
@@ -442,6 +446,8 @@ bool fn_if_3(query *q)
 	return do_if_else(q, p1, p2, p3);
 }
 
+// goal , goal
+
 bool fn_iso_conjunction_2(query *q)
 {
 	q->tot_goals--;
@@ -449,6 +455,8 @@ bool fn_iso_conjunction_2(query *q)
 	q->st.curr_cell++;
 	return true;
 }
+
+// goal ; goal
 
 bool fn_iso_disjunction_2(query *q)
 {
@@ -495,7 +503,7 @@ bool fn_iso_disjunction_2(query *q)
 	return true;
 }
 
-// \+ goal
+// if -> !, fail ; true
 
 bool fn_iso_negation_1(query *q)
 {
