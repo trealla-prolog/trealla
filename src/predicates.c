@@ -8279,7 +8279,7 @@ builtins g_other_bifs[] =
 	{"$erase_attributes", 1, fn_sys_erase_attributes_1, "@variable", false, false, BLAH},
 	{"$list_attributed", 1, fn_sys_list_attributed_1, "-list", false, false, BLAH},
 	{"$dump_keys", 1, fn_sys_dump_keys_1, NULL, false, false, BLAH},
-	{"$skip_max_list", 4, fn_sys_skip_max_list_4, NULL, false, false, BLAH},
+	{"$skip_max_list", 4, fn_sys_skip_max_list_4, "?integer,?integer?,?term,?term", false, false, BLAH},
 
 #if USE_OPENSSL
 	{"crypto_data_hash", 3, fn_crypto_data_hash_3, "?character_list,?character_list,?list", false, false, BLAH},
