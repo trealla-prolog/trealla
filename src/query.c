@@ -931,9 +931,9 @@ bool push_choice(query *q)
 	return true;
 }
 
-// A barrier is used when making a call, it sets a
-// new choice generation so that normal cuts are contained.
-// An '$prune_me' though will also remove the barrier...
+// A barrier is used when making a call, it sets a new
+// choice generation so that normal cuts are contained.
+// This is because there is no separate control stack.
 
 bool push_barrier(query *q)
 {
@@ -944,6 +944,8 @@ bool push_barrier(query *q)
 	ch->barrier = true;
 	return true;
 }
+
+// A catcher adds the ability to trap exceptions.
 
 bool push_catcher(query *q, enum q_retry retry)
 {
@@ -1010,7 +1012,7 @@ void prune_me(query *q, bool soft_cut, pl_idx_t cp)
 		choice *ch = GET_CURR_CHOICE();
 		const choice *save_ch = ch;
 
-		while (soft_cut && (ch >= q->choices)) {
+		while (soft_cut) {
 			if ((q->cp-1) == cp) {
 				if (ch == save_ch) {
 					unshare_predicate(q, ch->st.pr);
