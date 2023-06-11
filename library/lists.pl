@@ -58,14 +58,16 @@ append([L0|Ls0], Ls) :-
 	append(L0, Rest, Ls),
 	append(Ls0, Rest).
 
-:- help(append(+list,?list), [iso(false), desc('The concatention of a list of lists to make a new one.')]).
+:- help(append(?list,?list), [iso(false), desc('The concatention of a list of lists to make a new one.')]).
 
 append([], R, R).
 append([X|L], R, [X|S]) :- append(L, R, S).
 
-:- help(append(?list,?list,?list), [iso(false), desc('The concatenation of two lists to make a third.')]).
+:- help(append(?term,?term,?term), [iso(false), desc('The concatenation of two lists to make a third.')]).
 
 memberchk(X, Xs) :- member(X, Xs), !.
+
+:- help(memberchk(?term,?term), [iso(false), desc('Is element a member of the list.')]).
 
 member(El, [H|T]) :-
 	member_(T, El, H).
@@ -74,16 +76,16 @@ member_(_, El, El).
 member_([H|T], El, _) :-
 	member_(T, El, H).
 
-:- help(member(?term,?list), [iso(false), desc('Is element a member of the list.')]).
+:- help(member(?term,?term), [iso(false), desc('Is element a member of the list.')]).
 
 selectchk(X, L, Rest) :- select(X, L, Rest), !.
 
-:- help(selectchk(+term,+list,-rest), [iso(false), desc('Deterministically remove element from list to make a new one.')]).
+:- help(selectchk(+term,?term,?term), [iso(false), desc('Deterministically remove element from list to make a new one.')]).
 
 select(X, [X|T], T).
 select(X, [H|T], [H|Rest]) :- select(X, T, Rest).
 
-:- help(select(+term,+list), [iso(false), desc('Remove element from a list to make a new one.')]).
+:- help(select(+term,+term, ?term), [iso(false), desc('Remove element from a list to make a new one.')]).
 
 subtract([], _, []) :- !.
 subtract([H|T], L2, L3) :- memberchk(H, L2), !, subtract(T, L2, L3).
@@ -147,7 +149,7 @@ nth1(N, Es0, E) :-
 nth1(N, Es, E) :-
 	nth1_orig(N, Es, E).
 
-:- help(nth1(+integer,+list,-term), [iso(false), desc('Indexed element (from 1) into list.')]).
+:- help(nth1(?integer,?term,?term), [iso(false), desc('Indexed element (from 1) into list.')]).
 
 nth0(N, Es0, E) :-
 	nonvar(N),
@@ -157,17 +159,17 @@ nth0(N, Es0, E) :-
 nth0(N, Es, E) :-
 	nth0_orig(N, Es, E).
 
-:- help(nth0(+integer,+list,-term), [iso(false), desc('Indexed element (from 0) into list.')]).
+:- help(nth0(?integer,?term,?term), [iso(false), desc('Indexed element (from 0) into list.')]).
 
 nth1(Nth, List, Element, Rest) :-
 	nth(Element, List, 1, Nth, Rest).
 
-:- help(nth1(+integer,+list,-term,-list), [iso(false)]).
+:- help(nth1(?integer,+term,?term,?term), [iso(false)]).
 
 nth0(Nth, List, Element, Rest) :-
 	nth(Element, List, 0, Nth, Rest).
 
-:- help(nth0(+integer,+list,-term,-list), [iso(false), desc('Indexed element (from 0) into list with remainder.')]).
+:- help(nth0(?integer,?term,?term,?term), [iso(false), desc('Indexed element (from 0) into list with remainder.')]).
 
 nth(Element, List, Acc, Nth, Rest) :-
 	(	integer(Nth),
@@ -370,4 +372,4 @@ length_rundown([_|Xs], N) :-
 	N1 is N-1,
 	length_rundown(Xs, N1).
 
-:- help(length(?list,?integer), [iso(true), desc('Number of elements in list.')]).
+:- help(length(?term,?integer), [iso(false), desc('Number of elements in list.')]).

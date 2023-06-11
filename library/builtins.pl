@@ -1077,7 +1077,8 @@ succ(X,S) :- var(X), Y=1, nonvar(Y), nonvar(S),
 succ(_,_) :-
 	throw(error(instantiation_error, succ/2)).
 
-:- help(succ(?integer,?integer,?integer), [iso(false)]).
+:- help(succ(?integer,+integer), [iso(false)]).
+:- help(succ(+integer,-integer), [iso(false)]).
 
 sre_match_all_in_file(Pat, Filename, L) :-
 	setup_call_cleanup(
