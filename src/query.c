@@ -1012,7 +1012,7 @@ void prune_me(query *q, bool soft_cut, pl_idx_t cp)
 		choice *ch = GET_CURR_CHOICE();
 		const choice *save_ch = ch;
 
-		while (soft_cut) {
+		while (soft_cut && (ch >= q->choices)) {
 			if ((q->cp-1) == cp) {
 				if (ch == save_ch) {
 					unshare_predicate(q, ch->st.pr);
