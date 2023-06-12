@@ -58,11 +58,11 @@ bool fn_sys_cleanup_if_det_1(query *q)
 	if (!ch->register_cleanup)
 		return true;
 
-	if (ch->did_cleanup)
+	if (ch->fail_on_retry)
 		return true;
 
 	drop_choice(q);
-	ch->did_cleanup = true;
+	ch->fail_on_retry = true;
 	cell *c = deref(q, ch->st.curr_cell, ch->st.curr_frame);
 	pl_idx_t c_ctx = q->latest_ctx;
 	c = deref(q, c+1, c_ctx);
@@ -701,9 +701,6 @@ bool find_exception_handler(query *q, char *ball)
 
 		if (ch->block_catcher)
 			continue;
-
-		//if (ch->did_cleanup)
-		//	continue;
 
 		if (!ch->catchme_retry)
 			continue;

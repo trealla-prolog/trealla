@@ -727,7 +727,7 @@ int retry_choice(query *q)
 		if (ch->succeed_on_retry)
 			return -1;
 
-		if (ch->catchme_exception || ch->soft_cut || ch->did_cleanup || ch->fail_on_retry)
+		if (ch->catchme_exception || ch->fail_on_retry)
 			continue;
 
 		if (!ch->register_cleanup && q->noretry)
@@ -924,10 +924,9 @@ bool push_choice(query *q)
 	ch->actual_slots = f->actual_slots;
 	ch->overflow = f->overflow;
 	ch->catchme_retry =
-		ch->catchme_exception = ch->barrier = ch->soft_cut =
-		ch->did_cleanup = ch->register_cleanup =
-		ch->block_catcher = ch->catcher =
-		ch->fail_on_retry = ch->succeed_on_retry = false;
+		ch->catchme_exception = ch->barrier = ch->register_cleanup =
+		ch->block_catcher = ch->catcher = ch->fail_on_retry =
+		ch->succeed_on_retry = false;
 	return true;
 }
 
@@ -989,8 +988,8 @@ void cut_me(query *q)
 		unshare_predicate(q, ch->st.pr);
 		drop_choice(q);
 
-		if (ch->register_cleanup && !ch->did_cleanup) {
-			ch->did_cleanup = true;
+		if (ch->register_cleanup && !ch->fail_on_retry) {
+			ch->fail_on_retry = true;
 			cell *c = ch->st.curr_cell;
 			pl_idx_t c_ctx = ch->st.curr_frame;
 			c = deref(q, c+1, c_ctx);
@@ -1021,7 +1020,7 @@ void prune_me(query *q, bool soft_cut, pl_idx_t cp)
 					return;
 				}
 
-				ch->soft_cut = true;
+				ch->fail_on_retry = true;
 				f->cgen--;
 				return;
 			}
@@ -1039,8 +1038,8 @@ void prune_me(query *q, bool soft_cut, pl_idx_t cp)
 		unshare_predicate(q, ch->st.pr);
 		drop_choice(q);
 
-		if (ch->register_cleanup && !ch->did_cleanup) {
-			ch->did_cleanup = true;
+		if (ch->register_cleanup && !ch->fail_on_retry) {
+			ch->fail_on_retry = true;
 			cell *c = ch->st.curr_cell;
 			pl_idx_t c_ctx = ch->st.curr_frame;
 			c = deref(q, c+1, c_ctx);
