@@ -6466,15 +6466,20 @@ static bool fn_sys_legacy_function_property_2(query *q)
 	bool found = false, evaluable = false;
 
 	if (get_builtin_term(q->st.m, p1, &found, &evaluable), found) {
-		make_atom(&tmp, index_from_pool(q->pl, "built_in"));
-
 		if (!evaluable)
 			return false;
 
+		make_atom(&tmp, index_from_pool(q->pl, "built_in"));
+
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
-		else
-			return throw_error(q, p2, p2_ctx, "domain_error", "function_property");
+
+		make_atom(&tmp, index_from_pool(q->pl, "static"));
+
+		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
+			return true;
+
+		return throw_error(q, p2, p2_ctx, "domain_error", "function_property");
 	}
 
 	return false;
