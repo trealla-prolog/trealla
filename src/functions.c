@@ -2996,7 +2996,7 @@ builtins g_evaluable_bifs[] =
 	{"e", 0, fn_iso_e_0, "-float", true, true, BLAH},
 	{"+", 2, fn_iso_add_2, "+number,+number,-number", true, true, BLAH},
 	{"-", 2, fn_iso_sub_2, "+number,+number,-number", true, true, BLAH},
-	{"*", 2, fn_iso_mul_2, "+number,+number,-float", true, true, BLAH},
+	{"*", 2, fn_iso_mul_2, "+number,+number,-number", true, true, BLAH},
 	{"/", 2, fn_iso_divide_2, "+number,+number,-float", true, true, BLAH},
 	{"//", 2, fn_iso_divint_2, "+integer,+integer,-integer", true, true, BLAH},
 	{"div", 2, fn_iso_div_2, "+integer,+integer,-integer", true, true, BLAH},
@@ -3045,7 +3045,8 @@ builtins g_evaluable_bifs[] =
 	{"numerator", 1, fn_numerator_1, "+rational,-integer", false, true, BLAH},
 	{"denominator", 1, fn_denominator_1, "+rational,-integer", false, true, BLAH},
 	{"rational", 1, fn_rational_1, "+term", false, false, BLAH},
-	{"rdiv", 2, fn_rdiv_2, "+number,+number,-rational", false, true, BLAH},
+	{"rdiv", 2, fn_rdiv_2, "+integer,+integer,-rational", false, true, BLAH},
+
 	{"divmod", 4, fn_divmod_4, "+integer,+integer,?integer,?integer", false, false, BLAH},
 	{"log", 2, fn_log_2, "+number,+number,-float", false, true, BLAH},
 	{"log10", 1, fn_log10_1, "+number,-float", false, true, BLAH},
