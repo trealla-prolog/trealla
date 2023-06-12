@@ -1057,9 +1057,6 @@ void prune_me(query *q, bool soft_cut, pl_idx_t cp)
 
 bool drop_barrier(query *q, pl_idx_t cp)
 {
-	const frame *f = GET_CURR_FRAME();
-	const choice *ch = GET_CURR_CHOICE();
-
 	if ((q->cp-1) == cp) {
 		drop_choice(q);
 		return true;
