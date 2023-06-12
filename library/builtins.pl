@@ -28,7 +28,7 @@ predicate_property(P, A) :-
 function_property(P, A) :-
 	nonvar(P), atom(A), !,
 	must_be(P, callable, function_property/2, _),
-	'$legacy_predicate_property'(P, A).
+	'$legacy_function_property'(P, A).
 function_property(P, A) :-
 	'$load_properties',
 	(	var(A)

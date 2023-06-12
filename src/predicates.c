@@ -6387,12 +6387,15 @@ static bool fn_sys_legacy_predicate_property_2(query *q)
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,atom_or_var);
 	cell tmp;
-	bool found = false;
+	bool found = false, evaluable = false;
 
-	if (get_builtin_term(q->st.m, p1, &found, NULL), found) {
+	if (get_builtin_term(q->st.m, p1, &found, &evaluable), found) {
 		make_atom(&tmp, index_from_pool(q->pl, "built_in"));
 
-		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame) == true)
+		if (evaluable)
+			return false;
+
+		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 		else
 			return throw_error(q, p2, p2_ctx, "domain_error", "predicate_property");
@@ -6400,58 +6403,78 @@ static bool fn_sys_legacy_predicate_property_2(query *q)
 
 	predicate *pr = find_predicate(q->st.m, p1);
 
-	if (pr && !pr->is_dynamic && !is_var(p2)) {
+	if (!pr)
+		return false;
+
+	if (!pr->is_dynamic && !is_var(p2)) {
 		make_atom(&tmp, index_from_pool(q->pl, "built_in"));
-		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame) == true)
+		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 	}
 
-	if (pr && pr->is_multifile) {
+	if (pr->is_multifile) {
 		make_atom(&tmp, index_from_pool(q->pl, "multifile"));
-		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame) == true)
+		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 	}
 
-	if (pr && pr->is_dynamic) {
+	if (pr->is_dynamic) {
 		make_atom(&tmp, index_from_pool(q->pl, "dynamic"));
-		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame) == true)
+		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 	}
 
-	if (pr && !pr->is_dynamic) {
+	if (!pr->is_dynamic) {
 		make_atom(&tmp, index_from_pool(q->pl, "static"));
-		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame) == true)
+		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 	}
 
-	if (pr && pr->is_public) {
+	if (pr->is_public) {
 		make_atom(&tmp, index_from_pool(q->pl, "public"));
-		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame) == true)
+		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 	}
 
-	if (pr && pr->is_public) {
+	if (pr->is_public) {
 		make_atom(&tmp, index_from_pool(q->pl, "exported"));
-		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame) == true)
+		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 	}
 
-	if (pr) {
-		make_atom(&tmp, index_from_pool(q->pl, "static"));
-		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame) == true)
-			return true;
-	}
+	make_atom(&tmp, index_from_pool(q->pl, "static"));
+	if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
+		return true;
 
-	if (pr) {
-		make_atom(&tmp, index_from_pool(q->pl, "meta_predicate"));
-		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame) == true)
-			return true;
-	}
+	make_atom(&tmp, index_from_pool(q->pl, "meta_predicate"));
+	if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
+		return true;
 
-	if (pr) {
-		make_atom(&tmp, index_from_pool(q->pl, "visible"));
-		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame) == true)
+	make_atom(&tmp, index_from_pool(q->pl, "visible"));
+
+	if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
+		return true;
+
+	return false;
+}
+
+static bool fn_sys_legacy_function_property_2(query *q)
+{
+	GET_FIRST_ARG(p1,callable);
+	GET_NEXT_ARG(p2,atom_or_var);
+	cell tmp;
+	bool found = false, evaluable = false;
+
+	if (get_builtin_term(q->st.m, p1, &found, &evaluable), found) {
+		make_atom(&tmp, index_from_pool(q->pl, "built_in"));
+
+		if (!evaluable)
+			return false;
+
+		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
+		else
+			return throw_error(q, p2, p2_ctx, "domain_error", "function_property");
 	}
 
 	return false;
@@ -8263,6 +8286,7 @@ builtins g_other_bifs[] =
 	{"$undo_trail", 1, fn_sys_undo_trail_1, NULL, false, false, BLAH},
 	{"$redo_trail", 0, fn_sys_redo_trail_0, NULL, false, false, BLAH},
 	{"$legacy_predicate_property", 2, fn_sys_legacy_predicate_property_2, "+callable,?character_list", false, false, BLAH},
+	{"$legacy_function_property", 2, fn_sys_legacy_function_property_2, "+callable,?character_list", false, false, BLAH},
 	{"$load_properties", 0, fn_sys_load_properties_0, NULL, false, false, BLAH},
 	{"$load_flags", 0, fn_sys_load_flags_0, NULL, false, false, BLAH},
 	{"$load_ops", 0, fn_sys_load_ops_0, NULL, false, false, BLAH},

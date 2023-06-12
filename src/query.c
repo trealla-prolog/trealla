@@ -759,8 +759,7 @@ static frame *push_frame(query *q, unsigned nbr_vars)
 		f->prev_cell = q->st.curr_cell;
 	}
 
-	choice *ch = GET_CURR_CHOICE();
-	f->cgen = ch->cgen = ++q->cgen;
+	f->cgen = ++q->cgen;
 	f->is_last = false;
 	f->overflow = 0;
 	f->hp = q->st.hp;
