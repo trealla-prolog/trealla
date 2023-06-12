@@ -70,20 +70,6 @@ bool fn_sys_cleanup_if_det_1(query *q)
 	return true;
 }
 
-bool fn_sys_cut_if_det_1(query *q)
-{
-	q->tot_goals--;
-	GET_FIRST_ARG(p1,integer);
-	const frame *f = GET_CURR_FRAME();
-	choice *ch = GET_CURR_CHOICE();
-
-	if ((q->cp-1) != get_smallint(p1))
-		return true;
-
-	drop_choice(q);
-	return true;
-}
-
 // module:goal
 
 bool fn_iso_invoke_2(query *q)

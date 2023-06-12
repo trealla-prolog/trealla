@@ -4521,7 +4521,7 @@ static bool fn_time_1(query *q)
 	cell *tmp = clone_to_heap(q, true, p1, 4);
 	pl_idx_t nbr_cells = 1 + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_elapsed_s, fn_sys_elapsed_0, 0, 0);
-	make_struct(tmp+nbr_cells++, g_sys_cut_if_det_s, fn_sys_cut_if_det_1, 1, 1);
+	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
@@ -8091,7 +8091,6 @@ builtins g_iso_bifs[] =
 	{"$call_cleanup", 3, fn_sys_call_cleanup_3, NULL, false, false, BLAH},
 	{"$block_catcher", 1, fn_sys_block_catcher_1, NULL, false, false, BLAH},
 	{"$cleanup_if_det", 1, fn_sys_cleanup_if_det_1, NULL, false, false, BLAH},
-	{"$cut_if_det", 1, fn_sys_cut_if_det_1, NULL, false, false, BLAH},
 	{"$soft_prune", 1, fn_sys_soft_prune_1, NULL, false, false, BLAH},
 	{"$prune", 0, fn_sys_prune_0, NULL, false, false, BLAH},
 	{"$drop_barrier", 1, fn_sys_drop_barrier_1, NULL, false, false, BLAH},
