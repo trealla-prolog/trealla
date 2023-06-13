@@ -6395,7 +6395,7 @@ static void do_template(char *tmpbuf, const char *name, unsigned arity, const ch
 	if (arity)
 		SB_strcat(t, "(");
 
-	char tmpbuf1[256], tmpbuf2[256], tmpbuf3[256];
+	char tmpbuf1[256], tmpbuf2[256];
 	const char *src = help + (function?1:0);
 
 	for (unsigned i = 0; i < arity; i++) {
@@ -6406,8 +6406,7 @@ static void do_template(char *tmpbuf, const char *name, unsigned arity, const ch
 			SB_strcat(t, ",");
 
 		SB_strcat(t, tmpbuf1);
-		strcpy(tmpbuf3, tmpbuf2);
-		src = tmpbuf3 + (function?1:0);
+		src = tmpbuf2 + (function?1:0);
 	}
 
 	if (arity)
