@@ -6468,7 +6468,7 @@ static bool fn_sys_legacy_predicate_property_2(query *q)
 				return true;
 		}
 
-		return throw_error(q, q->st.curr_cell, q->st.curr_frame, "domain_error", "predicate_property");
+		return throw_error(q, p2, p2_ctx, "domain_error", "predicate_property");
 	}
 
 	predicate *pr = find_predicate(q->st.m, p1);
