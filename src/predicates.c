@@ -6478,36 +6478,42 @@ static bool fn_sys_legacy_predicate_property_2(query *q)
 
 	if (!pr->is_dynamic && !is_var(p2)) {
 		make_atom(&tmp, index_from_pool(q->pl, "built_in"));
+
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 	}
 
 	if (pr->is_multifile) {
 		make_atom(&tmp, index_from_pool(q->pl, "multifile"));
+
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 	}
 
 	if (pr->is_dynamic) {
 		make_atom(&tmp, index_from_pool(q->pl, "dynamic"));
+
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 	}
 
 	if (!pr->is_dynamic) {
 		make_atom(&tmp, index_from_pool(q->pl, "static"));
+
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 	}
 
 	if (pr->is_public) {
 		make_atom(&tmp, index_from_pool(q->pl, "public"));
+
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 	}
 
 	if (pr->is_public) {
 		make_atom(&tmp, index_from_pool(q->pl, "exported"));
+
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 	}
