@@ -6430,10 +6430,10 @@ static bool fn_sys_legacy_predicate_property_2(query *q)
 	builtins *ptr;
 
 	if (ptr = get_builtin_term(q->st.m, p1, &found, &evaluable), found) {
-		make_atom(&tmp, index_from_pool(q->pl, "built_in"));
-
 		if (evaluable)
 			return false;
+
+		make_atom(&tmp, index_from_pool(q->pl, "built_in"));
 
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
