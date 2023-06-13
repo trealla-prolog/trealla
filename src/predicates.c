@@ -6427,9 +6427,8 @@ static bool fn_sys_legacy_predicate_property_2(query *q)
 	GET_NEXT_ARG(p2,atom_or_var);
 	cell tmp;
 	bool found = false, evaluable = false;
-	builtins *ptr;
 
-	if (ptr = get_builtin_term(q->st.m, p1, &found, &evaluable), found) {
+	if (get_builtin_term(q->st.m, p1, &found, &evaluable), found) {
 		if (evaluable)
 			return false;
 
@@ -6438,35 +6437,15 @@ static bool fn_sys_legacy_predicate_property_2(query *q)
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 
-		bool quote = needs_quoting(q->st.m, ptr->name, strlen(ptr->name));
+		make_atom(&tmp, index_from_pool(q->pl, "static"));
 
-		if (ptr->help) {
-			char tmpbuf2[256];
-			do_template(tmpbuf2, ptr->name, ptr->arity, ptr->help, evaluable, quote);
-			parser *p = parser_create(q->st.m);
-			p->srcptr = tmpbuf2;
-			p->consulting = false;
-			tokenize(p, false, false);
-			parser_destroy(p);
-			cell *tmp = clone_to_heap(q, false, p->cl->cells, 0);
+		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
+			return true;
 
-			if (unify(q, p2, p2_ctx, tmp, q->st.curr_frame))
-				return true;
-		}
+		make_atom(&tmp, index_from_pool(q->pl, "dynamic"));
 
-		if (ptr->help_alt) {
-			char tmpbuf2[256];
-			do_template(tmpbuf2, ptr->name, ptr->arity, ptr->help_alt, evaluable, quote);
-			parser *p = parser_create(q->st.m);
-			p->srcptr = tmpbuf2;
-			p->consulting = false;
-			tokenize(p, false, false);
-			parser_destroy(p);
-			cell *tmp = clone_to_heap(q, false, p->cl->cells, 0);
-
-			if (unify(q, p2, p2_ctx, tmp, q->st.curr_frame))
-				return true;
-		}
+		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
+			return false;
 
 		return throw_error(q, p2, p2_ctx, "domain_error", "predicate_property");
 	}
@@ -6483,8 +6462,8 @@ static bool fn_sys_legacy_predicate_property_2(query *q)
 			return true;
 	}
 
-	if (pr->is_multifile) {
-		make_atom(&tmp, index_from_pool(q->pl, "multifile"));
+	if (!pr->is_dynamic) {
+		make_atom(&tmp, index_from_pool(q->pl, "static"));
 
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
@@ -6497,8 +6476,8 @@ static bool fn_sys_legacy_predicate_property_2(query *q)
 			return true;
 	}
 
-	if (!pr->is_dynamic) {
-		make_atom(&tmp, index_from_pool(q->pl, "static"));
+	if (pr->is_multifile) {
+		make_atom(&tmp, index_from_pool(q->pl, "multifile"));
 
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
@@ -6533,41 +6512,6 @@ static bool fn_sys_legacy_predicate_property_2(query *q)
 	if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 		return true;
 
-	const char *help = NULL, *help_alt = NULL;
-	const char *name = C_STR(q, &pr->key);
-	unsigned arity = pr->key.arity;
-	map_get(q->pl->help, name, (const void**)&help);
-
-	bool quote = needs_quoting(q->st.m, name, strlen(name));
-
-	if (help) {
-		char tmpbuf2[256];
-		do_template(tmpbuf2, name, arity, help, evaluable, quote);
-		parser *p = parser_create(q->st.m);
-		p->srcptr = tmpbuf2;
-		p->consulting = false;
-		tokenize(p, false, false);
-		parser_destroy(p);
-		cell *tmp = clone_to_heap(q, false, p->cl->cells, 0);
-
-		if (unify(q, p2, p2_ctx, tmp, q->st.curr_frame))
-			return true;
-	}
-
-	if (help_alt) {
-		char tmpbuf2[256];
-		do_template(tmpbuf2, name, arity, help_alt, evaluable, quote);
-		parser *p = parser_create(q->st.m);
-		p->srcptr = tmpbuf2;
-		p->consulting = false;
-		tokenize(p, false, false);
-		parser_destroy(p);
-		cell *tmp = clone_to_heap(q, false, p->cl->cells, 0);
-
-		if (unify(q, p2, p2_ctx, tmp, q->st.curr_frame))
-			return true;
-	}
-
 	return false;
 }
 
@@ -6577,9 +6521,8 @@ static bool fn_sys_legacy_function_property_2(query *q)
 	GET_NEXT_ARG(p2,atom_or_var);
 	cell tmp;
 	bool found = false, evaluable = false;
-	builtins *ptr;
 
-	if (ptr = get_builtin_term(q->st.m, p1, &found, &evaluable), found) {
+	if (get_builtin_term(q->st.m, p1, &found, &evaluable), found) {
 		if (!evaluable)
 			return false;
 
@@ -6592,36 +6535,6 @@ static bool fn_sys_legacy_function_property_2(query *q)
 
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
-
-		bool quote = needs_quoting(q->st.m, ptr->name, strlen(ptr->name));
-
-		if (ptr->help) {
-			char tmpbuf2[256];
-			do_template(tmpbuf2, ptr->name, ptr->arity, ptr->help, evaluable, quote);
-			parser *p = parser_create(q->st.m);
-			p->srcptr = tmpbuf2;
-			p->consulting = false;
-			tokenize(p, false, false);
-			parser_destroy(p);
-			cell *tmp = clone_to_heap(q, false, p->cl->cells, 0);
-
-			if (unify(q, p2, p2_ctx, tmp, q->st.curr_frame))
-				return true;
-		}
-
-		if (ptr->help_alt) {
-			char tmpbuf2[256];
-			do_template(tmpbuf2, ptr->name, ptr->arity, ptr->help_alt, evaluable, quote);
-			parser *p = parser_create(q->st.m);
-			p->srcptr = tmpbuf2;
-			p->consulting = false;
-			tokenize(p, false, false);
-			parser_destroy(p);
-			cell *tmp = clone_to_heap(q, false, p->cl->cells, 0);
-
-			if (unify(q, p2, p2_ctx, tmp, q->st.curr_frame))
-				return true;
-		}
 
 		return throw_error(q, p2, p2_ctx, "domain_error", "function_property");
 	}
