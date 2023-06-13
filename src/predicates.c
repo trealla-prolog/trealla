@@ -6382,14 +6382,54 @@ static bool fn_sys_ops_dirty_0(query *q)
 	return ok;
 }
 
+static void do_template(char *tmpbuf, const char *name, unsigned arity, const char *help, bool function, bool quote)
+{
+	SB(t);
+
+	if (quote) {
+		SB_sprintf(t, "template('%s'", name);
+	} else {
+		SB_sprintf(t, "template(%s", name);
+	}
+
+	if (arity)
+		SB_strcat(t, "(");
+
+	char tmpbuf1[256], tmpbuf2[256], tmpbuf3[256];
+	const char *src = help + (function?1:0);
+
+	for (unsigned i = 0; i < arity; i++) {
+		sscanf(src, "%255[^,],%s255", tmpbuf1, tmpbuf2);
+		tmpbuf1[sizeof(tmpbuf1)-1] = tmpbuf2[sizeof(tmpbuf2)-1] = 0;
+
+		if (i > 0)
+			SB_strcat(t, ",");
+
+		SB_strcat(t, tmpbuf1);
+		strcpy(tmpbuf3, tmpbuf2);
+		src = tmpbuf3 + (function?1:0);
+	}
+
+	if (arity)
+		SB_strcat(t, ")");
+
+	if (function) {
+		SB_sprintf(t, ",%s", src);
+	}
+
+	strcpy(tmpbuf, SB_cstr(t));
+	SB_free(t);
+}
+
 static bool fn_sys_legacy_predicate_property_2(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,atom_or_var);
 	cell tmp;
 	bool found = false, evaluable = false;
+	builtins *ptr;
 
-	if (get_builtin_term(q->st.m, p1, &found, &evaluable), found) {
+	if (ptr = get_builtin_term(q->st.m, p1, &found, &evaluable), found) {
 		make_atom(&tmp, index_from_pool(q->pl, "built_in"));
 
 		if (evaluable)
@@ -6397,8 +6437,38 @@ static bool fn_sys_legacy_predicate_property_2(query *q)
 
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
-		else
-			return throw_error(q, p2, p2_ctx, "domain_error", "predicate_property");
+
+		bool quote = needs_quoting(q->st.m, ptr->name, strlen(ptr->name));
+
+		if (ptr->help) {
+			char tmpbuf2[256];
+			do_template(tmpbuf2, ptr->name, ptr->arity, ptr->help, evaluable, quote);
+			parser *p = parser_create(q->st.m);
+			p->srcptr = tmpbuf2;
+			p->consulting = false;
+			tokenize(p, false, false);
+			parser_destroy(p);
+			cell *tmp = clone_to_heap(q, false, p->cl->cells, 0);
+
+			if (unify(q, p2, p2_ctx, tmp, q->st.curr_frame))
+				return true;
+		}
+
+		if (ptr->help_alt) {
+			char tmpbuf2[256];
+			do_template(tmpbuf2, ptr->name, ptr->arity, ptr->help_alt, evaluable, quote);
+			parser *p = parser_create(q->st.m);
+			p->srcptr = tmpbuf2;
+			p->consulting = false;
+			tokenize(p, false, false);
+			parser_destroy(p);
+			cell *tmp = clone_to_heap(q, false, p->cl->cells, 0);
+
+			if (unify(q, p2, p2_ctx, tmp, q->st.curr_frame))
+				return true;
+		}
+
+		return throw_error(q, q->st.curr_cell, q->st.curr_frame, "domain_error", "predicate_property");
 	}
 
 	predicate *pr = find_predicate(q->st.m, p1);
@@ -6443,10 +6513,12 @@ static bool fn_sys_legacy_predicate_property_2(query *q)
 	}
 
 	make_atom(&tmp, index_from_pool(q->pl, "static"));
+
 	if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 		return true;
 
 	make_atom(&tmp, index_from_pool(q->pl, "meta_predicate"));
+
 	if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 		return true;
 
@@ -6455,46 +6527,42 @@ static bool fn_sys_legacy_predicate_property_2(query *q)
 	if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 		return true;
 
+	const char *help = NULL, *help_alt = NULL;
+	const char *name = C_STR(q, &pr->key);
+	unsigned arity = pr->key.arity;
+	map_get(q->pl->help, name, (const void**)&help);
+
+	bool quote = needs_quoting(q->st.m, name, strlen(name));
+
+	if (help) {
+		char tmpbuf2[256];
+		do_template(tmpbuf2, name, arity, help, evaluable, quote);
+		parser *p = parser_create(q->st.m);
+		p->srcptr = tmpbuf2;
+		p->consulting = false;
+		tokenize(p, false, false);
+		parser_destroy(p);
+		cell *tmp = clone_to_heap(q, false, p->cl->cells, 0);
+
+		if (unify(q, p2, p2_ctx, tmp, q->st.curr_frame))
+			return true;
+	}
+
+	if (help_alt) {
+		char tmpbuf2[256];
+		do_template(tmpbuf2, name, arity, help_alt, evaluable, quote);
+		parser *p = parser_create(q->st.m);
+		p->srcptr = tmpbuf2;
+		p->consulting = false;
+		tokenize(p, false, false);
+		parser_destroy(p);
+		cell *tmp = clone_to_heap(q, false, p->cl->cells, 0);
+
+		if (unify(q, p2, p2_ctx, tmp, q->st.curr_frame))
+			return true;
+	}
+
 	return false;
-}
-
-static void do_template(char *tmpbuf, const char *name, unsigned arity, const char *help, bool function, bool quote)
-{
-	SB(t);
-
-	if (quote) {
-		SB_sprintf(t, "template('%s'", name);
-	} else {
-		SB_sprintf(t, "template(%s", name);
-	}
-
-	if (arity)
-		SB_strcat(t, "(");
-
-	char tmpbuf1[256], tmpbuf2[256], tmpbuf3[256];
-	const char *src = help + (function?1:0);
-
-	for (unsigned i = 0; i < arity; i++) {
-		sscanf(src, "%255[^,],%s255", tmpbuf1, tmpbuf2);
-		tmpbuf1[sizeof(tmpbuf1)-1] = tmpbuf2[sizeof(tmpbuf2)-1] = 0;
-
-		if (i > 0)
-			SB_strcat(t, ",");
-
-		SB_strcat(t, tmpbuf1);
-		strcpy(tmpbuf3, tmpbuf2);
-		src = tmpbuf3 + (function?1:0);
-	}
-
-	if (arity)
-		SB_strcat(t, ")");
-
-	if (function) {
-		SB_sprintf(t, ",%s", src);
-	}
-
-	strcpy(tmpbuf, SB_cstr(t));
-	SB_free(t);
 }
 
 static bool fn_sys_legacy_function_property_2(query *q)
