@@ -7738,6 +7738,45 @@ void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, u
 	dst += snprintf(dst, buflen-(dst-tmpbuf), ", %s).\n", type);
 }
 
+void do_template(char *tmpbuf, const char *name, unsigned arity, const char *help, bool function, bool quote)
+{
+	SB(t);
+
+	if (quote) {
+		SB_sprintf(t, "template('%s'", name);
+	} else {
+		SB_sprintf(t, "template(%s", name);
+	}
+
+	if (arity)
+		SB_strcat(t, "(");
+
+	char tmpbuf1[256], tmpbuf2[256], tmpbuf3[256];
+	const char *src = help + (function?1:0);
+
+	for (unsigned i = 0; i < arity; i++) {
+		sscanf(src, "%255[^,],%s255", tmpbuf1, tmpbuf2);
+		tmpbuf1[sizeof(tmpbuf1)-1] = tmpbuf2[sizeof(tmpbuf2)-1] = 0;
+
+		if (i > 0)
+			SB_strcat(t, ",");
+
+		SB_strcat(t, tmpbuf1);
+		strcpy(tmpbuf3, tmpbuf2);
+		src = tmpbuf3 + (function?1:0);
+	}
+
+	if (arity)
+		SB_strcat(t, ")");
+
+	if (function) {
+		SB_sprintf(t, ",%s", src);
+	}
+
+	strcpy(tmpbuf, SB_cstr(t));
+	SB_free(t);
+}
+
 void format_template(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const builtins *ptr, bool function, bool alt)
 {
 	tmpbuf[0] = '\0';
@@ -7771,41 +7810,9 @@ void format_template(module *m, char *tmpbuf, size_t buflen, const char *name, u
 		dst += snprintf(dst, buflen-(dst-tmpbuf), ")");
 	}
 
-	SB(t);
-
-	if (quote) {
-		SB_sprintf(t, "template('%s'", name);
-	} else {
-		SB_sprintf(t, "template(%s", name);
-	}
-
-	if (ptr->arity)
-		SB_strcat(t, "(");
-
-	char tmpbuf1[256], tmpbuf2[256], tmpbuf3[256];
-	const char *src = (alt ? ptr->help_alt : ptr->help) + (function?1:0);
-
-	for (unsigned i = 0; i < ptr->arity; i++) {
-		sscanf(src, "%255[^,],%s255", tmpbuf1, tmpbuf2);
-		tmpbuf1[sizeof(tmpbuf1)-1] = tmpbuf2[sizeof(tmpbuf2)-1] = 0;
-
-		if (i > 0)
-			SB_strcat(t, ",");
-
-		SB_strcat(t, tmpbuf1);
-		strcpy(tmpbuf3, tmpbuf2);
-		src = tmpbuf3 + (function?1:0);
-	}
-
-	if (ptr->arity)
-		SB_strcat(t, ")");
-
-	if (function) {
-		SB_sprintf(t, ",%s", src);
-	}
-
-	dst += snprintf(dst, buflen-(dst-tmpbuf), ", %s)).\n", SB_cstr(t));
-	SB_free(t);
+	char tmpbuf2[256];
+	do_template(tmpbuf2, name, ptr->arity, alt?ptr->help_alt:ptr->help, function, quote);
+	dst += snprintf(dst, buflen-(dst-tmpbuf), ", %s)).\n", tmpbuf2);
 }
 
 static void load_properties(module *m)
