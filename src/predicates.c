@@ -6519,9 +6519,11 @@ static bool fn_sys_legacy_function_property_2(query *q)
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 
+		bool quote = needs_quoting(q->st.m, ptr->name, strlen(ptr->name));
+
 		if (ptr->help) {
 			char tmpbuf2[256];
-			do_template(tmpbuf2, ptr->name, ptr->arity, ptr->help, evaluable, false);
+			do_template(tmpbuf2, ptr->name, ptr->arity, ptr->help, evaluable, quote);
 			parser *p = parser_create(q->st.m);
 			p->srcptr = tmpbuf2;
 			p->consulting = false;
@@ -6535,7 +6537,7 @@ static bool fn_sys_legacy_function_property_2(query *q)
 
 		if (ptr->help_alt) {
 			char tmpbuf2[256];
-			do_template(tmpbuf2, ptr->name, ptr->arity, ptr->help_alt, evaluable, false);
+			do_template(tmpbuf2, ptr->name, ptr->arity, ptr->help_alt, evaluable, quote);
 			parser *p = parser_create(q->st.m);
 			p->srcptr = tmpbuf2;
 			p->consulting = false;
