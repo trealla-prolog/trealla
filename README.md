@@ -166,6 +166,13 @@ Then...
 
 	make test
 
+There should be no errors, Further (if valgrind is installed)...
+
+	make leaks
+
+Should show no memory out-of-bounds errors, null-pointer errors,
+use-after-free errors or memory leaks.
+
 On *BSD* systems use *gmake* to build and do
 
 	pkg install editors/vim

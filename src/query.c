@@ -796,13 +796,12 @@ static void trim_trail(query *q)
 	if (q->undo_hi_tp)
 		return;
 
-	if (!q->cp) {
-		q->st.tp = 0;
-		return;
-	}
+	pl_idx_t tp = 0;
 
-	const choice *ch = GET_CURR_CHOICE();
-	pl_idx_t tp = ch->st.tp;
+	if (q->cp) {
+		const choice *ch = GET_CURR_CHOICE();
+		tp = ch->st.tp;
+	}
 
 	while (q->st.tp > tp) {
 		const trail *tr = q->trails + q->st.tp - 1;
@@ -869,7 +868,9 @@ static void commit_me(query *q)
 		f->is_last = true;
 		unshare_predicate(q, q->st.pr);
 		drop_choice(q);
-		trim_trail(q);
+
+		if (tco)
+			trim_trail(q);
 	} else {
 		choice *ch = GET_CURR_CHOICE();
 		ch->st.curr_dbe = q->st.curr_dbe;
