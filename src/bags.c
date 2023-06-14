@@ -65,14 +65,15 @@ bool fn_iso_findall_3(query *q)
 
 	// Now grab matching solutions with fresh variables...
 
-	try_me(q, MAX_ARITY);
+	const frame *f = GET_CURR_FRAME();
+	try_me(q, f->actual_slots);
 	check_heap_error(init_tmp_heap(q), free(solns));
 
 	for (cell *c = solns; nbr_cells; nbr_cells -= c->nbr_cells, c += c->nbr_cells) {
 		cell *tmp = alloc_on_tmp(q, 1);
 		check_heap_error(tmp, free(solns));
 		make_struct(tmp, g_dot_s, NULL, 2, c->nbr_cells);
-		tmp = deep_copy_to_tmp(q, c, q->st.fp, false);
+		tmp = deep_copy_to_tmp(q, c, q->st.curr_frame, false);
 		check_heap_error(tmp, free(solns));
 	}
 

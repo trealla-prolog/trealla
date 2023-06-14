@@ -3504,7 +3504,7 @@ bool fn_sys_queue_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	check_heap_error(init_tmp_heap(q));
-	cell *tmp = deep_raw_copy_to_tmp(q, p1, p1_ctx);
+	cell *tmp = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(tmp);
 	check_heap_error(alloc_on_queuen(q, q->st.qnbr, tmp));
 	return true;
@@ -4501,7 +4501,7 @@ static bool fn_sys_elapsed_0(query *q)
 	if (!q->is_redo) fprintf(stdout, "   ");
 	if (q->is_redo) fprintf(stdout, " ");
 	double lips = (1.0 / ((double)elapsed/1000/1000)) * q->tot_goals;
-	fprintf(stderr, "%% Time elapsed %.3fs, %llu Inferences, %.3f MLips)\n", (double)elapsed/1000/1000, (unsigned long long)q->tot_goals, lips/1000/1000);
+	fprintf(stderr, "%% Time elapsed %.3fs, %llu Inferences, %.3f MLips\n", (double)elapsed/1000/1000, (unsigned long long)q->tot_goals, lips/1000/1000);
 	if (q->is_redo) fprintf(stdout, "  ");
 	//else if (!q->redo) fprintf(stdout, "");
 	choice *ch = GET_CURR_CHOICE();
