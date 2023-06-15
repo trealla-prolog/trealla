@@ -367,8 +367,9 @@ bool has_next_key(query *q)
 
 		cl = &next->cl;
 		cell *darg1 = cl->cells->val_off == g_neck_s ? cl->cells+1+1 : cl->cells+1;
+		cell *darg2 = darg1 + darg1->nbr_cells;
 
-		if (is_var(darg1))
+		if (is_var(darg1) || (darg2 && is_var(darg2)))
 			return true;
 
 		cell *karg1 = deref(q, q->st.key+1, q->st.key_ctx);
