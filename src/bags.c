@@ -79,7 +79,6 @@ bool fn_iso_findall_3(query *q)
 
 	cell *l = end_list(q);
 	check_heap_error(l);
-	fix_list(l);
 	free(solns);
 	return unify(q, xp3, xp3_ctx, l, q->st.curr_frame);
 }
