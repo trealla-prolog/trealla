@@ -44,7 +44,7 @@ bool fn_iso_findall_3(query *q)
 		check_heap_error(tmp);
 		pl_idx_t nbr_cells = 1 + p2->nbr_cells;
 		make_struct(tmp+nbr_cells++, g_sys_queue_s, fn_sys_queue_1, 1, p1->nbr_cells);
-		nbr_cells += safe_copy_cells(tmp+nbr_cells, p1, p1->nbr_cells);
+		nbr_cells += copy_cells(tmp+nbr_cells, p1, p1->nbr_cells);
 		make_struct(tmp+nbr_cells++, g_fail_s, fn_iso_fail_0, 0, 0);
 		make_call(q, tmp+nbr_cells);
 		check_heap_error(push_barrier(q));
@@ -72,7 +72,7 @@ bool fn_iso_findall_3(query *q)
 	for (cell *c = solns; nbr_cells; nbr_cells -= c->nbr_cells, c += c->nbr_cells) {
 		cell *tmp = alloc_on_tmp(q, 1);
 		check_heap_error(tmp, free(solns));
-		make_struct(tmp, g_dot_s, NULL, 2, c->nbr_cells);
+		make_struct(tmp, g_dot_s, NULL, 2, 0);
 		tmp = deep_copy_to_tmp(q, c, q->st.curr_frame, false);
 		check_heap_error(tmp, free(solns));
 	}
