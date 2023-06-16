@@ -6522,6 +6522,13 @@ static bool fn_sys_legacy_function_property_2(query *q)
 	cell tmp;
 	bool found = false, evaluable = false;
 
+	if (CMP_STR_TO_CSTR(q, p2, "built_in")
+		&& CMP_STR_TO_CSTR(q, p2, "static")
+		&& CMP_STR_TO_CSTR(q, p2, "dynamic")
+		&& CMP_STR_TO_CSTR(q, p2, "foreign")
+		)
+		return throw_error(q, p2, p2_ctx, "domain_error", "function_property");
+
 	if (get_builtin_term(q->st.m, p1, &found, &evaluable), found) {
 		if (!evaluable)
 			return false;
@@ -6535,6 +6542,16 @@ static bool fn_sys_legacy_function_property_2(query *q)
 
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
+
+		make_atom(&tmp, index_from_pool(q->pl, "dynamic"));
+
+		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
+			return false;
+
+		make_atom(&tmp, index_from_pool(q->pl, "foreign"));
+
+		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
+			return false;
 
 		return throw_error(q, p2, p2_ctx, "domain_error", "function_property");
 	}
