@@ -277,7 +277,7 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 				if (!tmp) return NULL;
 				*tmp = *h;
 				tmp->var_nbr = q->tab0_varno;
-				tmp->flags |= FLAG_VAR_FRESH;
+				tmp->flags = FLAG_VAR_FRESH;
 				tmp->tmp_attrs = NULL;
 			} else {
 				reflist nlist;
@@ -305,7 +305,7 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 				tmp->nbr_cells = 1;
 				tmp->val_off = g_anon_s;
 				tmp->var_nbr = q->tab0_varno;
-				tmp->flags |= FLAG_VAR_FRESH;
+				tmp->flags = FLAG_VAR_FRESH;
 				tmp->tmp_attrs = NULL;
 				cyclic = true;
 				break;
@@ -342,7 +342,7 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 			if (!tmp) return NULL;
 			*tmp = *p1;
 			tmp->var_nbr = q->tab0_varno;
-			tmp->flags |= FLAG_VAR_FRESH;
+			tmp->flags = FLAG_VAR_FRESH;
 			tmp->tmp_attrs = NULL;
 		} else {
 			reflist nlist;
@@ -477,7 +477,7 @@ cell *deep_copy_to_heap(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_attrs)
 
 cell *deep_copy_to_heap_with_replacement(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_attrs, cell *from, pl_idx_t from_ctx, cell *to, pl_idx_t to_ctx)
 {
-	if (q->vars) map_destroy(q->vars);
+	void *save_vars = q->vars;
 	q->vars = map_create(NULL, NULL, NULL);
 	if (!q->vars) return NULL;
 	const frame *f = GET_CURR_FRAME();
@@ -485,7 +485,7 @@ cell *deep_copy_to_heap_with_replacement(query *q, cell *p1, pl_idx_t p1_ctx, bo
 	q->tab_idx = 0;
 	cell *tmp = deep_copy_to_tmp_with_replacement(q, p1, p1_ctx, copy_attrs, from, from_ctx, to, to_ctx);
 	map_destroy(q->vars);
-	q->vars = NULL;
+	q->vars = save_vars;
 	if (!tmp) return NULL;
 	cell *tmp2 = alloc_on_heap(q, tmp->nbr_cells);
 	if (!tmp2) return NULL;
@@ -503,9 +503,6 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 
 	cell *save_p1 = p1;
 	pl_idx_t save_p1_ctx = p1_ctx;
-	//p1 = deref(q, p1, p1_ctx);
-	//p1_ctx = q->latest_ctx;
-
 	pl_idx_t save_idx = tmp_heap_used(q);
 	cell *tmp = alloc_on_tmp(q, 1);
 	if (!tmp) return NULL;

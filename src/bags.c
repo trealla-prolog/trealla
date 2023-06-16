@@ -16,10 +16,10 @@ bool fn_iso_findall_3(query *q)
 	GET_NEXT_ARG(xp2,callable);
 	GET_NEXT_ARG(xp3,list_or_nil_or_var);
 
-	// This checks for a valid list (it allows for partial but acyclic lists)...
-
 	if (!q->retry) {
 		bool is_partial = false;
+
+		// This checks for a valid list (it allows for partial but acyclic lists)...
 
 		if (is_iso_list(xp3) && !check_list(q, xp3, xp3_ctx, &is_partial, NULL) && !is_partial)
 			return throw_error(q, xp3, xp3_ctx, "type_error", "list");
@@ -63,7 +63,7 @@ bool fn_iso_findall_3(query *q)
 	cell *solns = take_queuen(q);
 	drop_queuen(q);
 
-	// Now grab matching solutions with fresh variables...
+	// Now grab matching solutions with fresh variables for each...
 
 	const frame *f = GET_CURR_FRAME();
 	try_me(q, f->actual_slots);
@@ -77,8 +77,8 @@ bool fn_iso_findall_3(query *q)
 		check_heap_error(tmp, free(solns));
 	}
 
+	free(solns);
 	cell *l = end_list(q);
 	check_heap_error(l);
-	free(solns);
 	return unify(q, xp3, xp3_ctx, l, q->st.curr_frame);
 }
