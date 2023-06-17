@@ -550,8 +550,8 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 				if (!rec) return NULL;
 			}
 
-			save_p1 = p1;
-			save_p1_ctx = p1_ctx;
+			cell *tmp_save_p1 = p1;
+			pl_idx_t tmp_save_p1_ctx = p1_ctx;
 
 			p1 = LIST_TAIL(p1);
 			cell *tmp_p1 = p1;
@@ -560,10 +560,10 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 
 			reflist nlist;
 			nlist.next = list;
-			nlist.ptr = save_p1;
-			nlist.ctx = save_p1_ctx;
+			nlist.ptr = tmp_save_p1;
+			nlist.ctx = tmp_save_p1_ctx;
 
-			if (is_in_ref_list(p1, p1_ctx, &nlist)) {
+			if (is_in_ref_list(p1, p1_ctx, &nlist) || ((p1 == save_p1) && (p1_ctx == save_p1_ctx))) {
 				cell *tmp = alloc_on_tmp(q, 1);
 				if (!tmp) return NULL;
 				*tmp = *tmp_p1;
