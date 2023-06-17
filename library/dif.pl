@@ -1,9 +1,6 @@
-/**
-Provides predicate `dif/2`. `dif/2` is a constraint that is true only if both of its
-arguments are different terms.
-*/
-
 :- module(dif, [dif/2]).
+
+% This is borrowed from Scryer-Prolog
 
 :- use_module(library(atts)).
 :- use_module(library(dcgs)).
@@ -12,7 +9,7 @@ arguments are different terms.
 :- attribute dif/1.
 
 put_dif_att(Var, X, Y) :-
-    (   get_atts(Var, +dif(Z)) ->
+    (   (get_atts(Var, +dif(Z)), nonvar(Z)) ->
 	    sort([X \== Y | Z], NewZ),
 	    put_atts(Var, +dif(NewZ))
     ;   put_atts(Var, +dif([X \== Y]))
@@ -40,39 +37,27 @@ verify_attributes(Var, Value, Goals) :-
     ;   Goals = []
     ).
 
-%% dif(?X, ?Y).
-%
-% True iff X and Y are different terms. Unlike `\=/2`, `dif/2` is more declarative because if X and Y can
-% unify but they're not yet equal, the decision is delayed, and prevents X and Y to become equal later.
-% Examples:
-%
-% ```
-% ?- dif(a, a).
-%    false.
-% ?- dif(a, b).
-%    true.
-% ?- dif(X, b).
-%    dif:dif(X,b).
-% ?- dif(X, b), X = b.
-%    false.
-% ```
+% Probably the world's worst dif/2 implementation. I'm open to
+% suggestions for improvement.
+
 dif(X, Y) :-
     X \== Y,
     (   X \= Y -> true
-    ;   term_variables(dif(X,Y), Vars),
-        dif_set_variables(Vars, X, Y)
+    ;   (   term_variables(X, XVars),
+            term_variables(Y, YVars),
+            dif_set_variables(XVars, X, Y),
+            dif_set_variables(YVars, X, Y)
+        )
     ).
 
-gather_dif_goals(_, []) --> [].
-gather_dif_goals(V, [(X \== Y) | Goals]) -->
-    (  { term_variables(X-Y, [V0 | _]),
-         V == V0 } ->
-       [dif:dif(X, Y)]
-    ;  []
-    ),
-    gather_dif_goals(V, Goals).
+:- help(dif(@term,@term), [iso(false),desc('The dif/2 predicate is a constraint that is true if and only if A and B are different terms.')]).
+
+gather_dif_goals([]) --> [].
+gather_dif_goals([(X \== Y) | Goals]) -->
+    [dif(X, Y)],
+    gather_dif_goals(Goals).
 
 attribute_goals(X) -->
     { get_atts(X, +dif(Goals)) },
-    gather_dif_goals(X, Goals),
+    gather_dif_goals(Goals),
     { put_atts(X, -dif(_)) }.
