@@ -545,6 +545,9 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 				if (!rec) return NULL;
 			}
 
+			save_p1 = p1;
+			save_p1_ctx = p1_ctx;
+
 			p1 = LIST_TAIL(p1);
 			cell *tmp_p1 = p1;
 			p1 = deref(q, p1, p1_ctx);
