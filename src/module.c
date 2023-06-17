@@ -1861,6 +1861,13 @@ module *load_file(module *m, const char *filename, bool including)
 	if (!realbuf) {
 		if (!(realbuf = realpath(tmpbuf, NULL))) {
 			strcpy(tmpbuf, savebuf);
+			realbuf = realpath(tmpbuf, NULL);
+		}
+	}
+
+	if (!realbuf) {
+		if (!(realbuf = realpath(tmpbuf, NULL))) {
+			strcpy(tmpbuf, savebuf);
 			strcat(tmpbuf, ".pl");
 			realbuf = realpath(tmpbuf, NULL);
 		}
