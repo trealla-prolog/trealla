@@ -285,7 +285,7 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 				nlist.ptr = save_p1;
 				nlist.ctx = save_p1_ctx;
 				cell *rec = deep_copy2_to_tmp(q, c, c_ctx, copy_attrs, from, from_ctx, to, to_ctx, depth+1, &nlist);
-				if (!rec) return rec;
+				if (!rec) return NULL;
 			}
 
 			p1 = LIST_TAIL(p1);
@@ -320,7 +320,7 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 
 		if (!cyclic) {
 			cell *rec = deep_copy2_to_tmp(q, p1, p1_ctx, copy_attrs, from, from_ctx, to, to_ctx, depth+1, list);
-			if (!rec) return rec;
+			if (!rec) return NULL;
 		}
 
 		tmp = get_tmp_heap(q, save_idx);
@@ -351,7 +351,7 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 			nlist.ctx = save_p1_ctx;
 
 			cell *rec = deep_copy2_to_tmp(q, c, c_ctx, copy_attrs, from, from_ctx, to, to_ctx, depth+1, &nlist);
-			if (!rec) return rec;
+			if (!rec) return NULL;
 		}
 
 		p1 += p1->nbr_cells;
@@ -378,7 +378,7 @@ cell *deep_raw_copy_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx)
 	cell *rec = deep_copy2_to_tmp(q, p1, p1_ctx, false, NULL, 0, NULL, 0, 0, &nlist);
 	map_destroy(q->vars);
 	q->vars = NULL;
-	if (!rec) return rec;
+	if (!rec) return NULL;
 	return q->tmp_heap;
 }
 
@@ -415,7 +415,7 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx_t p1_c
 	nlist.ptr = c;
 	nlist.ctx = c_ctx;
 	cell *rec = deep_copy2_to_tmp(q, c, c_ctx, copy_attrs, from, from_ctx, to, to_ctx, 0, &nlist);
-	if (!rec) return rec;
+	if (!rec) return NULL;
 	int cnt = q->varno - f->actual_slots;
 
 	if (cnt) {
@@ -542,7 +542,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 				nlist.ptr = save_p1;
 				nlist.ctx = save_p1_ctx;
 				cell *rec = deep_clone2_to_tmp(q, c, c_ctx, depth+1, &nlist);
-				if (!rec) return rec;
+				if (!rec) return NULL;
 			}
 
 			p1 = LIST_TAIL(p1);
@@ -572,7 +572,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 
 		if (!cyclic) {
 			cell *rec = deep_clone2_to_tmp(q, p1, p1_ctx, depth+1, list);
-			if (!rec) return rec;
+			if (!rec) return NULL;
 		}
 
 		tmp = get_tmp_heap(q, save_idx);
@@ -598,7 +598,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 			nlist.ctx = save_p1_ctx;
 
 			cell *rec = deep_clone2_to_tmp(q, c, c_ctx, depth+1, &nlist);
-			if (!rec) return rec;
+			if (!rec) return NULL;
 		}
 
 		p1 += p1->nbr_cells;
@@ -618,7 +618,7 @@ cell *deep_clone_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx)
 	nlist.ctx = p1_ctx;
 
 	cell *rec = deep_clone2_to_tmp(q, p1, p1_ctx, 0, &nlist);
-	if (!rec) return rec;
+	if (!rec) return NULL;
 	return q->tmp_heap;
 }
 
