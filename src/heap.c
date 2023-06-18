@@ -267,6 +267,9 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 		LIST_HANDLER(p1);
 
 		while (is_iso_list(p1)) {
+			if (g_tpl_interrupt)
+				return NULL;
+
 			cell *h = LIST_HEAD(p1);
 			cell *c = h;
 			c = deref(q, c, p1_ctx);
@@ -333,6 +336,9 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 	p1++;
 
 	while (arity--) {
+		if (g_tpl_interrupt)
+			return NULL;
+
 		cell *c = p1;
 		c = deref(q, c, p1_ctx);
 		pl_idx_t c_ctx = q->latest_ctx;
@@ -522,10 +528,8 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 		LIST_HANDLER(p1);
 
 		while (is_iso_list(p1)) {
-			if (g_tpl_interrupt) {
-				q->cycle_error = true;
+			if (g_tpl_interrupt)
 				return NULL;
-			}
 
 			cell *h = LIST_HEAD(p1);
 			pl_idx_t h_ctx = p1_ctx;
@@ -533,9 +537,8 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 			pl_idx_t c_ctx = q->latest_ctx;
 
 			if (is_in_ref_list(c, c_ctx, list)) {
-				cell *tmp = alloc_on_tmp(q, 1);
-				if (!tmp) return NULL;
-				*tmp = *h;
+				cell *rec = deep_clone2_to_tmp(q, h, p1_ctx, depth+1, list);
+				if (!rec) return NULL;
 			} else {
 				reflist nlist;
 				nlist.next = list;
@@ -559,9 +562,8 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 			nlist.ctx = tmp_save_p1_ctx;
 
 			if (is_in_ref_list(p1, p1_ctx, &nlist) || ((p1 == save_p1) && (p1_ctx == save_p1_ctx))) {
-				cell *tmp = alloc_on_tmp(q, 1);
-				if (!tmp) return NULL;
-				*tmp = *tmp_p1;
+				cell *rec = deep_clone2_to_tmp(q, tmp_p1, p1_ctx, depth+1, list);
+				if (!rec) return NULL;
 				cyclic = true;
 				break;
 			}
@@ -587,13 +589,15 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 	p1++;
 
 	while (arity--) {
+		if (g_tpl_interrupt)
+			return NULL;
+
 		cell *c = deref(q, p1, p1_ctx);
 		pl_idx_t c_ctx = q->latest_ctx;
 
 		if (is_in_ref_list(c, c_ctx, list)) {
-			cell *tmp = alloc_on_tmp(q, 1);
-			if (!tmp) return NULL;
-			*tmp = *p1;
+			cell *rec = deep_clone2_to_tmp(q, p1, p1_ctx, depth+1, list);
+			if (!rec) return NULL;
 		} else {
 			reflist nlist;
 			nlist.next = list;
