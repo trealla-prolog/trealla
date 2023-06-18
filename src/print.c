@@ -360,7 +360,7 @@ size_t sprint_int(char *dst, size_t dstlen, pl_int_t n, int base)
 	return dst - save_dst;
 }
 
-static void reformat_float(query * q, char *tmpbuf, pl_flt_t v)
+static void reformat_float(query *q, char *tmpbuf, pl_flt_t v)
 {
 	if ((!strchr(tmpbuf, 'e') && !strchr(tmpbuf, 'E'))
 		&& !q->ignore_ops) {
@@ -462,7 +462,7 @@ static const char *get_slot_name(query *q, pl_idx_t slot_idx)
 	return varformat(q->pl->tmpbuf, i);
 }
 
-ssize_t print_variable(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t c_ctx, bool running)
+ssize_t print_variable(query *q, char *dst, size_t dstlen, const cell *c, pl_idx_t c_ctx, bool running)
 {
 	char *save_dst = dst;
 	frame *f = GET_FRAME(running ? c_ctx : 0);
@@ -1329,7 +1329,7 @@ char *print_canonical_to_strbuf(query *q, cell *c, pl_idx_t c_ctx, int running)
 	q->did_quote = false;
 	ssize_t len = print_term_to_buf(q, NULL, 0, c, c_ctx, running, false, 1);
 	char *buf = malloc(len*2+1);
-	ensure(buf);
+	ensure(buf, clear_write_options(q));
 	q->last_thing_was_symbol = false;
 	q->did_quote = false;
 	len = print_term_to_buf(q, buf, len+1, c, c_ctx, running, false, 0);
@@ -1359,7 +1359,7 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx_t c_ctx, i
 	q->did_quote = false;
 	ssize_t len = print_term_to_buf(q, NULL, 0, c, c_ctx, running, false, 1);
 	char *dst = malloc(len*2+1);
-	check_heap_error(dst);
+	check_heap_error(dst, clear_write_options(q));
 	q->last_thing_was_symbol = false;
 	q->did_quote = false;
 	len = print_term_to_buf(q, dst, len+1, c, c_ctx, running, false, 0);
@@ -1406,7 +1406,7 @@ bool print_canonical(query *q, FILE *fp, cell *c, pl_idx_t c_ctx, int running)
 	ssize_t len = print_term_to_buf(q, NULL, 0, c, c_ctx, running, false, 0);
 	q->did_quote = false;
 	char *dst = malloc(len*2+1);
-	check_heap_error(dst);
+	check_heap_error(dst, clear_write_options(q));
 	q->last_thing_was_symbol = false;
 	q->did_quote = false;
 	len = print_term_to_buf(q, dst, len+1, c, c_ctx, running, false, 0);
@@ -1443,7 +1443,7 @@ char *print_term_to_strbuf(query *q, cell *c, pl_idx_t c_ctx, int running)
 	}
 
 	char *buf = malloc(len*2+1);
-	ensure(buf);
+	ensure(buf, clear_write_options(q));
 	q->vgen++;
 	q->last_thing_was_symbol = false;
 	q->did_quote = false;
@@ -1463,7 +1463,7 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_idx_t c_ctx, int ru
 	}
 
 	char *dst = malloc(len*2+1);
-	check_heap_error(dst);
+	check_heap_error(dst, clear_write_options(q));
 	q->vgen++;
 	q->last_thing_was_symbol = false;
 	q->did_quote = false;
@@ -1499,7 +1499,7 @@ bool print_term(query *q, FILE *fp, cell *c, pl_idx_t c_ctx, int running)
 	}
 
 	char *dst = malloc(len*2+1);
-	check_heap_error(dst);
+	check_heap_error(dst, clear_write_options(q));
 	q->vgen++;
 	q->last_thing_was_symbol = false;
 	q->did_quote = false;
