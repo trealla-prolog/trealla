@@ -507,6 +507,8 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 		return NULL;
 	}
 
+	cell *save_p1 = p1;
+	pl_idx_t save_p1_ctx = p1_ctx;
 	pl_idx_t save_idx = tmp_heap_used(q);
 	cell *tmp = alloc_on_tmp(q, 1);
 	if (!tmp) return NULL;
@@ -586,11 +588,16 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 		cell *c = deref(q, p1, p1_ctx);
 		pl_idx_t c_ctx = q->latest_ctx;
 
+		reflist nlist;
+		nlist.next = list;
+		nlist.ptr = save_p1;
+		nlist.ctx = save_p1_ctx;
+
 		if (is_in_ref_list(c, c_ctx, list)) {
 			cell *rec = deep_clone2_to_tmp(q, p1, p1_ctx, depth+1, list);
 			if (!rec) return NULL;
 		} else {
-			cell *rec = deep_clone2_to_tmp(q, c, c_ctx, depth+1, list);
+			cell *rec = deep_clone2_to_tmp(q, c, c_ctx, depth+1, &nlist);
 			if (!rec) return NULL;
 		}
 
