@@ -183,7 +183,7 @@ bool check_redo(query *q)
 			printf("  ... .\n");
 			q->is_redo = true;
 			q->retry = QUERY_RETRY;
-			q->pl->did_dump_vars = false;
+			q->pl->did_dump_vars = true;
 			q->noretry = true;
 			break;
 		}
