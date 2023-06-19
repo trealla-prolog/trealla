@@ -6892,12 +6892,13 @@ static bool fn_sys_list_attributed_1(query *q)
 		if (!strcmp(p->vartab.var_name[i], "_"))
 			continue;
 
-		slot *e = GET_SLOT(f, i);
+		const slot *e = GET_SLOT(f, i);
+		const cell *c = &e->c;
 
-		if (!is_empty(&e->c))
+		if (!is_empty(c))
 			continue;
 
-		if (!e->c.attrs || is_nil(e->c.attrs))
+		if (!c->attrs || is_nil(c->attrs))
 			continue;
 
 		cell v;
