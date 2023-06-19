@@ -28,16 +28,6 @@ struct heap_save {
 	q->tmph_size = _s.size;								\
 	q->tmphp = _s.hp;
 
-struct reflist_ {
-	reflist *next;
-	cell *ptr;
-	pl_idx_t ctx;
-};
-
-struct cycle_info_ {
-	reflist *r1, *r2;
-};
-
 static int accum_slot(const query *q, pl_idx_t slot_nbr, unsigned var_nbr)
 {
 	const void *vnbr;
@@ -188,6 +178,16 @@ void trim_heap(query *q)
 		init_cell(c);
 	}
 }
+
+struct reflist_ {
+	reflist *next;
+	cell *ptr;
+	pl_idx_t ctx;
+};
+
+struct cycle_info_ {
+	reflist *r1, *r2;
+};
 
 static bool is_in_ref_list(const cell *c, pl_idx_t c_ctx, const reflist *rlist)
 {
