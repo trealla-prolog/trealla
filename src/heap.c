@@ -201,7 +201,9 @@ static bool is_in_ref_list(const cell *c, pl_idx_t c_ctx, const reflist *rlist)
 	return false;
 }
 
-// FIXME: rewrite this to be efficient...
+// FIXME: rewrite this. The plan is that all copy operations should
+// first do a clone then just reassign the vars rathee than trying
+// to do both steps at once. This should simplify things a lot.
 
 static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_attrs, cell *from, pl_idx_t from_ctx, cell *to, pl_idx_t to_ctx, unsigned depth, reflist *list)
 {
@@ -255,13 +257,8 @@ static cell *deep_copy2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_at
 	}
 
 	bool cyclic = false;
-	bool is_partial = false;
 
-	//if (q->flags.occurs_check && is_iso_list(p1)
-	//	&& !check_list(q, p1, p1_ctx, &is_partial, NULL))
-	//	is_partial = true;
-
-	if (!is_partial && is_iso_list(p1)) {
+	if (is_iso_list(p1)) {
 		LIST_HANDLER(p1);
 
 		while (is_iso_list(p1)) {
