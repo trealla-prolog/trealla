@@ -6865,8 +6865,8 @@ static bool fn_sys_list_attributed_1(query *q)
 	bool first = true;
 
 	for (unsigned i = 0; i < p->nbr_vars; i++) {
-		if (!strcmp(p->vartab.var_name[i], "_"))
-			continue;
+		//if (!strcmp(p->vartab.var_name[i], "_"))
+		//	continue;
 
 		const slot *e = GET_SLOT(f, i);
 		const cell *c = &e->c;
