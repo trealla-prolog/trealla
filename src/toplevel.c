@@ -270,8 +270,9 @@ static bool any_attributed(const query *q)
 
 	for (unsigned i = 0; i < p->nbr_vars; i++) {
 		const slot *e = GET_SLOT(f, i);
+		const cell *c = &e->c;
 
-		if (!is_empty(&e->c) || !e->c.attrs)
+		if (!is_empty(c) || !c->attrs)
 			continue;
 
 		any = true;
