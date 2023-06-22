@@ -1007,10 +1007,10 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 				if (is_var(c)) {
 					const frame *f = GET_FRAME(c_ctx);
 					e = GET_SLOT(f, c->var_nbr);
+					save_vgen = e->vgen;
 
 					if (e->vgen == q->vgen) {
 					} else {
-						save_vgen = e->vgen;
 						e->vgen = q->vgen;
 						tmp = running ? deref(q, c, c_ctx) : c;
 						tmp_ctx = running ? q->latest_ctx : 0;
