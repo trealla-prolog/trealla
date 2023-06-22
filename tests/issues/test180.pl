@@ -2,4 +2,5 @@
 
 main :-
 	[X|Y] = [a,b,X|X],
-	write([X,Y]), nl.
+	write(X), nl,
+	write(Y), nl.

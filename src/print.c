@@ -559,9 +559,9 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 			head = running ? deref(q, head, c_ctx) : head;
 			head_ctx = running ? q->latest_ctx : 0;
 
-			if (e->vgen == q->vgen) {
-				head = save_head;
-				head_ctx = c_ctx;
+			if ((e->vgen == q->vgen) || ((head->var_nbr == save_c->var_nbr) && (head_ctx == save_c_ctx))) {
+				//head = save_head;
+				//head_ctx = c_ctx;
 			} else
 				e->vgen = q->vgen;
 		}
