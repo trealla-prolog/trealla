@@ -12,6 +12,9 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 	LIST_HANDLER(p2);
 
 	while (is_iso_list(p1) && is_iso_list(p2)) {
+		if (g_tpl_interrupt)
+			return -1;
+
 		cell *h1 = LIST_HEAD(p1);
 		cell *h2 = LIST_HEAD(p2);
 
@@ -336,6 +339,9 @@ static void collect_var_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned dept
 	LIST_HANDLER(l);
 
 	while (is_iso_list(l)) {
+		if (g_tpl_interrupt)
+			return;
+
 		cell *c = LIST_HEAD(l);
 		pl_idx_t c_ctx = l_ctx;
 
@@ -442,6 +448,9 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 	LIST_HANDLER(l);
 
 	while (is_iso_list(l)) {
+			if (g_tpl_interrupt)
+				return NULL;
+
 		cell *c = LIST_HEAD(l);
 		pl_idx_t c_ctx = l_ctx;
 
@@ -544,6 +553,9 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigne
 static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 {
 	while (is_iso_list(p1)) {
+		if (g_tpl_interrupt)
+			return NULL;
+
 		cell *h = p1 + 1;
 
 		if (is_var(h)) {
@@ -1073,6 +1085,9 @@ static const struct dispatch g_disp[] =
 static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
 {
 	while (is_iso_list(p1) && is_iso_list(p2)) {
+		if (g_tpl_interrupt)
+			return NULL;
+
 		cell *h1 = p1 + 1;
 		cell *h2 = p2 + 1;
 		slot *e1 = NULL, *e2 = NULL;

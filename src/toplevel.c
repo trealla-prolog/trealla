@@ -407,7 +407,10 @@ void dump_vars(query *q, bool partial)
 		q->max_depth = 9;
 		q->parens = parens;
 
-		print_term(q, stdout, c, c_ctx, 1);
+		e->vgen = q->vgen+1;
+		init_tmp_heap(q);
+		cell *tmp = deep_clone_to_tmp(q, c, c_ctx);
+		print_term(q, stdout, tmp, 0, 0);
 
 		if (parens) fputc(')', stdout);
 		if (q->last_thing_was_symbol) space = true;

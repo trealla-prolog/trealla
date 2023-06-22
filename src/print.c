@@ -481,7 +481,7 @@ ssize_t print_variable(query *q, char *dst, size_t dstlen, const cell *c, pl_idx
 		dst += snprintf(dst, dstlen, "_%s", get_slot_name(q, slot_idx));
 	} else if (q->listing) {
 		dst += snprintf(dst, dstlen, "%s", get_slot_name(q, slot_idx));
-	} else if (!running && !is_ref(c)) {
+	} else if (!running && !is_fresh(c) && !is_ref(c)) {
 		dst += snprintf(dst, dstlen, "%s", C_STR(q, c));
 	} else
 		dst += snprintf(dst, dstlen, "_%u", (unsigned)slot_idx);
@@ -532,6 +532,9 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 	LIST_HANDLER(c);
 
 	while (is_iso_list(c)) {
+		if (g_tpl_interrupt)
+			return 0;
+
 		cell *save_c = c;
 		pl_idx_t save_c_ctx = c_ctx;
 
@@ -549,7 +552,6 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 		cell *save_head = head;
 		pl_idx_t head_ctx = c_ctx;
 		slot *e = NULL;
-		unsigned save_mgen = 0;
 
 		if (is_var(head) && running) {
 			const frame *f = GET_FRAME(c_ctx);
@@ -557,15 +559,11 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 			head = running ? deref(q, head, c_ctx) : head;
 			head_ctx = running ? q->latest_ctx : 0;
 
-			if (!is_var(head)) {
-				if ((e->vgen == q->vgen) && false) {
-					head = save_head;
-					head_ctx = c_ctx;
-				}
-
-				save_mgen = e->vgen;
+			if (e->vgen == q->vgen) {
+				head = save_head;
+				head_ctx = c_ctx;
+			} else
 				e->vgen = q->vgen;
-			}
 		}
 
 		bool special_op = false;
@@ -586,7 +584,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 		q->parens = parens;
 		ssize_t res = print_term_to_buf(q, dst, dstlen, head, head_ctx, running, false, depth+1);
 		q->parens = false;
-		if (e) e->vgen = save_mgen;
+		if (e) e->vgen = 0;
 		if (res < 0) return -1;
 		dst += res;
 		if (parens) dst += snprintf(dst, dstlen, "%s", ")");
@@ -604,11 +602,9 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 			tail = deref(q, tail, c_ctx);
 			c_ctx = q->latest_ctx;
 
-			if (!is_var(tail)) {
-				if (e->vgen == q->vgen) {
-					tail = save_tail;
-				}
-
+			if (e->vgen == q->vgen) {
+				tail = save_tail;
+			} else {
 				e->vgen = q->vgen;
 				possible_chars = false;
 			}
@@ -674,49 +670,6 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 
 		return dst - save_dst;
 	}
-
-	return dst - save_dst;
-}
-
-static ssize_t print_canonical_list(query *q, char *save_dst, char *dst, size_t dstlen, cell *c, pl_idx_t c_ctx, int running, unsigned depth)
-{
-	unsigned print_list = 0;
-
-	while (is_iso_list(c)) {
-		cell *save_c = c;
-		pl_idx_t save_c_ctx = c_ctx;
-
-		if (q->max_depth && (print_list >= q->max_depth)) {
-			dst--;
-			dst += snprintf(dst, dstlen, "%s", "|...)");
-			q->last_thing_was_symbol = false;
-			break;
-		}
-
-		LIST_HANDLER(c);
-		cell *head = LIST_HEAD(c);
-		head = running ? deref(q, head, c_ctx) : head;
-		pl_idx_t head_ctx = running ? q->latest_ctx : 0;
-		print_list++;
-
-		dst += snprintf(dst, dstlen, "%s", "'.'(");
-		ssize_t res = print_term_to_buf(q, dst, dstlen, head, head_ctx, running, false, depth+1);
-		if (res < 0) return -1;
-		dst += res;
-		dst += snprintf(dst, dstlen, "%s", ",");
-
-		cell *tail = LIST_TAIL(c);
-		tail = running ? deref(q, tail, c_ctx) : tail;
-		c = tail;
-		c_ctx = running ? q->latest_ctx : 0;
-	}
-
-	ssize_t res = print_term_to_buf(q, dst, dstlen, c, c_ctx, running, false, depth+1);
-	if (res < 0) return -1;
-	dst += res;
-
-	while (print_list--)
-		dst += snprintf(dst, dstlen, "%s", ")");
 
 	return dst - save_dst;
 }
@@ -890,12 +843,6 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 		return n;
 	}
 
-	if (is_iso_list(c) && q->ignore_ops) {
-		ssize_t n = print_canonical_list(q, save_dst, dst, dstlen, c, c_ctx, running, depth+1);
-		q->was_space = false;
-		return n;
-	}
-
 	int is_chars_list = is_string(c);
 	bool possible_chars = false;
 
@@ -1049,8 +996,22 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 			q->parens = true;
 
 			for (c++; arity--; c += c->nbr_cells) {
-				cell *tmp = running ? deref(q, c, c_ctx) : c;
-				pl_idx_t tmp_ctx = running ? q->latest_ctx : 0;
+				slot *e = NULL;
+				cell *tmp = c;
+				pl_idx_t tmp_ctx = c_ctx;
+
+				if (is_var(c)) {
+					const frame *f = GET_FRAME(c_ctx);
+					e = GET_SLOT(f, c->var_nbr);
+
+					if (e->vgen == q->vgen) {
+					} else {
+						e->vgen = q->vgen;
+						tmp = running ? deref(q, c, c_ctx) : c;
+						tmp_ctx = running ? q->latest_ctx : 0;
+					}
+				}
+
 				bool parens = false;
 
 				if (!braces && is_interned(tmp) && !q->ignore_ops) {
@@ -1075,6 +1036,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 				q->parens = false;
 				if (res < 0) return -1;
 				dst += res;
+				if (e) e->vgen = 0;
 
 				if (parens)
 					dst += snprintf(dst, dstlen, "%s", ")");

@@ -430,7 +430,7 @@ static void directives(parser *p, cell *d)
 	if (d->arity != 1)
 		return;
 
-	if (!strcmp(dirname, "initialization") && (c->arity <= 2)) {
+	if (!strcmp(dirname, "initialization") && (c->arity == 1)) {
 		p->run_init = true;
 		return;
 	}
