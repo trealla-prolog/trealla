@@ -552,6 +552,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 		cell *save_head = head;
 		pl_idx_t head_ctx = c_ctx;
 		slot *e = NULL;
+		uint64_t save_vgen = 0;
 
 		if (is_var(head) && running) {
 			const frame *f = GET_FRAME(c_ctx);
@@ -562,8 +563,10 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 			if ((e->vgen == q->vgen) || ((head->var_nbr == save_c->var_nbr) && (head_ctx == save_c_ctx))) {
 				//head = save_head;
 				//head_ctx = c_ctx;
-			} else
+			} else {
+				save_vgen = e->vgen;
 				e->vgen = q->vgen;
+			}
 		}
 
 		bool special_op = false;
@@ -584,7 +587,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 		q->parens = parens;
 		ssize_t res = print_term_to_buf(q, dst, dstlen, head, head_ctx, running, false, depth+1);
 		q->parens = false;
-		if (e) e->vgen = 0;
+		if (e) e->vgen = save_vgen;
 		if (res < 0) return -1;
 		dst += res;
 		if (parens) dst += snprintf(dst, dstlen, "%s", ")");
@@ -999,6 +1002,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 				slot *e = NULL;
 				cell *tmp = c;
 				pl_idx_t tmp_ctx = c_ctx;
+				uint64_t save_vgen = 0;
 
 				if (is_var(c)) {
 					const frame *f = GET_FRAME(c_ctx);
@@ -1006,6 +1010,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 
 					if (e->vgen == q->vgen) {
 					} else {
+						save_vgen = e->vgen;
 						e->vgen = q->vgen;
 						tmp = running ? deref(q, c, c_ctx) : c;
 						tmp_ctx = running ? q->latest_ctx : 0;
@@ -1036,7 +1041,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 				q->parens = false;
 				if (res < 0) return -1;
 				dst += res;
-				if (e) e->vgen = 0;
+				if (e) e->vgen = save_vgen;
 
 				if (parens)
 					dst += snprintf(dst, dstlen, "%s", ")");
