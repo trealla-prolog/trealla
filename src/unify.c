@@ -558,6 +558,9 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigne
 
 static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 {
+	cell *save_p1 = p1;
+	pl_idx_t save_p1_ctx = p1_ctx;
+
 	while (is_iso_list(p1)) {
 		if (g_tpl_interrupt)
 			return NULL;
@@ -600,7 +603,23 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned d
 		}
 	}
 
-	q->vgen++;	// ????
+	p1 = save_p1;
+	p1_ctx = save_p1_ctx;
+
+	while (is_iso_list(p1)) {
+		if (g_tpl_interrupt)
+			return NULL;
+
+		p1 = p1 + 1; p1 += p1->nbr_cells;
+
+		if (is_var(p1)) {
+			const frame *f = GET_FRAME(p1_ctx);
+			slot *e = GET_SLOT(f, p1->var_nbr);
+			e->vgen = 0;
+			p1 = deref(q, p1, p1_ctx);
+			p1_ctx = q->latest_ctx;
+		}
+	}
 
 	return is_cyclic_term_internal(q, p1, p1_ctx, depth+1);
 }
