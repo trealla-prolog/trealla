@@ -1130,11 +1130,13 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 			pl_idx_t h2_ctx = q->latest_ctx;
 			bool ok = unify_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
 			if (!ok) return false;
-		} else
-			return true;
+		}
 
 		if (e1) e1->vgen = save_vgen1;
 		if (e2) e2->vgen2 = save_vgen2;
+
+		if (both == 2)
+			return true;
 
 		p1 = p1 + 1; p1 += p1->nbr_cells;
 		p2 = p2 + 1; p2 += p2->nbr_cells;
