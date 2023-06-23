@@ -25,11 +25,11 @@ predicate_property(P, A) :-
 
 :- help(predicate_property(+callable,+term), [iso(true)]).
 
-function_property(P, A) :-
+evaluable_property(P, A) :-
 	nonvar(P), atom(A), !,
-	must_be(P, callable, function_property/2, _),
-	'$legacy_function_property'(P, A).
-function_property(P, A) :-
+	must_be(P, callable, evaluable_property/2, _),
+	'$legacy_evaluable_property'(P, A).
+evaluable_property(P, A) :-
 	'$load_properties',
 	(	var(A)
 	->	true
@@ -37,18 +37,18 @@ function_property(P, A) :-
 			memberchk(A, Controls))
 			->	true
 			;	(
-				must_be(A, callable, function_property/2, _),
-				throw(error(domain_error(function_property, A), P))
+				must_be(A, callable, evaluable_property/2, _),
+				throw(error(domain_error(evaluable_property, A), P))
 				)
 		)
 	),
-	must_be(P, callable, function_property/2, _),
+	must_be(P, callable, evaluable_property/2, _),
 	(	P = (M:P2)
 	->	M:'$predicate_property'(function, P2, A)
 	;	'$predicate_property'(function, P, A)
 	).
 
-:- help(function_property(+callable,+term), [iso(true)]).
+:- help(evaluable_property(+callable,+term), [iso(true)]).
 
 current_prolog_flag(P, A) :-
 	nonvar(P), !,

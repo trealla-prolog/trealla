@@ -6491,7 +6491,7 @@ static bool fn_sys_legacy_predicate_property_2(query *q)
 	return false;
 }
 
-static bool fn_sys_legacy_function_property_2(query *q)
+static bool fn_sys_legacy_evaluable_property_2(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,atom_or_var);
@@ -6503,7 +6503,7 @@ static bool fn_sys_legacy_function_property_2(query *q)
 		&& CMP_STR_TO_CSTR(q, p2, "dynamic")
 		&& CMP_STR_TO_CSTR(q, p2, "foreign")
 		)
-		return throw_error(q, p2, p2_ctx, "domain_error", "function_property");
+		return throw_error(q, p2, p2_ctx, "domain_error", "evaluable_property");
 
 	if (get_builtin_term(q->st.m, p1, &found, &evaluable), found) {
 		if (!evaluable)
@@ -6529,7 +6529,7 @@ static bool fn_sys_legacy_function_property_2(query *q)
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return false;
 
-		return throw_error(q, p2, p2_ctx, "domain_error", "function_property");
+		return throw_error(q, p2, p2_ctx, "domain_error", "evaluable_property");
 	}
 
 	return false;
@@ -8309,7 +8309,7 @@ builtins g_other_bifs[] =
 	{"$undo_trail", 1, fn_sys_undo_trail_1, NULL, false, false, BLAH},
 	{"$redo_trail", 0, fn_sys_redo_trail_0, NULL, false, false, BLAH},
 	{"$legacy_predicate_property", 2, fn_sys_legacy_predicate_property_2, "+callable,?character_list", false, false, BLAH},
-	{"$legacy_function_property", 2, fn_sys_legacy_function_property_2, "+callable,?character_list", false, false, BLAH},
+	{"$legacy_evaluable_property", 2, fn_sys_legacy_evaluable_property_2, "+callable,?character_list", false, false, BLAH},
 	{"$load_properties", 0, fn_sys_load_properties_0, NULL, false, false, BLAH},
 	{"$load_flags", 0, fn_sys_load_flags_0, NULL, false, false, BLAH},
 	{"$load_ops", 0, fn_sys_load_ops_0, NULL, false, false, BLAH},
