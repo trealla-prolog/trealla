@@ -56,6 +56,9 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 		if (e1) e1->vgen = save_vgen1;
 		if (e2) e2->vgen2 = save_vgen2;
 
+		if (both == 2)
+			return 0;
+
 		p1 = LIST_TAIL(p1);
 		p2 = LIST_TAIL(p2);
 		both = 0;
