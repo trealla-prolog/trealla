@@ -1091,6 +1091,8 @@ static const struct dispatch g_disp[] =
 
 static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
 {
+	unsigned cnt = 0;
+
 	while (is_iso_list(p1) && is_iso_list(p2)) {
 		if (g_tpl_interrupt)
 			return NULL;
@@ -1162,13 +1164,15 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 				e2->vgen2 = q->vgen;
 		}
 
-		if (both == 2)
-			return true;
+		if ((both == 2) ||
+			(both && (cnt > MAX_DEPTH)))		// HACK
+			break;
 
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
 		p2 = deref(q, p2, p2_ctx);
 		p2_ctx = q->latest_ctx;
+		cnt++;
 	}
 
 	return unify_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1);
