@@ -1290,6 +1290,7 @@ char *print_canonical_to_strbuf(query *q, cell *c, pl_idx_t c_ctx, int running)
 		running = 0;
 	}
 
+	q->vgen++;
 	q->ignore_ops = true;
 	q->quoted = 1;
 	q->last_thing_was_symbol = false;
@@ -1320,6 +1321,7 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx_t c_ctx, i
 		running = 0;
 	}
 
+	q->vgen++;
 	q->ignore_ops = true;
 	q->quoted = 1;
 	q->last_thing_was_symbol = false;
@@ -1366,6 +1368,7 @@ bool print_canonical(query *q, FILE *fp, cell *c, pl_idx_t c_ctx, int running)
 		running = 0;
 	}
 
+	q->vgen++;
 	q->ignore_ops = true;
 	q->quoted = 1;
 	q->last_thing_was_symbol = false;
