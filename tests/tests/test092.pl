@@ -1,6 +1,6 @@
 :-initialization(main).
 
-main :- main1, main2.
+main :- main1, main2, main3.
 
 main1 :-
 	A1=[[]|B1],B1=[[],[]|B1],A1=B1,
@@ -10,3 +10,6 @@ main1 :-
 main2 :-
 	\+ (A4=[A4|A4],A4=[B4,A4]),
 	\+ (A5=B5,A5=[A5|A5],A5=[B5,A5]).
+
+main3 :-
+	\+ unify_with_occurs_check(A,[[[A]]|A]).
