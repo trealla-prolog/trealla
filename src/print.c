@@ -477,6 +477,8 @@ ssize_t print_variable(query *q, char *dst, size_t dstlen, const cell *c, pl_idx
 	} else if (q->varnames && !is_fresh(c) && !is_anon(c) && running
 		&& c->val_off && !e->c.attrs && !is_ref(c)) {
 		dst += snprintf(dst, dstlen, "%s", C_STR(q, c));
+	} else if (q->portray_vars) {
+		dst += snprintf(dst, dstlen, "%s", get_slot_name(q, slot_idx));
 	} else if (q->is_dump_vars) {
 		dst += snprintf(dst, dstlen, "_%s", get_slot_name(q, slot_idx));
 	} else if (q->listing) {
@@ -1230,8 +1232,9 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 	if (quote) dst += snprintf(dst, dstlen, "%s", quote?"' ":"");
 	q->was_space = false;
 
-	if (q->listing && !depth && !strcmp(src, ":-"))
-		space = true;
+	if (q->listing && !depth && !strcmp(src, ":-")) {
+		dst += snprintf(dst, dstlen, "%s", "\n  ");
+	}
 
 	if (!q->was_space && space) {
 		dst += snprintf(dst, dstlen, "%s", " ");

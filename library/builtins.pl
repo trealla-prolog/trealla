@@ -679,6 +679,11 @@ pretty(PI) :-
 
 :- help(pretty(+predicateindicator), [iso(false)]).
 
+portray_clause(T) :-
+	'$portray_clause'(T).
+
+:- help(portray_clause(+term), [iso(false)]).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SWI compatible
 %

@@ -686,6 +686,7 @@ struct query_ {
 	bool in_hook:1;
 	bool do_dump_vars:1;
 	bool is_dump_vars:1;
+	bool portray_vars:1;
 	bool status:1;
 	bool no_tco:1;
 	bool check_unique:1;
