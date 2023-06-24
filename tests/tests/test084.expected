@@ -1,4 +1,8 @@
-dummy(A,B,C,D) :- A+B,C+D.
-dummy(A,B,C,D) :- A+B,C=D.
-dummy((A-->B),C,D,E) :- list_goal(B,F),expand_term((A-->F),C).
-dummy(g(A),[],B,C) :- B=[{A},!|C].
+dummy(A,B,C,D) :-
+   A+B,C+D.
+dummy(A,B,C,D) :-
+   A+B,C=D.
+dummy((A-->B),C,D,E) :-
+   list_goal(B,F),expand_term((A-->F),C).
+dummy(g(A),[],B,C) :-
+   B=[{A},!|C].

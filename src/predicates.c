@@ -5223,6 +5223,8 @@ static bool fn_can_be_2(query *q)
 		return throw_error(q, p1, p1_ctx, "type_error", "number");
 	else if (!strcmp(src, "compound") && !is_compound(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "compound");
+	else if (!strcmp(src, "term") && is_cyclic_term(q, p1, p1_ctx))
+		return throw_error(q, p1, p1_ctx, "type_error", "term");
 	else if (!strcmp(src, "list")) {
 		bool is_partial;
 
