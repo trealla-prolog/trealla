@@ -298,7 +298,7 @@ static void setup_key(query *q)
 		arg3 = deref(q, arg3, q->st.key_ctx);
 
 	if (is_atomic(arg1)
-		|| (is_structure(arg1) && !has_vars(q, arg1, arg1_ctx))
+		//!has_vars(q, arg1, arg1_ctx)
 		)
 		q->st.arg1_is_ground = true;
 
