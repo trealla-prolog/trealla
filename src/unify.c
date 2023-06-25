@@ -1118,12 +1118,13 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 
 		cell *h1 = p1 + 1;
 		cell *h2 = p2 + 1;
+		pl_idx_t h1_ctx = p1_ctx, h2_ctx = p2_ctx;
 		slot *e1 = NULL, *e2 = NULL;
 		uint64_t save_vgen1 = 0, save_vgen2 = 0;
 		int both = 0;
 
 		if (is_var(h1)) {
-			const frame *f1 = GET_FRAME(p1_ctx);
+			const frame *f1 = GET_FRAME(h1_ctx);
 			e1 = GET_SLOT(f1, h1->var_nbr);
 			save_vgen1 = e1->vgen;
 
@@ -1134,7 +1135,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 		}
 
 		if (is_var(h2)) {
-			const frame *f2 = GET_FRAME(p2_ctx);
+			const frame *f2 = GET_FRAME(h2_ctx);
 			e2 = GET_SLOT(f2, h2->var_nbr);
 			save_vgen2 = e2->vgen2;
 
@@ -1145,12 +1146,13 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 		}
 
 		if (both != 2) {
-			h1 = deref(q, h1, p1_ctx);
-			pl_idx_t h1_ctx = q->latest_ctx;
-			h2 = deref(q, h2, p2_ctx);
-			pl_idx_t h2_ctx = q->latest_ctx;
-			bool ok = unify_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
-			if (!ok) return false;
+			h1 = deref(q, h1, h1_ctx);
+			h1_ctx = q->latest_ctx;
+			h2 = deref(q, h2, h2_ctx);
+			h2_ctx = q->latest_ctx;
+
+			if (!unify_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1))
+				return false;
 		}
 
 		if (e1) e1->vgen = save_vgen1;
@@ -1206,14 +1208,14 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 	p1++; p2++;
 
 	while (arity--) {
-		slot *e1, *e2;
+		slot *e1 = NULL, *e2 = NULL;
 		uint64_t save_vgen1 = 0, save_vgen2 = 0;
-		pl_idx_t c1_ctx, c2_ctx;
-		cell *c1 , *c2;
+		pl_idx_t c1_ctx = p1_ctx, c2_ctx = p2_ctx;
+		cell *c1 = p1, *c2 = p2;
 		int both = 0;
 
 		if (is_var(p1)) {
-			const frame *f1 = GET_FRAME(p1_ctx);
+			const frame *f1 = GET_FRAME(c1_ctx);
 			e1 = GET_SLOT(f1, p1->var_nbr);
 			save_vgen1 = e1->vgen;
 
@@ -1221,17 +1223,10 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 				both++;
 			else
 				e1->vgen = q->vgen;
-
-			c1 = deref(q, p1, p1_ctx);
-			c1_ctx = q->latest_ctx;
-		} else {
-			e1 = NULL;
-			c1 = p1;
-			c1_ctx = p1_ctx;
 		}
 
 		if (is_var(p2)) {
-			const frame *f2 = GET_FRAME(p2_ctx);
+			const frame *f2 = GET_FRAME(c2_ctx);
 			e2 = GET_SLOT(f2, p2->var_nbr);
 			save_vgen2 = e2->vgen2;
 
@@ -1239,16 +1234,14 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 				both++;
 			else
 				e2->vgen2 = q->vgen;
-
-			c2 = deref(q, p2, p2_ctx);
-			c2_ctx = q->latest_ctx;
-		} else {
-			e2 = NULL;
-			c2 = p2;
-			c2_ctx = p2_ctx;
 		}
 
 		if (both != 2) {
+			c1 = deref(q, c1, c1_ctx);
+			c1_ctx = q->latest_ctx;
+			c2 = deref(q, c2, c2_ctx);
+			c2_ctx = q->latest_ctx;
+
 			if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
 				return false;
 		}
