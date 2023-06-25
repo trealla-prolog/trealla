@@ -7422,6 +7422,22 @@ static bool fn_sys_portray_clause_1(query *q)
 	return true;
 }
 
+static bool fn_sys_portray_clause_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+	GET_NEXT_ARG(p1,any);
+	q->quoted = 1;
+	q->listing = q->numbervars = q->is_dump_vars = q->portray_vars = true;
+	print_term(q, str->fp, p1, p1_ctx, 1);
+	fputc('.', str->fp);
+	fputc('\n', str->fp);
+	q->quoted = 0;
+	q->listing = q->numbervars = q->is_dump_vars = q->portray_vars = false;
+	return true;
+}
+
 static bool fn_sys_register_cleanup_1(query *q)
 {
 	if (q->retry) {
@@ -8325,6 +8341,7 @@ builtins g_other_bifs[] =
 	{"sre_subst", 4, fn_sre_subst_4, "+character_list,+character_list,-character_list,-character_list,", false, false, BLAH},
 
 	{"$portray_clause", 1, fn_sys_portray_clause_1, NULL, false, false, BLAH},
+	{"$portray_clause", 2, fn_sys_portray_clause_2, NULL, false, false, BLAH},
 	{"$register_cleanup", 1, fn_sys_register_cleanup_1, NULL, false, false, BLAH},
 	{"$get_level", 1, fn_sys_get_level_1, "?integer", false, false, BLAH},
 	{"$is_partial_string", 1, fn_sys_is_partial_string_1, "+character_list", false, false, BLAH},

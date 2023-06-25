@@ -317,7 +317,7 @@ Non-standard predicates
 	samsort/2                   # same as msort/2
 	merge/3
 	format/[1-3]
-	portray_clause/1			# portray_clause(+term)
+	portray_clause/[1-2]
 	predicate_property/2
 	evaluable_property/2
 	numbervars/[1,3-4]

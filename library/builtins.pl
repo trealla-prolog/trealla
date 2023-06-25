@@ -682,7 +682,11 @@ pretty(PI) :-
 portray_clause(T) :-
 	'$portray_clause'(T).
 
+portray_clause(S, T) :-
+	'$portray_clause'(S, T).
+
 :- help(portray_clause(+term), [iso(false)]).
+:- help(portray_clause(+stream,+term), [iso(false)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SWI compatible
