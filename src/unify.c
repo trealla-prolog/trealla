@@ -1124,6 +1124,9 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 		int both = 0;
 
 		if (is_var(h1)) {
+			if (is_ref(h1))
+				h1_ctx = h1->var_ctx;
+
 			const frame *f1 = GET_FRAME(h1_ctx);
 			e1 = GET_SLOT(f1, h1->var_nbr);
 			save_vgen1 = e1->vgen;
@@ -1135,6 +1138,9 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 		}
 
 		if (is_var(h2)) {
+			if (is_ref(h2))
+				h2_ctx = h2->var_ctx;
+
 			const frame *f2 = GET_FRAME(h2_ctx);
 			e2 = GET_SLOT(f2, h2->var_nbr);
 			save_vgen2 = e2->vgen2;
@@ -1222,9 +1228,12 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 		cell *c1 = p1, *c2 = p2;
 		int both = 0;
 
-		if (is_var(p1)) {
+		if (is_var(c1)) {
+			if (is_ref(c1))
+				c1_ctx = c1->var_ctx;
+
 			const frame *f1 = GET_FRAME(c1_ctx);
-			e1 = GET_SLOT(f1, p1->var_nbr);
+			e1 = GET_SLOT(f1, c1->var_nbr);
 			save_vgen1 = e1->vgen;
 
 			if (e1->vgen == q->vgen)
@@ -1233,9 +1242,12 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 				e1->vgen = q->vgen;
 		}
 
-		if (is_var(p2)) {
+		if (is_var(c2)) {
+			if (is_ref(c2))
+				c2_ctx = c2->var_ctx;
+
 			const frame *f2 = GET_FRAME(c2_ctx);
-			e2 = GET_SLOT(f2, p2->var_nbr);
+			e2 = GET_SLOT(f2, c2->var_nbr);
 			save_vgen2 = e2->vgen2;
 
 			if (e2->vgen2 == q->vgen)
