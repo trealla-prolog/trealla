@@ -103,11 +103,13 @@ static int compare_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 
 	while (arity--) {
 		slot *e1 = NULL, *e2 = NULL;
+		uint64_t save_vgen1 = 0, save_vgen2 = 0;
 		int both = 0;
 
 		if (is_var(p1)) {
 			const frame *f1 = GET_FRAME(p1_ctx);
 			e1 = GET_SLOT(f1, p1->var_nbr);
+			save_vgen1 = e1->vgen;
 
 			if (e1->vgen == q->vgen)
 				both++;
@@ -118,6 +120,7 @@ static int compare_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 		if (is_var(p2)) {
 			const frame *f2 = GET_FRAME(p2_ctx);
 			e2 = GET_SLOT(f2, p2->var_nbr);
+			save_vgen2 = e2->vgen2;
 
 			if (e2->vgen2 == q->vgen)
 				both++;
@@ -125,7 +128,7 @@ static int compare_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 				e2->vgen2 = q->vgen;
 		}
 
-		if (!both) {
+		if (both != 2) {
 			cell *c1 = deref(q, p1, p1_ctx);
 			pl_idx_t c1_ctx = q->latest_ctx;
 			cell *c2 = deref(q, p2, p2_ctx);
@@ -133,11 +136,10 @@ static int compare_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 
 			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
 			if (val) return val;
+		}
 
-			if (e1) e1->vgen = 0;
-			if (e2) e2->vgen2 = 0;
-		} else if (both == 1)
-			break;
+		if (e1) e1->vgen = save_vgen1;
+		if (e2) e2->vgen2 = save_vgen2;
 
 		p1 += p1->nbr_cells;
 		p2 += p2->nbr_cells;
@@ -149,8 +151,8 @@ static int compare_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
 {
 	if (depth >= MAX_DEPTH) {
-		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
-		q->cycle_error = true;
+		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		//q->cycle_error = true;
 		return 0;
 	}
 
@@ -389,8 +391,8 @@ static void collect_var_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned dept
 static void collect_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 {
 	if (depth >= MAX_DEPTH) {
-		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
-		q->cycle_error = true;
+		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		//q->cycle_error = true;
 		return;
 	}
 
@@ -421,9 +423,10 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned 
 				accum_var(q, c, c_ctx);
 
 			if (!is_var(c) && (e->vgen != q->vgen)) {
+				uint64_t save_vgen = e->vgen;
 				e->vgen = q->vgen;
 				collect_vars_internal(q, c, c_ctx, depth+1);
-				e->vgen = 0;
+				e->vgen = save_vgen;
 			}
 		} else {
 			collect_vars_internal(q, p1, p1_ctx, depth+1);
@@ -503,8 +506,8 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 static bool has_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 {
 	if (depth >= MAX_DEPTH) {
-		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
-		q->cycle_error = true;
+		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		//q->cycle_error = true;
 		return false;
 	}
 
@@ -531,12 +534,14 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned dept
 				return true;
 
 			if (e->vgen != q->vgen) {
+				uint64_t save_vgen = e->vgen;
 				e->vgen = q->vgen;
 
 				if (has_vars_internal(q, c, c_ctx, depth+1))
 					return true;
-			} else
-				e->vgen = q->vgen;
+
+				e->vgen = save_vgen;
+			}
 		} else {
 			if (has_vars_internal(q, p1, p1_ctx, depth+1))
 				return true;
@@ -627,8 +632,8 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned d
 static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 {
 	if (depth > MAX_DEPTH) {
-		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
-		q->cycle_error = true;
+		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		//q->cycle_error = true;
 		return true;
 	}
 
