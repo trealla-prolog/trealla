@@ -289,6 +289,7 @@ static void setup_key(query *q)
 		arg3 = arg2 + arg2->nbr_cells;
 
 	arg1 = deref(q, arg1, q->st.key_ctx);
+	pl_idx_t arg1_ctx = q->latest_ctx;
 
 	if (arg2)
 		arg2 = deref(q, arg2, q->st.key_ctx);
@@ -296,7 +297,9 @@ static void setup_key(query *q)
 	if (arg3)
 		arg3 = deref(q, arg3, q->st.key_ctx);
 
-	if (is_atomic(arg1) || is_structure(arg1))
+	if (is_atomic(arg1)
+		|| (is_structure(arg1) && !has_vars(q, arg1, arg1_ctx))
+		)
 		q->st.arg1_is_ground = true;
 
 	if (arg2 && is_atomic(arg2))
