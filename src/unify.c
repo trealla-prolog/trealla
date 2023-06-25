@@ -17,13 +17,17 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 
 		cell *h1 = LIST_HEAD(p1);
 		cell *h2 = LIST_HEAD(p2);
+		pl_idx_t h1_ctx = p1_ctx, h2_ctx = p2_ctx;
 
 		slot *e1 = NULL, *e2 = NULL;
 		uint64_t save_vgen1 = 0, save_vgen2 = 0;
 		int both = 0;
 
 		if (is_var(h1)) {
-			const frame *f1 = GET_FRAME(p1_ctx);
+			if (is_ref(h1))
+				h1_ctx = h1->var_ctx;
+
+			const frame *f1 = GET_FRAME(h1_ctx);
 			e1 = GET_SLOT(f1, h1->var_nbr);
 			save_vgen1 = e1->vgen;
 
@@ -34,7 +38,10 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 		}
 
 		if (is_var(h2)) {
-			const frame *f2 = GET_FRAME(p2_ctx);
+			if (is_ref(h2))
+				h2_ctx = h2->var_ctx;
+
+			const frame *f2 = GET_FRAME(h2_ctx);
 			e2 = GET_SLOT(f2, h2->var_nbr);
 			save_vgen2 = e2->vgen;
 
@@ -45,10 +52,10 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 		}
 
 		if (both != 2) {
-			h1 = deref(q, h1, p1_ctx);
-			pl_idx_t h1_ctx = q->latest_ctx;
-			h2 = deref(q, h2, p2_ctx);
-			pl_idx_t h2_ctx = q->latest_ctx;
+			h1 = deref(q, h1, h1_ctx);
+			h1_ctx = q->latest_ctx;
+			h2 = deref(q, h2, h2_ctx);
+			h2_ctx = q->latest_ctx;
 			int val = compare_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
 			if (val) return val;
 		}
@@ -61,6 +68,9 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 		both = 0;
 
 		if (is_var(p1)) {
+			if (is_ref(p1))
+				p1_ctx = p1->var_ctx;
+
 			const frame *f1 = GET_FRAME(p1_ctx);
 			e1 = GET_SLOT(f1, p1->var_nbr);
 
@@ -71,6 +81,9 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 		}
 
 		if (is_var(p2)) {
+			if (is_ref(p2))
+				p2_ctx = p2->var_ctx;
+
 			const frame *f2 = GET_FRAME(p2_ctx);
 			e2 = GET_SLOT(f2, p2->var_nbr);
 
@@ -106,6 +119,9 @@ static int compare_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 		int both = 0;
 
 		if (is_var(p1)) {
+			if (is_ref(p1))
+				p1_ctx = p1->var_ctx;
+
 			const frame *f1 = GET_FRAME(p1_ctx);
 			e1 = GET_SLOT(f1, p1->var_nbr);
 
@@ -116,6 +132,9 @@ static int compare_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 		}
 
 		if (is_var(p2)) {
+			if (is_ref(p2))
+				p2_ctx = p2->var_ctx;
+
 			const frame *f2 = GET_FRAME(p2_ctx);
 			e2 = GET_SLOT(f2, p2->var_nbr);
 
