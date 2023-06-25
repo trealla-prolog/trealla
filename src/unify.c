@@ -1182,8 +1182,10 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 				e2->vgen2 = q->vgen;
 		}
 
-		if ((both == 2) ||
-			(both && (cnt > MAX_DEPTH)))		// HACK
+		if (both == 2)
+			break;
+
+		if (both && (cnt > MAX_DEPTH))		// HACK
 			break;
 
 		p1 = deref(q, p1, p1_ctx);
