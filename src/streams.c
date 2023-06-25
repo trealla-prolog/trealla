@@ -7146,6 +7146,37 @@ static bool fn_engine_destroy_1(query *q)
 	return fn_iso_close_1(q);
 }
 
+static bool fn_sys_portray_clause_1(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	int n = q->pl->current_output;
+	stream *str = &q->pl->streams[n];
+	q->quoted = 1;
+	q->listing = q->numbervars = q->is_dump_vars = q->portray_vars = true;
+	print_term(q, str->fp, p1, p1_ctx, 1);
+	fputc('.', str->fp);
+	fputc('\n', str->fp);
+	q->quoted = 0;
+	q->listing = q->numbervars = q->is_dump_vars = q->portray_vars = false;
+	return true;
+}
+
+static bool fn_sys_portray_clause_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+	GET_NEXT_ARG(p1,any);
+	q->quoted = 1;
+	q->listing = q->numbervars = q->is_dump_vars = q->portray_vars = true;
+	print_term(q, str->fp, p1, p1_ctx, 1);
+	fputc('.', str->fp);
+	fputc('\n', str->fp);
+	q->quoted = 0;
+	q->listing = q->numbervars = q->is_dump_vars = q->portray_vars = false;
+	return true;
+}
+
 builtins g_files_bifs[] =
 {
 	// ISO...
@@ -7209,6 +7240,8 @@ builtins g_files_bifs[] =
 	{"redo", 2, fn_edin_redo_2, "+stream,+integer", false, false, BLAH},
 	{"tab", 1, fn_edin_tab_1, "+integer", false, false, BLAH},
 	{"tab", 2, fn_edin_tab_2, "+stream,+integer", false, false, BLAH},
+	{"portray_clause", 1, fn_sys_portray_clause_1, "+term", false, false, BLAH},
+	{"portray_clause", 2, fn_sys_portray_clause_2, "+stream,+term", false, false, BLAH},
 
 	// Other...
 

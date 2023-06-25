@@ -66,8 +66,7 @@ future_cancel(all(Fs)) :-
 
 future_cancel(any(Fs)) :-
 	Fs = [F|Rest],
-	future_cancel(F)
-	-> true
+	future_cancel(F) -> true
 	; future_cancel(any(Rest)).
 
 future_cancel([]).
@@ -81,8 +80,7 @@ future_done(all(Fs)) :-
 
 future_done(any(Fs)) :-
 	Fs = [F|Rest],
-	future_done(F)
-	-> true
+	future_done(F) -> true
 	; future_done(any(Rest)).
 
 future_done([]).

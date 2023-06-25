@@ -40,8 +40,7 @@ lst(D, L) :-
 match([], _, L, L) :- !.
 match([H:V|T], Template, L1, L) :-
 	copy_term(Template, Template2),
-	(	H = Template ->
-		match(T, Template2, [V|L1], L)
+	(	H = Template -> match(T, Template2, [V|L1], L)
 	;	match(T, Template2, L1, L)
 	).
 

@@ -23,7 +23,8 @@ when(Cond, Goal) :-
 	Cond = (Cond1,Cond2), !,
 	arg(1, Cond1, Var1),
 	arg(1, Cond2, Var2),
-	(Cond -> Goal ; (
+	(Cond -> Goal
+	; (
 		(var(Var1) -> process_var_(Var1, Cond, Goal) ; true),
 		(var(Var2) -> process_var_(Var2, Cond, Goal) ; true))
 	).
@@ -32,7 +33,8 @@ when(Cond, Goal) :-
 	Cond = (Cond1;Cond2), !,
 	arg(1, Cond1, Var1),
 	arg(1, Cond2, Var2),
-	(Cond -> Goal ; (
+	(Cond -> Goal
+	; (
 		(var(Var1) -> process_var_(Var1, Cond, Goal) ; true),
 		(var(Var2) -> process_var_(Var2, Cond, Goal) ; true))
 	).
@@ -58,14 +60,11 @@ verify_attributes(Var, Other, Goals) :-
 	(	var(Other) ->
 		get_atts(Other, when(OtherCond-OtherGoal)),
 		Goals =
-			(	VarCond
-			->	VarGoal
-			; 	(	VarCond == OtherCond
-				->	NewCond = VarCond
+			(	VarCond -> VarGoal
+			; 	(	VarCond == OtherCond ->	NewCond = VarCond
 				;	NewCond = (OtherCond,VarCond)
 				),
-			(	VarGoal == OtherGoal ->
-				NewGoal = VarGoal
+			(	VarGoal == OtherGoal -> NewGoal = VarGoal
 			;	NewGoal = (OtherGoal,VarGoal)
 			),
 			put_atts(Other, when(NewCond-NewGoal))

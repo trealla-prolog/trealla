@@ -55,8 +55,7 @@ sqlite3_query(Conn, Sql, Cols, Names) :-
 	sqlite_flag('SQLITE_ROW', SQLITE_ROW),
 	sqlite3_prepare_v2(Conn, Sql, -1, Statement, _, Ret), Ret =:= SQLITE_OK,
 	repeat,
-		(	( sqlite3_step(Statement, Ret2), Ret2 =:= SQLITE_ROW )
-		->	get_row(Statement, Cols, Names)
+		(	( sqlite3_step(Statement, Ret2), Ret2 =:= SQLITE_ROW ) -> get_row(Statement, Cols, Names)
 		;	( !, sqlite3_finalize(Statement, _Ret), fail )
 		).
 
