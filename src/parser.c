@@ -2304,7 +2304,7 @@ char *eat_space(parser *p)
 			if (*src == '\n')
 				p->line_nbr++;
 
-			src++;
+			//src++;
 			done = false;
 			continue;
 		}
