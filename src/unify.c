@@ -115,6 +115,9 @@ static int compare_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 	p2 = p2 + 1;
 
 	while (arity--) {
+		if (g_tpl_interrupt)
+			return 0;
+
 		slot *e1 = NULL, *e2 = NULL;
 		pl_idx_t c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 		cell *c1 = p1, *c2 = p2;
@@ -282,6 +285,9 @@ static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_id
 		LIST_HANDLER(p2);
 
 		while (is_list(p1) && is_list(p2)) {
+			if (g_tpl_interrupt)
+				return 0;
+
 			cell *h1 = LIST_HEAD(p1);
 			h1 = deref(q, h1, p1_ctx);
 			pl_idx_t h1_ctx = q->latest_ctx;
@@ -438,6 +444,9 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned 
 	p1++;
 
 	while (arity--) {
+		if (g_tpl_interrupt)
+			return;
+
 		cell *c = p1;
 		pl_idx_t c_ctx = p1_ctx;
 
@@ -486,8 +495,8 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 	LIST_HANDLER(l);
 
 	while (is_iso_list(l)) {
-			if (g_tpl_interrupt)
-				return NULL;
+		if (g_tpl_interrupt)
+			return false;
 
 		cell *c = LIST_HEAD(l);
 		pl_idx_t c_ctx = l_ctx;
@@ -560,6 +569,9 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned dept
 	p1++;
 
 	while (arity--) {
+		if (g_tpl_interrupt)
+			return false;
+
 		cell *c = p1;
 		pl_idx_t c_ctx = p1_ctx;
 
@@ -605,7 +617,7 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned d
 
 	while (is_iso_list(p1)) {
 		if (g_tpl_interrupt)
-			return NULL;
+			return false;
 
 		cell *h = p1 + 1;
 		pl_idx_t h_ctx = p1_ctx;
@@ -657,7 +669,7 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned d
 
 	while (is_iso_list(p1)) {
 		if (g_tpl_interrupt)
-			return NULL;
+			return false;
 
 		p1 = p1 + 1; p1 += p1->nbr_cells;
 		cell *c = p1;
@@ -697,6 +709,9 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigne
 	p1++;
 
 	while (arity--) {
+		if (g_tpl_interrupt)
+			return false;
+
 		cell *c = p1;
 		pl_idx_t c_ctx = p1_ctx;
 
@@ -1174,7 +1189,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 
 	while (is_iso_list(p1) && is_iso_list(p2)) {
 		if (g_tpl_interrupt)
-			return NULL;
+			return false;
 
 		cell *h1 = p1 + 1;
 		cell *h2 = p2 + 1;
@@ -1282,6 +1297,9 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 	p1++; p2++;
 
 	while (arity--) {
+		if (g_tpl_interrupt)
+			return false;
+
 		slot *e1 = NULL, *e2 = NULL;
 		uint64_t save_vgen1 = 0, save_vgen2 = 0;
 		pl_idx_t c1_ctx = p1_ctx, c2_ctx = p2_ctx;
