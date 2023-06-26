@@ -170,8 +170,8 @@ static int compare_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
 {
 	if (depth >= MAX_DEPTH) {
-		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
-		q->cycle_error = true;
+		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		//q->cycle_error = true;
 		return 0;
 	}
 
@@ -416,8 +416,8 @@ static void collect_var_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned dept
 static void collect_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 {
 	if (depth >= MAX_DEPTH) {
-		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
-		q->cycle_error = true;
+		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		//q->cycle_error = true;
 		return;
 	}
 
@@ -542,8 +542,8 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 static bool has_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 {
 	if (depth >= MAX_DEPTH) {
-		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
-		q->cycle_error = true;
+		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		//q->cycle_error = true;
 		return false;
 	}
 
@@ -681,8 +681,8 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned d
 static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 {
 	if (depth > MAX_DEPTH) {
-		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
-		q->cycle_error = true;
+		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		//q->cycle_error = true;
 		return true;
 	}
 
@@ -1317,9 +1317,9 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 		}
 
 		if (both != 2) {
-			c1 = deref(q, c1, c1_ctx);
+			c1 = deref(q, p1, p1_ctx);
 			c1_ctx = q->latest_ctx;
-			c2 = deref(q, c2, c2_ctx);
+			c2 = deref(q, p2, p2_ctx);
 			c2_ctx = q->latest_ctx;
 
 			if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
@@ -1339,9 +1339,9 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 static bool unify_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
 {
 	if (depth > MAX_DEPTH) {
-		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
-		q->cycle_error = true;
-		return false;
+		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		//q->cycle_error = true;
+		return true;
 	}
 
 	if (is_var(p1) && is_var(p2)) {
