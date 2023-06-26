@@ -557,18 +557,20 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 		uint64_t save_vgen = 0;
 
 		if (is_var(head) && running) {
-			const frame *f = GET_FRAME(c_ctx);
+			if (is_ref(head))
+				head_ctx = head->var_ctx;
+
+			const frame *f = GET_FRAME(head_ctx);
 			e = GET_SLOT(f, head->var_nbr);
+			save_vgen = e->vgen;
 			head = running ? deref(q, head, c_ctx) : head;
 			head_ctx = running ? q->latest_ctx : 0;
 
 			if ((e->vgen == q->vgen) || ((head->var_nbr == save_c->var_nbr) && (head_ctx == save_c_ctx))) {
 				//head = save_head;
 				//head_ctx = c_ctx;
-			} else {
-				save_vgen = e->vgen;
+			} else
 				e->vgen = q->vgen;
-			}
 		}
 
 		bool special_op = false;
@@ -599,10 +601,14 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 			possible_chars = true;
 
 		cell *tail = LIST_TAIL(c);
+		pl_idx_t tail_ctx = c_ctx;
 		cell *save_tail = tail;
 
 		if (is_var(tail) && running) {
-			const frame *f = GET_FRAME(c_ctx);
+			if (is_ref(tail))
+				tail_ctx = tail->var_ctx;
+
+			const frame *f = GET_FRAME(tail_ctx);
 			e = GET_SLOT(f, tail->var_nbr);
 			tail = deref(q, tail, c_ctx);
 			c_ctx = q->latest_ctx;
@@ -1007,8 +1013,11 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 				uint64_t save_vgen = 0;
 
 				if (is_var(c)) {
-					const frame *f = GET_FRAME(c_ctx);
-					e = GET_SLOT(f, c->var_nbr);
+					if (is_ref(tmp))
+						tmp_ctx = tmp->var_ctx;
+
+					const frame *f = GET_FRAME(tmp_ctx);
+					e = GET_SLOT(f, tmp->var_nbr);
 					save_vgen = e->vgen;
 
 					if (e->vgen == q->vgen) {
