@@ -1417,16 +1417,17 @@ static bool dcg_expansion(parser *p)
 	query *q = query_create(p->m, false);
 	check_error(q);
 
-	cell *tmp = alloc_on_heap(q, 1+p->cl->cells->nbr_cells+1+1);
-	make_struct(tmp, index_from_pool(p->pl, "dcg_translate"), NULL, 2, p->cl->cells->nbr_cells+1);
-	safe_copy_cells(tmp+1, p->cl->cells, p->cl->cells->nbr_cells);
-	make_var(tmp+1+p->cl->cells->nbr_cells, g_anon_s, p->cl->nbr_vars);
-	make_end(tmp+1+p->cl->cells->nbr_cells+1);
+	cell *c = p->cl->cells;
+	cell *tmp = alloc_on_heap(q, 1+c->nbr_cells+1+1);
+	make_struct(tmp, index_from_pool(p->pl, "dcg_translate"), NULL, 2, c->nbr_cells+1);
+	safe_copy_cells(tmp+1, p->cl->cells, c->nbr_cells);
+	make_var(tmp+1+c->nbr_cells, g_anon_s, p->cl->nbr_vars);
+	make_end(tmp+1+c->nbr_cells+1);
 	execute(q, tmp, p->cl->nbr_vars+1);
 
 	cell *arg1 = tmp + 1;
 	cell *arg2 = arg1 + arg1->nbr_cells;
-	cell *c = deref(q, arg2, 0);
+	c = deref(q, arg2, 0);
 	char *src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
 	strcat(src, ".");
 	query_destroy(q);
