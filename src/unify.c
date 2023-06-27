@@ -8,6 +8,7 @@ static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_id
 
 static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
 {
+	unsigned cnt = 0;
 	LIST_HANDLER(p1);
 	LIST_HANDLER(p2);
 
@@ -96,10 +97,14 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 		if (both == 2)
 			return 0;
 
+		if (both && (cnt > MAX_DEPTH))		// HACK
+			return 0;
+
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
 		p2 = deref(q, p2, p2_ctx);
 		p2_ctx = q->latest_ctx;
+		cnt++;
 	}
 
 	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1);
@@ -120,6 +125,7 @@ static int compare_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 
 		slot *e1 = NULL, *e2 = NULL;
 		pl_idx_t c1_ctx = p1_ctx, c2_ctx = p2_ctx;
+		uint64_t save_vgen1 = 0, save_vgen2 = 0;
 		cell *c1 = p1, *c2 = p2;
 		int both = 0;
 
@@ -129,6 +135,7 @@ static int compare_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 
 			const frame *f1 = GET_FRAME(c1_ctx);
 			e1 = GET_SLOT(f1, c1->var_nbr);
+			save_vgen1 = e1->vgen;
 
 			if (e1->vgen == q->vgen)
 				both++;
@@ -142,6 +149,7 @@ static int compare_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 
 			const frame *f2 = GET_FRAME(c2_ctx);
 			e2 = GET_SLOT(f2, c2->var_nbr);
+			save_vgen2 = e2->vgen2;
 
 			if (e2->vgen2 == q->vgen)
 				both++;
@@ -156,11 +164,16 @@ static int compare_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 			c2_ctx = q->latest_ctx;
 
 			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
+			if (e1) e1->vgen = save_vgen1;
+			if (e2) e2->vgen2 = save_vgen2;
 			if (val) return val;
-
-			if (e1) e1->vgen = 0;
-			if (e2) e2->vgen2 = 0;
 		} else if (both == 1)
+			break;
+
+		if (e1) e1->vgen = save_vgen1;
+		if (e2) e2->vgen2 = save_vgen2;
+
+		if (both && q->cycle_error)		// HACK
 			break;
 
 		p1 += p1->nbr_cells;
@@ -174,7 +187,7 @@ static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_id
 {
 	if (depth >= MAX_DEPTH) {
 		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
-		//q->cycle_error = true;
+		q->cycle_error = true;
 		return 0;
 	}
 
