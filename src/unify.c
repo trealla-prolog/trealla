@@ -670,6 +670,7 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned d
 			if (e->vgen == q->vgen)
 				return true;
 
+			e->vgen2 = e->vgen;
 			e->vgen = q->vgen;
 			p1 = deref(q, p1, p1_ctx);
 			p1_ctx = q->latest_ctx;
@@ -693,7 +694,7 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned d
 
 			const frame *f = GET_FRAME(c_ctx);
 			slot *e = GET_SLOT(f, c->var_nbr);
-			e->vgen = 0;
+			e->vgen = e->vgen2;
 			p1 = deref(q, p1, p1_ctx);
 			p1_ctx = q->latest_ctx;
 		}
@@ -717,7 +718,6 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigne
 		return is_cyclic_term_lists(q, p1, p1_ctx, depth);
 
 	unsigned arity = p1->arity;
-	const frame *f = GET_FRAME(p1_ctx);
 	p1++;
 
 	while (arity--) {
@@ -731,6 +731,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigne
 			if (is_ref(c))
 				c_ctx = c->var_ctx;
 
+			const frame *f = GET_FRAME(c_ctx);
 			slot *e = GET_SLOT(f, c->var_nbr);
 
 			if (e->vgen == q->vgen)
