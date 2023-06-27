@@ -3562,6 +3562,9 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 		if (!tokenize(p, false, false))
 			break;
 
+		if (!p->cl->cidx)
+			break;
+
 		if (!p->error && !p->end_of_term && !p->run_init) {
 			fprintf(stdout, "Error: syntax error, missing operand or operator, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 			p->error = true;
