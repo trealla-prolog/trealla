@@ -9,15 +9,13 @@ static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_id
 static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
 {
 	unsigned cnt = 0;
-	LIST_HANDLER(p1);
-	LIST_HANDLER(p2);
 
 	while (is_iso_list(p1) && is_iso_list(p2)) {
 		if (g_tpl_interrupt)
 			return -1;
 
-		cell *h1 = LIST_HEAD(p1);
-		cell *h2 = LIST_HEAD(p2);
+		cell *h1 = p1 + 1;
+		cell *h2 = p2 + 1;
 		pl_idx_t h1_ctx = p1_ctx, h2_ctx = p2_ctx;
 
 		slot *e1 = NULL, *e2 = NULL;
@@ -44,7 +42,7 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 
 			const frame *f2 = GET_FRAME(h2_ctx);
 			e2 = GET_SLOT(f2, h2->var_nbr);
-			save_vgen2 = e2->vgen;
+			save_vgen2 = e2->vgen2;
 
 			if (e2->vgen2 == q->vgen)
 				both++;
@@ -64,8 +62,8 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 		if (e1) e1->vgen = save_vgen1;
 		if (e2) e2->vgen2 = save_vgen2;
 
-		p1 = LIST_TAIL(p1);
-		p2 = LIST_TAIL(p2);
+		p1 = p1 + 1; p1 += p1->nbr_cells;
+		p2 = p2 + 1; p2 += p2->nbr_cells;
 		both = 0;
 
 		if (is_var(p1)) {
@@ -98,7 +96,7 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 			return 0;
 
 		if (both && (cnt > MAX_DEPTH))		// HACK
-			return 0;
+			break;
 
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
@@ -1285,7 +1283,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 		}
 
 		if (both == 2)
-			break;
+			return true;
 
 		if (both && (cnt > MAX_DEPTH))		// HACK
 			break;
