@@ -476,9 +476,10 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned 
 				accum_var(q, c, c_ctx);
 
 			if (!is_var(c) && (e->vgen != q->vgen)) {
+				uint64_t save_vgen = e->vgen;
 				e->vgen = q->vgen;
 				collect_vars_internal(q, c, c_ctx, depth+1);
-				e->vgen = 0;
+				e->vgen = save_vgen;
 			}
 		} else {
 			collect_vars_internal(q, c, c_ctx, depth+1);
@@ -737,6 +738,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigne
 			if (e->vgen == q->vgen)
 				return true;
 
+			uint64_t save_vgen = e->vgen;
 			e->vgen = q->vgen;
 			c = deref(q, c, c_ctx);
 			c_ctx = q->latest_ctx;
@@ -744,7 +746,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigne
 			if (is_cyclic_term_internal(q, c, c_ctx, depth+1))
 				return true;
 
-			e->vgen = 0;
+			e->vgen = save_vgen;
 		} else {
 			if (is_cyclic_term_internal(q, c, c_ctx, depth+1))
 				return true;
