@@ -1344,7 +1344,7 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 				return false;
 		}
 
-		if ((both == 1) && q->cycle_error)		// HACK
+		if (both && q->cycle_error)		// HACK
 			break;
 
 		if (e1) e1->vgen = save_vgen1;
