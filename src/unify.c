@@ -1344,6 +1344,9 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 				return false;
 		}
 
+		if ((both == 1) && q->cycle_error)		// HACK
+			break;
+
 		if (e1) e1->vgen = save_vgen1;
 		if (e2) e2->vgen2 = save_vgen2;
 
@@ -1358,7 +1361,7 @@ static bool unify_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 {
 	if (depth > MAX_DEPTH) {
 		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
-		//q->cycle_error = true;
+		q->cycle_error = true;
 		return true;
 	}
 
