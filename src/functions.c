@@ -18,6 +18,7 @@
 	q->accum.tag = TAG_INTEGER;										\
 	q->accum.flags = FLAG_MANAGED;								\
 	q->accum.val_bigint = malloc(sizeof(bigint));				\
+	check_heap_error(q->accum.val_bigint);						\
 	if (errno == ENOMEM)										\
 		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
 	q->accum.val_bigint->refcnt = 0;							\
@@ -34,6 +35,7 @@
 	q->accum.tag = TAG_INTEGER;										\
 	q->accum.flags = FLAG_MANAGED;								\
 	q->accum.val_bigint = malloc(sizeof(bigint));				\
+	check_heap_error(q->accum.val_bigint);						\
 	if (errno == ENOMEM)										\
 		return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory"); \
 	q->accum.val_bigint->refcnt = 0;							\
@@ -51,6 +53,7 @@
 		q->accum.tag = TAG_RATIONAL;										\
 		q->accum.flags = FLAG_MANAGED;								\
 		q->accum.val_bigint = malloc(sizeof(bigint));				\
+		check_heap_error(q->accum.val_bigint);						\
 		if (errno == ENOMEM)										\
 			return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
 		q->accum.val_bigint->refcnt = 0;							\
@@ -61,6 +64,7 @@
 		q->accum.tag = TAG_INTEGER;										\
 		q->accum.flags = FLAG_MANAGED;								\
 		q->accum.val_bigint = malloc(sizeof(bigint));				\
+		check_heap_error(q->accum.val_bigint);						\
 		if (errno == ENOMEM)										\
 			return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
 		q->accum.val_bigint->refcnt = 0;							\
@@ -535,6 +539,7 @@ static bool fn_numerator_1(query *q)
 	q->accum.tag = TAG_INTEGER;
 	q->accum.flags = FLAG_MANAGED;
 	q->accum.val_bigint = malloc(sizeof(bigint));
+	check_heap_error(q->accum.val_bigint);						\
 	mp_int_init_copy(&q->accum.val_bigint->ival, &p1.val_bigint->irat.num);
 	q->accum.val_bigint->refcnt = 0;
 	return true;
@@ -559,6 +564,7 @@ static bool fn_denominator_1(query *q)
 	q->accum.tag = TAG_INTEGER;
 	q->accum.flags = FLAG_MANAGED;
 	q->accum.val_bigint = malloc(sizeof(bigint));
+	check_heap_error(q->accum.val_bigint);						\
 	mp_int_init_copy(&q->accum.val_bigint->ival, &p1.val_bigint->irat.den);
 	q->accum.val_bigint->refcnt = 0;
 	return true;

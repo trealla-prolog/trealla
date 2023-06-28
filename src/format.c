@@ -18,7 +18,9 @@ static int format_integer(char *dst, cell *c, int grouping, int sep, int decimal
 	} else {
 		size_t len = mp_int_string_len(&c->val_bigint->ival, radix) - 1;
 		tmpbuf1 = malloc(len+1);
+		check_error(tmpbuf1);
 		tmpbuf2 = malloc(len+1);
+		check_error(tmpbuf2);
 		mp_int_to_string(&c->val_bigint->ival, radix, tmpbuf1, len+1);
 	}
 

@@ -209,6 +209,7 @@ static void consultall(parser *p, cell *l)
 char *relative_to(const char *basefile, const char *relfile)
 {
 	char *tmpbuf = malloc(strlen(basefile) + strlen(relfile) + 256);
+	check_error(tmpbuf);
 	char *ptr = tmpbuf;
 
 	if (!strncmp(relfile, "../", 3)) {
@@ -2118,6 +2119,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 		if (mp_int_to_int(&v2, &val) == MP_RANGE) {
 			p->v.val_bigint = malloc(sizeof(bigint));
+			check_error(p->v.val_bigint);
 			p->v.val_bigint->refcnt = 1;
 			mp_int_init_copy(&p->v.val_bigint->ival, &v2);
 			if (neg) p->v.val_bigint->ival.sign = MP_NEG;
@@ -2141,6 +2143,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 		if (mp_int_to_int(&v2, &val) == MP_RANGE) {
 			p->v.val_bigint = malloc(sizeof(bigint));
+			check_error(p->v.val_bigint);
 			p->v.val_bigint->refcnt = 1;
 			mp_int_init_copy(&p->v.val_bigint->ival, &v2);
 			if (neg) p->v.val_bigint->ival.sign = MP_NEG;
@@ -2164,6 +2167,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 		if (mp_int_to_int(&v2, &val) == MP_RANGE) {
 			p->v.val_bigint = malloc(sizeof(bigint));
+			check_error(p->v.val_bigint);
 			p->v.val_bigint->refcnt = 1;
 			mp_int_init_copy(&p->v.val_bigint->ival, &v2);
 			if (neg) p->v.val_bigint->ival.sign = MP_NEG;
@@ -2224,6 +2228,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 	if (mp_int_to_int(&v2, &val) == MP_RANGE) {
 		p->v.val_bigint = malloc(sizeof(bigint));
+		check_error(p->v.val_bigint);
 		p->v.val_bigint->refcnt = 1;
 		mp_int_init_copy(&p->v.val_bigint->ival, &v2);
 		if (neg) p->v.val_bigint->ival.sign = MP_NEG;

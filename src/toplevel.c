@@ -224,6 +224,7 @@ static void	clear_results()
 static void add_result(int nbr, cell *c, pl_idx_t c_ctx)
 {
 	item *ptr = malloc(sizeof(item));
+	if (!ptr) return;
 	ptr->c = c;
 	ptr->c_ctx = c_ctx;
 	ptr->nbr = nbr;

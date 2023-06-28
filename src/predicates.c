@@ -3152,6 +3152,7 @@ static cell *nodesort(query *q, cell *p1, pl_idx_t p1_ctx, bool dedup, bool keys
 	unshare_cell(&tmp);
 	size_t cnt = skip;
 	basepair *base = malloc(sizeof(basepair)*cnt);
+	check_error(base);
 	LIST_HANDLER(p1);
 		size_t idx = 0;
 
@@ -3347,6 +3348,7 @@ static cell *nodesort4(query *q, cell *p1, pl_idx_t p1_ctx, bool dedup, bool asc
 	unshare_cell(&tmp);
 	size_t cnt = skip;
 	basepair *base = malloc(sizeof(basepair)*cnt);
+	check_error(base);
 	LIST_HANDLER(p1);
 	size_t idx = 0;
 
@@ -3932,7 +3934,7 @@ static bool fn_load_all_modules_0(query *q)
 	for (library *lib = g_libs; lib->name; lib++) {
 		size_t len = *lib->len;
 		char *src = malloc(len+1);
-		check_error(src, pl_destroy(pl));
+		check_error(src);
 		memcpy(src, lib->start, len);
 		src[len] = '\0';
 		SB(s1);
@@ -6068,6 +6070,7 @@ static bool fn_hex_chars_2(query *q)
 		if (is_bigint(p1)) {
 			size_t len = mp_int_string_len(&p1->val_bigint->ival, 16) -1;
 			dst = malloc(len+10);
+			check_heap_error(dst);
 			mp_int_to_string(&p1->val_bigint->ival, 16, dst, len+1);
 		} else {
 			snprintf(tmpbuf, sizeof(tmpbuf), "%"PRIx64"", (uint64_t)get_smallint(p1));
@@ -6093,6 +6096,7 @@ static bool fn_hex_chars_2(query *q)
 	if (mp_int_to_int(&v2, &val) == MP_RANGE) {
 		tmp.tag = TAG_INTEGER;
 		tmp.val_bigint = malloc(sizeof(bigint));
+		check_heap_error(tmp.val_bigint);
 		tmp.val_bigint->refcnt = 1;
 		mp_int_init_copy(&tmp.val_bigint->ival, &v2);
 		tmp.flags |= FLAG_MANAGED;
@@ -6121,6 +6125,7 @@ static bool fn_octal_chars_2(query *q)
 		if (is_bigint(p1)) {
 			size_t len = mp_int_string_len(&p1->val_bigint->ival, 8) -1;
 			dst = malloc(len+10);
+			check_heap_error(dst);
 			mp_int_to_string(&p1->val_bigint->ival, 8, dst, len+1);
 		} else {
 			snprintf(tmpbuf, sizeof(tmpbuf), "%"PRIo64"", (uint64_t)get_smallint(p1));
@@ -6146,6 +6151,7 @@ static bool fn_octal_chars_2(query *q)
 	if (mp_int_to_int(&v2, &val) == MP_RANGE) {
 		tmp.tag = TAG_INTEGER;
 		tmp.val_bigint = malloc(sizeof(bigint));
+		check_heap_error(tmp.val_bigint);
 		tmp.val_bigint->refcnt = 1;
 		mp_int_init_copy(&tmp.val_bigint->ival, &v2);
 		tmp.flags |= FLAG_MANAGED;
@@ -7485,6 +7491,7 @@ static bool fn_sre_compile_2(query *q)
 	tmp.flags = FLAG_MANAGED | FLAG_BLOB_SRE;
 	tmp.nbr_cells = 1;
 	tmp.val_blob = malloc(sizeof(blob));
+	check_heap_error(tmp.val_blob);
 	tmp.val_blob->ptr = (void*)reg;
 	tmp.val_blob->ptr2 = (void*)buf;
 	tmp.val_blob->refcnt = 1;

@@ -36,7 +36,7 @@ cell *string_to_chars_list(query *q, cell *p, pl_idx_t p_ctx)
 char *chars_list_to_string(query *q, cell *p_chars, pl_idx_t p_chars_ctx, size_t len)
 {
 	char *tmp = malloc(len+1+1);
-	ensure(tmp);
+	check_error(tmp);
 	char *dst = tmp;
 	LIST_HANDLER(p_chars);
 
@@ -1309,7 +1309,7 @@ char *print_canonical_to_strbuf(query *q, cell *c, pl_idx_t c_ctx, int running)
 	q->did_quote = false;
 	ssize_t len = print_term_to_buf(q, NULL, 0, c, c_ctx, running, false, 1);
 	char *buf = malloc(len*2+1);
-	ensure(buf, clear_write_options(q));
+	check_error(buf, clear_write_options(q));
 	q->last_thing_was_symbol = false;
 	q->did_quote = false;
 	len = print_term_to_buf(q, buf, len+1, c, c_ctx, running, false, 0);
@@ -1425,7 +1425,7 @@ char *print_term_to_strbuf(query *q, cell *c, pl_idx_t c_ctx, int running)
 	}
 
 	char *buf = malloc(len*2+1);
-	ensure(buf, clear_write_options(q));
+	check_error(buf, clear_write_options(q));
 	q->vgen++;
 	q->last_thing_was_symbol = false;
 	q->did_quote = false;

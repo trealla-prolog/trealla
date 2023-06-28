@@ -139,6 +139,7 @@ static const char *set_known(module *m, const char *filename)
 	}
 
 	ptr = malloc(sizeof(*ptr));
+	check_error(ptr);
 	ptr->next = m->loaded_files;
 	ptr->orig_filename = strdup(filename);
 	ptr->filename = strdup(filename);
@@ -162,6 +163,7 @@ static const char *set_loaded(module *m, const char *filename, const char *orig_
 	}
 
 	ptr = malloc(sizeof(*ptr));
+	check_error(ptr);
 	ptr->next = m->loaded_files;
 	ptr->orig_filename = strdup(orig_filename);
 	ptr->filename = strdup(filename);
@@ -970,6 +972,7 @@ bool set_op(module *m, const char *name, unsigned specifier, unsigned priority)
 
 	map_done(iter);
 	op_table *tmp = malloc(sizeof(op_table));
+	check_error(tmp);
 	tmp->name = set_known(m, name);
 	tmp->priority = priority;
 	tmp->specifier = specifier;
@@ -1692,6 +1695,7 @@ bool unload_file(module *m, const char *filename)
 	//printf("*** unload_file '%s'\n", filename);
 	size_t len = strlen(filename);
 	char *tmpbuf = malloc(len + 20);
+	check_error(tmpbuf);
 	memcpy(tmpbuf, filename, len+1);
 
 	if (tmpbuf[0] == '~') {
@@ -1699,6 +1703,7 @@ bool unload_file(module *m, const char *filename)
 
 		if (ptr) {
 			tmpbuf = realloc(tmpbuf, strlen(ptr) + 10 + strlen(filename) + 20);
+			check_error(tmpbuf);
 			strcpy(tmpbuf, ptr);
 			strcat(tmpbuf, filename+1);
 			convert_path(tmpbuf);
@@ -1841,6 +1846,7 @@ module *load_file(module *m, const char *filename, bool including)
 
 	size_t len = strlen(filename);
 	char *tmpbuf = malloc(len + 20);
+	check_error(tmpbuf);
 	memcpy(tmpbuf, filename, len+1);
 
 	if (tmpbuf[0] == '~') {
@@ -1848,6 +1854,7 @@ module *load_file(module *m, const char *filename, bool including)
 
 		if (ptr) {
 			tmpbuf = realloc(tmpbuf, strlen(ptr) + 10 + strlen(filename) + 20);
+			check_error(tmpbuf);
 			strcpy(tmpbuf, ptr);
 			strcat(tmpbuf, filename+1);
 			convert_path(tmpbuf);
@@ -1905,6 +1912,7 @@ module *load_file(module *m, const char *filename, bool including)
 
 	if ((st.st_mode & S_IFMT) == S_IFDIR) {
 		char *tmpbuf = malloc(strlen(orig_filename)+20);
+		check_error(tmpbuf);
 		strcpy(tmpbuf, orig_filename);
 		strcat(tmpbuf, ".pl");
 		m = load_file(m, tmpbuf, including);
@@ -2058,6 +2066,7 @@ module *module_create(prolog *pl, const char *name)
 	if (strcmp(name, "system")) {
 		for (const op_table *ptr = g_ops; ptr->name; ptr++) {
 			op_table *tmp = malloc(sizeof(op_table));
+			check_error(tmp);
 			memcpy(tmp, ptr, sizeof(op_table));
 			map_app(m->defops, tmp->name, tmp);
 		}

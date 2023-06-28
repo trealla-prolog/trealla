@@ -384,7 +384,8 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
 
     if (*lineptr == NULL) {
         *lineptr = malloc(128);
-        if (*lineptr == NULL) {
+ 		check_error(*lineptr);
+       if (*lineptr == NULL) {
             return -1;
         }
         *n = 128;
@@ -7242,8 +7243,8 @@ builtins g_files_bifs[] =
 	{"redo", 2, fn_edin_redo_2, "+stream,+integer", false, false, BLAH},
 	{"tab", 1, fn_edin_tab_1, "+integer", false, false, BLAH},
 	{"tab", 2, fn_edin_tab_2, "+stream,+integer", false, false, BLAH},
-	{"portray_clause", 1, fn_sys_portray_clause_1, "+term", false, false, BLAH},
-	{"portray_clause", 2, fn_sys_portray_clause_2, "+stream,+term", false, false, BLAH},
+	{"$portray_clause", 1, fn_sys_portray_clause_1, "+term", false, false, BLAH},
+	{"$portray_clause", 2, fn_sys_portray_clause_2, "+stream,+term", false, false, BLAH},
 
 	// Other...
 

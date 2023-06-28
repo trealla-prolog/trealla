@@ -356,11 +356,13 @@ bool accum_var(query *q, const cell *c, pl_idx_t c_ctx)
 	if (!q->pl->tabs) {
 		q->pl->tabs_size = 4000;
 		q->pl->tabs = malloc(sizeof(var_item)*q->pl->tabs_size);
+		check_error(!q->pl->tabs);
 	}
 
 	if (q->tab_idx == q->pl->tabs_size) {
 		q->pl->tabs_size *= 2;
 		q->pl->tabs = realloc(q->pl->tabs, sizeof(var_item)*q->pl->tabs_size);
+		check_error(!q->pl->tabs);
 	}
 
 	q->pl->tabs[q->tab_idx].ctx = c_ctx;
@@ -964,7 +966,7 @@ bool fn_sys_undo_trail_1(query *q)
 	}
 
 	q->save_e = malloc(sizeof(slot)*(q->undo_hi_tp - q->undo_lo_tp));
-	check_heap_error(q->save_e);
+	check_error(q->save_e);
 	bool first = true;
 
 	// Unbind our vars
