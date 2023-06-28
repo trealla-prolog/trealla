@@ -7152,12 +7152,13 @@ static bool fn_sys_portray_clause_1(query *q)
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
 	q->quoted = 1;
-	q->listing = q->numbervars = q->is_dump_vars = q->portray_vars = true;
+	q->portray_vars = true;
+	q->print_idx = 0;
 	print_term(q, str->fp, p1, p1_ctx, 1);
 	fputc('.', str->fp);
 	fputc('\n', str->fp);
 	q->quoted = 0;
-	q->listing = q->numbervars = q->is_dump_vars = q->portray_vars = false;
+	q->portray_vars = false;
 	return true;
 }
 
@@ -7168,12 +7169,13 @@ static bool fn_sys_portray_clause_2(query *q)
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,any);
 	q->quoted = 1;
-	q->listing = q->numbervars = q->is_dump_vars = q->portray_vars = true;
+	q->portray_vars = true;
+	q->print_idx = 0;
 	print_term(q, str->fp, p1, p1_ctx, 1);
 	fputc('.', str->fp);
 	fputc('\n', str->fp);
 	q->quoted = 0;
-	q->listing = q->numbervars = q->is_dump_vars = q->portray_vars = false;
+	q->portray_vars = false;
 	return true;
 }
 
