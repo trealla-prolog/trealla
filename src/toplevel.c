@@ -54,16 +54,12 @@ int check_interrupt(query *q)
 #endif
 
 		if (ch == 'h') {
-			printf("Action (#digit), (e)nd, e(x)it, (r)etry, (c)ontinue, (t)race, cree(p): ");
+			printf("Action (#digit), (e)xit, (a)bort, (;)retry, (c)ontinue, (t)race: ");
 			goto LOOP;
 		}
 
-		if (ch == 't') {
-			q->trace = !q->trace;
-			break;
-		}
 
-		if (ch == 'p') {
+		if (ch == 't') {
 			q->trace = q->creep = !q->creep;
 			break;
 		}
@@ -79,7 +75,7 @@ int check_interrupt(query *q)
 		}
 
 #ifndef __wasi__
-		if ((ch == '\n') || (ch == 'e')) {
+		if ((ch == '\n') || (ch == 'a')) {
 			//printf(";  ... .\n");
 			printf("  ... .\n");
 			q->is_redo = true;
@@ -90,7 +86,7 @@ int check_interrupt(query *q)
 		}
 #endif
 
-		if (ch == 'x') {
+		if (ch == 'e') {
 			if (!q->run_init)
 				printf("\n");
 
@@ -144,7 +140,7 @@ bool check_redo(query *q)
 		int ch = history_getch();
 
 		if ((ch == 'h') || (ch == '?')) {
-			printf("Action (#digit), (a)ll, (e)nd, e(x)it, (r)etry, (e)nd:\n");
+			printf("Action (#digit), (a)ll, (a)bort, (e)x)it, (;)retry, (t)race:\n");
 			fflush(stdout);
 			continue;
 		}
