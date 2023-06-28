@@ -940,7 +940,7 @@ bool push_choice(query *q)
 
 bool push_barrier(query *q)
 {
-	check_error(push_choice(q));
+	check_heap_error(push_choice(q));
 	frame *f = GET_CURR_FRAME();
 	choice *ch = GET_CURR_CHOICE();
 	ch->cgen = f->cgen = ++q->cgen;
@@ -952,7 +952,7 @@ bool push_barrier(query *q)
 
 bool push_catcher(query *q, enum q_retry retry)
 {
-	check_error(push_barrier(q));
+	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->catcher = true;
 
@@ -1903,10 +1903,10 @@ query *query_create(module *m, bool is_task)
 	q->trails_size = is_task ? INITIAL_NBR_TRAILS/10 : INITIAL_NBR_TRAILS;
 
 	bool error = false;
-	CHECK_SENTINEL(q->frames = calloc(q->frames_size, sizeof(frame)), NULL);
-	CHECK_SENTINEL(q->slots = calloc(q->slots_size, sizeof(slot)), NULL);
-	CHECK_SENTINEL(q->choices = calloc(q->choices_size, sizeof(choice)), NULL);
-	CHECK_SENTINEL(q->trails = calloc(q->trails_size, sizeof(trail)), NULL);
+	ensure(q->frames = calloc(q->frames_size, sizeof(frame)), NULL);
+	ensure(q->slots = calloc(q->slots_size, sizeof(slot)), NULL);
+	ensure(q->choices = calloc(q->choices_size, sizeof(choice)), NULL);
+	ensure(q->trails = calloc(q->trails_size, sizeof(trail)), NULL);
 
 	// Allocate these later as needed...
 
