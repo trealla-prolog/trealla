@@ -64,7 +64,7 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define MAX_ARITY UINT8_MAX
 #define MAX_IF_DEPTH 255
 #define MAX_VARS 1024
-#define MAX_QUEUES 16
+#define MAX_QUEUES 255
 #define MAX_STREAMS 1024
 #define MAX_MODULES 1024
 //#define MAX_DEPTH 9999

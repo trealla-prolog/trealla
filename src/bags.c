@@ -39,7 +39,10 @@ bool fn_iso_findall_3(query *q)
 		GET_NEXT_ARG(p2,any);
 
 		grab_queuen(q);
-		assert(q->st.qnbr < MAX_QUEUES);
+
+		if (q->st.qnbr == MAX_QUEUES)
+			return throw_error(q, xp2, xp2_ctx, "resource_error", "max_queues");
+
 		cell *tmp = clone_to_heap(q, true, p2, 1+p1->nbr_cells+2);
 		check_heap_error(tmp);
 		pl_idx_t nbr_cells = 1 + p2->nbr_cells;
