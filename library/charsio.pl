@@ -1,8 +1,7 @@
 :- module(charsio, [
 	read_line_to_chars/3,
 	get_n_chars/3,
-	read_from_chars/2,
-	fabricate_var_name/3
+	read_from_chars/2
     ]).
 
 read_from_chars(Cs, T) :-
@@ -33,4 +32,3 @@ fabricate_var_name(VarType, VarName, N) :-
           atom_chars(VarName, [LC | NNChars])
        )
     ).
-
