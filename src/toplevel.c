@@ -55,13 +55,11 @@ int check_interrupt(query *q)
 
 		if (ch == 'h') {
 			printf("Action:\n"
+				"\tENTER     abort        - abort current query\n"
 				"\ta         abort        - abort current query\n"
 				"\tc         continue     - resume current query\n"
 				"\te         exit         - exit top-level\n"
 				"\tt         trace        - toggle tracing (creeping)\n"
-				"\t;         next         - display next solution\n"
-				"\t#         digit        - display # solutions\n"
-				"\tENTER     all          - display all solutions\n"
 				"\th         help         - display this help\n"
 				"");
 			goto LOOP;
@@ -150,13 +148,12 @@ bool check_redo(query *q)
 
 		if ((ch == 'h') || (ch == '?')) {
 			printf("Action:\n"
-				"\ta         abort        - abort current query\n"
-				"\tc         continue     - resume current query\n"
+				"\tENTER     abort        - abort current query\n"
 				"\te         exit         - exit top-level\n"
 				"\tt         trace        - toggle tracing (creeping)\n"
 				"\t;         next         - display next solution\n"
 				"\t#         digit        - display # solutions\n"
-				"\tENTER     all          - display all solutions\n"
+				"\ta         all          - display all solutions\n"
 				"\th         help         - display this help\n"
 			"");
 			fflush(stdout);
@@ -167,7 +164,7 @@ bool check_redo(query *q)
 	printf(" ");
 #endif
 
-		if ((ch == '\n') || isdigit(ch)) {
+		if ((ch == 'a') || isdigit(ch)) {
 			printf(" ");
 			fflush(stdout);
 			q->is_redo = true;
@@ -188,10 +185,10 @@ bool check_redo(query *q)
 		}
 
 #ifndef __wasi__
-		if ((ch == '\n') || (ch == 'a')) {
+		if (ch == '\n') {
 #else
 		// WASI always sends buffered input with a linebreak, so use '.' instead
-		if ((ch == '.') || (ch == 'a')) {
+		if (ch == '.') {
 #endif
 			//printf(";  ... .\n");
 			printf("  ... .\n");
