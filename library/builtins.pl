@@ -678,9 +678,6 @@ portray_clause(T) :-
 portray_clause(S, T) :-
 	'$portray_clause'(S, T).
 
-write_term_to_chars(Cs, T, Opts) :-
-	'$write_term_to_chars'(Cs, T, Opts).
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SWI compatible
 %

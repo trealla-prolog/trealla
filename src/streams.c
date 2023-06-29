@@ -2579,9 +2579,6 @@ bool parse_write_params(query *q, cell *c, pl_idx_t c_ctx, cell **vnames, pl_idx
 			return false;
 		}
 
-		if (vnames && *vnames)
-			return true;
-
 		cell *c1_orig = c1;
 		pl_idx_t c1_orig_ctx = c1_ctx;
 		LIST_HANDLER(c1);
@@ -7292,7 +7289,7 @@ builtins g_files_bifs[] =
 	{"$read_term_from_chars", 4, fn_sys_read_term_from_chars_4, "?term,+list,+character_list,-character_list", false, false, BLAH},
 	{"write_term_to_atom", 3, fn_write_term_to_atom_3, "?atom,?term,+list", false, false, BLAH},
 	{"write_canonical_to_atom", 3, fn_write_canonical_to_chars_3, "?atom,?term,+list", false, false, BLAH},
-	{"$write_term_to_chars", 3, fn_write_term_to_chars_3, "?term,+list,?character_list", false, false, BLAH},
+	{"write_term_to_chars", 3, fn_write_term_to_chars_3, "?term,+list,?character_list", false, false, BLAH},
 	{"write_canonical_to_chars", 3, fn_write_canonical_to_chars_3, "?character_list,?term,+list", false, false, BLAH},
 	{"read_line_to_string", 2, fn_read_line_to_string_2, "+stream,-character_list", false, false, BLAH},
 	{"read_file_to_string", 3, fn_read_file_to_string_3, "+atom,-string,+options", false, false, BLAH},
