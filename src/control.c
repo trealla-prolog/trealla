@@ -699,6 +699,9 @@ bool find_exception_handler(query *q, char *ball)
 	else
 		fprintf(stdout, "  ");
 
+	if (q->run_init)
+		fprintf(stdout, "\rWarning: Initialization goal exception: ");
+
 	//if (!q->run_init/*!is_interned(e) || strcmp(C_STR(q, e), "error")*/)
 	//	fprintf(stdout, "throw(");
 
