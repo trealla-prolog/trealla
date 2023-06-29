@@ -1590,7 +1590,7 @@ bool start(query *q)
 				}
 			}
 
-			if (!status && !q->is_oom) {
+			if ((!status && !q->is_oom) || q->abort) {
 				q->retry = QUERY_RETRY;
 
 				if (q->yielded)

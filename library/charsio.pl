@@ -84,6 +84,5 @@ write_term_to_chars(Term, Options, Chars) :-
     term_variables(Term, Vars),
     memberchk(variable_names(VNNames), Options),
     extend_var_list(Vars, VNNames, NewVarNames, numbervars),
-    %write(['*** here1', VNNames, NewVarNames, Options]), nl,
     '$write_term_to_chars'(Term, [variable_names(NewVarNames)|Options], Chars).
 
