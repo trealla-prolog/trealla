@@ -54,7 +54,16 @@ int check_interrupt(query *q)
 #endif
 
 		if (ch == 'h') {
-			printf("Action:\n\ta\tabort      - abort\n\tc\tcontinue   - resume\n\te\texit       - exit top-level\n\tt\ttrace      - toggle tracing (creeping)\n\t#\tdigit      - display # solutions\n\t;\tall        - display all solutions\n\th\thelp       - display this help\n");
+			printf("Action:\n"
+				"\ta         abort        - abort current query\n"
+				"\tc         continue     - resume current query\n"
+				"\te         exit         - exit top-level\n"
+				"\tt         trace        - toggle tracing (creeping)\n"
+				"\t;         next         - display next solution\n"
+				"\t#         digit        - display # solutions\n"
+				"\tENTER     all          - display all solutions\n"
+				"\th         help         - display this help\n"
+				"");
 			goto LOOP;
 		}
 
@@ -140,7 +149,16 @@ bool check_redo(query *q)
 		int ch = history_getch();
 
 		if ((ch == 'h') || (ch == '?')) {
-			printf("Action:\n\ta\tabort      - abort\n\tc\tcontinue   - resume\n\te\texit       - exit top-level\n\tt\ttrace      - toggle tracing (creeping)\n\t#\tdigit      - display # solutions\n\t;\tall        - display all solutions\n\th\thelp       - display this help");
+			printf("Action:\n"
+				"\ta         abort        - abort current query\n"
+				"\tc         continue     - resume current query\n"
+				"\te         exit         - exit top-level\n"
+				"\tt         trace        - toggle tracing (creeping)\n"
+				"\t;         next         - display next solution\n"
+				"\t#         digit        - display # solutions\n"
+				"\tENTER     all          - display all solutions\n"
+				"\th         help         - display this help\n"
+			"");
 			fflush(stdout);
 			continue;
 		}
