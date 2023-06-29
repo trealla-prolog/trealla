@@ -54,7 +54,7 @@ int check_interrupt(query *q)
 #endif
 
 		if (ch == 'h') {
-			printf("Action (#digit), (e)xit, (a)bort, (;)retry, (c)ontinue, (t)race: ");
+			printf("Action:\n\ta\tabort      - abort\n\tc\tcontinue   - resume\n\te\texit       - exit top-level\n\tt\ttrace      - toggle tracing (creeping)\n\t#\tdigit      - display # solutions\n\t;\tall        - display all solutions\n\th\thelp       - display this help\n");
 			goto LOOP;
 		}
 
@@ -140,7 +140,7 @@ bool check_redo(query *q)
 		int ch = history_getch();
 
 		if ((ch == 'h') || (ch == '?')) {
-			printf("Action (#digit), (a)ll, (a)bort, (e)x)it, (;)retry, (t)race:\n");
+			printf("Action:\n\ta\tabort      - abort\n\tc\tcontinue   - resume\n\te\texit       - exit top-level\n\tt\ttrace      - toggle tracing (creeping)\n\t#\tdigit      - display # solutions\n\t;\tall        - display all solutions\n\th\thelp       - display this help");
 			fflush(stdout);
 			continue;
 		}
@@ -149,7 +149,7 @@ bool check_redo(query *q)
 	printf(" ");
 #endif
 
-		if ((ch == 'a') || isdigit(ch)) {
+		if ((ch == '\n') || isdigit(ch)) {
 			printf(" ");
 			fflush(stdout);
 			q->is_redo = true;
@@ -170,10 +170,10 @@ bool check_redo(query *q)
 		}
 
 #ifndef __wasi__
-		if ((ch == '\n') || (ch == 'e')) {
+		if ((ch == '\n') || (ch == 'a')) {
 #else
 		// WASI always sends buffered input with a linebreak, so use '.' instead
-		if ((ch == '.') || (ch == 'e')) {
+		if ((ch == '.') || (ch == 'a')) {
 #endif
 			//printf(";  ... .\n");
 			printf("  ... .\n");
@@ -184,7 +184,13 @@ bool check_redo(query *q)
 			break;
 		}
 
-		if (ch == 'x') {
+		if (isdigit(ch)) {
+			q->fail_on_retry = true;
+			q->autofail_n = isdigit(ch) ? (unsigned)ch - '0' : UINT_MAX;
+			break;
+		}
+
+		if (ch == 'e') {
 			if (!q->run_init)
 				printf("\n");
 
