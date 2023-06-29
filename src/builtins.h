@@ -111,6 +111,7 @@ inline static void init_queuen(query *q)
 	free(q->queue[q->st.qnbr]);
 	q->queue[q->st.qnbr] = NULL;
 	q->qp[q->st.qnbr] = 0;
+	q->qcnt[q->st.qnbr] = 0;
 }
 
 inline static void grab_queuen(query *q)

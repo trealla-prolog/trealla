@@ -554,6 +554,7 @@ cell *alloc_on_queuen(query *q, unsigned qnbr, const cell *c)
 
 	cell *dst = q->queue[qnbr] + q->qp[qnbr];
 	q->qp[qnbr] += safe_copy_cells(dst, c, c->nbr_cells);
+	q->qcnt[qnbr]++;
 	return dst;
 }
 

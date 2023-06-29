@@ -4521,11 +4521,23 @@ static bool fn_trace_0(query *q)
 static bool fn_statistics_0(query *q)
 {
 	fprintf(stdout,
-		"Goals %"PRIu64", Matches %"PRIu64", Max frames %u, choices %u, trails %u, slots %u, heap: %u.\nBacktracks %"PRIu64", TCOs:%"PRIu64", Recovered frames: %"PRIu64", slots: %"PRIu64"\n",
+		"Goals %"PRIu64", "
+		"Matches %"PRIu64", "
+		"Max frames %u, "
+		"choices %u, "
+		"trails %u, "
+		"slots %u, "
+		"heap: %u."
+		"\nBacktracks %"PRIu64", "
+		"TCOs:%"PRIu64", "
+		"Recovered frames: %"PRIu64", "
+		"slots: %"PRIu64", "
+		"Queue: %u"
+		"\n",
 		q->tot_goals, q->tot_matches,
 		q->hw_frames, q->hw_choices, q->hw_trails, q->hw_slots, q->st.hp,
 		q->tot_retries, q->tot_tcos,
-		q->tot_frecovs, q->tot_srecovs
+		q->tot_frecovs, q->tot_srecovs, (unsigned)q->qcnt[q->st.qnbr]
 		);
 	return true;
 }

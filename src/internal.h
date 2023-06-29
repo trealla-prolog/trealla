@@ -665,7 +665,7 @@ struct query_ {
 	pl_idx_t tmphp, latest_ctx, popp, variable_names_ctx;
 	pl_idx_t frames_size, slots_size, trails_size, choices_size;
 	pl_idx_t hw_choices, hw_frames, hw_slots, hw_trails;
-	pl_idx_t cp, before_hook_tp;
+	pl_idx_t cp, before_hook_tp, qcnt[MAX_QUEUES];
 	pl_idx_t h_size, tmph_size, tot_heaps, tot_heapsize, undo_lo_tp, undo_hi_tp;
 	pl_idx_t q_size[MAX_QUEUES], tmpq_size[MAX_QUEUES], qp[MAX_QUEUES];
 	prolog_flags flags;
