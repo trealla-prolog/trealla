@@ -930,7 +930,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 			return dst - save_dst;
 		}
 
-		if (is_var(c) && !is_anon(c) && q->variable_names) {
+		if (is_var(c) && q->variable_names) {
 			cell *l = q->variable_names;
 			pl_idx_t l_ctx = q->variable_names_ctx;
 			LIST_HANDLER(l);
@@ -940,10 +940,10 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 				h = running ? deref(q, h, l_ctx) : h;
 				pl_idx_t h_ctx = running ? q->latest_ctx : 0;
 				cell *name = running ? deref(q, h+1, h_ctx) : h+1;
-				cell *var = running ? deref(q, h+2, l_ctx) : h+2;
-				pl_idx_t tmp_ctx = running ? q->latest_ctx : l_ctx;
+				cell *var = running ? deref(q, h+2, h_ctx) : h+2;
+				pl_idx_t var_ctx = running ? q->latest_ctx : h_ctx;
 
-				if (is_var(var) && (var->var_nbr == c->var_nbr) && (tmp_ctx == c_ctx)) {
+				if (is_var(var) && (var->var_nbr == c->var_nbr) && (var_ctx == c_ctx)) {
 					dst += snprintf(dst, dstlen, "%s", C_STR(q, name));
 					q->last_thing_was_symbol = false;
 					q->was_space = false;
