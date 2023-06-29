@@ -21,15 +21,16 @@ fabricate_var_name(VarType, VarName, N) :-
     char_code(LC, LN),
     NN is N // 26,
     (  NN =:= 0 ->
-	( VarType == fabricated ->
-	    atom_chars(VarName, ['_', LC])
-	; VarType == numbervars ->
-	    atom_chars(VarName, [LC])
-	)
+       (  VarType == fabricated ->
+          atom_chars(VarName, ['_', LC])
+       ;  VarType == numbervars ->
+          atom_chars(VarName, [LC])
+       )
     ;  number_chars(NN, NNChars),
-	( VarType == fabricated ->
-	    atom_chars(VarName, ['_', LC | NNChars])
-	; VarType == numbervars ->
-	    atom_chars(VarName, [LC | NNChars])
-	)
+       (  VarType == fabricated ->
+          atom_chars(VarName, ['_', LC | NNChars])
+       ;  VarType == numbervars ->
+          atom_chars(VarName, [LC | NNChars])
+       )
     ).
+
