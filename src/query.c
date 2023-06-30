@@ -368,7 +368,11 @@ bool has_next_key(query *q)
 
 		cl = &next->cl;
 		cell *dkey = cl->cells;
-		cell *darg1 = dkey->val_off == g_neck_s ? dkey+1+1 : dkey+1;
+
+		if (dkey->val_off == g_neck_s)
+			dkey++;
+
+		cell *darg1 = dkey + 1;
 		cell *darg2 = dkey->arity > 1 ? darg1 + darg1->nbr_cells : NULL;
 
 		if (is_var(darg1) || (darg2 && is_var(darg2)))
