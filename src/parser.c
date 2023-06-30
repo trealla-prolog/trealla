@@ -2911,16 +2911,12 @@ unsigned tokenize(parser *p, bool args, bool consing)
 #endif
 
 		if (!p->quote_char
-			&& (SB_strcmp(p->token, ".") == 0)
-			&& !iswalpha(*p->srcptr)
-		    && (*p->srcptr != '"')
-		    && (*p->srcptr != '(')
+			&& !SB_strcmp(p->token, ".")
 		    && (*p->srcptr != ',')
-		    && (*p->srcptr != ';')
+		    && (*p->srcptr != '(')
 		    && (*p->srcptr != ')')
 		    && (*p->srcptr != ']')
 		    && (*p->srcptr != '}')
-		    && (*p->srcptr != '|')
 		    ) {
 
 			if (p->nesting_parens || p->nesting_brackets || p->nesting_braces) {
