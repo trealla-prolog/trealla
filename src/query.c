@@ -380,10 +380,7 @@ bool has_next_key(query *q)
 		//DUMP_TERM("key", q->st.key, q->st.key_ctx, 1);
 		//DUMP_TERM("next", cl->cells, q->st.curr_frame, 0);
 
-		if (is_var(karg1) || !is_atomic(karg1))
-			return true;
-
-		if (compare_keys(q, karg1, karg1_ctx, darg1, q->st.curr_frame) == 0)
+		if (index_cmpkey(karg1, darg1, q->st.m, NULL) == 0)
 			return true;
 	}
 
