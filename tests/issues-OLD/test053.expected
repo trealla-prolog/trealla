@@ -1,2 +1,2 @@
 1
-   error(type_error(atom,1),(=..)/2).
+   Warning: Initialization goal exception: error(type_error(atom,1),(=..)/2).

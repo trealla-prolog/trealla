@@ -1,1 +1,1 @@
-   error(existence_error(procedure,call/0),main/0).
+   Warning: Initialization goal exception: error(existence_error(procedure,call/0),main/0).
