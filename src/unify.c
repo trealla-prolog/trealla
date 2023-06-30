@@ -189,7 +189,7 @@ static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_id
 		return 0;
 	}
 
-	if (q->compare_keys && is_var(p1) && is_var(p2))
+	if (q->compare_keys && (is_var(p1) || is_var(p2)))
 		return 0;
 
 	if (is_var(p1)) {
