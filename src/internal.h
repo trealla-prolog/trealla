@@ -717,6 +717,7 @@ struct query_ {
 	bool was_space:1;
 	bool is_engine:1;
 	bool ops_dirty:1;
+	bool compare_keys:1;
 };
 
 struct parser_ {

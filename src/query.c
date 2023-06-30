@@ -297,9 +297,7 @@ static void setup_key(query *q)
 	if (arg3)
 		arg3 = deref(q, arg3, q->st.key_ctx);
 
-	if (is_atomic(arg1)
-		//!has_vars(q, arg1, arg1_ctx)
-		)
+	if (is_atomic(arg1) /*|| !has_vars(q, arg1, arg1_ctx*/)
 		q->st.arg1_is_ground = true;
 
 	if (arg2 && is_atomic(arg2))
@@ -369,8 +367,9 @@ bool has_next_key(query *q)
 			return true;
 
 		cl = &next->cl;
-		cell *darg1 = cl->cells->val_off == g_neck_s ? cl->cells+1+1 : cl->cells+1;
-		cell *darg2 = darg1 + darg1->nbr_cells;
+		cell *dkey = cl->cells;
+		cell *darg1 = dkey->val_off == g_neck_s ? dkey+1+1 : dkey+1;
+		cell *darg2 = dkey->arity > 1 ? darg1 + darg1->nbr_cells : NULL;
 
 		if (is_var(darg1) || (darg2 && is_var(darg2)))
 			return true;
@@ -384,7 +383,7 @@ bool has_next_key(query *q)
 		if (is_var(karg1) || !is_atomic(karg1))
 			return true;
 
-		if (compare(q, karg1, karg1_ctx, darg1, q->st.curr_frame) == 0)
+		if (compare_keys(q, karg1, karg1_ctx, darg1, q->st.curr_frame) == 0)
 			return true;
 	}
 

@@ -77,6 +77,7 @@ bool has_vars(query *q, cell *p1, pl_idx_t p1_ctx);
 bool accum_var(query *q, const cell *c, pl_idx_t c_ctx);
 bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx_t p2_ctx);
 
+int compare_keys(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx);
 int compare(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx);
 bool unify(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx);
 

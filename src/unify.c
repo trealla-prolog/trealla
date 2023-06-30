@@ -189,6 +189,9 @@ static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_id
 		return 0;
 	}
 
+	if (q->compare_keys && is_var(p1) && is_var(p2))
+		return 0;
+
 	if (is_var(p1)) {
 		if (is_var(p2)) {
 			if (p1_ctx < p2_ctx)
@@ -337,6 +340,16 @@ int compare(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx)
 	q->cycle_error = false;
 	q->vgen++;
 	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
+}
+
+int compare_keys(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx)
+{
+	q->compare_keys = true;
+	q->cycle_error = false;
+	q->vgen++;
+	int ok = compare_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
+	q->compare_keys = false;
+	return ok;
 }
 
 bool accum_var(query *q, const cell *c, pl_idx_t c_ctx)
