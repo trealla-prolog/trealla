@@ -693,7 +693,7 @@ static bool do_stream_property(query *q)
 
 	if (!CMP_STR_TO_CSTR(q, p1, "reposition")) {
 		cell tmp;
-		check_heap_error(make_cstring(&tmp, str->socket || (n <= 2) ? "false" : "true"));
+		check_heap_error(make_cstring(&tmp, str->socket || (n <= 2) ? "false" : str->repo ? "true" : "false"));
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		return ok;
@@ -1346,7 +1346,7 @@ static bool fn_iso_open_4(query *q)
 	check_heap_error(str->filename = strdup(filename));
 	if (!str->alias) str->alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	check_heap_error(str->mode = DUP_STR(q, p2));
-	bool binary = false, repo = false;
+	bool binary = false, repo = true;
 	uint8_t eof_action = eof_action_eof_code;
 	free(src);
 
@@ -3946,7 +3946,7 @@ static bool fn_iso_set_stream_position_2(query *q)
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,any);
 
-	if (!str->repo)
+	if (str->socket || (n <= 2) || !str->repo)
 		return throw_error(q, p1, p1_ctx, "permission_error", "reposition,stream");
 
 	if (!is_smallint(p1))
