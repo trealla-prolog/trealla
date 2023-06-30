@@ -2934,7 +2934,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 
 				p->error_desc = "incomplete_statement";
 				p->error = true;
-				return false;
+				return 0;
 			}
 
 			if (analyze(p, 0, last_op)) {
@@ -3006,10 +3006,10 @@ unsigned tokenize(parser *p, bool args, bool consing)
 						cell *h = LIST_HEAD(p1);
 
 						if (!process_term(p, h))
-							return false;
+							return 0;
 
 						if (p->already_loaded_error)
-							return false;
+							return 0;
 
 						p1 = LIST_TAIL(p1);
 
@@ -3018,10 +3018,10 @@ unsigned tokenize(parser *p, bool args, bool consing)
 					}
 
 					if (!tail && !process_term(p, p1))
-						return false;
+						return 0;
 
 					if (p->already_loaded_error)
-						return false;
+						return 0;
 
 					p->cl->cidx = 0;
 				}
@@ -3532,7 +3532,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 	}
 
 	p->depth--;
-	return !p->error;
+	return !p->error ? 1 : 0;
 }
 
 bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yield_time_in_ms)
