@@ -4522,20 +4522,25 @@ static bool fn_statistics_0(query *q)
 {
 	fprintf(stdout,
 		"Goals %"PRIu64", "
-		"Matches %"PRIu64", "
+		"Matches %"PRIu64".\n"
 		"Max frames %u, "
 		"choices %u, "
 		"trails %u, "
-		"slots %u, "
-		"heap: %u."
-		"\nBacktracks %"PRIu64", "
+		"slots %u.\n"
+		"Active frames %u, "
+		"choices %u, "
+		"trails %u, "
+		"slots %u.\n"
+		"Heap: %u (~%u MB), "
+		"Backtracks %"PRIu64", "
 		"TCOs:%"PRIu64", "
 		"Recovered frames: %"PRIu64", "
 		"slots: %"PRIu64", "
-		"Queue: %u"
-		"\n",
+		"Queue: %u\n",
 		q->tot_goals, q->tot_matches,
-		q->hw_frames, q->hw_choices, q->hw_trails, q->hw_slots, q->st.hp,
+		q->hw_frames, q->hw_choices, q->hw_trails, q->hw_slots,
+		q->st.fp, q->cp, q->st.tp, q->st.sp,
+		q->st.hp, (unsigned)(sizeof(slot)*q->st.hp/1024/1024),
 		q->tot_retries, q->tot_tcos,
 		q->tot_frecovs, q->tot_srecovs, (unsigned)q->qcnt[q->st.qnbr]
 		);
