@@ -410,7 +410,7 @@ static bool fn_iso_compound_1(query *q)
 static bool fn_iso_atomic_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	return is_atomic(p1);
+	return is_iso_atomic(p1);
 }
 
 static bool fn_iso_var_1(query *q)

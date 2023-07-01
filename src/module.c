@@ -307,8 +307,8 @@ static int predicate_cmpkey(const void *ptr1, const void *ptr2, const void *para
 static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, void *l, unsigned depth)
 {
 	const module *m = (const module*)param;
-	const cell *p1 = (const cell*)ptr1;
-	const cell *p2 = (const cell*)ptr2;
+	cell *p1 = (cell*)ptr1;
+	cell *p2 = (cell*)ptr2;
 
 	if (is_smallint(p1)) {
 		if (is_smallint(p2)) {
@@ -357,6 +357,26 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 			return 1;
 		else if (!is_var(p2))
 			return -1;
+	} else if (is_list(p1)) {
+		if (is_list(p2)) {
+			LIST_HANDLER(p1);
+			LIST_HANDLER(p2);
+
+			while (is_list(p1) && is_list(p2)) {
+				cell *h1 = LIST_HEAD(p1);
+				cell *h2 = LIST_HEAD(p2);
+				int ok = index_cmpkey_(h1, h2, param, l, depth+1);
+
+				if (ok != 0)
+					return ok;
+
+				p1 = LIST_TAIL(p1);
+				p2 = LIST_TAIL(p2);
+			}
+
+			return index_cmpkey_(p1, p2, param, l, depth+1);
+		} else if (!is_var(p2))
+			return 1;
 	} else if (is_interned(p1) && !p1->arity) {
 		if (is_interned(p2) && !p2->arity) {
 			if (p1->val_off == p2->val_off)

@@ -170,6 +170,7 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define is_compound(c) (is_structure(c) || is_string(c))
 #define is_number(c) (is_integer(c) || is_float(c) || is_rational(c))
 #define is_atomic(c) (is_atom(c) || is_number(c))
+#define is_iso_atomic(c) (is_iso_atom(c) || is_number(c))
 #define is_nonvar(c) !is_var(c)
 
 typedef struct {
