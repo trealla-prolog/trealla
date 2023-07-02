@@ -335,7 +335,7 @@ static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_id
 int compare(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx)
 {
 	q->cycle_error = false;
-	q->vgen++;
+	if (++q->vgen == 0) q->vgen = 1;
 	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
 }
 
@@ -491,7 +491,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned 
 
 void collect_vars(query *q, cell *p1, pl_idx_t p1_ctx)
 {
-	q->vgen++;
+	if (++q->vgen == 0) q->vgen = 1;
 	q->tab_idx = 0;
 	ensure(q->vars = map_create(NULL, NULL, NULL));
 	map_allow_dups(q->vars, false);
@@ -618,7 +618,7 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned dept
 
 bool has_vars(query *q, cell *p1, pl_idx_t p1_ctx)
 {
-	q->vgen++;
+	if (++q->vgen == 0) q->vgen = 1;
 	return has_vars_internal(q, p1, p1_ctx, 0);
 }
 
@@ -762,14 +762,14 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigne
 bool is_cyclic_term(query *q, cell *p1, pl_idx_t p1_ctx)
 {
 	q->cycle_error = false;
-	q->vgen++;
+	if (++q->vgen == 0) q->vgen = 1;
 	return is_cyclic_term_internal(q, p1, p1_ctx, 0);
 }
 
 bool is_acyclic_term(query *q, cell *p1, pl_idx_t p1_ctx)
 {
 	q->cycle_error = false;
-	q->vgen++;
+	if (++q->vgen == 0) q->vgen = 1;
 	return !is_cyclic_term_internal(q, p1, p1_ctx, 0);
 }
 
@@ -1454,6 +1454,6 @@ static bool unify_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 bool unify(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx)
 {
 	q->cycle_error = false;
-	q->vgen++;
+	if (++q->vgen == 0) q->vgen = 1;
 	return unify_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
 }
