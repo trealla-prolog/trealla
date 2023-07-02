@@ -317,7 +317,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 
 cell *deep_clone_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx)
 {
-	q->vgen++;
+	if (++q->vgen == 0) q->vgen = 1;
 	cell *rec = deep_clone2_to_tmp(q, p1, p1_ctx, 0);
 	if (!rec) return NULL;
 	return rec;
