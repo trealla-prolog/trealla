@@ -3502,10 +3502,10 @@ static bool fn_sys_list_1(query *q)
 bool fn_sys_queue_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	check_heap_error(init_tmp_heap(q));
+	check_heap_error(init_tmp_heap(q), q->st.qnbr--);
 	cell *tmp = deep_clone_to_tmp(q, p1, p1_ctx);
-	check_heap_error(tmp);
-	check_heap_error(alloc_on_queuen(q, q->st.qnbr, tmp));
+	check_heap_error(tmp, q->st.qnbr--);
+	check_heap_error(alloc_on_queuen(q, q->st.qnbr, tmp), q->st.qnbr--);
 	return true;
 }
 

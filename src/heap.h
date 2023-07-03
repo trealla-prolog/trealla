@@ -17,7 +17,6 @@ cell *deep_copy_to_heap(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_attrs);
 cell *alloc_on_heap(query *q, unsigned nbr_cells);
 cell *alloc_on_tmp(query *q, unsigned nbr_cells);
 cell *alloc_on_queuen(query *q, unsigned qnbr, const cell *c);
-cell *alloc_on_queuen_unsafe(query *q, unsigned qnbr, const cell *c);
 
 void trim_heap(query *q);
 
