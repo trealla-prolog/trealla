@@ -204,7 +204,7 @@ size_t formatted(char *dst, size_t dstlen, const char *src, int srclen, bool dq,
 		int lench = len_char_utf8(src);
 		int ch = get_char_utf8(&src);
 		srclen -= lench;
-		const char *ptr = NULL;//(lench == 1) && (ch != ' ') ? strchr(g_escapes, ch) : NULL;
+		const char *ptr = (lench == 1) && (ch != ' ') ? strchr(g_escapes, ch) : NULL;
 
 		if ((ch == '\'') && dq)
 			ptr = 0;
