@@ -5693,6 +5693,41 @@ static bool fn_format_3(query *q)
 	return do_format(q, pstr, pstr_ctx, p1, p1_ctx, !is_nil(p2)?p2:NULL, p2_ctx);
 }
 
+// FIXME: not truly crypto strength
+
+static bool fn_crypto_n_random_bytes_2(query *q)
+{
+	static bool s_seed = false;
+
+	if (!s_seed) {
+		s_seed = true;
+		srand(time(NULL));
+	}
+
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,list_or_var);
+	bool first_time = true;
+	int n = get_smallint(p1);
+
+	if (n < 1)
+		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
+
+	while (n--) {
+		int i = rand() % 256;
+		cell tmp;
+		make_int(&tmp, i);
+
+		if (first_time) {
+			first_time = false;
+			allocate_list(q, &tmp);
+		} else
+			append_list(q, &tmp);
+	}
+
+	cell *tmp = end_list(q);
+	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+}
+
 #if USE_OPENSSL
 static bool fn_crypto_data_hash_3(query *q)
 {
@@ -8360,6 +8395,7 @@ builtins g_other_bifs[] =
 	{"$list_attributed", 1, fn_sys_list_attributed_1, "-list", false, false, BLAH},
 	{"$dump_keys", 1, fn_sys_dump_keys_1, NULL, false, false, BLAH},
 	{"$skip_max_list", 4, fn_sys_skip_max_list_4, "?integer,?integer?,?term,?term", false, false, BLAH},
+	{"crypto_n_random_bytes", 2, fn_crypto_n_random_bytes_2, "+integer,-codes", false, false, BLAH},
 
 #if USE_OPENSSL
 	{"crypto_data_hash", 3, fn_crypto_data_hash_3, "?character_list,?character_list,?list", false, false, BLAH},

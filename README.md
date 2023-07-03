@@ -648,6 +648,10 @@ with OpenSSL...
 
 	crypto_data_hash/3          # crypto_data_hash(+data,-hash,+options)
 
+Generate 'N' random bytes.
+
+	crypto_n_random_bytes(N, Bs) # crypto_n_random_bytes(+integer, -codes)
+
 Convert a hexadecimal string to a byte-list. At least one arg must be
 instantiated...
 
