@@ -218,6 +218,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 
 				const frame *f = GET_FRAME(h_ctx);
 				slot *e = GET_SLOT(f, h->var_nbr);
+				uint64_t save_vgen = e->vgen;
 
 				if (e->vgen == q->vgen) {
 					cell *rec = deep_clone2_to_tmp(q, h, h_ctx, depth+1);
@@ -229,7 +230,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 					pl_idx_t c_ctx = q->latest_ctx;
 					cell *rec = deep_clone2_to_tmp(q, c, c_ctx, depth+1);
 					if (!rec) return NULL;
-					e->vgen = 0;
+					e->vgen = save_vgen;
 				}
 			} else {
 				cell *rec = deep_clone2_to_tmp(q, h, p1_ctx, depth+1);
@@ -290,6 +291,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 				c_ctx = c->var_ctx;
 
 			slot *e = GET_SLOT(f, c->var_nbr);
+			uint64_t save_vgen = e->vgen;
 
 			if (e->vgen == q->vgen) {
 				cell *rec = deep_clone2_to_tmp(q, c, c_ctx, depth+1);
@@ -300,7 +302,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, unsigned de
 				pl_idx_t c_ctx = q->latest_ctx;
 				cell *rec = deep_clone2_to_tmp(q, c, c_ctx, depth+1);
 				if (!rec) return NULL;
-				e->vgen = 0;
+				e->vgen = save_vgen;
 			}
 		} else {
 			cell *rec = deep_clone2_to_tmp(q, p1, p1_ctx, depth+1);
