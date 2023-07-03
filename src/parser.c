@@ -1901,8 +1901,8 @@ static int get_hex(const char **srcptr, unsigned n, bool *error)
 	return v;
 }
 
-const char *g_escapes = "\a\f\b\t\v\r\n\x20\x7F\'\\\"`";
-const char *g_anti_escapes = "afbtvrnsd'\\\"`";
+const char *g_escapes = "\e\a\f\b\t\v\r\n\x20\x7F\'\\\"`";
+const char *g_anti_escapes = "eafbtvrnsd'\\\"`";
 
 static int get_escape(parser *p, const char **_src, bool *error, bool number)
 {
