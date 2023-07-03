@@ -8,7 +8,8 @@
 		sum_list/2, prod_list/2, max_list/2, min_list/2,	% SWI
 		list_sum/2, list_prod/2, list_max/2, list_min/2,	% Modern
 		list_to_conjunction/2, conjunction_to_list/2,
-		list_to_set/2, numlist/3, length/2, reverse/2
+		list_to_set/2, numlist/3, length/2, reverse/2,
+		permutation/2
 	]).
 
 /*  Author:        Andrew Davison, Mark Thom, Jan Wielemaker, and Richard O'Keefe
@@ -372,3 +373,47 @@ length_rundown([_|Xs], N) :-
 	length_rundown(Xs, N1).
 
 :- help(length(?term,?integer), [iso(false), desc('Number of elements in list.')]).
+
+%% permutation(?Xs, ?Ys) is nondet.
+%
+% True when Xs is a permutation of Ys. This can solve for Ys given
+% Xs or Xs given Ys, or  even   enumerate  Xs and Ys together. The
+% predicate  `permutation/2`  is  primarily   intended  to  generate
+% permutations. Note that a list of  length N has N! permutations,
+% and  unbounded  permutation  generation   becomes  prohibitively
+% expensive, even for rather short lists (10! = 3,628,800).
+%
+% The example below illustrates that Xs   and Ys being proper lists
+% is not a sufficient condition to use the above replacement.
+%
+% ```
+% ?- permutation([1,2], [X,Y]).
+%    X = 1, Y = 2
+% ;  X = 2, Y = 1
+% ;  false.
+% ```
+%
+%   Throws `type_error(list, Arg)` if either argument is not a proper
+%   or partial list.
+
+permutation(Xs, Ys) :-
+    '$skip_max_list'(Xlen, _, Xs, XTail),
+    '$skip_max_list'(Ylen, _, Ys, YTail),
+    (   XTail == [], YTail == []            % both proper lists
+    ->  Xlen == Ylen
+    ;   var(XTail), YTail == []             % partial, proper
+    ->  length(Xs, Ylen)
+    ;   XTail == [], var(YTail)             % proper, partial
+    ->  length(Ys, Xlen)
+    ;   var(XTail), var(YTail)              % partial, partial
+    ->  length(Xs, Len),
+        length(Ys, Len)
+    ;   must_be(list, Xs),                  % either is not a list
+        must_be(list, Ys)
+    ),
+    perm(Xs, Ys).
+
+perm([], []).
+perm(List, [First|Perm]) :-
+    select(First, List, Rest),
+    perm(Rest, Perm).

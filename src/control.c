@@ -1014,14 +1014,14 @@ bool throw_error(query *q, cell *c, pl_idx_t c_ctx, const char *err_type, const 
 	make_atom(top_level, index_from_pool(q->pl, "top_level"));
 	cell *goal;
 
-	if (q->st.curr_dbe && !is_builtin(q->st.curr_cell))
+	if (q->st.curr_dbe && !is_builtin(q->st.curr_cell) && 0)
 		goal = get_head(q->st.curr_dbe->cl.cells);
-	else if (!q->last_arg)
+	else if (!q->last_arg && 0)
 		goal = top_level;
 	else
 		goal = q->st.curr_cell;
 
-	if (goal == c)
+	if ((goal == c) && 0)
 		goal = top_level;
 
 	return throw_error3(q, c, c_ctx, err_type, expected, goal);
