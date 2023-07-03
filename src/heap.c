@@ -549,10 +549,11 @@ cell *alloc_on_queuen(query *q, unsigned qnbr, const cell *c)
 	}
 
 	while ((q->qp[qnbr]+c->nbr_cells) >= q->q_size[qnbr]) {
-		q->q_size[qnbr] += q->q_size[qnbr] / 2;
-		void *ptr = realloc(q->queue[qnbr], sizeof(cell)*q->q_size[qnbr]);
+		size_t n = q->q_size[qnbr] + q->q_size[qnbr] / 2;
+		void *ptr = realloc(q->queue[qnbr], sizeof(cell)*n);
 		if (!ptr) return NULL;
 		q->queue[qnbr] = ptr;
+		q->q_size[qnbr] = n;
 	}
 
 	cell *dst = q->queue[qnbr] + q->qp[qnbr];

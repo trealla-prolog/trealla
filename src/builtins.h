@@ -356,4 +356,4 @@ inline static cell *get_raw_arg(const query *q, int n)
 
 #define check_heap_error(expr, ...) \
 	CHECK_SENTINEL(expr, 0, __VA_ARGS__; \
-	return false /*throw_error(q, q->st.curr_cell, q->st.curr_frame, "resource_error", "memory")*/)
+	return throw_error(q, q->st.curr_cell, q->st.curr_frame, "resource_error", "memory"))
