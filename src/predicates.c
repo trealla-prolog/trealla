@@ -2326,18 +2326,25 @@ static bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 	for (db_entry *dbe = pr->head; dbe; dbe = dbe->next)
 		retract_from_db(dbe);
 
-	if (!pr->refcnt)
-		pr->refcnt++;
-
-	while (pr->dirty_list) {
+	if (!pr->refcnt) {
 		db_entry *dbe = pr->dirty_list;
-		pr->dirty_list = dbe->dirty;
-		dbe->dirty = q->dirty_list;
-		q->dirty_list = dbe;
+
+		while (dbe) {
+			delink(pr, dbe);
+			db_entry *save = dbe->dirty;
+			clear_rule(&dbe->cl);
+			free(dbe);
+			dbe = save;
+		}
+	} else {
+		while (pr->dirty_list) {
+			db_entry *dbe = pr->dirty_list;
+			pr->dirty_list = dbe->dirty;
+			dbe->dirty = q->dirty_list;
+			q->dirty_list = dbe;
+		}
 	}
 
-	pr->cnt = 0;
-	purge_predicate_dirty_list(q, pr);
 	map_destroy(pr->idx2);
 	map_destroy(pr->idx);
 	pr->idx2 = pr->idx = NULL;

@@ -566,10 +566,10 @@ static void add_stream_properties(query *q, int n)
 	parser_destroy(p);
 }
 
-static void del_stream_properties(query *q, int n)
+static bool del_stream_properties(query *q, int n)
 {
 	cell *tmp = alloc_on_heap(q, 3);
-	ensure(tmp);
+	check_heap_error(tmp);
 	make_atom(tmp+0, g_sys_stream_property_s);
 	make_int(tmp+1, n);
 	make_var(tmp+2, g_anon_s, create_vars(q, 1));
@@ -578,12 +578,13 @@ static void del_stream_properties(query *q, int n)
 	q->retry = QUERY_OK;
 
 	while (do_retract(q, tmp, q->st.curr_frame, DO_RETRACTALL)) {
-		if (q->did_throw) return;
+		if (q->did_throw) return false;
 		q->retry = QUERY_RETRY;
 		retry_choice(q);
 	}
 
 	q->retry = QUERY_OK;
+	return true;
 }
 
 static bool do_stream_property(query *q)

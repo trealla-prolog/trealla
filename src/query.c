@@ -611,44 +611,57 @@ static void unshare_predicate(query *q, predicate *pr)
 	if (!pr->dirty_list)
 		return;
 
-	// Just because this predicate is no longer in use doesn't
-	// mean there are no shared references to terms contained
-	// within. So move items on the dirty-list to the query
-	// dirty-list. They will be freed up at end of the query.
+	if (!pr->is_abolished) {
+		// Just because this predicate is no longer in use doesn't
+		// mean there are no shared references to terms contained
+		// within. So move items on the dirty-list to the query
+		// dirty-list. They will be freed up at end of the query.
+		// FIXME: this is a memory leak.
 
-	db_entry *dbe = pr->dirty_list;
+		db_entry *dbe = pr->dirty_list;
 
-	while (dbe) {
-		delink(pr, dbe);
+		while (dbe) {
+			delink(pr, dbe);
 
-		if (pr->cnt) {
-			predicate *pr = dbe->owner;
-			map_remove(pr->idx2, dbe);
-			map_remove(pr->idx, dbe);
+			if (pr->cnt) {
+				predicate *pr = dbe->owner;
+				map_remove(pr->idx2, dbe);
+				map_remove(pr->idx, dbe);
+			}
+
+			dbe->cl.is_deleted = true;
+			db_entry *save = dbe->dirty;
+			dbe->dirty = q->dirty_list;
+			q->dirty_list = dbe;
+			dbe = save;
 		}
 
-		dbe->cl.is_deleted = true;
-		db_entry *save = dbe->dirty;
-		dbe->dirty = q->dirty_list;
-		q->dirty_list = dbe;
-		dbe = save;
-	}
+		pr->dirty_list = NULL;
 
-	pr->dirty_list = NULL;
+		if (pr->idx && !pr->cnt) {
+			map_destroy(pr->idx2);
+			map_destroy(pr->idx);
+			pr->idx2 = NULL;
 
-	if (pr->idx && !pr->cnt) {
-		map_destroy(pr->idx2);
-		map_destroy(pr->idx);
-		pr->idx2 = NULL;
+			pr->idx = map_create(index_cmpkey, NULL, pr->m);
+			ensure(pr->idx);
+			map_allow_dups(pr->idx, true);
 
-		pr->idx = map_create(index_cmpkey, NULL, pr->m);
-		ensure(pr->idx);
-		map_allow_dups(pr->idx, true);
+			if (pr->key.arity > 1) {
+				pr->idx2 = map_create(index_cmpkey, NULL, pr->m);
+				ensure(pr->idx2);
+				map_allow_dups(pr->idx2, true);
+			}
+		}
+	} else {
+		db_entry *dbe = pr->dirty_list;
 
-		if (pr->key.arity > 1) {
-			pr->idx2 = map_create(index_cmpkey, NULL, pr->m);
-			ensure(pr->idx2);
-			map_allow_dups(pr->idx2, true);
+		while (dbe) {
+			delink(pr, dbe);
+			db_entry *save = dbe->dirty;
+			clear_rule(&dbe->cl);
+			free(dbe);
+			dbe = save;
 		}
 	}
 }
