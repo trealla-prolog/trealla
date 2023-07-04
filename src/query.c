@@ -663,6 +663,8 @@ static void unshare_predicate(query *q, predicate *pr)
 			free(dbe);
 			dbe = save;
 		}
+
+		pr->dirty_list = NULL;
 	}
 }
 

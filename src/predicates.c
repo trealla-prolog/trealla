@@ -2412,49 +2412,6 @@ static bool fn_iso_abolish_1(query *q)
 	return do_abolish(q, p1, &tmp, true);
 }
 
-static bool fn_soft_abolish_1(query *q)
-{
-	GET_FIRST_ARG(p1,callable);
-
-	if (p1->arity != 2)
-		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
-
-	if (CMP_STR_TO_CSTR(q, p1, "/") && CMP_STR_TO_CSTR(q, p1, "//"))
-		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
-
-	cell *p1_name = p1 + 1;
-	p1_name = deref(q, p1_name, p1_ctx);
-
-	if (!is_atom(p1_name))
-		return throw_error(q, p1_name, p1_ctx, "type_error", "atom");
-
-	cell *p1_arity = p1 + 2;
-	p1_arity = deref(q, p1_arity, p1_ctx);
-
-	if (!CMP_STR_TO_CSTR(q, p1, "//"))
-		p1_arity += 2;
-
-	if (!is_integer(p1_arity))
-		return throw_error(q, p1_arity, p1_ctx, "type_error", "integer");
-
-	if (is_negative(p1_arity))
-		return throw_error(q, p1_arity, p1_ctx, "domain_error", "not_less_than_zero");
-
-	if (get_smallint(p1_arity) > MAX_ARITY)
-		return throw_error(q, p1_arity, p1_ctx, "representation_error", "max_arity");
-
-	bool found = false;
-
-	if (get_builtin(q->pl, C_STR(q, p1_name), C_STRLEN(q, p1_name), get_smallint(p1_arity), &found, NULL), found)
-		return throw_error(q, p1, p1_ctx, "permission_error", "modify,static_procedure");
-
-	cell tmp;
-	tmp = *p1_name;
-	tmp.arity = get_smallint(p1_arity);
-	CLR_OP(&tmp);
-	return do_abolish(q, p1, &tmp, false);
-}
-
 static unsigned count_non_anons(uint8_t *mask, unsigned bit)
 {
 	unsigned bits = 0;
@@ -8354,7 +8311,6 @@ builtins g_other_bifs[] =
 	{"abort", 0, fn_abort_0, NULL, false, false, BLAH},
 	{"sort", 4, fn_sort_4, "+integer,+atom,+list,?list", false, false, BLAH},
 	{"ignore", 1, fn_ignore_1, ":callable", false, false, BLAH},
-	{"soft_abolish", 1, fn_soft_abolish_1, "+term", false, false, BLAH},
 	{"string_codes", 2, fn_string_codes_2, "+character_list,-list", false, false, BLAH},
 	{"term_singletons", 2, fn_term_singletons_2, "+term,-list", false, false, BLAH},
 	{"pid", 1, fn_pid_1, "-integer", false, false, BLAH},

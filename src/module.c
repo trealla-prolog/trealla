@@ -230,6 +230,32 @@ static void clear_loaded(const module *m)
 	}
 }
 
+static predicate *find_predicate_(module *m, cell *c, bool any)
+{
+	cell tmp = *c;
+	tmp.tag = TAG_INTERNED;
+	tmp.flags = 0;
+	tmp.nbr_cells = 1;
+
+	if (is_cstring(c)) {
+		tmp.val_off = index_from_pool(m->pl, C_STR(m, c));
+	}
+
+	miter *iter = map_find_key(m->index, &tmp);
+	predicate *pr = NULL;
+
+	while (map_next_key(iter, (void*)&pr)) {
+		if (pr->is_abolished && !any)
+			continue;
+
+		map_done(iter);
+		return pr;
+	}
+
+	map_done(iter);
+	return NULL;
+}
+
 predicate *create_predicate(module *m, cell *c)
 {
 	bool found, evaluable;
@@ -859,28 +885,7 @@ void convert_to_literal(module *m, cell *c)
 
 predicate *find_predicate(module *m, cell *c)
 {
-	cell tmp = *c;
-	tmp.tag = TAG_INTERNED;
-	tmp.flags = 0;
-	tmp.nbr_cells = 1;
-
-	if (is_cstring(c)) {
-		tmp.val_off = index_from_pool(m->pl, C_STR(m, c));
-	}
-
-	miter *iter = map_find_key(m->index, &tmp);
-	predicate *pr = NULL;
-
-	while (map_next_key(iter, (void*)&pr)) {
-		if (pr->is_abolished)
-			continue;
-
-		map_done(iter);
-		return pr;
-	}
-
-	map_done(iter);
-	return NULL;
+	return find_predicate_(m, c, false);
 }
 
 predicate *find_functor(module *m, const char *name, unsigned arity)
@@ -1358,11 +1363,7 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 
 	size_t dbe_size = sizeof(db_entry) + (sizeof(cell) * (p1->nbr_cells+1));
 	db_entry *dbe = calloc(1, dbe_size);
-
-	if (!dbe) {
-		pr->is_abolished = true;
-		return NULL;
-	}
+	ensure(dbe);
 
 	copy_cells(dbe->cl.cells, p1, p1->nbr_cells);
 	dbe->cl.cells[p1->nbr_cells] = (cell){0};
