@@ -2336,6 +2336,7 @@ static bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 		q->dirty_list = dbe;
 	}
 
+	pr->cnt = 0;
 	purge_predicate_dirty_list(q, pr);
 	map_destroy(pr->idx2);
 	map_destroy(pr->idx);
