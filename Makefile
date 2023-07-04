@@ -115,6 +115,7 @@ LIBOBJECTS +=  \
 	library/si.o \
 	library/sqlite3.o \
 	library/ugraphs.o \
+	library/uuid.o \
 	library/when.o
 
 SRCOBJECTS += src/imath/imath.o

@@ -56,6 +56,8 @@ extern unsigned char library_concurrent_pl[];
 extern unsigned int library_concurrent_pl_len;
 extern unsigned char library_gensym_pl[];
 extern unsigned int library_gensym_pl_len;
+extern unsigned char library_uuid_pl[];
+extern unsigned int library_uuid_pl_len;
 
 library g_libs[] = {
 	 {"abnf", library_abnf_pl, &library_abnf_pl_len},
@@ -85,6 +87,7 @@ library g_libs[] = {
 	 {"si", library_si_pl, &library_si_pl_len},
 	 {"sqlite3", library_sqlite3_pl, &library_sqlite3_pl_len},
 	 {"ugraphs", library_ugraphs_pl, &library_ugraphs_pl_len},
+	 {"uuid", library_uuid_pl, &library_uuid_pl_len},
 	 {"when", library_when_pl, &library_when_pl_len},
 
 	 {0}

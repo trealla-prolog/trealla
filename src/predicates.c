@@ -1081,6 +1081,53 @@ static bool fn_hex_bytes_2(query *q)
 		return ok;
 	}
 
+	if (is_list(p2) && is_iso_list(p1)) {
+		LIST_HANDLER(p1);
+		LIST_HANDLER(p2);
+
+		while (is_list(p1) && is_list(p2)) {
+			cell *h11 = LIST_HEAD(p1);
+			h11 = deref(q, h11, p1_ctx);
+			pl_idx_t h11_ctx = q->latest_ctx;
+			p1 = LIST_TAIL(p1);
+			p1 = deref(q, p1, p1_ctx);
+			p1_ctx = q->latest_ctx;
+			cell *h12 = LIST_HEAD(p1);
+			h12 = deref(q, h12, p1_ctx);
+			pl_idx_t h12_ctx = q->latest_ctx;
+
+			cell *h2 = LIST_HEAD(p2);
+			h2 = deref(q, h2, p2_ctx);
+			unsigned n = get_smalluint(h2);
+
+			unsigned n1 = (n >> 4) & 0xF;
+			int ch;
+			if (n1 < 10) ch = '0' + n1;
+			else { n1 -= 10; ch = 'a' + n1; }
+			char tmpbuf[10];
+			put_char_utf8(tmpbuf, ch);
+			cell tmp;
+			make_cstring(&tmp, tmpbuf);
+			unify(q, h11, h11_ctx, &tmp, q->st.curr_frame);
+
+			unsigned n2 = n & 0xF;
+			if (n2 < 10) ch = '0' + n2;
+			else { n2 -= 10; ch = 'a' + n2; }
+			put_char_utf8(tmpbuf, ch);
+			make_cstring(&tmp, tmpbuf);
+
+			if (!unify(q, h12, h12_ctx, &tmp, q->st.curr_frame))
+				return false;
+
+			p1 = LIST_TAIL(p1);
+			p1 = deref(q, p1, p1_ctx);
+			p1_ctx = q->latest_ctx;
+			p2 = LIST_TAIL(p2);
+			p2 = deref(q, p2, p2_ctx);
+			p2_ctx = q->latest_ctx;
+		}
+	}
+
 	LIST_HANDLER(p1);
 	bool first = true;
 
