@@ -205,6 +205,10 @@ bool check_redo(query *q)
 			break;
 		}
 
+		if (ch == '!') {
+			abort();
+		}
+
 		if (ch == 'e') {
 			if (!q->run_init)
 				printf("\n");

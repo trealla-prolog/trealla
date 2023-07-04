@@ -256,8 +256,9 @@ static predicate *find_predicate_(module *m, cell *c, bool abolished)
 	return NULL;
 }
 
-predicate *create_predicate(module *m, cell *c)
+predicate *create_predicate(module *m, cell *c, bool *created)
 {
+	if (created) *created = false;
 	bool found, evaluable;
 
 	if (strcmp(m->name, "format") && 0) {
@@ -273,6 +274,7 @@ predicate *create_predicate(module *m, cell *c)
 		pr = calloc(1, sizeof(predicate));
 		ensure(pr);
 		pr->prev = m->tail;
+		if (created) *created = true;
 
 		if (m->tail)
 			m->tail->next = pr;
@@ -541,7 +543,7 @@ void set_discontiguous_in_db(module *m, const char *name, unsigned arity)
 	ensure(tmp.val_off != ERR_IDX);
 	tmp.arity = arity;
 	predicate *pr = find_predicate(m, &tmp);
-	if (!pr) pr = create_predicate(m, &tmp);
+	if (!pr) pr = create_predicate(m, &tmp, NULL);
 
 	if (pr) {
 		push_property(m, name, arity, "discontiguous");
@@ -558,7 +560,7 @@ void set_multifile_in_db(module *m, const char *name, pl_idx_t arity)
 	ensure(tmp.val_off != ERR_IDX);
 	tmp.arity = arity;
 	predicate *pr = find_predicate(m, &tmp);
-	if (!pr) pr = create_predicate(m, &tmp);
+	if (!pr) pr = create_predicate(m, &tmp, NULL);
 
 	if (pr) {
 		push_property(m, name, arity, "multifile");
@@ -575,7 +577,7 @@ void set_dynamic_in_db(module *m, const char *name, unsigned arity)
 	ensure(tmp.val_off != ERR_IDX);
 	tmp.arity = arity;
 	predicate *pr = find_predicate(m, &tmp);
-	if (!pr) pr = create_predicate(m, &tmp);
+	if (!pr) pr = create_predicate(m, &tmp, NULL);
 
 	if (pr) {
 		push_property(m, name, arity, "dynamic");
@@ -594,7 +596,7 @@ void set_meta_predicate_in_db(module *m, cell *c)
 	ensure(tmp.val_off != ERR_IDX);
 	tmp.arity = arity;
 	predicate *pr = find_predicate(m, &tmp);
-	if (!pr) pr = create_predicate(m, &tmp);
+	if (!pr) pr = create_predicate(m, &tmp, NULL);
 
 	if (pr) {
 		query q = (query){0};
@@ -751,7 +753,7 @@ bool do_use_module_2(module *curr_m, cell *p)
 				tmp.arity = get_smalluint(lhs+2);
 				predicate *pr = find_predicate(curr_m->used[curr_m->idx_used-1], &tmp);
 				tmp.val_off = rhs->val_off;
-				predicate *pr2 = create_predicate(curr_m, &tmp);
+				predicate *pr2 = create_predicate(curr_m, &tmp, NULL);
 				pr2->alias = pr;
 			} else if (is_compound(lhs) && (lhs->arity == 2)
 				&& (lhs->val_off == g_slash_s)
@@ -760,7 +762,7 @@ bool do_use_module_2(module *curr_m, cell *p)
 				tmp.arity = get_smalluint(lhs+2);
 				predicate *pr = find_predicate(curr_m->used[curr_m->idx_used-1], &tmp);
 				tmp.val_off = (rhs+1)->val_off;
-				predicate *pr2 = create_predicate(curr_m, &tmp);
+				predicate *pr2 = create_predicate(curr_m, &tmp, NULL);
 				pr2->alias = pr;
 			} else if (is_compound(lhs) && is_compound(rhs)) {
 				// assertz(goal_expansion(rhs, module:lhs))
@@ -1352,26 +1354,29 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 		return NULL;
 
 	if (!pr) {
-		pr = create_predicate(m, c);
+		bool created = false;
+		pr = create_predicate(m, c, &created);
 		check_error(pr);
 
-		if (is_check_directive(p1))
-			pr->is_check_directive = true;
+		if (created) {
+			if (is_check_directive(p1))
+				pr->is_check_directive = true;
 
-		if (!consulting) {
-			push_property(m, C_STR(m, c), c->arity, "dynamic");
-			pr->is_dynamic = true;
-		} else {
-			if (m->prebuilt)
-				push_property(m, C_STR(m, c), c->arity, "built_in");
+			if (!consulting) {
+				push_property(m, C_STR(m, c), c->arity, "dynamic");
+				pr->is_dynamic = true;
+			} else {
+				if (m->prebuilt)
+					push_property(m, C_STR(m, c), c->arity, "built_in");
 
-			push_property(m, C_STR(m, c), c->arity, "static");
-			push_property(m, C_STR(m, c), c->arity, "interpreted");
-		}
+				push_property(m, C_STR(m, c), c->arity, "static");
+				push_property(m, C_STR(m, c), c->arity, "interpreted");
+			}
 
-		if (consulting && m->make_public) {
-			push_property(m, C_STR(m, c), c->arity, "public");
-			pr->is_public = true;
+			if (consulting && m->make_public) {
+				push_property(m, C_STR(m, c), c->arity, "public");
+				pr->is_public = true;
+			}
 		}
 	}
 

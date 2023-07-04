@@ -700,7 +700,7 @@ static void directives(parser *p, cell *d)
 						tmp.arity += 2;
 
 					predicate *pr = find_predicate(p->m, &tmp);
-					if (!pr) pr = create_predicate(p->m, &tmp);
+					if (!pr) pr = create_predicate(p->m, &tmp, NULL);
 
 					if (!pr) {
 						module_destroy(p->m);
