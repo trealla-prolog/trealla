@@ -302,6 +302,7 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 			dbe = save;
 		}
 
+		pr->dirty_list = NULL;
 		pr->is_abolished = false;
 	}
 
