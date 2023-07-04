@@ -2336,6 +2336,8 @@ static bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 			free(dbe);
 			dbe = save;
 		}
+
+		pr->dirty_list = NULL;
 	} else {
 		while (pr->dirty_list) {
 			db_entry *dbe = pr->dirty_list;

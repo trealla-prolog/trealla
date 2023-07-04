@@ -230,7 +230,7 @@ static void clear_loaded(const module *m)
 	}
 }
 
-static predicate *find_predicate_(module *m, cell *c, bool any)
+static predicate *find_predicate_(module *m, cell *c, bool abolished)
 {
 	cell tmp = *c;
 	tmp.tag = TAG_INTERNED;
@@ -245,7 +245,7 @@ static predicate *find_predicate_(module *m, cell *c, bool any)
 	predicate *pr = NULL;
 
 	while (map_next_key(iter, (void*)&pr)) {
-		if (pr->is_abolished && !any)
+		if (pr->is_abolished && !abolished)
 			continue;
 
 		map_done(iter);
@@ -267,25 +267,42 @@ predicate *create_predicate(module *m, cell *c)
 		}
 	}
 
-	predicate *pr = calloc(1, sizeof(predicate));
-	ensure(pr);
-	pr->prev = m->tail;
+	predicate *pr = find_predicate_(m, c, true);
 
-	if (m->tail)
-		m->tail->next = pr;
+	if (!pr) {
+		pr = calloc(1, sizeof(predicate));
+		ensure(pr);
+		pr->prev = m->tail;
 
-	m->tail = pr;
+		if (m->tail)
+			m->tail->next = pr;
 
-	if (!m->head)
-		m->head = pr;
+		m->tail = pr;
 
-	pr->filename = m->filename;
-	pr->m = m;
-	pr->key = *c;
-	pr->key.tag = TAG_INTERNED;
-	pr->key.nbr_cells = 1;
-	pr->is_noindex = m->pl->noindex || !pr->key.arity;
-	map_app(m->index, &pr->key, pr);
+		if (!m->head)
+			m->head = pr;
+
+		pr->filename = m->filename;
+		pr->m = m;
+		pr->key = *c;
+		pr->key.tag = TAG_INTERNED;
+		pr->key.nbr_cells = 1;
+		pr->is_noindex = m->pl->noindex || !pr->key.arity;
+		map_app(m->index, &pr->key, pr);
+	} else {
+		db_entry *dbe = pr->dirty_list;
+
+		while (dbe) {
+			delink(pr, dbe);
+			db_entry *save = dbe->dirty;
+			clear_rule(&dbe->cl);
+			free(dbe);
+			dbe = save;
+		}
+
+		pr->is_abolished = false;
+	}
+
 	return pr;
 }
 
