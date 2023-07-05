@@ -830,6 +830,9 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 	}
 
 	if (is_float(c)) {
+		if (c->val_float == 0.0)
+			c->val_float = fabs(c->val_float);
+
 		char tmpbuf[256];
 		sprintf(tmpbuf, "%.*g", 17, get_float(c));
 		if (!q->json) reformat_float(q, tmpbuf, c->val_float);
@@ -1116,7 +1119,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 		bool space = (c->val_off == g_minus_s) && (is_number(rhs) || search_op(q->st.m, C_STR(q, rhs), NULL, true));
 		if ((c->val_off == g_plus_s) && search_op(q->st.m, C_STR(q, rhs), NULL, true) && rhs->arity) space = true;
 		if (isalpha(*src)) space = true;
-		if (is_op(rhs) || is_negative(rhs)) space = true;
+		if (is_op(rhs) || is_negative(rhs) || is_float(rhs)) space = true;
 
 		bool parens = false; //is_op(rhs);
 		if (strcmp(src, "+") && (is_infix(rhs) || is_postfix(rhs))) parens = true;
