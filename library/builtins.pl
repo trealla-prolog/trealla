@@ -194,8 +194,8 @@ replace_key_variables_(N, OldKey, Vars0, NewKey) :-
 	M is N-1,
 	replace_key_variables_(M, OldKey, Vars1, NewKey).
 replace_key_variables_(N, OldKey, Vars, NewKey) :-
-	arg(N, OldKey, OldVar),
-	arg(N, NewKey, OldVar),
+	%arg(N, OldKey, OldVar),
+	arg(N, NewKey, _OldVar),
 	M is N-1,
 	replace_key_variables_(M, OldKey, Vars, NewKey).
 
