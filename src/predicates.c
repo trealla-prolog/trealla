@@ -6836,11 +6836,12 @@ static bool fn_call_nth_2(query *q)
 		return true;
 	}
 
-	cell *tmp = clone_to_heap(q, true, p1, 4);
+	cell *tmp = clone_to_heap(q, true, p1, 5);
 	pl_idx_t nbr_cells = 1 + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_ne_s, fn_sys_ne_2, 2, 2);
 	make_int(tmp+nbr_cells++, 1);
 	make_int(tmp+nbr_cells++, get_smallint(p2));
+	make_struct(tmp+nbr_cells++, g_sys_prune_s, fn_sys_prune_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
