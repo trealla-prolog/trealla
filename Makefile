@@ -167,8 +167,9 @@ clean:
 	rm -f tpl tpl.wasm \
 		src/*.o src/imath/*.o src/isocline/src/*.o src/sre/*.o \
 		library/*.o library/*.c *.o samples/*.o samples/*.so \
-		vgcore.* *.core core core.* *.exe gmon.*
-	rm -f *.itf *.po samples/*.itf samples/*.po
+		vgcore.* *.core core core.* *.exe gmon.* \
+		samples/*.xwam
+	rm -f *.itf *.po *.xwam samples/*.itf samples/*.po
 
 # from [gcc|clang] -MM src/*.c src/imath/*.c src/isocline/src/*.c src/sre/*.c
 
