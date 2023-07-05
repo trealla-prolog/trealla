@@ -947,7 +947,10 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx_t 
 				pl_idx_t var_ctx = running ? q->latest_ctx : h_ctx;
 
 				if (is_var(var) && (var->var_nbr == c->var_nbr) && (var_ctx == c_ctx)) {
-					dst += snprintf(dst, dstlen, "%s", C_STR(q, name));
+					if (!strcmp(C_STR(q, name), "_"))
+						dst += print_variable(q, dst, dstlen, var, var_ctx, running);
+					else
+						dst += snprintf(dst, dstlen, "%s", C_STR(q, name));
 					q->last_thing_was_symbol = false;
 					q->was_space = false;
 					return dst - save_dst;
