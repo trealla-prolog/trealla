@@ -134,64 +134,6 @@ findall(T, G, B, Tail) :-
 :- help(findall(+term,:callable,-list,+list), [iso(false)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-
-:- help(keysort(+list,?list), [iso(true)]).
-
-keysort_(List, Sorted) :-
-	keysort_(List, List, Sorted, []).
-
-keysort_([Term| _], _, _, _) :-
-	var(Term),
-	throw(error(instantiation_error, keysort/2)).
-keysort_([Key-X| Xs], List, Ys, YsTail) :-
-	!,
-	'$key_partition'(Xs, Key, List, Left, EQ, EQT, Right),
-	keysort_(Left, List,  Ys, [Key-X|EQ]),
-	keysort_(Right, List, EQT, YsTail),
-	!.
-keysort_([], _, Ys, Ys) :-
-	!.
-keysort_([Term| _], _, _, _) :-
-	throw(error(type_error(pair,Term), keysort/2)).
-keysort_(Term, List, _, _) :-
-	Term \== [],
-	throw(error(type_error(list,List), keysort/2)).
-keysort_(_, _, Sorted, _) :-
-	Sorted \= [_|_],
-	throw(error(type_error(list,Sorted), keysort/2)).
-keysort_(_, _, [Term| _], _) :-
-	Term \= _-_,
-	throw(error(type_error(pair,Term), keysort/2)).
-keysort_(_, _, Sorted, _) :-
-	throw(error(type_error(list,Sorted), keysort/2)).
-
-'$key_partition'([Term| _], _, _, _, _, _, _) :-
-	var(Term),
-	throw(error(instantiation_error, keysort/2)).
-'$key_partition'([XKey-X| Xs], YKey, List, [XKey-X| Ls], EQ, EQT, Rs) :-
-	XKey @< YKey,
-	!,
-	'$key_partition'(Xs, YKey, List, Ls, EQ, EQT, Rs).
-'$key_partition'([XKey-X| Xs], YKey, List, Ls, [XKey-X| EQ], EQT, Rs) :-
-	XKey == YKey,
-	!,
-	'$key_partition'(Xs, YKey, List, Ls, EQ, EQT, Rs).
-'$key_partition'([XKey-X| Xs], YKey, List, Ls, EQ, EQT, [XKey-X| Rs]) :-
-%	XKey @> YKey,
-	!,
-	'$key_partition'(Xs, YKey, List, Ls, EQ, EQT, Rs).
-'$key_partition'([], _, _, [], EQT, EQT, []) :-
-	!.
-'$key_partition'([Term| _], _, _, _, _, _, _) :-
-	throw(error(type_error(pair,Term), keysort/2)).
-'$key_partition'(_, _, List, _, _, _, _) :-
-	throw(error(type_error(list,List), keysort/2)).
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Derived from code by R.A. O'Keefe
 
 setof(Template, Generator, Set) :-
@@ -223,7 +165,7 @@ bagof_(Template, Generator, Bag) :-
 	functor(Key, (.), N),
 	findall(Key-Template, Generator, Recorded),
 	replace_instance_(Recorded, Key, N, _, OmniumGatherum),
-	keysort_(OmniumGatherum, Gamut), !,
+	keysort(OmniumGatherum, Gamut), !,
 	concordant_subset_(Gamut, Key, Answer),
 	Bag = Answer.
 bagof_(Template, Generator, Bag) :-
