@@ -26,18 +26,18 @@ bool fn_iso_findall_3(query *q)
 
 		cell *p0;
 
-		if (is_compound(xp1) && !is_iso_list(xp1)) {
+		if (is_structure(xp1) && !is_iso_list(xp1)) {
 			p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, false);
 			check_heap_error(p0);
 			unify(q, q->st.curr_cell, q->st.curr_frame, p0, q->st.curr_frame);
-		} else {
+		} else if (!is_atomic(xp1)) {
 			p0 = deep_clone_to_heap(q, q->st.curr_cell, q->st.curr_frame);
 			check_heap_error(p0);
-		}
+		} else
+			p0 = q->st.curr_cell;
 
 		GET_FIRST_ARG0(p1,any,p0);
 		GET_NEXT_ARG(p2,any);
-
 		grab_queuen(q);
 
 		if (q->st.qnbr == MAX_QUEUES)
