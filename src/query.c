@@ -581,7 +581,7 @@ size_t scan_is_chars_list(query *q, cell *l, pl_idx_t l_ctx, bool allow_codes)
 	return scan_is_chars_list2(q, l, l_ctx, allow_codes, &has_var, &is_partial);
 }
 
-static void share_predicate(query *q, predicate *pr)
+static void enter_predicate(query *q, predicate *pr)
 {
 	if (!pr->is_dynamic)
 		return;
@@ -590,7 +590,7 @@ static void share_predicate(query *q, predicate *pr)
 	pr->refcnt++;
 }
 
-static void unshare_predicate(query *q, predicate *pr)
+static void leave_predicate(query *q, predicate *pr)
 {
 	if (!pr)
 		return;
@@ -885,7 +885,7 @@ static void commit_me(query *q)
 
 	if (last_match) {
 		f->is_last = true;
-		unshare_predicate(q, q->st.pr);
+		leave_predicate(q, q->st.pr);
 		drop_choice(q);
 
 		if (tco)
@@ -906,7 +906,7 @@ void stash_me(query *q, const clause *cl, bool last_match)
 	pl_idx_t cgen = ++q->cgen;
 
 	if (last_match) {
-		unshare_predicate(q, q->st.pr);
+		leave_predicate(q, q->st.pr);
 		drop_choice(q);
 	} else {
 		choice *ch = GET_CURR_CHOICE();
@@ -1004,7 +1004,7 @@ void cut_me(query *q)
 				q->st.fp = ch->st.fp;
 			}
 
-		unshare_predicate(q, ch->st.pr);
+		leave_predicate(q, ch->st.pr);
 		drop_choice(q);
 
 		if (ch->register_cleanup && !ch->fail_on_retry) {
@@ -1033,7 +1033,7 @@ void prune_me(query *q, bool soft_cut, pl_idx_t cp)
 		while (soft_cut && (ch >= q->choices)) {
 			if ((q->cp-1) == cp) {
 				if (ch == save_ch) {
-					unshare_predicate(q, ch->st.pr);
+					leave_predicate(q, ch->st.pr);
 					drop_choice(q);
 					f->cgen--;
 					return;
@@ -1054,7 +1054,7 @@ void prune_me(query *q, bool soft_cut, pl_idx_t cp)
 			break;
 		}
 
-		unshare_predicate(q, ch->st.pr);
+		leave_predicate(q, ch->st.pr);
 		drop_choice(q);
 
 		if (ch->register_cleanup && !ch->fail_on_retry) {
@@ -1225,7 +1225,7 @@ bool match_rule(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract
 			return throw_error(q, head, q->latest_ctx, "permission_error", "modify,static_procedure");
 
 		find_key(q, pr, c, p1_ctx);
-		share_predicate(q, pr);
+		enter_predicate(q, pr);
 		frame *f = GET_FRAME(q->st.curr_frame);
 		f->ugen = q->pl->ugen;
 	} else {
@@ -1233,7 +1233,7 @@ bool match_rule(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract
 	}
 
 	if (!q->st.curr_dbe) {
-		unshare_predicate(q, q->st.pr);
+		leave_predicate(q, q->st.pr);
 		return false;
 	}
 
@@ -1290,7 +1290,7 @@ bool match_rule(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract
 		undo_me(q);
 	}
 
-	unshare_predicate(q, q->st.pr);
+	leave_predicate(q, q->st.pr);
 	drop_choice(q);
 	return false;
 }
@@ -1341,7 +1341,7 @@ bool match_clause(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retra
 		}
 
 		find_key(q, pr, c, p1_ctx);
-		share_predicate(q, pr);
+		enter_predicate(q, pr);
 		frame *f = GET_FRAME(q->st.curr_frame);
 		f->ugen = q->pl->ugen;
 	} else {
@@ -1349,7 +1349,7 @@ bool match_clause(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retra
 	}
 
 	if (!q->st.curr_dbe) {
-		unshare_predicate(q, q->st.pr);
+		leave_predicate(q, q->st.pr);
 		return false;
 	}
 
@@ -1379,7 +1379,7 @@ bool match_clause(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retra
 		undo_me(q);
 	}
 
-	unshare_predicate(q, q->st.pr);
+	leave_predicate(q, q->st.pr);
 	drop_choice(q);
 	return false;
 }
@@ -1420,14 +1420,14 @@ static bool match_head(query *q)
 		}
 
 		find_key(q, pr, c, q->st.curr_frame);
-		share_predicate(q, pr);
+		enter_predicate(q, pr);
 		frame *f = GET_FRAME(q->st.curr_frame);
 		f->ugen = q->pl->ugen;
 	} else
 		next_key(q);
 
 	if (!q->st.curr_dbe) {
-		unshare_predicate(q, q->st.pr);
+		leave_predicate(q, q->st.pr);
 		return false;
 	}
 
@@ -1457,7 +1457,7 @@ static bool match_head(query *q)
 
 	choice *ch = GET_CURR_CHOICE();
 	ch->st.iter = NULL;
-	unshare_predicate(q, q->st.pr);
+	leave_predicate(q, q->st.pr);
 	drop_choice(q);
 	return false;
 }
