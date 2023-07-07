@@ -460,6 +460,7 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx_t p1_c
 		slot *e = GET_SLOT(f, p1->var_nbr);
 		const pl_idx_t slot_nbr = e - q->slots;
 		e->vgen = q->vgen+1; // +1 because that is what deep_clone_to_tmp() will do
+		if (e->vgen == 0) e->vgen++;
 		q->tab0_varno = q->varno;
 		q->tab_idx++;
 		map_set(q->vars, (void*)(size_t)slot_nbr, (void*)(size_t)q->varno);
