@@ -355,8 +355,8 @@ pointers (if any) may need to be refreshed after creating new variables
 A collection of slots constitute an environment and belong to a frame.
 
 
-Control-Stack
-=============
+Controls
+========
 
 Similar...
 
