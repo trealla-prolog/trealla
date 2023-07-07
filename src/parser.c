@@ -3538,7 +3538,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yield_time_in_ms)
 {
 	if ((*pSrc == '.') && !pSrc[1]) {
-		fprintf(stdout, "Error: syntax error, unexpected end of rule, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+		fprintf(stdout, "Error: syntax error, incomplete statement, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 		return false;
 	}
 
