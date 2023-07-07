@@ -355,13 +355,14 @@ pointers (if any) may need to be refreshed after creating new variables
 A collection of slots constitute an environment and belong to a frame.
 
 
-Choices
-=======
+Control-Stack
+=============
 
 Similar...
 
-A choice contains the index of the highest heap, slot & trail used at
-this point. On backtracking excess space can be freed.
+A control-point (usually a choice-point) contains the index of the
+highest heap, slot & trail used at this point. On backtracking excess
+space can be freed.
 
 It also contains the index number of the frame which created it and a
 record of the frame state (nbr of vars etc) at the time the choice
@@ -369,6 +370,9 @@ was created. On backtracking vars (slots space) can be trimmed back
 (if possible) and the frame state restored.
 
 It also contains flags related to managing cuts & call cleanup etc.
+
+Apart from choice-points other types of contol-points are barriers
+and catchers.
 
 
 Trail

@@ -153,7 +153,7 @@ void make_call(query *q, cell *tmp)
 	cell *c = q->st.curr_cell;
 	frame *f = GET_CURR_FRAME();
 	tmp->val_ret = c ? c + c->nbr_cells : NULL;	// save the return instruction
-	tmp->cgen = f->cgen;						// ... choice-generation
+	tmp->cgen = f->cgen;						// ... control-generation
 	tmp->mid = q->st.m->id;						// ... current-module
 }
 
@@ -162,7 +162,7 @@ void make_call_return(query *q, cell *tmp, cell *c_ret)
 	make_end(tmp);
 	frame *f = GET_CURR_FRAME();
 	tmp->val_ret = q->st.curr_cell;				// save the return instruction
-	tmp->cgen = f->cgen;						// ... choice-generation
+	tmp->cgen = f->cgen;						// ... control-generation
 	tmp->mid = q->st.m->id;						// ... current-module
 }
 
@@ -352,7 +352,7 @@ static bool fn_iso_notunify_2(query *q)
 	make_struct(tmp+nbr_cells++, g_fail_s, fn_iso_fail_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
-	choice *ch = GET_CURR_CHOICE();
+	control *ch = GET_CURR_CHOICE();
 	ch->succeed_on_retry = true;
 	q->st.curr_cell = tmp;
 	return true;
@@ -1454,7 +1454,7 @@ static bool fn_iso_sub_string_5(query *q)
 	}
 
 	if (before > len_p1) {
-		drop_choice(q);
+		drop_control(q);
 		return false;
 	}
 
@@ -1468,7 +1468,7 @@ static bool fn_iso_sub_string_5(query *q)
 			make_int(&tmp, before);
 
 			if (!unify(q, p2, p2_ctx, &tmp, q->st.curr_frame)) {
-				retry_choice(q);
+				retry_control(q);
 				continue;
 			}
 
@@ -1476,7 +1476,7 @@ static bool fn_iso_sub_string_5(query *q)
 			make_int(&tmp, len);
 
 			if (!unify(q, p3, p3_ctx, &tmp, q->st.curr_frame)) {
-				retry_choice(q);
+				retry_control(q);
 				continue;
 			}
 
@@ -1484,7 +1484,7 @@ static bool fn_iso_sub_string_5(query *q)
 			make_int(&tmp, after);
 
 			if (!unify(q, p4, p4_ctx, &tmp, q->st.curr_frame)) {
-				retry_choice(q);
+				retry_control(q);
 				continue;
 			}
 
@@ -1497,8 +1497,8 @@ static bool fn_iso_sub_string_5(query *q)
 				unshare_cell(&tmp);
 
 				if (fixed) {
-					drop_choice(q);
-					drop_choice(q);
+					drop_control(q);
+					drop_control(q);
 				}
 
 				return true;
@@ -1506,15 +1506,15 @@ static bool fn_iso_sub_string_5(query *q)
 
 			if (!unify(q, p5, p5_ctx, &tmp, q->st.curr_frame)) {
 				unshare_cell(&tmp);
-				retry_choice(q);
+				retry_control(q);
 				continue;
 			}
 
 			unshare_cell(&tmp);
 
 			if (fixed) {
-				drop_choice(q);
-				drop_choice(q);
+				drop_control(q);
+				drop_control(q);
 			}
 
 			return true;
@@ -1523,7 +1523,7 @@ static bool fn_iso_sub_string_5(query *q)
 		len = 0;
 	}
 
-	drop_choice(q);
+	drop_control(q);
 	return false;
 }
 
@@ -2210,7 +2210,7 @@ static bool fn_iso_clause_2(query *q)
 
 		q->retry = QUERY_RETRY;
 		q->tot_backtracks++;
-		retry_choice(q);
+		retry_control(q);
 	}
 
 	return false;
@@ -2287,7 +2287,7 @@ static bool fn_iso_retractall_1(query *q)
 		if (q->did_throw) return true;
 		q->retry = QUERY_RETRY;
 		q->tot_backtracks++;
-		retry_choice(q);
+		retry_control(q);
 	}
 
 	//purge_predicate_dirty_list(q, pr);
@@ -2741,7 +2741,7 @@ static bool search_functor(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 	}
 
 	map_done(q->st.f_iter);
-	drop_choice(q);
+	drop_control(q);
 	return false;
 }
 
@@ -3713,7 +3713,7 @@ static bool fn_clause_3(query *q)
 
 		q->retry = QUERY_RETRY;
 		q->tot_backtracks++;
-		retry_choice(q);
+		retry_control(q);
 	}
 
 	return false;
@@ -4501,7 +4501,7 @@ static bool fn_sys_elapsed_0(query *q)
 	fprintf(stderr, "%% Time elapsed %.3fs, %llu Inferences, %.3f MLips\n", (double)elapsed/1000/1000, (unsigned long long)q->tot_goals, lips/1000/1000);
 	if (q->is_redo) fprintf(stdout, "  ");
 	//else if (!q->redo) fprintf(stdout, "");
-	choice *ch = GET_CURR_CHOICE();
+	control *ch = GET_CURR_CHOICE();
 	ch->st.timer_started = get_time_in_usec();
 	return true;
 }
@@ -4538,11 +4538,11 @@ static bool fn_statistics_0(query *q)
 		"Goals %"PRIu64", "
 		"Matches %"PRIu64".\n"
 		"Max frames %u, "
-		"choices %u, "
+		"controls %u, "
 		"trails %u, "
 		"slots %u.\n"
 		"Active frames %u, "
-		"choices %u, "
+		"controls %u, "
 		"trails %u, "
 		"slots %u.\n"
 		"Heap: %u (~%u MB), "
@@ -4552,7 +4552,7 @@ static bool fn_statistics_0(query *q)
 		"slots: %"PRIu64", "
 		"Queue: %u\n",
 		q->tot_goals, q->tot_matches,
-		q->hw_frames, q->hw_choices, q->hw_trails, q->hw_slots,
+		q->hw_frames, q->hw_controls, q->hw_trails, q->hw_slots,
 		q->st.fp, q->cp, q->st.tp, q->st.sp,
 		q->st.hp, (unsigned)(sizeof(slot)*q->st.hp/1024/1024),
 		q->tot_retries, q->tot_tcos,
@@ -6705,7 +6705,7 @@ static bool fn_sys_lt_2(query *q)
 		return true;
 	}
 
-	drop_choice(q);
+	drop_control(q);
 	return true;
 }
 
@@ -6784,7 +6784,7 @@ static bool fn_sys_ne_2(query *q)
 		return false;
 	}
 
-	drop_choice(q);
+	drop_control(q);
 	return true;
 }
 
@@ -6830,7 +6830,7 @@ static bool fn_call_nth_2(query *q)
 		make_int(tmp+nbr_cells++, 0);
 		make_call(q, tmp+nbr_cells);
 		check_heap_error(push_barrier(q));
-		choice *ch = GET_CURR_CHOICE();
+		control *ch = GET_CURR_CHOICE();
 		ch->fail_on_retry = true;
 		q->st.curr_cell = tmp;
 		return true;
@@ -6844,7 +6844,7 @@ static bool fn_call_nth_2(query *q)
 	make_struct(tmp+nbr_cells++, g_sys_prune_s, fn_sys_prune_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
-	choice *ch = GET_CURR_CHOICE();
+	control *ch = GET_CURR_CHOICE();
 	ch->fail_on_retry = true;
 	q->st.curr_cell = tmp;
 	return true;
@@ -6894,7 +6894,7 @@ static bool fn_sys_unifiable_3(query *q)
 	if (!unify(q, p1, p1_ctx, p2, p2_ctx) && !q->cycle_error) {
 		q->in_hook = save_hook;
 		undo_me(q);
-		drop_choice(q);
+		drop_control(q);
 		return false;
 	}
 
@@ -6928,7 +6928,7 @@ static bool fn_sys_unifiable_3(query *q)
 	}
 
 	undo_me(q);
-	drop_choice(q);
+	drop_control(q);
 
 	cell *l = end_list(q);
 	cell tmp;
@@ -7499,7 +7499,7 @@ static bool fn_sys_register_cleanup_1(query *q)
 	}
 
 	check_heap_error(push_choice(q));
-	choice *ch = GET_CURR_CHOICE();
+	control *ch = GET_CURR_CHOICE();
 	ch->register_cleanup = true;
 	return true;
 }
@@ -7520,7 +7520,7 @@ static bool fn_abort_0(query *q)
 static bool fn_sys_choice_0(query *q)
 {
 	check_heap_error(push_choice(q));
-	choice *ch = GET_CURR_CHOICE();
+	control *ch = GET_CURR_CHOICE();
 	ch->fail_on_retry = true;
 	return true;
 }
@@ -8401,7 +8401,7 @@ builtins g_other_bifs[] =
 	{"$list", 1, fn_sys_list_1, "-list", false, false, BLAH},
 	{"$queue", 1, fn_sys_queue_1, "+term", false, false, BLAH},
 	{"$incr", 2, fn_sys_incr_2, "@integer,+integer", false, false, BLAH},
-	{"$choice", 0, fn_sys_choice_0, NULL, false, false, BLAH},
+	{"$control", 0, fn_sys_choice_0, NULL, false, false, BLAH},
 	{"$alarm", 1, fn_sys_alarm_1, "+integer", false, false, BLAH},
 	{"$put_attributes", 2, fn_sys_put_attributes_2, "@variable,+list", false, false, BLAH},
 	{"$get_attributes", 2, fn_sys_get_attributes_2, "@variable,-list", false, false, BLAH},

@@ -76,9 +76,9 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define MAX_OF(a,b) (a) > (b) ? (a) : (b)
 #define MIN_OF(a,b) (a) < (b) ? (a) : (b)
 
-#define GET_CHOICE(i) (q->choices+(i))
-#define GET_CURR_CHOICE() GET_CHOICE(q->cp?q->cp-1:q->cp)
-#define GET_PREV_CHOICE() GET_CHOICE(q->cp?q->cp-2:q->cp)
+#define GET_CONTROL(i) (q->controls+(i))
+#define GET_CURR_CHOICE() GET_CONTROL(q->cp?q->cp-1:q->cp)
+#define GET_PREV_CHOICE() GET_CONTROL(q->cp?q->cp-2:q->cp)
 
 #define GET_FRAME(i) (q->frames+(i))
 #define GET_FIRST_FRAME() GET_FRAME(0)
@@ -331,7 +331,7 @@ typedef struct parser_ parser;
 typedef struct page_ page;
 typedef struct stream_ stream;
 typedef struct slot_ slot;
-typedef struct choice_ choice;
+typedef struct control_ control;
 typedef struct prolog_state_ prolog_state;
 typedef struct prolog_flags_ prolog_flags;
 typedef struct cycle_info_ cycle_info;
@@ -409,7 +409,7 @@ struct cell_ {
 
 		struct {
 			cell *val_ret;				// used with TAG_EMPTY saves
-			uint64_t cgen;				// choice generation on call
+			uint64_t cgen;				// control generation on call
 		};
 	};
 };
@@ -551,7 +551,7 @@ struct prolog_state_ {
 	bool arg3_is_ground:1;
 };
 
-struct choice_ {
+struct control_ {
 	prolog_state st;
 	uint64_t cgen, frame_cgen, ugen;
 	pl_idx_t overflow, initial_slots, actual_slots;
@@ -642,7 +642,7 @@ struct query_ {
 	parser *p;
 	frame *frames;
 	slot *slots;
-	choice *choices;
+	control *controls;
 	trail *trails;
 	cell *tmp_heap, *last_arg, *variable_names, *ball, *suspect;
 	cell *queue[MAX_QUEUES], *tmpq[MAX_QUEUES];
@@ -664,8 +664,8 @@ struct query_ {
 	uint64_t time_cpu_started, time_cpu_last_started, future;
 	unsigned max_depth, print_idx, tab_idx, varno, tab0_varno, curr_engine;
 	pl_idx_t tmphp, latest_ctx, popp, variable_names_ctx;
-	pl_idx_t frames_size, slots_size, trails_size, choices_size;
-	pl_idx_t hw_choices, hw_frames, hw_slots, hw_trails;
+	pl_idx_t frames_size, slots_size, trails_size, controls_size;
+	pl_idx_t hw_controls, hw_frames, hw_slots, hw_trails;
 	pl_idx_t cp, before_hook_tp, qcnt[MAX_QUEUES];
 	pl_idx_t h_size, tmph_size, tot_heaps, tot_heapsize, undo_lo_tp, undo_hi_tp;
 	pl_idx_t q_size[MAX_QUEUES], tmpq_size[MAX_QUEUES], qp[MAX_QUEUES];

@@ -580,7 +580,7 @@ static bool del_stream_properties(query *q, int n)
 	while (do_retract(q, tmp, q->st.curr_frame, DO_RETRACTALL)) {
 		if (q->did_throw) return false;
 		q->retry = QUERY_RETRY;
-		retry_choice(q);
+		retry_control(q);
 	}
 
 	q->retry = QUERY_OK;
@@ -6936,7 +6936,7 @@ static bool fn_with_mutex_2(query *q)
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
-	choice *ch = GET_CURR_CHOICE();
+	control *ch = GET_CURR_CHOICE();
 	ch->fail_on_retry = true;
 	q->st.curr_cell = tmp;
 	return true;

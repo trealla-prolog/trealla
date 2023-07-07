@@ -301,7 +301,7 @@ static bool fn_return_1(query *q)
 	CLEANUP cell p1 = eval(q, p1_tmp);
 	q->accum = p1;
 	prune_me(q, false, -1);
-	drop_choice(q);
+	drop_control(q);
 	q->error = true;
 	return true;
 }
