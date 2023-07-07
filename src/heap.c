@@ -563,7 +563,7 @@ cell *copy_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx)
 			continue;
 
 		const cell *v = c;
-		pl_idx_t v_ctx =p1_ctx;
+		pl_idx_t v_ctx = p1_ctx;
 
 		if (is_ref(v))
 			v_ctx = v->var_ctx;
