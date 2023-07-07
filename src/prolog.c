@@ -123,7 +123,11 @@ bool pl_eval(prolog *pl, const char *s)
 
 	pl->p = parser_create(pl->curr_m);
 	if (!pl->p) return false;
-	pl->p->command = true;
+
+	if (isatty(fileno(stdin)))
+		pl->p->fp = stdin;
+	else pl->p->command = true;
+
 	bool ok = run(pl->p, s, true, NULL, 0);
 	if (get_status(pl)) pl->curr_m = pl->p->m;
 	parser_destroy(pl->p);
