@@ -14,7 +14,7 @@ skel(unify_with_occurs_check(_,_*_)).
 main :-
 	ti(G_0,_),G_0.
 
-main.
+main :-
 	ti(_,R_0),R_0.
 
 main.

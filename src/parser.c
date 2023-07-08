@@ -2875,7 +2875,7 @@ static bool process_term(parser *p, cell *p1)
 	db_entry *dbe;
 
 	if ((dbe = assertz_to_db(p->m, p->cl->nbr_vars, p->cl->nbr_temporaries, p1, 1)) == NULL) {
-		if (DUMP_ERRS || !p->do_read_term)
+		if ((DUMP_ERRS || !p->do_read_term) && 0)
 			printf("Error: assertion failed '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 
 		p->error = true;
