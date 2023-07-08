@@ -373,11 +373,6 @@ bool has_next_key(query *q)
 			dkey++;
 
 		cell *darg1 = dkey + 1;
-		cell *darg2 = dkey->arity > 1 ? darg1 + darg1->nbr_cells : NULL;
-
-		if (is_var(darg1) || (darg2 && is_var(darg2)))
-			return true;
-
 		cell *karg1 = deref(q, q->st.key+1, q->st.key_ctx);
 		pl_idx karg1_ctx = q->latest_ctx;
 
