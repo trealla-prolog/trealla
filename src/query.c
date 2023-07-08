@@ -359,7 +359,7 @@ bool has_next_key(query *q)
 
 	// Attempt look-ahead on 1st arg...
 
-#if 1
+#if 0
 	for (db_entry *next = q->st.curr_dbe->next; next; next = next->next) {
 		if (!can_view(q, f->ugen, next))
 			continue;
@@ -377,7 +377,7 @@ bool has_next_key(query *q)
 		cell *karg1 = deref(q, q->st.key+1, q->st.key_ctx);
 		pl_idx karg1_ctx = q->latest_ctx;
 
-		//DUMP_TERM("key", q->st.key, q->st.key_ctx, 1);
+		//DUMP_TERM("key", q->st.key, q->st.key_ctx, 0);
 		//DUMP_TERM("next", cl->cells, q->st.curr_frame, 0);
 
 		if (index_cmpkey(karg1, darg1, q->st.m, NULL) == 0)
@@ -394,7 +394,8 @@ bool has_next_key(query *q)
 		if ((dkey->val_off == g_neck_s) && (dkey->arity > 1))
 			dkey++;
 
-		//DUMP_TERM("dkey", dkey, q->st.curr_frame, 0);
+		//DUMP_TERM("key", q->st.key, q->st.key_ctx, 0);
+		//DUMP_TERM("next", cl->cells, q->st.curr_frame, 0);
 
 		if (index_cmpkey(q->st.key, dkey, q->st.m, NULL) == 0)
 			return true;
