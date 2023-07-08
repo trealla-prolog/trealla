@@ -30,7 +30,7 @@ bool fn_iso_findall_3(query *q)
 			p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, false);
 			check_heap_error(p0);
 			unify(q, q->st.curr_cell, q->st.curr_frame, p0, q->st.curr_frame);
-		} else if (!is_atomic(xp1)) {
+		} else if (!is_atomic(xp1) && !is_string(xp1)) {
 			p0 = deep_clone_to_heap(q, q->st.curr_cell, q->st.curr_frame);
 			check_heap_error(p0);
 		} else
