@@ -370,12 +370,11 @@ bool has_next_key(query *q)
 		cl = &next->cl;
 		cell *dkey = cl->cells;
 
-		if ((dkey->val_off == g_neck_s) && (dkey->arity == 1))
+		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
 			dkey++;
 
 		cell *darg1 = dkey + 1;
 		cell *karg1 = deref(q, q->st.key+1, q->st.key_ctx);
-		pl_idx karg1_ctx = q->latest_ctx;
 
 		//DUMP_TERM("key", q->st.key, q->st.key_ctx, 0);
 		//DUMP_TERM("next", cl->cells, q->st.curr_frame, 0);
@@ -391,7 +390,7 @@ bool has_next_key(query *q)
 		cl = &next->cl;
 		cell *dkey = cl->cells;
 
-		if ((dkey->val_off == g_neck_s) && (dkey->arity == 1))
+		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
 			dkey++;
 
 		//DUMP_TERM("key", q->st.key, q->st.key_ctx, 0);
