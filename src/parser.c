@@ -3030,8 +3030,10 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			p->end_of_term = true;
 			last_op = true;
 
-			if (p->one_shot)
+			if (p->one_shot) {
+				p->fp = NULL;
 				break;
+			}
 
 			last_num = false;
 			continue;
