@@ -522,7 +522,7 @@ struct slot_ {
 struct frame_ {
 	cell *prev_cell;
 	uint64_t ugen, cgen;
-	pl_idx prev_offset, base, overflow, hp, initial_slots, actual_slots;
+	pl_idx prev_offset, hp, base, overflow, initial_slots, actual_slots;
 	uint16_t mid;
 	bool is_last:1;
 };
@@ -552,7 +552,7 @@ struct prolog_state_ {
 struct control_ {
 	prolog_state st;
 	uint64_t cgen, frame_cgen, ugen;
-	pl_idx overflow, initial_slots, actual_slots;
+	pl_idx base, overflow, initial_slots, actual_slots;
 	bool catchme_retry:1;
 	bool catchme_exception:1;
 	bool barrier:1;

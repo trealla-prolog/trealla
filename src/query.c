@@ -742,6 +742,7 @@ int retry_control(query *q)
 		f->initial_slots = ch->initial_slots;
 		f->actual_slots = ch->actual_slots;
 		f->overflow = ch->overflow;
+		f->base = ch->base;
 
 		if (ch->succeed_on_retry)
 			return -1;
@@ -942,6 +943,7 @@ bool push_choice(query *q)
 	ch->initial_slots = f->initial_slots;
 	ch->actual_slots = f->actual_slots;
 	ch->overflow = f->overflow;
+	ch->base = f->base;
 	ch->catchme_retry =
 		ch->catchme_exception = ch->barrier = ch->register_cleanup =
 		ch->block_catcher = ch->catcher = ch->fail_on_retry =
