@@ -2958,9 +2958,6 @@ unsigned tokenize(parser *p, bool args, bool consing)
 					return 0;
 				}
 
-				if (isatty(fileno(stdin)))
-					p->fp = NULL;
-
 				xref_rule(p->m, p->cl, NULL);
 				term_to_body(p);
 
