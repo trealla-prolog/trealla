@@ -67,18 +67,18 @@ bool wrap_ffi_predicate(query *q, builtins *fn_ptr);
 #define is_iso_atom_or_var(c) (is_iso_atom(c) || is_var(c))
 #define is_iso_atomic_or_var(c) (is_iso_atom(c) || is_number(c) || is_var(c))
 
-void make_uint(cell *tmp, pl_uint_t v);
-void make_int(cell *tmp, pl_int_t v);
-void make_float(cell *tmp, pl_flt_t v);
+void make_uint(cell *tmp, pl_uint v);
+void make_int(cell *tmp, pl_int v);
+void make_float(cell *tmp, pl_flt v);
 void make_ptr(cell *tmp, void *v);
-void make_struct(cell *tmp, pl_idx_t offset, void *fn, unsigned arity, pl_idx_t extra_cells);
-void make_ref(cell *tmp, pl_idx_t off, unsigned var_nbr, pl_idx_t ctx);
-void make_var(cell *tmp, pl_idx_t off, unsigned var_nbr);
-void make_var2(cell *tmp, pl_idx_t off);
+void make_struct(cell *tmp, pl_idx offset, void *fn, unsigned arity, pl_idx extra_cells);
+void make_ref(cell *tmp, pl_idx off, unsigned var_nbr, pl_idx ctx);
+void make_var(cell *tmp, pl_idx off, unsigned var_nbr);
+void make_var2(cell *tmp, pl_idx off);
 void make_call(query *q, cell *tmp);
 void make_call_return(query *q, cell *tmp, cell *ret);
 void make_end(cell *tmp);
-void make_atom(cell *tmp, pl_idx_t offset);
+void make_atom(cell *tmp, pl_idx offset);
 cell *make_nil(void);
 void make_smalln(cell *tmp, const char *s, size_t n);
 bool make_cstringn(cell *tmp, const char *s, size_t n);
@@ -96,7 +96,7 @@ bool fn_iso_add_2(query *q);
 bool fn_iso_float_1(query *q);
 bool fn_iso_integer_1(query *q);
 
-inline static void make_indirect(cell *tmp, cell *v, pl_idx_t v_ctx)
+inline static void make_indirect(cell *tmp, cell *v, pl_idx v_ctx)
 {
 	tmp->tag = TAG_PTR;
 	tmp->nbr_cells = 1;
@@ -126,7 +126,7 @@ inline static void drop_queuen(query *q)
 	q->st.qnbr--;
 }
 
-inline static pl_idx_t queuen_used(const query *q)
+inline static pl_idx queuen_used(const query *q)
 {
 	return q->qp[q->st.qnbr];
 }
@@ -144,7 +144,7 @@ inline static cell *take_queuen(query *q)
 	return save;
 }
 
-inline static cell *get_var(query *q, cell *c, pl_idx_t c_ctx)
+inline static cell *get_var(query *q, cell *c, pl_idx c_ctx)
 {
 	if (is_ref(c))
 		c_ctx = c->var_ctx;
@@ -174,7 +174,7 @@ inline static cell *get_var(query *q, cell *c, pl_idx_t c_ctx)
 
 bool check_trail(query *q);
 
-inline static void add_trail(query *q, pl_idx_t c_ctx, unsigned c_var_nbr, cell *attrs, pl_idx_t attrs_ctx)
+inline static void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs, pl_idx attrs_ctx)
 {
 	if (q->st.tp >= q->trails_size) {
 		if (!check_trail(q)) {
@@ -190,12 +190,12 @@ inline static void add_trail(query *q, pl_idx_t c_ctx, unsigned c_var_nbr, cell 
 	tr->attrs_ctx = attrs_ctx;
 }
 
-inline static void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
+inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
 {
 	const frame *f = GET_FRAME(c_ctx);
 	slot *e = GET_SLOT(f, c->var_nbr);
 	cell *c_attrs = is_empty(&e->c) ? e->c.attrs : NULL, *v_attrs = NULL;
-	pl_idx_t c_attrs_ctx = c_attrs ? e->c.attrs_ctx : 0;
+	pl_idx c_attrs_ctx = c_attrs ? e->c.attrs_ctx : 0;
 
 	if ((c_ctx < q->st.fp) || is_managed(v))
 		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
@@ -235,7 +235,7 @@ inline static void set_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_
 	}
 }
 
-inline static void reset_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, pl_idx_t v_ctx)
+inline static void reset_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
 {
 	const frame *f = GET_FRAME(c_ctx);
 	slot *e = GET_SLOT(f, c->var_nbr);
@@ -265,36 +265,36 @@ inline static void reset_var(query *q, const cell *c, pl_idx_t c_ctx, cell *v, p
 
 #define GET_RAW_ARG(n,p) \
 	cell *p = get_raw_arg(q,n); \
-	pl_idx_t p##_ctx = q->latest_ctx
+	pl_idx p##_ctx = q->latest_ctx
 
 #define GET_FIRST_ARG(p,vt) \
 	cell *p = get_first_arg(q); \
-	pl_idx_t p##_ctx = q->latest_ctx; \
+	pl_idx p##_ctx = q->latest_ctx; \
 	if (!is_##vt(p)) { return throw_error(q, p, p##_ctx, "type_error", #vt); }
 
 #define GET_FIRST_ARG0(p,vt,p0) \
 	cell *p = get_first_arg0(q,p0); \
-	pl_idx_t p##_ctx = q->latest_ctx; \
+	pl_idx p##_ctx = q->latest_ctx; \
 	if (!is_##vt(p)) { return throw_error(q, p, p##_ctx, "type_error", #vt); }
 
 #define GET_FIRST_RAW_ARG(p,vt) \
 	cell *p = get_first_raw_arg(q); \
-	pl_idx_t p##_ctx = q->st.curr_frame; \
+	pl_idx p##_ctx = q->st.curr_frame; \
 	if (!is_##vt(p)) { return throw_error(q, p, p##_ctx, "type_error", #vt); }
 
 #define GET_FIRST_RAW_ARG0(p,vt,p0) \
 	cell *p = get_first_raw_arg0(q,p0); \
-	pl_idx_t p##_ctx = q->st.curr_frame; \
+	pl_idx p##_ctx = q->st.curr_frame; \
 	if (!is_##vt(p)) { return throw_error(q, p, p##_ctx, "type_error", #vt); }
 
 #define GET_NEXT_ARG(p,vt) \
 	cell *p = get_next_arg(q); \
-	pl_idx_t p##_ctx = q->latest_ctx; \
+	pl_idx p##_ctx = q->latest_ctx; \
 	if (!is_##vt(p)) { return throw_error(q, p, p##_ctx, "type_error", #vt); }
 
 #define GET_NEXT_RAW_ARG(p,vt) \
 	cell *p = get_next_raw_arg(q); \
-	pl_idx_t p##_ctx = q->st.curr_frame; \
+	pl_idx p##_ctx = q->st.curr_frame; \
 	if (!is_##vt(p)) { return throw_error(q, p, p##_ctx, "type_error", #vt); }
 
 inline static cell *get_first_arg(query *q)

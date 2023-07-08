@@ -65,7 +65,7 @@ void do_yield_at(query *q, unsigned int time_in_ms)
 	q->yield_at += time_in_ms > 0 ? time_in_ms : 1;
 }
 
-void make_ref(cell *tmp, pl_idx_t off, unsigned var_nbr, pl_idx_t ctx)
+void make_ref(cell *tmp, pl_idx off, unsigned var_nbr, pl_idx ctx)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_VAR;
@@ -75,7 +75,7 @@ void make_ref(cell *tmp, pl_idx_t off, unsigned var_nbr, pl_idx_t ctx)
 	tmp->var_ctx = ctx;
 }
 
-void make_var(cell *tmp, pl_idx_t off, unsigned var_nbr)
+void make_var(cell *tmp, pl_idx off, unsigned var_nbr)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_VAR;
@@ -84,7 +84,7 @@ void make_var(cell *tmp, pl_idx_t off, unsigned var_nbr)
 	tmp->val_off = off;
 }
 
-void make_var2(cell *tmp, pl_idx_t off)
+void make_var2(cell *tmp, pl_idx off)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_VAR;
@@ -92,7 +92,7 @@ void make_var2(cell *tmp, pl_idx_t off)
 	tmp->val_off = off;
 }
 
-void make_float(cell *tmp, pl_flt_t v)
+void make_float(cell *tmp, pl_flt v)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_DOUBLE;
@@ -100,7 +100,7 @@ void make_float(cell *tmp, pl_flt_t v)
 	tmp->val_float = v;
 }
 
-void make_int(cell *tmp, pl_int_t v)
+void make_int(cell *tmp, pl_int v)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_INTEGER;
@@ -108,7 +108,7 @@ void make_int(cell *tmp, pl_int_t v)
 	set_smallint(tmp, v);
 }
 
-void make_uint(cell *tmp, pl_uint_t v)
+void make_uint(cell *tmp, pl_uint v)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_INTEGER;
@@ -124,7 +124,7 @@ void make_ptr(cell *tmp, void *v)
 	tmp->val_uint = (size_t)v;
 }
 
-void make_struct(cell *tmp, pl_idx_t offset, void *fn, unsigned arity, pl_idx_t extra_cells)
+void make_struct(cell *tmp, pl_idx offset, void *fn, unsigned arity, pl_idx extra_cells)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_INTERNED;
@@ -166,7 +166,7 @@ void make_call_return(query *q, cell *tmp, cell *c_ret)
 	tmp->mid = q->st.m->id;						// ... current-module
 }
 
-void make_atom(cell *tmp, pl_idx_t offset)
+void make_atom(cell *tmp, pl_idx offset)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_INTERNED;
@@ -202,7 +202,7 @@ static void init_queue(query *q)
 }
 #endif
 
-static pl_idx_t queue_used(const query *q) { return q->qp[0]; }
+static pl_idx queue_used(const query *q) { return q->qp[0]; }
 static cell *get_queue(query *q) { return q->queue[0]; }
 
 static cell *pop_queue(query *q)
@@ -341,7 +341,7 @@ static bool fn_iso_notunify_2(query *q)
 	cell tmp2;
 	make_struct(&tmp2, g_unify_s, fn_iso_unify_2, 2, 0);
 	cell *tmp = clone_to_heap(q, true, &tmp2, p1->nbr_cells+p2->nbr_cells+4);
-	pl_idx_t nbr_cells = 1;
+	pl_idx nbr_cells = 1;
 	tmp[nbr_cells].nbr_cells += p1->nbr_cells+p2->nbr_cells;
 	nbr_cells++;
 	safe_copy_cells(tmp+nbr_cells, p1, p1->nbr_cells);
@@ -531,7 +531,7 @@ static bool fn_iso_atom_chars_2(query *q)
 
 	if (!is_var(p2)) {
 		cell *save_p2 = p2;
-		pl_idx_t save_p2_ctx = p2_ctx;
+		pl_idx save_p2_ctx = p2_ctx;
 		LIST_HANDLER(p2);
 
 		while (is_list(p2)) {
@@ -642,12 +642,12 @@ static bool fn_iso_number_chars_2(query *q)
 
 	// Verify the list
 
-	pl_int_t cnt = 0;
+	pl_int cnt = 0;
 	bool any_vars = false;
 
 	if (!is_var(p2)) {
 		cell *save_p2 = p2;
-		pl_idx_t save_p2_ctx = p2_ctx;
+		pl_idx save_p2_ctx = p2_ctx;
 		LIST_HANDLER(p2);
 
 		while (is_list(p2)) {
@@ -802,7 +802,7 @@ static bool fn_iso_atom_codes_2(query *q)
 
 	if (!is_var(p2)) {
 		cell *save_p2 = p2;
-		pl_idx_t save_p2_ctx = p2_ctx;
+		pl_idx save_p2_ctx = p2_ctx;
 		LIST_HANDLER(p2);
 
 		while (is_list(p2)) {
@@ -835,7 +835,7 @@ static bool fn_iso_atom_codes_2(query *q)
 			cell *head = LIST_HEAD(p2);
 			head = deref(q, head, p2_ctx);
 
-			pl_int_t val = get_smallint(head);
+			pl_int val = get_smallint(head);
 
 			if (val < 0)
 				return throw_error(q, head, q->latest_ctx, "representation_error", "character_code");
@@ -917,7 +917,7 @@ static bool fn_string_codes_2(query *q)
 
 	if (!is_var(p2)) {
 		cell *save_p2 = p2;
-		pl_idx_t save_p2_ctx = p2_ctx;
+		pl_idx save_p2_ctx = p2_ctx;
 		LIST_HANDLER(p2);
 
 		while (is_list(p2)) {
@@ -950,7 +950,7 @@ static bool fn_string_codes_2(query *q)
 			cell *head = LIST_HEAD(p2);
 			head = deref(q, head, p2_ctx);
 
-			pl_int_t val = get_smallint(head);
+			pl_int val = get_smallint(head);
 
 			if (val < 0)
 				return throw_error(q, head, q->latest_ctx, "representation_error", "character_code");
@@ -1023,7 +1023,7 @@ static bool fn_hex_bytes_2(query *q)
 
 	if (!is_var(p2)) {
 		cell *save_p2 = p2;
-		pl_idx_t save_p2_ctx = p2_ctx;
+		pl_idx save_p2_ctx = p2_ctx;
 		LIST_HANDLER(p2);
 
 		while (is_list(p2)) {
@@ -1056,7 +1056,7 @@ static bool fn_hex_bytes_2(query *q)
 			cell *head = LIST_HEAD(p2);
 			head = deref(q, head, p2_ctx);
 
-			pl_int_t val = get_smallint(head);
+			pl_int val = get_smallint(head);
 
 			if ((val < 0) || (val > 255))
 				return throw_error(q, head, q->latest_ctx, "representation_error", "byte");
@@ -1088,13 +1088,13 @@ static bool fn_hex_bytes_2(query *q)
 		while (is_list(p1) && is_list(p2)) {
 			cell *h11 = LIST_HEAD(p1);
 			h11 = deref(q, h11, p1_ctx);
-			pl_idx_t h11_ctx = q->latest_ctx;
+			pl_idx h11_ctx = q->latest_ctx;
 			p1 = LIST_TAIL(p1);
 			p1 = deref(q, p1, p1_ctx);
 			p1_ctx = q->latest_ctx;
 			cell *h12 = LIST_HEAD(p1);
 			h12 = deref(q, h12, p1_ctx);
-			pl_idx_t h12_ctx = q->latest_ctx;
+			pl_idx h12_ctx = q->latest_ctx;
 
 			cell *h2 = LIST_HEAD(p2);
 			h2 = deref(q, h2, p2_ctx);
@@ -1229,7 +1229,7 @@ static bool fn_iso_number_codes_2(query *q)
 
 	if (!is_var(p2)) {
 		cell *save_p2 = p2;
-		pl_idx_t save_p2_ctx = p2_ctx;
+		pl_idx save_p2_ctx = p2_ctx;
 		LIST_HANDLER(p2);
 
 		while (is_list(p2)) {
@@ -1360,14 +1360,14 @@ static bool fn_iso_number_codes_2(query *q)
 	return unify(q, p2, p2_ctx, l, q->st.curr_frame);
 }
 
-static bool do_sub_atom(query *q, cell *p1, cell *p2, pl_idx_t p2_ctx, cell *p3, pl_idx_t p3_ctx, cell *p4, pl_idx_t p4_ctx, cell *p5)
+static bool do_sub_atom(query *q, cell *p1, cell *p2, pl_idx p2_ctx, cell *p3, pl_idx p3_ctx, cell *p4, pl_idx p4_ctx, cell *p5)
 {
 	if (!q->retry) {
 		q->st.v1 = 0;
 	}
 
 	const char *src = C_STR(q, p1), *s = C_STR(q, p5);
-	pl_int_t srclen = C_STRLEN(q, p1), before = (int)q->st.v1, len = C_STRLEN(q, p5);
+	pl_int srclen = C_STRLEN(q, p1), before = (int)q->st.v1, len = C_STRLEN(q, p5);
 	const char *src2 = src + before;
 	src2 = strstr(src2, s);
 
@@ -1377,7 +1377,7 @@ static bool do_sub_atom(query *q, cell *p1, cell *p2, pl_idx_t p2_ctx, cell *p3,
 	if (!src2)
 		return false;
 
-	pl_int_t after = srclen - (src2 - src) - len;
+	pl_int after = srclen - (src2 - src) - len;
 	before = src2 - src;
 
 	if (after < 0)
@@ -1779,7 +1779,7 @@ static bool fn_iso_arg_3(query *q)
 	if (is_bigint(p1))
 		return false;
 
-	pl_int_t arg_nbr = get_smallint(p1);
+	pl_int arg_nbr = get_smallint(p1);
 
 	if ((arg_nbr == 0) || (arg_nbr > p2->arity))
 		return false;
@@ -1788,7 +1788,7 @@ static bool fn_iso_arg_3(query *q)
 		LIST_HANDLER(p2);
 		cell *c = LIST_HEAD(p2);
 		c = deref(q, c, p2_ctx);
-		pl_idx_t c_ctx = q->latest_ctx;
+		pl_idx c_ctx = q->latest_ctx;
 
 		if (arg_nbr == 1)
 			return unify(q, c, c_ctx, p3, p3_ctx);
@@ -1804,7 +1804,7 @@ static bool fn_iso_arg_3(query *q)
 	for (int i = 1; i <= arg_nbr; i++) {
 		if (i == arg_nbr) {
 			cell *c = deref(q, p2, p2_ctx);
-			pl_idx_t c_ctx = q->latest_ctx;
+			pl_idx c_ctx = q->latest_ctx;
 			return unify(q, p3, p3_ctx, c, c_ctx);
 		}
 
@@ -1872,7 +1872,7 @@ static bool fn_iso_univ_2(query *q)
 		if (is_var(p22))
 			return throw_error(q, p2, p2_ctx, "instantiation_error", "not_sufficiently_instantiated");
 
-		pl_idx_t save_hp = q->st.hp;
+		pl_idx save_hp = q->st.hp;
 		cell *tmp = deep_clone_to_heap(q, p2, p2_ctx);
 		check_heap_error(tmp);
 		p2 = tmp;
@@ -1904,7 +1904,7 @@ static bool fn_iso_univ_2(query *q)
 
 		arity--;
 		cell *tmp2 = get_tmp_heap(q, 0);
-		pl_idx_t nbr_cells = tmp_heap_used(q);
+		pl_idx nbr_cells = tmp_heap_used(q);
 
 		if (is_cstring(tmp2) && !is_string(save_p2)) {
 			share_cell(tmp2);
@@ -1978,7 +1978,7 @@ static bool fn_iso_univ_2(query *q)
 	return unify(q, p2, p2_ctx, l, p1_ctx);
 }
 
-cell *do_term_variables(query *q, cell *p1, pl_idx_t p1_ctx)
+cell *do_term_variables(query *q, cell *p1, pl_idx p1_ctx)
 {
 	frame *f = GET_CURR_FRAME();
 	q->varno = f->actual_slots;
@@ -2037,7 +2037,7 @@ static bool fn_iso_term_variables_2(query *q)
 	return unify(q, p2, p2_ctx, tmp2, q->st.curr_frame);
 }
 
-static cell *do_term_singletons(query *q, cell *p1, pl_idx_t p1_ctx)
+static cell *do_term_singletons(query *q, cell *p1, pl_idx p1_ctx)
 {
 	frame *f = GET_CURR_FRAME();
 	q->varno = f->actual_slots;
@@ -2216,7 +2216,7 @@ static bool fn_iso_clause_2(query *q)
 	return false;
 }
 
-bool do_retract(query *q, cell *p1, pl_idx_t p1_ctx, enum clause_type is_retract)
+bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 {
 	if (!q->retry) {
 		cell *head = deref(q, get_head(p1), p1_ctx);
@@ -2428,11 +2428,11 @@ static unsigned count_non_anons(uint8_t *mask, unsigned bit)
 
 static void do_term_assign_vars(parser *p)
 {
-	pl_idx_t nbr_cells = p->cl->cidx;
+	pl_idx nbr_cells = p->cl->cidx;
 	term_assign_vars(p, 0, true);
 	memset(p->vartab.vars, 0, sizeof(p->vartab.vars));
 
-	for (pl_idx_t i = 0; i < nbr_cells; i++) {
+	for (pl_idx i = 0; i < nbr_cells; i++) {
 		cell *c = p->cl->cells+i;
 
 		if (!is_var(c))
@@ -2442,7 +2442,7 @@ static void do_term_assign_vars(parser *p)
 		p->vartab.vars[c->var_nbr]++;
 	}
 
-	for (pl_idx_t i = 0; i < nbr_cells; i++) {
+	for (pl_idx i = 0; i < nbr_cells; i++) {
 		cell *c = p->cl->cells+i;
 
 		if (!is_var(c))
@@ -2493,7 +2493,7 @@ static bool fn_iso_asserta_1(query *q)
 	if (body && ((tmp2 = check_body_callable(body)) != NULL))
 		return throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
 
-	pl_idx_t nbr_cells = tmp->nbr_cells;
+	pl_idx nbr_cells = tmp->nbr_cells;
 	parser *p = q->st.m->p;
 
 	if (nbr_cells > p->cl->allocated_cells) {
@@ -2548,7 +2548,7 @@ static bool fn_iso_assertz_1(query *q)
 	if (body && ((tmp2 = check_body_callable(body)) != NULL))
 		return throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
 
-	pl_idx_t nbr_cells = tmp->nbr_cells;
+	pl_idx nbr_cells = tmp->nbr_cells;
 	parser *p = q->st.m->p;
 
 	if (nbr_cells > p->cl->allocated_cells) {
@@ -2709,7 +2709,7 @@ static bool fn_iso_current_rule_1(query *q)
 	return false;
 }
 
-static bool search_functor(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx)
+static bool search_functor(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
 {
 	if (!q->retry)
 		q->st.f_iter = map_first(q->st.m->index);
@@ -2755,8 +2755,8 @@ static bool fn_iso_current_predicate_1(query *q)
 	if (is_var(p_pi)) {
 		cell tmp1, tmp2;
 		cell *p1 = &tmp1, *p2 = &tmp2;
-		pl_idx_t p1_ctx = q->st.curr_frame;
-		pl_idx_t p2_ctx = q->st.curr_frame;
+		pl_idx p1_ctx = q->st.curr_frame;
+		pl_idx p2_ctx = q->st.curr_frame;
 		frame *f = GET_CURR_FRAME();
 		unsigned var_nbr = f->actual_slots;
 		make_var(&tmp1, 0, var_nbr++);
@@ -2778,7 +2778,7 @@ static bool fn_iso_current_predicate_1(query *q)
 		return throw_error(q, p_pi, p_pi_ctx, "type_error", "predicate_indicator");
 
 	cell *p1, *p2;
-	pl_idx_t p1_ctx, p2_ctx;
+	pl_idx p1_ctx, p2_ctx;
 
 	p1 = p_pi + 1;
 	p1 = deref(q, p1, p_pi_ctx);
@@ -3121,7 +3121,7 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 	return true;
 }
 
-typedef struct { query *q; cell *c; pl_idx_t c_ctx; int8_t arg; bool ascending:1; } basepair;
+typedef struct { query *q; cell *c; pl_idx c_ctx; int8_t arg; bool ascending:1; } basepair;
 
 static int nodecmp(const void *ptr1, const void *ptr2)
 {
@@ -3131,7 +3131,7 @@ static int nodecmp(const void *ptr1, const void *ptr2)
 	query *q = cp1->q;
 	int arg = cp1->arg;
 	cell *p1 = cp1->c, *p2 = cp2->c;
-	pl_idx_t p1_ctx = cp1->c_ctx, p2_ctx = cp2->c_ctx;
+	pl_idx p1_ctx = cp1->c_ctx, p2_ctx = cp2->c_ctx;
 
 	if ((p1->arity >= arg) && (arg > 0)) {
 		p1 = p1 + 1;
@@ -3156,10 +3156,10 @@ static int nodecmp(const void *ptr1, const void *ptr2)
 		return ok < 0 ? 1 : ok > 0 ? -1 : 0;
 }
 
-static cell *nodesort(query *q, cell *p1, pl_idx_t p1_ctx, bool dedup, bool keysort, bool *status)
+static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysort, bool *status)
 {
-	pl_int_t max = PL_INT_MAX, skip = 0;
-	pl_idx_t tmp_ctx = p1_ctx;
+	pl_int max = PL_INT_MAX, skip = 0;
+	pl_idx tmp_ctx = p1_ctx;
 	cell tmp = {0};
 
 	skip_max_list(q, p1, &tmp_ctx, max, &skip, &tmp);
@@ -3173,7 +3173,7 @@ static cell *nodesort(query *q, cell *p1, pl_idx_t p1_ctx, bool dedup, bool keys
 	while (is_list(p1)) {
 		cell *h = LIST_HEAD(p1);
 		h = deref(q, h, p1_ctx);
-		pl_idx_t h_ctx = q->latest_ctx;
+		pl_idx h_ctx = q->latest_ctx;
 
 		if (keysort) {
 			if (!is_structure(h) || strcmp(C_STR(q, h), "-")) {
@@ -3213,7 +3213,7 @@ static cell *nodesort(query *q, cell *p1, pl_idx_t p1_ctx, bool dedup, bool keys
 		}
 
 		cell *c = deref(q, base[i].c, base[i].c_ctx);
-		pl_idx_t c_ctx = q->latest_ctx;
+		pl_idx c_ctx = q->latest_ctx;
 		cell tmp;
 
 		if (is_var(c) || is_structure(c)) {
@@ -3238,7 +3238,7 @@ static bool fn_iso_sort_2(query *q)
 	GET_FIRST_ARG(p1,list_or_nil);
 	GET_NEXT_ARG(p2,list_or_nil_or_var);
 	bool is_partial = false;
-	pl_int_t skip1 = 0, skip2 = 0;
+	pl_int skip1 = 0, skip2 = 0;
 
 	if (is_iso_list(p1) && !check_list(q, p1, p1_ctx, &is_partial, &skip1) && !is_partial)
 		return throw_error(q, p1, p1_ctx, "type_error", "list");
@@ -3278,7 +3278,7 @@ static bool fn_iso_msort_2(query *q)
 	GET_FIRST_ARG(p1,list_or_nil);
 	GET_NEXT_ARG(p2,list_or_nil_or_var);
 	bool is_partial = false;
-	pl_int_t skip1 = 0, skip2 = 0;
+	pl_int skip1 = 0, skip2 = 0;
 
 	if (is_iso_list(p1) && !check_list(q, p1, p1_ctx, &is_partial, &skip1) && !is_partial)
 		return throw_error(q, p1, p1_ctx, "type_error", "list");
@@ -3318,7 +3318,7 @@ static bool fn_iso_keysort_2(query *q)
 	GET_FIRST_ARG(p1,list_or_nil);
 	GET_NEXT_ARG(p2,list_or_nil_or_var);
 	bool is_partial = false;
-	pl_int_t skip1 = 0, skip2 = 0;
+	pl_int skip1 = 0, skip2 = 0;
 
 	if (is_iso_list(p1) && !check_list(q, p1, p1_ctx, &is_partial, &skip1) && !is_partial)
 		return throw_error(q, p1, p1_ctx, "type_error", "list");
@@ -3333,7 +3333,7 @@ static bool fn_iso_keysort_2(query *q)
 		LIST_HANDLER(p2);
 		cell *tmp_h = LIST_HEAD(p2);
 		tmp_h = deref(q, tmp_h, p2_ctx);
-		pl_idx_t tmp_h_ctx = q->latest_ctx;
+		pl_idx tmp_h_ctx = q->latest_ctx;
 		LIST_TAIL(p2);
 
 		if (!is_var(tmp_h) && (!is_structure(tmp_h) || strcmp(C_STR(q, tmp_h), "-")))
@@ -3352,10 +3352,10 @@ static bool fn_iso_keysort_2(query *q)
 	return unify(q, p2, p2_ctx, l, q->st.curr_frame);
 }
 
-static cell *nodesort4(query *q, cell *p1, pl_idx_t p1_ctx, bool dedup, bool ascending, int arg, bool *status)
+static cell *nodesort4(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool ascending, int arg, bool *status)
 {
-	pl_int_t max = PL_INT_MAX, skip = 0;
-	pl_idx_t tmp_ctx = p1_ctx;
+	pl_int max = PL_INT_MAX, skip = 0;
+	pl_idx tmp_ctx = p1_ctx;
 	cell tmp = {0};
 
 	skip_max_list(q, p1, &tmp_ctx, max, &skip, &tmp);
@@ -3368,7 +3368,7 @@ static cell *nodesort4(query *q, cell *p1, pl_idx_t p1_ctx, bool dedup, bool asc
 
 	while (is_list(p1)) {
 		cell *h = deref(q, LIST_HEAD(p1), p1_ctx);
-		pl_idx_t h_ctx = q->latest_ctx;
+		pl_idx h_ctx = q->latest_ctx;
 		base[idx].c = h;
 		base[idx].c_ctx = h_ctx;
 		base[idx].q = q;
@@ -3398,7 +3398,7 @@ static cell *nodesort4(query *q, cell *p1, pl_idx_t p1_ctx, bool dedup, bool asc
 		}
 
 		cell *c = deref(q, base[i].c, base[i].c_ctx);
-		pl_idx_t c_ctx = q->latest_ctx;
+		pl_idx c_ctx = q->latest_ctx;
 		cell tmp;
 
 		if (is_var(c) || is_structure(c)) {
@@ -3425,7 +3425,7 @@ static bool fn_sort_4(query *q)
 	GET_NEXT_ARG(p3,list_or_nil);
 	GET_NEXT_ARG(p4,list_or_nil_or_var);
 	bool is_partial = false, dedup = false, ascending = true;
-	pl_int_t skip1 = 0, skip2 = 0;
+	pl_int skip1 = 0, skip2 = 0;
 
 	if (is_integer(p1) && is_negative(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
@@ -3461,7 +3461,7 @@ static bool fn_sort_4(query *q)
 		LIST_HANDLER(p4);
 		cell *tmp_h = LIST_HEAD(p4);
 		tmp_h = deref(q, tmp_h, p4_ctx);
-		pl_idx_t tmp_h_ctx = q->latest_ctx;
+		pl_idx tmp_h_ctx = q->latest_ctx;
 		LIST_TAIL(p4);
 
 		if (!is_var(tmp_h) && (!is_structure(tmp_h) || strcmp(C_STR(q, tmp_h), "-")))
@@ -3480,7 +3480,7 @@ static bool fn_sort_4(query *q)
 	return unify(q, p4, p4_ctx, l, q->st.curr_frame);
 }
 
-static cell *convert_to_list(query *q, cell *c, pl_idx_t nbr_cells)
+static cell *convert_to_list(query *q, cell *c, pl_idx nbr_cells)
 {
 	if ((!nbr_cells || !c->nbr_cells)) {
 		cell *c = alloc_on_tmp(q, 1);
@@ -3523,7 +3523,7 @@ bool fn_sys_queue_1(query *q)
 	return true;
 }
 
-static bool do_op(query *q, cell *p3, pl_idx_t p3_ctx)
+static bool do_op(query *q, cell *p3, pl_idx p3_ctx)
 {
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,atom);
@@ -3751,7 +3751,7 @@ static bool do_asserta_2(query *q)
 	check_heap_error(init_tmp_heap(q));
 	cell *tmp = deep_copy_to_tmp(q, p1, p1_ctx, false);
 	check_heap_error(tmp);
-	pl_idx_t nbr_cells = tmp->nbr_cells;
+	pl_idx nbr_cells = tmp->nbr_cells;
 	parser *p = q->st.m->p;
 
 	if (nbr_cells > p->cl->allocated_cells) {
@@ -3841,7 +3841,7 @@ static bool do_assertz_2(query *q)
 	check_heap_error(init_tmp_heap(q));
 	cell *tmp = deep_copy_to_tmp(q, p1, p1_ctx, false);
 	check_heap_error(tmp);
-	pl_idx_t nbr_cells = tmp->nbr_cells;
+	pl_idx nbr_cells = tmp->nbr_cells;
 	parser *p = q->st.m->p;
 
 	if (nbr_cells > p->cl->allocated_cells) {
@@ -3970,7 +3970,7 @@ static bool fn_listing_0(query *q)
 	return true;
 }
 
-static void save_name(FILE *fp, query *q, pl_idx_t name, unsigned arity)
+static void save_name(FILE *fp, query *q, pl_idx name, unsigned arity)
 {
 	module *m = q->st.curr_dbe ? q->st.curr_dbe->owner->m : q->st.m;
 	q->listing = true;
@@ -4004,7 +4004,7 @@ static void save_name(FILE *fp, query *q, pl_idx_t name, unsigned arity)
 static bool fn_listing_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	pl_idx_t name = p1->val_off;
+	pl_idx name = p1->val_off;
 	unsigned arity = -1;
 
 	if (p1->arity) {
@@ -4516,7 +4516,7 @@ static bool fn_time_1(query *q)
 	GET_FIRST_ARG(p1,callable);
 	fn_sys_timer_0(q);
 	cell *tmp = clone_to_heap(q, true, p1, 4);
-	pl_idx_t nbr_cells = 1 + p1->nbr_cells;
+	pl_idx nbr_cells = 1 + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_elapsed_s, fn_sys_elapsed_0, 0, 0);
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
@@ -4665,7 +4665,7 @@ static bool fn_busy_1(query *q)
 	if (is_bigint(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
 
-	pl_int_t elapse = get_smallint(p1);
+	pl_int elapse = get_smallint(p1);
 
 	if (elapse < 0)
 		return true;
@@ -4675,8 +4675,8 @@ static bool fn_busy_1(query *q)
 	if (elapse > (60 * 1000))
 		return true;
 
-	pl_uint_t started = get_time_in_usec() / 1000;
-	pl_uint_t end = started + elapse;
+	pl_uint started = get_time_in_usec() / 1000;
+	pl_uint end = started + elapse;
 
 	while ((get_time_in_usec() / 1000)  < end) {
 		CHECK_INTERRUPT();
@@ -4687,7 +4687,7 @@ static bool fn_busy_1(query *q)
 
 static bool fn_now_0(query *q)
 {
-	pl_int_t secs = get_time_in_usec() / 1000 / 1000;
+	pl_int secs = get_time_in_usec() / 1000 / 1000;
 	q->accum.tag = TAG_INTEGER;
 	set_smallint(&q->accum, secs);
 	return true;
@@ -4696,7 +4696,7 @@ static bool fn_now_0(query *q)
 static bool fn_now_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
-	pl_int_t secs = get_time_in_usec() / 1000 / 1000;
+	pl_int secs = get_time_in_usec() / 1000 / 1000;
 	cell tmp;
 	make_int(&tmp, secs);
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
@@ -4716,7 +4716,7 @@ static bool fn_cpu_time_1(query *q)
 	GET_FIRST_ARG(p1,var);
 	double v = ((double)cpu_time_in_usec()-q->time_cpu_started) / 1000 / 1000;
 	cell tmp;
-	make_float(&tmp, (pl_flt_t)v);
+	make_float(&tmp, (pl_flt)v);
 	return unify (q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
@@ -4987,7 +4987,7 @@ static bool fn_must_be_4(query *q)
 	else if (is_structure(p2) && (p2->arity == 1) && !strcmp(src, "list")) {
 		cell *c = p2+1;
 		c = deref(q, c, p2_ctx);
-		pl_idx_t c_ctx = q->latest_ctx;
+		pl_idx c_ctx = q->latest_ctx;
 
 		if (!is_atom(c))
 			return throw_error(q, c, c_ctx, "type_error", "atom");
@@ -4998,13 +4998,13 @@ static bool fn_must_be_4(query *q)
 			return throw_error(q, p1, p1_ctx, "type_error", "list");
 
 		cell *l = p1;
-		pl_idx_t l_ctx = p1_ctx;
+		pl_idx l_ctx = p1_ctx;
 		LIST_HANDLER(l);
 
 		while (is_iso_list(l)) {
 			cell *h = LIST_HEAD(l);
 			h = deref(q, h, l_ctx);
-			pl_idx_t h_ctx = q->latest_ctx;
+			pl_idx h_ctx = q->latest_ctx;
 			src = C_STR(q, c);
 
 			if (!strcmp(src, "var" ) && !is_var(h))
@@ -5122,7 +5122,7 @@ static bool fn_must_be_2(query *q)
 	} else if (is_structure(p2) && (p2->arity == 1) && !strcmp(src, "list")) {
 		cell *c = p2+1;
 		c = deref(q, c, p2_ctx);
-		pl_idx_t c_ctx = q->latest_ctx;
+		pl_idx c_ctx = q->latest_ctx;
 
 		if (!is_atom(c))
 			return throw_error(q, c, c_ctx, "type_error", "atom");
@@ -5133,13 +5133,13 @@ static bool fn_must_be_2(query *q)
 			return throw_error(q, p1, p1_ctx, "type_error", "list");
 
 		cell *l = p1;
-		pl_idx_t l_ctx = p1_ctx;
+		pl_idx l_ctx = p1_ctx;
 		LIST_HANDLER(l);
 
 		while (is_iso_list(l)) {
 			cell *h = LIST_HEAD(l);
 			h = deref(q, h, l_ctx);
-			pl_idx_t h_ctx = q->latest_ctx;
+			pl_idx h_ctx = q->latest_ctx;
 			src = C_STR(q, c);
 
 			if (!strcmp(src, "var" ) && !is_var(h))
@@ -5299,8 +5299,8 @@ static bool fn_sys_skip_max_list_4(query *q)
 			&& unify(q, p3, p3_ctx, p4, p4_ctx);
 	}
 
-	pl_int_t skip=0, max = is_smallint(p2) ? get_smallint(p2) : PL_INT_MAX;
-	pl_idx_t c_ctx = p3_ctx;
+	pl_int skip=0, max = is_smallint(p2) ? get_smallint(p2) : PL_INT_MAX;
+	pl_idx c_ctx = p3_ctx;
 	cell tmp = {0};
 	cell *c = skip_max_list(q, p3, &c_ctx, max, &skip, &tmp);
 
@@ -5404,7 +5404,7 @@ static bool fn_await_0(query *q)
 {
 	while (q->tasks) {
 		CHECK_INTERRUPT();
-		pl_uint_t now = get_time_in_usec() / 1000;
+		pl_uint now = get_time_in_usec() / 1000;
 		query *task = q->tasks;
 		unsigned spawn_cnt = 0;
 		bool did_something = false;
@@ -5466,7 +5466,7 @@ static bool fn_yield_0(query *q)
 
 static bool fn_task_n(query *q)
 {
-	pl_idx_t save_hp = q->st.hp;
+	pl_idx save_hp = q->st.hp;
 	cell *p0 = deep_clone_to_heap(q, q->st.curr_cell, q->st.curr_frame);
 	GET_FIRST_RAW_ARG0(p1,callable,p0);
 	check_heap_error(init_tmp_heap(q));
@@ -5516,7 +5516,7 @@ static bool fn_send_1(query *q)
 	cell *c = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(c);
 
-	for (pl_idx_t i = 0; i < c->nbr_cells; i++) {
+	for (pl_idx i = 0; i < c->nbr_cells; i++) {
 		cell *c2 = c + i;
 		share_cell(c2);
 	}
@@ -5755,12 +5755,12 @@ static bool fn_crypto_data_hash_3(query *q)
 	while (is_list(p3)) {
 		cell *h = LIST_HEAD(p3);
 		h = deref(q, h, p3_ctx);
-		pl_idx_t h_ctx = q->latest_ctx;
+		pl_idx h_ctx = q->latest_ctx;
 
 		if (is_structure(h) && (h->arity == 1)) {
 			cell *arg = h+1;
 			arg = deref(q, arg, h_ctx);
-			pl_idx_t arg_ctx = q->latest_ctx;
+			pl_idx arg_ctx = q->latest_ctx;
 
 			if (!CMP_STR_TO_CSTR(q, h, "algorithm")) {
 				if (is_var(arg)) {
@@ -6075,9 +6075,9 @@ static bool fn_string_upper_2(query *q)
 	return ok;
 }
 
-static pl_idx_t jenkins_one_at_a_time_hash(const char *key, size_t len)
+static pl_idx jenkins_one_at_a_time_hash(const char *key, size_t len)
 {
-	pl_idx_t hash = 0;
+	pl_idx hash = 0;
 
 	while (len-- > 0) {
 		hash += *key++;
@@ -6698,7 +6698,7 @@ static bool fn_sys_lt_2(query *q)
 	if (is_bigint(p2))
 		return throw_error(q, p2, p2_ctx, "domain_error", "small_integer_range");
 
-	pl_int_t num = get_smallint(p1);
+	pl_int num = get_smallint(p1);
 
 	if (num < get_smallint(p2)) {
 		set_smallint(p1, num+1);
@@ -6718,7 +6718,7 @@ static bool fn_limit_2(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
 
 	cell *tmp = clone_to_heap(q, true, p2, 4);
-	pl_idx_t nbr_cells = 1 + p2->nbr_cells;
+	pl_idx nbr_cells = 1 + p2->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_fail_s, fn_sys_lt_2, 2, 2);
 	make_int(tmp+nbr_cells++, 1);
 	make_int(tmp+nbr_cells++, get_smallint(p1));
@@ -6738,7 +6738,7 @@ static bool fn_sys_gt_2(query *q)
 	if (is_bigint(p2))
 		return throw_error(q, p2, p2_ctx, "domain_error", "small_integer_range");
 
-	pl_int_t num = get_smallint(p1);
+	pl_int num = get_smallint(p1);
 
 	if (num <= get_smallint(p2)) {
 		set_smallint(p1, num+1);
@@ -6757,7 +6757,7 @@ static bool fn_offset_2(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
 
 	cell *tmp = clone_to_heap(q, true, p2, 4);
-	pl_idx_t nbr_cells = 1 + p2->nbr_cells;
+	pl_idx nbr_cells = 1 + p2->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_fail_s, fn_sys_gt_2, 2, 2);
 	make_int(tmp+nbr_cells++, 1);
 	make_int(tmp+nbr_cells++, get_smallint(p1));
@@ -6777,7 +6777,7 @@ static bool fn_sys_ne_2(query *q)
 	if (is_bigint(p2))
 		return throw_error(q, p2, p2_ctx, "domain_error", "small_integer_range");
 
-	pl_int_t num = get_smallint(p1);
+	pl_int num = get_smallint(p1);
 
 	if (num != get_smallint(p2)) {
 		set_smallint(p1, num+1);
@@ -6796,7 +6796,7 @@ static bool fn_sys_incr_2(query *q)
 	if (is_bigint(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
 
-	pl_int_t n = get_smallint(p2);
+	pl_int n = get_smallint(p2);
 	n++;
 	set_smallint(p2, n);
 
@@ -6822,7 +6822,7 @@ static bool fn_call_nth_2(query *q)
 
 	if (is_var(p2)) {
 		cell *tmp = clone_to_heap(q, true, p1, 4);
-		pl_idx_t nbr_cells = 1 + p1->nbr_cells;
+		pl_idx nbr_cells = 1 + p1->nbr_cells;
 		make_struct(tmp+nbr_cells++, g_sys_incr_s, fn_sys_incr_2, 2, 2);
 		GET_RAW_ARG(2,p2_raw);
 		tmp[nbr_cells] = *p2_raw;
@@ -6837,7 +6837,7 @@ static bool fn_call_nth_2(query *q)
 	}
 
 	cell *tmp = clone_to_heap(q, true, p1, 5);
-	pl_idx_t nbr_cells = 1 + p1->nbr_cells;
+	pl_idx nbr_cells = 1 + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_ne_s, fn_sys_ne_2, 2, 2);
 	make_int(tmp+nbr_cells++, 1);
 	make_int(tmp+nbr_cells++, get_smallint(p2));
@@ -6887,7 +6887,7 @@ static bool fn_sys_unifiable_3(query *q)
 	GET_NEXT_ARG(p3,list_or_nil_or_var);
 	check_heap_error(push_choice(q));
 	try_me(q, MAX_VARS);
-	pl_idx_t before_hook_tp = q->st.tp;
+	pl_idx before_hook_tp = q->st.tp;
 	bool save_hook = q->in_hook;
 	q->in_hook = true;
 
@@ -7286,7 +7286,7 @@ static bool fn_kv_get_3(query *q)
 	}
 
 	if (all_digs) {
-		pl_int_t v = strtoll(val, NULL, 10);
+		pl_int v = strtoll(val, NULL, 10);
 		make_int(&tmp, v);
 	} else
 		check_heap_error(make_cstring(&tmp, val));
@@ -7490,7 +7490,7 @@ static bool fn_sys_register_cleanup_1(query *q)
 	if (q->retry) {
 		GET_FIRST_ARG(p1,callable);
 		cell *tmp = clone_to_heap(q, true, p1, 4);
-		pl_idx_t nbr_cells = 1 + p1->nbr_cells;
+		pl_idx nbr_cells = 1 + p1->nbr_cells;
 		make_struct(tmp+nbr_cells++, g_sys_prune_s, fn_sys_prune_0, 0, 0);
 		make_struct(tmp+nbr_cells++, g_fail_s, fn_iso_fail_0, 0, 0);
 		make_call(q, tmp+nbr_cells);
@@ -7804,7 +7804,7 @@ static bool fn_parse_csv_file_2(query *q)
 	q->p->fp = fopen(C_STR(q, p1), "r");
 	if (!q->p->fp) return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 	unsigned line_nbr = 0;
-	pl_idx_t save_hp = q->st.hp;
+	pl_idx save_hp = q->st.hp;
 	frame *f = GET_CURR_FRAME();
 	frame save_f = *f;
 	ssize_t len;

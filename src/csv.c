@@ -10,7 +10,7 @@
 #include "prolog.h"
 #include "query.h"
 
-bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx_t p2_ctx)
+bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx p2_ctx)
 {
 	bool quoted = false, was_quoted = false, first = true, was_sep = false;
 	unsigned chars = 0, args = 0;

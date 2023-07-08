@@ -45,7 +45,7 @@ bool fn_iso_findall_3(query *q)
 
 		cell *tmp = clone_to_heap(q, true, p2, 1+p1->nbr_cells+2);
 		check_heap_error(tmp);
-		pl_idx_t nbr_cells = 1 + p2->nbr_cells;
+		pl_idx nbr_cells = 1 + p2->nbr_cells;
 		make_struct(tmp+nbr_cells++, g_sys_queue_s, fn_sys_queue_1, 1, p1->nbr_cells);
 		nbr_cells += copy_cells(tmp+nbr_cells, p1, p1->nbr_cells);
 		make_struct(tmp+nbr_cells++, g_fail_s, fn_iso_fail_0, 0, 0);
@@ -62,7 +62,7 @@ bool fn_iso_findall_3(query *q)
 
 	// Retry takes the queue
 
-	pl_idx_t nbr_cells = queuen_used(q);
+	pl_idx nbr_cells = queuen_used(q);
 	cell *solns = take_queuen(q);
 	drop_queuen(q);
 

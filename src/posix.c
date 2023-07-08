@@ -94,7 +94,7 @@ static bool fn_posix_strptime_3(query *q)
 
 	cell *tmp = alloc_on_heap(q, 10);
 	make_struct(tmp, g_tm_s, NULL, 9, 0);
-	pl_idx_t nbr_cells = 1;
+	pl_idx nbr_cells = 1;
 	make_int(tmp+nbr_cells++, tm.tm_sec);
 	make_int(tmp+nbr_cells++, tm.tm_min);
 	make_int(tmp+nbr_cells++, tm.tm_hour);
@@ -150,7 +150,7 @@ static bool fn_posix_gmtime_2(query *q)
 
 	cell *tmp = alloc_on_heap(q, 10);
 	make_struct(tmp, g_tm_s, NULL, 9, 0);
-	pl_idx_t nbr_cells = 1;
+	pl_idx nbr_cells = 1;
 	make_int(tmp+nbr_cells++, tm.tm_sec);
 	make_int(tmp+nbr_cells++, tm.tm_min);
 	make_int(tmp+nbr_cells++, tm.tm_hour);
@@ -177,7 +177,7 @@ static bool fn_posix_localtime_2(query *q)
 
 	cell *tmp = alloc_on_heap(q, 10);
 	make_struct(tmp, g_tm_s, NULL, 9, 0);
-	pl_idx_t nbr_cells = 1;
+	pl_idx nbr_cells = 1;
 	make_int(tmp+nbr_cells++, tm.tm_sec);
 	make_int(tmp+nbr_cells++, tm.tm_min);
 	make_int(tmp+nbr_cells++, tm.tm_hour);

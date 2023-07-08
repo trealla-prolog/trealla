@@ -226,7 +226,7 @@ typedef struct item_ item;
 
 struct item_ {
 	cell *c;
-	pl_idx_t c_ctx;
+	pl_idx c_ctx;
 	int nbr;
 	item *next;
 };
@@ -242,7 +242,7 @@ static void	clear_results()
 	}
 }
 
-static void add_result(int nbr, cell *c, pl_idx_t c_ctx)
+static void add_result(int nbr, cell *c, pl_idx c_ctx)
 {
 	item *ptr = malloc(sizeof(item));
 	ensure(ptr);
@@ -253,7 +253,7 @@ static void add_result(int nbr, cell *c, pl_idx_t c_ctx)
 	g_items = ptr;
 }
 
-static int check_duplicate_result(query *q, int nbr, cell *c, pl_idx_t c_ctx)
+static int check_duplicate_result(query *q, int nbr, cell *c, pl_idx c_ctx)
 {
 	const item *ptr = g_items;
 
@@ -370,7 +370,7 @@ void dump_vars(query *q, bool partial)
 			continue;
 
 		cell *c = deref(q, &e->c, 0);
-		pl_idx_t c_ctx = q->latest_ctx;
+		pl_idx c_ctx = q->latest_ctx;
 
 		if (is_var(c) && is_anon(c))
 			continue;
@@ -464,7 +464,7 @@ void dump_vars(query *q, bool partial)
 		cell p1;
 		make_atom(&p1, index_from_pool(q->pl, "dump_attvars"));
 		cell *tmp = clone_to_heap(q, false, &p1, 1);
-		pl_idx_t nbr_cells = 0 + p1.nbr_cells;
+		pl_idx nbr_cells = 0 + p1.nbr_cells;
 		make_end(tmp+nbr_cells);
 		q->st.curr_cell = tmp;
 		q->in_attvar_print = true;

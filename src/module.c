@@ -553,7 +553,7 @@ void set_discontiguous_in_db(module *m, const char *name, unsigned arity)
 		m->error = true;
 }
 
-void set_multifile_in_db(module *m, const char *name, pl_idx_t arity)
+void set_multifile_in_db(module *m, const char *name, pl_idx arity)
 {
 	cell tmp = (cell){0};
 	tmp.tag = TAG_INTERNED;
@@ -858,7 +858,7 @@ bool do_foreign_struct(module *m, cell *p)
 	LIST_HANDLER(p2);
 	const char *symbol = C_STR(m, p1);
 	cell *l = p2;
-	pl_idx_t l_ctx = 0;
+	pl_idx l_ctx = 0;
 
 	void *handle = NULL;
 	do_register_struct(m, NULL, handle, symbol, l, 0, "invalid");
@@ -894,7 +894,7 @@ bool do_use_foreign_module(module *m, cell *p)
 void convert_to_literal(module *m, cell *c)
 {
 	char *src = DUP_STR(m, c);
-	pl_idx_t off = index_from_pool(m->pl, src);
+	pl_idx off = index_from_pool(m->pl, src);
 	unshare_cell(c);
 	c->tag = TAG_INTERNED;
 	c->val_off = off;
@@ -1619,7 +1619,7 @@ void xref_rule(module *m, clause *cl, predicate *parent)
 	if (c->val_off == g_sys_record_key_s)
 		return;
 
-	for (pl_idx_t i = 0; i < cl->cidx; i++) {
+	for (pl_idx i = 0; i < cl->cidx; i++) {
 		cell *c = cl->cells + i;
 		c->flags &= ~FLAG_TAIL_REC;
 
@@ -1989,7 +1989,7 @@ module *load_file(module *m, const char *filename, bool including)
 static void module_save_fp(module *m, FILE *fp, int canonical, int dq)
 {
 	(void) dq;
-	pl_idx_t ctx = 0;
+	pl_idx ctx = 0;
 	query q = (query){0};
 	q.pl = m->pl;
 	q.st.m = m;

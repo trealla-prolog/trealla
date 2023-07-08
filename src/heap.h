@@ -8,13 +8,13 @@ cell *append_to_tmp(query *q, cell *p1);
 cell *clone_to_tmp(query *q, cell *p1);
 cell *clone_to_heap(query *q, bool prefix, cell *p1, unsigned extras);
 
-cell *deep_clone_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx);
-cell *deep_clone_to_heap(query *q, cell *p1, pl_idx_t p1_ctx);
+cell *deep_clone_to_tmp(query *q, cell *p1, pl_idx p1_ctx);
+cell *deep_clone_to_heap(query *q, cell *p1, pl_idx p1_ctx);
 
-cell *deep_copy_to_tmp(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_attrs);
-cell *deep_copy_to_heap(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_attrs);
+cell *deep_copy_to_tmp(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs);
+cell *deep_copy_to_heap(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs);
 
-cell *copy_to_tmp(query *q, cell *c, pl_idx_t p1_ctx);
+cell *copy_to_tmp(query *q, cell *c, pl_idx p1_ctx);
 
 cell *alloc_on_heap(query *q, unsigned nbr_cells);
 cell *alloc_on_tmp(query *q, unsigned nbr_cells);
@@ -25,7 +25,7 @@ void trim_heap(query *q);
 cell *init_tmp_heap(query *q);
 
 // Used for copying attributes and doesn't init tmp heap...
-cell *deep_copy_to_heap_with_replacement(query *q, cell *p1, pl_idx_t p1_ctx, bool copy_attrs, cell *from, pl_idx_t from_ctx, cell *to, pl_idx_t to_ctx);
+cell *deep_copy_to_heap_with_replacement(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs, cell *from, pl_idx from_ctx, cell *to, pl_idx to_ctx);
 
 #define get_tmp_heap_start(q) (q)->tmp_heap
 #define get_tmp_heap(q,i) ((q)->tmp_heap + (i))

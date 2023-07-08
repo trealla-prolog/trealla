@@ -4,9 +4,9 @@
 #include "module.h"
 #include "query.h"
 
-static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth);
+static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth);
 
-static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
+static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
 	unsigned cnt = 0;
 
@@ -16,7 +16,7 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 
 		cell *h1 = p1 + 1;
 		cell *h2 = p2 + 1;
-		pl_idx_t h1_ctx = p1_ctx, h2_ctx = p2_ctx;
+		pl_idx h1_ctx = p1_ctx, h2_ctx = p2_ctx;
 
 		slot *e1 = NULL, *e2 = NULL;
 		uint64_t save_vgen1 = 0, save_vgen2 = 0;
@@ -108,7 +108,7 @@ static int compare_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t
 	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 }
 
-static int compare_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
+static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
 	int val = CMP_STR_TO_STR(q, p1, p2);
 	if (val) return val;
@@ -122,7 +122,7 @@ static int compare_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 			return 0;
 
 		slot *e1 = NULL, *e2 = NULL;
-		pl_idx_t c1_ctx = p1_ctx, c2_ctx = p2_ctx;
+		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 		uint64_t save_vgen1 = 0, save_vgen2 = 0;
 		cell *c1 = p1, *c2 = p2;
 		int both = 0;
@@ -181,7 +181,7 @@ static int compare_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 	return 0;
 }
 
-static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
+static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
 	if (depth >= MAX_DEPTH) {
 		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
@@ -301,10 +301,10 @@ static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_id
 
 			cell *h1 = LIST_HEAD(p1);
 			h1 = deref(q, h1, p1_ctx);
-			pl_idx_t h1_ctx = q->latest_ctx;
+			pl_idx h1_ctx = q->latest_ctx;
 			cell *h2 = LIST_HEAD(p2);
 			h2 = deref(q, h2, p2_ctx);
-			pl_idx_t h2_ctx = q->latest_ctx;
+			pl_idx h2_ctx = q->latest_ctx;
 
 			int val = compare_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
 			if (val) return val;
@@ -332,14 +332,14 @@ static int compare_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_id
 	return compare_structs(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 }
 
-int compare(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx)
+int compare(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
 {
 	q->cycle_error = false;
 	if (++q->vgen == 0) q->vgen = 1;
 	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
 }
 
-bool accum_var(query *q, const cell *c, pl_idx_t c_ctx)
+bool accum_var(query *q, const cell *c, pl_idx c_ctx)
 {
 	const frame *f = GET_FRAME(c_ctx);
 	const slot *e = GET_SLOT(f, c->var_nbr);
@@ -374,12 +374,12 @@ bool accum_var(query *q, const cell *c, pl_idx_t c_ctx)
 	return false;
 }
 
-static void collect_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth);
+static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth);
 
-static void collect_var_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
+static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
 	cell *l = p1;
-	pl_idx_t l_ctx = p1_ctx;
+	pl_idx l_ctx = p1_ctx;
 	LIST_HANDLER(l);
 
 	while (is_iso_list(l)) {
@@ -387,7 +387,7 @@ static void collect_var_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned dept
 			return;
 
 		cell *h = LIST_HEAD(l);
-		pl_idx_t h_ctx = l_ctx;
+		pl_idx h_ctx = l_ctx;
 
 		if (is_var(h)) {
 			if (is_ref(h))
@@ -432,7 +432,7 @@ static void collect_var_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned dept
 	collect_vars_internal(q, l, l_ctx, depth+1);
 }
 
-static void collect_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
+static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
 	if (depth >= MAX_DEPTH) {
 		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
@@ -461,7 +461,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned 
 			return;
 
 		cell *c = p1;
-		pl_idx_t c_ctx = p1_ctx;
+		pl_idx c_ctx = p1_ctx;
 
 		if (is_var(c)) {
 			if (is_ref(c))
@@ -489,7 +489,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned 
 	}
 }
 
-void collect_vars(query *q, cell *p1, pl_idx_t p1_ctx)
+void collect_vars(query *q, cell *p1, pl_idx p1_ctx)
 {
 	if (++q->vgen == 0) q->vgen = 1;
 	q->tab_idx = 0;
@@ -500,12 +500,12 @@ void collect_vars(query *q, cell *p1, pl_idx_t p1_ctx)
 	q->vars = NULL;
 }
 
-static bool has_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth);
+static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth);
 
-static bool has_vars_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
+static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
 	cell *l = p1;
-	pl_idx_t l_ctx = p1_ctx;
+	pl_idx l_ctx = p1_ctx;
 	LIST_HANDLER(l);
 
 	while (is_iso_list(l)) {
@@ -513,7 +513,7 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 			return false;
 
 		cell *c = LIST_HEAD(l);
-		pl_idx_t c_ctx = l_ctx;
+		pl_idx c_ctx = l_ctx;
 
 		if (is_var(c)) {
 			if (is_ref(c))
@@ -562,7 +562,7 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
 	return has_vars_internal(q, l, l_ctx, depth+1);
 }
 
-static bool has_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
+static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
 	if (depth >= MAX_DEPTH) {
 		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
@@ -587,7 +587,7 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned dept
 			return false;
 
 		cell *c = p1;
-		pl_idx_t c_ctx = p1_ctx;
+		pl_idx c_ctx = p1_ctx;
 
 		if (is_var(c)) {
 			frame *f = GET_FRAME(c_ctx);
@@ -616,25 +616,25 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned dept
 	return false;
 }
 
-bool has_vars(query *q, cell *p1, pl_idx_t p1_ctx)
+bool has_vars(query *q, cell *p1, pl_idx p1_ctx)
 {
 	if (++q->vgen == 0) q->vgen = 1;
 	return has_vars_internal(q, p1, p1_ctx, 0);
 }
 
-static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth);
+static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth);
 
-static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
+static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
 	cell *save_p1 = p1;
-	pl_idx_t save_p1_ctx = p1_ctx;
+	pl_idx save_p1_ctx = p1_ctx;
 
 	while (is_iso_list(p1)) {
 		if (g_tpl_interrupt)
 			return false;
 
 		cell *h = p1 + 1;
-		pl_idx_t h_ctx = p1_ctx;
+		pl_idx h_ctx = p1_ctx;
 
 		if (is_var(h)) {
 			if (is_ref(h))
@@ -688,7 +688,7 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned d
 
 		p1 = p1 + 1; p1 += p1->nbr_cells;
 		cell *c = p1;
-		pl_idx_t c_ctx = p1_ctx;
+		pl_idx c_ctx = p1_ctx;
 
 		if (is_var(c)) {
 			if (is_ref(c))
@@ -705,7 +705,7 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx_t p1_ctx, unsigned d
 	return is_cyclic_term_internal(q, p1, p1_ctx, depth+1);
 }
 
-static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigned depth)
+static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
 	if (depth > MAX_DEPTH) {
 		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
@@ -727,7 +727,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigne
 			return false;
 
 		cell *c = p1;
-		pl_idx_t c_ctx = p1_ctx;
+		pl_idx c_ctx = p1_ctx;
 
 		if (is_var(c)) {
 			if (is_ref(c))
@@ -759,21 +759,21 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx_t p1_ctx, unsigne
 	return false;
 }
 
-bool is_cyclic_term(query *q, cell *p1, pl_idx_t p1_ctx)
+bool is_cyclic_term(query *q, cell *p1, pl_idx p1_ctx)
 {
 	q->cycle_error = false;
 	if (++q->vgen == 0) q->vgen = 1;
 	return is_cyclic_term_internal(q, p1, p1_ctx, 0);
 }
 
-bool is_acyclic_term(query *q, cell *p1, pl_idx_t p1_ctx)
+bool is_acyclic_term(query *q, cell *p1, pl_idx p1_ctx)
 {
 	q->cycle_error = false;
 	if (++q->vgen == 0) q->vgen = 1;
 	return !is_cyclic_term_internal(q, p1, p1_ctx, 0);
 }
 
-static cell *term_next(query *q, cell *c, pl_idx_t *c_ctx, bool *done)
+static cell *term_next(query *q, cell *c, pl_idx *c_ctx, bool *done)
 {
 	if (!is_iso_list(c)) {
 		*done = true;
@@ -789,7 +789,7 @@ static cell *term_next(query *q, cell *c, pl_idx_t *c_ctx, bool *done)
 
 // This uses Brent's algorithm...
 
-cell *skip_max_list(query *q, cell *head, pl_idx_t *head_ctx, pl_int_t max, pl_int_t *skip, cell *tmp)
+cell *skip_max_list(query *q, cell *head, pl_idx *head_ctx, pl_int max, pl_int *skip, cell *tmp)
 {
 	if (!head)
 		return NULL;
@@ -802,7 +802,7 @@ cell *skip_max_list(query *q, cell *head, pl_idx_t *head_ctx, pl_int_t max, pl_i
 	cell *slow;
 
 #if 0
-	pl_int_t offset = 0;
+	pl_int offset = 0;
 #endif
 
 LOOP:
@@ -838,10 +838,10 @@ LOOP:
 	// Handle ISO lists...
 
 	slow = head;
-	pl_idx_t slow_ctx = *head_ctx, fast_ctx = *head_ctx;
+	pl_idx slow_ctx = *head_ctx, fast_ctx = *head_ctx;
 	bool done = false;
 	cell *fast = term_next(q, head, &fast_ctx, &done);
-	pl_int_t length = 1, cnt = 0;
+	pl_int length = 1, cnt = 0;
 	int power = 1;
 
 	while (!done) {
@@ -899,7 +899,7 @@ LOOP:
 			break;
 	}
 
-	pl_int_t len = 0;
+	pl_int len = 0;
 
 	while (true) {
 		if ((fast == slow) && (fast_ctx == slow_ctx))
@@ -915,10 +915,10 @@ LOOP:
 	return slow;
 }
 
-bool check_list(query *q, cell *p1, pl_idx_t p1_ctx, bool *is_partial, pl_int_t *skip_)
+bool check_list(query *q, cell *p1, pl_idx p1_ctx, bool *is_partial, pl_int *skip_)
 {
-	pl_int_t skip = 0, max = 1000000000;
-	pl_idx_t c_ctx = p1_ctx;
+	pl_int skip = 0, max = 1000000000;
+	pl_idx c_ctx = p1_ctx;
 	cell tmp = {0};
 
 	cell *c = skip_max_list(q, p1, &c_ctx, max, &skip, &tmp);
@@ -941,7 +941,7 @@ bool check_list(query *q, cell *p1, pl_idx_t p1_ctx, bool *is_partial, pl_int_t 
 	return false;
 }
 
-static void make_new_var(query *q, cell *tmp, unsigned var_nbr, pl_idx_t ctx)
+static void make_new_var(query *q, cell *tmp, unsigned var_nbr, pl_idx ctx)
 {
 	make_var(tmp, g_anon_s, create_vars(q, 1));
 	cell v;
@@ -949,7 +949,7 @@ static void make_new_var(query *q, cell *tmp, unsigned var_nbr, pl_idx_t ctx)
 	set_var(q, tmp, q->st.curr_frame, &v, ctx);
 }
 
-static void set_new_var(query *q, cell *tmp, cell *v, pl_idx_t ctx)
+static void set_new_var(query *q, cell *tmp, cell *v, pl_idx ctx)
 {
 	make_var(tmp, g_anon_s, create_vars(q, 1));
 	set_var(q, tmp, q->st.curr_frame, v, ctx);
@@ -971,7 +971,7 @@ bool fn_sys_undo_trail_1(query *q)
 
 	// Unbind our vars
 
-	for (pl_idx_t i = q->undo_lo_tp, j = 0; i < q->undo_hi_tp; i++, j++) {
+	for (pl_idx i = q->undo_lo_tp, j = 0; i < q->undo_hi_tp; i++, j++) {
 		const trail *tr = q->trails + i;
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
@@ -1010,7 +1010,7 @@ bool fn_sys_undo_trail_1(query *q)
 
 bool fn_sys_redo_trail_0(query * q)
 {
-	for (pl_idx_t i = q->undo_lo_tp, j = 0; i < q->undo_hi_tp; i++, j++) {
+	for (pl_idx i = q->undo_lo_tp, j = 0; i < q->undo_hi_tp; i++, j++) {
 		const trail *tr = q->trails + i;
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
@@ -1065,11 +1065,11 @@ bool do_post_unification_hook(query *q, bool is_builtin)
 	return true;
 }
 
-static bool unify_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth);
+static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth);
 
 // This is for when one arg is a string & the other an iso-list...
 
-static bool unify_string_to_list(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx)
+static bool unify_string_to_list(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
 {
 	LIST_HANDLER(p1);
 	LIST_HANDLER(p2);
@@ -1078,9 +1078,9 @@ static bool unify_string_to_list(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, 
 		cell *c1 = LIST_HEAD(p1);
 		cell *c2 = LIST_HEAD(p2);
 
-		pl_idx_t c1_ctx = p1_ctx;
+		pl_idx c1_ctx = p1_ctx;
 		c2 = deref(q, c2, p2_ctx);
-		pl_idx_t c2_ctx = q->latest_ctx;
+		pl_idx c2_ctx = q->latest_ctx;
 
 		if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, 0)) {
 			if (q->cycle_error)
@@ -1199,7 +1199,7 @@ static const struct dispatch g_disp[] =
 	{0}
 };
 
-static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
+static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
 	unsigned cnt = 0;
 
@@ -1209,7 +1209,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 
 		cell *h1 = p1 + 1;
 		cell *h2 = p2 + 1;
-		pl_idx_t h1_ctx = p1_ctx, h2_ctx = p2_ctx;
+		pl_idx h1_ctx = p1_ctx, h2_ctx = p2_ctx;
 		slot *e1 = NULL, *e2 = NULL;
 		uint64_t save_vgen1 = 0, save_vgen2 = 0;
 		int both = 0;
@@ -1301,7 +1301,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t 
 	return unify_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 }
 
-static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
+static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
 	if (p1->arity != p2->arity)
 		return false;
@@ -1318,7 +1318,7 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 
 		slot *e1 = NULL, *e2 = NULL;
 		uint64_t save_vgen1 = 0, save_vgen2 = 0;
-		pl_idx_t c1_ctx = p1_ctx, c2_ctx = p2_ctx;
+		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 		cell *c1 = p1, *c2 = p2;
 		int both = 0;
 
@@ -1373,7 +1373,7 @@ static bool unify_structs(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_
 	return true;
 }
 
-static bool unify_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx, unsigned depth)
+static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
 	if (depth > MAX_DEPTH) {
 		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
@@ -1396,7 +1396,7 @@ static bool unify_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 
 	if (is_var(p2)) {
 		cell *tmp = p2;
-		pl_idx_t tmp_ctx = p2_ctx;
+		pl_idx tmp_ctx = p2_ctx;
 		p2 = p1;
 		p2_ctx = p1_ctx;
 		p1 = tmp;
@@ -1451,7 +1451,7 @@ static bool unify_internal(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx
 	return g_disp[p1->tag].fn(q, p1, p2);
 }
 
-bool unify(query *q, cell *p1, pl_idx_t p1_ctx, cell *p2, pl_idx_t p2_ctx)
+bool unify(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
 {
 	q->cycle_error = false;
 	if (++q->vgen == 0) q->vgen = 1;

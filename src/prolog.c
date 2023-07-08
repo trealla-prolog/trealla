@@ -13,17 +13,17 @@ void convert_path(char *filename);
 
 static const size_t INITIAL_POOL_SIZE = 64000;	// bytes
 
-pl_idx_t g_empty_s, g_dot_s, g_cut_s, g_nil_s, g_true_s, g_fail_s;
-pl_idx_t g_anon_s, g_neck_s, g_eof_s, g_lt_s, g_gt_s, g_eq_s, g_false_s;
-pl_idx_t g_sys_elapsed_s, g_sys_queue_s, g_braces_s, g_call_s, g_braces_s;
-pl_idx_t g_sys_stream_property_s, g_unify_s, g_on_s, g_off_s, g_sys_var_s;
-pl_idx_t g_plus_s, g_minus_s, g_once_s, g_post_unify_hook_s, g_sys_record_key_s;
-pl_idx_t g_conjunction_s, g_disjunction_s, g_at_s, g_sys_ne_s, g_sys_incr_s;
-pl_idx_t g_dcg_s, g_throw_s, g_sys_block_catcher_s, g_sys_drop_barrier_s;
-pl_idx_t g_sys_soft_prune_s, g_if_then_s, g_soft_cut_s, g_negation_s;
-pl_idx_t g_error_s, g_slash_s, g_sys_cleanup_if_det_s, g_sys_table_s;
-pl_idx_t g_goal_expansion_s, g_term_expansion_s, g_tm_s, g_float_s;
-pl_idx_t g_sys_cut_if_det_s, g_as_s, g_colon_s, g_sys_prune_s, g_syscall_s;
+pl_idx g_empty_s, g_dot_s, g_cut_s, g_nil_s, g_true_s, g_fail_s;
+pl_idx g_anon_s, g_neck_s, g_eof_s, g_lt_s, g_gt_s, g_eq_s, g_false_s;
+pl_idx g_sys_elapsed_s, g_sys_queue_s, g_braces_s, g_call_s, g_braces_s;
+pl_idx g_sys_stream_property_s, g_unify_s, g_on_s, g_off_s, g_sys_var_s;
+pl_idx g_plus_s, g_minus_s, g_once_s, g_post_unify_hook_s, g_sys_record_key_s;
+pl_idx g_conjunction_s, g_disjunction_s, g_at_s, g_sys_ne_s, g_sys_incr_s;
+pl_idx g_dcg_s, g_throw_s, g_sys_block_catcher_s, g_sys_drop_barrier_s;
+pl_idx g_sys_soft_prune_s, g_if_then_s, g_soft_cut_s, g_negation_s;
+pl_idx g_error_s, g_slash_s, g_sys_cleanup_if_det_s, g_sys_table_s;
+pl_idx g_goal_expansion_s, g_term_expansion_s, g_tm_s, g_float_s;
+pl_idx g_sys_cut_if_det_s, g_as_s, g_colon_s, g_sys_prune_s, g_syscall_s;
 
 unsigned g_cpu_count = 4;
 char *g_tpl_lib = NULL;
@@ -47,7 +47,7 @@ bool is_multifile_in_db(prolog *pl, const char *mod, const char *name, unsigned 
 	return pr->is_multifile ? true : false;
 }
 
-static pl_idx_t add_to_pool(prolog *pl, const char *name)
+static pl_idx add_to_pool(prolog *pl, const char *name)
 {
 	size_t offset = pl->pool_offset, len = strlen(name);
 
@@ -68,15 +68,15 @@ static pl_idx_t add_to_pool(prolog *pl, const char *name)
 	const char *key = strdup(name);
 	map_set(pl->symtab, key, (void*)(size_t)offset);
 	g_interned_cnt++;
-	return (pl_idx_t)offset;
+	return (pl_idx)offset;
 }
 
-pl_idx_t index_from_pool(prolog *pl, const char *name)
+pl_idx index_from_pool(prolog *pl, const char *name)
 {
 	const void *val;
 
 	if (map_get(pl->symtab, name, &val))
-		return (pl_idx_t)(size_t)val;
+		return (pl_idx)(size_t)val;
 
 	return add_to_pool(pl, name);
 }

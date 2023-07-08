@@ -18,10 +18,10 @@
 #define USE_THREADS 0
 #endif
 
-typedef double pl_flt_t;
-typedef intmax_t pl_int_t;
-typedef uintmax_t pl_uint_t;
-typedef uint32_t pl_idx_t;
+typedef double pl_flt;
+typedef intmax_t pl_int;
+typedef uintmax_t pl_uint;
+typedef uint32_t pl_idx;
 
 #define PL_INT_MAX INTMAX_MAX
 #define PL_INT_MIN INTMAX_MIN
@@ -56,7 +56,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 extern unsigned g_string_cnt, g_interned_cnt;
 
 // Sentinel Value
-#define ERR_IDX (~(pl_idx_t)0)
+#define ERR_IDX (~(pl_idx)0)
 #define IDX_MAX (ERR_IDX-1)
 
 #define MAX_SMALL_STRING ((sizeof(void*)*2)-1)
@@ -334,8 +334,6 @@ typedef struct slot_ slot;
 typedef struct control_ control;
 typedef struct prolog_state_ prolog_state;
 typedef struct prolog_flags_ prolog_flags;
-typedef struct cycle_info_ cycle_info;
-typedef struct reflist_ reflist;
 typedef struct builtins_ builtins;
 
 // Using a fixed-size cell allows having arrays of cells, which is
@@ -363,9 +361,9 @@ struct cell_ {
 
 		// Proper types...
 
-		pl_uint_t val_uint;
-		pl_int_t val_int;
-		pl_flt_t val_float;
+		pl_uint val_uint;
+		pl_int val_int;
+		pl_flt val_float;
 		bigint *val_bigint;
 		blob *val_blob;
 		uint16_t priority;				// used in parsing operators
@@ -398,13 +396,13 @@ struct cell_ {
 
 			union {
 				uint32_t val_off;		// used with TAG_VAR & TAG_INTERNED
-				pl_idx_t var_ctx;		// used with TAG_VAR & FLAG_VAR_REF
+				pl_idx var_ctx;		// used with TAG_VAR & FLAG_VAR_REF
 			};
 		};
 
 		struct {
 			cell *attrs;				// used with TAG_EMPTY in slot
-			pl_idx_t attrs_ctx;			// to set attributes on a var
+			pl_idx attrs_ctx;			// to set attributes on a var
 		};
 
 		struct {
@@ -420,7 +418,7 @@ typedef struct {
 
 struct clause_ {
 	uint64_t dgen_created, dgen_erased;
-	pl_idx_t allocated_cells, cidx;
+	pl_idx allocated_cells, cidx;
 	uint32_t nbr_vars;
 	uint16_t nbr_temporaries;
 	bool is_first_cut:1;
@@ -506,7 +504,7 @@ typedef struct {
 
 struct trail_ {
 	cell *attrs;
-	pl_idx_t var_ctx, attrs_ctx;
+	pl_idx var_ctx, attrs_ctx;
 	uint32_t var_nbr;
 };
 
@@ -524,7 +522,7 @@ struct slot_ {
 struct frame_ {
 	cell *prev_cell;
 	uint64_t ugen, cgen;
-	pl_idx_t prev_offset, base, overflow, hp, initial_slots, actual_slots;
+	pl_idx prev_offset, base, overflow, hp, initial_slots, actual_slots;
 	uint16_t mid;
 	bool is_last:1;
 };
@@ -543,7 +541,7 @@ struct prolog_state_ {
 	};
 
 	uint64_t timer_started;
-	pl_idx_t curr_frame, fp, hp, tp, sp, pp, key_ctx;
+	pl_idx curr_frame, fp, hp, tp, sp, pp, key_ctx;
 	float prob;
 	uint8_t qnbr;
 	bool arg1_is_ground:1;
@@ -554,7 +552,7 @@ struct prolog_state_ {
 struct control_ {
 	prolog_state st;
 	uint64_t cgen, frame_cgen, ugen;
-	pl_idx_t overflow, initial_slots, actual_slots;
+	pl_idx overflow, initial_slots, actual_slots;
 	bool catchme_retry:1;
 	bool catchme_exception:1;
 	bool barrier:1;
@@ -613,7 +611,7 @@ struct stream_ {
 struct page_ {
 	page *next;
 	cell *heap;
-	pl_idx_t hp, max_hp_used, h_size;
+	pl_idx hp, max_hp_used, h_size;
 	unsigned nbr;
 };
 
@@ -649,7 +647,6 @@ struct query_ {
 	page *pages;
 	slot *save_e;
 	db_entry *dirty_list;
-	cycle_info *info1, *info2;
 	query *tasks;
 	map *vars;
 	cell accum;
@@ -663,12 +660,12 @@ struct query_ {
 	uint64_t get_started, autofail_n, yield_at;
 	uint64_t time_cpu_started, time_cpu_last_started, future;
 	unsigned max_depth, max_eval_depth, print_idx, tab_idx, varno, tab0_varno, curr_engine;
-	pl_idx_t tmphp, latest_ctx, popp, variable_names_ctx;
-	pl_idx_t frames_size, slots_size, trails_size, controls_size;
-	pl_idx_t hw_controls, hw_frames, hw_slots, hw_trails;
-	pl_idx_t cp, before_hook_tp, qcnt[MAX_QUEUES];
-	pl_idx_t h_size, tmph_size, tot_heaps, tot_heapsize, undo_lo_tp, undo_hi_tp;
-	pl_idx_t q_size[MAX_QUEUES], tmpq_size[MAX_QUEUES], qp[MAX_QUEUES];
+	pl_idx tmphp, latest_ctx, popp, variable_names_ctx;
+	pl_idx frames_size, slots_size, trails_size, controls_size;
+	pl_idx hw_controls, hw_frames, hw_slots, hw_trails;
+	pl_idx cp, before_hook_tp, qcnt[MAX_QUEUES];
+	pl_idx h_size, tmph_size, tot_heaps, tot_heapsize, undo_lo_tp, undo_hi_tp;
+	pl_idx q_size[MAX_QUEUES], tmpq_size[MAX_QUEUES], qp[MAX_QUEUES];
 	prolog_flags flags;
 	enum q_retry retry;
 	uint32_t vgen;
@@ -796,7 +793,7 @@ struct module_ {
 };
 
 typedef struct {
-	pl_idx_t ctx, val_off;
+	pl_idx ctx, val_off;
 	unsigned var_nbr, cnt;
 	bool is_anon;
 } var_item;
@@ -804,7 +801,7 @@ typedef struct {
 struct prolog_ {
 	stream streams[MAX_STREAMS];
 	module *modmap[MAX_MODULES];
-	struct { pl_idx_t tab1[MAX_IGNORES], tab2[MAX_IGNORES]; };
+	struct { pl_idx tab1[MAX_IGNORES], tab2[MAX_IGNORES]; };
 	char tmpbuf[8192];
 	module *modules, *system_m, *user_m, *curr_m, *dcgs;
 	var_item *tabs;
@@ -828,12 +825,12 @@ struct prolog_ {
 	bool trace:1;
 };
 
-extern pl_idx_t g_empty_s, g_pair_s, g_dot_s, g_cut_s, g_nil_s, g_true_s, g_fail_s;
-extern pl_idx_t g_anon_s, g_neck_s, g_eof_s, g_lt_s, g_false_s, g_once_s;
-extern pl_idx_t g_gt_s, g_eq_s, g_sys_elapsed_s, g_sys_queue_s, g_braces_s;
-extern pl_idx_t g_sys_stream_property_s, g_unify_s, g_on_s, g_off_s, g_sys_var_s;
-extern pl_idx_t g_call_s, g_braces_s, g_plus_s, g_minus_s, g_post_unify_hook_s;
-extern pl_idx_t g_sys_soft_prune_s;
+extern pl_idx g_empty_s, g_pair_s, g_dot_s, g_cut_s, g_nil_s, g_true_s, g_fail_s;
+extern pl_idx g_anon_s, g_neck_s, g_eof_s, g_lt_s, g_false_s, g_once_s;
+extern pl_idx g_gt_s, g_eq_s, g_sys_elapsed_s, g_sys_queue_s, g_braces_s;
+extern pl_idx g_sys_stream_property_s, g_unify_s, g_on_s, g_off_s, g_sys_var_s;
+extern pl_idx g_call_s, g_braces_s, g_plus_s, g_minus_s, g_post_unify_hook_s;
+extern pl_idx g_sys_soft_prune_s;
 
 extern unsigned g_cpu_count;
 
@@ -882,25 +879,25 @@ inline static void unshare_cell_(cell *c)
 	}
 }
 
-inline static pl_idx_t copy_cells(cell *dst, const cell *src, pl_idx_t nbr_cells)
+inline static pl_idx copy_cells(cell *dst, const cell *src, pl_idx nbr_cells)
 {
 	memcpy(dst, src, sizeof(cell)*(nbr_cells));
 	return nbr_cells;
 }
 
-inline static pl_idx_t safe_copy_cells(cell *dst, const cell *src, pl_idx_t nbr_cells)
+inline static pl_idx safe_copy_cells(cell *dst, const cell *src, pl_idx nbr_cells)
 {
 	memcpy(dst, src, sizeof(cell)*nbr_cells);
 
-	for (pl_idx_t i = 0; i < nbr_cells; i++, src++)
+	for (pl_idx i = 0; i < nbr_cells; i++, src++)
 		share_cell(src);
 
 	return nbr_cells;
 }
 
-inline static void chk_cells(cell *src, pl_idx_t nbr_cells)
+inline static void chk_cells(cell *src, pl_idx nbr_cells)
 {
-	for (pl_idx_t i = 0; i < nbr_cells; i++, src++)
+	for (pl_idx i = 0; i < nbr_cells; i++, src++)
 		unshare_cell(src);
 }
 
@@ -919,7 +916,7 @@ int slicecmp(const char *s1, size_t len1, const char *s2, size_t len2);
 uint64_t get_time_in_usec(void);
 uint64_t cpu_time_in_usec(void);
 char *relative_to(const char *basefile, const char *relfile);
-size_t sprint_int(char *dst, size_t size, pl_int_t n, int base);
+size_t sprint_int(char *dst, size_t size, pl_int n, int base);
 const char *dump_key(const void *k, const void *v, const void *p);
 
 #define slicecmp2(s1,l1,s2) slicecmp(s1,l1,s2,strlen(s2))
