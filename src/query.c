@@ -1660,11 +1660,12 @@ bool start(query *q)
 		if (q->is_oom) {
 			q->is_oom = q->error = false;
 
-			if (throw_error(q, q->st.curr_cell, q->st.curr_frame, "resource_error", "memory") != true) {
-				q->retry = QUERY_RETRY;
-				q->tot_backtracks++;
+			//if (!throw_error(q, q->st.curr_cell, q->st.curr_frame, "resource_error", "memory")) {
+			//	q->retry = QUERY_RETRY;
+			//	q->tot_backtracks++;
+				q->fail_on_retry = false;
 				continue;
-			}
+			//}
 		}
 
 		MORE:
