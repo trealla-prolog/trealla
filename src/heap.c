@@ -179,6 +179,9 @@ void trim_heap(query *q)
 	}
 }
 
+#define blahdeblah(c) \
+	(!q->noderef || (is_ref(c) && (c->var_ctx == q->st.curr_frame)))
+
 static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
 	if (depth >= MAX_DEPTH) {
@@ -226,14 +229,14 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 					q->cycle_error = true;
 				} else {
 					e->vgen = q->vgen;
-					cell *c = deref(q, h, p1_ctx);
-					pl_idx c_ctx = q->latest_ctx;
+					cell *c = blahdeblah(h) ? deref(q, h, h_ctx) : h;
+					pl_idx c_ctx = blahdeblah(h) ? q->latest_ctx : h_ctx;
 					cell *rec = deep_clone2_to_tmp(q, c, c_ctx, depth+1);
 					if (!rec) return NULL;
 					e->vgen = save_vgen;
 				}
 			} else {
-				cell *rec = deep_clone2_to_tmp(q, h, p1_ctx, depth+1);
+				cell *rec = deep_clone2_to_tmp(q, h, h_ctx, depth+1);
 				if (!rec) return NULL;
 			}
 
@@ -257,8 +260,8 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 				}
 
 				e->vgen = q->vgen;
-				p1 = deref(q, p1, p1_ctx);
-				p1_ctx = q->latest_ctx;
+				p1 = blahdeblah(t) ? deref(q, t, t_ctx) : t;
+				p1_ctx = blahdeblah(t) ? q->latest_ctx : t_ctx;
 			}
 
 			if (is_iso_list(p1)) {
@@ -298,14 +301,14 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 				if (!rec) return NULL;
 			} else {
 				e->vgen = q->vgen;
-				cell *c = deref(q, p1, p1_ctx);
-				pl_idx c_ctx = q->latest_ctx;
+				c = blahdeblah(c) ? deref(q, c, c_ctx) : c;
+				c_ctx = blahdeblah(c) ? q->latest_ctx : c_ctx;
 				cell *rec = deep_clone2_to_tmp(q, c, c_ctx, depth+1);
 				if (!rec) return NULL;
 				e->vgen = save_vgen;
 			}
 		} else {
-			cell *rec = deep_clone2_to_tmp(q, p1, p1_ctx, depth+1);
+			cell *rec = deep_clone2_to_tmp(q, c, c_ctx, depth+1);
 			if (!rec) return NULL;
 		}
 

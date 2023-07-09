@@ -77,7 +77,9 @@ bool fn_iso_findall_3(query *q)
 		cell *tmp = alloc_on_tmp(q, 1);
 		check_heap_error(tmp, free(solns));
 		make_struct(tmp, g_dot_s, NULL, 2, 0);
+		q->noderef = true;
 		tmp = deep_copy_to_tmp(q, c, q->st.fp, false);
+		q->noderef = false;
 		check_heap_error(tmp, free(solns));
 	}
 
