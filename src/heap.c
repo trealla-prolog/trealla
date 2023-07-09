@@ -229,9 +229,9 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 					q->cycle_error = true;
 				} else {
 					e->vgen = q->vgen;
-					cell *c = blahdeblah(h) ? deref(q, h, h_ctx) : h;
-					pl_idx c_ctx = blahdeblah(h) ? q->latest_ctx : h_ctx;
-					cell *rec = deep_clone2_to_tmp(q, c, c_ctx, depth+1);
+					h = blahdeblah(h) ? deref(q, h, h_ctx) : h;
+					h_ctx = blahdeblah(h) ? q->latest_ctx : h_ctx;
+					cell *rec = deep_clone2_to_tmp(q, h, h_ctx, depth+1);
 					if (!rec) return NULL;
 					e->vgen = save_vgen;
 				}
