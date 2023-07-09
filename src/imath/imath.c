@@ -1694,7 +1694,7 @@ static const mp_digit fill = (mp_digit)0xdeadbeefabad1dea;
 static mp_digit *s_alloc(mp_size num) {
   mp_digit *out = malloc(num * sizeof(mp_digit));
   //assert(out != NULL);
-  if (out == NULL) errno = ENOMEM;
+  if (out == NULL) { errno = ENOMEM; return out; };
 
 #if DEBUG
   for (mp_size ix = 0; ix < num; ++ix) out[ix] = fill;

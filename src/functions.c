@@ -16,34 +16,32 @@
 	if (errno == ENOMEM)										\
 		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
 	q->accum.tag = TAG_INTEGER;										\
-	q->accum.flags = FLAG_MANAGED;								\
 	q->accum.val_bigint = malloc(sizeof(bigint));				\
-	check_heap_error(q->accum.val_bigint);						\
 	if (errno == ENOMEM)										\
 		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
-	q->accum.val_bigint->refcnt = 0;							\
 	if (mp_int_init_copy(&q->accum.val_bigint->ival, &q->tmp_ival) == MP_MEMORY) {\
-		return throw_error(q, &q->accum, q->st.curr_frame, "resource_error", "memory"); \
+		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
 	} \
 	if (errno == ENOMEM)										\
 		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
+	q->accum.flags = FLAG_MANAGED;								\
+	q->accum.val_bigint->refcnt = 0;							\
 }
 
 #define SET_ACCUM2() {											\
 	if (errno == ENOMEM)										\
 		return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory"); \
 	q->accum.tag = TAG_INTEGER;										\
-	q->accum.flags = FLAG_MANAGED;								\
 	q->accum.val_bigint = malloc(sizeof(bigint));				\
-	check_heap_error(q->accum.val_bigint);						\
 	if (errno == ENOMEM)										\
 		return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory"); \
-	q->accum.val_bigint->refcnt = 0;							\
 	if (mp_int_init_copy(&q->accum.val_bigint->ival, &q->tmp_ival) == MP_MEMORY) {\
-		return throw_error(q, &q->accum, q->st.curr_frame, "resource_error", "memory"); \
+		return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory"); \
 	} \
 	if (errno == ENOMEM)										\
 		return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory"); \
+	q->accum.flags = FLAG_MANAGED;								\
+	q->accum.val_bigint->refcnt = 0;							\
 }
 
 #define SET_RAT_ACCUM2() {											\
@@ -51,26 +49,24 @@
 		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
 	if (mp_int_compare_value(&q->tmp_irat.den, 1)) { \
 		q->accum.tag = TAG_RATIONAL;										\
-		q->accum.flags = FLAG_MANAGED;								\
 		q->accum.val_bigint = malloc(sizeof(bigint));				\
-		check_heap_error(q->accum.val_bigint);						\
 		if (errno == ENOMEM)										\
 			return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
-		q->accum.val_bigint->refcnt = 0;							\
 		if (mp_rat_init_copy(&q->accum.val_bigint->irat, &q->tmp_irat) == MP_MEMORY) {\
-			return throw_error(q, &q->accum, q->st.curr_frame, "resource_error", "memory"); \
+			return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
 		} \
+		q->accum.flags = FLAG_MANAGED;								\
+		q->accum.val_bigint->refcnt = 0;							\
 	} else { \
 		q->accum.tag = TAG_INTEGER;										\
-		q->accum.flags = FLAG_MANAGED;								\
 		q->accum.val_bigint = malloc(sizeof(bigint));				\
-		check_heap_error(q->accum.val_bigint);						\
 		if (errno == ENOMEM)										\
 			return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
-		q->accum.val_bigint->refcnt = 0;							\
 		if (mp_int_init_copy(&q->accum.val_bigint->ival, &q->tmp_irat.num) == MP_MEMORY) {\
-			return throw_error(q, &q->accum, q->st.curr_frame, "resource_error", "memory"); \
+			return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
 		} \
+		q->accum.flags = FLAG_MANAGED;								\
+		q->accum.val_bigint->refcnt = 0;							\
 	} \
 	if (errno == ENOMEM)										\
 		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
@@ -78,10 +74,10 @@
 
 void clr_accum(cell *p)
 {
-	if (is_bigint(p) && !p->val_bigint->refcnt) {
+	if (is_bigint(p) && p->val_bigint && !p->val_bigint->refcnt) {
 		mp_int_clear(&p->val_bigint->ival);
 		free(p->val_bigint);
-	} else if (is_rational(p) && !p->val_bigint->refcnt) {
+	} else if (is_rational(p) && p->val_bigint && !p->val_bigint->refcnt) {
 		mp_rat_clear(&p->val_bigint->irat);
 		free(p->val_bigint);
 	}
@@ -113,7 +109,11 @@ void clr_accum(cell *p)
 		ON_OVERFLOW(op, p1.val_int, p2.val_int) { \
 			mpz_t tmp; \
 			mp_int_init_value(&tmp, p1.val_int); \
+			if (errno == ENOMEM)										\
+				return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
 			mp_int_##op2##_value(&tmp, p2.val_int, &q->tmp_ival); \
+			if (errno == ENOMEM)										\
+				return throw_error(q, &p2, q->st.curr_frame, "resource_error", "memory"); \
 			mp_int_clear(&tmp); \
 			SET_ACCUM(); \
 		} else { \
@@ -123,9 +123,13 @@ void clr_accum(cell *p)
 	} else if (is_bigint(&p1)) { \
 		if (is_bigint(&p2)) { \
 			mp_int_##op2(&p1.val_bigint->ival, &p2.val_bigint->ival, &q->tmp_ival); \
+			if (errno == ENOMEM)										\
+				return throw_error(q, &p2, q->st.curr_frame, "resource_error", "memory"); \
 			SET_ACCUM(); \
 		} else if (is_smallint(&p2)) { \
 			mp_int_##op2##_value(&p1.val_bigint->ival, p2.val_int, &q->tmp_ival); \
+			if (errno == ENOMEM)										\
+				return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
 			SET_ACCUM(); \
 		} else if (is_float(&p2)) { \
 			pl_flt d = BIGINT_TO_DOUBLE(&p1.val_bigint->ival); \
@@ -138,7 +142,11 @@ void clr_accum(cell *p)
 		if (is_smallint(&p1)) { \
 			mpz_t tmp; \
 			mp_int_init_value(&tmp, p1.val_int); \
+			if (errno == ENOMEM)										\
+				return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
 			mp_int_##op2(&tmp, &p2.val_bigint->ival, &q->tmp_ival); \
+			if (errno == ENOMEM)										\
+				return throw_error(q, &p2, q->st.curr_frame, "resource_error", "memory"); \
 			mp_int_clear(&tmp); \
 			SET_ACCUM(); \
 		} else if (is_float(&p1)) { \
@@ -163,12 +171,18 @@ void clr_accum(cell *p)
 	} else if (is_rational(&p1)) { \
 		if (is_rational(&p2)) { \
 			mp_rat_##op2(&p1.val_bigint->irat, &p2.val_bigint->irat, &q->tmp_irat); \
+			if (errno == ENOMEM)										\
+				return throw_error(q, &p2, q->st.curr_frame, "resource_error", "memory"); \
 			SET_RAT_ACCUM2(); \
 		} else if (is_bigint(&p2)) { \
 			mpq_t tmp; \
 			mp_int_init_copy(&tmp.num, &p2.val_bigint->ival); \
+			if (errno == ENOMEM)										\
+				return throw_error(q, &p2, q->st.curr_frame, "resource_error", "memory"); \
 			mp_int_init_value(&tmp.den, 1); \
 			mp_rat_##op2(&p1.val_bigint->irat, &tmp, &q->tmp_irat); \
+			if (errno == ENOMEM)										\
+				return throw_error(q, &p2, q->st.curr_frame, "resource_error", "memory"); \
 			mp_rat_clear(&tmp); \
 			SET_RAT_ACCUM2(); \
 		} else { \
@@ -176,6 +190,8 @@ void clr_accum(cell *p)
 			mp_rat_init(&tmp); \
 			mp_rat_set_value(&tmp, p2.val_int, 1); \
 			mp_rat_##op2(&p1.val_bigint->irat, &tmp, &q->tmp_irat); \
+			if (errno == ENOMEM)										\
+				return throw_error(q, &p2, q->st.curr_frame, "resource_error", "memory"); \
 			mp_rat_clear(&tmp); \
 			SET_RAT_ACCUM2(); \
 		} \
@@ -183,8 +199,12 @@ void clr_accum(cell *p)
 		if (is_bigint(&p1)) { \
 			mpq_t tmp; \
 			mp_int_init_copy(&tmp.num, &p1.val_bigint->ival); \
+			if (errno == ENOMEM)										\
+				return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
 			mp_int_init_value(&tmp.den, 1); \
 			mp_rat_##op2(&p2.val_bigint->irat, &tmp, &q->tmp_irat); \
+			if (errno == ENOMEM)										\
+				return throw_error(q, &p2, q->st.curr_frame, "resource_error", "memory"); \
 			mp_rat_clear(&tmp); \
 			SET_RAT_ACCUM2(); \
 		} else { \
@@ -192,6 +212,8 @@ void clr_accum(cell *p)
 			mp_rat_init(&tmp); \
 			mp_rat_set_value(&tmp, p1.val_int, 1); \
 			mp_rat_##op2(&p2.val_bigint->irat, &tmp, &q->tmp_irat); \
+			if (errno == ENOMEM)										\
+				return throw_error(q, &p2, q->st.curr_frame, "resource_error", "memory"); \
 			mp_rat_clear(&tmp); \
 			SET_RAT_ACCUM2(); \
 		} \
@@ -540,10 +562,13 @@ static bool fn_numerator_1(query *q)
 	}
 
 	q->accum.tag = TAG_INTEGER;
-	q->accum.flags = FLAG_MANAGED;
 	q->accum.val_bigint = malloc(sizeof(bigint));
-	check_heap_error(q->accum.val_bigint);						\
+	if (errno == ENOMEM)
+		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory");
 	mp_int_init_copy(&q->accum.val_bigint->ival, &p1.val_bigint->irat.num);
+	if (errno == ENOMEM)
+		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory");
+	q->accum.flags = FLAG_MANAGED;
 	q->accum.val_bigint->refcnt = 0;
 	return true;
 }
@@ -565,10 +590,13 @@ static bool fn_denominator_1(query *q)
 	}
 
 	q->accum.tag = TAG_INTEGER;
-	q->accum.flags = FLAG_MANAGED;
 	q->accum.val_bigint = malloc(sizeof(bigint));
-	check_heap_error(q->accum.val_bigint);						\
+	if (errno == ENOMEM)
+		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory");
 	mp_int_init_copy(&q->accum.val_bigint->ival, &p1.val_bigint->irat.den);
+	if (errno == ENOMEM)
+		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory");
+	q->accum.flags = FLAG_MANAGED;
 	q->accum.val_bigint->refcnt = 0;
 	return true;
 }
