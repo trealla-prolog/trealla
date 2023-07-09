@@ -260,8 +260,8 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 				}
 
 				e->vgen = q->vgen;
-				p1 = blahdeblah(t) ? deref(q, t, t_ctx) : t;
-				p1_ctx = blahdeblah(t) ? q->latest_ctx : t_ctx;
+				p1 = deref(q, t, t_ctx);
+				p1_ctx = q->latest_ctx;
 			}
 
 			if (is_iso_list(p1)) {
