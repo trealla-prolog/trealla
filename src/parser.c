@@ -3030,6 +3030,9 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			p->end_of_term = true;
 			last_op = true;
 
+			if (p->interactive)
+				p->fp = NULL;
+
 			if (p->one_shot)
 				break;
 

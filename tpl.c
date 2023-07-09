@@ -277,7 +277,7 @@ int main(int ac, char *av[], char * envp[])
 #endif
 
 	if (goal) {
-		if (!pl_eval(pl, goal)) {
+		if (!pl_eval(pl, goal, false)) {
 			int halt_code = get_halt_code(pl);
 			pl_destroy(pl);
 			return halt_code;
@@ -349,7 +349,7 @@ int main(int ac, char *av[], char * envp[])
 		g_tpl_interrupt = 0;
 
 #if 1
-		pl_eval(pl, src);
+		pl_eval(pl, src, true);
 #else
 		pl_sub_query *subq;
 		pl_query(pl, src, &subq, 0);

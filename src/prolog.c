@@ -116,7 +116,7 @@ void set_opt(prolog *pl, int level) { pl->opt = level; }
 bool pl_isatty(prolog* pl) { return isatty(fileno(pl->streams[0].fp)); }
 FILE *pl_stdin(prolog *pl) { return pl->streams[0].fp; }
 
-bool pl_eval(prolog *pl, const char *s)
+bool pl_eval(prolog *pl, const char *s, bool interactive)
 {
 	if (!*s)
 		return false;
@@ -124,10 +124,11 @@ bool pl_eval(prolog *pl, const char *s)
 	pl->p = parser_create(pl->curr_m);
 	if (!pl->p) return false;
 
-	if (isatty(fileno(stdin)))
+	if (interactive && isatty(fileno(stdin)))
 		pl->p->fp = stdin;
-	else pl->p->command = true;
 
+	pl->p->interactive = interactive;
+	pl->p->command = true;
 	bool ok = run(pl->p, s, true, NULL, 0);
 	if (get_status(pl)) pl->curr_m = pl->p->m;
 	parser_destroy(pl->p);

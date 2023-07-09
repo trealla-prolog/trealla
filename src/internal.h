@@ -764,6 +764,7 @@ struct parser_ {
 	bool no_fp:1;
 	bool symbol:1;
 	bool reuse:1;
+	bool interactive:1;
 };
 
 typedef struct loaded_file_ loaded_file;
