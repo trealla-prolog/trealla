@@ -1694,7 +1694,7 @@ static const mp_digit fill = (mp_digit)0xdeadbeefabad1dea;
 static mp_digit *s_alloc(mp_size num) {
   mp_digit *out = malloc(num * sizeof(mp_digit));
   //assert(out != NULL);
-  if (out == NULL) { errno = ENOMEM; return out; };
+  if (out == NULL) { errno = ENOMEM; return out; }
 
 #if DEBUG
   for (mp_size ix = 0; ix < num; ++ix) out[ix] = fill;
@@ -1706,7 +1706,7 @@ static mp_digit *s_realloc(mp_digit *old, mp_size osize, mp_size nsize) {
 #if DEBUG
   mp_digit *new = s_alloc(nsize);
  // assert(new != NULL);
-  if (new == NULL) errno = ENOMEM;
+  if (new == NULL) { errno = ENOMEM; return new; }
 
   for (mp_size ix = 0; ix < nsize; ++ix) new[ix] = fill;
   memcpy(new, old, osize * sizeof(mp_digit));
