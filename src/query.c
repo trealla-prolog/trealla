@@ -1663,7 +1663,7 @@ bool start(query *q)
 			//if (!throw_error(q, q->st.curr_cell, q->st.curr_frame, "resource_error", "memory")) {
 			//	q->retry = QUERY_RETRY;
 			//	q->tot_backtracks++;
-				q->fail_on_retry = false;
+			//	q->fail_on_retry = false;
 				continue;
 			//}
 		}
