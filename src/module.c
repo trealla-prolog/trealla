@@ -260,10 +260,9 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 {
 	if (created) *created = false;
 	bool found, evaluable;
-	builtins *fn;
 
-	if ((fn = get_builtin_term(m, c, &found, &evaluable),
-		!evaluable && found && (fn->arity == c->arity) && strcmp(m->name, "format"))) {
+	if (get_builtin_term(m, c, &found, &evaluable),
+		!evaluable && found && strcmp(m->name, "format")) {
 		fprintf(stdout, "Error: permission error modifying %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
 		return NULL;
 	}
