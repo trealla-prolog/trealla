@@ -260,12 +260,12 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 {
 	if (created) *created = false;
 	bool found, evaluable;
+	unsigned specifier;
 
-	if (strcmp(m->name, "format") && 0) {
-		if (get_builtin_term(m, c, &found, &evaluable), found && !evaluable) {
-			fprintf(stdout, "Error: permission error modifying %s/%u\n", C_STR(m, c), c->arity);
-			return NULL;
-		}
+	if (search_op(m, C_STR(m, c), &specifier, is_prefix(c))
+		&& (get_builtin_term(m, c, &found, &evaluable), !evaluable && found)) {
+		fprintf(stdout, "Error: permission error modifying %s/%u\n", C_STR(m, c), c->arity);
+		return NULL;
 	}
 
 	predicate *pr = find_predicate_(m, c, true);
