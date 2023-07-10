@@ -179,7 +179,7 @@ void trim_heap(query *q)
 	}
 }
 
-#define blahdeblah(c) \
+#define deep_copy(c) \
 	(!q->noderef || (is_ref(c) && (c->var_ctx == q->st.curr_frame)))
 
 static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
@@ -215,7 +215,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 			cell *h = p1 + 1;
 			pl_idx h_ctx = p1_ctx;
 
-			if (is_var(h)) {
+			if (is_var(h) && deep_copy(h)) {
 				if (is_ref(h))
 					h_ctx = h->var_ctx;
 
@@ -229,8 +229,8 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 					q->cycle_error = true;
 				} else {
 					e->vgen = q->vgen;
-					h = blahdeblah(h) ? deref(q, h, h_ctx) : h;
-					h_ctx = blahdeblah(h) ? q->latest_ctx : h_ctx;
+					h = deref(q, h, h_ctx);
+					h_ctx = q->latest_ctx;
 					cell *rec = deep_clone2_to_tmp(q, h, h_ctx, depth+1);
 					if (!rec) return NULL;
 					e->vgen = save_vgen;
@@ -244,7 +244,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 			cell *t = p1;
 			pl_idx t_ctx = p1_ctx;
 
-			if (is_var(t)) {
+			if (is_var(t) && deep_copy(t)) {
 				if (is_ref(t))
 					t_ctx = t->var_ctx;
 
@@ -289,7 +289,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 		cell *c = p1;
 		pl_idx c_ctx = p1_ctx;
 
-		if (is_var(c)) {
+		if (is_var(c) && deep_copy(c)) {
 			if (is_ref(c))
 				c_ctx = c->var_ctx;
 
@@ -301,8 +301,8 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 				if (!rec) return NULL;
 			} else {
 				e->vgen = q->vgen;
-				c = blahdeblah(c) ? deref(q, c, c_ctx) : c;
-				c_ctx = blahdeblah(c) ? q->latest_ctx : c_ctx;
+				c = deref(q, c, c_ctx);
+				c_ctx = q->latest_ctx;
 				cell *rec = deep_clone2_to_tmp(q, c, c_ctx, depth+1);
 				if (!rec) return NULL;
 				e->vgen = save_vgen;
