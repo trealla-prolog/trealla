@@ -2483,8 +2483,8 @@ bool parse_write_params(query *q, cell *c, pl_idx c_ctx, cell **vnames, pl_idx *
 			return false;
 		}
 
-		if (is_integer(c1) && (get_smallint(&c[1]) >= 0))
-			q->max_depth = get_smallint(&c[1]);
+		if (is_integer(c1) && (get_smallint(c1) >= 0))
+			q->max_depth = get_smallint(c1);
 		else {
 			throw_error(q, c, c_ctx, "domain_error", "write_option");
 			return false;
