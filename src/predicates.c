@@ -3531,8 +3531,7 @@ static bool do_op(query *q, cell *p3, pl_idx p3_ctx)
 	if (!is_atom(p3))
 		return throw_error(q, p3, p3_ctx, "type_error", "atom");
 
-	unsigned specifier;
-	unsigned pri = get_smallint(p1);
+	unsigned specifier, pri = get_smallint(p1);
 
 	if (!CMP_STR_TO_CSTR(q, p2, "fx"))
 		specifier = OP_FX;
