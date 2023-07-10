@@ -180,7 +180,7 @@ void trim_heap(query *q)
 }
 
 #define deep_copy(c) \
-	(!q->noderef || (is_ref(c) && (c->var_ctx == q->st.curr_frame)))
+	(!q->noderef || (is_ref(c) && (c->var_ctx == q->st.curr_frame) && !is_anon(c)))
 
 static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
