@@ -2516,7 +2516,7 @@ static bool fn_iso_asserta_1(query *q)
 	db_entry *dbe = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->nbr_temporaries, p->cl->cells, 0);
 
 	if (!dbe)
-		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify_static_procedure");
+		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
 	p->cl->cidx = 0;
 	return true;
@@ -2571,7 +2571,7 @@ static bool fn_iso_assertz_1(query *q)
 	db_entry *dbe = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->nbr_temporaries, p->cl->cells, 0);
 
 	if (!dbe)
-		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify_static_procedure");
+		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
 	p->cl->cidx = 0;
 	return true;
@@ -3773,7 +3773,7 @@ static bool do_asserta_2(query *q)
 	db_entry *dbe = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->nbr_temporaries, p->cl->cells, 0);
 
 	if (!dbe)
-		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify_static_procedure");
+		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
 	p->cl->cidx = 0;
 
@@ -3863,7 +3863,7 @@ static bool do_assertz_2(query *q)
 	db_entry *dbe = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->nbr_temporaries, p->cl->cells, 0);
 
 	if (!dbe)
-		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify_static_procedure");
+		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
 	p->cl->cidx = 0;
 
