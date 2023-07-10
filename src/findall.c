@@ -68,9 +68,6 @@ bool fn_iso_findall_3(query *q)
 
 	// Now grab matching solutions with fresh variables for each...
 
-	const frame *f = GET_CURR_FRAME();
-	check_heap_error(check_slot(q, f->actual_slots));
-	try_me(q, f->actual_slots);
 	check_heap_error(init_tmp_heap(q), free(solns));
 
 	for (cell *c = solns; nbr_cells; nbr_cells -= c->nbr_cells, c += c->nbr_cells) {
@@ -78,7 +75,7 @@ bool fn_iso_findall_3(query *q)
 		check_heap_error(tmp, free(solns));
 		make_struct(tmp, g_dot_s, NULL, 2, 0);
 		q->noderef = true;
-		tmp = deep_copy_to_tmp(q, c, q->st.fp, false);
+		tmp = deep_copy_to_tmp(q, c, q->st.curr_frame, false);
 		q->noderef = false;
 		check_heap_error(tmp, free(solns));
 	}
