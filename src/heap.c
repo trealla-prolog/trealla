@@ -411,7 +411,7 @@ static bool copy_vars(query *q, cell *tmp, bool copy_attrs, cell *from, pl_idx f
 
 		const frame *f = GET_FRAME(tmp->var_ctx);
 		const slot *e = GET_SLOT(f, tmp->var_nbr);
-		const pl_idx slot_nbr = e - q->slots;
+		const pl_idx slot_nbr = f->base + tmp->var_nbr;
 		int var_nbr;
 
 		if ((var_nbr = accum_slot(q, slot_nbr, q->varno)) == -1)
@@ -461,7 +461,7 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx
 	if (is_var(p1)) {
 		const frame *f = GET_FRAME(p1_ctx);
 		slot *e = GET_SLOT(f, p1->var_nbr);
-		const pl_idx slot_nbr = e - q->slots;
+		const pl_idx slot_nbr = f->base + p1->var_nbr;
 		e->vgen = q->vgen+1; // +1 because that is what deep_clone_to_tmp() will do
 		if (e->vgen == 0) e->vgen++;
 		q->tab0_varno = q->varno;
@@ -574,7 +574,7 @@ cell *copy_to_tmp(query *q, cell *p1, pl_idx p1_ctx)
 
 		const frame *f = GET_FRAME(v_ctx);
 		const slot *e = GET_SLOT(f, v->var_nbr);
-		const pl_idx slot_nbr = e - q->slots;
+		const pl_idx slot_nbr = f->base + v->var_nbr;
 		int var_nbr;
 
 		if ((var_nbr = accum_slot(q, slot_nbr, q->varno)) == -1)
