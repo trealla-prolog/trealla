@@ -9,6 +9,10 @@
 #include "prolog.h"
 #include "query.h"
 
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
+#include <sys/resource.h>
+#endif
+
 void convert_path(char *filename);
 
 static const size_t INITIAL_POOL_SIZE = 64000;	// bytes
@@ -29,6 +33,7 @@ unsigned g_cpu_count = 4;
 char *g_tpl_lib = NULL;
 int g_ac = 0, g_avc = 1;
 char **g_av = NULL, *g_argv0 = NULL;
+unsigned g_max_depth = 6000;
 
 static atomic_t int g_tpl_count = 0;
 
@@ -370,6 +375,12 @@ static bool g_init(prolog *pl)
 		g_tpl_lib = strdup(ptr);
 		convert_path(g_tpl_lib);
 	}
+
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
+	struct rlimit rlp;
+	getrlimit(RLIMIT_STACK, &rlp);
+	g_max_depth = rlp.rlim_cur / 1024;
+#endif
 
 	pl->pool = calloc(1, pl->pool_size=INITIAL_POOL_SIZE);
 	CHECK_SENTINEL(pl->symtab = map_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);

@@ -700,7 +700,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 		return dst - save_dst;
 	}
 
-	if (depth > MAX_DEPTH) {
+	if (depth > g_max_depth) {
 		q->cycle_error = true;
 		q->last_thing_was_symbol = false;
 		return -1;

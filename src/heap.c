@@ -184,7 +184,7 @@ void trim_heap(query *q)
 
 static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
-	if (depth >= MAX_DEPTH) {
+	if (depth >= g_max_depth) {
 		printf("*** Stack limit %s %d\n", __FILE__, __LINE__);
 		q->cycle_error = true;
 		return NULL;
