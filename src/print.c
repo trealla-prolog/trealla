@@ -691,9 +691,10 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 
 	if (q->max_depth && (depth >= q->max_depth)) {
 		if (cons) dst += snprintf(dst, dstlen, "[");
+		if (q->last_thing_was_symbol) dst += snprintf(dst, dstlen, " ");
 		dst += snprintf(dst, dstlen, "...");
 		if (cons) dst += snprintf(dst, dstlen, "]");
-		q->last_thing_was_symbol = false;
+		q->last_thing_was_symbol = true;
 		q->was_space = false;
 		return dst - save_dst;
 	}
