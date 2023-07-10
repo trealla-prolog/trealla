@@ -7,18 +7,13 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	Integers & Rationals are unbounded
 	Atoms are UTF-8 of unlimited length
 	The default double-quoted representation is *chars* list
-	Unlimited arity (system resources constrained)
-	Uses 1st & 2nd arg indexing
 	Strings & slices are super-efficient (especially with mmap'd files)
-	DCGs
 	REPL with history
 	Compiles in <1s with *tcc*, or ~5s with *gcc* and *clang*
 	Runs on Linux, Android, FreeBSD, macOS, and WebAssembly (WASI) & Go
 	Foreign function interface (FFI) for calling out to user C code
-	Access SQLITE databases using builtin module (uses FFI)
 	API for calling from C (or by using WASM from Go & JS)
-	Attributed variables with SICStus interface (*WIP*)
-	Rational trees aka. cyclic terms (*WIP*)
+	Access SQLITE databases using builtin module (uses FFI)
 	Concurrency via tasks / futures / engines (generators)
 	Logtalk compatible
 
