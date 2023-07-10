@@ -655,6 +655,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 				dst += snprintf(dst, dstlen, "%s", !is_ref(save_tail) ? C_STR(q, save_tail) : "_");
 			} else {
 				dst += snprintf(dst, dstlen, "%s", ",");
+				q->last_thing_was_comma = true;
 				c = tail;
 				print_list++;
 				cons = true;
@@ -691,7 +692,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 
 	if (q->max_depth && (depth >= q->max_depth)) {
 		if (cons) dst += snprintf(dst, dstlen, "[");
-		if (q->last_thing_was_symbol) dst += snprintf(dst, dstlen, " ");
+		if (q->last_thing_was_symbol && !q->last_thing_was_comma) dst += snprintf(dst, dstlen, " ");
 		dst += snprintf(dst, dstlen, "...");
 		if (cons) dst += snprintf(dst, dstlen, "]");
 		q->last_thing_was_symbol = true;
@@ -1528,5 +1529,6 @@ void clear_write_options(query *q)
 	q->nl = q->fullstop = q->varnames = q->ignore_ops = false;
 	q->parens = q->numbervars = q->json = false;
 	q->last_thing_was_symbol = false;
+	q->last_thing_was_comma = false;
 	q->variable_names = NULL;
 }

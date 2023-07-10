@@ -674,6 +674,7 @@ struct query_ {
 	bool done:1;
 	bool parens:1;
 	bool last_thing_was_symbol:1;
+	bool last_thing_was_comma:1;
 	bool in_attvar_print:1;
 	bool lists_ok:1;
 	bool fail_on_retry:1;
