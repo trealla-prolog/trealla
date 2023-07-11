@@ -289,6 +289,8 @@ static void setup_key(query *q)
 		arg3 = arg2 + arg2->nbr_cells;
 
 	arg1 = deref(q, arg1, q->st.key_ctx);
+	q->st.karg1 = *arg1;
+
 	//pl_idx arg1_ctx = q->latest_ctx;
 
 	if (arg2)
