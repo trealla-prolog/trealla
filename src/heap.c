@@ -72,10 +72,10 @@ size_t alloc_grow(void **addr, size_t elem_size, size_t min_elements, size_t max
 
 cell *init_tmp_heap(query *q)
 {
-	if (q->tmp_heap && (q->tmph_size > 1024)) {
+	if (q->tmp_heap && (q->tmph_size > 1000)) {
 		free(q->tmp_heap);
 		q->tmp_heap = NULL;
-		q->tmph_size = 100;
+		q->tmph_size = 1000;
 	}
 
 	if (!q->tmp_heap) {
@@ -96,7 +96,7 @@ cell *alloc_on_tmp(query *q, unsigned nbr_cells)
 	pl_idx new_size = q->tmphp + nbr_cells;
 
 	if (new_size >= q->tmph_size) {
-		size_t elements = alloc_grow((void**)&q->tmp_heap, sizeof(cell), new_size, new_size*4/3, true);
+		size_t elements = alloc_grow((void**)&q->tmp_heap, sizeof(cell), new_size, new_size*2, true);
 		if (!elements) return NULL;
 		q->tmph_size = elements;
 	}
@@ -730,10 +730,10 @@ cell *end_structure(query *q)
 	safe_copy_cells(tmp, get_tmp_heap(q, 0), nbr_cells);
 	tmp->nbr_cells = nbr_cells;
 
-	if (q->tmp_heap && (q->tmph_size > 1024)) {
+	if (q->tmp_heap && (q->tmph_size > 1000)) {
 		free(q->tmp_heap);
 		q->tmp_heap = NULL;
-		q->tmph_size = 100;
+		q->tmph_size = 1000;
 	}
 
 	return tmp;
