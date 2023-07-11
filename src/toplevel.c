@@ -320,7 +320,7 @@ void dump_vars(query *q, bool partial)
 		return;
 
 	parser *p = q->p;
-	frame *f = GET_FIRST_FRAME();
+	const frame *f = GET_FIRST_FRAME();
 	q->is_dump_vars = true;
 	q->tab_idx = 0;
 	bool any = false;
@@ -372,8 +372,15 @@ void dump_vars(query *q, bool partial)
 		cell *c = deref(q, &e->c, 0);
 		pl_idx c_ctx = q->latest_ctx;
 
+		//printf("\n*** %s c->tag=%u, c->flags=%u\n", C_STR(q, c), c->tag, c->flags);
+
 		if (is_var(c) && is_anon(c))
 			continue;
+
+		if (is_ref(c)) {
+			if (!strcmp(p->vartab.var_name[c->var_nbr], "_"))
+				continue;
+		}
 
 		if (any)
 			fprintf(stdout, ", ");

@@ -73,6 +73,9 @@ void make_ref(cell *tmp, pl_idx off, unsigned var_nbr, pl_idx ctx)
 	tmp->flags = FLAG_VAR_REF;
 	tmp->var_nbr = var_nbr;
 	tmp->var_ctx = ctx;
+
+	if (off == g_anon_s)
+		tmp->flags |= FLAG_VAR_ANON;
 }
 
 void make_var(cell *tmp, pl_idx off, unsigned var_nbr)
