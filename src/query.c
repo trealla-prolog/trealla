@@ -359,7 +359,7 @@ bool has_next_key(query *q)
 
 	// Attempt look-ahead on 1st arg...
 
-#if 1
+#if 0
 	for (db_entry *next = q->st.curr_dbe->next; next; next = next->next) {
 		if (!can_view(q, f->ugen, next))
 			continue;
