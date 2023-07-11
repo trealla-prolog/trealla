@@ -439,9 +439,9 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 	//sl_dump(pr->idx, dump_key, q);
 
 	check_heap_error(init_tmp_heap(q));
-	q->st.key = key = deep_clone_to_tmp(q, key, key_ctx);
+	q->st.key = deep_clone_to_tmp(q, key, key_ctx);
 
-	cell *arg1 = key->arity ? key + 1 : NULL;
+	cell *arg1 = q->st.key->arity ? q->st.key + 1 : NULL;
 	map *idx = pr->idx;
 
 	if (arg1 && (is_var(arg1) || pr->is_var_in_first_arg)) {
@@ -457,20 +457,20 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 			return true;
 		}
 
-		q->st.key = key = arg2;
+		q->st.key = arg2;
 		idx = pr->idx2;
 	}
 
 #define DEBUGIDX 0
 
 #if DEBUGIDX
-	DUMP_TERM("search, term = ", key, q->st.curr_frame);
+	DUMP_TERM("search, term = ", q->st.key, q->st.curr_frame);
 #endif
 
 	q->st.curr_dbe = NULL;
 	miter *iter;
 
-	if (!(iter = map_find_key(idx, key)))
+	if (!(iter = map_find_key(idx, q->st.key)))
 		return false;
 
 	// If the index search has found just one (definite) solution
