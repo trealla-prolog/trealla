@@ -400,6 +400,7 @@ bool has_next_key(query *q)
 			return true;
 	}
 #endif
+
 	return false;
 }
 
@@ -1976,4 +1977,3 @@ query *query_create_subquery(query *q, cell *curr_cell)
 	subq->st.sp = fdst->actual_slots;
 	return subq;
 }
-
