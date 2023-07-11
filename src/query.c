@@ -363,6 +363,9 @@ bool has_next_key(query *q)
 		if (!can_view(q, f->ugen, next))
 			continue;
 
+		if (!q->st.key->arity)
+			return true;
+
 		cl = &next->cl;
 		cell *dkey = cl->cells;
 
@@ -371,9 +374,6 @@ bool has_next_key(query *q)
 
 		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
 			dkey++;
-
-		if (!dkey->arity)
-			return true;
 
 #if 0
 		cell *darg1 = dkey + 1;
