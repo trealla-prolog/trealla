@@ -533,18 +533,18 @@ struct prolog_state_ {
 	module *m, *prev_m;
 
 	union {
-		cell *key;
+		struct { cell *key, karg1; };
+		struct { uint64_t v1, v2; };
 		int64_t cnt;
-		struct { uint32_t v1, v2; };
 	};
 
 	uint64_t timer_started;
 	pl_idx curr_frame, fp, hp, tp, sp, pp, key_ctx;
 	float prob;
 	uint8_t qnbr;
-	bool arg1_is_ground:1;
-	bool arg2_is_ground:1;
-	bool arg3_is_ground:1;
+	bool karg1_is_ground:1;
+	bool karg2_is_ground:1;
+	bool karg3_is_ground:1;
 };
 
 struct control_ {

@@ -285,11 +285,11 @@ static void setup_key(query *q)
 	if (q->st.key->arity > 1)
 		arg2 = arg1 + arg1->nbr_cells;
 
-	if (arg2 && (q->st.key->arity > 2))
+	if (q->st.key->arity > 2)
 		arg3 = arg2 + arg2->nbr_cells;
 
 	arg1 = deref(q, arg1, q->st.key_ctx);
-	pl_idx arg1_ctx = q->latest_ctx;
+	//pl_idx arg1_ctx = q->latest_ctx;
 
 	if (arg2)
 		arg2 = deref(q, arg2, q->st.key_ctx);
@@ -298,13 +298,13 @@ static void setup_key(query *q)
 		arg3 = deref(q, arg3, q->st.key_ctx);
 
 	if (is_atomic(arg1) /*|| !has_vars(q, arg1, arg1_ctx*/)
-		q->st.arg1_is_ground = true;
+		q->st.karg1_is_ground = true;
 
 	if (arg2 && is_atomic(arg2))
-		q->st.arg2_is_ground = true;
+		q->st.karg2_is_ground = true;
 
 	if (arg3 && is_atomic(arg3))
-		q->st.arg3_is_ground = true;
+		q->st.karg3_is_ground = true;
 }
 
 void next_key(query *q)
@@ -345,61 +345,45 @@ bool has_next_key(query *q)
 
 	clause *cl = &q->st.curr_dbe->cl;
 
-	//printf("*** q->st.arg1_is_ground=%d, cl->arg1_is_unique=%d\n",
-	//	q->st.arg1_is_ground, cl->arg1_is_unique);
+	//printf("*** q->st.karg1_is_ground=%d, cl->arg1_is_unique=%d\n",
+	//	q->st.karg1_is_ground, cl->arg1_is_unique);
 
-	if (q->st.arg1_is_ground && cl->arg1_is_unique)
+	if (q->st.karg1_is_ground && cl->arg1_is_unique)
 		return false;
 
-	if (q->st.arg2_is_ground && cl->arg2_is_unique)
+	if (q->st.karg2_is_ground && cl->arg2_is_unique)
 		return false;
 
-	if (q->st.arg3_is_ground && cl->arg3_is_unique)
+	if (q->st.karg3_is_ground && cl->arg3_is_unique)
 		return false;
 
-	// Attempt look-ahead on 1st arg...
+	for (db_entry *next = q->st.curr_dbe->next; next; next = next->next) {
+		if (!can_view(q, f->ugen, next))
+			continue;
+
+		cl = &next->cl;
+		cell *dkey = cl->cells;
+
+		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
+			dkey++;
+
+		//DUMP_TERM("key", q->st.key, q->st.key_ctx, 0);
+		//DUMP_TERM("next", dkey, q->st.curr_frame, 0);
 
 #if 0
-	for (db_entry *next = q->st.curr_dbe->next; next; next = next->next) {
-		if (!can_view(q, f->ugen, next))
-			continue;
-
-		if (!q->st.arg1_is_ground)
-			return true;
-
-		cl = &next->cl;
-		cell *dkey = cl->cells;
-
-		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
-			dkey++;
+		// Attempt look-ahead on 1st arg...
 
 		cell *darg1 = dkey + 1;
-		cell *karg1 = deref(q, q->st.key+1, q->st.key_ctx);
 
-		//DUMP_TERM("key", q->st.key, q->st.key_ctx, 0);
-		//DUMP_TERM("next", cl->cells, q->st.curr_frame, 0);
-
-		if (index_cmpkey(karg1, darg1, q->st.m, NULL) == 0)
-			return true;
-	}
-#else
-	for (db_entry *next = q->st.curr_dbe->next; next; next = next->next) {
-		if (!can_view(q, f->ugen, next))
-			continue;
-
-		cl = &next->cl;
-		cell *dkey = cl->cells;
-
-		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
-			dkey++;
-
-		//DUMP_TERM("key", q->st.key, q->st.key_ctx, 0);
-		//DUMP_TERM("next", cl->cells, q->st.curr_frame, 0);
+		if (!is_var(&q->st.karg1) && !is_var(darg1)) {
+			if (!q->st.karg1_is_ground && is_atomic(darg1))
+				continue;
+		}
+#endif
 
 		if (index_cmpkey(q->st.key, dkey, q->st.m, NULL) == 0)
 			return true;
 	}
-#endif
 
 	return false;
 }
@@ -416,13 +400,14 @@ const char *dump_id(const void *k, const void *v, const void *p)
 static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 {
 	q->st.iter = NULL;
-	q->st.arg1_is_ground = false;
-	q->st.arg2_is_ground = false;
-	q->st.arg3_is_ground = false;
-	q->st.key = key;
+	q->st.karg1_is_ground = false;
+	q->st.karg2_is_ground = false;
+	q->st.karg3_is_ground = false;
 	q->st.key_ctx = key_ctx;
 
 	if (!pr->idx) {
+		q->st.key = key;
+
 		// The just_in_time_rebuild of the index is currently disabled
 		// for multifile/dynamic predicates because of why???
 
@@ -430,6 +415,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 			just_in_time_rebuild(pr);
 
 		q->st.curr_dbe = pr->head;
+		q->st.karg1.tag = TAG_EMPTY;
 
 		if (key->arity)
 			setup_key(q);
