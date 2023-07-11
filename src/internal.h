@@ -533,7 +533,7 @@ struct prolog_state_ {
 	module *m, *prev_m;
 
 	union {
-		struct { cell *key, karg1; };
+		struct { cell *key; unsigned karg1_tag; };
 		struct { uint64_t v1, v2; };
 		int64_t cnt;
 	};

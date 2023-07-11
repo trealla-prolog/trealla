@@ -289,7 +289,7 @@ static void setup_key(query *q)
 		arg3 = arg2 + arg2->nbr_cells;
 
 	arg1 = deref(q, arg1, q->st.key_ctx);
-	q->st.karg1 = *arg1;
+	q->st.karg1_tag = arg1->tag;
 
 	//pl_idx arg1_ctx = q->latest_ctx;
 
@@ -299,13 +299,13 @@ static void setup_key(query *q)
 	if (arg3)
 		arg3 = deref(q, arg3, q->st.key_ctx);
 
-	if (is_atomic(arg1) /*|| !has_vars(q, arg1, arg1_ctx*/)
+	if (is_iso_atomic(arg1) /*|| !has_vars(q, arg1, arg1_ctx*/)
 		q->st.karg1_is_ground = true;
 
-	if (arg2 && is_atomic(arg2))
+	if (arg2 && is_iso_atomic(arg2))
 		q->st.karg2_is_ground = true;
 
-	if (arg3 && is_atomic(arg3))
+	if (arg3 && is_iso_atomic(arg3))
 		q->st.karg3_is_ground = true;
 }
 
@@ -366,21 +366,26 @@ bool has_next_key(query *q)
 		cl = &next->cl;
 		cell *dkey = cl->cells;
 
-		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
-			dkey++;
-
 		//DUMP_TERM("key", q->st.key, q->st.key_ctx, 0);
 		//DUMP_TERM("next", dkey, q->st.curr_frame, 0);
 
-#if 0
-		// Attempt look-ahead on 1st arg...
+		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
+			dkey++;
 
+		if (!dkey->arity)
+			return true;
+
+#if 0
 		cell *darg1 = dkey + 1;
 
-		if (!is_var(&q->st.karg1) && !is_var(darg1)) {
-			if (!q->st.karg1_is_ground && is_atomic(darg1))
-				continue;
-		}
+		if ((q->st.karg1_tag == TAG_VAR) || is_var(darg1))
+			return true;
+
+		if (!q->st.karg1_is_ground && is_iso_atomic(darg1))
+			continue;
+
+		if (q->st.karg1_is_ground && !is_iso_atomic(darg1))
+			continue;
 #endif
 
 		if (index_cmpkey(q->st.key, dkey, q->st.m, NULL) == 0)
@@ -417,7 +422,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 			just_in_time_rebuild(pr);
 
 		q->st.curr_dbe = pr->head;
-		q->st.karg1.tag = TAG_EMPTY;
+		q->st.karg1_tag = TAG_EMPTY;
 
 		if (key->arity)
 			setup_key(q);
