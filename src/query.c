@@ -418,7 +418,11 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 	q->st.key_ctx = key_ctx;
 
 	if (!pr->idx) {
-		q->st.key = key;
+		if (pr->is_dynamic) {
+			check_heap_error(init_tmp_heap(q));
+			q->st.key = deep_clone_to_heap(q, key, key_ctx);
+		} else
+			q->st.key = key;
 
 		// The just_in_time_rebuild of the index is currently disabled
 		// for multifile/dynamic predicates because of why???
