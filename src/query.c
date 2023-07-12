@@ -323,8 +323,8 @@ static void setup_key(query *q)
 
 	if (arg3 && is_iso_atomic(arg3))
 		q->st.karg3_is_ground = true;
-	//else if (arg31 && !is_var(arg31))
-	//	q->st.karg3_is_ground = true;
+	else if (arg31 && !is_var(arg31))
+		q->st.karg3_is_ground = true;
 }
 
 void next_key(query *q)
