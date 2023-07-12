@@ -289,24 +289,42 @@ static void setup_key(query *q)
 		arg3 = arg2 + arg2->nbr_cells;
 
 	arg1 = deref(q, arg1, q->st.key_ctx);
-	q->st.karg1_tag = arg1->tag;
+	pl_idx arg1_ctx = q->latest_ctx;
+	cell *arg11 = NULL, *arg21 = NULL, *arg31 = NULL;
 
-	//pl_idx arg1_ctx = q->latest_ctx;
+	if (arg1->arity == 1)
+		arg11 = deref(q, arg1+1, arg1_ctx);
 
-	if (arg2)
+	if (arg2) {
 		arg2 = deref(q, arg2, q->st.key_ctx);
+		pl_idx arg2_ctx = q->latest_ctx;
 
-	if (arg3)
+		if (arg2->arity == 1)
+			arg21 = deref(q, arg2+1, arg2_ctx);
+	}
+
+	if (arg3) {
 		arg3 = deref(q, arg3, q->st.key_ctx);
+		pl_idx arg3_ctx = q->latest_ctx;
 
-	if (is_iso_atomic(arg1) /*|| !has_vars(q, arg1, arg1_ctx*/)
+		if (arg3->arity == 1)
+			arg31 = deref(q, arg3+1, arg3_ctx);
+	}
+
+	if (is_iso_atomic(arg1))
+		q->st.karg1_is_ground = true;
+	else if (arg11 && !is_var(arg11))
 		q->st.karg1_is_ground = true;
 
 	if (arg2 && is_iso_atomic(arg2))
 		q->st.karg2_is_ground = true;
+	//else if (arg21 && !is_var(arg21))
+	//	q->st.karg2_is_ground = true;
 
 	if (arg3 && is_iso_atomic(arg3))
 		q->st.karg3_is_ground = true;
+	//else if (arg31 && !is_var(arg31))
+	//	q->st.karg3_is_ground = true;
 }
 
 void next_key(query *q)
@@ -375,19 +393,6 @@ bool has_next_key(query *q)
 		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
 			dkey++;
 
-#if 0
-		cell *darg1 = dkey + 1;
-
-		if ((q->st.karg1_tag == TAG_VAR) || is_var(darg1))
-			return true;
-
-		if (!q->st.karg1_is_ground && is_iso_atomic(darg1))
-			continue;
-
-		if (q->st.karg1_is_ground && !is_iso_atomic(darg1))
-			continue;
-#endif
-
 		if (index_cmpkey(q->st.key, dkey, q->st.m, NULL) == 0)
 			return true;
 	}
@@ -422,7 +427,6 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 			just_in_time_rebuild(pr);
 
 		q->st.curr_dbe = pr->head;
-		q->st.karg1_tag = TAG_EMPTY;
 
 		if (key->arity)
 			setup_key(q);

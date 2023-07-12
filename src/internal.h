@@ -535,7 +535,6 @@ struct prolog_state_ {
 	union {
 		struct {
 			cell *key;
-			uint8_t karg1_tag;
 			bool karg1_is_ground:1;
 			bool karg2_is_ground:1;
 			bool karg3_is_ground:1;
