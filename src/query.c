@@ -387,11 +387,11 @@ bool has_next_key(query *q)
 		cl = &next->cl;
 		cell *dkey = cl->cells;
 
-		//DUMP_TERM("key", q->st.key, q->st.key_ctx, 0);
-		//DUMP_TERM("next", dkey, q->st.curr_frame, 0);
-
 		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
 			dkey++;
+
+		//DUMP_TERM("key", q->st.key, q->st.key_ctx, 0);
+		//DUMP_TERM("next", dkey, q->st.curr_frame, 0);
 
 		if (index_cmpkey(q->st.key, dkey, q->st.m, NULL) == 0)
 			return true;
