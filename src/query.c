@@ -415,13 +415,8 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 	q->st.karg1_is_ground = false;
 	q->st.karg2_is_ground = false;
 	q->st.karg3_is_ground = false;
-	q->st.key_ctx = key_ctx;
 
 	if (!pr->idx) {
-		if (pr->is_dynamic) {
-			q->st.key = deep_clone_to_heap(q, key, key_ctx);
-		} else
-			q->st.key = key;
 
 		// The just_in_time_rebuild of the index is currently disabled
 		// for multifile/dynamic predicates because of why???
@@ -430,9 +425,17 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 			just_in_time_rebuild(pr);
 
 		q->st.curr_dbe = pr->head;
+		q->st.key = key;
+		q->st.key_ctx = key_ctx;
 
-		if (key->arity)
+		if (key->arity) {
+			if (pr->is_dynamic) {
+				q->st.key = deep_clone_to_heap(q, key, key_ctx);
+				q->st.key_ctx = q->st.curr_frame;
+			}
+
 			setup_key(q);
+		}
 
 		return true;
 	}
@@ -441,6 +444,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 
 	check_heap_error(init_tmp_heap(q));
 	q->st.key = deep_clone_to_tmp(q, key, key_ctx);
+	q->st.key_ctx = q->st.curr_frame;
 
 	cell *arg1 = q->st.key->arity ? q->st.key + 1 : NULL;
 	map *idx = pr->idx;
