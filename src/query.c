@@ -419,7 +419,6 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 
 	if (!pr->idx) {
 		if (pr->is_dynamic) {
-			check_heap_error(init_tmp_heap(q));
 			q->st.key = deep_clone_to_heap(q, key, key_ctx);
 		} else
 			q->st.key = key;
