@@ -444,7 +444,7 @@ static const char *get_slot_name(query *q, pl_idx slot_nbr)
 {
 	for (unsigned i = 0; i < q->print_idx; i++) {
 		if (q->pl->tab1[i] == slot_nbr) {
-			return varformat(q->pl->tmpbuf, i);
+			return varformat(q->pl->tmpbuf, q->pl->tab2[i]);
 		}
 	}
 
