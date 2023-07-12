@@ -381,6 +381,11 @@ bool has_next_key(query *q)
 		if (!can_view(q, f->ugen, next))
 			continue;
 
+#if 1
+		if (!q->st.karg1_is_ground)
+			return true;
+#endif
+
 		if (!q->st.key->arity)
 			return true;
 
