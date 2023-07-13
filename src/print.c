@@ -869,7 +869,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 	}
 
 	if (is_string(c) && q->ignore_ops) {
-		ssize_t n = print_string_list(q, save_dst, dst, dstlen, c, c_ctx, running, cons, depth+1);
+		ssize_t n = print_string_list(q, save_dst, dst, dstlen, c, c_ctx, running, cons > 0, depth+1);
 		q->was_space = false;
 		return n;
 	}
@@ -911,7 +911,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 	}
 
 	if (is_iso_list(c) && !q->ignore_ops) {
-		ssize_t n = print_iso_list(q, save_dst, dst, dstlen, c, c_ctx, running, cons, depth+1);
+		ssize_t n = print_iso_list(q, save_dst, dst, dstlen, c, c_ctx, running, cons > 0, depth+1);
 		q->was_space = false;
 		return n;
 	}
