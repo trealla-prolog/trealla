@@ -942,8 +942,9 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 		if ((c->arity == 1) && is_interned(c) && !strcmp(src, "{}")) braces = 1;
 		cell *c1 = c->arity ? deref(q, c+1, c_ctx) : NULL;
 
-		if (running && is_interned(c) && c->arity && !strcmp(src, "$VAR") && c1
-			&& q->numbervars && is_integer(c1)) {
+		if (running && is_interned(c) && c->arity
+			&& q->numbervars && !strcmp(src, "$VAR") && c1
+			&& is_integer(c1) && (get_smallint(c1) >= 0)) {
 			dst += snprintf(dst, dstlen, "%s", varformat2(q->pl->tmpbuf, sizeof(q->pl->tmpbuf), c1, 0));
 			q->last_thing_was_symbol = false;
 			q->was_space = false;
