@@ -29,10 +29,6 @@ CC = $(WASI_CC)
 endif
 endif
 
-ifndef DEBUG
-CFLAGS += -fomit-frame-pointer
-endif
-
 ifdef ISOCLINE
 CFLAGS += -DUSE_ISOCLINE=1
 else
