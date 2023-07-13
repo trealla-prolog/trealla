@@ -120,8 +120,6 @@ bool fn_iso_unify_2(query *q);
 bool fn_sys_block_catcher_1(query *q);
 bool fn_sys_cleanup_if_det_1(query *q);
 bool fn_sys_queue_1(query *q);
-bool fn_iso_findall_3(query *q);
-bool fn_iso_bagof_3(query *q);
 
 builtins *get_fn_ptr(void *fn);
 
