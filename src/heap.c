@@ -452,8 +452,12 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx
 	cell *c = deref(q, p1, p1_ctx);
 	pl_idx c_ctx = q->latest_ctx;
 
+	void *save = q->vars;
 	q->vars = map_create(NULL, NULL, NULL);
-	if (!q->vars) return false;
+	if (!q->vars) {
+		q->vars = save;
+		return NULL;
+	}
 	const frame *f = GET_CURR_FRAME();
 	q->varno = f->actual_slots;
 	q->tab_idx = 0;
@@ -471,16 +475,20 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx
 	}
 
 	cell *tmp = deep_clone_to_tmp(q, c, c_ctx);
-	if (!tmp) return tmp;
+	if (!tmp) {
+		map_destroy(q->vars);
+		q->vars = save;
+		return NULL;
+	}
 
 	if (!copy_vars(q, tmp, copy_attrs, from, from_ctx, to, to_ctx)) {
 		map_destroy(q->vars);
-		q->vars = NULL;
+		q->vars = save;
 		return NULL;
 	}
 
 	map_destroy(q->vars);
-	q->vars = NULL;
+	q->vars = save;
 	int cnt = q->varno - f->actual_slots;
 
 	if (cnt) {
