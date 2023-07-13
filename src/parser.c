@@ -3443,6 +3443,15 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			SB_cstr(p->token), last_op, p->is_op, is_func, IS_PREFIX(specifier));
 #endif
 
+		if (!is_func && last_op && (args && priority >= 1200) && !p->is_quoted) {
+			if (DUMP_ERRS || !p->do_read_term)
+				fprintf(stdout, "Error: syntax error, parens needed around operator '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
+
+			p->error_desc = "parens_needed";
+			p->error = true;
+			break;
+		}
+
 		if ((p->was_string || p->string) && is_func) {
 			if (DUMP_ERRS || !p->do_read_term)
 				fprintf(stdout, "Error: syntax error, near \"%s\", expected atom, %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
