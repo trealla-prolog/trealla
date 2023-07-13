@@ -7949,7 +7949,7 @@ void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, u
 		dst += snprintf(dst, buflen-(dst-tmpbuf), ")");
 	}
 
-	dst += snprintf(dst, buflen-(dst-tmpbuf), ", %s).\n", type);
+	dst += snprintf(dst, buflen-(dst-tmpbuf), ", (%s)).\n", type);
 }
 
 void format_template(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const builtins *ptr, bool function, bool alt)
@@ -7987,7 +7987,7 @@ void format_template(module *m, char *tmpbuf, size_t buflen, const char *name, u
 
 	char tmpbuf2[256];
 	do_template(tmpbuf2, name, ptr->arity, alt?ptr->help_alt:ptr->help, function, quote);
-	dst += snprintf(dst, buflen-(dst-tmpbuf), ", %s)).\n", tmpbuf2);
+	dst += snprintf(dst, buflen-(dst-tmpbuf), ", (%s))).\n", tmpbuf2);
 }
 
 static void load_properties(module *m)
