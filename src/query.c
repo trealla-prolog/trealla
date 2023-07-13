@@ -382,6 +382,9 @@ bool has_next_key(query *q)
 			continue;
 
 #if 1
+		// This is needed for: tpl -g run ~/retina/retina.pl ~/retina/rdfsurfaces/lubm/lubm.s
+		// But causes the 27 non-determistic errors in Logtalk
+
 		if (!q->st.karg1_is_ground)
 			return true;
 #endif
@@ -434,7 +437,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 		q->st.key_ctx = key_ctx;
 
 		if (key->arity) {
-			if (pr->is_dynamic) {
+			if (pr->is_dynamic && pr->is_multifile) {
 				q->st.key = deep_clone_to_heap(q, key, key_ctx);
 				q->st.key_ctx = q->st.curr_frame;
 			}
