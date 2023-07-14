@@ -33,7 +33,7 @@ static void show_goals(query *q, int nbr)
 	while (c && nbr--) {
 		printf(" [%llu] ", (long long unsigned)c_ctx);
 		unsigned save = q->max_depth;
-		q->max_depth = 3;
+		q->max_depth = 5;
 		q->quoted = true;
 		print_term(q, stdout, c, c_ctx, 1);
 		q->max_depth = save;
@@ -43,9 +43,9 @@ static void show_goals(query *q, int nbr)
 		if (!f->prev_offset)
 			break;
 
-		c_ctx -= f->prev_offset;
-		f = GET_FRAME(c_ctx);
 		c = f->curr_cell;
+		c_ctx = q->st.curr_frame - f->prev_offset;
+		f = GET_FRAME(c_ctx);
 	}
 }
 
