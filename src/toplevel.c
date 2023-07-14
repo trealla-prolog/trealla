@@ -24,6 +24,30 @@ static void msleep(int ms)
 }
 #endif
 
+static void show_goals(query *q, int nbr)
+{
+	frame *f = GET_CURR_FRAME();
+	cell *c = q->st.curr_cell;
+	pl_idx c_ctx = q->st.curr_frame;
+
+	while (c && nbr--) {
+		printf(" [%llu] ", (long long unsigned)c_ctx);
+		unsigned save = q->max_depth;
+		q->max_depth = 3;
+		q->quoted = true;
+		print_term(q, stdout, c, c_ctx, 1);
+		q->max_depth = save;
+		q->quoted = false;
+		printf("\n");
+
+		if (!f->prev_offset)
+			break;
+
+		c_ctx -= f->prev_offset;
+		f = GET_FRAME(c_ctx);
+		c = f->curr_cell;
+	}
+}
 
 int check_interrupt(query *q)
 {
@@ -38,6 +62,11 @@ int check_interrupt(query *q)
 		return 0;
 	}
 #endif
+
+	if (!q->p->interactive) {
+		q->halt = true;
+		return 1;
+	}
 
 	signal(SIGINT, &sigfn);
 	g_tpl_interrupt = 0;
@@ -60,6 +89,7 @@ int check_interrupt(query *q)
 				"\tc         continue     - resume current query\n"
 				"\te         exit         - exit top-level\n"
 				"\tt         trace        - toggle tracing (creeping)\n"
+				"\tg         goals        - show goals\n"
 				"\th         help         - display this help\n"
 				"");
 			goto LOOP;
@@ -69,6 +99,11 @@ int check_interrupt(query *q)
 		if (ch == 't') {
 			q->trace = q->creep = !q->creep;
 			break;
+		}
+
+		if (ch == 'g') {
+			show_goals(q, 7);
+			goto LOOP;
 		}
 
 		if (isdigit(ch)) {

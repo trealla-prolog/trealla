@@ -518,7 +518,7 @@ struct slot_ {
 // Where *overflow* is where new slots are allocated (actual_slots > initial_slots)
 
 struct frame_ {
-	cell *prev_cell;
+	cell *curr_cell;
 	uint64_t ugen, cgen;
 	pl_idx prev_offset, hp, base, overflow, initial_slots, actual_slots;
 	uint16_t mid;

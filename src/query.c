@@ -24,7 +24,7 @@ static void msleep(int ms)
 }
 #endif
 
-#define Trace if (q->trace /*&& !consulting*/) trace_call
+#define Trace if (!(q->trace /*&& !consulting*/)) q->step++; else  trace_call
 
 static const unsigned INITIAL_NBR_QUEUE_CELLS = 1000;
 static const unsigned INITIAL_NBR_HEAP_CELLS = 16000;
@@ -89,6 +89,8 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 		return;
 #endif
 
+	q->step++;
+
 	if (box == CALL)
 		box = q->retry?REDO:CALL;
 
@@ -111,13 +113,13 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 #ifdef DEBUG
 	SB_sprintf(pr, "[%s:%"PRIu64":f%u:fp:%u:cp%u:sp%u:hp%u:tp%u] ",
 		q->st.m->name,
-		q->step++,
+		q->step,
 		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.tp
 		);
 #else
 	SB_sprintf(pr, "[%s:%"PRIu64":cp%u] ",
 		q->st.m->name,
-		q->step++,
+		q->step,
 		q->cp
 		);
 #endif
@@ -313,17 +315,17 @@ static void setup_key(query *q)
 
 	if (is_iso_atomic(arg1))
 		q->st.karg1_is_ground = true;
-	else if (arg11 && !is_var(arg11))
+	else if (arg11 && is_atomic(arg11))
 		q->st.karg1_is_ground = true;
 
 	if (arg2 && is_iso_atomic(arg2))
 		q->st.karg2_is_ground = true;
-	else if (arg21 && !is_var(arg21))
+	else if (arg21 && is_atomic(arg21))
 		q->st.karg2_is_ground = true;
 
 	if (arg3 && is_iso_atomic(arg3))
 		q->st.karg3_is_ground = true;
-	else if (arg31 && !is_var(arg31))
+	else if (arg31 && is_atomic(arg31))
 		q->st.karg3_is_ground = true;
 }
 
@@ -796,12 +798,12 @@ static frame *push_frame(query *q, unsigned nbr_vars)
 
 	// Avoid long chains of useless returns...
 
-	if (is_end(next_cell) && !next_cell->val_ret && curr_f->prev_cell) {
+	if (is_end(next_cell) && !next_cell->val_ret && curr_f->curr_cell) {
 		f->prev_offset = (new_frame - q->st.curr_frame) + curr_f->prev_offset;
-		f->prev_cell = curr_f->prev_cell;
+		f->curr_cell = curr_f->curr_cell;
 	} else {
 		f->prev_offset = new_frame - q->st.curr_frame;
-		f->prev_cell = q->st.curr_cell;
+		f->curr_cell = q->st.curr_cell;
 	}
 
 	f->cgen = ++q->cgen;
@@ -947,7 +949,7 @@ void stash_me(query *q, const clause *cl, bool last_match)
 		frame *f = GET_FRAME(new_frame);
 		f->is_last = last_match;
 		f->prev_offset = new_frame - q->st.curr_frame;
-		f->prev_cell = NULL;
+		f->curr_cell = NULL;
 		f->cgen = cgen;
 		f->overflow = 0;
 		q->st.sp += nbr_vars;
@@ -1145,7 +1147,7 @@ static bool resume_frame(query *q)
 	if (q->pl->opt && 0)
 		chop_frames(q, f);
 
-	q->st.curr_cell = f->prev_cell;
+	q->st.curr_cell = f->curr_cell;
 	q->st.curr_frame = q->st.curr_frame - f->prev_offset;
 	f = GET_CURR_FRAME();
 	q->st.m = q->pl->modmap[f->mid];
