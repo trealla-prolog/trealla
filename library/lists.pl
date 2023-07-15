@@ -362,13 +362,9 @@ length(_, N) :-
    type_error(integer, N, length/2).
 
 length_rundown(Xs, 0) :- !, Xs = [].
-length_rundown(Vs, N) :-
-    '$unattributed_var'(Vs), % unconstrained
-    !,
-    '$det_length_rundown'(Vs, N).
-length_rundown([_|Xs], N) :- % force unification
-    N1 is N-1,
-    length(Xs, N1). % maybe some new info on Xs
+length_rundown([_|Xs], N) :-
+	N1 is N-1,
+	length_rundown(Xs, N1).
 
 failingvarskip(Xs) :-
     '$unattributed_var'(Xs), % unconstrained
