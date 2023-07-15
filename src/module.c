@@ -1425,8 +1425,6 @@ static void assert_commit(module *m, db_entry *dbe, predicate *pr, bool append)
 		return;
 
 	if (!pr->idx) {
-		bool sys = C_STR(m, &pr->key)[0] == '$';
-
 		if (pr->cnt < 1500)
 			return;
 

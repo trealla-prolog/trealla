@@ -85,6 +85,7 @@ cell *init_tmp_heap(query *q)
 	}
 
 	q->tmphp = 0;
+	q->ground = true;
 	return q->tmp_heap;
 }
 
@@ -197,9 +198,13 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 
 	// Convert vars to refs...
 
-	if (is_var(tmp) && !is_ref(tmp)) {
-		tmp->flags |= FLAG_VAR_REF;
-		tmp->var_ctx = p1_ctx;
+	if (is_var(tmp)) {
+		if (!is_ref(tmp)) {
+			tmp->flags |= FLAG_VAR_REF;
+			tmp->var_ctx = p1_ctx;
+		}
+
+		q->ground = false;
 	}
 
 	if (!is_structure(p1) || is_string(p1))
@@ -337,6 +342,7 @@ cell *deep_clone_to_heap(query *q, cell *p1, pl_idx p1_ctx)
 	if (!p1) return p1;
 	cell *tmp = alloc_on_heap(q, p1->nbr_cells);
 	if (!tmp) return NULL;
+	tmp->flags |= q->ground ? FLAG_GROUND : 0;
 	safe_copy_cells(tmp, p1, p1->nbr_cells);
 	return tmp;
 }

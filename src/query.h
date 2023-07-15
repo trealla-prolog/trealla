@@ -25,7 +25,6 @@ void do_yield_at(query *q, unsigned int time_in_ms);
 cell *do_term_variables(query *q, cell *p1, pl_idx p1_ctx);
 bool query_redo(query *q);
 bool has_next_key(query *q);
-void next_key(query *q);
 void purge_predicate_dirty_list(query *q, predicate *pr);
 void purge_dirty_list(query *q);
 bool check_slot(query *q, unsigned cnt);
