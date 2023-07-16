@@ -182,10 +182,10 @@ src/control.o: src/control.c src/heap.h src/internal.h src/map.h \
   src/builtins.h
 src/csv.o: src/csv.c src/heap.h src/prolog.h src/internal.h src/map.h src/skiplist.h \
   src/trealla.h src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
-  src/query.h src/builtins.h
+  src/module.h src/parser.h src/query.h src/builtins.h
 src/ffi.o: src/ffi.c src/heap.h src/prolog.h src/internal.h src/map.h src/skiplist.h \
   src/trealla.h src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
-  src/query.h src/builtins.h
+  src/module.h src/parser.h src/query.h src/builtins.h
 src/format.o: src/format.c src/network.h src/internal.h src/map.h \
   src/skiplist.h src/trealla.h src/cdebug.h src/stringbuf.h \
   src/imath/imath.h src/imath/imrat.h src/query.h src/builtins.h src/utf8.h
