@@ -1131,6 +1131,9 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 	}
 
 	if (is_prefix(c)) {
+		if (q->last_thing_was_symbol && !q->was_space)
+			dst += snprintf(dst, dstlen, " ");
+
 		cell *rhs = c + 1;
 		rhs = running ? deref(q, rhs, c_ctx) : rhs;
 		pl_idx rhs_ctx = running ? q->latest_ctx : 0;
