@@ -1313,14 +1313,14 @@ void just_in_time_rebuild(predicate *pr)
 	}
 }
 
-static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting)
+static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting, bool directive)
 {
 	cell *c = p1;
 
 	if (!is_check_directive(c)) {
 		c = get_head(p1);
 
-		if ((c->val_off == g_neck_s) && (c->arity == 1) && !consulting)
+		if ((c->val_off == g_neck_s) && (c->arity == 1) && !directive)
 			return NULL;
 
 		// Remove module from head if present...
@@ -1488,7 +1488,7 @@ db_entry *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, 
 	predicate *pr;
 
 	do {
-		dbe = assert_begin(m, nbr_vars, nbr_temporaries, p1, consulting);
+		dbe = assert_begin(m, nbr_vars, nbr_temporaries, p1, consulting, false);
 		if (!dbe) return NULL;
 		pr = dbe->owner;
 
@@ -1511,13 +1511,13 @@ db_entry *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, 
 	return dbe;
 }
 
-db_entry *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting)
+db_entry *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting, bool directive)
 {
 	db_entry *dbe;
 	predicate *pr;
 
 	do {
-		dbe = assert_begin(m, nbr_vars, nbr_temporaries, p1, consulting);
+		dbe = assert_begin(m, nbr_vars, nbr_temporaries, p1, consulting, directive);
 		if (!dbe) return NULL;
 		pr = dbe->owner;
 

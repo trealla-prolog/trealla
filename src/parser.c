@@ -401,48 +401,48 @@ static bool conditionals(parser *p, cell *d)
 	return false;
 }
 
-static void directives(parser *p, cell *d)
+static bool directives(parser *p, cell *d)
 {
 	p->skip = false;
 
 	if (!is_interned(d))
-		return;
+		return false;
 
 	if (is_list(d) && p->command) {
 		consultall(p, d);
 		p->skip = true;
-		return;
+		return false;
 	}
 
 	if (strcmp(C_STR(p, d), ":-"))
-		return;
+		return false;
 
 	cell *c = d + 1;
 
 	if (!is_interned(c))
-		return;
+		return false;
 
 	const char *dirname = C_STR(p, c);
 
 	if (d->arity != 1)
-		return;
+		return false;
 
 	if (!strcmp(dirname, "initialization") && (c->arity == 1)) {
 		p->run_init = true;
-		return;
+		return true;
 	}
 
 	if (!strcmp(dirname, "info") && (c->arity == 1)) {
 		printf("INFO: %s\n", C_STR(p, c+1));
-		return;
+		return true;
 	}
 
 	cell *p1 = c + 1;
 
 	if (!strcmp(dirname, "help") && (c->arity == 2)) {
-		if (!is_structure(p1)) return;
+		if (!is_structure(p1)) return true;
 		cell *p2 = p1 + p1->nbr_cells;
-		if (!is_iso_list_or_nil(p2)) return;
+		if (!is_iso_list_or_nil(p2)) return true;
 		LIST_HANDLER(p2);
 		char *desc = NULL;
 		bool iso = false;
@@ -495,11 +495,11 @@ static void directives(parser *p, cell *d)
 			push_property(p->m, ptr->name, ptr->arity, "iso");
 
 		push_template(p->m, ptr->name, ptr->arity, ptr);
-		return;
+		return true;
 	}
 
 	if (!strcmp(dirname, "include") && (c->arity == 1)) {
-		if (!is_atom(p1)) return;
+		if (!is_atom(p1)) return true;
 		unsigned save_line_nbr = p->line_nbr;
 		const char *name = C_STR(p, p1);
 		char *filename = relative_to(p->m->filename, name);
@@ -511,16 +511,16 @@ static void directives(parser *p, cell *d)
 			free(filename);
 			p->line_nbr = save_line_nbr;
 			p->error = true;
-			return;
+			return true;
 		}
 
 		free(filename);
 		p->line_nbr = save_line_nbr;
-		return;
+		return true;
 	}
 
 	if (!strcmp(dirname, "ensure_loaded") && (c->arity == 1)) {
-		if (!is_atom(p1)) return;
+		if (!is_atom(p1)) return true;
 		unsigned save_line_nbr = p->line_nbr;
 		const char *name = C_STR(p, p1);
 		char *filename = relative_to(p->m->filename, name);
@@ -532,12 +532,12 @@ static void directives(parser *p, cell *d)
 			free(filename);
 			p->line_nbr = save_line_nbr;
 			p->error = true;
-			return;
+			return true;
 		}
 
 		free(filename);
 		p->line_nbr = save_line_nbr;
-		return;
+		return true;
 	}
 
 	if (!strcmp(dirname, "pragma") && (c->arity == 2)) {
@@ -561,7 +561,7 @@ static void directives(parser *p, cell *d)
 				fprintf(stdout, "Error: pragma name not an atom, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error = true;
-			return;
+			return true;
 		} else
 			name = C_STR(p, p1);
 
@@ -577,7 +577,7 @@ static void directives(parser *p, cell *d)
 			if (tmp_m != p->m)
 				p->m->used[p->m->idx_used++] = tmp_m;
 
-			return;
+			return true;
 		}
 
 		tmp_m = module_create(p->m->pl, name);
@@ -586,7 +586,7 @@ static void directives(parser *p, cell *d)
 				fprintf(stdout, "Error: module creation failed: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error = true;
-			return;
+			return true;
 		}
 
 		if (tmp_m != p->m)
@@ -599,7 +599,7 @@ static void directives(parser *p, cell *d)
 			p2 = LIST_TAIL(p2);
 		}
 
-		return;
+		return true;
 	}
 
 	if (!strcmp(dirname, "attribute") && (c->arity == 1)) {
@@ -610,7 +610,7 @@ static void directives(parser *p, cell *d)
 			char *name = C_STR(p->m, f+1);
 			unsigned arity = get_smallint(f+2);
 			module_duplicate(p->m->pl, p->m, name, arity);
-			return;
+			return true;
 		}
 
 		while (arg->val_off == g_conjunction_s) {
@@ -628,7 +628,7 @@ static void directives(parser *p, cell *d)
 			arg += 4;
 		}
 
-		return;
+		return true;
 	}
 
 	if (!strcmp(dirname, "module") && (c->arity >= 1)) {
@@ -651,7 +651,7 @@ static void directives(parser *p, cell *d)
 				fprintf(stdout, "Error: module name not an atom, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error = true;
-			return;
+			return true;
 		} else
 			name = C_STR(p, p1);
 
@@ -663,7 +663,7 @@ static void directives(parser *p, cell *d)
 			//
 			p->already_loaded_error = true;
 			p->m = tmp_m;
-			return;
+			return true;
 		}
 
 		tmp_m = module_create(p->m->pl, name);
@@ -673,13 +673,13 @@ static void directives(parser *p, cell *d)
 				fprintf(stdout, "Error: module creation failed: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error = true;
-			return;
+			return true;
 		}
 
 		p->m = tmp_m;
 
 		if (c->arity == 1)
-			return;
+			return true;
 
 		cell *p2 = c + 2;
 		LIST_HANDLER(p2);
@@ -691,8 +691,8 @@ static void directives(parser *p, cell *d)
 				if (!strcmp(C_STR(p, head), "/")
 					|| !strcmp(C_STR(p, head), "//")) {
 					cell *f = head+1, *a = f+1;
-					if (!is_interned(f)) return;
-					if (!is_integer(a)) return;
+					if (!is_interned(f)) return true;
+					if (!is_integer(a)) return true;
 					cell tmp = *f;
 					tmp.arity = get_smallint(a);
 
@@ -709,7 +709,7 @@ static void directives(parser *p, cell *d)
 							fprintf(stdout, "Error: predicate creation failed, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 						p->error = true;
-						return;
+						return true;
 					}
 
 					push_property(p->m, C_STR(p, &tmp), tmp.arity, "static");
@@ -724,49 +724,49 @@ static void directives(parser *p, cell *d)
 			p2 = LIST_TAIL(p2);
 		}
 
-		return;
+		return true;
 	}
 
 	if ((!strcmp(dirname, "use_module") || !strcmp(dirname, "autoload") || !strcmp(dirname, "reexport")) && (c->arity >= 1)) {
 		if (!is_callable(p1))
-			return;
+			return true;
 
 		c->arity == 1 ? do_use_module_1(p->m, c) : do_use_module_2(p->m, c);
-		return;
+		return true;
 	}
 
 #if USE_FFI
 	if (!strcmp(dirname, "foreign_struct") && (c->arity == 2)) {
 		if (!is_iso_atom(p1)) {
 			p->error = true;
-			return;
+			return true;
 		}
 
 		do_foreign_struct(p->m, c);
-		return;
+		return true;
 	}
 
 	if (!strcmp(dirname, "use_foreign_module") && (c->arity == 2)) {
 		if (!is_atom(p1)) {
 			p->error = true;
-			return;
+			return true;
 		}
 
 		do_use_foreign_module(p->m, c);
-		return;
+		return true;
 	}
 #endif
 
 	if (!strcmp(dirname, "meta_predicate") && (c->arity == 1)) {
 		if (!is_structure(p1))
-			return;
+			return true;
 	}
 
 	if (!strcmp(dirname, "set_prolog_flag") && (c->arity == 2)) {
 		cell *p2 = c + 2;
 
 		if (!is_interned(p2))
-			return;
+			return true;
 
 		if (!strcmp(C_STR(p, p1), "double_quotes")) {
 			if (!strcmp(C_STR(p, p2), "atom")) {
@@ -783,7 +783,7 @@ static void directives(parser *p, cell *d)
 					fprintf(stdout, "Error: unknown value, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 				p->error = true;
-				return;
+				return true;
 			}
 		} else if (!strcmp(C_STR(p, p1), "character_escapes")) {
 			if (!strcmp(C_STR(p, p2), "true") || !strcmp(C_STR(p, p2), "on"))
@@ -795,12 +795,12 @@ static void directives(parser *p, cell *d)
 		}
 
 		p->flags = p->m->flags;
-		return;
+		return true;
 	}
 
 	if (!strcmp(dirname, "op") && (c->arity == 3)) {
 		do_op(p, c, false);
-		return;
+		return true;
 	}
 
 	LIST_HANDLER(p1);
@@ -835,7 +835,7 @@ static void directives(parser *p, cell *d)
 						fprintf(stdout, "Error: no permission to modify static predicate %s:%s/%u, %s:%d\n", p->m->name, C_STR(p->m, c_name), arity, get_loaded(p->m, p->m->filename), p->line_nbr);
 
 					p->error = true;
-					return;
+					return true;
 				}
 
 				set_dynamic_in_db(p->m, C_STR(p, c_name), arity);
@@ -860,7 +860,7 @@ static void directives(parser *p, cell *d)
 							fprintf(stdout, "Error: not multifile %s:%s/%u\n", mod, name, arity);
 
 						p->error = true;
-						return;
+						return true;
 					}
 				}
 			} else {
@@ -873,7 +873,7 @@ static void directives(parser *p, cell *d)
 	}
 
 	if (is_nil(p1))
-		return;
+		return true;
 
 	while (is_interned(p1) && !g_tpl_interrupt) {
 		module *m = p->m;
@@ -883,7 +883,7 @@ static void directives(parser *p, cell *d)
 			cell *c_mod = p1 + 1;
 
 			if (!is_atom(c_mod))
-				return;
+				return true;
 
 			m = find_module(p->m->pl, C_STR(p, c_mod));
 
@@ -897,12 +897,12 @@ static void directives(parser *p, cell *d)
 			cell *c_name = c_id + 1;
 
 			if (!is_atom(c_name))
-				return;
+				return true;
 
 			cell *c_arity = c_id + 2;
 
 			if (!is_integer(c_arity))
-				return;
+				return true;
 
 			unsigned arity = get_smallint(c_arity);
 			cell tmp = *c_name;
@@ -927,7 +927,7 @@ static void directives(parser *p, cell *d)
 						fprintf(stdout, "Error: no permission to modify static predicate %s:%s/%u, %s:%d\n", m->name, C_STR(p->m, c_name), arity, get_loaded(p->m, p->m->filename), p->line_nbr);
 
 					p->error = true;
-					return;
+					return true;
 				}
 
 				set_dynamic_in_db(m, C_STR(p, c_name), arity);
@@ -953,6 +953,8 @@ static void directives(parser *p, cell *d)
 			break;
 		}
 	}
+
+	return true;
 }
 
 static void check_first_cut(clause *cl)
@@ -2838,7 +2840,7 @@ static bool process_term(parser *p, cell *p1)
 	if (p->m->ifs_blocked[p->m->if_depth])
 		return true;
 
-	directives(p, p1);
+	bool directive = directives(p, p1), consulting = true;
 
 	cell *h = get_head(p1);
 
@@ -2874,7 +2876,7 @@ static bool process_term(parser *p, cell *p1)
 
 	db_entry *dbe;
 
-	if ((dbe = assertz_to_db(p->m, p->cl->nbr_vars, p->cl->nbr_temporaries, p1, true)) == NULL) {
+	if ((dbe = assertz_to_db(p->m, p->cl->nbr_vars, p->cl->nbr_temporaries, p1, consulting, directive)) == NULL) {
 		if ((DUMP_ERRS || !p->do_read_term) && 0)
 			printf("Error: assertion failed '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 
