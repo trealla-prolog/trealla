@@ -1831,7 +1831,7 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including)
 			p->command = true;
 			p->consulting = false;
 			SB(src);
-			SB_sprintf(src, "forall(%s:retract(('$initialization'(initialization(__G_)))), (once(__G_) -> true ; format('Warning: Initialization goal failed: ~w~n', [__G_])))", p->m->name);
+			SB_sprintf(src, "forall(%s:retract(('$directive'(initialization(__G_)))), (once(__G_) -> true ; format('Warning: Initialization goal failed: ~w~n', [__G_])))", p->m->name);
 
 			if (run(p, SB_cstr(src), false, NULL, 0))
 				p->m->pl->status = false;
@@ -2152,11 +2152,11 @@ module *module_create(prolog *pl, const char *name)
 
 	set_multifile_in_db(m, "term_expansion", 2);
 	set_multifile_in_db(m, "goal_expansion", 2);
-	set_multifile_in_db(m, "$initialization", 1);
+	set_multifile_in_db(m, "$directive", 1);
 
 	set_dynamic_in_db(m, "term_expansion", 2);
 	set_dynamic_in_db(m, "goal_expansion", 2);
-	set_dynamic_in_db(m, "$initialization", 1);
+	set_dynamic_in_db(m, "$directive", 1);
 
 	return m;
 }

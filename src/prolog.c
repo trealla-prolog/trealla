@@ -604,7 +604,7 @@ prolog *pl_create()
 	set_dynamic_in_db(pl->user_m, "$predicate_property", 3);
 	set_dynamic_in_db(pl->user_m, "$current_prolog_flag", 2);
 	set_dynamic_in_db(pl->user_m, "$stream_property", 2);
-	set_dynamic_in_db(pl->user_m, "$initialization", 1);
+	set_dynamic_in_db(pl->user_m, "$directive", 1);
 
 	pl->user_m->prebuilt = true;
 	const char *save_filename = pl->user_m->filename;

@@ -428,7 +428,7 @@ static bool directives(parser *p, cell *d)
 		return false;
 
 	if (!strcmp(dirname, "initialization") && (c->arity == 1)) {
-		d->val_off = index_from_pool(p->pl, "$initialization");
+		d->val_off = index_from_pool(p->pl, "$directive");
 		CLR_OP(d);
 		p->run_init = true;
 		return false;
