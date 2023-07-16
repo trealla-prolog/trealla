@@ -428,8 +428,10 @@ static bool directives(parser *p, cell *d)
 		return false;
 
 	if (!strcmp(dirname, "initialization") && (c->arity == 1)) {
+		d->val_off = index_from_pool(p->pl, "$initialization");
+		CLR_OP(d);
 		p->run_init = true;
-		return true;
+		return false;
 	}
 
 	if (!strcmp(dirname, "info") && (c->arity == 1)) {
@@ -2840,7 +2842,10 @@ static bool process_term(parser *p, cell *p1)
 	if (p->m->ifs_blocked[p->m->if_depth])
 		return true;
 
-	bool directive = directives(p, p1), consulting = true;
+	if (directives(p, p1))
+		return true;
+
+	bool consulting = true;
 
 	cell *h = get_head(p1);
 
@@ -2876,7 +2881,7 @@ static bool process_term(parser *p, cell *p1)
 
 	db_entry *dbe;
 
-	if ((dbe = assertz_to_db(p->m, p->cl->nbr_vars, p->cl->nbr_temporaries, p1, consulting, directive)) == NULL) {
+	if ((dbe = assertz_to_db(p->m, p->cl->nbr_vars, p->cl->nbr_temporaries, p1, consulting)) == NULL) {
 		if ((DUMP_ERRS || !p->do_read_term) && 0)
 			printf("Error: assertion failed '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 

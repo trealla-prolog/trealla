@@ -1313,14 +1313,14 @@ void just_in_time_rebuild(predicate *pr)
 	}
 }
 
-static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting, bool directive)
+static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting)
 {
 	cell *c = p1;
 
 	if (!is_check_directive(c)) {
 		c = get_head(p1);
 
-		if ((c->val_off == g_neck_s) && (c->arity == 1) && !directive)
+		if ((c->val_off == g_neck_s) && (c->arity == 1))
 			return NULL;
 
 		// Remove module from head if present...
@@ -1488,7 +1488,7 @@ db_entry *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, 
 	predicate *pr;
 
 	do {
-		dbe = assert_begin(m, nbr_vars, nbr_temporaries, p1, consulting, false);
+		dbe = assert_begin(m, nbr_vars, nbr_temporaries, p1, consulting);
 		if (!dbe) return NULL;
 		pr = dbe->owner;
 
@@ -1511,13 +1511,13 @@ db_entry *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, 
 	return dbe;
 }
 
-db_entry *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting, bool directive)
+db_entry *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting)
 {
 	db_entry *dbe;
 	predicate *pr;
 
 	do {
-		dbe = assert_begin(m, nbr_vars, nbr_temporaries, p1, consulting, directive);
+		dbe = assert_begin(m, nbr_vars, nbr_temporaries, p1, consulting);
 		if (!dbe) return NULL;
 		pr = dbe->owner;
 
@@ -1684,7 +1684,7 @@ module *load_text(module *m, const char *src, const char *filename)
 			p->consulting = false;
 			p->command = true;
 			SB(src);
-			SB_sprintf(src, "forall(%s:retract((:- initialization(__G_))), (once(__G_) -> true ; format('Warning: Initialization goal failed: ~w~n', [__G_])))", p->m->name);
+			SB_sprintf(src, "forall(%s:retract(('$-'(initialization(__G_)))), (once(__G_) -> true ; format('Warning: Initialization goal failed: ~w~n', [__G_])))", p->m->name);
 
 			if (run(p, SB_cstr(src), false, NULL, 0))
 				p->m->pl->status = false;
@@ -1831,7 +1831,7 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including)
 			p->command = true;
 			p->consulting = false;
 			SB(src);
-			SB_sprintf(src, "forall(%s:retract((:- initialization(__G_))), (once(__G_) -> true ; format('Warning: Initialization goal failed: ~w~n', [__G_])))", p->m->name);
+			SB_sprintf(src, "forall(%s:retract(('$initialization'(initialization(__G_)))), (once(__G_) -> true ; format('Warning: Initialization goal failed: ~w~n', [__G_])))", p->m->name);
 
 			if (run(p, SB_cstr(src), false, NULL, 0))
 				p->m->pl->status = false;

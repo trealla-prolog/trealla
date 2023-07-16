@@ -2647,7 +2647,7 @@ static bool fn_iso_assertz_1(query *q)
 	if (!is_interned(h))
 		return throw_error(q, h, q->st.curr_frame, "type_error", "callable");
 
-	db_entry *dbe = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->nbr_temporaries, p->cl->cells, false, false);
+	db_entry *dbe = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->nbr_temporaries, p->cl->cells, false);
 
 	if (!dbe)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
@@ -3939,7 +3939,7 @@ static bool do_assertz_2(query *q)
 	if (!is_interned(h))
 		return throw_error(q, h, q->latest_ctx, "type_error", "callable");
 
-	db_entry *dbe = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->nbr_temporaries, p->cl->cells, false, false);
+	db_entry *dbe = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->nbr_temporaries, p->cl->cells, false);
 
 	if (!dbe)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");

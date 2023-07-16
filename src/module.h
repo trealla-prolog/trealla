@@ -43,7 +43,7 @@ bool do_use_foreign_module(module *m, cell *p);
 #endif
 
 db_entry *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting);
-db_entry *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting, bool directive);
+db_entry *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting);
 db_entry *find_in_db(module *m, uuid *ref);
 db_entry *erase_from_db(module *m, uuid *ref);
 
