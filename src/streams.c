@@ -2573,6 +2573,18 @@ bool parse_write_params(query *q, cell *c, pl_idx c_ctx, cell **vnames, pl_idx *
 		}
 
 		q->numbervars = !CMP_STR_TO_CSTR(q, c1, "true");
+	} else if (!CMP_STR_TO_CSTR(q, c, "double_quotes")) {
+		if (is_var(c1)) {
+			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
+			return false;
+		}
+
+		if (!is_interned(c1) || (CMP_STR_TO_CSTR(q, c1, "true") && CMP_STR_TO_CSTR(q, c1, "false"))) {
+			throw_error(q, c, c_ctx, "domain_error", "write_option");
+			return false;
+		}
+
+		q->double_quotes = !CMP_STR_TO_CSTR(q, c1, "true");
 	} else if (!CMP_STR_TO_CSTR(q, c, "variable_names")) {
 		if (is_var(c1)) {
 			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
