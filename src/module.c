@@ -2131,7 +2131,6 @@ module *module_create(prolog *pl, const char *name)
 	m->p = parser_create(m);
 	check_error(m->p);
 	set_multifile_in_db(m, "$predicate_property", 3);
-	set_multifile_in_db(m, ":-", 1);
 
 	parser *p = parser_create(m);
 	if (p) {
@@ -2153,12 +2152,11 @@ module *module_create(prolog *pl, const char *name)
 
 	set_multifile_in_db(m, "term_expansion", 2);
 	set_multifile_in_db(m, "goal_expansion", 2);
-	set_multifile_in_db(m, "initialization", 1);
+	set_multifile_in_db(m, "$initialization", 1);
 
 	set_dynamic_in_db(m, "term_expansion", 2);
 	set_dynamic_in_db(m, "goal_expansion", 2);
-	set_dynamic_in_db(m, "initialization", 1);
-	set_dynamic_in_db(m, ":-", 1);
+	set_dynamic_in_db(m, "$initialization", 1);
 
 	return m;
 }
