@@ -261,6 +261,9 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 	if (created) *created = false;
 	bool found, evaluable;
 
+	if ((c->val_off == g_neck_s) && (c->arity == 2))
+		return NULL;
+
 	if (get_builtin_term(m, c, &found, &evaluable),
 		!evaluable && found && strcmp(m->name, "format")) {
 		return NULL;
@@ -1316,6 +1319,9 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 
 	if (!is_check_directive(c)) {
 		c = get_head(p1);
+
+		if ((c->val_off == g_neck_s) && (c->arity == 1) && !consulting)
+			return NULL;
 
 		// Remove module from head if present...
 
