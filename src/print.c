@@ -779,6 +779,9 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 	if (is_bigint(c)) {
 		int radix = 10;
 
+		if (is_negative(c) && q->last_thing_was_symbol && !q->was_space)
+			dst += snprintf(dst, dstlen, " ");
+
 		if (q->listing) {
 			if (q->listing) {
 				if (c->flags & FLAG_INT_BINARY)
@@ -814,6 +817,9 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 	if (is_smallint(c)) {
 		//if (dstlen) printf("*** int %d,  was=%d, is=%d\n", (int)c->val_int, q->last_thing_was_symbol, false);
 
+		if (is_negative(c) && q->last_thing_was_symbol && !q->was_space)
+			dst += snprintf(dst, dstlen, " ");
+
 		if (q->listing) {
 			if (((c->flags & FLAG_INT_HEX) || (c->flags & FLAG_INT_BINARY))) {
 				dst += snprintf(dst, dstlen, "%s0x", get_smallint(c)<0?"-":"");
@@ -847,6 +853,9 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 	}
 
 	if (is_float(c)) {
+		if (is_negative(c) && q->last_thing_was_symbol && !q->was_space)
+			dst += snprintf(dst, dstlen, " ");
+
 		if (c->val_float == 0.0)
 			c->val_float = fabs(c->val_float);
 
