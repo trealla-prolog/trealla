@@ -1321,7 +1321,9 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 		c = get_head(p1);
 
 		if ((c->val_off == g_neck_s) && (c->arity == 1)) {
-			fprintf(stdout, "Error: permission error modifying %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
+			if (consulting)
+				fprintf(stdout, "Error: permission error modifying %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
+
 			return NULL;
 		}
 
