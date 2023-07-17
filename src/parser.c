@@ -429,6 +429,7 @@ static bool directives(parser *p, cell *d)
 		return false;
 
 	if (!strcmp(dirname, "initialization") && (c->arity == 1)) {
+		unshare_cell(c);
 		d->val_off = index_from_pool(p->pl, "$directive");
 		CLR_OP(d);
 		p->run_init = true;
@@ -3630,13 +3631,10 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 
 		ok = !q->error;
 		p->m = q->st.m;
-
-		if (q->pl->is_query) {
-			query_destroy(q);
-			break;
-		}
-
 		query_destroy(q);
+
+		if (p->pl->is_query)
+			break;
 
 		if (!ok)
 			break;
