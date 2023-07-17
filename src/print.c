@@ -1300,7 +1300,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 		&& !iswalpha(*C_STR(q, rhs)) && !needs_quoting(q->st.m, C_STR(q, rhs), C_STRLEN(q, rhs))
 		&& !rhs_parens;
 
-	if (rhs_is_symbol && strcmp(C_STR(q, rhs), "!"))
+	if (rhs_is_symbol && strcmp(C_STR(q, rhs), "[]") && strcmp(C_STR(q, rhs), "{}") && strcmp(C_STR(q, rhs), "!"))
 		space = true;
 
 	if ((rhs_pri_1 == my_priority) && is_xfy(c))
