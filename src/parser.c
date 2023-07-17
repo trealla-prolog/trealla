@@ -336,6 +336,7 @@ static bool goal_run(parser *p, cell *goal)
 		return false;
 	}
 
+	query_destroy(q);
 	return true;
 }
 
@@ -3630,8 +3631,10 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 		ok = !q->error;
 		p->m = q->st.m;
 
-		if (q->pl->is_query)
+		if (q->pl->is_query) {
+			query_destroy(q);
 			break;
+		}
 
 		query_destroy(q);
 
