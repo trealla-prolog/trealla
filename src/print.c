@@ -692,16 +692,14 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 
 	if (cons && q->max_depth && (depth > (q->max_depth+1))) {
 		if (cons > 0) dst += snprintf(dst, dstlen, "[");
-		if (q->last_thing_was_symbol && !q->last_thing_was_comma) dst += snprintf(dst, dstlen, " ");
-		if (!q->was_space) dst += snprintf(dst, dstlen, " ");
+		if (!q->was_space && q->last_thing_was_symbol && !q->last_thing_was_comma) dst += snprintf(dst, dstlen, " ");
 		dst += snprintf(dst, dstlen, "...");
 		if (cons > 0) dst += snprintf(dst, dstlen, "]");
 		q->last_thing_was_symbol = true;
 		q->was_space = false;
 		return dst - save_dst;
 	} else if (!cons && q->max_depth && (depth >= (q->max_depth))) {
-		if (q->last_thing_was_symbol && !q->last_thing_was_comma) dst += snprintf(dst, dstlen, " ");
-		if (!q->was_space) dst += snprintf(dst, dstlen, " ");
+		if (!q->was_space && q->last_thing_was_symbol && !q->last_thing_was_comma) dst += snprintf(dst, dstlen, " ");
 		dst += snprintf(dst, dstlen, "...");
 		q->last_thing_was_symbol = true;
 		q->was_space = false;
@@ -752,8 +750,10 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 	}
 
 	if (is_number(c) && is_negative(c)) {
-		if (is_negative(c) && q->last_thing_was_symbol && !q->was_space)
+		if (is_negative(c) && q->last_thing_was_symbol && !q->was_space) {
 			dst += snprintf(dst, dstlen, " ");
+			q->was_space = true;
+		}
 	}
 
 	if (is_rational(c)) {
@@ -1134,8 +1134,10 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 	}
 
 	if (is_prefix(c)) {
-		if (q->last_thing_was_symbol && !q->was_space)
+		if (q->last_thing_was_symbol && !q->was_space) {
 			dst += snprintf(dst, dstlen, " ");
+			q->was_space = true;
+		}
 
 		cell *rhs = c + 1;
 		rhs = running ? deref(q, rhs, c_ctx) : rhs;
