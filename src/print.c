@@ -1552,4 +1552,5 @@ void clear_write_options(query *q)
 	q->last_thing_was_symbol = false;
 	q->last_thing_was_comma = false;
 	q->variable_names = NULL;
+	memset(q->ignores, 0, sizeof(q->ignores));
 }

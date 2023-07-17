@@ -7177,6 +7177,7 @@ static bool fn_sys_portray_clause_1(query *q)
 	fputc('\n', str->fp);
 	q->quoted = 0;
 	q->portray_vars = false;
+	clear_write_options(q);
 	return true;
 }
 
