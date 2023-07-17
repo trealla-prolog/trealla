@@ -7,6 +7,3 @@ main :-
 	write_term(-_* -_,[max_depth(2)]), nl,
 	write_term([]*[]*[],[max_depth(3)]), nl,
 	true.
-
-
-

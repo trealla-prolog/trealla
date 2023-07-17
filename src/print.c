@@ -1216,7 +1216,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 	bool lhs_space = false;
 
 	if (!q->was_space && lhs_space) {
-		dst += snprintf(dst, dstlen, "%s", " ");
+		dst += snprintf(dst, dstlen, "%s", "");
 		q->was_space = true;
 	}
 
@@ -1226,6 +1226,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 	q->parens = false;
 	if (res < 0) return -1;
 	dst += res;
+
 	if (lhs_parens) dst += snprintf(dst, dstlen, "%s", ")");
 	bool space = false;
 
@@ -1233,7 +1234,8 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 		const char *lhs_src = C_STR(q, lhs);
 		if (!isalpha(*lhs_src) && !isdigit(*lhs_src) && (*lhs_src != '$')
 			&& strcmp(src, ",") && strcmp(src, ";")
-			&& strcmp(lhs_src, "[]") && strcmp(lhs_src, "{}"))
+			&& strcmp(lhs_src, "[]") && strcmp(lhs_src, "{}")
+			)
 			space = true;
 	}
 
@@ -1252,7 +1254,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 	if (!*src || (q->last_thing_was_symbol && is_symbol && !lhs_parens && !q->was_space && !q->parens))
 		space = true;
 
-	if (!q->was_space && space) {
+	if (!q->was_space && !is_symbol && space) {
 		dst += snprintf(dst, dstlen, "%s", " ");
 		q->was_space = true;
 	}
