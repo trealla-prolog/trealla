@@ -428,10 +428,10 @@ static bool directives(parser *p, cell *d)
 	if (d->arity != 1)
 		return false;
 
+	d->val_off = index_from_pool(p->pl, "$directive");
+	CLR_OP(d);
+
 	if (!strcmp(dirname, "initialization") && (c->arity == 1)) {
-		unshare_cell(c);
-		d->val_off = index_from_pool(p->pl, "$directive");
-		CLR_OP(d);
 		p->run_init = true;
 		return false;
 	}
@@ -2844,8 +2844,7 @@ static bool process_term(parser *p, cell *p1)
 	if (p->m->ifs_blocked[p->m->if_depth])
 		return true;
 
-	if (directives(p, p1))
-		return true;
+	directives(p, p1);
 
 	bool consulting = true;
 
