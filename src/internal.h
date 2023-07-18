@@ -716,6 +716,7 @@ struct query_ {
 	bool did_quote:1;
 	bool is_input:1;
 	bool was_space:1;
+	bool was_dots:1;
 	bool is_engine:1;
 	bool ops_dirty:1;
 	bool noderef:1;
