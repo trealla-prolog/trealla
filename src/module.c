@@ -1211,27 +1211,27 @@ unsigned search_op(module *m, const char *name, unsigned *specifier, bool hint_p
 	return 0;
 }
 
-static bool check_multifile(module *m, predicate *pr, db_entry *dbe)
+static bool check_multifile(module *m, predicate *pr, db_entry *dbe_orig)
 {
 	if (pr->head
 		&& !pr->is_multifile && !pr->is_dynamic
 		&& (C_STR(m, &pr->key)[0] != '$')
 		) {
-		if ((dbe->filename != pr->head->filename) || pr->is_reload) {
+		if ((dbe_orig->filename != pr->head->filename) || pr->is_reload) {
 			for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
 				retract_from_db(dbe);
 				pr->is_processed = false;
 				pr->is_reload = false;
 			}
 
-			if (dbe->owner->cnt)
+			if (pr->cnt)
 				fprintf(stderr, "Warning: overwriting %s/%u\n", C_STR(m, &pr->key), pr->key.arity);
 
 			map_destroy(pr->idx2);
 			map_destroy(pr->idx);
 			pr->idx2 = pr->idx = NULL;
 			pr->head = pr->tail = NULL;
-			dbe->owner->cnt = 0;
+			pr->cnt = 0;
 			return false;
 		}
 	}
