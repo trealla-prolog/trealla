@@ -699,7 +699,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 		q->was_space = false;
 		if (cons > 0) dst += snprintf(dst, dstlen, "]");
 		return dst - save_dst;
-	} else if (!cons && q->max_depth && (depth > (q->max_depth))) {
+	} else if (!cons && q->max_depth && (depth > (q->max_depth+1))) {
 		if (!q->was_space) dst += snprintf(dst, dstlen, " ");
 		dst += snprintf(dst, dstlen, "...");
 		q->was_dots = true;
