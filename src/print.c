@@ -1006,8 +1006,8 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 
 			if (is_blob(c) && q->max_depth && (len_str >= q->max_depth) && (src_len > 128)) {
 				dst--;
-				if (!q->was_space) dst += snprintf(dst, dstlen, " ");
-				dst += snprintf(dst, dstlen, "%s", "... ");
+				//if (!q->was_space) dst += snprintf(dst, dstlen, " ");
+				dst += snprintf(dst, dstlen, "%s", "...");
 				q->was_space = true;
 			}
 
@@ -1072,8 +1072,8 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 					dst += snprintf(dst, dstlen, "%s", "(");
 
 				if (q->max_depth && ((depth+1) >= q->max_depth)) {
-					if (!q->was_space) dst += snprintf(dst, dstlen, " ");
-					dst += snprintf(dst, dstlen, "... )");
+					//if (!q->was_space) dst += snprintf(dst, dstlen, " ");
+					dst += snprintf(dst, dstlen, "...)");
 					q->last_thing_was_symbol = false;
 					return dst - save_dst;
 				}
