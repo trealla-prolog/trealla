@@ -1771,10 +1771,10 @@ bool unload_file(module *m, const char *filename)
 
 	if (!(realbuf = realpath(tmpbuf, NULL))) {
 		strcpy(tmpbuf, savebuf);
-
 		strcat(tmpbuf, ".pl");
 
 		if (!(realbuf = realpath(tmpbuf, NULL))) {
+			free(savebuf);
 			free(tmpbuf);
 			return false;
 		}
