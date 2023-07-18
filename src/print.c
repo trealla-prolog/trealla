@@ -699,7 +699,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 		q->was_space = false;
 		if (cons > 0) dst += snprintf(dst, dstlen, "]");
 		return dst - save_dst;
-	} else if (!cons && q->max_depth && (depth >= (q->max_depth))) {
+	} else if (!cons && q->max_depth && (depth > (q->max_depth))) {
 		if (!q->was_space) dst += snprintf(dst, dstlen, " ");
 		dst += snprintf(dst, dstlen, "...");
 		q->was_dots = true;
@@ -900,7 +900,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 		LIST_HANDLER(l);
 
 		while (is_list(l)) {
-			if (q->max_depth && (cnt++ >= q->max_depth)) {
+			if (q->max_depth && (cnt++ > q->max_depth)) {
 				dst += snprintf(dst, dstlen, "%s", "|...");
 				q->was_dots = true;
 				break;
@@ -1009,7 +1009,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 
 			dst += formatted(dst, dstlen, src, len_str, dq, q->json);
 
-			if (is_blob(c) && q->max_depth && (len_str >= q->max_depth) && (src_len > 128)) {
+			if (is_blob(c) && q->max_depth && (len_str > q->max_depth) && (src_len > 128)) {
 				dst--;
 				//if (!q->was_space) dst += snprintf(dst, dstlen, " ");
 				dst += snprintf(dst, dstlen, "%s", "...");
