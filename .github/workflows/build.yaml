@@ -69,7 +69,6 @@
             cat ${MINGW_PREFIX}/share/licenses/libffi/LICENSE >> ATTRIBUTION
             echo -e "\n\nisocline:\n" >> ATTRIBUTION
             cat src/isocline/LICENSE >> ATTRIBUTION
-            rm -f tpl.exe
             mv tpl tpl.exe
             mv ATTRIBUTION ATTRIBUTION.txt
             mv LICENSE LICENSE.txt
