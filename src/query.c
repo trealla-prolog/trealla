@@ -1610,7 +1610,9 @@ bool start(query *q)
 #endif
 				q->max_eval_depth = 0;
 				status = q->st.curr_cell->fn_ptr->fn(q);
+#if USE_FFI
 			}
+#endif
 
 			if (q->retry == QUERY_SKIP) {
 				q->retry = QUERY_OK;
