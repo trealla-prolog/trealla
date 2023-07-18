@@ -334,7 +334,6 @@ static bool fn_iso_is_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2_tmp,any);
-	q->max_eval_depth = 0;
 
 	if (!is_number(p1) && !is_var(p1))
 		return false;

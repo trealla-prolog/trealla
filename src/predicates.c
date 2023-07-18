@@ -8310,7 +8310,6 @@ builtins g_iso_bifs[] =
 	{"$lt", 2, fn_sys_lt_2, NULL, false, false, BLAH},
 	{"$gt", 2, fn_sys_gt_2, NULL, false, false, BLAH},
 	{"$ne", 2, fn_sys_ne_2, NULL, false, false, BLAH},
-	{"$incr", 2, fn_sys_incr_2, NULL, false, false, BLAH},
 
 	{"$call", 1, fn_iso_call_1, ":callable", true, false, BLAH},
 	{"call", 1, fn_iso_call_1, ":callable", true, false, BLAH},

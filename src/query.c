@@ -1606,9 +1606,11 @@ bool start(query *q)
 					status = wrap_ffi_function(q, q->st.curr_cell->fn_ptr);
 				else
 					status = wrap_ffi_predicate(q, q->st.curr_cell->fn_ptr);
-			} else
+			} else {
 #endif
+				q->max_eval_depth = 0;
 				status = q->st.curr_cell->fn_ptr->fn(q);
+			}
 
 			if (q->retry == QUERY_SKIP) {
 				q->retry = QUERY_OK;
