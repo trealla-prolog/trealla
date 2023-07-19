@@ -1218,19 +1218,21 @@ static bool check_multifile(module *m, predicate *pr, db_entry *dbe_orig)
 		&& (C_STR(m, &pr->key)[0] != '$')
 		) {
 		if ((dbe_orig->filename != pr->head->filename) || pr->is_reload) {
-			for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
-				retract_from_db(dbe);
-				pr->is_processed = false;
-				pr->is_reload = false;
-			}
+			fprintf(stderr, "Warning: overwriting %s/%u\n", C_STR(m, &pr->key), pr->key.arity);
 
-			if (pr->cnt)
-				fprintf(stderr, "Warning: overwriting %s/%u\n", C_STR(m, &pr->key), pr->key.arity);
+			while (pr->head) {
+				db_entry *dbe = pr->head;
+				pr->head = pr->head->next;
+				clear_rule(&dbe->cl);
+				free(dbe);
+			}
 
 			map_destroy(pr->idx2);
 			map_destroy(pr->idx);
 			pr->idx2 = pr->idx = NULL;
 			pr->head = pr->tail = NULL;
+			pr->is_processed = false;
+			pr->is_reload = false;
 			pr->cnt = 0;
 			return false;
 		}
