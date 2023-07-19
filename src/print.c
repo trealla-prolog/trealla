@@ -1180,7 +1180,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 		if (quote) dst += snprintf(dst, dstlen, "%s", quote?"'":"");
 		dst += plain(dst, dstlen, src, srclen);
 		if (quote) dst += snprintf(dst, dstlen, "%s", quote?"' ":"");
-		q->last_thing_was_space = false;
+		//q->last_thing_was_space = false;
 
 		if (/*!q->last_thing_was_space &&*/ space) {
 			dst += snprintf(dst, dstlen, "%s", " ");
