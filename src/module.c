@@ -261,7 +261,7 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 	if (created) *created = false;
 	bool found, evaluable;
 
-	if ((c->val_off == g_neck_s) && (c->arity == 2))
+	if (c->val_off == g_neck_s)
 		return NULL;
 
 	if (get_builtin_term(m, c, &found, &evaluable),
