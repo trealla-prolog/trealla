@@ -292,21 +292,21 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 		pr->key.nbr_cells = 1;
 		pr->is_noindex = m->pl->noindex || !pr->key.arity;
 		map_app(m->index, &pr->key, pr);
-	} else {
-		db_entry *dbe = pr->dirty_list;
-
-		while (dbe) {
-			delink(pr, dbe);
-			db_entry *save = dbe->dirty;
-			clear_rule(&dbe->cl);
-			free(dbe);
-			dbe = save;
-		}
-
-		pr->dirty_list = NULL;
-		pr->is_abolished = false;
+		return pr;
 	}
 
+	db_entry *dbe = pr->dirty_list;
+
+	while (dbe) {
+		delink(pr, dbe);
+		db_entry *save = dbe;
+		dbe = dbe->dirty;
+		clear_rule(&save->cl);
+		free(save);
+	}
+
+	pr->dirty_list = NULL;
+	pr->is_abolished = false;
 	return pr;
 }
 
