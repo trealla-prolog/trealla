@@ -1892,17 +1892,6 @@ void query_destroy(query *q)
 		q->tasks = task;
 	}
 
-	for (module *m = q->pl->modules; m; m = m->next) {
-		for (predicate *pr = m->head; pr; pr = pr->next) {
-			while (pr->dirty_list) {
-				db_entry *dbe = pr->dirty_list;
-				pr->dirty_list = pr->dirty_list->next;
-				clear_rule(&dbe->cl);
-				free(dbe);
-			}
-		}
-	}
-
 #if 0
 	module *m = find_module(q->pl, "concurrent");
 
