@@ -1274,8 +1274,8 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 
 	// Print OP..
 
-	q->last_thing_was_symbol += is_symbol;
-	space = iswalpha(*src);
+	//q->last_thing_was_symbol += is_symbol;
+	space = iswalpha(*src) || q->last_thing_was_symbol;
 
 	if (q->listing && !depth && !strcmp(src, ":-"))
 		space = true;
@@ -1311,6 +1311,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 
 	bool rhs_is_symbol = is_interned(rhs) && !rhs->arity
 		&& !iswalpha(*C_STR(q, rhs)) && !needs_quoting(q->st.m, C_STR(q, rhs), C_STRLEN(q, rhs))
+		&& strcmp(C_STR(q, rhs), "[]") && strcmp(C_STR(q, rhs), "{}")
 		&& !rhs_parens;
 
 	if (rhs_is_symbol && strcmp(C_STR(q, rhs), "[]") && strcmp(C_STR(q, rhs), "{}") && strcmp(C_STR(q, rhs), "!"))
