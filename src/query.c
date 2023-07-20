@@ -365,6 +365,9 @@ bool has_next_key(query *q)
 		return false;
 	}
 
+	if (!q->st.key->arity)
+		return q->st.curr_dbe->next ? true : false;
+
 	clause *cl = &q->st.curr_dbe->cl;
 	predicate *pr = q->st.curr_dbe->owner;
 
@@ -395,7 +398,7 @@ bool has_next_key(query *q)
 		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
 			dkey++;
 
-		if (karg1 && is_atomic(karg1)) {
+		if (karg1) {
 			cell *darg1 = dkey + 1;
 
 			if (index_cmpkey(karg1, darg1, q->st.m, NULL) != 0)
