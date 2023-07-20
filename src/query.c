@@ -408,7 +408,7 @@ bool has_next_key(query *q)
 #if 1
 		// This is needed for: tpl -g run ~/retina/retina.pl ~/retina/rdfsurfaces/lubm/lubm.s
 
-		if (pr->is_dynamic && !q->st.karg1_is_ground)
+		if (pr->is_dynamic && !q->st.karg1_is_ground && (*C_STR(q, &pr->key) != '$'))
 			return true;
 #endif
 
