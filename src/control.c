@@ -755,6 +755,7 @@ bool throw_error3(query *q, cell *c, pl_idx c_ctx, const char *err_type, const c
 
 	char tmpbuf[1024];
 	snprintf(tmpbuf, sizeof(tmpbuf), "%s", expected);
+	tmpbuf[sizeof(tmpbuf)-1] = '\0';
 	char *ptr;
 
 	if (!strcmp(err_type, "type_error")
@@ -774,6 +775,7 @@ bool throw_error3(query *q, cell *c, pl_idx c_ctx, const char *err_type, const c
 	if (!is_var(c)) {
 		char *tmpbuf = DUP_STR(q, goal);
 		snprintf(functor, sizeof(functor), "%s", tmpbuf);
+		functor[sizeof(functor)-1] = '\0';
 		free(tmpbuf);
 	}
 
