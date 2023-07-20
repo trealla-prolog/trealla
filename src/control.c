@@ -792,6 +792,10 @@ bool throw_error3(query *q, cell *c, pl_idx c_ctx, const char *err_type, const c
 	if (!strcmp(C_STR(q, q->st.curr_cell), "abolish"))
 		is_abolish = true;
 
+	bool is_builtin = false, evaluable = false;
+	get_builtin_term(q->st.m, c, &is_builtin, &evaluable);
+	bool is_op = search_op(q->st.m, C_STR(q, c), NULL, true) > 0;
+
 	cell *tmp;
 
 	if (is_var(c)) {
@@ -873,7 +877,7 @@ bool throw_error3(query *q, cell *c, pl_idx c_ctx, const char *err_type, const c
 		SET_OP(tmp+nbr_cells, OP_YFX); nbr_cells++;
 		make_atom(tmp+nbr_cells++, index_from_pool(q->pl, functor));
 		make_int(tmp+nbr_cells, !is_string(goal)?goal->arity:0);
-	} else if (!strcmp(err_type, "permission_error") && (is_builtin(c) || (is_op(c) && !is_abolish))) {
+	} else if (!strcmp(err_type, "permission_error") && (is_builtin || (is_op && c->arity)) && !is_abolish) {
 		//printf("error(%s(%s,(%s)/%u),(%s)/%u).\n", err_type, expected, tmpbuf, c->arity, functor, goal->arity);
 		tmp = alloc_on_heap(q, 9+extra);
 		check_heap_error(tmp);
