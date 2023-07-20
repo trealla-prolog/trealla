@@ -315,7 +315,7 @@ static void setup_key(query *q)
 
 	if (is_iso_atomic(arg1) || is_ground(arg1))
 		q->st.karg1_is_ground = true;
-	else if (arg11 && (is_atomic(arg11) || is_ground(arg1)))
+	else if (arg11 && (is_atomic(arg11) || is_ground(arg11)))
 		q->st.karg1_is_ground = true;
 
 	if (arg2 && (is_iso_atomic(arg2) || is_ground(arg2)))
@@ -397,7 +397,7 @@ bool has_next_key(query *q)
 		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
 			dkey++;
 
-		//DUMP_TERM("key", q->st.key, q->st.key_ctx, 0);
+		//DUMP_TERM("key", q->st.key, q->st.key_ctx, 1);
 		//DUMP_TERM("next", dkey, q->st.curr_frame, 0);
 
 		if (index_cmpkey(q->st.key, dkey, q->st.m, NULL) == 0)
