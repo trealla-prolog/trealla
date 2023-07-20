@@ -380,9 +380,27 @@ bool has_next_key(query *q)
 	if (q->st.karg3_is_ground && cl->arg3_is_unique)
 		return false;
 
+	cell *karg1 = NULL;
+
+	if (q->st.karg1_is_ground)
+		karg1 = deref(q, q->st.key+1, q->st.key_ctx);
+
 	for (db_entry *next = q->st.curr_dbe->next; next; next = next->next) {
 		if (!can_view(q, f->ugen, next))
 			continue;
+
+		cl = &next->cl;
+		cell *dkey = cl->cells;
+
+		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
+			dkey++;
+
+		cell *darg1 = dkey + 1;
+
+		if (karg1 && is_atomic(karg1) && !next->next) {
+			if (index_cmpkey(karg1, darg1, q->st.m, NULL) != 0)
+				return false;
+		}
 
 #if 1
 		// This is needed for: tpl -g run ~/retina/retina.pl ~/retina/rdfsurfaces/lubm/lubm.s
@@ -391,13 +409,7 @@ bool has_next_key(query *q)
 			return true;
 #endif
 
-		cl = &next->cl;
-		cell *dkey = cl->cells;
-
-		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
-			dkey++;
-
-		//DUMP_TERM("key", q->st.key, q->st.key_ctx, 1);
+		//DUMP_TERM("key", q->st.key, q->st.key_ctx, 0);
 		//DUMP_TERM("next", dkey, q->st.curr_frame, 0);
 
 		if (index_cmpkey(q->st.key, dkey, q->st.m, NULL) == 0)
