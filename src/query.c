@@ -395,9 +395,9 @@ bool has_next_key(query *q)
 		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
 			dkey++;
 
-		cell *darg1 = dkey + 1;
-
 		if (karg1 && is_atomic(karg1) && !next->next) {
+			cell *darg1 = dkey + 1;
+
 			if (index_cmpkey(karg1, darg1, q->st.m, NULL) != 0)
 				return false;
 		}
