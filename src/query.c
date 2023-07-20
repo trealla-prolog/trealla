@@ -313,19 +313,19 @@ static void setup_key(query *q)
 			arg31 = deref(q, arg3+1, arg3_ctx);
 	}
 
-	if (is_iso_atomic(arg1) || is_ground(arg1))
+	if (is_iso_atomic(arg1))
 		q->st.karg1_is_ground = true;
-	else if (arg11 && (is_atomic(arg11) || is_ground(arg11)))
+	else if (arg11 && is_atomic(arg11))
 		q->st.karg1_is_ground = true;
 
-	if (arg2 && (is_iso_atomic(arg2) || is_ground(arg2)))
+	if (arg2 && is_iso_atomic(arg2))
 		q->st.karg2_is_ground = true;
-	else if (arg21 && (is_atomic(arg21) || is_ground(arg21)))
+	else if (arg21 && is_atomic(arg21))
 		q->st.karg2_is_ground = true;
 
-	if (arg3 && (is_iso_atomic(arg3) || is_ground(arg3)))
+	if (arg3 && is_iso_atomic(arg3))
 		q->st.karg3_is_ground = true;
-	else if (arg31 && (is_atomic(arg31) || is_ground(arg31)))
+	else if (arg31 && is_atomic(arg31))
 		q->st.karg3_is_ground = true;
 }
 

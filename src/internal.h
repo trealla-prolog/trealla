@@ -159,7 +159,6 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define is_anon(c) ((c)->flags & FLAG_VAR_ANON)
 #define is_builtin(c) ((c)->flags & FLAG_BUILTIN)
 #define is_evaluable(c) ((c)->flags & FLAG_EVALUABLE)
-#define is_ground(c) ((c)->flags & FLAG_GROUND)
 #define is_tail_recursive(c) ((c)->flags & FLAG_TAIL_REC)
 #define is_temporary(c) (is_var(c) && ((c)->flags & FLAG_VAR_TEMPORARY))
 #define is_ref(c) (is_var(c) && ((c)->flags & FLAG_VAR_REF))
@@ -277,7 +276,6 @@ enum {
 
 	FLAG_BLOB_SRE=1<<0,					// used with TAG_BLOB
 
-	FLAG_GROUND=1<<7,					// only true if on the heap
 	FLAG_FFI=1<<8,
 	FLAG_BUILTIN=1<<9,
 	FLAG_MANAGED=1<<10,					// any ref-counted object
@@ -720,7 +718,6 @@ struct query_ {
 	bool is_engine:1;
 	bool ops_dirty:1;
 	bool noderef:1;
-	bool ground:1;
 	bool double_quotes:1;
 };
 
