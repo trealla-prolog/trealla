@@ -77,7 +77,6 @@ bool fn_iso_invoke_2(query *q)
 	q->tot_goals--;
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,callable);
-
 	module *m = find_module(q->pl, C_STR(q, p1));
 
 	if (!m)
@@ -197,10 +196,8 @@ bool fn_iso_call_1(query *q)
 {
 	q->tot_goals--;
 	GET_FIRST_ARG(p1,callable);
-	cell *tmp2;
-
 	check_heap_error(init_tmp_heap(q));
-	tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
+	cell *tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(tmp2);
 
 	if (is_cstring(tmp2)) {
@@ -242,10 +239,8 @@ bool fn_iso_once_1(query *q)
 {
 	q->tot_goals--;
 	GET_FIRST_ARG(p1,callable);
-	cell *tmp2;
-
 	check_heap_error(init_tmp_heap(q));
-	tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
+	cell *tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(tmp2);
 
 	if (is_cstring(tmp2)) {
@@ -286,10 +281,8 @@ bool fn_ignore_1(query *q)
 {
 	q->tot_goals--;
 	GET_FIRST_ARG(p1,callable);
-	cell *tmp2;
-
 	check_heap_error(init_tmp_heap(q));
-	tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
+	cell *tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(tmp2);
 
 	if (is_cstring(tmp2)) {
