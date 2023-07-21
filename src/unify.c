@@ -1430,8 +1430,6 @@ static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		return true;
 	}
 
-	q->check_unique = true;
-
 	if (is_string(p1) && is_string(p2))
 		return unify_cstrings(q, p1, p2);
 

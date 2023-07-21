@@ -738,7 +738,6 @@ void try_me(query *q, unsigned nbr_vars)
 
 	q->run_hook = false;
 	q->cycle_error = false;
-	q->check_unique = false;
 	q->has_vars = false;
 	q->no_tco = false;
 	q->tot_matches++;
@@ -894,7 +893,7 @@ static void commit_me(query *q)
 		q->st.m = q->st.curr_dbe->owner->m;
 	}
 
-	bool implied_first_cut = q->check_unique && !q->has_vars && cl->is_unique && !q->st.iter;
+	bool implied_first_cut = !q->has_vars && cl->is_unique;
 	bool last_match = implied_first_cut || cl->is_first_cut || !has_next_key(q);
 	bool tco = false;
 
