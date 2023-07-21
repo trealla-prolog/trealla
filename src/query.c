@@ -713,6 +713,7 @@ void try_me(query *q, unsigned nbr_vars)
 
 	while (nbr_vars--) {
 		init_cell(&e->c);
+		e->vgen = e->vgen2 = 0;
 		e++;
 	}
 
@@ -792,7 +793,6 @@ static frame *push_frame(query *q, unsigned nbr_vars)
 	}
 
 	f->cgen = ++q->cgen;
-	f->is_last = false;
 	f->overflow = 0;
 	f->hp = q->st.hp;
 
@@ -881,9 +881,9 @@ static void commit_me(query *q)
 	else if (last_match){
 		bool recursive = is_tail_recursive(q->st.curr_cell);
 		bool vars_ok = f->actual_slots == cl->nbr_vars;
-		bool controls = false;//any_choices(q, f);
+		bool choices = any_choices(q, f);
 		bool slots_ok = are_slots_ok(q, f);
-		tco = recursive && vars_ok && !controls && slots_ok;
+		tco = recursive && vars_ok && !choices && slots_ok;
 	}
 
 #if 0
@@ -897,7 +897,6 @@ static void commit_me(query *q)
 		f = push_frame(q, cl->nbr_vars);
 
 	if (last_match) {
-		f->is_last = true;
 		leave_predicate(q, q->st.pr);
 		drop_control(q);
 
@@ -932,7 +931,6 @@ void stash_me(query *q, const clause *cl, bool last_match)
 	if (nbr_vars) {
 		pl_idx new_frame = q->st.fp++;
 		frame *f = GET_FRAME(new_frame);
-		f->is_last = last_match;
 		f->prev_offset = new_frame - q->st.curr_frame;
 		f->curr_cell = NULL;
 		f->cgen = cgen;

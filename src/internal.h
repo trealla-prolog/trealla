@@ -518,7 +518,6 @@ struct frame_ {
 	uint64_t ugen, cgen;
 	pl_idx prev_offset, hp, base, overflow, initial_slots, actual_slots;
 	uint16_t mid;
-	bool is_last:1;
 };
 
 struct prolog_state_ {
