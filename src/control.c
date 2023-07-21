@@ -199,12 +199,6 @@ bool fn_iso_call_1(query *q)
 	check_heap_error(init_tmp_heap(q));
 	cell *tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(tmp2);
-
-	if (is_cstring(tmp2)) {
-		share_cell(tmp2);
-		convert_to_literal(q->st.m, tmp2);
-	}
-
 	bool found = false;
 
 	if (!tmp2->match) {
@@ -242,12 +236,6 @@ bool fn_iso_once_1(query *q)
 	check_heap_error(init_tmp_heap(q));
 	cell *tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(tmp2);
-
-	if (is_cstring(tmp2)) {
-		share_cell(tmp2);
-		convert_to_literal(q->st.m, tmp2);
-	}
-
 	bool found = false;
 
 	if (!tmp2->match) {
@@ -284,12 +272,6 @@ bool fn_ignore_1(query *q)
 	check_heap_error(init_tmp_heap(q));
 	cell *tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(tmp2);
-
-	if (is_cstring(tmp2)) {
-		share_cell(tmp2);
-		convert_to_literal(q->st.m, tmp2);
-	}
-
 	bool found = false;
 
 	if (!tmp2->match) {
