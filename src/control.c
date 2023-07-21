@@ -201,14 +201,9 @@ bool fn_iso_call_1(query *q)
 	check_heap_error(tmp2);
 	bool found = false;
 
-	if (!tmp2->match && 0) {
-		if ((tmp2->match = search_predicate(q->st.m, tmp2, NULL)) != NULL) {
-			tmp2->flags &= ~FLAG_BUILTIN;
-		} else if ((tmp2->fn_ptr = get_builtin_term(q->st.m, tmp2, &found, NULL)), found) {
+	if (!tmp2->match) {
+		if ((tmp2->fn_ptr = get_builtin_term(q->st.m, tmp2, &found, NULL)), found)
 			tmp2->flags |= FLAG_BUILTIN;
-		} else {
-			tmp2->flags &= ~FLAG_BUILTIN;
-		}
 	}
 
 	if (check_body_callable(tmp2) != NULL)
@@ -239,13 +234,8 @@ bool fn_iso_once_1(query *q)
 	bool found = false;
 
 	if (!tmp2->match) {
-		if ((tmp2->match = search_predicate(q->st.m, tmp2, NULL)) != NULL) {
-			tmp2->flags &= ~FLAG_BUILTIN;
-		} else if ((tmp2->fn_ptr = get_builtin_term(q->st.m, tmp2, &found, NULL)), found) {
+		if ((tmp2->fn_ptr = get_builtin_term(q->st.m, tmp2, &found, NULL)), found)
 			tmp2->flags |= FLAG_BUILTIN;
-		} else {
-			tmp2->flags &= ~FLAG_BUILTIN;
-		}
 	}
 
 	if (check_body_callable(tmp2) != NULL)
@@ -275,13 +265,8 @@ bool fn_ignore_1(query *q)
 	bool found = false;
 
 	if (!tmp2->match) {
-		if ((tmp2->match = search_predicate(q->st.m, tmp2, NULL)) != NULL) {
-			tmp2->flags &= ~FLAG_BUILTIN;
-		} else if ((tmp2->fn_ptr = get_builtin_term(q->st.m, tmp2, &found, NULL)), found) {
+		if ((tmp2->fn_ptr = get_builtin_term(q->st.m, tmp2, &found, NULL)), found)
 			tmp2->flags |= FLAG_BUILTIN;
-		} else {
-			tmp2->flags &= ~FLAG_BUILTIN;
-		}
 	}
 
 	if (check_body_callable(tmp2) != NULL)
