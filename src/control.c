@@ -114,7 +114,6 @@ bool fn_call_0(query *q, cell *p1, pl_idx p1_ctx)
 	control *ch = GET_CURR_CHOICE();
 	ch->fail_on_retry = true;
 	q->st.curr_cell = tmp;
-	q->st.curr_frame = p1_ctx;
 	return true;
 }
 
