@@ -335,7 +335,7 @@ typedef struct prolog_flags_ prolog_flags;
 typedef struct builtins_ builtins;
 
 // Using a fixed-size cell allows having arrays of cells, which is
-// basically what a Term is. A compound is a var length array of
+// basically what a Term is. A compound is a variable length array of
 // cells, the length specified by 'nbr_cells' field in the 1st cell.
 // A cell is a tagged union.
 // The size should be 24 bytes... (1 + 2) * 8
