@@ -421,9 +421,6 @@ struct clause_ {
 	uint16_t nbr_temporaries;
 	bool is_first_cut:1;
 	bool is_cut_only:1;
-	bool arg1_is_unique:1;
-	bool arg2_is_unique:1;
-	bool arg3_is_unique:1;
 	bool is_unique:1;
 	bool is_fact:1;
 	bool is_complex:1;

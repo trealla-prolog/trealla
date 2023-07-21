@@ -1246,43 +1246,14 @@ static void optimize_rule(module *m, db_entry *dbe_orig)
 	predicate *pr = dbe_orig->owner;
 	clause *cl = &dbe_orig->cl;
 	cell *head = get_head(cl->cells);
-	cell *p1 = head + 1, *p2 = NULL, *p3 = NULL;
 	bool matched = false;
-	bool p1_matched = false, p2_matched = false, p3_matched = false;
-	cl->arg1_is_unique = cl->arg2_is_unique = cl->arg3_is_unique = false;
 	cl->is_unique = false;
-
-	if (pr->key.arity > 1)
-		p2 = p1 + p1->nbr_cells;
-
-	if (pr->key.arity > 2)
-		p3 = p2 + p2->nbr_cells;
 
 	for (db_entry *dbe = dbe_orig->next; dbe; dbe = dbe->next) {
 		if (dbe->cl.dgen_erased)
 			continue;
 
 		cell *head2 = get_head(dbe->cl.cells);
-		cell *h21 = head2 + 1, *h22 = NULL, *h23 = NULL;
-
-		if (pr->key.arity > 1)
-			h22 = h21 + h21->nbr_cells;
-
-		if (pr->key.arity > 2)
-			h23 = h22 + h22->nbr_cells;
-
-		if (!index_cmpkey(p1, h21, m, NULL))
-			p1_matched = true;
-
-		if (pr->key.arity > 1) {
-			if (!index_cmpkey(p2, h22, m, NULL))
-				p2_matched = true;
-		}
-
-		if (pr->key.arity > 2) {
-			if (!index_cmpkey(p3, h23, m, NULL))
-				p3_matched = true;
-		}
 
 		if (!index_cmpkey(head, head2, m, NULL)) {
 			matched = true;
@@ -1292,15 +1263,6 @@ static void optimize_rule(module *m, db_entry *dbe_orig)
 
 	if (!matched)
 		cl->is_unique = true;
-
-	if (!p1_matched && cl->is_unique)
-		cl->arg1_is_unique = true;
-
-	if (!p2_matched && cl->is_unique)
-		cl->arg2_is_unique = true;
-
-	if (!p3_matched && cl->is_unique)
-		cl->arg3_is_unique = true;
 }
 
 void just_in_time_rebuild(predicate *pr)
@@ -1425,10 +1387,6 @@ static void assert_commit(module *m, db_entry *dbe, predicate *pr, bool append)
 	pr->cnt++;
 
 	clause *cl = &dbe->cl;
-	cl->arg1_is_unique = false;
-	cl->arg2_is_unique = false;
-	cl->arg3_is_unique = false;
-
 	uuid_gen(m->pl, &dbe->u);
 
 	// Note: indexing here refers to the dynamic index...
@@ -1621,9 +1579,6 @@ static void xref_cell(module *m, clause *cl, cell *c, predicate *parent)
 
 void xref_rule(module *m, clause *cl, predicate *parent)
 {
-	cl->arg1_is_unique = false;
-	cl->arg2_is_unique = false;
-	cl->arg3_is_unique = false;
 	cl->is_unique = false;
 	cl->is_tail_rec = false;
 

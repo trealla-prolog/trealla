@@ -370,19 +370,6 @@ bool has_next_key(query *q)
 
 	clause *cl = &q->st.curr_dbe->cl;
 	predicate *pr = q->st.curr_dbe->owner;
-
-	//printf("*** q->st.karg1_is_ground=%d, cl->arg1_is_unique=%d\n",
-	//	q->st.karg1_is_ground, cl->arg1_is_unique);
-
-	if (q->st.karg1_is_ground && cl->arg1_is_unique)
-		return false;
-
-	if (q->st.karg2_is_ground && cl->arg2_is_unique)
-		return false;
-
-	if (q->st.karg3_is_ground && cl->arg3_is_unique)
-		return false;
-
 	cell *karg1 = NULL;
 
 	if (q->st.karg1_is_ground)
