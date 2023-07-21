@@ -281,7 +281,6 @@ enum {
 	FLAG_MANAGED=1<<10,					// any ref-counted object
 	FLAG_TAIL_REC=1<<11,
 	FLAG_EVALUABLE=1<<12,
-	FLAG_PROCESSED=1<<12,				// used by bagof
 
 	FLAG_END=1<<13
 };
