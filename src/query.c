@@ -346,24 +346,8 @@ static void next_key(query *q)
 
 bool has_next_key(query *q)
 {
-	const frame *f = GET_CURR_FRAME();
-
-	if (q->st.iter) {
-		const db_entry *dbe;
-
-		while (map_is_next(q->st.iter, (void**)&dbe)) {
-			if (!can_view(q, f->ugen, dbe)) {
-				db_entry *save_dbe = q->st.curr_dbe;
-				next_key(q);
-				q->st.curr_dbe = save_dbe;
-				continue;
-			}
-
-			return true;
-		}
-
-		return false;
-	}
+	if (q->st.iter)
+		return map_is_next(q->st.iter, NULL);
 
 	if (!q->st.key->arity)
 		return q->st.curr_dbe->next ? true : false;
@@ -376,9 +360,6 @@ bool has_next_key(query *q)
 		karg1 = deref(q, q->st.key+1, q->st.key_ctx);
 
 	for (db_entry *next = q->st.curr_dbe->next; next; next = next->next) {
-		if (!can_view(q, f->ugen, next))
-			continue;
-
 		cl = &next->cl;
 		cell *dkey = cl->cells;
 
