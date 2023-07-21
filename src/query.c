@@ -713,12 +713,10 @@ void try_me(query *q, unsigned nbr_vars)
 
 	while (nbr_vars--) {
 		init_cell(&e->c);
-		e->vgen = e->vgen2 = 0;
 		e++;
 	}
 
 	q->run_hook = false;
-	q->cycle_error = false;
 	q->has_vars = false;
 	q->no_tco = false;
 	q->tot_matches++;
