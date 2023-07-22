@@ -1124,7 +1124,6 @@ static bool resume_frame(query *q)
 	if (!q->st.curr_frame)
 		return false;
 
-	Trace(q, get_head(q->st.curr_dbe->cl.cells), q->st.curr_frame, EXIT);
 	const frame *f = GET_CURR_FRAME();
 
 	if (q->pl->opt && 0)
@@ -1671,6 +1670,10 @@ bool start(query *q)
 		q->retry = QUERY_OK;
 
 		while (!q->st.curr_cell || is_end(q->st.curr_cell)) {
+			if (q->st.curr_dbe) {
+				Trace(q, get_head(q->st.curr_dbe->cl.cells), q->st.curr_frame, EXIT);
+			}
+
 			if (resume_frame(q)) {
 				proceed(q);
 				continue;

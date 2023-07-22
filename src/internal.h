@@ -666,7 +666,7 @@ struct query_ {
 	uint32_t vgen;
 	int8_t halt_code;
 	int8_t quoted;
-	enum { WAS_OTHER,WAS_SPACE,WAS_COMMA,WAS_SYMBOL } last_thing;
+	enum { WAS_OTHER, WAS_SPACE, WAS_COMMA, WAS_SYMBOL } last_thing;
 	bool done:1;
 	bool parens:1;
 	bool in_attvar_print:1;
