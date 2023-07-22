@@ -837,7 +837,7 @@ static bool fn_iso_number_chars_2(query *q)
 
 	q->ignore_ops = true;
 	q->quoted = 1;
-	q->last_thing_was_symbol = false;
+	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
 	ssize_t len = print_term_to_buf(q, NULL, 0, p1, p1_ctx, 1, 0, 0);
 	char *dst = malloc(len+10);
@@ -1415,7 +1415,7 @@ static bool fn_iso_number_codes_2(query *q)
 
 	q->ignore_ops = true;
 	q->quoted = 1;
-	q->last_thing_was_symbol = false;
+	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
 	ssize_t len = print_term_to_buf(q, NULL, 0, p1, p1_ctx, 1, 0, 0);
 	char *dst = malloc(len+10);
@@ -4009,7 +4009,7 @@ static void save_db(FILE *fp, query *q, int logging)
 				fprintf(fp, ",'%s')", tmpbuf);
 			}
 
-			if (q->last_thing_was_symbol)
+			if (q->last_thing == WAS_SYMBOL)
 				fprintf(fp, " ");
 
 			fprintf(fp, ".\n");

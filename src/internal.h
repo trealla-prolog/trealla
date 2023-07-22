@@ -666,10 +666,9 @@ struct query_ {
 	uint32_t vgen;
 	int8_t halt_code;
 	int8_t quoted;
+	enum { WAS_OTHER,WAS_SPACE,WAS_COMMA,WAS_SYMBOL } last_thing;
 	bool done:1;
 	bool parens:1;
-	bool last_thing_was_symbol:1;
-	bool last_thing_was_comma:1;
 	bool in_attvar_print:1;
 	bool lists_ok:1;
 	bool fail_on_retry:1;
@@ -707,7 +706,6 @@ struct query_ {
 	bool in_commit:1;
 	bool did_quote:1;
 	bool is_input:1;
-	bool last_thing_was_space:1;
 	bool was_dots:1;
 	bool is_engine:1;
 	bool ops_dirty:1;

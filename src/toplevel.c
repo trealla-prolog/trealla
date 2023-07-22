@@ -480,7 +480,7 @@ void dump_vars(query *q, bool partial)
 		print_term(q, stdout, tmp, 0, 1);
 
 		if (parens) fputc(')', stdout);
-		if (q->last_thing_was_symbol) space = true;
+		if (q->last_thing == WAS_SYMBOL) space = true;
 		if (q->did_quote) space = false;
 		q->quoted = saveq;
 		q->numbervars = false;
