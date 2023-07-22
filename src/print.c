@@ -1270,7 +1270,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 	if (quote) dst += snprintf(dst, dstlen, "%s", quote?" '":"");
 	dst += plain(dst, dstlen, src, srclen);
 	if (quote) dst += snprintf(dst, dstlen, "%s", quote?"' ":"");
-	q->last_thing = WAS_OTHER;
+	q->last_thing = strcmp(src, "|") ? WAS_SYMBOL : WAS_OTHER;
 
 	if (q->listing && !depth && !strcmp(src, ":-")) {
 		dst += snprintf(dst, dstlen, "%s", "\n  ");
