@@ -1017,7 +1017,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 			}
 
 			dst += plain(dst, dstlen, src, len_str);
-			q->last_thing = WAS_SYMBOL ? is_symbol : WAS_OTHER;;
+			q->last_thing = is_symbol ? WAS_SYMBOL : WAS_OTHER;;
 		}
 
 		dst += snprintf(dst, dstlen, "%s", !braces&&quote?dq?"\"":"'":"");
@@ -1087,7 +1087,9 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 			q->parens = false;
 		}
 
-		q->last_thing = WAS_OTHER;
+		if (q->last_thing != WAS_SYMBOL)
+			q->last_thing = WAS_OTHER;
+
 		return dst - save_dst;
 	}
 
