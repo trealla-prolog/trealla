@@ -518,8 +518,8 @@ read_term_from_chars_(T, Opts, Cs, Rest) :-
 :- help(read_term_from_chars_(?term,+chars,-chars), [iso(false)]).
 :- help(read_term_from_chars_(?term,+list,+chars,-chars), [iso(false)]).
 
-read_term_from_atom(A, T) :- read_term_from_atom(A, T, []).
-read_term_from_chars(Cs, T) :- read_term_from_chars(Cs, T, []).
+read_from_atom(A, T) :- read_term_from_atom(A, T, []).
+read_from_chars(Cs, T) :- read_term_from_chars(Cs, T, []).
 
 :- help(read_term_from_atom(+atom,?term), [iso(false)]).
 :- help(read_term_from_chars(+chars,?term), [iso(false)]).
