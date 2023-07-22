@@ -1580,6 +1580,7 @@ bool start(query *q)
 		pl_idx save_ctx = q->st.curr_frame;
 		q->run_hook = q->did_throw = false;
 		q->before_hook_tp = q->st.tp;
+		q->max_eval_depth = 0;
 		q->tot_goals++;
 
 		if (is_builtin(q->st.curr_cell)) {
