@@ -1056,12 +1056,11 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 						q->parens = parens = true;
 				}
 
-				if (parens) dst += snprintf(dst, dstlen, "%s", "(");
+				if (parens)
+					dst += snprintf(dst, dstlen, "%s", "(");
 
-				if (q->max_depth && (depth > q->max_depth)) {
+				if (q->max_depth && ((depth+1) >= q->max_depth)) {
 					dst += snprintf(dst, dstlen, "...");
-					q->last_thing = WAS_SYMBOL;
-					if (parens) dst += snprintf(dst, dstlen, "%s", ")");
 					dst += snprintf(dst, dstlen, "%s", braces&&!q->ignore_ops?"}":")");
 					q->last_thing = WAS_OTHER;
 					return dst - save_dst;
