@@ -125,7 +125,7 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 		uint64_t save_vgen1 = 0, save_vgen2 = 0;
 		cell *c1 = p1, *c2 = p2;
-		int both = 0;
+		bool cycle1 = false, cycle2 = false;
 
 		if (is_var(c1)) {
 			if (is_ref(c1))
@@ -136,7 +136,7 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 			save_vgen1 = e1->vgen;
 
 			if (e1->vgen == q->vgen)
-				both++;
+				cycle1 = true;
 			else
 				e1->vgen = q->vgen;
 		}
@@ -150,12 +150,18 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 			save_vgen2 = e2->vgen2;
 
 			if (e2->vgen2 == q->vgen)
-				both++;
+				cycle2 = true;
 			else
 				e2->vgen2 = q->vgen;
 		}
 
-		if (!both) {
+		if (cycle1 && !cycle2)
+			return 1;
+
+		if (!cycle1 && cycle2)
+			return -1;
+
+		if (!cycle1 && !cycle2) {
 			c1 = deref(q, p1, p1_ctx);
 			c1_ctx = q->latest_ctx;
 			c2 = deref(q, p2, p2_ctx);
@@ -165,13 +171,12 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 			if (e1) e1->vgen = save_vgen1;
 			if (e2) e2->vgen2 = save_vgen2;
 			if (val) return val;
-		} else if (both == 1)
-			break;
+		}
 
 		if (e1) e1->vgen = save_vgen1;
 		if (e2) e2->vgen2 = save_vgen2;
 
-		if (both && q->cycle_error)		// HACK
+		if ((cycle1 || cycle2) && q->cycle_error)		// HACK
 			break;
 
 		p1 += p1->nbr_cells;
