@@ -1169,8 +1169,7 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 			q->last_thing = WAS_SPACE;
 		}
 
-		if (parens) dst += snprintf(dst, dstlen, "%s", "(");
-		q->last_thing = WAS_OTHER;
+		if (parens) { dst += snprintf(dst, dstlen, "%s", "("); q->last_thing = WAS_OTHER; }
 		q->parens = parens;
 		ssize_t res = print_term_to_buf(q, dst, dstlen, rhs, rhs_ctx, running, 0, depth+1);
 		q->parens = false;
