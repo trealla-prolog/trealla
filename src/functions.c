@@ -319,17 +319,6 @@ bool call_userfun(query *q, cell *c, pl_idx c_ctx)
 	return ok;
 }
 
-static bool fn_return_1(query *q)
-{
-	GET_FIRST_ARG(p1_tmp,any);
-	CLEANUP cell p1 = eval(q, p1_tmp);
-	q->accum = p1;
-	prune_me(q, false, -1);
-	drop_control(q);
-	q->error = true;
-	return true;
-}
-
 static bool fn_iso_is_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -3027,7 +3016,6 @@ builtins g_evaluable_bifs[] =
 
 	// Functions...
 
-	{"return", 1, fn_return_1, "+number,-number", false, true, BLAH},
 	{"+", 1, fn_iso_positive_1, "+number,-number", true, true, BLAH},
 	{"-", 1, fn_iso_negative_1, "+number,-number", true, true, BLAH},
 	{"abs", 1, fn_iso_abs_1, "+number,-number", true, true, BLAH},
