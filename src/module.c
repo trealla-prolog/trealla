@@ -224,8 +224,8 @@ static void clear_loaded(const module *m)
 	while (ptr) {
 		loaded_file *save = ptr;
 		ptr = ptr->next;
-		free(save->orig_filename);
-		free(save->filename);
+		if (save->orig_filename) free(save->orig_filename);
+		if (save->filename) free(save->filename);
 		free(save);
 	}
 }

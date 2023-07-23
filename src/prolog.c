@@ -222,9 +222,9 @@ void ptrfree(const void *key, const void *val, const void *p)
 	builtins *ptr = (void*)val;
 
 	if (ptr->via_directive) {
-		free((void*)ptr->help2);
-		free((void*)ptr->desc);
-		free((void*)ptr->name);
+		if (ptr->help2) free((void*)ptr->help2);
+		if (ptr->desc) free((void*)ptr->desc);
+		if (ptr->name) free((void*)ptr->name);
 		free((void*)ptr);
 	}
 }
