@@ -424,12 +424,9 @@ static bool copy_vars(query *q, cell *tmp, bool copy_attrs, cell *from, pl_idx f
 			q->tab_idx++;
 		}
 
-		tmp->flags = FLAG_VAR_FRESH;
-		tmp->val_off = g_anon_s;
+		tmp->flags = FLAG_VAR_REF | FLAG_VAR_FRESH;
 
 		if (from && (tmp->var_nbr == from->var_nbr) && (tmp->var_ctx == from_ctx)) {
-			tmp->flags |= FLAG_VAR_REF;
-			tmp->val_off = to->val_off;
 			tmp->var_nbr = to->var_nbr;
 			tmp->var_ctx = to_ctx;
 		} else {
@@ -569,7 +566,6 @@ cell *copy_to_tmp(query *q, cell *p1, pl_idx p1_ctx)
 	q->varno = f->actual_slots;
 	pl_idx nbr_cells = p1->nbr_cells;
 	cell *dst = tmp;
-	//DUMP_TERM("+++", p1, p1_ctx, 1);
 
 	for (const cell *c = p1; nbr_cells--; c++, dst++) {
 		copy_cells(dst, c, 1);
@@ -591,11 +587,11 @@ cell *copy_to_tmp(query *q, cell *p1, pl_idx p1_ctx)
 		if ((var_nbr = accum_slot(q, slot_nbr, q->varno)) == -1)
 			var_nbr = q->varno++;
 
+		dst->flags = FLAG_VAR_REF | FLAG_VAR_FRESH;
 		dst->var_nbr = var_nbr;
-		dst->flags = FLAG_VAR_FRESH;
+		dst->var_ctx = q->st.curr_frame;
 	}
 
-	//DUMP_TERM("---", tmp, q->st.curr_frame, 1);
 	map_destroy(q->vars);
 	q->vars = NULL;
 	int cnt = q->varno - f->actual_slots;
