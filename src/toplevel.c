@@ -480,7 +480,7 @@ void dump_vars(query *q, bool partial)
 			return;
 
 		cell *tmp = deep_clone_to_tmp(q, c, c_ctx);
-		print_term(q, stdout, tmp, 0, 0);
+		print_term(q, stdout, tmp, 0, 1);
 
 		if (parens) fputc(')', stdout);
 		if (q->last_thing == WAS_SYMBOL) space = true;
