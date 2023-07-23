@@ -1091,6 +1091,12 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 		return dst - save_dst;
 	}
 
+	if (q->max_depth && (depth >= q->max_depth)) {
+		dst += snprintf(dst, dstlen, "...");
+		q->last_thing = WAS_SYMBOL;
+		return dst - save_dst;
+	}
+
 	size_t srclen = src_len;
 
 	if (is_postfix(c)) {
