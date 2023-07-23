@@ -553,59 +553,6 @@ cell *deep_copy_to_heap_with_replacement(query *q, cell *p1, pl_idx p1_ctx, bool
 	return tmp2;
 }
 
-cell *copy_to_tmp(query *q, cell *p1, pl_idx p1_ctx)
-{
-	cell *tmp = alloc_on_tmp(q, p1->nbr_cells);
-
-	if (!tmp)
-		return NULL;
-
-	q->vars = map_create(NULL, NULL, NULL);
-	if (!q->vars) return NULL;
-	const frame *f = GET_CURR_FRAME();
-	q->varno = f->actual_slots;
-	pl_idx nbr_cells = p1->nbr_cells;
-	cell *dst = tmp;
-
-	for (const cell *c = p1; nbr_cells--; c++, dst++) {
-		copy_cells(dst, c, 1);
-
-		if (!is_var(c))
-			continue;
-
-		const cell *v = c;
-		pl_idx v_ctx = p1_ctx;
-
-		if (is_ref(v))
-			v_ctx = v->var_ctx;
-
-		const frame *f = GET_FRAME(v_ctx);
-		const slot *e = GET_SLOT(f, v->var_nbr);
-		const pl_idx slot_nbr = f->base + v->var_nbr;
-		int var_nbr;
-
-		if ((var_nbr = accum_slot(q, slot_nbr, q->varno)) == -1)
-			var_nbr = q->varno++;
-
-		dst->flags = FLAG_VAR_REF | FLAG_VAR_FRESH;
-		dst->var_nbr = var_nbr;
-		dst->var_ctx = q->st.curr_frame;
-	}
-
-	map_destroy(q->vars);
-	q->vars = NULL;
-	int cnt = q->varno - f->actual_slots;
-
-	if (cnt) {
-		if (!create_vars(q, cnt)) {
-			throw_error(q, p1, q->st.curr_frame, "resource_error", "stack");
-			return NULL;
-		}
-	}
-
-	return tmp;
-}
-
 cell *alloc_on_queuen(query *q, unsigned qnbr, const cell *c)
 {
 	if (!q->queue[qnbr]) {
