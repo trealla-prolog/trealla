@@ -1056,6 +1056,9 @@ void prune_me(query *q, bool soft_cut, pl_idx cp)
 				return;
 			}
 
+			if (ch == q->controls)
+				return;
+
 			ch--;
 		}
 
