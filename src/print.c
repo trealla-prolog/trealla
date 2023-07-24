@@ -1207,7 +1207,7 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 
 	ssize_t res;
 
-	if (q->max_depth && ((depth+1) >= q->max_depth)) {
+	if (!is_var(lhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
 		if (q->last_thing != WAS_SPACE) dst += snprintf(dst, dstlen, "%s", " ");
 		dst += snprintf(dst, dstlen, "%s", "...");
 		q->last_thing = WAS_SYMBOL;
@@ -1308,7 +1308,7 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 		q->last_thing = WAS_SPACE;
 	}
 
-	if (q->max_depth && ((depth+1) >= q->max_depth)) {
+	if (!is_var(rhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
 		if (q->last_thing != WAS_SPACE) dst += snprintf(dst, dstlen, "%s", " ");
 		dst += snprintf(dst, dstlen, "%s", "...");
 		q->last_thing = WAS_SYMBOL;
