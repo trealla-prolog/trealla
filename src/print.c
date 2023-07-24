@@ -1089,10 +1089,18 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 	if (is_postfix(c)) {
 		cell *lhs = c + 1;
 		lhs = running ? deref(q, lhs, c_ctx) : lhs;
-		pl_idx lhs_ctx = running ? q->latest_ctx : 0;
-		ssize_t res = print_term_to_buf_(q, dst, dstlen, lhs, lhs_ctx, running, 0, 0, depth+1);
-		if (res < 0) return -1;
-		dst += res;
+
+		if (!is_var(lhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
+			if (q->last_thing != WAS_SPACE) dst += snprintf(dst, dstlen, "%s", " ");
+			dst += snprintf(dst, dstlen, "%s", "...");
+			q->last_thing = WAS_SYMBOL;
+			return dst - save_dst;
+		} else {
+			pl_idx lhs_ctx = running ? q->latest_ctx : 0;
+			ssize_t res = print_term_to_buf_(q, dst, dstlen, lhs, lhs_ctx, running, 0, 0, depth+1);
+			if (res < 0) return -1;
+			dst += res;
+		}
 
 		bool space = (c->val_off == g_minus_s) && (is_number(lhs) || search_op(q->st.m, C_STR(q, lhs), NULL, true));
 		if ((c->val_off == g_plus_s) && search_op(q->st.m, C_STR(q, lhs), NULL, true) && lhs->arity) space = true;
@@ -1160,7 +1168,7 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 			q->last_thing = WAS_SPACE;
 		}
 
-		if (q->max_depth && ((depth+1) >= q->max_depth)) {
+		if (!is_var(rhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
 			if (!space) dst += snprintf(dst, dstlen, "%s", " ");
 			dst += snprintf(dst, dstlen, "%s", "...");
 			q->last_thing = WAS_SYMBOL;
