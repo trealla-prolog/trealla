@@ -1142,8 +1142,8 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 		if (isalpha(*src)) space = true;
 		if (is_op(rhs) || is_negative(rhs) || is_float(rhs)) space = true;
 
-		bool parens = false; //is_op(rhs);
-		if (strcmp(src, "+") && (is_infix(rhs) || is_postfix(rhs))) parens = true;
+		bool parens = false;
+		if (!strcmp(src, "+") && (is_infix(rhs) || is_postfix(rhs))) parens = true;
 		if (rhs_pri > my_priority) parens = true;
 		if (my_priority && (rhs_pri == my_priority) && strcmp(src, "-") && strcmp(src, "+")) parens = true;
 		if (!strcmp(src, "-") && (rhs_pri == my_priority) && (rhs->arity > 1)) parens = true;
