@@ -839,10 +839,10 @@ static bool fn_iso_number_chars_2(query *q)
 	q->quoted = 1;
 	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
-	ssize_t len = print_term_to_buf(q, NULL, 0, p1, p1_ctx, 1, 0, 0);
+	ssize_t len = print_term_to_buf(q, NULL, 0, p1, p1_ctx, 1, 0);
 	char *dst = malloc(len+10);
 	check_heap_error(dst);
-	print_term_to_buf(q, dst, len+1, p1, p1_ctx, 1, 0, 0);
+	print_term_to_buf(q, dst, len+1, p1, p1_ctx, 1, 0);
 	q->ignore_ops = false;
 	q->quoted = 0;
 	cell tmp;
@@ -1417,10 +1417,10 @@ static bool fn_iso_number_codes_2(query *q)
 	q->quoted = 1;
 	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
-	ssize_t len = print_term_to_buf(q, NULL, 0, p1, p1_ctx, 1, 0, 0);
+	ssize_t len = print_term_to_buf(q, NULL, 0, p1, p1_ctx, 1, 0);
 	char *dst = malloc(len+10);
 	check_heap_error(dst);
-	print_term_to_buf(q, dst, len+1, p1, p1_ctx, 1, 0, 0);
+	print_term_to_buf(q, dst, len+1, p1, p1_ctx, 1, 0);
 	q->ignore_ops = false;
 	q->quoted = 0;
 	const char *src = dst;
@@ -4520,7 +4520,7 @@ const char *dump_key(const void *k, const void *v, const void *p)
 	query *q = (query*)p;
 	cell *c = (cell*)k;
 	static char tmpbuf[1024];
-	print_term_to_buf(q, tmpbuf, sizeof(tmpbuf), c, q->st.curr_frame, 0, false, 0);
+	print_term_to_buf(q, tmpbuf, sizeof(tmpbuf), c, q->st.curr_frame, 0, false);
 	return tmpbuf;
 }
 
@@ -6385,9 +6385,9 @@ static bool fn_atomic_concat_3(query *q)
 	const char *src1, *src2;
 	size_t len1, len2;
 	char tmpbuf1[256], tmpbuf2[256];
-	len1 = print_term_to_buf(q, tmpbuf1, sizeof(tmpbuf1), p1, p1_ctx, 1, false, 0);
+	len1 = print_term_to_buf(q, tmpbuf1, sizeof(tmpbuf1), p1, p1_ctx, 1, false);
 	src1 = tmpbuf1;
-	len2 = print_term_to_buf(q, tmpbuf2, sizeof(tmpbuf2), p2, p2_ctx, 1, false, 0);
+	len2 = print_term_to_buf(q, tmpbuf2, sizeof(tmpbuf2), p2, p2_ctx, 1, false);
 	src2 = tmpbuf2;
 	SB(pr);
 	SB_strcatn(pr, src1, len1);
