@@ -75,8 +75,8 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define MIN_OF(a,b) (a) < (b) ? (a) : (b)
 
 #define GET_CHOICE(i) (q->choices+(i))
-#define GET_CURR_CHOICE() GET_CHOICE(q->cp?q->cp-1:q->cp)
-#define GET_PREV_CHOICE() GET_CHOICE(q->cp?q->cp-2:q->cp)
+#define GET_CURR_CHOICE() GET_CHOICE(q->cp?q->cp-1:0)
+#define GET_PREV_CHOICE() GET_CHOICE(q->cp?q->cp-2:0)
 
 #define GET_FRAME(i) (q->frames+(i))
 #define GET_FIRST_FRAME() GET_FRAME(0)
