@@ -83,8 +83,8 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define GET_CURR_FRAME() GET_FRAME(q->st.curr_frame)
 #define GET_NEW_FRAME() GET_FRAME(q->st.fp)
 
-#define FIRST_ARG(c) (c)+1
-#define NEXT_ARG(c) (c)+1
+#define FIRST_ARG(c) ((c)+1)
+#define NEXT_ARG(c) ((c)+(c)->nbr_cells)
 
 #define GET_SLOT(f,i) ((i) < (f)->initial_slots ? 			\
 	(q->slots+(f)->base+(i)) : 								\
