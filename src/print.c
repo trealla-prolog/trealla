@@ -929,7 +929,7 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 		if (is_string(c)) dq = quote = 1;
 		if (q->quoted < 0) quote = 0;
 		if ((c->arity == 1) && is_interned(c) && !strcmp(src, "{}")) braces = 1;
-		cell *c1 = c->arity ? deref(q, c+1, c_ctx) : NULL;
+		cell *c1 = c->arity ? deref(q, FIRST_ARG(c), c_ctx) : NULL;
 
 		if (running && is_interned(c) && c->arity
 			&& q->numbervars && !strcmp(src, "$VAR") && c1

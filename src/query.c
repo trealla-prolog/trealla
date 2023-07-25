@@ -44,7 +44,7 @@ typedef enum { CALL, EXIT, REDO, NEXT, FAIL } box_t;
 #define PRESSURE_FACTOR 4
 #define TRACE_MEM 0
 
-// Note: when in commit there is a provisional control point
+// Note: when in commit there is a provisional choice point
 // that we should skip over, hence the '1' ...
 
 static bool any_choices(const query *q, const frame *f)
@@ -52,7 +52,7 @@ static bool any_choices(const query *q, const frame *f)
 	if (q->cp == (unsigned)(q->in_commit ? 1 : 0))
 		return false;
 
-	const control *ch = q->in_commit ? GET_PREV_CHOICE() : GET_CURR_CHOICE();
+	const choice *ch = q->in_commit ? GET_PREV_CHOICE() : GET_CURR_CHOICE();
 	return ch->cgen >= f->cgen;
 }
 
@@ -163,11 +163,11 @@ static void check_pressure(query *q)
 		q->trails_size = alloc_grow((void**)&q->trails, sizeof(trail), q->st.tp, INITIAL_NBR_TRAILS, false);
 	}
 
-	if ((q->controls_size > (INITIAL_NBR_CHOICES*PRESSURE_FACTOR)) && (q->cp < INITIAL_NBR_CHOICES)) {
+	if ((q->choices_size > (INITIAL_NBR_CHOICES*PRESSURE_FACTOR)) && (q->cp < INITIAL_NBR_CHOICES)) {
 #if TRACE_MEM
-		printf("*** q->st.cp=%u, q->controls_size=%u\n", (unsigned)q->cp, (unsigned)q->controls_size);
+		printf("*** q->st.cp=%u, q->choices_size=%u\n", (unsigned)q->cp, (unsigned)q->choices_size);
 #endif
-		q->controls_size = alloc_grow((void**)&q->controls, sizeof(control), q->cp, INITIAL_NBR_CHOICES, false);
+		q->choices_size = alloc_grow((void**)&q->choices, sizeof(choice), q->cp, INITIAL_NBR_CHOICES, false);
 	}
 
 	if ((q->frames_size > (INITIAL_NBR_FRAMES*PRESSURE_FACTOR)) && (q->st.fp < INITIAL_NBR_FRAMES)) {
@@ -205,19 +205,19 @@ bool check_trail(query *q)
 	return true;
 }
 
-static bool check_control(query *q)
+static bool check_choice(query *q)
 {
-	if (q->cp > q->hw_controls)
-		q->hw_controls = q->cp;
+	if (q->cp > q->hw_choices)
+		q->hw_choices = q->cp;
 
-	if (q->cp >= q->controls_size) {
-		pl_idx new_choicessize = alloc_grow((void**)&q->controls, sizeof(control), q->cp, q->controls_size*4/3, false);
+	if (q->cp >= q->choices_size) {
+		pl_idx new_choicessize = alloc_grow((void**)&q->choices, sizeof(choice), q->cp, q->choices_size*4/3, false);
 		if (!new_choicessize) {
 			q->is_oom = q->error = true;
 			return false;
 		}
 
-		q->controls_size = new_choicessize;
+		q->choices_size = new_choicessize;
 	}
 
 	return true;
@@ -685,7 +685,7 @@ static void leave_predicate(query *q, predicate *pr)
 
 static void unwind_trail(query *q)
 {
-	const control *ch = GET_CURR_CHOICE();
+	const choice *ch = GET_CURR_CHOICE();
 
 	while (q->st.tp > ch->st.tp) {
 		const trail *tr = q->trails + --q->st.tp;
@@ -723,12 +723,12 @@ void try_me(query *q, unsigned nbr_vars)
 	q->tot_matches++;
 }
 
-void drop_control(query *q)
+void drop_choice(query *q)
 {
 	if (!q->cp)
 		return;
 
-	control *ch = GET_CURR_CHOICE();
+	choice *ch = GET_CURR_CHOICE();
 
 	if (ch->st.iter) {
 		map_done(ch->st.iter);
@@ -739,12 +739,12 @@ void drop_control(query *q)
 	--q->cp;
 }
 
-int retry_control(query *q)
+int retry_choice(query *q)
 {
 	while (q->cp) {
 		unwind_trail(q);
 		pl_idx curr_choice = --q->cp;
-		const control *ch = GET_CONTROL(curr_choice);
+		const choice *ch = GET_CHOICE(curr_choice);
 		q->st = ch->st;
 		q->save_m = NULL;
 		trim_heap(q);
@@ -817,7 +817,7 @@ static void reuse_frame(query *q, const clause *cl)
 		*to++ = *from++;
 	}
 
-	const control *ch = GET_CURR_CHOICE();
+	const choice *ch = GET_CURR_CHOICE();
 	q->st.sp = f->base + f->initial_slots;
 	q->st.hp = f->hp;
 	q->tot_tcos++;
@@ -831,7 +831,7 @@ static void trim_trail(query *q)
 	pl_idx tp = 0;
 
 	if (q->cp) {
-		const control *ch = GET_CURR_CHOICE();
+		const choice *ch = GET_CURR_CHOICE();
 		tp = ch->st.tp;
 	}
 
@@ -887,8 +887,8 @@ static void commit_me(query *q)
 	}
 
 #if 0
-	printf("*** retry=%d,tco=%d,q->no_tco=%d,last_match=%d (%d/%d),recursive=%d,controls=%d,slots_ok=%d,vars_ok=%d,cl->nbr_vars=%u,cl->nbr_temps=%u\n",
-		q->retry, tco, q->no_tco, last_match, implied_first_cut, cl->is_first_cut, recursive, controls, slots_ok, vars_ok, cl->nbr_vars, cl->nbr_temporaries);
+	printf("*** retry=%d,tco=%d,q->no_tco=%d,last_match=%d (%d/%d),recursive=%d,choices=%d,slots_ok=%d,vars_ok=%d,cl->nbr_vars=%u,cl->nbr_temps=%u\n",
+		q->retry, tco, q->no_tco, last_match, implied_first_cut, cl->is_first_cut, recursive, choices, slots_ok, vars_ok, cl->nbr_vars, cl->nbr_temporaries);
 #endif
 
 	if (q->pl->opt && tco)
@@ -898,12 +898,12 @@ static void commit_me(query *q)
 
 	if (last_match) {
 		leave_predicate(q, q->st.pr);
-		drop_control(q);
+		drop_choice(q);
 
 		if (tco)
 			trim_trail(q);
 	} else {
-		control *ch = GET_CURR_CHOICE();
+		choice *ch = GET_CURR_CHOICE();
 		ch->st.curr_dbe = q->st.curr_dbe;
 		ch->cgen = f->cgen;
 	}
@@ -919,9 +919,9 @@ void stash_me(query *q, const clause *cl, bool last_match)
 
 	if (last_match) {
 		leave_predicate(q, q->st.pr);
-		drop_control(q);
+		drop_choice(q);
 	} else {
-		control *ch = GET_CURR_CHOICE();
+		choice *ch = GET_CURR_CHOICE();
 		ch->st.curr_dbe = q->st.curr_dbe;
 		ch->cgen = cgen;
 	}
@@ -943,10 +943,10 @@ void stash_me(query *q, const clause *cl, bool last_match)
 
 bool push_choice(query *q)
 {
-	check_heap_error(check_control(q));
+	check_heap_error(check_choice(q));
 	const frame *f = GET_CURR_FRAME();
 	pl_idx curr_choice = q->cp++;
-	control *ch = GET_CONTROL(curr_choice);
+	choice *ch = GET_CHOICE(curr_choice);
 	ch->st = q->st;
 	ch->ugen = f->ugen;
 	ch->frame_cgen = ch->cgen = f->cgen;
@@ -962,14 +962,14 @@ bool push_choice(query *q)
 }
 
 // A barrier is used when making a call, it sets a new
-// control generation so that normal cuts are contained.
-// This is because there is no separate control stack.
+// choice generation so that normal cuts are contained.
+// This is because there is no separate choice stack.
 
 bool push_barrier(query *q)
 {
 	check_heap_error(push_choice(q));
 	frame *f = GET_CURR_FRAME();
-	control *ch = GET_CURR_CHOICE();
+	choice *ch = GET_CURR_CHOICE();
 	ch->cgen = f->cgen = ++q->cgen;
 	ch->barrier = true;
 	return true;
@@ -980,7 +980,7 @@ bool push_barrier(query *q)
 bool push_catcher(query *q, enum q_retry retry)
 {
 	check_heap_error(push_barrier(q));
-	control *ch = GET_CURR_CHOICE();
+	choice *ch = GET_CURR_CHOICE();
 	ch->catcher = true;
 
 	if (retry == QUERY_RETRY)
@@ -991,12 +991,12 @@ bool push_catcher(query *q, enum q_retry retry)
 	return true;
 }
 
-void cut_me(query *q)
+void cut(query *q)
 {
 	const frame *f = GET_CURR_FRAME();
 
 	while (q->cp) {
-		control *ch = GET_CURR_CHOICE();
+		choice *ch = GET_CURR_CHOICE();
 
 		// A normal cut can't break out of a barrier...
 
@@ -1017,13 +1017,13 @@ void cut_me(query *q)
 			}
 
 		leave_predicate(q, ch->st.pr);
-		drop_control(q);
+		drop_choice(q);
 
 		if (ch->register_cleanup && !ch->fail_on_retry) {
 			ch->fail_on_retry = true;
 			cell *c = ch->st.curr_cell;
 			pl_idx c_ctx = ch->st.curr_frame;
-			c = deref(q, c+1, c_ctx);
+			c = deref(q, FIRST_ARG(c), c_ctx);
 			c_ctx = q->latest_ctx;
 			do_cleanup(q, c, c_ctx);
 			break;
@@ -1034,19 +1034,19 @@ void cut_me(query *q)
 		q->st.tp = 0;
 }
 
-void prune_me(query *q, bool soft_cut, pl_idx cp)
+void prune(query *q, bool soft_cut, pl_idx cp)
 {
 	frame *f = GET_CURR_FRAME();
 
 	while (q->cp) {
-		control *ch = GET_CURR_CHOICE();
-		const control *save_ch = ch;
+		choice *ch = GET_CURR_CHOICE();
+		const choice *save_ch = ch;
 
-		while (soft_cut && (ch >= q->controls)) {
+		while (soft_cut && (ch > q->choices)) {
 			if ((q->cp-1) == cp) {
 				if (ch == save_ch) {
 					leave_predicate(q, ch->st.pr);
-					drop_control(q);
+					drop_choice(q);
 					f->cgen--;
 					return;
 				}
@@ -1056,11 +1056,11 @@ void prune_me(query *q, bool soft_cut, pl_idx cp)
 				return;
 			}
 
-			if (ch == q->controls)
-				return;
-
 			ch--;
 		}
+
+		if (ch == q->choices)
+			return;
 
 		// A prune can break through a barrier...
 
@@ -1070,13 +1070,13 @@ void prune_me(query *q, bool soft_cut, pl_idx cp)
 		}
 
 		leave_predicate(q, ch->st.pr);
-		drop_control(q);
+		drop_choice(q);
 
 		if (ch->register_cleanup && !ch->fail_on_retry) {
 			ch->fail_on_retry = true;
 			cell *c = ch->st.curr_cell;
 			pl_idx c_ctx = ch->st.curr_frame;
-			c = deref(q, c+1, c_ctx);
+			c = deref(q, FIRST_ARG(c), c_ctx);
 			c_ctx = q->latest_ctx;
 			do_cleanup(q, c, c_ctx);
 			break;
@@ -1092,7 +1092,7 @@ void prune_me(query *q, bool soft_cut, pl_idx cp)
 bool drop_barrier(query *q, pl_idx cp)
 {
 	if ((q->cp-1) == cp) {
-		drop_control(q);
+		drop_choice(q);
 		return true;
 	}
 
@@ -1305,7 +1305,7 @@ bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 	}
 
 	leave_predicate(q, q->st.pr);
-	drop_control(q);
+	drop_choice(q);
 	return false;
 }
 
@@ -1394,7 +1394,7 @@ bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract
 	}
 
 	leave_predicate(q, q->st.pr);
-	drop_control(q);
+	drop_choice(q);
 	return false;
 }
 
@@ -1469,17 +1469,17 @@ static bool match_head(query *q)
 		undo_me(q);
 	}
 
-	control *ch = GET_CURR_CHOICE();
+	choice *ch = GET_CURR_CHOICE();
 	ch->st.iter = NULL;
 	leave_predicate(q, q->st.pr);
-	drop_control(q);
+	drop_choice(q);
 	return false;
 }
 
 static bool any_outstanding_choices(query *q)
 {
 	while (q->cp) {
-		const control *ch = GET_CURR_CHOICE();
+		const choice *ch = GET_CURR_CHOICE();
 
 		if (!ch->barrier)
 			break;
@@ -1554,7 +1554,7 @@ bool start(query *q)
 
 		if (q->retry) {
 			Trace(q, q->st.curr_cell, q->st.curr_frame, FAIL);
-			int ok = retry_control(q);
+			int ok = retry_choice(q);
 
 			if (!ok)
 				break;
@@ -1684,12 +1684,12 @@ bool start(query *q)
 			}
 
 			while (q->cp) {
-				control *ch = GET_CURR_CHOICE();
+				choice *ch = GET_CURR_CHOICE();
 
 				if (!ch->barrier)
 					break;
 
-				drop_control(q);
+				drop_choice(q);
 			}
 
 			if (q->p && !q->run_init && any_outstanding_choices(q)) {
@@ -1806,8 +1806,8 @@ bool execute(query *q, cell *cells, unsigned nbr_vars)
 	// this points to the next available frame...
 	q->st.fp = 1;
 
-	// There may not be a control-point, so this points to the
-	// next available control-point
+	// There may not be a choice-point, so this points to the
+	// next available choice-point
 	q->cp = 0;
 
 	frame *f = q->frames + q->st.curr_frame;
@@ -1903,7 +1903,7 @@ void query_destroy(query *q)
 	mp_rat_clear(&q->tmp_irat);
 	purge_dirty_list(q);
 	free(q->trails);
-	free(q->controls);
+	free(q->choices);
 	free(q->slots);
 	free(q->frames);
 	free(q->tmp_heap);
@@ -1935,13 +1935,13 @@ query *query_create(module *m, bool is_task)
 
 	q->frames_size = is_task ? INITIAL_NBR_FRAMES/10 : INITIAL_NBR_FRAMES;
 	q->slots_size = is_task ? INITIAL_NBR_SLOTS/10 : INITIAL_NBR_SLOTS;
-	q->controls_size = is_task ? INITIAL_NBR_CHOICES/10 : INITIAL_NBR_CHOICES;
+	q->choices_size = is_task ? INITIAL_NBR_CHOICES/10 : INITIAL_NBR_CHOICES;
 	q->trails_size = is_task ? INITIAL_NBR_TRAILS/10 : INITIAL_NBR_TRAILS;
 
 	bool error = false;
 	ensure(q->frames = calloc(q->frames_size, sizeof(frame)), NULL);
 	ensure(q->slots = calloc(q->slots_size, sizeof(slot)), NULL);
-	ensure(q->controls = calloc(q->controls_size, sizeof(control)), NULL);
+	ensure(q->choices = calloc(q->choices_size, sizeof(choice)), NULL);
 	ensure(q->trails = calloc(q->trails_size, sizeof(trail)), NULL);
 
 	// Allocate these later as needed...

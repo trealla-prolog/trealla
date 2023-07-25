@@ -1001,7 +1001,7 @@ Concurrency (tasks)						##EXPERIMENTAL##
 
 Trealla is single-threaded internally but cooperative multitasking is
 available in the form of light-weight coroutines that run until they
-yield control, either explicitly or implicitly (when waiting on input
+yield choice, either explicitly or implicitly (when waiting on input
 or a timer). They are called a `task` here.
 
 	task/[1-n]	            # concurrent form of call/1-n

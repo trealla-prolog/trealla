@@ -580,7 +580,7 @@ static bool del_stream_properties(query *q, int n)
 	while (do_retract(q, tmp, q->st.curr_frame, DO_RETRACTALL)) {
 		if (q->did_throw) return false;
 		q->retry = QUERY_RETRY;
-		retry_control(q);
+		retry_choice(q);
 	}
 
 	q->retry = QUERY_OK;
@@ -1078,7 +1078,7 @@ static bool fn_process_create_3(query *q)
 #if defined(__GLIBC__) && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 26))
 				return throw_error(q, c, c_ctx, "not available", "posix_spawnattr_setflags");
 #else
-				bool detached = !CMP_STR_TO_CSTR(q, c+1, "true");
+				bool detached = !CMP_STR_TO_CSTR(q, FIRST_ARG(c), "true");
 				posix_spawnattr_setflags(&attrp, POSIX_SPAWN_SETSID);
 #endif
 			} else if (!CMP_STR_TO_CSTR(q, c, "cwd")) {
@@ -1262,9 +1262,9 @@ static bool fn_process_wait_2(query *q)
 		cell *name = c + 1;
 
 		if (is_structure(c) && (c->arity == 1) && !CMP_STR_TO_CSTR(q, c, "timeout")) {
-			if (is_integer(c+1))
-				secs = get_smallint(c+1);
-			else if (is_atom(c+1) && !CMP_STR_TO_CSTR(q, c+1, "infinite"))
+			if (is_integer(FIRST_ARG(c)))
+				secs = get_smallint(FIRST_ARG(c));
+			else if (is_atom(FIRST_ARG(c)) && !CMP_STR_TO_CSTR(q, FIRST_ARG(c), "infinite"))
 				secs = -1;
 		} else
 			return throw_error(q, c, q->latest_ctx, "domain_error", "process_wait_option");
@@ -1806,7 +1806,7 @@ static bool parse_read_params(query *q, stream *str, cell *c, pl_idx c_ctx, cell
 		return false;
 	}
 
-	cell *c1 = deref(q, c+1, c_ctx);
+	cell *c1 = deref(q, FIRST_ARG(c), c_ctx);
 	pl_idx c1_ctx = q->latest_ctx;
 
 	if (!CMP_STR_TO_CSTR(q, c, "character_escapes")) {
@@ -2474,7 +2474,7 @@ bool parse_write_params(query *q, cell *c, pl_idx c_ctx, cell **vnames, pl_idx *
 		return false;
 	}
 
-	cell *c1 = deref(q, c+1, c_ctx);
+	cell *c1 = deref(q, FIRST_ARG(c), c_ctx);
 	pl_idx c1_ctx = q->latest_ctx;
 
 	if (!CMP_STR_TO_CSTR(q, c, "max_depth")) {
@@ -6952,7 +6952,7 @@ static bool fn_with_mutex_2(query *q)
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
-	control *ch = GET_CURR_CHOICE();
+	choice *ch = GET_CURR_CHOICE();
 	ch->fail_on_retry = true;
 	q->st.curr_cell = tmp;
 	return true;

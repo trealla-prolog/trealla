@@ -1293,8 +1293,8 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 
 		// Remove module from head if present...
 
-		if ((p1->val_off == g_neck_s) && (c->val_off == g_colon_s) && (c->arity == 2) && is_atom(c+1)) {
-			const char *name = C_STR(m, c+1);
+		if ((p1->val_off == g_neck_s) && (c->val_off == g_colon_s) && (c->arity == 2) && is_atom(FIRST_ARG(c))) {
+			const char *name = C_STR(m, FIRST_ARG(c));
 			module *tmp_m = find_module(m->pl, name);
 
 			if (!tmp_m)
@@ -1305,8 +1305,8 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 			copy_cells(p1+1, p1+3, p1->nbr_cells-3);
 			p1->nbr_cells -= 2;
 			c = get_head(p1);
-		} else if ((c->val_off == g_colon_s) && (c->arity == 2) && is_atom(c+1)) {
-			const char *name = C_STR(m, c+1);
+		} else if ((c->val_off == g_colon_s) && (c->arity == 2) && is_atom(FIRST_ARG(c))) {
+			const char *name = C_STR(m, FIRST_ARG(c));
 			module *tmp_m = find_module(m->pl, name);
 
 			if (!tmp_m)

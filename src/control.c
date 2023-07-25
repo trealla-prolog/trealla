@@ -46,12 +46,12 @@ bool fn_sys_cleanup_if_det_1(query *q)
 	q->tot_goals--;
 	GET_FIRST_ARG(p1,integer);
 	const frame *f = GET_CURR_FRAME();
-	control *ch = GET_CURR_CHOICE();
+	choice *ch = GET_CURR_CHOICE();
 
 	if ((q->cp-1) != get_smallint(p1))
 		return true;
 
-	drop_control(q);
+	drop_choice(q);
 	ch = GET_CURR_CHOICE();
 
 	if (!ch->register_cleanup)
@@ -60,11 +60,11 @@ bool fn_sys_cleanup_if_det_1(query *q)
 	if (ch->fail_on_retry)
 		return true;
 
-	drop_control(q);
+	drop_choice(q);
 	ch->fail_on_retry = true;
 	cell *c = deref(q, ch->st.curr_cell, ch->st.curr_frame);
 	pl_idx c_ctx = q->latest_ctx;
-	c = deref(q, c+1, c_ctx);
+	c = deref(q, FIRST_ARG(c), c_ctx);
 	c_ctx = q->latest_ctx;
 	do_cleanup(q, c, c_ctx);
 	return true;
@@ -111,7 +111,7 @@ bool fn_call_0(query *q, cell *p1, pl_idx p1_ctx)
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
-	control *ch = GET_CURR_CHOICE();
+	choice *ch = GET_CURR_CHOICE();
 	ch->fail_on_retry = true;
 	q->st.curr_cell = tmp;
 	return true;
@@ -185,7 +185,7 @@ bool fn_iso_call_n(query *q)
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
-	control *ch = GET_CURR_CHOICE();
+	choice *ch = GET_CURR_CHOICE();
 	ch->fail_on_retry = true;
 	q->st.curr_cell = tmp;
 	return true;
@@ -215,7 +215,7 @@ bool fn_iso_call_1(query *q)
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
-	control *ch = GET_CURR_CHOICE();
+	choice *ch = GET_CURR_CHOICE();
 	ch->fail_on_retry = true;
 	q->st.curr_cell = tmp;
 	return true;
@@ -246,7 +246,7 @@ bool fn_iso_once_1(query *q)
 	make_struct(tmp+nbr_cells++, g_sys_prune_s, fn_sys_prune_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
-	control *ch = GET_CURR_CHOICE();
+	choice *ch = GET_CURR_CHOICE();
 	ch->fail_on_retry = true;
 	q->st.curr_cell = tmp;
 	return true;
@@ -277,7 +277,7 @@ bool fn_ignore_1(query *q)
 	make_struct(tmp+nbr_cells++, g_sys_prune_s, fn_sys_prune_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
-	control *ch = GET_CURR_CHOICE();
+	choice *ch = GET_CURR_CHOICE();
 	ch->succeed_on_retry = true;
 	q->st.curr_cell = tmp;
 	return true;
@@ -298,7 +298,7 @@ bool fn_iso_if_then_2(query *q)
 	nbr_cells += safe_copy_cells(tmp+nbr_cells, p2, p2->nbr_cells);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
-	control *ch = GET_CURR_CHOICE();
+	choice *ch = GET_CURR_CHOICE();
 	ch->fail_on_retry = true;
 	q->st.curr_cell = tmp;
 	return true;
@@ -320,7 +320,7 @@ bool fn_if_2(query *q)
 	nbr_cells += safe_copy_cells(tmp+nbr_cells, p2, p2->nbr_cells);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
-	control *ch = GET_CURR_CHOICE();
+	choice *ch = GET_CURR_CHOICE();
 	ch->fail_on_retry = true;
 	q->st.curr_cell = tmp;
 	return true;
@@ -454,7 +454,7 @@ bool fn_iso_negation_1(query *q)
 	make_struct(tmp+nbr_cells++, g_fail_s, fn_iso_fail_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
-	control *ch = GET_CURR_CHOICE();
+	choice *ch = GET_CURR_CHOICE();
 	ch->succeed_on_retry = true;
 	q->st.curr_cell = tmp;
 	return true;
@@ -463,14 +463,14 @@ bool fn_iso_negation_1(query *q)
 bool fn_iso_cut_0(query *q)
 {
 	q->tot_goals--;
-	cut_me(q);
+	cut(q);
 	return true;
 }
 
 bool fn_sys_prune_0(query *q)
 {
 	q->tot_goals--;
-	prune_me(q, false, 0);
+	prune(q, false, 0);
 	return true;
 }
 
@@ -478,7 +478,7 @@ bool fn_sys_soft_prune_1(query *q)
 {
 	q->tot_goals--;
 	GET_FIRST_ARG(p1,integer);
-	prune_me(q, true, get_smallint(p1));
+	prune(q, true, get_smallint(p1));
 	return true;
 }
 
@@ -487,7 +487,7 @@ bool fn_sys_block_catcher_1(query *q)
 	q->tot_goals--;
 	GET_FIRST_ARG(p1,integer);
 	pl_idx cp = get_smalluint(p1);
-	control *ch = GET_CONTROL(cp);
+	choice *ch = GET_CHOICE(cp);
 
 	if (!ch->catchme_retry)
 		return false;
@@ -621,8 +621,8 @@ static cell *parse_to_heap(query *q, const char *src)
 
 bool find_exception_handler(query *q, char *ball)
 {
-	while (retry_control(q)) {
-		const control *ch = GET_CONTROL(q->cp);
+	while (retry_choice(q)) {
+		const choice *ch = GET_CHOICE(q->cp);
 
 		if (ch->block_catcher)
 			continue;
@@ -799,7 +799,7 @@ bool throw_error3(query *q, cell *c, pl_idx c_ctx, const char *err_type, const c
 		SET_OP(tmp+nbr_cells, OP_YFX); nbr_cells++;
 		make_atom(tmp+nbr_cells++, index_from_pool(q->pl, functor));
 		make_int(tmp+nbr_cells, !is_string(goal)?goal->arity:0);
-	} else if (!strcmp(err_type, "permission_error") && is_structure(c) && CMP_STR_TO_CSTR(q, c, "/") && is_var(c+1)) {
+	} else if (!strcmp(err_type, "permission_error") && is_structure(c) && CMP_STR_TO_CSTR(q, c, "/") && is_var(FIRST_ARG(c))) {
 		//printf("error(%s(%s,(%s)/%u),(%s)/%u).\n", err_type, expected, tmpbuf, c->arity, functor, goal->arity);
 		tmp = alloc_on_heap(q, 9+extra);
 		check_heap_error(tmp);

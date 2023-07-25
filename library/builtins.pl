@@ -10,7 +10,7 @@ predicate_property(P, A) :-
 predicate_property(P, A) :-
 	'$load_properties',
 	(	var(A) -> true
-	; 	(	(Controls = [built_in,control_construct,discontiguous,private,static,dynamic,foreign,tabled,multifile,meta_predicate(_),iso,visible,template(_)],
+	; 	(	(Controls = [built_in,choice_construct,discontiguous,private,static,dynamic,foreign,tabled,multifile,meta_predicate(_),iso,visible,template(_)],
 			memberchk(A, Controls))
 			->	true
 			;	throw(error(domain_error(predicate_property, A), P))
@@ -248,7 +248,7 @@ concordant_subset_(More, _, [], More).
 /*
 %   concordant_subset_/5 tries the current subset, and if that
 %   doesn't work if backs up and tries the next subset.  The
-%   first clause is there to save a control point when this is
+%   first clause is there to save a choice point when this is
 %   the last possible subset.
 */
 
