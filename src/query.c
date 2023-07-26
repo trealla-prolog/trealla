@@ -415,7 +415,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 	cell *arg1 = q->st.key->arity ? FIRST_ARG(q->st.key) : NULL;
 	map *idx = pr->idx;
 
-	if (arg1 && (is_var(arg1) || pr->is_var_in_first_arg)) {
+	if (arg1 && (is_var(arg1))) {
 		if (!pr->idx2) {
 			q->st.curr_dbe = pr->head;
 			return true;

@@ -1417,8 +1417,8 @@ static void assert_commit(module *m, db_entry *dbe, predicate *pr, bool append)
 			map_app(pr->idx, c, cl2);
 
 			if (pr->idx2) {
-				cell *arg1 = c + 1;
-				cell *arg2 = arg1 + arg1->nbr_cells;
+				cell *arg1 = FIRST_ARG(c);
+				cell *arg2 = NEXT_ARG(arg1);
 				map_app(pr->idx2, arg2, cl2);
 			}
 		}
@@ -1427,11 +1427,8 @@ static void assert_commit(module *m, db_entry *dbe, predicate *pr, bool append)
 	}
 
 	cell *c = get_head(dbe->cl.cells);
-	cell *arg1 = c->arity ? c + 1 : NULL;
-	cell *arg2 = arg1 ? arg1 + arg1->nbr_cells : NULL;
-
-	if (arg1 && is_var(arg1))
-		pr->is_var_in_first_arg = true;
+	cell *arg1 = c->arity ? FIRST_ARG(c) : NULL;
+	cell *arg2 = c->arity > 1 ? NEXT_ARG(arg1) : NULL;
 
 	if (!append) {
 		map_set(pr->idx, c, dbe);
