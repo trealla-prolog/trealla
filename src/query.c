@@ -381,7 +381,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 	q->st.karg1_is_ground = false;
 
 	if (!pr->idx) {
-		if (!pr->is_processed && !pr->is_multifile && !pr->is_dynamic)
+		if (!pr->is_processed && !pr->is_dynamic)
 			just_in_time_rebuild(pr);
 
 		q->st.curr_dbe = pr->head;
@@ -389,7 +389,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 		q->st.key_ctx = key_ctx;
 
 		if (key->arity) {
-			if (pr->is_dynamic /*&& pr->is_multifile*/) {
+			if (pr->is_dynamic) {
 
 				// Because the key will also be used later
 				// to check for choice-points, we need to
