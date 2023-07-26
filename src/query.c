@@ -317,7 +317,7 @@ bool has_next_key(query *q)
 	if (q->st.iter)
 		return map_is_next(q->st.iter, NULL);
 
-	if (!q->st.key->arity)
+	if (!q->st.key->arity || !q->pl->opt)
 		return q->st.curr_dbe->next ? true : false;
 
 	clause *cl = &q->st.curr_dbe->cl;
