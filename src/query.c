@@ -282,36 +282,14 @@ static void setup_key(query *q)
 	if (!q->pl->opt)
 		return;
 
-	cell *arg1 = q->st.key + 1, *arg2 = NULL, *arg3 = NULL;
-
-	if (q->st.key->arity > 1)
-		arg2 = arg1 + arg1->nbr_cells;
-
-	if (q->st.key->arity > 2)
-		arg3 = arg2 + arg2->nbr_cells;
+	cell *arg1 = q->st.key + 1;
 
 	arg1 = deref(q, arg1, q->st.key_ctx);
-	pl_idx arg1_ctx = q->latest_ctx, arg2_ctx = 0, arg3_ctx = 0;
-	cell *arg11 = NULL, *arg21 = NULL, *arg31 = NULL;
+	pl_idx arg1_ctx = q->latest_ctx;
+	cell *arg11 = NULL;
 
 	if (arg1->arity == 1)
 		arg11 = deref(q, arg1+1, arg1_ctx);
-
-	if (arg2) {
-		arg2 = deref(q, arg2, q->st.key_ctx);
-		arg2_ctx = q->latest_ctx;
-
-		if (arg2->arity == 1)
-			arg21 = deref(q, arg2+1, arg2_ctx);
-	}
-
-	if (arg3) {
-		arg3 = deref(q, arg3, q->st.key_ctx);
-		arg3_ctx = q->latest_ctx;
-
-		if (arg3->arity == 1)
-			arg31 = deref(q, arg3+1, arg3_ctx);
-	}
 
 	if (is_iso_atomic(arg1))
 		q->st.karg1_is_ground = true;
