@@ -282,14 +282,14 @@ static void setup_key(query *q)
 	if (!q->pl->opt)
 		return;
 
-	cell *arg1 = q->st.key + 1;
+	cell *arg1 = FIRST_ARG(q->st.key);
 
 	arg1 = deref(q, arg1, q->st.key_ctx);
 	pl_idx arg1_ctx = q->latest_ctx;
 	cell *arg11 = NULL;
 
 	if (arg1->arity == 1)
-		arg11 = deref(q, arg1+1, arg1_ctx);
+		arg11 = deref(q, FIRST_ARG(arg1), arg1_ctx);
 
 	if (is_iso_atomic(arg1))
 		q->st.karg1_is_ground = true;
@@ -325,7 +325,7 @@ bool has_next_key(query *q)
 	cell *karg1 = NULL;
 
 	if (q->st.karg1_is_ground)
-		karg1 = deref(q, q->st.key+1, q->st.key_ctx);
+		karg1 = deref(q, FIRST_ARG(q->st.key), q->st.key_ctx);
 
 	for (db_entry *next = q->st.curr_dbe->next; next; next = next->next) {
 		cl = &next->cl;
@@ -346,6 +346,12 @@ bool has_next_key(query *q)
 			}
 		}
 
+		//DUMP_TERM("key", q->st.key, q->st.key_ctx, 0);
+		//DUMP_TERM("next", dkey, q->st.curr_frame, 0);
+
+		if (index_cmpkey(q->st.key, dkey, q->st.m, NULL) == 0)
+			return true;
+
 #if 1
 		// This is needed for: tpl -g run ~/retina/retina.pl ~/retina/rdfsurfaces/lubm/lubm.s
 
@@ -355,12 +361,6 @@ bool has_next_key(query *q)
 			)
 			return true;
 #endif
-
-		//DUMP_TERM("key", q->st.key, q->st.key_ctx, 0);
-		//DUMP_TERM("next", dkey, q->st.curr_frame, 0);
-
-		if (index_cmpkey(q->st.key, dkey, q->st.m, NULL) == 0)
-			return true;
 	}
 
 	return false;
@@ -381,10 +381,6 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 	q->st.karg1_is_ground = false;
 
 	if (!pr->idx) {
-
-		// The just_in_time_rebuild of the index is currently disabled
-		// for multifile/dynamic predicates because of why???
-
 		if (!pr->is_processed && !pr->is_multifile && !pr->is_dynamic)
 			just_in_time_rebuild(pr);
 
@@ -393,7 +389,12 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 		q->st.key_ctx = key_ctx;
 
 		if (key->arity) {
-			if (pr->is_dynamic && pr->is_multifile) {
+			if (pr->is_dynamic /*&& pr->is_multifile*/) {
+
+				// Because the key will also be used later
+				// to check for choice-points, we need to
+				// actually clone to the heap...
+
 				q->st.key = deep_clone_to_heap(q, key, key_ctx);
 				q->st.key_ctx = q->st.curr_frame;
 			}
@@ -404,13 +405,14 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 		return true;
 	}
 
-	//sl_dump(pr->idx, dump_key, q);
+	// Because the key is only used once, here,
+	// we only need a temporary clone...
 
 	check_heap_error(init_tmp_heap(q));
 	q->st.key = deep_clone_to_tmp(q, key, key_ctx);
 	q->st.key_ctx = q->st.curr_frame;
 
-	cell *arg1 = q->st.key->arity ? q->st.key + 1 : NULL;
+	cell *arg1 = q->st.key->arity ? FIRST_ARG(q->st.key) : NULL;
 	map *idx = pr->idx;
 
 	if (arg1 && (is_var(arg1) || pr->is_var_in_first_arg)) {
@@ -419,7 +421,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 			return true;
 		}
 
-		cell *arg2 = arg1 + arg1->nbr_cells;
+		cell *arg2 = NEXT_ARG(arg1);
 
 		if (is_var(arg2)) {
 			q->st.curr_dbe = pr->head;
