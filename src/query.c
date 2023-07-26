@@ -317,16 +317,6 @@ static void setup_key(query *q)
 		q->st.karg1_is_ground = true;
 	else if (arg11 && is_atomic(arg11))
 		q->st.karg1_is_ground = true;
-
-	if (arg2 && is_iso_atomic(arg2))
-		q->st.karg2_is_ground = true;
-	else if (arg21 && is_atomic(arg21))
-		q->st.karg2_is_ground = true;
-
-	if (arg3 && is_iso_atomic(arg3))
-		q->st.karg3_is_ground = true;
-	else if (arg31 && is_atomic(arg31))
-		q->st.karg3_is_ground = true;
 }
 
 static void next_key(query *q)
@@ -411,8 +401,6 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 {
 	q->st.iter = NULL;
 	q->st.karg1_is_ground = false;
-	q->st.karg2_is_ground = false;
-	q->st.karg3_is_ground = false;
 
 	if (!pr->idx) {
 
