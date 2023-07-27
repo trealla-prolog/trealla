@@ -458,7 +458,7 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 			p1++; p2++;
 
 			while (arity--) {
-				if (is_var(p1) || is_var(p2)) {
+				if (l && (is_var(p1) || is_var(p2))) {
 					if (map_is_find(l))
 						break;
 
