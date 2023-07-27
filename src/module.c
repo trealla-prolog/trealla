@@ -1396,7 +1396,8 @@ static void assert_commit(module *m, db_entry *dbe, predicate *pr, bool append)
 
 	if (!pr->idx) {
 		unsigned INDEX_THRESHHOLD =
-			(pr->is_dynamic && pr->is_multifile) || (*C_STR(m,&pr->key)== '$')
+			(pr->is_dynamic && pr->is_multifile)
+			|| (*C_STR(m,&pr->key) == '$')
 			? 1500 : 500;
 
 		if (pr->cnt < INDEX_THRESHHOLD)
