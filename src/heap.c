@@ -211,9 +211,6 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 		bool cyclic = false;
 
 		while (is_iso_list(p1)) {
-			if (g_tpl_interrupt)
-				return NULL;
-
 			cell *h = p1 + 1;
 			pl_idx h_ctx = p1_ctx;
 

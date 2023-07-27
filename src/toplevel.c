@@ -473,13 +473,13 @@ void dump_vars(query *q, bool partial)
 		q->numbervars = true;
 		q->max_depth = 9;
 		q->parens = parens;
-
 		e->vgen = q->vgen+1;
 
 		if (!init_tmp_heap(q))
 			return;
 
 		cell *tmp = deep_clone_to_tmp(q, c, c_ctx);
+		ensure(tmp)
 		print_term(q, stdout, tmp, 0, 1);
 
 		if (parens) fputc(')', stdout);
@@ -518,7 +518,6 @@ void dump_vars(query *q, bool partial)
 		any = true;
 	}
 
-	g_tpl_interrupt = false;
 	q->is_dump_vars = false;
 	q->is_input = false;
 
