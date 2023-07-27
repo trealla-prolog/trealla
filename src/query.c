@@ -381,9 +381,6 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 	q->st.karg1_is_ground = false;
 
 	if (!pr->idx) {
-		if (!pr->is_processed && !pr->is_dynamic)
-			just_in_time_rebuild(pr);
-
 		q->st.curr_dbe = pr->head;
 		q->st.key = key;
 		q->st.key_ctx = key_ctx;

@@ -25,7 +25,6 @@ bool needs_quoting(module *m, const char *src, int srclen);
 bool unload_file(module *m, const char *filename);
 void xref_rule(module *m, clause *t, predicate *parent);
 void xref_db(module *m);
-void just_in_time_rebuild(predicate *pr);
 const char *get_loaded(const module *m, const char *filename);
 builtins *get_module_help(module *m, const char *name, unsigned arity, bool *found, bool *evaluable);
 builtins *get_builtin_term(module *m, cell *c, bool *found, bool *evaluable);

@@ -1026,12 +1026,6 @@ bool set_op(module *m, const char *name, unsigned specifier, unsigned priority)
 	tmp->specifier = specifier;
 	m->user_ops = true;
 	map_app(m->ops, tmp->name, tmp);
-
-#if DUMP_KEYS
-	sl_dump(m->ops, dump_key, m);
-	sl_dump(m->defops, dump_key, m);
-#endif
-
 	return true;
 }
 
@@ -1263,18 +1257,6 @@ static void optimize_rule(module *m, db_entry *dbe_orig)
 
 	if (!matched)
 		cl->is_unique = true;
-}
-
-void just_in_time_rebuild(predicate *pr)
-{
-	pr->is_processed = true;
-
-	for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
-		if (dbe->cl.is_deleted)
-			continue;
-
-		optimize_rule(pr->m, dbe);
-	}
 }
 
 static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting)
@@ -1713,7 +1695,6 @@ static bool unload_realfile(module *m, const char *filename)
 
 bool unload_file(module *m, const char *filename)
 {
-	//printf("*** unload_file '%s'\n", filename);
 	size_t len = strlen(filename);
 	char *tmpbuf = malloc(len + 20);
 	ensure(tmpbuf);
@@ -1793,7 +1774,6 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including)
 	if (!p->error && !p->already_loaded_error) {
 		xref_db(p->m);
 		int save = p->m->pl->quiet;
-		//p->m->pl->quiet = true;
 		p->directive = true;
 
 		if (p->run_init) {
@@ -1824,7 +1804,6 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including)
 
 module *load_file(module *m, const char *filename, bool including)
 {
-	//printf("*** load_file '%s'\n", filename);
 	const char *orig_filename = filename;
 
 	if (!strcmp(filename, "user")) {
@@ -2001,20 +1980,6 @@ bool save_file(module *m, const char *filename)
 	fclose(fp);
 	return true;
 }
-
-#if 0
-static void make_rule(module *m, const char *src)
-{
-	m->prebuilt = true;
-	bool save = m->p->consulting;
-	m->p->consulting = true;
-	m->p->srcptr = (char*)src;
-	m->p->line_nbr = 1;
-	tokenize(m->p, false, false);
-	m->prebuilt = false;
-	m->p->consulting = save;
-}
-#endif
 
 void module_destroy(module *m)
 {
