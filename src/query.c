@@ -420,7 +420,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 
 		cell *arg2 = NEXT_ARG(arg1);
 
-		if (is_var(arg2) || pr->is_var_in_second_arg) {
+		if (is_var(arg2) /*|| pr->is_var_in_second_arg*/) {
 			q->st.curr_dbe = pr->head;
 			return true;
 		}
