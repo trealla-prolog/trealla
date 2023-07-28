@@ -1311,7 +1311,7 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 	if (rhs_pri_2 > 0)
 		rhs_parens = true;
 
-	if ((q->last_thing != WAS_SPACE) && space) {
+	if ((q->last_thing != WAS_SPACE) && space && !rhs_parens) {
 		dst += snprintf(dst, dstlen, "%s", " ");
 		q->last_thing = WAS_SPACE;
 	}
