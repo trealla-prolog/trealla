@@ -2320,21 +2320,6 @@ bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 		return match;
 
 	db_entry *dbe = q->st.curr_dbe;
-
-	if (dbe->owner->m->pl != q->pl)
-		return throw_error(q, p1, p1_ctx, "permission_error", "modify,static_procedure");
-
-#if 0
-	if (dbe->owner->is_multifile
-		&& (is_retract == DO_RETRACTALL)
-		&& strcmp(q->st.m->filename, dbe->filename)
-		&& !strcmp(q->st.m->filename, "user")
-		) {
-		//printf("*** RETRACT? %s : %s/%u multifile=%d, dynamic=%d, m->filename=%s\n", dbe->filename, C_STR(q->st.m, &dbe->owner->key), dbe->owner->key.arity, dbe->owner->is_multifile, dbe->owner->is_dynamic, q->st.m->filename);
-		return true;
-	}
-#endif
-
 	retract_from_db(dbe);
 	bool last_match = (is_retract == DO_RETRACT) && !has_next_key(q);
 	stash_me(q, &dbe->cl, last_match);
@@ -2397,9 +2382,6 @@ static bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 	if (!pr) return true;
 
 	if (!pr->is_dynamic)
-		return throw_error(q, c_orig, q->st.curr_frame, "permission_error", "modify,static_procedure");
-
-	if (pr->m->pl != q->pl)
 		return throw_error(q, c_orig, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
 	for (db_entry *dbe = pr->head; dbe; dbe = dbe->next)
