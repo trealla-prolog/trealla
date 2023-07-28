@@ -613,19 +613,7 @@ static void leave_predicate(query *q, predicate *pr)
 		if (pr->idx && !pr->cnt) {
 			map_destroy(pr->idx2);
 			map_destroy(pr->idx);
-			pr->idx2 = NULL;
-
-#if 0
-			pr->idx = map_create(index_cmpkey, NULL, pr->m);
-			ensure(pr->idx);
-			map_allow_dups(pr->idx, true);
-
-			if (pr->key.arity > 1) {
-				pr->idx2 = map_create(index_cmpkey, NULL, pr->m);
-				ensure(pr->idx2);
-				map_allow_dups(pr->idx2, true);
-			}
-#endif
+			pr->idx = pr->idx2 = NULL;
 		}
 	} else {
 		db_entry *dbe = pr->dirty_list;
