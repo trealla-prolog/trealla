@@ -1196,7 +1196,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 		// Prefix...
 
 		if (is_fx(c)) {
-			cell *rhs = c + 1;
+			const cell *rhs = c + 1;
 
 			if (is_fx(rhs) && !rhs->arity && (rhs->priority == c->priority) && !is_quoted(rhs)) {
 				if (DUMP_ERRS || !p->do_read_term)
@@ -1221,7 +1221,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 		}
 
 		if (is_prefix(c)) {
-			cell *rhs = c + 1;
+			const cell *rhs = c + 1;
 
 			if (is_infix(rhs) && !rhs->arity && (rhs->priority > c->priority) && !is_quoted(rhs)) {
 				if (DUMP_ERRS || !p->do_read_term)
@@ -1243,7 +1243,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 		}
 
 		if (is_prefix(c)) {
-			cell *rhs = c + 1;
+			const cell *rhs = c + 1;
 			pl_idx off = (pl_idx)(rhs - p->cl->cells);
 
 			if (off > end_idx) {
@@ -1261,7 +1261,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 
 		// Postfix...
 
-		cell *rhs = c + 1;
+		const cell *rhs = c + 1;
 		cell save = *c;
 
 		if (is_xf(rhs) && (rhs->priority == c->priority) && !is_quoted(rhs)) {
@@ -1319,7 +1319,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			return false;
 		}
 
-		cell *lhs = p->cl->cells + last_idx;
+		const cell *lhs = p->cl->cells + last_idx;
 
 		if (is_infix(lhs) && !lhs->arity && !is_quoted(lhs)) {
 			if (DUMP_ERRS || !p->do_read_term)
