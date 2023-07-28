@@ -1244,7 +1244,6 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 
 		if (is_prefix(c)) {
 			cell *rhs = c + 1;
-			c->nbr_cells += rhs->nbr_cells;
 			pl_idx off = (pl_idx)(rhs - p->cl->cells);
 
 			if (off > end_idx) {
@@ -1256,6 +1255,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 				return false;
 			}
 
+			c->nbr_cells += rhs->nbr_cells;
 			break;
 		}
 
