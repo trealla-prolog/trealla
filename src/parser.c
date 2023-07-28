@@ -3413,7 +3413,9 @@ unsigned tokenize(parser *p, bool args, bool consing)
 
 			int nextch = *s;
 
-			if ((nextch == ',')
+			/*if (IS_PREFIX(specifier) && p->symbol && SB_strcmp(p->token, ":-"))
+				;
+			else*/ if ((nextch == ',')
 				|| (nextch == ';')
 				|| (nextch == ')')
 				|| (nextch == '|')
