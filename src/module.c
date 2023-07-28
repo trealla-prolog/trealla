@@ -1413,9 +1413,6 @@ static void assert_commit(module *m, db_entry *dbe, predicate *pr, bool append)
 	if (arg1 && is_var(arg1))
 		pr->is_var_in_first_arg = true;
 
-	if (arg2 && is_var(arg2))
-		pr->is_var_in_second_arg = true;
-
 	if (!append) {
 		map_set(pr->idx, c, dbe);
 
