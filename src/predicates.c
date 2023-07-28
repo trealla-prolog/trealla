@@ -2354,8 +2354,6 @@ static bool fn_iso_retractall_1(query *q)
 		retry_choice(q);
 	}
 
-	//purge_predicate_dirty_list(q, pr);
-
 	if (pr->idx && !pr->cnt) {
 		purge_predicate_dirty_list(q, pr);
 		map_destroy(pr->idx2);

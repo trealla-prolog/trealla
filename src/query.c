@@ -572,18 +572,10 @@ static void enter_predicate(query *q, predicate *pr)
 
 static void leave_predicate(query *q, predicate *pr)
 {
-	if (!pr)
+	if (!pr || !pr->is_dynamic || !pr->refcnt)
 		return;
 
-	if (!pr->is_dynamic)
-		return;
-
-	if (!pr->refcnt)
-		return;
-
-	--pr->refcnt;
-
-	if (pr->refcnt != 0)
+	if (--pr->refcnt != 0)
 		return;
 
 	// Predicate is no longer being used
@@ -596,15 +588,15 @@ static void leave_predicate(query *q, predicate *pr)
 		// mean there are no shared references to terms contained
 		// within. So move items on the dirty-list to the query
 		// dirty-list. They will be freed up at end of the query.
-		// FIXME: this is a memory leak.
+		// FIXME: this is a memory drain.
 
 		db_entry *dbe = pr->dirty_list;
 
 		while (dbe) {
 			delink(pr, dbe);
 
-			if (pr->cnt) {
-				predicate *pr = dbe->owner;
+			if (pr->idx && pr->cnt) {
+				//predicate *pr = dbe->owner;
 				map_remove(pr->idx2, dbe);
 				map_remove(pr->idx, dbe);
 			}
@@ -623,6 +615,7 @@ static void leave_predicate(query *q, predicate *pr)
 			map_destroy(pr->idx);
 			pr->idx2 = NULL;
 
+#if 0
 			pr->idx = map_create(index_cmpkey, NULL, pr->m);
 			ensure(pr->idx);
 			map_allow_dups(pr->idx, true);
@@ -632,6 +625,7 @@ static void leave_predicate(query *q, predicate *pr)
 				ensure(pr->idx2);
 				map_allow_dups(pr->idx2, true);
 			}
+#endif
 		}
 	} else {
 		db_entry *dbe = pr->dirty_list;

@@ -312,13 +312,6 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 
 static void destroy_predicate(module *m, predicate *pr)
 {
-#if 0
-	if (pr->cnt != 0) {
-		printf("*** Warning: unreleased (%u) predicate '%s'/%u\n",
-		(unsigned)pr->cnt, C_STR(m, &pr->key), pr->key.arity);
-	}
-#endif
-
 	map_del(m->index, &pr->key);
 
 	for (db_entry *dbe = pr->head; dbe;) {
@@ -1505,7 +1498,7 @@ static bool retract_from_predicate(db_entry *dbe)
 	dbe->filename = NULL;
 	pr->cnt--;
 
-	if (pr->idx && !pr->cnt && 0) {
+	if (pr->idx && !pr->cnt && !pr->refcnt) {
 		map_destroy(pr->idx2);
 		map_destroy(pr->idx);
 		pr->idx2 = NULL;
@@ -1656,11 +1649,6 @@ module *load_text(module *m, const char *src, const char *filename)
 static bool unload_realfile(module *m, const char *filename)
 {
 	for (predicate *pr = m->head; pr; pr = pr->next) {
-#if 0
-		if (pr->is_multifile || pr->is_dynamic)
-			continue;
-#endif
-
 		if (pr->filename && strcmp(pr->filename, filename))
 			continue;
 

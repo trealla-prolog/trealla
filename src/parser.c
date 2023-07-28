@@ -834,7 +834,7 @@ static bool directives(parser *p, cell *d)
 			if (!strcmp(dirname, "dynamic")) {
 				predicate * pr = find_predicate(p->m, &tmp);
 
-				if (pr && !pr->is_dynamic && pr->cnt) {
+				if (pr && !pr->is_dynamic && pr->head) {
 					if (DUMP_ERRS || !p->do_read_term)
 						fprintf(stdout, "Error: no permission to modify static predicate %s:%s/%u, %s:%d\n", p->m->name, C_STR(p->m, c_name), arity, get_loaded(p->m, p->m->filename), p->line_nbr);
 
@@ -926,7 +926,7 @@ static bool directives(parser *p, cell *d)
 			else if (!strcmp(dirname, "dynamic")) {
 				predicate * pr = find_predicate(p->m, &tmp);
 
-				if (pr && !pr->is_dynamic && pr->cnt) {
+				if (pr && !pr->is_dynamic && pr->head) {
 					if (DUMP_ERRS || !p->do_read_term)
 						fprintf(stdout, "Error: no permission to modify static predicate %s:%s/%u, %s:%d\n", m->name, C_STR(p->m, c_name), arity, get_loaded(p->m, p->m->filename), p->line_nbr);
 
@@ -1467,7 +1467,7 @@ static bool term_expansion(parser *p)
 
 	predicate *pr = find_functor(p->m, "term_expansion", 2);
 
-	if (!pr || !pr->cnt)
+	if (!pr || !pr->head)
 		return false;
 
 	cell *h = get_head(p->cl->cells);
@@ -1552,7 +1552,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 	predicate *pr = find_functor(p->m, "goal_expansion", 2);
 
-	if (!pr || !pr->cnt)
+	if (!pr || !pr->head)
 		return goal;
 
 	if (get_builtin_term(p->m, goal, NULL, NULL) /*|| is_op(goal)*/)
