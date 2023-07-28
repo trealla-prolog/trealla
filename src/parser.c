@@ -3505,7 +3505,6 @@ unsigned tokenize(parser *p, bool args, bool consing)
 		SET_OP(c,specifier);
 		c->priority = priority;
 		bool found = false;
-
 		last_num = is_number(c);
 
 		if (is_bigint(&p->v)) {
