@@ -3446,11 +3446,6 @@ unsigned tokenize(parser *p, bool args, bool consing)
 
 		is_func = last_op && is_interned(&p->v) && !specifier && !last_num && (*p->srcptr == '(');
 
-#if 0
-		printf("*** =%s, last_op=%d, p->is_op=%d, is_func=%d, prefix=%d\n",
-			SB_cstr(p->token), last_op, p->is_op, is_func, IS_PREFIX(specifier));
-#endif
-
 		if (!is_func && last_op && (args && priority >= 1200) && !p->is_quoted) {
 			if (DUMP_ERRS || !p->do_read_term)
 				fprintf(stdout, "Error: syntax error, parens needed around operator '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
