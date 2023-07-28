@@ -109,6 +109,7 @@ module *find_module(prolog *pl, const char *name)
 }
 
 bool get_halt(prolog *pl) { return pl->halt; }
+bool get_error(prolog *pl) { return pl->error; }
 bool get_status(prolog *pl) { return pl->status; }
 bool get_redo(prolog *pl) { return pl->is_redo; }
 bool did_dump_vars(prolog *pl) { return pl->did_dump_vars; }

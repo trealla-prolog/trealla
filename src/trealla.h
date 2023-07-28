@@ -22,6 +22,7 @@ extern bool pl_redo(pl_sub_query *q);
 extern bool pl_done(pl_sub_query *q);	// only call if redo still active
 
 extern int get_halt_code(prolog*);
+extern bool get_error(prolog*);
 extern bool get_halt(prolog*);
 extern bool get_status(prolog*);
 extern bool get_redo(prolog*);

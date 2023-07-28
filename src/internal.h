@@ -816,6 +816,7 @@ struct prolog_ {
 	bool is_query:1;
 	bool halt:1;
 	bool status:1;
+	bool error:1;
 	bool did_dump_vars:1;
 	bool quiet:1;
 	bool noindex:1;

@@ -3578,8 +3578,10 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 		p->one_shot = true;
 		p->consulting = false;
 
-		if (!tokenize(p, false, false))
+		if (!tokenize(p, false, false)) {
+			p->m->pl->error = p->error;
 			break;
+		}
 
 		if (!p->cl->cidx)
 			break;
@@ -3592,6 +3594,7 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 		if (p->error) {
 			p->pl->did_dump_vars = true;
 			p->srcptr = NULL;
+			p->m->pl->error = p->error;
 			SB_free(src);
 			return false;
 		}
@@ -3626,6 +3629,7 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 		p->m->pl->halt = q->halt;
 		p->m->pl->halt_code = q->halt_code;
 		p->m->pl->status = q->status;
+		p->m->pl->error = q->error;
 		p->m->pl->is_redo = q->is_redo;
 
 		ok = !q->error;
