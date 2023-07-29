@@ -1163,7 +1163,7 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 		dst += plain(dst, dstlen, src, srclen);
 		if (quote) dst += snprintf(dst, dstlen, "%s", quote?"' ":"");
 
-		if (space) {
+		if (space || parens) {
 			dst += snprintf(dst, dstlen, "%s", " ");
 			q->last_thing = WAS_SPACE;
 		}
