@@ -31,7 +31,8 @@ bool fn_sys_drop_barrier_1(query *q)
 
 void do_cleanup(query *q, cell *c, pl_idx c_ctx)
 {
-	cell *tmp2 = deep_clone_to_heap(q, c, c_ctx);
+	ensure(init_tmp_heap(q));
+	cell *tmp2 = deep_clone_to_tmp(q, c, c_ctx);
 	ensure(tmp2);
 	cell *tmp = clone_to_heap(q, true, tmp2, 2);
 	ensure(tmp);
