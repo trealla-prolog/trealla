@@ -311,33 +311,35 @@ bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n)
 
 static bool fn_iso_findall_3(query *q)
 {
-	GET_FIRST_ARG(xp1,any);
-	GET_NEXT_ARG(xp2,callable);
-	GET_NEXT_ARG(xp3,list_or_nil_or_var);
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,callable);
+	GET_NEXT_ARG(p3,list_or_nil_or_var);
 
 	if (!q->retry) {
 		bool is_partial = false;
 
 		// This checks for a valid list (it allows for partial but acyclic lists)...
 
-		if (is_iso_list(xp3) && !check_list(q, xp3, xp3_ctx, &is_partial, NULL) && !is_partial)
-			return throw_error(q, xp3, xp3_ctx, "type_error", "list");
+		if (is_iso_list(p3) && !check_list(q, p3, p3_ctx, &is_partial, NULL) && !is_partial)
+			return throw_error(q, p3, p3_ctx, "type_error", "list");
 
 		cell *p0;
 
-		if (is_structure(xp1) && !is_iso_list(xp1)) {	// Why is this necessary?
+		if (is_structure(p1) && !is_iso_list(p1)) {	// Why is this necessary?
 			p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, false);
 			check_heap_error(p0);
 			unify(q, q->st.curr_cell, q->st.curr_frame, p0, q->st.curr_frame);
-		} else
-			p0 = q->st.curr_cell;
+			GET_FIRST_ARG0(xp1,any,p0);
+			GET_NEXT_ARG(xp2,any);
+			p1 = xp1;
+			p2 = xp2;
+			p2_ctx = xp2_ctx;
+		}
 
-		GET_FIRST_ARG0(p1,any,p0);
-		GET_NEXT_ARG(p2,any);
 		grab_queuen(q);
 
 		if (q->st.qnbr == MAX_QUEUES)
-			return throw_error(q, xp2, xp2_ctx, "resource_error", "max_queues");
+			return throw_error(q, p2, p2_ctx, "resource_error", "max_queues");
 
 		cell *tmp = prepare_call(q, true, p2, p2_ctx, 1+p1->nbr_cells+2);
 		check_heap_error(tmp);
@@ -353,7 +355,7 @@ static bool fn_iso_findall_3(query *q)
 
 	if (!queuen_used(q)) {
 		drop_queuen(q);
-		return unify(q, xp3, xp3_ctx, make_nil(), q->st.curr_frame);
+		return unify(q, p3, p3_ctx, make_nil(), q->st.curr_frame);
 	}
 
 	// Retry takes the queue
@@ -379,7 +381,7 @@ static bool fn_iso_findall_3(query *q)
 	free(solns);
 	cell *l = end_list(q);
 	check_heap_error(l);
-	return unify(q, xp3, xp3_ctx, l, q->st.curr_frame);
+	return unify(q, p3, p3_ctx, l, q->st.curr_frame);
 }
 
 static bool fn_iso_unify_with_occurs_check_2(query *q)
