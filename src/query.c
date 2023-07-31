@@ -1916,7 +1916,7 @@ query *query_create_subquery(query *q, cell *curr_cell)
 	subq->is_task = true;
 	subq->p = q->p;
 
-	cell *tmp = clone_to_heap(subq, false, curr_cell, q->st.curr_frame, 1);
+	cell *tmp = prepare_call(subq, false, curr_cell, q->st.curr_frame, 1);
 	pl_idx nbr_cells = tmp->nbr_cells;
 	make_end(tmp+nbr_cells);
 	subq->st.curr_cell = tmp;

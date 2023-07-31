@@ -6945,7 +6945,7 @@ static bool fn_with_mutex_2(query *q)
 	if (check_body_callable(tmp2) != NULL)
 		return throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
 
-	cell *tmp = clone_to_heap(q, true, tmp2, p1_ctx, 3);
+	cell *tmp = prepare_call(q, true, tmp2, p1_ctx, 3);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = 1+tmp2->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_1, 1, 1);
@@ -7037,7 +7037,7 @@ static bool fn_engine_create_4(query *q)
 	GET_FIRST_ARG0(xp1,any,p0);
 	GET_NEXT_ARG(xp2,callable);
 
-	cell *tmp = clone_to_heap(q, true, xp2, xp2_ctx, 1);
+	cell *tmp = prepare_call(q, true, xp2, xp2_ctx, 1);
 	pl_idx nbr_cells = 1 + xp2->nbr_cells;
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
