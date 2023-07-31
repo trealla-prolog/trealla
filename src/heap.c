@@ -366,9 +366,9 @@ cell *clone_to_tmp(query *q, cell *p1)
 
 cell *prepare_call(query *q, bool prefix, cell *p1, pl_idx p1_ctx, unsigned extras)
 {
-	cell *tmp = alloc_on_heap(q, (prefix?1:0)+(unsigned)p1->nbr_cells+extras);
+	unsigned nbr_cells = (prefix?1:0) + p1->nbr_cells + extras;
+	cell *tmp = alloc_on_heap(q, nbr_cells);
 	if (!tmp) return NULL;
-	const frame *f = GET_CURR_FRAME();
 
 	if (prefix) {
 		// Needed for follow() to work
@@ -385,7 +385,7 @@ cell *prepare_call(query *q, bool prefix, cell *p1, pl_idx p1_ctx, unsigned extr
 		tmp->fn_ptr = s_fn_ptr;
 	}
 
-	cell *src = p1, *dst = tmp+(prefix?1:0);
+	cell *src = p1, *dst = tmp + (prefix?1:0);
 
 	for (pl_idx i = 0; i < p1->nbr_cells; i++, dst++) {
 		*dst = *src++;

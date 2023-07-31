@@ -339,7 +339,6 @@ static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 		return true;
 	}
 
-	const frame *f = GET_CURR_FRAME();
 	cell *tmp = prepare_call(q, true, p1, q->st.curr_frame, 1+p2->nbr_cells+1);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = 1 + p1->nbr_cells;
