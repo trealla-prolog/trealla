@@ -989,7 +989,7 @@ void prune(query *q, bool soft_cut, pl_idx cp)
 		choice *ch = GET_CURR_CHOICE();
 		const choice *save_ch = ch;
 
-		while (soft_cut && (ch > q->choices)) {
+		while (soft_cut && (ch >= q->choices)) {
 			if ((q->cp-1) == cp) {
 				if (ch == save_ch) {
 					leave_predicate(q, ch->st.pr);
@@ -1003,11 +1003,11 @@ void prune(query *q, bool soft_cut, pl_idx cp)
 				return;
 			}
 
+			if (ch == q->choices)
+				return;
+
 			ch--;
 		}
-
-		if (ch == q->choices)
-			return;
 
 		// A prune can break through a barrier...
 
