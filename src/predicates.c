@@ -325,7 +325,7 @@ static bool fn_iso_findall_3(query *q)
 
 		cell *p0;
 
-		if (is_structure(xp1) && !is_list(xp1)) {	// Why is this necessary?
+		if (is_structure(xp1) && !is_iso_list(xp1)) {	// Why is this necessary?
 			p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, false);
 			check_heap_error(p0);
 			unify(q, q->st.curr_cell, q->st.curr_frame, p0, q->st.curr_frame);
