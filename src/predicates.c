@@ -323,10 +323,8 @@ static bool fn_iso_findall_3(query *q)
 		if (is_iso_list(p3) && !check_list(q, p3, p3_ctx, &is_partial, NULL) && !is_partial)
 			return throw_error(q, p3, p3_ctx, "type_error", "list");
 
-		cell *p0;
-
 		if (is_structure(p1) && !is_iso_list(p1)) {	// Why is this necessary?
-			p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, false);
+			cell *p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, false);
 			check_heap_error(p0);
 			unify(q, q->st.curr_cell, q->st.curr_frame, p0, q->st.curr_frame);
 			GET_FIRST_ARG0(xp1,any,p0);
