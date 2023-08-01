@@ -1573,8 +1573,6 @@ static bool fn_iso_close_1(query *q)
 	parser_destroy(str->p);
 	str->p = NULL;
 
-	//printf("*** close %s\n", str->filename);
-
 	if ((str->fp == stdin)
 		|| (str->fp == stdout)
 		|| (str->fp == stderr))
@@ -1749,7 +1747,7 @@ static bool fn_iso_nl_0(query *q)
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
 	fputc('\n', str->fp);
-	//fflush(str->fp);
+	fflush(str->fp);
 	return !ferror(str->fp);
 }
 
@@ -1763,7 +1761,11 @@ static bool fn_iso_nl_1(query *q)
 		return throw_error(q, pstr, q->st.curr_frame, "permission_error", "output,stream");
 
 	fputc('\n', str->fp);
-	//fflush(str->fp);
+	int err = fflush(str->fp);
+
+	if (err == EOF)
+		return throw_error(q, pstr, pstr_ctx, "io_error", strerror(errno));
+
 	return !ferror(str->fp);
 }
 
