@@ -1738,7 +1738,11 @@ static bool fn_iso_flush_output_1(query *q)
 	if (!strcmp(str->mode, "read"))
 		return throw_error(q, pstr, q->st.curr_frame, "permission_error", "output,stream");
 
-	fflush(str->fp);
+	int err = fflush(str->fp);
+
+	if (err == EOF)
+		return throw_error(q, pstr, pstr_ctx, "io_error", strerror(errno));
+
 	return !ferror(str->fp);
 }
 
