@@ -1627,7 +1627,7 @@ static bool fn_iso_close_1(query *q)
 	str->at_end_of_file = true;
 
 	if (!ok)
-		return throw_error(q, pstr, pstr_ctx, "io_error", "file_system_error");
+		return throw_error(q, pstr, pstr_ctx, "io_error", strerror(errno));
 
 	return true;
 }
