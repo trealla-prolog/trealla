@@ -1607,6 +1607,8 @@ static bool fn_iso_close_1(query *q)
 	if (!str->socket)
 		del_stream_properties(q, n);
 
+	bool ok = true;
+
 	if (str->is_map) {
 		map_destroy(str->keyval);
 		str->keyval = NULL;
@@ -1614,7 +1616,7 @@ static bool fn_iso_close_1(query *q)
 		query_destroy(str->engine);
 		str->engine = NULL;
 	} else
-		net_close(str);
+		ok = !net_close(str);
 
 	map_destroy(str->alias);
 	str->alias = NULL; //map_create((void*)fake_strcmp, (void*)keyfree, NULL);
@@ -1623,6 +1625,10 @@ static bool fn_iso_close_1(query *q)
 	free(str->data);
 	str->filename = NULL;
 	str->at_end_of_file = true;
+
+	if (!ok)
+		return throw_error(q, pstr, pstr_ctx, "io_error", "file_system_error");
+
 	return true;
 }
 
@@ -2356,8 +2362,10 @@ static bool fn_iso_write_2(query *q)
 	print_term_to_stream(q, str, p1, p1_ctx, 1);
 	q->numbervars = false;
 
-	if (isatty(fileno(str->fp)))
-		fflush(str->fp);
+	if (isatty(fileno(str->fp))) {
+		if (fflush(str->fp))
+			return false;
+	}
 
 	return !ferror(str->fp);
 }

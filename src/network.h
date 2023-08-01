@@ -17,4 +17,4 @@ extern int net_getline(char **lineptr, size_t *n, stream *str);
 extern int net_peekc(stream *str);
 extern int net_getc(stream *str);
 extern size_t net_write(const void *ptr, size_t nbytes, stream *str);
-extern void net_close(stream *str);
+extern int net_close(stream *str);
