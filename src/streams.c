@@ -1725,7 +1725,11 @@ static bool fn_iso_flush_output_0(query *q)
 {
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
-	fflush(str->fp);
+	int err = fflush(str->fp);
+
+	if (err == EOF)
+		return throw_error(q, q->st.curr_cell, q->st.curr_frame, "io_error", strerror(errno));
+
 	return !ferror(str->fp);
 }
 
@@ -1751,7 +1755,11 @@ static bool fn_iso_nl_0(query *q)
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
 	fputc('\n', str->fp);
-	fflush(str->fp);
+	int err = fflush(str->fp);
+
+	if (err == EOF)
+		return throw_error(q, q->st.curr_cell, q->st.curr_frame, "io_error", strerror(errno));
+
 	return !ferror(str->fp);
 }
 
