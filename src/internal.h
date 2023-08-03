@@ -443,13 +443,14 @@ struct db_entry_ {
 };
 
 struct predicate_ {
+	cell key;
 	predicate *prev, *next, *alias;
 	db_entry *head, *tail;
 	module *m;
 	map *idx, *idx2;
 	db_entry *dirty_list;
 	const char *filename;
-	cell key;
+	cell *meta_args;
 	uint64_t cnt, refcnt, db_id;
 	bool is_reload:1;
 	bool is_prebuilt:1;

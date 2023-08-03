@@ -386,7 +386,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 		q->st.key_ctx = key_ctx;
 
 		if (key->arity) {
-			if (pr->is_dynamic && pr->is_multifile) {
+			if (pr->is_dynamic || pr->is_multifile) {
 
 				// Because the key will also be used later
 				// to check for choice-points, we need to
