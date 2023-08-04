@@ -706,10 +706,10 @@ Examples...
 ```
 
 
-Application maps
-================
+Application maps (dictionaries)
+===============================
 
-Maps use atomic key/values only.
+Maps use atomic key/value pairs only.
 
 	map_create/2					# map_create(-map,+opts)
 	map_create/1					# map_create(-map)
