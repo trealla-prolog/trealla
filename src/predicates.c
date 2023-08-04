@@ -390,7 +390,7 @@ static bool fn_iso_unify_with_occurs_check_2(query *q)
 	q->flags.occurs_check = OCCURS_CHECK_TRUE;
 	bool ok = unify(q, p1, p1_ctx, p2, p2_ctx);
 	q->flags.occurs_check = save;
-	return ok ? true : false;
+	return ok;
 }
 
 bool fn_iso_unify_2(query *q)
@@ -407,7 +407,7 @@ bool fn_iso_unify_2(query *q)
 			return throw_error(q, p2, p2_ctx, "representation_error", "term");
 	}
 
-	return ok ? true : false;
+	return ok;
 }
 
 static bool fn_iso_notunify_2(query *q)
