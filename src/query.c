@@ -1606,6 +1606,7 @@ bool start(query *q)
 		q->run_hook = false;
 
 		if (q->is_oom) {
+			check_pressure(q);
 			q->is_oom = q->error = false;
 
 			if (!q->did_throw)
