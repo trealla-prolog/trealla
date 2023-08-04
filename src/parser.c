@@ -2591,21 +2591,6 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		} else if ((p->quote_char == '"') && p->flags.double_quote_chars)
 			p->string = true;
 
-		if (p->string && !p->flags.json && (*src == p->quote_char) && (*src == '"')) {
-			SB_strcpy(p->token, "[]");
-			src++;
-			p->was_string = true;
-			p->string = false;
-			p->srcptr = (char*)src;
-			int ch = peek_char_utf8(src);
-
-			if (!check_space_before_function(p, ch, src))
-				return false;
-
-			src = p->srcptr;
-			return true;
-		}
-
 		for (;;) {
 			for (int ch; (ch = get_char_utf8(&src));) {
 				if (ch == '\n') {
@@ -2672,6 +2657,14 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 				src = p->srcptr = p->save_line;
 				continue;
+			}
+
+			if (p->string && !p->flags.json && !SB_strlen(p->token)) {
+				SB_strcpy(p->token, "[]");
+				p->was_string = true;
+				p->string = false;
+				p->srcptr = (char*)src;
+				return true;
 			}
 
 			if (!p->string
