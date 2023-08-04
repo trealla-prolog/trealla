@@ -340,13 +340,13 @@ static bool fn_iso_findall_3(query *q)
 			return throw_error(q, p2, p2_ctx, "resource_error", "max_queues");
 
 		cell *tmp = prepare_call(q, true, p2, p2_ctx, 1+p1->nbr_cells+2);
-		check_heap_error(tmp);
+		check_heap_error(tmp, drop_queuen(q));
 		pl_idx nbr_cells = 1 + p2->nbr_cells;
 		make_struct(tmp+nbr_cells++, g_sys_queue_s, fn_sys_queue_1, 1, p1->nbr_cells);
 		nbr_cells += copy_cells(tmp+nbr_cells, p1, p1->nbr_cells);
 		make_struct(tmp+nbr_cells++, g_fail_s, fn_iso_fail_0, 0, 0);
 		make_call(q, tmp+nbr_cells);
-		check_heap_error(push_barrier(q));
+		check_heap_error(push_barrier(q), drop_queuen(q));
 		q->st.curr_cell = tmp;
 		return true;
 	}
