@@ -863,7 +863,7 @@ LOOP:
 
 		fast = term_next(q, fast, &fast_ctx, &done);
 
-		if (is_string(fast)) {
+		if (is_string(slow)) {
 			head = fast;
 			max -= cnt + 1;
 			max += 1;
