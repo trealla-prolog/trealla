@@ -709,7 +709,8 @@ Examples...
 Application maps (dictionaries)
 ===============================
 
-Maps use atomic key/value pairs only.
+Maps use atomic key/value pairs only and are represented as
+pseudo-streams:
 
 	map_create/2					# map_create(-map,+opts)
 	map_create/1					# map_create(-map)
