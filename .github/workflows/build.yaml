@@ -62,11 +62,13 @@
           run: make test
         - name: Make Windows-friendly
           run: |
-            cp ${MINGW_PREFIX}/bin/{libcrypto-3-x64.dll,libssl-3-x64.dll,libffi-8.dll} .
+            cp ${MINGW_PREFIX}/bin/{libcrypto-3-x64.dll,libssl-3-x64.dll,libffi-8.dll,libdl.dll} .
             echo -e "\n\nOpenSSL (libcrypto-3-x64.dll, libssl-3-x64.dll):\n" >> ATTRIBUTION
             cat ${MINGW_PREFIX}/share/licenses/openssl/LICENSE >> ATTRIBUTION
             echo -e "\n\nlibffi: (libffi-8.dll)\n" >> ATTRIBUTION
             cat ${MINGW_PREFIX}/share/licenses/libffi/LICENSE >> ATTRIBUTION
+            echo -e "\n\dlfcn: (libdl.dll)\n" >> ATTRIBUTION
+            cat ${MINGW_PREFIX}/share/licenses/dlfcn/LICENSE >> ATTRIBUTION
             echo -e "\n\nisocline:\n" >> ATTRIBUTION
             cat src/isocline/LICENSE >> ATTRIBUTION
             if [ ! -f "tpl.exe" ]; then
@@ -86,6 +88,7 @@
               libcrypto-3-x64.dll
               libssl-3-x64.dll
               libffi-8.dll
+              libdl.dll
 
     # Roughly matches https://github.com/WebAssembly/wasi-sdk#install
     wasm:
