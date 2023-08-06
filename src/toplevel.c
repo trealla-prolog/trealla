@@ -473,6 +473,7 @@ void dump_vars(query *q, bool partial)
 		q->numbervars = true;
 		q->max_depth = 9;
 		q->parens = parens;
+		q->double_quotes = true;
 		e->vgen = q->vgen+1;
 
 		if (!init_tmp_heap(q))
@@ -485,6 +486,7 @@ void dump_vars(query *q, bool partial)
 		if (parens) fputc(')', stdout);
 		if (q->last_thing == WAS_SYMBOL) space = true;
 		if (q->did_quote) space = false;
+		q->double_quotes = false;
 		q->quoted = saveq;
 		q->numbervars = false;
 		q->parens = false;

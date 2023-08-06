@@ -488,7 +488,7 @@ ssize_t print_variable(query *q, char *dst, size_t dstlen, const cell *c, pl_idx
 	return dst - save_dst;
 }
 
-static ssize_t print_string_list(query *q, char *save_dst, char *dst, size_t dstlen, cell *c, pl_idx c_ctx, int running, bool cons, unsigned depth)
+static ssize_t print_string_canonical(query *q, char *save_dst, char *dst, size_t dstlen, cell *c, pl_idx c_ctx, int running, bool cons, unsigned depth)
 {
 	unsigned print_list = 0, cnt = 1;
 	LIST_HANDLER(c);
@@ -522,6 +522,36 @@ static ssize_t print_string_list(query *q, char *save_dst, char *dst, size_t dst
 	while (cnt--)
 		dst += snprintf(dst, dstlen, "%s", ")");
 
+	return dst - save_dst;
+}
+
+static ssize_t print_string_list(query *q, char *save_dst, char *dst, size_t dstlen, cell *c, pl_idx c_ctx, int running, bool cons, unsigned depth)
+{
+	LIST_HANDLER(c);
+	dst += snprintf(dst, dstlen, "%s", "[");
+
+	while (is_list(c)) {
+		cell *h = LIST_HEAD(c);
+
+		const char *src = C_STR(q, h);
+		int ch = peek_char_utf8(src);
+
+		if (needs_quoting(q->st.m, src, strlen(src)) && q->quoted) {
+			dst += snprintf(dst, dstlen, "%s", "'");
+			dst += formatted(dst, dstlen, C_STR(q, h), C_STRLEN(q, h), false, false);
+			dst += snprintf(dst, dstlen, "%s", "'");
+		} else
+			dst += snprintf(dst, dstlen, "%s", C_STR(q, h));
+
+		c = LIST_TAIL(c);
+
+		if (!is_list(c))
+			break;
+
+		dst += snprintf(dst, dstlen, "%s", ",");
+	}
+
+	dst += snprintf(dst, dstlen, "%s", "]");
 	return dst - save_dst;
 }
 
@@ -598,7 +628,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 		if (parens) dst += snprintf(dst, dstlen, "%s", ")");
 		bool possible_chars = false;
 
-		if (is_interned(head) && (C_STRLEN_UTF8(head) == 1))
+		if (is_interned(head) && (C_STRLEN_UTF8(head) == 1) && q->double_quotes)
 			possible_chars = true;
 
 		cell *tail = LIST_TAIL(c);
@@ -668,7 +698,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 				cons = true;
 				continue;
 			}
-		} else if (is_string(tail)) {
+		} else if (is_string(tail) && q->double_quotes) {
 			dst+= snprintf(dst, dstlen, "%s", "|\"");
 			dst += formatted(dst, dstlen, C_STR(q, tail), C_STRLEN(q, tail), true, false);
 			dst += snprintf(dst, dstlen, "%s", "\"");
@@ -850,7 +880,7 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 		return dst - save_dst;
 	}
 
-	if (is_string(c) && !q->ignore_ops) {
+	if (is_string(c) && !q->ignore_ops && q->double_quotes) {
 		dst += snprintf(dst, dstlen, "%s", "\"");
 		dst += formatted(dst, dstlen, C_STR(q, c), C_STRLEN(q, c), true, q->json);
 		dst += snprintf(dst, dstlen, "%s", "\"");
@@ -859,15 +889,21 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 	}
 
 	if (is_string(c) && q->ignore_ops) {
+		ssize_t n = print_string_canonical(q, save_dst, dst, dstlen, c, c_ctx, running, cons > 0, depth+1);
+		q->last_thing = WAS_OTHER;
+		return n;
+	}
+
+	if (is_string(c) && !q->double_quotes) {
 		ssize_t n = print_string_list(q, save_dst, dst, dstlen, c, c_ctx, running, cons > 0, depth+1);
 		q->last_thing = WAS_OTHER;
 		return n;
 	}
 
-	int is_chars_list = is_string(c);
+	int is_chars_list = is_string(c) && q->double_quotes;
 	bool possible_chars = false;
 
-	if (is_interned(c) && (C_STRLEN_UTF8(c) == 1) && !q->ignore_ops)
+	if (is_interned(c) && (C_STRLEN_UTF8(c) == 1) && !q->ignore_ops && q->double_quotes)
 		possible_chars = true;
 
 	if (!is_chars_list && running && possible_chars
@@ -926,7 +962,7 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 	if (q->ignore_ops || !IS_OP(c) || !c->arity) {
 		int quote = ((running <= 0) || q->quoted) && !is_var(c) && needs_quoting(q->st.m, src, src_len);
 		int dq = 0, braces = 0;
-		if (is_string(c)) dq = quote = 1;
+		if (is_string(c) && q->double_quotes) dq = quote = 1;
 		if (q->quoted < 0) quote = 0;
 		if ((c->arity == 1) && is_interned(c) && !strcmp(src, "{}")) braces = 1;
 		cell *c1 = c->arity ? deref(q, FIRST_ARG(c), c_ctx) : NULL;
@@ -1564,7 +1600,7 @@ void clear_write_options(query *q)
 	q->print_idx = 0;
 	q->max_depth = q->quoted = 0;
 	q->nl = q->fullstop = q->varnames = q->ignore_ops = false;
-	q->parens = q->numbervars = q->json = false;
+	q->parens = q->numbervars = q->json = q->double_quotes = false;
 	q->last_thing = WAS_OTHER;
 	q->variable_names = NULL;
 	memset(q->ignores, 0, sizeof(q->ignores));

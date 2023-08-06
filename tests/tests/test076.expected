@@ -1,6 +1,6 @@
 []
-"a"
-"aa"
-"aaa"
-"aaaa"
-"aaaaa"
+[a]
+[a,a]
+[a,a,a]
+[a,a,a,a]
+[a,a,a,a,a]
