@@ -528,7 +528,7 @@ static ssize_t print_string_canonical(query *q, char *save_dst, char *dst, size_
 static ssize_t print_string_list(query *q, char *save_dst, char *dst, size_t dstlen, cell *c, pl_idx c_ctx, int running, bool cons, unsigned depth)
 {
 	LIST_HANDLER(c);
-	dst += snprintf(dst, dstlen, "%s", "[");
+	if (!cons) dst += snprintf(dst, dstlen, "%s", "[");
 
 	while (is_list(c)) {
 		cell *h = LIST_HEAD(c);
@@ -551,7 +551,7 @@ static ssize_t print_string_list(query *q, char *save_dst, char *dst, size_t dst
 		dst += snprintf(dst, dstlen, "%s", ",");
 	}
 
-	dst += snprintf(dst, dstlen, "%s", "]");
+	if (!cons) dst += snprintf(dst, dstlen, "%s", "]");
 	return dst - save_dst;
 }
 
@@ -686,6 +686,12 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 
 			free(tmp_src);
 			print_list++;
+		} else if (is_string(tail) && !q->double_quotes) {
+			dst += snprintf(dst, dstlen, "%s", ",");
+			dst += print_string_list(q, dst, dst, dstlen, tail, c_ctx, running, 1, depth+1);
+			dst += snprintf(dst, dstlen, "%s", "]");
+			q->last_thing = WAS_OTHER;
+			break;
 		} else if (is_iso_list(tail)) {
 			if ((tail == save_c) && (c_ctx == save_c_ctx) && running) {
 				dst += snprintf(dst, dstlen, "%s", "|");
