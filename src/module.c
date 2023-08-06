@@ -323,6 +323,7 @@ static void destroy_predicate(module *m, predicate *pr)
 
 	map_destroy(pr->idx2);
 	map_destroy(pr->idx);
+	free(pr->meta_args);
 	free(pr);
 }
 
@@ -603,6 +604,8 @@ void set_meta_predicate_in_db(module *m, cell *c)
 		free(dst);
 		push_property(m, name, arity, tmpbuf);
 		pr->is_meta_predicate = true;
+		pr->meta_args = malloc(sizeof(cell)*c->nbr_cells);
+		safe_copy_cells(pr->meta_args, c, c->nbr_cells);
 	} else
 		m->error = true;
 }
