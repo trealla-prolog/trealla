@@ -525,7 +525,7 @@ struct frame_ {
 };
 
 struct prolog_state_ {
-	cell *curr_cell;
+	cell *curr_cell, *save_key;
 	predicate *pr;
 	db_entry *curr_dbe;
 	miter *iter, *f_iter;

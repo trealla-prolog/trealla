@@ -382,6 +382,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 
 	if (!pr->idx) {
 		q->st.curr_dbe = pr->head;
+		q->st.save_key = q->st.curr_cell;
 		q->st.key = key;
 		q->st.key_ctx = key_ctx;
 
@@ -393,7 +394,31 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 				// actually clone to the heap...
 
 				q->st.key = deep_clone_to_heap(q, key, key_ctx);
+				check_heap_error(q->st.key);
 				q->st.key_ctx = q->st.curr_frame;
+
+				if (pr->is_meta_predicate) {
+					unsigned arity = pr->key.arity;
+					cell *tmp = alloc_on_heap(q, q->st.key->nbr_cells*3);	// alloc max possible
+					check_heap_error(tmp);
+					cell *save_tmp = tmp;
+					tmp += copy_cells(tmp, q->st.key, 1);
+
+					// Expand module-sensitive args...
+
+					for (cell *k = q->st.key+1, *m = pr->meta_args+1; arity--; k += k->nbr_cells, m += m->nbr_cells) {
+						if (m->val_off == g_colon_s) {
+							make_struct(tmp, g_colon_s, NULL, 2, 1+k->nbr_cells);
+							SET_OP(tmp, OP_XFY); tmp++;
+							make_atom(tmp++, index_from_pool(q->pl, pr->m->name));
+						}
+
+						tmp += safe_copy_cells(tmp, k, k->nbr_cells);
+					}
+
+					save_tmp->nbr_cells = tmp - save_tmp;
+					q->st.save_key = q->st.key = save_tmp;
+				}
 			}
 
 			setup_key(q);
@@ -406,6 +431,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 	// we only need a temporary clone...
 
 	check_heap_error(init_tmp_heap(q));
+	q->st.save_key = key;
 	q->st.key = deep_clone_to_tmp(q, key, key_ctx);
 	q->st.key_ctx = q->st.curr_frame;
 
@@ -1380,7 +1406,7 @@ static bool match_head(query *q)
 			c->match = pr;
 		}
 
-		find_key(q, pr, c, q->st.curr_frame);
+		find_key(q, pr, q->st.curr_cell, q->st.curr_frame);
 		enter_predicate(q, pr);
 		frame *f = GET_FRAME(q->st.curr_frame);
 		f->ugen = q->pl->ugen;
@@ -1405,7 +1431,7 @@ static bool match_head(query *q)
 		cell *head = get_head(cl->cells);
 		try_me(q, cl->nbr_vars);
 
-		if (unify(q, q->st.curr_cell, q->st.curr_frame, head, q->st.fp)) {
+		if (unify(q, q->st.save_key, q->st.key_ctx, head, q->st.fp)) {
 			if (q->error)
 				break;
 
