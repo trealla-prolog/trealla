@@ -133,10 +133,10 @@ static bool is_more_data(query *q, list_reader_t *fmt)
 }
 
 #define CHECK_BUF(len) {									\
-    int n = (len) > 0 ? len : 1;                            \
+    int n = (len) > 0 ? (len) : 1;                          \
 	if (nbytes <= (unsigned)(1+n+1)) {    					\
 		size_t save = dst - tmpbuf;							\
-		bufsiz += len;										\
+		bufsiz += n;										\
 		tmpbuf = realloc(tmpbuf, bufsiz*=2);				\
 		check_heap_error(tmpbuf);							\
 		dst = tmpbuf + save;								\
@@ -560,17 +560,17 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 				q->quoted = 1;
 			}
 
-			char *tmpbuf = print_term_to_strbuf(q, c, c_ctx, 1);
+			char *tmpbuf2 = print_term_to_strbuf(q, c, c_ctx, 1);
 
 			if (q->cycle_error) {
 				free(tmpbuf);
 				return throw_error(q, c, q->st.curr_frame, "resource_error", "cyclic");
             }
 
-			len = strlen(tmpbuf);
+			len = strlen(tmpbuf2);
 			CHECK_BUF(len*2);
-			strcpy(dst, tmpbuf);
-			free(tmpbuf);
+			strcpy(dst, tmpbuf2);
+			free(tmpbuf2);
 			clear_write_options(q);
 			q->quoted = saveq;
             break;
