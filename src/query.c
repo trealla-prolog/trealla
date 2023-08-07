@@ -375,6 +375,31 @@ const char *dump_id(const void *k, const void *v, const void *p)
 	return tmpbuf;
 }
 
+static cell *expand_meta_predicate(query *q, predicate *pr)
+{
+	unsigned arity = q->st.key->arity;
+	cell *tmp = alloc_on_heap(q, q->st.key->nbr_cells*3);	// alloc max possible
+	if (!tmp) return NULL;
+	cell *save_tmp = tmp;
+	tmp += copy_cells(tmp, q->st.key, 1);
+
+	// Expand module-sensitive args...
+
+	for (cell *k = q->st.key+1, *m = pr->meta_args+1; arity--; k += k->nbr_cells, m += m->nbr_cells) {
+		if (m->val_off == g_colon_s) {
+			make_struct(tmp, g_colon_s, NULL, 2, 1+k->nbr_cells);
+			SET_OP(tmp, OP_XFY); tmp++;
+			make_atom(tmp++, index_from_pool(q->pl, pr->m->name));
+		}
+
+		tmp += safe_copy_cells(tmp, k, k->nbr_cells);
+	}
+
+	save_tmp->nbr_cells = tmp - save_tmp;
+	q->st.save_key = q->st.key = save_tmp;
+	return tmp;
+}
+
 static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 {
 	q->st.iter = NULL;
@@ -397,28 +422,8 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 				check_heap_error(q->st.key);
 				q->st.key_ctx = q->st.curr_frame;
 
-				if (pr->is_meta_predicate) {
-					unsigned arity = pr->key.arity;
-					cell *tmp = alloc_on_heap(q, q->st.key->nbr_cells*3);	// alloc max possible
-					check_heap_error(tmp);
-					cell *save_tmp = tmp;
-					tmp += copy_cells(tmp, q->st.key, 1);
-
-					// Expand module-sensitive args...
-
-					for (cell *k = q->st.key+1, *m = pr->meta_args+1; arity--; k += k->nbr_cells, m += m->nbr_cells) {
-						if (m->val_off == g_colon_s) {
-							make_struct(tmp, g_colon_s, NULL, 2, 1+k->nbr_cells);
-							SET_OP(tmp, OP_XFY); tmp++;
-							make_atom(tmp++, index_from_pool(q->pl, pr->m->name));
-						}
-
-						tmp += safe_copy_cells(tmp, k, k->nbr_cells);
-					}
-
-					save_tmp->nbr_cells = tmp - save_tmp;
-					q->st.save_key = q->st.key = save_tmp;
-				}
+				if (pr->is_meta_predicate)
+					check_heap_error(expand_meta_predicate(q, pr));
 			}
 
 			setup_key(q);
@@ -434,6 +439,9 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 	q->st.save_key = key;
 	q->st.key = deep_clone_to_tmp(q, key, key_ctx);
 	q->st.key_ctx = q->st.curr_frame;
+
+	if (pr->is_meta_predicate)
+		check_heap_error(expand_meta_predicate(q, pr));
 
 	cell *arg1 = q->st.key->arity ? FIRST_ARG(q->st.key) : NULL;
 	map *idx = pr->idx;
