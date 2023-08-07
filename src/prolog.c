@@ -27,7 +27,8 @@ pl_idx g_dcg_s, g_throw_s, g_sys_block_catcher_s, g_sys_drop_barrier_s;
 pl_idx g_sys_soft_prune_s, g_if_then_s, g_soft_cut_s, g_negation_s;
 pl_idx g_error_s, g_slash_s, g_sys_cleanup_if_det_s, g_sys_table_s;
 pl_idx g_goal_expansion_s, g_term_expansion_s, g_tm_s, g_float_s;
-pl_idx g_sys_cut_if_det_s, g_as_s, g_colon_s, g_sys_prune_s, g_syscall_s;
+pl_idx g_sys_cut_if_det_s, g_as_s, g_colon_s, g_sys_prune_s;
+pl_idx g_caret_s, g_syscall_s;
 
 unsigned g_cpu_count = 4;
 char *g_tpl_lib = NULL;
@@ -443,6 +444,7 @@ static bool g_init(prolog *pl)
 	CHECK_SENTINEL(g_sys_table_s = index_from_pool(pl, "$table"), ERR_IDX);
 	CHECK_SENTINEL(g_as_s = index_from_pool(pl, "as"), ERR_IDX);
 	CHECK_SENTINEL(g_colon_s = index_from_pool(pl, ":"), ERR_IDX);
+	CHECK_SENTINEL(g_caret_s = index_from_pool(pl, "^"), ERR_IDX);
 
 	return error;
 }
