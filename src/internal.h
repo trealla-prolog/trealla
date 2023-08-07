@@ -884,6 +884,12 @@ inline static pl_idx copy_cells(cell *dst, const cell *src, pl_idx nbr_cells)
 	return nbr_cells;
 }
 
+inline static pl_idx move_cells(cell *dst, const cell *src, pl_idx nbr_cells)
+{
+	memmove(dst, src, sizeof(cell)*(nbr_cells));
+	return nbr_cells;
+}
+
 inline static pl_idx safe_copy_cells(cell *dst, const cell *src, pl_idx nbr_cells)
 {
 	memcpy(dst, src, sizeof(cell)*nbr_cells);
