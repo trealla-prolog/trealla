@@ -1282,7 +1282,7 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 			else
 				m = tmp_m;
 
-			copy_cells(p1+1, p1+3, p1->nbr_cells-3);
+			move_cells(p1+1, p1+3, p1->nbr_cells-3);
 			p1->nbr_cells -= 2;
 			c = get_head(p1);
 		} else if ((c->val_off == g_colon_s) && (c->arity == 2) && is_atom(FIRST_ARG(c))) {
@@ -1294,7 +1294,7 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 			else
 				m = tmp_m;
 
-			copy_cells(p1, p1+2, p1->nbr_cells-2);
+			move_cells(p1, p1+2, p1->nbr_cells-2);
 			c = get_head(p1);
 		}
 	}
