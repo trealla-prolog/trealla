@@ -19,7 +19,9 @@
             - ubuntu-latest
             - macos-latest
       steps:
-        - uses: actions/checkout@v1
+        - uses: actions/checkout@v3
+          with:
+            fetch-depth: 0
         - name: Install deps (Linux)
           run: |
             sudo apt-get install libreadline-dev xxd libffi-dev libssl-dev
@@ -29,6 +31,8 @@
             brew install readline vim libffi openssl make
             echo "$(brew --prefix)/opt/make/libexec/gnubin" >> $GITHUB_PATH
           if: matrix.os == 'macos-latest'
+        - name: Fetch tags
+          run: git fetch --tags --force origin
         - name: Build
           run: make release
         - name: Test
@@ -51,11 +55,17 @@
           shell: msys2 {0}
       steps:
         - uses: msys2/setup-msys2@v2
-        - uses: actions/checkout@v1
         - name: Install deps
           run: |
             pacman --noconfirm -S make mingw-w64-x86_64-gcc mingw-w64-x86_64-headers-git mingw-w64-x86_64-libffi mingw-w64-x86_64-dlfcn
-            pacman --noconfirm -S mingw-w64-x86_64-openssl mingw-w64-x86_64-readline vim diffutils
+            pacman --noconfirm -S mingw-w64-x86_64-openssl vim diffutils git
+        - name: Configure line endings
+          run: git config --global core.autocrlf input  
+        - uses: actions/checkout@v3
+          with:
+            fetch-depth: 0
+        - name: Fetch tags
+          run: git fetch --tags --force origin
         - name: Build
           run: make ISOCLINE=1 release
         - name: Test
@@ -98,7 +108,11 @@
         WASI_VERSION: 19
         BINARYEN_VERSION: 109
       steps:
-        - uses: actions/checkout@v1
+        - uses: actions/checkout@v3
+          with:
+            fetch-depth: 0
+        - name: Fetch tags
+          run: git fetch --tags --force origin
         - name: Set environment (1/3)
           run: |
             echo "WASI_VERSION_FULL=${WASI_VERSION}.0" >> $GITHUB_ENV
