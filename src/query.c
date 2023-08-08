@@ -390,10 +390,7 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 			;
 		else if (!is_interned(k))
 			;
-		else if ((m->val_off == g_colon_s)
-			//|| (m->val_off == g_caret_s)
-			//|| (is_smallint(m) && (get_smallint(m) >= 0) && (get_smallint(m) <= 9))
-			) {
+		else if (m->val_off == g_colon_s) {
 			make_struct(tmp, g_colon_s, NULL, 2, 1+k->nbr_cells);
 			SET_OP(tmp, OP_XFY); tmp++;
 			make_atom(tmp++, index_from_pool(q->pl, pr->m->name));
