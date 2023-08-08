@@ -1,12 +1,13 @@
 Introduction
 ============
 
-For convenience a fixed size (24-byte) cell has been implemented. The
-following diagrams illustrate the cell layout on 64-bit systems.
+For convenience a fixed size (24-byte) cell has been implemented. Cells
+are layed out in a flattened-arena form rather than a traditional AST.
+The following diagrams illustrate the cell layout on 64-bit systems.
 
 
-Literal
-=======
+Interned
+========
 
 ```
         +----------+---------+----------+---------+
@@ -24,13 +25,13 @@ Literal
         +----------+---------+----------+---------+
 ```
 
-Where *tag* is TAG_LITERAL.
+Where *tag* is TAG_INTERNED.
 Where *arity* is always 0.
 Where *nbr_cells* is always 1.
 Where *val_off* is a byte-offset into the symbol table.
 
-Two literals will unify if their *val_off* is the same.
-A literal is always used for functor names.
+Two interned cells will unify if their *val_off* is the same.
+An interned cell is always used for functor names.
 
 
 Var
@@ -56,7 +57,8 @@ Where *tag* is TAG_VAR.
 Where *arity* is always 0.
 Where *nbr_cells* is always 1.
 Where *val_off* is a byte_offset into the symbol table.
-Where *var_nbr* is the index into an environment
+Where *var_nbr* is the index into the current context
+
 
 Ref
 ===
@@ -82,7 +84,7 @@ Where *arity* is always 0.
 Where *flags* is FLAG_REF
 Where *nbr_cells* is always 1.
 Where *var_ctx* is the context (or environment)
-Where *var_nbr* is the index into an environment
+Where *var_nbr* is the index into the current context
 
 
 Integer
@@ -135,8 +137,8 @@ Where *nbr_cells* is always 1.
 Where *val_bigint* is a pointer.
 
 
-Float
-=====
+Double
+======
 
 ```
         +----------+---------+----------+---------+
@@ -145,7 +147,7 @@ Float
     4   |                 nbr_cells               |
         +----------+---------+----------+---------+
     8   |                                         |
-        +                val_real                 +
+        +                val_float                +
    12   |                                         |
         +----------+---------+----------+---------+
    16   |                                         |
@@ -154,7 +156,7 @@ Float
         +----------+---------+----------+---------+
 ```
 
-Where *tag* is TAG_FLOAT.
+Where *tag* is TAG_DOUBLE.
 Where *arity* is always 0
 Where *nbr_cells* is always 1.
 Where *val_real* is a floating-point *double*.
@@ -355,7 +357,7 @@ pointers (if any) may need to be refreshed after creating new variables
 A collection of slots constitute an environment and belong to a frame.
 
 
-Controls
+Choices
 ========
 
 Similar...
@@ -391,4 +393,4 @@ A term allocated on the heap must be fully contained within one page,
 to this end terms are first built in a temporary space and copied
 into a suitably sized page.
 
-Excess heap pages can be freed on backtracking.
+Excess heap pages may be freed on backtracking or with cuts.

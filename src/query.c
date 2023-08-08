@@ -335,9 +335,7 @@ bool has_next_key(query *q)
 			dkey++;
 
 		if (karg1) {
-			cell *darg1 = dkey + 1;
-
-			if (index_cmpkey(karg1, darg1, q->st.m, NULL) != 0)
+			if (index_cmpkey(karg1, FIRST_ARG(dkey), q->st.m, NULL) != 0)
 				continue;
 		}
 
