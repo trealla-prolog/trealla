@@ -881,7 +881,7 @@ static bool directives(parser *p, cell *d)
 
 	if (is_var(p1)) {
 		if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-			fprintf(stdout, "Warning: uninstantiated, directive: %s/%d\n", dirname, c->arity);
+			fprintf(stdout, "Warning: uninstantiated: %s/%d\n", dirname, c->arity);
 	}
 
 	while (is_interned(p1) && !g_tpl_interrupt) {
