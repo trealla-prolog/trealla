@@ -337,13 +337,8 @@ bool has_next_key(query *q)
 		if (karg1) {
 			cell *darg1 = dkey + 1;
 
-			if (is_atomic(karg1) && is_iso_list(darg1))
+			if (index_cmpkey(karg1, darg1, q->st.m, NULL) != 0)
 				continue;
-
-			if (is_atomic(karg1) && !darg1->arity) {
-				if (index_cmpkey(karg1, darg1, q->st.m, NULL) != 0)
-					continue;
-			}
 		}
 
 		//DUMP_TERM("key", q->st.key, q->st.key_ctx, 0);
