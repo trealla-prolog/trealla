@@ -320,16 +320,18 @@ bool has_next_key(query *q)
 	if (!q->st.key->arity || !q->pl->opt)
 		return q->st.curr_dbe->next ? true : false;
 
-	clause *cl = &q->st.curr_dbe->cl;
-	predicate *pr = q->st.curr_dbe->owner;
-	cell *karg1 = NULL;
+	const predicate *pr = q->st.curr_dbe->owner;
+	const clause *cl = &q->st.curr_dbe->cl;
+	const cell *karg1 = NULL;
 
 	if (q->st.karg1_is_ground)
 		karg1 = deref(q, FIRST_ARG(q->st.key), q->st.key_ctx);
 
-	for (db_entry *next = q->st.curr_dbe->next; next; next = next->next) {
+	//DUMP_TERM("key ", q->st.key, q->st.key_ctx, 1);
+
+	for (const db_entry *next = q->st.curr_dbe->next; next; next = next->next) {
 		cl = &next->cl;
-		cell *dkey = cl->cells;
+		const cell *dkey = cl->cells;
 
 		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
 			dkey++;
@@ -339,10 +341,9 @@ bool has_next_key(query *q)
 				continue;
 		}
 
-		//DUMP_TERM("key", q->st.key, q->st.key_ctx, 0);
 		//DUMP_TERM("next", dkey, q->st.curr_frame, 0);
 
-		if (index_cmpkey(q->st.key, dkey, q->st.m, NULL) == 0)
+		if (index_cmpkey(q->st.save_key, dkey, q->st.m, NULL) == 0)
 			return true;
 
 #if 1
