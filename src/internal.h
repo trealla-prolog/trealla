@@ -41,7 +41,7 @@ typedef uint32_t pl_idx;
 #define NEWLINE_MODE "posix"
 #endif
 
-#include "map.h"
+#include "skiplist.h"
 #include "trealla.h"
 #include "cdebug.h"
 #include "stringbuf.h"
@@ -447,7 +447,7 @@ struct predicate_ {
 	predicate *prev, *next, *alias;
 	db_entry *head, *tail;
 	module *m;
-	map *idx, *idx2;
+	skiplist *idx, *idx2;
 	db_entry *dirty_list;
 	const char *filename;
 	cell *meta_args;
@@ -528,7 +528,7 @@ struct prolog_state_ {
 	cell *curr_cell, *save_key;
 	predicate *pr;
 	db_entry *curr_dbe;
-	miter *iter, *f_iter;
+	sliter *iter, *f_iter;
 	module *m, *prev_m;
 
 	union {
@@ -565,13 +565,13 @@ enum { eof_action_eof_code, eof_action_error, eof_action_reset };
 struct stream_ {
 	union {
 		FILE *fp;
-		map *keyval;
+		skiplist *keyval;
 		query *engine;
 	};
 
 	string_buffer sb_buf;
 	char *mode, *filename, *data, *src;
-	map *alias;
+	skiplist *alias;
 	void *sslptr;
 	parser *p;
 
@@ -645,7 +645,7 @@ struct query_ {
 	slot *save_e;
 	db_entry *dirty_list;
 	query *tasks;
-	map *vars;
+	skiplist *vars;
 	cell accum;
 	mpz_t tmp_ival;
 	mpq_t tmp_irat;
@@ -774,7 +774,7 @@ struct module_ {
 	predicate *head, *tail;
 	parser *p;
 	FILE *fp;
-	map *index, *ops, *defops;
+	skiplist *index, *ops, *defops;
 	loaded_file *loaded_files;
 	prolog_flags flags;
 	unsigned id, idx_used, arity;
@@ -805,7 +805,7 @@ struct prolog_ {
 	var_item *tabs;
 	parser *p;
 	query *curr_query;
-	map *symtab, *biftab, *keyval, *help, *fortab;
+	skiplist *symtab, *biftab, *keyval, *help, *fortab;
 	char *pool;
 	size_t pool_offset, pool_size, tabs_size;
 	uint64_t s_last, s_cnt, seed, ugen;

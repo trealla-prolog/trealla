@@ -163,7 +163,7 @@ static void register_struct(prolog *pl, const char *name, unsigned arity, void *
 		ptr->names[i] = names[i];
 	}
 
-	map_app(pl->fortab, ptr->name, ptr);
+	sl_app(pl->fortab, ptr->name, ptr);
 }
 
 // TODO: pre-compile the type definitions so it doesn't have
@@ -187,7 +187,7 @@ static void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn,
 
 	ptr->ret_type = ret_type;
 	ptr->ret_name = ret_name;
-	map_app(pl->biftab, ptr->name, ptr);
+	sl_app(pl->biftab, ptr->name, ptr);
 }
 
 USE_RESULT bool fn_sys_register_function_4(query *q)
@@ -1028,7 +1028,7 @@ static bool handle_struct1(query *q, foreign_struct *sptr, nested_elements *nest
 			const char *name = sptr->names[cnt];
 			foreign_struct *sptr = NULL;
 
-			if (!map_get(q->pl->fortab, name, (void*)&sptr)) {
+			if (!sl_get(q->pl->fortab, name, (void*)&sptr)) {
 				printf("wrapper: not found struct: %s\n", name);
 				return false;
 			}
@@ -1310,7 +1310,7 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 
 			foreign_struct *sptr = NULL;
 
-			if (!map_get(q->pl->fortab, name, (void*)&sptr)) {
+			if (!sl_get(q->pl->fortab, name, (void*)&sptr)) {
 				printf("wrapper: not found struct: %s\n", name);
 				return false;
 			}
@@ -1620,7 +1620,7 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 			const char *name = ptr->ret_name;
 			foreign_struct *sptr = NULL;
 
-			if (!map_get(q->pl->fortab, name, (void*)&sptr)) {
+			if (!sl_get(q->pl->fortab, name, (void*)&sptr)) {
 				printf("wrapper: not found struct: %s\n", name);
 				return false;
 			}

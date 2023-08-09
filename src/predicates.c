@@ -2353,18 +2353,18 @@ static bool fn_iso_retractall_1(query *q)
 
 	if (pr->idx && !pr->cnt) {
 		purge_predicate_dirty_list(q, pr);
-		map_destroy(pr->idx2);
-		map_destroy(pr->idx);
+		sl_destroy(pr->idx2);
+		sl_destroy(pr->idx);
 		pr->idx2 = NULL;
 
-		pr->idx = map_create(index_cmpkey, NULL, pr->m);
+		pr->idx = sl_create(index_cmpkey, NULL, pr->m);
 		ensure(pr->idx);
-		map_allow_dups(pr->idx, true);
+		sl_allow_dups(pr->idx, true);
 
 		if (pr->key.arity > 1) {
-			pr->idx2 = map_create(index_cmpkey, NULL, pr->m);
+			pr->idx2 = sl_create(index_cmpkey, NULL, pr->m);
 			ensure(pr->idx2);
-			map_allow_dups(pr->idx2, true);
+			sl_allow_dups(pr->idx2, true);
 		}
 	}
 
@@ -2403,22 +2403,22 @@ static bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 		}
 	}
 
-	map_destroy(pr->idx2);
-	map_destroy(pr->idx);
+	sl_destroy(pr->idx2);
+	sl_destroy(pr->idx);
 	pr->idx2 = pr->idx = NULL;
 	pr->is_processed = false;
 
 	if (hard) {
 		pr->is_abolished = true;
 	} else {
-		pr->idx = map_create(index_cmpkey, NULL, pr->m);
+		pr->idx = sl_create(index_cmpkey, NULL, pr->m);
 		ensure(pr->idx);
-		map_allow_dups(pr->idx, true);
+		sl_allow_dups(pr->idx, true);
 
 		if (pr->key.arity > 1) {
-			pr->idx2 = map_create(index_cmpkey, NULL, pr->m);
+			pr->idx2 = sl_create(index_cmpkey, NULL, pr->m);
 			ensure(pr->idx2);
-			map_allow_dups(pr->idx2, true);
+			sl_allow_dups(pr->idx2, true);
 		}
 	}
 
@@ -2768,13 +2768,13 @@ static bool fn_iso_current_rule_1(query *q)
 static bool search_functor(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
 {
 	if (!q->retry)
-		q->st.f_iter = map_first(q->st.m->index);
+		q->st.f_iter = sl_first(q->st.m->index);
 
 	check_heap_error(push_choice(q));
 	check_heap_error(check_slot(q, MAX_VARS));
 	predicate *pr = NULL;
 
-	while (map_next(q->st.f_iter, (void*)&pr)) {
+	while (sl_next(q->st.f_iter, (void*)&pr)) {
 		const char *src = C_STR(q, &pr->key);
 
 		if (src[0] == '$')
@@ -2796,7 +2796,7 @@ static bool search_functor(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		undo_me(q);
 	}
 
-	map_done(q->st.f_iter);
+	sl_done(q->st.f_iter);
 	drop_choice(q);
 	return false;
 }
@@ -4092,10 +4092,10 @@ static bool fn_listing_1(query *q)
 static bool fn_help_0(query *q)
 {
 	bool found = false, evaluable = false;
-	miter *iter = map_first(q->pl->help);
+	sliter *iter = sl_first(q->pl->help);
 	builtins *fn;
 
-	while (map_next(iter, (void**)&fn)) {
+	while (sl_next(iter, (void**)&fn)) {
 		if (fn->arity)
 			fprintf(stdout, "%s/%u: %s(%s)%s%s\n", fn->name, fn->arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
 		else
@@ -4207,10 +4207,10 @@ static bool fn_help_1(query *q)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 		const char *functor = C_STR(q, p1);
-		miter *iter = map_find_key(q->pl->help, functor);
+		sliter *iter = sl_find_key(q->pl->help, functor);
 		builtins *fn;
 
-		while (map_next_key(iter, (void**)&fn)) {
+		while (sl_next_key(iter, (void**)&fn)) {
 			if (fn->help_alt) {
 				if (fn->arity)
 					fprintf(stdout, "%s/%u: %s(%s)%s%s\n", fn->name, fn->arity, fn->name, fn->help_alt ? fn->help_alt : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
@@ -4277,10 +4277,10 @@ static bool fn_help_2(query *q)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 		const char *functor = C_STR(q, p1);
-		miter *iter = map_find_key(q->pl->help, functor);
+		sliter *iter = sl_find_key(q->pl->help, functor);
 		builtins *fn;
 
-		while (map_next_key(iter, (void**)&fn)) {
+		while (sl_next_key(iter, (void**)&fn)) {
 			if (fn->arity)
 				fprintf(stdout, "%s/%u: %s(%s)%s%s\n", fn->name, fn->arity, fn->name, fn->help ? fn->help : "no args", fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
 			else
@@ -4338,10 +4338,10 @@ static bool fn_module_help_1(query *q)
 	if (!m)
 		return false;
 
-	miter *iter = map_first(q->pl->help);
+	sliter *iter = sl_first(q->pl->help);
 	builtins *fn;
 
-	while (map_next(iter, (void**)&fn)) {
+	while (sl_next(iter, (void**)&fn)) {
 		if (fn->m != m)
 			continue;
 
@@ -4369,10 +4369,10 @@ static bool fn_module_help_2(query *q)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 		const char *functor = C_STR(q, p1);
-		miter *iter = map_find_key(q->pl->help, functor);
+		sliter *iter = sl_find_key(q->pl->help, functor);
 		builtins *fn;
 
-		while (map_next_key(iter, (void**)&fn)) {
+		while (sl_next_key(iter, (void**)&fn)) {
 			if (fn->m != m)
 				continue;
 
@@ -4437,10 +4437,10 @@ static bool fn_module_help_3(query *q)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 		const char *functor = C_STR(q, p1);
-		miter *iter = map_find_key(q->pl->help, functor);
+		sliter *iter = sl_find_key(q->pl->help, functor);
 		builtins *fn;
 
-		while (map_next_key(iter, (void**)&fn)) {
+		while (sl_next_key(iter, (void**)&fn)) {
 			if (fn->m != m)
 				continue;
 
@@ -7268,7 +7268,7 @@ static bool fn_kv_set_3(query *q)
 	check_heap_error(key);
 
 	if (do_create) {
-		if (map_get(q->pl->keyval, key, NULL)) {
+		if (sl_get(q->pl->keyval, key, NULL)) {
 			free(key);
 			return false;
 		}
@@ -7288,7 +7288,7 @@ static bool fn_kv_set_3(query *q)
 	}
 
 	check_heap_error(val);
-	map_set(q->pl->keyval, key, val);
+	sl_set(q->pl->keyval, key, val);
 	return true;
 }
 
@@ -7346,7 +7346,7 @@ static bool fn_kv_get_3(query *q)
 	check_heap_error(key);
 	char *val = NULL;
 
-	if (!map_get(q->pl->keyval, key, (void*)&val)) {
+	if (!sl_get(q->pl->keyval, key, (void*)&val)) {
 		if (key != tmpbuf) free(key);
 		return false;
 	}
@@ -7371,7 +7371,7 @@ static bool fn_kv_get_3(query *q)
 		check_heap_error(make_cstring(&tmp, val));
 
 	if (do_delete)
-		map_del(q->pl->keyval, key);
+		sl_del(q->pl->keyval, key);
 
 	if (key != tmpbuf) free(key);
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
@@ -8067,7 +8067,7 @@ static void load_properties(module *m)
 	}
 
 	for (const builtins *ptr = g_iso_bifs; ptr->name; ptr++) {
-		map_app(m->pl->biftab, ptr->name, ptr);
+		sl_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -8077,7 +8077,7 @@ static void load_properties(module *m)
  	}
 
 	for (const builtins *ptr = g_files_bifs; ptr->name; ptr++) {
-		map_app(m->pl->biftab, ptr->name, ptr);
+		sl_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -8087,7 +8087,7 @@ static void load_properties(module *m)
  	}
 
 	for (const builtins *ptr = g_evaluable_bifs; ptr->name; ptr++) {
-		map_app(m->pl->biftab, ptr->name, ptr);
+		sl_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -8097,7 +8097,7 @@ static void load_properties(module *m)
 	}
 
 	for (const builtins *ptr = g_other_bifs; ptr->name; ptr++) {
-		map_app(m->pl->biftab, ptr->name, ptr);
+		sl_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -8107,7 +8107,7 @@ static void load_properties(module *m)
 	}
 
 	for (const builtins *ptr = g_ffi_bifs; ptr->name; ptr++) {
-		map_app(m->pl->biftab, ptr->name, ptr);
+		sl_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -8117,7 +8117,7 @@ static void load_properties(module *m)
 	}
 
 	for (const builtins *ptr = g_posix_bifs; ptr->name; ptr++) {
-		map_app(m->pl->biftab, ptr->name, ptr);
+		sl_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -8127,7 +8127,7 @@ static void load_properties(module *m)
 	}
 
 	for (const builtins *ptr = g_contrib_bifs; ptr->name; ptr++) {
-		map_app(m->pl->biftab, ptr->name, ptr);
+		sl_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -8183,10 +8183,10 @@ static void load_flags(query *q)
 static void load_ops(query *q)
 {
 	SB_alloc(pr, 1024*8);
-	miter *iter = map_first(q->st.m->ops);
+	sliter *iter = sl_first(q->st.m->ops);
 	op_table *ptr;
 
-	while (map_next(iter, (void**)&ptr)) {
+	while (sl_next(iter, (void**)&ptr)) {
 		char specifier[80], name[1024];
 
 		if (!ptr->priority || !ptr->specifier)
@@ -8221,10 +8221,10 @@ static void load_ops(query *q)
 		}
 	}
 
-	map_done(iter);
-	iter = map_first(q->st.m->defops);
+	sl_done(iter);
+	iter = sl_first(q->st.m->defops);
 
-	while (map_next(iter, (void**)&ptr)) {
+	while (sl_next(iter, (void**)&ptr)) {
 		char specifier[80], name[1024];
 
 		if (!ptr->specifier)

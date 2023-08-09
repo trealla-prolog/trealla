@@ -32,10 +32,10 @@ static int accum_slot(const query *q, pl_idx slot_nbr, unsigned var_nbr)
 {
 	const void *vnbr;
 
-	if (map_get(q->vars, (void*)(size_t)slot_nbr, &vnbr))
+	if (sl_get(q->vars, (void*)(size_t)slot_nbr, &vnbr))
 		return (unsigned)(size_t)vnbr;
 
-	map_set(q->vars, (void*)(size_t)slot_nbr, (void*)(size_t)var_nbr);
+	sl_set(q->vars, (void*)(size_t)slot_nbr, (void*)(size_t)var_nbr);
 	return -1;
 }
 
@@ -449,7 +449,7 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx
 	pl_idx c_ctx = q->latest_ctx;
 
 	void *save = q->vars;
-	q->vars = map_create(NULL, NULL, NULL);
+	q->vars = sl_create(NULL, NULL, NULL);
 	if (!q->vars) {
 		q->vars = save;
 		return NULL;
@@ -467,24 +467,24 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx
 		if (e->vgen == 0) e->vgen++;
 		q->tab0_varno = q->varno;
 		q->tab_idx++;
-		map_set(q->vars, (void*)(size_t)slot_nbr, (void*)(size_t)q->varno);
+		sl_set(q->vars, (void*)(size_t)slot_nbr, (void*)(size_t)q->varno);
 		q->varno++;
 	}
 
 	cell *tmp = deep_clone_to_tmp(q, c, c_ctx);
 	if (!tmp) {
-		map_destroy(q->vars);
+		sl_destroy(q->vars);
 		q->vars = save;
 		return NULL;
 	}
 
 	if (!copy_vars(q, tmp, copy_attrs, from, from_ctx, to, to_ctx)) {
-		map_destroy(q->vars);
+		sl_destroy(q->vars);
 		q->vars = save;
 		return NULL;
 	}
 
-	map_destroy(q->vars);
+	sl_destroy(q->vars);
 	q->vars = save;
 	int cnt = q->varno - f->actual_slots;
 

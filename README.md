@@ -462,7 +462,7 @@ Non-standard predicates
 	b_getval(K,V)
 	b_delete(K)
 
-	# The system map uses atomic key/values only...
+	# The system skiplist uses atomic key/values only...
 
 	'$kv_set'(+key,+value,[create(Bool)])
 	'$kv_get'(+key,?value,[delete(Bool)])
@@ -712,24 +712,24 @@ Application maps (dictionaries)
 Maps use atomic key/value pairs only and are represented as
 pseudo-streams:
 
-	map_create/2					# map_create(-map,+opts)
-	map_create/1					# map_create(-map)
-	map_set/3						# map_set(+map,+key,+value)
-	map_get/3						# map_get(+map,+key,?value)
-	map_del/2						# map_del(+map,+key)
-	map_count/2						# map_count(+map,-count)
-	map_list/2						# map_list(+map,?list)
-	map_close/1						# map_close(+map)
+	sl_create/2					# sl_create(-skiplist,+opts)
+	sl_create/1					# sl_create(-skiplist)
+	sl_set/3						# sl_set(+skiplist,+key,+value)
+	sl_get/3						# sl_get(+skiplist,+key,?value)
+	sl_del/2						# sl_del(+skiplist,+key)
+	sl_count/2						# sl_count(+skiplist,-count)
+	map_list/2						# map_list(+skiplist,?list)
+	map_close/1						# map_close(+skiplist)
 
 ```console
 	$ tpl
-	?- map_create(S,[alias(foo)]).
+	?- sl_create(S,[alias(foo)]).
 	   S = <$stream>(4).
-	?- map_set(foo,1,111), map_set(foo,two,222), map_set(foo,3,333).
+	?- sl_set(foo,1,111), sl_set(foo,two,222), sl_set(foo,3,333).
 	   true.
-	?- map_get(foo,3,V).
+	?- sl_get(foo,3,V).
 	   V = 333.
-	?- map_del(foo,3).
+	?- sl_del(foo,3).
 	   true.
 	?- map_list(foo,L).
 	   L = [1=111,two=222].

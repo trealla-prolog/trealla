@@ -350,13 +350,13 @@ bool accum_var(query *q, const cell *c, pl_idx c_ctx)
 	const slot *e = GET_SLOT(f, c->var_nbr);
 	const void *v;
 
-	if (map_get(q->vars, e, &v)) {
+	if (sl_get(q->vars, e, &v)) {
 		size_t idx = (size_t)v;
 		q->pl->tabs[idx].cnt++;
 		return true;
 	}
 
-	map_set(q->vars, e, (void*)(size_t)q->tab_idx);
+	sl_set(q->vars, e, (void*)(size_t)q->tab_idx);
 
 	if (!q->pl->tabs) {
 		q->pl->tabs_size = 4000;
@@ -498,10 +498,10 @@ void collect_vars(query *q, cell *p1, pl_idx p1_ctx)
 {
 	if (++q->vgen == 0) q->vgen = 1;
 	q->tab_idx = 0;
-	ensure(q->vars = map_create(NULL, NULL, NULL));
-	map_allow_dups(q->vars, false);
+	ensure(q->vars = sl_create(NULL, NULL, NULL));
+	sl_allow_dups(q->vars, false);
 	collect_vars_internal(q, p1, p1_ctx, 0);
-	map_destroy(q->vars);
+	sl_destroy(q->vars);
 	q->vars = NULL;
 }
 

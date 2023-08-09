@@ -545,9 +545,9 @@ with_output_to(atom(Cs), Goal) :-
 		'$capture_output_to_atom'(Cs)
 	), !.
 
-map_create(S) :- map_create(S,[]).
+sl_create(S) :- sl_create(S,[]).
 
-:- help(map_create(--stream), [iso(false)]).
+:- help(sl_create(--stream), [iso(false)]).
 
 iso_dif(X, Y) :-
 	X \== Y,

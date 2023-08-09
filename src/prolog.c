@@ -72,7 +72,7 @@ static pl_idx add_to_pool(prolog *pl, const char *name)
 	memcpy(pl->pool + offset, name, len+1);
 	pl->pool_offset += len + 1;
 	const char *key = strdup(name);
-	map_set(pl->symtab, key, (void*)(size_t)offset);
+	sl_set(pl->symtab, key, (void*)(size_t)offset);
 	g_interned_cnt++;
 	return (pl_idx)offset;
 }
@@ -81,7 +81,7 @@ pl_idx index_from_pool(prolog *pl, const char *name)
 {
 	const void *val;
 
-	if (map_get(pl->symtab, name, &val))
+	if (sl_get(pl->symtab, name, &val))
 		return (pl_idx)(size_t)val;
 
 	return add_to_pool(pl, name);
@@ -244,42 +244,42 @@ void keyvalfree(const void *key, const void *val, const void *p)
 
 builtins *get_help(prolog *pl, const char *name, unsigned arity, bool *found, bool *evaluable)
 {
-	miter *iter = map_find_key(pl->help, name);
+	sliter *iter = sl_find_key(pl->help, name);
 	builtins *ptr;
 
-	while (map_next_key(iter, (void**)&ptr)) {
+	while (sl_next_key(iter, (void**)&ptr)) {
 		if (ptr->arity == arity) {
 			if (found) *found = true;
 			if (evaluable) *evaluable = ptr->evaluable;
-			map_done(iter);
+			sl_done(iter);
 			return ptr;
 		}
 	}
 
 	if (found) *found = false;
 	if (evaluable) *evaluable = false;
-	map_done(iter);
+	sl_done(iter);
 	return NULL;
 }
 
 builtins *get_builtin(prolog *pl, const char *name, size_t len, unsigned arity, bool *found, bool *evaluable)
 {
 	// TODO: use 'len' in comparison
-	miter *iter = map_find_key(pl->biftab, name);
+	sliter *iter = sl_find_key(pl->biftab, name);
 	builtins *ptr;
 
-	while (map_next_key(iter, (void**)&ptr)) {
+	while (sl_next_key(iter, (void**)&ptr)) {
 		if (ptr->arity == arity) {
 			if (found) *found = true;
 			if (evaluable) *evaluable = ptr->evaluable;
-			map_done(iter);
+			sl_done(iter);
 			return ptr;
 		}
 	}
 
 	if (found) *found = false;
 	if (evaluable) *evaluable = false;
-	map_done(iter);
+	sl_done(iter);
 	return NULL;
 }
 
@@ -326,45 +326,45 @@ builtins *get_fn_ptr(void *fn)
 void load_builtins(prolog *pl)
 {
 	for (const builtins *ptr = g_iso_bifs; ptr->name; ptr++) {
-		map_app(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		map_app(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_evaluable_bifs; ptr->name; ptr++) {
-		map_app(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		map_app(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_other_bifs; ptr->name; ptr++) {
-		map_app(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		map_app(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_files_bifs; ptr->name; ptr++) {
-		map_app(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		map_app(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_ffi_bifs; ptr->name; ptr++) {
-		map_app(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		map_app(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_posix_bifs; ptr->name; ptr++) {
-		map_app(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		map_app(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_contrib_bifs; ptr->name; ptr++) {
-		map_app(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		map_app(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 }
 
@@ -385,8 +385,8 @@ static bool g_init(prolog *pl)
 #endif
 
 	pl->pool = calloc(1, pl->pool_size=INITIAL_POOL_SIZE);
-	CHECK_SENTINEL(pl->symtab = map_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
-	map_allow_dups(pl->symtab, false);
+	CHECK_SENTINEL(pl->symtab = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
+	sl_allow_dups(pl->symtab, false);
 
 	CHECK_SENTINEL(index_from_pool(pl, "dummy"), ERR_IDX);
 	CHECK_SENTINEL(g_false_s = index_from_pool(pl, "false"), ERR_IDX);
@@ -455,15 +455,15 @@ void pl_destroy(prolog *pl)
 
 	module_destroy(pl->system_m);
 	module_destroy(pl->user_m);
-	map_destroy(pl->biftab);
-	map_destroy(pl->symtab);
+	sl_destroy(pl->biftab);
+	sl_destroy(pl->symtab);
 
 	while (pl->modules)
 		module_destroy(pl->modules);
 
-	map_destroy(pl->fortab);
-	map_destroy(pl->keyval);
-	map_destroy(pl->help);
+	sl_destroy(pl->fortab);
+	sl_destroy(pl->keyval);
+	sl_destroy(pl->help);
 	free(pl->tabs);
 	pl->pool_offset = 0;
 
@@ -479,7 +479,7 @@ void pl_destroy(prolog *pl)
 				&& (str->fp != stderr)
 			) {
 				if (str->is_map)
-					map_destroy(str->keyval);
+					sl_destroy(str->keyval);
 				else if (str->is_engine)
 					query_destroy(str->engine);
 				else if (str->fp && (i > 2))
@@ -488,7 +488,7 @@ void pl_destroy(prolog *pl)
 
 			parser_destroy(str->p);
 			str->p = NULL;
-			map_destroy(str->alias);
+			sl_destroy(str->alias);
 			free(str->mode);
 			free(str->filename);
 			free(str->data);
@@ -529,8 +529,8 @@ prolog *pl_create()
 			g_tpl_lib = strdup("../library");
 	}
 
-	CHECK_SENTINEL(pl->keyval = map_create((void*)fake_strcmp, (void*)keyvalfree, NULL), NULL);
-	map_allow_dups(pl->keyval, false);
+	CHECK_SENTINEL(pl->keyval = sl_create((void*)fake_strcmp, (void*)keyvalfree, NULL), NULL);
+	sl_allow_dups(pl->keyval, false);
 
 	if (error) {
 		free(pl->pool);
@@ -538,36 +538,36 @@ prolog *pl_create()
 	}
 
 	pl->streams[0].fp = stdin;
-	CHECK_SENTINEL(pl->streams[0].alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
+	CHECK_SENTINEL(pl->streams[0].alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
 	CHECK_SENTINEL(pl->streams[0].filename = strdup("stdin"), NULL);
 	CHECK_SENTINEL(pl->streams[0].mode = strdup("read"), NULL);
-	map_set(pl->streams[0].alias, strdup("user_input"), NULL);
+	sl_set(pl->streams[0].alias, strdup("user_input"), NULL);
 	pl->streams[0].eof_action = eof_action_reset;
 
 	pl->streams[1].fp = stdout;
-	CHECK_SENTINEL(pl->streams[1].alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
+	CHECK_SENTINEL(pl->streams[1].alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
 	CHECK_SENTINEL(pl->streams[1].filename = strdup("stdout"), NULL);
 	CHECK_SENTINEL(pl->streams[1].mode = strdup("append"), NULL);
-	map_set(pl->streams[1].alias, strdup("user_output"), NULL);
+	sl_set(pl->streams[1].alias, strdup("user_output"), NULL);
 	pl->streams[1].eof_action = eof_action_reset;
 
 	pl->streams[2].fp = stderr;
-	CHECK_SENTINEL(pl->streams[2].alias = map_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
+	CHECK_SENTINEL(pl->streams[2].alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
 	CHECK_SENTINEL(pl->streams[2].filename = strdup("stderr"), NULL);
 	CHECK_SENTINEL(pl->streams[2].mode = strdup("append"), NULL);
-	map_set(pl->streams[2].alias, strdup("user_error"), NULL);
+	sl_set(pl->streams[2].alias, strdup("user_error"), NULL);
 	pl->streams[2].eof_action = eof_action_reset;
 
 	pl->streams[3].ignore = true;
 
-	pl->help = map_create((void*)fake_strcmp, (void*)ptrfree, NULL);
-	map_allow_dups(pl->help, false);
+	pl->help = sl_create((void*)fake_strcmp, (void*)ptrfree, NULL);
+	sl_allow_dups(pl->help, false);
 
-	pl->fortab = map_create((void*)fake_strcmp, NULL, NULL);
-	map_allow_dups(pl->fortab, false);
+	pl->fortab = sl_create((void*)fake_strcmp, NULL, NULL);
+	sl_allow_dups(pl->fortab, false);
 
-	pl->biftab = map_create((void*)fake_strcmp, NULL, NULL);
-	map_allow_dups(pl->biftab, false);
+	pl->biftab = sl_create((void*)fake_strcmp, NULL, NULL);
+	sl_allow_dups(pl->biftab, false);
 
 	if (pl->biftab)
 		load_builtins(pl);

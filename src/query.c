@@ -300,9 +300,9 @@ static void setup_key(query *q)
 static void next_key(query *q)
 {
 	if (q->st.iter) {
-		if (!map_next(q->st.iter, (void*)&q->st.curr_dbe)) {
+		if (!sl_next(q->st.iter, (void*)&q->st.curr_dbe)) {
 			q->st.curr_dbe = NULL;
-			map_done(q->st.iter);
+			sl_done(q->st.iter);
 			q->st.iter = NULL;
 		}
 
@@ -315,7 +315,7 @@ static void next_key(query *q)
 bool has_next_key(query *q)
 {
 	if (q->st.iter)
-		return map_is_next(q->st.iter, NULL);
+		return sl_is_next(q->st.iter, NULL);
 
 	if (!q->st.key->arity || !q->pl->opt)
 		return q->st.curr_dbe->next ? true : false;
@@ -444,7 +444,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 	}
 
 	cell *arg1 = q->st.key->arity ? FIRST_ARG(q->st.key) : NULL;
-	map *idx = pr->idx;
+	skiplist *idx = pr->idx;
 
 	if (arg1 && (is_var(arg1) || pr->is_var_in_first_arg)) {
 		if (!pr->idx2) {
@@ -470,9 +470,9 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 #endif
 
 	q->st.curr_dbe = NULL;
-	miter *iter;
+	sliter *iter;
 
-	if (!(iter = map_find_key(idx, q->st.key)))
+	if (!(iter = sl_find_key(idx, q->st.key)))
 		return false;
 
 	// If the index search has found just one (definite) solution
@@ -480,34 +480,34 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 	// results must be returned in database order, so prefetch all
 	// the results and return them sorted as an iterator...
 
-	map *tmp_idx = NULL;
+	skiplist *tmp_idx = NULL;
 	const db_entry *dbe;
 
-	while (map_next_key(iter, (void*)&dbe)) {
+	while (sl_next_key(iter, (void*)&dbe)) {
 #if DEBUGIDX
 		DUMP_TERM("   got, key = ", dbe->cl.cells, q->st.curr_frame);
 #endif
 
 		if (!tmp_idx) {
-			tmp_idx = map_create(NULL, NULL, NULL);
-			map_allow_dups(tmp_idx, false);
-			map_set_tmp(tmp_idx);
+			tmp_idx = sl_create(NULL, NULL, NULL);
+			sl_allow_dups(tmp_idx, false);
+			sl_set_tmp(tmp_idx);
 		}
 
-		map_app(tmp_idx, (void*)(size_t)dbe->db_id, (void*)dbe);
+		sl_app(tmp_idx, (void*)(size_t)dbe->db_id, (void*)dbe);
 	}
 
-	map_done(iter);
+	sl_done(iter);
 
 	if (!tmp_idx)
 		return false;
 
 	//sl_dump(tmp_idx, dump_id, q);
 
-	iter = map_first(tmp_idx);
+	iter = sl_first(tmp_idx);
 
-	if (!map_next(iter, (void*)&q->st.curr_dbe)) {
-		map_done(iter);
+	if (!sl_next(iter, (void*)&q->st.curr_dbe)) {
+		sl_done(iter);
 		return false;
 	}
 
@@ -631,8 +631,8 @@ static void leave_predicate(query *q, predicate *pr)
 
 			if (pr->idx && pr->cnt) {
 				//predicate *pr = dbe->owner;
-				map_remove(pr->idx2, dbe);
-				map_remove(pr->idx, dbe);
+				sl_remove(pr->idx2, dbe);
+				sl_remove(pr->idx, dbe);
 			}
 
 			dbe->cl.is_deleted = true;
@@ -645,8 +645,8 @@ static void leave_predicate(query *q, predicate *pr)
 		pr->dirty_list = NULL;
 
 		if (pr->idx && !pr->cnt) {
-			map_destroy(pr->idx2);
-			map_destroy(pr->idx);
+			sl_destroy(pr->idx2);
+			sl_destroy(pr->idx);
 			pr->idx = pr->idx2 = NULL;
 		}
 	} else {
@@ -712,7 +712,7 @@ void drop_choice(query *q)
 	choice *ch = GET_CURR_CHOICE();
 
 	if (ch->st.iter) {
-		map_done(ch->st.iter);
+		sl_done(ch->st.iter);
 		ch->st.iter = NULL;
 	}
 
