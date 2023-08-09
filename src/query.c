@@ -320,24 +320,21 @@ bool has_next_key(query *q)
 	if (!q->st.key->arity || !q->pl->opt)
 		return q->st.curr_dbe->next ? true : false;
 
-	const predicate *pr = q->st.curr_dbe->owner;
-	const clause *cl = &q->st.curr_dbe->cl;
-	const cell *karg1 = NULL;
+	const cell *qarg1 = NULL;
 
 	if (q->st.karg1_is_ground)
-		karg1 = deref(q, FIRST_ARG(q->st.key), q->st.key_ctx);
+		qarg1 = deref(q, FIRST_ARG(q->st.key), q->st.key_ctx);
 
 	//DUMP_TERM("key ", q->st.key, q->st.key_ctx, 1);
 
 	for (const db_entry *next = q->st.curr_dbe->next; next; next = next->next) {
-		cl = &next->cl;
-		const cell *dkey = cl->cells;
+		const cell *dkey = next->cl.cells;
 
 		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
 			dkey++;
 
-		if (karg1) {
-			if (index_cmpkey(karg1, FIRST_ARG(dkey), q->st.m, NULL) != 0)
+		if (qarg1) {
+			if (index_cmpkey(qarg1, FIRST_ARG(dkey), q->st.m, NULL) != 0)
 				continue;
 		}
 
@@ -348,6 +345,8 @@ bool has_next_key(query *q)
 
 #if 1
 		// This is needed for: tpl -g run ~/retina/retina.pl ~/retina/rdfsurfaces/lubm/lubm.s
+
+		const predicate *pr = q->st.curr_dbe->owner;
 
 		if (pr->is_dynamic
 			&& !q->st.karg1_is_ground
