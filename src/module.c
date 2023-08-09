@@ -351,6 +351,9 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 	cell *p1 = (cell*)ptr1;
 	cell *p2 = (cell*)ptr2;
 
+	if (is_var(p1) || is_var(p2))
+		return 0;
+
 	if (is_smallint(p1)) {
 		if (is_smallint(p2)) {
 			if (get_smallint(p1) < get_smallint(p2))
@@ -363,14 +366,14 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 			return -mp_int_compare_value(&p2->val_bigint->ival, p1->val_int);
 		} else if (is_rational(p2)) {
 			return -mp_rat_compare_value(&p2->val_bigint->irat, p1->val_int, 1);
-		} else if (!is_var(p2))
+		} else
 			return -1;
 	} else if (is_bigint(p1)) {
 		if (is_bigint(p2)) {
 			return mp_int_compare(&p1->val_bigint->ival, &p2->val_bigint->ival);
 		} else if (is_smallint(p2)) {
 			return mp_int_compare_value(&p1->val_bigint->ival, p2->val_int);
-		} else if (!is_var(p2))
+		} else
 			return -1;
 	} else if (is_rational(p1)) {
 		if (is_rational(p2)) {
@@ -384,7 +387,7 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 			return ok;
 		} else if (is_smallint(p2)) {
 			return mp_rat_compare_value(&p1->val_bigint->irat, p2->val_int, 1);
-		} else if (!is_var(p2))
+		} else
 			return -1;
 	} else if (is_float(p1)) {
 		if (is_float(p2)) {
@@ -396,7 +399,7 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 				return 0;
 		} else if (is_integer(p2))
 			return 1;
-		else if (!is_var(p2))
+		else
 			return -1;
 	} else if (is_list(p1)) {
 		if (is_list(p2)) {
@@ -416,7 +419,7 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 			}
 
 			return index_cmpkey_(p1, p2, param, l);
-		} else if (!is_var(p2))
+		} else
 			return 1;
 	} else if (is_interned(p1) && !p1->arity) {
 		if (is_interned(p2) && !p2->arity) {
@@ -428,14 +431,14 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 			return strcmp(C_STR(m, p1), C_STR(m, p2));
 		else if (is_number(p2))
 			return 1;
-		else if (!is_var(p2))
+		else
 			return -1;
 	} else if (is_atom(p1)) {
 		if (is_atom(p2))
 			return strcmp(C_STR(m, p1), C_STR(m, p2));
 		else if (is_number(p2))
 			return 1;
-		else if (!is_var(p2))
+		else
 			return -1;
 	} else if (is_structure(p1)) {
 		if (is_structure(p2)) {
@@ -472,7 +475,7 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 			}
 
 			return 0;
-		} else if (!is_var(p2))
+		} else
 			return 1;
 	}
 
