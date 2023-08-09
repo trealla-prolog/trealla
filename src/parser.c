@@ -815,6 +815,14 @@ static bool directives(parser *p, cell *d)
 		if (is_interned(h) && (!strcmp(C_STR(p, h), "/") || !strcmp(C_STR(p, h), "//")) && (h->arity == 2)) {
 			cell *c_name = h + 1;
 
+			if (is_var(c_name)) {
+				if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
+					fprintf(stdout, "Error: uninstantiated: %s/%d\n", dirname, c->arity);
+
+				p->error = true;
+				return true;
+			}
+
 			if (!is_atom(c_name))
 				continue;
 
@@ -869,7 +877,10 @@ static bool directives(parser *p, cell *d)
 				}
 			} else {
 				if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-					fprintf(stdout, "Warning: unknown directive: %s/%d\n", dirname, c->arity);
+					fprintf(stdout, "Error: unknown directive: %s/%d\n", dirname, c->arity);
+
+				p->error = true;
+				return true;
 			}
 		}
 
@@ -881,7 +892,10 @@ static bool directives(parser *p, cell *d)
 
 	if (is_var(p1)) {
 		if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-			fprintf(stdout, "Warning: uninstantiated: %s/%d\n", dirname, c->arity);
+			fprintf(stdout, "Error: uninstantiated: %s/%d\n", dirname, c->arity);
+
+		p->error = true;
+		return true;
 	}
 
 	while (is_interned(p1) && !g_tpl_interrupt) {
@@ -904,6 +918,14 @@ static bool directives(parser *p, cell *d)
 
 		if (!strcmp(C_STR(p, c_id), "/") && (p1->arity == 2)) {
 			cell *c_name = c_id + 1;
+
+			if (is_var(c_name)) {
+				if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
+					fprintf(stdout, "Error: uninstantiated: %s/%d\n", dirname, c->arity);
+
+				p->error = true;
+				return true;
+			}
 
 			if (!is_atom(c_name))
 				return true;
@@ -942,7 +964,10 @@ static bool directives(parser *p, cell *d)
 				set_dynamic_in_db(m, C_STR(p, c_name), arity);
 			} else {
 				if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-					fprintf(stdout, "Warning: unknown directive: %s/%d\n", dirname, c->arity);
+					fprintf(stdout, "Error: unknown directive: %s/%d\n", dirname, c->arity);
+
+				p->error = true;
+				return true;
 			}
 
 			p1 += p1->nbr_cells;
@@ -957,9 +982,10 @@ static bool directives(parser *p, cell *d)
 			p1 += 1;
 		else {
 			if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-				fprintf(stdout, "Warning: unknown directive: %s/%d\n", dirname, c->arity);
+				fprintf(stdout, "Error: unknown directive: %s/%d\n", dirname, c->arity);
 
-			break;
+			p->error = true;
+			return true;
 		}
 	}
 
@@ -1125,7 +1151,8 @@ void term_assign_vars(parser *p, unsigned start, bool rebase)
 		if (p->consulting && !p->do_read_term && (p->vartab.var_used[i] == 1) &&
 			(p->vartab.var_name[i][strlen(p->vartab.var_name[i])-1] != '_') &&
 			(*p->vartab.var_name[i] != '_')) {
-			if (!p->m->pl->quiet)
+			if (!p->m->pl->quiet
+				&& !((cl->cells->val_off == g_neck_s) && cl->cells->arity == 1))
 				fprintf(stdout, "Warning: singleton: %s, near %s:%d\n", p->vartab.var_name[i], get_loaded(p->m, p->m->filename), p->line_nbr);
 		}
 	}
@@ -2844,6 +2871,9 @@ static bool process_term(parser *p, cell *p1)
 
 	directives(p, p1);
 
+	if (p->error)
+		return false;
+
 	bool consulting = true;
 
 	cell *h = get_head(p1);
@@ -2892,7 +2922,6 @@ static bool process_term(parser *p, cell *p1)
 	dbe->cl.is_fact = !get_logical_body(dbe->cl.cells);
 	dbe->line_nbr_start = p->line_nbr_start;
 	dbe->line_nbr_end = p->line_nbr;
-	//printf("*** %s/%u => '%s' : %u:%u\n", C_STR(p, &dbe->owner->key), dbe->owner->key.arity, dbe->filename, dbe->line_nbr_start, dbe->line_nbr_end);
 	p->line_nbr_start = 0;
 	return true;
 }
