@@ -345,7 +345,7 @@ static int predicate_cmpkey(const void *ptr1, const void *ptr2, const void *para
 	return strcmp(m->pl->pool+p1->val_off, m->pl->pool+p2->val_off);
 }
 
-static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, void *l, unsigned depth)
+static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, void *l)
 {
 	const module *m = (const module*)param;
 	cell *p1 = (cell*)ptr1;
@@ -406,7 +406,7 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 			while (is_list(p1) && is_list(p2)) {
 				cell *h1 = LIST_HEAD(p1);
 				cell *h2 = LIST_HEAD(p2);
-				int ok = index_cmpkey_(h1, h2, param, l, depth+1);
+				int ok = index_cmpkey_(h1, h2, param, l);
 
 				if (ok != 0)
 					return ok;
@@ -415,7 +415,7 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 				p2 = LIST_TAIL(p2);
 			}
 
-			return index_cmpkey_(p1, p2, param, l, depth+1);
+			return index_cmpkey_(p1, p2, param, l);
 		} else if (!is_var(p2))
 			return 1;
 	} else if (is_interned(p1) && !p1->arity) {
@@ -462,7 +462,7 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 					continue;
 				}
 
-				int ok = index_cmpkey_(p1, p2, param, l, depth+1);
+				int ok = index_cmpkey_(p1, p2, param, l);
 
 				if (ok != 0)
 					return ok;
@@ -481,7 +481,7 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 
 int index_cmpkey(const void *ptr1, const void *ptr2, const void *param, void *l)
 {
-	return index_cmpkey_(ptr1, ptr2, param, l, 0);
+	return index_cmpkey_(ptr1, ptr2, param, l);
 }
 
 db_entry *find_in_db(module *m, uuid *ref)
