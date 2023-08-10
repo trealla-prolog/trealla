@@ -45,7 +45,7 @@ typedef enum { CALL, EXIT, REDO, NEXT, FAIL } box_t;
 #define TRACE_MEM 0
 
 // Note: when in commit there is a provisional choice point
-// that we should skip over, hence the '1' ...
+// that we should ignore, hence the '1' ...
 
 static bool any_choices(const query *q, const frame *f)
 {
@@ -1080,28 +1080,29 @@ bool drop_barrier(query *q, pl_idx cp)
 	return false;
 }
 
+#if 0
 // Prune dead frames from the top down...
 
 static void chop_frames(query *q, const frame *f)
 {
 	if (q->st.curr_frame == (q->st.fp-1)) {
-		const frame *tmpf = f;
 		pl_idx prev_frame = q->st.curr_frame - f->prev_offset;
 
 		while (q->st.fp > (prev_frame+1)) {
-			if (any_choices(q, tmpf))
+			if (any_choices(q, f))
 				break;
 
-			q->tot_srecovs += q->st.sp - tmpf->base;
+			q->tot_srecovs += q->st.sp - f->base;
 			q->tot_frecovs++;
-			q->st.sp = tmpf->base;
+			q->st.sp = f->base;
 			q->st.fp--;
-			tmpf--;
+			f--;
 		}
 	}
 }
+#endif
 
-// Resume previous frame...
+// Resume next goal in previous clause...
 
 static bool resume_frame(query *q)
 {
@@ -1110,8 +1111,10 @@ static bool resume_frame(query *q)
 
 	const frame *f = GET_CURR_FRAME();
 
-	if (q->pl->opt && 0)
+#if 0
+	if (q->pl->opt)
 		chop_frames(q, f);
+#endif
 
 	q->st.curr_cell = f->curr_cell;
 	q->st.curr_frame = q->st.curr_frame - f->prev_offset;
@@ -1120,15 +1123,15 @@ static bool resume_frame(query *q)
 	return true;
 }
 
-// Proceed to next goal in frame...
+// Proceed to next goal in current clause...
 
 static void proceed(query *q)
 {
 	q->st.curr_cell += q->st.curr_cell->nbr_cells;
+	frame *f = GET_CURR_FRAME();
 
 	while (is_end(q->st.curr_cell)) {
 		if (q->st.curr_cell->val_ret) {
-			frame *f = GET_CURR_FRAME();
 			f->cgen = q->st.curr_cell->cgen;
 			q->st.m = q->pl->modmap[q->st.curr_cell->mid];
 		}
