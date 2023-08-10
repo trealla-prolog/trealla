@@ -330,12 +330,12 @@ bool has_next_key(query *q)
 		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
 			dkey++;
 
+		//DUMP_TERM("next", dkey, q->st.curr_frame, 0);
+
 		if (qarg1) {
 			if (index_cmpkey(qarg1, FIRST_ARG(dkey), q->st.m, NULL) != 0)
 				continue;
 		}
-
-		//DUMP_TERM("next", dkey, q->st.curr_frame, 0);
 
 		if (index_cmpkey(FIRST_ARG(q->st.key), FIRST_ARG(dkey), q->st.m, NULL) == 0)
 			return true;
