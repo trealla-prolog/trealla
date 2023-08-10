@@ -853,8 +853,8 @@ static void commit_me(query *q)
 		q->st.m = q->st.curr_dbe->owner->m;
 	}
 
-	bool implied_first_cut = !q->has_vars && cl->is_unique;
-	bool last_match = implied_first_cut || cl->is_first_cut || !has_next_key(q);
+	bool is_det = !q->has_vars && cl->is_unique;
+	bool last_match = is_det || cl->is_first_cut || !has_next_key(q);
 	bool tco = false;
 
 	if (q->no_tco && (cl->nbr_vars != cl->nbr_temporaries))
