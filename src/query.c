@@ -1080,28 +1080,6 @@ bool drop_barrier(query *q, pl_idx cp)
 	return false;
 }
 
-#if 0
-// Prune dead frames from the top down...
-
-static void chop_frames(query *q, const frame *f)
-{
-	if (q->st.curr_frame == (q->st.fp-1)) {
-		pl_idx prev_frame = q->st.curr_frame - f->prev_offset;
-
-		while (q->st.fp > (prev_frame+1)) {
-			if (any_choices(q, f))
-				break;
-
-			q->tot_srecovs += q->st.sp - f->base;
-			q->tot_frecovs++;
-			q->st.sp = f->base;
-			q->st.fp--;
-			f--;
-		}
-	}
-}
-#endif
-
 // Resume next goal in previous clause...
 
 static bool resume_frame(query *q)
@@ -1110,12 +1088,6 @@ static bool resume_frame(query *q)
 		return false;
 
 	const frame *f = GET_CURR_FRAME();
-
-#if 0
-	if (q->pl->opt)
-		chop_frames(q, f);
-#endif
-
 	q->st.curr_cell = f->curr_cell;
 	q->st.curr_frame = q->st.curr_frame - f->prev_offset;
 	f = GET_CURR_FRAME();
