@@ -878,6 +878,7 @@ static void commit_me(query *q)
 		f = push_frame(q, cl->nbr_vars);
 
 	if (last_match) {
+		Trace(q, get_head(q->st.curr_dbe->cl.cells), q->st.curr_frame, EXIT);
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
 
@@ -899,6 +900,7 @@ void stash_me(query *q, const clause *cl, bool last_match)
 	pl_idx cgen = ++q->cgen;
 
 	if (last_match) {
+		Trace(q, get_head(q->st.curr_dbe->cl.cells), q->st.curr_frame, EXIT);
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
 	} else {
@@ -995,7 +997,7 @@ void cut(query *q)
 			&& (f2->actual_slots == 0)
 			) {
 				q->st.fp = ch->st.fp;
-			}
+		}
 
 		leave_predicate(q, ch->st.pr);
 		drop_choice(q);
@@ -1601,7 +1603,6 @@ bool start(query *q)
 			if (q->run_hook && !q->in_hook)
 				do_post_unification_hook(q, false);
 		} else {
-			//Trace(q, save_cell, save_ctx, EXIT);
 			if (consultall(q, q->st.curr_cell, q->st.curr_frame) != true) {
 				q->retry = QUERY_RETRY;
 				q->tot_backtracks++;
@@ -1631,10 +1632,6 @@ bool start(query *q)
 		q->retry = QUERY_OK;
 
 		while (!q->st.curr_cell || is_end(q->st.curr_cell)) {
-			if (q->st.curr_dbe) {
-				Trace(q, get_head(q->st.curr_dbe->cl.cells), q->st.curr_frame, EXIT);
-			}
-
 			if (resume_frame(q)) {
 				proceed(q);
 				continue;
