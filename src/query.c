@@ -283,18 +283,10 @@ static void setup_key(query *q)
 		return;
 
 	cell *arg1 = FIRST_ARG(q->st.key);
-
 	arg1 = deref(q, arg1, q->st.key_ctx);
-	//pl_idx arg1_ctx = q->latest_ctx;
-	//cell *arg11 = NULL;
-
-	//if (arg1->arity == 1)
-	//	arg11 = deref(q, FIRST_ARG(arg1), arg1_ctx);
 
 	if (is_iso_atomic(arg1))
 		q->st.karg1_is_ground = true;
-	//else if (arg11 && is_atomic(arg11))
-	//	q->st.karg1_is_ground = true;
 }
 
 static void next_key(query *q)
