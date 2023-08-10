@@ -317,8 +317,11 @@ bool has_next_key(query *q)
 	if (q->st.iter)
 		return sl_is_next(q->st.iter, NULL);
 
+	if (!q->st.curr_dbe->next)
+		return false;
+
 	if (!q->st.key->arity || !q->pl->opt)
-		return q->st.curr_dbe->next ? true : false;
+		return true;
 
 	const cell *qarg1 = NULL;
 
