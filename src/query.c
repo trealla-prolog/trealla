@@ -279,14 +279,16 @@ static bool can_view(query *q, size_t ugen, const db_entry *dbe)
 
 static void setup_key(query *q)
 {
-	if (!q->pl->opt)
-		return;
-
 	cell *arg1 = FIRST_ARG(q->st.key);
 	arg1 = deref(q, arg1, q->st.key_ctx);
+	pl_idx arg1_ctx = q->latest_ctx;
 
 	if (is_iso_atomic(arg1))
 		q->st.karg1_is_ground = true;
+	else if (arg1->arity == 1) {
+		const cell *arg11 = deref(q, FIRST_ARG(arg1), arg1_ctx);
+		q->st.karg1_is_ground = is_atomic(arg11);
+	}
 }
 
 static void next_key(query *q)
