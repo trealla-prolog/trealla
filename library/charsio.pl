@@ -1,11 +1,12 @@
 :- module(charsio, [
 	get_line_to_chars/3,
+	get_single_char/1,
 	get_n_chars/3,
 	read_from_chars/2
 	]).
 
-read_from_chars(Cs, T) :-
-    read_term_from_chars(Cs, T, []).
+get_single_char(C) :-
+    get_unbuffered_char(C).
 
 get_line_to_chars(Stream, Cs0, Cs) :-
     getline(Stream, Line,[terminator(true)]),
@@ -13,6 +14,9 @@ get_line_to_chars(Stream, Cs0, Cs) :-
 
 get_n_chars(Stream, N, Cs) :-
     bread(Stream, N, Cs).
+
+read_from_chars(Cs, T) :-
+    read_term_from_chars(Cs, T, []).
 
 fabricate_var_name(VarType, VarName, N) :-
     char_code('A', AC),
