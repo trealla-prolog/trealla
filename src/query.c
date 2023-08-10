@@ -321,6 +321,8 @@ bool has_next_key(query *q)
 
 	if (q->st.karg1_is_ground)
 		qarg1 = deref(q, FIRST_ARG(q->st.key), q->st.key_ctx);
+	else
+		qarg1 = FIRST_ARG(q->st.key);
 
 	//DUMP_TERM("key ", q->st.key, q->st.key_ctx, 1);
 
@@ -332,12 +334,7 @@ bool has_next_key(query *q)
 
 		//DUMP_TERM("next", dkey, q->st.curr_frame, 0);
 
-		if (qarg1) {
-			if (index_cmpkey(qarg1, FIRST_ARG(dkey), q->st.m, NULL) != 0)
-				continue;
-		}
-
-		if (index_cmpkey(FIRST_ARG(q->st.key), FIRST_ARG(dkey), q->st.m, NULL) == 0)
+		if (index_cmpkey(qarg1, FIRST_ARG(dkey), q->st.m, NULL) == 0)
 			return true;
 
 #if 1
