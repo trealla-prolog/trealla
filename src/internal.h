@@ -532,8 +532,8 @@ struct prolog_state_ {
 	module *m, *prev_m;
 
 	union {
-		struct { cell *save_key; bool karg1_is_ground:1; };
-		struct { uint64_t v1, v2; };
+		struct { bool karg1_is_ground:1; };
+		struct { uint32_t v1, v2; };
 		int64_t cnt;
 	};
 

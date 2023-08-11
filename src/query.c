@@ -387,7 +387,7 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 	}
 
 	save_tmp->nbr_cells = tmp - save_tmp;
-	q->st.save_key = q->st.key = save_tmp;
+	q->st.key = save_tmp;
 	return true;
 }
 
@@ -395,11 +395,11 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 {
 	q->st.iter = NULL;
 	q->st.karg1_is_ground = false;
+	q->st.key = key;
+	q->st.key_ctx = key_ctx;
 
 	if (!pr->idx) {
 		q->st.curr_dbe = pr->head;
-		q->st.save_key = q->st.key = key;
-		q->st.key_ctx = key_ctx;
 
 		if (key->arity) {
 			if (pr->is_dynamic || pr->is_multifile || pr->is_meta_predicate) {
@@ -428,16 +428,15 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 	// we only need a temporary clone...
 
 	check_heap_error(init_tmp_heap(q));
-	q->st.save_key = key;
-	q->st.key = deep_clone_to_tmp(q, key, key_ctx);
-	q->st.key_ctx = q->st.curr_frame;
+	key = deep_clone_to_tmp(q, key, key_ctx);
+	key_ctx = q->st.curr_frame;
 
 	if (pr->is_meta_predicate) {
 		if (!expand_meta_predicate(q, pr))
 			return false;
 	}
 
-	cell *arg1 = q->st.key->arity ? FIRST_ARG(q->st.key) : NULL;
+	cell *arg1 = key->arity ? FIRST_ARG(key) : NULL;
 	skiplist *idx = pr->idx;
 
 	if (arg1 && (is_var(arg1) || pr->is_var_in_first_arg)) {
@@ -453,20 +452,20 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 			return true;
 		}
 
-		q->st.key = arg2;
+		key = arg2;
 		idx = pr->idx2;
 	}
 
 #define DEBUGIDX 0
 
 #if DEBUGIDX
-	DUMP_TERM("search, term = ", q->st.key, q->st.curr_frame);
+	DUMP_TERM("search, term = ", key, key_ctx);
 #endif
 
 	q->st.curr_dbe = NULL;
 	sliter *iter;
 
-	if (!(iter = sl_find_key(idx, q->st.key)))
+	if (!(iter = sl_find_key(idx, key)))
 		return false;
 
 	// If the index search has found just one (definite) solution
@@ -1410,7 +1409,7 @@ static bool match_head(query *q)
 		cell *head = get_head(cl->cells);
 		try_me(q, cl->nbr_vars);
 
-		if (unify(q, q->st.save_key, q->st.key_ctx, head, q->st.fp)) {
+		if (unify(q, q->st.key, q->st.key_ctx, head, q->st.fp)) {
 			if (q->error)
 				break;
 
