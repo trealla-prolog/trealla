@@ -863,7 +863,7 @@ static bool fn_iso_stream_property_2(query *q)
 		return false;
 	}
 
-	clause *cl = &q->st.curr_dbe->cl;
+	clause *cl = &q->st.dbe->cl;
 	GET_FIRST_ARG(pstrx,any);
 	pstrx->flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
 	stash_me(q, cl, false);

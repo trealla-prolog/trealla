@@ -2266,7 +2266,7 @@ static bool fn_iso_clause_2(query *q)
 
 	while (match_clause(q, p1, p1_ctx, DO_CLAUSE)) {
 		if (q->did_throw) return true;
-		clause *cl = &q->st.curr_dbe->cl;
+		clause *cl = &q->st.dbe->cl;
 		cell *body = get_body(cl->cells);
 		bool ok;
 
@@ -2316,7 +2316,7 @@ bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 	if (!match || q->did_throw)
 		return match;
 
-	db_entry *dbe = q->st.curr_dbe;
+	db_entry *dbe = q->st.dbe;
 	retract_from_db(dbe);
 	bool last_match = (is_retract == DO_RETRACT) && !has_next_key(q);
 	stash_me(q, &dbe->cl, last_match);
@@ -3720,7 +3720,7 @@ static bool fn_clause_3(query *q)
 			if (!dbe || (!u.u1 && !u.u2))
 				break;
 
-			q->st.curr_dbe = dbe;
+			q->st.dbe = dbe;
 			cl = &dbe->cl;
 			cell *head = get_head(cl->cells);
 
@@ -3731,12 +3731,12 @@ static bool fn_clause_3(query *q)
 				break;
 
 			char tmpbuf[128];
-			uuid_to_buf(&q->st.curr_dbe->u, tmpbuf, sizeof(tmpbuf));
+			uuid_to_buf(&q->st.dbe->u, tmpbuf, sizeof(tmpbuf));
 			cell tmp;
 			check_heap_error(make_cstring(&tmp, tmpbuf));
 			unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 			unshare_cell(&tmp);
-			cl = &q->st.curr_dbe->cl;
+			cl = &q->st.dbe->cl;
 		}
 
 		cell *body = get_body(cl->cells);
@@ -4027,7 +4027,7 @@ static bool fn_listing_0(query *q)
 
 static void save_name(FILE *fp, query *q, pl_idx name, unsigned arity)
 {
-	module *m = q->st.curr_dbe ? q->st.curr_dbe->owner->m : q->st.m;
+	module *m = q->st.dbe ? q->st.dbe->owner->m : q->st.m;
 	q->listing = true;
 
 	for (predicate *pr = m->head; pr; pr = pr->next) {
