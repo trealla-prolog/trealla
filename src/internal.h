@@ -525,15 +525,15 @@ struct frame_ {
 };
 
 struct prolog_state_ {
-	cell *curr_cell, *key;
+	cell *curr_cell;
 	predicate *pr;
 	db_entry *curr_dbe;
 	sliter *iter, *f_iter;
 	module *m, *prev_m;
 
 	union {
-		struct { bool karg1_is_ground:1; };
-		struct { uint32_t v1, v2; };
+		struct { cell *key; bool karg1_is_ground:1; };
+		struct { uint64_t v1, v2; };
 		int64_t cnt;
 	};
 
