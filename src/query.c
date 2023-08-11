@@ -402,12 +402,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 		q->st.curr_dbe = pr->head;
 
 		if (key->arity) {
-			if (pr->is_dynamic || pr->is_multifile || pr->is_meta_predicate) {
-
-				// Because the key will also be used later
-				// to check for choice-points, we need to
-				// actually clone to the heap...
-
+			if (pr->is_multifile || pr->is_meta_predicate) {
 				q->st.key = deep_clone_to_heap(q, key, key_ctx);
 				check_heap_error(q->st.key);
 				q->st.key_ctx = q->st.curr_frame;
