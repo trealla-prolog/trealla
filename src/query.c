@@ -317,7 +317,7 @@ bool has_next_key(query *q)
 	if (!q->st.key->arity || !q->pl->opt)
 		return true;
 
-	const cell *qarg1 = NULL;
+	const cell *qarg1;
 
 	if (q->st.karg1_is_ground)
 		qarg1 = deref(q, FIRST_ARG(q->st.key), q->st.key_ctx);
