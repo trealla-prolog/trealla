@@ -221,7 +221,9 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 	}
 
 	if (is_structure(v)) {
-		q->no_tco = true;
+		if ((c_ctx == q->st.fp) || (v_ctx == q->st.fp))
+			q->no_tco = true;
+
 		make_indirect(&e->c, v, v_ctx);
 	} else if (is_var(v)) {
 		e->c.tag = TAG_VAR;
@@ -244,7 +246,9 @@ inline static void reset_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_
 		add_trail(q, c_ctx, c->var_nbr, NULL, 0);
 
 	if (is_structure(v)) {
-		q->no_tco = true;
+		if ((c_ctx == q->st.fp) || (v_ctx == q->st.fp))
+			q->no_tco = true;
+
 		make_indirect(&e->c, v, v_ctx);
 	} else if (is_var(v)) {
 		e->c.tag = TAG_VAR;
