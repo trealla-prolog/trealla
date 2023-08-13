@@ -221,10 +221,6 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 	}
 
 	if (is_structure(v)) {
-		// TODO: if v_ctx > c_ctx then deep clone v
-		// to the heap and bind to that. How are we
-		// keeping track of frame & slot hit water?
-
 		q->no_tco = true;
 		make_indirect(&e->c, v, v_ctx);
 	} else if (is_var(v)) {
