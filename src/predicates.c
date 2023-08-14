@@ -5369,6 +5369,9 @@ static bool fn_sys_skip_max_list_4(query *q)
 	if (ok != true)
 		return ok;
 
+
+	unshare_cell(&tmp);
+
 	if (!is_iso_list_or_nil(c) && !(is_cstring(c) && !strcmp(C_STR(q,c), "[]")) && !is_var(c)) {
 		make_int(&tmp, -1);
 		unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
