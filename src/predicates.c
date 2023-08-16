@@ -4558,6 +4558,7 @@ static bool fn_sys_elapsed_0(query *q)
 	fprintf(stderr, "%% Time elapsed %.3fs, %llu Inferences, %.3f MLips\n", (double)elapsed/1000/1000, (unsigned long long)q->tot_goals, lips/1000/1000);
 	if (q->is_redo) fprintf(stdout, "  ");
 	//else if (!q->redo) fprintf(stdout, "");
+	if (!q->cp) return true;
 	choice *ch = GET_CURR_CHOICE();
 	ch->st.timer_started = get_time_in_usec();
 	return true;

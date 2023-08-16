@@ -432,10 +432,7 @@ bool fn_iso_disjunction_2(query *q)
 
 	q->tot_goals--;
 	GET_FIRST_ARG(p1,callable);
-	GET_NEXT_ARG(p2,any);
-
-	if (!is_callable(p2))
-		return throw_error(q, q->st.curr_cell, q->st.curr_frame, "type_error", "callable");
+	GET_NEXT_ARG(p2,callable);
 
 	if (q->retry) {
 		q->retry = QUERY_SKIP;
