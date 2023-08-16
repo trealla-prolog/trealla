@@ -325,7 +325,7 @@ bool fn_if_2(query *q)
 	cell *tmp = prepare_call(q, true, p1, p1_ctx, 2+p2->nbr_cells+1);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = 1+p1->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_sys_soft_prune_s, fn_sys_soft_prune_1, 1, 1);
+	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
 	nbr_cells += safe_copy_cells(tmp+nbr_cells, p2, p2->nbr_cells);
 	make_call(q, tmp+nbr_cells);
@@ -376,7 +376,7 @@ static bool do_if_else(query *q, cell *p1, cell *p2, cell *p3)
 	cell *tmp = prepare_call(q, true, p1, q->st.curr_frame, 2+p2->nbr_cells+1);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = 1+p1->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_sys_soft_prune_s, fn_sys_soft_prune_1, 1, 1);
+	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
 	nbr_cells += safe_copy_cells(tmp+nbr_cells, p2, p2->nbr_cells);
 	make_call(q, tmp+nbr_cells);
@@ -474,14 +474,6 @@ bool fn_iso_cut_0(query *q)
 {
 	q->tot_goals--;
 	cut(q);
-	return true;
-}
-
-bool fn_sys_soft_prune_1(query *q)
-{
-	q->tot_goals--;
-	GET_FIRST_ARG(p1,integer);
-	prune(q, true, get_smalluint(p1));
 	return true;
 }
 

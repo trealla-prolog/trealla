@@ -8289,7 +8289,6 @@ builtins g_iso_bifs[] =
 	{"$call_cleanup", 3, fn_sys_call_cleanup_3, NULL, false, false, BLAH},
 	{"$block_catcher", 1, fn_sys_block_catcher_1, NULL, false, false, BLAH},
 	{"$cleanup_if_det", 1, fn_sys_cleanup_if_det_1, NULL, false, false, BLAH},
-	{"$soft_prune", 1, fn_sys_soft_prune_1, NULL, false, false, BLAH},
 	{"$drop_barrier", 1, fn_sys_drop_barrier_1, NULL, false, false, BLAH},
 	{"$timer", 0, fn_sys_timer_0, NULL, false, false, BLAH},
 	{"$elapsed", 0, fn_sys_elapsed_0, NULL, false, false, BLAH},

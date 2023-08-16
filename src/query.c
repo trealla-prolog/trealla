@@ -1005,59 +1005,6 @@ void cut(query *q)
 		q->st.tp = 0;
 }
 
-void prune(query *q, bool soft_cut, pl_idx cp)
-{
-	frame *f = GET_CURR_FRAME();
-
-	while (q->cp) {
-		choice *ch = GET_CURR_CHOICE();
-		const choice *save_ch = ch;
-
-		while (soft_cut && (ch >= q->choices)) {
-			if ((q->cp-1) == cp) {
-				if (ch == save_ch) {
-					leave_predicate(q, ch->st.pr);
-					drop_choice(q);
-					f->cgen--;
-					return;
-				}
-
-				ch->fail_on_retry = true;
-				f->cgen--;
-				return;
-			}
-
-			if (ch == q->choices)
-				return;
-
-			ch--;
-		}
-
-		// A prune can break through a barrier...
-
-		if (ch->cgen < f->cgen) {
-			f->cgen = ch->cgen;
-			break;
-		}
-
-		leave_predicate(q, ch->st.pr);
-		drop_choice(q);
-
-		if (ch->register_cleanup && !ch->fail_on_retry) {
-			ch->fail_on_retry = true;
-			cell *c = ch->st.curr_cell;
-			pl_idx c_ctx = ch->st.curr_frame;
-			c = deref(q, FIRST_ARG(c), c_ctx);
-			c_ctx = q->latest_ctx;
-			do_cleanup(q, c, c_ctx);
-			break;
-		}
-	}
-
-	if (!q->cp && !q->undo_hi_tp)
-		q->st.tp = 0;
-}
-
 // If the call is det then the barrier can be dropped...
 
 bool drop_barrier(query *q, pl_idx cp)
