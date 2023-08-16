@@ -1064,6 +1064,13 @@ bool drop_barrier(query *q, pl_idx cp)
 {
 	if ((q->cp-1) == cp) {
 		drop_choice(q);
+
+		if (q->cp) {
+			const choice *ch = GET_CURR_CHOICE();
+			frame *f = GET_CURR_FRAME();
+			f->cgen = ch->cgen;
+		}
+
 		return true;
 	}
 

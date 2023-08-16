@@ -109,7 +109,6 @@ bool fn_iso_once_1(query *q);
 bool fn_iso_call_1(query *q);
 bool fn_iso_call_n(query *q);
 bool fn_iso_cut_0(query *q);
-bool fn_sys_prune_0(query *q);
 bool fn_iso_fail_0(query *q);
 bool fn_iso_true_0(query *q);
 bool fn_sys_undo_trail_1(query *q);

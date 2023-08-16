@@ -416,7 +416,7 @@ static bool fn_iso_notunify_2(query *q)
 	GET_NEXT_RAW_ARG(p2,any);
 	cell tmp2;
 	make_struct(&tmp2, g_unify_s, fn_iso_unify_2, 2, 0);
-	cell *tmp = prepare_call(q, true, &tmp2, q->st.curr_frame, p1->nbr_cells+p2->nbr_cells+4);
+	cell *tmp = prepare_call(q, true, &tmp2, q->st.curr_frame, p1->nbr_cells+p2->nbr_cells+5);
 	pl_idx nbr_cells = 1;
 	tmp[nbr_cells].nbr_cells += p1->nbr_cells+p2->nbr_cells;
 	nbr_cells++;
@@ -424,7 +424,9 @@ static bool fn_iso_notunify_2(query *q)
 	nbr_cells += p1->nbr_cells;
 	safe_copy_cells(tmp+nbr_cells, p2, p2->nbr_cells);
 	nbr_cells += p2->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_sys_prune_s, fn_sys_prune_0, 0, 0);
+	make_struct(tmp+nbr_cells++, g_cut_s, fn_iso_cut_0, 0, 0);
+	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_1, 1, 1);
+	make_uint(tmp+nbr_cells++, q->cp);
 	make_struct(tmp+nbr_cells++, g_fail_s, fn_iso_fail_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
@@ -6894,12 +6896,14 @@ static bool fn_call_nth_2(query *q)
 		return true;
 	}
 
-	cell *tmp = prepare_call(q, true, p1, p1_ctx, 5);
+	cell *tmp = prepare_call(q, true, p1, p1_ctx, 7);
 	pl_idx nbr_cells = 1 + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_ne_s, fn_sys_ne_2, 2, 2);
 	make_int(tmp+nbr_cells++, 1);
 	make_int(tmp+nbr_cells++, get_smallint(p2));
-	make_struct(tmp+nbr_cells++, g_sys_prune_s, fn_sys_prune_0, 0, 0);
+	make_struct(tmp+nbr_cells++, g_cut_s, fn_iso_cut_0, 0, 0);
+	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_1, 1, 1);
+	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
@@ -7571,9 +7575,11 @@ static bool fn_sys_register_cleanup_1(query *q)
 {
 	if (q->retry) {
 		GET_FIRST_ARG(p1,callable);
-		cell *tmp = prepare_call(q, true, p1, p1_ctx, 4);
+		cell *tmp = prepare_call(q, true, p1, p1_ctx, 5);
 		pl_idx nbr_cells = 1 + p1->nbr_cells;
-		make_struct(tmp+nbr_cells++, g_sys_prune_s, fn_sys_prune_0, 0, 0);
+		make_struct(tmp+nbr_cells++, g_cut_s, fn_iso_cut_0, 0, 0);
+		make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_1, 1, 1);
+		make_uint(tmp+nbr_cells++, q->cp);
 		make_struct(tmp+nbr_cells++, g_fail_s, fn_iso_fail_0, 0, 0);
 		make_call(q, tmp+nbr_cells);
 		q->st.curr_cell = tmp;
@@ -8283,7 +8289,6 @@ builtins g_iso_bifs[] =
 	{"$block_catcher", 1, fn_sys_block_catcher_1, NULL, false, false, BLAH},
 	{"$cleanup_if_det", 1, fn_sys_cleanup_if_det_1, NULL, false, false, BLAH},
 	{"$soft_prune", 1, fn_sys_soft_prune_1, NULL, false, false, BLAH},
-	{"$prune", 0, fn_sys_prune_0, NULL, false, false, BLAH},
 	{"$drop_barrier", 1, fn_sys_drop_barrier_1, NULL, false, false, BLAH},
 	{"$timer", 0, fn_sys_timer_0, NULL, false, false, BLAH},
 	{"$elapsed", 0, fn_sys_elapsed_0, NULL, false, false, BLAH},
