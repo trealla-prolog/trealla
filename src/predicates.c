@@ -1847,6 +1847,7 @@ static void db_log(query *q, db_entry *dbe, enum log_type l)
 		break;
 	}
 
+	fflush(fp);
 	q->quoted = 0;
 }
 
