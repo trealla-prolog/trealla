@@ -165,7 +165,7 @@ int main(int ac, char *av[], char * envp[])
 	snprintf(histfile, sizeof(histfile), "%s/%s", homedir, ".tpl_history");
 	convert_path(histfile);
 	//bool did_load = false;
-	int i, do_goal = 0, do_lib = 0, do_save = 0, do_restore = 0;
+	int i, do_goal = 0, do_lib = 0, do_log = 0, do_restore = 0;
 	int version = 0, daemon = 0;
 	bool no_res = false, quiet = false;
 	const char *restore_file = NULL;
@@ -246,8 +246,8 @@ int main(int ac, char *av[], char * envp[])
 			do_lib = 1;
 		} else if (!strcmp(av[i], "--restore")) {
 			do_restore = 1;
-		} else if (!strcmp(av[i], "--save")) {
-			do_save = 1;
+		} else if (!strcmp(av[i], "--log")) {
+			do_log = 1;
 		} else if (!strcmp(av[i], "-f") || !strcmp(av[i], "-l") || !strcmp(av[i], "--file") || !strcmp(av[i], "--consult-file")) {
 			if (!strcmp(av[i], "-f"))
 				no_res = true;
@@ -268,13 +268,13 @@ int main(int ac, char *av[], char * envp[])
 		} else if (do_restore) {
 			restore_file = av[i];
 			do_restore = 0;
-		} else if (do_save) {
+		} else if (do_log) {
 			if (!pl_logging(pl, av[i])) {
 				fprintf(stderr, "Error: error(existence_error(source_sink,'%s'),log_save)\n", av[i]);
 				pl_destroy(pl);
 				return 1;
 			}
-			do_save = 0;
+			do_log = 0;
 		} else {
 			if (!pl_consult(pl, av[i])) {
 				fprintf(stderr, "Error: error(existence_error(source_sink,'%s'),consult/1)\n", av[i]);
@@ -332,7 +332,8 @@ int main(int ac, char *av[], char * envp[])
 		fprintf(stdout, "  -d, --daemon\t\t- daemonize\n");
 		fprintf(stdout, "  -w, --watchdog\t- create watchdog\n");
 		fprintf(stdout, "  --consult\t\t- consult from STDIN\n");
-		fprintf(stdout, "  --log file\t\t- log file\n");
+		fprintf(stdout, "  --log file\t\t- enable log file\n");
+		fprintf(stdout, "  --restore file\t\t- reload log file\n");
 	}
 
 	if (version) {
