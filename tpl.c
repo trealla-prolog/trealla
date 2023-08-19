@@ -165,9 +165,10 @@ int main(int ac, char *av[], char * envp[])
 	snprintf(histfile, sizeof(histfile), "%s/%s", homedir, ".tpl_history");
 	convert_path(histfile);
 	//bool did_load = false;
-	int i, do_goal = 0, do_lib = 0;
+	int i, do_goal = 0, do_lib = 0, do_save = 0, do_restore = 0;
 	int version = 0, daemon = 0;
 	bool no_res = false, quiet = false;
+	const char *restore_file = NULL;
 	void *pl = pl_create();
 
 	if (!pl) {
@@ -243,6 +244,10 @@ int main(int ac, char *av[], char * envp[])
 		} else if (!strcmp(av[i], "--library")) {
 			do_goal = 0;
 			do_lib = 1;
+		} else if (!strcmp(av[i], "--restore")) {
+			do_restore = 1;
+		} else if (!strcmp(av[i], "--save")) {
+			do_save = 1;
 		} else if (!strcmp(av[i], "-f") || !strcmp(av[i], "-l") || !strcmp(av[i], "--file") || !strcmp(av[i], "--consult-file")) {
 			if (!strcmp(av[i], "-f"))
 				no_res = true;
@@ -260,6 +265,16 @@ int main(int ac, char *av[], char * envp[])
 		} else if (do_goal) {
 			do_goal = 0;
 			goal = av[i];
+		} else if (do_restore) {
+			restore_file = av[i];
+			do_restore = 0;
+		} else if (do_save) {
+			if (!pl_logging(pl, av[i])) {
+				fprintf(stderr, "Error: error(existence_error(source_sink,'%s'),log_save)\n", av[i]);
+				pl_destroy(pl);
+				return 1;
+			}
+			do_save = 0;
 		} else {
 			if (!pl_consult(pl, av[i])) {
 				fprintf(stderr, "Error: error(existence_error(source_sink,'%s'),consult/1)\n", av[i]);
@@ -275,6 +290,14 @@ int main(int ac, char *av[], char * envp[])
 #else
 		pl_consult(pl, "~/.tplrc");
 #endif
+
+	if (restore_file) {
+		if (!pl_restore(pl, restore_file)) {
+			fprintf(stderr, "Error: error(existence_error(source_sink,'%s'),restore_file)\n", restore_file);
+			pl_destroy(pl);
+			return 1;
+		}
+	}
 
 	if (goal) {
 		if (!pl_eval(pl, goal, false)) {
@@ -309,6 +332,7 @@ int main(int ac, char *av[], char * envp[])
 		fprintf(stdout, "  -d, --daemon\t\t- daemonize\n");
 		fprintf(stdout, "  -w, --watchdog\t- create watchdog\n");
 		fprintf(stdout, "  --consult\t\t- consult from STDIN\n");
+		fprintf(stdout, "  --log file\t\t- log file\n");
 	}
 
 	if (version) {

@@ -14,6 +14,8 @@ extern bool pl_consult_fp(prolog*, FILE *fp, const char *filename);
 extern bool pl_eval(prolog*, const char *expr, bool interactive);
 extern bool pl_isatty(prolog*);
 extern FILE *pl_stdin(prolog*);
+extern bool pl_restore(prolog*, const char *filename);
+extern bool pl_logging(prolog*, const char *filename);
 
 extern bool pl_query(prolog*, const char *expr, pl_sub_query **q, unsigned int yield_time_in_ms);
 extern bool pl_yield_at(pl_sub_query *q, unsigned int time_in_ms);

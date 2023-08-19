@@ -804,6 +804,7 @@ struct prolog_ {
 	parser *p;
 	query *curr_query;
 	skiplist *symtab, *biftab, *keyval, *help, *fortab;
+	FILE *logfp;
 	char *pool;
 	size_t pool_offset, pool_size, tabs_size;
 	uint64_t s_last, s_cnt, seed, ugen;

@@ -6,6 +6,7 @@ module *module_create(prolog *pl, const char *name);
 void module_duplicate(prolog *pl, module *m, const char *name, unsigned arity);
 void module_destroy(module *m);
 
+bool restore_log(module *m, const char *filename);
 bool save_file(module *m, const char *filename);
 module *load_file(module *m, const char *filename, bool including);
 module *load_fp(module *m, FILE *fp, const char *filename, bool including);

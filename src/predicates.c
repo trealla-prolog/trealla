@@ -1819,6 +1819,11 @@ enum log_type { LOG_ASSERTA=1, LOG_ASSERTZ=2, LOG_ERASE=3 };
 
 static void db_log(query *q, db_entry *dbe, enum log_type l)
 {
+	FILE *fp = q->pl->logfp;
+
+	if (!fp)
+		return;
+
 	char tmpbuf[256];
 	char *dst;
 	q->quoted = 2;
@@ -1827,18 +1832,18 @@ static void db_log(query *q, db_entry *dbe, enum log_type l)
 	case LOG_ASSERTA:
 		dst = print_term_to_strbuf(q, dbe->cl.cells, q->st.curr_frame, 1);
 		uuid_to_buf(&dbe->u, tmpbuf, sizeof(tmpbuf));
-		fprintf(q->st.m->fp, "'$a_'(%s,'%s').\n", dst, tmpbuf);
+		fprintf(fp, "%s:asserta((%s),'%s').\n", q->st.m->name, dst, tmpbuf);
 		free(dst);
 		break;
 	case LOG_ASSERTZ:
 		dst = print_term_to_strbuf(q, dbe->cl.cells, q->st.curr_frame, 1);
 		uuid_to_buf(&dbe->u, tmpbuf, sizeof(tmpbuf));
-		fprintf(q->st.m->fp, "'$z_'(%s,'%s').\n", dst, tmpbuf);
+		fprintf(fp, "%s:assertz((%s),'%s').\n", q->st.m->name, dst, tmpbuf);
 		free(dst);
 		break;
 	case LOG_ERASE:
 		uuid_to_buf(&dbe->u, tmpbuf, sizeof(tmpbuf));
-		fprintf(q->st.m->fp, "'$e_'('%s').\n", tmpbuf);
+		fprintf(fp, "%s:erase('%s').\n", q->st.m->name, tmpbuf);
 		break;
 	}
 
@@ -2322,6 +2327,7 @@ bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 	retract_from_db(dbe);
 	bool last_match = (is_retract == DO_RETRACT) && !has_next_key(q);
 	stash_me(q, &dbe->cl, last_match);
+	db_log(q, dbe, LOG_ERASE);
 	return true;
 }
 
@@ -2577,6 +2583,7 @@ static bool fn_iso_asserta_1(query *q)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
 	p->cl->cidx = 0;
+	db_log(q, dbe, LOG_ASSERTA);
 	return true;
 }
 
@@ -2632,6 +2639,7 @@ static bool fn_iso_assertz_1(query *q)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
 	p->cl->cidx = 0;
+	db_log(q, dbe, LOG_ASSERTZ);
 	return true;
 }
 
@@ -3849,20 +3857,14 @@ static bool do_asserta_2(query *q)
 		unshare_cell(&tmp2);
 	}
 
+	db_log(q, dbe, LOG_ASSERTA);
 	return true;
 }
 
 static bool fn_asserta_2(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
-	GET_NEXT_ARG(p2,var);
-	return do_asserta_2(q);
-}
-
-static bool fn_sys_asserta_2(query *q)
-{
-	GET_FIRST_ARG(p1,nonvar);
-	GET_NEXT_ARG(p2,atom);
+	GET_NEXT_ARG(p2,atom_or_var);
 	return do_asserta_2(q);
 }
 
@@ -3939,20 +3941,14 @@ static bool do_assertz_2(query *q)
 		unshare_cell(&tmp2);
 	}
 
+	db_log(q, dbe, LOG_ASSERTZ);
 	return true;
 }
 
 static bool fn_assertz_2(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
-	GET_NEXT_ARG(p2,var);
-	return do_assertz_2(q);
-}
-
-static bool fn_sys_assertz_2(query *q)
-{
-	GET_FIRST_ARG(p1,nonvar);
-	GET_NEXT_ARG(p2,atom);
+	GET_NEXT_ARG(p2,atom_or_var);
 	return do_assertz_2(q);
 }
 

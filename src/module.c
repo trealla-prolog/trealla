@@ -1795,6 +1795,33 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including)
 	return save_m;
 }
 
+bool restore_log(module *m, const char *filename)
+{
+	FILE *fp = fopen(filename, "r");
+	char *line = NULL;
+
+	if (!fp)
+		return false;
+
+	FILE *save = m->pl->logfp;
+	m->pl->logfp = NULL;
+
+	for (;;) {
+		size_t n = 0;
+
+		if (getline(&line, &n, fp) < 0) {
+			free(line);
+			break;
+		}
+
+		pl_eval(m->pl, line, false);
+	}
+
+	fclose(fp);
+	m->pl->logfp = save;
+	return true;
+}
+
 module *load_file(module *m, const char *filename, bool including)
 {
 	const char *orig_filename = filename;

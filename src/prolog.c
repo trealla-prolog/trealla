@@ -214,6 +214,17 @@ bool pl_consult(prolog *pl, const char *filename)
 	return load_file(pl->user_m, filename, false);
 }
 
+bool pl_logging(prolog *pl, const char *filename)
+{
+	pl->logfp = fopen(filename, "a");
+	return pl->logfp ? true : false;
+}
+
+bool pl_restore(prolog *pl, const char *filename)
+{
+	return restore_log(pl->user_m, filename);
+}
+
 static void g_destroy()
 {
 	free(g_tpl_lib);
@@ -450,6 +461,9 @@ static bool g_init(prolog *pl)
 void pl_destroy(prolog *pl)
 {
 	if (!pl) return;
+
+	if (pl->logfp)
+		fclose(pl->logfp);
 
 	module_destroy(pl->system_m);
 	module_destroy(pl->user_m);
