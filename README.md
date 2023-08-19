@@ -14,7 +14,7 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	Foreign function interface (FFI) for calling out to user C code
 	API for calling from C (or by using WASM from Go & JS)
 	Access SQLITE databases using builtin module (uses FFI)
-	Concurrency via tasks / futures / engines (generators)
+	Concurrency via tasks / linda / futures / engines (generators)
 	Logtalk compatible
 
 
@@ -328,16 +328,16 @@ Non-standard predicates
 	get_unbuffered_code/1		# read a single unbuffered code
 	get_unbuffered_char/1		# read a single unbuffered character
 
-	read_term_from_atom/2       # read_term_from_atom(+atom,?term)
+	read_from_atom/2            # read_from_atom(+atom,?term)
+	read_from_chars/2	        # read_from_chars(+chars,?term)
 	read_term_from_atom/3       # read_term_from_atom(+atom,?term,+optlist)
-	read_term_from_chars/2	    # read_term_from_chars(+chars,?term)
 	read_term_from_chars/3	    # read_term_from_chars(+chars,?term,+optlist)
 
-	read_term_from_chars_/3	    # read_term_from_chars+(?term,+chars,-rest)
+	read_from_chars_/3	        # read_from_chars+(?term,+chars,-rest)
 	read_term_from_chars_/4	    # read_term_from_chars+(?term,+optlist,+chars,-rest)
 
-	write_term_to_atom/3        # write_term_to_atom(?atom,?term,+list)
-	write_canonical_to_atom/3   # write_canonical_to_atom(?atom,?term,+list)
+	write_term_to_atom/3        # write_term_to_atom(?atom,?term,+oplist)
+	write_canonical_to_atom/3   # write_canonical_to_atom(?atom,?term,+oplist)
 	term_to_atom/2              # term_to_atom(?atom,?term)
 
 	setrand/1                   # set_seed(+integer) set random number seed
@@ -1011,10 +1011,10 @@ Run...
 Concurrency (tasks)						##EXPERIMENTAL##
 ===================
 
-Trealla is single-threaded internally but cooperative multitasking is
-available in the form of light-weight coroutines that run until they
-yield choice, either explicitly or implicitly (when waiting on input
-or a timer). They are called a `task` here.
+Trealla is thread-safe, but single-threaded, internally. Cooperative
+multitasking is available in the form of light-weight coroutines that
+run until they yield either explicitly or implicitly (when waiting on
+an event of some kind). They are called a `task` here.
 
 	task/[1-n]	            # concurrent form of call/1-n
 	tasklist/[2-8]          # concurrent form of maplist/1-n
@@ -1025,7 +1025,7 @@ ones complete (should this be optional?).
 
 An example:
 
-```console
+```
 	:-use_module(library(http)).
 
 	geturl(Url) :-
@@ -1075,6 +1075,74 @@ operating system threads in a C-wrapper program by calling
 Each such *prolog* instance is thread-safe. Such instances could use
 Unix domain sockets for IPC. See *src/trealla.h* for API.
 
+
+Concurrency (linda)							##EXPERIMENTAL##
+===================
+
+Implements a toy version of the Linda coordination language using
+coroutines (tasks).
+
+```
+	linda_eval/1					# Make a goal.
+	out/1							# Output a tuple
+	in/1							# retract a tuple
+	rd/1							# match a tuple
+	in_noblock/1					# retract a tuple
+	rd_noblock/1					# match a tuple
+	wait/0
+	end_wait/0
+```
+
+For example:
+
+```
+	:- initialization(main).
+	:- use_module(library(linda)).
+
+	main :-
+		linda_eval(consumer('A')),
+		linda_eval(consumer('B')),
+		linda_eval(producer),
+		wait.
+
+	producer :-
+		between(1, 10, I),
+			write(['producer', I]), nl,
+			out({msg:I}),
+			delay(250),
+			fail.
+
+	consumer(N) :-
+		in({msg:I}),
+		write(['consumer',N,'got=',I]), nl,
+		random(R), Ms is floor(R*1000),
+		delay(Ms),
+		fail.
+```
+
+```
+	$ tpl samples/testlinda.pl
+	[producer,1]
+	[consumer,B,got=,1]
+	[producer,2]
+	[consumer,B,got=,2]
+	[producer,3]
+	[consumer,B,got=,3]
+	[producer,4]
+	[consumer,A,got=,4]
+	[producer,5]
+	[producer,6]
+	[consumer,B,got=,5]
+	[producer,7]
+	[consumer,A,got=,6]
+	[producer,8]
+	[consumer,B,got=,7]
+	[consumer,A,got=,8]
+	[producer,9]
+	[consumer,A,got=,9]
+	[producer,10]
+	[consumer,B,got=,10]
+```
 
 Concurrency (futures)						##EXPERIMENTAL##
 =====================

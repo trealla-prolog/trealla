@@ -58,6 +58,8 @@ extern unsigned char library_gensym_pl[];
 extern unsigned int library_gensym_pl_len;
 extern unsigned char library_uuid_pl[];
 extern unsigned int library_uuid_pl_len;
+extern unsigned char library_linda_pl[];
+extern unsigned int library_linda_pl_len;
 
 library g_libs[] = {
 	 {"abnf", library_abnf_pl, &library_abnf_pl_len},
@@ -78,6 +80,7 @@ library g_libs[] = {
 	 {"http", library_http_pl, &library_http_pl_len},
 	 {"json", library_json_pl, &library_json_pl_len},
 	 {"lambda", library_lambda_pl, &library_lambda_pl_len},
+	 {"linda", library_linda_pl, &library_linda_pl_len},
 	 {"lists", library_lists_pl, &library_lists_pl_len},
 	 {"ordsets", library_ordsets_pl, &library_ordsets_pl_len},
 	 {"pairs", library_pairs_pl, &library_pairs_pl_len},

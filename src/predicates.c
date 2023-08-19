@@ -4670,9 +4670,6 @@ static bool fn_sleep_1(query *q)
 
 	GET_FIRST_ARG(p1,number);
 
-	if (is_zero(p1))
-		return true;
-
 	if (is_negative(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
 
@@ -4699,9 +4696,6 @@ static bool fn_delay_1(query *q)
 		return true;
 
 	GET_FIRST_ARG(p1,integer);
-
-	if (is_zero(p1))
-		return true;
 
 	if (is_negative(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
@@ -5414,9 +5408,17 @@ static query *pop_task(query *q, query *task)
 	return task->next;
 }
 
+static bool fn_end_wait_0(query *q)
+{
+	if (q->parent)
+		q->parent->end_wait = true;
+
+	return true;
+}
+
 static bool fn_wait_0(query *q)
 {
-	while (q->tasks) {
+	while (q->tasks && !q->end_wait) {
 		CHECK_INTERRUPT();
 		uint64_t now = get_time_in_usec() / 1000;
 		query *task = q->tasks;
@@ -5458,6 +5460,7 @@ static bool fn_wait_0(query *q)
 			msleep(0);
 	}
 
+	q->end_wait = false;
 	return true;
 }
 
@@ -8512,6 +8515,7 @@ builtins g_other_bifs[] =
 	{"task", 7, fn_task_n, ":callable,?term,?term,?term,?term,?term,?term", false, false, BLAH},
 	{"task", 8, fn_task_n, ":callable,?term,?term,?term,?term,?term,?term,?term", false, false, BLAH},
 
+	{"end_wait", 0, fn_end_wait_0, NULL, false, false, BLAH},
 	{"wait", 0, fn_wait_0, NULL, false, false, BLAH},
 	{"await", 0, fn_await_0, NULL, false, false, BLAH},
 	{"yield", 0, fn_yield_0, NULL, false, false, BLAH},
