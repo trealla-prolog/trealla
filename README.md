@@ -1079,16 +1079,16 @@ Unix domain sockets for IPC. See *src/trealla.h* for API.
 Concurrency (linda)							##EXPERIMENTAL##
 ===================
 
-Implements a toy version of the Linda coordination language using
-coroutines (tasks).
+Implements a toy (local-only) version of the Linda coordination
+language using coroutines (tasks).
 
 ```
-	linda_eval/1					# Make a goal.
-	out/1							# Output a tuple
-	in/1							# retract a tuple
-	rd/1							# match a tuple
-	in_noblock/1					# retract a tuple
-	rd_noblock/1					# match a tuple
+	linda_eval/1                    # linda_eval(:goal)
+	out/1                           # out(+tuple)
+	in/1                            # in(?tuple)
+	rd/1                            # rd(?tuple)
+	in_noblock/1                    # in_noblock(?tuple)
+	rd_noblock/1                    # rd_noblock(?tuple)
 	wait/0
 	end_wait/0
 ```
