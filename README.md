@@ -1090,8 +1090,8 @@ language using coroutines (tasks). See:
 	rd/1                            # rd(?tuple)
 	in_noblock/1                    # in_noblock(?tuple)
 	rd_noblock/1                    # rd_noblock(?tuple)
-	bagof_in_noblock/3				# bagof_in_noblock(+template,+tuple,?list)
-	bagof_rd_noblock/3				# bagof_rd_noblock(+template,+tuple,?list)
+	bagof_in_noblock/3				# bagof_in_noblock(+term,+tuple,?list)
+	bagof_rd_noblock/3				# bagof_rd_noblock(+term,+tuple,?list)
 	wait/0
 	end_wait/0
 ```
@@ -1106,7 +1106,10 @@ For example:
 		linda_eval(consumer('A')),
 		linda_eval(consumer('B')),
 		linda_eval(producer),
-		wait.
+		wait,
+		in(producer),			% verify it finished normally
+		writeq(done), nl,
+		halt.
 
 	producer :-
 		between(1, 10, I),
@@ -1114,6 +1117,9 @@ For example:
 			out({msg:I}),
 			delay(250),
 			fail.
+	producer :-
+		forall(rd_noblock({msg:_}), delay(1)),
+		end_wait.
 
 	consumer(N) :-
 		in({msg:I}),
@@ -1145,6 +1151,7 @@ For example:
 	[consumer,A,got=,9]
 	[producer,10]
 	[consumer,B,got=,10]
+	done
 ```
 
 Concurrency (futures)						##EXPERIMENTAL##
