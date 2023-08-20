@@ -1089,6 +1089,8 @@ language using coroutines (tasks).
 	rd/1                            # rd(?tuple)
 	in_noblock/1                    # in_noblock(?tuple)
 	rd_noblock/1                    # rd_noblock(?tuple)
+	bagof_in_noblock/3				# bagof_in_noblock(+template,+tuple,?list)
+	bagof_rd_noblock/3				# bagof_rd_noblock(+template,+tuple,?list)
 	wait/0
 	end_wait/0
 ```
