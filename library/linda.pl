@@ -11,12 +11,15 @@
 
 linda_eval(Goal) :-
 	copy_term(Goal, Goal2),
-	task(Goal2).
+	task(Goal2),
+	Head = Goal2,
+	out(Head).
 
 linda_eval(Head, Goal) :-
 	copy_term(Goal, Goal2),
 	task(Goal2),
-	Head = Goal2.
+	Head = Goal2,
+	out(Head).
 
 out(Tuple) :-
 	assertz('$linda'(Tuple)),
