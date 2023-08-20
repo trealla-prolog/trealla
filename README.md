@@ -1080,7 +1080,8 @@ Concurrency (linda)							##EXPERIMENTAL##
 ===================
 
 Implements a toy (local-only) version of the Linda coordination
-language using coroutines (tasks).
+language using coroutines (tasks). See:
+[swi-prolog](https://www.swi-prolog.org/pldoc/man?section=tipc-linda-clients).
 
 ```
 	linda_eval/1                    # linda_eval(:goal)
