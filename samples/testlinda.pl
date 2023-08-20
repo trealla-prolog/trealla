@@ -17,13 +17,13 @@ producer(N) :-
 		delay(250),
 		fail.
 producer(_) :-
-	delay(1000),
+	forall(rd_noblock({msg:_}), delay(1)),
 	end_wait.
 
 consumer(N) :-
 	in({msg:I}),
 	writeq(['consumer',N,'got=',I]), nl,
 	random(R),
-	Ms is floor(R*1000),
+	Ms is floor(R*1000) // 10 + 10,
 	delay(Ms),
 	fail.
