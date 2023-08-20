@@ -1832,13 +1832,13 @@ static void db_log(query *q, db_entry *dbe, enum log_type l)
 	case LOG_ASSERTA:
 		dst = print_term_to_strbuf(q, dbe->cl.cells, q->st.curr_frame, 1);
 		uuid_to_buf(&dbe->u, tmpbuf, sizeof(tmpbuf));
-		fprintf(fp, "%s:asserta((%s),'%s').\n", q->st.m->name, dst, tmpbuf);
+		fprintf(fp, "%s:'$asserta'((%s),'%s').\n", q->st.m->name, dst, tmpbuf);
 		free(dst);
 		break;
 	case LOG_ASSERTZ:
 		dst = print_term_to_strbuf(q, dbe->cl.cells, q->st.curr_frame, 1);
 		uuid_to_buf(&dbe->u, tmpbuf, sizeof(tmpbuf));
-		fprintf(fp, "%s:assertz((%s),'%s').\n", q->st.m->name, dst, tmpbuf);
+		fprintf(fp, "%s:'$assertz'((%s),'%s').\n", q->st.m->name, dst, tmpbuf);
 		free(dst);
 		break;
 	case LOG_ERASE:
@@ -1847,7 +1847,6 @@ static void db_log(query *q, db_entry *dbe, enum log_type l)
 		break;
 	}
 
-	fflush(fp);
 	q->quoted = 0;
 }
 
@@ -3865,7 +3864,14 @@ static bool do_asserta_2(query *q)
 static bool fn_asserta_2(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
-	GET_NEXT_ARG(p2,atom_or_var);
+	GET_NEXT_ARG(p2,var);
+	return do_asserta_2(q);
+}
+
+static bool fn_sys_asserta_2(query *q)
+{
+	GET_FIRST_ARG(p1,nonvar);
+	GET_NEXT_ARG(p2,atom);
 	return do_asserta_2(q);
 }
 
@@ -3949,7 +3955,14 @@ static bool do_assertz_2(query *q)
 static bool fn_assertz_2(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
-	GET_NEXT_ARG(p2,atom_or_var);
+	GET_NEXT_ARG(p2,var);
+	return do_assertz_2(q);
+}
+
+static bool fn_sys_assertz_2(query *q)
+{
+	GET_FIRST_ARG(p1,nonvar);
+	GET_NEXT_ARG(p2,atom);
 	return do_assertz_2(q);
 }
 
@@ -8521,6 +8534,9 @@ builtins g_other_bifs[] =
 	{"recv", 1, fn_recv_1, "?term", false, false, BLAH},
 	{"$cancel_future", 1, fn_sys_cancel_future_1, "+integer", false, false, BLAH},
 	{"$set_future", 1, fn_sys_set_future_1, "+integer", false, false, BLAH},
+
+	{"$asserta", 2, fn_sys_asserta_2, "+term,+atom", true, false, BLAH},
+	{"$assertz", 2, fn_sys_assertz_2, "+term,+atom", true, false, BLAH},
 
 	{0}
 };
