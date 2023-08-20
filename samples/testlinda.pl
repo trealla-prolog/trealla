@@ -4,22 +4,23 @@
 main :-
     linda_eval(consumer('A')),
     linda_eval(consumer('B')),
-    linda_eval(producer),
+    linda_eval(producer('P')),
     wait,
-    in(producer),			% verify it finished
-    in(consumer(_)),		% verify it finished
-    in(consumer(_)),		% verify it finished
-    write(done), nl,
+    in(producer(V0)),		% verify it finished
+    writeq(done(V0)), nl,
+    in(consumer(V1)),		% verify it finished
+    writeq(done(V1)), nl,
+    in(consumer(V2)),		% verify it finished
+    writeq(done(V2)), nl,
     halt.
 
-producer :-
+producer(N) :-
     between(1, 10, I),
-		writeq(['producer', I]), nl,
+		writeq(['producer',N,' ',I]), nl,
 		out({msg:I}),
 		delay(250),
 		fail.
-producer :-
-	delay(1000),
+producer(_) :-
 	end_wait.
 
 consumer(N) :-
