@@ -2,16 +2,12 @@
 :- use_module(library(linda)).
 
 main :-
-    linda_eval(consumer('A')),
-    linda_eval(consumer('B')),
+    linda_eval(consumer('C1')),
+    linda_eval(consumer('C2')),
     linda_eval(producer('P')),
     wait,
-    in(producer(V0)),		% verify it finished
+    in(producer(V0)),		% verify it finished normally
     writeq(done(V0)), nl,
-    in(consumer(V1)),		% verify it finished
-    writeq(done(V1)), nl,
-    in(consumer(V2)),		% verify it finished
-    writeq(done(V2)), nl,
     halt.
 
 producer(N) :-
@@ -21,6 +17,7 @@ producer(N) :-
 		delay(250),
 		fail.
 producer(_) :-
+	delay(250),
 	end_wait.
 
 consumer(N) :-

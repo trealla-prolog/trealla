@@ -9,17 +9,18 @@
 
 :- dynamic(linda/1).
 
+linda_call_(H, G) :-
+	G,
+	H = G,
+	out(H).
+
 linda_eval(Goal) :-
 	copy_term(Goal, Goal2),
-	task(Goal2),
-	Head = Goal2,
-	out(Head).
+	task(linda_call_(_, Goal2)).
 
 linda_eval(Head, Goal) :-
 	copy_term(Goal, Goal2),
-	task(Goal2),
-	Head = Goal2,
-	out(Head).
+	task(linda_call_(Head, Goal2)).
 
 out(Tuple) :-
 	assertz('$linda'(Tuple)),
