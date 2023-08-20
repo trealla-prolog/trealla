@@ -17,7 +17,7 @@ producer(N) :-
 		delay(250),
 		fail.
 producer(_) :-
-	delay(250),
+	delay(1000),
 	end_wait.
 
 consumer(N) :-
