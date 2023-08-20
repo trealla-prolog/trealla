@@ -1,5 +1,5 @@
 :- module(linda, [
-	linda_eval/1,
+	linda_eval/1, linda_eval/2,
 	out/1,
 	in_noblock/1, rd_noblock/1,
 	in/1, rd/1,
@@ -10,7 +10,13 @@
 :- dynamic(linda/1).
 
 linda_eval(Goal) :-
-	task(Goal).
+	copy_term(Goal, Goal2),
+	task(Goal2).
+
+linda_eval(Head, Goal) :-
+	copy_term(Goal, Goal2),
+	task(Goal2),
+	Head = Goal2.
 
 out(Tuple) :-
 	assertz('$linda'(Tuple)),
