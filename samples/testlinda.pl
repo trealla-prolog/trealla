@@ -2,6 +2,8 @@
 :- use_module(library(linda)).
 
 main :-
+	now(Seed),
+	srandom(Seed),
     linda_eval(consumer('C1')),
     linda_eval(consumer('C2')),
     linda_eval(producer('P')),
@@ -10,11 +12,12 @@ main :-
     writeq(done(V0)), nl,
     halt.
 
-producer(N) :-
+producer(_) :-
     between(1, 10, I),
-		writeq(['producer',N,' ',I]), nl,
 		out({msg:I}),
-		delay(250),
+		random(R),
+		Ms is floor(R*1000) // 2 + 1,
+		delay(Ms),
 		fail.
 producer(_) :-
 	forall(rd_noblock({msg:_}), delay(1)),
@@ -24,6 +27,6 @@ consumer(N) :-
 	in({msg:I}),
 	writeq(['consumer',N,'got=',I]), nl,
 	random(R),
-	Ms is floor(R*1000) // 10 + 10,
+	Ms is floor(R*1000) // 10 + 1,
 	delay(Ms),
 	fail.
