@@ -518,6 +518,8 @@ static bool directives(parser *p, cell *d)
 			return true;
 		}
 
+		//printf("*** include %s, parent = %s\n", p->m->actual_filename, p->m->filename);
+		set_parent(p->m, p->m->actual_filename, p->m->filename);
 		free(filename);
 		p->line_nbr = save_line_nbr;
 		return true;

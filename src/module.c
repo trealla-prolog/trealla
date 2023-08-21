@@ -15,6 +15,7 @@ struct loaded_file_ {
 	loaded_file *next;
 	char *filename;
 	char *orig_filename;
+	const char *parent;
 	time_t when_loaded;
 	bool is_loaded:1;
 };
@@ -217,6 +218,34 @@ const char *get_loaded(const module *m, const char *filename)
 	return filename;
 }
 
+const char *get_parent(const module *m, const char *filename)
+{
+	loaded_file *ptr = m->loaded_files;
+
+	while (ptr) {
+		if (ptr->is_loaded && !strcmp(ptr->filename, filename))
+			return ptr->parent;
+
+		ptr = ptr->next;
+	}
+
+	return filename;
+}
+
+void set_parent(const module *m, const char *filename, const char *parent)
+{
+	loaded_file *ptr = m->loaded_files;
+
+	while (ptr) {
+		if (ptr->is_loaded && !strcmp(ptr->filename, filename)) {
+			ptr->parent = parent;
+			return;
+		}
+
+		ptr = ptr->next;
+	}
+}
+
 static void clear_loaded(const module *m)
 {
 	loaded_file *ptr = m->loaded_files;
@@ -239,8 +268,11 @@ void make(module *m)
 
 		if (stat(ptr->filename, &st) == 0) {
 			if (st.st_mtime > ptr->when_loaded) {
-				printf("%% %s reloaded\n", ptr->filename);
-				load_file(m, ptr->filename, false);
+				const char *filename = get_parent(m, ptr->filename);
+				printf("%% %s changed\n", ptr->filename);
+				unload_file(m, ptr->filename);
+				unload_file(m, filename);
+				load_file(m, filename, false);
 			}
 		}
 
@@ -1943,8 +1975,6 @@ module *load_file(module *m, const char *filename, bool including)
 	if (is_loaded(m, realbuf))
 		return m;
 
-	filename = set_loaded(m, realbuf, orig_filename);
-
 	struct stat st = {0};
 	stat(filename, &st);
 
@@ -1964,6 +1994,9 @@ module *load_file(module *m, const char *filename, bool including)
 		free(realbuf);
 		return NULL;
 	}
+
+	filename = set_loaded(m, realbuf, orig_filename);
+	m->actual_filename = filename;
 
 	// Check for a BOM
 

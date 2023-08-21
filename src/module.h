@@ -27,6 +27,7 @@ bool unload_file(module *m, const char *filename);
 void xref_rule(module *m, clause *t, predicate *parent);
 void xref_db(module *m);
 const char *get_loaded(const module *m, const char *filename);
+void set_parent(const module *m, const char *filename, const char *parent);
 builtins *get_module_help(module *m, const char *name, unsigned arity, bool *found, bool *evaluable);
 builtins *get_builtin_term(module *m, cell *c, bool *found, bool *evaluable);
 void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type, bool function);

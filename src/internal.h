@@ -768,7 +768,7 @@ struct module_ {
 	module *used[MAX_MODULES];
 	module *next, *orig;
 	prolog *pl;
-	const char *filename, *name;
+	const char *filename, *name, *actual_filename;
 	predicate *head, *tail;
 	parser *p;
 	FILE *fp;
