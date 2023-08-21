@@ -4781,6 +4781,14 @@ static bool fn_unload_files_1(query *q)
 	return true;
 }
 
+static bool fn_make_0(query *q)
+{
+	for (module *m = q->pl->modules; m; m = m->next)
+		make(m);
+
+	return true;
+}
+
 static bool fn_savefile_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_list);
@@ -7303,6 +7311,7 @@ builtins g_files_bifs[] =
 	{"getlines", 3, fn_getlines_3, "+stream,-list,+list", false, false, BLAH},
 	{"load_files", 2, fn_load_files_2, "+atom,+list", false, false, BLAH},
 	{"unload_files", 1, fn_unload_files_1, "+atom", false, false, BLAH},
+	{"make", 0, fn_make_0, NULL, false, false, BLAH},
 	{"getfile", 2, fn_getfile_2, "+atom,-list", false, false, BLAH},
 	{"getfile", 3, fn_getfile_3, "+atom,-list,+list", false, false, BLAH},
 	{"loadfile", 2, fn_loadfile_2, "+atom,-atom", false, false, BLAH},

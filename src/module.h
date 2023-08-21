@@ -33,6 +33,7 @@ void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, u
 void format_template(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const builtins *ptr, bool function, bool alt);
 void push_property(module *m, const char *name, unsigned arity, const char *type);
 void push_template(module *m, const char *name, unsigned arity, const builtins *ptr);
+void make(module *m);
 
 bool do_use_module_1(module *curr_m, cell *p);
 bool do_use_module_2(module *curr_m, cell *p);

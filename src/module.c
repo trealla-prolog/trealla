@@ -138,7 +138,7 @@ static const char *set_known(module *m, const char *filename)
 		ptr = ptr->next;
 	}
 
-	ptr = malloc(sizeof(*ptr));
+	ptr = malloc(sizeof(loaded_file));
 	ensure(ptr);
 	ptr->next = m->loaded_files;
 	ptr->orig_filename = strdup(filename);
@@ -162,7 +162,7 @@ static const char *set_loaded(module *m, const char *filename, const char *orig_
 		ptr = ptr->next;
 	}
 
-	ptr = malloc(sizeof(*ptr));
+	ptr = malloc(sizeof(loaded_file));
 	ensure(ptr);
 	ptr->next = m->loaded_files;
 	ptr->orig_filename = strdup(orig_filename);
@@ -227,6 +227,24 @@ static void clear_loaded(const module *m)
 		if (save->orig_filename) free(save->orig_filename);
 		if (save->filename) free(save->filename);
 		free(save);
+	}
+}
+
+void make(module *m)
+{
+	loaded_file *ptr = m->loaded_files;
+
+	while (ptr) {
+		struct stat st = {0};
+
+		if (stat(ptr->filename, &st) == 0) {
+			if (st.st_mtime > ptr->when_loaded) {
+				printf("%% %s reloaded\n", ptr->filename);
+				load_file(m, ptr->filename, false);
+			}
+		}
+
+		ptr = ptr->next;
 	}
 }
 

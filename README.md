@@ -433,6 +433,7 @@ Non-standard predicates
 	line_count/2
 	strip_module/3
 	atom_number/2
+	make/0
 
 	rdiv/2						# evaluable
 	numerator/1					# evaluable
@@ -492,12 +493,10 @@ Non-standard predicates
 	copy_file/2
 	time_file/2
 	size_file/2
-
 	exists_directory/1          # also directory_exists/1
 	make_directory/1
 	make_directory_path/1
 	working_directory/2
-
 	chdir/1
 	absolute_file_name/[2,3]	# expand(Bool) & relative_to(file) options
 	is_absolute_file_name/1
