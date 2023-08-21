@@ -5470,7 +5470,7 @@ static bool fn_wait_0(query *q)
 		}
 
 		if (!did_something)
-			msleep(0);
+			msleep(1);
 	}
 
 	q->end_wait = false;
@@ -5521,7 +5521,7 @@ static bool fn_await_0(query *q)
 		}
 
 		if (!did_something)
-			msleep(0);
+			msleep(1);
 		else
 			break;
 	}
