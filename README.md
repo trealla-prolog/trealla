@@ -1106,13 +1106,12 @@ For example:
 		linda_eval(consumer('B')),
 		linda_eval(producer),
 		wait,
-		in(producer),			% verify it finished normally
+		in(producer),               % verify it finished normally
 		writeq(done), nl,
 		halt.
 
 	producer :-
 		between(1, 10, I),
-			write(['producer', I]), nl,
 			out({msg:I}),
 			delay(250),
 			fail.
@@ -1130,25 +1129,15 @@ For example:
 
 ```
 	$ tpl samples/testlinda.pl
-	[producer,1]
 	[consumer,B,got=,1]
-	[producer,2]
 	[consumer,B,got=,2]
-	[producer,3]
 	[consumer,B,got=,3]
-	[producer,4]
 	[consumer,A,got=,4]
-	[producer,5]
-	[producer,6]
 	[consumer,B,got=,5]
-	[producer,7]
 	[consumer,A,got=,6]
-	[producer,8]
 	[consumer,B,got=,7]
 	[consumer,A,got=,8]
-	[producer,9]
 	[consumer,A,got=,9]
-	[producer,10]
 	[consumer,B,got=,10]
 	done
 ```
