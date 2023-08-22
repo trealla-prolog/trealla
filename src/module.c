@@ -224,7 +224,7 @@ const char *get_parent(const module *m, const char *filename)
 
 	while (ptr) {
 		if (ptr->is_loaded && !strcmp(ptr->filename, filename))
-			return ptr->parent;
+			return ptr->parent ? ptr->parent : filename;
 
 		ptr = ptr->next;
 	}
@@ -265,18 +265,23 @@ void make(module *m)
 
 	while (ptr) {
 		struct stat st = {0};
+		loaded_file *save = ptr->next;
 
 		if (stat(ptr->filename, &st) == 0) {
 			if (st.st_mtime > ptr->when_loaded) {
-				const char *filename = get_parent(m, ptr->filename);
+				char *filename = strdup(get_parent(m, ptr->filename));
 				printf("%% %s changed\n", ptr->filename);
-				unload_file(m, ptr->filename);
+
+				if (strcmp(filename, ptr->filename))
+					unload_file(m, ptr->filename);
+
 				unload_file(m, filename);
 				load_file(m, filename, false);
+				free(filename);
 			}
 		}
 
-		ptr = ptr->next;
+		ptr = save;
 	}
 }
 
@@ -1988,6 +1993,7 @@ module *load_file(module *m, const char *filename, bool including)
 		return m;
 	}
 
+	filename = set_loaded(m, realbuf, orig_filename);
 	FILE *fp = fopen(filename, "r");
 
 	if (!fp) {
@@ -1995,7 +2001,6 @@ module *load_file(module *m, const char *filename, bool including)
 		return NULL;
 	}
 
-	filename = set_loaded(m, realbuf, orig_filename);
 	m->actual_filename = filename;
 
 	// Check for a BOM
