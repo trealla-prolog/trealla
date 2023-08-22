@@ -175,7 +175,7 @@ static const char *set_loaded(module *m, const char *filename, const char *orig_
 	return ptr->filename;
 }
 
-static void set_unloaded(module *m, const char *filename)
+void set_unloaded(module *m, const char *filename)
 {
 	loaded_file *ptr = m->loaded_files;
 
@@ -269,15 +269,15 @@ void make(module *m)
 
 		if (stat(ptr->filename, &st) == 0) {
 			if (st.st_mtime > ptr->when_loaded) {
-				char *filename = strdup(get_parent(m, ptr->filename));
+				char *parent_filename = strdup(get_parent(m, ptr->filename));
 				printf("%% %s changed\n", ptr->filename);
 
-				if (strcmp(filename, ptr->filename))
+				if (strcmp(parent_filename, ptr->filename))
 					unload_file(m, ptr->filename);
 
-				unload_file(m, filename);
-				load_file(m, filename, false);
-				free(filename);
+				unload_file(m, parent_filename);
+				load_file(m, parent_filename, false);
+				free(parent_filename);
 			}
 		}
 
@@ -1977,7 +1977,10 @@ module *load_file(module *m, const char *filename, bool including)
 	if (!realbuf)
 		return NULL;
 
-	if (is_loaded(m, realbuf))
+	if (including)
+		set_unloaded(m, realbuf);
+
+	else if (is_loaded(m, realbuf))
 		return m;
 
 	struct stat st = {0};
