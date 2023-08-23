@@ -931,11 +931,12 @@ static void commit_me(query *q)
 
 	bool is_det = !q->has_vars && cl->is_unique;
 	bool last_match = is_det || cl->is_first_cut || !has_next_key(q);
+	bool empty_frame = cl->nbr_vars == cl->nbr_temporaries;
 	bool tco = false;
 
-	if (q->no_tco && (cl->nbr_vars != cl->nbr_temporaries))
+	if (q->no_tco && !empty_frame)
 		;
-	else if (last_match){
+	else if (last_match || empty_frame) {
 		bool recursive = is_tail_recursive(q->st.curr_cell);
 		bool vars_ok = f->actual_slots == cl->nbr_vars;
 		bool choices = any_choices(q, f);
