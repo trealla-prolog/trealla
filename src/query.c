@@ -908,7 +908,7 @@ static bool are_slots_ok(const query *q, const frame *f)
 		const slot *e = GET_SLOT(f, i);
 		const cell *c = &e->c;
 
-		if (is_var(c) && (c->var_ctx < q->st.curr_frame))	// Why?
+		if (is_empty(c) || is_indirect(c))
 			return false;
 	}
 
@@ -942,12 +942,13 @@ static void commit_me(query *q)
 		bool choices = any_choices(q, f);
 		bool slots_ok = are_slots_ok(q, f);
 		tco = recursive && vars_ok && !choices && slots_ok;
-	}
 
 #if 0
-	printf("*** retry=%d,tco=%d,q->no_tco=%d,last_match=%d (%d/%d),recursive=%d,choices=%d,slots_ok=%d,vars_ok=%d,cl->nbr_vars=%u,cl->nbr_temps=%u\n",
-		q->retry, tco, q->no_tco, last_match, implied_first_cut, cl->is_first_cut, recursive, choices, slots_ok, vars_ok, cl->nbr_vars, cl->nbr_temporaries);
+		printf("*** retry=%d,tco=%d,q->no_tco=%d,last_match=%d (%d),recursive=%d,choices=%d,slots_ok=%d,vars_ok=%d,cl->nbr_vars=%u,cl->nbr_temps=%u\n",
+			q->retry, tco, q->no_tco, last_match, cl->is_first_cut, recursive, choices, slots_ok, vars_ok, cl->nbr_vars, cl->nbr_temporaries);
 #endif
+
+	}
 
 	if (q->pl->opt && tco)
 		reuse_frame(q, cl);
