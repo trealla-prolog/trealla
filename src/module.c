@@ -1613,17 +1613,14 @@ static void xref_cell(module *m, clause *cl, cell *c, predicate *parent)
 		c->fn_ptr = NULL;
 
 	if ((c+c->nbr_cells) >= (cl->cells + cl->cidx-1)) {
-		if (parent && (parent->key.val_off == c->val_off) && (parent->key.arity == c->arity)) {
+		if (parent && (parent->key.val_off == c->val_off) && (parent->key.arity == c->arity))
 			c->flags |= FLAG_TAIL_REC;
-			cl->is_tail_rec = true;
-		}
 	}
 }
 
 void xref_rule(module *m, clause *cl, predicate *parent)
 {
 	cl->is_unique = false;
-	cl->is_tail_rec = false;
 
 	cell *c = cl->cells;
 
