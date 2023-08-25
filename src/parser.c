@@ -823,28 +823,30 @@ static bool directives(parser *p, cell *d)
 		} else
 			name = C_STR(p, p1);
 
-		module *tmp_m;
+		if (!p->m->make) {
+			module *tmp_m;
 
-		if ((tmp_m = find_module(p->m->pl, name)) != NULL) {
-			//if (DUMP_ERRS || !p->do_read_term)
-			//	fprintf(stdout, "Error: module already loaded: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_nbr);
-			//
-			p->already_loaded_error = true;
+			if ((tmp_m = find_module(p->m->pl, name)) != NULL) {
+				//if (DUMP_ERRS || !p->do_read_term)
+				//	fprintf(stdout, "Error: module already loaded: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_nbr);
+				//
+				p->already_loaded_error = true;
+				p->m = tmp_m;
+				return true;
+			}
+
+			tmp_m = module_create(p->m->pl, name);
+
+			if (!tmp_m) {
+				if (DUMP_ERRS || !p->do_read_term)
+					fprintf(stdout, "Error: module creation failed: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_nbr);
+
+				p->error = true;
+				return true;
+			}
+
 			p->m = tmp_m;
-			return true;
 		}
-
-		tmp_m = module_create(p->m->pl, name);
-
-		if (!tmp_m) {
-			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: module creation failed: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_nbr);
-
-			p->error = true;
-			return true;
-		}
-
-		p->m = tmp_m;
 
 		if (c->arity == 1)
 			return true;

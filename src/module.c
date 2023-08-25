@@ -261,6 +261,7 @@ static void clear_loaded(const module *m)
 
 void make(module *m)
 {
+	m->make = true;
 	loaded_file *ptr = m->loaded_files;
 
 	while (ptr) {
@@ -283,6 +284,8 @@ void make(module *m)
 
 		ptr = save;
 	}
+
+	m->make = false;
 }
 
 static predicate *find_predicate_(module *m, cell *c, bool abolished)
