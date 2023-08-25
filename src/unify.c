@@ -1224,6 +1224,9 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 				both++;
 			else
 				e1->vgen = q->vgen;
+
+			h1 = deref(q, h1, h1_ctx);
+			h1_ctx = q->latest_ctx;
 		}
 
 		if (is_var(h2)) {
@@ -1238,14 +1241,12 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 				both++;
 			else
 				e2->vgen2 = q->vgen;
+
+			h2 = deref(q, h2, h2_ctx);
+			h2_ctx = q->latest_ctx;
 		}
 
 		if (both != 2) {
-			h1 = deref(q, h1, h1_ctx);
-			h1_ctx = q->latest_ctx;
-			h2 = deref(q, h2, h2_ctx);
-			h2_ctx = q->latest_ctx;
-
 			if (!unify_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1))
 				return false;
 		}
@@ -1332,6 +1333,9 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 				both++;
 			else
 				e1->vgen = q->vgen;
+
+			c1 = deref(q, p1, p1_ctx);
+			c1_ctx = q->latest_ctx;
 		}
 
 		if (is_var(c2)) {
@@ -1346,14 +1350,12 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 				both++;
 			else
 				e2->vgen2 = q->vgen;
+
+			c2 = deref(q, p2, p2_ctx);
+			c2_ctx = q->latest_ctx;
 		}
 
 		if (both != 2) {
-			c1 = deref(q, p1, p1_ctx);
-			c1_ctx = q->latest_ctx;
-			c2 = deref(q, p2, p2_ctx);
-			c2_ctx = q->latest_ctx;
-
 			if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
 				return false;
 		}
