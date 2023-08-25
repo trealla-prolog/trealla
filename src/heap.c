@@ -220,7 +220,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 
 				const frame *f = GET_FRAME(h_ctx);
 				slot *e = GET_SLOT(f, h->var_nbr);
-				uint64_t save_vgen = e->vgen;
+				uint32_t save_vgen = e->vgen;
 
 				if (e->vgen == q->vgen) {
 					cell *rec = deep_clone2_to_tmp(q, h, h_ctx, depth+1);
@@ -293,7 +293,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 				c_ctx = c->var_ctx;
 
 			slot *e = GET_SLOT(f, c->var_nbr);
-			uint64_t save_vgen = e->vgen;
+			uint32_t save_vgen = e->vgen;
 
 			if (e->vgen == q->vgen) {
 				cell *rec = deep_clone2_to_tmp(q, c, c_ctx, depth+1);
