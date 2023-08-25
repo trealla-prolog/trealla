@@ -302,7 +302,7 @@ bool call_userfun(query *q, cell *c, pl_idx c_ctx)
 	cell *save = q->st.curr_cell;
 	pl_idx save_ctx = q->st.curr_frame;
 	cell *tmp = prepare_call(q, true, c, c_ctx, 3);
-	pl_idx nbr_cells = 1 + c->nbr_cells;
+	pl_idx nbr_cells = PREFIX_LEN + c->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);

@@ -6977,7 +6977,7 @@ static bool fn_with_mutex_2(query *q)
 
 	cell *tmp = prepare_call(q, true, tmp2, p1_ctx, 3);
 	check_heap_error(tmp);
-	pl_idx nbr_cells = 1+tmp2->nbr_cells;
+	pl_idx nbr_cells = PREFIX_LEN + tmp2->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
@@ -7068,7 +7068,7 @@ static bool fn_engine_create_4(query *q)
 	GET_NEXT_ARG(xp2,callable);
 
 	cell *tmp = prepare_call(q, true, xp2, xp2_ctx, 1);
-	pl_idx nbr_cells = 1 + xp2->nbr_cells;
+	pl_idx nbr_cells = PREFIX_LEN + xp2->nbr_cells;
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
 	q->st.curr_cell = tmp;

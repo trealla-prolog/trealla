@@ -174,7 +174,7 @@ static bool fn_iso_findall_3(query *q)
 
 		cell *tmp = prepare_call(q, true, p2, p2_ctx, 1+p1->nbr_cells+2);
 		check_heap_error(tmp, drop_queuen(q));
-		pl_idx nbr_cells = 1 + p2->nbr_cells;
+		pl_idx nbr_cells = PREFIX_LEN + p2->nbr_cells;
 		make_struct(tmp+nbr_cells++, g_sys_queue_s, fn_sys_queue_1, 1, p1->nbr_cells);
 		nbr_cells += copy_cells(tmp+nbr_cells, p1, p1->nbr_cells);
 		make_struct(tmp+nbr_cells++, g_fail_s, fn_iso_fail_0, 0, 0);
@@ -250,7 +250,7 @@ static bool fn_iso_notunify_2(query *q)
 	cell tmp2;
 	make_struct(&tmp2, g_unify_s, fn_iso_unify_2, 2, 0);
 	cell *tmp = prepare_call(q, true, &tmp2, q->st.curr_frame, p1->nbr_cells+p2->nbr_cells+5);
-	pl_idx nbr_cells = 1;
+	pl_idx nbr_cells = PREFIX_LEN;
 	tmp[nbr_cells].nbr_cells += p1->nbr_cells+p2->nbr_cells;
 	nbr_cells++;
 	safe_copy_cells(tmp+nbr_cells, p1, p1->nbr_cells);
@@ -4417,7 +4417,7 @@ static bool fn_time_1(query *q)
 	GET_FIRST_ARG(p1,callable);
 	fn_sys_timer_0(q);
 	cell *tmp = prepare_call(q, true, p1, p1_ctx, 4);
-	pl_idx nbr_cells = 1 + p1->nbr_cells;
+	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_elapsed_s, fn_sys_elapsed_0, 0, 0);
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
@@ -6625,7 +6625,7 @@ static bool fn_limit_2(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
 
 	cell *tmp = prepare_call(q, true, p2, p2_ctx, 4);
-	pl_idx nbr_cells = 1 + p2->nbr_cells;
+	pl_idx nbr_cells = PREFIX_LEN + p2->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_fail_s, fn_sys_lt_2, 2, 2);
 	make_int(tmp+nbr_cells++, 1);
 	make_int(tmp+nbr_cells++, get_smallint(p1));
@@ -6664,7 +6664,7 @@ static bool fn_offset_2(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
 
 	cell *tmp = prepare_call(q, true, p2, p2_ctx, 4);
-	pl_idx nbr_cells = 1 + p2->nbr_cells;
+	pl_idx nbr_cells = PREFIX_LEN + p2->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_fail_s, fn_sys_gt_2, 2, 2);
 	make_int(tmp+nbr_cells++, 1);
 	make_int(tmp+nbr_cells++, get_smallint(p1));
@@ -6729,7 +6729,7 @@ static bool fn_call_nth_2(query *q)
 
 	if (is_var(p2)) {
 		cell *tmp = prepare_call(q, true, p1, p1_ctx, 4);
-		pl_idx nbr_cells = 1 + p1->nbr_cells;
+		pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 		make_struct(tmp+nbr_cells++, g_sys_incr_s, fn_sys_incr_2, 2, 2);
 		GET_RAW_ARG(2,p2_raw);
 		tmp[nbr_cells] = *p2_raw;
@@ -6744,7 +6744,7 @@ static bool fn_call_nth_2(query *q)
 	}
 
 	cell *tmp = prepare_call(q, true, p1, p1_ctx, 7);
-	pl_idx nbr_cells = 1 + p1->nbr_cells;
+	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_ne_s, fn_sys_ne_2, 2, 2);
 	make_int(tmp+nbr_cells++, 1);
 	make_int(tmp+nbr_cells++, get_smallint(p2));
@@ -7424,7 +7424,7 @@ static bool fn_sys_register_cleanup_1(query *q)
 	if (q->retry) {
 		GET_FIRST_ARG(p1,callable);
 		cell *tmp = prepare_call(q, true, p1, p1_ctx, 5);
-		pl_idx nbr_cells = 1 + p1->nbr_cells;
+		pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 		make_struct(tmp+nbr_cells++, g_cut_s, fn_iso_cut_0, 0, 0);
 		make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_1, 1, 1);
 		make_uint(tmp+nbr_cells++, q->cp);
