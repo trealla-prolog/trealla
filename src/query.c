@@ -269,8 +269,11 @@ void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
 		ve->c.attrs_ctx = c_attrs_ctx;
 	}
 
+	// A structure in the current frame can't be overwritten
+	// hence no TCO in this instance...
+
 	if (is_structure(v)) {
-		if ((c_ctx == q->st.fp) || (v_ctx == q->st.fp))
+		if (v_ctx == q->st.curr_frame)
 			q->no_tco = true;
 
 		make_indirect(&e->c, v, v_ctx);
@@ -295,7 +298,7 @@ void reset_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
 		add_trail(q, c_ctx, c->var_nbr, NULL, 0);
 
 	if (is_structure(v)) {
-		if ((c_ctx == q->st.fp) || (v_ctx == q->st.fp))
+		if (v_ctx == q->st.curr_frame)
 			q->no_tco = true;
 
 		make_indirect(&e->c, v, v_ctx);
