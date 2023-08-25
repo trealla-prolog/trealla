@@ -215,15 +215,6 @@ void make_ref(cell *tmp, pl_idx off, unsigned var_nbr, pl_idx ctx)
 		tmp->flags |= FLAG_VAR_ANON;
 }
 
-void make_var(cell *tmp, pl_idx off, unsigned var_nbr)
-{
-	*tmp = (cell){0};
-	tmp->tag = TAG_VAR;
-	tmp->nbr_cells = 1;
-	tmp->var_nbr = var_nbr;
-	tmp->val_off = off;
-}
-
 void make_float(cell *tmp, pl_flt v)
 {
 	*tmp = (cell){0};
@@ -1622,7 +1613,7 @@ static bool dcg_expansion(parser *p)
 	cell *tmp = alloc_on_heap(q, 1+c->nbr_cells+1+1);
 	make_struct(tmp, index_from_pool(p->pl, "dcg_translate"), NULL, 2, c->nbr_cells+1);
 	safe_copy_cells(tmp+1, p->cl->cells, c->nbr_cells);
-	make_var(tmp+1+c->nbr_cells, g_anon_s, p->cl->nbr_vars);
+	make_ref(tmp+1+c->nbr_cells, g_anon_s, p->cl->nbr_vars, 0);
 	make_end(tmp+1+c->nbr_cells+1);
 	execute(q, tmp, p->cl->nbr_vars+1);
 

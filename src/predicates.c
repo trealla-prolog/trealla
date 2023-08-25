@@ -2525,8 +2525,8 @@ static bool fn_iso_functor_3(query *q)
 				tmp[i].tag = TAG_VAR;
 				tmp[i].nbr_cells = 1;
 				tmp[i].var_nbr = var_nbr++;
-				tmp[i].val_off = g_anon_s;
-				tmp[i].flags = FLAG_VAR_FRESH | FLAG_VAR_ANON;
+				tmp[i].var_ctx = q->st.curr_frame;
+				tmp[i].flags = FLAG_VAR_REF | FLAG_VAR_FRESH | FLAG_VAR_ANON;
 			}
 
 			unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
