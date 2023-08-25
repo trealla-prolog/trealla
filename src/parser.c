@@ -265,7 +265,6 @@ void make_struct(cell *tmp, pl_idx offset, void *fn, unsigned arity, pl_idx extr
 	if (fn) {
 		tmp->flags |= FLAG_BUILTIN;
 		tmp->fn_ptr = get_fn_ptr(fn);
-		assert(tmp->fn_ptr);
 	}
 
 	tmp->arity = arity;
