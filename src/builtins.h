@@ -67,23 +67,6 @@ bool wrap_ffi_predicate(query *q, builtins *fn_ptr);
 #define is_iso_atom_or_var(c) (is_iso_atom(c) || is_var(c))
 #define is_iso_atomic_or_var(c) (is_iso_atom(c) || is_number(c) || is_var(c))
 
-void make_uint(cell *tmp, pl_uint v);
-void make_int(cell *tmp, pl_int v);
-void make_float(cell *tmp, pl_flt v);
-void make_ptr(cell *tmp, void *v);
-void make_struct(cell *tmp, pl_idx offset, void *fn, unsigned arity, pl_idx extra_cells);
-void make_ref(cell *tmp, pl_idx off, unsigned var_nbr, pl_idx ctx);
-void make_var(cell *tmp, pl_idx off, unsigned var_nbr);
-void make_var2(cell *tmp, pl_idx off);
-void make_call(query *q, cell *tmp);
-void make_call_return(query *q, cell *tmp, cell *ret);
-void make_end(cell *tmp);
-void make_atom(cell *tmp, pl_idx offset);
-cell *make_nil(void);
-void make_smalln(cell *tmp, const char *s, size_t n);
-bool make_cstringn(cell *tmp, const char *s, size_t n);
-bool make_stringn(cell *tmp, const char *s, size_t n);
-
 #if USE_FFI
 bool fn_sys_dlopen_3(query *q);
 bool fn_sys_dlsym_3(query *q);

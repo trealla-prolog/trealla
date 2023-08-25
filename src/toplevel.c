@@ -383,7 +383,7 @@ void dump_vars(query *q, bool partial)
 		cell tmp[3];
 		make_struct(tmp, g_eq_s, NULL, 2, 2);
 		make_cstring(tmp+1, p->vartab.var_name[i]);
-		make_var(tmp+2, g_anon_s, i);
+		make_ref(tmp+2, g_anon_s, i, q->st.curr_frame);
 
 		if (i == 0)
 			allocate_list(q, tmp);

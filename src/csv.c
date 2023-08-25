@@ -103,7 +103,7 @@ bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx 
 			if (SB_strlen(pr)) {
 				cell tmp;
 				unsigned vnbr = create_vars(q, 1);
-				make_var(&tmp, g_anon_s, vnbr);
+				make_ref(&tmp, g_anon_s, vnbr, q->st.curr_frame);
 				check_heap_error(make_stringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
 				unify(q, &tmpc, q->st.curr_frame, &tmp, q->st.curr_frame);
 				unshare_cell(&tmpc);
@@ -112,7 +112,7 @@ bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx 
 		} else {
 			cell tmp;
 			unsigned vnbr = create_vars(q, 1);
-			make_var(&tmp, g_anon_s, vnbr);
+			make_ref(&tmp, g_anon_s, vnbr, q->st.curr_frame);
 			check_heap_error(make_cstringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
 			unify(q, &tmpc, q->st.curr_frame, &tmp, q->st.curr_frame);
 			unshare_cell(&tmpc);
@@ -151,7 +151,7 @@ bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx 
 			if (SB_strlen(pr)) {
 				cell tmp;
 				unsigned vnbr = create_vars(q, 1);
-				make_var(&tmp, g_anon_s, vnbr);
+				make_ref(&tmp, g_anon_s, vnbr, q->st.curr_frame);
 				check_heap_error(make_stringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
 				unify(q, &tmpc, q->st.curr_frame, &tmp, q->st.curr_frame);
 				unshare_cell(&tmpc);
@@ -160,7 +160,7 @@ bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx 
 		} else {
 			cell tmp;
 			unsigned vnbr = create_vars(q, 1);
-			make_var(&tmp, g_anon_s, vnbr);
+			make_ref(&tmp, g_anon_s, vnbr, q->st.curr_frame);
 			check_heap_error(make_cstringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
 			unify(q, &tmpc, q->st.curr_frame, &tmp, q->st.curr_frame);
 			unshare_cell(&tmpc);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "parser.h"
 #include "builtins.h"
 
 typedef struct {
@@ -40,7 +41,7 @@ bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract);
 bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type retract);
 void try_me(query *q, unsigned vars);
 void call_attrs(query *q, cell *attrs);
-void stash_me(query *q, const clause *cl, bool last_match);
+void stash_frame(query *q, const clause *cl, bool last_match);
 bool do_post_unification_hook(query *q, bool is_builtin);
 bool check_redo(query *q);
 void dump_vars(query *q, bool partial);

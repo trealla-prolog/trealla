@@ -572,7 +572,7 @@ static bool del_stream_properties(query *q, int n)
 	check_heap_error(tmp);
 	make_atom(tmp+0, g_sys_stream_property_s);
 	make_int(tmp+1, n);
-	make_var(tmp+2, g_anon_s, create_vars(q, 1));
+	make_ref(tmp+2, g_anon_s, create_vars(q, 1), q->st.curr_frame);
 	tmp->nbr_cells = 3;
 	tmp->arity = 2;
 	q->retry = QUERY_OK;
@@ -866,7 +866,7 @@ static bool fn_iso_stream_property_2(query *q)
 	clause *cl = &q->st.dbe->cl;
 	GET_FIRST_ARG(pstrx,any);
 	pstrx->flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
-	stash_me(q, cl, false);
+	stash_frame(q, cl, false);
 	return true;
 }
 
@@ -2155,7 +2155,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 				tmp[idx].arity = 2;
 				tmp[idx++].nbr_cells = ((cnt-done)*2)+1;
 				cell v;
-				make_var(&v, q->pl->tabs[i].val_off, q->pl->tabs[i].var_nbr);
+				make_ref(&v, q->pl->tabs[i].val_off, q->pl->tabs[i].var_nbr, q->st.curr_frame);
 				tmp[idx++] = v;
 				done++;
 			}
@@ -2208,7 +2208,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 				tmp[idx++] = v;
 				make_atom(&v, q->pl->tabs[i].val_off);
 				tmp[idx++] = v;
-				make_var(&v, q->pl->tabs[i].val_off, q->pl->tabs[i].var_nbr);
+				make_ref(&v, q->pl->tabs[i].val_off, q->pl->tabs[i].var_nbr, q->st.curr_frame);
 				tmp[idx++] = v;
 				done++;
 			}
@@ -2267,7 +2267,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 				tmp[idx++] = v;
 				make_atom(&v, q->pl->tabs[i].val_off);
 				tmp[idx++] = v;
-				make_var(&v, q->pl->tabs[i].val_off, q->pl->tabs[i].var_nbr);
+				make_ref(&v, q->pl->tabs[i].val_off, q->pl->tabs[i].var_nbr, q->st.curr_frame);
 				tmp[idx++] = v;
 				done++;
 			}

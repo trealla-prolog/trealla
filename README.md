@@ -17,15 +17,10 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	Concurrency via tasks / linda / futures / engines (generators)
 	Logtalk compatible
 
-
 Trealla is not WAM-based. It uses tree-walking, structure-sharing and
-deep-binding. Source is byte-code compiled to an AST that is interpreted
-at runtime. The intent and continued aim of Trealla is to be a small,
-easily ported, Prolog core.
-
-The name Trealla comes from the Liaden Universe books by Lee & Miller
-(where it doesn't seem to mean anything) and also a reference to the
-Trealla region of Western Australia.
+deep-binding. Source is byte-code compiled to a flattened AST that is
+interpreted at runtime. The intent and continued aim of Trealla is to
+be a small, easily ported, Prolog core.
 
 Available from: [trealla-prolog.org](https://trealla-prolog.org).
 

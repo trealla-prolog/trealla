@@ -755,29 +755,23 @@ static void unwind_trail(query *q)
 	}
 }
 
-void undo_me(query *q)
-{
-	q->tot_retries++;
-	unwind_trail(q);
-}
-
 void try_me(query *q, unsigned nbr_vars)
 {
 	frame *f = GET_NEW_FRAME();
 	f->initial_slots = f->actual_slots = nbr_vars;
 	f->base = q->st.sp;
 	slot *e = GET_SLOT(f, 0);
-
-	while (nbr_vars--) {
-		init_cell(&e->c);
-		e->vgen = e->vgen2 = 0;
-		e++;
-	}
-
+	memset(e, 0, sizeof(slot)*nbr_vars);
 	q->run_hook = false;
 	q->has_vars = false;
 	q->no_tco = false;
 	q->tot_matches++;
+}
+
+void undo_me(query *q)
+{
+	q->tot_retries++;
+	unwind_trail(q);
 }
 
 void drop_choice(query *q)
@@ -904,8 +898,9 @@ static void trim_trail(query *q)
 
 static bool are_slots_ok(const query *q, const frame *f)
 {
-	for (unsigned i = 0; i < f->actual_slots; i++) {
-		const slot *e = GET_SLOT(f, i);
+	const slot *e = GET_SLOT(f, 0);
+
+	for (unsigned i = 0; i < f->initial_slots; i++, e++) {
 		const cell *c = &e->c;
 
 		if (is_empty(c) || is_indirect(c))
@@ -915,7 +910,7 @@ static bool are_slots_ok(const query *q, const frame *f)
 	return true;
 }
 
-static void commit_me(query *q)
+static void commit_frame(query *q)
 {
 	q->in_commit = true;
 	clause *cl = &q->st.dbe->cl;
@@ -973,7 +968,7 @@ static void commit_me(query *q)
 	q->st.iter = NULL;
 }
 
-void stash_me(query *q, const clause *cl, bool last_match)
+void stash_frame(query *q, const clause *cl, bool last_match)
 {
 	pl_idx cgen = ++q->cgen;
 
@@ -1180,13 +1175,8 @@ unsigned create_vars(query *q, unsigned cnt)
 	}
 
 	q->st.sp += cnt;
-
-	for (unsigned i = 0; i < cnt; i++) {
-		slot *e = GET_SLOT(f, f->actual_slots+i);
-		init_cell(&e->c);
-		e->vgen2 = e->vgen = 0;
-	}
-
+	slot *e = GET_SLOT(f, f->actual_slots);
+	memset(e, 0, sizeof(slot)*cnt);
 	f->actual_slots += cnt;
 	return var_nbr;
 }
@@ -1452,7 +1442,7 @@ static bool match_head(query *q)
 			if (q->error)
 				break;
 
-			commit_me(q);
+			commit_frame(q);
 			return true;
 		}
 

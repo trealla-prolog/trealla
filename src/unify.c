@@ -939,18 +939,18 @@ bool check_list(query *q, cell *p1, pl_idx p1_ctx, bool *is_partial, pl_int *ski
 	return false;
 }
 
-static void make_new_var(query *q, cell *tmp, unsigned var_nbr, pl_idx ctx)
+static void make_new_var(query *q, cell *tmp, unsigned var_nbr, pl_idx var_ctx)
 {
-	make_var(tmp, g_anon_s, create_vars(q, 1));
+	make_ref(tmp, g_anon_s, create_vars(q, 1), q->st.curr_frame);
 	cell v;
-	make_var(&v, g_anon_s, var_nbr);
-	set_var(q, tmp, q->st.curr_frame, &v, ctx);
+	make_ref(&v, g_anon_s, var_nbr, var_ctx);
+	set_var(q, tmp, q->st.curr_frame, &v, var_ctx);
 }
 
-static void set_new_var(query *q, cell *tmp, cell *v, pl_idx ctx)
+static void set_new_var(query *q, cell *tmp, cell *v, pl_idx v_ctx)
 {
-	make_var(tmp, g_anon_s, create_vars(q, 1));
-	set_var(q, tmp, q->st.curr_frame, v, ctx);
+	make_ref(tmp, g_anon_s, create_vars(q, 1), q->st.curr_frame);
+	set_var(q, tmp, q->st.curr_frame, v, v_ctx);
 }
 
 bool fn_sys_undo_trail_1(query *q)

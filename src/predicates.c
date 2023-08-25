@@ -35,20 +35,6 @@ static void msleep(int ms)
 }
 #endif
 
-size_t slicecpy(char *dst, size_t dstlen, const char *src, size_t len)
-{
-	char *save = dst;
-
-	while ((dstlen-1) && len) {
-		*dst++ = *src++;
-		dstlen--;
-		len--;
-	}
-
-	*dst = '\0';
-	return dst - save;
-}
-
 bool do_yield(query *q, int msecs)
 {
 	if (!q->is_task)
@@ -68,91 +54,6 @@ void do_yield_at(query *q, unsigned int time_in_ms)
 	q->yield_at += time_in_ms > 0 ? time_in_ms : 1;
 }
 
-void make_ref(cell *tmp, pl_idx off, unsigned var_nbr, pl_idx ctx)
-{
-	*tmp = (cell){0};
-	tmp->tag = TAG_VAR;
-	tmp->nbr_cells = 1;
-	tmp->flags = FLAG_VAR_REF;
-	tmp->var_nbr = var_nbr;
-	tmp->var_ctx = ctx;
-
-	if (off == g_anon_s)
-		tmp->flags |= FLAG_VAR_ANON;
-}
-
-void make_var(cell *tmp, pl_idx off, unsigned var_nbr)
-{
-	*tmp = (cell){0};
-	tmp->tag = TAG_VAR;
-	tmp->nbr_cells = 1;
-	tmp->var_nbr = var_nbr;
-	tmp->val_off = off;
-}
-
-void make_var2(cell *tmp, pl_idx off)
-{
-	*tmp = (cell){0};
-	tmp->tag = TAG_VAR;
-	tmp->nbr_cells = 1;
-	tmp->val_off = off;
-}
-
-void make_float(cell *tmp, pl_flt v)
-{
-	*tmp = (cell){0};
-	tmp->tag = TAG_DOUBLE;
-	tmp->nbr_cells = 1;
-	tmp->val_float = v;
-}
-
-void make_int(cell *tmp, pl_int v)
-{
-	*tmp = (cell){0};
-	tmp->tag = TAG_INTEGER;
-	tmp->nbr_cells = 1;
-	set_smallint(tmp, v);
-}
-
-void make_uint(cell *tmp, pl_uint v)
-{
-	*tmp = (cell){0};
-	tmp->tag = TAG_INTEGER;
-	tmp->nbr_cells = 1;
-	set_smalluint(tmp, v);
-}
-
-void make_ptr(cell *tmp, void *v)
-{
-	*tmp = (cell){0};
-	tmp->tag = TAG_INTEGER;
-	tmp->nbr_cells = 1;
-	tmp->val_uint = (size_t)v;
-}
-
-void make_struct(cell *tmp, pl_idx offset, void *fn, unsigned arity, pl_idx extra_cells)
-{
-	*tmp = (cell){0};
-	tmp->tag = TAG_INTERNED;
-	tmp->nbr_cells = 1 + extra_cells;
-
-	if (fn) {
-		tmp->flags |= FLAG_BUILTIN;
-		tmp->fn_ptr = get_fn_ptr(fn);
-		assert(tmp->fn_ptr);
-	}
-
-	tmp->arity = arity;
-	tmp->val_off = offset;
-}
-
-void make_end(cell *tmp)
-{
-	*tmp = (cell){0};
-	tmp->tag = TAG_END;
-	tmp->nbr_cells = 1;
-}
-
 void make_call(query *q, cell *tmp)
 {
 	make_end(tmp);
@@ -170,33 +71,6 @@ void make_call_return(query *q, cell *tmp, cell *c_ret)
 	tmp->val_ret = q->st.curr_cell;				// save the return instruction
 	tmp->cgen = f->cgen;						// ... choice-generation
 	tmp->mid = q->st.m->id;						// ... current-module
-}
-
-void make_atom(cell *tmp, pl_idx offset)
-{
-	*tmp = (cell){0};
-	tmp->tag = TAG_INTERNED;
-	tmp->nbr_cells = 1;
-	tmp->val_off = offset;
-}
-
-cell *make_nil(void)
-{
-	static cell tmp = {0};
-	tmp.tag = TAG_INTERNED;
-	tmp.nbr_cells = 1;
-	tmp.val_off = g_nil_s;
-	return &tmp;
-}
-
-void make_smalln(cell *tmp, const char *s, size_t n)
-{
-	*tmp = (cell){0};
-	tmp->tag = TAG_CSTR;
-	tmp->nbr_cells = 1;
-	memcpy(tmp->val_chr, s, n);
-	tmp->val_chr[n] = '\0';
-	tmp->chr_len = n;
 }
 
 #if 0
@@ -223,50 +97,6 @@ static cell *pop_queue(query *q)
 		q->popp = q->qp[0] = 0;
 
 	return c;
-}
-
-bool make_cstringn(cell *d, const char *s, size_t n)
-{
-	if (!n) {
-		make_atom(d, g_empty_s);
-		return true;
-	}
-
-	if (n < MAX_SMALL_STRING) {
-		make_smalln(d, s, n);
-		return true;
-	}
-
-	*d = (cell){0};
-	d->tag = TAG_CSTR;
-	d->nbr_cells = 1;
-	SET_STR(d, s, n, 0);
-	return true;
-}
-
-bool make_stringn(cell *d, const char *s, size_t n)
-{
-	if (!n) {
-		make_atom(d, g_empty_s);
-		return true;
-	}
-
-#if 0
-	if (n < MAX_SMALL_STRING) {
-		make_smalln(d, s, n);
-		d->flags |= FLAG_CSTR_STRING;
-		d->arity = 2;
-		return true;
-	}
-#endif
-
-	*d = (cell){0};
-	d->tag = TAG_CSTR;
-	d->flags = FLAG_CSTR_STRING;
-	d->nbr_cells = 1;
-	d->arity = 2;
-	SET_STR(d, s, n, 0);
-	return true;
 }
 
 bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n)
@@ -2202,12 +2032,12 @@ static bool fn_iso_copy_term_2(query *q)
 	GET_NEXT_ARG(p2,any);
 
 	if (is_var(p1) && is_var(p2)) {
-		frame *f1 = GET_FRAME(p1_ctx);
-		slot *e1 = GET_SLOT(f1, p1->var_nbr);
-		frame *f2 = GET_FRAME(p2_ctx);
-		slot *e2 = GET_SLOT(f2, p2->var_nbr);
+		const frame *f1 = GET_FRAME(p1_ctx);
+		const slot *e1 = GET_SLOT(f1, p1->var_nbr);
 
 		if (e1->c.attrs) {
+			const frame *f2 = GET_FRAME(p2_ctx);
+			slot *e2 = GET_SLOT(f2, p2->var_nbr);
 			check_heap_error(init_tmp_heap(q));
 			frame *f = GET_CURR_FRAME();
 			q->varno = f->actual_slots;
@@ -2290,7 +2120,7 @@ static bool fn_iso_clause_2(query *q)
 
 		if (ok) {
 			bool last_match = !has_next_key(q);
-			stash_me(q, cl, last_match);
+			stash_frame(q, cl, last_match);
 			return true;
 		}
 
@@ -2329,7 +2159,7 @@ bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 	db_entry *dbe = q->st.dbe;
 	retract_from_db(dbe);
 	bool last_match = (is_retract == DO_RETRACT) && !has_next_key(q);
-	stash_me(q, &dbe->cl, last_match);
+	stash_frame(q, &dbe->cl, last_match);
 	db_log(q, dbe, LOG_ERASE);
 	return true;
 }
@@ -2828,8 +2658,8 @@ static bool fn_iso_current_predicate_1(query *q)
 		pl_idx p2_ctx = q->st.curr_frame;
 		frame *f = GET_CURR_FRAME();
 		unsigned var_nbr = f->actual_slots;
-		make_var(&tmp1, 0, var_nbr++);
-		make_var(&tmp2, 0, var_nbr++);
+		make_ref(&tmp1, 0, var_nbr++, q->st.curr_frame);
+		make_ref(&tmp2, 0, var_nbr++, q->st.curr_frame);
 		create_vars(q, 2);
 		bool ok = search_functor(q, p1, p1_ctx, p2, p2_ctx) ? true : false;
 		cell *tmp = alloc_on_heap(q, 3);
@@ -3286,7 +3116,7 @@ static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysor
 		cell tmp;
 
 		if (is_var(c) || is_structure(c)) {
-			make_var(&tmp, c->val_off, create_vars(q, 1));
+			make_ref(&tmp, c->val_off, create_vars(q, 1), q->st.curr_frame);
 			unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 			c = &tmp;
 		}
@@ -3471,7 +3301,7 @@ static cell *nodesort4(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool ascen
 		cell tmp;
 
 		if (is_var(c) || is_structure(c)) {
-			make_var(&tmp, c->val_off, create_vars(q, 1));
+			make_ref(&tmp, c->val_off, create_vars(q, 1), q->st.curr_frame);
 			unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 			c = &tmp;
 		}
@@ -3772,7 +3602,7 @@ static bool fn_clause_3(query *q)
 				last_match = true;
 			}
 
-			stash_me(q, cl, last_match);
+			stash_frame(q, cl, last_match);
 			return true;
 		}
 
@@ -6965,7 +6795,8 @@ static bool fn_sys_unifiable_3(query *q)
 	GET_NEXT_ARG(p2,any);
 	GET_NEXT_ARG(p3,list_or_nil_or_var);
 	check_heap_error(push_choice(q));
-	try_me(q, MAX_VARS);
+	const frame *f = GET_CURR_FRAME();
+	try_me(q, f->actual_slots);
 	pl_idx before_hook_tp = q->st.tp;
 	bool save_hook = q->in_hook;
 	q->in_hook = true;
@@ -6992,7 +6823,7 @@ static bool fn_sys_unifiable_3(query *q)
 		make_struct(tmp, g_unify_s, fn_iso_unify_2, 2, 1+c->nbr_cells);
 		SET_OP(tmp, OP_XFX);
 		cell v;
-		make_var(&v, g_anon_s, tr->var_nbr);
+		make_ref(&v, g_anon_s, tr->var_nbr, q->st.curr_frame);
 		tmp[1] = v;
 		safe_copy_cells(tmp+2, c, c->nbr_cells);
 
@@ -7041,7 +6872,7 @@ static bool fn_sys_list_attributed_1(query *q)
 			continue;
 
 		cell v;
-		make_var(&v, index_from_pool(q->pl, p->vartab.var_name[i]), i);
+		make_ref(&v, index_from_pool(q->pl, p->vartab.var_name[i]), i, q->st.curr_frame);
 
 		if (first) {
 			allocate_list(q, &v);

@@ -117,6 +117,168 @@ cell *get_logical_body(cell *c)
 	return body;
 }
 
+size_t slicecpy(char *dst, size_t dstlen, const char *src, size_t len)
+{
+	char *save = dst;
+
+	while ((dstlen-1) && len) {
+		*dst++ = *src++;
+		dstlen--;
+		len--;
+	}
+
+	*dst = '\0';
+	return dst - save;
+}
+
+bool make_cstringn(cell *d, const char *s, size_t n)
+{
+	if (!n) {
+		make_atom(d, g_empty_s);
+		return true;
+	}
+
+	if (n < MAX_SMALL_STRING) {
+		make_smalln(d, s, n);
+		return true;
+	}
+
+	*d = (cell){0};
+	d->tag = TAG_CSTR;
+	d->nbr_cells = 1;
+	SET_STR(d, s, n, 0);
+	return true;
+}
+
+bool make_stringn(cell *d, const char *s, size_t n)
+{
+	if (!n) {
+		make_atom(d, g_empty_s);
+		return true;
+	}
+
+#if 0
+	if (n < MAX_SMALL_STRING) {
+		make_smalln(d, s, n);
+		d->flags |= FLAG_CSTR_STRING;
+		d->arity = 2;
+		return true;
+	}
+#endif
+
+	*d = (cell){0};
+	d->tag = TAG_CSTR;
+	d->flags = FLAG_CSTR_STRING;
+	d->nbr_cells = 1;
+	d->arity = 2;
+	SET_STR(d, s, n, 0);
+	return true;
+}
+
+void make_atom(cell *tmp, pl_idx offset)
+{
+	*tmp = (cell){0};
+	tmp->tag = TAG_INTERNED;
+	tmp->nbr_cells = 1;
+	tmp->val_off = offset;
+}
+
+cell *make_nil(void)
+{
+	static cell tmp = {0};
+	tmp.tag = TAG_INTERNED;
+	tmp.nbr_cells = 1;
+	tmp.val_off = g_nil_s;
+	return &tmp;
+}
+
+void make_smalln(cell *tmp, const char *s, size_t n)
+{
+	*tmp = (cell){0};
+	tmp->tag = TAG_CSTR;
+	tmp->nbr_cells = 1;
+	memcpy(tmp->val_chr, s, n);
+	tmp->val_chr[n] = '\0';
+	tmp->chr_len = n;
+}
+
+void make_ref(cell *tmp, pl_idx off, unsigned var_nbr, pl_idx ctx)
+{
+	*tmp = (cell){0};
+	tmp->tag = TAG_VAR;
+	tmp->nbr_cells = 1;
+	tmp->flags = FLAG_VAR_REF;
+	tmp->var_nbr = var_nbr;
+	tmp->var_ctx = ctx;
+
+	if (off == g_anon_s)
+		tmp->flags |= FLAG_VAR_ANON;
+}
+
+void make_var(cell *tmp, pl_idx off, unsigned var_nbr)
+{
+	*tmp = (cell){0};
+	tmp->tag = TAG_VAR;
+	tmp->nbr_cells = 1;
+	tmp->var_nbr = var_nbr;
+	tmp->val_off = off;
+}
+
+void make_float(cell *tmp, pl_flt v)
+{
+	*tmp = (cell){0};
+	tmp->tag = TAG_DOUBLE;
+	tmp->nbr_cells = 1;
+	tmp->val_float = v;
+}
+
+void make_int(cell *tmp, pl_int v)
+{
+	*tmp = (cell){0};
+	tmp->tag = TAG_INTEGER;
+	tmp->nbr_cells = 1;
+	set_smallint(tmp, v);
+}
+
+void make_uint(cell *tmp, pl_uint v)
+{
+	*tmp = (cell){0};
+	tmp->tag = TAG_INTEGER;
+	tmp->nbr_cells = 1;
+	set_smalluint(tmp, v);
+}
+
+void make_ptr(cell *tmp, void *v)
+{
+	*tmp = (cell){0};
+	tmp->tag = TAG_INTEGER;
+	tmp->nbr_cells = 1;
+	tmp->val_uint = (size_t)v;
+}
+
+void make_struct(cell *tmp, pl_idx offset, void *fn, unsigned arity, pl_idx extra_cells)
+{
+	*tmp = (cell){0};
+	tmp->tag = TAG_INTERNED;
+	tmp->nbr_cells = 1 + extra_cells;
+
+	if (fn) {
+		tmp->flags |= FLAG_BUILTIN;
+		tmp->fn_ptr = get_fn_ptr(fn);
+		assert(tmp->fn_ptr);
+	}
+
+	tmp->arity = arity;
+	tmp->val_off = offset;
+}
+
+void make_end(cell *tmp)
+{
+	*tmp = (cell){0};
+	tmp->tag = TAG_END;
+	tmp->nbr_cells = 1;
+}
+
 void clear_rule(clause *cl)
 {
 	cell *c = cl->cells;
