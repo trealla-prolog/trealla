@@ -6211,12 +6211,12 @@ static bool do_parse_parts(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 			if (!is_atom(h+1))
 				return throw_error(q, h+1, p2_ctx, "type_error", "atom");
 
-			sprintf(protocol, C_STR(q, h+1));
+			sprintf(protocol, "%s", C_STR(q, h+1));
 		} else if (!strcmp(C_STR(q, h), "host")) {
 			if (!is_atom(h+1))
 				return throw_error(q, h+1, p2_ctx, "type_error", "atom");
 
-			sprintf(host, C_STR(q, h+1));
+			sprintf(host, "%s", C_STR(q, h+1));
 		} else if (!strcmp(C_STR(q, h), "port")) {
 			if (!is_smallint(h+1))
 				return throw_error(q, h+1, p2_ctx, "type_error", "integer");
@@ -6226,7 +6226,7 @@ static bool do_parse_parts(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 			if (!is_atom(h+1))
 				return throw_error(q, h+1, p2_ctx, "type_error", "atom");
 
-			sprintf(path, C_STR(q, h+1));
+			sprintf(path, "%s", C_STR(q, h+1));
 		} else if (!strcmp(C_STR(q, h), "search")) {
 			cell *h1 = h + 1;
 			h1 = deref(q, h1, h_ctx);
@@ -6296,7 +6296,7 @@ static bool do_parse_parts(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 			if (!is_atom(h+1))
 				return throw_error(q, h+1, p2_ctx, "type_error", "atom");
 
-			sprintf(fragment, C_STR(q, h+1));
+			sprintf(fragment, "%s", C_STR(q, h+1));
 		}
 
 		p2 = LIST_TAIL(p2);
