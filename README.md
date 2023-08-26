@@ -762,6 +762,8 @@ A server *Goal* takes a single arg, the connection stream.
 Networking					##EXPERIMENTAL##
 ==========
 
+	parse_url/2             # parse_url(?atom,?list)
+
 	server/2                # server(+host,-stream)
 	server/3                # server(+host,-stream,+list)
 	accept/2                # accept(+stream,-stream)

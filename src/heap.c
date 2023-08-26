@@ -667,7 +667,7 @@ void allocate_structure(query *q, const char *functor, const cell *c)
 	if (!tmp) return;
 	tmp->tag = TAG_INTERNED;
 	tmp->nbr_cells = 1;
-	tmp->val_off = index_from_pool(q->pl, functor);
+	tmp->val_off = new_atom(q->pl, functor);
 	tmp->arity = 0;
 	tmp->flags = 0;
 	append_structure(q, c);

@@ -45,7 +45,7 @@ bool is_multifile_in_db(prolog *pl, const char *mod, const char *name, unsigned 
 
 	cell tmp = (cell){0};
 	tmp.tag = TAG_INTERNED;
-	tmp.val_off = index_from_pool(m->pl, name);
+	tmp.val_off = new_atom(m->pl, name);
 	if (tmp.val_off == ERR_IDX) return false;
 	tmp.arity = arity;
 	predicate *pr = find_predicate(m, &tmp);
@@ -77,7 +77,7 @@ static pl_idx add_to_pool(prolog *pl, const char *name)
 	return (pl_idx)offset;
 }
 
-pl_idx index_from_pool(prolog *pl, const char *name)
+pl_idx new_atom(prolog *pl, const char *name)
 {
 	const void *val;
 
@@ -399,61 +399,61 @@ static bool g_init(prolog *pl)
 	CHECK_SENTINEL(pl->symtab = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
 	sl_allow_dups(pl->symtab, false);
 
-	CHECK_SENTINEL(index_from_pool(pl, "dummy"), ERR_IDX);
-	CHECK_SENTINEL(g_false_s = index_from_pool(pl, "false"), ERR_IDX);
-	CHECK_SENTINEL(g_true_s = index_from_pool(pl, "true"), ERR_IDX);
-	CHECK_SENTINEL(g_at_s = index_from_pool(pl, "@"), ERR_IDX);
-	CHECK_SENTINEL(g_conjunction_s = index_from_pool(pl, ","), ERR_IDX);
-	CHECK_SENTINEL(g_disjunction_s = index_from_pool(pl, ";"), ERR_IDX);
-	CHECK_SENTINEL(g_if_then_s = index_from_pool(pl, "->"), ERR_IDX);
-	CHECK_SENTINEL(g_soft_cut_s = index_from_pool(pl, "*->"), ERR_IDX);
-	CHECK_SENTINEL(g_negation_s = index_from_pool(pl, "\\+"), ERR_IDX);
-	CHECK_SENTINEL(g_dot_s = index_from_pool(pl, "."), ERR_IDX);
-	CHECK_SENTINEL(g_plus_s = index_from_pool(pl, "+"), ERR_IDX);
-	CHECK_SENTINEL(g_minus_s = index_from_pool(pl, "-"), ERR_IDX);
-	CHECK_SENTINEL(g_empty_s = index_from_pool(pl, ""), ERR_IDX);
-	CHECK_SENTINEL(g_anon_s = index_from_pool(pl, "_"), ERR_IDX);
-	CHECK_SENTINEL(g_dcg_s = index_from_pool(pl, "-->"), ERR_IDX);
-	CHECK_SENTINEL(g_call_s = index_from_pool(pl, "call"), ERR_IDX);
-	CHECK_SENTINEL(g_syscall_s = index_from_pool(pl, "$call"), ERR_IDX);
-	CHECK_SENTINEL(g_braces_s = index_from_pool(pl, "braces"), ERR_IDX);
-	CHECK_SENTINEL(g_unify_s = index_from_pool(pl, "="), ERR_IDX);
-	CHECK_SENTINEL(g_on_s = index_from_pool(pl, "on"), ERR_IDX);
-	CHECK_SENTINEL(g_off_s = index_from_pool(pl, "off"), ERR_IDX);
-	CHECK_SENTINEL(g_cut_s = index_from_pool(pl, "!"), ERR_IDX);
-	CHECK_SENTINEL(g_nil_s = index_from_pool(pl, "[]"), ERR_IDX);
-	CHECK_SENTINEL(g_braces_s = index_from_pool(pl, "{}"), ERR_IDX);
-	CHECK_SENTINEL(g_fail_s = index_from_pool(pl, "fail"), ERR_IDX);
-	CHECK_SENTINEL(g_neck_s = index_from_pool(pl, ":-"), ERR_IDX);
-	CHECK_SENTINEL(g_eof_s = index_from_pool(pl, "end_of_file"), ERR_IDX);
-	CHECK_SENTINEL(g_lt_s = index_from_pool(pl, "<"), ERR_IDX);
-	CHECK_SENTINEL(g_gt_s = index_from_pool(pl, ">"), ERR_IDX);
-	CHECK_SENTINEL(g_eq_s = index_from_pool(pl, "="), ERR_IDX);
-	CHECK_SENTINEL(g_once_s = index_from_pool(pl, "once"), ERR_IDX);
-	CHECK_SENTINEL(g_throw_s = index_from_pool(pl, "throw"), ERR_IDX);
-	CHECK_SENTINEL(g_error_s = index_from_pool(pl, "error"), ERR_IDX);
-	CHECK_SENTINEL(g_slash_s = index_from_pool(pl, "/"), ERR_IDX);
-	CHECK_SENTINEL(g_goal_expansion_s = index_from_pool(pl, "goal_expansion"), ERR_IDX);
-	CHECK_SENTINEL(g_term_expansion_s = index_from_pool(pl, "term_expansion"), ERR_IDX);
-	CHECK_SENTINEL(g_tm_s = index_from_pool(pl, "tm"), ERR_IDX);
-	CHECK_SENTINEL(g_float_s = index_from_pool(pl, "float"), ERR_IDX);
+	CHECK_SENTINEL(new_atom(pl, "dummy"), ERR_IDX);
+	CHECK_SENTINEL(g_false_s = new_atom(pl, "false"), ERR_IDX);
+	CHECK_SENTINEL(g_true_s = new_atom(pl, "true"), ERR_IDX);
+	CHECK_SENTINEL(g_at_s = new_atom(pl, "@"), ERR_IDX);
+	CHECK_SENTINEL(g_conjunction_s = new_atom(pl, ","), ERR_IDX);
+	CHECK_SENTINEL(g_disjunction_s = new_atom(pl, ";"), ERR_IDX);
+	CHECK_SENTINEL(g_if_then_s = new_atom(pl, "->"), ERR_IDX);
+	CHECK_SENTINEL(g_soft_cut_s = new_atom(pl, "*->"), ERR_IDX);
+	CHECK_SENTINEL(g_negation_s = new_atom(pl, "\\+"), ERR_IDX);
+	CHECK_SENTINEL(g_dot_s = new_atom(pl, "."), ERR_IDX);
+	CHECK_SENTINEL(g_plus_s = new_atom(pl, "+"), ERR_IDX);
+	CHECK_SENTINEL(g_minus_s = new_atom(pl, "-"), ERR_IDX);
+	CHECK_SENTINEL(g_empty_s = new_atom(pl, ""), ERR_IDX);
+	CHECK_SENTINEL(g_anon_s = new_atom(pl, "_"), ERR_IDX);
+	CHECK_SENTINEL(g_dcg_s = new_atom(pl, "-->"), ERR_IDX);
+	CHECK_SENTINEL(g_call_s = new_atom(pl, "call"), ERR_IDX);
+	CHECK_SENTINEL(g_syscall_s = new_atom(pl, "$call"), ERR_IDX);
+	CHECK_SENTINEL(g_braces_s = new_atom(pl, "braces"), ERR_IDX);
+	CHECK_SENTINEL(g_unify_s = new_atom(pl, "="), ERR_IDX);
+	CHECK_SENTINEL(g_on_s = new_atom(pl, "on"), ERR_IDX);
+	CHECK_SENTINEL(g_off_s = new_atom(pl, "off"), ERR_IDX);
+	CHECK_SENTINEL(g_cut_s = new_atom(pl, "!"), ERR_IDX);
+	CHECK_SENTINEL(g_nil_s = new_atom(pl, "[]"), ERR_IDX);
+	CHECK_SENTINEL(g_braces_s = new_atom(pl, "{}"), ERR_IDX);
+	CHECK_SENTINEL(g_fail_s = new_atom(pl, "fail"), ERR_IDX);
+	CHECK_SENTINEL(g_neck_s = new_atom(pl, ":-"), ERR_IDX);
+	CHECK_SENTINEL(g_eof_s = new_atom(pl, "end_of_file"), ERR_IDX);
+	CHECK_SENTINEL(g_lt_s = new_atom(pl, "<"), ERR_IDX);
+	CHECK_SENTINEL(g_gt_s = new_atom(pl, ">"), ERR_IDX);
+	CHECK_SENTINEL(g_eq_s = new_atom(pl, "="), ERR_IDX);
+	CHECK_SENTINEL(g_once_s = new_atom(pl, "once"), ERR_IDX);
+	CHECK_SENTINEL(g_throw_s = new_atom(pl, "throw"), ERR_IDX);
+	CHECK_SENTINEL(g_error_s = new_atom(pl, "error"), ERR_IDX);
+	CHECK_SENTINEL(g_slash_s = new_atom(pl, "/"), ERR_IDX);
+	CHECK_SENTINEL(g_goal_expansion_s = new_atom(pl, "goal_expansion"), ERR_IDX);
+	CHECK_SENTINEL(g_term_expansion_s = new_atom(pl, "term_expansion"), ERR_IDX);
+	CHECK_SENTINEL(g_tm_s = new_atom(pl, "tm"), ERR_IDX);
+	CHECK_SENTINEL(g_float_s = new_atom(pl, "float"), ERR_IDX);
 
-	CHECK_SENTINEL(g_sys_elapsed_s = index_from_pool(pl, "$elapsed"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_queue_s = index_from_pool(pl, "$queue"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_var_s = index_from_pool(pl, "$VAR"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_stream_property_s = index_from_pool(pl, "$stream_property"), ERR_IDX);
-	CHECK_SENTINEL(g_post_unify_hook_s = index_from_pool(pl, "$post_unify_hook"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_record_key_s = index_from_pool(pl, "$record_key"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_ne_s = index_from_pool(pl, "$ne"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_incr_s = index_from_pool(pl, "$incr"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_block_catcher_s = index_from_pool(pl, "$block_catcher"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_drop_barrier_s = index_from_pool(pl, "$drop_barrier"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_cleanup_if_det_s = index_from_pool(pl, "$cleanup_if_det"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_cut_if_det_s = index_from_pool(pl, "$cut_if_det"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_table_s = index_from_pool(pl, "$table"), ERR_IDX);
-	CHECK_SENTINEL(g_as_s = index_from_pool(pl, "as"), ERR_IDX);
-	CHECK_SENTINEL(g_colon_s = index_from_pool(pl, ":"), ERR_IDX);
-	CHECK_SENTINEL(g_caret_s = index_from_pool(pl, "^"), ERR_IDX);
+	CHECK_SENTINEL(g_sys_elapsed_s = new_atom(pl, "$elapsed"), ERR_IDX);
+	CHECK_SENTINEL(g_sys_queue_s = new_atom(pl, "$queue"), ERR_IDX);
+	CHECK_SENTINEL(g_sys_var_s = new_atom(pl, "$VAR"), ERR_IDX);
+	CHECK_SENTINEL(g_sys_stream_property_s = new_atom(pl, "$stream_property"), ERR_IDX);
+	CHECK_SENTINEL(g_post_unify_hook_s = new_atom(pl, "$post_unify_hook"), ERR_IDX);
+	CHECK_SENTINEL(g_sys_record_key_s = new_atom(pl, "$record_key"), ERR_IDX);
+	CHECK_SENTINEL(g_sys_ne_s = new_atom(pl, "$ne"), ERR_IDX);
+	CHECK_SENTINEL(g_sys_incr_s = new_atom(pl, "$incr"), ERR_IDX);
+	CHECK_SENTINEL(g_sys_block_catcher_s = new_atom(pl, "$block_catcher"), ERR_IDX);
+	CHECK_SENTINEL(g_sys_drop_barrier_s = new_atom(pl, "$drop_barrier"), ERR_IDX);
+	CHECK_SENTINEL(g_sys_cleanup_if_det_s = new_atom(pl, "$cleanup_if_det"), ERR_IDX);
+	CHECK_SENTINEL(g_sys_cut_if_det_s = new_atom(pl, "$cut_if_det"), ERR_IDX);
+	CHECK_SENTINEL(g_sys_table_s = new_atom(pl, "$table"), ERR_IDX);
+	CHECK_SENTINEL(g_as_s = new_atom(pl, "as"), ERR_IDX);
+	CHECK_SENTINEL(g_colon_s = new_atom(pl, ":"), ERR_IDX);
+	CHECK_SENTINEL(g_caret_s = new_atom(pl, "^"), ERR_IDX);
 
 	return error;
 }

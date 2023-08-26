@@ -580,7 +580,7 @@ static bool directives(parser *p, cell *d)
 	if (d->arity != 1)
 		return false;
 
-	d->val_off = index_from_pool(p->pl, "$directive");
+	d->val_off = new_atom(p->pl, "$directive");
 	CLR_OP(d);
 
 	if (!strcmp(dirname, "initialization") && (c->arity == 1)) {
@@ -1611,7 +1611,7 @@ static bool dcg_expansion(parser *p)
 
 	cell *c = p->cl->cells;
 	cell *tmp = alloc_on_heap(q, 1+c->nbr_cells+1+1);
-	make_struct(tmp, index_from_pool(p->pl, "dcg_translate"), NULL, 2, c->nbr_cells+1);
+	make_struct(tmp, new_atom(p->pl, "dcg_translate"), NULL, 2, c->nbr_cells+1);
 	safe_copy_cells(tmp+1, p->cl->cells, c->nbr_cells);
 	make_ref(tmp+1+c->nbr_cells, g_anon_s, p->cl->nbr_vars, 0);
 	make_end(tmp+1+c->nbr_cells+1);
@@ -3051,7 +3051,7 @@ static bool process_term(parser *p, cell *p1)
 	}
 
 	if (is_cstring(h)) {
-		pl_idx off = index_from_pool(p->m->pl, C_STR(p, h));
+		pl_idx off = new_atom(p->m->pl, C_STR(p, h));
 		if (off == ERR_IDX) {
 			p->error = true;
 			return false;
@@ -3709,7 +3709,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			if (p->is_quoted)
 				c->flags |= FLAG_CSTR_QUOTED;
 
-			c->val_off = index_from_pool(p->m->pl, SB_cstr(p->token));
+			c->val_off = new_atom(p->m->pl, SB_cstr(p->token));
 			ensure(c->val_off != ERR_IDX);
 		} else {
 			c->tag = TAG_CSTR;

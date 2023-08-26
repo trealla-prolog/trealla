@@ -6,7 +6,7 @@ builtins *get_builtin(prolog *pl, const char *name, size_t len, unsigned arity, 
 builtins *get_help(prolog *pl, const char *name, unsigned arity, bool *found, bool *evaluable);
 module *find_module(prolog *pl, const char *name);
 module *find_next_module(prolog *pl, module *m);
-pl_idx index_from_pool(prolog *pl, const char *name);
+pl_idx new_atom(prolog *pl, const char *name);
 bool is_multifile_in_db(prolog *pl, const char *mod, const char *name, unsigned arity);
 void load_builtins(prolog *pl);
 void uuid_gen(prolog *pl, uuid *u);

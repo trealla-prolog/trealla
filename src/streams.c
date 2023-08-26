@@ -726,13 +726,13 @@ static bool do_stream_property(query *q)
 		cell tmp;
 
 		if (str->eof_action == eof_action_eof_code)
-			make_atom(&tmp, index_from_pool(q->pl, "eof_code"));
+			make_atom(&tmp, new_atom(q->pl, "eof_code"));
 		else if (str->eof_action == eof_action_error)
-			make_atom(&tmp, index_from_pool(q->pl, "error"));
+			make_atom(&tmp, new_atom(q->pl, "error"));
 		else if (str->eof_action == eof_action_reset)
-			make_atom(&tmp, index_from_pool(q->pl, "reset"));
+			make_atom(&tmp, new_atom(q->pl, "reset"));
 		else
-			make_atom(&tmp, index_from_pool(q->pl, "none"));
+			make_atom(&tmp, new_atom(q->pl, "none"));
 
 		return unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 	}
@@ -764,11 +764,11 @@ static bool do_stream_property(query *q)
 		cell tmp;
 
 		if (str->at_end_of_file)
-			make_atom(&tmp, index_from_pool(q->pl, "past"));
+			make_atom(&tmp, new_atom(q->pl, "past"));
 		else if (at_end_of_file)
-			make_atom(&tmp, index_from_pool(q->pl, "at"));
+			make_atom(&tmp, new_atom(q->pl, "at"));
 		else
-			make_atom(&tmp, index_from_pool(q->pl, "not"));
+			make_atom(&tmp, new_atom(q->pl, "not"));
 
 		return unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 	}
@@ -6195,6 +6195,275 @@ static bool fn_accept_2(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
+static bool do_parse_parts(query *q, bool full)
+{
+	GET_FIRST_ARG(p1,atom_or_var);
+	GET_NEXT_ARG(p2,iso_list);
+	char protocol[256], host[1024], path[8192], search[8192], fragment[8192];
+	protocol[0] = host[0] = path[0] = search[0] = fragment[0] = '\0';
+	int port = 0;
+	LIST_HANDLER(p2);
+
+	while (is_iso_list(p2)) {
+		cell *h = LIST_HEAD(p2);
+		h = deref(q, h, p2_ctx);
+		pl_idx h_ctx = q->latest_ctx;
+
+		if (!strcmp(C_STR(q, h), "protocol")) {
+			if (!is_atom(h+1))
+				return throw_error(q, h+1, p2_ctx, "type_error", "atom");
+
+			sprintf(protocol, C_STR(q, h+1));
+		} else if (!strcmp(C_STR(q, h), "host")) {
+			if (!is_atom(h+1))
+				return throw_error(q, h+1, p2_ctx, "type_error", "atom");
+
+			sprintf(host, C_STR(q, h+1));
+		} else if (!strcmp(C_STR(q, h), "port")) {
+			if (!is_smallint(h+1))
+				return throw_error(q, h+1, p2_ctx, "type_error", "integer");
+
+			port = get_smallint(h+1);
+		} else if (!strcmp(C_STR(q, h), "path")) {
+			if (!is_atom(h+1))
+				return throw_error(q, h+1, p2_ctx, "type_error", "atom");
+
+			sprintf(path, C_STR(q, h+1));
+		} else if (!strcmp(C_STR(q, h), "search")) {
+			cell *h1 = h + 1;
+			h1 = deref(q, h1, h_ctx);
+			pl_idx h1_ctx = q->latest_ctx;
+
+			if (!is_iso_list(h1))
+				return throw_error(q, h1, h_ctx, "type_error", "list");
+
+			char *dst = search;
+			LIST_HANDLER(h1);
+
+			while (is_iso_list(h1)) {
+				cell *c = LIST_HEAD(h1);
+				c = deref(q, c, h1_ctx);
+
+				if (!is_structure(c))
+					return throw_error(q, c, h1_ctx, "type_error", "compound");
+
+				if (!is_atom(c+1))
+					return throw_error(q, c+1, h1_ctx, "type_error", "atom");
+
+				if (!is_atom(c+2))
+					return throw_error(q, c+2, h1_ctx, "type_error", "atom");
+
+				size_t len2 = C_STRLEN(q, c+2);
+				char *dstbuf2 = malloc(len2+1);
+				check_heap_error(dstbuf2);
+				url_encode(C_STR(q, c+2), len2, dstbuf2);
+				dst += sprintf(dst, "%s=%s", C_STR(q, c+1), dstbuf2);
+				free(dstbuf2);
+
+				h1 = LIST_TAIL(h1);
+				h1 = deref(q, h1, h1_ctx);
+				h1_ctx = q->latest_ctx;
+
+				if (!is_nil(h1))
+					dst += sprintf(dst, "&");
+			}
+		} else if (!strcmp(C_STR(q, h), "fragment")) {
+			if (!is_atom(h+1))
+				return throw_error(q, h+1, p2_ctx, "type_error", "atom");
+
+			sprintf(fragment, C_STR(q, h+1));
+		}
+
+		p2 = LIST_TAIL(p2);
+		p2 = deref(q, p2, p2_ctx);
+		p2_ctx = q->latest_ctx;
+	}
+
+	SB(pr);
+	SB_sprintf(pr, "%s://%s", protocol, host);
+	if (port) SB_sprintf(pr, "%d", port);
+	if (path[0]) SB_sprintf(pr, "%s", path);
+	if (search[0]) SB_sprintf(pr, "?%s", search);
+	if (fragment[0]) SB_sprintf(pr, "#%s", fragment);
+	cell tmp;
+	make_cstring(&tmp,  SB_cstr(pr));
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool do_parse_url(query *q, bool full)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,iso_list_or_var);
+
+	const char *src = C_STR(q, p1);
+	char protocol[256], host[1024], path[8192], search[8192], fragment[8192];
+	protocol[0] = host[0] = path[0] = search[0] = fragment[0] = '\0';
+
+	if (full)
+		sscanf(src, "%255[^:\r\n]://%1023[^/\r\n]%8191[^?\r\n]?%8191[^#\r\n]#%8191[^\r\n]", protocol, host, path, search, fragment);
+	else
+		sscanf(src, "%8191[^?\r\n]?%8191[^#\r\n]#%8191[^\r\n]", path, search, fragment);
+
+	protocol[255] = host[1023] = path[8191] = search[8191] = fragment[8191] = '\0';
+	char *dstbuf;
+	size_t len;
+	cell tmp[3];
+
+	if (search[0]) {
+		allocate_list(q, tmp);
+		char key[8192], search2[8192];
+		key[0] = search2[0] = '\0';
+		char *src2 = search, *dst2 = key;
+		bool first = true;
+
+		while (*src2) {
+			if (*src2 == '=') {
+				src2++;
+				dst2 = search2;
+				*dst2 = '\0';
+			} else if (*src2 == '&') {
+				make_struct(tmp, new_atom(q->pl, "="), NULL, 2, 2);
+				SET_OP(tmp, OP_YFX);
+
+				len = strlen(key);
+				dstbuf = malloc(len+1);
+				check_heap_error(dstbuf);
+				url_decode(key, dstbuf);
+				make_cstring(tmp+1, dstbuf);
+				free(dstbuf);
+
+				len = strlen(search2);
+				dstbuf = malloc(len+1);
+				check_heap_error(dstbuf);
+				url_decode(search2, dstbuf);
+				make_cstring(tmp+2, dstbuf);
+				free(dstbuf);
+
+				if (first) {
+					allocate_list(q, tmp);
+					first = false;
+				} else
+					append_list(q, tmp);
+
+				src2++;
+				dst2 = key;
+				*dst2 = '\0';
+			}
+
+			*dst2++ = *src2++;
+			*dst2 = '\0';
+		}
+
+		make_struct(tmp, new_atom(q->pl, "="), NULL, 2, 2);
+		SET_OP(tmp, OP_YFX);
+
+		len = strlen(key);
+		dstbuf = malloc(len+1);
+		check_heap_error(dstbuf);
+		url_decode(key, dstbuf);
+		make_cstring(tmp+1, dstbuf);
+		free(dstbuf);
+
+		len = strlen(search2);
+		dstbuf = malloc(len+1);
+		check_heap_error(dstbuf);
+		url_decode(search2, dstbuf);
+		make_cstring(tmp+2, dstbuf);
+		free(dstbuf);
+		append_list(q, tmp);
+
+		cell *l = end_list(q);
+		cell *tmp2 = alloc_on_heap(q, 1 + l->nbr_cells);
+		make_struct(tmp2, new_atom(q->pl, "search"), NULL, 1, l->nbr_cells);
+		safe_copy_cells(tmp2+1, l, l->nbr_cells);
+		allocate_list(q, tmp2);
+	}
+
+	if (protocol[0]) {
+		make_struct(tmp, new_atom(q->pl, "protocol"), NULL, 1, 1);
+		make_cstring(tmp+1, protocol);
+
+		if (search[0])
+			append_list(q, tmp);
+		else
+			allocate_list(q, tmp);
+	}
+
+	if (host[0]) {
+		char host2[256]; host2[0] = '\0';
+		int port = 0;
+		sscanf(host, "%255[^:]:%d", host2, &port);
+		host2[255] = '\0';
+
+		make_struct(tmp, new_atom(q->pl, "host"), NULL, 1, 1);
+		make_cstring(tmp+1, host2);
+		append_list(q, tmp);
+
+		if (port) {
+			make_struct(tmp, new_atom(q->pl, "port"), NULL, 1, 1);
+			make_int(tmp+1, port);
+			append_list(q, tmp);
+		}
+	}
+
+	if (!path[0])
+		strcpy(path, "/");
+
+	if (path[0]) {
+		len = strlen(path);
+		dstbuf = malloc(len+1);
+		check_heap_error(dstbuf);
+		url_decode(path, dstbuf);
+		src = dstbuf;
+		make_struct(tmp, new_atom(q->pl, "path"), NULL, 1, 1);
+		make_cstring(tmp+1, path);
+		append_list(q, tmp);
+		free(dstbuf);
+	}
+
+	if (fragment[0]) {
+		len = strlen(fragment);
+		dstbuf = malloc(len+1);
+		check_heap_error(dstbuf);
+		url_decode(path, dstbuf);
+		src = dstbuf;
+		make_struct(tmp, new_atom(q->pl, "fragment"), NULL, 1, 1);
+		make_cstring(tmp+1, fragment);
+		append_list(q, tmp);
+		free(dstbuf);
+	}
+
+	return unify(q, p2, p2_ctx, end_list(q), q->st.curr_frame);
+}
+
+static bool fn_parse_url_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom_or_var);
+	GET_NEXT_ARG(p2,iso_list_or_var);
+
+	if (is_var(p1) && is_var(p2))
+		return throw_error2(q, p1, p1_ctx, "uninstantiation_error", "not_sufficiently_instantiated", p2);
+
+	if (is_var(p2))
+		return do_parse_url(q, true);
+	else
+		return do_parse_parts(q, true);
+}
+
+static bool fn_parse_location_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom_or_var);
+	GET_NEXT_ARG(p2,iso_list_or_var);
+
+	if (is_var(p1) && is_var(p2))
+		return throw_error2(q, p1, p1_ctx, "uninstantiation_error", "not_sufficiently_instantiated", p2);
+
+	if (is_var(p2))
+		return do_parse_url(q, false);
+	else
+		return do_parse_parts(q, false);
+}
+
 static bool fn_client_5(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -7343,6 +7612,8 @@ builtins g_files_bifs[] =
 	{"read_line_to_string", 2, fn_read_line_to_string_2, "+stream,-character_list", false, false, BLAH},
 	{"read_file_to_string", 3, fn_read_file_to_string_3, "+atom,-string,+options", false, false, BLAH},
 
+	{"parse_location", 2, fn_parse_location_2, "?atom,?list", false, false, BLAH},
+	{"parse_url", 2, fn_parse_url_2, "?atom,?list", false, false, BLAH},
 	{"client", 5, fn_client_5, "+atom,-atom,-atom,-atom,+list", false, false, BLAH},
 	{"server", 3, fn_server_3, "+atom,--stream,+list", false, false, BLAH},
 	{"accept", 2, fn_accept_2, "+stream,--stream", false, false, BLAH},

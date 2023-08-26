@@ -2359,7 +2359,7 @@ static void do_term_assign_vars(parser *p)
 		else
 			snprintf(tmpbuf, sizeof(tmpbuf), "%c%d", ch, n);
 
-		c->val_off = index_from_pool(p->m->pl, tmpbuf);
+		c->val_off = new_atom(p->m->pl, tmpbuf);
 		c->flags = 0;
 	}
 }
@@ -2516,7 +2516,7 @@ static bool fn_iso_functor_3(query *q)
 			tmp[0].nbr_cells = 1 + arity;
 
 			if (is_cstring(p2)) {
-				tmp[0].val_off = index_from_pool(q->pl, C_STR(q, p2));
+				tmp[0].val_off = new_atom(q->pl, C_STR(q, p2));
 			} else
 				tmp[0].val_off = p2->val_off;
 
@@ -2594,7 +2594,7 @@ static bool fn_iso_current_rule_1(query *q)
 
 	cell tmp = (cell){0};
 	tmp.tag = TAG_INTERNED;
-	tmp.val_off = index_from_pool(q->pl, functor);
+	tmp.val_off = new_atom(q->pl, functor);
 	tmp.arity = arity;
 
 	if (search_predicate(q->st.m, &tmp, NULL))
@@ -2698,7 +2698,7 @@ static bool fn_iso_current_predicate_1(query *q)
 
 	cell tmp = (cell){0};
 	tmp.tag = TAG_INTERNED;
-	tmp.val_off = is_interned(p1) ? p1->val_off : index_from_pool(q->pl, C_STR(q, p1));
+	tmp.val_off = is_interned(p1) ? p1->val_off : new_atom(q->pl, C_STR(q, p1));
 	tmp.arity = get_smallint(p2);
 	bool is_prebuilt = false;
 	bool ok = search_predicate(q->st.m, &tmp, &is_prebuilt) != NULL;
@@ -2726,11 +2726,11 @@ static bool fn_iso_current_prolog_flag_2(query *q)
 		cell tmp;
 
 		if (q->st.m->flags.double_quote_atom)
-			make_atom(&tmp, index_from_pool(q->pl, "atom"));
+			make_atom(&tmp, new_atom(q->pl, "atom"));
 		else if (q->st.m->flags.double_quote_codes)
-			make_atom(&tmp, index_from_pool(q->pl, "codes"));
+			make_atom(&tmp, new_atom(q->pl, "codes"));
 		else if (q->st.m->flags.double_quote_chars)
-			make_atom(&tmp, index_from_pool(q->pl, "chars"));
+			make_atom(&tmp, new_atom(q->pl, "chars"));
 
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	} else if (!CMP_STR_TO_CSTR(q, p1, "char_conversion")) {
@@ -2758,12 +2758,12 @@ static bool fn_iso_current_prolog_flag_2(query *q)
 		else if (q->st.m->flags.occurs_check == OCCURS_CHECK_FALSE)
 			make_atom(&tmp, g_false_s);
 		else
-			make_atom(&tmp, index_from_pool(q->pl, "error"));
+			make_atom(&tmp, new_atom(q->pl, "error"));
 
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	} else if (!CMP_STR_TO_CSTR(q, p1, "encoding")) {
 		cell tmp;
-		make_atom(&tmp, index_from_pool(q->pl, "UTF-8"));
+		make_atom(&tmp, new_atom(q->pl, "UTF-8"));
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	} else if (!CMP_STR_TO_CSTR(q, p1, "strict_iso")) {
 		cell tmp;
@@ -2794,11 +2794,11 @@ static bool fn_iso_current_prolog_flag_2(query *q)
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	} else if (!CMP_STR_TO_CSTR(q, p1, "dialect")) {
 		cell tmp;
-		make_atom(&tmp, index_from_pool(q->pl, "trealla"));
+		make_atom(&tmp, new_atom(q->pl, "trealla"));
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	} else if (!CMP_STR_TO_CSTR(q, p1, "integer_rounding_function")) {
 		cell tmp;
-		make_atom(&tmp, index_from_pool(q->pl, "toward_zero"));
+		make_atom(&tmp, new_atom(q->pl, "toward_zero"));
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	} else if (!CMP_STR_TO_CSTR(q, p1, "bounded")) {
 		cell tmp;
@@ -2827,7 +2827,7 @@ static bool fn_iso_current_prolog_flag_2(query *q)
 		sscanf(g_version, "v%u.%u.%u", &v1, &v2, &v3);
 		cell *tmp = alloc_on_heap(q, 5);
 		check_heap_error(tmp);
-		make_atom(&tmp[0], index_from_pool(q->pl, "trealla"));
+		make_atom(&tmp[0], new_atom(q->pl, "trealla"));
 		make_int(&tmp[1], v1);
 		make_int(&tmp[2], v2);
 		make_int(&tmp[3], v3);
@@ -2837,7 +2837,7 @@ static bool fn_iso_current_prolog_flag_2(query *q)
 		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 	} else if (!CMP_STR_TO_CSTR(q, p1, "version_git")) {
 		cell tmp;
-		make_atom(&tmp, index_from_pool(q->pl, g_version));
+		make_atom(&tmp, new_atom(q->pl, g_version));
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	} else if (!CMP_STR_TO_CSTR(q, p1, "argv")) {
 		if (g_avc >= g_ac)
@@ -2859,10 +2859,10 @@ static bool fn_iso_current_prolog_flag_2(query *q)
 	} else if (!CMP_STR_TO_CSTR(q, p1, "unknown")) {
 		cell tmp;
 		make_atom(&tmp,
-			q->st.m->flags.unknown == UNK_ERROR ? index_from_pool(q->pl, "error") :
-			q->st.m->flags.unknown == UNK_WARNING ? index_from_pool(q->pl, "warning") :
-			q->st.m->flags.unknown == UNK_CHANGEABLE ? index_from_pool(q->pl, "changeable") :
-			index_from_pool(q->pl, "fail"));
+			q->st.m->flags.unknown == UNK_ERROR ? new_atom(q->pl, "error") :
+			q->st.m->flags.unknown == UNK_WARNING ? new_atom(q->pl, "warning") :
+			q->st.m->flags.unknown == UNK_CHANGEABLE ? new_atom(q->pl, "changeable") :
+			new_atom(q->pl, "fail"));
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	} else if (!CMP_STR_TO_CSTR(q, p1, "generate_debug_info")) {
 	}
@@ -3921,7 +3921,7 @@ static bool fn_listing_1(query *q)
 		if (!is_integer(p3))
 			return throw_error(q, p3, p1_ctx, "type_error", "integer");
 
-		name = index_from_pool(q->pl, C_STR(q, p2));
+		name = new_atom(q->pl, C_STR(q, p2));
 		arity = get_smallint(p3);
 
 		if (!CMP_STR_TO_CSTR(q, p1, "//"))
@@ -4023,10 +4023,10 @@ static bool fn_source_info_2(query *q)
 	for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
 		cell tmp[8];
 		make_struct(tmp+0, g_dot_s, NULL, 2, 7);
-		make_struct(tmp+1, index_from_pool(q->pl, "filename"), NULL, 1, 1);
+		make_struct(tmp+1, new_atom(q->pl, "filename"), NULL, 1, 1);
 		make_cstring(tmp+2, dbe->filename);
 		make_struct(tmp+3, g_dot_s, NULL, 2, 4);
-		make_struct(tmp+4, index_from_pool(q->pl, "lines"), NULL, 2, 2);
+		make_struct(tmp+4, new_atom(q->pl, "lines"), NULL, 2, 2);
 		make_uint(tmp+5, dbe->line_nbr_start);
 		make_uint(tmp+6, dbe->line_nbr_end);
 		make_atom(tmp+7, g_nil_s);
@@ -5672,7 +5672,7 @@ static bool fn_crypto_data_hash_3(query *q)
 			if (!CMP_STR_TO_CSTR(q, h, "algorithm")) {
 				if (is_var(arg)) {
 					cell tmp;
-					make_atom(&tmp, index_from_pool(q->pl, "sha256"));
+					make_atom(&tmp, new_atom(q->pl, "sha256"));
 					unify(q, arg, arg_ctx, &tmp, q->st.curr_frame);
 					is_sha384 = is_sha512 = false;
 					is_sha256 = true;
@@ -5786,14 +5786,17 @@ static bool fn_base64_3(query *q)
 	return throw_error(q, p1, p1_ctx, "instantiation_error", "atom");
 }
 
-static char *url_encode(const char *src, int len, char *dstbuf)
+char *url_encode(const char *src, int len, char *dstbuf)
 {
 	char *dst = dstbuf;
 
 	// As per RFC3986 (2005)
 
 	while (len-- > 0) {
-		if (!isalnum(*src) && (*src != '-') && (*src != '_') && (*src != '.') && (*src != '~'))
+		if (*src == ' ') {
+			*dst++ = '+';
+			src++;
+		} else if (!isalnum(*src) && (*src != '-') && (*src != '_') && (*src != '.') && (*src != '~'))
 			dst += sprintf(dst, "%%%02X", *src++);
 		else
 			*dst++ = *src++;
@@ -6398,17 +6401,17 @@ static bool fn_sys_legacy_predicate_property_2(query *q)
 		if (evaluable)
 			return false;
 
-		make_atom(&tmp, index_from_pool(q->pl, "built_in"));
+		make_atom(&tmp, new_atom(q->pl, "built_in"));
 
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 
-		make_atom(&tmp, index_from_pool(q->pl, "static"));
+		make_atom(&tmp, new_atom(q->pl, "static"));
 
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 
-		make_atom(&tmp, index_from_pool(q->pl, "dynamic"));
+		make_atom(&tmp, new_atom(q->pl, "dynamic"));
 
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return false;
@@ -6422,58 +6425,58 @@ static bool fn_sys_legacy_predicate_property_2(query *q)
 		return false;
 
 	if (!pr->is_dynamic && !is_var(p2)) {
-		make_atom(&tmp, index_from_pool(q->pl, "built_in"));
+		make_atom(&tmp, new_atom(q->pl, "built_in"));
 
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 	}
 
 	if (!pr->is_dynamic) {
-		make_atom(&tmp, index_from_pool(q->pl, "static"));
+		make_atom(&tmp, new_atom(q->pl, "static"));
 
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 	}
 
 	if (pr->is_dynamic) {
-		make_atom(&tmp, index_from_pool(q->pl, "dynamic"));
+		make_atom(&tmp, new_atom(q->pl, "dynamic"));
 
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 	}
 
 	if (pr->is_multifile) {
-		make_atom(&tmp, index_from_pool(q->pl, "multifile"));
+		make_atom(&tmp, new_atom(q->pl, "multifile"));
 
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 	}
 
 	if (pr->is_public) {
-		make_atom(&tmp, index_from_pool(q->pl, "public"));
+		make_atom(&tmp, new_atom(q->pl, "public"));
 
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 	}
 
 	if (pr->is_public) {
-		make_atom(&tmp, index_from_pool(q->pl, "exported"));
+		make_atom(&tmp, new_atom(q->pl, "exported"));
 
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 	}
 
-	make_atom(&tmp, index_from_pool(q->pl, "static"));
+	make_atom(&tmp, new_atom(q->pl, "static"));
 
 	if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 		return true;
 
-	make_atom(&tmp, index_from_pool(q->pl, "meta_predicate"));
+	make_atom(&tmp, new_atom(q->pl, "meta_predicate"));
 
 	if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 		return true;
 
-	make_atom(&tmp, index_from_pool(q->pl, "visible"));
+	make_atom(&tmp, new_atom(q->pl, "visible"));
 
 	if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 		return true;
@@ -6499,22 +6502,22 @@ static bool fn_sys_legacy_evaluable_property_2(query *q)
 		if (!evaluable)
 			return false;
 
-		make_atom(&tmp, index_from_pool(q->pl, "built_in"));
+		make_atom(&tmp, new_atom(q->pl, "built_in"));
 
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 
-		make_atom(&tmp, index_from_pool(q->pl, "static"));
+		make_atom(&tmp, new_atom(q->pl, "static"));
 
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 
-		make_atom(&tmp, index_from_pool(q->pl, "dynamic"));
+		make_atom(&tmp, new_atom(q->pl, "dynamic"));
 
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return false;
 
-		make_atom(&tmp, index_from_pool(q->pl, "foreign"));
+		make_atom(&tmp, new_atom(q->pl, "foreign"));
 
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return false;
@@ -6872,7 +6875,7 @@ static bool fn_sys_list_attributed_1(query *q)
 			continue;
 
 		cell v;
-		make_ref(&v, index_from_pool(q->pl, p->vartab.var_name[i]), i, q->st.curr_frame);
+		make_ref(&v, new_atom(q->pl, p->vartab.var_name[i]), i, q->st.curr_frame);
 
 		if (first) {
 			allocate_list(q, &v);
@@ -7247,7 +7250,7 @@ static bool fn_current_module_1(query *q)
 		check_heap_error(push_choice(q));
 		module *m = q->current_m = q->pl->modules;
 		cell tmp;
-		make_atom(&tmp, index_from_pool(q->pl, m->name));
+		make_atom(&tmp, new_atom(q->pl, m->name));
 		return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 	}
 
@@ -7261,7 +7264,7 @@ static bool fn_current_module_1(query *q)
 
 	check_heap_error(push_choice(q));
 	cell tmp;
-	make_atom(&tmp, index_from_pool(q->pl, m->name));
+	make_atom(&tmp, new_atom(q->pl, m->name));
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
@@ -7296,7 +7299,7 @@ static bool fn_attribute_3(query *q)
 	while (m) {
 		if ((arity == m->arity) && !strcmp(name, m->name)) {
 			cell tmp;
-			make_atom(&tmp, index_from_pool(q->pl, m->orig->name));
+			make_atom(&tmp, new_atom(q->pl, m->orig->name));
 			return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 		}
 
@@ -7304,7 +7307,7 @@ static bool fn_attribute_3(query *q)
 	}
 
 	cell tmp;
-	make_atom(&tmp, index_from_pool(q->pl, q->st.m->name));
+	make_atom(&tmp, new_atom(q->pl, q->st.m->name));
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
@@ -7317,7 +7320,7 @@ static bool fn_prolog_load_context_2(query *q)
 		return false;
 
 	cell tmp;
-	make_atom(&tmp, index_from_pool(q->pl, q->st.prev_m->name));
+	make_atom(&tmp, new_atom(q->pl, q->st.prev_m->name));
 	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 }
 
@@ -7327,7 +7330,7 @@ static bool fn_module_1(query *q)
 
 	if (is_var(p1)) {
 		cell tmp;
-		make_atom(&tmp, index_from_pool(q->pl, q->st.m->name));
+		make_atom(&tmp, new_atom(q->pl, q->st.m->name));
 		return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 	}
 
@@ -8004,7 +8007,7 @@ static void load_properties(module *m)
 static void load_flags(query *q)
 {
 	cell tmp;
-	make_atom(&tmp, index_from_pool(q->pl, "$current_prolog_flag"));
+	make_atom(&tmp, new_atom(q->pl, "$current_prolog_flag"));
 	tmp.arity = 2;
 
 	if (do_abolish(q, &tmp, &tmp, false) != true)
