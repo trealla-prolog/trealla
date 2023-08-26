@@ -906,6 +906,9 @@ static bool are_slots_ok(const query *q, const frame *f)
 	for (unsigned i = 0; i < f->initial_slots; i++, e++) {
 		const cell *c = &e->c;
 
+		// If a slot is empty something may be bound to it, so nok
+		// If it's indirect (a struct) then an element may bind here, so nok
+
 		if (is_empty(c) || is_indirect(c))
 			return false;
 	}
