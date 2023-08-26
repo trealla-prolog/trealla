@@ -764,6 +764,15 @@ Networking					##EXPERIMENTAL##
 
 	parse_url/2             # parse_url(?atom,?list)
 
+```
+	$ tpl
+	?- parse_url('http://www.xyz.org:81/hello?msg=Hello+World%21&foo=bar#xyz',P).
+	   P = [search([msg='Hello World!',foo=bar]),protocol(http),host('www.xyz.org'),port(81),path('/hello'),fragment(xyz)].
+	?- parse_url(U,[search([msg='Hello World!',foo=bar]),protocol(http),host('www.xyz.org'),port(81),path('/hello'),fragment(xyz)]).
+	   U = 'http://www.xyz.org:81/hello?msg=Hello+World%21&foo=bar#xyz'.
+	?-
+```
+
 	server/2                # server(+host,-stream)
 	server/3                # server(+host,-stream,+list)
 	accept/2                # accept(+stream,-stream)

@@ -6281,7 +6281,7 @@ static bool do_parse_parts(query *q, bool full)
 
 	SB(pr);
 	SB_sprintf(pr, "%s://%s", protocol, host);
-	if (port) SB_sprintf(pr, "%d", port);
+	if (port) SB_sprintf(pr, ":%d", port);
 	if (path[0]) SB_sprintf(pr, "%s", path);
 	if (search[0]) SB_sprintf(pr, "?%s", search);
 	if (fragment[0]) SB_sprintf(pr, "#%s", fragment);
