@@ -942,7 +942,7 @@ static void commit_frame(query *q)
 		tco = recursive && vars_ok && !choices && slots_ok;
 
 #if 0
-		printf("*** retry=%d,tco=%d,q->no_tco=%d,last_match=%d (%d),recursive=%d,choices=%d,slots_ok=%d,vars_ok=%d,cl->nbr_vars=%u,cl->nbr_temps=%u\n",
+		fprintf(stderr, "*** retry=%d,tco=%d,q->no_tco=%d,last_match=%d (%d),recursive=%d,choices=%d,slots_ok=%d,vars_ok=%d,cl->nbr_vars=%u,cl->nbr_temps=%u\n",
 			q->retry, tco, q->no_tco, last_match, cl->is_first_cut, recursive, choices, slots_ok, vars_ok, cl->nbr_vars, cl->nbr_temporaries);
 #endif
 
