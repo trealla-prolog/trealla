@@ -131,13 +131,15 @@
         - name: Install Binaryen
           run: |
             brew install binaryen
-        - name: Install Wasmer
-          uses: wasmerio/setup-wasmer@v1
+        - name: Setup Wasmtime
+          uses: mwilliamson/setup-wasmtime-action@v2
+          with:
+            wasmtime-version: "12.0.1"
         - name: Build
           run: make clean wasm
         - name: Test
           run: |
-            echo 'wasmer --dir . tpl.wasm -- $@' > tpl
+            echo 'wasmtime run --max-wasm-stack 8388608 --dir . tpl.wasm -- $@' > tpl
             chmod +x tpl
             make test
         - name: Upload artifacts
