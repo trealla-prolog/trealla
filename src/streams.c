@@ -6244,7 +6244,7 @@ static bool do_parse_parts(query *q, bool full)
 				cell *c = LIST_HEAD(h1);
 				c = deref(q, c, h1_ctx);
 
-				if (!is_structure(c))
+				if (!is_structure(c) || (c->val_off != g_eq_s) || (c->arity != 2))
 					return throw_error(q, c, h1_ctx, "type_error", "compound");
 
 				if (!is_atom(c+1))
@@ -6253,11 +6253,18 @@ static bool do_parse_parts(query *q, bool full)
 				if (!is_atom(c+2))
 					return throw_error(q, c+2, h1_ctx, "type_error", "atom");
 
+				size_t len1 = C_STRLEN(q, c+1);
+				char *dstbuf1 = malloc(len1+1);
+				check_heap_error(dstbuf1);
+				url_encode(C_STR(q, c+1), len1, dstbuf1);
+				dst += sprintf(dst, "%s", dstbuf1);
+				free(dstbuf1);
+
 				size_t len2 = C_STRLEN(q, c+2);
 				char *dstbuf2 = malloc(len2+1);
 				check_heap_error(dstbuf2);
 				url_encode(C_STR(q, c+2), len2, dstbuf2);
-				dst += sprintf(dst, "%s=%s", C_STR(q, c+1), dstbuf2);
+				dst += sprintf(dst, "=%s", dstbuf2);
 				free(dstbuf2);
 
 				h1 = LIST_TAIL(h1);
