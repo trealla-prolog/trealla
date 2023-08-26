@@ -6195,10 +6195,8 @@ static bool fn_accept_2(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
-static bool do_parse_parts(query *q, bool full)
+static bool do_parse_parts(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, bool full)
 {
-	GET_FIRST_ARG(p1,atom_or_var);
-	GET_NEXT_ARG(p2,iso_list);
 	char protocol[256], host[1024], path[8192], search[8192], fragment[8192];
 	protocol[0] = host[0] = path[0] = search[0] = fragment[0] = '\0';
 	int port = 0;
@@ -6317,11 +6315,8 @@ static bool do_parse_parts(query *q, bool full)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
-static bool do_parse_url(query *q, bool full)
+static bool do_parse_url(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, bool full)
 {
-	GET_FIRST_ARG(p1,atom);
-	GET_NEXT_ARG(p2,iso_list_or_var);
-
 	const char *src = C_STR(q, p1);
 	char protocol[256], host[1024], path[8192], search[8192], fragment[8192];
 	protocol[0] = host[0] = path[0] = search[0] = fragment[0] = '\0';
@@ -6472,23 +6467,23 @@ static bool fn_parse_url_2(query *q)
 		return throw_error2(q, p1, p1_ctx, "uninstantiation_error", "not_sufficiently_instantiated", p2);
 
 	if (is_var(p2))
-		return do_parse_url(q, true);
+		return do_parse_url(q, p1, p1_ctx, p2, p2_ctx, true);
 	else
-		return do_parse_parts(q, true);
+		return do_parse_parts(q, p1, p1_ctx, p2, p2_ctx, true);
 }
 
-static bool fn_parse_location_2(query *q)
+static bool fn_http_location_2(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_var);
-	GET_NEXT_ARG(p2,iso_list_or_var);
+	GET_FIRST_ARG(p1,iso_list_or_var);
+	GET_NEXT_ARG(p2,atom_or_var);
 
 	if (is_var(p1) && is_var(p2))
 		return throw_error2(q, p1, p1_ctx, "uninstantiation_error", "not_sufficiently_instantiated", p2);
 
-	if (is_var(p2))
-		return do_parse_url(q, false);
+	if (is_var(p1))
+		return do_parse_url(q, p2, p2_ctx, p1, p1_ctx, false);
 	else
-		return do_parse_parts(q, false);
+		return do_parse_parts(q, p2, p2_ctx, p1, p1_ctx, false);
 }
 
 static bool fn_client_5(query *q)
@@ -7639,7 +7634,7 @@ builtins g_files_bifs[] =
 	{"read_line_to_string", 2, fn_read_line_to_string_2, "+stream,-character_list", false, false, BLAH},
 	{"read_file_to_string", 3, fn_read_file_to_string_3, "+atom,-string,+options", false, false, BLAH},
 
-	{"parse_location", 2, fn_parse_location_2, "?atom,?list", false, false, BLAH},
+	{"http_location", 2, fn_http_location_2, "?list,?atom", false, false, BLAH},
 	{"parse_url", 2, fn_parse_url_2, "?atom,?list", false, false, BLAH},
 	{"client", 5, fn_client_5, "+atom,-atom,-atom,-atom,+list", false, false, BLAH},
 	{"server", 3, fn_server_3, "+atom,--stream,+list", false, false, BLAH},
