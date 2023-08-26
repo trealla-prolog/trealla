@@ -6250,7 +6250,7 @@ static bool do_parse_parts(query *q, bool full)
 				if (!is_atom(c+1))
 					return throw_error(q, c+1, h1_ctx, "type_error", "atom");
 
-				if (!is_atom(c+2))
+				if (!is_atomic(c+2))
 					return throw_error(q, c+2, h1_ctx, "type_error", "atom");
 
 				size_t len1 = C_STRLEN(q, c+1);
@@ -6260,12 +6260,32 @@ static bool do_parse_parts(query *q, bool full)
 				dst += sprintf(dst, "%s", dstbuf1);
 				free(dstbuf1);
 
-				size_t len2 = C_STRLEN(q, c+2);
-				char *dstbuf2 = malloc(len2+1);
-				check_heap_error(dstbuf2);
-				url_encode(C_STR(q, c+2), len2, dstbuf2);
-				dst += sprintf(dst, "=%s", dstbuf2);
-				free(dstbuf2);
+				if (is_atom(c+2)) {
+					size_t len2 = C_STRLEN(q, c+2);
+					char *dstbuf2 = malloc(len2+1);
+					check_heap_error(dstbuf2);
+					url_encode(C_STR(q, c+2), len2, dstbuf2);
+					dst += sprintf(dst, "=%s", dstbuf2);
+					free(dstbuf2);
+				} else if (is_smallint(c+2)) {
+					char tmpbuf[256];
+					snprintf(tmpbuf, sizeof(tmpbuf), "%lld", (long long)get_smallint(c+2));
+					size_t len2 = strlen(tmpbuf);
+					char *dstbuf2 = malloc(len2+1);
+					check_heap_error(dstbuf2);
+					url_encode(tmpbuf, len2, dstbuf2);
+					dst += sprintf(dst, "=%s", dstbuf2);
+					free(dstbuf2);
+				} else {
+					char tmpbuf[256];
+					snprintf(tmpbuf, sizeof(tmpbuf), "%.17g", get_float(c+2));
+					size_t len2 = strlen(tmpbuf);
+					char *dstbuf2 = malloc(len2+1);
+					check_heap_error(dstbuf2);
+					url_encode(tmpbuf, len2, dstbuf2);
+					dst += sprintf(dst, "=%s", dstbuf2);
+					free(dstbuf2);
+				}
 
 				h1 = LIST_TAIL(h1);
 				h1 = deref(q, h1, h1_ctx);
