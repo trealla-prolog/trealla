@@ -306,6 +306,7 @@ Non-standard predicates
 	msort/2						# unsorted version of sort/3
 	samsort/2                   # same as msort/2
 	merge/3
+	countall/2					# countall(@callable,-integer)
 	format/[1-3]
 	portray_clause/[1-2]
 	predicate_property/2
@@ -762,8 +763,10 @@ A server *Goal* takes a single arg, the connection stream.
 Networking					##EXPERIMENTAL##
 ==========
 
-	http_location/2         # http_location(?list,?atom)
-	parse_url/2             # parse_url(?atom,?list)
+These two are bidirectional...
+
+	http_location/2         # http_location(?list,?url)
+	parse_url/2             # parse_url(?url,?list)
 
 ```
 	$ tpl

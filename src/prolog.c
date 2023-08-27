@@ -28,7 +28,7 @@ pl_idx g_if_then_s, g_soft_cut_s, g_negation_s;
 pl_idx g_error_s, g_slash_s, g_sys_cleanup_if_det_s, g_sys_table_s;
 pl_idx g_goal_expansion_s, g_term_expansion_s, g_tm_s, g_float_s;
 pl_idx g_sys_cut_if_det_s, g_as_s, g_colon_s;
-pl_idx g_caret_s, g_syscall_s;
+pl_idx g_caret_s, g_syscall_s, g_sys_counter_s;
 
 unsigned g_cpu_count = 4;
 char *g_tpl_lib = NULL;
@@ -416,6 +416,7 @@ static bool g_init(prolog *pl)
 	CHECK_SENTINEL(g_dcg_s = new_atom(pl, "-->"), ERR_IDX);
 	CHECK_SENTINEL(g_call_s = new_atom(pl, "call"), ERR_IDX);
 	CHECK_SENTINEL(g_syscall_s = new_atom(pl, "$call"), ERR_IDX);
+	CHECK_SENTINEL(g_sys_counter_s = new_atom(pl, "$counter"), ERR_IDX);
 	CHECK_SENTINEL(g_braces_s = new_atom(pl, "braces"), ERR_IDX);
 	CHECK_SENTINEL(g_unify_s = new_atom(pl, "="), ERR_IDX);
 	CHECK_SENTINEL(g_on_s = new_atom(pl, "on"), ERR_IDX);

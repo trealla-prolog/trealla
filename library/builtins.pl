@@ -90,6 +90,21 @@ catch(G, E, C) :-
 :- meta_predicate(catch(0,?,0)).
 :- help(catch(:callable,+term,:callable), [iso(true)]).
 
+countall(_, N) :-
+	integer(N),
+	(	N >= 0
+	->	true
+	; 	throw(error(domain_error(not_less_than_zero, N), countall/2))
+	),
+	fail.
+
+countall(G, N) :-
+	'$countall'(G, N0),
+	N = N0.
+
+:- meta_predicate(countall(0,?)).
+:- help(countall(:callable,?integer), [iso(true)]).
+
 call_det(G, Det) :-
 	'$get_level'(L1),
 	G,

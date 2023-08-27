@@ -7785,6 +7785,18 @@ static bool fn_parse_csv_file_2(query *q)
 	return true;
 }
 
+bool fn_sys_counter_1(query *q)
+{
+	q->tot_goals--;
+	GET_FIRST_ARG(p1,integer);
+	pl_uint n = get_smalluint(p1);
+	cell tmp;
+	make_uint(&tmp, n+1);
+	GET_RAW_ARG(1, p1_raw);
+	reset_var(q, p1_raw, p1_raw_ctx, &tmp, q->st.curr_frame);
+	return true;
+}
+
 void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type, bool function)
 {
 	tmpbuf[0] = '\0';
@@ -8203,6 +8215,7 @@ builtins g_iso_bifs[] =
 	{"acyclic_term", 1, fn_iso_acyclic_term_1, "+term", true, false, BLAH},
 	{"compare", 3, fn_iso_compare_3, "+atom,+term,+term", true, false, BLAH},
 	{"unify_with_occurs_check", 2, fn_iso_unify_with_occurs_check_2, "+term,+term", true, false, BLAH},
+	{"$countall", 2, fn_iso_countall_2, "@callable,-integer", true, false, BLAH},
 
 	{0}
 };
@@ -8328,6 +8341,7 @@ builtins g_other_bifs[] =
 	{"$is_partial_string", 1, fn_sys_is_partial_string_1, "+character_list", false, false, BLAH},
 	{"$undo_trail", 1, fn_sys_undo_trail_1, NULL, false, false, BLAH},
 	{"$redo_trail", 0, fn_sys_redo_trail_0, NULL, false, false, BLAH},
+	{"$counter", 1, fn_sys_counter_1, NULL, false, false, BLAH},
 	{"$legacy_predicate_property", 2, fn_sys_legacy_predicate_property_2, "+callable,?character_list", false, false, BLAH},
 	{"$legacy_evaluable_property", 2, fn_sys_legacy_evaluable_property_2, "+callable,?character_list", false, false, BLAH},
 	{"$load_properties", 0, fn_sys_load_properties_0, NULL, false, false, BLAH},

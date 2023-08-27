@@ -294,9 +294,6 @@ void reset_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
 	const frame *f = GET_FRAME(c_ctx);
 	slot *e = GET_SLOT(f, c->var_nbr);
 
-	if ((c_ctx < q->st.fp) || is_managed(v))
-		add_trail(q, c_ctx, c->var_nbr, NULL, 0);
-
 	if (is_structure(v)) {
 		if (v_ctx == q->st.curr_frame)
 			q->no_tco = true;

@@ -586,6 +586,38 @@ bool fn_sys_call_cleanup_3(query *q)
 	return true;
 }
 
+bool fn_iso_countall_2(query *q)
+{
+	q->tot_goals--;
+	GET_FIRST_ARG(p1,callable);
+	GET_NEXT_ARG(p2,var);
+
+	check_heap_error(init_tmp_heap(q));
+	cell *tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
+	check_heap_error(tmp2);
+	bool status;
+
+	if (!call_check(q, tmp2, &status, false))
+		return status;
+
+	cell tmp1;
+	make_int(&tmp1, 0);
+	set_var(q, p2, p2_ctx, &tmp1, q->st.curr_frame);
+
+	cell *tmp = prepare_call(q, true, tmp2, q->st.curr_frame, 4);
+	check_heap_error(tmp);
+	pl_idx nbr_cells = PREFIX_LEN + tmp2->nbr_cells;
+	make_struct(tmp+nbr_cells++, g_sys_counter_s, fn_sys_counter_1, 1, 1);
+	make_ref(tmp+nbr_cells++, g_anon_s, p2->var_nbr, p2_ctx);
+	make_struct(tmp+nbr_cells++, g_fail_s, fn_iso_fail_0, 0, 0);
+	make_call(q, tmp+nbr_cells);
+	check_heap_error(push_barrier(q));
+	choice *ch = GET_CURR_CHOICE();
+	ch->succeed_on_retry = true;
+	q->st.curr_cell = tmp;
+	return true;
+}
+
 static cell *parse_to_heap(query *q, const char *src)
 {
 	SB(s);
