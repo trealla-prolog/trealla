@@ -4,8 +4,6 @@
 #include "module.h"
 #include "query.h"
 
-#define RATIONAL_TREES 1
-
 static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth);
 
 static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)

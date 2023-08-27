@@ -18,6 +18,10 @@
 #define USE_THREADS 0
 #endif
 
+#ifndef USE_RATIONAL_TREES
+#define RATIONAL_TREES 1
+#endif
+
 typedef double pl_flt;
 typedef intmax_t pl_int;
 typedef uintmax_t pl_uint;
