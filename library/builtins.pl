@@ -97,7 +97,6 @@ countall(_, N) :-
 	; 	throw(error(domain_error(not_less_than_zero, N), countall/2))
 	),
 	fail.
-
 countall(G, N) :-
 	'$countall'(G, N0),
 	N = N0.
