@@ -99,6 +99,7 @@ countall(_, N) :-
 	fail.
 countall(G, N) :-
 	'$countall'(G, N0),
+	integer(N0),
 	N = N0.
 
 :- meta_predicate(countall(0,?)).
