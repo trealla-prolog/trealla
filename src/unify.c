@@ -415,7 +415,6 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 		cell *h = LIST_HEAD(l);
 		pl_idx h_ctx = l_ctx;
 
-#if USE_RATIONAL_TREES
 		if (is_var(h)) {
 			if (is_ref(h))
 				h_ctx = h->var_ctx;
@@ -437,15 +436,9 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 		} else {
 			collect_vars_internal(q, h, h_ctx, depth+1);
 		}
-#else
-		h = deref(q, h, h_ctx);
-		h_ctx = q->latest_ctx;
-		collect_vars_internal(q, h, h_ctx, depth+1);
-#endif
 
 		l = LIST_TAIL(l);
 
-#if USE_RATIONAL_TREES
 		if (is_var(l)) {
 			if (is_ref(l))
 				l_ctx = l->var_ctx;
@@ -460,10 +453,6 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 
 			e->vgen = q->vgen;
 		}
-#else
-		l = deref(q, l, l_ctx);
-		l_ctx = q->latest_ctx;
-#endif
 	}
 
 	collect_vars_internal(q, l, l_ctx, depth+1);
@@ -500,7 +489,6 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 		cell *c = p1;
 		pl_idx c_ctx = p1_ctx;
 
-#if USE_RATIONAL_TREES
 		if (is_var(c)) {
 			if (is_ref(c))
 				c_ctx = c->var_ctx;
@@ -522,11 +510,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 		} else {
 			collect_vars_internal(q, c, c_ctx, depth+1);
 		}
-#else
-		c = deref(q, c, c_ctx);
-		c_ctx = q->latest_ctx;
-		collect_vars_internal(q, c, c_ctx, depth+1);
-#endif
+
 		p1 += p1->nbr_cells;
 	}
 }
@@ -557,7 +541,6 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 		cell *c = LIST_HEAD(l);
 		pl_idx c_ctx = l_ctx;
 
-#if USE_RATIONAL_TREES
 		if (is_var(c)) {
 			if (is_ref(c))
 				c_ctx = c->var_ctx;
@@ -583,17 +566,9 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 			if (has_vars_internal(q, c, c_ctx, depth+1))
 				return true;
 		}
-#else
-		c = deref(q, c, c_ctx);
-		c_ctx = q->latest_ctx;
-
-		if (has_vars_internal(q, c, c_ctx, depth+1))
-			return true;
-#endif
 
 		l = LIST_TAIL(l);
 
-#if USE_RATIONAL_TREES
 		if (is_var(l)) {
 			if (is_ref(l))
 				l_ctx = l->var_ctx;
@@ -608,10 +583,6 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 
 			e->vgen = q->vgen;
 		}
-#else
-		l = deref(q, l, l_ctx);
-		l_ctx = q->latest_ctx;
-#endif
 	}
 
 	return has_vars_internal(q, l, l_ctx, depth+1);
@@ -644,7 +615,6 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 		cell *c = p1;
 		pl_idx c_ctx = p1_ctx;
 
-#if USE_RATIONAL_TREES
 		if (is_var(c)) {
 			frame *f = GET_FRAME(c_ctx);
 			slot *e = GET_SLOT(f, c->var_nbr);
@@ -665,13 +635,6 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 			if (has_vars_internal(q, c, c_ctx, depth+1))
 				return true;
 		}
-#else
-		c = deref(q, c, c_ctx);
-		c_ctx = q->latest_ctx;
-
-		if (has_vars_internal(q, c, c_ctx, depth+1))
-			return true;
-#endif
 
 		p1 += p1->nbr_cells;
 	}
@@ -699,7 +662,6 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 		cell *h = p1 + 1;
 		pl_idx h_ctx = p1_ctx;
 
-#if USE_RATIONAL_TREES
 		if (is_var(h)) {
 			if (is_ref(h))
 				h_ctx = h->var_ctx;
@@ -723,17 +685,9 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 			if (is_cyclic_term_internal(q, h, h_ctx, depth+1))
 				return true;
 		}
-#else
-		h = deref(q, h, h_ctx);
-		h_ctx = q->latest_ctx;
-
-		if (is_cyclic_term_internal(q, h, h_ctx, depth+1))
-			return true;
-#endif
 
 		p1 = p1 + 1; p1 += p1->nbr_cells;
 
-#if USE_RATIONAL_TREES
 		if (is_var(p1)) {
 			if (is_ref(p1))
 				p1_ctx = p1->var_ctx;
@@ -749,13 +703,8 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 			e->vgen2 = e->vgen;
 			e->vgen = q->vgen;
 		}
-#else
-		p1 = deref(q, p1, p1_ctx);
-		p1_ctx = q->latest_ctx;
-#endif
 	}
 
-#if USE_RATIONAL_TREES
 	p1 = save_p1;
 	p1_ctx = save_p1_ctx;
 
@@ -778,7 +727,6 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 			p1_ctx = q->latest_ctx;
 		}
 	}
-#endif
 
 	return is_cyclic_term_internal(q, p1, p1_ctx, depth+1);
 }
@@ -807,7 +755,6 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned 
 		cell *c = p1;
 		pl_idx c_ctx = p1_ctx;
 
-#if USE_RATIONAL_TREES
 		if (is_var(c)) {
 			if (is_ref(c))
 				c_ctx = c->var_ctx;
@@ -831,13 +778,6 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned 
 			if (is_cyclic_term_internal(q, c, c_ctx, depth+1))
 				return true;
 		}
-#else
-		c = deref(q, c, c_ctx);
-		c_ctx = q->latest_ctx;
-
-		if (is_cyclic_term_internal(q, c, c_ctx, depth+1))
-			return true;
-#endif
 
 		p1 += p1->nbr_cells;
 	}

@@ -214,7 +214,6 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 			cell *h = p1 + 1;
 			pl_idx h_ctx = p1_ctx;
 
-#if USE_RATIONAL_TREES
 			if (is_var(h) && deep_copy(h)) {
 				if (is_ref(h))
 					h_ctx = h->var_ctx;
@@ -239,21 +238,11 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 				cell *rec = deep_clone2_to_tmp(q, h, h_ctx, depth+1);
 				if (!rec) return NULL;
 			}
-#else
-			if (is_var(h) && deep_copy(h)) {
-				h = deref(q, h, h_ctx);
-				h_ctx = q->latest_ctx;
-			}
-
-			cell *rec = deep_clone2_to_tmp(q, h, h_ctx, depth+1);
-			if (!rec) return NULL;
-#endif
 
 			p1 = p1 + 1; p1 += p1->nbr_cells;
 			cell *t = p1;
 			pl_idx t_ctx = p1_ctx;
 
-#if USE_RATIONAL_TREES
 			if (is_var(t) && deep_copy(t)) {
 				if (is_ref(t))
 					t_ctx = t->var_ctx;
@@ -273,12 +262,6 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 				p1 = deref(q, t, t_ctx);
 				p1_ctx = q->latest_ctx;
 			}
-#else
-			if (is_var(t) && deep_copy(t)) {
-				p1 = deref(q, t, t_ctx);
-				p1_ctx = q->latest_ctx;
-			}
-#endif
 
 			if (is_iso_list(p1)) {
 				cell *tmp = alloc_on_tmp(q, 1);
@@ -305,7 +288,6 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 		cell *c = p1;
 		pl_idx c_ctx = p1_ctx;
 
-#if USE_RATIONAL_TREES
 		if (is_var(c) && deep_copy(c)) {
 			if (is_ref(c))
 				c_ctx = c->var_ctx;
@@ -328,16 +310,6 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 			cell *rec = deep_clone2_to_tmp(q, c, c_ctx, depth+1);
 			if (!rec) return NULL;
 		}
-#else
-		if (is_var(c) && deep_copy(c)) {
-			c = deref(q, c, c_ctx);
-			c_ctx = q->latest_ctx;
-		}
-
-		cell *rec = deep_clone2_to_tmp(q, c, c_ctx, depth+1);
-		if (!rec) return NULL;
-#endif
-
 		p1 += p1->nbr_cells;
 	}
 
@@ -494,10 +466,8 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx
 			const frame *f = GET_FRAME(p1_ctx);
 			slot *e = GET_SLOT(f, p1->var_nbr);
 			const pl_idx slot_nbr = f->base + p1->var_nbr;
-#if USE_RATIONAL_TREES
 			e->vgen = q->vgen+1; // +1 because that is what deep_clone_to_tmp() will do
 			if (e->vgen == 0) e->vgen++;
-#endif
 			q->tab0_varno = q->varno;
 			q->tab_idx++;
 			sl_set(q->vars, (void*)(size_t)slot_nbr, (void*)(size_t)q->varno);

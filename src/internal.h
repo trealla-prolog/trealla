@@ -511,9 +511,7 @@ struct trail_ {
 
 struct slot_ {
 	cell c;
-#if USE_RATIONAL_TREES
 	uint32_t vgen, vgen2;	// visit generation
-#endif
 };
 
 // Where 'prev_offset' is the number of frames back

@@ -585,7 +585,6 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 		cell *save_head = head;
 		pl_idx head_ctx = c_ctx;
 
-#if USE_RATIONAL_TREES
 		slot *e = NULL;
 		uint64_t save_vgen = q->vgen - 1;
 
@@ -608,10 +607,6 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 			} else
 				e->vgen = q->vgen;
 		}
-#else
-		head = running ? deref(q, head, c_ctx) : head;
-		head_ctx = running ? q->latest_ctx : 0;
-#endif
 
 		bool special_op = false;
 
@@ -631,9 +626,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 		q->parens = parens;
 		ssize_t res = print_term_to_buf_(q, dst, dstlen, head, head_ctx, running, -1, 0, depth+1);
 		q->parens = false;
-#if USE_RATIONAL_TREES
 		if (e) e->vgen = save_vgen;
-#endif
 		if (res < 0) return -1;
 		dst += res;
 		if (parens) dst += snprintf(dst, dstlen, "%s", ")");
@@ -652,7 +645,6 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 			return dst - save_dst;
 		}
 
-#if USE_RATIONAL_TREES
 		if (is_var(tail) && running) {
 			if (is_ref(tail))
 				tail_ctx = tail->var_ctx;
@@ -669,14 +661,6 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 				possible_chars = false;
 			}
 		}
-#else
-		if (is_var(tail) && running) {
-			tail = deref(q, tail, c_ctx);
-			c_ctx = q->latest_ctx;
-			possible_chars = false;
-		}
-#endif
-
 		size_t tmp_len = 0;
 
 		if (is_interned(tail) && !is_structure(tail)) {
@@ -1080,7 +1064,6 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 				cell *tmp = c;
 				pl_idx tmp_ctx = c_ctx;
 
-#if USE_RATIONAL_TREES
 				slot *e = NULL;
 
 				uint64_t save_vgen = q->vgen - 1;
@@ -1100,10 +1083,6 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 						tmp_ctx = running ? q->latest_ctx : 0;
 					}
 				}
-#else
-				tmp = running ? deref(q, c, c_ctx) : c;
-				tmp_ctx = running ? q->latest_ctx : 0;
-#endif
 
 				if (q->max_depth && ((depth+1) >= q->max_depth)) {
 					dst += snprintf(dst, dstlen, "%s", "...");
@@ -1133,9 +1112,7 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 				q->parens = false;
 				if (res < 0) return -1;
 				dst += res;
-#if USE_RATIONAL_TREES
 				if (e) e->vgen = save_vgen;
-#endif
 
 				if (parens)
 					dst += snprintf(dst, dstlen, "%s", ")");
