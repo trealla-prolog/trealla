@@ -474,7 +474,10 @@ void dump_vars(query *q, bool partial)
 		q->max_depth = 9;
 		q->parens = parens;
 		q->double_quotes = true;
+
+#if USE_RATIONAL_TREES
 		e->vgen = q->vgen+1;
+#endif
 
 		if (!init_tmp_heap(q))
 			return;

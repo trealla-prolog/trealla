@@ -17,7 +17,7 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 		cell *h1 = p1 + 1, *h2 = p2 + 1;
 		pl_idx h1_ctx = p1_ctx, h2_ctx = p2_ctx;
 
-#if RATIONAL_TREES
+#if USE_RATIONAL_TREES
 		slot *e1 = NULL, *e2 = NULL;
 		uint32_t save_vgen1 = 0, save_vgen2 = 0;
 		int both = 0;
@@ -74,7 +74,7 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 		p1 = p1 + 1; p1 += p1->nbr_cells;
 		p2 = p2 + 1; p2 += p2->nbr_cells;
 
-#if RATIONAL_TREES
+#if USE_RATIONAL_TREES
 		both = 0;
 
 		if (is_var(p1)) {
@@ -139,7 +139,7 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		cell *c1 = p1, *c2 = p2;
 		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 
-#if RATIONAL_TREES
+#if USE_RATIONAL_TREES
 		slot *e1 = NULL, *e2 = NULL;
 		uint32_t save_vgen1 = 0, save_vgen2 = 0;
 		bool cycle1 = false, cycle2 = false;
@@ -415,7 +415,7 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 		cell *h = LIST_HEAD(l);
 		pl_idx h_ctx = l_ctx;
 
-#if RATIONAL_TREES
+#if USE_RATIONAL_TREES
 		if (is_var(h)) {
 			if (is_ref(h))
 				h_ctx = h->var_ctx;
@@ -445,7 +445,7 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 
 		l = LIST_TAIL(l);
 
-#if RATIONAL_TREES
+#if USE_RATIONAL_TREES
 		if (is_var(l)) {
 			if (is_ref(l))
 				l_ctx = l->var_ctx;
@@ -500,7 +500,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 		cell *c = p1;
 		pl_idx c_ctx = p1_ctx;
 
-#if RATIONAL_TREES
+#if USE_RATIONAL_TREES
 		if (is_var(c)) {
 			if (is_ref(c))
 				c_ctx = c->var_ctx;
@@ -557,7 +557,7 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 		cell *c = LIST_HEAD(l);
 		pl_idx c_ctx = l_ctx;
 
-#if RATIONAL_TREES
+#if USE_RATIONAL_TREES
 		if (is_var(c)) {
 			if (is_ref(c))
 				c_ctx = c->var_ctx;
@@ -593,7 +593,7 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 
 		l = LIST_TAIL(l);
 
-#if RATIONAL_TREES
+#if USE_RATIONAL_TREES
 		if (is_var(l)) {
 			if (is_ref(l))
 				l_ctx = l->var_ctx;
@@ -644,7 +644,7 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 		cell *c = p1;
 		pl_idx c_ctx = p1_ctx;
 
-#if RATIONAL_TREES
+#if USE_RATIONAL_TREES
 		if (is_var(c)) {
 			frame *f = GET_FRAME(c_ctx);
 			slot *e = GET_SLOT(f, c->var_nbr);
@@ -699,7 +699,7 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 		cell *h = p1 + 1;
 		pl_idx h_ctx = p1_ctx;
 
-#if RATIONAL_TREES
+#if USE_RATIONAL_TREES
 		if (is_var(h)) {
 			if (is_ref(h))
 				h_ctx = h->var_ctx;
@@ -733,7 +733,7 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 
 		p1 = p1 + 1; p1 += p1->nbr_cells;
 
-#if RATIONAL_TREES
+#if USE_RATIONAL_TREES
 		if (is_var(p1)) {
 			if (is_ref(p1))
 				p1_ctx = p1->var_ctx;
@@ -755,7 +755,7 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 #endif
 	}
 
-#if RATIONAL_TREES
+#if USE_RATIONAL_TREES
 	p1 = save_p1;
 	p1_ctx = save_p1_ctx;
 
@@ -807,7 +807,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned 
 		cell *c = p1;
 		pl_idx c_ctx = p1_ctx;
 
-#if RATIONAL_TREES
+#if USE_RATIONAL_TREES
 		if (is_var(c)) {
 			if (is_ref(c))
 				c_ctx = c->var_ctx;
@@ -1289,7 +1289,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 		cell *h1 = p1 + 1, *h2 = p2 + 1;
 		pl_idx h1_ctx = p1_ctx, h2_ctx = p2_ctx;
 
-#if RATIONAL_TREES
+#if USE_RATIONAL_TREES
 		slot *e1 = NULL, *e2 = NULL;
 		uint32_t save_vgen1 = 0, save_vgen2 = 0;
 		int both = 0;
@@ -1340,7 +1340,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 			return false;
 #endif
 
-#if RATIONAL_TREES
+#if USE_RATIONAL_TREES
 		if (e1) e1->vgen = save_vgen1;
 		if (e2) e2->vgen2 = save_vgen2;
 #endif
@@ -1348,7 +1348,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 		p1 = p1 + 1; p1 += p1->nbr_cells;
 		p2 = p2 + 1; p2 += p2->nbr_cells;
 
-#if RATIONAL_TREES
+#if USE_RATIONAL_TREES
 		both = 0;
 
 		if (is_var(p1)) {
@@ -1415,7 +1415,7 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 		cell *c1 = p1, *c2 = p2;
 
-#if RATIONAL_TREES
+#if USE_RATIONAL_TREES
 		slot *e1 = NULL, *e2 = NULL;
 		uint32_t save_vgen1 = 0, save_vgen2 = 0;
 		int both = 0;
@@ -1466,7 +1466,7 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 			return false;
 #endif
 
-#if RATIONAL_TREES
+#if USE_RATIONAL_TREES
 		if (e1) e1->vgen = save_vgen1;
 		if (e2) e2->vgen2 = save_vgen2;
 

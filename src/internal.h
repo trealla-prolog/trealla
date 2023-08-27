@@ -19,7 +19,7 @@
 #endif
 
 #ifndef USE_RATIONAL_TREES
-#define RATIONAL_TREES 1
+#define USE_RATIONAL_TREES 1
 #endif
 
 typedef double pl_flt;
@@ -511,7 +511,9 @@ struct trail_ {
 
 struct slot_ {
 	cell c;
+#if USE_RATIONAL_TREES
 	uint32_t vgen, vgen2;	// visit generation
+#endif
 };
 
 // Where 'prev_offset' is the number of frames back
