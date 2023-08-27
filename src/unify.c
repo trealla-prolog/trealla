@@ -770,8 +770,10 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned 
 			uint32_t save_vgen = e->vgen;
 			e->vgen = q->vgen;
 
-			if (is_cyclic_term_internal(q, c, c_ctx, depth+1))
+			if (is_cyclic_term_internal(q, c, c_ctx, depth+1)) {
+				e->vgen = save_vgen;
 				return true;
+			}
 
 			e->vgen = save_vgen;
 		} else {
