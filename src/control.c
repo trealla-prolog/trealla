@@ -586,7 +586,7 @@ bool fn_sys_call_cleanup_3(query *q)
 	return true;
 }
 
-bool fn_iso_countall_2(query *q)
+bool fn_sys_countall_2(query *q)
 {
 	q->tot_goals--;
 	GET_FIRST_ARG(p1,callable);

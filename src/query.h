@@ -108,8 +108,8 @@ bool fn_if_3(query *q);
 bool fn_if_2(query *q);
 bool fn_ignore_1(query *q);
 bool fn_sys_counter_1(query *q);
+bool fn_sys_countall_2(query *q);
 
-bool fn_iso_countall_2(query *q);
 bool fn_iso_if_then_2(query *q);
 bool fn_iso_invoke_2(query *q);
 bool fn_iso_once_1(query *q);

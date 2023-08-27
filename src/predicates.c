@@ -8215,7 +8215,6 @@ builtins g_iso_bifs[] =
 	{"acyclic_term", 1, fn_iso_acyclic_term_1, "+term", true, false, BLAH},
 	{"compare", 3, fn_iso_compare_3, "+atom,+term,+term", true, false, BLAH},
 	{"unify_with_occurs_check", 2, fn_iso_unify_with_occurs_check_2, "+term,+term", true, false, BLAH},
-	{"$countall", 2, fn_iso_countall_2, "@callable,-integer", true, false, BLAH},
 
 	{0}
 };
@@ -8336,6 +8335,7 @@ builtins g_other_bifs[] =
 	{"sre_substp", 4, fn_sre_substp_4, "+character_list,+character_list,-character_list,-character_list,", false, false, BLAH},
 	{"sre_subst", 4, fn_sre_subst_4, "+character_list,+character_list,-character_list,-character_list,", false, false, BLAH},
 
+	{"$countall", 2, fn_sys_countall_2, "@callable,-integer", false, false, BLAH},
 	{"$register_cleanup", 1, fn_sys_register_cleanup_1, NULL, false, false, BLAH},
 	{"$get_level", 1, fn_sys_get_level_1, "?integer", false, false, BLAH},
 	{"$is_partial_string", 1, fn_sys_is_partial_string_1, "+character_list", false, false, BLAH},
