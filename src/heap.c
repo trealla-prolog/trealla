@@ -240,8 +240,11 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 				if (!rec) return NULL;
 			}
 #else
-			h = deref(q, h, h_ctx);
-			h_ctx = q->latest_ctx;
+			if (is_var(h) && deep_copy(h)) {
+				h = deref(q, h, h_ctx);
+				h_ctx = q->latest_ctx;
+			}
+
 			cell *rec = deep_clone2_to_tmp(q, h, h_ctx, depth+1);
 			if (!rec) return NULL;
 #endif
@@ -271,8 +274,10 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 				p1_ctx = q->latest_ctx;
 			}
 #else
-			p1 = deref(q, t, t_ctx);
-			p1_ctx = q->latest_ctx;
+			if (is_var(t) && deep_copy(t)) {
+				p1 = deref(q, t, t_ctx);
+				p1_ctx = q->latest_ctx;
+			}
 #endif
 
 			if (is_iso_list(p1)) {
@@ -324,8 +329,11 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 			if (!rec) return NULL;
 		}
 #else
-		c = deref(q, c, c_ctx);
-		c_ctx = q->latest_ctx;
+		if (is_var(c) && deep_copy(c)) {
+			c = deref(q, c, c_ctx);
+			c_ctx = q->latest_ctx;
+		}
+
 		cell *rec = deep_clone2_to_tmp(q, c, c_ctx, depth+1);
 		if (!rec) return NULL;
 #endif
