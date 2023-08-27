@@ -7788,8 +7788,12 @@ static bool fn_parse_csv_file_2(query *q)
 bool fn_sys_counter_1(query *q)
 {
 	q->tot_goals--;
-	GET_FIRST_ARG(p1,integer);
-	pl_uint n = get_smalluint(p1);
+	GET_FIRST_ARG(p1,integer_or_var);
+	pl_uint n = 0;
+
+	if (is_smallint(p1))
+		n = get_smalluint(p1);
+
 	cell tmp;
 	make_uint(&tmp, n+1);
 	GET_RAW_ARG(1, p1_raw);
