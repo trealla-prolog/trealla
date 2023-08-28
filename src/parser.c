@@ -202,6 +202,18 @@ void make_smalln(cell *tmp, const char *s, size_t n)
 	tmp->chr_len = n;
 }
 
+void make_var(cell *tmp, pl_idx off, unsigned var_nbr)
+{
+	*tmp = (cell){0};
+	tmp->tag = TAG_VAR;
+	tmp->nbr_cells = 1;
+	tmp->var_nbr = var_nbr;
+	tmp->val_off = off;
+
+	if (off == g_anon_s)
+		tmp->flags |= FLAG_VAR_ANON;
+}
+
 void make_ref(cell *tmp, pl_idx off, unsigned var_nbr, pl_idx ctx)
 {
 	*tmp = (cell){0};
