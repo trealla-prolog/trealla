@@ -617,7 +617,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 		cell *c = deref(q, str+1, str_ctx);
 		cell tmp;
 		check_heap_error(make_cstringn(&tmp, tmpbuf, len), free(tmpbuf));
-		set_var(q, c, q->latest_ctx, &tmp, q->st.curr_frame);
+		unify(q, c, q->latest_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 	} else if (is_structure(str)) {
 		cell *c = deref(q, str+1, str_ctx);
@@ -628,7 +628,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 		else
 			make_atom(&tmp, g_nil_s);
 
-		set_var(q, c, q->latest_ctx, &tmp, q->st.curr_frame);
+		unify(q, c, q->latest_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 	} else if (is_stream(str)) {
 		int n = get_stream(q, str);

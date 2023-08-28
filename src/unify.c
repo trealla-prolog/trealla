@@ -962,18 +962,19 @@ bool check_list(query *q, cell *p1, pl_idx p1_ctx, bool *is_partial, pl_int *ski
 	return false;
 }
 
+
 static void make_new_var(query *q, cell *tmp, unsigned var_nbr, pl_idx var_ctx)
 {
 	make_ref(tmp, g_anon_s, create_vars(q, 1), q->st.curr_frame);
 	cell v;
 	make_ref(&v, g_anon_s, var_nbr, var_ctx);
-	set_var(q, tmp, q->st.curr_frame, &v, var_ctx);
+	unify(q, tmp, q->st.curr_frame, &v, var_ctx);
 }
 
 static void set_new_var(query *q, cell *tmp, cell *v, pl_idx v_ctx)
 {
 	make_ref(tmp, g_anon_s, create_vars(q, 1), q->st.curr_frame);
-	set_var(q, tmp, q->st.curr_frame, v, v_ctx);
+	unify(q, tmp, q->st.curr_frame, v, v_ctx);
 }
 
 bool fn_sys_undo_trail_1(query *q)
@@ -982,7 +983,7 @@ bool fn_sys_undo_trail_1(query *q)
 	q->in_hook = true;
 
 	if (q->undo_hi_tp <= q->undo_lo_tp) {
-		set_var(q, p1, p1_ctx, make_nil(), q->st.curr_frame);
+		unify(q, p1, p1_ctx, make_nil(), q->st.curr_frame);
 		return true;
 	}
 
@@ -1025,7 +1026,7 @@ bool fn_sys_undo_trail_1(query *q)
 	cell *tmp = end_list(q);
 	check_heap_error(tmp);
 	//DUMP_TERM("$undo3 tmp", tmp, q->st.curr_frame, 0);
-	set_var(q, p1, p1_ctx, tmp, q->st.curr_frame);
+	unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 	return true;
 }
 
@@ -1084,6 +1085,78 @@ bool do_post_unification_hook(query *q, bool is_builtin)
 
 	q->st.curr_cell = tmp;
 	return true;
+}
+
+inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
+{
+	const frame *f = GET_FRAME(c_ctx);
+	slot *e = GET_SLOT(f, c->var_nbr);
+	cell *c_attrs = is_empty(&e->c) ? e->c.attrs : NULL, *v_attrs = NULL;
+	pl_idx c_attrs_ctx = c_attrs ? e->c.attrs_ctx : 0;
+
+	if ((c_ctx < q->st.fp) || is_managed(v))
+		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
+
+	if (c_attrs && is_var(v)) {
+		const frame *vf = GET_FRAME(v_ctx);
+		const slot *ve = GET_SLOT(vf, v->var_nbr);
+		v_attrs = is_empty(&ve->c) ? ve->c.attrs : NULL;
+	}
+
+	// If 'c' is an attvar and either 'v' is an attvar or nonvar then run the hook
+	// If 'c' is an attvar and 'v' is a plain var then copy attributes to 'v'
+	// If 'c' is a plain var and 'v' is an attvar then copy attributes to 'c'
+
+	if (c_attrs && (v_attrs || is_nonvar(v))) {
+		q->run_hook = true;
+	} else if (c_attrs && !v_attrs && is_var(v)) {
+		const frame *vf = GET_FRAME(v_ctx);
+		slot *ve = GET_SLOT(vf, v->var_nbr);
+		add_trail(q, v_ctx, v->var_nbr, NULL, 0);
+		ve->c.attrs = c_attrs;
+		ve->c.attrs_ctx = c_attrs_ctx;
+	}
+
+	// A structure in the current frame can't be reclaimed,
+	// hence no TCO in this instance...
+
+	if (is_structure(v)) {
+		if (v_ctx == q->st.curr_frame)
+			q->no_tco = true;
+
+		make_indirect(&e->c, v, v_ctx);
+	} else if (is_var(v)) {
+		e->c.tag = TAG_VAR;
+		e->c.nbr_cells = 1;
+		e->c.flags |= FLAG_VAR_REF;
+		e->c.var_nbr = v->var_nbr;
+		e->c.var_ctx = v_ctx;
+	} else {
+		share_cell(v);
+		e->c = *v;
+	}
+}
+
+void reset_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
+{
+	const frame *f = GET_FRAME(c_ctx);
+	slot *e = GET_SLOT(f, c->var_nbr);
+
+	if (is_structure(v)) {
+		if (v_ctx == q->st.curr_frame)
+			q->no_tco = true;
+
+		make_indirect(&e->c, v, v_ctx);
+	} else if (is_var(v)) {
+		e->c.tag = TAG_VAR;
+		e->c.nbr_cells = 1;
+		e->c.flags |= FLAG_VAR_REF;
+		e->c.var_nbr = v->var_nbr;
+		e->c.var_ctx = v_ctx;
+	} else {
+		share_cell(v);
+		e->c = *v;
+	}
 }
 
 static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth);
@@ -1412,7 +1485,7 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 		if (e1) e1->vgen = save_vgen1;
 		if (e2) e2->vgen2 = save_vgen2;
 
-		if (both && q->cycle_error)		// HACK
+		if (q->cycle_error)		// HACK
 			break;
 #else
 		if (q->cycle_error)
