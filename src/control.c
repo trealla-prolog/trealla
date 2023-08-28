@@ -600,6 +600,9 @@ bool fn_sys_countall_2(query *q)
 	if (!call_check(q, tmp2, &status, false))
 		return status;
 
+	cell n;
+	make_uint(&n, 0);
+	reset_var(q, p2, p2_ctx, &n, q->st.curr_frame);
 	cell *tmp = prepare_call(q, true, tmp2, q->st.curr_frame, 4);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + tmp2->nbr_cells;
