@@ -653,7 +653,7 @@ struct query_ {
 	bool ignores[MAX_IGNORES];
 	uint64_t tot_goals, tot_backtracks, tot_retries, tot_matches;
 	uint64_t tot_tcos, tot_frecovs, tot_srecovs;
-	uint64_t step, qid, tmo_msecs, cgen;
+	uint64_t step, qid, tmo_msecs, cgen, cycle_error;
 	uint64_t get_started, autofail_n, yield_at;
 	uint64_t time_cpu_started, time_cpu_last_started, future;
 	unsigned max_depth, max_eval_depth, print_idx, tab_idx, varno, tab0_varno, curr_engine;
@@ -700,7 +700,6 @@ struct query_ {
 	bool numbervars:1;
 	bool halt:1;
 	bool abort:1;
-	bool cycle_error:1;
 	bool spawned:1;
 	bool run_init:1;
 	bool varnames:1;
