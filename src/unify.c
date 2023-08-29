@@ -1392,9 +1392,6 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 				e2->vgen2 = q->vgen;
 		}
 
-		if (both == 2)
-			break;
-
 		if (both && (cnt > g_max_depth))		// HACK
 			break;
 #else
