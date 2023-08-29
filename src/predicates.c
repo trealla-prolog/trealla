@@ -2733,6 +2733,12 @@ static bool fn_iso_current_prolog_flag_2(query *q)
 			make_atom(&tmp, new_atom(q->pl, "chars"));
 
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	} else if (!CMP_STR_TO_CSTR(q, p1, "answer_write_options")) {
+		cell tmp[2];
+		make_struct(tmp+0, new_atom(q->pl, "max_depth"), NULL, 1, 1);
+		make_uint(tmp+1, q->pl->def_max_depth);
+		allocate_list(q, tmp);
+		return unify(q, p2, p2_ctx, end_list(q), q->st.curr_frame);
 	} else if (!CMP_STR_TO_CSTR(q, p1, "char_conversion")) {
 		cell tmp;
 
@@ -8082,6 +8088,7 @@ static void load_flags(query *q)
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "max_arity", MAX_ARITY);
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "cpu_count", g_cpu_count);
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "integer_rounding_function", "toward_zero");
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, [max_depth(%u)]).\n", "answer_write_options", (unsigned)q->pl->def_max_depth);
 
 	parser *p = parser_create(m);
 	p->srcptr = SB_cstr(pr);
