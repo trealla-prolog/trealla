@@ -608,7 +608,7 @@ prolog *pl_create()
 	pl->current_input = 0;		// STDIN
 	pl->current_output = 1;		// STDOUT
 	pl->current_error = 2;		// STDERR
-	pl->def_max_depth = 10;
+	pl->def_max_depth = 19;
 
 	// In user space...
 

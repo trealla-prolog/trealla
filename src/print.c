@@ -889,7 +889,7 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 		return dst - save_dst;
 	}
 
-	if (is_string(c) && !q->ignore_ops && q->double_quotes) {
+	if (is_string(c) && !q->ignore_ops && q->double_quotes && 0) {
 		dst += snprintf(dst, dstlen, "%s", "\"");
 		dst += formatted(dst, dstlen, C_STR(q, c), C_STRLEN(q, c), true, q->json);
 		dst += snprintf(dst, dstlen, "%s", "\"");
@@ -924,10 +924,12 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 		dst += snprintf(dst, dstlen, "%s", "\"");
 		unsigned cnt = 0;
 		LIST_HANDLER(l);
+		bool closing_quote = true;
 
 		while (is_list(l)) {
-			if (q->max_depth && (cnt++ > q->max_depth)) {
-				dst += snprintf(dst, dstlen, "%s", "|...");
+			if (q->max_depth && (cnt++ >= q->max_depth)) {
+				dst += snprintf(dst, dstlen, "%s", "\"||... ");
+				closing_quote = false;
 				break;
 			}
 
@@ -939,7 +941,7 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 			c_ctx = running ? q->latest_ctx : 0;
 		}
 
-		dst += snprintf(dst, dstlen, "%s", "\"");
+		if (closing_quote) dst += snprintf(dst, dstlen, "%s", "\"");
 		q->last_thing = WAS_OTHER;
 		return dst - save_dst;
 	}
