@@ -1842,6 +1842,7 @@ query *query_create(module *m, bool is_task)
 	q->ops_dirty = true;
 	q->double_quotes = false;
 	q->st.prob = 1.0;
+	q->max_depth = 0;
 	mp_int_init(&q->tmp_ival);
 	mp_rat_init(&q->tmp_irat);
 	clr_accum(&q->accum);

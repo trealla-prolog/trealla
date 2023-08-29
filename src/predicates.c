@@ -2883,8 +2883,8 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 		return true;
 	}
 
-	if (!is_atom(p2) && !is_integer(p2))
-		return throw_error(q, p2, p2_ctx, "type_error", "atom");
+	if (!is_atom(p2) && !is_integer(p2) && !is_list_or_nil(p2))
+		return throw_error(q, p2, p2_ctx, "type_error", "atomic_or_list");
 
 	if (!CMP_STR_TO_CSTR(q, p1, "double_quotes")) {
 		if (!CMP_STR_TO_CSTR(q, p2, "atom")) {
@@ -2907,6 +2907,39 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 		}
 
 		q->st.m->p->flags = q->st.m->flags;
+	} else if (!CMP_STR_TO_CSTR(q, p1, "answer_write_options")) {
+		cell *l = p1 + 1;
+		l = deref(q, l, p1_ctx);
+		pl_idx l_ctx = q->latest_ctx;
+
+		if (!is_list_or_nil(l))
+			return throw_error(q, l, p1_ctx, "type_error", "list");
+
+		LIST_HANDLER(l);
+
+		while (is_iso_list(l)) {
+			cell *h = LIST_HEAD(l);
+			h = deref(q, h, l_ctx);
+			pl_idx h_ctx = q->latest_ctx;
+
+			if (!is_structure(h) || (h->arity > 1))
+				return throw_error(q, h, h_ctx, "type_error", "compound");
+
+			cell *h1 = h + 1;
+			h1 = deref(q, h1, h_ctx);
+
+			if (!CMP_STR_TO_CSTR(q, h, "max_depth")) {
+				if (!is_integer(h1))
+					return throw_error(q, h1, h_ctx, "type_error", "integer");
+
+				q->pl->def_max_depth = get_smallint(h1);
+			}
+
+			l = LIST_TAIL(l);
+			l = deref(q, l, l_ctx);
+			l_ctx = q->latest_ctx;
+		}
+
 	} else if (!CMP_STR_TO_CSTR(q, p1, "character_escapes")) {
 		if (!CMP_STR_TO_CSTR(q, p2, "true") || !CMP_STR_TO_CSTR(q, p2, "on"))
 			q->st.m->flags.character_escapes = true;
