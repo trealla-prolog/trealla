@@ -2922,15 +2922,18 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 			h = deref(q, h, l_ctx);
 			pl_idx h_ctx = q->latest_ctx;
 
-			if (!is_structure(h) || (h->arity > 1))
+			if (!is_structure(h))
 				return throw_error(q, h, h_ctx, "type_error", "compound");
 
 			cell *h1 = h + 1;
 			h1 = deref(q, h1, h_ctx);
 
-			if (!CMP_STR_TO_CSTR(q, h, "max_depth")) {
+			if (!CMP_STR_TO_CSTR(q, h, "max_depth") && (h->arity == 1)) {
 				if (!is_integer(h1))
 					return throw_error(q, h1, h_ctx, "type_error", "integer");
+
+				if (is_negative(h1))
+					return throw_error(q, h1, h_ctx, "domain_error", "not_less_than_zero");
 
 				q->pl->def_max_depth = get_smallint(h1);
 			}
@@ -2939,7 +2942,6 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 			l = deref(q, l, l_ctx);
 			l_ctx = q->latest_ctx;
 		}
-
 	} else if (!CMP_STR_TO_CSTR(q, p1, "character_escapes")) {
 		if (!CMP_STR_TO_CSTR(q, p2, "true") || !CMP_STR_TO_CSTR(q, p2, "on"))
 			q->st.m->flags.character_escapes = true;
