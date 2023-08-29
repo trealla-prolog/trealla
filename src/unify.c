@@ -1484,6 +1484,9 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 
 		if (q->cycle_error > 2)		// HACK
 			break;
+
+		if ((both == 2) && q->cycle_error)		// HACK
+			return false;
 #else
 		if (q->cycle_error)
 			return throw_error(q, p1, p1_ctx, "system_error", "cyclic_term");
