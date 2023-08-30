@@ -197,11 +197,9 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 
 	// Convert vars to refs...
 
-	if (is_var(tmp)) {
-		if (!is_ref(tmp)) {
-			tmp->flags |= FLAG_VAR_REF;
-			tmp->var_ctx = p1_ctx;
-		}
+	if (is_var(tmp) && !is_ref(tmp)) {
+		tmp->flags |= FLAG_VAR_REF;
+		tmp->var_ctx = p1_ctx;
 	}
 
 	if (!is_structure(p1) || is_string(p1))
