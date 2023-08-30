@@ -202,7 +202,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 		tmp->var_ctx = p1_ctx;
 	}
 
-	if (!is_structure(p1) || is_string(p1))
+	if (!is_structure(p1))
 		return tmp;
 
 	if (is_iso_list(p1)) {
