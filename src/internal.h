@@ -810,10 +810,12 @@ struct prolog_ {
 	FILE *logfp;
 	char *pool;
 	size_t pool_offset, pool_size, tabs_size;
-	uint64_t s_last, s_cnt, seed, ugen, def_max_depth;
-	unsigned next_mod_id;
+	uint64_t s_last, s_cnt, seed, ugen;
+	unsigned next_mod_id, def_max_depth;
 	uint8_t current_input, current_output, current_error;
 	int8_t halt_code, opt;
+	bool def_quoted:1;
+	bool def_double_quotes:1;
 	bool is_redo:1;
 	bool is_query:1;
 	bool halt:1;

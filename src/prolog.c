@@ -609,6 +609,8 @@ prolog *pl_create()
 	pl->current_output = 1;		// STDOUT
 	pl->current_error = 2;		// STDERR
 	pl->def_max_depth = 19;
+	pl->def_quoted = true;
+	pl->def_double_quotes = true;
 
 	// In user space...
 

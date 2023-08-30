@@ -2739,10 +2739,10 @@ static bool fn_iso_current_prolog_flag_2(query *q)
 		make_uint(tmp+1, q->pl->def_max_depth);
 		allocate_list(q, tmp);
 		make_struct(tmp+0, new_atom(q->pl, "quoted"), NULL, 1, 1);
-		make_atom(tmp+1, g_true_s);
+		make_atom(tmp+1, q->pl->def_quoted);
 		append_list(q, tmp);
 		make_struct(tmp+0, new_atom(q->pl, "double_quotes"), NULL, 1, 1);
-		make_atom(tmp+1, g_true_s);
+		make_atom(tmp+1, q->pl->def_double_quotes);
 		append_list(q, tmp);
 		return unify(q, p2, p2_ctx, end_list(q), q->st.curr_frame);
 	} else if (!CMP_STR_TO_CSTR(q, p1, "char_conversion")) {
@@ -2948,6 +2948,26 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 					return throw_error(q, h1, h_ctx, "domain_error", "not_less_than_zero");
 
 				q->pl->def_max_depth = get_smallint(h1);
+			} else if (!CMP_STR_TO_CSTR(q, h, "quoted") && (h->arity == 1)) {
+				if (!is_atom(h1))
+					return throw_error(q, h1, h_ctx, "type_error", "integer");
+
+				if (!CMP_STR_TO_CSTR(q, h1, "true") || !CMP_STR_TO_CSTR(q, h1, "on"))
+					q->pl->def_quoted = true;
+				else if (!CMP_STR_TO_CSTR(q, h1, "false") || !CMP_STR_TO_CSTR(q, h1, "off"))
+					q->pl->def_quoted = false;
+				else
+					return throw_error(q, h, q->st.curr_frame, "domain_error", "flag_value");
+			} else if (!CMP_STR_TO_CSTR(q, h, "double_quotes") && (h->arity == 1)) {
+				if (!is_atom(h1))
+					return throw_error(q, h1, h_ctx, "type_error", "integer");
+
+				if (!CMP_STR_TO_CSTR(q, h1, "true") || !CMP_STR_TO_CSTR(q, h1, "on"))
+					q->pl->def_double_quotes = true;
+				else if (!CMP_STR_TO_CSTR(q, h1, "false") || !CMP_STR_TO_CSTR(q, h1, "off"))
+					q->pl->def_double_quotes = false;
+				else
+					return throw_error(q, h, q->st.curr_frame, "domain_error", "flag_value");
 			}
 
 			l = LIST_TAIL(l);
@@ -8094,7 +8114,7 @@ static void load_flags(query *q)
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "max_arity", MAX_ARITY);
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "cpu_count", g_cpu_count);
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "integer_rounding_function", "toward_zero");
-	SB_sprintf(pr, "'$current_prolog_flag'(%s, [max_depth(%u),quoted(true),double_quotes(true)]).\n", "answer_write_options", (unsigned)q->pl->def_max_depth);
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, [max_depth(%u),quoted(%s),double_quotes(%s)]).\n", "answer_write_options", (unsigned)q->pl->def_max_depth, q->pl->def_quoted?"true":"false", q->pl->def_double_quotes?"true":"false");
 
 	parser *p = parser_create(m);
 	p->srcptr = SB_cstr(pr);
