@@ -582,32 +582,9 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 		}
 
 		cell *head = LIST_HEAD(c);
-		cell *save_head = head;
 		pl_idx head_ctx = c_ctx;
-
-		slot *e = NULL;
-		uint64_t save_vgen = q->vgen - 1;
-
-		if (is_var(head) && running) {
-			if (is_ref(head))
-				head_ctx = head->var_ctx;
-
-			const frame *f = GET_FRAME(head_ctx);
-			e = GET_SLOT(f, head->var_nbr);
-			save_vgen = e->vgen;
-			head = running ? deref(q, head, c_ctx) : head;
-			head_ctx = running ? q->latest_ctx : 0;
-
-			if ((e->vgen == q->vgen)
-				|| (is_var(save_c)
-				&& (head->var_nbr == save_c->var_nbr)
-				&& (head_ctx == save_c_ctx))) {
-				//head = save_head;
-				//head_ctx = c_ctx;
-			} else
-				e->vgen = q->vgen;
-		}
-
+		head = running ? deref(q, head, c_ctx) : head;
+		head_ctx = running ? q->latest_ctx : 0;
 		bool special_op = false;
 
 		if (is_interned(head)) {
@@ -626,7 +603,6 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 		q->parens = parens;
 		ssize_t res = print_term_to_buf_(q, dst, dstlen, head, head_ctx, running, -1, 0, depth+1);
 		q->parens = false;
-		if (e) e->vgen = save_vgen;
 		if (res < 0) return -1;
 		dst += res;
 		if (parens) dst += snprintf(dst, dstlen, "%s", ")");
@@ -650,7 +626,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 				tail_ctx = tail->var_ctx;
 
 			const frame *f = GET_FRAME(tail_ctx);
-			e = GET_SLOT(f, tail->var_nbr);
+			slot *e = GET_SLOT(f, tail->var_nbr);
 			tail = deref(q, tail, c_ctx);
 			c_ctx = q->latest_ctx;
 
@@ -661,6 +637,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 				possible_chars = false;
 			}
 		}
+
 		size_t tmp_len = 0;
 
 		if (is_interned(tail) && !is_structure(tail)) {
