@@ -2741,6 +2741,9 @@ static bool fn_iso_current_prolog_flag_2(query *q)
 		make_struct(tmp+0, new_atom(q->pl, "quoted"), NULL, 1, 1);
 		make_atom(tmp+1, g_true_s);
 		append_list(q, tmp);
+		make_struct(tmp+0, new_atom(q->pl, "double_quotes"), NULL, 1, 1);
+		make_atom(tmp+1, g_true_s);
+		append_list(q, tmp);
 		return unify(q, p2, p2_ctx, end_list(q), q->st.curr_frame);
 	} else if (!CMP_STR_TO_CSTR(q, p1, "char_conversion")) {
 		cell tmp;
