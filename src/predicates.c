@@ -8091,7 +8091,7 @@ static void load_flags(query *q)
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "max_arity", MAX_ARITY);
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "cpu_count", g_cpu_count);
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "integer_rounding_function", "toward_zero");
-	SB_sprintf(pr, "'$current_prolog_flag'(%s, [max_depth(%u),quoted(true)]).\n", "answer_write_options", (unsigned)q->pl->def_max_depth);
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, [max_depth(%u),quoted(true),double_quotes(true)]).\n", "answer_write_options", (unsigned)q->pl->def_max_depth);
 
 	parser *p = parser_create(m);
 	p->srcptr = SB_cstr(pr);
