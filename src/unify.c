@@ -105,9 +105,6 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 
 		if (both == 2)
 			return 0;
-
-		if (both && (cnt > g_max_depth))		// HACK
-			break;
 #else
 		if (cnt > g_max_depth)
 			break;
