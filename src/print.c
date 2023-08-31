@@ -715,7 +715,9 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 			q->last_thing = WAS_OTHER;
 		} else {
 			dst += snprintf(dst, dstlen, "%s", "|");
-			bool parens = is_op(tail);
+			unsigned specifier = 0;
+			unsigned priority = search_op(q->st.m, C_STR(q, tail), &specifier, false);
+			bool parens = is_infix(tail) && (priority >= 1000);
 			if (parens) dst += snprintf(dst, dstlen, "%s", "(");
 			ssize_t res = print_term_to_buf_(q, dst, dstlen, tail, c_ctx, running, true, depth+1, depth+1);
 			if (res < 0) return -1;
