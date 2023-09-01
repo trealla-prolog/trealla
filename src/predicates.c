@@ -2739,10 +2739,10 @@ static bool fn_iso_current_prolog_flag_2(query *q)
 		make_uint(tmp+1, q->pl->def_max_depth);
 		allocate_list(q, tmp);
 		make_struct(tmp+0, new_atom(q->pl, "quoted"), NULL, 1, 1);
-		make_atom(tmp+1, q->pl->def_quoted);
+		make_atom(tmp+1, q->pl->def_quoted?g_true_s:g_false_s);
 		append_list(q, tmp);
 		make_struct(tmp+0, new_atom(q->pl, "double_quotes"), NULL, 1, 1);
-		make_atom(tmp+1, q->pl->def_double_quotes);
+		make_atom(tmp+1, q->pl->def_double_quotes?g_true_s:g_false_s);
 		append_list(q, tmp);
 		return unify(q, p2, p2_ctx, end_list(q), q->st.curr_frame);
 	} else if (!CMP_STR_TO_CSTR(q, p1, "char_conversion")) {
