@@ -32,7 +32,7 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 			h1 = deref(q, h1, h1_ctx);
 			h1_ctx = q->latest_ctx;
 
-			if (!is_var(h1) && (e1->vgen == q->vgen))
+			if (is_structure(h1) && (e1->vgen == q->vgen))
 				both++;
 			else
 				e1->vgen = q->vgen;
@@ -48,7 +48,7 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 			h2 = deref(q, h2, h2_ctx);
 			h2_ctx = q->latest_ctx;
 
-			if (!is_var(h2) && (e2->vgen2 == q->vgen))
+			if (is_structure(h2) && (e2->vgen2 == q->vgen))
 				both++;
 			else
 				e2->vgen2 = q->vgen;
@@ -83,8 +83,10 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 
 			const frame *f1 = GET_FRAME(p1_ctx);
 			e1 = GET_SLOT(f1, p1->var_nbr);
+			p1 = deref(q, p1, p1_ctx);
+			p1_ctx = q->latest_ctx;
 
-			if (e1->vgen == q->vgen)
+			if (is_structure(p1) && (e1->vgen == q->vgen))
 				both++;
 			else
 				e1->vgen = q->vgen;
@@ -96,8 +98,10 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 
 			const frame *f2 = GET_FRAME(p2_ctx);
 			e2 = GET_SLOT(f2, p2->var_nbr);
+			p2 = deref(q, p2, p2_ctx);
+			p2_ctx = q->latest_ctx;
 
-			if (e2->vgen2 == q->vgen)
+			if (is_structure(p2) && (e2->vgen2 == q->vgen))
 				both++;
 			else
 				e2->vgen2 = q->vgen;
@@ -106,14 +110,15 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 		if (both == 2)
 			return 0;
 #else
-		if (cnt > g_max_depth)
-			break;
-#endif
-
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
 		p2 = deref(q, p2, p2_ctx);
 		p2_ctx = q->latest_ctx;
+
+		if (cnt > g_max_depth)
+			break;
+#endif
+
 		cnt++;
 	}
 
@@ -151,7 +156,7 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 			c1 = deref(q, p1, p1_ctx);
 			c1_ctx = q->latest_ctx;
 
-			if (!is_var(c1) && (e1->vgen == q->vgen))
+			if (is_structure(c1) && (e1->vgen == q->vgen))
 				cycle1 = true;
 			else
 				e1->vgen = q->vgen;
@@ -167,7 +172,7 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 			c2 = deref(q, p2, p2_ctx);
 			c2_ctx = q->latest_ctx;
 
-			if (!is_var(c2) && (e2->vgen2 == q->vgen))
+			if (is_structure(c2) && (e2->vgen2 == q->vgen))
 				cycle2 = true;
 			else
 				e2->vgen2 = q->vgen;
