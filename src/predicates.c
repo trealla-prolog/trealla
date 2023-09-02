@@ -2882,6 +2882,17 @@ static bool fn_iso_current_prolog_flag_2(query *q)
 	return throw_error(q, p1, p1_ctx, "domain_error", "prolog_flag");
 }
 
+static bool anwer_write_options_error(query *q, cell *c)
+{
+	cell *tmp = alloc_on_heap(q, 2+c->nbr_cells);
+	check_heap_error(tmp);
+	make_struct(tmp, g_plus_s, fn_iso_add_2, 2, 1+c->nbr_cells);
+	make_atom(tmp+1, new_atom(q->pl, "answer_write_options"));
+	safe_copy_cells(tmp+2, c, c->nbr_cells);
+	SET_OP(tmp, OP_YFX);
+	return throw_error(q, tmp, q->st.curr_frame, "domain_error", "flag_value");
+}
+
 static bool fn_iso_set_prolog_flag_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -2895,8 +2906,8 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 		return true;
 	}
 
-	if (!is_atom(p2) && !is_integer(p2) && !is_list_or_nil(p2))
-		return throw_error(q, p2, p2_ctx, "type_error", "atomic_or_list");
+	//if (!is_atom(p2) && !is_integer(p2) && !is_list_or_nil(p2))
+	//	return throw_error(q, p2, p2_ctx, "type_error", "atomic_or_list");
 
 	if (!CMP_STR_TO_CSTR(q, p1, "double_quotes")) {
 		if (!CMP_STR_TO_CSTR(q, p2, "atom")) {
@@ -2920,12 +2931,12 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 
 		q->st.m->p->flags = q->st.m->flags;
 	} else if (!CMP_STR_TO_CSTR(q, p1, "answer_write_options")) {
-		cell *l = p1 + 1;
-		l = deref(q, l, p1_ctx);
+		cell *l = p2;
+		l = deref(q, l, p2_ctx);
 		pl_idx l_ctx = q->latest_ctx;
 
 		if (!is_list_or_nil(l))
-			return throw_error(q, l, p1_ctx, "type_error", "list");
+			return anwer_write_options_error(q, l);
 
 		LIST_HANDLER(l);
 
@@ -2935,40 +2946,41 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 			pl_idx h_ctx = q->latest_ctx;
 
 			if (!is_structure(h))
-				return throw_error(q, h, h_ctx, "type_error", "compound");
+				return anwer_write_options_error(q, h);
 
 			cell *h1 = h + 1;
 			h1 = deref(q, h1, h_ctx);
 
 			if (!CMP_STR_TO_CSTR(q, h, "max_depth") && (h->arity == 1)) {
 				if (!is_integer(h1))
-					return throw_error(q, h1, h_ctx, "type_error", "integer");
+					return anwer_write_options_error(q, h);
 
 				if (is_negative(h1))
-					return throw_error(q, h1, h_ctx, "domain_error", "not_less_than_zero");
+					return anwer_write_options_error(q, h);
 
 				q->pl->def_max_depth = get_smallint(h1);
 			} else if (!CMP_STR_TO_CSTR(q, h, "quoted") && (h->arity == 1)) {
 				if (!is_atom(h1))
-					return throw_error(q, h1, h_ctx, "type_error", "integer");
+					return anwer_write_options_error(q, h);
 
 				if (!CMP_STR_TO_CSTR(q, h1, "true") || !CMP_STR_TO_CSTR(q, h1, "on"))
 					q->pl->def_quoted = true;
 				else if (!CMP_STR_TO_CSTR(q, h1, "false") || !CMP_STR_TO_CSTR(q, h1, "off"))
 					q->pl->def_quoted = false;
 				else
-					return throw_error(q, h, q->st.curr_frame, "domain_error", "flag_value");
+					return anwer_write_options_error(q, h);
 			} else if (!CMP_STR_TO_CSTR(q, h, "double_quotes") && (h->arity == 1)) {
 				if (!is_atom(h1))
-					return throw_error(q, h1, h_ctx, "type_error", "integer");
+					return anwer_write_options_error(q, h);
 
 				if (!CMP_STR_TO_CSTR(q, h1, "true") || !CMP_STR_TO_CSTR(q, h1, "on"))
 					q->pl->def_double_quotes = true;
 				else if (!CMP_STR_TO_CSTR(q, h1, "false") || !CMP_STR_TO_CSTR(q, h1, "off"))
 					q->pl->def_double_quotes = false;
 				else
-					return throw_error(q, h, q->st.curr_frame, "domain_error", "flag_value");
-			}
+					return anwer_write_options_error(q, h);
+			} else
+				return anwer_write_options_error(q, h);
 
 			l = LIST_TAIL(l);
 			l = deref(q, l, l_ctx);
