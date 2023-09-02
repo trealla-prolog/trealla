@@ -2906,8 +2906,8 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 		return true;
 	}
 
-	//if (!is_atom(p2) && !is_integer(p2) && !is_list_or_nil(p2))
-	//	return throw_error(q, p2, p2_ctx, "type_error", "atomic_or_list");
+	if (is_var(p2))
+		return throw_error(q, p2, p2_ctx, "uninstantiation_error", "non_var");
 
 	if (!CMP_STR_TO_CSTR(q, p1, "double_quotes")) {
 		if (!CMP_STR_TO_CSTR(q, p2, "atom")) {
