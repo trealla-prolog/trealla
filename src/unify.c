@@ -119,9 +119,9 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 
 		if (cnt > g_max_depth)
 			break;
-#endif
 
 		cnt++;
+#endif
 	}
 
 	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1);
