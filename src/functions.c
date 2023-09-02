@@ -2744,10 +2744,19 @@ static bool fn_log10_1(query *q)
 }
 
 static pl_uint g_seed = 0;
+static bool g_first_time = true;
 #define random_M 0x7FFFFFFFL
 
 static pl_flt rnd(void)
 {
+	if (g_first_time) {
+		g_first_time = false;
+		g_seed = clock();
+
+		for (int i = 0; i < 3; i++)
+			rnd();
+	}
+
 	g_seed = ((g_seed * 2743) + 5923) & random_M;
 	return((pl_flt)g_seed / (pl_flt)random_M);
 }
@@ -2755,6 +2764,7 @@ static pl_flt rnd(void)
 static bool fn_set_seed_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
+	g_first_time = false;
 	g_seed = p1->val_int;
 	return true;
 }
