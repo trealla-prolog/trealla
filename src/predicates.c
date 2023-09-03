@@ -2917,7 +2917,7 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 		return true;
 	}
 
-	if (is_var(p2))
+	if (has_vars(q, p2, p2_ctx))
 		return throw_error(q, p2, p2_ctx, "uninstantiation_error", "non_var");
 
 	if (!CMP_STR_TO_CSTR(q, p1, "double_quotes")) {
