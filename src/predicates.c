@@ -2920,12 +2920,12 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 			q->st.m->flags.double_quote_atom = q->st.m->flags.double_quote_codes = false;
 			q->st.m->flags.double_quote_chars = true;
 		} else {
-			cell *tmp = alloc_on_heap(q, 3);
+			cell *tmp = alloc_on_heap(q, 2+p2->nbr_cells);
 			check_heap_error(tmp);
-			make_struct(tmp, g_plus_s, fn_iso_add_2, 2, 2);
+			make_struct(tmp, g_plus_s, fn_iso_add_2, 2, 1+p2->nbr_cells);
+			make_atom(tmp+1, p1->val_off);
+			safe_copy_cells(tmp+2, p2, p2->nbr_cells);
 			SET_OP(tmp, OP_YFX);
-			tmp[1] = *p1; tmp[1].nbr_cells = 1;
-			tmp[2] = *p2; tmp[2].nbr_cells = 1;
 			return throw_error(q, tmp, q->st.curr_frame, "domain_error", "flag_value");
 		}
 
@@ -2992,12 +2992,12 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 		else if (!CMP_STR_TO_CSTR(q, p2, "false") || !CMP_STR_TO_CSTR(q, p2, "off"))
 			q->st.m->flags.character_escapes = false;
 		else {
-			cell *tmp = alloc_on_heap(q, 3);
+			cell *tmp = alloc_on_heap(q, 2+p2->nbr_cells);
 			check_heap_error(tmp);
-			make_struct(tmp, g_plus_s, fn_iso_add_2, 2, 2);
+			make_struct(tmp, g_plus_s, fn_iso_add_2, 2, 1+p2->nbr_cells);
+			make_atom(tmp+1, p1->val_off);
+			safe_copy_cells(tmp+2, p2, p2->nbr_cells);
 			SET_OP(tmp, OP_YFX);
-			tmp[1] = *p1; tmp[1].nbr_cells = 1;
-			tmp[2] = *p2; tmp[2].nbr_cells = 1;
 			return throw_error(q, tmp, q->st.curr_frame, "domain_error", "flag_value");
 		}
 	} else if (!CMP_STR_TO_CSTR(q, p1, "char_conversion")) {
@@ -3006,12 +3006,12 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 		else if (!CMP_STR_TO_CSTR(q, p2, "false") || !CMP_STR_TO_CSTR(q, p2, "off"))
 			q->st.m->flags.char_conversion = false;
 		else {
-			cell *tmp = alloc_on_heap(q, 3);
+			cell *tmp = alloc_on_heap(q, 2+p2->nbr_cells);
 			check_heap_error(tmp);
-			make_struct(tmp, g_plus_s, fn_iso_add_2, 2, 2);
+			make_struct(tmp, g_plus_s, fn_iso_add_2, 2, 1+p2->nbr_cells);
+			make_atom(tmp+1, p1->val_off);
+			safe_copy_cells(tmp+2, p2, p2->nbr_cells);
 			SET_OP(tmp, OP_YFX);
-			tmp[1] = *p1; tmp[1].nbr_cells = 1;
-			tmp[2] = *p2; tmp[2].nbr_cells = 1;
 			return throw_error(q, tmp, q->st.curr_frame, "domain_error", "flag_value");
 		}
 	} else if (!CMP_STR_TO_CSTR(q, p1, "occurs_check")) {
@@ -3022,12 +3022,12 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 		else if (!CMP_STR_TO_CSTR(q, p2, "error"))
 			q->st.m->flags.occurs_check = OCCURS_CHECK_ERROR;
 		else {
-			cell *tmp = alloc_on_heap(q, 3);
+			cell *tmp = alloc_on_heap(q, 2+p2->nbr_cells);
 			check_heap_error(tmp);
-			make_struct(tmp, g_plus_s, fn_iso_add_2, 2, 2);
+			make_struct(tmp, g_plus_s, fn_iso_add_2, 2, 1+p2->nbr_cells);
+			make_atom(tmp+1, p1->val_off);
+			safe_copy_cells(tmp+2, p2, p2->nbr_cells);
 			SET_OP(tmp, OP_YFX);
-			tmp[1] = *p1; tmp[1].nbr_cells = 1;
-			tmp[2] = *p2; tmp[2].nbr_cells = 1;
 			return throw_error(q, tmp, q->st.curr_frame, "domain_error", "flag_value");
 		}
 	} else if (!CMP_STR_TO_CSTR(q, p1, "debug")) {
@@ -3036,12 +3036,12 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 		else if (!CMP_STR_TO_CSTR(q, p2, "false") || !CMP_STR_TO_CSTR(q, p2, "off"))
 			q->st.m->flags.debug = false;
 		else {
-			cell *tmp = alloc_on_heap(q, 3);
+			cell *tmp = alloc_on_heap(q, 2+p2->nbr_cells);
 			check_heap_error(tmp);
-			make_struct(tmp, g_plus_s, fn_iso_add_2, 2, 2);
+			make_struct(tmp, g_plus_s, fn_iso_add_2, 2, 1+p2->nbr_cells);
+			make_atom(tmp+1, p1->val_off);
+			safe_copy_cells(tmp+2, p2, p2->nbr_cells);
 			SET_OP(tmp, OP_YFX);
-			tmp[1] = *p1; tmp[1].nbr_cells = 1;
-			tmp[2] = *p2; tmp[2].nbr_cells = 1;
 			return throw_error(q, tmp, q->st.curr_frame, "domain_error", "flag_value");
 		}
 	} else if (!CMP_STR_TO_CSTR(q, p1, "strict_iso")) {
@@ -3050,12 +3050,12 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 		else if (!CMP_STR_TO_CSTR(q, p2, "false") || !CMP_STR_TO_CSTR(q, p2, "off"))
 			q->st.m->flags.not_strict_iso = !false;
 		else {
-			cell *tmp = alloc_on_heap(q, 3);
+			cell *tmp = alloc_on_heap(q, 2+p2->nbr_cells);
 			check_heap_error(tmp);
-			make_struct(tmp, g_plus_s, fn_iso_add_2, 2, 2);
+			make_struct(tmp, g_plus_s, fn_iso_add_2, 2, 1+p2->nbr_cells);
+			make_atom(tmp+1, p1->val_off);
+			safe_copy_cells(tmp+2, p2, p2->nbr_cells);
 			SET_OP(tmp, OP_YFX);
-			tmp[1] = *p1; tmp[1].nbr_cells = 1;
-			tmp[2] = *p2; tmp[2].nbr_cells = 1;
 			return throw_error(q, tmp, q->st.curr_frame, "domain_error", "flag_value");
 		}
 	} else if (!CMP_STR_TO_CSTR(q, p1, "unknown")) {
@@ -3068,12 +3068,12 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 		} else if (!CMP_STR_TO_CSTR(q, p2, "changeable")) {
 			q->st.m->flags.unknown = UNK_CHANGEABLE;
 		} else {
-			cell *tmp = alloc_on_heap(q, 3);
+			cell *tmp = alloc_on_heap(q, 2+p2->nbr_cells);
 			check_heap_error(tmp);
-			make_struct(tmp, g_plus_s, fn_iso_add_2, 2, 2);
+			make_struct(tmp, g_plus_s, fn_iso_add_2, 2, 1+p2->nbr_cells);
+			make_atom(tmp+1, p1->val_off);
+			safe_copy_cells(tmp+2, p2, p2->nbr_cells);
 			SET_OP(tmp, OP_YFX);
-			tmp[1] = *p1; tmp[1].nbr_cells = 1;
-			tmp[2] = *p2; tmp[2].nbr_cells = 1;
 			return throw_error(q, tmp, q->st.curr_frame, "domain_error", "flag_value");
 		}
 	} else if (!CMP_STR_TO_CSTR(q, p1, "bounded")
