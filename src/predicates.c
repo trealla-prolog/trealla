@@ -230,17 +230,7 @@ bool fn_iso_unify_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
-	bool ok = unify(q, p1, p1_ctx, p2, p2_ctx);
-
-	if (q->cycle_error) {
-		if (q->flags.occurs_check == OCCURS_CHECK_TRUE)
-			return false;
-
-		if (q->flags.occurs_check == OCCURS_CHECK_ERROR)
-			return throw_error(q, p2, p2_ctx, "representation_error", "term");
-	}
-
-	return ok;
+	return unify(q, p1, p1_ctx, p2, p2_ctx);
 }
 
 static bool fn_iso_notunify_2(query *q)

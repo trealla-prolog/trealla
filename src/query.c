@@ -675,6 +675,9 @@ static void leave_predicate(query *q, predicate *pr)
 
 static void unwind_trail(query *q)
 {
+	if (!q->cp)
+		return;
+
 	const choice *ch = GET_CURR_CHOICE();
 
 	while (q->st.tp > ch->st.tp) {
@@ -1223,8 +1226,8 @@ bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 		undo_me(q);
 	}
 
-	leave_predicate(q, q->st.pr);
 	drop_choice(q);
+	leave_predicate(q, q->st.pr);
 	return false;
 }
 
@@ -1312,8 +1315,8 @@ bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract
 		undo_me(q);
 	}
 
-	leave_predicate(q, q->st.pr);
 	drop_choice(q);
+	leave_predicate(q, q->st.pr);
 	return false;
 }
 
@@ -1388,10 +1391,13 @@ static bool match_head(query *q)
 		undo_me(q);
 	}
 
-	choice *ch = GET_CURR_CHOICE();
-	ch->st.iter = NULL;
+	if (q->cp) {
+		choice *ch = GET_CURR_CHOICE();
+		ch->st.iter = NULL;
+		drop_choice(q);
+	}
+
 	leave_predicate(q, q->st.pr);
-	drop_choice(q);
 	return false;
 }
 
