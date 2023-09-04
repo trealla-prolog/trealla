@@ -182,7 +182,6 @@ static void check_pressure(query *q)
 		printf("*** q->st.sp=%u, q->slots_size=%u\n", (unsigned)q->st.sp, (unsigned)q->slots_size);
 #endif
 		q->slots_size = alloc_grow((void**)&q->slots, sizeof(slot), q->st.sp, INITIAL_NBR_SLOTS, false);
-		q->vgen = 0;
 	}
 #endif
 }
