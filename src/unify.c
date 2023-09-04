@@ -38,167 +38,201 @@ static void	cleanup_reflist(reflist *orig_refs1, reflist **refs1, reflist *orig_
 	}
 }
 
-static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth);
+static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, reflist *refs1, reflist *refs2, unsigned depth);
 
-static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
+inline static int compare_outer(query *q, cell *c1, pl_idx c1_ctx, cell *c2, pl_idx c2_ctx, reflist **refs1, reflist **refs2, unsigned depth)
 {
+	bool cycle1 = false, cycle2 = false;
+
+	if (is_var(c1)) {
+		pl_idx c0_ctx = c1_ctx;
+		cell *c0 = c1;
+
+		if (is_ref(c1))
+			c0_ctx = c1->var_ctx;
+
+		c1 = deref(q, c1, c1_ctx);
+		c1_ctx = q->latest_ctx;
+
+		if (is_structure(c1) && in_reflist(*refs1, c0->var_nbr, c0_ctx)) {
+			c1 = c0;
+			c1_ctx = c0_ctx;
+			cycle1 = true;
+		} else if (is_structure(c1)) {
+			reflist *nrefs = malloc(sizeof(reflist));
+			nrefs->prev = *refs1;
+			nrefs->var_nbr = c0->var_nbr;
+			nrefs->ctx = c0_ctx;
+			*refs1 = nrefs;
+		}
+	}
+
+	if (is_var(c2)) {
+		pl_idx c0_ctx = c2_ctx;
+		cell *c0 = c2;
+
+		if (is_ref(c2))
+			c0_ctx = c2->var_ctx;
+
+		c2 = deref(q, c2, c2_ctx);
+		c2_ctx = q->latest_ctx;
+
+		if (is_structure(c2) && in_reflist(*refs2, c0->var_nbr, c0_ctx)) {
+			c2 = c0;
+			c2_ctx = c0_ctx;
+			cycle2 = true;
+		} else if (is_structure(c2)) {
+			reflist *nrefs = malloc(sizeof(reflist));
+			nrefs->prev = *refs2;
+			nrefs->var_nbr = c0->var_nbr;
+			nrefs->ctx = c0_ctx;
+			*refs2 = nrefs;
+		}
+	}
+
+	if (cycle1 && !cycle2)
+		return 1;
+
+	if (!cycle1 && cycle2)
+		return -1;
+
+	if (cycle1 && cycle2)
+		return 0;
+
+	return compare_internal(q, c1, c1_ctx, c2, c2_ctx, *refs1, *refs2, depth);
+}
+
+inline static int compare_inner(query *q, cell *c1, pl_idx c1_ctx, cell *c2, pl_idx c2_ctx, reflist *refs1, reflist *refs2, unsigned depth)
+{
+	reflist nrefs1, nrefs2;
+	bool cycle1 = false, cycle2 = false;
+
+	if (is_var(c1)) {
+		pl_idx c0_ctx = c1_ctx;
+		cell *c0 = c1;
+
+		if (is_ref(c1))
+			c0_ctx = c1->var_ctx;
+
+		c1 = deref(q, c1, c1_ctx);
+		c1_ctx = q->latest_ctx;
+
+		if (is_structure(c1) && in_reflist(refs1, c0->var_nbr, c0_ctx)) {
+			c1 = c0;
+			c1_ctx = c0_ctx;
+			cycle1 = true;
+		} else if (is_structure(c1)) {
+			nrefs1.prev = refs1;
+			nrefs1.var_nbr = c0->var_nbr;
+			nrefs1.ctx = c0_ctx;
+			refs1 = &nrefs1;
+		}
+	}
+
+	if (is_var(c2)) {
+		pl_idx c0_ctx = c2_ctx;
+		cell *c0 = c2;
+
+		if (is_ref(c2))
+			c0_ctx = c2->var_ctx;
+
+		c2 = deref(q, c2, c2_ctx);
+		c2_ctx = q->latest_ctx;
+
+		if (is_structure(c2) && in_reflist(refs2, c0->var_nbr, c0_ctx)) {
+			c2 = c0;
+			c2_ctx = c0_ctx;
+			cycle2 = true;
+		} else if (is_structure(c2)) {
+			nrefs2.prev = refs2;
+			nrefs2.var_nbr = c0->var_nbr;
+			nrefs2.ctx = c0_ctx;
+			refs2 = &nrefs2;
+		}
+	}
+
+	if (cycle1 && !cycle2)
+		return 1;
+
+	if (!cycle1 && cycle2)
+		return -1;
+
+	if (cycle1 && cycle2)
+		return 0;
+
+	return compare_internal(q, c1, c1_ctx, c2, c2_ctx, refs1, refs2, depth);
+}
+
+static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, reflist *refs1, reflist *refs2, unsigned depth)
+{
+	reflist *orig_refs1 = refs1, *orig_refs2 = refs2;
+	bool skip = false;
+	int ok = 0;
+	unsigned cnt = 0;
+
 	while (is_iso_list(p1) && is_iso_list(p2)) {
-		if (g_tpl_interrupt)
-			return -1;
+		if (g_tpl_interrupt) {
+			ok = false;
+			break;
+		}
 
 		cell *h1 = p1 + 1, *h2 = p2 + 1;
 		pl_idx h1_ctx = p1_ctx, h2_ctx = p2_ctx;
 
-		slot *e1 = NULL, *e2 = NULL;
-		uint32_t save_vgen1 = 0, save_vgen2 = 0;
-		int both = 0;
+		ok = compare_outer(q, h1, h1_ctx, h2, h2_ctx, &refs1, &refs2, depth+1);
 
-		if (is_var(h1)) {
-			if (is_ref(h1))
-				h1_ctx = h1->var_ctx;
+		if (ok != 0)
+			break;
 
-			const frame *f1 = GET_FRAME(h1_ctx);
-			e1 = GET_SLOT(f1, h1->var_nbr);
-			save_vgen1 = e1->vgen;
-			h1 = deref(q, h1, h1_ctx);
-			h1_ctx = q->latest_ctx;
-
-			if (is_structure(h1) && (e1->vgen == q->vgen))
-				both++;
-			else
-				e1->vgen = q->vgen;
-		}
-
-		if (is_var(h2)) {
-			if (is_ref(h2))
-				h2_ctx = h2->var_ctx;
-
-			const frame *f2 = GET_FRAME(h2_ctx);
-			e2 = GET_SLOT(f2, h2->var_nbr);
-			save_vgen2 = e2->vgen2;
-			h2 = deref(q, h2, h2_ctx);
-			h2_ctx = q->latest_ctx;
-
-			if (is_structure(h2) && (e2->vgen2 == q->vgen))
-				both++;
-			else
-				e2->vgen2 = q->vgen;
-		}
-
-		if (both != 2) {
-			int val = compare_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
-			if (val) return val;
-		}
-
-		if (e1) e1->vgen = save_vgen1;
-		if (e2) e2->vgen2 = save_vgen2;
 		p1 = p1 + 1; p1 += p1->nbr_cells;
 		p2 = p2 + 1; p2 += p2->nbr_cells;
-		both = 0;
 
-		if (is_var(p1)) {
-			if (is_ref(p1))
-				p1_ctx = p1->var_ctx;
-
-			const frame *f1 = GET_FRAME(p1_ctx);
-			e1 = GET_SLOT(f1, p1->var_nbr);
-			p1 = deref(q, p1, p1_ctx);
-			p1_ctx = q->latest_ctx;
-
-			if (is_structure(p1) && (e1->vgen == q->vgen))
-				both++;
-			else
-				e1->vgen = q->vgen;
+		if (q->cycle_error) {
+			skip = true;
+			break;
 		}
 
-		if (is_var(p2)) {
-			if (is_ref(p2))
-				p2_ctx = p2->var_ctx;
-
-			const frame *f2 = GET_FRAME(p2_ctx);
-			e2 = GET_SLOT(f2, p2->var_nbr);
-			p2 = deref(q, p2, p2_ctx);
-			p2_ctx = q->latest_ctx;
-
-			if (is_structure(p2) && (e2->vgen2 == q->vgen))
-				both++;
-			else
-				e2->vgen2 = q->vgen;
+		if (cnt > g_max_depth) {
+			skip = true;
+			break;
 		}
 
-		if (both == 2)
-			return 0;
+		p1 = deref(q, p1, p1_ctx);
+		p1_ctx = q->latest_ctx;
+		p2 = deref(q, p2, p2_ctx);
+		p2_ctx = q->latest_ctx;
+		cnt++;
 	}
 
-	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1);
+	cleanup_reflist(orig_refs1, &refs1, orig_refs2, &refs2);
+
+	if (ok != 0)
+		return ok;
+
+	if (skip)
+		return 0;
+
+	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, orig_refs1, orig_refs2, depth+1);
 }
 
-static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
+static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, reflist *refs1, reflist *refs2, unsigned depth)
 {
-	int val = CMP_STR_TO_STR(q, p1, p2);
-	if (val) return val;
+	int ok = CMP_STR_TO_STR(q, p1, p2);
+	if (ok != 0) return ok;
 
-	int arity = p1->arity;
-	p1 = p1 + 1;
-	p2 = p2 + 1;
+	reflist *orig_refs1 = refs1, *orig_refs2 = refs2;
+	unsigned arity = p1->arity;
+	p1++; p2++;
 
 	while (arity--) {
 		if (g_tpl_interrupt)
-			return 0;
+			return false;
 
-		cell *c1 = p1, *c2 = p2;
-		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
-		slot *e1 = NULL, *e2 = NULL;
-		uint32_t save_vgen1 = 0, save_vgen2 = 0;
-		bool cycle1 = false, cycle2 = false;
+		ok = compare_inner(q, p1, p1_ctx, p2, p2_ctx, refs1, refs2, depth+1);
 
-		if (is_var(c1)) {
-			if (is_ref(c1))
-				c1_ctx = c1->var_ctx;
+		if (ok != 0)
+			return ok;
 
-			const frame *f1 = GET_FRAME(c1_ctx);
-			e1 = GET_SLOT(f1, c1->var_nbr);
-			save_vgen1 = e1->vgen;
-			c1 = deref(q, p1, p1_ctx);
-			c1_ctx = q->latest_ctx;
-
-			if (is_structure(c1) && (e1->vgen == q->vgen))
-				cycle1 = true;
-			else
-				e1->vgen = q->vgen;
-		}
-
-		if (is_var(c2)) {
-			if (is_ref(c2))
-				c2_ctx = c2->var_ctx;
-
-			const frame *f2 = GET_FRAME(c2_ctx);
-			e2 = GET_SLOT(f2, c2->var_nbr);
-			save_vgen2 = e2->vgen2;
-			c2 = deref(q, p2, p2_ctx);
-			c2_ctx = q->latest_ctx;
-
-			if (is_structure(c2) && (e2->vgen2 == q->vgen))
-				cycle2 = true;
-			else
-				e2->vgen2 = q->vgen;
-		}
-
-		if (cycle1 && !cycle2)
-			return 1;
-
-		if (!cycle1 && cycle2)
-			return -1;
-
-		if (!cycle1 && !cycle2) {
-			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
-			if (e1) e1->vgen = save_vgen1;
-			if (e2) e2->vgen2 = save_vgen2;
-			if (val) return val;
-		}
-
-		if (e1) e1->vgen = save_vgen1;
-		if (e2) e2->vgen2 = save_vgen2;
 		p1 += p1->nbr_cells;
 		p2 += p2->nbr_cells;
 	}
@@ -206,7 +240,7 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 	return 0;
 }
 
-static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
+static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, reflist *refs1, reflist *refs2, unsigned depth)
 {
 	if (depth >= g_max_depth) {
 		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
@@ -331,8 +365,10 @@ static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx 
 			h2 = deref(q, h2, p2_ctx);
 			pl_idx h2_ctx = q->latest_ctx;
 
-			int val = compare_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
-			if (val) return val;
+			int ret = compare_internal(q, h1, h1_ctx, h2, h2_ctx, refs1, refs2, depth+1);
+
+			if (ret != 0)
+				return ret;
 
 			p1 = LIST_TAIL(p1);
 			p1 = deref(q, p1, p1_ctx);
@@ -348,20 +384,20 @@ static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx 
 		if (is_list(p2))
 			return -1;
 
-		return compare_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1);
+		return compare_internal(q, p1, p1_ctx, p2, p2_ctx, refs1, refs2, depth+1);
 	}
 
 	if (is_iso_list(p1) && is_iso_list(p2))
-		return compare_lists(q, p1, p1_ctx, p2, p2_ctx, depth+1);
+		return compare_lists(q, p1, p1_ctx, p2, p2_ctx, refs1, refs2, depth+1);
 
-	return compare_structs(q, p1, p1_ctx, p2, p2_ctx, depth+1);
+	return compare_structs(q, p1, p1_ctx, p2, p2_ctx, refs1, refs2, depth+1);
 }
 
 int compare(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
 {
 	q->cycle_error = false;
 	if (++q->vgen == 0) q->vgen = 1;
-	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
+	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, NULL, NULL, 0);
 }
 
 bool accum_var(query *q, const cell *c, pl_idx c_ctx)
