@@ -575,7 +575,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 			dst--;
 			dst += snprintf(dst, dstlen, "%s", "|...]");
 			q->last_thing = WAS_OTHER;
-			return dst - save_dst;
+			break;
 		}
 
 		if (!cons) {
@@ -643,7 +643,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 		if (q->max_depth && (print_depth >= q->max_depth)) {
 			dst += snprintf(dst, dstlen, "|...]");
 			q->last_thing = WAS_OTHER;
-			return dst - save_dst;
+			break;
 		}
 
 		if (is_var(tail) && running) {
