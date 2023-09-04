@@ -775,7 +775,7 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 	char *save_dst = dst;
 
 	if (depth > g_max_depth) {
-		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		q->cycle_error = true;
 		q->last_thing = WAS_OTHER;
 		return -1;
