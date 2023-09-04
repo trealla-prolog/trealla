@@ -582,11 +582,12 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 		}
 
 		cell *head = LIST_HEAD(c);
-		cell *save_head = head;
 		pl_idx head_ctx = c_ctx;
+		cell *save_head = head;
+		pl_idx save_head_ctx = head_ctx;
 
 		slot *e = NULL;
-		uint64_t save_vgen = q->vgen - 1;
+		uint64_t save_vgen = 0;
 
 		if (is_var(head) && running) {
 			if (is_ref(head))
@@ -705,6 +706,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 				dst += snprintf(dst, dstlen, "%s", ",");
 				q->last_thing = WAS_COMMA;
 				c = tail;
+				c_ctx = tail_ctx;
 				print_list++;
 				cons = true;
 				continue;
