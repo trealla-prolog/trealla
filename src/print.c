@@ -1071,10 +1071,9 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 				cell *tmp = c;
 				pl_idx tmp_ctx = c_ctx;
 				slot *e = NULL;
+				uint64_t save_vgen = 0;
 
-				uint64_t save_vgen = q->vgen - 1;
-
-				if (is_var(c)) {
+				if (is_var(tmp)) {
 					if (is_ref(tmp))
 						tmp_ctx = tmp->var_ctx;
 
