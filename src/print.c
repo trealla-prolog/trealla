@@ -595,10 +595,10 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 			const frame *f = GET_FRAME(head_ctx);
 			e = GET_SLOT(f, head->var_nbr);
 			save_vgen = e->vgen;
-			head = running ? deref(q, head, c_ctx) : head;
+			head = running ? deref(q, head, head_ctx) : head;
 			head_ctx = running ? q->latest_ctx : 0;
 
-			if ((e->vgen == q->vgen)
+			if ((is_structure(head) && (e->vgen == q->vgen))
 				|| (is_var(save_c)
 				&& (head->var_nbr == save_c->var_nbr)
 				&& (head_ctx == save_c_ctx))) {
@@ -638,6 +638,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 		cell *tail = LIST_TAIL(c);
 		pl_idx tail_ctx = c_ctx;
 		cell *save_tail = tail;
+		pl_idx save_tail_ctx = c_ctx;
 
 		if (q->max_depth && (print_depth >= q->max_depth)) {
 			dst += snprintf(dst, dstlen, "|...]");
@@ -651,11 +652,12 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 
 			const frame *f = GET_FRAME(tail_ctx);
 			e = GET_SLOT(f, tail->var_nbr);
-			tail = deref(q, tail, c_ctx);
-			c_ctx = q->latest_ctx;
+			c = tail = deref(q, tail, tail_ctx);
+			c_ctx = tail_ctx = q->latest_ctx;
 
-			if (e->vgen == q->vgen) {
-				tail = save_tail;
+			if (is_structure(tail) && (e->vgen == q->vgen)) {
+				c = tail = save_tail;
+				c_ctx = tail_ctx = save_tail_ctx;
 			} else {
 				e->vgen = q->vgen;
 				possible_chars = false;
@@ -1068,7 +1070,6 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 			for (c++; arity--; c += c->nbr_cells) {
 				cell *tmp = c;
 				pl_idx tmp_ctx = c_ctx;
-
 				slot *e = NULL;
 
 				uint64_t save_vgen = q->vgen - 1;
@@ -1080,12 +1081,14 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 					const frame *f = GET_FRAME(tmp_ctx);
 					e = GET_SLOT(f, tmp->var_nbr);
 					save_vgen = e->vgen;
+					tmp = running ? deref(q, c, c_ctx) : c;
+					tmp_ctx = running ? q->latest_ctx : 0;
 
-					if (e->vgen == q->vgen) {
+					if (is_structure(tmp) && (e->vgen == q->vgen)) {
+						tmp = c;
+						tmp_ctx = c_ctx;
 					} else {
 						e->vgen = q->vgen;
-						tmp = running ? deref(q, c, c_ctx) : c;
-						tmp_ctx = running ? q->latest_ctx : 0;
 					}
 				}
 
