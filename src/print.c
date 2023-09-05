@@ -1111,7 +1111,12 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 
 	if (is_postfix(c)) {
 		cell *lhs = c + 1;
-		lhs = running ? deref(q, lhs, c_ctx) : lhs;
+		pl_idx lhs_ctx = c_ctx;
+
+		slot *e = NULL;
+		uint32_t save_vgen = 0;
+		int both = 0;
+		if (running) DEREF_SLOT(both, save_vgen, e, e->vgen, lhs, lhs_ctx, q->print_vgen);
 
 		if (!is_var(lhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
 			if (q->last_thing != WAS_SPACE) dst += snprintf(dst, dstlen, "%s", " ");
@@ -1150,9 +1155,12 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 		}
 
 		cell *rhs = c + 1;
+		pl_idx rhs_ctx = c_ctx;
+		slot *e = NULL;
+		uint32_t save_vgen = 0;
+		int both = 0;
+		if (running) DEREF_SLOT(both, save_vgen, e, e->vgen, rhs, rhs_ctx, q->print_vgen);
 
-		rhs = running ? deref(q, rhs, c_ctx) : rhs;
-		pl_idx rhs_ctx = running ? q->latest_ctx : 0;
 		unsigned my_priority = search_op(q->st.m, src, NULL, true);
 		unsigned rhs_pri = is_interned(rhs) ? search_op(q->st.m, C_STR(q, rhs), NULL, true) : 0;
 
@@ -1213,11 +1221,17 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 	// Infix..
 
 	cell *lhs = c + 1;
+	pl_idx lhs_ctx = c_ctx;
 	cell *rhs = lhs + lhs->nbr_cells;
-	lhs = running ? deref(q, lhs, c_ctx) : lhs;
-	pl_idx lhs_ctx = running ? q->latest_ctx : 0;
-	rhs = running ? deref(q, rhs, c_ctx) : rhs;
-	pl_idx rhs_ctx = running ? q->latest_ctx : 0;
+	pl_idx rhs_ctx = c_ctx;
+	slot *e = NULL;
+	uint32_t save_vgen = 0;
+	int both = 0;
+	if (running) DEREF_SLOT(both, save_vgen, e, e->vgen, lhs, lhs_ctx, q->print_vgen);
+	if (e) e->vgen = save_vgen;
+	e = NULL;
+	if (running) DEREF_SLOT(both, save_vgen, e, e->vgen, rhs, rhs_ctx, q->print_vgen);
+	if (e) e->vgen = save_vgen;
 
 	unsigned lhs_pri_1 = is_interned(lhs) ? search_op(q->st.m, C_STR(q, lhs), NULL, is_prefix(rhs)) : 0;
 	unsigned lhs_pri_2 = is_interned(lhs) && !lhs->arity ? search_op(q->st.m, C_STR(q, lhs), NULL, false) : 0;
