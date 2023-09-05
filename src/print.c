@@ -585,8 +585,6 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 
 		cell *head = LIST_HEAD(c);
 		pl_idx head_ctx = c_ctx;
-		cell *save_head = head;
-		pl_idx save_head_ctx = head_ctx;
 		slot *e = NULL;
 		uint64_t save_vgen = 0;
 		int both = 0;
@@ -713,8 +711,6 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 		c = LIST_TAIL(c);
 		cell *tail = c;
 		pl_idx tail_ctx = c_ctx;
-		cell *save_tail = tail;
-		pl_idx save_tail_ctx = tail_ctx;
 		uint32_t save_vgen;
 		slot *e = NULL;
 		int both = 0;
