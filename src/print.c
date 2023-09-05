@@ -728,7 +728,7 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 	char *save_dst = dst;
 
 	if (depth > g_max_depth) {
-		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		q->cycle_error = true;
 		q->last_thing = WAS_OTHER;
 		return -1;
@@ -1380,25 +1380,13 @@ ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_
 
 char *print_canonical_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running)
 {
-	pl_int skip = 0, max = 1000000000;
-	pl_idx tmp_ctx = c_ctx;
-	cell tmp = {0};
-
-	if (running && is_iso_list(c)) {
-		cell *t = skip_max_list(q, c, &tmp_ctx, max, &skip, &tmp);
-
-		if (t && !is_var(t) && !skip)
-			running = 0;
-	} else if (running && is_cyclic_term(q, c, c_ctx)) {
-		running = 0;
-	}
-
 	if (++q->print_vgen == 0) q->print_vgen = 1;
 	q->ignore_ops = true;
 	q->quoted = 1;
 	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
 	ssize_t len = print_term_to_buf(q, NULL, 0, c, c_ctx, running, false);
+
 	char *buf = malloc(len*2+1);
 	check_error(buf, clear_write_options(q));
 	if (++q->print_vgen == 0) q->print_vgen = 1;
@@ -1412,25 +1400,13 @@ char *print_canonical_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running)
 
 bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int running)
 {
-	pl_int skip = 0, max = 1000000000;
-	pl_idx tmp_ctx = c_ctx;
-	cell tmp = {0};
-
-	if (running && is_iso_list(c)) {
-		cell *t = skip_max_list(q, c, &tmp_ctx, max, &skip, &tmp);
-
-		if (t && !is_var(t) && !skip)
-			running = 0;
-	} else if (running && is_cyclic_term(q, c, c_ctx)) {
-		running = 0;
-	}
-
 	if (++q->print_vgen == 0) q->print_vgen = 1;
 	q->ignore_ops = true;
 	q->quoted = 1;
 	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
 	ssize_t len = print_term_to_buf(q, NULL, 0, c, c_ctx, running, false);
+
 	char *dst = malloc(len*2+1);
 	check_heap_error(dst, clear_write_options(q));
 	if (++q->print_vgen == 0) q->print_vgen = 1;
@@ -1460,19 +1436,6 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int
 
 bool print_canonical(query *q, FILE *fp, cell *c, pl_idx c_ctx, int running)
 {
-	pl_int skip = 0, max = 1000000000;
-	pl_idx tmp_ctx = c_ctx;
-	cell tmp = {0};
-
-	if (running && is_iso_list(c)) {
-		cell *t = skip_max_list(q, c, &tmp_ctx, max, &skip, &tmp);
-
-		if (t && !is_var(t) && !skip)
-			running = 0;
-	} else if (running && is_cyclic_term(q, c, c_ctx)) {
-		running = 0;
-	}
-
 	if (++q->print_vgen == 0) q->print_vgen = 1;
 	q->ignore_ops = true;
 	q->quoted = 1;
@@ -1480,6 +1443,7 @@ bool print_canonical(query *q, FILE *fp, cell *c, pl_idx c_ctx, int running)
 	q->did_quote = false;
 	ssize_t len = print_term_to_buf(q, NULL, 0, c, c_ctx, running, false);
 	q->did_quote = false;
+
 	char *dst = malloc(len*2+1);
 	check_heap_error(dst, clear_write_options(q));
 	if (++q->print_vgen == 0) q->print_vgen = 1;
@@ -1515,11 +1479,6 @@ char *print_term_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running)
 	//q->last_thing_was_space = true;
 	ssize_t len = print_term_to_buf(q, NULL, 0, c, c_ctx, running, false);
 
-	if ((len < 0) || q->cycle_error) {
-		if (++q->print_vgen == 0) q->print_vgen = 1;
-		len = print_term_to_buf(q, NULL, 0, c, c_ctx, running=0, false);
-	}
-
 	char *buf = malloc(len*2+1);
 	check_error(buf, clear_write_options(q));
 	if (++q->print_vgen == 0) q->print_vgen = 1;
@@ -1536,11 +1495,6 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int runn
 	q->did_quote = false;
 	q->last_thing = WAS_SPACE;
 	ssize_t len = print_term_to_buf(q, NULL, 0, c, c_ctx, running, false);
-
-	if ((len < 0) || q->cycle_error) {
-		if (++q->print_vgen == 0) q->print_vgen = 1;
-		len = print_term_to_buf(q, NULL, 0, c, c_ctx, running=0, false);
-	}
 
 	char *dst = malloc(len*2+1);
 	check_heap_error(dst, clear_write_options(q));
@@ -1573,11 +1527,6 @@ bool print_term(query *q, FILE *fp, cell *c, pl_idx c_ctx, int running)
 	q->did_quote = false;
 	q->last_thing = WAS_SPACE;
 	ssize_t len = print_term_to_buf(q, NULL, 0, c, c_ctx, running, false);
-
-	if ((len < 0) || q->cycle_error) {
-		if (++q->print_vgen == 0) q->print_vgen = 1;
-		len = print_term_to_buf(q, NULL, 0, c, c_ctx, running=0, false);
-	}
 
 	char *dst = malloc(len*4+1);
 	check_heap_error(dst, clear_write_options(q));
