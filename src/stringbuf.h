@@ -7,19 +7,19 @@
 
 #define SB_LEN 256
 
-typedef struct string_buffer_ {
+typedef struct {
 	char tmpbuf[SB_LEN];
 	char *buf, *dst;
 	size_t size;
-} string_buffer;
+} stringbuf;
 
-#define SB(pr) string_buffer pr##_buf;							\
+#define SB(pr) stringbuf pr##_buf;							\
 	pr##_buf.size = SB_LEN;										\
 	pr##_buf.buf = pr##_buf.tmpbuf;								\
 	pr##_buf.dst = pr##_buf.buf;								\
 	*pr##_buf.dst = '\0';
 
-#define SB_alloc(pr,len) string_buffer pr##_buf; 				\
+#define SB_alloc(pr,len) stringbuf pr##_buf; 				\
 	pr##_buf.size = len;										\
 	pr##_buf.buf = malloc((len)+1);								\
 	ensure(pr##_buf.buf);										\

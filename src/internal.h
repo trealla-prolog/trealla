@@ -569,7 +569,7 @@ struct stream_ {
 		query *engine;
 	};
 
-	string_buffer sb_buf;
+	stringbuf sb_buf;
 	char *mode, *filename, *data, *src;
 	skiplist *alias;
 	void *sslptr;
@@ -728,7 +728,7 @@ struct parser_ {
 	module *m;
 	clause *cl;
 	cell v;
-	string_buffer token_buf;
+	stringbuf token_buf;
 	prolog_flags flags;
 	char *save_line, *srcptr, *error_desc;
 	size_t token_size, n_line, pos_start;
