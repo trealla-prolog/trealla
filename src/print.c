@@ -1069,6 +1069,7 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 						q->last_thing = WAS_OTHER;
 					}
 
+					if (e) e->vgen = save_vgen;
 					continue;
 				}
 
@@ -1400,6 +1401,7 @@ char *print_canonical_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running)
 	ssize_t len = print_term_to_buf(q, NULL, 0, c, c_ctx, running, false);
 	char *buf = malloc(len*2+1);
 	check_error(buf, clear_write_options(q));
+	if (++q->print_vgen == 0) q->print_vgen = 1;
 	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
 	len = print_term_to_buf(q, buf, len+1, c, c_ctx, running, false);
@@ -1431,6 +1433,7 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int
 	ssize_t len = print_term_to_buf(q, NULL, 0, c, c_ctx, running, false);
 	char *dst = malloc(len*2+1);
 	check_heap_error(dst, clear_write_options(q));
+	if (++q->print_vgen == 0) q->print_vgen = 1;
 	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
 	len = print_term_to_buf(q, dst, len+1, c, c_ctx, running, false);
@@ -1479,6 +1482,7 @@ bool print_canonical(query *q, FILE *fp, cell *c, pl_idx c_ctx, int running)
 	q->did_quote = false;
 	char *dst = malloc(len*2+1);
 	check_heap_error(dst, clear_write_options(q));
+	if (++q->print_vgen == 0) q->print_vgen = 1;
 	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
 	len = print_term_to_buf(q, dst, len+1, c, c_ctx, running, false);
@@ -1512,6 +1516,7 @@ char *print_term_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running)
 	ssize_t len = print_term_to_buf(q, NULL, 0, c, c_ctx, running, false);
 
 	if ((len < 0) || q->cycle_error) {
+		if (++q->print_vgen == 0) q->print_vgen = 1;
 		len = print_term_to_buf(q, NULL, 0, c, c_ctx, running=0, false);
 	}
 
@@ -1533,6 +1538,7 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int runn
 	ssize_t len = print_term_to_buf(q, NULL, 0, c, c_ctx, running, false);
 
 	if ((len < 0) || q->cycle_error) {
+		if (++q->print_vgen == 0) q->print_vgen = 1;
 		len = print_term_to_buf(q, NULL, 0, c, c_ctx, running=0, false);
 	}
 
@@ -1569,19 +1575,20 @@ bool print_term(query *q, FILE *fp, cell *c, pl_idx c_ctx, int running)
 	ssize_t len = print_term_to_buf(q, NULL, 0, c, c_ctx, running, false);
 
 	if ((len < 0) || q->cycle_error) {
+		if (++q->print_vgen == 0) q->print_vgen = 1;
 		len = print_term_to_buf(q, NULL, 0, c, c_ctx, running=0, false);
 	}
 
-	char *dst = malloc(len*2+1);
+	char *dst = malloc(len*4+1);
 	check_heap_error(dst, clear_write_options(q));
 	if (++q->print_vgen == 0) q->print_vgen = 1;
 	q->did_quote = false;
 	q->last_thing = WAS_SPACE;
-	len = print_term_to_buf(q, dst, len+1, c, c_ctx, running, false);
+	ssize_t len2 = print_term_to_buf(q, dst, len+1, c, c_ctx, running, false);
 	const char *src = dst;
 
-	while (len) {
-		size_t nbytes = fwrite(src, 1, len, fp);
+	while (len2) {
+		size_t nbytes = fwrite(src, 1, len2, fp);
 
 		if (feof(fp)) {
 			q->error = true;
@@ -1589,7 +1596,7 @@ bool print_term(query *q, FILE *fp, cell *c, pl_idx c_ctx, int running)
 			return false;
 		}
 
-		len -= nbytes;
+		len2 -= nbytes;
 		src += nbytes;
 	}
 
