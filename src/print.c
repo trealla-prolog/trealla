@@ -627,7 +627,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 			break;
 		}
 
-		if (running) DEREF_SLOT(both, save_vgen, e, e->vgen, tail, tail_ctx, q->print_vgen);
+		if (running) DEREF_SLOT(both, e->vgen2, e, e->vgen, tail, tail_ctx, q->print_vgen);
 		size_t tmp_len = 0;
 
 		if (is_interned(tail) && !is_structure(tail)) {
@@ -711,7 +711,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 		c = LIST_TAIL(c);
 		cell *tail = c;
 		pl_idx tail_ctx = c_ctx;
-		uint32_t save_vgen;
+		uint32_t save_vgen = 0;
 		slot *e = NULL;
 		int both = 0;
 		if (running) DEREF_SLOT(both, save_vgen, e, e->vgen, tail, tail_ctx, q->print_vgen);
