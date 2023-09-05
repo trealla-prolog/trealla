@@ -587,27 +587,10 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 		pl_idx head_ctx = c_ctx;
 		cell *save_head = head;
 		pl_idx save_head_ctx = head_ctx;
-
 		slot *e = NULL;
 		uint64_t save_vgen = 0;
-
-		if (is_var(head) && running) {
-			if (is_ref(head))
-				head_ctx = head->var_ctx;
-
-			const frame *f = GET_FRAME(head_ctx);
-			e = GET_SLOT(f, head->var_nbr);
-			save_vgen = e->vgen;
-			head = running ? deref(q, head, head_ctx) : head;
-			head_ctx = running ? q->latest_ctx : 0;
-
-			if (is_structure(head) && (e->vgen == q->print_vgen)) {
-				head = save_head;
-				head_ctx = save_head_ctx;
-			} else if (is_structure(head))
-				e->vgen = q->print_vgen;
-		}
-
+		int both = 0;
+		if (running) DEREF_SLOT(both, save_vgen, e, e->vgen, head, head_ctx, q->print_vgen)
 		bool special_op = false;
 
 		if (is_interned(head)) {
@@ -646,24 +629,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 			break;
 		}
 
-		if (is_var(tail) && running) {
-			if (is_ref(tail))
-				tail_ctx = tail->var_ctx;
-
-			const frame *f = GET_FRAME(tail_ctx);
-			e = GET_SLOT(f, tail->var_nbr);
-			c = tail = deref(q, tail, tail_ctx);
-			c_ctx = tail_ctx = q->latest_ctx;
-
-			if (is_structure(tail) && (e->vgen == q->print_vgen)) {
-				c = tail = save_tail;
-				c_ctx = tail_ctx = save_tail_ctx;
-			} else {
-				e->vgen2 = e->vgen;
-				e->vgen = q->print_vgen;
-				possible_chars = false;
-			}
-		}
+		if (running) DEREF_SLOT(both, save_vgen, e, e->vgen, tail, tail_ctx, q->print_vgen);
 		size_t tmp_len = 0;
 
 		if (is_interned(tail) && !is_structure(tail)) {
@@ -671,15 +637,15 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 
 			if (strcmp(src, "[]")) {
 				dst += snprintf(dst, dstlen, "%s", "|");
-				ssize_t res = print_term_to_buf_(q, dst, dstlen, tail, c_ctx, running, true, depth+1, depth+1);
+				ssize_t res = print_term_to_buf_(q, dst, dstlen, tail, tail_ctx, running, true, depth+1, depth+1);
 				if (res < 0) return -1;
 				dst += res;
 			}
 		} else if (q->st.m->flags.double_quote_chars && running
 			&& !q->ignore_ops && possible_chars
-			&& (tmp_len = scan_is_chars_list(q, tail, c_ctx, false) > 0))
+			&& (tmp_len = scan_is_chars_list(q, tail, tail_ctx, false) > 0))
 			{
-			char *tmp_src = chars_list_to_string(q, tail, c_ctx, tmp_len);
+			char *tmp_src = chars_list_to_string(q, tail, tail_ctx, tmp_len);
 
 			if ((strlen(tmp_src) == 1) && (*tmp_src == '\''))
 				dst += snprintf(dst, dstlen, "|\"%s\"", tmp_src);
@@ -694,12 +660,12 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 			print_list++;
 		} else if (is_string(tail) && !q->double_quotes) {
 			dst += snprintf(dst, dstlen, "%s", ",");
-			dst += print_string_list(q, dst, dst, dstlen, tail, c_ctx, running, 1, depth+1);
+			dst += print_string_list(q, dst, dst, dstlen, tail, tail_ctx, running, 1, depth+1);
 			dst += snprintf(dst, dstlen, "%s", "]");
 			q->last_thing = WAS_OTHER;
 			break;
 		} else if (is_iso_list(tail)) {
-			if ((tail == save_c) && (c_ctx == save_c_ctx) && running) {
+			if ((tail == save_c) && (tail_ctx == save_c_ctx) && running) {
 				dst += snprintf(dst, dstlen, "%s", "|");
 				dst += snprintf(dst, dstlen, "%s", !is_ref(save_tail) ? C_STR(q, save_tail) : "_");
 			} else {
@@ -723,7 +689,7 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 			unsigned priority = search_op(q->st.m, C_STR(q, tail), &specifier, false);
 			bool parens = is_infix(tail) && (priority >= 1000);
 			if (parens) dst += snprintf(dst, dstlen, "%s", "(");
-			ssize_t res = print_term_to_buf_(q, dst, dstlen, tail, c_ctx, running, true, depth+1, depth+1);
+			ssize_t res = print_term_to_buf_(q, dst, dstlen, tail, tail_ctx, running, true, depth+1, depth+1);
 			if (res < 0) return -1;
 			dst += res;
 			if (parens) dst += snprintf(dst, dstlen, "%s", ")");
@@ -747,24 +713,15 @@ static ssize_t print_iso_list(query *q, char *save_dst, char *dst, size_t dstlen
 		c = LIST_TAIL(c);
 		cell *tail = c;
 		pl_idx tail_ctx = c_ctx;
-
-		if (is_var(tail) && running) {
-			if (is_ref(tail))
-				tail_ctx = tail->var_ctx;
-
-			const frame *f = GET_FRAME(tail_ctx);
-			slot *e = GET_SLOT(f, tail->var_nbr);
-
-			if (e->vgen == q->print_vgen) {
-				e->vgen = e->vgen2;
-				break;
-			}
-
-			e->vgen = e->vgen2;
-		}
-
-		c = running ? deref(q, c, c_ctx) : c;
-		c_ctx = running ? q->latest_ctx : c_ctx;
+		cell *save_tail = tail;
+		pl_idx save_tail_ctx = tail_ctx;
+		uint32_t save_vgen;
+		slot *e = NULL;
+		int both = 0;
+		if (running) DEREF_SLOT(both, save_vgen, e, e->vgen, tail, tail_ctx, q->print_vgen);
+		if (e) e->vgen = e->vgen2;
+		c = tail;
+		c_ctx = tail_ctx;
 	}
 
 	return dst - save_dst;
@@ -1104,24 +1061,8 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 				pl_idx tmp_ctx = c_ctx;
 				slot *e = NULL;
 				uint64_t save_vgen = 0;
-
-				if (is_var(tmp)) {
-					if (is_ref(tmp))
-						tmp_ctx = tmp->var_ctx;
-
-					const frame *f = GET_FRAME(tmp_ctx);
-					e = GET_SLOT(f, tmp->var_nbr);
-					save_vgen = e->vgen;
-					tmp = running ? deref(q, c, c_ctx) : c;
-					tmp_ctx = running ? q->latest_ctx : 0;
-
-					if (is_structure(tmp) && (e->vgen == q->print_vgen)) {
-						tmp = c;
-						tmp_ctx = c_ctx;
-					} else {
-						e->vgen = q->print_vgen;
-					}
-				}
+				int both = 0;
+				if (running) DEREF_SLOT(both, save_vgen, e, e->vgen, tmp, tmp_ctx, q->print_vgen);
 
 				if (q->max_depth && ((depth+1) >= q->max_depth)) {
 					dst += snprintf(dst, dstlen, "%s", "...");
@@ -1213,6 +1154,7 @@ static ssize_t print_term_to_buf_(query *q, char *dst, size_t dstlen, cell *c, p
 		}
 
 		cell *rhs = c + 1;
+
 		rhs = running ? deref(q, rhs, c_ctx) : rhs;
 		pl_idx rhs_ctx = running ? q->latest_ctx : 0;
 		unsigned my_priority = search_op(q->st.m, src, NULL, true);
