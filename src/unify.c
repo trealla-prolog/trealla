@@ -8,10 +8,6 @@ static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx 
 
 static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
-#if !USE_RATIONAL_TREES
-	unsigned cnt = 0;
-#endif
-
 	while (is_iso_list(p1) && is_iso_list(p2)) {
 		if (g_tpl_interrupt)
 			return -1;
@@ -23,11 +19,19 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 		slot *e1 = NULL, *e2 = NULL;
 		uint32_t save_vgen1 = 0, save_vgen2 = 0;
 		int both = 0;
-
 		DEREF_SLOT(both, save_vgen1, e1, e1->vgen, h1, h1_ctx, q->vgen);
+		bool cycle1 = both ? true : false;
+		both = 0;
 		DEREF_SLOT(both, save_vgen2, e2, e2->vgen2, h2, h2_ctx, q->vgen);
+		bool cycle2 = both ? true : false;
 
-		if (both != 2) {
+		if (cycle1 && !cycle2)
+			return 1;
+
+		if (!cycle1 && cycle2)
+			return -1;
+
+		if (!cycle1 && !cycle2) {
 			int val = compare_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
 			if (val) return val;
 		}
@@ -49,49 +53,16 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 
 #if USE_RATIONAL_TREES
 		both = 0;
+		DEREF_SLOT(both, save_vgen1, e1, e1->vgen, p1, p1_ctx, q->vgen);
+		DEREF_SLOT(both, save_vgen2, e2, e2->vgen2, p2, p2_ctx, q->vgen);
 
-		if (is_var(p1)) {
-			if (is_ref(p1))
-				p1_ctx = p1->var_ctx;
-
-			const frame *f1 = GET_FRAME(p1_ctx);
-			e1 = GET_SLOT(f1, p1->var_nbr);
-			p1 = deref(q, p1, p1_ctx);
-			p1_ctx = q->latest_ctx;
-
-			if (e1->vgen == q->vgen)
-				both++;
-			else
-				e1->vgen = q->vgen;
-		}
-
-		if (is_var(p2)) {
-			if (is_ref(p2))
-				p2_ctx = p2->var_ctx;
-
-			const frame *f2 = GET_FRAME(p2_ctx);
-			e2 = GET_SLOT(f2, p2->var_nbr);
-			p2 = deref(q, p2, p2_ctx);
-			p2_ctx = q->latest_ctx;
-
-			if (e2->vgen2 == q->vgen)
-				both++;
-			else
-				e2->vgen2 = q->vgen;
-		}
-
-		if (both == 2)
+		if (both)
 			return 0;
 #else
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
 		p2 = deref(q, p2, p2_ctx);
 		p2_ctx = q->latest_ctx;
-
-		if (cnt > g_max_depth)
-			break;
-
-		cnt++;
 #endif
 	}
 
@@ -117,39 +88,12 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 #if USE_RATIONAL_TREES
 		slot *e1 = NULL, *e2 = NULL;
 		uint32_t save_vgen1 = 0, save_vgen2 = 0;
-		bool cycle1 = false, cycle2 = false;
-
-		if (is_var(c1)) {
-			if (is_ref(c1))
-				c1_ctx = c1->var_ctx;
-
-			const frame *f1 = GET_FRAME(c1_ctx);
-			e1 = GET_SLOT(f1, c1->var_nbr);
-			save_vgen1 = e1->vgen;
-			c1 = deref(q, p1, p1_ctx);
-			c1_ctx = q->latest_ctx;
-
-			if (e1->vgen == q->vgen)
-				cycle1 = true;
-			else
-				e1->vgen = q->vgen;
-		}
-
-		if (is_var(c2)) {
-			if (is_ref(c2))
-				c2_ctx = c2->var_ctx;
-
-			const frame *f2 = GET_FRAME(c2_ctx);
-			e2 = GET_SLOT(f2, c2->var_nbr);
-			save_vgen2 = e2->vgen2;
-			c2 = deref(q, p2, p2_ctx);
-			c2_ctx = q->latest_ctx;
-
-			if (e2->vgen2 == q->vgen)
-				cycle2 = true;
-			else
-				e2->vgen2 = q->vgen;
-		}
+		int both = 0;
+		DEREF_SLOT(both, save_vgen1, e1, e1->vgen, c1, c1_ctx, q->vgen);
+		bool cycle1 = both ? true : false;
+		both = 0;
+		DEREF_SLOT(both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
+		bool cycle2 = both ? true : false;
 
 		if (cycle1 && !cycle2)
 			return 1;
@@ -1244,7 +1188,6 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 
 #if USE_RATIONAL_TREES
 		both = 0;
-
 		DEREF_SLOT(both, e1->save_vgen, e1, e1->vgen, p1, p1_ctx, q->vgen);
 		DEREF_SLOT(both, e2->save_vgen2, e2, e2->vgen2, p2, p2_ctx, q->vgen);
 
