@@ -71,6 +71,20 @@ typedef struct {
 	}															\
 }
 
+#define SB_strcpy(pr,s) {										\
+	size_t len = strlen(s);										\
+	SB_check(pr, len);											\
+	pr##_buf.dst = pr##_buf.buf;								\
+	SB_strcatn(pr,s,len);										\
+}
+
+#define SB_strcpy_and_free(pr,s) {								\
+	if (s) {													\
+		SB_strcpy(pr, s);										\
+		free(s);												\
+	}															\
+}
+
 #define SB_strcat(pr,s) SB_strcatn(pr,s,strlen(s))
 
 #define SB_strcatn(pr,s,len) {									\
@@ -78,13 +92,6 @@ typedef struct {
 	memcpy(pr##_buf.dst, s, len);								\
 	pr##_buf.dst += len;										\
 	*pr##_buf.dst = '\0';										\
-}
-
-#define SB_strcpy(pr,s) {										\
-	size_t len = strlen(s);										\
-	SB_check(pr, len);											\
-	pr##_buf.dst = pr##_buf.buf;								\
-	SB_strcatn(pr,s,len);										\
 }
 
 #define SB_strcat_and_free(pr,s) {								\
