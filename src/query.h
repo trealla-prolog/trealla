@@ -83,7 +83,7 @@ void reset_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx);
 int compare(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx);
 bool unify(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx);
 
-ssize_t print_term_to_buf(query *q, char *dst, size_t dstlen, cell *c, pl_idx c_ctx, int running, int cons);
+bool print_term_to_buf(query *q, cell *c, pl_idx c_ctx, int running, int cons);
 bool print_term(query *q, FILE *fp, cell *c, pl_idx c_ctx, int running);
 bool print_term_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int running);
 char *print_term_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running);

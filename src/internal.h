@@ -650,6 +650,7 @@ struct query_ {
 	mpz_t tmp_ival;
 	mpq_t tmp_irat;
 	prolog_state st;
+	stringbuf sb_buf;
 	bool ignores[MAX_IGNORES];
 	uint64_t tot_goals, tot_backtracks, tot_retries, tot_matches;
 	uint64_t tot_tcos, tot_frecovs, tot_srecovs;
@@ -918,7 +919,7 @@ cell *list_tail(cell *l, cell *tmp);
 
 enum clause_type { DO_CLAUSE, DO_RETRACT, DO_RETRACTALL };
 
-size_t formatted(char *dst, size_t dstlen, const char *src, int srclen, bool dq, bool json);
+char *formatted(const char *src, int srclen, bool dq, bool json);
 char *slicedup(const char *s, size_t n);
 int slicecmp(const char *s1, size_t len1, const char *s2, size_t len2);
 uint64_t get_time_in_usec(void);

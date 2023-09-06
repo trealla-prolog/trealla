@@ -13,13 +13,13 @@ typedef struct {
 	size_t size;
 } stringbuf;
 
-#define SB(pr) stringbuf pr##_buf;							\
+#define SB(pr) stringbuf pr##_buf;								\
 	pr##_buf.size = SB_LEN;										\
 	pr##_buf.buf = pr##_buf.tmpbuf;								\
 	pr##_buf.dst = pr##_buf.buf;								\
 	*pr##_buf.dst = '\0';
 
-#define SB_alloc(pr,len) stringbuf pr##_buf; 				\
+#define SB_alloc(pr,len) stringbuf pr##_buf; 					\
 	pr##_buf.size = len;										\
 	pr##_buf.buf = malloc((len)+1);								\
 	ensure(pr##_buf.buf);										\
@@ -87,6 +87,13 @@ typedef struct {
 	SB_strcatn(pr,s,len);										\
 }
 
+#define SB_strcat_and_free(pr,s) {								\
+	if (s) {													\
+		SB_strcat(pr, s);										\
+		free(s);												\
+	}															\
+}
+
 #define SB_fwrite(pr,ptr,size) {								\
 	size_t len = size;											\
 	SB_check(pr, len);											\
@@ -103,6 +110,11 @@ typedef struct {
 	*pr##_buf.dst = '\0';										\
 }
 
+#define SB_ungetchar(pr) {										\
+	SB_check(pr, 6);											\
+	if (pr##_buf.dst != pr##_buf.buf) pr##_buf.dst--;			\
+}
+
 #define SB_putchar(pr,ch) {										\
 	SB_check(pr, 6);											\
 	pr##_buf.dst += put_char_utf8(pr##_buf.dst, ch);			\
@@ -114,7 +126,7 @@ typedef struct {
 
 #define SB_free(pr) {											\
 	if (pr##_buf.buf != pr##_buf.tmpbuf)						\
-		free(pr##_buf.buf);											\
+		free(pr##_buf.buf);										\
 	pr##_buf.size = 0;											\
 	pr##_buf.buf = pr##_buf.dst = NULL;							\
 }

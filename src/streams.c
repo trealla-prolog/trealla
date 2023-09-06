@@ -516,20 +516,21 @@ static void add_stream_properties(query *q, int n)
 			str->ungetch = ch;
 	}
 
-	char tmpbuf2[1024*4];
 	sliter *iter = sl_first(str->alias);
 
 	while (sl_next(iter, NULL)) {
 		const char *alias = sl_key(iter);
-		formatted(tmpbuf2, sizeof(tmpbuf2), alias, strlen(alias), false, false);
-		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, alias('%s')).\n", n, tmpbuf2);
+		char *dst2 = formatted(alias, strlen(alias), false, false);
+		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, alias('%s')).\n", n, dst2);
+		free(dst2);
 	}
 
 	sl_done(iter);
 
 	if (!str->is_engine && !str->is_map) {
-		formatted(tmpbuf2, sizeof(tmpbuf2), str->filename, strlen(str->filename), false, false);
-		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, file_name('%s')).\n", n, tmpbuf2);
+		char *dst2 = formatted(str->filename, strlen(str->filename), false, false);
+		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, file_name('%s')).\n", n, dst2);
+		free(dst2);
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, file_no(%u)).\n", n, fileno(str->fp));
 
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, file(%llu)).\n", n, (unsigned long long)(size_t)str->fp);

@@ -661,15 +661,12 @@ static bool fn_iso_number_chars_2(query *q)
 	q->quoted = 1;
 	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
-	ssize_t len = print_term_to_buf(q, NULL, 0, p1, p1_ctx, 1, 0);
-	char *dst = malloc(len+10);
-	check_heap_error(dst);
-	print_term_to_buf(q, dst, len+1, p1, p1_ctx, 1, 0);
+	print_term_to_buf(q, p1, p1_ctx, 1, false);
 	q->ignore_ops = false;
 	q->quoted = 0;
 	cell tmp;
-	check_heap_error(make_string(&tmp, dst));
-	free(dst);
+	check_heap_error(make_string(&tmp, SB_cstr(q->sb)));
+	SB_free(q->sb);
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	unshare_cell(&tmp);
 	return ok;
@@ -1239,13 +1236,10 @@ static bool fn_iso_number_codes_2(query *q)
 	q->quoted = 1;
 	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
-	ssize_t len = print_term_to_buf(q, NULL, 0, p1, p1_ctx, 1, 0);
-	char *dst = malloc(len+10);
-	check_heap_error(dst);
-	print_term_to_buf(q, dst, len+1, p1, p1_ctx, 1, 0);
+	print_term_to_buf(q, p1, p1_ctx, 1, 0);
 	q->ignore_ops = false;
 	q->quoted = 0;
-	const char *src = dst;
+	const char *src = SB_cstr(q->sb);
 	cell tmp;
 	make_int(&tmp, *src);
 	allocate_list(q, &tmp);
@@ -1257,7 +1251,7 @@ static bool fn_iso_number_codes_2(query *q)
 
 	cell *l = end_list(q);
 	check_heap_error(l);
-	free(dst);
+	SB_free(q->sb);
 	return unify(q, p2, p2_ctx, l, q->st.curr_frame);
 }
 
@@ -4379,9 +4373,7 @@ const char *dump_key(const void *k, const void *v, const void *p)
 {
 	query *q = (query*)p;
 	cell *c = (cell*)k;
-	static char tmpbuf[1024];
-	print_term_to_buf(q, tmpbuf, sizeof(tmpbuf), c, q->st.curr_frame, 0, false);
-	return tmpbuf;
+	return print_term_to_strbuf(q, c, q->st.curr_frame, 0);
 }
 
 static bool fn_sys_dump_keys_1(query *q)
@@ -6252,16 +6244,13 @@ static bool fn_atomic_concat_3(query *q)
 	GET_FIRST_ARG(p1,atomic);
 	GET_NEXT_ARG(p2,atomic);
 	GET_NEXT_ARG(p3,atom_or_var);
-	const char *src1, *src2;
-	size_t len1, len2;
-	char tmpbuf1[256], tmpbuf2[256];
-	len1 = print_term_to_buf(q, tmpbuf1, sizeof(tmpbuf1), p1, p1_ctx, 1, false);
-	src1 = tmpbuf1;
-	len2 = print_term_to_buf(q, tmpbuf2, sizeof(tmpbuf2), p2, p2_ctx, 1, false);
-	src2 = tmpbuf2;
+	char *src1 = print_term_to_strbuf(q, p1, p1_ctx, 1);
+	char *src2 = print_term_to_strbuf(q, p2, p2_ctx, 1);
 	SB(pr);
-	SB_strcatn(pr, src1, len1);
-	SB_strcatn(pr, src2, len2);
+	SB_strcat(pr, src1);
+	SB_strcat(pr, src2);
+	free(src1);
+	free(src2);
 	cell tmp;
 	check_heap_error(make_cstringn(&tmp, SB_cstr(pr), SB_strlen(pr)), SB_free(pr));
 	SB_free(pr);
@@ -7845,9 +7834,9 @@ void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, u
 	char *dst = tmpbuf;
 
 	if (needs_quoting(m, name, strlen(name))) {
-		char tmpbuf2[1024];
-		formatted(tmpbuf2, sizeof(tmpbuf2), name, strlen(name), false, false);
-		dst += snprintf(dst, buflen-(dst-tmpbuf), "'$predicate_property'(%s, '%s'", function?"function":"predicate", tmpbuf2);
+		char *dst2 = formatted(name, strlen(name), false, false);
+		dst += snprintf(dst, buflen-(dst-tmpbuf), "'$predicate_property'(%s, '%s'", function?"function":"predicate", dst2);
+		free(dst2);
 	} else
 		dst += snprintf(dst, buflen-(dst-tmpbuf), "'$predicate_property'(%s, %s", function?"function":"predicate", name);
 
@@ -7881,9 +7870,9 @@ void format_template(module *m, char *tmpbuf, size_t buflen, const char *name, u
 	bool quote = needs_quoting(m, name, strlen(name));
 
 	if (quote) {
-		char tmpbuf2[1024];
-		formatted(tmpbuf2, sizeof(tmpbuf2), name, strlen(name), false, false);
-		dst += snprintf(dst, buflen-(dst-tmpbuf), "'$predicate_property'(%s, '%s'", function?"function":"predicate", tmpbuf2);
+		char *dst2 = formatted(name, strlen(name), false, false);
+		dst += snprintf(dst, buflen-(dst-tmpbuf), "'$predicate_property'(%s, '%s'", function?"function":"predicate", dst2);
+		free(dst2);
 	} else
 		dst += snprintf(dst, buflen-(dst-tmpbuf), "'$predicate_property'(%s, %s", function?"function":"predicate", name);
 
@@ -8124,9 +8113,11 @@ static void load_ops(query *q)
 
 		bool quote = needs_quoting(q->st.m, ptr->name, strlen(ptr->name));
 
-		if (quote)
-			formatted(name, sizeof(name), ptr->name, strlen(ptr->name), false, false);
-		else
+		if (quote) {
+			char *dst2 = formatted(ptr->name, strlen(ptr->name), false, false);
+			snprintf(name, sizeof(name), "%s", dst2);
+			free(dst2);
+		} else
 			snprintf(name, sizeof(name), "%s", ptr->name);
 
 		if (quote) {
@@ -8160,8 +8151,10 @@ static void load_ops(query *q)
 		else if (ptr->specifier == OP_XFX)
 			strcpy(specifier, "xfx");
 
-		formatted(name, sizeof(name), ptr->name, strlen(ptr->name), false, false);
-		SB_sprintf(pr, "'$op'('%s', %s, %u).\n", name, specifier, ptr->priority);
+
+		char *dst2 = formatted(ptr->name, strlen(ptr->name), false, false);
+		SB_sprintf(pr, "'$op'('%s', %s, %u).\n", dst2, specifier, ptr->priority);
+		free(dst2);
 	}
 
 	parser *p = parser_create(q->st.m);
