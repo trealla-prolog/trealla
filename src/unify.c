@@ -1273,7 +1273,6 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 	cell *orig_p1 = p1, *orig_p2 = p2;
 	pl_idx orig_p1_ctx = p1_ctx, orig_p2_ctx = p2_ctx;
 	bool skip = false;
-	unsigned cnt = 0;
 
 	while (is_iso_list(p1) && is_iso_list(p2)) {
 		if (g_tpl_interrupt)
@@ -1322,22 +1321,12 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 			skip = true;
 			break;
 		}
-
-		if (cnt > g_max_depth) {
-			skip = true;
-			break;
-		}
 #else
-		if (cnt > g_max_depth)
-			return true;
-
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
 		p2 = deref(q, p2, p2_ctx);
 		p2_ctx = q->latest_ctx;
 #endif
-
-		cnt++;
 	}
 
 #if USE_RATIONAL_TREES
@@ -1345,7 +1334,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 	p1_ctx = orig_p1_ctx;
 	p2 = orig_p2;
 	p2_ctx = orig_p2_ctx;
-	cnt = 0;
+	unsigned cnt = 0;
 
 	while (is_iso_list(p1) && is_iso_list(p2)) {
 		if (g_tpl_interrupt)
