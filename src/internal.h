@@ -943,24 +943,3 @@ inline static int fake_strcmp(const void *ptr1, const void *ptr2, const void *pa
 	if (l->tail == e) l->tail = e->prev;						\
 }
 
-#define DEREF_SLOT(both, svg, ee, evgen, cc, cc_ctx, qvgen)			\
-	if (is_var(cc)) {												\
-		if (is_ref(cc))												\
-			cc_ctx = cc->var_ctx;									\
-																	\
-		cell *c0 = cc;												\
-		pl_idx c0_ctx = cc_ctx;										\
-		const frame *f = GET_FRAME(cc_ctx);							\
-		ee = GET_SLOT(f, cc->var_nbr);								\
-		svg = evgen;												\
-		cc = deref(q, cc, cc_ctx);									\
-		cc_ctx = q->latest_ctx;										\
-																	\
-		if (evgen == qvgen) {										\
-			cc = c0;												\
-			cc_ctx = c0_ctx;										\
-			both++;													\
-		} else {													\
-			evgen = qvgen;											\
-		}															\
-	}
