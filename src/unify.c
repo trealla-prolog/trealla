@@ -648,9 +648,8 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 			return true;
 
 		if (e) e->vgen = save_vgen;
-		p1 = p1 + 1; p1 += p1->nbr_cells;
 
-		e = NULL;
+		p1 = p1 + 1; p1 += p1->nbr_cells;
 		both = 0;
 		DEREF_SLOT(both, e->vgen2, e, e->vgen, p1, p1_ctx, q->vgen);
 
