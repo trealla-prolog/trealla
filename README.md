@@ -89,7 +89,7 @@ chars-list), DCGs, and mmap'd files. Any code-point specific
 requirements, like *get_char*, *get_code*, *sub_atom*, *atom_length*,
 *atom_codes*, *atom_chars* & *_upper/*_lower are handled on the fly.
 
-Unicode atoms do not need to be quoted unless they contain breaking
+UTF-8 atoms do not need to be quoted unless they contain breaking
 characters...
 
 ```console
@@ -110,7 +110,8 @@ characters...
 	?-
 ```
 
-Trealla accepts as a var any atom beginning with Unicode uppercase...
+Trealla accepts as a var any atom beginning with an uppercase
+character...
 
 ```console
 	?- atom_upper(δ,C).
