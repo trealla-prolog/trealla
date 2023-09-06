@@ -389,45 +389,25 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 
 		cell *h = LIST_HEAD(l);
 		pl_idx h_ctx = l_ctx;
+		slot *e = NULL;
+		uint32_t save_vgen = 0;
+		int both = 0;
+		DEREF_SLOT(both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
 
-		if (is_var(h)) {
-			if (is_ref(h))
-				h_ctx = h->var_ctx;
-
-			const frame *f = GET_FRAME(h_ctx);
-			slot *e = GET_SLOT(f, h->var_nbr);
-			h = deref(q, h, h_ctx);
-			h_ctx = q->latest_ctx;
-
-			if (is_var(h))
-				accum_var(q, h, h_ctx);
-
-			if (!is_var(h) && (e->vgen != q->vgen)) {
-				uint32_t save_vgen = e->vgen;
-				e->vgen = q->vgen;
-				collect_vars_internal(q, h, h_ctx, depth+1);
-				e->vgen = save_vgen;
-			}
-		} else {
+		if (!both && is_var(h))
+			accum_var(q, h, h_ctx);
+		else if (!both)
 			collect_vars_internal(q, h, h_ctx, depth+1);
-		}
+
+		if (e) e->vgen = save_vgen;
 
 		l = LIST_TAIL(l);
+		e = NULL;
+		both = 0;
+		DEREF_SLOT(both, e->vgen2, e, e->vgen, l, l_ctx, q->vgen);
 
-		if (is_var(l)) {
-			if (is_ref(l))
-				l_ctx = l->var_ctx;
-
-			const frame *f = GET_FRAME(l_ctx);
-			slot *e = GET_SLOT(f, l->var_nbr);
-			l = deref(q, l, l_ctx);
-			l_ctx = q->latest_ctx;
-
-			if (!is_var(l) && (e->vgen == q->vgen))
-				return;
-
-			e->vgen = q->vgen;
-		}
+		if (both)
+			return;
 	}
 
 	collect_vars_internal(q, l, l_ctx, depth+1);
@@ -463,28 +443,17 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 
 		cell *c = p1;
 		pl_idx c_ctx = p1_ctx;
+		slot *e = NULL;
+		uint32_t save_vgen = 0;
+		int both = 0;
+		DEREF_SLOT(both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
 
-		if (is_var(c)) {
-			if (is_ref(c))
-				c_ctx = c->var_ctx;
-
-			const frame *f = GET_FRAME(c_ctx);
-			slot *e = GET_SLOT(f, c->var_nbr);
-			c = deref(q, c, c_ctx);
-			c_ctx = q->latest_ctx;
-
-			if (is_var(c))
-				accum_var(q, c, c_ctx);
-
-			if (!is_var(c) && (e->vgen != q->vgen)) {
-				uint32_t save_vgen = e->vgen;
-				e->vgen = q->vgen;
-				collect_vars_internal(q, c, c_ctx, depth+1);
-				e->vgen = save_vgen;
-			}
-		} else {
+		if (!both && is_var(c))
+			accum_var(q, c, c_ctx);
+		else if (!both)
 			collect_vars_internal(q, c, c_ctx, depth+1);
-		}
+
+		if (e) e->vgen = save_vgen;
 
 		p1 += p1->nbr_cells;
 	}
