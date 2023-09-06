@@ -636,48 +636,26 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 
 		cell *h = p1 + 1;
 		pl_idx h_ctx = p1_ctx;
+		slot *e = NULL;
+		uint32_t save_vgen = 0;
+		int both = 0;
+		DEREF_SLOT(both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
 
-		if (is_var(h)) {
-			if (is_ref(h))
-				h_ctx = h->var_ctx;
+		if (both)
+			return true;
 
-			const frame *f = GET_FRAME(h_ctx);
-			slot *e = GET_SLOT(f, h->var_nbr);
-			h = deref(q, h, h_ctx);
-			h_ctx = q->latest_ctx;
+		if (is_cyclic_term_internal(q, h, h_ctx, depth+1))
+			return true;
 
-			if (!is_var(h) && (e->vgen == q->vgen))
-				return true;
-
-			uint32_t save_vgen = e->vgen;
-			e->vgen = q->vgen;
-
-			if (is_cyclic_term_internal(q, h, h_ctx, depth+1))
-				return true;
-
-			e->vgen = save_vgen;
-		} else {
-			if (is_cyclic_term_internal(q, h, h_ctx, depth+1))
-				return true;
-		}
-
+		if (e) e->vgen = save_vgen;
 		p1 = p1 + 1; p1 += p1->nbr_cells;
 
-		if (is_var(p1)) {
-			if (is_ref(p1))
-				p1_ctx = p1->var_ctx;
+		e = NULL;
+		both = 0;
+		DEREF_SLOT(both, e->vgen2, e, e->vgen, p1, p1_ctx, q->vgen);
 
-			const frame *f = GET_FRAME(p1_ctx);
-			slot *e = GET_SLOT(f, p1->var_nbr);
-			p1 = deref(q, p1, p1_ctx);
-			p1_ctx = q->latest_ctx;
-
-			if (!is_var(p1) && (e->vgen == q->vgen))
-				return true;
-
-			e->vgen2 = e->vgen;
-			e->vgen = q->vgen;
-		}
+		if (both)
+			return true;
 	}
 
 	p1 = save_p1;
