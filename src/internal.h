@@ -956,11 +956,11 @@ inline static int fake_strcmp(const void *ptr1, const void *ptr2, const void *pa
 		cc = deref(q, cc, cc_ctx);									\
 		cc_ctx = q->latest_ctx;										\
 																	\
-		if (evgen == qvgen) {										\
+		if (!is_var(cc) && (evgen == qvgen)) {						\
 			cc = c0;												\
 			cc_ctx = c0_ctx;										\
 			both++;													\
-		} else { 													\
+		} else if (!is_var(cc)) {									\
 			evgen = qvgen;											\
 		}															\
 	}

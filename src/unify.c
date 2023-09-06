@@ -729,33 +729,18 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned 
 
 		cell *c = p1;
 		pl_idx c_ctx = p1_ctx;
+		slot *e = NULL;
+		uint32_t save_vgen = 0;
+		int both = 0;
+		DEREF_SLOT(both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
 
-		if (is_var(c)) {
-			if (is_ref(c))
-				c_ctx = c->var_ctx;
+		if (both)
+			return true;
 
-			const frame *f = GET_FRAME(c_ctx);
-			slot *e = GET_SLOT(f, c->var_nbr);
-			c = deref(q, c, c_ctx);
-			c_ctx = q->latest_ctx;
+		if (is_cyclic_term_internal(q, c, c_ctx, depth+1))
+			return true;
 
-			if (!is_var(c) && (e->vgen == q->vgen))
-				return true;
-
-			uint32_t save_vgen = e->vgen;
-			e->vgen = q->vgen;
-
-			if (is_cyclic_term_internal(q, c, c_ctx, depth+1)) {
-				e->vgen = save_vgen;
-				return true;
-			}
-
-			e->vgen = save_vgen;
-		} else {
-			if (is_cyclic_term_internal(q, c, c_ctx, depth+1))
-				return true;
-		}
-
+		if (e) e->vgen = save_vgen;
 		p1 += p1->nbr_cells;
 	}
 
