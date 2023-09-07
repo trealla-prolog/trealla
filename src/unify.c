@@ -934,7 +934,7 @@ bool do_post_unification_hook(query *q, bool is_builtin)
 	if (is_builtin)
 		make_call(q, tmp+2);
 	else
-		make_call_return(q, tmp+2, q->st.curr_cell);
+		make_call_return(q, tmp+2);
 
 	q->st.curr_cell = tmp;
 	return true;

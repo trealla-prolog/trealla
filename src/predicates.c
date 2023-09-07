@@ -64,7 +64,7 @@ void make_call(query *q, cell *tmp)
 	tmp->mid = q->st.m->id;						// ... current-module
 }
 
-void make_call_return(query *q, cell *tmp, cell *c_ret)
+void make_call_return(query *q, cell *tmp)
 {
 	make_end(tmp);
 	frame *f = GET_CURR_FRAME();
