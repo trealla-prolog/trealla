@@ -1145,8 +1145,11 @@ static const struct dispatch g_disp[] =
 
 static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
+#if USE_RATIONAL_TREES
 	cell *orig_p1 = p1, *orig_p2 = p2;
 	pl_idx orig_p1_ctx = p1_ctx, orig_p2_ctx = p2_ctx;
+#endif
+
 	bool skip = false;
 
 	while (is_iso_list(p1) && is_iso_list(p2)) {
