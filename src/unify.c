@@ -931,11 +931,7 @@ bool do_post_unification_hook(query *q, bool is_builtin)
 	if (!tmp[1].match)
 		return throw_error(q, tmp+1, q->st.curr_frame, "existence_error", "procedure");
 
-	if (is_builtin)
-		make_call(q, tmp+2);
-	else
-		make_call_return(q, tmp+2);
-
+	make_call(q, tmp+2);
 	q->st.curr_cell = tmp;
 	return true;
 }

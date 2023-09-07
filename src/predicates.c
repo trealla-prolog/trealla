@@ -59,16 +59,7 @@ void make_call(query *q, cell *tmp)
 	make_end(tmp);
 	cell *c = q->st.curr_cell;
 	frame *f = GET_CURR_FRAME();
-	tmp->val_ret = c ? c + c->nbr_cells : NULL;	// save the return instruction
-	tmp->cgen = f->cgen;						// ... choice-generation
-	tmp->mid = q->st.m->id;						// ... current-module
-}
-
-void make_call_return(query *q, cell *tmp)
-{
-	make_end(tmp);
-	frame *f = GET_CURR_FRAME();
-	tmp->val_ret = q->st.curr_cell;				// save the return instruction
+	tmp->val_ret = c ? c + c->nbr_cells : NULL;	// save next as the return instruction
 	tmp->cgen = f->cgen;						// ... choice-generation
 	tmp->mid = q->st.m->id;						// ... current-module
 }
