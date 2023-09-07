@@ -60,6 +60,8 @@ extern unsigned char library_uuid_pl[];
 extern unsigned int library_uuid_pl_len;
 extern unsigned char library_linda_pl[];
 extern unsigned int library_linda_pl_len;
+extern unsigned char library_reif_pl[];
+extern unsigned int library_reif_pl_len;
 
 library g_libs[] = {
 	 {"abnf", library_abnf_pl, &library_abnf_pl_len},
@@ -87,6 +89,7 @@ library g_libs[] = {
 	 {"pio", library_pio_pl, &library_pio_pl_len},
 	 {"random", library_random_pl, &library_random_pl_len},
 	 {"raylib", library_raylib_pl, &library_raylib_pl_len},
+	 {"reif", library_reif_pl, &library_reif_pl_len},
 	 {"si", library_si_pl, &library_si_pl_len},
 	 {"sqlite3", library_sqlite3_pl, &library_sqlite3_pl_len},
 	 {"ugraphs", library_ugraphs_pl, &library_ugraphs_pl_len},
