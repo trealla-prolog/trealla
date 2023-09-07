@@ -363,7 +363,7 @@ static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 
 // if *-> then ; else
 
-static bool do_if_else(query *q, cell *p1, cell *p2, cell *p3)
+static bool soft_do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 {
 	q->tot_goals--;
 
@@ -392,7 +392,7 @@ bool fn_if_3(query *q)
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,callable);
 	GET_NEXT_ARG(p3,callable);
-	return do_if_else(q, p1, p2, p3);
+	return soft_do_if_then_else(q, p1, p2, p3);
 }
 
 // goal , goal
@@ -426,7 +426,7 @@ bool fn_iso_disjunction_2(query *q)
 			cell *p1 = q->st.curr_cell + 2;
 			cell *p2 = p1 + p1->nbr_cells;
 			cell *p3 = p2 + p2->nbr_cells;
-			return do_if_else(q, p1, p2, p3);
+			return soft_do_if_then_else(q, p1, p2, p3);
 		}
 	}
 
