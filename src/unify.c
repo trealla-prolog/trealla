@@ -471,6 +471,9 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 
 			e->vgen = q->vgen;
 		}
+
+		if (q->cycle_error)
+			break;
 	}
 
 	return has_vars_internal(q, l, l_ctx, depth+1);

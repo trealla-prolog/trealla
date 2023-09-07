@@ -569,13 +569,14 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		cell *save_tail = tail;
 		pl_idx save_tail_ctx = c_ctx;
 
-		if (q->max_depth && (print_depth >= q->max_depth)) {
+		if (running) DEREF_SLOT(both, e->vgen2, e, e->vgen, tail, tail_ctx, q->print_vgen);
+
+		if (q->cycle_error || (q->max_depth && (print_depth >= q->max_depth))) {
 			SB_sprintf(q->sb, "%s", "|...]");
 			q->last_thing = WAS_OTHER;
 			break;
 		}
 
-		if (running) DEREF_SLOT(both, e->vgen2, e, e->vgen, tail, tail_ctx, q->print_vgen);
 		size_t tmp_len = 0;
 
 		if (is_interned(tail) && !is_structure(tail)) {
@@ -648,6 +649,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 
 	c = orig_c;
 	c_ctx = orig_c_ctx;
+	unsigned cnt = 0;
 
 	while (is_iso_list(c)) {
 		if (g_tpl_interrupt)
@@ -663,13 +665,18 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		if (e) e->vgen = e->vgen2;
 		c = tail;
 		c_ctx = tail_ctx;
+
+		if (cnt > g_max_depth)
+			break;
+
+		cnt++;
 	}
 }
 
 static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int cons, unsigned print_depth, unsigned depth)
 {
 	if (depth > g_max_depth) {
-		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		q->cycle_error = true;
 		q->last_thing = WAS_OTHER;
 		return false;

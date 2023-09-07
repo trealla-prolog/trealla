@@ -206,8 +206,6 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 		return tmp;
 
 	if (is_iso_list(p1)) {
-		bool cyclic = false;
-
 		while (is_iso_list(p1)) {
 			slot *e = NULL;
 			cell *h = p1 + 1;
@@ -235,11 +233,8 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 			}
 		}
 
-		if (!cyclic) {
-			cell *rec = deep_clone2_to_tmp(q, p1, p1_ctx, depth+1);
-			if (!rec) return NULL;
-		}
-
+		cell *rec = deep_clone2_to_tmp(q, p1, p1_ctx, depth+1);
+		if (!rec) return NULL;
 		tmp = get_tmp_heap(q, save_idx);
 		tmp->nbr_cells = tmp_heap_used(q) - save_idx;
 		return tmp;
