@@ -515,6 +515,12 @@ atom_number(A, N) :- atom_codes(A,Codes), number_codes(N, Codes).
 
 :- help(atom_number(+atom,-number), [iso(false)]).
 
+rational_numerator_denominator(R, N, D) :-
+	N is numerator(R),
+	D is denominator(R).
+
+:- help(rational_numerator_denominator(+rational,-integr,-integer), [iso(false)]).
+
 '$skip_list'(Skip, Xs0, Xs) :- '$skip_max_list'(Skip,_, Xs0, Xs).
 
 :- help('$skip_list'(+p1,?p2,?p3,-p4), [iso(false)]).

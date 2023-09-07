@@ -437,6 +437,9 @@ Non-standard predicates
 	numerator/1					# evaluable
 	denominator/1				# evaluable
 
+	rational/1
+	rational_numerator_denominator/3
+
 	with_output_to(chars(Cs), Goal)		# SWI-compatible
 	with_output_to(string(Cs), Goal)	# SWI-compatible
 	with_output_to(atom(Atom), Goal)	# SWI-compatible
