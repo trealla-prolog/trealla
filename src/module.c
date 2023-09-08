@@ -323,7 +323,11 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 		return NULL;
 
 	if (get_builtin_term(m, c, &found, &evaluable),
-		!evaluable && found && strcmp(m->name, "format")) {
+		!evaluable && found
+		&& strcmp(m->name, "format")
+		&& strcmp(m->name, "clpb")
+		&& strcmp(m->name, "clpz")
+		) {
 		return NULL;
 	}
 
@@ -776,7 +780,7 @@ bool do_use_module_1(module *curr_m, cell *p)
 	module *m;
 
 	if (!(m = load_file(curr_m, filename, false))) {
-		fprintf(stdout, "Error: module file not found: %s\n", filename);
+		fprintf(stdout, "Warning: module file not found: %s\n", filename);
 		free(filename);
 		return false;
 	}
