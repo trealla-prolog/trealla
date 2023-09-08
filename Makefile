@@ -102,6 +102,7 @@ LIBOBJECTS +=  \
 	library/concurrent.o \
 	library/curl.o \
 	library/dcgs.o \
+	library/debug.o \
 	library/dict.o \
 	library/dif.o \
 	library/error.o \
