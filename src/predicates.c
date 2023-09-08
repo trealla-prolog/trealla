@@ -8353,8 +8353,8 @@ builtins g_other_bifs[] =
 
 	{"must_be", 4, fn_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"can_be", 4, fn_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
-	{"must_be", 2, fn_must_be_2, "+atom,+term", false, false, BLAH},
-	{"can_be", 2, fn_can_be_2, "+atom,+term,", false, false, BLAH},
+	{"$must_be", 2, fn_must_be_2, "+atom,+term", false, false, BLAH},
+	{"$can_be", 2, fn_can_be_2, "+atom,+term,", false, false, BLAH},
 
 	{"sre_compile", 2, fn_sre_compile_2, "+string,-string,", false, false, BLAH},
 	{"sre_matchp", 4, fn_sre_matchp_4, "+string,+string,-string,-string,", false, false, BLAH},
