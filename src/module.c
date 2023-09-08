@@ -322,12 +322,10 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 	if (c->val_off == g_neck_s)
 		return NULL;
 
-	if (get_builtin_term(m, c, &found, &evaluable),
-		!evaluable && found
-		&& strcmp(m->name, "format")
-		&& strcmp(m->name, "clpb")
-		&& strcmp(m->name, "clpz")
-		) {
+	builtins *b;
+
+	if (b = get_builtin_term(m, c, &found, &evaluable),
+		!evaluable && found && b->iso) {
 		return NULL;
 	}
 
