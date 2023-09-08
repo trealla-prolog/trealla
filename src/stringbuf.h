@@ -79,9 +79,10 @@ typedef struct {
 }
 
 #define SB_strcpy_and_free(pr,s) {								\
-	if (s) {													\
-		SB_strcpy(pr, s);										\
-		free(s);												\
+	char *s2 = (s);												\
+	if (s2) {													\
+		SB_strcpy(pr, s2);										\
+		free(s2);												\
 	}															\
 }
 
@@ -95,9 +96,10 @@ typedef struct {
 }
 
 #define SB_strcat_and_free(pr,s) {								\
-	if (s) {													\
-		SB_strcat(pr, s);										\
-		free(s);												\
+	char *s2 = (s);												\
+	if (s2) {													\
+		SB_strcat(pr, s2);										\
+		free(s2);												\
 	}															\
 }
 
