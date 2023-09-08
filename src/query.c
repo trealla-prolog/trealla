@@ -329,7 +329,7 @@ bool has_next_key(query *q)
 	if (!q->st.dbe->next)
 		return false;
 
-	if (!q->st.key->arity || !q->pl->opt)
+	if (!q->st.key->arity)
 		return true;
 
 	const cell *qarg1;
