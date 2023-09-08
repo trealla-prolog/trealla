@@ -870,7 +870,7 @@ bool fn_sys_undo_trail_1(query *q)
 		} else
 			append_list(q, tmp);
 
-		e->c.tag = TAG_EMPTY;
+		init_cell(&e->c);
 		e->c.attrs = tr->attrs;
 		e->c.attrs_ctx = tr->attrs_ctx;
 		//DUMP_TERM("$undo2", tr->attrs, tr->attrs_ctx, 0);
@@ -966,8 +966,14 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 		const frame *vf = GET_FRAME(v_ctx);
 		slot *ve = GET_SLOT(vf, v->var_nbr);
 		add_trail(q, v_ctx, v->var_nbr, NULL, 0);
+#if 0
 		ve->c.attrs = c_attrs;
 		ve->c.attrs_ctx = c_attrs_ctx;
+#else
+		cell *tmp = deep_clone_to_heap(q, c_attrs, c_attrs_ctx);
+		ve->c.attrs = tmp;
+		ve->c.attrs_ctx = q->st.curr_frame;
+#endif
 	}
 
 	// A structure in the current frame can't be reclaimed,
