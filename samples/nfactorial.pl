@@ -1,6 +1,7 @@
 n_factorial(0, 1).
 n_factorial(N, F) :-
-        N #> 0,
-        N1 #= N - 1,
-        F #= N * F1,
-        n_factorial(N1, F1).
+	N #> 0,
+	N1 #= N - 1,
+	F #= N * F1,
+	clpz:get_atts(F,L), write([N,L]), nl,
+	n_factorial(N1, F1).
