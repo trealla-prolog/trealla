@@ -64,6 +64,15 @@ void make_call(query *q, cell *tmp)
 	tmp->mid = q->st.m->id;						// ... current-module
 }
 
+void make_call_return(query *q, cell *tmp, cell *c_ret)
+{
+	make_end(tmp);
+	frame *f = GET_CURR_FRAME();
+	tmp->val_ret = q->st.curr_cell;				// save the return instruction
+	tmp->cgen = f->cgen;						// ... choice-generation
+	tmp->mid = q->st.m->id;						// ... current-module
+}
+
 #if 0
 static void init_queue(query *q)
 {
