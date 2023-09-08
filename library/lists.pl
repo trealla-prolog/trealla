@@ -4,7 +4,7 @@
 		append/2, append/3,
 		subtract/3, union/3, intersection/3, is_set/1,
 		nth1/3, nth0/3, nth1/4, nth0/4,
-		last/2, flatten/2, same_length/2,
+		last/2, flatten/2, same_length/2, transpose/2,
 		sum_list/2, prod_list/2, max_list/2, min_list/2,	% SWI
 		list_sum/2, list_prod/2, list_max/2, list_min/2,	% Modern
 		list_to_conjunction/2, conjunction_to_list/2,
@@ -381,3 +381,19 @@ length_addendum([_|Xs], N, M) :-
     length_addendum(Xs, N, M1).
 
 :- help(length(?term,?integer), [iso(false), desc('Number of elements in list.')]).
+
+transpose(Ls, Ts) :-
+        lists_transpose(Ls, Ts).
+
+:- help(transpose(?list,?list), [iso(false), desc('Transpose list of lists.')]).
+
+lists_transpose([], []).
+lists_transpose([L|Ls], Ts) :-
+        maplist(lists:same_length(L), Ls),
+        foldl(lists:transpose_, L, Ts, [L|Ls], _).
+
+transpose_(_, Fs, Lists0, Lists) :-
+        maplist(lists:list_first_rest, Lists0, Fs, Lists).
+
+list_first_rest([L|Ls], L, Ls).
+

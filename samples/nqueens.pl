@@ -1,3 +1,5 @@
+:- use_module(library(clpz)).
+
 n_queens(N, Qs) :-
         length(Qs, N),
         Qs ins 1..N,

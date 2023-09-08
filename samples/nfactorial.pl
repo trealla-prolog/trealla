@@ -1,3 +1,5 @@
+:- use_module(library(clpz)).
+
 n_factorial(0, 1).
 n_factorial(N, F) :-
 	N #> 0,
