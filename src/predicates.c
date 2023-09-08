@@ -6935,8 +6935,10 @@ static bool fn_sys_put_attributes_2(query *q)
 	slot *e = GET_SLOT(f, p1->var_nbr);
 	add_trail(q, p1_ctx, p1->var_nbr, e->c.attrs, e->c.attrs_ctx);
 	//DUMP_TERM("$put_attr", p2, p2_ctx);
-	e->c.attrs = p2;
-	e->c.attrs_ctx = p2_ctx;
+	cell *tmp = deep_clone_to_heap(q, p2, p2_ctx);
+	check_heap_error(tmp);
+	e->c.attrs = tmp;
+	e->c.attrs_ctx = q->st.curr_frame;
 	return true;
 }
 
