@@ -64,8 +64,6 @@ extern unsigned char library_reif_pl[];
 extern unsigned int library_reif_pl_len;
 extern unsigned char library_debug_pl[];
 extern unsigned int library_debug_pl_len;
-extern unsigned char library_clpz_pl[];
-extern unsigned int library_clpz_pl_len;
 
 library g_libs[] = {
 	 {"abnf", library_abnf_pl, &library_abnf_pl_len},
@@ -74,7 +72,6 @@ library g_libs[] = {
 	 {"atts", library_atts_pl, &library_atts_pl_len},
 	 {"builtins", library_builtins_pl, &library_builtins_pl_len},
 	 {"charsio", library_charsio_pl, &library_charsio_pl_len},
-	 {"clpz", library_clpz_pl, &library_clpz_pl_len},
 	 {"concurrent", library_concurrent_pl, &library_concurrent_pl_len},
 	 {"curl", library_curl_pl, &library_curl_pl_len},
 	 {"dcgs", library_dcgs_pl, &library_dcgs_pl_len},
