@@ -351,18 +351,6 @@ bool has_next_key(query *q)
 
 		if (index_cmpkey(qarg1, FIRST_ARG(dkey), q->st.m, NULL) == 0)
 			return true;
-
-#if 1
-		// This is needed for: tpl -g run ~/retina/retina.pl ~/retina/rdfsurfaces/lubm/lubm.s
-
-		const predicate *pr = q->st.dbe->owner;
-
-		if (pr->is_dynamic
-			&& !q->st.karg1_is_ground
-			&& (*C_STR(q, &pr->key) != '$')
-			)
-			return true;
-#endif
 	}
 
 	return false;
