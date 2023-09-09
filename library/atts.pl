@@ -7,10 +7,9 @@
 :- use_module(library(lists), [append/3]).
 
 '$post_unify_hook' :-
-	setup_call_cleanup(
-		'$undo_trail'(Vars),
-		process_vars_(Vars, [], Goals),
-		'$redo_trail'),
+	'$undo_trail'(Vars),
+	process_vars_(Vars, [], Goals),
+	'$redo_trail',
 	maplist(call, Goals).
 
 process_vars_([], Goals, Goals) :- !.
@@ -23,8 +22,7 @@ process_var_(_, _, [], Goals, Goals) :- !.
 process_var_(Var, Val, [Att|Atts], SoFar, Goals) :-
 	functor(Att, F, A),
 	attribute(M, F, A),
-	% clpz:verify_attributes seems to be non-det so wrap in once/1
-	once(M:verify_attributes(Var, Val, NewGoals)),
+	M:verify_attributes(Var, Val, NewGoals),
 	append(SoFar, NewGoals, MoreGoals),
 	process_var_(Var, Val, Atts, MoreGoals, Goals).
 
