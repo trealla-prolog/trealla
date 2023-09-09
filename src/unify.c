@@ -947,43 +947,29 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 	cell *c_attrs = is_empty(&e->c) ? e->c.attrs : NULL, *v_attrs = NULL;
 	pl_idx c_attrs_ctx = c_attrs ? e->c.attrs_ctx : 0;
 
-	if ((c_ctx < q->st.fp) || is_managed(v))
-		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
-
-	if (c_attrs && is_var(v)) {
+	if (is_var(v)) {
 		const frame *vf = GET_FRAME(v_ctx);
 		const slot *ve = GET_SLOT(vf, v->var_nbr);
 		v_attrs = is_empty(&ve->c) ? ve->c.attrs : NULL;
 	}
 
-	// If 'c' is an attvar and either 'v' is an attvar or nonvar then run the hook
-	// If 'c' is an attvar and 'v' is a plain var then copy attributes to 'v'
-	// If 'c' is a plain var and 'v' is an attvar then copy attributes to 'c'
+	if ((c_ctx < q->st.fp) || is_managed(v))
+		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
 
-	if (c_attrs && (v_attrs || is_nonvar(v))) {
+	if (c_attrs || v_attrs)
 		q->run_hook = true;
-	} else if (c_attrs && !v_attrs && is_var(v)) {
-		const frame *vf = GET_FRAME(v_ctx);
-		slot *ve = GET_SLOT(vf, v->var_nbr);
-		add_trail(q, v_ctx, v->var_nbr, NULL, 0);
-		ve->c.attrs = c_attrs;
-		ve->c.attrs_ctx = c_attrs_ctx;
-	}
 
-	// A structure in the current frame can't be reclaimed,
-	// hence no TCO in this instance...
-
-	if (is_structure(v)) {
-		if (v_ctx == q->st.curr_frame)
-			q->no_tco = true;
-
-		make_indirect(&e->c, v, v_ctx);
-	} else if (is_var(v)) {
+	if (is_var(v)) {
 		e->c.tag = TAG_VAR;
 		e->c.nbr_cells = 1;
 		e->c.flags |= FLAG_VAR_REF;
 		e->c.var_nbr = v->var_nbr;
 		e->c.var_ctx = v_ctx;
+	} else if (is_structure(v)) {
+		if (v_ctx == q->st.curr_frame)
+			q->no_tco = true;
+
+		make_indirect(&e->c, v, v_ctx);
 	} else {
 		share_cell(v);
 		e->c = *v;
