@@ -651,20 +651,22 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 	c_ctx = orig_c_ctx;
 	unsigned cnt = 0;
 
-	while (is_iso_list(c)) {
+	while (running && is_iso_list(c)) {
 		if (g_tpl_interrupt)
 			return;
 
 		c = LIST_TAIL(c);
-		cell *tail = c;
-		pl_idx tail_ctx = c_ctx;
-		uint32_t save_vgen = 0;
-		slot *e = NULL;
-		int both = 0;
-		if (running) DEREF_SLOT(both, save_vgen, e, e->vgen, tail, tail_ctx, q->print_vgen);
-		if (e) e->vgen = e->vgen2;
-		c = tail;
-		c_ctx = tail_ctx;
+
+		if (is_var(c)) {
+			if (is_ref(c))
+				c_ctx = c->var_ctx;
+
+			const frame *f = GET_FRAME(c_ctx);
+			slot *e = GET_SLOT(f, c->var_nbr);
+			e->vgen = e->vgen2;
+			c = deref(q, c, c_ctx);
+			c_ctx = q->latest_ctx;
+		}
 
 		if (cnt > g_max_depth)
 			break;
