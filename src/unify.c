@@ -818,16 +818,15 @@ bool check_list(query *q, cell *p1, pl_idx p1_ctx, bool *is_partial, pl_int *ski
 
 static void make_new_var(query *q, cell *tmp, unsigned var_nbr, pl_idx var_ctx)
 {
-	make_ref(tmp, g_anon_s, create_vars(q, 1), q->st.curr_frame);
-	cell v;
-	make_ref(&v, g_anon_s, var_nbr, var_ctx);
-	unify(q, tmp, q->st.curr_frame, &v, var_ctx);
+	make_ref(tmp, g_anon_s, var_nbr, var_ctx);
 }
 
 static void set_new_var(query *q, cell *tmp, cell *v, pl_idx v_ctx)
 {
-	make_ref(tmp, g_anon_s, create_vars(q, 1), q->st.curr_frame);
-	unify(q, tmp, q->st.curr_frame, v, v_ctx);
+	*tmp = *v;
+
+	if (is_ref(v))
+		tmp->var_ctx = v_ctx;
 }
 
 bool fn_sys_undo_trail_1(query *q)
