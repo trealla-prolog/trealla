@@ -834,13 +834,13 @@ bool fn_sys_undo_trail_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	q->run_hook = false;
-	q->in_hook = true;
 
 	if (q->undo_hi_tp <= q->undo_lo_tp) {
 		unify(q, p1, p1_ctx, make_nil(), q->st.curr_frame);
 		return true;
 	}
 
+	q->in_hook = true;
 	q->save_e = malloc(sizeof(slot)*(q->undo_hi_tp - q->undo_lo_tp));
 	check_error(q->save_e);
 	bool first = true;
