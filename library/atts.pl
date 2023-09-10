@@ -8,10 +8,8 @@
 
 '$post_unify_hook' :-
 	'$undo_trail'(Vars),
-	(
-		process_vars_(Vars, [], Goals) -> '$redo_trail'
-	;	('$redo_trail', fail)
-	),
+	( process_vars_(Vars, [], Goals) *-> '$redo_trail'
+	;	('$redo_trail', fail) ),
 	maplist(call, Goals).
 
 process_vars_([], Goals, Goals) :- !.
