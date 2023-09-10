@@ -891,7 +891,7 @@ bool valid_list(query *q, cell *c, pl_idx c_ctx)
 		c = deref(q, c, c_ctx);
 		c_ctx = q->latest_ctx;
 
-		if (!is_iso_list_or_nil(c))
+		if (!is_iso_list_or_nil_or_var(c))
 			return false;
 	}
 
