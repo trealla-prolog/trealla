@@ -824,9 +824,6 @@ static void make_new_var(query *q, cell *tmp, unsigned var_nbr, pl_idx var_ctx)
 static void set_new_var(query *q, cell *tmp, cell *v, pl_idx v_ctx)
 {
 	*tmp = *v;
-
-	if (is_ref(v))
-		tmp->var_ctx = v_ctx;
 }
 
 bool fn_sys_undo_trail_1(query *q)
