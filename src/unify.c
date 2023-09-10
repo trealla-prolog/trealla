@@ -877,7 +877,7 @@ bool fn_sys_undo_trail_1(query *q)
 	}
 
 	cell *tmp = end_list(q);
-	check_heap_error(tmp);
+	check_heap_error(tmp, free(q->save_e));
 	//DUMP_TERM("$undo3 tmp", tmp, q->st.curr_frame, 0);
 	unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 	return true;
