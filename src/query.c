@@ -691,7 +691,6 @@ void try_me(query *q, unsigned nbr_vars)
 	f->base = q->st.sp;
 	slot *e = GET_SLOT(f, 0);
 	memset(e, 0, sizeof(slot)*nbr_vars);
-	q->run_hook = false;
 	q->has_vars = false;
 	q->no_tco = false;
 	q->tot_matches++;
@@ -1493,7 +1492,7 @@ bool start(query *q)
 		Trace(q, q->st.curr_cell, q->st.curr_frame, CALL);
 		cell *save_cell = q->st.curr_cell;
 		pl_idx save_ctx = q->st.curr_frame;
-		q->run_hook = q->did_throw = false;
+		q->did_throw = false;
 		q->before_hook_tp = q->st.tp;
 		q->max_eval_depth = 0;
 		q->tot_goals++;
@@ -1566,8 +1565,6 @@ bool start(query *q)
 			Trace(q, save_cell, save_ctx, EXIT);
 			proceed(q);
 		}
-
-		q->run_hook = false;
 
 		if (q->is_oom) {
 			check_pressure(q);

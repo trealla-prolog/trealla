@@ -833,6 +833,7 @@ static void set_new_var(query *q, cell *tmp, cell *v, pl_idx v_ctx)
 bool fn_sys_undo_trail_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
+	q->run_hook = false;
 	q->in_hook = true;
 
 	if (q->undo_hi_tp <= q->undo_lo_tp) {
