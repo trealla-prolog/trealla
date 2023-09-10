@@ -678,6 +678,12 @@ static void unwind_trail(query *q)
 	}
 }
 
+void undo_me(query *q)
+{
+	q->tot_retries++;
+	unwind_trail(q);
+}
+
 void try_me(query *q, unsigned nbr_vars)
 {
 	frame *f = GET_NEW_FRAME();
@@ -689,12 +695,6 @@ void try_me(query *q, unsigned nbr_vars)
 	q->has_vars = false;
 	q->no_tco = false;
 	q->tot_matches++;
-}
-
-void undo_me(query *q)
-{
-	q->tot_retries++;
-	unwind_trail(q);
 }
 
 void drop_choice(query *q)
