@@ -708,7 +708,6 @@ bool do_use_module_1(module *curr_m, cell *p)
 			|| !strcmp(name, "loader")
 			|| !strcmp(name, "error")
 			|| !strcmp(name, "crypto")
-			|| !strcmp(name, "arithmetic")
 		    || !strcmp(name, "files"))
 			return true;
 

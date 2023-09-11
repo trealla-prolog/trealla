@@ -95,6 +95,7 @@ SRCOBJECTS = tpl.o \
 LIBOBJECTS +=  \
 	library/abnf.o \
 	library/apply.o \
+	library/arithmetic.o \
 	library/assoc.o \
 	library/atts.o \
 	library/builtins.o \

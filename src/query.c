@@ -1541,7 +1541,7 @@ bool start(query *q)
 				continue;
 			}
 
-			if (q->run_hook && !q->in_hook)
+			if (q->run_hook)
 				do_post_unification_hook(q, true);
 
 			Trace(q, save_cell, save_ctx, EXIT);
@@ -1553,7 +1553,7 @@ bool start(query *q)
 				continue;
 			}
 
-			if (q->run_hook && !q->in_hook)
+			if (q->run_hook)
 				do_post_unification_hook(q, false);
 		} else {
 			if (consultall(q, q->st.curr_cell, q->st.curr_frame) != true) {

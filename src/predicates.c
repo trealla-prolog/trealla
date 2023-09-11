@@ -64,7 +64,7 @@ void make_call(query *q, cell *tmp)
 	tmp->mid = q->st.m->id;						// ... current-module
 }
 
-void make_call_return(query *q, cell *tmp, cell *c_ret)
+void make_call_redo(query *q, cell *tmp)
 {
 	make_end(tmp);
 	frame *f = GET_CURR_FRAME();
@@ -6828,17 +6828,13 @@ static bool fn_sys_unifiable_3(query *q)
 	const frame *f = GET_CURR_FRAME();
 	try_me(q, f->actual_slots);
 	pl_idx before_hook_tp = q->st.tp;
-	bool save_hook = q->in_hook;
-	q->in_hook = true;
 
 	if (!unify(q, p1, p1_ctx, p2, p2_ctx) && !q->cycle_error) {
-		q->in_hook = save_hook;
 		undo_me(q);
 		drop_choice(q);
 		return false;
 	}
 
-	q->in_hook = save_hook;
 	bool first = true;
 
 	// Go thru trail, getting the bindings...
@@ -8377,8 +8373,8 @@ builtins g_other_bifs[] =
 	{"$register_cleanup", 1, fn_sys_register_cleanup_1, NULL, false, false, BLAH},
 	{"$get_level", 1, fn_sys_get_level_1, "?integer", false, false, BLAH},
 	{"$is_partial_string", 1, fn_sys_is_partial_string_1, "+string", false, false, BLAH},
-	{"$undo_trail", 1, fn_sys_undo_trail_1, NULL, false, false, BLAH},
-	{"$redo_trail", 0, fn_sys_redo_trail_0, NULL, false, false, BLAH},
+	{"$undo_trail", 2, fn_sys_undo_trail_2, "-list,-blob", false, false, BLAH},
+	{"$redo_trail", 1, fn_sys_redo_trail_1, "+blob", false, false, BLAH},
 	{"$counter", 1, fn_sys_counter_1, NULL, false, false, BLAH},
 	{"$legacy_predicate_property", 2, fn_sys_legacy_predicate_property_2, "+callable,?string", false, false, BLAH},
 	{"$legacy_evaluable_property", 2, fn_sys_legacy_evaluable_property_2, "+callable,?string", false, false, BLAH},

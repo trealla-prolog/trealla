@@ -826,9 +826,16 @@ static void set_new_var(query *q, cell *tmp, cell *v, pl_idx v_ctx)
 	*tmp = *v;
 }
 
-bool fn_sys_undo_trail_1(query *q)
+typedef struct {
+	blob b;
+	pl_idx lo_tp, hi_tp;
+	slot e[];
+} bind_state;
+
+bool fn_sys_undo_trail_2(query *q)
 {
 	GET_FIRST_ARG(p1,var);
+	GET_NEXT_ARG(p2,var);
 	q->run_hook = false;
 
 	if (q->undo_hi_tp <= q->undo_lo_tp) {
@@ -836,9 +843,12 @@ bool fn_sys_undo_trail_1(query *q)
 		return true;
 	}
 
-	q->in_hook = true;
-	q->save_e = malloc(sizeof(slot)*(q->undo_hi_tp - q->undo_lo_tp));
-	check_error(q->save_e);
+	pl_idx slots = q->undo_hi_tp - q->undo_lo_tp;
+	bind_state *save = malloc(sizeof(bind_state)+(sizeof(slot)*slots));
+	check_error(save);
+	save->b.ptr = save->b.ptr2 = NULL;
+	save->lo_tp = q->undo_lo_tp;
+	save->hi_tp = q->undo_hi_tp;
 	bool first = true;
 
 	// Unbind our vars
@@ -848,7 +858,7 @@ bool fn_sys_undo_trail_1(query *q)
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
 		//printf("*** unbind [%u:%u] hi_tp=%u, ctx=%u, var=%u\n", j, i, q->undo_hi_tp, tr->var_ctx, tr->var_nbr);
-		q->save_e[j] = *e;
+		save->e[j] = *e;
 
 		cell lhs, rhs;
 		make_new_var(q, &lhs, tr->var_nbr, tr->var_ctx);
@@ -874,25 +884,37 @@ bool fn_sys_undo_trail_1(query *q)
 	}
 
 	cell *tmp = end_list(q);
-	check_heap_error(tmp, free(q->save_e));
+	check_heap_error(tmp, free(save));
 	//DUMP_TERM("$undo3 tmp", tmp, q->st.curr_frame, 0);
 	unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
+
+	cell tmp2 = {0};
+	tmp2.tag = TAG_BLOB;
+	tmp2.flags = FLAG_MANAGED;
+	tmp2.nbr_cells = 1;
+	tmp2.val_blob = &save->b;
+	tmp2.val_blob->refcnt = 0;
+	unify(q, p2, p2_ctx, &tmp2, q->st.curr_frame);
 	return true;
 }
 
-bool fn_sys_redo_trail_0(query * q)
+bool fn_sys_redo_trail_1(query * q)
 {
-	for (pl_idx i = q->undo_lo_tp, j = 0; i < q->undo_hi_tp; i++, j++) {
+	GET_FIRST_ARG(p1,any);
+
+	if (!is_blob(p1))
+		return true;
+
+	const bind_state *save = (bind_state*)p1->val_blob;
+
+	for (pl_idx i = save->lo_tp, j = 0; i < save->hi_tp; i++, j++) {
 		const trail *tr = q->trails + i;
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
 		//printf("*** rebind [%u:%u] hi_tp=%u, ctx=%u, var=%u\n", j, i, q->undo_hi_tp, tr->var_ctx, tr->var_nbr);
-		*e = q->save_e[j];
+		*e = save->e[j];
 	}
 
-	free(q->save_e);
-	q->save_e = NULL;
-	q->in_hook = false;
 	return true;
 }
 
@@ -911,19 +933,26 @@ bool do_post_unification_hook(query *q, bool is_builtin)
 	tmp[0].nbr_cells = 1;
 	tmp[0].flags = FLAG_BUILTIN;
 	tmp[0].val_off = g_true_s;
-	static builtins *s_fn_ptr = NULL;
 
-	if (!s_fn_ptr)
-		s_fn_ptr = get_fn_ptr(fn_iso_true_0);
+	static void *s_fn_ptr1 = NULL;
 
-	tmp[0].fn_ptr = s_fn_ptr;
+	if (!s_fn_ptr1)
+		s_fn_ptr1 = get_fn_ptr(fn_iso_true_0);
+
+	tmp[0].fn_ptr = s_fn_ptr1;
 
 	tmp[1].tag = TAG_INTERNED;
 	tmp[1].nbr_cells = 1;
 	tmp[1].arity = 0;
 	tmp[1].flags = 0;
 	tmp[1].val_off = g_post_unify_hook_s;
-	tmp[1].match = search_predicate(q->pl->user_m, tmp+1, NULL);
+
+	static void *s_fn_ptr2 = NULL;
+
+	if (!s_fn_ptr2)
+		s_fn_ptr2 = search_predicate(q->pl->user_m, tmp+1, NULL);
+
+	tmp[1].match = s_fn_ptr2;
 
 	if (!tmp[1].match)
 		return throw_error(q, tmp+1, q->st.curr_frame, "existence_error", "procedure");
@@ -931,7 +960,7 @@ bool do_post_unification_hook(query *q, bool is_builtin)
 	if (is_builtin)
 		make_call(q, tmp+2);
 	else
-		make_call_return(q, tmp+2, q->st.curr_cell);
+		make_call_redo(q, tmp+2);
 
 	q->st.curr_cell = tmp;
 	return true;

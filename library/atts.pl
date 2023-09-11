@@ -6,25 +6,30 @@
 :- use_module(library(apply)).
 :- use_module(library(lists), [append/3]).
 
+msb(_X, _N) :- writeln(oops).
+lsb(_X, _N) :- writeln(oops).
+popcount(_X, _N) :- writeln(oops).
+lcm(_X, _N, _) :- writeln(oops).
+
 '$post_unify_hook' :-
-	'$undo_trail'(Vars),
-	( process_vars_(Vars, [], Goals) *-> '$redo_trail'
-	;	('$redo_trail', fail) ),
+	'$undo_trail'(Vars, State),
+	process_vars_(Vars, [], Goals),
+	'$redo_trail'(State),
 	maplist(call, Goals).
 
 process_vars_([], Goals, Goals) :- !.
 process_vars_([Var-Val|Vars], SoFar, Goals) :-
 	get_atts(Var, Atts),
-	process_var_(Var, Val, Atts, SoFar, MoreGoals),
+	process_var_(Atts, Var, Val, SoFar, MoreGoals),
 	process_vars_(Vars, MoreGoals, Goals).
 
-process_var_(_, _, [], Goals, Goals) :- !.
-process_var_(Var, Val, [Att|Atts], SoFar, Goals) :-
+process_var_([], _, _, Goals, Goals) :- !.
+process_var_([Att|Atts], Var, Val, SoFar, Goals) :-
 	functor(Att, F, A),
 	attribute(M, F, A),
 	M:verify_attributes(Var, Val, NewGoals),
 	append(SoFar, NewGoals, MoreGoals),
-	process_var_(Var, Val, Atts, MoreGoals, Goals).
+	process_var_(Atts, Var, Val, MoreGoals, Goals).
 
 call_residue_vars(Goal, Atts) :-
 	Goal,
