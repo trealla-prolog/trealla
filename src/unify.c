@@ -970,19 +970,13 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 {
 	const frame *f = GET_FRAME(c_ctx);
 	slot *e = GET_SLOT(f, c->var_nbr);
-	cell *c_attrs = is_empty(&e->c) ? e->c.attrs : NULL, *v_attrs = NULL;
+	cell *c_attrs = is_empty(&e->c) ? e->c.attrs : NULL;
 	pl_idx c_attrs_ctx = c_attrs ? e->c.attrs_ctx : 0;
-
-	if (is_var(v)) {
-		const frame *vf = GET_FRAME(v_ctx);
-		const slot *ve = GET_SLOT(vf, v->var_nbr);
-		v_attrs = is_empty(&ve->c) ? ve->c.attrs : NULL;
-	}
 
 	if ((c_ctx < q->st.fp) || is_managed(v))
 		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
 
-	if (c_attrs || v_attrs)
+	if (c_attrs)
 		q->run_hook = true;
 
 	if (is_var(v)) {
