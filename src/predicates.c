@@ -157,7 +157,7 @@ static bool fn_iso_findall_3(query *q)
 			return throw_error(q, p3, p3_ctx, "type_error", "list");
 
 		if (is_structure(p1) && !is_iso_list(p1)) {	// Why is this necessary?
-			cell *p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, false);
+			cell *p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, true);
 			check_heap_error(p0);
 			unify(q, q->st.curr_cell, q->st.curr_frame, p0, q->st.curr_frame);
 			GET_FIRST_ARG0(xp1,any,p0);
@@ -199,12 +199,14 @@ static bool fn_iso_findall_3(query *q)
 
 	check_heap_error(init_tmp_heap(q), free(solns));
 
+	try_me(q, MAX_ARITY);	// Needed for some attrs/copy_term bug it seems
+
 	for (cell *c = solns; nbr_cells; nbr_cells -= c->nbr_cells, c += c->nbr_cells) {
 		cell *tmp = alloc_on_tmp(q, 1);
 		check_heap_error(tmp, free(solns));
 		make_struct(tmp, g_dot_s, NULL, 2, 0);
 		q->noderef = true;
-		tmp = deep_copy_to_tmp(q, c, q->st.curr_frame, false);
+		tmp = deep_copy_to_tmp(q, c, q->st.curr_frame, true);
 		q->noderef = false;
 		check_heap_error(tmp, free(solns));
 	}
@@ -6933,6 +6935,7 @@ static bool fn_sys_put_attributes_2(query *q)
 	//DUMP_TERM("$put_attr", p2, p2_ctx);
 	cell *tmp = deep_clone_to_heap(q, p2, p2_ctx);
 	check_heap_error(tmp);
+	e->c.flags = FLAG_VAR_ATTR;
 	e->c.attrs = tmp;
 	e->c.attrs_ctx = q->st.curr_frame;
 	return true;

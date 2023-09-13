@@ -673,6 +673,10 @@ static void unwind_trail(query *q)
 		slot *e = GET_SLOT(f, tr->var_nbr);
 		unshare_cell(&e->c);
 		init_cell(&e->c);
+
+		if (tr->attrs)
+			e->c.flags = FLAG_VAR_ATTR;
+
 		e->c.attrs = tr->attrs;
 		e->c.attrs_ctx = tr->attrs_ctx;
 	}

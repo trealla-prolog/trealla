@@ -878,6 +878,10 @@ bool fn_sys_undo_trail_2(query *q)
 			append_list(q, tmp);
 
 		init_cell(&e->c);
+
+		if (tr->attrs)
+			e->c.flags = FLAG_VAR_ATTR;
+
 		e->c.attrs = tr->attrs;
 		e->c.attrs_ctx = tr->attrs_ctx;
 		//DUMP_TERM("$undo2", tr->attrs, tr->attrs_ctx, 0);
@@ -991,6 +995,7 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 			if (v_ctx < q->st.fp)
 				add_trail(q, v_ctx, v->var_nbr, NULL, 0);
 
+			ev->c.flags = FLAG_VAR_ATTR;
 			ev->c.attrs = c_attrs;
 			ev->c.attrs_ctx = c_attrs_ctx;
 			nohook = true;
@@ -1005,6 +1010,8 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 			if (c_ctx < q->st.fp)
 				add_trail(q, c_ctx, c->var_nbr, NULL, 0);
 
+
+			e->c.flags = FLAG_VAR_ATTR;
 			e->c.attrs = v_attrs;
 			e->c.attrs_ctx = v_attrs_ctx;
 			nohook = true;

@@ -374,7 +374,7 @@ static bool copy_vars(query *q, cell *tmp, bool copy_attrs, const cell *from, pl
 			tmp->var_nbr = var_nbr;
 			tmp->var_ctx = q->st.curr_frame;
 
-			if (copy_attrs && e->c.attrs) {
+			if (copy_attrs && (e->c.flags & FLAG_VAR_ATTR) && e->c.attrs) {
 				push_tmp_heap(q);
 				cell *tmp2 = deep_copy_to_heap_with_replacement(q, e->c.attrs, e->c.attrs_ctx, false, NULL, 0, NULL, 0);
 				pop_tmp_heap(q);
@@ -466,8 +466,9 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx
 		if (is_var(c) && c->tmp_attrs) {
 			const frame *f = GET_FRAME(c->var_ctx);
 			slot *e = GET_SLOT(f, c->var_nbr);
+			e->c.flags = FLAG_VAR_ATTR;
 			e->c.attrs = c->tmp_attrs;
-			e->c.attrs_ctx = c->var_ctx;
+			e->c.attrs_ctx = q->st.curr_frame;
 		}
 	}
 
