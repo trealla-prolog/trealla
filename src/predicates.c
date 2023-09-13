@@ -6922,7 +6922,7 @@ static bool fn_sys_erase_attributes_1(query *q)
 	const frame *f = GET_FRAME(p1_ctx);
 	slot *e = GET_SLOT(f, p1->var_nbr);
 	add_trail(q, p1_ctx, p1->var_nbr, e->c.attrs, e->c.attrs_ctx);
-	//DUMP_TERM("$erase_attr", p2, p2_ctx ,true);
+	//DUMP_TERM("$erase_attr", p1, p1_ctx ,true);
 	e->c.flags = 0;
 	e->c.attrs = NULL;
 	e->c.attrs_ctx = 0;
