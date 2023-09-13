@@ -921,7 +921,7 @@ get_atts(Var, Attr) :- !,
 
 del_atts(Var) :-
 	var(Var),
-	'$erase_attribute'(Var).
+	'$erase_attributes'(Var).
 
 :- help(del_atts(@var), [iso(false)]).
 
