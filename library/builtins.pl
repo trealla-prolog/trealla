@@ -888,12 +888,12 @@ put_atts(Var, Attr) :- !,
 
 get_atts(Var, L) :- var(L), !,
 	var(Var),
-	('$get_attributes'(Var, D) -> true ; D = []),
+	'$get_attributes'(Var, D),
 	dict:match(D, _, L).
 
 get_atts(Var, -Attr) :- !,
 	var(Var),
-	('$get_attributes'(Var, D) -> true ; D = []),
+	'$get_attributes'(Var, D),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
 	\+ dict:get(D, Module, _),
@@ -977,8 +977,6 @@ print_goals_([Goal|Goals]) :-
 	),
 	print_goals_(Goals).
 
-:- help(print_goals(+list), [iso(false)]).
-
 dump_attvars_([], []) :- !.
 dump_attvars_([Var|Vars], [V|Rest]) :-
 	copy_term(Var, _, V),
@@ -990,8 +988,6 @@ dump_attvars :-
 	flatten(Gs0, Gs1),
 	sort(Gs1, Gs),
 	print_goals_(Gs).
-
-%:- help(dump_attvars, [iso(false)]).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
