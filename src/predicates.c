@@ -35,6 +35,8 @@ static void msleep(int ms)
 }
 #endif
 
+#define COPY_TERM_ATTRIBUTES 1
+
 bool do_yield(query *q, int msecs)
 {
 	if (!q->is_task)
@@ -148,6 +150,12 @@ static bool fn_iso_findall_3(query *q)
 	GET_NEXT_ARG(p2,callable);
 	GET_NEXT_ARG(p3,list_or_nil_or_var);
 
+#if COPY_TERM_ATTRIBUTES
+	bool copy_attrs = true;
+#else
+	bool copy_attrs = false;
+#endif
+
 	if (!q->retry) {
 		bool is_partial = false;
 
@@ -157,7 +165,7 @@ static bool fn_iso_findall_3(query *q)
 			return throw_error(q, p3, p3_ctx, "type_error", "list");
 
 		if (is_structure(p1) && !is_iso_list(p1)) {	// Why is this necessary?
-			cell *p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, true);
+			cell *p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, copy_attrs);
 			check_heap_error(p0);
 			unify(q, q->st.curr_cell, q->st.curr_frame, p0, q->st.curr_frame);
 			GET_FIRST_ARG0(xp1,any,p0);
@@ -206,7 +214,7 @@ static bool fn_iso_findall_3(query *q)
 		check_heap_error(tmp, free(solns));
 		make_struct(tmp, g_dot_s, NULL, 2, 0);
 		q->noderef = true;
-		tmp = deep_copy_to_tmp(q, c, q->st.curr_frame, true);
+		tmp = deep_copy_to_tmp(q, c, q->st.curr_frame, copy_attrs);
 		q->noderef = false;
 		check_heap_error(tmp, free(solns));
 	}
@@ -2018,6 +2026,7 @@ static bool fn_iso_copy_term_2(query *q)
 	GET_NEXT_ARG(p2,any);
 
 	if (is_var(p1) && is_var(p2)) {
+#if COPY_TERM_ATTRIBUTES
 		const frame *f1 = GET_FRAME(p1_ctx);
 		const slot *e1 = GET_SLOT(f1, p1->var_nbr);
 
@@ -2033,7 +2042,7 @@ static bool fn_iso_copy_term_2(query *q)
 			e2->c.attrs = tmp;
 			e2->c.attrs_ctx = q->st.curr_frame;
 		}
-
+#endif
 		return true;
 	}
 
