@@ -917,7 +917,7 @@ get_atts(Var, Attr) :- !,
 
 :- help(get_atts(@var,-term), [iso(false)]).
 
-% Ancilliary
+% Ancilliary...
 
 del_atts(Var) :-
 	var(Var),
@@ -930,6 +930,9 @@ attvar(Var) :-
 	'$get_attributes'(Var, _).
 
 :- help(attvar(@var), [iso(false)]).
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 term_attvars_([], VsIn, VsIn) :- !.
 term_attvars_([H|T], VsIn, VsOut) :-
@@ -988,9 +991,6 @@ dump_attvars :-
 	flatten(Gs0, Gs1),
 	sort(Gs1, Gs),
 	print_goals_(Gs).
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 plus(X,Y,S) :- nonvar(X), nonvar(Y),
 	must_be(X, integer, plus/3, _), must_be(Y, integer, plus/3, _), !,
