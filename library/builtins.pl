@@ -893,7 +893,7 @@ get_atts(Var, L) :- var(L), !,
 
 get_atts(Var, -Attr) :- !,
 	var(Var),
-	'$get_attributes'(Var, D),
+	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
 	\+ dict:get(D, Module, _),
