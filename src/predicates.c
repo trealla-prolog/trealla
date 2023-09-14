@@ -35,8 +35,6 @@ static void msleep(int ms)
 }
 #endif
 
-#define COPY_TERM_ATTRIBUTES 1
-
 bool do_yield(query *q, int msecs)
 {
 	if (!q->is_task)
@@ -150,12 +148,6 @@ static bool fn_iso_findall_3(query *q)
 	GET_NEXT_ARG(p2,callable);
 	GET_NEXT_ARG(p3,list_or_nil_or_var);
 
-#if COPY_TERM_ATTRIBUTES
-	bool copy_attrs = true;
-#else
-	bool copy_attrs = false;
-#endif
-
 	if (!q->retry) {
 		bool is_partial = false;
 
@@ -165,7 +157,7 @@ static bool fn_iso_findall_3(query *q)
 			return throw_error(q, p3, p3_ctx, "type_error", "list");
 
 		if (is_structure(p1) && !is_iso_list(p1)) {	// Why is this necessary?
-			cell *p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, copy_attrs);
+			cell *p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, false);
 			check_heap_error(p0);
 			unify(q, q->st.curr_cell, q->st.curr_frame, p0, q->st.curr_frame);
 			GET_FIRST_ARG0(xp1,any,p0);
@@ -207,7 +199,10 @@ static bool fn_iso_findall_3(query *q)
 
 	check_heap_error(init_tmp_heap(q), free(solns));
 
-	try_me(q, MAX_ARITY);	// Needed for some attrs/copy_term bug it seems
+	bool copy_attrs = true;
+
+	if (copy_attrs)
+		try_me(q, MAX_ARITY);	// Needed for some attrs/copy_term bug it seems
 
 	for (cell *c = solns; nbr_cells; nbr_cells -= c->nbr_cells, c += c->nbr_cells) {
 		cell *tmp = alloc_on_tmp(q, 1);
@@ -2026,23 +2021,26 @@ static bool fn_iso_copy_term_2(query *q)
 	GET_NEXT_ARG(p2,any);
 
 	if (is_var(p1) && is_var(p2)) {
-#if COPY_TERM_ATTRIBUTES
-		const frame *f1 = GET_FRAME(p1_ctx);
-		const slot *e1 = GET_SLOT(f1, p1->var_nbr);
+		bool copy_attrs = true;
 
-		if (e1->c.attrs) {
-			const frame *f2 = GET_FRAME(p2_ctx);
-			slot *e2 = GET_SLOT(f2, p2->var_nbr);
-			check_heap_error(init_tmp_heap(q));
-			frame *f = GET_CURR_FRAME();
-			q->varno = f->actual_slots;
-			q->tab_idx = 0;
-			cell *tmp = deep_copy_to_heap_with_replacement(q, e1->c.attrs, e1->c.attrs_ctx, false, p1, p1_ctx, p2, p2_ctx);
-			check_heap_error(tmp);
-			e2->c.attrs = tmp;
-			e2->c.attrs_ctx = q->st.curr_frame;
+		if (copy_attrs) {
+			const frame *f1 = GET_FRAME(p1_ctx);
+			const slot *e1 = GET_SLOT(f1, p1->var_nbr);
+
+			if (e1->c.attrs) {
+				const frame *f2 = GET_FRAME(p2_ctx);
+				slot *e2 = GET_SLOT(f2, p2->var_nbr);
+				check_heap_error(init_tmp_heap(q));
+				frame *f = GET_CURR_FRAME();
+				q->varno = f->actual_slots;
+				q->tab_idx = 0;
+				cell *tmp = deep_copy_to_heap_with_replacement(q, e1->c.attrs, e1->c.attrs_ctx, true, p1, p1_ctx, p2, p2_ctx);
+				check_heap_error(tmp);
+				e2->c.attrs = tmp;
+				e2->c.attrs_ctx = q->st.curr_frame;
+			}
 		}
-#endif
+
 		return true;
 	}
 
