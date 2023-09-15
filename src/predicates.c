@@ -2016,7 +2016,7 @@ static bool fn_iso_copy_term_2(query *q)
 	GET_NEXT_ARG(p2,any);
 
 	if (is_var(p1) && is_var(p2)) {
-#if 1
+#if 0
 		const frame *f1 = GET_FRAME(p1_ctx);
 		const slot *e1 = GET_SLOT(f1, p1->var_nbr);
 
