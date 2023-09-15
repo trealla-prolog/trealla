@@ -89,7 +89,8 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 		return;
 #endif
 
-	q->step++;
+	if (c->val_off == g_sys_drop_barrier_s)
+		return;
 
 	if (box == CALL)
 		box = q->retry?REDO:CALL;
@@ -97,10 +98,8 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 	const char *src = C_STR(q, c);
 
 #if 1
-	if (!strcmp(src, ",")) {
-		q->step--;
+	if (!strcmp(src, ","))
 		return;
-	}
 #endif
 
 #if 0
@@ -108,6 +107,7 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 		return;
 #endif
 
+	q->step++;
 	SB(pr);
 
 #ifdef DEBUG
