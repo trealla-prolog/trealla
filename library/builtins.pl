@@ -967,7 +967,7 @@ copy_term(Term, Copy, Gs) :-
 	term_attvars(Term, Vs),
 	collect_goals_(Vs, [], Gs).
 
-:- help(copy_term(+term,-term,+list), [iso(false)]).
+:- help(copy_term(+term,?term,+list), [iso(false)]).
 
 % Debugging...
 

@@ -2016,7 +2016,7 @@ static bool fn_iso_copy_term_2(query *q)
 	GET_NEXT_ARG(p2,any);
 
 	if (is_var(p1) && is_var(p2)) {
-#if 0
+#if 1
 		const frame *f1 = GET_FRAME(p1_ctx);
 		const slot *e1 = GET_SLOT(f1, p1->var_nbr);
 
@@ -2043,7 +2043,7 @@ static bool fn_iso_copy_term_2(query *q)
 		return unify(q, p1, p1_ctx, p2, p2_ctx);
 
 	GET_FIRST_RAW_ARG(p1_raw,any);
-	cell *tmp = deep_copy_to_heap(q, p1_raw, p1_raw_ctx, false);
+	cell *tmp = deep_copy_to_heap(q, p1_raw, p1_raw_ctx, true);
 	check_heap_error(tmp);
 
 	if (is_var(p1_raw) && is_var(p2)) {
