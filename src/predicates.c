@@ -147,6 +147,7 @@ static bool fn_iso_findall_3(query *q)
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,callable);
 	GET_NEXT_ARG(p3,list_or_nil_or_var);
+	bool copy_attrs = true;
 
 	if (!q->retry) {
 		bool is_partial = false;
@@ -157,7 +158,7 @@ static bool fn_iso_findall_3(query *q)
 			return throw_error(q, p3, p3_ctx, "type_error", "list");
 
 		if (is_structure(p1) && !is_iso_list(p1)) {	// Why is this necessary?
-			cell *p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, false);
+			cell *p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, copy_attrs);
 			check_heap_error(p0);
 			unify(q, q->st.curr_cell, q->st.curr_frame, p0, q->st.curr_frame);
 			GET_FIRST_ARG0(xp1,any,p0);
@@ -198,8 +199,6 @@ static bool fn_iso_findall_3(query *q)
 	// Now grab matching solutions with fresh variables for each...
 
 	check_heap_error(init_tmp_heap(q), free(solns));
-
-	bool copy_attrs = true;
 
 	if (copy_attrs)
 		try_me(q, MAX_ARITY);	// Needed for some attrs/copy_term bug it seems
