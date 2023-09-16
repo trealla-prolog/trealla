@@ -723,7 +723,7 @@ b_delete(_).
 :- help(b_delete(+atom), [iso(false)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% SICStus compatible
+* extensions
 
 bb_b_put(K, _) :-
 	must_be(K, atom, bb_b_put/2, _),
@@ -746,6 +746,8 @@ bb_b_del(K) :-
 bb_b_del(_).
 
 :- help(bb_b_del(+atom), [iso(false)]).
+
+% SICStus compatible
 
 bb_put(K, _) :-
 	must_be(K, atom, bb_put/2, _),
