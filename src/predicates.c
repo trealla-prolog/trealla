@@ -2010,6 +2010,9 @@ static bool fn_term_singletons_2(query *q)
 	return unify(q, p2, p2_ctx, tmp2, q->st.curr_frame);
 }
 
+// Don't copy attributes as per SICStus & YAP, this
+// makes copy_term/2 the same as copy_term_nat/2
+
 static bool fn_iso_copy_term_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
