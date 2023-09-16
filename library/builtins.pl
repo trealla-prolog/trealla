@@ -723,7 +723,7 @@ b_delete(_).
 :- help(b_delete(+atom), [iso(false)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-* extensions
+%* extensions
 
 bb_b_put(K, _) :-
 	must_be(K, atom, bb_b_put/2, _),
