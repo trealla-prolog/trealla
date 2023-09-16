@@ -87,9 +87,6 @@ forall(Cond, Action) :-
 catch(G, E, C) :-
 	'$catch'(call(G), E, call(C)).
 
-:- meta_predicate(catch(0,?,0)).
-:- help(catch(:callable,+term,:callable), [iso(true)]).
-
 countall(_, N) :-
 	integer(N),
 	(	N >= 0

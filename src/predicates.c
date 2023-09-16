@@ -7925,7 +7925,7 @@ static void load_properties(module *m)
 
 	format_property(m, tmpbuf, sizeof(tmpbuf), "not", 1, "meta_predicate(not(0))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "\\+", 1, "meta_predicate((\\+0))", false); SB_strcat(pr, tmpbuf);
-	//format_property(m, tmpbuf, sizeof(tmpbuf), "catch", 3, "meta_predicate(catch(0,?,0))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "catch", 3, "meta_predicate(catch(0,?,0))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "", 2, "meta_predicate((0,0))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), ",", 2, "meta_predicate((0,0))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), ";", 2, "meta_predicate((0;0))", false); SB_strcat(pr, tmpbuf);
@@ -8195,7 +8195,6 @@ builtins g_iso_bifs[] =
 	{"\\=", 2, fn_iso_notunify_2, "+term,+term", true, false, BLAH},
 	{"-->", 2, fn_iso_dcgs_2, "+term,+term", true, false, BLAH},
 
-	{"$catch", 3, fn_iso_catch_3, NULL, true, false, BLAH},
 	{"$call_cleanup", 3, fn_sys_call_cleanup_3, NULL, false, false, BLAH},
 	{"$block_catcher", 1, fn_sys_block_catcher_1, NULL, false, false, BLAH},
 	{"$cleanup_if_det", 1, fn_sys_cleanup_if_det_1, NULL, false, false, BLAH},
@@ -8216,7 +8215,7 @@ builtins g_iso_bifs[] =
 	{"call", 7, fn_iso_call_n, ":callable,?term,?term,?term,?term,?term,?term", true, false, BLAH},
 	{"call", 8, fn_iso_call_n, ":callable,?term,?term,?term,?term,?term,?term,?term", true, false, BLAH},
 
-
+	{"$catch", 3, fn_iso_catch_3, ":callable,?term,:callable", true, false, BLAH},
 	{"throw", 1, fn_iso_throw_1, "+term", true, false, BLAH},
 	{"once", 1, fn_iso_once_1, ":callable", true, false, BLAH},
 	{"repeat", 0, fn_iso_repeat_0, NULL, true, false, BLAH},
