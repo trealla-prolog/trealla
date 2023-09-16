@@ -2043,7 +2043,7 @@ static bool fn_iso_copy_term_2(query *q)
 		return unify(q, p1, p1_ctx, p2, p2_ctx);
 
 	GET_FIRST_RAW_ARG(p1_raw,any);
-	cell *tmp = deep_copy_to_heap(q, p1_raw, p1_raw_ctx, true);
+	cell *tmp = deep_copy_to_heap(q, p1_raw, p1_raw_ctx, false);
 	check_heap_error(tmp);
 
 	if (is_var(p1_raw) && is_var(p2)) {
