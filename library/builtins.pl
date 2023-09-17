@@ -889,34 +889,30 @@ put_atts(Var, Attr) :- !,
 get_atts(Var, L) :- var(L), !,
 	var(Var),
 	'$get_attributes'(Var, D),
-	dict:match(D, _, L),
-	true.
+	dict:match(D, _, L).
 
 get_atts(Var, -Attr) :- !,
 	var(Var),
-	('$get_attributes'(Var, D) -> true ; D = []),
+	('$get_attributes'(Var, D) -> true ; false),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
-	\+ dict:get(D, Module-Functor, _),
-	true.
+	\+ dict:get(D, Module-Functor, _).
 
 get_atts(Var, +Attr) :- !,
 	var(Var),
 	'$get_attributes'(Var, D),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
-	dict:get(D, Module-Functor, Attr),
-	true.
+	dict:get(D, Module-Functor, Attr).
 
 get_atts(Var, Attr) :- !,
 	var(Var),
 	'$get_attributes'(Var, D),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
-	dict:get(D, Module-Functor, Attr),
-	true.
+	dict:get(D, Module-Functor, Attr).
 
-:- help(get_atts(@var,-term), [iso(false)]).
+:- help(get_atts(@var,?term), [iso(false)]).
 
 % Ancilliary...
 
