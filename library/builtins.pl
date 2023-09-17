@@ -952,10 +952,14 @@ collect_goals_(_, [], GsIn, GsIn) :- !.
 collect_goals_(V, [H|T], GsIn, GsOut) :-
 	H =.. [M, _],
 	catch(M:attribute_goals(V, Goal0, []), _, Goal0 = put_atts(V, +H)),
+	!,
 	(	Goal0 = [H2]
 	->	Goal = H2
-	;	Goal = Goal0), collect_goals_(V, T, [Goal|GsIn], GsOut
-	).
+	;	Goal = Goal0
+	),
+	collect_goals_(V, T, [Goal|GsIn], GsOut).
+collect_goals_(V, [_|T], GsIn, GsOut) :-
+	collect_goals_(V, T, GsIn, GsOut).
 
 collect_goals_([], GsIn, GsIn) :- !.
 collect_goals_([V|T], GsIn, GsOut) :-
@@ -966,7 +970,8 @@ collect_goals_([V|T], GsIn, GsOut) :-
 copy_term(Term, Copy, Gs) :-
 	copy_term_nat(Term, Copy),
 	term_attvars(Term, Vs),
-	collect_goals_(Vs, [], Gs).
+	collect_goals_(Vs, [], Gs),
+	true.
 
 :- help(copy_term(+term,?term,+list), [iso(false)]).
 
@@ -982,8 +987,8 @@ print_goals_([Goal|Goals]) :-
 	print_goals_(Goals).
 
 dump_attvars_([], []) :- !.
-dump_attvars_([Var|Vars], [V|Rest]) :-
-	copy_term(Var, _, V),
+dump_attvars_([Var|Vars], [Gs|Rest]) :-
+	copy_term(Var, _, Gs),
 	dump_attvars_(Vars, Rest).
 
 dump_attvars :-
