@@ -759,11 +759,6 @@ bb_update(K, O, V) :-
 
 % extensions
 
-bb_b_put(K, _) :-
-	must_be(K, atom, bb_b_put/2, _),
-	\+ user:clause('$bb_global_key'(K, _), _),
-	user:asserta('$bb_global_key'(K, [])),
-	fail.
 bb_b_put(K, V) :-
 	must_be(K, atom, bb_b_put/2, _),
 	user:asserta('$bb_global_key'(K, V)).
