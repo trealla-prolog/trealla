@@ -865,7 +865,7 @@ put_atts(Var, -Attr) :- !,
 	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
-	dict:del(D, Module, Attr, D2),
+	dict:del(D, Module:Functor, Attr, D2),
 	'$put_attributes'(Var, D2).
 
 put_atts(Var, +Attr) :- !,
@@ -873,7 +873,7 @@ put_atts(Var, +Attr) :- !,
 	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
-	dict:set(D, Module, Attr, D2),
+	dict:set(D, Module:Functor, Attr, D2),
 	'$put_attributes'(Var, D2).
 
 put_atts(Var, Attr) :- !,
@@ -881,7 +881,7 @@ put_atts(Var, Attr) :- !,
 	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
-	dict:set(D, Module, Attr, D2),
+	dict:set(D, Module:Functor, Attr, D2),
 	'$put_attributes'(Var, D2).
 
 :- help(put_atts(@var,+term), [iso(false)]).
@@ -889,14 +889,15 @@ put_atts(Var, Attr) :- !,
 get_atts(Var, L) :- var(L), !,
 	var(Var),
 	'$get_attributes'(Var, D),
-	dict:match(D, _, L).
+	dict:match(D, _, L),
+	true.
 
 get_atts(Var, -Attr) :- !,
 	var(Var),
 	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
-	\+ dict:get(D, Module, _),
+	\+ dict:get(D, Module:Functor, _),
 	true.
 
 get_atts(Var, +Attr) :- !,
@@ -904,7 +905,7 @@ get_atts(Var, +Attr) :- !,
 	'$get_attributes'(Var, D),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
-	dict:get(D, Module, Attr),
+	dict:get(D, Module:Functor, Attr),
 	true.
 
 get_atts(Var, Attr) :- !,
@@ -912,7 +913,7 @@ get_atts(Var, Attr) :- !,
 	'$get_attributes'(Var, D),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
-	dict:get(D, Module, Attr),
+	dict:get(D, Module:Functor, Attr),
 	true.
 
 :- help(get_atts(@var,-term), [iso(false)]).
