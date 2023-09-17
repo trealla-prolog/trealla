@@ -294,8 +294,7 @@ static bool can_view(query *q, size_t ugen, const db_entry *dbe)
 
 static void setup_key(query *q)
 {
-	cell *arg1 = FIRST_ARG(q->st.key);
-	arg1 = deref(q, arg1, q->st.key_ctx);
+	cell *arg1 = deref(q, FIRST_ARG(q->st.key), q->st.key_ctx);
 
 	if (!is_var(arg1))
 		q->st.karg1_is_ground = true;
