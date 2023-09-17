@@ -970,8 +970,7 @@ collect_goals_([V|T], GsIn, GsOut) :-
 copy_term(Term, Copy, Gs) :-
 	copy_term_nat(Term, Copy),
 	term_attvars(Term, Vs),
-	collect_goals_(Vs, [], Gs),
-	true.
+	collect_goals_(Vs, [], Gs).
 
 :- help(copy_term(+term,?term,+list), [iso(false)]).
 
