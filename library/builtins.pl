@@ -723,39 +723,6 @@ b_delete(_).
 :- help(b_delete(+atom), [iso(false)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%* extensions
-
-bb_b_put(K, _) :-
-	must_be(K, atom, bb_b_put/2, _),
-	\+ user:clause('$bb_global_key'(K, _), _),
-	user:asserta('$bb_global_key'(K, [])),
-	fail.
-bb_b_put(K, V) :-
-	must_be(K, atom, bb_b_put/2, _),
-	user:asserta('$bb_global_key'(K, V)).
-bb_b_put(K, _) :-
-	user:retract('$bb_global_key'(K, _)),
-	!, fail.
-
-:- help(bb_b_put(+atom,+term), [iso(false)]).
-
-bb_b_del(K) :-
-	must_be(K, atom, bb_b_del/1, _),
-	user:retract('$bb_global_key'(K, _)),
-	!.
-bb_b_del(_).
-
-:- help(bb_b_del(+atom), [iso(false)]).
-
-bb_del(K) :-
-	must_be(K, atom, bb_del/1, _),
-	user:retractall('$bb_global_key'(K, _)),
-	!.
-bb_del(_).
-
-:- help(bb_del(+atom), [iso(false)]).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SICStus compatible
 
 bb_put(K, _) :-
@@ -789,6 +756,38 @@ bb_update(K, O, V) :-
 	!.
 
 :- help(bb_update(+atom,+term,+term), [iso(false)]).
+
+% extensions
+
+bb_b_put(K, _) :-
+	must_be(K, atom, bb_b_put/2, _),
+	\+ user:clause('$bb_global_key'(K, _), _),
+	user:asserta('$bb_global_key'(K, [])),
+	fail.
+bb_b_put(K, V) :-
+	must_be(K, atom, bb_b_put/2, _),
+	user:asserta('$bb_global_key'(K, V)).
+bb_b_put(K, _) :-
+	user:retract('$bb_global_key'(K, _)),
+	!, fail.
+
+:- help(bb_b_put(+atom,+term), [iso(false)]).
+
+bb_b_del(K) :-
+	must_be(K, atom, bb_b_del/1, _),
+	user:retract('$bb_global_key'(K, _)),
+	!.
+bb_b_del(_).
+
+:- help(bb_b_del(+atom), [iso(false)]).
+
+bb_del(K) :-
+	must_be(K, atom, bb_del/1, _),
+	user:retractall('$bb_global_key'(K, _)),
+	!.
+bb_del(_).
+
+:- help(bb_del(+atom), [iso(false)]).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
