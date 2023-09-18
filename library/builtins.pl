@@ -733,7 +733,7 @@ bb_put(K, _) :-
 	fail.
 bb_put(K, V) :-
 	must_be(K, atom, bb_put/2, _),
-	user:assertz('$bb_global_key'(K, {V:nb})).
+	user:asserta('$bb_global_key'(K, {V:nb})).
 
 :- help(bb_put(+atom,+term), [iso(false)]).
 
@@ -754,7 +754,7 @@ bb_delete(K, V) :-
 bb_update(K, O, V) :-
 	must_be(K, atom, bb_update/3, _),
 	user:catch(user:retract('$bb_global_key'(K, {O:_})), _, true),
-	user:assertz('$bb_global_key'(K, {V:nb})),
+	user:asserta('$bb_global_key'(K, {V:nb})),
 	!.
 
 :- help(bb_update(+atom,+term,+term), [iso(false)]).
