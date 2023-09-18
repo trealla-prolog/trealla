@@ -764,8 +764,8 @@ bb_update(K, O, V) :-
 bb_b_put(K, V) :-
 	must_be(K, atom, bb_b_put/2, _),
 	user:asserta('$bb_global_key'(K, {V:b})).
-bb_b_put(K, _) :-
-	user:retract('$bb_global_key'(K, {_:b})),
+bb_b_put(K, V) :-
+	user:retract('$bb_global_key'(K, {V:b})),
 	!, fail.
 
 :- help(bb_b_put(+atom,+term), [iso(false)]).
