@@ -1,4 +1,5 @@
 :- use_module(library(format)).
+:- use_module(library(dict)).
 :- use_module(library(http)).
 :- use_module(library(pio)).
 
@@ -305,7 +306,7 @@ test82 :- writeln(nok).
 test83 :- \+ \+ (!, true), writeln(ok).
 test83 :- writeln(nok).
 
-test90 :- D=[a:1,b:2,c:3], dict:lst(D,L), writeln(L).
+test90 :- D=[a:1,b:2,c:3], d_lst(D,L), writeln(L).
 
 list([]) --> [].
 list([L|Ls]) --> [L], list(Ls).

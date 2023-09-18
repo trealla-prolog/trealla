@@ -33,7 +33,7 @@ read_chunks(S, Tmp, Data) :-
 read_chunks(_, Data, Data).
 
 read_body(S, Hdrs, Data) :-
-	dict:get(Hdrs, "content-length", V, _),
+	d_get(Hdrs, "content-length", V, _),
 	number_chars(Len, V),
 	bread(S, Len, Data).
 
@@ -56,7 +56,7 @@ http_open(UrlList, S, Opts) :-
 	read_response(S, Code),
 	findall(Hdr, read_header(S, Hdr), Hdrs),
 	append(Host, Path, Url),
-	dict:get(Hdrs, "location", Location, Url),
+	d_get(Hdrs, "location", Location, Url),
 	ignore(memberchk(status_code(Code), OptList)),
 	ignore(memberchk(headers(Hdrs), OptList)),
 	ignore(memberchk(final_url(Location), OptList)).
@@ -90,12 +90,12 @@ http_get(Url, Data, Opts) :-
 	Opts2=[headers2(Hdrs)|Opts],
 	Opts3=[status_code2(Code)|Opts2],
 	process(Url, S, Opts3),
-	dict:get(Hdrs, "transfer-encoding", TE, ''),
+	d_get(Hdrs, "transfer-encoding", TE, ''),
 	(	TE == "chunked" -> read_chunks(S, '', Body)
 	; read_body(S, Hdrs, Body)
 	),
 	close(S),
-	(	memberchk(Code, [301,302]) -> (dict:get(Hdrs, "location", Loc, ''),
+	(	memberchk(Code, [301,302]) -> (d_get(Hdrs, "location", Loc, ''),
 		http_get(Loc, Data, Opts))
 	; 	(Data=Body,
 		ignore(memberchk(final_url(Url), Opts)),

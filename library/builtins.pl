@@ -1,5 +1,7 @@
 :- pragma(builtins, [once]).
 
+:- use_module(library(dict)).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 
@@ -859,7 +861,7 @@ put_atts(Var, -Attr) :- !,
 	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
-	dict:del(D, Module-Functor, Attr, D2),
+	d_del(D, Module-Functor, Attr, D2),
 	'$put_attributes'(Var, D2).
 
 put_atts(Var, +Attr) :- !,
@@ -867,7 +869,7 @@ put_atts(Var, +Attr) :- !,
 	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
-	dict:set(D, Module-Functor, Attr, D2),
+	d_set(D, Module-Functor, Attr, D2),
 	'$put_attributes'(Var, D2).
 
 put_atts(Var, Attr) :- !,
@@ -875,7 +877,7 @@ put_atts(Var, Attr) :- !,
 	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
-	dict:set(D, Module-Functor, Attr, D2),
+	d_set(D, Module-Functor, Attr, D2),
 	'$put_attributes'(Var, D2).
 
 :- help(put_atts(@var,+term), [iso(false)]).
@@ -883,28 +885,28 @@ put_atts(Var, Attr) :- !,
 get_atts(Var, L) :- var(L), !,
 	var(Var),
 	'$get_attributes'(Var, D),
-	dict:match(D, _, L).
+	d_match(D, _, L).
 
 get_atts(Var, -Attr) :- !,
 	var(Var),
 	('$get_attributes'(Var, D) -> true ; false),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
-	\+ dict:get(D, Module-Functor, _).
+	\+ d_get(D, Module-Functor, _).
 
 get_atts(Var, +Attr) :- !,
 	var(Var),
 	'$get_attributes'(Var, D),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
-	dict:get(D, Module-Functor, Attr).
+	d_get(D, Module-Functor, Attr).
 
 get_atts(Var, Attr) :- !,
 	var(Var),
 	'$get_attributes'(Var, D),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
-	dict:get(D, Module-Functor, Attr).
+	d_get(D, Module-Functor, Attr).
 
 :- help(get_atts(@var,?term), [iso(false)]).
 
