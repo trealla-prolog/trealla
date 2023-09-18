@@ -674,6 +674,7 @@ static void unwind_trail(query *q)
 		if (tr->attrs)
 			e->c.flags = FLAG_VAR_ATTR;
 
+		e->c.flags = tr->attrs ? FLAG_VAR_ATTR : 0;
 		e->c.attrs = tr->attrs;
 		e->c.attrs_ctx = tr->attrs_ctx;
 	}

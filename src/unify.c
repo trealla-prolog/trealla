@@ -882,6 +882,7 @@ bool fn_sys_undo_trail_2(query *q)
 		if (tr->attrs)
 			e->c.flags = FLAG_VAR_ATTR;
 
+		e->c.flags = tr->attrs ? FLAG_VAR_ATTR : 0;
 		e->c.attrs = tr->attrs;
 		e->c.attrs_ctx = tr->attrs_ctx;
 		//DUMP_TERM("$undo2", tr->attrs, tr->attrs_ctx, 0);
