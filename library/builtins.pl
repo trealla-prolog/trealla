@@ -729,32 +729,32 @@ b_delete(_).
 
 bb_put(K, _) :-
 	must_be(K, atom, bb_put/2, _),
-	user:retract('$bb_global_key'(K, _)),
+	user:retractall('$bb_global_key'(K, _)),
 	fail.
 bb_put(K, V) :-
 	must_be(K, atom, bb_put/2, _),
-	user:assertz('$bb_global_key'(K, V)).
+	user:assertz('$bb_global_key'(K, {V:nb})).
 
 :- help(bb_put(+atom,+term), [iso(false)]).
 
 bb_get(K, V) :-
 	must_be(K, atom, bb_get/2, _),
-	user:catch('$bb_global_key'(K, V), _, fail),
+	user:catch('$bb_global_key'(K, {V:_}), _, fail),
 	!.
 
 :- help(bb_get(+atom,?term), [iso(false)]).
 
 bb_delete(K, V) :-
 	must_be(K, atom, bb_delete/2, _),
-	user:catch(user:retract('$bb_global_key'(K, V)), _, fail),
+	user:catch(user:retract('$bb_global_key'(K, {V:_})), _, fail),
 	!.
 
 :- help(bb_delete(+atom,+term), [iso(false)]).
 
 bb_update(K, O, V) :-
 	must_be(K, atom, bb_update/3, _),
-	user:catch(user:retract('$bb_global_key'(K, O)), _, true),
-	user:assertz('$bb_global_key'(K, V)),
+	user:catch(user:retract('$bb_global_key'(K, {O:_})), _, true),
+	user:assertz('$bb_global_key'(K, {V:nb})),
 	!.
 
 :- help(bb_update(+atom,+term,+term), [iso(false)]).
@@ -763,9 +763,9 @@ bb_update(K, O, V) :-
 
 bb_b_put(K, V) :-
 	must_be(K, atom, bb_b_put/2, _),
-	user:asserta('$bb_global_key'(K, V)).
+	user:asserta('$bb_global_key'(K, {V:b})).
 bb_b_put(K, _) :-
-	user:retract('$bb_global_key'(K, _)),
+	user:retract('$bb_global_key'(K, {_:b})),
 	!, fail.
 
 :- help(bb_b_put(+atom,+term), [iso(false)]).
