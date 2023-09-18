@@ -644,13 +644,13 @@ nb_setval(K, _) :-
 	fail.
 nb_setval(K, V) :-
 	must_be(K, atom, nb_setval/2, _),
-	user:assertz('$bb_global_key'(K, V)).
+	user:asserta('$bb_global_key'(K, {V:nb})).
 
 :- help(nb_setval(+atom,+term), [iso(false)]).
 
 nb_getval(K, V) :-
 	must_be(K, atom, nb_getval/2, _),
-	user:catch('$bb_global_key'(K, V), _, throw(error(existence_error(var, K), nb_getval/2))),
+	user:catch('$bb_global_key'(K, {V:_}), _, throw(error(existence_error(var, K), nb_getval/2))),
 	!.
 
 :- help(nb_getval(+atom,?term), [iso(false)]).
@@ -665,7 +665,7 @@ nb_delete(_).
 
 nb_current(K, V) :-
 	can_be(K, atom, nb_current/2, _),
-	user:clause('$bb_global_key'(K, V), true).
+	user:clause('$bb_global_key'(K, {V:_}), true).
 
 :- help(nb_current(+atom,+term), [iso(false)]).
 
@@ -687,7 +687,7 @@ b_setval(K, _) :-
 	fail.
 b_setval(K, V) :-
 	must_be(K, atom, b_setval/2, _),
-	user:asserta('$bb_global_key'(K, V)).
+	user:asserta('$bb_global_key'(K, {V:b})).
 b_setval(K, _) :-
 	user:retract('$bb_global_key'(K, _)),
 	!, fail.
@@ -696,11 +696,11 @@ b_setval(K, _) :-
 
 b_setval0(K, _) :-
 	must_be(K, atom, b_setval0/2, _),
-	\+ user:clause('$bb_global_key'(K, _), _), asserta('$bb_global_key'(K, 0)),
+	\+ user:clause('$bb_global_key'(K, _), _), asserta('$bb_global_key'(K, {0:b})),
 	fail.
 b_setval0(K, V) :-
 	must_be(K, atom, b_setval0/2, _),
-	user:asserta('$bb_global_key'(K, V)).
+	user:asserta('$bb_global_key'(K, {V:b})).
 b_setval0(K, _) :-
 	user:retract('$bb_global_key'(K, _)),
 	!, fail.
@@ -709,7 +709,7 @@ b_setval0(K, _) :-
 
 b_getval(K, V) :-
 	must_be(K, atom, b_getval/2, _),
-	user:catch('$bb_global_key'(K, V), _, throw(error(existence_error(var, K), b_getval/2))),
+	user:catch('$bb_global_key'(K, {V:_}), _, throw(error(existence_error(var, K), b_getval/2))),
 	!.
 
 :- help(b_getval(+atom,?term), [iso(false)]).
