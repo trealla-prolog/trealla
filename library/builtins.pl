@@ -729,7 +729,7 @@ b_delete(_).
 
 bb_put(K, _) :-
 	must_be(K, atom, bb_put/2, _),
-	user:retractall('$bb_global_key'(K, _)),
+	user:retract('$bb_global_key'(K, _)),
 	fail.
 bb_put(K, V) :-
 	must_be(K, atom, bb_put/2, _),
