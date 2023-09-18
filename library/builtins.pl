@@ -770,14 +770,6 @@ bb_b_put(K, _) :-
 
 :- help(bb_b_put(+atom,+term), [iso(false)]).
 
-bb_b_del(K) :-
-	must_be(K, atom, bb_b_del/1, _),
-	user:retract('$bb_global_key'(K, _)),
-	!.
-bb_b_del(_).
-
-:- help(bb_b_del(+atom), [iso(false)]).
-
 bb_del(K) :-
 	must_be(K, atom, bb_del/1, _),
 	user:retractall('$bb_global_key'(K, _)),
