@@ -1043,10 +1043,11 @@ bool drop_barrier(query *q, pl_idx cp)
 
 static bool resume_frame(query *q)
 {
-	if (!q->st.curr_frame)
+	const frame *f = GET_CURR_FRAME();
+
+	if (!f->prev_offset)
 		return false;
 
-	const frame *f = GET_CURR_FRAME();
 	q->st.curr_cell = f->curr_cell;
 	q->st.curr_frame = q->st.curr_frame - f->prev_offset;
 	f = GET_CURR_FRAME();

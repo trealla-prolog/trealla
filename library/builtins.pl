@@ -1,7 +1,5 @@
 :- pragma(builtins, [once]).
 
-:- use_module(library(dict)).
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 
@@ -809,31 +807,6 @@ current_op(A, B, C) :-
 	'$op'(C, B, A).
 
 :- help(current_op(?integer,?atom,?atom), [iso(true)]).
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% SWI compatible
-
-get_attr(Var, Module, Value) :-
-	Access =.. [Module, Value],
-	var(Var),
-	get_atts(Var, Access).
-
-:- help(get_attr(@var,+atom,-term), [iso(false)]).
-
-put_attr(Var, Module, Value) :-
-	Access =.. [Module, Value],
-	put_atts(Var, Access).
-
-:- help(put_attr(@var,+atom,+term), [iso(false)]).
-
-del_attr(Var, Module) :-
-	Access =.. [Module, _],
-	( var(Var) -> put_atts(Var, -Access) ; true ).
-
-:- help(del_attr(@var,+atom), [iso(false)]).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
