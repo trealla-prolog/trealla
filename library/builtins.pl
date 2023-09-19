@@ -666,7 +666,7 @@ bb_update(K, O, V) :-
 
 :- help(bb_update(+atom,+term,+term), [iso(false)]).
 
-% extensions, not: bb_b_put/2 creates an unfortunate choicepoint
+% extensions, note: bb_b_put/2 creates an unfortunate choicepoint
 
 bb_b_put(K, V) :-
 	must_be(K, atom, bb_b_put/2, _),
