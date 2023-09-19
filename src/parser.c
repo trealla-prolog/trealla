@@ -1750,15 +1750,10 @@ static cell *goal_expansion(parser *p, cell *goal)
 	if ((goal->val_off == g_goal_expansion_s) || (goal->val_off == g_cut_s))
 		return goal;
 
-	predicate *pr = find_functor(p->m, "goal_expansion", 2);
-
-	if (!pr || !pr->head)
-		return goal;
-
 	if (get_builtin_term(p->m, goal, NULL, NULL) /*|| is_op(goal)*/)
 		return goal;
 
-	pr = search_predicate(p->m, goal, NULL);
+	predicate *pr = search_predicate(p->m, goal, NULL);
 
 	if (!pr || !pr->is_goal_expansion)
 		return goal;
