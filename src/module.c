@@ -1321,6 +1321,23 @@ static void optimize_rule(module *m, db_entry *dbe_orig)
 		cl->is_unique = true;
 }
 
+static void check_goal_expansion(module *m, cell *p1)
+{
+	cell *h = get_head(p1);
+
+	if (h->val_off != g_goal_expansion_s)
+		return;
+
+	cell *arg1 = h + 1;
+	predicate *pr = NULL;
+
+	if ((pr = find_predicate(m, arg1)) == NULL)
+		pr = create_predicate(m, arg1, NULL);
+
+	if (pr)
+		pr->is_goal_expansion = true;
+}
+
 static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting)
 {
 	cell *c = p1;
@@ -1370,6 +1387,8 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 
 	if (pr && !consulting && !pr->is_dynamic)
 		return NULL;
+
+	check_goal_expansion(m, c);
 
 	if (!pr) {
 		bool created = false;

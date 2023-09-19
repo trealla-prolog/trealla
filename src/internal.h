@@ -457,6 +457,7 @@ struct predicate_ {
 	const char *filename;
 	cell *meta_args;
 	uint64_t cnt, refcnt, db_id;
+	bool is_goal_expansion:1;
 	bool is_reload:1;
 	bool is_prebuilt:1;
 	bool is_public:1;
