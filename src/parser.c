@@ -1676,7 +1676,7 @@ static bool term_expansion(parser *p)
 	if (h->val_off == g_term_expansion_s)
 		return false;
 
-	query *q = query_create(p->m, false);
+	query *q = query_create(p->m, true);
 	check_error(q);
 	char *dst = print_canonical_to_strbuf(q, p->cl->cells, 0, 0);
 	SB(s);
@@ -1761,7 +1761,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	//if (search_predicate(p->m, goal))
 	//	return goal;
 
-	query *q = query_create(p->m, false);
+	query *q = query_create(p->m, true);
 	check_error(q);
 	q->varnames = true;
 	char *dst = print_canonical_to_strbuf(q, goal, 0, 0);
