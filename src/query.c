@@ -1863,8 +1863,8 @@ query *query_create(module *m, bool is_task)
 
 	q->frames_size = is_task ? 100 : INITIAL_NBR_FRAMES;
 	q->choices_size = is_task ? 100 : INITIAL_NBR_CHOICES;
-	q->slots_size = is_task ? MAX_ARITY : INITIAL_NBR_SLOTS;
-	q->trails_size = is_task ? MAX_ARITY : INITIAL_NBR_TRAILS;
+	q->slots_size = is_task ? 1000 : INITIAL_NBR_SLOTS;
+	q->trails_size = is_task ? 1000 : INITIAL_NBR_TRAILS;
 
 	ensure(q->frames = calloc(q->frames_size, sizeof(frame)), NULL);
 	ensure(q->choices = calloc(q->choices_size, sizeof(choice)), NULL);
