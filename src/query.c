@@ -1861,14 +1861,14 @@ query *query_create(module *m, bool is_task)
 
 	// Allocate these now...
 
-	q->frames_size = is_task ? INITIAL_NBR_FRAMES/10 : INITIAL_NBR_FRAMES;
-	q->slots_size = is_task ? INITIAL_NBR_SLOTS/10 : INITIAL_NBR_SLOTS;
-	q->choices_size = is_task ? INITIAL_NBR_CHOICES/10 : INITIAL_NBR_CHOICES;
-	q->trails_size = is_task ? INITIAL_NBR_TRAILS/10 : INITIAL_NBR_TRAILS;
+	q->frames_size = is_task ? 100 : INITIAL_NBR_FRAMES;
+	q->choices_size = is_task ? 100 : INITIAL_NBR_CHOICES;
+	q->slots_size = is_task ? MAX_ARITY : INITIAL_NBR_SLOTS;
+	q->trails_size = is_task ? MAX_ARITY : INITIAL_NBR_TRAILS;
 
 	ensure(q->frames = calloc(q->frames_size, sizeof(frame)), NULL);
-	ensure(q->slots = calloc(q->slots_size, sizeof(slot)), NULL);
 	ensure(q->choices = calloc(q->choices_size, sizeof(choice)), NULL);
+	ensure(q->slots = calloc(q->slots_size, sizeof(slot)), NULL);
 	ensure(q->trails = calloc(q->trails_size, sizeof(trail)), NULL);
 
 	// Allocate these later as needed...
