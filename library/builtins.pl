@@ -665,14 +665,12 @@ bb_update(K, O, V) :-
 
 :- help(bb_update(+atomic,+term,+term), [iso(false)]).
 
-% extension: note: bb_b_put/2 creates an unfortunate choicepoint
+% extension:
 
 bb_b_put(K, V) :-
 	must_be(K, atomic, bb_b_put/2, _),
-	asserta('$bb_global_key'(K, V, b)).
-bb_b_put(K, V) :-
-	retract('$bb_global_key'(K, V, b)),
-	!, fail.
+	asserta('$bb_global_key'(K, V, b), Ref),
+	'$quantum_eraser'(Ref).
 
 :- help(bb_b_put(+atomic,+term), [iso(false)]).
 

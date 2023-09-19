@@ -60,7 +60,7 @@ size_t scan_is_chars_list(query *q, cell *l, pl_idx l_ctx, bool allow_codes);
 char *chars_list_to_string(query *q, cell *p_chars, pl_idx p_chars_ctx, size_t len);
 cell *string_to_chars_list(query *q, cell *p, pl_idx p_ctx);
 
-unsigned create_vars(query *q, unsigned nbr);
+unsigned create_vars(query *q, unsigned cnt);
 cell *skip_max_list(query *q, cell *head, pl_idx *head_ctx, pl_int max, pl_int *skip, cell *tmp);
 bool is_cyclic_term(query *q, cell *p1, pl_idx p1_ctx);
 bool is_acyclic_term(query *q, cell *p1, pl_idx p1_ctx);
@@ -125,6 +125,7 @@ bool fn_sys_block_catcher_1(query *q);
 bool fn_sys_cleanup_if_det_1(query *q);
 bool fn_sys_queue_1(query *q);
 
+int uuid_from_buf(const char *s, uuid *u);
 builtins *get_fn_ptr(void *fn);
 
 #define FEOF(str) feof(str->fp) && !str->ungetch

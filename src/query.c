@@ -668,15 +668,23 @@ static void unwind_trail(query *q)
 		const trail *tr = q->trails + --q->st.tp;
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
-		unshare_cell(&e->c);
-		init_cell(&e->c);
+		cell *c = &e->c;
+
+		if (c->flags & FLAG_CSTR_QUATUM_ERASER) {
+			uuid u;
+			uuid_from_buf(C_STR(q, c), &u);
+			erase_from_db(q->st.m, &u);
+		}
+
+		unshare_cell(c);
+		init_cell(c);
 
 		if (tr->attrs)
-			e->c.flags = FLAG_VAR_ATTR;
+			c->flags = FLAG_VAR_ATTR;
 
-		e->c.flags = tr->attrs ? FLAG_VAR_ATTR : 0;
-		e->c.attrs = tr->attrs;
-		e->c.attrs_ctx = tr->attrs_ctx;
+		c->flags = tr->attrs ? FLAG_VAR_ATTR : 0;
+		c->attrs = tr->attrs;
+		c->attrs_ctx = tr->attrs_ctx;
 	}
 }
 
@@ -1786,8 +1794,17 @@ void query_destroy(query *q)
 
 	slot *e = q->slots;
 
-	for (pl_idx i = 0; i < q->st.sp; i++, e++)
-		unshare_cell(&e->c);
+	for (pl_idx i = 0; i < q->st.sp; i++, e++) {
+		cell *c = &e->c;
+
+		if (c->flags & FLAG_CSTR_QUATUM_ERASER) {
+			uuid u;
+			uuid_from_buf(C_STR(q, c), &u);
+			erase_from_db(q->st.m, &u);
+		}
+
+		unshare_cell(c);
+	}
 
 	while (q->tasks) {
 		query *task = q->tasks->next;

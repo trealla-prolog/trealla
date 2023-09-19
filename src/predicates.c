@@ -1610,7 +1610,7 @@ static char *uuid_to_buf(const uuid *u, char *buf, size_t buflen)
 	return buf;
 }
 
-static int uuid_from_buf(const char *s, uuid *u)
+int uuid_from_buf(const char *s, uuid *u)
 {
 	if (!s) {
 		uuid tmp = {0};
@@ -3567,6 +3567,19 @@ static bool fn_erase_1(query *q)
 	check_heap_error(dbe);
 	return true;
 }
+
+bool fn_sys_quantum_eraser_1(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	cell tmp2;
+	make_cstring(&tmp2, C_STR(q, p1));
+	tmp2.flags |= FLAG_CSTR_QUATUM_ERASER;
+	unsigned var_nbr = create_vars(q, 1);
+	cell tmp;
+	make_ref(&tmp, g_anon_s, var_nbr, q->st.curr_frame);
+	return unify(q, &tmp, q->st.curr_frame, &tmp2, q->st.curr_frame);
+}
+
 
 static bool fn_instance_2(query *q)
 {
@@ -8373,6 +8386,7 @@ builtins g_other_bifs[] =
 	{"kv_get", 3, fn_kv_get_3, "+atomic,-term,+list", false, false, BLAH},
 	{"between", 3, fn_between_3, "+integer,+integer,-integer", false, false, BLAH},
 	{"string_length", 2, fn_string_length_2, "+string,?integer", false, false, BLAH},
+	{"crypto_n_random_bytes", 2, fn_crypto_n_random_bytes_2, "+integer,-codes", false, false, BLAH},
 
 	{"must_be", 4, fn_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"can_be", 4, fn_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
@@ -8385,6 +8399,7 @@ builtins g_other_bifs[] =
 	{"sre_substp", 4, fn_sre_substp_4, "+string,+string,-string,-string,", false, false, BLAH},
 	{"sre_subst", 4, fn_sre_subst_4, "+string,+string,-string,-string,", false, false, BLAH},
 
+	{"$quantum_eraser", 1, fn_sys_quantum_eraser_1, "+string", false, false, BLAH},
 	{"$countall", 2, fn_sys_countall_2, "@callable,-integer", false, false, BLAH},
 	{"$register_cleanup", 1, fn_sys_register_cleanup_1, NULL, false, false, BLAH},
 	{"$get_level", 1, fn_sys_get_level_1, "?integer", false, false, BLAH},
@@ -8411,7 +8426,6 @@ builtins g_other_bifs[] =
 	{"$attributed_var", 1, fn_sys_attributed_var_1, "@variable", false, false, BLAH},
 	{"$dump_keys", 1, fn_sys_dump_keys_1, NULL, false, false, BLAH},
 	{"$skip_max_list", 4, fn_sys_skip_max_list_4, "?integer,?integer?,?term,?term", false, false, BLAH},
-	{"crypto_n_random_bytes", 2, fn_crypto_n_random_bytes_2, "+integer,-codes", false, false, BLAH},
 
 #if USE_OPENSSL
 	{"crypto_data_hash", 3, fn_crypto_data_hash_3, "?string,?string,?list", false, false, BLAH},
