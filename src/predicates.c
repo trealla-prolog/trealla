@@ -5447,7 +5447,7 @@ static bool fn_task_n(query *q)
 
 	q->st.hp = save_hp;
 	cell *tmp = prepare_call(q, false, tmp2, q->st.curr_frame, 0);
-	query *task = query_create_subquery(q, tmp);
+	query *task = query_create_task(q, tmp);
 	task->yielded = task->spawned = true;
 	push_task(q, task);
 	return true;
@@ -5456,7 +5456,7 @@ static bool fn_task_n(query *q)
 static bool fn_fork_0(query *q)
 {
 	cell *curr_cell = q->st.curr_cell + q->st.curr_cell->nbr_cells;
-	query *task = query_create_subquery(q, curr_cell);
+	query *task = query_create_task(q, curr_cell);
 	task->yielded = true;
 	push_task(q, task);
 	return false;

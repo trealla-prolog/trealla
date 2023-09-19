@@ -1882,25 +1882,24 @@ query *query_create(module *m, bool is_task)
 	return q;
 }
 
-query *query_create_subquery(query *q, cell *curr_cell)
+query *query_create_task(query *q, cell *curr_cell)
 {
-	query *subq = query_create(q->st.m, true);
-	if (!subq) return NULL;
-	subq->parent = q;
-	subq->st.fp = 1;
-	subq->is_task = true;
-	subq->p = q->p;
+	query *task = query_create(q->st.m, true);
+	if (!task) return NULL;
+	task->is_task = true;
+	task->parent = q;
+	task->st.fp = 1;
+	task->p = q->p;
 
-	cell *tmp = prepare_call(subq, false, curr_cell, q->st.curr_frame, 1);
+	cell *tmp = prepare_call(task, false, curr_cell, q->st.curr_frame, 1);
 	pl_idx nbr_cells = tmp->nbr_cells;
 	make_end(tmp+nbr_cells);
-	subq->st.curr_cell = tmp;
+	task->st.curr_cell = tmp;
 
 	frame *fsrc = GET_FRAME(q->st.curr_frame);
-	frame *fdst = subq->frames;
+	frame *fdst = task->frames;
 	fdst->initial_slots = fdst->actual_slots = fsrc->actual_slots;
 	fdst->ugen = ++q->pl->ugen;
-
-	subq->st.sp = fdst->actual_slots;
-	return subq;
+	task->st.sp = fdst->actual_slots;
+	return task;
 }
