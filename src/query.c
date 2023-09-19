@@ -1866,7 +1866,6 @@ query *query_create(module *m, bool is_task)
 	q->choices_size = is_task ? INITIAL_NBR_CHOICES/10 : INITIAL_NBR_CHOICES;
 	q->trails_size = is_task ? INITIAL_NBR_TRAILS/10 : INITIAL_NBR_TRAILS;
 
-	bool error = false;
 	ensure(q->frames = calloc(q->frames_size, sizeof(frame)), NULL);
 	ensure(q->slots = calloc(q->slots_size, sizeof(slot)), NULL);
 	ensure(q->choices = calloc(q->choices_size, sizeof(choice)), NULL);
@@ -1879,11 +1878,6 @@ query *query_create(module *m, bool is_task)
 
 	for (int i = 0; i < MAX_QUEUES; i++)
 		q->q_size[i] = is_task ? INITIAL_NBR_QUEUE_CELLS/4 : INITIAL_NBR_QUEUE_CELLS;
-
-	if (error) {
-		query_destroy (q);
-		q = NULL;
-	}
 
 	return q;
 }
