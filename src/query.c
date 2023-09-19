@@ -1712,10 +1712,12 @@ bool execute(query *q, cell *cells, unsigned nbr_vars)
 
 	// There is an initially frame (hence fp=0 is valid), so
 	// this points to the next available frame...
+
 	q->st.fp = 1;
 
-	// There may not be a choice-point, so this points to the
-	// next available choice-point
+	// There may not be a choicepoint, so this points to the
+	// next available choicepoint
+
 	q->cp = 0;
 
 	frame *f = q->frames + q->st.curr_frame;

@@ -632,145 +632,54 @@ pretty(PI) :-
 :- help(pretty(+predicateindicator), [iso(false)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% SWI compatible
-%
-% Global variables. using the namespace 'user' to make sure they
-% are truly global and not just in the current module. This a quick
-% hack using assert/retract...
-
-nb_setval(K, _) :-
-	must_be(K, atom, nb_setval/2, _),
-	user:retract('$bb_global_key'(K, _)),
-	fail.
-nb_setval(K, V) :-
-	must_be(K, atom, nb_setval/2, _),
-	user:asserta('$bb_global_key'(K, {V:nb})).
-
-:- help(nb_setval(+atom,+term), [iso(false)]).
-
-nb_getval(K, V) :-
-	must_be(K, atom, nb_getval/2, _),
-	user:catch('$bb_global_key'(K, {V:_}), _, throw(error(existence_error(var, K), nb_getval/2))),
-	!.
-
-:- help(nb_getval(+atom,?term), [iso(false)]).
-
-nb_delete(K) :-
-	must_be(K, atom, nb_delete/1, _),
-	user:retract('$bb_global_key'(K, _)),
-	!.
-nb_delete(_).
-
-:- help(nb_delete(+atom), [iso(false)]).
-
-nb_current(K, V) :-
-	can_be(K, atom, nb_current/2, _),
-	user:clause('$bb_global_key'(K, {V:_}), true).
-
-:- help(nb_current(+atom,+term), [iso(false)]).
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% SWI compatible
-%
-% Global variables. using the namespace 'user' to make sure they
-% are truly global and not just in the current module. This a quick
-% hack using assert/retract...
-% The following is not really correct.
-
-b_setval(K, _) :-
-	must_be(K, atom, b_setval/2, _),
-	\+ user:clause('$bb_global_key'(K, _), _),
-	user:asserta('$bb_global_key'(K, [])),
-	fail.
-b_setval(K, V) :-
-	must_be(K, atom, b_setval/2, _),
-	user:asserta('$bb_global_key'(K, {V:b})).
-b_setval(K, _) :-
-	user:retract('$bb_global_key'(K, _)),
-	!, fail.
-
-:- help(b_setval(+atom,+term), [iso(false)]).
-
-b_setval0(K, _) :-
-	must_be(K, atom, b_setval0/2, _),
-	\+ user:clause('$bb_global_key'(K, _), _), asserta('$bb_global_key'(K, {0:b})),
-	fail.
-b_setval0(K, V) :-
-	must_be(K, atom, b_setval0/2, _),
-	user:asserta('$bb_global_key'(K, {V:b})).
-b_setval0(K, _) :-
-	user:retract('$bb_global_key'(K, _)),
-	!, fail.
-
-:- help(b_setval0(+atom,+term), [iso(false)]).
-
-b_getval(K, V) :-
-	must_be(K, atom, b_getval/2, _),
-	user:catch('$bb_global_key'(K, {V:_}), _, throw(error(existence_error(var, K), b_getval/2))),
-	!.
-
-:- help(b_getval(+atom,?term), [iso(false)]).
-
-b_delete(K) :-
-	must_be(K, atom, b_delete/1, _),
-	user:retractall('$bb_global_key'(K, _)),
-	!.
-b_delete(_).
-
-:- help(b_delete(+atom), [iso(false)]).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% SICStus compatible
+% SICStus compatible - rewrite this not to use DB
 
 bb_put(K, _) :-
 	must_be(K, atom, bb_put/2, _),
-	user:retract('$bb_global_key'(K, _)),
+	user:retract('$bb_global_key'(K, _, _)),
 	fail.
 bb_put(K, V) :-
 	must_be(K, atom, bb_put/2, _),
-	user:asserta('$bb_global_key'(K, {V:nb})).
+	user:asserta('$bb_global_key'(K, V, nb)).
 
 :- help(bb_put(+atom,+term), [iso(false)]).
 
 bb_get(K, V) :-
 	must_be(K, atom, bb_get/2, _),
-	user:catch('$bb_global_key'(K, {V:_}), _, fail),
+	user:catch('$bb_global_key'(K, V, _), _, fail),
 	!.
 
 :- help(bb_get(+atom,?term), [iso(false)]).
 
 bb_delete(K, V) :-
 	must_be(K, atom, bb_delete/2, _),
-	user:catch(user:retract('$bb_global_key'(K, {V:_})), _, fail),
+	user:catch(user:retract('$bb_global_key'(K, V, _)), _, fail),
 	!.
 
 :- help(bb_delete(+atom,+term), [iso(false)]).
 
 bb_update(K, O, V) :-
 	must_be(K, atom, bb_update/3, _),
-	user:catch(user:retract('$bb_global_key'(K, {O:_})), _, true),
-	user:asserta('$bb_global_key'(K, {V:nb})),
+	user:catch(user:retract('$bb_global_key'(K, O, _)), _, true),
+	user:asserta('$bb_global_key'(K, V, nb)),
 	!.
 
 :- help(bb_update(+atom,+term,+term), [iso(false)]).
 
-% extensions
+% extensions, not: bb_b_put/2 creates an unfortunate choicepoint
 
 bb_b_put(K, V) :-
 	must_be(K, atom, bb_b_put/2, _),
-	user:asserta('$bb_global_key'(K, {V:b})).
+	user:asserta('$bb_global_key'(K, V, b)).
 bb_b_put(K, V) :-
-	user:retract('$bb_global_key'(K, {V:b})),
+	user:retract('$bb_global_key'(K, V, b)),
 	!, fail.
 
 :- help(bb_b_put(+atom,+term), [iso(false)]).
 
 bb_del(K) :-
 	must_be(K, atom, bb_del/1, _),
-	user:retractall('$bb_global_key'(K, _)),
+	user:retractall('$bb_global_key'(K, _, _)),
 	!.
 bb_del(_).
 
