@@ -665,7 +665,7 @@ bb_update(K, O, V) :-
 
 :- help(bb_update(+atomic,+term,+term), [iso(false)]).
 
-% extensions, note: bb_b_put/2 creates an unfortunate choicepoint
+% extension: note: bb_b_put/2 creates an unfortunate choicepoint
 
 bb_b_put(K, V) :-
 	must_be(K, atomic, bb_b_put/2, _),
@@ -675,14 +675,6 @@ bb_b_put(K, V) :-
 	!, fail.
 
 :- help(bb_b_put(+atomic,+term), [iso(false)]).
-
-bb_del(K) :-
-	must_be(K, atomic, bb_del/1, _),
-	retractall('$bb_global_key'(K, _, _)),
-	!.
-bb_del(_).
-
-:- help(bb_del(+atomic), [iso(false)]).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
