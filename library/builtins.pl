@@ -632,58 +632,57 @@ pretty(PI) :-
 :- help(pretty(+predicateindicator), [iso(false)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% SICStus compatible - rewrite this not to use DB
+% SICStus compatible
 
 bb_put(K, _) :-
-	must_be(K, atom, bb_put/2, _),
-	user:retract('$bb_global_key'(K, _, _)),
+	must_be(K, atomic, bb_put/2, _),
+	retract('$bb_global_key'(K, _, _)),
 	fail.
 bb_put(K, V) :-
-	must_be(K, atom, bb_put/2, _),
-	user:asserta('$bb_global_key'(K, V, nb)).
+	asserta('$bb_global_key'(K, V, nb)).
 
-:- help(bb_put(+atom,+term), [iso(false)]).
+:- help(bb_put(+atomic,+term), [iso(false)]).
 
 bb_get(K, V) :-
-	must_be(K, atom, bb_get/2, _),
-	catch(user:'$bb_global_key'(K, V, _), _, fail),
+	must_be(K, atomic, bb_get/2, _),
+	catch('$bb_global_key'(K, V, _), _, fail),
 	!.
 
-:- help(bb_get(+atom,?term), [iso(false)]).
+:- help(bb_get(+atomic,?term), [iso(false)]).
 
 bb_delete(K, V) :-
-	must_be(K, atom, bb_delete/2, _),
-	catch(user:retract('$bb_global_key'(K, V, _)), _, fail),
+	must_be(K, atomic, bb_delete/2, _),
+	catch(retract('$bb_global_key'(K, V, _)), _, fail),
 	!.
 
-:- help(bb_delete(+atom,+term), [iso(false)]).
+:- help(bb_delete(+atomic,+term), [iso(false)]).
 
 bb_update(K, O, V) :-
-	must_be(K, atom, bb_update/3, _),
-	catch(user:retract('$bb_global_key'(K, O, _)), _, true),
-	user:asserta('$bb_global_key'(K, V, nb)),
+	must_be(K, atomic, bb_update/3, _),
+	catch(retract('$bb_global_key'(K, O, _)), _, true),
+	asserta('$bb_global_key'(K, V, nb)),
 	!.
 
-:- help(bb_update(+atom,+term,+term), [iso(false)]).
+:- help(bb_update(+atomic,+term,+term), [iso(false)]).
 
 % extensions, note: bb_b_put/2 creates an unfortunate choicepoint
 
 bb_b_put(K, V) :-
-	must_be(K, atom, bb_b_put/2, _),
-	user:asserta('$bb_global_key'(K, V, b)).
+	must_be(K, atomic, bb_b_put/2, _),
+	asserta('$bb_global_key'(K, V, b)).
 bb_b_put(K, V) :-
-	user:retract('$bb_global_key'(K, V, b)),
+	retract('$bb_global_key'(K, V, b)),
 	!, fail.
 
-:- help(bb_b_put(+atom,+term), [iso(false)]).
+:- help(bb_b_put(+atomic,+term), [iso(false)]).
 
 bb_del(K) :-
-	must_be(K, atom, bb_del/1, _),
-	user:retractall('$bb_global_key'(K, _, _)),
+	must_be(K, atomic, bb_del/1, _),
+	retractall('$bb_global_key'(K, _, _)),
 	!.
 bb_del(_).
 
-:- help(bb_del(+atom), [iso(false)]).
+:- help(bb_del(+atomic), [iso(false)]).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
