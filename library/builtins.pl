@@ -646,21 +646,21 @@ bb_put(K, V) :-
 
 bb_get(K, V) :-
 	must_be(K, atom, bb_get/2, _),
-	user:catch('$bb_global_key'(K, V, _), _, fail),
+	catch(user:'$bb_global_key'(K, V, _), _, fail),
 	!.
 
 :- help(bb_get(+atom,?term), [iso(false)]).
 
 bb_delete(K, V) :-
 	must_be(K, atom, bb_delete/2, _),
-	user:catch(user:retract('$bb_global_key'(K, V, _)), _, fail),
+	catch(user:retract('$bb_global_key'(K, V, _)), _, fail),
 	!.
 
 :- help(bb_delete(+atom,+term), [iso(false)]).
 
 bb_update(K, O, V) :-
 	must_be(K, atom, bb_update/3, _),
-	user:catch(user:retract('$bb_global_key'(K, O, _)), _, true),
+	catch(user:retract('$bb_global_key'(K, O, _)), _, true),
 	user:asserta('$bb_global_key'(K, V, nb)),
 	!.
 
