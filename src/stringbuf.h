@@ -5,7 +5,7 @@
 
 // A string buffer
 
-#define SB_LEN 256
+#define SB_LEN 1024
 
 typedef struct {
 	char tmpbuf[SB_LEN];
