@@ -634,11 +634,9 @@ pretty(PI) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SICStus compatible
 
-bb_put(K, _) :-
-	must_be(K, atomic, bb_put/2, _),
-	retract('$bb_global_key'(K, _, _)),
-	fail.
 bb_put(K, V) :-
+	must_be(K, atomic, bb_put/2, _),
+	ignore(retract('$bb_global_key'(K, _, _))),
 	asserta('$bb_global_key'(K, V, nb)).
 
 :- help(bb_put(+atomic,+term), [iso(false)]).
@@ -652,14 +650,14 @@ bb_get(K, V) :-
 
 bb_delete(K, V) :-
 	must_be(K, atomic, bb_delete/2, _),
-	catch(retract('$bb_global_key'(K, V, _)), _, fail),
+	retract('$bb_global_key'(K, V, _)),
 	!.
 
 :- help(bb_delete(+atomic,+term), [iso(false)]).
 
 bb_update(K, O, V) :-
 	must_be(K, atomic, bb_update/3, _),
-	catch(retract('$bb_global_key'(K, O, _)), _, true),
+	ignore(retract('$bb_global_key'(K, O, _))),
 	asserta('$bb_global_key'(K, V, nb)),
 	!.
 

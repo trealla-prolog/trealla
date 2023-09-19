@@ -343,7 +343,7 @@ bool has_next_key(query *q)
 
 		//DUMP_TERM("next", dkey, q->st.curr_frame, 0);
 
-		if (index_cmpkey(qarg1, FIRST_ARG(dkey), q->st.m, NULL))
+		if (index_cmpkey(qarg1, FIRST_ARG(dkey), q->st.m, NULL) != 0)
 			continue;
 
 		if (index_cmpkey(q->st.key, dkey, q->st.m, NULL) == 0)
