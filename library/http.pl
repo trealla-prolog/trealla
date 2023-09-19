@@ -33,7 +33,7 @@ read_chunks(S, Tmp, Data) :-
 read_chunks(_, Data, Data).
 
 read_body(S, Hdrs, Data) :-
-	d_get(Hdrs, "content-length", V, _),
+	d_get(Hdrs, "content-length", V),
 	number_chars(Len, V),
 	bread(S, Len, Data).
 
@@ -55,8 +55,7 @@ http_open(UrlList, S, Opts) :-
 	format(S, '~s /~s HTTP/~d.~d\r~nHost: ~s\r~nConnection: keep-alive\r~n\r~n', [UMethod,Path,Major,Minor,Host]),
 	read_response(S, Code),
 	findall(Hdr, read_header(S, Hdr), Hdrs),
-	append(Host, Path, Url),
-	d_get(Hdrs, "location", Location, Url),
+	d_get(Hdrs, "location", Location),
 	ignore(memberchk(status_code(Code), OptList)),
 	ignore(memberchk(headers(Hdrs), OptList)),
 	ignore(memberchk(final_url(Location), OptList)).
