@@ -1837,27 +1837,38 @@ void query_destroy(query *q)
 	free(q);
 }
 
-query *query_create(module *m, bool is_task)
+void query_reset(query *q)
 {
-	static atomic_t uint64_t g_query_id = 0;
-
-	query *q = calloc(1, sizeof(query));
-	ensure(q);
 	q->flags.occurs_check = false;
-	q->qid = g_query_id++;
-	q->pl = m->pl;
-	q->st.prev_m = q->st.m = m;
-	q->trace = m->pl->trace;
-	q->flags = m->flags;
 	q->get_started = get_time_in_usec();
 	q->time_cpu_last_started = q->time_cpu_started = cpu_time_in_usec();
 	q->ops_dirty = true;
 	q->double_quotes = false;
 	q->st.prob = 1.0;
 	q->max_depth = 0;
+	q->halt = false;
+	q->error = false;
+	q->st.hp = 0;
+	q->st.tp = 0;
+	q->st.sp = 0;
 	mp_int_init(&q->tmp_ival);
 	mp_rat_init(&q->tmp_irat);
 	clr_accum(&q->accum);
+}
+
+query *query_create(module *m, bool is_task)
+{
+	static atomic_t uint64_t g_query_id = 0;
+
+	query *q = calloc(1, sizeof(query));
+	ensure(q);
+	q->qid = g_query_id++;
+	q->pl = m->pl;
+	q->st.prev_m = q->st.m = m;
+	q->trace = m->pl->trace;
+	q->flags = m->flags;
+
+	query_reset(q);
 
 	// Allocate these now...
 
