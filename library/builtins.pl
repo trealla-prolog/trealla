@@ -776,7 +776,7 @@ get_atts(Var, Attr) :- !,
 
 term_attvars_([], VsIn, VsIn) :- !.
 term_attvars_([H|T], VsIn, VsOut) :-
-	(	attvar(H)
+	(	'$attributed_var'(H)
 	->	term_attvars_(T, [H|VsIn], VsOut)
 	;	term_attvars_(T, VsIn, VsOut)
 	).
