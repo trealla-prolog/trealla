@@ -771,14 +771,6 @@ get_atts(Var, Attr) :- !,
 
 :- help(get_atts(@var,?term), [iso(false)]).
 
-% Ancilliary...
-
-attvar(Var) :-
-	var(Var),
-	'$get_attributes'(Var, _).
-
-:- help(attvar(@var), [iso(false)]).
-
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
