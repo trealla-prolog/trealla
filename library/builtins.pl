@@ -773,12 +773,6 @@ get_atts(Var, Attr) :- !,
 
 % Ancilliary...
 
-del_atts(Var) :-
-	var(Var),
-	'$erase_attributes'(Var).
-
-:- help(del_atts(@var), [iso(false)]).
-
 attvar(Var) :-
 	var(Var),
 	'$get_attributes'(Var, _).

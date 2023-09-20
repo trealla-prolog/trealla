@@ -6931,19 +6931,6 @@ static bool fn_sys_list_attributed_1(query *q)
 	return unify(q, p1, p1_ctx, l, 0);
 }
 
-static bool fn_sys_erase_attributes_1(query *q)
-{
-	GET_FIRST_ARG(p1,var);
-	const frame *f = GET_FRAME(p1_ctx);
-	slot *e = GET_SLOT(f, p1->var_nbr);
-	add_trail(q, p1_ctx, p1->var_nbr, e->c.attrs, e->c.attrs_ctx);
-	//DUMP_TERM("$erase_attr", p1, p1_ctx ,true);
-	e->c.flags = 0;
-	e->c.attrs = NULL;
-	e->c.attrs_ctx = 0;
-	return true;
-}
-
 static bool fn_sys_put_attributes_2(query *q)
 {
 	GET_FIRST_ARG(p1,var);
@@ -8420,7 +8407,6 @@ builtins g_other_bifs[] =
 	{"$alarm", 1, fn_sys_alarm_1, "+integer", false, false, BLAH},
 	{"$put_attributes", 2, fn_sys_put_attributes_2, "@variable,+list", false, false, BLAH},
 	{"$get_attributes", 2, fn_sys_get_attributes_2, "@variable,-list", false, false, BLAH},
-	{"$erase_attributes", 1, fn_sys_erase_attributes_1, "@variable", false, false, BLAH},
 	{"$list_attributed", 1, fn_sys_list_attributed_1, "-list", false, false, BLAH},
 	{"$unattributed_var", 1, fn_sys_unattributed_var_1, "@variable", false, false, BLAH},
 	{"$attributed_var", 1, fn_sys_attributed_var_1, "@variable", false, false, BLAH},
