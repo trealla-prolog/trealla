@@ -33,16 +33,6 @@ int slicecmp(const char *s1, size_t len1, const char *s2, size_t len2)
 	return len1 < len2 ? -1 : len1 > len2 ? 1 : 0;
 }
 
-static const char *get_filename(const char *path)
-{
-	const char *ptr = strrchr(path, PATH_SEP_CHAR);
-
-	if (!ptr)
-		return path;
-
-	return ptr+1;
-}
-
 cell *list_head(cell *l, cell *tmp)
 {
 	if (!is_string(l))
@@ -1676,7 +1666,6 @@ static bool term_expansion(parser *p)
 		return false;
 
 	cell *h = get_head(p->cl->cells);
-	const char *pred = C_STR(p, h);
 
 	if (h->val_off == g_term_expansion_s)
 		return false;
@@ -1918,7 +1907,6 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			|| (c->val_off == g_if_then_s)
 			|| (c->val_off == g_soft_cut_s)
 			|| (c->val_off == g_neck_s)) {
-			cell *save_c = c;
 			cell *lhs = c + 1;
 			bool norhs = false;
 
@@ -1949,7 +1937,6 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 		}
 	} else if (is_prefix(c)) {
 		if ((c->val_off == g_neck_s) || (c->val_off == g_negation_s)) {
-			cell *save_c = c;
 			cell *rhs = c + 1;
 
 			if (is_var(rhs)) {

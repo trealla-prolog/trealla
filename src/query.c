@@ -355,7 +355,6 @@ bool has_next_key(query *q)
 
 const char *dump_id(const void *k, const void *v, const void *p)
 {
-	const query *q = (query*)p;
 	uint64_t id = (uint64_t)(size_t)k;
 	static char tmpbuf[1024];
 	sprintf(tmpbuf, "%"PRIu64"", id);
@@ -800,7 +799,6 @@ static void reuse_frame(query *q, const clause *cl)
 		*to++ = *from++;
 	}
 
-	const choice *ch = GET_CURR_CHOICE();
 	q->st.sp = f->base + f->initial_slots;
 	q->st.hp = f->hp;
 	q->tot_tcos++;

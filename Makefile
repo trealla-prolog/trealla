@@ -1,19 +1,21 @@
 GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
 
 CFLAGS = -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' \
-	-std=gnu99 -O3 $(OPT) -D_GNU_SOURCE \
-	-Wall -Wextra \
-	-Wno-deprecated-declarations \
-	-Wno-unused-function \
+	-O3 $(OPT) -D_GNU_SOURCE \
 	-Wno-unused-parameter \
-	-Wno-unused-but-set-variable \
-	-Wno-unused-variable
-
+	-Wall -Wextra
 LDFLAGS = -L/usr/local/lib -lm
 
 ifdef HOMEBREW_PREFIX
 LDFLAGS += -L$(HOMEBREW_PREFIX)/opt/libffi/lib -L$(HOMEBREW_PREFIX)/opt/openssl@3/lib
 CFLAGS += -I$(HOMEBREW_PREFIX)/opt/libffi/include -I$(HOMEBREW_PREFIX)/opt/openssl@3/include
+endif
+
+ifndef NOPEDANTIC
+CFLAGS += -Wno-unused-but-set-variable \
+	-Wno-deprecated-declarations \
+	-Wno-unused-function \
+	-Wno-unused-variable
 endif
 
 ifdef WASI

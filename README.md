@@ -154,6 +154,12 @@ To build with the included ISOCLINE sources (default is to use GNU Readline):
 
 	make ISOCLINE=1
 
+Older compilers may require:
+
+	make NOPEDANTIC=1
+
+to avoid issues with newer flags.
+
 Then...
 
 	make test

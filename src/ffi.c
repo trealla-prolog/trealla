@@ -312,9 +312,8 @@ USE_RESULT bool fn_sys_register_function_4(query *q)
 
 bool do_register_struct(module *m, query *q, void *handle, const char *symbol, cell *l, pl_idx l_ctx, const char *ret)
 {
-	uint8_t arg_types[MAX_FFI_ARGS], ret_type = 0;
+	uint8_t arg_types[MAX_FFI_ARGS];
 	const char *arg_names[MAX_FFI_ARGS];
-	bool arg_vars[MAX_FFI_ARGS];
 	LIST_HANDLER(l);
 	int idx = 0;
 
@@ -437,7 +436,6 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 	if (!func) return false;
 
 	uint8_t arg_types[MAX_FFI_ARGS], ret_type = 0;
-	bool arg_vars[MAX_FFI_ARGS];
 	LIST_HANDLER(l);
 	int idx = 0;
 
@@ -647,7 +645,6 @@ bool wrap_ffi_function(query *q, builtins *ptr)
 
 	ffi_cif cif;
 	ffi_type *arg_types[MAX_FFI_ARGS];
-	ffi_status status;
 	void *arg_values[MAX_FFI_ARGS];
 	void *s_args[MAX_FFI_ARGS];
 	result cells[MAX_FFI_ARGS];
@@ -712,8 +709,6 @@ bool wrap_ffi_function(query *q, builtins *ptr)
 			ptr->types[i] == TAG_VAR ? "var" :
 			"invalid"
 			);
-
-		const char *src = C_STR(q, c);
 
 		if (ptr->types[i] == TAG_UINT8)
 			arg_types[i] = &ffi_type_uint8;
@@ -1305,6 +1300,7 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 				cell *h = LIST_HEAD(l);
 				h = deref(q, h, l_ctx);
 				name = C_STR(q, h);
+				l = LIST_TAIL(l);
 				break;
 			}
 

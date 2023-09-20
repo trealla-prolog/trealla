@@ -11,19 +11,6 @@
 #include "prolog.h"
 #include "query.h"
 
-#ifdef _WIN32
-#include <windows.h>
-#define msleep Sleep
-#else
-static void msleep(int ms)
-{
-	struct timespec tv;
-	tv.tv_sec = (ms) / 1000;
-	tv.tv_nsec = ((ms) % 1000) * 1000 * 1000;
-	nanosleep(&tv, &tv);
-}
-#endif
-
 static void show_goals(query *q, int nbr)
 {
 	frame *f = GET_CURR_FRAME();

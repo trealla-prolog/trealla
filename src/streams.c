@@ -1042,7 +1042,6 @@ static bool fn_process_create_3(query *q)
 	}
 
 	convert_path(filename);
-	bool binary = false;
     int args = 0, envs = 0;
     char *arguments[MAX_ARGS] = {NULL};
     char *environments[MAX_ARGS] = {NULL};
@@ -1094,7 +1093,6 @@ static bool fn_process_create_3(query *q)
 #if defined(__GLIBC__) && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 26))
 				return throw_error(q, c, c_ctx, "not available", "posix_spawnattr_setflags");
 #else
-				bool detached = !CMP_STR_TO_CSTR(q, FIRST_ARG(c), "true");
 				posix_spawnattr_setflags(&attrp, POSIX_SPAWN_SETSID);
 #endif
 			} else if (!CMP_STR_TO_CSTR(q, c, "cwd")) {
@@ -1112,7 +1110,6 @@ static bool fn_process_create_3(query *q)
 				while (is_iso_list(name)) {
 					cell *h = LIST_HEAD(name);
 					cell *c = deref(q, h, name_ctx);
-					pl_idx c_ctx = q->latest_ctx;
 
 					if (is_structure(c) && (c->arity == 2) && (c->val_off == g_eq_s)) {
 						cell *p1 = c + 1, *p2 = c + 2;
@@ -1138,7 +1135,6 @@ static bool fn_process_create_3(query *q)
 				while (is_iso_list(name)) {
 					cell *h = LIST_HEAD(name);
 					cell *c = deref(q, h, name_ctx);
-					pl_idx c_ctx = q->latest_ctx;
 
 					if (is_structure(c) && (c->arity == 2) && (c->val_off == g_eq_s)) {
 						cell *p1 = c + 1, *p2 = c + 2;
@@ -1274,8 +1270,6 @@ static bool fn_process_wait_2(query *q)
 	while (is_iso_list(p2)) {
 		cell *h = LIST_HEAD(p2);
 		cell *c = deref(q, h, p2_ctx);
-		pl_idx c_ctx = q->latest_ctx;
-		cell *name = c + 1;
 
 		if (is_structure(c) && (c->arity == 1) && !CMP_STR_TO_CSTR(q, c, "timeout")) {
 			if (is_integer(FIRST_ARG(c)))
@@ -3993,19 +3987,6 @@ static bool fn_iso_set_output_1(query *q)
 	return true;
 }
 
-static bool fn_iso_set_error_1(query *q)
-{
-	GET_FIRST_ARG(pstr,stream);
-	int n = get_stream(q, pstr);
-	stream *str = &q->pl->streams[n];
-
-	if (!strcmp(str->mode, "read"))
-		return throw_error(q, pstr, q->st.curr_frame, "permission_error", "output,stream");
-
-	q->pl->current_error = n;
-	return true;
-}
-
 static bool fn_iso_set_stream_position_2(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
@@ -4254,36 +4235,6 @@ static bool fn_write_term_to_atom_3(query *q)
 	q->variable_names = vnames;
 	q->variable_names_ctx = vnames_ctx;
 	char *dst = print_term_to_strbuf(q, p_term, p_term_ctx, 1);
-	clear_write_options(q);
-	cell tmp;
-	check_heap_error(make_cstring(&tmp, dst), free(dst));
-	free(dst);
-	bool ok = unify(q, p_chars, p_chars_ctx, &tmp, q->st.curr_frame);
-	unshare_cell(&tmp);
-	return ok;
-}
-
-static bool fn_write_canonical_to_atom_3(query *q)
-{
-	GET_FIRST_ARG(p_chars,atom_or_var);
-	GET_NEXT_ARG(p_term,any);
-	GET_NEXT_ARG(p2,list_or_nil);
-	cell *vnames = NULL;
-	pl_idx vnames_ctx = 0;
-	q->flags = q->st.m->flags;
-	LIST_HANDLER(p2);
-
-	while (is_list(p2)) {
-		cell *h = LIST_HEAD(p2);
-		h = deref(q, h, p2_ctx);
-		pl_idx h_ctx = q->latest_ctx;
-		parse_write_params(q, h, h_ctx, &vnames, &vnames_ctx);
-		p2 = LIST_TAIL(p2);
-		p2 = deref(q, p2, p2_ctx);
-		p2_ctx = q->latest_ctx;
-	}
-
-	char *dst = print_canonical_to_strbuf(q, p_term, p_term_ctx, 1);
 	clear_write_options(q);
 	cell tmp;
 	check_heap_error(make_cstring(&tmp, dst), free(dst));
@@ -5272,7 +5223,6 @@ static bool fn_absolute_file_name_3(query *q)
 	char cwdbuf[1024*4];
 	char *here = strdup(getcwd(cwdbuf, sizeof(cwdbuf)));
 	check_heap_error(here);
-	char *ptr = here + strlen(here) - 1;
 	char *cwd = here;
 
 	if (is_iso_list(p1)) {
@@ -7043,10 +6993,8 @@ static bool fn_map_list_2(query *q)
 
 	GET_NEXT_ARG(p1,list_or_var);
 	sliter *iter = sl_first(str->keyval);
-	union { pl_flt vd; int64_t vi; void *vp; } dummy;
 	bool first = true;
 	char *val = NULL;
-	char tmpbuf[128];
 
 	while (sl_next(iter, (void**)&val)) {
 		void *key = sl_key(iter);

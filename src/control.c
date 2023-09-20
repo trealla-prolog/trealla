@@ -48,7 +48,6 @@ bool fn_sys_cleanup_if_det_1(query *q)
 {
 	q->tot_goals--;
 	GET_FIRST_ARG(p1,integer);
-	const frame *f = GET_CURR_FRAME();
 	choice *ch = GET_CURR_CHOICE();
 
 	if ((q->cp-1) != get_smalluint(p1))
@@ -298,7 +297,6 @@ bool fn_iso_if_then_2(query *q)
 	q->tot_goals--;
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,callable);
-	const frame *f = GET_CURR_FRAME();
 	cell *tmp = prepare_call(q, true, p1, p1_ctx, 3+p2->nbr_cells+1);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
@@ -321,7 +319,6 @@ bool fn_if_2(query *q)
 	q->tot_goals--;
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,callable);
-	const frame *f = GET_CURR_FRAME();
 	cell *tmp = prepare_call(q, true, p1, p1_ctx, 2+p2->nbr_cells+1);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;

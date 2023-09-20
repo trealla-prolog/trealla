@@ -241,7 +241,6 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 	}
 
 	unsigned arity = p1->arity;
-	const frame *f = GET_FRAME(p1_ctx);
 	p1++;
 
 	while (arity--) {

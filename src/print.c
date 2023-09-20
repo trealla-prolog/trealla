@@ -350,18 +350,6 @@ static void reformat_float(query *q, char *tmpbuf, pl_flt v)
 	*dst = '\0';
 }
 
-static unsigned count_non_anons(const bool *mask, unsigned bit)
-{
-	unsigned bits = 0;
-
-	for (unsigned i = 0; i < bit; i++) {
-		if (mask[i])
-			bits++;
-	}
-
-	return bits;
-}
-
 static const char *varformat2(char *tmpbuf, size_t tmpbuf_len, cell *c, unsigned nv_start)
 {
 	mpz_t tmp;
@@ -417,7 +405,6 @@ static const char *get_slot_name(query *q, pl_idx slot_nbr)
 void print_variable(query *q, const cell *c, pl_idx c_ctx, bool running)
 {
 	const frame *f = GET_FRAME(running ? c_ctx : 0);
-	const slot *e = GET_SLOT(f, c->var_nbr);
 	pl_idx slot_nbr = running ? (unsigned)(f->base + c->var_nbr) : (unsigned)c->var_nbr;
 
 	if (q->varnames && !is_anon(c) && running) {
@@ -441,7 +428,7 @@ void print_variable(query *q, const cell *c, pl_idx c_ctx, bool running)
 
 static void print_string_canonical(query *q, cell *c, pl_idx c_ctx, int running, bool cons, unsigned depth)
 {
-	unsigned print_list = 0, cnt = 1;
+	unsigned cnt = 1;
 	LIST_HANDLER(c);
 
 	SB_sprintf(q->sb, "%s", "'.'(");
@@ -450,7 +437,6 @@ static void print_string_canonical(query *q, cell *c, pl_idx c_ctx, int running,
 		cell *h = LIST_HEAD(c);
 
 		const char *src = C_STR(q, h);
-		int ch = peek_char_utf8(src);
 
 		if (needs_quoting(q->st.m, src, strlen(src))) {
 			SB_sprintf(q->sb, "%s", "'");
@@ -484,7 +470,6 @@ static void print_string_list(query *q, cell *c, pl_idx c_ctx, int running, bool
 		cell *h = LIST_HEAD(c);
 
 		const char *src = C_STR(q, h);
-		int ch = peek_char_utf8(src);
 
 		if (needs_quoting(q->st.m, src, strlen(src)) && q->quoted) {
 			SB_sprintf(q->sb, "%s", "'");
@@ -567,7 +552,6 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		cell *tail = LIST_TAIL(c);
 		pl_idx tail_ctx = c_ctx;
 		cell *save_tail = tail;
-		pl_idx save_tail_ctx = c_ctx;
 
 		if (running) DEREF_SLOT(both, e->vgen2, e, e->vgen, tail, tail_ctx, q->print_vgen);
 
@@ -708,7 +692,6 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	}
 
 	if ((c->tag == TAG_INTEGER) && (c->flags & FLAG_INT_STREAM)) {
-		int n = get_stream(q, c);
 		SB_sprintf(q->sb, "'<$stream>'(%d)", (int)get_smallint(c));
 		q->last_thing = WAS_OTHER;
 		return true;

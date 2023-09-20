@@ -59,7 +59,6 @@ bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx 
 				if ((len = getline(&q->p->save_line, &q->p->n_line, q->p->fp)) == -1)
 					return true;
 
-				char *line = q->p->save_line;
 				src = q->p->save_line;
 				continue;
 			}

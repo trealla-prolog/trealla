@@ -990,7 +990,6 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 		const frame *fv = GET_FRAME(v_ctx);
 		slot *ev = GET_SLOT(fv, v->var_nbr);
 		const cell *v_attrs = is_empty(&ev->c) ? ev->c.attrs : NULL;
-		pl_idx v_attrs_ctx = v_attrs ? ev->c.attrs_ctx : 0;
 
 		if (!v_attrs) {
 			if (v_ctx < q->st.fp)

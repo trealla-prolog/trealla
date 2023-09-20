@@ -916,10 +916,8 @@ bool do_foreign_struct(module *m, cell *p)
 {
 	cell *p1 = p + 1;
 	cell *p2 = p1 + p1->nbr_cells;
-	LIST_HANDLER(p2);
 	const char *symbol = C_STR(m, p1);
 	cell *l = p2;
-	pl_idx l_ctx = 0;
 
 	void *handle = NULL;
 	do_register_struct(m, NULL, handle, symbol, l, 0, "invalid");
@@ -1299,7 +1297,6 @@ static bool check_multifile(module *m, predicate *pr, db_entry *dbe_orig)
 
 static void optimize_rule(module *m, db_entry *dbe_orig)
 {
-	predicate *pr = dbe_orig->owner;
 	clause *cl = &dbe_orig->cl;
 	cell *head = get_head(cl->cells);
 	bool matched = false;
@@ -1449,7 +1446,6 @@ static void assert_commit(module *m, db_entry *dbe, predicate *pr, bool append)
 	pr->db_id++;
 	pr->cnt++;
 
-	clause *cl = &dbe->cl;
 	uuid_gen(m->pl, &dbe->u);
 
 	// Note: indexing here refers to the dynamic index...
