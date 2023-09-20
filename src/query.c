@@ -1718,8 +1718,8 @@ bool execute(query *q, cell *cells, unsigned nbr_vars)
 	q->cycle_error = false;
 	q->is_redo = false;
 
-	// There is an initially frame (hence fp=0 is valid), so
-	// this points to the next available frame...
+	// There is an initial frame (fp=0), so this
+	// to the next available frame...
 
 	q->st.fp = 1;
 
