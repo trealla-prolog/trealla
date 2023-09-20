@@ -1090,7 +1090,7 @@ static bool fn_process_create_3(query *q)
 				ppid = name;
 				ppid_ctx = name_ctx;
 			} else if (!CMP_STR_TO_CSTR(q, c, "detached")) {
-#if defined(__GLIBC__) && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 26))
+#if (defined(__GLIBC__) && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 26))) || !defined(POSIX_SPAWN_SETSID)
 				return throw_error(q, c, c_ctx, "not available", "posix_spawnattr_setflags");
 #else
 				posix_spawnattr_setflags(&attrp, POSIX_SPAWN_SETSID);
