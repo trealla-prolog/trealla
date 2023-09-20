@@ -962,6 +962,11 @@ static bool directives(parser *p, cell *d)
 				p->m->flags.character_escapes = true;
 			else if (!strcmp(C_STR(p, p2), "false") || !strcmp(C_STR(p, p2), "off"))
 				p->m->flags.character_escapes = false;
+		} else if (!strcmp(C_STR(p, p1), "occurs_check")) {
+			if (!strcmp(C_STR(p, p2), "true") || !strcmp(C_STR(p, p2), "on"))
+				p->m->flags.occurs_check = true;
+			else if (!strcmp(C_STR(p, p2), "false") || !strcmp(C_STR(p, p2), "off"))
+				p->m->flags.occurs_check = false;
 		} else {
 			//fprintf(stdout, "Warning: unknown flag: %s\n", C_STR(p, p1));
 		}
