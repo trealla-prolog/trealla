@@ -3,6 +3,9 @@ GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
 CFLAGS = -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' \
 	-O3 $(OPT) -D_GNU_SOURCE \
 	-Wno-unused-parameter \
+	-Wno-deprecated-declarations \
+	-Wno-unused-function \
+	-Wno-unused-variable \
 	-Wall -Wextra
 LDFLAGS = -L/usr/local/lib -lm
 
@@ -12,10 +15,7 @@ CFLAGS += -I$(HOMEBREW_PREFIX)/opt/libffi/include -I$(HOMEBREW_PREFIX)/opt/opens
 endif
 
 ifndef NOPEDANTIC
-CFLAGS += -Wno-unused-but-set-variable \
-	-Wno-deprecated-declarations \
-	-Wno-unused-function \
-	-Wno-unused-variable
+CFLAGS += -Wno-unused-but-set-variable
 endif
 
 ifdef WASI
