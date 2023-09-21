@@ -6904,7 +6904,7 @@ static bool fn_sys_list_attributed_1(query *q)
 		if (!is_empty(c))
 			continue;
 
-		if (!c->attrs || is_nil(c->attrs))
+		if (!c->attrs)
 			continue;
 
 		cell v;
@@ -6958,7 +6958,7 @@ static bool fn_sys_get_attributes_2(query *q)
 	const frame *f = GET_FRAME(p1_ctx);
 	const slot *e = GET_SLOT(f, p1->var_nbr);
 
-	if (!e->c.attrs || is_nil(e->c.attrs))
+	if (!e->c.attrs)
 		return false;
 
 	return unify(q, p2, p2_ctx, e->c.attrs, e->c.attrs_ctx);
@@ -6970,7 +6970,7 @@ static bool fn_sys_unattributed_var_1(query *q)
 	const frame *f = GET_FRAME(p1_ctx);
 	const slot *e = GET_SLOT(f, p1->var_nbr);
 
-	if (!e->c.attrs || is_nil(e->c.attrs))
+	if (!e->c.attrs)
 		return true;
 
 	return false;
@@ -6982,7 +6982,7 @@ static bool fn_sys_attributed_var_1(query *q)
 	const frame *f = GET_FRAME(p1_ctx);
 	const slot *e = GET_SLOT(f, p1->var_nbr);
 
-	if (!e->c.attrs || is_nil(e->c.attrs))
+	if (!e->c.attrs)
 		return false;
 
 	return true;
