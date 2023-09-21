@@ -6930,7 +6930,10 @@ static bool fn_sys_put_attributes_2(query *q)
 	GET_NEXT_ARG(p2,list_or_nil);
 	const frame *f = GET_FRAME(p1_ctx);
 	slot *e = GET_SLOT(f, p1->var_nbr);
-	add_trail(q, p1_ctx, p1->var_nbr, e->c.attrs, e->c.attrs_ctx);
+
+	if (e->c.attrs || !is_nil(p2))
+		add_trail(q, p1_ctx, p1->var_nbr, e->c.attrs, e->c.attrs_ctx);
+
 	//DUMP_TERM("$put_attr", p2, p2_ctx ,true);
 
 	if (is_nil(p2)) {
