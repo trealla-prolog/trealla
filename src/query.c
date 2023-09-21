@@ -265,7 +265,7 @@ bool check_slot(query *q, unsigned cnt)
 		q->hw_slots = q->st.sp;
 
 	if (nbr >= q->slots_size) {
-		pl_idx new_slotssize = alloc_grow((void**)&q->slots, sizeof(slot), nbr, q->slots_size*4/3, false);
+		pl_idx new_slotssize = alloc_grow((void**)&q->slots, sizeof(slot), nbr, nbr*4/3, false);
 
 		if (!new_slotssize) {
 			q->is_oom = q->error = true;

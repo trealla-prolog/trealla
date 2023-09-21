@@ -28,7 +28,7 @@ struct heap_save {
 	q->tmph_size = _s.size;								\
 	q->tmphp = _s.hp;
 
-static int accum_slot(const query *q, pl_idx slot_nbr, unsigned var_nbr)
+static int accum_slot(const query *q, size_t slot_nbr, unsigned var_nbr)
 {
 	const void *vnbr;
 
@@ -353,7 +353,7 @@ static bool copy_vars(query *q, cell *tmp, bool copy_attrs, const cell *from, pl
 
 		const frame *f = GET_FRAME(tmp->var_ctx);
 		const slot *e = GET_SLOT(f, tmp->var_nbr);
-		const pl_idx slot_nbr = f->base + tmp->var_nbr;
+		const size_t slot_nbr = f->base + tmp->var_nbr;
 		int var_nbr;
 
 		if ((var_nbr = accum_slot(q, slot_nbr, q->varno)) == -1)
