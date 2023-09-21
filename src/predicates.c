@@ -6969,11 +6969,7 @@ static bool fn_sys_unattributed_var_1(query *q)
 	GET_FIRST_ARG(p1,var);
 	const frame *f = GET_FRAME(p1_ctx);
 	const slot *e = GET_SLOT(f, p1->var_nbr);
-
-	if (!e->c.attrs)
-		return true;
-
-	return false;
+	return !e->c.attrs;
 }
 
 static bool fn_sys_attributed_var_1(query *q)
@@ -6981,11 +6977,7 @@ static bool fn_sys_attributed_var_1(query *q)
 	GET_FIRST_ARG(p1,var);
 	const frame *f = GET_FRAME(p1_ctx);
 	const slot *e = GET_SLOT(f, p1->var_nbr);
-
-	if (!e->c.attrs)
-		return false;
-
-	return true;
+	return e->c.attrs;
 }
 
 static bool fn_get_unbuffered_code_1(query *q)
