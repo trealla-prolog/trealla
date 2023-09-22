@@ -712,18 +712,16 @@ current_op(A, B, C) :-
 
 :- use_module(library(dict)).
 
-put_atts(_, []) :- !.
-put_atts(Var, [H|T]) :- !,
-	put_atts(Var, H),
-	put_atts(Var, T).
-
 put_atts(Var, -Attr) :- !,
 	var(Var),
-	('$get_attributes'(Var, D) -> true ; D = []),
-	functor(Attr, Functor, Arity),
-	attribute(Module, Functor, Arity),
-	d_del(D, Module-Functor, Attr, D2),
-	'$put_attributes'(Var, D2).
+	('$get_attributes'(Var, D) -> (
+		functor(Attr, Functor, Arity),
+		attribute(Module, Functor, Arity),
+		d_del(D, Module-Functor, Attr, D2),
+		'$put_attributes'(Var, D2)
+		)
+	; true
+	).
 
 put_atts(Var, +Attr) :- !,
 	var(Var),
@@ -750,7 +748,7 @@ get_atts(Var, L) :- var(L), !,
 
 get_atts(Var, -Attr) :- !,
 	var(Var),
-	('$get_attributes'(Var, D) -> true ; false),
+	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
 	\+ d_get(D, Module-Functor, _).
