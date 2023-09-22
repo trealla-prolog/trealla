@@ -1088,15 +1088,12 @@ unsigned create_vars(query *q, unsigned cnt)
 	if (!cnt)
 		return f->actual_slots;
 
-	if ((q->st.sp + cnt) > MAX_LOCAL_VARS) {
+	if ((f->actual_vars + cnt) > MAX_LOCAL_VARS) {
 		printf("*** Ooops %s %d\n", __FILE__, __LINE__);
 		return 0;
 	}
 
 	unsigned var_nbr = f->actual_slots;
-
-	if (!check_slot(q, cnt))
-		return 0;
 
 	if ((f->base + f->initial_slots) >= q->st.sp) {
 		f->initial_slots += cnt;
@@ -1107,9 +1104,16 @@ unsigned create_vars(query *q, unsigned cnt)
 		pl_idx save_overflow = f->overflow;
 		f->overflow = q->st.sp;
 		pl_idx cnt2 = f->actual_slots - f->initial_slots;
+
+		if (!check_slot(q, cnt2))
+			return 0;
+
 		memmove(q->slots+f->overflow, q->slots+save_overflow, sizeof(slot)*cnt2);
 		q->st.sp += cnt2;
 	}
+
+	if (!check_slot(q, cnt))
+		return 0;
 
 	q->st.sp += cnt;
 	slot *e = GET_SLOT(f, f->actual_slots);
