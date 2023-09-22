@@ -1,7 +1,7 @@
 GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
 
 CFLAGS = -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' \
-	-O3 $(OPT) -D_GNU_SOURCE \
+	-std=gnu99 -O3 $(OPT) -D_GNU_SOURCE \
 	-Wall -Wextra \
 	-Wno-unused-parameter \
 	-Wno-deprecated-declarations \

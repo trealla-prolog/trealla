@@ -1088,7 +1088,7 @@ unsigned create_vars(query *q, unsigned cnt)
 	if (!cnt)
 		return f->actual_slots;
 
-	if ((f->actual_vars + cnt) > MAX_LOCAL_VARS) {
+	if ((f->actual_slots + cnt) > MAX_LOCAL_VARS) {
 		printf("*** Ooops %s %d\n", __FILE__, __LINE__);
 		return 0;
 	}
