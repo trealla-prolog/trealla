@@ -981,46 +981,7 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 	if ((c_ctx < q->st.fp) || is_managed(v))
 		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
 
-	bool nohook = false;
-
-#if 0
-	// If we can get away without running the hook, then
-	// just copy the attributes now (less expensive)
-
-	if (c_attrs && is_var(v)) {
-		const frame *fv = GET_FRAME(v_ctx);
-		slot *ev = GET_SLOT(fv, v->var_nbr);
-		const cell *v_attrs = is_empty(&ev->c) ? ev->c.attrs : NULL;
-
-		if (!v_attrs) {
-			if (v_ctx < q->st.fp)
-				add_trail(q, v_ctx, v->var_nbr, NULL, 0);
-
-			ev->c.flags = FLAG_VAR_ATTR;
-			ev->c.attrs = c_attrs;
-			ev->c.attrs_ctx = c_attrs_ctx;
-			nohook = true;
-		}
-	} else if (!c_attrs && is_var(v)) {
-		const frame *fv = GET_FRAME(v_ctx);
-		slot *ev = GET_SLOT(fv, v->var_nbr);
-		cell *v_attrs = is_empty(&ev->c) ? ev->c.attrs : NULL;
-		pl_idx v_attrs_ctx = v_attrs ? ev->c.attrs_ctx : 0;
-
-		if (v_attrs) {
-			if (c_ctx < q->st.fp)
-				add_trail(q, c_ctx, c->var_nbr, NULL, 0);
-
-
-			e->c.flags = FLAG_VAR_ATTR;
-			e->c.attrs = v_attrs;
-			e->c.attrs_ctx = v_attrs_ctx;
-			nohook = true;
-		}
-	}
-#endif
-
-	if (c_attrs && !nohook)
+	if (c_attrs)
 		q->run_hook = true;
 
 	if (is_var(v)) {
