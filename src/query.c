@@ -1335,7 +1335,7 @@ static bool match_head(query *q)
 		if (!pr || is_evaluable(c) || is_builtin(c)) {
 			pr = search_predicate(q->st.m, c, NULL);
 
-			if (!pr) {
+			if (!pr || (pr->is_goal_expansion && !pr->head)) {
 				if (!is_end(c) && !(is_interned(c) && !strcmp(C_STR(q, c), "initialization"))) {
 					if (q->st.m->flags.unknown == UNK_ERROR)
 						return throw_error(q, c, q->st.curr_frame, "existence_error", "procedure");

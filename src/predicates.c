@@ -2688,8 +2688,15 @@ static bool fn_iso_current_predicate_1(query *q)
 	tmp.val_off = is_interned(p1) ? p1->val_off : new_atom(q->pl, C_STR(q, p1));
 	tmp.arity = get_smallint(p2);
 	bool is_prebuilt = false;
-	bool ok = search_predicate(q->st.m, &tmp, &is_prebuilt) != NULL;
-	return ok && !is_prebuilt;
+	predicate *pr = search_predicate(q->st.m, &tmp, &is_prebuilt);
+
+	if (is_prebuilt || !pr)
+		return false;
+
+	if (pr->is_goal_expansion && !pr->head)
+		return false;
+
+	return true;
 }
 
 static bool fn_cyclic_term_1(query *q)
