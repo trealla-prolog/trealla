@@ -983,6 +983,7 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 
 	bool nohook = false;
 
+#if 0
 	// If we can get away without running the hook, then
 	// just copy the attributes now (less expensive)
 
@@ -1017,6 +1018,7 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 			nohook = true;
 		}
 	}
+#endif
 
 	if (c_attrs && !nohook)
 		q->run_hook = true;
