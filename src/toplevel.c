@@ -466,9 +466,9 @@ void dump_vars(query *q, bool partial)
 		if (!init_tmp_heap(q))
 			return;
 
-		cell *tmp = deep_clone_to_tmp(q, c, c_ctx);
-		ensure(tmp)
-		print_term(q, stdout, tmp, 0, 1);
+		//cell *tmp = deep_clone_to_tmp(q, c, c_ctx);
+		//ensure(tmp)
+		print_term(q, stdout, c, c_ctx, 1);
 
 		if (parens) fputc(')', stdout);
 		if (q->last_thing == WAS_SYMBOL) space = true;

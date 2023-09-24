@@ -407,8 +407,8 @@ void print_variable(query *q, const cell *c, pl_idx c_ctx, bool running)
 	const frame *f = GET_FRAME(running ? c_ctx : 0);
 	pl_idx slot_nbr = running ? (unsigned)(f->base + c->var_nbr) : (unsigned)c->var_nbr;
 
-	if (q->varnames && !is_anon(c) && running) {
-		if (q->p->vartab.var_name[c->var_nbr]) {
+	if ((q->varnames || q->cycle_error) && !is_anon(c) && running) {
+		if (q->varnames && q->p->vartab.var_name[c->var_nbr]) {
 			SB_sprintf(q->sb, "%s", q->p->vartab.var_name[c->var_nbr]);
 		} else {
 			SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr));
@@ -524,6 +524,13 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		uint64_t save_vgen = 0;
 		int both = 0;
 		if (running) DEREF_SLOT(both, save_vgen, e, e->vgen, head, head_ctx, q->print_vgen)
+
+		if ((head == orig_c) && (head_ctx == orig_c_ctx)) {
+			head = LIST_HEAD(c);
+			head_ctx = c_ctx;
+			q->cycle_error = true;
+		}
+
 		bool special_op = false;
 
 		if (is_interned(head)) {
@@ -542,6 +549,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		q->parens = parens;
 		print_term_to_buf_(q, head, head_ctx, running, -1, 0, depth+1);
 		q->parens = false;
+		q->cycle_error = false;
 		if (e) e->vgen = save_vgen;
 		if (parens) { SB_sprintf(q->sb, "%s", ")"); }
 		bool possible_chars = false;
@@ -661,6 +669,9 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 
 static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int cons, unsigned print_depth, unsigned depth)
 {
+	cell *save_c = c;
+	pl_idx save_c_ctx = c_ctx;
+
 	if (depth > g_max_depth) {
 		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		q->cycle_error = true;
@@ -989,6 +1000,11 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 				uint64_t save_vgen = 0;
 				int both = 0;
 				if (running) DEREF_SLOT(both, save_vgen, e, e->vgen, tmp, tmp_ctx, q->print_vgen);
+
+				if ((tmp == save_c) && (tmp_ctx == save_c_ctx)) {
+					tmp = c;
+					tmp_ctx = c_ctx;
+				}
 
 				if (q->max_depth && ((depth+1) >= q->max_depth)) {
 					SB_sprintf(q->sb, "%s", "...");
