@@ -3158,7 +3158,7 @@ static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysor
 		pl_idx c_ctx = q->latest_ctx;
 		cell tmp;
 
-		if (is_structure(c)) {
+		if (is_structure(c) && !is_iso_list(c)) {
 			make_ref(&tmp, c->val_off, create_vars(q, 1), q->st.curr_frame);
 			unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 			c = &tmp;
