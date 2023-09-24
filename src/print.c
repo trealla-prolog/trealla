@@ -407,7 +407,7 @@ void print_variable(query *q, const cell *c, pl_idx c_ctx, bool running)
 	const frame *f = GET_FRAME(running ? c_ctx : 0);
 	pl_idx slot_nbr = running ? (unsigned)(f->base + c->var_nbr) : (unsigned)c->var_nbr;
 
-	if ((q->varnames || q->cycle_error) && !is_anon(c) && running) {
+	if ((q->varnames || q->cycle_error) && !is_anon(c) && running && (!q->cycle_error || q->is_dump_vars)) {
 		if (q->varnames && q->p->vartab.var_name[c->var_nbr]) {
 			SB_sprintf(q->sb, "%s", q->p->vartab.var_name[c->var_nbr]);
 		} else {
