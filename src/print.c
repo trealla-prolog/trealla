@@ -605,7 +605,11 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		} else if (is_iso_list(tail)) {
 			if ((tail == save_c) && (tail_ctx == save_c_ctx) && running) {
 				SB_sprintf(q->sb, "%s", "|");
-				SB_sprintf(q->sb, "%s", !is_ref(save_tail) ? C_STR(q, save_tail) : "_");
+
+				if (q->is_dump_vars) {
+					SB_sprintf(q->sb, "%s", !is_ref(save_tail) ? C_STR(q, save_tail) : "_");
+				} else
+					print_variable(q, save_tail, orig_c_ctx, 1);
 			} else {
 				SB_sprintf(q->sb, "%s", ",");
 				q->last_thing = WAS_COMMA;
