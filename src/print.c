@@ -1004,6 +1004,9 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 				if ((tmp == save_c) && (tmp_ctx == save_c_ctx)) {
 					tmp = c;
 					tmp_ctx = c_ctx;
+					SB_sprintf(q->sb, "%s", !is_ref(tmp) ? C_STR(q, tmp) : "_");
+					if (e) e->vgen = save_vgen;
+					continue;
 				}
 
 				if (q->max_depth && ((depth+1) >= q->max_depth)) {
