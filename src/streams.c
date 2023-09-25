@@ -28,7 +28,9 @@
 #define USE_MMAP 1
 #endif
 #if USE_MMAP
+#ifndef _WIN32
 #include <sys/mman.h>
+#endif
 #endif
 #endif
 
