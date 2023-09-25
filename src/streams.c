@@ -22,7 +22,6 @@
 #endif
 
 #ifdef _WIN32
-#define USE_MMAP 0
 #define mkdir(p1,p2) mkdir(p1)
 #else
 #ifndef USE_MMAP
@@ -1315,6 +1314,47 @@ static bool fn_process_kill_1(query *q)
 }
 #endif
 
+#ifdef _WIN32
+#include "windows-mmap.h"
+
+static void *mmap(void *start, size_t length, int prot, int flags, int fd, off_t offset)
+{
+	size_t len;
+	struct stat st;
+	uint64_t o = offset;
+	uint32_t l = o & 0xFFFFFFFF;
+	uint32_t h = (o >> 32) & 0xFFFFFFFF;
+
+	if (!fstat(fd, &st))
+		len = (size_t) st.st_size;
+	else {
+		fprintf(stderr, "mmap: could not determine filesize");
+		return NULL;
+	}
+
+	if ((length + offset) > len)
+		length = len - offset;
+
+	if (!(flags & MAP_PRIVATE)) {
+		fprintf(stderr, "Invalid usage of mmap");
+		return NULL;
+	}
+
+	HANDLE hmap = CreateFileMapping((HANDLE)_get_osfhandle(fd), 0, PAGE_WRITECOPY, 0, 0, 0);
+
+	if (!hmap)
+		return NULL;
+
+	void *temp = MapViewOfFileEx(hmap, FILE_MAP_COPY, h, l, length, start);
+
+	if (!CloseHandle(hmap))
+		fprintf(stderr, "unable to close file mapping handle\n");
+
+	return temp ? temp : MAP_FAILED;
+}
+#endif
+
+
 static bool fn_iso_open_4(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_structure);
@@ -1558,6 +1598,7 @@ static bool fn_iso_open_4(query *q)
 		fstat(fd, &st);
 		size_t len = st.st_size;
 		void *addr = mmap(0, len, prot, MAP_PRIVATE, fd, offset);
+		check_error(addr);
 		cell tmp = {0};
 		tmp.tag = TAG_CSTR;
 		tmp.flags = FLAG_CSTR_BLOB | FLAG_CSTR_STRING | FLAG_CSTR_SLICE;
