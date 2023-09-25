@@ -16,8 +16,6 @@
 
 :- use_module(library(dcgs)).
 :- use_module(library(error)).
-:- use_module(library(freeze)).
-:- use_module(library(iso_ext), [setup_call_cleanup/3, partial_string/3]).
 :- use_module(library(lists), [member/2, maplist/2]).
 :- use_module(library(charsio), [get_n_chars/3]).
 
@@ -26,11 +24,6 @@
 :- meta_predicate(phrase_to_file(2, ?)).
 :- meta_predicate(phrase_to_file(2, ?, ?)).
 :- meta_predicate(phrase_to_stream(2, ?)).
-
-%% phrase_from_file(+GRBody, +File)
-%
-%  True if grammar rule body GRBody covers the contents of File,
-%  represented as a list of characters.
 
 phrase_from_file(NT, File) :-
     phrase_from_file(NT, File, []).
@@ -44,44 +37,12 @@ phrase_from_file(NT, File, Options) :-
             member(Type, [text,binary])
         ;   Type = text
         ),
-	setup_call_cleanup(
-		open(File, read, Stream, [mmap(Ms)|Options]),
-		(copy_term(NT, NT2), NT2=NT, phrase(NT2, Ms, [])),
-		close(Stream))
+		setup_call_cleanup(
+			open(File, read, Stream, [mmap(Ms)|Options]),
+			(copy_term(NT, NT2), NT2=NT, phrase(NT2, Ms, [])),
+			close(Stream)
+		)
 	).
-
-%% phrase_from_file(+GRBody, +File, +Options)
-%
-%  Like `phrase_from_file/2`, using Options to open the file.
-
-orig_phrase_from_file(NT, File, Options) :-
-    (   var(File) -> instantiation_error(phrase_from_file/3)
-    ;   must_be(list, Options),
-        (   member(Var, Options), var(Var) -> instantiation_error(phrase_from_file/3)
-        ;   member(type(Type), Options) ->
-            must_be(atom, Type),
-            member(Type, [text,binary])
-        ;   Type = text
-        ),
-        setup_call_cleanup(open(File, read, Stream, [reposition(true)|Options]),
-                           (   stream_to_lazy_list(Stream, Xs),
-                               phrase(NT, Xs) ),
-                           close(Stream))
-   ).
-
-
-stream_to_lazy_list(Stream, Xs) :-
-        stream_property(Stream, position(Pos)),
-        freeze(Xs, reader_step(Stream, Pos, Xs)).
-
-reader_step(Stream, Pos, Xs0) :-
-        set_stream_position(Stream, Pos),
-        (   at_end_of_stream(Stream)
-        ->  Xs0 = []
-        ;   get_n_chars(Stream, 4096, Cs),
-            partial_string(Cs, Xs0, Xs),
-            stream_to_lazy_list(Stream, Xs)
-        ).
 
 %% phrase_to_stream(+GRBody, +Stream)
 %
@@ -115,19 +76,13 @@ phrase_to_stream(GRBody, Stream) :-
         % maplist(put_char(Stream), Cs). It also works for binary streams.
         '$put_chars'(Stream, Cs).
 
-%% phrase_to_file(+GRBody, +File)
-%
-%  Write the string described by GRBody to File.
-
 phrase_to_file(GRBody, File) :-
         phrase_to_file(GRBody, File, []).
 
 
-%% phrase_to_file(+GRBody, +File, +Options)
-%
-%  Like `phrase_to_file/2`, using Options to open the file.
-
 phrase_to_file(GRBody, File, Options) :-
-        setup_call_cleanup(open(File, write, Stream, Options),
-                           phrase_to_stream(GRBody, Stream),
-                           close(Stream)).
+	setup_call_cleanup(
+		open(File, write, Stream, Options),
+		phrase_to_stream(GRBody, Stream),
+		close(Stream)
+	).
