@@ -369,19 +369,21 @@ void dump_vars(query *q, bool partial)
 	for (unsigned i = 0; i < p->nbr_vars; i++) {
 		cell tmp[3];
 		make_struct(tmp, g_eq_s, NULL, 2, 2);
-		make_cstring(tmp+1, p->vartab.var_name[i]);
-		make_ref(tmp+2, g_anon_s, i, q->st.curr_frame);
+		make_atom(tmp+1, new_atom(q->pl, p->vartab.var_name[i]));
+		make_var(tmp+2, g_anon_s, i);
 
 		if (i == 0)
 			allocate_list(q, tmp);
 		else
 			append_list(q, tmp);
+
+		//printf("\n*** %s, i=%u\n", C_STR(q, tmp+1), tmp[2].var_nbr);
 	}
 
 	// Now go through the variables (slots actually) and
 	// dump them out...
 
-	cell *vlist = p->nbr_vars ? end_list(q) : NULL;
+	cell *vlist = end_list(q);
 	bool space = false;
 	q->print_idx = 0;
 

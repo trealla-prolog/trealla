@@ -2018,26 +2018,8 @@ static bool fn_iso_copy_term_2(query *q)
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 
-	if (is_var(p1) && is_var(p2)) {
-#if 0
-		const frame *f1 = GET_FRAME(p1_ctx);
-		const slot *e1 = GET_SLOT(f1, p1->var_nbr);
-
-		if (e1->c.attrs) {
-			const frame *f2 = GET_FRAME(p2_ctx);
-			slot *e2 = GET_SLOT(f2, p2->var_nbr);
-			check_heap_error(init_tmp_heap(q));
-			frame *f = GET_CURR_FRAME();
-			q->varno = f->actual_slots;
-			q->tab_idx = 0;
-			cell *tmp = deep_copy_to_heap_with_replacement(q, e1->c.attrs, e1->c.attrs_ctx, true, p1, p1_ctx, p2, p2_ctx);
-			check_heap_error(tmp);
-			e2->c.attrs = tmp;
-			e2->c.attrs_ctx = q->st.curr_frame;
-		}
-#endif
+	if (is_var(p1) && is_var(p2))
 		return true;
-	}
 
 	if (is_atomic(p1) && is_var(p2))
 		return unify(q, p1, p1_ctx, p2, p2_ctx);
@@ -2045,15 +2027,16 @@ static bool fn_iso_copy_term_2(query *q)
 	if (!is_var(p2) && !has_vars(q, p1, p1_ctx))
 		return unify(q, p1, p1_ctx, p2, p2_ctx);
 
-	GET_FIRST_RAW_ARG(p1_raw,any);
-	cell *tmp = deep_copy_to_heap(q, p1_raw, p1_raw_ctx, false);
-	check_heap_error(tmp);
+	GET_FIRST_RAW_ARG(from,any);
+	cell *tmp;
 
-	if (is_var(p1_raw) && is_var(p2)) {
-		cell tmpv;
-		tmpv = *p2;
-		tmpv.var_nbr = q->tab0_varno;
-		unify(q, p2, p2_ctx, &tmpv, q->st.curr_frame);
+	if (is_var(from)) {
+		GET_NEXT_RAW_ARG(to,any);
+		tmp = deep_copy_to_heap_with_replacement(q, from, from_ctx, false, from, from_ctx, to, to_ctx);
+		check_heap_error(tmp);
+	} else {
+		tmp = deep_copy_to_heap(q, from, from_ctx, false);
+		check_heap_error(tmp);
 	}
 
 	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
