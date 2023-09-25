@@ -3841,6 +3841,7 @@ static bool fn_sys_assertz_2(query *q)
 static void save_db(FILE *fp, query *q, int logging)
 {
 	q->listing = true;
+	q->double_quotes = true;
 
 	for (predicate *pr = q->st.m->head; pr; pr = pr->next) {
 		if (pr->is_prebuilt)
@@ -3877,6 +3878,7 @@ static void save_db(FILE *fp, query *q, int logging)
 		}
 	}
 
+	q->double_quotes = false;
 	q->listing = false;
 }
 
