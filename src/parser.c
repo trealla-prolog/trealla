@@ -1960,16 +1960,18 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 		if (c->val_off == g_call_s)
 			meta = true;
 
-		if (meta) {
-			cell *arg = c + 1;
-			unsigned arity = c->arity;
+		cell *arg = c + 1;
+		unsigned arity = c->arity;
 
-			while (arity--) {
-				c->nbr_cells -= arg->nbr_cells;
+		while (arity--) {
+			c->nbr_cells -= arg->nbr_cells;
+
+			if (meta)
 				arg = goal_expansion(p, arg);
-				c->nbr_cells += arg->nbr_cells;
-				arg += arg->nbr_cells;
-			}
+
+			//arg = term_to_body_conversion(p, arg);
+			c->nbr_cells += arg->nbr_cells;
+			arg += arg->nbr_cells;
 		}
 	}
 
