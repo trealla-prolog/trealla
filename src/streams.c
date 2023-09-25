@@ -1317,7 +1317,17 @@ static bool fn_process_kill_1(query *q)
 #endif
 
 #ifdef _WIN32
-#include "windows-mmap.h"
+#include <windows.h>
+#include <io.h>
+
+/* macro definitions extracted from git/git-compat-util.h */
+#define PROT_READ  1
+#define PROT_WRITE 2
+#define MAP_FAILED ((void*)-1)
+
+/* macro definitions extracted from /usr/include/bits/mman.h */
+#define MAP_SHARED	0x01		/* Share changes.  */
+#define MAP_PRIVATE	0x02		/* Changes are private.  */
 
 static void *mmap(void *start, size_t length, int prot, int flags, int fd, off_t offset)
 {
