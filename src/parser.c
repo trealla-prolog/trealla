@@ -1955,8 +1955,12 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 		}
 	} else if (c->arity) {
 		predicate *pr = find_predicate(p->m, c);
+		bool meta = pr && pr->is_meta_predicate;
 
-		if (pr && pr->is_meta_predicate) {
+		if (c->val_off == g_call_s)
+			meta = true;
+
+		if (meta) {
 			cell *arg = c + 1;
 			unsigned arity = c->arity;
 
