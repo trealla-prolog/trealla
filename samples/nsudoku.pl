@@ -1,4 +1,5 @@
 :- use_module(library(clpz)).
+:- use_module(library(format)).
 
 sudoku(Rows) :-
         length(Rows, 9), maplist(same_length(Rows), Rows),
