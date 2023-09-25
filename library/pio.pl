@@ -35,11 +35,26 @@
 phrase_from_file(NT, File) :-
     phrase_from_file(NT, File, []).
 
+phrase_from_file(NT, File, Options) :-
+    (   var(File) -> instantiation_error(phrase_from_file/3)
+    ;   must_be(list, Options),
+        (   member(Var, Options), var(Var) -> instantiation_error(phrase_from_file/3)
+        ;   member(type(Type), Options) ->
+            must_be(atom, Type),
+            member(Type, [text,binary])
+        ;   Type = text
+        ),
+	setup_call_cleanup(
+		open(File, read, Stream, [mmap(Ms)|Options]),
+		(copy_term(NT, NT2), NT2=NT, phrase(NT2, Ms, [])),
+		close(Stream))
+	).
+
 %% phrase_from_file(+GRBody, +File, +Options)
 %
 %  Like `phrase_from_file/2`, using Options to open the file.
 
-phrase_from_file(NT, File, Options) :-
+orig_phrase_from_file(NT, File, Options) :-
     (   var(File) -> instantiation_error(phrase_from_file/3)
     ;   must_be(list, Options),
         (   member(Var, Options), var(Var) -> instantiation_error(phrase_from_file/3)
