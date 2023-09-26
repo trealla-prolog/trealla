@@ -12,7 +12,6 @@ typedef struct {
 
 query *query_create(module *m, bool sub_query);
 query *query_create_task(query *q, cell *curr_cell);
-void query_reset(query *q);
 void query_destroy(query *q);
 
 bool push_choice(query *q);
