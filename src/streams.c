@@ -6940,6 +6940,7 @@ static bool fn_map_set_3(query *q)
 	}
 
 	check_heap_error(val);
+	sl_del(str->keyval, key);
 	sl_set(str->keyval, key, val);
 	return true;
 }
