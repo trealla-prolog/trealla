@@ -553,6 +553,28 @@ bool sl_next(sliter *iter, void **val)
 	return false;
 }
 
+bool sl_next_mutable(sliter *iter, void **val)
+{
+	if (!iter)
+		return false;
+
+	while (iter->p) {
+		if (iter->idx < iter->p->nbr) {
+			if (val)
+				*val = &iter->p->bkt[iter->idx].val;
+
+			iter->key = iter->p->bkt[iter->idx].key;
+			iter->idx++;
+			return true;
+		}
+
+		iter->p = iter->p->forward[0];
+		iter->idx = 0;
+	}
+
+	return false;
+}
+
 void *sl_key(sliter *iter)
 {
 	if (!iter)

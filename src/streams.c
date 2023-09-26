@@ -7443,6 +7443,106 @@ static bool fn_mat_list_4(query *q)
 	return unify(q, p3, p3_ctx, tmp, q->st.curr_frame);
 }
 
+static bool fn_mat_mult_scal_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
+
+	GET_NEXT_ARG(p1,number);
+	sliter *iter = sl_first(str->keyval);
+	bool first = true;
+	union {
+		int64_t *vi;
+		double *vf;
+	} val;
+
+	while (sl_next_mutable(iter, (void**)&val)) {
+		if (str->is_integer) {
+			int64_t v = *(val.vi);
+
+			if (v == 0)
+				continue;
+
+			if (is_smallint(p1)) {
+				v *= get_smallint(p1);
+				*(val.vi) = v;
+			} else {
+				v *= get_float(p1);
+				*(val.vi) = v;
+			}
+		} else {
+			double v = *(val.vf);
+
+			if (v == 0.0)
+				continue;
+
+			if (is_smallint(p1)) {
+				v *= get_smallint(p1);
+				*(val.vf) = v;
+			} else {
+				v *= get_float(p1);
+				*(val.vf) = v;
+			}
+		}
+	}
+
+	return true;
+}
+
+static bool fn_mat_div_scal_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
+
+	GET_NEXT_ARG(p1,number);
+	sliter *iter = sl_first(str->keyval);
+	bool first = true;
+	union {
+		int64_t *vi;
+		double *vf;
+	} val;
+
+	while (sl_next_mutable(iter, (void**)&val)) {
+		if (str->is_integer) {
+			int64_t v = *(val.vi);
+
+			if (v == 0)
+				continue;
+
+			if (is_smallint(p1)) {
+				v /= get_smallint(p1);
+				*(val.vi) = v;
+			} else {
+				v /= get_float(p1);
+				*(val.vi) = v;
+			}
+		} else {
+			double v = *(val.vf);
+
+			if (v == 0.0)
+				continue;
+
+			if (is_smallint(p1)) {
+				v /= get_smallint(p1);
+				*(val.vf) = v;
+			} else {
+				v /= get_float(p1);
+				*(val.vf) = v;
+			}
+		}
+	}
+
+	return true;
+}
+
 static bool fn_sys_capture_output_0(query *q)
 {
 	int n = q->pl->current_output;
@@ -7984,6 +8084,8 @@ builtins g_files_bifs[] =
 	{"mat_del", 3, fn_mat_del_3, "+stream,+integer,+integer", false, false, BLAH},
 	{"mat_list", 4, fn_mat_list_4, "+stream,-integer,-integer,-list", false, false, BLAH},
 	{"mat_count", 2, fn_map_count_2, "+stream,-integer", false, false, BLAH},
+	{"mat_mult_scal", 2, fn_mat_mult_scal_2, "+stream,+number", false, false, BLAH},
+	{"mat_div_scal", 2, fn_mat_div_scal_2, "+stream,+number", false, false, BLAH},
 	{"mat_close", 1, fn_map_close_1, "+stream", false, false, BLAH},
 
 	{"engine_create", 4, fn_engine_create_4, "+term,:callable,?stream,+list", false, false, BLAH},
