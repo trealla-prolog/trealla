@@ -7323,6 +7323,7 @@ static bool fn_mat_set_4(query *q)
 		val.vf = v;
 	}
 
+	sl_del(str->keyval, (void*)key.k);
 	sl_set(str->keyval, (void*)key.k, val.v);
 	return true;
 }
@@ -7386,7 +7387,7 @@ static bool fn_mat_del_3(query *q)
 	return true;
 }
 
-static bool fn_mat_list_4(query *q)
+static bool fn_mat_list_3(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
 	int n = get_stream(q, pstr);
@@ -7395,9 +7396,26 @@ static bool fn_mat_list_4(query *q)
 	if (!str->is_map)
 		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
 
-	GET_NEXT_ARG(p1,integer_or_var);
-	GET_NEXT_ARG(p2,integer_or_var);
-	GET_NEXT_ARG(p3,list_or_var);
+	GET_NEXT_ARG(p1,var);
+	cell tmp1[2];
+	make_struct(tmp1, new_atom(q->pl, "rows"), NULL, 1, 1);
+	make_int(tmp1+1, str->rows);
+	allocate_list(q, tmp1);
+	make_struct(tmp1, new_atom(q->pl, "cols"), NULL, 1, 1);
+	make_int(tmp1+1, str->cols);
+	append_list(q, tmp1);
+	make_struct(tmp1, new_atom(q->pl, "sparse"), NULL, 1, 1);
+	make_atom(tmp1+1, str->is_sparse?g_true_s:g_false_s);
+	append_list(q, tmp1);
+	make_struct(tmp1, new_atom(q->pl, "integer"), NULL, 1, 1);
+	make_atom(tmp1+1, str->is_integer?g_true_s:g_false_s);
+	append_list(q, tmp1);
+	cell *tmp = end_list(q);
+
+	if (!unify(q, p1, p1_ctx, tmp, q->st.curr_frame))
+		return false;
+
+	GET_NEXT_ARG(p2,var);
 	sliter *iter = sl_first(str->keyval);
 	bool first = true;
 	union {
@@ -7439,20 +7457,9 @@ static bool fn_mat_list_4(query *q)
 			append_list(q, tmp2);
 	}
 
-	cell *tmp = !first ? end_list(q) : make_nil();
+	tmp = !first ? end_list(q) : make_nil();
 	sl_done(iter);
-	cell tmp2;
-	make_int(&tmp2, str->rows);
-
-	if (!unify(q, p1, p1_ctx, &tmp2, q->st.curr_frame))
-		return false;
-
-	make_int(&tmp2, str->cols);
-
-	if (!unify(q, p2, p2_ctx, &tmp2, q->st.curr_frame))
-		return false;
-
-	return unify(q, p3, p3_ctx, tmp, q->st.curr_frame);
+	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 }
 
 static bool fn_mat_max_2(query *q)
@@ -8255,7 +8262,7 @@ builtins g_files_bifs[] =
 	{"mat_set", 4, fn_mat_set_4, "+stream,+integer,+integer,+number", false, false, BLAH},
 	{"mat_get", 4, fn_mat_get_4, "+stream,+integer,+integer,-number", false, false, BLAH},
 	{"mat_del", 3, fn_mat_del_3, "+stream,+integer,+integer", false, false, BLAH},
-	{"mat_list", 4, fn_mat_list_4, "+stream,-integer,-integer,-list", false, false, BLAH},
+	{"mat_list", 3, fn_mat_list_3, "+stream,-list,-list", false, false, BLAH},
 	{"mat_count", 2, fn_map_count_2, "+stream,-integer", false, false, BLAH},
 	{"mat_max", 2, fn_mat_max_2, "+stream,-number", false, false, BLAH},
 	{"mat_min", 2, fn_mat_min_2, "+stream,-number", false, false, BLAH},
