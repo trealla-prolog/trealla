@@ -7160,8 +7160,9 @@ static bool fn_mat_create_2(query *q)
 	stream *str = &q->pl->streams[n];
 	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	LIST_HANDLER(p4);
-	unsigned identity = 0, rows = 0, cols = 0;
-	str->is_sparse = false;
+	unsigned identity = 0;
+	str->is_integer = true;
+	str->is_sparse = true;
 
 	while (is_list(p4)) {
 		cell *h = LIST_HEAD(p4);
@@ -7185,17 +7186,6 @@ static bool fn_mat_create_2(query *q)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 
 			sl_set(str->alias, DUP_STR(q, name), NULL);
-		} else if (!CMP_STR_TO_CSTR(q, c, "sparse")) {
-			if (is_var(name))
-				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
-
-			if (!is_atom(name))
-				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
-
-			if (!strcmp(C_STR(q, name), "true"))
-				str->is_sparse = true;
-			else
-				str->is_sparse = false;
 		} else if (!CMP_STR_TO_CSTR(q, c, "integer")) {
 			if (is_var(name))
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
@@ -7207,6 +7197,17 @@ static bool fn_mat_create_2(query *q)
 				str->is_integer = true;
 			else
 				str->is_integer = false;
+		} else if (!CMP_STR_TO_CSTR(q, c, "sparse")) {
+			if (is_var(name))
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+
+			if (!is_atom(name))
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+
+			if (!strcmp(C_STR(q, name), "true"))
+				str->is_sparse = true;
+			else
+				str->is_sparse = false;
 		} else if (!CMP_STR_TO_CSTR(q, c, "double")) {
 			if (is_var(name))
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
@@ -7225,7 +7226,7 @@ static bool fn_mat_create_2(query *q)
 			if (!is_smallint(name))
 				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 
-			rows = cols = identity = get_smallint(name);
+			str->rows = str->cols = identity = get_smallint(name);
 		} else if (!CMP_STR_TO_CSTR(q, c, "rows")) {
 			if (is_var(name))
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
@@ -7233,10 +7234,10 @@ static bool fn_mat_create_2(query *q)
 			if (!is_smallint(name))
 				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 
-			rows = get_smallint(name);
+			str->rows = get_smallint(name);
 
-			if (cols == 0)
-				cols = rows;
+			if (str->cols == 0)
+				str->cols = str->rows;
 		} else if (!CMP_STR_TO_CSTR(q, c, "cols")) {
 			if (is_var(name))
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
@@ -7244,10 +7245,10 @@ static bool fn_mat_create_2(query *q)
 			if (!is_smallint(name))
 				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 
-			cols = get_smallint(name);
+			str->cols = get_smallint(name);
 
-			if (rows == 0)
-				rows = cols;
+			if (str->rows == 0)
+				str->rows = str->cols;
 		} else {
 			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 		}
@@ -7264,8 +7265,29 @@ static bool fn_mat_create_2(query *q)
 	check_heap_error(str->keyval);
 	sl_allow_dups(str->keyval, false);
 	str->is_map = true;
-	str->rows = rows;
-	str->cols = cols;
+
+	if (!str->is_sparse) {
+		for (unsigned i = 0; i < str->rows; i++) {
+			for (unsigned j = 0; j < str->cols; j++) {
+				union {
+					int64_t vi;
+					double vf;
+					void *v;
+				} val;
+
+				mat_key key;
+				key.row = i;
+				key.col = j;
+
+				if (str->is_integer)
+					val.vi = 1;
+				 else
+					val.vf = 1.0;
+
+				sl_set(str->keyval, (void*)key.k, val.v);
+			}
+		}
+	}
 
 	if (identity) {
 		union {
@@ -7279,11 +7301,10 @@ static bool fn_mat_create_2(query *q)
 			key.row = i;
 			key.col = i;
 
-			if (str->is_integer) {
+			if (str->is_integer)
 				val.vi = 1;
-			} else {
+			else
 				val.vf = 1.0;
-			}
 
 			sl_set(str->keyval, (void*)key.k, val.v);
 		}
@@ -7347,7 +7368,6 @@ static bool fn_mat_get_4(query *q)
 	union {
 		int64_t vi;
 		double vf;
-		void *v;
 	} val;
 
 	if (!sl_get(str->keyval, (void*)key.k, (void*)&val)) {
@@ -7422,7 +7442,6 @@ static bool fn_mat_list_3(query *q)
 	union {
 		int64_t vi;
 		double vf;
-		void *v;
 	} val;
 
 	while (sl_next(iter, (void**)&val)) {
@@ -7437,7 +7456,7 @@ static bool fn_mat_list_3(query *q)
 			make_float(&tmpv, v);
 		}
 
-		if (str->is_sparse && is_zero(&tmpv))
+		if (is_zero(&tmpv))
 			continue;
 
 		mat_key tmpk;
@@ -7490,16 +7509,10 @@ static bool fn_mat_max_2(query *q)
 		if (str->is_integer) {
 			int64_t v = val.vi;
 
-			if (str->is_sparse && (v == 0))
-				continue;
-
 			if (v > max.vi)
 				max.vi = v;
 		} else {
 			double v = val.vf;
-
-			if (str->is_sparse && (v == 0.0))
-				continue;
 
 			if (v > max.vf)
 				max.vf = v;
@@ -7543,16 +7556,10 @@ static bool fn_mat_min_2(query *q)
 		if (str->is_integer) {
 			int64_t v = val.vi;
 
-			if (str->is_sparse && (v == 0))
-				continue;
-
 			if (v < min.vi)
 				min.vi = v;
 		} else {
 			double v = val.vf;
-
-			if (str->is_sparse && (v == 0.0))
-				continue;
 
 			if (v < min.vf)
 				min.vf = v;
@@ -7597,17 +7604,9 @@ static bool fn_mat_avg_2(query *q)
 	while (sl_next(iter, (void**)&val)) {
 		if (str->is_integer) {
 			int64_t v = val.vi;
-
-			if (str->is_sparse && (v == 0))
-				continue;
-
 			avg.vi += v;
 		} else {
 			double v = val.vf;
-
-			if (str->is_sparse && (v == 0.0))
-				continue;
-
 			avg.vf += v;
 		}
 
@@ -7645,9 +7644,6 @@ static bool fn_mat_mult_scal_2(query *q)
 		if (str->is_integer) {
 			int64_t v = *(val.vi);
 
-			if (str->is_sparse && (v == 0))
-				continue;
-
 			if (is_smallint(p1)) {
 				v *= get_smallint(p1);
 				*(val.vi) = v;
@@ -7657,9 +7653,6 @@ static bool fn_mat_mult_scal_2(query *q)
 			}
 		} else {
 			double v = *(val.vf);
-
-			if (str->is_sparse && (v == 0.0))
-				continue;
 
 			if (is_smallint(p1)) {
 				v *= get_smallint(p1);
@@ -7695,9 +7688,6 @@ static bool fn_mat_div_scal_2(query *q)
 		if (str->is_integer) {
 			int64_t v = *(val.vi);
 
-			if (str->is_sparse && (v == 0))
-				continue;
-
 			if (is_smallint(p1)) {
 				v /= get_smallint(p1);
 				*(val.vi) = v;
@@ -7707,9 +7697,6 @@ static bool fn_mat_div_scal_2(query *q)
 			}
 		} else {
 			double v = *(val.vf);
-
-			if (str->is_sparse && (v == 0.0))
-				continue;
 
 			if (is_smallint(p1)) {
 				v /= get_smallint(p1);
