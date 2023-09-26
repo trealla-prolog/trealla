@@ -7160,6 +7160,7 @@ static bool fn_mat_create_2(query *q)
 	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	LIST_HANDLER(p4);
 	unsigned identity = 0, rows = 0, cols = 0;
+	str->is_sparse = false;
 
 	while (is_list(p4)) {
 		cell *h = LIST_HEAD(p4);
@@ -7183,6 +7184,17 @@ static bool fn_mat_create_2(query *q)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 
 			sl_set(str->alias, DUP_STR(q, name), NULL);
+		} else if (!CMP_STR_TO_CSTR(q, c, "sparse")) {
+			if (is_var(name))
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+
+			if (!is_atom(name))
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+
+			if (!strcmp(C_STR(q, name), "true"))
+				str->is_sparse = true;
+			else
+				str->is_sparse = false;
 		} else if (!CMP_STR_TO_CSTR(q, c, "integer")) {
 			if (is_var(name))
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
@@ -7406,7 +7418,7 @@ static bool fn_mat_list_4(query *q)
 			make_float(&tmpv, v);
 		}
 
-		if (is_zero(&tmpv))
+		if (str->is_sparse && is_zero(&tmpv))
 			continue;
 
 		mat_key tmpk;
@@ -7443,6 +7455,167 @@ static bool fn_mat_list_4(query *q)
 	return unify(q, p3, p3_ctx, tmp, q->st.curr_frame);
 }
 
+static bool fn_mat_max_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
+
+	GET_NEXT_ARG(p1,number);
+	GET_NEXT_ARG(p2,var);
+	sliter *iter = sl_first(str->keyval);
+	bool first = true;
+	union {
+		int64_t vi;
+		double vf;
+	} val;
+
+	struct {
+		int64_t vi;
+		double vf;
+	} max = {INT64_MIN, DBL_MIN};
+
+	while (sl_next(iter, (void**)&val)) {
+		if (str->is_integer) {
+			int64_t v = val.vi;
+
+			if (str->is_sparse && (v == 0))
+				continue;
+
+			if (v > max.vi)
+				max.vi = v;
+		} else {
+			double v = val.vf;
+
+			if (str->is_sparse && (v == 0.0))
+				continue;
+
+			if (v > max.vf)
+				max.vf = v;
+		}
+	}
+
+	cell tmp;
+
+	if (str->is_integer)
+		make_int(&tmp, max.vi);
+	else
+		make_float(&tmp, max.vf);
+
+	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool fn_mat_min_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
+
+	GET_NEXT_ARG(p1,number);
+	GET_NEXT_ARG(p2,var);
+	sliter *iter = sl_first(str->keyval);
+	bool first = true;
+	union {
+		int64_t vi;
+		double vf;
+	} val;
+
+	struct {
+		int64_t vi;
+		double vf;
+	} min = {INT64_MAX, DBL_MAX};
+
+	while (sl_next(iter, (void**)&val)) {
+		if (str->is_integer) {
+			int64_t v = val.vi;
+
+			if (str->is_sparse && (v == 0))
+				continue;
+
+			if (v < min.vi)
+				min.vi = v;
+		} else {
+			double v = val.vf;
+
+			if (str->is_sparse && (v == 0.0))
+				continue;
+
+			if (v < min.vf)
+				min.vf = v;
+		}
+	}
+
+	cell tmp;
+
+	if (str->is_integer)
+		make_int(&tmp, min.vi);
+	else
+		make_float(&tmp, min.vf);
+
+	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool fn_mat_avg_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
+
+	GET_NEXT_ARG(p1,number);
+	GET_NEXT_ARG(p2,var);
+	sliter *iter = sl_first(str->keyval);
+	bool first = true;
+	unsigned cnt = 0;
+
+	union {
+		int64_t vi;
+		double vf;
+	} val;
+
+	struct {
+		int64_t vi;
+		double vf;
+	} avg = {0, 0.0};
+
+	while (sl_next(iter, (void**)&val)) {
+		if (str->is_integer) {
+			int64_t v = val.vi;
+
+			if (str->is_sparse && (v == 0))
+				continue;
+
+			avg.vi += v;
+		} else {
+			double v = val.vf;
+
+			if (str->is_sparse && (v == 0.0))
+				continue;
+
+			avg.vf += v;
+		}
+
+		cnt++;
+	}
+
+	cell tmp;
+
+	if (str->is_integer)
+		make_int(&tmp, avg.vi/cnt);
+	else
+		make_float(&tmp, avg.vf/cnt);
+
+	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+}
+
 static bool fn_mat_mult_scal_2(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
@@ -7464,7 +7637,7 @@ static bool fn_mat_mult_scal_2(query *q)
 		if (str->is_integer) {
 			int64_t v = *(val.vi);
 
-			if (v == 0)
+			if (str->is_sparse && (v == 0))
 				continue;
 
 			if (is_smallint(p1)) {
@@ -7477,7 +7650,7 @@ static bool fn_mat_mult_scal_2(query *q)
 		} else {
 			double v = *(val.vf);
 
-			if (v == 0.0)
+			if (str->is_sparse && (v == 0.0))
 				continue;
 
 			if (is_smallint(p1)) {
@@ -7514,7 +7687,7 @@ static bool fn_mat_div_scal_2(query *q)
 		if (str->is_integer) {
 			int64_t v = *(val.vi);
 
-			if (v == 0)
+			if (str->is_sparse && (v == 0))
 				continue;
 
 			if (is_smallint(p1)) {
@@ -7527,7 +7700,7 @@ static bool fn_mat_div_scal_2(query *q)
 		} else {
 			double v = *(val.vf);
 
-			if (v == 0.0)
+			if (str->is_sparse && (v == 0.0))
 				continue;
 
 			if (is_smallint(p1)) {
@@ -8084,6 +8257,9 @@ builtins g_files_bifs[] =
 	{"mat_del", 3, fn_mat_del_3, "+stream,+integer,+integer", false, false, BLAH},
 	{"mat_list", 4, fn_mat_list_4, "+stream,-integer,-integer,-list", false, false, BLAH},
 	{"mat_count", 2, fn_map_count_2, "+stream,-integer", false, false, BLAH},
+	{"mat_max", 2, fn_mat_max_2, "+stream,-number", false, false, BLAH},
+	{"mat_min", 2, fn_mat_min_2, "+stream,-number", false, false, BLAH},
+	{"mat_avg", 2, fn_mat_avg_2, "+stream,-number", false, false, BLAH},
 	{"mat_mult_scal", 2, fn_mat_mult_scal_2, "+stream,+number", false, false, BLAH},
 	{"mat_div_scal", 2, fn_mat_div_scal_2, "+stream,+number", false, false, BLAH},
 	{"mat_close", 1, fn_map_close_1, "+stream", false, false, BLAH},
