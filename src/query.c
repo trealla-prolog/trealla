@@ -477,7 +477,6 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 
 		if (!tmp_idx) {
 			tmp_idx = sl_create(NULL, NULL, NULL);
-			sl_allow_dups(tmp_idx, false);
 			sl_set_tmp(tmp_idx);
 		}
 

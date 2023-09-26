@@ -42,7 +42,7 @@ struct skiplist_ {
 	size_t count;
 	int level;
 	unsigned seed;
-	bool allow_dups, is_tmp_list, wild_card, is_find;
+	bool is_tmp_list, wild_card, is_find;
 };
 
 #define MAX_LEVELS 16
@@ -87,7 +87,6 @@ skiplist *sl_create(int (*cmpkey)(const void*, const void*, const void*, void *)
 	l->header->bkt[0].key = NULL;
 	l->cmpkey = cmpkey ? cmpkey : default_cmpkey;
 	l->delkey = delkey;
-	l->allow_dups = true;
 	l->is_tmp_list = false;
 	l->wild_card = false;
 	l->p = p;
@@ -129,7 +128,6 @@ void sl_destroy(skiplist *l)
 void sl_wild_card(skiplist *l) { if (l) l->wild_card = true; }
 bool sl_is_find(skiplist *l) { return l ? l->is_find : true; }
 skiplist *sl_get_map(const sliter *i) { return i->l; }
-void sl_allow_dups(skiplist *l, bool mode) { l->allow_dups = mode; }
 size_t sl_count(const skiplist *l) { return l ? l->count : 0; }
 void sl_set_tmp(skiplist *l) { l->is_tmp_list = true; }
 
@@ -210,6 +208,7 @@ bool sl_set(skiplist *l, const void *key, const void *val)
 	if (!l)
 		return false;
 
+	sl_del(l, key);
 	slnode_t *update[MAX_LEVELS];
 	slnode_t *p, *q;
 	slnode_t stash;

@@ -2171,12 +2171,10 @@ static bool fn_iso_retractall_1(query *q)
 
 		pr->idx = sl_create(index_cmpkey, NULL, pr->m);
 		ensure(pr->idx);
-		sl_allow_dups(pr->idx, true);
 
 		if (pr->key.arity > 1) {
 			pr->idx2 = sl_create(index_cmpkey, NULL, pr->m);
 			ensure(pr->idx2);
-			sl_allow_dups(pr->idx2, true);
 		}
 	}
 
@@ -2225,12 +2223,10 @@ static bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 	} else {
 		pr->idx = sl_create(index_cmpkey, NULL, pr->m);
 		ensure(pr->idx);
-		sl_allow_dups(pr->idx, true);
 
 		if (pr->key.arity > 1) {
 			pr->idx2 = sl_create(index_cmpkey, NULL, pr->m);
 			ensure(pr->idx2);
-			sl_allow_dups(pr->idx2, true);
 		}
 	}
 

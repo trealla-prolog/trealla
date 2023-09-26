@@ -397,7 +397,6 @@ static bool g_init(prolog *pl)
 
 	pl->pool = calloc(1, pl->pool_size=INITIAL_POOL_SIZE);
 	CHECK_SENTINEL(pl->symtab = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
-	sl_allow_dups(pl->symtab, false);
 
 	CHECK_SENTINEL(new_atom(pl, "dummy"), ERR_IDX);
 	CHECK_SENTINEL(g_false_s = new_atom(pl, "false"), ERR_IDX);
@@ -543,7 +542,6 @@ prolog *pl_create()
 	}
 
 	CHECK_SENTINEL(pl->keyval = sl_create((void*)fake_strcmp, (void*)keyvalfree, NULL), NULL);
-	sl_allow_dups(pl->keyval, false);
 
 	if (error) {
 		free(pl->pool);
@@ -574,13 +572,8 @@ prolog *pl_create()
 	pl->streams[3].ignore = true;
 
 	pl->help = sl_create((void*)fake_strcmp, (void*)ptrfree, NULL);
-	sl_allow_dups(pl->help, false);
-
 	pl->fortab = sl_create((void*)fake_strcmp, NULL, NULL);
-	sl_allow_dups(pl->fortab, false);
-
 	pl->biftab = sl_create((void*)fake_strcmp, NULL, NULL);
-	sl_allow_dups(pl->biftab, false);
 
 	if (pl->biftab)
 		load_builtins(pl);

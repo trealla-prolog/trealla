@@ -6890,7 +6890,6 @@ static bool fn_map_create_2(query *q)
 
 	str->keyval = sl_create((void*)fake_strcmp, (void*)keyvalfree, NULL);
 	check_heap_error(str->keyval);
-	sl_allow_dups(str->keyval, false);
 	str->is_map = true;
 
 	cell tmp ;
@@ -6940,7 +6939,6 @@ static bool fn_map_set_3(query *q)
 	}
 
 	check_heap_error(val);
-	sl_del(str->keyval, key);
 	sl_set(str->keyval, key, val);
 	return true;
 }
@@ -7263,7 +7261,6 @@ static bool fn_mat_create_2(query *q)
 
 	str->keyval = sl_create(NULL, NULL, NULL);
 	check_heap_error(str->keyval);
-	sl_allow_dups(str->keyval, false);
 	str->is_map = true;
 
 	if (!str->is_sparse) {
@@ -7345,7 +7342,6 @@ static bool fn_mat_set_4(query *q)
 		val.vf = v;
 	}
 
-	sl_del(str->keyval, (void*)key.k);
 	sl_set(str->keyval, (void*)key.k, val.v);
 	return true;
 }
