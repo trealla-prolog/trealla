@@ -7144,7 +7144,7 @@ static bool fn_map_close_1(query *q)
 
 typedef union {
 	struct { int32_t row; int32_t col; };
-	size_t k;
+	uint64_t k;
 } mat_key;
 
 static bool fn_mat_create_2(query *q)
