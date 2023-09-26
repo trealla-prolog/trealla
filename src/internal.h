@@ -606,6 +606,7 @@ struct stream_ {
 	bool is_memory:1;
 	bool is_map:1;
 	bool is_engine:1;
+	bool is_integer:1;
 };
 
 struct page_ {

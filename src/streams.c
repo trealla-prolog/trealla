@@ -7112,8 +7112,7 @@ static bool fn_map_list_2(query *q)
 
 	cell *tmp = end_list(q);
 	sl_done(iter);
-	bool ok = unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
-	return ok;
+	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
 
 static bool fn_map_count_2(query *q)
@@ -7141,6 +7140,263 @@ static bool fn_map_close_1(query *q)
 		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
 
 	return fn_iso_close_1(q);
+}
+
+typedef union {
+	struct { int32_t row; int32_t col; };
+	size_t k;
+} mat_key;
+
+static bool fn_mat_create_2(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	int n = new_stream(q->pl);
+	GET_NEXT_ARG(p4,list_or_nil);
+
+	if (n < 0)
+		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
+
+	stream *str = &q->pl->streams[n];
+	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
+	LIST_HANDLER(p4);
+	unsigned identity = 0;
+
+	while (is_list(p4)) {
+		cell *h = LIST_HEAD(p4);
+		cell *c = deref(q, h, p4_ctx);
+		pl_idx c_ctx = q->latest_ctx;
+
+		if (is_var(c))
+			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+
+		cell *name = c + 1;
+		name = deref(q, name, c_ctx);
+
+		if (!CMP_STR_TO_CSTR(q, c, "alias")) {
+			if (is_var(name))
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+
+			if (!is_atom(name))
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+
+			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
+				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
+
+			sl_set(str->alias, DUP_STR(q, name), NULL);
+		} else if (!CMP_STR_TO_CSTR(q, c, "integer")) {
+			if (is_var(name))
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+
+			if (!is_atom(name))
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+
+			if (!strcmp(C_STR(q, name), "true"))
+				str->is_integer = true;
+			else
+				str->is_integer = false;
+		} else if (!CMP_STR_TO_CSTR(q, c, "double")) {
+			if (is_var(name))
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+
+			if (!is_atom(name))
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+
+			if (!strcmp(C_STR(q, name), "true"))
+				str->is_integer = false;
+			else
+				str->is_integer = true;
+		} else if (!CMP_STR_TO_CSTR(q, c, "identity")) {
+			if (is_var(name))
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+
+			if (!is_smallint(name))
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+
+			identity = get_smallint(name);
+		} else {
+			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+		}
+
+		p4 = LIST_TAIL(p4);
+		p4 = deref(q, p4, p4_ctx);
+		p4_ctx = q->latest_ctx;
+
+		if (is_var(p4))
+			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+	}
+
+	str->keyval = sl_create(NULL, NULL, NULL);
+	check_heap_error(str->keyval);
+	sl_allow_dups(str->keyval, false);
+	str->is_map = true;
+
+	if (identity) {
+		union {
+			int64_t vi;
+			double vf;
+			void *v;
+		} val;
+
+		for (unsigned i = 0; i < identity; i++) {
+			mat_key key;
+			key.row = i;
+			key.col = i;
+
+			if (str->is_integer) {
+				val.vi = 1;
+			} else {
+				val.vf = 1.0;
+			}
+
+			sl_set(str->keyval, (void*)key.k, val.v);
+		}
+	}
+
+	cell tmp ;
+	make_int(&tmp, n);
+	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool fn_mat_set_4(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
+
+	GET_NEXT_ARG(p1,integer);
+	GET_NEXT_ARG(p2,integer);
+	GET_NEXT_ARG(p3,number);
+	mat_key key;
+	key.row = get_smallint(p1);
+	key.col = get_smallint(p2);
+	union {
+		int64_t vi;
+		double vf;
+		void *v;
+	} val;
+
+	if (str->is_integer) {
+		int64_t v = is_integer(p3) ? get_smallint(p3) : get_float(p3);
+		val.vi = v;
+	} else {
+		double v = is_integer(p3) ? get_smallint(p3) : get_float(p3);
+		val.vf = v;
+	}
+
+	sl_set(str->keyval, (void*)key.k, val.v);
+	return true;
+}
+
+static bool fn_mat_get_4(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
+
+	GET_NEXT_ARG(p1,number);
+	GET_NEXT_ARG(p2,number);
+	GET_NEXT_ARG(p3,number_or_var);
+	mat_key key;
+	key.row = get_smallint(p1);
+	key.col = get_smallint(p2);
+	union {
+		int64_t vi;
+		double vf;
+		void *v;
+	} val;
+
+	if (!sl_get(str->keyval, (void*)key.k, (void*)&val))
+		return false;
+
+	cell tmp;
+
+	if (str->is_integer) {
+		int64_t v = val.vi;
+		make_int(&tmp, v);
+	} else {
+		double v = val.vf;
+		make_float(&tmp, v);
+	}
+
+	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool fn_mat_del_3(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
+
+	GET_NEXT_ARG(p1,number);
+	GET_NEXT_ARG(p2,number);
+	mat_key key;
+	key.row = get_smallint(p1);
+	key.col = get_smallint(p2);
+	sl_del(str->keyval, (void*)key.k);
+	return true;
+}
+
+static bool fn_mat_list_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (!str->is_map)
+		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
+
+	GET_NEXT_ARG(p1,list_or_var);
+	sliter *iter = sl_first(str->keyval);
+	bool first = true;
+	union {
+		int64_t vi;
+		double vf;
+		void *v;
+	} val;
+
+	while (sl_next(iter, (void**)&val)) {
+		void *key = sl_key(iter);
+		cell tmpv;
+
+		if (str->is_integer) {
+			int64_t v = val.vi;
+			make_int(&tmpv, v);
+		} else {
+			double v = val.vf;
+			make_float(&tmpv, v);
+		}
+
+		mat_key tmpk;
+		memcpy(&tmpk, &key, sizeof(size_t));
+		cell tmp2[5];
+		make_struct(tmp2+0, g_colon_s, NULL, 2, 4);
+		make_struct(tmp2+1, g_conjunction_s, NULL, 2, 2);
+		make_int(tmp2+2, tmpk.row);
+		make_int(tmp2+3, tmpk.col);
+		tmp2[4] = tmpv;
+		SET_OP(tmp2+0, OP_YFX);
+		SET_OP(tmp2+1, OP_XFY);
+
+		if (first) {
+			allocate_list(q, tmp2);
+			first = false;
+		} else
+			append_list(q, tmp2);
+	}
+
+	cell *tmp = end_list(q);
+	sl_done(iter);
+	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
 
 static bool fn_sys_capture_output_0(query *q)
@@ -7671,12 +7927,20 @@ builtins g_files_bifs[] =
 	{"bwrite", 2, fn_bwrite_2, "+stream,-string", false, false, BLAH},
 
 	{"map_create", 2, fn_map_create_2, "--stream,+list", false, false, BLAH},
-	{"map_set", 3, fn_map_set_3, "+stream,+atomic,+value", false, false, BLAH},
-	{"map_get", 3, fn_map_get_3, "+stream,+atomic,-value", false, false, BLAH},
+	{"map_set", 3, fn_map_set_3, "+stream,+atomic,+atomic", false, false, BLAH},
+	{"map_get", 3, fn_map_get_3, "+stream,+atomic,-atomic", false, false, BLAH},
 	{"map_del", 2, fn_map_del_2, "+stream,+atomic", false, false, BLAH},
 	{"map_count", 2, fn_map_count_2, "+stream,-integer", false, false, BLAH},
 	{"map_list", 2, fn_map_list_2, "+stream,?list", false, false, BLAH},
 	{"map_close", 1, fn_map_close_1, "+stream", false, false, BLAH},
+
+	{"mat_create", 2, fn_mat_create_2, "--stream,+list", false, false, BLAH},
+	{"mat_set", 4, fn_mat_set_4, "+stream,+row,+col,+number", false, false, BLAH},
+	{"mat_get", 4, fn_mat_get_4, "+stream,+row,+col,-number", false, false, BLAH},
+	{"mat_del", 3, fn_mat_del_3, "+stream,+row,+col", false, false, BLAH},
+	{"mat_count", 2, fn_map_count_2, "+stream,-integer", false, false, BLAH},
+	{"mat_list", 2, fn_mat_list_2, "+stream,?list", false, false, BLAH},
+	{"mat_close", 1, fn_map_close_1, "+stream", false, false, BLAH},
 
 	{"engine_create", 4, fn_engine_create_4, "+term,:callable,?stream,+list", false, false, BLAH},
 	{"engine_next", 2, fn_engine_next_2, "+stream,-term", false, false, BLAH},
