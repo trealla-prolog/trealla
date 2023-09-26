@@ -366,9 +366,6 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
 #endif
 
 #ifdef _WIN32
-// if typedef doesn't exist (msvc, blah)
-typedef intptr_t ssize_t;
-
 ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
     size_t pos;
     int c;
@@ -1340,7 +1337,7 @@ static void *mmap(void *start, size_t length, int prot, int flags, int fd, off_t
 	if (!fstat(fd, &st))
 		len = (size_t) st.st_size;
 	else {
-		fprintf(stderr, "mmap: could not determine filesize");
+		fprintf(stderr, "ERROR: mmap could not determine filesize");
 		return NULL;
 	}
 
@@ -1348,19 +1345,21 @@ static void *mmap(void *start, size_t length, int prot, int flags, int fd, off_t
 		length = len - offset;
 
 	if (!(flags & MAP_PRIVATE)) {
-		fprintf(stderr, "Invalid usage of mmap");
+		fprintf(stderr, "ERROR: Invalid usage of mmap");
 		return NULL;
 	}
 
 	HANDLE hmap = CreateFileMapping((HANDLE)_get_osfhandle(fd), 0, PAGE_WRITECOPY, 0, 0, 0);
 
-	if (!hmap)
+	if (!hmap) {
+		fprintf(stderr, "ERROR: CreateFileMapping failed");
 		return NULL;
+	}
 
 	void *temp = MapViewOfFileEx(hmap, FILE_MAP_COPY, h, l, length, start);
 
 	if (!CloseHandle(hmap))
-		fprintf(stderr, "unable to close file mapping handle\n");
+		fprintf(stderr, "Unable to close file mapping handle\n");
 
 	return temp ? temp : MAP_FAILED;
 }

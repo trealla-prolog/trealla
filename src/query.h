@@ -193,3 +193,8 @@ inline static cell *get_body(cell *c)
 	(c)->arity = 0;					\
 	(c)->attrs = NULL;				\
 }
+
+#ifdef _WIN32
+typedef intptr_t ssize_t;
+extern ssize_t getline(char **lineptr, size_t *n, FILE *stream);
+#endif

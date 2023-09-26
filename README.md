@@ -213,7 +213,7 @@ Cross-compile for Windows x64
 
 To cross-compile on Linux and produce a Windows/x86-64 executable...
 
-	sudo apt-get install mingw-w64 wine wine64
+	sudo apt-get install mingw-w64 wine wine64 wine-mono
 	make CC=x86_64-w64-mingw32-gcc NOSSL=1 NOFFI=1 ISOCLINE=1
 
 ```console

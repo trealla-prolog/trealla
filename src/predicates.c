@@ -5539,7 +5539,7 @@ static bool fn_date_time_7(query *q)
 	struct timeval cur_time;
 	gettimeofday(&cur_time, NULL);
 	struct tm tm = {0};
-	localtime_r(&cur_time.tv_sec, &tm);
+	localtime_r((const time_t*)&cur_time.tv_sec, &tm);
 	cell tmp;
 	make_int(&tmp, tm.tm_year+1900);
 	unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
