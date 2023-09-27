@@ -4376,6 +4376,28 @@ const char *dump_key(const void *k, const void *v, const void *p)
 	return print_term_to_strbuf(q, c, q->st.curr_frame, 0);
 }
 
+static bool fn_sys_first_non_octet_2(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,integer_or_var);
+	unsigned n = 0, len = C_STRLEN_UTF8(p1);
+	const char *src = C_STR(q, p1);
+
+	for (unsigned i = 0; i < len; i++) {
+		int ch = get_char_utf8(&src);
+
+		if (ch > 255) {
+			cell tmp;
+			make_uint(&tmp, n);
+			return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+		}
+
+		n++;
+	}
+
+	return false;
+}
+
 static bool fn_sys_dump_keys_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -8387,6 +8409,7 @@ builtins g_other_bifs[] =
 	{"$list_attributed", 1, fn_sys_list_attributed_1, "-list", false, false, BLAH},
 	{"$unattributed_var", 1, fn_sys_unattributed_var_1, "@variable", false, false, BLAH},
 	{"$attributed_var", 1, fn_sys_attributed_var_1, "@variable", false, false, BLAH},
+	{"$first_non_octet", 2, fn_sys_first_non_octet_2, "+chars,-integer", false, false, BLAH},
 	{"$dump_keys", 1, fn_sys_dump_keys_1, NULL, false, false, BLAH},
 	{"$skip_max_list", 4, fn_sys_skip_max_list_4, "?integer,?integer?,?term,?term", false, false, BLAH},
 
