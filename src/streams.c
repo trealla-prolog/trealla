@@ -6822,7 +6822,7 @@ static bool fn_sys_put_chars_2(query *q)
 	GET_FIRST_ARG(pstr,stream);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
-	GET_NEXT_ARG(p1,any);
+	GET_NEXT_ARG(p1,list_or_nil);
 	size_t len;
 
 	if (is_cstring(p1)) {

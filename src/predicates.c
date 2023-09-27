@@ -5000,8 +5000,8 @@ static bool fn_must_be_4(query *q)
 
 static bool fn_must_be_2(query *q)
 {
-	GET_FIRST_ARG(p2,callable);
-	GET_NEXT_ARG(p1,any);
+	GET_FIRST_ARG(p1,callable);
+	GET_NEXT_ARG(p2,any);
 
 	const char *src = C_STR(q, p2);
 
@@ -5182,8 +5182,8 @@ static bool fn_can_be_4(query *q)
 
 static bool fn_can_be_2(query *q)
 {
-	GET_FIRST_ARG(p2,atom);
-	GET_NEXT_ARG(p1,any);
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,any);
 
 	if (is_var(p1))
 		return true;

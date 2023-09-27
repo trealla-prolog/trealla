@@ -544,7 +544,7 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 
 		l = LIST_TAIL(l);
 
-#if USE_RATIONAL_TREES
+#if USE_RATIONAL_TREES && 0
 		if (is_var(l)) {
 			frame *f = GET_FRAME(l_ctx);
 			slot *e = GET_SLOT(f, l->var_nbr);
