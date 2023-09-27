@@ -37,7 +37,7 @@ static const op_table g_ops[] =
 	{"multifile", OP_FX, 1150},
 	{"attribute", OP_FX, 1150},
 	//{"op", OP_FX, 1150},
-	{"table", OP_FX, 1150},
+	//{"table", OP_FX, 1150},
 	{"dynamic", OP_FX, 1150},
 	{"initialization", OP_FX, 1150},
 	//{"set_prolog_flag", OP_FX, 1150},
