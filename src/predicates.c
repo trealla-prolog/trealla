@@ -4380,7 +4380,7 @@ static bool fn_sys_first_non_octet_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,integer_or_var);
-	unsigned n = 0, len = C_STRLEN_UTF8(p1);
+	unsigned len = C_STRLEN_UTF8(p1);
 	const char *src = C_STR(q, p1);
 
 	for (unsigned i = 0; i < len; i++) {
@@ -4388,11 +4388,9 @@ static bool fn_sys_first_non_octet_2(query *q)
 
 		if (ch > 255) {
 			cell tmp;
-			make_uint(&tmp, n);
+			make_uint(&tmp, i);
 			return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 		}
-
-		n++;
 	}
 
 	return false;
