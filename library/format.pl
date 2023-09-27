@@ -513,12 +513,10 @@ portray_clause(Stream, Term) :-
         phrase_to_stream(portray_clause_(Term), Stream),
         flush_output(Stream).
 
-% called once.
 portray_clause_(Term) -->
         { unique_variable_names(Term, VNs) },
         portray_(Term, VNs), ".\n".
 
-% mysteriously called twice, the second time with the truncated B3.
 unique_variable_names(Term, VNs) :-
         term_variables(Term, Vs),
         foldl(var_name, Vs, VNs, 0, _).
@@ -528,7 +526,7 @@ var_name(V, Name=V, Num0, Num) :-
         Num is Num0 + 1.
 
 literal(Lit, VNs) -->
-        { write_term_to_chars(Lit, [quoted(true),variable_names(VNs)], Ls) },
+        { write_term_to_chars(Lit, [quoted(true),variable_names(VNs),double_quotes(true)], Ls) },
         seq(Ls).
 
 portray_(Var, VNs) --> { var(Var) }, !, literal(Var, VNs).
