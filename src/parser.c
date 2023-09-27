@@ -1628,13 +1628,15 @@ static bool dcg_expansion(parser *p)
 	cell *arg2 = arg1 + arg1->nbr_cells;
 	c = deref(q, arg2, 0);
 	char *src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
-	strcat(src, ".");
-	query_destroy(q);
 
 	if (!src) {
+		query_destroy(q);
 		p->error = true;
 		return false;
 	}
+
+	strcat(src, ".");
+	query_destroy(q);
 
 	parser *p2 = parser_create(p->m);
 	check_error(p2);
