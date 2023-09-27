@@ -643,7 +643,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 					if (!dump_variable(q, save_tail, c_ctx, running))
 						print_variable(q, save_tail, c_ctx, 0);
 				} else
-					print_variable(q, save_tail, c_ctx, 0);
+					print_variable(q, save_tail, c_ctx, 1);
 			} else {
 				SB_sprintf(q->sb, "%s", ",");
 				q->last_thing = WAS_COMMA;
@@ -1091,7 +1091,11 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		if (isalpha(*src)) space = true;
 
 		if ((lhs == save_c) && (lhs_ctx == save_c_ctx)) {
-			SB_sprintf(q->sb, "%s", !is_ref(save_lhs) ? C_STR(q, save_lhs) : "_");
+			if (q->is_dump_vars) {
+				SB_sprintf(q->sb, "%s", !is_ref(save_lhs) ? C_STR(q, save_lhs) : "_");
+			} else
+				print_variable(q, save_lhs, lhs_ctx, 1);
+
 			q->last_thing = WAS_OTHER;
 			return true;
 		}
@@ -1159,7 +1163,11 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		if (quote) { SB_sprintf(q->sb, "%s", quote?"' ":""); }
 
 		if ((rhs == save_c) && (rhs_ctx == save_c_ctx)) {
-			SB_sprintf(q->sb, "%s", !is_ref(save_rhs) ? C_STR(q, save_rhs) : "_");
+			if (q->is_dump_vars) {
+				SB_sprintf(q->sb, "%s", !is_ref(save_rhs) ? C_STR(q, save_rhs) : "_");
+			} else
+				print_variable(q, save_rhs, rhs_ctx, 1);
+
 			q->last_thing = WAS_OTHER;
 			return true;
 		}
@@ -1225,7 +1233,11 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		SB_sprintf(q->sb, "%s", "...");
 		q->last_thing = WAS_SYMBOL;
 	} else if ((lhs == save_c) && (lhs_ctx == save_c_ctx)) {
-		SB_sprintf(q->sb, "%s", !is_ref(save_lhs) ? C_STR(q, save_lhs) : "_");
+		if (q->is_dump_vars) {
+			SB_sprintf(q->sb, "%s", !is_ref(save_lhs) ? C_STR(q, save_lhs) : "_");
+		} else
+			print_variable(q, save_lhs, lhs_ctx, 1);
+
 		q->last_thing = WAS_OTHER;
 	} else {
 		if (lhs_parens) { SB_sprintf(q->sb, "%s", "("); }
@@ -1327,7 +1339,11 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		SB_sprintf(q->sb, "%s", "...");
 		q->last_thing = WAS_SYMBOL;
 	} else if ((rhs == save_c) && (rhs_ctx == save_c_ctx)) {
-		SB_sprintf(q->sb, "%s", !is_ref(save_rhs) ? C_STR(q, save_rhs) : "_");
+		if (q->is_dump_vars) {
+			SB_sprintf(q->sb, "%s", !is_ref(save_rhs) ? C_STR(q, save_rhs) : "_");
+		} else
+			print_variable(q, save_rhs, rhs_ctx, 1);
+
 		q->last_thing = WAS_OTHER;
 	} else {
 		if (rhs_parens) { SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
