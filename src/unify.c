@@ -95,13 +95,14 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		DEREF_SLOT(both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
 		bool cycle2 = both ? true : false;
 
-		if (cycle1 && !cycle2)
-			return 1;
-
-		if (!cycle1 && cycle2)
-			return -1;
-
 		if (!cycle1 && !cycle2) {
+			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
+			if (val) return val;
+		} else if (cycle1 != cycle2) {
+			c1 = deref(q, p1, p1_ctx);
+			c1_ctx = q->latest_ctx;
+			c2 = deref(q, p2, p2_ctx);
+			c2_ctx = q->latest_ctx;
 			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
 			if (val) return val;
 		}
