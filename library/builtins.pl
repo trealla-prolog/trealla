@@ -3,6 +3,11 @@
 resource_error(Resource, Context) :-
    throw(error(resource_error(Resource), Context)).
 
+error(Err, Impl) :-
+	must_be(Err, atom, error/2, _),
+	F =.. [Err, Impl],
+	throw(F).
+
 predicate_property(P, A) :-
 	nonvar(P), atom(A), !,
 	must_be(P, callable, predicate_property/2, _),
