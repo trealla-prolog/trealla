@@ -746,8 +746,8 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		return true;
 	}
 
-	if (q->is_dump_vars && is_blob(c)) {
-		SB_sprintf(q->sb, "'<$blob>'(0x%X)", (int)get_smallint(c));
+	if (is_blob(c)) {
+		SB_sprintf(q->sb, "'<$blob>'(%p)", c->val_ptr);
 		q->last_thing = WAS_OTHER;
 		return true;
 	}
