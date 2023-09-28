@@ -1,7 +1,7 @@
 :- pragma(builtins, [once]).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
+resource_error(Resource, Context) :-
+   throw(error(resource_error(Resource), Context)).
 
 predicate_property(P, A) :-
 	nonvar(P), atom(A), !,
