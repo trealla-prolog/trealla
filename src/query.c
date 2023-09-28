@@ -505,37 +505,43 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 {
 	*is_partial = *has_var = false;
 	size_t is_chars_list = 0;
+	cell *save_l = l;
+	pl_idx save_l_ctx = l_ctx;
 	LIST_HANDLER(l);
 
 	while (is_list(l) && (q->st.m->flags.double_quote_chars || allow_codes)) {
 		cell *h = LIST_HEAD(l);
-		cell *c = deref(q, h, l_ctx);
-		q->suspect = c;
+		pl_idx h_ctx = l_ctx;
+		slot *e = NULL;
+		uint32_t save_vgen = 0;
+		int both = 0;
+		DEREF_SLOT(both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
+		q->suspect = h;
 
-		if (is_var(c)) {
+		if (is_var(h)) {
 			*has_var = true;
 			return 0;
 		}
 
-		if (!is_integer(c) && !is_iso_atom(c)) {
+		if (!is_integer(h) && !is_iso_atom(h)) {
 			return 0;
 		}
 
-		if (is_integer(c) && !allow_codes) {
+		if (is_integer(h) && !allow_codes) {
 			return 0;
 		}
 
-		if (is_integer(c)) {
-			int ch = get_smallint(c);
+		if (is_integer(h)) {
+			int ch = get_smallint(h);
 			char tmp[20];
 			put_char_utf8(tmp, ch);
 			size_t len = len_char_utf8(tmp);
 			is_chars_list += len;
 		} else {
-			const char *src = C_STR(q, c);
+			const char *src = C_STR(q, h);
 			size_t len = len_char_utf8(src);
 
-			if (len != C_STRLEN(q, c)) {
+			if (len != C_STRLEN(q, h)) {
 				return 0;
 			}
 
@@ -544,7 +550,7 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 
 		l = LIST_TAIL(l);
 
-#if USE_RATIONAL_TREES && 0
+#if USE_RATIONAL_TREES
 		if (is_var(l)) {
 			frame *f = GET_FRAME(l_ctx);
 			slot *e = GET_SLOT(f, l->var_nbr);
@@ -552,6 +558,7 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 			if (e->vgen == q->vgen)
 				return 0;
 
+			e->vgen2 = e->vgen;
 			e->vgen = q->vgen;
 			l = deref(q, l, l_ctx);
 			l_ctx = q->latest_ctx;
@@ -561,6 +568,25 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 		l_ctx = q->latest_ctx;
 #endif
 	}
+
+#if USE_RATIONAL_TREES
+	cell *l2 = save_l;
+	pl_idx l2_ctx = save_l_ctx;
+	LIST_HANDLER(l2);
+
+	while (is_list(l2) && (q->st.m->flags.double_quote_chars || allow_codes)) {
+		cell *h = LIST_HEAD(l2);
+		l2 = LIST_TAIL(l2);
+
+		if (is_var(l2)) {
+			frame *f = GET_FRAME(l2_ctx);
+			slot *e = GET_SLOT(f, l2->var_nbr);
+			e->vgen = e->vgen2;
+			l2 = deref(q, l2, l2_ctx);
+			l2_ctx = q->latest_ctx;
+		}
+	}
+#endif
 
 	if (is_var(l)) {
 		is_chars_list = 0;
