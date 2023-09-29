@@ -874,8 +874,7 @@ expand_term((H --> B), Out) :-
 
 dcg_translate(TermIn, Term) :-
 	nonvar(TermIn),
-	dcg_rule(TermIn, (Head :- Body)),
-	Term = (Head :- Body).
+	dcg_rule(TermIn, Term).
 
 plus(X,Y,S) :- nonvar(X), nonvar(Y),
 	must_be(X, integer, plus/3, _), must_be(Y, integer, plus/3, _), !,
