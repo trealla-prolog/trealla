@@ -596,9 +596,8 @@ read_line_to_codes(Stream, Codes) :-
 %
 
 error(Err, Context) :-
-	(var(Err) -> throw(error(instantiation_error, error/2)); true),
-	F =.. [Err, Context],
-	throw(F).
+	must_be(Err, nonvar, error/2, _),
+	throw(error(Err,Context)).
 
 resource_error(Resource, Context) :-
    throw(error(resource_error(Resource), Context)).
