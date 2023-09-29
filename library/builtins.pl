@@ -596,7 +596,7 @@ read_line_to_codes(Stream, Codes) :-
 %
 
 error(Err, Context) :-
-	must_be(Err, atom, error/2, _),
+	(var(Err) -> throw(error(instantiation_error, error/2)); true),
 	F =.. [Err, Context],
 	throw(F).
 
