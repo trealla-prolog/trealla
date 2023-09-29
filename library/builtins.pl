@@ -1,13 +1,5 @@
 :- pragma(builtins, [once]).
 
-resource_error(Resource, Context) :-
-   throw(error(resource_error(Resource), Context)).
-
-error(Err, Impl) :-
-	must_be(Err, atom, error/2, _),
-	F =.. [Err, Impl],
-	throw(F).
-
 predicate_property(P, A) :-
 	nonvar(P), atom(A), !,
 	must_be(P, callable, predicate_property/2, _),
@@ -608,6 +600,19 @@ read_line_to_codes(Stream, Codes) :-
 
 :- help(read_line_to_codes(+stream,?list), [iso(false)]).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+
+error(Err, Context) :-
+	must_be(Err, atom, error/2, _),
+	F =.. [Err, Context],
+	throw(F).
+
+resource_error(Resource, Context) :-
+   throw(error(resource_error(Resource), Context)).
+
+:- help(resource_error(+term,+term), [iso(false)]).
+
 instantiation_error(Context) :-
 	throw(error(instantiation_error, Context)).
 
@@ -623,7 +628,10 @@ type_error(Type, Term, Context) :-
 
 :- help(type_error(+atom,+term,+term), [iso(false)]).
 
-% NOTE: this doesn't print var names properly...
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% NOTE: this doesn't display var names properly...
 
 pretty(PI) :-
 	use_module(library(format)),
