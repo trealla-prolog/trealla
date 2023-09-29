@@ -881,6 +881,14 @@ dump_attvars :-
 	sort(Gs1, Gs),
 	print_goals_(Gs).
 
+expand_term((H --> B), Out) :- !,
+	dcg_translate((H --> B), Out), !.
+
+dcg_translate(TermIn, Term) :-
+	nonvar(TermIn),
+	dcg_rule(TermIn, (Head :- Body)),
+	Term = (Head :- Body).
+
 plus(X,Y,S) :- nonvar(X), nonvar(Y),
 	must_be(X, integer, plus/3, _), must_be(Y, integer, plus/3, _), !,
 	S is X + Y.

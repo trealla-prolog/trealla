@@ -1,6 +1,5 @@
 :- module(dcgs, [
 		op(1105, xfy, '|'),
-		dcg_translate/2,
 		phrase/2, phrase/3,
 		seq//1,
 		seqq//1,
@@ -10,14 +9,6 @@
 :- use_module(library(error)).
 :- use_module(library(iso_ext)).
 :- use_module(library(lists), [append/3, member/2]).
-
-expand_term((H --> B), Out) :- !,
-	dcg_translate((H --> B), Out), !.
-
-dcg_translate(TermIn, Term) :-
-	nonvar(TermIn),
-	dcg_rule(TermIn, (Head :- Body)),
-	Term = (Head :- Body).
 
 :- meta_predicate phrase(2, ?).
 
