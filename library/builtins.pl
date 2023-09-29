@@ -7,7 +7,13 @@ predicate_property(P, A) :-
 predicate_property(P, A) :-
 	'$load_properties',
 	(	var(A) -> true
-	; 	(	(Controls = [built_in,choice_construct,discontiguous,private,static,dynamic,foreign,tabled,multifile,meta_predicate(_),iso,visible,template(_)],
+	; 	(	(Controls = [
+				built_in,choice_construct,
+				discontiguous,private,static,
+				dynamic,foreign,tabled,multifile,
+				meta_predicate(_),iso,visible,
+				template(_)
+				],
 			memberchk(A, Controls))
 			->	true
 			;	throw(error(domain_error(predicate_property, A), P))
