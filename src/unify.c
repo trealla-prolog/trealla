@@ -931,7 +931,6 @@ bool do_post_unification_hook(query *q, bool is_builtin)
 	tmp[0].nbr_cells = 1;
 	tmp[0].flags = FLAG_BUILTIN;
 	tmp[0].val_off = g_true_s;
-
 	static void *s_fn_ptr1 = NULL;
 
 	if (!s_fn_ptr1)
