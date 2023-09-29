@@ -7,21 +7,19 @@ predicate_property(P, A) :-
 predicate_property(P, A) :-
 	'$load_properties',
 	(	var(A) -> true
-	; 	(	(Controls = [
-				built_in,choice_construct,
-				discontiguous,private,static,
-				dynamic,foreign,tabled,multifile,
-				meta_predicate(_),iso,visible,
-				template(_)
-				],
-			memberchk(A, Controls))
-			->	true
-			;	throw(error(domain_error(predicate_property, A), P))
+	; 	(Controls = [
+			built_in,choice_construct,
+			discontiguous,private,static,
+			dynamic,foreign,tabled,multifile,
+			meta_predicate(_),iso,visible,
+			template(_)
+			],
+		memberchk(A, Controls) -> true
+		; throw(error(domain_error(predicate_property, A), P))
 		)
 	),
 	must_be(P, callable, predicate_property/2, _),
-	(	P = (M:P2) ->
-		M:'$predicate_property'(predicate, P2, A)
+	(	P = (M:P2) -> M:'$predicate_property'(predicate, P2, A)
 	;	'$predicate_property'(predicate, P, A)
 	).
 
@@ -34,13 +32,12 @@ evaluable_property(P, A) :-
 evaluable_property(P, A) :-
 	'$load_properties',
 	(	var(A) -> true
-	; 	(	(Controls = [iso,built_in,static,dynamic,template(_),template(_,_)],
-			memberchk(A, Controls))
-			->	true
-			;	(
-				must_be(A, callable, evaluable_property/2, _),
-				throw(error(domain_error(evaluable_property, A), P))
-				)
+	; 	(Controls = [iso,built_in,static,dynamic,template(_),template(_,_)],
+			memberchk(A, Controls) -> true
+		;	(
+			must_be(A, callable, evaluable_property/2, _),
+			throw(error(domain_error(evaluable_property, A), P))
+			)
 		)
 	),
 	must_be(P, callable, evaluable_property/2, _),
@@ -92,10 +89,7 @@ catch(G, E, C) :-
 
 countall(_, N) :-
 	integer(N),
-	(	N >= 0
-	->	true
-	; 	throw(error(domain_error(not_less_than_zero, N), countall/2))
-	),
+	(N >= 0 -> true; throw(error(domain_error(not_less_than_zero, N), countall/2))),
 	fail.
 countall(G, N) :-
 	'$countall'(G, N0),
@@ -108,13 +102,13 @@ call_det(G, Det) :-
 	'$get_level'(L1),
 	G,
 	'$get_level'(L2),
-	(L1 = L2 -> Det = true ; Det = false).
+	(L1 = L2 -> Det = true; Det = false).
 
 :- meta_predicate(call_det(0,?)).
 :- help(call_det(:callable,?boolean), [iso(false)]).
 
 call_cleanup(G, C) :-
-	(var(C) -> throw(error(instantiation_error, call_cleanup/3)) ; true),
+	(var(C) -> throw(error(instantiation_error, call_cleanup/3)); true),
 	'$register_cleanup'(ignore(C)),
 	'$call_cleanup'(
 		call(G),
@@ -127,7 +121,7 @@ call_cleanup(G, C) :-
 
 setup_call_cleanup(S, G, C) :-
 	once(S),
-	(var(C) -> throw(error(instantiation_error, setup_call_cleanup/3)) ; true),
+	(var(C) -> throw(error(instantiation_error, setup_call_cleanup/3)); true),
 	'$register_cleanup'(ignore(C)),
 	'$call_cleanup'(
 		call(G),
@@ -162,9 +156,7 @@ setof(Template, Generator, Set) :-
 :- help(setof(+term,+callable,?list), [iso(true)]).
 
 bagof(Template, Generator, Bag) :-
-	(	var(Bag) -> true
-	;	must_be(Bag, list_or_partial_list, bagof/3, _)
-	),
+	(var(Bag) -> true; must_be(Bag, list_or_partial_list, bagof/3, _)),
 	bagof_(Template, Generator, Bag).
 
 :- meta_predicate(bagof(-,0,?)).
@@ -396,8 +388,7 @@ recorded(K, V, R) :- nonvar(K), clause('$record_global_key'(K,V), _, R).
 call_with_time_limit(Time, Goal) :-
 	Time0 is truncate(Time * 1000),
 	'$alarm'(Time0),
-	(	catch(once(Goal), E, ('$alarm'(0), throw(E)))
-	->	'$alarm'(0)
+	(	catch(once(Goal), E, ('$alarm'(0), throw(E))) ->	'$alarm'(0)
 	;	('$alarm'(0), fail)
 	).
 
@@ -406,8 +397,7 @@ call_with_time_limit(Time, Goal) :-
 
 time_out(Goal, Time, Result) :-
 	'$alarm'(Time),
-	(	catch(once(Goal), E, ('$alarm'(0), throw(E)))
-	->	('$alarm'(0), Result = success)
+	(	catch(once(Goal), E, ('$alarm'(0), throw(E))) -> ('$alarm'(0), Result = success)
 	;	('$alarm'(0), fail)
 	).
 
@@ -503,15 +493,12 @@ deconsult(Files) :- unload_files(Files).
 
 :- help(deconsult(+list), [iso(false)]).
 
-strip_module_(T, M, P) :- T=M:P -> true ; P=T.
+strip_module_(T, M, P) :- T=M:P -> true; P=T.
 
 strip_module(GRBody, Module, GRBody0) :-
     strip_module_(GRBody, Module, GRBody0),
-    (  nonvar(Module) ->
-       true
-    ;  prolog_load_context(module, Module) ->
-       true
-    ;  true
+    (  nonvar(Module) -> true
+    ;  prolog_load_context(module, Module)
     ).
 
 :- help(strip_module(+term,-atom,-term), [iso(false)]).
@@ -580,8 +567,7 @@ sl_create(S) :- sl_create(S,[]).
 
 iso_dif(X, Y) :-
 	X \== Y,
-	(	X \= Y
-	->	true
+	(	X \= Y -> true
 	;	throw(error(instantiation_error,iso_dif/2))
 	).
 
@@ -649,8 +635,7 @@ pretty(PI) :-
 	functor(Head, Name, Arity),
 	\+ \+ clause(Head, _), % only true if there is at least one clause
 	(   clause(Head, Body),
-		(   Body == true
-		-> 	portray_clause(Head)
+		(   Body == true -> portray_clause(Head)
 		;   portray_clause((Head :- Body))
 		),
 		false
@@ -753,7 +738,7 @@ put_attr(Var, Module, Value) :-
 
 del_attr(Var, Module) :-
 	Access =.. [Module, _],
-	( var(Var) -> put_atts(Var, -Access) ; true ).
+	(var(Var) -> put_atts(Var, -Access) ; true).
 
 :- help(del_attr(@var,+atom), [iso(false)]).
 
@@ -827,8 +812,7 @@ get_atts(Var, Attr) :- !,
 
 term_attvars_([], VsIn, VsIn) :- !.
 term_attvars_([H|T], VsIn, VsOut) :-
-	(	'$attributed_var'(H)
-	->	term_attvars_(T, [H|VsIn], VsOut)
+	(	'$attributed_var'(H) -> term_attvars_(T, [H|VsIn], VsOut)
 	;	term_attvars_(T, VsIn, VsOut)
 	).
 
@@ -843,8 +827,7 @@ collect_goals_(V, [H|T], GsIn, GsOut) :-
 	H =.. [M, _],
 	catch(M:attribute_goals(V, Goal0, []), _, Goal0 = put_atts(V, +H)),
 	!,
-	(	Goal0 = [H2]
-	->	Goal = H2
+	(	Goal0 = [H2] ->	Goal = H2
 	;	Goal = Goal0
 	),
 	collect_goals_(V, T, [Goal|GsIn], GsOut).
@@ -869,8 +852,7 @@ copy_term(Term, Copy, Gs) :-
 print_goals_([]) :- !.
 print_goals_([Goal|Goals]) :-
 	write_term(Goal, [varnames(true)]),
-	(	Goals == []
-	->	write('')
+	(	Goals == [] ->	write('')
 	; 	write(',')
 	),
 	print_goals_(Goals).
@@ -911,15 +893,13 @@ plus(_,_,_) :-
 
 succ(X,S) :- nonvar(X), Y=1, nonvar(Y),
 	must_be(X, integer, succ/2, _), must_be(Y, integer, succ/2, _), !,
-	(	X >= 0
-	->	true
+	(	X >= 0 ->	true
 	; 	throw(error(domain_error(not_less_than_zero, X), succ/2))
 	),
 	S is X + Y.
 succ(X,S) :- var(X), Y=1, nonvar(Y), nonvar(S),
 	must_be(S, integer, succ/2, _), must_be(Y, integer, succ/2, _), !,
-	(	S >= 0
-	->	true
+	(	S >= 0 ->	true
 	; 	throw(error(domain_error(not_less_than_zero, S), succ/2))
 	),
 	!,
@@ -948,8 +928,7 @@ sre_match_all(Pat, Text, L) :-
 sre_match_all_(_, [], L, L) :- !.
 sre_match_all_(Reg, TextIn, L0, L) :-
 	sre_matchp(Reg, TextIn, Match, TextOut),
-	(	TextOut \= []
-	->	sre_match_all_(Reg, TextOut, [Match|L0], L)
+	(	TextOut \= [] -> sre_match_all_(Reg, TextOut, [Match|L0], L)
 	;	L = L0
 	).
 
@@ -1002,8 +981,7 @@ sre_subst_all(Pat, Text, Subst, L) :-
 sre_subst_all_(_, [], _, L, L) :- !.
 sre_subst_all_(Reg, TextIn, Subst, L0, L) :-
 	sre_substp(Reg, TextIn, Prefix, TextOut),
-	(	TextOut \= []
-	->	sre_subst_all_(Reg, TextOut, Subst, [Subst,Prefix|L0], L)
+	(	TextOut \= [] -> sre_subst_all_(Reg, TextOut, Subst, [Subst,Prefix|L0], L)
 	;	L = [Prefix|L0]
 	).
 
