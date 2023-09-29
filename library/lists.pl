@@ -60,7 +60,9 @@ append([L0|Ls0], Ls) :-
 :- help(append(?list,?list), [iso(false), desc('The concatention of a list of lists to make a new one.')]).
 
 append([], R, R).
-append([X|L], R, [X|S]) :- append(L, R, S).
+append([X|L], R, [X|S0]) :-
+	S0=S,
+	append(L, R, S).
 
 :- help(append(?term,?term,?term), [iso(false), desc('The concatenation of two lists to make a third.')]).
 
