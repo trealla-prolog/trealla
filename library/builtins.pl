@@ -1,4 +1,4 @@
-:- pragma(builtins, [once]).
+:- pragma(builtins, [once(true)]).
 
 predicate_property(P, A) :-
 	nonvar(P), atom(A), !,
