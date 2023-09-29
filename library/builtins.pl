@@ -881,7 +881,7 @@ dump_attvars :-
 	sort(Gs1, Gs),
 	print_goals_(Gs).
 
-expand_term((H --> B), Out) :- !,
+expand_term((H --> B), Out) :-
 	dcg_translate((H --> B), Out), !.
 
 dcg_translate(TermIn, Term) :-
