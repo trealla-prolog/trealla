@@ -31,6 +31,7 @@ process_var_([Att|Atts], Var, Val, SoFar, Goals) :-
 	attribute(M, F, A),
 	M:verify_attributes(Var, Val, NewGoals),
 	append(SoFar, NewGoals, MoreGoals),
+	!,
 	process_var_(Atts, Var, Val, MoreGoals, Goals).
 
 call_residue_vars(Goal, Atts) :-
