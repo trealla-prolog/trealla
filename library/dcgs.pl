@@ -1,14 +1,26 @@
-:- module(dcgs, [
-		op(1105, xfy, '|'),
-		phrase/2, phrase/3,
-		seq//1,
-		seqq//1,
-		... //0
-	]).
+/** Support for Definite Clause Grammars.
+
+A Prolog definite clause grammar (DCG) describes a sequence. Operationally, DCGs
+can be used to parse, generate, complete and check sequences manifested as lists.
+
+Check [The Power of Prolog chapter on DCGs](https://www.metalevel.at/prolog/dcg)
+to learn more about them.
+*/
+
+
+:- module(dcgs,
+          [op(1105, xfy, '|'),
+           phrase/2,
+           phrase/3,
+           seq//1,
+           seqq//1,
+           ... //0
+          ]).
 
 :- use_module(library(error)).
 :- use_module(library(iso_ext)).
 :- use_module(library(lists), [append/3, member/2]).
+:- use_module(library(loader), [strip_module/3]).
 
 :- meta_predicate phrase(2, ?).
 
