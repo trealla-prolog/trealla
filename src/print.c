@@ -661,12 +661,17 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			q->last_thing = WAS_OTHER;
 		} else {
 			SB_sprintf(q->sb, "%s", "|");
-			unsigned specifier = 0;
-			unsigned priority = search_op(q->st.m, C_STR(q, tail), &specifier, false);
-			bool parens = is_infix(tail) && (priority >= 1000);
-			if (parens) { SB_sprintf(q->sb, "%s", "("); }
-			print_term_to_buf_(q, tail, tail_ctx, running, true, depth+1, depth+1);
-			if (parens) { SB_sprintf(q->sb, "%s", ")"); }
+
+			if (is_var(tail)) {
+				print_variable(q, tail, tail_ctx, running);
+			} else {
+				unsigned specifier = 0;
+				unsigned priority = search_op(q->st.m, C_STR(q, tail), &specifier, false);
+				bool parens = is_infix(tail) && (priority >= 1000);
+				if (parens) { SB_sprintf(q->sb, "%s", "("); }
+				print_term_to_buf_(q, tail, tail_ctx, running, true, depth+1, depth+1);
+				if (parens) { SB_sprintf(q->sb, "%s", ")"); }
+			}
 		}
 
 		if (!cons || print_list) {
