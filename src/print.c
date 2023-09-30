@@ -641,7 +641,8 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 
 				if (q->is_dump_vars) {
 					if (!dump_variable(q, save_tail, c_ctx, running))
-						print_variable(q, save_tail, c_ctx, 0);
+						if (!dump_variable(q, tail, tail_ctx, running))
+							print_variable(q, tail, tail_ctx, 0);
 				} else
 					print_variable(q, save_tail, c_ctx, 1);
 			} else {
