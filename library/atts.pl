@@ -15,8 +15,7 @@ lcm(_X, _N, _) :- writeln(oops).
 	'$undo_trail'(Vars, State),
 	process_vars_(Vars, [], Goals),
 	'$redo_trail'(State),
-	maplist(call, Goals),
-	!.
+	once(maplist(call, Goals)).
 
 process_vars_([], Goals, Goals) :- !.
 process_vars_([Var-Val|Vars], SoFar, Goals) :-

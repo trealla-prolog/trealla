@@ -775,13 +775,12 @@ del_attr(Var, Module) :-
 :- use_module(library(dict)).
 
 put_atts(Var, -Attr) :- !,
-	('$get_attributes'(Var, D) -> (
+	(	'$get_attributes'(Var, D) ->
 		functor(Attr, Functor, Arity),
 		attribute(Module, Functor, Arity),
 		d_del(D, Module-Functor, Attr, D2),
 		'$put_attributes'(Var, D2)
-		)
-	; true
+	;	true
 	).
 
 put_atts(Var, +Attr) :- !,
@@ -805,12 +804,13 @@ get_atts(Var, L) :- var(L), !,
 	d_match(D, _, L).
 
 get_atts(Var, -Attr) :- !,
-	'$get_attributes'(Var, D) ->
+	( '$get_attributes'(Var, D) ->
 		functor(Attr, Functor, Arity),
 		attribute(Module, Functor, Arity),
 		functor(Skel, Functor, Arity),
 		\+ d_get(D, Module-Functor, Skel)
-	;	true.
+	;	true
+	).
 
 get_atts(Var, +Attr) :- !,
 	'$get_attributes'(Var, D),
