@@ -70,6 +70,7 @@ WASMOPT = wasm-opt
 endif
 
 SRCOBJECTS = tpl.o \
+	src/attributed.o \
 	src/base64.o \
 	src/contrib.o \
 	src/control.o \
@@ -184,6 +185,8 @@ clean:
 
 # from [gcc|clang] -MM src/*.c src/imath/*.c src/isocline/src/*.c src/sre/*.c
 
+src/attributed.o: src/attributed.c src/trealla.h src/internal.h \
+  src/cdebug.h src/stringbuf.h src/query.h src/builtins.h
 src/base64.o: src/base64.c src/base64.h
 src/contrib.o: src/contrib.c src/trealla.h src/internal.h \
   src/skiplist.h src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \

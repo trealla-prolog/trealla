@@ -6,6 +6,7 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 
+#include "attributed.h"
 #include "base64.h"
 #include "heap.h"
 #include "history.h"
@@ -6894,99 +6895,6 @@ static bool fn_sys_unifiable_3(query *q)
 	}
 
 	return unify(q, p3, p3_ctx, l, q->st.curr_frame);
-}
-
-static bool fn_sys_list_attributed_1(query *q)
-{
-	GET_FIRST_ARG(p1,var);
-	parser *p = q->p;
-	const frame *f = GET_FIRST_FRAME();
-	bool first = true;
-
-	for (unsigned i = 0; i < p->nbr_vars; i++) {
-		//if (!strcmp(p->vartab.var_name[i], "_"))
-		//	continue;
-
-		const slot *e = GET_SLOT(f, i);
-		const cell *c = &e->c;
-
-		if (!is_empty(c))
-			continue;
-
-		if (!c->attrs)
-			continue;
-
-		cell v;
-		make_var(&v, new_atom(q->pl, p->vartab.var_name[i]), i);
-
-		if (first) {
-			allocate_list(q, &v);
-			first = false;
-		} else
-			append_list(q, &v);
-	}
-
-	if (first)
-		return unify(q, p1, p1_ctx, make_nil(), q->st.curr_frame);
-
-	cell *l = end_list(q);
-	return unify(q, p1, p1_ctx, l, 0);
-}
-
-static bool fn_sys_put_attributes_2(query *q)
-{
-	GET_FIRST_ARG(p1,var);
-	GET_NEXT_ARG(p2,list_or_nil);
-	const frame *f = GET_FRAME(p1_ctx);
-	slot *e = GET_SLOT(f, p1->var_nbr);
-
-	if (e->c.attrs || !is_nil(p2))
-		add_trail(q, p1_ctx, p1->var_nbr, e->c.attrs, e->c.attrs_ctx);
-
-	//DUMP_TERM("$put_attr", p2, p2_ctx ,true);
-
-	if (is_nil(p2)) {
-		e->c.flags = 0;
-		e->c.attrs = NULL;
-		e->c.attrs_ctx = 0;
-		return true;
-	}
-
-	cell *tmp = deep_clone_to_heap(q, p2, p2_ctx);
-	check_heap_error(tmp);
-	e->c.flags = FLAG_VAR_ATTR;
-	e->c.attrs = tmp;
-	e->c.attrs_ctx = q->st.curr_frame;
-	return true;
-}
-
-static bool fn_sys_get_attributes_2(query *q)
-{
-	GET_FIRST_ARG(p1,var);
-	GET_NEXT_ARG(p2,list_or_nil_or_var);
-	const frame *f = GET_FRAME(p1_ctx);
-	const slot *e = GET_SLOT(f, p1->var_nbr);
-
-	if (!e->c.attrs)
-		return false;
-
-	return unify(q, p2, p2_ctx, e->c.attrs, e->c.attrs_ctx);
-}
-
-static bool fn_sys_unattributed_var_1(query *q)
-{
-	GET_FIRST_ARG(p1,var);
-	const frame *f = GET_FRAME(p1_ctx);
-	const slot *e = GET_SLOT(f, p1->var_nbr);
-	return !e->c.attrs;
-}
-
-static bool fn_sys_attributed_var_1(query *q)
-{
-	GET_FIRST_ARG(p1,var);
-	const frame *f = GET_FRAME(p1_ctx);
-	const slot *e = GET_SLOT(f, p1->var_nbr);
-	return e->c.attrs;
 }
 
 static bool fn_get_unbuffered_code_1(query *q)
