@@ -750,7 +750,6 @@ del_attr(Var, Module) :-
 :- use_module(library(dict)).
 
 put_atts(Var, -Attr) :- !,
-	var(Var),
 	('$get_attributes'(Var, D) -> (
 		functor(Attr, Functor, Arity),
 		attribute(Module, Functor, Arity),
@@ -761,7 +760,6 @@ put_atts(Var, -Attr) :- !,
 	).
 
 put_atts(Var, +Attr) :- !,
-	var(Var),
 	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
@@ -769,7 +767,6 @@ put_atts(Var, +Attr) :- !,
 	'$put_attributes'(Var, D2).
 
 put_atts(Var, Attr) :- !,
-	var(Var),
 	('$get_attributes'(Var, D) -> true ; D = []),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
@@ -779,26 +776,25 @@ put_atts(Var, Attr) :- !,
 :- help(put_atts(@var,+term), [iso(false)]).
 
 get_atts(Var, L) :- var(L), !,
-	var(Var),
 	'$get_attributes'(Var, D),
 	d_match(D, _, L).
 
 get_atts(Var, -Attr) :- !,
-	var(Var),
-	('$get_attributes'(Var, D) -> true ; D = []),
-	functor(Attr, Functor, Arity),
-	attribute(Module, Functor, Arity),
-	\+ d_get(D, Module-Functor, _).
+	('$get_attributes'(Var, D) -> (
+		functor(Attr, Functor, Arity),
+		attribute(Module, Functor, Arity),
+		\+ d_get(D, Module-Functor, _)
+		)
+	;	true
+	).
 
 get_atts(Var, +Attr) :- !,
-	var(Var),
 	'$get_attributes'(Var, D),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
 	d_get(D, Module-Functor, Attr).
 
 get_atts(Var, Attr) :- !,
-	var(Var),
 	'$get_attributes'(Var, D),
 	functor(Attr, Functor, Arity),
 	attribute(Module, Functor, Arity),
