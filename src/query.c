@@ -1581,7 +1581,7 @@ bool start(query *q)
 			}
 
 			if (q->run_hook)
-				do_post_unification_hook(q, true);
+				do_post_unification_hook(q);
 
 			Trace(q, save_cell, save_ctx, EXIT);
 			proceed(q);
@@ -1593,7 +1593,7 @@ bool start(query *q)
 			}
 
 			if (q->run_hook)
-				do_post_unification_hook(q, false);
+				do_post_unification_hook(q);
 		} else {
 			if (consultall(q, q->st.curr_cell, q->st.curr_frame) != true) {
 				q->retry = QUERY_RETRY;

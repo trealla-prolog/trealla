@@ -646,6 +646,8 @@ pretty(PI) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SICStus compatible
 
+:- dynamic('$bb_global_key'/3).
+
 bb_put(K, V) :-
 	must_be(K, atomic, bb_put/2, _),
 	ignore(retract('$bb_global_key'(K, _, _))),
@@ -655,7 +657,7 @@ bb_put(K, V) :-
 
 bb_get(K, V) :-
 	must_be(K, atomic, bb_get/2, _),
-	catch('$bb_global_key'(K, V, _), _, fail),
+	'$bb_global_key'(K, V, _),
 	!.
 
 :- help(bb_get(+atomic,?term), [iso(false)]).
