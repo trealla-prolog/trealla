@@ -724,24 +724,14 @@ current_op(A, B, C) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SWI compatible
 
-get_attr(Var, Module, Value) :-
-	Access =.. [Module, Value],
-	var(Var),
-	get_atts(Var, Access).
+goal_expansion(get_attr(Var, Module, Value), (var(Var),get_atts(Var, Access))) :-
+	Access =.. [Module,Value].
 
-:- help(get_attr(@var,+atom,-term), [iso(false)]).
+goal_expansion(put_attr(Var, Module, Value), put_atts(Var, Access)) :-
+	Access =.. [Module,Value].
 
-put_attr(Var, Module, Value) :-
-	Access =.. [Module, Value],
-	put_atts(Var, Access).
-
-:- help(put_attr(@var,+atom,+term), [iso(false)]).
-
-del_attr(Var, Module) :-
-	Access =.. [Module, _],
-	(var(Var) -> put_atts(Var, -Access) ; true).
-
-:- help(del_attr(@var,+atom), [iso(false)]).
+goal_expansion(del_attr(Var, Module), (var(Var) -> put_atts(Var, -Access);true)) :-
+	Access =.. [Module,_].
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
