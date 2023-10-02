@@ -1910,10 +1910,6 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			|| (c->val_off == g_soft_cut_s)
 			|| (c->val_off == g_neck_s)) {
 			cell *lhs = c + 1;
-			bool norhs = false;
-
-			//if (c->val_off == g_soft_cut_s)
-			//	norhs = true;
 
 			if (is_var(lhs)) {
 				c = insert_call_here(p, c, lhs);
@@ -1928,7 +1924,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			cell *rhs = lhs + lhs->nbr_cells;
 			c = p->cl->cells + c_idx;
 
-			if (is_var(rhs) && !norhs)
+			if (is_var(rhs))
 				c = insert_call_here(p, c, rhs);
 			else {
 				rhs = goal_expansion(p, rhs);
@@ -1957,7 +1953,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 		}
 	} else if (c->arity) {
 		predicate *pr = find_predicate(p->m, c);
-		bool meta = pr && pr->is_meta_predicate;
+		bool meta = !pr || (pr && pr->is_meta_predicate);
 
 		if (c->val_off == g_call_s)
 			meta = true;

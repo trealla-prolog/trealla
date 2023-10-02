@@ -1326,16 +1326,6 @@ static void check_goal_expansion(module *m, cell *p1)
 		return;
 
 	cell *arg1 = h + 1;
-
-	if ((arg1->val_off == new_atom(m->pl, "get_attr")) && (arg1->arity == 3))
-		return;
-
-	if ((arg1->val_off == new_atom(m->pl, "put_attr")) && (arg1->arity == 3))
-		return;
-
-	if ((arg1->val_off == new_atom(m->pl, "del_attr")) && (arg1->arity == 2))
-		return;
-
 	predicate *pr = NULL;
 
 	if ((pr = find_predicate(m, arg1)) == NULL)
