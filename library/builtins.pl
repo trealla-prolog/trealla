@@ -780,13 +780,12 @@ get_atts(Var, L) :- var(L), !,
 	d_match(D, _, L).
 
 get_atts(Var, -Attr) :- !,
-	('$get_attributes'(Var, D) -> (
+	'$get_attributes'(Var, D) ->
 		functor(Attr, Functor, Arity),
 		attribute(Module, Functor, Arity),
-		\+ d_get(D, Module-Functor, _)
-		)
-	;	true
-	).
+		functor(Skel, Functor, Arity),
+		\+ d_get(D, Module-Functor, Skel)
+	;	true.
 
 get_atts(Var, +Attr) :- !,
 	'$get_attributes'(Var, D),
