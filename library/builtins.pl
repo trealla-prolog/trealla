@@ -750,14 +750,22 @@ del_attr(Var, Module) :-
 /*
 	get_atts(-Var, ?AccessSpec)
 
-	Gets the attributes of Var according to AccessSpec. If AccessSpec is unbound, it will be bound to a list of all set attributes of Var. Non-variable terms in Var cause a type error. AccessSpec is either +(Attribute), -(Attribute), or a list of such (prefix + may be dropped for convenience). The prefixes in the AccessSpec have the following meaning:
+	Gets the attributes of Var according to AccessSpec. If AccessSpec
+	is unbound, it will be bound to a list of all set attributes of Var.
+	Non-variable terms in Var cause a type error. AccessSpec is
+	either +(Attribute), -(Attribute), or a list of such (prefix + may
+	be dropped for convenience). The prefixes in the AccessSpec have
+	the following meaning:
 
 		+(Attribute): The corresponding actual attribute must be present and is unified with Attribute.
 		-(Attribute): The corresponding actual attribute must be absent. The arguments of Attribute are ignored, only the name and arity are relevant.
 
 	put_atts(-Var, +AccessSpec)
 
-	Sets the attributes of Var according to AccessSpec. Non-variable terms in Var cause a type error. The effect of put_atts/2 are undone on backtracking. The prefixes of AccessSpec have the following meaning:
+	Sets the attributes of Var according to AccessSpec. Non-variable
+	terms in Var cause a type error. The effect of put_atts/2 are
+	undone on backtracking. The prefixes of AccessSpec have the
+	following meaning:
 
 		+(Attribute): The corresponding actual attribute is set to Attribute. If the actual attribute was already present, it is simply replaced.
 		-(Attribute): The corresponding actual attribute is removed. If the actual attribute is already absent, nothing happens.
