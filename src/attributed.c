@@ -85,14 +85,14 @@ bool fn_put_atts_2(query *q)
 	}
 
 	if (!is_minus) {
-		cell *tmp = alloc_on_tmp(q, 1+1+attr->nbr_cells);
+		cell *tmp = alloc_on_tmp(q, 1+1);
 		make_atom(tmp, g_dot_s);
 		tmp->arity = 2;
 		tmp->nbr_cells += 1+attr->nbr_cells;
 		make_atom(tmp+1, new_atom(q->pl, m_name));
 		tmp[1].arity = 1;
-		tmp[1].nbr_cells += attr->nbr_cells;
-		copy_cells(tmp+2, attr, attr->nbr_cells);
+		cell *tmp2 = deep_clone_to_tmp(q, attr, p2_ctx);
+		tmp[1].nbr_cells += tmp2->nbr_cells;
 	}
 
 	cell *l = end_list(q);
