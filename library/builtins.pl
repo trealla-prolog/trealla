@@ -34,7 +34,8 @@ evaluable_property(P, A) :-
 	'$legacy_evaluable_property'(P, A).
 evaluable_property(P, A) :-
 	'$load_properties',
-	(	var(A) -> true
+	(	var(A) ->
+		true
 	; 	(Controls = [iso,built_in,static,dynamic,template(_),template(_,_)],
 		memberchk(A, Controls) ->
 			true
