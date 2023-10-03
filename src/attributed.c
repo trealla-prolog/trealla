@@ -119,6 +119,9 @@ bool fn_get_atts_2(query *q)
 	const slot *e = GET_SLOT(f, p1->var_nbr);
 	bool is_minus = !is_var(p2) && p2->val_off == g_minus_s;
 
+	if (!e->c.attrs)
+		return is_minus ? true : false;
+
 	if (is_var(p2)) {
 		cell *l = e->c.attrs;
 		pl_idx l_ctx = e->c.attrs_ctx;
@@ -135,9 +138,6 @@ bool fn_get_atts_2(query *q)
 		check_heap_error(l);
 		return unify(q, p2, p2_ctx, l, q->st.curr_frame);
 	}
-
-	if (!e->c.attrs)
-		return is_minus ? true : false;
 
 	cell *attr = p2;
 
@@ -203,6 +203,7 @@ bool fn_sys_list_attributed_1(query *q)
 		return unify(q, p1, p1_ctx, make_nil(), q->st.curr_frame);
 
 	cell *l = end_list(q);
+	check_heap_error(l);
 	return unify(q, p1, p1_ctx, l, 0);
 }
 
@@ -211,7 +212,7 @@ bool fn_sys_unattributed_var_1(query *q)
 	GET_FIRST_ARG(p1,var);
 	const frame *f = GET_FRAME(p1_ctx);
 	const slot *e = GET_SLOT(f, p1->var_nbr);
-	return !e->c.attrs;
+	return e->c.attrs ? false : true;
 }
 
 bool fn_sys_attributed_var_1(query *q)
@@ -219,7 +220,7 @@ bool fn_sys_attributed_var_1(query *q)
 	GET_FIRST_ARG(p1,var);
 	const frame *f = GET_FRAME(p1_ctx);
 	const slot *e = GET_SLOT(f, p1->var_nbr);
-	return e->c.attrs;
+	return e->c.attrs ? true : false;
 }
 
 static void make_new_var(query *q, cell *tmp, unsigned var_nbr, pl_idx var_ctx)
