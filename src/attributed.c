@@ -119,9 +119,6 @@ bool fn_get_atts_2(query *q)
 	const slot *e = GET_SLOT(f, p1->var_nbr);
 	bool is_minus = !is_var(p2) && p2->val_off == g_minus_s;
 
-	if (!e->c.attrs)
-		return false;
-
 	if (is_var(p2)) {
 		cell *l = e->c.attrs;
 		pl_idx l_ctx = e->c.attrs_ctx;
@@ -138,6 +135,9 @@ bool fn_get_atts_2(query *q)
 		check_heap_error(l);
 		return unify(q, p2, p2_ctx, l, q->st.curr_frame);
 	}
+
+	if (!e->c.attrs)
+		return is_minus ? true : false;
 
 	cell *attr = p2;
 
