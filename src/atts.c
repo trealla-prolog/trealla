@@ -61,9 +61,9 @@ bool fn_put_atts_2(query *q)
 	if ((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s))
 		attr++;
 
-	const char *name = C_STR(q, attr);
-	unsigned arity = attr->arity;
-	const char *m_name = do_attribute(q, name, arity);
+	const char *a_name = C_STR(q, attr);
+	unsigned a_arity = attr->arity;
+	const char *m_name = do_attribute(q, a_name, a_arity);
 	init_tmp_heap(q);
 
 	if (e->c.attrs) {
@@ -75,8 +75,8 @@ bool fn_put_atts_2(query *q)
 			cell *h = LIST_HEAD(l);
 
 			if (strcmp(C_STR(q, h), m_name)
-				|| strcmp(C_STR(q, h+1), name)
-				|| ((h+1)->arity != arity)) {
+				|| strcmp(C_STR(q, h+1), a_name)
+				|| ((h+1)->arity != a_arity)) {
 				append_list(q, h);
 			}
 
@@ -144,9 +144,9 @@ bool fn_get_atts_2(query *q)
 	if ((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s))
 		attr++;
 
-	const char *name = C_STR(q, attr);
-	unsigned arity = attr->arity;
-	const char *m_name = do_attribute(q, name, arity);
+	const char *a_name = C_STR(q, attr);
+	unsigned a_arity = attr->arity;
+	const char *m_name = do_attribute(q, a_name, a_arity);
 	cell *l = e->c.attrs;
 	pl_idx l_ctx = e->c.attrs_ctx;
 	LIST_HANDLER(l);
@@ -155,8 +155,8 @@ bool fn_get_atts_2(query *q)
 		cell *h = LIST_HEAD(l);
 
 		if (!strcmp(C_STR(q, h), m_name)
-			&& !strcmp(C_STR(q, h+1), name)
-			&& ((h+1)->arity == arity)) {
+			&& !strcmp(C_STR(q, h+1), a_name)
+			&& ((h+1)->arity == a_arity)) {
 			if (is_minus)
 				return false;
 
