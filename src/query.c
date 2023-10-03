@@ -4,7 +4,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "attributed.h"
+#include "atts.h"
 #include "heap.h"
 #include "module.h"
 #include "network.h"
