@@ -520,8 +520,9 @@ static bool fn_iso_atom_chars_2(query *q)
 			append_list(q, &tmp2);
 	}
 
-	cell *tmp = end_list(q);
-	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+	cell *l = end_list(q);
+	check_heap_error(l);
+	return unify(q, p2, p2_ctx, l, q->st.curr_frame);
 }
 
 static bool fn_iso_number_chars_2(query *q)
@@ -4017,6 +4018,7 @@ static bool fn_module_info_2(query *q)
 	}
 
 	cell *l = end_list(q);
+	check_heap_error(l);
 	return unify(q, p2, p2_ctx, l, q->st.curr_frame);
 }
 
@@ -4073,6 +4075,7 @@ static bool fn_source_info_2(query *q)
 	}
 
 	cell *l = end_list(q);
+	check_heap_error(l);
 	return unify(q, p2, p2_ctx, l, q->st.curr_frame);
 }
 
@@ -5696,8 +5699,9 @@ static bool fn_crypto_n_random_bytes_2(query *q)
 			append_list(q, &tmp);
 	}
 
-	cell *tmp = end_list(q);
-	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+	cell *l = end_list(q);
+	check_heap_error(l);
+	return unify(q, p2, p2_ctx, l, q->st.curr_frame);
 }
 
 #if USE_OPENSSL
@@ -6887,13 +6891,6 @@ static bool fn_sys_unifiable_3(query *q)
 	drop_choice(q);
 
 	cell *l = end_list(q);
-	cell tmp;
-
-	if (!l) {
-		make_atom(&tmp, g_nil_s);
-		l = &tmp;
-	}
-
 	return unify(q, p3, p3_ctx, l, q->st.curr_frame);
 }
 
@@ -7233,30 +7230,6 @@ static bool fn_use_module_2(query *q)
 	return do_use_module_2(q->st.m, q->st.curr_cell);
 }
 
-static bool fn_attribute_3(query *q)
-{
-	GET_FIRST_ARG(p1,atom_or_var);
-	GET_NEXT_ARG(p2,atom);
-	GET_NEXT_ARG(p3,integer);
-	module *m = q->pl->modules;
-	const char *name = C_STR(q, p2);
-	unsigned arity = get_smallint(p3);
-
-	while (m) {
-		if ((arity == m->arity) && !strcmp(name, m->name)) {
-			cell tmp;
-			make_atom(&tmp, new_atom(q->pl, m->orig->name));
-			return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-		}
-
-		m = m->next;
-	}
-
-	cell tmp;
-	make_atom(&tmp, new_atom(q->pl, q->st.m->name));
-	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-}
-
 static bool fn_prolog_load_context_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -7313,8 +7286,9 @@ static bool fn_modules_1(query *q)
 			append_list(q, &tmp);
 	}
 
-	cell *tmp = end_list(q);
-	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
+	cell *l = end_list(q);
+	check_heap_error(l);
+	return unify(q, p1, p1_ctx, l, q->st.curr_frame);
 }
 
 static bool fn_using_0(query *q)
@@ -8279,6 +8253,8 @@ builtins g_other_bifs[] =
 	{"between", 3, fn_between_3, "+integer,+integer,-integer", false, false, BLAH},
 	{"string_length", 2, fn_string_length_2, "+string,?integer", false, false, BLAH},
 	{"crypto_n_random_bytes", 2, fn_crypto_n_random_bytes_2, "+integer,-codes", false, false, BLAH},
+	{"put_atts", 2, fn_put_atts_2, "@variable,+term", false, false, BLAH},
+	{"get_atts", 2, fn_get_atts_2, "@variable,-term", false, false, BLAH},
 
 	{"must_be", 4, fn_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"can_be", 4, fn_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
@@ -8310,8 +8286,6 @@ builtins g_other_bifs[] =
 	{"$incr", 2, fn_sys_incr_2, "@integer,+integer", false, false, BLAH},
 	{"$choice", 0, fn_sys_choice_0, NULL, false, false, BLAH},
 	{"$alarm", 1, fn_sys_alarm_1, "+integer", false, false, BLAH},
-	{"$put_attributes", 2, fn_sys_put_attributes_2, "@variable,+list", false, false, BLAH},
-	{"$get_attributes", 2, fn_sys_get_attributes_2, "@variable,-list", false, false, BLAH},
 	{"$list_attributed", 1, fn_sys_list_attributed_1, "-list", false, false, BLAH},
 	{"$unattributed_var", 1, fn_sys_unattributed_var_1, "@variable", false, false, BLAH},
 	{"$attributed_var", 1, fn_sys_attributed_var_1, "@variable", false, false, BLAH},

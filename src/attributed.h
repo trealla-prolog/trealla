@@ -1,8 +1,10 @@
 #include "query.h"
 
+bool fn_put_atts_2(query *q);
+bool fn_get_atts_2(query *q);
+bool fn_attribute_3(query *q);
+
 bool fn_sys_list_attributed_1(query *q);
-bool fn_sys_put_attributes_2(query *q);
-bool fn_sys_get_attributes_2(query *q);
 bool fn_sys_unattributed_var_1(query *q);
 bool fn_sys_attributed_var_1(query *q);
 

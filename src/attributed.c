@@ -10,6 +10,154 @@
 #include "prolog.h"
 #include "query.h"
 
+static const char *do_attribute(query *q, const char *name, unsigned arity)
+{
+	module *m = q->pl->modules;
+
+	while (m) {
+		if ((arity == m->arity) && !strcmp(name, m->name))
+			return m->orig->name;
+
+		m = m->next;
+	}
+
+	return q->st.m->name;
+}
+
+bool fn_attribute_3(query *q)
+{
+	GET_FIRST_ARG(p1,atom_or_var);
+	GET_NEXT_ARG(p2,atom);
+	GET_NEXT_ARG(p3,integer);
+	const char *m_name = do_attribute(q, C_STR(q, p2), get_smalluint(p3));
+	cell tmp;
+	make_atom(&tmp, new_atom(q->pl, m_name));
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+bool fn_put_atts_2(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	GET_NEXT_ARG(p2,callable);
+	const frame *f = GET_FRAME(p1_ctx);
+	slot *e = GET_SLOT(f, p1->var_nbr);
+	bool is_minus = p2->val_off == g_minus_s;
+
+	if (!e->c.attrs && is_minus)
+		return true;
+
+	if (e->c.attrs || !is_nil(p2))
+		add_trail(q, p1_ctx, p1->var_nbr, e->c.attrs, e->c.attrs_ctx);
+
+	if (is_nil(p2)) {
+		e->c.flags = 0;
+		e->c.attrs = NULL;
+		e->c.attrs_ctx = 0;
+		return true;
+	}
+
+	cell *attr = p2;
+
+	if ((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s))
+		attr++;
+
+	const char *name = C_STR(q, attr);
+	unsigned arity = attr->arity;
+	const char *m_name = do_attribute(q, name, arity);
+	init_tmp_heap(q);
+
+	if (e->c.attrs) {
+		cell *l = e->c.attrs;
+		pl_idx l_ctx = e->c.attrs_ctx;
+		LIST_HANDLER(l);
+
+		while (is_iso_list(l)) {
+			cell *h = LIST_HEAD(l);
+
+			if (strcmp(C_STR(q, h), m_name)
+				|| strcmp(C_STR(q, h+1), name)
+				|| ((h+1)->arity != arity)) {
+				append_list(q, h);
+			}
+
+			l = LIST_TAIL(l);
+		}
+	}
+
+	if (!is_minus) {
+		cell *tmp = alloc_on_tmp(q, 1+1+attr->nbr_cells);
+		make_atom(tmp, g_dot_s);
+		tmp->arity = 2;
+		tmp->nbr_cells += 1+attr->nbr_cells;
+		make_atom(tmp+1, new_atom(q->pl, m_name));
+		tmp[1].arity = 1;
+		tmp[1].nbr_cells += attr->nbr_cells;
+		copy_cells(tmp+2, attr, attr->nbr_cells);
+	}
+
+	cell *l = end_list(q);
+	check_heap_error(l);
+	e->c.flags = FLAG_VAR_ATTR;
+	e->c.attrs = l;
+	e->c.attrs_ctx = q->st.curr_frame;
+	return true;
+}
+
+bool fn_get_atts_2(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	GET_NEXT_ARG(p2,callable_or_var);
+	const frame *f = GET_FRAME(p1_ctx);
+	const slot *e = GET_SLOT(f, p1->var_nbr);
+	bool is_minus = !is_var(p2) && p2->val_off == g_minus_s;
+
+	if (!e->c.attrs)
+		return false;
+
+	if (is_var(p2)) {
+		cell *l = e->c.attrs;
+		pl_idx l_ctx = e->c.attrs_ctx;
+		init_tmp_heap(q);
+		LIST_HANDLER(l);
+
+		while (is_iso_list(l)) {
+			cell *h = LIST_HEAD(l);
+			append_list(q, h+1);
+			l = LIST_TAIL(l);
+		}
+
+		l = end_list(q);
+		check_heap_error(l);
+		return unify(q, p2, p2_ctx, l, l_ctx);
+	}
+
+	cell *attr = p2;
+
+	if ((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s))
+		attr++;
+
+	const char *name = C_STR(q, attr);
+	unsigned arity = attr->arity;
+	const char *m_name = do_attribute(q, name, arity);
+	cell *l = e->c.attrs;
+	pl_idx l_ctx = e->c.attrs_ctx;
+	LIST_HANDLER(l);
+
+	while (is_iso_list(l)) {
+		cell *h = LIST_HEAD(l);
+
+		if (!strcmp(C_STR(q, h), m_name)
+			&& !strcmp(C_STR(q, h+1), name)
+			&& ((h+1)->arity == arity)) {
+			return unify(q, attr, p2_ctx, h+1, l_ctx);
+		}
+
+		l = LIST_TAIL(l);
+	}
+
+	return is_minus ? true : false;
+}
+
 bool fn_sys_list_attributed_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
@@ -45,46 +193,6 @@ bool fn_sys_list_attributed_1(query *q)
 
 	cell *l = end_list(q);
 	return unify(q, p1, p1_ctx, l, 0);
-}
-
-bool fn_sys_put_attributes_2(query *q)
-{
-	GET_FIRST_ARG(p1,var);
-	GET_NEXT_ARG(p2,list_or_nil);
-	const frame *f = GET_FRAME(p1_ctx);
-	slot *e = GET_SLOT(f, p1->var_nbr);
-
-	if (e->c.attrs || !is_nil(p2))
-		add_trail(q, p1_ctx, p1->var_nbr, e->c.attrs, e->c.attrs_ctx);
-
-	//DUMP_TERM("$put_attr", p2, p2_ctx ,true);
-
-	if (is_nil(p2)) {
-		e->c.flags = 0;
-		e->c.attrs = NULL;
-		e->c.attrs_ctx = 0;
-		return true;
-	}
-
-	cell *tmp = deep_clone_to_heap(q, p2, p2_ctx);
-	check_heap_error(tmp);
-	e->c.flags = FLAG_VAR_ATTR;
-	e->c.attrs = tmp;
-	e->c.attrs_ctx = q->st.curr_frame;
-	return true;
-}
-
-bool fn_sys_get_attributes_2(query *q)
-{
-	GET_FIRST_ARG(p1,var);
-	GET_NEXT_ARG(p2,list_or_nil_or_var);
-	const frame *f = GET_FRAME(p1_ctx);
-	const slot *e = GET_SLOT(f, p1->var_nbr);
-
-	if (!e->c.attrs)
-		return false;
-
-	return unify(q, p2, p2_ctx, e->c.attrs, e->c.attrs_ctx);
 }
 
 bool fn_sys_unattributed_var_1(query *q)
