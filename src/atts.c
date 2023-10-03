@@ -43,6 +43,11 @@ bool fn_put_atts_2(query *q)
 	slot *e = GET_SLOT(f, p1->var_nbr);
 	bool is_minus = p2->val_off == g_minus_s;
 
+	cell *attr = p2;
+
+	if ((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s))
+		attr++;
+
 	if (!e->c.attrs && is_minus)
 		return true;
 
@@ -55,11 +60,6 @@ bool fn_put_atts_2(query *q)
 		e->c.attrs_ctx = 0;
 		return true;
 	}
-
-	cell *attr = p2;
-
-	if ((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s))
-		attr++;
 
 	unsigned a_arity = attr->arity;
 	const char *m_name = do_attribute(q, attr, a_arity);
@@ -118,6 +118,11 @@ bool fn_get_atts_2(query *q)
 	const slot *e = GET_SLOT(f, p1->var_nbr);
 	bool is_minus = !is_var(p2) && p2->val_off == g_minus_s;
 
+	cell *attr = p2;
+
+	if ((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s))
+		attr++;
+
 	if (!e->c.attrs)
 		return is_minus ? true : false;
 
@@ -137,11 +142,6 @@ bool fn_get_atts_2(query *q)
 		check_heap_error(l);
 		return unify(q, p2, p2_ctx, l, q->st.curr_frame);
 	}
-
-	cell *attr = p2;
-
-	if ((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s))
-		attr++;
 
 	unsigned a_arity = attr->arity;
 	const char *m_name = do_attribute(q, attr, a_arity);
