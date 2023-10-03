@@ -2181,6 +2181,7 @@ module *module_create(prolog *pl, const char *name)
 	set_dynamic_in_db(m, "term_expansion", 2);
 	set_dynamic_in_db(m, "goal_expansion", 2);
 	set_dynamic_in_db(m, "$directive", 1);
+	set_dynamic_in_db(m, "$bb_global_key", 3);
 
 	return m;
 }

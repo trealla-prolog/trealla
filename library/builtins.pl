@@ -662,8 +662,6 @@ pretty(PI) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SICStus compatible
 
-:- dynamic('$bb_global_key'/3).
-
 bb_put(K, V) :-
 	must_be(K, atomic, bb_put/2, _),
 	ignore(retract('$bb_global_key'(K, _, _))),
