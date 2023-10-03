@@ -555,6 +555,11 @@ cell *end_list(query *q)
 	tmp->arity = tmp->flags = 0;
 	pl_idx nbr_cells = tmp_heap_used(q);
 
+	if (is_nil(get_tmp_heap(q, 0))) {
+		init_tmp_heap(q);
+		return make_nil();
+	}
+
 	tmp = alloc_on_heap(q, nbr_cells);
 	if (!tmp) return NULL;
 	safe_copy_cells(tmp, get_tmp_heap(q, 0), nbr_cells);

@@ -97,6 +97,14 @@ bool fn_put_atts_2(query *q)
 
 	cell *l = end_list(q);
 	check_heap_error(l);
+
+	if (is_nil(l)) {
+		e->c.flags = 0;
+		e->c.attrs = NULL;
+		e->c.attrs_ctx = 0;
+		return true;
+	}
+
 	e->c.flags = FLAG_VAR_ATTR;
 	e->c.attrs = l;
 	e->c.attrs_ctx = q->st.curr_frame;
