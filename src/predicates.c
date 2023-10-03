@@ -6,7 +6,7 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 
-#include "attributed.h"
+#include "atts.h"
 #include "base64.h"
 #include "heap.h"
 #include "history.h"

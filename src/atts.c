@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "attributed.h"
+#include "atts.h"
 #include "heap.h"
 #include "module.h"
 #include "parser.h"

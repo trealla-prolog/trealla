@@ -1,3 +1,5 @@
+#pragma once
+
 #include "query.h"
 
 bool fn_put_atts_2(query *q);
