@@ -748,6 +748,7 @@ current_op(A, B, C) :-
 		-(Attribute): The corresponding actual attribute is removed. If the actual attribute is already absent, nothing happens.
 */
 
+// TODO: rewrite these predicates as builtins in C
 
 :- use_module(library(dict)).
 
