@@ -136,7 +136,7 @@ bool fn_get_atts_2(query *q)
 
 		l = end_list(q);
 		check_heap_error(l);
-		return unify(q, p2, p2_ctx, l, l_ctx);
+		return unify(q, p2, p2_ctx, l, q->st.curr_frame);
 	}
 
 	cell *attr = p2;
@@ -157,6 +157,9 @@ bool fn_get_atts_2(query *q)
 		if (!strcmp(C_STR(q, h), m_name)
 			&& !strcmp(C_STR(q, h+1), name)
 			&& ((h+1)->arity == arity)) {
+			if (is_minus)
+				return false;
+
 			return unify(q, attr, p2_ctx, h+1, l_ctx);
 		}
 
