@@ -590,29 +590,7 @@ db_entry *erase_from_db(module *m, uuid *ref)
 {
 	db_entry *dbe = find_in_db(m, ref);
 	if (!dbe) return 0;
-	predicate *pr = dbe->owner;
 	dbe->cl.dgen_erased = ++m->pl->ugen;
-	dbe->filename = NULL;
-	pr->cnt--;
-
-	dbe->dirty = pr->dirty_list;
-	pr->dirty_list = dbe;
-
-	if (!pr->idx || !pr->cnt || !pr->refcnt)
-		return dbe;
-
-	sl_destroy(pr->idx2);
-	sl_destroy(pr->idx);
-	pr->idx2 = NULL;
-
-	pr->idx = sl_create(index_cmpkey, NULL, m);
-	ensure(pr->idx);
-
-	if (pr->key.arity > 1) {
-		pr->idx2 = sl_create(index_cmpkey, NULL, m);
-		ensure(pr->idx2);
-	}
-
 	return dbe;
 }
 
@@ -1599,19 +1577,18 @@ static bool retract_from_predicate(db_entry *dbe)
 	dbe->filename = NULL;
 	pr->cnt--;
 
-	if (!pr->idx || !pr->cnt || !pr->refcnt)
-		return true;
+	if (pr->idx && !pr->cnt && !pr->refcnt) {
+		sl_destroy(pr->idx2);
+		sl_destroy(pr->idx);
+		pr->idx2 = NULL;
 
-	sl_destroy(pr->idx2);
-	sl_destroy(pr->idx);
-	pr->idx2 = NULL;
+		pr->idx = sl_create(index_cmpkey, NULL, m);
+		ensure(pr->idx);
 
-	pr->idx = sl_create(index_cmpkey, NULL, m);
-	ensure(pr->idx);
-
-	if (pr->key.arity > 1) {
-		pr->idx2 = sl_create(index_cmpkey, NULL, m);
-		ensure(pr->idx2);
+		if (pr->key.arity > 1) {
+			pr->idx2 = sl_create(index_cmpkey, NULL, m);
+			ensure(pr->idx2);
+		}
 	}
 
 	return true;

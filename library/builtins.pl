@@ -696,7 +696,7 @@ bb_update(K, O, V) :-
 bb_b_put(K, V) :-
 	must_be(K, atomic, bb_b_put/2, _),
 	asserta('$bb_global_key'(K, V, b), Ref),
-	'$quantum_eraser'(Ref).
+	'$quantum_eraser'(_, Ref).
 
 :- help(bb_b_put(+atomic,+term), [iso(false)]).
 
