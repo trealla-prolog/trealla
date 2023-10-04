@@ -550,6 +550,9 @@ int index_cmpkey(const void *ptr1, const void *ptr2, const void *param, void *l)
 db_entry *find_in_db(module *m, uuid *ref)
 {
 	for (predicate *pr = m->head; pr; pr = pr->next) {
+		if (!pr->is_dynamic)
+			continue;
+
 		for (db_entry *dbe = pr->head ; dbe; dbe = dbe->next) {
 			if (dbe->cl.dgen_erased)
 				continue;
