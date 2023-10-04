@@ -2077,6 +2077,12 @@ static bool fn_iso_clause_2(query *q)
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,callable_or_var);
 
+	if (p1->val_off == g_colon_s) {
+		p1 = p1 + 1;
+		q->st.m = find_module(q->pl, C_STR(q, p1));
+		p1 += p1->nbr_cells;
+	}
+
 	while (match_clause(q, p1, p1_ctx, DO_CLAUSE)) {
 		if (q->did_throw) return true;
 		clause *cl = &q->st.dbe->cl;
@@ -3587,6 +3593,14 @@ static bool fn_clause_3(query *q)
 	GET_FIRST_ARG(p1,callable_or_var);
 	GET_NEXT_ARG(p2,callable_or_var);
 	GET_NEXT_ARG(p3,atom_or_var);
+
+	if (!is_var(p1)) {
+		if (p1->val_off == g_colon_s) {
+			p1 = p1 + 1;
+			q->st.m = find_module(q->pl, C_STR(q, p1));
+			p1 += p1->nbr_cells;
+		}
+	}
 
 	if (is_var(p1) && is_var(p2) && is_var(p3))
 		return throw_error(q, p3, p3_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
