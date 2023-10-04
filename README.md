@@ -311,7 +311,7 @@ Non-standard predicates
 	pretty/1					# pretty-print version of listing/1
 	between/3
 	forall/2
-	msort/2						# unsorted version of sort/3
+	msort/2						# version of sort/3 with duplicates
 	samsort/2                   # same as msort/2
 	merge/3
 	countall/2					# countall(@callable,-integer)
@@ -323,11 +323,6 @@ Non-standard predicates
 	e/0
 	name/2
 	tab/[1,2]
-
-	maplist/[2-8]               # auto-loaded from library(apply)
-	foldl/[4-7]                 # auto-loaded from library(apply)
-	include/3                   # auto-loaded from library(apply)
-	exclude/3                   # auto-loaded from library(apply)
 
 	get_unbuffered_code/1		# read a single unbuffered code
 	get_unbuffered_char/1		# read a single unbuffered character
@@ -360,13 +355,8 @@ Non-standard predicates
 	bb_put/2                    # SICStus-compatible
 	bb_delete/2                 # SICStus-compatible
 	bb_update/3                 # SICStus-compatible
-	bb_del/1                    # SICStus-compatible
 	bb_b_put/2                  # SICStus-compatible
 
-	freeze/2                    # auto-loaded from library(freeze)
-	frozen/2                    # auto-loaded from library(freeze)
-	when/2						# auto-loaded from library(when)
-	dif/2						# auto-loaded from library(dif)
 	call_residue_vars/2
 
 	gensym/2					# gensym(+atom,-atom)
@@ -700,7 +690,6 @@ Examples...
 	;  A = 'AAA', B = 'NYSEARCA', C = 'ETF', D = 'USD', E = '2020-09-09', F = '2021-06-25'
 	;
 ```
-
 
 Application maps (dictionaries)
 ===============================
