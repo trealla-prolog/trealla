@@ -10,12 +10,12 @@
 #include "prolog.h"
 #include "query.h"
 
-static const char *do_attribute(query *q, const char *name, unsigned arity)
+static const char *do_attribute(query *q, cell *c, unsigned arity)
 {
 	module *m = q->pl->modules;
 
 	while (m) {
-		if ((arity == m->arity) && !strcmp(name, m->name))
+		if ((arity == m->arity) && !CMP_STR_TO_CSTR(q, c, m->name))
 			return m->orig->name;
 
 		m = m->next;
@@ -29,7 +29,7 @@ bool fn_attribute_3(query *q)
 	GET_FIRST_ARG(p1,atom_or_var);
 	GET_NEXT_ARG(p2,atom);
 	GET_NEXT_ARG(p3,integer);
-	const char *m_name = do_attribute(q, C_STR(q, p2), get_smalluint(p3));
+	const char *m_name = do_attribute(q, p2, get_smalluint(p3));
 	cell tmp;
 	make_atom(&tmp, new_atom(q->pl, m_name));
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
@@ -42,6 +42,11 @@ bool fn_put_atts_2(query *q)
 	const frame *f = GET_FRAME(p1_ctx);
 	slot *e = GET_SLOT(f, p1->var_nbr);
 	bool is_minus = p2->val_off == g_minus_s;
+
+	cell *attr = p2;
+
+	if ((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s))
+		attr++;
 
 	if (!e->c.attrs && is_minus)
 		return true;
@@ -56,14 +61,8 @@ bool fn_put_atts_2(query *q)
 		return true;
 	}
 
-	cell *attr = p2;
-
-	if ((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s))
-		attr++;
-
-	const char *name = C_STR(q, attr);
-	unsigned arity = attr->arity;
-	const char *m_name = do_attribute(q, name, arity);
+	unsigned a_arity = attr->arity;
+	const char *m_name = do_attribute(q, attr, a_arity);
 	init_tmp_heap(q);
 
 	if (e->c.attrs) {
@@ -74,9 +73,9 @@ bool fn_put_atts_2(query *q)
 		while (is_iso_list(l)) {
 			cell *h = LIST_HEAD(l);
 
-			if (strcmp(C_STR(q, h), m_name)
-				|| strcmp(C_STR(q, h+1), name)
-				|| ((h+1)->arity != arity)) {
+			if (CMP_STR_TO_CSTR(q, h, m_name)
+				|| CMP_STR_TO_STR(q, h+1, attr)
+				|| ((h+1)->arity != a_arity)) {
 				append_list(q, h);
 			}
 
@@ -119,6 +118,11 @@ bool fn_get_atts_2(query *q)
 	const slot *e = GET_SLOT(f, p1->var_nbr);
 	bool is_minus = !is_var(p2) && p2->val_off == g_minus_s;
 
+	cell *attr = p2;
+
+	if ((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s))
+		attr++;
+
 	if (!e->c.attrs)
 		return is_minus ? true : false;
 
@@ -139,14 +143,8 @@ bool fn_get_atts_2(query *q)
 		return unify(q, p2, p2_ctx, l, q->st.curr_frame);
 	}
 
-	cell *attr = p2;
-
-	if ((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s))
-		attr++;
-
-	const char *name = C_STR(q, attr);
-	unsigned arity = attr->arity;
-	const char *m_name = do_attribute(q, name, arity);
+	unsigned a_arity = attr->arity;
+	const char *m_name = do_attribute(q, attr, a_arity);
 	cell *l = e->c.attrs;
 	pl_idx l_ctx = e->c.attrs_ctx;
 	LIST_HANDLER(l);
@@ -154,9 +152,9 @@ bool fn_get_atts_2(query *q)
 	while (is_iso_list(l)) {
 		cell *h = LIST_HEAD(l);
 
-		if (!strcmp(C_STR(q, h), m_name)
-			&& !strcmp(C_STR(q, h+1), name)
-			&& ((h+1)->arity == arity)) {
+		if (!CMP_STR_TO_CSTR(q, h, m_name)
+			&& !CMP_STR_TO_STR(q, h+1, attr)
+			&& ((h+1)->arity == a_arity)) {
 			if (is_minus)
 				return false;
 
