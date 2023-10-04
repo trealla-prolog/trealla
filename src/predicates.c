@@ -3567,7 +3567,7 @@ bool fn_sys_quantum_eraser_1(query *q)
 	GET_FIRST_ARG(p1,atom);
 	cell tmp2;
 	make_cstring(&tmp2, C_STR(q, p1));
-	tmp2.flags |= FLAG_CSTR_QUATUM_ERASER;
+	tmp2.flags |= FLAG_CSTR_QUANTUM_ERASER;
 	unsigned var_nbr = create_vars(q, 1);
 	cell tmp;
 	make_ref(&tmp, g_anon_s, var_nbr, q->st.curr_frame);
