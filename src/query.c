@@ -1861,14 +1861,22 @@ void query_destroy(query *q)
 			predicate *pr = find_functor(m, "$bb_global_key", 3);
 
 			if (pr) {
-				for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
+				db_entry *dbe = pr->head;
+
+				while (dbe) {
 					cell *c = dbe->cl.cells;
 					cell *arg1 = c + 1;
 					cell *arg2 = arg1 + arg1->nbr_cells;
 					cell *arg3 = arg2 + arg2->nbr_cells;
 
-					if (!CMP_STR_TO_CSTR(m, arg3, "b"))
-						retract_from_db(dbe);
+					if (!CMP_STR_TO_CSTR(m, arg3, "b")) {
+						delink(pr, dbe);
+						db_entry *save = dbe;
+						dbe = dbe->next;
+						clear_rule(&save->cl);
+						free(save);
+					} else
+						dbe = dbe->next;
 				}
 			}
 		}
