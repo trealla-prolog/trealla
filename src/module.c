@@ -1577,18 +1577,19 @@ static bool retract_from_predicate(db_entry *dbe)
 	dbe->filename = NULL;
 	pr->cnt--;
 
-	if (pr->idx && !pr->cnt && !pr->refcnt) {
-		sl_destroy(pr->idx2);
-		sl_destroy(pr->idx);
-		pr->idx2 = NULL;
+	if (!pr->idx || !pr->cnt || !pr->refcnt)
+		return true;
 
-		pr->idx = sl_create(index_cmpkey, NULL, m);
-		ensure(pr->idx);
+	sl_destroy(pr->idx2);
+	sl_destroy(pr->idx);
+	pr->idx2 = NULL;
 
-		if (pr->key.arity > 1) {
-			pr->idx2 = sl_create(index_cmpkey, NULL, m);
-			ensure(pr->idx2);
-		}
+	pr->idx = sl_create(index_cmpkey, NULL, m);
+	ensure(pr->idx);
+
+	if (pr->key.arity > 1) {
+		pr->idx2 = sl_create(index_cmpkey, NULL, m);
+		ensure(pr->idx2);
 	}
 
 	return true;
