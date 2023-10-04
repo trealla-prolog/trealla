@@ -1824,13 +1824,6 @@ void query_destroy(query *q)
 
 	for (pl_idx i = 0; i < q->st.sp; i++, e++) {
 		cell *c = &e->c;
-
-		if (c->flags & FLAG_CSTR_QUANTUM_ERASER) {
-			uuid u;
-			uuid_from_buf(C_STR(q, c), &u);
-			erase_from_db(q->st.m, &u);
-		}
-
 		unshare_cell(c);
 	}
 
