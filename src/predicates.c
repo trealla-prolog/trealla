@@ -7279,7 +7279,7 @@ static bool fn_modules_1(query *q)
 			continue;
 
 		cell tmp;
-		make_string(&tmp,  m->name);
+		make_atom(&tmp,  new_atom(q->pl, m->name));
 
 		if (first) {
 			allocate_list(q, &tmp);
