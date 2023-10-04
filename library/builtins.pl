@@ -667,7 +667,6 @@ bb_put(K, V) :-
 	ignore(retract('$bb_global_key'(K, _, _))),
 	asserta('$bb_global_key'(K, V, nb)).
 
-:- meta_predicate(bb_put(:,+)).
 :- help(bb_put(+atomic,+term), [iso(false)]).
 
 bb_get(K, V) :-
@@ -675,7 +674,6 @@ bb_get(K, V) :-
 	'$bb_global_key'(K, V, _),
 	!.
 
-:- meta_predicate(bb_get(:,?)).
 :- help(bb_get(+atomic,?term), [iso(false)]).
 
 bb_delete(K, V) :-
@@ -683,7 +681,6 @@ bb_delete(K, V) :-
 	retract('$bb_global_key'(K, V, _)),
 	!.
 
-:- meta_predicate(bb_delete(:,?)).
 :- help(bb_delete(+atomic,+term), [iso(false)]).
 
 bb_update(K, O, V) :-
@@ -692,7 +689,6 @@ bb_update(K, O, V) :-
 	asserta('$bb_global_key'(K, V, nb)),
 	!.
 
-:- meta_predicate(bb_update(:,?,?)).
 :- help(bb_update(+atomic,+term,+term), [iso(false)]).
 
 % extension:
