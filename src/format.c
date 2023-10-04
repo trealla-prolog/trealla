@@ -78,7 +78,7 @@ static int get_next_char(query *q, list_reader_t *fmt)
 
 	fmt->p = fmt->p + 1;
 	cell *head = deref(q, fmt->p, fmt->p_ctx);
-	char ch;
+	int ch;
 
 	if (is_smallint(head))
 		ch = get_smallint(head);
