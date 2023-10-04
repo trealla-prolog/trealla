@@ -1854,6 +1854,28 @@ void query_destroy(query *q)
 	}
 #endif
 
+	module *m = q->pl->modules;
+
+	while (m) {
+		if (m) {
+			predicate *pr = find_functor(m, "$bb_global_key", 3);
+
+			if (pr) {
+				for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
+					cell *c = dbe->cl.cells;
+					cell *arg1 = c + 1;
+					cell *arg2 = arg1 + arg1->nbr_cells;
+					cell *arg3 = arg2 + arg2->nbr_cells;
+
+					if (!CMP_STR_TO_CSTR(m, arg3, "b"))
+						retract_from_db(dbe);
+				}
+			}
+		}
+
+		m = m->next;
+	}
+
 	mp_int_clear(&q->tmp_ival);
 	mp_rat_clear(&q->tmp_irat);
 	purge_dirty_list(q);
