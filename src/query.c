@@ -1361,6 +1361,8 @@ static bool match_head(query *q)
 		q->save_m = q->st.m;
 
 		if (!pr || is_evaluable(c) || is_builtin(c)) {
+			//static unsigned s_cnt = 1;
+			//printf("*** %s / %u ... %u\n", C_STR(q, c), c->arity, s_cnt++);
 			pr = search_predicate(q->st.m, c, NULL);
 
 			if (!pr || (pr->is_goal_expansion && !pr->head)) {
