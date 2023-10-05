@@ -695,7 +695,7 @@ static void unwind_trail(query *q)
 		slot *e = GET_SLOT(f, tr->var_nbr);
 		cell *c = &e->c;
 
-		if (c->flags & FLAG_CSTR_QUANTUM_ERASER) {
+		if (is_cstring(c) && (c->flags & FLAG_CSTR_QUANTUM_ERASER)) {
 			uuid u;
 			uuid_from_buf(C_STR(q, c), &u);
 			erase_from_db(q->st.m, &u);
