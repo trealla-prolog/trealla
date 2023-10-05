@@ -1629,9 +1629,9 @@ static void xref_cell(module *m, clause *cl, cell *c, predicate *parent)
 			c->flags |= FLAG_BUILTIN;
 
 		return;
-	} else {
-		//c->match = search_predicate(m, c, NULL);
 	}
+
+	c->match = search_predicate(m, c, NULL);
 
 	if ((c+c->nbr_cells) >= (cl->cells + cl->cidx-1)) {
 		if (parent && (parent->key.val_off == c->val_off) && (parent->key.arity == c->arity))
