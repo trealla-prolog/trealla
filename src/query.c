@@ -755,7 +755,6 @@ int retry_choice(query *q)
 		const choice *ch = GET_CHOICE(curr_choice);
 		q->st = ch->st;
 		q->save_m = NULL;
-		trim_heap(q);
 
 		frame *f = GET_CURR_FRAME();
 		f->ugen = ch->ugen;
@@ -764,9 +763,6 @@ int retry_choice(query *q)
 		f->actual_slots = ch->actual_slots;
 		f->overflow = ch->overflow;
 		f->base = ch->base;
-
-		if (ch->succeed_on_retry)
-			return -1;
 
 		if (ch->catchme_exception || ch->fail_on_retry)
 			continue;
@@ -777,9 +773,15 @@ int retry_choice(query *q)
 		if (ch->register_cleanup && q->noretry)
 			q->noretry = false;
 
+		trim_heap(q);
+
+		if (ch->succeed_on_retry)
+			return -1;
+
 		return 1;
 	}
 
+	trim_heap(q);
 	return 0;
 }
 
