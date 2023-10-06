@@ -254,7 +254,7 @@ bool fn_sys_undo_trail_2(query *q)
 	save->b.ptr = save->b.ptr2 = NULL;
 	save->lo_tp = q->undo_lo_tp;
 	save->hi_tp = q->undo_hi_tp;
-	bool first = true;
+	init_tmp_heap(q);
 
 	// Unbind our vars
 
@@ -269,19 +269,12 @@ bool fn_sys_undo_trail_2(query *q)
 		make_new_var(q, &lhs, tr->var_nbr, tr->var_ctx);
 		set_new_var(q, &rhs, &e->c, e->c.var_ctx);
 		//DUMP_TERM("$undo1 rhs", &e->c, e->c.var_ctx, 0);
-
 		cell tmp[3];
 		make_struct(tmp, g_minus_s, NULL, 2, 2);
 		SET_OP(&tmp[0], OP_YFX);
 		tmp[1] = lhs;
 		tmp[2] = rhs;
-
-		if (first) {
-			allocate_list(q, tmp);
-			first = false;
-		} else
-			append_list(q, tmp);
-
+		append_list(q, tmp);
 		init_cell(&e->c);
 
 		if (tr->attrs)
