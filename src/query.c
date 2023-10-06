@@ -1855,7 +1855,7 @@ void query_destroy(query *q)
 
 	while (m) {
 		if (m) {
-			predicate *pr = find_functor(m, "$bb_global_key", 3);
+			predicate *pr = find_functor(m, "$bb_key", 3);
 
 			if (pr) {
 				db_entry *dbe = pr->head;
