@@ -264,7 +264,6 @@ bool fn_sys_undo_trail_2(query *q)
 		slot *e = GET_SLOT(f, tr->var_nbr);
 		//printf("*** unbind [%u:%u] hi_tp=%u, ctx=%u, var=%u\n", j, i, q->undo_hi_tp, tr->var_ctx, tr->var_nbr);
 		save->e[j] = *e;
-
 		cell lhs, rhs;
 		make_new_var(q, &lhs, tr->var_nbr, tr->var_ctx);
 		set_new_var(q, &rhs, &e->c, e->c.var_ctx);
