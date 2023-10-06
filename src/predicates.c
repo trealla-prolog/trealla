@@ -2113,6 +2113,12 @@ static bool fn_iso_clause_2(query *q)
 
 bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 {
+	if (p1->val_off == g_colon_s) {
+		p1 = p1 + 1;
+		q->st.m = find_module(q->pl, C_STR(q, p1));
+		p1 += p1->nbr_cells;
+	}
+
 	if (!q->retry) {
 		cell *head = deref(q, get_head(p1), p1_ctx);
 

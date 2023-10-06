@@ -662,31 +662,33 @@ pretty(PI) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SICStus compatible
 
+% TODO: should be per-module key
+
 bb_put(K, V) :-
 	must_be(K, atomic, bb_put/2, _),
-	ignore(retract('$bb_key'(K, _, _))),
-	asserta('$bb_key'(K, V, nb)).
+	ignore(retract(user:'$bb_key'(K, _, _))),
+	asserta(user:'$bb_key'(K, V, nb)).
 
 :- help(bb_put(+atomic,+term), [iso(false)]).
 
 bb_get(K, V) :-
 	must_be(K, atomic, bb_get/2, _),
-	'$bb_key'(K, V, _),
+	user:'$bb_key'(K, V, _),
 	!.
 
 :- help(bb_get(+atomic,?term), [iso(false)]).
 
 bb_delete(K, V) :-
 	must_be(K, atomic, bb_delete/2, _),
-	retract('$bb_key'(K, V, _)),
+	retract(user:'$bb_key'(K, V, _)),
 	!.
 
 :- help(bb_delete(+atomic,+term), [iso(false)]).
 
 bb_update(K, O, V) :-
 	must_be(K, atomic, bb_update/3, _),
-	ignore(retract('$bb_key'(K, O, _))),
-	asserta('$bb_key'(K, V, nb)),
+	ignore(retract(user:'$bb_key'(K, O, _))),
+	asserta(user:'$bb_key'(K, V, nb)),
 	!.
 
 :- help(bb_update(+atomic,+term,+term), [iso(false)]).
@@ -695,7 +697,7 @@ bb_update(K, O, V) :-
 
 bb_b_put(K, V) :-
 	must_be(K, atomic, bb_b_put/2, _),
-	asserta('$bb_key'(K, V, b), Ref),
+	asserta(user:'$bb_key'(K, V, b), Ref),
 	'$quantum_eraser'(_, Ref).
 
 :- help(bb_b_put(+atomic,+term), [iso(false)]).
