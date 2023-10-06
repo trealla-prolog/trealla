@@ -360,7 +360,7 @@ bool do_post_unification_hook(query *q, bool is_builtin)
 	static void *s_fn_ptr2 = NULL;
 
 	if (!s_fn_ptr2)
-		s_fn_ptr2 = search_predicate(q->pl->user_m, tmp+1, NULL);
+		s_fn_ptr2 = search_predicate(q->st.m, tmp+1, NULL);
 
 	tmp[1].match = s_fn_ptr2;
 
