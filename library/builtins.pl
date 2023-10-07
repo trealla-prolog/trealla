@@ -662,33 +662,35 @@ pretty(PI) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SICStus compatible
 
-% TODO: should be per-module key
-
 bb_put(K, V) :-
 	must_be(K, atomic, bb_put/2, _),
-	ignore(retract(user:'$bb_key'(K, _, _))),
-	asserta(user:'$bb_key'(K, V, nb)).
+	prolog_load_context(module, M),
+	ignore(retract(M:'$bb_key'(K, _, _))),
+	asserta(M:'$bb_key'(K, V, nb)).
 
 :- help(bb_put(+atomic,+term), [iso(false)]).
 
 bb_get(K, V) :-
 	must_be(K, atomic, bb_get/2, _),
-	user:'$bb_key'(K, V, _),
+	prolog_load_context(module, M),
+	M:'$bb_key'(K, V, _),
 	!.
 
 :- help(bb_get(+atomic,?term), [iso(false)]).
 
 bb_delete(K, V) :-
 	must_be(K, atomic, bb_delete/2, _),
-	retract(user:'$bb_key'(K, V, _)),
+	prolog_load_context(module, M),
+	retract(M:'$bb_key'(K, V, _)),
 	!.
 
 :- help(bb_delete(+atomic,+term), [iso(false)]).
 
 bb_update(K, O, V) :-
 	must_be(K, atomic, bb_update/3, _),
-	ignore(retract(user:'$bb_key'(K, O, _))),
-	asserta(user:'$bb_key'(K, V, nb)),
+	prolog_load_context(module, M),
+	ignore(retract(M:'$bb_key'(K, O, _))),
+	asserta(M:'$bb_key'(K, V, nb)),
 	!.
 
 :- help(bb_update(+atomic,+term,+term), [iso(false)]).
@@ -697,7 +699,8 @@ bb_update(K, O, V) :-
 
 bb_b_put(K, V) :-
 	must_be(K, atomic, bb_b_put/2, _),
-	asserta(user:'$bb_key'(K, V, b), Ref),
+	prolog_load_context(module, M),
+	asserta(M:'$bb_key'(K, V, b), Ref),
 	'$quantum_eraser'(_, Ref).
 
 :- help(bb_b_put(+atomic,+term), [iso(false)]).
