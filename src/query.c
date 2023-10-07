@@ -882,7 +882,7 @@ static void commit_frame(query *q)
 	f->mid = q->st.m->id;
 
 	if (!q->st.dbe->owner->is_prebuilt) {
-		if (q->st.m != q->st.dbe->owner->m)
+		//if (q->st.m != q->st.dbe->owner->m)
 			q->st.prev_m = q->st.m;
 
 		q->st.m = q->st.dbe->owner->m;

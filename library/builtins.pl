@@ -663,32 +663,32 @@ pretty(PI) :-
 % SICStus compatible
 
 bb_put(K, V) :-
-	must_be(K, atomic, bb_put/2, _),
 	prolog_load_context(module, M),
+	must_be(K, atomic, bb_put/2, _),
 	ignore(retract(M:'$bb_key'(K, _, _))),
 	asserta(M:'$bb_key'(K, V, nb)).
 
 :- help(bb_put(+atomic,+term), [iso(false)]).
 
 bb_get(K, V) :-
-	must_be(K, atomic, bb_get/2, _),
 	prolog_load_context(module, M),
+	must_be(K, atomic, bb_get/2, _),
 	M:'$bb_key'(K, V, _),
 	!.
 
 :- help(bb_get(+atomic,?term), [iso(false)]).
 
 bb_delete(K, V) :-
-	must_be(K, atomic, bb_delete/2, _),
 	prolog_load_context(module, M),
+	must_be(K, atomic, bb_delete/2, _),
 	retract(M:'$bb_key'(K, V, _)),
 	!.
 
 :- help(bb_delete(+atomic,+term), [iso(false)]).
 
 bb_update(K, O, V) :-
-	must_be(K, atomic, bb_update/3, _),
 	prolog_load_context(module, M),
+	must_be(K, atomic, bb_update/3, _),
 	ignore(retract(M:'$bb_key'(K, O, _))),
 	asserta(M:'$bb_key'(K, V, nb)),
 	!.
@@ -698,8 +698,8 @@ bb_update(K, O, V) :-
 % extension:
 
 bb_b_put(K, V) :-
-	must_be(K, atomic, bb_b_put/2, _),
 	prolog_load_context(module, M),
+	must_be(K, atomic, bb_b_put/2, _),
 	asserta(M:'$bb_key'(K, V, b), Ref),
 	'$quantum_eraser'(_, Ref).
 
