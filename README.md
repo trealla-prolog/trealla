@@ -15,7 +15,8 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	API for calling from C (or by using WASM from Go & JS)
 	Access SQLITE databases using builtin module (uses FFI)
 	Concurrency via tasks / linda / futures / engines (generators)
-	Rational trees are considered ##EXPERIMENTAL##
+	Rational trees ##EXPERIMENTAL##
+	CLP(B) for boolean constraints ##EXPERIMENTAL##
 	Logtalk compatible
 
 Trealla is not WAM-based. It uses tree-walking, structure-sharing and
