@@ -82,7 +82,7 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 	if (!c || is_empty(c))
 		return;
 
-	if (c->fn_ptr && !c->fn_ptr->fn)
+	if (is_builtin(c) && c->fn_ptr && !c->fn_ptr->fn)
 		return;
 
 #if 0
@@ -90,8 +90,10 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 		return;
 #endif
 
+#if 0
 	if (c->val_off == g_sys_drop_barrier_s)
 		return;
+#endif
 
 	if (box == CALL)
 		box = q->retry?REDO:CALL;
@@ -920,8 +922,9 @@ static void commit_frame(query *q)
 	else
 		f = push_frame(q, cl->nbr_vars);
 
+	Trace(q, get_head(q->st.dbe->cl.cells), q->st.curr_frame, EXIT);
+
 	if (last_match) {
-		Trace(q, get_head(q->st.dbe->cl.cells), q->st.curr_frame, EXIT);
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
 
