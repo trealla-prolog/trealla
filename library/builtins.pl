@@ -673,8 +673,9 @@ bb_put(K, V) :-
 bb_get(K, V) :-
 	prolog_load_context(module, M),
 	must_be(K, atomic, bb_get/2, _),
-	M:'$bb_key'(K, V, _),
-	!.
+	M:'$bb_key'(K, V0, _),
+	!,
+	V0 = V.
 
 :- help(bb_get(+atomic,?term), [iso(false)]).
 
