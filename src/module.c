@@ -1709,7 +1709,7 @@ module *load_text(module *m, const char *src, const char *filename)
 			p->consulting = false;
 			p->command = true;
 			SB(src);
-			SB_sprintf(src, "forall(%s:retract(('$-'(initialization(__G_)))), (once(__G_) -> true ; format('Warning: Initialization goal failed: ~w~n', [__G_])))", p->m->name);
+			SB_sprintf(src, "forall(%s:retract(('$directive'(initialization(__G_)))), (once(__G_) -> true ; format('Warning: Initialization goal failed: ~w~n', [__G_])))", p->m->name);
 
 			if (run(p, SB_cstr(src), false, NULL, 0))
 				p->m->pl->status = false;
