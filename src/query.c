@@ -90,10 +90,8 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 		return;
 #endif
 
-#if 0
 	if (c->val_off == g_sys_drop_barrier_s)
 		return;
-#endif
 
 	if (box == CALL)
 		box = q->retry?REDO:CALL;
