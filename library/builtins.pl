@@ -682,6 +682,9 @@ bb_get(K, V) :-
 bb_delete(K, V) :-
 	prolog_load_context(module, M),
 	must_be(K, atomic, bb_delete/2, _),
+	M:'$bb_key'(K, V0, _),
+	!,
+	V0 = V,
 	retract(M:'$bb_key'(K, V, _)),
 	!.
 
@@ -690,6 +693,9 @@ bb_delete(K, V) :-
 bb_update(K, O, V) :-
 	prolog_load_context(module, M),
 	must_be(K, atomic, bb_update/3, _),
+	M:'$bb_key'(K, O0, _),
+	!,
+	O0 = O,
 	ignore(retract(M:'$bb_key'(K, O, _))),
 	asserta(M:'$bb_key'(K, V, nb)),
 	!.
