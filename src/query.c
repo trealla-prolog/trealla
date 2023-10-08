@@ -1875,7 +1875,7 @@ void query_destroy(query *q)
 					cell *arg3 = arg2 + arg2->nbr_cells;
 
 					if (!CMP_STR_TO_CSTR(m, arg3, "b")) {
-						//printf("*** quantum clean '%s'\n", C_STR(m, arg1));
+						//printf("*** quantum cleaner '%s'\n", C_STR(m, arg1));
 						delink(pr, dbe);
 						db_entry *save = dbe;
 						dbe = dbe->next;
