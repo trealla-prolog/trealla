@@ -696,9 +696,15 @@ static void unwind_trail(query *q)
 		cell *c = &e->c;
 
 		if (is_cstring(c) && (c->flags & FLAG_CSTR_QUANTUM_ERASER)) {
+			//printf("*** quantum eraser '%s'\n", C_STR(q, c));
 			uuid u;
 			uuid_from_buf(C_STR(q, c), &u);
-			erase_from_db(q->st.m, &u);
+			db_entry *dbe = find_in_db(q->st.m, &u);
+			if (dbe) {
+				delink(dbe->owner, dbe);
+				clear_rule(&dbe->cl);
+				free(dbe);
+			}
 		}
 
 		unshare_cell(c);
@@ -1869,6 +1875,7 @@ void query_destroy(query *q)
 					cell *arg3 = arg2 + arg2->nbr_cells;
 
 					if (!CMP_STR_TO_CSTR(m, arg3, "b")) {
+						//printf("*** quantum clean '%s'\n", C_STR(m, arg1));
 						delink(pr, dbe);
 						db_entry *save = dbe;
 						dbe = dbe->next;
