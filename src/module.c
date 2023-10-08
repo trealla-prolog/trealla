@@ -703,6 +703,9 @@ bool do_use_module_1(module *curr_m, cell *p)
 			return true;
 		}
 
+		if (!strcmp(name, "clpb") || !strcmp(name, "clpz"))
+			curr_m->pl->opt = false;
+
 		if (!strcmp(name, "between")
 		    || !strcmp(name, "samsort")
 		    || !strcmp(name, "terms")
