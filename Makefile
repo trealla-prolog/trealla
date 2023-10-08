@@ -105,6 +105,7 @@ LIBOBJECTS +=  \
 	library/charsio.o \
 	library/concurrent.o \
 	library/clpb.o \
+	library/clpz.o \
 	library/curl.o \
 	library/dcgs.o \
 	library/debug.o \
