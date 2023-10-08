@@ -1507,7 +1507,6 @@ bool start(query *q)
 		}
 
 		if (q->retry) {
-			Trace(q, q->st.curr_cell, q->st.curr_frame, FAIL);
 			int ok = retry_choice(q);
 
 			if (!ok)
@@ -1575,6 +1574,7 @@ bool start(query *q)
 			}
 
 			if ((!status && !q->is_oom) || q->abort) {
+				Trace(q, q->st.curr_cell, q->st.curr_frame, FAIL);
 				q->retry = QUERY_RETRY;
 
 				if (q->yielded)
@@ -1591,6 +1591,7 @@ bool start(query *q)
 			proceed(q);
 		} else if (!is_iso_list(q->st.curr_cell)) {
 			if (!match_head(q) && !q->is_oom) {
+				Trace(q, q->st.curr_cell, q->st.curr_frame, FAIL);
 				q->retry = QUERY_RETRY;
 				q->tot_backtracks++;
 				continue;
@@ -1599,7 +1600,8 @@ bool start(query *q)
 			if (q->run_hook)
 				do_post_unification_hook(q, false);
 		} else {
-			if (consultall(q, q->st.curr_cell, q->st.curr_frame) != true) {
+			if (!consultall(q, q->st.curr_cell, q->st.curr_frame)) {
+				Trace(q, q->st.curr_cell, q->st.curr_frame, FAIL);
 				q->retry = QUERY_RETRY;
 				q->tot_backtracks++;
 				continue;
