@@ -829,7 +829,21 @@ static void reuse_frame(query *q, const clause *cl)
 	slot *to = GET_SLOT(f, 0);
 
 	for (pl_idx i = 0; i < f->initial_slots; i++) {
-		unshare_cell(&to->c);
+		cell *c = &to->c;
+
+		if (is_cstring(c) && (c->flags & FLAG_CSTR_QUANTUM_ERASER)) {
+			//printf("*** quantum eraser '%s'\n", C_STR(q, c));
+			uuid u;
+			uuid_from_buf(C_STR(q, c), &u);
+			db_entry *dbe = find_in_db(q->st.m, &u);
+			if (dbe) {
+				delink(dbe->owner, dbe);
+				clear_rule(&dbe->cl);
+				free(dbe);
+			}
+		}
+
+		unshare_cell(c);
 		*to++ = *from++;
 	}
 

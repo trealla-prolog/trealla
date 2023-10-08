@@ -3577,7 +3577,6 @@ bool fn_sys_quantum_eraser_2(query *q)
 	tmp2.flags |= FLAG_CSTR_QUANTUM_ERASER;
 	bool ok = unify(q, p1, p1_ctx, &tmp2, q->st.curr_frame);
 	unshare_cell(&tmp2);
-	q->no_tco = true;
 	return ok;
 }
 
