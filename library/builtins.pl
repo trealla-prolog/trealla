@@ -665,7 +665,7 @@ pretty(PI) :-
 bb_put(K, V) :-
 	prolog_load_context(module, M),
 	must_be(K, atomic, bb_put/2, _),
-	ignore(retract(M:'$bb_key'(K, _, _))),
+	ignore(retractall(M:'$bb_key'(K, _, _))),
 	asserta(M:'$bb_key'(K, V, nb)).
 
 :- help(bb_put(+atomic,+term), [iso(false)]).
@@ -685,8 +685,7 @@ bb_delete(K, V) :-
 	M:'$bb_key'(K, V0, _),
 	!,
 	V0 = V,
-	retract(M:'$bb_key'(K, V, _)),
-	!.
+	retractall(M:'$bb_key'(K, _, _)).
 
 :- help(bb_delete(+atomic,+term), [iso(false)]).
 
@@ -696,7 +695,7 @@ bb_update(K, O, V) :-
 	M:'$bb_key'(K, O0, _),
 	!,
 	O0 = O,
-	ignore(retract(M:'$bb_key'(K, O, _))),
+	retractall(M:'$bb_key'(K, _, _)),
 	asserta(M:'$bb_key'(K, V, nb)),
 	!.
 

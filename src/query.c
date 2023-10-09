@@ -830,19 +830,6 @@ static void reuse_frame(query *q, const clause *cl)
 
 	for (pl_idx i = 0; i < f->initial_slots; i++) {
 		cell *c = &to->c;
-
-		if (is_cstring(c) && (c->flags & FLAG_CSTR_QUANTUM_ERASER)) {
-			//printf("*** quantum eraser '%s'\n", C_STR(q, c));
-			uuid u;
-			uuid_from_buf(C_STR(q, c), &u);
-			db_entry *dbe = find_in_db(q->st.m, &u);
-			if (dbe) {
-				delink(dbe->owner, dbe);
-				clear_rule(&dbe->cl);
-				free(dbe);
-			}
-		}
-
 		unshare_cell(c);
 		*to++ = *from++;
 	}
@@ -886,9 +873,10 @@ static bool are_slots_ok(const query *q, const frame *f)
 
 		if (is_empty(c))
 			return false;
-		else if (is_indirect(c) && !is_evaluable(c->val_ptr)) {
+		else if (is_indirect(c) && !is_evaluable(c->val_ptr))
 			return false;
-		}
+		else if (is_cstring(c) && (c->flags & FLAG_CSTR_QUANTUM_ERASER))
+			return false;
 	}
 
 	return true;
@@ -929,9 +917,10 @@ static void commit_frame(query *q)
 
 	}
 
-	if (q->pl->opt && tco)
+	if (q->pl->opt && tco) {
+		printf("*** TCO\n");
 		reuse_frame(q, cl);
-	else
+	} else
 		f = push_frame(q, cl->nbr_vars);
 
 	Trace(q, get_head(q->st.dbe->cl.cells), q->st.curr_frame, EXIT);

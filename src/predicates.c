@@ -2079,7 +2079,8 @@ static bool fn_iso_clause_2(query *q)
 
 	if (p1->val_off == g_colon_s) {
 		p1 = p1 + 1;
-		q->st.m = find_module(q->pl, C_STR(q, p1));
+		cell *m = deref(q, p1, p1_ctx);
+		q->st.m = find_module(q->pl, C_STR(q, m));
 		p1 += p1->nbr_cells;
 	}
 
@@ -2113,12 +2114,6 @@ static bool fn_iso_clause_2(query *q)
 
 bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 {
-	if (p1->val_off == g_colon_s) {
-		p1 = p1 + 1;
-		q->st.m = find_module(q->pl, C_STR(q, p1));
-		p1 += p1->nbr_cells;
-	}
-
 	if (!q->retry) {
 		cell *head = deref(q, get_head(p1), p1_ctx);
 
@@ -2152,12 +2147,28 @@ bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 static bool fn_iso_retract_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
+
+	if (p1->val_off == g_colon_s) {
+		p1 = p1 + 1;
+		cell *m = deref(q, p1, p1_ctx);
+		q->st.m = find_module(q->pl, C_STR(q, m));
+		p1 += p1->nbr_cells;
+	}
+
 	return do_retract(q, p1, p1_ctx, DO_RETRACT);
 }
 
 static bool fn_iso_retractall_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
+
+	if (p1->val_off == g_colon_s) {
+		p1 = p1 + 1;
+		cell *m = deref(q, p1, p1_ctx);
+		q->st.m = find_module(q->pl, C_STR(q, m));
+		p1 += p1->nbr_cells;
+	}
+
 	cell *head = deref(q, get_head(p1), p1_ctx);
 	predicate *pr = search_predicate(q->st.m, head, NULL);
 
@@ -3600,7 +3611,8 @@ static bool fn_clause_3(query *q)
 	if (!is_var(p1)) {
 		if (p1->val_off == g_colon_s) {
 			p1 = p1 + 1;
-			q->st.m = find_module(q->pl, C_STR(q, p1));
+			cell *m = deref(q, p1, p1_ctx);
+			q->st.m = find_module(q->pl, C_STR(q, m));
 			p1 += p1->nbr_cells;
 		}
 	}
@@ -3967,7 +3979,8 @@ static bool fn_listing_1(query *q)
 
 	if (p1->val_off == g_colon_s) {
 		p1 = p1 + 1;
-		q->st.m = find_module(q->pl, C_STR(q, p1));
+		cell *m = deref(q, p1, p1_ctx);
+		q->st.m = find_module(q->pl, C_STR(q, m));
 		p1 += p1->nbr_cells;
 	}
 
