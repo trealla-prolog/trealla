@@ -917,10 +917,9 @@ static void commit_frame(query *q)
 
 	}
 
-	if (q->pl->opt && tco) {
-		printf("*** TCO\n");
+	if (q->pl->opt && tco)
 		reuse_frame(q, cl);
-	} else
+	else
 		f = push_frame(q, cl->nbr_vars);
 
 	Trace(q, get_head(q->st.dbe->cl.cells), q->st.curr_frame, EXIT);
