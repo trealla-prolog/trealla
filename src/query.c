@@ -701,6 +701,7 @@ static void unwind_trail(query *q)
 			uuid_from_buf(C_STR(q, c), &u);
 			db_entry *dbe = find_in_db(q->st.m, &u);
 			if (dbe) {
+				dbe->owner->cnt--;
 				delink(dbe->owner, dbe);
 				clear_rule(&dbe->cl);
 				free(dbe);
@@ -1879,6 +1880,7 @@ void query_destroy(query *q)
 
 					if (!CMP_STR_TO_CSTR(m, arg3, "b")) {
 						//printf("*** quantum cleaner '%s'\n", C_STR(m, arg1));
+						pr->cnt--;
 						delink(pr, dbe);
 						db_entry *save = dbe;
 						dbe = dbe->next;
