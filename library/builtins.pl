@@ -1,7 +1,5 @@
 :- pragma(builtins, [once(true)]).
 
-findall(A, B, C) :- '$findall'(A, B, C).
-
 predicate_property(P, A) :-
 	nonvar(P), atom(A), !,
 	must_be(P, callable, predicate_property/2, _),

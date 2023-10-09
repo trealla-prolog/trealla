@@ -8177,7 +8177,7 @@ builtins g_iso_bifs[] =
 	{"$legacy_current_prolog_flag", 2, fn_iso_current_prolog_flag_2, "+atom,?term", true, false, BLAH},
 	{"set_prolog_flag", 2, fn_iso_set_prolog_flag_2, "+atom,+term", true, false, BLAH},
 	{"op", 3, fn_iso_op_3, "?integer,?atom,+atom", true, false, BLAH},
-	{"$findall", 3, fn_iso_findall_3, "+term,:callable,-list", true, false, BLAH},
+	{"findall", 3, fn_iso_findall_3, "+term,:callable,-list", true, false, BLAH},
 	{"current_predicate", 1, fn_iso_current_predicate_1, "+predicate_indicator", true, false, BLAH},
 	{"acyclic_term", 1, fn_iso_acyclic_term_1, "+term", true, false, BLAH},
 	{"compare", 3, fn_iso_compare_3, "+atom,+term,+term", true, false, BLAH},
