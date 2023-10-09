@@ -706,11 +706,6 @@ bool do_use_module_1(module *curr_m, cell *p)
 		// There's a TCO bug manifesting with clpb:sat_rewite
 		// so this is a temporary fix...
 
-		if (!strcmp(name, "clpb"))
-			curr_m->pl->opt = false;
-		else if (!strcmp(name, "clpz"))
-			curr_m->pl->opt = false;
-
 		if (!strcmp(name, "between")
 		    || !strcmp(name, "samsort")
 		    || !strcmp(name, "terms")

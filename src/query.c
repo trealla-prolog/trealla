@@ -874,7 +874,7 @@ static bool are_slots_ok(const query *q, const frame *f)
 
 		if (is_empty(c))
 			return false;
-		else if (is_indirect(c) && !is_evaluable(c->val_ptr))
+		else if (is_indirect(c) /*&& !is_evaluable(c->val_ptr)*/)
 			return false;
 		else if (is_cstring(c) && (c->flags & FLAG_CSTR_QUANTUM_ERASER))
 			return false;
