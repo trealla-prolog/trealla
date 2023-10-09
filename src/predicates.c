@@ -167,9 +167,8 @@ static bool fn_iso_findall_3(query *q)
 			p1 = xp1;
 			p2 = xp2;
 			p2_ctx = xp2_ctx;
-		} else if (p1_ctx != p2_ctx) {
+		} else if (p1_ctx != q->st.curr_frame) {
 			p1 = deep_clone_to_heap(q, p1, p1_ctx);
-			p2 = deep_clone_to_heap(q, p2, p2_ctx);
 		}
 
 		grab_queuen(q);
