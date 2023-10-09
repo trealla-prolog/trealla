@@ -158,7 +158,7 @@ static bool fn_iso_findall_3(query *q)
 			return throw_error(q, p3, p3_ctx, "type_error", "list");
 
 		if (is_structure(p1)
-			&& (!is_iso_list(p1) || (p1_ctx != q->st.curr_frame))) {	// Why is this necessary?
+			&& (!is_iso_list(p1))) {	// Why is this necessary?
 			cell *p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, true);
 			check_heap_error(p0);
 			unify(q, q->st.curr_cell, q->st.curr_frame, p0, q->st.curr_frame);
@@ -167,6 +167,9 @@ static bool fn_iso_findall_3(query *q)
 			p1 = xp1;
 			p2 = xp2;
 			p2_ctx = xp2_ctx;
+		} else if (p1_ctx != p2_ctx) {
+			p1 = deep_clone_to_heap(q, p1, p1_ctx);
+			p2 = deep_clone_to_heap(q, p2, p2_ctx);
 		}
 
 		grab_queuen(q);
