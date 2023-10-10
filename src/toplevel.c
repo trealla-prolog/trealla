@@ -482,7 +482,6 @@ void dump_vars(query *q, bool partial)
 		q->numbervars = false;
 		q->parens = false;
 		any = true;
-		clear_write_options(q);
 	}
 
 	bool any_atts = any_attributed(q);
