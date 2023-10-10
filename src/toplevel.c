@@ -289,7 +289,9 @@ static int check_duplicate_result(query *q, int nbr, cell *c, pl_idx c_ctx)
 		ptr = ptr->next;
 	}
 
-	add_result(nbr, c, c_ctx);
+	if (!is_atomic(c))
+		add_result(nbr, c, c_ctx);
+
 	return -1;
 }
 
