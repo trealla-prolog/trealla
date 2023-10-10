@@ -696,11 +696,11 @@ static void unwind_trail(query *q)
 		cell *c = &e->c;
 
 		if (is_cstring(c) && (c->flags & FLAG_CSTR_QUANTUM_ERASER)) {
-			//printf("*** quantum eraser '%s'\n", C_STR(q, c));
 			uuid u;
 			uuid_from_buf(C_STR(q, c), &u);
 			db_entry *dbe = find_in_db(q->st.m, &u);
 			if (dbe) {
+				//printf("*** quantum eraser '%s'\n", C_STR(q, c));
 				dbe->owner->cnt--;
 				delink(dbe->owner, dbe);
 				clear_rule(&dbe->cl);
@@ -1871,6 +1871,7 @@ void query_destroy(query *q)
 
 			if (pr) {
 				db_entry *dbe = pr->head;
+				unsigned cnt = 0;
 
 				while (dbe) {
 					cell *c = dbe->cl.cells;
@@ -1879,7 +1880,7 @@ void query_destroy(query *q)
 					cell *arg3 = arg2 + arg2->nbr_cells;
 
 					if (!CMP_STR_TO_CSTR(m, arg3, "b")) {
-						//printf("*** quantum cleaner '%s'\n", C_STR(m, arg1));
+						cnt++;
 						pr->cnt--;
 						delink(pr, dbe);
 						db_entry *save = dbe;
@@ -1889,6 +1890,9 @@ void query_destroy(query *q)
 					} else
 						dbe = dbe->next;
 				}
+
+				if (cnt && 0)
+					printf("*** quantum cleaner: %u items\n", cnt);
 			}
 		}
 

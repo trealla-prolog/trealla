@@ -549,16 +549,18 @@ int index_cmpkey(const void *ptr1, const void *ptr2, const void *param, void *l)
 
 db_entry *find_in_db(module *m, uuid *ref)
 {
-	for (predicate *pr = m->head; pr; pr = pr->next) {
-		if (!pr->is_dynamic)
-			continue;
-
-		for (db_entry *dbe = pr->head ; dbe; dbe = dbe->next) {
-			if (dbe->cl.dgen_erased)
+	for (m = m->pl->modules; m; m = m->next) {
+		for (predicate *pr = m->head; pr; pr = pr->next) {
+			if (!pr->is_dynamic)
 				continue;
 
-			if (!memcmp(&dbe->u, ref, sizeof(uuid)))
-				return dbe;
+			for (db_entry *dbe = pr->head ; dbe; dbe = dbe->next) {
+				if (dbe->cl.dgen_erased)
+					continue;
+
+				if (!memcmp(&dbe->u, ref, sizeof(uuid)))
+					return dbe;
+			}
 		}
 	}
 
