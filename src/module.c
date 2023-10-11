@@ -1666,7 +1666,7 @@ void xref_rule(module *m, clause *cl, predicate *parent)
 		// Don't want to match on module qualified predicates
 
 		if (c->val_off == g_colon_s) {
-			xref_cell(m, cl, c, parent, false);
+			xref_cell(m, cl, c, parent, 0);
 			last_was_colon = 3;
 		} else {
 			last_was_colon--;
