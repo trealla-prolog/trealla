@@ -125,7 +125,14 @@ void clr_accum(cell *p)
 			mp_int_##op2(&p1.val_bigint->ival, &p2.val_bigint->ival, &q->tmp_ival); \
 			if (errno == ENOMEM)										\
 				return throw_error(q, &p2, q->st.curr_frame, "resource_error", "memory"); \
-			SET_ACCUM(); \
+			if (mp_int_compare_value(&q->tmp_ival, MP_SMALL_MAX) > 0) { \
+				SET_ACCUM(); \
+				return true; \
+			} \
+			mp_small i; \
+			mp_int_to_int(&q->tmp_ival, &i); \
+			q->accum.val_int = i; \
+			q->accum.tag = TAG_INTEGER; \
 		} else if (is_smallint(&p2)) { \
 			mp_int_##op2##_value(&p1.val_bigint->ival, p2.val_int, &q->tmp_ival); \
 			if (errno == ENOMEM)										\
