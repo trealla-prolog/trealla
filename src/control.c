@@ -156,13 +156,13 @@ bool fn_iso_call_n(query *q)
 	GET_FIRST_ARG(p1,callable);
 
 	if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
-		cell *pm = p1 + 1;
-		pm = deref(q, pm, p1_ctx);
+		cell *cm = p1 + 1;
+		cm = deref(q, cm, p1_ctx);
 
-		if (!is_atom(pm) && !is_var(pm))
-			return throw_error(q, pm, p1_ctx, "type_error", "callable");
+		if (!is_atom(cm) && !is_var(cm))
+			return throw_error(q, cm, p1_ctx, "type_error", "callable");
 
-		module *m = find_module(q->pl, C_STR(q, pm));
+		module *m = find_module(q->pl, C_STR(q, cm));
 		if (m) q->st.m = m;
 		p1 += 2;
 		p1 = deref(q, p1, p1_ctx);
