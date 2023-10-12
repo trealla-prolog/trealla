@@ -1,60 +1,43 @@
 :- pragma(apply, [once(true)]).
 
-maplist(G, L) :-
-	maplist_(L, G).
+maplist(_, []).
+maplist(Cont1, [E1|E1s]) :-
+    call(Cont1, E1),
+    maplist(Cont1, E1s).
 
-maplist_([], _).
-maplist_([E|T], G) :-
-	call(G, E),
-	maplist_(T, G).
+maplist(_, [], []).
+maplist(Cont2, [E1|E1s], [E2|E2s]) :-
+    call(Cont2, E1, E2),
+    maplist(Cont2, E1s, E2s).
 
-maplist(G, L1, L2) :-
-	maplist_(L1, L2, G).
+maplist(Cont3, [E1|E1s], [E2|E2s], [E3|E3s]) :-
+    call(Cont3, E1, E2, E3),
+    maplist(Cont3, E1s, E2s, E3s).
 
-maplist_([], [], _).
-maplist_([E1|T1], [E2|T2], G) :-
-	call(G, E1, E2),
-	maplist_(T1, T2, G).
+maplist(_, [], [], [], []).
+maplist(Cont, [E1|E1s], [E2|E2s], [E3|E3s], [E4|E4s]) :-
+    call(Cont, E1, E2, E3, E4),
+    maplist(Cont, E1s, E2s, E3s, E4s).
 
-maplist(G, L1, L2, L3) :-
-	maplist_(L1, L2, L3, G).
+maplist(_, [], [], [], [], []).
+maplist(Cont, [E1|E1s], [E2|E2s], [E3|E3s], [E4|E4s], [E5|E5s]) :-
+    call(Cont, E1, E2, E3, E4, E5),
+    maplist(Cont, E1s, E2s, E3s, E4s, E5s).
 
-maplist_([], [], [], _).
-maplist_([E1|T1], [E2|T2], [E3|T3], G) :-
-	call(G, E1, E2, E3),
-	maplist_(T1, T2, T3, G).
+maplist(_, [], [], [], [], [], []).
+maplist(Cont, [E1|E1s], [E2|E2s], [E3|E3s], [E4|E4s], [E5|E5s], [E6|E6s]) :-
+    call(Cont, E1, E2, E3, E4, E5, E6),
+    maplist(Cont, E1s, E2s, E3s, E4s, E5s, E6s).
 
-maplist(G, L1, L2, L3, L4) :-
-	maplist_(L1, L2, L3, L4, G).
+maplist(_, [], [], [], [], [], [], []).
+maplist(Cont, [E1|E1s], [E2|E2s], [E3|E3s], [E4|E4s], [E5|E5s], [E6|E6s], [E7|E7s]) :-
+    call(Cont, E1, E2, E3, E4, E5, E6, E7),
+    maplist(Cont, E1s, E2s, E3s, E4s, E5s, E6s, E7s).
 
-maplist_([], [], [], [], _).
-maplist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], G) :-
-	call(G, E1, E2, E3, E4),
-	maplist_(T1, T2, T3, T4, G).
-
-maplist(G, L1, L2, L3, L4, L5) :-
-	maplist_(L1, L2, L3, L4, L5, G).
-
-maplist_([], [], [], [], [], _).
-maplist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], G) :-
-	call(G, E1, E2, E3, E4, E5),
-	maplist_(T1, T2, T3, T4, T5, G).
-
-maplist(G, L1, L2, L3, L4, L5, L6) :-
-	maplist_(L1, L2, L3, L4, L5, L6, G).
-
-maplist_([], [], [], [], [], [], _).
-maplist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], [E6|T6], G) :-
-	call(G, E1, E2, E3, E4, E5, E6),
-	maplist_(T1, T2, T3, T4, T5, T6, G).
-
-maplist(G, L1, L2, L3, L4, L5, L6, L7) :-
-	maplist_(L1, L2, L3, L4, L5, L6, L7, G).
-
-maplist_([], [], [], [], [], [], [], _).
-maplist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], [E6|T6], [E7|T7], G) :-
-	call(G, E1, E2, E3, E4, E5, E6, E7),
-	maplist_(T1, T2, T3, T4, T5, T6, T7, G).
+maplist(_, [], [], [], [], [], [], [], []).
+maplist(Cont, [E1|E1s], [E2|E2s], [E3|E3s], [E4|E4s], [E5|E5s], [E6|E6s], [E7|E7s], [E8|E8s]) :-
+    call(Cont, E1, E2, E3, E4, E5, E6, E7, E8),
+    maplist(Cont, E1s, E2s, E3s, E4s, E5s, E6s, E7s, E8s).
 
 :- meta_predicate(maplist(1, ?)).
 :- meta_predicate(maplist(2, ?, ?)).
