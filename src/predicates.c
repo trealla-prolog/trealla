@@ -2085,7 +2085,7 @@ static bool fn_iso_clause_2(query *q)
 		module *m = find_module(q->pl, C_STR(q, cm));
 
 		if (!m)
-			return throw_error(q, q->st.curr_cell, q->st.curr_frame, "existence_error", "procedure");
+			return throw_error(q, cm, p1_ctx, "existence_error", "module");
 
 		q->st.m = m;
 		p1 += p1->nbr_cells;
@@ -2161,7 +2161,7 @@ static bool fn_iso_retract_1(query *q)
 		module *m = find_module(q->pl, C_STR(q, cm));
 
 		if (!m)
-			return throw_error(q, q->st.curr_cell, q->st.curr_frame, "existence_error", "procedure");
+			return throw_error(q, cm, p1_ctx, "existence_error", "module");
 
 		p1 += p1->nbr_cells;
 	}
@@ -2179,7 +2179,7 @@ static bool fn_iso_retractall_1(query *q)
 		module *m = find_module(q->pl, C_STR(q, cm));
 
 		if (!m)
-			return throw_error(q, q->st.curr_cell, q->st.curr_frame, "existence_error", "procedure");
+			return throw_error(q, cm, p1_ctx, "existence_error", "module");
 
 		p1 += p1->nbr_cells;
 	}
@@ -3630,7 +3630,7 @@ static bool fn_clause_3(query *q)
 			module *m = find_module(q->pl, C_STR(q, cm));
 
 			if (!m)
-				return throw_error(q, q->st.curr_cell, q->st.curr_frame, "existence_error", "procedure");
+				return throw_error(q, cm, p1_ctx, "existence_error", "module");
 
 			p1 += p1->nbr_cells;
 		}
@@ -4002,7 +4002,7 @@ static bool fn_listing_1(query *q)
 		module *m = find_module(q->pl, C_STR(q, cm));
 
 		if (!m)
-			return throw_error(q, q->st.curr_cell, q->st.curr_frame, "existence_error", "procedure");
+			return throw_error(q, cm, p1_ctx, "existence_error", "module");
 
 		p1 += p1->nbr_cells;
 	}
