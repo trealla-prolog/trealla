@@ -10,6 +10,7 @@ maplist(Cont2, [E1|E1s], [E2|E2s]) :-
     call(Cont2, E1, E2),
     maplist(Cont2, E1s, E2s).
 
+maplist(_, [], [], []).
 maplist(Cont3, [E1|E1s], [E2|E2s], [E3|E3s]) :-
     call(Cont3, E1, E2, E3),
     maplist(Cont3, E1s, E2s, E3s).
