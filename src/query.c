@@ -710,10 +710,6 @@ static void unwind_trail(query *q)
 
 		unshare_cell(c);
 		init_cell(c);
-
-		if (tr->attrs)
-			c->flags = FLAG_VAR_ATTR;
-
 		c->flags = tr->attrs ? FLAG_VAR_ATTR : 0;
 		c->attrs = tr->attrs;
 		c->attrs_ctx = tr->attrs_ctx;
