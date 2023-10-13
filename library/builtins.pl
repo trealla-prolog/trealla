@@ -504,14 +504,10 @@ deconsult(Files) :- unload_files(Files).
 
 :- help(deconsult(+list), [iso(false)]).
 
-strip_module_(T, M, P) :- T=M:P -> true; P=T.
-
-strip_module(GRBody, Module, GRBody0) :-
-    strip_module_(GRBody, Module, GRBody0),
-    (	nonvar(Module) ->
-		true
-    ;	prolog_load_context(module, Module)
-    ).
+strip_module(T, M, P) :-
+	(	T = M:P -> true
+	;	( P=T, prolog_load_context(module, M))
+	).
 
 :- help(strip_module(+term,-atom,-term), [iso(false)]).
 
