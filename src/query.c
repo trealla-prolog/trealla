@@ -731,8 +731,13 @@ void try_me(query *q, unsigned nbr_vars)
 	frame *f = GET_NEW_FRAME();
 	f->initial_slots = f->actual_slots = nbr_vars;
 	f->base = q->st.sp;
-	slot *e = GET_SLOT(f, 0);
-	memset(e, 0, sizeof(slot)*nbr_vars);
+
+	for (unsigned i = 0; i < nbr_vars; i++) {
+		slot *e = GET_SLOT(f, i);
+		e->c.tag = 0;
+		e->c.attrs = 0;
+	}
+
 	q->has_vars = false;
 	q->no_tco = false;
 	q->tot_matches++;
