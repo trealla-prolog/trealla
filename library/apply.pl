@@ -1,19 +1,19 @@
 :- pragma(apply, [once(true)]).
 
 maplist(_, []).
-maplist(Cont1, [E1|E1s]) :-
-    call(Cont1, E1),
-    maplist(Cont1, E1s).
+maplist(Cont, [E1|E1s]) :-
+    call(Cont, E1),
+    maplist(Cont, E1s).
 
 maplist(_, [], []).
-maplist(Cont2, [E1|E1s], [E2|E2s]) :-
-    call(Cont2, E1, E2),
-    maplist(Cont2, E1s, E2s).
+maplist(Cont, [E1|E1s], [E2|E2s]) :-
+    call(Cont, E1, E2),
+    maplist(Cont, E1s, E2s).
 
 maplist(_, [], [], []).
-maplist(Cont3, [E1|E1s], [E2|E2s], [E3|E3s]) :-
-    call(Cont3, E1, E2, E3),
-    maplist(Cont3, E1s, E2s, E3s).
+maplist(Cont, [E1|E1s], [E2|E2s], [E3|E3s]) :-
+    call(Cont, E1, E2, E3),
+    maplist(Cont, E1s, E2s, E3s).
 
 maplist(_, [], [], [], []).
 maplist(Cont, [E1|E1s], [E2|E2s], [E3|E3s], [E4|E4s]) :-
