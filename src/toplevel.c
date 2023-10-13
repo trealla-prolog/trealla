@@ -368,18 +368,14 @@ void dump_vars(query *q, bool partial)
 
 	// Build the var-names list for dumping vars...
 
+	init_tmp_heap(q);
+
 	for (unsigned i = 0; i < p->nbr_vars; i++) {
 		cell tmp[3];
 		make_struct(tmp, g_eq_s, NULL, 2, 2);
 		make_atom(tmp+1, new_atom(q->pl, p->vartab.var_name[i]));
 		make_var(tmp+2, g_anon_s, i);
-
-		if (i == 0)
-			allocate_list(q, tmp);
-		else
-			append_list(q, tmp);
-
-		//printf("\n*** %s, i=%u\n", C_STR(q, tmp+1), tmp[2].var_nbr);
+		append_list(q, tmp);
 	}
 
 	// Now go through the variables (slots actually) and
