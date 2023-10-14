@@ -121,6 +121,26 @@ bool fn_iso_unify_2(query *q);
 bool fn_sys_block_catcher_1(query *q);
 bool fn_sys_cleanup_if_det_1(query *q);
 bool fn_sys_queue_1(query *q);
+bool fn_iso_clause_2(query *q);
+bool fn_iso_retract_1(query *q);
+bool fn_iso_retractall_1(query *q);
+bool fn_iso_abolish_1(query *q);
+bool fn_iso_asserta_1(query *q);
+bool fn_iso_assertz_1(query *q);
+bool fn_sys_assertz_2(query *q);
+bool fn_assertz_2(query *q);
+bool fn_sys_asserta_2(query *q);
+bool fn_asserta_2(query *q);
+bool fn_clause_3(query *q);
+bool fn_abolish_2(query *q);
+
+void save_db(FILE *fp, query *q, int logging);
+char *uuid_to_buf(const uuid *u, char *buf, size_t buflen);
+bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard);
+
+enum log_type { LOG_ASSERTA=1, LOG_ASSERTZ=2, LOG_ERASE=3 };
+
+void db_log(query *q, db_entry *dbe, enum log_type l);
 
 int uuid_from_buf(const char *s, uuid *u);
 builtins *get_fn_ptr(void *fn);

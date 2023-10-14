@@ -75,6 +75,7 @@ SRCOBJECTS = tpl.o \
 	src/contrib.o \
 	src/control.o \
 	src/csv.o \
+	src/database.o \
 	src/ffi.o \
 	src/format.o \
 	src/functions.o \
@@ -200,6 +201,10 @@ src/control.o: src/control.c src/heap.h src/internal.h \
 src/csv.o: src/csv.c src/heap.h src/prolog.h src/internal.h src/skiplist.h \
   src/trealla.h src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
   src/module.h src/parser.h src/query.h src/builtins.h
+src/database.o: src/database.c src/atts.h src/base64.h src/heap.h src/internal.h \
+  src/skiplist.h src/trealla.h src/cdebug.h src/stringbuf.h \
+  src/imath/imath.h src/imath/imrat.h src/history.h src/library.h src/module.h src/sre/re.h \
+  src/parser.h src/prolog.h src/query.h src/builtins.h src/utf8.h
 src/ffi.o: src/ffi.c src/heap.h src/prolog.h src/internal.h src/skiplist.h \
   src/trealla.h src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
   src/module.h src/parser.h src/query.h src/builtins.h
