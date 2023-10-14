@@ -136,6 +136,11 @@ bool fn_abolish_2(query *q);
 bool fn_parse_csv_file_2(query *q);
 bool fn_parse_csv_line_3(query *q);
 bool fn_parse_csv_line_2(query *q);
+bool fn_sre_compile_2(query *q);
+bool fn_sre_matchp_4(query *q);
+bool fn_sre_match_4(query *q);
+bool fn_sre_substp_4(query *q);
+bool fn_sre_subst_4(query *q);
 
 void save_db(FILE *fp, query *q, int logging);
 char *uuid_to_buf(const uuid *u, char *buf, size_t buflen);
