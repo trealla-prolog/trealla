@@ -3571,7 +3571,8 @@ parse_reified(E, R, D,
                m(max(A,B))   => [d(D), p(pgeq(R, A)), p(pgeq(R, B)), p(pmax(A,B,R)), a(A,B,R)],
                m(min(A,B))   => [d(D), p(pgeq(A, R)), p(pgeq(B, R)), p(pmin(A,B,R)), a(A,B,R)],
                m(abs(A))     => [d(D), g(#R#>=0), p(pabs(A, R)), a(A,R)],
-               m(A^B)        => [d(D), p(pexp(A,B,R)), a(A,B,R)],
+               m(A^B)        => [d(D1), p(preified_exp(A,B,D2,R)),
+                                 p(reified_and(D1,[],D2,[],D)),a(D2),a(A,B,R)],
                m(A/B)        => [d(D1), p(preified_slash(A,B,D2,R)),
                                  p(reified_and(D1,[],D2,[],D)),a(D2),a(A,B,R)],
                m(A div B)    => [d(D1),
@@ -3585,13 +3586,13 @@ parse_reified(E, R, D,
                m(\A)         => [function(D,\,A,R)],
                m(msb(A))     => [g(#A#>0) ,function(D,msb,A,R)],
                m(lsb(A))     => [g(#A#>0), function(D,lsb,A,R)],
-               m(popcount(A)) => [function(D,popcount,A,R)],
-               m(sign(A))    => [function(D,sign,A,R)],
+               m(popcount(A)) => [d(D), p(ppopcount(A, R)), a(A,R)],
+               m(sign(A))    => [d(D), p(psign(A, R)), a(A,R)],
                m(A<<B)       => [function(D,<<,A,B,R)],
                m(A>>B)       => [function(D,>>,A,B,R)],
                m(A/\B)       => [function(D,/\,A,B,R)],
                m(A\/B)       => [function(D,\/,A,B,R)],
-               m(xor(A, B))  => [function(D,xor,A,B,R)],
+               m(xor(A, B))  => [skeleton(A,B,D,R,pxor)],
                g(true)       => [g(domain_error(clpz_expression, E))]]
              ).
 
@@ -5940,6 +5941,35 @@ run_propagator(preified_slash(X, Y, D, R), MState) -->
         ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+run_propagator(preified_exp(X, Y, D, R), MState) -->
+        (   X == 1 ->
+            kill(MState),
+            D = 1,
+            R = 1
+        ;   Y == 0 ->
+            kill(MState),
+            D = 1,
+            R = 1
+        ;   Y == 1 ->
+            kill(MState),
+            D = 1,
+            R = X
+        ;   nonvar(X),
+            nonvar(Y) ->
+            kill(MState),
+            (   ( abs(X) =:= 1 ; Y >= 0 ) ->
+                D = 1,
+                R is X^Y
+            ;   D = 0
+            )
+        ;   D == 1 ->
+            kill(MState),
+            queue_goal(X^Y #= R)
+        ;   []
+        ).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 update_bounds(X, XD, XPs, XL, XU, NXL, NXU) -->
@@ -7872,6 +7902,7 @@ attribute_goal_(reified_and(X,_,Y,_,B))    --> [#X #/\ #Y #<==> #B].
 attribute_goal_(reified_or(X, _, Y, _, B)) --> [#X #\/ #Y #<==> #B].
 attribute_goal_(reified_not(X, Y))         --> [#\ #X #<==> #Y].
 attribute_goal_(preified_slash(X, Y, _, R)) --> [#X/ #Y #= R].
+attribute_goal_(preified_exp(X, Y, _, R))  --> [#X^ #Y #= R].
 attribute_goal_(pimpl(X, Y, _))            --> [#X #==> #Y].
 attribute_goal_(pfunction(Op, A, B, R)) -->
         { Expr =.. [Op,#A,#B] },
