@@ -535,7 +535,7 @@ struct prolog_state_ {
 	predicate *pr;
 	db_entry *dbe;
 	sliter *iter, *f_iter;
-	module *m, *prev_m;
+	module *m;
 
 	union {
 		struct { cell *key; bool karg1_is_ground:1; };

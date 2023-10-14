@@ -7300,7 +7300,7 @@ static bool fn_prolog_load_context_2(query *q)
 		return false;
 
 	cell tmp;
-	make_atom(&tmp, new_atom(q->pl, q->st.prev_m->name));
+	make_atom(&tmp, new_atom(q->pl, q->st.m->name));
 	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 }
 

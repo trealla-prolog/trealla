@@ -886,12 +886,8 @@ static void commit_frame(query *q)
 	frame *f = GET_CURR_FRAME();
 	f->mid = q->st.m->id;
 
-	if (!q->st.dbe->owner->is_prebuilt) {
-		//if (q->st.m != q->st.dbe->owner->m)
-			q->st.prev_m = q->st.m;
-
+	if (!q->st.dbe->owner->is_prebuilt)
 		q->st.m = q->st.dbe->owner->m;
-	}
 
 	bool is_det = !q->has_vars && cl->is_unique;
 	bool last_match = is_det || cl->is_first_cut || !has_next_key(q);
@@ -1915,7 +1911,7 @@ query *query_create(module *m, bool is_task)
 	q->flags.occurs_check = false;
 	q->qid = g_query_id++;
 	q->pl = m->pl;
-	q->st.prev_m = q->st.m = m;
+	q->st.m = m;
 	q->trace = m->pl->trace;
 	q->flags = m->flags;
 	q->get_started = get_time_in_usec();
