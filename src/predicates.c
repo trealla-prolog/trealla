@@ -506,7 +506,7 @@ static bool fn_iso_atom_chars_2(query *q)
 
 	const char *src = C_STR(q, p1);
 	size_t len = C_STRLEN(q, p1);
-	bool first = true;
+	check_heap_error(init_tmp_heap(q));
 
 	while (len) {
 		size_t n = len_char_utf8(src);
@@ -514,12 +514,7 @@ static bool fn_iso_atom_chars_2(query *q)
 		make_smalln(&tmp2, src, n);
 		src += n;
 		len -= n;
-
-		if (first) {
-			allocate_list(q, &tmp2);
-			first = false;
-		} else
-			append_list(q, &tmp2);
+		append_list(q, &tmp2);
 	}
 
 	cell *l = end_list(q);
@@ -3290,7 +3285,7 @@ static bool fn_module_info_2(query *q)
 	if (!m)
 		return false;
 
-	bool first_time = true;
+	check_heap_error(init_tmp_heap(q));
 
 	for (predicate *pr = m->head; pr; pr = pr->next) {
 		if (!pr->is_public)
@@ -3301,12 +3296,7 @@ static bool fn_module_info_2(query *q)
 		SET_OP(tmp, OP_YFX);
 		make_atom(tmp+1, pr->key.val_off);
 		make_int(tmp+2, pr->key.arity);
-
-		if (first_time) {
-			allocate_list(q, tmp);
-			first_time = false;
-		} else
-			append_list(q, tmp);
+		append_list(q, tmp);
 	}
 
 	cell *l = end_list(q);
@@ -3346,7 +3336,7 @@ static bool fn_source_info_2(query *q)
 	if (!pr || pr->is_dynamic)
 		return false;
 
-	bool first_time = true;
+	check_heap_error(init_tmp_heap(q));
 
 	for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
 		cell tmp[8];
@@ -3358,12 +3348,7 @@ static bool fn_source_info_2(query *q)
 		make_uint(tmp+5, dbe->line_nbr_start);
 		make_uint(tmp+6, dbe->line_nbr_end);
 		make_atom(tmp+7, g_nil_s);
-
-		if (first_time) {
-			allocate_list(q, tmp);
-			first_time = false;
-		} else
-			append_list(q, tmp);
+		append_list(q, tmp);
 	}
 
 	cell *l = end_list(q);
@@ -4021,10 +4006,12 @@ static bool fn_split_string_4(query *q)
 	int pad = peek_char_utf8(C_STR(q, p3));
 	const char *start = src, *ptr;
 	cell *l = NULL;
-	int nbr = 1, in_list = 0;
+	int nbr = 1;
 
 	if (!*start)
 		return unify(q, p4, p4_ctx, make_nil(), q->st.curr_frame);
+
+	check_heap_error(init_tmp_heap(q));
 
 	// FIXME: sep & pad are not a single char...
 
@@ -4035,13 +4022,7 @@ static bool fn_split_string_4(query *q)
 		if (ptr-start) {
 			cell tmp;
 			check_heap_error(make_slice(q, &tmp, p1, start-src, ptr-start));
-
-			if (nbr++ == 1)
-				allocate_list(q, &tmp);
-			else
-				append_list(q, &tmp);
-
-			in_list = 1;
+			append_list(q, &tmp);
 		}
 
 		start = ptr + 1;
@@ -4054,12 +4035,8 @@ static bool fn_split_string_4(query *q)
 		cell tmp;
 		check_heap_error(make_slice(q, &tmp, p1, start-src, C_STRLEN(q, p1)-(start-src)));
 
-		if (C_STRLEN(q, p1)-(start-src)) {
-			if (!in_list)
-				allocate_list(q, &tmp);
-			else
-				append_list(q, &tmp);
-		}
+		if (C_STRLEN(q, p1)-(start-src))
+			append_list(q, &tmp);
 	}
 
 	l = end_list(q);
@@ -4973,22 +4950,18 @@ static bool fn_crypto_n_random_bytes_2(query *q)
 
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,list_or_var);
-	bool first_time = true;
 	int n = get_smallint(p1);
 
 	if (n < 1)
 		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
 
+	check_heap_error(init_tmp_heap(q));
+
 	while (n--) {
 		int i = rand() % 256;
 		cell tmp;
 		make_int(&tmp, i);
-
-		if (first_time) {
-			first_time = false;
-			allocate_list(q, &tmp);
-		} else
-			append_list(q, &tmp);
+		append_list(q, &tmp);
 	}
 
 	cell *l = end_list(q);
@@ -6137,7 +6110,7 @@ static bool fn_sys_unifiable_3(query *q)
 		return false;
 	}
 
-	bool first = true;
+	check_heap_error(init_tmp_heap(q));
 
 	// Go thru trail, getting the bindings...
 
@@ -6154,13 +6127,7 @@ static bool fn_sys_unifiable_3(query *q)
 		make_ref(&v, g_anon_s, tr->var_nbr, q->st.curr_frame);
 		tmp[1] = v;
 		safe_copy_cells(tmp+2, c, c->nbr_cells);
-
-		if (first) {
-			allocate_list(q, tmp);
-			first = false;
-		} else
-			append_list(q, tmp);
-
+		append_list(q, tmp);
 		free(tmp);
 		before_hook_tp++;
 	}
@@ -6548,7 +6515,7 @@ static bool fn_module_1(query *q)
 static bool fn_modules_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
-	bool first = true;
+	check_heap_error(init_tmp_heap(q));
 
 	for (module *m = q->pl->modules; m; m = m->next) {
 		if (m->orig)
@@ -6556,12 +6523,7 @@ static bool fn_modules_1(query *q)
 
 		cell tmp;
 		make_atom(&tmp,  new_atom(q->pl, m->name));
-
-		if (first) {
-			allocate_list(q, &tmp);
-			first = false;
-		} else
-			append_list(q, &tmp);
+		append_list(q, &tmp);
 	}
 
 	cell *l = end_list(q);

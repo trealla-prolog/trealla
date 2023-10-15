@@ -172,7 +172,7 @@ bool fn_sys_list_attributed_1(query *q)
 	GET_FIRST_ARG(p1,var);
 	parser *p = q->p;
 	const frame *f = GET_FIRST_FRAME();
-	bool first = true;
+	check_heap_error(init_tmp_heap(q));
 
 	for (unsigned i = 0; i < p->nbr_vars; i++) {
 		//if (!strcmp(p->vartab.var_name[i], "_"))
@@ -189,16 +189,8 @@ bool fn_sys_list_attributed_1(query *q)
 
 		cell v;
 		make_var(&v, new_atom(q->pl, p->vartab.var_name[i]), i);
-
-		if (first) {
-			allocate_list(q, &v);
-			first = false;
-		} else
-			append_list(q, &v);
+		append_list(q, &v);
 	}
-
-	if (first)
-		return unify(q, p1, p1_ctx, make_nil(), q->st.curr_frame);
 
 	cell *l = end_list(q);
 	check_heap_error(l);

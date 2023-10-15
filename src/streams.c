@@ -4935,7 +4935,8 @@ static bool fn_getfile_2(query *q)
 
 	char *line = NULL;
 	size_t len = 0;
-	int nbr = 1, in_list = 0;
+	int nbr = 1;
+	check_heap_error(init_tmp_heap(q));
 
 	while (getline(&line, &len, fp) != -1) {
 		int len = strlen(line);
@@ -4952,26 +4953,14 @@ static bool fn_getfile_2(query *q)
 
 		cell tmp;
 		make_stringn(&tmp, line, len);
-
-		if (nbr++ == 1)
-			allocate_list(q, &tmp);
-		else
-			append_list(q, &tmp);
-
-		in_list = 1;
+		append_list(q, &tmp);
 	}
 
 	free(line);
 	fclose(fp);
-
-	if (!in_list)
-		unify(q, p2, p2_ctx, make_nil(), q->st.curr_frame);
-	else {
-		cell *l = end_list(q);
-		check_heap_error(l);
-		unify(q, p2, p2_ctx, l, q->st.curr_frame);
-	}
-
+	cell *l = end_list(q);
+	check_heap_error(l);
+	unify(q, p2, p2_ctx, l, q->st.curr_frame);
 	return true;
 }
 
@@ -5037,7 +5026,8 @@ static bool fn_getfile_3(query *q)
 
 	char *line = NULL;
 	size_t len = 0;
-	int nbr = 1, in_list = 0;
+	int nbr = 1;
+	check_heap_error(init_tmp_heap(q));
 
 	while (getline(&line, &len, fp) != -1) {
 		int len = strlen(line);
@@ -5056,26 +5046,14 @@ static bool fn_getfile_3(query *q)
 
 		cell tmp;
 		make_stringn(&tmp, line, len);
-
-		if (nbr++ == 1)
-			allocate_list(q, &tmp);
-		else
-			append_list(q, &tmp);
-
-		in_list = 1;
+		append_list(q, &tmp);
 	}
 
 	free(line);
 	fclose(fp);
-
-	if (!in_list)
-		unify(q, p2, p2_ctx, make_nil(), q->st.curr_frame);
-	else {
-		cell *l = end_list(q);
-		check_heap_error(l);
-		unify(q, p2, p2_ctx, l, q->st.curr_frame);
-	}
-
+	cell *l = end_list(q);
+	check_heap_error(l);
+	unify(q, p2, p2_ctx, l, q->st.curr_frame);
 	return true;
 }
 
@@ -5086,7 +5064,8 @@ static bool fn_getlines_1(query *q)
 	stream *str = &q->pl->streams[n];
 	char *line = NULL;
 	size_t len = 0;
-	int nbr = 1, in_list = 0;
+	int nbr = 1;
+	check_heap_error(init_tmp_heap(q));
 
 	while (getline(&line, &len, str->fp) != -1) {
 		int len = strlen(line);
@@ -5103,25 +5082,13 @@ static bool fn_getlines_1(query *q)
 
 		cell tmp;
 		make_stringn(&tmp, line, len);
-
-		if (nbr++ == 1)
-			allocate_list(q, &tmp);
-		else
-			append_list(q, &tmp);
-
-		in_list = 1;
+		append_list(q, &tmp);
 	}
 
 	free(line);
-
-	if (!in_list)
-		unify(q, p1, p1_ctx, make_nil(), q->st.curr_frame);
-	else {
-		cell *l = end_list(q);
-		check_heap_error(l);
-		unify(q, p1, p1_ctx, l, q->st.curr_frame);
-	}
-
+	cell *l = end_list(q);
+	check_heap_error(l);
+	unify(q, p1, p1_ctx, l, q->st.curr_frame);
 	return true;
 }
 
@@ -5133,7 +5100,8 @@ static bool fn_getlines_2(query *q)
 	stream *str = &q->pl->streams[n];
 	char *line = NULL;
 	size_t len = 0;
-	int nbr = 1, in_list = 0;
+	int nbr = 1;
+	check_heap_error(init_tmp_heap(q));
 
 	while (getline(&line, &len, str->fp) != -1) {
 		int len = strlen(line);
@@ -5150,25 +5118,13 @@ static bool fn_getlines_2(query *q)
 
 		cell tmp;
 		make_stringn(&tmp, line, len);
-
-		if (nbr++ == 1)
-			allocate_list(q, &tmp);
-		else
-			append_list(q, &tmp);
-
-		in_list = 1;
+		append_list(q, &tmp);
 	}
 
 	free(line);
-
-	if (!in_list)
-		unify(q, p1, p1_ctx, make_nil(), q->st.curr_frame);
-	else {
-		cell *l = end_list(q);
-		check_heap_error(l);
-		unify(q, p1, p1_ctx, l, q->st.curr_frame);
-	}
-
+	cell *l = end_list(q);
+	check_heap_error(l);
+	unify(q, p1, p1_ctx, l, q->st.curr_frame);
 	return true;
 }
 
@@ -5181,8 +5137,9 @@ static bool fn_getlines_3(query *q)
 	stream *str = &q->pl->streams[n];
 	char *line = NULL;
 	size_t len = 0;
-	int nbr = 1, in_list = 0;
+	int nbr = 1;
 	bool terminator = get_terminator(q, p2, p2_ctx);
+	check_heap_error(init_tmp_heap(q));
 
 	while (getline(&line, &len, str->fp) != -1) {
 		int len = strlen(line);
@@ -5201,25 +5158,13 @@ static bool fn_getlines_3(query *q)
 
 		cell tmp;
 		make_stringn(&tmp, line, len);
-
-		if (nbr++ == 1)
-			allocate_list(q, &tmp);
-		else
-			append_list(q, &tmp);
-
-		in_list = 1;
+		append_list(q, &tmp);
 	}
 
 	free(line);
-
-	if (!in_list)
-		unify(q, p1, p1_ctx, make_nil(), q->st.curr_frame);
-	else {
-		cell *l = end_list(q);
-		check_heap_error(l);
-		unify(q, p1, p1_ctx, l, q->st.curr_frame);
-	}
-
+	cell *l = end_list(q);
+	check_heap_error(l);
+	unify(q, p1, p1_ctx, l, q->st.curr_frame);
 	return true;
 }
 
@@ -7044,8 +6989,8 @@ static bool fn_map_list_2(query *q)
 
 	GET_NEXT_ARG(p1,list_or_var);
 	sliter *iter = sl_first(str->keyval);
-	bool first = true;
 	char *val = NULL;
+	check_heap_error(init_tmp_heap(q));
 
 	while (sl_next(iter, (void**)&val)) {
 		void *key = sl_key(iter);
@@ -7101,15 +7046,10 @@ static bool fn_map_list_2(query *q)
 		tmp2[1] = tmpk;
 		tmp2[2] = tmpv;
 		SET_OP(tmp2, OP_YFX);
-
-		if (first) {
-			allocate_list(q, tmp2);
-			first = false;
-		} else
-			append_list(q, tmp2);
+		append_list(q, tmp2);
 	}
 
-	cell *tmp = !first ? end_list(q) : make_nil();
+	cell *tmp = end_list(q);
 	sl_done(iter);
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
@@ -7434,11 +7374,12 @@ static bool fn_mat_list_3(query *q)
 
 	GET_NEXT_ARG(p2,var);
 	sliter *iter = sl_first(str->keyval);
-	bool first = true;
 	union {
 		int64_t vi;
 		double vf;
 	} val;
+
+	check_heap_error(init_tmp_heap(q));
 
 	while (sl_next(iter, (void**)&val)) {
 		void *key = sl_key(iter);
@@ -7465,15 +7406,10 @@ static bool fn_mat_list_3(query *q)
 		tmp2[4] = tmpv;
 		SET_OP(tmp2+0, OP_YFX);
 		SET_OP(tmp2+1, OP_XFY);
-
-		if (first) {
-			allocate_list(q, tmp2);
-			first = false;
-		} else
-			append_list(q, tmp2);
+		append_list(q, tmp2);
 	}
 
-	tmp = !first ? end_list(q) : make_nil();
+	tmp = end_list(q);
 	sl_done(iter);
 	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 }
