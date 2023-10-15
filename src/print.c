@@ -16,18 +16,12 @@
 cell *string_to_chars_list(query *q, cell *p, pl_idx p_ctx)
 {
 	LIST_HANDLER(p);
-	int i = 0;
+	init_tmp_heap(q);
 
 	while (is_list(p)) {
 		cell *h = LIST_HEAD(p);
-
-		if (i == 0)
-			allocate_list(q, h);
-		else
-			append_list(q, h);
-
+		append_list(q, h);
 		p = LIST_TAIL(p);
-		i++;
 	}
 
 	return end_list(q);

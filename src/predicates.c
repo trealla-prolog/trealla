@@ -1027,7 +1027,7 @@ static bool fn_hex_bytes_2(query *q)
 	}
 
 	LIST_HANDLER(p1);
-	bool first = true;
+	check_heap_error(init_tmp_heap(q));
 
 	while (is_list(p1)) {
 		cell *h = LIST_HEAD(p1);
@@ -1078,13 +1078,7 @@ static bool fn_hex_bytes_2(query *q)
 
 		cell tmp;
 		make_int(&tmp, (int)val);
-
-		if (first) {
-			allocate_list(q, &tmp);
-			first = false;
-		} else
-			append_list(q, &tmp);
-
+		append_list(q, &tmp);
 		p1 = LIST_TAIL(p1);
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
@@ -1092,9 +1086,6 @@ static bool fn_hex_bytes_2(query *q)
 
 	if (!is_nil(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "hex_encoding");
-
-	if (first)
-		return unify(q, p2, p2_ctx, make_nil(), q->st.curr_frame);
 
 	cell *l = end_list(q);
 	check_heap_error(l);
