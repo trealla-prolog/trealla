@@ -702,8 +702,11 @@ bb_update(K, O, V) :-
 bb_b_put(K, V) :-
 	prolog_load_context(module, M),
 	must_be(K, atomic, bb_b_put/2, _),
-	asserta(M:'$bb_key'(K, V, b), Ref),
-	'$quantum_eraser'(_, Ref).
+	asserta(M:'$bb_key'(K, V, b)).
+bb_b_put(K, V) :-
+	prolog_load_context(module, M),
+	ignore(retractall(M:'$bb_key'(K, V, b))),
+	fail.
 
 :- help(bb_b_put(+atomic,+term), [iso(false)]).
 

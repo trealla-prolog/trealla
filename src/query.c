@@ -694,20 +694,6 @@ static void unwind_trail(query *q)
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
 		cell *c = &e->c;
-
-		if (is_cstring(c) && (c->flags & FLAG_CSTR_QUANTUM_ERASER)) {
-			uuid u;
-			uuid_from_buf(C_STR(q, c), &u);
-			db_entry *dbe = find_in_db(q->st.m, &u);
-			if (dbe) {
-				//printf("*** quantum eraser '%s'\n", C_STR(q, c));
-				dbe->owner->cnt--;
-				delink(dbe->owner, dbe);
-				clear_rule(&dbe->cl);
-				free(dbe);
-			}
-		}
-
 		unshare_cell(c);
 		init_cell(c);
 		c->flags = tr->attrs ? FLAG_VAR_ATTR : 0;
@@ -871,8 +857,6 @@ static bool are_slots_ok(const query *q, const frame *f)
 		if (is_empty(c))
 			return false;
 		else if (is_indirect(c))
-			return false;
-		else if (is_cstring(c) && (c->flags & FLAG_CSTR_QUANTUM_ERASER))
 			return false;
 	}
 
