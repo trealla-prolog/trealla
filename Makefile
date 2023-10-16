@@ -82,6 +82,7 @@ SRCOBJECTS = tpl.o \
 	src/heap.o \
 	src/history.o \
 	src/library.o \
+	src/maps.o \
 	src/module.o \
 	src/network.o \
 	src/parser.o \
@@ -220,6 +221,10 @@ src/heap.o: src/heap.c src/heap.h src/internal.h src/skiplist.h \
   src/query.h src/builtins.h
 src/history.o: src/history.c src/history.h src/utf8.h src/cdebug.h
 src/library.o: src/library.c src/library.h
+src/maps.o: src/maps.c src/module.h src/internal.h \
+  src/skiplist.h src/trealla.h src/cdebug.h src/stringbuf.h \
+  src/imath/imath.h src/imath/imrat.h src/parser.h src/prolog.h src/query.h src/builtins.h \
+  src/utf8.h
 src/module.o: src/module.c src/module.h src/internal.h \
   src/skiplist.h src/trealla.h src/cdebug.h src/stringbuf.h \
   src/imath/imath.h src/imath/imrat.h src/parser.h src/prolog.h src/query.h src/builtins.h \
