@@ -451,11 +451,6 @@ Non-standard predicates
 	b_getval(K,V)
 	b_delete(K)
 
-	# The system skiplist uses atomic key/values only...
-
-	'$kv_set'(+key,+value,[create(Bool)])
-	'$kv_get'(+key,?value,[delete(Bool)])
-
 	call_nth/2
 	offset/2
 	limit/2
