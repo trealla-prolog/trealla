@@ -9,9 +9,6 @@ static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx 
 static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
 	while (is_iso_list(p1) && is_iso_list(p2)) {
-		if (g_tpl_interrupt)
-			return -1;
-
 		cell *h1 = p1 + 1, *h2 = p2 + 1;
 		pl_idx h1_ctx = p1_ctx, h2_ctx = p2_ctx;
 
@@ -77,9 +74,6 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 	p2 = p2 + 1;
 
 	while (arity--) {
-		if (g_tpl_interrupt)
-			return 0;
-
 		cell *c1 = p1, *c2 = p2;
 		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 
@@ -235,9 +229,6 @@ static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx 
 		LIST_HANDLER(p2);
 
 		while (is_list(p1) && is_list(p2)) {
-			if (g_tpl_interrupt)
-				return 0;
-
 			cell *h1 = LIST_HEAD(p1);
 			h1 = deref(q, h1, p1_ctx);
 			pl_idx h1_ctx = q->latest_ctx;
@@ -322,9 +313,6 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 	LIST_HANDLER(l);
 
 	while (is_iso_list(l)) {
-		if (g_tpl_interrupt)
-			return;
-
 		cell *h = LIST_HEAD(l);
 		pl_idx h_ctx = l_ctx;
 		slot *e = NULL;
@@ -376,9 +364,6 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 	p1++;
 
 	while (arity--) {
-		if (g_tpl_interrupt)
-			return;
-
 		cell *c = p1;
 		pl_idx c_ctx = p1_ctx;
 		slot *e = NULL;
@@ -416,9 +401,6 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 	LIST_HANDLER(l);
 
 	while (is_iso_list(l)) {
-		if (g_tpl_interrupt)
-			return false;
-
 		cell *c = LIST_HEAD(l);
 		pl_idx c_ctx = l_ctx;
 
@@ -493,9 +475,6 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 	p1++;
 
 	while (arity--) {
-		if (g_tpl_interrupt)
-			return false;
-
 		cell *c = p1;
 		pl_idx c_ctx = p1_ctx;
 
@@ -540,9 +519,6 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 	pl_idx save_p1_ctx = p1_ctx;
 
 	while (is_iso_list(p1)) {
-		if (g_tpl_interrupt)
-			return false;
-
 		cell *h = p1 + 1;
 		pl_idx h_ctx = p1_ctx;
 		slot *e = NULL;
@@ -570,9 +546,6 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 	p1_ctx = save_p1_ctx;
 
 	while (is_iso_list(p1)) {
-		if (g_tpl_interrupt)
-			return false;
-
 		p1 = p1 + 1; p1 += p1->nbr_cells;
 		cell *c = p1;
 		pl_idx c_ctx = p1_ctx;
@@ -610,9 +583,6 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned 
 	p1++;
 
 	while (arity--) {
-		if (g_tpl_interrupt)
-			return false;
-
 		cell *c = p1;
 		pl_idx c_ctx = p1_ctx;
 		slot *e = NULL;
