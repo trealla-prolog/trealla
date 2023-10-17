@@ -13,9 +13,8 @@ lcm(_X, _N, _) :- writeln(oops).
 
 '$post_unify_hook' :-
 	'$undo_trail'(Vars, State),
-	(	process_vars_(Vars, [], Goals) -> '$redo_trail'(State)
-	;	('$redo_trail'(State), fail)
-	),
+	process_vars_(Vars, [], Goals),
+	'$redo_trail'(State),
 	maplist(call, Goals).
 
 process_vars_([], Goals, Goals).
