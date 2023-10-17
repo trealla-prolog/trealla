@@ -638,7 +638,7 @@ USE_RESULT bool fn_sys_register_predicate_4(query *q)
 
 bool wrap_ffi_function(query *q, builtins *ptr)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1, any);
 	cell *c = p1;
 	pl_idx c_ctx = p1_ctx;

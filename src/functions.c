@@ -443,7 +443,7 @@ bool fn_iso_integer_1(query *q)
 
 static bool fn_iso_abs_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 	q->accum.tag = p1.tag;
@@ -466,7 +466,7 @@ static bool fn_iso_abs_1(query *q)
 
 static bool fn_iso_sign_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 	q->accum.tag = TAG_INTEGER;
@@ -489,7 +489,7 @@ static bool fn_iso_sign_1(query *q)
 
 static bool fn_iso_positive_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 	q->accum = p1;
@@ -498,7 +498,7 @@ static bool fn_iso_positive_1(query *q)
 
 static bool fn_iso_negative_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 	q->accum.tag = p1.tag;
@@ -523,7 +523,7 @@ static bool fn_iso_negative_1(query *q)
 
 static bool fn_iso_epsilon_0(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	q->accum.val_float = DBL_EPSILON;
 	q->accum.tag = TAG_DOUBLE;
 	return true;
@@ -531,7 +531,7 @@ static bool fn_iso_epsilon_0(query *q)
 
 static bool fn_iso_pi_0(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	q->accum.val_float = M_PI;
 	q->accum.tag = TAG_DOUBLE;
 	return true;
@@ -539,7 +539,7 @@ static bool fn_iso_pi_0(query *q)
 
 static bool fn_iso_e_0(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	q->accum.val_float = M_E;
 	q->accum.tag = TAG_DOUBLE;
 	return true;
@@ -547,7 +547,7 @@ static bool fn_iso_e_0(query *q)
 
 static bool fn_numerator_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -573,7 +573,7 @@ static bool fn_numerator_1(query *q)
 
 static bool fn_denominator_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -607,7 +607,7 @@ static bool fn_rational_1(query *q)
 
 static bool fn_rdiv_2(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
@@ -654,7 +654,7 @@ static bool fn_rdiv_2(query *q)
 
 bool fn_iso_add_2(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
@@ -665,7 +665,7 @@ bool fn_iso_add_2(query *q)
 
 static bool fn_iso_sub_2(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
@@ -676,7 +676,7 @@ static bool fn_iso_sub_2(query *q)
 
 static bool fn_iso_mul_2(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
@@ -687,7 +687,7 @@ static bool fn_iso_mul_2(query *q)
 
 static bool fn_iso_exp_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -725,7 +725,7 @@ static bool fn_iso_exp_1(query *q)
 
 static bool fn_iso_sqrt_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -766,7 +766,7 @@ static bool fn_iso_sqrt_1(query *q)
 
 static bool fn_iso_log_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -807,7 +807,7 @@ static bool fn_iso_log_1(query *q)
 
 static bool fn_popcount_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -842,7 +842,7 @@ static bool fn_popcount_1(query *q)
 
 static bool fn_lsb_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -876,7 +876,7 @@ static bool fn_lsb_1(query *q)
 
 static bool fn_msb_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -910,7 +910,7 @@ static bool fn_msb_1(query *q)
 
 static bool fn_iso_truncate_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -937,7 +937,7 @@ static bool fn_iso_truncate_1(query *q)
 
 static bool fn_iso_round_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -975,7 +975,7 @@ static bool fn_iso_round_1(query *q)
 
 static bool fn_iso_ceiling_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -1002,7 +1002,7 @@ static bool fn_iso_ceiling_1(query *q)
 
 static bool fn_iso_float_integer_part_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -1022,7 +1022,7 @@ static bool fn_iso_float_integer_part_1(query *q)
 
 static bool fn_iso_float_fractional_part_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -1046,7 +1046,7 @@ static bool fn_iso_float_fractional_part_1(query *q)
 
 static bool fn_iso_floor_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -1073,7 +1073,7 @@ static bool fn_iso_floor_1(query *q)
 
 static bool fn_iso_sin_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -1106,7 +1106,7 @@ static bool fn_iso_sin_1(query *q)
 
 static bool fn_iso_cos_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -1139,7 +1139,7 @@ static bool fn_iso_cos_1(query *q)
 
 static bool fn_iso_tan_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -1180,7 +1180,7 @@ static bool fn_iso_tan_1(query *q)
 
 static bool fn_iso_asin_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -1213,7 +1213,7 @@ static bool fn_iso_asin_1(query *q)
 
 static bool fn_iso_acos_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -1246,7 +1246,7 @@ static bool fn_iso_acos_1(query *q)
 
 static bool fn_iso_atan_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -1279,7 +1279,7 @@ static bool fn_iso_atan_1(query *q)
 
 static bool fn_iso_atan2_2(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
@@ -1326,7 +1326,7 @@ static bool fn_iso_atan2_2(query *q)
 
 static bool fn_sinh_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -1359,7 +1359,7 @@ static bool fn_sinh_1(query *q)
 
 static bool fn_cosh_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -1392,7 +1392,7 @@ static bool fn_cosh_1(query *q)
 
 static bool fn_tanh_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -1425,7 +1425,7 @@ static bool fn_tanh_1(query *q)
 
 static bool fn_asinh_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -1458,7 +1458,7 @@ static bool fn_asinh_1(query *q)
 
 static bool fn_acosh_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -1491,7 +1491,7 @@ static bool fn_acosh_1(query *q)
 
 static bool fn_atanh_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -1525,7 +1525,7 @@ static bool fn_atanh_1(query *q)
 
 static bool fn_erf_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -1559,7 +1559,7 @@ static bool fn_erf_1(query *q)
 
 static bool fn_erfc_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -1593,7 +1593,7 @@ static bool fn_erfc_1(query *q)
 
 static bool fn_iso_copysign_2(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
@@ -1630,7 +1630,7 @@ static bool fn_iso_copysign_2(query *q)
 
 static bool fn_iso_pow_2(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
@@ -1700,7 +1700,7 @@ static bool fn_iso_pow_2(query *q)
 
 static bool fn_iso_powi_2(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
@@ -1805,7 +1805,7 @@ static bool fn_iso_powi_2(query *q)
 
 static bool fn_iso_divide_2(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
@@ -1917,7 +1917,7 @@ static bool fn_iso_divide_2(query *q)
 
 static bool fn_iso_divint_2(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
@@ -1964,7 +1964,7 @@ static void big_mod(mpz_t *x, mpz_t *y, mpz_t *r)
 
 static bool fn_iso_mod_2(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
@@ -2004,7 +2004,7 @@ static bool fn_iso_mod_2(query *q)
 
 static bool fn_iso_div_2(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
@@ -2068,7 +2068,7 @@ static bool fn_iso_div_2(query *q)
 
 static bool fn_iso_rem_2(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
@@ -2108,7 +2108,7 @@ static bool fn_iso_rem_2(query *q)
 
 static bool fn_iso_max_2(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
@@ -2201,7 +2201,7 @@ static bool fn_iso_max_2(query *q)
 
 static bool fn_iso_min_2(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
@@ -2297,7 +2297,7 @@ static bool fn_iso_min_2(query *q)
 
 static bool fn_iso_xor_2(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
@@ -2334,7 +2334,7 @@ static bool fn_iso_xor_2(query *q)
 
 static bool fn_iso_or_2(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
@@ -2371,7 +2371,7 @@ static bool fn_iso_or_2(query *q)
 
 static bool fn_iso_and_2(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
@@ -2408,7 +2408,7 @@ static bool fn_iso_and_2(query *q)
 
 static bool fn_iso_shl_2(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
@@ -2443,7 +2443,7 @@ static bool fn_iso_shl_2(query *q)
 
 static bool fn_iso_shr_2(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
@@ -2468,7 +2468,7 @@ static bool fn_iso_shr_2(query *q)
 
 static bool fn_iso_neg_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -2643,7 +2643,7 @@ static bool fn_iso_nlt_2(query *q)
 
 static bool fn_log_2(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
@@ -2722,7 +2722,7 @@ static bool fn_log_2(query *q)
 
 static bool fn_log10_1(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
@@ -2815,7 +2815,7 @@ static bool fn_random_1(query *q)
 
 static bool fn_random_integer_0(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	q->accum.tag = TAG_INTEGER;
 	q->accum.val_int = rnd() * ((int64_t)RAND_MAX+1);
 	return true;
@@ -2823,7 +2823,7 @@ static bool fn_random_integer_0(query *q)
 
 static bool fn_random_float_0(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	q->accum.tag = TAG_DOUBLE;
 	q->accum.val_float = rnd();
 	return true;
@@ -2831,7 +2831,7 @@ static bool fn_random_float_0(query *q)
 
 static bool fn_rand_0(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	q->accum.tag = TAG_INTEGER;
 	q->accum.val_int = rnd() * ((int64_t)RAND_MAX+1);
 	return true;
@@ -2899,7 +2899,7 @@ static pl_int gcd(pl_int num, pl_int remainder)
 
 static bool fn_gcd_2(query *q)
 {
-	CHECK_CALC();
+	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);

@@ -9,17 +9,6 @@
 
 #define MAX_FFI 1000
 
-#define CHECK_CALC()								\
-	errno = 0;										\
-													\
-	if (!q->eval) {									\
-		if (q->st.m->flags.unknown == 0)			\
-			return false;							\
-		return throw_error(q, q->st.curr_cell, 		\
-			q->st.curr_frame, 						\
-			"existence_error", "procedure");		\
-	}
-
 void clr_accum(cell *p);
 
 #if USE_FFI
@@ -272,3 +261,18 @@ inline static cell *get_raw_arg(const query *q, int n)
 			cc_ctx = q->latest_ctx;									\
 		}															\
 	}
+
+inline static bool START_FUNCTION(query *q)
+{
+	extern bool throw_error(query *q, cell *c, pl_idx c_ctx, const char *err_type, const char *expected);
+	errno = 0;
+
+	if (q->eval)
+		return true;
+
+	if (!q->st.m->flags.unknown == 0)
+		return throw_error(q, q->st.curr_cell, q->st.curr_frame, "existence_error", "procedure");
+
+	return false;
+}
+
