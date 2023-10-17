@@ -1004,9 +1004,6 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 	bool skip = false;
 
 	while (is_iso_list(p1) && is_iso_list(p2)) {
-		if (g_tpl_interrupt)
-			return false;
-
 		cell *h1 = p1 + 1, *h2 = p2 + 1;
 		pl_idx h1_ctx = p1_ctx, h2_ctx = p2_ctx;
 
@@ -1063,9 +1060,6 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 	unsigned cnt = 0;
 
 	while (is_iso_list(p1) && is_iso_list(p2)) {
-		if (g_tpl_interrupt)
-			return false;
-
 		p1 = p1 + 1; p1 += p1->nbr_cells;
 		p2 = p2 + 1; p2 += p2->nbr_cells;
 
@@ -1118,9 +1112,6 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 	p1++; p2++;
 
 	while (arity--) {
-		if (g_tpl_interrupt)
-			return false;
-
 		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 		cell *c1 = p1, *c2 = p2;
 
