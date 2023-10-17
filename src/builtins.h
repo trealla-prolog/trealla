@@ -270,7 +270,7 @@ inline static bool START_FUNCTION(query *q)
 	if (q->eval)
 		return true;
 
-	if (!q->st.m->flags.unknown == 0)
+	if (!q->st.m->flags.unknown)
 		return throw_error(q, q->st.curr_cell, q->st.curr_frame, "existence_error", "procedure");
 
 	return false;
