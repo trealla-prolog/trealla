@@ -5,6 +5,25 @@
 #include <string.h>
 #include <time.h>
 
+#if USE_OPENSSL
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+static int g_ctx_use_cnt = 0;
+static SSL_CTX *g_ctx = NULL;
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+#define TLS_SERVER_METHOD_FUNC TLS_server_method
+#define TLS_CLIENT_METHOD_FUNC TLS_client_method
+#else
+#warning "TLS is not available, falling back to SSL23 (deprecated)"
+#define TLS_SERVER_METHOD_FUNC SSLv23_server_method
+#define TLS_CLIENT_METHOD_FUNC SSLv23_client_method
+#endif
+#endif
+
+#include "history.h"
+#include "network.h"
+#include "query.h"
+
 #ifdef _WIN32
 #include <winsock2.h>
 #include <windows.h>
@@ -29,25 +48,6 @@
 #include <sys/un.h>
 #include <unistd.h>
 #endif
-
-#if USE_OPENSSL
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-static int g_ctx_use_cnt = 0;
-static SSL_CTX *g_ctx = NULL;
-#if OPENSSL_VERSION_NUMBER > 0x10100000L
-#define TLS_SERVER_METHOD_FUNC TLS_server_method
-#define TLS_CLIENT_METHOD_FUNC TLS_client_method
-#else
-#warning "TLS is not available, falling back to SSL23 (deprecated)"
-#define TLS_SERVER_METHOD_FUNC SSLv23_server_method
-#define TLS_CLIENT_METHOD_FUNC SSLv23_client_method
-#endif
-#endif
-
-#include "history.h"
-#include "network.h"
-#include "query.h"
 
 int net_domain_connect(const char *name, bool udp)
 {
