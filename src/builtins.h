@@ -262,6 +262,12 @@ inline static cell *get_raw_arg(const query *q, int n)
 		}															\
 	}
 
+#ifdef _WIN32
+#ifndef errno
+#define errno WSAGetLastError()
+#endif
+#endif
+
 inline static bool START_FUNCTION(query *q)
 {
 	extern bool throw_error(query *q, cell *c, pl_idx c_ctx, const char *err_type, const char *expected);
