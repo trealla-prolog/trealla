@@ -70,10 +70,6 @@ When consulting, reconsulting and deconsulting files the *.pl* version
 of the filename is always preferred (if not specified) when looking for a
 file.
 
-To run the Pereira benchmark suite:
-
-	tpl -g "bench_peirera,halt" -f samples/peirera.pl
-
 
 A note on UTF-8
 ===============
