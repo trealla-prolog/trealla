@@ -3147,27 +3147,6 @@ static bool fn_instance_2(query *q)
 	return unify(q, p2, p2_ctx, dbe->cl.cells, q->st.curr_frame);
 }
 
-static bool fn_load_all_modules_0(query *q)
-{
-	prolog *pl = q->pl;
-
-	for (library *lib = g_libs; lib->name; lib++) {
-		size_t len = *lib->len;
-		char *src = malloc(len+1);
-		check_error(src);
-		memcpy(src, lib->start, len);
-		src[len] = '\0';
-		SB(s1);
-		SB_sprintf(s1, "library/%s", lib->name);
-		module *m = load_text(pl->user_m, src, SB_cstr(s1));
-		SB_free(s1);
-		free(src);
-		check_error(m, pl_destroy(pl));
-	}
-
-	return true;
-}
-
 static bool fn_listing_0(query *q)
 {
 	int n = q->pl->current_output;
@@ -3666,45 +3645,6 @@ static bool fn_sys_first_non_octet_2(query *q)
 	}
 
 	return false;
-}
-
-static bool fn_sys_dump_keys_1(query *q)
-{
-	GET_FIRST_ARG(p1,any);
-	const char *name = NULL;
-	unsigned arity = -1;
-
-	if (p1->arity) {
-		if (CMP_STR_TO_CSTR(q, p1, "/") && CMP_STR_TO_CSTR(q, p1, "//"))
-			return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
-
-		cell *p2 = p1 + 1;
-
-		if (!is_atom(p2))
-			return throw_error(q, p2, p1_ctx, "type_error", "atom");
-
-		cell *p3 = p2 + p2->nbr_cells;
-
-		if (!is_integer(p3))
-			return throw_error(q, p3, p1_ctx, "type_error", "integer");
-
-		name = C_STR(q, p2);
-		arity = get_smallint(p3);
-
-		if (!CMP_STR_TO_CSTR(q, p1, "//"))
-			arity += 2;
-	}
-
-	predicate *pr = find_functor(q->st.m, name, arity);
-
-	if (!pr)
-		return false;
-
-	if (!pr->idx)
-		return true;
-
-	fprintf(stderr, "\n"); sl_dump(pr->idx, dump_key, q);
-	return true;
 }
 
 static bool fn_sys_timer_0(query *q)
@@ -6924,36 +6864,37 @@ builtins g_other_bifs[] =
 	{"*->", 2, fn_if_2, "+term,+term", false, false, BLAH},
 	{"if", 3, fn_if_3, "+term,+term,+term", false, false, BLAH},
 
-	{"cyclic_term", 1, fn_cyclic_term_1, "+term", false, false, BLAH},
-	{"current_module", 1, fn_current_module_1, "-atom", false, false, BLAH},
-	{"prolog_load_context", 2, fn_prolog_load_context_2, "+atom,?term", false, false, BLAH},
-	{"module", 1, fn_module_1, "?atom", false, false, BLAH},
-	{"modules", 1, fn_modules_1, "-list", false, false, BLAH},
-	{"attribute", 3, fn_attribute_3, "?atom,+atom,+integer", false, false, BLAH},
-	{"using", 0, fn_using_0, NULL, false, false, BLAH},
-	{"use_module", 1, fn_use_module_1, "+term", false, false, BLAH},
-	{"use_module", 2, fn_use_module_2, "+term,+list", false, false, BLAH},
-
 	{"sleep", 1, fn_sleep_1, "+number", false, false, BLAH},
 	{"delay", 1, fn_delay_1, "+number", false, false, BLAH},
 	{"shell", 1, fn_shell_1, "+atom", false, false, BLAH},
 	{"shell", 2, fn_shell_2, "+atom,-integer", false, false, BLAH},
-
 	{"listing", 0, fn_listing_0, NULL, false, false, BLAH},
 	{"listing", 1, fn_listing_1, "+predicate_indicator", false, false, BLAH},
 	{"time", 1, fn_time_1, ":callable", false, false, BLAH},
 	{"trace", 0, fn_trace_0, NULL, false, false, BLAH},
+	{"statistics", 0, fn_statistics_0, NULL, false, false, BLAH},
+	{"statistics", 2, fn_statistics_2, "+atom,-term", false, false, BLAH},
+
+	{"attribute", 3, fn_attribute_3, "?atom,+atom,+integer", false, false, BLAH},
+	{"put_atts", 2, fn_put_atts_2, "@variable,+term", false, false, BLAH},
+	{"get_atts", 2, fn_get_atts_2, "@variable,-term", false, false, BLAH},
+
+	{"current_module", 1, fn_current_module_1, "-atom", false, false, BLAH},
+	{"prolog_load_context", 2, fn_prolog_load_context_2, "+atom,?term", false, false, BLAH},
+	{"module", 1, fn_module_1, "?atom", false, false, BLAH},
+	{"modules", 1, fn_modules_1, "-list", false, false, BLAH},
+	{"using", 0, fn_using_0, NULL, false, false, BLAH},
+	{"use_module", 1, fn_use_module_1, "+term", false, false, BLAH},
+	{"use_module", 2, fn_use_module_2, "+term,+list", false, false, BLAH},
 	{"module_info", 2, fn_module_info_2, "+atom,-list", false, false, BLAH},
 	{"source_info", 2, fn_source_info_2, "+predicate_indicator,-list", false, false, BLAH},
+
 	{"help", 2, fn_help_2, "+predicate_indicator,+atom", false, false, BLAH},
 	{"help", 1, fn_help_1, "+predicate_indicator", false, false, BLAH},
 	{"help", 0, fn_help_0, NULL, false, false, BLAH},
 	{"module_help", 3, fn_module_help_3, "+atom,+predicate_indicator,+atom", false, false, BLAH},
 	{"module_help", 2, fn_module_help_2, "+atom,+predicate_indicator", false, false, BLAH},
 	{"module_help", 1, fn_module_help_1, "+atom", false, false, BLAH},
-	{"load_all_modules", 0, fn_load_all_modules_0, NULL, false, false, BLAH},
-
-	// Miscellaneous...
 
 	{"parse_csv_line", 2, fn_parse_csv_line_2, "+atom,-list", false, false, BLAH},
 	{"parse_csv_line", 3, fn_parse_csv_line_3, "+atom,-list,+list", false, false, BLAH},
@@ -7012,8 +6953,6 @@ builtins g_other_bifs[] =
 	{"getenv", 2, fn_getenv_2, "+atom,-atom", false, false, BLAH},
 	{"setenv", 2, fn_setenv_2, "+atom,+atom", false, false, BLAH},
 	{"unsetenv", 1, fn_unsetenv_1, "+atom", false, false, BLAH},
-	{"statistics", 0, fn_statistics_0, NULL, false, false, BLAH},
-	{"statistics", 2, fn_statistics_2, "+atom,-term", false, false, BLAH},
 	{"duplicate_term", 2, fn_iso_copy_term_2, "+term,-term", false, false, BLAH},
 	{"call_nth", 2, fn_call_nth_2, ":callable,+integer", false, false, BLAH},
 	{"limit", 2, fn_limit_2, "+integer,:callable", false, false, BLAH},
@@ -7022,8 +6961,7 @@ builtins g_other_bifs[] =
 	{"between", 3, fn_between_3, "+integer,+integer,-integer", false, false, BLAH},
 	{"string_length", 2, fn_string_length_2, "+string,?integer", false, false, BLAH},
 	{"crypto_n_random_bytes", 2, fn_crypto_n_random_bytes_2, "+integer,-codes", false, false, BLAH},
-	{"put_atts", 2, fn_put_atts_2, "@variable,+term", false, false, BLAH},
-	{"get_atts", 2, fn_get_atts_2, "@variable,-term", false, false, BLAH},
+	{"cyclic_term", 1, fn_cyclic_term_1, "+term", false, false, BLAH},
 
 	{"must_be", 4, fn_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"can_be", 4, fn_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
@@ -7058,8 +6996,11 @@ builtins g_other_bifs[] =
 	{"$unattributed_var", 1, fn_sys_unattributed_var_1, "@variable", false, false, BLAH},
 	{"$attributed_var", 1, fn_sys_attributed_var_1, "@variable", false, false, BLAH},
 	{"$first_non_octet", 2, fn_sys_first_non_octet_2, "+chars,-integer", false, false, BLAH},
-	{"$dump_keys", 1, fn_sys_dump_keys_1, NULL, false, false, BLAH},
 	{"$skip_max_list", 4, fn_sys_skip_max_list_4, "?integer,?integer?,?term,?term", false, false, BLAH},
+	{"$cancel_future", 1, fn_sys_cancel_future_1, "+integer", false, false, BLAH},
+	{"$set_future", 1, fn_sys_set_future_1, "+integer", false, false, BLAH},
+	{"$asserta", 2, fn_sys_asserta_2, "+term,+atom", true, false, BLAH},
+	{"$assertz", 2, fn_sys_assertz_2, "+term,+atom", true, false, BLAH},
 
 #if USE_OPENSSL
 	{"crypto_data_hash", 3, fn_crypto_data_hash_3, "?string,?string,?list", false, false, BLAH},
@@ -7081,11 +7022,6 @@ builtins g_other_bifs[] =
 	{"fork", 0, fn_fork_0, NULL, false, false, BLAH},
 	{"send", 1, fn_send_1, "+term", false, false, BLAH},
 	{"recv", 1, fn_recv_1, "?term", false, false, BLAH},
-	{"$cancel_future", 1, fn_sys_cancel_future_1, "+integer", false, false, BLAH},
-	{"$set_future", 1, fn_sys_set_future_1, "+integer", false, false, BLAH},
-
-	{"$asserta", 2, fn_sys_asserta_2, "+term,+atom", true, false, BLAH},
-	{"$assertz", 2, fn_sys_assertz_2, "+term,+atom", true, false, BLAH},
 
 	{0}
 };

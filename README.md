@@ -304,7 +304,6 @@ Non-standard predicates
 
 	module/1					# module(?atom)
 	modules/1					# modules(-list)
-	load_all_modules/0			#
 
 	listing/0
 	listing/1					# listing(+PI)
