@@ -745,7 +745,7 @@ current_op(A, B, C) :-
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-term_attvars_([], VsIn, VsIn) :- !.
+term_attvars_([], VsIn, VsIn).
 term_attvars_([H|T], VsIn, VsOut) :-
 	(	'$attributed_var'(H) ->
 		term_attvars_(T, [H|VsIn], VsOut)
@@ -758,7 +758,7 @@ term_attvars(Term, Vs) :-
 
 :- help(term_attvars(+term,-list), [iso(false)]).
 
-collect_goals_(_, [], GsIn, GsIn) :- !.
+collect_goals_(_, [], GsIn, GsIn).
 collect_goals_(V, [H|T], GsIn, GsOut) :-
 	H =.. [M, _],
 	catch(M:attribute_goals(V, Goal0, []), _, Goal0 = put_atts(V, +H)),
@@ -768,7 +768,7 @@ collect_goals_(V, [H|T], GsIn, GsOut) :-
 collect_goals_(V, [_|T], GsIn, GsOut) :-
 	collect_goals_(V, T, GsIn, GsOut).
 
-collect_goals_([], GsIn, GsIn) :- !.
+collect_goals_([], GsIn, GsIn).
 collect_goals_([V|T], GsIn, GsOut) :-
 	get_atts(V, Ls),
 	collect_goals_(V, Ls, GsIn, GsOut2),
@@ -783,13 +783,13 @@ copy_term(Term, Copy, Gs) :-
 
 % Debugging...
 
-print_goals_([]) :- !.
+print_goals_([]).
 print_goals_([Goal|Goals]) :-
 	write_term(Goal, [varnames(true)]),
-	(Goals == [] -> write('') ;	write(',')),
+	(Goals == [] -> write('') ;	write(', ')),
 	print_goals_(Goals).
 
-dump_attvars_([], []) :- !.
+dump_attvars_([], []).
 dump_attvars_([Var|Vars], [Gs|Rest]) :-
 	copy_term(Var, _, Gs),
 	dump_attvars_(Vars, Rest).
