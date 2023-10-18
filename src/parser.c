@@ -957,6 +957,11 @@ static bool directives(parser *p, cell *d)
 				p->m->flags.occurs_check = true;
 			else if (!strcmp(C_STR(p, p2), "false") || !strcmp(C_STR(p, p2), "off"))
 				p->m->flags.occurs_check = false;
+		} else if (!strcmp(C_STR(p, p1), "strict_iso")) {
+			if (!strcmp(C_STR(p, p2), "true") || !strcmp(C_STR(p, p2), "on"))
+				p->m->flags.not_strict_iso = false;
+			else if (!strcmp(C_STR(p, p2), "false") || !strcmp(C_STR(p, p2), "off"))
+				p->m->flags.not_strict_iso = true;
 		} else {
 			//fprintf(stdout, "Warning: unknown flag: %s\n", C_STR(p, p1));
 		}
