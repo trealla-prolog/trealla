@@ -1,18 +1,7 @@
-#include <ctype.h>
-#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
-#include <sys/time.h>
-#include <sys/stat.h>
 
-#include "atts.h"
-#include "base64.h"
-#include "heap.h"
 #include "history.h"
-#include "library.h"
-#include "module.h"
-#include "parser.h"
 #include "prolog.h"
 #include "query.h"
 
