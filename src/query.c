@@ -1283,7 +1283,7 @@ bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract
 
 		if (!pr->is_dynamic) {
 			if (is_retract == DO_CLAUSE) {
-				if (!q->access_private)
+				if (!q->flags.not_strict_iso)
 					return throw_error(q, p1, p1_ctx, "permission_error", "access,private_procedure");
 			} else
 				return throw_error(q, p1, p1_ctx, "permission_error", "modify,static_procedure");
@@ -1847,7 +1847,6 @@ void query_destroy(query *q)
 
 			if (pr) {
 				db_entry *dbe = pr->head;
-				unsigned cnt = 0;
 
 				while (dbe) {
 					cell *c = dbe->cl.cells;
@@ -1856,7 +1855,6 @@ void query_destroy(query *q)
 					cell *arg3 = arg2 + arg2->nbr_cells;
 
 					if (!CMP_STR_TO_CSTR(m, arg3, "b")) {
-						cnt++;
 						pr->cnt--;
 						delink(pr, dbe);
 						db_entry *save = dbe;
@@ -1866,9 +1864,6 @@ void query_destroy(query *q)
 					} else
 						dbe = dbe->next;
 				}
-
-				if (cnt && 0)
-					printf("*** quantum cleaner: %u items\n", cnt);
 			}
 		}
 
