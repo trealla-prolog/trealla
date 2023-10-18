@@ -1,13 +1,8 @@
-#include <ctype.h>
-#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 
 #include "heap.h"
 #include "module.h"
-#include "parser.h"
-#include "prolog.h"
 #include "query.h"
 
 bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx p2_ctx)
