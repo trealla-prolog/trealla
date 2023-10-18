@@ -1282,10 +1282,9 @@ bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract
 		}
 
 		if (!pr->is_dynamic) {
-			if (is_retract == DO_CLAUSE) {
-				if (!q->flags.not_strict_iso)
-					return throw_error(q, p1, p1_ctx, "permission_error", "access,private_procedure");
-			} else
+			if (is_retract == DO_CLAUSE)
+				return throw_error(q, p1, p1_ctx, "permission_error", "access,private_procedure");
+			else
 				return throw_error(q, p1, p1_ctx, "permission_error", "modify,static_procedure");
 		}
 
