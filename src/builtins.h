@@ -256,9 +256,10 @@ inline static cell *get_raw_arg(const query *q, int n)
 		if (evgen == qvgen) {										\
 			both++;													\
 		} else {													\
-			evgen = qvgen;											\
 			cc = deref(q, cc, cc_ctx);								\
 			cc_ctx = q->latest_ctx;									\
+			if (!is_var(cc))										\
+				evgen = qvgen;										\
 		}															\
 	}
 

@@ -602,13 +602,12 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 
 size_t scan_is_chars_list2(query *q, cell *l, pl_idx l_ctx, bool allow_codes, bool *has_var, bool *is_partial)
 {
-	q->vgen++;
+	if (++q->vgen == 0) q->vgen = 1;
 	return scan_is_chars_list_internal(q, l, l_ctx, allow_codes, has_var, is_partial);
 }
 
 size_t scan_is_chars_list(query *q, cell *l, pl_idx l_ctx, bool allow_codes)
 {
-	q->vgen++;
 	bool has_var, is_partial;
 	return scan_is_chars_list2(q, l, l_ctx, allow_codes, &has_var, &is_partial);
 }
