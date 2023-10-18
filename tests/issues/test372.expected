@@ -1,0 +1,2 @@
+answer(41):-1=:=2,fail
+answer(42):-true
