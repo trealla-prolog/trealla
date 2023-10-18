@@ -1,13 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
-#include <string.h>
-#include <time.h>
 
 #include "heap.h"
 #include "history.h"
 #include "module.h"
-#include "parser.h"
 #include "prolog.h"
 #include "query.h"
 
