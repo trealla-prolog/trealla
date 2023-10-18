@@ -7001,6 +7001,8 @@ builtins g_other_bifs[] =
 	{"$set_future", 1, fn_sys_set_future_1, "+integer", false, false, BLAH},
 	{"$asserta", 2, fn_sys_asserta_2, "+term,+atom", true, false, BLAH},
 	{"$assertz", 2, fn_sys_assertz_2, "+term,+atom", true, false, BLAH},
+	{"$clause", 2, fn_sys_clause_2, "?term,?term", false, false, BLAH},
+	{"$clause", 3, fn_sys_clause_3, "?term,?term,-string", false, false, BLAH},
 
 #if USE_OPENSSL
 	{"crypto_data_hash", 3, fn_crypto_data_hash_3, "?string,?string,?list", false, false, BLAH},

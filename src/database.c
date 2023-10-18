@@ -181,6 +181,22 @@ bool fn_iso_clause_2(query *q)
 	return false;
 }
 
+bool fn_sys_clause_2(query *q)
+{
+	q->access_private = true;
+	bool ok = fn_iso_clause_2(q);
+	q->access_private = false;
+	return ok;
+}
+
+bool fn_sys_clause_3(query *q)
+{
+	q->access_private = true;
+	bool ok = fn_clause_3(q);
+	q->access_private = false;
+	return ok;
+}
+
 bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 {
 	if (!q->retry) {
