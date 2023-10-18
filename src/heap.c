@@ -251,11 +251,9 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 			if (is_var(c)) {
 				const frame *f = GET_FRAME(c_ctx);
 				slot *e = GET_SLOT(f, c->var_nbr);
+				e->vgen = e->vgen2;
 				p1 = deref(q, c, c_ctx);
 				p1_ctx = q->latest_ctx;
-
-				if (!is_var(p1))
-					e->vgen = e->vgen2;
 			}
 		}
 #endif
