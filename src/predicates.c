@@ -2384,6 +2384,15 @@ static bool fn_iso_current_prolog_flag_2(query *q)
 		cell tmp;
 		make_int(&tmp, g_cpu_count);
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	} else if (!CMP_STR_TO_CSTR(q, p1, "public_clauses")) {
+		cell tmp;
+
+		if (q->st.m->flags.public_clauses)
+			make_atom(&tmp, g_on_s);
+		else
+			make_atom(&tmp, g_off_s);
+
+		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	} else if (!CMP_STR_TO_CSTR(q, p1, "version")) {
 		unsigned v1 = 0;
 		sscanf(g_version, "v%u", &v1);
@@ -2578,6 +2587,14 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 			q->st.m->flags.debug = true;
 		else if (!CMP_STR_TO_CSTR(q, p2, "false") || !CMP_STR_TO_CSTR(q, p2, "off"))
 			q->st.m->flags.debug = false;
+		else {
+			return flag_value_error(q, p1, p2);
+		}
+	} else if (!CMP_STR_TO_CSTR(q, p1, "public_clauses")) {
+		if (!CMP_STR_TO_CSTR(q, p2, "true") || !CMP_STR_TO_CSTR(q, p2, "on"))
+			q->st.m->flags.public_clauses = true;
+		else if (!CMP_STR_TO_CSTR(q, p2, "false") || !CMP_STR_TO_CSTR(q, p2, "off"))
+			q->st.m->flags.public_clauses = false;
 		else {
 			return flag_value_error(q, p1, p2);
 		}
@@ -3258,7 +3275,7 @@ static bool fn_module_info_2(query *q)
 	check_heap_error(init_tmp_heap(q));
 
 	for (predicate *pr = m->head; pr; pr = pr->next) {
-		if (!pr->is_public)
+		if (!pr->is_exported)
 			continue;
 
 		cell tmp[3];
@@ -5706,7 +5723,7 @@ static bool fn_sys_legacy_predicate_property_2(query *q)
 			return true;
 	}
 
-	if (pr->is_public) {
+	if (pr->is_exported) {
 		make_atom(&tmp, new_atom(q->pl, "exported"));
 
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
@@ -6680,6 +6697,7 @@ static void load_flags(query *q)
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "cpu_count", g_cpu_count);
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "integer_rounding_function", "toward_zero");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, [max_depth(%u),quoted(%s),double_quotes(%s)]).\n", "answer_write_options", (unsigned)q->pl->def_max_depth, q->pl->def_quoted?"true":"false", q->pl->def_double_quotes?"true":"false");
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "public_clauses", m->flags.public_clauses?"on":"off");
 
 	parser *p = parser_create(m);
 	p->srcptr = SB_cstr(pr);

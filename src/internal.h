@@ -460,6 +460,7 @@ struct predicate_ {
 	bool is_reload:1;
 	bool is_prebuilt:1;
 	bool is_public:1;
+	bool is_exported:1;
 	bool is_dynamic:1;
 	bool is_meta_predicate:1;
 	bool is_multifile:1;
@@ -631,6 +632,7 @@ struct prolog_flags_ {
 	bool debug:1;
 	bool json:1;
 	bool var_prefix:1;
+	bool public_clauses:1;
 };
 
 struct query_ {

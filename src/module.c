@@ -650,6 +650,23 @@ void set_dynamic_in_db(module *m, const char *name, unsigned arity)
 		m->error = true;
 }
 
+void set_public_in_db(module *m, const char *name, unsigned arity)
+{
+	cell tmp = (cell){0};
+	tmp.tag = TAG_INTERNED;
+	tmp.val_off = new_atom(m->pl, name);
+	ensure(tmp.val_off != ERR_IDX);
+	tmp.arity = arity;
+	predicate *pr = find_predicate(m, &tmp);
+	if (!pr) pr = create_predicate(m, &tmp, NULL);
+
+	if (pr) {
+		push_property(m, name, arity, "public");
+		pr->is_public = true;
+	} else
+		m->error = true;
+}
+
 void set_meta_predicate_in_db(module *m, cell *c)
 {
 	const char *name = C_STR(m, c);

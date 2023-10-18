@@ -877,7 +877,8 @@ static bool directives(parser *p, cell *d)
 					push_property(p->m, C_STR(p, &tmp), tmp.arity, "static");
 					push_property(p->m, C_STR(p, &tmp), tmp.arity, "visible");
 					push_property(p->m, C_STR(p, &tmp), tmp.arity, "interpreted");
-					pr->is_public = true;
+					push_property(p->m, C_STR(p, &tmp), tmp.arity, "exported");
+					pr->is_exported = true;
 				} else if (!strcmp(C_STR(p, head), "op") && (head->arity == 3)) {
 					do_op(p, head, true);
 				}
@@ -957,11 +958,16 @@ static bool directives(parser *p, cell *d)
 				p->m->flags.occurs_check = true;
 			else if (!strcmp(C_STR(p, p2), "false") || !strcmp(C_STR(p, p2), "off"))
 				p->m->flags.occurs_check = false;
+		} else if (!strcmp(C_STR(p, p1), "public_clauses")) {
+			if (!strcmp(C_STR(p, p2), "true") || !strcmp(C_STR(p, p2), "on"))
+				p->m->flags.public_clauses = true;
+			else if (!strcmp(C_STR(p, p2), "false") || !strcmp(C_STR(p, p2), "off"))
+				p->m->flags.public_clauses = false;
 		} else if (!strcmp(C_STR(p, p1), "strict_iso")) {
 			if (!strcmp(C_STR(p, p2), "true") || !strcmp(C_STR(p, p2), "on"))
-				p->m->flags.not_strict_iso = false;
+				p->m->flags.not_strict_iso = !true;
 			else if (!strcmp(C_STR(p, p2), "false") || !strcmp(C_STR(p, p2), "off"))
-				p->m->flags.not_strict_iso = true;
+				p->m->flags.not_strict_iso = !false;
 		} else {
 			//fprintf(stdout, "Warning: unknown flag: %s\n", C_STR(p, p1));
 		}
@@ -1021,6 +1027,7 @@ static bool directives(parser *p, cell *d)
 				set_dynamic_in_db(p->m, C_STR(p, c_name), arity);
 			} else if (!strcmp(dirname, "encoding")) {
 			} else if (!strcmp(dirname, "public")) {
+				set_public_in_db(p->m, C_STR(p, c_name), arity);
 			} else if (!strcmp(dirname, "export")) {
 			} else if (!strcmp(dirname, "discontiguous")) {
 				set_discontiguous_in_db(p->m, C_STR(p, c_name), arity);
@@ -1115,7 +1122,7 @@ static bool directives(parser *p, cell *d)
 			else if (!strcmp(dirname, "discontiguous"))
 				set_discontiguous_in_db(m, C_STR(p, c_name), arity);
 			else if (!strcmp(dirname, "public"))
-				;
+				set_public_in_db(m, C_STR(p, c_name), arity);
 			else if (!strcmp(dirname, "export"))
 				;
 			else if (!strcmp(dirname, "dynamic")) {

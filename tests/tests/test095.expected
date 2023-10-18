@@ -1,0 +1,4 @@
+answer(41):-abc,fail.
+answer(42):-true.
+ok
+error(permission_error(access,private_procedure,not_public/1),clause/2)

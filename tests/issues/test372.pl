@@ -1,8 +1,9 @@
 :-initialization(main).
-:-set_prolog_flag(strict_iso,off).
+:-set_prolog_flag(public_clauses,on).
 
-answer(41) :- 1 =:= 2, fail.
+answer(41) :- abc, fail.
 answer(42).
 
-main :- H = answer(X), clause(H, Body), writeln((H :- Body)), fail.
+main :- H = answer(_), clause(H, Body), write_term((H :- Body), [nl(true), fullstop(true)]), fail.
+main :- current_prolog_flag(public_clauses, Flag), writeln(Flag), fail.
 main.
