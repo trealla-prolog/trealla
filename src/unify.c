@@ -1028,7 +1028,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 	p2_ctx = orig_p2_ctx;
 	unsigned cnt = 0;
 
-	while (is_iso_list(p1) && is_iso_list(p2)) {
+	while (is_iso_list(p1) && is_iso_list(p2) && !q->cycle_error) {
 		p1 = p1 + 1; p1 += p1->nbr_cells;
 		p2 = p2 + 1; p2 += p2->nbr_cells;
 

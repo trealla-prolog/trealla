@@ -226,6 +226,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 
 			both = 0;
 			if (deep_copy(t)) DEREF_SLOT(both, e->vgen2, e, e->vgen, t, t_ctx, q->vgen);
+			if (both) q->cycle_error = true;
 			p1 = t;
 			p1_ctx = t_ctx;
 
@@ -239,11 +240,10 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 		cell *rec = deep_clone2_to_tmp(q, p1, p1_ctx, depth+1);
 		if (!rec) return NULL;
 
-#if 0
 		p1 = save_p1;
 		p1_ctx = save_p1_ctx;
 
-		while (is_iso_list(p1)) {
+		while (is_iso_list(p1) && !q->cycle_error) {
 			p1 = p1 + 1; p1 += p1->nbr_cells;
 			cell *c = p1;
 			pl_idx c_ctx = p1_ctx;
@@ -256,7 +256,6 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 				p1_ctx = q->latest_ctx;
 			}
 		}
-#endif
 
 		tmp = get_tmp_heap(q, save_idx);
 		tmp->nbr_cells = tmp_heap_used(q) - save_idx;
