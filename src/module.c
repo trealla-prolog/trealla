@@ -1574,44 +1574,6 @@ db_entry *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, 
 	return dbe;
 }
 
-static bool retract_from_predicate(db_entry *dbe)
-{
-	if (dbe->cl.dgen_erased)
-		return false;
-
-	predicate *pr = dbe->owner;
-	module *m = pr->m;
-	dbe->cl.dgen_erased = ++m->pl->ugen;
-	dbe->filename = NULL;
-	pr->cnt--;
-
-	if (pr->idx && !pr->cnt && !pr->refcnt) {
-		sl_destroy(pr->idx2);
-		sl_destroy(pr->idx);
-		pr->idx2 = NULL;
-
-		pr->idx = sl_create(index_cmpkey, NULL, m);
-		ensure(pr->idx);
-
-		if (pr->key.arity > 1) {
-			pr->idx2 = sl_create(index_cmpkey, NULL, m);
-			ensure(pr->idx2);
-		}
-	}
-
-	return true;
-}
-
-void retract_from_db(db_entry *dbe)
-{
-	if (!retract_from_predicate(dbe))
-		return;
-
-	predicate *pr = dbe->owner;
-	dbe->dirty = pr->dirty_list;
-	pr->dirty_list = dbe;
-}
-
 static void xref_cell(module *m, clause *cl, cell *c, predicate *parent, int last_was_colon)
 {
 	unsigned specifier;
@@ -1751,7 +1713,7 @@ static bool unload_realfile(module *m, const char *filename)
 				continue;
 
 			if (dbe->filename && !strcmp(dbe->filename, filename)) {
-				if (!retract_from_predicate(dbe))
+				if (!retract_from_predicate(pr, dbe))
 					continue;
 
 				dbe->dirty = pr->dirty_list;

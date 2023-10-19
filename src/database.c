@@ -197,6 +197,44 @@ bool fn_sys_clause_3(query *q)
 	return ok;
 }
 
+bool retract_from_predicate(predicate *pr, db_entry *dbe)
+{
+	if (dbe->cl.dgen_erased)
+		return false;
+
+	module *m = pr->m;
+	dbe->cl.dgen_erased = ++m->pl->ugen;
+	dbe->filename = NULL;
+	pr->cnt--;
+
+	if (pr->idx && !pr->cnt && !pr->refcnt) {
+		sl_destroy(pr->idx2);
+		sl_destroy(pr->idx);
+		pr->idx2 = NULL;
+
+		pr->idx = sl_create(index_cmpkey, NULL, m);
+		ensure(pr->idx);
+
+		if (pr->key.arity > 1) {
+			pr->idx2 = sl_create(index_cmpkey, NULL, m);
+			ensure(pr->idx2);
+		}
+	}
+
+	return true;
+}
+
+void retract_from_db(db_entry *dbe)
+{
+	predicate *pr = dbe->owner;
+
+	if (!retract_from_predicate(pr, dbe))
+		return;
+
+	dbe->dirty = pr->dirty_list;
+	pr->dirty_list = dbe;
+}
+
 bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 {
 	if (!q->retry) {
