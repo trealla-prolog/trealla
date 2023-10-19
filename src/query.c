@@ -872,6 +872,7 @@ static void commit_frame(query *q, cell *body)
 	q->in_commit = true;
 	clause *cl = &q->st.dbe->cl;
 	frame *f = GET_CURR_FRAME();
+	frame *save_f = f;
 	f->mid = q->st.m->id;
 
 	if (!q->st.dbe->owner->is_prebuilt)
@@ -900,8 +901,17 @@ static void commit_frame(query *q, cell *body)
 
 	if (q->pl->opt && tco)
 		reuse_frame(q, cl);
-	else
+	else {
 		f = push_frame(q, cl->nbr_vars);
+
+		// If mathcing against a fact then no need
+		// for the new frame...
+
+		if (!cl->nbr_vars && !body && last_match) {
+			f = save_f;
+			q->st.fp--;
+		}
+	}
 
 	Trace(q, get_head(q->st.dbe->cl.cells), q->st.curr_frame, EXIT);
 
