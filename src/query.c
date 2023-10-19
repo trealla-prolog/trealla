@@ -635,8 +635,11 @@ static void leave_predicate(query *q, predicate *pr)
 		return;
 
 	if (!pr->is_abolished) {
-
 #if 0
+		// Enable this when matching of dynamic predicates
+		// clones the clause on the heap, thus making it
+		// safe for physical deletion.
+
 		purge_predicate_dirty_list(q, pr);
 #else
 
@@ -1289,7 +1292,7 @@ bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract
 
 		if (!pr->is_dynamic) {
 			if (is_retract == DO_CLAUSE) {
-				if (!q->flags.not_strict_iso)
+				if (!q->flags.access_private)
 					return throw_error(q, p1, p1_ctx, "permission_error", "access,private_procedure");
 			} else
 				return throw_error(q, p1, p1_ctx, "permission_error", "modify,static_procedure");
@@ -1785,12 +1788,19 @@ void purge_predicate_dirty_list(query *q, predicate *pr)
 
 void purge_dirty_list(query *q)
 {
+	unsigned cnt = 0;
+
 	while (q->dirty_list) {
 		db_entry *dbe = q->dirty_list;
 		q->dirty_list = dbe->dirty;
 		clear_rule(&dbe->cl);
 		free(dbe);
+		cnt++;
 	}
+
+#ifdef DEBUG
+	if (cnt) printf("*** purge %u\n", cnt);
+#endif
 }
 
 void query_destroy(query *q)

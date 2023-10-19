@@ -349,17 +349,7 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 		retract_from_db(dbe);
 
 	if (!pr->refcnt) {
-		db_entry *dbe = pr->dirty_list;
-
-		while (dbe) {
-			delink(pr, dbe);
-			db_entry *save = dbe->dirty;
-			clear_rule(&dbe->cl);
-			free(dbe);
-			dbe = save;
-		}
-
-		pr->dirty_list = NULL;
+		purge_predicate_dirty_list(q, pr);
 	} else {
 		while (pr->dirty_list) {
 			db_entry *dbe = pr->dirty_list;
