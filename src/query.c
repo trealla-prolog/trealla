@@ -878,7 +878,8 @@ static void commit_frame(query *q, cell *body)
 		q->st.m = q->st.dbe->owner->m;
 
 	bool is_det = !q->has_vars && cl->is_unique;
-	bool last_match = is_det || cl->is_first_cut || !has_next_key(q);
+	bool next_key = has_next_key(q);
+	bool last_match = is_det || cl->is_first_cut || !next_key;
 	bool empty_frame = cl->nbr_vars == cl->nbr_temporaries;
 	bool tco = false;
 
@@ -892,8 +893,8 @@ static void commit_frame(query *q, cell *body)
 		tco = recursive && vars_ok && !choices && slots_ok;
 
 #if 0
-		fprintf(stderr, "*** retry=%d,tco=%d,q->no_tco=%d,last_match=%d (%d),recursive=%d,choices=%d,slots_ok=%d,vars_ok=%d,cl->nbr_vars=%u,cl->nbr_temps=%u\n",
-			q->retry, tco, q->no_tco, last_match, cl->is_first_cut, recursive, choices, slots_ok, vars_ok, cl->nbr_vars, cl->nbr_temporaries);
+		fprintf(stderr, "*** retry=%d,tco=%d,q->no_tco=%d,last_match=%d,is_det=%d,is_first_cut=%d,next_key=%d,recursive=%d,choices=%d,slots_ok=%d,vars_ok=%d,cl->nbr_vars=%u,cl->nbr_temps=%u\n",
+			q->retry, tco, q->no_tco, last_match, is_det, cl->is_first_cut, next_key, recursive, choices, slots_ok, vars_ok, cl->nbr_vars, cl->nbr_temporaries);
 #endif
 
 	}
