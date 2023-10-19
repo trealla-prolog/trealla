@@ -81,7 +81,7 @@ bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx 
 void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs, pl_idx attrs_ctx);
 void reset_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx);
 bool valid_list(query *q, cell *c, pl_idx c_ctx);
-bool retract_from_predicate(predicate *pr, db_entry *dbe);
+bool remove_from_predicate(predicate *pr, db_entry *dbe);
 void retract_from_db(db_entry *dbe);
 
 int compare(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx);

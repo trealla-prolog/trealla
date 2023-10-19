@@ -197,13 +197,13 @@ bool fn_sys_clause_3(query *q)
 	return ok;
 }
 
-bool retract_from_predicate(predicate *pr, db_entry *dbe)
+bool remove_from_predicate(predicate *pr, db_entry *dbe)
 {
-	if (dbe->cl.dgen_erased)
+	if (dbe->cl.dbgen_erased)
 		return false;
 
 	module *m = pr->m;
-	dbe->cl.dgen_erased = ++m->pl->ugen;
+	dbe->cl.dbgen_erased = ++m->pl->dbgen;
 	dbe->filename = NULL;
 	pr->cnt--;
 
@@ -228,7 +228,7 @@ void retract_from_db(db_entry *dbe)
 {
 	predicate *pr = dbe->owner;
 
-	if (!retract_from_predicate(pr, dbe))
+	if (!remove_from_predicate(pr, dbe))
 		return;
 
 	dbe->dirty = pr->dirty_list;
@@ -796,7 +796,7 @@ void save_db(FILE *fp, query *q, int logging)
 			continue;
 
 		for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
-			if (dbe->cl.dgen_erased)
+			if (dbe->cl.dbgen_erased)
 				continue;
 
 			if (logging)

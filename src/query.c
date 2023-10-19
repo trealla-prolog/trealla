@@ -54,7 +54,7 @@ static bool any_choices(const query *q, const frame *f)
 		return false;
 
 	const choice *ch = q->in_commit ? GET_PREV_CHOICE() : GET_CURR_CHOICE();
-	return ch->cgen >= f->cgen;
+	return ch->chgen >= f->chgen;
 }
 
 void dump_term(query *q, const char *s, const cell *c)
@@ -279,15 +279,15 @@ bool check_slot(query *q, unsigned cnt)
 	return true;
 }
 
-static bool can_view(query *q, size_t ugen, const db_entry *dbe)
+static bool can_view(query *q, size_t dbgen, const db_entry *dbe)
 {
 	if (dbe->cl.is_deleted)
 		return false;
 
-	if (dbe->cl.dgen_created > ugen)
+	if (dbe->cl.dbgen_created > dbgen)
 		return false;
 
-	if (dbe->cl.dgen_erased && (dbe->cl.dgen_erased <= ugen))
+	if (dbe->cl.dbgen_erased && (dbe->cl.dbgen_erased <= dbgen))
 		return false;
 
 	return true;
@@ -751,8 +751,8 @@ int retry_choice(query *q)
 		q->save_m = NULL;
 
 		frame *f = GET_CURR_FRAME();
-		f->ugen = ch->ugen;
-		f->cgen = ch->frame_cgen;
+		f->dbgen = ch->dbgen;
+		f->chgen = ch->frame_cgen;
 		f->initial_slots = ch->initial_slots;
 		f->actual_slots = ch->actual_slots;
 		f->overflow = ch->overflow;
@@ -796,7 +796,7 @@ static frame *push_frame(query *q, unsigned nbr_vars)
 		f->curr_cell = q->st.curr_cell;
 	}
 
-	f->cgen = ++q->cgen;
+	f->chgen = ++q->chgen;
 	f->overflow = 0;
 	f->hp = q->st.hp;
 
@@ -810,7 +810,7 @@ static void reuse_frame(query *q, const clause *cl)
 	frame *f = GET_CURR_FRAME();
 	const frame *newf = GET_FRAME(q->st.fp);
 	f->initial_slots = f->actual_slots = cl->nbr_vars - cl->nbr_temporaries;
-	f->cgen = ++q->cgen;
+	f->chgen = ++q->chgen;
 	f->overflow = 0;
 
 	const slot *from = GET_SLOT(newf, 0);
@@ -915,7 +915,7 @@ static void commit_frame(query *q)
 	} else {
 		choice *ch = GET_CURR_CHOICE();
 		ch->st.dbe = q->st.dbe;
-		ch->cgen = f->cgen;
+		ch->chgen = f->chgen;
 	}
 
 	q->st.curr_cell = get_body(cl->cells);
@@ -925,7 +925,7 @@ static void commit_frame(query *q)
 
 void stash_frame(query *q, const clause *cl, bool last_match)
 {
-	pl_idx cgen = ++q->cgen;
+	pl_idx chgen = ++q->chgen;
 
 	if (last_match) {
 		Trace(q, get_head(q->st.dbe->cl.cells), q->st.curr_frame, EXIT);
@@ -934,7 +934,7 @@ void stash_frame(query *q, const clause *cl, bool last_match)
 	} else {
 		choice *ch = GET_CURR_CHOICE();
 		ch->st.dbe = q->st.dbe;
-		ch->cgen = cgen;
+		ch->chgen = chgen;
 	}
 
 	unsigned nbr_vars = cl->nbr_vars;
@@ -944,7 +944,7 @@ void stash_frame(query *q, const clause *cl, bool last_match)
 		frame *f = GET_FRAME(new_frame);
 		f->prev_offset = new_frame - q->st.curr_frame;
 		f->curr_cell = NULL;
-		f->cgen = cgen;
+		f->chgen = chgen;
 		f->overflow = 0;
 		q->st.sp += nbr_vars;
 	}
@@ -959,8 +959,8 @@ bool push_choice(query *q)
 	pl_idx curr_choice = q->cp++;
 	choice *ch = GET_CHOICE(curr_choice);
 	ch->st = q->st;
-	ch->ugen = f->ugen;
-	ch->frame_cgen = ch->cgen = f->cgen;
+	ch->dbgen = f->dbgen;
+	ch->frame_cgen = ch->chgen = f->chgen;
 	ch->initial_slots = f->initial_slots;
 	ch->actual_slots = f->actual_slots;
 	ch->overflow = f->overflow;
@@ -981,7 +981,7 @@ bool push_barrier(query *q)
 	check_heap_error(push_choice(q));
 	frame *f = GET_CURR_FRAME();
 	choice *ch = GET_CURR_CHOICE();
-	ch->cgen = f->cgen = ++q->cgen;
+	ch->chgen = f->chgen = ++q->chgen;
 	ch->barrier = true;
 	return true;
 }
@@ -1012,10 +1012,10 @@ void cut(query *q)
 		// A normal cut can't break out of a barrier...
 
 		if (ch->barrier) {
-			if (ch->cgen <= f->cgen)
+			if (ch->chgen <= f->chgen)
 				break;
 		} else {
-			if (ch->cgen < f->cgen)
+			if (ch->chgen < f->chgen)
 				break;
 		}
 
@@ -1055,7 +1055,7 @@ bool drop_barrier(query *q, pl_idx cp)
 		if (q->cp) {
 			const choice *ch = GET_CURR_CHOICE();
 			frame *f = GET_CURR_FRAME();
-			f->cgen = ch->cgen;
+			f->chgen = ch->chgen;
 		}
 
 		return true;
@@ -1089,7 +1089,7 @@ static void proceed(query *q)
 
 	while (is_end(q->st.curr_cell)) {
 		if (q->st.curr_cell->val_ret) {
-			f->cgen = q->st.curr_cell->cgen;
+			f->chgen = q->st.curr_cell->chgen;
 			q->st.m = q->pl->modmap[q->st.curr_cell->mid];
 		}
 
@@ -1181,7 +1181,7 @@ bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 		find_key(q, pr, c, p1_ctx);
 		enter_predicate(q, pr);
 		frame *f = GET_FRAME(q->st.curr_frame);
-		f->ugen = q->pl->ugen;
+		f->dbgen = q->pl->dbgen;
 	} else {
 		next_key(q);
 	}
@@ -1199,7 +1199,7 @@ bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 	check_heap_error(check_slot(q, MAX_ARITY));
 
 	for (; q->st.dbe; q->st.dbe = q->st.dbe->next) {
-		if (!can_view(q, f->ugen, q->st.dbe))
+		if (!can_view(q, f->dbgen, q->st.dbe))
 			continue;
 
 		clause *cl = &q->st.dbe->cl;
@@ -1298,7 +1298,7 @@ bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract
 		find_key(q, pr, c, p1_ctx);
 		enter_predicate(q, pr);
 		frame *f = GET_FRAME(q->st.curr_frame);
-		f->ugen = q->pl->ugen;
+		f->dbgen = q->pl->dbgen;
 	} else {
 		next_key(q);
 	}
@@ -1314,7 +1314,7 @@ bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract
 	check_heap_error(check_slot(q, MAX_ARITY));
 
 	for (; q->st.dbe; q->st.dbe = q->st.dbe->next) {
-		if (!can_view(q, f->ugen, q->st.dbe))
+		if (!can_view(q, f->dbgen, q->st.dbe))
 			continue;
 
 		clause *cl = &q->st.dbe->cl;
@@ -1379,7 +1379,7 @@ static bool match_head(query *q)
 		find_key(q, pr, q->st.curr_cell, q->st.curr_frame);
 		enter_predicate(q, pr);
 		frame *f = GET_FRAME(q->st.curr_frame);
-		f->ugen = q->pl->ugen;
+		f->dbgen = q->pl->dbgen;
 	} else
 		next_key(q);
 
@@ -1394,7 +1394,7 @@ static bool match_head(query *q)
 	check_heap_error(check_slot(q, MAX_ARITY));
 
 	for (; q->st.dbe; next_key(q)) {
-		if (!can_view(q, f->ugen, q->st.dbe))
+		if (!can_view(q, f->dbgen, q->st.dbe))
 			continue;
 
 		clause *cl = &q->st.dbe->cl;
@@ -1756,7 +1756,7 @@ bool execute(query *q, cell *cells, unsigned nbr_vars)
 
 	frame *f = q->frames + q->st.curr_frame;
 	f->initial_slots = f->actual_slots = nbr_vars;
-	f->ugen = ++q->pl->ugen;
+	f->dbgen = ++q->pl->dbgen;
 	return start(q);
 }
 
@@ -1949,7 +1949,7 @@ query *query_create_task(query *q, cell *curr_cell)
 	frame *fsrc = GET_FRAME(q->st.curr_frame);
 	frame *fdst = task->frames;
 	fdst->initial_slots = fdst->actual_slots = fsrc->actual_slots;
-	fdst->ugen = ++q->pl->ugen;
+	fdst->dbgen = ++q->pl->dbgen;
 	task->st.sp = fdst->actual_slots;
 	return task;
 }

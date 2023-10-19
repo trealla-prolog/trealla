@@ -401,7 +401,7 @@ struct cell_ {
 
 			union {
 				uint32_t val_off;		// used with TAG_VAR & TAG_INTERNED
-				pl_idx var_ctx;		// used with TAG_VAR & FLAG_VAR_REF
+				pl_idx var_ctx;			// used with TAG_VAR & FLAG_VAR_REF
 			};
 		};
 
@@ -412,7 +412,7 @@ struct cell_ {
 
 		struct {
 			cell *val_ret;				// used with TAG_EMPTY saves
-			uint64_t cgen;				// choice generation on call
+			uint64_t chgen;				// choice generation on call
 		};
 	};
 };
@@ -422,7 +422,7 @@ typedef struct {
 } uuid;
 
 struct clause_ {
-	uint64_t dgen_created, dgen_erased;
+	uint64_t dbgen_created, dbgen_erased;
 	pl_idx allocated_cells, cidx;
 	uint32_t nbr_vars;
 	uint16_t nbr_temporaries;
@@ -524,7 +524,7 @@ struct slot_ {
 
 struct frame_ {
 	cell *curr_cell;
-	uint64_t ugen, cgen;
+	uint64_t dbgen, chgen;
 	pl_idx prev_offset, hp, base, overflow, initial_slots, actual_slots;
 	uint16_t mid;
 };
@@ -550,7 +550,7 @@ struct prolog_state_ {
 
 struct choice_ {
 	prolog_state st;
-	uint64_t cgen, frame_cgen, ugen;
+	uint64_t chgen, frame_cgen, dbgen;
 	pl_idx base, overflow, initial_slots, actual_slots;
 	bool catchme_retry:1;
 	bool catchme_exception:1;
@@ -657,7 +657,7 @@ struct query_ {
 	bool ignores[MAX_IGNORES];
 	uint64_t tot_goals, tot_backtracks, tot_retries, tot_matches;
 	uint64_t tot_tcos, tot_frecovs, tot_srecovs;
-	uint64_t step, qid, tmo_msecs, cgen, cycle_error;
+	uint64_t step, qid, tmo_msecs, chgen, cycle_error;
 	uint64_t get_started, autofail_n, yield_at;
 	uint64_t time_cpu_started, time_cpu_last_started, future;
 	unsigned max_depth, max_eval_depth, print_idx, tab_idx, varno, tab0_varno, curr_engine;
@@ -815,7 +815,7 @@ struct prolog_ {
 	FILE *logfp;
 	char *pool;
 	size_t pool_offset, pool_size, tabs_size;
-	uint64_t s_last, s_cnt, seed, ugen;
+	uint64_t s_last, s_cnt, seed, dbgen;
 	unsigned next_mod_id, def_max_depth;
 	uint8_t current_input, current_output, current_error;
 	int8_t halt_code, opt;

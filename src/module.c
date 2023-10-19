@@ -555,7 +555,7 @@ db_entry *find_in_db(module *m, uuid *ref)
 				continue;
 
 			for (db_entry *dbe = pr->head ; dbe; dbe = dbe->next) {
-				if (dbe->cl.dgen_erased)
+				if (dbe->cl.dbgen_erased)
 					continue;
 
 				if (!memcmp(&dbe->u, ref, sizeof(uuid)))
@@ -595,7 +595,7 @@ db_entry *erase_from_db(module *m, uuid *ref)
 {
 	db_entry *dbe = find_in_db(m, ref);
 	if (!dbe) return 0;
-	dbe->cl.dgen_erased = ++m->pl->ugen;
+	dbe->cl.dbgen_erased = ++m->pl->dbgen;
 	return dbe;
 }
 
@@ -1311,7 +1311,7 @@ static void optimize_rule(module *m, db_entry *dbe_orig)
 	cl->is_unique = false;
 
 	for (db_entry *dbe = dbe_orig->next; dbe; dbe = dbe->next) {
-		if (dbe->cl.dgen_erased)
+		if (dbe->cl.dbgen_erased)
 			continue;
 
 		cell *head2 = get_head(dbe->cl.cells);
@@ -1440,7 +1440,7 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_tempora
 	dbe->cl.nbr_vars = nbr_vars;
 	dbe->cl.allocated_cells = p1->nbr_cells;
 	dbe->cl.cidx = p1->nbr_cells+1;
-	dbe->cl.dgen_created = ++m->pl->ugen;
+	dbe->cl.dbgen_created = ++m->pl->dbgen;
 	dbe->filename = m->filename;
 	dbe->owner = pr;
 	return dbe;
@@ -1481,7 +1481,7 @@ static void assert_commit(module *m, db_entry *dbe, predicate *pr, bool append)
 		for (db_entry *cl2 = pr->head; cl2; cl2 = cl2->next) {
 			cell *c = get_head(cl2->cl.cells);
 
-			if (cl2->cl.dgen_erased)
+			if (cl2->cl.dbgen_erased)
 				continue;
 
 			sl_app(pr->idx, c, cl2);
@@ -1709,11 +1709,11 @@ static bool unload_realfile(module *m, const char *filename)
 			continue;
 
 		for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
-			if (dbe->cl.dgen_erased)
+			if (dbe->cl.dbgen_erased)
 				continue;
 
 			if (dbe->filename && !strcmp(dbe->filename, filename)) {
-				if (!retract_from_predicate(pr, dbe))
+				if (!remove_from_predicate(pr, dbe))
 					continue;
 
 				dbe->dirty = pr->dirty_list;
@@ -2029,7 +2029,7 @@ static void module_save_fp(module *m, FILE *fp, int canonical, int dq)
 			continue;
 
 		for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
-			if (dbe->cl.dgen_erased)
+			if (dbe->cl.dbgen_erased)
 				continue;
 
 			if (canonical)

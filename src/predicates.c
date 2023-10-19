@@ -61,7 +61,7 @@ void make_call(query *q, cell *tmp)
 	cell *c = q->st.curr_cell;
 	frame *f = GET_CURR_FRAME();
 	tmp->val_ret = c ? c + c->nbr_cells : NULL;	// save next as the return instruction
-	tmp->cgen = f->cgen;						// ... choice-generation
+	tmp->chgen = f->chgen;						// ... choice-generation
 	tmp->mid = q->st.m->id;						// ... current-module
 }
 
@@ -70,7 +70,7 @@ void make_call_redo(query *q, cell *tmp)
 	make_end(tmp);
 	frame *f = GET_CURR_FRAME();
 	tmp->val_ret = q->st.curr_cell;				// save the return instruction
-	tmp->cgen = f->cgen;						// ... choice-generation
+	tmp->chgen = f->chgen;						// ... choice-generation
 	tmp->mid = q->st.m->id;						// ... current-module
 }
 
@@ -3171,7 +3171,7 @@ static void save_name(FILE *fp, query *q, pl_idx name, unsigned arity)
 			continue;
 
 		for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
-			if (dbe->cl.dgen_erased)
+			if (dbe->cl.dbgen_erased)
 				continue;
 
 			for (unsigned i = 0; i < MAX_IGNORES; i++)
