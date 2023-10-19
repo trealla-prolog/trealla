@@ -357,7 +357,7 @@ struct cell_ {
 
 	union {
 		uint32_t nbr_cells;
-		uint16_t mid;				// used with TAG_EMPTY so not counted
+		uint32_t mid;				// used with TAG_EMPTY so not counted
 	};
 
 	// 2 * 8 = 16 bytes.
@@ -423,9 +423,7 @@ typedef struct {
 
 struct clause_ {
 	uint64_t dbgen_created, dbgen_erased;
-	pl_idx allocated_cells, cidx;
-	uint32_t nbr_vars;
-	uint16_t nbr_temporaries;
+	pl_idx cidx, nbr_allocated_cells, nbr_vars, nbr_temporaries;
 	bool is_first_cut:1;
 	bool is_cut_only:1;
 	bool is_unique:1;
@@ -526,7 +524,7 @@ struct frame_ {
 	cell *curr_cell;
 	uint64_t dbgen, chgen;
 	pl_idx prev_offset, hp, base, overflow, initial_slots, actual_slots;
-	uint16_t mid;
+	uint32_t mid;
 };
 
 struct prolog_state_ {

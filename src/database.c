@@ -501,10 +501,10 @@ bool fn_iso_asserta_1(query *q)
 	pl_idx nbr_cells = tmp->nbr_cells;
 	parser *p = q->st.m->p;
 
-	if (nbr_cells > p->cl->allocated_cells) {
+	if (nbr_cells > p->cl->nbr_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(nbr_cells+1)));
 		check_heap_error(p->cl);
-		p->cl->allocated_cells = nbr_cells;
+		p->cl->nbr_allocated_cells = nbr_cells;
 	}
 
 	p->cl->cidx = safe_copy_cells(p->cl->cells, tmp, nbr_cells);
@@ -557,10 +557,10 @@ bool fn_iso_assertz_1(query *q)
 	pl_idx nbr_cells = tmp->nbr_cells;
 	parser *p = q->st.m->p;
 
-	if (nbr_cells > p->cl->allocated_cells) {
+	if (nbr_cells > p->cl->nbr_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(nbr_cells+1)));
 		check_heap_error(p->cl);
-		p->cl->allocated_cells = nbr_cells;
+		p->cl->nbr_allocated_cells = nbr_cells;
 	}
 
 	p->cl->cidx = safe_copy_cells(p->cl->cells, tmp, nbr_cells);
@@ -619,10 +619,10 @@ static bool do_asserta_2(query *q)
 	pl_idx nbr_cells = tmp->nbr_cells;
 	parser *p = q->st.m->p;
 
-	if (nbr_cells > p->cl->allocated_cells) {
+	if (nbr_cells > p->cl->nbr_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(nbr_cells+1)));
 		check_heap_error(p->cl);
-		p->cl->allocated_cells = nbr_cells;
+		p->cl->nbr_allocated_cells = nbr_cells;
 	}
 
 	p->cl->cidx = safe_copy_cells(p->cl->cells, tmp, nbr_cells);
@@ -710,10 +710,10 @@ static bool do_assertz_2(query *q)
 	pl_idx nbr_cells = tmp->nbr_cells;
 	parser *p = q->st.m->p;
 
-	if (nbr_cells > p->cl->allocated_cells) {
+	if (nbr_cells > p->cl->nbr_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(nbr_cells+1)));
 		check_heap_error(p->cl);
-		p->cl->allocated_cells = nbr_cells;
+		p->cl->nbr_allocated_cells = nbr_cells;
 	}
 
 	p->cl->cidx = safe_copy_cells(p->cl->cells, tmp, nbr_cells);

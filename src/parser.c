@@ -284,13 +284,13 @@ void clear_rule(clause *cl)
 
 static bool make_room(parser *p, unsigned nbr)
 {
-	if ((p->cl->cidx+nbr) >= p->cl->allocated_cells) {
-		pl_idx nbr_cells = (p->cl->allocated_cells + nbr) * 3 / 2;
+	if ((p->cl->cidx+nbr) >= p->cl->nbr_allocated_cells) {
+		pl_idx nbr_cells = (p->cl->nbr_allocated_cells + nbr) * 3 / 2;
 
 		clause *cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*nbr_cells));
 		ensure(cl);
 		p->cl = cl;
-		p->cl->allocated_cells = nbr_cells;
+		p->cl->nbr_allocated_cells = nbr_cells;
 	}
 
 	return true;
@@ -329,7 +329,7 @@ parser *parser_create(module *m)
 	pl_idx nbr_cells = INITIAL_NBR_CELLS;
 	p->cl = calloc(1, sizeof(clause)+(sizeof(cell)*nbr_cells));
 	ensure(p->cl, free(p));
-	p->cl->allocated_cells = nbr_cells;
+	p->cl->nbr_allocated_cells = nbr_cells;
 	p->start_term = true;
 	p->flags = m->flags;
 	p->line_nbr = 1;
