@@ -279,7 +279,7 @@ bool check_slot(query *q, unsigned cnt)
 	return true;
 }
 
-static bool can_view(query *q, size_t dbgen, const db_entry *dbe)
+static bool can_view(query *q, uint64_t dbgen, const db_entry *dbe)
 {
 	if (dbe->cl.is_deleted)
 		return false;
@@ -636,11 +636,7 @@ static void leave_predicate(query *q, predicate *pr)
 
 	if (!pr->is_abolished) {
 #if 0
-		// Enable this when matching of dynamic predicates
-		// clones the clause on the heap, thus making it
-		// safe for physical deletion.
-
-		purge_predicate_dirty_list(q, pr);
+		purge_predicate_dirty_list(pr);
 #else
 
 		// Just because this predicate is no longer in use doesn't
@@ -871,7 +867,7 @@ static bool are_slots_ok(const query *q, const frame *f)
 	return true;
 }
 
-static void commit_frame(query *q)
+static void commit_frame(query *q, cell *body)
 {
 	q->in_commit = true;
 	clause *cl = &q->st.dbe->cl;
@@ -921,7 +917,7 @@ static void commit_frame(query *q)
 		ch->chgen = f->chgen;
 	}
 
-	q->st.curr_cell = get_body(cl->cells);
+	q->st.curr_cell = body;
 	q->in_commit = false;
 	q->st.iter = NULL;
 }
@@ -1194,12 +1190,12 @@ bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 		return false;
 	}
 
+	check_heap_error(check_slot(q, MAX_ARITY));
 	check_heap_error(check_frame(q));
 	check_heap_error(push_choice(q));
+	const frame *f = GET_FRAME(q->st.curr_frame);
 	cell *p1_body = deref(q, get_logical_body(p1), p1_ctx);
 	cell *orig_p1 = p1;
-	const frame *f = GET_FRAME(q->st.curr_frame);
-	check_heap_error(check_slot(q, MAX_ARITY));
 
 	for (; q->st.dbe; q->st.dbe = q->st.dbe->next) {
 		if (!can_view(q, f->dbgen, q->st.dbe))
@@ -1311,10 +1307,10 @@ bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract
 		return false;
 	}
 
+	check_heap_error(check_slot(q, MAX_ARITY));
 	check_heap_error(check_frame(q));
 	check_heap_error(push_choice(q));
 	const frame *f = GET_FRAME(q->st.curr_frame);
-	check_heap_error(check_slot(q, MAX_ARITY));
 
 	for (; q->st.dbe; q->st.dbe = q->st.dbe->next) {
 		if (!can_view(q, f->dbgen, q->st.dbe))
@@ -1391,10 +1387,10 @@ static bool match_head(query *q)
 		return false;
 	}
 
+	check_heap_error(check_slot(q, MAX_ARITY));
 	check_heap_error(check_frame(q));
 	check_heap_error(push_choice(q));
 	const frame *f = GET_FRAME(q->st.curr_frame);
-	check_heap_error(check_slot(q, MAX_ARITY));
 
 	for (; q->st.dbe; next_key(q)) {
 		if (!can_view(q, f->dbgen, q->st.dbe))
@@ -1408,7 +1404,7 @@ static bool match_head(query *q)
 			if (q->error)
 				break;
 
-			commit_frame(q);
+			commit_frame(q, get_body(cl->cells));
 			return true;
 		}
 
@@ -1763,29 +1759,6 @@ bool execute(query *q, cell *cells, unsigned nbr_vars)
 	return start(q);
 }
 
-void purge_predicate_dirty_list(query *q, predicate *pr)
-{
-	if (pr->refcnt)
-		return;
-
-	db_entry *save = NULL;
-
-	while (q->dirty_list) {
-		db_entry *dbe = q->dirty_list;
-		q->dirty_list = dbe->dirty;
-
-		if (dbe->owner == pr) {
-			clear_rule(&dbe->cl);
-			free(dbe);
-		} else {
-			dbe->dirty = save;
-			save = dbe;
-		}
-	}
-
-	q->dirty_list = save;
-}
-
 void purge_dirty_list(query *q)
 {
 	unsigned cnt = 0;
@@ -1798,9 +1771,8 @@ void purge_dirty_list(query *q)
 		cnt++;
 	}
 
-#ifdef DEBUG
-	if (cnt) printf("*** purge %u\n", cnt);
-#endif
+	if (cnt && 0)
+		printf("*** purge_dirty_list %u\n", cnt);
 }
 
 void query_destroy(query *q)

@@ -197,6 +197,25 @@ bool fn_sys_clause_3(query *q)
 	return ok;
 }
 
+void purge_predicate_dirty_list(predicate *pr)
+{
+	unsigned cnt = 0;
+
+	while (pr->dirty_list) {
+		db_entry *dbe = pr->dirty_list;
+		delink(pr, dbe);
+		pr->dirty_list = dbe->dirty;
+		clear_rule(&dbe->cl);
+		free(dbe);
+		cnt++;
+	}
+
+	pr->dirty_list = NULL;
+
+	if (cnt && 0)
+		printf("*** purge_predicate_dirty_list %u\n", cnt);
+}
+
 bool remove_from_predicate(predicate *pr, db_entry *dbe)
 {
 	if (dbe->cl.dbgen_erased)
@@ -210,15 +229,7 @@ bool remove_from_predicate(predicate *pr, db_entry *dbe)
 	if (pr->idx && !pr->cnt && !pr->refcnt) {
 		sl_destroy(pr->idx2);
 		sl_destroy(pr->idx);
-		pr->idx2 = NULL;
-
-		pr->idx = sl_create(index_cmpkey, NULL, m);
-		ensure(pr->idx);
-
-		if (pr->key.arity > 1) {
-			pr->idx2 = sl_create(index_cmpkey, NULL, m);
-			ensure(pr->idx2);
-		}
+		pr->idx = pr->idx2 = NULL;
 	}
 
 	return true;
@@ -319,19 +330,12 @@ bool fn_iso_retractall_1(query *q)
 		retry_choice(q);
 	}
 
+	purge_predicate_dirty_list(pr);
+
 	if (pr->idx && !pr->cnt) {
-		purge_predicate_dirty_list(q, pr);
 		sl_destroy(pr->idx2);
 		sl_destroy(pr->idx);
-		pr->idx2 = NULL;
-
-		pr->idx = sl_create(index_cmpkey, NULL, pr->m);
-		ensure(pr->idx);
-
-		if (pr->key.arity > 1) {
-			pr->idx2 = sl_create(index_cmpkey, NULL, pr->m);
-			ensure(pr->idx2);
-		}
+		pr->idx = pr->idx2 = NULL;
 	}
 
 	return true;
@@ -348,8 +352,8 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 	for (db_entry *dbe = pr->head; dbe; dbe = dbe->next)
 		retract_from_db(dbe);
 
-	if (!pr->refcnt) {
-		purge_predicate_dirty_list(q, pr);
+	if (pr->idx && !pr->cnt) {
+		purge_predicate_dirty_list(pr);
 	} else {
 		while (pr->dirty_list) {
 			db_entry *dbe = pr->dirty_list;
@@ -361,20 +365,11 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 
 	sl_destroy(pr->idx2);
 	sl_destroy(pr->idx);
-	pr->idx2 = pr->idx = NULL;
+	pr->idx = pr->idx2 = NULL;
 	pr->is_processed = false;
 
-	if (hard) {
+	if (hard)
 		pr->is_abolished = true;
-	} else {
-		pr->idx = sl_create(index_cmpkey, NULL, pr->m);
-		ensure(pr->idx);
-
-		if (pr->key.arity > 1) {
-			pr->idx2 = sl_create(index_cmpkey, NULL, pr->m);
-			ensure(pr->idx2);
-		}
-	}
 
 	pr->head = pr->tail = NULL;
 	pr->cnt = 0;
