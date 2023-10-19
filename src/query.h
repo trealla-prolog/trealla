@@ -82,6 +82,8 @@ void reset_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx);
 bool valid_list(query *q, cell *c, pl_idx c_ctx);
 bool remove_from_predicate(predicate *pr, db_entry *dbe);
 void retract_from_db(db_entry *dbe);
+void make_call(query *q, cell *tmp);
+void make_call_redo(query *q, cell *tmp);
 
 int compare(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx);
 bool unify(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx);

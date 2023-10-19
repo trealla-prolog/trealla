@@ -24,8 +24,6 @@ void make_ptr(cell *tmp, void *v);
 void make_struct(cell *tmp, pl_idx offset, void *fn, unsigned arity, pl_idx extra_cells);
 void make_var(cell *tmp, pl_idx off, unsigned var_nbr);
 void make_ref(cell *tmp, pl_idx off, unsigned var_nbr, pl_idx ctx);
-void make_call(query *q, cell *tmp);
-void make_call_redo(query *q, cell *tmp);
 void make_end(cell *tmp);
 void make_atom(cell *tmp, pl_idx offset);
 cell *make_nil(void);
