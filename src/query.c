@@ -150,7 +150,7 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 	q->max_depth = save_depth;
 
 	if (q->creep) {
-		msleep(500);
+		msleep(250);
 	}
 }
 
