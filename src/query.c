@@ -296,9 +296,16 @@ static bool can_view(query *q, uint64_t dbgen, const db_entry *dbe)
 static void setup_key(query *q)
 {
 	cell *arg1 = deref(q, FIRST_ARG(q->st.key), q->st.key_ctx);
+	cell *arg2 = NULL;
+
+	if (q->st.key->arity > 1)
+		arg2 = deref(q, NEXT_ARG(FIRST_ARG(q->st.key)), q->st.key_ctx);
 
 	if (!is_var(arg1))
 		q->st.karg1_is_ground = true;
+
+	if (arg2 && !is_var(arg2))
+		q->st.karg2_is_ground = true;
 }
 
 static void next_key(query *q)
@@ -327,12 +334,13 @@ bool has_next_key(query *q)
 	if (!q->st.key->arity)
 		return true;
 
-	const cell *qarg1;
+	const cell *qarg1 = NULL, *qarg2 = NULL;
 
 	if (q->st.karg1_is_ground)
 		qarg1 = deref(q, FIRST_ARG(q->st.key), q->st.key_ctx);
-	else
-		qarg1 = FIRST_ARG(q->st.key);
+
+	if (q->st.karg2_is_ground)
+		qarg2 = deref(q, NEXT_ARG(FIRST_ARG(q->st.key)), q->st.key_ctx);
 
 	//DUMP_TERM("key ", q->st.key, q->st.key_ctx, 1);
 
@@ -344,8 +352,15 @@ bool has_next_key(query *q)
 
 		//DUMP_TERM("next", dkey, q->st.curr_frame, 0);
 
-		if (index_cmpkey(qarg1, FIRST_ARG(dkey), q->st.m, NULL) != 0)
-			continue;
+		if (qarg1) {
+			if (index_cmpkey(qarg1, FIRST_ARG(dkey), q->st.m, NULL) != 0)
+				continue;
+		}
+
+		if (qarg2) {
+			if (index_cmpkey(qarg2, NEXT_ARG(FIRST_ARG(dkey)), q->st.m, NULL) != 0)
+				continue;
+		}
 
 		if (index_cmpkey(q->st.key, dkey, q->st.m, NULL) == 0)
 			return true;
@@ -395,6 +410,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 {
 	q->st.iter = NULL;
 	q->st.karg1_is_ground = false;
+	q->st.karg2_is_ground = false;
 	q->st.key = key;
 	q->st.key_ctx = key_ctx;
 
