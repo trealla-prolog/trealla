@@ -15,8 +15,8 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 		slot *e1 = NULL, *e2 = NULL;
 		uint32_t save_vgen1 = 0, save_vgen2 = 0;
 		int both = 0;
-		DEREF_SLOT(both, save_vgen1, e1, e1->vgen, h1, h1_ctx, q->vgen);
-		DEREF_SLOT(both, save_vgen2, e2, e2->vgen2, h2, h2_ctx, q->vgen);
+		DEREF_CHECKED(both, save_vgen1, e1, e1->vgen, h1, h1_ctx, q->vgen);
+		DEREF_CHECKED(both, save_vgen2, e2, e2->vgen2, h2, h2_ctx, q->vgen);
 
 		if (both == 0) {
 			int val = compare_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
@@ -47,8 +47,8 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 
 #if USE_RATIONAL_TREES
 		both = 0;
-		DEREF_SLOT(both, save_vgen1, e1, e1->vgen, p1, p1_ctx, q->vgen);
-		DEREF_SLOT(both, save_vgen2, e2, e2->vgen2, p2, p2_ctx, q->vgen);
+		DEREF_CHECKED(both, save_vgen1, e1, e1->vgen, p1, p1_ctx, q->vgen);
+		DEREF_CHECKED(both, save_vgen2, e2, e2->vgen2, p2, p2_ctx, q->vgen);
 
 		if (both)
 			return 0;
@@ -80,8 +80,8 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		slot *e1 = NULL, *e2 = NULL;
 		uint32_t save_vgen1 = 0, save_vgen2 = 0;
 		int both = 0;
-		DEREF_SLOT(both, save_vgen1, e1, e1->vgen, c1, c1_ctx, q->vgen);
-		DEREF_SLOT(both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
+		DEREF_CHECKED(both, save_vgen1, e1, e1->vgen, c1, c1_ctx, q->vgen);
+		DEREF_CHECKED(both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
 
 		if (both == 0) {
 			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
@@ -317,7 +317,7 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 		slot *e = NULL;
 		uint32_t save_vgen = 0;
 		int both = 0;
-		DEREF_SLOT(both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
+		DEREF_CHECKED(both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
 
 		if (!both && is_var(h))
 			accum_var(q, h, h_ctx);
@@ -329,7 +329,7 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 		l = LIST_TAIL(l);
 		e = NULL;
 		both = 0;
-		DEREF_SLOT(both, e->vgen2, e, e->vgen, l, l_ctx, q->vgen);
+		DEREF_CHECKED(both, save_vgen, e, e->vgen, l, l_ctx, q->vgen);
 
 		if (both)
 			return;
@@ -368,7 +368,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 		slot *e = NULL;
 		uint32_t save_vgen = 0;
 		int both = 0;
-		DEREF_SLOT(both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
+		DEREF_CHECKED(both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
 
 		if (!both && is_var(c))
 			accum_var(q, c, c_ctx);
@@ -523,7 +523,7 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 		slot *e = NULL;
 		uint32_t save_vgen = 0;
 		int both = 0;
-		DEREF_SLOT(both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
+		DEREF_CHECKED(both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
 
 		if (both)
 			return true;
@@ -535,7 +535,7 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 
 		p1 = p1 + 1; p1 += p1->nbr_cells;
 		both = 0;
-		DEREF_SLOT(both, e->vgen2, e, e->vgen, p1, p1_ctx, q->vgen);
+		DEREF_CHECKED(both, e->save_vgen, e, e->vgen, p1, p1_ctx, q->vgen);
 
 		if (both)
 			return true;
@@ -555,7 +555,7 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 
 			const frame *f = GET_FRAME(c_ctx);
 			slot *e = GET_SLOT(f, c->var_nbr);
-			e->vgen = e->vgen2;
+			e->vgen = e->save_vgen;
 			p1 = deref(q, p1, p1_ctx);
 			p1_ctx = q->latest_ctx;
 		}
@@ -587,7 +587,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned 
 		slot *e = NULL;
 		uint32_t save_vgen = 0;
 		int both = 0;
-		DEREF_SLOT(both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
+		DEREF_CHECKED(both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
 
 		if (both)
 			return true;
@@ -981,8 +981,8 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 		uint32_t save_vgen1 = 0, save_vgen2 = 0;
 		int both = 0;
 
-		DEREF_SLOT(both, save_vgen1, e1, e1->vgen, h1, h1_ctx, q->vgen);
-		DEREF_SLOT(both, save_vgen2, e2, e2->vgen2, h2, h2_ctx, q->vgen);
+		DEREF_CHECKED(both, save_vgen1, e1, e1->vgen, h1, h1_ctx, q->vgen);
+		DEREF_CHECKED(both, save_vgen2, e2, e2->vgen2, h2, h2_ctx, q->vgen);
 
 		if (both != 2) {
 			if (!unify_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1))
@@ -1006,8 +1006,8 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 
 #if USE_RATIONAL_TREES
 		both = 0;
-		DEREF_SLOT(both, e1->save_vgen, e1, e1->vgen, p1, p1_ctx, q->vgen);
-		DEREF_SLOT(both, e2->save_vgen2, e2, e2->vgen2, p2, p2_ctx, q->vgen);
+		DEREF_CHECKED(both, e1->save_vgen, e1, e1->vgen, p1, p1_ctx, q->vgen);
+		DEREF_CHECKED(both, e2->save_vgen2, e2, e2->vgen2, p2, p2_ctx, q->vgen);
 
 		if (q->cycle_error) {
 			skip = true;
@@ -1088,8 +1088,8 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 		slot *e1 = NULL, *e2 = NULL;
 		uint32_t save_vgen1 = 0, save_vgen2 = 0;
 		int both = 0;
-		DEREF_SLOT(both, save_vgen1, e1, e1->vgen, c1, c1_ctx, q->vgen);
-		DEREF_SLOT(both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
+		DEREF_CHECKED(both, save_vgen1, e1, e1->vgen, c1, c1_ctx, q->vgen);
+		DEREF_CHECKED(both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
 
 		if (both != 2) {
 			if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))

@@ -550,7 +550,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		slot *e = NULL;
 		uint64_t save_vgen = 0;
 		int both = 0;
-		if (running) DEREF_SLOT(both, save_vgen, e, e->vgen, head, head_ctx, q->print_vgen)
+		if (running) DEREF_CHECKED(both, save_vgen, e, e->vgen, head, head_ctx, q->print_vgen)
 
 		if ((head == orig_c) && (head_ctx == orig_c_ctx)) {
 			head = LIST_HEAD(c);
@@ -588,7 +588,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		pl_idx tail_ctx = c_ctx;
 		cell *save_tail = tail;
 
-		if (running) DEREF_SLOT(both, e->vgen2, e, e->vgen, tail, tail_ctx, q->print_vgen);
+		if (running) DEREF_CHECKED(both, e->save_vgen, e, e->vgen, tail, tail_ctx, q->print_vgen);
 
 		if (q->cycle_error || (q->max_depth && (print_depth >= q->max_depth))) {
 			SB_sprintf(q->sb, "%s", "|...]");
@@ -693,7 +693,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 
 			const frame *f = GET_FRAME(c_ctx);
 			slot *e = GET_SLOT(f, c->var_nbr);
-			e->vgen = e->vgen2;
+			e->vgen = e->save_vgen;
 			c = deref(q, c, c_ctx);
 			c_ctx = q->latest_ctx;
 		}
@@ -1012,7 +1012,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 				slot *e = NULL;
 				uint64_t save_vgen = 0;
 				int both = 0;
-				if (running) DEREF_SLOT(both, save_vgen, e, e->vgen, tmp, tmp_ctx, q->print_vgen);
+				if (running) DEREF_CHECKED(both, save_vgen, e, e->vgen, tmp, tmp_ctx, q->print_vgen);
 
 				if ((tmp == save_c) && (tmp_ctx == save_c_ctx)) {
 					tmp = c;
@@ -1074,7 +1074,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		slot *e = NULL;
 		uint32_t save_vgen = 0;
 		int both = 0;
-		if (running) DEREF_SLOT(both, save_vgen, e, e->vgen, lhs, lhs_ctx, q->print_vgen);
+		if (running) DEREF_CHECKED(both, save_vgen, e, e->vgen, lhs, lhs_ctx, q->print_vgen);
 
 		if (!is_var(lhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
 			if (q->last_thing != WAS_SPACE) SB_sprintf(q->sb, "%s", " ");
@@ -1126,7 +1126,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		slot *e = NULL;
 		uint32_t save_vgen = 0;
 		int both = 0;
-		if (running) DEREF_SLOT(both, save_vgen, e, e->vgen, rhs, rhs_ctx, q->print_vgen);
+		if (running) DEREF_CHECKED(both, save_vgen, e, e->vgen, rhs, rhs_ctx, q->print_vgen);
 
 		unsigned my_priority = search_op(q->st.m, src, NULL, true);
 		unsigned rhs_pri = is_interned(rhs) ? search_op(q->st.m, C_STR(q, rhs), NULL, true) : 0;
@@ -1204,10 +1204,10 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	slot *e = NULL;
 	uint32_t save_vgen = 0;
 	int both = 0;
-	if (running) DEREF_SLOT(both, save_vgen, e, e->vgen, lhs, lhs_ctx, q->print_vgen);
+	if (running) DEREF_CHECKED(both, save_vgen, e, e->vgen, lhs, lhs_ctx, q->print_vgen);
 	if (e) e->vgen = save_vgen;
 	e = NULL;
-	if (running) DEREF_SLOT(both, save_vgen, e, e->vgen, rhs, rhs_ctx, q->print_vgen);
+	if (running) DEREF_CHECKED(both, save_vgen, e, e->vgen, rhs, rhs_ctx, q->print_vgen);
 	if (e) e->vgen = save_vgen;
 
 	unsigned lhs_pri_1 = is_interned(lhs) ? search_op(q->st.m, C_STR(q, lhs), NULL, is_prefix(rhs)) : 0;
