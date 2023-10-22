@@ -876,7 +876,9 @@ static bool are_slots_ok(const query *q, const frame *f)
 
 		if (is_empty(c))
 			return false;
-		else if (is_indirect(c))
+		else if (is_var(c) && (c->var_ctx == q->st.curr_frame))
+			return false;
+		else if (is_indirect(c) && (c->var_ctx == q->st.curr_frame))
 			return false;
 	}
 
@@ -899,18 +901,24 @@ static void commit_frame(query *q, cell *body)
 	bool empty_frame = cl->nbr_vars == cl->nbr_temporaries;
 	bool tco = false;
 
-	if (q->no_tco && !empty_frame)
+	if ((q->no_tco && !empty_frame) || (q->st.fp != q->st.curr_frame + 1))
 		;
 	else if (last_match || empty_frame) {
-		bool recursive = is_tail_recursive(q->st.curr_cell);
-		bool vars_ok = f->actual_slots == cl->nbr_vars;
 		bool choices = any_choices(q, f);
-		bool slots_ok = are_slots_ok(q, f);
-		tco = recursive && vars_ok && !choices && slots_ok;
+		bool tail_recursive = last_match && is_tail_recursive(q->st.curr_cell) && !choices;
+		bool tail_call = last_match && is_tail_call(q->st.curr_cell) && !choices;
+		bool vars_ok = !f->overflow && (f->initial_slots == cl->nbr_vars);
+		bool slots_ok = are_slots_ok(q, GET_NEW_FRAME());
+		tco = tail_recursive && vars_ok && slots_ok;
 
 #if 0
-		fprintf(stderr, "*** retry=%d,tco=%d,q->no_tco=%d,last_match=%d,is_det=%d,is_first_cut=%d,next_key=%d,recursive=%d,choices=%d,slots_ok=%d,vars_ok=%d,cl->nbr_vars=%u,cl->nbr_temps=%u\n",
-			q->retry, tco, q->no_tco, last_match, is_det, cl->is_first_cut, next_key, recursive, choices, slots_ok, vars_ok, cl->nbr_vars, cl->nbr_temporaries);
+		fprintf(stderr,
+			"*** tco=%d,q->no_tco=%d,last_match=%d,is_det=%d,"
+				"next_key=%d,tail_call=%d/%d,slots_ok=%d,"
+					"vars_ok=%d,cl->nbr_vars=%u,f->initial_slots=%u\n",
+			tco, q->no_tco, last_match, is_det,
+				next_key, tail_call, tail_recursive, slots_ok,
+					vars_ok, cl->nbr_vars, f->initial_slots);
 #endif
 
 	}

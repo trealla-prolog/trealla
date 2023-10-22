@@ -166,7 +166,8 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define is_anon(c) ((c)->flags & FLAG_VAR_ANON)
 #define is_builtin(c) ((c)->flags & FLAG_BUILTIN)
 #define is_evaluable(c) ((c)->flags & FLAG_EVALUABLE)
-#define is_tail_recursive(c) ((c)->flags & FLAG_TAIL_REC)
+#define is_tail_call(c) ((c)->flags & FLAG_TAIL_CALL)
+#define is_tail_recursive(c) ((c)->flags & FLAG_TAIL_RECURSIVE)
 #define is_temporary(c) (is_var(c) && ((c)->flags & FLAG_VAR_TEMPORARY))
 #define is_ref(c) (is_var(c) && ((c)->flags & FLAG_VAR_REF))
 #define is_op(c) (c->flags & 0xE000) ? true : false
@@ -284,10 +285,11 @@ enum {
 
 	FLAG_BLOB_SRE=1<<0,					// used with TAG_BLOB
 
-	FLAG_FFI=1<<8,
-	FLAG_BUILTIN=1<<9,
-	FLAG_MANAGED=1<<10,					// any ref-counted object
-	FLAG_TAIL_REC=1<<11,
+	FLAG_TAIL_CALL=1<<7,
+	FLAG_TAIL_RECURSIVE=1<<8,
+	FLAG_FFI=1<<9,
+	FLAG_BUILTIN=1<<10,
+	FLAG_MANAGED=1<<11,					// any ref-counted object
 	FLAG_EVALUABLE=1<<12,
 
 	FLAG_END=1<<13

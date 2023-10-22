@@ -1603,7 +1603,9 @@ static void xref_cell(module *m, clause *cl, cell *c, predicate *parent, int las
 
 	if ((c+c->nbr_cells) >= (cl->cells + cl->cidx-1)) {
 		if (parent && (parent->key.val_off == c->val_off) && (parent->key.arity == c->arity))
-			c->flags |= FLAG_TAIL_REC;
+			c->flags |= FLAG_TAIL_RECURSIVE;
+
+		c->flags |= FLAG_TAIL_CALL;
 	}
 }
 
@@ -1620,7 +1622,7 @@ void xref_rule(module *m, clause *cl, predicate *parent)
 
 	for (pl_idx i = 0; i < cl->cidx; i++) {
 		cell *c = cl->cells + i;
-		c->flags &= ~FLAG_TAIL_REC;
+		c->flags &= ~FLAG_TAIL_CALL;
 
 		if (!is_interned(c))
 			continue;

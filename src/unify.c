@@ -1099,9 +1099,9 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 		if (e1) e1->vgen = save_vgen1;
 		if (e2) e2->vgen2 = save_vgen2;
 #else
-		c1 = deref(q, p1, p1_ctx);
+		c1 = deref(q, c1, c1_ctx);
 		c1_ctx = q->latest_ctx;
-		c2 = deref(q, p2, p2_ctx);
+		c2 = deref(q, c2, c2_ctx);
 		c2_ctx = q->latest_ctx;
 
 		if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
@@ -1177,21 +1177,24 @@ static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		return true;
 	}
 
-	if (is_string(p1) && is_string(p2))
-		return unify_cstrings(q, p1, p2);
+	if (is_string(p1)) {
+		if (is_string(p2))
+			return unify_cstrings(q, p1, p2);
 
-	if (is_string(p1) && is_iso_list(p2))
-		return unify_string_to_list(q, p1, p1_ctx, p2, p2_ctx);
-
-	if (is_string(p2) && is_iso_list(p1))
-		return unify_string_to_list(q, p2, p2_ctx, p1, p1_ctx);
-
-	if (p1->arity || p2->arity) {
-		if (is_iso_list(p1) && is_iso_list(p2))
-			return unify_lists(q, p1, p1_ctx, p2, p2_ctx, depth+1);
-		else
-			return unify_structs(q, p1, p1_ctx, p2, p2_ctx, depth+1);
+		if (is_iso_list(p2))
+			return unify_string_to_list(q, p1, p1_ctx, p2, p2_ctx);
 	}
+
+	if (is_string(p2)) {
+		if (is_iso_list(p1))
+			return unify_string_to_list(q, p2, p2_ctx, p1, p1_ctx);
+	}
+
+	if (is_iso_list(p1) && is_iso_list(p2))
+		return unify_lists(q, p1, p1_ctx, p2, p2_ctx, depth+1);
+
+	if (p1->arity || p2->arity)
+		return unify_structs(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 
 	return g_disp[p1->tag].fn(q, p1, p2);
 }
