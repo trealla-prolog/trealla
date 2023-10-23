@@ -864,20 +864,6 @@ static void trim_trail(query *q)
 	}
 }
 
-static bool are_slots_ok(const query *q, const frame *f)
-{
-	const slot *e = GET_SLOT(f, 0);
-
-	for (unsigned i = 0; i < f->initial_slots; i++, e++) {
-		const cell *c = &e->c;
-
-		if (is_empty(c))
-			return false;
-	}
-
-	return true;
-}
-
 static void commit_frame(query *q, cell *body)
 {
 	q->in_commit = true;
@@ -901,8 +887,7 @@ static void commit_frame(query *q, cell *body)
 		bool tail_recursive = last_match && is_tail_recursive(q->st.curr_cell) && !choices;
 		bool tail_call = last_match && is_tail_call(q->st.curr_cell) && !choices;
 		bool vars_ok = !f->overflow && (f->initial_slots == cl->nbr_vars);
-		bool slots_ok = are_slots_ok(q, GET_NEW_FRAME());
-		tco = tail_recursive && vars_ok && slots_ok;
+		tco = tail_recursive && vars_ok;
 
 #if 0
 		fprintf(stderr,
