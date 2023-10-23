@@ -309,10 +309,9 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
 	cell *l = p1;
 	pl_idx l_ctx = p1_ctx;
-	LIST_HANDLER(l);
 
 	while (is_iso_list(l)) {
-		cell *h = LIST_HEAD(l);
+		cell *h = l + 1;
 		pl_idx h_ctx = l_ctx;
 		slot *e = NULL;
 		uint32_t save_vgen = 0;
@@ -326,13 +325,33 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 
 		if (e) e->vgen = save_vgen;
 
-		l = LIST_TAIL(l);
+		l = l + 1; l += l->nbr_cells;
 		e = NULL;
 		both = 0;
 		DEREF_CHECKED(both, save_vgen, e, e->vgen, l, l_ctx, q->vgen);
 
 		if (both)
 			return;
+	}
+
+	l = p1;
+	l_ctx = p1_ctx;
+
+	while (is_iso_list(l) && !q->cycle_error) {
+		l = l + 1; l += l->nbr_cells;
+		cell *c = l;
+		pl_idx c_ctx = l_ctx;
+
+		if (is_var(c)) {
+			if (is_ref(c))
+				c_ctx = c->var_ctx;
+
+			const frame *f = GET_FRAME(c_ctx);
+			slot *e = GET_SLOT(f, c->var_nbr);
+			e->vgen = e->save_vgen;
+			l = deref(q, c, c_ctx);
+			l_ctx = q->latest_ctx;
+		}
 	}
 
 	collect_vars_internal(q, l, l_ctx, depth+1);
@@ -397,10 +416,9 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
 	cell *l = p1;
 	pl_idx l_ctx = p1_ctx;
-	LIST_HANDLER(l);
 
 	while (is_iso_list(l)) {
-		cell *c = LIST_HEAD(l);
+		cell *c = l + 1;
 		pl_idx c_ctx = l_ctx;
 
 		if (is_var(c)) {
@@ -429,7 +447,7 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 				return true;
 		}
 
-		l = LIST_TAIL(l);
+		l = l + 1; l += l->nbr_cells;
 
 		if (is_var(l)) {
 			if (is_ref(l))
@@ -448,6 +466,26 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 
 		if (q->cycle_error)
 			break;
+	}
+
+	l = p1;
+	l_ctx = p1_ctx;
+
+	while (is_iso_list(l) && !q->cycle_error) {
+		l = l + 1; l += l->nbr_cells;
+		cell *c = l;
+		pl_idx c_ctx = l_ctx;
+
+		if (is_var(c)) {
+			if (is_ref(c))
+				c_ctx = c->var_ctx;
+
+			const frame *f = GET_FRAME(c_ctx);
+			slot *e = GET_SLOT(f, c->var_nbr);
+			e->vgen = e->save_vgen;
+			l = deref(q, c, c_ctx);
+			l_ctx = q->latest_ctx;
+		}
 	}
 
 	return has_vars_internal(q, l, l_ctx, depth+1);

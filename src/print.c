@@ -524,7 +524,6 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 	cell *orig_c = c;
 	pl_idx orig_c_ctx = c_ctx;
 	unsigned print_list = 0;
-	LIST_HANDLER(c);
 
 	while (is_iso_list(c)) {
 		if (g_tpl_interrupt)
@@ -537,6 +536,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			SB_ungetchar(q->sb);
 			SB_sprintf(q->sb, "%s", "|...]");
 			q->last_thing = WAS_OTHER;
+			q->cycle_error = true;
 			break;
 		}
 
@@ -545,7 +545,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			q->last_thing = WAS_OTHER;
 		}
 
-		cell *head = LIST_HEAD(c);
+		cell *head = c + 1;
 		pl_idx head_ctx = c_ctx;
 		slot *e = NULL;
 		uint64_t save_vgen = 0;
@@ -553,7 +553,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		if (running) DEREF_CHECKED(both, save_vgen, e, e->vgen, head, head_ctx, q->print_vgen)
 
 		if ((head == orig_c) && (head_ctx == orig_c_ctx)) {
-			head = LIST_HEAD(c);
+			head = c + 1;
 			head_ctx = c_ctx;
 			q->cycle_error = true;
 		}
@@ -584,15 +584,17 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		if (is_interned(head) && (C_STRLEN_UTF8(head) == 1) && q->double_quotes)
 			possible_chars = true;
 
-		cell *tail = LIST_TAIL(c);
+		cell *tail = c + 1; tail += tail->nbr_cells;
 		pl_idx tail_ctx = c_ctx;
 		cell *save_tail = tail;
+		both = 0;
 
 		if (running) DEREF_CHECKED(both, e->save_vgen, e, e->vgen, tail, tail_ctx, q->print_vgen);
 
-		if (q->cycle_error || (q->max_depth && (print_depth >= q->max_depth))) {
+		if (both || q->cycle_error || (q->max_depth && (print_depth >= q->max_depth))) {
 			SB_sprintf(q->sb, "%s", "|...]");
 			q->last_thing = WAS_OTHER;
+			q->cycle_error = true;
 			break;
 		}
 
@@ -628,6 +630,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			print_string_list(q, tail, tail_ctx, running, 1, depth+1);
 			SB_sprintf(q->sb, "%s", "]");
 			q->last_thing = WAS_OTHER;
+			q->cycle_error = true;
 			break;
 		} else if (is_iso_list(tail)) {
 			if ((tail == save_c) && (tail_ctx == save_c_ctx) && running) {
@@ -679,13 +682,12 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 
 	c = orig_c;
 	c_ctx = orig_c_ctx;
-	unsigned cnt = 0;
 
-	while (running && is_iso_list(c)) {
+	while (running && !q->cycle_error && is_iso_list(c)) {
 		if (g_tpl_interrupt)
 			return;
 
-		c = LIST_TAIL(c);
+		c = c + 1; c += c->nbr_cells;
 
 		if (is_var(c)) {
 			if (is_ref(c))
@@ -693,15 +695,14 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 
 			const frame *f = GET_FRAME(c_ctx);
 			slot *e = GET_SLOT(f, c->var_nbr);
+
+			if (e->vgen == e->save_vgen)
+				break;
+
 			e->vgen = e->save_vgen;
 			c = deref(q, c, c_ctx);
 			c_ctx = q->latest_ctx;
 		}
-
-		if (cnt > g_max_depth)
-			break;
-
-		cnt++;
 	}
 }
 

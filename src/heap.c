@@ -249,6 +249,9 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 			pl_idx c_ctx = p1_ctx;
 
 			if (is_var(c)) {
+				if (is_ref(c))
+					c_ctx = c->var_ctx;
+
 				const frame *f = GET_FRAME(c_ctx);
 				slot *e = GET_SLOT(f, c->var_nbr);
 				e->vgen = e->save_vgen;
