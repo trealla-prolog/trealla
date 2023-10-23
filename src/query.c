@@ -736,6 +736,7 @@ void try_me(query *q, unsigned nbr_vars)
 	slot *e = GET_SLOT(f, 0);
 	memset(e, 0, sizeof(slot)*nbr_vars);
 	q->has_vars = false;
+	q->no_tco = false;
 	q->tot_matches++;
 }
 
@@ -877,8 +878,6 @@ static bool are_slots_ok(const query *q, const frame *f)
 			return false;
 		else if (is_var(c) && (c->var_ctx == q->st.curr_frame))
 			return false;
-		else if (is_indirect(c) && (c->var_ctx == q->st.curr_frame))
-			return false;
 	}
 
 	return true;
@@ -900,7 +899,7 @@ static void commit_frame(query *q, cell *body)
 	bool empty_frame = cl->nbr_vars == cl->nbr_temporaries;
 	bool tco = false;
 
-	if (q->st.fp != (q->st.curr_frame + 1))
+	if ((q->no_tco && !empty_frame) || (q->st.fp != q->st.curr_frame + 1))
 		;
 	else if (last_match || empty_frame) {
 		bool choices = any_choices(q, f);
@@ -912,10 +911,10 @@ static void commit_frame(query *q, cell *body)
 
 #if 0
 		fprintf(stderr,
-			"*** tco=%d,last_match=%d,is_det=%d,"
+			"*** tco=%d,q->no_tco=%d,last_match=%d,is_det=%d,"
 				"next_key=%d,tail_call=%d/%d,slots_ok=%d,"
 					"vars_ok=%d,cl->nbr_vars=%u,f->initial_slots=%u\n",
-			tco, last_match, is_det,
+			tco, q->no_tco, last_match, is_det,
 				next_key, tail_call, tail_recursive, slots_ok,
 					vars_ok, cl->nbr_vars, f->initial_slots);
 #endif

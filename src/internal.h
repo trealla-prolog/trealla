@@ -687,6 +687,7 @@ struct query_ {
 	bool is_dump_vars:1;
 	bool portray_vars:1;
 	bool status:1;
+	bool no_tco:1;
 	bool has_vars:1;
 	bool error:1;
 	bool did_throw:1;
