@@ -865,7 +865,12 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 	if (c_attrs)
 		q->run_hook = true;
 
-	if (is_var(v)) {
+	if (is_structure(v)) {
+		make_indirect(&e->c, v, v_ctx);
+
+		if (v_ctx == q->st.curr_frame)
+			q->no_tco = true;
+	} else if (is_var(v)) {
 		e->c.tag = TAG_VAR;
 		e->c.nbr_cells = 1;
 		e->c.flags |= FLAG_VAR_REF;
@@ -874,11 +879,6 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 
 		if (v_ctx == q->st.curr_frame)
 			q->no_tco = true;
-	} else if (is_structure(v)) {
-		if (v_ctx == q->st.curr_frame)
-			q->no_tco = true;
-
-		make_indirect(&e->c, v, v_ctx);
 	} else {
 		share_cell(v);
 		e->c = *v;
@@ -891,10 +891,10 @@ void reset_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
 	slot *e = GET_SLOT(f, c->var_nbr);
 
 	if (is_structure(v)) {
+		make_indirect(&e->c, v, v_ctx);
+
 		if (v_ctx == q->st.curr_frame)
 			q->no_tco = true;
-
-		make_indirect(&e->c, v, v_ctx);
 	} else if (is_var(v)) {
 		e->c.tag = TAG_VAR;
 		e->c.nbr_cells = 1;
