@@ -871,6 +871,9 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 		e->c.flags |= FLAG_VAR_REF;
 		e->c.var_nbr = v->var_nbr;
 		e->c.var_ctx = v_ctx;
+
+		if (v_ctx == q->st.curr_frame)
+			q->no_tco = true;
 	} else if (is_structure(v)) {
 		if (v_ctx == q->st.curr_frame)
 			q->no_tco = true;
@@ -898,6 +901,9 @@ void reset_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
 		e->c.flags |= FLAG_VAR_REF;
 		e->c.var_nbr = v->var_nbr;
 		e->c.var_ctx = v_ctx;
+
+		if (v_ctx == q->st.curr_frame)
+			q->no_tco = true;
 	} else {
 		share_cell(v);
 		e->c = *v;
