@@ -877,26 +877,25 @@ static void commit_frame(query *q, cell *body)
 	bool is_det = !q->has_vars && cl->is_unique;
 	bool next_key = has_next_key(q);
 	bool last_match = is_det || cl->is_first_cut || !next_key;
-	bool empty_frame = cl->nbr_vars == cl->nbr_temporaries;
 	bool tco = false;
 
-	if ((q->no_tco && !empty_frame) || (q->st.fp != q->st.curr_frame + 1))
+	if (q->no_tco || (q->st.fp != q->st.curr_frame + 1))
 		;
-	else if (last_match || empty_frame) {
+	else if (last_match) {
 		bool choices = any_choices(q, f);
-		bool tail_recursive = last_match && is_tail_recursive(q->st.curr_cell) && !choices;
-		bool tail_call = last_match && is_tail_call(q->st.curr_cell) && !choices;
+		bool tail_recursive = is_tail_recursive(q->st.curr_cell) && !choices;
+		bool tail_call = is_tail_call(q->st.curr_cell) && !choices;
 		bool vars_ok = !f->overflow && (f->initial_slots == cl->nbr_vars);
 		tco = tail_recursive && vars_ok;
 
 #if 0
 		fprintf(stderr,
 			"*** tco=%d,q->no_tco=%d,last_match=%d,is_det=%d,"
-				"next_key=%d,tail_call=%d/%d,slots_ok=%d,"
-					"vars_ok=%d,cl->nbr_vars=%u,f->initial_slots=%u\n",
+			"next_key=%d,tail_call=%d/%d,vars_ok=%d,"
+			"cl->nbr_vars=%u,cl->nbr_temporaries=%u,f->initial_slots=%u\n",
 			tco, q->no_tco, last_match, is_det,
-				next_key, tail_call, tail_recursive, slots_ok,
-					vars_ok, cl->nbr_vars, f->initial_slots);
+			next_key, tail_call, tail_recursive, vars_ok,
+			cl->nbr_vars, cl->nbr_temporaries, f->initial_slots);
 #endif
 
 	}

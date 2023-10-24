@@ -868,10 +868,9 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 	if (is_structure(v)) {
 		make_indirect(&e->c, v, v_ctx);
 
-		if ((c_ctx != v_ctx) && (v_ctx == q->st.curr_frame))
+		if ((c_ctx == q->st.fp) && (v_ctx == q->st.curr_frame))
 			q->no_tco = true;
-
-		if ((v_ctx == q->st.fp))
+		else if ((v_ctx == q->st.fp))
 			q->no_tco = true;
 	} else if (is_var(v)) {
 		e->c.tag = TAG_VAR;
@@ -880,16 +879,15 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 		e->c.var_nbr = v->var_nbr;
 		e->c.var_ctx = v_ctx;
 
-		if ((c_ctx != v_ctx) && (v_ctx == q->st.curr_frame))
+		if ((c_ctx == q->st.fp) && (v_ctx == q->st.curr_frame))
 			q->no_tco = true;
-
-		if ((v_ctx == q->st.fp))
+		else if ((v_ctx == q->st.fp))
 			q->no_tco = true;
 	} else {
 		share_cell(v);
 		e->c = *v;
 
-		if ((v_ctx == q->st.curr_frame))
+		if ((c_ctx == q->st.fp) && (v_ctx == q->st.curr_frame))
 			q->no_tco = true;
 	}
 }
@@ -901,30 +899,15 @@ void reset_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
 
 	if (is_structure(v)) {
 		make_indirect(&e->c, v, v_ctx);
-
-		if ((c_ctx != v_ctx) && (v_ctx == q->st.curr_frame))
-			q->no_tco = true;
-
-		if ((v_ctx == q->st.fp))
-			q->no_tco = true;
 	} else if (is_var(v)) {
 		e->c.tag = TAG_VAR;
 		e->c.nbr_cells = 1;
 		e->c.flags |= FLAG_VAR_REF;
 		e->c.var_nbr = v->var_nbr;
 		e->c.var_ctx = v_ctx;
-
-		if ((c_ctx != v_ctx) && (v_ctx == q->st.curr_frame))
-			q->no_tco = true;
-
-		if ((v_ctx == q->st.fp))
-			q->no_tco = true;
 	} else {
 		share_cell(v);
 		e->c = *v;
-
-		if ((v_ctx == q->st.curr_frame))
-			q->no_tco = true;
 	}
 }
 
