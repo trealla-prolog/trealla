@@ -2029,9 +2029,10 @@ static bool fn_iso_functor_3(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
-	GET_NEXT_ARG(p3,any);
 
 	if (is_var(p1)) {
+		GET_NEXT_ARG(p3,any);
+
 		if (!is_atomic(p2))
 			return throw_error(q, p2, p2_ctx, "type_error", "atomic");
 
@@ -2098,6 +2099,7 @@ static bool fn_iso_functor_3(query *q)
 	if (!unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 		return false;
 
+	GET_NEXT_ARG(p3,any);
 	make_int(&tmp, p1->arity);
 	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 }
