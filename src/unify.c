@@ -870,7 +870,7 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 
 		if ((c_ctx == q->st.fp) && (v_ctx == q->st.curr_frame))
 			q->no_tco = true;
-		else if ((v_ctx == q->st.fp))
+		else if (v_ctx == q->st.fp)
 			q->no_tco = true;
 	} else if (is_var(v)) {
 		e->c.tag = TAG_VAR;
@@ -881,7 +881,7 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 
 		if ((c_ctx == q->st.fp) && (v_ctx == q->st.curr_frame))
 			q->no_tco = true;
-		else if ((v_ctx == q->st.fp))
+		else if (v_ctx == q->st.fp)
 			q->no_tco = true;
 	} else {
 		share_cell(v);
