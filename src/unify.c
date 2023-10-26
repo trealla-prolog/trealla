@@ -886,9 +886,6 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 	} else {
 		share_cell(v);
 		e->c = *v;
-
-		if ((c_ctx == q->st.fp) && (v_ctx == q->st.curr_frame))
-			q->no_tco = true;
 	}
 }
 
