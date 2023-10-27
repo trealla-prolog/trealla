@@ -868,7 +868,7 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 	if (is_structure(v)) {
 		make_indirect(&e->c, v, v_ctx);
 
-		if ((c_ctx == q->st.fp) && (v_ctx == q->st.curr_frame))
+		if ((c_ctx != q->st.curr_frame) && (v_ctx == q->st.curr_frame))
 			q->no_tco = true;
 		else if (v_ctx == q->st.fp)
 			q->no_tco = true;
@@ -879,7 +879,7 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 		e->c.var_nbr = v->var_nbr;
 		e->c.var_ctx = v_ctx;
 
-		if ((c_ctx == q->st.fp) && (v_ctx == q->st.curr_frame))
+		if ((c_ctx != q->st.curr_frame) && (v_ctx == q->st.curr_frame))
 			q->no_tco = true;
 		else if (v_ctx == q->st.fp)
 			q->no_tco = true;
