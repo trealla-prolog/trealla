@@ -103,7 +103,7 @@ char_type(Char, Type) :-
             ;   domain_error(char_type, Type, char_type/2)
             )
         ;   ctype(Type),
-            catch('$char_type'(Char, Type), _, true)
+            '$char_type'(Char, Type)
         ).
 
 

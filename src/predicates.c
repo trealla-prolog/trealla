@@ -5819,7 +5819,7 @@ static bool fn_char_type_2(query *q)
 		return iswlower(ch);
 	else if (!CMP_STR_TO_CSTR(q, p2, "upper"))
 		return iswupper(ch);
-	else if (!CMP_STR_TO_CSTR(q, p2, "to_lower")) {
+	else if (!CMP_STR_TO_CSTR(q, p2, "to_lower") && p2->arity) {
 		cell *arg1 = deref(q, p2+1, p2_ctx);
 		pl_idx arg1_ctx = q->latest_ctx;
 		char tmpbuf[20];
@@ -5827,7 +5827,7 @@ static bool fn_char_type_2(query *q)
 		cell tmp;
 		make_string(&tmp, tmpbuf);
 		return unify(q, arg1, arg1_ctx, &tmp, q->st.curr_frame);
-	} else if (!CMP_STR_TO_CSTR(q, p2, "to_upper")) {
+	} else if (!CMP_STR_TO_CSTR(q, p2, "to_upper") && p2->arity) {
 		cell *arg1 = deref(q, p2+1, p2_ctx);
 		pl_idx arg1_ctx = q->latest_ctx;
 		char tmpbuf[20];
@@ -5849,8 +5849,16 @@ static bool fn_char_type_2(query *q)
 		return ch < 128;
 	else if (!CMP_STR_TO_CSTR(q, p2, "octet"))			// used by abnf.pl
 		return ch < 256;
+	else if (!CMP_STR_TO_CSTR(q, p2, "exponent"))
+		return (ch == 'e') || (ch == 'E');
+	else if (!CMP_STR_TO_CSTR(q, p2, "sign"))
+		return (ch == '-') || (ch == '+');
 	else if (!CMP_STR_TO_CSTR(q, p2, "newline"))
 		return ch == 10;
+	else if (!CMP_STR_TO_CSTR(q, p2, "meta"))			// ?????????????
+		return ch == -1;
+	else if (!CMP_STR_TO_CSTR(q, p2, "solo"))			// ?????????????
+		return ch == -1;
 	else if (!CMP_STR_TO_CSTR(q, p2, "end_of_line"))
 		return (ch >= 10) && (ch <= 13);
 	else if (!CMP_STR_TO_CSTR(q, p2, "end_of_file"))
