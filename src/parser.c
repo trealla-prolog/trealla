@@ -279,6 +279,7 @@ void clear_rule(clause *cl)
 		unshare_cell(c);
 	}
 
+	cl->is_complex = false;
 	cl->cidx = 0;
 }
 
@@ -1220,23 +1221,25 @@ void term_assign_vars(parser *p, unsigned start, bool rebase)
 
 	cl->is_first_cut = false;
 	cl->is_cut_only = false;
+	cl->is_complex = false;
+	const cell *body = get_body(cl->cells);
 
+	bool in_body = false;
 
 	for (pl_idx i = 0; i < cl->cidx; i++) {
 		cell *c = cl->cells + i;
+
+		if (c == body)
+			in_body = true;
+
+		//if (is_iso_list(c) && !in_body)
+		//	cl->is_complex = true;
 
 		if (!is_var(c))
 			continue;
 
 		if (c->val_off == g_anon_s)
 			c->flags |= FLAG_VAR_ANON;
-	}
-
-	for (pl_idx i = 0; i < cl->cidx; i++) {
-		cell *c = cl->cells + i;
-
-		if (!is_var(c))
-			continue;
 
 		if (rebase) {
 			char tmpbuf[20];
@@ -1258,8 +1261,7 @@ void term_assign_vars(parser *p, unsigned start, bool rebase)
 		if (p->vartab.var_used[c->var_nbr]++ == 0) {
 			cl->nbr_vars++;
 			p->nbr_vars++;
-		} else
-			cl->is_complex = true;
+		}
 	}
 
 	for (pl_idx i = 0; i < cl->nbr_vars; i++) {
@@ -1521,7 +1523,6 @@ static bool analyze(parser *p, pl_idx start_idx, bool last_op)
 void reset(parser *p)
 {
 	clear_rule(p->cl);
-	p->cl->cidx = 0;
 	p->start_term = true;
 	p->comment = false;
 	p->error = false;
@@ -3016,6 +3017,7 @@ static bool process_term(parser *p, cell *p1)
 
 	check_first_cut(&dbe->cl);
 	dbe->cl.is_fact = !get_logical_body(dbe->cl.cells);
+	dbe->cl.is_complex = p->cl->is_complex;
 	dbe->line_nbr_start = p->line_nbr_start;
 	dbe->line_nbr_end = p->line_nbr;
 	p->line_nbr_start = 0;
