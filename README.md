@@ -404,8 +404,6 @@ Non-standard predicates
 	nan/0
 	\uXXXX and \UXXXXXXXX 		# quoted character escapes
 	gcd/2
-	char_type/2
-	code_type/2
 	uuid/1                      # generates non-standard UUID
 	load_files/[1,2]
 	split_string/4				# SWI-compatible

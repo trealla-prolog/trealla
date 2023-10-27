@@ -5780,7 +5780,7 @@ static bool fn_sys_legacy_evaluable_property_2(query *q)
 static bool fn_char_type_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_int);
-	GET_NEXT_ARG(p2,atom);
+	GET_NEXT_ARG(p2,atom_or_structure);
 	int ch;
 
 	if (is_bigint(p1))
@@ -5796,13 +5796,22 @@ static bool fn_char_type_2(query *q)
 
 	if (!CMP_STR_TO_CSTR(q, p2, "alpha"))
 		return iswalpha(ch);
-	else if (!CMP_STR_TO_CSTR(q, p2, "digit"))
+	else if (!CMP_STR_TO_CSTR(q, p2, "alphabetic"))
+		return iswalpha(ch);
+	else if (!CMP_STR_TO_CSTR(q, p2, "alphanumeric"))
+		return iswalpha(ch) || iswdigit(ch);
+	else if (!CMP_STR_TO_CSTR(q, p2, "prolog"))
+		return iswalpha(ch) || iswdigit(ch) || iswgraph(ch);
+	else if (!CMP_STR_TO_CSTR(q, p2, "hexadecimal_digit")) {
+		static const char *s_hex = "0123456789abcdefABCDEF";
+		return strchr(s_hex, ch);
+	} else if (!CMP_STR_TO_CSTR(q, p2, "digit"))
 		return iswdigit(ch);
 	else if (!CMP_STR_TO_CSTR(q, p2, "xdigit"))
 		return iswxdigit(ch);
 	else if (!CMP_STR_TO_CSTR(q, p2, "whitespace"))
 		return iswblank(ch) || iswspace(ch);
-	else if (!CMP_STR_TO_CSTR(q, p2, "white"))
+	else if (!CMP_STR_TO_CSTR(q, p2, "white") || !CMP_STR_TO_CSTR(q, p2, "blank"))
 		return iswblank(ch);
 	else if (!CMP_STR_TO_CSTR(q, p2, "space"))
 		return iswspace(ch);
@@ -5810,14 +5819,36 @@ static bool fn_char_type_2(query *q)
 		return iswlower(ch);
 	else if (!CMP_STR_TO_CSTR(q, p2, "upper"))
 		return iswupper(ch);
-	else if (!CMP_STR_TO_CSTR(q, p2, "punct"))
+	else if (!CMP_STR_TO_CSTR(q, p2, "to_lower")) {
+		cell *arg1 = deref(q, p2+1, p2_ctx);
+		pl_idx arg1_ctx = q->latest_ctx;
+		char tmpbuf[20];
+		sprintf(tmpbuf, "%c", tolower(ch));
+		cell tmp;
+		make_string(&tmp, tmpbuf);
+		return unify(q, arg1, arg1_ctx, &tmp, q->st.curr_frame);
+	} else if (!CMP_STR_TO_CSTR(q, p2, "to_upper")) {
+		cell *arg1 = deref(q, p2+1, p2_ctx);
+		pl_idx arg1_ctx = q->latest_ctx;
+		char tmpbuf[20];
+		sprintf(tmpbuf, "%c", toupper(ch));
+		cell tmp;
+		make_string(&tmp, tmpbuf);
+		return unify(q, arg1, arg1_ctx, &tmp, q->st.curr_frame);
+	} else if (!CMP_STR_TO_CSTR(q, p2, "punct"))
 		return iswpunct(ch);
 	else if (!CMP_STR_TO_CSTR(q, p2, "cntrl"))
 		return iswcntrl(ch);
+	else if (!CMP_STR_TO_CSTR(q, p2, "control"))		// used by abnf.pl
+		return iswcntrl(ch) && (ch < 128);
 	else if (!CMP_STR_TO_CSTR(q, p2, "graph"))
 		return iswgraph(ch);
+	else if (!CMP_STR_TO_CSTR(q, p2, "ascii_graphic"))	// used by abnf.pl
+		return iswgraph(ch) && (ch < 128);
 	else if (!CMP_STR_TO_CSTR(q, p2, "ascii"))
 		return ch < 128;
+	else if (!CMP_STR_TO_CSTR(q, p2, "octet"))			// used by abnf.pl
+		return ch < 256;
 	else if (!CMP_STR_TO_CSTR(q, p2, "newline"))
 		return ch == 10;
 	else if (!CMP_STR_TO_CSTR(q, p2, "end_of_line"))
@@ -6944,8 +6975,8 @@ builtins g_other_bifs[] =
 	{"hex_bytes", 2, fn_hex_bytes_2, "?string,?list", false, false, BLAH},
 	{"hex_chars", 2, fn_hex_chars_2, "?integer,?string", false, false, BLAH},
 	{"octal_chars", 2, fn_octal_chars_2, "?integer,?string", false, false, BLAH},
-	{"char_type", 2, fn_char_type_2, "+character,+term", false, false, BLAH},
-	{"code_type", 2, fn_char_type_2, "+integer,+term", false, false, BLAH},
+	{"$char_type", 2, fn_char_type_2, "+character,+term", false, false, BLAH},
+	{"$code_type", 2, fn_char_type_2, "+integer,+term", false, false, BLAH},
 	{"uuid", 1, fn_uuid_1, "-string", false, false, BLAH},
 	{"asserta", 2, fn_asserta_2, "+term,-string", false, false, BLAH},
 	{"assertz", 2, fn_assertz_2, "+term,-string", false, false, BLAH},
