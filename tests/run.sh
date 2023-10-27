@@ -15,6 +15,9 @@ for source in tests/tests/* tests/issues*/*
 
 do
 	case "$source" in
+		*.plx)
+			cmd="$TPL -O0 -q -f -g halt "
+			;;
 		*.pl)
 			cmd="$TPL -q -f -g halt "
 			;;
