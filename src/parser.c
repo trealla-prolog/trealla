@@ -1218,40 +1218,24 @@ void term_assign_vars(parser *p, unsigned start, bool rebase)
 		cl->nbr_vars = 0;
 	}
 
-	cl->nbr_temporaries = 0;
 	cl->is_first_cut = false;
 	cl->is_cut_only = false;
 
-	// Any var that only occurs in the head of
-	// a clause we consider a temporary var...
-
-	cell *body = get_body(cl->cells);
-	bool in_body = false;
 
 	for (pl_idx i = 0; i < cl->cidx; i++) {
 		cell *c = cl->cells + i;
-
-		if (body && (c == body))
-			in_body = true;
 
 		if (!is_var(c))
 			continue;
 
 		if (c->val_off == g_anon_s)
 			c->flags |= FLAG_VAR_ANON;
-
-		if (!in_body)
-			c->flags |= FLAG_VAR_TEMPORARY;
-		else
-			c->flags &= ~FLAG_VAR_TEMPORARY;
 	}
-
-	// Don't assign temporaries yet...
 
 	for (pl_idx i = 0; i < cl->cidx; i++) {
 		cell *c = cl->cells + i;
 
-		if (!is_var(c) || is_temporary(c))
+		if (!is_var(c))
 			continue;
 
 		if (rebase) {
@@ -1276,38 +1260,6 @@ void term_assign_vars(parser *p, unsigned start, bool rebase)
 			p->nbr_vars++;
 		} else
 			cl->is_complex = true;
-	}
-
-	// Do temporaries last...
-
-	for (pl_idx i = 0; i < cl->cidx; i++) {
-		cell *c = cl->cells + i;
-
-		if (!is_var(c) || !is_temporary(c))
-			continue;
-
-		if (rebase) {
-			char tmpbuf[20];
-			snprintf(tmpbuf, sizeof(tmpbuf), "_V%u", c->var_nbr);
-			c->var_nbr = get_varno(p, tmpbuf);
-		} else
-			c->var_nbr = get_varno(p, C_STR(p, c));
-
-		c->var_nbr += start;
-
-		if (c->var_nbr == MAX_VARS) {
-			fprintf(stdout, "Error: max vars reached, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
-			p->error = true;
-			return;
-		}
-
-		p->vartab.var_name[c->var_nbr] = C_STR(p, c);
-
-		if (p->vartab.var_used[c->var_nbr]++ == 0) {
-			cl->nbr_temporaries++;
-			cl->nbr_vars++;
-			p->nbr_vars++;
-		}
 	}
 
 	for (pl_idx i = 0; i < cl->nbr_vars; i++) {
@@ -3054,7 +3006,7 @@ static bool process_term(parser *p, cell *p1)
 
 	db_entry *dbe;
 
-	if ((dbe = assertz_to_db(p->m, p->cl->nbr_vars, p->cl->nbr_temporaries, p1, consulting)) == NULL) {
+	if ((dbe = assertz_to_db(p->m, p->cl->nbr_vars, p1, consulting)) == NULL) {
 		if ((DUMP_ERRS || !p->do_read_term) && 0)
 			printf("Error: assertion failed '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 

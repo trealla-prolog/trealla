@@ -824,7 +824,7 @@ static void reuse_frame(query *q, const clause *cl)
 {
 	frame *f = GET_CURR_FRAME();
 	const frame *newf = GET_FRAME(q->st.fp);
-	f->initial_slots = f->actual_slots = cl->nbr_vars - cl->nbr_temporaries;
+	f->initial_slots = f->actual_slots = cl->nbr_vars;
 	f->chgen = ++q->chgen;
 	f->overflow = 0;
 
@@ -892,10 +892,10 @@ static void commit_frame(query *q, cell *body)
 		fprintf(stderr,
 			"*** tco=%d,q->no_tco=%d,last_match=%d,is_det=%d,"
 			"next_key=%d,tail_call=%d/%d,vars_ok=%d,"
-			"cl->nbr_vars=%u,cl->nbr_temporaries=%u,f->initial_slots=%u\n",
+			"cl->nbr_vars=%u,f->initial_slots=%u\n",
 			tco, q->no_tco, last_match, is_det,
 			next_key, tail_call, tail_recursive, vars_ok,
-			cl->nbr_vars, cl->nbr_temporaries, f->initial_slots);
+			cl->nbr_vars, f->initial_slots);
 #endif
 
 	}
