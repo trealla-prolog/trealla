@@ -81,8 +81,12 @@ selectchk(X, L, Rest) :- select(X, L, Rest), !.
 
 :- help(selectchk(+term,?term,?term), [iso(false), desc('Deterministically remove element from list to make a new one.')]).
 
-select(X, [X|T], T).
-select(X, [H|T], [H|Rest]) :- select(X, T, Rest).
+select(X, [Head|Tail], Rest) :-
+	select3_(Tail, Head, X, Rest).
+
+select3_(Tail, Head, Head, Tail).
+select3_([Head2|Tail], Head, X, [Head|Rest]) :-
+	select3_(Tail, Head2, X, Rest).
 
 :- help(select(+term,+term, ?term), [iso(false), desc('Remove element from a list to make a new one.')]).
 
