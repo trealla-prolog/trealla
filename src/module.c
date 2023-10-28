@@ -1611,7 +1611,6 @@ static void xref_cell(module *m, clause *cl, cell *c, predicate *parent, int las
 void xref_clause(module *m, clause *cl, predicate *parent)
 {
 	cl->is_unique = false;
-
 	cell *c = cl->cells;
 
 	if (c->val_off == g_sys_record_key_s)
