@@ -27,7 +27,7 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt);
 predicate *create_predicate(module *m, cell *c, bool *created);
 int index_cmpkey(const void *ptr1, const void *ptr2, const void *param, void *l);
 bool needs_quoting(module *m, const char *src, int srclen);
-void xref_rule(module *m, clause *t, predicate *parent);
+void xref_clause(module *m, clause *t, predicate *parent);
 void xref_db(module *m);
 builtins *get_module_help(module *m, const char *name, unsigned arity, bool *found, bool *evaluable);
 builtins *get_builtin_term(module *m, cell *c, bool *found, bool *evaluable);

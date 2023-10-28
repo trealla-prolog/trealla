@@ -854,7 +854,7 @@ bool do_use_module_2(module *curr_m, cell *p)
 				p2->skip = true;
 				p2->srcptr = SB_cstr(s);
 				tokenize(p2, false, false);
-				xref_rule(p2->m, p2->cl, NULL);
+				xref_clause(p2->m, p2->cl, NULL);
 				execute(q, p2->cl->cells, p2->cl->nbr_vars);
 				SB_free(s);
 			}
@@ -906,7 +906,7 @@ bool do_use_module_2(module *curr_m, cell *p)
 				p2->skip = true;
 				p2->srcptr = SB_cstr(s);
 				tokenize(p2, false, false);
-				xref_rule(p2->m, p2->cl, NULL);
+				xref_clause(p2->m, p2->cl, NULL);
 				execute(q, p2->cl->cells, p2->cl->nbr_vars);
 				SB_free(s);
 			}
@@ -1608,7 +1608,7 @@ static void xref_cell(module *m, clause *cl, cell *c, predicate *parent, int las
 	}
 }
 
-void xref_rule(module *m, clause *cl, predicate *parent)
+void xref_clause(module *m, clause *cl, predicate *parent)
 {
 	cl->is_unique = false;
 
@@ -1647,7 +1647,7 @@ void xref_db(module *m)
 		pr->is_processed = true;
 
 		for (db_entry *dbe = pr->head; dbe; dbe = dbe->next)
-			xref_rule(m, &dbe->cl, pr);
+			xref_clause(m, &dbe->cl, pr);
 
 		if (pr->is_dynamic || pr->idx)
 			continue;

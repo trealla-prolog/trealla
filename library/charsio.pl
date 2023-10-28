@@ -69,8 +69,8 @@ fabricate_var_name(VarType, VarName, N) :-
 % - `symbolic_control`
 % - `symbolic_hexadecimal`
 % - `upper`
-% - `to_lower(Lower)`
-% - `to_upper(Upper)`
+% - `lower(Lower)`
+% - `upper(Upper)`
 % - `whitespace`
 %
 % An example:
@@ -88,8 +88,8 @@ fabricate_var_name(VarType, VarName, N) :-
 % ;  Type = octet
 % ;  Type = prolog
 % ;  Type = symbolic_control
-% ;  Type = to_lower("a")
-% ;  Type = to_upper("A")
+% ;  Type = lower("a")
+% ;  Type = upper("A")
 % ;  false.
 % ```
 %
@@ -132,7 +132,7 @@ ctype(sign).
 ctype(solo).
 ctype(symbolic_control).
 ctype(symbolic_hexadecimal).
-ctype(to_lower(_)).
-ctype(to_upper(_)).
+ctype(lower(_)).
+ctype(upper(_)).
 ctype(upper).
 ctype(whitespace).
