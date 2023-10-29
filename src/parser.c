@@ -1237,7 +1237,8 @@ void clause_assign_vars(parser *p, unsigned start, bool rebase)
 
 	if (!p->reuse) {
 		memset(&p->vartab, 0, sizeof(p->vartab));
-		cl->nbr_vars = 0;
+		cl->nbr_vars = cl->nbr_temporaries = 0;
+		p->nbr_vars = 0;
 	}
 
 	cl->is_first_cut = false;
