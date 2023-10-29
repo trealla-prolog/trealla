@@ -434,7 +434,7 @@ static unsigned count_non_anons(uint8_t *mask, unsigned bit)
 static void do_term_assign_vars(parser *p)
 {
 	pl_idx nbr_cells = p->cl->cidx;
-	term_assign_vars(p, 0, true);
+	clause_assign_vars(p, 0, true);
 	memset(p->vartab.vars, 0, sizeof(p->vartab.vars));
 
 	for (pl_idx i = 0; i < nbr_cells; i++) {

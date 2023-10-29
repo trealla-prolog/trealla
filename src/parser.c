@@ -1227,7 +1227,7 @@ static bool get_in_body(parser *p, const char *src)
 	return false;
 }
 
-void term_assign_vars(parser *p, unsigned start, bool rebase)
+void clause_assign_vars(parser *p, unsigned start, bool rebase)
 {
 	if (!p || p->error)
 		return;
@@ -3116,7 +3116,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 					return 0;
 				}
 
-				term_assign_vars(p, p->read_term_slots, false);
+				clause_assign_vars(p, p->read_term_slots, false);
 
 				if (p->consulting && check_body_callable(p->cl->cells)) {
 					if (DUMP_ERRS || !p->do_read_term)

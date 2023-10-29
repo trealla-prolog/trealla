@@ -36,7 +36,7 @@ bool fn_call_0(query *q, cell *p1, pl_idx p1_ctx);
 void undo_me(query *q);
 void drop_choice(query *q);
 int retry_choice(query *q);
-void term_assign_vars(parser *p, unsigned start, bool rebase);
+void clause_assign_vars(parser *p, unsigned start, bool rebase);
 bool start(query *q);
 bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract);
 bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type retract);
