@@ -44,7 +44,7 @@ bool fn_clause_3(query *q)
 		if (!is_var(p3)) {
 			uuid u;
 			uuid_from_buf(C_STR(q, p3), &u);
-			db_entry *dbe = find_in_db(q->st.m, &u);
+			rule *dbe = find_in_db(q->st.m, &u);
 
 			if (!dbe || (!u.u1 && !u.u2))
 				break;
@@ -103,7 +103,7 @@ bool fn_clause_3(query *q)
 	return false;
 }
 
-void db_log(query *q, db_entry *dbe, enum log_type l)
+void db_log(query *q, rule *dbe, enum log_type l)
 {
 	FILE *fp = q->pl->logfp;
 
@@ -202,10 +202,10 @@ void purge_predicate_dirty_list(predicate *pr)
 	unsigned cnt = 0;
 
 	while (pr->dirty_list) {
-		db_entry *dbe = pr->dirty_list;
+		rule *dbe = pr->dirty_list;
 		delink(pr, dbe);
 		pr->dirty_list = dbe->dirty;
-		clear_rule(&dbe->cl);
+		clear_clause(&dbe->cl);
 		free(dbe);
 		cnt++;
 	}
@@ -216,7 +216,7 @@ void purge_predicate_dirty_list(predicate *pr)
 		printf("*** purge_predicate_dirty_list %u\n", cnt);
 }
 
-bool remove_from_predicate(predicate *pr, db_entry *dbe)
+bool remove_from_predicate(predicate *pr, rule *dbe)
 {
 	if (dbe->cl.dbgen_erased)
 		return false;
@@ -235,7 +235,7 @@ bool remove_from_predicate(predicate *pr, db_entry *dbe)
 	return true;
 }
 
-void retract_from_db(db_entry *dbe)
+void retract_from_db(rule *dbe)
 {
 	predicate *pr = dbe->owner;
 
@@ -270,7 +270,7 @@ bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 	if (!match || q->did_throw)
 		return match;
 
-	db_entry *dbe = q->st.dbe;
+	rule *dbe = q->st.dbe;
 	retract_from_db(dbe);
 	bool last_match = (is_retract == DO_RETRACT) && !has_next_key(q);
 	stash_frame(q, &dbe->cl, last_match);
@@ -349,14 +349,14 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 	if (!pr->is_dynamic)
 		return throw_error(q, c_orig, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
-	for (db_entry *dbe = pr->head; dbe; dbe = dbe->next)
+	for (rule *dbe = pr->head; dbe; dbe = dbe->next)
 		retract_from_db(dbe);
 
 	if (pr->idx && !pr->cnt) {
 		purge_predicate_dirty_list(pr);
 	} else {
 		while (pr->dirty_list) {
-			db_entry *dbe = pr->dirty_list;
+			rule *dbe = pr->dirty_list;
 			pr->dirty_list = dbe->dirty;
 			dbe->dirty = q->dirty_list;
 			q->dirty_list = dbe;
@@ -518,7 +518,7 @@ bool fn_iso_asserta_1(query *q)
 	if (!is_interned(h))
 		return throw_error(q, h, q->st.curr_frame, "type_error", "callable");
 
-	db_entry *dbe = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, 0);
+	rule *dbe = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, 0);
 
 	if (!dbe)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
@@ -574,7 +574,7 @@ bool fn_iso_assertz_1(query *q)
 	if (!is_interned(h))
 		return throw_error(q, h, q->st.curr_frame, "type_error", "callable");
 
-	db_entry *dbe = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, false);
+	rule *dbe = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, false);
 
 	if (!dbe)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
@@ -636,7 +636,7 @@ static bool do_asserta_2(query *q)
 	if (!is_interned(h))
 		return throw_error(q, h, q->latest_ctx, "type_error", "callable");
 
-	db_entry *dbe = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, 0);
+	rule *dbe = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, 0);
 
 	if (!dbe)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
@@ -727,7 +727,7 @@ static bool do_assertz_2(query *q)
 	if (!is_interned(h))
 		return throw_error(q, h, q->latest_ctx, "type_error", "callable");
 
-	db_entry *dbe = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, false);
+	rule *dbe = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, false);
 
 	if (!dbe)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
@@ -780,7 +780,7 @@ void save_db(FILE *fp, query *q, int logging)
 		if (src[0] == '$')
 			continue;
 
-		for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
+		for (rule *dbe = pr->head; dbe; dbe = dbe->next) {
 			if (dbe->cl.dbgen_erased)
 				continue;
 

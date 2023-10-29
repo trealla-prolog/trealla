@@ -271,7 +271,7 @@ void make_end(cell *tmp)
 	tmp->nbr_cells = 1;
 }
 
-void clear_rule(clause *cl)
+void clear_clause(clause *cl)
 {
 	cell *c = cl->cells;
 
@@ -279,6 +279,7 @@ void clear_rule(clause *cl)
 		unshare_cell(c);
 	}
 
+	cl->nbr_vars = cl->nbr_temporaries = 0;
 	cl->is_unsafe = false;
 	cl->cidx = 0;
 }
@@ -314,7 +315,7 @@ void parser_destroy(parser *p)
 		free(p->save_line);
 
 	if (p->cl) {
-		clear_rule(p->cl);
+		clear_clause(p->cl);
 		free(p->cl);
 	}
 
@@ -1179,15 +1180,17 @@ static void check_first_cut(clause *cl)
 	}
 }
 
-static pl_idx get_varno(parser *p, const char *src)
+static pl_idx get_varno(parser *p, const char *src, bool in_body)
 {
 	int anon = !strcmp(src, "_");
 	size_t offset = 0;
 	unsigned i = 0;
 
 	while (p->vartab.var_pool[offset]) {
-		if (!strcmp(p->vartab.var_pool+offset, src) && !anon)
+		if (!strcmp(p->vartab.var_pool+offset, src) && !anon) {
+			p->vartab.in_body[i] = in_body;
 			return i;
+		}
 
 		offset += strlen(p->vartab.var_pool+offset) + 1;
 		i++;
@@ -1202,7 +1205,26 @@ static pl_idx get_varno(parser *p, const char *src)
 	}
 
 	memcpy(p->vartab.var_pool+offset, src, len+1);
+	p->vartab.in_body[i] = in_body;
 	return i;
+}
+
+static bool get_in_body(parser *p, const char *src)
+{
+	int anon = !strcmp(src, "_");
+	size_t offset = 0;
+	unsigned i = 0;
+
+	while (p->vartab.var_pool[offset]) {
+		if (!strcmp(p->vartab.var_pool+offset, src) && !anon) {
+			return p->vartab.in_body[i];
+		}
+
+		offset += strlen(p->vartab.var_pool+offset) + 1;
+		i++;
+	}
+
+	return false;
 }
 
 void term_assign_vars(parser *p, unsigned start, bool rebase)
@@ -1240,10 +1262,10 @@ void term_assign_vars(parser *p, unsigned start, bool rebase)
 
 		if (rebase) {
 			char tmpbuf[20];
-			snprintf(tmpbuf, sizeof(tmpbuf), "_V%u", c->var_nbr);
-			c->var_nbr = get_varno(p, tmpbuf);
+			snprintf(tmpbuf, sizeof(tmpbuf), "___V%u", c->var_nbr);
+			c->var_nbr = get_varno(p, tmpbuf, in_body);
 		} else
-			c->var_nbr = get_varno(p, C_STR(p, c));
+			c->var_nbr = get_varno(p, C_STR(p, c), in_body);
 
 		c->var_nbr += start;
 
@@ -1261,7 +1283,23 @@ void term_assign_vars(parser *p, unsigned start, bool rebase)
 		}
 	}
 
+	for (pl_idx i = 0; i < cl->cidx; i++) {
+		cell *c = cl->cells + i;
+
+		if (!is_var(c))
+			continue;
+
+		// A temporary variable is one that occurs
+		// only in the head of a clause...
+
+		if (!get_in_body(p, C_STR(p, c)))
+			c->flags |= FLAG_VAR_TEMPORARY;
+	}
+
 	for (pl_idx i = 0; i < cl->nbr_vars; i++) {
+		if (!p->vartab.in_body[i])
+			cl->nbr_temporaries++;
+
 		if (p->consulting && !p->do_read_term && (p->vartab.var_used[i] == 1) &&
 			(p->vartab.var_name[i][strlen(p->vartab.var_name[i])-1] != '_') &&
 			(*p->vartab.var_name[i] != '_')) {
@@ -1519,7 +1557,7 @@ static bool analyze(parser *p, pl_idx start_idx, bool last_op)
 
 void reset(parser *p)
 {
-	clear_rule(p->cl);
+	clear_clause(p->cl);
 	p->start_term = true;
 	p->comment = false;
 	p->error = false;
@@ -1595,7 +1633,7 @@ static bool dcg_expansion(parser *p)
 	//xref_clause(p2->m, p2->cl, NULL);
 	free(src);
 
-	clear_rule(p->cl);
+	clear_clause(p->cl);
 	free(p->cl);
 	p->cl = p2->cl;					// Take the completed clause
 	p->nbr_vars = p2->nbr_vars;
@@ -1656,7 +1694,7 @@ static bool term_expansion(parser *p)
 	xref_clause(p2->m, p2->cl, NULL);
 	free(src);
 
-	clear_rule(p->cl);
+	clear_clause(p->cl);
 	free(p->cl);
 	p->cl = p2->cl;					// Take the completed clause
 	p->nbr_vars = p2->nbr_vars;
@@ -1787,7 +1825,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 	memcpy(goal, p2->cl->cells, sizeof(cell)*new_cells);
 	p->cl->cidx += new_cells;
-	clear_rule(p2->cl);
+	clear_clause(p2->cl);
 	free(p2->cl);
 	p2->cl = NULL;
 
@@ -3002,7 +3040,7 @@ static bool process_term(parser *p, cell *p1)
 		h->arity = 0;
 	}
 
-	db_entry *dbe;
+	rule *dbe;
 
 	if ((dbe = assertz_to_db(p->m, p->cl->nbr_vars, p1, consulting)) == NULL) {
 		if ((DUMP_ERRS || !p->do_read_term) && 0)

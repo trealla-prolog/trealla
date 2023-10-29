@@ -793,8 +793,8 @@ static void clear_streams_properties(query *q)
 	predicate *pr = find_predicate(q->st.m, &tmp);
 
 	if (pr) {
-		for (db_entry *dbe = pr->head; dbe;) {
-			db_entry *save = dbe;
+		for (rule *dbe = pr->head; dbe;) {
+			rule *save = dbe;
 			dbe = dbe->next;
 			retract_from_db(save);
 		}
@@ -2360,7 +2360,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 	check_heap_error(tmp);
 	safe_copy_cells(tmp, str->p->cl->cells, str->p->cl->cidx-1);
 	bool ok = unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
-	clear_rule(str->p->cl);
+	clear_clause(str->p->cl);
 	return ok;
 }
 

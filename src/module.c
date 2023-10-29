@@ -355,13 +355,13 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 		return pr;
 	}
 
-	db_entry *dbe = pr->dirty_list;
+	rule *dbe = pr->dirty_list;
 
 	while (dbe) {
 		delink(pr, dbe);
-		db_entry *save = dbe;
+		rule *save = dbe;
 		dbe = dbe->dirty;
-		clear_rule(&save->cl);
+		clear_clause(&save->cl);
 		free(save);
 	}
 
@@ -374,9 +374,9 @@ static void destroy_predicate(module *m, predicate *pr)
 {
 	sl_del(m->index, &pr->key);
 
-	for (db_entry *dbe = pr->head; dbe;) {
-		db_entry *save = dbe->next;
-		clear_rule(&dbe->cl);
+	for (rule *dbe = pr->head; dbe;) {
+		rule *save = dbe->next;
+		clear_clause(&dbe->cl);
 		free(dbe);
 		dbe = save;
 	}
@@ -547,14 +547,14 @@ int index_cmpkey(const void *ptr1, const void *ptr2, const void *param, void *l)
 	return index_cmpkey_(ptr1, ptr2, param, l);
 }
 
-db_entry *find_in_db(module *m, uuid *ref)
+rule *find_in_db(module *m, uuid *ref)
 {
 	for (m = m->pl->modules; m; m = m->next) {
 		for (predicate *pr = m->head; pr; pr = pr->next) {
 			if (!pr->is_dynamic)
 				continue;
 
-			for (db_entry *dbe = pr->head ; dbe; dbe = dbe->next) {
+			for (rule *dbe = pr->head ; dbe; dbe = dbe->next) {
 				if (dbe->cl.dbgen_erased)
 					continue;
 
@@ -591,9 +591,9 @@ void push_template(module *m, const char *name, unsigned arity, const builtins *
 	parser_destroy(p);
 }
 
-db_entry *erase_from_db(module *m, uuid *ref)
+rule *erase_from_db(module *m, uuid *ref)
 {
-	db_entry *dbe = find_in_db(m, ref);
+	rule *dbe = find_in_db(m, ref);
 	if (!dbe) return 0;
 	dbe->cl.dbgen_erased = ++m->pl->dbgen;
 	return dbe;
@@ -1270,7 +1270,7 @@ unsigned search_op(module *m, const char *name, unsigned *specifier, bool hint_p
 	return 0;
 }
 
-static bool check_multifile(module *m, predicate *pr, db_entry *dbe_orig)
+static bool check_multifile(module *m, predicate *pr, rule *dbe_orig)
 {
 	if (pr->head
 		&& !pr->is_multifile && !pr->is_dynamic
@@ -1283,9 +1283,9 @@ static bool check_multifile(module *m, predicate *pr, db_entry *dbe_orig)
 			free(dst2);
 
 			while (pr->head) {
-				db_entry *dbe = pr->head;
+				rule *dbe = pr->head;
 				pr->head = pr->head->next;
-				clear_rule(&dbe->cl);
+				clear_clause(&dbe->cl);
 				free(dbe);
 			}
 
@@ -1303,14 +1303,14 @@ static bool check_multifile(module *m, predicate *pr, db_entry *dbe_orig)
 	return true;
 }
 
-static void optimize_rule(module *m, db_entry *dbe_orig)
+static void optimize_rule(module *m, rule *dbe_orig)
 {
 	clause *cl = &dbe_orig->cl;
 	cell *head = get_head(cl->cells);
 	bool matched = false;
 	cl->is_unique = false;
 
-	for (db_entry *dbe = dbe_orig->next; dbe; dbe = dbe->next) {
+	for (rule *dbe = dbe_orig->next; dbe; dbe = dbe->next) {
 		if (dbe->cl.dbgen_erased)
 			continue;
 
@@ -1343,7 +1343,7 @@ static void check_goal_expansion(module *m, cell *p1)
 		pr->is_goal_expansion = true;
 }
 
-static db_entry *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consulting)
+static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 {
 	cell *c = p1;
 
@@ -1429,8 +1429,8 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consu
 	if (m->prebuilt)
 		pr->is_prebuilt = true;
 
-	size_t dbe_size = sizeof(db_entry) + (sizeof(cell) * (p1->nbr_cells+1));
-	db_entry *dbe = calloc(1, dbe_size);
+	size_t dbe_size = sizeof(rule) + (sizeof(cell) * (p1->nbr_cells+1));
+	rule *dbe = calloc(1, dbe_size);
 	ensure(dbe);
 
 	copy_cells(dbe->cl.cells, p1, p1->nbr_cells);
@@ -1445,7 +1445,7 @@ static db_entry *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consu
 	return dbe;
 }
 
-static void assert_commit(module *m, db_entry *dbe, predicate *pr, bool append)
+static void assert_commit(module *m, rule *dbe, predicate *pr, bool append)
 {
 	if (pr->db_id)
 		dbe->db_id = append ? pr->db_id : -pr->db_id;
@@ -1477,7 +1477,7 @@ static void assert_commit(module *m, db_entry *dbe, predicate *pr, bool append)
 			ensure(pr->idx2);
 		}
 
-		for (db_entry *cl2 = pr->head; cl2; cl2 = cl2->next) {
+		for (rule *cl2 = pr->head; cl2; cl2 = cl2->next) {
 			cell *c = get_head(cl2->cl.cells);
 
 			if (cl2->cl.dbgen_erased)
@@ -1515,9 +1515,9 @@ static void assert_commit(module *m, db_entry *dbe, predicate *pr, bool append)
 	}
 }
 
-db_entry *asserta_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
+rule *asserta_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 {
-	db_entry *dbe;
+	rule *dbe;
 	predicate *pr;
 
 	do {
@@ -1544,9 +1544,9 @@ db_entry *asserta_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 	return dbe;
 }
 
-db_entry *assertz_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
+rule *assertz_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 {
-	db_entry *dbe;
+	rule *dbe;
 	predicate *pr;
 
 	do {
@@ -1645,13 +1645,13 @@ void xref_db(module *m)
 
 		pr->is_processed = true;
 
-		for (db_entry *dbe = pr->head; dbe; dbe = dbe->next)
+		for (rule *dbe = pr->head; dbe; dbe = dbe->next)
 			xref_clause(m, &dbe->cl, pr);
 
 		if (pr->is_dynamic || pr->idx)
 			continue;
 
-		for (db_entry *dbe = pr->head; dbe; dbe = dbe->next)
+		for (rule *dbe = pr->head; dbe; dbe = dbe->next)
 			optimize_rule(m, dbe);
 	}
 }
@@ -1708,7 +1708,7 @@ static bool unload_realfile(module *m, const char *filename)
 		if (pr->filename && strcmp(pr->filename, filename))
 			continue;
 
-		for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
+		for (rule *dbe = pr->head; dbe; dbe = dbe->next) {
 			if (dbe->cl.dbgen_erased)
 				continue;
 
@@ -2028,7 +2028,7 @@ static void module_save_fp(module *m, FILE *fp, int canonical, int dq)
 		if (pr->is_prebuilt)
 			continue;
 
-		for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
+		for (rule *dbe = pr->head; dbe; dbe = dbe->next) {
 			if (dbe->cl.dbgen_erased)
 				continue;
 

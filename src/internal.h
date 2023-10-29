@@ -168,6 +168,7 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define is_evaluable(c) ((c)->flags & FLAG_EVALUABLE)
 #define is_tail_call(c) ((c)->flags & FLAG_TAIL_CALL)
 #define is_tail_recursive(c) ((c)->flags & FLAG_TAIL_RECURSIVE)
+#define is_temporary(c) (is_var(c) && ((c)->flags & FLAG_VAR_TEMPORARY))
 #define is_ref(c) (is_var(c) && ((c)->flags & FLAG_VAR_REF))
 #define is_op(c) (c->flags & 0xE000) ? true : false
 #define is_callable(c) (is_interned(c) || (is_cstring(c) && !is_string(c)))
@@ -277,6 +278,7 @@ enum {
 	FLAG_VAR_FRESH=1<<1,				// used with TAG_VAR
 	FLAG_VAR_REF=1<<2,					// used with TAG_VAR
 	FLAG_VAR_ATTR=1<<3,					// used with TAG_VAR
+	FLAG_VAR_TEMPORARY=1<<4,			// used with TAG_VAR
 
 	FLAG_HANDLE_DLL=1<<0,				// used with FLAG_INT_HANDLE
 	FLAG_HANDLE_FUNC=1<<1,				// used with FLAG_INT_HANDLE
@@ -327,7 +329,7 @@ enum {
 typedef struct module_ module;
 typedef struct query_ query;
 typedef struct predicate_ predicate;
-typedef struct db_entry_ db_entry;
+typedef struct rule_ rule;
 typedef struct cell_ cell;
 typedef struct clause_ clause;
 typedef struct trail_ trail;
@@ -423,7 +425,7 @@ typedef struct {
 
 struct clause_ {
 	uint64_t dbgen_created, dbgen_erased;
-	pl_idx cidx, nbr_allocated_cells, nbr_vars;
+	pl_idx cidx, nbr_allocated_cells, nbr_vars, nbr_temporaries;
 	bool is_first_cut:1;
 	bool is_cut_only:1;
 	bool is_unique:1;
@@ -433,11 +435,11 @@ struct clause_ {
 	cell cells[];
 };
 
-struct db_entry_ {
+struct rule_ {
 	predicate *owner;
-	db_entry *prev, *next;
+	rule *prev, *next;
 	const char *filename;
-	db_entry *dirty;
+	rule *dirty;
 	uuid u;
 	uint64_t db_id;
 	unsigned line_nbr_start, line_nbr_end;
@@ -447,10 +449,10 @@ struct db_entry_ {
 struct predicate_ {
 	cell key;
 	predicate *prev, *next, *alias;
-	db_entry *head, *tail;
+	rule *head, *tail;
 	module *m;
 	skiplist *idx, *idx2;
-	db_entry *dirty_list;
+	rule *dirty_list;
 	const char *filename;
 	cell *meta_args;
 	uint64_t cnt, refcnt, db_id;
@@ -530,7 +532,7 @@ struct frame_ {
 struct prolog_state_ {
 	cell *curr_cell;
 	predicate *pr;
-	db_entry *dbe;
+	rule *dbe;
 	sliter *iter, *f_iter;
 	module *m;
 
@@ -644,7 +646,7 @@ struct query_ {
 	cell *queue[MAX_QUEUES], *tmpq[MAX_QUEUES];
 	page *pages;
 	slot *save_e;
-	db_entry *dirty_list;
+	rule *dirty_list;
 	query *tasks;
 	skiplist *vars;
 	cell accum;
@@ -723,6 +725,7 @@ struct parser_ {
 		unsigned var_used[MAX_VARS];
 		const char *var_name[MAX_VARS];
 		uint8_t vars[MAX_VARS];
+		bool in_body[MAX_VARS];
 	} vartab;
 
 	prolog *pl;

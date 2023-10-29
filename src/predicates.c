@@ -3133,7 +3133,7 @@ static bool fn_erase_1(query *q)
 	GET_FIRST_ARG(p1,atom);
 	uuid u;
 	uuid_from_buf(C_STR(q, p1), &u);
-	db_entry *dbe = erase_from_db(q->st.m, &u);
+	rule *dbe = erase_from_db(q->st.m, &u);
 	check_heap_error(dbe);
 	return true;
 }
@@ -3144,7 +3144,7 @@ static bool fn_instance_2(query *q)
 	GET_NEXT_ARG(p2,any);
 	uuid u;
 	uuid_from_buf(C_STR(q, p1), &u);
-	db_entry *dbe = find_in_db(q->st.m, &u);
+	rule *dbe = find_in_db(q->st.m, &u);
 	check_heap_error(dbe);
 	return unify(q, p2, p2_ctx, dbe->cl.cells, q->st.curr_frame);
 }
@@ -3172,7 +3172,7 @@ static void save_name(FILE *fp, query *q, pl_idx name, unsigned arity)
 		if ((arity != pr->key.arity) && (arity != -1U))
 			continue;
 
-		for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
+		for (rule *dbe = pr->head; dbe; dbe = dbe->next) {
 			if (dbe->cl.dbgen_erased)
 				continue;
 
@@ -3310,7 +3310,7 @@ static bool fn_source_info_2(query *q)
 
 	check_heap_error(init_tmp_heap(q));
 
-	for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
+	for (rule *dbe = pr->head; dbe; dbe = dbe->next) {
 		cell tmp[8];
 		make_struct(tmp+0, g_dot_s, NULL, 2, 7);
 		make_struct(tmp+1, new_atom(q->pl, "filename"), NULL, 1, 1);

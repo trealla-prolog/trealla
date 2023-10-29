@@ -279,7 +279,7 @@ bool check_slot(query *q, unsigned cnt)
 	return true;
 }
 
-static bool can_view(query *q, uint64_t dbgen, const db_entry *dbe)
+static bool can_view(query *q, uint64_t dbgen, const rule *dbe)
 {
 	if (dbe->cl.is_deleted)
 		return false;
@@ -344,7 +344,7 @@ bool has_next_key(query *q)
 
 	//DUMP_TERM("key ", q->st.key, q->st.key_ctx, 1);
 
-	for (const db_entry *next = q->st.dbe->next; next; next = next->next) {
+	for (const rule *next = q->st.dbe->next; next; next = next->next) {
 		const cell *dkey = next->cl.cells;
 
 		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
@@ -485,7 +485,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 	// the results and return them sorted as an iterator...
 
 	skiplist *tmp_idx = NULL;
-	const db_entry *dbe;
+	const rule *dbe;
 
 	while (sl_next_key(iter, (void*)&dbe)) {
 #if DEBUGIDX
@@ -661,7 +661,7 @@ static void leave_predicate(query *q, predicate *pr)
 		// dirty-list. They will be freed up at end of the query.
 		// FIXME: this is a memory drain.
 
-		db_entry *dbe = pr->dirty_list;
+		rule *dbe = pr->dirty_list;
 
 		while (dbe) {
 			delink(pr, dbe);
@@ -673,7 +673,7 @@ static void leave_predicate(query *q, predicate *pr)
 			}
 
 			dbe->cl.is_deleted = true;
-			db_entry *save = dbe->dirty;
+			rule *save = dbe->dirty;
 			dbe->dirty = q->dirty_list;
 			q->dirty_list = dbe;
 			dbe = save;
@@ -688,12 +688,12 @@ static void leave_predicate(query *q, predicate *pr)
 			pr->idx = pr->idx2 = NULL;
 		}
 	} else {
-		db_entry *dbe = pr->dirty_list;
+		rule *dbe = pr->dirty_list;
 
 		while (dbe) {
 			delink(pr, dbe);
-			db_entry *save = dbe->dirty;
-			clear_rule(&dbe->cl);
+			rule *save = dbe->dirty;
+			clear_clause(&dbe->cl);
 			free(dbe);
 			dbe = save;
 		}
@@ -1774,9 +1774,9 @@ void purge_dirty_list(query *q)
 	unsigned cnt = 0;
 
 	while (q->dirty_list) {
-		db_entry *dbe = q->dirty_list;
+		rule *dbe = q->dirty_list;
 		q->dirty_list = dbe->dirty;
-		clear_rule(&dbe->cl);
+		clear_clause(&dbe->cl);
 		free(dbe);
 		cnt++;
 	}
@@ -1830,7 +1830,7 @@ void query_destroy(query *q)
 		predicate *pr = find_functor(m, "$future", 1);
 
 		if (pr) {
-			for (db_entry *dbe = pr->head; dbe; dbe = dbe->next) {
+			for (rule *dbe = pr->head; dbe; dbe = dbe->next) {
 				retract_from_db(dbe);
 			}
 		}
@@ -1844,7 +1844,7 @@ void query_destroy(query *q)
 			predicate *pr = find_functor(m, "$bb_key", 3);
 
 			if (pr) {
-				db_entry *dbe = pr->head;
+				rule *dbe = pr->head;
 
 				while (dbe) {
 					cell *c = dbe->cl.cells;
@@ -1855,9 +1855,9 @@ void query_destroy(query *q)
 					if (!CMP_STR_TO_CSTR(m, arg3, "b")) {
 						pr->cnt--;
 						delink(pr, dbe);
-						db_entry *save = dbe;
+						rule *save = dbe;
 						dbe = dbe->next;
-						clear_rule(&save->cl);
+						clear_clause(&save->cl);
 						free(save);
 					} else
 						dbe = dbe->next;
