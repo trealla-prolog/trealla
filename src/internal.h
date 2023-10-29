@@ -430,7 +430,6 @@ struct clause_ {
 	bool is_cut_only:1;
 	bool is_unique:1;
 	bool is_fact:1;
-	bool is_unsafe:1;
 	bool is_deleted:1;
 	cell cells[];
 };

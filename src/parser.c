@@ -280,7 +280,6 @@ void clear_clause(clause *cl)
 	}
 
 	cl->nbr_vars = cl->nbr_temporaries = 0;
-	cl->is_unsafe = false;
 	cl->cidx = 0;
 }
 
@@ -1243,7 +1242,6 @@ void clause_assign_vars(parser *p, unsigned start, bool rebase)
 
 	cl->is_first_cut = false;
 	cl->is_cut_only = false;
-	cl->is_unsafe = false;
 	const cell *body = get_body(cl->cells);
 	bool in_body = false;
 
@@ -3051,7 +3049,6 @@ static bool process_term(parser *p, cell *p1)
 
 	check_first_cut(&r->cl);
 	r->cl.is_fact = !get_logical_body(r->cl.cells);
-	r->cl.is_unsafe = p->cl->is_unsafe;
 	r->line_nbr_start = p->line_nbr_start;
 	r->line_nbr_end = p->line_nbr;
 	p->line_nbr_start = 0;

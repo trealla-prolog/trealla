@@ -886,16 +886,16 @@ static void commit_frame(query *q, cell *body)
 		bool tail_recursive = is_tail_recursive(q->st.curr_cell) && !choices;
 		bool tail_call = is_tail_call(q->st.curr_cell) && !choices;
 		bool vars_ok = !f->overflow && (f->initial_slots == cl->nbr_vars);
-		tco = tail_recursive && vars_ok && !cl->is_unsafe;
+		tco = tail_recursive && vars_ok;
 
 #if 0
 		fprintf(stderr,
 			"*** tco=%d,q->no_tco=%d,last_match=%d,is_det=%d,"
 			"next_key=%d,tail_call=%d/%d,vars_ok=%d,"
-			"cl->nbr_vars=%u,f->initial_slots=%u,cl->is_unsafe=%d\n",
+			"cl->nbr_vars=%u,f->initial_slots=%u\n",
 			tco, q->no_tco, last_match, is_det,
 			next_key, tail_call, tail_recursive, vars_ok,
-			cl->nbr_vars, f->initial_slots, cl->is_unsafe);
+			cl->nbr_vars, f->initial_slots);
 #endif
 
 	}
