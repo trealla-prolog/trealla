@@ -1233,7 +1233,6 @@ void clause_assign_vars(parser *p, unsigned start, bool rebase)
 		return;
 
 	p->start_term = true;
-	p->nbr_vars = 0;
 	clause *cl = p->cl;
 
 	if (!p->reuse) {
@@ -1245,7 +1244,6 @@ void clause_assign_vars(parser *p, unsigned start, bool rebase)
 	cl->is_cut_only = false;
 	cl->is_unsafe = false;
 	const cell *body = get_body(cl->cells);
-
 	bool in_body = false;
 
 	for (pl_idx i = 0; i < cl->cidx; i++) {
