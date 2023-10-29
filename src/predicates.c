@@ -3133,8 +3133,8 @@ static bool fn_erase_1(query *q)
 	GET_FIRST_ARG(p1,atom);
 	uuid u;
 	uuid_from_buf(C_STR(q, p1), &u);
-	rule *dbe = erase_from_db(q->st.m, &u);
-	check_heap_error(dbe);
+	rule *r = erase_from_db(q->st.m, &u);
+	check_heap_error(r);
 	return true;
 }
 
@@ -3144,9 +3144,9 @@ static bool fn_instance_2(query *q)
 	GET_NEXT_ARG(p2,any);
 	uuid u;
 	uuid_from_buf(C_STR(q, p1), &u);
-	rule *dbe = find_in_db(q->st.m, &u);
-	check_heap_error(dbe);
-	return unify(q, p2, p2_ctx, dbe->cl.cells, q->st.curr_frame);
+	rule *r = find_in_db(q->st.m, &u);
+	check_heap_error(r);
+	return unify(q, p2, p2_ctx, r->cl.cells, q->st.curr_frame);
 }
 
 static bool fn_listing_0(query *q)
@@ -3159,7 +3159,7 @@ static bool fn_listing_0(query *q)
 
 static void save_name(FILE *fp, query *q, pl_idx name, unsigned arity)
 {
-	module *m = q->st.dbe ? q->st.dbe->owner->m : q->st.m;
+	module *m = q->st.r ? q->st.r->owner->m : q->st.m;
 	q->listing = true;
 
 	for (predicate *pr = m->head; pr; pr = pr->next) {
@@ -3172,15 +3172,15 @@ static void save_name(FILE *fp, query *q, pl_idx name, unsigned arity)
 		if ((arity != pr->key.arity) && (arity != -1U))
 			continue;
 
-		for (rule *dbe = pr->head; dbe; dbe = dbe->next) {
-			if (dbe->cl.dbgen_erased)
+		for (rule *r = pr->head; r; r = r->next) {
+			if (r->cl.dbgen_erased)
 				continue;
 
 			for (unsigned i = 0; i < MAX_IGNORES; i++)
 				q->ignores[i] = false;
 
 			q->print_idx = 0;
-			print_term(q, fp, dbe->cl.cells, 0, 0);
+			print_term(q, fp, r->cl.cells, 0, 0);
 			fprintf(fp, ".\n");
 		}
 	}
@@ -3310,15 +3310,15 @@ static bool fn_source_info_2(query *q)
 
 	check_heap_error(init_tmp_heap(q));
 
-	for (rule *dbe = pr->head; dbe; dbe = dbe->next) {
+	for (rule *r = pr->head; r; r = r->next) {
 		cell tmp[8];
 		make_struct(tmp+0, g_dot_s, NULL, 2, 7);
 		make_struct(tmp+1, new_atom(q->pl, "filename"), NULL, 1, 1);
-		make_cstring(tmp+2, dbe->filename);
+		make_cstring(tmp+2, r->filename);
 		make_struct(tmp+3, g_dot_s, NULL, 2, 4);
 		make_struct(tmp+4, new_atom(q->pl, "lines"), NULL, 2, 2);
-		make_uint(tmp+5, dbe->line_nbr_start);
-		make_uint(tmp+6, dbe->line_nbr_end);
+		make_uint(tmp+5, r->line_nbr_start);
+		make_uint(tmp+6, r->line_nbr_end);
 		make_atom(tmp+7, g_nil_s);
 		append_list(q, tmp);
 	}

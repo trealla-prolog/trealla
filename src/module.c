@@ -355,12 +355,12 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 		return pr;
 	}
 
-	rule *dbe = pr->dirty_list;
+	rule *r = pr->dirty_list;
 
-	while (dbe) {
-		delink(pr, dbe);
-		rule *save = dbe;
-		dbe = dbe->dirty;
+	while (r) {
+		delink(pr, r);
+		rule *save = r;
+		r = r->dirty;
 		clear_clause(&save->cl);
 		free(save);
 	}
@@ -374,11 +374,11 @@ static void destroy_predicate(module *m, predicate *pr)
 {
 	sl_del(m->index, &pr->key);
 
-	for (rule *dbe = pr->head; dbe;) {
-		rule *save = dbe->next;
-		clear_clause(&dbe->cl);
-		free(dbe);
-		dbe = save;
+	for (rule *r = pr->head; r;) {
+		rule *save = r->next;
+		clear_clause(&r->cl);
+		free(r);
+		r = save;
 	}
 
 	sl_destroy(pr->idx2);
@@ -554,12 +554,12 @@ rule *find_in_db(module *m, uuid *ref)
 			if (!pr->is_dynamic)
 				continue;
 
-			for (rule *dbe = pr->head ; dbe; dbe = dbe->next) {
-				if (dbe->cl.dbgen_erased)
+			for (rule *r = pr->head ; r; r = r->next) {
+				if (r->cl.dbgen_erased)
 					continue;
 
-				if (!memcmp(&dbe->u, ref, sizeof(uuid)))
-					return dbe;
+				if (!memcmp(&r->u, ref, sizeof(uuid)))
+					return r;
 			}
 		}
 	}
@@ -593,10 +593,10 @@ void push_template(module *m, const char *name, unsigned arity, const builtins *
 
 rule *erase_from_db(module *m, uuid *ref)
 {
-	rule *dbe = find_in_db(m, ref);
-	if (!dbe) return 0;
-	dbe->cl.dbgen_erased = ++m->pl->dbgen;
-	return dbe;
+	rule *r = find_in_db(m, ref);
+	if (!r) return 0;
+	r->cl.dbgen_erased = ++m->pl->dbgen;
+	return r;
 }
 
 void set_discontiguous_in_db(module *m, const char *name, unsigned arity)
@@ -1283,10 +1283,10 @@ static bool check_multifile(module *m, predicate *pr, rule *dbe_orig)
 			free(dst2);
 
 			while (pr->head) {
-				rule *dbe = pr->head;
+				rule *r = pr->head;
 				pr->head = pr->head->next;
-				clear_clause(&dbe->cl);
-				free(dbe);
+				clear_clause(&r->cl);
+				free(r);
 			}
 
 			sl_destroy(pr->idx2);
@@ -1310,11 +1310,11 @@ static void optimize_rule(module *m, rule *dbe_orig)
 	bool matched = false;
 	cl->is_unique = false;
 
-	for (rule *dbe = dbe_orig->next; dbe; dbe = dbe->next) {
-		if (dbe->cl.dbgen_erased)
+	for (rule *r = dbe_orig->next; r; r = r->next) {
+		if (r->cl.dbgen_erased)
 			continue;
 
-		cell *head2 = get_head(dbe->cl.cells);
+		cell *head2 = get_head(r->cl.cells);
 
 		if (!index_cmpkey(head, head2, m, NULL)) {
 			matched = true;
@@ -1430,30 +1430,30 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 		pr->is_prebuilt = true;
 
 	size_t dbe_size = sizeof(rule) + (sizeof(cell) * (p1->nbr_cells+1));
-	rule *dbe = calloc(1, dbe_size);
-	ensure(dbe);
+	rule *r = calloc(1, dbe_size);
+	ensure(r);
 
-	copy_cells(dbe->cl.cells, p1, p1->nbr_cells);
-	dbe->cl.cells[p1->nbr_cells] = (cell){0};
-	dbe->cl.cells[p1->nbr_cells].tag = TAG_END;
-	dbe->cl.nbr_vars = nbr_vars;
-	dbe->cl.nbr_allocated_cells = p1->nbr_cells;
-	dbe->cl.cidx = p1->nbr_cells+1;
-	dbe->cl.dbgen_created = ++m->pl->dbgen;
-	dbe->filename = m->filename;
-	dbe->owner = pr;
-	return dbe;
+	copy_cells(r->cl.cells, p1, p1->nbr_cells);
+	r->cl.cells[p1->nbr_cells] = (cell){0};
+	r->cl.cells[p1->nbr_cells].tag = TAG_END;
+	r->cl.nbr_vars = nbr_vars;
+	r->cl.nbr_allocated_cells = p1->nbr_cells;
+	r->cl.cidx = p1->nbr_cells+1;
+	r->cl.dbgen_created = ++m->pl->dbgen;
+	r->filename = m->filename;
+	r->owner = pr;
+	return r;
 }
 
-static void assert_commit(module *m, rule *dbe, predicate *pr, bool append)
+static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 {
 	if (pr->db_id)
-		dbe->db_id = append ? pr->db_id : -pr->db_id;
+		r->db_id = append ? pr->db_id : -pr->db_id;
 
 	pr->db_id++;
 	pr->cnt++;
 
-	uuid_gen(m->pl, &dbe->u);
+	uuid_gen(m->pl, &r->u);
 
 	// Note: indexing here refers to the dynamic index...
 
@@ -1495,7 +1495,7 @@ static void assert_commit(module *m, rule *dbe, predicate *pr, bool append)
 		return;
 	}
 
-	cell *c = get_head(dbe->cl.cells);
+	cell *c = get_head(r->cl.cells);
 	cell *arg1 = c->arity ? FIRST_ARG(c) : NULL;
 	cell *arg2 = c->arity > 1 ? NEXT_ARG(arg1) : NULL;
 
@@ -1503,74 +1503,74 @@ static void assert_commit(module *m, rule *dbe, predicate *pr, bool append)
 		pr->is_var_in_first_arg = true;
 
 	if (!append) {
-		sl_set(pr->idx, c, dbe);
+		sl_set(pr->idx, c, r);
 
 		if (pr->idx2 && arg2)
-			sl_set(pr->idx2, arg2, dbe);
+			sl_set(pr->idx2, arg2, r);
 	} else {
-		sl_app(pr->idx, c, dbe);
+		sl_app(pr->idx, c, r);
 
 		if (pr->idx2 && arg2)
-			sl_app(pr->idx2, arg2, dbe);
+			sl_app(pr->idx2, arg2, r);
 	}
 }
 
 rule *asserta_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 {
-	rule *dbe;
+	rule *r;
 	predicate *pr;
 
 	do {
-		dbe = assert_begin(m, nbr_vars, p1, consulting);
-		if (!dbe) return NULL;
-		pr = dbe->owner;
+		r = assert_begin(m, nbr_vars, p1, consulting);
+		if (!r) return NULL;
+		pr = r->owner;
 
 		if (pr->head)
-			pr->head->prev = dbe;
+			pr->head->prev = r;
 	}
-	 while (!check_multifile(m, pr, dbe));
+	 while (!check_multifile(m, pr, r));
 
-	dbe->next = pr->head;
-	pr->head = dbe;
+	r->next = pr->head;
+	pr->head = r;
 
 	if (!pr->tail)
-		pr->tail = dbe;
+		pr->tail = r;
 
-	assert_commit(m, dbe, pr, false);
+	assert_commit(m, r, pr, false);
 
 	if (!consulting && !pr->idx)
 		pr->is_processed = false;
 
-	return dbe;
+	return r;
 }
 
 rule *assertz_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 {
-	rule *dbe;
+	rule *r;
 	predicate *pr;
 
 	do {
-		dbe = assert_begin(m, nbr_vars, p1, consulting);
-		if (!dbe) return NULL;
-		pr = dbe->owner;
+		r = assert_begin(m, nbr_vars, p1, consulting);
+		if (!r) return NULL;
+		pr = r->owner;
 
 		if (pr->tail)
-			pr->tail->next = dbe;
+			pr->tail->next = r;
 	}
-	 while (!check_multifile(m, pr, dbe));
+	 while (!check_multifile(m, pr, r));
 
-	dbe->prev = pr->tail;
-	pr->tail = dbe;
+	r->prev = pr->tail;
+	pr->tail = r;
 
 	if (!pr->head)
-		pr->head = dbe;
+		pr->head = r;
 
-	assert_commit(m, dbe, pr, true);
+	assert_commit(m, r, pr, true);
 
 	if (!consulting && !pr->idx)
 		pr->is_processed = false;
 
-	return dbe;
+	return r;
 }
 
 static void xref_cell(module *m, clause *cl, cell *c, predicate *parent, int last_was_colon)
@@ -1645,14 +1645,14 @@ void xref_db(module *m)
 
 		pr->is_processed = true;
 
-		for (rule *dbe = pr->head; dbe; dbe = dbe->next)
-			xref_clause(m, &dbe->cl, pr);
+		for (rule *r = pr->head; r; r = r->next)
+			xref_clause(m, &r->cl, pr);
 
 		if (pr->is_dynamic || pr->idx)
 			continue;
 
-		for (rule *dbe = pr->head; dbe; dbe = dbe->next)
-			optimize_rule(m, dbe);
+		for (rule *r = pr->head; r; r = r->next)
+			optimize_rule(m, r);
 	}
 }
 
@@ -1708,16 +1708,16 @@ static bool unload_realfile(module *m, const char *filename)
 		if (pr->filename && strcmp(pr->filename, filename))
 			continue;
 
-		for (rule *dbe = pr->head; dbe; dbe = dbe->next) {
-			if (dbe->cl.dbgen_erased)
+		for (rule *r = pr->head; r; r = r->next) {
+			if (r->cl.dbgen_erased)
 				continue;
 
-			if (dbe->filename && !strcmp(dbe->filename, filename)) {
-				if (!remove_from_predicate(pr, dbe))
+			if (r->filename && !strcmp(r->filename, filename)) {
+				if (!remove_from_predicate(pr, r))
 					continue;
 
-				dbe->dirty = pr->dirty_list;
-				pr->dirty_list = dbe;
+				r->dirty = pr->dirty_list;
+				pr->dirty_list = r;
 				pr->is_processed = false;
 			}
 		}
@@ -2028,14 +2028,14 @@ static void module_save_fp(module *m, FILE *fp, int canonical, int dq)
 		if (pr->is_prebuilt)
 			continue;
 
-		for (rule *dbe = pr->head; dbe; dbe = dbe->next) {
-			if (dbe->cl.dbgen_erased)
+		for (rule *r = pr->head; r; r = r->next) {
+			if (r->cl.dbgen_erased)
 				continue;
 
 			if (canonical)
-				print_canonical(&q, fp, dbe->cl.cells, ctx, 0);
+				print_canonical(&q, fp, r->cl.cells, ctx, 0);
 			else
-				print_term(&q, fp, dbe->cl.cells, ctx, 0);
+				print_term(&q, fp, r->cl.cells, ctx, 0);
 
 			fprintf(fp, "\n");
 		}

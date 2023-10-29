@@ -793,9 +793,9 @@ static void clear_streams_properties(query *q)
 	predicate *pr = find_predicate(q->st.m, &tmp);
 
 	if (pr) {
-		for (rule *dbe = pr->head; dbe;) {
-			rule *save = dbe;
-			dbe = dbe->next;
+		for (rule *r = pr->head; r;) {
+			rule *save = r;
+			r = r->next;
 			retract_from_db(save);
 		}
 
@@ -858,7 +858,7 @@ static bool fn_iso_stream_property_2(query *q)
 		return false;
 	}
 
-	clause *cl = &q->st.dbe->cl;
+	clause *cl = &q->st.r->cl;
 	GET_FIRST_ARG(pstrx,any);
 	pstrx->flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
 	stash_frame(q, cl, false);

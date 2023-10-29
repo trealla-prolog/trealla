@@ -532,7 +532,7 @@ struct frame_ {
 struct prolog_state_ {
 	cell *curr_cell;
 	predicate *pr;
-	rule *dbe;
+	rule *r;
 	sliter *iter, *f_iter;
 	module *m;
 

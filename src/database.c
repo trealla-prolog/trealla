@@ -44,13 +44,13 @@ bool fn_clause_3(query *q)
 		if (!is_var(p3)) {
 			uuid u;
 			uuid_from_buf(C_STR(q, p3), &u);
-			rule *dbe = find_in_db(q->st.m, &u);
+			rule *r = find_in_db(q->st.m, &u);
 
-			if (!dbe || (!u.u1 && !u.u2))
+			if (!r || (!u.u1 && !u.u2))
 				break;
 
-			q->st.dbe = dbe;
-			cl = &dbe->cl;
+			q->st.r = r;
+			cl = &r->cl;
 			cell *head = get_head(cl->cells);
 
 			if (!unify(q, p1, p1_ctx, head, q->st.fp))
@@ -60,12 +60,12 @@ bool fn_clause_3(query *q)
 				break;
 
 			char tmpbuf[128];
-			uuid_to_buf(&q->st.dbe->u, tmpbuf, sizeof(tmpbuf));
+			uuid_to_buf(&q->st.r->u, tmpbuf, sizeof(tmpbuf));
 			cell tmp;
 			make_cstring(&tmp, tmpbuf);
 			unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 			unshare_cell(&tmp);
-			cl = &q->st.dbe->cl;
+			cl = &q->st.r->cl;
 		}
 
 		cell *body = get_body(cl->cells);
@@ -103,7 +103,7 @@ bool fn_clause_3(query *q)
 	return false;
 }
 
-void db_log(query *q, rule *dbe, enum log_type l)
+void db_log(query *q, rule *r, enum log_type l)
 {
 	FILE *fp = q->pl->logfp;
 
@@ -116,19 +116,19 @@ void db_log(query *q, rule *dbe, enum log_type l)
 
 	switch(l) {
 	case LOG_ASSERTA:
-		dst = print_term_to_strbuf(q, dbe->cl.cells, q->st.curr_frame, 1);
-		uuid_to_buf(&dbe->u, tmpbuf, sizeof(tmpbuf));
+		dst = print_term_to_strbuf(q, r->cl.cells, q->st.curr_frame, 1);
+		uuid_to_buf(&r->u, tmpbuf, sizeof(tmpbuf));
 		fprintf(fp, "%s:'$asserta'((%s),'%s').\n", q->st.m->name, dst, tmpbuf);
 		free(dst);
 		break;
 	case LOG_ASSERTZ:
-		dst = print_term_to_strbuf(q, dbe->cl.cells, q->st.curr_frame, 1);
-		uuid_to_buf(&dbe->u, tmpbuf, sizeof(tmpbuf));
+		dst = print_term_to_strbuf(q, r->cl.cells, q->st.curr_frame, 1);
+		uuid_to_buf(&r->u, tmpbuf, sizeof(tmpbuf));
 		fprintf(fp, "%s:'$assertz'((%s),'%s').\n", q->st.m->name, dst, tmpbuf);
 		free(dst);
 		break;
 	case LOG_ERASE:
-		uuid_to_buf(&dbe->u, tmpbuf, sizeof(tmpbuf));
+		uuid_to_buf(&r->u, tmpbuf, sizeof(tmpbuf));
 		fprintf(fp, "%s:erase('%s').\n", q->st.m->name, tmpbuf);
 		break;
 	}
@@ -155,7 +155,7 @@ bool fn_iso_clause_2(query *q)
 
 	while (match_clause(q, p1, p1_ctx, DO_CLAUSE)) {
 		if (q->did_throw) return true;
-		clause *cl = &q->st.dbe->cl;
+		clause *cl = &q->st.r->cl;
 		cell *body = get_body(cl->cells);
 		bool ok;
 
@@ -202,11 +202,11 @@ void purge_predicate_dirty_list(predicate *pr)
 	unsigned cnt = 0;
 
 	while (pr->dirty_list) {
-		rule *dbe = pr->dirty_list;
-		delink(pr, dbe);
-		pr->dirty_list = dbe->dirty;
-		clear_clause(&dbe->cl);
-		free(dbe);
+		rule *r = pr->dirty_list;
+		delink(pr, r);
+		pr->dirty_list = r->dirty;
+		clear_clause(&r->cl);
+		free(r);
 		cnt++;
 	}
 
@@ -216,14 +216,14 @@ void purge_predicate_dirty_list(predicate *pr)
 		printf("*** purge_predicate_dirty_list %u\n", cnt);
 }
 
-bool remove_from_predicate(predicate *pr, rule *dbe)
+bool remove_from_predicate(predicate *pr, rule *r)
 {
-	if (dbe->cl.dbgen_erased)
+	if (r->cl.dbgen_erased)
 		return false;
 
 	module *m = pr->m;
-	dbe->cl.dbgen_erased = ++m->pl->dbgen;
-	dbe->filename = NULL;
+	r->cl.dbgen_erased = ++m->pl->dbgen;
+	r->filename = NULL;
 	pr->cnt--;
 
 	if (pr->idx && !pr->cnt && !pr->refcnt) {
@@ -235,15 +235,15 @@ bool remove_from_predicate(predicate *pr, rule *dbe)
 	return true;
 }
 
-void retract_from_db(rule *dbe)
+void retract_from_db(rule *r)
 {
-	predicate *pr = dbe->owner;
+	predicate *pr = r->owner;
 
-	if (!remove_from_predicate(pr, dbe))
+	if (!remove_from_predicate(pr, r))
 		return;
 
-	dbe->dirty = pr->dirty_list;
-	pr->dirty_list = dbe;
+	r->dirty = pr->dirty_list;
+	pr->dirty_list = r;
 }
 
 bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
@@ -270,11 +270,11 @@ bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 	if (!match || q->did_throw)
 		return match;
 
-	rule *dbe = q->st.dbe;
-	retract_from_db(dbe);
+	rule *r = q->st.r;
+	retract_from_db(r);
 	bool last_match = (is_retract == DO_RETRACT) && !has_next_key(q);
-	stash_frame(q, &dbe->cl, last_match);
-	db_log(q, dbe, LOG_ERASE);
+	stash_frame(q, &r->cl, last_match);
+	db_log(q, r, LOG_ERASE);
 	return true;
 }
 
@@ -349,17 +349,17 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 	if (!pr->is_dynamic)
 		return throw_error(q, c_orig, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
-	for (rule *dbe = pr->head; dbe; dbe = dbe->next)
-		retract_from_db(dbe);
+	for (rule *r = pr->head; r; r = r->next)
+		retract_from_db(r);
 
 	if (pr->idx && !pr->cnt) {
 		purge_predicate_dirty_list(pr);
 	} else {
 		while (pr->dirty_list) {
-			rule *dbe = pr->dirty_list;
-			pr->dirty_list = dbe->dirty;
-			dbe->dirty = q->dirty_list;
-			q->dirty_list = dbe;
+			rule *r = pr->dirty_list;
+			pr->dirty_list = r->dirty;
+			r->dirty = q->dirty_list;
+			q->dirty_list = r;
 		}
 	}
 
@@ -518,13 +518,13 @@ bool fn_iso_asserta_1(query *q)
 	if (!is_interned(h))
 		return throw_error(q, h, q->st.curr_frame, "type_error", "callable");
 
-	rule *dbe = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, 0);
+	rule *r = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, 0);
 
-	if (!dbe)
+	if (!r)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
 	p->cl->cidx = 0;
-	db_log(q, dbe, LOG_ASSERTA);
+	db_log(q, r, LOG_ASSERTA);
 	return true;
 }
 
@@ -574,13 +574,13 @@ bool fn_iso_assertz_1(query *q)
 	if (!is_interned(h))
 		return throw_error(q, h, q->st.curr_frame, "type_error", "callable");
 
-	rule *dbe = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, false);
+	rule *r = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, false);
 
-	if (!dbe)
+	if (!r)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
 	p->cl->cidx = 0;
-	db_log(q, dbe, LOG_ASSERTZ);
+	db_log(q, r, LOG_ASSERTZ);
 	return true;
 }
 
@@ -636,9 +636,9 @@ static bool do_asserta_2(query *q)
 	if (!is_interned(h))
 		return throw_error(q, h, q->latest_ctx, "type_error", "callable");
 
-	rule *dbe = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, 0);
+	rule *r = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, 0);
 
-	if (!dbe)
+	if (!r)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
 	p->cl->cidx = 0;
@@ -646,18 +646,18 @@ static bool do_asserta_2(query *q)
 	if (!is_var(p2)) {
 		uuid u;
 		uuid_from_buf(C_STR(q, p2), &u);
-		dbe->u = u;
+		r->u = u;
 	} else {
-		uuid_gen(q->pl, &dbe->u);
+		uuid_gen(q->pl, &r->u);
 		char tmpbuf[128];
-		uuid_to_buf(&dbe->u, tmpbuf, sizeof(tmpbuf));
+		uuid_to_buf(&r->u, tmpbuf, sizeof(tmpbuf));
 		cell tmp2;
 		make_cstring(&tmp2, tmpbuf);
 		unify(q, p2, p2_ctx, &tmp2, q->st.curr_frame);
 		unshare_cell(&tmp2);
 	}
 
-	db_log(q, dbe, LOG_ASSERTA);
+	db_log(q, r, LOG_ASSERTA);
 	return true;
 }
 
@@ -727,9 +727,9 @@ static bool do_assertz_2(query *q)
 	if (!is_interned(h))
 		return throw_error(q, h, q->latest_ctx, "type_error", "callable");
 
-	rule *dbe = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, false);
+	rule *r = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, false);
 
-	if (!dbe)
+	if (!r)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
 	p->cl->cidx = 0;
@@ -737,18 +737,18 @@ static bool do_assertz_2(query *q)
 	if (!is_var(p2)) {
 		uuid u;
 		uuid_from_buf(C_STR(q, p2), &u);
-		dbe->u = u;
+		r->u = u;
 	} else {
-		uuid_gen(q->pl, &dbe->u);
+		uuid_gen(q->pl, &r->u);
 		char tmpbuf[128];
-		uuid_to_buf(&dbe->u, tmpbuf, sizeof(tmpbuf));
+		uuid_to_buf(&r->u, tmpbuf, sizeof(tmpbuf));
 		cell tmp2;
 		make_cstring(&tmp2, tmpbuf);
 		unify(q, p2, p2_ctx, &tmp2, q->st.curr_frame);
 		unshare_cell(&tmp2);
 	}
 
-	db_log(q, dbe, LOG_ASSERTZ);
+	db_log(q, r, LOG_ASSERTZ);
 	return true;
 }
 
@@ -780,8 +780,8 @@ void save_db(FILE *fp, query *q, int logging)
 		if (src[0] == '$')
 			continue;
 
-		for (rule *dbe = pr->head; dbe; dbe = dbe->next) {
-			if (dbe->cl.dbgen_erased)
+		for (rule *r = pr->head; r; r = r->next) {
+			if (r->cl.dbgen_erased)
 				continue;
 
 			if (logging)
@@ -791,11 +791,11 @@ void save_db(FILE *fp, query *q, int logging)
 				q->ignores[i] = false;
 
 			q->print_idx = 0;
-			print_term(q, fp, dbe->cl.cells, 0, 0);
+			print_term(q, fp, r->cl.cells, 0, 0);
 
 			if (logging) {
 				char tmpbuf[256];
-				uuid_to_buf(&dbe->u, tmpbuf, sizeof(tmpbuf));
+				uuid_to_buf(&r->u, tmpbuf, sizeof(tmpbuf));
 				fprintf(fp, ",'%s')", tmpbuf);
 			}
 

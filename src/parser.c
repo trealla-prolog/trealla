@@ -3040,9 +3040,9 @@ static bool process_term(parser *p, cell *p1)
 		h->arity = 0;
 	}
 
-	rule *dbe;
+	rule *r;
 
-	if ((dbe = assertz_to_db(p->m, p->cl->nbr_vars, p1, consulting)) == NULL) {
+	if ((r = assertz_to_db(p->m, p->cl->nbr_vars, p1, consulting)) == NULL) {
 		if ((DUMP_ERRS || !p->do_read_term) && 0)
 			printf("Error: assertion failed '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 
@@ -3050,11 +3050,11 @@ static bool process_term(parser *p, cell *p1)
 		return false;
 	}
 
-	check_first_cut(&dbe->cl);
-	dbe->cl.is_fact = !get_logical_body(dbe->cl.cells);
-	dbe->cl.is_unsafe = p->cl->is_unsafe;
-	dbe->line_nbr_start = p->line_nbr_start;
-	dbe->line_nbr_end = p->line_nbr;
+	check_first_cut(&r->cl);
+	r->cl.is_fact = !get_logical_body(r->cl.cells);
+	r->cl.is_unsafe = p->cl->is_unsafe;
+	r->line_nbr_start = p->line_nbr_start;
+	r->line_nbr_end = p->line_nbr;
 	p->line_nbr_start = 0;
 	return true;
 }

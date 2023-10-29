@@ -80,8 +80,8 @@ bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx 
 void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs, pl_idx attrs_ctx);
 void reset_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx);
 bool valid_list(query *q, cell *c, pl_idx c_ctx);
-bool remove_from_predicate(predicate *pr, rule *dbe);
-void retract_from_db(rule *dbe);
+bool remove_from_predicate(predicate *pr, rule *r);
+void retract_from_db(rule *r);
 void make_call(query *q, cell *tmp);
 void make_call_redo(query *q, cell *tmp);
 
@@ -173,7 +173,7 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard);
 
 enum log_type { LOG_ASSERTA=1, LOG_ASSERTZ=2, LOG_ERASE=3 };
 
-void db_log(query *q, rule *dbe, enum log_type l);
+void db_log(query *q, rule *r, enum log_type l);
 
 int uuid_from_buf(const char *s, uuid *u);
 builtins *get_fn_ptr(void *fn);
