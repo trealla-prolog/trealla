@@ -198,7 +198,7 @@ bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx 
 			return throw_error(q, l, q->st.curr_frame, "permission_error", "modify,static_procedure");
 	}
 
-	if (!assertz_to_db(q->st.m, 0, l, false))
+	if (!assertz_to_db(q->st.m, 0, 0, l, false))
 		return throw_error(q, l, q->st.curr_frame, "permission_error", "modify_static_procedure");
 
 	return true;

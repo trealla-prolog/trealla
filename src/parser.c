@@ -3081,7 +3081,7 @@ static bool process_term(parser *p, cell *p1)
 
 	rule *r;
 
-	if ((r = assertz_to_db(p->m, p->cl->nbr_vars, p1, consulting)) == NULL) {
+	if ((r = assertz_to_db(p->m, p->cl->nbr_vars, p->cl->nbr_temporaries, p1, consulting)) == NULL) {
 		if ((DUMP_ERRS || !p->do_read_term) && 0)
 			printf("Error: assertion failed '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 
