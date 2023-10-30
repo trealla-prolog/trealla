@@ -330,7 +330,8 @@ bool fn_iso_retractall_1(query *q)
 		retry_choice(q);
 	}
 
-	purge_predicate_dirty_list(pr);
+	if (!pr->refcnt)
+		purge_predicate_dirty_list(pr);
 
 	if (pr->idx && !pr->cnt) {
 		sl_destroy(pr->idx2);

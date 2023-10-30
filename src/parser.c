@@ -1230,8 +1230,10 @@ void clause_assign_vars(parser *p, unsigned start, bool rebase)
 	if (!p || p->error)
 		return;
 
-	p->start_term = true;
 	clause *cl = p->cl;
+	cl->is_first_cut = false;
+	cl->is_cut_only = false;
+	p->start_term = true;
 
 	if (!p->reuse) {
 		memset(&p->vartab, 0, sizeof(p->vartab));
@@ -1239,8 +1241,6 @@ void clause_assign_vars(parser *p, unsigned start, bool rebase)
 		p->nbr_vars = 0;
 	}
 
-	cl->is_first_cut = false;
-	cl->is_cut_only = false;
 	const cell *body = get_body(cl->cells);
 	bool in_body = false;
 
@@ -1597,6 +1597,7 @@ static bool analyze(parser *p, pl_idx start_idx, bool last_op)
 void reset(parser *p)
 {
 	clear_clause(p->cl);
+	p->nbr_vars = 0;
 	p->start_term = true;
 	p->comment = false;
 	p->error = false;
