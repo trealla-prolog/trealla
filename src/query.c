@@ -157,32 +157,32 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 static void check_pressure(query *q)
 {
 #if REDUCE_PRESSURE
-	if ((q->trails_size > (INITIAL_NBR_TRAILS*PRESSURE_FACTOR)) && (q->st.tp < INITIAL_NBR_TRAILS)) {
+	if (q->trails_size > (INITIAL_NBR_TRAILS*PRESSURE_FACTOR)) {
 #if TRACE_MEM
 		printf("*** q->st.tp=%u, q->trails_size=%u\n", (unsigned)q->st.tp, (unsigned)q->trails_size);
 #endif
-		q->trails_size = alloc_grow((void**)&q->trails, sizeof(trail), q->st.tp, INITIAL_NBR_TRAILS, false);
+		q->trails_size = alloc_grow((void**)&q->trails, sizeof(trail), q->st.tp, q->st.tp*3/2, false);
 	}
 
-	if ((q->choices_size > (INITIAL_NBR_CHOICES*PRESSURE_FACTOR)) && (q->cp < INITIAL_NBR_CHOICES)) {
+	if (q->choices_size > (INITIAL_NBR_CHOICES*PRESSURE_FACTOR)) {
 #if TRACE_MEM
 		printf("*** q->st.cp=%u, q->choices_size=%u\n", (unsigned)q->cp, (unsigned)q->choices_size);
 #endif
-		q->choices_size = alloc_grow((void**)&q->choices, sizeof(choice), q->cp, INITIAL_NBR_CHOICES, false);
+		q->choices_size = alloc_grow((void**)&q->choices, sizeof(choice), q->cp, q->cp*3/2, false);
 	}
 
-	if ((q->frames_size > (INITIAL_NBR_FRAMES*PRESSURE_FACTOR)) && (q->st.fp < INITIAL_NBR_FRAMES)) {
+	if (q->frames_size > (INITIAL_NBR_FRAMES*PRESSURE_FACTOR)) {
 #if TRACE_MEM
 		printf("*** q->st.fp=%u, q->frames_size=%u\n", (unsigned)q->st.fp, (unsigned)q->frames_size);
 #endif
-		q->frames_size = alloc_grow((void**)&q->frames, sizeof(frame), q->st.fp, INITIAL_NBR_FRAMES, false);
+		q->frames_size = alloc_grow((void**)&q->frames, sizeof(frame), q->st.fp, q->st.fp*3/2, false);
 	}
 
-	if ((q->slots_size > (INITIAL_NBR_SLOTS*PRESSURE_FACTOR)) && (q->st.sp < INITIAL_NBR_SLOTS)) {
+	if (q->slots_size > (INITIAL_NBR_SLOTS*PRESSURE_FACTOR)) {
 #if TRACE_MEM
 		printf("*** q->st.sp=%u, q->slots_size=%u\n", (unsigned)q->st.sp, (unsigned)q->slots_size);
 #endif
-		q->slots_size = alloc_grow((void**)&q->slots, sizeof(slot), q->st.sp, INITIAL_NBR_SLOTS, false);
+		q->slots_size = alloc_grow((void**)&q->slots, sizeof(slot), q->st.sp, q->st.sp*3/2, false);
 	}
 #endif
 }
