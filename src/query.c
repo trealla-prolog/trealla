@@ -837,7 +837,7 @@ static void reuse_frame(query *q, const clause *cl)
 		*to++ = *from++;
 	}
 
-	q->st.sp = f->base + f->initial_slots;
+	q->st.sp = f->base + f->initial_slots - cl->nbr_temporaries;
 	q->st.hp = f->hp;
 	q->tot_tcos++;
 }
