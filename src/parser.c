@@ -1187,7 +1187,6 @@ static pl_idx get_varno(parser *p, const char *src, bool in_body)
 
 	while (p->vartab.var_pool[offset]) {
 		if (!strcmp(p->vartab.var_pool+offset, src) && !anon) {
-			p->vartab.in_body[i] = in_body;
 			return i;
 		}
 
@@ -1250,6 +1249,49 @@ void clause_assign_vars(parser *p, unsigned start, bool rebase)
 
 		if (c == body)
 			in_body = true;
+
+		if (!in_body)
+			continue;
+
+		if (!is_var(c))
+			continue;
+
+		if (c->val_off == g_anon_s)
+			c->flags |= FLAG_VAR_ANON;
+
+		if (rebase) {
+			char tmpbuf[20];
+			snprintf(tmpbuf, sizeof(tmpbuf), "___V%u", c->var_nbr);
+			c->var_nbr = get_varno(p, tmpbuf, in_body);
+		} else
+			c->var_nbr = get_varno(p, C_STR(p, c), in_body);
+
+		c->var_nbr += start;
+
+		if (c->var_nbr == MAX_VARS) {
+			fprintf(stdout, "Error: max vars reached, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+			p->error = true;
+			return;
+		}
+
+		p->vartab.var_name[c->var_nbr] = C_STR(p, c);
+
+		if (p->vartab.var_used[c->var_nbr]++ == 0) {
+			cl->nbr_vars++;
+			p->nbr_vars++;
+		}
+	}
+
+	in_body = false;
+
+	for (unsigned i = 0; i < cl->cidx; i++) {
+		cell *c = cl->cells + i;
+
+		if (c == body)
+			in_body = true;
+
+		if (in_body)
+			break;
 
 		if (!is_var(c))
 			continue;
