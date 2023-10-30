@@ -1245,7 +1245,7 @@ void clause_assign_vars(parser *p, unsigned start, bool rebase)
 	const cell *body = get_body(cl->cells);
 	bool in_body = false;
 
-	for (pl_idx i = 0; i < cl->cidx; i++) {
+	for (unsigned i = 0; i < cl->cidx; i++) {
 		cell *c = cl->cells + i;
 
 		if (c == body)
@@ -1280,7 +1280,7 @@ void clause_assign_vars(parser *p, unsigned start, bool rebase)
 		}
 	}
 
-	for (pl_idx i = 0; i < cl->cidx; i++) {
+	for (unsigned i = 0; i < cl->cidx; i++) {
 		cell *c = cl->cells + i;
 
 		if (!is_var(c))
@@ -1293,7 +1293,7 @@ void clause_assign_vars(parser *p, unsigned start, bool rebase)
 			c->flags |= FLAG_VAR_TEMPORARY;
 	}
 
-	for (pl_idx i = 0; i < cl->nbr_vars; i++) {
+	for (unsigned i = 0; i < cl->nbr_vars; i++) {
 		if (!p->vartab.in_body[i])
 			cl->nbr_temporaries++;
 
