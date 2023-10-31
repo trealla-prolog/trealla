@@ -45,18 +45,6 @@ typedef enum { CALL, EXIT, REDO, NEXT, FAIL } box_t;
 #define PRESSURE_FACTOR 4
 #define TRACE_MEM 0
 
-// Note: when in commit there is a provisional choice point
-// that we should ignore, hence the '1' ...
-
-static bool any_choices(const query *q, const frame *f)
-{
-	if (q->cp == (unsigned)(q->in_commit ? 1 : 0))
-		return false;
-
-	const choice *ch = q->in_commit ? GET_PREV_CHOICE() : GET_CURR_CHOICE();
-	return ch->chgen >= f->chgen;
-}
-
 void dump_term(query *q, const char *s, const cell *c)
 {
 	unsigned nbr_cells = c->nbr_cells;
@@ -864,10 +852,21 @@ static void trim_trail(query *q)
 	}
 }
 
+// Note: when in commit there is a provisional choice point
+// that we should ignore, hence the '1' ...
+
+inline static bool any_choices(const query *q, const frame *f)
+{
+	if (q->cp == 1)
+		return false;
+
+	const choice *ch = GET_PREV_CHOICE();
+	return ch->chgen >= f->chgen;
+}
+
 static void commit_frame(query *q, cell *body)
 {
-	q->in_commit = true;
-	clause *cl = &q->st.r->cl;
+	const clause *cl = &q->st.r->cl;
 	frame *f = GET_CURR_FRAME();
 	f->mid = q->st.m->id;
 
@@ -883,18 +882,18 @@ static void commit_frame(query *q, cell *body)
 		;
 	else if (last_match) {
 		bool choices = any_choices(q, f);
-		bool tail_recursive = is_tail_recursive(q->st.curr_cell) && !choices;
-		bool tail_call = is_tail_call(q->st.curr_cell) && !choices;
+		bool tail_recursive = is_tail_recursive(q->st.curr_cell);
+		bool tail_call = is_tail_call(q->st.curr_cell);
 		bool vars_ok = !f->overflow && (f->initial_slots == cl->nbr_vars);
-		tco = tail_recursive && vars_ok;
+		tco = tail_recursive && vars_ok && !choices;
 
 #if 0
 		fprintf(stderr,
 			"*** tco=%d,q->no_tco=%d,last_match=%d,is_det=%d,"
-			"next_key=%d,tail_call=%d/%d,vars_ok=%d,"
+			"next_key=%d,tail_call=%d/%d,vars_ok=%d,choices=%d,"
 			"cl->nbr_vars=%u,f->initial_slots=%u\n",
 			tco, q->no_tco, last_match, is_det,
-			next_key, tail_call, tail_recursive, vars_ok,
+			next_key, tail_call, tail_recursive, vars_ok, choices,
 			cl->nbr_vars, f->initial_slots);
 #endif
 
@@ -907,7 +906,7 @@ static void commit_frame(query *q, cell *body)
 
 		// If matching against a fact then drop new frame...
 
-		if (!cl->nbr_vars && !body && last_match) {
+		if (!cl->nbr_vars && !body) {
 			f = GET_FRAME(q->st.curr_frame-f->prev_offset);
 			q->st.fp--;
 		}
@@ -928,7 +927,6 @@ static void commit_frame(query *q, cell *body)
 	}
 
 	q->st.curr_cell = body;
-	q->in_commit = false;
 	q->st.iter = NULL;
 }
 

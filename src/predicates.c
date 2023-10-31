@@ -6938,7 +6938,7 @@ builtins g_other_bifs[] =
 	{"module_help", 1, fn_module_help_1, "+atom", false, false, BLAH},
 
 	{"parse_csv_line", 2, fn_parse_csv_line_2, "+atom,-list", false, false, BLAH},
-	{"parse_csv_line", 3, fn_parse_csv_line_3, "+atom,-list,+list", false, false, BLAH},
+	{"parse_csv_line", 3, fn_parse_csv_line_3, "+atom,-compound,+list", false, false, BLAH},
 	{"parse_csv_file", 2, fn_parse_csv_file_2, "+atom,+list", false, false, BLAH},
 
 	{"abort", 0, fn_abort_0, NULL, false, false, BLAH},

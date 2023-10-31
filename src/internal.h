@@ -707,7 +707,6 @@ struct query_ {
 	bool run_init:1;
 	bool varnames:1;
 	bool listing:1;
-	bool in_commit:1;
 	bool did_quote:1;
 	bool is_input:1;
 	bool is_engine:1;

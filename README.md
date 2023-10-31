@@ -631,16 +631,18 @@ instantiated...
 Parsing CSV with builtins
 =========================
 
-	parse_csv_line/2			# parse_csv_line(+atom,-var)
-	parse_csv_line/3			# parse_csv_line(+atom,-var,+options)
+Fast, efficient parsing of CSV files...
+
+	parse_csv_line/2			# parse_csv_line(+atom,-list)
+	parse_csv_line/3			# parse_csv_line(+atom,-compound,+options)
 	parse_csv_file/2			# parse_csv_file(+filename,+options)
 
 Where options can be:
 
 	trim(Boolean)				# default false, trims leading and trailing whitespace
 	numbers(Boolean)			# default false, converts integers and floats
-	header(Boolean)				# default false, skip first (header) line
-	comments(Boolean)			# default false, skip lines beginning with comment character
+	header(Boolean)				# default false, skip first (header) line in file
+	comments(Boolean)			# default false, skip lines beginning with comment character in file
 	comment(Char)				# default '#', set the comment character
 	strings(Boolean)			# default depends on type of input (atom ot string)
 	arity(Integer)				# default to not checking arity, otherwise throw domain_error
@@ -654,6 +656,8 @@ Examples...
 ```
 	?- parse_csv_line('123,2.345,3456789',T).
 	   T = ['123','2.345','3456789'].
+	?- parse_csv_line("123,2.345,3456789",T).
+	   T = ["123","2.345","3456789"].
 	?- parse_csv_line('123,2.345,3456789',T,[functor(f)]).
 	   T = f('123','2.345','3456789').
 	?- parse_csv_line('123,2.345,3456789',T,[functor(f),numbers(true)]).
@@ -666,7 +670,7 @@ Examples...
 	   true.
 	?- f(A,B,C).
 	   A = 123, B = 2.345, C = 3456789.
-	?- time(parse_csv_file('/home/andrew/lgt3git/library/csv/test_files/tickers.csv',[functor(f),quote('\'')])).
+	?- time(parse_csv_file('/home/infradig/lgt3git/library/csv/test_files/tickers.csv',[functor(f),quote('\'')])).
 	% Parsed 35193 lines
 	% Time elapsed 0.096s, 3 Inferences, 0.000 MLips)
 		  true.
