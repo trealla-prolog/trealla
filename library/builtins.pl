@@ -378,6 +378,11 @@ directory_exists(F) :- exists_directory(F).
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+not(X) :- X, !, fail.
+not(_).
+
+:- meta_predicate(not(0)).
+
 current_key(K) :- var(K), '$record_global_key'(K,_).
 recorda(K, V) :- nonvar(K), nonvar(V), asserta('$record_global_key'(K,V)).
 recordz(K, V) :- nonvar(K), nonvar(V), assertz('$record_global_key'(K,V)).

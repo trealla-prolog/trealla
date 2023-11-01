@@ -6556,7 +6556,6 @@ static void load_properties(module *m)
 	format_property(m, tmpbuf, sizeof(tmpbuf), "->", 2, "choice_construct", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "*->", 2, "choice_construct", false); SB_strcat(pr, tmpbuf);
 
-	format_property(m, tmpbuf, sizeof(tmpbuf), "not", 1, "meta_predicate(not(0))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "\\+", 1, "meta_predicate((\\+0))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "catch", 3, "meta_predicate(catch(0,?,0))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "", 2, "meta_predicate((0,0))", false); SB_strcat(pr, tmpbuf);
@@ -6825,7 +6824,6 @@ builtins g_iso_bifs[] =
 	{"=..", 2, fn_iso_univ_2, "+term,?list", true, false, BLAH},
 	{"->", 2, fn_iso_if_then_2, ":callable,:callable", true, false, BLAH},
 	{"\\+", 1, fn_iso_negation_1, ":callable", true, false, BLAH},
-	{"not", 1, fn_iso_negation_1, ":callable", false, false, BLAH},
 	{"=", 2, fn_iso_unify_2, "+term,+term", true, false, BLAH},
 	{"\\=", 2, fn_iso_notunify_2, "+term,+term", true, false, BLAH},
 	{"-->", 2, fn_iso_dcgs_2, "+term,+term", true, false, BLAH},
@@ -6840,7 +6838,6 @@ builtins g_iso_bifs[] =
 	{"$gt", 2, fn_sys_gt_2, NULL, false, false, BLAH},
 	{"$ne", 2, fn_sys_ne_2, NULL, false, false, BLAH},
 
-	{"$call", 1, fn_iso_call_1, ":callable", true, false, BLAH},
 	{"call", 1, fn_iso_call_1, ":callable", true, false, BLAH},
 	{"call", 2, fn_iso_call_n, ":callable,?term", true, false, BLAH},
 	{"call", 3, fn_iso_call_n, ":callable,?term,term", true, false, BLAH},
