@@ -84,10 +84,11 @@ variant(Term1, Term2) :-
 
 :- help(variant(+term,+term), [iso(false)]).
 
+:- meta_predicate(forall(0,0)).
+
 forall(Cond, Action) :-
 	\+ (Cond, \+ Action).
 
-:- meta_predicate(forall(0,0)).
 :- help(forall(:callable,:callable), [iso(false)]).
 
 catch(G, E, C) :-
@@ -104,14 +105,17 @@ countall(G, N) :-
 :- meta_predicate(countall(0,?)).
 :- help(countall(:callable,?integer), [iso(true)]).
 
+:- meta_predicate(call_det(0,?)).
+
 call_det(G, Det) :-
 	'$get_level'(L1),
 	G,
 	'$get_level'(L2),
 	(L1 = L2 -> Det = true; Det = false).
 
-:- meta_predicate(call_det(0,?)).
 :- help(call_det(:callable,?boolean), [iso(false)]).
+
+:- meta_predicate(call_cleanup(0,0)).
 
 call_cleanup(G, C) :-
 	(var(C) -> throw(error(instantiation_error, call_cleanup/3)); true),
@@ -122,7 +126,6 @@ call_cleanup(G, C) :-
 		( catch(ignore(C), _, true), throw(Err))
 	).
 
-:- meta_predicate(call_cleanup(0,0)).
 :- help(call_cleanup(:callable,:callable), [iso(false)]).
 
 setup_call_cleanup(S, G, C) :-
@@ -138,17 +141,20 @@ setup_call_cleanup(S, G, C) :-
 :- meta_predicate(setup_call_cleanup(0,0,0)).
 :- help(setup_call_cleanup(:callable,:callable,:callable), [iso(false)]).
 
+:- meta_predicate(findall(?,0,-,?)).
+
 findall(T, G, B, Tail) :-
 	can_be(B, list, findall/4, _),
 	can_be(Tail, list, findall/4, _),
 	findall(T, G, B0),
 	append(B0, Tail, B), !.
 
-:- meta_predicate(findall(?,0,-,?)).
 :- help(findall(+term,:callable,-list,+list), [iso(false)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Derived from code by R.A. O'Keefe
+
+:- meta_predicate(setof(-,0,?)).
 
 setof(Template, Generator, Set) :-
 	( 	var(Set) ->
@@ -159,14 +165,14 @@ setof(Template, Generator, Set) :-
 	is_list_or_partial_list(Set),
 	sort(Bag, Set).
 
-:- meta_predicate(setof(-,0,?)).
 :- help(setof(+term,+callable,?list), [iso(true)]).
+
+:- meta_predicate(bagof(-,0,?)).
 
 bagof(Template, Generator, Bag) :-
 	(var(Bag) -> true; must_be(Bag, list_or_partial_list, bagof/3, _)),
 	bagof_(Template, Generator, Bag).
 
-:- meta_predicate(bagof(-,0,?)).
 :- help(bagof(+term,:callable,?list), [iso(true)]).
 
 bagof_(Template, Generator, Bag) :-
@@ -378,10 +384,10 @@ directory_exists(F) :- exists_directory(F).
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+:- meta_predicate(not(0)).
+
 not(X) :- X, !, fail.
 not(_).
-
-:- meta_predicate(not(0)).
 
 current_key(K) :- var(K), '$record_global_key'(K,_).
 recorda(K, V) :- nonvar(K), nonvar(V), asserta('$record_global_key'(K,V)).
@@ -399,6 +405,8 @@ recorded(K, V, R) :- nonvar(K), clause('$record_global_key'(K,V), _, R).
 :- help(recorded(+term,?term), [iso(false)]).
 :- help(recorded(+term,?term,-ref), [iso(false)]).
 
+:- meta_predicate(call_with_time_limit(+,0)).
+
 call_with_time_limit(Time, Goal) :-
 	Time0 is truncate(Time * 1000),
 	'$alarm'(Time0),
@@ -407,8 +415,9 @@ call_with_time_limit(Time, Goal) :-
 	;	('$alarm'(0), fail)
 	).
 
-:- meta_predicate(call_with_time_limit(+,0)).
 :- help(call_with_time_limit(+millisecs,:callable), [iso(false)]).
+
+:- meta_predicate(time_out(0,+,-)).
 
 time_out(Goal, Time, Result) :-
 	'$alarm'(Time),
@@ -417,7 +426,6 @@ time_out(Goal, Time, Result) :-
 	;	('$alarm'(0), fail)
 	).
 
-:- meta_predicate(time_out(0,+,-)).
 :- help(time_out(:callable,+integer,?atom), [iso(false)]).
 
 print(T) :- bwrite(user_output, T), nl.
@@ -438,9 +446,10 @@ open(F, M, S) :- open(F, M, S, []).
 
 :- help(open(+atom,+atom,--stream), [iso(true)]).
 
+:- meta_predicate(engine_create(?,0,?)).
+
 engine_create(T, G, S) :- engine_create(T, G, S, []).
 
-:- meta_predicate(engine_create(?,0,?)).
 :- help(engine_create(+term,+callable,?stream), [iso(false)]).
 
 engine_post(E, T, R) :-
