@@ -1955,9 +1955,6 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 		predicate *pr = find_predicate(p->m, c);
 		bool meta = !pr || (pr && pr->is_meta_predicate);
 
-		if ((c->val_off == g_call_s) && (c->arity == 1))
-			meta = true;
-
 		cell *arg = c + 1;
 		unsigned arity = c->arity;
 
