@@ -1407,8 +1407,11 @@ static bool match_head(query *q)
 		clause *cl = &q->st.r->cl;
 		cell *head = get_head(cl->cells);
 		try_me(q, cl->nbr_vars);
+		q->st.r->attempted++;
 
 		if (unify(q, q->st.key, q->st.key_ctx, head, q->st.fp)) {
+			q->st.r->matched++;
+
 			if (q->error)
 				break;
 

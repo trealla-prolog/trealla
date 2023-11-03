@@ -3697,6 +3697,24 @@ static bool fn_trace_0(query *q)
 	return true;
 }
 
+static bool do_profile(query *q)
+{
+	for (module *m = q->pl->modules; m; m = m->next) {
+		for (predicate *pr = m->head; pr; pr = pr->next) {
+			for (rule *r = pr->head; r; r = r->next) {
+				if (!r->attempted)
+					continue;
+
+				fprintf(stderr, "'%s/%u',%llu,%llu\n",
+					C_STR(q, &pr->key), pr->key.arity,
+					(unsigned long long)r->attempted, (unsigned long long)r->matched);
+			}
+		}
+	}
+
+	return true;
+}
+
 static bool fn_statistics_0(query *q)
 {
 	fprintf(stdout,
@@ -3743,6 +3761,10 @@ static bool fn_statistics_2(query *q)
 		cell tmp;
 		make_float(&tmp, 0);
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	}
+
+	if (!CMP_STR_TO_CSTR(q, p1, "profile") && is_var(p2)) {
+		return do_profile(q);
 	}
 
 	if (!CMP_STR_TO_CSTR(q, p1, "wall") && is_var(p2)) {
@@ -6416,6 +6438,36 @@ static bool fn_sys_register_cleanup_1(query *q)
 	return true;
 }
 
+static bool fn_memberchk_2(query *q)
+{
+	q->tot_goals--;
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,list_or_nil_or_var);
+
+	if (is_var(p2)) {
+		return false;
+	}
+
+	LIST_HANDLER(p2);
+	try_me(q, MAX_ARITY);
+
+	while (is_list(p2)) {
+		cell *h = LIST_HEAD(p2);
+		h = deref(q, h, p2_ctx);
+		pl_idx h_ctx = q->latest_ctx;
+
+		if (unify(q, p1, p1_ctx, h, h_ctx))
+			return true;
+
+		undo_me(q);
+		p2 = LIST_TAIL(p2);
+		p2 = deref(q, p2, p2_ctx);
+		p2_ctx = q->latest_ctx;
+	}
+
+	return false;
+}
+
 static bool fn_sys_get_level_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -6999,6 +7051,10 @@ builtins g_other_bifs[] =
 	{"string_length", 2, fn_string_length_2, "+string,?integer", false, false, BLAH},
 	{"crypto_n_random_bytes", 2, fn_crypto_n_random_bytes_2, "+integer,-codes", false, false, BLAH},
 	{"cyclic_term", 1, fn_cyclic_term_1, "+term", false, false, BLAH},
+
+#if 0
+	{"memberchk", 2, fn_memberchk_2, "?term,?list", false, false, BLAH},
+#endif
 
 	{"must_be", 4, fn_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"can_be", 4, fn_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},

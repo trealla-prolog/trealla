@@ -1746,6 +1746,26 @@ static bool term_expansion(parser *p)
 	return term_expansion(p);
 }
 
+static cell *special_expansion(parser *p, cell *goal)
+{
+#if 0
+	if (goal->val_off == g_member_s) {
+		cell *arg2 = goal + 1;
+		arg2 += arg2->nbr_cells;
+
+		cell *next_goal = goal + goal->nbr_cells;
+
+		if (next_goal->val_off != g_cut_s)
+			return goal;
+
+		goal->val_off = g_memberchk_s;
+		return goal;
+	}
+#endif
+
+	return goal;
+}
+
 static cell *goal_expansion(parser *p, cell *goal)
 {
 	if (p->error || p->internal || !is_interned(goal))
@@ -1760,7 +1780,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	predicate *pr = search_predicate(p->m, goal, NULL);
 
 	if (!pr || !pr->is_goal_expansion)
-		return goal;
+		return special_expansion(p, goal);
 
 	//if (search_predicate(p->m, goal))
 	//	return goal;

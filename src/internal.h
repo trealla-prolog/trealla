@@ -440,7 +440,7 @@ struct rule_ {
 	const char *filename;
 	rule *dirty;
 	uuid u;
-	uint64_t db_id;
+	uint64_t db_id, matched, attempted;
 	unsigned line_nbr_start, line_nbr_end;
 	clause cl;
 };
