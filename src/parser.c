@@ -1938,7 +1938,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			c->nbr_cells = 1 + lhs->nbr_cells + rhs->nbr_cells;
 		}
 	} else if (is_prefix(c)) {
-		if ((c->val_off == g_neck_s) /*|| (c->val_off == g_negation_s)*/) {
+		if (c->val_off == g_neck_s) {
 			cell *rhs = c + 1;
 
 			if (is_var(rhs)) {
@@ -1954,6 +1954,12 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 	} else if (c->arity) {
 		predicate *pr = find_predicate(p->m, c);
 		bool meta = !pr || (pr && pr->is_meta_predicate);
+		bool control = false;
+
+		if ((c->val_off == g_throw_s) && (c->arity == 1))
+			control = true;
+		else if ((c->val_off == g_catch_s) && (c->arity == 3))
+			control = true;
 
 		cell *arg = c + 1;
 		unsigned arity = c->arity;
@@ -1963,7 +1969,9 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 
 			if (meta) {
 				arg = goal_expansion(p, arg);
-				//arg = term_to_body_conversion(p, arg);
+
+			if (control)
+				arg = term_to_body_conversion(p, arg);
 			}
 
 			c->nbr_cells += arg->nbr_cells;

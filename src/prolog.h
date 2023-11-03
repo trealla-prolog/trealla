@@ -24,7 +24,7 @@ extern pl_idx g_if_then_s, g_soft_cut_s, g_negation_s;
 extern pl_idx g_error_s, g_slash_s, g_sys_cleanup_if_det_s;
 extern pl_idx g_goal_expansion_s, g_term_expansion_s, g_tm_s, g_float_s;
 extern pl_idx g_sys_cut_if_det_s, g_as_s, g_colon_s;
-extern pl_idx g_caret_s, g_sys_counter_s;
+extern pl_idx g_caret_s, g_sys_counter_s, g_catch_s;
 
 extern void convert_path(char *filename);
 
