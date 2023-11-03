@@ -87,7 +87,7 @@ variant(Term1, Term2) :-
 :- meta_predicate(forall(0,0)).
 
 forall(Cond, Action) :-
-	\+ (Cond, \+ Action).
+	\+ (call(Cond), \+ call(Action)).
 
 :- help(forall(:callable,:callable), [iso(false)]).
 
@@ -99,7 +99,7 @@ countall(_, N) :-
 	(N >= 0 -> true; throw(error(domain_error(not_less_than_zero, N), countall/2))),
 	fail.
 countall(G, N) :-
-	'$countall'(G, N0),
+	'$countall'(call(G), N0),
 	N = N0.
 
 :- meta_predicate(countall(0,?)).
