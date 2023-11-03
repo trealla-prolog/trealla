@@ -6438,34 +6438,44 @@ static bool fn_sys_register_cleanup_1(query *q)
 	return true;
 }
 
-static bool fn_memberchk_2(query *q)
+static bool fn_sys_memberchk_3(query *q)
 {
 	q->tot_goals--;
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,list_or_nil_or_var);
-
-	if (is_var(p2)) {
-		return false;
-	}
-
+	GET_NEXT_ARG(p3,var);
 	LIST_HANDLER(p2);
-	try_me(q, MAX_ARITY);
+	push_choice(q);
+
+	if (!is_string(p2))
+		try_me(q, MAX_ARITY);
 
 	while (is_list(p2)) {
 		cell *h = LIST_HEAD(p2);
 		h = deref(q, h, p2_ctx);
 		pl_idx h_ctx = q->latest_ctx;
 
-		if (unify(q, p1, p1_ctx, h, h_ctx))
+		if (unify(q, p1, p1_ctx, h, h_ctx)) {
+			drop_choice(q);
+			unify(q, p3, p3_ctx, make_nil(), q->st.curr_frame);
 			return true;
+		}
 
-		undo_me(q);
+		if (!is_string(p2))
+			undo_me(q);
+
 		p2 = LIST_TAIL(p2);
 		p2 = deref(q, p2, p2_ctx);
 		p2_ctx = q->latest_ctx;
 	}
 
-	return false;
+	drop_choice(q);
+
+	if (is_nil(p2))
+		return false;
+
+	unify(q, p3, p3_ctx, p2, p2_ctx);
+	return true;
 }
 
 static bool fn_sys_get_level_1(query *q)
@@ -7052,10 +7062,6 @@ builtins g_other_bifs[] =
 	{"crypto_n_random_bytes", 2, fn_crypto_n_random_bytes_2, "+integer,-codes", false, false, BLAH},
 	{"cyclic_term", 1, fn_cyclic_term_1, "+term", false, false, BLAH},
 
-#if 0
-	{"memberchk", 2, fn_memberchk_2, "?term,?list", false, false, BLAH},
-#endif
-
 	{"must_be", 4, fn_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"can_be", 4, fn_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"must_be", 2, fn_must_be_2, "+atom,+term", false, false, BLAH},
@@ -7067,6 +7073,7 @@ builtins g_other_bifs[] =
 	{"sre_substp", 4, fn_sre_substp_4, "+string,+string,-string,-string,", false, false, BLAH},
 	{"sre_subst", 4, fn_sre_subst_4, "+string,+string,-string,-string,", false, false, BLAH},
 
+	{"$memberchk", 3, fn_sys_memberchk_3, "?term,?list,-term", false, false, BLAH},
 	{"$countall", 2, fn_sys_countall_2, "@callable,-integer", false, false, BLAH},
 	{"$register_cleanup", 1, fn_sys_register_cleanup_1, NULL, false, false, BLAH},
 	{"$get_level", 1, fn_sys_get_level_1, "?integer", false, false, BLAH},

@@ -64,9 +64,13 @@ append([X|L], R, [X|S]) :- append(L, R, S).
 
 :- help(append(?term,?term,?term), [iso(false), desc('The concatenation of two lists to make a third.')]).
 
-memberchk(El, [H|T]) :-
-	member_(T, El, H),
-	!.
+memberchk(E, List) :-
+	'$memberchk'(E, List, Tail),
+	(   nonvar(Tail)
+	->  true
+	;   Tail = [_|_],
+	memberchk(E, Tail)
+	).
 
 :- help(memberchk(?term,?term), [iso(false), desc('Is element a member of the list.')]).
 
