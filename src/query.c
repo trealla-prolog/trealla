@@ -175,21 +175,21 @@ static void check_pressure(query *q)
 #endif
 }
 
-bool check_trail(query *q)
+static bool check_trail(query *q)
 {
 	if (q->st.tp > q->hw_trails)
 		q->hw_trails = q->st.tp;
 
-	if (q->st.tp >= q->trails_size) {
-		pl_idx new_trailssize = alloc_grow((void**)&q->trails, sizeof(trail), q->st.tp, q->trails_size*4/3, false);
-		if (!new_trailssize) {
-			q->is_oom = q->error = true;
-			return false;
-		}
+	if (q->st.tp < q->trails_size)
+		return true;
 
-		q->trails_size = new_trailssize;
+	pl_idx new_trailssize = alloc_grow((void**)&q->trails, sizeof(trail), q->st.tp, q->trails_size*4/3, false);
+	if (!new_trailssize) {
+		q->is_oom = q->error = true;
+		return false;
 	}
 
+	q->trails_size = new_trailssize;
 	return true;
 }
 
@@ -198,16 +198,56 @@ static bool check_choice(query *q)
 	if (q->cp > q->hw_choices)
 		q->hw_choices = q->cp;
 
-	if (q->cp >= q->choices_size) {
-		pl_idx new_choicessize = alloc_grow((void**)&q->choices, sizeof(choice), q->cp, q->choices_size*4/3, false);
-		if (!new_choicessize) {
-			q->is_oom = q->error = true;
-			return false;
-		}
+	if (q->cp < q->choices_size)
+		return true;
 
-		q->choices_size = new_choicessize;
+	pl_idx new_choicessize = alloc_grow((void**)&q->choices, sizeof(choice), q->cp, q->choices_size*4/3, false);
+	if (!new_choicessize) {
+		q->is_oom = q->error = true;
+		return false;
 	}
 
+	q->choices_size = new_choicessize;
+	return true;
+}
+
+static bool check_frame(query *q)
+{
+	if (q->st.fp > q->hw_frames)
+		q->hw_frames = q->st.fp;
+
+	if (q->st.fp < q->frames_size)
+		return true;
+
+	pl_idx new_framessize = alloc_grow((void**)&q->frames, sizeof(frame), q->st.fp, q->frames_size*4/3, false);
+
+	if (!new_framessize) {
+		q->is_oom = q->error = true;
+		return false;
+	}
+
+	q->frames_size = new_framessize;
+	return true;
+}
+
+bool check_slot(query *q, unsigned cnt)
+{
+	pl_idx nbr = q->st.sp + cnt;
+
+	if (q->st.sp > q->hw_slots)
+		q->hw_slots = q->st.sp;
+
+	if (nbr < q->slots_size)
+		return true;
+
+	pl_idx new_slotssize = alloc_grow((void**)&q->slots, sizeof(slot), nbr, nbr*4/3, false);
+
+	if (!new_slotssize) {
+		q->is_oom = q->error = true;
+		return false;
+	}
+
+	q->slots_size = new_slotssize;
 	return true;
 }
 
@@ -225,46 +265,6 @@ void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs, pl_idx a
 	tr->var_nbr = c_var_nbr;
 	tr->attrs = attrs;
 	tr->attrs_ctx = attrs_ctx;
-}
-
-static bool check_frame(query *q)
-{
-	if (q->st.fp > q->hw_frames)
-		q->hw_frames = q->st.fp;
-
-	if (q->st.fp >= q->frames_size) {
-		pl_idx new_framessize = alloc_grow((void**)&q->frames, sizeof(frame), q->st.fp, q->frames_size*4/3, false);
-
-		if (!new_framessize) {
-			q->is_oom = q->error = true;
-			return false;
-		}
-
-		q->frames_size = new_framessize;
-	}
-
-	return true;
-}
-
-bool check_slot(query *q, unsigned cnt)
-{
-	pl_idx nbr = q->st.sp + cnt;
-
-	if (q->st.sp > q->hw_slots)
-		q->hw_slots = q->st.sp;
-
-	if (nbr >= q->slots_size) {
-		pl_idx new_slotssize = alloc_grow((void**)&q->slots, sizeof(slot), nbr, nbr*4/3, false);
-
-		if (!new_slotssize) {
-			q->is_oom = q->error = true;
-			return false;
-		}
-
-		q->slots_size = new_slotssize;
-	}
-
-	return true;
 }
 
 static bool can_view(query *q, uint64_t dbgen, const rule *r)
