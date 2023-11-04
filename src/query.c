@@ -708,7 +708,6 @@ static void unwind_trail(query *q)
 		cell *c = &e->c;
 		unshare_cell(c);
 		init_cell(c);
-		c->flags = tr->attrs ? FLAG_VAR_ATTR : 0;
 		c->attrs = tr->attrs;
 		c->attrs_ctx = tr->attrs_ctx;
 	}
@@ -1077,7 +1076,7 @@ bool drop_barrier(query *q, pl_idx cp)
 
 // Resume next goal in previous clause...
 
-static bool resume_frame(query *q)
+inline static bool resume_frame(query *q)
 {
 	const frame *f = GET_CURR_FRAME();
 
@@ -1093,7 +1092,7 @@ static bool resume_frame(query *q)
 
 // Proceed to next goal in current clause...
 
-static void proceed(query *q)
+inline static void proceed(query *q)
 {
 	q->st.curr_cell += q->st.curr_cell->nbr_cells;
 	frame *f = GET_CURR_FRAME();
