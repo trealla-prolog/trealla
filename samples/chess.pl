@@ -248,7 +248,7 @@ legal_move(Board, Color, From, To) :-
     \+ in_check(NewBoard, Color).
 
 in_check(Board, Color) :-
-    member(piece(KingSquare, Color, king), Board),
+    memberchk(piece(KingSquare, Color, king), Board),
     opposite(Color, OppositeColor),
     move(Board, _, KingSquare, OppositeColor, _).
 
@@ -294,25 +294,25 @@ parse_move(Move, From_File-From_Rank, To_File-To_Rank) :-
         on_board(To_File-To_Rank).
 
 on_board(File-Rank) :-
-    member(File, [a, b, c, d, e, f, g, h]),
-    member(Rank, [1, 2, 3, 4, 5, 6, 7, 8]).
+    memberchk(File, [a, b, c, d, e, f, g, h]),
+    memberchk(Rank, [1, 2, 3, 4, 5, 6, 7, 8]).
 
 not_moved(Board, Color, king) :-
-    member(state(Color, King, _, _), Board), !,
+    memberchk(state(Color, King, _, _), Board),
     var(King).
 not_moved(Board, Color, king, rook) :-
-    member(state(Color, _, KingRook, _), Board), !,
+    memberchk(state(Color, _, KingRook, _), Board),
     var(KingRook).
 not_moved(Board, Color, queen, rook) :-
-    member(state(Color, _, _, QueenRook), Board), !,
+    memberchk(state(Color, _, _, QueenRook), Board),
     var(QueenRook).
 
 update_state(Board, From, Color, king) :-       % Was king moved?
-    member(state(Color, king_moved, _, _), Board).
+    memberchk(state(Color, king_moved, _, _), Board).
 update_state(Board, h-Rank, Color, rook) :-     % Was king rook moved?
-    member(state(Color, _, king_rook_moved, _), Board).
+    memberchk(state(Color, _, king_rook_moved, _), Board).
 update_state(Board, a-Rank, Color, rook) :-     % Was queen rook moved?
-    member(state(Color, _, _, queen_rook_moved), Board).
+    memberchk(state(Color, _, _, queen_rook_moved), Board).
 update_state(_, _, _, _).               % Else, ignore
 
 
