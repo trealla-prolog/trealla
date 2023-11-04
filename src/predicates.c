@@ -3699,6 +3699,8 @@ static bool fn_trace_0(query *q)
 
 static bool do_profile(query *q)
 {
+	fprintf(stderr, "#functor/arity,unify_attempts,unify_matches\n");
+
 	for (module *m = q->pl->modules; m; m = m->next) {
 		for (predicate *pr = m->head; pr; pr = pr->next) {
 			for (rule *r = pr->head; r; r = r->next) {
