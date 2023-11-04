@@ -711,7 +711,7 @@ bool is_acyclic_term(query *q, cell *p1, pl_idx p1_ctx)
 	return !is_cyclic_term_internal(q, p1, p1_ctx, 0);
 }
 
-static cell *term_next(query *q, cell *c, pl_idx *c_ctx, bool *done)
+inline static cell *term_next(query *q, cell *c, pl_idx *c_ctx, bool *done)
 {
 	if (!is_iso_list(c)) {
 		*done = true;
