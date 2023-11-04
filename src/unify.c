@@ -63,6 +63,7 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 #endif
 	}
 
+#if USE_RATIONAL_TREES
 	p1 = orig_p1;
 	p1_ctx = orig_p1_ctx;
 	p2 = orig_p2;
@@ -96,6 +97,7 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 			p2_ctx = q->latest_ctx;
 		}
 	}
+#endif
 
 	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 }
