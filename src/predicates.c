@@ -3699,7 +3699,7 @@ static bool fn_trace_0(query *q)
 
 static bool do_profile(query *q)
 {
-	fprintf(stderr, "#functor/arity,unify_attempts,unify_matches\n");
+	fprintf(stderr, "#functor/arity,match_attempts,matched,tcos\n");
 
 	for (module *m = q->pl->modules; m; m = m->next) {
 		for (predicate *pr = m->head; pr; pr = pr->next) {
@@ -3707,9 +3707,9 @@ static bool do_profile(query *q)
 				if (!r->attempted)
 					continue;
 
-				fprintf(stderr, "'%s/%u',%llu,%llu\n",
+				fprintf(stderr, "'%s/%u',%llu,%llu,%llu\n",
 					C_STR(q, &pr->key), pr->key.arity,
-					(unsigned long long)r->attempted, (unsigned long long)r->matched);
+					(unsigned long long)r->attempted, (unsigned long long)r->matched, (unsigned long long)r->tcos);
 			}
 		}
 	}
