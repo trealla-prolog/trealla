@@ -1173,3 +1173,5 @@ Profile
 ```
 	$ time tpl -q -g 'main,statistics(profile,_),halt' -f ~/trealla/samples/chess.pl 2>chess.csv
 	$ sort chess.csv -k 3 -t ',' -n -r
+```
+
