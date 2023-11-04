@@ -9,6 +9,7 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 {
 	cell *orig_p1 = p1, *orig_p2 = p2;
 	pl_idx orig_p1_ctx = p1_ctx, orig_p2_ctx = p2_ctx;
+	bool any1 = false, any2 = false;
 
 	while (is_iso_list(p1) && is_iso_list(p2)) {
 		cell *h1 = p1 + 1, *h2 = p2 + 1;
@@ -18,8 +19,8 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 		slot *e1 = NULL, *e2 = NULL;
 		uint32_t save_vgen1 = 0, save_vgen2 = 0;
 		int both = 0;
-		DEREF_CHECKED(both, save_vgen1, e1, e1->vgen, h1, h1_ctx, q->vgen);
-		DEREF_CHECKED(both, save_vgen2, e2, e2->vgen2, h2, h2_ctx, q->vgen);
+		DEREF_CHECKED(any1, both, save_vgen1, e1, e1->vgen, h1, h1_ctx, q->vgen);
+		DEREF_CHECKED(any1, both, save_vgen2, e2, e2->vgen2, h2, h2_ctx, q->vgen);
 
 		if (both == 0) {
 			int val = compare_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
@@ -50,8 +51,8 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 
 #if USE_RATIONAL_TREES
 		both = 0;
-		DEREF_CHECKED(both, e1->save_vgen, e1, e1->vgen, p1, p1_ctx, q->vgen);
-		DEREF_CHECKED(both, e2->save_vgen2, e2, e2->vgen2, p2, p2_ctx, q->vgen);
+		DEREF_CHECKED(any2, both, e1->save_vgen, e1, e1->vgen, p1, p1_ctx, q->vgen);
+		DEREF_CHECKED(any2, both, e2->save_vgen2, e2, e2->vgen2, p2, p2_ctx, q->vgen);
 
 		if (both)
 			return 0;
@@ -64,37 +65,39 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 	}
 
 #if USE_RATIONAL_TREES
-	p1 = orig_p1;
-	p1_ctx = orig_p1_ctx;
-	p2 = orig_p2;
-	p2_ctx = orig_p2_ctx;
+	if (any2) {
+		p1 = orig_p1;
+		p1_ctx = orig_p1_ctx;
+		p2 = orig_p2;
+		p2_ctx = orig_p2_ctx;
 
-	while (is_iso_list(p1) && is_iso_list(p2)) {
-		p1 = p1 + 1; p1 += p1->nbr_cells;
-		p2 = p2 + 1; p2 += p2->nbr_cells;
-		cell *c1 = p1, *c2 = p2;
-		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
+		while (is_iso_list(p1) && is_iso_list(p2)) {
+			p1 = p1 + 1; p1 += p1->nbr_cells;
+			p2 = p2 + 1; p2 += p2->nbr_cells;
+			cell *c1 = p1, *c2 = p2;
+			pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 
-		if (is_var(c1)) {
-			if (is_ref(c1))
-				c1_ctx = c1->var_ctx;
+			if (is_var(c1)) {
+				if (is_ref(c1))
+					c1_ctx = c1->var_ctx;
 
-			const frame *f = GET_FRAME(c1_ctx);
-			slot *e = GET_SLOT(f, c1->var_nbr);
-			e->vgen = e->save_vgen;
-			p1 = deref(q, c1, c1_ctx);
-			p1_ctx = q->latest_ctx;
-		}
+				const frame *f = GET_FRAME(c1_ctx);
+				slot *e = GET_SLOT(f, c1->var_nbr);
+				e->vgen = e->save_vgen;
+				p1 = deref(q, c1, c1_ctx);
+				p1_ctx = q->latest_ctx;
+			}
 
-		if (is_var(c2)) {
-			if (is_ref(c2))
-				c2_ctx = c2->var_ctx;
+			if (is_var(c2)) {
+				if (is_ref(c2))
+					c2_ctx = c2->var_ctx;
 
-			const frame *f = GET_FRAME(c2_ctx);
-			slot *e = GET_SLOT(f, c2->var_nbr);
-			e->vgen = e->save_vgen2;
-			p2 = deref(q, c2, c2_ctx);
-			p2_ctx = q->latest_ctx;
+				const frame *f = GET_FRAME(c2_ctx);
+				slot *e = GET_SLOT(f, c2->var_nbr);
+				e->vgen = e->save_vgen2;
+				p2 = deref(q, c2, c2_ctx);
+				p2_ctx = q->latest_ctx;
+			}
 		}
 	}
 #endif
@@ -107,6 +110,7 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 	int val = CMP_STR_TO_STR(q, p1, p2);
 	if (val) return val;
 
+	bool any = false;
 	int arity = p1->arity;
 	p1 = p1 + 1;
 	p2 = p2 + 1;
@@ -119,8 +123,8 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		slot *e1 = NULL, *e2 = NULL;
 		uint32_t save_vgen1 = 0, save_vgen2 = 0;
 		int both = 0;
-		DEREF_CHECKED(both, save_vgen1, e1, e1->vgen, c1, c1_ctx, q->vgen);
-		DEREF_CHECKED(both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
+		DEREF_CHECKED(any, both, save_vgen1, e1, e1->vgen, c1, c1_ctx, q->vgen);
+		DEREF_CHECKED(any, both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
 
 		if (both == 0) {
 			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
@@ -350,6 +354,7 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
 	cell *l = p1;
 	pl_idx l_ctx = p1_ctx;
+	bool any = false;
 
 	while (is_iso_list(l)) {
 		cell *h = l + 1;
@@ -357,7 +362,7 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 		slot *e = NULL;
 		uint32_t save_vgen = 0;
 		int both = 0;
-		DEREF_CHECKED(both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
+		DEREF_CHECKED(any, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
 
 		if (!both && is_var(h))
 			accum_var(q, h, h_ctx);
@@ -369,7 +374,7 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 		l = l + 1; l += l->nbr_cells;
 		e = NULL;
 		both = 0;
-		DEREF_CHECKED(both, save_vgen, e, e->vgen, l, l_ctx, q->vgen);
+		DEREF_CHECKED(any, both, save_vgen, e, e->vgen, l, l_ctx, q->vgen);
 
 		if (both)
 			return;
@@ -421,6 +426,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 		return;
 	}
 
+	bool any = false;
 	unsigned arity = p1->arity;
 	p1++;
 
@@ -430,7 +436,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 		slot *e = NULL;
 		uint32_t save_vgen = 0;
 		int both = 0;
-		DEREF_CHECKED(both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
+		DEREF_CHECKED(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
 
 		if (!both && is_var(c))
 			accum_var(q, c, c_ctx);
@@ -599,6 +605,7 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 {
 	cell *save_p1 = p1;
 	pl_idx save_p1_ctx = p1_ctx;
+	bool any1 = false, any2 = false;
 
 	while (is_iso_list(p1)) {
 		cell *h = p1 + 1;
@@ -606,7 +613,7 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 		slot *e = NULL;
 		uint32_t save_vgen = 0;
 		int both = 0;
-		DEREF_CHECKED(both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
+		DEREF_CHECKED(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
 
 		if (both)
 			return true;
@@ -618,29 +625,31 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 
 		p1 = p1 + 1; p1 += p1->nbr_cells;
 		both = 0;
-		DEREF_CHECKED(both, e->save_vgen, e, e->vgen, p1, p1_ctx, q->vgen);
+		DEREF_CHECKED(any2, both, e->save_vgen, e, e->vgen, p1, p1_ctx, q->vgen);
 
 		if (both)
 			return true;
 	}
 
-	p1 = save_p1;
-	p1_ctx = save_p1_ctx;
+	if (any2) {
+		p1 = save_p1;
+		p1_ctx = save_p1_ctx;
 
-	while (is_iso_list(p1)) {
-		p1 = p1 + 1; p1 += p1->nbr_cells;
-		cell *c = p1;
-		pl_idx c_ctx = p1_ctx;
+		while (is_iso_list(p1)) {
+			p1 = p1 + 1; p1 += p1->nbr_cells;
+			cell *c = p1;
+			pl_idx c_ctx = p1_ctx;
 
-		if (is_var(c)) {
-			if (is_ref(c))
-				c_ctx = c->var_ctx;
+			if (is_var(c)) {
+				if (is_ref(c))
+					c_ctx = c->var_ctx;
 
-			const frame *f = GET_FRAME(c_ctx);
-			slot *e = GET_SLOT(f, c->var_nbr);
-			e->vgen = e->save_vgen;
-			p1 = deref(q, p1, p1_ctx);
-			p1_ctx = q->latest_ctx;
+				const frame *f = GET_FRAME(c_ctx);
+				slot *e = GET_SLOT(f, c->var_nbr);
+				e->vgen = e->save_vgen;
+				p1 = deref(q, p1, p1_ctx);
+				p1_ctx = q->latest_ctx;
+			}
 		}
 	}
 
@@ -663,6 +672,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned 
 	if (is_iso_list(p1))
 		return is_cyclic_term_lists(q, p1, p1_ctx, depth);
 
+	bool any = false;
 	unsigned arity = p1->arity;
 	p1++;
 
@@ -672,7 +682,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned 
 		slot *e = NULL;
 		uint32_t save_vgen = 0;
 		int both = 0;
-		DEREF_CHECKED(both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
+		DEREF_CHECKED(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
 
 		if (both)
 			return true;
@@ -1057,6 +1067,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 	pl_idx orig_p1_ctx = p1_ctx, orig_p2_ctx = p2_ctx;
 #endif
 
+	bool any1 = false, any2 = false;
 	bool skip = false;
 
 	while (is_iso_list(p1) && is_iso_list(p2)) {
@@ -1068,8 +1079,8 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 		uint32_t save_vgen1 = 0, save_vgen2 = 0;
 		int both = 0;
 
-		DEREF_CHECKED(both, save_vgen1, e1, e1->vgen, h1, h1_ctx, q->vgen);
-		DEREF_CHECKED(both, save_vgen2, e2, e2->vgen2, h2, h2_ctx, q->vgen);
+		DEREF_CHECKED(any1, both, save_vgen1, e1, e1->vgen, h1, h1_ctx, q->vgen);
+		DEREF_CHECKED(any1, both, save_vgen2, e2, e2->vgen2, h2, h2_ctx, q->vgen);
 
 		if (both != 2) {
 			if (!unify_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1))
@@ -1093,8 +1104,8 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 
 #if USE_RATIONAL_TREES
 		both = 0;
-		DEREF_CHECKED(both, e1->save_vgen, e1, e1->vgen, p1, p1_ctx, q->vgen);
-		DEREF_CHECKED(both, e2->save_vgen2, e2, e2->vgen2, p2, p2_ctx, q->vgen);
+		DEREF_CHECKED(any2, both, e1->save_vgen, e1, e1->vgen, p1, p1_ctx, q->vgen);
+		DEREF_CHECKED(any2, both, e2->save_vgen2, e2, e2->vgen2, p2, p2_ctx, q->vgen);
 
 		if (q->cycle_error) {
 			skip = true;
@@ -1109,44 +1120,46 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 	}
 
 #if USE_RATIONAL_TREES
-	p1 = orig_p1;
-	p1_ctx = orig_p1_ctx;
-	p2 = orig_p2;
-	p2_ctx = orig_p2_ctx;
-	unsigned cnt = 0;
+	if (any2) {
+		p1 = orig_p1;
+		p1_ctx = orig_p1_ctx;
+		p2 = orig_p2;
+		p2_ctx = orig_p2_ctx;
+		unsigned cnt = 0;
 
-	while (is_iso_list(p1) && is_iso_list(p2) && !q->cycle_error) {
-		p1 = p1 + 1; p1 += p1->nbr_cells;
-		p2 = p2 + 1; p2 += p2->nbr_cells;
+		while (is_iso_list(p1) && is_iso_list(p2) && !q->cycle_error) {
+			p1 = p1 + 1; p1 += p1->nbr_cells;
+			p2 = p2 + 1; p2 += p2->nbr_cells;
 
-		if (is_var(p1)) {
-			if (is_ref(p1))
-				p1_ctx = p1->var_ctx;
+			if (is_var(p1)) {
+				if (is_ref(p1))
+					p1_ctx = p1->var_ctx;
 
-			const frame *f = GET_FRAME(p1_ctx);
-			slot *e1 = GET_SLOT(f, p1->var_nbr);
-			e1->vgen = e1->save_vgen;
-			p1 = deref(q, p1, p1_ctx);
-			p1_ctx = q->latest_ctx;
+				const frame *f = GET_FRAME(p1_ctx);
+				slot *e1 = GET_SLOT(f, p1->var_nbr);
+				e1->vgen = e1->save_vgen;
+				p1 = deref(q, p1, p1_ctx);
+				p1_ctx = q->latest_ctx;
+			}
+
+			if (is_var(p2)) {
+				if (is_ref(p2))
+					p2_ctx = p2->var_ctx;
+
+				const frame *f = GET_FRAME(p2_ctx);
+				slot *e2 = GET_SLOT(f, p2->var_nbr);
+				e2->vgen2 = e2->save_vgen2;
+				p2 = deref(q, p2, p2_ctx);
+				p2_ctx = q->latest_ctx;
+			}
+
+			if (cnt > g_max_depth) {
+				skip = true;
+				break;
+			}
+
+			cnt++;
 		}
-
-		if (is_var(p2)) {
-			if (is_ref(p2))
-				p2_ctx = p2->var_ctx;
-
-			const frame *f = GET_FRAME(p2_ctx);
-			slot *e2 = GET_SLOT(f, p2->var_nbr);
-			e2->vgen2 = e2->save_vgen2;
-			p2 = deref(q, p2, p2_ctx);
-			p2_ctx = q->latest_ctx;
-		}
-
-		if (cnt > g_max_depth) {
-			skip = true;
-			break;
-		}
-
-		cnt++;
 	}
 #endif
 
@@ -1164,6 +1177,7 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 	if (p1->val_off != p2->val_off)
 		return false;
 
+	bool any = false;
 	unsigned arity = p1->arity;
 	p1++; p2++;
 
@@ -1175,8 +1189,8 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 		slot *e1 = NULL, *e2 = NULL;
 		uint32_t save_vgen1 = 0, save_vgen2 = 0;
 		int both = 0;
-		DEREF_CHECKED(both, save_vgen1, e1, e1->vgen, c1, c1_ctx, q->vgen);
-		DEREF_CHECKED(both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
+		DEREF_CHECKED(any, both, save_vgen1, e1, e1->vgen, c1, c1_ctx, q->vgen);
+		DEREF_CHECKED(any, both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
 
 		if (both != 2) {
 			if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))

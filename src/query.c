@@ -512,6 +512,7 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 	size_t is_chars_list = 0;
 	cell *save_l = l;
 	pl_idx save_l_ctx = l_ctx;
+	bool any1 = false, any2 = false;
 	LIST_HANDLER(l);
 
 	while (is_list(l) && (q->st.m->flags.double_quote_chars || allow_codes)) {
@@ -520,7 +521,7 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 		slot *e = NULL;
 		uint32_t save_vgen = 0;
 		int both = 0;
-		DEREF_CHECKED(both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
+		DEREF_CHECKED(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
 		q->suspect = h;
 
 		if (is_var(h)) {
@@ -557,6 +558,7 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 
 #if USE_RATIONAL_TREES
 		if (is_var(l)) {
+			any2 = true;
 			frame *f = GET_FRAME(l_ctx);
 			slot *e = GET_SLOT(f, l->var_nbr);
 
@@ -575,20 +577,22 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 	}
 
 #if USE_RATIONAL_TREES
-	cell *l2 = save_l;
-	pl_idx l2_ctx = save_l_ctx;
-	LIST_HANDLER(l2);
+	if (any2) {
+		cell *l2 = save_l;
+		pl_idx l2_ctx = save_l_ctx;
+		LIST_HANDLER(l2);
 
-	while (is_list(l2) && (q->st.m->flags.double_quote_chars || allow_codes)) {
-		cell *h = LIST_HEAD(l2);
-		l2 = LIST_TAIL(l2);
+		while (is_list(l2) && (q->st.m->flags.double_quote_chars || allow_codes)) {
+			cell *h = LIST_HEAD(l2);
+			l2 = LIST_TAIL(l2);
 
-		if (is_var(l2)) {
-			frame *f = GET_FRAME(l2_ctx);
-			slot *e = GET_SLOT(f, l2->var_nbr);
-			e->vgen = e->vgen2;
-			l2 = deref(q, l2, l2_ctx);
-			l2_ctx = q->latest_ctx;
+			if (is_var(l2)) {
+				frame *f = GET_FRAME(l2_ctx);
+				slot *e = GET_SLOT(f, l2->var_nbr);
+				e->vgen = e->vgen2;
+				l2 = deref(q, l2, l2_ctx);
+				l2_ctx = q->latest_ctx;
+			}
 		}
 	}
 #endif

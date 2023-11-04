@@ -208,6 +208,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 	if (is_iso_list(p1)) {
 		cell *save_p1 = p1;
 		pl_idx save_p1_ctx = p1_ctx;
+		bool any1 = false, any2 = false;
 
 		while (is_iso_list(p1)) {
 			slot *e = NULL;
@@ -215,7 +216,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 			pl_idx h_ctx = p1_ctx;
 			uint32_t save_vgen = 0;
 			int both = 0;
-			if (deep_copy(h)) DEREF_CHECKED(both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
+			if (deep_copy(h)) DEREF_CHECKED(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
 			cell *rec = deep_clone2_to_tmp(q, h, h_ctx, depth+1);
 			if (!rec) return NULL;
 			if (e) e->vgen = save_vgen;
@@ -225,7 +226,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 			pl_idx t_ctx = p1_ctx;
 
 			both = 0;
-			if (deep_copy(t)) DEREF_CHECKED(both, e->save_vgen, e, e->vgen, t, t_ctx, q->vgen);
+			if (deep_copy(t)) DEREF_CHECKED(any2, both, e->save_vgen, e, e->vgen, t, t_ctx, q->vgen);
 			if (both) q->cycle_error = true;
 			p1 = t;
 			p1_ctx = t_ctx;
@@ -240,23 +241,25 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 		cell *rec = deep_clone2_to_tmp(q, p1, p1_ctx, depth+1);
 		if (!rec) return NULL;
 
-		p1 = save_p1;
-		p1_ctx = save_p1_ctx;
+		if (any2) {
+			p1 = save_p1;
+			p1_ctx = save_p1_ctx;
 
-		while (is_iso_list(p1) && !q->cycle_error) {
-			p1 = p1 + 1; p1 += p1->nbr_cells;
-			cell *c = p1;
-			pl_idx c_ctx = p1_ctx;
+			while (is_iso_list(p1) && !q->cycle_error) {
+				p1 = p1 + 1; p1 += p1->nbr_cells;
+				cell *c = p1;
+				pl_idx c_ctx = p1_ctx;
 
-			if (is_var(c)) {
-				if (is_ref(c))
-					c_ctx = c->var_ctx;
+				if (is_var(c)) {
+					if (is_ref(c))
+						c_ctx = c->var_ctx;
 
-				const frame *f = GET_FRAME(c_ctx);
-				slot *e = GET_SLOT(f, c->var_nbr);
-				e->vgen = e->save_vgen;
-				p1 = deref(q, c, c_ctx);
-				p1_ctx = q->latest_ctx;
+					const frame *f = GET_FRAME(c_ctx);
+					slot *e = GET_SLOT(f, c->var_nbr);
+					e->vgen = e->save_vgen;
+					p1 = deref(q, c, c_ctx);
+					p1_ctx = q->latest_ctx;
+				}
 			}
 		}
 
@@ -265,6 +268,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 		return tmp;
 	}
 
+	bool any = false;
 	unsigned arity = p1->arity;
 	p1++;
 
@@ -274,7 +278,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 		pl_idx c_ctx = p1_ctx;
 		uint32_t save_vgen = 0;
 		int both = 0;
-		if (deep_copy(c)) DEREF_CHECKED(both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
+		if (deep_copy(c)) DEREF_CHECKED(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
 		cell *rec = deep_clone2_to_tmp(q, c, c_ctx, depth+1);
 		if (!rec) return NULL;
 		if (e) e->vgen = save_vgen;

@@ -244,8 +244,10 @@ inline static cell *get_raw_arg(const query *q, int n)
 	CHECK_SENTINEL(expr, 0, __VA_ARGS__; \
 	return throw_error(q, q->st.curr_cell, q->st.curr_frame, "resource_error", "memory"))
 
-#define DEREF_CHECKED(both, svg, ee, evgen, cc, cc_ctx, qvgen)			\
+#define DEREF_CHECKED(any, both, svg, ee, evgen, cc, cc_ctx, qvgen)	\
 	if (is_var(cc)) {												\
+		any = true;													\
+																	\
 		if (is_ref(cc))												\
 			cc_ctx = cc->var_ctx;									\
 																	\
