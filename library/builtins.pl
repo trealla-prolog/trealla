@@ -268,7 +268,7 @@ concordant_subset_(More, _, [], More).
 /*
 %   concordant_subset_/5 tries the current subset, and if that
 %   doesn't work if backs up and tries the next subset.  The
-%   first clause is there to save a choice point when this is
+%   first clause is there to save a choicepoint when this is
 %   the last possible subset.
 */
 

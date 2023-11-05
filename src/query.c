@@ -860,11 +860,11 @@ static void trim_trail(query *q)
 	}
 }
 
-// Note: when in commit there is a provisional choice point
-// that we should ignore, hence the '1' ...
-
 inline static bool any_choices(const query *q, const frame *f)
 {
+	// Note: when in commit there is a provisional choicepoint
+	// that we should ignore, hence the '1' ...
+
 	if (q->cp == 1)
 		return false;
 
