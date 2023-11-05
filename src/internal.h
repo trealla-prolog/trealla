@@ -610,7 +610,7 @@ struct stream_ {
 struct page_ {
 	page *next;
 	cell *cells;
-	pl_idx pagep, max_pagep_used, page_size;
+	pl_idx idx, max_idx_used, page_size;
 	unsigned nbr;
 };
 
