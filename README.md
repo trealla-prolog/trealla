@@ -567,24 +567,24 @@ For general *POSIX* process creation use these *SWI-compatible* calls...
 For example...
 
 ```
-?- process_create('ls',['-l'],[process(Pid)]),process_wait(Pid).
-total 2552
-   4 -rw-rw-r-- 1 andrew andrew    1813 Aug 25 10:18 ATTRIBUTION
-   4 -rw-rw-r-- 1 andrew andrew    1093 Aug 25 10:18 LICENSE
-   8 -rw-rw-r-- 1 andrew andrew    7259 Sep 18 18:27 Makefile
-  24 -rw-rw-r-- 1 andrew andrew   23709 Sep 19 08:56 README.md
-   4 -rw-rw-r-- 1 andrew andrew      28 Aug 25 10:18 _config.yml
-   4 drwxrwxr-x 2 andrew andrew    4096 Sep 17 10:41 docs
-   4 drwxrwxr-x 2 andrew andrew    4096 Sep 18 21:29 library
-   4 drwxrwxr-x 2 andrew andrew    4096 Sep  3 13:02 samples
-   4 drwxrwxr-x 6 andrew andrew    4096 Sep 19 09:38 src
-   4 drwxrwxr-x 5 andrew andrew    4096 Sep 14 20:49 tests
-1448 -rwxrwxr-x 1 andrew andrew 1478712 Sep 19 09:38 tpl
-   8 -rw-rw-r-- 1 andrew andrew    7671 Aug 25 10:18 tpl.c
-  16 -rw-rw-r-- 1 andrew andrew   13928 Sep 18 18:28 tpl.o
-  36 -rw-rw-r-- 1 andrew andrew   33862 Aug 25 10:18 trealla.png
-   Pid = 735602.
-?-
+	?- process_create('ls',['-l'],[process(Pid)]),process_wait(Pid).
+	total 2552
+	   4 -rw-rw-r-- 1 andrew andrew    1813 Aug 25 10:18 ATTRIBUTION
+	   4 -rw-rw-r-- 1 andrew andrew    1093 Aug 25 10:18 LICENSE
+	   8 -rw-rw-r-- 1 andrew andrew    7259 Sep 18 18:27 Makefile
+	  24 -rw-rw-r-- 1 andrew andrew   23709 Sep 19 08:56 README.md
+	   4 -rw-rw-r-- 1 andrew andrew      28 Aug 25 10:18 _config.yml
+	   4 drwxrwxr-x 2 andrew andrew    4096 Sep 17 10:41 docs
+	   4 drwxrwxr-x 2 andrew andrew    4096 Sep 18 21:29 library
+	   4 drwxrwxr-x 2 andrew andrew    4096 Sep  3 13:02 samples
+	   4 drwxrwxr-x 6 andrew andrew    4096 Sep 19 09:38 src
+	   4 drwxrwxr-x 5 andrew andrew    4096 Sep 14 20:49 tests
+	1448 -rwxrwxr-x 1 andrew andrew 1478712 Sep 19 09:38 tpl
+	   8 -rw-rw-r-- 1 andrew andrew    7671 Aug 25 10:18 tpl.c
+	  16 -rw-rw-r-- 1 andrew andrew   13928 Sep 18 18:28 tpl.o
+	  36 -rw-rw-r-- 1 andrew andrew   33862 Aug 25 10:18 trealla.png
+	   Pid = 735602.
+	?-
 ```
 
 Note: read_term/[2,3] supports the positions(Start,End) and the
@@ -805,23 +805,23 @@ package (packages?) is included.
 
 	sre_subst_all_in_file/4		# sre_subst_in_file(+pattern,+filename,+subst,-text)
 ```
- * Supports:
- * ---------
- *   '.'        Dot, matches any character
- *   '^'        Start anchor, matches beginning of string
- *   '$'        End anchor, matches end of string
- *   '*'        Asterisk, match zero or more (greedy)
- *   '+'        Plus, match one or more (greedy)
- *   '?'        Question, match zero or one (non-greedy)
- *   '[abc]'    Character class, match if one of {'a', 'b', 'c'}
- *   '[^abc]'   Inverted class, match if NOT one of {'a', 'b', 'c'}
- *   '[a-zA-Z]' Character ranges, the character set of the ranges { a-z | A-Z }
- *   '\s'       Whitespace, \t \f \r \n \v and spaces
- *   '\S'       Non-whitespace
- *   '\w'       Alphanumeric, [a-zA-Z0-9_]
- *   '\W'       Non-alphanumeric
- *   '\d'       Digits, [0-9]
- *   '\D'       Non-digits
+	 * Supports:
+	 * ---------
+	 *   '.'        Dot, matches any character
+	 *   '^'        Start anchor, matches beginning of string
+	 *   '$'        End anchor, matches end of string
+	 *   '*'        Asterisk, match zero or more (greedy)
+	 *   '+'        Plus, match one or more (greedy)
+	 *   '?'        Question, match zero or one (non-greedy)
+	 *   '[abc]'    Character class, match if one of {'a', 'b', 'c'}
+	 *   '[^abc]'   Inverted class, match if NOT one of {'a', 'b', 'c'}
+	 *   '[a-zA-Z]' Character ranges, the character set of the ranges { a-z | A-Z }
+	 *   '\s'       Whitespace, \t \f \r \n \v and spaces
+	 *   '\S'       Non-whitespace
+	 *   '\w'       Alphanumeric, [a-zA-Z0-9_]
+	 *   '\W'       Non-alphanumeric
+	 *   '\d'       Digits, [0-9]
+	 *   '\D'       Non-digits
 ```
 
 For example...
@@ -1142,12 +1142,12 @@ Implements [Tau-Prolog](http://tau-prolog.org/documentation#concurrent)
 inspired futures.
 
 ```
-await/2 – Wait for a Future.
-future/3 – Make a Future from a Prolog goal.
-future_all/2 – Make a Future that resolves to a list of the results of an input list of futures.
-future_any/2 – Make a Future that resolves as soon as any of the futures in a list succeeds.
-future_cancel/1 – Cancel unfinished future.
-future_done/1 – Check if a future finished.
+	await/2 – Wait for a Future.
+	future/3 – Make a Future from a Prolog goal.
+	future_all/2 – Make a Future that resolves to a list of the results of an input list of futures.
+	future_any/2 – Make a Future that resolves as soon as any of the futures in a list succeeds.
+	future_cancel/1 – Cancel unfinished future.
+	future_done/1 – Check if a future finished.
 ```
 
 For example:
