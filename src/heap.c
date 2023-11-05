@@ -114,7 +114,7 @@ cell *alloc_on_tmp(query *q, unsigned nbr_cells)
 
 cell *alloc_on_cache(query *q, unsigned nbr_cells)
 {
-	if (((uint64_t)q->st.heapp + nbr_cells) > UINT32_MAX)
+	if (((uint64_t)q->st.cachep + nbr_cells) > UINT32_MAX)
 		return NULL;
 
 	if (!q->cache_pages) {
@@ -125,14 +125,14 @@ cell *alloc_on_cache(query *q, unsigned nbr_cells)
 		a->cells = calloc(a->page_size=n, sizeof(cell));
 		if (!a->cells) { free(a); return NULL; }
 		a->nbr = q->st.cache_nbr++;
-		q->heap_pages = a;
+		q->cache_pages = a;
 	}
 
-	if ((q->st.heapp + nbr_cells) >= q->heap_pages->page_size) {
+	if ((q->st.cachep + nbr_cells) >= q->cache_pages->page_size) {
 		page *a = calloc(1, sizeof(page));
 		if (!a) return NULL;
-		a->next = q->heap_pages;
-		unsigned n = MAX_OF(q->heap_size, nbr_cells);
+		a->next = q->cache_pages;
+		unsigned n = MAX_OF(q->cache_size, nbr_cells);
 		a->cells = calloc(a->page_size=n, sizeof(cell));
 		if (!a->cells) { free(a); return NULL; }
 		a->nbr = q->st.cache_nbr++;
@@ -140,7 +140,7 @@ cell *alloc_on_cache(query *q, unsigned nbr_cells)
 		q->st.cachep = 0;
 	}
 
-	cell *c = q->cache_pages->cells + q->st.heapp;
+	cell *c = q->cache_pages->cells + q->st.cachep;
 	q->st.cachep += nbr_cells;
 	q->cache_pages->pagep = q->st.cachep;
 
