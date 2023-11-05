@@ -1801,7 +1801,7 @@ void query_destroy(query *q)
 	for (page *a = q->cache_pages; a;) {
 		cell *c = a->cells;
 
-		for (pl_idx i = 0; i < a->max_pagep_used; i++, c++)
+		for (pl_idx i = 0; i < a->max_idx_used; i++, c++)
 			unshare_cell(c);
 
 		page *save = a;
@@ -1813,7 +1813,7 @@ void query_destroy(query *q)
 	for (page *a = q->heap_pages; a;) {
 		cell *c = a->cells;
 
-		for (pl_idx i = 0; i < a->max_pagep_used; i++, c++)
+		for (pl_idx i = 0; i < a->max_idx_used; i++, c++)
 			unshare_cell(c);
 
 		page *save = a;

@@ -142,10 +142,10 @@ cell *alloc_on_cache(query *q, unsigned nbr_cells)
 
 	cell *c = q->cache_pages->cells + q->st.cachep;
 	q->st.cachep += nbr_cells;
-	q->cache_pages->pagep = q->st.cachep;
+	q->cache_pages->idx = q->st.cachep;
 
-	if (q->cache_pages->pagep > q->cache_pages->max_pagep_used)
-		q->cache_pages->max_pagep_used = q->cache_pages->pagep;
+	if (q->cache_pages->idx > q->cache_pages->max_idx_used)
+		q->cache_pages->max_idx_used = q->cache_pages->idx;
 
 	return c;
 }
@@ -161,7 +161,7 @@ void trim_cache(query *q)
 
 		cell *c = a->cells;
 
-		for (pl_idx i = 0; i < a->pagep; i++, c++)
+		for (pl_idx i = 0; i < a->idx; i++, c++)
 			unshare_cell(c);
 
 		page *save = a;
@@ -172,7 +172,7 @@ void trim_cache(query *q)
 
 	const page *a = q->cache_pages;
 
-	for (pl_idx i = q->st.cachep; a && (i < a->pagep); i++) {
+	for (pl_idx i = q->st.cachep; a && (i < a->idx); i++) {
 		cell *c = a->cells + i;
 		unshare_cell(c);
 		init_cell(c);
@@ -215,10 +215,10 @@ cell *alloc_on_heap(query *q, unsigned nbr_cells)
 
 	cell *c = q->heap_pages->cells + q->st.heapp;
 	q->st.heapp += nbr_cells;
-	q->heap_pages->pagep = q->st.heapp;
+	q->heap_pages->idx = q->st.heapp;
 
-	if (q->heap_pages->pagep > q->heap_pages->max_pagep_used)
-		q->heap_pages->max_pagep_used = q->heap_pages->pagep;
+	if (q->heap_pages->idx > q->heap_pages->max_idx_used)
+		q->heap_pages->max_idx_used = q->heap_pages->idx;
 
 	return c;
 }
@@ -234,7 +234,7 @@ void trim_heap(query *q)
 
 		cell *c = a->cells;
 
-		for (pl_idx i = 0; i < a->pagep; i++, c++)
+		for (pl_idx i = 0; i < a->idx; i++, c++)
 			unshare_cell(c);
 
 		page *save = a;
@@ -245,7 +245,7 @@ void trim_heap(query *q)
 
 	const page *a = q->heap_pages;
 
-	for (pl_idx i = q->st.heapp; a && (i < a->pagep); i++) {
+	for (pl_idx i = q->st.heapp; a && (i < a->idx); i++) {
 		cell *c = a->cells + i;
 		unshare_cell(c);
 		init_cell(c);
