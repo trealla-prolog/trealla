@@ -10,14 +10,14 @@
 
 struct heap_save {
 	cell *heap;
-	pl_idx size, hp;
+	pl_idx size, heapp;
 };
 
 #define push_tmp_heap(q) 								\
 	struct heap_save _s;								\
 	_s.heap = q->tmp_heap;								\
 	_s.size = q->tmph_size;								\
-	_s.hp = q->tmphp;									\
+	_s.heapp = q->tmphp;									\
 	q->tmp_heap = NULL;									\
 	q->tmphp = 0;										\
 	if (!init_tmp_heap(q)) return NULL;
@@ -26,7 +26,7 @@ struct heap_save {
 	free(q->tmp_heap);									\
 	q->tmp_heap = _s.heap;								\
 	q->tmph_size = _s.size;								\
-	q->tmphp = _s.hp;
+	q->tmphp = _s.heapp;
 
 static int accum_slot(const query *q, size_t slot_nbr, unsigned var_nbr)
 {
@@ -114,65 +114,65 @@ cell *alloc_on_tmp(query *q, unsigned nbr_cells)
 
 cell *alloc_on_heap(query *q, unsigned nbr_cells)
 {
-	if (((uint64_t)q->st.hp + nbr_cells) > UINT32_MAX)
+	if (((uint64_t)q->st.heapp + nbr_cells) > UINT32_MAX)
 		return NULL;
 
-	if (!q->pages) {
+	if (!q->heap_pages) {
 		page *a = calloc(1, sizeof(page));
 		if (!a) return NULL;
-		a->next = q->pages;
-		unsigned n = MAX_OF(q->h_size, nbr_cells);
-		a->heap = calloc(a->h_size=n, sizeof(cell));
+		a->next = q->heap_pages;
+		unsigned n = MAX_OF(q->heap_size, nbr_cells);
+		a->heap = calloc(a->heap_size=n, sizeof(cell));
 		if (!a->heap) { free(a); return NULL; }
-		a->nbr = q->st.pp++;
-		q->pages = a;
+		a->nbr = q->st.heap_nbr++;
+		q->heap_pages = a;
 	}
 
-	if ((q->st.hp + nbr_cells) >= q->pages->h_size) {
+	if ((q->st.heapp + nbr_cells) >= q->heap_pages->heap_size) {
 		page *a = calloc(1, sizeof(page));
 		if (!a) return NULL;
-		a->next = q->pages;
-		unsigned n = MAX_OF(q->h_size, nbr_cells);
-		a->heap = calloc(a->h_size=n, sizeof(cell));
+		a->next = q->heap_pages;
+		unsigned n = MAX_OF(q->heap_size, nbr_cells);
+		a->heap = calloc(a->heap_size=n, sizeof(cell));
 		if (!a->heap) { free(a); return NULL; }
-		a->nbr = q->st.pp++;
-		q->pages = a;
-		q->st.hp = 0;
+		a->nbr = q->st.heap_nbr++;
+		q->heap_pages = a;
+		q->st.heapp = 0;
 	}
 
-	cell *c = q->pages->heap + q->st.hp;
-	q->st.hp += nbr_cells;
-	q->pages->hp = q->st.hp;
+	cell *c = q->heap_pages->heap + q->st.heapp;
+	q->st.heapp += nbr_cells;
+	q->heap_pages->heapp = q->st.heapp;
 
-	if (q->pages->hp > q->pages->max_hp_used)
-		q->pages->max_hp_used = q->pages->hp;
+	if (q->heap_pages->heapp > q->heap_pages->max_hp_used)
+		q->heap_pages->max_hp_used = q->heap_pages->heapp;
 
 	return c;
 }
 
 void trim_heap(query *q)
 {
-	// q->pages is a push-down stack and points to the
+	// q->heap_pages is a push-down stack and points to the
 	// most recent page of heap allocations...
 
-	for (page *a = q->pages; a;) {
-		if (a->nbr < q->st.pp)
+	for (page *a = q->heap_pages; a;) {
+		if (a->nbr < q->st.heap_nbr)
 			break;
 
 		cell *c = a->heap;
 
-		for (pl_idx i = 0; i < a->hp; i++, c++)
+		for (pl_idx i = 0; i < a->heapp; i++, c++)
 			unshare_cell(c);
 
 		page *save = a;
-		q->pages = a = a->next;
+		q->heap_pages = a = a->next;
 		free(save->heap);
 		free(save);
 	}
 
-	const page *a = q->pages;
+	const page *a = q->heap_pages;
 
-	for (pl_idx i = q->st.hp; a && (i < a->hp); i++) {
+	for (pl_idx i = q->st.heapp; a && (i < a->heapp); i++) {
 		cell *c = a->heap + i;
 		unshare_cell(c);
 		init_cell(c);

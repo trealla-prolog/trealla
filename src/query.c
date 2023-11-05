@@ -104,10 +104,10 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 	SB(pr);
 
 #ifdef DEBUG
-	SB_sprintf(pr, "[%s:%"PRIu64":f%u:fp%u:cp%u:sp%u:hp%u:tp%u] ",
+	SB_sprintf(pr, "[%s:%"PRIu64":f%u:fp%u:cp%u:sp%u:heapp%u:tp%u] ",
 		q->st.m->name,
 		q->step,
-		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.tp
+		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.heapp, q->st.tp
 		);
 #else
 	SB_sprintf(pr, "[%s:%"PRIu64":cp%u] ",
@@ -808,7 +808,7 @@ static frame *push_frame(query *q, unsigned nbr_vars)
 
 	f->chgen = ++q->chgen;
 	f->overflow = 0;
-	f->hp = q->st.hp;
+	f->heapp = q->st.heapp;
 
 	q->st.sp += nbr_vars;
 	q->st.curr_frame = new_frame;
@@ -833,7 +833,7 @@ static void reuse_frame(query *q, const clause *cl)
 	}
 
 	q->st.sp = f->base + f->initial_slots - cl->nbr_temporaries;
-	q->st.hp = f->hp;
+	q->st.heapp = f->heapp;
 	q->st.r->tcos++;
 	q->tot_tcos++;
 }
@@ -1798,7 +1798,7 @@ void query_destroy(query *q)
 {
 	q->done = true;
 
-	for (page *a = q->pages; a;) {
+	for (page *a = q->heap_pages; a;) {
 		cell *c = a->heap;
 
 		for (pl_idx i = 0; i < a->max_hp_used; i++, c++)
@@ -1924,7 +1924,7 @@ query *query_create(module *m, bool is_task)
 
 	// Allocate these later as needed...
 
-	q->h_size = is_task ? INITIAL_NBR_HEAP_CELLS/4 : INITIAL_NBR_HEAP_CELLS;
+	q->heap_size = is_task ? INITIAL_NBR_HEAP_CELLS/4 : INITIAL_NBR_HEAP_CELLS;
 	q->tmph_size = INITIAL_NBR_CELLS;
 
 	for (int i = 0; i < MAX_QUEUES; i++)

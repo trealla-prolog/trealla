@@ -523,7 +523,7 @@ struct slot_ {
 struct frame_ {
 	cell *curr_cell;
 	uint64_t dbgen, chgen;
-	pl_idx prev_offset, hp, base, overflow, initial_slots, actual_slots;
+	pl_idx prev_offset, heapp, base, overflow, initial_slots, actual_slots;
 	uint32_t mid;
 };
 
@@ -541,7 +541,7 @@ struct prolog_state_ {
 	};
 
 	uint64_t timer_started;
-	pl_idx curr_frame, fp, hp, tp, sp, pp, key_ctx;
+	pl_idx curr_frame, fp, heapp, tp, sp, heap_nbr, key_ctx;
 	float prob;
 	uint8_t qnbr;
 };
@@ -609,7 +609,7 @@ struct stream_ {
 struct page_ {
 	page *next;
 	cell *heap;
-	pl_idx hp, max_hp_used, h_size;
+	pl_idx heapp, max_hp_used, heap_size;
 	unsigned nbr;
 };
 
@@ -642,7 +642,7 @@ struct query_ {
 	trail *trails;
 	cell *tmp_heap, *last_arg, *variable_names, *ball, *suspect;
 	cell *queue[MAX_QUEUES], *tmpq[MAX_QUEUES];
-	page *pages;
+	page *heap_pages;
 	slot *save_e;
 	rule *dirty_list;
 	query *tasks;
@@ -663,7 +663,7 @@ struct query_ {
 	pl_idx frames_size, slots_size, trails_size, choices_size;
 	pl_idx hw_choices, hw_frames, hw_slots, hw_trails;
 	pl_idx cp, before_hook_tp, qcnt[MAX_QUEUES];
-	pl_idx h_size, tmph_size, tot_heaps, tot_heapsize, undo_lo_tp, undo_hi_tp;
+	pl_idx heap_size, tmph_size, tot_heaps, tot_heapsize, undo_lo_tp, undo_hi_tp;
 	pl_idx q_size[MAX_QUEUES], tmpq_size[MAX_QUEUES], qp[MAX_QUEUES];
 	prolog_flags flags;
 	enum q_retry retry;

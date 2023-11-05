@@ -3739,7 +3739,7 @@ static bool fn_statistics_0(query *q)
 		q->tot_goals, q->tot_matches,
 		q->hw_frames, q->hw_choices, q->hw_trails, q->hw_slots,
 		q->st.fp, q->cp, q->st.tp, q->st.sp,
-		q->st.hp, (unsigned)(sizeof(slot)*q->st.hp/1024/1024),
+		q->st.heapp, (unsigned)(sizeof(slot)*q->st.heapp/1024/1024),
 		q->tot_retries, q->tot_tcos,
 		q->tot_frecovs, q->tot_srecovs, (unsigned)q->qcnt[q->st.qnbr]
 		);
@@ -4653,7 +4653,7 @@ static bool fn_yield_0(query *q)
 
 static bool fn_task_n(query *q)
 {
-	pl_idx save_hp = q->st.hp;
+	pl_idx save_hp = q->st.heapp;
 	cell *p0 = deep_clone_to_heap(q, q->st.curr_cell, q->st.curr_frame);
 	GET_FIRST_RAW_ARG0(p1,callable,p0);
 	check_heap_error(init_tmp_heap(q));
@@ -4678,7 +4678,7 @@ static bool fn_task_n(query *q)
 		tmp2->flags |= FLAG_BUILTIN;
 	}
 
-	q->st.hp = save_hp;
+	q->st.heapp = save_hp;
 	cell *tmp = prepare_call(q, false, tmp2, q->st.curr_frame, 0);
 	query *task = query_create_task(q, tmp);
 	task->yielded = task->spawned = true;
