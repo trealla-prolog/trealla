@@ -960,7 +960,7 @@ bool do_use_foreign_module(module *m, cell *p)
 
 void convert_to_literal(module *m, cell *c)
 {
-	char *src = DUP_STR(m, c);
+	char *src = DUP_STRING(m, c);
 	pl_idx off = new_atom(m->pl, src);
 	unshare_cell(c);
 	c->tag = TAG_INTERNED;

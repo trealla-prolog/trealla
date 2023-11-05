@@ -384,7 +384,7 @@ bool fn_iso_abolish_1(query *q)
 	if (p1->arity != 2)
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
-	if (CMP_STR_TO_CSTR(q, p1, "/") && CMP_STR_TO_CSTR(q, p1, "//"))
+	if (CMP_STRING_TO_CSTR(q, p1, "/") && CMP_STRING_TO_CSTR(q, p1, "//"))
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
 	cell *p1_name = p1 + 1;
@@ -396,7 +396,7 @@ bool fn_iso_abolish_1(query *q)
 	cell *p1_arity = p1 + 2;
 	p1_arity = deref(q, p1_arity, p1_ctx);
 
-	if (!CMP_STR_TO_CSTR(q, p1, "//"))
+	if (!CMP_STRING_TO_CSTR(q, p1, "//"))
 		p1_arity += 2;
 
 	if (!is_integer(p1_arity))

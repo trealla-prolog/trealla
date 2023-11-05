@@ -39,14 +39,14 @@ bool wrap_ffi_predicate(query *q, builtins *fn_ptr);
 #define is_list_or_atom(c) (is_atom(c) || is_iso_list(c))
 #define is_atom_or_list(c) (is_atom(c) || is_iso_list(c))
 #define is_atom_or_list_or_var(c) (is_atom(c) || is_iso_list(c) || is_var(c))
-#define is_character(c) (is_iso_atom(c) && ((strlen_utf8(C_STR(q, c)) <= 1) || !CMP_STR_TO_CSTR(q, c, "end_of_file")))
+#define is_character(c) (is_iso_atom(c) && ((strlen_utf8(C_STR(q, c)) <= 1) || !CMP_STRING_TO_CSTR(q, c, "end_of_file")))
 #define is_character_or_var(c) (is_in_character(c) || is_var(c))
-#define is_in_character(c) (is_atom(c) && ((strlen_utf8(C_STR(q, c)) <= 1) || !CMP_STR_TO_CSTR(q, c, "end_of_file")))
+#define is_in_character(c) (is_atom(c) && ((strlen_utf8(C_STR(q, c)) <= 1) || !CMP_STRING_TO_CSTR(q, c, "end_of_file")))
 #define is_in_character_or_var(c) (is_in_character(c) || is_var(c))
 #define is_in_byte(c) (is_integer(c) && (get_smallint(c) >= -1) && (get_smallint(c) < 256))
 #define is_in_byte_or_var(c) (is_in_byte(c) || is_var(c))
 #define is_byte(c) (is_integer(c) && (get_smallint(c) >= 0) && (get_smallint(c) < 256))
-#define is_chars(q,c,ctx) (is_nil(c) || is_string(c) || scan_is_chars_list(q, c, ctx, false) || (is_cstring(c) && !CMP_STR_TO_CSTR(q, c, "[]")))
+#define is_chars(q,c,ctx) (is_nil(c) || is_string(c) || scan_is_chars_list(q, c, ctx, false) || (is_cstring(c) && !CMP_STRING_TO_CSTR(q, c, "[]")))
 #define is_sregex(c) (is_blob(c) && ((c)->flags & FLAG_BLOB_SRE))
 #define is_any(c) true
 

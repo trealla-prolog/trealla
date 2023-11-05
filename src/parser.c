@@ -393,7 +393,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 	}
 
 	unsigned specifier;
-	char *spec = DUP_STR(p, p2);
+	char *spec = DUP_STRING(p, p2);
 
 	if (!strcmp(spec, "fx"))
 		specifier = OP_FX;
@@ -424,7 +424,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 		cell *h = LIST_HEAD(p3);
 
 		if (is_atom(h)) {
-			char *name = DUP_STR(p, h);
+			char *name = DUP_STRING(p, h);
 
 			if (!set_op(p->m, name, specifier, get_smallint(p1))) {
 				if (DUMP_ERRS || !p->do_read_term)
@@ -451,7 +451,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 	}
 
 	if (is_atom(p3) && !is_nil(p3)) {
-		char *name = DUP_STR(p, p3);
+		char *name = DUP_STRING(p, p3);
 
 		if (!set_op(p->m, name, specifier, get_smallint(p1))) {
 			if (DUMP_ERRS || !p->do_read_term)
@@ -616,7 +616,7 @@ static bool directives(parser *p, cell *d)
 
 			if (is_structure(h) && is_atom(h+1) && !strcmp(C_STR(p, h), "desc")) {
 				cell *arg = h + 1;
-				desc = DUP_STR(p, arg);
+				desc = DUP_STRING(p, arg);
 			}
 
 			p2 = LIST_TAIL(p2);

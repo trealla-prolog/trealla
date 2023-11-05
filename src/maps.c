@@ -34,7 +34,7 @@ bool fn_map_create_2(query *q)
 		cell *name = c + 1;
 		name = deref(q, name, c_ctx);
 
-		if (!CMP_STR_TO_CSTR(q, c, "alias")) {
+		if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
 			if (is_var(name))
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 
@@ -44,7 +44,7 @@ bool fn_map_create_2(query *q)
 			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 
-			sl_set(str->alias, DUP_STR(q, name), NULL);
+			sl_set(str->alias, DUP_STRING(q, name), NULL);
 		} else {
 			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 		}
@@ -85,7 +85,7 @@ bool fn_map_set_3(query *q)
 		snprintf(tmpbuf, sizeof(tmpbuf), "%lld", (long long unsigned)get_smallint(p1));
 		key = strdup(tmpbuf);
 	} else if (is_atom(p1))
-		key = DUP_STR(q, p1);
+		key = DUP_STRING(q, p1);
 	else
 		return throw_error(q, p1, p1_ctx, "type_error", "integer");
 
@@ -101,7 +101,7 @@ bool fn_map_set_3(query *q)
 		snprintf(tmpbuf, sizeof(tmpbuf), "%.*lg", DBL_DECIMAL_DIG, get_float(p2));
 		val = strdup(tmpbuf);
 	} else if (is_atom(p2))
-		val = DUP_STR(q, p2);
+		val = DUP_STRING(q, p2);
 	else {
 		free(key);
 		return throw_error(q, p2, p2_ctx, "type_error", "integer");
@@ -130,7 +130,7 @@ bool fn_map_get_3(query *q)
 		snprintf(tmpbuf, sizeof(tmpbuf), "%lld", (long long unsigned)get_smallint(p1));
 		key = tmpbuf;
 	} else if (is_atom(p1))
-		key = DUP_STR(q, p1);
+		key = DUP_STRING(q, p1);
 	else
 		return throw_error(q, p2, p2_ctx, "type_error", "integer");
 
@@ -193,7 +193,7 @@ bool fn_map_del_2(query *q)
 		snprintf(tmpbuf, sizeof(tmpbuf), "%lld", (long long unsigned)get_smallint(p1));
 		key = strdup(tmpbuf);
 	} else if (is_atom(p1))
-		key = DUP_STR(q, p1);
+		key = DUP_STRING(q, p1);
 	else
 		return throw_error(q, p1, p1_ctx, "type_error", "integer");
 

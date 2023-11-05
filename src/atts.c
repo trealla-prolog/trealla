@@ -15,7 +15,7 @@ static const char *do_attribute(query *q, cell *c, unsigned arity)
 	module *m = q->pl->modules;
 
 	while (m) {
-		if ((arity == m->arity) && !CMP_STR_TO_CSTR(q, c, m->name))
+		if ((arity == m->arity) && !CMP_STRING_TO_CSTR(q, c, m->name))
 			return m->orig->name;
 
 		m = m->next;
@@ -73,8 +73,8 @@ bool fn_put_atts_2(query *q)
 		while (is_iso_list(l)) {
 			cell *h = LIST_HEAD(l);
 
-			if (CMP_STR_TO_CSTR(q, h, m_name)
-				|| CMP_STR_TO_STR(q, h+1, attr)
+			if (CMP_STRING_TO_CSTR(q, h, m_name)
+				|| CMP_STRING_TO_STRING(q, h+1, attr)
 				|| ((h+1)->arity != a_arity)) {
 				append_list(q, h);
 			}
@@ -151,8 +151,8 @@ bool fn_get_atts_2(query *q)
 	while (is_iso_list(l)) {
 		cell *h = LIST_HEAD(l);
 
-		if (!CMP_STR_TO_CSTR(q, h, m_name)
-			&& !CMP_STR_TO_STR(q, h+1, attr)
+		if (!CMP_STRING_TO_CSTR(q, h, m_name)
+			&& !CMP_STRING_TO_STRING(q, h+1, attr)
 			&& ((h+1)->arity == a_arity)) {
 			if (is_minus)
 				return false;

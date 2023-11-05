@@ -411,7 +411,7 @@ cell *clone_to_tmp(query *q, cell *p1)
 cell *prepare_call(query *q, bool prefix, cell *p1, pl_idx p1_ctx, unsigned extras)
 {
 	unsigned nbr_cells = (prefix ? PREFIX_LEN : NOPREFIX_LEN) + p1->nbr_cells + extras;
-	cell *tmp = alloc_on_heap(q, nbr_cells);
+	cell *tmp = alloc_on_cache(q, nbr_cells);
 	if (!tmp) return NULL;
 
 	if (prefix) {

@@ -1459,7 +1459,7 @@ static bool any_outstanding_choices(query *q)
 static bool consultall(query *q, cell *l, pl_idx l_ctx)
 {
 	if (is_string(l)) {
-		char *s = DUP_STR(q, l);
+		char *s = DUP_STRING(q, l);
 		unload_file(q->p->m, s);
 
 		if (!load_file(q->p->m, s, false)) {
@@ -1485,7 +1485,7 @@ static bool consultall(query *q, cell *l, pl_idx l_ctx)
 			if (consultall(q, h, h_ctx) != true)
 				return false;
 		} else {
-			char *s = DUP_STR(q, h);
+			char *s = DUP_STRING(q, h);
 			unload_file(q->p->m, s);
 
 			if (!load_file(q->p->m, s, false)) {
@@ -1875,7 +1875,7 @@ void query_destroy(query *q)
 					cell *arg2 = arg1 + arg1->nbr_cells;
 					cell *arg3 = arg2 + arg2->nbr_cells;
 
-					if (!CMP_STR_TO_CSTR(m, arg3, "b")) {
+					if (!CMP_STRING_TO_CSTR(m, arg3, "b")) {
 						pr->cnt--;
 						delink(pr, r);
 						rule *save = r;

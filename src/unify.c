@@ -107,7 +107,7 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 
 static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
-	int val = CMP_STR_TO_STR(q, p1, p2);
+	int val = CMP_STRING_TO_STRING(q, p1, p2);
 	if (val) return val;
 
 	bool any = false;
@@ -246,10 +246,10 @@ static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx 
 	}
 
 	if (is_iso_atom(p1) && is_iso_atom(p2))
-		return CMP_STR_TO_STR(q, p1, p2);
+		return CMP_STRING_TO_STRING(q, p1, p2);
 
 	if (is_string(p1) && is_string(p2))
-		return CMP_STR_TO_STR(q, p1, p2);
+		return CMP_STRING_TO_STRING(q, p1, p2);
 
 	if (is_iso_atom(p1)) {
 		if (is_number(p2))
@@ -265,7 +265,7 @@ static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx 
 		return 1;
 
 	if (is_string(p1) && is_string(p2))
-		return CMP_STR_TO_STR(q, p1, p2);
+		return CMP_STRING_TO_STRING(q, p1, p2);
 
 	if ((is_string(p1) && is_iso_list(p2))
 		|| (is_string(p2) && is_iso_list(p1))) {
