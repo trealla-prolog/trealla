@@ -3730,7 +3730,8 @@ static bool fn_statistics_0(query *q)
 		"choices %u, "
 		"trails %u, "
 		"slots %u.\n"
-		"Heap: %u (~%u MB), "
+		"Cache: %u (~%u MB), "
+		"Heap: %u (~%u MB)\n"
 		"Backtracks %"PRIu64", "
 		"TCOs:%"PRIu64", "
 		"Recovered frames: %"PRIu64", "
@@ -3739,6 +3740,7 @@ static bool fn_statistics_0(query *q)
 		q->tot_goals, q->tot_matches,
 		q->hw_frames, q->hw_choices, q->hw_trails, q->hw_slots,
 		q->st.fp, q->cp, q->st.tp, q->st.sp,
+		q->st.cachep, (unsigned)(sizeof(slot)*q->st.cachep/1024/1024),
 		q->st.heapp, (unsigned)(sizeof(slot)*q->st.heapp/1024/1024),
 		q->tot_retries, q->tot_tcos,
 		q->tot_frecovs, q->tot_srecovs, (unsigned)q->qcnt[q->st.qnbr]

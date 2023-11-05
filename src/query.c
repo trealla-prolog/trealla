@@ -777,6 +777,7 @@ int retry_choice(query *q)
 		if (ch->register_cleanup && q->noretry)
 			q->noretry = false;
 
+		trim_cache(q);
 		trim_heap(q);
 
 		if (ch->succeed_on_retry)
@@ -785,6 +786,7 @@ int retry_choice(query *q)
 		return 1;
 	}
 
+	trim_cache(q);
 	trim_heap(q);
 	return 0;
 }
