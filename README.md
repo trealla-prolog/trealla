@@ -1172,6 +1172,18 @@ Profile
 
 ```
 	$ time tpl -q -g 'main,statistics(profile,_),halt' -f ~/trealla/samples/chess.pl 2>chess.csv
-	$ sort chess.csv -k 3 -t ',' -n -r
+	$ head -1 chess.csv >chess_sorted.csv && tail -n+2 chess.csv | sort -k 3 -t ',' -n -r >> chess_sorted.csv
+	$ cat chess_sorted.csv
+	#functor/arity,match_attempts,matched,tcos
+	'member_/3',20505037,20036023,19362515
+	'can_step/5',1149136,288705,189915
+	'can_move/5',164848,98905,32873
+	'strength/4',1074794,63382,31691
+	'minus_one/2',1621942,1621942,0
+	'make_move/6',1086892,1086892,0
+	'member_/3',20709531,730369,0
+	'member/2',673508,673508,0
+	'occupied_by/4',673316,673316,0
+
 ```
 
