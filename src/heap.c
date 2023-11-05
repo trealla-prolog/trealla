@@ -106,7 +106,80 @@ cell *alloc_on_tmp(query *q, unsigned nbr_cells)
 	return c;
 }
 
-// The heap is used for long-life allocations and a realloc() can't be
+// The cache is used for instruction allocations and a realloc() can't be
+// done as it will invalidate existing pointers. Build any compounds
+// first on the tmp heap, then allocate in one go here and copy in.
+// When more space is need allocate a new page and keep them in the
+// page list. Backtracking will garbage collect and free as needed.
+
+cell *alloc_on_cache(query *q, unsigned nbr_cells)
+{
+	if (((uint64_t)q->st.heapp + nbr_cells) > UINT32_MAX)
+		return NULL;
+
+	if (!q->cache_pages) {
+		page *a = calloc(1, sizeof(page));
+		if (!a) return NULL;
+		a->next = q->cache_pages;
+		unsigned n = MAX_OF(q->cache_size, nbr_cells);
+		a->cells = calloc(a->page_size=n, sizeof(cell));
+		if (!a->cells) { free(a); return NULL; }
+		a->nbr = q->st.cache_nbr++;
+		q->heap_pages = a;
+	}
+
+	if ((q->st.heapp + nbr_cells) >= q->heap_pages->page_size) {
+		page *a = calloc(1, sizeof(page));
+		if (!a) return NULL;
+		a->next = q->heap_pages;
+		unsigned n = MAX_OF(q->heap_size, nbr_cells);
+		a->cells = calloc(a->page_size=n, sizeof(cell));
+		if (!a->cells) { free(a); return NULL; }
+		a->nbr = q->st.cache_nbr++;
+		q->cache_pages = a;
+		q->st.cachep = 0;
+	}
+
+	cell *c = q->cache_pages->cells + q->st.heapp;
+	q->st.cachep += nbr_cells;
+	q->cache_pages->pagep = q->st.cachep;
+
+	if (q->cache_pages->pagep > q->cache_pages->max_pagep_used)
+		q->cache_pages->max_pagep_used = q->cache_pages->pagep;
+
+	return c;
+}
+
+void trim_cache(query *q)
+{
+	// q->cache_pages is a push-down stack and points to the
+	// most recent page of cache allocations...
+
+	for (page *a = q->cache_pages; a;) {
+		if (a->nbr < q->st.cache_nbr)
+			break;
+
+		cell *c = a->cells;
+
+		for (pl_idx i = 0; i < a->pagep; i++, c++)
+			unshare_cell(c);
+
+		page *save = a;
+		q->cache_pages = a = a->next;
+		free(save->cells);
+		free(save);
+	}
+
+	const page *a = q->cache_pages;
+
+	for (pl_idx i = q->st.cachep; a && (i < a->pagep); i++) {
+		cell *c = a->cells + i;
+		unshare_cell(c);
+		init_cell(c);
+	}
+}
+
+// The heap is used for data allocations and a realloc() can't be
 // done as it will invalidate existing pointers. Build any compounds
 // first on the tmp heap, then allocate in one go here and copy in.
 // When more space is need allocate a new page and keep them in the
@@ -122,30 +195,30 @@ cell *alloc_on_heap(query *q, unsigned nbr_cells)
 		if (!a) return NULL;
 		a->next = q->heap_pages;
 		unsigned n = MAX_OF(q->heap_size, nbr_cells);
-		a->heap = calloc(a->heap_size=n, sizeof(cell));
-		if (!a->heap) { free(a); return NULL; }
+		a->cells = calloc(a->page_size=n, sizeof(cell));
+		if (!a->cells) { free(a); return NULL; }
 		a->nbr = q->st.heap_nbr++;
 		q->heap_pages = a;
 	}
 
-	if ((q->st.heapp + nbr_cells) >= q->heap_pages->heap_size) {
+	if ((q->st.heapp + nbr_cells) >= q->heap_pages->page_size) {
 		page *a = calloc(1, sizeof(page));
 		if (!a) return NULL;
 		a->next = q->heap_pages;
 		unsigned n = MAX_OF(q->heap_size, nbr_cells);
-		a->heap = calloc(a->heap_size=n, sizeof(cell));
-		if (!a->heap) { free(a); return NULL; }
+		a->cells = calloc(a->page_size=n, sizeof(cell));
+		if (!a->cells) { free(a); return NULL; }
 		a->nbr = q->st.heap_nbr++;
 		q->heap_pages = a;
 		q->st.heapp = 0;
 	}
 
-	cell *c = q->heap_pages->heap + q->st.heapp;
+	cell *c = q->heap_pages->cells + q->st.heapp;
 	q->st.heapp += nbr_cells;
-	q->heap_pages->heapp = q->st.heapp;
+	q->heap_pages->pagep = q->st.heapp;
 
-	if (q->heap_pages->heapp > q->heap_pages->max_hp_used)
-		q->heap_pages->max_hp_used = q->heap_pages->heapp;
+	if (q->heap_pages->pagep > q->heap_pages->max_pagep_used)
+		q->heap_pages->max_pagep_used = q->heap_pages->pagep;
 
 	return c;
 }
@@ -159,21 +232,21 @@ void trim_heap(query *q)
 		if (a->nbr < q->st.heap_nbr)
 			break;
 
-		cell *c = a->heap;
+		cell *c = a->cells;
 
-		for (pl_idx i = 0; i < a->heapp; i++, c++)
+		for (pl_idx i = 0; i < a->pagep; i++, c++)
 			unshare_cell(c);
 
 		page *save = a;
 		q->heap_pages = a = a->next;
-		free(save->heap);
+		free(save->cells);
 		free(save);
 	}
 
 	const page *a = q->heap_pages;
 
-	for (pl_idx i = q->st.heapp; a && (i < a->heapp); i++) {
-		cell *c = a->heap + i;
+	for (pl_idx i = q->st.heapp; a && (i < a->pagep); i++) {
+		cell *c = a->cells + i;
 		unshare_cell(c);
 		init_cell(c);
 	}

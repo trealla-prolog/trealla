@@ -28,7 +28,7 @@ static void msleep(int ms)
 #define Trace if (!(q->trace /*&& !consulting*/)) q->step++; else  trace_call
 
 static const unsigned INITIAL_NBR_QUEUE_CELLS = 1000;
-static const unsigned INITIAL_NBR_HEAP_CELLS = 8000;
+static const unsigned INITIAL_NBR_HEAP_CELLS = 4000;
 static const unsigned INITIAL_NBR_FRAMES = 8000;
 static const unsigned INITIAL_NBR_SLOTS = 16000;
 static const unsigned INITIAL_NBR_TRAILS = 16000;
@@ -1798,15 +1798,27 @@ void query_destroy(query *q)
 {
 	q->done = true;
 
-	for (page *a = q->heap_pages; a;) {
-		cell *c = a->heap;
+	for (page *a = q->cache_pages; a;) {
+		cell *c = a->cells;
 
-		for (pl_idx i = 0; i < a->max_hp_used; i++, c++)
+		for (pl_idx i = 0; i < a->max_pagep_used; i++, c++)
 			unshare_cell(c);
 
 		page *save = a;
 		a = a->next;
-		free(save->heap);
+		free(save->cells);
+		free(save);
+	}
+
+	for (page *a = q->heap_pages; a;) {
+		cell *c = a->cells;
+
+		for (pl_idx i = 0; i < a->max_pagep_used; i++, c++)
+			unshare_cell(c);
+
+		page *save = a;
+		a = a->next;
+		free(save->cells);
 		free(save);
 	}
 
