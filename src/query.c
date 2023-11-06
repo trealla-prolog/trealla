@@ -257,11 +257,9 @@ bool check_slot(query *q, unsigned cnt)
 
 void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs, pl_idx attrs_ctx)
 {
-	if (q->st.tp >= q->trails_size) {
-		if (!check_trail(q)) {
-			q->error = false;
-			return;
-		}
+	if (!check_trail(q)) {
+		q->error = false;
+		return;
 	}
 
 	trail *tr = q->trails + q->st.tp++;
@@ -789,7 +787,7 @@ int retry_choice(query *q)
 	return 0;
 }
 
-static frame *push_frame(query *q, unsigned nbr_vars)
+static frame *push_frame(query *q, const clause *cl)
 {
 	const frame *curr_f = GET_CURR_FRAME();
 	const cell *next_cell = q->st.curr_cell + q->st.curr_cell->nbr_cells;
@@ -806,11 +804,12 @@ static frame *push_frame(query *q, unsigned nbr_vars)
 		f->curr_cell = q->st.curr_cell;
 	}
 
+	f->initial_slots = f->actual_slots = cl->nbr_vars;
 	f->chgen = ++q->chgen;
 	f->overflow = 0;
 	f->hp = q->st.hp;
 
-	q->st.sp += nbr_vars;
+	q->st.sp = f->base + cl->nbr_vars;
 	q->st.curr_frame = new_frame;
 	return f;
 }
@@ -832,7 +831,7 @@ static void reuse_frame(query *q, const clause *cl)
 		*to++ = *from++;
 	}
 
-	q->st.sp = f->base + f->initial_slots - cl->nbr_temporaries;
+	q->st.sp = f->base + (cl->nbr_vars - cl->nbr_temporaries);
 	q->st.hp = f->hp;
 	q->st.r->tcos++;
 	q->tot_tcos++;
@@ -910,7 +909,7 @@ static void commit_frame(query *q, cell *body)
 	if (q->pl->opt && tco)
 		reuse_frame(q, cl);
 	else {
-		f = push_frame(q, cl->nbr_vars);
+		f = push_frame(q, cl);
 
 		// If matching against a fact then drop new frame...
 
