@@ -104,10 +104,10 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 	SB(pr);
 
 #ifdef DEBUG
-	SB_sprintf(pr, "[%s:%"PRIu64":f%u:fp%u:cp%u:sp%u:heapp%u:tp%u] ",
+	SB_sprintf(pr, "[%s:%"PRIu64":f%u:fp%u:cp%u:sp%u:hp%u:tp%u] ",
 		q->st.m->name,
 		q->step,
-		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.heapp, q->st.tp
+		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.tp
 		);
 #else
 	SB_sprintf(pr, "[%s:%"PRIu64":cp%u] ",
@@ -777,7 +777,6 @@ int retry_choice(query *q)
 		if (ch->register_cleanup && q->noretry)
 			q->noretry = false;
 
-		trim_cache(q);
 		trim_heap(q);
 
 		if (ch->succeed_on_retry)
@@ -786,7 +785,6 @@ int retry_choice(query *q)
 		return 1;
 	}
 
-	trim_cache(q);
 	trim_heap(q);
 	return 0;
 }
@@ -810,7 +808,7 @@ static frame *push_frame(query *q, unsigned nbr_vars)
 
 	f->chgen = ++q->chgen;
 	f->overflow = 0;
-	f->heapp = q->st.heapp;
+	f->hp = q->st.hp;
 
 	q->st.sp += nbr_vars;
 	q->st.curr_frame = new_frame;
@@ -835,7 +833,7 @@ static void reuse_frame(query *q, const clause *cl)
 	}
 
 	q->st.sp = f->base + f->initial_slots - cl->nbr_temporaries;
-	q->st.heapp = f->heapp;
+	q->st.hp = f->hp;
 	q->st.r->tcos++;
 	q->tot_tcos++;
 }
@@ -1799,18 +1797,6 @@ void purge_dirty_list(query *q)
 void query_destroy(query *q)
 {
 	q->done = true;
-
-	for (page *a = q->cache_pages; a;) {
-		cell *c = a->cells;
-
-		for (pl_idx i = 0; i < a->max_idx_used; i++, c++)
-			unshare_cell(c);
-
-		page *save = a;
-		a = a->next;
-		free(save->cells);
-		free(save);
-	}
 
 	for (page *a = q->heap_pages; a;) {
 		cell *c = a->cells;

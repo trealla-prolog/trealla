@@ -317,7 +317,7 @@ bool fn_parse_csv_file_2(query *q)
 	q->p->fp = fopen(C_STR(q, p1), "r");
 	if (!q->p->fp) return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 	unsigned line_nbr = 0;
-	pl_idx save_hp = q->st.heapp;
+	pl_idx save_hp = q->st.hp;
 	frame *f = GET_CURR_FRAME();
 	frame save_f = *f;
 	ssize_t len;
@@ -345,7 +345,7 @@ bool fn_parse_csv_file_2(query *q)
 		}
 
 		*f = save_f;
-		q->st.heapp = save_hp;
+		q->st.hp = save_hp;
 	}
 
 	free(q->p->save_line);

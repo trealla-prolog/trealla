@@ -3730,8 +3730,6 @@ static bool fn_statistics_0(query *q)
 		"choices %u, "
 		"trails %u, "
 		"slots %u.\n"
-		"Cache: %u (~%u MB), "
-		"Heap: %u (~%u MB)\n"
 		"Backtracks %"PRIu64", "
 		"TCOs:%"PRIu64", "
 		"Recovered frames: %"PRIu64", "
@@ -3740,8 +3738,6 @@ static bool fn_statistics_0(query *q)
 		q->tot_goals, q->tot_matches,
 		q->hw_frames, q->hw_choices, q->hw_trails, q->hw_slots,
 		q->st.fp, q->cp, q->st.tp, q->st.sp,
-		q->st.cachep, (unsigned)(sizeof(slot)*q->st.cachep/1024/1024),
-		q->st.heapp, (unsigned)(sizeof(slot)*q->st.heapp/1024/1024),
 		q->tot_retries, q->tot_tcos,
 		q->tot_frecovs, q->tot_srecovs, (unsigned)q->qcnt[q->st.qnbr]
 		);
@@ -4655,7 +4651,7 @@ static bool fn_yield_0(query *q)
 
 static bool fn_task_n(query *q)
 {
-	pl_idx save_hp = q->st.heapp;
+	pl_idx save_hp = q->st.hp;
 	cell *p0 = deep_clone_to_heap(q, q->st.curr_cell, q->st.curr_frame);
 	GET_FIRST_RAW_ARG0(p1,callable,p0);
 	check_heap_error(init_tmp_heap(q));
@@ -4680,7 +4676,7 @@ static bool fn_task_n(query *q)
 		tmp2->flags |= FLAG_BUILTIN;
 	}
 
-	q->st.heapp = save_hp;
+	q->st.hp = save_hp;
 	cell *tmp = prepare_call(q, false, tmp2, q->st.curr_frame, 0);
 	query *task = query_create_task(q, tmp);
 	task->yielded = task->spawned = true;
