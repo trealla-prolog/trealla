@@ -1016,6 +1016,25 @@ bool push_catcher(query *q, enum q_retry retry)
 	return true;
 }
 
+// If the call is det then the barrier can be dropped...
+
+bool drop_barrier(query *q, pl_idx cp)
+{
+	if ((q->cp-1) == cp) {
+		drop_choice(q);
+
+		if (q->cp) {
+			const choice *ch = GET_CURR_CHOICE();
+			frame *f = GET_CURR_FRAME();
+			f->chgen = ch->chgen;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 void cut(query *q)
 {
 	const frame *f = GET_CURR_FRAME();
@@ -1057,25 +1076,6 @@ void cut(query *q)
 
 	if (!q->cp && !q->undo_hi_tp)
 		q->st.tp = 0;
-}
-
-// If the call is det then the barrier can be dropped...
-
-bool drop_barrier(query *q, pl_idx cp)
-{
-	if ((q->cp-1) == cp) {
-		drop_choice(q);
-
-		if (q->cp) {
-			const choice *ch = GET_CURR_CHOICE();
-			frame *f = GET_CURR_FRAME();
-			f->chgen = ch->chgen;
-		}
-
-		return true;
-	}
-
-	return false;
 }
 
 // Resume next goal in previous clause...
