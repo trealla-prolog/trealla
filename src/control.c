@@ -103,6 +103,12 @@ bool fn_call_0(query *q, cell *p1, pl_idx p1_ctx)
 	if (!is_callable(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "callable");
 
+	if (is_interned(p1) && !p1->arity) {
+		q->retry = QUERY_SKIP;
+		q->st.curr_cell++;
+		return true;
+	}
+
 	cell *tmp = prepare_call(q, false, p1, p1_ctx, 3);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = NOPREFIX_LEN + p1->nbr_cells;
@@ -208,6 +214,13 @@ bool fn_iso_call_n(query *q)
 bool fn_iso_call_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
+
+	if (is_interned(p1) && !p1->arity) {
+		q->retry = QUERY_SKIP;
+		q->st.curr_cell++;
+		return true;
+	}
+
 	check_heap_error(init_tmp_heap(q));
 	cell *tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(tmp2);
