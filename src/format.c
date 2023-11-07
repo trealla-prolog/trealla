@@ -134,7 +134,7 @@ static bool is_more_data(query *q, list_reader_t *fmt)
 
 #define CHECK_BUF(len) {									\
     int n = (len) > 0 ? (len) : 1;                          \
-	if (nbytes <= (unsigned)(1+n+1)) {    					\
+	if (nbytes <= (unsigned)(1+bufsiz+n+1)) {				\
 		size_t save = dst - tmpbuf;							\
 		bufsiz += n;										\
 		tmpbuf = realloc(tmpbuf, bufsiz*=2);				\
