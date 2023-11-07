@@ -291,14 +291,17 @@ static void setup_key(query *q)
 	if (q->st.key->arity > 1)
 		arg2 = deref(q, NEXT_ARG(FIRST_ARG(q->st.key)), q->st.key_ctx);
 
+#if 0
 	if (!is_var(arg1))
 		q->st.karg1_is_ground = true;
 
-	if (is_atomic(arg1))
-		q->st.karg1_is_atomic = true;
-
 	if (arg2 && !is_var(arg2))
 		q->st.karg2_is_ground = true;
+
+#endif
+
+	if (is_atomic(arg1))
+		q->st.karg1_is_atomic = true;
 
 	if (arg2 && is_atomic(arg2))
 		q->st.karg2_is_atomic = true;
@@ -417,8 +420,12 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 {
 	q->st.iter = NULL;
+
+#if 0
 	q->st.karg1_is_ground = false;
 	q->st.karg2_is_ground = false;
+#endif
+
 	q->st.karg1_is_atomic = false;
 	q->st.karg2_is_atomic = false;
 	q->st.key = key;
