@@ -108,7 +108,7 @@ bool fn_call_0(query *q, cell *p1, pl_idx p1_ctx)
 
 	cell *tmp = prepare_call(q, false, p1, p1_ctx, 3);
 	check_heap_error(tmp);
-	pl_idx nbr_cells = NOPREFIX_LEN + tmp->nbr_cells;
+	pl_idx nbr_cells = NOPREFIX_LEN + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
