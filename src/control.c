@@ -393,7 +393,6 @@ bool fn_iso_conjunction_2(query *q)
 
 bool fn_iso_disjunction_2(query *q)
 {
-	q->tot_goals--;
 	cell *c = q->st.curr_cell+1;
 
 	if (is_callable(c)) {
