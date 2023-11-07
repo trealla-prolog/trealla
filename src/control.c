@@ -76,7 +76,6 @@ bool fn_sys_cleanup_if_det_1(query *q)
 
 bool fn_iso_invoke_2(query *q)
 {
-	q->tot_goals--;
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,callable);
 	module *m = find_module(q->pl, C_STR(q, p1));
@@ -101,8 +100,6 @@ bool fn_iso_invoke_2(query *q)
 
 bool fn_call_0(query *q, cell *p1, pl_idx p1_ctx)
 {
-	q->tot_goals--;
-
 	if (!is_callable(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "callable");
 
@@ -152,7 +149,6 @@ static bool call_check(query *q, cell *tmp2, bool *status, bool calln)
 
 bool fn_iso_call_n(query *q)
 {
-	q->tot_goals--;
 	GET_FIRST_ARG(p1,callable);
 
 	if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
@@ -211,7 +207,6 @@ bool fn_iso_call_n(query *q)
 
 bool fn_iso_call_1(query *q)
 {
-	q->tot_goals--;
 	GET_FIRST_ARG(p1,callable);
 	check_heap_error(init_tmp_heap(q));
 	cell *tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
@@ -238,7 +233,6 @@ bool fn_iso_call_1(query *q)
 
 bool fn_iso_once_1(query *q)
 {
-	q->tot_goals--;
 	GET_FIRST_ARG(p1,callable);
 	check_heap_error(init_tmp_heap(q));
 	cell *tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
@@ -266,7 +260,6 @@ bool fn_iso_once_1(query *q)
 
 bool fn_ignore_1(query *q)
 {
-	q->tot_goals--;
 	GET_FIRST_ARG(p1,callable);
 	check_heap_error(init_tmp_heap(q));
 	cell *tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
@@ -294,7 +287,6 @@ bool fn_ignore_1(query *q)
 
 bool fn_iso_if_then_2(query *q)
 {
-	q->tot_goals--;
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,callable);
 	cell *tmp = prepare_call(q, true, p1, p1_ctx, 3+p2->nbr_cells+1);
@@ -316,7 +308,6 @@ bool fn_iso_if_then_2(query *q)
 
 bool fn_if_2(query *q)
 {
-	q->tot_goals--;
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,callable);
 	cell *tmp = prepare_call(q, true, p1, p1_ctx, 2+p2->nbr_cells+1);
@@ -337,8 +328,6 @@ bool fn_if_2(query *q)
 
 static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 {
-	q->tot_goals--;
-
 	if (q->retry) {
 		q->retry = QUERY_SKIP;
 		q->st.curr_cell = p3;
@@ -362,8 +351,6 @@ static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 
 static bool soft_do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 {
-	q->tot_goals--;
-
 	if (q->retry) {
 		q->retry = QUERY_SKIP;
 		q->st.curr_cell = p3;
@@ -406,6 +393,7 @@ bool fn_iso_conjunction_2(query *q)
 
 bool fn_iso_disjunction_2(query *q)
 {
+	q->tot_goals--;
 	cell *c = q->st.curr_cell+1;
 
 	if (is_callable(c)) {
@@ -427,7 +415,6 @@ bool fn_iso_disjunction_2(query *q)
 		}
 	}
 
-	q->tot_goals--;
 	GET_FIRST_ARG(p1,callable);
 
 	if (q->retry) {
@@ -450,7 +437,6 @@ bool fn_iso_disjunction_2(query *q)
 
 bool fn_iso_negation_1(query *q)
 {
-	q->tot_goals--;
 	GET_FIRST_ARG(p1,callable);
 	cell *tmp = prepare_call(q, true, p1, p1_ctx, 5);
 	check_heap_error(tmp);
@@ -469,14 +455,12 @@ bool fn_iso_negation_1(query *q)
 
 bool fn_iso_cut_0(query *q)
 {
-	q->tot_goals--;
 	cut(q);
 	return true;
 }
 
 bool fn_sys_block_catcher_1(query *q)
 {
-	q->tot_goals--;
 	GET_FIRST_ARG(p1,integer);
 	pl_idx cp = get_smalluint(p1);
 	choice *ch = GET_CHOICE(cp);
@@ -585,7 +569,6 @@ bool fn_sys_call_cleanup_3(query *q)
 
 bool fn_sys_countall_2(query *q)
 {
-	q->tot_goals--;
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,var);
 
