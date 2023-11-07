@@ -247,9 +247,9 @@ static bool fn_iso_notunify_2(query *q)
 	pl_idx nbr_cells = PREFIX_LEN;
 	tmp[nbr_cells].nbr_cells += p1->nbr_cells+p2->nbr_cells;
 	nbr_cells++;
-	safe_copy_cells(tmp+nbr_cells, p1, p1->nbr_cells);
+	safe_copy_cells2(tmp+nbr_cells, p1, p1_ctx, p1->nbr_cells);
 	nbr_cells += p1->nbr_cells;
-	safe_copy_cells(tmp+nbr_cells, p2, p2->nbr_cells);
+	safe_copy_cells2(tmp+nbr_cells, p2, p2_ctx, p2->nbr_cells);
 	nbr_cells += p2->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_cut_s, fn_iso_cut_0, 0, 0);
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_1, 1, 1);

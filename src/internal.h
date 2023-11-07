@@ -906,6 +906,22 @@ inline static pl_idx safe_copy_cells(cell *dst, const cell *src, pl_idx nbr_cell
 	return nbr_cells;
 }
 
+inline static pl_idx safe_copy_cells2(cell *dst, const cell *src, pl_idx src_ctx, pl_idx nbr_cells)
+{
+	memcpy(dst, src, sizeof(cell)*nbr_cells);
+
+	for (pl_idx i = 0; i < nbr_cells; i++, dst++) {
+		share_cell(dst);
+
+		if (is_var(dst) && !is_ref(dst)) {
+			dst->flags |= FLAG_VAR_REF;
+			dst->var_ctx = src_ctx;
+		}
+	}
+
+	return nbr_cells;
+}
+
 inline static void chk_cells(cell *src, pl_idx nbr_cells)
 {
 	for (pl_idx i = 0; i < nbr_cells; i++, src++)
