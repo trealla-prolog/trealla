@@ -357,11 +357,9 @@ cell *prepare_call(query *q, bool prefix, cell *p1, pl_idx p1_ctx, unsigned extr
 	}
 
 	cell *src = p1, *dst = tmp + (prefix ? PREFIX_LEN : NOPREFIX_LEN);
+	copy_cells(dst, src, src->nbr_cells);
 
 	for (pl_idx i = 0; i < p1->nbr_cells; i++, dst++) {
-		*dst = *src++;
-		share_cell(dst);
-
 		if (is_var(dst) && !is_ref(dst)) {
 			dst->flags |= FLAG_VAR_REF;
 			dst->var_ctx = p1_ctx;
