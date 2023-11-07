@@ -338,6 +338,7 @@ bool has_next_key(query *q)
 			return false;
 	}
 
+#if 0
 	const cell *qarg1 = NULL, *qarg2 = NULL;
 
 	if (q->st.karg1_is_ground)
@@ -345,6 +346,7 @@ bool has_next_key(query *q)
 
 	if (q->st.karg2_is_ground)
 		qarg2 = deref(q, NEXT_ARG(FIRST_ARG(q->st.key)), q->st.key_ctx);
+#endif
 
 	//DUMP_TERM("key ", q->st.key, q->st.key_ctx, 1);
 
@@ -356,6 +358,7 @@ bool has_next_key(query *q)
 
 		//DUMP_TERM("next", dkey, q->st.curr_frame, 0);
 
+#if 0
 		if (qarg1) {
 			if (index_cmpkey(qarg1, FIRST_ARG(dkey), q->st.m, NULL) != 0)
 				continue;
@@ -365,6 +368,7 @@ bool has_next_key(query *q)
 			if (index_cmpkey(qarg2, NEXT_ARG(FIRST_ARG(dkey)), q->st.m, NULL) != 0)
 				continue;
 		}
+#endif
 
 		if (index_cmpkey(q->st.key, dkey, q->st.m, NULL) == 0)
 			return true;
