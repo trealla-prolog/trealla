@@ -294,8 +294,14 @@ static void setup_key(query *q)
 	if (!is_var(arg1))
 		q->st.karg1_is_ground = true;
 
+	if (is_atomic(arg1))
+		q->st.karg1_is_atomic = true;
+
 	if (arg2 && !is_var(arg2))
 		q->st.karg2_is_ground = true;
+
+	if (arg2 && is_atomic(arg2))
+		q->st.karg2_is_atomic = true;
 }
 
 static void next_key(query *q)
@@ -323,6 +329,14 @@ bool has_next_key(query *q)
 
 	if (!q->st.key->arity)
 		return true;
+
+	if (q->st.r->cl.is_unique) {
+		if ((q->st.key->arity == 1) && q->st.karg1_is_atomic)
+			return false;
+
+		if ((q->st.key->arity == 2) && q->st.karg1_is_atomic && q->st.karg2_is_atomic)
+			return false;
+	}
 
 	const cell *qarg1 = NULL, *qarg2 = NULL;
 
@@ -401,6 +415,8 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 	q->st.iter = NULL;
 	q->st.karg1_is_ground = false;
 	q->st.karg2_is_ground = false;
+	q->st.karg1_is_atomic = false;
+	q->st.karg2_is_atomic = false;
 	q->st.key = key;
 	q->st.key_ctx = key_ctx;
 

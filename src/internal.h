@@ -536,7 +536,7 @@ struct prolog_state_ {
 	module *m;
 
 	union {
-		struct { cell *key; bool karg1_is_ground:1; bool karg2_is_ground:1; };
+		struct { cell *key; bool karg1_is_ground:1, karg2_is_ground:1, karg1_is_atomic:1, karg2_is_atomic:1; };
 		struct { uint64_t v1, v2; };
 		int64_t cnt;
 	};
