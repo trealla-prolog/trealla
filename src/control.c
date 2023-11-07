@@ -335,7 +335,7 @@ bool fn_if_2(query *q)
 
 // if -> then ; else
 
-static bool do_if_then_else(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, cell *p3, pl_idx p3_ctx)
+static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 {
 	q->tot_goals--;
 
@@ -345,13 +345,13 @@ static bool do_if_then_else(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx 
 		return true;
 	}
 
-	cell *tmp = prepare_call(q, true, p1, p1_ctx, 3+p2->nbr_cells+1);
+	cell *tmp = prepare_call(q, true, p1, q->st.curr_frame, 3+p2->nbr_cells+1);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_cut_s, fn_iso_cut_0, 0, 0);
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
-	nbr_cells += safe_copy_cells2(tmp+nbr_cells, p2, p2_ctx, p2->nbr_cells);
+	nbr_cells += safe_copy_cells(tmp+nbr_cells, p2, p2->nbr_cells);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
 	q->st.curr_cell = tmp;
@@ -360,7 +360,7 @@ static bool do_if_then_else(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx 
 
 // if *-> then ; else
 
-static bool soft_do_if_then_else(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, cell *p3, pl_idx p3_ctx)
+static bool soft_do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 {
 	q->tot_goals--;
 
@@ -370,12 +370,12 @@ static bool soft_do_if_then_else(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl
 		return true;
 	}
 
-	cell *tmp = prepare_call(q, true, p1, p1_ctx, 2+p2->nbr_cells+1);
+	cell *tmp = prepare_call(q, true, p1, q->st.curr_frame, 2+p2->nbr_cells+1);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
-	nbr_cells += safe_copy_cells2(tmp+nbr_cells, p2, p2_ctx, p2->nbr_cells);
+	nbr_cells += safe_copy_cells(tmp+nbr_cells, p2, p2->nbr_cells);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
 	q->st.curr_cell = tmp;
@@ -386,10 +386,10 @@ static bool soft_do_if_then_else(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl
 
 bool fn_if_3(query *q)
 {
-	GET_FIRST_ARG(p1,callable);
-	GET_NEXT_ARG(p2,callable);
-	GET_NEXT_ARG(p3,callable);
-	return soft_do_if_then_else(q, p1, p1_ctx, p2, p2_ctx, p3, p3_ctx);
+	cell *p1 = q->st.curr_cell + 1;
+	cell *p2 = p1 + p1->nbr_cells;
+	cell *p3 = p2 + p2->nbr_cells;
+	return soft_do_if_then_else(q, p1, p2, p3);
 }
 
 // goal , goal
@@ -409,29 +409,29 @@ bool fn_iso_disjunction_2(query *q)
 	cell *c = q->st.curr_cell+1;
 
 	if (is_callable(c)) {
-		if (is_cstring(c) && !CMP_STRING_TO_CSTR(q, c, "[]"))
+		if (is_cstring(c) && (c->val_off == g_nil_s))
 			return throw_error(q, c, q->st.curr_frame, "type_error", "callable");
 
 		if (c->fn_ptr && (c->fn_ptr->fn == fn_iso_if_then_2)) {
 			cell *p1 = q->st.curr_cell + 2;
 			cell *p2 = p1 + p1->nbr_cells;
 			cell *p3 = p2 + p2->nbr_cells;
-			return do_if_then_else(q, p1, q->st.curr_frame, p2, q->st.curr_frame, p3, q->st.curr_frame);
+			return do_if_then_else(q, p1, p2, p3);
 		}
 
 		if (c->fn_ptr && (c->fn_ptr->fn == fn_if_2)) {
 			cell *p1 = q->st.curr_cell + 2;
 			cell *p2 = p1 + p1->nbr_cells;
 			cell *p3 = p2 + p2->nbr_cells;
-			return soft_do_if_then_else(q, p1, q->st.curr_frame, p2, q->st.curr_frame, p3, q->st.curr_frame);
+			return soft_do_if_then_else(q, p1, p2, p3);
 		}
 	}
 
 	q->tot_goals--;
 	GET_FIRST_ARG(p1,callable);
-	GET_NEXT_ARG(p2,callable);
 
 	if (q->retry) {
+		GET_NEXT_ARG(p2,callable);
 		q->retry = QUERY_SKIP;
 		q->st.curr_cell = p2;
 		return true;
