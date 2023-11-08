@@ -1022,6 +1022,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 					tmp_ctx = c_ctx;
 					SB_sprintf(q->sb, "%s", !is_ref(tmp) ? C_STR(q, tmp) : "_");
 					if (e) e->vgen = save_vgen;
+					if (arity) {SB_sprintf(q->sb, "%s", ","); }
 					continue;
 				}
 
