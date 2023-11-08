@@ -2042,7 +2042,7 @@ static bool fn_iso_functor_3(query *q)
 		if (is_negative(p3))
 			return throw_error(q, p3, p3_ctx, "domain_error", "not_less_than_zero");
 
-		if (is_gt(p3,MAX_ARITY/2))
+		if (is_gt(p3,MAX_ARITY))
 			return throw_error(q, p3, p3_ctx, "representation_error", "max_arity");
 
 		if (!is_atom(p2) && is_positive(p3))
