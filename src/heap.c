@@ -357,7 +357,7 @@ cell *prepare_call(query *q, bool prefix, cell *p1, pl_idx p1_ctx, unsigned extr
 	}
 
 	cell *dst = tmp + (prefix ? PREFIX_LEN : NOPREFIX_LEN);
-	safe_copy_cells2(dst, p1, p1_ctx, p1->nbr_cells);
+	safe_copy_cells_by_ref(dst, p1, p1_ctx, p1->nbr_cells);
 	return tmp;
 }
 

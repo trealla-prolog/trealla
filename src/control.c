@@ -295,7 +295,7 @@ bool fn_iso_if_then_2(query *q)
 	make_struct(tmp+nbr_cells++, g_cut_s, fn_iso_cut_0, 0, 0);
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
-	nbr_cells += safe_copy_cells2(tmp+nbr_cells, p2, p2_ctx, p2->nbr_cells);
+	nbr_cells += safe_copy_cells_by_ref(tmp+nbr_cells, p2, p2_ctx, p2->nbr_cells);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
@@ -315,7 +315,7 @@ bool fn_if_2(query *q)
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
-	nbr_cells += safe_copy_cells2(tmp+nbr_cells, p2, p2_ctx, p2->nbr_cells);
+	nbr_cells += safe_copy_cells_by_ref(tmp+nbr_cells, p2, p2_ctx, p2->nbr_cells);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();

@@ -906,7 +906,7 @@ inline static pl_idx safe_copy_cells(cell *dst, const cell *src, pl_idx nbr_cell
 	return nbr_cells;
 }
 
-inline static pl_idx safe_copy_cells2(cell *dst, const cell *src, pl_idx src_ctx, pl_idx nbr_cells)
+inline static pl_idx safe_copy_cells_by_ref(cell *dst, const cell *src, pl_idx src_ctx, pl_idx nbr_cells)
 {
 	memcpy(dst, src, sizeof(cell)*nbr_cells);
 
