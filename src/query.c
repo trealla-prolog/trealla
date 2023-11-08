@@ -28,11 +28,11 @@ static void msleep(int ms)
 #define Trace if (!(q->trace /*&& !consulting*/)) q->step++; else  trace_call
 
 static const unsigned INITIAL_NBR_QUEUE_CELLS = 1000;
-static const unsigned INITIAL_NBR_HEAP_CELLS = 4000;
+static const unsigned INITIAL_NBR_HEAP_CELLS = 8000;
 static const unsigned INITIAL_NBR_FRAMES = 8000;
-static const unsigned INITIAL_NBR_SLOTS = 16000;
-static const unsigned INITIAL_NBR_TRAILS = 16000;
-static const unsigned INITIAL_NBR_CHOICES = 2000;
+static const unsigned INITIAL_NBR_SLOTS = 32000;
+static const unsigned INITIAL_NBR_TRAILS = 32000;
+static const unsigned INITIAL_NBR_CHOICES = 8000;
 static const unsigned INITIAL_NBR_CELLS = 1000;
 
 unsigned g_string_cnt = 0, g_interned_cnt = 0;
