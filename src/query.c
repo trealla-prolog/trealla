@@ -902,9 +902,7 @@ static void commit_frame(query *q, cell *body)
 	bool last_match = is_det || cl->is_first_cut || !next_key;
 	bool tco = false;
 
-	if (q->no_tco || (q->st.fp != q->st.curr_frame + 1))
-		;
-	else if (last_match) {
+	if (!q->no_tco && (q->st.fp == (q->st.curr_frame + 1)) && last_match) {
 		bool choices = any_choices(q, f);
 		bool tail_recursive = is_tail_recursive(q->st.curr_cell);
 		bool tail_call = is_tail_call(q->st.curr_cell);
