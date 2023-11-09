@@ -57,8 +57,6 @@ typedef uint32_t pl_idx;
 char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #endif
 
-extern unsigned g_string_cnt, g_interned_cnt;
-
 // Sentinel Value
 #define ERR_IDX (~(pl_idx)0)
 #define IDX_MAX (ERR_IDX-1)
@@ -202,7 +200,6 @@ typedef struct {
 	strb->cstr[n] = 0;											\
 	strb->len = n;												\
 	strb->refcnt = 1;											\
-	g_string_cnt++;												\
 	(c)->val_strb = strb;										\
 	(c)->strb_off = off;										\
 	(c)->strb_len = n;											\
@@ -860,7 +857,6 @@ inline static void unshare_cell_(cell *c)
 		if (--(c)->val_strb->refcnt == 0) {
 			free((c)->val_strb);
 			c->flags = 0;
-			g_string_cnt--;
 		}
 	} else if (is_bigint(c)) {
 		if (--(c)->val_bigint->refcnt == 0)	{

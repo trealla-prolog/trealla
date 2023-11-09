@@ -35,7 +35,6 @@ static const unsigned INITIAL_NBR_TRAILS = 32000;
 static const unsigned INITIAL_NBR_CHOICES = 8000;
 static const unsigned INITIAL_NBR_CELLS = 1000;
 
-unsigned g_string_cnt = 0, g_interned_cnt = 0;
 volatile int g_tpl_interrupt = 0;
 
 typedef enum { CALL, EXIT, REDO, NEXT, FAIL } box_t;
