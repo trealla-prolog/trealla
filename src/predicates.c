@@ -5837,11 +5837,11 @@ static bool fn_char_type_2(query *q)
 		return iswblank(ch);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "space"))
 		return iswspace(ch);
-	else if (!CMP_STRING_TO_CSTR(q, p2, "lower"))
-		return iswlower(ch);
-	else if (!CMP_STRING_TO_CSTR(q, p2, "upper"))
-		return iswupper(ch);
-	else if (!CMP_STRING_TO_CSTR(q, p2, "to_lower") && p2->arity) {
+	//else if (!CMP_STRING_TO_CSTR(q, p2, "lower"))
+	//	return iswlower(ch);
+	//else if (!CMP_STRING_TO_CSTR(q, p2, "upper"))
+	//	return iswupper(ch);
+	else if (!CMP_STRING_TO_CSTR(q, p2, "lower") && p2->arity) {
 		cell *arg1 = deref(q, p2+1, p2_ctx);
 		pl_idx arg1_ctx = q->latest_ctx;
 		char tmpbuf[20];
@@ -5849,7 +5849,7 @@ static bool fn_char_type_2(query *q)
 		cell tmp;
 		make_string(&tmp, tmpbuf);
 		return unify(q, arg1, arg1_ctx, &tmp, q->st.curr_frame);
-	} else if (!CMP_STRING_TO_CSTR(q, p2, "to_upper") && p2->arity) {
+	} else if (!CMP_STRING_TO_CSTR(q, p2, "upper") && p2->arity) {
 		cell *arg1 = deref(q, p2+1, p2_ctx);
 		pl_idx arg1_ctx = q->latest_ctx;
 		char tmpbuf[20];
