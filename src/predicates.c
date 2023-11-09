@@ -5818,7 +5818,9 @@ static bool fn_char_type_2(query *q)
 	else if (!CMP_STRING_TO_CSTR(q, p2, "hexadecimal_digit")) {
 		static const char *s_hex = "0123456789abcdefABCDEF";
 		return strchr(s_hex, ch);
-	} else if (!CMP_STRING_TO_CSTR(q, p2, "digit"))
+	} else if (!CMP_STRING_TO_CSTR(q, p2, "decimal_digit"))
+		return iswdigit(ch);
+	else if (!CMP_STRING_TO_CSTR(q, p2, "digit"))
 		return iswdigit(ch);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "xdigit"))
 		return iswxdigit(ch);
