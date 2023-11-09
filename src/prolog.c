@@ -86,14 +86,6 @@ pl_idx new_atom(prolog *pl, const char *name)
 	return add_to_pool(pl, name);
 }
 
-module *find_next_module(prolog *pl, module *m)
-{
-	if (!m)
-		return pl->modules;
-
-	return m->next;
-}
-
 module *find_module(prolog *pl, const char *name)
 {
 	for (module *m = pl->modules; m; m = m->next) {
