@@ -431,8 +431,8 @@ static bool dump_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 		h = running ? deref(q, h, l_ctx) : h;
 		pl_idx h_ctx = running ? q->latest_ctx : 0;
 		cell *name = running ? deref(q, h+1, h_ctx) : h+1;
-		cell *v = running ? deref(q, h+2, h_ctx) : h + 2;
-		pl_idx v_ctx = c_ctx;
+		cell *v = running ? deref(q, h+2, h_ctx) : h+2;
+		pl_idx v_ctx = running ? q->latest_ctx : 0;
 
 		if (is_var(v) && (v->var_nbr == c->var_nbr) && (v_ctx == c_ctx)) {
 			if (0 && !strcmp(C_STR(q, name), "_")) {
