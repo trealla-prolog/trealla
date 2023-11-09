@@ -162,10 +162,7 @@ static bool fn_iso_findall_3(query *q)
 			check_heap_error(p0);
 			unify(q, q->st.curr_cell, q->st.curr_frame, p0, q->st.curr_frame);
 			GET_FIRST_ARG0(xp1,any,p0);
-			GET_NEXT_ARG(xp2,any);
 			p1 = xp1;
-			p2 = xp2;
-			p2_ctx = xp2_ctx;
 		}
 
 		grab_queuen(q);
