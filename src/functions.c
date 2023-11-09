@@ -2854,7 +2854,7 @@ static bool fn_sys_set_prob_1(query *q)
 		p = p1->val_float;
 	else if (is_smallint(p1))
 		p = p1->val_int;
-	else if (is_structure(p1) && (p1->arity == 2) && !strcmp(C_STR(q, p1), "/")) {
+	else if (is_compound(p1) && (p1->arity == 2) && !strcmp(C_STR(q, p1), "/")) {
 		cell *c1 = p1+1;
 
 		if (!is_smallint(c1))

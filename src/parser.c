@@ -599,7 +599,7 @@ static bool directives(parser *p, cell *d)
 	cell *p1 = c + 1;
 
 	if (!strcmp(dirname, "help") && (c->arity == 2)) {
-		if (!is_structure(p1)) return true;
+		if (!is_compound(p1)) return true;
 		cell *p2 = p1 + p1->nbr_cells;
 		if (!is_iso_list_or_nil(p2)) return true;
 		LIST_HANDLER(p2);
@@ -609,12 +609,12 @@ static bool directives(parser *p, cell *d)
 		while (is_iso_list(p2)) {
 			cell *h = LIST_HEAD(p2);
 
-			if (is_structure(h) && is_atom(h+1) && !strcmp(C_STR(p, h), "iso")) {
+			if (is_compound(h) && is_atom(h+1) && !strcmp(C_STR(p, h), "iso")) {
 				cell *arg = h + 1;
 				iso = !strcmp(C_STR(p, arg), "true");
 			}
 
-			if (is_structure(h) && is_atom(h+1) && !strcmp(C_STR(p, h), "desc")) {
+			if (is_compound(h) && is_atom(h+1) && !strcmp(C_STR(p, h), "desc")) {
 				cell *arg = h + 1;
 				desc = DUP_STRING(p, arg);
 			}
@@ -777,7 +777,7 @@ static bool directives(parser *p, cell *d)
 		while (arg->val_off == g_conjunction_s) {
 			cell *f = arg + 1;
 
-			if (!is_structure(f))
+			if (!is_compound(f))
 				break;
 
 			if (f->val_off != g_slash_s)
@@ -850,7 +850,7 @@ static bool directives(parser *p, cell *d)
 		while (is_iso_list(p2) && !g_tpl_interrupt) {
 			cell *head = LIST_HEAD(p2);
 
-			if (is_structure(head)) {
+			if (is_compound(head)) {
 				if (!strcmp(C_STR(p, head), "/")
 					|| !strcmp(C_STR(p, head), "//")) {
 					cell *f = head+1, *a = f+1;
@@ -921,7 +921,7 @@ static bool directives(parser *p, cell *d)
 #endif
 
 	if (!strcmp(dirname, "meta_predicate") && (c->arity == 1)) {
-		if (!is_structure(p1))
+		if (!is_compound(p1))
 			return true;
 	}
 

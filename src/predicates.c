@@ -157,7 +157,7 @@ static bool fn_iso_findall_3(query *q)
 		if (is_iso_list(p3) && !check_list(q, p3, p3_ctx, &is_partial, NULL) && !is_partial)
 			return throw_error(q, p3, p3_ctx, "type_error", "list");
 
-		if (is_structure(p1) && (!is_iso_list(p1))) {	// Why?
+		if (is_compound(p1) && (!is_iso_list(p1))) {	// Why?
 			cell *p0 = deep_copy_to_heap(q, q->st.curr_cell, q->st.curr_frame, false);
 			check_heap_error(p0);
 			unify(q, q->st.curr_cell, q->st.curr_frame, p0, q->st.curr_frame);
@@ -306,7 +306,7 @@ static bool fn_iso_atom_1(query *q)
 static bool fn_iso_compound_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	return is_compound(p1) ? 1 : 0;
+	return is_structure(p1) ? 1 : 0;
 }
 
 static bool fn_iso_atomic_1(query *q)
@@ -2505,7 +2505,7 @@ static bool fn_iso_set_prolog_flag_2(query *q)
 			h = deref(q, h, l_ctx);
 			pl_idx h_ctx = q->latest_ctx;
 
-			if (!is_structure(h))
+			if (!is_compound(h))
 				return answer_write_options_error(q, h);
 
 			cell *h1 = h + 1;
@@ -2678,7 +2678,7 @@ static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysor
 		pl_idx h_ctx = q->latest_ctx;
 
 		if (keysort) {
-			if (!is_structure(h) || strcmp(C_STR(q, h), "-")) {
+			if (!is_compound(h) || strcmp(C_STR(q, h), "-")) {
 				*status = throw_error(q, h, h_ctx, "type_error", "pair");
 				free(base);
 				return NULL;
@@ -2718,7 +2718,7 @@ static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysor
 		pl_idx c_ctx = q->latest_ctx;
 		cell tmp;
 
-		if (is_structure(c) && !is_iso_list(c)) {
+		if (is_compound(c) && !is_iso_list(c)) {
 			make_ref(&tmp, c->val_off, create_vars(q, 1), q->st.curr_frame);
 			unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 			c = &tmp;
@@ -2838,7 +2838,7 @@ static bool fn_iso_keysort_2(query *q)
 		pl_idx tmp_h_ctx = q->latest_ctx;
 		LIST_TAIL(p2);
 
-		if (!is_var(tmp_h) && (!is_structure(tmp_h) || strcmp(C_STR(q, tmp_h), "-")))
+		if (!is_var(tmp_h) && (!is_compound(tmp_h) || strcmp(C_STR(q, tmp_h), "-")))
 			return throw_error(q, tmp_h, tmp_h_ctx, "type_error", "pair");
 	}
 
@@ -2903,7 +2903,7 @@ static cell *nodesort4(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool ascen
 		pl_idx c_ctx = q->latest_ctx;
 		cell tmp;
 
-		if (is_var(c) || is_structure(c)) {
+		if (is_var(c) || is_compound(c)) {
 			make_ref(&tmp, c->val_off, create_vars(q, 1), q->st.curr_frame);
 			unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 			c = &tmp;
@@ -2966,7 +2966,7 @@ static bool fn_sort_4(query *q)
 		pl_idx tmp_h_ctx = q->latest_ctx;
 		LIST_TAIL(p4);
 
-		if (!is_var(tmp_h) && (!is_structure(tmp_h) || strcmp(C_STR(q, tmp_h), "-")))
+		if (!is_var(tmp_h) && (!is_compound(tmp_h) || strcmp(C_STR(q, tmp_h), "-")))
 			return throw_error(q, tmp_h, tmp_h_ctx, "type_error", "pair");
 	}
 
@@ -3278,7 +3278,7 @@ static bool fn_source_info_2(query *q)
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,var);
 
-	if (!is_structure(p1))
+	if (!is_compound(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
 	if (p1->arity != 2)
@@ -3353,7 +3353,7 @@ static bool fn_help_1(query *q)
 		return true;
 	}
 
-	if (!is_structure(p1))
+	if (!is_compound(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
 	if (p1->arity != 2)
@@ -3418,7 +3418,7 @@ static bool fn_help_2(query *q)
 		return true;
 	}
 
-	if (!is_structure(p1))
+	if (!is_compound(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
 	if (p1->arity != 2)
@@ -3512,7 +3512,7 @@ static bool fn_module_help_2(query *q)
 		return true;
 	}
 
-	if (!is_structure(p1))
+	if (!is_compound(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
 	if (p1->arity != 2)
@@ -3580,7 +3580,7 @@ static bool fn_module_help_3(query *q)
 		return true;
 	}
 
-	if (!is_structure(p1))
+	if (!is_compound(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
 	if (p1->arity != 2)
@@ -4153,9 +4153,9 @@ static bool fn_must_be_4(query *q)
 	else if (!strcmp(src, "ground")) {
 		if (has_vars(q, p1, p1_ctx))
 			return throw_error2(q, p1, p1_ctx, "type_error", "ground", p3);
-	} else if (!strcmp(src, "compound") && !is_compound(p1))
+	} else if (!strcmp(src, "compound") && !is_structure(p1))
 		return throw_error2(q, p1, p1_ctx, "type_error", "compound", p3);
-	else if (is_structure(p2) && (p2->arity == 1) && !strcmp(src, "list")) {
+	else if (is_compound(p2) && (p2->arity == 1) && !strcmp(src, "list")) {
 		cell *c = p2+1;
 		c = deref(q, c, p2_ctx);
 		pl_idx c_ctx = q->latest_ctx;
@@ -4202,7 +4202,7 @@ static bool fn_must_be_4(query *q)
 				return throw_error(q, h, h_ctx, "type_error", "atomic");
 			else if (!strcmp(src, "ground" ) && has_vars(q, h, h_ctx))
 				return throw_error(q, h, h_ctx, "type_error", "ground");
-			else if (!strcmp(src, "compound" ) && !is_compound(h))
+			else if (!strcmp(src, "compound" ) && !is_structure(h))
 				return throw_error(q, h, h_ctx, "type_error", "compound");
 
 			l = LIST_TAIL(l);
@@ -4288,9 +4288,9 @@ static bool fn_must_be_2(query *q)
 		if (has_vars(q, p1, p1_ctx))
 			return throw_error(q, p1, p1_ctx, "type_error", "ground");
 	} else if (!strcmp(src, "compound")) {
-		if (!is_compound(p1))
+		if (!is_structure(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "compound");
-	} else if (is_structure(p2) && (p2->arity == 1) && !strcmp(src, "list")) {
+	} else if (is_compound(p2) && (p2->arity == 1) && !strcmp(src, "list")) {
 		cell *c = p2+1;
 		c = deref(q, c, p2_ctx);
 		pl_idx c_ctx = q->latest_ctx;
@@ -4337,7 +4337,7 @@ static bool fn_must_be_2(query *q)
 				return throw_error(q, h, h_ctx, "type_error", "atomic");
 			else if (!strcmp(src, "ground" ) && has_vars(q, h, h_ctx))
 				return throw_error(q, h, h_ctx, "type_error", "ground");
-			else if (!strcmp(src, "compound" ) && !is_compound(h))
+			else if (!strcmp(src, "compound" ) && !is_structure(h))
 				return throw_error(q, h, h_ctx, "type_error", "compound");
 
 			l = LIST_TAIL(l);
@@ -4387,7 +4387,7 @@ static bool fn_can_be_4(query *q)
 		return throw_error2(q, p1, p1_ctx, "type_error", "float", p3);
 	else if (!strcmp(src, "number") && !is_number(p1))
 		return throw_error2(q, p1, p1_ctx, "type_error", "number", p3);
-	else if (!strcmp(src, "compound") && !is_compound(p1))
+	else if (!strcmp(src, "compound") && !is_structure(p1))
 		return throw_error2(q, p1, p1_ctx, "type_error", "compound", p3);
 	else if (!strcmp(src, "term") && is_cyclic_term(q, p1, p1_ctx))
 		return throw_error(q, p1, p1_ctx, "type_error", "term");
@@ -4432,7 +4432,7 @@ static bool fn_can_be_2(query *q)
 		return throw_error(q, p1, p1_ctx, "type_error", "float");
 	else if (!strcmp(src, "number") && !is_number(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "number");
-	else if (!strcmp(src, "compound") && !is_compound(p1))
+	else if (!strcmp(src, "compound") && !is_structure(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "compound");
 	else if (!strcmp(src, "term") && is_cyclic_term(q, p1, p1_ctx))
 		return throw_error(q, p1, p1_ctx, "type_error", "term");
@@ -4937,7 +4937,7 @@ static bool fn_crypto_data_hash_3(query *q)
 		h = deref(q, h, p3_ctx);
 		pl_idx h_ctx = q->latest_ctx;
 
-		if (is_structure(h) && (h->arity == 1)) {
+		if (is_compound(h) && (h->arity == 1)) {
 			cell *arg = h+1;
 			arg = deref(q, arg, h_ctx);
 			pl_idx arg_ctx = q->latest_ctx;
@@ -5800,7 +5800,7 @@ static bool fn_sys_legacy_evaluable_property_2(query *q)
 static bool fn_char_type_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_int);
-	GET_NEXT_ARG(p2,atom_or_structure);
+	GET_NEXT_ARG(p2,atom_or_compound);
 	int ch;
 
 	if (is_bigint(p1))
@@ -6293,7 +6293,7 @@ static bool fn_current_module_1(query *q)
 static bool fn_use_module_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	if (!is_atom(p1) && !is_structure(p1)) return false;
+	if (!is_atom(p1) && !is_compound(p1)) return false;
 	return do_use_module_1(q->st.m, q->st.curr_cell);
 }
 

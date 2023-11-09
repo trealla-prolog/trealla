@@ -58,7 +58,7 @@ void dump_term(query *q, const char *s, const cell *c)
 			printf("%s ", C_STR(q, c));
 		else if (is_var(c))
 			printf("_%u ", c->var_nbr);
-		else if (is_structure(c))
+		else if (is_compound(c))
 			printf("%s/%u ", C_STR(q, c), c->arity);
 
 		printf("\n");

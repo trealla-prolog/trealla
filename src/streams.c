@@ -940,7 +940,7 @@ static bool fn_popen_4(query *q)
 		if (is_var(c))
 			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 
-		if (is_structure(c) && (c->arity == 1)) {
+		if (is_compound(c) && (c->arity == 1)) {
 			cell *name = c + 1;
 			name = deref(q, name, q->latest_ctx);
 
@@ -1075,7 +1075,7 @@ static bool fn_process_create_3(query *q)
 		cell *c = deref(q, h, p3_ctx);
 		pl_idx c_ctx = q->latest_ctx;
 
-		if (is_structure(c) && (c->arity == 1)) {
+		if (is_compound(c) && (c->arity == 1)) {
 			cell *name = c + 1;
 			name = deref(q, name, c_ctx);
 			pl_idx name_ctx = q->latest_ctx;
@@ -1105,7 +1105,7 @@ static bool fn_process_create_3(query *q)
 					cell *h = LIST_HEAD(name);
 					cell *c = deref(q, h, name_ctx);
 
-					if (is_structure(c) && (c->arity == 2) && (c->val_off == g_eq_s)) {
+					if (is_compound(c) && (c->arity == 2) && (c->val_off == g_eq_s)) {
 						cell *p1 = c + 1, *p2 = c + 2;
 						SB(pr);
 
@@ -1130,7 +1130,7 @@ static bool fn_process_create_3(query *q)
 					cell *h = LIST_HEAD(name);
 					cell *c = deref(q, h, name_ctx);
 
-					if (is_structure(c) && (c->arity == 2) && (c->val_off == g_eq_s)) {
+					if (is_compound(c) && (c->arity == 2) && (c->val_off == g_eq_s)) {
 						cell *p1 = c + 1, *p2 = c + 2;
 						SB(pr);
 
@@ -1153,7 +1153,7 @@ static bool fn_process_create_3(query *q)
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdin") && !CMP_STRING_TO_CSTR(q, name, "null")) {
 				posix_spawn_file_actions_addopen(&file_actions, 0, "/dev/null", O_RDONLY, 0);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdin") && !CMP_STRING_TO_CSTR(q, name, "pipe")
-				&& is_structure(name) && (name->arity == 1) && is_var(name+1)) {
+				&& is_compound(name) && (name->arity == 1) && is_var(name+1)) {
 				cell *ns = deref(q, name+1, name_ctx);
 				pl_idx ns_ctx = q->latest_ctx;
 				int n = new_stream(q->pl);
@@ -1177,7 +1177,7 @@ static bool fn_process_create_3(query *q)
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdout") && !CMP_STRING_TO_CSTR(q, name, "null")) {
 				posix_spawn_file_actions_addopen(&file_actions, 1, "/dev/null", O_WRONLY, 0);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdout") && !CMP_STRING_TO_CSTR(q, name, "pipe")
-				&& is_structure(name) && (name->arity == 1) && is_var(name+1)) {
+				&& is_compound(name) && (name->arity == 1) && is_var(name+1)) {
 				cell *ns = deref(q, name+1, name_ctx);
 				pl_idx ns_ctx = q->latest_ctx;
 				int n = new_stream(q->pl);
@@ -1201,7 +1201,7 @@ static bool fn_process_create_3(query *q)
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stderr") && !CMP_STRING_TO_CSTR(q, name, "null")) {
 				posix_spawn_file_actions_addopen(&file_actions, 2, "/dev/null", O_WRONLY, 0);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stderr") && !CMP_STRING_TO_CSTR(q, name, "pipe")
-				&& is_structure(name) && (name->arity == 1) && is_var(name+1)) {
+				&& is_compound(name) && (name->arity == 1) && is_var(name+1)) {
 				cell *ns = deref(q, name+1, name_ctx);
 				pl_idx ns_ctx = q->latest_ctx;
 				int n = new_stream(q->pl);
@@ -1265,7 +1265,7 @@ static bool fn_process_wait_2(query *q)
 		cell *h = LIST_HEAD(p2);
 		cell *c = deref(q, h, p2_ctx);
 
-		if (is_structure(c) && (c->arity == 1) && !CMP_STRING_TO_CSTR(q, c, "timeout")) {
+		if (is_compound(c) && (c->arity == 1) && !CMP_STRING_TO_CSTR(q, c, "timeout")) {
 			if (is_integer(FIRST_ARG(c)))
 				secs = get_smallint(FIRST_ARG(c));
 			else if (is_atom(FIRST_ARG(c)) && !CMP_STRING_TO_CSTR(q, FIRST_ARG(c), "infinite"))
@@ -1364,7 +1364,7 @@ static void *mmap(void *start, size_t length, int prot, int flags, int fd, off_t
 
 static bool fn_iso_open_4(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_structure);
+	GET_FIRST_ARG(p1,atom_or_compound);
 	GET_NEXT_ARG(p2,atom);
 	GET_NEXT_ARG(p3,var);
 	GET_NEXT_ARG(p4,list_or_nil);
@@ -1377,7 +1377,7 @@ static bool fn_iso_open_4(query *q)
 	char *filename;
 	stream *oldstr = NULL;
 
-	if (is_structure(p1) && (p1->arity == 1) && !CMP_STRING_TO_CSTR(q, p1, "stream")) {
+	if (is_compound(p1) && (p1->arity == 1) && !CMP_STRING_TO_CSTR(q, p1, "stream")) {
 		int oldn = get_stream(q, p1+1);
 
 		if (oldn < 0)
@@ -1698,7 +1698,7 @@ static bool fn_iso_close_2(query *q)
 		cell *h = LIST_HEAD(p1);
 		h = deref(q, h, p1_ctx);
 
-		if (!is_structure(h)
+		if (!is_compound(h)
 			|| CMP_STRING_TO_CSTR(q, h, "force")
 			|| CMP_STRING_TO_CSTR(q, h+1, "true"))
 			return throw_error(q, h, q->latest_ctx, "domain_error", "close_option");
@@ -1879,7 +1879,7 @@ static bool parse_read_params(query *q, stream *str, cell *c, pl_idx c_ctx, cell
 {
 	parser *p = str->p;
 
-	if (!is_structure(c)) {
+	if (!is_compound(c)) {
 		throw_error(q, c, c_ctx, "domain_error", "read_option");
 		return false;
 	}
@@ -2561,7 +2561,7 @@ bool parse_write_params(query *q, cell *c, pl_idx c_ctx, cell **vnames, pl_idx *
 		return false;
 	}
 
-	if (!is_interned(c) || !is_structure(c)) {
+	if (!is_interned(c) || !is_compound(c)) {
 		throw_error(q, c, c_ctx, "domain_error", "write_option");
 		return false;
 	}
@@ -2702,7 +2702,7 @@ bool parse_write_params(query *q, cell *c, pl_idx c_ctx, cell **vnames, pl_idx *
 				return false;
 			}
 
-			if (!is_structure(h)) {
+			if (!is_compound(h)) {
 				throw_error(q, c, c_ctx, "domain_error", "write_option");
 				return false;
 			}
@@ -4604,7 +4604,7 @@ static bool fn_read_file_to_string_3(query *q)
 		if (is_var(c))
 			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 
-		if (is_structure(c) && (c->arity == 1)) {
+		if (is_compound(c) && (c->arity == 1)) {
 			cell *name = c + 1;
 			name = deref(q, name, q->latest_ctx);
 
@@ -4697,7 +4697,7 @@ static bool do_consult(query *q, cell *p1, pl_idx p1_ctx)
 		return true;
 	}
 
-	if (!is_structure(p1))
+	if (!is_compound(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 	if (CMP_STRING_TO_CSTR(q, p1, ":"))
@@ -4738,7 +4738,7 @@ static bool do_deconsult(query *q, cell *p1, pl_idx p1_ctx)
 		return true;
 	}
 
-	if (!is_structure(p1))
+	if (!is_compound(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "source_sink");
 
 	if (CMP_STRING_TO_CSTR(q, p1, ":"))
@@ -4786,7 +4786,7 @@ static bool fn_load_files_2(query *q)
 
 static bool fn_unload_files_1(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_structure);
+	GET_FIRST_ARG(p1,atom_or_compound);
 
 	if (is_atom(p1)) {
 		check_heap_error(do_deconsult(q, p1, p1_ctx));
@@ -4970,7 +4970,7 @@ static bool get_terminator(query *q, cell *l, pl_idx l_ctx)
 		h = deref(q, h, l_ctx);
 		pl_idx h_ctx = q->latest_ctx;
 
-		if (is_structure(h)) {
+		if (is_compound(h)) {
 			if (!CMP_STRING_TO_CSTR(q, h, "terminator")) {
 				h = h + 1;
 				h = deref(q, h, h_ctx);
@@ -5235,7 +5235,7 @@ static bool fn_absolute_file_name_3(query *q)
 		cell *h = LIST_HEAD(p_opts);
 		h = deref(q, h, p_opts_ctx);
 
-		if (is_structure(h) && (h->arity == 1)) {
+		if (is_compound(h) && (h->arity == 1)) {
 			if (!CMP_STRING_TO_CSTR(q, h, "expand")) {
 				if (is_interned(h+1)) {
 					if (!CMP_STRING_TO_CSTR(q, h+1, "true"))
@@ -6009,7 +6009,7 @@ static bool fn_server_3(query *q)
 		cell *h = LIST_HEAD(p3);
 		cell *c = deref(q, h, p3_ctx);
 
-		if (is_structure(c) && (c->arity == 1)) {
+		if (is_compound(c) && (c->arity == 1)) {
 			if (!CMP_STRING_TO_CSTR(q, c, "udp")) {
 				c = c + 1;
 
@@ -6213,7 +6213,7 @@ static bool do_parse_parts(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 				cell *c = LIST_HEAD(h1);
 				c = deref(q, c, h1_ctx);
 
-				if (!is_structure(c) || (c->val_off != g_eq_s) || (c->arity != 2))
+				if (!is_compound(c) || (c->val_off != g_eq_s) || (c->arity != 2))
 					return throw_error(q, c, h1_ctx, "type_error", "compound");
 
 				if (!is_atom(c+1))
@@ -6475,7 +6475,7 @@ static bool fn_client_5(query *q)
 		cell *h = LIST_HEAD(p5);
 		cell *c = deref(q, h, p5_ctx);
 
-		if (is_structure(c) && (c->arity == 1)) {
+		if (is_compound(c) && (c->arity == 1)) {
 			if (!CMP_STRING_TO_CSTR(q, c, "udp")) {
 				c = c + 1;
 
@@ -6529,7 +6529,7 @@ static bool fn_client_5(query *q)
 		cell *h = LIST_HEAD(p5);
 		cell *c = deref(q, h, p5_ctx);
 
-		if (is_structure(c) && (c->arity == 1)) {
+		if (is_compound(c) && (c->arity == 1)) {
 			if (!CMP_STRING_TO_CSTR(q, c, "host")) {
 				c = c + 1;
 
@@ -6883,7 +6883,7 @@ static bool fn_set_stream_2(query *q)
 	cell *name = p1 + 1;
 	name = deref(q, name, p1_ctx);
 
-	if (!is_compound(p1))
+	if (!is_structure(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "stream_property");
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "alias")) {

@@ -227,7 +227,7 @@ bool fn_parse_csv_line_3(query *q)
 		cell *h = LIST_HEAD(p3);
 		h = deref(q,h,p3_ctx);
 
-		if (is_structure(h) && (h->arity == 1)) {
+		if (is_compound(h) && (h->arity == 1)) {
 			cell *c = h + 1;
 
 			if (!strcmp("trim", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))
@@ -279,7 +279,7 @@ bool fn_parse_csv_file_2(query *q)
 		cell *h = LIST_HEAD(p3);
 		h = deref(q,h,p3_ctx);
 
-		if (is_structure(h) && (h->arity == 1)) {
+		if (is_compound(h) && (h->arity == 1)) {
 			cell *c = h + 1;
 
 			if (!strcmp("trim", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))

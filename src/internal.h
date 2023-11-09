@@ -172,8 +172,8 @@ extern unsigned g_string_cnt, g_interned_cnt;
 #define is_ref(c) (is_var(c) && ((c)->flags & FLAG_VAR_REF))
 #define is_op(c) (c->flags & 0xE000) ? true : false
 #define is_callable(c) (is_interned(c) || (is_cstring(c) && !is_string(c)))
-#define is_structure(c) (is_interned(c) && (c)->arity)
-#define is_compound(c) (is_structure(c) || is_string(c))
+#define is_compound(c) (is_interned(c) && (c)->arity)
+#define is_structure(c) (is_compound(c) || is_string(c))
 #define is_number(c) (is_integer(c) || is_float(c) || is_rational(c))
 #define is_atomic(c) (is_atom(c) || is_number(c))
 #define is_iso_atomic(c) (is_iso_atom(c) || is_number(c))
@@ -282,7 +282,7 @@ enum {
 	FLAG_HANDLE_DLL=1<<0,				// used with FLAG_INT_HANDLE
 	FLAG_HANDLE_FUNC=1<<1,				// used with FLAG_INT_HANDLE
 
-	FLAG_BLOB_SRE=1<<0,					// used with TAG_BLOB
+	FLAG_BLOB_SREGEX=1<<0,					// used with TAG_BLOB
 
 	FLAG_TAIL_CALL=1<<7,
 	FLAG_TAIL_RECURSIVE=1<<8,

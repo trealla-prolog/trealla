@@ -418,7 +418,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 		return;
 	}
 
-	if (!is_structure(p1))
+	if (!is_compound(p1))
 		return;
 
 	if (is_iso_list(p1)) {
@@ -553,7 +553,7 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 	if (is_var(p1))
 		return true;
 
-	if (!is_structure(p1))
+	if (!is_compound(p1))
 		return false;
 
 	if (is_iso_list(p1))
@@ -666,7 +666,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned 
 	}
 #endif
 
-	if (!is_structure(p1))
+	if (!is_compound(p1))
 		return false;
 
 	if (is_iso_list(p1))
@@ -885,7 +885,7 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 	if (c_attrs)
 		q->run_hook = true;
 
-	if (is_structure(v)) {
+	if (is_compound(v)) {
 		make_indirect(&e->c, v, v_ctx);
 
 		if ((c_ctx != q->st.curr_frame) && (v_ctx == q->st.curr_frame))
@@ -912,7 +912,7 @@ void reset_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
 	const frame *f = GET_FRAME(c_ctx);
 	slot *e = GET_SLOT(f, c->var_nbr);
 
-	if (is_structure(v)) {
+	if (is_compound(v)) {
 		make_indirect(&e->c, v, v_ctx);
 	} else if (is_var(v)) {
 		e->c.tag = TAG_VAR;

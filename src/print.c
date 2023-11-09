@@ -572,7 +572,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 				|| !strcmp(C_STR(q, head), "-->"));
 		}
 
-		int parens = is_structure(head) && special_op;
+		int parens = is_compound(head) && special_op;
 		if (parens) {  SB_sprintf(q->sb, "%s", "("); }
 		q->parens = parens;
 		print_term_to_buf_(q, head, head_ctx, running, -1, 0, depth+1);
@@ -601,7 +601,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 
 		size_t tmp_len = 0;
 
-		if (is_interned(tail) && !is_structure(tail)) {
+		if (is_interned(tail) && !is_compound(tail)) {
 			const char *src = C_STR(q, tail);
 
 			if (strcmp(src, "[]")) {
@@ -1003,7 +1003,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		SB_sprintf(q->sb, "%s", !braces&&quote?dq?"\"":"'":"");
 		q->did_quote = !braces&&quote;
 
-		if (is_structure(c) && !is_string(c)) {
+		if (is_compound(c) && !is_string(c)) {
 			pl_idx arity = c->arity;
 			SB_sprintf(q->sb, "%s", braces&&!q->ignore_ops?"{":"(");
 			q->parens = true;
@@ -1227,7 +1227,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	bool lhs_parens = lhs_pri_1 >= my_priority;
 	if ((lhs_pri_1 == my_priority) && is_yfx(c)) lhs_parens = false;
 	if (lhs_pri_2 > 0) lhs_parens = true;
-	if (is_structure(lhs) && (lhs_pri_1 <= my_priority) && (lhs->val_off == g_plus_s)) { lhs_parens = false; }
+	if (is_compound(lhs) && (lhs_pri_1 <= my_priority) && (lhs->val_off == g_plus_s)) { lhs_parens = false; }
 	bool lhs_space = false;
 
 	if ((q->last_thing != WAS_SPACE) && lhs_space) {

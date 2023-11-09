@@ -500,8 +500,8 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 			return 1;
 		else
 			return -1;
-	} else if (is_structure(p1)) {
-		if (is_structure(p2)) {
+	} else if (is_compound(p1)) {
+		if (is_compound(p2)) {
 			if (p1->arity < p2->arity)
 				return -1;
 
@@ -680,7 +680,7 @@ void set_meta_predicate_in_db(module *m, cell *c)
 
 static bool is_check_directive(const cell *c)
 {
-	if (is_structure(c) && (c->val_off == g_neck_s) && (c->arity == 1))
+	if (is_compound(c) && (c->val_off == g_neck_s) && (c->arity == 1))
 		return true;
 
 	return false;
@@ -692,7 +692,7 @@ bool do_use_module_1(module *curr_m, cell *p)
 	const char *name = C_STR(curr_m, p1);
 	char dstbuf[1024*4];
 
-	if (is_structure(p1) && !strcmp(name, "library")) {
+	if (is_compound(p1) && !strcmp(name, "library")) {
 		p1 = p1 + 1;
 		if (!is_interned(p1)) return false;
 		name = C_STR(curr_m, p1);
@@ -816,7 +816,7 @@ bool do_use_module_2(module *curr_m, cell *p)
 			cell *lhs = head + 1;
 			cell *rhs = lhs + lhs->nbr_cells;
 
-			if (is_compound(lhs) && (lhs->arity == 2)
+			if (is_structure(lhs) && (lhs->arity == 2)
 				&& (lhs->val_off == g_slash_s)
 				&& is_atom(rhs)) {
 				cell tmp = *(lhs+1);
@@ -825,16 +825,16 @@ bool do_use_module_2(module *curr_m, cell *p)
 				tmp.val_off = rhs->val_off;
 				predicate *pr2 = create_predicate(curr_m, &tmp, NULL);
 				pr2->alias = pr;
-			} else if (is_compound(lhs) && (lhs->arity == 2)
+			} else if (is_structure(lhs) && (lhs->arity == 2)
 				&& (lhs->val_off == g_slash_s)
-				&& is_compound(lhs) && (lhs->arity == rhs->arity)) {
+				&& is_structure(lhs) && (lhs->arity == rhs->arity)) {
 				cell tmp = *(lhs+1);
 				tmp.arity = get_smalluint(lhs+2);
 				predicate *pr = find_predicate(curr_m->used[curr_m->idx_used-1], &tmp);
 				tmp.val_off = (rhs+1)->val_off;
 				predicate *pr2 = create_predicate(curr_m, &tmp, NULL);
 				pr2->alias = pr;
-			} else if (is_compound(lhs) && is_compound(rhs)) {
+			} else if (is_structure(lhs) && is_structure(rhs)) {
 				// assertz(goal_expansion(rhs, module:lhs))
 				query *q = query_create(curr_m, false);
 				check_error(q);
@@ -862,7 +862,7 @@ bool do_use_module_2(module *curr_m, cell *p)
 		} else {
 			cell *lhs = head;
 
-			if (is_compound(lhs) && (lhs->arity == 2) && (lhs->val_off == g_slash_s)) {
+			if (is_structure(lhs) && (lhs->arity == 2) && (lhs->val_off == g_slash_s)) {
 				// assertz(goal_expansion(rhs, module:lhs))
 				query *q = query_create(curr_m, false);
 				check_error(q);
