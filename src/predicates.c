@@ -5827,20 +5827,12 @@ static bool fn_char_type_2(query *q)
 		return iswdigit(ch);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "numeric"))
 		return iswdigit(ch);
-	else if (!CMP_STRING_TO_CSTR(q, p2, "digit"))
-		return iswdigit(ch);
-	else if (!CMP_STRING_TO_CSTR(q, p2, "xdigit"))
-		return iswxdigit(ch);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "whitespace"))
 		return iswblank(ch) || iswspace(ch);
-	else if (!CMP_STRING_TO_CSTR(q, p2, "white") || !CMP_STRING_TO_CSTR(q, p2, "blank"))
-		return iswblank(ch);
-	else if (!CMP_STRING_TO_CSTR(q, p2, "space"))
-		return iswspace(ch);
-	//else if (!CMP_STRING_TO_CSTR(q, p2, "lower"))
-	//	return iswlower(ch);
-	//else if (!CMP_STRING_TO_CSTR(q, p2, "upper"))
-	//	return iswupper(ch);
+	else if (!CMP_STRING_TO_CSTR(q, p2, "lower") && !p2->arity)
+		return iswlower(ch);
+	else if (!CMP_STRING_TO_CSTR(q, p2, "upper") && !p2->arity)
+		return iswupper(ch);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "lower") && p2->arity) {
 		cell *arg1 = deref(q, p2+1, p2_ctx);
 		pl_idx arg1_ctx = q->latest_ctx;
@@ -5857,38 +5849,31 @@ static bool fn_char_type_2(query *q)
 		cell tmp;
 		make_string(&tmp, tmpbuf);
 		return unify(q, arg1, arg1_ctx, &tmp, q->st.curr_frame);
-	} else if (!CMP_STRING_TO_CSTR(q, p2, "punct"))
-		return iswpunct(ch);
-	else if (!CMP_STRING_TO_CSTR(q, p2, "cntrl"))
-		return iswcntrl(ch);
-	else if (!CMP_STRING_TO_CSTR(q, p2, "control"))		// used by abnf.pl
-		return iswcntrl(ch) && (ch < 128);
-	else if (!CMP_STRING_TO_CSTR(q, p2, "graph"))
-		return iswgraph(ch);
-	else if (!CMP_STRING_TO_CSTR(q, p2, "ascii_graphic"))	// used by abnf.pl
-		return iswgraph(ch) && (ch < 128);
+	} else if (!CMP_STRING_TO_CSTR(q, p2, "graphic"))
+		return iswgraph(ch) && !iswalnum(ch);
+	else if (!CMP_STRING_TO_CSTR(q, p2, "graphic_token"))	// ???
+		return iswgraph(ch) && !iswalnum(ch);
+	else if (!CMP_STRING_TO_CSTR(q, p2, "ascii_graphic"))	// ???
+		return iswgraph(ch) && !iswalnum(ch) && (ch < 128);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "ascii"))
 		return ch < 128;
-	else if (!CMP_STRING_TO_CSTR(q, p2, "octet"))			// used by abnf.pl
+	else if (!CMP_STRING_TO_CSTR(q, p2, "ascii_punctuation"))
+		return iswpunct(ch);
+	else if (!CMP_STRING_TO_CSTR(q, p2, "octet"))
 		return ch < 256;
+	else if (!CMP_STRING_TO_CSTR(q, p2, "layout"))
+		return iswspace(ch) || (ch == '\t') || (ch == '\v') || (ch == '\f') || (ch == '\r') || (ch == '\n');
 	else if (!CMP_STRING_TO_CSTR(q, p2, "exponent"))
 		return (ch == 'e') || (ch == 'E');
 	else if (!CMP_STRING_TO_CSTR(q, p2, "sign"))
 		return (ch == '-') || (ch == '+');
-	else if (!CMP_STRING_TO_CSTR(q, p2, "newline"))
-		return ch == 10;
-	else if (!CMP_STRING_TO_CSTR(q, p2, "meta"))			// ?????????????
-		return ch == -1;
-	else if (!CMP_STRING_TO_CSTR(q, p2, "solo"))			// ?????????????
-		return ch == -1;
-	else if (!CMP_STRING_TO_CSTR(q, p2, "end_of_line"))
-		return (ch >= 10) && (ch <= 13);
-	else if (!CMP_STRING_TO_CSTR(q, p2, "end_of_file"))
-		return ch == -1;
-	else if (!CMP_STRING_TO_CSTR(q, p2, "quote"))
-		return (ch == '\'') || (ch == '"') || (ch == '`');
-	else if (!CMP_STRING_TO_CSTR(q, p2, "period"))
-		return (ch == '.') || (ch == '!') || (ch == '?');
+	else if (!CMP_STRING_TO_CSTR(q, p2, "meta"))
+		return (ch == '\'') || (ch == '"') || (ch == '`') || (ch == '\\');
+	else if (!CMP_STRING_TO_CSTR(q, p2, "solo"))
+		return (ch == '|') || (ch == '!')
+			|| (ch == '[') || (ch == ']')
+			|| (ch == '{') || (ch == '}')
+			|| (ch == '(') || (ch == ')');
 
 	return false;
 }
