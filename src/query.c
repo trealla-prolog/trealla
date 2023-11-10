@@ -834,7 +834,7 @@ static void reuse_frame(query *q, const clause *cl)
 {
 	frame *f = GET_CURR_FRAME();
 	const frame *newf = GET_FRAME(q->st.fp);
-	f->initial_slots = f->actual_slots = cl->nbr_vars;
+	f->initial_slots = f->actual_slots = cl->nbr_vars - cl->nbr_temporaries;
 	f->chgen = ++q->chgen;
 	f->overflow = 0;
 
