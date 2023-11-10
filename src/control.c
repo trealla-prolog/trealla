@@ -26,6 +26,12 @@ bool fn_sys_drop_barrier_1(query *q)
 	GET_FIRST_ARG(p1,integer)
 	q->tot_goals--;
 	drop_barrier(q, get_smalluint(p1));
+
+	if (q->cp) {
+		const choice *ch = GET_CURR_CHOICE();
+		q->st.timer_started = ch->st.timer_started;
+	}
+
 	return true;
 }
 

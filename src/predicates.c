@@ -3642,6 +3642,7 @@ static bool fn_sys_first_non_octet_2(query *q)
 static bool fn_sys_timer_0(query *q)
 {
 	q->st.timer_started = get_time_in_usec();
+	q->tot_goals = 0;
 	return true;
 }
 
@@ -3649,15 +3650,9 @@ static bool fn_sys_elapsed_0(query *q)
 {
 	uint64_t elapsed = get_time_in_usec();
 	elapsed -= q->st.timer_started;
-	if (!q->is_redo) fprintf(stdout, "   ");
-	if (q->is_redo) fprintf(stdout, " ");
 	double lips = (1.0 / ((double)elapsed/1000/1000)) * q->tot_goals;
 	fprintf(stderr, "%% Time elapsed %.3fs, %llu Inferences, %.3f MLips\n", (double)elapsed/1000/1000, (unsigned long long)q->tot_goals, lips/1000/1000);
 	if (q->is_redo) fprintf(stdout, "  ");
-	//else if (!q->redo) fprintf(stdout, "");
-	if (!q->cp) return true;
-	choice *ch = GET_CURR_CHOICE();
-	ch->st.timer_started = get_time_in_usec();
 	return true;
 }
 
@@ -3668,8 +3663,8 @@ static bool fn_time_1(query *q)
 		return false;
 	}
 
-	GET_FIRST_ARG(p1,callable);
 	fn_sys_timer_0(q);
+	GET_FIRST_ARG(p1,callable);
 	cell *tmp = prepare_call(q, true, p1, p1_ctx, 4);
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_elapsed_s, fn_sys_elapsed_0, 0, 0);
