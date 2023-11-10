@@ -155,16 +155,6 @@ bool fn_map_del_2(query *q);
 bool fn_map_list_2(query *q);
 bool fn_map_count_2(query *q);
 bool fn_map_close_1(query *q);
-bool fn_mat_create_2(query *q);
-bool fn_mat_set_4(query *q);
-bool fn_mat_get_4(query *q);
-bool fn_mat_del_3(query *q);
-bool fn_mat_list_3(query *q);
-bool fn_mat_max_2(query *q);
-bool fn_mat_min_2(query *q);
-bool fn_mat_avg_2(query *q);
-bool fn_mat_mult_scal_2(query *q);
-bool fn_mat_div_scal_2(query *q);
 bool fn_iso_close_1(query *q);
 
 void save_db(FILE *fp, query *q, int logging);
