@@ -3571,7 +3571,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			((*p->srcptr == ')') || (*p->srcptr == ';') || (*p->srcptr == ',') || (*p->srcptr == '.')))
 			p->quote_char = 1;
 
-		if (p->quote_char) {
+		if (p->quote_char && last_op) {
 			specifier = 0;
 			priority = 0;
 		}
