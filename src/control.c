@@ -429,11 +429,11 @@ bool fn_iso_disjunction_2(query *q)
 		return true;
 	}
 
+	check_heap_error(push_choice(q));
 	cell *tmp = prepare_call(q, true, p1, p1_ctx, 1);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 	make_call(q, tmp+nbr_cells);
-	check_heap_error(push_choice(q));
 	q->st.curr_cell = tmp;
 	return true;
 }

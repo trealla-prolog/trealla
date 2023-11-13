@@ -830,14 +830,19 @@ static frame *push_frame(query *q, const clause *cl)
 	return f;
 }
 
+// Temporary variables occur only in the head and so are
+// not referenced after the matching process. The parser
+// puts them at the end of the frame so here we can just
+// chop them off.
+
 static void reuse_frame(query *q, const clause *cl)
 {
 	frame *f = GET_CURR_FRAME();
-	const frame *newf = GET_FRAME(q->st.fp);
 	f->initial_slots = f->actual_slots = cl->nbr_vars - cl->nbr_temporaries;
 	f->chgen = ++q->chgen;
 	f->overflow = 0;
 
+	const frame *newf = GET_FRAME(q->st.fp);
 	const slot *from = GET_SLOT(newf, 0);
 	slot *to = GET_SLOT(f, 0);
 
@@ -858,17 +863,18 @@ static void trim_trail(query *q)
 	if (q->undo_hi_tp)
 		return;
 
-	pl_idx tp = 0;
-
-	if (q->cp) {
-		const choice *ch = GET_CURR_CHOICE();
-		tp = ch->st.tp;
+	if (!q->cp) {
+		q->st.tp = 0;
+		return;
 	}
+
+	const choice *ch = GET_CURR_CHOICE();
+	pl_idx tp = ch->st.tp;
 
 	while (q->st.tp > tp) {
 		const trail *tr = q->trails + q->st.tp - 1;
 
-		if (tr->var_ctx != q->st.curr_frame)
+		if (tr->var_ctx < q->st.curr_frame)
 			break;
 
 		q->st.tp--;
@@ -927,25 +933,21 @@ static void commit_frame(query *q, cell *body)
 
 		// If matching against a fact then drop new frame...
 
-		if (!cl->nbr_vars && !body) {
-			f = GET_FRAME(q->st.curr_frame-f->prev_offset);
+		if (!cl->nbr_vars && !body)
 			q->st.fp--;
-		}
 	}
-
-	Trace(q, get_head(q->st.r->cl.cells), q->st.curr_frame, EXIT);
 
 	if (last_match) {
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
-
-		if (tco)
-			trim_trail(q);
+		trim_trail(q);
 	} else {
 		choice *ch = GET_CURR_CHOICE();
 		ch->st.r = q->st.r;
 		ch->chgen = f->chgen;
 	}
+
+	Trace(q, get_head(q->st.r->cl.cells), q->st.curr_frame, EXIT);
 
 	q->st.curr_cell = body;
 	q->st.iter = NULL;
