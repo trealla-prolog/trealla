@@ -8,7 +8,9 @@
 		sum_list/2, prod_list/2, max_list/2, min_list/2,	% SWI
 		list_sum/2, list_prod/2, list_max/2, list_min/2,	% Modern
 		list_to_conjunction/2, conjunction_to_list/2,
-		list_to_set/2, numlist/3, length/2, reverse/2
+		list_to_set/2, numlist/3, length/2, reverse/2,
+		partition/4, exclude/3, include/3,
+		foldl/4, foldl/5, foldl/6, foldl/7
 	]).
 
 /*  Author:        Andrew Davison, Mark Thom, Jan Wielemaker, and Richard O'Keefe
@@ -405,3 +407,76 @@ transpose_(_, Fs, Lists0, Lists) :-
 
 list_first_rest([L|Ls], L, Ls).
 
+
+foldl(G, L, V0, V) :-
+	foldl_(L, G, V0, V).
+
+foldl_([], _, V, V).
+foldl_([H|T], G, V0, V) :-
+	call(G, H, V0, V1),
+	foldl_(T, G, V1, V).
+
+foldl(G, L1, L2, V0, V) :-
+	foldl_(L1, L2, G, V0, V).
+
+foldl_([], [], _, V, V).
+foldl_([H1|T1], [H2|T2], G, V0, V) :-
+	call(G, H1, H2, V0, V1),
+	foldl_(T1, T2, G, V1, V).
+
+foldl(G, L1, L2, L3, V0, V) :-
+	foldl_(L1, L2, L3, G, V0, V).
+
+foldl_([], [], [], _, V, V).
+foldl_([H1|T1], [H2|T2], [H3|T3], G, V0, V) :-
+	call(G, H1, H2, H3, V0, V1),
+	foldl_(T1, T2, T3, G, V1, V).
+
+foldl(G, L1, L2, L3, L4, V0, V) :-
+	foldl_(L1, L2, L3, L4, G, V0, V).
+
+foldl_([], [], [], [], _, V, V).
+foldl_([H1|T1], [H2|T2], [H3|T3], [H4|T4], G, V0, V) :-
+	call(G, H1, H2, H3, H4, V0, V1),
+	foldl_(T1, T2, T3, T4, G, V1, V).
+
+:- help(foldl(:callable,+list,+var,-var), [iso(false)]).
+:- help(foldl(:callable,+list,+list,+var,-var), [iso(false)]).
+:- help(foldl(:callable,+list,+list,+list,+var,-var), [iso(false)]).
+:- help(foldl(:callable,+list,+list,+list,+list,+var,-var), [iso(false)]).
+
+
+include(G, L, Included) :-
+	include_(L, G, Included).
+
+	include_([], _, []).
+	include_([X1|Xs1], P, Included) :-
+		(   call(P, X1) -> Included = [X1|Included1]
+		;   Included = Included1
+		),
+		include_(Xs1, P, Included1).
+
+:- help(include(:callable,?list), [iso(false)]).
+
+
+exclude(G, L, Included) :-
+	exclude_(L, G, Included).
+
+exclude_([], _, []).
+exclude_([X1|Xs1], P, Included) :-
+	(   call(P, X1) -> Included = Included1
+	;   Included = [X1|Included1]
+	),
+	exclude_(Xs1, P, Included1).
+
+:- help(exclude(:callable,?list), [iso(false)]).
+
+
+partition([X|L], Y, [X|L1], L2) :-
+	X @< Y, !,
+	partition(L, Y, L1, L2).
+partition([X|L], Y, L1, [X|L2]) :-
+	partition(L, Y, L1, L2).
+partition([], _, [], []).
+
+:- help(partition(:callable,?list,?list), [iso(false)]).

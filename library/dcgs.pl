@@ -22,8 +22,14 @@ to learn more about them.
 :- use_module(library(lists), [append/3, member/2]).
 :- use_module(library(loader), [strip_module/3]).
 
-:- meta_predicate phrase(2, ?).
+expand_term((H --> B), Out) :-
+	dcg_translate((H --> B), Out), !.
 
+dcg_translate(TermIn, Term) :-
+	nonvar(TermIn),
+	dcg_rule(TermIn, Term).
+
+:- meta_predicate phrase(2, ?).
 :- meta_predicate phrase(2, ?, ?).
 
 %% phrase(+Body, ?Ls).

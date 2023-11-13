@@ -1,5 +1,7 @@
 :- pragma(builtins, [once(true)]).
 
+:- use_module(library(lists)).
+
 predicate_property(P, A) :-
 	nonvar(P), atom(A), !,
 	must_be(P, callable, predicate_property/2, _),
@@ -816,13 +818,6 @@ dump_attvars :-
 	flatten(Gs0, Gs1),
 	sort(Gs1, Gs),
 	print_goals_(Gs).
-
-expand_term((H --> B), Out) :-
-	dcg_translate((H --> B), Out), !.
-
-dcg_translate(TermIn, Term) :-
-	nonvar(TermIn),
-	dcg_rule(TermIn, Term).
 
 plus(X,Y,S) :- nonvar(X), nonvar(Y),
 	must_be(X, integer, plus/3, _), must_be(Y, integer, plus/3, _), !,

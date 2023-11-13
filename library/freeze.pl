@@ -2,6 +2,7 @@
 
 :- use_module(library(atts)).
 :- use_module(library(dcgs)).
+:- use_module(library(lists)).
 
 :- meta_predicate(freeze(?, 0)).
 :- attribute frozen/1.

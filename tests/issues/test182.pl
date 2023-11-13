@@ -1,4 +1,5 @@
 :-initialization(main).
+:- use_module(library(dcgs)).
 :- use_module(library(format)).
 
 main :-

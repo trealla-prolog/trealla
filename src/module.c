@@ -998,6 +998,17 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 		return pr;
 	}
 
+	if (m->pl->user_m) {
+		pr = find_predicate(m->pl->user_m, c);
+
+		if (pr) {
+			if (pr->is_prebuilt && prebuilt)
+				*prebuilt = true;
+
+			return pr;
+		}
+	}
+
 	for (unsigned i = 0; i < m->idx_used; i++) {
 		module *tmp_m = m->used[i];
 		pr = find_predicate(tmp_m, c);
@@ -1010,6 +1021,7 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 		}
 	}
 
+
 	for (module *tmp_m = m->pl->modules; tmp_m; tmp_m = tmp_m->next) {
 		if (m == tmp_m)
 			continue;
@@ -1019,6 +1031,18 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 		if (pr) {
 			if (pr->is_prebuilt && prebuilt)
 				*prebuilt = true;
+
+			// This is a hack...
+
+			if (strcmp(tmp_m->name, "dcgs")
+				&& strcmp(tmp_m->name, "format")
+				&& strcmp(tmp_m->name, "uuid")
+				&& strcmp(tmp_m->name, "clpb")
+				&& strcmp(tmp_m->name, "clpz")
+				) {
+				if (m != m->pl->user_m)
+					return NULL;
+			}
 
 			m->used[m->idx_used++] = tmp_m;
 			return pr;
