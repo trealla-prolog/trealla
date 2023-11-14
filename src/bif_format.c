@@ -133,11 +133,11 @@ static bool is_more_data(query *q, list_reader_t *fmt)
 }
 
 #define CHECK_BUF(len) {									\
-    int n = (len) > 0 ? (len) : 1 + 1; 		                \
-	if (nbytes <= (unsigned)(1+n+1)) {						\
+    unsigned n = ((len) > 0 ? (len) : 1) + 1;	            \
+	if (n >= nbytes) {										\
 		size_t save = dst - tmpbuf;							\
 		bufsiz += n;										\
-		tmpbuf = realloc(tmpbuf, bufsiz*=2);				\
+		tmpbuf = realloc(tmpbuf, (bufsiz*=2));				\
 		check_heap_error(tmpbuf);							\
 		dst = tmpbuf + save;								\
 		*dst = '\0';										\
@@ -592,7 +592,6 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 		nbytes -= len;
 	}
 
-	*dst = '\0';
 	size_t len = dst - tmpbuf;
 
 	if (fmt2.p) {
