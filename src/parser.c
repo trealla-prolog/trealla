@@ -839,6 +839,7 @@ static bool directives(parser *p, cell *d)
 			}
 
 			p->m = tmp_m;
+			p->pl->user_m->used[p->pl->user_m->idx_used++] = tmp_m;
 		}
 
 		if (c->arity == 1)
