@@ -2215,10 +2215,10 @@ static bool bif_iso_current_predicate_1(query *q)
 	}
 
 	if (p_pi->arity != 2)
-		return throw_error(q, p_pi, p_pi_ctx, "type_error", "predicate_indicator1");
+		return throw_error(q, p_pi, p_pi_ctx, "type_error", "predicate_indicator");
 
 	if (CMP_STRING_TO_CSTR(q, p_pi, "/"))
-		return throw_error(q, p_pi, p_pi_ctx, "type_error", "predicate_indicator2");
+		return throw_error(q, p_pi, p_pi_ctx, "type_error", "predicate_indicator");
 
 	cell *p1, *p2;
 	pl_idx p1_ctx, p2_ctx;
@@ -2228,14 +2228,14 @@ static bool bif_iso_current_predicate_1(query *q)
 	p1_ctx = q->latest_ctx;
 
 	if (!is_atom(p1) && !is_var(p1))
-		return throw_error(q, p_pi, p_pi_ctx, "type_error", "predicate_indicator3");
+		return throw_error(q, p_pi, p_pi_ctx, "type_error", "predicate_indicator");
 
 	p2 = p_pi + 2;
 	p2 = deref(q, p2, p_pi_ctx);
 	p2_ctx = q->latest_ctx;
 
 	if ((!is_integer(p2) || is_negative(p2)) && !is_var(p2))
-		return throw_error(q, p_pi, p_pi_ctx, "type_error", "predicate_indicator4");
+		return throw_error(q, p_pi, p_pi_ctx, "type_error", "predicate_indicator");
 
 	if (is_var(p1) || is_var(p2))
 		return search_functor(q, p1, p1_ctx, p2, p2_ctx) ? true : false;
