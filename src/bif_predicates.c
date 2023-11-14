@@ -2244,7 +2244,12 @@ static bool bif_iso_current_predicate_1(query *q)
 	tmp.tag = TAG_INTERNED;
 	tmp.val_off = is_interned(p1) ? p1->val_off : new_atom(q->pl, C_STR(q, p1));
 	tmp.arity = get_smallint(p2);
-	predicate *pr = find_predicate(q->st.m, &tmp);
+	predicate *pr;
+
+	if (q->st.m == q->pl->user_m)
+		pr = search_predicate(q->st.m, &tmp, NULL);
+	else
+		pr = find_predicate(q->st.m, &tmp);
 
 	if (!pr)
 		return false;
