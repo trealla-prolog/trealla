@@ -4,13 +4,14 @@
 #include <string.h>
 #include <time.h>
 
-#include "atts.h"
 #include "heap.h"
 #include "module.h"
 #include "network.h"
 #include "parser.h"
 #include "prolog.h"
 #include "query.h"
+
+#include "bif_atts.h"
 
 #ifdef _WIN32
 #include <windows.h>
