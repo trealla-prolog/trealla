@@ -314,6 +314,79 @@ static predicate *find_predicate_(module *m, cell *c, bool abolished)
 	return NULL;
 }
 
+predicate *find_predicate(module *m, cell *c)
+{
+	return find_predicate_(m, c, false);
+}
+
+predicate *search_predicate(module *m, cell *c, bool *prebuilt)
+{
+	if (prebuilt)
+		*prebuilt = false;
+
+	predicate *pr = find_predicate(m, c);
+
+	if (pr) {
+		if (pr->is_prebuilt && prebuilt)
+			*prebuilt = true;
+
+		return pr;
+	}
+
+	if (m->pl->user_m) {
+		pr = find_predicate(m->pl->user_m, c);
+
+		if (pr) {
+			if (pr->is_prebuilt && prebuilt)
+				*prebuilt = true;
+
+			return pr;
+		}
+	}
+
+	for (unsigned i = 0; i < m->idx_used; i++) {
+		module *tmp_m = m->used[i];
+		pr = find_predicate(tmp_m, c);
+
+		if (pr) {
+			if (pr->is_prebuilt && prebuilt)
+				*prebuilt = true;
+
+			return pr;
+		}
+	}
+
+
+	for (module *tmp_m = m->pl->modules; tmp_m; tmp_m = tmp_m->next) {
+		if (m == tmp_m)
+			continue;
+
+		pr = find_predicate(tmp_m, c);
+
+		if (pr) {
+			if (pr->is_prebuilt && prebuilt)
+				*prebuilt = true;
+
+			// This is a hack...
+
+			if (strcmp(tmp_m->name, "dcgs")
+				&& strcmp(tmp_m->name, "format")
+				&& strcmp(tmp_m->name, "uuid")
+				&& strcmp(tmp_m->name, "clpb")
+				&& strcmp(tmp_m->name, "clpz")
+				) {
+				if (m != m->pl->user_m)
+					return NULL;
+			}
+
+			m->used[m->idx_used++] = tmp_m;
+			return pr;
+		}
+	}
+
+	return NULL;
+}
+
 predicate *create_predicate(module *m, cell *c, bool *created)
 {
 	if (created) *created = false;
@@ -970,11 +1043,6 @@ void convert_to_literal(module *m, cell *c)
 	free(src);
 }
 
-predicate *find_predicate(module *m, cell *c)
-{
-	return find_predicate_(m, c, false);
-}
-
 predicate *find_functor(module *m, const char *name, unsigned arity)
 {
 	cell tmp = (cell){0};
@@ -982,74 +1050,6 @@ predicate *find_functor(module *m, const char *name, unsigned arity)
 	tmp.val_off = new_atom(m->pl, name);
 	tmp.arity = arity;
 	return find_predicate(m, &tmp);
-}
-
-predicate *search_predicate(module *m, cell *c, bool *prebuilt)
-{
-	if (prebuilt)
-		*prebuilt = false;
-
-	predicate *pr = find_predicate(m, c);
-
-	if (pr) {
-		if (pr->is_prebuilt && prebuilt)
-			*prebuilt = true;
-
-		return pr;
-	}
-
-	if (m->pl->user_m) {
-		pr = find_predicate(m->pl->user_m, c);
-
-		if (pr) {
-			if (pr->is_prebuilt && prebuilt)
-				*prebuilt = true;
-
-			return pr;
-		}
-	}
-
-	for (unsigned i = 0; i < m->idx_used; i++) {
-		module *tmp_m = m->used[i];
-		pr = find_predicate(tmp_m, c);
-
-		if (pr) {
-			if (pr->is_prebuilt && prebuilt)
-				*prebuilt = true;
-
-			return pr;
-		}
-	}
-
-
-	for (module *tmp_m = m->pl->modules; tmp_m; tmp_m = tmp_m->next) {
-		if (m == tmp_m)
-			continue;
-
-		pr = find_predicate(tmp_m, c);
-
-		if (pr) {
-			if (pr->is_prebuilt && prebuilt)
-				*prebuilt = true;
-
-			// This is a hack...
-
-			if (strcmp(tmp_m->name, "dcgs")
-				&& strcmp(tmp_m->name, "format")
-				&& strcmp(tmp_m->name, "uuid")
-				&& strcmp(tmp_m->name, "clpb")
-				&& strcmp(tmp_m->name, "clpz")
-				) {
-				if (m != m->pl->user_m)
-					return NULL;
-			}
-
-			m->used[m->idx_used++] = tmp_m;
-			return pr;
-		}
-	}
-
-	return NULL;
 }
 
 #define DUMP_KEYS 0
