@@ -115,7 +115,6 @@ bool fn_sys_counter_1(query *q);
 bool fn_sys_countall_2(query *q);
 
 bool fn_iso_if_then_2(query *q);
-bool fn_iso_invoke_2(query *q);
 bool fn_iso_once_1(query *q);
 bool fn_iso_call_1(query *q);
 bool fn_iso_call_n(query *q);
