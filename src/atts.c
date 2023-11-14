@@ -24,7 +24,7 @@ static const char *do_attribute(query *q, cell *c, unsigned arity)
 	return q->st.m->name;
 }
 
-bool fn_attribute_3(query *q)
+bool bif_attribute_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_var);
 	GET_NEXT_ARG(p2,atom);
@@ -35,7 +35,7 @@ bool fn_attribute_3(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
-bool fn_put_atts_2(query *q)
+bool bif_put_atts_2(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,callable);
@@ -109,7 +109,7 @@ bool fn_put_atts_2(query *q)
 	return true;
 }
 
-bool fn_get_atts_2(query *q)
+bool bif_get_atts_2(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,callable_or_var);
@@ -166,7 +166,7 @@ bool fn_get_atts_2(query *q)
 	return is_minus ? true : false;
 }
 
-bool fn_sys_list_attributed_1(query *q)
+bool bif_sys_list_attributed_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	parser *p = q->p;
@@ -196,7 +196,7 @@ bool fn_sys_list_attributed_1(query *q)
 	return unify(q, p1, p1_ctx, l, 0);
 }
 
-bool fn_sys_unattributed_var_1(query *q)
+bool bif_sys_unattributed_var_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	const frame *f = GET_FRAME(p1_ctx);
@@ -204,7 +204,7 @@ bool fn_sys_unattributed_var_1(query *q)
 	return e->c.attrs ? false : true;
 }
 
-bool fn_sys_attributed_var_1(query *q)
+bool bif_sys_attributed_var_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	const frame *f = GET_FRAME(p1_ctx);
@@ -228,7 +228,7 @@ typedef struct {
 	slot e[];
 } bind_state;
 
-bool fn_sys_undo_trail_2(query *q)
+bool bif_sys_undo_trail_2(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,var);
@@ -286,7 +286,7 @@ bool fn_sys_undo_trail_2(query *q)
 	return true;
 }
 
-bool fn_sys_redo_trail_1(query * q)
+bool bif_sys_redo_trail_1(query * q)
 {
 	GET_FIRST_ARG(p1,any);
 
@@ -325,9 +325,9 @@ bool do_post_unification_hook(query *q, bool is_builtin)
 	static void *s_fn_ptr1 = NULL;
 
 	if (!s_fn_ptr1)
-		s_fn_ptr1 = get_fn_ptr(fn_iso_true_0);
+		s_fn_ptr1 = get_fn_ptr(bif_iso_true_0);
 
-	tmp[0].fn_ptr = s_fn_ptr1;
+	tmp[0].bif_ptr = s_fn_ptr1;
 
 	tmp[1].tag = TAG_INTERNED;
 	tmp[1].nbr_cells = 1;

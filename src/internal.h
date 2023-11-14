@@ -391,7 +391,7 @@ struct cell_ {
 			union {
 				cell *val_ptr;
 				predicate *match;
-				builtins *fn_ptr;
+				builtins *bif_ptr;
 				cell *tmp_attrs;		// used with TAG_VAR in copy_term
 			};
 

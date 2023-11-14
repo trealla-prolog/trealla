@@ -19,7 +19,7 @@
 #define localtime_r(p1,p2) localtime(p1)
 #endif
 
-static bool fn_posix_strftime_3(query *q)
+static bool bif_posix_strftime_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p3,var);
@@ -81,7 +81,7 @@ static bool fn_posix_strftime_3(query *q)
 }
 
 #ifndef _WIN32
-static bool fn_posix_strptime_3(query *q)
+static bool bif_posix_strptime_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,atom);
@@ -109,7 +109,7 @@ static bool fn_posix_strptime_3(query *q)
 }
 #endif
 
-static bool fn_posix_mktime_2(query *q)
+static bool bif_posix_mktime_2(query *q)
 {
 	GET_FIRST_ARG(p1,compound);
 	GET_NEXT_ARG(p2,var);
@@ -137,7 +137,7 @@ static bool fn_posix_mktime_2(query *q)
 	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 }
 
-static bool fn_posix_gmtime_2(query *q)
+static bool bif_posix_gmtime_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,var);
@@ -164,7 +164,7 @@ static bool fn_posix_gmtime_2(query *q)
 	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 }
 
-static bool fn_posix_localtime_2(query *q)
+static bool bif_posix_localtime_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,var);
@@ -191,7 +191,7 @@ static bool fn_posix_localtime_2(query *q)
 	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 }
 
-static bool fn_posix_ctime_2(query *q)
+static bool bif_posix_ctime_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,var);
@@ -204,7 +204,7 @@ static bool fn_posix_ctime_2(query *q)
 	return ok;
 }
 
-static bool fn_posix_time_1(query *q)
+static bool bif_posix_time_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
@@ -214,15 +214,15 @@ static bool fn_posix_time_1(query *q)
 
 builtins g_posix_bifs[] =
 {
-    {"posix_strftime", 3, fn_posix_strftime_3, "+atom,-atom,+compound", false, false, BLAH},
+    {"posix_strftime", 3, bif_posix_strftime_3, "+atom,-atom,+compound", false, false, BLAH},
 #ifndef _WIN32
-    {"posix_strptime", 3, fn_posix_strptime_3, "+atom,+atom,-compound", false, false, BLAH},
+    {"posix_strptime", 3, bif_posix_strptime_3, "+atom,+atom,-compound", false, false, BLAH},
 #endif
-	{"posix_gmtime", 2, fn_posix_gmtime_2, "+integer,-compound", false, false, BLAH},
-	{"posix_localtime", 2, fn_posix_localtime_2, "+integer,-compound", false, false, BLAH},
-	{"posix_mktime", 2, fn_posix_mktime_2, "+compound,-integer", false, false, BLAH},
-	{"posix_ctime", 2, fn_posix_ctime_2, "+integer,-atom", false, false, BLAH},
-	{"posix_time", 1, fn_posix_time_1, "-integer", false, false, BLAH},
+	{"posix_gmtime", 2, bif_posix_gmtime_2, "+integer,-compound", false, false, BLAH},
+	{"posix_localtime", 2, bif_posix_localtime_2, "+integer,-compound", false, false, BLAH},
+	{"posix_mktime", 2, bif_posix_mktime_2, "+compound,-integer", false, false, BLAH},
+	{"posix_ctime", 2, bif_posix_ctime_2, "+integer,-atom", false, false, BLAH},
+	{"posix_time", 1, bif_posix_time_1, "-integer", false, false, BLAH},
 	{0}
 };
 

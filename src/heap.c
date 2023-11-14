@@ -351,9 +351,9 @@ cell *prepare_call(query *q, bool prefix, cell *p1, pl_idx p1_ctx, unsigned extr
 		static builtins *s_fn_ptr = NULL;
 
 		if (!s_fn_ptr)
-			s_fn_ptr = get_fn_ptr(fn_iso_true_0);
+			s_fn_ptr = get_fn_ptr(bif_iso_true_0);
 
-		tmp->fn_ptr = s_fn_ptr;
+		tmp->bif_ptr = s_fn_ptr;
 	}
 
 	cell *dst = tmp + (prefix ? PREFIX_LEN : NOPREFIX_LEN);

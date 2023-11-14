@@ -1611,7 +1611,7 @@ static void xref_cell(module *m, clause *cl, cell *c, predicate *parent, int las
 	}
 
 	bool found = false, evaluable = false;
-	c->fn_ptr = get_builtin_term(m, c, &found, &evaluable);
+	c->bif_ptr = get_builtin_term(m, c, &found, &evaluable);
 
 	if (found) {
 		if (evaluable)

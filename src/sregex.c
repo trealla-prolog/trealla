@@ -5,7 +5,7 @@
 #include "prolog.h"
 #include "query.h"
 
-bool fn_sre_compile_2(query *q)
+bool bif_sre_compile_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,var);
@@ -27,7 +27,7 @@ bool fn_sre_compile_2(query *q)
 	return ok;
 }
 
-bool fn_sre_matchp_4(query *q)
+bool bif_sre_matchp_4(query *q)
 {
 	GET_FIRST_ARG(p1,sregex);
 	GET_NEXT_ARG(p2,atom);
@@ -58,7 +58,7 @@ bool fn_sre_matchp_4(query *q)
 	return ok;
 }
 
-bool fn_sre_match_4(query *q)
+bool bif_sre_match_4(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,atom);
@@ -89,7 +89,7 @@ bool fn_sre_match_4(query *q)
 	return ok;
 }
 
-bool fn_sre_substp_4(query *q)
+bool bif_sre_substp_4(query *q)
 {
 	GET_FIRST_ARG(p1,sregex);
 	GET_NEXT_ARG(p2,atom);
@@ -120,7 +120,7 @@ bool fn_sre_substp_4(query *q)
 	return ok;
 }
 
-bool fn_sre_subst_4(query *q)
+bool bif_sre_subst_4(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,atom);

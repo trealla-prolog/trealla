@@ -12,8 +12,8 @@
 void clr_accum(cell *p);
 
 #if USE_FFI
-bool wrap_ffi_function(query *q, builtins *fn_ptr);
-bool wrap_ffi_predicate(query *q, builtins *fn_ptr);
+bool wrap_ffi_function(query *q, builtins *bif_ptr);
+bool wrap_ffi_predicate(query *q, builtins *bif_ptr);
 #endif
 
 #define is_callable_or_var(c) (is_interned(c) || is_cstring(c) || is_var(c))
@@ -57,16 +57,16 @@ bool wrap_ffi_predicate(query *q, builtins *fn_ptr);
 #define is_iso_atomic_or_var(c) (is_iso_atom(c) || is_number(c) || is_var(c))
 
 #if USE_FFI
-bool fn_sys_dlopen_3(query *q);
-bool fn_sys_dlsym_3(query *q);
-bool fn_sys_dlclose_1(query *q);
-bool fn_sys_ffi_register_function_4(query *q);
-bool fn_sys_ffi_register_predicate_4(query *q);
+bool bif_sys_dlopen_3(query *q);
+bool bif_sys_dlsym_3(query *q);
+bool bif_sys_dlclose_1(query *q);
+bool bif_sys_ffi_register_function_4(query *q);
+bool bif_sys_ffi_register_predicate_4(query *q);
 #endif
 
-bool fn_iso_add_2(query *q);
-bool fn_iso_float_1(query *q);
-bool fn_iso_integer_1(query *q);
+bool bif_iso_add_2(query *q);
+bool bif_iso_float_1(query *q);
+bool bif_iso_integer_1(query *q);
 
 inline static void make_indirect(cell *tmp, cell *v, pl_idx v_ctx)
 {
@@ -237,7 +237,7 @@ inline static cell *get_raw_arg(const query *q, int n)
 		return true; 												\
 	if (is_var(c))													\
 		return throw_error(q, c, q->st.curr_frame, "instantiation_error", "number"); \
-	if (is_builtin(c) && c->fn_ptr && (c->fn_ptr->fn != fn_iso_float_1) && (c->fn_ptr->fn != fn_iso_integer_1)) \
+	if (is_builtin(c) && c->bif_ptr && (c->bif_ptr->fn != bif_iso_float_1) && (c->bif_ptr->fn != bif_iso_integer_1)) \
 		return throw_error(q, c, q->st.curr_frame, "type_error", "evaluable");
 
 #define check_heap_error(expr, ...) \

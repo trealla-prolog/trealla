@@ -257,7 +257,7 @@ void make_struct(cell *tmp, pl_idx offset, void *fn, unsigned arity, pl_idx extr
 
 	if (fn) {
 		tmp->flags |= FLAG_BUILTIN;
-		tmp->fn_ptr = get_fn_ptr(fn);
+		tmp->bif_ptr = get_fn_ptr(fn);
 	}
 
 	tmp->arity = arity;
@@ -1861,7 +1861,7 @@ static cell *insert_call_here(parser *p, cell *c, cell *p1)
 	p1 = p->cl->cells + p1_idx;
 	p1->tag = TAG_INTERNED;
 	p1->flags = FLAG_BUILTIN;
-	p1->fn_ptr = get_fn_ptr(fn_iso_call_1);
+	p1->bif_ptr = get_fn_ptr(bif_iso_call_1);
 	p1->val_off = g_call_s;
 	p1->nbr_cells = 2;
 	p1->arity = 1;

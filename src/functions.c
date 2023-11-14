@@ -270,16 +270,16 @@ bool call_builtin(query *q, cell *c, pl_idx c_ctx)
 	q->eval = true;
 
 #if USE_FFI
-	if (c->fn_ptr && c->fn_ptr->ffi)
-		wrap_ffi_function(q, c->fn_ptr);
+	if (c->bif_ptr && c->bif_ptr->ffi)
+		wrap_ffi_function(q, c->bif_ptr);
 	else
 #endif
-	if (!c->fn_ptr->evaluable && (c->val_off != g_float_s))
+	if (!c->bif_ptr->evaluable && (c->val_off != g_float_s))
 		return throw_error(q, &q->accum, q->st.curr_frame, "type_error", "evaluable");
 	else if (q->max_eval_depth++ > g_max_depth)
 		return throw_error(q, q->st.curr_cell, q->st.curr_frame, "type_error", "evaluable");
 	else
-		c->fn_ptr->fn(q);
+		c->bif_ptr->fn(q);
 
 	q->eval = save_calc;
 
@@ -313,7 +313,7 @@ bool call_userfun(query *q, cell *c, pl_idx c_ctx)
 	pl_idx save_ctx = q->st.curr_frame;
 	cell *tmp = prepare_call(q, true, c, c_ctx, 3);
 	pl_idx nbr_cells = PREFIX_LEN + c->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, fn_sys_drop_barrier_1, 1, 1);
+	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
@@ -329,7 +329,7 @@ bool call_userfun(query *q, cell *c, pl_idx c_ctx)
 	return ok;
 }
 
-static bool fn_iso_is_2(query *q)
+static bool bif_iso_is_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2_tmp,any);
@@ -370,7 +370,7 @@ static bool fn_iso_is_2(query *q)
 	return false;
 }
 
-bool fn_iso_float_1(query *q)
+bool bif_iso_float_1(query *q)
 {
 	GET_FIRST_ARG(p1_tmp,any);
 
@@ -410,7 +410,7 @@ bool fn_iso_float_1(query *q)
 	return is_float(p1_tmp);
 }
 
-bool fn_iso_integer_1(query *q)
+bool bif_iso_integer_1(query *q)
 {
 	GET_FIRST_ARG(p1_tmp,any);
 
@@ -441,7 +441,7 @@ bool fn_iso_integer_1(query *q)
 	return is_integer(p1_tmp);
 }
 
-static bool fn_iso_abs_1(query *q)
+static bool bif_iso_abs_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -464,7 +464,7 @@ static bool fn_iso_abs_1(query *q)
 	return true;
 }
 
-static bool fn_iso_sign_1(query *q)
+static bool bif_iso_sign_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -487,7 +487,7 @@ static bool fn_iso_sign_1(query *q)
 	return true;
 }
 
-static bool fn_iso_positive_1(query *q)
+static bool bif_iso_positive_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -496,7 +496,7 @@ static bool fn_iso_positive_1(query *q)
 	return true;
 }
 
-static bool fn_iso_negative_1(query *q)
+static bool bif_iso_negative_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -521,7 +521,7 @@ static bool fn_iso_negative_1(query *q)
 	return true;
 }
 
-static bool fn_iso_epsilon_0(query *q)
+static bool bif_iso_epsilon_0(query *q)
 {
 	START_FUNCTION(q);
 	q->accum.val_float = DBL_EPSILON;
@@ -529,7 +529,7 @@ static bool fn_iso_epsilon_0(query *q)
 	return true;
 }
 
-static bool fn_iso_pi_0(query *q)
+static bool bif_iso_pi_0(query *q)
 {
 	START_FUNCTION(q);
 	q->accum.val_float = M_PI;
@@ -537,7 +537,7 @@ static bool fn_iso_pi_0(query *q)
 	return true;
 }
 
-static bool fn_iso_e_0(query *q)
+static bool bif_iso_e_0(query *q)
 {
 	START_FUNCTION(q);
 	q->accum.val_float = M_E;
@@ -545,7 +545,7 @@ static bool fn_iso_e_0(query *q)
 	return true;
 }
 
-static bool fn_numerator_1(query *q)
+static bool bif_numerator_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -571,7 +571,7 @@ static bool fn_numerator_1(query *q)
 	return true;
 }
 
-static bool fn_denominator_1(query *q)
+static bool bif_denominator_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -599,13 +599,13 @@ static bool fn_denominator_1(query *q)
 	return true;
 }
 
-static bool fn_rational_1(query *q)
+static bool bif_rational_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	return is_rational(p1) || is_integer(p1);
 }
 
-static bool fn_rdiv_2(query *q)
+static bool bif_rdiv_2(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -652,7 +652,7 @@ static bool fn_rdiv_2(query *q)
 	return true;
 }
 
-bool fn_iso_add_2(query *q)
+bool bif_iso_add_2(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -663,7 +663,7 @@ bool fn_iso_add_2(query *q)
 	return true;
 }
 
-static bool fn_iso_sub_2(query *q)
+static bool bif_iso_sub_2(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -674,7 +674,7 @@ static bool fn_iso_sub_2(query *q)
 	return true;
 }
 
-static bool fn_iso_mul_2(query *q)
+static bool bif_iso_mul_2(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -685,7 +685,7 @@ static bool fn_iso_mul_2(query *q)
 	return true;
 }
 
-static bool fn_iso_exp_1(query *q)
+static bool bif_iso_exp_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -723,7 +723,7 @@ static bool fn_iso_exp_1(query *q)
 	return true;
 }
 
-static bool fn_iso_sqrt_1(query *q)
+static bool bif_iso_sqrt_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -764,7 +764,7 @@ static bool fn_iso_sqrt_1(query *q)
 	return true;
 }
 
-static bool fn_iso_log_1(query *q)
+static bool bif_iso_log_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -805,7 +805,7 @@ static bool fn_iso_log_1(query *q)
 	return true;
 }
 
-static bool fn_popcount_1(query *q)
+static bool bif_popcount_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -840,7 +840,7 @@ static bool fn_popcount_1(query *q)
 	return true;
 }
 
-static bool fn_lsb_1(query *q)
+static bool bif_lsb_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -874,7 +874,7 @@ static bool fn_lsb_1(query *q)
 	return true;
 }
 
-static bool fn_msb_1(query *q)
+static bool bif_msb_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -908,7 +908,7 @@ static bool fn_msb_1(query *q)
 	return true;
 }
 
-static bool fn_iso_truncate_1(query *q)
+static bool bif_iso_truncate_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -935,7 +935,7 @@ static bool fn_iso_truncate_1(query *q)
 	return true;
 }
 
-static bool fn_iso_round_1(query *q)
+static bool bif_iso_round_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -973,7 +973,7 @@ static bool fn_iso_round_1(query *q)
 	return true;
 }
 
-static bool fn_iso_ceiling_1(query *q)
+static bool bif_iso_ceiling_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1000,7 +1000,7 @@ static bool fn_iso_ceiling_1(query *q)
 	return true;
 }
 
-static bool fn_iso_float_integer_part_1(query *q)
+static bool bif_iso_float_integer_part_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1020,7 +1020,7 @@ static bool fn_iso_float_integer_part_1(query *q)
 	return true;
 }
 
-static bool fn_iso_float_fractional_part_1(query *q)
+static bool bif_iso_float_fractional_part_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1044,7 +1044,7 @@ static bool fn_iso_float_fractional_part_1(query *q)
 	return true;
 }
 
-static bool fn_iso_floor_1(query *q)
+static bool bif_iso_floor_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1071,7 +1071,7 @@ static bool fn_iso_floor_1(query *q)
 	return true;
 }
 
-static bool fn_iso_sin_1(query *q)
+static bool bif_iso_sin_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1104,7 +1104,7 @@ static bool fn_iso_sin_1(query *q)
 	return true;
 }
 
-static bool fn_iso_cos_1(query *q)
+static bool bif_iso_cos_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1137,7 +1137,7 @@ static bool fn_iso_cos_1(query *q)
 	return true;
 }
 
-static bool fn_iso_tan_1(query *q)
+static bool bif_iso_tan_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1178,7 +1178,7 @@ static bool fn_iso_tan_1(query *q)
 	return true;
 }
 
-static bool fn_iso_asin_1(query *q)
+static bool bif_iso_asin_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1211,7 +1211,7 @@ static bool fn_iso_asin_1(query *q)
 	return true;
 }
 
-static bool fn_iso_acos_1(query *q)
+static bool bif_iso_acos_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1244,7 +1244,7 @@ static bool fn_iso_acos_1(query *q)
 	return true;
 }
 
-static bool fn_iso_atan_1(query *q)
+static bool bif_iso_atan_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1277,7 +1277,7 @@ static bool fn_iso_atan_1(query *q)
 	return true;
 }
 
-static bool fn_iso_atan2_2(query *q)
+static bool bif_iso_atan2_2(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1324,7 +1324,7 @@ static bool fn_iso_atan2_2(query *q)
 	return true;
 }
 
-static bool fn_sinh_1(query *q)
+static bool bif_sinh_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1357,7 +1357,7 @@ static bool fn_sinh_1(query *q)
 	return true;
 }
 
-static bool fn_cosh_1(query *q)
+static bool bif_cosh_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1390,7 +1390,7 @@ static bool fn_cosh_1(query *q)
 	return true;
 }
 
-static bool fn_tanh_1(query *q)
+static bool bif_tanh_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1423,7 +1423,7 @@ static bool fn_tanh_1(query *q)
 	return true;
 }
 
-static bool fn_asinh_1(query *q)
+static bool bif_asinh_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1456,7 +1456,7 @@ static bool fn_asinh_1(query *q)
 	return true;
 }
 
-static bool fn_acosh_1(query *q)
+static bool bif_acosh_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1489,7 +1489,7 @@ static bool fn_acosh_1(query *q)
 	return true;
 }
 
-static bool fn_atanh_1(query *q)
+static bool bif_atanh_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1523,7 +1523,7 @@ static bool fn_atanh_1(query *q)
 	return true;
 }
 
-static bool fn_erf_1(query *q)
+static bool bif_erf_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1557,7 +1557,7 @@ static bool fn_erf_1(query *q)
 	return true;
 }
 
-static bool fn_erfc_1(query *q)
+static bool bif_erfc_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1591,7 +1591,7 @@ static bool fn_erfc_1(query *q)
 	return true;
 }
 
-static bool fn_iso_copysign_2(query *q)
+static bool bif_iso_copysign_2(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1628,7 +1628,7 @@ static bool fn_iso_copysign_2(query *q)
 	return true;
 }
 
-static bool fn_iso_pow_2(query *q)
+static bool bif_iso_pow_2(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1698,7 +1698,7 @@ static bool fn_iso_pow_2(query *q)
 	return true;
 }
 
-static bool fn_iso_powi_2(query *q)
+static bool bif_iso_powi_2(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1803,7 +1803,7 @@ static bool fn_iso_powi_2(query *q)
 	return true;
 }
 
-static bool fn_iso_divide_2(query *q)
+static bool bif_iso_divide_2(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1915,7 +1915,7 @@ static bool fn_iso_divide_2(query *q)
 	return true;
 }
 
-static bool fn_iso_divint_2(query *q)
+static bool bif_iso_divint_2(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -1962,7 +1962,7 @@ static void big_mod(mpz_t *x, mpz_t *y, mpz_t *r)
 	}
 }
 
-static bool fn_iso_mod_2(query *q)
+static bool bif_iso_mod_2(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -2002,7 +2002,7 @@ static bool fn_iso_mod_2(query *q)
 	return true;
 }
 
-static bool fn_iso_div_2(query *q)
+static bool bif_iso_div_2(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -2066,7 +2066,7 @@ static bool fn_iso_div_2(query *q)
 	return true;
 }
 
-static bool fn_iso_rem_2(query *q)
+static bool bif_iso_rem_2(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -2106,7 +2106,7 @@ static bool fn_iso_rem_2(query *q)
 	return true;
 }
 
-static bool fn_iso_max_2(query *q)
+static bool bif_iso_max_2(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -2199,7 +2199,7 @@ static bool fn_iso_max_2(query *q)
 	return true;
 }
 
-static bool fn_iso_min_2(query *q)
+static bool bif_iso_min_2(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -2295,7 +2295,7 @@ static bool fn_iso_min_2(query *q)
 	return true;
 }
 
-static bool fn_iso_xor_2(query *q)
+static bool bif_iso_xor_2(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -2332,7 +2332,7 @@ static bool fn_iso_xor_2(query *q)
 	return true;
 }
 
-static bool fn_iso_or_2(query *q)
+static bool bif_iso_or_2(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -2369,7 +2369,7 @@ static bool fn_iso_or_2(query *q)
 	return true;
 }
 
-static bool fn_iso_and_2(query *q)
+static bool bif_iso_and_2(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -2406,7 +2406,7 @@ static bool fn_iso_and_2(query *q)
 	return true;
 }
 
-static bool fn_iso_shl_2(query *q)
+static bool bif_iso_shl_2(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -2441,7 +2441,7 @@ static bool fn_iso_shl_2(query *q)
 	return true;
 }
 
-static bool fn_iso_shr_2(query *q)
+static bool bif_iso_shr_2(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -2466,7 +2466,7 @@ static bool fn_iso_shr_2(query *q)
 	return true;
 }
 
-static bool fn_iso_neg_1(query *q)
+static bool bif_iso_neg_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -2484,7 +2484,7 @@ static bool fn_iso_neg_1(query *q)
 	return true;
 }
 
-static bool fn_iso_seq_2(query *q)
+static bool bif_iso_seq_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
@@ -2492,7 +2492,7 @@ static bool fn_iso_seq_2(query *q)
 	return res == 0;
 }
 
-static bool fn_iso_sne_2(query *q)
+static bool bif_iso_sne_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
@@ -2500,7 +2500,7 @@ static bool fn_iso_sne_2(query *q)
 	return res != 0;
 }
 
-static bool fn_iso_slt_2(query *q)
+static bool bif_iso_slt_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
@@ -2508,7 +2508,7 @@ static bool fn_iso_slt_2(query *q)
 	return res < 0;
 }
 
-static bool fn_iso_sle_2(query *q)
+static bool bif_iso_sle_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
@@ -2516,7 +2516,7 @@ static bool fn_iso_sle_2(query *q)
 	return res <= 0;
 }
 
-static bool fn_iso_sgt_2(query *q)
+static bool bif_iso_sgt_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
@@ -2524,7 +2524,7 @@ static bool fn_iso_sgt_2(query *q)
 	return res > 0;
 }
 
-static bool fn_iso_sge_2(query *q)
+static bool bif_iso_sge_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
@@ -2581,7 +2581,7 @@ static bool fn_iso_sge_2(query *q)
 		return p1.val_float op f2; \
 	}
 
-static bool fn_iso_neq_2(query *q)
+static bool bif_iso_neq_2(query *q)
 {
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
@@ -2591,7 +2591,7 @@ static bool fn_iso_neq_2(query *q)
 	return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable");
 }
 
-static bool fn_iso_nne_2(query *q)
+static bool bif_iso_nne_2(query *q)
 {
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
@@ -2601,7 +2601,7 @@ static bool fn_iso_nne_2(query *q)
 	return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable");
 }
 
-static bool fn_iso_nge_2(query *q)
+static bool bif_iso_nge_2(query *q)
 {
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
@@ -2611,7 +2611,7 @@ static bool fn_iso_nge_2(query *q)
 	return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable");
 }
 
-static bool fn_iso_ngt_2(query *q)
+static bool bif_iso_ngt_2(query *q)
 {
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
@@ -2621,7 +2621,7 @@ static bool fn_iso_ngt_2(query *q)
 	return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable");
 }
 
-static bool fn_iso_nle_2(query *q)
+static bool bif_iso_nle_2(query *q)
 {
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
@@ -2631,7 +2631,7 @@ static bool fn_iso_nle_2(query *q)
 	return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable");
 }
 
-static bool fn_iso_nlt_2(query *q)
+static bool bif_iso_nlt_2(query *q)
 {
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
@@ -2641,7 +2641,7 @@ static bool fn_iso_nlt_2(query *q)
 	return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable");
 }
 
-static bool fn_log_2(query *q)
+static bool bif_log_2(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -2720,7 +2720,7 @@ static bool fn_log_2(query *q)
 	return true;
 }
 
-static bool fn_log10_1(query *q)
+static bool bif_log10_1(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -2771,7 +2771,7 @@ static pl_flt rnd(void)
 	return((pl_flt)g_seed / (pl_flt)random_M);
 }
 
-static bool fn_set_seed_1(query *q)
+static bool bif_set_seed_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	g_first_time = false;
@@ -2779,7 +2779,7 @@ static bool fn_set_seed_1(query *q)
 	return true;
 }
 
-static bool fn_get_seed_1(query *q)
+static bool bif_get_seed_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
@@ -2787,7 +2787,7 @@ static bool fn_get_seed_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
-static bool fn_random_between_3(query *q)
+static bool bif_random_between_3(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,integer);
@@ -2805,7 +2805,7 @@ static bool fn_random_between_3(query *q)
 	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 }
 
-static bool fn_random_1(query *q)
+static bool bif_random_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
@@ -2813,7 +2813,7 @@ static bool fn_random_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
-static bool fn_random_integer_0(query *q)
+static bool bif_random_integer_0(query *q)
 {
 	START_FUNCTION(q);
 	q->accum.tag = TAG_INTEGER;
@@ -2821,7 +2821,7 @@ static bool fn_random_integer_0(query *q)
 	return true;
 }
 
-static bool fn_random_float_0(query *q)
+static bool bif_random_float_0(query *q)
 {
 	START_FUNCTION(q);
 	q->accum.tag = TAG_DOUBLE;
@@ -2829,7 +2829,7 @@ static bool fn_random_float_0(query *q)
 	return true;
 }
 
-static bool fn_rand_0(query *q)
+static bool bif_rand_0(query *q)
 {
 	START_FUNCTION(q);
 	q->accum.tag = TAG_INTEGER;
@@ -2837,7 +2837,7 @@ static bool fn_rand_0(query *q)
 	return true;
 }
 
-static bool fn_rand_1(query *q)
+static bool bif_rand_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
@@ -2845,7 +2845,7 @@ static bool fn_rand_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
-static bool fn_sys_set_prob_1(query *q)
+static bool bif_sys_set_prob_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	double p;
@@ -2879,7 +2879,7 @@ static bool fn_sys_set_prob_1(query *q)
 	return true;
 }
 
-static bool fn_sys_get_prob_1(query *q)
+static bool bif_sys_get_prob_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
@@ -2897,7 +2897,7 @@ static pl_int gcd(pl_int num, pl_int remainder)
 	return gcd(remainder, num % remainder);
 }
 
-static bool fn_gcd_2(query *q)
+static bool bif_gcd_2(query *q)
 {
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
@@ -2934,7 +2934,7 @@ static bool fn_gcd_2(query *q)
 	return true;
 }
 
-static bool fn_divmod_4(query *q)
+static bool bif_divmod_4(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,integer);
@@ -3006,106 +3006,106 @@ builtins g_evaluable_bifs[] =
 {
 	// Predicate...
 
-	{"=:=", 2, fn_iso_neq_2, "+number,+number", true, false, BLAH},
-	{"=\\=", 2, fn_iso_nne_2, "+number,+number", true, false, BLAH},
-	{">", 2, fn_iso_ngt_2, "+number,+number", true, false, BLAH},
-	{">=", 2, fn_iso_nge_2, "+number,+number", true, false, BLAH},
-	{"=<", 2, fn_iso_nle_2, "+number,+number", true, false, BLAH},
-	{"<", 2, fn_iso_nlt_2, "+number,+number", true, false, BLAH},
+	{"=:=", 2, bif_iso_neq_2, "+number,+number", true, false, BLAH},
+	{"=\\=", 2, bif_iso_nne_2, "+number,+number", true, false, BLAH},
+	{">", 2, bif_iso_ngt_2, "+number,+number", true, false, BLAH},
+	{">=", 2, bif_iso_nge_2, "+number,+number", true, false, BLAH},
+	{"=<", 2, bif_iso_nle_2, "+number,+number", true, false, BLAH},
+	{"<", 2, bif_iso_nlt_2, "+number,+number", true, false, BLAH},
 
-	{"==", 2, fn_iso_seq_2, "+term,+term", true, false, BLAH},
-	{"\\==", 2, fn_iso_sne_2, "+term,+term", true, false, BLAH},
-	{"@>", 2, fn_iso_sgt_2, "+term,+term", true, false, BLAH},
-	{"@>=", 2, fn_iso_sge_2, "+term,+term", true, false, BLAH},
-	{"@=<", 2, fn_iso_sle_2, "+term,+term", true, false, BLAH},
-	{"@<", 2, fn_iso_slt_2, "+term,+term", true, false, BLAH},
+	{"==", 2, bif_iso_seq_2, "+term,+term", true, false, BLAH},
+	{"\\==", 2, bif_iso_sne_2, "+term,+term", true, false, BLAH},
+	{"@>", 2, bif_iso_sgt_2, "+term,+term", true, false, BLAH},
+	{"@>=", 2, bif_iso_sge_2, "+term,+term", true, false, BLAH},
+	{"@=<", 2, bif_iso_sle_2, "+term,+term", true, false, BLAH},
+	{"@<", 2, bif_iso_slt_2, "+term,+term", true, false, BLAH},
 
-	{"is", 2, fn_iso_is_2, "?number,+number", true, false, BLAH},
-	{"float", 1, fn_iso_float_1, "+number", true, false, BLAH},
-	{"integer", 1, fn_iso_integer_1, "+number", true, false, BLAH},
-	{"setrand", 1, fn_set_seed_1, "+integer", false, false, BLAH},
-	{"srandom", 1, fn_set_seed_1, "+integer", false, false, BLAH},
-	{"set_seed", 1, fn_set_seed_1, "+integer", false, false, BLAH},
-	{"get_seed", 1, fn_get_seed_1, "-integer", false, false, BLAH},
-	{"rand", 1, fn_rand_1, "?integer", false, false, BLAH},
-	{"random", 1, fn_random_1, "?integer", false, false, BLAH},
-	{"random_between", 3, fn_random_between_3, "?integer,?integer,-integer", false, false, BLAH},
+	{"is", 2, bif_iso_is_2, "?number,+number", true, false, BLAH},
+	{"float", 1, bif_iso_float_1, "+number", true, false, BLAH},
+	{"integer", 1, bif_iso_integer_1, "+number", true, false, BLAH},
+	{"setrand", 1, bif_set_seed_1, "+integer", false, false, BLAH},
+	{"srandom", 1, bif_set_seed_1, "+integer", false, false, BLAH},
+	{"set_seed", 1, bif_set_seed_1, "+integer", false, false, BLAH},
+	{"get_seed", 1, bif_get_seed_1, "-integer", false, false, BLAH},
+	{"rand", 1, bif_rand_1, "?integer", false, false, BLAH},
+	{"random", 1, bif_random_1, "?integer", false, false, BLAH},
+	{"random_between", 3, bif_random_between_3, "?integer,?integer,-integer", false, false, BLAH},
 
-	{"$set_prob", 1, fn_sys_set_prob_1, "+real", false, false, BLAH},
-	{"$get_prob", 1, fn_sys_get_prob_1, "-real", false, false, BLAH},
+	{"$set_prob", 1, bif_sys_set_prob_1, "+real", false, false, BLAH},
+	{"$get_prob", 1, bif_sys_get_prob_1, "-real", false, false, BLAH},
 
 	// Functions...
 
-	{"+", 1, fn_iso_positive_1, "+number,-number", true, true, BLAH},
-	{"-", 1, fn_iso_negative_1, "+number,-number", true, true, BLAH},
-	{"abs", 1, fn_iso_abs_1, "+number,-number", true, true, BLAH},
-	{"sign", 1, fn_iso_sign_1, "+number,-number", true, true, BLAH},
-	{"epsilon", 0, fn_iso_epsilon_0, "-float", true, true, BLAH},
-	{"pi", 0, fn_iso_pi_0, "-float", true, true, BLAH},
-	{"e", 0, fn_iso_e_0, "-float", true, true, BLAH},
-	{"+", 2, fn_iso_add_2, "+number,+number,-number", true, true, BLAH},
-	{"-", 2, fn_iso_sub_2, "+number,+number,-number", true, true, BLAH},
-	{"*", 2, fn_iso_mul_2, "+number,+number,-number", true, true, BLAH},
-	{"/", 2, fn_iso_divide_2, "+number,+number,-float", true, true, BLAH},
-	{"//", 2, fn_iso_divint_2, "+integer,+integer,-integer", true, true, BLAH},
-	{"div", 2, fn_iso_div_2, "+integer,+integer,-integer", true, true, BLAH},
-	{"mod", 2, fn_iso_mod_2, "+integer,+integer,-integer", true, true, BLAH},
-	{"rem", 2, fn_iso_rem_2, "+integer,+integer,-integer", true, true, BLAH},
-	{"max", 2, fn_iso_max_2, "+number,+number,-number", true, true, BLAH},
-	{"min", 2, fn_iso_min_2, "+number,+number,-number", true, true, BLAH},
-	{"xor", 2, fn_iso_xor_2, "+integer,+integer,-integer", true, true, BLAH},
-	{"/\\", 2, fn_iso_and_2, "+integer,+integer,-integer", true, true, BLAH},
-	{"\\/", 2, fn_iso_or_2, "+integer,+integer,-integer", true, true, BLAH},
-	{"<<", 2, fn_iso_shl_2, "+integer,-integer", true, true, BLAH},
-	{">>", 2, fn_iso_shr_2, "+integer,-integer", true, true, BLAH},
-	{"\\", 1, fn_iso_neg_1, "+integer,-integer", true, true, BLAH},
-	{"**", 2, fn_iso_pow_2, "+number,+number,-float", true, true, BLAH},
-	{"^", 2, fn_iso_powi_2, "+number,+number,-integer", true, true, BLAH},
-	{"exp", 1, fn_iso_exp_1, "+number,-float", true, true, BLAH},
-	{"sqrt", 1, fn_iso_sqrt_1, "+number,-float", true, true, BLAH},
-	{"log", 1, fn_iso_log_1, "+number,-float", true, true, BLAH},
+	{"+", 1, bif_iso_positive_1, "+number,-number", true, true, BLAH},
+	{"-", 1, bif_iso_negative_1, "+number,-number", true, true, BLAH},
+	{"abs", 1, bif_iso_abs_1, "+number,-number", true, true, BLAH},
+	{"sign", 1, bif_iso_sign_1, "+number,-number", true, true, BLAH},
+	{"epsilon", 0, bif_iso_epsilon_0, "-float", true, true, BLAH},
+	{"pi", 0, bif_iso_pi_0, "-float", true, true, BLAH},
+	{"e", 0, bif_iso_e_0, "-float", true, true, BLAH},
+	{"+", 2, bif_iso_add_2, "+number,+number,-number", true, true, BLAH},
+	{"-", 2, bif_iso_sub_2, "+number,+number,-number", true, true, BLAH},
+	{"*", 2, bif_iso_mul_2, "+number,+number,-number", true, true, BLAH},
+	{"/", 2, bif_iso_divide_2, "+number,+number,-float", true, true, BLAH},
+	{"//", 2, bif_iso_divint_2, "+integer,+integer,-integer", true, true, BLAH},
+	{"div", 2, bif_iso_div_2, "+integer,+integer,-integer", true, true, BLAH},
+	{"mod", 2, bif_iso_mod_2, "+integer,+integer,-integer", true, true, BLAH},
+	{"rem", 2, bif_iso_rem_2, "+integer,+integer,-integer", true, true, BLAH},
+	{"max", 2, bif_iso_max_2, "+number,+number,-number", true, true, BLAH},
+	{"min", 2, bif_iso_min_2, "+number,+number,-number", true, true, BLAH},
+	{"xor", 2, bif_iso_xor_2, "+integer,+integer,-integer", true, true, BLAH},
+	{"/\\", 2, bif_iso_and_2, "+integer,+integer,-integer", true, true, BLAH},
+	{"\\/", 2, bif_iso_or_2, "+integer,+integer,-integer", true, true, BLAH},
+	{"<<", 2, bif_iso_shl_2, "+integer,-integer", true, true, BLAH},
+	{">>", 2, bif_iso_shr_2, "+integer,-integer", true, true, BLAH},
+	{"\\", 1, bif_iso_neg_1, "+integer,-integer", true, true, BLAH},
+	{"**", 2, bif_iso_pow_2, "+number,+number,-float", true, true, BLAH},
+	{"^", 2, bif_iso_powi_2, "+number,+number,-integer", true, true, BLAH},
+	{"exp", 1, bif_iso_exp_1, "+number,-float", true, true, BLAH},
+	{"sqrt", 1, bif_iso_sqrt_1, "+number,-float", true, true, BLAH},
+	{"log", 1, bif_iso_log_1, "+number,-float", true, true, BLAH},
 
-	{"sin", 1, fn_iso_sin_1, "+number,-float", true, true, BLAH},
-	{"cos", 1, fn_iso_cos_1, "+number,-float", true, true, BLAH},
-	{"tan", 1, fn_iso_tan_1, "+number,-float", true, true, BLAH},
-	{"asin", 1, fn_iso_asin_1, "+number,-float", true, true, BLAH},
-	{"acos", 1, fn_iso_acos_1, "+number,-float", true, true, BLAH},
-	{"atan", 1, fn_iso_atan_1, "+number,-float", true, true, BLAH},
+	{"sin", 1, bif_iso_sin_1, "+number,-float", true, true, BLAH},
+	{"cos", 1, bif_iso_cos_1, "+number,-float", true, true, BLAH},
+	{"tan", 1, bif_iso_tan_1, "+number,-float", true, true, BLAH},
+	{"asin", 1, bif_iso_asin_1, "+number,-float", true, true, BLAH},
+	{"acos", 1, bif_iso_acos_1, "+number,-float", true, true, BLAH},
+	{"atan", 1, bif_iso_atan_1, "+number,-float", true, true, BLAH},
 
-	{"sinh", 1, fn_sinh_1, "+number,-float", false, true, BLAH},
-	{"cosh", 1, fn_cosh_1, "+number,-float", false, true, BLAH},
-	{"tanh", 1, fn_tanh_1, "+number,-float", false, true, BLAH},
-	{"asinh", 1, fn_asinh_1, "+number,-float", false, true, BLAH},
-	{"acosh", 1, fn_acosh_1, "+number,-float", false, true, BLAH},
-	{"atanh", 1, fn_atanh_1, "+number,-float", false, true, BLAH},
+	{"sinh", 1, bif_sinh_1, "+number,-float", false, true, BLAH},
+	{"cosh", 1, bif_cosh_1, "+number,-float", false, true, BLAH},
+	{"tanh", 1, bif_tanh_1, "+number,-float", false, true, BLAH},
+	{"asinh", 1, bif_asinh_1, "+number,-float", false, true, BLAH},
+	{"acosh", 1, bif_acosh_1, "+number,-float", false, true, BLAH},
+	{"atanh", 1, bif_atanh_1, "+number,-float", false, true, BLAH},
 
-	{"erf", 1, fn_erf_1, "+number,-float", false, true, BLAH},
-	{"erfc", 1, fn_erfc_1, "+number,-float", false, true, BLAH},
+	{"erf", 1, bif_erf_1, "+number,-float", false, true, BLAH},
+	{"erfc", 1, bif_erfc_1, "+number,-float", false, true, BLAH},
 
-	{"atan2", 2, fn_iso_atan2_2, "+number,+number,-float", true, true, BLAH},
-	{"copysign", 2, fn_iso_copysign_2, "+number,-number", true, true, BLAH},
-	{"truncate", 1, fn_iso_truncate_1, "+float,-integer", true, true, BLAH},
-	{"round", 1, fn_iso_round_1, "+float,-integer", true, true, BLAH},
-	{"ceiling", 1, fn_iso_ceiling_1, "+float,-integer", true, true, BLAH},
-	{"floor", 1, fn_iso_floor_1, "+float,-integer", true, true, BLAH},
-	{"float_integer_part", 1, fn_iso_float_integer_part_1, "+float,-integer", true, true, BLAH},
-	{"float_fractional_part", 1, fn_iso_float_fractional_part_1, "+float,-float", true, true, BLAH},
+	{"atan2", 2, bif_iso_atan2_2, "+number,+number,-float", true, true, BLAH},
+	{"copysign", 2, bif_iso_copysign_2, "+number,-number", true, true, BLAH},
+	{"truncate", 1, bif_iso_truncate_1, "+float,-integer", true, true, BLAH},
+	{"round", 1, bif_iso_round_1, "+float,-integer", true, true, BLAH},
+	{"ceiling", 1, bif_iso_ceiling_1, "+float,-integer", true, true, BLAH},
+	{"floor", 1, bif_iso_floor_1, "+float,-integer", true, true, BLAH},
+	{"float_integer_part", 1, bif_iso_float_integer_part_1, "+float,-integer", true, true, BLAH},
+	{"float_fractional_part", 1, bif_iso_float_fractional_part_1, "+float,-float", true, true, BLAH},
 
-	{"numerator", 1, fn_numerator_1, "+rational,-integer", false, true, BLAH},
-	{"denominator", 1, fn_denominator_1, "+rational,-integer", false, true, BLAH},
-	{"rational", 1, fn_rational_1, "+term", false, false, BLAH},
-	{"rdiv", 2, fn_rdiv_2, "+integer,+integer,-rational", false, true, BLAH},
+	{"numerator", 1, bif_numerator_1, "+rational,-integer", false, true, BLAH},
+	{"denominator", 1, bif_denominator_1, "+rational,-integer", false, true, BLAH},
+	{"rational", 1, bif_rational_1, "+term", false, false, BLAH},
+	{"rdiv", 2, bif_rdiv_2, "+integer,+integer,-rational", false, true, BLAH},
 
-	{"divmod", 4, fn_divmod_4, "+integer,+integer,?integer,?integer", false, false, BLAH},
-	{"log", 2, fn_log_2, "+number,+number,-float", false, true, BLAH},
-	{"log10", 1, fn_log10_1, "+number,-float", false, true, BLAH},
-	{"random_integer", 0, fn_random_integer_0, "-integer", false, true, BLAH},
-	{"random_float", 0, fn_random_float_0, "-float", false, true, BLAH},
-	{"rand", 0, fn_rand_0, "-integer", false, true, BLAH},
-	{"gcd", 2, fn_gcd_2, "+integer,+integer,-integer", false, true, BLAH},
-	{"popcount", 1, fn_popcount_1, "+integer,-integer", false, true, BLAH},
-	{"lsb", 1, fn_lsb_1, "+integer,-integer", false, true, BLAH},
-	{"msb", 1, fn_msb_1, "+integer,-integer", false, true, BLAH},
+	{"divmod", 4, bif_divmod_4, "+integer,+integer,?integer,?integer", false, false, BLAH},
+	{"log", 2, bif_log_2, "+number,+number,-float", false, true, BLAH},
+	{"log10", 1, bif_log10_1, "+number,-float", false, true, BLAH},
+	{"random_integer", 0, bif_random_integer_0, "-integer", false, true, BLAH},
+	{"random_float", 0, bif_random_float_0, "-float", false, true, BLAH},
+	{"rand", 0, bif_rand_0, "-integer", false, true, BLAH},
+	{"gcd", 2, bif_gcd_2, "+integer,+integer,-integer", false, true, BLAH},
+	{"popcount", 1, bif_popcount_1, "+integer,-integer", false, true, BLAH},
+	{"lsb", 1, bif_lsb_1, "+integer,-integer", false, true, BLAH},
+	{"msb", 1, bif_msb_1, "+integer,-integer", false, true, BLAH},
 
 	{0}
 };

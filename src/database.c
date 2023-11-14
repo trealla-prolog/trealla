@@ -16,7 +16,7 @@
 #include "prolog.h"
 #include "query.h"
 
-bool fn_clause_3(query *q)
+bool bif_clause_3(query *q)
 {
 	GET_FIRST_ARG(p1,callable_or_var);
 	GET_NEXT_ARG(p2,callable_or_var);
@@ -136,7 +136,7 @@ void db_log(query *q, rule *r, enum log_type l)
 	q->quoted = 0;
 }
 
-bool fn_iso_clause_2(query *q)
+bool bif_iso_clause_2(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,callable_or_var);
@@ -181,18 +181,18 @@ bool fn_iso_clause_2(query *q)
 	return false;
 }
 
-bool fn_sys_clause_2(query *q)
+bool bif_sys_clause_2(query *q)
 {
 	q->access_private = true;
-	bool ok = fn_iso_clause_2(q);
+	bool ok = bif_iso_clause_2(q);
 	q->access_private = false;
 	return ok;
 }
 
-bool fn_sys_clause_3(query *q)
+bool bif_sys_clause_3(query *q)
 {
 	q->access_private = true;
-	bool ok = fn_clause_3(q);
+	bool ok = bif_clause_3(q);
 	q->access_private = false;
 	return ok;
 }
@@ -278,7 +278,7 @@ bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 	return true;
 }
 
-bool fn_iso_retract_1(query *q)
+bool bif_iso_retract_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 
@@ -296,7 +296,7 @@ bool fn_iso_retract_1(query *q)
 	return do_retract(q, p1, p1_ctx, DO_RETRACT);
 }
 
-bool fn_iso_retractall_1(query *q)
+bool bif_iso_retractall_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 
@@ -377,7 +377,7 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 	return true;
 }
 
-bool fn_iso_abolish_1(query *q)
+bool bif_iso_abolish_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 
@@ -473,7 +473,7 @@ static void do_term_assign_vars(parser *p)
 	}
 }
 
-bool fn_iso_asserta_1(query *q)
+bool bif_iso_asserta_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	check_heap_error(init_tmp_heap(q));
@@ -529,7 +529,7 @@ bool fn_iso_asserta_1(query *q)
 	return true;
 }
 
-bool fn_iso_assertz_1(query *q)
+bool bif_iso_assertz_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	check_heap_error(init_tmp_heap(q));
@@ -662,14 +662,14 @@ static bool do_asserta_2(query *q)
 	return true;
 }
 
-bool fn_asserta_2(query *q)
+bool bif_asserta_2(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
 	GET_NEXT_ARG(p2,var);
 	return do_asserta_2(q);
 }
 
-bool fn_sys_asserta_2(query *q)
+bool bif_sys_asserta_2(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
 	GET_NEXT_ARG(p2,atom);
@@ -753,14 +753,14 @@ static bool do_assertz_2(query *q)
 	return true;
 }
 
-bool fn_assertz_2(query *q)
+bool bif_assertz_2(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
 	GET_NEXT_ARG(p2,var);
 	return do_assertz_2(q);
 }
 
-bool fn_sys_assertz_2(query *q)
+bool bif_sys_assertz_2(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
 	GET_NEXT_ARG(p2,atom);
@@ -811,7 +811,7 @@ void save_db(FILE *fp, query *q, int logging)
 	q->listing = false;
 }
 
-bool fn_abolish_2(query *q)
+bool bif_abolish_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,integer);

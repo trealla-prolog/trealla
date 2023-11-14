@@ -10,7 +10,7 @@
 #define DBL_DECIMAL_DIG DBL_DIG
 #endif
 
-bool fn_map_create_2(query *q)
+bool bif_map_create_2(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	int n = new_stream(q->pl);
@@ -67,7 +67,7 @@ bool fn_map_create_2(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
-bool fn_map_set_3(query *q)
+bool bif_map_set_3(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
 	int n = get_stream(q, pstr);
@@ -112,7 +112,7 @@ bool fn_map_set_3(query *q)
 	return true;
 }
 
-bool fn_map_get_3(query *q)
+bool bif_map_get_3(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
 	int n = get_stream(q, pstr);
@@ -176,7 +176,7 @@ bool fn_map_get_3(query *q)
 	return ok;
 }
 
-bool fn_map_del_2(query *q)
+bool bif_map_del_2(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
 	int n = get_stream(q, pstr);
@@ -202,7 +202,7 @@ bool fn_map_del_2(query *q)
 	return true;
 }
 
-bool fn_map_list_2(query *q)
+bool bif_map_list_2(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
 	int n = get_stream(q, pstr);
@@ -278,7 +278,7 @@ bool fn_map_list_2(query *q)
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
 
-bool fn_map_count_2(query *q)
+bool bif_map_count_2(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
 	int n = get_stream(q, pstr);
@@ -293,7 +293,7 @@ bool fn_map_count_2(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
-bool fn_map_close_1(query *q)
+bool bif_map_close_1(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
 	int n = get_stream(q, pstr);
@@ -302,5 +302,5 @@ bool fn_map_close_1(query *q)
 	if (!str->is_map)
 		return throw_error(q, pstr, pstr_ctx, "type_error", "not_a_map");
 
-	return fn_iso_close_1(q);
+	return bif_iso_close_1(q);
 }

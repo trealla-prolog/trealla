@@ -204,7 +204,7 @@ bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx 
 	return true;
 }
 
-bool fn_parse_csv_line_2(query *q)
+bool bif_parse_csv_line_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,var);
@@ -212,7 +212,7 @@ bool fn_parse_csv_line_2(query *q)
 	return do_parse_csv_line(q, &params, C_STR(q,p1), p2, p2_ctx);
 }
 
-bool fn_parse_csv_line_3(query *q)
+bool bif_parse_csv_line_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,var);
@@ -259,7 +259,7 @@ bool fn_parse_csv_line_3(query *q)
 	return do_parse_csv_line(q, &params, C_STR(q,p1), !do_assert||!functor ? p2 : NULL, p2_ctx);
 }
 
-bool fn_parse_csv_file_2(query *q)
+bool bif_parse_csv_file_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p3,list_or_nil);

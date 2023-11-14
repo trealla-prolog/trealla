@@ -102,7 +102,7 @@ void *do_dlopen(const char *filename, int flag)
 	return handle;
 }
 
-USE_RESULT bool fn_sys_dlopen_3(query *q)
+USE_RESULT bool bif_sys_dlopen_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,integer);
@@ -115,7 +115,7 @@ USE_RESULT bool fn_sys_dlopen_3(query *q)
 	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 }
 
-USE_RESULT bool fn_sys_dlsym_3(query *q)
+USE_RESULT bool bif_sys_dlsym_3(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,atom);
@@ -139,7 +139,7 @@ int do_dlclose(void *handle)
 	return dlclose(handle);
 }
 
-USE_RESULT bool fn_sys_dlclose_1(query *q)
+USE_RESULT bool bif_sys_dlclose_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	size_t handle = get_smalluint(p1);
@@ -190,7 +190,7 @@ static void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn,
 	sl_app(pl->biftab, ptr->name, ptr);
 }
 
-USE_RESULT bool fn_sys_register_function_4(query *q)
+USE_RESULT bool bif_sys_register_function_4(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,atom);
@@ -623,7 +623,7 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 	return true;
 }
 
-USE_RESULT bool fn_sys_register_predicate_4(query *q)
+USE_RESULT bool bif_sys_register_predicate_4(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,atom);
@@ -1890,7 +1890,7 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 	return true;
 }
 
-static bool fn_foreign_struct_2(query *q)
+static bool bif_foreign_struct_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,list_or_nil);
@@ -1898,7 +1898,7 @@ static bool fn_foreign_struct_2(query *q)
 	return do_foreign_struct(q->st.m, q->st.curr_cell);
 }
 
-static bool fn_use_foreign_module_2(query *q)
+static bool bif_use_foreign_module_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,list_or_nil);
@@ -1910,14 +1910,14 @@ static bool fn_use_foreign_module_2(query *q)
 builtins g_ffi_bifs[MAX_FFI] =
 {
 #if USE_FFI
-	{"$dlopen", 3, fn_sys_dlopen_3, "+atom,+atom,-term", false, false, BLAH},
-	{"$dlsym", 3, fn_sys_dlsym_3, "+atom,+symbol,-term", false, false, BLAH},
-	{"$dlclose", 1, fn_sys_dlclose_1, "+term", false, false, BLAH},
-	{"$register_function", 4, fn_sys_register_function_4, "+term, +atom, +list,+atom", false, false, BLAH},
-	{"$register_predicate", 4, fn_sys_register_predicate_4, "+term, +atom, +list,+atom", false, false, BLAH},
+	{"$dlopen", 3, bif_sys_dlopen_3, "+atom,+atom,-term", false, false, BLAH},
+	{"$dlsym", 3, bif_sys_dlsym_3, "+atom,+symbol,-term", false, false, BLAH},
+	{"$dlclose", 1, bif_sys_dlclose_1, "+term", false, false, BLAH},
+	{"$register_function", 4, bif_sys_register_function_4, "+term, +atom, +list,+atom", false, false, BLAH},
+	{"$register_predicate", 4, bif_sys_register_predicate_4, "+term, +atom, +list,+atom", false, false, BLAH},
 
-	{"foreign_struct", 2, fn_foreign_struct_2, "+atom,+list", false, false, BLAH},
-	{"use_foreign_module", 2, fn_use_foreign_module_2, "+atom,+list", false, false, BLAH},
+	{"foreign_struct", 2, bif_foreign_struct_2, "+atom,+list", false, false, BLAH},
+	{"use_foreign_module", 2, bif_use_foreign_module_2, "+atom,+list", false, false, BLAH},
 #endif
 
 	{0}
