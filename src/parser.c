@@ -1680,11 +1680,8 @@ static bool term_expansion(parser *p)
 	query *q = query_create(m, true);
 	check_error(q);
 	cell *c = p->cl->cells;
-	cell *tmp = alloc_on_heap(q, 3+c->nbr_cells+2);
+	cell *tmp = alloc_on_heap(q, 1+c->nbr_cells+2);
 	unsigned nbr_cells = 0;
-	make_struct(tmp+nbr_cells, g_colon_s, bif_iso_invoke_2, 2, 2+c->nbr_cells+1);
-	SET_OP(tmp+nbr_cells, OP_XFY); nbr_cells++;
-	make_atom(tmp+nbr_cells++, new_atom(p->pl, m->name));
 	make_struct(tmp+nbr_cells++, new_atom(p->pl, "term_expansion"), NULL, 2, c->nbr_cells+1);
 	safe_copy_cells(tmp+nbr_cells, p->cl->cells, c->nbr_cells);
 	nbr_cells += c->nbr_cells;
