@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <unistd.h>
-#include "utf8.h"
 
 #ifndef USE_OPENSSL
 #define USE_OPENSSL 0
@@ -45,13 +44,14 @@ typedef uint32_t pl_idx;
 #define NEWLINE_MODE "posix"
 #endif
 
-#include "skiplist.h"
 #include "trealla.h"
 #include "cdebug.h"
 #include "stringbuf.h"
 #include "imath/imath.h"
 #include "imath/imrat.h"
 #include "sre/re.h"
+#include "skiplist/skiplist.h"
+#include "utf8/utf8.h"
 
 #if defined(_WIN32) || defined(__wasi__)
 char *realpath(const char *path, char resolved_path[PATH_MAX]);
