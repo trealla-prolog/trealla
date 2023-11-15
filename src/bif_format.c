@@ -134,15 +134,15 @@ static bool is_more_data(query *q, list_reader_t *fmt)
 
 #define CHECK_BUF(len) {									\
     unsigned n = ((len) > 0 ? (len) : 1) + 1;	            \
-	if (n >= nbytes) {										\
-		size_t save = dst - tmpbuf;							\
-		bufsiz += n;										\
-		tmpbuf = realloc(tmpbuf, (bufsiz*=2));				\
+	if (n >= tmpbuf_free) {									\
+		size_t save_offset = dst - tmpbuf;					\
+		tmpbuf_size += n;									\
+		tmpbuf = realloc(tmpbuf, (tmpbuf_size*=2));			\
 		check_heap_error(tmpbuf);							\
-		dst = tmpbuf + save;								\
-		*dst = '\0';										\
-		nbytes = bufsiz - save;								\
+		dst = tmpbuf + save_offset;							\
+		tmpbuf_free = tmpbuf_size - save_offset;			\
 	}                                                       \
+	tmpbuf_free -= len;										\
 }
 
 bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
@@ -157,12 +157,12 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 	fmt2.p = p2;
 	fmt2.p_ctx = p2_ctx;
 
-	size_t bufsiz = 1024*64;
-	char *tmpbuf = malloc(bufsiz);
+	size_t tmpbuf_size = 1024*8;
+	char *tmpbuf = malloc(tmpbuf_size);
 	check_heap_error(tmpbuf);
 	char *dst = tmpbuf;
 	*dst = '\0';
-	size_t nbytes = bufsiz;
+	size_t tmpbuf_free = tmpbuf_size;
 	bool redo = false, start_of_line = true;
 	int tab_at = 1, tabs = 0, diff = 0, last_at = 0, tab_char = ' ';
 	save_fmt1 = fmt1;
@@ -382,6 +382,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 			}
 
 			while (!noargval && argval--) {
+				CHECK_BUF(MAX_BYTES_PER_CODEPOINT);
 				dst += put_char_utf8(dst, ' ');
 			}
 
@@ -575,7 +576,6 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
             }
 
 			len = strlen(tmpbuf2);
-			CHECK_BUF(len*2);
 			strcpy(dst, tmpbuf2);
 			free(tmpbuf2);
 			clear_write_options(q);
@@ -588,10 +588,11 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 			return throw_error(q, c, q->st.curr_frame, "existence_error", "format_character");
 		}
 
+		CHECK_BUF(len);
 		dst += len;
-		nbytes -= len;
 	}
 
+	*dst = '\0';
 	size_t len = dst - tmpbuf;
 
 	if (fmt2.p) {
@@ -641,9 +642,9 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 		const char *tmpsrc = tmpbuf;
 
 		while (len) {
-			size_t nbytes = net_write(tmpsrc, len, str);
+			size_t tmpbuf_free = net_write(tmpsrc, len, str);
 
-			if (!nbytes) {
+			if (!tmpbuf_free) {
 				if (feof(str->fp) || ferror(str->fp)) {
 					free(tmpbuf);
 					fprintf(stdout, "Error: end of file on write\n");
@@ -652,8 +653,8 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 			}
 
 			clearerr(str->fp);
-			len -= nbytes;
-			tmpsrc += nbytes;
+			len -= tmpbuf_free;
+			tmpsrc += tmpbuf_free;
 		}
 	} else {
 		free(tmpbuf);
