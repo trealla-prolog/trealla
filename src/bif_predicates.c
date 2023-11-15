@@ -6250,7 +6250,7 @@ static bool bif_get_unbuffered_char_1(query *q)
 
 // module:goal
 
-static bool bif_iso_invoke_2(query *q)
+bool bif_iso_invoke_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,callable);

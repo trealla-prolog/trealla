@@ -1658,7 +1658,13 @@ static bool term_expansion(parser *p)
 	if (p->cl->cells->val_off == g_dcg_s)
 		return dcg_expansion(p);
 
-	predicate *pr = find_functor(p->m, "term_expansion", 2);
+	module *m = p->m;
+	predicate *pr = find_functor(m, "term_expansion", 2);
+
+	if (!pr || !pr->head) {
+		m = p->pl->user_m;
+		pr = find_functor(m, "term_expansion", 2);
+	}
 
 	if (!pr || !pr->head)
 		return false;
@@ -1668,14 +1674,22 @@ static bool term_expansion(parser *p)
 	if (h->val_off == g_term_expansion_s)
 		return false;
 
-	query *q = query_create(p->m, true);
+	if (h->val_off == g_colon_s)
+		return false;
+
+	query *q = query_create(m, true);
 	check_error(q);
 	cell *c = p->cl->cells;
-	cell *tmp = alloc_on_heap(q, 1+c->nbr_cells+1+1);
-	make_struct(tmp, new_atom(p->pl, "term_expansion"), NULL, 2, c->nbr_cells+1);
-	safe_copy_cells(tmp+1, p->cl->cells, c->nbr_cells);
-	make_ref(tmp+1+c->nbr_cells, g_anon_s, p->cl->nbr_vars, 0);
-	make_end(tmp+1+c->nbr_cells+1);
+	cell *tmp = alloc_on_heap(q, 3+c->nbr_cells+2);
+	unsigned nbr_cells = 0;
+	make_struct(tmp+nbr_cells, g_colon_s, bif_iso_invoke_2, 2, 2+c->nbr_cells+1);
+	SET_OP(tmp+nbr_cells, OP_XFY); nbr_cells++;
+	make_atom(tmp+nbr_cells++, new_atom(p->pl, m->name));
+	make_struct(tmp+nbr_cells++, new_atom(p->pl, "term_expansion"), NULL, 2, c->nbr_cells+1);
+	safe_copy_cells(tmp+nbr_cells, p->cl->cells, c->nbr_cells);
+	nbr_cells += c->nbr_cells;
+	make_ref(tmp+nbr_cells++, g_anon_s, p->cl->nbr_vars, 0);
+	make_end(tmp+nbr_cells);
 	execute(q, tmp, p->cl->nbr_vars+1);
 
 	if (q->retry != QUERY_OK) {
