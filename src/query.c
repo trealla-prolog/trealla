@@ -891,7 +891,7 @@ inline static bool any_choices(const query *q, const frame *f)
 		return false;
 
 	const choice *ch = GET_PREV_CHOICE();
-	return ch->chgen >= f->chgen;
+	return ch->chgen > f->chgen;
 }
 
 static void commit_frame(query *q, cell *body)
