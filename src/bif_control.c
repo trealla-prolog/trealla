@@ -309,7 +309,7 @@ bool bif_if_2(query *q)
 static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 {
 	if (q->retry) {
-		q->retry = QUERY_SKIP;
+		q->retry = QUERY_NOSKIPARG;
 		q->st.curr_cell = p3;
 		return true;
 	}
@@ -332,7 +332,7 @@ static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 static bool soft_do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 {
 	if (q->retry) {
-		q->retry = QUERY_SKIP;
+		q->retry = QUERY_NOSKIPARG;
 		q->st.curr_cell = p3;
 		return true;
 	}
@@ -364,7 +364,7 @@ bool bif_if_3(query *q)
 bool bif_iso_conjunction_2(query *q)
 {
 	q->tot_goals--;
-	q->retry = QUERY_SKIP;
+	q->retry = QUERY_NOSKIPARG;
 	q->st.curr_cell++;
 	return true;
 }
@@ -375,8 +375,8 @@ bool bif_iso_disjunction_2(query *q)
 {
 	cell *c = q->st.curr_cell+1;
 
-	if (is_interned(c)) {
-		if (c->val_off == g_nil_s)
+	if (is_callable(c)) {
+		if (is_cstring(c) && (c->val_off == g_nil_s))
 			return throw_error(q, c, q->st.curr_frame, "type_error", "callable");
 
 		if (c->bif_ptr && (c->bif_ptr->fn == bif_iso_if_then_2)) {
@@ -398,10 +398,12 @@ bool bif_iso_disjunction_2(query *q)
 
 	if (q->retry) {
 		GET_NEXT_ARG(p2,callable);
-		q->retry = QUERY_SKIP;
+		q->retry = QUERY_NOSKIPARG;
 		q->st.curr_cell = p2;
 		return true;
 	}
+
+	// Do this to skip the next arg on success.
 
 	check_heap_error(push_choice(q));
 	cell *tmp = prepare_call(q, true, p1, p1_ctx, 1);
