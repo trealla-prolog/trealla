@@ -375,8 +375,8 @@ bool bif_iso_disjunction_2(query *q)
 {
 	cell *c = q->st.curr_cell+1;
 
-	if (is_callable(c)) {
-		if (is_cstring(c) && (c->val_off == g_nil_s))
+	if (is_interned(c)) {
+		if (c->val_off == g_nil_s)
 			return throw_error(q, c, q->st.curr_frame, "type_error", "callable");
 
 		if (c->bif_ptr && (c->bif_ptr->fn == bif_iso_if_then_2)) {
