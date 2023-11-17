@@ -300,8 +300,9 @@ bool bif_sys_redo_trail_1(query * q)
 		const trail *tr = q->trails + i;
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
-		//printf("*** rebind [%u:%u] hi_tp=%u, ctx=%u, var=%u\n", j, i, q->undo_hi_tp, tr->var_ctx, tr->var_nbr);
 		*e = save->e[j];
+		//printf("*** rebind [%u:%u] hi_tp=%u, tag=%u, ctx=%u, var=%u\n", j, i, q->undo_hi_tp, e->c.tag, tr->var_ctx, tr->var_nbr);
+		//DUMP_TERM("$redo1 rhs", &e->c, e->c.var_ctx, 0);
 	}
 
 	return true;

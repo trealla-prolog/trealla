@@ -754,6 +754,11 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		return true;
 	}
 
+	if (is_indirect(c)) {
+		c = c->val_ptr;
+		c_ctx = c->var_ctx;
+	}
+
 	if (is_number(c) && is_negative(c)) {
 		if (is_negative(c) && (q->last_thing == WAS_SYMBOL)) {
 			SB_sprintf(q->sb, "%s", " ");
