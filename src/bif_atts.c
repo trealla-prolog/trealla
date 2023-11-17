@@ -213,16 +213,6 @@ bool bif_sys_attributed_var_1(query *q)
 	return e->c.attrs ? true : false;
 }
 
-static void make_new_var(query *q, cell *tmp, unsigned var_nbr, pl_idx var_ctx)
-{
-	make_ref(tmp, g_anon_s, var_nbr, var_ctx);
-}
-
-static void set_old_value(query *q, cell *tmp, cell *v)
-{
-	*tmp = *v;
-}
-
 typedef struct {
 	blob b;
 	pl_idx lo_tp, hi_tp;
@@ -248,7 +238,7 @@ bool bif_sys_undo_trail_2(query *q)
 	save->hi_tp = q->undo_hi_tp;
 	init_tmp_heap(q);
 
-	// Unbind our vars
+	// Unbind & save our vars
 
 	for (pl_idx i = q->undo_lo_tp, j = 0; i < q->undo_hi_tp; i++, j++) {
 		const trail *tr = q->trails + i;
@@ -257,8 +247,8 @@ bool bif_sys_undo_trail_2(query *q)
 		//printf("*** unbind [%u:%u] hi_tp=%u, tag=%u, ctx=%u, var=%u\n", j, i, q->undo_hi_tp, e->c.tag, tr->var_ctx, tr->var_nbr);
 		save->e[j] = *e;
 		cell lhs, rhs;
-		make_new_var(q, &lhs, tr->var_nbr, tr->var_ctx);
-		set_old_value(q, &rhs, &e->c);
+		make_ref(&lhs, g_anon_s, tr->var_nbr, tr->var_ctx);
+		rhs = e->c;
 		//DUMP_TERM("$undo1 rhs", &e->c, e->c.var_ctx, 0);
 		cell tmp[3];
 		make_struct(tmp, g_minus_s, NULL, 2, 2);
