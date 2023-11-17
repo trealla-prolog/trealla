@@ -103,7 +103,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_integer(c) (((c)->tag == TAG_INTEGER) && !((c)->flags & FLAG_INT_STREAM))
 #define is_float(c) ((c)->tag == TAG_DOUBLE)
 #define is_rational(c) ((c)->tag == TAG_RATIONAL)
-#define is_indirect(c) ((c)->tag == TAG_PTR)
+#define is_indirect(c) ((c)->tag == TAG_INDIRECT)
 #define is_blob(c) ((c)->tag == TAG_BLOB)
 #define is_end(c) ((c)->tag == TAG_END)
 
@@ -254,7 +254,7 @@ enum {
 	TAG_INTEGER=4,
 	TAG_DOUBLE=5,
 	TAG_RATIONAL=6,
-	TAG_PTR=7,
+	TAG_INDIRECT=7,
 	TAG_BLOB=8,
 	TAG_END=9
 };

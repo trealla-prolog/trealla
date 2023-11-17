@@ -218,7 +218,7 @@ static void make_new_var(query *q, cell *tmp, unsigned var_nbr, pl_idx var_ctx)
 	make_ref(tmp, g_anon_s, var_nbr, var_ctx);
 }
 
-static void set_new_var(query *q, cell *tmp, cell *v, pl_idx v_ctx)
+static void set_old_value(query *q, cell *tmp, cell *v)
 {
 	*tmp = *v;
 }
@@ -254,11 +254,11 @@ bool bif_sys_undo_trail_2(query *q)
 		const trail *tr = q->trails + i;
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
-		//printf("*** unbind [%u:%u] hi_tp=%u, ctx=%u, var=%u\n", j, i, q->undo_hi_tp, tr->var_ctx, tr->var_nbr);
+		//printf("*** unbind [%u:%u] hi_tp=%u, tag=%u, ctx=%u, var=%u\n", j, i, q->undo_hi_tp, e->c.tag, tr->var_ctx, tr->var_nbr);
 		save->e[j] = *e;
 		cell lhs, rhs;
 		make_new_var(q, &lhs, tr->var_nbr, tr->var_ctx);
-		set_new_var(q, &rhs, &e->c, e->c.var_ctx);
+		set_old_value(q, &rhs, &e->c);
 		//DUMP_TERM("$undo1 rhs", &e->c, e->c.var_ctx, 0);
 		cell tmp[3];
 		make_struct(tmp, g_minus_s, NULL, 2, 2);
