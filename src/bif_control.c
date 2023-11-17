@@ -172,15 +172,10 @@ bool bif_iso_call_n(query *q)
 	if (!call_check(q, tmp2, &status, true))
 		return status;
 
-	cell *tmp = prepare_call(q, true, tmp2, q->st.curr_frame, 3);
+	cell *tmp = prepare_call(q, true, tmp2, q->st.curr_frame, 1);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + tmp2->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
-	check_heap_error(push_barrier(q));
-	choice *ch = GET_CURR_CHOICE();
-	ch->fail_on_retry = true;
 	q->st.curr_cell = tmp;
 	return true;
 }
