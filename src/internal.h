@@ -880,15 +880,29 @@ inline static void unshare_cell_(cell *c)
 	}
 }
 
+inline static pl_idx move_cells(cell *dst, const cell *src, pl_idx nbr_cells)
+{
+	memmove(dst, src, sizeof(cell)*(nbr_cells));
+	return nbr_cells;
+}
+
 inline static pl_idx copy_cells(cell *dst, const cell *src, pl_idx nbr_cells)
 {
 	memcpy(dst, src, sizeof(cell)*(nbr_cells));
 	return nbr_cells;
 }
 
-inline static pl_idx move_cells(cell *dst, const cell *src, pl_idx nbr_cells)
+inline static pl_idx copy_cells_by_ref(cell *dst, const cell *src, pl_idx src_ctx, pl_idx nbr_cells)
 {
-	memmove(dst, src, sizeof(cell)*(nbr_cells));
+	memcpy(dst, src, sizeof(cell)*nbr_cells);
+
+	for (pl_idx i = 0; i < nbr_cells; i++, src++) {
+		if (is_var(dst) && !is_ref(dst)) {
+			dst->flags |= FLAG_VAR_REF;
+			dst->var_ctx = src_ctx;
+		}
+	}
+
 	return nbr_cells;
 }
 
