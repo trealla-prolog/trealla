@@ -44,13 +44,13 @@ bool bif_put_atts_2(query *q)
 	slot *e = GET_SLOT(f, p1->var_nbr);
 	bool is_minus = p2->val_off == g_minus_s;
 
+	if (!e->c.attrs && is_minus)
+		return true;
+
 	cell *attr = p2;
 
 	if ((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s))
 		attr++;
-
-	if (!e->c.attrs && is_minus)
-		return true;
 
 	if (e->c.attrs || !is_nil(p2))
 		add_trail(q, p1_ctx, p1->var_nbr, e->c.attrs, e->c.attrs_ctx);
