@@ -115,13 +115,8 @@ bool bif_get_atts_2(query *q)
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,callable_or_var);
 	const frame *f = GET_FRAME(p1_ctx);
-	const slot *e = GET_SLOT(f, p1->var_nbr);
 	bool is_minus = !is_var(p2) && p2->val_off == g_minus_s;
-
-	cell *attr = p2;
-
-	if ((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s))
-		attr++;
+	slot *e = GET_SLOT(f, p1->var_nbr);
 
 	if (!e->c.attrs)
 		return is_minus ? true : false;
@@ -134,6 +129,7 @@ bool bif_get_atts_2(query *q)
 
 		while (is_iso_list(l)) {
 			cell *h = LIST_HEAD(l);
+			//DUMP_TERM("$att", h, l_ctx, 1);
 			append_list(q, h+1);
 			l = LIST_TAIL(l);
 		}
@@ -142,6 +138,11 @@ bool bif_get_atts_2(query *q)
 		check_heap_error(l);
 		return unify(q, p2, p2_ctx, l, q->st.curr_frame);
 	}
+
+	cell *attr = p2;
+
+	if ((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s))
+		attr++;
 
 	unsigned a_arity = attr->arity;
 	const char *m_name = do_attribute(q, attr, a_arity);
@@ -246,10 +247,6 @@ bool bif_sys_undo_trail_2(query *q)
 		slot *e = GET_SLOT(f, tr->var_nbr);
 		save->e[j] = *e;
 		//printf("*** unbind [%u:%u] hi_tp=%u, tag=%u, tr->var_ctx=%u, tr->var_nbr=%u\n", j, i, q->undo_hi_tp, e->c.tag, tr->var_ctx, tr->var_nbr);
-
-		if (is_empty(&e->c))
-			continue;
-
 		cell lhs, rhs;
 		make_ref(&lhs, g_anon_s, tr->var_nbr, tr->var_ctx);
 		rhs = e->c;
@@ -263,12 +260,12 @@ bool bif_sys_undo_trail_2(query *q)
 		init_cell(&e->c);
 		e->c.attrs = tr->attrs;
 		e->c.attrs_ctx = tr->attrs_ctx;
-		//DUMP_TERM("$undo2 trail", tr->attrs, tr->attrs_ctx, 0);
+		//if (tr->attrs) DUMP_TERM("$undo2 trail", tr->attrs, tr->attrs_ctx, 0);
 	}
 
 	cell *tmp = end_list(q);
 	check_heap_error(tmp, free(save));
-	//DUMP_TERM("$undo3 tmp", tmp, q->st.curr_frame, 0);
+	//DUMP_TERM("undolist tmp", tmp, q->st.curr_frame, 0);
 	unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 
 	cell tmp2 = {0};
@@ -291,6 +288,9 @@ bool bif_sys_redo_trail_1(query * q)
 	const bind_state *save = (bind_state*)p1->val_blob;
 
 	for (pl_idx i = save->lo_tp, j = 0; i < save->hi_tp; i++, j++) {
+		if (is_empty(&save->e[j].c))
+			continue;
+
 		const trail *tr = q->trails + i;
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
