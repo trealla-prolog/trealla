@@ -244,8 +244,12 @@ bool bif_sys_undo_trail_2(query *q)
 		const trail *tr = q->trails + i;
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
-		//printf("*** unbind [%u:%u] hi_tp=%u, tag=%u, ctx=%u, var=%u\n", j, i, q->undo_hi_tp, e->c.tag, tr->var_ctx, tr->var_nbr);
 		save->e[j] = *e;
+		//printf("*** unbind [%u:%u] hi_tp=%u, tag=%u, tr->var_ctx=%u, tr->var_nbr=%u\n", j, i, q->undo_hi_tp, e->c.tag, tr->var_ctx, tr->var_nbr);
+
+		if (is_empty(&e->c))
+			continue;
+
 		cell lhs, rhs;
 		make_ref(&lhs, g_anon_s, tr->var_nbr, tr->var_ctx);
 		rhs = e->c;
@@ -259,7 +263,7 @@ bool bif_sys_undo_trail_2(query *q)
 		init_cell(&e->c);
 		e->c.attrs = tr->attrs;
 		e->c.attrs_ctx = tr->attrs_ctx;
-		//DUMP_TERM("$undo2", tr->attrs, tr->attrs_ctx, 0);
+		//DUMP_TERM("$undo2 trail", tr->attrs, tr->attrs_ctx, 0);
 	}
 
 	cell *tmp = end_list(q);
