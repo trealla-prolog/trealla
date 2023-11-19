@@ -413,7 +413,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 	}
 #endif
 
-	if (is_var(p1)) {
+	if (is_var(p1) && !(p1->flags & FLAG_VAR_CYCLIC)) {
 		accum_var(q, p1, p1_ctx);
 		return;
 	}
@@ -438,7 +438,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 		int both = 0;
 		DEREF_CHECKED(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
 
-		if (!both && is_var(c))
+		if (!both && is_var(c) && !(c->flags & FLAG_VAR_CYCLIC))
 			accum_var(q, c, c_ctx);
 		else if (!both)
 			collect_vars_internal(q, c, c_ctx, depth+1);
