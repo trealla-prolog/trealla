@@ -214,6 +214,24 @@ bool bif_sys_attributed_var_1(query *q)
 	return e->c.attrs ? true : false;
 }
 
+static bool is_var_in_term(unsigned var_nbr, pl_idx var_ctx, cell *c)
+{
+	for (unsigned nbr_cells = c->nbr_cells; nbr_cells--; c++) {
+		if (!is_ref(c))
+			continue;
+
+		if (c->var_nbr != var_nbr)
+			continue;
+
+		if (c->var_ctx != var_ctx)
+			continue;
+
+		return true;
+	}
+
+	return false;
+}
+
 typedef struct {
 	blob b;
 	pl_idx lo_tp, hi_tp;
@@ -246,6 +264,10 @@ bool bif_sys_undo_trail_2(query *q)
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
 		save->e[j] = *e;
+
+		if (is_var_in_term(tr->var_nbr, tr->var_ctx, &e->c))
+			continue;
+
 		//printf("*** unbind [%u:%u] hi_tp=%u, tag=%u, tr->var_ctx=%u, tr->var_nbr=%u\n", j, i, q->undo_hi_tp, e->c.tag, tr->var_ctx, tr->var_nbr);
 		cell lhs, rhs;
 		make_ref(&lhs, g_anon_s, tr->var_nbr, tr->var_ctx);
