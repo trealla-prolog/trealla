@@ -6,10 +6,10 @@
 :- use_module(library(apply)).
 :- use_module(library(lists), [append/3]).
 
-msb(_X, _N) :- writeln(oops).
-lsb(_X, _N) :- writeln(oops).
-popcount(_X, _N) :- writeln(oops).
-lcm(_X, _N, _) :- writeln(oops).
+msb(_X, _N) :- writeln(oops_msb).
+lsb(_X, _N) :- writeln(oops_lsb).
+popcount(_X, _N) :- writeln(oops_popcount).
+lcm(_X, _N, _) :- writeln(oops_lcm).
 
 '$post_unify_hook' :-
 	'$undo_trail'(Vars, State),

@@ -242,10 +242,8 @@ bool bif_sys_undo_trail_2(query *q)
 	GET_NEXT_ARG(p2,var);
 	q->run_hook = false;
 
-	if (q->undo_hi_tp <= q->undo_lo_tp) {
-		unify(q, p1, p1_ctx, make_nil(), q->st.curr_frame);
-		return true;
-	}
+	if (q->undo_hi_tp <= q->undo_lo_tp)
+		return unify(q, p1, p1_ctx, make_nil(), q->st.curr_frame);
 
 	pl_idx slots = q->undo_hi_tp - q->undo_lo_tp;
 	bind_state *save = malloc(sizeof(bind_state)+(sizeof(slot)*slots));
@@ -283,7 +281,9 @@ bool bif_sys_undo_trail_2(query *q)
 	cell *tmp = end_list(q);
 	check_heap_error(tmp, free(save));
 	//DUMP_TERM("undolist tmp", tmp, q->st.curr_frame, 0);
-	unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
+
+	if (!unify(q, p1, p1_ctx, tmp, q->st.curr_frame))
+		return false;
 
 	cell tmp2 = {0};
 	tmp2.tag = TAG_BLOB;
@@ -291,8 +291,7 @@ bool bif_sys_undo_trail_2(query *q)
 	tmp2.nbr_cells = 1;
 	tmp2.val_blob = &save->b;
 	tmp2.val_blob->refcnt = 0;
-	unify(q, p2, p2_ctx, &tmp2, q->st.curr_frame);
-	return true;
+	return unify(q, p2, p2_ctx, &tmp2, q->st.curr_frame);
 }
 
 bool bif_sys_redo_trail_1(query * q)
@@ -300,7 +299,7 @@ bool bif_sys_redo_trail_1(query * q)
 	GET_FIRST_ARG(p1,any);
 
 	if (!is_blob(p1))
-		return true;
+		return false;
 
 	const bind_state *save = (bind_state*)p1->val_blob;
 
