@@ -49,28 +49,20 @@ reinforce_goal(Goal0, Goal) :-
         dif:dif(L, R)
     ).
 
-% Modified to ignore the attvar if it occurs in it's own
-% term (a cyclic term). There's a way to avoid this but it
-% will involve '$undo_trail'/2 marking such vars so that
-% term_variables/2 can ignore them /TODO
-
-append_goals(_, [], _).
-append_goals(Def, [Var|Vars], Goals) :-
-	Def \== Var, !,
+append_goals([], _).
+append_goals([Var|Vars], Goals) :-
     (   get_atts(Var, +dif(VarGoals)) ->
 	    append(Goals, VarGoals, NewGoals0),
 	    sort(NewGoals0, NewGoals)
     ;   NewGoals = Goals
     ),
     put_atts(Var, +dif(NewGoals)),
-    append_goals(Def, Vars, Goals).
-append_goals(Def, [_|Vars], Goals) :-
-    append_goals(Def, Vars, Goals).
+    append_goals(Vars, Goals).
 
 verify_attributes(Var, Value, Goals) :-
     (   get_atts(Var, +dif(Goals0)) ->
 	    term_variables(Value, ValueVars),
-	    append_goals(Var, ValueVars, Goals0),
+	    append_goals(ValueVars, Goals0),
         maplist(reinforce_goal, Goals0, Goals)
     ;   Goals = []
     ).
