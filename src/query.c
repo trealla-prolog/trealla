@@ -891,7 +891,7 @@ inline static bool any_choices(const query *q, const frame *f)
 		return false;
 
 	const choice *ch = GET_PREV_CHOICE();
-	return ch->chgen >= f->chgen;
+	return ch->chgen > f->chgen;
 }
 
 static void commit_frame(query *q, cell *body)
@@ -1122,7 +1122,7 @@ inline static void proceed(query *q)
 	while (is_end(q->st.curr_cell)) {
 		if (q->st.curr_cell->val_ret) {
 			f->chgen = q->st.curr_cell->chgen;
-			q->st.m = q->pl->modmap[q->st.curr_cell->mid];
+			//q->st.m = q->pl->modmap[q->st.curr_cell->mid];
 		}
 
 		if (!(q->st.curr_cell = q->st.curr_cell->val_ret))
@@ -1579,7 +1579,7 @@ bool start(query *q)
 #endif
 				status = q->st.curr_cell->bif_ptr->fn(q);
 
-			if (q->retry == QUERY_SKIP) {
+			if (q->retry == QUERY_NOSKIPARG) {
 				q->retry = QUERY_OK;
 				continue;
 			}

@@ -171,7 +171,7 @@ static bool bif_iso_findall_3(query *q)
 		check_heap_error(tmp, drop_queuen(q));
 		pl_idx nbr_cells = PREFIX_LEN + p2->nbr_cells;
 		make_struct(tmp+nbr_cells++, g_sys_queue_s, bif_sys_queue_1, 1, p1->nbr_cells);
-		nbr_cells += copy_cells(tmp+nbr_cells, p1, p1->nbr_cells);
+		nbr_cells += copy_cells_by_ref(tmp+nbr_cells, p1, p1_ctx, p1->nbr_cells);
 		make_struct(tmp+nbr_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
 		make_call(q, tmp+nbr_cells);
 		check_heap_error(push_barrier(q), drop_queuen(q));

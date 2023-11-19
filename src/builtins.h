@@ -70,7 +70,7 @@ bool bif_iso_integer_1(query *q);
 
 inline static void make_indirect(cell *tmp, cell *v, pl_idx v_ctx)
 {
-	tmp->tag = TAG_PTR;
+	tmp->tag = TAG_INDIRECT;
 	tmp->nbr_cells = 1;
 	tmp->arity = 0;
 	tmp->flags = 0;

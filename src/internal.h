@@ -103,7 +103,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_integer(c) (((c)->tag == TAG_INTEGER) && !((c)->flags & FLAG_INT_STREAM))
 #define is_float(c) ((c)->tag == TAG_DOUBLE)
 #define is_rational(c) ((c)->tag == TAG_RATIONAL)
-#define is_indirect(c) ((c)->tag == TAG_PTR)
+#define is_indirect(c) ((c)->tag == TAG_INDIRECT)
 #define is_blob(c) ((c)->tag == TAG_BLOB)
 #define is_end(c) ((c)->tag == TAG_END)
 
@@ -254,7 +254,7 @@ enum {
 	TAG_INTEGER=4,
 	TAG_DOUBLE=5,
 	TAG_RATIONAL=6,
-	TAG_PTR=7,
+	TAG_INDIRECT=7,
 	TAG_BLOB=8,
 	TAG_END=9
 };
@@ -611,7 +611,7 @@ struct page_ {
 	unsigned nbr;
 };
 
-enum q_retry { QUERY_OK=0, QUERY_SKIP=1, QUERY_RETRY=2, QUERY_EXCEPTION=3 };
+enum q_retry { QUERY_OK=0, QUERY_NOSKIPARG=1, QUERY_RETRY=2, QUERY_EXCEPTION=3 };
 enum unknowns { UNK_FAIL=0, UNK_ERROR=1, UNK_WARNING=2, UNK_CHANGEABLE=3 };
 enum occurs { OCCURS_CHECK_FALSE=0, OCCURS_CHECK_TRUE=1, OCCURS_CHECK_ERROR = 2 };
 
@@ -880,15 +880,29 @@ inline static void unshare_cell_(cell *c)
 	}
 }
 
+inline static pl_idx move_cells(cell *dst, const cell *src, pl_idx nbr_cells)
+{
+	memmove(dst, src, sizeof(cell)*(nbr_cells));
+	return nbr_cells;
+}
+
 inline static pl_idx copy_cells(cell *dst, const cell *src, pl_idx nbr_cells)
 {
 	memcpy(dst, src, sizeof(cell)*(nbr_cells));
 	return nbr_cells;
 }
 
-inline static pl_idx move_cells(cell *dst, const cell *src, pl_idx nbr_cells)
+inline static pl_idx copy_cells_by_ref(cell *dst, const cell *src, pl_idx src_ctx, pl_idx nbr_cells)
 {
-	memmove(dst, src, sizeof(cell)*(nbr_cells));
+	memcpy(dst, src, sizeof(cell)*nbr_cells);
+
+	for (pl_idx i = 0; i < nbr_cells; i++, src++) {
+		if (is_var(dst) && !is_ref(dst)) {
+			dst->flags |= FLAG_VAR_REF;
+			dst->var_ctx = src_ctx;
+		}
+	}
+
 	return nbr_cells;
 }
 
