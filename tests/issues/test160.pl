@@ -1,4 +1,5 @@
 :-initialization(main).
+:- use_module(library(when)).
 
 main :-
 	main1, main2, main3.
