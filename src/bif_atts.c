@@ -242,7 +242,7 @@ static void check_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c)
 		c = c->val_ptr;
 
 	for (unsigned nbr_cells = c->nbr_cells; nbr_cells--; c++) {
-		if (!is_var(c))
+		if (!is_ref(c))
 			continue;
 
 		if (var_nbr != c->var_nbr)
