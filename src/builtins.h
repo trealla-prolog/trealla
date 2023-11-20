@@ -145,8 +145,8 @@ inline static cell *get_var(query *q, cell *c, pl_idx c_ctx)
 }
 
 #define deref(q,c,c_ctx) \
-	is_indirect(c) ? q->latest_ctx = (c)->var_ctx, (c)->val_ptr : \
-	!is_var(c) ? q->latest_ctx = (c_ctx), (c) : \
+	is_indirect(c) ? (q->latest_ctx = (c)->var_ctx, (c)->val_ptr) : \
+	!is_var(c) ? (q->latest_ctx = (c_ctx), (c)) : \
 	get_var(q, c, c_ctx)
 
 #define GET_RAW_ARG(n,p) \
