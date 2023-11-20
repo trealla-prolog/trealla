@@ -315,11 +315,7 @@ bool bif_sys_undo_trail_2(query *q)
 
 bool bif_sys_redo_trail_1(query * q)
 {
-	GET_FIRST_ARG(p1,any);
-
-	if (!is_blob(p1))
-		return false;
-
+	GET_FIRST_ARG(p1,blob);
 	const bind_state *save = (bind_state*)p1->val_blob;
 
 	for (pl_idx i = save->lo_tp, j = 0; i < save->hi_tp; i++, j++) {
