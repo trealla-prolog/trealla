@@ -179,18 +179,34 @@ bool bif_sys_list_attributed_1(query *q)
 		//if (!strcmp(p->vartab.var_name[i], "_"))
 		//	continue;
 
-		const slot *e = GET_SLOT(f, i);
-		const cell *c = &e->c;
+		slot *e = GET_SLOT(f, i);
+		cell *c = &e->c;
+		cell *v = deref(q, c, q->st.curr_frame);
+		pl_idx v_ctx = q->latest_ctx;
 
-		if (!is_empty(c))
+		if (is_interned(v)) {
+			collect_vars(q, v, v_ctx);
+
+			for (unsigned i = 0, done = 0; i < q->tab_idx; i++) {
+				frame *vf = GET_FRAME(q->pl->tabs[i].ctx);
+				slot *ve = GET_SLOT(vf, q->pl->tabs[i].var_nbr);
+				cell *v = &ve->c;
+
+				if (!is_empty(v) || !v->attrs)
+					continue;
+
+				cell tmp;
+				make_var(&tmp, new_atom(q->pl, p->vartab.var_name[i]), i);
+				append_list(q, &tmp);
+			}
+		}
+
+		if (!is_empty(c) || !c->attrs)
 			continue;
 
-		if (!c->attrs)
-			continue;
-
-		cell v;
-		make_var(&v, new_atom(q->pl, p->vartab.var_name[i]), i);
-		append_list(q, &v);
+		cell tmp;
+		make_var(&tmp, new_atom(q->pl, p->vartab.var_name[i]), i);
+		append_list(q, &tmp);
 	}
 
 	cell *l = end_list(q);
