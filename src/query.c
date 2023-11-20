@@ -934,14 +934,14 @@ static void commit_frame(query *q, cell *body)
 
 		// If matching against a fact then drop new frame...
 
-		if (!cl->nbr_vars && !body)
+		if (q->pl->opt && !cl->nbr_vars && !body)
 			q->st.fp--;
 	}
 
 	if (last_match) {
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
-		trim_trail(q);
+		//trim_trail(q);	// Dodgey?
 	} else {
 		choice *ch = GET_CURR_CHOICE();
 		ch->st.r = q->st.r;

@@ -3167,7 +3167,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 					LIST_HANDLER(p1);
 					bool tail = false;
 
-					while (is_list(p1) && !g_tpl_interrupt) {
+					while (is_iso_list(p1) && !g_tpl_interrupt) {
 						cell *h = LIST_HEAD(p1);
 
 						if (!process_term(p, h))

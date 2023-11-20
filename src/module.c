@@ -1290,16 +1290,16 @@ static bool check_multifile(module *m, predicate *pr, rule *dbe_orig)
 		&& (C_STR(m, &pr->key)[0] != '$')
 		) {
 		if ((dbe_orig->filename != pr->head->filename) || pr->is_reload) {
-			SB(sb);
-			char *dst2 = formatted(C_STR(m, &pr->key), C_STRLEN(m, &pr->key), false, false);
-			fprintf(stderr, "Warning: overwriting '%s'/%u\n", dst2, pr->key.arity);
-			free(dst2);
+			fprintf(stderr, "Warning: overwriting '%s'/%u\n", C_STR(m, &pr->key), pr->key.arity);
 
 			while (pr->head) {
 				rule *r = pr->head;
 				pr->head = pr->head->next;
-				clear_clause(&r->cl);
-				free(r);
+
+				if (r != dbe_orig) {
+					clear_clause(&r->cl);
+					free(r);
+				}
 			}
 
 			sl_destroy(pr->idx2);
