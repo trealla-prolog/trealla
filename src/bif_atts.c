@@ -232,6 +232,9 @@ static void check_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c)
 		if (var_nbr != c->var_nbr)
 			continue;
 
+		if (var_ctx != c->var_ctx)
+			continue;
+
 		c->flags |= FLAG_VAR_CYCLIC;
 	}
 }
