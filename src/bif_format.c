@@ -576,6 +576,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
             }
 
 			len = strlen(tmpbuf2);
+			CHECK_BUF(len);
 			strcpy(dst, tmpbuf2);
 			free(tmpbuf2);
 			clear_write_options(q);
@@ -588,7 +589,6 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 			return throw_error(q, c, q->st.curr_frame, "existence_error", "format_character");
 		}
 
-		CHECK_BUF(len);
 		dst += len;
 	}
 
