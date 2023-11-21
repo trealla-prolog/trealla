@@ -1192,10 +1192,11 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 		DEREF_CHECKED(any, both, save_vgen1, e1, e1->vgen, c1, c1_ctx, q->vgen);
 		DEREF_CHECKED(any, both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
 
-		if (both != 2) {
-			if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
-				return false;
-		}
+		if (both == 2)
+			break;
+
+		if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
+			return false;
 
 		if (e1) e1->vgen = save_vgen1;
 		if (e2) e2->vgen2 = save_vgen2;
