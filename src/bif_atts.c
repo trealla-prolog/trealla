@@ -242,7 +242,7 @@ static void check_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c)
 		c = c->val_ptr;
 
 	for (unsigned nbr_cells = c->nbr_cells; nbr_cells--; c++) {
-		if (!is_var(c))
+		if (!is_ref(c))
 			continue;
 
 		if (var_nbr != c->var_nbr)
@@ -318,7 +318,7 @@ bool bif_sys_redo_trail_1(query * q)
 	GET_FIRST_ARG(p1,any);
 
 	if (!is_blob(p1))
-		return false;
+		return true;
 
 	const bind_state *save = (bind_state*)p1->val_blob;
 

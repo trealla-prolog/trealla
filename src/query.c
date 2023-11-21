@@ -80,7 +80,7 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 		return;
 #endif
 
-#if 1
+#if 0
 	if (c->val_off == g_sys_drop_barrier_s)
 		return;
 #endif
@@ -1562,7 +1562,6 @@ bool start(query *q)
 		cell *save_cell = q->st.curr_cell;
 		pl_idx save_ctx = q->st.curr_frame;
 		q->did_throw = false;
-		q->before_hook_tp = q->st.tp;
 		q->max_eval_depth = 0;
 		q->tot_goals++;
 

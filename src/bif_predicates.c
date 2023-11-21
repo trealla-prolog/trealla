@@ -221,6 +221,49 @@ static bool bif_iso_unify_with_occurs_check_2(query *q)
 	return ok;
 }
 
+static bool bif_sys_unifiable_3(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,any);
+	GET_NEXT_ARG(p3,list_or_nil_or_var);
+	check_heap_error(push_choice(q));
+	pl_idx save_tp = q->st.tp;
+
+	if (!unify(q, p1, p1_ctx, p2, p2_ctx) && !q->cycle_error) {
+		undo_me(q);
+		drop_choice(q);
+		return false;
+	}
+
+	check_heap_error(init_tmp_heap(q));
+
+	// Go thru trail, getting the bindings...
+
+	while (save_tp < q->st.tp) {
+		const trail *tr = q->trails + save_tp;
+		const frame *f = GET_FRAME(tr->var_ctx);
+		slot *e = GET_SLOT(f, tr->var_nbr);
+		cell *c = deref(q, &e->c, e->c.var_ctx);
+		cell *tmp = malloc(sizeof(cell)*(2+c->nbr_cells));
+		check_heap_error(tmp);
+		make_struct(tmp, g_unify_s, bif_iso_unify_2, 2, 1+c->nbr_cells);
+		SET_OP(tmp, OP_XFX);
+		cell v;
+		make_ref(&v, g_anon_s, tr->var_nbr, q->st.curr_frame);
+		tmp[1] = v;
+		safe_copy_cells(tmp+2, c, c->nbr_cells);
+		append_list(q, tmp);
+		free(tmp);
+		save_tp++;
+	}
+
+	undo_me(q);
+	drop_choice(q);
+
+	cell *l = end_list(q);
+	return unify(q, p3, p3_ctx, l, q->st.curr_frame);
+}
+
 bool bif_iso_unify_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -230,11 +273,12 @@ bool bif_iso_unify_2(query *q)
 
 static bool bif_iso_notunify_2(query *q)
 {
-	GET_FIRST_RAW_ARG(p1,any);
-	GET_NEXT_RAW_ARG(p2,any);
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,any);
 	cell tmp2;
 	make_struct(&tmp2, g_unify_s, bif_iso_unify_2, 2, 0);
-	cell *tmp = prepare_call(q, true, &tmp2, q->st.curr_frame, p1->nbr_cells+p2->nbr_cells+5);
+	SET_OP(&tmp2, OP_XFX);
+	cell *tmp = prepare_call(q, true, &tmp2, q->st.curr_frame, p1->nbr_cells+p2->nbr_cells+4);
 	pl_idx nbr_cells = PREFIX_LEN;
 	tmp[nbr_cells].nbr_cells += p1->nbr_cells+p2->nbr_cells;
 	nbr_cells++;
@@ -242,7 +286,6 @@ static bool bif_iso_notunify_2(query *q)
 	nbr_cells += p1->nbr_cells;
 	safe_copy_cells_by_ref(tmp+nbr_cells, p2, p2_ctx, p2->nbr_cells);
 	nbr_cells += p2->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_struct(tmp+nbr_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
@@ -253,7 +296,6 @@ static bool bif_iso_notunify_2(query *q)
 	q->st.curr_cell = tmp;
 	return true;
 }
-
 
 static bool bif_iso_dcgs_2(query *q)
 {
@@ -6075,51 +6117,6 @@ static bool bif_string_length_2(query *q)
 	return throw_error(q, p1, p1_ctx, "type_error", "chars");
 }
 
-static bool bif_sys_unifiable_3(query *q)
-{
-	GET_FIRST_ARG(p1,any);
-	GET_NEXT_ARG(p2,any);
-	GET_NEXT_ARG(p3,list_or_nil_or_var);
-	check_heap_error(push_choice(q));
-	const frame *f = GET_CURR_FRAME();
-	try_me(q, f->actual_slots);
-	pl_idx before_hook_tp = q->st.tp;
-
-	if (!unify(q, p1, p1_ctx, p2, p2_ctx) && !q->cycle_error) {
-		undo_me(q);
-		drop_choice(q);
-		return false;
-	}
-
-	check_heap_error(init_tmp_heap(q));
-
-	// Go thru trail, getting the bindings...
-
-	while (before_hook_tp < q->st.tp) {
-		const trail *tr = q->trails + before_hook_tp;
-		const frame *f = GET_FRAME(tr->var_ctx);
-		slot *e = GET_SLOT(f, tr->var_nbr);
-		cell *c = deref(q, &e->c, e->c.var_ctx);
-		cell *tmp = malloc(sizeof(cell)*(2+c->nbr_cells));
-		check_heap_error(tmp);
-		make_struct(tmp, g_unify_s, bif_iso_unify_2, 2, 1+c->nbr_cells);
-		SET_OP(tmp, OP_XFX);
-		cell v;
-		make_ref(&v, g_anon_s, tr->var_nbr, q->st.curr_frame);
-		tmp[1] = v;
-		safe_copy_cells(tmp+2, c, c->nbr_cells);
-		append_list(q, tmp);
-		free(tmp);
-		before_hook_tp++;
-	}
-
-	undo_me(q);
-	drop_choice(q);
-
-	cell *l = end_list(q);
-	return unify(q, p3, p3_ctx, l, q->st.curr_frame);
-}
-
 static bool bif_get_unbuffered_code_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer_or_var);
@@ -6460,9 +6457,6 @@ static bool bif_sys_memberchk_3(query *q)
 	GET_NEXT_ARG(p3,var);
 	LIST_HANDLER(p2);
 	push_choice(q);
-
-	if (!is_string(p2))
-		try_me(q, MAX_ARITY);
 
 	while (is_list(p2)) {
 		cell *h = LIST_HEAD(p2);
