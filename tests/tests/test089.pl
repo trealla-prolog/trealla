@@ -1,4 +1,6 @@
+:- use_module(library(freeze)).
+
 main :-
-	freeze(X,writeln(here)), X \= true.
+	freeze(X,(write(here),nl)), X \= true.
 
 :- initialization(main).
