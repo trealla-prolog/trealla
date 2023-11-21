@@ -230,8 +230,8 @@ bool bif_iso_unify_2(query *q)
 
 static bool bif_iso_notunify_2(query *q)
 {
-	GET_FIRST_RAW_ARG(p1,any);
-	GET_NEXT_RAW_ARG(p2,any);
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,any);
 	cell tmp2;
 	make_struct(&tmp2, g_unify_s, bif_iso_unify_2, 2, 0);
 	cell *tmp = prepare_call(q, true, &tmp2, q->st.curr_frame, p1->nbr_cells+p2->nbr_cells+5);
