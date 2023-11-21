@@ -1562,7 +1562,6 @@ bool start(query *q)
 		cell *save_cell = q->st.curr_cell;
 		pl_idx save_ctx = q->st.curr_frame;
 		q->did_throw = false;
-		q->before_hook_tp = q->st.tp;
 		q->max_eval_depth = 0;
 		q->tot_goals++;
 

@@ -6082,7 +6082,7 @@ static bool bif_sys_unifiable_3(query *q)
 	check_heap_error(push_choice(q));
 	const frame *f = GET_CURR_FRAME();
 	try_me(q, f->actual_slots);
-	pl_idx before_hook_tp = q->st.tp;
+	pl_idx save_tp = q->st.tp;
 
 	if (!unify(q, p1, p1_ctx, p2, p2_ctx) && !q->cycle_error) {
 		undo_me(q);
@@ -6094,8 +6094,8 @@ static bool bif_sys_unifiable_3(query *q)
 
 	// Go thru trail, getting the bindings...
 
-	while (before_hook_tp < q->st.tp) {
-		const trail *tr = q->trails + before_hook_tp;
+	while (save_tp < q->st.tp) {
+		const trail *tr = q->trails + save_tp;
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
 		cell *c = deref(q, &e->c, e->c.var_ctx);
@@ -6109,7 +6109,7 @@ static bool bif_sys_unifiable_3(query *q)
 		safe_copy_cells(tmp+2, c, c->nbr_cells);
 		append_list(q, tmp);
 		free(tmp);
-		before_hook_tp++;
+		save_tp++;
 	}
 
 	undo_me(q);
