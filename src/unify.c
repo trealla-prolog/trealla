@@ -1071,6 +1071,9 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 	bool skip = false;
 
 	while (is_iso_list(p1) && is_iso_list(p2)) {
+		if (g_tpl_interrupt)
+			return false;
+
 		cell *c1 = p1 + 1, *c2 = p2 + 1;
 		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 
@@ -1082,7 +1085,15 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 		DEREF_CHECKED(any1, both, save_vgen1, e1, e1->vgen, c1, c1_ctx, q->vgen);
 		DEREF_CHECKED(any1, both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
 
-		if (both != 2) {
+		if (both == 0) {
+			if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
+				return false;
+		} else if (both == 1) {
+			c1 = deref(q, p1, p1_ctx);
+			c1_ctx = q->latest_ctx;
+			c2 = deref(q, p2, p2_ctx);
+			c2_ctx = q->latest_ctx;
+
 			if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
 				return false;
 		}
@@ -1182,6 +1193,9 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 	p1++; p2++;
 
 	while (arity--) {
+		if (g_tpl_interrupt)
+			return false;
+
 		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 		cell *c1 = p1, *c2 = p2;
 
@@ -1192,14 +1206,27 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 		DEREF_CHECKED(any, both, save_vgen1, e1, e1->vgen, c1, c1_ctx, q->vgen);
 		DEREF_CHECKED(any, both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
 
-		if (both == 2)
-			break;
+		if (both == 0) {
+			if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
+				return false;
+		} else if (both == 1) {
+			c1 = deref(q, p1, p1_ctx);
+			c1_ctx = q->latest_ctx;
+			c2 = deref(q, p2, p2_ctx);
+			c2_ctx = q->latest_ctx;
 
-		if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
-			return false;
+			if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
+				return false;
+		}
 
 		if (e1) e1->vgen = save_vgen1;
 		if (e2) e2->vgen2 = save_vgen2;
+
+		if ((both == 2) && q->cycle_error) {
+			q->cycle_error = false;
+			return false;
+		}
+
 #else
 		c1 = deref(q, c1, c1_ctx);
 		c1_ctx = q->latest_ctx;
