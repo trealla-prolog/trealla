@@ -2087,7 +2087,7 @@ static int get_escape(parser *p, const char **_src, bool *error, bool number)
 
 		if (ch == 'x')
 			ch = get_hex(&src, UINT_MAX, error);
-		else if ((ch == 'U') && p->flags.json) {
+		else if (ch == 'U') {
 			ch = get_hex(&src, 8, error);
 			unicode = true;
 		} else if (ch == 'u') {
