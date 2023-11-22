@@ -225,8 +225,18 @@ char *formatted(const char *src, int srclen, bool dq, bool json)
 			case '\f': SB_putchar(sb, 'f'); break;
 			case '\r': SB_putchar(sb, 'r'); break;
 			case '\t': SB_putchar(sb, 't'); break;
-			default: SB_sprintf(sb, "u%04x", ch);
+			default: SB_sprintf(sb, "u%04X", ch);
 			}
+		} else if (((unsigned)ch > 0x10000) && json && false) {
+			SB_putchar(sb, '\\');
+			SB_sprintf(sb, "U%08X", ch);
+		} else if (((unsigned)ch > 0x10000) && json) {
+			unsigned ch1 = (ch - 0x10000) / 0x400 + 0xd800;
+			unsigned ch2 = (ch - 0x10000) % 0x400 + 0xdc00;
+			SB_putchar(sb, '\\');
+			SB_sprintf(sb, "u%04X", ch1);
+			SB_putchar(sb, '\\');
+			SB_sprintf(sb, "u%04X", ch2);
 		} else if (ch == '\\') {
 			SB_putchar(sb, '\\');
 			SB_putchar(sb, ch);
