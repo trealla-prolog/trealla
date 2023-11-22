@@ -12,37 +12,37 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 	bool any1 = false, any2 = false;
 
 	while (is_iso_list(p1) && is_iso_list(p2)) {
-		cell *h1 = p1 + 1, *h2 = p2 + 1;
-		pl_idx h1_ctx = p1_ctx, h2_ctx = p2_ctx;
+		cell *c1 = p1 + 1, *c2 = p2 + 1;
+		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 
 #if USE_RATIONAL_TREES
 		slot *e1 = NULL, *e2 = NULL;
 		uint32_t save_vgen1 = 0, save_vgen2 = 0;
 		int both = 0;
-		DEREF_CHECKED(any1, both, save_vgen1, e1, e1->vgen, h1, h1_ctx, q->vgen);
-		DEREF_CHECKED(any1, both, save_vgen2, e2, e2->vgen2, h2, h2_ctx, q->vgen);
+		DEREF_CHECKED(any1, both, save_vgen1, e1, e1->vgen, c1, c1_ctx, q->vgen);
+		DEREF_CHECKED(any1, both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
 
 		if (both == 0) {
-			int val = compare_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
+			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
 			if (val) return val;
 		} else if (both == 1) {
-			h1 = deref(q, p1+1, p1_ctx);
-			h1_ctx = q->latest_ctx;
-			h2 = deref(q, p2+1, p2_ctx);
-			h2_ctx = q->latest_ctx;
-			int val = compare_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
+			c1 = deref(q, p1+1, p1_ctx);
+			c1_ctx = q->latest_ctx;
+			c2 = deref(q, p2+1, p2_ctx);
+			c2_ctx = q->latest_ctx;
+			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
 			if (val) return val;
 		}
 
 		if (e1) e1->vgen = save_vgen1;
 		if (e2) e2->vgen2 = save_vgen2;
 #else
-		h1 = deref(q, h1, h1_ctx);
-		h1_ctx = q->latest_ctx;
-		h2 = deref(q, h2, h2_ctx);
-		h2_ctx = q->latest_ctx;
+		c1 = deref(q, c1, c1_ctx);
+		c1_ctx = q->latest_ctx;
+		c2 = deref(q, c2, c2_ctx);
+		c2_ctx = q->latest_ctx;
 
-		int val = compare_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
+		int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
 		if (val) return val;
 #endif
 
@@ -273,14 +273,14 @@ static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx 
 		LIST_HANDLER(p2);
 
 		while (is_list(p1) && is_list(p2)) {
-			cell *h1 = LIST_HEAD(p1);
-			h1 = deref(q, h1, p1_ctx);
-			pl_idx h1_ctx = q->latest_ctx;
-			cell *h2 = LIST_HEAD(p2);
-			h2 = deref(q, h2, p2_ctx);
-			pl_idx h2_ctx = q->latest_ctx;
+			cell *c1 = LIST_HEAD(p1);
+			c1 = deref(q, c1, p1_ctx);
+			pl_idx c1_ctx = q->latest_ctx;
+			cell *c2 = LIST_HEAD(p2);
+			c2 = deref(q, c2, p2_ctx);
+			pl_idx c2_ctx = q->latest_ctx;
 
-			int val = compare_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1);
+			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
 			if (val) return val;
 
 			p1 = LIST_TAIL(p1);
@@ -1071,31 +1071,31 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 	bool skip = false;
 
 	while (is_iso_list(p1) && is_iso_list(p2)) {
-		cell *h1 = p1 + 1, *h2 = p2 + 1;
-		pl_idx h1_ctx = p1_ctx, h2_ctx = p2_ctx;
+		cell *c1 = p1 + 1, *c2 = p2 + 1;
+		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 
 #if USE_RATIONAL_TREES
 		slot *e1 = NULL, *e2 = NULL;
 		uint32_t save_vgen1 = 0, save_vgen2 = 0;
 		int both = 0;
 
-		DEREF_CHECKED(any1, both, save_vgen1, e1, e1->vgen, h1, h1_ctx, q->vgen);
-		DEREF_CHECKED(any1, both, save_vgen2, e2, e2->vgen2, h2, h2_ctx, q->vgen);
+		DEREF_CHECKED(any1, both, save_vgen1, e1, e1->vgen, c1, c1_ctx, q->vgen);
+		DEREF_CHECKED(any1, both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
 
 		if (both != 2) {
-			if (!unify_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1))
+			if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
 				return false;
 		}
 
 		if (e1) e1->vgen = save_vgen1;
 		if (e2) e2->vgen2 = save_vgen2;
 #else
-		h1 = deref(q, h1, h1_ctx);
-		h1_ctx = q->latest_ctx;
-		h2 = deref(q, h2, h2_ctx);
-		h2_ctx = q->latest_ctx;
+		c1 = deref(q, c1, c1_ctx);
+		c1_ctx = q->latest_ctx;
+		c2 = deref(q, c2, c2_ctx);
+		c2_ctx = q->latest_ctx;
 
-		if (!unify_internal(q, h1, h1_ctx, h2, h2_ctx, depth+1))
+		if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
 			return false;
 #endif
 
