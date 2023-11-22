@@ -6920,7 +6920,6 @@ static bool bif_with_mutex_2(query *q)
 {
 	GET_FIRST_ARG(pstr,any);
 	GET_NEXT_ARG(p1,callable);
-	q->tot_goals--;
 	cell *tmp2;
 
 	if (p1_ctx != q->st.curr_frame) {

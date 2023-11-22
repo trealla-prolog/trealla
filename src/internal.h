@@ -652,7 +652,7 @@ struct query_ {
 	prolog_state st;
 	stringbuf sb_buf;
 	bool ignores[MAX_IGNORES];
-	uint64_t tot_goals, tot_backtracks, tot_retries, tot_matches;
+	uint64_t tot_goals, tot_backtracks, tot_retries, tot_matches, tot_inferences;
 	uint64_t tot_tcos, tot_frecovs, tot_srecovs;
 	uint64_t step, qid, tmo_msecs, chgen, cycle_error;
 	uint64_t get_started, autofail_n, yield_at;

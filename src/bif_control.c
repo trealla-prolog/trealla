@@ -11,20 +11,18 @@
 
 bool bif_iso_true_0(query *q)
 {
-	q->tot_goals--;
 	return true;
 }
 
 bool bif_iso_fail_0(query *q)
 {
-	q->tot_goals--;
 	return false;
 }
 
 bool bif_sys_drop_barrier_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer)
-	q->tot_goals--;
+	q->tot_inferences--;
 	drop_barrier(q, get_smalluint(p1));
 
 	if (q->cp) {
@@ -52,7 +50,7 @@ void do_cleanup(query *q, cell *c, pl_idx c_ctx)
 
 bool bif_sys_cleanup_if_det_1(query *q)
 {
-	q->tot_goals--;
+	q->tot_inferences--;
 	GET_FIRST_ARG(p1,integer);
 	choice *ch = GET_CURR_CHOICE();
 
@@ -358,7 +356,7 @@ bool bif_if_3(query *q)
 
 bool bif_iso_conjunction_2(query *q)
 {
-	q->tot_goals--;
+	q->tot_inferences--;
 	q->retry = QUERY_NOSKIPARG;
 	q->st.curr_cell++;
 	return true;

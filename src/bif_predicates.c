@@ -3691,16 +3691,17 @@ static bool bif_sys_first_non_octet_2(query *q)
 static bool bif_sys_timer_0(query *q)
 {
 	q->st.timer_started = get_time_in_usec();
-	q->tot_goals = 0;
+	q->tot_inferences = 0;
 	return true;
 }
 
 static bool bif_sys_elapsed_0(query *q)
 {
+	q->tot_inferences--;
 	uint64_t elapsed = get_time_in_usec();
 	elapsed -= q->st.timer_started;
-	double lips = (1.0 / ((double)elapsed/1000/1000)) * q->tot_goals;
-	fprintf(stderr, "%% Time elapsed %.3fs, %llu Inferences, %.3f MLips\n", (double)elapsed/1000/1000, (unsigned long long)q->tot_goals, lips/1000/1000);
+	double lips = (1.0 / ((double)elapsed/1000/1000)) * q->tot_inferences;
+	fprintf(stderr, "%% Time elapsed %.3fs, %llu Inferences, %.3f MLips\n", (double)elapsed/1000/1000, (unsigned long long)q->tot_inferences, lips/1000/1000);
 	if (q->is_redo) fprintf(stdout, "  ");
 	return true;
 }
@@ -3770,7 +3771,7 @@ static bool bif_statistics_0(query *q)
 		"Recovered frames: %"PRIu64", "
 		"slots: %"PRIu64", "
 		"Queue: %u\n",
-		q->tot_goals, q->tot_matches,
+		q->tot_inferences, q->tot_matches,
 		q->hw_frames, q->hw_choices, q->hw_trails, q->hw_slots,
 		q->st.fp, q->cp, q->st.tp, q->st.sp, q->st.heap_nbr,
 		q->tot_retries, q->tot_tcos,
@@ -6451,7 +6452,6 @@ static bool bif_sys_register_cleanup_1(query *q)
 
 static bool bif_sys_memberchk_3(query *q)
 {
-	q->tot_goals--;
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,list_or_nil_or_var);
 	GET_NEXT_ARG(p3,var);
@@ -6529,7 +6529,6 @@ static bool bif_iso_compare_3(query *q)
 
 bool bif_sys_counter_1(query *q)
 {
-	q->tot_goals--;
 	GET_FIRST_ARG(p1,integer_or_var);
 	pl_uint n = 0;
 

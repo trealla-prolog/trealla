@@ -1566,6 +1566,7 @@ bool start(query *q)
 		q->tot_goals++;
 
 		if (is_builtin(q->st.curr_cell)) {
+			q->tot_inferences++;
 			bool status;
 
 #if USE_FFI
@@ -1626,6 +1627,8 @@ bool start(query *q)
 			Trace(q, save_cell, save_ctx, EXIT);
 			proceed(q);
 		} else {
+			q->tot_inferences++;
+
 			if (!match_head(q) && !q->is_oom) {
 				Trace(q, q->st.curr_cell, q->st.curr_frame, FAIL);
 				q->retry = QUERY_RETRY;
