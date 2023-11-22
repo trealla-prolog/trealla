@@ -2087,12 +2087,18 @@ static int get_escape(parser *p, const char **_src, bool *error, bool number)
 
 		if (ch == 'x')
 			ch = get_hex(&src, UINT_MAX, error);
-		else if (ch == 'U') {
+		else if ((ch == 'U') && p->flags.json) {
 			ch = get_hex(&src, 8, error);
 			unicode = true;
 		} else if (ch == 'u') {
 			ch = get_hex(&src, 4, error);
 			unicode = true;
+
+			if (((unsigned)ch > 0xd800) && (src[0] == '\\') && (src[1] == 'u')) {
+				src += 2;
+				int ch2 = get_hex(&src, 4, error);
+				ch = (((unsigned)ch - 0xd800) * 0x400) + ((unsigned)ch2 - 0xdc00) + 0x10000;
+			}
 		} else {
 			src--;
 			ch = get_octal(&src);
