@@ -588,6 +588,7 @@ prolog *pl_create()
 		return pl;
 	}
 
+	pl->user_m->flags.strict_iso = false;
 	pl->curr_m = pl->user_m;
 
 	pl->current_input = 0;		// STDIN

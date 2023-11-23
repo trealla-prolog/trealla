@@ -959,6 +959,11 @@ static bool directives(parser *p, cell *d)
 				p->m->flags.occurs_check = true;
 			else if (!strcmp(C_STR(p, p2), "false") || !strcmp(C_STR(p, p2), "off"))
 				p->m->flags.occurs_check = false;
+		} else if (!strcmp(C_STR(p, p1), "strict_iso")) {
+			if (!strcmp(C_STR(p, p2), "true") || !strcmp(C_STR(p, p2), "on"))
+				p->m->flags.strict_iso = true;
+			else if (!strcmp(C_STR(p, p2), "false") || !strcmp(C_STR(p, p2), "off"))
+				p->m->flags.occurs_check = false;
 		} else {
 			//fprintf(stdout, "Warning: unknown flag: %s\n", C_STR(p, p1));
 		}
@@ -2080,7 +2085,7 @@ static int get_escape(parser *p, const char **_src, bool *error, bool number)
 	if (ptr)
 		ch = g_escapes[ptr-g_anti_escapes];
 	else if ((isdigit(ch) || (ch == 'x')
-		|| (((ch == 'u') || (ch == 'U')) && (!p->flags.not_strict_iso || p->flags.json))
+		|| (((ch == 'u') || (ch == 'U')) && (p->flags.json || !p->flags.strict_iso))
 		)
 		&& !number) {
 		bool unicode = false;
@@ -2250,7 +2255,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 			s++;
 			v = *s++;
 #if 1
-		} else if ((*s == '\'') && !p->flags.not_strict_iso && search_op(p->m, "", NULL, false)) {
+		} else if ((*s == '\'') && p->flags.strict_iso && search_op(p->m, "", NULL, false)) {
 			if (DUMP_ERRS || !p->do_read_term)
 				fprintf(stdout, "Error: syntax error, parsing number4, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
