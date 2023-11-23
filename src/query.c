@@ -721,18 +721,20 @@ static void leave_predicate(query *q, predicate *pr)
 
 static void unwind_trail(query *q)
 {
-	if (!q->cp)
-		return;
+	pl_idx tp = 0;
 
-	const choice *ch = GET_CURR_CHOICE();
+	if (q->cp) {
+		const choice *ch = GET_CURR_CHOICE();
+		tp = ch->st.tp;
+	}
 
-	while (q->st.tp > ch->st.tp) {
+	while (q->st.tp > tp) {
 		const trail *tr = q->trails + --q->st.tp;
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
 		cell *c = &e->c;
 		unshare_cell(c);
-		init_cell(c);
+		c->tag = TAG_EMPTY;;
 		c->attrs = tr->attrs;
 		c->attrs_ctx = tr->attrs_ctx;
 	}
