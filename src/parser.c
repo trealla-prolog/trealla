@@ -2080,7 +2080,7 @@ static int get_escape(parser *p, const char **_src, bool *error, bool number)
 	if (ptr)
 		ch = g_escapes[ptr-g_anti_escapes];
 	else if ((isdigit(ch) || (ch == 'x')
-		|| (ch == 'u') || (ch == 'U')
+		|| (((ch == 'u') || (ch == 'U')) && (!p->flags.not_strict_iso || p->flags.json))
 		)
 		&& !number) {
 		bool unicode = false;
