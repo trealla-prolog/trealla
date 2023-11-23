@@ -546,7 +546,7 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 		slot *e = NULL;
 		uint32_t save_vgen1 = 0;
 		int both = 0;
-		DEREF_CHECKED(any1, both, save_vgen1, e, e->vgen1, h, h_ctx, q->vgen1);
+		DEREF_CHECKED(any1, both, save_vgen1, e, e->vgen1, h, h_ctx, q->vgen);
 		q->suspect = h;
 
 		if (is_var(h)) {
@@ -587,11 +587,11 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 			frame *f = GET_FRAME(l_ctx);
 			slot *e = GET_SLOT(f, l->var_nbr);
 
-			if (e->vgen1 == q->vgen1)
+			if (e->vgen1 == q->vgen)
 				return 0;
 
 			e->vgen2 = e->vgen1;
-			e->vgen1 = q->vgen1;
+			e->vgen1 = q->vgen;
 			l = deref(q, l, l_ctx);
 			l_ctx = q->latest_ctx;
 		}
@@ -635,7 +635,7 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 
 size_t scan_is_chars_list2(query *q, cell *l, pl_idx l_ctx, bool allow_codes, bool *has_var, bool *is_partial)
 {
-	if (++q->vgen1 == 0) q->vgen1 = 1;
+	if (++q->vgen == 0) q->vgen = 1;
 	return scan_is_chars_list_internal(q, l, l_ctx, allow_codes, has_var, is_partial);
 }
 

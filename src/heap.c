@@ -215,7 +215,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 			pl_idx h_ctx = p1_ctx;
 			uint32_t save_vgen1 = 0;
 			int both = 0;
-			if (deep_copy(h)) DEREF_CHECKED(any1, both, save_vgen1, e, e->vgen1, h, h_ctx, q->vgen1);
+			if (deep_copy(h)) DEREF_CHECKED(any1, both, save_vgen1, e, e->vgen1, h, h_ctx, q->vgen);
 			cell *rec = deep_clone2_to_tmp(q, h, h_ctx, depth+1);
 			if (!rec) return NULL;
 			if (e) e->vgen1 = save_vgen1;
@@ -225,7 +225,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 			pl_idx t_ctx = p1_ctx;
 
 			both = 0;
-			if (deep_copy(t)) DEREF_CHECKED(any2, both, e->save_vgen1, e, e->vgen1, t, t_ctx, q->vgen1);
+			if (deep_copy(t)) DEREF_CHECKED(any2, both, e->save_vgen1, e, e->vgen1, t, t_ctx, q->vgen);
 			if (both) q->cycle_error = true;
 			p1 = t;
 			p1_ctx = t_ctx;
@@ -277,7 +277,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 		pl_idx c_ctx = p1_ctx;
 		uint32_t save_vgen1 = 0;
 		int both = 0;
-		if (deep_copy(c)) DEREF_CHECKED(any, both, save_vgen1, e, e->vgen1, c, c_ctx, q->vgen1);
+		if (deep_copy(c)) DEREF_CHECKED(any, both, save_vgen1, e, e->vgen1, c, c_ctx, q->vgen);
 		cell *rec = deep_clone2_to_tmp(q, c, c_ctx, depth+1);
 		if (!rec) return NULL;
 		if (e) e->vgen1 = save_vgen1;
@@ -291,7 +291,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 
 cell *deep_clone_to_tmp(query *q, cell *p1, pl_idx p1_ctx)
 {
-	if (++q->vgen1 == 0) q->vgen1 = 1;
+	if (++q->vgen == 0) q->vgen = 1;
 	cell *rec = deep_clone2_to_tmp(q, p1, p1_ctx, 0);
 	if (!rec) return NULL;
 	return rec;
@@ -416,7 +416,7 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx
 		const frame *f = GET_FRAME(p1_ctx);
 		slot *e = GET_SLOT(f, p1->var_nbr);
 		const pl_idx slot_nbr = f->base + p1->var_nbr;
-		e->vgen1 = q->vgen1+1; // +1 because that is what deep_clone_to_tmp() will do
+		e->vgen1 = q->vgen+1; // +1 because that is what deep_clone_to_tmp() will do
 		if (e->vgen1 == 0) e->vgen1++;
 		q->tab0_varno = q->varno;
 		q->tab_idx++;
