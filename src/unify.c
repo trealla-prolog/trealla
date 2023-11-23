@@ -1226,7 +1226,6 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 			q->cycle_error = false;
 			return false;
 		}
-
 #else
 		c1 = deref(q, c1, c1_ctx);
 		c1_ctx = q->latest_ctx;
