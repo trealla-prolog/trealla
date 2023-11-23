@@ -246,12 +246,13 @@ inline static cell *get_raw_arg(const query *q, int n)
 
 #define DEREF_CHECKED(any, both, svg, ee, evgen, cc, cc_ctx, qvgen)	\
 	if (is_var(cc)) {												\
+		pl_idx tmp_cc_ctx = cc_ctx;									\
 		any = true;													\
 																	\
 		if (is_ref(cc))												\
-			cc_ctx = cc->var_ctx;									\
+			tmp_cc_ctx = cc->var_ctx;								\
 																	\
-		const frame *f = GET_FRAME(cc_ctx);							\
+		const frame *f = GET_FRAME(tmp_cc_ctx);						\
 		ee = GET_SLOT(f, cc->var_nbr);								\
 		svg = evgen;												\
 																	\
@@ -260,8 +261,7 @@ inline static cell *get_raw_arg(const query *q, int n)
 		} else {													\
 			cc = deref(q, cc, cc_ctx);								\
 			cc_ctx = q->latest_ctx;									\
-			if (!is_var(cc))										\
-				evgen = qvgen;										\
+			evgen = qvgen;											\
 		}															\
 	}
 
