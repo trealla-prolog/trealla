@@ -149,6 +149,12 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 static void check_pressure(query *q)
 {
 #if REDUCE_PRESSURE
+	if (q->tmp_heap && (q->tmph_size > 4000)) {
+		free(q->tmp_heap);
+		q->tmp_heap = NULL;
+		q->tmph_size = 1000;
+	}
+
 	if (q->trails_size > (INITIAL_NBR_TRAILS*PRESSURE_FACTOR)) {
 #if TRACE_MEM
 		printf("*** q->st.tp=%u, q->trails_size=%u\n", (unsigned)q->st.tp, (unsigned)q->trails_size);
