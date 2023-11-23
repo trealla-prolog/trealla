@@ -1118,7 +1118,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 		DEREF_CHECKED(any2, both, e1->save_vgen1, e1, e1->vgen1, p1, p1_ctx, q->vgen);
 		DEREF_CHECKED(any2, both, e2->save_vgen2, e2, e2->vgen2, p2, p2_ctx, q->vgen);
 
-		if (q->cycle_error) {
+		if (both && q->cycle_error) {
 			skip = true;
 			break;
 		}
