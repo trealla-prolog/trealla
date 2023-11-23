@@ -963,7 +963,7 @@ static bool directives(parser *p, cell *d)
 			if (!strcmp(C_STR(p, p2), "true") || !strcmp(C_STR(p, p2), "on"))
 				p->m->flags.strict_iso = true;
 			else if (!strcmp(C_STR(p, p2), "false") || !strcmp(C_STR(p, p2), "off"))
-				p->m->flags.occurs_check = false;
+				p->m->flags.strict_iso = false;
 		} else {
 			//fprintf(stdout, "Warning: unknown flag: %s\n", C_STR(p, p1));
 		}
