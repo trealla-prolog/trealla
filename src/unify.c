@@ -94,7 +94,7 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 
 				const frame *f = GET_FRAME(c2_ctx);
 				slot *e = GET_SLOT(f, c2->var_nbr);
-				e->vgen1 = e->save_vgen2;
+				e->vgen2 = e->save_vgen2;
 				p2 = deref(q, c2, c2_ctx);
 				p2_ctx = q->latest_ctx;
 			}
