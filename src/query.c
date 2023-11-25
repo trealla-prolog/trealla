@@ -544,9 +544,9 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 		cell *h = LIST_HEAD(l);
 		pl_idx h_ctx = l_ctx;
 		slot *e = NULL;
-		uint32_t save_vgen1 = 0;
+		uint32_t save_vgen = 0;
 		int both = 0;
-		DEREF_CHECKED(any1, both, save_vgen1, e, e->vgen1, h, h_ctx, q->vgen);
+		DEREF_CHECKED(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
 		q->suspect = h;
 
 		if (is_var(h)) {
@@ -587,11 +587,11 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 			frame *f = GET_FRAME(l_ctx);
 			slot *e = GET_SLOT(f, l->var_nbr);
 
-			if (e->vgen1 == q->vgen)
+			if (e->vgen == q->vgen)
 				return 0;
 
-			e->vgen2 = e->vgen1;
-			e->vgen1 = q->vgen;
+			e->vgen2 = e->vgen;
+			e->vgen = q->vgen;
 			l = deref(q, l, l_ctx);
 			l_ctx = q->latest_ctx;
 		}
@@ -614,7 +614,7 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 			if (is_var(l2)) {
 				frame *f = GET_FRAME(l2_ctx);
 				slot *e = GET_SLOT(f, l2->var_nbr);
-				e->vgen1 = e->vgen2;
+				e->vgen = e->vgen2;
 				l2 = deref(q, l2, l2_ctx);
 				l2_ctx = q->latest_ctx;
 			}

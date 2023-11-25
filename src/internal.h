@@ -509,8 +509,8 @@ struct trail_ {
 
 struct slot_ {
 	cell c;
-	union { uint32_t vgen1; uint32_t vgen2; };
-	union { uint32_t save_vgen1; uint32_t save_vgen2; };
+	union { uint32_t vgen; uint32_t vgen2; };
+	union { uint32_t save_vgen; uint32_t save_vgen2; };
 };
 
 // Where 'prev_offset' is the number of frames back
