@@ -1065,13 +1065,18 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 		p2 = p2 + 1; p2 += p2->nbr_cells;
 
 #if USE_RATIONAL_TREES
-		int both = 0;
-		DEREF_CHECKED(any2, both, e1->save_vgen, e1, e1->vgen, p1, p1_ctx, q->vgen);
-		DEREF_CHECKED(any2, both, e2->save_vgen, e2, e2->vgen, p2, p2_ctx, q->vgen);
+		both1 = both2 = 0;
+		DEREF_CHECKED(any2, both1, e1->save_vgen, e1, e1->vgen, p1, p1_ctx, q->vgen);
+		DEREF_CHECKED(any2, both2, e2->save_vgen, e2, e2->vgen, p2, p2_ctx, q->vgen);
 
-		if (both && q->cycle_error) {
+		if (both1)
+			q->is_cyclic1 = true;
+
+		if (both2)
+			q->is_cyclic2 = true;
+
+		if (q->is_cyclic1 && q->is_cyclic2) {
 			q->cycle_error = false;
-			skip = true;
 			break;
 		}
 #else
