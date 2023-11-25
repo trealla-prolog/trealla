@@ -1113,7 +1113,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 				p2_ctx = q->latest_ctx;
 			}
 
-			if (cnt > g_max_depth) {
+			if ((cnt > g_max_depth) || (cnt > 6000)) {
 				skip = true;
 				break;
 			}
