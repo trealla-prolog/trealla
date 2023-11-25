@@ -119,6 +119,9 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		DEREF_CHECKED2(any, both, save_vgen, e1, e1->vgen, c1, c1_ctx, q->vgen);
 		DEREF_CHECKED2(any, both, save_vgen2, e2, e2->vgen, c2, c2_ctx, q->vgen);
 
+		if (both && (depth > g_max_depth))
+			return 0;
+
 		if (both != 2) {
 			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
 			if (val) return val;
@@ -126,11 +129,6 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 
 		if (e1) e1->vgen = save_vgen;
 		if (e2) e2->vgen = save_vgen2;
-
-		if (both && (depth > 1)) {
-			q->cycle_error = false;
-			return 0;
-		}
 #else
 		c1 = deref(q, p1, p1_ctx);
 		c1_ctx = q->latest_ctx;
