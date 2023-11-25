@@ -158,14 +158,6 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 
 static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
-#if 0
-	if (depth >= g_max_depth) {
-		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
-		q->cycle_error = true;
-		return 0;
-	}
-#endif
-
 	if (is_var(p1)) {
 		if (is_var(p2)) {
 			if (p1_ctx < p2_ctx)
@@ -308,7 +300,6 @@ static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx 
 
 int compare(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
 {
-	q->cycle_error = false;
 	if (++q->vgen == 0) q->vgen = 1;
 	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
 }
@@ -383,7 +374,7 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 	l = p1;
 	l_ctx = p1_ctx;
 
-	while (is_iso_list(l) && !q->cycle_error) {
+	while (is_iso_list(l)) {
 		l = l + 1; l += l->nbr_cells;
 		cell *c = l;
 		pl_idx c_ctx = l_ctx;
@@ -405,14 +396,6 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 
 static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
-#if 0
-	if (depth >= g_max_depth) {
-		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
-		q->cycle_error = true;
-		return;
-	}
-#endif
-
 	if (is_var(p1) && !(p1->flags & FLAG_VAR_CYCLIC)) {
 		accum_var(q, p1, p1_ctx);
 		return;
@@ -512,15 +495,12 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 
 			e->vgen1 = q->vgen;
 		}
-
-		if (q->cycle_error)
-			break;
 	}
 
 	l = p1;
 	l_ctx = p1_ctx;
 
-	while (is_iso_list(l) && !q->cycle_error) {
+	while (is_iso_list(l)) {
 		l = l + 1; l += l->nbr_cells;
 		cell *c = l;
 		pl_idx c_ctx = l_ctx;
@@ -542,14 +522,6 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 
 static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
-#if 0
-	if (depth >= g_max_depth) {
-		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
-		q->cycle_error = true;
-		return false;
-	}
-#endif
-
 	if (is_var(p1))
 		return true;
 
@@ -658,14 +630,6 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 
 static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
-#if 0
-	if (depth > g_max_depth) {
-		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
-		q->cycle_error = true;
-		return true;
-	}
-#endif
-
 	if (!is_compound(p1))
 		return false;
 
@@ -699,7 +663,6 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned 
 
 bool is_cyclic_term(query *q, cell *p1, pl_idx p1_ctx)
 {
-	q->cycle_error = false;
 	if (++q->vgen == 0) q->vgen = 1;
 	return is_cyclic_term_internal(q, p1, p1_ctx, 0);
 }
@@ -707,7 +670,6 @@ bool is_cyclic_term(query *q, cell *p1, pl_idx p1_ctx)
 bool is_acyclic_term(query *q, cell *p1, pl_idx p1_ctx)
 {
 	q->cycle_error = false;
-	if (++q->vgen == 0) q->vgen = 1;
 	return !is_cyclic_term_internal(q, p1, p1_ctx, 0);
 }
 
@@ -943,15 +905,8 @@ static bool unify_string_to_list(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl
 		c2 = deref(q, c2, p2_ctx);
 		pl_idx c2_ctx = q->latest_ctx;
 
-		if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, 0)) {
-			if (q->cycle_error)
-				return true;
-
+		if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, 0))
 			return false;
-		}
-
-		if (q->cycle_error)
-			return true;
 
 		c1 = LIST_TAIL(p1);
 		c2 = LIST_TAIL(p2);
@@ -1222,6 +1177,8 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 		if (e1) e1->vgen1 = save_vgen1;
 		if (e2) e2->vgen2 = save_vgen2;
 
+		//printf("*** both=%d, q->cycle_error=%u\n", both, (unsigned)q->cycle_error);
+
 		if ((both == 2) && q->cycle_error) {
 			q->cycle_error = false;
 			return false;
@@ -1235,12 +1192,6 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 		if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
 			return false;
 #endif
-
-#if !USE_RATIONAL_TREES
-		if (q->cycle_error)
-			return throw_error(q, p1, p1_ctx, "system_error", "cyclic_term");
-#endif
-
 		p1 += p1->nbr_cells;
 		p2 += p2->nbr_cells;
 	}
@@ -1250,11 +1201,13 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 
 static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
+#if 1
 	if (depth > g_max_depth) {
 		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		q->cycle_error++;
 		return true;
 	}
+#endif
 
 	if (is_var(p1) && is_var(p2)) {
 		if (p2_ctx > p1_ctx)
