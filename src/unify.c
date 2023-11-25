@@ -126,11 +126,6 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 
 		if (e1) e1->vgen = save_vgen;
 		if (e2) e2->vgen = save_vgen2;
-
-		if ((both == 2) && q->cycle_error) {
-			q->cycle_error = false;
-			return true;
-		}
 #else
 		c1 = deref(q, p1, p1_ctx);
 		c1_ctx = q->latest_ctx;
