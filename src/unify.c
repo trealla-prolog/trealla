@@ -126,6 +126,11 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 
 		if (e1) e1->vgen = save_vgen;
 		if (e2) e2->vgen = save_vgen2;
+
+		if ((both == 2) && q->cycle_error) {
+			q->cycle_error = false;
+			return true;
+		}
 #else
 		c1 = deref(q, p1, p1_ctx);
 		c1_ctx = q->latest_ctx;
@@ -144,6 +149,14 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 
 static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
+#if 1
+	if (depth > g_max_depth) {
+		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		q->cycle_error++;
+		return true;
+	}
+#endif
+
 	if (is_var(p1)) {
 		if (is_var(p2)) {
 			if (p1_ctx < p2_ctx)
