@@ -20,7 +20,7 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 		uint32_t save_vgen = 0, save_vgen2 = 0;
 		int both = 0;
 		DEREF_CHECKED(any1, both, save_vgen, e1, e1->vgen, c1, c1_ctx, q->vgen);
-		DEREF_CHECKED(any1, both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
+		DEREF_CHECKED(any1, both, save_vgen2, e2, e2->vgen, c2, c2_ctx, q->vgen);
 
 		if (both == 0) {
 			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
@@ -35,7 +35,7 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 		}
 
 		if (e1) e1->vgen = save_vgen;
-		if (e2) e2->vgen2 = save_vgen2;
+		if (e2) e2->vgen = save_vgen2;
 #else
 		c1 = deref(q, c1, c1_ctx);
 		c1_ctx = q->latest_ctx;
@@ -52,7 +52,7 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 #if USE_RATIONAL_TREES
 		both = 0;
 		DEREF_CHECKED(any2, both, e1->save_vgen, e1, e1->vgen, p1, p1_ctx, q->vgen);
-		DEREF_CHECKED(any2, both, e2->save_vgen2, e2, e2->vgen2, p2, p2_ctx, q->vgen);
+		DEREF_CHECKED(any2, both, e2->save_vgen, e2, e2->vgen, p2, p2_ctx, q->vgen);
 
 		if (both)
 			return 0;
@@ -94,7 +94,7 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 
 				const frame *f = GET_FRAME(c2_ctx);
 				slot *e = GET_SLOT(f, c2->var_nbr);
-				e->vgen2 = e->save_vgen2;
+				e->vgen = e->save_vgen;
 				p2 = deref(q, c2, c2_ctx);
 				p2_ctx = q->latest_ctx;
 			}
@@ -124,7 +124,7 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		uint32_t save_vgen = 0, save_vgen2 = 0;
 		int both = 0;
 		DEREF_CHECKED(any, both, save_vgen, e1, e1->vgen, c1, c1_ctx, q->vgen);
-		DEREF_CHECKED(any, both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
+		DEREF_CHECKED(any, both, save_vgen2, e2, e2->vgen, c2, c2_ctx, q->vgen);
 
 		if (both == 0) {
 			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
@@ -139,7 +139,7 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		}
 
 		if (e1) e1->vgen = save_vgen;
-		if (e2) e2->vgen2 = save_vgen2;
+		if (e2) e2->vgen = save_vgen2;
 #else
 		c1 = deref(q, p1, p1_ctx);
 		c1_ctx = q->latest_ctx;
@@ -1037,7 +1037,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 		int both = 0;
 
 		DEREF_CHECKED(any1, both, save_vgen, e1, e1->vgen, c1, c1_ctx, q->vgen);
-		DEREF_CHECKED(any1, both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
+		DEREF_CHECKED(any1, both, save_vgen2, e2, e2->vgen, c2, c2_ctx, q->vgen);
 
 		if (both == 0) {
 			if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
@@ -1053,7 +1053,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 		}
 
 		if (e1) e1->vgen = save_vgen;
-		if (e2) e2->vgen2 = save_vgen2;
+		if (e2) e2->vgen = save_vgen2;
 #else
 		c1 = deref(q, c1, c1_ctx);
 		c1_ctx = q->latest_ctx;
@@ -1070,7 +1070,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 #if USE_RATIONAL_TREES
 		both = 0;
 		DEREF_CHECKED(any2, both, e1->save_vgen, e1, e1->vgen, p1, p1_ctx, q->vgen);
-		DEREF_CHECKED(any2, both, e2->save_vgen2, e2, e2->vgen2, p2, p2_ctx, q->vgen);
+		DEREF_CHECKED(any2, both, e2->save_vgen, e2, e2->vgen, p2, p2_ctx, q->vgen);
 
 		if (both && (depth > 1)) {
 			skip = true;
@@ -1113,7 +1113,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 
 				const frame *f = GET_FRAME(p2_ctx);
 				slot *e2 = GET_SLOT(f, p2->var_nbr);
-				e2->vgen2 = e2->save_vgen2;
+				e2->vgen = e2->save_vgen;
 				p2 = deref(q, p2, p2_ctx);
 				p2_ctx = q->latest_ctx;
 			}
@@ -1158,7 +1158,7 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 		uint32_t save_vgen = 0, save_vgen2 = 0;
 		int both = 0;
 		DEREF_CHECKED(any, both, save_vgen, e1, e1->vgen, c1, c1_ctx, q->vgen);
-		DEREF_CHECKED(any, both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
+		DEREF_CHECKED(any, both, save_vgen2, e2, e2->vgen, c2, c2_ctx, q->vgen);
 
 		if (both == 0) {
 			if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
@@ -1174,7 +1174,7 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 		}
 
 		if (e1) e1->vgen = save_vgen;
-		if (e2) e2->vgen2 = save_vgen2;
+		if (e2) e2->vgen = save_vgen2;
 
 		//printf("*** both=%d, q->cycle_error=%u\n", both, (unsigned)q->cycle_error);
 
