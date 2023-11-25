@@ -669,7 +669,6 @@ bool is_cyclic_term(query *q, cell *p1, pl_idx p1_ctx)
 
 bool is_acyclic_term(query *q, cell *p1, pl_idx p1_ctx)
 {
-	q->cycle_error = false;
 	return !is_cyclic_term_internal(q, p1, p1_ctx, 0);
 }
 
@@ -1073,7 +1072,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 		DEREF_CHECKED(any2, both, e1->save_vgen1, e1, e1->vgen1, p1, p1_ctx, q->vgen);
 		DEREF_CHECKED(any2, both, e2->save_vgen2, e2, e2->vgen2, p2, p2_ctx, q->vgen);
 
-		if (both && q->cycle_error) {
+		if (both && (depth > 1)) {
 			skip = true;
 			break;
 		}
@@ -1086,14 +1085,14 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 	}
 
 #if USE_RATIONAL_TREES
-	if (any2) {
+	if (any2 && !q->cycle_error) {
 		p1 = orig_p1;
 		p1_ctx = orig_p1_ctx;
 		p2 = orig_p2;
 		p2_ctx = orig_p2_ctx;
 		unsigned cnt = 0;
 
-		while (is_iso_list(p1) && is_iso_list(p2) && !q->cycle_error) {
+		while (is_iso_list(p1) && is_iso_list(p2)) {
 			p1 = p1 + 1; p1 += p1->nbr_cells;
 			p2 = p2 + 1; p2 += p2->nbr_cells;
 
