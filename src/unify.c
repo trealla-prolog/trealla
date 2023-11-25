@@ -108,7 +108,7 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 	p1 = p1 + 1;
 	p2 = p2 + 1;
 
-	while (arity-- && !q->cycle_error) {
+	while (arity--) {
 		cell *c1 = p1, *c2 = p2;
 		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 
@@ -117,19 +117,20 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		uint32_t save_vgen = 0, save_vgen2 = 0;
 		int both = 0;
 		DEREF_CHECKED2(any, both, save_vgen, e1, e1->vgen, c1, c1_ctx, q->vgen);
-		DEREF_CHECKED2(any, both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
+		DEREF_CHECKED2(any, both, save_vgen2, e2, e2->vgen, c2, c2_ctx, q->vgen);
 
-		if (both && (depth > 6000)) {
-			q->cycle_error = true;
-			return 0;
+		if (both != 2) {
+			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
+			if (val) return val;
 		}
 
-		int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
-		if (val) return val;
-
 		if (e1) e1->vgen = save_vgen;
-		if (e2) e2->vgen2 = save_vgen2;
+		if (e2) e2->vgen = save_vgen2;
 
+		if (both && (depth > 1)) {
+			q->cycle_error = false;
+			return 0;
+		}
 #else
 		c1 = deref(q, p1, p1_ctx);
 		c1_ctx = q->latest_ctx;
