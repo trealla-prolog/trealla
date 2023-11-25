@@ -590,7 +590,7 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 			if (e->vgen == q->vgen)
 				return 0;
 
-			e->vgen2 = e->vgen;
+			e->save_vgen = e->vgen;
 			e->vgen = q->vgen;
 			l = deref(q, l, l_ctx);
 			l_ctx = q->latest_ctx;
@@ -614,7 +614,7 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 			if (is_var(l2)) {
 				frame *f = GET_FRAME(l2_ctx);
 				slot *e = GET_SLOT(f, l2->var_nbr);
-				e->vgen = e->vgen2;
+				e->vgen = e->save_vgen;
 				l2 = deref(q, l2, l2_ctx);
 				l2_ctx = q->latest_ctx;
 			}
