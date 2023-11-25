@@ -1156,7 +1156,7 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 		if (e1) e1->vgen = save_vgen;
 		if (e2) e2->vgen = save_vgen2;
 
-		if ((both == 2) && q->cycle_error) {
+		if (both && q->cycle_error) {
 			q->cycle_error = false;
 			return true;
 		}
