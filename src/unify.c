@@ -342,7 +342,7 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 		slot *e = NULL;
 		uint32_t save_vgen = 0;
 		int both = 0;
-		DEREF_CHECKED(any, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
+		DEREF_VAR(any, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
 
 		if (!both && is_var(h))
 			accum_var(q, h, h_ctx);
@@ -354,7 +354,7 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 		l = l + 1; l += l->nbr_cells;
 		e = NULL;
 		both = 0;
-		DEREF_CHECKED(any, both, save_vgen, e, e->vgen, l, l_ctx, q->vgen);
+		DEREF_VAR(any, both, save_vgen, e, e->vgen, l, l_ctx, q->vgen);
 
 		if (both)
 			return;
@@ -408,7 +408,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 		slot *e = NULL;
 		uint32_t save_vgen = 0;
 		int both = 0;
-		DEREF_CHECKED(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
+		DEREF_VAR(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
 
 		if (!both && is_var(c) && !(c->flags & FLAG_VAR_CYCLIC))
 			accum_var(q, c, c_ctx);
@@ -574,7 +574,7 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 		slot *e = NULL;
 		uint32_t save_vgen = 0;
 		int both = 0;
-		DEREF_CHECKED(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
+		DEREF_VAR(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
 
 		if (both)
 			return true;
@@ -586,7 +586,7 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 
 		p1 = p1 + 1; p1 += p1->nbr_cells;
 		both = 0;
-		DEREF_CHECKED(any2, both, save_vgen, e, e->vgen, p1, p1_ctx, q->vgen);
+		DEREF_VAR(any2, both, save_vgen, e, e->vgen, p1, p1_ctx, q->vgen);
 
 		if (both)
 			return true;
@@ -635,7 +635,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned 
 		slot *e = NULL;
 		uint32_t save_vgen = 0;
 		int both = 0;
-		DEREF_CHECKED(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
+		DEREF_VAR(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
 
 		if (both)
 			return true;
