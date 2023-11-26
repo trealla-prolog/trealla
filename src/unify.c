@@ -87,6 +87,7 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 	int arity = p1->arity;
 	p1 = p1 + 1;
 	p2 = p2 + 1;
+	int i = 0;
 
 	while (arity--) {
 		cell *c1 = p1, *c2 = p2;
@@ -99,16 +100,17 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		DEREF_VAR(any, both, save_vgen, e1, e1->vgen, c1, c1_ctx, q->vgen);
 		DEREF_VAR(any, both, save_vgen2, e2, e2->vgen, c2, c2_ctx, q->vgen);
 
-		if (both && (depth > g_max_depth))
-			return 0;
+		if (both && ((depth > g_max_depth) || (depth > 6000)))
+			break;
 
-		if (both != 2) {
-			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
-			if (val) return val;
-		}
+		int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
+		if (val) return val;
 
 		if (e1) e1->vgen = save_vgen;
 		if (e2) e2->vgen = save_vgen2;
+
+		if (both == 2)
+			break;
 #else
 		c1 = deref(q, p1, p1_ctx);
 		c1_ctx = q->latest_ctx;
@@ -120,6 +122,7 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 
 		p1 += p1->nbr_cells;
 		p2 += p2->nbr_cells;
+		i++;
 	}
 
 	return 0;
