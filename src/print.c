@@ -710,7 +710,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			if (e->vgen != q->vgen)
 				break;
 
-			e->vgen -= 1;
+			e->vgen = 0;
 			c = deref(q, c, c_ctx);
 			c_ctx = q->latest_ctx;
 		}

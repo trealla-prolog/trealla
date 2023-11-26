@@ -613,7 +613,7 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 			if (is_var(l2)) {
 				frame *f = GET_FRAME(l2_ctx);
 				slot *e = GET_SLOT(f, l2->var_nbr);
-				e->vgen -= 1;
+				e->vgen = 0;
 				l2 = deref(q, l2, l2_ctx);
 				l2_ctx = q->latest_ctx;
 			}
