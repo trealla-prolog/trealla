@@ -1031,10 +1031,8 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 		if (both2)
 			q->is_cyclic2 = true;
 
-		if (q->is_cyclic1 && q->is_cyclic2) {
-			q->cycle_error = false;
+		if (q->is_cyclic1 && q->is_cyclic2)
 			break;
-		}
 
 		if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
 			return false;
@@ -1065,10 +1063,8 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 		if (both2)
 			q->is_cyclic2 = true;
 
-		if (q->is_cyclic1 && q->is_cyclic2) {
-			q->cycle_error = false;
+		if (q->is_cyclic1 && q->is_cyclic2)
 			break;
-		}
 #else
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
@@ -1078,7 +1074,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 	}
 
 #if USE_RATIONAL_TREES
-	if (any2 && !q->cycle_error) {
+	if (any2) {
 		p1 = orig_p1;
 		p1_ctx = orig_p1_ctx;
 		p2 = orig_p2;
