@@ -225,7 +225,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 			pl_idx t_ctx = p1_ctx;
 
 			both = 0;
-			if (deep_copy(t)) DEREF_CHECKED(any2, both, e->save_vgen, e, e->vgen, t, t_ctx, q->vgen);
+			if (deep_copy(t)) DEREF_CHECKED(any2, both, save_vgen, e, e->vgen, t, t_ctx, q->vgen);
 			if (both) q->cycle_error = true;
 			p1 = t;
 			p1_ctx = t_ctx;
@@ -255,7 +255,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 
 					const frame *f = GET_FRAME(c_ctx);
 					slot *e = GET_SLOT(f, c->var_nbr);
-					e->vgen = e->save_vgen;
+					e->vgen -= 1;
 					p1 = deref(q, c, c_ctx);
 					p1_ctx = q->latest_ctx;
 				}
