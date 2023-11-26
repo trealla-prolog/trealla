@@ -76,7 +76,7 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 
 				const frame *f = GET_FRAME(c1_ctx);
 				slot *e = GET_SLOT(f, c1->var_nbr);
-				e->vgen -= 1;
+				e->vgen = q->vgen - 1;
 				p1 = deref(q, c1, c1_ctx);
 				p1_ctx = q->latest_ctx;
 			}
@@ -87,7 +87,7 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 
 				const frame *f = GET_FRAME(c2_ctx);
 				slot *e = GET_SLOT(f, c2->var_nbr);
-				e->vgen -= 1;
+				e->vgen = q->vgen - 1;
 				p2 = deref(q, c2, c2_ctx);
 				p2_ctx = q->latest_ctx;
 			}
@@ -374,7 +374,7 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 
 			const frame *f = GET_FRAME(c_ctx);
 			slot *e = GET_SLOT(f, c->var_nbr);
-			e->vgen -= 1;
+			e->vgen = q->vgen - 1;
 			l = deref(q, c, c_ctx);
 			l_ctx = q->latest_ctx;
 		}
@@ -500,7 +500,7 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 
 			const frame *f = GET_FRAME(c_ctx);
 			slot *e = GET_SLOT(f, c->var_nbr);
-			e->vgen -= 1;
+			e->vgen = q->vgen - 1;
 			l = deref(q, c, c_ctx);
 			l_ctx = q->latest_ctx;
 		}
@@ -607,7 +607,7 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 
 				const frame *f = GET_FRAME(c_ctx);
 				slot *e = GET_SLOT(f, c->var_nbr);
-				e->vgen -= 1;
+				e->vgen = q->vgen - 1;
 				p1 = deref(q, p1, p1_ctx);
 				p1_ctx = q->latest_ctx;
 			}
@@ -1090,7 +1090,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 
 				const frame *f = GET_FRAME(p1_ctx);
 				slot *e = GET_SLOT(f, p1->var_nbr);
-				e->vgen -= 1;
+				e->vgen = q->vgen - 1;
 				p1 = deref(q, p1, p1_ctx);
 				p1_ctx = q->latest_ctx;
 			}
@@ -1101,7 +1101,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 
 				const frame *f = GET_FRAME(p2_ctx);
 				slot *e = GET_SLOT(f, p2->var_nbr);
-				e->vgen -= 1;
+				e->vgen = q->vgen - 1;
 				p2 = deref(q, p2, p2_ctx);
 				p2_ctx = q->latest_ctx;
 			}

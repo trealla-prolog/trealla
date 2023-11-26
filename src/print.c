@@ -690,31 +690,6 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 
 		break;
 	}
-
-	c = orig_c;
-	c_ctx = orig_c_ctx;
-
-	while (running && !q->cycle_error && is_iso_list(c)) {
-		if (g_tpl_interrupt)
-			return;
-
-		c = c + 1; c += c->nbr_cells;
-
-		if (is_var(c)) {
-			if (is_ref(c))
-				c_ctx = c->var_ctx;
-
-			const frame *f = GET_FRAME(c_ctx);
-			slot *e = GET_SLOT(f, c->var_nbr);
-
-			if (e->vgen != q->vgen)
-				break;
-
-			e->vgen = 0;
-			c = deref(q, c, c_ctx);
-			c_ctx = q->latest_ctx;
-		}
-	}
 }
 
 static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int cons, unsigned print_depth, unsigned depth)
