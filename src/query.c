@@ -546,7 +546,7 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 		slot *e = NULL;
 		uint32_t save_vgen = 0;
 		int both = 0;
-		DEREF_CHECKED(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
+		DEREF_VAR(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
 		q->suspect = h;
 
 		if (is_var(h)) {
@@ -554,13 +554,11 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 			return 0;
 		}
 
-		if (!is_integer(h) && !is_iso_atom(h)) {
+		if (!is_integer(h) && !is_iso_atom(h))
 			return 0;
-		}
 
-		if (is_integer(h) && !allow_codes) {
+		if (is_integer(h) && !allow_codes)
 			return 0;
-		}
 
 		if (is_integer(h)) {
 			int ch = get_smallint(h);
@@ -572,9 +570,8 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 			const char *src = C_STR(q, h);
 			size_t len = len_char_utf8(src);
 
-			if (len != C_STRLEN(q, h)) {
+			if (len != C_STRLEN(q, h))
 				return 0;
-			}
 
 			is_chars_list += len;
 		}
@@ -609,14 +606,7 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 		while (is_list(l2) && (q->st.m->flags.double_quote_chars || allow_codes)) {
 			cell *h = LIST_HEAD(l2);
 			l2 = LIST_TAIL(l2);
-
-			if (is_var(l2)) {
-				frame *f = GET_FRAME(l2_ctx);
-				slot *e = GET_SLOT(f, l2->var_nbr);
-				e->vgen = q->vgen - 1;
-				l2 = deref(q, l2, l2_ctx);
-				l2_ctx = q->latest_ctx;
-			}
+			RESTORE_VAR(l2, l2_ctx, l2, l2_ctx, q->vgen);
 		}
 	}
 #endif
