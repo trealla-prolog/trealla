@@ -600,7 +600,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		cell *save_tail = tail;
 		both = 0;
 
-		if (running) DEREF_CHECKED(any2, both, e->save_vgen, e, e->vgen, tail, tail_ctx, q->print_vgen);
+		if (running) DEREF_CHECKED(any2, both, save_vgen, e, e->vgen, tail, tail_ctx, q->print_vgen);
 
 		if (both || q->cycle_error || (q->max_depth && (print_depth >= q->max_depth))) {
 			SB_sprintf(q->sb, "%s", "|...]");
@@ -689,31 +689,6 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		}
 
 		break;
-	}
-
-	c = orig_c;
-	c_ctx = orig_c_ctx;
-
-	while (running && !q->cycle_error && is_iso_list(c)) {
-		if (g_tpl_interrupt)
-			return;
-
-		c = c + 1; c += c->nbr_cells;
-
-		if (is_var(c)) {
-			if (is_ref(c))
-				c_ctx = c->var_ctx;
-
-			const frame *f = GET_FRAME(c_ctx);
-			slot *e = GET_SLOT(f, c->var_nbr);
-
-			if (e->vgen == e->save_vgen)
-				break;
-
-			e->vgen = e->save_vgen;
-			c = deref(q, c, c_ctx);
-			c_ctx = q->latest_ctx;
-		}
 	}
 }
 
