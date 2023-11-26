@@ -244,6 +244,8 @@ inline static cell *get_raw_arg(const query *q, int n)
 	CHECK_SENTINEL(expr, 0, __VA_ARGS__; \
 	return throw_error(q, q->st.curr_cell, q->st.curr_frame, "resource_error", "memory"))
 
+// This one leaves original state if a cycle detected...
+
 #define DEREF_CHECKED(any, both, svg, ee, evgen, cc, cc_ctx, qvgen)	\
 	if (is_var(cc)) {												\
 		pl_idx tmp_cc_ctx = cc_ctx;									\
@@ -259,13 +261,15 @@ inline static cell *get_raw_arg(const query *q, int n)
 		if (evgen == qvgen) {										\
 			both++;													\
 		} else {													\
-			cc = deref(q, cc, cc_ctx);								\
+			cc = deref(q, cc, tmp_cc_ctx);							\
 			cc_ctx = q->latest_ctx;									\
 			evgen = qvgen;											\
 		}															\
 	}
 
-#define DEREF_CHECKED2(any, both, svg, ee, evgen, cc, cc_ctx, qvgen)	\
+// This one always derefs...
+
+#define DEREF_VAR(any, both, svg, ee, evgen, cc, cc_ctx, qvgen)	\
 	if (is_var(cc)) {												\
 		pl_idx tmp_cc_ctx = cc_ctx;									\
 		any = true;													\
@@ -283,7 +287,7 @@ inline static cell *get_raw_arg(const query *q, int n)
 			evgen = qvgen;											\
 		}															\
 																	\
-		cc = deref(q, cc, cc_ctx);									\
+		cc = deref(q, cc, tmp_cc_ctx);								\
 		cc_ctx = q->latest_ctx;										\
 	}
 
