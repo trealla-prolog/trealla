@@ -44,8 +44,8 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 
 #if USE_RATIONAL_TREES
 		both = 0;
-		DEREF_CHECKED(any2, both, e1->save_vgen, e1, e1->vgen, p1, p1_ctx, q->vgen);
-		DEREF_CHECKED(any2, both, e2->save_vgen, e2, e2->vgen, p2, p2_ctx, q->vgen);
+		DEREF_CHECKED2(any2, both, e1->save_vgen, e1, e1->vgen, p1, p1_ctx, q->vgen);
+		DEREF_CHECKED2(any2, both, e2->save_vgen, e2, e2->vgen, p2, p2_ctx, q->vgen);
 
 		if (both)
 			return 0;
@@ -1011,7 +1011,6 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 #endif
 
 	bool any1 = false, any2 = false;
-	bool skip = false;
 
 	while (is_iso_list(p1) && is_iso_list(p2)) {
 		cell *c1 = p1 + 1, *c2 = p2 + 1;
@@ -1031,10 +1030,8 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 		if (both2)
 			q->is_cyclic2 = true;
 
-		if (q->is_cyclic1 && q->is_cyclic2) {
-			q->cycle_error = false;
+		if (q->is_cyclic1 && q->is_cyclic2)
 			break;
-		}
 
 		if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
 			return false;
@@ -1056,8 +1053,8 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 
 #if USE_RATIONAL_TREES
 		both1 = both2 = 0;
-		DEREF_CHECKED(any2, both1, e1->save_vgen, e1, e1->vgen, p1, p1_ctx, q->vgen);
-		DEREF_CHECKED(any2, both2, e2->save_vgen, e2, e2->vgen, p2, p2_ctx, q->vgen);
+		DEREF_CHECKED2(any2, both1, e1->save_vgen, e1, e1->vgen, p1, p1_ctx, q->vgen);
+		DEREF_CHECKED2(any2, both2, e2->save_vgen, e2, e2->vgen, p2, p2_ctx, q->vgen);
 
 		if (both1)
 			q->is_cyclic1 = true;
@@ -1065,10 +1062,8 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 		if (both2)
 			q->is_cyclic2 = true;
 
-		if (q->is_cyclic1 && q->is_cyclic2) {
-			q->cycle_error = false;
+		if (q->is_cyclic1 && q->is_cyclic2)
 			break;
-		}
 #else
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
@@ -1078,7 +1073,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 	}
 
 #if USE_RATIONAL_TREES
-	if (any2 && !q->cycle_error) {
+	if (any2) {
 		p1 = orig_p1;
 		p1_ctx = orig_p1_ctx;
 		p2 = orig_p2;
@@ -1111,18 +1106,13 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 				p2_ctx = q->latest_ctx;
 			}
 
-			if ((cnt > g_max_depth) || (cnt > 6000)) {
-				skip = true;
-				break;
-			}
+			if ((cnt > g_max_depth) || (cnt > 6000))
+				return true;
 
 			cnt++;
 		}
 	}
 #endif
-
-	if (skip)
-		return true;
 
 	return unify_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 }
