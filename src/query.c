@@ -606,14 +606,7 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 		while (is_list(l2) && (q->st.m->flags.double_quote_chars || allow_codes)) {
 			cell *h = LIST_HEAD(l2);
 			l2 = LIST_TAIL(l2);
-
-			if (is_var(l2)) {
-				frame *f = GET_FRAME(l2_ctx);
-				slot *e = GET_SLOT(f, l2->var_nbr);
-				e->vgen = q->vgen - 1;
-				l2 = deref(q, l2, l2_ctx);
-				l2_ctx = q->latest_ctx;
-			}
+			RESTORE_VAR(l2, l2_ctx, l2, l2_ctx, q->vgen);
 		}
 	}
 #endif
