@@ -16,7 +16,6 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	Access SQLITE databases using builtin module (uses FFI)
 	Concurrency via tasks / linda / futures / engines (generators)
 	Rational trees ##EXPERIMENTAL##
-	CLP(B) for boolean constraints ##EXPERIMENTAL##
 	Logtalk compatible
 
 Trealla is not WAM-based. It uses tree-walking, structure-sharing and
@@ -319,6 +318,10 @@ Non-standard predicates
 	e/0
 	name/2
 	tab/[1,2]
+
+	freeze/2
+	dif/2
+	when/2
 
 	get_unbuffered_code/1		# read a single unbuffered code
 	get_unbuffered_char/1		# read a single unbuffered character
