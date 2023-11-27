@@ -14,6 +14,11 @@
 #include "prolog.h"
 #include "query.h"
 
+#ifndef _WIN32
+#include <signal.h>
+#include <unistd.h>
+#endif
+
 #ifdef _WIN32
 #define ctime_r(p1,p2) ctime(p1)
 #define gmtime_r(p1,p2) gmtime(p1)
