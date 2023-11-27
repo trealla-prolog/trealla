@@ -1138,16 +1138,16 @@ For example:
 Concurrency (futures)						##EXPERIMENTAL##
 =====================
 
-Implements [Tau-Prolog](http://tau-prolog.org/documentation#concurrent)
-inspired futures.
+Inspiured by [Tau-Prolog](http://tau-prolog.org/documentation#concurrent)
+futures.
 
 ```
-	await/2 – Wait for a Future.
 	future/3 – Make a Future from a Prolog goal.
 	future_all/2 – Make a Future that resolves to a list of the results of an input list of futures.
 	future_any/2 – Make a Future that resolves as soon as any of the futures in a list succeeds.
 	future_cancel/1 – Cancel unfinished future.
 	future_done/1 – Check if a future finished.
+	await/2 – Wait for a Future.
 ```
 
 For example:
@@ -1156,9 +1156,9 @@ For example:
 
 ```
 test9(C) :-
-	future(Status, geturl("www.google.com", Status), F1),
-	future(Status, geturl("www.bing.com", Status), F2),
-	future(Status, geturl("www.duckduckgo.com", Status), F3),
+	future(Status1, geturl("www.google.com", Status1), F1),
+	future(Status2, geturl("www.bing.com", Status2), F2),
+	future(Status3, geturl("www.duckduckgo.com", Status3), F3),
 	future_all([F1,F2,F3], F),
 	await(F, StatusCodes),
 	C = StatusCodes.
