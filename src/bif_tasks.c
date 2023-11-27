@@ -405,7 +405,7 @@ static bool bif_pl_create_2(query *q)
 #endif
 
 	cell tmp;
-	make_uint(&tmp, (size_t)t->id);
+	make_ptr(&tmp, t->id);
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 #endif
