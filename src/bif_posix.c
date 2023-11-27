@@ -218,36 +218,12 @@ static bool bif_posix_time_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
-static bool bif_posix_gettid_1(query *q)
-{
-	GET_FIRST_ARG(p1,var);
-	cell tmp;
-#if defined(linux) && !defined(__wasi__)
-	make_int(&tmp, gettid());
-#else
-	make_int(&tmp, 42);
-#endif
-	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-}
-
 static bool bif_posix_getpid_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
 #ifndef __wasi__
 	make_int(&tmp, getpid());
-#else
-	make_int(&tmp, -1);
-#endif
-	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-}
-
-static bool bif_posix_getppid_1(query *q)
-{
-	GET_FIRST_ARG(p1,var);
-	cell tmp;
-#if defined(linux) && !defined(__wasi__)
-	make_int(&tmp, getppid());
 #else
 	make_int(&tmp, -1);
 #endif
@@ -280,9 +256,7 @@ builtins g_posix_bifs[] =
 	{"posix_ctime", 2, bif_posix_ctime_2, "+integer,-atom", false, false, BLAH},
 	{"posix_time", 1, bif_posix_time_1, "-integer", false, false, BLAH},
 
-	{"posix_gettid", 1, bif_posix_gettid_1, "-integer", false, false, BLAH},
 	{"posix_getpid", 1, bif_posix_getpid_1, "-integer", false, false, BLAH},
-	{"posix_getppid", 1, bif_posix_getppid_1, "-integer", false, false, BLAH},
 	{"posix_fork", 1, bif_posix_fork_1, "-integer", false, false, BLAH},
 
 	{0}
