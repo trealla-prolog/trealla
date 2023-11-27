@@ -372,8 +372,8 @@ typedef struct {
 static void *start_routine(thread *t)
 {
 	prolog *pl = pl_create();
-	sleep(1);
-	pl_destroy(pl);
+	ensure(pl);
+	pl_consult(pl, t->filename);
     return 0;
 }
 
