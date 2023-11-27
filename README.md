@@ -438,6 +438,7 @@ Non-standard predicates
 	posix_ctime/2				# posix_time(+seconds,-atom)
 	posix_time/1				# posix_time(-seconds)
 	posix_getpid/1				# posix_pid(-pid)
+	posix_getppid/1				# posix_ppid(-pid)
 	posix_fork/1				# posix_fork(-pid)
 
 	nb_setval(K,V)
