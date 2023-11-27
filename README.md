@@ -1059,18 +1059,33 @@ An example:
 	Time elapsed 0.33 secs
 ```
 
+Concurrency (threads)
+===================
+
 Multiple* high level *prolog* objects can be created and assigned to
 operating system threads in a C-wrapper program by calling
 
 ```c
-	prolog *pl = pl_create()
-	pl_consult(pl, filename)
-	pl_eval(pl, expr)
+	#include "src/trealla.h"
+	prolog *pl = pl_create();
+	pl_consult(pl, filename);
+	pl_eval(pl, expr);
 	etc.
 ```
 
 Each such *prolog* instance is thread-safe. Such instances could use
 Unix domain sockets for IPC. See *src/trealla.h* for API.
+
+Alternatively, if built with threading enabled...
+
+	make THREADS=1
+
+then multiple independent Prolog instances can be created
+programmatically, each on a unique thread. For example...
+
+```
+	?- between(1,4,_), pl_consult(Id, 'http_server.pl'), fail.
+```
 
 
 Concurrency (linda)							##EXPERIMENTAL##
