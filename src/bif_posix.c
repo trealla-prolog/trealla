@@ -232,7 +232,7 @@ static bool bif_posix_getpid_1(query *q)
 #ifndef __wasi__
 	make_int(&tmp, getpid());
 #else
-	make_int(&tmp, 42);
+	make_int(&tmp, -1);
 #endif
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
@@ -241,10 +241,10 @@ static bool bif_posix_getppid_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
-#ifndef __wasi__
+#if !defined(_WIN32) && !defined(__wasi__)
 	make_int(&tmp, getppid());
 #else
-	make_int(&tmp, 42);
+	make_int(&tmp, -1);
 #endif
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
