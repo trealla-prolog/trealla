@@ -655,14 +655,6 @@ static bool do_stream_property(query *q)
 		return ok;
 	}
 
-	if (!CMP_STRING_TO_CSTR(q, p1, "mutex")) {
-		cell tmp;
-		make_cstring(&tmp, false?"true":"false");
-		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
-		unshare_cell(&tmp);
-		return ok;
-	}
-
 	if (!CMP_STRING_TO_CSTR(q, p1, "skiplist")) {
 		cell tmp;
 		make_cstring(&tmp, str->is_map?"true":"false");
@@ -807,7 +799,7 @@ static void clear_streams_properties(query *q)
 static const char *s_properties =
 	"alias,file_name,mode,encoding,type,line_count,"			\
 	"position,reposition,end_of_stream,eof_action,"				\
-	"input,output,newline,engine,skiplist,mutex";
+	"input,output,newline,engine,skiplist";
 
 static bool bif_iso_stream_property_2(query *q)
 {
@@ -6916,35 +6908,6 @@ static bool bif_set_stream_2(query *q)
 	return false;
 }
 
-static bool bif_with_mutex_2(query *q)
-{
-	GET_FIRST_ARG(pstr,any);
-	GET_NEXT_ARG(p1,callable);
-	cell *tmp2;
-
-	if (p1_ctx != q->st.curr_frame) {
-		check_heap_error(init_tmp_heap(q));
-		tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
-		check_heap_error(tmp2);
-	} else
-		tmp2 = p1;
-
-	if (check_body_callable(tmp2) != NULL)
-		return throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
-
-	cell *tmp = prepare_call(q, true, tmp2, p1_ctx, 3);
-	check_heap_error(tmp);
-	pl_idx nbr_cells = PREFIX_LEN + tmp2->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+nbr_cells++, q->cp);
-	make_call(q, tmp+nbr_cells);
-	check_heap_error(push_barrier(q));
-	choice *ch = GET_CURR_CHOICE();
-	ch->fail_on_retry = true;
-	q->st.curr_cell = tmp;
-	return true;
-}
-
 static bool bif_engine_create_4(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -7324,15 +7287,6 @@ builtins g_files_bifs[] =
 	{"engine_post", 2, bif_engine_post_2, "+stream,+term", false, false, BLAH},
 	{"engine_fetch", 1, bif_engine_fetch_1, "-term", false, false, BLAH},
 	{"engine_destroy", 1, bif_engine_destroy_1, "+stream", false, false, BLAH},
-
-	{"mutex_create", 1, bif_iso_true_0, "+stream", false, false, BLAH},
-	{"mutex_create", 2, bif_iso_true_0, "+stream,+list", false, false, BLAH},
-	{"with_mutex", 2, bif_with_mutex_2, "+stream,+callable", false, false, BLAH},
-	{"mutex_lock", 1, bif_iso_true_0, "+stream", false, false, BLAH},
-	{"mutex_trylock", 1, bif_iso_true_0, "+stream", false, false, BLAH},
-	{"mutex_unlock", 1, bif_iso_true_0, "+stream", false, false, BLAH},
-	{"mutex_unlockall", 0, bif_iso_true_0, "+stream", false, false, BLAH},
-	{"mutex_destroy", 1, bif_iso_true_0, "+stream", false, false, BLAH},
 
 	{"$capture_output", 0, bif_sys_capture_output_0, NULL, false, false, BLAH},
 	{"$capture_output_to_chars", 1, bif_sys_capture_output_to_chars_1, "-string", false, false, BLAH},

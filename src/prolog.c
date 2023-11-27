@@ -24,7 +24,7 @@ pl_idx g_sys_stream_property_s, g_unify_s, g_on_s, g_off_s, g_sys_var_s;
 pl_idx g_plus_s, g_minus_s, g_once_s, g_post_unify_hook_s, g_sys_record_key_s;
 pl_idx g_conjunction_s, g_disjunction_s, g_at_s, g_sys_ne_s, g_sys_incr_s;
 pl_idx g_dcg_s, g_throw_s, g_sys_block_catcher_s, g_sys_drop_barrier_s;
-pl_idx g_if_then_s, g_soft_cut_s, g_negation_s;
+pl_idx g_if_then_s, g_soft_cut_s, g_negation_s, g_dummy_s;
 pl_idx g_error_s, g_slash_s, g_sys_cleanup_if_det_s;
 pl_idx g_goal_expansion_s, g_term_expansion_s, g_tm_s, g_float_s;
 pl_idx g_sys_cut_if_det_s, g_as_s, g_colon_s, g_member_s;
@@ -400,7 +400,7 @@ static bool g_init(prolog *pl)
 	pl->pool = calloc(1, pl->pool_size=INITIAL_POOL_SIZE);
 	CHECK_SENTINEL(pl->symtab = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
 
-	CHECK_SENTINEL(new_atom(pl, "dummy"), ERR_IDX);
+	CHECK_SENTINEL(g_dummy_s = new_atom(pl, "dummy"), ERR_IDX);
 	CHECK_SENTINEL(g_false_s = new_atom(pl, "false"), ERR_IDX);
 	CHECK_SENTINEL(g_true_s = new_atom(pl, "true"), ERR_IDX);
 	CHECK_SENTINEL(g_at_s = new_atom(pl, "@"), ERR_IDX);

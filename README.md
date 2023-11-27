@@ -16,7 +16,6 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	Access SQLITE databases using builtin module (uses FFI)
 	Concurrency via tasks / linda / futures / engines (generators)
 	Rational trees ##EXPERIMENTAL##
-	CLP(B) for boolean constraints ##EXPERIMENTAL##
 	Logtalk compatible
 
 Trealla is not WAM-based. It uses tree-walking, structure-sharing and
@@ -320,6 +319,10 @@ Non-standard predicates
 	name/2
 	tab/[1,2]
 
+	freeze/2
+	dif/2
+	when/2
+
 	get_unbuffered_code/1		# read a single unbuffered code
 	get_unbuffered_char/1		# read a single unbuffered character
 
@@ -434,6 +437,10 @@ Non-standard predicates
 	posix_localtime/2			# posix_localtime(+seconds,-tm(NNN,...))
 	posix_ctime/2				# posix_time(+seconds,-atom)
 	posix_time/1				# posix_time(-seconds)
+	posix_gettid/1				# posix_ppid(-tid)
+	posix_getpid/1				# posix_pid(-pid)
+	posix_getppid/1				# posix_ppid(-ppid)
+	posix_fork/1				# posix_fork(-pid)
 
 	nb_setval(K,V)
 	nb_getval(K,V)
@@ -508,7 +515,6 @@ Non-standard predicates
 	sleep/1                     # sleep time in secs
 	delay/1                     # sleep time in ms
 	split/4                     # split(+string,+sep,?left,?right)
-	pid/1
 	shell/1
 	shell/2
 	wall_time/1
@@ -1138,16 +1144,16 @@ For example:
 Concurrency (futures)						##EXPERIMENTAL##
 =====================
 
-Implements [Tau-Prolog](http://tau-prolog.org/documentation#concurrent)
-inspired futures.
+Inspiured by [Tau-Prolog](http://tau-prolog.org/documentation#concurrent)
+futures.
 
 ```
-	await/2 – Wait for a Future.
 	future/3 – Make a Future from a Prolog goal.
 	future_all/2 – Make a Future that resolves to a list of the results of an input list of futures.
 	future_any/2 – Make a Future that resolves as soon as any of the futures in a list succeeds.
 	future_cancel/1 – Cancel unfinished future.
 	future_done/1 – Check if a future finished.
+	await/2 – Wait for a Future.
 ```
 
 For example:
@@ -1156,9 +1162,9 @@ For example:
 
 ```
 test9(C) :-
-	future(Status, geturl("www.google.com", Status), F1),
-	future(Status, geturl("www.bing.com", Status), F2),
-	future(Status, geturl("www.duckduckgo.com", Status), F3),
+	future(Status1, geturl("www.google.com", Status1), F1),
+	future(Status2, geturl("www.bing.com", Status2), F2),
+	future(Status3, geturl("www.duckduckgo.com", Status3), F3),
 	future_all([F1,F2,F3], F),
 	await(F, StatusCodes),
 	C = StatusCodes.
