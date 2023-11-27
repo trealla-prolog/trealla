@@ -222,7 +222,7 @@ static bool bif_posix_gettid_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
-#if !defined(_WIN32) && !defined(__wasi__)
+#if defined(linux) && !defined(__wasi__)
 	make_int(&tmp, gettid());
 #else
 	make_int(&tmp, 42);
@@ -246,7 +246,7 @@ static bool bif_posix_getppid_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
-#if !defined(_WIN32) && !defined(__wasi__)
+#if defined(linux) && !defined(__wasi__)
 	make_int(&tmp, getppid());
 #else
 	make_int(&tmp, -1);
