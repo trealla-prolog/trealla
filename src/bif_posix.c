@@ -272,6 +272,10 @@ builtins g_posix_bifs[] =
 	{"posix_getpid", 1, bif_posix_getpid_1, "-integer", false, false, BLAH},
 	{"posix_fork", 1, bif_posix_fork_1, "-integer", false, false, BLAH},
 
+	// For Logtalk...
+
+	{"pid", 1, bif_posix_getpid_1, "-integer", false, false, BLAH},
+
 	{0}
 };
 
