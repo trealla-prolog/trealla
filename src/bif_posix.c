@@ -252,10 +252,10 @@ static bool bif_posix_getppid_1(query *q)
 static bool bif_posix_fork_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
-#ifndef __wasi__
+	cell tmp;
+#if !defined(_WIN32) && !defined(__wasi__)
 	signal(SIGCHLD, SIG_IGN);
 	int pid = fork();
-	cell tmp;
 	make_int(&tmp, pid);
 #else
 	make_int(&tmp, -1);
