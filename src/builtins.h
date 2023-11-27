@@ -68,6 +68,9 @@ bool bif_iso_add_2(query *q);
 bool bif_iso_float_1(query *q);
 bool bif_iso_integer_1(query *q);
 
+bool do_yield(query *q, int msecs);
+void do_yield_at(query *q, unsigned int time_in_ms);
+
 inline static void make_indirect(cell *tmp, cell *v, pl_idx v_ctx)
 {
 	tmp->tag = TAG_INDIRECT;
