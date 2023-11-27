@@ -14,6 +14,11 @@
 #include "prolog.h"
 #include "query.h"
 
+#ifndef _WIN32
+#include <signal.h>
+#include <unistd.h>
+#endif
+
 #ifdef _WIN32
 #define ctime_r(p1,p2) ctime(p1)
 #define gmtime_r(p1,p2) gmtime(p1)
@@ -217,7 +222,7 @@ static bool bif_posix_gettid_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
-#if !defined(_WIN32) && !defined(__wasi__)
+#if defined(linux) && !defined(__wasi__)
 	make_int(&tmp, gettid());
 #else
 	make_int(&tmp, 42);
@@ -241,7 +246,7 @@ static bool bif_posix_getppid_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
-#if !defined(_WIN32) && !defined(__wasi__)
+#if defined(linux) && !defined(__wasi__)
 	make_int(&tmp, getppid());
 #else
 	make_int(&tmp, -1);
