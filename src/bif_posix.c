@@ -234,7 +234,7 @@ static bool bif_posix_getppid_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
-#ifndef __wasi__
+#if !defined(_WIN32) && !defined(__wasi__)
 	make_int(&tmp, getppid());
 #else
 	make_int(&tmp, -1);
