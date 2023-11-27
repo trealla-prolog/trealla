@@ -28,6 +28,7 @@
 #define msleep Sleep
 #define localtime_r(p1,p2) localtime(p1)
 #else
+#include <unistd.h>
 static void msleep(int ms)
 {
 	struct timespec tv;
@@ -2383,6 +2384,10 @@ static bool bif_iso_current_prolog_flag_2(query *q)
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "max_arity")) {
 		cell tmp;
 		make_int(&tmp, MAX_ARITY);
+		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	} else if (!CMP_STRING_TO_CSTR(q, p1, "pid")) {
+		cell tmp;
+		make_int(&tmp, getpid());
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "max_integer")) {
 		return false;
