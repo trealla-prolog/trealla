@@ -366,7 +366,7 @@ static bool bif_recv_2(query *q)
 
 typedef struct {
 	void *id;
-	cell *c;
+	const char *filename;
 } thread;
 
 static void *start_routine(thread *t)
@@ -377,17 +377,23 @@ static void *start_routine(thread *t)
     return 0;
 }
 
-static bool bif_pl_create_2(query *q)
+static bool bif_pl_consult_2(query *q)
 {
 	GET_FIRST_ARG(p1,var);
-	GET_NEXT_ARG(p2,nonvar);
+	GET_NEXT_ARG(p2,atom);
+	char *filename = DUP_STRING(q, p2);
 
-	if (has_vars(q, p1, p1_ctx))
-		return false;
+	convert_path(filename);
+	struct stat st = {0};
+
+	if (stat(filename, &st)) {
+		free(filename);
+		return throw_error(q, p2, p2_ctx, "existence_error", "file");
+	}
 
 	thread *t = calloc(1, sizeof(thread));
 	check_heap_error(t);
-	t->c = deep_clone_to_heap(q, p2, p2_ctx);
+	t->filename = filename;
 
 #ifdef _WIN32
     SECURITY_ATTRIBUTES sa = {0};
@@ -430,7 +436,7 @@ builtins g_tasks_bifs[] =
 	{"recv", 1, bif_recv_1, "?term", false, false, BLAH},
 
 #if USE_THREADS
-	{"pl_create", 2, bif_pl_create_2, "+integer,+callable", false, false, BLAH},
+	{"pl_consult", 2, bif_pl_consult_2, "+integer,+atom", false, false, BLAH},
 	{"send", 2, bif_send_2, "+integer,+term", false, false, BLAH},
 	{"recv", 2, bif_recv_2, "?integer,?term", false, false, BLAH},
 #endif
