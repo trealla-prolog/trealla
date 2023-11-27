@@ -22,12 +22,16 @@
 #endif
 
 #if USE_THREADS
+#ifdef _WIN32
+#include <process.h>
+#include <windows.h>
+#else
 #include <pthread.h>
 #include <unistd.h>
 #endif
+#endif
 
 #ifdef _WIN32
-#include <windows.h>
 #define unsetenv(p1)
 #define setenv(p1,p2,p3) _putenv_s(p1,p2)
 #define msleep Sleep
@@ -321,6 +325,7 @@ static bool bif_recv_1(query *q)
 	return false;
 }
 
+#if USE_THREADS
 static bool bif_send_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
@@ -359,6 +364,52 @@ static bool bif_recv_2(query *q)
 	return false;
 }
 
+typedef struct {
+	void *id;
+	cell *c;
+} thread;
+
+static void *start_routine(thread *t)
+{
+	prolog *pl = pl_create();
+	sleep(1);
+	pl_destroy(pl);
+    return 0;
+}
+
+static bool bif_pl_create_2(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	GET_NEXT_ARG(p2,nonvar);
+
+	if (has_vars(q, p1, p1_ctx))
+		return false;
+
+	thread *t = calloc(1, sizeof(thread));
+	check_heap_error(t);
+	t->c = deep_clone_to_heap(q, p2, p2_ctx);
+
+#ifdef _WIN32
+    SECURITY_ATTRIBUTES sa = {0};
+    sa.nLength = sizeof(sa);
+    sa.lpSecurityDescriptor = 0;
+    sa.bInheritHandle = 0;
+    typedef unsigned(_stdcall * start_routine_t)(void *);
+    t->id = _beginthreadex(&sa, 0, (start_routine_t)start_routine, (void*)t, 0, NULL);
+#else
+    typedef void *(*start_routine_t)(void *);
+    pthread_attr_t sa;
+    pthread_attr_init(&sa);
+    pthread_attr_setdetachstate(&sa, PTHREAD_CREATE_DETACHED);
+    pthread_create((pthread_t*)&t->id, &sa, (start_routine_t)start_routine, (void*)t);
+#endif
+
+	cell tmp;
+	make_uint(&tmp, (size_t)t->id);
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+#endif
+
 builtins g_tasks_bifs[] =
 {
 	{"task", 1, bif_task_n, ":callable", false, false, BLAH},
@@ -378,8 +429,11 @@ builtins g_tasks_bifs[] =
 	{"send", 1, bif_send_1, "+term", false, false, BLAH},
 	{"recv", 1, bif_recv_1, "?term", false, false, BLAH},
 
+#if USE_THREADS
+	{"pl_create", 2, bif_pl_create_2, "+integer,+callable", false, false, BLAH},
 	{"send", 2, bif_send_2, "+integer,+term", false, false, BLAH},
 	{"recv", 2, bif_recv_2, "?integer,?term", false, false, BLAH},
+#endif
 
 	{"$cancel_future", 1, bif_sys_cancel_future_1, "+integer", false, false, BLAH},
 	{"$set_future", 1, bif_sys_set_future_1, "+integer", false, false, BLAH},
