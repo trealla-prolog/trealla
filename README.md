@@ -437,6 +437,10 @@ Non-standard predicates
 	posix_localtime/2			# posix_localtime(+seconds,-tm(NNN,...))
 	posix_ctime/2				# posix_time(+seconds,-atom)
 	posix_time/1				# posix_time(-seconds)
+	posix_gettid/1				# posix_ppid(-tid)
+	posix_getpid/1				# posix_pid(-pid)
+	posix_getppid/1				# posix_ppid(-ppid)
+	posix_fork/1				# posix_fork(-pid)
 
 	nb_setval(K,V)
 	nb_getval(K,V)
@@ -511,7 +515,6 @@ Non-standard predicates
 	sleep/1                     # sleep time in secs
 	delay/1                     # sleep time in ms
 	split/4                     # split(+string,+sep,?left,?right)
-	pid/1
 	shell/1
 	shell/2
 	wall_time/1

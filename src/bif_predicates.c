@@ -4508,18 +4508,6 @@ static bool bif_is_stream_1(query *q)
 	return is_stream(p1);
 }
 
-static bool bif_pid_1(query *q)
-{
-	GET_FIRST_ARG(p1,var);
-	cell tmp;
-#ifndef __wasi__
-	make_int(&tmp, getpid());
-#else
-	make_int(&tmp, 42);
-#endif
-	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-}
-
 static bool bif_wall_time_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
@@ -6741,7 +6729,6 @@ builtins g_other_bifs[] =
 	{"ignore", 1, bif_ignore_1, ":callable", false, false, BLAH},
 	{"string_codes", 2, bif_string_codes_2, "+string,-list", false, false, BLAH},
 	{"term_singletons", 2, bif_term_singletons_2, "+term,-list", false, false, BLAH},
-	{"pid", 1, bif_pid_1, "-integer", false, false, BLAH},
 	{"get_unbuffered_code", 1, bif_get_unbuffered_code_1, "?integer", false, false, BLAH},
 	{"get_unbuffered_char", 1, bif_get_unbuffered_char_1, "?character", false, false, BLAH},
 	{"format", 2, bif_format_2, "+string,+list", false, false, BLAH},

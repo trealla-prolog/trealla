@@ -6,6 +6,7 @@
 #include <math.h>
 #include <float.h>
 #include <errno.h>
+#include <signal.h>
 
 #include "trealla.h"
 #include "internal.h"
@@ -212,6 +213,56 @@ static bool bif_posix_time_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
+static bool bif_posix_gettid_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	cell tmp;
+#ifndef __wasi__
+	make_int(&tmp, gettid());
+#else
+	make_int(&tmp, 42);
+#endif
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool bif_posix_getpid_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	cell tmp;
+#ifndef __wasi__
+	make_int(&tmp, getpid());
+#else
+	make_int(&tmp, 42);
+#endif
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool bif_posix_getppid_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	cell tmp;
+#ifndef __wasi__
+	make_int(&tmp, getppid());
+#else
+	make_int(&tmp, 42);
+#endif
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool bif_posix_fork_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+#ifndef __wasi__
+	signal(SIGCHLD, SIG_IGN);
+	int pid = fork();
+	cell tmp;
+	make_int(&tmp, pid);
+#else
+	make_int(&tmp, -1);
+#endif
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
 builtins g_posix_bifs[] =
 {
     {"posix_strftime", 3, bif_posix_strftime_3, "+atom,-atom,+compound", false, false, BLAH},
@@ -223,6 +274,12 @@ builtins g_posix_bifs[] =
 	{"posix_mktime", 2, bif_posix_mktime_2, "+compound,-integer", false, false, BLAH},
 	{"posix_ctime", 2, bif_posix_ctime_2, "+integer,-atom", false, false, BLAH},
 	{"posix_time", 1, bif_posix_time_1, "-integer", false, false, BLAH},
+
+	{"posix_gettid", 1, bif_posix_gettid_1, "-integer", false, false, BLAH},
+	{"posix_getpid", 1, bif_posix_getpid_1, "-integer", false, false, BLAH},
+	{"posix_getppid", 1, bif_posix_getppid_1, "-integer", false, false, BLAH},
+	{"posix_fork", 1, bif_posix_fork_1, "-integer", false, false, BLAH},
+
 	{0}
 };
 

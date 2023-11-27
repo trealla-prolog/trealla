@@ -21,6 +21,11 @@
 #include "openssl/sha.h"
 #endif
 
+#if USE_THREADS
+#include <pthread.h>
+#include <unistd.h>
+#endif
+
 #ifdef _WIN32
 #include <windows.h>
 #define unsetenv(p1)
@@ -258,6 +263,28 @@ static bool bif_fork_0(query *q)
 	return false;
 }
 
+static bool bif_sys_cancel_future_1(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	uint64_t future = get_smalluint(p1);
+
+	for (query *task = q->tasks; task; task = task->next) {
+		if (task->future == future) {
+			task->error = true;
+			break;
+		}
+	}
+
+	return true;
+}
+
+static bool bif_sys_set_future_1(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	q->future = get_smalluint(p1);
+	return true;
+}
+
 static bool bif_send_1(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
@@ -294,26 +321,42 @@ static bool bif_recv_1(query *q)
 	return false;
 }
 
-static bool bif_sys_cancel_future_1(query *q)
+static bool bif_send_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
-	uint64_t future = get_smalluint(p1);
+	GET_NEXT_ARG(p2,nonvar);
+	query *dstq = q->parent && !q->parent->done ? q->parent : q;
+	check_heap_error(init_tmp_heap(q));
+	cell *c = deep_clone_to_tmp(q, p2, p2_ctx);
+	check_heap_error(c);
 
-	for (query *task = q->tasks; task; task = task->next) {
-		if (task->future == future) {
-			task->error = true;
-			break;
-		}
+	for (pl_idx i = 0; i < c->nbr_cells; i++) {
+		cell *c2 = c + i;
+		share_cell(c2);
 	}
 
+	check_heap_error(alloc_on_queuen(dstq, 0, c));
+	q->yielded = true;
 	return true;
 }
 
-static bool bif_sys_set_future_1(query *q)
+static bool bif_recv_2(query *q)
 {
-	GET_FIRST_ARG(p1,integer);
-	q->future = get_smalluint(p1);
-	return true;
+	GET_FIRST_ARG(p1,integer_or_var);
+	GET_NEXT_ARG(p2,nonvar);
+
+	while (true) {
+		CHECK_INTERRUPT();
+		cell *c = pop_queue(q);
+		if (!c) break;
+
+		if (unify(q, p2, p2_ctx, c, q->st.curr_frame))
+			return true;
+
+		check_heap_error(alloc_on_queuen(q, 0, c));
+	}
+
+	return false;
 }
 
 builtins g_tasks_bifs[] =
@@ -334,6 +377,9 @@ builtins g_tasks_bifs[] =
 	{"fork", 0, bif_fork_0, NULL, false, false, BLAH},
 	{"send", 1, bif_send_1, "+term", false, false, BLAH},
 	{"recv", 1, bif_recv_1, "?term", false, false, BLAH},
+
+	{"send", 2, bif_send_2, "+integer,+term", false, false, BLAH},
+	{"recv", 2, bif_recv_2, "?integer,?term", false, false, BLAH},
 
 	{"$cancel_future", 1, bif_sys_cancel_future_1, "+integer", false, false, BLAH},
 	{"$set_future", 1, bif_sys_set_future_1, "+integer", false, false, BLAH},

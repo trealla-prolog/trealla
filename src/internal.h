@@ -178,18 +178,18 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_nonvar(c) !is_var(c)
 
 typedef struct {
-	int64_t refcnt;
+	atomic_t int64_t refcnt;
 	size_t len;
 	char cstr[];
 } strbuf;
 
 typedef struct {
-	int64_t refcnt;
+	atomic_t int64_t refcnt;
 	union { mpz_t ival; mpq_t irat; };
 } bigint;
 
 typedef struct {
-	int64_t refcnt;
+	atomic_t int64_t refcnt;
 	char *ptr, *ptr2;
 } blob;
 
