@@ -23,17 +23,19 @@
 #endif
 
 #if USE_THREADS
+
+typedef enum { QIN=0, QOUT=1, QEND=2 } QUEUE;
+
 typedef struct {
 	void *id;
 	const char *filename;
-	cell *queue[2];
+	cell *queue[QEND];
 	unsigned chan;
 } pl_thread;
 
 #define MAX_PL_THREADS 64
 static pl_thread pl_threads[MAX_PL_THREADS] = {0};
 static unsigned pl_cnt = 0;
-typedef enum { QIN=0, QOUT=1 } QUEUE;
 
 static cell *queue_to_chan(unsigned chan, QUEUE inout, const cell *c)
 {
