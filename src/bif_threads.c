@@ -73,17 +73,10 @@ static bool do_pl_recv(query *q, unsigned chan, cell *p1, pl_idx p1_ctx)
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
 
-static bool bif_pl_send_2(query *q)
+static bool do_pl_send(query *q, unsigned chan, cell *p1, pl_idx p1_ctx)
 {
-	GET_FIRST_ARG(p1,integer);
-	GET_NEXT_ARG(p2,any);
-
-	if (has_vars(q, p2, p2_ctx))
-		return throw_error(q, p2, p2_ctx, "instantiation_error", "not_sufficiently_instantiated");
-
-	unsigned chan = get_smalluint(p1);
 	check_heap_error(init_tmp_heap(q));
-	cell *c = deep_clone_to_tmp(q, p2, p2_ctx);
+	cell *c = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(c);
 
 	for (pl_idx i = 0; i < c->nbr_cells; i++) {
@@ -95,6 +88,27 @@ static bool bif_pl_send_2(query *q)
 	return true;
 }
 
+static bool bif_pl_send_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,any);
+
+	if (has_vars(q, p2, p2_ctx))
+		return throw_error(q, p2, p2_ctx, "instantiation_error", "not_sufficiently_instantiated");
+
+	return do_pl_send(q, get_smalluint(p1), p2, p2_ctx);
+}
+
+static bool bif_pl_send_1(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+
+	if (has_vars(q, p1, p1_ctx))
+		return throw_error(q, p1, p1_ctx, "instantiation_error", "not_sufficiently_instantiated");
+
+	return do_pl_send(q, q->pl->chan, p1, p1_ctx);
+}
+
 static bool bif_pl_recv_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer_or_var);
@@ -104,7 +118,7 @@ static bool bif_pl_recv_2(query *q)
 
 static bool bif_pl_recv_1(query *q)
 {
-	GET_NEXT_ARG(p1,any);
+	GET_FIRST_ARG(p1,any);
 	return do_pl_recv(q, q->pl->chan, p1, p1_ctx);
 }
 
@@ -162,6 +176,7 @@ builtins g_threads_bifs[] =
 	{"pl_consult", 2, bif_pl_consult_2, "+integer,+atom", false, false, BLAH},
 	{"pl_send", 2, bif_pl_send_2, "+integer,+term", false, false, BLAH},
 	{"pl_recv", 2, bif_pl_recv_2, "?integer,?term", false, false, BLAH},
+	{"pl_send", 1, bif_pl_send_1, "+term", false, false, BLAH},
 	{"pl_recv", 1, bif_pl_recv_1, "?term", false, false, BLAH},
 #endif
 
