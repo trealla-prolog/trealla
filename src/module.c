@@ -464,7 +464,7 @@ static int predicate_cmpkey(const void *ptr1, const void *ptr2, const void *para
 	if (p1->val_off == p2->val_off)
 		return 0;
 
-	return strcmp(m->pl->pool+p1->val_off, m->pl->pool+p2->val_off);
+	return strcmp(g_pool+p1->val_off, g_pool+p2->val_off);
 }
 
 static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, void *l)

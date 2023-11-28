@@ -17,6 +17,11 @@ void convert_path(char *filename);
 
 static const size_t INITIAL_POOL_SIZE = 64000;	// bytes
 
+static skiplist *s_symtab;
+static size_t s_pool_size = INITIAL_POOL_SIZE, s_pool_offset = 0;
+char *g_pool = NULL;
+
+
 pl_idx g_empty_s, g_dot_s, g_cut_s, g_nil_s, g_true_s, g_fail_s;
 pl_idx g_anon_s, g_neck_s, g_eof_s, g_lt_s, g_gt_s, g_eq_s, g_false_s;
 pl_idx g_sys_elapsed_s, g_sys_queue_s, g_braces_s, g_call_s, g_braces_s;
@@ -53,37 +58,46 @@ bool is_multifile_in_db(prolog *pl, const char *mod, const char *name, unsigned 
 	return pr->is_multifile ? true : false;
 }
 
-static pl_idx add_to_pool(prolog *pl, const char *name)
+static pl_idx add_to_pool(const char *name)
 {
-	size_t offset = pl->pool_offset, len = strlen(name);
+	size_t offset = s_pool_offset, len = strlen(name);
 
-	while ((offset+len+1+1) >= pl->pool_size) {
-		size_t nbytes = (size_t)pl->pool_size * 3 / 2;
-		char *tmp = realloc(pl->pool, nbytes);
+	while ((offset+len+1+1) >= s_pool_size) {
+		size_t nbytes = (size_t)s_pool_size * 3 / 2;
+		char *tmp = realloc(g_pool, nbytes);
 		if (!tmp) return ERR_IDX;
-		pl->pool = tmp;
-		memset(pl->pool + pl->pool_size, 0, nbytes - pl->pool_size);
-		pl->pool_size = nbytes;
+		g_pool = tmp;
+		memset(g_pool + s_pool_size, 0, nbytes - s_pool_size);
+		s_pool_size = nbytes;
 	}
 
 	if ((offset + len + 1) >= UINT32_MAX)
 		return ERR_IDX;
 
-	memcpy(pl->pool + offset, name, len+1);
-	pl->pool_offset += len + 1;
+	memcpy(g_pool + offset, name, len+1);
+	s_pool_offset += len + 1;
 	const char *key = strdup(name);
-	sl_set(pl->symtab, key, (void*)(size_t)offset);
+	sl_set(s_symtab, key, (void*)(size_t)offset);
 	return (pl_idx)offset;
 }
+
+static pl_atomic int64_t s_atomtable_spinlock = 0;
 
 pl_idx new_atom(prolog *pl, const char *name)
 {
 	const void *val;
 
-	if (sl_get(pl->symtab, name, &val))
-		return (pl_idx)(size_t)val;
+	while (s_atomtable_spinlock++)
+		;
 
-	return add_to_pool(pl, name);
+	if (sl_get(s_symtab, name, &val)) {
+		s_atomtable_spinlock = 0;
+		return (pl_idx)(size_t)val;
+	}
+
+	pl_idx off = add_to_pool(name);
+	s_atomtable_spinlock = 0;
+	return off;
 }
 
 module *find_module(prolog *pl, const char *name)
@@ -394,109 +408,12 @@ void load_builtins(prolog *pl)
 
 static bool g_init(prolog *pl)
 {
-	char *ptr = getenv("TPL_LIBRARY_PATH");
 	bool error = false;
 
-	if (ptr) {
-		g_tpl_lib = strdup(ptr);
-		convert_path(g_tpl_lib);
-	}
+	g_pool = calloc(1, s_pool_size);
+	s_pool_offset = 0;
 
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
-	struct rlimit rlp;
-	getrlimit(RLIMIT_STACK, &rlp);
-	g_max_depth = rlp.rlim_cur / 1024;
-#endif
-
-	return error;
-}
-
-void pl_destroy(prolog *pl)
-{
-	if (!pl) return;
-
-	if (pl->logfp)
-		fclose(pl->logfp);
-
-	module_destroy(pl->system_m);
-	module_destroy(pl->user_m);
-	sl_destroy(pl->biftab);
-	sl_destroy(pl->symtab);
-
-	while (pl->modules)
-		module_destroy(pl->modules);
-
-	sl_destroy(pl->fortab);
-	sl_destroy(pl->keyval);
-	sl_destroy(pl->help);
-	free(pl->tabs);
-	pl->pool_offset = 0;
-
-	if (!--g_tpl_count)
-		g_destroy();
-
-	for (int i = 0; i < MAX_STREAMS; i++) {
-		stream *str = &pl->streams[i];
-
-		if (str->fp) {
-			if ((str->fp != stdin)
-				&& (str->fp != stdout)
-				&& (str->fp != stderr)
-			) {
-				if (str->is_map)
-					sl_destroy(str->keyval);
-				else if (str->is_engine)
-					query_destroy(str->engine);
-				else if (str->fp && (i > 2))
-					fclose(str->fp);
-			}
-
-			parser_destroy(str->p);
-			str->p = NULL;
-			sl_destroy(str->alias);
-			free(str->mode);
-			free(str->filename);
-			free(str->data);
-		}
-	}
-
-	memset(pl->streams, 0, sizeof(pl->streams));
-	parser_destroy(pl->p);
-	free(pl->pool);
-	free(pl);
-}
-
-prolog *pl_create()
-{
-	//printf("*** sizeof(cell) = %u bytes\n", (unsigned)sizeof(cell));
-	//assert(sizeof(cell) == 24);
-
-	prolog *pl = calloc(1, sizeof(prolog));
-	if (!pl) return NULL;
-	bool error = false;
-
-	if (!g_tpl_count++)
-		g_init(pl);
-
-	if (!g_tpl_lib) {
-		g_tpl_lib = realpath(g_argv0, NULL);
-
-		if (g_tpl_lib) {
-			char *src = g_tpl_lib + strlen(g_tpl_lib) - 1;
-
-			while ((src != g_tpl_lib) && (*src != PATH_SEP_CHAR))
-				src--;
-
-			*src = '\0';
-			g_tpl_lib = realloc(g_tpl_lib, strlen(g_tpl_lib)+40);
-			strcat(g_tpl_lib, "/library");
-		} else
-			g_tpl_lib = strdup("../library");
-	}
-
-	pl->pool = calloc(1, pl->pool_size=INITIAL_POOL_SIZE);
-	CHECK_SENTINEL(pl->symtab = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
-
+	CHECK_SENTINEL(s_symtab = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
 	CHECK_SENTINEL(g_dummy_s = new_atom(pl, "dummy"), ERR_IDX);
 	CHECK_SENTINEL(g_false_s = new_atom(pl, "false"), ERR_IDX);
 	CHECK_SENTINEL(g_true_s = new_atom(pl, "true"), ERR_IDX);
@@ -555,12 +472,103 @@ prolog *pl_create()
 	CHECK_SENTINEL(g_colon_s = new_atom(pl, ":"), ERR_IDX);
 	CHECK_SENTINEL(g_caret_s = new_atom(pl, "^"), ERR_IDX);
 
-	CHECK_SENTINEL(pl->keyval = sl_create((void*)fake_strcmp, (void*)keyvalfree, NULL), NULL);
+	char *ptr = getenv("TPL_LIBRARY_PATH");
 
-	if (error) {
-		free(pl->pool);
-		return NULL;
+	if (ptr) {
+		g_tpl_lib = strdup(ptr);
+		convert_path(g_tpl_lib);
 	}
+
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
+	struct rlimit rlp;
+	getrlimit(RLIMIT_STACK, &rlp);
+	g_max_depth = rlp.rlim_cur / 1024;
+#endif
+
+	return error;
+}
+
+void pl_destroy(prolog *pl)
+{
+	if (!pl) return;
+
+	if (pl->logfp)
+		fclose(pl->logfp);
+
+	module_destroy(pl->system_m);
+	module_destroy(pl->user_m);
+	sl_destroy(pl->biftab);
+
+	while (pl->modules)
+		module_destroy(pl->modules);
+
+	sl_destroy(pl->fortab);
+	sl_destroy(pl->keyval);
+	sl_destroy(pl->help);
+	free(pl->tabs);
+
+	if (!--g_tpl_count)
+		g_destroy();
+
+	for (int i = 0; i < MAX_STREAMS; i++) {
+		stream *str = &pl->streams[i];
+
+		if (str->fp) {
+			if ((str->fp != stdin)
+				&& (str->fp != stdout)
+				&& (str->fp != stderr)
+			) {
+				if (str->is_map)
+					sl_destroy(str->keyval);
+				else if (str->is_engine)
+					query_destroy(str->engine);
+				else if (str->fp && (i > 2))
+					fclose(str->fp);
+			}
+
+			parser_destroy(str->p);
+			str->p = NULL;
+			sl_destroy(str->alias);
+			free(str->mode);
+			free(str->filename);
+			free(str->data);
+		}
+	}
+
+	memset(pl->streams, 0, sizeof(pl->streams));
+	parser_destroy(pl->p);
+	free(pl);
+}
+
+prolog *pl_create()
+{
+	//printf("*** sizeof(cell) = %u bytes\n", (unsigned)sizeof(cell));
+	//assert(sizeof(cell) == 24);
+
+	prolog *pl = calloc(1, sizeof(prolog));
+	if (!pl) return NULL;
+	bool error = false;
+
+	if (!g_tpl_count++)
+		g_init(pl);
+
+	if (!g_tpl_lib) {
+		g_tpl_lib = realpath(g_argv0, NULL);
+
+		if (g_tpl_lib) {
+			char *src = g_tpl_lib + strlen(g_tpl_lib) - 1;
+
+			while ((src != g_tpl_lib) && (*src != PATH_SEP_CHAR))
+				src--;
+
+			*src = '\0';
+			g_tpl_lib = realloc(g_tpl_lib, strlen(g_tpl_lib)+40);
+			strcat(g_tpl_lib, "/library");
+		} else
+			g_tpl_lib = strdup("../library");
+	}
+
+	CHECK_SENTINEL(pl->keyval = sl_create((void*)fake_strcmp, (void*)keyvalfree, NULL), NULL);
 
 	pl->streams[0].fp = stdin;
 	CHECK_SENTINEL(pl->streams[0].alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
