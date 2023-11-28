@@ -30,19 +30,20 @@ typedef struct {
 	void *id;
 	const char *filename;
 	cell *queue[QEND];
+	pl_idx nbr_cells[QEND];
 	unsigned chan;
 } pl_thread;
 
 #define MAX_PL_THREADS 64
-static pl_thread pl_threads[MAX_PL_THREADS] = {0};
-static unsigned pl_cnt = 0;
+static pl_thread g_pl_threads[MAX_PL_THREADS] = {0};
+static unsigned g_pl_cnt = 0;
 
 static cell *queue_to_chan(unsigned chan, QUEUE inout, const cell *c)
 {
 	if ((inout != QIN) && (inout != QOUT))
 		return NULL;
 
-	pl_thread *t = &pl_threads[chan];
+	pl_thread *t = &g_pl_threads[chan];
 
 	if (!t->queue[inout]) {
 		t->queue[inout] = malloc(sizeof(cell)*c->nbr_cells);
@@ -55,13 +56,27 @@ static cell *queue_to_chan(unsigned chan, QUEUE inout, const cell *c)
 	}
 
 	safe_copy_cells(t->queue[inout], c, c->nbr_cells);
+	t->nbr_cells[inout] = c->nbr_cells;
 	return t->queue[inout];
+}
+
+static bool do_pl_recv(query *q, unsigned chan, cell *p1, pl_idx p1_ctx)
+{
+	pl_thread *t = &g_pl_threads[chan];
+
+	if (!t->nbr_cells[QOUT])
+		return false;
+
+	cell *c = t->queue[QOUT];
+	cell *tmp = deep_clone_to_heap(q, c, q->st.curr_frame);
+	t->nbr_cells[QOUT] = 0;
+	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
 
 static bool bif_pl_send_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
-	GET_NEXT_ARG(p2,nonvar);
+	GET_NEXT_ARG(p2,any);
 
 	if (has_vars(q, p2, p2_ctx))
 		return throw_error(q, p2, p2_ctx, "instantiation_error", "not_sufficiently_instantiated");
@@ -83,8 +98,14 @@ static bool bif_pl_send_2(query *q)
 static bool bif_pl_recv_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer_or_var);
-	GET_NEXT_ARG(p2,nonvar);
-	return false;
+	GET_NEXT_ARG(p2,any);
+	return do_pl_recv(q, get_smalluint(p1), p2, p2_ctx);
+}
+
+static bool bif_pl_recv_1(query *q)
+{
+	GET_NEXT_ARG(p1,any);
+	return do_pl_recv(q, q->pl->chan, p1, p1_ctx);
 }
 
 static void *start_routine(pl_thread *t)
@@ -110,8 +131,8 @@ static bool bif_pl_consult_2(query *q)
 		return throw_error(q, p2, p2_ctx, "existence_error", "file");
 	}
 
-	uint chan = pl_cnt++;
-	pl_thread *t = &pl_threads[chan];
+	uint chan = g_pl_cnt++;
+	pl_thread *t = &g_pl_threads[chan];
 	t->filename = filename;
 
 #ifdef _WIN32
@@ -141,6 +162,7 @@ builtins g_threads_bifs[] =
 	{"pl_consult", 2, bif_pl_consult_2, "+integer,+atom", false, false, BLAH},
 	{"pl_send", 2, bif_pl_send_2, "+integer,+term", false, false, BLAH},
 	{"pl_recv", 2, bif_pl_recv_2, "?integer,?term", false, false, BLAH},
+	{"pl_recv", 1, bif_pl_recv_1, "?term", false, false, BLAH},
 #endif
 
 	{0}
