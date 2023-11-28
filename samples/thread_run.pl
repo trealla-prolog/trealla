@@ -1,19 +1,22 @@
 :- initialization(run).
 
 run :-
-	write('Running'), nl,
+	write('Square-root calculator running...'), nl,
 	repeat,
 		pl_recv(Tid, Term),
 		format("Child: ~q~n", [Term]), nl,
-		pl_send(Tid, ok),
+		Term = sqrt(X,Y),
+		Y is sqrt(X),
+		pl_send(Tid, Term),
 		fail.
 
 /*
-?- pl_consult(Tid, 'samples/thread_run.pl'),
-	pl_send(Tid, msg('hello, world. This is a test.')),
+?- pl_consult(Tid,'samples/thread_run.pl'),
+	pl_send(Tid,sqrt(2,Y)),
 	pl_recv(Tid, Response).
-Running
-Child: msg('hello, world. This is a test.')
+Square-root calculator running...
+Child: sqrt(2,_7)
 
-   Tid = 1, Response = ok.
+   Tid = 1, Response = sqrt(2,1.4142135623731).
+?-
 */

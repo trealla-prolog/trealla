@@ -112,7 +112,15 @@ static bool do_pl_recv(query *q, cell *p1, pl_idx p1_ctx)
 	//printf("*** recv msg nbr_cells=%u\n", t->queue->nbr_cells);
 
 	cell *c = t->queue;
-	cell *tmp = deep_clone_to_heap(q, c, q->st.curr_frame);
+	try_me(q, MAX_ARITY);
+
+	for (unsigned i = 0; i < c->nbr_cells; i++) {
+		if (is_ref(&c[i])) {
+			c[i].flags &= ~FLAG_VAR_REF;
+		}
+	}
+
+	cell *tmp = deep_copy_to_heap(q, c, q->st.fp, false);
 	check_heap_error(tmp);
 	chk_cells(c, c->nbr_cells);
 	t->queue_size = 0;
@@ -124,10 +132,6 @@ static bool bif_pl_send_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,any);
-
-	if (has_vars(q, p2, p2_ctx))
-		return throw_error(q, p2, p2_ctx, "instantiation_error", "not_sufficiently_instantiated");
-
 	return do_pl_send(q, get_smalluint(p1), p2, p2_ctx);
 }
 
