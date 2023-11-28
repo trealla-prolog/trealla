@@ -106,9 +106,6 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		DEREF_VAR(any, both, save_vgen, e1, e1->vgen, c1, c1_ctx, q->vgen);
 		DEREF_VAR(any, both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
 
-		if (both && ((depth > g_max_depth) || (depth > 6000)))
-			break;
-
 		if (both != 2) {
 			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
 			if (val) return val;
@@ -138,6 +135,14 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 
 static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
+#if 1
+	if ((depth > g_max_depth) || (depth > 6000)) {
+		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		q->cycle_error++;
+		return 0;
+	}
+#endif
+
 	if (is_var(p1)) {
 		if (is_var(p2)) {
 			if (p1_ctx < p2_ctx)
