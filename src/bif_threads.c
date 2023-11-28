@@ -16,9 +16,17 @@
 #ifdef _WIN32
 #include <process.h>
 #include <windows.h>
+#define msleep Sleep
 #else
 #include <pthread.h>
 #include <unistd.h>
+static void msleep(int ms)
+{
+	struct timespec tv;
+	tv.tv_sec = (ms) / 1000;
+	tv.tv_nsec = ((ms) % 1000) * 1000 * 1000;
+	nanosleep(&tv, &tv);
+}
 #endif
 #endif
 
@@ -182,6 +190,7 @@ static bool bif_pl_consult_2(query *q)
     pthread_create((pthread_t*)&t->id, &sa, (start_routine_t)start_routine, (void*)t);
 #endif
 
+	msleep(10);
 	cell tmp;
 	make_uint(&tmp, chan);
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
