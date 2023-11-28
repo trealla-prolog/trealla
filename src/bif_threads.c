@@ -6,20 +6,11 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 
-#include "base64.h"
 #include "heap.h"
-#include "history.h"
-#include "library.h"
 #include "module.h"
 #include "parser.h"
 #include "prolog.h"
 #include "query.h"
-
-#include "bif_atts.h"
-
-#if USE_OPENSSL
-#include "openssl/sha.h"
-#endif
 
 #if USE_THREADS
 #ifdef _WIN32
