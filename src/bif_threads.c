@@ -33,7 +33,6 @@ typedef struct {
 #define MAX_PL_THREADS 64
 static pl_thread pl_threads[MAX_PL_THREADS] = {0};
 static unsigned pl_cnt = 0;
-
 typedef enum { QIN=0, QOUT=1 } QUEUE;
 
 static cell *queue_to_chan(unsigned chan, QUEUE inout, const cell *c)
