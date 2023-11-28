@@ -138,13 +138,17 @@ To build without libffi:
 
 	make NOFFI=1
 
-Other systems may vary. On Debian+ systems you may need to install OpenSSL:
+On Debian+ systems you may need to install OpenSSL:
 
 	sudo apt install libssl-dev
 
-To build without OpenSSL:
+unless you choose to build without SSL/TLS support:
 
 	make NOSSL=1
+
+To build without multi-threading support:
+
+	make NOTHREADS=1
 
 To build with the included ISOCLINE sources (default is to use GNU Readline):
 
@@ -164,8 +168,8 @@ There should be no errors, Further (if valgrind is installed)...
 
 	make leaks
 
-Should show no memory out-of-bounds errors, null-pointer errors,
-use-after-free errors or memory leaks.
+Should show no memory out-of-bounds, null-pointer, use after free
+or memory leaks (there may be one perhaps spurious error).
 
 On *BSD* systems use *gmake* to build and do
 

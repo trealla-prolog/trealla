@@ -55,7 +55,7 @@ ifdef NORATIONAL_TREES
 CFLAGS += -DUSE_RATIONAL_TREES=0
 endif
 
-ifdef THREADS
+ifndef NOTHREADS
 CFLAGS += -DUSE_THREADS=1 -pthread
 LDFLAGS += -pthread
 endif
