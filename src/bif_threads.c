@@ -26,7 +26,7 @@
 typedef struct {
 	void *id;
 	const char *filename;
-	cell *in_queue, *out_queue;
+	cell *queue[2];
 	unsigned chan;
 } pl_thread;
 
@@ -34,40 +34,27 @@ typedef struct {
 static pl_thread pl_threads[MAX_PL_THREADS] = {0};
 static unsigned pl_cnt = 0;
 
-static cell *alloc_on_in_queue(unsigned chan, const cell *c)
+typedef enum { QIN=0, QOUT=1 } QUEUE;
+
+static cell *queue_to_chan(unsigned chan, QUEUE inout, const cell *c)
 {
+	if ((inout != QIN) && (inout != QOUT))
+		return NULL;
+
 	pl_thread *t = &pl_threads[chan];
 
-	if (!t->in_queue) {
-		t->in_queue = malloc(sizeof(cell)*c->nbr_cells);
-		if (!t->in_queue) return NULL;
+	if (!t->queue[inout]) {
+		t->queue[inout] = malloc(sizeof(cell)*c->nbr_cells);
+		if (!t->queue[inout]) return NULL;
 	}
 
-	if (t->in_queue->nbr_cells < c->nbr_cells) {
-		t->in_queue = realloc(t->in_queue, sizeof(cell)*c->nbr_cells);
-		if (!t->in_queue) return NULL;
+	if (t->queue[inout]->nbr_cells < c->nbr_cells) {
+		t->queue[inout] = realloc(t->queue[inout], sizeof(cell)*c->nbr_cells);
+		if (!t->queue[inout]) return NULL;
 	}
 
-	safe_copy_cells(t->in_queue, c, c->nbr_cells);
-	return t->in_queue;
-}
-
-static cell *alloc_on_out_queue(unsigned chan, const cell *c)
-{
-	pl_thread *t = &pl_threads[chan];
-
-	if (!t->out_queue) {
-		t->out_queue = malloc(sizeof(cell)*c->nbr_cells);
-		if (!t->out_queue) return NULL;
-	}
-
-	if (t->out_queue->nbr_cells < c->nbr_cells) {
-		t->out_queue = realloc(t->out_queue, sizeof(cell)*c->nbr_cells);
-		if (!t->out_queue) return NULL;
-	}
-
-	safe_copy_cells(t->out_queue, c, c->nbr_cells);
-	return t->out_queue;
+	safe_copy_cells(t->queue[inout], c, c->nbr_cells);
+	return t->queue[inout];
 }
 
 static bool bif_pl_send_2(query *q)
@@ -88,7 +75,7 @@ static bool bif_pl_send_2(query *q)
 		share_cell(c2);
 	}
 
-	check_heap_error(alloc_on_in_queue(chan, c));
+	check_heap_error(queue_to_chan(chan, QIN, c));
 	return true;
 }
 
