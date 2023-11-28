@@ -42,9 +42,6 @@ static unsigned g_pl_cnt = 1;	// 0 is the first instance
 
 static cell *queue_to_chan(unsigned chan, QUEUE inout, const cell *c)
 {
-	if ((inout != QIN) && (inout != QOUT))
-		return NULL;
-
 	pl_thread *t = &g_pl_threads[chan];
 
 	if (!t->queue[inout]) {
@@ -57,38 +54,37 @@ static cell *queue_to_chan(unsigned chan, QUEUE inout, const cell *c)
 		if (!t->queue[inout]) return NULL;
 	}
 
+	printf("*** send to chan=%u, nbr_cells=%u\n", chan, c->nbr_cells);
+
 	safe_copy_cells(t->queue[inout], c, c->nbr_cells);
 	t->queue_size[inout] = c->nbr_cells;
 	return t->queue[inout];
 }
 
-static bool do_pl_recv(query *q, unsigned chan, cell *p1, pl_idx p1_ctx)
-{
-	pl_thread *t = &g_pl_threads[chan];
-
-	if (!t->queue_size[QOUT])
-		return false;
-
-	cell *c = t->queue[QOUT];
-	cell *tmp = deep_clone_to_heap(q, c, q->st.curr_frame);
-	chk_cells(c, c->nbr_cells);
-	t->queue_size[QOUT] = 0;
-	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
-}
-
-static bool do_pl_send(query *q, unsigned chan, cell *p1, pl_idx p1_ctx)
+static bool do_pl_send(query *q, unsigned chan, QUEUE inout, cell *p1, pl_idx p1_ctx)
 {
 	check_heap_error(init_tmp_heap(q));
 	cell *c = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(c);
-
-	for (pl_idx i = 0; i < c->nbr_cells; i++) {
-		cell *c2 = c + i;
-		share_cell(c2);
-	}
-
-	check_heap_error(queue_to_chan(chan, QIN, c));
+	check_heap_error(queue_to_chan(chan, inout, c));
 	return true;
+}
+
+static bool do_pl_recv(query *q, unsigned chan, QUEUE inout, cell *p1, pl_idx p1_ctx)
+{
+	pl_thread *t = &g_pl_threads[chan];
+
+	if (!t->queue_size[inout])
+		return false;
+
+	//printf("*** recv on chan=%u, nbr_cells=%u\n", chan, t->queue_size[inout]);
+
+	cell *c = t->queue[inout];
+	cell *tmp = deep_clone_to_heap(q, c, q->st.curr_frame);
+	check_heap_error(tmp);
+	chk_cells(c, c->nbr_cells);
+	t->queue_size[inout] = 0;
+	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
 
 static bool bif_pl_send_2(query *q)
@@ -99,7 +95,7 @@ static bool bif_pl_send_2(query *q)
 	if (has_vars(q, p2, p2_ctx))
 		return throw_error(q, p2, p2_ctx, "instantiation_error", "not_sufficiently_instantiated");
 
-	return do_pl_send(q, get_smalluint(p1), p2, p2_ctx);
+	return do_pl_send(q, get_smalluint(p1), QIN, p2, p2_ctx);
 }
 
 static bool bif_pl_send_1(query *q)
@@ -109,20 +105,20 @@ static bool bif_pl_send_1(query *q)
 	if (has_vars(q, p1, p1_ctx))
 		return throw_error(q, p1, p1_ctx, "instantiation_error", "not_sufficiently_instantiated");
 
-	return do_pl_send(q, q->pl->chan, p1, p1_ctx);
+	return do_pl_send(q, q->pl->chan, QOUT, p1, p1_ctx);
 }
 
 static bool bif_pl_recv_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer_or_var);
 	GET_NEXT_ARG(p2,any);
-	return do_pl_recv(q, get_smalluint(p1), p2, p2_ctx);
+	return do_pl_recv(q, get_smalluint(p1), QOUT, p2, p2_ctx);
 }
 
 static bool bif_pl_recv_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	return do_pl_recv(q, q->pl->chan, p1, p1_ctx);
+	return do_pl_recv(q, q->pl->chan, QIN, p1, p1_ctx);
 }
 
 static void *start_routine(pl_thread *t)
@@ -151,6 +147,7 @@ static bool bif_pl_consult_2(query *q)
 	uint chan = g_pl_cnt++;
 	pl_thread *t = &g_pl_threads[chan];
 	t->filename = filename;
+	t->chan = chan;
 
 #ifdef _WIN32
     SECURITY_ATTRIBUTES sa = {0};
