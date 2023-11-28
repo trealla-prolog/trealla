@@ -30,13 +30,15 @@ typedef struct {
 	void *id;
 	const char *filename;
 	cell *queue[QEND];
-	pl_idx nbr_cells[QEND];
+	pl_idx queue_size[QEND];
 	unsigned chan;
 } pl_thread;
 
 #define MAX_PL_THREADS 64
 static pl_thread g_pl_threads[MAX_PL_THREADS] = {0};
 static unsigned g_pl_cnt = 0;
+
+// NOTE: current implementation allows for queueing 1 item at a time.
 
 static cell *queue_to_chan(unsigned chan, QUEUE inout, const cell *c)
 {
@@ -50,13 +52,13 @@ static cell *queue_to_chan(unsigned chan, QUEUE inout, const cell *c)
 		if (!t->queue[inout]) return NULL;
 	}
 
-	if (t->queue[inout]->nbr_cells < c->nbr_cells) {
+	if (t->queue_size[inout] < c->nbr_cells) {
 		t->queue[inout] = realloc(t->queue[inout], sizeof(cell)*c->nbr_cells);
 		if (!t->queue[inout]) return NULL;
 	}
 
 	safe_copy_cells(t->queue[inout], c, c->nbr_cells);
-	t->nbr_cells[inout] = c->nbr_cells;
+	t->queue_size[inout] = c->nbr_cells;
 	return t->queue[inout];
 }
 
@@ -64,13 +66,13 @@ static bool do_pl_recv(query *q, unsigned chan, cell *p1, pl_idx p1_ctx)
 {
 	pl_thread *t = &g_pl_threads[chan];
 
-	if (!t->nbr_cells[QOUT])
+	if (!t->queue_size[QOUT])
 		return false;
 
 	cell *c = t->queue[QOUT];
 	cell *tmp = deep_clone_to_heap(q, c, q->st.curr_frame);
 	chk_cells(c, c->nbr_cells);
-	t->nbr_cells[QOUT] = 0;
+	t->queue_size[QOUT] = 0;
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
 
