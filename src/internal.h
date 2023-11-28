@@ -814,7 +814,7 @@ struct prolog_ {
 	char *pool;
 	size_t pool_offset, pool_size, tabs_size;
 	uint64_t s_last, s_cnt, seed, dbgen;
-	unsigned next_mod_id, def_max_depth;
+	unsigned next_mod_id, def_max_depth, chan;
 	uint8_t current_input, current_output, current_error;
 	int8_t halt_code, opt;
 	bool def_quoted:1;
