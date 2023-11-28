@@ -2387,7 +2387,11 @@ static bool bif_iso_current_prolog_flag_2(query *q)
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "pid")) {
 		cell tmp;
+#ifndef __wasi__
 		make_int(&tmp, getpid());
+#else
+		make_int(&tmp, -1);
+#endif
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "max_integer")) {
 		return false;
