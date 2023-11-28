@@ -27,19 +27,24 @@ typedef struct {
 	void *id;
 	const char *filename;
 	cell *in_queue, *out_queue;
-	pl_idx q_size, chan;
+	unsigned chan;
 } pl_thread;
 
 #define MAX_PL_THREADS 64
 static pl_thread pl_threads[MAX_PL_THREADS] = {0};
 static unsigned pl_cnt = 0;
 
-static cell *alloc_on_pl_in_queue(unsigned chan, const cell *c)
+static cell *alloc_on_in_queue(unsigned chan, const cell *c)
 {
 	pl_thread *t = &pl_threads[chan];
 
 	if (!t->in_queue) {
-		t->in_queue = malloc(sizeof(cell)*t->q_size);
+		t->in_queue = malloc(sizeof(cell)*c->nbr_cells);
+		if (!t->in_queue) return NULL;
+	}
+
+	if (t->in_queue->nbr_cells < c->nbr_cells) {
+		t->in_queue = realloc(t->in_queue, sizeof(cell)*c->nbr_cells);
 		if (!t->in_queue) return NULL;
 	}
 
@@ -47,13 +52,18 @@ static cell *alloc_on_pl_in_queue(unsigned chan, const cell *c)
 	return t->in_queue;
 }
 
-static cell *alloc_on_pl_out_queue(unsigned chan, const cell *c)
+static cell *alloc_on_out_queue(unsigned chan, const cell *c)
 {
 	pl_thread *t = &pl_threads[chan];
 
 	if (!t->out_queue) {
-		t->out_queue = malloc(sizeof(cell)*t->q_size);
-		if (!t->in_queue) return NULL;
+		t->out_queue = malloc(sizeof(cell)*c->nbr_cells);
+		if (!t->out_queue) return NULL;
+	}
+
+	if (t->out_queue->nbr_cells < c->nbr_cells) {
+		t->out_queue = realloc(t->out_queue, sizeof(cell)*c->nbr_cells);
+		if (!t->out_queue) return NULL;
 	}
 
 	safe_copy_cells(t->out_queue, c, c->nbr_cells);
@@ -78,7 +88,7 @@ static bool bif_pl_send_2(query *q)
 		share_cell(c2);
 	}
 
-	check_heap_error(alloc_on_pl_in_queue(chan, c));
+	check_heap_error(alloc_on_in_queue(chan, c));
 	return true;
 }
 
@@ -140,8 +150,8 @@ builtins g_threads_bifs[] =
 {
 #if USE_THREADS
 	{"pl_consult", 2, bif_pl_consult_2, "+integer,+atom", false, false, BLAH},
-	//{"pl_send", 2, bif_pl_send_2, "+integer,+term", false, false, BLAH},
-	//{"pl_recv", 2, bif_pl_recv_2, "?integer,?term", false, false, BLAH},
+	{"pl_send", 2, bif_pl_send_2, "+integer,+term", false, false, BLAH},
+	{"pl_recv", 2, bif_pl_recv_2, "?integer,?term", false, false, BLAH},
 #endif
 
 	{0}
