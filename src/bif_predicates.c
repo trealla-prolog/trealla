@@ -2630,6 +2630,7 @@ static bool bif_iso_set_prolog_flag_2(query *q)
 		|| !CMP_STRING_TO_CSTR(q, p1, "verbose")
 		|| !CMP_STRING_TO_CSTR(q, p1, "integer_rounding_function")
 		|| !CMP_STRING_TO_CSTR(q, p1, "dialect")
+		|| !CMP_STRING_TO_CSTR(q, p1, "pid")
 		) {
 		return throw_error(q, p1, p1_ctx, "permission_error", "modify,flag");
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "generate_debug_info")) {
@@ -6512,6 +6513,11 @@ static void load_flags(query *q)
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "dialect", "trealla");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "bounded", "false");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "max_arity", MAX_ARITY);
+#ifndef __wasi__
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "pid", getpid());
+#else
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "pid", 42);
+#endif
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "cpu_count", g_cpu_count);
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "integer_rounding_function", "toward_zero");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, [max_depth(%u),quoted(%s),double_quotes(%s)]).\n", "answer_write_options", (unsigned)q->pl->def_max_depth, q->pl->def_quoted?"true":"false", q->pl->def_double_quotes?"true":"false");
