@@ -91,6 +91,7 @@ static void *start_routine(pl_thread *t)
 {
 	prolog *pl = pl_create();
 	ensure(pl);
+	pl->chan = t->chan;
 	pl_consult(pl, t->filename);
     return 0;
 }
