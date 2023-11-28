@@ -24,14 +24,18 @@
 
 #if USE_THREADS
 
-typedef enum { QIN=0, QOUT=1, QEND=2 } QUEUE;
-
 typedef struct {
-	void *id;
 	const char *filename;
-	cell *queue[QEND];
-	pl_idx queue_size[QEND];
-	unsigned chan;
+	cell *queue;
+	pl_idx queue_size;
+	unsigned queue_chan, chan;
+#ifdef _WIN32
+    HANDLE id;
+#else
+    pthread_t id;
+    pthread_cond_t cond;
+    pthread_mutex_t mutex;
+#endif
 } pl_thread;
 
 #define MAX_PL_THREADS 64
@@ -40,50 +44,71 @@ static unsigned g_pl_cnt = 1;	// 0 is the first instance
 
 // NOTE: current implementation allows for queueing 1 item at a time.
 
-static cell *queue_to_chan(unsigned chan, QUEUE inout, const cell *c)
+static cell *queue_to_chan(unsigned chan, const cell *c)
 {
 	pl_thread *t = &g_pl_threads[chan];
 
-	if (!t->queue[inout]) {
-		t->queue[inout] = malloc(sizeof(cell)*c->nbr_cells);
-		if (!t->queue[inout]) return NULL;
+	if (!t->queue) {
+		t->queue = malloc(sizeof(cell)*c->nbr_cells);
+		if (!t->queue) return NULL;
 	}
 
-	if (t->queue_size[inout] < c->nbr_cells) {
-		t->queue[inout] = realloc(t->queue[inout], sizeof(cell)*c->nbr_cells);
-		if (!t->queue[inout]) return NULL;
+	if (t->queue_size < c->nbr_cells) {
+		t->queue = realloc(t->queue, sizeof(cell)*c->nbr_cells);
+		if (!t->queue) return NULL;
 	}
 
-	printf("*** send to chan=%u, nbr_cells=%u\n", chan, c->nbr_cells);
+	//printf("*** send to chan=%u, nbr_cells=%u\n", chan, c->nbr_cells);
 
-	safe_copy_cells(t->queue[inout], c, c->nbr_cells);
-	t->queue_size[inout] = c->nbr_cells;
-	return t->queue[inout];
+	safe_copy_cells(t->queue, c, c->nbr_cells);
+	t->queue_size = c->nbr_cells;
+	return t->queue;
 }
 
-static bool do_pl_send(query *q, unsigned chan, QUEUE inout, cell *p1, pl_idx p1_ctx)
+static bool do_pl_send(query *q, unsigned chan, cell *p1, pl_idx p1_ctx)
 {
 	check_heap_error(init_tmp_heap(q));
 	cell *c = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(c);
-	check_heap_error(queue_to_chan(chan, inout, c));
+	check_heap_error(queue_to_chan(chan, c));
+	pl_thread *t = &g_pl_threads[chan];
+	t->queue_chan = q->pl->chan;
+
+#ifdef _WIN32
+    ResumeThread(t->id);
+#else
+    pthread_mutex_lock(&t->mutex);
+    pthread_cond_signal(&t->cond);
+    pthread_mutex_unlock(&t->mutex);
+#endif
+
 	return true;
 }
 
-static bool do_pl_recv(query *q, unsigned chan, QUEUE inout, cell *p1, pl_idx p1_ctx)
+static bool do_pl_recv(query *q, cell *p1, pl_idx p1_ctx)
 {
-	pl_thread *t = &g_pl_threads[chan];
+	pl_thread *t = &g_pl_threads[q->pl->chan];
 
-	if (!t->queue_size[inout])
-		return false;
+	while (!t->queue_size) {
+		//printf("*** sleeping chan=%u\n", q->pl->chan);
+#ifdef _WIN32
+		SuspendThread(t->id);
+#else
+		pthread_mutex_lock(&t->mutex);
+		pthread_cond_wait(&t->cond, &t->mutex);
+		pthread_mutex_unlock(&t->mutex);
+#endif
+	}
 
-	//printf("*** recv on chan=%u, nbr_cells=%u\n", chan, t->queue_size[inout]);
+	//printf("*** awake=%u from=%u\n", q->pl->chan, t->queue_chan);
+	//printf("*** recv msg nbr_cells=%u\n", t->queue->nbr_cells);
 
-	cell *c = t->queue[inout];
+	cell *c = t->queue;
 	cell *tmp = deep_clone_to_heap(q, c, q->st.curr_frame);
 	check_heap_error(tmp);
 	chk_cells(c, c->nbr_cells);
-	t->queue_size[inout] = 0;
+	t->queue_size = 0;
+	q->curr_chan = t->queue_chan;
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
 
@@ -95,7 +120,7 @@ static bool bif_pl_send_2(query *q)
 	if (has_vars(q, p2, p2_ctx))
 		return throw_error(q, p2, p2_ctx, "instantiation_error", "not_sufficiently_instantiated");
 
-	return do_pl_send(q, get_smalluint(p1), QIN, p2, p2_ctx);
+	return do_pl_send(q, get_smalluint(p1), p2, p2_ctx);
 }
 
 static bool bif_pl_send_1(query *q)
@@ -105,20 +130,13 @@ static bool bif_pl_send_1(query *q)
 	if (has_vars(q, p1, p1_ctx))
 		return throw_error(q, p1, p1_ctx, "instantiation_error", "not_sufficiently_instantiated");
 
-	return do_pl_send(q, q->pl->chan, QOUT, p1, p1_ctx);
-}
-
-static bool bif_pl_recv_2(query *q)
-{
-	GET_FIRST_ARG(p1,integer_or_var);
-	GET_NEXT_ARG(p2,any);
-	return do_pl_recv(q, get_smalluint(p1), QOUT, p2, p2_ctx);
+	return do_pl_send(q, q->curr_chan, p1, p1_ctx);
 }
 
 static bool bif_pl_recv_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	return do_pl_recv(q, q->pl->chan, QIN, p1, p1_ctx);
+	return do_pl_recv(q, p1, p1_ctx);
 }
 
 static void *start_routine(pl_thread *t)
@@ -175,7 +193,6 @@ builtins g_threads_bifs[] =
 #if USE_THREADS
 	{"pl_consult", 2, bif_pl_consult_2, "+integer,+atom", false, false, BLAH},
 	{"pl_send", 2, bif_pl_send_2, "+integer,+term", false, false, BLAH},
-	{"pl_recv", 2, bif_pl_recv_2, "?integer,?term", false, false, BLAH},
 	{"pl_send", 1, bif_pl_send_1, "+term", false, false, BLAH},
 	{"pl_recv", 1, bif_pl_recv_1, "?term", false, false, BLAH},
 #endif
