@@ -1076,17 +1076,6 @@ operating system threads in a C-wrapper program by calling
 Each such *prolog* instance is thread-safe. Such instances could use
 Unix domain sockets for IPC. See *src/trealla.h* for API.
 
-Alternatively, if built with threading enabled...
-
-	make THREADS=1
-
-then multiple independent Prolog instances can be created
-programmatically, each on a unique thread. For example...
-
-```
-	?- between(1,4,_), pl_consult(Id, 'http_server.pl'), fail.
-```
-
 
 Concurrency (linda)							##EXPERIMENTAL##
 ===================
