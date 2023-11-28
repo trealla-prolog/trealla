@@ -36,7 +36,7 @@ typedef struct {
 
 #define MAX_PL_THREADS 64
 static pl_thread g_pl_threads[MAX_PL_THREADS] = {0};
-static unsigned g_pl_cnt = 0;
+static unsigned g_pl_cnt = 1;	// 0 is the first instance
 
 // NOTE: current implementation allows for queueing 1 item at a time.
 
