@@ -141,6 +141,20 @@ static bool bif_pl_send_1(query *q)
 	return do_pl_send(q, q->curr_chan, p1, p1_ctx);
 }
 
+static bool bif_pl_recv_2(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,any);
+	pl_thread *t = &g_pl_threads[q->pl->chan];
+
+	if (!do_pl_recv(q, p2, p2_ctx))
+		return false;
+
+	cell tmp;
+	make_uint(&tmp, q->curr_chan);
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
 static bool bif_pl_recv_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -203,6 +217,7 @@ builtins g_threads_bifs[] =
 	{"pl_consult", 2, bif_pl_consult_2, "+integer,+atom", false, false, BLAH},
 	{"pl_send", 2, bif_pl_send_2, "+integer,+term", false, false, BLAH},
 	{"pl_send", 1, bif_pl_send_1, "+term", false, false, BLAH},
+	{"pl_recv", 2, bif_pl_recv_2, "?integer,?term", false, false, BLAH},
 	{"pl_recv", 1, bif_pl_recv_1, "?term", false, false, BLAH},
 #endif
 
