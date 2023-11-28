@@ -69,6 +69,7 @@ static bool do_pl_recv(query *q, unsigned chan, cell *p1, pl_idx p1_ctx)
 
 	cell *c = t->queue[QOUT];
 	cell *tmp = deep_clone_to_heap(q, c, q->st.curr_frame);
+	chk_cells(c, c->nbr_cells);
 	t->nbr_cells[QOUT] = 0;
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
