@@ -36,7 +36,7 @@ int g_ac = 0, g_avc = 1;
 char **g_av = NULL, *g_argv0 = NULL;
 unsigned g_max_depth = 6000;
 
-static atomic_t int g_tpl_count = 0;
+static pl_atomic int g_tpl_count = 0;
 
 bool is_multifile_in_db(prolog *pl, const char *mod, const char *name, unsigned arity)
 {

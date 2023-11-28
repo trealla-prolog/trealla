@@ -31,9 +31,9 @@ typedef uint32_t pl_idx;
 
 #if (__STDC_VERSION__ >= 201112L) && USE_THREADS
 #include <stdatomic.h>
-#define atomic_t _Atomic
+#define pl_atomic _Atomic
 #else
-#define atomic_t volatile
+#define pl_atomic volatile
 #endif
 
 #ifdef _WIN32
@@ -178,18 +178,18 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_nonvar(c) !is_var(c)
 
 typedef struct {
-	atomic_t int64_t refcnt;
+	pl_atomic int64_t refcnt;
 	size_t len;
 	char cstr[];
 } strbuf;
 
 typedef struct {
-	atomic_t int64_t refcnt;
+	pl_atomic int64_t refcnt;
 	union { mpz_t ival; mpq_t irat; };
 } bigint;
 
 typedef struct {
-	atomic_t int64_t refcnt;
+	pl_atomic int64_t refcnt;
 	char *ptr, *ptr2;
 } blob;
 
