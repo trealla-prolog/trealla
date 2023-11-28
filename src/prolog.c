@@ -81,22 +81,23 @@ static pl_idx add_to_pool(const char *name)
 	return (pl_idx)offset;
 }
 
-static pl_atomic int64_t s_atomtable_spinlock = 0;
+#define SPIN_LOCK(v) while (v++)
+#define SPIN_UNLOCK(v) v = 0
+
+static pl_atomic uint64_t s_atomtable_lock = 0;
 
 pl_idx new_atom(prolog *pl, const char *name)
 {
+	SPIN_LOCK(s_atomtable_lock);
 	const void *val;
 
-	while (s_atomtable_spinlock++)
-		;
-
 	if (sl_get(s_symtab, name, &val)) {
-		s_atomtable_spinlock = 0;
+		SPIN_UNLOCK(s_atomtable_lock);
 		return (pl_idx)(size_t)val;
 	}
 
 	pl_idx off = add_to_pool(name);
-	s_atomtable_spinlock = 0;
+	SPIN_UNLOCK(s_atomtable_lock);
 	return off;
 }
 
