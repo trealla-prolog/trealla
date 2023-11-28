@@ -295,16 +295,16 @@ inline static cell *get_raw_arg(const query *q, int n)
 	}
 
 #define RESTORE_VAR(cc, cc_ctx, p, p_ctx, qvgen)					\
-			if (is_var(cc)) {										\
-				if (is_ref(cc))										\
-					cc_ctx = cc->var_ctx;							\
+	if (is_var(cc)) {												\
+		if (is_ref(cc))												\
+			cc_ctx = cc->var_ctx;									\
 																	\
-				const frame *f = GET_FRAME(cc_ctx);					\
-				slot *e = GET_SLOT(f, cc->var_nbr);					\
-				e->vgen = qvgen - 1;								\
-				p = deref(q, cc, cc_ctx);							\
-				p_ctx = q->latest_ctx;								\
-			}
+		const frame *f = GET_FRAME(cc_ctx);							\
+		slot *e = GET_SLOT(f, cc->var_nbr);							\
+		e->vgen = qvgen - 1;										\
+		p = deref(q, cc, cc_ctx);									\
+		p_ctx = q->latest_ctx;										\
+	}
 
 inline static bool START_FUNCTION(query *q)
 {
