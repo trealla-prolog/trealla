@@ -28,9 +28,6 @@ static void msleep(int ms)
 	nanosleep(&tv, &tv);
 }
 #endif
-#endif
-
-#if USE_THREADS
 
 typedef struct {
 #ifdef _WIN32
