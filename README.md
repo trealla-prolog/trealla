@@ -1098,10 +1098,10 @@ Concurrency (multi-threading)				##EXPERIMENTAL##
 			fail.
 
 	$ tpl
-	?- pl_consult(Tid,'samples/thread_sqrt.pl'), assertz(thread_sqrt(Tid)).
-	Square-root calculator running...
+	?- pl_consult(Tid,'samples/thread_calc.pl'), assertz(thread_calc(Tid)).
+	Calculator running...
 	   Tid = 1.
-	?- thread_sqrt(Tid), pl_send(Tid,sqrt(2,Y)), pl_recv(Tid, Response).
+	?- thread_calc(Tid), pl_send(Tid,sqrt(2,Y)), pl_recv(Tid, Response).
 	   Tid = 1, Response = sqrt(2,1.4142135623731).
 	?-
 ```
