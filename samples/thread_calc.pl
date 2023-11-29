@@ -12,7 +12,7 @@ run :-
 		fail.
 
 /*
-?- pl_consult(Tid,'samples/thread_calc.pl'),
+?- pl_thread(Tid,'samples/thread_calc.pl'),
 	Term = sqrt(2,Y),
 	pl_send(Tid, Term),
 	pl_recv(Tid, Term).

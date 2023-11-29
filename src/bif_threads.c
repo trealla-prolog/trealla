@@ -209,7 +209,7 @@ static void *start_routine(pl_thread *t)
     return 0;
 }
 
-static bool bif_pl_consult_2(query *q)
+static bool bif_pl_thread_2(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,atom);
@@ -253,7 +253,7 @@ static bool bif_pl_consult_2(query *q)
 builtins g_threads_bifs[] =
 {
 #if USE_THREADS
-	{"pl_consult", 2, bif_pl_consult_2, "+integer,+atom", false, false, BLAH},
+	{"pl_thread", 2, bif_pl_thread_2, "+integer,+atom", false, false, BLAH},
 	{"pl_send", 2, bif_pl_send_2, "+integer,+term", false, false, BLAH},
 	{"pl_recv", 2, bif_pl_recv_2, "-integer,?term", false, false, BLAH},
 #endif

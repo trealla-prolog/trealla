@@ -28,6 +28,7 @@ LDFLAGS += -lwasi-emulated-mman -lwasi-emulated-signal \
 	-o tpl.wasm
 NOFFI = 1
 NOSSL = 1
+NOTHREADS = 1
 ifdef WASI_CC
 CC = $(WASI_CC)
 endif

@@ -12,15 +12,6 @@
 #include "prolog.h"
 #include "query.h"
 
-#if USE_THREADS
-#ifdef _WIN32
-#include <process.h>
-#include <windows.h>
-#else
-#include <unistd.h>
-#endif
-#endif
-
 #ifdef _WIN32
 #define unsetenv(p1)
 #define setenv(p1,p2,p3) _putenv_s(p1,p2)
