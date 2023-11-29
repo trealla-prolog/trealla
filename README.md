@@ -1063,8 +1063,8 @@ An example:
 	Time elapsed 0.33 secs
 ```
 
-Concurrency (threads)
-=====================
+Concurrency (host threads)
+==========================
 
 Multiple* high level *prolog* objects can be created and assigned to
 operating system threads in a C-wrapper program by calling
