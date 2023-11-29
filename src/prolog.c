@@ -81,10 +81,14 @@ static pl_idx add_to_pool(const char *name)
 	return (pl_idx)offset;
 }
 
+#if USE_THREADS
+static pl_atomic int64_t s_atomtable_lock = 0;
 #define SPIN_LOCK(v) while (v++)
 #define SPIN_UNLOCK(v) v = 0
-
-static pl_atomic uint64_t s_atomtable_lock = 0;
+#else
+#define SPIN_LOCK(v)
+#define SPIN_UNLOCK(v)
+#endif
 
 pl_idx new_atom(prolog *pl, const char *name)
 {
