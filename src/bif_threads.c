@@ -93,7 +93,7 @@ typedef struct {
 static pl_thread g_pl_threads[MAX_PL_THREADS] = {0};
 static unsigned g_pl_cnt = 1;	// 0 is the first instance
 
-static void thread_suspend(pl_thread *t)
+static void suspend_thread(pl_thread *t)
 {
 #ifdef _WIN32
 	SuspendThread(t->id);
@@ -104,7 +104,7 @@ static void thread_suspend(pl_thread *t)
 #endif
 }
 
-static void thread_resume(pl_thread *t)
+static void resume_thread(pl_thread *t)
 {
 #ifdef _WIN32
     ResumeThread(t->id);
@@ -147,7 +147,7 @@ static bool do_pl_send(query *q, unsigned chan, cell *p1, pl_idx p1_ctx)
 	check_heap_error(queue_to_chan(chan, c));
 	pl_thread *t = &g_pl_threads[chan];
 	t->queue_chan = q->pl->chan;
-    thread_resume(t);
+    resume_thread(t);
 	lock_unlock(&t->guard);
 	return true;
 }
@@ -157,7 +157,7 @@ static bool do_pl_recv(query *q, cell *p1, pl_idx p1_ctx)
 	pl_thread *t = &g_pl_threads[q->pl->chan];
 
 	while (!t->queue_size)
-		thread_suspend(t);
+		suspend_thread(t);
 
 	//printf("*** recv msg nbr_cells=%u\n", t->queue->nbr_cells);
 
