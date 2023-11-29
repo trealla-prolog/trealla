@@ -192,7 +192,7 @@ static bool bif_pl_consult_2(query *q)
     pthread_create((pthread_t*)&t->id, &sa, (start_routine_t)start_routine, (void*)t);
 #endif
 
-	msleep(10);
+	msleep(100);
 	cell tmp;
 	make_uint(&tmp, chan);
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);

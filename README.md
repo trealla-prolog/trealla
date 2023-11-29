@@ -1089,6 +1089,7 @@ Concurrency (multi-threading)				##EXPERIMENTAL##
 	:- initialization(run).
 
 	run :-
+		write('Square-root calculator running...'), nl,
 		repeat,
 			pl_recv(Tid, Term),
 			Term = sqrt(X,Y),
@@ -1097,9 +1098,10 @@ Concurrency (multi-threading)				##EXPERIMENTAL##
 			fail.
 
 	$ tpl
-	?- pl_consult(Tid,'samples/thread_sqrt.pl'),
-		pl_send(Tid,sqrt(2,Y)),
-		pl_recv(Tid, Response).
+	?- pl_consult(Tid,'samples/thread_sqrt.pl'), assertz(thread_sqrt(Tid)).
+	Square-root calculator running...
+	   Tid = 1.
+	?- thread_sqrt(Tid), pl_send(Tid,sqrt(2,Y)), pl_recv(Tid, Response).
 	   Tid = 1, Response = sqrt(2,1.4142135623731).
 	?-
 ```
