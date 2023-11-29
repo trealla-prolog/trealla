@@ -148,7 +148,6 @@ static bool do_pl_send(query *q, unsigned chan, cell *p1, pl_idx p1_ctx)
 	pl_thread *t = &g_pl_threads[chan];
 	t->queue_chan = q->pl->chan;
     resume_thread(t);
-	lock_unlock(&t->guard);
 	return true;
 }
 
@@ -161,7 +160,6 @@ static bool do_pl_recv(query *q, cell *p1, pl_idx p1_ctx)
 
 	//printf("*** recv msg nbr_cells=%u\n", t->queue->nbr_cells);
 
-	lock_lock(&t->guard);
 	cell *c = t->queue;
 	try_me(q, MAX_ARITY);
 
