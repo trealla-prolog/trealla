@@ -32,6 +32,7 @@
 #endif
 
 #ifdef _WIN32
+#include <windows.h>
 #define unsetenv(p1)
 #define setenv(p1,p2,p3) _putenv_s(p1,p2)
 #define msleep Sleep
