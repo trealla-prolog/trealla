@@ -92,6 +92,7 @@ typedef struct {
 	cell *queue;
 	pl_idx queue_size;
 	unsigned queue_chan, chan;
+	lock guard;
 #ifdef _WIN32
     HANDLE id;
 #else
@@ -110,6 +111,7 @@ static unsigned g_pl_cnt = 1;	// 0 is the first instance
 static cell *queue_to_chan(unsigned chan, const cell *c)
 {
 	pl_thread *t = &g_pl_threads[chan];
+	lock_lock(&t->guard);
 
 	if (!t->queue) {
 		t->queue = malloc(sizeof(cell)*c->nbr_cells);
@@ -145,6 +147,7 @@ static bool do_pl_send(query *q, unsigned chan, cell *p1, pl_idx p1_ctx)
     pthread_mutex_unlock(&t->mutex);
 #endif
 
+	lock_unlock(&t->guard);
 	return true;
 }
 
@@ -166,6 +169,7 @@ static bool do_pl_recv(query *q, cell *p1, pl_idx p1_ctx)
 	//printf("*** awake=%u from=%u\n", q->pl->chan, t->queue_chan);
 	//printf("*** recv msg nbr_cells=%u\n", t->queue->nbr_cells);
 
+	lock_lock(&t->guard);
 	cell *c = t->queue;
 	try_me(q, MAX_ARITY);
 
@@ -180,6 +184,7 @@ static bool do_pl_recv(query *q, cell *p1, pl_idx p1_ctx)
 	chk_cells(c, c->nbr_cells);
 	t->queue_size = 0;
 	q->curr_chan = t->queue_chan;
+	lock_unlock(&t->guard);
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
 
@@ -208,6 +213,7 @@ static void *start_routine(pl_thread *t)
 {
 	prolog *pl = pl_create();
 	ensure(pl);
+	lock_init(&t->guard);
 	pl->chan = t->chan;
 	pl_consult(pl, t->filename);
     return 0;
