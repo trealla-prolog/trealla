@@ -13,9 +13,10 @@ run :-
 
 /*
 ?- pl_consult(Tid,'samples/thread_calc.pl'),
-	pl_send(Tid,sqrt(2,Y)),
-	pl_recv(Tid, Response).
+	Term = sqrt(2,Y),
+	pl_send(Tid, Term),
+	pl_recv(Tid, Term).
 Calculator running...
-   Tid = 1, Response = sqrt(2,1.4142135623731).
+   Tid = 1, Term = sqrt(2,1.4142135623731), V = 1.4142135623731.
 ?-
 */

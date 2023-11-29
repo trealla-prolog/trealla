@@ -1103,11 +1103,14 @@ fast builtin channels. No marshalling of terms is done.
 			fail.
 
 	$ tpl
-	?- pl_consult(Tid,'samples/thread_calc.pl'), assertz(thread_calc(Tid)).
+	?- pl_consult(Tid, 'samples/thread_calc.pl'), assertz(thread_calc(Tid)).
 	Calculator running...
 	   Tid = 1.
-	?- thread_calc(Tid), pl_send(Tid,sqrt(2,Y)), pl_recv(Tid, Response).
-	   Tid = 1, Response = sqrt(2,1.4142135623731).
+	?- thread_calc(Tid),
+		Term = sqrt(2,V),
+		pl_send(Tid, Term),
+		pl_recv(Tid, Term).
+	   Tid = 1, Term = sqrt(2,1.4142135623731), V = 1.4142135623731..
 	?-
 ```
 
