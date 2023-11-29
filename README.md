@@ -1064,7 +1064,7 @@ An example:
 ```
 
 Concurrency (threads)
-===================
+=====================
 
 Multiple* high level *prolog* objects can be created and assigned to
 operating system threads in a C-wrapper program by calling
@@ -1080,6 +1080,29 @@ operating system threads in a C-wrapper program by calling
 Each such *prolog* instance is thread-safe. Such instances could use
 Unix domain sockets for IPC. See *src/trealla.h* for API.
 
+
+Concurrency (multi-threading)				##EXPERIMENTAL##
+=============================
+
+```
+	$ cat samples/thread_sqrt.pl
+	:- initialization(run).
+
+	run :-
+		repeat,
+			pl_recv(Tid, Term),
+			Term = sqrt(X,Y),
+			Y is sqrt(X),
+			pl_send(Tid, Term),
+			fail.
+
+	$ tpl
+	?- pl_consult(Tid,'samples/thread_sqrt.pl'),
+		pl_send(Tid,sqrt(2,Y)),
+		pl_recv(Tid, Response).
+	   Tid = 1, Response = sqrt(2,1.4142135623731).
+	?-
+```
 
 Concurrency (linda)							##EXPERIMENTAL##
 ===================
