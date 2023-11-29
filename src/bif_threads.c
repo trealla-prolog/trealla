@@ -93,6 +93,28 @@ typedef struct {
 static pl_thread g_pl_threads[MAX_PL_THREADS] = {0};
 static unsigned g_pl_cnt = 1;	// 0 is the first instance
 
+static void thread_suspend(pl_thread *t)
+{
+#ifdef _WIN32
+	SuspendThread(t->id);
+#else
+	pthread_mutex_lock(&t->mutex);
+	pthread_cond_wait(&t->cond, &t->mutex);
+	pthread_mutex_unlock(&t->mutex);
+#endif
+}
+
+static void thread_resume(pl_thread *t)
+{
+#ifdef _WIN32
+    ResumeThread(t->id);
+#else
+    pthread_mutex_lock(&t->mutex);
+    pthread_cond_signal(&t->cond);
+    pthread_mutex_unlock(&t->mutex);
+#endif
+}
+
 // NOTE: current implementation allows for queueing 1 item at a time.
 
 static cell *queue_to_chan(unsigned chan, const cell *c)
@@ -125,15 +147,7 @@ static bool do_pl_send(query *q, unsigned chan, cell *p1, pl_idx p1_ctx)
 	check_heap_error(queue_to_chan(chan, c));
 	pl_thread *t = &g_pl_threads[chan];
 	t->queue_chan = q->pl->chan;
-
-#ifdef _WIN32
-    ResumeThread(t->id);
-#else
-    pthread_mutex_lock(&t->mutex);
-    pthread_cond_signal(&t->cond);
-    pthread_mutex_unlock(&t->mutex);
-#endif
-
+    thread_resume(t);
 	lock_unlock(&t->guard);
 	return true;
 }
@@ -144,13 +158,7 @@ static bool do_pl_recv(query *q, cell *p1, pl_idx p1_ctx)
 
 	while (!t->queue_size) {
 		//printf("*** sleeping chan=%u\n", q->pl->chan);
-#ifdef _WIN32
-		SuspendThread(t->id);
-#else
-		pthread_mutex_lock(&t->mutex);
-		pthread_cond_wait(&t->cond, &t->mutex);
-		pthread_mutex_unlock(&t->mutex);
-#endif
+		thread_suspend(t);
 	}
 
 	//printf("*** awake=%u from=%u\n", q->pl->chan, t->queue_chan);
