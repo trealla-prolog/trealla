@@ -156,12 +156,9 @@ static bool do_pl_recv(query *q, cell *p1, pl_idx p1_ctx)
 {
 	pl_thread *t = &g_pl_threads[q->pl->chan];
 
-	while (!t->queue_size) {
-		//printf("*** sleeping chan=%u\n", q->pl->chan);
+	while (!t->queue_size)
 		thread_suspend(t);
-	}
 
-	//printf("*** awake=%u from=%u\n", q->pl->chan, t->queue_chan);
 	//printf("*** recv msg nbr_cells=%u\n", t->queue->nbr_cells);
 
 	lock_lock(&t->guard);
