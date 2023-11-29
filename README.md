@@ -1084,11 +1084,14 @@ Unix domain sockets for IPC. See *src/trealla.h* for API.
 Concurrency (multi-threading)				##EXPERIMENTAL##
 =============================
 
-Start multiple Prolog instances and comminucate via fast channels.
+Start multiple Prolog instances as threads and communucate via
+fast builtin channels. No marshalling of terms is done.
 
 ```
 	$ cat samples/thread_sqrt.pl
 	:- initialization(run).
+
+	% At the moment we only do sqrt
 
 	run :-
 		write('Square-root calculator running...'), nl,
