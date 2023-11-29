@@ -1084,6 +1084,8 @@ Unix domain sockets for IPC. See *src/trealla.h* for API.
 Concurrency (multi-threading)				##EXPERIMENTAL##
 =============================
 
+Start multiple Prolog instances and comminucate via fast channels.
+
 ```
 	$ cat samples/thread_sqrt.pl
 	:- initialization(run).
