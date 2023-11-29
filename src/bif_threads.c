@@ -40,7 +40,7 @@ typedef struct {
 #endif
 } lock;
 
-static void lock_init(lock *l)
+static void init_lock(lock *l)
 {
 #ifdef _WIN32
     InitializeCriticalSection(&l->mutex);
@@ -49,14 +49,14 @@ static void lock_init(lock *l)
 #endif
 }
 
-static void lock_done(lock *l)
+static void deinit_lock(lock *l)
 {
 #ifndef _WIN32
     pthread_mutex_destroy(&l->mutex);
 #endif
 }
 
-void lock_lock(lock *l)
+void acquire_lock(lock *l)
 {
 #ifdef _WIN32
     EnterCriticalSection(&l->mutex);
@@ -65,7 +65,7 @@ void lock_lock(lock *l)
 #endif
 }
 
-void lock_unlock(lock *l)
+void release_lock(lock *l)
 {
 #ifdef _WIN32
     LeaveCriticalSection(&l->mutex);
@@ -120,7 +120,7 @@ static void resume_thread(pl_thread *t)
 static cell *queue_to_chan(unsigned chan, const cell *c)
 {
 	pl_thread *t = &g_pl_threads[chan];
-	lock_lock(&t->guard);
+	acquire_lock(&t->guard);
 
 	if (!t->queue) {
 		t->queue = malloc(sizeof(cell)*c->nbr_cells);
@@ -174,7 +174,7 @@ static bool do_pl_recv(query *q, cell *p1, pl_idx p1_ctx)
 	chk_cells(c, c->nbr_cells);
 	t->queue_size = 0;
 	q->curr_chan = t->queue_chan;
-	lock_unlock(&t->guard);
+	release_lock(&t->guard);
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
 
@@ -203,7 +203,7 @@ static void *start_routine(pl_thread *t)
 {
 	prolog *pl = pl_create();
 	ensure(pl);
-	lock_init(&t->guard);
+	init_lock(&t->guard);
 	pl->chan = t->chan;
 	pl_consult(pl, t->filename);
     return 0;
