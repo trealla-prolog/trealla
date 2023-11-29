@@ -56,19 +56,6 @@ static void lock_done(lock *l)
 #endif
 }
 
-lock *lock_create(void)
-{
-    lock *l = (lock *)calloc(1, sizeof(lock));
-    lock_init(l);
-    return l;
-}
-
-void lock_destroy(lock *l)
-{
-    lock_done(l);
-    free(l);
-}
-
 void lock_lock(lock *l)
 {
 #ifdef _WIN32
