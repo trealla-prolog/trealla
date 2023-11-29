@@ -33,6 +33,61 @@ static void msleep(int ms)
 #if USE_THREADS
 
 typedef struct {
+#ifdef _WIN32
+    CRITICAL_SECTION mutex;
+#else
+    pthread_mutex_t mutex;
+#endif
+} lock;
+
+static void lock_init(lock *l)
+{
+#ifdef _WIN32
+    InitializeCriticalSection(&l->mutex);
+#else
+    pthread_mutex_init(&l->mutex, NULL);
+#endif
+}
+
+static void lock_done(lock *l)
+{
+#ifndef _WIN32
+    pthread_mutex_destroy(&l->mutex);
+#endif
+}
+
+lock *lock_create(void)
+{
+    lock *l = (lock *)calloc(1, sizeof(lock));
+    lock_init(l);
+    return l;
+}
+
+void lock_destroy(lock *l)
+{
+    lock_done(l);
+    free(l);
+}
+
+void lock_lock(lock *l)
+{
+#ifdef _WIN32
+    EnterCriticalSection(&l->mutex);
+#else
+    pthread_mutex_lock(&l->mutex);
+#endif
+}
+
+void lock_unlock(lock *l)
+{
+#ifdef _WIN32
+    LeaveCriticalSection(&l->mutex);
+#else
+    pthread_mutex_unlock(&l->mutex);
+#endif
+}
+
+typedef struct {
 	const char *filename;
 	cell *queue;
 	pl_idx queue_size;
