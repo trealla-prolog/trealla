@@ -114,7 +114,7 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		if (e1) e1->vgen = save_vgen;
 		if (e2) e2->vgen2 = save_vgen2;
 
-		if ((q->cycle_error > g_max_depth) || (q->cycle_error > 6000)) // ??
+		if (q->cycle_error > 10) // ??
 			break;
 #else
 		c1 = deref(q, p1, p1_ctx);
@@ -1097,7 +1097,7 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 		if (e1) e1->vgen = save_vgen;
 		if (e2) e2->vgen2 = save_vgen2;
 
-		if ((q->cycle_error > g_max_depth) || (q->cycle_error > 6000)) // ??
+		if (q->cycle_error > 10) // ??
 			break;
 #else
 		c1 = deref(q, c1, c1_ctx);
