@@ -92,6 +92,7 @@ bool bif_put_atts_2(query *q)
 		make_atom(tmp+1, new_atom(q->pl, m_name));
 		tmp[1].arity = 1;
 		cell *tmp2 = deep_clone_to_tmp(q, attr, p2_ctx);
+		check_heap_error(tmp2);
 		tmp[1].nbr_cells += tmp2->nbr_cells;
 	}
 
