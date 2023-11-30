@@ -1081,11 +1081,15 @@ Each such *prolog* instance is thread-safe. Such instances could use
 Unix domain sockets for IPC. See *src/trealla.h* for API.
 
 
-Concurrency (multi-threading)				##EXPERIMENTAL##
+Concurrency (Prolog threads)			##EXPERIMENTAL##
 =============================
 
-Start independent Prolog instances as threads and communucate via
+Start independent Prolog instances as threads and communicate via
 fast builtin channels. No marshalling of terms is done.
+
+	pl_thread/2				# pl_thread(-threadId,+filename)
+	pl_send/2				# pl_send(+threadId, @term)
+	pl_recv/2				# pl_recv(-threadId, @term)
 
 ```
 	$ cat samples/thread_calc.pl
