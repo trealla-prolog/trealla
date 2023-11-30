@@ -184,7 +184,7 @@ static bool bif_pl_send_2(query *q)
 
 static bool bif_pl_recv_2(query *q)
 {
-	GET_FIRST_ARG(p1,any);
+	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,any);
 	pl_thread *t = &g_pl_threads[q->pl->chan];
 
