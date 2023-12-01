@@ -759,19 +759,6 @@ current_op(A, B, C) :-
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-term_attvars_([], VsIn, VsIn).
-term_attvars_([H|T], VsIn, VsOut) :-
-	(	'$attributed_var'(H) ->
-		term_attvars_(T, [H|VsIn], VsOut)
-	;	term_attvars_(T, VsIn, VsOut)
-	).
-
-term_attvars(Term, Vs) :-
-	term_variables(Term, Vs0),
-	term_attvars_(Vs0, [], Vs).
-
-:- help(term_attvars(+term,-list), [iso(false)]).
-
 collect_goals_(_, [], GsIn, GsIn).
 collect_goals_(V, [H|T], GsIn, GsOut) :-
 	H =.. [M, _],
@@ -790,7 +777,7 @@ collect_goals_([V|T], GsIn, GsOut) :-
 
 copy_term(Term, Copy, Gs) :-
 	copy_term_nat(Term, Copy),
-	term_attvars(Term, Vs),
+	term_attributed_variables(Term, Vs),
 	collect_goals_(Vs, [], Gs).
 
 :- help(copy_term(+term,?term,+list), [iso(false)]).

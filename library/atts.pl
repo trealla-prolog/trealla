@@ -1,6 +1,7 @@
 :- module(atts, [
 		op(1150, fx, attribute),
-		call_residue_vars/2
+		call_residue_vars/2,
+		term_attributed_variables/2
 	]).
 
 :- use_module(library(apply)).
@@ -33,9 +34,22 @@ process_var_([Att|Atts], Var, Val, SoFar, Goals) :-
 	append(SoFar, NewGoals, MoreGoals),
 	process_var_(Atts, Var, Val, MoreGoals, Goals).
 
+term_attvars_([], VsIn, VsIn).
+term_attvars_([H|T], VsIn, VsOut) :-
+	(	'$attributed_var'(H) ->
+		term_attvars_(T, [H|VsIn], VsOut)
+	;	term_attvars_(T, VsIn, VsOut)
+	).
+
+term_attributed_variables(Term, Vs) :-
+	term_variables(Term, Vs0),
+	term_attvars_(Vs0, [], Vs).
+
+:- help(term_attributed_variables(+term,-list), [iso(false)]).
+
 call_residue_vars(Goal, Atts) :-
 	Goal,
-	term_attvars(Goal, Atts).
+	term_attributed_variables(Goal, Atts).
 
 :- meta_predicate(call_residue_vars(0, ?)).
 :- help(call_residue_vars(:callable, -list), [iso(false), desc('Find residual attributed variables left by Goal. This predicate is intended for reasoning about and debugging programs that use coroutining or constraints. To see why this predicate is necessary, consider a predicate that poses contradicting constraints on a variable, and where that variable does not appear in any argument of the predicate and hence does not yield any residual goals on the toplevel when the predicate is invoked. Such programs should fail, but sometimes succeed because the constraint solver is too weak to detect the contradiction. Ideally, delayed goals and constraints are all executed at the end of the computation. The meta predicate call_residue_vars/2 finds variables that are given attributes or whose attributes are modified by Goal, regardless of whether or not these variables are reachable from the arguments of Goal.')]).
