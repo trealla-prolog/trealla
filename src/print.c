@@ -409,10 +409,12 @@ static const char *get_slot_name(query *q, pl_idx slot_nbr)
 void print_variable(query *q, const cell *c, pl_idx c_ctx, bool running)
 {
 	const frame *f = GET_FRAME(running ? c_ctx : 0);
-	pl_idx slot_nbr = running ? (unsigned)(f->base + c->var_nbr) : (unsigned)c->var_nbr;
+	pl_idx slot_nbr = running ?
+		(GET_SLOT(f, c->var_nbr)-q->slots)
+		: (unsigned)c->var_nbr;
 
 	if ((q->varnames || q->cycle_error) && !is_anon(c) && running && (!q->cycle_error)) {
-		if (q->varnames && q->p->vartab.var_name[c->var_nbr] && (c_ctx == 0)) {
+		if (q->varnames && q->p->vartab.var_name[c->var_nbr]) {
 			SB_sprintf(q->sb, "%s", q->p->vartab.var_name[c->var_nbr]);
 		} else {
 			SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr));
