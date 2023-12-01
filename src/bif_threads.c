@@ -220,7 +220,7 @@ static bool bif_pl_thread_2(query *q)
 		return throw_error(q, p2, p2_ctx, "existence_error", "file");
 	}
 
-	uint chan = g_pl_cnt++;
+	unsigned chan = g_pl_cnt++;
 	pl_thread *t = &g_pl_threads[chan];
 	t->filename = filename;
 	t->chan = chan;
