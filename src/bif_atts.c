@@ -186,6 +186,7 @@ bool bif_sys_list_attributed_1(query *q)
 		cell *v = deref(q, c, q->st.curr_frame);
 		pl_idx v_ctx = q->latest_ctx;
 
+#if 0
 		if (is_interned(v)) {
 			collect_vars(q, v, v_ctx);
 
@@ -202,6 +203,7 @@ bool bif_sys_list_attributed_1(query *q)
 				append_list(q, &tmp);
 			}
 		}
+#endif
 
 		if (!is_empty(c) || !c->attrs)
 			continue;
