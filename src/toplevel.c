@@ -339,9 +339,9 @@ static bool any_attributed(query *q)
 		if (!is_empty(c) || !c->attrs)
 			continue;
 
-		cell *a = deref(q, c->attrs, c->attrs_ctx);
+		cell *a = c->attrs;
 
-		if (is_empty(a) || is_nil(a))
+		if (is_nil(a))
 			continue;
 
 		for (unsigned i = 0; i < a->nbr_cells; i++) {
