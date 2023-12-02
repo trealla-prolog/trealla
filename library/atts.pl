@@ -1,5 +1,5 @@
 :- module(atts, [
-		op(1150, fx, attribute),
+		op(1199, fx, attribute),
 		call_residue_vars/2,
 		term_attributed_variables/2
 	]).

@@ -216,7 +216,7 @@ bool bif_sys_list_attributed_1(query *q)
 		}
 #endif
 
-		if (!is_empty(c) || !c->attrs)
+		if (!c->attrs)
 			continue;
 
 		cell tmp;
