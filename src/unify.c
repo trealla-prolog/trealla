@@ -809,11 +809,7 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 		else if (v_ctx == q->st.fp)
 			q->no_tco = true;
 	} else if (is_var(v)) {
-		e->c.tag = TAG_VAR;
-		e->c.nbr_cells = 1;
-		e->c.flags |= FLAG_VAR_REF;
-		e->c.var_nbr = v->var_nbr;
-		e->c.var_ctx = v_ctx;
+		make_ref(&e->c, v->val_off, v->var_nbr, v_ctx);
 
 		if ((c_ctx != q->st.curr_frame) && (v_ctx == q->st.curr_frame))
 			q->no_tco = true;
