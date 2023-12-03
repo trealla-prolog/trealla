@@ -169,9 +169,6 @@ bool bif_get_atts_2(query *q)
 			if (is_minus)
 				return false;
 
-			if (is_nil(h+1))
-				return false;
-
 			return unify(q, attr, p2_ctx, h+1, l_ctx);
 		}
 
