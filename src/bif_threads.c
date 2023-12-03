@@ -230,14 +230,12 @@ static bool bif_pl_thread_2(query *q)
     sa.nLength = sizeof(sa);
     sa.lpSecurityDescriptor = 0;
     sa.bInheritHandle = 0;
-    typedef unsigned(_stdcall * start_routine_t)(void *);
-    t->id = _beginthreadex(&sa, 0, (start_routine_t)start_routine, (void*)t, 0, NULL);
+    t->id = (void*)_beginthreadex(&sa, 0, (void*)start_routine, (void*)t, 0, NULL);
 #else
-    typedef void *(*start_routine_t)(void *);
     pthread_attr_t sa;
     pthread_attr_init(&sa);
     pthread_attr_setdetachstate(&sa, PTHREAD_CREATE_DETACHED);
-    pthread_create((pthread_t*)&t->id, &sa, (start_routine_t)start_routine, (void*)t);
+    pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine, (void*)t);
 #endif
 
 	msleep(100);
