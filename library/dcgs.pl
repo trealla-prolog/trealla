@@ -30,6 +30,7 @@ dcg_translate(TermIn, Term) :-
 	dcg_rule(TermIn, Term).
 
 :- meta_predicate phrase(2, ?).
+
 :- meta_predicate phrase(2, ?, ?).
 
 %% phrase(+Body, ?Ls).
@@ -107,7 +108,10 @@ dcg_rule(( NonTerminal --> GRBody ), ( Head :- Body )) :-
 dcg_non_terminal(NonTerminal, S0, S, Goal) :-
     NonTerminal =.. NonTerminalUniv,
     append(NonTerminalUniv, [S0, S], GoalUniv),
-    Goal =.. GoalUniv.
+    (  callable(NonTerminal) ->
+       Goal =.. GoalUniv
+    ;  Goal = NonTerminal % let call/N throw an error instead of throwing one here.
+    ).
 
 dcg_terminals(Terminals, S0, S, S0 = List) :-
     append(Terminals, S, List).
@@ -174,11 +178,10 @@ dcg_cbody(( GRIf -> GRThen ), S0, S, ( If -> Then )) :-
     dcg_body(GRIf, S0, S1, If),
     dcg_body(GRThen, S1, S, Then).
 
-/*
 user:term_expansion(Term0, Term) :-
     nonvar(Term0),
     dcg_rule(Term0, Term).
-*/
+
 
 %% seq(Seq)//
 %
