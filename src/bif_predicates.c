@@ -5618,7 +5618,7 @@ static bool bif_char_type_2(query *q)
 	else if (!CMP_STRING_TO_CSTR(q, p2, "graphic_token"))	// ???
 		return iswgraph(ch) && !iswalnum(ch);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "ascii_graphic"))	// ???
-		return iswgraph(ch) && !iswalnum(ch) && (ch < 128);
+		return iswgraph(ch) && iswalnum(ch) && (ch < 128);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "ascii"))
 		return ch < 128;
 	else if (!CMP_STRING_TO_CSTR(q, p2, "ascii_punctuation"))
@@ -5634,10 +5634,12 @@ static bool bif_char_type_2(query *q)
 	else if (!CMP_STRING_TO_CSTR(q, p2, "meta"))
 		return (ch == '\'') || (ch == '"') || (ch == '`') || (ch == '\\');
 	else if (!CMP_STRING_TO_CSTR(q, p2, "solo"))
-		return (ch == '|') || (ch == '!')
+		return (ch == '|') || (ch == '!') || (ch == '%')
 			|| (ch == '[') || (ch == ']')
 			|| (ch == '{') || (ch == '}')
-			|| (ch == '(') || (ch == ')');
+			|| (ch == '(') || (ch == ')')
+			|| (ch == '%')
+			;
 
 	return false;
 }
