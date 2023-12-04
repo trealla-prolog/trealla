@@ -5638,7 +5638,6 @@ static bool bif_char_type_2(query *q)
 			|| (ch == '[') || (ch == ']')
 			|| (ch == '{') || (ch == '}')
 			|| (ch == '(') || (ch == ')')
-			|| (ch == '%')
 			;
 
 	return false;
