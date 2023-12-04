@@ -15,12 +15,9 @@
 
 void convert_path(char *filename);
 
-static const size_t INITIAL_POOL_SIZE = 64000;	// bytes
-
 static skiplist *s_symtab;
-static size_t s_pool_size = INITIAL_POOL_SIZE, s_pool_offset = 0;
+static size_t s_pool_size = 64000, s_pool_offset = 0;
 char *g_pool = NULL;
-
 
 pl_idx g_empty_s, g_dot_s, g_cut_s, g_nil_s, g_true_s, g_fail_s;
 pl_idx g_anon_s, g_neck_s, g_eof_s, g_lt_s, g_gt_s, g_eq_s, g_false_s;
