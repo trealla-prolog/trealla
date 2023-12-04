@@ -4115,7 +4115,7 @@ static bool bif_is_list_or_partial_list_1(query *q)
 static bool bif_must_be_4(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	GET_NEXT_ARG(p2,callable);
+	GET_NEXT_ARG(p2,atom);
 	GET_NEXT_ARG(p3,callable);
 	GET_NEXT_ARG(p4,any);
 
@@ -4376,7 +4376,7 @@ static bool bif_must_be_2(query *q)
 static bool bif_can_be_4(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	GET_NEXT_ARG(p2,callable);
+	GET_NEXT_ARG(p2,atom);
 	GET_NEXT_ARG(p3,callable);
 	GET_NEXT_ARG(p4,any);
 
