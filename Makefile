@@ -192,109 +192,196 @@ clean:
 
 # from [gcc|clang] -MM src/*.c src/imath/*.c src/isocline/src/*.c src/sre/*.c src/skiplist/skiplist.c src/utf8/utf8.c
 
-src/bif_atts.o: src/bif_atts.c src/bif_atts.h src/trealla.h src/internal.h \
-  src/cdebug.h src/stringbuf.h src/query.h src/builtins.h
-src/base64.o: src/base64.c src/base64.h
-src/bif_contrib.o: src/bif_contrib.c src/trealla.h src/internal.h \
-  src/skiplist/skiplist.h src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
-  src/query.h src/builtins.h
-src/bif_control.o: src/bif_control.c src/heap.h src/internal.h \
-  src/skiplist/skiplist.h src/trealla.h src/cdebug.h src/stringbuf.h \
-  src/imath/imath.h src/imath/imrat.h src/module.h src/parser.h src/prolog.h src/query.h \
-  src/builtins.h
-src/bif_csv.o: src/bif_csv.c src/heap.h src/prolog.h src/internal.h src/skiplist/skiplist.h \
-  src/trealla.h src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
-  src/module.h src/parser.h src/query.h src/builtins.h
-src/bif_database.o: src/bif_database.c src/base64.h src/heap.h src/internal.h \
-  src/skiplist/skiplist.h src/trealla.h src/cdebug.h src/stringbuf.h \
-  src/imath/imath.h src/imath/imrat.h src/history.h src/library.h src/module.h src/sre/re.h \
-  src/parser.h src/prolog.h src/query.h src/builtins.h src/utf8/utf8.h
-src/bif_ffi.o: src/bif_ffi.c src/heap.h src/prolog.h src/internal.h src/skiplist/skiplist.h \
-  src/trealla.h src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
-  src/module.h src/parser.h src/query.h src/builtins.h
-src/bif_format.o: src/bif_format.c src/network.h src/internal.h \
-  src/skiplist/skiplist.h src/trealla.h src/cdebug.h src/stringbuf.h \
-  src/imath/imath.h src/imath/imrat.h src/query.h src/builtins.h src/utf8/utf8.h
-src/bif_functions.o: src/bif_functions.c src/heap.h src/internal.h \
-  src/skiplist/skiplist.h src/trealla.h src/cdebug.h src/stringbuf.h \
-  src/imath/imath.h src/imath/imrat.h src/module.h src/prolog.h src/query.h src/builtins.h
-src/heap.o: src/heap.c src/heap.h src/internal.h src/skiplist/skiplist.h \
-  src/trealla.h src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
-  src/query.h src/builtins.h
-src/history.o: src/history.c src/history.h src/utf8/utf8.h src/cdebug.h
-src/library.o: src/library.c src/library.h
-src/bif_maps.o: src/bif_maps.c src/module.h src/internal.h \
-  src/skiplist/skiplist.h src/trealla.h src/cdebug.h src/stringbuf.h \
-  src/imath/imath.h src/imath/imrat.h src/parser.h src/prolog.h src/query.h src/builtins.h \
-  src/utf8/utf8.h
-src/module.o: src/module.c src/module.h src/internal.h \
-  src/skiplist/skiplist.h src/trealla.h src/cdebug.h src/stringbuf.h \
-  src/imath/imath.h src/imath/imrat.h src/parser.h src/prolog.h src/query.h src/builtins.h \
-  src/utf8/utf8.h
-src/network.o: src/network.c src/network.h src/internal.h \
-  src/skiplist/skiplist.h src/trealla.h src/cdebug.h src/stringbuf.h \
-  src/imath/imath.h src/imath/imrat.h src/query.h src/builtins.h
-src/parser.o: src/parser.c src/heap.h src/internal.h src/skiplist/skiplist.h \
-  src/trealla.h src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
-  src/library.h src/module.h src/parser.h src/prolog.h src/query.h \
-  src/builtins.h src/utf8/utf8.h
-src/bif_posix.o: src/bif_posix.c src/trealla.h src/internal.h \
-  src/skiplist/skiplist.h src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
-  src/heap.h src/prolog.h src/query.h src/builtins.h
-src/bif_predicates.o: src/bif_predicates.c src/bif_atts.h src/base64.h src/heap.h src/internal.h \
-  src/skiplist/skiplist.h src/trealla.h src/cdebug.h src/stringbuf.h \
-  src/imath/imath.h src/imath/imrat.h src/history.h src/library.h src/module.h src/sre/re.h \
-  src/parser.h src/prolog.h src/query.h src/builtins.h src/utf8/utf8.h
-src/print.o: src/print.c src/heap.h src/internal.h src/skiplist/skiplist.h \
-  src/trealla.h src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
-  src/module.h src/network.h src/parser.h src/query.h src/builtins.h \
-  src/utf8/utf8.h
-src/prolog.o: src/prolog.c src/library.h src/module.h src/internal.h \
-  src/skiplist/skiplist.h src/trealla.h src/cdebug.h src/stringbuf.h \
-  src/imath/imath.h src/imath/imrat.h src/parser.h src/prolog.h src/query.h src/builtins.h
-src/query.o: src/query.c src/bif_atts.h src/heap.h src/internal.h src/skiplist/skiplist.h \
-  src/trealla.h src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
-  src/module.h src/network.h src/parser.h src/prolog.h src/query.h \
-  src/builtins.h src/utf8/utf8.h
-src/skiplist.o: src/skiplist/skiplist.c src/skiplist/skiplist.h
-src/bif_sregex.o: src/bif_sregex.c src/heap.h src/internal.h \
-  src/skiplist/skiplist.h src/trealla.h src/cdebug.h src/stringbuf.h \
-  src/imath/imath.h src/imath/imrat.h src/module.h src/network.h src/parser.h src/prolog.h \
-  src/query.h src/builtins.h src/utf8/utf8.h
-src/bif_streams.o: src/bif_streams.c src/heap.h src/internal.h \
-  src/skiplist/skiplist.h src/trealla.h src/cdebug.h src/stringbuf.h \
-  src/imath/imath.h src/imath/imrat.h src/module.h src/network.h src/parser.h src/prolog.h \
-  src/query.h src/builtins.h src/utf8/utf8.h
-src/bif_tasks.o: src/bif_tasks.c src/bif_atts.h src/base64.h src/heap.h src/internal.h \
-  src/skiplist/skiplist.h src/trealla.h src/cdebug.h src/stringbuf.h \
-  src/imath/imath.h src/imath/imrat.h src/history.h src/library.h src/module.h src/sre/re.h \
-  src/parser.h src/prolog.h src/query.h src/builtins.h src/utf8/utf8.h
-src/toplevel.o: src/toplevel.c src/heap.h src/internal.h \
-  src/skiplist/skiplist.h src/trealla.h src/cdebug.h src/stringbuf.h \
-  src/imath/imath.h src/imath/imrat.h src/history.h src/module.h src/parser.h src/prolog.h \
-  src/query.h src/builtins.h src/utf8/utf8.h
-src/unify.o: src/unify.c src/heap.h src/internal.h src/skiplist/skiplist.h \
-  src/trealla.h src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
-  src/module.h src/query.h src/builtins.h src/utf8/utf8.h
-src/utf8.o: src/utf8/utf8.c src/utf8/utf8.h
-src/version.o: src/version.c
-src/imath.o: src/imath/imath.c src/imath/imath.h
-src/imrat.o: src/imath/imrat.c src/imath/imath.h src/imath/imrat.h
-src/re.o: src/sre/re.c src/sre/re.h
-src/isocline.o: src/isocline/src/isocline.c src/isocline/src/attr.c \
-  src/isocline/src/common.h src/isocline/src/../include/isocline.h \
-  src/isocline/src/stringbuf.h src/isocline/src/attr.h \
-  src/isocline/src/term.h src/isocline/src/tty.h \
-  src/isocline/src/bbcode.c src/isocline/src/bbcode.h \
-  src/isocline/src/bbcode_colors.c src/isocline/src/editline.c \
-  src/isocline/src/env.h src/isocline/src/history.h \
-  src/isocline/src/completions.h src/isocline/src/undo.h \
-  src/isocline/src/highlight.h src/isocline/src/editline_help.c \
-  src/isocline/src/editline_history.c \
-  src/isocline/src/editline_completion.c src/isocline/src/highlight.c \
-  src/isocline/src/undo.c src/isocline/src/history.c \
-  src/isocline/src/completers.c src/isocline/src/completions.c \
-  src/isocline/src/term.c src/isocline/src/term_color.c \
-  src/isocline/src/tty_esc.c src/isocline/src/tty.c \
-  src/isocline/src/stringbuf.c src/isocline/src/wcwidth.c \
-  src/isocline/src/common.c
+base64.o: src/base64.c src/base64.h
+bif_atts.o: src/bif_atts.c src/heap.h src/internal.h src/trealla.h \
+ src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
+ src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h \
+ src/module.h src/parser.h src/prolog.h src/query.h src/builtins.h \
+ src/bif_atts.h
+bif_contrib.o: src/bif_contrib.c src/trealla.h src/internal.h \
+ src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
+ src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h \
+ src/query.h src/parser.h src/builtins.h
+bif_control.o: src/bif_control.c src/heap.h src/internal.h src/trealla.h \
+ src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
+ src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h \
+ src/module.h src/parser.h src/prolog.h src/query.h src/builtins.h
+bif_csv.o: src/bif_csv.c src/heap.h src/internal.h src/trealla.h \
+ src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
+ src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h \
+ src/module.h src/query.h src/parser.h src/builtins.h
+bif_database.o: src/bif_database.c src/base64.h src/heap.h src/internal.h \
+ src/trealla.h src/cdebug.h src/stringbuf.h src/imath/imath.h \
+ src/imath/imrat.h src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h \
+ src/utf8/utf8.h src/history.h src/library.h src/module.h src/parser.h \
+ src/prolog.h src/query.h src/builtins.h
+bif_ffi.o: src/bif_ffi.c src/prolog.h src/internal.h src/trealla.h \
+ src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
+ src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h \
+ src/module.h src/query.h src/parser.h src/builtins.h src/heap.h
+bif_format.o: src/bif_format.c src/network.h src/internal.h src/trealla.h \
+ src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
+ src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h \
+ src/query.h src/parser.h src/builtins.h
+bif_functions.o: src/bif_functions.c src/heap.h src/internal.h \
+ src/trealla.h src/cdebug.h src/stringbuf.h src/imath/imath.h \
+ src/imath/imrat.h src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h \
+ src/utf8/utf8.h src/module.h src/prolog.h src/query.h src/parser.h \
+ src/builtins.h
+bif_maps.o: src/bif_maps.c src/heap.h src/internal.h src/trealla.h \
+ src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
+ src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h \
+ src/prolog.h src/query.h src/parser.h src/builtins.h
+bif_posix.o: src/bif_posix.c src/trealla.h src/internal.h src/cdebug.h \
+ src/stringbuf.h src/imath/imath.h src/imath/imrat.h src/imath/imath.h \
+ src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h src/heap.h \
+ src/prolog.h src/query.h src/parser.h src/builtins.h
+bif_predicates.o: src/bif_predicates.c src/base64.h src/heap.h \
+ src/internal.h src/trealla.h src/cdebug.h src/stringbuf.h \
+ src/imath/imath.h src/imath/imrat.h src/imath/imath.h src/sre/re.h \
+ src/skiplist/skiplist.h src/utf8/utf8.h src/history.h src/library.h \
+ src/module.h src/parser.h src/prolog.h src/query.h src/builtins.h \
+ src/bif_atts.h
+bif_sregex.o: src/bif_sregex.c src/history.h src/trealla.h src/prolog.h \
+ src/internal.h src/cdebug.h src/stringbuf.h src/imath/imath.h \
+ src/imath/imrat.h src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h \
+ src/utf8/utf8.h src/query.h src/parser.h src/builtins.h
+bif_streams.o: src/bif_streams.c src/heap.h src/internal.h src/trealla.h \
+ src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
+ src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h \
+ src/module.h src/network.h src/parser.h src/prolog.h src/query.h \
+ src/builtins.h
+bif_tasks.o: src/bif_tasks.c src/base64.h src/heap.h src/internal.h \
+ src/trealla.h src/cdebug.h src/stringbuf.h src/imath/imath.h \
+ src/imath/imrat.h src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h \
+ src/utf8/utf8.h src/history.h src/library.h src/module.h src/parser.h \
+ src/prolog.h src/query.h src/builtins.h src/bif_atts.h
+heap.o: src/heap.c src/heap.h src/internal.h src/trealla.h src/cdebug.h \
+ src/stringbuf.h src/imath/imath.h src/imath/imrat.h src/imath/imath.h \
+ src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h src/prolog.h \
+ src/query.h src/parser.h src/builtins.h
+history.o: src/history.c src/internal.h src/trealla.h src/cdebug.h \
+ src/stringbuf.h src/imath/imath.h src/imath/imrat.h src/imath/imath.h \
+ src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h src/history.h \
+ src/prolog.h
+library.o: src/library.c src/library.h
+module.o: src/module.c src/module.h src/internal.h src/trealla.h \
+ src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
+ src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h \
+ src/parser.h src/history.h src/library.h src/prolog.h src/query.h \
+ src/builtins.h
+network.o: src/network.c src/history.h src/trealla.h src/network.h \
+ src/internal.h src/cdebug.h src/stringbuf.h src/imath/imath.h \
+ src/imath/imrat.h src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h \
+ src/utf8/utf8.h src/query.h src/parser.h src/builtins.h
+parser.o: src/parser.c src/heap.h src/internal.h src/trealla.h \
+ src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
+ src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h \
+ src/history.h src/library.h src/module.h src/parser.h src/prolog.h \
+ src/query.h src/builtins.h
+print.o: src/print.c src/heap.h src/internal.h src/trealla.h src/cdebug.h \
+ src/stringbuf.h src/imath/imath.h src/imath/imrat.h src/imath/imath.h \
+ src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h src/module.h \
+ src/network.h src/parser.h src/query.h src/builtins.h
+prolog.o: src/prolog.c src/library.h src/module.h src/internal.h \
+ src/trealla.h src/cdebug.h src/stringbuf.h src/imath/imath.h \
+ src/imath/imrat.h src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h \
+ src/utf8/utf8.h src/parser.h src/prolog.h src/query.h src/builtins.h
+query.o: src/query.c src/heap.h src/internal.h src/trealla.h src/cdebug.h \
+ src/stringbuf.h src/imath/imath.h src/imath/imrat.h src/imath/imath.h \
+ src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h src/module.h \
+ src/network.h src/parser.h src/prolog.h src/query.h src/builtins.h \
+ src/bif_atts.h
+toplevel.o: src/toplevel.c src/heap.h src/internal.h src/trealla.h \
+ src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
+ src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h \
+ src/history.h src/module.h src/prolog.h src/query.h src/parser.h \
+ src/builtins.h
+unify.o: src/unify.c src/heap.h src/internal.h src/trealla.h src/cdebug.h \
+ src/stringbuf.h src/imath/imath.h src/imath/imrat.h src/imath/imath.h \
+ src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h src/query.h \
+ src/parser.h src/builtins.h
+version.o: src/version.c
+imath.o: src/imath/imath.c src/imath/imath.h
+imrat.o: src/imath/imrat.c src/imath/imrat.h src/imath/imath.h
+attr.o: src/isocline/src/attr.c src/isocline/src/common.h \
+ src/isocline/src/../include/isocline.h src/isocline/src/stringbuf.h \
+ src/isocline/src/attr.h src/isocline/src/term.h src/isocline/src/tty.h
+bbcode.o: src/isocline/src/bbcode.c src/isocline/src/common.h \
+ src/isocline/src/../include/isocline.h src/isocline/src/attr.h \
+ src/isocline/src/stringbuf.h src/isocline/src/term.h \
+ src/isocline/src/tty.h src/isocline/src/bbcode.h \
+ src/isocline/src/bbcode_colors.c
+bbcode_colors.o: src/isocline/src/bbcode_colors.c \
+ src/isocline/src/common.h src/isocline/src/../include/isocline.h
+common.o: src/isocline/src/common.c src/isocline/src/common.h \
+ src/isocline/src/../include/isocline.h
+completers.o: src/isocline/src/completers.c \
+ src/isocline/src/../include/isocline.h src/isocline/src/common.h \
+ src/isocline/src/env.h src/isocline/src/term.h src/isocline/src/tty.h \
+ src/isocline/src/stringbuf.h src/isocline/src/attr.h \
+ src/isocline/src/history.h src/isocline/src/completions.h \
+ src/isocline/src/bbcode.h
+completions.o: src/isocline/src/completions.c \
+ src/isocline/src/../include/isocline.h src/isocline/src/common.h \
+ src/isocline/src/env.h src/isocline/src/term.h src/isocline/src/tty.h \
+ src/isocline/src/stringbuf.h src/isocline/src/attr.h \
+ src/isocline/src/history.h src/isocline/src/completions.h \
+ src/isocline/src/bbcode.h
+editline.o: src/isocline/src/editline.c src/isocline/src/common.h \
+ src/isocline/src/../include/isocline.h src/isocline/src/term.h \
+ src/isocline/src/tty.h src/isocline/src/stringbuf.h \
+ src/isocline/src/attr.h src/isocline/src/env.h \
+ src/isocline/src/history.h src/isocline/src/completions.h \
+ src/isocline/src/bbcode.h src/isocline/src/undo.h \
+ src/isocline/src/highlight.h src/isocline/src/editline_help.c \
+ src/isocline/src/editline_history.c \
+ src/isocline/src/editline_completion.c
+editline_completion.o: src/isocline/src/editline_completion.c
+editline_help.o: src/isocline/src/editline_help.c
+editline_history.o: src/isocline/src/editline_history.c
+highlight.o: src/isocline/src/highlight.c src/isocline/src/common.h \
+ src/isocline/src/../include/isocline.h src/isocline/src/term.h \
+ src/isocline/src/tty.h src/isocline/src/stringbuf.h \
+ src/isocline/src/attr.h src/isocline/src/bbcode.h
+history.o: src/isocline/src/history.c \
+ src/isocline/src/../include/isocline.h src/isocline/src/common.h \
+ src/isocline/src/history.h src/isocline/src/stringbuf.h
+isocline.o: src/isocline/src/isocline.c src/isocline/src/attr.c \
+ src/isocline/src/common.h src/isocline/src/../include/isocline.h \
+ src/isocline/src/stringbuf.h src/isocline/src/attr.h \
+ src/isocline/src/term.h src/isocline/src/tty.h src/isocline/src/bbcode.c \
+ src/isocline/src/bbcode.h src/isocline/src/bbcode_colors.c \
+ src/isocline/src/editline.c src/isocline/src/env.h \
+ src/isocline/src/history.h src/isocline/src/completions.h \
+ src/isocline/src/undo.h src/isocline/src/highlight.h \
+ src/isocline/src/editline_help.c src/isocline/src/editline_history.c \
+ src/isocline/src/editline_completion.c src/isocline/src/highlight.c \
+ src/isocline/src/undo.c src/isocline/src/history.c \
+ src/isocline/src/completers.c src/isocline/src/completions.c \
+ src/isocline/src/term.c src/isocline/src/term_color.c \
+ src/isocline/src/tty_esc.c src/isocline/src/tty.c \
+ src/isocline/src/stringbuf.c src/isocline/src/wcwidth.c \
+ src/isocline/src/common.c
+stringbuf.o: src/isocline/src/stringbuf.c src/isocline/src/wcwidth.c \
+ src/isocline/src/common.h src/isocline/src/../include/isocline.h \
+ src/isocline/src/stringbuf.h
+term.o: src/isocline/src/term.c src/isocline/src/common.h \
+ src/isocline/src/../include/isocline.h src/isocline/src/tty.h \
+ src/isocline/src/term.h src/isocline/src/stringbuf.h \
+ src/isocline/src/attr.h src/isocline/src/term_color.c
+term_color.o: src/isocline/src/term_color.c
+tty.o: src/isocline/src/tty.c src/isocline/src/tty.h \
+ src/isocline/src/common.h src/isocline/src/../include/isocline.h
+tty_esc.o: src/isocline/src/tty_esc.c src/isocline/src/tty.h \
+ src/isocline/src/common.h src/isocline/src/../include/isocline.h
+undo.o: src/isocline/src/undo.c src/isocline/src/../include/isocline.h \
+ src/isocline/src/common.h src/isocline/src/env.h src/isocline/src/term.h \
+ src/isocline/src/tty.h src/isocline/src/stringbuf.h \
+ src/isocline/src/attr.h src/isocline/src/history.h \
+ src/isocline/src/completions.h src/isocline/src/bbcode.h \
+ src/isocline/src/undo.h
+wcwidth.o: src/isocline/src/wcwidth.c
+re.o: src/sre/re.c src/sre/re.h
+skiplist.o: src/skiplist/skiplist.c src/skiplist/skiplist.h
+utf8.o: src/utf8/utf8.c src/utf8/utf8.h
