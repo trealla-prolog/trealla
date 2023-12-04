@@ -248,8 +248,7 @@ static bool bif_iso_notunify_2(query *q)
 	SET_OP(&tmp2, OP_XFX);
 	cell *tmp = prepare_call(q, true, &tmp2, q->st.curr_frame, p1->nbr_cells+p2->nbr_cells+4);
 	pl_idx nbr_cells = PREFIX_LEN;
-	tmp[nbr_cells].nbr_cells += p1->nbr_cells+p2->nbr_cells;
-	nbr_cells++;
+	tmp[nbr_cells++].nbr_cells += p1->nbr_cells+p2->nbr_cells;
 	safe_copy_cells_by_ref(tmp+nbr_cells, p1, p1_ctx, p1->nbr_cells);
 	nbr_cells += p1->nbr_cells;
 	safe_copy_cells_by_ref(tmp+nbr_cells, p2, p2_ctx, p2->nbr_cells);
