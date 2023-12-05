@@ -4228,7 +4228,7 @@ static bool bif_must_be_4(query *q)
 
 		if (!check_list(q, p1, p1_ctx, &is_partial, NULL)) {
 			if (is_partial)
-				return throw_error(q, p1, p1_ctx, "uninstantiation_error", "list");
+				return throw_error(q, p1, p1_ctx, "instantiation_error", "list");
 			else
 				return throw_error(q, p1, p1_ctx, "type_error", "list");
 		}
@@ -4367,7 +4367,7 @@ static bool bif_must_be_2(query *q)
 
 		if (!check_list(q, p1, p1_ctx, &is_partial, NULL)) {
 			if (is_partial)
-				return throw_error(q, p1, p1_ctx, "uninstantiation_error", "list");
+				return throw_error(q, p1, p1_ctx, "instantiation_error", "list");
 			else
 				return throw_error(q, p1, p1_ctx, "type_error", "list");
 		}
