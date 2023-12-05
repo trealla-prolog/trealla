@@ -4226,8 +4226,12 @@ static bool bif_must_be_4(query *q)
 	} else if (!strcmp(src, "list")) {
 		bool is_partial;
 
-		if (!check_list(q, p1, p1_ctx, &is_partial, NULL))
-			return throw_error2(q, p1, p1_ctx, "type_error", "list", p3);
+		if (!check_list(q, p1, p1_ctx, &is_partial, NULL)) {
+			if (is_partial)
+				return throw_error(q, p1, p1_ctx, "uninstantiation_error", "list");
+			else
+				return throw_error(q, p1, p1_ctx, "type_error", "list");
+		}
 	} else if (!strcmp(src, "list_or_partial_list")) {
 		bool is_partial;
 
@@ -4361,8 +4365,12 @@ static bool bif_must_be_2(query *q)
 	} else if (!strcmp(src, "list")) {
 		bool is_partial;
 
-		if (!check_list(q, p1, p1_ctx, &is_partial, NULL))
-			return throw_error(q, p1, p1_ctx, "type_error", "list");
+		if (!check_list(q, p1, p1_ctx, &is_partial, NULL)) {
+			if (is_partial)
+				return throw_error(q, p1, p1_ctx, "uninstantiation_error", "list");
+			else
+				return throw_error(q, p1, p1_ctx, "type_error", "list");
+		}
 	} else if (!strcmp(src, "list_or_partial_list")) {
 		bool is_partial;
 
