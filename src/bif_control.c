@@ -141,6 +141,9 @@ bool bif_iso_call_n(query *q)
 		p1 += 2;
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
+
+		if (!is_callable(p1))
+			return throw_error(q, p1, p1_ctx, "type_error", "callable");
 	}
 
 	check_heap_error(init_tmp_heap(q));
