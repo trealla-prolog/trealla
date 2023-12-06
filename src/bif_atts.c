@@ -74,7 +74,7 @@ bool bif_put_atts_2(query *q)
 		tmp->nbr_cells += 1+attr->nbr_cells;
 		make_atom(tmp+1, new_atom(q->pl, m_name));
 		tmp[1].arity = 1;
-		cell *tmp2 = deep_clone_to_tmp(q, attr, p2_ctx);
+		cell *tmp2 = clone_to_tmp(q, attr);
 		check_heap_error(tmp2);
 		cell *tmp3 = get_tmp_heap(q, 1);
 		tmp3->nbr_cells += tmp2->nbr_cells;
