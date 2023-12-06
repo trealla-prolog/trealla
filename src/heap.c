@@ -84,6 +84,7 @@ cell *init_tmp_heap(query *q)
 	}
 
 	q->tmphp = 0;
+	q->cycle_error = false;
 	return q->tmp_heap;
 }
 
