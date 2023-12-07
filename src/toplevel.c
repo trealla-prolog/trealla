@@ -334,12 +334,7 @@ static bool any_attributed(query *q)
 			}
 		}
 
-		if (!is_empty(c) || !c->attrs)
-			continue;
-
-		cell *a = c->attrs;
-
-		if (is_nil(a))
+		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
 			continue;
 
 		return false;
