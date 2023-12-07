@@ -121,7 +121,7 @@ bool bif_get_atts_2(query *q)
 	bool is_minus = !is_var(p2) && p2->val_off == g_minus_s;
 	slot *e = GET_SLOT(f, p1->var_nbr);
 
-	if (!e->c.attrs)
+	if (!e->c.attrs || is_nil(e->c.attrs))
 		return is_minus ? true : false;
 
 	if (is_var(p2)) {
@@ -213,7 +213,7 @@ bool bif_sys_list_attributed_1(query *q)
 		}
 #endif
 
-		if (!is_empty(c) || !c->attrs)
+		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
 			continue;
 
 		cell tmp;
@@ -232,7 +232,7 @@ bool bif_sys_attributed_var_1(query *q)
 	const frame *f = GET_FRAME(p1_ctx);
 	slot *e = GET_SLOT(f, p1->var_nbr);
 
-	if (!e->c.attrs)
+	if (!e->c.attrs || is_nil(e->c.attrs))
 		return false;
 
 	cell *l = e->c.attrs;
