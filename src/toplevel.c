@@ -316,6 +316,8 @@ static bool any_attributed(query *q)
 	for (unsigned i = 0; i < p->nbr_vars; i++) {
 		slot *e = GET_SLOT(f, i);
 		cell *c = &e->c;
+
+#if 0
 		cell *v = deref(q, c, 0);
 		pl_idx v_ctx = q->latest_ctx;
 
@@ -333,11 +335,12 @@ static bool any_attributed(query *q)
 				return true;
 			}
 		}
+#endif
 
 		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
 			continue;
 
-		return false;
+		return true;
 	}
 
 	return false;

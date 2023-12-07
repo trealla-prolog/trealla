@@ -203,7 +203,7 @@ bool bif_sys_list_attributed_1(query *q)
 				slot *ve = GET_SLOT(vf, q->pl->tabs[i].var_nbr);
 				cell *v = &ve->c;
 
-				if (!is_empty(v) || !v->attrs)
+				if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
 					continue;
 
 				cell tmp;
