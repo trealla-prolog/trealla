@@ -308,6 +308,17 @@ static int varunformat(const char *s)
 	return (int)j;
 }
 
+bool query_redo(query *q)
+{
+	if (!q->cp)
+		return false;
+
+	q->is_redo = true;
+	q->retry = QUERY_RETRY;
+	q->pl->did_dump_vars = false;
+	return start(q);
+}
+
 static bool any_attributed(query *q)
 {
 	const parser *p = q->p;
@@ -344,17 +355,6 @@ static bool any_attributed(query *q)
 	}
 
 	return false;
-}
-
-bool query_redo(query *q)
-{
-	if (!q->cp)
-		return false;
-
-	q->is_redo = true;
-	q->retry = QUERY_RETRY;
-	q->pl->did_dump_vars = false;
-	return start(q);
 }
 
 void dump_vars(query *q, bool partial)
