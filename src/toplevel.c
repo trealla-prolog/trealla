@@ -319,7 +319,6 @@ static bool any_attributed(query *q)
 		cell *v = deref(q, c, 0);
 		pl_idx v_ctx = q->latest_ctx;
 
-#if 0
 		if (is_interned(v)) {
 			collect_vars(q, v, v_ctx);
 
@@ -334,7 +333,6 @@ static bool any_attributed(query *q)
 				return true;
 			}
 		}
-#endif
 
 		if (!is_empty(c) || !c->attrs)
 			continue;
@@ -343,15 +341,6 @@ static bool any_attributed(query *q)
 
 		if (is_nil(a))
 			continue;
-
-		for (unsigned i = 0; i < a->nbr_cells; i++) {
-			if (is_var(&a[i])) {
-				cell *a2 = deref(q, &a[i], c->attrs_ctx);
-
-				if (is_var(a2))
-					return true;
-			}
-		}
 
 		return false;
 	}
