@@ -357,9 +357,8 @@ bool bif_sys_redo_trail_1(query * q)
 	const bind_state *save = (bind_state*)p1->val_blob;
 
 	for (pl_idx i = save->lo_tp, j = 0; i < save->hi_tp; i++, j++) {
-		if (is_empty(&save->e[j].c))
-			continue;
-
+		//if (is_empty(&save->e[j].c))
+		//	continue;
 		const trail *tr = q->trails + i;
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
