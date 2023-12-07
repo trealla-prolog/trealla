@@ -209,13 +209,13 @@ static bool bif_task_n(query *q)
 	cell *p0 = deep_clone_to_heap(q, q->st.curr_cell, q->st.curr_frame);
 	GET_FIRST_RAW_ARG0(p1,callable,p0);
 	check_heap_error(init_tmp_heap(q));
-	check_heap_error(clone_to_tmp(q, p1));
+	check_heap_error(clone_to_tmp(q, p1, p1_ctx));
 	unsigned arity = p1->arity;
 	unsigned args = 1;
 
 	while (args++ < q->st.curr_cell->arity) {
 		GET_NEXT_RAW_ARG(p2,any);
-		check_heap_error(append_to_tmp(q, p2));
+		check_heap_error(append_to_tmp(q, p2, p2_ctx));
 		arity++;
 	}
 
