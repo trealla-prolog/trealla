@@ -413,7 +413,7 @@ void print_variable(query *q, const cell *c, pl_idx c_ctx, bool running)
 		(GET_SLOT(f, c->var_nbr)-q->slots)
 		: (unsigned)c->var_nbr;
 
-	if ((q->varnames || q->cycle_error) && !is_anon(c) && running && (!q->cycle_error)) {
+	if (q->varnames && !is_anon(c) && running && !q->cycle_error && (c_ctx == 0)) {
 		if (q->varnames && q->p->vartab.var_name[c->var_nbr]) {
 			SB_sprintf(q->sb, "%s", q->p->vartab.var_name[c->var_nbr]);
 		} else {
