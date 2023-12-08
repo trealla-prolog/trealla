@@ -206,7 +206,7 @@ bool bif_sys_list_attributed_1(query *q)
 					continue;
 
 				cell tmp;
-				make_var(&tmp, new_atom(q->pl, p->vartab.var_name[i]), i);
+				make_ref(&tmp, q->pl->tabs[i].val_off, q->pl->tabs[i].var_nbr, q->pl->tabs[i].ctx);
 				append_list(q, &tmp);
 			}
 		}
