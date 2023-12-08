@@ -609,7 +609,15 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		if (running) DEREF_CHECKED(any2, both, save_vgen, e, e->vgen, tail, tail_ctx, q->print_vgen);
 
 		if (both || q->cycle_error || (q->max_depth && (print_depth >= q->max_depth))) {
-			SB_sprintf(q->sb, "%s", "|...]");
+			SB_sprintf(q->sb, "%s", "|");
+
+			if ((both || q->cycle_error) && (tail_ctx == 0)) {
+				print_variable(q, tail, tail_ctx, running);
+			} else {
+				SB_sprintf(q->sb, "%s", "...");
+			}
+
+			SB_sprintf(q->sb, "%s", "]");
 			q->last_thing = WAS_OTHER;
 			q->cycle_error = true;
 			break;
