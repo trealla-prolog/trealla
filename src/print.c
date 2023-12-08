@@ -422,7 +422,11 @@ void print_variable(query *q, const cell *c, pl_idx c_ctx, bool running)
 	} else if (q->portray_vars) {
 		SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr));
 	} else if (q->is_dump_vars) {
-		SB_sprintf(q->sb, "_%s", get_slot_name(q, slot_nbr));
+		if (c_ctx == 0) {
+			SB_sprintf(q->sb, "%s", q->p->vartab.var_name[c->var_nbr]);
+		} else {
+			SB_sprintf(q->sb, "_%s", get_slot_name(q, slot_nbr));
+		}
 	} else if (q->listing) {
 		SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr));
 	} else if (!running && !is_ref(c)) {
