@@ -330,7 +330,7 @@ static bool any_attributed(query *q)
 		cell *v = deref(q, c, 0);
 		pl_idx v_ctx = q->latest_ctx;
 
-		if (is_interned(v)) {
+		if (is_compound(v)) {
 			collect_vars(q, v, v_ctx);
 
 			for (unsigned i = 0, done = 0; i < q->tab_idx; i++) {
