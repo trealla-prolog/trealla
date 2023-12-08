@@ -30,6 +30,7 @@ cell *make_nil(void);
 void make_smalln(cell *tmp, const char *s, size_t n);
 bool make_cstringn(cell *tmp, const char *s, size_t n);
 bool make_stringn(cell *tmp, const char *s, size_t n);
+void make_blob(cell *tmp, void *ptr);
 
 void clear_clause(clause *t);
 void do_reduce(cell *n);

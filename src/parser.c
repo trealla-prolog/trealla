@@ -271,6 +271,17 @@ void make_end(cell *tmp)
 	tmp->nbr_cells = 1;
 }
 
+
+void make_blob(cell *tmp, void *ptr)
+{
+	*tmp = (cell){0};
+	tmp->tag = TAG_BLOB;
+	tmp->flags = FLAG_MANAGED;
+	tmp->nbr_cells = 1;
+	tmp->val_blob = ptr;
+	tmp->val_blob->refcnt = 0;
+}
+
 void clear_clause(clause *cl)
 {
 	cell *c = cl->cells;

@@ -338,12 +338,8 @@ bool bif_sys_undo_trail_2(query *q)
 	if (!unify(q, p1, p1_ctx, tmp, q->st.curr_frame))
 		return false;
 
-	cell tmp2 = {0};
-	tmp2.tag = TAG_BLOB;
-	tmp2.flags = FLAG_MANAGED;
-	tmp2.nbr_cells = 1;
-	tmp2.val_blob = &save->b;
-	tmp2.val_blob->refcnt = 0;
+	cell tmp2;
+	make_blob(&tmp2, &save->b);
 	return unify(q, p2, p2_ctx, &tmp2, q->st.curr_frame);
 }
 
