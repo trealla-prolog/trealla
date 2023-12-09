@@ -1543,16 +1543,19 @@ bool start(query *q)
 			}
 		}
 
-		if (is_var(q->st.curr_cell)) {
-			cell *p1 = deref(q, q->st.curr_cell, q->st.curr_frame);
-			pl_idx p1_ctx = q->latest_ctx;
+		if (!is_callable(q->st.curr_cell)) {
+			if (is_var(q->st.curr_cell)) {
+				cell *p1 = deref(q, q->st.curr_cell, q->st.curr_frame);
+				pl_idx p1_ctx = q->latest_ctx;
 
-			if (!bif_call_0(q, p1, p1_ctx)) {
-				if (is_var(p1))
-					break;
+				if (!bif_call_0(q, p1, p1_ctx)) {
+					if (is_var(p1))
+						break;
 
-				continue;
-			}
+					continue;
+				}
+			} else
+				return throw_error(q, q->st.curr_cell, q->st.curr_frame, "type_error", "callable");
 		}
 
 		Trace(q, q->st.curr_cell, q->st.curr_frame, CALL);
