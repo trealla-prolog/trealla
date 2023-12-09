@@ -611,7 +611,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		if (both || q->cycle_error || (q->max_depth && (print_depth >= q->max_depth))) {
 			SB_sprintf(q->sb, "%s", "|");
 
-			if ((both || q->cycle_error) && (tail_ctx == 0)) {
+			if (both && (tail_ctx == q->st.curr_frame) && (q->portray_vars || q->do_dump_vars)) {
 				print_variable(q, tail, tail_ctx, running);
 			} else {
 				SB_sprintf(q->sb, "%s", "...");
