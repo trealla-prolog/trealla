@@ -1732,7 +1732,7 @@ static bool bif_iso_univ_2(query *q)
 		check_heap_error(tmp);
 		p2 = tmp;
 		p2_ctx = q->st.curr_frame;
-		unsigned arity = 0;
+		unsigned arity = 0, save_hp = q->st.hp;
 		check_heap_error(init_tmp_heap(q));
 		cell *save_p2 = p2;
 		LIST_HANDLER(p2);
@@ -1778,6 +1778,7 @@ static bool bif_iso_univ_2(query *q)
 		if (arity > MAX_ARITY)
 			return throw_error(q, tmp2, q->st.curr_frame, "representation_error", "max_arity");
 
+		q->st.hp = save_hp;
 		check_heap_error(tmp = alloc_on_heap(q, nbr_cells));
 		safe_copy_cells(tmp, tmp2, nbr_cells);
 		tmp->nbr_cells = nbr_cells;

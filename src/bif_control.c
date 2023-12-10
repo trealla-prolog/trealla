@@ -35,12 +35,9 @@ bool bif_sys_drop_barrier_1(query *q)
 
 void do_cleanup(query *q, cell *c, pl_idx c_ctx)
 {
-	ensure(init_tmp_heap(q));
-	cell *tmp2 = deep_clone_to_tmp(q, c, c_ctx);
-	ensure(tmp2);
-	cell *tmp = prepare_call(q, true, tmp2, q->st.curr_frame, 4);
+	cell *tmp = prepare_call(q, true, c, c_ctx, 4);
 	ensure(tmp);
-	pl_idx nbr_cells = PREFIX_LEN + tmp2->nbr_cells;
+	pl_idx nbr_cells = PREFIX_LEN + c->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
