@@ -106,6 +106,53 @@ cell *alloc_on_tmp(query *q, unsigned nbr_cells)
 	return c;
 }
 
+// The cache is used for instruction allocations and a realloc() can't be
+// done as it will invalidate existing pointers. Build any compounds
+// first on the tmp heap, then allocate in one go here and copy in.
+// When more space is need allocate a new page and keep them in the
+// page list. Backtracking will garbage collect and free as needed.
+
+cell *alloc_on_cache(query *q, unsigned nbr_cells)
+{
+	if (((uint64_t)q->st.hp + nbr_cells) > UINT32_MAX)
+		return NULL;
+
+	if (!q->heap_pages) {
+		page *a = calloc(1, sizeof(page));
+		if (!a) return NULL;
+		a->next = q->heap_pages;
+		unsigned n = MAX_OF(q->heap_size, nbr_cells);
+		a->cells = calloc(a->page_size=n, sizeof(cell));
+		if (!a->cells) { free(a); return NULL; }
+		a->nbr = q->st.heap_nbr++;
+		q->heap_pages = a;
+	}
+
+	if ((q->st.hp + nbr_cells) >= q->heap_pages->page_size) {
+		page *a = calloc(1, sizeof(page));
+		if (!a) return NULL;
+		a->next = q->heap_pages;
+		unsigned n = MAX_OF(q->heap_size, nbr_cells);
+		a->cells = calloc(a->page_size=n, sizeof(cell));
+		if (!a->cells) { free(a); return NULL; }
+		a->nbr = q->st.heap_nbr++;
+		q->heap_pages = a;
+		q->st.hp = 0;
+	}
+
+	if (q->st.heap_nbr > q->hw_heap_nbr)
+		q->hw_heap_nbr = q->st.heap_nbr;
+
+	cell *c = q->heap_pages->cells + q->st.hp;
+	q->st.hp += nbr_cells;
+	q->heap_pages->idx = q->st.hp;
+
+	if (q->heap_pages->idx > q->heap_pages->max_idx_used)
+		q->heap_pages->max_idx_used = q->heap_pages->idx;
+
+	return c;
+}
+
 // The heap is used for data allocations and a realloc() can't be
 // done as it will invalidate existing pointers. Build any compounds
 // first on the tmp heap, then allocate in one go here and copy in.
@@ -140,6 +187,9 @@ cell *alloc_on_heap(query *q, unsigned nbr_cells)
 		q->st.hp = 0;
 	}
 
+	if (q->st.heap_nbr > q->hw_heap_nbr)
+		q->hw_heap_nbr = q->st.heap_nbr;
+
 	cell *c = q->heap_pages->cells + q->st.hp;
 	q->st.hp += nbr_cells;
 	q->heap_pages->idx = q->st.hp;
@@ -150,8 +200,39 @@ cell *alloc_on_heap(query *q, unsigned nbr_cells)
 	return c;
 }
 
+static void trim_cache(query *q)
+{
+	// q->heap_pages is a push-down stack and points to the
+	// most recent page of heap allocations...
+
+	for (page *a = q->heap_pages; a;) {
+		if (a->nbr < q->st.heap_nbr)
+			break;
+
+		cell *c = a->cells;
+
+		for (pl_idx i = 0; i < a->idx; i++, c++)
+			unshare_cell(c);
+
+		page *save = a;
+		q->heap_pages = a = a->next;
+		free(save->cells);
+		free(save);
+	}
+
+	const page *a = q->heap_pages;
+
+	for (pl_idx i = q->st.hp; a && (i < a->idx); i++) {
+		cell *c = a->cells + i;
+		unshare_cell(c);
+		init_cell(c);
+	}
+}
+
 void trim_heap(query *q)
 {
+	trim_cache(q);
+
 	// q->heap_pages is a push-down stack and points to the
 	// most recent page of heap allocations...
 
@@ -330,7 +411,7 @@ cell *clone_to_tmp(query *q, cell *p1, pl_idx p1_ctx)
 cell *prepare_call(query *q, bool prefix, cell *p1, pl_idx p1_ctx, unsigned extras)
 {
 	unsigned nbr_cells = (prefix ? PREFIX_LEN : NOPREFIX_LEN) + p1->nbr_cells + extras;
-	cell *tmp = alloc_on_heap(q, nbr_cells);
+	cell *tmp = alloc_on_cache(q, nbr_cells);
 	if (!tmp) return NULL;
 
 	if (prefix) {

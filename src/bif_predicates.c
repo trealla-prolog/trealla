@@ -3737,8 +3737,9 @@ static bool bif_statistics_0(query *q)
 		"Max frames %u, "
 		"choices %u, "
 		"trails %u, "
-		"slots %u.\n"
-		"Active frames %u, "
+		"slots %u, "
+		"pages %u.\n"
+		"Active pages %u, "
 		"choices %u, "
 		"trails %u, "
 		"slots %u, "
@@ -3749,9 +3750,9 @@ static bool bif_statistics_0(query *q)
 		"slots: %"PRIu64", "
 		"Queue: %u\n",
 		q->tot_inferences, q->tot_matches,
-		q->hw_frames, q->hw_choices, q->hw_trails, q->hw_slots,
-		q->st.fp, q->cp, q->st.tp, q->st.sp, q->st.heap_nbr,
-		q->tot_retries, q->tot_tcos,
+		q->hw_frames, q->hw_choices, q->hw_trails, q->hw_slots, q->hw_heap_nbr,
+		q->st.fp, q->cp, q->st.tp, q->st.sp,
+		q->st.heap_nbr, q->tot_retries, q->tot_tcos,
 		q->tot_frecovs, q->tot_srecovs, (unsigned)q->qcnt[q->st.qnbr]
 		);
 	return true;
