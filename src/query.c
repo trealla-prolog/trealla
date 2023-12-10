@@ -844,13 +844,13 @@ static void reuse_frame(query *q, const clause *cl)
 	const slot *from = GET_SLOT(newf, 0);
 	slot *to = GET_SLOT(f, 0);
 
-	for (pl_idx i = 0; i < f->initial_slots - cl->nbr_temporaries; i++) {
+	for (pl_idx i = 0; i < cl->nbr_vars - cl->nbr_temporaries; i++) {
 		cell *c = &to->c;
 		unshare_cell(c);
 		*to++ = *from++;
 	}
 
-	q->st.sp = f->base + (cl->nbr_vars - cl->nbr_temporaries);
+	q->st.sp = f->base + cl->nbr_vars - cl->nbr_temporaries;
 	q->st.hp = f->hp;
 	q->st.r->tcos++;
 	q->tot_tcos++;
