@@ -909,17 +909,20 @@ static void commit_frame(query *q, cell *body)
 		bool choices = any_choices(q, f);
 		bool tail_recursive = is_tail_recursive(q->st.curr_cell);
 		bool tail_call = is_tail_call(q->st.curr_cell);
-		bool vars_ok = !f->overflow && (f->initial_slots == cl->nbr_vars);
+		bool vars_ok = /*!f->overflow &&*/ (f->initial_slots == cl->nbr_vars);
 		tco = tail_recursive && vars_ok && !choices;
 
 #if 0
+		const cell *head = get_head((cell*)(cl->cells));
+
 		fprintf(stderr,
-			"*** tco=%d,q->no_tco=%d,last_match=%d,is_det=%d,"
+			"*** %s/%u tco=%d,q->no_tco=%d,last_match=%d,is_det=%d,"
 			"next_key=%d,tail_call=%d/%d,vars_ok=%d,choices=%d,"
-			"cl->nbr_vars=%u,f->initial_slots=%u\n",
+			"cl->nbr_vars=%u/%u,f->initial_slots=%u/%u\n",
+			C_STR(q, head), head->arity,
 			tco, q->no_tco, last_match, is_det,
 			next_key, tail_call, tail_recursive, vars_ok, choices,
-			cl->nbr_vars, f->initial_slots);
+			cl->nbr_vars, cl->nbr_temporaries, f->initial_slots, f->actual_slots);
 #endif
 
 	}
