@@ -217,7 +217,7 @@ static bool bif_sys_unifiable_3(query *q)
 		make_struct(tmp, g_unify_s, bif_iso_unify_2, 2, 1+c->nbr_cells);
 		SET_OP(tmp, OP_XFX);
 		cell v;
-		make_ref(&v, g_anon_s, tr->var_nbr, q->st.curr_frame);
+		make_ref(&v, tr->var_nbr, q->st.curr_frame);
 		tmp[1] = v;
 		safe_copy_cells(tmp+2, c, c->nbr_cells);
 		append_list(q, tmp);
@@ -1851,7 +1851,7 @@ cell *do_term_variables(query *q, cell *p1, pl_idx p1_ctx)
 			tmp[idx].arity = 2;
 			tmp[idx].nbr_cells = ((cnt-done)*2)+1;
 			idx++;
-			make_ref(tmp+idx, q->pl->tabs[i].val_off, q->pl->tabs[i].var_nbr, q->pl->tabs[i].ctx);
+			make_ref(tmp+idx, q->pl->tabs[i].var_nbr, q->pl->tabs[i].ctx);
 
 			if (q->pl->tabs[i].is_anon)
 				tmp[idx].flags |= FLAG_VAR_ANON;
@@ -1924,7 +1924,7 @@ static cell *do_term_singletons(query *q, cell *p1, pl_idx p1_ctx)
 			tmp[idx].arity = 2;
 			tmp[idx].nbr_cells = ((cnt2-done)*2)+1;
 			idx++;
-			make_ref(tmp+idx, q->pl->tabs[i].val_off, q->pl->tabs[i].var_nbr, q->pl->tabs[i].ctx);
+			make_ref(tmp+idx, q->pl->tabs[i].var_nbr, q->pl->tabs[i].ctx);
 
 			if (q->pl->tabs[i].is_anon)
 				tmp[idx].flags |= FLAG_VAR_ANON;
@@ -2211,8 +2211,8 @@ static bool bif_iso_current_predicate_1(query *q)
 		pl_idx p2_ctx = q->st.curr_frame;
 		frame *f = GET_CURR_FRAME();
 		unsigned var_nbr = f->actual_slots;
-		make_ref(&tmp1, 0, var_nbr++, q->st.curr_frame);
-		make_ref(&tmp2, 0, var_nbr++, q->st.curr_frame);
+		make_ref(&tmp1, var_nbr++, q->st.curr_frame);
+		make_ref(&tmp2, var_nbr++, q->st.curr_frame);
 		create_vars(q, 2);
 		bool ok = search_functor(q, p1, p1_ctx, p2, p2_ctx) ? true : false;
 		cell *tmp = alloc_on_heap(q, 3);
@@ -2737,7 +2737,7 @@ static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysor
 		cell tmp;
 
 		if (is_compound(c) && !is_iso_list(c)) {
-			make_ref(&tmp, c->val_off, create_vars(q, 1), q->st.curr_frame);
+			make_ref(&tmp, create_vars(q, 1), q->st.curr_frame);
 			unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 			c = &tmp;
 		}
@@ -2922,7 +2922,7 @@ static cell *nodesort4(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool ascen
 		cell tmp;
 
 		if (is_var(c) || is_compound(c)) {
-			make_ref(&tmp, c->val_off, create_vars(q, 1), q->st.curr_frame);
+			make_ref(&tmp, create_vars(q, 1), q->st.curr_frame);
 			unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 			c = &tmp;
 		}

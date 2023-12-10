@@ -206,7 +206,7 @@ bool bif_sys_list_attributed_1(query *q)
 					continue;
 
 				cell tmp;
-				make_ref(&tmp, q->pl->tabs[i].val_off, q->pl->tabs[i].var_nbr, q->pl->tabs[i].ctx);
+				make_ref(&tmp, q->pl->tabs[i].var_nbr, q->pl->tabs[i].ctx);
 				append_list(q, &tmp);
 			}
 		}
@@ -319,7 +319,7 @@ bool bif_sys_undo_trail_2(query *q)
 		check_occurs(tr->var_nbr, tr->var_ctx, &e->c, e->c.var_ctx);
 		//printf("*** unbind [%u:%u] hi_tp=%u, tag=%u, tr->var_ctx=%u, tr->var_nbr=%u\n", j, i, q->undo_hi_tp, e->c.tag, tr->var_ctx, tr->var_nbr);
 		cell lhs, rhs;
-		make_ref(&lhs, g_anon_s, tr->var_nbr, tr->var_ctx);
+		make_ref(&lhs, tr->var_nbr, tr->var_ctx);
 		rhs = e->c;
 		//DUMP_TERM("$undo1 rhs", &e->c, e->c.var_ctx, 0);
 		cell tmp[3];

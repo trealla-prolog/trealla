@@ -564,7 +564,7 @@ bool bif_sys_countall_2(query *q)
 	check_heap_error(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + tmp2->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_counter_s, bif_sys_counter_1, 1, 1);
-	make_ref(tmp+nbr_cells++, g_anon_s, p2->var_nbr, p2_ctx);
+	make_ref(tmp+nbr_cells++, p2->var_nbr, p2_ctx);
 	make_struct(tmp+nbr_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));

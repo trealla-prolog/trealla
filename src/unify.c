@@ -330,7 +330,7 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
 	cell *l = p1;
 	pl_idx l_ctx = p1_ctx;
-	bool any = false;
+	bool any = false, any2 = false;
 
 	while (is_iso_list(l)) {
 		cell *h = l + 1;
@@ -340,7 +340,7 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 		int both = 0;
 		DEREF_VAR(any, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
 
-		if (!both && is_var(h))
+		if (!both && is_var(h) && !(h->flags & FLAG_VAR_CYCLIC))
 			accum_var(q, h, h_ctx);
 		else if (!both)
 			collect_vars_internal(q, h, h_ctx, depth+1);
@@ -350,20 +350,22 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 		l = l + 1; l += l->nbr_cells;
 		e = NULL;
 		both = 0;
-		DEREF_VAR(any, both, save_vgen, e, e->vgen, l, l_ctx, q->vgen);
+		DEREF_VAR(any2, both, save_vgen, e, e->vgen, l, l_ctx, q->vgen);
 
 		if (both)
 			return;
 	}
 
-	l = p1;
-	l_ctx = p1_ctx;
+	if (any2) {
+		l = p1;
+		l_ctx = p1_ctx;
 
-	while (is_iso_list(l)) {
-		l = l + 1; l += l->nbr_cells;
-		cell *c = l;
-		pl_idx c_ctx = l_ctx;
-		RESTORE_VAR(c, c_ctx, l, l_ctx, q->vgen);
+		while (is_iso_list(l)) {
+			l = l + 1; l += l->nbr_cells;
+			cell *c = l;
+			pl_idx c_ctx = l_ctx;
+			RESTORE_VAR(c, c_ctx, l, l_ctx, q->vgen);
+		}
 	}
 
 	collect_vars_internal(q, l, l_ctx, depth+1);
@@ -817,7 +819,7 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 		else if (v_ctx == q->st.fp)
 			q->no_tco = true;
 	} else if (is_var(v)) {
-		make_ref(&e->c, v->val_off, v->var_nbr, v_ctx);
+		make_ref(&e->c, v->var_nbr, v_ctx);
 
 		if ((c_ctx != q->st.curr_frame) && (v_ctx == q->st.curr_frame))
 			q->no_tco = true;
