@@ -642,15 +642,17 @@ size_t scan_is_chars_list(query *q, cell *l, pl_idx l_ctx, bool allow_codes)
 
 static void enter_predicate(query *q, predicate *pr)
 {
-	if (!pr->is_dynamic)
-		return;
-
+	q->st.recursive = q->st.pr && (q->st.pr == pr);
 	q->st.pr = pr;
-	pr->refcnt++;
+
+	if (pr->is_dynamic)
+		pr->refcnt++;
 }
 
 static void leave_predicate(query *q, predicate *pr)
 {
+	q->st.recursive = false;
+
 	if (!pr || !pr->is_dynamic || !pr->refcnt)
 		return;
 
@@ -765,7 +767,7 @@ void drop_choice(query *q)
 		ch->st.iter = NULL;
 	}
 
-	q->st.pr = NULL;
+	//q->st.pr = NULL;
 	--q->cp;
 }
 
@@ -912,15 +914,14 @@ static void commit_frame(query *q, cell *body)
 	bool tco = false;
 
 	if (!q->no_tco && (q->st.fp == (q->st.curr_frame + 1)) && last_match) {
+		const cell *head = get_head((cell*)cl->cells);
 		bool choices = any_choices(q, f);
-		bool tail_recursive = is_tail_recursive(q->st.curr_cell);
 		bool tail_call = is_tail_call(q->st.curr_cell);
+		bool tail_recursive = tail_call && q->st.recursive;
 		bool vars_ok = /*!f->overflow &&*/ (f->initial_slots == cl->nbr_vars);
 		tco = tail_recursive && vars_ok && !choices;
 
 #if 0
-		const cell *head = get_head((cell*)(cl->cells));
-
 		fprintf(stderr,
 			"*** %s/%u tco=%d,q->no_tco=%d,last_match=%d,is_det=%d,"
 			"next_key=%d,tail_call=%d/%d,vars_ok=%d,choices=%d,"

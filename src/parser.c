@@ -1651,7 +1651,7 @@ static bool dcg_expansion(parser *p)
 	check_error(p2);
 	p2->srcptr = src;
 	tokenize(p2, false, false);
-	//xref_clause(p2->m, p2->cl, NULL);
+	xref_clause(p2->m, p2->cl);
 	free(src);
 
 	clear_clause(p->cl);
@@ -1723,7 +1723,7 @@ static bool term_expansion(parser *p)
 	check_error(p2);
 	p2->srcptr = src;
 	tokenize(p2, false, false);
-	xref_clause(p2->m, p2->cl, NULL);
+	xref_clause(p2->m, p2->cl);
 	free(src);
 
 	clear_clause(p->cl);
@@ -1783,7 +1783,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	p2->skip = true;
 	p2->srcptr = SB_cstr(s);
 	tokenize(p2, false, false);
-	xref_clause(p2->m, p2->cl, NULL);
+	xref_clause(p2->m, p2->cl);
 	execute(q, p2->cl->cells, p2->cl->nbr_vars);
 	SB_free(s);
 
@@ -1830,7 +1830,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	p2->reuse = true;
 	p2->srcptr = src;
 	tokenize(p2, false, false);
-	xref_clause(p2->m, p2->cl, NULL);
+	xref_clause(p2->m, p2->cl);
 	free(src);
 
 	// Push the updated vatab back...
@@ -3142,7 +3142,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 					return 0;
 				}
 
-				xref_clause(p->m, p->cl, NULL);
+				xref_clause(p->m, p->cl);
 				term_to_body(p);
 
 				if (p->consulting && !p->skip) {

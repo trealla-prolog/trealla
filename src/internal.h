@@ -165,7 +165,6 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_builtin(c) ((c)->flags & FLAG_BUILTIN)
 #define is_evaluable(c) ((c)->flags & FLAG_EVALUABLE)
 #define is_tail_call(c) ((c)->flags & FLAG_TAIL_CALL)
-#define is_tail_recursive(c) ((c)->flags & FLAG_TAIL_RECURSIVE)
 #define is_temporary(c) (is_var(c) && ((c)->flags & FLAG_VAR_TEMPORARY))
 #define is_ref(c) (is_var(c) && ((c)->flags & FLAG_VAR_REF))
 #define is_op(c) (c->flags & 0xE000) ? true : false
@@ -282,14 +281,13 @@ enum {
 	FLAG_HANDLE_DLL=1<<0,				// used with FLAG_INT_HANDLE
 	FLAG_HANDLE_FUNC=1<<1,				// used with FLAG_INT_HANDLE
 
-	FLAG_BLOB_SREGEX=1<<0,					// used with TAG_BLOB
+	FLAG_BLOB_SREGEX=1<<0,				// used with TAG_BLOB
 
 	FLAG_TAIL_CALL=1<<7,
-	FLAG_TAIL_RECURSIVE=1<<8,
-	FLAG_FFI=1<<9,
-	FLAG_BUILTIN=1<<10,
-	FLAG_MANAGED=1<<11,					// any ref-counted object
-	FLAG_EVALUABLE=1<<12,
+	FLAG_FFI=1<<8,
+	FLAG_BUILTIN=1<<9,
+	FLAG_MANAGED=1<<10,					// any ref-counted object
+	FLAG_EVALUABLE=1<<11,
 
 	FLAG_END=1<<13
 };
@@ -536,7 +534,7 @@ struct prolog_state_ {
 	module *m;
 
 	union {
-		struct { cell *key; bool karg1_is_ground:1, karg2_is_ground:1, karg1_is_atomic:1, karg2_is_atomic:1; };
+		struct { cell *key; bool karg1_is_ground:1, karg2_is_ground:1, karg1_is_atomic:1, karg2_is_atomic:1, recursive:1; };
 		struct { uint64_t v1, v2; };
 		int64_t cnt;
 	};
