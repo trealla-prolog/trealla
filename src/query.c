@@ -275,110 +275,6 @@ void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs, pl_idx a
 	tr->attrs_ctx = attrs_ctx;
 }
 
-static bool can_view(query *q, uint64_t dbgen, const rule *r)
-{
-	if (r->cl.is_deleted)
-		return false;
-
-	if (r->cl.dbgen_created > dbgen)
-		return false;
-
-	if (r->cl.dbgen_erased && (r->cl.dbgen_erased <= dbgen))
-		return false;
-
-	return true;
-}
-
-static void setup_key(query *q)
-{
-	cell *arg1 = deref(q, FIRST_ARG(q->st.key), q->st.key_ctx);
-	cell *arg2 = NULL;
-
-	if (q->st.key->arity > 1)
-		arg2 = deref(q, NEXT_ARG(FIRST_ARG(q->st.key)), q->st.key_ctx);
-
-	if (!is_var(arg1))
-		q->st.karg1_is_ground = true;
-
-	if (arg2 && !is_var(arg2))
-		q->st.karg2_is_ground = true;
-
-	if (is_atomic(arg1))
-		q->st.karg1_is_atomic = true;
-
-	if (arg2 && is_atomic(arg2))
-		q->st.karg2_is_atomic = true;
-}
-
-static void next_key(query *q)
-{
-	if (q->st.iter) {
-		if (!sl_next(q->st.iter, (void*)&q->st.r)) {
-			q->st.r = NULL;
-			sl_done(q->st.iter);
-			q->st.iter = NULL;
-		}
-
-		return;
-	}
-
-	q->st.r = q->st.r->next;
-}
-
-bool has_next_key(query *q)
-{
-	if (q->st.iter)
-		return sl_is_next(q->st.iter, NULL);
-
-	if (!q->st.r->next)
-		return false;
-
-	if (!q->st.key->arity)
-		return true;
-
-	if (q->st.r->cl.is_unique) {
-		if ((q->st.key->arity == 1) && q->st.karg1_is_atomic)
-			return false;
-
-		if ((q->st.key->arity == 2) && q->st.karg1_is_atomic && q->st.karg2_is_atomic)
-			return false;
-	}
-
-	const cell *qarg1 = NULL, *qarg2 = NULL;
-
-	if (q->st.karg1_is_ground)
-		qarg1 = deref(q, FIRST_ARG(q->st.key), q->st.key_ctx);
-
-	if (q->st.karg2_is_ground)
-		qarg2 = deref(q, NEXT_ARG(FIRST_ARG(q->st.key)), q->st.key_ctx);
-
-	//DUMP_TERM("key ", q->st.key, q->st.key_ctx, 1);
-
-	for (const rule *next = q->st.r->next; next; next = next->next) {
-		const cell *dkey = next->cl.cells;
-
-		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
-			dkey++;
-
-		//DUMP_TERM("next", dkey, q->st.curr_frame, 0);
-
-		if (qarg1) {
-			if (index_cmpkey(qarg1, FIRST_ARG(dkey), q->st.m, NULL) != 0)
-				continue;
-		}
-
-		if (qarg2) {
-			if (index_cmpkey(qarg2, NEXT_ARG(FIRST_ARG(dkey)), q->st.m, NULL) != 0)
-				continue;
-		}
-
-		if (index_cmpkey(q->st.key, dkey, q->st.m, NULL) == 0)
-			return true;
-	}
-
-	return false;
-}
-
 const char *dump_id(const void *k, const void *v, const void *p)
 {
 	uint64_t id = (uint64_t)(size_t)k;
@@ -1036,6 +932,110 @@ unsigned create_vars(query *q, unsigned cnt)
 	return var_nbr;
 }
 
+static bool can_view(query *q, uint64_t dbgen, const rule *r)
+{
+	if (r->cl.is_deleted)
+		return false;
+
+	if (r->cl.dbgen_created > dbgen)
+		return false;
+
+	if (r->cl.dbgen_erased && (r->cl.dbgen_erased <= dbgen))
+		return false;
+
+	return true;
+}
+
+static void setup_key(query *q)
+{
+	cell *arg1 = deref(q, FIRST_ARG(q->st.key), q->st.key_ctx);
+	cell *arg2 = NULL;
+
+	if (q->st.key->arity > 1)
+		arg2 = deref(q, NEXT_ARG(FIRST_ARG(q->st.key)), q->st.key_ctx);
+
+	if (!is_var(arg1))
+		q->st.karg1_is_ground = true;
+
+	if (arg2 && !is_var(arg2))
+		q->st.karg2_is_ground = true;
+
+	if (is_atomic(arg1))
+		q->st.karg1_is_atomic = true;
+
+	if (arg2 && is_atomic(arg2))
+		q->st.karg2_is_atomic = true;
+}
+
+static void next_key(query *q)
+{
+	if (q->st.iter) {
+		if (!sl_next(q->st.iter, (void*)&q->st.r)) {
+			q->st.r = NULL;
+			sl_done(q->st.iter);
+			q->st.iter = NULL;
+		}
+
+		return;
+	}
+
+	q->st.r = q->st.r->next;
+}
+
+bool has_next_key(query *q)
+{
+	if (q->st.iter)
+		return sl_is_next(q->st.iter, NULL);
+
+	if (!q->st.r->next)
+		return false;
+
+	if (!q->st.key->arity)
+		return true;
+
+	if (q->st.r->cl.is_unique) {
+		if ((q->st.key->arity == 1) && q->st.karg1_is_atomic)
+			return false;
+
+		if ((q->st.key->arity == 2) && q->st.karg1_is_atomic && q->st.karg2_is_atomic)
+			return false;
+	}
+
+	const cell *qarg1 = NULL, *qarg2 = NULL;
+
+	if (q->st.karg1_is_ground)
+		qarg1 = deref(q, FIRST_ARG(q->st.key), q->st.key_ctx);
+
+	if (q->st.karg2_is_ground)
+		qarg2 = deref(q, NEXT_ARG(FIRST_ARG(q->st.key)), q->st.key_ctx);
+
+	//DUMP_TERM("key ", q->st.key, q->st.key_ctx, 1);
+
+	for (const rule *next = q->st.r->next; next; next = next->next) {
+		const cell *dkey = next->cl.cells;
+
+		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
+			dkey++;
+
+		//DUMP_TERM("next", dkey, q->st.curr_frame, 0);
+
+		if (qarg1) {
+			if (index_cmpkey(qarg1, FIRST_ARG(dkey), q->st.m, NULL) != 0)
+				continue;
+		}
+
+		if (qarg2) {
+			if (index_cmpkey(qarg2, NEXT_ARG(FIRST_ARG(dkey)), q->st.m, NULL) != 0)
+				continue;
+		}
+
+		if (index_cmpkey(q->st.key, dkey, q->st.m, NULL) == 0)
+			return true;
+	}
+
+	return false;
+}
+
 static bool expand_meta_predicate(query *q, predicate *pr)
 {
 	unsigned arity = q->st.key->arity;
@@ -1100,9 +1100,9 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 	// Because the key is only used once, here,
 	// we only need a temporary clone...
 
-	check_heap_error(init_tmp_heap(q));
-	key = deep_clone_to_tmp(q, key, key_ctx);
-	key_ctx = q->st.curr_frame;
+	//check_heap_error(init_tmp_heap(q));
+	//key = deep_clone_to_tmp(q, key, key_ctx);
+	//key_ctx = q->st.curr_frame;
 
 	if (pr->is_meta_predicate) {
 		if (!expand_meta_predicate(q, pr))
