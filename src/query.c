@@ -387,150 +387,6 @@ const char *dump_id(const void *k, const void *v, const void *p)
 	return tmpbuf;
 }
 
-static bool expand_meta_predicate(query *q, predicate *pr)
-{
-	unsigned arity = q->st.key->arity;
-	cell *tmp = alloc_on_heap(q, q->st.key->nbr_cells*3);	// alloc max possible
-	check_heap_error(tmp);
-	cell *save_tmp = tmp;
-	tmp += copy_cells(tmp, q->st.key, 1);
-
-	// Expand module-sensitive args...
-
-	for (cell *k = q->st.key+1, *m = pr->meta_args+1; arity--; k += k->nbr_cells, m += m->nbr_cells) {
-		if ((k->arity == 2) && (k->val_off == g_colon_s) && is_atom(FIRST_ARG(k)))
-			;
-		else if (!is_interned(k))
-			;
-		else if (m->val_off == g_colon_s) {
-			make_struct(tmp, g_colon_s, bif_iso_invoke_2, 2, 1+k->nbr_cells);
-			SET_OP(tmp, OP_XFY); tmp++;
-			make_atom(tmp++, new_atom(q->pl, pr->m->name));
-		}
-
-		tmp += safe_copy_cells(tmp, k, k->nbr_cells);
-	}
-
-	save_tmp->nbr_cells = tmp - save_tmp;
-	q->st.key = save_tmp;
-	return true;
-}
-
-static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
-{
-	q->st.iter = NULL;
-
-	q->st.karg1_is_ground = false;
-	q->st.karg2_is_ground = false;
-	q->st.karg1_is_atomic = false;
-	q->st.karg2_is_atomic = false;
-	q->st.key = key;
-	q->st.key_ctx = key_ctx;
-
-	if (!pr->idx) {
-		q->st.r = pr->head;
-
-		if (key->arity) {
-			if (pr->is_multifile || pr->is_meta_predicate) {
-				q->st.key = deep_clone_to_heap(q, key, key_ctx);
-				check_heap_error(q->st.key);
-				q->st.key_ctx = q->st.curr_frame;
-
-				if (pr->is_meta_predicate) {
-					if (!expand_meta_predicate(q, pr))
-						return false;
-				}
-			}
-
-			setup_key(q);
-		}
-
-		return true;
-	}
-
-	// Because the key is only used once, here,
-	// we only need a temporary clone...
-
-	check_heap_error(init_tmp_heap(q));
-	key = deep_clone_to_tmp(q, key, key_ctx);
-	key_ctx = q->st.curr_frame;
-
-	if (pr->is_meta_predicate) {
-		if (!expand_meta_predicate(q, pr))
-			return false;
-	}
-
-	cell *arg1 = key->arity ? FIRST_ARG(key) : NULL;
-	skiplist *idx = pr->idx;
-
-	if (arg1 && (is_var(arg1) || pr->is_var_in_first_arg)) {
-		if (!pr->idx2) {
-			q->st.r = pr->head;
-			return true;
-		}
-
-		cell *arg2 = NEXT_ARG(arg1);
-
-		if (is_var(arg2)) {
-			q->st.r = pr->head;
-			return true;
-		}
-
-		key = arg2;
-		idx = pr->idx2;
-	}
-
-#define DEBUGIDX 0
-
-#if DEBUGIDX
-	DUMP_TERM("search, term = ", key, key_ctx);
-#endif
-
-	q->st.r = NULL;
-	sliter *iter;
-
-	if (!(iter = sl_find_key(idx, key)))
-		return false;
-
-	// If the index search has found just one (definite) solution
-	// then we can use it with no problems. If more than one then
-	// results must be returned in database order, so prefetch all
-	// the results and return them sorted as an iterator...
-
-	skiplist *tmp_idx = NULL;
-	const rule *r;
-
-	while (sl_next_key(iter, (void*)&r)) {
-#if DEBUGIDX
-		DUMP_TERM("   got, key = ", r->cl.cells, q->st.curr_frame);
-#endif
-
-		if (!tmp_idx) {
-			tmp_idx = sl_create(NULL, NULL, NULL);
-			sl_set_tmp(tmp_idx);
-		}
-
-		sl_app(tmp_idx, (void*)(size_t)r->db_id, (void*)r);
-	}
-
-	sl_done(iter);
-
-	if (!tmp_idx)
-		return false;
-
-	//sl_dump(tmp_idx, dump_id, q);
-
-	iter = sl_first(tmp_idx);
-
-	if (!sl_next(iter, (void*)&q->st.r)) {
-		sl_done(iter);
-		return false;
-	}
-
-	q->st.iter = iter;
-	return true;
-}
-
 static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool allow_codes, bool *has_var, bool *is_partial)
 {
 	*is_partial = *has_var = false;
@@ -1178,6 +1034,150 @@ unsigned create_vars(query *q, unsigned cnt)
 	memset(e, 0, sizeof(slot)*cnt);
 	f->actual_slots += cnt;
 	return var_nbr;
+}
+
+static bool expand_meta_predicate(query *q, predicate *pr)
+{
+	unsigned arity = q->st.key->arity;
+	cell *tmp = alloc_on_heap(q, q->st.key->nbr_cells*3);	// alloc max possible
+	check_heap_error(tmp);
+	cell *save_tmp = tmp;
+	tmp += copy_cells(tmp, q->st.key, 1);
+
+	// Expand module-sensitive args...
+
+	for (cell *k = q->st.key+1, *m = pr->meta_args+1; arity--; k += k->nbr_cells, m += m->nbr_cells) {
+		if ((k->arity == 2) && (k->val_off == g_colon_s) && is_atom(FIRST_ARG(k)))
+			;
+		else if (!is_interned(k))
+			;
+		else if (m->val_off == g_colon_s) {
+			make_struct(tmp, g_colon_s, bif_iso_invoke_2, 2, 1+k->nbr_cells);
+			SET_OP(tmp, OP_XFY); tmp++;
+			make_atom(tmp++, new_atom(q->pl, pr->m->name));
+		}
+
+		tmp += safe_copy_cells(tmp, k, k->nbr_cells);
+	}
+
+	save_tmp->nbr_cells = tmp - save_tmp;
+	q->st.key = save_tmp;
+	return true;
+}
+
+static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
+{
+	q->st.iter = NULL;
+
+	q->st.karg1_is_ground = false;
+	q->st.karg2_is_ground = false;
+	q->st.karg1_is_atomic = false;
+	q->st.karg2_is_atomic = false;
+	q->st.key = key;
+	q->st.key_ctx = key_ctx;
+
+	if (!pr->idx) {
+		q->st.r = pr->head;
+
+		if (key->arity) {
+			if (pr->is_multifile || pr->is_meta_predicate) {
+				q->st.key = deep_clone_to_heap(q, key, key_ctx);
+				check_heap_error(q->st.key);
+				q->st.key_ctx = q->st.curr_frame;
+
+				if (pr->is_meta_predicate) {
+					if (!expand_meta_predicate(q, pr))
+						return false;
+				}
+			}
+
+			setup_key(q);
+		}
+
+		return true;
+	}
+
+	// Because the key is only used once, here,
+	// we only need a temporary clone...
+
+	//check_heap_error(init_tmp_heap(q));
+	//key = deep_clone_to_tmp(q, key, key_ctx);
+	//key_ctx = q->st.curr_frame;
+
+	if (pr->is_meta_predicate) {
+		if (!expand_meta_predicate(q, pr))
+			return false;
+	}
+
+	cell *arg1 = key->arity ? deref(q, FIRST_ARG(key), key_ctx) : NULL;
+	skiplist *idx = pr->idx;
+
+	if (arg1 && (is_var(arg1) || pr->is_var_in_first_arg)) {
+		if (!pr->idx2) {
+			q->st.r = pr->head;
+			return true;
+		}
+
+		cell *arg2 = deref(q, NEXT_ARG(arg1), key_ctx);
+
+		if (is_var(arg2)) {
+			q->st.r = pr->head;
+			return true;
+		}
+
+		key = arg2;
+		idx = pr->idx2;
+	}
+
+#define DEBUGIDX 0
+
+#if DEBUGIDX
+	DUMP_TERM("search, term = ", key, key_ctx);
+#endif
+
+	q->st.r = NULL;
+	sliter *iter;
+
+	if (!(iter = sl_find_key(idx, key)))
+		return false;
+
+	// If the index search has found just one (definite) solution
+	// then we can use it with no problems. If more than one then
+	// results must be returned in database order, so prefetch all
+	// the results and return them sorted as an iterator...
+
+	skiplist *tmp_idx = NULL;
+	const rule *r;
+
+	while (sl_next_key(iter, (void*)&r)) {
+#if DEBUGIDX
+		DUMP_TERM("   got, key = ", r->cl.cells, q->st.curr_frame);
+#endif
+
+		if (!tmp_idx) {
+			tmp_idx = sl_create(NULL, NULL, NULL);
+			sl_set_tmp(tmp_idx);
+		}
+
+		sl_app(tmp_idx, (void*)(size_t)r->db_id, (void*)r);
+	}
+
+	sl_done(iter);
+
+	if (!tmp_idx)
+		return false;
+
+	//sl_dump(tmp_idx, dump_id, q);
+
+	iter = sl_first(tmp_idx);
+
+	if (!sl_next(iter, (void*)&q->st.r)) {
+		sl_done(iter);
+		return false;
+	}
+
+	q->st.iter = iter;
+	return true;
 }
 
 // Match HEAD :- BODY.
