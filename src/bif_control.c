@@ -178,6 +178,17 @@ bool bif_iso_call_n(query *q)
 	return true;
 }
 
+static bool bif_sys_call_1(query *q)
+{
+	GET_FIRST_ARG(p1,callable);
+	cell *tmp = prepare_call(q, true, p1, p1_ctx, 1);
+	check_heap_error(tmp);
+	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
+	make_call(q, tmp+nbr_cells);
+	q->st.curr_cell = tmp;
+	return true;
+}
+
 bool bif_iso_call_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
@@ -188,6 +199,11 @@ bool bif_iso_call_1(query *q)
 
 	if (!call_check(q, tmp2, &status, false))
 		return status;
+
+	if (!is_builtin(p1) && p1->arity) {
+		check_heap_error(init_tmp_heap(q));
+		return bif_sys_call_1(q);
+	}
 
 	cell *tmp = prepare_call(q, true, tmp2, q->st.curr_frame, 3);
 	check_heap_error(tmp);
