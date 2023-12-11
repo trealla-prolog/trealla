@@ -1081,7 +1081,8 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 
 		if (key->arity) {
 			if (pr->is_multifile || pr->is_meta_predicate) {
-				q->st.key = deep_clone_to_heap(q, key, key_ctx);
+				check_heap_error(init_tmp_heap(q));
+				q->st.key = deep_clone_to_tmp(q, key, key_ctx);
 				check_heap_error(q->st.key);
 				q->st.key_ctx = q->st.curr_frame;
 
@@ -1096,9 +1097,6 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 
 		return true;
 	}
-
-	// Because the key is only used once, here,
-	// we only need a temporary clone...
 
 	check_heap_error(init_tmp_heap(q));
 	key = deep_clone_to_tmp(q, key, key_ctx);
