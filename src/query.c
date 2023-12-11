@@ -1029,7 +1029,7 @@ bool has_next_key(query *q)
 				continue;
 		}
 
-		if (index_cmpkey(q->st.key, dkey, q->st.m, NULL) == 0)
+		//if (index_cmpkey(q->st.key, dkey, q->st.m, NULL) == 0)
 			return true;
 	}
 
@@ -1081,8 +1081,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 
 		if (key->arity) {
 			if (pr->is_multifile || pr->is_meta_predicate) {
-				check_heap_error(init_tmp_heap(q));
-				q->st.key = deep_clone_to_tmp(q, key, key_ctx);
+				q->st.key = deep_clone_to_heap(q, key, key_ctx);
 				check_heap_error(q->st.key);
 				q->st.key_ctx = q->st.curr_frame;
 
