@@ -1100,9 +1100,9 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 	// Because the key is only used once, here,
 	// we only need a temporary clone...
 
-	//check_heap_error(init_tmp_heap(q));
-	//key = deep_clone_to_tmp(q, key, key_ctx);
-	//key_ctx = q->st.curr_frame;
+	check_heap_error(init_tmp_heap(q));
+	key = deep_clone_to_tmp(q, key, key_ctx);
+	key_ctx = q->st.curr_frame;
 
 	if (pr->is_meta_predicate) {
 		if (!expand_meta_predicate(q, pr))
