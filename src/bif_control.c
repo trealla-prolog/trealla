@@ -197,6 +197,10 @@ static bool bif_sys_call_1(query *q)
 bool bif_iso_call_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
+
+	if (!is_builtin(p1) && p1->arity)
+		return bif_sys_call_1(q);
+
 	check_heap_error(init_tmp_heap(q));
 	cell *tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(tmp2);
@@ -204,11 +208,6 @@ bool bif_iso_call_1(query *q)
 
 	if (!call_check(q, tmp2, &status, false))
 		return status;
-
-	if (!is_builtin(p1) && p1->arity) {
-		check_heap_error(init_tmp_heap(q));
-		return bif_sys_call_1(q);
-	}
 
 	cell *tmp = prepare_call(q, true, tmp2, q->st.curr_frame, 3);
 	check_heap_error(tmp);
