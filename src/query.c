@@ -540,19 +540,25 @@ int retry_choice(query *q)
 		f->overflow = ch->overflow;
 		f->base = ch->base;
 
-		if (ch->catchme_exception || ch->fail_on_retry)
+		if (ch->catchme_exception || ch->fail_on_retry) {
+			leave_predicate(q, ch->st.pr);
 			continue;
+		}
 
-		if (!ch->register_cleanup && q->noretry)
+		if (!ch->register_cleanup && q->noretry) {
+			leave_predicate(q, ch->st.pr);
 			continue;
+		}
 
 		if (ch->register_cleanup && q->noretry)
 			q->noretry = false;
 
 		trim_heap(q);
 
-		if (ch->succeed_on_retry)
+		if (ch->succeed_on_retry) {
+			leave_predicate(q, ch->st.pr);
 			return -1;
+		}
 
 		return 1;
 	}
@@ -1106,7 +1112,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 			return false;
 	}
 
-	cell *arg1 = key->arity ? deref(q, FIRST_ARG(key), key_ctx) : NULL;
+	cell *arg1 = key->arity ? FIRST_ARG(key) : NULL;
 	skiplist *idx = pr->idx;
 
 	if (arg1 && (is_var(arg1) || pr->is_var_in_first_arg)) {
@@ -1115,7 +1121,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 			return true;
 		}
 
-		cell *arg2 = deref(q, NEXT_ARG(arg1), key_ctx);
+		cell *arg2 = NEXT_ARG(arg1);
 
 		if (is_var(arg2)) {
 			q->st.r = pr->head;
