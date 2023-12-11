@@ -200,7 +200,7 @@ bool bif_iso_call_1(query *q)
 	if (!call_check(q, tmp2, &status, false))
 		return status;
 
-	if (!is_builtin(p1) && p1->arity) {
+	if (!is_builtin(tmp2) && tmp2->arity && 0) {
 		check_heap_error(init_tmp_heap(q));
 		return bif_sys_call_1(q);
 	}
