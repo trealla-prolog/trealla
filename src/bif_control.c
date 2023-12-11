@@ -181,23 +181,21 @@ bool bif_iso_call_n(query *q)
 bool bif_iso_call_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
-	cell *tmp2 = p1;
-	pl_idx tmp2_ctx = p1_ctx;
 
 	if (is_builtin(p1) || !p1->arity) {
 		check_heap_error(init_tmp_heap(q));
-		tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
-		check_heap_error(tmp2);
-		tmp2_ctx = q->st.curr_frame;
+		p1 = deep_clone_to_tmp(q, p1, p1_ctx);
+		check_heap_error(p1);
+		p1_ctx = q->st.curr_frame;
 		bool status;
 
-		if (!call_check(q, tmp2, &status, false))
+		if (!call_check(q, p1, &status, false))
 			return status;
 	}
 
-	cell *tmp = prepare_call(q, true, tmp2, tmp2_ctx, 3);
+	cell *tmp = prepare_call(q, true, p1, p1_ctx, 3);
 	check_heap_error(tmp);
-	pl_idx nbr_cells = PREFIX_LEN + tmp2->nbr_cells;
+	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
