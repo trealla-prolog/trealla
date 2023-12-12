@@ -835,7 +835,7 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 	cell *c_attrs = is_empty(&e->c) ? e->c.attrs : NULL;
 	pl_idx c_attrs_ctx = c_attrs ? e->c.attrs_ctx : 0;
 
-	if ((/*q->cp &&*/ (c_ctx < q->st.fp)) || is_managed(v))
+	if ((c_ctx < q->st.fp) || is_managed(v))
 		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
 
 	if (c_attrs)
