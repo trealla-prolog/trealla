@@ -182,7 +182,7 @@ bool bif_iso_call_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 
-	if (is_builtin(p1) || !p1->arity) {
+	if ((is_builtin(p1) && !is_evaluable(p1)) || !p1->arity) {
 		check_heap_error(init_tmp_heap(q));
 		p1 = deep_clone_to_tmp(q, p1, p1_ctx);
 		check_heap_error(p1);
@@ -212,7 +212,7 @@ bool bif_iso_once_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 
-	if (is_builtin(p1) || !p1->arity) {
+	if ((is_builtin(p1) && !is_evaluable(p1)) || !p1->arity) {
 		check_heap_error(init_tmp_heap(q));
 		p1 = deep_clone_to_tmp(q, p1, p1_ctx);
 		check_heap_error(p1);
