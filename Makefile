@@ -83,6 +83,7 @@ SRCOBJECTS = tpl.o \
 	src/bif_maps.o \
 	src/bif_posix.o \
 	src/bif_predicates.o \
+	src/bif_sort.o \
 	src/bif_sregex.o \
 	src/bif_streams.o \
 	src/bif_tasks.o \
@@ -239,6 +240,12 @@ src/bif_posix.o: src/bif_posix.c src/trealla.h src/internal.h src/cdebug.h \
  src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h src/heap.h \
  src/prolog.h src/query.h src/parser.h src/builtins.h
 src/bif_predicates.o: src/bif_predicates.c src/base64.h src/heap.h \
+ src/internal.h src/trealla.h src/cdebug.h src/stringbuf.h \
+ src/imath/imath.h src/imath/imrat.h src/imath/imath.h src/sre/re.h \
+ src/skiplist/skiplist.h src/utf8/utf8.h src/history.h src/library.h \
+ src/module.h src/parser.h src/prolog.h src/query.h src/builtins.h \
+ src/bif_atts.h
+src/bif_sort.o: src/bif_sort.c src/base64.h src/heap.h \
  src/internal.h src/trealla.h src/cdebug.h src/stringbuf.h \
  src/imath/imath.h src/imath/imrat.h src/imath/imath.h src/sre/re.h \
  src/skiplist/skiplist.h src/utf8/utf8.h src/history.h src/library.h \

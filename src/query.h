@@ -156,6 +156,10 @@ bool bif_map_list_2(query *q);
 bool bif_map_count_2(query *q);
 bool bif_map_close_1(query *q);
 bool bif_iso_close_1(query *q);
+bool bif_sort_4(query *q);
+bool bif_iso_keysort_2(query *q);
+bool bif_iso_msort_2(query *q);
+bool bif_iso_sort_2(query *q);
 
 void save_db(FILE *fp, query *q, int logging);
 char *uuid_to_buf(const uuid *u, char *buf, size_t buflen);
