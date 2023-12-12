@@ -416,4 +416,3 @@ bool do_post_unification_hook(query *q, bool is_builtin)
 	q->st.curr_cell = tmp;
 	return true;
 }
-
