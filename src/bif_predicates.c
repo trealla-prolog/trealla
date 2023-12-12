@@ -2689,7 +2689,7 @@ static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysor
 	basepair *base = malloc(sizeof(basepair)*cnt);
 	check_error(base);
 	LIST_HANDLER(p1);
-		size_t idx = 0;
+	size_t idx = 0;
 
 	while (is_list(p1)) {
 		cell *h = LIST_HEAD(p1);
@@ -2788,6 +2788,10 @@ static bool bif_iso_sort_2(query *q)
 	if (is_string(p2))
 		p2 = string_to_chars_list(q, p2, p2_ctx);
 
+	p1 = deep_clone_to_heap(q, p1, p1_ctx);
+	check_heap_error(p1);
+	p1_ctx = q->st.curr_frame;
+
 	bool status = false;
 	cell *l = nodesort(q, p1, p1_ctx, true, false, &status);
 	if (!l) return status;
@@ -2828,6 +2832,10 @@ static bool bif_iso_msort_2(query *q)
 	if (is_string(p2))
 		p2 = string_to_chars_list(q, p2, p2_ctx);
 
+	p1 = deep_clone_to_heap(q, p1, p1_ctx);
+	check_heap_error(p1);
+	p1_ctx = q->st.curr_frame;
+
 	bool status = false;
 	cell *l = nodesort(q, p1, p1_ctx, false, false, &status);
 	if (!l) return status;
@@ -2866,6 +2874,10 @@ static bool bif_iso_keysort_2(query *q)
 
 	if (skip1 && skip2 && (skip2 > skip1))
 		return false;
+
+	p1 = deep_clone_to_heap(q, p1, p1_ctx);
+	check_heap_error(p1);
+	p1_ctx = q->st.curr_frame;
 
 	bool status = false;
 	cell *l = nodesort(q, p1, p1_ctx, false, true, &status);

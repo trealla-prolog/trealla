@@ -211,17 +211,21 @@ bool bif_iso_call_1(query *q)
 bool bif_iso_once_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
-	check_heap_error(init_tmp_heap(q));
-	cell *tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
-	check_heap_error(tmp2);
-	bool status;
 
-	if (!call_check(q, tmp2, &status, false))
-		return status;
+	if (is_builtin(p1) || !p1->arity) {
+		check_heap_error(init_tmp_heap(q));
+		p1 = deep_clone_to_tmp(q, p1, p1_ctx);
+		check_heap_error(p1);
+		p1_ctx = q->st.curr_frame;
+		bool status;
 
-	cell *tmp = prepare_call(q, true, tmp2, q->st.curr_frame, 4);
+		if (!call_check(q, p1, &status, false))
+			return status;
+	}
+
+	cell *tmp = prepare_call(q, true, p1, p1_ctx, 4);
 	check_heap_error(tmp);
-	pl_idx nbr_cells = PREFIX_LEN + tmp2->nbr_cells;
+	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
