@@ -140,6 +140,7 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 	net_write(src, srclen, str);
 	SB_free(pr);
 	q->max_depth = save_depth;
+	if (++q->print_vgen == 0) q->print_vgen = 1;
 
 	if (q->creep) {
 		msleep(250);
