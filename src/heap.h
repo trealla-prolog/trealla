@@ -9,6 +9,7 @@ size_t alloc_grow(void **addr, size_t elem_size, size_t min_elements, size_t max
 
 cell *append_to_tmp(query *q, cell *p1, pl_idx p1_ctx);
 cell *clone_to_tmp(query *q, cell *p1, pl_idx p1_ctx);
+cell *clone_to_heap(query *q, cell *p1, pl_idx p1_ctx);
 cell *prepare_call(query *q, bool prefix, cell *p1, pl_idx p1_ctx, unsigned extras);
 
 cell *deep_clone_to_tmp(query *q, cell *p1, pl_idx p1_ctx);
