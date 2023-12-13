@@ -680,7 +680,6 @@ struct query_ {
 	bool lists_ok:1;
 	bool fail_on_retry:1;
 	bool noretry:1;
-	bool is_oom:1;
 	bool is_redo:1;
 	bool run_hook:1;
 	bool in_hook:1;

@@ -196,7 +196,7 @@ static bool check_trail(query *q)
 
 	pl_idx new_trailssize = alloc_grow((void**)&q->trails, sizeof(trail), q->st.tp, q->trails_size*4/3, false);
 	if (!new_trailssize) {
-		q->is_oom = q->error = true;
+		q->error = true;
 		return false;
 	}
 
@@ -214,7 +214,7 @@ static bool check_choice(query *q)
 
 	pl_idx new_choicessize = alloc_grow((void**)&q->choices, sizeof(choice), q->cp, q->choices_size*4/3, false);
 	if (!new_choicessize) {
-		q->is_oom = q->error = true;
+		q->error = true;
 		return false;
 	}
 
@@ -233,7 +233,7 @@ static bool check_frame(query *q)
 	pl_idx new_framessize = alloc_grow((void**)&q->frames, sizeof(frame), q->st.fp, q->frames_size*4/3, false);
 
 	if (!new_framessize) {
-		q->is_oom = q->error = true;
+		q->error = true;
 		return false;
 	}
 
@@ -254,7 +254,7 @@ bool check_slot(query *q, unsigned cnt)
 	pl_idx new_slotssize = alloc_grow((void**)&q->slots, sizeof(slot), nbr, nbr*4/3, false);
 
 	if (!new_slotssize) {
-		q->is_oom = q->error = true;
+		q->error = true;
 		return false;
 	}
 
@@ -1614,7 +1614,7 @@ bool start(query *q)
 				}
 			}
 
-			if ((!status && !q->is_oom) || q->abort) {
+			if (!status || q->abort) {
 				Trace(q, q->st.curr_cell, q->st.curr_frame, FAIL);
 				q->retry = QUERY_RETRY;
 
@@ -1643,7 +1643,7 @@ bool start(query *q)
 		} else {
 			q->tot_inferences++;
 
-			if (!match_head(q) && !q->is_oom) {
+			if (!match_head(q)) {
 				Trace(q, q->st.curr_cell, q->st.curr_frame, FAIL);
 				q->retry = QUERY_RETRY;
 				q->tot_backtracks++;
@@ -1652,18 +1652,6 @@ bool start(query *q)
 
 			if (q->run_hook)
 				do_post_unification_hook(q, false);
-		}
-
-		if (q->is_oom) {
-			check_pressure(q);
-			q->is_oom = q->error = false;
-
-			if (!q->did_throw)
-				throw_error(q, q->st.curr_cell, q->st.curr_frame, "resource_error", "memory");
-
-			q->retry = QUERY_RETRY;
-			q->tot_backtracks++;
-			continue;
 		}
 
 		MORE:
