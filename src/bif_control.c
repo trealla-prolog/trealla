@@ -607,7 +607,7 @@ static cell *parse_to_heap(query *q, const char *src)
 	return tmp;
 }
 
-bool find_exception_handler(query *q, char *ball)
+static bool find_exception_handler(query *q, char *ball)
 {
 	while (retry_choice(q)) {
 		const choice *ch = GET_CHOICE(q->cp);
