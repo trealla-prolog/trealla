@@ -147,7 +147,7 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 	}
 }
 
-static void check_pressure(query *q)
+void check_pressure(query *q)
 {
 #if REDUCE_PRESSURE
 	if (q->tmp_heap && (q->tmph_size > 4000)) {
@@ -160,28 +160,28 @@ static void check_pressure(query *q)
 #if TRACE_MEM
 		printf("*** q->st.tp=%u, q->trails_size=%u\n", (unsigned)q->st.tp, (unsigned)q->trails_size);
 #endif
-		q->trails_size = alloc_grow((void**)&q->trails, sizeof(trail), q->st.tp, q->st.tp*3/2, false);
+		q->trails_size = alloc_grow(q, (void**)&q->trails, sizeof(trail), q->st.tp, q->st.tp*3/2, false);
 	}
 
 	if (q->choices_size > (INITIAL_NBR_CHOICES*PRESSURE_FACTOR)) {
 #if TRACE_MEM
 		printf("*** q->st.cp=%u, q->choices_size=%u\n", (unsigned)q->cp, (unsigned)q->choices_size);
 #endif
-		q->choices_size = alloc_grow((void**)&q->choices, sizeof(choice), q->cp, q->cp*3/2, false);
+		q->choices_size = alloc_grow(q, (void**)&q->choices, sizeof(choice), q->cp, q->cp*3/2, false);
 	}
 
 	if (q->frames_size > (INITIAL_NBR_FRAMES*PRESSURE_FACTOR)) {
 #if TRACE_MEM
 		printf("*** q->st.fp=%u, q->frames_size=%u\n", (unsigned)q->st.fp, (unsigned)q->frames_size);
 #endif
-		q->frames_size = alloc_grow((void**)&q->frames, sizeof(frame), q->st.fp, q->st.fp*3/2, false);
+		q->frames_size = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.fp, q->st.fp*3/2, false);
 	}
 
 	if (q->slots_size > (INITIAL_NBR_SLOTS*PRESSURE_FACTOR)) {
 #if TRACE_MEM
 		printf("*** q->st.sp=%u, q->slots_size=%u\n", (unsigned)q->st.sp, (unsigned)q->slots_size);
 #endif
-		q->slots_size = alloc_grow((void**)&q->slots, sizeof(slot), q->st.sp, q->st.sp*3/2, false);
+		q->slots_size = alloc_grow(q, (void**)&q->slots, sizeof(slot), q->st.sp, q->st.sp*3/2, false);
 	}
 #endif
 }
@@ -194,7 +194,7 @@ static bool check_trail(query *q)
 	if (q->st.tp < q->trails_size)
 		return true;
 
-	pl_idx new_trailssize = alloc_grow((void**)&q->trails, sizeof(trail), q->st.tp, q->trails_size*4/3, false);
+	pl_idx new_trailssize = alloc_grow(q, (void**)&q->trails, sizeof(trail), q->st.tp, q->trails_size*4/3, false);
 	if (!new_trailssize) {
 		q->error = true;
 		return false;
@@ -212,7 +212,7 @@ static bool check_choice(query *q)
 	if (q->cp < q->choices_size)
 		return true;
 
-	pl_idx new_choicessize = alloc_grow((void**)&q->choices, sizeof(choice), q->cp, q->choices_size*4/3, false);
+	pl_idx new_choicessize = alloc_grow(q, (void**)&q->choices, sizeof(choice), q->cp, q->choices_size*4/3, false);
 	if (!new_choicessize) {
 		q->error = true;
 		return false;
@@ -230,7 +230,7 @@ static bool check_frame(query *q)
 	if (q->st.fp < q->frames_size)
 		return true;
 
-	pl_idx new_framessize = alloc_grow((void**)&q->frames, sizeof(frame), q->st.fp, q->frames_size*4/3, false);
+	pl_idx new_framessize = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.fp, q->frames_size*4/3, false);
 
 	if (!new_framessize) {
 		q->error = true;
@@ -251,7 +251,7 @@ bool check_slot(query *q, unsigned cnt)
 	if (nbr < q->slots_size)
 		return true;
 
-	pl_idx new_slotssize = alloc_grow((void**)&q->slots, sizeof(slot), nbr, nbr*4/3, false);
+	pl_idx new_slotssize = alloc_grow(q, (void**)&q->slots, sizeof(slot), nbr, nbr*4/3, false);
 
 	if (!new_slotssize) {
 		q->error = true;

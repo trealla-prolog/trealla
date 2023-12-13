@@ -1625,6 +1625,7 @@ static bool dcg_expansion(parser *p)
 	query *q = query_create(p->m, false);
 	check_error(q);
 
+	q->trace = false;
 	cell *c = p->cl->cells;
 	cell *tmp = alloc_on_heap(q, 1+c->nbr_cells+1+1);
 	make_struct(tmp, new_atom(p->pl, "dcg_translate"), NULL, 2, c->nbr_cells+1);
@@ -1692,6 +1693,7 @@ static bool term_expansion(parser *p)
 
 	query *q = query_create(m, true);
 	check_error(q);
+	q->trace = false;
 	cell *c = p->cl->cells;
 	cell *tmp = alloc_on_heap(q, 1+c->nbr_cells+2);
 	unsigned nbr_cells = 0;
@@ -1759,6 +1761,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 	query *q = query_create(p->m, true);
 	check_error(q);
+	q->trace = false;
 	q->varnames = true;
 	char *dst = print_canonical_to_strbuf(q, goal, 0, 0);
 	q->varnames = false;

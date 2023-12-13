@@ -510,8 +510,11 @@ void dump_vars(query *q, bool partial)
 		make_end(tmp+nbr_cells);
 		q->st.curr_cell = tmp;
 		q->in_attvar_print = true;
+		bool save_trace = q->trace;
+		q->trace = false;
 		start(q);
 		q->in_attvar_print = false;
+		q->trace = save_trace;
 		any = true;
 	}
 
