@@ -5,7 +5,7 @@
 #define NOPREFIX_LEN 0
 #define PREFIX_LEN 1
 
-size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, size_t max_elements, bool zeroit);
+size_t alloc_grow(void **addr, size_t elem_size, size_t min_elements, size_t max_elements, bool zeroit);
 
 cell *append_to_tmp(query *q, cell *p1, pl_idx p1_ctx);
 cell *clone_to_tmp(query *q, cell *p1, pl_idx p1_ctx);
