@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define ensure(cond, ...) if (!(cond)) { printf("Error: no memory\n"); abort(); }
+#define ensure(cond, ...) if (!(cond)) { printf("Error: no memory %s %d\n", __FILE__, __LINE__); abort(); }
 
 #define USE_RESULT __attribute__ ((__warn_unused_result__))
 #define DISCARD_RESULT (void)!
