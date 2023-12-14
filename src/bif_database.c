@@ -858,7 +858,7 @@ bool bif_abolish_2(query *q)
 
 			if (!CMP_STRING_TO_CSTR(q, c, "force")) {
 				if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "true")) {
-					force = force;
+					force = true;
 				} else if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "false")) {
 					force = false;
 				}
