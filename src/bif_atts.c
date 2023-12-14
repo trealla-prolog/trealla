@@ -182,25 +182,24 @@ bool bif_sys_list_attributed_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	parser *p = q->p;
-	const frame *f = GET_FIRST_FRAME();
 	check_heap_error(init_tmp_heap(q));
 
-	for (unsigned i = 0; i < p->nbr_vars; i++) {
-		//if (!strcmp(p->vartab.var_name[i], "_"))
-		//	continue;
-
-		slot *e = GET_SLOT(f, i);
+	for (unsigned i = 0; i < q->st.tp; i++) {
+		const trail *tr = q->trails + i;
+		const frame *f = GET_FRAME(tr->var_ctx);
+		slot *e = GET_SLOT(f, tr->var_nbr);
 		cell *c = &e->c;
-		cell *v = deref(q, c, q->st.curr_frame);
+		cell *v = deref(q, c, e->c.var_ctx);
 		pl_idx v_ctx = q->latest_ctx;
 
 		if (is_compound(v)) {
 			collect_vars(q, v, v_ctx);
 
 			for (unsigned i = 0, done = 0; i < q->tab_idx; i++) {
-				frame *vf = GET_FRAME(q->pl->tabs[i].ctx);
-				slot *ve = GET_SLOT(vf, q->pl->tabs[i].var_nbr);
-				cell *v = &ve->c;
+				const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
+				slot *e = GET_SLOT(f, q->pl->tabs[i].var_nbr);
+				cell *c = &e->c;
+				cell *v = deref(q, c, e->c.var_ctx);
 
 				if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
 					continue;
@@ -211,11 +210,11 @@ bool bif_sys_list_attributed_1(query *q)
 			}
 		}
 
-		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
+		if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
 			continue;
 
 		cell tmp;
-		make_var(&tmp, new_atom(q->pl, p->vartab.var_name[i]), i);
+		make_ref(&tmp, tr->var_nbr, tr->var_ctx);
 		append_list(q, &tmp);
 	}
 
