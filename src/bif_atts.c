@@ -269,8 +269,10 @@ typedef struct {
 
 static void check_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c, pl_idx c_ctx)
 {
-	if (is_indirect(c))
+	if (is_indirect(c)) {
 		c = c->val_ptr;
+		c_ctx = c->var_ctx;
+	}
 
 	for (unsigned nbr_cells = c->nbr_cells; nbr_cells--; c++) {
 		if (!is_var(c))
