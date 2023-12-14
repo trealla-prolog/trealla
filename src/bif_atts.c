@@ -269,11 +269,6 @@ typedef struct {
 
 static void check_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c, pl_idx c_ctx)
 {
-	if (is_indirect(c)) {
-		c = c->val_ptr;
-		c_ctx = c->var_ctx;
-	}
-
 	for (unsigned nbr_cells = c->nbr_cells; nbr_cells--; c++) {
 		if (!is_var(c))
 			continue;
@@ -317,7 +312,9 @@ bool bif_sys_undo_trail_2(query *q)
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
 		save->e[j] = *e;
-		check_occurs(tr->var_nbr, tr->var_ctx, &e->c, e->c.var_ctx);
+		cell *c = deref(q, &e->c, e->c.var_ctx);
+		pl_idx c_ctx = q->latest_ctx;
+		check_occurs(tr->var_nbr, tr->var_ctx, c, c_ctx);
 		//printf("*** unbind [%u:%u] hi_tp=%u, tag=%u, tr->var_ctx=%u, tr->var_nbr=%u\n", j, i, q->undo_hi_tp, e->c.tag, tr->var_ctx, tr->var_nbr);
 		cell lhs, rhs;
 		make_ref(&lhs, tr->var_nbr, tr->var_ctx);
