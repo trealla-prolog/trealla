@@ -842,10 +842,51 @@ bool bif_abolish_2(query *q)
 	if (get_smallint(p1_arity) > MAX_ARITY)
 		return throw_error(q, p1_arity, p1_ctx, "representation_error", "max_arity");
 
-	bool found = false;
+	bool force = false, tree = false;
+	LIST_HANDLER(p2);
 
-	if (get_builtin(q->pl, C_STR(q, p1_name), C_STRLEN(q, p1_name), get_smallint(p1_arity), &found, NULL), found)
-		return throw_error(q, p1, p1_ctx, "permission_error", "modify,static_procedure");
+	while (is_list(p2)) {
+		cell *h = LIST_HEAD(p2);
+		cell *c = deref(q, h, p2_ctx);
+
+		if (is_var(c))
+			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+
+		if (is_compound(c) && (c->arity == 1)) {
+			cell *name = c + 1;
+			name = deref(q, name, q->latest_ctx);
+
+			if (!CMP_STRING_TO_CSTR(q, c, "force")) {
+				if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "true")) {
+					force = force;
+				} else if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "false")) {
+					force = false;
+				}
+			} else if (!CMP_STRING_TO_CSTR(q, c, "tree") && false) {
+				if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "true")) {
+					tree = force;
+				} else if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "false")) {
+					tree = false;
+				}
+			} else
+				return throw_error(q, c, q->latest_ctx, "domain_error", "stream_option");
+		} else
+			return throw_error(q, c, q->latest_ctx, "domain_error", "stream_option");
+
+		p2 = LIST_TAIL(p2);
+		p2 = deref(q, p2, p2_ctx);
+		p2_ctx = q->latest_ctx;
+
+		if (is_var(p2))
+			return throw_error(q, p2, p2_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+	}
+
+	if (!force) {
+		bool found = false;
+
+		if (get_builtin(q->pl, C_STR(q, p1_name), C_STRLEN(q, p1_name), get_smallint(p1_arity), &found, NULL), found)
+			return throw_error(q, p1, p1_ctx, "permission_error", "modify,static_procedure");
+	}
 
 	cell tmp;
 	tmp = *p1_name;
