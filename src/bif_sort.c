@@ -21,23 +21,6 @@
 #include "openssl/sha.h"
 #endif
 
-#ifdef _WIN32
-#include <windows.h>
-#define unsetenv(p1)
-#define setenv(p1,p2,p3) _putenv_s(p1,p2)
-#define msleep Sleep
-#define localtime_r(p1,p2) localtime(p1)
-#else
-#include <unistd.h>
-static void msleep(int ms)
-{
-	struct timespec tv;
-	tv.tv_sec = (ms) / 1000;
-	tv.tv_nsec = ((ms) % 1000) * 1000 * 1000;
-	nanosleep(&tv, &tv);
-}
-#endif
-
 typedef struct { query *q; cell *c; pl_idx c_ctx; int8_t arg; bool ascending:1; } basepair;
 
 static int nodecmp(const void *ptr1, const void *ptr2)
