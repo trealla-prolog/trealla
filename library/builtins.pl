@@ -786,7 +786,7 @@ copy_term(Term, Copy, Gs) :-
 
 print_goals_([]).
 print_goals_([Goal|Goals]) :-
-	write_term(Goal, [varnames(true)]),
+	write(Goal),
 	(Goals == [] -> write('') ;	write(', ')),
 	print_goals_(Goals).
 
