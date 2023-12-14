@@ -1030,7 +1030,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 					continue;
 				}
 
-				if (q->max_depth && ((depth+1) >= q->max_depth)) {
+				if (q->max_depth && (depth >= q->max_depth)) {
 					SB_sprintf(q->sb, "%s", "...");
 					q->last_thing = WAS_SYMBOL;
 
