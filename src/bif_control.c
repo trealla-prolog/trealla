@@ -475,6 +475,7 @@ bool bif_iso_catch_3(query *q)
 	// Second time through? Try the recover goal...
 
 	if (q->retry == QUERY_EXCEPTION) {
+		check_pressure(q);
 		q->error = false;
 		GET_NEXT_ARG(p2,any);
 		GET_NEXT_ARG(p3,callable);
