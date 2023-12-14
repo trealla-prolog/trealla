@@ -812,15 +812,45 @@ void save_db(FILE *fp, query *q, int logging)
 
 bool bif_abolish_2(query *q)
 {
-	GET_FIRST_ARG(p1,atom);
-	GET_NEXT_ARG(p2,integer);
+	GET_FIRST_ARG(p1,callable);
+	GET_NEXT_ARG(p2,iso_list_or_nil);
 
-	if (is_bigint(p2))
-		return throw_error(q, p2, p2_ctx, "domain_error", "small_integer_range");
+	if (p1->arity != 2)
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
 
-	cell tmp = *p1;
-	tmp.arity = get_smallint(p2);
+	if (CMP_STRING_TO_CSTR(q, p1, "/") && CMP_STRING_TO_CSTR(q, p1, "//"))
+		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+	cell *p1_name = p1 + 1;
+	p1_name = deref(q, p1_name, p1_ctx);
+
+	if (!is_atom(p1_name))
+		return throw_error(q, p1_name, p1_ctx, "type_error", "atom");
+
+	cell *p1_arity = p1 + 2;
+	p1_arity = deref(q, p1_arity, p1_ctx);
+
+	if (!CMP_STRING_TO_CSTR(q, p1, "//"))
+		p1_arity += 2;
+
+	if (!is_integer(p1_arity))
+		return throw_error(q, p1_arity, p1_ctx, "type_error", "integer");
+
+	if (is_negative(p1_arity))
+		return throw_error(q, p1_arity, p1_ctx, "domain_error", "not_less_than_zero");
+
+	if (get_smallint(p1_arity) > MAX_ARITY)
+		return throw_error(q, p1_arity, p1_ctx, "representation_error", "max_arity");
+
+	bool found = false;
+
+	if (get_builtin(q->pl, C_STR(q, p1_name), C_STRLEN(q, p1_name), get_smallint(p1_arity), &found, NULL), found)
+		return throw_error(q, p1, p1_ctx, "permission_error", "modify,static_procedure");
+
+	cell tmp;
+	tmp = *p1_name;
+	tmp.arity = get_smallint(p1_arity);
 	CLR_OP(&tmp);
-	return do_abolish(q, &tmp, &tmp, true);
+	return do_abolish(q, p1, &tmp, true);
 }
 
