@@ -307,6 +307,7 @@ Non-standard predicates
 	listing/0
 	listing/1					# listing(+PI)
 
+	abolish/2					# abolish(+pi,+list)
 	pretty/1					# pretty-print version of listing/1
 	between/3
 	forall/2
