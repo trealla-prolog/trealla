@@ -787,7 +787,7 @@ copy_term(Term, Copy, Gs) :-
 print_goals_([]).
 print_goals_([Goal|Goals]) :-
 	write(Goal),
-	(Goals == [] -> write('') ;	write(', ')),
+	(Goals == [] -> true ;	write(', ')),
 	print_goals_(Goals).
 
 dump_attvars_([], []).
