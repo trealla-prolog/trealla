@@ -761,6 +761,7 @@ current_op(A, B, C) :-
 
 collect_goals_(_, [], GsIn, GsIn).
 collect_goals_(V, [H|T], GsIn, GsOut) :-
+	nonvar(H),
 	H =.. [M, _],
 	catch(M:attribute_goals(V, Goal0, []), _, Goal0 = put_atts(V, +H)),
 	!,
