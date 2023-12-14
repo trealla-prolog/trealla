@@ -274,6 +274,8 @@ static void add_result(int nbr, cell *c, pl_idx c_ctx)
 
 static int check_duplicate_result(query *q, int nbr, cell *c, pl_idx c_ctx)
 {
+	return -1;
+
 	if (is_cyclic_term(q, c, c_ctx))
 		return -1;
 
