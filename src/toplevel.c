@@ -324,21 +324,23 @@ bool query_redo(query *q)
 static bool any_attributed(query *q)
 {
 	const parser *p = q->p;
-	frame *f = GET_FIRST_FRAME();
 
-	for (unsigned i = 0; i < p->nbr_vars; i++) {
-		slot *e = GET_SLOT(f, i);
+	for (unsigned i = 0; i < q->st.tp; i++) {
+		const trail *tr = q->trails + i;
+		const frame *f = GET_FRAME(tr->var_ctx);
+		slot *e = GET_SLOT(f, tr->var_nbr);
 		cell *c = &e->c;
-		cell *v = deref(q, c, 0);
+		cell *v = deref(q, c, e->c.var_ctx);
 		pl_idx v_ctx = q->latest_ctx;
 
 		if (is_compound(v)) {
 			collect_vars(q, v, v_ctx);
 
 			for (unsigned i = 0, done = 0; i < q->tab_idx; i++) {
-				frame *vf = GET_FRAME(q->pl->tabs[i].ctx);
-				slot *ve = GET_SLOT(vf, q->pl->tabs[i].var_nbr);
-				cell *v = &ve->c;
+				frame *f = GET_FRAME(q->pl->tabs[i].ctx);
+				slot *e = GET_SLOT(f, q->pl->tabs[i].var_nbr);
+				cell *c = &e->c;
+				cell *v = deref(q, c, e->c.var_ctx);
 
 				if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
 					continue;
@@ -347,7 +349,7 @@ static bool any_attributed(query *q)
 			}
 		}
 
-		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
+		if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
 			continue;
 
 		return true;
