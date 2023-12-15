@@ -1779,7 +1779,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	// Note: since only parsing goals we need to preserve
 	// the varnames so they get reused. Only genuinely new
 	// variables should create anew. Hence we pull the
-	// vartab from the main parser...
+	// vartab from the main parser... IS THIS TRUE?
 
 	p->pl->in_goal_expansion = true;
 	parser *p2 = parser_create(p->m);
