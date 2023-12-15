@@ -1687,7 +1687,7 @@ bool start(query *q)
 		if (q->oom) {
 			if (q->oom++ == 99) {
 				q->error = true;
-				printf("\nterminated\n");
+				printf("\n%%terminated\n");
 				break;
 			}
 		}
