@@ -792,6 +792,7 @@ struct module_ {
 	bool loading:1;
 	bool error:1;
 	bool ignore_vars:1;
+	bool wild_goal_expansion:1;
 	bool make:1;
 };
 
@@ -829,6 +830,7 @@ struct prolog_ {
 	bool noindex:1;
 	bool iso_only:1;
 	bool trace:1;
+	bool in_goal_expansion:1;
 };
 
 extern pl_idx g_empty_s, g_pair_s, g_dot_s, g_cut_s, g_nil_s, g_true_s, g_fail_s;

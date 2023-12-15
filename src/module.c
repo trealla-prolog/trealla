@@ -1347,6 +1347,12 @@ static void check_goal_expansion(module *m, cell *p1)
 		return;
 
 	cell *arg1 = h + 1;
+
+	if (is_var(arg1)) {
+		m->wild_goal_expansion = true;
+		return;
+	}
+
 	predicate *pr = NULL;
 
 	if ((pr = find_predicate(m, arg1)) == NULL)
