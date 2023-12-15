@@ -1952,6 +1952,13 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			}
 
 			c->nbr_cells = 1 + rhs->nbr_cells;
+		} else if (c->val_off == g_negation_s) {
+			cell *rhs = c + 1;
+
+			if (!is_var(rhs)) {
+				rhs = goal_expansion(p, rhs);
+				c->nbr_cells = 1 + rhs->nbr_cells;
+			}
 		}
 	} else if (c->arity) {
 		predicate *pr = find_predicate(p->m, c);
