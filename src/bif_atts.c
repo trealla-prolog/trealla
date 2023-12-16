@@ -319,7 +319,12 @@ bool bif_sys_undo_trail_2(query *q)
 		//printf("*** unbind [%u:%u] hi_tp=%u, tag=%u, tr->var_ctx=%u, tr->var_nbr=%u\n", j, i, q->undo_hi_tp, e->c.tag, tr->var_ctx, tr->var_nbr);
 		cell lhs, rhs;
 		make_ref(&lhs, tr->var_nbr, tr->var_ctx);
-		rhs = e->c;
+
+		if (is_compound(c))
+			make_indirect(&rhs, c, c_ctx);
+		else
+			rhs = *c;
+
 		//DUMP_TERM("$undo1 rhs", &e->c, e->c.var_ctx, 0);
 		cell tmp[3];
 		make_struct(tmp, g_minus_s, NULL, 2, 2);
