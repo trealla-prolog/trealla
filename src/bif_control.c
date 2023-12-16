@@ -93,6 +93,11 @@ bool bif_call_0(query *q, cell *p1, pl_idx p1_ctx)
 
 static bool call_check(query *q, cell *tmp2, bool *status, bool calln)
 {
+	if (tmp2->val_off == g_colon_s) {
+		tmp2 = tmp2 + 1;
+		tmp2 += tmp2->nbr_cells;
+	}
+
 	if (!tmp2->match) {
 		bool found = false;
 
@@ -188,14 +193,8 @@ bool bif_iso_call_1(query *q)
 		check_heap_error(p1);
 		p1_ctx = q->st.curr_frame;
 		bool status;
-		cell *tmp_p1 = p1;
 
-		if (tmp_p1->val_off == g_colon_s) {
-			tmp_p1 = tmp_p1 + 1;
-			tmp_p1 += tmp_p1->nbr_cells;
-		}
-
-		if (!call_check(q, tmp_p1, &status, false))
+		if (!call_check(q, p1, &status, false))
 			return status;
 	}
 
