@@ -1938,21 +1938,8 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			}
 
 			c->nbr_cells = 1 + lhs->nbr_cells + rhs->nbr_cells;
-		} else {
-			cell *lhs = c + 1;
-
-			if (is_var(lhs))
-				lhs = goal_expansion(p, lhs);
-
-			cell *rhs = lhs + lhs->nbr_cells;
-			c = p->cl->cells + c_idx;
-
-			if (is_var(rhs))
-				rhs = goal_expansion(p, rhs);
-
-			c->nbr_cells = 1 + lhs->nbr_cells + rhs->nbr_cells;
 		}
-	} else if (is_prefix(c) ||is_postfix(c)) {
+	} else if (is_prefix(c)) {
 		if (c->val_off == g_neck_s) {
 			cell *rhs = c + 1;
 
@@ -1965,7 +1952,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			}
 
 			c->nbr_cells = 1 + rhs->nbr_cells;
-		} else {
+		} else if (c->val_off == g_negation_s) {
 			cell *rhs = c + 1;
 
 			if (!is_var(rhs)) {
