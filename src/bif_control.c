@@ -188,8 +188,14 @@ bool bif_iso_call_1(query *q)
 		check_heap_error(p1);
 		p1_ctx = q->st.curr_frame;
 		bool status;
+		cell *tmp_p1 = p1;
 
-		if (!call_check(q, p1, &status, false))
+		if (tmp_p1->val_off == g_colon_s) {
+			tmp_p1 = tmp_p1 + 1;
+			tmp_p1 += tmp_p1->nbr_cells;
+		}
+
+		if (!call_check(q, tmp_p1, &status, false))
 			return status;
 	}
 
