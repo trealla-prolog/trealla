@@ -118,7 +118,7 @@ static bool call_check(query *q, cell *tmp2, bool *status, bool calln)
 			SET_OP(tmp2, specifier);
 	}
 
-	if (check_body_callable(tmp2) != NULL) {
+	if ((tmp2 = check_body_callable(tmp2)) != NULL) {
 		*status = throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
 		return false;
 	}
