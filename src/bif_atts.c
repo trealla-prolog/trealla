@@ -88,14 +88,18 @@ bool bif_put_atts_2(query *q)
 
 		while (is_iso_list(l)) {
 			cell *h = LIST_HEAD(l);
+			h = deref(q, h, l_ctx);
+			cell *h1 = deref(q, h+1, q->latest_ctx);
 
 			if (CMP_STRING_TO_CSTR(q, h, m_name)
-				|| CMP_STRING_TO_STRING(q, h+1, attr)
-				|| ((h+1)->arity != a_arity)) {
+				|| CMP_STRING_TO_STRING(q, h1, attr)
+				|| (h1->arity != a_arity)) {
 				append_list(q, h);
 			}
 
 			l = LIST_TAIL(l);
+			l = deref(q, l, l_ctx);
+			l_ctx = q->latest_ctx;
 		}
 	}
 
@@ -134,12 +138,15 @@ bool bif_get_atts_2(query *q)
 
 		while (is_iso_list(l)) {
 			cell *h = LIST_HEAD(l);
-			//DUMP_TERM("$att", h, l_ctx, 1);
+			h = deref(q, h, l_ctx);
+			cell *h1 = deref(q, h+1, q->latest_ctx);
 
-			if (!is_nil(h+1))
-				append_list(q, h+1);
+			if (!is_nil(h1))
+				append_list(q, h1);
 
 			l = LIST_TAIL(l);
+			l = deref(q, l, l_ctx);
+			l_ctx = q->latest_ctx;
 		}
 
 		l = end_list(q);
@@ -164,17 +171,21 @@ bool bif_get_atts_2(query *q)
 
 	while (is_iso_list(l)) {
 		cell *h = LIST_HEAD(l);
+		h = deref(q, h, l_ctx);
+		cell *h1 = deref(q, h+1, q->latest_ctx);
 
 		if (!CMP_STRING_TO_CSTR(q, h, m_name)
-			&& !CMP_STRING_TO_STRING(q, h+1, attr)
-			&& ((h+1)->arity == a_arity)) {
+			&& !CMP_STRING_TO_STRING(q, h1, attr)
+			&& (h1->arity == a_arity)) {
 			if (is_minus)
 				return false;
 
-			return unify(q, attr, p2_ctx, h+1, l_ctx);
+			return unify(q, attr, p2_ctx, h1, l_ctx);
 		}
 
 		l = LIST_TAIL(l);
+		l = deref(q, l, l_ctx);
+		l_ctx = q->latest_ctx;
 	}
 
 	return is_minus ? true : false;
@@ -240,12 +251,15 @@ bool bif_sys_attributed_var_1(query *q)
 
 	while (is_iso_list(l)) {
 		cell *h = LIST_HEAD(l);
-		//DUMP_TERM("$att", h, l_ctx, 1);
+		h = deref(q, h, l_ctx);
+		cell *h1 = deref(q, h+1, l_ctx);
 
-		if (!is_nil(h+1))
-			append_list(q, h+1);
+		if (!is_nil(h1))
+			append_list(q, h1);
 
 		l = LIST_TAIL(l);
+		l = deref(q, l, l_ctx);
+		l_ctx = q->latest_ctx;
 	}
 
 	l = end_list(q);
