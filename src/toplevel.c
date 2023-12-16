@@ -324,21 +324,22 @@ bool query_redo(query *q)
 static bool any_attributed(query *q)
 {
 	const parser *p = q->p;
-	frame *f = GET_FIRST_FRAME();
+	const frame *f = GET_FIRST_FRAME();
 
 	for (unsigned i = 0; i < p->nbr_vars; i++) {
 		slot *e = GET_SLOT(f, i);
 		cell *c = &e->c;
-		cell *v = deref(q, c, 0);
+		cell *v = deref(q, c, q->st.curr_frame);
 		pl_idx v_ctx = q->latest_ctx;
 
 		if (is_compound(v)) {
 			collect_vars(q, v, v_ctx);
 
 			for (unsigned i = 0, done = 0; i < q->tab_idx; i++) {
-				frame *vf = GET_FRAME(q->pl->tabs[i].ctx);
-				slot *ve = GET_SLOT(vf, q->pl->tabs[i].var_nbr);
-				cell *v = &ve->c;
+				const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
+				slot *e = GET_SLOT(f, q->pl->tabs[i].var_nbr);
+				cell *c = &e->c;
+				cell *v = deref(q, c, e->c.var_ctx);
 
 				if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
 					continue;
