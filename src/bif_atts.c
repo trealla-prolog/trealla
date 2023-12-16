@@ -188,8 +188,7 @@ bool bif_sys_list_attributed_1(query *q)
 		const trail *tr = q->trails + i;
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
-		cell *c = &e->c;
-		cell *v = deref(q, c, e->c.var_ctx);
+		cell *v = deref(q, &e->c, e->c.var_ctx);
 		pl_idx v_ctx = q->latest_ctx;
 
 		if (is_compound(v)) {
@@ -198,8 +197,7 @@ bool bif_sys_list_attributed_1(query *q)
 			for (unsigned i = 0, done = 0; i < q->tab_idx; i++) {
 				const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
 				slot *e = GET_SLOT(f, q->pl->tabs[i].var_nbr);
-				cell *c = &e->c;
-				cell *v = deref(q, c, e->c.var_ctx);
+				cell *v = deref(q, &e->c, e->c.var_ctx);
 
 				if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
 					continue;
