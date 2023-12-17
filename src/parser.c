@@ -1761,8 +1761,10 @@ static cell *goal_expansion(parser *p, cell *goal)
 	//if (search_predicate(p->m, goal))
 	//	return goal;
 
-	if (p->pl->in_goal_expansion)
+	if (p->pl->in_goal_expansion) {
+		//printf("??? goal_expansion %s/%u\n", C_STR(p, goal), goal->arity);
 		return goal;
+	}
 
 	query *q = query_create(p->m, true);
 	check_error(q);
@@ -1781,6 +1783,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	// variables should create anew. Hence we pull the
 	// vartab from the main parser... IS THIS TRUE?
 
+	//printf("+++ goal_expansion %s/%u\n", C_STR(p, goal), goal->arity);
 	p->pl->in_goal_expansion = true;
 	parser *p2 = parser_create(p->m);
 	check_error(p2, query_destroy(q));
@@ -1796,6 +1799,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	execute(q, p2->cl->cells, p2->cl->nbr_vars);
 	SB_free(s);
 	p->pl->in_goal_expansion = false;
+	//printf("-- goal_expansion %s/%u\n", C_STR(p, goal), goal->arity);
 
 	if (q->retry != QUERY_OK) {
 		parser_destroy(p2);
@@ -1972,7 +1976,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 
 		//printf("*** %s/%u, meta=%d\n", C_STR(p, c), c->arity, meta);
 
-		bool no_meta = (c->val_off == g_call_s) && (c->arity == 1);
+		bool no_meta = false;//(c->val_off == g_call_s) && (c->arity == 1);
 
 		if (meta)
 			c = goal_expansion(p, c);
@@ -1994,6 +1998,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 		}
 	}
 
+	c_idx = c - p->cl->cells;
 	return p->cl->cells + c_idx;
 }
 
