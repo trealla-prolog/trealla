@@ -1972,7 +1972,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 
 		//printf("*** %s/%u, meta=%d\n", C_STR(p, c), c->arity, meta);
 
-		bool no_meta = is_builtin(c);
+		bool no_meta = (c->val_off == g_call_s) && (c->arity == 1);
 
 		if (meta)
 			c = goal_expansion(p, c);

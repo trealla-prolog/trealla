@@ -5705,6 +5705,33 @@ static bool bif_prolog_load_context_2(query *q)
 	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 }
 
+static bool bif_strip_module_3(query *q)
+{
+	GET_FIRST_ARG(p1,callable);
+	GET_NEXT_ARG(p2,atom_or_var);
+	GET_NEXT_ARG(p3,any);
+
+	if (p1->val_off == g_colon_s) {
+		cell *cm = deref(q, p1+1, p1_ctx);
+		pl_idx cm_ctx = q->latest_ctx;
+
+		if (!unify(q, p2, p2_ctx, cm, cm_ctx))
+			return false;
+
+		cell *ct = deref(q, p1+2, p1_ctx);
+		pl_idx ct_ctx = q->latest_ctx;
+		return unify(q, p3, p3_ctx, ct, ct_ctx);
+	}
+
+	cell tmp;
+	make_atom(&tmp, new_atom(q->pl, q->st.m->name));
+
+	if (!unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
+		return false;
+
+	return unify(q, p3, p3_ctx, p1, p1_ctx);
+}
+
 static bool bif_module_1(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_var);
@@ -6371,6 +6398,7 @@ builtins g_other_bifs[] =
 
 	{"current_module", 1, bif_current_module_1, "-atom", false, false, BLAH},
 	{"prolog_load_context", 2, bif_prolog_load_context_2, "+atom,?term", false, false, BLAH},
+	{"strip_module", 3, bif_strip_module_3, "+callable,?atom,?callable", false, false, BLAH},
 	{"module", 1, bif_module_1, "?atom", false, false, BLAH},
 	{"modules", 1, bif_modules_1, "-list", false, false, BLAH},
 	{"using", 0, bif_using_0, NULL, false, false, BLAH},

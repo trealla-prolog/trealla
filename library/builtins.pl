@@ -518,13 +518,6 @@ deconsult(Files) :- unload_files(Files).
 
 :- help(deconsult(+list), [iso(false)]).
 
-strip_module(T, M, P) :-
-	(	T = M:P -> true
-	;	( P=T, prolog_load_context(module, M))
-	).
-
-:- help(strip_module(+term,-atom,-term), [iso(false)]).
-
 ?=(X, Y) :- \+ unifiable(X, Y, [_|_]).
 
 :- help('?='(+term,+term), [iso(false)]).
