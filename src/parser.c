@@ -488,7 +488,10 @@ static bool goal_run(parser *p, cell *goal)
 	if (p->error || p->internal || !is_interned(goal))
 		return false;
 
-	if ((goal->val_off == g_goal_expansion_s) || (goal->val_off == g_cut_s))
+	if ((goal->val_off == g_goal_expansion_s) && (goal->arity == 2))
+		return false;
+
+	if (goal->val_off == g_cut_s)
 		return false;
 
 	query *q = query_create(p->m, false);
@@ -1745,7 +1748,10 @@ static cell *goal_expansion(parser *p, cell *goal)
 	if (p->error || p->internal || !is_interned(goal))
 		return goal;
 
-	if ((goal->val_off == g_goal_expansion_s) || (goal->val_off == g_cut_s))
+	if ((goal->val_off == g_goal_expansion_s) && (goal->arity == 2))
+		return goal;
+
+	if (goal->val_off == g_cut_s)
 		return goal;
 
 	if (get_builtin_term(p->m, goal, NULL, NULL) /*|| is_op(goal)*/)
