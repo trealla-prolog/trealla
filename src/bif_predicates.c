@@ -5620,26 +5620,29 @@ static bool bif_get_unbuffered_char_1(query *q)
 
 bool bif_iso_invoke_2(query *q)
 {
-	GET_FIRST_ARG(p1,atom);
+	GET_FIRST_ARG(p1,atom_or_var);
 	GET_NEXT_ARG(p2,callable);
-	module *m = find_module(q->pl, C_STR(q, p1));
 
-	if (!m)
-		m = module_create(q->pl, C_STR(q, p1));
+	if (is_atom(p1)) {
+		module *m = find_module(q->pl, C_STR(q, p1));
+
+		if (!m)
+			m = module_create(q->pl, C_STR(q, p1));
+
+		q->st.m = m;
+	}
 
 	cell *tmp = prepare_call(q, true, p2, p2_ctx, 1);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = PREFIX_LEN;
 
 	if (!is_builtin(p2) /*&& !tmp[nbr_cells].match*/)
-		tmp[nbr_cells].match = find_predicate(m, p2);
+		tmp[nbr_cells].match = find_predicate(q->st.m, p2);
 
 	nbr_cells += p2->nbr_cells;
 	make_call(q, tmp+nbr_cells);
-	q->save_m = q->st.m;
 	q->st.curr_cell = tmp;
 	q->st.curr_frame = p2_ctx;
-	q->st.m = m;
 	return true;
 }
 

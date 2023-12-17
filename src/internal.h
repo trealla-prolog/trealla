@@ -632,7 +632,7 @@ struct prolog_flags_ {
 
 struct query_ {
 	query *prev, *next, *parent;
-	module *save_m, *current_m;
+	module *current_m;
 	prolog *pl;
 	parser *p;
 	frame *frames;
