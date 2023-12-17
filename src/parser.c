@@ -1972,6 +1972,8 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 
 		//printf("*** %s/%u, meta=%d\n", C_STR(p, c), c->arity, meta);
 
+		bool is_call = c->val_off == g_call_s;
+
 		if (meta)
 			c = goal_expansion(p, c);
 
@@ -1981,7 +1983,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 		while (arity--) {
 			c->nbr_cells -= arg->nbr_cells;
 
-			if (meta)
+			if (meta && !is_call)
 				arg = goal_expansion(p, arg);
 
 			if (control)
