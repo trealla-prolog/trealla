@@ -5715,8 +5715,8 @@ static bool bif_strip_module_3(query *q)
 		cell *cm = deref(q, p1+1, p1_ctx);
 		pl_idx cm_ctx = q->latest_ctx;
 
-		//if (!unify(q, p2, p2_ctx, cm, cm_ctx))
-		//	return false;
+		if (!unify(q, p2, p2_ctx, cm, cm_ctx))
+			return false;
 
 		cell *ct = deref(q, p1+2, p1_ctx);
 		pl_idx ct_ctx = q->latest_ctx;
