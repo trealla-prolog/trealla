@@ -1758,7 +1758,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 	//printf("*** here %s/%u\n", C_STR(p, goal), goal->arity);
 
-	//if (search_predicate(p->m, goal))
+	//if (search_predicate(p->m, goal, NULL))
 	//	return goal;
 
 	if (p->pl->in_goal_expansion) {
