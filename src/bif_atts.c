@@ -95,6 +95,9 @@ bool bif_put_atts_2(query *q)
 				|| CMP_STRING_TO_STRING(q, h1, attr)
 				|| (h1->arity != a_arity)) {
 				append_list(q, h);
+			} else if (is_minus) {
+				if (!unify(q, attr, p2_ctx, h1, l_ctx))
+					return false;
 			}
 
 			l = LIST_TAIL(l);
