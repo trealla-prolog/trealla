@@ -1397,7 +1397,7 @@ static bool match_head(query *q)
 			//printf("*** %s / %u ... %u\n", C_STR(q, c), c->arity, s_cnt++);
 			pr = search_predicate(q->st.m, c, NULL);
 
-			if (!pr || (pr->is_goal_expansion && !pr->head)) {
+			if (!pr) {
 				if (!is_end(c) && !(is_interned(c) && !strcmp(C_STR(q, c), "initialization"))) {
 					if (q->st.m->flags.unknown == UNK_ERROR)
 						return throw_error(q, c, q->st.curr_frame, "existence_error", "procedure");
