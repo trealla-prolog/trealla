@@ -451,7 +451,8 @@ static void destroy_predicate(module *m, predicate *pr)
 
 bool find_goal_expansion(module *m, cell *c)
 {
-	cell tmp = *c;
+	if (m->wild_goal_expansion)
+		return true;
 
 	for (gex *g = m->gex_head; g; g = g->next) {
 		if ((g->key.val_off == c->val_off) && (g->key.arity == c->arity))
@@ -463,9 +464,6 @@ bool find_goal_expansion(module *m, cell *c)
 
 bool search_goal_expansion(module *m, cell *c)
 {
-	if (m->wild_goal_expansion)
-		return true;
-
 	if (find_goal_expansion(m, c))
 		return true;
 
@@ -477,9 +475,6 @@ bool search_goal_expansion(module *m, cell *c)
 	for (unsigned i = 0; i < m->idx_used; i++) {
 		module *tmp_m = m->used[i];
 
-		if (tmp_m->wild_goal_expansion)
-			return true;
-
 		if (find_goal_expansion(tmp_m, c))
 			return true;
 	}
@@ -488,9 +483,6 @@ bool search_goal_expansion(module *m, cell *c)
 	for (module *tmp_m = m->pl->modules; tmp_m; tmp_m = tmp_m->next) {
 		if (m == tmp_m)
 			continue;
-
-		if (tmp_m->wild_goal_expansion)
-			return true;
 
 		if (find_goal_expansion(tmp_m, c))
 			return true;
