@@ -463,9 +463,11 @@ bool find_goal_expansion(module *m, cell *c)
 
 bool search_goal_expansion(module *m, cell *c)
 {
-	if (find_goal_expansion(m, c))
+	if (m->wild_goal_expansion)
 		return true;
 
+	if (find_goal_expansion(m, c))
+		return true;
 
 	if (m->pl->user_m) {
 		if (find_goal_expansion(m->pl->user_m, c))
@@ -475,6 +477,9 @@ bool search_goal_expansion(module *m, cell *c)
 	for (unsigned i = 0; i < m->idx_used; i++) {
 		module *tmp_m = m->used[i];
 
+		if (tmp_m->wild_goal_expansion)
+			return true;
+
 		if (find_goal_expansion(tmp_m, c))
 			return true;
 	}
@@ -483,6 +488,9 @@ bool search_goal_expansion(module *m, cell *c)
 	for (module *tmp_m = m->pl->modules; tmp_m; tmp_m = tmp_m->next) {
 		if (m == tmp_m)
 			continue;
+
+		if (tmp_m->wild_goal_expansion)
+			return true;
 
 		if (find_goal_expansion(tmp_m, c))
 			return true;
