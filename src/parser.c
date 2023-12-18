@@ -1745,7 +1745,7 @@ static bool term_expansion(parser *p)
 
 static cell *goal_expansion(parser *p, cell *goal)
 {
-	if (p->error || p->internal || !is_interned(goal))
+	if (p->error || p->internal || !is_interned(goal) || !is_callable(goal))
 		return goal;
 
 	if ((goal->val_off == g_goal_expansion_s) && (goal->arity == 2))
@@ -1760,7 +1760,12 @@ static cell *goal_expansion(parser *p, cell *goal)
 	if (!search_goal_expansion(p->m, goal))
 		return goal;
 
-	//printf("*** here %s/%u\n", C_STR(p, goal), goal->arity);
+	if (!CMP_STRING_TO_CSTR(p, goal, "phrase") && !p->consulting) {
+		return goal;
+	}
+
+	//printf("*** here %s/%u\n", C_STR(p, goal), (goal)->arity);
+	//printf("*** ***  %s/%u\n", C_STR(p, goal+1), (goal+1)->arity);
 
 	//if (search_predicate(p->m, goal, NULL))
 	//	return goal;
@@ -1819,6 +1824,9 @@ static cell *goal_expansion(parser *p, cell *goal)
 	char *src = NULL;
 
 	for (unsigned i = 0; i < p2->cl->nbr_vars; i++) {
+		if (!p2->vartab.var_name[i])
+			continue;
+
 		if (strcmp(p2->vartab.var_name[i], "_TermOut"))
 			continue;
 
