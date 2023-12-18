@@ -2,6 +2,13 @@
 
 :- use_module(library(lists)).
 
+expand_term((H --> B), Out) :-
+	dcg_translate((H --> B), Out), !.
+
+dcg_translate(TermIn, Term) :-
+	nonvar(TermIn),
+	dcg_rule(TermIn, Term).
+
 predicate_property(P, A) :-
 	nonvar(P), atom(A), !,
 	must_be(P, callable, predicate_property/2, _),
