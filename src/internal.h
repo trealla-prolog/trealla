@@ -452,7 +452,6 @@ struct predicate_ {
 	const char *filename;
 	cell *meta_args;
 	uint64_t cnt, refcnt, db_id;
-	bool is_goal_expansion:1;
 	bool is_reload:1;
 	bool is_prebuilt:1;
 	bool is_public:1;
@@ -770,12 +769,18 @@ struct parser_ {
 
 typedef struct loaded_file_ loaded_file;
 
+typedef struct gex_ {
+	cell key;
+	struct gex_ *prev, *next, *alias;
+} gex;
+
 struct module_ {
 	module *used[MAX_MODULES];
 	module *next, *orig;
 	prolog *pl;
 	const char *filename, *name, *actual_filename;
 	predicate *head, *tail;
+	gex *gex_head, *gex_tail;
 	parser *p;
 	FILE *fp;
 	skiplist *index, *ops, *defops;

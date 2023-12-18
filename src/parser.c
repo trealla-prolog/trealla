@@ -1757,9 +1757,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	if (get_builtin_term(p->m, goal, NULL, NULL) /*|| is_op(goal)*/)
 		return goal;
 
-	predicate *pr = search_predicate(p->m, goal, NULL);
-
-	if ((!pr || !pr->is_goal_expansion) && !p->m->wild_goal_expansion)
+	if (!search_goal_expansion(p->m, goal))
 		return goal;
 
 	//printf("*** here %s/%u\n", C_STR(p, goal), goal->arity);
@@ -1972,7 +1970,8 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 		}
 	} else if (c->arity) {
 		predicate *pr = find_predicate(p->m, c);
-		bool meta = !pr || pr->is_meta_predicate || pr->is_goal_expansion || p->m->wild_goal_expansion;
+		bool is_goal_expansion = find_goal_expansion(p->m, c);
+		bool meta = !pr || pr->is_meta_predicate || is_goal_expansion || p->m->wild_goal_expansion;
 		bool control = false;
 
 		if ((c->val_off == g_throw_s) && (c->arity == 1))

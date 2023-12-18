@@ -2264,9 +2264,6 @@ static bool bif_iso_current_predicate_1(query *q)
 	if (!pr)
 		return false;
 
-	if (pr->is_goal_expansion && !pr->head)
-		return false;
-
 	return true;
 }
 

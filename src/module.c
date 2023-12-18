@@ -449,6 +449,68 @@ static void destroy_predicate(module *m, predicate *pr)
 	free(pr);
 }
 
+bool find_goal_expansion(module *m, cell *c)
+{
+	cell tmp = *c;
+
+	for (gex *g = m->gex_head; g; g = g->next) {
+		if ((g->key.val_off == c->val_off) && (g->key.arity == c->arity))
+			return true;
+	}
+
+	return NULL;
+}
+
+bool search_goal_expansion(module *m, cell *c)
+{
+	if (find_goal_expansion(m, c))
+		return true;
+
+
+	if (m->pl->user_m) {
+		if (find_goal_expansion(m->pl->user_m, c))
+			return true;
+	}
+
+	for (unsigned i = 0; i < m->idx_used; i++) {
+		module *tmp_m = m->used[i];
+
+		if (find_goal_expansion(tmp_m, c))
+			return true;
+	}
+
+
+	for (module *tmp_m = m->pl->modules; tmp_m; tmp_m = tmp_m->next) {
+		if (m == tmp_m)
+			continue;
+
+		if (find_goal_expansion(tmp_m, c))
+			return true;
+	}
+
+	return false;
+}
+
+void create_goal_expansion(module *m, cell *c)
+{
+	if (find_goal_expansion(m, c))
+		return;
+
+	gex *g = calloc(1, sizeof(gex));
+	ensure(g);
+	g->prev = m->gex_tail;
+
+	if (m->gex_tail)
+		m->gex_tail->next = g;
+
+	m->gex_tail = g;
+
+	if (!m->gex_head)
+		m->gex_head = g;
+
+	g->key = *c;
+}
+
 static int predicate_cmpkey(const void *ptr1, const void *ptr2, const void *param, void *l)
 {
 	const module *m = (const module*)param;
@@ -1353,13 +1415,7 @@ static void check_goal_expansion(module *m, cell *p1)
 		return;
 	}
 
-	predicate *pr = NULL;
-
-	if ((pr = find_predicate(m, arg1)) == NULL)
-		pr = create_predicate(m, arg1, NULL);
-
-	if (pr)
-		pr->is_goal_expansion = true;
+	create_goal_expansion(m, arg1);
 }
 
 static rule *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting)

@@ -203,7 +203,6 @@ seqq([Es|Ess]) --> seq(Es), seqq(Ess).
    Cs0 = Cs.
 ... --> [] | [_], ... .
 
-/*
 error_goal(error(E, must_be/2), error(E, must_be/2)).
 error_goal(error(E, (=..)/2), error(E, (=..)/2)).
 error_goal(E, _) :- throw(E).
@@ -221,4 +220,3 @@ user:goal_expansion(phrase(GRBody, S, S0), GRBody2) :-
     ).
 
 user:goal_expansion(phrase(GRBody, S), phrase(GRBody, S, [])).
-*/
