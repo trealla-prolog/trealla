@@ -180,18 +180,18 @@ builtins *get_fn_ptr(void *fn);
 
 #define PROMPT ""
 
-#define DUMP_TERM(s,c,c_ctx,running) {				\
-	printf("*** %s ", s);							\
-	q->quoted = true;								\
-	print_term(q, stdout, c, c_ctx, running);		\
-	q->quoted = false;								\
-	printf("\n");									\
+#define DUMP_TERM(s,c,c_ctx,running) { \
+	fprintf(stderr, "*** %s ", s); \
+	q->quoted = true; \
+	print_term(q, stderr, c, c_ctx, running); \
+	q->quoted = false; \
+	fprintf(stderr, "\n"); \
 }
 
-#define CHECK_INTERRUPT()							\
-	if (g_tpl_interrupt) {							\
-		if (check_interrupt(q))						\
-			break;									\
+#define CHECK_INTERRUPT() \
+	if (g_tpl_interrupt) { \
+		if (check_interrupt(q)) \
+			break; \
 	}
 
 inline static bool make_cstring(cell *d, const char *s)
