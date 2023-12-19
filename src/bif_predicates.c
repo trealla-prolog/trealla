@@ -5723,11 +5723,13 @@ static bool bif_strip_module_3(query *q)
 		return unify(q, p3, p3_ctx, ct, ct_ctx);
 	}
 
+#if 0
 	cell tmp;
 	make_atom(&tmp, new_atom(q->pl, q->st.m->name));
 
 	if (!unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 		return false;
+#endif
 
 	return unify(q, p3, p3_ctx, p1, p1_ctx);
 }
