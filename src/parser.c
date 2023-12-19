@@ -1927,6 +1927,7 @@ static cell *insert_call_here(parser *p, cell *c, cell *p1)
 static cell *term_to_body_conversion(parser *p, cell *c)
 {
 	pl_idx c_idx = c - p->cl->cells;
+	bool is_head = c_idx == 0;
 
 	if (is_xfx(c) || is_xfy(c)) {
 		if ((c->val_off == g_conjunction_s)
@@ -1979,7 +1980,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 				c->nbr_cells = 1 + rhs->nbr_cells;
 			}
 		}
-	} else if (c->arity) {
+	} else if (!is_head && c->arity) {
 		predicate *pr = find_predicate(p->m, c);
 		bool is_goal_expansion = find_goal_expansion(p->m, c);
 		bool meta = !pr || pr->is_meta_predicate || is_goal_expansion || p->m->wild_goal_expansion;
