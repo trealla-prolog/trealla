@@ -90,13 +90,14 @@ bool bif_put_atts_2(query *q)
 			cell *h = LIST_HEAD(l);
 			h = deref(q, h, l_ctx);
 			cell *h1 = deref(q, h+1, q->latest_ctx);
+			pl_idx h1_ctx = q->latest_ctx;
 
 			if (CMP_STRING_TO_CSTR(q, h, m_name)
 				|| CMP_STRING_TO_STRING(q, h1, attr)
 				|| (h1->arity != a_arity)) {
 				append_list(q, h);
 			} else if (is_minus) {
-				if (!unify(q, attr, p2_ctx, h1, l_ctx))
+				if (!unify(q, attr, p2_ctx, h1, h1_ctx))
 					return false;
 			}
 
@@ -176,6 +177,7 @@ bool bif_get_atts_2(query *q)
 		cell *h = LIST_HEAD(l);
 		h = deref(q, h, l_ctx);
 		cell *h1 = deref(q, h+1, q->latest_ctx);
+		pl_idx h1_ctx = q->latest_ctx;
 
 		if (!CMP_STRING_TO_CSTR(q, h, m_name)
 			&& !CMP_STRING_TO_STRING(q, h1, attr)
@@ -183,7 +185,7 @@ bool bif_get_atts_2(query *q)
 			if (is_minus)
 				return false;
 
-			return unify(q, attr, p2_ctx, h1, l_ctx);
+			return unify(q, attr, p2_ctx, h1, h1_ctx);
 		}
 
 		l = LIST_TAIL(l);
