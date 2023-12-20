@@ -358,7 +358,7 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 		both = 0;
 		DEREF_VAR(any2, both, save_vgen, e, e->vgen, l, l_ctx, q->vgen);
 
-		if (both)
+		if (both || q->cycle_error)
 			return;
 	}
 
@@ -382,6 +382,14 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 
 static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
+#if 1
+	if ((depth > g_max_depth) || (depth > 6000)) {
+		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		q->cycle_error++;
+		return;
+	}
+#endif
+
 	if (is_var(p1) && !(p1->flags & FLAG_VAR_CYCLIC)) {
 		accum_var(q, p1, p1_ctx);
 		return;
