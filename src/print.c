@@ -704,21 +704,6 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 
 		break;
 	}
-
-	if (any2) {
-		cell *l2 = orig_c;
-		pl_idx l2_ctx = orig_c_ctx;
-		LIST_HANDLER(l2);
-
-		while (is_list(l2)) {
-			if (g_tpl_interrupt)
-				break;
-
-			cell *h = LIST_HEAD(l2);
-			l2 = LIST_TAIL(l2);
-			RESTORE_VAR(l2, l2_ctx, l2, l2_ctx, q->vgen);
-		}
-	}
 }
 
 static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int cons, unsigned print_depth, unsigned depth)
