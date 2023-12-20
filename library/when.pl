@@ -1,80 +1,106 @@
+/**
+Provides the predicate `when/2`.
+*/
+
 :- module(when, [when/2]).
 
 :- use_module(library(atts)).
 :- use_module(library(dcgs)).
+:- use_module(library(lists)).
+:- use_module(library(lambda)).
 
-:- meta_predicate(when(*, 0)).
-:- attribute when/1.
+:- use_module(library(format)).
+:- use_module(library(debug)).
 
-when(Cond, Goal) :-
-	Cond = nonvar(Var), !,
-	(Cond -> Goal ; process_var_(Var, Cond, Goal)).
+:- attribute when_list/1.
 
-when(Cond, Goal) :-
-	Cond = ground(Var), !,
-	(Cond -> Goal ; process_var_(Var, Cond, Goal)).
+:- meta_predicate(when(+, 0)).
 
-when(Cond, Goal) :-
-	Cond = ?=(Var1, Var2), !,
-	process_var_(Var1, Cond, Goal),
-	process_var_(Var2, Cond, Goal).
+%% when(Condition, Goal).
+%
+% Executes Goal when Condition becomes true.
+when(Condition, Goal) :-
+    (   when_condition(Condition) ->
+        (   Condition ->
+            Goal
+        ;   term_variables(Condition, Vars),
+            maplist(
+                [Goal, Condition]+\Var^(
+                    get_atts(Var, when_list(Whens0)) ->
+                    Whens = [when(Condition, Goal) | Whens0],
+                    put_atts(Var, when_list(Whens))
+                ;   put_atts(Var, when_list([when(Condition, Goal)]))
+                ),
+                Vars
+            )
+        )
+    ;   throw(error(domain_error(when_condition, Condition),_))
+    ).
 
-when(Cond, Goal) :-
-	Cond = (Cond1,Cond2), !,
-	arg(1, Cond1, Var1),
-	arg(1, Cond2, Var2),
-	(Cond -> Goal
-	; (
-		(var(Var1) -> process_var_(Var1, Cond, Goal) ; true),
-		(var(Var2) -> process_var_(Var2, Cond, Goal) ; true))
-	).
+when_condition(Cond) :-
+    % Should this be delayed?
+    var(Cond), !, throw(error(instantiation_error,when_condition/1)).
+when_condition(ground(_)).
+when_condition(nonvar(_)).
+when_condition((A, B)) :-
+    when_condition(A),
+    when_condition(B).
+when_condition((A ; B)) :-
+    when_condition(A),
+    when_condition(B).
 
-when(Cond, Goal) :-
-	Cond = (Cond1;Cond2), !,
-	arg(1, Cond1, Var1),
-	arg(1, Cond2, Var2),
-	(Cond -> Goal
-	; (
-		(var(Var1) -> process_var_(Var1, Cond, Goal) ; true),
-		(var(Var2) -> process_var_(Var2, Cond, Goal) ; true))
-	).
+remove_goal([], _, []).
+remove_goal([G0|G0s], Goal, Goals) :-
+    (   G0 == Goal ->
+        remove_goal(G0s, Goal, Goals)
+    ;   Goals = [G0|Goals1],
+        remove_goal(G0s, Goal, Goals1)
+    ).
 
-:- help(when(+term,+callable), [iso(false),desc('Execute Goal when Condition becomes true.')]).
+vars_remove_goal(Vars, Goal) :-
+    maplist(
+        Goal+\Var^(
+            get_atts(Var, when_list(Whens0)) ->
+            remove_goal(Whens0, Goal, Whens),
+            (   Whens = [] ->
+                put_atts(Var, -when_list(_))
+            ;   put_atts(Var, when_list(Whens))
+            )
+        ;   true
+        ),
+        Vars
+    ).
 
-process_var_(Var, Cond, Goal) :-
-	(	get_atts(Var, when(OldCond-OldGoal)) ->
-		(	NewCond = (Cond, OldCond),
-			NewGoal = (OldGoal, Goal),
-			put_atts(Var, -when(_))
-		)
-	;	(	NewCond = Cond,
-			NewGoal = Goal
-		)
-	),
-    put_atts(Var, when(NewCond-NewGoal)).
+reinforce_goal(Goal0, Goal) :-
+    Goal = (
+        term_variables(Goal0, Vars),
+        when:vars_remove_goal(Vars, Goal0),
+        Goal0
+    ).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+verify_attributes(Var, Value, Goals) :-
+    (   get_atts(Var, when_list(Whens)) ->
+        (   var(Value) ->
+            (   get_atts(Value, when_list(WhensValue)) ->
+                append(Whens, WhensValue, WhensNew),
+                put_atts(Value, when_list(WhensNew))
+            ;   put_atts(Value, when_list(Whens))
+            ),
+            Goals = []
+        ;   maplist(reinforce_goal, Whens, Goals)
+        )
+    ;   Goals = []
+    ).
 
-verify_attributes(Var, Other, Goals) :-
-	get_atts(Var, when(VarCond-VarGoal)),
-	(	var(Other) ->
-		get_atts(Other, when(OtherCond-OtherGoal)),
-		Goals =
-			(	VarCond -> VarGoal
-			; 	(	VarCond == OtherCond ->	NewCond = VarCond
-				;	NewCond = (OtherCond,VarCond)
-				),
-			(	VarGoal == OtherGoal -> NewGoal = VarGoal
-			;	NewGoal = (OtherGoal,VarGoal)
-			),
-			put_atts(Other, when(NewCond-NewGoal))
-			)
-	; Goals = [(VarCond -> VarGoal ; true)]
-	).
-
-attribute_goal(Var, when(Var,Goals)) :-     % interpretation as goal
-	get_atts(Var, when(Goals)).
+gather_when_goals([], _) --> [].
+gather_when_goals([When|Whens], Var) -->
+    ( { term_variables(When, [V0|_]), Var == V0 } ->
+        [when:When]
+    ;   []
+    ),
+    gather_when_goals(Whens, Var).
 
 attribute_goals(Var) -->
-	{ attribute_goal(Var, Goals) },
-	[Goals].
+    { get_atts(Var, when_list(Whens)) },
+    gather_when_goals(Whens, Var),
+    { put_atts(Var, -when_list(_)) }.
