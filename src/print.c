@@ -607,7 +607,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		e = NULL;
 		both = 0;
 
-		if (running) DEREF_CHECKED(any2, both, save_vgen, e, e->vgen, tail, tail_ctx, q->print_vgen);
+		if (running) DEREF_CHECKED(any2, both, e->vgen2, e, e->vgen, tail, tail_ctx, q->print_vgen);
 
 		if (both || q->cycle_error || (q->max_depth && (print_depth >= q->max_depth))) {
 			SB_sprintf(q->sb, "%s", "|");
@@ -656,7 +656,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			print_string_list(q, tail, tail_ctx, running, 1, depth+1);
 			SB_sprintf(q->sb, "%s", "]");
 			q->last_thing = WAS_OTHER;
-			q->cycle_error = true;
+			//q->cycle_error = true;
 			break;
 		} else if (is_iso_list(tail)) {
 			if ((tail == save_c) && (tail_ctx == save_c_ctx) && running) {
@@ -896,7 +896,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	}
 
 	if (is_string(c) && !q->double_quotes) {
-		print_string_list(q, c, c_ctx, running, cons > 0, depth+1);
+			print_string_list(q, c, c_ctx, running, cons > 0, depth+1);
 		q->last_thing = WAS_OTHER;
 		return true;
 	}
@@ -1398,6 +1398,7 @@ char *print_canonical_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running)
 	q->quoted = 1;
 	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
+	q->cycle_error = false;
 	SB_init(q->sb);
 	print_term_to_buf(q, c, c_ctx, running, false);
 	q->ignore_ops = false;
@@ -1415,6 +1416,7 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int
 	q->quoted = 1;
 	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
+	q->cycle_error = false;
 	SB_init(q->sb);
 	print_term_to_buf(q, c, c_ctx, running, false);
 	q->ignore_ops = false;
@@ -1446,6 +1448,7 @@ bool print_canonical(query *q, FILE *fp, cell *c, pl_idx c_ctx, int running)
 	q->quoted = 1;
 	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
+	q->cycle_error = false;
 	SB_init(q->sb);
 	print_term_to_buf(q, c, c_ctx, running, false);
 	q->ignore_ops = false;
@@ -1475,6 +1478,7 @@ char *print_term_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running)
 	if (++q->print_vgen == 0) q->print_vgen = 1;
 	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
+	q->cycle_error = false;
 	//q->last_thing_was_space = true;
 	SB_init(q->sb);
 	print_term_to_buf(q, c, c_ctx, running, false);
@@ -1489,6 +1493,7 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int runn
 	if (++q->print_vgen == 0) q->print_vgen = 1;
 	q->did_quote = false;
 	q->last_thing = WAS_SPACE;
+	q->cycle_error = false;
 	SB_init(q->sb);
 	print_term_to_buf(q, c, c_ctx, running, false);
 	const char *src = SB_cstr(q->sb);
@@ -1516,6 +1521,7 @@ bool print_term(query *q, FILE *fp, cell *c, pl_idx c_ctx, int running)
 	if (++q->print_vgen == 0) q->print_vgen = 1;
 	q->did_quote = false;
 	q->last_thing = WAS_SPACE;
+	q->cycle_error = false;
 	SB_init(q->sb);
 	print_term_to_buf(q, c, c_ctx, running, false);
 	const char *src = SB_cstr(q->sb);
@@ -1546,5 +1552,6 @@ void clear_write_options(query *q)
 	q->parens = q->numbervars = q->json = q->double_quotes = false;
 	q->last_thing = WAS_OTHER;
 	q->variable_names = NULL;
+	q->cycle_error = false;
 	memset(q->ignores, 0, sizeof(q->ignores));
 }
