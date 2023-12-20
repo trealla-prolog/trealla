@@ -474,7 +474,7 @@ void dump_vars(query *q, bool partial)
 		q->double_quotes = q->pl->def_double_quotes;
 		q->quoted = q->pl->def_quoted ? 1 : 0;
 		q->parens = parens;
-		e->vgen = q->vgen+1;
+		e->vgen = ++q->vgen;
 
 		//if (!init_tmp_heap(q))
 		//	return;

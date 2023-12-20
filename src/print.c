@@ -1215,15 +1215,12 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	uint32_t save_vgen1 = 0, save_vgen2 = 0;
 	bool any = false;
 	int both = 0;
-	if (running) DEREF_CHECKED(any, both, save_vgen1, e1, e1->vgen, lhs, lhs_ctx, q->print_vgen);
-	if (running) DEREF_CHECKED(any, both, save_vgen2, e2, e2->vgen, rhs, rhs_ctx, q->print_vgen2);
-
-	unsigned lhs_pri_1 = is_interned(lhs) ? search_op(q->st.m, C_STR(q, lhs), NULL, is_prefix(rhs)) : 0;
-	unsigned lhs_pri_2 = is_interned(lhs) && !lhs->arity ? search_op(q->st.m, C_STR(q, lhs), NULL, false) : 0;
-	unsigned rhs_pri_1 = is_interned(rhs) ? search_op(q->st.m, C_STR(q, rhs), NULL, is_prefix(rhs)) : 0;
-	unsigned rhs_pri_2 = is_interned(rhs) && !rhs->arity ? search_op(q->st.m, C_STR(q, rhs), NULL, false) : 0;
 
 	// Print LHS..
+
+	if (running) DEREF_CHECKED(any, both, save_vgen1, e1, e1->vgen, lhs, lhs_ctx, q->print_vgen);
+	unsigned lhs_pri_1 = is_interned(lhs) ? search_op(q->st.m, C_STR(q, lhs), NULL, is_prefix(rhs)) : 0;
+	unsigned lhs_pri_2 = is_interned(lhs) && !lhs->arity ? search_op(q->st.m, C_STR(q, lhs), NULL, false) : 0;
 
 	bool lhs_parens = lhs_pri_1 >= my_priority;
 	if ((lhs_pri_1 == my_priority) && is_yfx(c)) lhs_parens = false;
@@ -1319,6 +1316,9 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 	// Print RHS..
 
+	if (running) DEREF_CHECKED(any, both, save_vgen2, e2, e2->vgen, rhs, rhs_ctx, q->print_vgen);
+	unsigned rhs_pri_1 = is_interned(rhs) ? search_op(q->st.m, C_STR(q, rhs), NULL, is_prefix(rhs)) : 0;
+	unsigned rhs_pri_2 = is_interned(rhs) && !rhs->arity ? search_op(q->st.m, C_STR(q, rhs), NULL, false) : 0;
 	bool rhs_parens = rhs_pri_1 >= my_priority;
 	space = is_number(rhs) && is_negative(rhs);
 
@@ -1376,7 +1376,6 @@ bool print_term_to_buf(query *q, cell *c, pl_idx c_ctx, int running, int cons)
 char *print_canonical_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running)
 {
 	if (++q->print_vgen == 0) q->print_vgen = 1;
-	if (++q->print_vgen2 == 0) q->print_vgen2 = 1;
 	q->ignore_ops = true;
 	q->quoted = 1;
 	q->last_thing = WAS_OTHER;
@@ -1394,7 +1393,6 @@ char *print_canonical_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running)
 bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int running)
 {
 	if (++q->print_vgen == 0) q->print_vgen = 1;
-	if (++q->print_vgen2 == 0) q->print_vgen2 = 1;
 	q->ignore_ops = true;
 	q->quoted = 1;
 	q->last_thing = WAS_OTHER;
@@ -1426,7 +1424,6 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int
 bool print_canonical(query *q, FILE *fp, cell *c, pl_idx c_ctx, int running)
 {
 	if (++q->print_vgen == 0) q->print_vgen = 1;
-	if (++q->print_vgen2 == 0) q->print_vgen2 = 1;
 	q->ignore_ops = true;
 	q->quoted = 1;
 	q->last_thing = WAS_OTHER;
@@ -1458,7 +1455,6 @@ bool print_canonical(query *q, FILE *fp, cell *c, pl_idx c_ctx, int running)
 char *print_term_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running)
 {
 	if (++q->print_vgen == 0) q->print_vgen = 1;
-	if (++q->print_vgen2 == 0) q->print_vgen2 = 1;
 	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
 	//q->last_thing_was_space = true;
@@ -1473,7 +1469,6 @@ char *print_term_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running)
 bool print_term_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int running)
 {
 	if (++q->print_vgen == 0) q->print_vgen = 1;
-	if (++q->print_vgen2 == 0) q->print_vgen2 = 1;
 	q->did_quote = false;
 	q->last_thing = WAS_SPACE;
 	SB_init(q->sb);
