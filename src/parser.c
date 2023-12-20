@@ -1900,6 +1900,24 @@ static cell *goal_expansion(parser *p, cell *goal)
 	return goal;
 }
 
+static bool is_meta_arg(predicate *pr, cell *c, unsigned arg)
+{
+	if (!pr->meta_args)
+		return false;
+
+	unsigned i = 0;
+
+	for (cell *m = pr->meta_args+1; m && (i < c->arity); m += m->nbr_cells, i++) {
+		if (!is_integer(m) || (i != arg))
+			continue;
+
+		if (get_smalluint(m) == 0)
+			return true;
+	}
+
+	return false;
+}
+
 static cell *insert_call_here(parser *p, cell *c, cell *p1)
 {
 	pl_idx c_idx = c - p->cl->cells, p1_idx = p1 - p->cl->cells;
@@ -1993,18 +2011,17 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 
 		//printf("*** %s/%u, meta=%d\n", C_STR(p, c), c->arity, meta);
 
-		bool no_meta = false;//(c->val_off == g_call_s) && (c->arity == 1);
-
 		if (meta)
 			c = goal_expansion(p, c);
 
 		cell *arg = c + 1;
-		unsigned arity = c->arity;
+		unsigned arity = c->arity, i = 0;
 
 		while (arity--) {
+			bool meta = pr ? is_meta_arg(pr, c, i) : false;
 			c->nbr_cells -= arg->nbr_cells;
 
-			if (meta && !no_meta)
+			if (meta)
 				arg = goal_expansion(p, arg);
 
 			if (control)
@@ -2012,6 +2029,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 
 			c->nbr_cells += arg->nbr_cells;
 			arg += arg->nbr_cells;
+			i++;
 		}
 	}
 

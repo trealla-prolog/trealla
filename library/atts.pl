@@ -53,3 +53,16 @@ call_residue_vars(Goal, Atts) :-
 
 :- meta_predicate(call_residue_vars(0, ?)).
 :- help(call_residue_vars(:callable, -list), [iso(false), desc('Find residual attributed variables left by Goal. This predicate is intended for reasoning about and debugging programs that use coroutining or constraints. To see why this predicate is necessary, consider a predicate that poses contradicting constraints on a variable, and where that variable does not appear in any argument of the predicate and hence does not yield any residual goals on the toplevel when the predicate is invoked. Such programs should fail, but sometimes succeed because the constraint solver is too weak to detect the contradiction. Ideally, delayed goals and constraints are all executed at the end of the computation. The meta predicate call_residue_vars/2 finds variables that are given attributes or whose attributes are modified by Goal, regardless of whether or not these variables are reachable from the arguments of Goal.')]).
+
+get_attr(Var, Module, Value) :-
+	var(Var),
+	Access =.. [Module, Value],
+	get_atts(Var, Access).
+
+put_attr(Var, Module, Value) :-
+	Access =.. [Module, Value],
+	put_atts(Var, Access).
+
+del_attr(Var, Module) :-
+	Access =.. [Module, _],
+	var(Var) -> put_atts(Var, -Access); true.
