@@ -604,6 +604,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		cell *tail = c + 1; tail += tail->nbr_cells;
 		pl_idx tail_ctx = c_ctx;
 		cell *save_tail = tail;
+		e = NULL;
 		both = 0;
 
 		if (running) DEREF_CHECKED(any2, both, save_vgen, e, e->vgen, tail, tail_ctx, q->print_vgen);
@@ -703,6 +704,23 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		}
 
 		break;
+	}
+
+	if (any2 && !q->cycle_error) {
+		cell *p1 = orig_c;
+		pl_idx p1_ctx = orig_c_ctx;
+
+		while (is_iso_list(p1)) {
+			if (g_tpl_interrupt)
+				break;
+
+			p1 = p1 + 1; p1 += p1->nbr_cells;
+			cell *c = p1;
+			pl_idx c_ctx = p1_ctx;
+			bool both = false;
+			RESTORE_VAR_CHECKED(both,c, c_ctx, p1, p1_ctx, q->print_vgen);
+			if (both) break;
+		}
 	}
 }
 

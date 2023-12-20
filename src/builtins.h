@@ -318,6 +318,20 @@ inline static cell *get_raw_arg(const query *q, int n)
 		p_ctx = q->latest_ctx;										\
 	}
 
+#define RESTORE_VAR_CHECKED(any, cc, cc_ctx, p, p_ctx, qvgen)		\
+	if (is_var(cc)) {												\
+		if (is_ref(cc))												\
+			cc_ctx = cc->var_ctx;									\
+																	\
+		const frame *f = GET_FRAME(cc_ctx);							\
+		slot *e = GET_SLOT(f, cc->var_nbr);							\
+		if (e->vgen == qvgen) any = true;							\
+		e->vgen = qvgen - 1;										\
+		p = deref(q, cc, cc_ctx);									\
+		p_ctx = q->latest_ctx;										\
+	}
+
+
 inline static bool START_FUNCTION(query *q)
 {
 	extern bool throw_error(query *q, cell *c, pl_idx c_ctx, const char *err_type, const char *expected);
