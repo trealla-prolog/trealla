@@ -738,7 +738,7 @@ struct parser_ {
 	unsigned line_nbr, line_nbr_start;
 	unsigned depth, read_term_slots, nbr_vars;
 	unsigned nesting_parens, nesting_braces, nesting_brackets;
-	int quote_char;
+	int quote_char, entered;
 	int8_t dq_consing;
 	bool error, if_depth[MAX_IF_DEPTH];
 	bool was_consing:1;
