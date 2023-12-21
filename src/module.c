@@ -829,8 +829,8 @@ bool do_use_module_1(module *curr_m, cell *p)
 			return true;
 		}
 
-		// There's a TCO bug manifesting with clpb:sat_rewite
-		// so this is a temporary fix...
+		// These are some modules that don't exist in Trealla,
+		// but the predicates probably pop up somewhere else...
 
 		if (!strcmp(name, "between")
 		    || !strcmp(name, "samsort")
@@ -840,7 +840,9 @@ bool do_use_module_1(module *curr_m, cell *p)
 			|| !strcmp(name, "loader")
 			|| !strcmp(name, "error")
 			|| !strcmp(name, "crypto")
-		    || !strcmp(name, "files"))
+		    || !strcmp(name, "files")
+		    || !strcmp(name, "time")
+		    )
 			return true;
 
 		for (library *lib = g_libs; lib->name; lib++) {
