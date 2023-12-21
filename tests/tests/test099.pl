@@ -8,5 +8,6 @@ run :-
 	A = a(B),
 	Run1 == true, var(Run2),
 	B = 1,
-	Run2 == true.
+	Run2 == true,
+	write(ok), nl.
 
