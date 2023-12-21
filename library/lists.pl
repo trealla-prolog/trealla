@@ -13,8 +13,7 @@
 		foldl/4, foldl/5, foldl/6, foldl/7
 	]).
 
-/*  Author:        Andrew Davison, Mark Thom, Jan Wielemaker, and Richard O'Keefe
-	Copyright (c)  2022,      Andrew Davison
+/*  Author:        Mark Thom, Jan Wielemaker, and Richard O'Keefe
 	Copyright (c)  2018-2021, Mark Thom
 	Copyright (c)  2002-2020, University of Amsterdam
 							  VU University Amsterdam
