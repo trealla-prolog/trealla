@@ -661,6 +661,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		} else if (is_iso_list(tail)) {
 			if ((tail == save_c) && (tail_ctx == save_c_ctx) && running) {
 				SB_sprintf(q->sb, "%s", "|");
+				q->cycle_error = true;
 
 				if (q->is_dump_vars) {
 					if (!dump_variable(q, save_tail, c_ctx, running))
