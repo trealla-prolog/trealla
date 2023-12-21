@@ -1,5 +1,4 @@
 :- pragma(builtins, [once(true)]).
-
 :- use_module(library(lists)).
 
 expand_term((H --> B), Out) :-
@@ -835,6 +834,9 @@ succ(_,_) :-
 :- help(succ(?integer,+integer), [iso(false)]).
 :- help(succ(+integer,-integer), [iso(false)]).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+
 sre_match_all_in_file(Pat, Filename, L) :-
 	setup_call_cleanup(
 		open(Filename, read, S, [mmap(Cs)]),
@@ -912,3 +914,6 @@ sre_subst_all_(Reg, TextIn, Subst, L0, L) :-
 	).
 
 :- help(sre_subst_all(+pattern,+text,+subst,-text), [iso(false)]).
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
