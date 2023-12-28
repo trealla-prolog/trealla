@@ -21,14 +21,21 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 #if USE_RATIONAL_TREES
 		slot *e1 = NULL, *e2 = NULL;
 		uint32_t save_vgen = 0, save_vgen2 = 0;
-		int both = 0;
-		DEREF_VAR(any1, both, save_vgen, e1, e1->vgen, c1, c1_ctx, q->vgen);
-		DEREF_VAR(any1, both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
+		int both1 = 0, both2 = 0;
+		DEREF_VAR(any1, both1, save_vgen, e1, e1->vgen, c1, c1_ctx, q->vgen);
+		DEREF_VAR(any1, both2, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
 
-		if (both != 2) {
-			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
-			if (val) return val;
-		}
+		if (both1)
+			q->is_cyclic1 = true;
+
+		if (both2)
+			q->is_cyclic2 = true;
+
+		if (q->is_cyclic1 && q->is_cyclic2)
+			break;
+
+		int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
+		if (val) return val;
 
 		if (e1) e1->vgen = save_vgen;
 		if (e2) e2->vgen2 = save_vgen2;
@@ -46,12 +53,18 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 		p2 = p2 + 1; p2 += p2->nbr_cells;
 
 #if USE_RATIONAL_TREES
-		both = 0;
-		DEREF_VAR(any2, both, save_vgen, e1, e1->vgen, p1, p1_ctx, q->vgen);
-		DEREF_VAR(any2, both, save_vgen2, e2, e2->vgen2, p2, p2_ctx, q->vgen);
+		both1 = both2 = 0;
+		DEREF_VAR(any2, both1, save_vgen, e1, e1->vgen, p1, p1_ctx, q->vgen);
+		DEREF_VAR(any2, both2, save_vgen2, e2, e2->vgen2, p2, p2_ctx, q->vgen);
 
-		if (both)
-			return 0;
+		if (both1)
+			q->is_cyclic1 = true;
+
+		if (both2)
+			q->is_cyclic2 = true;
+
+		if (q->is_cyclic1 && q->is_cyclic2)
+			break;
 #else
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
@@ -61,11 +74,12 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 	}
 
 #if USE_RATIONAL_TREES
-	if (any2) {
+	if (any2 && 0) {
 		p1 = orig_p1;
 		p1_ctx = orig_p1_ctx;
 		p2 = orig_p2;
 		p2_ctx = orig_p2_ctx;
+		unsigned cnt = 0;
 
 		while (is_iso_list(p1) && is_iso_list(p2)) {
 			if (g_tpl_interrupt)
@@ -77,6 +91,11 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 			pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 			RESTORE_VAR(c1, c1_ctx, p1, p1_ctx, q->vgen);
 			RESTORE_VAR2(c2, c2_ctx, p2, p2_ctx, q->vgen);
+
+			if ((cnt > g_max_depth) || (cnt > 6000))
+				return true;
+
+			cnt++;
 		}
 	}
 #endif
