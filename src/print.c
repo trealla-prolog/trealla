@@ -604,6 +604,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		cell *tail = c + 1; tail += tail->nbr_cells;
 		pl_idx tail_ctx = c_ctx;
 		cell *save_tail = tail;
+		pl_idx save_tail_ctx = tail_ctx;
 		e = NULL;
 		both = 0;
 
@@ -664,11 +665,11 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 				q->cycle_error = true;
 
 				if (q->is_dump_vars) {
-					if (!dump_variable(q, save_tail, c_ctx, running))
-						if (!dump_variable(q, tail, tail_ctx, running))
-							print_variable(q, tail, tail_ctx, 0);
+					if (!dump_variable(q, save_tail, save_tail_ctx, running))
+						if (!dump_variable(q, save_tail, save_tail_ctx, running))
+							print_variable(q, save_tail, save_tail_ctx, 0);
 				} else
-					print_variable(q, save_tail, c_ctx, 1);
+					print_variable(q, save_tail, save_tail_ctx, 1);
 			} else {
 				SB_sprintf(q->sb, "%s", ",");
 				q->last_thing = WAS_COMMA;
