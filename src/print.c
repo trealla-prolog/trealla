@@ -567,7 +567,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		slot *e = NULL;
 		uint64_t save_vgen = 0;
 		int both = 0;
-		if (running) DEREF_CHECKED(any1, both, save_vgen, e, e->vgen, head, head_ctx, q->print_vgen)
+		if (running) DEREF_CHECKED(any1, both, save_vgen, e, e->vgen2, head, head_ctx, q->print_vgen)
 
 		if ((head == orig_c) && (head_ctx == orig_c_ctx)) {
 			head = c + 1;
@@ -594,7 +594,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		print_term_to_buf_(q, head, head_ctx, running, -1, 0, depth+1);
 		q->parens = false;
 		q->cycle_error = false;
-		if (e) e->vgen = save_vgen;
+		if (e) e->vgen2 = save_vgen;
 		if (parens) { SB_sprintf(q->sb, "%s", ")"); }
 		bool possible_chars = false;
 
@@ -607,7 +607,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		e = NULL;
 		both = 0;
 
-		if (running) DEREF_CHECKED(any2, both, e->vgen2, e, e->vgen, tail, tail_ctx, q->print_vgen);
+		if (running) DEREF_CHECKED(any2, both, e->vgen2, e, e->vgen2, tail, tail_ctx, q->print_vgen);
 
 		if (both || q->cycle_error || (q->max_depth && (print_depth >= q->max_depth))) {
 			SB_sprintf(q->sb, "%s", "|");
@@ -1038,13 +1038,13 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 				slot *e = NULL;
 				uint64_t save_vgen = 0;
 				int both = 0;
-				if (running) DEREF_CHECKED(any, both, save_vgen, e, e->vgen, tmp, tmp_ctx, q->print_vgen);
+				if (running) DEREF_CHECKED(any, both, save_vgen, e, e->vgen2, tmp, tmp_ctx, q->print_vgen);
 
 				if ((tmp == save_c) && (tmp_ctx == save_c_ctx)) {
 					tmp = c;
 					tmp_ctx = c_ctx;
 					SB_sprintf(q->sb, "%s", !is_ref(tmp) ? C_STR(q, tmp) : "_");
-					if (e) e->vgen = save_vgen;
+					if (e) e->vgen2 = save_vgen;
 					if (arity) {SB_sprintf(q->sb, "%s", ","); }
 					continue;
 				}
@@ -1058,7 +1058,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 						q->last_thing = WAS_OTHER;
 					}
 
-					if (e) e->vgen = save_vgen;
+					if (e) e->vgen2 = save_vgen;
 					continue;
 				}
 
@@ -1076,7 +1076,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 				q->parens = parens;
 				print_term_to_buf_(q, tmp, tmp_ctx, running, 0, depth+1, depth+1);
 				q->parens = false;
-				if (e) e->vgen = save_vgen;
+				if (e) e->vgen2 = save_vgen;
 				if (parens) {SB_sprintf(q->sb, "%s", ")"); }
 				if (arity) {SB_sprintf(q->sb, "%s", ","); }
 			}
@@ -1102,7 +1102,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		uint32_t save_vgen = 0;
 		bool any = false;
 		int both = 0;
-		if (running) DEREF_CHECKED(any, both, save_vgen, e, e->vgen, lhs, lhs_ctx, q->print_vgen);
+		if (running) DEREF_CHECKED(any, both, save_vgen, e, e->vgen2, lhs, lhs_ctx, q->print_vgen);
 
 		if (!is_var(lhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
 			if (q->last_thing != WAS_SPACE) SB_sprintf(q->sb, "%s", " ");
@@ -1155,7 +1155,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		uint32_t save_vgen = 0;
 		bool any = false;
 		int both = 0;
-		if (running) DEREF_CHECKED(any, both, save_vgen, e, e->vgen, rhs, rhs_ctx, q->print_vgen);
+		if (running) DEREF_CHECKED(any, both, save_vgen, e, e->vgen2, rhs, rhs_ctx, q->print_vgen);
 
 		unsigned my_priority = search_op(q->st.m, src, NULL, true);
 		unsigned rhs_pri = is_interned(rhs) ? search_op(q->st.m, C_STR(q, rhs), NULL, true) : 0;
@@ -1237,10 +1237,10 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 	// Print LHS..
 
-	if (running) DEREF_CHECKED(any, both, save_vgen, e, e->vgen, lhs, lhs_ctx, q->print_vgen);
-	if (e) e->vgen = save_vgen;
-	if (running) DEREF_CHECKED(any, both, save_vgen, e, e->vgen, rhs, rhs_ctx, q->print_vgen);
-	if (e) e->vgen = save_vgen;
+	if (running) DEREF_CHECKED(any, both, save_vgen, e, e->vgen2, lhs, lhs_ctx, q->print_vgen);
+	if (e) e->vgen2 = save_vgen;
+	if (running) DEREF_CHECKED(any, both, save_vgen, e, e->vgen2, rhs, rhs_ctx, q->print_vgen);
+	if (e) e->vgen2 = save_vgen;
 
 	unsigned lhs_pri_1 = is_interned(lhs) ? search_op(q->st.m, C_STR(q, lhs), NULL, is_prefix(rhs)) : 0;
 	unsigned lhs_pri_2 = is_interned(lhs) && !lhs->arity ? search_op(q->st.m, C_STR(q, lhs), NULL, false) : 0;
