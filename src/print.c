@@ -1230,14 +1230,18 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	cell *rhs = lhs + lhs->nbr_cells;
 	cell *save_rhs = rhs;
 	pl_idx rhs_ctx = c_ctx;
-	slot *e1 = NULL, *e2 = NULL;
-	uint32_t save_vgen1 = 0, save_vgen2 = 0;
+	slot *e = NULL;
+	uint32_t save_vgen = 0;
 	bool any = false;
 	int both = 0;
 
 	// Print LHS..
 
-	if (running) DEREF_CHECKED(any, both, save_vgen1, e1, e1->vgen, lhs, lhs_ctx, q->print_vgen);
+	if (running) DEREF_CHECKED(any, both, save_vgen, e, e->vgen, lhs, lhs_ctx, q->print_vgen);
+	if (e) e->vgen = save_vgen;
+	if (running) DEREF_CHECKED(any, both, save_vgen, e, e->vgen, rhs, rhs_ctx, q->print_vgen);
+	if (e) e->vgen = save_vgen;
+
 	unsigned lhs_pri_1 = is_interned(lhs) ? search_op(q->st.m, C_STR(q, lhs), NULL, is_prefix(rhs)) : 0;
 	unsigned lhs_pri_2 = is_interned(lhs) && !lhs->arity ? search_op(q->st.m, C_STR(q, lhs), NULL, false) : 0;
 
@@ -1302,8 +1306,6 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		q->last_thing = WAS_SPACE;
 	}
 
-	if (e1) e1->vgen = save_vgen1;
-
 	// Print OP..
 
 	//q->last_thing_was_symbol += is_symbol;
@@ -1335,7 +1337,6 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 	// Print RHS..
 
-	if (running) DEREF_CHECKED(any, both, save_vgen2, e2, e2->vgen, rhs, rhs_ctx, q->print_vgen);
 	unsigned rhs_pri_1 = is_interned(rhs) ? search_op(q->st.m, C_STR(q, rhs), NULL, is_prefix(rhs)) : 0;
 	unsigned rhs_pri_2 = is_interned(rhs) && !rhs->arity ? search_op(q->st.m, C_STR(q, rhs), NULL, false) : 0;
 	bool rhs_parens = rhs_pri_1 >= my_priority;
@@ -1383,7 +1384,6 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		else if (rhs_is_symbol) { q->last_thing = WAS_SYMBOL; }
 	}
 
-	if (e2) e2->vgen = save_vgen2;
 	return true;
 }
 

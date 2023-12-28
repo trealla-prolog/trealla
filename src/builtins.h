@@ -272,7 +272,7 @@ inline static cell *get_raw_arg(const query *q, int n)
 
 // This one always derefs...
 
-#define DEREF_VAR(any, both, svg, ee, evgen, cc, cc_ctx, qvgen)	\
+#define DEREF_VAR(any, both, svg, ee, evgen, cc, cc_ctx, qvgen)		\
 	if (is_var(cc)) {												\
 		pl_idx tmp_cc_ctx = cc_ctx;									\
 		any = true;													\
