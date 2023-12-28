@@ -1635,7 +1635,7 @@ static bool dcg_expansion(parser *p)
 	cell *c = p->cl->cells;
 	cell *tmp = alloc_on_heap(q, 1+c->nbr_cells+1+1);
 	make_struct(tmp, new_atom(p->pl, "dcg_translate"), NULL, 2, c->nbr_cells+1);
-	safe_copy_cells(tmp+1, p->cl->cells, c->nbr_cells);
+	dup_cells(tmp+1, p->cl->cells, c->nbr_cells);
 	make_ref(tmp+1+c->nbr_cells, p->cl->nbr_vars, 0);
 	make_end(tmp+1+c->nbr_cells+1);
 	execute(q, tmp, p->cl->nbr_vars+1);
@@ -1704,7 +1704,7 @@ static bool term_expansion(parser *p)
 	cell *tmp = alloc_on_heap(q, 1+c->nbr_cells+2);
 	unsigned nbr_cells = 0;
 	make_struct(tmp+nbr_cells++, new_atom(p->pl, "term_expansion"), NULL, 2, c->nbr_cells+1);
-	safe_copy_cells(tmp+nbr_cells, p->cl->cells, c->nbr_cells);
+	dup_cells(tmp+nbr_cells, p->cl->cells, c->nbr_cells);
 	nbr_cells += c->nbr_cells;
 	make_ref(tmp+nbr_cells++, p->cl->nbr_vars, 0);
 	make_end(tmp+nbr_cells);

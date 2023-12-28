@@ -219,7 +219,7 @@ static bool bif_sys_unifiable_3(query *q)
 		cell v;
 		make_ref(&v, tr->var_nbr, q->st.curr_frame);
 		tmp[1] = v;
-		safe_copy_cells(tmp+2, c, c->nbr_cells);
+		dup_cells(tmp+2, c, c->nbr_cells);
 		append_list(q, tmp);
 		free(tmp);
 		save_tp++;
@@ -249,9 +249,9 @@ static bool bif_iso_notunify_2(query *q)
 	cell *tmp = prepare_call(q, true, &tmp2, q->st.curr_frame, p1->nbr_cells+p2->nbr_cells+4);
 	pl_idx nbr_cells = PREFIX_LEN;
 	tmp[nbr_cells++].nbr_cells += p1->nbr_cells+p2->nbr_cells;
-	safe_copy_cells_by_ref(tmp+nbr_cells, p1, p1_ctx, p1->nbr_cells);
+	dup_cells_by_ref(tmp+nbr_cells, p1, p1_ctx, p1->nbr_cells);
 	nbr_cells += p1->nbr_cells;
-	safe_copy_cells_by_ref(tmp+nbr_cells, p2, p2_ctx, p2->nbr_cells);
+	dup_cells_by_ref(tmp+nbr_cells, p2, p2_ctx, p2->nbr_cells);
 	nbr_cells += p2->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
@@ -1780,7 +1780,7 @@ static bool bif_iso_univ_2(query *q)
 
 		q->st.hp = save_hp;
 		check_heap_error(tmp = alloc_on_heap(q, nbr_cells));
-		safe_copy_cells(tmp, tmp2, nbr_cells);
+		dup_cells(tmp, tmp2, nbr_cells);
 		tmp->nbr_cells = nbr_cells;
 		tmp->arity = arity;
 		bool found = false;
@@ -1889,7 +1889,7 @@ static bool bif_iso_term_variables_2(query *q)
 	check_heap_error(tmp);
 	cell *tmp2 = alloc_on_heap(q, tmp->nbr_cells);
 	check_heap_error(tmp2);
-	safe_copy_cells(tmp2, tmp, tmp->nbr_cells);
+	dup_cells(tmp2, tmp, tmp->nbr_cells);
 	return unify(q, p2, p2_ctx, tmp2, q->st.curr_frame);
 }
 
@@ -1962,7 +1962,7 @@ static bool bif_term_singletons_2(query *q)
 	check_heap_error(tmp);
 	cell *tmp2 = alloc_on_heap(q, tmp->nbr_cells);
 	check_heap_error(tmp2);
-	safe_copy_cells(tmp2, tmp, tmp->nbr_cells);
+	dup_cells(tmp2, tmp, tmp->nbr_cells);
 	return unify(q, p2, p2_ctx, tmp2, q->st.curr_frame);
 }
 
@@ -2458,7 +2458,7 @@ static bool answer_write_options_error(query *q, cell *c)
 	check_heap_error(tmp);
 	make_struct(tmp, g_plus_s, bif_iso_add_2, 2, 1+c->nbr_cells);
 	make_atom(tmp+1, new_atom(q->pl, "answer_write_options"));
-	safe_copy_cells(tmp+2, c, c->nbr_cells);
+	dup_cells(tmp+2, c, c->nbr_cells);
 	SET_OP(tmp, OP_YFX);
 	return throw_error(q, tmp, q->st.curr_frame, "domain_error", "flag_value");
 }
@@ -2469,7 +2469,7 @@ static bool flag_value_error(query *q, cell *p1, cell *p2)
 	check_heap_error(tmp);
 	make_struct(tmp, g_plus_s, bif_iso_add_2, 2, 1+p2->nbr_cells);
 	make_atom(tmp+1, p1->val_off);
-	safe_copy_cells(tmp+2, p2, p2->nbr_cells);
+	dup_cells(tmp+2, p2, p2->nbr_cells);
 	SET_OP(tmp, OP_YFX);
 	return throw_error(q, tmp, q->st.curr_frame, "domain_error", "flag_value");
 }

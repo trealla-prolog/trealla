@@ -131,7 +131,7 @@ static cell *queue_to_chan(unsigned chan, const cell *c)
 
 	//printf("*** send to chan=%u, nbr_cells=%u\n", chan, c->nbr_cells);
 
-	safe_copy_cells(t->queue, c, c->nbr_cells);
+	dup_cells(t->queue, c, c->nbr_cells);
 	t->queue_size = c->nbr_cells;
 	return t->queue;
 }
@@ -168,7 +168,7 @@ static bool do_pl_recv(query *q, cell *p1, pl_idx p1_ctx)
 
 	cell *tmp = deep_copy_to_heap(q, c, q->st.fp, false);
 	check_heap_error(tmp);
-	chk_cells(c, c->nbr_cells);
+	unshare_cells(c, c->nbr_cells);
 	t->queue_size = 0;
 	q->curr_chan = t->queue_chan;
 	release_lock(&t->guard);

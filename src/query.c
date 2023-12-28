@@ -1063,7 +1063,7 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 			make_atom(tmp++, new_atom(q->pl, pr->m->name));
 		}
 
-		tmp += safe_copy_cells(tmp, k, k->nbr_cells);
+		tmp += dup_cells(tmp, k, k->nbr_cells);
 	}
 
 	save_tmp->nbr_cells = tmp - save_tmp;

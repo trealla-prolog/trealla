@@ -797,7 +797,7 @@ void set_meta_predicate_in_db(module *m, cell *c)
 		push_property(m, name, arity, tmpbuf);
 		pr->is_meta_predicate = true;
 		pr->meta_args = malloc(sizeof(cell)*c->nbr_cells);
-		safe_copy_cells(pr->meta_args, c, c->nbr_cells);
+		dup_cells(pr->meta_args, c, c->nbr_cells);
 	} else
 		m->error = true;
 }

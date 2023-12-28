@@ -507,7 +507,7 @@ bool bif_iso_asserta_1(query *q)
 		p->cl->nbr_allocated_cells = nbr_cells;
 	}
 
-	p->cl->cidx = safe_copy_cells(p->cl->cells, tmp, nbr_cells);
+	p->cl->cidx = dup_cells(p->cl->cells, tmp, nbr_cells);
 	do_term_assign_vars(p);
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
@@ -563,7 +563,7 @@ bool bif_iso_assertz_1(query *q)
 		p->cl->nbr_allocated_cells = nbr_cells;
 	}
 
-	p->cl->cidx = safe_copy_cells(p->cl->cells, tmp, nbr_cells);
+	p->cl->cidx = dup_cells(p->cl->cells, tmp, nbr_cells);
 	do_term_assign_vars(p);
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
@@ -625,7 +625,7 @@ static bool do_asserta_2(query *q)
 		p->cl->nbr_allocated_cells = nbr_cells;
 	}
 
-	p->cl->cidx = safe_copy_cells(p->cl->cells, tmp, nbr_cells);
+	p->cl->cidx = dup_cells(p->cl->cells, tmp, nbr_cells);
 	do_term_assign_vars(p);
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
@@ -716,7 +716,7 @@ static bool do_assertz_2(query *q)
 		p->cl->nbr_allocated_cells = nbr_cells;
 	}
 
-	p->cl->cidx = safe_copy_cells(p->cl->cells, tmp, nbr_cells);
+	p->cl->cidx = dup_cells(p->cl->cells, tmp, nbr_cells);
 	do_term_assign_vars(p);
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);

@@ -2220,7 +2220,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 			cell *save = tmp;
 			tmp = alloc_on_heap(q, idx);
 			check_heap_error(tmp);
-			safe_copy_cells(tmp, save, idx);
+			dup_cells(tmp, save, idx);
 			tmp->nbr_cells = idx;
 			if (!unify(q, vars, vars_ctx, tmp, q->st.curr_frame))
 				return false;
@@ -2276,7 +2276,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 			cell *save = tmp;
 			tmp = alloc_on_heap(q, idx);
 			check_heap_error(tmp);
-			safe_copy_cells(tmp, save, idx);
+			dup_cells(tmp, save, idx);
 			tmp->nbr_cells = idx;
 			if (!unify(q, varnames, varnames_ctx, tmp, q->st.curr_frame))
 				return false;
@@ -2338,7 +2338,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 			cell *save = tmp;
 			tmp = alloc_on_heap(q, idx);
 			check_heap_error(tmp);
-			safe_copy_cells(tmp, save, idx);
+			dup_cells(tmp, save, idx);
 			tmp->nbr_cells = idx;
 			if (!unify(q, sings, sings_ctx, tmp, q->st.curr_frame))
 				return false;
@@ -2350,7 +2350,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 
 	cell *tmp = alloc_on_heap(q, str->p->cl->cidx-1);
 	check_heap_error(tmp);
-	safe_copy_cells(tmp, str->p->cl->cells, str->p->cl->cidx-1);
+	dup_cells(tmp, str->p->cl->cells, str->p->cl->cidx-1);
 	bool ok = unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 	clear_clause(str->p->cl);
 	return ok;
@@ -6360,7 +6360,7 @@ static bool do_parse_url(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 		cell *l = end_list(q);
 		cell *tmp2 = alloc_on_heap(q, 1 + l->nbr_cells);
 		make_struct(tmp2, new_atom(q->pl, "search"), NULL, 1, l->nbr_cells);
-		safe_copy_cells(tmp2+1, l, l->nbr_cells);
+		dup_cells(tmp2+1, l, l->nbr_cells);
 		allocate_list(q, tmp2);
 	}
 

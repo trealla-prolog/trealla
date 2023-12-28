@@ -325,10 +325,6 @@ Non-standard predicates
 	name/2
 	tab/[1,2]
 
-	freeze/2
-	dif/2
-	when/2
-
 	get_unbuffered_code/1		# read a single unbuffered code
 	get_unbuffered_char/1		# read a single unbuffered character
 
@@ -372,8 +368,6 @@ Non-standard predicates
 	must_be/2                   # must_be(+type,+term)
 	can_be/2                    # can_be(+type,+term)
 	expand_term/2               # expand_term(+rule,-Term)
-	memberchk/2                 # memberchk(+rule,+list).
-	nonmember/2                 # \+ memberchk(+rule,+list)
 	sub_string/5				# sub_string(+string,?before,?len,?after,?substring)
 	atomic_concat/3             # atomic_concat(+atom,+list,-list)
 	atomic_list_concat/2	    # atomic_list_concat(L,Atom)
@@ -411,22 +405,20 @@ Non-standard predicates
 	time/1
 	inf/0
 	nan/0
-	\uXXXX and \UXXXXXXXX 		# quoted character escapes
+	\uXXXX and \UXXXXXXXX 		# Unicode escapes for JSON)
 	gcd/2
-	uuid/1                      # generates non-standard UUID
+	uuid/1                      # uuid(-string)
 	load_files/[1,2]
 	split_string/4				# SWI-compatible
 	plus/3
 	module/1
 	line_count/2
-	strip_module/3
 	atom_number/2
 	make/0
 
 	rdiv/2						# evaluable
 	numerator/1					# evaluable
 	denominator/1				# evaluable
-
 	rational/1
 
 	with_output_to(chars(Cs), Goal)		# SWI-compatible
