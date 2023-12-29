@@ -1188,8 +1188,8 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 {
 	if (!q->retry) {
-		cell *head = deref(q, get_head(p1), p1_ctx);
-		cell *c = head;
+		cell *c = deref(q, get_head(p1), p1_ctx);
+		pl_idx c_ctx = q->latest_ctx;
 		predicate *pr = NULL;
 
 		if (is_interned(c))
@@ -1205,8 +1205,8 @@ bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 		if (!pr) {
 			bool found = false;
 
-			if (get_builtin_term(q->st.m, head, &found, NULL), found)
-				return throw_error(q, head, q->latest_ctx, "permission_error", "modify,static_procedure");
+			if (get_builtin_term(q->st.m, c, &found, NULL), found)
+				return throw_error(q, c, c_ctx, "permission_error", "modify,static_procedure");
 
 			q->st.r = NULL;
 			return false;
@@ -1218,9 +1218,9 @@ bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 		}
 
 		if (!pr->is_dynamic)
-			return throw_error(q, head, q->latest_ctx, "permission_error", "modify,static_procedure");
+			return throw_error(q, c, c_ctx, "permission_error", "modify,static_procedure");
 
-		find_key(q, pr, c, p1_ctx);
+		find_key(q, pr, c, c_ctx);
 		enter_predicate(q, pr);
 		frame *f = GET_FRAME(q->st.curr_frame);
 		f->dbgen = q->pl->dbgen;
@@ -1298,6 +1298,7 @@ bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract
 {
 	if (!q->retry) {
 		cell *c = p1;
+		pl_idx c_ctx = p1_ctx;
 		predicate *pr = NULL;
 
 		if (is_interned(c))
@@ -1337,7 +1338,7 @@ bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract
 				return throw_error(q, p1, p1_ctx, "permission_error", "modify,static_procedure");
 		}
 
-		find_key(q, pr, c, p1_ctx);
+		find_key(q, pr, c, c_ctx);
 		enter_predicate(q, pr);
 		frame *f = GET_FRAME(q->st.curr_frame);
 		f->dbgen = q->pl->dbgen;
@@ -1385,6 +1386,7 @@ static bool match_head(query *q)
 {
 	if (!q->retry) {
 		cell *c = q->st.curr_cell;
+		pl_idx c_ctx = q->st.curr_frame;
 		predicate *pr = NULL;
 
 		if (is_interned(c))
@@ -1393,14 +1395,12 @@ static bool match_head(query *q)
 			convert_to_literal(q->st.m, c);
 
 		if (!pr || is_evaluable(c) || is_builtin(c)) {
-			//static unsigned s_cnt = 1;
-			//printf("*** %s / %u ... %u\n", C_STR(q, c), c->arity, s_cnt++);
 			pr = search_predicate(q->st.m, c, NULL);
 
 			if (!pr) {
 				if (!is_end(c) && !(is_interned(c) && !strcmp(C_STR(q, c), "initialization"))) {
 					if (q->st.m->flags.unknown == UNK_ERROR)
-						return throw_error(q, c, q->st.curr_frame, "existence_error", "procedure");
+						return throw_error(q, c, c_ctx, "existence_error", "procedure");
 					return false;
 				} else
 					q->error = true;
@@ -1416,7 +1416,7 @@ static bool match_head(query *q)
 			c->match = pr;
 		}
 
-		find_key(q, pr, q->st.curr_cell, q->st.curr_frame);
+		find_key(q, pr, c, c_ctx);
 		enter_predicate(q, pr);
 		frame *f = GET_FRAME(q->st.curr_frame);
 		f->dbgen = q->pl->dbgen;

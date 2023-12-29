@@ -414,7 +414,7 @@ void print_variable(query *q, const cell *c, pl_idx c_ctx, bool running)
 		: (unsigned)c->var_nbr;
 
 	if (q->varnames && !is_anon(c) && running && !q->cycle_error && (c_ctx == 0)) {
-		if (q->varnames && q->p->vartab.var_name[c->var_nbr]) {
+		if (q->varnames && q->p->vartab.var_name[c->var_nbr] && !is_fresh(c)) {
 			SB_sprintf(q->sb, "%s", q->p->vartab.var_name[c->var_nbr]);
 		} else {
 			SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr));
@@ -422,7 +422,7 @@ void print_variable(query *q, const cell *c, pl_idx c_ctx, bool running)
 	} else if (q->portray_vars) {
 		SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr));
 	} else if (q->is_dump_vars) {
-		if (c_ctx == 0) {
+		if ((c_ctx == 0) && !is_fresh(c)) {
 			SB_sprintf(q->sb, "%s", q->p->vartab.var_name[c->var_nbr]);
 		} else {
 			SB_sprintf(q->sb, "_%s", get_slot_name(q, slot_nbr));
