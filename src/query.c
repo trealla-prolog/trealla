@@ -673,10 +673,10 @@ static void commit_frame(query *q, cell *body)
 
 	if (!q->no_tco && (q->st.fp == (q->st.curr_frame + 1)) && last_match) {
 		const cell *head = get_head((cell*)cl->cells);
-		bool choices = any_choices(q, f);
 		bool tail_call = is_tail_call(q->st.curr_cell);
 		bool tail_recursive = tail_call && q->st.recursive;
-		bool vars_ok = /*!f->overflow &&*/ (f->initial_slots == cl->nbr_vars);
+		bool vars_ok = f->initial_slots == cl->nbr_vars;
+		bool choices = any_choices(q, f);
 		tco = tail_recursive && vars_ok && !choices;
 
 #if 0
