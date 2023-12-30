@@ -627,15 +627,25 @@ static void reuse_frame(query *q, const clause *cl)
 	q->tot_tcos++;
 }
 
+static void prune_trail(query *q)
+{
+	while (q->st.tp) {
+		const trail *tr = q->trails + q->st.tp - 1;
+
+		if (tr->var_ctx != q->st.curr_frame)
+			break;
+
+		q->st.tp--;
+	}
+}
+
 static void trim_trail(query *q)
 {
 	if (q->undo_hi_tp)
 		return;
 
-	if (!q->cp) {
-		q->st.tp = 0;
+	if (!q->cp)
 		return;
-	}
 
 	const choice *ch = GET_CURR_CHOICE();
 	pl_idx tp = ch->st.tp;
@@ -643,7 +653,7 @@ static void trim_trail(query *q)
 	while (q->st.tp > tp) {
 		const trail *tr = q->trails + q->st.tp - 1;
 
-		if (tr->var_ctx < q->st.curr_frame)
+		if (tr->var_ctx != q->st.curr_frame)
 			break;
 
 		q->st.tp--;
@@ -696,9 +706,10 @@ static void commit_frame(query *q, cell *body)
 #endif
 	}
 
-	if (q->pl->opt && tco)
+	if (q->pl->opt && tco) {
 		reuse_frame(q, cl);
-	else {
+		prune_trail(q);
+	} else {
 		f = push_frame(q, cl);
 
 		// If matching against a fact then drop new frame...
@@ -710,7 +721,7 @@ static void commit_frame(query *q, cell *body)
 	if (last_match) {
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
-		//trim_trail(q);	// Dodgey?
+		trim_trail(q);
 	} else {
 		choice *ch = GET_CURR_CHOICE();
 		ch->st.r = q->st.r;
