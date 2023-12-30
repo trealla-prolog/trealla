@@ -601,6 +601,11 @@ static frame *push_frame(query *q, const clause *cl)
 
 static void reuse_frame(query *q, const clause *cl)
 {
+	cell *c = q->st.curr_cell + q->st.curr_cell->nbr_cells;
+
+	if (c->val_off == g_sys_drop_barrier_s)
+		drop_choice(q);
+
 	frame *f = GET_CURR_FRAME();
 	f->initial_slots = f->actual_slots = cl->nbr_vars;
 	f->chgen = ++q->chgen;
@@ -689,7 +694,6 @@ static void commit_frame(query *q, cell *body)
 			next_key, tail_call, tail_recursive, vars_ok, choices,
 			cl->nbr_vars, cl->nbr_temporaries, f->initial_slots, f->actual_slots);
 #endif
-
 	}
 
 	if (q->pl->opt && tco)
