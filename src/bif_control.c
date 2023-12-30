@@ -78,11 +78,9 @@ bool bif_call_0(query *q, cell *p1, pl_idx p1_ctx)
 	if (!is_callable(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "callable");
 
-	cell *tmp = prepare_call(q, false, p1, p1_ctx, 3);
+	cell *tmp = prepare_call(q, false, p1, p1_ctx, 1);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = NOPREFIX_LEN + p1->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
