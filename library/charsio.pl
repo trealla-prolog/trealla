@@ -96,7 +96,7 @@ fabricate_var_name(VarType, VarName, N) :-
 % Note that uppercase and lowercase transformations use a string. This is because
 % some characters do not map 1:1 between lowercase and uppercase.
 char_type(Char, Type) :-
-        must_be(character, Char),
+        '$must_be'(character, Char),
         (   ground(Type) ->
             (   ctype(Type) ->
                 '$char_type'(Char, Type)
