@@ -5824,6 +5824,28 @@ static bool bif_sys_register_cleanup_1(query *q)
 	return true;
 }
 
+static bool bif_sys_det_length_rundown_2(query *q)
+{
+	GET_FIRST_ARG(p1,list_or_var);
+	GET_NEXT_ARG(p2,integer);
+	unsigned var_nbr, arity = get_smalluint(p2);
+
+	if (!(var_nbr = create_vars(q, arity)))
+		return throw_error(q, p2, p2_ctx, "resource_error", "stack");
+
+	check_heap_error(init_tmp_heap(q));
+
+	while (arity--) {
+		cell v;
+		make_ref(&v, var_nbr++, q->st.curr_frame);
+		append_list(q, &v);
+	}
+
+	cell *tmp = end_list(q);
+	GET_FIRST_ARG(xp1,list_or_var);
+	return unify(q, xp1, xp1_ctx, tmp, q->st.curr_frame);
+}
+
 static bool bif_sys_memberchk_3(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -6468,6 +6490,7 @@ builtins g_other_bifs[] =
 	{"sre_substp", 4, bif_sre_substp_4, "+string,+string,-string,-string,", false, false, BLAH},
 	{"sre_subst", 4, bif_sre_subst_4, "+string,+string,-string,-string,", false, false, BLAH},
 
+	{"$det_length_rundown", 2, bif_sys_det_length_rundown_2, "?list,+integer", false, false, BLAH},
 	{"$memberchk", 3, bif_sys_memberchk_3, "?term,?list,-term", false, false, BLAH},
 	{"$countall", 2, bif_sys_countall_2, "@callable,-integer", false, false, BLAH},
 	{"$register_cleanup", 1, bif_sys_register_cleanup_1, NULL, false, false, BLAH},

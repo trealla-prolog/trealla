@@ -936,15 +936,19 @@ unsigned create_vars(query *q, unsigned cnt)
 		f->overflow = q->st.sp;
 		pl_idx cnt2 = f->actual_slots - f->initial_slots;
 
-		if (!check_slot(q, cnt2))
+		if (!check_slot(q, cnt2)) {
+			printf("*** Ooops %s %d\n", __FILE__, __LINE__);
 			return 0;
+		}
 
 		memmove(q->slots+f->overflow, q->slots+save_overflow, sizeof(slot)*cnt2);
 		q->st.sp += cnt2;
 	}
 
-	if (!check_slot(q, cnt))
+	if (!check_slot(q, cnt)) {
+		printf("*** Ooops %s %d\n", __FILE__, __LINE__);
 		return 0;
+	}
 
 	q->st.sp += cnt;
 	slot *e = GET_SLOT(f, f->actual_slots);
