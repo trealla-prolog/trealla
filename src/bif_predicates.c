@@ -3882,11 +3882,8 @@ static bool bif_must_be_4(query *q)
 	return true;
 }
 
-static bool bif_must_be_2(query *q)
+static bool do_must_be(query *q, cell *p2, pl_idx p2_ctx, cell *p1, pl_idx p1_ctx)
 {
-	GET_FIRST_ARG(p2,atom);
-	GET_NEXT_ARG(p1,any);
-
 	const char *src = C_STR(q, p2);
 
 	if (!strcmp(src, "var") && !is_var(p1))
@@ -3952,10 +3949,6 @@ static bool bif_must_be_2(query *q)
 		cell *c = p2+1;
 		c = deref(q, c, p2_ctx);
 		pl_idx c_ctx = q->latest_ctx;
-
-		if (!is_atom(c))
-			return throw_error(q, c, c_ctx, "type_error", "atom");
-
 		bool is_partial;
 
 		if (!check_list(q, p1, p1_ctx, &is_partial, NULL))
@@ -3969,34 +3962,9 @@ static bool bif_must_be_2(query *q)
 			cell *h = LIST_HEAD(l);
 			h = deref(q, h, l_ctx);
 			pl_idx h_ctx = q->latest_ctx;
-			src = C_STR(q, c);
 
-			if (!strcmp(src, "var" ) && !is_var(h))
-				return throw_error(q, h, h_ctx, "type_error", "var");
-			else if (!strcmp(src, "nonvar" ) && is_var(h))
-				return throw_error(q, h, h_ctx, "type_error", "nonvar");
-			else if (!strcmp(src, "character" ) && !is_character(h))
-				return throw_error(q, h, h_ctx, "type_error", "character");
-			else if (!strcmp(src, "boolean" ) && !is_boolean(h))
-				return throw_error(q, h, h_ctx, "type_error", "boolean");
-			else if (!strcmp(src, "integer" ) && !is_integer(h))
-				return throw_error(q, h, h_ctx, "type_error", "integer");
-			else if (!strcmp(src, "float" ) && !is_float(h))
-				return throw_error(q, h, h_ctx, "type_error", "float");
-			else if (!strcmp(src, "number" ) && !is_number(h))
-				return throw_error(q, h, h_ctx, "type_error", "number");
-			else if (!strcmp(src, "not_less_than_zero" ) && !is_number(h))
-				return throw_error(q, h, h_ctx, "type_error", "number");
-			else if (!strcmp(src, "not_less_than_zero" ) && is_negative(h))
-				return throw_error(q, h, h_ctx, "domain_error", "not_less_than_zero");
-			else if (!strcmp(src, "atom" ) && !is_atom(h))
-				return throw_error(q, h, h_ctx, "type_error", "atom");
-			else if (!strcmp(src, "atomic" ) && !is_atomic(h))
-				return throw_error(q, h, h_ctx, "type_error", "atomic");
-			else if (!strcmp(src, "ground" ) && has_vars(q, h, h_ctx))
-				return throw_error(q, h, h_ctx, "type_error", "ground");
-			else if (!strcmp(src, "compound" ) && !is_structure(h))
-				return throw_error(q, h, h_ctx, "type_error", "compound");
+			if (!do_must_be(q, c, c_ctx, h, h_ctx))
+				return false;
 
 			l = LIST_TAIL(l);
 			l = deref(q, l, l_ctx);
@@ -4019,6 +3987,13 @@ static bool bif_must_be_2(query *q)
 	}
 
 	return true;
+}
+
+static bool bif_must_be_2(query *q)
+{
+	GET_FIRST_ARG(p2,callable);
+	GET_NEXT_ARG(p1,any);
+	return do_must_be(q, p2, p2_ctx, p1, p1_ctx);
 }
 
 static bool bif_can_be_4(query *q)
