@@ -443,6 +443,10 @@ foldl_([H1|T1], [H2|T2], [H3|T3], [H4|T4], G, V0, V) :-
 :- help(foldl(:callable,+list,+list,+var,-var), [iso(false)]).
 :- help(foldl(:callable,+list,+list,+list,+var,-var), [iso(false)]).
 :- help(foldl(:callable,+list,+list,+list,+list,+var,-var), [iso(false)]).
+:- meta_predicate foldl(4, ?, ?, ?, ?).
+:- meta_predicate foldl(5, ?, ?, ?, ?).
+:- meta_predicate foldl(6, ?, ?, ?, ?).
+:- meta_predicate foldl(7, ?, ?, ?, ?).
 
 
 include(G, L, Included) :-
@@ -456,7 +460,7 @@ include(G, L, Included) :-
 		include_(Xs1, P, Included1).
 
 :- help(include(:callable,?list), [iso(false)]).
-
+:- meta_predicate(include(1, ?, ?)).
 
 exclude(G, L, Included) :-
 	exclude_(L, G, Included).
@@ -469,7 +473,7 @@ exclude_([X1|Xs1], P, Included) :-
 	exclude_(Xs1, P, Included1).
 
 :- help(exclude(:callable,?list), [iso(false)]).
-
+:- meta_predicate(exclude(1, ?, ?)).
 
 partition([X|L], Y, [X|L1], L2) :-
 	X @< Y, !,
@@ -479,3 +483,4 @@ partition([X|L], Y, L1, [X|L2]) :-
 partition([], _, [], []).
 
 :- help(partition(:callable,?list,?list), [iso(false)]).
+:- meta_predicate(partition(1, ?, ?, ?)).
