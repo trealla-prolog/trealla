@@ -3882,7 +3882,7 @@ static bool bif_must_be_4(query *q)
 	return true;
 }
 
-static bool do_must_be(query *q, cell *p2, pl_idx p2_ctx, cell *p1, pl_idx p1_ctx)
+static bool do_must_be_2(query *q, cell *p2, pl_idx p2_ctx, cell *p1, pl_idx p1_ctx)
 {
 	const char *src = C_STR(q, p2);
 
@@ -3963,7 +3963,7 @@ static bool do_must_be(query *q, cell *p2, pl_idx p2_ctx, cell *p1, pl_idx p1_ct
 			h = deref(q, h, l_ctx);
 			pl_idx h_ctx = q->latest_ctx;
 
-			if (!do_must_be(q, c, c_ctx, h, h_ctx))
+			if (!do_must_be_2(q, c, c_ctx, h, h_ctx))
 				return false;
 
 			l = LIST_TAIL(l);
@@ -3993,7 +3993,7 @@ static bool bif_must_be_2(query *q)
 {
 	GET_FIRST_ARG(p2,callable);
 	GET_NEXT_ARG(p1,any);
-	return do_must_be(q, p2, p2_ctx, p1, p1_ctx);
+	return do_must_be_2(q, p2, p2_ctx, p1, p1_ctx);
 }
 
 static bool bif_can_be_4(query *q)
