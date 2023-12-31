@@ -6457,10 +6457,10 @@ builtins g_other_bifs[] =
 	{"crypto_n_random_bytes", 2, bif_crypto_n_random_bytes_2, "+integer,-codes", false, false, BLAH},
 	{"cyclic_term", 1, bif_cyclic_term_1, "+term", false, false, BLAH},
 
-	{"must_be", 4, bif_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
-	{"can_be", 4, bif_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
-	{"must_be", 2, bif_must_be_2, "+atom,+term", false, false, BLAH},
-	{"can_be", 2, bif_can_be_2, "+atom,+term,", false, false, BLAH},
+	{"$must_be", 4, bif_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
+	{"$can_be", 4, bif_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
+	{"$must_be", 2, bif_must_be_2, "+atom,+term", false, false, BLAH},
+	{"$can_be", 2, bif_can_be_2, "+atom,+term,", false, false, BLAH},
 
 	{"sre_compile", 2, bif_sre_compile_2, "+string,-string,", false, false, BLAH},
 	{"sre_matchp", 4, bif_sre_matchp_4, "+string,+string,-string,-string,", false, false, BLAH},

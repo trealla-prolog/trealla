@@ -10,7 +10,7 @@ dcg_translate(TermIn, Term) :-
 
 predicate_property(P, A) :-
 	nonvar(P), atom(A), !,
-	must_be(P, callable, predicate_property/2, _),
+	'$must_be'(P, callable, predicate_property/2, _),
 	'$legacy_predicate_property'(P, A).
 predicate_property(P, A) :-
 	'$load_properties',
@@ -28,7 +28,7 @@ predicate_property(P, A) :-
 			;	throw(error(domain_error(predicate_property, A), P))
 		)
 	),
-	must_be(P, callable, predicate_property/2, _),
+	'$must_be'(P, callable, predicate_property/2, _),
 	(	P = (M:P2) ->
 		M:'$predicate_property'(predicate, P2, A)
 	;	'$predicate_property'(predicate, P, A)
@@ -38,7 +38,7 @@ predicate_property(P, A) :-
 
 evaluable_property(P, A) :-
 	nonvar(P), atom(A), !,
-	must_be(P, callable, evaluable_property/2, _),
+	'$must_be'(P, callable, evaluable_property/2, _),
 	'$legacy_evaluable_property'(P, A).
 evaluable_property(P, A) :-
 	'$load_properties',
@@ -48,12 +48,12 @@ evaluable_property(P, A) :-
 		memberchk(A, Controls) ->
 			true
 		;	(
-			must_be(A, callable, evaluable_property/2, _),
+			'$must_be'(A, callable, evaluable_property/2, _),
 			throw(error(domain_error(evaluable_property, A), P))
 			)
 		)
 	),
-	must_be(P, callable, evaluable_property/2, _),
+	'$must_be'(P, callable, evaluable_property/2, _),
 	(	P = (M:P2) ->
 		M:'$predicate_property'(function, P2, A)
 	;	'$predicate_property'(function, P, A)
@@ -152,8 +152,8 @@ setup_call_cleanup(S, G, C) :-
 :- meta_predicate(findall(?,0,-,?)).
 
 findall(T, G, B, Tail) :-
-	can_be(B, list, findall/4, _),
-	can_be(Tail, list, findall/4, _),
+	'$can_be'(B, list, findall/4, _),
+	'$can_be'(Tail, list, findall/4, _),
 	findall(T, G, B0),
 	append(B0, Tail, B), !.
 
@@ -167,7 +167,7 @@ findall(T, G, B, Tail) :-
 setof(Template, Generator, Set) :-
 	( 	var(Set) ->
 		true
-	; 	must_be(Set, list_or_partial_list, setof/3, _)
+	; 	'$must_be'(Set, list_or_partial_list, setof/3, _)
 	),
 	bagof_(Template, Generator, Bag),
 	is_list_or_partial_list(Set),
@@ -178,7 +178,7 @@ setof(Template, Generator, Set) :-
 :- meta_predicate(bagof(-,0,?)).
 
 bagof(Template, Generator, Bag) :-
-	(var(Bag) -> true; must_be(Bag, list_or_partial_list, bagof/3, _)),
+	(var(Bag) -> true; '$must_be'(Bag, list_or_partial_list, bagof/3, _)),
 	bagof_(Template, Generator, Bag).
 
 :- help(bagof(+term,:callable,?list), [iso(true)]).
@@ -594,8 +594,8 @@ iso_dif(X, Y) :-
 	).
 
 numbervars(Term, N0, N) :-
-   must_be(N0, integer, numbervars/3, _),
-   can_be(N, integer, numbervars/3, _),
+   '$must_be'(N0, integer, numbervars/3, _),
+   '$can_be'(N, integer, numbervars/3, _),
    term_variables(Term, Vars),
    numberlist_(Vars, N0, N).
 
@@ -618,7 +618,7 @@ read_line_to_codes(Stream, Codes) :-
 %
 
 error(Err, Context) :-
-	must_be(Err, nonvar, error/2, _),
+	'$must_be'(Err, nonvar, error/2, _),
 	throw(error(Err,Context)).
 
 resource_error(Resource, Context) :-
@@ -673,7 +673,7 @@ pretty(PI) :-
 
 bb_put(K, V) :-
 	prolog_load_context(module, M),
-	must_be(K, atomic, bb_put/2, _),
+	'$must_be'(K, atomic, bb_put/2, _),
 	ignore(retractall(M:'$bb_key'(K, _, _))),
 	asserta(M:'$bb_key'(K, V, nb)).
 
@@ -681,7 +681,7 @@ bb_put(K, V) :-
 
 bb_get(K, V) :-
 	prolog_load_context(module, M),
-	must_be(K, atomic, bb_get/2, _),
+	'$must_be'(K, atomic, bb_get/2, _),
 	M:'$bb_key'(K, V0, _),
 	!,
 	V0 = V.
@@ -690,7 +690,7 @@ bb_get(K, V) :-
 
 bb_delete(K, V) :-
 	prolog_load_context(module, M),
-	must_be(K, atomic, bb_delete/2, _),
+	'$must_be'(K, atomic, bb_delete/2, _),
 	M:'$bb_key'(K, V0, _),
 	!,
 	V0 = V,
@@ -700,7 +700,7 @@ bb_delete(K, V) :-
 
 bb_update(K, O, V) :-
 	prolog_load_context(module, M),
-	must_be(K, atomic, bb_update/3, _),
+	'$must_be'(K, atomic, bb_update/3, _),
 	M:'$bb_key'(K, O0, _),
 	!,
 	O0 = O,
@@ -714,7 +714,7 @@ bb_update(K, O, V) :-
 
 bb_b_put(K, V) :-
 	prolog_load_context(module, M),
-	must_be(K, atomic, bb_b_put/2, _),
+	'$must_be'(K, atomic, bb_b_put/2, _),
 	asserta(M:'$bb_key'(K, V, b)).
 bb_b_put(K, V) :-
 	prolog_load_context(module, M),
@@ -803,13 +803,13 @@ dump_attvars :-
 	print_goals_(Gs).
 
 plus(X,Y,S) :- nonvar(X), nonvar(Y),
-	must_be(X, integer, plus/3, _), must_be(Y, integer, plus/3, _), !,
+	'$must_be'(X, integer, plus/3, _), '$must_be'(Y, integer, plus/3, _), !,
 	S is X + Y.
 plus(X,Y,S) :- nonvar(X), var(Y), nonvar(S),
-	must_be(X, integer, plus/3, _), must_be(S, integer, plus/3, _), !,
+	'$must_be'(X, integer, plus/3, _), '$must_be'(S, integer, plus/3, _), !,
 	Y is S - X.
 plus(X,Y,S) :- var(X), nonvar(Y), nonvar(S),
-	must_be(S, integer, plus/3, _), must_be(Y, integer, plus/3, _), !,
+	'$must_be'(S, integer, plus/3, _), '$must_be'(Y, integer, plus/3, _), !,
 	X is S - Y.
 plus(_,_,_) :-
 	throw(error(instantiation_error, plus/3)).
@@ -817,13 +817,13 @@ plus(_,_,_) :-
 :- help(plus(?integer,?integer,?integer), [iso(false)]).
 
 succ(X,S) :- nonvar(X), Y=1, nonvar(Y),
-	must_be(X, integer, succ/2, _), must_be(Y, integer, succ/2, _), !,
+	'$must_be'(X, integer, succ/2, _), '$must_be'(Y, integer, succ/2, _), !,
 	(	X >= 0 -> true
 	; 	throw(error(domain_error(not_less_than_zero, X), succ/2))
 	),
 	S is X + Y.
 succ(X,S) :- var(X), Y=1, nonvar(Y), nonvar(S),
-	must_be(S, integer, succ/2, _), must_be(Y, integer, succ/2, _), !,
+	'$must_be'(S, integer, succ/2, _), '$must_be'(Y, integer, succ/2, _), !,
 	(S >= 0 -> true ; throw(error(domain_error(not_less_than_zero, S), succ/2))),
 	!,
 	S > 0,

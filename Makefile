@@ -116,6 +116,7 @@ LIBOBJECTS +=  \
 	library/debug.o \
 	library/dict.o \
 	library/dif.o \
+	library/error.o \
 	library/format.o \
 	library/freeze.o \
 	library/gensym.o \
