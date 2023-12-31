@@ -829,8 +829,9 @@ bool do_use_module_1(module *curr_m, cell *p)
 			return true;
 		}
 
-		// These are some modules that don't exist in Trealla,
-		// but the predicates probably pop up somewhere else...
+		// These are some modules that don't exist in Trealla
+		// but the predicates probably pop up somewhere else.
+		// They are implemented as builtins.
 
 		if (!strcmp(name, "between")
 		    || !strcmp(name, "samsort")
