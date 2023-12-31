@@ -358,15 +358,16 @@ Non-standard predicates
 	bb_update/3                 # SICStus-compatible
 	bb_b_put/2                  # SICStus-compatible
 
-	call_residue_vars/2
-
 	gensym/2					# gensym(+atom,-atom)
 	reset_gensym/1				# reset_gensym(+atom)
 
 	must_be/4                   # must_be(+term,+type,+goal,?arg)
-	can_be/4                    # can_be(+term,+type,+goal,?arg)
 	must_be/2                   # must_be(+type,+term)
+
+	can_be/4                    # can_be(+term,+type,+goal,?arg)
 	can_be/2                    # can_be(+type,+term)
+
+	call_residue_vars/2
 	expand_term/2               # expand_term(+rule,-Term)
 	sub_string/5				# sub_string(+string,?before,?len,?after,?substring)
 	atomic_concat/3             # atomic_concat(+atom,+list,-list)
