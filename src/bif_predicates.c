@@ -3806,7 +3806,7 @@ static bool bif_must_be_4(query *q)
 		return throw_error2(q, p1, p1_ctx, "type_error", "number", p3);
 	else if (!strcmp(src, "ground")) {
 		if (has_vars(q, p1, p1_ctx))
-			return throw_error2(q, p1, p1_ctx, "type_error", "ground", p3);
+			return throw_error2(q, p1, p1_ctx, "instantiation_error", "ground", p3);
 	} else if (!strcmp(src, "compound") && !is_structure(p1))
 		return throw_error2(q, p1, p1_ctx, "type_error", "compound", p3);
 	else if (is_compound(p2) && (p2->arity == 1) && !strcmp(src, "list")) {
@@ -3855,7 +3855,7 @@ static bool bif_must_be_4(query *q)
 			else if (!strcmp(src, "atomic" ) && !is_atomic(h))
 				return throw_error(q, h, h_ctx, "type_error", "atomic");
 			else if (!strcmp(src, "ground" ) && has_vars(q, h, h_ctx))
-				return throw_error(q, h, h_ctx, "type_error", "ground");
+				return throw_error(q, h, h_ctx, "instantiation_error", "ground");
 			else if (!strcmp(src, "compound" ) && !is_structure(h))
 				return throw_error(q, h, h_ctx, "type_error", "compound");
 
@@ -3941,7 +3941,7 @@ static bool do_must_be(query *q, cell *p2, pl_idx p2_ctx, cell *p1, pl_idx p1_ct
 			return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
 	} else if (!strcmp(src, "ground")) {
 		if (has_vars(q, p1, p1_ctx))
-			return throw_error(q, p1, p1_ctx, "type_error", "ground");
+			return throw_error(q, p1, p1_ctx, "instantiation_error", "ground");
 	} else if (!strcmp(src, "compound")) {
 		if (!is_structure(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "compound");
