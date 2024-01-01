@@ -395,7 +395,7 @@ size_t scan_is_chars_list(query *q, cell *l, pl_idx l_ctx, bool allow_codes)
 
 static void enter_predicate(query *q, predicate *pr)
 {
-	q->st.recursive = q->st.pr && (q->st.pr == pr);
+	q->st.recursive = q->st.pr == pr;
 	q->st.pr = pr;
 
 	if (pr->is_dynamic)
