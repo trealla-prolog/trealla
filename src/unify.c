@@ -868,6 +868,11 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 	if (c_attrs)
 		q->run_hook = true;
 
+	if (v_ctx == q->st.curr_frame)
+		q->no_tco = true;
+	else if (c_ctx == q->st.curr_frame)
+		q->no_tco = true;
+
 	if (is_compound(v)) {
 		make_indirect(&e->c, v, v_ctx);
 
