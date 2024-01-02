@@ -198,6 +198,7 @@ bool bif_iso_call_1(query *q)
 
 	cell *tmp = prepare_call(q, true, p1, p1_ctx, 3);
 	check_heap_error(tmp);
+	tmp[1].flags &= ~FLAG_TAIL_CALL;
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
@@ -228,6 +229,7 @@ bool bif_iso_once_1(query *q)
 
 	cell *tmp = prepare_call(q, true, p1, p1_ctx, 4);
 	check_heap_error(tmp);
+	tmp[1].flags &= ~FLAG_TAIL_CALL;
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
@@ -255,6 +257,7 @@ bool bif_ignore_1(query *q)
 
 	cell *tmp = prepare_call(q, true, tmp2, q->st.curr_frame, 4);
 	check_heap_error(tmp);
+	tmp[1].flags &= ~FLAG_TAIL_CALL;
 	pl_idx nbr_cells = PREFIX_LEN + tmp2->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
