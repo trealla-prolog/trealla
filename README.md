@@ -405,7 +405,7 @@ Non-standard predicates
 	uuid/1                      # uuid(-string)
 	load_files/[1,2]
 	split_string/4				# SWI-compatible
-	plus/3
+	succ/2
 	module/1
 	line_count/2
 	atom_number/2

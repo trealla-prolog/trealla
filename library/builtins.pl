@@ -802,20 +802,6 @@ dump_attvars :-
 	sort(Gs1, Gs),
 	print_goals_(Gs).
 
-plus(X,Y,S) :- nonvar(X), nonvar(Y),
-	'$must_be'(X, integer, plus/3, _), '$must_be'(Y, integer, plus/3, _), !,
-	S is X + Y.
-plus(X,Y,S) :- nonvar(X), var(Y), nonvar(S),
-	'$must_be'(X, integer, plus/3, _), '$must_be'(S, integer, plus/3, _), !,
-	Y is S - X.
-plus(X,Y,S) :- var(X), nonvar(Y), nonvar(S),
-	'$must_be'(S, integer, plus/3, _), '$must_be'(Y, integer, plus/3, _), !,
-	X is S - Y.
-plus(_,_,_) :-
-	throw(error(instantiation_error, plus/3)).
-
-:- help(plus(?integer,?integer,?integer), [iso(false)]).
-
 succ(X,S) :- nonvar(X), Y=1, nonvar(Y),
 	'$must_be'(X, integer, succ/2, _), '$must_be'(Y, integer, succ/2, _), !,
 	(	X >= 0 -> true
