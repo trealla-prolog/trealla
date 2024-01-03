@@ -311,11 +311,9 @@ Non-standard predicates
 	abolish/2					# abolish(+pi,+list)
 	pretty/1					# pretty-print version of listing/1
 	between/3
-	forall/2
 	msort/2						# version of sort/3 with duplicates
 	samsort/2                   # same as msort/2
 	merge/3
-	countall/2					# countall(@callable,-integer)
 	format/[1-3]
 	portray_clause/[1-2]
 	predicate_property/2
@@ -352,12 +350,6 @@ Non-standard predicates
 	random_integer/0            # function returning integer [0,RAND_MAX]
 	rand/0                      # function returning integer [0,RAND_MAX]
 
-	bb_get/2                    # SICStus-compatible
-	bb_put/2                    # SICStus-compatible
-	bb_delete/2                 # SICStus-compatible
-	bb_update/3                 # SICStus-compatible
-	bb_b_put/2                  # SICStus-compatible
-
 	gensym/2					# gensym(+atom,-atom)
 	reset_gensym/1				# reset_gensym(+atom)
 
@@ -377,8 +369,6 @@ Non-standard predicates
 	partial_string/3            # partial_string(+string,-String,-Var)
 	if/3, (*->)/2               # soft-cut
 	call_det/2					# call_det(+call,?boolean)
-	setup_call_cleanup/3        # setup_call_cleanup(+setup,+call,+cleanup)
-	call_cleanup/2              # call_cleanup(+call,+cleanup)
 	term_attvars/2              # term_attvars(+term,-Vs)
 	copy_term_nat/2             # doesn't copy attrs
 	copy_term/3                 # copy_term(+term1,-term2,-Goals)
@@ -405,7 +395,6 @@ Non-standard predicates
 	uuid/1                      # uuid(-string)
 	load_files/[1,2]
 	split_string/4				# SWI-compatible
-	plus/3
 	module/1
 	line_count/2
 	atom_number/2
