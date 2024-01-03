@@ -686,12 +686,13 @@ static void commit_frame(query *q, cell *body)
 	bool last_match = is_det || cl->is_first_cut || !next_key;
 	bool tco = false;
 
-	if (!q->no_tco && (q->st.fp == (q->st.curr_frame + 1)) && last_match) {
+	if (!q->no_tco && last_match && (q->st.fp == (q->st.curr_frame + 1))) {
 		bool tail_call = is_tail_call(q->st.curr_cell);
 		bool tail_recursive = tail_call && q->st.recursive;
 		bool vars_ok =
 			tail_recursive ? f->initial_slots == cl->nbr_vars :
-			tail_call ? f->initial_slots == (cl->nbr_vars - cl->nbr_temporaries) : false;
+			tail_call ? f->initial_slots == (cl->nbr_vars - cl->nbr_temporaries) :
+			false;
 		bool choices = any_choices(q, f);
 		tco = vars_ok && !choices;
 
