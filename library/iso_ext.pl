@@ -2,8 +2,8 @@
 		bb_b_put/2,
 		bb_put/2,
 		bb_get/2,
-		bb_delete/2,		# SICStus
-		bb_update/3,		# SICStus
+		bb_delete/2,		% SICStus
+		bb_update/3,		% SICStus
 		countall/2,
 		call_cleanup/3,
 		setup_call_cleanup/3,
