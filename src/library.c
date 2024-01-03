@@ -70,6 +70,8 @@ extern unsigned char library_clpb_pl[];
 extern unsigned int library_clpb_pl_len;
 extern unsigned char library_clpz_pl[];
 extern unsigned int library_clpz_pl_len;
+extern unsigned char library_iso_ext_pl[];
+extern unsigned int library_iso_ext_pl_len;
 
 library g_libs[] = {
 	 {"abnf", library_abnf_pl, &library_abnf_pl_len},
@@ -92,6 +94,7 @@ library g_libs[] = {
 	 {"freeze", library_freeze_pl, &library_freeze_pl_len},
 	 {"gensym", library_gensym_pl, &library_gensym_pl_len},
 	 {"http", library_http_pl, &library_http_pl_len},
+	 {"iso_ext", library_iso_ext_pl, &library_iso_ext_pl_len},
 	 {"json", library_json_pl, &library_json_pl_len},
 	 {"lambda", library_lambda_pl, &library_lambda_pl_len},
 	 {"linda", library_linda_pl, &library_linda_pl_len},
