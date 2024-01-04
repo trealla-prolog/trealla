@@ -175,6 +175,10 @@ bool bif_iso_call_n(query *q)
 	check_heap_error(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + tmp2->nbr_cells;
 	make_call(q, tmp+nbr_cells);
+
+	if (is_tail_call(q->st.curr_cell))
+		tmp[1].flags |= FLAG_TAIL_CALL;
+
 	q->st.curr_cell = tmp;
 	return true;
 }
@@ -204,6 +208,10 @@ bool bif_iso_call_1(query *q)
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->fail_on_retry = true;
+
+	if (is_tail_call(q->st.curr_cell))
+		tmp[1].flags |= FLAG_TAIL_CALL;
+
 	q->st.curr_cell = tmp;
 	return true;
 }

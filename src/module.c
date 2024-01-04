@@ -1671,11 +1671,12 @@ static void xref_cell(module *m, clause *cl, cell *c, int last_was_colon, bool i
 		else
 			c->flags |= FLAG_BUILTIN;
 
-		return;
+		if (c->val_off != g_call_s)
+			return;
+	} else {
+		if (last_was_colon < 1)
+			c->match = search_predicate(m, c, NULL);
 	}
-
-	if (last_was_colon < 1)
-		c->match = search_predicate(m, c, NULL);
 
 	if (!is_directive) {
 		if ((c+c->nbr_cells) >= (cl->cells + cl->cidx-1))
