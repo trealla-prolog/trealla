@@ -1082,7 +1082,11 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 		else if (is_interned(m) && (m->val_off == g_colon_s)) {
 			make_struct(tmp, g_colon_s, bif_iso_invoke_2, 2, 1+k->nbr_cells);
 			SET_OP(tmp, OP_XFY); tmp++;
-			make_atom(tmp++, new_atom(q->pl, pr->m->name));
+			make_atom(tmp++, new_atom(q->pl, q->st.m->name));
+		} else if (is_positive(m) && (get_smallint(m) <= 9)) {
+			make_struct(tmp, g_colon_s, bif_iso_invoke_2, 2, 1+k->nbr_cells);
+			SET_OP(tmp, OP_XFY); tmp++;
+			make_atom(tmp++, new_atom(q->pl, q->st.m->name));
 		}
 
 		tmp += dup_cells(tmp, k, k->nbr_cells);
