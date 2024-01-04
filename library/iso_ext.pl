@@ -1,16 +1,3 @@
-:- module(iso_ext, [
-		bb_b_put/2,
-		bb_put/2,
-		bb_get/2,
-		bb_delete/2,		% SICStus
-		bb_update/3,		% SICStus
-		countall/2,
-		call_cleanup/3,
-		setup_call_cleanup/3,
-		forall/2,
-		succ/2
-	]).
-
 bb_put(K, V) :-
 	prolog_load_context(module, M),
 	'$must_be'(K, atomic, bb_put/2, _),
