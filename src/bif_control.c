@@ -148,14 +148,12 @@ bool bif_iso_call_n(query *q)
 
 	check_heap_error(init_tmp_heap(q));
 	check_heap_error(clone_to_tmp(q, p1, p1_ctx));
-	unsigned arity = p1->arity;
-	unsigned args = 1;
+	unsigned arity = p1->arity, args = 1;
 
-	while (args < q->st.curr_cell->arity) {
+	while (args++ < q->st.curr_cell->arity) {
 		GET_NEXT_ARG(p2,any);
 		check_heap_error(clone_to_tmp(q, p2, p2_ctx));
 		arity++;
-		args++;
 	}
 
 	cell *tmp2 = get_tmp_heap(q, 0);
