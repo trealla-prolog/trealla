@@ -868,19 +868,30 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 	if (c_attrs)
 		q->run_hook = true;
 
-	if (v_ctx == q->st.curr_frame)	// ???
+	// This seems to be needed to make call/n elighle for TCO
+	// in some circumstances.
+
+	if (v_ctx == q->st.curr_frame)
 		q->no_tco = true;
+
+	// If anything outside the current frame (q->st.curr_frame) points
+	// inside the current frame then we can't TCO.
+	// If anything points inside the next (q->st.fp) frame then ditto.
 
 	if (is_compound(v)) {
 		make_indirect(&e->c, v, v_ctx);
 
-		if (v_ctx >= q->st.curr_frame)
+		if ((c_ctx != q->st.curr_frame) && (v_ctx == q->st.curr_frame))
+			q->no_tco = true;
+		else if (v_ctx == q->st.fp)
 			q->no_tco = true;
 	} else if (is_var(v)) {
 		make_ref(&e->c, v->var_nbr, v_ctx);
 
-		if (v_ctx >= q->st.curr_frame)
+		if ((c_ctx != q->st.curr_frame) && (v_ctx == q->st.curr_frame))
 			q->no_tco = true;
+		else if (v_ctx == q->st.fp)		// Doesn't seem to be needed but
+			q->no_tco = true;			// leaving it here for now.
 	} else {
 		share_cell(v);
 		e->c = *v;
