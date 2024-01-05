@@ -868,12 +868,6 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 	if (c_attrs)
 		q->run_hook = true;
 
-	// This seems to be needed to make call/n elighle for TCO
-	// in some circumstances.
-
-	if (v_ctx == q->st.curr_frame)
-		q->no_tco = true;
-
 	// If anything outside the current frame (q->st.curr_frame) points
 	// inside the current frame then we can't TCO.
 	// If anything points inside the next (q->st.fp) frame then ditto.
@@ -895,6 +889,12 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 	} else {
 		share_cell(v);
 		e->c = *v;
+
+		// This seems to be needed to make call/n elighle for TCO
+		// in some circumstances...
+
+		if (v_ctx == q->st.curr_frame)
+			q->no_tco = true;
 	}
 }
 
