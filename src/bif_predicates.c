@@ -264,11 +264,6 @@ static bool bif_iso_notunify_2(query *q)
 	return true;
 }
 
-static bool bif_iso_dcgs_2(query *q)
-{
-	return throw_error(q, q->st.curr_cell, q->st.curr_frame, "existence_error", "procedure");
-}
-
 static bool bif_iso_repeat_0(query *q)
 {
 	check_heap_error(push_choice(q));
@@ -6304,7 +6299,6 @@ builtins g_iso_bifs[] =
 	{"\\+", 1, bif_iso_negation_1, ":callable", true, false, BLAH},
 	{"=", 2, bif_iso_unify_2, "+term,+term", true, false, BLAH},
 	{"\\=", 2, bif_iso_notunify_2, "+term,+term", true, false, BLAH},
-	{"-->", 2, bif_iso_dcgs_2, "+term,+term", true, false, BLAH},
 
 	{"$call_cleanup", 3, bif_sys_call_cleanup_3, NULL, false, false, BLAH},
 	{"$block_catcher", 1, bif_sys_block_catcher_1, NULL, false, false, BLAH},
