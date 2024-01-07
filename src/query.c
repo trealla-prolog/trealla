@@ -1592,6 +1592,7 @@ bool start(query *q)
 		Trace(q, q->st.curr_cell, q->st.curr_frame, CALL);
 		cell *save_cell = q->st.curr_cell;
 		pl_idx save_ctx = q->st.curr_frame;
+		q->cycle_error = false;
 		q->did_throw = false;
 		q->max_eval_depth = 0;
 		q->tot_goals++;
