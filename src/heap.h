@@ -26,6 +26,7 @@ cell *alloc_on_queuen(query *q, unsigned qnbr, const cell *c);
 void trim_heap(query *q);
 
 cell *init_tmp_heap(query *q);
+cell *preinit_tmp_heap(query *q, pl_idx n);
 
 // Used for copying attributes and doesn't init tmp heap...
 cell *deep_copy_to_heap_with_replacement(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs, cell *from, pl_idx from_ctx, cell *to, pl_idx to_ctx);

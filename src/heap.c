@@ -90,6 +90,24 @@ cell *init_tmp_heap(query *q)
 	return q->tmp_heap;
 }
 
+cell *preinit_tmp_heap(query *q, pl_idx n)
+{
+	if (q->tmp_heap && (q->tmph_size < n)) {
+		free(q->tmp_heap);
+		q->tmp_heap = NULL;
+		q->tmph_size = n;
+	}
+
+	if (!q->tmp_heap) {
+		q->tmp_heap = malloc(n * sizeof(cell));
+		if (!q->tmp_heap) return NULL;
+	}
+
+	q->tmphp = 0;
+	q->cycle_error = false;
+	return q->tmp_heap;
+}
+
 cell *alloc_on_tmp(query *q, unsigned nbr_cells)
 {
 	if (((uint64_t)q->tmphp + nbr_cells) > UINT32_MAX)

@@ -5823,14 +5823,14 @@ static bool bif_sys_det_length_rundown_2(query *q)
 {
 	GET_FIRST_ARG(p1,list_or_var);
 	GET_NEXT_ARG(p2,integer);
-	unsigned var_nbr, arity = get_smalluint(p2);
+	unsigned var_nbr, n = get_smalluint(p2);
 
-	if (!(var_nbr = create_vars(q, arity)))
+	if (!(var_nbr = create_vars(q, n)))
 		return throw_error(q, p2, p2_ctx, "resource_error", "stack");
 
-	check_heap_error(init_tmp_heap(q));
+	check_heap_error(preinit_tmp_heap(q, n*2+1));
 
-	while (arity--) {
+	while (n--) {
 		cell v;
 		make_ref(&v, var_nbr++, q->st.curr_frame);
 		append_list(q, &v);
