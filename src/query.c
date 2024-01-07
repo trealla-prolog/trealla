@@ -1806,7 +1806,6 @@ bool execute(query *q, cell *cells, unsigned nbr_vars)
 	q->st.curr_cell = cells;
 	q->st.sp = nbr_vars;
 	q->abort = false;
-	q->cycle_error = false;
 	q->is_redo = false;
 
 	// There is an initial frame (fp=0), so this

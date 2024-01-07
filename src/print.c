@@ -1394,7 +1394,6 @@ char *print_canonical_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running)
 	q->quoted = 1;
 	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
-	q->cycle_error = false;
 	SB_init(q->sb);
 	print_term_to_buf(q, c, c_ctx, running, false);
 	q->ignore_ops = false;
@@ -1412,7 +1411,6 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int
 	q->quoted = 1;
 	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
-	q->cycle_error = false;
 	SB_init(q->sb);
 	print_term_to_buf(q, c, c_ctx, running, false);
 	q->ignore_ops = false;
@@ -1444,7 +1442,6 @@ bool print_canonical(query *q, FILE *fp, cell *c, pl_idx c_ctx, int running)
 	q->quoted = 1;
 	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
-	q->cycle_error = false;
 	SB_init(q->sb);
 	print_term_to_buf(q, c, c_ctx, running, false);
 	q->ignore_ops = false;
@@ -1474,7 +1471,6 @@ char *print_term_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running)
 	if (++q->print_vgen == 0) q->print_vgen = 1;
 	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
-	q->cycle_error = false;
 	//q->last_thing_was_space = true;
 	SB_init(q->sb);
 	print_term_to_buf(q, c, c_ctx, running, false);
@@ -1489,7 +1485,6 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int runn
 	if (++q->print_vgen == 0) q->print_vgen = 1;
 	q->did_quote = false;
 	q->last_thing = WAS_SPACE;
-	q->cycle_error = false;
 	SB_init(q->sb);
 	print_term_to_buf(q, c, c_ctx, running, false);
 	const char *src = SB_cstr(q->sb);
@@ -1517,7 +1512,6 @@ bool print_term(query *q, FILE *fp, cell *c, pl_idx c_ctx, int running)
 	if (++q->print_vgen == 0) q->print_vgen = 1;
 	q->did_quote = false;
 	q->last_thing = WAS_SPACE;
-	q->cycle_error = false;
 	SB_init(q->sb);
 	print_term_to_buf(q, c, c_ctx, running, false);
 	const char *src = SB_cstr(q->sb);
