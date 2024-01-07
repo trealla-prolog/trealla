@@ -884,8 +884,8 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 
 		if ((c_ctx == q->st.fp) && (v_ctx == q->st.curr_frame))
 			q->no_tco = true;
-		else if (v_ctx == q->st.fp)		// Doesn't seem to be needed but
-			q->no_tco = true;			// leaving it here for now.
+		//else if (v_ctx == q->st.fp)	// Doesn't seem to be needed but
+		//	q->no_tco = true;			// leaving it here for now.
 	} else {
 		share_cell(v);
 		e->c = *v;
