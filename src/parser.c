@@ -349,7 +349,7 @@ static void consultall(parser *p, cell *l)
 {
 	LIST_HANDLER(l);
 
-	while (is_list(l) && !g_tpl_interrupt) {
+	while (is_list(l)) {
 		cell *h = LIST_HEAD(l);
 
 		if (is_iso_list(h))
@@ -428,7 +428,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 	free(spec);
 	LIST_HANDLER(p3);
 
-	while (is_list(p3) && !g_tpl_interrupt) {
+	while (is_list(p3)) {
 		cell *h = LIST_HEAD(p3);
 
 		if (is_atom(h)) {
@@ -766,7 +766,7 @@ static bool directives(parser *p, cell *d)
 
 		LIST_HANDLER(p2);
 
-		while (is_iso_list(p2) && !g_tpl_interrupt) {
+		while (is_iso_list(p2)) {
 			LIST_HEAD(p2);
 			p2 = LIST_TAIL(p2);
 		}
@@ -862,7 +862,7 @@ static bool directives(parser *p, cell *d)
 		cell *p2 = c + 2;
 		LIST_HANDLER(p2);
 
-		while (is_iso_list(p2) && !g_tpl_interrupt) {
+		while (is_iso_list(p2)) {
 			cell *head = LIST_HEAD(p2);
 
 			if (is_compound(head)) {
@@ -993,7 +993,7 @@ static bool directives(parser *p, cell *d)
 
 	LIST_HANDLER(p1);
 
-	while (is_list(p1) && !g_tpl_interrupt) {
+	while (is_list(p1)) {
 		cell *h = LIST_HEAD(p1);
 
 		if (is_interned(h) && (!strcmp(C_STR(p, h), "/") || !strcmp(C_STR(p, h), "//")) && (h->arity == 2)) {
@@ -1082,7 +1082,7 @@ static bool directives(parser *p, cell *d)
 		return true;
 	}
 
-	while (is_interned(p1) && !g_tpl_interrupt) {
+	while (is_interned(p1)) {
 		module *m = p->m;
 		cell *c_id = p1;
 
@@ -3147,7 +3147,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 	unsigned arity = 1;
 	p->depth++;
 
-	while (get_token(p, last_op, last_postfix) && !g_tpl_interrupt) {
+	while (get_token(p, last_op, last_postfix)) {
 		if (p->error && !p->do_read_term)
 			break;
 
@@ -3250,7 +3250,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 					LIST_HANDLER(p1);
 					bool tail = false;
 
-					while (is_iso_list(p1) && !g_tpl_interrupt) {
+					while (is_iso_list(p1)) {
 						cell *h = LIST_HEAD(p1);
 
 						if (!process_term(p, h))
@@ -3838,7 +3838,7 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 	p->srcptr = SB_cstr(src);
 	bool ok;
 
-	while (p->srcptr && *p->srcptr && !g_tpl_interrupt) {
+	while (p->srcptr && *p->srcptr) {
 		reset(p);
 		p->line_nbr_start = 0;
 		p->line_nbr = 1;

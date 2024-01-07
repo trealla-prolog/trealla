@@ -543,9 +543,6 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 	bool any1 = false, any2 = false;
 
 	while (is_iso_list(c)) {
-		if (g_tpl_interrupt)
-			return;
-
 		cell *save_c = c;
 		pl_idx save_c_ctx = c_ctx;
 
@@ -713,9 +710,6 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		pl_idx p1_ctx = orig_c_ctx;
 
 		while (is_iso_list(p1)) {
-			if (g_tpl_interrupt)
-				break;
-
 			p1 = p1 + 1; p1 += p1->nbr_cells;
 			cell *c = p1;
 			pl_idx c_ctx = p1_ctx;

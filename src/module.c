@@ -1716,7 +1716,7 @@ void xref_clause(module *m, clause *cl)
 
 void xref_db(module *m)
 {
-	for (predicate *pr = m->head; pr && !g_tpl_interrupt; pr = pr->next) {
+	for (predicate *pr = m->head; pr; pr = pr->next) {
 		if (pr->is_processed)
 			continue;
 

@@ -294,9 +294,6 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 	LIST_HANDLER(l);
 
 	while (is_list(l) && (q->st.m->flags.double_quote_chars || allow_codes)) {
-		if (g_tpl_interrupt)
-			return 0;
-
 		cell *h = LIST_HEAD(l);
 		pl_idx h_ctx = l_ctx;
 		slot *e = NULL;
@@ -360,9 +357,6 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 		LIST_HANDLER(l2);
 
 		while (is_list(l2) && (q->st.m->flags.double_quote_chars || allow_codes)) {
-			if (g_tpl_interrupt)
-				return 0;
-
 			cell *h = LIST_HEAD(l2);
 			l2 = LIST_TAIL(l2);
 			RESTORE_VAR(l2, l2_ctx, l2, l2_ctx, q->vgen);
