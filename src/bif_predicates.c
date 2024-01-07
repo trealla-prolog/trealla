@@ -5828,17 +5828,23 @@ static bool bif_sys_det_length_rundown_2(query *q)
 	if (!(var_nbr = create_vars(q, n)))
 		return throw_error(q, p2, p2_ctx, "resource_error", "stack");
 
-	check_heap_error(preinit_tmp_heap(q, n*2+1));
+	cell *l;
+	check_heap_error(l = alloc_on_heap(q, n*2+1));
+	cell *save_l = l;
 
-	while (n--) {
-		cell v;
-		make_ref(&v, var_nbr++, q->st.curr_frame);
-		append_list(q, &v);
+	while (n) {
+		make_atom(l, g_dot_s);
+		l->arity = 2;
+		l->nbr_cells = n*2+1;
+		l->flags = 0;
+		l++;
+		make_ref(l++, var_nbr++, q->st.curr_frame);
+		n--;
 	}
 
-	cell *tmp = end_list(q);
+	make_atom(l, g_nil_s);
 	GET_FIRST_ARG(xp1,list_or_var);
-	return unify(q, xp1, xp1_ctx, tmp, q->st.curr_frame);
+	return unify(q, xp1, xp1_ctx, save_l, q->st.curr_frame);
 }
 
 static bool bif_sys_memberchk_3(query *q)
