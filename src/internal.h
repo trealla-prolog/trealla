@@ -464,6 +464,8 @@ struct predicate_ {
 	bool is_check_directive:1;
 	bool is_processed:1;
 	bool is_var_in_first_arg:1;
+	bool is_iso:1;
+	bool is_tco:1;
 };
 
 #define BLAH1 false, false, {0}, {0}, 0, NULL, NULL, NULL, NULL, NULL

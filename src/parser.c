@@ -623,6 +623,25 @@ static bool directives(parser *p, cell *d)
 			if (is_compound(h) && is_atom(h+1) && !strcmp(C_STR(p, h), "iso")) {
 				cell *arg = h + 1;
 				iso = !strcmp(C_STR(p, arg), "true");
+
+				if (iso) {
+					predicate *pr = find_predicate(p->m, p1);
+
+					if (pr)
+						pr->is_iso = true;
+				}
+			}
+
+			if (is_compound(h) && is_atom(h+1) && !strcmp(C_STR(p, h), "tco")) {
+				cell *arg = h + 1;
+				bool tco = !strcmp(C_STR(p, arg), "true");
+
+				if (tco) {
+					predicate *pr = find_predicate(p->m, p1);
+
+					if (pr)
+						pr->is_tco = true;
+				}
 			}
 
 			if (is_compound(h) && is_atom(h+1) && !strcmp(C_STR(p, h), "desc")) {

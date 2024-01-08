@@ -680,6 +680,10 @@ static void commit_frame(query *q, cell *body)
 	bool last_match = is_det || cl->is_first_cut || !next_key;
 	bool tco = false;
 
+	if (q->st.r->owner->is_tco)
+		q->no_tco = false;
+
+
 	if (!q->no_tco && last_match && (q->st.fp == (q->st.curr_frame + 1))) {
 		bool tail_call = is_tail_call(q->st.curr_cell);
 		bool tail_recursive = tail_call && q->st.recursive;
