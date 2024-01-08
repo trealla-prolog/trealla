@@ -626,7 +626,7 @@ static void prune_trail(query *q)
 	while (q->st.tp) {
 		const trail *tr = q->trails + q->st.tp - 1;
 
-		if (tr->var_ctx != q->st.curr_frame)
+		if (tr->var_ctx < q->st.curr_frame)
 			break;
 
 		q->st.tp--;
