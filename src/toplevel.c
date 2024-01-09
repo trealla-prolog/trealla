@@ -476,11 +476,6 @@ void dump_vars(query *q, bool partial)
 		q->parens = parens;
 		e->vgen = ++q->vgen;
 
-		//if (!init_tmp_heap(q))
-		//	return;
-
-		//cell *tmp = deep_clone_to_tmp(q, c, c_ctx);
-		//ensure(tmp)
 		print_term(q, stdout, c, c_ctx, 1);
 
 		if (parens) fputc(')', stdout);
