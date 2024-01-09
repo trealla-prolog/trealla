@@ -2291,12 +2291,7 @@ static bool bif_call_residue_vars_2(query *q)
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->fail_on_retry = true;
-
-	if (is_tail_call(q->st.curr_cell))
-		tmp[1].flags |= FLAG_TAIL_CALL;
-
 	q->st.curr_cell = tmp;
-	return true;
 	return true;
 }
 
