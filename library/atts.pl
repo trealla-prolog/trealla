@@ -45,7 +45,7 @@ term_attributed_variables(Term, Vs) :-
 	term_variables(Term, Vs0),
 	term_attvars_(Vs0, [], Vs).
 
-:- help(term_attributed_variables(+term,-list), [iso(false)]).
+:- help(term_attributed_variables(+term,-list), [iso(false), desc('Return list of attributed variables in term')]).
 
 call_residue_vars(Goal, Atts) :-
 	Goal,
