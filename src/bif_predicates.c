@@ -2274,6 +2274,32 @@ static bool bif_iso_acyclic_term_1(query *q)
 	return is_acyclic_term(q, p1, p1_ctx) ? true : false;
 }
 
+static bool bif_call_residue_vars_2(query *q)
+{
+	GET_FIRST_ARG(p1,callable);
+	GET_NEXT_ARG(p2,var);
+	cell *tmp = prepare_call(q, true, p1, p1_ctx, 6);
+	check_heap_error(tmp);
+	tmp[1].flags &= ~FLAG_TAIL_CALL;
+	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
+	make_struct(tmp+nbr_cells++, new_atom(q->pl, "term_attributed_variables"), NULL, 2, 2);
+	make_indirect(tmp+nbr_cells++, p1, p1_ctx);
+	make_ref(tmp+nbr_cells++, p2->var_nbr, p2_ctx);
+	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
+	make_uint(tmp+nbr_cells++, q->cp);
+	make_call(q, tmp+nbr_cells);
+	check_heap_error(push_barrier(q));
+	choice *ch = GET_CURR_CHOICE();
+	ch->fail_on_retry = true;
+
+	if (is_tail_call(q->st.curr_cell))
+		tmp[1].flags |= FLAG_TAIL_CALL;
+
+	q->st.curr_cell = tmp;
+	return true;
+	return true;
+}
+
 static bool bif_iso_current_prolog_flag_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -6053,6 +6079,7 @@ static void load_properties(module *m)
 	format_property(m, tmpbuf, sizeof(tmpbuf), "abolish", 1, "meta_predicate(abolish(:))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "clause", 2, "meta_predicate(clause(:,?))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "clause", 3, "meta_predicate(clause(:,?,?))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "call_residue_vars", 2, "meta_predicate(call_residue_vars(0,?))", false); SB_strcat(pr, tmpbuf);
 
 	for (int i = 2; i <= 7; i++) {
 		char metabuf[1024];
@@ -6480,6 +6507,7 @@ builtins g_other_bifs[] =
 	{"string_length", 2, bif_string_length_2, "+string,?integer", false, false, BLAH},
 	{"crypto_n_random_bytes", 2, bif_crypto_n_random_bytes_2, "+integer,-codes", false, false, BLAH},
 	{"cyclic_term", 1, bif_cyclic_term_1, "+term", false, false, BLAH},
+	{"call_residue_vars", 2, bif_call_residue_vars_2, ":callable,-list", false, false, BLAH},
 
 	{"$must_be", 4, bif_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"$can_be", 4, bif_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
