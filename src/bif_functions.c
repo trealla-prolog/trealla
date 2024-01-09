@@ -262,10 +262,10 @@ static mp_result mp_rat_divx(mp_rat a, mp_rat b, mp_rat q)
 
 bool call_builtin(query *q, cell *c, pl_idx c_ctx)
 {
-	cell *save = q->st.curr_cell;
+	cell *save = q->st.next_instr;
 	pl_idx save_ctx = q->st.curr_frame;
 	bool save_calc = q->eval;
-	q->st.curr_cell = c;
+	q->st.next_instr = c;
 	q->st.curr_frame = c_ctx;
 	q->eval = true;
 
@@ -277,14 +277,14 @@ bool call_builtin(query *q, cell *c, pl_idx c_ctx)
 	if (!c->bif_ptr->evaluable && (c->val_off != g_float_s))
 		return throw_error(q, &q->accum, q->st.curr_frame, "type_error", "evaluable");
 	else if (q->max_eval_depth++ > g_max_depth)
-		return throw_error(q, q->st.curr_cell, q->st.curr_frame, "type_error", "evaluable");
+		return throw_error(q, q->st.next_instr, q->st.curr_frame, "type_error", "evaluable");
 	else
 		c->bif_ptr->fn(q);
 
 	q->eval = save_calc;
 
 	if (!q->did_throw) {
-		q->st.curr_cell = save;
+		q->st.next_instr = save;
 		q->st.curr_frame = save_ctx;
 	}
 
@@ -309,7 +309,7 @@ bool call_userfun(query *q, cell *c, pl_idx c_ctx)
 
 	return throw_error(q, c, c_ctx, "type_error", "evaluable");
 
-	cell *save = q->st.curr_cell;
+	cell *save = q->st.next_instr;
 	pl_idx save_ctx = q->st.curr_frame;
 	cell *tmp = prepare_call(q, true, c, c_ctx, 3);
 	pl_idx nbr_cells = PREFIX_LEN + c->nbr_cells;
@@ -317,12 +317,12 @@ bool call_userfun(query *q, cell *c, pl_idx c_ctx)
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
-	q->st.curr_cell = tmp;
+	q->st.next_instr = tmp;
 	bool ok = start(q);
 	q->error = false;
 
 	if (!q->did_throw) {
-		q->st.curr_cell = save;
+		q->st.next_instr = save;
 		q->st.curr_frame = save_ctx;
 	}
 

@@ -436,6 +436,6 @@ bool do_post_unification_hook(query *q, bool is_builtin)
 	else
 		make_call_redo(q, tmp+2);
 
-	q->st.curr_cell = tmp;
+	q->st.next_instr = tmp;
 	return true;
 }
