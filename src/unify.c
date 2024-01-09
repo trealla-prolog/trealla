@@ -1025,7 +1025,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 		int both1 = 0, both2 = 0;
 
 		DEREF_VAR(any1, both1, save_vgen, e1, e1->vgen, c1, c1_ctx, q->vgen);
-		DEREF_VAR(any1, both2, save_vgen2, e2, e2->vgen, c2, c2_ctx, q->vgen);
+		DEREF_VAR(any1, both2, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
 
 		if (both1)
 			q->is_cyclic1 = true;
@@ -1057,13 +1057,16 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 #if USE_RATIONAL_TREES
 		both1 = both2 = 0;
 		DEREF_VAR(any2, both1, save_vgen, e1, e1->vgen, p1, p1_ctx, q->vgen);
-		DEREF_VAR(any2, both2, save_vgen2, e2, e2->vgen, p2, p2_ctx, q->vgen);
+		DEREF_VAR(any2, both2, save_vgen2, e2, e2->vgen2, p2, p2_ctx, q->vgen);
 
 		if (both1)
 			q->is_cyclic1 = true;
 
 		if (both2)
 			q->is_cyclic2 = true;
+
+		if (q->is_cyclic1 && q->is_cyclic2)
+			break;
 #else
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
@@ -1084,7 +1087,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 			p1 = p1 + 1; p1 += p1->nbr_cells;
 			p2 = p2 + 1; p2 += p2->nbr_cells;
 			RESTORE_VAR(p1, p1_ctx, p1, p1_ctx, q->vgen);
-			RESTORE_VAR(p2, p2_ctx, p2, p2_ctx, q->vgen);
+			RESTORE_VAR2(p2, p2_ctx, p2, p2_ctx, q->vgen);
 
 			if ((cnt > g_max_depth) || (cnt > 6000))
 				return true;

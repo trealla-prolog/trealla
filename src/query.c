@@ -722,6 +722,7 @@ static void commit_frame(query *q, cell *body)
 	if (last_match) {
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
+		cut(q); // ???
 		trim_trail(q);
 	} else {
 		choice *ch = GET_CURR_CHOICE();
