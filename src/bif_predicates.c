@@ -5837,9 +5837,10 @@ static bool bif_sys_det_length_rundown_2(query *q)
 		l->val_off = g_dot_s;
 		l->nbr_cells = n*2+1;
 		l->arity = 2;
-		l->flags = 0;
 		l++;
-		make_ref(l++, var_nbr++, q->st.curr_frame);
+		make_ref(l, var_nbr++, q->st.curr_frame);
+		l->flags = FLAG_VAR_ANON;
+		l++;
 		n--;
 	}
 
