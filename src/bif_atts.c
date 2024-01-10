@@ -343,6 +343,7 @@ bool bif_sys_undo_trail_2(query *q)
 			rhs = *c;
 
 		//DUMP_TERM("$undo1 rhs", &e->c, e->c.var_ctx, 0);
+
 		cell tmp[3];
 		make_struct(tmp, g_minus_s, NULL, 2, 2);
 		SET_OP(&tmp[0], OP_YFX);
