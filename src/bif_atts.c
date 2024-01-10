@@ -207,7 +207,7 @@ bool any_attributed(query *q)
 		if (is_compound(c)) {
 			collect_vars(q, c, c_ctx);
 
-			for (unsigned i = 0, done = 0; i < q->tab_idx; i++) {
+			for (unsigned i = 0; i < q->tab_idx; i++) {
 				const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
 				slot *e = GET_SLOT(f, q->pl->tabs[i].var_nbr);
 				cell *v = deref(q, &e->c, e->c.var_ctx);
@@ -242,7 +242,7 @@ bool bif_sys_list_attributed_1(query *q)
 		if (is_compound(c)) {
 			collect_vars(q, c, c_ctx);
 
-			for (unsigned i = 0, done = 0; i < q->tab_idx; i++) {
+			for (unsigned i = 0; i < q->tab_idx; i++) {
 				const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
 				slot *e = GET_SLOT(f, q->pl->tabs[i].var_nbr);
 				cell *v = deref(q, &e->c, e->c.var_ctx);
