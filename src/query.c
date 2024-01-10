@@ -874,8 +874,8 @@ void cut(query *q)
 		ch--;
 	}
 
-	if (!q->cp && !q->undo_hi_tp)
-		q->st.tp = 0;
+	//if (!q->cp && !q->undo_hi_tp)
+	//	q->st.tp = 0;
 }
 
 // Resume next goal in previous clause...
