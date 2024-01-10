@@ -59,7 +59,6 @@ bool bif_put_atts_2(query *q)
 	if (is_nil(attr)) {
 		e->c.flags = 0;
 		e->c.attrs = NULL;
-		e->c.attrs_ctx = 0;
 		return true;
 	}
 
@@ -113,7 +112,6 @@ bool bif_put_atts_2(query *q)
 	if (is_nil(l)) {
 		e->c.flags = 0;
 		e->c.attrs = NULL;
-		e->c.attrs_ctx = 0;
 		return true;
 	}
 
