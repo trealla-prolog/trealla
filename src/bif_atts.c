@@ -11,6 +11,27 @@
 
 #include "bif_atts.h"
 
+static void check_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c, pl_idx c_ctx)
+{
+	for (unsigned nbr_cells = c->nbr_cells; nbr_cells--; c++) {
+		if (!is_var(c))
+			continue;
+
+		pl_idx ctx = c_ctx;
+
+		if (is_ref(c))
+			ctx = c->var_ctx;
+
+		if (var_nbr != c->var_nbr)
+			continue;
+
+		if (var_ctx != ctx)
+			continue;
+
+		c->flags |= FLAG_VAR_CYCLIC;
+	}
+}
+
 static const char *do_attribute(query *q, cell *c, unsigned arity)
 {
 	module *m = q->pl->modules;
@@ -316,27 +337,6 @@ typedef struct {
 	pl_idx lo_tp, hi_tp;
 	slot e[];
 } bind_state;
-
-static void check_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c, pl_idx c_ctx)
-{
-	for (unsigned nbr_cells = c->nbr_cells; nbr_cells--; c++) {
-		if (!is_var(c))
-			continue;
-
-		pl_idx ctx = c_ctx;
-
-		if (is_ref(c))
-			ctx = c->var_ctx;
-
-		if (var_nbr != c->var_nbr)
-			continue;
-
-		if (var_ctx != ctx)
-			continue;
-
-		c->flags |= FLAG_VAR_CYCLIC;
-	}
-}
 
 bool bif_sys_undo_trail_2(query *q)
 {
