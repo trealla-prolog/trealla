@@ -1657,7 +1657,12 @@ static bool dcg_expansion(parser *p)
 	dup_cells(tmp+1, p->cl->cells, c->nbr_cells);
 	make_ref(tmp+1+c->nbr_cells, p->cl->nbr_vars, 0);
 	make_end(tmp+1+c->nbr_cells+1);
-	execute(q, tmp, p->cl->nbr_vars+1);
+	bool ok = execute(q, tmp, p->cl->nbr_vars+1);
+
+	if (!ok || q->abort) {
+		query_destroy(q);
+		return false;
+	}
 
 	cell *arg1 = tmp + 1;
 	cell *arg2 = arg1 + arg1->nbr_cells;
@@ -1676,7 +1681,13 @@ static bool dcg_expansion(parser *p)
 	parser *p2 = parser_create(p->m);
 	check_error(p2);
 	p2->srcptr = src;
-	tokenize(p2, false, false);
+
+	if (!tokenize(p2, false, false)) {
+		parser_destroy(p2);
+		p->error = true;
+		return false;
+	}
+
 	xref_clause(p2->m, p2->cl);
 	free(src);
 
