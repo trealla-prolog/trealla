@@ -197,17 +197,33 @@ bool bif_get_atts_2(query *q)
 bool bif_sys_list_attributed_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
-	parser *p = q->p;
 	check_heap_error(init_tmp_heap(q));
 
 	for (unsigned i = 0; i < q->st.tp; i++) {
 		const trail *tr = q->trails + i;
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
-		cell *c = &e->c;
-		pl_idx c_ctx = e->c.var_ctx;
+		cell *c = deref(q, &e->c, e->c.var_ctx);
+		pl_idx c_ctx = q->latest_ctx;
 
-		if (!is_empty(c) || !c->attrs || is_nil(c->attrs) /*|| is_cyclic_term(q, c->attrs, c->attrs_ctx)*/)
+		if (is_compound(c)) {
+			collect_vars(q, c, c_ctx);
+
+			for (unsigned i = 0, done = 0; i < q->tab_idx; i++) {
+				const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
+				slot *e = GET_SLOT(f, q->pl->tabs[i].var_nbr);
+				cell *v = deref(q, &e->c, e->c.var_ctx);
+
+				if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
+					continue;
+
+				cell tmp;
+				make_ref(&tmp, q->pl->tabs[i].var_nbr, q->pl->tabs[i].ctx);
+				append_list(q, &tmp);
+			}
+		}
+
+		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
 			continue;
 
 		cell tmp;
