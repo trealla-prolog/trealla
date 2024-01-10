@@ -207,23 +207,6 @@ bool bif_sys_list_attributed_1(query *q)
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		pl_idx c_ctx = q->latest_ctx;
 
-		if (is_compound(c)) {
-			collect_vars(q, c, c_ctx);
-
-			for (unsigned i = 0, done = 0; i < q->tab_idx; i++) {
-				const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
-				slot *e = GET_SLOT(f, q->pl->tabs[i].var_nbr);
-				cell *v = deref(q, &e->c, e->c.var_ctx);
-
-				if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
-					continue;
-
-				cell tmp;
-				make_ref(&tmp, q->pl->tabs[i].var_nbr, q->pl->tabs[i].ctx);
-				append_list(q, &tmp);
-			}
-		}
-
 		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
 			continue;
 
