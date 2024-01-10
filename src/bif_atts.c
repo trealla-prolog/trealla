@@ -198,11 +198,10 @@ bool bif_sys_list_attributed_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	check_heap_error(init_tmp_heap(q));
+	frame *f = GET_FIRST_FRAME();
 
-	for (unsigned i = 0; i < q->st.tp; i++) {
-		const trail *tr = q->trails + i;
-		const frame *f = GET_FRAME(tr->var_ctx);
-		slot *e = GET_SLOT(f, tr->var_nbr);
+	for (unsigned i = 0; i < f->initial_slots; i++) {
+		slot *e = GET_SLOT(f, i);
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		pl_idx c_ctx = q->latest_ctx;
 
@@ -227,7 +226,7 @@ bool bif_sys_list_attributed_1(query *q)
 			continue;
 
 		cell tmp;
-		make_ref(&tmp, tr->var_nbr, tr->var_ctx);
+		make_ref(&tmp, i, 0);
 		append_list(q, &tmp);
 	}
 
