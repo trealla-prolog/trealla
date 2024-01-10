@@ -1661,6 +1661,7 @@ static bool dcg_expansion(parser *p)
 
 	if (!ok || q->abort) {
 		query_destroy(q);
+		p->error = true;
 		return false;
 	}
 
