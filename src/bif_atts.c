@@ -37,6 +37,31 @@ static bool check_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c, pl_idx c_ctx
 	return !any;
 }
 
+static bool check_occurs2(unsigned var_nbr, pl_idx var_ctx, cell *c, pl_idx c_ctx)
+{
+	bool any = false;
+
+	for (unsigned nbr_cells = c->nbr_cells; nbr_cells--; c++) {
+		if (!is_var(c))
+			continue;
+
+		pl_idx ctx = c_ctx;
+
+		if (is_ref(c))
+			ctx = c->var_ctx;
+
+		if (var_nbr != c->var_nbr)
+			continue;
+
+		if (var_ctx != ctx)
+			continue;
+
+		any = true;
+	}
+
+	return !any;
+}
+
 static const char *do_attribute(query *q, cell *c, unsigned arity)
 {
 	module *m = q->pl->modules;
@@ -414,13 +439,16 @@ bool any_attributed(query *q)
 		if (is_compound(c)) {
 			collect_vars(q, c, c_ctx);
 
-			for (unsigned i = 0; i < q->tab_idx; i++) {
-				const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
-				slot *e = GET_SLOT(f, q->pl->tabs[i].var_nbr);
+			for (unsigned j = 0; j < q->tab_idx; j++) {
+				const frame *f = GET_FRAME(q->pl->tabs[j].ctx);
+				slot *e = GET_SLOT(f, q->pl->tabs[j].var_nbr);
 				cell *v = deref(q, &e->c, e->c.var_ctx);
 
 				if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
 					continue;
+
+				//if (check_occurs2(j, 0, v->attrs, v->attrs_ctx))
+				//	continue;
 
 				return true;
 			}
@@ -428,6 +456,9 @@ bool any_attributed(query *q)
 
 		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
 			continue;
+
+		//if (q->tab_idx && check_occurs2(i, 0, c->attrs, c->attrs_ctx))
+		//	continue;
 
 		return true;
 	}
@@ -449,13 +480,16 @@ bool bif_sys_list_attributed_1(query *q)
 		if (is_compound(c)) {
 			collect_vars(q, c, c_ctx);
 
-			for (unsigned i = 0; i < q->tab_idx; i++) {
-				const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
-				slot *e = GET_SLOT(f, q->pl->tabs[i].var_nbr);
+			for (unsigned j = 0; j < q->tab_idx; j++) {
+				const frame *f = GET_FRAME(q->pl->tabs[j].ctx);
+				slot *e = GET_SLOT(f, q->pl->tabs[j].var_nbr);
 				cell *v = deref(q, &e->c, e->c.var_ctx);
 
 				if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
 					continue;
+
+				//if (check_occurs2(j, 0, v->attrs, v->attrs_ctx))
+				//	continue;
 
 				cell tmp;
 				make_ref(&tmp, q->pl->tabs[i].var_nbr, q->pl->tabs[i].ctx);
@@ -465,6 +499,9 @@ bool bif_sys_list_attributed_1(query *q)
 
 		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
 			continue;
+
+		//if (q->tab_idx && check_occurs2(i, 0, c->attrs, c->attrs_ctx))
+		//	continue;
 
 		cell tmp;
 		make_ref(&tmp, i, 0);
