@@ -197,15 +197,15 @@ bool bif_get_atts_2(query *q)
 bool any_attributed(query *q)
 {
 	const parser *p = q->p;
-	const frame *f = GET_FIRST_FRAME();
+	frame *f = GET_FIRST_FRAME();
 
-	for (unsigned i = 0; i < p->nbr_vars; i++) {
+	for (unsigned i = 0; i < f->initial_slots; i++) {
 		slot *e = GET_SLOT(f, i);
-		cell *v = deref(q, &e->c, e->c.var_ctx);
-		pl_idx v_ctx = q->latest_ctx;
+		cell *c = deref(q, &e->c, e->c.var_ctx);
+		pl_idx c_ctx = q->latest_ctx;
 
-		if (is_compound(v)) {
-			collect_vars(q, v, v_ctx);
+		if (is_compound(c)) {
+			collect_vars(q, c, c_ctx);
 
 			for (unsigned i = 0, done = 0; i < q->tab_idx; i++) {
 				const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
@@ -219,7 +219,7 @@ bool any_attributed(query *q)
 			}
 		}
 
-		if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
+		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
 			continue;
 
 		return true;
