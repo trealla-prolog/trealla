@@ -11,8 +11,10 @@
 
 #include "bif_atts.h"
 
-static void check_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c, pl_idx c_ctx)
+static bool check_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c, pl_idx c_ctx)
 {
+	bool any = false;
+
 	for (unsigned nbr_cells = c->nbr_cells; nbr_cells--; c++) {
 		if (!is_var(c))
 			continue;
@@ -29,7 +31,10 @@ static void check_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c, pl_idx c_ctx
 			continue;
 
 		c->flags |= FLAG_VAR_CYCLIC;
+		any = true;
 	}
+
+	return !any;
 }
 
 static const char *do_attribute(query *q, cell *c, unsigned arity)
@@ -215,81 +220,6 @@ bool bif_get_atts_2(query *q)
 	return is_minus ? true : false;
 }
 
-bool any_attributed(query *q)
-{
-	const parser *p = q->p;
-	frame *f = GET_FIRST_FRAME();
-
-	for (unsigned i = 0; i < f->initial_slots; i++) {
-		slot *e = GET_SLOT(f, i);
-		cell *c = deref(q, &e->c, e->c.var_ctx);
-		pl_idx c_ctx = q->latest_ctx;
-
-		if (is_compound(c)) {
-			collect_vars(q, c, c_ctx);
-
-			for (unsigned i = 0; i < q->tab_idx; i++) {
-				const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
-				slot *e = GET_SLOT(f, q->pl->tabs[i].var_nbr);
-				cell *v = deref(q, &e->c, e->c.var_ctx);
-
-				if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
-					continue;
-
-				return true;
-			}
-		}
-
-		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
-			continue;
-
-		return true;
-	}
-
-	return false;
-}
-
-bool bif_sys_list_attributed_1(query *q)
-{
-	GET_FIRST_ARG(p1,var);
-	check_heap_error(init_tmp_heap(q));
-	frame *f = GET_FIRST_FRAME();
-
-	for (unsigned i = 0; i < f->initial_slots; i++) {
-		slot *e = GET_SLOT(f, i);
-		cell *c = deref(q, &e->c, e->c.var_ctx);
-		pl_idx c_ctx = q->latest_ctx;
-
-		if (is_compound(c)) {
-			collect_vars(q, c, c_ctx);
-
-			for (unsigned i = 0; i < q->tab_idx; i++) {
-				const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
-				slot *e = GET_SLOT(f, q->pl->tabs[i].var_nbr);
-				cell *v = deref(q, &e->c, e->c.var_ctx);
-
-				if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
-					continue;
-
-				cell tmp;
-				make_ref(&tmp, q->pl->tabs[i].var_nbr, q->pl->tabs[i].ctx);
-				append_list(q, &tmp);
-			}
-		}
-
-		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
-			continue;
-
-		cell tmp;
-		make_ref(&tmp, i, 0);
-		append_list(q, &tmp);
-	}
-
-	cell *l = end_list(q);
-	check_heap_error(l);
-	return unify(q, p1, p1_ctx, l, 0);
-}
-
 bool bif_sys_attributed_var_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
@@ -470,3 +400,79 @@ bool do_post_unification_hook(query *q, bool is_builtin)
 	q->st.next_instr = tmp;
 	return true;
 }
+
+bool any_attributed(query *q)
+{
+	const parser *p = q->p;
+	frame *f = GET_FIRST_FRAME();
+
+	for (unsigned i = 0; i < f->initial_slots; i++) {
+		slot *e = GET_SLOT(f, i);
+		cell *c = deref(q, &e->c, e->c.var_ctx);
+		pl_idx c_ctx = q->latest_ctx;
+
+		if (is_compound(c)) {
+			collect_vars(q, c, c_ctx);
+
+			for (unsigned i = 0; i < q->tab_idx; i++) {
+				const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
+				slot *e = GET_SLOT(f, q->pl->tabs[i].var_nbr);
+				cell *v = deref(q, &e->c, e->c.var_ctx);
+
+				if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
+					continue;
+
+				return true;
+			}
+		}
+
+		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
+			continue;
+
+		return true;
+	}
+
+	return false;
+}
+
+bool bif_sys_list_attributed_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	check_heap_error(init_tmp_heap(q));
+	frame *f = GET_FIRST_FRAME();
+
+	for (unsigned i = 0; i < f->initial_slots; i++) {
+		slot *e = GET_SLOT(f, i);
+		cell *c = deref(q, &e->c, e->c.var_ctx);
+		pl_idx c_ctx = q->latest_ctx;
+
+		if (is_compound(c)) {
+			collect_vars(q, c, c_ctx);
+
+			for (unsigned i = 0; i < q->tab_idx; i++) {
+				const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
+				slot *e = GET_SLOT(f, q->pl->tabs[i].var_nbr);
+				cell *v = deref(q, &e->c, e->c.var_ctx);
+
+				if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
+					continue;
+
+				cell tmp;
+				make_ref(&tmp, q->pl->tabs[i].var_nbr, q->pl->tabs[i].ctx);
+				append_list(q, &tmp);
+			}
+		}
+
+		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
+			continue;
+
+		cell tmp;
+		make_ref(&tmp, i, 0);
+		append_list(q, &tmp);
+	}
+
+	cell *l = end_list(q);
+	check_heap_error(l);
+	return unify(q, p1, p1_ctx, l, 0);
+}
+
