@@ -207,7 +207,7 @@ bool bif_sys_list_attributed_1(query *q)
 		cell *c = &e->c;
 		pl_idx c_ctx = e->c.var_ctx;
 
-		if (!is_empty(c) || !c->attrs || is_nil(c->attrs) || is_cyclic_term(q, c->attrs, c->attrs_ctx))
+		if (!is_empty(c) || !c->attrs || is_nil(c->attrs) /*|| is_cyclic_term(q, c->attrs, c->attrs_ctx)*/)
 			continue;
 
 		cell tmp;
