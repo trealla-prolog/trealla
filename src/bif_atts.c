@@ -204,10 +204,10 @@ bool bif_sys_list_attributed_1(query *q)
 		const trail *tr = q->trails + i;
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
-		cell *c = deref(q, &e->c, e->c.var_ctx);
-		pl_idx c_ctx = q->latest_ctx;
+		cell *c = &e->c;
+		pl_idx c_ctx = e->c.var_ctx;
 
-		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
+		if (!is_empty(c) || !c->attrs || is_nil(c->attrs) || is_cyclic_term(q, c, c_ctx))
 			continue;
 
 		cell tmp;
