@@ -197,7 +197,7 @@ clean:
 # from [gcc|clang] -MM src/*.c src/imath/*.c src/isocline/src/*.c src/sre/*.c src/skiplist/skiplist.c src/utf8/utf8.c
 
 src/base64.o: src/base64.c src/base64.h
-src/bif_atts.o: src/bif_atts.c src/heap.h src/internal.h src/trealla.h \
+src/bif_atts.o: src/bif_atts.c src/bif_atts.h src/heap.h src/internal.h src/trealla.h \
  src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
  src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h \
  src/module.h src/parser.h src/prolog.h src/query.h src/builtins.h \
@@ -307,7 +307,7 @@ src/query.o: src/query.c src/heap.h src/internal.h src/trealla.h src/cdebug.h \
  src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h src/module.h \
  src/network.h src/parser.h src/prolog.h src/query.h src/builtins.h \
  src/bif_atts.h
-src/toplevel.o: src/toplevel.c src/heap.h src/internal.h src/trealla.h \
+src/toplevel.o: src/toplevel.c src/bif_atts.h src/heap.h src/internal.h src/trealla.h \
  src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
  src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h \
  src/history.h src/module.h src/prolog.h src/query.h src/parser.h \

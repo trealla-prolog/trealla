@@ -8,6 +8,8 @@
 #include "prolog.h"
 #include "query.h"
 
+#include "bif_atts.h"
+
 static void show_goals(query *q, int nbr)
 {
 	frame *f = GET_CURR_FRAME();
@@ -319,40 +321,6 @@ bool query_redo(query *q)
 	q->retry = QUERY_RETRY;
 	q->pl->did_dump_vars = false;
 	return start(q);
-}
-
-static bool any_attributed(query *q)
-{
-	const parser *p = q->p;
-	const frame *f = GET_FIRST_FRAME();
-
-	for (unsigned i = 0; i < p->nbr_vars; i++) {
-		slot *e = GET_SLOT(f, i);
-		cell *v = deref(q, &e->c, e->c.var_ctx);
-		pl_idx v_ctx = q->latest_ctx;
-
-		if (is_compound(v)) {
-			collect_vars(q, v, v_ctx);
-
-			for (unsigned i = 0, done = 0; i < q->tab_idx; i++) {
-				const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
-				slot *e = GET_SLOT(f, q->pl->tabs[i].var_nbr);
-				cell *v = deref(q, &e->c, e->c.var_ctx);
-
-				if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
-					continue;
-
-				return true;
-			}
-		}
-
-		if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
-			continue;
-
-		return true;
-	}
-
-	return false;
 }
 
 void dump_vars(query *q, bool partial)
