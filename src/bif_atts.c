@@ -194,20 +194,62 @@ bool bif_get_atts_2(query *q)
 	return is_minus ? true : false;
 }
 
+static bool check_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c, pl_idx c_ctx)
+{
+	bool any = false;
+
+	for (unsigned nbr_cells = c->nbr_cells; nbr_cells--; c++) {
+		if (!is_var(c))
+			continue;
+
+		pl_idx ctx = c_ctx;
+
+		if (is_ref(c))
+			ctx = c->var_ctx;
+
+		if (var_nbr != c->var_nbr)
+			continue;
+
+		if (var_ctx != ctx)
+			continue;
+
+		any = true;
+	}
+
+	return !any;
+}
+
+bool any_attributed(query *q)
+{
+	for (unsigned i = 0; i < q->st.tp; i++) {
+		const trail *tr = q->trails + i;
+		const frame *f = GET_FRAME(tr->var_ctx);
+		slot *e = GET_SLOT(f, tr->var_nbr);
+		cell *v = deref(q, &e->c, e->c.var_ctx);
+		pl_idx v_ctx = q->latest_ctx;
+
+		if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
+			continue;
+
+		return true;
+	}
+
+	return false;
+}
+
 bool bif_sys_list_attributed_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
-	parser *p = q->p;
 	check_heap_error(init_tmp_heap(q));
 
 	for (unsigned i = 0; i < q->st.tp; i++) {
 		const trail *tr = q->trails + i;
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
-		cell *c = &e->c;
-		pl_idx c_ctx = e->c.var_ctx;
+		cell *c = deref(q, &e->c, e->c.var_ctx);
+		pl_idx c_ctx = q->latest_ctx;
 
-		if (!is_empty(c) || !c->attrs || is_nil(c->attrs) /*|| is_cyclic_term(q, c->attrs, c->attrs_ctx)*/)
+		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
 			continue;
 
 		cell tmp;
@@ -268,7 +310,7 @@ typedef struct {
 	slot e[];
 } bind_state;
 
-static void check_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c, pl_idx c_ctx)
+static void set_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c, pl_idx c_ctx)
 {
 	for (unsigned nbr_cells = c->nbr_cells; nbr_cells--; c++) {
 		if (!is_var(c))
@@ -315,7 +357,7 @@ bool bif_sys_undo_trail_2(query *q)
 		save->e[j] = *e;
 		cell *c = &e->c;
 		pl_idx c_ctx = e->c.var_ctx;
-		check_occurs(tr->var_nbr, tr->var_ctx, c, c_ctx);
+		set_occurs(tr->var_nbr, tr->var_ctx, c, c_ctx);
 		//printf("*** unbind [%u:%u] hi_tp=%u, tag=%u, tr->var_ctx=%u, tr->var_nbr=%u\n", j, i, q->undo_hi_tp, e->c.tag, tr->var_ctx, tr->var_nbr);
 		cell lhs, rhs;
 		make_ref(&lhs, tr->var_nbr, tr->var_ctx);
