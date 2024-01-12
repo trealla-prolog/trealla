@@ -756,7 +756,6 @@ struct parser_ {
 	bool one_shot:1;
 	bool start_term:1;
 	bool end_of_term:1;
-	bool end_of_file:1;
 	bool comment:1;
 	bool is_quoted:1;
 	bool is_var:1;
