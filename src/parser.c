@@ -3178,7 +3178,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 	unsigned arity = 1;
 	p->depth++;
 
-	while (get_token(p, last_op, last_postfix)) {
+	while (get_token(p, last_op, last_postfix) && !g_tpl_interrupt) {
 		if (p->error && !p->do_read_term)
 			break;
 
