@@ -42,7 +42,7 @@ void make_call(query *q, cell *tmp)
 {
 	make_end(tmp);
 	const frame *f = GET_CURR_FRAME();
-	cell *c = q->st.next_instr;
+	cell *c = q->st.curr_instr;
 	tmp->save_ret = c + c->nbr_cells;	// save next as the return instruction
 	tmp->chgen = f->chgen;				// ... choice-generation
 	tmp->mid = q->st.m->id;				// ... current-module
@@ -52,7 +52,7 @@ void make_call_redo(query *q, cell *tmp)
 {
 	make_end(tmp);
 	const frame *f = GET_CURR_FRAME();
-	tmp->save_ret = q->st.next_instr;		// save the return instruction
+	tmp->save_ret = q->st.curr_instr;		// save the return instruction
 	tmp->chgen = f->chgen;				// ... choice-generation
 	tmp->mid = q->st.m->id;				// ... current-module
 }
@@ -143,7 +143,7 @@ static bool bif_iso_findall_3(query *q)
 		make_struct(tmp+nbr_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
 		make_call(q, tmp+nbr_cells);
 		check_heap_error(push_barrier(q), drop_queuen(q));
-		q->st.next_instr = tmp;
+		q->st.curr_instr = tmp;
 		return true;
 	}
 
@@ -260,7 +260,7 @@ static bool bif_iso_notunify_2(query *q)
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->succeed_on_retry = true;
-	q->st.next_instr = tmp;
+	q->st.curr_instr = tmp;
 	return true;
 }
 
@@ -2291,7 +2291,7 @@ static bool bif_call_residue_vars_2(query *q)
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->fail_on_retry = true;
-	q->st.next_instr = tmp;
+	q->st.curr_instr = tmp;
 	return true;
 }
 
@@ -3353,7 +3353,7 @@ static bool bif_time_1(query *q)
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
-	q->st.next_instr = tmp;
+	q->st.curr_instr = tmp;
 	return true;
 }
 
@@ -5317,7 +5317,7 @@ static bool bif_limit_2(query *q)
 	make_int(tmp+nbr_cells++, 1);
 	make_int(tmp+nbr_cells++, get_smallint(p1));
 	make_call(q, tmp+nbr_cells);
-	q->st.next_instr = tmp;
+	q->st.curr_instr = tmp;
 	return true;
 }
 
@@ -5356,7 +5356,7 @@ static bool bif_offset_2(query *q)
 	make_int(tmp+nbr_cells++, 1);
 	make_int(tmp+nbr_cells++, get_smallint(p1));
 	make_call(q, tmp+nbr_cells);
-	q->st.next_instr = tmp;
+	q->st.curr_instr = tmp;
 	return true;
 }
 
@@ -5426,7 +5426,7 @@ static bool bif_call_nth_2(query *q)
 		check_heap_error(push_barrier(q));
 		choice *ch = GET_CURR_CHOICE();
 		ch->fail_on_retry = true;
-		q->st.next_instr = tmp;
+		q->st.curr_instr = tmp;
 		return true;
 	}
 
@@ -5442,7 +5442,7 @@ static bool bif_call_nth_2(query *q)
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->fail_on_retry = true;
-	q->st.next_instr = tmp;
+	q->st.curr_instr = tmp;
 	return true;
 }
 
@@ -5629,7 +5629,7 @@ bool bif_iso_invoke_2(query *q)
 
 	nbr_cells += p2->nbr_cells;
 	make_call(q, tmp+nbr_cells);
-	q->st.next_instr = tmp;
+	q->st.curr_instr = tmp;
 	q->st.curr_frame = p2_ctx;
 	return true;
 }
@@ -5669,7 +5669,7 @@ static bool bif_use_module_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	if (!is_atom(p1) && !is_compound(p1)) return false;
-	return do_use_module_1(q->st.m, q->st.next_instr);
+	return do_use_module_1(q->st.m, q->st.curr_instr);
 }
 
 static bool bif_use_module_2(query *q)
@@ -5677,10 +5677,10 @@ static bool bif_use_module_2(query *q)
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,list_or_nil);
 
-	if (!do_use_module_1(q->st.m, q->st.next_instr))
+	if (!do_use_module_1(q->st.m, q->st.curr_instr))
 		return false;
 
-	return do_use_module_2(q->st.m, q->st.next_instr);
+	return do_use_module_2(q->st.m, q->st.curr_instr);
 }
 
 static bool bif_prolog_load_context_2(query *q)
@@ -5830,7 +5830,7 @@ static bool bif_sys_register_cleanup_1(query *q)
 		make_uint(tmp+nbr_cells++, q->cp);
 		make_struct(tmp+nbr_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
 		make_call(q, tmp+nbr_cells);
-		q->st.next_instr = tmp;
+		q->st.curr_instr = tmp;
 		return true;
 	}
 
@@ -5916,7 +5916,7 @@ static bool bif_sys_get_level_1(query *q)
 
 static bool bif_abort_0(query *q)
 {
-	return throw_error(q, q->st.next_instr, q->st.curr_frame, "$aborted", "abort_error");
+	return throw_error(q, q->st.curr_instr, q->st.curr_frame, "$aborted", "abort_error");
 }
 
 static bool bif_sys_choice_0(query *q)
