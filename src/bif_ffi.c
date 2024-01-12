@@ -1895,7 +1895,7 @@ static bool bif_foreign_struct_2(query *q)
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,list_or_nil);
 
-	return do_foreign_struct(q->st.m, q->st.next_instr);
+	return do_foreign_struct(q->st.m, q->st.curr_instr);
 }
 
 static bool bif_use_foreign_module_2(query *q)
@@ -1903,7 +1903,7 @@ static bool bif_use_foreign_module_2(query *q)
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,list_or_nil);
 
-	return do_use_foreign_module(q->st.m, q->st.next_instr);
+	return do_use_foreign_module(q->st.m, q->st.curr_instr);
 }
 #endif
 

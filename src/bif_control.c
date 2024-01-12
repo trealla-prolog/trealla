@@ -42,7 +42,7 @@ void do_cleanup(query *q, cell *c, pl_idx c_ctx)
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
-	q->st.next_instr = tmp;
+	q->st.curr_instr = tmp;
 }
 
 bool bif_sys_cleanup_if_det_1(query *q)
@@ -65,7 +65,7 @@ bool bif_sys_cleanup_if_det_1(query *q)
 
 	drop_choice(q);
 	ch->fail_on_retry = true;
-	cell *c = deref(q, ch->st.next_instr, ch->st.curr_frame);
+	cell *c = deref(q, ch->st.curr_instr, ch->st.curr_frame);
 	pl_idx c_ctx = q->latest_ctx;
 	c = deref(q, FIRST_ARG(c), c_ctx);
 	c_ctx = q->latest_ctx;
@@ -85,7 +85,7 @@ bool bif_call_0(query *q, cell *p1, pl_idx p1_ctx)
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->fail_on_retry = true;
-	q->st.next_instr = tmp;
+	q->st.curr_instr = tmp;
 	return true;
 }
 
@@ -150,7 +150,7 @@ bool bif_iso_call_n(query *q)
 	check_heap_error(clone_to_tmp(q, p1, p1_ctx));
 	unsigned arity = p1->arity, args = 1;
 
-	while (args++ < q->st.next_instr->arity) {
+	while (args++ < q->st.curr_instr->arity) {
 		GET_NEXT_ARG(p2,any);
 		check_heap_error(clone_to_tmp(q, p2, p2_ctx));
 		arity++;
@@ -176,10 +176,10 @@ bool bif_iso_call_n(query *q)
 	pl_idx nbr_cells = PREFIX_LEN + tmp2->nbr_cells;
 	make_call(q, tmp+nbr_cells);
 
-	if (is_tail_call(q->st.next_instr))
+	if (is_tail_call(q->st.curr_instr))
 		tmp[1].flags |= FLAG_TAIL_CALL;
 
-	q->st.next_instr = tmp;
+	q->st.curr_instr = tmp;
 	return true;
 }
 
@@ -209,10 +209,10 @@ bool bif_iso_call_1(query *q)
 	choice *ch = GET_CURR_CHOICE();
 	ch->fail_on_retry = true;
 
-	if (is_tail_call(q->st.next_instr))
+	if (is_tail_call(q->st.curr_instr))
 		tmp[1].flags |= FLAG_TAIL_CALL;
 
-	q->st.next_instr = tmp;
+	q->st.curr_instr = tmp;
 	return true;
 }
 
@@ -244,7 +244,7 @@ bool bif_iso_once_1(query *q)
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->fail_on_retry = true;
-	q->st.next_instr = tmp;
+	q->st.curr_instr = tmp;
 	return true;
 }
 
@@ -272,7 +272,7 @@ bool bif_ignore_1(query *q)
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->succeed_on_retry = true;
-	q->st.next_instr = tmp;
+	q->st.curr_instr = tmp;
 	return true;
 }
 
@@ -293,7 +293,7 @@ bool bif_iso_if_then_2(query *q)
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->fail_on_retry = true;
-	q->st.next_instr = tmp;
+	q->st.curr_instr = tmp;
 	return true;
 }
 
@@ -313,7 +313,7 @@ bool bif_if_2(query *q)
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->fail_on_retry = true;
-	q->st.next_instr = tmp;
+	q->st.curr_instr = tmp;
 	return true;
 }
 
@@ -323,7 +323,7 @@ static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 {
 	if (q->retry) {
 		q->retry = QUERY_NOSKIPARG;
-		q->st.next_instr = p3;
+		q->st.curr_instr = p3;
 		return true;
 	}
 
@@ -336,7 +336,7 @@ static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 	nbr_cells += dup_cells(tmp+nbr_cells, p2, p2->nbr_cells);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
-	q->st.next_instr = tmp;
+	q->st.curr_instr = tmp;
 	return true;
 }
 
@@ -346,7 +346,7 @@ static bool soft_do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 {
 	if (q->retry) {
 		q->retry = QUERY_NOSKIPARG;
-		q->st.next_instr = p3;
+		q->st.curr_instr = p3;
 		return true;
 	}
 
@@ -358,7 +358,7 @@ static bool soft_do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 	nbr_cells += dup_cells(tmp+nbr_cells, p2, p2->nbr_cells);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
-	q->st.next_instr = tmp;
+	q->st.curr_instr = tmp;
 	return true;
 }
 
@@ -366,7 +366,7 @@ static bool soft_do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 
 bool bif_if_3(query *q)
 {
-	cell *p1 = q->st.next_instr + 1;
+	cell *p1 = q->st.curr_instr + 1;
 	cell *p2 = p1 + p1->nbr_cells;
 	cell *p3 = p2 + p2->nbr_cells;
 	return soft_do_if_then_else(q, p1, p2, p3);
@@ -378,7 +378,7 @@ bool bif_iso_conjunction_2(query *q)
 {
 	q->tot_inferences--;
 	q->retry = QUERY_NOSKIPARG;
-	q->st.next_instr++;
+	q->st.curr_instr++;
 	return true;
 }
 
@@ -386,21 +386,21 @@ bool bif_iso_conjunction_2(query *q)
 
 bool bif_iso_disjunction_2(query *q)
 {
-	cell *c = q->st.next_instr+1;
+	cell *c = q->st.curr_instr+1;
 
 	if (is_callable(c)) {
 		if (is_cstring(c) && (c->val_off == g_nil_s))
 			return throw_error(q, c, q->st.curr_frame, "type_error", "callable");
 
 		if (c->bif_ptr && (c->bif_ptr->fn == bif_iso_if_then_2)) {
-			cell *p1 = q->st.next_instr + 2;
+			cell *p1 = q->st.curr_instr + 2;
 			cell *p2 = p1 + p1->nbr_cells;
 			cell *p3 = p2 + p2->nbr_cells;
 			return do_if_then_else(q, p1, p2, p3);
 		}
 
 		if (c->bif_ptr && (c->bif_ptr->fn == bif_if_2)) {
-			cell *p1 = q->st.next_instr + 2;
+			cell *p1 = q->st.curr_instr + 2;
 			cell *p2 = p1 + p1->nbr_cells;
 			cell *p3 = p2 + p2->nbr_cells;
 			return soft_do_if_then_else(q, p1, p2, p3);
@@ -412,7 +412,7 @@ bool bif_iso_disjunction_2(query *q)
 	if (q->retry) {
 		GET_NEXT_ARG(p2,callable);
 		q->retry = QUERY_NOSKIPARG;
-		q->st.next_instr = p2;
+		q->st.curr_instr = p2;
 		return true;
 	}
 
@@ -423,7 +423,7 @@ bool bif_iso_disjunction_2(query *q)
 	check_heap_error(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 	make_call(q, tmp+nbr_cells);
-	q->st.next_instr = tmp;
+	q->st.curr_instr = tmp;
 	return true;
 }
 
@@ -443,7 +443,7 @@ bool bif_iso_negation_1(query *q)
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->succeed_on_retry = true;
-	q->st.next_instr = tmp;
+	q->st.curr_instr = tmp;
 	return true;
 }
 
@@ -499,7 +499,7 @@ bool bif_iso_catch_3(query *q)
 		make_uint(tmp+nbr_cells++, q->cp);
 		make_call(q, tmp+nbr_cells);
 		check_heap_error(push_catcher(q, QUERY_EXCEPTION));
-		q->st.next_instr = tmp;
+		q->st.curr_instr = tmp;
 		return true;
 	}
 
@@ -515,7 +515,7 @@ bool bif_iso_catch_3(query *q)
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_catcher(q, QUERY_RETRY));
-	q->st.next_instr = tmp;
+	q->st.curr_instr = tmp;
 	return true;
 }
 
@@ -543,7 +543,7 @@ bool bif_sys_call_cleanup_3(query *q)
 		make_uint(tmp+nbr_cells++, q->cp);
 		make_call(q, tmp+nbr_cells);
 		check_heap_error(push_catcher(q, QUERY_EXCEPTION));
-		q->st.next_instr = tmp;
+		q->st.curr_instr = tmp;
 		return true;
 	}
 
@@ -559,7 +559,7 @@ bool bif_sys_call_cleanup_3(query *q)
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_catcher(q, QUERY_RETRY));
-	q->st.next_instr = tmp;
+	q->st.curr_instr = tmp;
 	return true;
 }
 
@@ -589,7 +589,7 @@ bool bif_sys_countall_2(query *q)
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->succeed_on_retry = true;
-	q->st.next_instr = tmp;
+	q->st.curr_instr = tmp;
 	return true;
 }
 
@@ -750,7 +750,7 @@ bool throw_error3(query *q, cell *c, pl_idx c_ctx, const char *err_type, const c
 
 	bool is_abolish = false;
 
-	if (!strcmp(C_STR(q, q->st.next_instr), "abolish"))
+	if (!strcmp(C_STR(q, q->st.curr_instr), "abolish"))
 		is_abolish = true;
 
 	bool is_builtin = false, evaluable = false;
@@ -977,6 +977,6 @@ bool throw_error(query *q, cell *c, pl_idx c_ctx, const char *err_type, const ch
 	if ((q->st.m->flags.syntax_error == UNK_FAIL) && !strcmp(err_type, "syntax_error"))
 		return false;
 
-	return throw_error3(q, c, c_ctx, err_type, expected, q->st.next_instr);
+	return throw_error3(q, c, c_ctx, err_type, expected, q->st.curr_instr);
 }
 

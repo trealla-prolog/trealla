@@ -119,7 +119,7 @@ static bool bif_wait_0(query *q)
 				task->tmo_msecs = 0;
 			}
 
-			if (!task->yielded || !task->st.next_instr || task->error) {
+			if (!task->yielded || !task->st.curr_instr || task->error) {
 				query *save = task;
 				task = pop_task(q, task);
 				query_destroy(save);
@@ -167,7 +167,7 @@ static bool bif_await_0(query *q)
 				task->tmo_msecs = 0;
 			}
 
-			if (!task->yielded || !task->st.next_instr || task->error) {
+			if (!task->yielded || !task->st.curr_instr || task->error) {
 				query *save = task;
 				task = pop_task(q, task);
 				query_destroy(save);
@@ -206,14 +206,14 @@ static bool bif_yield_0(query *q)
 static bool bif_task_n(query *q)
 {
 	pl_idx save_hp = q->st.hp;
-	cell *p0 = deep_clone_to_heap(q, q->st.next_instr, q->st.curr_frame);
+	cell *p0 = deep_clone_to_heap(q, q->st.curr_instr, q->st.curr_frame);
 	GET_FIRST_RAW_ARG0(p1,callable,p0);
 	check_heap_error(init_tmp_heap(q));
 	check_heap_error(clone_to_tmp(q, p1, p1_ctx));
 	unsigned arity = p1->arity;
 	unsigned args = 1;
 
-	while (args++ < q->st.next_instr->arity) {
+	while (args++ < q->st.curr_instr->arity) {
 		GET_NEXT_RAW_ARG(p2,any);
 		check_heap_error(append_to_tmp(q, p2, p2_ctx));
 		arity++;
@@ -240,8 +240,8 @@ static bool bif_task_n(query *q)
 
 static bool bif_fork_0(query *q)
 {
-	cell *next_instr = q->st.next_instr + q->st.next_instr->nbr_cells;
-	query *task = query_create_task(q, next_instr);
+	cell *curr_instr = q->st.curr_instr + q->st.curr_instr->nbr_cells;
+	query *task = query_create_task(q, curr_instr);
 	task->yielded = true;
 	push_task(q, task);
 	return false;

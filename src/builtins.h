@@ -188,7 +188,7 @@ inline static cell *get_var(query *q, cell *c, pl_idx c_ctx)
 
 inline static cell *get_first_arg(query *q)
 {
-	q->last_arg = q->st.next_instr + 1;
+	q->last_arg = q->st.curr_instr + 1;
 	return deref(q, q->last_arg, q->st.curr_frame);
 }
 
@@ -200,7 +200,7 @@ inline static cell *get_first_arg0(query *q, cell *p0)
 
 inline static cell *get_first_raw_arg(query *q)
 {
-	q->last_arg = q->st.next_instr + 1;
+	q->last_arg = q->st.curr_instr + 1;
 	return q->last_arg;
 }
 
@@ -224,7 +224,7 @@ inline static cell *get_next_raw_arg(query *q)
 
 inline static cell *get_raw_arg(const query *q, int n)
 {
-	cell *c = q->st.next_instr + 1;
+	cell *c = q->st.curr_instr + 1;
 
 	for (int i = 1; i < n; i++)
 		c += c->nbr_cells;
@@ -245,7 +245,7 @@ inline static cell *get_raw_arg(const query *q, int n)
 
 #define check_heap_error(expr, ...) \
 	CHECK_SENTINEL(expr, 0, __VA_ARGS__; \
-	return throw_error(q, q->st.next_instr, q->st.curr_frame, "resource_error", "memory"))
+	return throw_error(q, q->st.curr_instr, q->st.curr_frame, "resource_error", "memory"))
 
 // This one leaves original state if a cycle detected...
 
@@ -341,7 +341,7 @@ inline static bool START_FUNCTION(query *q)
 		return true;
 
 	if (!q->st.m->flags.unknown)
-		return throw_error(q, q->st.next_instr, q->st.curr_frame, "existence_error", "procedure");
+		return throw_error(q, q->st.curr_instr, q->st.curr_frame, "existence_error", "procedure");
 
 	return false;
 }

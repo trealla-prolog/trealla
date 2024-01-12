@@ -520,7 +520,7 @@ struct slot_ {
 // Where *overflow* is where new slots are allocated (actual_slots > initial_slots)
 
 struct frame_ {
-	cell *next_instr;
+	cell *curr_instr;
 	uint64_t dbgen, chgen;
 	pl_idx prev_offset, hp;
 	pl_idx base, overflow, initial_slots, actual_slots;
@@ -528,7 +528,7 @@ struct frame_ {
 };
 
 struct prolog_state_ {
-	cell *next_instr;
+	cell *curr_instr;
 	predicate *pr;
 	rule *r;
 	sliter *iter, *f_iter;
