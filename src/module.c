@@ -1971,8 +1971,6 @@ module *load_file(module *m, const char *filename, bool including)
 
 			// Process extra input line text...
 
-			bool is_eof = false;
-
 			while (m->pl->p && m->pl->p->srcptr && *m->pl->p->srcptr) {
 				m->filename = filename;
 				parser *p = parser_create(m);
@@ -1982,16 +1980,16 @@ module *load_file(module *m, const char *filename, bool including)
 				p->m = m;
 
 				if (!tokenize(p, false, false)) {
-					is_eof = true;
-					break;
+					if (p->end_of_file) {
+						m->pl->p->srcptr = p->srcptr;
+						parser_destroy(p);
+						return m;
+					}
 				}
 
 				m->pl->p->srcptr = p->srcptr;
 				parser_destroy(p);
 			}
-
-			if (is_eof)
-				return m;
 
 			module *save_m = load_fp(m, str->fp, filename, including);
 			clearerr(str->fp);
