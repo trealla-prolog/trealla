@@ -1096,6 +1096,9 @@ fast builtin channels. No marshalling of terms is done.
 	?-
 ```
 
+TODO: allow use of an alias for threadId like with streams.
+
+
 Concurrency (linda)							##EXPERIMENTAL##
 ===================
 
