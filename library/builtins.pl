@@ -585,11 +585,11 @@ process_thread_option_([_|Rest], _, _) :-
 pl_thread(Tid, Filename) :-
 	'$pl_thread'(Tid, Filename).
 
-pl_thread(Tid, Filename, List) :-
-	process_thread_option_(List, Alias, Cpu),
+pl_thread(Tid, Filename, Options) :-
+	process_thread_option_(Options, Alias, Cpu),
 	'$pl_thread'(Tid, Filename),
-	(integer(Cpu) -> '$pl_pin_cpu'(Tid, Cpu) ; true),
 	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
+	(integer(Cpu) -> '$pl_pin_cpu'(Tid, Cpu) ; true),
 	true.
 
 pl_send(Tid0, Term) :-
