@@ -1065,9 +1065,10 @@ Concurrency (Prolog threads)			##EXPERIMENTAL##
 Start independent Prolog instances as threads and communicate via
 fast builtin channels. No marshalling of terms is done.
 
-	pl_thread/2				# pl_thread(-threadId,+filename)
-	pl_send/2				# pl_send(+threadId, @term)
-	pl_recv/2				# pl_recv(-threadId, @term)
+	pl_thread/3				# pl_thread(-thread,+filename,+options)
+	pl_thread/2				# pl_thread(-thread,+filename)
+	pl_send/2				# pl_send(+thread, @term)
+	pl_recv/2				# pl_recv(-thread, @term)
 
 ```
 	$ cat samples/thread_calc.pl
@@ -1085,14 +1086,12 @@ fast builtin channels. No marshalling of terms is done.
 			fail.
 
 	$ tpl
-	?- pl_thread(Tid, 'samples/thread_calc.pl'), assertz(alias(calc,Tid)).
+	?- pl_thread(_, 'samples/thread_calc.pl', [alias(calc)]).
 	Calculator running...
-	   Tid = 1.
-	?- alias(calc,Tid),
-		Term = sqrt(2,V),
-		pl_send(Tid, Term),
-		pl_recv(Tid, Term).
-	   Tid = 1, Term = sqrt(2,1.4142135623731), V = 1.4142135623731..
+	?- Term = sqrt(2,V),
+		pl_send(calc, Term),
+		pl_recv(_, Term).
+	   Term = sqrt(2,1.4142135623731), V = 1.4142135623731.
 	?-
 ```
 
