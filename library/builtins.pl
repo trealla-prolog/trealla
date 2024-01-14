@@ -572,12 +572,25 @@ read_line_to_codes(Stream, Codes) :-
 
 % This is preliminary:
 
+process_thread_option_([], _, _) :- !.
+process_thread_option_([alias(Alias)|Rest], Alias, _) :-
+	!,
+	process_thread_option_(Rest, _, _).
+process_thread_option_([cpu(Cpu)|Rest], _, Cpu) :-
+	!,
+	process_thread_option_(Rest, _, _).
+process_thread_option_([_|Rest], _, _) :-
+	process_thread_option_(Rest, _, _).
+
 pl_thread(Tid, Filename) :-
 	'$pl_thread'(Tid, Filename).
 
-pl_thread(Tid, Filename, [alias(Alias)]) :-
+pl_thread(Tid, Filename, Options) :-
+	process_thread_option_(Options, Alias, Cpu),
 	'$pl_thread'(Tid, Filename),
-	assertz('$pl_thread_alias'(Alias, Tid)).
+	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
+	(integer(Cpu) -> '$pl_pin_cpu'(Tid, Cpu) ; true),
+	true.
 
 pl_send(Tid0, Term) :-
 	clause('$pl_thread_alias'(Tid0, Tid), _),

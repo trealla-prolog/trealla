@@ -1031,7 +1031,6 @@ An example:
 		L = ['www.google.com','www.bing.com','www.duckduckgo.com'],
 		tasklist(geturl,L),
 		writeln('Finished').
-	```
 
 	$ tpl samples/test -g "time(test56),halt"
 	Job [www.duckduckgo.com] 200 ==> https://duckduckgo.com done
@@ -1065,18 +1064,25 @@ Concurrency (Prolog threads)			##EXPERIMENTAL##
 Start independent Prolog instances as threads and communicate via
 fast builtin channels. No marshalling of terms is done.
 
+```
 	pl_thread/3				# pl_thread(-thread,+filename,+options)
 	pl_thread/2				# pl_thread(-thread,+filename)
 	pl_send/2				# pl_send(+thread, @term)
 	pl_recv/2				# pl_recv(-thread, @term)
+```
+
+Where 'options' can be one or more of *alias(+atom)* or
+*cpu(+integer)* or more to come.
+
+For example...
 
 ```
 	$ cat samples/thread_calc.pl
-	:- initialization(run).
+	:- initialization(main).
 
 	% At the moment we only do sqrt
 
-	run :-
+	main :-
 		write('Calculator running...'), nl,
 		repeat,
 			pl_recv(Tid, Term),

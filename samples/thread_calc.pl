@@ -1,8 +1,8 @@
-:- initialization(run).
+:- initialization(main).
 
 % At the moment we only do sqrt
 
-run :-
+main :-
 	write('Calculator running...'), nl,
 	repeat,
 		pl_recv(Tid, Term),
