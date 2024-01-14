@@ -1072,8 +1072,7 @@ is *not* shared.
 	pl_recv/2				# pl_recv(-thread, -term)
 ```
 
-Where 'options' can be one or more of *alias(+atom)*,
-*queue_size(+integer)* or more to come.
+Where 'options' can be (currently just) *alias(+atom)*.
 
 Note: pl_recv/2 unconditionally removes the first available item
 from the queue. Eventually this will be extended to allow selective

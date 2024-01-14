@@ -582,9 +582,6 @@ process_thread_option_([cpu(Cpu)|Rest], _, Cpu, _, _) :-
 process_thread_option_([priority(Priority)|Rest], _, _, Priority, _) :-
 	!,
 	process_thread_option_(Rest, _, _, _, _).
-process_thread_option_([queue_size(QueueSize)|Rest], _, _, _, QueueSize) :-
-	!,
-	process_thread_option_(Rest, _, _, _, _).
 process_thread_option_([Name|_], _, _, _, _) :-
 	throw(error(domain_error(thread_property, Name), pl_thread/2)).
 
@@ -592,13 +589,12 @@ pl_thread(Tid, Filename) :-
 	'$pl_thread'(Tid, Filename).
 
 pl_thread(Tid, Filename, Options) :-
-	process_thread_option_(Options, Alias, _Cpu, _Priority, QueueSize),
+	process_thread_option_(Options, Alias, _Cpu, _Priority, _Spare),
 	'$pl_thread'(Tid, Filename),
 	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
 	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
 	%(integer(Cpu) -> '$pl_thread_pin_cpu'(Tid, Cpu) ; true),
 	%(integer(Priority) -> '$pl_thread_set_priority'(Tid, Priority) ; true),
-	(integer(QueueSize) -> '$pl_thread_set_queue_size'(Tid, QueueSize) ; true),
 	true.
 
 pl_send(Tid0, Term) :-
