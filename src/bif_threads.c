@@ -268,6 +268,7 @@ static bool bif_pl_thread_pin_cpu_2(query *q)
 	GET_NEXT_ARG(p2,integer);
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
+	// Do something here
 	return true;
 }
 
@@ -278,6 +279,7 @@ static bool bif_pl_thread_set_priority_2(query *q)
 	unsigned chan = get_smalluint(p1);
 	int pri = get_smallint(p2);
 	pl_thread *t = &g_pl_threads[chan];
+	// Do something here
 	return true;
 }
 
@@ -287,6 +289,7 @@ static bool bif_pl_thread_set_queue_size_2(query *q)
 	GET_NEXT_ARG(p2,integer);
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
+	// Do something here
 	return true;
 }
 
