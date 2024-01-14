@@ -263,10 +263,18 @@ static bool bif_pl_thread_2(query *q)
 }
 #endif
 
+static bool bif_pl_pin_cpu_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,integer);
+	return true;
+}
+
 builtins g_threads_bifs[] =
 {
 #if USE_THREADS
 	{"$pl_thread", 2, bif_pl_thread_2, "-integer,+atom", false, false, BLAH},
+	{"$pl_pin_cpu", 2, bif_pl_pin_cpu_2, "+integer,+integer", false, false, BLAH},
 	{"$pl_send", 2, bif_pl_send_2, "+integer,+term", false, false, BLAH},
 	{"$pl_recv", 2, bif_pl_recv_2, "-integer,?term", false, false, BLAH},
 #endif

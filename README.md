@@ -1069,8 +1069,13 @@ fast builtin channels. No marshalling of terms is done.
 	pl_thread/2				# pl_thread(-thread,+filename)
 	pl_send/2				# pl_send(+thread, @term)
 	pl_recv/2				# pl_recv(-thread, @term)
-
 ```
+
+Where 'options' can be one or more of *alias(+atom)* or
+*cpu(+integer)* or more to come.
+
+For example...
+
 	$ cat samples/thread_calc.pl
 	:- initialization(run).
 
