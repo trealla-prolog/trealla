@@ -74,7 +74,7 @@ void release_lock(lock *l)
 typedef struct {
 	const char *filename;
 	cell *queue;
-	pl_idx queue_size;
+	pl_atomic pl_idx queue_size;
 	unsigned from_chan, chan;
 	bool active;
 	lock guard;
@@ -122,13 +122,17 @@ static cell *queue_to_chan(unsigned chan, const cell *c)
 
 	if (t->queue_size < c->nbr_cells) {
 		t->queue = realloc(t->queue, sizeof(cell)*c->nbr_cells);
-		if (!t->queue) return NULL;
+		if (!t->queue) {
+			release_lock(&t->guard);
+			return NULL;
+		}
 	}
 
 	//printf("*** send to chan=%u, nbr_cells=%u\n", chan, c->nbr_cells);
 
 	dup_cells(t->queue, c, c->nbr_cells);
 	t->queue_size = c->nbr_cells;
+	release_lock(&t->guard);
 	return t->queue;
 }
 
@@ -146,7 +150,7 @@ static bool do_pl_send(query *q, unsigned chan, cell *p1, pl_idx p1_ctx)
 	cell *c = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(c);
 	check_heap_error(queue_to_chan(chan, c));
-	t->from_chan = q->pl->chan;
+	t->from_chan = q->pl->my_chan;
     resume_thread(t);
 	return true;
 }
@@ -164,7 +168,7 @@ static bool bif_pl_send_2(query *q)
 
 static bool do_pl_recv(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx)
 {
-	pl_thread *t = &g_pl_threads[q->pl->chan];
+	pl_thread *t = &g_pl_threads[q->pl->my_chan];
 
 	while (!t->queue_size)
 		suspend_thread(t);
@@ -205,7 +209,7 @@ static bool bif_pl_recv_2(query *q)
 			return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread");
 	}
 
-	pl_thread *t = &g_pl_threads[q->pl->chan];
+	pl_thread *t = &g_pl_threads[q->pl->my_chan];
 
 	if (!do_pl_recv(q, from_chan, p2, p2_ctx))
 		return false;
@@ -220,7 +224,7 @@ static void *start_routine(pl_thread *t)
 	prolog *pl = pl_create();
 	ensure(pl);
 	init_lock(&t->guard);
-	pl->chan = t->chan;
+	pl->my_chan = t->chan;
 	pl_consult(pl, t->filename);
 	t->active = false;
     return 0;
@@ -231,10 +235,10 @@ static bool bif_pl_thread_2(query *q)
 	static bool s_first = true;
 
 	if (s_first) {
+		s_first = false;
 		pl_thread *t = &g_pl_threads[0];
 		init_lock(&t->guard);
 		t->active = true;
-		s_first = false;
 	}
 
 	GET_FIRST_ARG(p1,var);
