@@ -149,6 +149,13 @@ static bool do_pl_send(query *q, unsigned chan, cell *p1, pl_idx p1_ctx)
 	return true;
 }
 
+static bool bif_pl_send_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,any);
+	return do_pl_send(q, get_smalluint(p1), p2, p2_ctx);
+}
+
 static bool do_pl_recv(query *q, cell *p1, pl_idx p1_ctx)
 {
 	pl_thread *t = &g_pl_threads[q->pl->chan];
@@ -174,13 +181,6 @@ static bool do_pl_recv(query *q, cell *p1, pl_idx p1_ctx)
 	q->curr_chan = t->queue_chan;
 	release_lock(&t->guard);
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
-}
-
-static bool bif_pl_send_2(query *q)
-{
-	GET_FIRST_ARG(p1,integer);
-	GET_NEXT_ARG(p2,any);
-	return do_pl_send(q, get_smalluint(p1), p2, p2_ctx);
 }
 
 static bool bif_pl_recv_2(query *q)
