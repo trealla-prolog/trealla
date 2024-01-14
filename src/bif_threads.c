@@ -75,7 +75,7 @@ typedef struct {
 	const char *filename;
 	cell *queue;
 	pl_idx queue_size;
-	unsigned queue_chan, chan;
+	unsigned from_chan, chan;
 	bool active;
 	lock guard;
 #ifdef _WIN32
@@ -134,16 +134,19 @@ static cell *queue_to_chan(unsigned chan, const cell *c)
 
 static bool do_pl_send(query *q, unsigned chan, cell *p1, pl_idx p1_ctx)
 {
+	if (chan >= g_pl_cnt)
+		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread");
+
 	pl_thread *t = &g_pl_threads[chan];
 
 	if (!t->active)
-		return false;
+		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread");
 
 	check_heap_error(init_tmp_heap(q));
 	cell *c = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(c);
 	check_heap_error(queue_to_chan(chan, c));
-	t->queue_chan = q->pl->chan;
+	t->from_chan = q->pl->chan;
     resume_thread(t);
 	return true;
 }
@@ -152,10 +155,14 @@ static bool bif_pl_send_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,any);
+
+	if (is_negative(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
+
 	return do_pl_send(q, get_smalluint(p1), p2, p2_ctx);
 }
 
-static bool do_pl_recv(query *q, cell *p1, pl_idx p1_ctx)
+static bool do_pl_recv(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx)
 {
 	pl_thread *t = &g_pl_threads[q->pl->chan];
 
@@ -177,7 +184,7 @@ static bool do_pl_recv(query *q, cell *p1, pl_idx p1_ctx)
 	check_heap_error(tmp);
 	unshare_cells(c, c->nbr_cells);
 	t->queue_size = 0;
-	q->curr_chan = t->queue_chan;
+	q->curr_chan = t->from_chan;
 	release_lock(&t->guard);
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
@@ -186,9 +193,21 @@ static bool bif_pl_recv_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer_or_var);
 	GET_NEXT_ARG(p2,any);
+	unsigned from_chan = 0;
+
+	if (is_integer(p1)) {
+		if (is_negative(p1))
+			return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
+
+		from_chan = get_smalluint(p1);
+
+		if (from_chan >= g_pl_cnt)
+			return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread");
+	}
+
 	pl_thread *t = &g_pl_threads[q->pl->chan];
 
-	if (!do_pl_recv(q, p2, p2_ctx))
+	if (!do_pl_recv(q, from_chan, p2, p2_ctx))
 		return false;
 
 	cell tmp;
@@ -266,6 +285,13 @@ static bool bif_pl_thread_pin_cpu_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,integer);
+
+	if (is_negative(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
+
+	if (is_negative(p2))
+		return throw_error(q, p2, p2_ctx, "domain_error", "not_less_than_zero");
+
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
 	// Do something here
@@ -276,6 +302,13 @@ static bool bif_pl_thread_set_priority_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,integer);
+
+	if (is_negative(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
+
+	if (is_negative(p2))
+		return throw_error(q, p2, p2_ctx, "domain_error", "not_less_than_zero");
+
 	unsigned chan = get_smalluint(p1);
 	int pri = get_smallint(p2);
 	pl_thread *t = &g_pl_threads[chan];
@@ -287,6 +320,13 @@ static bool bif_pl_thread_set_queue_size_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,integer);
+
+	if (is_negative(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
+
+	if (is_negative(p2))
+		return throw_error(q, p2, p2_ctx, "domain_error", "not_less_than_zero");
+
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
 	// Do something here
