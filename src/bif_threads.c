@@ -76,6 +76,7 @@ typedef struct {
 	cell *queue;
 	pl_idx queue_size;
 	unsigned queue_chan, chan;
+	bool active;
 	lock guard;
 #ifdef _WIN32
     HANDLE id;
@@ -88,7 +89,7 @@ typedef struct {
 
 #define MAX_PL_THREADS 64
 static pl_thread g_pl_threads[MAX_PL_THREADS] = {0};
-static unsigned g_pl_cnt = 1;	// 0 is the first instance
+static unsigned g_pl_cnt = 1;	// 0 is the primaryinstance
 
 static void suspend_thread(pl_thread *t)
 {
@@ -203,11 +204,21 @@ static void *start_routine(pl_thread *t)
 	init_lock(&t->guard);
 	pl->chan = t->chan;
 	pl_consult(pl, t->filename);
+	t->active = false;
     return 0;
 }
 
 static bool bif_pl_thread_2(query *q)
 {
+	static bool s_first = true;
+
+	if (s_first) {
+		pl_thread *t = &g_pl_threads[0];
+		init_lock(&t->guard);
+		t->active = true;
+		s_first = false;
+	}
+
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,atom);
 	char *filename = DUP_STRING(q, p2);
@@ -222,6 +233,13 @@ static bool bif_pl_thread_2(query *q)
 
 	unsigned chan = g_pl_cnt++;
 	pl_thread *t = &g_pl_threads[chan];
+
+	while (t->active) {
+		chan = g_pl_cnt++ % MAX_PL_THREADS;
+		t = &g_pl_threads[chan];
+	}
+
+	t->active = true;
 	t->filename = filename;
 	t->chan = chan;
 
