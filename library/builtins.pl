@@ -592,12 +592,12 @@ pl_thread(Tid, Filename) :-
 	'$pl_thread'(Tid, Filename).
 
 pl_thread(Tid, Filename, Options) :-
-	process_thread_option_(Options, Alias, Cpu, _Priority, _Queue),
+	process_thread_option_(Options, Alias, _Cpu, _Priority, QueueSize),
 	'$pl_thread'(Tid, Filename),
 	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
 	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
-	(integer(Cpu) -> '$pl_thread_pin_cpu'(Tid, Cpu) ; true),
-	(integer(Priority) -> '$pl_thread_set_priority'(Tid, Priority) ; true),
+	%(integer(Cpu) -> '$pl_thread_pin_cpu'(Tid, Cpu) ; true),
+	%(integer(Priority) -> '$pl_thread_set_priority'(Tid, Priority) ; true),
 	(integer(QueueSize) -> '$pl_thread_set_queue_size'(Tid, QueueSize) ; true),
 	true.
 
