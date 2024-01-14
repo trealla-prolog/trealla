@@ -1980,6 +1980,7 @@ query *query_create(module *m, bool is_task)
 	for (int i = 0; i < MAX_QUEUES; i++)
 		q->q_size[i] = is_task ? INITIAL_NBR_QUEUE_CELLS/4 : INITIAL_NBR_QUEUE_CELLS;
 
+	clear_write_options(q);
 	return q;
 }
 

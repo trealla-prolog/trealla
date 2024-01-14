@@ -1543,5 +1543,6 @@ void clear_write_options(query *q)
 	q->last_thing = WAS_OTHER;
 	q->variable_names = NULL;
 	q->cycle_error = false;
+	if (++q->print_vgen == 0) q->print_vgen = 1;
 	memset(q->ignores, 0, sizeof(q->ignores));
 }
