@@ -572,25 +572,33 @@ read_line_to_codes(Stream, Codes) :-
 
 % This is preliminary:
 
-process_thread_option_([], _, _) :- !.
-process_thread_option_([alias(Alias)|Rest], Alias, _) :-
+process_thread_option_([], _, _, _, _) :- !.
+process_thread_option_([alias(Alias)|Rest], Alias, _, _, _) :-
 	!,
-	process_thread_option_(Rest, _, _).
-process_thread_option_([cpu(Cpu)|Rest], _, Cpu) :-
+	process_thread_option_(Rest, _, _, _, _).
+process_thread_option_([cpu(Cpu)|Rest], _, Cpu, _, _) :-
 	!,
-	process_thread_option_(Rest, _, _).
-process_thread_option_([_|Rest], _, _) :-
-	process_thread_option_(Rest, _, _).
+	process_thread_option_(Rest, _, _, _, _).
+process_thread_option_([priority(Priority)|Rest], _, _, Priority, _) :-
+	!,
+	process_thread_option_(Rest, _, _, _, _).
+process_thread_option_([queue(Queue)|Rest], _, _, _, Queue) :-
+	!,
+	process_thread_option_(Rest, _, _, _, _).
+process_thread_option_([Name|_], _, _, _, _) :-
+	throw(error(domain_error(thread_property, Name), pl_thread/2)).
 
 pl_thread(Tid, Filename) :-
 	'$pl_thread'(Tid, Filename).
 
 pl_thread(Tid, Filename, Options) :-
-	process_thread_option_(Options, Alias, Cpu),
+	process_thread_option_(Options, Alias, Cpu, _Priority, _Queue),
 	'$pl_thread'(Tid, Filename),
 	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
 	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
 	(integer(Cpu) -> '$pl_pin_cpu'(Tid, Cpu) ; true),
+	%(integer(Priority) -> '$pl_priority'(Tid, Priority) ; true),
+	%(integer(Queue) -> '$pl_queue'(Tid, Queue) ; true),
 	true.
 
 pl_send(Tid0, Term) :-

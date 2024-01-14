@@ -1062,7 +1062,8 @@ Concurrency (Prolog threads)			##EXPERIMENTAL##
 =============================
 
 Start independent Prolog instances as threads and communicate via
-fast builtin channels. No marshalling of terms is done.
+fast builtin channels. No marshalling of terms is done. The database
+is *not* shared.
 
 ```
 	pl_thread/3				# pl_thread(-thread,+filename,+options)
@@ -1071,8 +1072,8 @@ fast builtin channels. No marshalling of terms is done.
 	pl_recv/2				# pl_recv(-thread, -term)
 ```
 
-Where 'options' can be one or more of *alias(+atom)* or
-*cpu(+integer)* or more to come.
+Where 'options' can be one or more of *alias(+atom)*, *cpu(+integer)*,
+*priority(+integer)*, *queue(+integer)* or more to come.
 
 Note: pl_recv/2 unconditionally removes the first available item
 from the queue. Eventually this will be extended to allow selective
