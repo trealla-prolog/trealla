@@ -120,11 +120,6 @@ static cell *queue_to_chan(unsigned chan, const cell *c)
 	pl_thread *t = &g_pl_threads[chan];
 	acquire_lock(&t->guard);
 
-	if (!t->queue) {
-		t->queue = malloc(sizeof(cell)*c->nbr_cells);
-		if (!t->queue) return NULL;
-	}
-
 	if (t->queue_size < c->nbr_cells) {
 		t->queue = realloc(t->queue, sizeof(cell)*c->nbr_cells);
 		if (!t->queue) return NULL;
