@@ -97,6 +97,7 @@ SRCOBJECTS = tpl.o \
 	src/print.o \
 	src/prolog.o \
 	src/query.o \
+	src/terms.o \
 	src/toplevel.o \
 	src/unify.o
 
@@ -307,6 +308,10 @@ src/query.o: src/query.c src/heap.h src/internal.h src/trealla.h src/cdebug.h \
  src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h src/module.h \
  src/network.h src/parser.h src/prolog.h src/query.h src/builtins.h \
  src/bif_atts.h
+src/terms.o: src/terms.c src/heap.h src/internal.h src/trealla.h src/cdebug.h \
+ src/stringbuf.h src/imath/imath.h src/imath/imrat.h src/imath/imath.h \
+ src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h src/query.h \
+ src/parser.h src/builtins.h
 src/toplevel.o: src/toplevel.c src/bif_atts.h src/heap.h src/internal.h src/trealla.h \
  src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
  src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h \
