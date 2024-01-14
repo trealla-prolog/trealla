@@ -1068,11 +1068,15 @@ fast builtin channels. No marshalling of terms is done.
 	pl_thread/3				# pl_thread(-thread,+filename,+options)
 	pl_thread/2				# pl_thread(-thread,+filename)
 	pl_send/2				# pl_send(+thread, @term)
-	pl_recv/2				# pl_recv(-thread, @term)
+	pl_recv/2				# pl_recv(-thread, -term)
 ```
 
 Where 'options' can be one or more of *alias(+atom)* or
 *cpu(+integer)* or more to come.
+
+Note: pl_recv/2 unconditionally removes the first available item
+from the queue. Eventually this will be extended to allow selective
+removal by matching, either by term or thread.
 
 For example...
 
@@ -1101,8 +1105,7 @@ For example...
 	?-
 ```
 
-TODO: allow recovery of thread slots on termination and removal
-of aliases.
+TODO: allow recovery of thread slots on termination.
 
 
 Concurrency (linda)							##EXPERIMENTAL##

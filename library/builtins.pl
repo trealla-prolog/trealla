@@ -588,6 +588,7 @@ pl_thread(Tid, Filename) :-
 pl_thread(Tid, Filename, Options) :-
 	process_thread_option_(Options, Alias, Cpu),
 	'$pl_thread'(Tid, Filename),
+	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
 	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
 	(integer(Cpu) -> '$pl_pin_cpu'(Tid, Cpu) ; true),
 	true.
