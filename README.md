@@ -1095,7 +1095,8 @@ fast builtin channels. No marshalling of terms is done.
 	?-
 ```
 
-TODO: allow use of an alias for threadId like with streams.
+TODO: allow recovery of thread slots on termination and removal
+of aliases.
 
 
 Concurrency (linda)							##EXPERIMENTAL##

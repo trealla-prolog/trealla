@@ -570,6 +570,8 @@ read_line_to_codes(Stream, Codes) :-
 
 :- help(read_line_to_codes(+stream,?list), [iso(false)]).
 
+% This is preliminary:
+
 pl_thread(Tid, Filename) :-
 	'$pl_thread'(Tid, Filename).
 
