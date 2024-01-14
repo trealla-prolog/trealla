@@ -1105,8 +1105,7 @@ For example...
 	?-
 ```
 
-TODO: allow recovery of thread slots on termination and removal
-of aliases.
+TODO: allow recovery of thread slots on termination.
 
 
 Concurrency (linda)							##EXPERIMENTAL##
