@@ -570,6 +570,25 @@ read_line_to_codes(Stream, Codes) :-
 
 :- help(read_line_to_codes(+stream,?list), [iso(false)]).
 
+% This is preliminary:
+
+pl_thread(Tid, Filename) :-
+	'$pl_thread'(Tid, Filename).
+
+pl_thread(Tid, Filename, [alias(Alias)]) :-
+	'$pl_thread'(Tid, Filename),
+	assertz('$pl_thread_alias'(Alias, Tid)).
+
+pl_send(Tid0, Term) :-
+	clause('$pl_thread_alias'(Tid0, Tid), _),
+	!,
+	'$pl_send'(Tid, Term).
+pl_send(Tid, Term) :-
+	'$pl_send'(Tid, Term).
+
+pl_recv(Tid, Term) :-
+	'$pl_recv'(Tid, Term).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 
