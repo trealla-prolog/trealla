@@ -1085,16 +1085,19 @@ fast builtin channels. No marshalling of terms is done.
 			fail.
 
 	$ tpl
-	?- pl_thread(Tid, 'samples/thread_calc.pl'), assertz(thread_calc(Tid)).
+	?- pl_thread(Tid, 'samples/thread_calc.pl'), assertz(alias(calc,Tid)).
 	Calculator running...
 	   Tid = 1.
-	?- thread_calc(Tid),
+	?- alias(calc,Tid),
 		Term = sqrt(2,V),
 		pl_send(Tid, Term),
 		pl_recv(Tid, Term).
 	   Tid = 1, Term = sqrt(2,1.4142135623731), V = 1.4142135623731..
 	?-
 ```
+
+TODO: allow use of an alias for threadId like with streams.
+
 
 Concurrency (linda)							##EXPERIMENTAL##
 ===================
