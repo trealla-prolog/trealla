@@ -139,11 +139,15 @@ static cell *queue_to_chan(unsigned chan, const cell *c)
 
 static bool do_pl_send(query *q, unsigned chan, cell *p1, pl_idx p1_ctx)
 {
+	pl_thread *t = &g_pl_threads[chan];
+
+	if (!t->active)
+		return false;
+
 	check_heap_error(init_tmp_heap(q));
 	cell *c = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(c);
 	check_heap_error(queue_to_chan(chan, c));
-	pl_thread *t = &g_pl_threads[chan];
 	t->queue_chan = q->pl->chan;
     resume_thread(t);
 	return true;
