@@ -669,7 +669,7 @@ struct query_ {
 	pl_idx q_size[MAX_QUEUES], tmpq_size[MAX_QUEUES], qp[MAX_QUEUES];
 	prolog_flags flags;
 	enum q_retry retry;
-	uint32_t vgen, print_vgen;
+	uint32_t vgen;
 	int8_t halt_code;
 	int8_t quoted;
 	enum { WAS_OTHER, WAS_SPACE, WAS_COMMA, WAS_SYMBOL } last_thing;
