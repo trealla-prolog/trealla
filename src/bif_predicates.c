@@ -2277,7 +2277,7 @@ static bool bif_iso_acyclic_term_1(query *q)
 static bool bif_call_residue_vars_2(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
-	GET_NEXT_ARG(p2,nil_or_var);
+	GET_NEXT_ARG(p2,list_or_nil_or_var);
 	cell *tmp = prepare_call(q, true, p1, p1_ctx, 6);
 	check_heap_error(tmp);
 	tmp[1].flags &= ~FLAG_TAIL_CALL;
