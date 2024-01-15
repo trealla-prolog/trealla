@@ -95,12 +95,16 @@ static void suspend_thread(pl_thread *t, int ms)
 {
 #ifdef _WIN32
 	SuspendThread(t->id);
-#else
+#elif !defined(__wasi__)
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_nsec += 1000 * 1000 * ms;
 	pthread_mutex_lock(&t->mutex);
 	pthread_cond_timedwait(&t->cond, &t->mutex, &ts);
+	pthread_mutex_unlock(&t->mutex);
+#else
+	pthread_mutex_lock(&t->mutex);
+	pthread_cond_wait(&t->cond, &t->mutex);
 	pthread_mutex_unlock(&t->mutex);
 #endif
 }
