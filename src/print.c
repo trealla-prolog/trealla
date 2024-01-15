@@ -111,7 +111,7 @@ bool needs_quoting(module *m, const char *src, int srclen)
 			alphas++;
 		else if ((ch < 256) && iswgraph(ch) && (ch != '%'))
 			graphs++;
-		else if (iswgraph(ch)) // Not sure about this?
+		else if (iswgraph(ch) && (ch != '%'))
 			graphs++;
 	}
 
