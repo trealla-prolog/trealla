@@ -91,13 +91,16 @@ typedef struct {
 static pl_thread g_pl_threads[MAX_PL_THREADS] = {0};
 static unsigned g_pl_cnt = 1;	// 0 is the primaryinstance
 
-static void suspend_thread(pl_thread *t)
+static void suspend_thread(pl_thread *t, int ms)
 {
 #ifdef _WIN32
 	SuspendThread(t->id);
 #else
+	struct timespec ts;
+	clock_gettime(CLOCK_REALTIME, &ts);
+	ts.tv_nsec += 1000 * 1000 * ms;
 	pthread_mutex_lock(&t->mutex);
-	pthread_cond_wait(&t->cond, &t->mutex);
+	pthread_cond_timedwait(&t->cond, &t->mutex, &ts);
 	pthread_mutex_unlock(&t->mutex);
 #endif
 }
@@ -171,7 +174,7 @@ static bool do_pl_recv(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx)
 	pl_thread *t = &g_pl_threads[q->pl->my_chan];
 
 	while (!t->queue_size)
-		suspend_thread(t);
+		suspend_thread(t, 1);
 
 	//printf("*** recv msg nbr_cells=%u\n", t->queue->nbr_cells);
 
