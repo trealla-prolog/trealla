@@ -111,6 +111,8 @@ bool needs_quoting(module *m, const char *src, int srclen)
 			alphas++;
 		else if ((ch < 256) && iswgraph(ch) && (ch != '%'))
 			graphs++;
+		else if (iswgraph(ch)) // Not sure about this?
+			graphs++;
 	}
 
 	if (cnt == alphas)
@@ -959,7 +961,8 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		CLR_OP(c);
 
 	if (q->ignore_ops || !IS_OP(c) || !c->arity) {
-		int quote = ((running <= 0) || q->quoted) && !is_var(c) && needs_quoting(q->st.m, src, src_len);
+		bool is_needs_quoting = needs_quoting(q->st.m, src, src_len);
+		int quote = ((running <= 0) || q->quoted) && !is_var(c) && is_needs_quoting;
 		int dq = 0, braces = 0;
 		if (is_string(c) && q->double_quotes) dq = quote = 1;
 		if (q->quoted < 0) quote = 0;
