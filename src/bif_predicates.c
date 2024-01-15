@@ -760,16 +760,21 @@ static bool bif_iso_atom_codes_2(query *q)
 		return ok;
 	}
 
-	const char *tmpbuf = C_STR(q, p1);
+	const char *src = C_STR(q, p1);
 	size_t len = C_STRLEN(q, p1);
-	const char *src = tmpbuf;
 	cell tmp;
 	len -= len_char_utf8(src);
 	make_int(&tmp, get_char_utf8(&src));
 	allocate_list(q, &tmp);
 
 	while (len) {
-		len -= len_char_utf8(src);
+		CHECK_INTERRUPT();
+		int char_len = len_char_utf8(src);
+
+		if (char_len > 6)
+			return throw_error(q, p1, p1_ctx, "representation_error", "character_code");
+
+		len -= char_len;
 		make_int(&tmp, get_char_utf8(&src));
 		append_list(q, &tmp);
 	}
