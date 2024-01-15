@@ -2277,14 +2277,19 @@ static bool bif_iso_acyclic_term_1(query *q)
 static bool bif_call_residue_vars_2(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
-	GET_NEXT_ARG(p2,var);
+	GET_NEXT_ARG(p2,nil_or_var);
 	cell *tmp = prepare_call(q, true, p1, p1_ctx, 6);
 	check_heap_error(tmp);
 	tmp[1].flags &= ~FLAG_TAIL_CALL;
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, new_atom(q->pl, "term_attributed_variables"), NULL, 2, 2);
 	make_indirect(tmp+nbr_cells++, p1, p1_ctx);
-	make_ref(tmp+nbr_cells++, p2->var_nbr, p2_ctx);
+
+	if (is_var(p2))
+		make_ref(tmp+nbr_cells++, p2->var_nbr, p2_ctx);
+	else
+		tmp[nbr_cells++] = *p2;
+
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
