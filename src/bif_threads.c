@@ -135,7 +135,6 @@ static cell *queue_to_chan(unsigned chan, const cell *c)
 
 	dup_cells(t->queue, c, c->nbr_cells);
 	t->queue_size = c->nbr_cells;
-	release_lock(&t->guard);
 	return t->queue;
 }
 
