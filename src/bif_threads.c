@@ -172,9 +172,12 @@ static bool bif_pl_send_2(query *q)
 static bool do_pl_recv(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx)
 {
 	pl_thread *t = &g_pl_threads[q->pl->my_chan];
+	uint64_t cnt = 0;
 
-	while (!t->queue_size)
-		suspend_thread(t, 1);
+	while (!t->queue_size) {
+		suspend_thread(t, cnt < 1000 ? 0 : cnt < 10000 ? 1 : cnt < 100000 ? 10 : 100);
+		cnt++;
+	}
 
 	//printf("*** recv msg nbr_cells=%u\n", t->queue->nbr_cells);
 
