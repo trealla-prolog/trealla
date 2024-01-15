@@ -95,16 +95,12 @@ static void suspend_thread(pl_thread *t, int ms)
 {
 #ifdef _WIN32
 	SuspendThread(t->id);
-#elif !defined(__wasi__)
+#else
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_nsec += 1000 * 1000 * ms;
 	pthread_mutex_lock(&t->mutex);
 	pthread_cond_timedwait(&t->cond, &t->mutex, &ts);
-	pthread_mutex_unlock(&t->mutex);
-#else
-	pthread_mutex_lock(&t->mutex);
-	pthread_cond_wait(&t->cond, &t->mutex);
 	pthread_mutex_unlock(&t->mutex);
 #endif
 }
@@ -293,7 +289,6 @@ static bool bif_pl_thread_2(query *q)
 	make_uint(&tmp, chan);
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
-#endif
 
 static bool bif_pl_thread_pin_cpu_2(query *q)
 {
@@ -329,6 +324,7 @@ static bool bif_pl_thread_set_priority_2(query *q)
 	// Do something here
 	return true;
 }
+#endif
 
 builtins g_threads_bifs[] =
 {
