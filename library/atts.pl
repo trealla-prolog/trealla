@@ -41,6 +41,7 @@ term_attvars_([H|T], VsIn, VsOut) :-
 	).
 
 term_attributed_variables(Term, Vs) :-
+	'$can_be'(Vs, list, term_attributed_variables/2, _),
 	term_variables(Term, Vs0),
 	term_attvars_(Vs0, [], Vs).
 

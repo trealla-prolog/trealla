@@ -2293,7 +2293,7 @@ static bool bif_call_residue_vars_2(query *q)
 	if (is_var(p2))
 		make_ref(tmp+nbr_cells++, p2->var_nbr, p2_ctx);
 	else
-		tmp[nbr_cells++] = *p2;
+		make_indirect(tmp+nbr_cells++, p2, p2_ctx);
 
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
