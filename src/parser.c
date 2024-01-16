@@ -1871,8 +1871,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		q->varnames = true;
-		q->quoted = true;
-		src = print_term_to_strbuf(q, c, q->latest_ctx, 1);
+		src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
 		q->varnames = false;
 		strcat(src, ".");
 		break;
