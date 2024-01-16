@@ -79,7 +79,7 @@ typedef struct msg_ {
 
 typedef struct {
 	const char *filename;
-	pl_atomic msg *queue;
+	msg *queue;
 	unsigned chan;
 	bool active;
 	lock guard;
@@ -135,7 +135,7 @@ static cell *queue_to_chan(unsigned chan, const cell *c, unsigned from_chan)
 	m->from_chan = from_chan;
 	dup_cells(m->c, c, c->nbr_cells);
 	acquire_lock(&t->guard);
-	m->next = (msg*)t->queue;
+	m->next = t->queue;
 	t->queue = m;
 	release_lock(&t->guard);
 	return m->c;
@@ -182,7 +182,7 @@ static bool do_pl_recv(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx)
 
 	acquire_lock(&t->guard);
 	//printf("*** recv msg nbr_cells=%u\n", t->queue->nbr_cells);
-	msg *m = (msg*)t->queue;
+	msg *m = t->queue;
 	t->queue = m->next;
 	release_lock(&t->guard);
 
