@@ -112,7 +112,7 @@ bool needs_quoting(module *m, const char *src, int srclen)
 		else if ((ch < 256) && iswgraph(ch) && (ch != '%'))
 			graphs++;
 		else if (iswgraph(ch) && (ch != '%')
-			&& (cnt == 1)	// Hack
+			//&& (cnt == 1)	// Hack
 			)
 			graphs++;
 	}
@@ -1349,6 +1349,9 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		&& !iswalpha(*C_STR(q, rhs)) && !needs_quoting(q->st.m, C_STR(q, rhs), C_STRLEN(q, rhs))
 		&& strcmp(C_STR(q, rhs), "[]") && strcmp(C_STR(q, rhs), "{}")
 		&& !rhs_parens;
+
+	if (peek_char_utf8(C_STR(q, rhs)) > 256)
+		space = true;
 
 	if (rhs_is_symbol && strcmp(C_STR(q, rhs), "[]") && strcmp(C_STR(q, rhs), "{}") && strcmp(C_STR(q, rhs), "!"))
 		space = true;
