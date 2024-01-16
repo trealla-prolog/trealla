@@ -1101,8 +1101,6 @@ For example...
 	?-
 ```
 
-TODO: allow recovery of thread slots on termination.
-
 TODO: allow matching on received messages.
 
 
