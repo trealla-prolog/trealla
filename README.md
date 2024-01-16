@@ -1074,10 +1074,6 @@ The database is *not* shared.
 
 Where 'options' can be (currently just) *alias(+atom)*.
 
-Note: pl_recv/2 unconditionally removes the first available item
-from the queue. Eventually this will be extended to allow selective
-removal by matching, either by term or thread.
-
 For example...
 
 ```
