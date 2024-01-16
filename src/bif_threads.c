@@ -174,17 +174,18 @@ static bool do_pl_recv(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx)
 {
 	pl_thread *t = &g_pl_threads[q->pl->my_chan];
 	uint64_t cnt = 0;
-	acquire_lock(&t->guard);
 
 	while (!t->queue) {
-		release_lock(&t->guard);
 		suspend_thread(t, cnt < 1000 ? 0 : cnt < 10000 ? 1 : cnt < 100000 ? 10 : 100);
 		cnt++;
 	}
 
+	acquire_lock(&t->guard);
 	//printf("*** recv msg nbr_cells=%u\n", t->queue->nbr_cells);
-
 	msg *m = (msg*)t->queue;
+	t->queue = m->next;
+	release_lock(&t->guard);
+
 	cell *c = m->c;
 	try_me(q, MAX_ARITY);
 
@@ -198,8 +199,6 @@ static bool do_pl_recv(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx)
 	check_heap_error(tmp, release_lock(&t->guard));
 	unshare_cells(c, c->nbr_cells);
 	q->curr_chan = m->from_chan;
-	t->queue = m->next;
-	release_lock(&t->guard);
 	free(m);
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
