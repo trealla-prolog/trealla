@@ -1062,8 +1062,8 @@ Concurrency (Prolog threads)			##EXPERIMENTAL##
 =============================
 
 Start independent (no shared state) Prolog instances as threads and
-communicate via fast builtin channels. No marshalling of terms is done.
-The database is *not* shared.
+communicate via fast builtin channels. No marshalling of terms via text
+is done. Note: the database is *not* shared.
 
 ```
 	pl_thread/3				# pl_thread(-thread,+filename,+options)
