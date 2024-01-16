@@ -1061,9 +1061,9 @@ Unix domain sockets for IPC. See *src/trealla.h* for API.
 Concurrency (Prolog threads)			##EXPERIMENTAL##
 =============================
 
-Start independent Prolog instances as threads and communicate via
-fast builtin channels. No marshalling of terms is done. The database
-is *not* shared.
+Start independent (no shared state) Prolog instances as threads and
+communicate via fast builtin channels. No marshalling of terms is done.
+The database is *not* shared.
 
 ```
 	pl_thread/3				# pl_thread(-thread,+filename,+options)
@@ -1106,6 +1106,8 @@ For example...
 ```
 
 TODO: allow recovery of thread slots on termination.
+
+TODO: allow matching on received messages.
 
 
 Concurrency (linda)							##EXPERIMENTAL##
