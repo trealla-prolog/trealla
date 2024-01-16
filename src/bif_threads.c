@@ -125,8 +125,8 @@ static void resume_thread(pl_thread *t)
 
 static cell *queue_to_chan(unsigned chan, const cell *c, unsigned from_chan)
 {
-	pl_thread *t = &g_pl_threads[chan];
 	//printf("*** send to chan=%u, nbr_cells=%u\n", chan, c->nbr_cells);
+	pl_thread *t = &g_pl_threads[chan];
 	msg *m = malloc(sizeof(msg) + (sizeof(cell)*c->nbr_cells));
 
 	if (!m)
