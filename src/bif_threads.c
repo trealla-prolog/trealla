@@ -152,7 +152,7 @@ static bool do_pl_send(query *q, unsigned chan, cell *p1, pl_idx p1_ctx)
 		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread");
 
 	check_heap_error(init_tmp_heap(q));
-	cell *c = deep_clone_to_tmp(q, p1, p1_ctx);
+	const cell *c = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(c);
 	check_heap_error(queue_to_chan(chan, c, q->pl->my_chan));
     resume_thread(t);
@@ -199,8 +199,8 @@ static bool do_pl_recv(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx)
 	unshare_cells(c, c->nbr_cells);
 	q->curr_chan = m->from_chan;
 	t->queue = m->next;
-	free(m);
 	release_lock(&t->guard);
+	free(m);
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
 
