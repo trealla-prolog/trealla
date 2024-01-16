@@ -1086,7 +1086,7 @@ For example...
 		write('Calculator running...'), nl,
 		repeat,
 			pl_recv(Tid, Term),
-			Term = sqrt(X,Y),
+			Term = sqrt(X, Y),
 			Y is sqrt(X),
 			pl_send(Tid, Term),
 			fail.
@@ -1094,14 +1094,12 @@ For example...
 	$ tpl
 	?- pl_thread(_, 'samples/thread_calc.pl', [alias(calc)]).
 	Calculator running...
-	?- Term = sqrt(2,V),
+	?- Term = sqrt(2, V),
 		pl_send(calc, Term),
 		pl_recv(_, Term).
 	   Term = sqrt(2,1.4142135623731), V = 1.4142135623731.
 	?-
 ```
-
-TODO: allow matching on received messages.
 
 
 Concurrency (linda)							##EXPERIMENTAL##
