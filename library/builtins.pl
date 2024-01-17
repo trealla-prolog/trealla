@@ -731,8 +731,9 @@ dump_attvars_([Var|Vars], [Gs|Rest]) :-
 	dump_attvars_(Vars, Rest).
 
 dump_attvars :-
-	'$list_attributed'(Vars),
-	dump_attvars_(Vars, Gs0),
+	'$list_attributed'(Vs0),
+	sort(Vs0, Vs),
+	dump_attvars_(Vs, Gs0),
 	flatten(Gs0, Gs1),
 	sort(Gs1, Gs),
 	print_goals_(Gs).
