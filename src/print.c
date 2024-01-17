@@ -1346,11 +1346,14 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		space = true;
 
 	bool rhs_is_symbol = is_interned(rhs) && !rhs->arity
-		&& !iswalpha(*C_STR(q, rhs)) && !needs_quoting(q->st.m, C_STR(q, rhs), C_STRLEN(q, rhs))
+		&& !iswalpha(*C_STR(q, rhs))
+		&& !needs_quoting(q->st.m, C_STR(q, rhs), C_STRLEN(q, rhs))
 		&& strcmp(C_STR(q, rhs), "[]") && strcmp(C_STR(q, rhs), "{}")
 		&& !rhs_parens;
 
-	if (peek_char_utf8(C_STR(q, rhs)) > 256)
+	if (is_atom(rhs) && (peek_char_utf8(C_STR(q, rhs)) > 255)
+		&& !needs_quoting(q->st.m, C_STR(q, rhs), C_STRLEN(q, rhs))
+		)
 		space = true;
 
 	if (rhs_is_symbol && strcmp(C_STR(q, rhs), "[]") && strcmp(C_STR(q, rhs), "{}") && strcmp(C_STR(q, rhs), "!"))
