@@ -49,7 +49,7 @@ bb_b_put(K, _) :-
 	ignore(retract(M:'$bb_key'(K, _, b))),
 	fail.
 
-:- help(bb_b_put(+atom,+term), [iso(false)]).
+:- help(bb_b_put(+atom,+term), [iso(false), desc('Backtrackable version of bb_put/2')]).
 
 countall(_, N) :-
 	integer(N),
