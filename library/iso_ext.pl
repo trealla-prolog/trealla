@@ -42,10 +42,11 @@ bb_update(K, O, V) :-
 bb_b_put(K, V) :-
 	prolog_load_context(module, M),
 	'$must_be'(K, atomic, bb_b_put/2, _),
+	ignore(retract(M:'$bb_key'(K, _, b))),
 	asserta(M:'$bb_key'(K, V, b)).
-bb_b_put(K, V) :-
+bb_b_put(K, _) :-
 	prolog_load_context(module, M),
-	ignore(retract(M:'$bb_key'(K, V, b))),
+	ignore(retract(M:'$bb_key'(K, _, b))),
 	fail.
 
 :- help(bb_b_put(+atomic,+term), [iso(false)]).
