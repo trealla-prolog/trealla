@@ -45,7 +45,7 @@ bb_b_put(K, V) :-
 	asserta(M:'$bb_key'(K, V, b)).
 bb_b_put(K, V) :-
 	prolog_load_context(module, M),
-	ignore(retractall(M:'$bb_key'(K, V, b))),
+	ignore(retract(M:'$bb_key'(K, V, b))),
 	fail.
 
 :- help(bb_b_put(+atomic,+term), [iso(false)]).
