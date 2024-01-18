@@ -43,11 +43,8 @@ bb_b_put(K, V) :-
 	'$must_be'(K, atom, bb_b_put/2, _),
 	prolog_load_context(module, M),
 	ignore(retract(M:'$bb_key'(K, _, b))),
-	asserta(M:'$bb_key'(K, V, b)).
-bb_b_put(K, _) :-
-	prolog_load_context(module, M),
-	ignore(retract(M:'$bb_key'(K, _, b))),
-	fail.
+	asserta(M:'$bb_key'(K, V, b), Ref),
+	'$retract_on_backtrack'(Ref).
 
 :- help(bb_b_put(+atom,+term), [iso(false), desc('Backtrackable version of bb_put/2')]).
 

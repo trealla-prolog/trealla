@@ -2816,16 +2816,6 @@ static bool bif_iso_op_3(query *q)
 	return true;
 }
 
-static bool bif_erase_1(query *q)
-{
-	GET_FIRST_ARG(p1,atom);
-	uuid u;
-	uuid_from_buf(C_STR(q, p1), &u);
-	rule *r = erase_from_db(q->st.m, &u);
-	check_heap_error(r);
-	return true;
-}
-
 static bool bif_instance_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -5980,6 +5970,25 @@ bool bif_sys_counter_1(query *q)
 	return true;
 }
 
+bool bif_sys_retract_on_backtrack_1(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	unsigned var_nbr;
+
+	if (!(var_nbr = create_vars(q, 1)))
+		return false;
+
+	share_cell(p1);
+	frame *f = GET_CURR_FRAME();
+	slot *e = GET_SLOT(f, var_nbr);
+	blob *b = calloc(1, sizeof(blob));
+	b->ptr = (void*)q->st.m;
+	b->ptr2 = (void*)strdup(C_STR(q, p1));
+	make_dbref(&e->c, b);
+	share_cell(&e->c);
+	return true;
+}
+
 void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type, bool function)
 {
 	tmpbuf[0] = '\0';
@@ -6562,6 +6571,7 @@ builtins g_other_bifs[] =
 	{"$assertz", 2, bif_sys_assertz_2, "+term,+atom", true, false, BLAH},
 	{"$clause", 2, bif_sys_clause_2, "?term,?term", false, false, BLAH},
 	{"$clause", 3, bif_sys_clause_3, "?term,?term,-string", false, false, BLAH},
+	{"$retract_on_backtrack", 1, bif_sys_retract_on_backtrack_1, "+string", false, false, BLAH},
 
 #if USE_OPENSSL
 	{"crypto_data_hash", 3, bif_crypto_data_hash_3, "?string,?string,?list", false, false, BLAH},

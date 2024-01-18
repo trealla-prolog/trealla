@@ -895,3 +895,17 @@ bool bif_abolish_2(query *q)
 	return do_abolish(q, p1, &tmp, true);
 }
 
+bool do_erase(module* m, const char *str)
+{
+	uuid u;
+	uuid_from_buf(str, &u);
+	erase_from_db(m, &u);
+	return true;
+}
+
+bool bif_erase_1(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	return do_erase(q->st.m, C_STR(q, p1));
+}
+

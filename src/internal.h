@@ -104,6 +104,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_float(c) ((c)->tag == TAG_DOUBLE)
 #define is_rational(c) ((c)->tag == TAG_RATIONAL)
 #define is_indirect(c) ((c)->tag == TAG_INDIRECT)
+#define is_dbref(c) ((c)->tag == TAG_DBREF)
 #define is_blob(c) ((c)->tag == TAG_BLOB)
 #define is_end(c) ((c)->tag == TAG_END)
 
@@ -257,7 +258,8 @@ enum {
 	TAG_RATIONAL=6,
 	TAG_INDIRECT=7,
 	TAG_BLOB=8,
-	TAG_END=9
+	TAG_DBREF=9,
+	TAG_END=10
 };
 
 enum {
@@ -846,6 +848,7 @@ extern pl_idx g_anon_s, g_neck_s, g_eof_s, g_lt_s, g_false_s, g_once_s;
 extern pl_idx g_gt_s, g_eq_s, g_sys_elapsed_s, g_sys_queue_s, g_braces_s;
 extern pl_idx g_sys_stream_property_s, g_unify_s, g_on_s, g_off_s, g_sys_var_s;
 extern pl_idx g_call_s, g_braces_s, g_plus_s, g_minus_s, g_post_unify_hook_s;
+extern bool do_erase(module *m, const char *str);
 
 extern unsigned g_cpu_count;
 
@@ -861,6 +864,8 @@ inline static void share_cell_(const cell *c)
 	else if (is_rational(c))
 		(c)->val_bigint->refcnt++;
 	else if (is_blob(c))
+		(c)->val_blob->refcnt++;
+	else if (is_dbref(c))
 		(c)->val_blob->refcnt++;
 }
 
@@ -888,6 +893,16 @@ inline static void unshare_cell_(cell *c)
 			free((c)->val_blob->ptr2);
 			free((c)->val_blob->ptr);
 			free((c)->val_blob);
+			c->flags = 0;
+		}
+	} else if (is_dbref(c)) {
+		if (--c->val_blob->refcnt == 0) {
+			module *m = (module*)c->val_blob->ptr;
+			char *ref = (char*)c->val_blob->ptr2;
+			do_erase(m, ref);
+			//printf("*** RETRACT ref: %s\n", ref);
+			free(c->val_blob->ptr2);
+			free(c->val_blob);
 			c->flags = 0;
 		}
 	}
