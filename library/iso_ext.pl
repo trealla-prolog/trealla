@@ -1,33 +1,33 @@
 bb_put(K, V) :-
+	'$must_be'(K, atom, bb_put/2, _),
 	prolog_load_context(module, M),
-	'$must_be'(K, atomic, bb_put/2, _),
 	ignore(retractall(M:'$bb_key'(K, _, _))),
 	asserta(M:'$bb_key'(K, V, nb)).
 
-:- help(bb_put(+atomic,+term), [iso(false)]).
+:- help(bb_put(+atom,+term), [iso(false)]).
 
 bb_get(K, V) :-
+	'$must_be'(K, atom, bb_get/2, _),
 	prolog_load_context(module, M),
-	'$must_be'(K, atomic, bb_get/2, _),
 	M:'$bb_key'(K, V0, _),
 	!,
 	V0 = V.
 
-:- help(bb_get(+atomic,?term), [iso(false)]).
+:- help(bb_get(+atom,?term), [iso(false)]).
 
 bb_delete(K, V) :-
+	'$must_be'(K, atom, bb_delete/2, _),
 	prolog_load_context(module, M),
-	'$must_be'(K, atomic, bb_delete/2, _),
 	M:'$bb_key'(K, V0, _),
 	!,
 	V0 = V,
 	retractall(M:'$bb_key'(K, _, _)).
 
-:- help(bb_delete(+atomic,+term), [iso(false)]).
+:- help(bb_delete(+atom,+term), [iso(false)]).
 
 bb_update(K, O, V) :-
+	'$must_be'(K, atom, bb_update/3, _),
 	prolog_load_context(module, M),
-	'$must_be'(K, atomic, bb_update/3, _),
 	M:'$bb_key'(K, O0, _),
 	!,
 	O0 = O,
@@ -35,13 +35,13 @@ bb_update(K, O, V) :-
 	asserta(M:'$bb_key'(K, V, nb)),
 	!.
 
-:- help(bb_update(+atomic,+term,+term), [iso(false)]).
+:- help(bb_update(+atom,+term,+term), [iso(false)]).
 
 % extension:
 
 bb_b_put(K, V) :-
+	'$must_be'(K, atom, bb_b_put/2, _),
 	prolog_load_context(module, M),
-	'$must_be'(K, atomic, bb_b_put/2, _),
 	ignore(retract(M:'$bb_key'(K, _, b))),
 	asserta(M:'$bb_key'(K, V, b)).
 bb_b_put(K, _) :-
@@ -49,7 +49,7 @@ bb_b_put(K, _) :-
 	ignore(retract(M:'$bb_key'(K, _, b))),
 	fail.
 
-:- help(bb_b_put(+atomic,+term), [iso(false)]).
+:- help(bb_b_put(+atom,+term), [iso(false)]).
 
 countall(_, N) :-
 	integer(N),
