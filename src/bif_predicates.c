@@ -5978,15 +5978,14 @@ bool bif_sys_retract_on_backtrack_1(query *q)
 	if (!(var_nbr = create_vars(q, 1)))
 		return false;
 
-	share_cell(p1);
-	frame *f = GET_CURR_FRAME();
-	slot *e = GET_SLOT(f, var_nbr);
 	blob *b = calloc(1, sizeof(blob));
 	b->ptr = (void*)q->st.m;
 	b->ptr2 = (void*)strdup(C_STR(q, p1));
-	make_dbref(&e->c, b);
-	share_cell(&e->c);
-	return true;
+
+	cell c, v;
+	make_ref(&c, var_nbr, q->st.curr_frame);
+	make_dbref(&v, b);
+	return unify(q, &c, q->st.curr_frame, &v, q->st.curr_frame);
 }
 
 void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type, bool function)
