@@ -5706,7 +5706,7 @@ static bool bif_prolog_load_context_2(query *q)
 
 static bool bif_strip_module_3(query *q)
 {
-	GET_FIRST_ARG(p1,callable);
+	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,atom_or_var);
 	GET_NEXT_ARG(p3,any);
 
