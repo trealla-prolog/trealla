@@ -1803,9 +1803,8 @@ static cell *goal_expansion(parser *p, cell *goal)
 	if (!search_goal_expansion(p->m, goal))
 		return goal;
 
-	if (!CMP_STRING_TO_CSTR(p, goal, "phrase") && !p->consulting) {
+	if (!CMP_STRING_TO_CSTR(p, goal, "phrase") && !p->consulting)
 		return goal;
-	}
 
 	//printf("*** here %s/%u\n", C_STR(p, goal), (goal)->arity);
 	//printf("*** ***  %s/%u\n", C_STR(p, goal+1), (goal+1)->arity);
