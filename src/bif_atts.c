@@ -231,18 +231,20 @@ bool any_attributed(query *q)
 		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
 			continue;
 
-		c = c->attrs;
+		//DUMP_TERM("atts", c->attrs, c->attrs_ctx, 1);
+
+		cell *v = c->attrs;
 		bool any = false;
 
-		while (is_iso_list(c)) {
-			cell *h = c + 1;
+		while (is_iso_list(v)) {
+			cell *h = v + 1;
 
 			//  Ignore \== created by dif/2, but what are they?
 
 			if (!is_op(h))
 				any = true;
 
-			c = c + 1; c += c->nbr_cells;
+			v = v + 1; v += v->nbr_cells;
 		}
 
 		if (!any)
