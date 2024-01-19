@@ -231,6 +231,23 @@ bool any_attributed(query *q)
 		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
 			continue;
 
+		c = c->attrs;
+		bool any = false;
+
+		while (is_iso_list(c)) {
+			cell *h = c + 1;
+
+			//  Ignore \== created by dif/2
+
+			if (!is_op(h))
+				any = true;
+
+			c = c + 1; c += c->nbr_cells;
+		}
+
+		if (!any)
+			continue;
+
 		return true;
 	}
 
