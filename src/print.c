@@ -567,33 +567,35 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		pl_idx head_ctx = c_ctx;
 		slot *e = NULL;
 		uint64_t save_vgen = 0;
-		int both = 0;
+		int both = 0, parens = 0;
 		if (running) DEREF_CHECKED(any1, both, save_vgen, e, e->vgen2, head, head_ctx, q->vgen)
 
 		if ((head == orig_c) && (head_ctx == orig_c_ctx)) {
 			head = c + 1;
 			head_ctx = c_ctx;
 			q->cycle_error = true;
+			SB_sprintf(q->sb, "%s", !is_ref(head) ? C_STR(q, head) : "_");
+		} else {
+			bool special_op = false;
+
+			if (is_interned(head)) {
+				special_op = (
+					!strcmp(C_STR(q, head), ",")
+					|| !strcmp(C_STR(q, head), "|")
+					|| !strcmp(C_STR(q, head), ";")
+					|| !strcmp(C_STR(q, head), ":-")
+					|| !strcmp(C_STR(q, head), "->")
+					|| !strcmp(C_STR(q, head), "*->")
+					|| !strcmp(C_STR(q, head), "-->"));
+			}
+
+			parens = is_compound(head) && special_op;
+			if (parens) {  SB_sprintf(q->sb, "%s", "("); }
+			q->parens = parens;
+			print_term_to_buf_(q, head, head_ctx, running, -1, 0, depth+1);
+			q->parens = false;
 		}
 
-		bool special_op = false;
-
-		if (is_interned(head)) {
-			special_op = (
-				!strcmp(C_STR(q, head), ",")
-				|| !strcmp(C_STR(q, head), "|")
-				|| !strcmp(C_STR(q, head), ";")
-				|| !strcmp(C_STR(q, head), ":-")
-				|| !strcmp(C_STR(q, head), "->")
-				|| !strcmp(C_STR(q, head), "*->")
-				|| !strcmp(C_STR(q, head), "-->"));
-		}
-
-		int parens = is_compound(head) && special_op;
-		if (parens) {  SB_sprintf(q->sb, "%s", "("); }
-		q->parens = parens;
-		print_term_to_buf_(q, head, head_ctx, running, -1, 0, depth+1);
-		q->parens = false;
 		q->cycle_error = false;
 		if (e) e->vgen2 = save_vgen;
 		if (parens) { SB_sprintf(q->sb, "%s", ")"); }
