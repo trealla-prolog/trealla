@@ -225,10 +225,10 @@ bool any_attributed(query *q)
 		const trail *tr = q->trails + i;
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
-		cell *v = deref(q, &e->c, e->c.var_ctx);
-		pl_idx v_ctx = q->latest_ctx;
+		cell *c = deref(q, &e->c, e->c.var_ctx);
+		pl_idx c_ctx = q->latest_ctx;
 
-		if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
+		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
 			continue;
 
 		return true;
