@@ -702,22 +702,6 @@ A possible future extension would be to load a CSV file directly
 in a very efficient manner.
 
 
-Engines (dictionaries)		##EXPERIMENTAL##
-======================
-
-See: https://www.swi-prolog.org/pldoc/man?section=engine-predicates
-
-	engine_create/[3,4]
-	engine_next/2
-	engine_yield/1
-	engine_post/[2,3]
-	engine_fetch/1
-	engine_self/1
-	is_engine/1
-	current_engine/1
-	engine_destroy/1
-
-
 HTTP 1.1
 ========
 
@@ -1064,50 +1048,6 @@ Each such *prolog* instance is thread-safe. Such instances could use
 Unix domain sockets for IPC. See *src/trealla.h* for API.
 
 
-Concurrency (Prolog threads)			##EXPERIMENTAL##
-=============================
-
-Start independent (no shared state) Prolog instances as dedicated
-threads and communicate via fast builtin channels. Note: the database
-is *not* shared. For shared data consider using SQLite.
-
-```
-	pl_thread/3				# pl_thread(-thread,+filename,+options)
-	pl_thread/2				# pl_thread(-thread,+filename)
-	pl_send/2				# pl_send(+thread, @term)
-	pl_recv/2				# pl_recv(-thread, -term)
-```
-
-Where 'options' can be (currently just) *alias(+atom)*.
-
-For example...
-
-```
-	$ cat samples/thread_calc.pl
-	:- initialization(main).
-
-	% At the moment we only do sqrt
-
-	main :-
-		write('Calculator running...'), nl,
-		repeat,
-			pl_recv(Tid, Term),
-			Term = sqrt(X, Y),
-			Y is sqrt(X),
-			pl_send(Tid, Term),
-			fail.
-
-	$ tpl
-	?- pl_thread(_, 'samples/thread_calc.pl', [alias(calc)]).
-	Calculator running...
-	?- Term = sqrt(2, V),
-		pl_send(calc, Term),
-		pl_recv(_, Term).
-	   Term = sqrt(2,1.4142135623731), V = 1.4142135623731.
-	?-
-```
-
-
 Concurrency (linda)							##EXPERIMENTAL##
 ===================
 
@@ -1178,7 +1118,7 @@ For example:
 Concurrency (futures)						##EXPERIMENTAL##
 =====================
 
-Inspiured by [Tau-Prolog](http://tau-prolog.org/documentation#concurrent)
+Inspired by [Tau-Prolog](http://tau-prolog.org/documentation#concurrent)
 futures.
 
 ```
@@ -1207,8 +1147,71 @@ test9(C) :-
 See `samples/testconcurrent.pl`.
 
 
+Concurrency (engines)						##EXPERIMENTAL##
+=====================
+
+Inspired by [SWI-Prolog](https://www.swi-prolog.org/pldoc/man?section=engine-predicates)
+engines.
+
+	engine_create/[3,4]
+	engine_next/2
+	engine_yield/1
+	engine_post/[2,3]
+	engine_fetch/1
+	engine_self/1
+	is_engine/1
+	current_engine/1
+	engine_destroy/1
+
+
+Multi-threading (Prolog threads)			##EXPERIMENTAL##
+================================
+
+Start independent (no shared state) Prolog instances as dedicated
+threads and communicate via fast builtin channels. Note: the database
+is *not* shared. For shared data consider using SQLite.
+
+```
+	pl_thread/3				# pl_thread(-thread,+filename,+options)
+	pl_thread/2				# pl_thread(-thread,+filename)
+	pl_send/2				# pl_send(+thread, @term)
+	pl_recv/2				# pl_recv(-thread, -term)
+```
+
+Where 'options' can be (currently just) *alias(+atom)*.
+
+For example...
+
+```
+	$ cat samples/thread_calc.pl
+	:- initialization(main).
+
+	% At the moment we only do sqrt
+
+	main :-
+		write('Calculator running...'), nl,
+		repeat,
+			pl_recv(Tid, Term),
+			Term = sqrt(X, Y),
+			Y is sqrt(X),
+			pl_send(Tid, Term),
+			fail.
+
+	$ tpl
+	?- pl_thread(_, 'samples/thread_calc.pl', [alias(calc)]).
+	Calculator running...
+	?- Term = sqrt(2, V),
+		pl_send(calc, Term),
+		pl_recv(_, Term).
+	   Term = sqrt(2,1.4142135623731), V = 1.4142135623731.
+	?-
+```
+
+
 Profile
 =======
+
+Why did I put this here?
 
 ```
 	$ time tpl -q -g 'main,statistics(profile,_),halt' -f ~/trealla/samples/chess.pl 2>chess.csv
