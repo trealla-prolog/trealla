@@ -237,7 +237,7 @@ bool any_attributed(query *q)
 		while (is_iso_list(c)) {
 			cell *h = c + 1;
 
-			//  Ignore \== created by dif/2
+			//  Ignore \== created by dif/2, but what are they?
 
 			if (!is_op(h))
 				any = true;
