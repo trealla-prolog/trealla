@@ -39,6 +39,7 @@ extern builtins g_contrib_bifs[];
 extern builtins g_files_bifs[];
 extern builtins g_evaluable_bifs[];
 extern builtins g_tasks_bifs[];
+extern builtins g_maps_bifs[];
 extern builtins g_threads_bifs[];
 
 extern void keyfree(const void *key, const void *val, const void *p);
