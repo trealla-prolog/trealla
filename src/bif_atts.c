@@ -228,10 +228,7 @@ bool any_attributed(query *q)
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		pl_idx c_ctx = q->latest_ctx;
 
-		if (!is_empty(c) || !c->attrs)
-			continue;
-
-		if (!has_vars(q, c->attrs, c->attrs_ctx))
+		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
 			continue;
 
 		return true;
@@ -252,10 +249,7 @@ bool bif_sys_list_attributed_1(query *q)
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		pl_idx c_ctx = q->latest_ctx;
 
-		if (!is_empty(c) || !c->attrs)
-			continue;
-
-		if (!has_vars(q, c->attrs, c->attrs_ctx))
+		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
 			continue;
 
 		cell tmp;
