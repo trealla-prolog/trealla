@@ -489,6 +489,8 @@ static bool copy_vars(query *q, cell *tmp, bool copy_attrs, const cell *from, pl
 		}
 
 		tmp->tmp_attrs = NULL;
+		tmp->flags |= FLAG_VAR_FRESH;
+		tmp->flags |= FLAG_VAR_ANON;
 
 		if (from && (tmp->var_nbr == from->var_nbr) && (tmp->var_ctx == from_ctx)) {
 			tmp->var_nbr = to->var_nbr;
