@@ -611,8 +611,8 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 
 			visit me;
 			me.next = visited;
-			me.c = c;
-			me.c_ctx = c_ctx;
+			me.c = head;
+			me.c_ctx = head_ctx;
 
 			parens = is_compound(head) && special_op;
 			if (parens) {  SB_sprintf(q->sb, "%s", "("); }
