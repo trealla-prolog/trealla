@@ -635,10 +635,12 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		tail = deref(q, tail, tail_ctx);
 		tail_ctx = q->latest_ctx;
 
-		if (has_visited(visited, tail, tail_ctx) || (q->max_depth && (print_depth >= q->max_depth))) {
+		if (has_visited(visited, tail, tail_ctx)
+			|| ((tail == save_c) && (tail_ctx == save_c_ctx))
+			|| (q->max_depth && (print_depth >= q->max_depth))) {
 			SB_sprintf(q->sb, "%s", "|");
 
-			if ((tail_ctx == q->st.curr_frame) && (q->portray_vars || q->do_dump_vars)) {
+			if (q->portray_vars || q->do_dump_vars) {
 				print_variable(q, tail, tail_ctx, running);
 			} else {
 				SB_sprintf(q->sb, "%s", "...");
@@ -696,8 +698,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 
 				if (q->is_dump_vars) {
 					if (!dump_variable(q, save_tail, save_tail_ctx, running))
-						if (!dump_variable(q, save_tail, save_tail_ctx, running))
-							print_variable(q, save_tail, save_tail_ctx, 0);
+						print_variable(q, save_tail, save_tail_ctx, 0);
 				} else
 					print_variable(q, save_tail, save_tail_ctx, 1);
 			} else {
