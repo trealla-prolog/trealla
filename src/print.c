@@ -561,6 +561,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool cons, unsigned print_depth, unsigned depth, visit *visited)
 {
+	visit *save_visited = visited;
 	cell *orig_c = c;
 	pl_idx orig_c_ctx = c_ctx;
 	unsigned print_list = 0;
@@ -585,8 +586,8 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 
 		cell *head = c + 1;
 		pl_idx head_ctx = c_ctx;
-		head  = deref(q, head, head_ctx);
-		head_ctx = q->latest_ctx;
+		if (running) head  = deref(q, head, head_ctx);
+		if (running) head_ctx = q->latest_ctx;
 		uint64_t save_vgen = 0;
 		int parens = 0;
 
@@ -632,8 +633,8 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		pl_idx tail_ctx = c_ctx;
 		cell *save_tail = tail;
 		pl_idx save_tail_ctx = tail_ctx;
-		tail = deref(q, tail, tail_ctx);
-		tail_ctx = q->latest_ctx;
+		if (running) tail = deref(q, tail, tail_ctx);
+		if (running) tail_ctx = q->latest_ctx;
 
 		if (has_visited(visited, tail, tail_ctx)
 			|| ((tail == save_c) && (tail_ctx == save_c_ctx))
@@ -652,11 +653,6 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			break;
 		}
 
-		visit *me = malloc(sizeof(visit));;
-		me->next = visited;
-		me->c = tail;
-		me->c_ctx = tail_ctx;
-		visited = me;
 		size_t tmp_len = 0;
 
 		if (is_interned(tail) && !is_compound(tail)) {
@@ -722,6 +718,11 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			if (is_var(tail)) {
 				print_variable(q, tail, tail_ctx, running);
 			} else {
+				visit *me = malloc(sizeof(visit));;
+				me->next = visited;
+				me->c = tail;
+				me->c_ctx = tail_ctx;
+				visited = me;
 				unsigned specifier = 0;
 				unsigned priority = search_op(q->st.m, C_STR(q, tail), &specifier, false);
 				bool parens = is_infix(tail) && (priority >= 1000);
@@ -737,6 +738,12 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		}
 
 		break;
+	}
+
+	while (visited != save_visited) {
+		visit *tmp = visited;
+		visited = visited->next;
+		free(tmp);
 	}
 }
 
@@ -1051,8 +1058,8 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 			for (c++; arity--; c += c->nbr_cells) {
 				cell *tmp = c;
 				pl_idx tmp_ctx = c_ctx;
-				tmp = deref(q, tmp, tmp_ctx);
-				tmp_ctx = q->latest_ctx;
+				if (running) tmp = deref(q, tmp, tmp_ctx);
+				if (running) tmp_ctx = q->latest_ctx;
 
 				if (has_visited(visited, tmp, tmp_ctx)) {
 					tmp = c;
@@ -1112,8 +1119,8 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		cell *lhs = c + 1;
 		cell *save_lhs = lhs;
 		pl_idx lhs_ctx = c_ctx;
-		lhs = deref(q, lhs, lhs_ctx);
-		lhs_ctx = q->latest_ctx;
+		if (running) lhs = deref(q, lhs, lhs_ctx);
+		if (running) lhs_ctx = q->latest_ctx;
 
 		bool any = false;
 
@@ -1169,8 +1176,8 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		cell *save_rhs = rhs;
 		pl_idx save_rhs_ctx = c_ctx;
 		pl_idx rhs_ctx = c_ctx;
-		rhs = deref(q, rhs, rhs_ctx);
-		rhs_ctx = q->latest_ctx;
+		if (running) rhs = deref(q, rhs, rhs_ctx);
+		if (running) rhs_ctx = q->latest_ctx;
 		bool any = false;
 
 		unsigned my_priority = search_op(q->st.m, src, NULL, true);
@@ -1251,10 +1258,10 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	cell *rhs = lhs + lhs->nbr_cells;
 	cell *save_rhs = rhs;
 	pl_idx rhs_ctx = c_ctx;
-	lhs = deref(q, lhs, lhs_ctx);
-	lhs_ctx = q->latest_ctx;
-	rhs = deref(q, rhs, rhs_ctx);
-	rhs_ctx = q->latest_ctx;
+	if (running) lhs = deref(q, lhs, lhs_ctx);
+	if (running) lhs_ctx = q->latest_ctx;
+	if (running) rhs = deref(q, rhs, rhs_ctx);
+	if (running) rhs_ctx = q->latest_ctx;
 	bool any = false;
 
 	// Print LHS..
