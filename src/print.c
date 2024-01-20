@@ -33,6 +33,15 @@ static bool has_visited(visit *visited, cell *c, pl_idx c_ctx)
 	return false;
 }
 
+static void clear_visited(visit *visited, visit *save_visited)
+{
+	while (visited != save_visited) {
+		visit *tmp = visited;
+		visited = visited->next;
+		free(tmp);
+	}
+}
+
 cell *string_to_chars_list(query *q, cell *p, pl_idx p_ctx)
 {
 	LIST_HANDLER(p);
@@ -740,11 +749,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		break;
 	}
 
-	while (visited != save_visited) {
-		visit *tmp = visited;
-		visited = visited->next;
-		free(tmp);
-	}
+	clear_visited(visited, save_visited);
 }
 
 static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int cons, unsigned print_depth, unsigned depth, visit *visited)
