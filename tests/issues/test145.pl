@@ -3,5 +3,5 @@
 main :-
 	Z = ([[a|Z],X]=[X,[Y|Z]]),
 	Z,
-	writeln(Z).
+	write(Z), nl.
 
