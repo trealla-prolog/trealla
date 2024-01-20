@@ -13,6 +13,14 @@
 #include "parser.h"
 #include "query.h"
 
+typedef struct visit_ visit;
+
+struct visit_ {
+	visit *next;
+	cell *c;
+	pl_idx c_ctx;
+};
+
 cell *string_to_chars_list(query *q, cell *p, pl_idx p_ctx)
 {
 	LIST_HANDLER(p);
@@ -537,9 +545,9 @@ static void print_string_list(query *q, cell *c, pl_idx c_ctx, int running, bool
 	if (!cons) { SB_sprintf(q->sb, "%s", "]"); }
 }
 
-static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int cons, unsigned print_depth, unsigned depth);
+static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int cons, unsigned print_depth, unsigned depth, visit *);
 
-static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool cons, unsigned print_depth, unsigned depth)
+static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool cons, unsigned print_depth, unsigned depth, visit *visited)
 {
 	cell *orig_c = c;
 	pl_idx orig_c_ctx = c_ctx;
@@ -592,7 +600,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			parens = is_compound(head) && special_op;
 			if (parens) {  SB_sprintf(q->sb, "%s", "("); }
 			q->parens = parens;
-			print_term_to_buf_(q, head, head_ctx, running, -1, 0, depth+1);
+			print_term_to_buf_(q, head, head_ctx, running, -1, 0, depth+1, visited);
 			q->parens = false;
 		}
 
@@ -635,7 +643,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 
 			if (strcmp(src, "[]")) {
 				SB_sprintf(q->sb, "%s", "|");
-				print_term_to_buf_(q, tail, tail_ctx, running, true, depth+1, depth+1);
+				print_term_to_buf_(q, tail, tail_ctx, running, true, depth+1, depth+1, visited);
 			}
 		} else if (q->st.m->flags.double_quote_chars && running
 			&& !q->ignore_ops && possible_chars
@@ -698,7 +706,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 				unsigned priority = search_op(q->st.m, C_STR(q, tail), &specifier, false);
 				bool parens = is_infix(tail) && (priority >= 1000);
 				if (parens) { SB_sprintf(q->sb, "%s", "("); }
-				print_term_to_buf_(q, tail, tail_ctx, running, true, depth+1, depth+1);
+				print_term_to_buf_(q, tail, tail_ctx, running, true, depth+1, depth+1, visited);
 				if (parens) { SB_sprintf(q->sb, "%s", ")"); }
 			}
 		}
@@ -726,7 +734,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 	}
 }
 
-static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int cons, unsigned print_depth, unsigned depth)
+static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int cons, unsigned print_depth, unsigned depth, visit *visited)
 {
 	cell *save_c = c;
 	pl_idx save_c_ctx = c_ctx;
@@ -941,7 +949,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	}
 
 	if (is_iso_list(c) && !q->ignore_ops) {
-		print_iso_list(q, c, c_ctx, running, cons > 0, print_depth+1, depth+1);
+		print_iso_list(q, c, c_ctx, running, cons > 0, print_depth+1, depth+1, visited);
 		q->last_thing = WAS_OTHER;
 		return true;
 	}
@@ -1076,7 +1084,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 				if (parens) { SB_sprintf(q->sb, "%s", "("); }
 
 				q->parens = parens;
-				print_term_to_buf_(q, tmp, tmp_ctx, running, 0, depth+1, depth+1);
+				print_term_to_buf_(q, tmp, tmp_ctx, running, 0, depth+1, depth+1, visited);
 				q->parens = false;
 				if (e) e->vgen2 = save_vgen;
 				if (parens) {SB_sprintf(q->sb, "%s", ")"); }
@@ -1113,7 +1121,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 			return true;
 		} else {
 			pl_idx lhs_ctx = running ? q->latest_ctx : 0;
-			print_term_to_buf_(q, lhs, lhs_ctx, running, 0, 0, depth+1);
+			print_term_to_buf_(q, lhs, lhs_ctx, running, 0, 0, depth+1, visited);
 		}
 
 		bool space = (c->val_off == g_minus_s) && (is_number(lhs) || search_op(q->st.m, C_STR(q, lhs), NULL, true));
@@ -1218,7 +1226,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		q->last_thing = WAS_OTHER;
 		if (parens) { SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
 		q->parens = parens;
-		print_term_to_buf_(q, rhs, rhs_ctx, running, 0, 0, depth+1);
+		print_term_to_buf_(q, rhs, rhs_ctx, running, 0, 0, depth+1, visited);
 		q->parens = false;
 		if (parens) { SB_sprintf(q->sb, "%s", ")"); q->last_thing = WAS_OTHER; }
 		return true;
@@ -1272,7 +1280,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	} else {
 		if (lhs_parens) { SB_sprintf(q->sb, "%s", "("); }
 		q->parens = lhs_parens;
-		print_term_to_buf_(q, lhs, lhs_ctx, running, 0, 0, depth+1);
+		print_term_to_buf_(q, lhs, lhs_ctx, running, 0, 0, depth+1, visited);
 		q->parens = false;
 		if (lhs_parens) { SB_sprintf(q->sb, "%s", ")"); }
 	}
@@ -1386,7 +1394,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	} else {
 		if (rhs_parens) { SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
 		q->parens = rhs_parens || space;
-		print_term_to_buf_(q, rhs, rhs_ctx, running, 0, 0, depth+1);
+		print_term_to_buf_(q, rhs, rhs_ctx, running, 0, 0, depth+1, visited);
 		q->parens = false;
 		if (rhs_parens) { SB_sprintf(q->sb, "%s", ")"); q->last_thing = WAS_OTHER; }
 		else if (rhs_is_symbol) { q->last_thing = WAS_SYMBOL; }
@@ -1397,7 +1405,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 bool print_term_to_buf(query *q, cell *c, pl_idx c_ctx, int running, int cons)
 {
-	return print_term_to_buf_(q, c, c_ctx, running, cons, 0, 0);
+	return print_term_to_buf_(q, c, c_ctx, running, cons, 0, 0, NULL);
 }
 
 char *print_canonical_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running)
