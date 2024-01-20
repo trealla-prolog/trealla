@@ -1,4 +1,5 @@
 :- pragma(builtins, [once(true)]).
+:- use_module(library(iso_ext)).
 :- use_module(library(lists)).
 
 expand_term((H --> B), Out) :-
