@@ -595,16 +595,16 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 
 		cell *head = c + 1;
 		pl_idx head_ctx = c_ctx;
+		cell *save_head = head;
+		pl_idx save_head_ctx = head_ctx;
 		if (running) head  = deref(q, head, head_ctx);
 		if (running) head_ctx = q->latest_ctx;
 		uint64_t save_vgen = 0;
 		int parens = 0;
 
 		if (has_visited(visited, head, head_ctx)) {
-			head = c + 1;
-			head_ctx = c_ctx;
 			q->cycle_error = true;
-			SB_sprintf(q->sb, "%s", !is_ref(head) ? C_STR(q, head) : "_");
+			SB_sprintf(q->sb, "%s", !is_ref(save_head) ? C_STR(q, save_head) : "_");
 		} else {
 			bool special_op = false;
 
