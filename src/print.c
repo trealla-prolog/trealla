@@ -604,7 +604,10 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 
 		if (has_visited(visited, head, head_ctx)) {
 			q->cycle_error = true;
-			SB_sprintf(q->sb, "%s", !is_ref(save_head) ? C_STR(q, save_head) : "_");
+			if (is_iso_list(save_head))
+				print_term_to_buf_(q, save_head, save_head_ctx, running, -1, 0, depth+1, visited);
+			else
+				SB_sprintf(q->sb, "%s", !is_ref(save_head) ? C_STR(q, save_head) : "_");
 		} else {
 			bool special_op = false;
 
