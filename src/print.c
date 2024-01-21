@@ -654,7 +654,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			SB_sprintf(q->sb, "%s", "|");
 
 			if (q->portray_vars || q->do_dump_vars) {
-				print_variable(q, save_tail, save_tail_ctx, running);
+				print_variable(q, orig_c, orig_c_ctx, running);
 			} else {
 				SB_sprintf(q->sb, "%s", "...");
 			}
