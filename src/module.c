@@ -1170,9 +1170,9 @@ bool set_op(module *m, const char *name, unsigned specifier, unsigned priority)
 	return true;
 }
 
-static unsigned find_op_internal(module *m, const char *name, unsigned specifier)
+static unsigned find_op_internal(const module *m, const char *name, unsigned specifier)
 {
-	op_table *ptr;
+	const op_table *ptr;
 	sliter *iter = sl_find_key(m->ops, name);
 
 	while (sl_next_key(iter, (void**)&ptr)) {
@@ -1224,9 +1224,9 @@ unsigned find_op(module *m, const char *name, unsigned specifier)
 	return 0;
 }
 
-static unsigned search_op_internal(module *m, const char *name, unsigned *specifier, bool hint_prefix)
+static unsigned search_op_internal(const module *m, const char *name, unsigned *specifier, bool hint_prefix)
 {
-	op_table *ptr;
+	const op_table *ptr;
 	sliter *iter = sl_find_key(m->defops, name);
 
 	while (sl_next_key(iter, (void**)&ptr)) {
