@@ -275,6 +275,35 @@ bool bif_sys_list_attributed_1(query *q)
 		append_list(q, &tmp);
 	}
 
+	for (unsigned i = 0; i < f->initial_slots; i++) {
+		slot *e = GET_SLOT(f, i);
+		cell *c = deref(q, &e->c, e->c.var_ctx);
+		pl_idx c_ctx = q->latest_ctx;
+
+		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
+			continue;
+
+		if (!is_compound(c->attrs))
+			continue;
+
+		//DUMP_TERM("here", c->attrs, c->attrs_ctx, 0);
+
+		collect_vars(q, c->attrs, c->attrs_ctx);
+
+		for (unsigned i = 0; i < q->tab_idx; i++) {
+			const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
+			slot *e = GET_SLOT(f, q->pl->tabs[i].var_nbr);
+			cell *v = deref(q, &e->c, e->c.var_ctx);
+
+			if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
+				continue;
+
+			cell tmp;
+			make_ref(&tmp, q->pl->tabs[i].var_nbr, q->pl->tabs[i].ctx);
+			append_list(q, &tmp);
+		}
+	}
+
 	cell *l = end_list(q);
 	check_heap_error(l);
 	return unify(q, p1, p1_ctx, l, 0);
