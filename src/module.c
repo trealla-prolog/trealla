@@ -800,6 +800,12 @@ void set_meta_predicate_in_db(module *m, cell *c)
 		snprintf(tmpbuf, sizeof(tmpbuf), "meta_predicate(%s)", dst);
 		free(dst);
 		push_property(m, name, arity, tmpbuf);
+
+		if (pr->meta_args) {
+			unshare_cells(pr->meta_args, pr->meta_args->nbr_cells);
+			free(pr->meta_args);
+		}
+
 		pr->is_meta_predicate = true;
 		pr->meta_args = malloc(sizeof(cell)*c->nbr_cells);
 		dup_cells(pr->meta_args, c, c->nbr_cells);
