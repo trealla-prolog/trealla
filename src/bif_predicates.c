@@ -4472,9 +4472,11 @@ char *url_encode(const char *src, int len, char *dstbuf)
 		if (*src == ' ') {
 			*dst++ = '+';
 			src++;
-		} else if (!isalnum(*src) && (*src != '-') && (*src != '_') && (*src != '.') && (*src != '~'))
-			dst += sprintf(dst, "%%%02X", *src++);
-		else
+		} else if (!isalnum(*src) && (*src != '-') && (*src != '_') && (*src != '.') && (*src != '~')) {
+			const unsigned char* src2 = (unsigned char*)src;
+			dst += sprintf(dst, "%%%02X", *src2);
+			src++;
+		} else
 			*dst++ = *src++;
 	}
 
