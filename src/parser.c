@@ -1694,6 +1694,7 @@ static bool dcg_expansion(parser *p)
 
 	if (!tokenize(p2, false, false)) {
 		parser_destroy(p2);
+		query_destroy(q);
 		p->error = true;
 		return false;
 	}
