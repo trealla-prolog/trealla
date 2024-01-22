@@ -290,12 +290,7 @@ void make_dbref(cell *tmp, void *ptr)
 
 void clear_clause(clause *cl)
 {
-	cell *c = cl->cells;
-
-	for (pl_idx i = 0; i < cl->cidx; i++, c++) {
-		unshare_cell(c);
-	}
-
+	unshare_cells(cl->cells, cl->cidx);
 	cl->nbr_vars = cl->nbr_temporaries = 0;
 	cl->cidx = 0;
 }
@@ -326,9 +321,7 @@ void parser_destroy(parser *p)
 {
 	if (!p) return;
 	SB_free(p->token);
-
-	if (p->save_line)
-		free(p->save_line);
+	free(p->save_line);
 
 	if (p->cl) {
 		clear_clause(p->cl);
