@@ -302,7 +302,7 @@ inline static cell *get_raw_arg(const query *q, int n)
 																	\
 		const frame *f = GET_FRAME(cc_ctx);							\
 		slot *e = GET_SLOT(f, cc->var_nbr);							\
-		e->vgen = qvgen - 1;										\
+		e->vgen = 0;												\
 		p = deref(q, cc, cc_ctx);									\
 		p_ctx = q->latest_ctx;										\
 	}
@@ -314,7 +314,7 @@ inline static cell *get_raw_arg(const query *q, int n)
 																	\
 		const frame *f = GET_FRAME(cc_ctx);							\
 		slot *e = GET_SLOT(f, cc->var_nbr);							\
-		e->vgen2 = qvgen - 1;										\
+		e->vgen2 = 0;												\
 		p = deref(q, cc, cc_ctx);									\
 		p_ctx = q->latest_ctx;										\
 	}
@@ -327,7 +327,7 @@ inline static cell *get_raw_arg(const query *q, int n)
 		const frame *f = GET_FRAME(cc_ctx);							\
 		slot *e = GET_SLOT(f, cc->var_nbr);							\
 		if (e->vgen == qvgen) any = true;							\
-		e->vgen = qvgen - 1;										\
+		e->vgen = 0;												\
 		p = deref(q, cc, cc_ctx);									\
 		p_ctx = q->latest_ctx;										\
 	}

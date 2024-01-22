@@ -80,6 +80,8 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 			RESTORE_VAR(c, c_ctx, l, l_ctx, q->vgen);
 		}
 	}
+
+	collect_vars_internal(q, l, l_ctx, depth+1);
 }
 
 static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
@@ -162,7 +164,6 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 				return true;
 
 			if (!is_var(c) && (e->vgen != q->vgen)) {
-				uint32_t save_vgen = e->vgen;
 				e->vgen = q->vgen;
 
 				if (has_vars_internal(q, c, c_ctx, depth+1))
