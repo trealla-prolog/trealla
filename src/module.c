@@ -2176,6 +2176,12 @@ void module_destroy(module *m)
 	if (m->fp)
 		fclose(m->fp);
 
+	while (m->gex_head) {
+		gex *save = m->gex_head;
+		m->gex_head = m->gex_head->next;
+		free(save);
+	}
+
 	sl_destroy(m->index);
 	parser_destroy(m->p);
 	clear_loaded(m);
