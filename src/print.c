@@ -622,11 +622,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 					|| !strcmp(C_STR(q, head), "-->"));
 			}
 
-			visit me;
-			me.next = visited;
-			me.c = head;
-			me.c_ctx = head_ctx;
-
+			visit me = {.next = visited, .c = head, .c_ctx = head_ctx};
 			parens = is_compound(head) && special_op;
 			if (parens) {  SB_sprintf(q->sb, "%s", "("); }
 			q->parens = parens;
@@ -1099,11 +1095,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 				if (parens) { SB_sprintf(q->sb, "%s", "("); }
 
-				visit me;
-				me.next = visited;
-				me.c = tmp;
-				me.c_ctx = tmp_ctx;
-
+				visit me = {.next = visited, .c = tmp, .c_ctx = tmp_ctx};
 				q->parens = parens;
 				print_term_to_buf_(q, tmp, tmp_ctx, running, 0, depth+1, depth+1, &me);
 				q->parens = false;
