@@ -445,7 +445,12 @@ static void destroy_predicate(module *m, predicate *pr)
 
 	sl_destroy(pr->idx2);
 	sl_destroy(pr->idx);
-	free(pr->meta_args);
+
+	if (pr->meta_args) {
+		unshare_cells(pr->meta_args, pr->meta_args->nbr_cells);
+		free(pr->meta_args);
+	}
+
 	free(pr);
 }
 
@@ -2157,9 +2162,9 @@ void module_destroy(module *m)
 	sl_destroy(m->ops);
 
 	for (predicate *pr = m->head; pr;) {
-		predicate *save = pr->next;
-		destroy_predicate(m, pr);
-		pr = save;
+		predicate *save = pr;
+		pr = pr->next;
+		destroy_predicate(m, save);
 	}
 
 	if (m->pl->modules == m) {
