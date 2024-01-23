@@ -521,7 +521,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 			return false;
 
 		if (e1) e1->vgen = save_vgen;
-		if (e2) e2->vgen = save_vgen2;
+		if (e2) e2->vgen2 = save_vgen2;
 #else
 		c1 = deref(q, c1, c1_ctx);
 		c1_ctx = q->latest_ctx;
