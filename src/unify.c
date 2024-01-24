@@ -28,11 +28,10 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 		if (both2)
 			q->is_cyclic2 = true;
 
-		if (q->is_cyclic1 && q->is_cyclic2)
-			break;
-
-		int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
-		if (val) return val;
+		if (!q->is_cyclic1 || !q->is_cyclic2) {
+			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
+			if (val) return val;
+		}
 
 		if (e1) e1->vgen = save_vgen;
 		if (e2) e2->vgen2 = save_vgen2;
