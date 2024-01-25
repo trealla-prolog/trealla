@@ -36,9 +36,8 @@ freeze(X, Goal) :-
 
 :- help(freeze(+var,:callable), [iso(false),desc('Delay the execution of Goal until Var is bound (i.e., is not a variable or attributed variable).')]).
 
-attribute_goal(Var, freeze(Var,Goal)) :-     % interpretation as goal
-	get_atts(Var, frozen(Goal)).
-
 attribute_goals(Var) -->
-	{ attribute_goal(Var, Goal) },
-	[Goal].
+    { get_atts(Var, frozen(Goals)),
+      put_atts(Var, -frozen(_)) },
+    [freeze(Var, Goals)].
+
