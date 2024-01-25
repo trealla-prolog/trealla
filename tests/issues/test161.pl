@@ -1,4 +1,3 @@
-:- use_module(library(freeze)).
 :- initialization(main).
 
 main :-
