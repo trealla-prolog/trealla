@@ -31,8 +31,12 @@ verify_attributes(Var, Other, Goals) :-
 verify_attributes(_, _, []).
 
 freeze(X, Goal) :-
+	var(X),
+	!,
 	put_atts(Fresh, frozen(Goal)),
 	Fresh = X.
+freeze(_, Goal) :-
+	Goal.
 
 :- help(freeze(+var,:callable), [iso(false),desc('Delay the execution of Goal until Var is bound (i.e., is not a variable or attributed variable).')]).
 
