@@ -296,7 +296,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 				continue;
 
 			if (!redo) {
-				int at = last_at = argval ? (last_at+argval) : pos;
+				int at = last_at = argval ? (last_at+argval) : 8; // Why 8, really???
 
 				if (!tabs) {
 					tab_at = pos;
