@@ -259,7 +259,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 		}
 
 		if (ch == '|') {
-			int at = last_at = argval ? argval : pos;
+			int at = last_at = argval ? argval : pos-1;
 
 			if (!argval)
 				last_at -= 1;
@@ -296,7 +296,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 				continue;
 
 			if (!redo) {
-				int at = last_at = argval ? (last_at+argval) : (pos-1);
+				int at = last_at = argval ? (last_at+argval) : 8;
 
 				if (!tabs) {
 					tab_at = pos;
