@@ -2257,7 +2257,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 				cell v;
 				make_atom(&v, g_unify_s);
 				v.flags |= FLAG_BUILTIN;
-				v.bif_ptr = get_fn_ptr(bif_iso_unify_2);
+				//v.bif_ptr = get_fn_ptr(bif_iso_unify_2);
 				v.arity = 2;
 				v.nbr_cells = 3;
 				SET_OP(&v,OP_XFX);
@@ -2265,6 +2265,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 				make_atom(&v, q->pl->tabs[i].val_off);
 				tmp[idx++] = v;
 				make_ref(&v, q->pl->tabs[i].var_nbr, q->st.curr_frame);
+				v.flags |= FLAG_VAR_FRESH;
 				tmp[idx++] = v;
 				done++;
 			}
@@ -2319,7 +2320,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 				cell v;
 				make_atom(&v, g_unify_s);
 				v.flags |= FLAG_BUILTIN;
-				v.bif_ptr = get_fn_ptr(bif_iso_unify_2);
+				//v.bif_ptr = get_fn_ptr(bif_iso_unify_2);
 				v.arity = 2;
 				v.nbr_cells = 3;
 				SET_OP(&v,OP_XFX);
@@ -2327,6 +2328,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 				make_atom(&v, q->pl->tabs[i].val_off);
 				tmp[idx++] = v;
 				make_ref(&v, q->pl->tabs[i].var_nbr, q->st.curr_frame);
+				v.flags |= FLAG_VAR_FRESH;
 				tmp[idx++] = v;
 				done++;
 			}
