@@ -848,8 +848,8 @@ static bool directives(parser *p, cell *d)
 		} else
 			name = C_STR(p, p1);
 
-		if (!strcmp(name, "clpz"))	// TO-DO: why?????
-			p->pl->opt = false;
+		//if (!strcmp(name, "clpz"))
+		//	p->pl->opt = false;
 
 		if (!p->m->make) {
 			module *tmp_m;
