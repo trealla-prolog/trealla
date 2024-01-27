@@ -44,6 +44,8 @@ bool bif_put_atts_2(query *q)
 	slot *e = GET_SLOT(f, p1->var_nbr);
 	cell *c = deref(q, &e->c, e->c.var_ctx);
 	bool is_minus = p2->val_off == g_minus_s;
+	frame *fcurr = GET_CURR_FRAME();
+	fcurr->no_tco = true;
 
 	if (!c->attrs && is_minus)
 		return true;

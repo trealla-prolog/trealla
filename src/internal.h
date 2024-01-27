@@ -527,6 +527,7 @@ struct frame_ {
 	pl_idx prev_offset, hp;
 	pl_idx base, overflow, initial_slots, actual_slots;
 	uint32_t mid;
+	bool no_tco:1;
 };
 
 struct prolog_state_ {
