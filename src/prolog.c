@@ -561,6 +561,7 @@ prolog *pl_create()
 	prolog *pl = calloc(1, sizeof(prolog));
 	if (!pl) return NULL;
 	bool error = false;
+	pl->opt = 1;
 
 	if (!g_tpl_count++)
 		g_init(pl);

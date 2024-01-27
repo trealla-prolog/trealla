@@ -176,8 +176,6 @@ int main(int ac, char *av[], char * envp[])
 		return 1;
 	}
 
-	set_opt(pl, 1);
-
 	for (i = 1; i < ac; i++) {
 		if (!strcmp(av[i], "--")) {
 			g_ac = ac;

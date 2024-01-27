@@ -1,9 +1,10 @@
-run :-
+:- initialization(main).
+:- use_module(library(dif)).
+
+main :-
 	dif([],A),L=A*L,L=L*A,A=a,
 	!,
 	write(nok), nl.
-run :-
+main :-
 	write(ok), nl.
-
-:- initialization(run).
 

@@ -1,4 +1,5 @@
-:-initialization(main).
+:- initialization(main).
+:- use_module(library(freeze)).
 
 main :-
 	freeze(X, (X > 3, X < 5)),

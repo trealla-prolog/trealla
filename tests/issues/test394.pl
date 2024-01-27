@@ -1,3 +1,6 @@
+:- initialization(main).
+:- use_module(library(dif)).
+
 ti(G=Rs) :-
    ti(EsG, EsRG, 3),
    ( G = EsG ; G = EsRG ),
@@ -11,9 +14,7 @@ ti(EsG,(A,B,EDif),N) :-
 
 f((dif(A,B),B=[]*[],A=[]*_)).
 
-run :-
+main :-
 	findall(G-Rs, ti(G=Rs), L),
 	write(L), nl.
-
-:- initialization(run).
 

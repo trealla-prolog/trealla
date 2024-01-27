@@ -1,4 +1,5 @@
 :- initialization(main).
+:- use_module(library(freeze)).
 
 main :-
 	freeze(X,integer(X)),freeze(Z,((freeze(_,I))=Z)),frozen(X,Z), X=1,

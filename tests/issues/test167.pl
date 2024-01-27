@@ -1,4 +1,5 @@
-:-initialization(main).
+:- initialization(main).
+:- use_module(library(freeze)).
 :- use_module(library(when)).
 
 main :-
