@@ -1998,34 +1998,6 @@ static bool bif_iso_copy_term_2(query *q)
 	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 }
 
-static bool bif_copy_term_nat_2(query *q)
-{
-	GET_FIRST_ARG(p1,any);
-	GET_NEXT_ARG(p2,any);
-
-	if (is_var(p1) && is_var(p2))
-		return true;
-
-	if (is_atomic(p1) && is_var(p2))
-		return unify(q, p1, p1_ctx, p2, p2_ctx);
-
-	if (!is_var(p2) && !has_vars(q, p1, p1_ctx))
-		return unify(q, p1, p1_ctx, p2, p2_ctx);
-
-	GET_FIRST_RAW_ARG(p1_raw,any);
-	cell *tmp = deep_copy_to_heap(q, p1_raw, p1_raw_ctx, false);
-	check_heap_error(tmp);
-
-	if (is_var(p1_raw) && is_var(p2)) {
-		cell tmpv;
-		tmpv = *p2;
-		tmpv.var_nbr = q->tab0_varno;
-		unify(q, p2, p2_ctx, &tmpv, q->st.curr_frame);
-	}
-
-	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
-}
-
 static bool bif_iso_functor_3(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -6490,7 +6462,7 @@ builtins g_other_bifs[] =
 	{"format", 3, bif_format_3, "+stream,+string,+list", false, false, BLAH},
 	{"abolish", 2, bif_abolish_2, "+term,+list", false, false, BLAH},
 	{"assert", 1, bif_iso_assertz_1, "+term", false, false, BLAH},
-	{"copy_term_nat", 2, bif_copy_term_nat_2, "+term,-term", false, false, BLAH},
+	{"copy_term_nat", 2, bif_iso_copy_term_2, "+term,-term", false, false, BLAH},
 	{"string", 1, bif_atom_1, "+term,+term", false, false, BLAH},
 	{"atomic_concat", 3, bif_atomic_concat_3, "+atomic,+atomic,?atomic", false, false, BLAH},
 	{"atomic_list_concat", 3, bif_atomic_list_concat_3, "+list,+list,-atomic", false, false, BLAH},
