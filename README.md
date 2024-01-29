@@ -17,7 +17,6 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	Concurrency via tasks / linda / futures / engines (generators)
 	Rational trees ##EXPERIMENTAL##
 	CLP(Z) ##EXPERIMENTAL##
-	Logtalk compatible
 
 Trealla is not WAM-based. It uses tree-walking, structure-sharing and
 deep-binding. Source is byte-code compiled to a flattened AST that is
@@ -249,8 +248,7 @@ testing framework, for the initial push to get serious and for being
 the first to take this work (in it's nascent form) seriously.
 
 Special thanks to [Paulo Moura](https://github.com/pmoura) for his patience
-and sleuthing in the quest for Trealla to run his Logtalk project,
-for his drive towards ISO standardization.
+and sleuthing in the quest for Trealla to run his Logtalk project.
 
 Special thanks to [Markus Triska](https://github.com/triska) for
 driving the use of packed UTF-8 strings for character-lists. For the
