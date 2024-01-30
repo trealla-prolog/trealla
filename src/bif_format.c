@@ -19,16 +19,17 @@ static int format_integer(char *dst, cell *c, int grouping, int sep, int decimal
 		size_t len = mp_int_string_len(&c->val_bigint->ival, radix) - 1;
 		tmpbuf1 = malloc(len+1);
 		check_error(tmpbuf1);
+		mp_int_to_string(&c->val_bigint->ival, radix, tmpbuf1, len+1);
+		len *= 2;
 		tmpbuf2 = malloc(len+1);
 		check_error(tmpbuf2);
-		mp_int_to_string(&c->val_bigint->ival, radix, tmpbuf1, len+1);
 	}
 
 	const char *src = tmpbuf1 + strlen(tmpbuf1) - 1;	// start from back
 	char *dst2 = tmpbuf2;
 	int i = 1, j = 1;
 
-	while (src >= tmpbuf1) {
+	while (src > tmpbuf1) {
 		*dst2++ = *src--;
 
 		if (grouping && !decimals && !(i++ % grouping) && *src)
@@ -476,7 +477,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 
 			print_term_to_buf(q, c, 0, 0, false);
 			len = SB_strlen(q->sb);
-			CHECK_BUF(len*10);
+			CHECK_BUF(len*2+1);
 			len = format_integer(dst, c, noargval?3:argval, '_', 0, 10);
 			break;
 
@@ -488,7 +489,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 
 			print_term_to_buf(q, c, 0, 0, false);
 			len = SB_strlen(q->sb);
-			CHECK_BUF(len*10);
+			CHECK_BUF(len*2+1);
 			len = format_integer(dst, c, 0, ',', noargval?0:argval, 10);
 			break;
 
@@ -500,7 +501,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 
 			print_term_to_buf(q, c, 0, 0, false);
 			len = SB_strlen(q->sb);
-			CHECK_BUF(len*10);
+			CHECK_BUF(len*2+1);
 			len = format_integer(dst, c, 3, ',', noargval?0:argval, 10);
 			break;
 
