@@ -29,7 +29,7 @@ static int format_integer(char *dst, cell *c, int grouping, int sep, int decimal
 	char *dst2 = tmpbuf2;
 	int i = 1, j = 1;
 
-	while (src > tmpbuf1) {
+	while (src >= tmpbuf1) {
 		*dst2++ = *src--;
 
 		if (grouping && !decimals && !(i++ % grouping) && *src)
