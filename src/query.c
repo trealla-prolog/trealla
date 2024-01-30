@@ -580,8 +580,9 @@ static frame *push_frame(query *q, const clause *cl)
 
 	f->initial_slots = f->actual_slots = cl->nbr_vars;
 	f->chgen = ++q->chgen;
-	f->overflow = 0;
 	f->hp = q->st.hp;
+	f->overflow = 0;
+	f->no_tco = false;
 
 	q->st.sp = f->base + cl->nbr_vars;
 	q->st.curr_frame = new_frame;
