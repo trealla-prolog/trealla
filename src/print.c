@@ -649,11 +649,30 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			|| (q->max_depth && (print_depth >= q->max_depth))) {
 			SB_sprintf(q->sb, "%s", "|");
 
+#if 0
+			if (is_var(c+1)) printf("*** c+1 = %u/%u\n", (c+1)->var_nbr, c_ctx);
+			if (is_var(tail)) printf("*** tail = %u/%u\n", tail->var_nbr, tail_ctx);
+			if (is_var(save_tail)) printf("*** save_tail = %u/%u\n", save_tail->var_nbr, save_tail_ctx);
+			if (is_var(save_c)) printf("*** save_c = %u/%u\n", save_c->var_nbr, save_c_ctx);
+			if (is_var(orig_c)) printf("*** orig_c = %u/%u\n", orig_c->var_nbr, orig_c_ctx);
+#endif
+
+			cell v = *(c+1);
+			pl_idx v_ctx = c_ctx;
+
+			if (is_var(c+1)) {
+				v = *(c+1);
+				v_ctx = c_ctx;
+			} else if (is_var(save_tail) && !q->do_dump_vars) {
+				v = *save_tail;
+				v_ctx = save_tail_ctx;
+			} else {
+				v.var_nbr = q->dump_var_nbr;
+				v_ctx = 0;
+			}
+
 			if (q->portray_vars || q->do_dump_vars) {
-				if (save_tail_ctx != 0)
-					;//print_variable(q, save_tail, save_tail_ctx, 0);
-				else
-					print_variable(q, save_c, save_c_ctx, running);
+				print_variable(q, &v, v_ctx, running);
 			} else {
 				SB_sprintf(q->sb, "%s", "...");
 			}

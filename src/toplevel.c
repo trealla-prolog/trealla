@@ -442,6 +442,7 @@ void dump_vars(query *q, bool partial)
 		q->double_quotes = q->pl->def_double_quotes;
 		q->quoted = q->pl->def_quoted ? 1 : 0;
 		q->parens = parens;
+		q->dump_var_nbr = i;
 		e->vgen = ++q->vgen;
 
 		print_term(q, stdout, c, c_ctx, 1);
