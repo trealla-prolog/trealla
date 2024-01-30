@@ -978,7 +978,7 @@ Run...
 Concurrency (tasks)						##EXPERIMENTAL##
 ===================
 
-Trealla is thread-safe, but single-threaded, internally. Cooperative
+Trealla is thread-safe, but single-threaded internally. Cooperative
 multitasking is available in the form of light-weight coroutines that
 run until they yield either explicitly or implicitly (when waiting on
 an event of some kind). They are called a `task` here.
@@ -1027,24 +1027,6 @@ An example:
 	Finished
 	Time elapsed 0.33 secs
 ```
-
-Concurrency (host threads)
-==========================
-
-Multiple* high level *prolog* objects can be created and assigned to
-operating system threads in a C-wrapper program by calling
-
-```c
-	#include "src/trealla.h"
-	prolog *pl = pl_create();
-	pl_consult(pl, filename);
-	pl_eval(pl, expr);
-	etc.
-```
-
-Each such *prolog* instance is thread-safe. Such instances could use
-Unix domain sockets for IPC. See *src/trealla.h* for API.
-
 
 Concurrency (linda)							##EXPERIMENTAL##
 ===================
@@ -1184,7 +1166,7 @@ For example...
 	$ cat samples/thread_calc.pl
 	:- initialization(main).
 
-	% At the moment we only do sqrt
+	% At the moment we only do sqrt here...
 
 	main :-
 		write('Calculator running...'), nl,
