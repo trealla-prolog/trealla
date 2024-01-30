@@ -48,11 +48,13 @@ typedef struct {
 }
 
 #define SB_strlen(pr) (pr##_buf.dst - pr##_buf.buf)
+#define SB_strlen_utf8(pr) strlen_utf8(pr##_buf.buf)
 
 #define SB_truncate(pr,len) {									\
-	if ((len) < SB_strlen(pr) {									\
-		pr##_buf.dst = pr##_buf.buf + (len);					\
-		*pr##_buf.dst = '\0';									\
+	const char *src = pr##_buf.buf;								\
+	for (unsigned i = 0; i < len; i++) {						\
+		int ch = get_char_utf8(&src);							\
+		if (!ch) break;											\
 	}															\
 }
 
