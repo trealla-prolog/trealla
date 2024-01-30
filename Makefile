@@ -152,7 +152,8 @@ endif
 OBJECTS = $(SRCOBJECTS) $(LIBOBJECTS) src/version.o
 
 library/%.c: library/%.pl
-	xxd -i $^ $@
+	echo '#include <stddef.h>' > $@
+	xxd -i $^ >> $@
 
 all: tpl
 
