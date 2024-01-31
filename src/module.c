@@ -1678,6 +1678,8 @@ rule *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell
 	return r;
 }
 
+// Module must be locked to enter here...
+
 bool remove_from_predicate(module *m, predicate *pr, rule *r)
 {
 	if (r->cl.dbgen_erased)
