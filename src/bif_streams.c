@@ -433,13 +433,18 @@ int get_named_stream(prolog *pl, const char *name, size_t len)
 
 int new_stream(prolog *pl)
 {
+	acquire_lock(&pl->guard);
+
 	for (int i = 0; i < MAX_STREAMS; i++) {
 		stream *str = &pl->streams[i];
 
-		if (!str->fp && !str->ignore)
+		if (!str->fp && !str->ignore) {
+			release_lock(&pl->guard);
 			return i;
+		}
 	}
 
+	release_lock(&pl->guard);
 	return -1;
 }
 
