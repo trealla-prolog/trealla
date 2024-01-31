@@ -179,8 +179,8 @@ static bool do_pl_match(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx)
 				if (t->tail == m)
 					t->tail = m->prev;
 
-				free(m);
 				release_lock(&t->guard);
+				free(m);
 				return true;
 			}
 
