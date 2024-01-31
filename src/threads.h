@@ -56,4 +56,25 @@ inline static void release_lock(lock *l)
 #endif
 }
 
+#else
+
+typedef struct {
+} lock;
+
+inline static void init_lock(lock *l)
+{
+}
+
+inline static void deinit_lock(lock *l)
+{
+}
+
+inline static void acquire_lock(lock *l)
+{
+}
+
+inline static void release_lock(lock *l)
+{
+}
+
 #endif
