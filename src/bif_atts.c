@@ -55,8 +55,7 @@ bool bif_put_atts_2(query *q)
 	if ((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s))
 		attr++;
 
-	//if (e->c.attrs || !is_nil(attr))
-		add_trail(q, p1_ctx, p1->var_nbr, c->attrs, c->attrs_ctx);
+	add_trail(q, p1_ctx, p1->var_nbr, c->attrs, c->attrs_ctx);
 
 	if (is_nil(attr)) {
 		e->c.flags = 0;
