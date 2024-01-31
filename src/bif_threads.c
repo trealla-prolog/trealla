@@ -80,8 +80,6 @@ static void resume_thread(pl_thread *t)
 #endif
 }
 
-// NOTE: current implementation allows for queueing 1 item at a time.
-
 static cell *queue_to_chan(unsigned chan, const cell *c, unsigned from_chan)
 {
 	//printf("*** send to chan=%u, nbr_cells=%u\n", chan, c->nbr_cells);
