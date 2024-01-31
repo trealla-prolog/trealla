@@ -177,15 +177,18 @@ static bool do_pl_match(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx)
 					t->head = m->next;
 
 				if (t->tail == m)
-					t->tail = m->next;
+					t->tail = m->prev;
 
 				free(m);
+				release_lock(&t->guard);
 				return true;
 			}
 
 			undo_me(q);
 			m = m->next;
 		}
+
+		release_lock(&t->guard);
 	}
 }
 
