@@ -267,7 +267,7 @@ src/bif_tasks.o: src/bif_tasks.c src/base64.h src/heap.h src/internal.h \
  src/imath/imrat.h src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h \
  src/utf8/utf8.h src/history.h src/library.h src/module.h src/parser.h \
  src/prolog.h src/query.h src/builtins.h src/bif_atts.h
-src/bif_threads.o: src/bif_threads.c src/heap.h src/internal.h \
+src/bif_threads.o: src/bif_threads.c src/threads.h src/heap.h src/internal.h \
  src/trealla.h src/cdebug.h src/stringbuf.h src/imath/imath.h \
  src/imath/imrat.h src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h \
  src/utf8/utf8.h src/history.h src/library.h src/module.h src/parser.h \

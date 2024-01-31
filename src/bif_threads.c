@@ -11,6 +11,7 @@
 #include "parser.h"
 #include "prolog.h"
 #include "query.h"
+#include "threads.h"
 
 #if USE_THREADS
 #ifdef _WIN32
@@ -28,48 +29,6 @@ static void msleep(int ms)
 	nanosleep(&tv, &tv);
 }
 #endif
-
-typedef struct {
-#ifdef _WIN32
-    CRITICAL_SECTION mutex;
-#else
-    pthread_mutex_t mutex;
-#endif
-} lock;
-
-static void init_lock(lock *l)
-{
-#ifdef _WIN32
-    InitializeCriticalSection(&l->mutex);
-#else
-    pthread_mutex_init(&l->mutex, NULL);
-#endif
-}
-
-static void deinit_lock(lock *l)
-{
-#ifndef _WIN32
-    pthread_mutex_destroy(&l->mutex);
-#endif
-}
-
-void acquire_lock(lock *l)
-{
-#ifdef _WIN32
-    EnterCriticalSection(&l->mutex);
-#else
-    pthread_mutex_lock(&l->mutex);
-#endif
-}
-
-void release_lock(lock *l)
-{
-#ifdef _WIN32
-    LeaveCriticalSection(&l->mutex);
-#else
-    pthread_mutex_unlock(&l->mutex);
-#endif
-}
 
 typedef struct msg_ {
 	struct msg_ *prev, *next;
