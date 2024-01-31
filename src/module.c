@@ -1699,12 +1699,14 @@ bool remove_from_predicate(module *m, predicate *pr, rule *r)
 void retract_from_db(module *m, rule *r)
 {
 	predicate *pr = r->owner;
+	acquire_lock(&m->guard);
 
-	if (!remove_from_predicate(m, pr, r))
-		return;
+	if (remove_from_predicate(m, pr, r)) {
+		r->dirty = pr->dirty_list;
+		pr->dirty_list = r;
+	}
 
-	r->dirty = pr->dirty_list;
-	pr->dirty_list = r;
+	release_lock(&m->guard);
 }
 
 static void xref_cell(module *m, clause *cl, cell *c, int last_was_colon, bool is_directive)
@@ -1838,6 +1840,8 @@ module *load_text(module *m, const char *src, const char *filename)
 
 static bool unload_realfile(module *m, const char *filename)
 {
+	acquire_lock(&m->guard);
+
 	for (predicate *pr = m->head; pr; pr = pr->next) {
 		if (pr->filename && strcmp(pr->filename, filename))
 			continue;
@@ -1868,6 +1872,7 @@ static bool unload_realfile(module *m, const char *filename)
 	}
 
 	set_unloaded(m, filename);
+	release_lock(&m->guard);
 	return true;
 }
 
