@@ -47,6 +47,7 @@ typedef uint32_t pl_idx;
 #include "trealla.h"
 #include "cdebug.h"
 #include "stringbuf.h"
+#include "threads.h"
 #include "imath/imath.h"
 #include "imath/imrat.h"
 #include "sre/re.h"
@@ -791,6 +792,7 @@ struct module_ {
 	FILE *fp;
 	skiplist *index, *ops, *defops;
 	loaded_file *loaded_files;
+	lock guard;
 	prolog_flags flags;
 	unsigned id, idx_used, arity;
 	int if_depth;
@@ -824,6 +826,7 @@ struct prolog_ {
 	query *curr_query;
 	skiplist *biftab, *keyval, *help, *fortab;
 	FILE *logfp;
+	lock guard;
 	size_t tabs_size;
 	uint64_t s_last, s_cnt, seed, dbgen;
 	unsigned next_mod_id, def_max_depth, my_chan;

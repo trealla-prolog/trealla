@@ -281,7 +281,7 @@ src/history.o: src/history.c src/internal.h src/trealla.h src/cdebug.h \
  src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h src/history.h \
  src/prolog.h
 src/library.o: src/library.c src/library.h
-src/module.o: src/module.c src/module.h src/internal.h src/trealla.h \
+src/module.o: src/module.c src/threads.h src/module.h src/internal.h src/trealla.h \
  src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
  src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h \
  src/parser.h src/history.h src/library.h src/prolog.h src/query.h \
@@ -299,7 +299,7 @@ src/print.o: src/print.c src/heap.h src/internal.h src/trealla.h src/cdebug.h \
  src/stringbuf.h src/imath/imath.h src/imath/imrat.h src/imath/imath.h \
  src/sre/re.h src/skiplist/skiplist.h src/utf8/utf8.h src/module.h \
  src/network.h src/parser.h src/query.h src/builtins.h
-src/prolog.o: src/prolog.c src/library.h src/module.h src/internal.h \
+src/prolog.o: src/prolog.c src/threads.h src/library.h src/module.h src/internal.h \
  src/trealla.h src/cdebug.h src/stringbuf.h src/imath/imath.h \
  src/imath/imrat.h src/imath/imath.h src/sre/re.h src/skiplist/skiplist.h \
  src/utf8/utf8.h src/parser.h src/prolog.h src/query.h src/builtins.h

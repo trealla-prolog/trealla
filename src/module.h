@@ -38,6 +38,8 @@ void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, u
 void format_template(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const builtins *ptr, bool function, bool alt);
 void push_property(module *m, const char *name, unsigned arity, const char *type);
 void push_template(module *m, const char *name, unsigned arity, const builtins *ptr);
+bool remove_from_predicate(module *m, predicate *pr, rule *r);
+void retract_from_db(module *m, rule *r);
 void make(module *m);
 
 void purge_predicate_dirty_list(predicate *pr);

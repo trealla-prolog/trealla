@@ -11,7 +11,6 @@
 #include "parser.h"
 #include "prolog.h"
 #include "query.h"
-#include "threads.h"
 
 #if USE_THREADS
 #ifdef _WIN32

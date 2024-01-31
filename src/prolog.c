@@ -632,6 +632,7 @@ prolog *pl_create()
 		return pl;
 	}
 
+	init_lock(&pl->guard);
 	pl->user_m->flags.strict_iso = false;
 	pl->curr_m = pl->user_m;
 

@@ -788,7 +788,7 @@ static void clear_streams_properties(query *q)
 		for (rule *r = pr->head; r;) {
 			rule *save = r;
 			r = r->next;
-			retract_from_db(save);
+			retract_from_db(pr->m, save);
 		}
 
 		pr->head = pr->tail = NULL;

@@ -24,7 +24,10 @@ inline static void init_lock(lock *l)
 #ifdef _WIN32
     InitializeCriticalSection(&l->mutex);
 #else
-    pthread_mutex_init(&l->mutex, NULL);
+	pthread_mutexattr_t Attr;
+	pthread_mutexattr_init(&Attr);
+	pthread_mutexattr_settype(&Attr, PTHREAD_MUTEX_RECURSIVE);
+	pthread_mutex_init(&l->mutex, &Attr);
 #endif
 }
 
@@ -40,7 +43,7 @@ inline static void acquire_lock(lock *l)
 #ifdef _WIN32
     EnterCriticalSection(&l->mutex);
 #else
-    pthread_mutex_lock(&l->mutex);
+	pthread_mutex_lock(&l->mutex);
 #endif
 }
 

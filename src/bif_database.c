@@ -215,36 +215,6 @@ void purge_predicate_dirty_list(predicate *pr)
 		printf("*** purge_predicate_dirty_list %u\n", cnt);
 }
 
-bool remove_from_predicate(predicate *pr, rule *r)
-{
-	if (r->cl.dbgen_erased)
-		return false;
-
-	module *m = pr->m;
-	r->cl.dbgen_erased = ++m->pl->dbgen;
-	r->filename = NULL;
-	pr->cnt--;
-
-	if (pr->idx && !pr->cnt && !pr->refcnt) {
-		sl_destroy(pr->idx2);
-		sl_destroy(pr->idx);
-		pr->idx = pr->idx2 = NULL;
-	}
-
-	return true;
-}
-
-void retract_from_db(rule *r)
-{
-	predicate *pr = r->owner;
-
-	if (!remove_from_predicate(pr, r))
-		return;
-
-	r->dirty = pr->dirty_list;
-	pr->dirty_list = r;
-}
-
 bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 {
 	if (!q->retry) {
@@ -270,7 +240,7 @@ bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 		return match;
 
 	rule *r = q->st.r;
-	retract_from_db(r);
+	retract_from_db(r->owner->m, r);
 	bool last_match = (is_retract == DO_RETRACT) && !has_next_key(q);
 	stash_frame(q, &r->cl, last_match);
 	db_log(q, r, LOG_ERASE);
@@ -350,7 +320,7 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 		return throw_error(q, c_orig, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
 	for (rule *r = pr->head; r; r = r->next)
-		retract_from_db(r);
+		retract_from_db(r->owner->m, r);
 
 	if (pr->idx && !pr->cnt) {
 		purge_predicate_dirty_list(pr);
