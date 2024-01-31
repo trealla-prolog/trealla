@@ -1157,6 +1157,7 @@ is *not* shared. For shared data consider using SQLite.
 	pl_send/2				# pl_send(+thread, @term)
 	pl_recv/2				# pl_recv(-thread, -term)
 	pl_peek/2				# pl_peek(-thread, -term)
+	pl_match/2				# pl_match(-thread, +term)
 ```
 
 Where 'options' can be (currently just) *alias(+atom)*.

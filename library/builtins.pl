@@ -608,6 +608,12 @@ pl_send(Tid, Term) :-
 pl_recv(Tid, Term) :-
 	'$pl_recv'(Tid, Term).
 
+pl_peek(Tid, Term) :-
+	'$pl_peek'(Tid, Term).
+
+pl_match(Tid, Term) :-
+	'$pl_match'(Tid, Term).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 

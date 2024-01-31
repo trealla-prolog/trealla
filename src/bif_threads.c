@@ -133,18 +133,102 @@ static bool bif_pl_send_2(query *q)
 	return do_pl_send(q, get_smalluint(p1), p2, p2_ctx);
 }
 
-static bool do_pl_recv(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx, bool peek)
+static bool do_pl_match(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx)
 {
 	pl_thread *t = &g_pl_threads[q->pl->my_chan];
-	uint64_t cnt = 0;
 
-	if (!t->head && peek)
-		return false;
+LOOP:
+
+	uint64_t cnt = 0;
 
 	while (!t->head) {
 		suspend_thread(t, cnt < 1000 ? 0 : cnt < 10000 ? 1 : cnt < 100000 ? 10 : 100);
 		cnt++;
 	}
+
+	//printf("*** recv msg nbr_cells=%u\n", t->head->nbr_cells);
+
+	try_me(q, MAX_ARITY);
+	acquire_lock(&t->guard);
+	msg *m = t->head;
+
+	while (m) {
+		cell *c = m->c;
+
+		for (unsigned i = 0; i < c->nbr_cells; i++) {
+			if (is_ref(&c[i])) {
+				c[i].flags &= ~FLAG_VAR_REF;
+			}
+		}
+
+		cell *tmp = deep_copy_to_heap(q, c, q->st.fp, false);
+		check_heap_error(tmp, release_lock(&t->guard));
+		unshare_cells(c, c->nbr_cells);
+
+		if (unify(q, p1, p1_ctx, tmp, q->st.curr_frame)) {
+			q->curr_chan = m->from_chan;
+
+			if (m->prev)
+				m->prev->next = m->next;
+
+			if (m->next)
+				m->next->prev = m->prev;
+
+			if (t->head == m)
+				t->head = m->next;
+
+			if (t->tail == m)
+				t->tail = m->next;
+
+			free(m);
+			return true;
+		}
+
+		undo_me(q);
+		m = m->next;
+	}
+
+	goto LOOP;
+}
+
+static bool bif_pl_match_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer_or_var);
+	GET_NEXT_ARG(p2,any);
+	unsigned from_chan = 0;
+
+	if (is_integer(p1)) {
+		if (is_negative(p1))
+			return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
+
+		from_chan = get_smalluint(p1);
+
+		if (from_chan >= g_pl_cnt)
+			return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread");
+	}
+
+	pl_thread *t = &g_pl_threads[q->pl->my_chan];
+
+	if (!do_pl_match(q, from_chan, p2, p2_ctx))
+		return false;
+
+	cell tmp;
+	make_uint(&tmp, q->curr_chan);
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool do_pl_recv(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx, bool peek)
+{
+	pl_thread *t = &g_pl_threads[q->pl->my_chan];
+	uint64_t cnt = 0;
+
+	while (!t->head) {
+		suspend_thread(t, cnt < 1000 ? 0 : cnt < 10000 ? 1 : cnt < 100000 ? 10 : 100);
+		cnt++;
+	}
+
+	if (!t->head && peek)
+		return false;
 
 	//printf("*** recv msg nbr_cells=%u\n", t->head->nbr_cells);
 
@@ -339,12 +423,13 @@ static bool bif_pl_thread_set_priority_2(query *q)
 builtins g_threads_bifs[] =
 {
 #if USE_THREADS
-	{"$pl_thread", 2, bif_pl_thread_2, "-integer,+atom", false, false, BLAH},
-	{"$pl_thread_pin_cpu", 2, bif_pl_thread_pin_cpu_2, "+integer,+integer", false, false, BLAH},
-	{"$pl_thread_set_priority", 2, bif_pl_thread_set_priority_2, "+integer,+integer", false, false, BLAH},
-	{"$pl_send", 2, bif_pl_send_2, "+integer,+term", false, false, BLAH},
-	{"$pl_recv", 2, bif_pl_recv_2, "-integer,?term", false, false, BLAH},
-	{"$pl_peek", 2, bif_pl_peek_2, "-integer,?term", false, false, BLAH},
+	{"$pl_thread", 2, bif_pl_thread_2, "-thread,+atom", false, false, BLAH},
+	{"$pl_thread_pin_cpu", 2, bif_pl_thread_pin_cpu_2, "+thread,+integer", false, false, BLAH},
+	{"$pl_thread_set_priority", 2, bif_pl_thread_set_priority_2, "+thread,+integer", false, false, BLAH},
+	{"$pl_send", 2, bif_pl_send_2, "+thread,+term", false, false, BLAH},
+	{"$pl_recv", 2, bif_pl_recv_2, "-thread,?term", false, false, BLAH},
+	{"$pl_peek", 2, bif_pl_peek_2, "-thread,?term", false, false, BLAH},
+	{"$pl_match", 2, bif_pl_match_2, "-thread,+term", false, false, BLAH},
 #endif
 
 	{0}
