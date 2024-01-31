@@ -133,10 +133,13 @@ static bool bif_pl_send_2(query *q)
 	return do_pl_send(q, get_smalluint(p1), p2, p2_ctx);
 }
 
-static bool do_pl_recv(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx)
+static bool do_pl_recv(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx, bool peek)
 {
 	pl_thread *t = &g_pl_threads[q->pl->my_chan];
 	uint64_t cnt = 0;
+
+	if (!t->head && peek)
+		return false;
 
 	while (!t->head) {
 		suspend_thread(t, cnt < 1000 ? 0 : cnt < 10000 ? 1 : cnt < 100000 ? 10 : 100);
@@ -148,13 +151,16 @@ static bool do_pl_recv(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx)
 	acquire_lock(&t->guard);
 	msg *m = t->head;
 
-	if (m->next)
-		m->next->prev = NULL;
+	if (!peek) {
+		if (m->next)
+			m->next->prev = NULL;
 
-	if (t->head == t->tail)
-		t->tail = NULL;
+		if (t->head == t->tail)
+			t->tail = NULL;
 
-	t->head = m->next;
+		t->head = m->next;
+	}
+
 	release_lock(&t->guard);
 
 	cell *c = m->c;
@@ -170,7 +176,10 @@ static bool do_pl_recv(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx)
 	check_heap_error(tmp, release_lock(&t->guard));
 	unshare_cells(c, c->nbr_cells);
 	q->curr_chan = m->from_chan;
-	free(m);
+
+	if (!peek)
+		free(m);
+
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
 
@@ -192,7 +201,33 @@ static bool bif_pl_recv_2(query *q)
 
 	pl_thread *t = &g_pl_threads[q->pl->my_chan];
 
-	if (!do_pl_recv(q, from_chan, p2, p2_ctx))
+	if (!do_pl_recv(q, from_chan, p2, p2_ctx, false))
+		return false;
+
+	cell tmp;
+	make_uint(&tmp, q->curr_chan);
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool bif_pl_peek_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer_or_var);
+	GET_NEXT_ARG(p2,any);
+	unsigned from_chan = 0;
+
+	if (is_integer(p1)) {
+		if (is_negative(p1))
+			return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
+
+		from_chan = get_smalluint(p1);
+
+		if (from_chan >= g_pl_cnt)
+			return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread");
+	}
+
+	pl_thread *t = &g_pl_threads[q->pl->my_chan];
+
+	if (!do_pl_recv(q, from_chan, p2, p2_ctx, true))
 		return false;
 
 	cell tmp;
@@ -309,6 +344,7 @@ builtins g_threads_bifs[] =
 	{"$pl_thread_set_priority", 2, bif_pl_thread_set_priority_2, "+integer,+integer", false, false, BLAH},
 	{"$pl_send", 2, bif_pl_send_2, "+integer,+term", false, false, BLAH},
 	{"$pl_recv", 2, bif_pl_recv_2, "-integer,?term", false, false, BLAH},
+	{"$pl_peek", 2, bif_pl_peek_2, "-integer,?term", false, false, BLAH},
 #endif
 
 	{0}
