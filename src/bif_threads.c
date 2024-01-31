@@ -137,58 +137,56 @@ static bool do_pl_match(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx)
 {
 	pl_thread *t = &g_pl_threads[q->pl->my_chan];
 
-LOOP:
+	while (true) {
+		uint64_t cnt = 0;
 
-	uint64_t cnt = 0;
+		while (!t->head) {
+			suspend_thread(t, cnt < 1000 ? 0 : cnt < 10000 ? 1 : cnt < 100000 ? 10 : 100);
+			cnt++;
+		}
 
-	while (!t->head) {
-		suspend_thread(t, cnt < 1000 ? 0 : cnt < 10000 ? 1 : cnt < 100000 ? 10 : 100);
-		cnt++;
-	}
+		//printf("*** recv msg nbr_cells=%u\n", t->head->nbr_cells);
 
-	//printf("*** recv msg nbr_cells=%u\n", t->head->nbr_cells);
+		try_me(q, MAX_ARITY);
+		acquire_lock(&t->guard);
+		msg *m = t->head;
 
-	try_me(q, MAX_ARITY);
-	acquire_lock(&t->guard);
-	msg *m = t->head;
+		while (m) {
+			cell *c = m->c;
 
-	while (m) {
-		cell *c = m->c;
-
-		for (unsigned i = 0; i < c->nbr_cells; i++) {
-			if (is_ref(&c[i])) {
-				c[i].flags &= ~FLAG_VAR_REF;
+			for (unsigned i = 0; i < c->nbr_cells; i++) {
+				if (is_ref(&c[i])) {
+					c[i].flags &= ~FLAG_VAR_REF;
+				}
 			}
+
+			cell *tmp = deep_copy_to_heap(q, c, q->st.fp, false);
+			check_heap_error(tmp, release_lock(&t->guard));
+			unshare_cells(c, c->nbr_cells);
+
+			if (unify(q, p1, p1_ctx, tmp, q->st.curr_frame)) {
+				q->curr_chan = m->from_chan;
+
+				if (m->prev)
+					m->prev->next = m->next;
+
+				if (m->next)
+					m->next->prev = m->prev;
+
+				if (t->head == m)
+					t->head = m->next;
+
+				if (t->tail == m)
+					t->tail = m->next;
+
+				free(m);
+				return true;
+			}
+
+			undo_me(q);
+			m = m->next;
 		}
-
-		cell *tmp = deep_copy_to_heap(q, c, q->st.fp, false);
-		check_heap_error(tmp, release_lock(&t->guard));
-		unshare_cells(c, c->nbr_cells);
-
-		if (unify(q, p1, p1_ctx, tmp, q->st.curr_frame)) {
-			q->curr_chan = m->from_chan;
-
-			if (m->prev)
-				m->prev->next = m->next;
-
-			if (m->next)
-				m->next->prev = m->prev;
-
-			if (t->head == m)
-				t->head = m->next;
-
-			if (t->tail == m)
-				t->tail = m->next;
-
-			free(m);
-			return true;
-		}
-
-		undo_me(q);
-		m = m->next;
 	}
-
-	goto LOOP;
 }
 
 static bool bif_pl_match_2(query *q)
