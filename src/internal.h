@@ -823,7 +823,6 @@ struct prolog_ {
 	module *modules, *system_m, *user_m, *curr_m, *dcgs;
 	var_item *tabs;
 	parser *p;
-	query *curr_query;
 	skiplist *biftab, *keyval, *help, *fortab;
 	FILE *logfp;
 	lock guard;

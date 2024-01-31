@@ -3922,7 +3922,6 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 		if (yield_time_in_ms > 0)
 			do_yield_at(q, yield_time_in_ms);
 
-		p->pl->curr_query = q;
 		q->p = p;
 		q->do_dump_vars = dump;
 		q->run_init = p->run_init;
