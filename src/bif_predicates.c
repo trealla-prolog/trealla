@@ -2326,6 +2326,17 @@ static bool bif_iso_current_prolog_flag_2(query *q)
 		cell tmp;
 		make_atom(&tmp, q->pl->quiet ? g_false_s : g_true_s);
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+#if USE_THREADS
+	} else if (!CMP_STRING_TO_CSTR(q, p1, "threads")) {
+		cell tmp;
+		make_atom(&tmp, g_true_s);
+		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+#else
+	} else if (!CMP_STRING_TO_CSTR(q, p1, "threads")) {
+		cell tmp;
+		make_atom(&tmp, g_false_s);
+		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+#endif
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "unix")) {
 		cell tmp;
 		make_atom(&tmp, g_true_s);
@@ -6221,6 +6232,11 @@ static void load_flags(query *q)
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "unknown", m->flags.unknown == UNK_ERROR?"error":m->flags.unknown == UNK_WARNING?"warning":m->flags.unknown == UNK_CHANGEABLE?"changeable":"fail");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "encoding", "'UTF-8'");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "unix", "true");
+#if USE_THREADS
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "threads", "true");
+#else
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "threads", "false");
+#endif
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "verbose", q->pl->quiet?"false":"true");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "dialect", "trealla");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "bounded", "false");
