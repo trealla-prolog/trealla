@@ -577,6 +577,7 @@ read_line_to_codes(Stream, Codes) :-
 % This is preliminary:
 
 pl_thread_option_([], _, _, _, _) :- !.
+pl_thread_option_([X|_], _, _, _, _) :- var(X), !, instantiation_error(thread_option).
 pl_thread_option_([alias(Alias)|Rest], Alias, _, _, _) :-
 	!,
 	pl_thread_option_(Rest, _, _, _, _).
@@ -590,7 +591,7 @@ pl_thread_option_([priority(Priority)|Rest], _, _, Priority, _) :-
 	!,
 	pl_thread_option_(Rest, _, _, _, _).
 pl_thread_option_([Name|_], _, _, _, _) :-
-	throw(error(domain_error(thread_property, Name), pl_thread/2)).
+	throw(error(domain_error(thread_option, Name), pl_thread/2)).
 
 pl_thread(Tid, Filename) :-
 	'$pl_thread'(Tid, Filename).
