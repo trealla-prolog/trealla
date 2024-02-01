@@ -522,8 +522,10 @@ static bool bif_pl_thread_sleep_1(query *q)
 static bool bif_pl_thread_yield_0(query *q)
 {
 #ifdef _WIN32
-#else
+#elif 0
 	pthread_yield();
+#else
+	sleep(0);
 #endif
 
 	return true;
