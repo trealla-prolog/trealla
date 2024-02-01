@@ -395,6 +395,7 @@ static void *start_routine_thread_create(pl_thread *t)
 {
 	execute(t->q, t->goal, 16);
 	query_destroy(t->q);
+	t->q = NULL;
 	t->active = false;
     return 0;
 }
@@ -488,13 +489,12 @@ static bool bif_pl_thread_cancel_1(query *q)
 	return false;
 #else
 	pthread_cancel((pthread_t)t->id);
+	query_destroy(t->q);
+#endif
 
-	if (t->q)
-		query_destroy(t->q);
-
+	t->q = NULL;
 	t->active = false;
 	return true;
-#endif
 }
 
 static bool bif_pl_thread_sleep_1(query *q)
