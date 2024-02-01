@@ -1212,8 +1212,6 @@ join_done
 ?-
 ```
 
-The need for the *halt* command is temporary and will be removed in future.
-
 
 Multi-threading (Prolog instances)			##EXPERIMENTAL##
 ==================================
