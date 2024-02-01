@@ -1156,6 +1156,8 @@ For shared data in this case consider using SQLite.
 	pl_thread/2				# pl_thread(-thread,+filename)
 ```
 
+Where 'options' can be (currently just) *alias(+atom)*.
+
 Thread communication via messages. Specify either a
 thread, message queue, or alias:
 
@@ -1164,15 +1166,17 @@ thread, message queue, or alias:
 	pl_msg_recv/2			# pl_msg_recv(-queue, -term)
 	pl_msg_peek/2			# pl_msg_peek(-queue, -term)
 	pl_msg_match/2			# pl_msg_match(-queue, +term)
+```
 
 Create a stand-alone message queue...
 
+```
 	pl_msg_create/2			# pl_msg_create(-queue,+options)
 	pl_msg_create/1			# pl_msg_create(-queue)
 	pl_msg_destroy/1		# pl_msg_destroy(+queue)
 ```
 
-Where 'options' can be (currently just) *alias(+atom)*.
+Where 'options' can be *alias(+atom)*.
 
 For example...
 
@@ -1237,13 +1241,17 @@ thread, message queue, or alias:
 	pl_msg_recv/2			# pl_msg_recv(-queue, -term)
 	pl_msg_peek/2			# pl_msg_peek(-queue, -term)
 	pl_msg_match/2			# pl_msg_match(-queue, +term)
+```
 
 Create a stand-alone message queue...
 
+```
 	pl_msg_create/2			# pl_msg_create(-queue,+options)
 	pl_msg_create/1			# pl_msg_create(-queue)
 	pl_msg_destroy/1		# pl_msg_destroy(+queue)
 ```
+
+Where 'options' can be *alias(+atom)*.
 
 For example...
 
