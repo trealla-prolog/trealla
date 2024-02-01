@@ -110,12 +110,12 @@ static cell *queue_to_chan(unsigned chan, const cell *c, unsigned from_chan)
 static bool do_pl_send(query *q, unsigned chan, cell *p1, pl_idx p1_ctx)
 {
 	if (chan >= g_pl_cnt)
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread");
+		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
 
 	pl_thread *t = &g_pl_threads[chan];
 
-	if (!t->active)
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread");
+	if (!t->active || t->is_mutex_only)
+		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
 
 	check_heap_error(init_tmp_heap(q));
 	const cell *c = deep_clone_to_tmp(q, p1, p1_ctx);
@@ -489,6 +489,10 @@ static bool bif_pl_thread_cancel_1(query *q)
 		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,thread,main");
 
 	pl_thread *t = &g_pl_threads[chan];
+
+	if (t->is_queue_only || t->is_mutex_only)
+		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,not_thread");
+
 	t->q->halt_code = 0;
 	t->q->halt = t->q->error = true;
 
@@ -568,10 +572,6 @@ static bool bif_pl_msg_destroy_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	unsigned chan = get_smalluint(p1);
-
-	if (chan == 0)
-		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,thread,main");
-
 	pl_thread *t = &g_pl_threads[chan];
 
 	if (!t->is_queue_only)
@@ -618,10 +618,6 @@ static bool bif_pl_mutex_destroy_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	unsigned chan = get_smalluint(p1);
-
-	if (chan == 0)
-		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,thread,main");
-
 	pl_thread *t = &g_pl_threads[chan];
 
 	if (!t->is_mutex_only)
@@ -635,14 +631,10 @@ static bool bif_pl_mutex_lock_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	unsigned chan = get_smalluint(p1);
-
-	if (chan == 0)
-		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,thread,main");
-
 	pl_thread *t = &g_pl_threads[chan];
 
 	if (!t->is_mutex_only)
-		return throw_error(q, p1, p1_ctx, "permission_error", "destroy,not_mutex");
+		return throw_error(q, p1, p1_ctx, "permission_error", "lock,not_mutex");
 
 	acquire_lock(&t->guard);
 	return true;
@@ -652,14 +644,10 @@ static bool bif_pl_mutex_unlock_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	unsigned chan = get_smalluint(p1);
-
-	if (chan == 0)
-		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,thread,main");
-
 	pl_thread *t = &g_pl_threads[chan];
 
 	if (!t->is_mutex_only)
-		return throw_error(q, p1, p1_ctx, "permission_error", "destroy,not_mutex");
+		return throw_error(q, p1, p1_ctx, "permission_error", "unlock,not_mutex");
 
 	release_lock(&t->guard);
 	return true;
@@ -678,6 +666,10 @@ static bool bif_pl_thread_pin_cpu_2(query *q)
 
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
+
+	if (t->is_queue_only || t->is_mutex_only)
+		return throw_error(q, p1, p1_ctx, "permission_error", "pin_cpu,not_thread");
+
 	// Do something here
 	return true;
 }
@@ -696,6 +688,10 @@ static bool bif_pl_thread_set_priority_2(query *q)
 	unsigned chan = get_smalluint(p1);
 	int pri = get_smallint(p2);
 	pl_thread *t = &g_pl_threads[chan];
+
+	if (t->is_queue_only || t->is_mutex_only)
+		return throw_error(q, p1, p1_ctx, "permission_error", "set_priority,not_thread");
+
 	// Do something here
 	return true;
 }
