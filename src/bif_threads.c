@@ -41,7 +41,8 @@ typedef struct {
 	cell *goal;
 	msg *head, *tail;
 	unsigned chan;
-	bool active, init;
+	bool init;
+	pl_atomic bool active;
 	lock guard;
 #ifdef _WIN32
     HANDLE id;
@@ -492,17 +493,23 @@ static bool bif_pl_thread_cancel_1(query *q)
 	t->q->halt_code = 0;
 	t->q->halt = t->q->error = true;
 
-	if (t->active)
-		msleep(10);
+	for (int i = 0; i < 1000; i++) {
+		if (!t->active)
+			break;
+
+		msleep(1);
+	}
 
 #ifdef _WIN32
 #else
-	pthread_cancel((pthread_t)t->id);
-	query_destroy(t->q);
+	if (t->active) {
+		pthread_cancel((pthread_t)t->id);
+		query_destroy(t->q);
+	}
 #endif
 
-	t->q = NULL;
 	t->active = false;
+	t->q = NULL;
 	return true;
 }
 
