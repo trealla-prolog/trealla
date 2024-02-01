@@ -637,6 +637,20 @@ pl_msg_send(Tid0, Term) :-
 pl_msg_send(Tid, Term) :-
 	'$pl_msg_send'(Tid, Term).
 
+thread_get_message(Tid0, Term) :-
+	clause('$pl_thread_alias'(Tid0, Tid), _),
+	!,
+	'$thread_get_message'(Tid, Term).
+thread_get_message(Tid, Term) :-
+	'$thread_get_message'(Tid, Term).
+
+thread_peek_message(Tid0, Term) :-
+	clause('$pl_thread_alias'(Tid0, Tid), _),
+	!,
+	'$thread_peek_message'(Tid, Term).
+thread_peek_message(Tid, Term) :-
+	'$thread_peek_message'(Tid, Term).
+
 message_queue_create(Tid) :-
 	'$message_queue_create'(Tid).
 
