@@ -613,6 +613,7 @@ thread_create(Goal, Tid) :-
 
 thread_create(Goal, Tid, Options) :-
 	'$must_be'(Goal, callable, thread_create/3, _),
+	'$must_be'(Options, list, thread_create/3, _),
 	pl_thread_option_(Options, Alias, _Cpu, _Priority, Detached),
 	'$thread_create'((Goal, halt), Tid, Detached),
 	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
