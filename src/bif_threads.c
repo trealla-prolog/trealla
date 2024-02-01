@@ -704,25 +704,25 @@ builtins g_threads_bifs[] =
 	{"$pl_thread_pin_cpu", 2, bif_pl_thread_pin_cpu_2, "+thread,+integer", false, false, BLAH},
 	{"$pl_thread_set_priority", 2, bif_pl_thread_set_priority_2, "+thread,+integer", false, false, BLAH},
 
-	{"$pl_thread_create", 3, bif_pl_thread_create_3, "-thread,+callable,+boolean", false, false, BLAH},
-	{"$pl_thread_cancel", 1, bif_pl_thread_cancel_1, "+thread", false, false, BLAH},
-	{"$pl_thread_join", 2, bif_pl_thread_join_2, "+thread,-integer", false, false, BLAH},
+	{"$thread_create", 3, bif_pl_thread_create_3, "-thread,+callable,+boolean", false, false, BLAH},
+	{"$thread_cancel", 1, bif_pl_thread_cancel_1, "+thread", false, false, BLAH},
+	{"$thread_join", 2, bif_pl_thread_join_2, "+thread,-integer", false, false, BLAH},
 
-	{"pl_thread_sleep", 1, bif_pl_thread_sleep_1, "+integer", false, false, BLAH},
-	{"pl_thread_yield", 0, bif_pl_thread_yield_0, "", false, false, BLAH},
+	{"thread_sleep", 1, bif_pl_thread_sleep_1, "+integer", false, false, BLAH},
+	{"thread_yield", 0, bif_pl_thread_yield_0, "", false, false, BLAH},
 
-	{"$pl_msg_send", 2, bif_pl_send_2, "+thread,+term", false, false, BLAH},
-	{"pl_msg_recv", 2, bif_pl_recv_2, "-thread,?term", false, false, BLAH},
-	{"pl_msg_peek", 2, bif_pl_peek_2, "-thread,?term", false, false, BLAH},
-	{"pl_msg_match", 2, bif_pl_match_2, "-thread,+term", false, false, BLAH},
+	{"$thread_send_message", 2, bif_pl_send_2, "+thread,+term", false, false, BLAH},
+	{"thread_get_message", 2, bif_pl_recv_2, "-thread,?term", false, false, BLAH},
+	{"thread_peek_message", 2, bif_pl_peek_2, "-thread,?term", false, false, BLAH},
+	{"thread_match_message", 2, bif_pl_match_2, "-thread,+term", false, false, BLAH},
 
-	{"$pl_msg_create", 1, bif_pl_msg_create_1, "-thread", false, false, BLAH},
-	{"$pl_msg_destroy", 1, bif_pl_msg_destroy_1, "+thread", false, false, BLAH},
+	{"$message_queue_create", 1, bif_pl_msg_create_1, "-thread", false, false, BLAH},
+	{"$message_queue_destroy", 1, bif_pl_msg_destroy_1, "+thread", false, false, BLAH},
 
-	{"$pl_mutex_create", 1, bif_pl_mutex_create_1, "-thread", false, false, BLAH},
-	{"$pl_mutex_lock", 1, bif_pl_mutex_lock_1, "+thread", false, false, BLAH},
-	{"$pl_mutex_unlock", 1, bif_pl_mutex_unlock_1, "+thread", false, false, BLAH},
-	{"$pl_mutex_destroy", 1, bif_pl_mutex_destroy_1, "+thread", false, false, BLAH},
+	{"$mutex_create", 1, bif_pl_mutex_create_1, "-thread", false, false, BLAH},
+	{"$mutex_lock", 1, bif_pl_mutex_lock_1, "+thread", false, false, BLAH},
+	{"$mutex_unlock", 1, bif_pl_mutex_unlock_1, "+thread", false, false, BLAH},
+	{"$mutex_destroy", 1, bif_pl_mutex_destroy_1, "+thread", false, false, BLAH},
 #endif
 
 	{0}
