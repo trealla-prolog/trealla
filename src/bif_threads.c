@@ -489,7 +489,6 @@ static bool bif_pl_thread_cancel_1(query *q)
 		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,thread,main");
 
 	pl_thread *t = &g_pl_threads[chan];
-
 	t->q->halt_code = 0;
 	t->q->halt = t->q->error = true;
 
