@@ -346,16 +346,17 @@ static bool s_first = true;
 
 static bool bif_pl_thread_2(query *q)
 {
-#ifndef _WIN32
 	if (s_first) {
 		s_first = false;
 		pl_thread *t = &g_pl_threads[0];
 		init_lock(&t->guard);
 		t->active = true;
-		pthread_t tid = pthread_self();
-		t->id = tid;
-	}
+#ifdef _WIN32
+		t->id = GetCurrentThreadID()
+#else
+		t->id = pthread_self();
 #endif
+	}
 
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,atom);
@@ -416,16 +417,17 @@ static void *start_routine_thread_create(pl_thread *t)
 
 static bool bif_thread_create_3(query *q)
 {
-#ifndef _WIN32
 	if (s_first) {
 		s_first = false;
 		pl_thread *t = &g_pl_threads[0];
 		init_lock(&t->guard);
 		t->active = true;
-		pthread_t tid = pthread_self();
-		t->id = tid;
-	}
+#ifdef _WIN32
+		t->id = GetCurrentThreadID()
+#else
+		t->id = pthread_self();
 #endif
+	}
 
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,callable);
@@ -518,13 +520,14 @@ static bool bif_thread_cancel_1(query *q)
 		msleep(1);
 	}
 
-#ifdef _WIN32
-#else
 	if (t->active) {
+#ifdef _WIN32
+		// TO-DO: something
+#else
 		pthread_cancel((pthread_t)t->id);
+#endif
 		query_destroy(t->q);
 	}
-#endif
 
 	t->active = false;
 	t->q = NULL;
@@ -535,18 +538,20 @@ static bool bif_thread_self_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 
-#ifndef _WIN32
 	if (s_first) {
 		s_first = false;
 		pl_thread *t = &g_pl_threads[0];
 		init_lock(&t->guard);
 		t->active = true;
-		pthread_t tid = pthread_self();
-		t->id = tid;
-	}
+#ifdef _WIN32
+		t->id = GetCurrentThreadID()
+#else
+		t->id = pthread_self();
 #endif
+	}
 
 #ifdef _WIN32
+	HANDLE tid = GetCurrentThreadID()
 #else
 	pthread_t tid = pthread_self();
 
@@ -571,16 +576,17 @@ static bool bif_thread_sleep_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 
-#ifndef _WIN32
 	if (s_first) {
 		s_first = false;
 		pl_thread *t = &g_pl_threads[0];
 		init_lock(&t->guard);
 		t->active = true;
-		pthread_t tid = pthread_self();
-		t->id = tid;
-	}
+#ifdef _WIN32
+		t->id = GetCurrentThreadID()
+#else
+		t->id = pthread_self();
 #endif
+	}
 
 	sleep(get_smallint(p1));
 	return true;
@@ -588,16 +594,17 @@ static bool bif_thread_sleep_1(query *q)
 
 static bool bif_thread_yield_0(query *q)
 {
-#ifndef _WIN32
 	if (s_first) {
 		s_first = false;
 		pl_thread *t = &g_pl_threads[0];
 		init_lock(&t->guard);
 		t->active = true;
-		pthread_t tid = pthread_self();
-		t->id = tid;
-	}
+#ifdef _WIN32
+		t->id = GetCurrentThreadID()
+#else
+		t->id = pthread_self();
 #endif
+	}
 
 #ifdef _WIN32
 #elif 0
@@ -611,16 +618,17 @@ static bool bif_thread_yield_0(query *q)
 
 static bool bif_message_queue_create_1(query *q)
 {
-#ifndef _WIN32
 	if (s_first) {
 		s_first = false;
 		pl_thread *t = &g_pl_threads[0];
 		init_lock(&t->guard);
 		t->active = true;
-		pthread_t tid = pthread_self();
-		t->id = tid;
-	}
+#ifdef _WIN32
+		t->id = GetCurrentThreadID()
+#else
+		t->id = pthread_self();
 #endif
+	}
 
 	GET_FIRST_ARG(p1,var);
 	unsigned chan = g_pl_cnt++;
@@ -659,16 +667,17 @@ static bool bif_message_queue_destroy_1(query *q)
 
 static bool bif_mutex_create_1(query *q)
 {
-#ifndef _WIN32
 	if (s_first) {
 		s_first = false;
 		pl_thread *t = &g_pl_threads[0];
 		init_lock(&t->guard);
 		t->active = true;
-		pthread_t tid = pthread_self();
-		t->id = tid;
-	}
+#ifdef _WIN32
+		t->id = GetCurrentThreadID()
+#else
+		t->id = pthread_self();
 #endif
+	}
 
 	GET_FIRST_ARG(p1,var);
 	unsigned chan = g_pl_cnt++;
