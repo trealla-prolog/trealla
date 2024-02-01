@@ -753,8 +753,8 @@ builtins g_threads_bifs[] =
 	{"thread_yield", 0, bif_pl_thread_yield_0, "", false, false, BLAH},
 
 	{"$thread_send_message", 2, bif_thread_send_message_2, "+thread,+term", false, false, BLAH},
-	{"$thread_get_message", 2, bif_thread_get_message_2, "?thread,+term", false, false, BLAH},
-	{"$thread_peek_message", 2, bif_thread_peek_message_2, "?thread,?term", false, false, BLAH},
+	{"$thread_get_message", 2, bif_thread_get_message_2, "+thread,?term", false, false, BLAH},
+	{"$thread_peek_message", 2, bif_thread_peek_message_2, "+thread,?term", false, false, BLAH},
 
 	{"$message_queue_create", 1, bif_pl_msg_create_1, "-thread", false, false, BLAH},
 	{"$message_queue_destroy", 1, bif_pl_msg_destroy_1, "+thread", false, false, BLAH},
