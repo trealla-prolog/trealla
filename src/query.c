@@ -1848,6 +1848,9 @@ void purge_dirty_list(query *q)
 
 void query_destroy(query *q)
 {
+	if (!q)
+		return;
+
 	q->done = true;
 
 	for (page *a = q->heap_pages; a;) {

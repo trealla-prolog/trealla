@@ -485,10 +485,14 @@ static bool bif_pl_thread_cancel_1(query *q)
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
 
+	t->q->halt_code = 0;
+	t->q->halt = t->q->error = true;
+
+	if (t->active)
+		msleep(10);
+
 #ifdef _WIN32
-	return false;
 #else
-	// Pretty evil
 	pthread_cancel((pthread_t)t->id);
 	query_destroy(t->q);
 #endif
