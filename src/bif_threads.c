@@ -483,6 +483,10 @@ static bool bif_pl_thread_cancel_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	unsigned chan = get_smalluint(p1);
+
+	if (chan == 0)
+		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,thread,main");
+
 	pl_thread *t = &g_pl_threads[chan];
 
 	t->q->halt_code = 0;
