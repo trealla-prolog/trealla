@@ -1148,7 +1148,7 @@ Multi-threading (Prolog instances)			##EXPERIMENTAL##
 
 Start independent (no shared state) Prolog instances as dedicated
 threads and communicate via message queues. Each thread has it's own
-message queue associated with. Note: the database is *not* shared.
+message queue associated with it. Note: the database is *not* shared.
 For shared data in this case consider using SQLite.
 
 ```
@@ -1200,7 +1200,7 @@ Multi-threading (Prolog queries)			##EXPERIMENTAL## / ##IN-PROGRESS##
 
 Start independent (shared state) Prolog queries as dedicated
 threads and communicate via message queues. Each thread has it's own
-message queue associated with. Note: the database
+message queue associated with it. Note: the database
 *is* shared.
 
 ```
