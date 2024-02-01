@@ -637,6 +637,24 @@ pl_msg_send(Tid0, Term) :-
 pl_msg_send(Tid, Term) :-
 	'$pl_msg_send'(Tid, Term).
 
+pl_msg_create(Tid) :-
+	'$pl_msg_create'(Tid).
+
+pl_msg_create(Tid, Options) :-
+	pl_thread_option_(Options, Alias, _Cpu, _Priority, _Detached),
+	'$pl_msg_create'(Tid),
+	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
+	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
+	true.
+
+pl_msg_destroy(Tid0) :-
+	clause('$pl_thread_alias'(Tid0, Tid), _),
+	!,
+	'$pl_msg_destroy'(Tid).
+pl_msg_destroy(Tid) :-
+	'$pl_msg_destroy'(Tid).
+
+
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

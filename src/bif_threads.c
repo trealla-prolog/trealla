@@ -41,7 +41,7 @@ typedef struct {
 	cell *goal;
 	msg *head, *tail;
 	unsigned chan;
-	bool init;
+	bool init, is_queue_only;
 	pl_atomic bool active;
 	lock guard;
 #ifdef _WIN32
@@ -529,6 +529,56 @@ static bool bif_pl_thread_yield_0(query *q)
 	return true;
 }
 
+static bool bif_pl_msg_create_1(query *q)
+{
+	static bool s_first = true;
+
+	if (s_first) {
+		s_first = false;
+		pl_thread *t = &g_pl_threads[0];
+		init_lock(&t->guard);
+		t->active = true;
+	}
+
+	GET_FIRST_ARG(p1,var);
+	unsigned chan = g_pl_cnt++;
+	pl_thread *t = &g_pl_threads[chan];
+
+	while (t->active) {
+		chan = g_pl_cnt++ % MAX_PL_THREADS;
+		t = &g_pl_threads[chan];
+	}
+
+	if (!t->init) {
+		init_lock(&t->guard);
+		t->init = true;
+	}
+
+	t->chan = chan;
+	t->active = true;
+	t->is_queue_only = true;
+	cell tmp;
+	make_uint(&tmp, chan);
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool bif_pl_msg_destroy_1(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	unsigned chan = get_smalluint(p1);
+
+	if (chan == 0)
+		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,thread,main");
+
+	pl_thread *t = &g_pl_threads[chan];
+
+	if (!t->is_queue_only)
+		return throw_error(q, p1, p1_ctx, "permission_error", "destroy,thread");
+
+	t->active = false;
+	return true;
+}
+
 static bool bif_pl_thread_pin_cpu_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
@@ -576,13 +626,16 @@ builtins g_threads_bifs[] =
 	{"$pl_thread_cancel", 1, bif_pl_thread_cancel_1, "+thread", false, false, BLAH},
 	{"$pl_thread_join", 2, bif_pl_thread_join_2, "+thread,-integer", false, false, BLAH},
 
-	{"pl_thread_sleep", 0, bif_pl_thread_sleep_1, "+integer", false, false, BLAH},
+	{"pl_thread_sleep", 1, bif_pl_thread_sleep_1, "+integer", false, false, BLAH},
 	{"pl_thread_yield", 0, bif_pl_thread_yield_0, "", false, false, BLAH},
 
 	{"$pl_msg_send", 2, bif_pl_send_2, "+thread,+term", false, false, BLAH},
 	{"pl_msg_recv", 2, bif_pl_recv_2, "-thread,?term", false, false, BLAH},
 	{"pl_msg_peek", 2, bif_pl_peek_2, "-thread,?term", false, false, BLAH},
 	{"pl_msg_match", 2, bif_pl_match_2, "-thread,+term", false, false, BLAH},
+
+	{"$pl_msg_create", 1, bif_pl_msg_create_1, "-thread", false, false, BLAH},
+	{"$pl_msg_destroy", 1, bif_pl_msg_destroy_1, "+thread", false, false, BLAH},
 #endif
 
 	{0}
