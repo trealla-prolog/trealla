@@ -516,6 +516,31 @@ static bool bif_pl_thread_cancel_1(query *q)
 	return true;
 }
 
+static bool bif_pl_thread_self_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+
+#ifdef _WIN32
+#else
+	pthread_t tid = pthread_self();
+
+	for (unsigned i = 0; i < MAX_PL_THREADS; i++) {
+		pl_thread *t = &g_pl_threads[i];
+
+		if (!t->active)
+			continue;
+
+		if (t->id == tid) {
+			cell tmp;
+			make_uint(&tmp, (unsigned)i);
+			return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+		}
+	}
+#endif
+
+	return false;
+}
+
 static bool bif_pl_thread_sleep_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
@@ -708,6 +733,7 @@ builtins g_threads_bifs[] =
 	{"$pl_thread_cancel", 1, bif_pl_thread_cancel_1, "+thread", false, false, BLAH},
 	{"$pl_thread_join", 2, bif_pl_thread_join_2, "+thread,-integer", false, false, BLAH},
 
+	{"pl_thread_self", 1, bif_pl_thread_self_1, "-integer", false, false, BLAH},
 	{"pl_thread_sleep", 1, bif_pl_thread_sleep_1, "+integer", false, false, BLAH},
 	{"pl_thread_yield", 0, bif_pl_thread_yield_0, "", false, false, BLAH},
 
