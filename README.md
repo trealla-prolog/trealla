@@ -1178,6 +1178,18 @@ Create a stand-alone message queue...
 
 Where 'options' can be *alias(+atom)*.
 
+Create a stand-alone mutex...
+
+```
+	pl_mutex_create/2			# pl_mutex_create(-mutex,+options)
+	pl_mutex_create/1			# pl_mutex_create(-mutex)
+	pl_mutex_lock/1				# pl_mutex_lock(-mutex)
+	pl_mutex_unlock/1			# pl_mutex_lock(-mutex)
+	pl_mutex_destroy/1			# pl_mutex_destroy(+mutex)
+```
+
+Where 'options' can be *alias(+atom)*.
+
 For example...
 
 ```
@@ -1225,33 +1237,6 @@ message queue associated with it. Note: the database
 
 Where 'options' can be *alias(+atom)* and/or *detached(+boolean)*
 (the default is *NOT* detached, ie. joinable).
-
-Mutexes *TO-DO*
-
-```
-	... mutexes???
-
-```
-
-Thread communication via messages. Specify either a
-thread, message queue, or alias:
-
-```
-	pl_msg_send/2			# pl_msg_send(+queue, @term)
-	pl_msg_recv/2			# pl_msg_recv(-queue, -term)
-	pl_msg_peek/2			# pl_msg_peek(-queue, -term)
-	pl_msg_match/2			# pl_msg_match(-queue, +term)
-```
-
-Create a stand-alone message queue...
-
-```
-	pl_msg_create/2			# pl_msg_create(-queue,+options)
-	pl_msg_create/1			# pl_msg_create(-queue)
-	pl_msg_destroy/1		# pl_msg_destroy(+queue)
-```
-
-Where 'options' can be *alias(+atom)*.
 
 For example...
 

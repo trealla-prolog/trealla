@@ -655,6 +655,38 @@ pl_msg_destroy(Tid) :-
 	'$pl_msg_destroy'(Tid).
 
 
+pl_mutex_create(Tid) :-
+	'$pl_mutex_create'(Tid).
+
+pl_mutex_create(Tid, Options) :-
+	pl_thread_option_(Options, Alias, _Cpu, _Priority, _Detached),
+	'$pl_mutex_create'(Tid),
+	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
+	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
+	true.
+
+pl_mutex_destroy(Tid0) :-
+	clause('$pl_thread_alias'(Tid0, Tid), _),
+	!,
+	'$pl_mutex_destroy'(Tid).
+pl_mutex_destroy(Tid) :-
+	'$pl_mutex_destroy'(Tid).
+
+pl_mutex_lock(Tid0) :-
+	clause('$pl_thread_alias'(Tid0, Tid), _),
+	!,
+	'$pl_mutex_lock'(Tid).
+pl_mutex_lock(Tid) :-
+	'$pl_mutex_lock'(Tid).
+
+pl_mutex_unlock(Tid0) :-
+	clause('$pl_thread_alias'(Tid0, Tid), _),
+	!,
+	'$pl_mutex_unlock'(Tid).
+pl_mutex_unlock(Tid) :-
+	'$pl_mutex_unlock'(Tid).
+
+
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

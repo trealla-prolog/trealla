@@ -41,7 +41,7 @@ typedef struct {
 	cell *goal;
 	msg *head, *tail;
 	unsigned chan;
-	bool init, is_queue_only;
+	bool init, is_queue_only, is_mutex_only;
 	pl_atomic bool active;
 	lock guard;
 #ifdef _WIN32
@@ -575,9 +575,93 @@ static bool bif_pl_msg_destroy_1(query *q)
 	pl_thread *t = &g_pl_threads[chan];
 
 	if (!t->is_queue_only)
-		return throw_error(q, p1, p1_ctx, "permission_error", "destroy,thread");
+		return throw_error(q, p1, p1_ctx, "permission_error", "destroy,not_queue");
 
 	t->active = false;
+	return true;
+}
+
+static bool bif_pl_mutex_create_1(query *q)
+{
+	static bool s_first = true;
+
+	if (s_first) {
+		s_first = false;
+		pl_thread *t = &g_pl_threads[0];
+		init_lock(&t->guard);
+		t->active = true;
+	}
+
+	GET_FIRST_ARG(p1,var);
+	unsigned chan = g_pl_cnt++;
+	pl_thread *t = &g_pl_threads[chan];
+
+	while (t->active) {
+		chan = g_pl_cnt++ % MAX_PL_THREADS;
+		t = &g_pl_threads[chan];
+	}
+
+	if (!t->init) {
+		init_lock(&t->guard);
+		t->init = true;
+	}
+
+	t->chan = chan;
+	t->active = true;
+	t->is_mutex_only = true;
+	cell tmp;
+	make_uint(&tmp, chan);
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool bif_pl_mutex_destroy_1(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	unsigned chan = get_smalluint(p1);
+
+	if (chan == 0)
+		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,thread,main");
+
+	pl_thread *t = &g_pl_threads[chan];
+
+	if (!t->is_mutex_only)
+		return throw_error(q, p1, p1_ctx, "permission_error", "destroy,not_mutex");
+
+	t->active = false;
+	return true;
+}
+
+static bool bif_pl_mutex_lock_1(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	unsigned chan = get_smalluint(p1);
+
+	if (chan == 0)
+		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,thread,main");
+
+	pl_thread *t = &g_pl_threads[chan];
+
+	if (!t->is_mutex_only)
+		return throw_error(q, p1, p1_ctx, "permission_error", "destroy,not_mutex");
+
+	acquire_lock(&t->guard);
+	return true;
+}
+
+static bool bif_pl_mutex_unlock_1(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	unsigned chan = get_smalluint(p1);
+
+	if (chan == 0)
+		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,thread,main");
+
+	pl_thread *t = &g_pl_threads[chan];
+
+	if (!t->is_mutex_only)
+		return throw_error(q, p1, p1_ctx, "permission_error", "destroy,not_mutex");
+
+	release_lock(&t->guard);
 	return true;
 }
 
@@ -638,6 +722,11 @@ builtins g_threads_bifs[] =
 
 	{"$pl_msg_create", 1, bif_pl_msg_create_1, "-thread", false, false, BLAH},
 	{"$pl_msg_destroy", 1, bif_pl_msg_destroy_1, "+thread", false, false, BLAH},
+
+	{"$pl_mutex_create", 1, bif_pl_mutex_create_1, "-thread", false, false, BLAH},
+	{"$pl_mutex_lock", 1, bif_pl_mutex_lock_1, "+thread", false, false, BLAH},
+	{"$pl_mutex_unlock", 1, bif_pl_mutex_unlock_1, "+thread", false, false, BLAH},
+	{"$pl_mutex_destroy", 1, bif_pl_mutex_destroy_1, "+thread", false, false, BLAH},
 #endif
 
 	{0}
