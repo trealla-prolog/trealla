@@ -554,6 +554,7 @@ static bool bif_thread_self_1(query *q)
 	HANDLE tid = GetCurrentThreadID()
 #else
 	pthread_t tid = pthread_self();
+#endif
 
 	for (unsigned i = 0; i < MAX_PL_THREADS; i++) {
 		pl_thread *t = &g_pl_threads[i];
@@ -567,7 +568,6 @@ static bool bif_thread_self_1(query *q)
 			return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 		}
 	}
-#endif
 
 	return false;
 }
