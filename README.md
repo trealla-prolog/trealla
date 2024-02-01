@@ -1202,7 +1202,7 @@ For example...
 
 ```
 ?- thread_create(Tid, (writeln(thread_hello),sleep(3),
-	writeln(thread_done),halt), [detached(false)]),
+	writeln(thread_done)), [detached(false)]),
 	writeln(joining), thread_join(Tid,Status), writeln(join_done).
 thread_hello
 joining

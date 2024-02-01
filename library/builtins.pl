@@ -612,7 +612,7 @@ thread_create(Tid, Goal) :-
 
 thread_create(Tid, Goal, Options) :-
 	pl_thread_option_(Options, Alias, _Cpu, _Priority, Detached),
-	'$thread_create'(Tid, Goal, Detached),
+	'$thread_create'(Tid, (Goal, halt), Detached),
 	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
 	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
 	%(integer(Cpu) -> '$pl_thread_pin_cpu'(Tid, Cpu) ; true),
