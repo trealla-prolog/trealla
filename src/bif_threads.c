@@ -249,6 +249,17 @@ static bool bif_thread_peek_message_2(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
+static bool bif_thread_send_message_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,any);
+
+	if (is_negative(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
+
+	return do_pl_send(q, get_smalluint(p1), p2, p2_ctx);
+}
+
 static bool do_pl_recv(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx, bool peek)
 {
 	pl_thread *t = &g_pl_threads[q->pl->my_chan];
@@ -741,8 +752,9 @@ builtins g_threads_bifs[] =
 	{"thread_sleep", 1, bif_pl_thread_sleep_1, "+integer", false, false, BLAH},
 	{"thread_yield", 0, bif_pl_thread_yield_0, "", false, false, BLAH},
 
-	{"$thread_get_message", 2, bif_thread_get_message_2, "-thread,+term", false, false, BLAH},
-	{"$thread_peek_message", 2, bif_thread_peek_message_2, "-thread,?term", false, false, BLAH},
+	{"$thread_send_message", 2, bif_thread_send_message_2, "+thread,+term", false, false, BLAH},
+	{"$thread_get_message", 2, bif_thread_get_message_2, "?thread,+term", false, false, BLAH},
+	{"$thread_peek_message", 2, bif_thread_peek_message_2, "?thread,?term", false, false, BLAH},
 
 	{"$message_queue_create", 1, bif_pl_msg_create_1, "-thread", false, false, BLAH},
 	{"$message_queue_destroy", 1, bif_pl_msg_destroy_1, "+thread", false, false, BLAH},

@@ -1168,8 +1168,9 @@ Thread communication via messages. Specify either a
 thread, message queue, or alias:
 
 ```
-	thread_get_message/2		# thread_get_message(-queue, +term)
-	thread_peek_message/2		# thread_peek_message(-queue, -term)
+	thread_send_message/2		# thread_send_message(+queue, +term)
+	thread_get_message/2		# thread_get_message(?queue, +term)
+	thread_peek_message/2		# thread_peek_message(?queue, -term)
 ```
 
 Create a stand-alone message queue...
