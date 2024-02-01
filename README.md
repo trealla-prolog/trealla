@@ -1164,21 +1164,21 @@ message queue associated with it. Note: the database
 Where 'options' can be *alias(+atom)* and/or *detached(+boolean)*
 (the default is *NOT* detached, ie. joinable).
 
-Thread communication via messages. Specify either a
-thread, message queue, or alias:
-
-```
-	thread_send_message/2		# thread_send_message(+queue, +term)
-	thread_get_message/2		# thread_get_message(?queue, +term)
-	thread_peek_message/2		# thread_peek_message(?queue, -term)
-```
-
 Create a stand-alone message queue...
 
 ```
 	message_queue_create/2		# message_queue_create(-queue,+options)
 	message_queue_create/1		# message_queue_create(-queue)
 	message_queue_destroy/1		# message_queue_destroy(+queue)
+```
+
+Thread communication via messages. Specify either a thread,
+message queue, or alias:
+
+```
+	thread_send_message/2		# thread_send_message(+queue, +term)
+	thread_get_message/2		# thread_get_message(?queue, +term)
+	thread_peek_message/2		# thread_peek_message(?queue, -term)
 ```
 
 Where 'options' can be *alias(+atom)*.
