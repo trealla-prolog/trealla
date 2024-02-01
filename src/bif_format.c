@@ -266,8 +266,14 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 			if (!argval)
 				last_at -= 1;
 
-			if (!tabs)
+			if (!tabs) {
+				for (int i = 0; i < argval; i++) {
+					CHECK_BUF(MAX_BYTES_PER_CODEPOINT);
+					dst += put_char_utf8(dst, tab_char);
+				}
+
 				continue;
+			}
 
 			if (!redo) {
 				if (!tabs) {
