@@ -492,7 +492,7 @@ static bool bif_thread_join_2(query *q)
 		return false;
 
 	cell tmp;
-	make_uint(&tmp, (unsigned)(size_t)retval);
+	make_atom(&tmp, g_true_s);
 	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 #endif
 }
