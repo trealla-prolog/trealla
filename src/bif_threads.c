@@ -429,8 +429,8 @@ static bool bif_thread_create_3(query *q)
 #endif
 	}
 
-	GET_FIRST_ARG(p2,callable);
-	GET_NEXT_ARG(p1,var);
+	GET_FIRST_ARG(p1,callable);
+	GET_NEXT_ARG(p2,var);
 	GET_NEXT_ARG(p3,atom_or_var);
 	unsigned chan = g_pl_cnt++;
 	pl_thread *t = &g_pl_threads[chan];
@@ -446,11 +446,11 @@ static bool bif_thread_create_3(query *q)
 	}
 
 	check_heap_error(init_tmp_heap(q));
-	cell *goal = deep_clone_to_tmp(q, p2, p2_ctx);
+	cell *goal = deep_copy_to_tmp(q, p1, p1_ctx, false);
 	check_heap_error(goal);
 	t->q = query_create(q->st.m, false);
 	check_heap_error(t->q);
-	t->goal = deep_copy_to_heap(t->q, goal, 0, false);
+	t->goal = deep_clone_to_heap(t->q, goal, 0);
 	t->chan = chan;
 	t->active = true;
 
@@ -473,7 +473,7 @@ static bool bif_thread_create_3(query *q)
 	msleep(100);
 	cell tmp;
 	make_uint(&tmp, chan);
-	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 }
 
 static bool bif_thread_join_2(query *q)
