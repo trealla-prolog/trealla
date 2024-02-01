@@ -136,7 +136,7 @@ static bool bif_pl_send_2(query *q)
 	return do_pl_send(q, get_smalluint(p1), p2, p2_ctx);
 }
 
-static bool do_pl_match(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx)
+static bool do_pl_match(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx, bool peek)
 {
 	pl_thread *t = &g_pl_threads[q->pl->my_chan];
 
@@ -170,20 +170,22 @@ static bool do_pl_match(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx)
 			if (unify(q, p1, p1_ctx, tmp, q->st.curr_frame)) {
 				q->curr_chan = m->from_chan;
 
-				if (m->prev)
-					m->prev->next = m->next;
+				if (!peek) {
+					if (m->prev)
+						m->prev->next = m->next;
 
-				if (m->next)
-					m->next->prev = m->prev;
+					if (m->next)
+						m->next->prev = m->prev;
 
-				if (t->head == m)
-					t->head = m->next;
+					if (t->head == m)
+						t->head = m->next;
 
-				if (t->tail == m)
-					t->tail = m->prev;
+					if (t->tail == m)
+						t->tail = m->prev;
+					}
 
 				release_lock(&t->guard);
-				free(m);
+				if (!peek) free(m);
 				return true;
 			}
 
@@ -213,7 +215,33 @@ static bool bif_pl_match_2(query *q)
 
 	pl_thread *t = &g_pl_threads[q->pl->my_chan];
 
-	if (!do_pl_match(q, from_chan, p2, p2_ctx))
+	if (!do_pl_match(q, from_chan, p2, p2_ctx, false))
+		return false;
+
+	cell tmp;
+	make_uint(&tmp, q->curr_chan);
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool bif_pl_peek_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer_or_var);
+	GET_NEXT_ARG(p2,any);
+	unsigned from_chan = 0;
+
+	if (is_integer(p1)) {
+		if (is_negative(p1))
+			return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
+
+		from_chan = get_smalluint(p1);
+
+		if (from_chan >= g_pl_cnt)
+			return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread");
+	}
+
+	pl_thread *t = &g_pl_threads[q->pl->my_chan];
+
+	if (!do_pl_match(q, from_chan, p2, p2_ctx, true))
 		return false;
 
 	cell tmp;
@@ -290,32 +318,6 @@ static bool bif_pl_recv_2(query *q)
 	pl_thread *t = &g_pl_threads[q->pl->my_chan];
 
 	if (!do_pl_recv(q, from_chan, p2, p2_ctx, false))
-		return false;
-
-	cell tmp;
-	make_uint(&tmp, q->curr_chan);
-	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-}
-
-static bool bif_pl_peek_2(query *q)
-{
-	GET_FIRST_ARG(p1,integer_or_var);
-	GET_NEXT_ARG(p2,any);
-	unsigned from_chan = 0;
-
-	if (is_integer(p1)) {
-		if (is_negative(p1))
-			return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
-
-		from_chan = get_smalluint(p1);
-
-		if (from_chan >= g_pl_cnt)
-			return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread");
-	}
-
-	pl_thread *t = &g_pl_threads[q->pl->my_chan];
-
-	if (!do_pl_recv(q, from_chan, p2, p2_ctx, true))
 		return false;
 
 	cell tmp;
@@ -729,26 +731,26 @@ builtins g_threads_bifs[] =
 	{"$pl_thread_pin_cpu", 2, bif_pl_thread_pin_cpu_2, "+thread,+integer", false, false, BLAH},
 	{"$pl_thread_set_priority", 2, bif_pl_thread_set_priority_2, "+thread,+integer", false, false, BLAH},
 
-	{"$pl_thread_create", 3, bif_pl_thread_create_3, "-thread,+callable,+boolean", false, false, BLAH},
-	{"$pl_thread_cancel", 1, bif_pl_thread_cancel_1, "+thread", false, false, BLAH},
-	{"$pl_thread_join", 2, bif_pl_thread_join_2, "+thread,-integer", false, false, BLAH},
+	{"$thread_create", 3, bif_pl_thread_create_3, "-thread,+callable,+boolean", false, false, BLAH},
+	{"$thread_cancel", 1, bif_pl_thread_cancel_1, "+thread", false, false, BLAH},
+	{"$thread_join", 2, bif_pl_thread_join_2, "+thread,-integer", false, false, BLAH},
 
-	{"pl_thread_self", 1, bif_pl_thread_self_1, "-integer", false, false, BLAH},
-	{"pl_thread_sleep", 1, bif_pl_thread_sleep_1, "+integer", false, false, BLAH},
-	{"pl_thread_yield", 0, bif_pl_thread_yield_0, "", false, false, BLAH},
+	{"thread_self", 1, bif_pl_thread_self_1, "-integer", false, false, BLAH},
+	{"thread_sleep", 1, bif_pl_thread_sleep_1, "+integer", false, false, BLAH},
+	{"thread_yield", 0, bif_pl_thread_yield_0, "", false, false, BLAH},
 
 	{"$pl_msg_send", 2, bif_pl_send_2, "+thread,+term", false, false, BLAH},
 	{"pl_msg_recv", 2, bif_pl_recv_2, "-thread,?term", false, false, BLAH},
-	{"pl_msg_peek", 2, bif_pl_peek_2, "-thread,?term", false, false, BLAH},
-	{"pl_msg_match", 2, bif_pl_match_2, "-thread,+term", false, false, BLAH},
+	{"thread_peek_message", 2, bif_pl_peek_2, "-thread,?term", false, false, BLAH},
+	{"thread_get_message", 2, bif_pl_match_2, "-thread,+term", false, false, BLAH},
 
-	{"$pl_msg_create", 1, bif_pl_msg_create_1, "-thread", false, false, BLAH},
-	{"$pl_msg_destroy", 1, bif_pl_msg_destroy_1, "+thread", false, false, BLAH},
+	{"$message_queue_create", 1, bif_pl_msg_create_1, "-thread", false, false, BLAH},
+	{"$message_queue_destroy", 1, bif_pl_msg_destroy_1, "+thread", false, false, BLAH},
 
-	{"$pl_mutex_create", 1, bif_pl_mutex_create_1, "-thread", false, false, BLAH},
-	{"$pl_mutex_lock", 1, bif_pl_mutex_lock_1, "+thread", false, false, BLAH},
-	{"$pl_mutex_unlock", 1, bif_pl_mutex_unlock_1, "+thread", false, false, BLAH},
-	{"$pl_mutex_destroy", 1, bif_pl_mutex_destroy_1, "+thread", false, false, BLAH},
+	{"$mutex_create", 1, bif_pl_mutex_create_1, "-thread", false, false, BLAH},
+	{"$mutex_lock", 1, bif_pl_mutex_lock_1, "+thread", false, false, BLAH},
+	{"$mutex_unlock", 1, bif_pl_mutex_unlock_1, "+thread", false, false, BLAH},
+	{"$mutex_destroy", 1, bif_pl_mutex_destroy_1, "+thread", false, false, BLAH},
 #endif
 
 	{0}
