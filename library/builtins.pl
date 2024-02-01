@@ -616,9 +616,15 @@ thread_create(Goal, Tid, Options) :-
 	'$must_be'(Goal, callable, thread_create/3, _),
 	'$must_be'(Options, list, thread_create/3, _),
 	pl_thread_option_(Options, Alias, _Cpu, _Priority, Detached),
-	Goal0 = (Goal, halt),
-	'$thread_create'(Goal0, Tid, Detached),
+	(atom(Alias) ->
+		(clause('$pl_thread_alias'(Alias, _), _) ->
+			throw(error(permission_error(create,thread,alias(Alias))))
+			; true
+		),
+		Goal0 = (Goal, sleep(1), retractall('$pl_thread_alias'(Alias, _)), halt)
+	;	Goal0 = (Goal, halt)),
 	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
+	'$thread_create'(Goal0, Tid, Detached),
 	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
 	%(integer(Cpu) -> '$pl_thread_pin_cpu'(Tid, Cpu) ; true),
 	%(integer(Priority) -> '$pl_thread_set_priority'(Tid, Priority) ; true),
