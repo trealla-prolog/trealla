@@ -429,8 +429,8 @@ static bool bif_thread_create_3(query *q)
 #endif
 	}
 
-	GET_FIRST_ARG(p1,var);
-	GET_NEXT_ARG(p2,callable);
+	GET_FIRST_ARG(p2,callable);
+	GET_NEXT_ARG(p1,var);
 	GET_NEXT_ARG(p3,atom_or_var);
 	unsigned chan = g_pl_cnt++;
 	pl_thread *t = &g_pl_threads[chan];

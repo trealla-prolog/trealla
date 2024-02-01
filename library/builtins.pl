@@ -604,15 +604,17 @@ pl_thread(Tid, Filename, Options) :-
 	%(integer(Priority) -> '$pl_thread_set_priority'(Tid, Priority) ; true),
 	true.
 
-:- meta_predicate(thread_create(-,0)).
-:- meta_predicate(thread_create(-,0,+)).
+:- meta_predicate(thread_create(0,-)).
+:- meta_predicate(thread_create(0,-,?)).
 
-thread_create(Tid, Goal) :-
-	'$thread_create'(Tid, Goal, false).
+thread_create(Goal, Tid) :-
+	'$must_be'(Goal, callable, thread_create/3, _),
+	'$thread_create'(Goal, Tid, false).
 
-thread_create(Tid, Goal, Options) :-
+thread_create(Goal, Tid, Options) :-
+	'$must_be'(Goal, callable, thread_create/3, _),
 	pl_thread_option_(Options, Alias, _Cpu, _Priority, Detached),
-	'$thread_create'(Tid, (Goal, halt), Detached),
+	'$thread_create'((Goal, halt), Tid, Detached),
 	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
 	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
 	%(integer(Cpu) -> '$pl_thread_pin_cpu'(Tid, Cpu) ; true),

@@ -1152,8 +1152,8 @@ message queue associated with it. Note: the database
 *is* shared.
 
 ```
-	thread_create/3		# thread_create(-thread,+callable,+options)
-	thread_create/2		# thread_create(-thread,+callable)
+	thread_create/3		# thread_create(+callable,-thread,+options)
+	thread_create/2		# thread_create(+callable,-thread)
 	thread_join/2		# thread_join(+thread, -integer)
 	thread_cancel/1		# thread_cancel(+thread)
 	thread_self/1		# thread_self(-thread)
@@ -1201,8 +1201,9 @@ Where 'options' can be *alias(+atom)*.
 For example...
 
 ```
-?- thread_create(Tid, (writeln(thread_hello),sleep(3),
-	writeln(thread_done)), [detached(false)]),
+?- thread_create(
+		(writeln(thread_hello),sleep(3),writeln(thread_done)),
+		Tid, [detached(false)]),
 	writeln(joining), thread_join(Tid,Status), writeln(join_done).
 thread_hello
 joining
