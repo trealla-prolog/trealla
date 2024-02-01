@@ -1159,10 +1159,10 @@ For shared data in this case consider using SQLite.
 Thread communication via message queues:
 
 ```
-	pl_send/2				# pl_send(+thread, @term)
-	pl_recv/2				# pl_recv(-thread, -term)
-	pl_peek/2				# pl_peek(-thread, -term)
-	pl_match/2				# pl_match(-thread, +term)
+	pl_msg_send/2				# pl_msg_send(+thread, @term)
+	pl_msg_recv/2				# pl_msg_recv(-thread, -term)
+	pl_msg_peek/2				# pl_msg_peek(-thread, -term)
+	pl_msg_match/2				# pl_msg_match(-thread, +term)
 ```
 
 Where 'options' can be (currently just) *alias(+atom)*.
@@ -1178,18 +1178,18 @@ For example...
 	main :-
 		write('Calculator running...'), nl,
 		repeat,
-			pl_recv(Tid, Term),
+			pl_msg_recv(Tid, Term),
 			Term = sqrt(X, Y),
 			Y is sqrt(X),
-			pl_send(Tid, Term),
+			pl_msg_send(Tid, Term),
 			fail.
 
 	$ tpl
 	?- pl_thread(_, 'samples/thread_calc.pl', [alias(calc)]).
 	Calculator running...
 	?- Term = sqrt(2, V),
-		pl_send(calc, Term),
-		pl_recv(_, Term).
+		pl_msg_send(calc, Term),
+		pl_msg_recv(_, Term).
 	   Term = sqrt(2,1.4142135623731), V = 1.4142135623731.
 	?-
 ```
@@ -1225,16 +1225,18 @@ Mutexes *TO-DO*
 Thread communication via message queues:
 
 ```
-	pl_send/2				# pl_send(+thread, @term)
-	pl_recv/2				# pl_recv(-thread, -term)
-	pl_peek/2				# pl_peek(-thread, -term)
-	pl_match/2				# pl_match(-thread, +term)
+	pl_msg_send/2			# pl_msg_send(+thread, @term)
+	pl_msg_recv/2			# pl_msg_recv(-thread, -term)
+	pl_msg_peek/2			# pl_msg_peek(-thread, -term)
+	pl_msg_match/2			# pl_msg_match(-thread, +term)
 ```
 
 For example...
 
 ```
-?- pl_thread_create(Tid, (writeln(thread_hello),sleep(3),writeln(thread_done),halt), [detached(false)]), writeln(joining), pl_thread_join(Tid,Status), writeln(join_done).
+?- pl_thread_create(Tid, (writeln(thread_hello),sleep(3),
+	writeln(thread_done),halt), [detached(false)]),
+	writeln(joining), pl_thread_join(Tid,Status), writeln(join_done).
 thread_hello
 joining
 thread_done

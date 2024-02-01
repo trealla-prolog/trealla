@@ -627,15 +627,15 @@ pl_thread_cancel(Tid0) :-
 	clause('$pl_thread_alias'(Tid0, Tid), _),
 	!,
 	'$pl_thread_cancel'(Tid).
-pl_thread_cancel(Tid, Status) :-
+pl_thread_cancel(Tid) :-
 	'$pl_thread_cancel'(Tid).
 
-pl_send(Tid0, Term) :-
+pl_msg_send(Tid0, Term) :-
 	clause('$pl_thread_alias'(Tid0, Tid), _),
 	!,
-	'$pl_send'(Tid, Term).
-pl_send(Tid, Term) :-
-	'$pl_send'(Tid, Term).
+	'$pl_msg_send'(Tid, Term).
+pl_msg_send(Tid, Term) :-
+	'$pl_msg_send'(Tid, Term).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
