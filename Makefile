@@ -1,10 +1,11 @@
 GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
 
 CFLAGS = -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' \
-	-std=gnu99 -O3 $(OPT) -D_GNU_SOURCE \
+	-std=gnu99 \
+	-O3 $(OPT) -D_GNU_SOURCE \
 	-Wall -Wextra \
-	-Wno-unused-parameter \
 	-Wno-deprecated-declarations \
+	-Wno-unused-parameter \
 	-Wno-unused-function \
 	-Wno-unused-variable
 LDFLAGS = -L/usr/local/lib -lm

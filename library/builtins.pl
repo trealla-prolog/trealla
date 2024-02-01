@@ -571,32 +571,57 @@ read_line_to_codes(Stream, Codes) :-
 
 :- help(read_line_to_codes(+stream,?list), [iso(false)]).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+
 % This is preliminary:
 
-process_thread_option_([], _, _, _, _) :- !.
-process_thread_option_([alias(Alias)|Rest], Alias, _, _, _) :-
+pl_thread_option_([], _, _, _, _) :- !.
+pl_thread_option_([alias(Alias)|Rest], Alias, _, _, _) :-
 	!,
-	process_thread_option_(Rest, _, _, _, _).
-process_thread_option_([cpu(Cpu)|Rest], _, Cpu, _, _) :-
+	pl_thread_option_(Rest, _, _, _, _).
+pl_thread_option_([detached(Detached)|Rest], _, _, _, Detached) :-
 	!,
-	process_thread_option_(Rest, _, _, _, _).
-process_thread_option_([priority(Priority)|Rest], _, _, Priority, _) :-
+	pl_thread_option_(Rest, _, _, _, _).
+pl_thread_option_([cpu(Cpu)|Rest], _, Cpu, _, _) :-
 	!,
-	process_thread_option_(Rest, _, _, _, _).
-process_thread_option_([Name|_], _, _, _, _) :-
+	pl_thread_option_(Rest, _, _, _, _).
+pl_thread_option_([priority(Priority)|Rest], _, _, Priority, _) :-
+	!,
+	pl_thread_option_(Rest, _, _, _, _).
+pl_thread_option_([Name|_], _, _, _, _) :-
 	throw(error(domain_error(thread_property, Name), pl_thread/2)).
 
 pl_thread(Tid, Filename) :-
 	'$pl_thread'(Tid, Filename).
 
 pl_thread(Tid, Filename, Options) :-
-	process_thread_option_(Options, Alias, _Cpu, _Priority, _Spare),
+	pl_thread_option_(Options, Alias, _Cpu, _Priority, _Detached),
 	'$pl_thread'(Tid, Filename),
 	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
 	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
 	%(integer(Cpu) -> '$pl_thread_pin_cpu'(Tid, Cpu) ; true),
 	%(integer(Priority) -> '$pl_thread_set_priority'(Tid, Priority) ; true),
 	true.
+
+pl_thread_create(Tid, Goal) :-
+	'$pl_thread_create'(Tid, Goal, false).
+
+pl_thread_create(Tid, Goal, Options) :-
+	pl_thread_option_(Options, Alias, _Cpu, _Priority, Detached),
+	'$pl_thread_create'(Tid, Goal, Detached),
+	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
+	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
+	%(integer(Cpu) -> '$pl_thread_pin_cpu'(Tid, Cpu) ; true),
+	%(integer(Priority) -> '$pl_thread_set_priority'(Tid, Priority) ; true),
+	true.
+
+pl_thread_join(Tid0, Status) :-
+	clause('$pl_thread_alias'(Tid0, Tid), _),
+	!,
+	'$pl_thread_join'(Tid, Status).
+pl_thread_join(Tid, Status) :-
+	'$pl_thread_join'(Tid, Status).
 
 pl_send(Tid0, Term) :-
 	clause('$pl_thread_alias'(Tid0, Tid), _),
@@ -613,6 +638,9 @@ pl_peek(Tid, Term) :-
 
 pl_match(Tid, Term) :-
 	'$pl_match'(Tid, Term).
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %

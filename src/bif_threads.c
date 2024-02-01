@@ -37,9 +37,11 @@ typedef struct msg_ {
 
 typedef struct {
 	const char *filename;
+	query *q;
+	cell *goal;
 	msg *head, *tail;
 	unsigned chan;
-	bool active;
+	bool active, init;
 	lock guard;
 #ifdef _WIN32
     HANDLE id;
@@ -179,8 +181,8 @@ static bool do_pl_match(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx)
 				if (t->tail == m)
 					t->tail = m->prev;
 
-				free(m);
 				release_lock(&t->guard);
+				free(m);
 				return true;
 			}
 
@@ -320,11 +322,10 @@ static bool bif_pl_peek_2(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
-static void *start_routine(pl_thread *t)
+static void *start_routine_thread(pl_thread *t)
 {
 	prolog *pl = pl_create();
 	ensure(pl);
-	init_lock(&t->guard);
 	pl->my_chan = t->chan;
 	pl_consult(pl, t->filename);
 	t->active = false;
@@ -362,6 +363,11 @@ static bool bif_pl_thread_2(query *q)
 		t = &g_pl_threads[chan];
 	}
 
+	if (!t->init) {
+		init_lock(&t->guard);
+		t->init = true;
+	}
+
 	t->active = true;
 	t->filename = filename;
 	t->chan = chan;
@@ -371,18 +377,105 @@ static bool bif_pl_thread_2(query *q)
     sa.nLength = sizeof(sa);
     sa.lpSecurityDescriptor = 0;
     sa.bInheritHandle = 0;
-    t->id = (void*)_beginthreadex(&sa, 0, (void*)start_routine, (void*)t, 0, NULL);
+    t->id = (void*)_beginthreadex(&sa, 0, (void*)start_routine_thread, (void*)t, 0, NULL);
 #else
     pthread_attr_t sa;
     pthread_attr_init(&sa);
     pthread_attr_setdetachstate(&sa, PTHREAD_CREATE_DETACHED);
-    pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine, (void*)t);
+    pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread, (void*)t);
 #endif
 
 	msleep(100);
 	cell tmp;
 	make_uint(&tmp, chan);
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+static void *start_routine_thread_create(pl_thread *t)
+{
+	execute(t->q, t->goal, 16);
+	query_destroy(t->q);
+	t->active = false;
+    return 0;
+}
+
+static bool bif_pl_thread_create_3(query *q)
+{
+	static bool s_first = true;
+
+	if (s_first) {
+		s_first = false;
+		pl_thread *t = &g_pl_threads[0];
+		init_lock(&t->guard);
+		t->active = true;
+	}
+
+	GET_FIRST_ARG(p1,var);
+	GET_NEXT_ARG(p2,callable);
+	GET_NEXT_ARG(p3,atom_or_var);
+	unsigned chan = g_pl_cnt++;
+	pl_thread *t = &g_pl_threads[chan];
+
+	while (t->active) {
+		chan = g_pl_cnt++ % MAX_PL_THREADS;
+		t = &g_pl_threads[chan];
+	}
+
+	if (!t->init) {
+		init_lock(&t->guard);
+		t->init = true;
+	}
+
+	check_heap_error(init_tmp_heap(q));
+	cell *goal = deep_clone_to_tmp(q, p2, p2_ctx);
+	check_heap_error(goal);
+	t->q = query_create(q->st.m, false);
+	check_heap_error(t->q);
+	t->goal = deep_copy_to_heap(t->q, goal, 0, false);
+	t->chan = chan;
+	t->active = true;
+
+#ifdef _WIN32
+    SECURITY_ATTRIBUTES sa = {0};
+    sa.nLength = sizeof(sa);
+    sa.lpSecurityDescriptor = 0;
+    sa.bInheritHandle = 0;
+    t->id = (void*)_beginthreadex(&sa, 0, (void*)start_routine_thread_create, (void*)t, 0, NULL);
+#else
+    pthread_attr_t sa;
+    pthread_attr_init(&sa);
+
+    if (is_interned(p3) && (p3->val_off == g_true_s))
+		pthread_attr_setdetachstate(&sa, PTHREAD_CREATE_DETACHED);
+
+    pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread_create, (void*)t);
+#endif
+
+	msleep(100);
+	cell tmp;
+	make_uint(&tmp, chan);
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool bif_pl_thread_join_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,integer_or_var);
+	unsigned chan = get_smalluint(p1);
+	pl_thread *t = &g_pl_threads[chan];
+
+#ifdef _WIN32
+	return false;
+#else
+	void *retval;
+
+	if (pthread_join((pthread_t)t->id, &retval))
+		return false;
+
+	cell tmp;
+	make_uint(&tmp, (unsigned)(size_t)retval);
+	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+#endif
 }
 
 static bool bif_pl_thread_pin_cpu_2(query *q)
@@ -431,6 +524,9 @@ builtins g_threads_bifs[] =
 	{"$pl_recv", 2, bif_pl_recv_2, "-thread,?term", false, false, BLAH},
 	{"$pl_peek", 2, bif_pl_peek_2, "-thread,?term", false, false, BLAH},
 	{"$pl_match", 2, bif_pl_match_2, "-thread,+term", false, false, BLAH},
+
+	{"$pl_thread_create", 3, bif_pl_thread_create_3, "-thread,+callable,+boolean", false, false, BLAH},
+	{"$pl_thread_join", 2, bif_pl_thread_join_2, "+thread,-integer", false, false, BLAH},
 #endif
 
 	{0}

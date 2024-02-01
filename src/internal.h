@@ -827,7 +827,8 @@ struct prolog_ {
 	FILE *logfp;
 	lock guard;
 	size_t tabs_size;
-	uint64_t s_last, s_cnt, seed, dbgen;
+	uint64_t s_last, s_cnt, seed;
+	pl_atomic uint64_t dbgen;
 	unsigned next_mod_id, def_max_depth, my_chan;
 	uint8_t current_input, current_output, current_error;
 	int8_t halt_code, opt;
@@ -961,6 +962,12 @@ inline static pl_idx dup_cells_by_ref(cell *dst, const cell *src, pl_idx src_ctx
 	}
 
 	return nbr_cells;
+}
+
+inline static void share_cells(cell *src, pl_idx nbr_cells)
+{
+	for (pl_idx i = 0; i < nbr_cells; i++, src++)
+		share_cell(src);
 }
 
 inline static void unshare_cells(cell *src, pl_idx nbr_cells)

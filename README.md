@@ -9,7 +9,6 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	The default double-quoted representation is *chars* list
 	Strings & slices are super-efficient (especially with mmap'd files)
 	REPL with history
-	Compiles in <1s with *tcc*, or ~5s with *gcc* and *clang*
 	Runs on Linux, Android, FreeBSD, macOS, and WebAssembly (WASI) & Go
 	Foreign function interface (FFI) for calling out to user C code
 	API for calling from C (or by using WASM from Go & JS)
@@ -1144,16 +1143,21 @@ engines.
 	engine_destroy/1
 
 
-Multi-threading (Prolog threads)			##EXPERIMENTAL##
-================================
+Multi-threading (Prolog instances)			##EXPERIMENTAL##
+==================================
 
 Start independent (no shared state) Prolog instances as dedicated
-threads and communicate via fast builtin channels. Note: the database
-is *not* shared. For shared data consider using SQLite.
+threads and communicate via message queues. Note: the database
+is *not* shared. For shared data in this case consider using SQLite.
 
 ```
 	pl_thread/3				# pl_thread(-thread,+filename,+options)
 	pl_thread/2				# pl_thread(-thread,+filename)
+```
+
+Thread communication via message queues:
+
+```
 	pl_send/2				# pl_send(+thread, @term)
 	pl_recv/2				# pl_recv(-thread, -term)
 	pl_peek/2				# pl_peek(-thread, -term)
@@ -1188,6 +1192,53 @@ For example...
 	   Term = sqrt(2,1.4142135623731), V = 1.4142135623731.
 	?-
 ```
+
+
+Multi-threading (Prolog queries)			##EXPERIMENTAL## / ##IN-PROGRESS##
+================================
+
+Start independent (shared state) Prolog queries as dedicated
+threads and communicate via message queues. Note: the database
+*is* shared.
+
+```
+	pl_thread_create/3		# pl_thread_create(-thread,+callable,+options)
+	pl_thread_create/2		# pl_thread_create(-thread,+callable)
+	pl_thread_join/2		# pl_thread_join(+thread, -integer)
+```
+
+Where 'options' can be *alias(+atom)* and/or *detached(+boolean)*
+(the default is *NOT* detached, ie. joinable).
+
+Mutexes *TO-DO*
+
+```
+	... mutexes???
+
+```
+
+Thread communication via message queues:
+
+```
+	pl_send/2				# pl_send(+thread, @term)
+	pl_recv/2				# pl_recv(-thread, -term)
+	pl_peek/2				# pl_peek(-thread, -term)
+	pl_match/2				# pl_match(-thread, +term)
+```
+
+For example...
+
+```
+?- pl_thread_create(Tid, (writeln(thread_hello),sleep(3),writeln(thread_done),halt), [detached(false)]), writeln(joining), pl_thread_join(Tid,Status), writeln(join_done).
+thread_hello
+joining
+thread_done
+join_done
+   Tid = 1, Status = 0.
+?-
+```
+
+The need for the *halt* command is temporary and will be removed in future.
 
 
 Profile
