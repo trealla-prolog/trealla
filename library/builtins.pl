@@ -604,87 +604,87 @@ pl_thread(Tid, Filename, Options) :-
 	%(integer(Priority) -> '$pl_thread_set_priority'(Tid, Priority) ; true),
 	true.
 
-thread_create(Tid, Goal) :-
-	'$thread_create'(Tid, Goal, false).
+pl_thread_create(Tid, Goal) :-
+	'$pl_thread_create'(Tid, Goal, false).
 
-thread_create(Tid, Goal, Options) :-
+pl_thread_create(Tid, Goal, Options) :-
 	pl_thread_option_(Options, Alias, _Cpu, _Priority, Detached),
-	'$thread_create'(Tid, Goal, Detached),
+	'$pl_thread_create'(Tid, Goal, Detached),
 	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
 	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
 	%(integer(Cpu) -> '$pl_thread_pin_cpu'(Tid, Cpu) ; true),
 	%(integer(Priority) -> '$pl_thread_set_priority'(Tid, Priority) ; true),
 	true.
 
-thread_join(Tid0, Status) :-
+pl_thread_join(Tid0, Status) :-
 	clause('$pl_thread_alias'(Tid0, Tid), _),
 	!,
-	'$thread_join'(Tid, Status).
-thread_join(Tid, Status) :-
-	'$thread_join'(Tid, Status).
+	'$pl_thread_join'(Tid, Status).
+pl_thread_join(Tid, Status) :-
+	'$pl_thread_join'(Tid, Status).
 
-thread_cancel(Tid0) :-
+pl_thread_cancel(Tid0) :-
 	clause('$pl_thread_alias'(Tid0, Tid), _),
 	!,
-	'$thread_cancel'(Tid).
-thread_cancel(Tid) :-
-	'$thread_cancel'(Tid).
+	'$pl_thread_cancel'(Tid).
+pl_thread_cancel(Tid) :-
+	'$pl_thread_cancel'(Tid).
 
-thread_send_message(Tid0, Term) :-
+pl_msg_send(Tid0, Term) :-
 	clause('$pl_thread_alias'(Tid0, Tid), _),
 	!,
-	'$thread_send_message'(Tid, Term).
-thread_send_message(Tid, Term) :-
-	'$thread_send_message'(Tid, Term).
+	'$pl_msg_send'(Tid, Term).
+pl_msg_send(Tid, Term) :-
+	'$pl_msg_send'(Tid, Term).
 
-message_queue_create(Tid) :-
-	'$message_queue_create'(Tid).
+pl_msg_create(Tid) :-
+	'$pl_msg_create'(Tid).
 
-message_queue_create(Tid, Options) :-
+pl_msg_create(Tid, Options) :-
 	pl_thread_option_(Options, Alias, _Cpu, _Priority, _Detached),
-	'$message_queue_create'(Tid),
+	'$pl_msg_create'(Tid),
 	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
 	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
 	true.
 
-message_queue_destroy(Tid0) :-
+pl_msg_destroy(Tid0) :-
 	clause('$pl_thread_alias'(Tid0, Tid), _),
 	!,
-	'$message_queue_destroy'(Tid).
-message_queue_destroy(Tid) :-
-	'$message_queue_destroy'(Tid).
+	'$pl_msg_destroy'(Tid).
+pl_msg_destroy(Tid) :-
+	'$pl_msg_destroy'(Tid).
 
 
-mutex_create(Tid) :-
-	'$mutex_create'(Tid).
+pl_mutex_create(Tid) :-
+	'$pl_mutex_create'(Tid).
 
-mutex_create(Tid, Options) :-
+pl_mutex_create(Tid, Options) :-
 	pl_thread_option_(Options, Alias, _Cpu, _Priority, _Detached),
-	'$mutex_create'(Tid),
+	'$pl_mutex_create'(Tid),
 	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
 	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
 	true.
 
-mutex_destroy(Tid0) :-
+pl_mutex_destroy(Tid0) :-
 	clause('$pl_thread_alias'(Tid0, Tid), _),
 	!,
-	'$mutex_destroy'(Tid).
-mutex_destroy(Tid) :-
-	'$mutex_destroy'(Tid).
+	'$pl_mutex_destroy'(Tid).
+pl_mutex_destroy(Tid) :-
+	'$pl_mutex_destroy'(Tid).
 
-mutex_lock(Tid0) :-
+pl_mutex_lock(Tid0) :-
 	clause('$pl_thread_alias'(Tid0, Tid), _),
 	!,
-	'$mutex_lock'(Tid).
-mutex_lock(Tid) :-
-	'$mutex_lock'(Tid).
+	'$pl_mutex_lock'(Tid).
+pl_mutex_lock(Tid) :-
+	'$pl_mutex_lock'(Tid).
 
-mutex_unlock(Tid0) :-
+pl_mutex_unlock(Tid0) :-
 	clause('$pl_thread_alias'(Tid0, Tid), _),
 	!,
-	'$mutex_unlock'(Tid).
-mutex_unlock(Tid) :-
-	'$mutex_unlock'(Tid).
+	'$pl_mutex_unlock'(Tid).
+pl_mutex_unlock(Tid) :-
+	'$pl_mutex_unlock'(Tid).
 
 
 %
