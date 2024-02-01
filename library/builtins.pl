@@ -604,8 +604,8 @@ pl_thread(Tid, Filename, Options) :-
 	%(integer(Priority) -> '$pl_thread_set_priority'(Tid, Priority) ; true),
 	true.
 
-:- meta_predicate(thread_create(?,0)).
-:- meta_predicate(thread_create(?,0,?)).
+:- meta_predicate(thread_create(-,0)).
+:- meta_predicate(thread_create(-,0,+)).
 
 thread_create(Tid, Goal) :-
 	'$thread_create'(Tid, Goal, false).
