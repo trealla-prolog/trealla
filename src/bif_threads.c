@@ -488,6 +488,7 @@ static bool bif_pl_thread_cancel_1(query *q)
 #ifdef _WIN32
 	return false;
 #else
+	// Pretty evil
 	pthread_cancel((pthread_t)t->id);
 	query_destroy(t->q);
 #endif
