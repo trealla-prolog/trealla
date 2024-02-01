@@ -488,6 +488,11 @@ static bool bif_pl_thread_cancel_1(query *q)
 	return false;
 #else
 	pthread_cancel((pthread_t)t->id);
+
+	if (t->q)
+		query_destroy(t->q);
+
+	t->active = false;
 	return true;
 #endif
 }
