@@ -1143,6 +1143,75 @@ engines.
 	engine_destroy/1
 
 
+Multi-threading (Prolog queries)			##EXPERIMENTAL## / ##IN-PROGRESS##
+================================
+
+Start independent (shared state) Prolog queries as dedicated
+threads and communicate via message queues. Each thread has it's own
+message queue associated with it. Note: the database
+*is* shared.
+
+```
+	thread_create/3		# thread_create(-thread,+callable,+options)
+	thread_create/2		# thread_create(-thread,+callable)
+	thread_join/2		# thread_join(+thread, -integer)
+	thread_cancel/1		# thread_cancel(+thread)
+	thread_self/1		# thread_self(-thread)
+	thread_sleep/1		# thread_sleep(+integer)
+	thread_yield/0		# thread_yield
+```
+
+Where 'options' can be *alias(+atom)* and/or *detached(+boolean)*
+(the default is *NOT* detached, ie. joinable).
+
+Thread communication via messages. Specify either a
+thread, message queue, or alias:
+
+```
+	thread_send_message/2		# thread_send_message(+queue, +term)
+	thread_get_message/2		# thread_get_message(?queue, +term)
+	thread_peek_message/2		# thread_peek_message(?queue, -term)
+```
+
+Create a stand-alone message queue...
+
+```
+	message_queue_create/2		# message_queue_create(-queue,+options)
+	message_queue_create/1		# message_queue_create(-queue)
+	message_queue_destroy/1		# message_queue_destroy(+queue)
+```
+
+Where 'options' can be *alias(+atom)*.
+
+Create a stand-alone mutex...
+
+```
+	mutex_create/2			# mutex_create(-mutex,+options)
+	mutex_create/1			# mutex_create(-mutex)
+	mutex_lock/1				# mutex_lock(-mutex)
+	mutex_unlock/1			# mutex_lock(-mutex)
+	mutex_destroy/1			# mutex_destroy(+mutex)
+```
+
+Where 'options' can be *alias(+atom)*.
+
+For example...
+
+```
+?- thread_create(Tid, (writeln(thread_hello),sleep(3),
+	writeln(thread_done),halt), [detached(false)]),
+	writeln(joining), thread_join(Tid,Status), writeln(join_done).
+thread_hello
+joining
+thread_done
+join_done
+   Tid = 1, Status = 0.
+?-
+```
+
+The need for the *halt* command is temporary and will be removed in future.
+
+
 Multi-threading (Prolog instances)			##EXPERIMENTAL##
 ==================================
 
@@ -1158,37 +1227,11 @@ For shared data in this case consider using SQLite.
 
 Where 'options' can be (currently just) *alias(+atom)*.
 
-Thread communication via messages. Specify either a
-thread, message queue, or alias:
-
 ```
 	pl_msg_send/2			# pl_msg_send(+queue, @term)
 	pl_msg_recv/2			# pl_msg_recv(-queue, -term)
-	pl_msg_peek/2			# pl_msg_peek(-queue, -term)
-	pl_msg_match/2			# pl_msg_match(-queue, +term)
-```
-
-Create a stand-alone message queue...
 
 ```
-	pl_msg_create/2			# pl_msg_create(-queue,+options)
-	pl_msg_create/1			# pl_msg_create(-queue)
-	pl_msg_destroy/1		# pl_msg_destroy(+queue)
-```
-
-Where 'options' can be *alias(+atom)*.
-
-Create a stand-alone mutex...
-
-```
-	pl_mutex_create/2			# pl_mutex_create(-mutex,+options)
-	pl_mutex_create/1			# pl_mutex_create(-mutex)
-	pl_mutex_lock/1				# pl_mutex_lock(-mutex)
-	pl_mutex_unlock/1			# pl_mutex_lock(-mutex)
-	pl_mutex_destroy/1			# pl_mutex_destroy(+mutex)
-```
-
-Where 'options' can be *alias(+atom)*.
 
 For example...
 
@@ -1216,43 +1259,6 @@ For example...
 	   Term = sqrt(2,1.4142135623731), V = 1.4142135623731.
 	?-
 ```
-
-
-Multi-threading (Prolog queries)			##EXPERIMENTAL## / ##IN-PROGRESS##
-================================
-
-Start independent (shared state) Prolog queries as dedicated
-threads and communicate via message queues. Each thread has it's own
-message queue associated with it. Note: the database
-*is* shared.
-
-```
-	pl_thread_create/3		# pl_thread_create(-thread,+callable,+options)
-	pl_thread_create/2		# pl_thread_create(-thread,+callable)
-	pl_thread_join/2		# pl_thread_join(+thread, -integer)
-	pl_thread_cancel/1		# pl_thread_cancel(+thread)
-	pl_thread_sleep/1		# pl_thread_sleep(+integer)
-	pl_thread_yield/0		# pl_thread_yield
-```
-
-Where 'options' can be *alias(+atom)* and/or *detached(+boolean)*
-(the default is *NOT* detached, ie. joinable).
-
-For example...
-
-```
-?- pl_thread_create(Tid, (writeln(thread_hello),sleep(3),
-	writeln(thread_done),halt), [detached(false)]),
-	writeln(joining), pl_thread_join(Tid,Status), writeln(join_done).
-thread_hello
-joining
-thread_done
-join_done
-   Tid = 1, Status = 0.
-?-
-```
-
-The need for the *halt* command is temporary and will be removed in future.
 
 
 Profile
