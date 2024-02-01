@@ -680,6 +680,7 @@ message_queue_create(Tid) :-
 	'$message_queue_create'(Tid).
 
 message_queue_create(Tid, Options) :-
+	'$must_be'(Options, list, message_queue_create/3, _),
 	pl_thread_option_(Options, Alias, _Cpu, _Priority, _Detached),
 	'$message_queue_create'(Tid),
 	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
@@ -698,6 +699,7 @@ mutex_create(Tid) :-
 	'$mutex_create'(Tid).
 
 mutex_create(Tid, Options) :-
+	'$must_be'(Options, list, mutex_create/3, _),
 	pl_thread_option_(Options, Alias, _Cpu, _Priority, _Detached),
 	'$mutex_create'(Tid),
 	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
