@@ -1207,6 +1207,9 @@ message queue associated with it. Note: the database
 	pl_thread_create/3		# pl_thread_create(-thread,+callable,+options)
 	pl_thread_create/2		# pl_thread_create(-thread,+callable)
 	pl_thread_join/2		# pl_thread_join(+thread, -integer)
+	pl_thread_cancel/1		# pl_thread_cancel(+thread)
+	pl_thread_sleep/1		# pl_thread_sleep(+integer)
+	pl_thread_yield/0		# pl_thread_yield
 ```
 
 Where 'options' can be *alias(+atom)* and/or *detached(+boolean)*

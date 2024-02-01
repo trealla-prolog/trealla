@@ -623,21 +623,19 @@ pl_thread_join(Tid0, Status) :-
 pl_thread_join(Tid, Status) :-
 	'$pl_thread_join'(Tid, Status).
 
+pl_thread_cancel(Tid0) :-
+	clause('$pl_thread_alias'(Tid0, Tid), _),
+	!,
+	'$pl_thread_cancel'(Tid).
+pl_thread_cancel(Tid, Status) :-
+	'$pl_thread_cancel'(Tid).
+
 pl_send(Tid0, Term) :-
 	clause('$pl_thread_alias'(Tid0, Tid), _),
 	!,
 	'$pl_send'(Tid, Term).
 pl_send(Tid, Term) :-
 	'$pl_send'(Tid, Term).
-
-pl_recv(Tid, Term) :-
-	'$pl_recv'(Tid, Term).
-
-pl_peek(Tid, Term) :-
-	'$pl_peek'(Tid, Term).
-
-pl_match(Tid, Term) :-
-	'$pl_match'(Tid, Term).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
