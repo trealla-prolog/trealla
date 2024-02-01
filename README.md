@@ -1186,11 +1186,11 @@ Where 'options' can be *alias(+atom)*.
 Create a stand-alone mutex...
 
 ```
-	mutex_create/2			# mutex_create(-mutex,+options)
-	mutex_create/1			# mutex_create(-mutex)
+	mutex_create/2				# mutex_create(-mutex,+options)
+	mutex_create/1				# mutex_create(-mutex)
 	mutex_lock/1				# mutex_lock(-mutex)
-	mutex_unlock/1			# mutex_lock(-mutex)
-	mutex_destroy/1			# mutex_destroy(+mutex)
+	mutex_unlock/1				# mutex_lock(-mutex)
+	mutex_destroy/1				# mutex_destroy(+mutex)
 ```
 
 Where 'options' can be *alias(+atom)*.
