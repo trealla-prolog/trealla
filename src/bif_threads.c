@@ -410,10 +410,10 @@ static void *start_routine_thread_create(pl_thread *t)
     return 0;
 }
 
-static bool bif_pl_thread_create_3(query *q)
-{
-	static bool s_first = true;
+static bool s_first = true;
 
+static bool bif_thread_create_3(query *q)
+{
 	if (s_first) {
 		s_first = false;
 		pl_thread *t = &g_pl_threads[0];
@@ -468,7 +468,7 @@ static bool bif_pl_thread_create_3(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
-static bool bif_pl_thread_join_2(query *q)
+static bool bif_thread_join_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,integer_or_var);
@@ -489,7 +489,7 @@ static bool bif_pl_thread_join_2(query *q)
 #endif
 }
 
-static bool bif_pl_thread_cancel_1(query *q)
+static bool bif_thread_cancel_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	unsigned chan = get_smalluint(p1);
@@ -525,9 +525,16 @@ static bool bif_pl_thread_cancel_1(query *q)
 	return true;
 }
 
-static bool bif_pl_thread_self_1(query *q)
+static bool bif_thread_self_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
+
+	if (s_first) {
+		s_first = false;
+		pl_thread *t = &g_pl_threads[0];
+		init_lock(&t->guard);
+		t->active = true;
+	}
 
 #ifdef _WIN32
 #else
@@ -550,15 +557,30 @@ static bool bif_pl_thread_self_1(query *q)
 	return false;
 }
 
-static bool bif_pl_thread_sleep_1(query *q)
+static bool bif_thread_sleep_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
+
+	if (s_first) {
+		s_first = false;
+		pl_thread *t = &g_pl_threads[0];
+		init_lock(&t->guard);
+		t->active = true;
+	}
+
 	sleep(get_smallint(p1));
 	return true;
 }
 
-static bool bif_pl_thread_yield_0(query *q)
+static bool bif_thread_yield_0(query *q)
 {
+	if (s_first) {
+		s_first = false;
+		pl_thread *t = &g_pl_threads[0];
+		init_lock(&t->guard);
+		t->active = true;
+	}
+
 #ifdef _WIN32
 #elif 0
 	pthread_yield();
@@ -569,7 +591,7 @@ static bool bif_pl_thread_yield_0(query *q)
 	return true;
 }
 
-static bool bif_pl_msg_create_1(query *q)
+static bool bif_message_queue_create_1(query *q)
 {
 	static bool s_first = true;
 
@@ -602,7 +624,7 @@ static bool bif_pl_msg_create_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
-static bool bif_pl_msg_destroy_1(query *q)
+static bool bif_message_queue_destroy_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	unsigned chan = get_smalluint(p1);
@@ -615,7 +637,7 @@ static bool bif_pl_msg_destroy_1(query *q)
 	return true;
 }
 
-static bool bif_pl_mutex_create_1(query *q)
+static bool bif_mutex_create_1(query *q)
 {
 	static bool s_first = true;
 
@@ -648,7 +670,7 @@ static bool bif_pl_mutex_create_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
-static bool bif_pl_mutex_destroy_1(query *q)
+static bool bif_mutex_destroy_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	unsigned chan = get_smalluint(p1);
@@ -661,7 +683,7 @@ static bool bif_pl_mutex_destroy_1(query *q)
 	return true;
 }
 
-static bool bif_pl_mutex_lock_1(query *q)
+static bool bif_mutex_lock_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	unsigned chan = get_smalluint(p1);
@@ -674,7 +696,7 @@ static bool bif_pl_mutex_lock_1(query *q)
 	return true;
 }
 
-static bool bif_pl_mutex_unlock_1(query *q)
+static bool bif_mutex_unlock_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	unsigned chan = get_smalluint(p1);
@@ -740,25 +762,25 @@ builtins g_threads_bifs[] =
 	{"$pl_msg_send", 2, bif_pl_send_2, "+thread,+term", false, false, BLAH},
 	{"pl_msg_recv", 2, bif_pl_recv_2, "-thread,?term", false, false, BLAH},
 
-	{"$thread_create", 3, bif_pl_thread_create_3, "-thread,+callable,+boolean", false, false, BLAH},
-	{"$thread_cancel", 1, bif_pl_thread_cancel_1, "+thread", false, false, BLAH},
-	{"$thread_join", 2, bif_pl_thread_join_2, "+thread,-integer", false, false, BLAH},
+	{"$thread_create", 3, bif_thread_create_3, "-thread,+callable,+boolean", false, false, BLAH},
+	{"$thread_cancel", 1, bif_thread_cancel_1, "+thread", false, false, BLAH},
+	{"$thread_join", 2, bif_thread_join_2, "+thread,-integer", false, false, BLAH},
 
-	{"thread_self", 1, bif_pl_thread_self_1, "-integer", false, false, BLAH},
-	{"thread_sleep", 1, bif_pl_thread_sleep_1, "+integer", false, false, BLAH},
-	{"thread_yield", 0, bif_pl_thread_yield_0, "", false, false, BLAH},
+	{"thread_self", 1, bif_thread_self_1, "-integer", false, false, BLAH},
+	{"thread_sleep", 1, bif_thread_sleep_1, "+integer", false, false, BLAH},
+	{"thread_yield", 0, bif_thread_yield_0, "", false, false, BLAH},
 
 	{"$thread_send_message", 2, bif_thread_send_message_2, "+thread,+term", false, false, BLAH},
 	{"$thread_get_message", 2, bif_thread_get_message_2, "+thread,?term", false, false, BLAH},
 	{"$thread_peek_message", 2, bif_thread_peek_message_2, "+thread,?term", false, false, BLAH},
 
-	{"$message_queue_create", 1, bif_pl_msg_create_1, "-thread", false, false, BLAH},
-	{"$message_queue_destroy", 1, bif_pl_msg_destroy_1, "+thread", false, false, BLAH},
+	{"$message_queue_create", 1, bif_message_queue_create_1, "-thread", false, false, BLAH},
+	{"$message_queue_destroy", 1, bif_message_queue_destroy_1, "+thread", false, false, BLAH},
 
-	{"$mutex_create", 1, bif_pl_mutex_create_1, "-thread", false, false, BLAH},
-	{"$mutex_lock", 1, bif_pl_mutex_lock_1, "+thread", false, false, BLAH},
-	{"$mutex_unlock", 1, bif_pl_mutex_unlock_1, "+thread", false, false, BLAH},
-	{"$mutex_destroy", 1, bif_pl_mutex_destroy_1, "+thread", false, false, BLAH},
+	{"$mutex_create", 1, bif_mutex_create_1, "-thread", false, false, BLAH},
+	{"$mutex_lock", 1, bif_mutex_lock_1, "+thread", false, false, BLAH},
+	{"$mutex_unlock", 1, bif_mutex_unlock_1, "+thread", false, false, BLAH},
+	{"$mutex_destroy", 1, bif_mutex_destroy_1, "+thread", false, false, BLAH},
 #endif
 
 	{0}

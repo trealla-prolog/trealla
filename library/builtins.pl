@@ -637,6 +637,10 @@ pl_msg_send(Tid0, Term) :-
 pl_msg_send(Tid, Term) :-
 	'$pl_msg_send'(Tid, Term).
 
+thread_send_message(Term) :-
+	thread_self(Tid),
+	'$thread_send_message'(Tid, Term).
+
 thread_send_message(Tid0, Term) :-
 	clause('$pl_thread_alias'(Tid0, Tid), _),
 	!,
@@ -644,12 +648,20 @@ thread_send_message(Tid0, Term) :-
 thread_send_message(Tid, Term) :-
 	'$thread_send_message'(Tid, Term).
 
+thread_get_message(Term) :-
+	thread_self(Tid),
+	'$thread_get_message'(Tid, Term).
+
 thread_get_message(Tid0, Term) :-
 	clause('$pl_thread_alias'(Tid0, Tid), _),
 	!,
 	'$thread_get_message'(Tid, Term).
 thread_get_message(Tid, Term) :-
 	'$thread_get_message'(Tid, Term).
+
+thread_peek_message(Term) :-
+	thread_self(Tid),
+	'$thread_peek_message'(Tid, Term).
 
 thread_peek_message(Tid0, Term) :-
 	clause('$pl_thread_alias'(Tid0, Tid), _),

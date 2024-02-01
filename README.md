@@ -1177,8 +1177,11 @@ message queue, or alias:
 
 ```
 	thread_send_message/2		# thread_send_message(+queue, +term)
+	thread_send_message/1		# thread_send_message(+term)
 	thread_get_message/2		# thread_get_message(+queue, ?term)
+	thread_get_message/1		# thread_get_message(?term)
 	thread_peek_message/2		# thread_peek_message(+queue, ?term)
+	thread_peek_message/1		# thread_peek_message(?term)
 ```
 
 Where 'options' can be *alias(+atom)*.
