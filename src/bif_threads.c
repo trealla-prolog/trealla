@@ -136,11 +136,14 @@ static bool bif_pl_send_2(query *q)
 	return do_pl_send(q, get_smalluint(p1), p2, p2_ctx);
 }
 
-static bool do_pl_match(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx, bool peek)
+static bool do_pl_match(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bool peek)
 {
-	pl_thread *t = &g_pl_threads[q->pl->my_chan];
+	pl_thread *t = &g_pl_threads[chan];
 
 	while (true) {
+		if (peek && !t->head)
+			return false;
+
 		uint64_t cnt = 0;
 
 		while (!t->head) {
@@ -194,59 +197,52 @@ static bool do_pl_match(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx, b
 		}
 
 		release_lock(&t->guard);
+
+		if (peek)
+			return false;
 	}
 }
 
 static bool bif_thread_get_message_2(query *q)
 {
-	GET_FIRST_ARG(p1,integer_or_var);
+	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,any);
-	unsigned from_chan = 0;
 
-	if (is_integer(p1)) {
-		if (is_negative(p1))
-			return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
+	if (is_negative(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
 
-		from_chan = get_smalluint(p1);
+	unsigned chan = get_smalluint(p1);
 
-		if (from_chan >= g_pl_cnt)
-			return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread");
-	}
+	if (chan >= g_pl_cnt)
+		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread");
 
-	pl_thread *t = &g_pl_threads[q->pl->my_chan];
+	pl_thread *t = &g_pl_threads[chan];
 
-	if (!do_pl_match(q, from_chan, p2, p2_ctx, false))
+	if (!do_pl_match(q, chan, p2, p2_ctx, false))
 		return false;
 
-	cell tmp;
-	make_uint(&tmp, q->curr_chan);
-	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+	return true;
 }
 
 static bool bif_thread_peek_message_2(query *q)
 {
-	GET_FIRST_ARG(p1,integer_or_var);
+	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,any);
-	unsigned from_chan = 0;
 
-	if (is_integer(p1)) {
-		if (is_negative(p1))
-			return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
+	if (is_negative(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
 
-		from_chan = get_smalluint(p1);
+	unsigned chan = get_smalluint(p1);
 
-		if (from_chan >= g_pl_cnt)
-			return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread");
-	}
+	if (chan >= g_pl_cnt)
+		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread");
 
-	pl_thread *t = &g_pl_threads[q->pl->my_chan];
+	pl_thread *t = &g_pl_threads[chan];
 
-	if (!do_pl_match(q, from_chan, p2, p2_ctx, true))
+	if (!do_pl_match(q, chan, p2, p2_ctx, true))
 		return false;
 
-	cell tmp;
-	make_uint(&tmp, q->curr_chan);
-	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+	return true;
 }
 
 static bool bif_thread_send_message_2(query *q)
