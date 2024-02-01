@@ -348,9 +348,12 @@ static bool bif_pl_thread_2(query *q)
 {
 	if (s_first) {
 		s_first = false;
+		unsigned chan = g_pl_cnt++;
 		pl_thread *t = &g_pl_threads[0];
 		init_lock(&t->guard);
+		t->chan = 0;
 		t->active = true;
+		t->init = true;
 #ifdef _WIN32
 		t->id = GetCurrentThreadId();
 #else
@@ -421,7 +424,9 @@ static bool bif_thread_create_3(query *q)
 		s_first = false;
 		pl_thread *t = &g_pl_threads[0];
 		init_lock(&t->guard);
+		t->chan = 0;
 		t->active = true;
+		t->init = true;
 #ifdef _WIN32
 		t->id = GetCurrentThreadId();
 #else
@@ -542,7 +547,9 @@ static bool bif_thread_self_1(query *q)
 		s_first = false;
 		pl_thread *t = &g_pl_threads[0];
 		init_lock(&t->guard);
+		t->chan = 0;
 		t->active = true;
+		t->init = true;
 #ifdef _WIN32
 		t->id = GetCurrentThreadId();
 #else
@@ -580,7 +587,9 @@ static bool bif_thread_sleep_1(query *q)
 		s_first = false;
 		pl_thread *t = &g_pl_threads[0];
 		init_lock(&t->guard);
+		t->chan = 0;
 		t->active = true;
+		t->init = true;
 #ifdef _WIN32
 		t->id = GetCurrentThreadId();
 #else
@@ -598,7 +607,9 @@ static bool bif_thread_yield_0(query *q)
 		s_first = false;
 		pl_thread *t = &g_pl_threads[0];
 		init_lock(&t->guard);
+		t->chan = 0;
 		t->active = true;
+		t->init = true;
 #ifdef _WIN32
 		t->id = GetCurrentThreadId();
 #else
@@ -622,7 +633,9 @@ static bool bif_message_queue_create_1(query *q)
 		s_first = false;
 		pl_thread *t = &g_pl_threads[0];
 		init_lock(&t->guard);
+		t->chan = 0;
 		t->active = true;
+		t->init = true;
 #ifdef _WIN32
 		t->id = GetCurrentThreadId();
 #else
@@ -671,7 +684,9 @@ static bool bif_mutex_create_1(query *q)
 		s_first = false;
 		pl_thread *t = &g_pl_threads[0];
 		init_lock(&t->guard);
+		t->chan = 0;
 		t->active = true;
+		t->init = true;
 #ifdef _WIN32
 		t->id = GetCurrentThreadId();
 #else
