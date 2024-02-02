@@ -355,7 +355,7 @@ static bool bif_pl_thread_2(query *q)
 		t->active = true;
 		t->init = true;
 #ifdef _WIN32
-		t->id = GetCurrentThreadId();
+		t->id = (void*)GetCurrentThreadId();
 #else
 		t->id = pthread_self();
 #endif
@@ -430,7 +430,7 @@ static bool bif_thread_create_3(query *q)
 		t->active = true;
 		t->init = true;
 #ifdef _WIN32
-		t->id = GetCurrentThreadId();
+		t->id = (void*)GetCurrentThreadId();
 #else
 		t->id = pthread_self();
 #endif
@@ -598,14 +598,14 @@ static bool bif_thread_self_1(query *q)
 		t->active = true;
 		t->init = true;
 #ifdef _WIN32
-		t->id = GetCurrentThreadId();
+		t->id = (void*)GetCurrentThreadId();
 #else
 		t->id = pthread_self();
 #endif
 	}
 
 #ifdef _WIN32
-	HANDLE tid = GetCurrentThreadId();
+	HANDLE tid = (void*)GetCurrentThreadId();
 #else
 	pthread_t tid = pthread_self();
 #endif
@@ -638,7 +638,7 @@ static bool bif_thread_sleep_1(query *q)
 		t->active = true;
 		t->init = true;
 #ifdef _WIN32
-		t->id = GetCurrentThreadId();
+		t->id = (void*)GetCurrentThreadId();
 #else
 		t->id = pthread_self();
 #endif
@@ -658,7 +658,7 @@ static bool bif_thread_yield_0(query *q)
 		t->active = true;
 		t->init = true;
 #ifdef _WIN32
-		t->id = GetCurrentThreadId();
+		t->id = (void*)GetCurrentThreadId();
 #else
 		t->id = pthread_self();
 #endif
@@ -686,7 +686,7 @@ static bool bif_thread_exit_1(query *q)
 		t->active = true;
 		t->init = true;
 #ifdef _WIN32
-		t->id = GetCurrentThreadId();
+		t->id = (void*)GetCurrentThreadId();
 #else
 		t->id = pthread_self();
 #endif
@@ -701,7 +701,7 @@ static bool bif_thread_exit_1(query *q)
 	dup_cells_by_ref(tmp+1, tmp_p1, q->st.curr_frame, tmp_p1->nbr_cells);
 
 #ifdef _WIN32
-	HANDLE tid = GetCurrentThreadId();
+	HANDLE tid = (void*)GetCurrentThreadId();
 #else
 	pthread_t tid = pthread_self();
 #endif
@@ -730,7 +730,7 @@ static bool bif_message_queue_create_1(query *q)
 		t->active = true;
 		t->init = true;
 #ifdef _WIN32
-		t->id = GetCurrentThreadId();
+		t->id = (void*)GetCurrentThreadId();
 #else
 		t->id = pthread_self();
 #endif
@@ -781,7 +781,7 @@ static bool bif_mutex_create_1(query *q)
 		t->active = true;
 		t->init = true;
 #ifdef _WIN32
-		t->id = GetCurrentThreadId();
+		t->id = (void*)GetCurrentThreadId();
 #else
 		t->id = pthread_self();
 #endif
