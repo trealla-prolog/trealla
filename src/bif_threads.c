@@ -493,6 +493,10 @@ static bool bif_thread_signal_2(query *q)
 	GET_NEXT_ARG(p2,callable);
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
+
+	if (!is_thread(t))
+		return throw_error(q, p1, p1_ctx, "permission_error", "signal,not_thread");
+
 	return false;
 }
 
@@ -535,7 +539,7 @@ static bool bif_thread_cancel_1(query *q)
 
 	pl_thread *t = &g_pl_threads[chan];
 
-	if (t->is_queue_only || t->is_mutex_only)
+	if (!is_thread(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,not_thread");
 
 	t->q->halt_code = 0;
@@ -569,12 +573,12 @@ static bool bif_thread_detach_1(query *q)
 	unsigned chan = get_smalluint(p1);
 
 	if (chan == 0)
-		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,thread,main");
+		return throw_error(q, p1, p1_ctx, "permission_error", "detach,thread,main");
 
 	pl_thread *t = &g_pl_threads[chan];
 
-	if (t->is_queue_only || t->is_mutex_only)
-		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,not_thread");
+	if (!is_thread(t))
+		return throw_error(q, p1, p1_ctx, "permission_error", "detach,not_thread");
 
 	t->q->halt_code = 0;
 	t->q->halt = t->q->error = true;
