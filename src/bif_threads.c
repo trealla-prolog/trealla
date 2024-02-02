@@ -430,7 +430,11 @@ static bool bif_pl_thread_2(query *q)
 static void *start_routine_thread_create(pl_thread *t)
 {
 	execute(t->q, t->goal, MAX_ARITY);
-	query_destroy(t->q);
+
+	if (!t->exit_code) {
+		query_destroy(t->q);
+		t->q = NULL;
+	}
 
 	while (t->queue_head) {
 		msg *save = t->queue_head;
@@ -449,7 +453,6 @@ static void *start_routine_thread_create(pl_thread *t)
 	t->active = false;
 	t->signal_head = t->queue_head = NULL;
 	t->signal_tail = t->queue_tail = NULL;
-	t->q = NULL;
     return 0;
 }
 
@@ -556,6 +559,8 @@ static bool bif_thread_join_2(query *q)
 	if (t->exit_code) {
 		cell *tmp = deep_copy_to_heap(q, t->exit_code, 1, false);
 		t->exit_code = NULL;
+		query_destroy(t->q);
+		t->q = NULL;
 		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 	} else {
 		cell tmp;
@@ -783,7 +788,7 @@ static bool bif_thread_exit_1(query *q)
 			t->exit_code = tmp;
 			q->halt_code = 0;
 			q->halt = t->q->error = true;
-			return false;
+			return true;
 		}
 	}
 
