@@ -3477,17 +3477,21 @@ static bool bif_sleep_1(query *q)
 	if (is_bigint(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
 
-	unsigned ms = 0;
+	int ms = 0;
 
 	if (is_float(p1))
-		ms = (unsigned)(get_float(p1) * 1000);
+		ms = (int)(get_float(p1) * 1000);
 	else
-		ms = get_smalluint(p1) * 1000;
+		ms = get_smallint(p1) * 1000;
 
 	if (q->is_task)
 		return do_yield(q, ms);
 
-	msleep(ms);
+	while ((ms > 0) && !q->halt) {
+		msleep(ms > 100 ? 100 : ms);
+		ms -= 100;
+	}
+
 	return true;
 }
 
@@ -3507,7 +3511,13 @@ static bool bif_delay_1(query *q)
 	if (q->is_task)
 		return do_yield(q, get_smallint(p1));
 
-	msleep(get_smalluint(p1));
+	int ms = get_smallint(p1);
+
+	while ((ms > 0) && !q->halt) {
+		msleep(ms > 10 ? 10 : ms);
+		ms -= 10;
+	}
+
 	return true;
 }
 
