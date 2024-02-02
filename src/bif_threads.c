@@ -691,9 +691,9 @@ static bool bif_thread_exit_1(query *q)
 #endif
 	}
 
-	cell *tmp_p1 = deep_copy_to_heap(q, p1, p1_ctx, false);
-	check_heap_error(tmp_p1);
 	check_heap_error(init_tmp_heap(q));
+	cell *tmp_p1 = deep_copy_to_tmp(q, p1, p1_ctx, false);
+	check_heap_error(tmp_p1);
 	cell *tmp = alloc_on_heap(q, 1+tmp_p1->nbr_cells);
 	check_heap_error(tmp);
 	make_struct(tmp, new_atom(q->pl, "exited"), NULL, 1, tmp_p1->nbr_cells);
