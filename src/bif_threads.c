@@ -38,10 +38,10 @@ typedef struct msg_ {
 typedef struct {
 	const char *filename;
 	query *q;
-	cell *goal;
+	cell *goal, *exit_code;
 	msg *head, *tail;
 	unsigned chan;
-	bool init, is_queue_only, is_mutex_only;
+	bool init, is_queue_only, is_mutex_only, is_detached;
 	pl_atomic bool active;
 	lock guard;
 #ifdef _WIN32
@@ -411,7 +411,10 @@ static bool bif_pl_thread_2(query *q)
 static void *start_routine_thread_create(pl_thread *t)
 {
 	execute(t->q, t->goal, MAX_ARITY);
-	query_destroy(t->q);
+
+	if (t->is_detached)
+		query_destroy(t->q);
+
 	t->q = NULL;
 	t->active = false;
     return 0;
@@ -468,8 +471,11 @@ static bool bif_thread_create_3(query *q)
     pthread_attr_t sa;
     pthread_attr_init(&sa);
 
-    if (is_interned(p3) && (p3->val_off == g_true_s))
+    if (is_interned(p3) && (p3->val_off == g_true_s)) {
 		pthread_attr_setdetachstate(&sa, PTHREAD_CREATE_DETACHED);
+		t->is_detached = true;
+	} else
+		t->is_detached = false;
 
     pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread_create, (void*)t);
 #endif
@@ -493,11 +499,18 @@ static bool bif_thread_join_2(query *q)
 
 	if (pthread_join((pthread_t)t->id, &retval))
 		return false;
-
-	cell tmp;
-	make_atom(&tmp, g_true_s);
-	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 #endif
+
+	query_destroy(t->q);
+
+	if (t->exit_code) {
+		cell *tmp = deep_copy_to_heap(q, t->exit_code, 1, false);
+		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+	} else {
+		cell tmp;
+		make_atom(&tmp, g_true_s);
+		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	}
 }
 
 static bool bif_thread_cancel_1(query *q)
@@ -658,6 +671,52 @@ static bool bif_thread_yield_0(query *q)
 #endif
 
 	return true;
+}
+
+static bool bif_thread_exit_1(query *q)
+{
+	GET_FIRST_ARG(p1,nonvar);
+
+	if (s_first) {
+		s_first = false;
+		pl_thread *t = &g_pl_threads[0];
+		init_lock(&t->guard);
+		t->chan = 0;
+		t->active = true;
+		t->init = true;
+#ifdef _WIN32
+		t->id = GetCurrentThreadId();
+#else
+		t->id = pthread_self();
+#endif
+	}
+
+	cell *tmp_p1 = deep_copy_to_heap(q, p1, p1_ctx, false);
+	check_heap_error(tmp_p1);
+	check_heap_error(init_tmp_heap(q));
+	cell *tmp = alloc_on_heap(q, 1+tmp_p1->nbr_cells);
+	check_heap_error(tmp);
+	make_struct(tmp, new_atom(q->pl, "exited"), NULL, 1, tmp_p1->nbr_cells);
+	dup_cells_by_ref(tmp+1, tmp_p1, q->st.curr_frame, tmp_p1->nbr_cells);
+
+#ifdef _WIN32
+	HANDLE tid = GetCurrentThreadId();
+#else
+	pthread_t tid = pthread_self();
+#endif
+
+	for (unsigned i = 0; i < MAX_PL_THREADS; i++) {
+		pl_thread *t = &g_pl_threads[i];
+
+		if (!t->active)
+			continue;
+
+		if (t->id == tid) {
+			t->exit_code = tmp;
+		}
+	}
+
+	return false;
 }
 
 static bool bif_message_queue_create_1(query *q)
@@ -846,6 +905,7 @@ builtins g_threads_bifs[] =
 	{"$thread_detach", 1, bif_thread_detach_1, "+thread", false, false, BLAH},
 	{"$thread_join", 2, bif_thread_join_2, "+thread,-integer", false, false, BLAH},
 
+	{"thread_exit", 1, bif_thread_exit_1, "+term", false, false, BLAH},
 	{"thread_self", 1, bif_thread_self_1, "-integer", false, false, BLAH},
 	{"thread_sleep", 1, bif_thread_sleep_1, "+integer", false, false, BLAH},
 	{"thread_yield", 0, bif_thread_yield_0, "", false, false, BLAH},
