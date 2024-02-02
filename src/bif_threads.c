@@ -522,7 +522,12 @@ static bool bif_thread_signal_2(query *q)
 	if (!is_thread(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "signal,not_thread");
 
-	return do_pl_send(q, get_smalluint(p1), p2, p2_ctx, true);
+	if (!do_pl_send(q, get_smalluint(p1), p2, p2_ctx, true))
+		return false;
+
+	printf("*** send signal\n");
+	resume_thread(t);
+	return true;
 }
 
 static bool bif_thread_join_2(query *q)
