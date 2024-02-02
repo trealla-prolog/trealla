@@ -35,6 +35,8 @@ typedef struct msg_ {
 	cell c[];
 } msg;
 
+#define is_thread(t) (!(t)->is_queue_only && !(t)->is_mutex_only)
+
 typedef struct {
 	const char *filename;
 	query *q;
