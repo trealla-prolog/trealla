@@ -53,7 +53,7 @@ typedef struct {
 #endif
 } pl_thread;
 
-#define MAX_PL_THREADS 1024
+#define MAX_PL_THREADS 256
 static pl_thread g_pl_threads[MAX_PL_THREADS] = {0};
 static unsigned g_pl_cnt = 1;	// 0 is the primaryinstance
 
