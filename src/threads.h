@@ -38,6 +38,15 @@ inline static void deinit_lock(lock *l)
 #endif
 }
 
+inline static bool try_lock(lock *l)
+{
+#ifdef _WIN32
+    return TryEnterCriticalSection(&l->mutex);
+#else
+	return pthread_mutex_trylock(&l->mutex);
+#endif
+}
+
 inline static void acquire_lock(lock *l)
 {
 #ifdef _WIN32

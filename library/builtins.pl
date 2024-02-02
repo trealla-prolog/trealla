@@ -759,6 +759,13 @@ mutex_destroy(Tid0) :-
 mutex_destroy(Tid) :-
 	'$mutex_destroy'(Tid).
 
+mutex_trylock(Tid0) :-
+	clause('$pl_thread_alias'(Tid0, Tid), _),
+	!,
+	'$mutex_trylock'(Tid).
+mutex_trylock(Tid) :-
+	'$mutex_trylock'(Tid).
+
 mutex_lock(Tid0) :-
 	clause('$pl_thread_alias'(Tid0, Tid), _),
 	!,

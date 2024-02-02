@@ -950,6 +950,18 @@ static bool bif_mutex_destroy_1(query *q)
 	return true;
 }
 
+static bool bif_mutex_trylock_1(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	unsigned chan = get_smalluint(p1);
+	pl_thread *t = &g_pl_threads[chan];
+
+	if (!t->is_mutex_only)
+		return throw_error(q, p1, p1_ctx, "permission_error", "lock,not_mutex");
+
+	return try_lock(&t->guard);
+}
+
 static bool bif_mutex_lock_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
@@ -1048,6 +1060,7 @@ builtins g_threads_bifs[] =
 	{"$message_queue_destroy", 1, bif_message_queue_destroy_1, "+thread", false, false, BLAH},
 
 	{"$mutex_create", 1, bif_mutex_create_1, "-thread", false, false, BLAH},
+	{"$mutex_trylock", 1, bif_mutex_trylock_1, "+thread", false, false, BLAH},
 	{"$mutex_lock", 1, bif_mutex_lock_1, "+thread", false, false, BLAH},
 	{"$mutex_unlock", 1, bif_mutex_unlock_1, "+thread", false, false, BLAH},
 	{"$mutex_destroy", 1, bif_mutex_destroy_1, "+thread", false, false, BLAH},
