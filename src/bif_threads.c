@@ -714,6 +714,9 @@ static bool bif_thread_exit_1(query *q)
 
 		if (t->id == tid) {
 			t->exit_code = tmp;
+			q->halt_code = 0;
+			q->halt = t->q->error = true;
+			return false;
 		}
 	}
 
