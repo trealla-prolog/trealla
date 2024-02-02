@@ -39,7 +39,7 @@ typedef struct {
 	const char *filename;
 	query *q;
 	cell *goal, *exit_code;
-	msg *head, *tail;
+	msg *queue_head, *queue_tail;
 	unsigned chan;
 	bool init, is_queue_only, is_mutex_only, is_detached;
 	pl_atomic bool active;
@@ -94,12 +94,12 @@ static cell *queue_to_chan(unsigned chan, const cell *c, unsigned from_chan)
 	dup_cells(m->c, c, c->nbr_cells);
 	acquire_lock(&t->guard);
 
-	if (!t->head) {
-		t->head = t->tail = m;
+	if (!t->queue_head) {
+		t->queue_head = t->queue_tail = m;
 	} else {
-		m->prev = t->tail;
-		t->tail->next = m;
-		t->tail = m;
+		m->prev = t->queue_tail;
+		t->queue_tail->next = m;
+		t->queue_tail = m;
 	}
 
 	release_lock(&t->guard);
@@ -140,21 +140,21 @@ static bool do_pl_match(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bool p
 	pl_thread *t = &g_pl_threads[chan];
 
 	while (true) {
-		if (peek && !t->head)
+		if (peek && !t->queue_head)
 			return false;
 
 		uint64_t cnt = 0;
 
-		while (!t->head) {
+		while (!t->queue_head) {
 			suspend_thread(t, cnt < 1000 ? 0 : cnt < 10000 ? 1 : cnt < 100000 ? 10 : 100);
 			cnt++;
 		}
 
-		//printf("*** recv msg nbr_cells=%u\n", t->head->nbr_cells);
+		//printf("*** recv msg nbr_cells=%u\n", t->queue_head->nbr_cells);
 
 		try_me(q, MAX_ARITY);
 		acquire_lock(&t->guard);
-		msg *m = t->head;
+		msg *m = t->queue_head;
 
 		while (m) {
 			cell *c = m->c;
@@ -179,11 +179,11 @@ static bool do_pl_match(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bool p
 					if (m->next)
 						m->next->prev = m->prev;
 
-					if (t->head == m)
-						t->head = m->next;
+					if (t->queue_head == m)
+						t->queue_head = m->next;
 
-					if (t->tail == m)
-						t->tail = m->prev;
+					if (t->queue_tail == m)
+						t->queue_tail = m->prev;
 					}
 
 				release_lock(&t->guard);
@@ -260,27 +260,27 @@ static bool do_pl_recv(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx, bo
 	pl_thread *t = &g_pl_threads[q->pl->my_chan];
 	uint64_t cnt = 0;
 
-	while (!t->head) {
+	while (!t->queue_head) {
 		suspend_thread(t, cnt < 1000 ? 0 : cnt < 10000 ? 1 : cnt < 100000 ? 10 : 100);
 		cnt++;
 	}
 
-	if (!t->head && peek)
+	if (!t->queue_head && peek)
 		return false;
 
-	//printf("*** recv msg nbr_cells=%u\n", t->head->nbr_cells);
+	//printf("*** recv msg nbr_cells=%u\n", t->queue_head->nbr_cells);
 
 	acquire_lock(&t->guard);
-	msg *m = t->head;
+	msg *m = t->queue_head;
 
 	if (!peek) {
 		if (m->next)
 			m->next->prev = NULL;
 
-		if (t->head == t->tail)
-			t->tail = NULL;
+		if (t->queue_head == t->queue_tail)
+			t->queue_tail = NULL;
 
-		t->head = m->next;
+		t->queue_head = m->next;
 	}
 
 	release_lock(&t->guard);
