@@ -644,6 +644,13 @@ thread_cancel(Tid0) :-
 thread_cancel(Tid) :-
 	'$thread_cancel'(Tid).
 
+thread_detach(Tid0) :-
+	clause('$pl_thread_alias'(Tid0, Tid), _),
+	!,
+	'$thread_detach'(Tid).
+thread_detach(Tid) :-
+	'$thread_detach'(Tid).
+
 pl_msg_send(Tid0, Term) :-
 	clause('$pl_thread_alias'(Tid0, Tid), _),
 	!,

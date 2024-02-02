@@ -410,7 +410,7 @@ static bool bif_pl_thread_2(query *q)
 
 static void *start_routine_thread_create(pl_thread *t)
 {
-	execute(t->q, t->goal, 16);
+	execute(t->q, t->goal, MAX_ARITY);
 	query_destroy(t->q);
 	t->q = NULL;
 	t->active = false;
@@ -525,15 +525,50 @@ static bool bif_thread_cancel_1(query *q)
 
 	if (t->active) {
 #ifdef _WIN32
-		// TO-DO: something
+		DWPORD exit_code;
+		TerminateThread(t->id, &exit_code);
 #else
-		pthread_cancel((pthread_t)t->id);
+		pthread_cancel(t->id);
 #endif
 		query_destroy(t->q);
 	}
 
 	t->active = false;
 	t->q = NULL;
+	return true;
+}
+
+static bool bif_thread_detach_1(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	unsigned chan = get_smalluint(p1);
+
+	if (chan == 0)
+		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,thread,main");
+
+	pl_thread *t = &g_pl_threads[chan];
+
+	if (t->is_queue_only || t->is_mutex_only)
+		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,not_thread");
+
+	t->q->halt_code = 0;
+	t->q->halt = t->q->error = true;
+
+	for (int i = 0; i < 1000; i++) {
+		if (!t->active)
+			break;
+
+		msleep(1);
+	}
+
+	if (t->active) {
+#ifdef _WIN32
+		CloseHandle(t->id);
+#else
+		pthread_detach(t->id);
+#endif
+	}
+
 	return true;
 }
 
@@ -808,6 +843,7 @@ builtins g_threads_bifs[] =
 
 	{"$thread_create", 3, bif_thread_create_3, "-thread,+callable,+boolean", false, false, BLAH},
 	{"$thread_cancel", 1, bif_thread_cancel_1, "+thread", false, false, BLAH},
+	{"$thread_detach", 1, bif_thread_detach_1, "+thread", false, false, BLAH},
 	{"$thread_join", 2, bif_thread_join_2, "+thread,-integer", false, false, BLAH},
 
 	{"thread_self", 1, bif_thread_self_1, "-integer", false, false, BLAH},
