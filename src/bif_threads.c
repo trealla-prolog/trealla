@@ -539,7 +539,7 @@ static bool bif_thread_cancel_1(query *q)
 
 	if (t->active) {
 #ifdef _WIN32
-		DWPORD exit_code;
+		DWORD exit_code;
 		TerminateThread(t->id, &exit_code);
 #else
 		pthread_cancel(t->id);
