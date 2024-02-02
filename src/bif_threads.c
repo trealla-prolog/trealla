@@ -525,7 +525,7 @@ static bool bif_thread_signal_2(query *q)
 	if (!do_pl_send(q, get_smalluint(p1), p2, p2_ctx, true))
 		return false;
 
-	printf("*** OOPS, send signal not yet implented\n");
+	printf("*** OOPS, send signal not yet implemented\n");
 	resume_thread(t);
 	return true;
 }
