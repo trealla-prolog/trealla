@@ -501,12 +501,13 @@ static bool bif_thread_join_2(query *q)
 		return false;
 #endif
 
-	query_destroy(t->q);
-
 	if (t->exit_code) {
 		cell *tmp = deep_copy_to_heap(q, t->exit_code, 1, false);
+		t->exit_code = NULL;
+		query_destroy(t->q);
 		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 	} else {
+		query_destroy(t->q);
 		cell tmp;
 		make_atom(&tmp, g_true_s);
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
