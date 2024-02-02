@@ -571,6 +571,19 @@ read_line_to_codes(Stream, Codes) :-
 
 :- help(read_line_to_codes(+stream,?list), [iso(false)]).
 
+sleep(0) :- !.
+sleep(Secs) :-
+	'$must_be'(Secs, integer, sleep/1, _),
+	(Secs < 0 ->
+		throw(error(domain_error(not_less_than_zero, Secs), sleep/1))
+	;	true
+	),
+	delay(1000),
+	Secs2 is Secs - 1,
+	sleep(Secs2).
+
+:- help(sleep(+integer), [iso(false)]).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 
@@ -620,17 +633,18 @@ thread_create(Goal, Tid, Options) :-
 	'$must_be'(Goal, callable, thread_create/3, _),
 	'$must_be'(Options, list, thread_create/3, _),
 	pl_thread_option_(Options, Alias, _Cpu, _Priority, Detached, AtExit),
+	Goal1 = catch(Goal, _, true),
 	(atom(Alias) ->
 		(clause('$pl_thread_alias'(Alias, _), _) ->
 			throw(error(permission_error(create,thread,alias(Alias))))
 			; true
 		),
-		Goal0 = (Goal, delay(1), retractall('$pl_thread_alias'(Alias, _)), halt)
+		Goal0 = (Goal1, delay(1), retractall('$pl_thread_alias'(Alias, _)), halt)
 	;
-		Goal0 = (Goal, halt)
+		Goal0 = (Goal1, halt)
 	),
 	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
-	'$thread_create'(Goal0, Tid, Detached, (AtExit, halt)),
+	'$thread_create'(Goal, Tid, Detached, (AtExit, halt)),
 	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
 	(integer(Cpu) -> '$pl_thread_pin_cpu'(Tid, Cpu) ; true),
 	(integer(Priority) -> '$pl_thread_set_priority'(Tid, Priority) ; true),

@@ -3464,37 +3464,6 @@ static bool bif_statistics_2(query *q)
 	return false;
 }
 
-static bool bif_sleep_1(query *q)
-{
-	if (q->retry)
-		return true;
-
-	GET_FIRST_ARG(p1,number);
-
-	if (is_negative(p1))
-		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
-
-	if (is_bigint(p1))
-		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
-
-	int ms = 0;
-
-	if (is_float(p1))
-		ms = (int)(get_float(p1) * 1000);
-	else
-		ms = get_smallint(p1) * 1000;
-
-	if (q->is_task)
-		return do_yield(q, ms);
-
-	while ((ms > 0) && !q->halt) {
-		msleep(ms > 100 ? 100 : ms);
-		ms -= 100;
-	}
-
-	return true;
-}
-
 static bool bif_delay_1(query *q)
 {
 	if (q->retry)
@@ -6455,7 +6424,6 @@ builtins g_other_bifs[] =
 	{"*->", 2, bif_if_2, "+term,+term", false, false, BLAH},
 	{"if", 3, bif_if_3, "+term,+term,+term", false, false, BLAH},
 
-	{"sleep", 1, bif_sleep_1, "+number", false, false, BLAH},
 	{"delay", 1, bif_delay_1, "+number", false, false, BLAH},
 	{"shell", 1, bif_shell_1, "+atom", false, false, BLAH},
 	{"shell", 2, bif_shell_2, "+atom,-integer", false, false, BLAH},

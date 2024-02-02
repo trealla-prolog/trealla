@@ -1569,8 +1569,8 @@ bool start(query *q)
 
 #if USE_THREADS
 		if (q->thread_signal) {
-			do_signal(q, q->thread_ptr);
 			q->thread_signal = false;
+			do_signal(q, q->thread_ptr);
 		}
 #endif
 
