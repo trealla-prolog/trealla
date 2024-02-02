@@ -53,8 +53,7 @@ typedef struct {
 #endif
 } pl_thread;
 
-#define MAX_PL_THREADS 256
-static pl_thread g_pl_threads[MAX_PL_THREADS] = {0};
+static pl_thread g_pl_threads[MAX_THREADS] = {0};
 static unsigned g_pl_cnt = 1;	// 0 is the primaryinstance
 
 static void suspend_thread(pl_thread *t, int ms)
@@ -377,7 +376,7 @@ static bool bif_pl_thread_2(query *q)
 	pl_thread *t = &g_pl_threads[chan];
 
 	while (t->active) {
-		chan = g_pl_cnt++ % MAX_PL_THREADS;
+		chan = g_pl_cnt++ % MAX_THREADS;
 		t = &g_pl_threads[chan];
 	}
 
@@ -443,7 +442,7 @@ static bool bif_thread_create_3(query *q)
 	pl_thread *t = &g_pl_threads[chan];
 
 	while (t->active) {
-		chan = g_pl_cnt++ % MAX_PL_THREADS;
+		chan = g_pl_cnt++ % MAX_THREADS;
 		t = &g_pl_threads[chan];
 	}
 
@@ -610,7 +609,7 @@ static bool bif_thread_self_1(query *q)
 	pthread_t tid = pthread_self();
 #endif
 
-	for (unsigned i = 0; i < MAX_PL_THREADS; i++) {
+	for (unsigned i = 0; i < MAX_THREADS; i++) {
 		pl_thread *t = &g_pl_threads[i];
 
 		if (!t->active)
@@ -706,7 +705,7 @@ static bool bif_thread_exit_1(query *q)
 	pthread_t tid = pthread_self();
 #endif
 
-	for (unsigned i = 0; i < MAX_PL_THREADS; i++) {
+	for (unsigned i = 0; i < MAX_THREADS; i++) {
 		pl_thread *t = &g_pl_threads[i];
 
 		if (!t->active)
@@ -744,7 +743,7 @@ static bool bif_message_queue_create_1(query *q)
 	pl_thread *t = &g_pl_threads[chan];
 
 	while (t->active) {
-		chan = g_pl_cnt++ % MAX_PL_THREADS;
+		chan = g_pl_cnt++ % MAX_THREADS;
 		t = &g_pl_threads[chan];
 	}
 
@@ -795,7 +794,7 @@ static bool bif_mutex_create_1(query *q)
 	pl_thread *t = &g_pl_threads[chan];
 
 	while (t->active) {
-		chan = g_pl_cnt++ % MAX_PL_THREADS;
+		chan = g_pl_cnt++ % MAX_THREADS;
 		t = &g_pl_threads[chan];
 	}
 

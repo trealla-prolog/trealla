@@ -62,6 +62,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define ERR_IDX (~(pl_idx)0)
 #define IDX_MAX (ERR_IDX-1)
 
+#define MAX_THREADS 256
 #define MAX_SMALL_STRING ((sizeof(void*)*2)-1)
 #define MAX_VAR_POOL_SIZE 16000
 #define MAX_ARITY UINT8_MAX

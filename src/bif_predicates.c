@@ -2331,6 +2331,14 @@ static bool bif_iso_current_prolog_flag_2(query *q)
 		cell tmp;
 		make_atom(&tmp, g_true_s);
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	} else if (!CMP_STRING_TO_CSTR(q, p1, "max_threads")) {
+		cell tmp;
+		make_int(&tmp, MAX_THREADS);
+		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	} else if (!CMP_STRING_TO_CSTR(q, p1, "hardware_threads")) {
+		cell tmp;
+		make_int(&tmp, 4);
+		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 #else
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "threads")) {
 		cell tmp;
@@ -2642,6 +2650,10 @@ static bool bif_iso_set_prolog_flag_2(query *q)
 		|| !CMP_STRING_TO_CSTR(q, p1, "encoding")
 		|| !CMP_STRING_TO_CSTR(q, p1, "unix")
 		|| !CMP_STRING_TO_CSTR(q, p1, "threads")
+#if USE_THREADS
+		|| !CMP_STRING_TO_CSTR(q, p1, "hardware_threads")
+		|| !CMP_STRING_TO_CSTR(q, p1, "max_threads")
+#endif
 		|| !CMP_STRING_TO_CSTR(q, p1, "verbose")
 		|| !CMP_STRING_TO_CSTR(q, p1, "integer_rounding_function")
 		|| !CMP_STRING_TO_CSTR(q, p1, "dialect")
@@ -6235,6 +6247,8 @@ static void load_flags(query *q)
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "unix", "true");
 #if USE_THREADS
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "threads", "true");
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "hardware_threads", 4);
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "max_threads", MAX_THREADS);
 #else
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "threads", "false");
 #endif
