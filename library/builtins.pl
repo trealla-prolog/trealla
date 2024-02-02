@@ -576,28 +576,31 @@ read_line_to_codes(Stream, Codes) :-
 
 % This is preliminary:
 
-pl_thread_option_([], _, _, _, _) :- !.
-pl_thread_option_([X|_], _, _, _, _) :- var(X), !, instantiation_error(thread_option).
-pl_thread_option_([alias(Alias)|Rest], Alias, _, _, _) :-
+pl_thread_option_([], _, _, _, _, _) :- !.
+pl_thread_option_([X|_], _, _, _, _, _) :- var(X), !, instantiation_error(thread_option).
+pl_thread_option_([at_exit(AtExit)|Rest], _, _, _, _, AtExit) :-
 	!,
-	pl_thread_option_(Rest, _, _, _, _).
-pl_thread_option_([detached(Detached)|Rest], _, _, _, Detached) :-
+	pl_thread_option_(Rest, _, _, _, _, _).
+pl_thread_option_([alias(Alias)|Rest], Alias, _, _, _, _) :-
 	!,
-	pl_thread_option_(Rest, _, _, _, _).
-pl_thread_option_([cpu(Cpu)|Rest], _, Cpu, _, _) :-
+	pl_thread_option_(Rest, _, _, _, _, _).
+pl_thread_option_([detached(Detached)|Rest], _, _, _, Detached, _) :-
 	!,
-	pl_thread_option_(Rest, _, _, _, _).
-pl_thread_option_([priority(Priority)|Rest], _, _, Priority, _) :-
+	pl_thread_option_(Rest, _, _, _, _, _).
+pl_thread_option_([cpu(Cpu)|Rest], _, Cpu, _, _, _) :-
 	!,
-	pl_thread_option_(Rest, _, _, _, _).
-pl_thread_option_([Name|_], _, _, _, _) :-
+	pl_thread_option_(Rest, _, _, _, _, _).
+pl_thread_option_([priority(Priority)|Rest], _, _, Priority, _, _) :-
+	!,
+	pl_thread_option_(Rest, _, _, _, _, _).
+pl_thread_option_([Name|_], _, _, _, _, _) :-
 	throw(error(domain_error(thread_option, Name), pl_thread/2)).
 
 pl_thread(Tid, Filename) :-
 	'$pl_thread'(Tid, Filename).
 
 pl_thread(Tid, Filename, Options) :-
-	pl_thread_option_(Options, Alias, _Cpu, _Priority, _Detached),
+	pl_thread_option_(Options, Alias, _Cpu, _Priority, _Detached, _AtExit),
 	'$pl_thread'(Tid, Filename),
 	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
 	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
@@ -616,14 +619,24 @@ thread_create(Goal, Tid) :-
 thread_create(Goal, Tid, Options) :-
 	'$must_be'(Goal, callable, thread_create/3, _),
 	'$must_be'(Options, list, thread_create/3, _),
-	pl_thread_option_(Options, Alias, _Cpu, _Priority, Detached),
+	pl_thread_option_(Options, Alias, _Cpu, _Priority, Detached, AtExit),
 	(atom(Alias) ->
 		(clause('$pl_thread_alias'(Alias, _), _) ->
 			throw(error(permission_error(create,thread,alias(Alias))))
 			; true
 		),
-		Goal0 = (Goal, delay(1), retractall('$pl_thread_alias'(Alias, _)), halt)
-	;	Goal0 = (Goal, halt)),
+		(	nonvar(AtExit) ->
+			Goal1 = (Goal, AtExit)
+			; Goal1 = Goal
+		),
+		Goal0 = (Goal1, delay(1), retractall('$pl_thread_alias'(Alias, _)), halt)
+	;
+		(	nonvar(AtExit) ->
+		Goal1 = (Goal, AtExit)
+		; Goal1 = Goal
+		),
+		Goal0 = (Goal1, halt)
+	),
 	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
 	'$thread_create'(Goal0, Tid, Detached),
 	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
@@ -706,7 +719,7 @@ message_queue_create(Tid) :-
 
 message_queue_create(Tid, Options) :-
 	'$must_be'(Options, list, message_queue_create/3, _),
-	pl_thread_option_(Options, Alias, _Cpu, _Priority, _Detached),
+	pl_thread_option_(Options, Alias, _Cpu, _Priority, _Detached, _AtExit),
 	'$message_queue_create'(Tid),
 	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
 	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
@@ -725,7 +738,7 @@ mutex_create(Tid) :-
 
 mutex_create(Tid, Options) :-
 	'$must_be'(Options, list, mutex_create/3, _),
-	pl_thread_option_(Options, Alias, _Cpu, _Priority, _Detached),
+	pl_thread_option_(Options, Alias, _Cpu, _Priority, _Detached, _AtExit),
 	'$mutex_create'(Tid),
 	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
 	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),

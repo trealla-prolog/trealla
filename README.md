@@ -1164,7 +1164,7 @@ message queue associated with it. Note: the database
 	thread_yield/0		# thread_yield
 ```
 
-Where 'options' can be *alias(+atom)* and/or *detached(+boolean)*
+Where 'options' can be *alias(+atom)*, *at_exit(:term)* and/or *detached(+boolean)*
 (the default is *NOT* detached, ie. joinable).
 
 Create a stand-alone message queue...
