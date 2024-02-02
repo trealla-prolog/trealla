@@ -40,6 +40,7 @@ typedef struct {
 	query *q;
 	cell *goal, *exit_code;
 	msg *queue_head, *queue_tail;
+	msg *signal_head, *signal_tail;
 	unsigned chan;
 	bool init, is_queue_only, is_mutex_only, is_detached;
 	pl_atomic bool active;
@@ -484,6 +485,15 @@ static bool bif_thread_create_3(query *q)
 	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 }
 
+static bool bif_thread_signal_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,callable);
+	unsigned chan = get_smalluint(p1);
+	pl_thread *t = &g_pl_threads[chan];
+	return false;
+}
+
 static bool bif_thread_join_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
@@ -903,9 +913,10 @@ builtins g_threads_bifs[] =
 	{"$pl_msg_send", 2, bif_pl_send_2, "+thread,+term", false, false, BLAH},
 	{"pl_msg_recv", 2, bif_pl_recv_2, "-thread,?term", false, false, BLAH},
 
-	{"$thread_create", 3, bif_thread_create_3, "-thread,+callable,+boolean", false, false, BLAH},
+	{"$thread_create", 3, bif_thread_create_3, "-thread,:term,+boolean", false, false, BLAH},
 	{"$thread_cancel", 1, bif_thread_cancel_1, "+thread", false, false, BLAH},
 	{"$thread_detach", 1, bif_thread_detach_1, "+thread", false, false, BLAH},
+	{"$thread_signal", 2, bif_thread_signal_2, "+thread,:term", false, false, BLAH},
 	{"$thread_join", 2, bif_thread_join_2, "+thread,-integer", false, false, BLAH},
 
 	{"thread_exit", 1, bif_thread_exit_1, "+term", false, false, BLAH},

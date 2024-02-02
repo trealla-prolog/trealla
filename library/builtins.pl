@@ -605,8 +605,9 @@ pl_thread(Tid, Filename, Options) :-
 	%(integer(Priority) -> '$pl_thread_set_priority'(Tid, Priority) ; true),
 	true.
 
-:- meta_predicate(thread_create(0,-)).
-:- meta_predicate(thread_create(0,-,?)).
+:- meta_predicate(thread_create(:,-)).
+:- meta_predicate(thread_create(:,-,?)).
+:- meta_predicate(thread_signal(+,:)).
 
 thread_create(Goal, Tid) :-
 	'$must_be'(Goal, callable, thread_create/3, _),
@@ -629,6 +630,15 @@ thread_create(Goal, Tid, Options) :-
 	(integer(Cpu) -> '$pl_thread_pin_cpu'(Tid, Cpu) ; true),
 	(integer(Priority) -> '$pl_thread_set_priority'(Tid, Priority) ; true),
 	true.
+
+thread_signal(Tid0, Goal) :-
+	clause('$pl_thread_alias'(Tid0, Tid), _),
+	!,
+	Goal0 = (Goal, halt)),
+	'$thread_signal'(Tid, Goal0).
+thread_signal(Tid, Goal) :-
+	Goal0 = (Goal, halt)),
+	'$thread_signal'(Tid, Goal0).
 
 thread_join(Tid0, Status) :-
 	clause('$pl_thread_alias'(Tid0, Tid), _),
