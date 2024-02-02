@@ -741,7 +741,6 @@ message_queue_destroy(Tid0) :-
 message_queue_destroy(Tid) :-
 	'$message_queue_destroy'(Tid).
 
-
 mutex_create(Tid) :-
 	'$mutex_create'(Tid).
 
@@ -774,6 +773,10 @@ mutex_unlock(Tid0) :-
 mutex_unlock(Tid) :-
 	'$mutex_unlock'(Tid).
 
+:- meta_predicate(with_mutex(+,0)).
+
+with_mutex(Tid, Goal) :-
+	setup_call_cleanup(mutex_lock(Tid), Goal, mutex_unlock(Tid).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
