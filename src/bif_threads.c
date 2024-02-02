@@ -430,9 +430,7 @@ static bool bif_pl_thread_2(query *q)
 static void *start_routine_thread_create(pl_thread *t)
 {
 	execute(t->q, t->goal, MAX_ARITY);
-
-	if (t->is_detached)
-		query_destroy(t->q);
+	query_destroy(t->q);
 
 	while (t->queue_head) {
 		msg *save = t->queue_head;
@@ -558,10 +556,8 @@ static bool bif_thread_join_2(query *q)
 	if (t->exit_code) {
 		cell *tmp = deep_copy_to_heap(q, t->exit_code, 1, false);
 		t->exit_code = NULL;
-		query_destroy(t->q);
 		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 	} else {
-		query_destroy(t->q);
 		cell tmp;
 		make_atom(&tmp, g_true_s);
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
@@ -583,6 +579,7 @@ static bool bif_thread_cancel_1(query *q)
 
 	t->q->halt_code = 0;
 	t->q->halt = t->q->error = true;
+	resume_thread(t);
 
 	for (int i = 0; i < 1000; i++) {
 		if (!t->active)
@@ -840,6 +837,14 @@ static bool bif_message_queue_destroy_1(query *q)
 	if (!t->is_queue_only)
 		return throw_error(q, p1, p1_ctx, "permission_error", "destroy,not_queue");
 
+	while (t->queue_head) {
+		msg *save = t->queue_head;
+		t->queue_head = t->queue_head->next;
+		unshare_cells(save->c, save->c->nbr_cells);
+		free(save);
+	}
+
+	t->queue_head = t->queue_tail = NULL;
 	t->active = false;
 	return true;
 }
