@@ -555,11 +555,11 @@ void do_signal(query *q, void *thread_ptr)
 	}
 
 	cell *tmp = prepare_call(q, true, c, c_ctx, 1);
+	ensure(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + c->nbr_cells;
 	unshare_cells(c, c->nbr_cells);
 	free(m);
-	ensure(tmp);
-	make_call(q, tmp+nbr_cells);
+	make_call_redo(q, tmp+nbr_cells);
 	q->st.curr_instr = tmp;
 }
 

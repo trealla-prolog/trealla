@@ -653,10 +653,10 @@ thread_create(Goal, Tid, Options) :-
 thread_signal(Tid0, Goal) :-
 	clause('$pl_thread_alias'(Tid0, Tid), _),
 	!,
-	Goal0 = (Goal, halt),
+	Goal0 = (Goal, true),
 	'$thread_signal'(Tid, Goal0).
 thread_signal(Tid, Goal) :-
-	Goal0 = (Goal, halt),
+	Goal0 = (Goal, true),
 	'$thread_signal'(Tid, Goal0).
 
 thread_join(Tid0, Status) :-
