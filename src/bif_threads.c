@@ -431,8 +431,10 @@ static void *start_routine_thread_create(pl_thread *t)
 {
 	execute(t->q, t->goal, MAX_ARITY);
 
-	if (t->at_exit)
+	if (t->at_exit) {
 		execute(t->q, t->at_exit, MAX_ARITY);
+		t->at_exit = NULL;
+	}
 
 	if (!t->exit_code) {
 		query_destroy(t->q);
