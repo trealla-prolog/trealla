@@ -119,7 +119,7 @@ static cell *queue_to_chan(unsigned chan, const cell *c, unsigned from_chan, boo
 	return m->c;
 }
 
-static bool do_pl_send(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bool is_signal)
+static bool do_send_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bool is_signal)
 {
 	if (chan >= g_pl_cnt)
 		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
@@ -145,10 +145,10 @@ static bool bif_pl_send_2(query *q)
 	if (is_negative(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
 
-	return do_pl_send(q, get_smalluint(p1), p2, p2_ctx, false);
+	return do_send_message(q, get_smalluint(p1), p2, p2_ctx, false);
 }
 
-static bool do_pl_match(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bool is_peek)
+static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bool is_peek)
 {
 	pl_thread *t = &g_pl_threads[chan];
 
@@ -200,7 +200,12 @@ static bool do_pl_match(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bool i
 					}
 
 				release_lock(&t->guard);
-				if (!is_peek) free(m);
+
+				if (!is_peek) {
+					unshare_cells(m->c, m->c->nbr_cells);
+					free(m);
+				}
+
 				return true;
 			}
 
@@ -230,7 +235,7 @@ static bool bif_thread_get_message_2(query *q)
 
 	pl_thread *t = &g_pl_threads[chan];
 
-	if (!do_pl_match(q, chan, p2, p2_ctx, false))
+	if (!do_match_message(q, chan, p2, p2_ctx, false))
 		return false;
 
 	return true;
@@ -251,7 +256,7 @@ static bool bif_thread_peek_message_2(query *q)
 
 	pl_thread *t = &g_pl_threads[chan];
 
-	if (!do_pl_match(q, chan, p2, p2_ctx, true))
+	if (!do_match_message(q, chan, p2, p2_ctx, true))
 		return false;
 
 	return true;
@@ -265,10 +270,10 @@ static bool bif_thread_send_message_2(query *q)
 	if (is_negative(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
 
-	return do_pl_send(q, get_smalluint(p1), p2, p2_ctx, false);
+	return do_send_message(q, get_smalluint(p1), p2, p2_ctx, false);
 }
 
-static bool do_pl_recv(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx, bool is_peek)
+static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx, bool is_peek)
 {
 	pl_thread *t = &g_pl_threads[q->pl->my_chan];
 	uint64_t cnt = 0;
@@ -312,8 +317,10 @@ static bool do_pl_recv(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx, bo
 	unshare_cells(c, c->nbr_cells);
 	q->curr_chan = m->from_chan;
 
-	if (!is_peek)
+	if (!is_peek) {
+		unshare_cells(m->c, m->c->nbr_cells);
 		free(m);
+	}
 
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
@@ -336,7 +343,7 @@ static bool bif_pl_recv_2(query *q)
 
 	pl_thread *t = &g_pl_threads[q->pl->my_chan];
 
-	if (!do_pl_recv(q, from_chan, p2, p2_ctx, false))
+	if (!do_recv_message(q, from_chan, p2, p2_ctx, false))
 		return false;
 
 	cell tmp;
@@ -430,12 +437,14 @@ static void *start_routine_thread_create(pl_thread *t)
 	while (t->queue_head) {
 		msg *save = t->queue_head;
 		t->queue_head = t->queue_head->next;
+		unshare_cells(save->c, save->c->nbr_cells);
 		free(save);
 	}
 
 	while (t->signal_head) {
 		msg *save = t->signal_head;
 		t->signal_head = t->signal_head->next;
+		unshare_cells(save->c, save->c->nbr_cells);
 		free(save);
 	}
 
@@ -522,7 +531,7 @@ static bool bif_thread_signal_2(query *q)
 	if (!is_thread(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "signal,not_thread");
 
-	if (!do_pl_send(q, get_smalluint(p1), p2, p2_ctx, true))
+	if (!do_send_message(q, get_smalluint(p1), p2, p2_ctx, true))
 		return false;
 
 	printf("*** OOPS, send signal not yet implemented\n");
@@ -595,12 +604,14 @@ static bool bif_thread_cancel_1(query *q)
 	while (t->queue_head) {
 		msg *save = t->queue_head;
 		t->queue_head = t->queue_head->next;
+		unshare_cells(save->c, save->c->nbr_cells);
 		free(save);
 	}
 
 	while (t->signal_head) {
 		msg *save = t->signal_head;
 		t->signal_head = t->signal_head->next;
+		unshare_cells(save->c, save->c->nbr_cells);
 		free(save);
 	}
 
