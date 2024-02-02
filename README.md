@@ -1154,7 +1154,7 @@ message queue associated with it. Note: the database
 ```
 	thread_create/3		# thread_create(+callable,-thread,+options)
 	thread_create/2		# thread_create(+callable,-thread)
-	thread_join/2		# thread_join(+thread, -integer)
+	thread_join/2		# thread_join(+thread,-integer)
 	thread_cancel/1		# thread_cancel(+thread)
 	thread_self/1		# thread_self(-thread)
 	thread_sleep/1		# thread_sleep(+integer)
@@ -1170,11 +1170,11 @@ Create a stand-alone message queue...
 	message_queue_create/2		# message_queue_create(-queue,+options)
 	message_queue_create/1		# message_queue_create(-queue)
 	message_queue_destroy/1		# message_queue_destroy(+queue)
-	thread_send_message/2		# thread_send_message(+queue, +term)
+	thread_send_message/2		# thread_send_message(+queue,+term)
 	thread_send_message/1		# thread_send_message(+term)
-	thread_get_message/2		# thread_get_message(+queue, ?term)
+	thread_get_message/2		# thread_get_message(+queue,?term)
 	thread_get_message/1		# thread_get_message(?term)
-	thread_peek_message/2		# thread_peek_message(+queue, ?term)
+	thread_peek_message/2		# thread_peek_message(+queue,?term)
 	thread_peek_message/1		# thread_peek_message(?term)
 ```
 
@@ -1221,8 +1221,8 @@ For shared data in this case consider using SQLite.
 Where 'options' can be (currently just) *alias(+atom)*.
 
 ```
-	pl_msg_send/2			# pl_msg_send(+queue, @term)
-	pl_msg_recv/2			# pl_msg_recv(-queue, -term)
+	pl_msg_send/2			# pl_msg_send(+queue,@term)
+	pl_msg_recv/2			# pl_msg_recv(-queue,-term)
 
 ```
 
