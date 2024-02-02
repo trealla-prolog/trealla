@@ -554,14 +554,11 @@ void do_signal(query *q, void *thread_ptr)
 		}
 	}
 
-	cell *tmp = prepare_call(q, true, c, c_ctx, 4);
+	cell *tmp = prepare_call(q, true, c, c_ctx, 1);
 	pl_idx nbr_cells = PREFIX_LEN + c->nbr_cells;
-	//unshare_cells(c, c->nbr_cells);
+	unshare_cells(c, c->nbr_cells);
 	free(m);
 	ensure(tmp);
-	make_struct(tmp+nbr_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
-	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
 	q->st.curr_instr = tmp;
 }
