@@ -1170,12 +1170,6 @@ Create a stand-alone message queue...
 	message_queue_create/2		# message_queue_create(-queue,+options)
 	message_queue_create/1		# message_queue_create(-queue)
 	message_queue_destroy/1		# message_queue_destroy(+queue)
-```
-
-Thread communication via messages. Specify either a thread,
-message queue, or alias:
-
-```
 	thread_send_message/2		# thread_send_message(+queue, +term)
 	thread_send_message/1		# thread_send_message(+term)
 	thread_get_message/2		# thread_get_message(+queue, ?term)
@@ -1191,9 +1185,9 @@ Create a stand-alone mutex...
 ```
 	mutex_create/2				# mutex_create(-mutex,+options)
 	mutex_create/1				# mutex_create(-mutex)
+	mutex_destroy/1				# mutex_destroy(+mutex)
 	mutex_lock/1				# mutex_lock(-mutex)
 	mutex_unlock/1				# mutex_lock(-mutex)
-	mutex_destroy/1				# mutex_destroy(+mutex)
 ```
 
 Where 'options' can be *alias(+atom)*.
