@@ -403,7 +403,6 @@ static bool bif_pl_thread_2(query *q)
     pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread, (void*)t);
 #endif
 
-	msleep(100);
 	cell tmp;
 	make_uint(&tmp, chan);
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
@@ -475,7 +474,6 @@ static bool bif_thread_create_3(query *q)
     pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread_create, (void*)t);
 #endif
 
-	msleep(100);
 	cell tmp;
 	make_uint(&tmp, chan);
 	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);

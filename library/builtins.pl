@@ -621,13 +621,13 @@ thread_create(Goal, Tid, Options) :-
 			throw(error(permission_error(create,thread,alias(Alias))))
 			; true
 		),
-		Goal0 = (Goal, sleep(1), retractall('$pl_thread_alias'(Alias, _)), halt)
+		Goal0 = (Goal, delay(1), retractall('$pl_thread_alias'(Alias, _)), halt)
 	;	Goal0 = (Goal, halt)),
 	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
 	'$thread_create'(Goal0, Tid, Detached),
 	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
-	%(integer(Cpu) -> '$pl_thread_pin_cpu'(Tid, Cpu) ; true),
-	%(integer(Priority) -> '$pl_thread_set_priority'(Tid, Priority) ; true),
+	(integer(Cpu) -> '$pl_thread_pin_cpu'(Tid, Cpu) ; true),
+	(integer(Priority) -> '$pl_thread_set_priority'(Tid, Priority) ; true),
 	true.
 
 thread_join(Tid0, Status) :-

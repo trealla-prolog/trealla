@@ -3495,7 +3495,7 @@ static bool bif_delay_1(query *q)
 	if (q->is_task)
 		return do_yield(q, get_smallint(p1));
 
-	msleep((unsigned)get_smallint(p1));
+	msleep(get_smalluint(p1));
 	return true;
 }
 
