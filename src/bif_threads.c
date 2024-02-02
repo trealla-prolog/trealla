@@ -427,8 +427,22 @@ static void *start_routine_thread_create(pl_thread *t)
 	if (t->is_detached)
 		query_destroy(t->q);
 
-	t->q = NULL;
+	while (t->queue_head) {
+		msg *save = t->queue_head;
+		t->queue_head = t->queue_head->next;
+		free(save);
+	}
+
+	while (t->signal_head) {
+		msg *save = t->signal_head;
+		t->signal_head = t->signal_head->next;
+		free(save);
+	}
+
 	t->active = false;
+	t->signal_head = t->queue_head = NULL;
+	t->signal_tail = t->queue_tail = NULL;
+	t->q = NULL;
     return 0;
 }
 
@@ -573,7 +587,21 @@ static bool bif_thread_cancel_1(query *q)
 		query_destroy(t->q);
 	}
 
+	while (t->queue_head) {
+		msg *save = t->queue_head;
+		t->queue_head = t->queue_head->next;
+		free(save);
+	}
+
+	while (t->signal_head) {
+		msg *save = t->signal_head;
+		t->signal_head = t->signal_head->next;
+		free(save);
+	}
+
 	t->active = false;
+	t->signal_head = t->queue_head = NULL;
+	t->signal_tail = t->queue_tail = NULL;
 	t->q = NULL;
 	return true;
 }
