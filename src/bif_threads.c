@@ -40,7 +40,7 @@ typedef struct msg_ {
 typedef struct {
 	const char *filename;
 	query *q;
-	cell *goal, *exit_code;
+	cell *goal, *exit_code, *at_exit;
 	msg *queue_head, *queue_tail;
 	msg *signal_head, *signal_tail;
 	unsigned chan;
@@ -431,6 +431,9 @@ static void *start_routine_thread_create(pl_thread *t)
 {
 	execute(t->q, t->goal, MAX_ARITY);
 
+	if (!is_var(t->at_exit))
+		execute(t->q, t->at_exit, MAX_ARITY);
+
 	if (!t->exit_code) {
 		query_destroy(t->q);
 		t->q = NULL;
@@ -456,7 +459,7 @@ static void *start_routine_thread_create(pl_thread *t)
     return 0;
 }
 
-static bool bif_thread_create_3(query *q)
+static bool bif_thread_create_4(query *q)
 {
 	if (s_first) {
 		s_first = false;
@@ -475,6 +478,7 @@ static bool bif_thread_create_3(query *q)
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,var);
 	GET_NEXT_ARG(p3,atom_or_var);
+	GET_NEXT_ARG(p4,any);
 	unsigned chan = g_pl_cnt++;
 	pl_thread *t = &g_pl_threads[chan];
 
@@ -488,12 +492,14 @@ static bool bif_thread_create_3(query *q)
 		t->init = true;
 	}
 
-	check_heap_error(init_tmp_heap(q));
-	cell *goal = deep_copy_to_tmp(q, p1, p1_ctx, false);
+	cell *goal = deep_copy_to_heap(q, p1, p1_ctx, false);
 	check_heap_error(goal);
+	cell *at_exit = is_nonvar(p4) ? deep_copy_to_heap(q, p4, p4_ctx, false) : NULL;
+	if (is_nonvar(p4)) check_heap_error(at_exit);
 	t->q = query_create(q->st.m, false);
 	check_heap_error(t->q);
 	t->goal = deep_clone_to_heap(t->q, goal, 0);
+	t->at_exit = is_nonvar(p4) ? deep_clone_to_heap(t->q, at_exit, 0) : NULL;
 	t->chan = chan;
 	t->active = true;
 	t->q->my_chan = chan;
@@ -984,7 +990,7 @@ builtins g_threads_bifs[] =
 	{"$pl_msg_send", 2, bif_pl_send_2, "+thread,+term", false, false, BLAH},
 	{"pl_msg_recv", 2, bif_pl_recv_2, "-thread,?term", false, false, BLAH},
 
-	{"$thread_create", 3, bif_thread_create_3, "-thread,:term,+boolean", false, false, BLAH},
+	{"$thread_create", 4, bif_thread_create_4, "-thread,:callable,+boolean,:callable", false, false, BLAH},
 	{"$thread_cancel", 1, bif_thread_cancel_1, "+thread", false, false, BLAH},
 	{"$thread_detach", 1, bif_thread_detach_1, "+thread", false, false, BLAH},
 	{"$thread_signal", 2, bif_thread_signal_2, "+thread,:term", false, false, BLAH},

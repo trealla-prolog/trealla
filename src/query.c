@@ -1808,10 +1808,10 @@ uint64_t get_time_in_usec(void)
 
 bool execute(query *q, cell *cells, unsigned nbr_vars)
 {
+	q->retry = q->halt = q->error = q->abort = false;
 	q->pl->did_dump_vars = false;
 	q->st.curr_instr = cells;
 	q->st.sp = nbr_vars;
-	q->abort = false;
 	q->is_redo = false;
 
 	// There is an initial frame (fp=0), so this
