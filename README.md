@@ -1197,12 +1197,12 @@ Where 'options' can be *alias(+atom)*.
 For example...
 
 ```
-?- thread_create((format("thread_hello~n",[]),sleep(1),format("thread_done~n",[])), Tid, []), format("joining~n",[]), thread_join(Tid,Status), format("join_done~n",[]).
+?- thread_create((format("thread_hello~n",[]),sleep(1),format("thread_done~n",[]),thread_exit(99)), Tid, []), format("joining~n",[]), thread_join(Tid,Status), format("join_done~n",[]).
 joining
 thread_hello
 thread_done
 join_done
-   Tid = 1, Status = true.
+   Tid = 1, Status = exited(99).
 ?-
 ```
 
