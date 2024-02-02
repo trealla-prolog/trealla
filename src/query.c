@@ -1567,10 +1567,12 @@ bool start(query *q)
 			}
 		}
 
+#if USE_THREADS
 		if (q->thread_signal) {
-			printf("*** OOPS, send signal not yet implemented\n");
+			do_signal(q, q->thread_ptr);
 			q->thread_signal = false;
 		}
+#endif
 
 		if (q->retry) {
 			int ok = retry_choice(q);

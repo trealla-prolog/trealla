@@ -530,6 +530,42 @@ static bool bif_thread_create_4(query *q)
 	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 }
 
+void do_signal(query *q, void *thread_ptr)
+{
+	pl_thread *t = (pl_thread*)thread_ptr;
+
+	if (!t->signal_head)
+		return;
+
+	acquire_lock(&t->guard);
+	msg *m = t->signal_head;
+	t->signal_head = t->signal_head->next;
+
+	if (!t->signal_head)
+		t->signal_tail = NULL;
+
+	release_lock(&t->guard);
+	cell *c = m->c;
+	pl_idx c_ctx = 0;
+
+	for (unsigned i = 0; i < c->nbr_cells; i++) {
+		if (is_ref(&c[i])) {
+			c[i].flags &= ~FLAG_VAR_REF;
+		}
+	}
+
+	cell *tmp = prepare_call(q, true, c, c_ctx, 4);
+	pl_idx nbr_cells = PREFIX_LEN + c->nbr_cells;
+	//unshare_cells(c, c->nbr_cells);
+	free(m);
+	ensure(tmp);
+	make_struct(tmp+nbr_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
+	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
+	make_uint(tmp+nbr_cells++, q->cp);
+	make_call(q, tmp+nbr_cells);
+	q->st.curr_instr = tmp;
+}
+
 static bool bif_thread_signal_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
