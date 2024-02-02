@@ -652,6 +652,7 @@ struct query_ {
 	rule *dirty_list;
 	query *tasks;
 	skiplist *vars;
+	void *thread_ptr;
 	cell accum;
 	mpz_t tmp_ival;
 	mpq_t tmp_irat;
@@ -680,6 +681,7 @@ struct query_ {
 	enum { WAS_OTHER, WAS_SPACE, WAS_COMMA, WAS_SYMBOL } last_thing;
 	bool is_cyclic1:1;
 	bool is_cyclic2:1;
+	bool thread_signal:1;
 	bool done:1;
 	bool parens:1;
 	bool in_attvar_print:1;

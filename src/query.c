@@ -1567,6 +1567,11 @@ bool start(query *q)
 			}
 		}
 
+		if (q->thread_signal) {
+			printf("*** OOPS, send signal not yet implemented\n");
+			q->thread_signal = false;
+		}
+
 		if (q->retry) {
 			int ok = retry_choice(q);
 

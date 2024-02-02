@@ -499,6 +499,7 @@ static bool bif_thread_create_4(query *q)
 	if (is_nonvar(p4)) check_heap_error(at_exit);
 	t->q = query_create(q->st.m, false);
 	check_heap_error(t->q);
+	t->q->thread_ptr = t;
 	t->goal = deep_clone_to_heap(t->q, goal, 0);
 	t->at_exit = is_nonvar(p4) ? deep_clone_to_heap(t->q, at_exit, 0) : NULL;
 	t->chan = chan;
@@ -542,7 +543,9 @@ static bool bif_thread_signal_2(query *q)
 	if (!do_send_message(q, get_smalluint(p1), p2, p2_ctx, true))
 		return false;
 
-	printf("*** OOPS, send signal not yet implemented\n");
+	if (t->q)
+		t->q->thread_signal = true;
+
 	resume_thread(t);
 	return true;
 }
