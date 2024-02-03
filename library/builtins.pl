@@ -743,7 +743,8 @@ message_queue_create(Tid, Options) :-
 message_queue_destroy(Tid0) :-
 	clause('$pl_thread_alias'(Tid0, Tid), _),
 	!,
-	'$message_queue_destroy'(Tid).
+	'$message_queue_destroy'(Tid),
+	retractall('$pl_thread_alias'(Tid0, _)).
 message_queue_destroy(Tid) :-
 	'$message_queue_destroy'(Tid).
 
