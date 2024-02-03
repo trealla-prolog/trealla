@@ -37,12 +37,15 @@ typedef struct msg_ {
 
 #define is_thread(t) (!(t)->is_queue_only && !(t)->is_mutex_only)
 
-typedef struct {
+typedef struct pl_thread_ pl_thread;
+
+struct pl_thread_ {
 	const char *filename;
 	query *q;
 	cell *goal, *exit_code, *at_exit;
 	msg *queue_head, *queue_tail;
 	msg *signal_head, *signal_tail;
+	void *locked_by;
 	unsigned chan;
 	bool init, is_queue_only, is_mutex_only, is_detached;
 	pl_atomic bool active;
@@ -54,7 +57,7 @@ typedef struct {
     pthread_cond_t cond;
     pthread_mutex_t mutex;
 #endif
-} pl_thread;
+};
 
 static pl_thread g_pl_threads[MAX_THREADS] = {0};
 static unsigned g_pl_cnt = 1;	// 0 is the primaryinstance
@@ -959,7 +962,17 @@ static bool bif_mutex_trylock_1(query *q)
 	if (!t->is_mutex_only)
 		return throw_error(q, p1, p1_ctx, "permission_error", "lock,not_mutex");
 
-	return try_lock(&t->guard);
+#ifdef _WIN32
+	HANDLE tid = (void*)GetCurrentThreadId();
+#else
+	pthread_t tid = pthread_self();
+#endif
+
+	if (!try_lock(&t->guard))
+		return false;
+
+	t->locked_by = (void*)tid;
+	return true;
 }
 
 static bool bif_mutex_lock_1(query *q)
@@ -971,7 +984,14 @@ static bool bif_mutex_lock_1(query *q)
 	if (!t->is_mutex_only)
 		return throw_error(q, p1, p1_ctx, "permission_error", "lock,not_mutex");
 
+#ifdef _WIN32
+	HANDLE tid = (void*)GetCurrentThreadId();
+#else
+	pthread_t tid = pthread_self();
+#endif
+
 	acquire_lock(&t->guard);
+	t->locked_by = (void*)tid;
 	return true;
 }
 
@@ -984,7 +1004,33 @@ static bool bif_mutex_unlock_1(query *q)
 	if (!t->is_mutex_only)
 		return throw_error(q, p1, p1_ctx, "permission_error", "unlock,not_mutex");
 
+	t->locked_by = 0;
 	release_lock(&t->guard);
+
+	return true;
+}
+
+static bool bif_mutex_unlock_all_0(query *q)
+{
+#ifdef _WIN32
+	HANDLE tid = (void*)GetCurrentThreadId();
+#else
+	pthread_t tid = pthread_self();
+#endif
+
+	for (unsigned i = 0; i < MAX_THREADS; i++) {
+		pl_thread *t = &g_pl_threads[i];
+
+		if (!t->active || !t->is_mutex_only)
+			continue;
+
+		if (t->locked_by != (void*)tid)
+			continue;
+
+		release_lock(&t->guard);
+		t->locked_by = 0;
+	}
+
 	return true;
 }
 
@@ -1060,10 +1106,11 @@ builtins g_threads_bifs[] =
 	{"$message_queue_destroy", 1, bif_message_queue_destroy_1, "+thread", false, false, BLAH},
 
 	{"$mutex_create", 1, bif_mutex_create_1, "-thread", false, false, BLAH},
+	{"$mutex_destroy", 1, bif_mutex_destroy_1, "+thread", false, false, BLAH},
 	{"$mutex_trylock", 1, bif_mutex_trylock_1, "+thread", false, false, BLAH},
 	{"$mutex_lock", 1, bif_mutex_lock_1, "+thread", false, false, BLAH},
 	{"$mutex_unlock", 1, bif_mutex_unlock_1, "+thread", false, false, BLAH},
-	{"$mutex_destroy", 1, bif_mutex_destroy_1, "+thread", false, false, BLAH},
+	{"mutex_unlock_all", 0, bif_mutex_unlock_all_0, "", false, false, BLAH},
 #endif
 
 	{0}
