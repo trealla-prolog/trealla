@@ -68,6 +68,9 @@ static bool is_threadid_(query *q, cell *c)
 {
 	pl_idx c_ctx = 0;
 
+	if (is_var(c))
+		return throw_error(q, c, c_ctx, "instantiation_error", "threadid_or_alias");
+
 	if (!is_smallint(c))
 		return throw_error(q, c, c_ctx, "domain_error", "threadid_or_alias");
 
