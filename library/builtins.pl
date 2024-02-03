@@ -633,22 +633,26 @@ thread_create(Goal, Tid, Options) :-
 	'$must_be'(Goal, callable, thread_create/3, _),
 	'$must_be'(Options, list, thread_create/3, _),
 	pl_thread_option_(Options, Alias, _Cpu, _Priority, Detached, AtExit),
-	Goal1 = catch(Goal, _, true),
 	(atom(Alias) ->
 		(clause('$pl_thread_alias'(Alias, _), _) ->
 			throw(error(permission_error(create,thread,alias(Alias))))
 			; true
 		),
-		Goal0 = (Goal1, delay(1), retractall('$pl_thread_alias'(Alias, _)), halt)
+		Goal1 = catch(Goal, _, true),
+		(	nonvar(Detached) ->
+			Goal2 = (Goal1, delay(1), retractall('$pl_thread_alias'(Alias, _)))
+		;	Goal2 = Goal1
+		),
+		Goal0 = (Goal2, halt)
 	;
-		Goal0 = (Goal1, halt)
+		Goal0 = (Goal2, halt)
 	),
 	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
 	( nonvar(AtExit) ->
-		'$thread_create'(Goal0, Tid, Detached, (AtExit, halt))
-	;	'$thread_create'(Goal0, Tid, Detached, _)
+		'$thread_create'(Goal0, Tid0, Detached, (AtExit, halt))
+	;	'$thread_create'(Goal0, Tid0, Detached, _)
 	),
-	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
+	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid0)), Tid = Alias ; Tid = Tid0),
 	(integer(Cpu) -> '$pl_thread_pin_cpu'(Tid, Cpu) ; true),
 	(integer(Priority) -> '$pl_thread_set_priority'(Tid, Priority) ; true),
 	true.
@@ -665,7 +669,8 @@ thread_signal(Tid, Goal) :-
 thread_join(Alias, Status) :-
 	clause('$pl_thread_alias'(Alias, Tid), _),
 	!,
-	'$thread_join'(Tid, Status).
+	'$thread_join'(Tid, Status),
+	retractall('$pl_thread_alias'(Alias, _)).
 thread_join(Tid, Status) :-
 	'$thread_join'(Tid, Status).
 
@@ -729,15 +734,15 @@ message_queue_create(Tid) :-
 message_queue_create(Tid, Options) :-
 	'$must_be'(Options, list, message_queue_create/3, _),
 	pl_thread_option_(Options, Alias, _Cpu, _Priority, _Detached, _AtExit),
-	'$message_queue_create'(Tid),
+	'$message_queue_create'(Tid0),
 	(atom(Alias) ->
 		(clause('$pl_thread_alias'(Alias, _), _) ->
 			throw(error(permission_error(create,thread,alias(Alias))))
-		; true
+		; Tid = Alias
 		)
-	; true
+	; Tid = Tid0
 	),
-	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
+	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid0)) ; true),
 	true.
 
 message_queue_destroy(Alias) :-
@@ -754,15 +759,15 @@ mutex_create(Tid) :-
 mutex_create(Tid, Options) :-
 	'$must_be'(Options, list, mutex_create/3, _),
 	pl_thread_option_(Options, Alias, _Cpu, _Priority, _Detached, _AtExit),
-	'$mutex_create'(Tid),
+	'$mutex_create'(Tid0),
 	(atom(Alias) ->
 		(clause('$pl_thread_alias'(Alias, _), _) ->
 			throw(error(permission_error(create,thread,alias(Alias))))
-		; true
+		; Tid = Alias
 		)
-	; true
+	; Tid = Tid0
 	),
-	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
+	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid0)) ; true),
 	true.
 
 mutex_destroy(Alias) :-
