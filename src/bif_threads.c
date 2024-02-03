@@ -152,9 +152,6 @@ static cell *queue_to_chan(unsigned chan, const cell *c, unsigned from_chan, boo
 
 static bool do_send_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bool is_signal)
 {
-	if (chan >= g_pl_cnt)
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
-
 	pl_thread *t = &g_pl_threads[chan];
 
 	if (!t->active || t->is_mutex_only)
