@@ -730,7 +730,13 @@ message_queue_create(Tid, Options) :-
 	'$must_be'(Options, list, message_queue_create/3, _),
 	pl_thread_option_(Options, Alias, _Cpu, _Priority, _Detached, _AtExit),
 	'$message_queue_create'(Tid),
-	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
+	(atom(Alias) ->
+		(clause('$pl_thread_alias'(Alias, _), _) ->
+			throw(error(permission_error(create,thread,alias(Alias))))
+		; true
+		)
+	; true
+	),
 	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
 	true.
 
@@ -748,14 +754,21 @@ mutex_create(Tid, Options) :-
 	'$must_be'(Options, list, mutex_create/3, _),
 	pl_thread_option_(Options, Alias, _Cpu, _Priority, _Detached, _AtExit),
 	'$mutex_create'(Tid),
-	(atom(Alias) -> retractall('$pl_thread_alias'(Alias, _)) ; true),
+	(atom(Alias) ->
+		(clause('$pl_thread_alias'(Alias, _), _) ->
+			throw(error(permission_error(create,thread,alias(Alias))))
+		; true
+		)
+	; true
+	),
 	(atom(Alias) -> assertz('$pl_thread_alias'(Alias, Tid)) ; true),
 	true.
 
 mutex_destroy(Tid0) :-
 	clause('$pl_thread_alias'(Tid0, Tid), _),
 	!,
-	'$mutex_destroy'(Tid).
+	'$mutex_destroy'(Tid),
+	retractall('$pl_thread_alias'(Tid0, _)).
 mutex_destroy(Tid) :-
 	'$mutex_destroy'(Tid).
 
