@@ -1998,6 +1998,37 @@ static bool bif_iso_copy_term_2(query *q)
 	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 }
 
+// Don't copy attributes
+
+static bool bif_copy_term_nat_2(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,any);
+
+	if (is_var(p1) && is_var(p2))
+		return true;
+
+	if (is_atomic(p1) && is_var(p2))
+		return unify(q, p1, p1_ctx, p2, p2_ctx);
+
+	if (!is_var(p2) && !has_vars(q, p1, p1_ctx))
+		return unify(q, p1, p1_ctx, p2, p2_ctx);
+
+	GET_FIRST_RAW_ARG(from,any);
+	cell *tmp;
+
+	if (is_var(from)) {
+		GET_NEXT_RAW_ARG(to,any);
+		tmp = deep_copy_to_heap_with_replacement(q, from, from_ctx, false, from, from_ctx, to, to_ctx);
+		check_heap_error(tmp);
+	} else {
+		tmp = deep_copy_to_heap(q, from, from_ctx, false);
+		check_heap_error(tmp);
+	}
+
+	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+}
+
 static bool bif_iso_functor_3(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -6471,7 +6502,6 @@ builtins g_other_bifs[] =
 	{"format", 3, bif_format_3, "+stream,+string,+list", false, false, BLAH},
 	{"abolish", 2, bif_abolish_2, "+term,+list", false, false, BLAH},
 	{"assert", 1, bif_iso_assertz_1, "+term", false, false, BLAH},
-	{"copy_term_nat", 2, bif_iso_copy_term_2, "+term,-term", false, false, BLAH},
 	{"string", 1, bif_atom_1, "+term,+term", false, false, BLAH},
 	{"atomic_concat", 3, bif_atomic_concat_3, "+atomic,+atomic,?atomic", false, false, BLAH},
 	{"atomic_list_concat", 3, bif_atomic_list_concat_3, "+list,+list,-atomic", false, false, BLAH},
@@ -6512,6 +6542,7 @@ builtins g_other_bifs[] =
 	{"getenv", 2, bif_getenv_2, "+atom,-atom", false, false, BLAH},
 	{"setenv", 2, bif_setenv_2, "+atom,+atom", false, false, BLAH},
 	{"unsetenv", 1, bif_unsetenv_1, "+atom", false, false, BLAH},
+	{"copy_term_nat", 2, bif_copy_term_nat_2, "+term,-term", false, false, BLAH},
 	{"duplicate_term", 2, bif_iso_copy_term_2, "+term,-term", false, false, BLAH},
 	{"call_nth", 2, bif_call_nth_2, ":callable,+integer", false, false, BLAH},
 	{"limit", 2, bif_limit_2, "+integer,:callable", false, false, BLAH},
