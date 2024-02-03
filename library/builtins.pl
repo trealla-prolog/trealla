@@ -783,7 +783,7 @@ mutex_unlock(Tid) :-
 :- meta_predicate(with_mutex(+,0)).
 
 with_mutex(Tid, Goal) :-
-	setup_call_cleanup(mutex_lock(Tid), once(Goal), mutex_unlock(Tid).
+	setup_call_cleanup(mutex_lock(Tid), once(Goal), mutex_unlock(Tid)).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
