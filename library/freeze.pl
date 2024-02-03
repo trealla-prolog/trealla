@@ -10,8 +10,9 @@
 :- meta_predicate(freeze(-, 0)).
 :- attribute frozen/1.
 
-legacy_frozen(Term, Goal) :-
-	copy_term(Term, _, Gs),
+frozen(Term, Goal) :-
+	copy_term(Term, Term2, Gs),
+	Term = Term2,
 	flatten(Gs, Gs2),
 	list_to_conjunction(Gs2, Fresh),
 	Fresh = Goal.

@@ -903,7 +903,8 @@ print_goals_([Goal|Goals]) :-
 
 dump_attvars_([], []).
 dump_attvars_([Var|Vars], [Gs|Rest]) :-
-	copy_term(Var, _, Gs),
+	copy_term(Var, Var2, Gs),
+	Var = Var2,
 	dump_attvars_(Vars, Rest).
 
 dump_attvars :-

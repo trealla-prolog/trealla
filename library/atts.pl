@@ -66,8 +66,8 @@ collect_goals_([V|T], GsIn, GsOut) :-
 	collect_goals_(T, GsOut2, GsOut).
 
 copy_term(Term, Copy, Gs) :-
-	copy_term_nat(Term, Copy),
-	term_attributed_variables(Term, Vs),
+	duplicate_term(Term, Copy),
+	term_attributed_variables(Copy, Vs),
 	collect_goals_(Vs, [], Gs).
 
 :- help(copy_term(+term,?term,+list), [iso(false)]).
