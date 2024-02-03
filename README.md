@@ -1181,7 +1181,8 @@ Create a stand-alone message queue...
 	thread_peek_message/1		# thread_peek_message(?term)
 ```
 
-Where 'options' can be *alias(+atom)*.
+Where 'options' can be *alias(+atom)*. Note: you can send/get/peek
+to a thread as well.
 
 Create a stand-alone mutex...
 
@@ -1189,13 +1190,15 @@ Create a stand-alone mutex...
 	mutex_create/2				# mutex_create(-mutex,+options)
 	mutex_create/1				# mutex_create(-mutex)
 	mutex_destroy/1				# mutex_destroy(+mutex)
-	mutex_trylock/1				# mutex_trylock(-mutex)
-	mutex_lock/1				# mutex_lock(-mutex)
-	mutex_unlock/1				# mutex_unlock(-mutex)
+	mutex_trylock/1				# mutex_trylock(+mutex)
+	mutex_lock/1				# mutex_lock(+mutex)
+	mutex_unlock/1				# mutex_unlock(+mutex)
 	mutex_unlock_all/0			# mutex_unlock_all
 ```
 
 Where 'options' can be *alias(+atom)*.
+
+Note: you can trylock/lock/unlock a thread or message queue as well.
 
 For example...
 
