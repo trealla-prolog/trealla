@@ -959,9 +959,6 @@ static bool bif_mutex_trylock_1(query *q)
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
 
-	if (!t->is_mutex_only)
-		return throw_error(q, p1, p1_ctx, "permission_error", "lock,not_mutex");
-
 #ifdef _WIN32
 	HANDLE tid = (void*)GetCurrentThreadId();
 #else
@@ -981,9 +978,6 @@ static bool bif_mutex_lock_1(query *q)
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
 
-	if (!t->is_mutex_only)
-		return throw_error(q, p1, p1_ctx, "permission_error", "lock,not_mutex");
-
 #ifdef _WIN32
 	HANDLE tid = (void*)GetCurrentThreadId();
 #else
@@ -1001,9 +995,6 @@ static bool bif_mutex_unlock_1(query *q)
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
 
-	if (!t->is_mutex_only)
-		return throw_error(q, p1, p1_ctx, "permission_error", "unlock,not_mutex");
-
 	t->locked_by = 0;
 	release_lock(&t->guard);
 	return true;
@@ -1020,7 +1011,7 @@ static bool bif_mutex_unlock_all_0(query *q)
 	for (unsigned i = 0; i < MAX_THREADS; i++) {
 		pl_thread *t = &g_pl_threads[i];
 
-		if (!t->active || !t->is_mutex_only)
+		if (!t->active)
 			continue;
 
 		if (t->locked_by != (void*)tid)
