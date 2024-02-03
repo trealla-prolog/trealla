@@ -225,8 +225,11 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 
 static bool bif_thread_get_message_2(query *q)
 {
-	GET_FIRST_ARG(p1,integer);
+	GET_FIRST_ARG(p1,nonvar);
 	GET_NEXT_ARG(p2,any);
+
+	if (!is_smallint(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "message_queue_or_alias");
 
 	if (is_negative(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
@@ -246,8 +249,11 @@ static bool bif_thread_get_message_2(query *q)
 
 static bool bif_thread_peek_message_2(query *q)
 {
-	GET_FIRST_ARG(p1,integer);
+	GET_FIRST_ARG(p1,nonvar);
 	GET_NEXT_ARG(p2,any);
+
+	if (!is_smallint(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "message_queue_or_alias");
 
 	if (is_negative(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
@@ -267,8 +273,11 @@ static bool bif_thread_peek_message_2(query *q)
 
 static bool bif_thread_send_message_2(query *q)
 {
-	GET_FIRST_ARG(p1,integer);
+	GET_FIRST_ARG(p1,nonvar);
 	GET_NEXT_ARG(p2,any);
+
+	if (!is_smallint(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "message_queue_or_alias");
 
 	if (is_negative(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
@@ -883,7 +892,11 @@ static bool bif_message_queue_create_1(query *q)
 
 static bool bif_message_queue_destroy_1(query *q)
 {
-	GET_FIRST_ARG(p1,integer);
+	GET_FIRST_ARG(p1,nonvar);
+
+	if (!is_smallint(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "message_queue_or_alias");
+
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
 
@@ -942,7 +955,14 @@ static bool bif_mutex_create_1(query *q)
 
 static bool bif_mutex_destroy_1(query *q)
 {
-	GET_FIRST_ARG(p1,integer);
+	GET_FIRST_ARG(p1,nonvar);
+
+	if (!is_smallint(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "mutex_or_alias");
+
+	if (is_negative(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
+
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
 
@@ -955,7 +975,14 @@ static bool bif_mutex_destroy_1(query *q)
 
 static bool bif_mutex_trylock_1(query *q)
 {
-	GET_FIRST_ARG(p1,integer);
+	GET_FIRST_ARG(p1,nonvar);
+
+	if (!is_smallint(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "mutex_or_alias");
+
+	if (is_negative(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
+
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
 
@@ -974,7 +1001,11 @@ static bool bif_mutex_trylock_1(query *q)
 
 static bool bif_mutex_lock_1(query *q)
 {
-	GET_FIRST_ARG(p1,integer);
+	GET_FIRST_ARG(p1,any);
+
+	if (!is_smallint(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "mutex_or_alias");
+
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
 
@@ -991,7 +1022,14 @@ static bool bif_mutex_lock_1(query *q)
 
 static bool bif_mutex_unlock_1(query *q)
 {
-	GET_FIRST_ARG(p1,integer);
+	GET_FIRST_ARG(p1,nonvar);
+
+	if (!is_smallint(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "mutex_or_alias");
+
+	if (is_negative(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
+
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
 
