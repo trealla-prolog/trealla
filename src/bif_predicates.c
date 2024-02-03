@@ -2029,6 +2029,44 @@ static bool bif_copy_term_nat_2(query *q)
 	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 }
 
+// Copy attributes
+
+static bool bif_duplicate_term_2(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,any);
+
+	if (is_var(p1) && is_var(p2)) {
+		const frame *f1 = GET_FRAME(p1_ctx);
+		const frame *f2 = GET_FRAME(p2_ctx);
+		slot *e1 = GET_SLOT(f1, p1->var_nbr);
+		slot *e2 = GET_SLOT(f2, p2->var_nbr);
+		e2->c.attrs = e1->c.attrs;
+		e2->c.attrs_ctx = e1->c.attrs_ctx;
+		return true;
+	}
+
+	if (is_atomic(p1) && is_var(p2))
+		return unify(q, p1, p1_ctx, p2, p2_ctx);
+
+	if (!is_var(p2) && !has_vars(q, p1, p1_ctx))
+		return unify(q, p1, p1_ctx, p2, p2_ctx);
+
+	GET_FIRST_RAW_ARG(from,any);
+	cell *tmp;
+
+	if (is_var(from)) {
+		GET_NEXT_RAW_ARG(to,any);
+		tmp = deep_copy_to_heap_with_replacement(q, from, from_ctx, true, from, from_ctx, to, to_ctx);
+		check_heap_error(tmp);
+	} else {
+		tmp = deep_copy_to_heap(q, from, from_ctx, true);
+		check_heap_error(tmp);
+	}
+
+	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+}
+
 static bool bif_iso_functor_3(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -6543,7 +6581,7 @@ builtins g_other_bifs[] =
 	{"setenv", 2, bif_setenv_2, "+atom,+atom", false, false, BLAH},
 	{"unsetenv", 1, bif_unsetenv_1, "+atom", false, false, BLAH},
 	{"copy_term_nat", 2, bif_copy_term_nat_2, "+term,-term", false, false, BLAH},
-	{"duplicate_term", 2, bif_iso_copy_term_2, "+term,-term", false, false, BLAH},
+	{"duplicate_term", 2, bif_duplicate_term_2, "+term,-term", false, false, BLAH},
 	{"call_nth", 2, bif_call_nth_2, ":callable,+integer", false, false, BLAH},
 	{"limit", 2, bif_limit_2, "+integer,:callable", false, false, BLAH},
 	{"offset", 2, bif_offset_2, "+integer,+callable", false, false, BLAH},
