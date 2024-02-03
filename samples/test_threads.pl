@@ -19,8 +19,9 @@ main :-
 	writeln(done).
 
 thread_run(I) :-
+	atomic_concat(foo, I, Alias),
 	mutex_lock(bar),
-	format(" ...Thread ~d~n", [I]),
+	format(" ...Thread ~w~n", [Alias]),
 	mutex_unlock(bar),
 	true.
 
