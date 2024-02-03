@@ -1006,7 +1006,6 @@ static bool bif_mutex_unlock_1(query *q)
 
 	t->locked_by = 0;
 	release_lock(&t->guard);
-
 	return true;
 }
 

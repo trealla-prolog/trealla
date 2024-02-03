@@ -43,7 +43,7 @@ inline static bool try_lock(lock *l)
 #ifdef _WIN32
     return TryEnterCriticalSection(&l->mutex);
 #else
-	return pthread_mutex_trylock(&l->mutex);
+	return pthread_mutex_trylock(&l->mutex) == 0;
 #endif
 }
 
