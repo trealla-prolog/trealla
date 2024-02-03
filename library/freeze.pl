@@ -1,6 +1,5 @@
 :- module(freeze, [
-	freeze/2,
-	frozen/2
+	freeze/2
 	]).
 
 :- use_module(library(atts)).
@@ -9,14 +8,6 @@
 
 :- meta_predicate(freeze(-, 0)).
 :- attribute frozen/1.
-
-frozen(Term, Goal) :-
-	copy_term(Term, _, Gs),
-	flatten(Gs, Gs2),
-	list_to_conjunction(Gs2, Fresh),
-	Fresh = Goal.
-
-:- help(frozen(@term,-callable), [iso(false),desc('Unify Goal with the goal or conjunction of goals delayed on some attributed variable in Term.')]).
 
 verify_attributes(Var, Other, Goals) :-
 	get_atts(Var, frozen(Fa)), !,       % are we involved?
