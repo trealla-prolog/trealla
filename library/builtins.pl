@@ -638,7 +638,7 @@ thread_create(Goal, Id, Options) :-
 			throw(error(permission_error(create,thread,alias(Alias))))
 			; true
 		),
-		Goal1 = catch(Goal, _, true),
+		Goal1 = Goal,
 		(	(nonvar(Detached), Detached = true) ->
 			Goal2 = (Goal1, retractall(user:'$pl_thread_alias'(Alias, _)))
 		;	Goal2 = Goal1
@@ -663,6 +663,7 @@ thread_signal(Alias, Goal) :-
 	Goal0 = (Goal, true),
 	'$thread_signal'(Id, Goal0).
 thread_signal(Id, Goal) :-
+	(integer(Id) -> true ; throw(error(domain_error(thread_or_alias, Id), thread_signal/2))),
 	Goal0 = (Goal, true),
 	'$thread_signal'(Id, Goal0).
 
@@ -672,6 +673,7 @@ thread_join(Alias, Status) :-
 	'$thread_join'(Id, Status),
 	retractall(user:'$pl_thread_alias'(Alias, _)).
 thread_join(Id, Status) :-
+	(integer(Id) -> true ; throw(error(domain_error(thread_or_alias, Id), thread_join/2))),
 	'$thread_join'(Id, Status),
 	retractall(user:'$pl_thread_alias'(_, Id)).
 
@@ -680,6 +682,7 @@ thread_cancel(Alias) :-
 	!,
 	'$thread_cancel'(Id).
 thread_cancel(Id) :-
+	(integer(Id) -> true ; throw(error(domain_error(thread_or_alias, Id), thread_cancel/2))),
 	'$thread_cancel'(Id).
 
 thread_detach(Alias) :-
@@ -687,6 +690,7 @@ thread_detach(Alias) :-
 	!,
 	'$thread_detach'(Id).
 thread_detach(Id) :-
+	(integer(Id) -> true ; throw(error(domain_error(thread_or_alias, Id), thread_detach/2))),
 	'$thread_detach'(Id).
 
 pl_msg_send(Alias, Term) :-
@@ -705,6 +709,7 @@ thread_send_message(Alias, Term) :-
 	!,
 	'$thread_send_message'(Id, Term).
 thread_send_message(Id, Term) :-
+	(integer(Id) -> true ; throw(error(domain_error(queue_or_alias, Id), thread_message_send/2))),
 	'$thread_send_message'(Id, Term).
 
 thread_get_message(Term) :-
@@ -716,6 +721,7 @@ thread_get_message(Alias, Term) :-
 	!,
 	'$thread_get_message'(Id, Term).
 thread_get_message(Id, Term) :-
+	(integer(Id) -> true ; throw(error(domain_error(queue_or_alias, Id), thread_message_get/2))),
 	'$thread_get_message'(Id, Term).
 
 thread_peek_message(Term) :-
@@ -727,6 +733,7 @@ thread_peek_message(Alias, Term) :-
 	!,
 	'$thread_peek_message'(Id, Term).
 thread_peek_message(Id, Term) :-
+	(integer(Id) -> true ; throw(error(domain_error(queue_or_alias, Id), thread_message_peek/2))),
 	'$thread_peek_message'(Id, Term).
 
 message_queue_create(Id) :-
@@ -752,6 +759,7 @@ message_queue_destroy(Alias) :-
 	'$message_queue_destroy'(Id),
 	retractall(user:'$pl_thread_alias'(Alias, _)).
 message_queue_destroy(Id) :-
+	(integer(Id) -> true ; throw(error(domain_error(queue_or_alias, Id), message_queue_destroy/1))),
 	'$message_queue_destroy'(Id).
 
 mutex_create(Id) :-
@@ -777,6 +785,7 @@ mutex_destroy(Alias) :-
 	'$mutex_destroy'(Id),
 	retractall(user:'$pl_thread_alias'(Alias, _)).
 mutex_destroy(Id) :-
+	(integer(Id) -> true ; throw(error(domain_error(mutex_or_alias, Id), mutex_destroy/1))),
 	'$mutex_destroy'(Id).
 
 mutex_trylock(Alias) :-
@@ -784,6 +793,7 @@ mutex_trylock(Alias) :-
 	!,
 	'$mutex_trylock'(Id).
 mutex_trylock(Id) :-
+	(integer(Id) -> true ; throw(error(domain_error(mutex_or_alias, Id), mutex_trylock/1))),
 	'$mutex_trylock'(Id).
 
 mutex_lock(Alias) :-
@@ -791,6 +801,7 @@ mutex_lock(Alias) :-
 	!,
 	'$mutex_lock'(Id).
 mutex_lock(Id) :-
+	(integer(Id) -> true ; throw(error(domain_error(mutex_or_alias, Id), mutex_lock/1))),
 	'$mutex_lock'(Id).
 
 mutex_unlock(Alias) :-
@@ -798,6 +809,7 @@ mutex_unlock(Alias) :-
 	!,
 	'$mutex_unlock'(Id).
 mutex_unlock(Id) :-
+	(integer(Id) -> true ; throw(error(domain_error(mutex_or_alias, Id), mutex_unlock/1))),
 	'$mutex_unlock'(Id).
 
 :- meta_predicate(with_mutex(+,0)).

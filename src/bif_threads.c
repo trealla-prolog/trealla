@@ -62,6 +62,8 @@ struct pl_thread_ {
 static pl_thread g_pl_threads[MAX_THREADS] = {0};
 static unsigned g_pl_cnt = 1;	// 0 is the primaryinstance
 
+#define THREAD_DEBUG if (1)
+
 #define is_threadid(c) is_thread_or_alias(q, c)
 #define is_mutexid(c) is_mutex_or_alias(q, c)
 #define is_queueid(c) is_queue_or_alias(q, c)
