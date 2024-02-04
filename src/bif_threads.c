@@ -66,7 +66,7 @@ static unsigned g_pl_cnt = 1;	// 0 is the primaryinstance
 #define is_mutexid(c) is_mutex_or_alias(q, c)
 #define is_queueid(c) is_queue_or_alias(q, c)
 
-static bool is_thread_or_alias_(query *q, cell *c)
+static bool is_thread_or_alias(query *q, cell *c)
 {
 	pl_idx c_ctx = 0;
 
@@ -76,10 +76,7 @@ static bool is_thread_or_alias_(query *q, cell *c)
 	if (!is_smallint(c))
 		return throw_error(q, c, c_ctx, "domain_error", "thread_or_alias");
 
-	int chan = get_smallint(c);
-
-	if (chan < 0)
-		return throw_error(q, c, c_ctx, "domain_error", "thread_or_alias");
+	unsigned chan = get_smalluint(c);
 
 	if (chan >= MAX_THREADS)
 		return throw_error(q, c, c_ctx, "domain_error", "thread_or_alias");
@@ -92,19 +89,50 @@ static bool is_thread_or_alias_(query *q, cell *c)
 	return true;
 }
 
-static bool is_thread_or_alias(query *q, cell *c)
-{
-	return is_thread_or_alias_(q, c);
-}
-
 static bool is_mutex_or_alias(query *q, cell *c)
 {
-	return is_thread_or_alias_(q, c);
+	pl_idx c_ctx = 0;
+
+	if (is_var(c))
+		return throw_error(q, c, c_ctx, "instantiation_error", "mutex_or_alias");
+
+	if (!is_smallint(c))
+		return throw_error(q, c, c_ctx, "domain_error", "mutex_or_alias");
+
+	unsigned chan = get_smalluint(c);
+
+	if (chan >= MAX_THREADS)
+		return throw_error(q, c, c_ctx, "domain_error", "mutex_or_alias");
+
+	pl_thread *t = &g_pl_threads[chan];
+
+	if (!t->active)
+		return throw_error(q, c, c_ctx, "existence_error", "mutex_or_alias");
+
+	return true;
 }
 
 static bool is_queue_or_alias(query *q, cell *c)
 {
-	return is_thread_or_alias_(q, c);
+	pl_idx c_ctx = 0;
+
+	if (is_var(c))
+		return throw_error(q, c, c_ctx, "instantiation_error", "queue_or_alias");
+
+	if (!is_smallint(c))
+		return throw_error(q, c, c_ctx, "domain_error", "queue_or_alias");
+
+	unsigned chan = get_smalluint(c);
+
+	if (chan >= MAX_THREADS)
+		return throw_error(q, c, c_ctx, "domain_error", "queue_or_alias");
+
+	pl_thread *t = &g_pl_threads[chan];
+
+	if (!t->active)
+		return throw_error(q, c, c_ctx, "existence_error", "queue_or_alias");
+
+	return true;
 }
 
 static void suspend_thread(pl_thread *t, int ms)
