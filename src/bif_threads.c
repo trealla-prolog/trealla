@@ -60,7 +60,8 @@ struct pl_thread_ {
 };
 
 static pl_thread g_pl_threads[MAX_THREADS] = {0};
-static unsigned g_pl_cnt = 1;	// 0 is the primaryinstance
+static unsigned g_pl_cnt = 1;		// 0 is the primaryinstance
+static unsigned g_pl_any_threads = 0;
 
 #define THREAD_DEBUG if (1)
 
@@ -524,6 +525,7 @@ static void *start_routine_thread_create(pl_thread *t)
 static bool bif_thread_create_4(query *q)
 {
 	if (s_first) {
+		g_pl_any_threads = 1;
 		s_first = false;
 		pl_thread *t = &g_pl_threads[0];
 		init_lock(&t->guard);
@@ -1112,7 +1114,7 @@ static bool bif_pl_thread_set_priority_2(query *q)
 }
 static bool bif_any_threads_0(query *q)
 {
-	return g_pl_cnt > 1;
+	return g_pl_any_threads != 0;
 }
 
 #endif
