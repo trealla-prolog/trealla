@@ -563,6 +563,7 @@ static bool bif_thread_create_4(query *q)
 	t->q = query_create(q->st.m, false);
 	check_heap_error(t->q);
 	t->q->thread_ptr = t;
+	t->q->trace = q->trace;
 	t->goal = deep_clone_to_heap(t->q, goal, 0);
 	t->at_exit = is_nonvar(p4) ? deep_clone_to_heap(t->q, at_exit, 0) : NULL;
 	t->chan = chan;
