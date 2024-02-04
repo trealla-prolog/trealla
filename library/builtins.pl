@@ -749,16 +749,7 @@ thread_peek_message(Id, Term) :-
 
 thread_property(P) :-
 	thread_self(Id),
-	'$pl_thread_alias'(Id, Alias, thread),
-	Alias \= '-',
-	P = alias(Alias).
-thread_property(P) :-
-	thread_self(Id),
-	'$pl_thread_alias'(Id, _, thread),
-	( '$thread_is_detached'(Id) ->
-		P = detached(true)
-	;	P = detached(false)
-	).
+	thread_property(Id, P).
 
 thread_property(Id, P) :-
 	'$pl_thread_alias'(Id, Alias, thread),
