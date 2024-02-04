@@ -905,6 +905,14 @@ static bool bif_thread_exit_1(query *q)
 	return false;
 }
 
+static bool bif_thread_is_detached_1(query *q)
+{
+	GET_FIRST_ARG(p1,mutexid);
+	unsigned chan = get_smalluint(p1);
+	pl_thread *t = &g_pl_threads[chan];
+	return t->is_detached;
+}
+
 static bool bif_message_queue_create_1(query *q)
 {
 	if (s_first) {
@@ -1034,7 +1042,7 @@ static bool bif_mutex_trylock_1(query *q)
 	return true;
 }
 
-static bool bif_mutex_status_1(query *q)
+static bool bif_mutex_is_locked_1(query *q)
 {
 	GET_FIRST_ARG(p1,mutexid);
 	unsigned chan = get_smalluint(p1);
@@ -1155,6 +1163,7 @@ builtins g_threads_bifs[] =
 	{"$thread_detach", 1, bif_thread_detach_1, "+thread", false, false, BLAH},
 	{"$thread_signal", 2, bif_thread_signal_2, "+thread,:callable", false, false, BLAH},
 	{"$thread_join", 2, bif_thread_join_2, "+thread,-integer", false, false, BLAH},
+	{"$thread_is_detached", 1, bif_thread_is_detached_1, "+thread", false, false, BLAH},
 
 	{"thread_exit", 1, bif_thread_exit_1, "+term", false, false, BLAH},
 	{"thread_self", 1, bif_thread_self_1, "-integer", false, false, BLAH},
@@ -1171,7 +1180,7 @@ builtins g_threads_bifs[] =
 	{"$mutex_create", 1, bif_mutex_create_1, "-thread", false, false, BLAH},
 	{"$mutex_destroy", 1, bif_mutex_destroy_1, "+thread", false, false, BLAH},
 	{"$mutex_trylock", 1, bif_mutex_trylock_1, "+thread", false, false, BLAH},
-	{"$mutex_status", 1, bif_mutex_status_1, "+thread", false, false, BLAH},
+	{"$mutex_is_locked", 1, bif_mutex_is_locked_1, "+thread", false, false, BLAH},
 	{"$mutex_lock", 1, bif_mutex_lock_1, "+thread", false, false, BLAH},
 	{"$mutex_unlock", 1, bif_mutex_unlock_1, "+thread", false, false, BLAH},
 	{"mutex_unlock_all", 0, bif_mutex_unlock_all_0, "", false, false, BLAH},
