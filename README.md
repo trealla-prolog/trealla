@@ -1194,6 +1194,7 @@ Create a stand-alone mutex...
 	mutex_lock/1				# mutex_lock(+mutex)
 	mutex_unlock/1				# mutex_unlock(+mutex)
 	mutex_unlock_all/0			# mutex_unlock_all
+	mutex_property/2			# mutex_property(+mutex,+term)
 ```
 
 Where 'options' can be *alias(+atom)*.
