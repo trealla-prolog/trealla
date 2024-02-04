@@ -628,12 +628,12 @@ pl_thread(Id, Filename, Options) :-
 :- meta_predicate(thread_signal(+,0)).
 
 thread_create(Goal, Id) :-
-	format("*** thread_create(~w,~w)~n", [Goal,Id]),
+	%format("*** thread_create(~w,~w)~n", [Goal,Id]),
 	'$must_be'(Goal, callable, thread_create/3, _),
 	'$thread_create'(Goal, Id, false).
 
 thread_create(Goal, Id, Options) :-
-	format("*** thread_create(~w,~w,~w)~n", [Goal,Id,Options]),
+	%format("*** thread_create(~w,~w,~w)~n", [Goal,Id,Options]),
 	'$must_be'(Goal, callable, thread_create/3, _),
 	'$must_be'(Options, list, thread_create/3, _),
 	pl_thread_option_(Options, Alias, _Cpu, _Priority, Detached, AtExit),
@@ -662,7 +662,7 @@ thread_create(Goal, Id, Options) :-
 	true.
 
 thread_signal(Alias, Goal) :-
-	format("*** thread_signal(~w,~w)~n", [Alias,Goal]),
+	%format("*** thread_signal(~w,~w)~n", [Alias,Goal]),
 	'$pl_thread_alias'(Alias, Id),
 	!,
 	Goal0 = (Goal, true),
@@ -673,7 +673,7 @@ thread_signal(Id, Goal) :-
 	'$thread_signal'(Id, Goal0).
 
 thread_join(Alias, Status) :-
-	format("*** thread_join(~w,~w)~n", [Alias,Status]),
+	%format("*** thread_join(~w,~w)~n", [Alias,Status]),
 	'$pl_thread_alias'(Alias, Id),
 	!,
 	'$thread_join'(Id, Status),
@@ -684,7 +684,7 @@ thread_join(Id, Status) :-
 	retractall('$pl_thread_alias'(_, Id)).
 
 thread_cancel(Alias) :-
-	format("*** thread_cancel(~w)~n", [Alias]),
+	%format("*** thread_cancel(~w)~n", [Alias]),
 	'$pl_thread_alias'(Alias, Id),
 	!,
 	'$thread_cancel'(Id).
@@ -712,7 +712,7 @@ thread_send_message(Term) :-
 	'$thread_send_message'(Id, Term).
 
 thread_send_message(Alias, Term) :-
-	format("*** thread_send_message(~w,~w)~n", [Alias,Term]),
+	%format("*** thread_send_message(~w,~w)~n", [Alias,Term]),
 	'$pl_thread_alias'(Alias, Id),
 	!,
 	'$thread_send_message'(Id, Term).
@@ -771,11 +771,11 @@ message_queue_destroy(Id) :-
 	'$message_queue_destroy'(Id).
 
 mutex_create(Id) :-
-	format("*** mutex_create(~w)~n", [Id]),
+	%format("*** mutex_create(~w)~n", [Id]),
 	'$mutex_create'(Id).
 
 mutex_create(Id, Options) :-
-	format("*** mutex_create(~w,~w)~n", [Id,Options]),
+	%format("*** mutex_create(~w,~w)~n", [Id,Options]),
 	'$must_be'(Options, list, mutex_create/3, _),
 	pl_thread_option_(Options, Alias, _Cpu, _Priority, _Detached, _AtExit),
 	'$mutex_create'(Id0),
@@ -790,7 +790,7 @@ mutex_create(Id, Options) :-
 	true.
 
 mutex_destroy(Alias) :-
-	format("*** mutex_destroy(~w)~n", [Alias]),
+	%format("*** mutex_destroy(~w)~n", [Alias]),
 	'$pl_thread_alias'(Alias, Id),
 	!,
 	'$mutex_destroy'(Id),
@@ -800,7 +800,7 @@ mutex_destroy(Id) :-
 	'$mutex_destroy'(Id).
 
 mutex_trylock(Alias) :-
-	format("*** mutex_trylock(~w)~n", [Alias]),
+	%format("*** mutex_trylock(~w)~n", [Alias]),
 	'$pl_thread_alias'(Alias, Id),
 	!,
 	'$mutex_trylock'(Id).
@@ -809,7 +809,7 @@ mutex_trylock(Id) :-
 	'$mutex_trylock'(Id).
 
 mutex_lock(Alias) :-
-	format("*** mutex_lock(~w)~n", [Alias]),
+	%format("*** mutex_lock(~w)~n", [Alias]),
 	'$pl_thread_alias'(Alias, Id),
 	!,
 	'$mutex_lock'(Id).
@@ -818,7 +818,7 @@ mutex_lock(Id) :-
 	'$mutex_lock'(Id).
 
 mutex_unlock(Alias) :-
-	format("*** mutex_unlock(~w)~n", [Alias]),
+	%format("*** mutex_unlock(~w)~n", [Alias]),
 	'$pl_thread_alias'(Alias, Id),
 	!,
 	'$mutex_unlock'(Id).
@@ -832,7 +832,7 @@ mutex_unlock(Id) :-
 :- meta_predicate(with_mutex(+,0)).
 
 with_mutex(Alias, Goal) :-
-	format("*** with_mutex1(~w,~w)~n", [Alias,Goal]),
+	%format("*** with_mutex1(~w,~w)~n", [Alias,Goal]),
 	'$pl_thread_alias'(Alias, Id),
 	!,
 	setup_call_cleanup(mutex_lock(Id), once(Goal), mutex_unlock(Id)).
