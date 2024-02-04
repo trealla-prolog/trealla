@@ -10,9 +10,9 @@ main :-
 main :-
 	between(1, 10, I),
 		atomic_concat(foo, I, Alias),
-		Msg = ok,
+		Msg = msg(Alias),
 		format(" ...Sending ~w msg ~w~n", [Alias, Msg]),
-		thread_send_message(Alias, msg(Alias)),
+		thread_send_message(Alias, Msg),
 		fail.
 main :-
 	between(1, 10, I),
