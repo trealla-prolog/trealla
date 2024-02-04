@@ -826,18 +826,22 @@ mutex_unlock(Id) :-
 	(integer(Id) -> true ; throw(error(domain_error(mutex_or_alias, Id), mutex_unlock/1))),
 	'$mutex_unlock'(Id).
 
+% Note: with_mutex/2 ignores the mutex if called without any
+% thread context. This is not well documented.
+
 :- meta_predicate(with_mutex(+,0)).
 
 with_mutex(Alias, Goal) :-
 	format("*** with_mutex1(~w,~w)~n", [Alias,Goal]),
 	'$pl_thread_alias'(Alias, Id),
 	!,
-	setup_call_cleanup(mutex_lock(Id), ignore(Goal), mutex_unlock(Id)).
+	setup_call_cleanup(mutex_lock(Id), once(Goal), mutex_unlock(Id)).
 with_mutex(Id, Goal) :-
 	( '$any_threads' ->
 		setup_call_cleanup(mutex_lock(Id), once(Goal), mutex_unlock(Id))
 	;	ignore(Goal)
 	).
+
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
