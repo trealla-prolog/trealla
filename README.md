@@ -1162,6 +1162,7 @@ message queue associated with it. Note: the database
 	thread_exit/1		# thread_exit(+term)
 	thread_sleep/1		# thread_sleep(+integer)
 	thread_yield/0		# thread_yield
+	thread_property/2	# thread_property(+thread,+term)
 ```
 
 Where 'options' can be *alias(+atom)*, *at_exit(:term)* and/or *detached(+boolean)*

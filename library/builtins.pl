@@ -747,6 +747,17 @@ thread_peek_message(Id, Term) :-
 	(integer(Id) -> true ; throw(error(domain_error(queue_or_alias, Id), thread_message_peek/2))),
 	'$thread_peek_message'(Id, Term).
 
+thread_property(Id, P) :-
+	'$pl_thread_alias'(Id, Alias, thread),
+	Alias \= '-',
+	P = alias(Alias).
+thread_property(Id, P) :-
+	'$pl_thread_alias'(Id, _, thread),
+	( '$mutex_status'(Id) ->
+		P = status(unlocked)
+	;	P = status(locked)
+	).
+
 message_queue_create(Id) :-
 	'$message_queue_create'(Id).
 
@@ -777,11 +788,11 @@ message_queue_destroy(Id) :-
 	'$message_queue_destroy'(Id).
 
 message_queue_property(Id, P) :-
-	'$pl_thread_alias'(Id, Alias, _),
+	'$pl_thread_alias'(Id, Alias, queue),
 	Alias \= '-',
 	P = alias(Alias).
 message_queue_property(Id, P) :-
-	'$pl_thread_alias'(Id, _, _),
+	'$pl_thread_alias'(Id, _, queue),
 	( '$mutex_status'(Id) ->
 		P = status(unlocked)
 	;	P = status(locked)
@@ -863,11 +874,11 @@ with_mutex(Id, Goal) :-
 	).
 
 mutex_property(Id, P) :-
-	'$pl_thread_alias'(Id, Alias, _),
+	'$pl_thread_alias'(Id, Alias, mutex),
 	Alias \= '-',
 	P = alias(Alias).
 mutex_property(Id, P) :-
-	'$pl_thread_alias'(Id, _, _),
+	'$pl_thread_alias'(Id, _, mutex),
 	( '$mutex_status'(Id) ->
 		P = status(unlocked)
 	;	P = status(locked)
