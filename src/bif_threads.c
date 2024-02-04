@@ -1121,7 +1121,7 @@ builtins g_threads_bifs[] =
 	{"$pl_msg_send", 2, bif_pl_send_2, "+thread,+term", false, false, BLAH},
 	{"pl_msg_recv", 2, bif_pl_recv_2, "-thread,?term", false, false, BLAH},
 
-	{"$thread_create", 4, bif_thread_create_4, "-thread,:callable,+boolean,:callable", false, false, BLAH},
+	{"$thread_create", 4, bif_thread_create_4, ":callable,-thread,+boolean,:callable", false, false, BLAH},
 	{"$thread_cancel", 1, bif_thread_cancel_1, "+thread", false, false, BLAH},
 	{"$thread_detach", 1, bif_thread_detach_1, "+thread", false, false, BLAH},
 	{"$thread_signal", 2, bif_thread_signal_2, "+thread,:term", false, false, BLAH},
