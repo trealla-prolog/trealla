@@ -74,15 +74,15 @@ static bool is_threadid_(query *q, cell *c)
 	if (!is_smallint(c))
 		return throw_error(q, c, c_ctx, "domain_error", "threadid_or_alias");
 
-	int nbr = get_smallint(c);
+	int chan = get_smallint(c);
 
-	if (nbr < 0)
+	if (chan < 0)
 		return throw_error(q, c, c_ctx, "domain_error", "threadid_or_alias");
 
-	if (nbr >= MAX_THREADS)
+	if (chan >= MAX_THREADS)
 		return throw_error(q, c, c_ctx, "domain_error", "threadid_or_alias");
 
-	pl_thread *t = &g_pl_threads[nbr];
+	pl_thread *t = &g_pl_threads[chan];
 
 	if (!t->active)
 		return throw_error(q, c, c_ctx, "existence_error", "threadid_or_alias");
@@ -157,8 +157,7 @@ static bool do_send_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bo
 	if (!t->active || t->is_mutex_only)
 		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
 
-	check_heap_error(init_tmp_heap(q));
-	const cell *c = deep_clone_to_tmp(q, p1, p1_ctx);
+	const cell *c = deep_clone_to_heap(q, p1, p1_ctx);
 	check_heap_error(c);
 	check_heap_error(queue_to_chan(chan, c, q->my_chan, is_signal));
     resume_thread(t);
@@ -175,6 +174,11 @@ static bool bif_pl_send_2(query *q)
 
 static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bool is_peek)
 {
+	if (chan >= MAX_THREADS) {
+		printf("*** match %d\n", chan);
+		assert(chan < MAX_THREADS);
+	}
+
 	pl_thread *t = &g_pl_threads[chan];
 
 	while (true) {

@@ -639,8 +639,8 @@ thread_create(Goal, Id, Options) :-
 			; true
 		),
 		Goal1 = catch(Goal, _, true),
-		(	nonvar(Detached) ->
-			Goal2 = (Goal1, delay(1), retractall(user:'$pl_thread_alias'(Alias, _)))
+		(	(nonvar(Detached), Detached = true) ->
+			Goal2 = (Goal1, retractall(user:'$pl_thread_alias'(Alias, _)))
 		;	Goal2 = Goal1
 		),
 		Goal0 = (Goal2, halt)
