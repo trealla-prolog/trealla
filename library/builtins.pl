@@ -672,7 +672,8 @@ thread_join(Alias, Status) :-
 	'$thread_join'(Id, Status),
 	retractall(user:'$pl_thread_alias'(Alias, _)).
 thread_join(Id, Status) :-
-	'$thread_join'(Id, Status).
+	'$thread_join'(Id, Status),
+	retractall(user:'$pl_thread_alias'(_, Id)).
 
 thread_cancel(Alias) :-
 	user:'$pl_thread_alias'(Alias, Id),
