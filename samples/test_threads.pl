@@ -31,13 +31,12 @@ main :-
 	writeln(done).
 
 thread_run(I) :-
-	atomic_concat(foo, I, Alias),
 	mutex_lock(bar),
-	format(" ...Thread ~w~n", [Alias]),
+	format(" ...Thread ~w~n", [I]),
 	mutex_unlock(bar),
-	thread_get_message(Alias, Msg),
+	thread_get_message(Msg),
 	mutex_lock(bar),
-	format(" ...Got ~w got ~w~n", [Alias, Msg]),
+	format(" ...Got ~w got ~w~n", [I, Msg]),
 	mutex_unlock(bar),
 	true.
 
