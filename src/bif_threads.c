@@ -606,8 +606,8 @@ static bool bif_thread_join_2(query *q)
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
 
-	if (t->is_mutex_only || t->is_queue_only)
-		return throw_error(q, p1, p1_ctx, "existence_error", "threadid_or_alias");
+	if (!is_thread(t))
+		return throw_error(q, p1, p1_ctx, "permission_error", "join,not_thread");
 
 #ifdef _WIN32
 	return false;
@@ -637,10 +637,6 @@ static bool bif_thread_cancel_1(query *q)
 {
 	GET_FIRST_ARG(p1,threadid);
 	unsigned chan = get_smalluint(p1);
-
-	if (chan == 0)
-		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,thread,main");
-
 	pl_thread *t = &g_pl_threads[chan];
 
 	if (!is_thread(t))
