@@ -478,6 +478,7 @@ bool bif_sys_block_catcher_1(query *q)
 bool bif_iso_catch_3(query *q)
 {
 	GET_FIRST_ARG(p1,any);
+	q->in_throw = false;
 
 	if (q->retry && q->ball) {
 		GET_NEXT_ARG(p2,any);
@@ -977,6 +978,7 @@ bool throw_error(query *q, cell *c, pl_idx c_ctx, const char *err_type, const ch
 	if ((q->st.m->flags.syntax_error == UNK_FAIL) && !strcmp(err_type, "syntax_error"))
 		return false;
 
+	q->in_throw = true;
 	return throw_error3(q, c, c_ctx, err_type, expected, q->st.curr_instr);
 }
 

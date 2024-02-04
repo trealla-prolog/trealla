@@ -616,7 +616,7 @@ pl_thread(Id, Filename, Options) :-
 	pl_thread_option_(Options, Alias, _Cpu, _Priority, _Detached, _AtExit),
 	'$pl_thread'(Id, Filename),
 	(atom(Alias) -> retractall(user:'$pl_thread_alias'(Alias, _)) ; true),
-	(atom(Alias) -> assertz(user:'$pl_thread_alias'(Alias, Id)) ; true),
+	(atom(Alias) -> assertz(clause(user:'$pl_thread_alias'(Alias, Id), _)) ; true),
 	%(integer(Cpu) -> '$pl_thread_pin_cpu'(Id, Cpu) ; true),
 	%(integer(Priority) -> '$pl_thread_set_priority'(Id, Priority) ; true),
 	true.
@@ -658,7 +658,7 @@ thread_create(Goal, Id, Options) :-
 	true.
 
 thread_signal(Alias, Goal) :-
-	user:'$pl_thread_alias'(Alias, Id),
+	clause(user:'$pl_thread_alias'(Alias, Id), _),
 	!,
 	Goal0 = (Goal, true),
 	'$thread_signal'(Id, Goal0).
@@ -667,7 +667,7 @@ thread_signal(Id, Goal) :-
 	'$thread_signal'(Id, Goal0).
 
 thread_join(Alias, Status) :-
-	user:'$pl_thread_alias'(Alias, Id),
+	clause(user:'$pl_thread_alias'(Alias, Id), _),
 	!,
 	'$thread_join'(Id, Status),
 	retractall(user:'$pl_thread_alias'(Alias, _)).
@@ -676,21 +676,21 @@ thread_join(Id, Status) :-
 	retractall(user:'$pl_thread_alias'(_, Id)).
 
 thread_cancel(Alias) :-
-	user:'$pl_thread_alias'(Alias, Id),
+	clause(user:'$pl_thread_alias'(Alias, Id), _),
 	!,
 	'$thread_cancel'(Id).
 thread_cancel(Id) :-
 	'$thread_cancel'(Id).
 
 thread_detach(Alias) :-
-	user:'$pl_thread_alias'(Alias, Id),
+	clause(user:'$pl_thread_alias'(Alias, Id), _),
 	!,
 	'$thread_detach'(Id).
 thread_detach(Id) :-
 	'$thread_detach'(Id).
 
 pl_msg_send(Alias, Term) :-
-	user:'$pl_thread_alias'(Alias, Id),
+	clause(user:'$pl_thread_alias'(Alias, Id), _),
 	!,
 	'$pl_msg_send'(Id, Term).
 pl_msg_send(Id, Term) :-
@@ -701,7 +701,7 @@ thread_send_message(Term) :-
 	'$thread_send_message'(Id, Term).
 
 thread_send_message(Alias, Term) :-
-	user:'$pl_thread_alias'(Alias, Id),
+	clause(user:'$pl_thread_alias'(Alias, Id), _),
 	!,
 	'$thread_send_message'(Id, Term).
 thread_send_message(Id, Term) :-
@@ -712,7 +712,7 @@ thread_get_message(Term) :-
 	'$thread_get_message'(Id, Term).
 
 thread_get_message(Alias, Term) :-
-	user:'$pl_thread_alias'(Alias, Id),
+	clause(user:'$pl_thread_alias'(Alias, Id), _),
 	!,
 	'$thread_get_message'(Id, Term).
 thread_get_message(Id, Term) :-
@@ -747,7 +747,7 @@ message_queue_create(Id, Options) :-
 	true.
 
 message_queue_destroy(Alias) :-
-	user:'$pl_thread_alias'(Alias, Id),
+	clause(user:'$pl_thread_alias'(Alias, Id), _),
 	!,
 	'$message_queue_destroy'(Id),
 	retractall(user:'$pl_thread_alias'(Alias, _)).
@@ -772,7 +772,7 @@ mutex_create(Id, Options) :-
 	true.
 
 mutex_destroy(Alias) :-
-	user:'$pl_thread_alias'(Alias, Id),
+	clause(user:'$pl_thread_alias'(Alias, Id), _),
 	!,
 	'$mutex_destroy'(Id),
 	retractall(user:'$pl_thread_alias'(Alias, _)).
@@ -780,21 +780,21 @@ mutex_destroy(Id) :-
 	'$mutex_destroy'(Id).
 
 mutex_trylock(Alias) :-
-	user:'$pl_thread_alias'(Alias, Id),
+	clause(user:'$pl_thread_alias'(Alias, Id), _),
 	!,
 	'$mutex_trylock'(Id).
 mutex_trylock(Id) :-
 	'$mutex_trylock'(Id).
 
 mutex_lock(Alias) :-
-	user:'$pl_thread_alias'(Alias, Id),
+	clause(user:'$pl_thread_alias'(Alias, Id), _),
 	!,
 	'$mutex_lock'(Id).
 mutex_lock(Id) :-
 	'$mutex_lock'(Id).
 
 mutex_unlock(Alias) :-
-	user:'$pl_thread_alias'(Alias, Id),
+	clause(user:'$pl_thread_alias'(Alias, Id), _),
 	!,
 	'$mutex_unlock'(Id).
 mutex_unlock(Id) :-

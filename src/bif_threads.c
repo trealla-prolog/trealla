@@ -63,31 +63,48 @@ static pl_thread g_pl_threads[MAX_THREADS] = {0};
 static unsigned g_pl_cnt = 1;	// 0 is the primaryinstance
 
 #define is_threadid(c) is_thread_or_alias(q, c)
+#define is_mutexid(c) is_mutex_or_alias(q, c)
+#define is_queueid(c) is_queue_or_alias(q, c)
 
-static bool is_thread_or_alias(query *q, cell *c)
+static bool is_thread_or_alias_(query *q, cell *c)
 {
 	pl_idx c_ctx = 0;
 
 	if (is_var(c))
-		return throw_error(q, c, c_ctx, "instantiation_error", "threadid_or_alias");
+		return throw_error(q, c, c_ctx, "instantiation_error", "thread_or_alias");
 
 	if (!is_smallint(c))
-		return throw_error(q, c, c_ctx, "domain_error", "threadid_or_alias");
+		return throw_error(q, c, c_ctx, "domain_error", "thread_or_alias");
 
 	int chan = get_smallint(c);
 
 	if (chan < 0)
-		return throw_error(q, c, c_ctx, "domain_error", "threadid_or_alias");
+		return throw_error(q, c, c_ctx, "domain_error", "thread_or_alias");
 
 	if (chan >= MAX_THREADS)
-		return throw_error(q, c, c_ctx, "domain_error", "threadid_or_alias");
+		return throw_error(q, c, c_ctx, "domain_error", "thread_or_alias");
 
 	pl_thread *t = &g_pl_threads[chan];
 
 	if (!t->active)
-		return throw_error(q, c, c_ctx, "existence_error", "threadid_or_alias");
+		return throw_error(q, c, c_ctx, "existence_error", "thread_or_alias");
 
 	return true;
+}
+
+static bool is_thread_or_alias(query *q, cell *c)
+{
+	return is_thread_or_alias_(q, c);
+}
+
+static bool is_mutex_or_alias(query *q, cell *c)
+{
+	return is_thread_or_alias_(q, c);
+}
+
+static bool is_queue_or_alias(query *q, cell *c)
+{
+	return is_thread_or_alias_(q, c);
 }
 
 static void suspend_thread(pl_thread *t, int ms)
@@ -256,7 +273,7 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 
 static bool bif_thread_get_message_2(query *q)
 {
-	GET_FIRST_ARG(p1,threadid);
+	GET_FIRST_ARG(p1,queueid);
 	GET_NEXT_ARG(p2,any);
 	unsigned chan = get_smalluint(p1);
 
@@ -268,7 +285,7 @@ static bool bif_thread_get_message_2(query *q)
 
 static bool bif_thread_peek_message_2(query *q)
 {
-	GET_FIRST_ARG(p1,threadid);
+	GET_FIRST_ARG(p1,queueid);
 	GET_NEXT_ARG(p2,any);
 	unsigned chan = get_smalluint(p1);
 
@@ -280,7 +297,7 @@ static bool bif_thread_peek_message_2(query *q)
 
 static bool bif_thread_send_message_2(query *q)
 {
-	GET_FIRST_ARG(p1,threadid);
+	GET_FIRST_ARG(p1,queueid);
 	GET_NEXT_ARG(p2,any);
 	unsigned chan = get_smalluint(p1);
 	return do_send_message(q, chan, p2, p2_ctx, false);
@@ -895,7 +912,7 @@ static bool bif_message_queue_create_1(query *q)
 
 static bool bif_message_queue_destroy_1(query *q)
 {
-	GET_FIRST_ARG(p1,threadid);
+	GET_FIRST_ARG(p1,queueid);
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
 
@@ -954,7 +971,7 @@ static bool bif_mutex_create_1(query *q)
 
 static bool bif_mutex_destroy_1(query *q)
 {
-	GET_FIRST_ARG(p1,threadid);
+	GET_FIRST_ARG(p1,mutexid);
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
 
@@ -967,7 +984,7 @@ static bool bif_mutex_destroy_1(query *q)
 
 static bool bif_mutex_trylock_1(query *q)
 {
-	GET_FIRST_ARG(p1,threadid);
+	GET_FIRST_ARG(p1,mutexid);
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
 
@@ -986,7 +1003,7 @@ static bool bif_mutex_trylock_1(query *q)
 
 static bool bif_mutex_lock_1(query *q)
 {
-	GET_FIRST_ARG(p1,threadid);
+	GET_FIRST_ARG(p1,mutexid);
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
 
@@ -1003,7 +1020,7 @@ static bool bif_mutex_lock_1(query *q)
 
 static bool bif_mutex_unlock_1(query *q)
 {
-	GET_FIRST_ARG(p1,threadid);
+	GET_FIRST_ARG(p1,mutexid);
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
 	t->locked_by = 0;

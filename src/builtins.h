@@ -160,32 +160,32 @@ inline static cell *get_var(query *q, cell *c, pl_idx c_ctx)
 #define GET_FIRST_ARG(p,vt) \
 	cell *p = get_first_arg(q); \
 	pl_idx p##_ctx = q->latest_ctx; \
-	if (!is_##vt(p)) { return throw_error(q, p, p##_ctx, "type_error", #vt); }
+	if (!is_##vt(p)) { return q->in_throw ? false : throw_error(q, p, p##_ctx, "type_error", #vt); }
 
 #define GET_FIRST_ARG0(p,vt,p0) \
 	cell *p = get_first_arg0(q,p0); \
 	pl_idx p##_ctx = q->latest_ctx; \
-	if (!is_##vt(p)) { return throw_error(q, p, p##_ctx, "type_error", #vt); }
+	if (!is_##vt(p)) { return q->in_throw ? false : throw_error(q, p, p##_ctx, "type_error", #vt); }
 
 #define GET_FIRST_RAW_ARG(p,vt) \
 	cell *p = get_first_raw_arg(q); \
 	pl_idx p##_ctx = q->st.curr_frame; \
-	if (!is_##vt(p)) { return throw_error(q, p, p##_ctx, "type_error", #vt); }
+	if (!is_##vt(p)) { return q->in_throw ? false : throw_error(q, p, p##_ctx, "type_error", #vt); }
 
 #define GET_FIRST_RAW_ARG0(p,vt,p0) \
 	cell *p = get_first_raw_arg0(q,p0); \
 	pl_idx p##_ctx = q->st.curr_frame; \
-	if (!is_##vt(p)) { return throw_error(q, p, p##_ctx, "type_error", #vt); }
+	if (!is_##vt(p)) { return q->in_throw ? false : throw_error(q, p, p##_ctx, "type_error", #vt); }
 
 #define GET_NEXT_ARG(p,vt) \
 	cell *p = get_next_arg(q); \
 	pl_idx p##_ctx = q->latest_ctx; \
-	if (!is_##vt(p)) { return throw_error(q, p, p##_ctx, "type_error", #vt); }
+	if (!is_##vt(p)) { return q->in_throw ? false : throw_error(q, p, p##_ctx, "type_error", #vt); }
 
 #define GET_NEXT_RAW_ARG(p,vt) \
 	cell *p = get_next_raw_arg(q); \
 	pl_idx p##_ctx = q->st.curr_frame; \
-	if (!is_##vt(p)) { return throw_error(q, p, p##_ctx, "type_error", #vt); }
+	if (!is_##vt(p)) { return q->in_throw ? false : throw_error(q, p, p##_ctx, "type_error", #vt); }
 
 inline static cell *get_first_arg(query *q)
 {
