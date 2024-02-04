@@ -175,22 +175,25 @@ static bool bif_pl_send_2(query *q)
 static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bool is_peek)
 {
 	if (chan >= MAX_THREADS) {
-		printf("*** match %d\n", chan);
+		fprintf(stderr, "*** match %d\n", chan);
 		assert(chan < MAX_THREADS);
 	}
 
 	pl_thread *t = &g_pl_threads[chan];
 
-	while (true) {
+	while (!q->pl->halt) {
 		if (is_peek && !t->queue_head)
 			return false;
 
 		uint64_t cnt = 0;
 
-		while (!t->queue_head) {
+		while (!t->queue_head && !q->pl->halt) {
 			suspend_thread(t, cnt < 1000 ? 0 : cnt < 10000 ? 1 : cnt < 100000 ? 10 : 100);
 			cnt++;
 		}
+
+		if (q->pl->halt)
+			return false;
 
 		//printf("*** recv msg nbr_cells=%u\n", t->queue_head->c->nbr_cells);
 
@@ -247,6 +250,8 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 		if (is_peek)
 			return false;
 	}
+
+	return false;
 }
 
 static bool bif_thread_get_message_2(query *q)
