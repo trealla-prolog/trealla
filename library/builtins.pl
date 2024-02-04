@@ -851,6 +851,17 @@ with_mutex(Id, Goal) :-
 	;	ignore(Goal)
 	).
 
+mutex_property(Id, P) :-
+	'$pl_thread_alias'(Id, Alias, _),
+	Alias \= '-',
+	P = alias(Alias).
+mutex_property(Id, P) :-
+	'$pl_thread_alias'(Id, _, _),
+	( '$mutex_status'(Id) ->
+		P = status(unlocked)
+	;	P = status(locked)
+	).
+
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

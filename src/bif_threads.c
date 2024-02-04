@@ -1034,6 +1034,27 @@ static bool bif_mutex_trylock_1(query *q)
 	return true;
 }
 
+static bool bif_mutex_status_1(query *q)
+{
+	GET_FIRST_ARG(p1,mutexid);
+	unsigned chan = get_smalluint(p1);
+	pl_thread *t = &g_pl_threads[chan];
+
+#ifdef _WIN32
+	HANDLE tid = (void*)GetCurrentThreadId();
+#else
+	pthread_t tid = pthread_self();
+#endif
+
+	if (!try_lock(&t->guard))
+		return false;
+
+	if (t->locked_by == (void*)tid)
+		return false;
+
+	return true;
+}
+
 static bool bif_mutex_lock_1(query *q)
 {
 	GET_FIRST_ARG(p1,mutexid);
@@ -1150,6 +1171,7 @@ builtins g_threads_bifs[] =
 	{"$mutex_create", 1, bif_mutex_create_1, "-thread", false, false, BLAH},
 	{"$mutex_destroy", 1, bif_mutex_destroy_1, "+thread", false, false, BLAH},
 	{"$mutex_trylock", 1, bif_mutex_trylock_1, "+thread", false, false, BLAH},
+	{"$mutex_status", 1, bif_mutex_status_1, "+thread", false, false, BLAH},
 	{"$mutex_lock", 1, bif_mutex_lock_1, "+thread", false, false, BLAH},
 	{"$mutex_unlock", 1, bif_mutex_unlock_1, "+thread", false, false, BLAH},
 	{"mutex_unlock_all", 0, bif_mutex_unlock_all_0, "", false, false, BLAH},
