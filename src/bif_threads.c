@@ -606,6 +606,9 @@ static bool bif_thread_join_2(query *q)
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
 
+	if (t->is_mutex_only || t->is_queue_only)
+		return throw_error(q, p1, p1_ctx, "existence_error", "threadid_or_alias");
+
 #ifdef _WIN32
 	return false;
 #else
