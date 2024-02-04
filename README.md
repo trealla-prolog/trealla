@@ -1173,6 +1173,7 @@ Create a stand-alone message queue...
 	message_queue_create/2		# message_queue_create(-queue,+options)
 	message_queue_create/1		# message_queue_create(-queue)
 	message_queue_destroy/1		# message_queue_destroy(+queue)
+	message_queue_property/2	# message_queue_property(+queue,+term)
 	thread_send_message/2		# thread_send_message(+queue,+term)
 	thread_send_message/1		# thread_send_message(+term)
 	thread_get_message/2		# thread_get_message(+queue,?term)

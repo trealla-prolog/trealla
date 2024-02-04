@@ -776,6 +776,17 @@ message_queue_destroy(Id) :-
 	(integer(Id) -> true ; throw(error(domain_error(queue_or_alias, Id), message_queue_destroy/1))),
 	'$message_queue_destroy'(Id).
 
+message_queue_property(Id, P) :-
+	'$pl_thread_alias'(Id, Alias, _),
+	Alias \= '-',
+	P = alias(Alias).
+message_queue_property(Id, P) :-
+	'$pl_thread_alias'(Id, _, _),
+	( '$mutex_status'(Id) ->
+		P = status(unlocked)
+	;	P = status(locked)
+	).
+
 mutex_create(Id) :-
 	%format("*** mutex_create(~w)~n", [Id]),
 	'$mutex_create'(Id).
