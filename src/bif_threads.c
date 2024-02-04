@@ -1110,6 +1110,11 @@ static bool bif_pl_thread_set_priority_2(query *q)
 	// Do something here
 	return true;
 }
+static bool bif_any_threads_0(query *q)
+{
+	return g_pl_cnt > 1;
+}
+
 #endif
 
 builtins g_threads_bifs[] =
@@ -1145,6 +1150,8 @@ builtins g_threads_bifs[] =
 	{"$mutex_lock", 1, bif_mutex_lock_1, "+thread", false, false, BLAH},
 	{"$mutex_unlock", 1, bif_mutex_unlock_1, "+thread", false, false, BLAH},
 	{"mutex_unlock_all", 0, bif_mutex_unlock_all_0, "", false, false, BLAH},
+
+	{"$any_threads", 0, bif_any_threads_0, "", false, false, BLAH},
 #endif
 
 	{0}
