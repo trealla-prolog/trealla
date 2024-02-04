@@ -169,8 +169,8 @@ static bool bif_pl_send_2(query *q)
 {
 	GET_FIRST_ARG(p1,threadid);
 	GET_NEXT_ARG(p2,any);
-
-	return do_send_message(q, get_smalluint(p1), p2, p2_ctx, false);
+	unsigned chan = get_smalluint(p1);
+	return do_send_message(q, chan, p2, p2_ctx, false);
 }
 
 static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bool is_peek)
