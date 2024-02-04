@@ -303,7 +303,7 @@ static predicate *find_predicate_(module *m, cell *c, bool abolished)
 	predicate *pr = NULL;
 
 	while (sl_next_key(iter, (void*)&pr)) {
-		if (pr->is_abolished && !abolished)
+		if (!pr || (pr->is_abolished && !abolished))
 			continue;
 
 		sl_done(iter);

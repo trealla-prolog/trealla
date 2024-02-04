@@ -1898,6 +1898,7 @@ void query_destroy(query *q)
 	module *m = find_module(q->pl, "concurrent");
 
 	if (m) {
+		acquire_lock(&m->guard);
 		predicate *pr = find_functor(m, "$future", 1);
 
 		if (pr) {
@@ -1905,37 +1906,39 @@ void query_destroy(query *q)
 				retract_from_db(r);
 			}
 		}
+
+		release_lock(&m->guard);
 	}
 #endif
 
 	module *m = q->pl->modules;
 
 	while (m) {
-		if (m) {
-			predicate *pr = find_functor(m, "$bb_key", 3);
+		acquire_lock(&m->guard);
+		predicate *pr = find_functor(m, "$bb_key", 3);
 
-			if (pr) {
-				rule *r = pr->head;
+		if (pr) {
+			rule *r = pr->head;
 
-				while (r) {
-					cell *c = r->cl.cells;
-					cell *arg1 = c + 1;
-					cell *arg2 = arg1 + arg1->nbr_cells;
-					cell *arg3 = arg2 + arg2->nbr_cells;
+			while (r) {
+				cell *c = r->cl.cells;
+				cell *arg1 = c + 1;
+				cell *arg2 = arg1 + arg1->nbr_cells;
+				cell *arg3 = arg2 + arg2->nbr_cells;
 
-					if (!CMP_STRING_TO_CSTR(m, arg3, "b")) {
-						pr->cnt--;
-						delink(pr, r);
-						rule *save = r;
-						r = r->next;
-						clear_clause(&save->cl);
-						free(save);
-					} else
-						r = r->next;
-				}
+				if (!CMP_STRING_TO_CSTR(m, arg3, "b")) {
+					pr->cnt--;
+					delink(pr, r);
+					rule *save = r;
+					r = r->next;
+					clear_clause(&save->cl);
+					free(save);
+				} else
+					r = r->next;
 			}
 		}
 
+		release_lock(&m->guard);
 		m = m->next;
 	}
 
