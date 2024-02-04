@@ -12,7 +12,7 @@ main :-
 		atomic_concat(foo, I, Alias),
 		Msg = ok,
 		format(" ...Sending ~w msg ~w~n", [Alias, Msg]),
-		thread_send_message(Alias, Msg),
+		thread_send_message(Alias, msg(Alias)),
 		fail.
 main :-
 	between(1, 10, I),
