@@ -11,7 +11,7 @@ main :-
 	between(1, 10, I),
 		atomic_concat(foo, I, Alias),
 		Msg = msg(Alias),
-		format(" ...Sending ~w msg ~w~n", [Alias, Msg]),
+		format(" ...Sending ~w ~w~n", [Alias, Msg]),
 		thread_send_message(Alias, Msg),
 		fail.
 main :-
