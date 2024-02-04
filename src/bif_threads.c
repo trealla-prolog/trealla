@@ -188,7 +188,7 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 			cnt++;
 		}
 
-		//printf("*** recv msg nbr_cells=%u\n", t->queue_head->nbr_cells);
+		//printf("*** recv msg nbr_cells=%u\n", t->queue_head->c->nbr_cells);
 
 		try_me(q, MAX_ARITY);
 		acquire_lock(&t->guard);
@@ -250,7 +250,6 @@ static bool bif_thread_get_message_2(query *q)
 	GET_FIRST_ARG(p1,threadid);
 	GET_NEXT_ARG(p2,any);
 	unsigned chan = get_smalluint(p1);
-	pl_thread *t = &g_pl_threads[chan];
 
 	if (!do_match_message(q, chan, p2, p2_ctx, false))
 		return false;
@@ -263,7 +262,6 @@ static bool bif_thread_peek_message_2(query *q)
 	GET_FIRST_ARG(p1,threadid);
 	GET_NEXT_ARG(p2,any);
 	unsigned chan = get_smalluint(p1);
-	pl_thread *t = &g_pl_threads[chan];
 
 	if (!do_match_message(q, chan, p2, p2_ctx, true))
 		return false;
@@ -275,7 +273,8 @@ static bool bif_thread_send_message_2(query *q)
 {
 	GET_FIRST_ARG(p1,threadid);
 	GET_NEXT_ARG(p2,any);
-	return do_send_message(q, get_smalluint(p1), p2, p2_ctx, false);
+	unsigned chan = get_smalluint(p1);
+	return do_send_message(q, chan, p2, p2_ctx, false);
 }
 
 static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx, bool is_peek)
@@ -512,6 +511,8 @@ static bool bif_thread_create_4(query *q)
 	t->chan = chan;
 	t->active = true;
 	t->q->my_chan = chan;
+	t->signal_head = t->queue_head = NULL;
+	t->signal_tail = t->queue_tail = NULL;
 
 #ifdef _WIN32
     SECURITY_ATTRIBUTES sa = {0};
