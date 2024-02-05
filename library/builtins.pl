@@ -804,12 +804,6 @@ message_queue_property(Id, P) :-
 		P = size(Size)
 	;	P = size(0)
 	).
-message_queue_property(Id, P) :-
-	'$pl_thread_alias'(Id, _, thread),
-	( catch('$message_queue_size'(Id, Size), _, fail) ->
-		P = size(Size)
-	;	P = size(0)
-	).
 
 mutex_create(Id) :-
 	%format("*** mutex_create(~w)~n", [Id]),
