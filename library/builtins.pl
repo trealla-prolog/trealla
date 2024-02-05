@@ -752,6 +752,7 @@ thread_property(P) :-
 	thread_property(Id, P).
 
 thread_property(Id, P) :-
+	%format("*** thread_property(~w,~w)~n", [Id,Options]),
 	'$pl_thread_alias'(Id, Alias, thread),
 	Alias \= '-',
 	P = alias(Alias).
@@ -795,6 +796,7 @@ message_queue_destroy(Id) :-
 	'$message_queue_destroy'(Id).
 
 message_queue_property(Id, P) :-
+	%format("*** message_queue_property(~w,~w)~n", [Id,Options]),
 	'$pl_thread_alias'(Id, Alias, queue),
 	Alias \= '-',
 	P = alias(Alias).
@@ -881,6 +883,7 @@ with_mutex(Id, Goal) :-
 	).
 
 mutex_property(Id, P) :-
+	%format("*** mutex_property(~w,~w)~n", [Id,Options]),
 	'$pl_thread_alias'(Id, Alias, mutex),
 	Alias \= '-',
 	P = alias(Alias).
