@@ -637,7 +637,7 @@ thread_create(Goal, Id, Options) :-
 	(atom(Alias) ->
 		('$pl_thread_alias'(_, Alias, _) ->
 			throw(error(permission_error(create,thread,alias(Alias))))
-			; true
+		;	true
 		),
 		Goal1 = Goal,
 		(	(nonvar(Detached), Detached = true) ->
@@ -645,8 +645,7 @@ thread_create(Goal, Id, Options) :-
 		;	Goal2 = Goal1
 		),
 		Goal0 = (Goal2, halt)
-	;
-		Goal0 = (Goal, halt)
+	;	Goal0 = (Goal, halt)
 	),
 	(atom(Alias) -> retractall('$pl_thread_alias'(_, Alias, _)) ; true),
 	( nonvar(AtExit) ->
@@ -828,7 +827,7 @@ message_queue_create(Id, Options) :-
 	(atom(Alias) ->
 		('$pl_thread_alias'(_, Alias, _) ->
 			throw(error(permission_error(create,thread,alias(Alias))))
-		; Id = Alias
+		;	Id = Alias
 		)
 	; Id = Id0
 	),
@@ -882,7 +881,7 @@ mutex_create(Id, Options) :-
 	(atom(Alias) ->
 		('$pl_thread_alias'(_, Alias, _) ->
 			throw(error(permission_error(create,thread,alias(Alias))))
-		; Id = Alias
+		;	Id = Alias
 		)
 	; Id = Id0
 	),
