@@ -656,13 +656,13 @@ thread_create(Goal, Id, Options) :-
 		assertz('$pl_thread_alias'(Id, Alias, thread))
 	;	assertz('$pl_thread_alias'(Id, -, thread))
 	),
-	format("*** thread_create(~w,~w,~w)~n", [...,Id,Options]),
+	%format("*** thread_create(~w,~w,~w)~n", [...,Id,Options]),
 	(integer(Cpu) -> '$pl_thread_pin_cpu'(Id, Cpu) ; true),
 	(integer(Priority) -> '$pl_thread_set_priority'(Id, Priority) ; true),
 	true.
 
 thread_signal(Alias, Goal) :-
-	format("*** thread_signal(~w,~w)~n", [Alias,Goal]),
+	%format("*** thread_signal(~w,~w)~n", [Alias,Goal]),
 	'$pl_thread_alias'(Id, Alias, thread),
 	!,
 	Goal0 = (Goal, true),
@@ -673,7 +673,7 @@ thread_signal(Id, Goal) :-
 	'$thread_signal'(Id, Goal0).
 
 thread_join(Alias, Status) :-
-	format("*** thread_join(~w,~w)~n", [Alias,Status]),
+	%format("*** thread_join(~w,~w)~n", [Alias,Status]),
 	'$pl_thread_alias'(Id, Alias, thread),
 	!,
 	'$thread_join'(Id, Status),
@@ -684,7 +684,7 @@ thread_join(Id, Status) :-
 	retractall('$pl_thread_alias'(_, Id, thread)).
 
 thread_cancel(Alias) :-
-	format("*** thread_cancel(~w)~n", [Alias]),
+	%format("*** thread_cancel(~w)~n", [Alias]),
 	'$pl_thread_alias'(Id, Alias, thread),
 	!,
 	'$thread_cancel'(Id).
@@ -712,7 +712,7 @@ thread_send_message(Term) :-
 	'$thread_send_message'(Id, Term).
 
 thread_send_message(Alias, Term) :-
-	format("*** thread_send_message(~w,~w)~n", [Alias,Term]),
+	%format("*** thread_send_message(~w,~w)~n", [Alias,Term]),
 	'$pl_thread_alias'(Id, Alias, _),
 	!,
 	'$thread_send_message'(Id, Term).
@@ -725,16 +725,16 @@ thread_get_message(Term) :-
 	'$thread_get_message'(Id, Term).
 
 thread_get_message(Alias, Term) :-
-	format("*** thread_get_message(~w,~w)~n", [Alias,Term]),
+	%format("*** thread_get_message(~w,~w)~n", [Alias,Term]),
 	'$pl_thread_alias'(Id, Alias, _),
 	!,
 	'$thread_get_message'(Id, Term),
-	format("*** got(~,~w)~n", [Alias,Term]),
+	%format("*** got(~,~w)~n", [Alias,Term]),
 	true.
 thread_get_message(Id, Term) :-
 	(integer(Id) -> true ; throw(error(domain_error(queue_or_alias, Id), thread_message_get/2))),
 	'$thread_get_message'(Id, Term),
-	format("*** got(~w,~w)~n", [Id,Term]),
+	%format("*** got(~w,~w)~n", [Id,Term]),
 	true.
 
 thread_peek_message(Term) :-
@@ -742,7 +742,7 @@ thread_peek_message(Term) :-
 	'$thread_peek_message'(Id, Term).
 
 thread_peek_message(Alias, Term) :-
-	format("*** thread_peek_message(~w,~w)~n", [Alias,Term]),
+	%format("*** thread_peek_message(~w,~w)~n", [Alias,Term]),
 	'$pl_thread_alias'(Id, Alias, _),
 	!,
 	'$thread_peek_message'(Id, Term).
@@ -755,7 +755,7 @@ thread_property(P) :-
 	thread_property(Id, P).
 
 thread_property(Alias, P) :-
-	format("*** thread_property(~w,~w)~n", [Alias,P]),
+	%format("*** thread_property(~w,~w)~n", [Alias,P]),
 	'$pl_thread_alias'(Id, Alias, thread),
 	Alias \= '-',
 	P = id(Id).
@@ -809,7 +809,7 @@ xthread_statistics(K, V) :-
 	thread_statistics(Id, K, V).
 
 xthread_statistics(Alias, _K, _V) :-
-	format("*** thread_statistics(~w, ~w,~w)~n", [Alias,_K,_V]),
+	%format("*** thread_statistics(~w, ~w,~w)~n", [Alias,_K,_V]),
 	'$pl_thread_alias'(_, Alias, thread),
 	fail.
 xthread_statistics(Id, _K, _V) :-
@@ -823,7 +823,7 @@ message_queue_create(Id, Options) :-
 	'$must_be'(Options, list, message_queue_create/3, _),
 	pl_thread_option_(Options, Alias, _Cpu, _Priority, _Detached, _AtExit),
 	'$message_queue_create'(Id0),
-	format("*** message_queue_create(~w,~w)~n", [Id0,Options]),
+	%format("*** message_queue_create(~w,~w)~n", [Id0,Options]),
 	(atom(Alias) ->
 		('$pl_thread_alias'(_, Alias, _) ->
 			throw(error(permission_error(create,thread,alias(Alias))))
@@ -838,7 +838,7 @@ message_queue_create(Id, Options) :-
 	true.
 
 message_queue_destroy(Alias) :-
-	format("*** message_queue_destroy(~w)~n", [Alias]),
+	%format("*** message_queue_destroy(~w)~n", [Alias]),
 	'$pl_thread_alias'(Id, Alias, queue),
 	!,
 	'$message_queue_destroy'(Id),
@@ -848,7 +848,7 @@ message_queue_destroy(Id) :-
 	'$message_queue_destroy'(Id).
 
 message_queue_property(Alias, P) :-
-	format("*** message_queue_property(~w,~w)~n", [Alias,P]),
+	%format("*** message_queue_property(~w,~w)~n", [Alias,P]),
 	'$pl_thread_alias'(_, Alias, queue),
 	Alias \= '-',
 	P = alias(Alias).
@@ -877,7 +877,7 @@ mutex_create(Id, Options) :-
 	'$must_be'(Options, list, mutex_create/3, _),
 	pl_thread_option_(Options, Alias, _Cpu, _Priority, _Detached, _AtExit),
 	'$mutex_create'(Id0),
-	format("*** mutex_create(~w,~w)~n", [Id0,Options]),
+	%format("*** mutex_create(~w,~w)~n", [Id0,Options]),
 	(atom(Alias) ->
 		('$pl_thread_alias'(_, Alias, _) ->
 			throw(error(permission_error(create,thread,alias(Alias))))
@@ -892,7 +892,7 @@ mutex_create(Id, Options) :-
 	true.
 
 mutex_destroy(Alias) :-
-	format("*** mutex_destroy(~w)~n", [Alias]),
+	%format("*** mutex_destroy(~w)~n", [Alias]),
 	'$pl_thread_alias'(Id, Alias, mutex),
 	!,
 	'$mutex_destroy'(Id),
@@ -902,7 +902,7 @@ mutex_destroy(Id) :-
 	'$mutex_destroy'(Id).
 
 mutex_trylock(Alias) :-
-	format("*** mutex_trylock(~w)~n", [Alias]),
+	%format("*** mutex_trylock(~w)~n", [Alias]),
 	'$pl_thread_alias'(Id, Alias, _),
 	!,
 	'$mutex_trylock'(Id).
@@ -911,7 +911,7 @@ mutex_trylock(Id) :-
 	'$mutex_trylock'(Id).
 
 mutex_lock(Alias) :-
-	format("*** mutex_lock(~w)~n", [Alias]),
+	%format("*** mutex_lock(~w)~n", [Alias]),
 	'$pl_thread_alias'(Id, Alias, _),
 	!,
 	'$mutex_lock'(Id).
@@ -920,7 +920,7 @@ mutex_lock(Id) :-
 	'$mutex_lock'(Id).
 
 mutex_unlock(Alias) :-
-	format("*** mutex_unlock(~w)~n", [Alias]),
+	%format("*** mutex_unlock(~w)~n", [Alias]),
 	'$pl_thread_alias'(Id, Alias, _),
 	!,
 	'$mutex_unlock'(Id).
@@ -934,7 +934,7 @@ mutex_unlock(Id) :-
 :- meta_predicate(with_mutex(+,0)).
 
 with_mutex(Alias, Goal) :-
-	format("*** with_mutex(~w,~w)~n", [Alias,Goal]),
+	%format("*** with_mutex(~w,~w)~n", [Alias,Goal]),
 	'$pl_thread_alias'(Id, Alias, _),
 	!,
 	setup_call_cleanup(mutex_lock(Id), once(Goal), mutex_unlock(Id)).
@@ -945,7 +945,7 @@ with_mutex(Id, Goal) :-
 	).
 
 mutex_property(Alias, P) :-
-	format("*** mutex_property(~w,~w)~n", [Alias,P]),
+	%format("*** mutex_property(~w,~w)~n", [Alias,P]),
 	'$pl_thread_alias'(_, Alias, mutex),
 	Alias \= '-',
 	P = alias(Alias).

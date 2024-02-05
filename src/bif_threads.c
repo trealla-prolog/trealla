@@ -638,6 +638,7 @@ static bool bif_thread_create_4(query *q)
 		return false;
 
 	cell *at_exit = is_nonvar(p4) ? deep_copy_to_heap(q, p4, p4_ctx, false) : NULL;
+	//DUMP_TERM("at_exit", at_exit, q->st.curr_frame, 0);
 	if (is_nonvar(p4)) check_heap_error(at_exit);
 	t->at_exit = is_nonvar(p4) ? deep_clone_to_heap(t->q, at_exit, 0) : NULL;
 	return true;
