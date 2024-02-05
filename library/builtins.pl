@@ -729,10 +729,14 @@ thread_get_message(Alias, Term) :-
 	format("*** thread_get_message(~w,~w)~n", [Alias,Term]),
 	'$pl_thread_alias'(Id, Alias, _),
 	!,
-	'$thread_get_message'(Id, Term).
+	'$thread_get_message'(Id, Term),
+	format("*** got(~,~w)~n", [Alias,Term]),
+	true.
 thread_get_message(Id, Term) :-
 	(integer(Id) -> true ; throw(error(domain_error(queue_or_alias, Id), thread_message_get/2))),
-	'$thread_get_message'(Id, Term).
+	'$thread_get_message'(Id, Term),
+	format("*** got(~w,~w)~n", [Id,Term]),
+	true.
 
 thread_peek_message(Term) :-
 	thread_self(Id),
