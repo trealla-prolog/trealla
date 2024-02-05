@@ -163,6 +163,22 @@ static void resume_thread(pl_thread *t)
 #endif
 }
 
+static unsigned queue_size(unsigned chan)
+{
+	pl_thread *t = &g_pl_threads[chan];
+	acquire_lock(&t->guard);
+	unsigned cnt = 0;
+	msg *m = t->queue_head;
+
+	while (m) {
+		m = m->next;
+		cnt++;
+	}
+
+	release_lock(&t->guard);
+	return cnt;
+}
+
 static cell *queue_to_chan(unsigned chan, const cell *c, unsigned from_chan, bool is_signal)
 {
 	//printf("*** send to chan=%u, nbr_cells=%u\n", chan, c->nbr_cells);
@@ -972,6 +988,17 @@ static bool bif_message_queue_destroy_1(query *q)
 	return true;
 }
 
+static bool bif_message_queue_size_2(query *q)
+{
+	GET_FIRST_ARG(p1,queueid);
+	unsigned chan = get_smalluint(p1);
+	GET_NEXT_ARG(p2,integer_or_var);
+	cell tmp;
+	unsigned size = queue_size(chan);;
+	make_uint(&tmp, size);
+	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+}
+
 static bool bif_mutex_create_1(query *q)
 {
 	if (s_first) {
@@ -1176,6 +1203,7 @@ builtins g_threads_bifs[] =
 
 	{"$message_queue_create", 1, bif_message_queue_create_1, "-thread", false, false, BLAH},
 	{"$message_queue_destroy", 1, bif_message_queue_destroy_1, "+thread", false, false, BLAH},
+	{"$message_queue_size", 2, bif_message_queue_size_2, "+thread,?integer", false, false, BLAH},
 
 	{"$mutex_create", 1, bif_mutex_create_1, "-thread", false, false, BLAH},
 	{"$mutex_destroy", 1, bif_mutex_destroy_1, "+thread", false, false, BLAH},
