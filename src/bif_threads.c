@@ -47,7 +47,8 @@ struct pl_thread_ {
 	msg *signal_head, *signal_tail;
 	void *locked_by;
 	unsigned chan;
-	bool init, is_queue_only, is_mutex_only, is_detached;
+	bool init;
+	bool is_queue_only, is_mutex_only, is_detached, is_exception;
 	pl_atomic bool active;
 	lock guard;
 #ifdef _WIN32
@@ -482,6 +483,7 @@ static bool bif_pl_thread_2(query *q)
 		t->init = true;
 	}
 
+	t->is_exception = false;
 	t->active = true;
 	t->filename = filename;
 	t->chan = chan;
@@ -512,6 +514,8 @@ static void *start_routine_thread_create(pl_thread *t)
 		execute(t->q, t->at_exit, MAX_ARITY);
 		t->at_exit = NULL;
 	}
+
+	t->is_exception = t->q->did_unhandled_excpetion;
 
 	if (!t->exit_code) {
 		query_destroy(t->q);
@@ -583,6 +587,7 @@ static bool bif_thread_create_4(query *q)
 	t->goal = deep_clone_to_heap(t->q, goal, 0);
 	t->at_exit = is_nonvar(p4) ? deep_clone_to_heap(t->q, at_exit, 0) : NULL;
 	t->chan = chan;
+	t->is_exception = false;
 	t->active = true;
 	t->q->my_chan = chan;
 	t->signal_head = t->queue_head = NULL;
@@ -685,6 +690,7 @@ static bool bif_thread_join_2(query *q)
 #endif
 
 	t->active = false;
+	t->is_exception = t->q->did_unhandled_excpetion;
 
 	if (t->exit_code) {
 		cell *tmp = deep_copy_to_heap(q, t->exit_code, 1, false);
@@ -927,6 +933,14 @@ static bool bif_thread_is_detached_1(query *q)
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
 	return t->is_detached;
+}
+
+static bool bif_thread_is_exception_1(query *q)
+{
+	GET_FIRST_ARG(p1,mutexid);
+	unsigned chan = get_smalluint(p1);
+	pl_thread *t = &g_pl_threads[chan];
+	return t->is_exception;
 }
 
 static bool bif_message_queue_create_1(query *q)
@@ -1191,6 +1205,7 @@ builtins g_threads_bifs[] =
 	{"$thread_signal", 2, bif_thread_signal_2, "+thread,:callable", false, false, BLAH},
 	{"$thread_join", 2, bif_thread_join_2, "+thread,-integer", false, false, BLAH},
 	{"$thread_is_detached", 1, bif_thread_is_detached_1, "+thread", false, false, BLAH},
+	{"$thread_is_exception", 1, bif_thread_is_exception_1, "+thread", false, false, BLAH},
 
 	{"thread_exit", 1, bif_thread_exit_1, "+term", false, false, BLAH},
 	{"thread_self", 1, bif_thread_self_1, "-integer", false, false, BLAH},

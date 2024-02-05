@@ -724,6 +724,7 @@ struct query_ {
 	bool double_quotes:1;
 	bool end_wait:1;
 	bool access_private:1;
+	bool did_unhandled_excpetion:1;
 };
 
 struct parser_ {
