@@ -779,15 +779,15 @@ thread_property(Id, P) :-
 	'$pl_thread_alias'(Id, _, thread),
 	P = status(running).
 
-thread_statistics(K, V) :-
+xthread_statistics(K, V) :-
 	thread_self(Id),
 	thread_statistics(Id, K, V).
 
-thread_statistics(Alias, K, V) :-
-	format("*** thread_statistics(~w, ~w,~w)~n", [Alias,K,V]),
+xthread_statistics(Alias, K, V) :-
+	%format("*** thread_statistics(~w, ~w,~w)~n", [Alias,K,V]),
 	'$pl_thread_alias'(_, Alias, thread),
 	fail.
-thread_statistics(Id, _K, _V) :-
+xthread_statistics(Id, _K, _V) :-
 	'$pl_thread_alias'(Id, _, thread),
 	fail.
 
