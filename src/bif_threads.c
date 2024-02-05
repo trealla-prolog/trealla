@@ -237,6 +237,27 @@ static bool bif_pl_send_2(query *q)
 	return do_send_message(q, chan, p2, p2_ctx, false);
 }
 
+static pl_thread *get_self()
+{
+#ifdef _WIN32
+	HANDLE tid = (void*)GetCurrentThreadId();
+#else
+	pthread_t tid = pthread_self();
+#endif
+
+	for (unsigned i = 0; i < MAX_THREADS; i++) {
+		pl_thread *t = &g_pl_threads[i];
+
+		if (!t->active)
+			continue;
+
+		if (t->id == tid)
+			return t;
+	}
+
+	return &g_pl_threads[0];
+}
+
 static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bool is_peek)
 {
 	if (chan >= MAX_THREADS) {
@@ -250,10 +271,11 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 		if (is_peek && !t->queue_head)
 			return false;
 
+		pl_thread *me = get_self();
 		uint64_t cnt = 0;
 
 		while (!t->queue_head && !q->pl->halt) {
-			suspend_thread(t, cnt < 1000 ? 0 : cnt < 10000 ? 1 : cnt < 100000 ? 10 : 100);
+			suspend_thread(me, cnt < 1000 ? 0 : cnt < 10000 ? 1 : cnt < 100000 ? 10 : 10);
 			cnt++;
 		}
 
