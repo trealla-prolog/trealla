@@ -190,7 +190,7 @@ static cell *queue_to_chan(unsigned chan, const cell *c, unsigned from_chan, boo
 		return NULL;
 
 	m->from_chan = from_chan;
-	copy_cells(m->c, c, c->nbr_cells);
+	dup_cells(m->c, c, c->nbr_cells);
 	acquire_lock(&t->guard);
 
 	if (is_signal) {
@@ -222,8 +222,9 @@ static bool do_send_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bo
 	if (!t->active || t->is_mutex_only)
 		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
 
-	const cell *c = deep_copy_to_heap(q, p1, p1_ctx, false);
+	cell *c = deep_clone_to_heap(q, p1, p1_ctx);
 	check_heap_error(c);
+	rebase_vars(q, c, 0);
 	check_heap_error(queue_to_chan(chan, c, q->my_chan, is_signal));
     resume_thread(t);
 	return true;
@@ -297,11 +298,11 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 				}
 			}
 
-			cell *tmp = deep_copy_to_heap(q, c, q->st.fp, false);
+			cell *tmp = deep_clone_to_heap(q, c, q->st.fp);
 			check_heap_error(tmp, release_lock(&t->guard));
 			unshare_cells(c, c->nbr_cells);
 
-			if (unify(q, p1, p1_ctx, tmp, q->st.curr_frame)) {
+			if (unify(q, p1, p1_ctx, tmp, q->st.fp)) {
 				q->curr_chan = m->from_chan;
 
 				if (!is_peek) {
