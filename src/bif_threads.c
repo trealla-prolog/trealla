@@ -378,7 +378,7 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_idx p1_ct
 	pl_thread *t = &g_pl_threads[q->pl->my_chan];
 	uint64_t cnt = 0;
 
-	while (!t->queue_head) {
+	while (!t->queue_head && !q->pl->halt) {
 		suspend_thread(t, cnt < 1000 ? 0 : cnt < 10000 ? 1 : cnt < 100000 ? 10 : 100);
 		cnt++;
 	}
@@ -600,14 +600,11 @@ static bool bif_thread_create_4(query *q)
 
 	cell *goal = deep_copy_to_heap(q, p1, p1_ctx, false);
 	check_heap_error(goal);
-	cell *at_exit = is_nonvar(p4) ? deep_copy_to_heap(q, p4, p4_ctx, false) : NULL;
-	if (is_nonvar(p4)) check_heap_error(at_exit);
 	t->q = query_create(q->st.m, false);
 	check_heap_error(t->q);
 	t->q->thread_ptr = t;
 	t->q->trace = q->trace;
 	t->goal = deep_clone_to_heap(t->q, goal, 0);
-	t->at_exit = is_nonvar(p4) ? deep_clone_to_heap(t->q, at_exit, 0) : NULL;
 	t->chan = chan;
 	t->is_exception = false;
 	t->active = true;
@@ -636,7 +633,14 @@ static bool bif_thread_create_4(query *q)
 
 	cell tmp;
 	make_uint(&tmp, chan);
-	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+
+	if (!unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
+		return false;
+
+	cell *at_exit = is_nonvar(p4) ? deep_copy_to_heap(q, p4, p4_ctx, false) : NULL;
+	if (is_nonvar(p4)) check_heap_error(at_exit);
+	t->at_exit = is_nonvar(p4) ? deep_clone_to_heap(t->q, at_exit, 0) : NULL;
+	return true;
 }
 
 void do_signal(query *q, void *thread_ptr)
