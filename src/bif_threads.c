@@ -690,7 +690,6 @@ static bool bif_thread_join_2(query *q)
 #endif
 
 	t->active = false;
-	t->is_exception = t->q->did_unhandled_excpetion;
 
 	if (t->exit_code) {
 		cell *tmp = deep_copy_to_heap(q, t->exit_code, 1, false);

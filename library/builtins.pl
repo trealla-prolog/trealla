@@ -628,9 +628,7 @@ pl_thread(Id, Filename, Options) :-
 :- meta_predicate(thread_signal(+,0)).
 
 thread_create(Goal, Id) :-
-	format("*** thread_create(~w,~w)~n", [Goal,Id]),
-	'$must_be'(Goal, callable, thread_create/3, _),
-	'$thread_create'(Goal, Id, false).
+	thread_create(Goal, Id, []).
 
 thread_create(Goal, Id, Options) :-
 	format("*** thread_create(~w,~w,~w)~n", [Goal,Id,Options]),
@@ -728,6 +726,7 @@ thread_get_message(Term) :-
 	'$thread_get_message'(Id, Term).
 
 thread_get_message(Alias, Term) :-
+	format("*** thread_get_message(~w,~w)~n", [Alias,Term]),
 	'$pl_thread_alias'(Id, Alias, _),
 	!,
 	'$thread_get_message'(Id, Term).
@@ -740,6 +739,7 @@ thread_peek_message(Term) :-
 	'$thread_peek_message'(Id, Term).
 
 thread_peek_message(Alias, Term) :-
+	format("*** thread_peek_message(~w,~w)~n", [Alias,Term]),
 	'$pl_thread_alias'(Id, Alias, _),
 	!,
 	'$thread_peek_message'(Id, Term).
@@ -804,7 +804,7 @@ xthread_statistics(Id, _K, _V) :-
 	fail.
 
 message_queue_create(Id) :-
-	'$message_queue_create'(Id).
+	message_queue_create(Id, []).
 
 message_queue_create(Id, Options) :-
 	format("*** message_queue_create(~w,~w)~n", [Id,Options]),
@@ -857,8 +857,7 @@ message_queue_property(Id, P) :-
 	).
 
 mutex_create(Id) :-
-	format("*** mutex_create(~w)~n", [Id]),
-	'$mutex_create'(Id).
+	mutex_create(Id, []).
 
 mutex_create(Id, Options) :-
 	format("*** mutex_create(~w,~w)~n", [Id,Options]),
