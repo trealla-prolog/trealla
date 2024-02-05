@@ -757,6 +757,13 @@ thread_property(P) :-
 
 thread_property(Alias, P) :-
 	%format("*** thread_property(~w,~w)~n", [Alias,P]),
+	'$pl_thread_alias'(Id, Alias, thread),
+	Alias \= '-',
+	P = id(Id).
+thread_property(Id, P) :-
+	'$pl_thread_alias'(Id, _, thread),
+	P = id(Id).
+thread_property(Alias, P) :-
 	'$pl_thread_alias'(_, Alias, thread),
 	Alias \= '-',
 	P = alias(Alias).
@@ -766,6 +773,7 @@ thread_property(Id, P) :-
 	P = alias(Alias).
 thread_property(Alias, P) :-
 	'$pl_thread_alias'(Id, Alias, thread),
+	Alias \= '-',
 	( catch('$thread_is_detached'(Id), _, fail) ->
 		P = detached(true)
 	;	P = detached(false)
@@ -778,6 +786,7 @@ thread_property(Id, P) :-
 	).
 thread_property(Alias, P) :-
 	'$pl_thread_alias'(Id, Alias, thread),
+	Alias \= '-',
 	( catch('$thread_is_exception'(Id), _, fail) ->
 		P = status(exception(true))
 	;	fail
@@ -790,6 +799,7 @@ thread_property(Id, P) :-
 	), !.
 thread_property(Alias, P) :-
 	'$pl_thread_alias'(_, Alias, thread),
+	Alias \= '-',
 	P = status(running).
 thread_property(Id, P) :-
 	'$pl_thread_alias'(Id, _, thread),
@@ -849,6 +859,7 @@ message_queue_property(Id, P) :-
 	P = alias(Alias).
 message_queue_property(Alias, P) :-
 	'$pl_thread_alias'(Id, Alias, queue),
+	Alias \= '-',
 	( catch('$message_queue_size'(Id, Size), _, fail) ->
 		P = size(Size)
 	;	P = size(0)
@@ -945,6 +956,7 @@ mutex_property(Id, P) :-
 	P = alias(Alias).
 mutex_property(Alias, P) :-
 	'$pl_thread_alias'(Id, Alias, mutex),
+	Alias \= '-',
 	( catch('$mutex_is_locked'(Id), _, fail) ->
 		P = status(unlocked)
 	;	P = status(locked)
