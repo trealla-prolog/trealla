@@ -784,7 +784,7 @@ xthread_statistics(K, V) :-
 	thread_statistics(Id, K, V).
 
 xthread_statistics(Alias, K, V) :-
-	%format("*** thread_statistics(~w, ~w,~w)~n", [Alias,K,V]),
+	format("*** thread_statistics(~w, ~w,~w)~n", [Alias,K,V]),
 	'$pl_thread_alias'(_, Alias, thread),
 	fail.
 xthread_statistics(Id, _K, _V) :-
