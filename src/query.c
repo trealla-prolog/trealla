@@ -104,13 +104,15 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 	SB(pr);
 
 #ifdef DEBUG
-	SB_sprintf(pr, "[%s:%"PRIu64":f%u:fp%u:cp%u:sp%u:hp%u:tp%u] ",
+	SB_sprintf(pr, "[%u:%s:%"PRIu64":f%u:fp%u:cp%u:sp%u:hp%u:tp%u] ",
+		q->my_chan,
 		q->st.m->name,
 		q->step,
 		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.tp
 		);
 #else
-	SB_sprintf(pr, "[%s:%"PRIu64":cp%u] ",
+	SB_sprintf(pr, "[%u:%s:%"PRIu64":cp%u] ",
+		q->my_chan,
 		q->st.m->name,
 		q->step,
 		q->cp

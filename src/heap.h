@@ -23,6 +23,8 @@ cell *alloc_on_heap(query *q, unsigned nbr_cells);
 cell *alloc_on_tmp(query *q, unsigned nbr_cells);
 cell *alloc_on_queuen(query *q, unsigned qnbr, const cell *c);
 
+cell *rebase_vars(query *q, cell *c, unsigned start_nbr);
+
 void trim_heap(query *q);
 
 cell *init_tmp_heap(query *q);

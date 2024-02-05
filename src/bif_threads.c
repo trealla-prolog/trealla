@@ -558,7 +558,6 @@ static void *start_routine_thread_create(pl_thread *t)
 		free(save);
 	}
 
-	t->at_exit = NULL;
 	t->signal_head = t->queue_head = NULL;
 	t->signal_tail = t->queue_tail = NULL;
     return 0;
@@ -598,13 +597,14 @@ static bool bif_thread_create_4(query *q)
 		t->init = true;
 	}
 
-	cell *goal = deep_copy_to_heap(q, p1, p1_ctx, false);
+	cell *goal = deep_clone_to_heap(q, p1, p1_ctx);
 	check_heap_error(goal);
 	t->q = query_create(q->st.m, false);
 	check_heap_error(t->q);
 	t->q->thread_ptr = t;
 	t->q->trace = q->trace;
 	t->goal = deep_clone_to_heap(t->q, goal, 0);
+	rebase_vars(t->q, t->goal, 0);
 	t->chan = chan;
 	t->is_exception = false;
 	t->active = true;
