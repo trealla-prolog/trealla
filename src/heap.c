@@ -526,6 +526,18 @@ unsigned rebase_vars(query *q, cell *c, unsigned start_nbr)
 
 	sl_destroy(q->vars);
 	q->vars = NULL;
+
+	// Turn refs back into vars to decontextualize
+
+	cell *tmp = c;
+
+	for (unsigned i = 0; i < c->nbr_cells; i++, tmp++) {
+		if (!is_ref(tmp))
+			continue;
+
+		tmp->flags &= ~FLAG_VAR_REF;
+	}
+
 	return q->varno;
 }
 

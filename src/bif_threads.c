@@ -300,7 +300,6 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 
 			cell *tmp = deep_clone_to_heap(q, c, q->st.fp);
 			check_heap_error(tmp, release_lock(&t->guard));
-			unshare_cells(c, c->nbr_cells);
 
 			if (unify(q, p1, p1_ctx, tmp, q->st.fp)) {
 				q->curr_chan = m->from_chan;
