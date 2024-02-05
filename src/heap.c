@@ -512,7 +512,7 @@ static bool copy_vars(query *q, cell *tmp, bool copy_attrs, const cell *from, pl
 	return true;
 }
 
-cell *rebase_vars(query *q, cell *c, unsigned start_nbr)
+unsigned rebase_vars(query *q, cell *c, unsigned start_nbr)
 {
 	q->vars = sl_create(NULL, NULL, NULL);
 	q->varno = start_nbr;
@@ -521,12 +521,12 @@ cell *rebase_vars(query *q, cell *c, unsigned start_nbr)
 	if (!copy_vars(q, c, false, NULL, 0, NULL, 0)) {
 		sl_destroy(q->vars);
 		q->vars = NULL;
-		return NULL;
+		return start_nbr;
 	}
 
 	sl_destroy(q->vars);
 	q->vars = NULL;
-	return c;
+	return q->varno;
 }
 
 static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs, cell *from, pl_idx from_ctx, cell *to, pl_idx to_ctx)

@@ -46,7 +46,7 @@ struct pl_thread_ {
 	msg *queue_head, *queue_tail;
 	msg *signal_head, *signal_tail;
 	void *locked_by;
-	unsigned chan;
+	unsigned chan, nbr_vars, at_exit_nbr_vars;
 	bool init;
 	bool is_queue_only, is_mutex_only, is_detached, is_exception;
 	pl_atomic bool active;
@@ -530,10 +530,10 @@ static bool bif_pl_thread_2(query *q)
 
 static void *start_routine_thread_create(pl_thread *t)
 {
-	execute(t->q, t->goal, MAX_ARITY);
+	execute(t->q, t->goal, t->nbr_vars);
 
 	if (t->at_exit) {
-		execute(t->q, t->at_exit, MAX_ARITY);
+		execute(t->q, t->at_exit, t->at_exit_nbr_vars);
 		t->at_exit = NULL;
 	}
 
@@ -604,7 +604,8 @@ static bool bif_thread_create_4(query *q)
 	t->q->thread_ptr = t;
 	t->q->trace = q->trace;
 	t->goal = deep_clone_to_heap(t->q, goal, 0);
-	rebase_vars(t->q, t->goal, 0);
+	check_heap_error(t->goal);
+	t->nbr_vars = rebase_vars(t->q, t->goal, 0);
 	t->chan = chan;
 	t->is_exception = false;
 	t->active = true;
@@ -637,10 +638,14 @@ static bool bif_thread_create_4(query *q)
 	if (!unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 		return false;
 
-	cell *at_exit = is_nonvar(p4) ? deep_copy_to_heap(q, p4, p4_ctx, false) : NULL;
-	//DUMP_TERM("at_exit", at_exit, q->st.curr_frame, 0);
-	if (is_nonvar(p4)) check_heap_error(at_exit);
-	t->at_exit = is_nonvar(p4) ? deep_clone_to_heap(t->q, at_exit, 0) : NULL;
+	if (is_nonvar(p4)) {
+		cell *at_exit = deep_clone_to_heap(q, p4, p4_ctx);
+		check_heap_error(at_exit);
+		t->at_exit = deep_clone_to_heap(t->q, at_exit, 0);
+		t->at_exit_nbr_vars = rebase_vars(t->q, t->at_exit, 0);
+		//DUMP_TERM("at_exit", t->at_exit, q->st.curr_frame, 0);
+	}
+
 	return true;
 }
 
