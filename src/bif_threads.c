@@ -302,6 +302,7 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 
 		//printf("*** recv msg nbr_cells=%u\n", t->queue_head->c->nbr_cells);
 
+		check_heap_error(push_choice(q));
 		check_slot(q, MAX_ARITY);
 		try_me(q, MAX_ARITY);
 		acquire_lock(&t->guard);
@@ -336,6 +337,7 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 					free(m);
 				}
 
+				drop_choice(q);
 				return true;
 			}
 
@@ -344,6 +346,7 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 		}
 
 		release_lock(&t->guard);
+		drop_choice(q);
 
 		if (is_peek)
 			return false;
@@ -413,6 +416,7 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_idx p1_ct
 	}
 
 	release_lock(&t->guard);
+	check_heap_error(push_choice(q));
 	check_slot(q, MAX_ARITY);
 	try_me(q, MAX_ARITY);
 	cell *c = m->c;
@@ -425,6 +429,7 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_idx p1_ct
 		free(m);
 	}
 
+	drop_choice(q);
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
 
