@@ -672,7 +672,7 @@ static bool bif_thread_signal_2(query *q)
 static bool bif_thread_join_2(query *q)
 {
 	GET_FIRST_ARG(p1,threadid);
-	GET_NEXT_ARG(p2,integer_or_var);
+	GET_NEXT_ARG(p2,any);
 	unsigned chan = get_smalluint(p1);
 	pl_thread *t = &g_pl_threads[chan];
 
@@ -691,7 +691,8 @@ static bool bif_thread_join_2(query *q)
 	t->active = false;
 
 	if (t->exit_code) {
-		cell *tmp = deep_clone_to_heap(q, t->exit_code, 1);
+		try_me(q, MAX_ARITY);
+		cell *tmp = deep_copy_to_heap(q, t->exit_code, q->st.fp, false);
 		t->exit_code = NULL;
 		query_destroy(t->q);
 		t->q = NULL;
@@ -840,6 +841,7 @@ static bool bif_thread_exit_1(query *q)
 	check_heap_error(init_tmp_heap(q));
 	cell *tmp_p1 = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(tmp_p1);
+	rebase_vars(q, tmp_p1, 0);
 	cell *tmp = alloc_on_heap(q, 1+tmp_p1->nbr_cells);
 	check_heap_error(tmp);
 	make_struct(tmp, new_atom(q->pl, "exited"), NULL, 1, tmp_p1->nbr_cells);
