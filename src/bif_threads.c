@@ -302,16 +302,17 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 
 		//printf("*** recv msg nbr_cells=%u\n", t->queue_head->c->nbr_cells);
 
+		check_slot(q, MAX_ARITY);
 		try_me(q, MAX_ARITY);
 		acquire_lock(&t->guard);
 		msg *m = t->queue_head;
 
 		while (m) {
 			cell *c = m->c;
-			cell *tmp = deep_clone_to_heap(q, c, q->st.fp);
+			cell *tmp = deep_copy_to_heap(q, c, q->st.fp, false);
 			check_heap_error(tmp, release_lock(&t->guard));
 
-			if (unify(q, p1, p1_ctx, tmp, q->st.fp)) {
+			if (unify(q, p1, p1_ctx, tmp, q->st.curr_frame)) {
 				q->curr_chan = m->from_chan;
 
 				if (!is_peek) {
@@ -412,9 +413,9 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_idx p1_ct
 	}
 
 	release_lock(&t->guard);
-
-	cell *c = m->c;
+	check_slot(q, MAX_ARITY);
 	try_me(q, MAX_ARITY);
+	cell *c = m->c;
 	cell *tmp = deep_clone_to_heap(q, c, q->st.fp);
 	check_heap_error(tmp, release_lock(&t->guard));
 	q->curr_chan = m->from_chan;
@@ -691,7 +692,6 @@ static bool bif_thread_join_2(query *q)
 	t->active = false;
 
 	if (t->exit_code) {
-		try_me(q, MAX_ARITY);
 		cell *tmp = deep_copy_to_heap(q, t->exit_code, q->st.fp, false);
 		t->exit_code = NULL;
 		query_destroy(t->q);
@@ -708,6 +708,10 @@ static bool bif_thread_cancel_1(query *q)
 {
 	GET_FIRST_ARG(p1,threadid);
 	unsigned chan = get_smalluint(p1);
+
+	if (chan == 0)
+		return throw_error(q, p1, p1_ctx, "permission_error", "detach,thread,main");
+
 	pl_thread *t = &g_pl_threads[chan];
 
 	if (!is_thread(t))
@@ -715,14 +719,7 @@ static bool bif_thread_cancel_1(query *q)
 
 	t->q->halt_code = 0;
 	t->q->halt = t->q->error = true;
-	resume_thread(t);
-
-	for (int i = 0; i < 1000; i++) {
-		if (!t->active)
-			break;
-
-		msleep(1);
-	}
+	msleep(10);
 
 	if (t->active) {
 #ifdef _WIN32
@@ -770,13 +767,6 @@ static bool bif_thread_detach_1(query *q)
 
 	t->q->halt_code = 0;
 	t->q->halt = t->q->error = true;
-
-	for (int i = 0; i < 1000; i++) {
-		if (!t->active)
-			break;
-
-		msleep(1);
-	}
 
 	if (t->active) {
 #ifdef _WIN32
@@ -856,8 +846,8 @@ static bool bif_thread_exit_1(query *q)
 	for (unsigned i = 0; i < MAX_THREADS; i++) {
 		pl_thread *t = &g_pl_threads[i];
 
-		if (!t->active)
-			continue;
+		//if (!t->active)
+		//	continue;
 
 		if (t->id == tid) {
 			t->exit_code = tmp;
