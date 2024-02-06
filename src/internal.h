@@ -604,11 +604,9 @@ struct stream_ {
 	bool ssl:1;
 	bool pipe:1;
 	bool first_time:1;
-	bool is_memory:1;
 	bool is_map:1;
+	bool is_memory:1;
 	bool is_engine:1;
-	bool is_integer:1;
-	bool is_sparse:1;
 };
 
 struct page_ {
