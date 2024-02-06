@@ -904,9 +904,17 @@ mutex_trylock(Alias) :-
 	'$pl_thread_alias'(Id, Alias, _),
 	!,
 	'$mutex_trylock'(Id).
-mutex_trylock(Id) :-
-	(integer(Id) -> true ; throw(error(domain_error(mutex_or_alias, Id), mutex_trylock/1))),
+mutex_lock(Id) :-
+	integer(Id),
+	!,
 	'$mutex_trylock'(Id).
+mutex_lock(Id) :-
+	atom(Id),
+	!,
+	mutex_create(_, [alias(Id)]),
+	mutex_trylock(Id).
+mutex_lock(Id) :-
+	throw(error(domain_error(mutex_or_alias, Id), mutex_trylock/1)).
 
 mutex_lock(Alias) :-
 	%format("*** mutex_lock(~w)~n", [Alias]),
@@ -914,8 +922,16 @@ mutex_lock(Alias) :-
 	!,
 	'$mutex_lock'(Id).
 mutex_lock(Id) :-
-	(integer(Id) -> true ; throw(error(domain_error(mutex_or_alias, Id), mutex_lock/1))),
+	integer(Id),
+	!,
 	'$mutex_lock'(Id).
+mutex_lock(Id) :-
+	atom(Id),
+	!,
+	mutex_create(_, [alias(Id)]),
+	mutex_lock(Id).
+mutex_lock(Id) :-
+	throw(error(domain_error(mutex_or_alias, Id), mutex_lock/1)).
 
 mutex_unlock(Alias) :-
 	%format("*** mutex_unlock(~w)~n", [Alias]),
