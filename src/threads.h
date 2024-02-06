@@ -11,6 +11,8 @@
 #include <unistd.h>
 #endif
 
+void thread_initialize();
+
 typedef struct {
 #ifdef _WIN32
     CRITICAL_SECTION mutex;

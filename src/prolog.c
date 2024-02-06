@@ -421,6 +421,10 @@ void load_builtins(prolog *pl)
 
 static bool g_init(prolog *pl)
 {
+#if USE_THREADS
+	thread_initialize();
+#endif
+
 	bool error = false;
 
 	g_pool = calloc(1, s_pool_size);
