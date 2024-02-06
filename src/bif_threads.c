@@ -857,7 +857,7 @@ static bool bif_thread_sleep_1(query *q)
 #endif
 	}
 
-	int ms = (int)(is_float(p1) ? get_float(p1) : get_smallint(p1)) * 1000;
+	int ms = (int)(is_float(p1) ? get_float(p1) : get_smallint(p1) * 1000);
 	msleep(ms);
 	return true;
 }
