@@ -582,6 +582,12 @@ static bool bif_thread_create_4(query *q)
 		t->init = true;
 	}
 
+	cell tmp;
+	make_uint(&tmp, chan);
+
+	if (!unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
+		return false;
+
 	cell *goal = deep_clone_to_heap(q, p1, p1_ctx);
 	check_heap_error(goal);
 	t->nbr_vars = rebase_vars(q, goal, 0);
@@ -624,12 +630,6 @@ static bool bif_thread_create_4(query *q)
 
     pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread_create, (void*)t);
 #endif
-
-	cell tmp;
-	make_uint(&tmp, chan);
-
-	if (!unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
-		return false;
 
 	return true;
 }
