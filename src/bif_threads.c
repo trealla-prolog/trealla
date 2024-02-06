@@ -841,7 +841,7 @@ static bool bif_thread_self_1(query *q)
 
 static bool bif_thread_sleep_1(query *q)
 {
-	GET_FIRST_ARG(p1,integer);
+	GET_FIRST_ARG(p1,number);
 
 	if (s_first) {
 		s_first = false;
@@ -857,7 +857,8 @@ static bool bif_thread_sleep_1(query *q)
 #endif
 	}
 
-	sleep(get_smallint(p1));
+	int ms = (int)(is_float(p1) ? get_float(p1) : get_smallint(p1)) * 1000;
+	msleep(ms);
 	return true;
 }
 
