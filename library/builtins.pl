@@ -642,17 +642,13 @@ thread_create(Goal, Id, Options) :-
 			Goal2 = (Goal1, retractall('$pl_thread_alias'(_, Alias, _)))
 		;	Goal2 = Goal1
 		),
-		Goal0 = (Goal2, halt)
-	;	Goal0 = (Goal, halt)
+		Goal0 = (assertz('$pl_thread_alias'(Id, Alias, thread)), Goal2, halt)
+	;	Goal0 = (assertz('$pl_thread_alias'(Id, -, thread)), Goal, halt)
 	),
 	(atom(Alias) -> retractall('$pl_thread_alias'(_, Alias, _)) ; true),
 	( nonvar(AtExit) ->
 		'$thread_create'(Goal0, Id, Detached, (AtExit, halt))
 	;	'$thread_create'(Goal0, Id, Detached, _)
-	),
-	( atom(Alias) ->
-		assertz('$pl_thread_alias'(Id, Alias, thread))
-	;	assertz('$pl_thread_alias'(Id, -, thread))
 	),
 	%format("*** thread_create(~w,~w,~w)~n", [...,Id,Options]),
 	(integer(Cpu) -> '$pl_thread_pin_cpu'(Id, Cpu) ; true),
