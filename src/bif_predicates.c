@@ -3540,7 +3540,7 @@ static bool bif_delay_1(query *q)
 	if (q->retry)
 		return true;
 
-	GET_FIRST_ARG(p1,integer);
+	GET_FIRST_ARG(p1,number);
 
 	if (is_negative(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
@@ -3551,9 +3551,10 @@ static bool bif_delay_1(query *q)
 	if (q->is_task)
 		return do_yield(q, get_smallint(p1));
 
-	int ms = get_smallint(p1);
+	int ms = is_float(p1) ? (int)get_float(p1) : get_smallint(p1);
 
 	while ((ms > 0) && !q->halt) {
+		CHECK_INTERRUPT();
 		msleep(ms > 10 ? 10 : ms);
 		ms -= 10;
 	}
