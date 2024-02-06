@@ -477,6 +477,7 @@ static bool bif_pl_thread_2(query *q)
 		return throw_error(q, p2, p2_ctx, "existence_error", "file");
 	}
 
+	acquire_lock(&g_pl_threads[0].guard);
 	unsigned chan = g_pl_cnt++;
 	pl_thread *t = &g_pl_threads[chan];
 
@@ -484,6 +485,8 @@ static bool bif_pl_thread_2(query *q)
 		chan = g_pl_cnt++ % MAX_THREADS;
 		t = &g_pl_threads[chan];
 	}
+
+	release_lock(&g_pl_threads[0].guard);
 
 	if (!t->init) {
 		init_lock(&t->guard);
@@ -569,6 +572,8 @@ static bool bif_thread_create_4(query *q)
 	GET_NEXT_ARG(p2,var);
 	GET_NEXT_ARG(p3,atom_or_var);
 	GET_NEXT_ARG(p4,any);
+
+	acquire_lock(&g_pl_threads[0].guard);
 	unsigned chan = g_pl_cnt++;
 	pl_thread *t = &g_pl_threads[chan];
 
@@ -576,6 +581,8 @@ static bool bif_thread_create_4(query *q)
 		chan = g_pl_cnt++ % MAX_THREADS;
 		t = &g_pl_threads[chan];
 	}
+
+	release_lock(&g_pl_threads[0].guard);
 
 	if (!t->init) {
 		init_lock(&t->guard);
@@ -970,6 +977,8 @@ static bool bif_message_queue_create_1(query *q)
 	}
 
 	GET_FIRST_ARG(p1,var);
+
+	acquire_lock(&g_pl_threads[0].guard);
 	unsigned chan = g_pl_cnt++;
 	pl_thread *t = &g_pl_threads[chan];
 
@@ -977,6 +986,8 @@ static bool bif_message_queue_create_1(query *q)
 		chan = g_pl_cnt++ % MAX_THREADS;
 		t = &g_pl_threads[chan];
 	}
+
+	release_lock(&g_pl_threads[0].guard);
 
 	if (!t->init) {
 		init_lock(&t->guard);
@@ -1040,6 +1051,8 @@ static bool bif_mutex_create_1(query *q)
 	}
 
 	GET_FIRST_ARG(p1,var);
+
+	acquire_lock(&g_pl_threads[0].guard);
 	unsigned chan = g_pl_cnt++;
 	pl_thread *t = &g_pl_threads[chan];
 
@@ -1047,6 +1060,8 @@ static bool bif_mutex_create_1(query *q)
 		chan = g_pl_cnt++ % MAX_THREADS;
 		t = &g_pl_threads[chan];
 	}
+
+	release_lock(&g_pl_threads[0].guard);
 
 	if (!t->init) {
 		init_lock(&t->guard);
