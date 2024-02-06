@@ -291,13 +291,6 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 
 		while (m) {
 			cell *c = m->c;
-
-			for (unsigned i = 0; i < c->nbr_cells; i++) {
-				if (is_ref(&c[i])) {
-					c[i].flags &= ~FLAG_VAR_REF;
-				}
-			}
-
 			cell *tmp = deep_clone_to_heap(q, c, q->st.fp);
 			check_heap_error(tmp, release_lock(&t->guard));
 
@@ -405,16 +398,8 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_idx p1_ct
 
 	cell *c = m->c;
 	try_me(q, MAX_ARITY);
-
-	for (unsigned i = 0; i < c->nbr_cells; i++) {
-		if (is_ref(&c[i])) {
-			c[i].flags &= ~FLAG_VAR_REF;
-		}
-	}
-
-	cell *tmp = deep_copy_to_heap(q, c, q->st.fp, false);
+	cell *tmp = deep_clone_to_heap(q, c, q->st.fp);
 	check_heap_error(tmp, release_lock(&t->guard));
-	unshare_cells(c, c->nbr_cells);
 	q->curr_chan = m->from_chan;
 
 	if (!is_peek) {
@@ -599,19 +584,27 @@ static bool bif_thread_create_4(query *q)
 
 	cell *goal = deep_clone_to_heap(q, p1, p1_ctx);
 	check_heap_error(goal);
+	t->nbr_vars = rebase_vars(q, goal, 0);
 	t->q = query_create(q->st.m, false);
 	check_heap_error(t->q);
 	t->q->thread_ptr = t;
 	t->q->trace = q->trace;
 	t->goal = deep_clone_to_heap(t->q, goal, 0);
 	check_heap_error(t->goal);
-	t->nbr_vars = rebase_vars(t->q, t->goal, 0);
 	t->chan = chan;
 	t->is_exception = false;
 	t->active = true;
 	t->q->my_chan = chan;
 	t->signal_head = t->queue_head = NULL;
 	t->signal_tail = t->queue_tail = NULL;
+
+	if (is_nonvar(p4)) {
+		cell *at_exit = deep_clone_to_heap(q, p4, p4_ctx);
+		check_heap_error(at_exit);
+		t->at_exit_nbr_vars = rebase_vars(t->q, at_exit, 0);
+		//DUMP_TERM("at_exit", at_exit, q->st.curr_frame, 0);
+		t->at_exit = deep_clone_to_heap(t->q, at_exit, 0);
+	}
 
 #ifdef _WIN32
     SECURITY_ATTRIBUTES sa = {0};
@@ -638,14 +631,6 @@ static bool bif_thread_create_4(query *q)
 	if (!unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 		return false;
 
-	if (is_nonvar(p4)) {
-		cell *at_exit = deep_clone_to_heap(q, p4, p4_ctx);
-		check_heap_error(at_exit);
-		t->at_exit = deep_clone_to_heap(t->q, at_exit, 0);
-		t->at_exit_nbr_vars = rebase_vars(t->q, t->at_exit, 0);
-		//DUMP_TERM("at_exit", t->at_exit, q->st.curr_frame, 0);
-	}
-
 	return true;
 }
 
@@ -666,13 +651,6 @@ void do_signal(query *q, void *thread_ptr)
 	release_lock(&t->guard);
 	cell *c = m->c;
 	pl_idx c_ctx = 0;
-
-	for (unsigned i = 0; i < c->nbr_cells; i++) {
-		if (is_ref(&c[i])) {
-			c[i].flags &= ~FLAG_VAR_REF;
-		}
-	}
-
 	cell *tmp = prepare_call(q, true, c, c_ctx, 1);
 	ensure(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + c->nbr_cells;
@@ -724,7 +702,7 @@ static bool bif_thread_join_2(query *q)
 	t->active = false;
 
 	if (t->exit_code) {
-		cell *tmp = deep_copy_to_heap(q, t->exit_code, 1, false);
+		cell *tmp = deep_clone_to_heap(q, t->exit_code, 1);
 		t->exit_code = NULL;
 		query_destroy(t->q);
 		t->q = NULL;
@@ -928,12 +906,12 @@ static bool bif_thread_exit_1(query *q)
 	}
 
 	check_heap_error(init_tmp_heap(q));
-	cell *tmp_p1 = deep_copy_to_tmp(q, p1, p1_ctx, false);
+	cell *tmp_p1 = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(tmp_p1);
 	cell *tmp = alloc_on_heap(q, 1+tmp_p1->nbr_cells);
 	check_heap_error(tmp);
 	make_struct(tmp, new_atom(q->pl, "exited"), NULL, 1, tmp_p1->nbr_cells);
-	dup_cells_by_ref(tmp+1, tmp_p1, q->st.curr_frame, tmp_p1->nbr_cells);
+	dup_cells(tmp+1, tmp_p1, tmp_p1->nbr_cells);
 
 #ifdef _WIN32
 	HANDLE tid = (void*)GetCurrentThreadId();
