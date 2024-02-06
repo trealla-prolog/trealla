@@ -1945,9 +1945,10 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 {
 	if (!str->p) {
 		str->p = parser_create(q->st.m);
+		check_heap_error(str->p);
 		str->p->flags = q->st.m->flags;
 		str->p->fp = str->fp;
-		str->p->no_fp = q->p->no_fp;
+		if (q->p) str->p->no_fp = q->p->no_fp;
 	} else
 		reset(str->p);
 
