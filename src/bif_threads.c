@@ -1077,7 +1077,7 @@ static bool do_thread_property_pin_both(query *q)
 	stream *str = &q->pl->streams[chan];
 
 	if (p2->arity != 1)
-		return throw_error(q, p2, p2_ctx, "domain_error", "mutex_property");
+		return throw_error(q, p2, p2_ctx, "domain_error", "thread_property");
 
 	cell *c = deref(q, p2, p2_ctx);
 	pl_idx c_ctx = q->latest_ctx;
@@ -1125,7 +1125,7 @@ static bool do_thread_property_pin_both(query *q)
 		make_atom(tmp+1, t->exit_code?g_false_s:g_true_s);
 		return unify(q, c, c_ctx, tmp, q->st.curr_frame);
 	} else
-		return throw_error(q, p2, p2_ctx, "domain_error", "mutex_property");
+		return throw_error(q, p2, p2_ctx, "domain_error", "thread_property");
 
 	return false;
 }
@@ -1421,7 +1421,7 @@ static bool do_message_queue_property_pin_both(query *q)
 	stream *str = &q->pl->streams[chan];
 
 	if (p2->arity != 1)
-		return throw_error(q, p2, p2_ctx, "domain_error", "mutex_property");
+		return throw_error(q, p2, p2_ctx, "domain_error", "queue_property");
 
 	cell *c = deref(q, p2, p2_ctx);
 	pl_idx c_ctx = q->latest_ctx;
@@ -1461,7 +1461,7 @@ static bool do_message_queue_property_pin_both(query *q)
 		sl_done(iter);
 		return true;
 	} else
-		return throw_error(q, p2, p2_ctx, "domain_error", "mutex_property");
+		return throw_error(q, p2, p2_ctx, "domain_error", "queue_property");
 
 	return false;
 }
