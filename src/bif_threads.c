@@ -63,7 +63,7 @@ struct pl_thread_ {
 static pl_thread g_pl_threads[MAX_THREADS] = {0};
 static unsigned g_pl_any_threads = 0;
 
-#define THREAD_DEBUG if (0)
+#define THREAD_DEBUG if (1)
 
 #define is_thread(c) is_thread_or_alias(q, c)
 #define is_mutex(c) is_mutex_or_alias(q, c)
@@ -281,7 +281,7 @@ static bool do_send_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bo
 	cell *c = deep_clone_to_heap(q, p1, p1_ctx);
 	check_heap_error(c);
 	rebase_vars(q, c, 0);
-	check_heap_error(queue_to_chan(chan, c, q->my_chan, is_signal), resume_thread(t));
+	check_heap_error(queue_to_chan(chan, c, q->my_chan, is_signal));
     resume_thread(t);
 	return true;
 }
