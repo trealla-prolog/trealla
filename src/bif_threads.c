@@ -752,7 +752,7 @@ static bool bif_thread_create_3(query *q)
 	t->q = query_create(q->st.m, false);
 	check_heap_error(t->q);
 	t->q->thread_ptr = t;
-	t->q->trace = q->trace;
+	//t->q->trace = q->trace;
 	t->goal = deep_clone_to_heap(t->q, tmp2, 0);
 	check_heap_error(t->goal);
 	t->is_detached = false;
@@ -1103,7 +1103,7 @@ static bool do_thread_property_pin_both(query *q)
 		if (t->is_exception) {
 			cell *tmp = alloc_on_heap(q, 3);
 			make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 2);
-			make_struct(tmp, new_atom(q->pl, "exception"), NULL, 1, 1);
+			make_struct(tmp+1, new_atom(q->pl, "exception"), NULL, 1, 1);
 			make_atom(tmp+2, g_true_s);
 			return unify(q, c, c_ctx, tmp, q->st.curr_frame);
 		}
@@ -1211,7 +1211,7 @@ static bool do_thread_property_pin_mutex(query *q)
 		if (t->is_exception) {
 			cell *tmp = alloc_on_heap(q, 3);
 			make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 2);
-			make_struct(tmp, new_atom(q->pl, "exception"), NULL, 1, 1);
+			make_struct(tmp+1, new_atom(q->pl, "exception"), NULL, 1, 1);
 			make_atom(tmp+2, g_true_s);
 			return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 		}
