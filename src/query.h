@@ -82,6 +82,7 @@ void reset_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx);
 bool valid_list(query *q, cell *c, pl_idx c_ctx);
 void make_call(query *q, cell *tmp);
 void make_call_redo(query *q, cell *tmp);
+bool stream_close(query *q, int n);
 
 #if USE_THREADS
 void do_signal(query *q, void *thread_ptr);
@@ -102,6 +103,7 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int
 
 void dump_term(query *q, const char *s, const cell *c);
 
+bool bif_iso_halt_0(query *q);
 bool bif_sys_drop_barrier_1(query *q);
 bool bif_iso_throw_1(query *q);
 bool bif_sys_call_cleanup_3(query *q);

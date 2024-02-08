@@ -2,6 +2,7 @@
 
 main :-
 	mutex_create(_, [alias(bar)]),
+	mutex_property(bar, status(unlocked)),
 	between(1, 10, I),
 		atomic_concat(foo, I, Alias),
 		format("Starting ~w~n", [I]),

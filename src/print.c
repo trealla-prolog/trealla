@@ -800,21 +800,33 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		return false;
 	}
 
-	if (q->is_dump_vars && (c->tag == TAG_INTEGER) && is_stream(c)) {
+	if (q->is_dump_vars && (c->tag == TAG_INTEGER) && (c->flags & FLAG_INT_STREAM)) {
 		int n = get_stream(q, c);
-		stream *str = &q->pl->streams[n];
-		sliter *iter = sl_first(str->alias);
+		stream *str = n >= 0 ? &q->pl->streams[n] : NULL;
+		sliter *iter = str && str->alias ? sl_first(str->alias) : NULL;
 
 		if (iter && sl_next(iter, NULL)) {
 			const char *alias = sl_key(iter);
 
 			if (strcmp(alias, "user_input") && strcmp(alias, "user_output") && strcmp(alias, "user_error")) {
 				SB_strcat_and_free(q->sb, formatted(alias, strlen(alias), false, q->json));
+			} else if (str->is_queue) {
+				SB_sprintf(q->sb, "'<$queue>'(%d)", (int)get_smallint(c));
+			} else if (str->is_mutex) {
+				SB_sprintf(q->sb, "'<$mutex>'(%d)", (int)get_smallint(c));
+			} else if (str->is_thread) {
+				SB_sprintf(q->sb, "'<$thread>'(%d)", (int)get_smallint(c));
 			} else {
 				SB_sprintf(q->sb, "'<$stream>'(%d)", (int)get_smallint(c));
 			}
 
 			sl_done(iter);
+		} else if (str && str->is_queue) {
+			SB_sprintf(q->sb, "'<$queue>'(%d)", (int)get_smallint(c));
+		} else if (str && str->is_mutex) {
+			SB_sprintf(q->sb, "'<$mutex>'(%d)", (int)get_smallint(c));
+		} else if (str && str->is_thread) {
+			SB_sprintf(q->sb, "'<$thread>'(%d)", (int)get_smallint(c));
 		} else {
 			SB_sprintf(q->sb, "'<$stream>'(%d)", (int)get_smallint(c));
 		}
@@ -824,7 +836,19 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	}
 
 	if ((c->tag == TAG_INTEGER) && (c->flags & FLAG_INT_STREAM)) {
-		SB_sprintf(q->sb, "'<$stream>'(%d)", (int)get_smallint(c));
+		int n = get_stream(q, c);
+		stream *str = &q->pl->streams[n];
+
+		if (str->is_queue) {
+			SB_sprintf(q->sb, "'<$queue>'(%d)", (int)get_smallint(c));
+		} else if (str->is_mutex) {
+			SB_sprintf(q->sb, "'<$mutex>'(%d)", (int)get_smallint(c));
+		} else if (str->is_thread) {
+			SB_sprintf(q->sb, "'<$thread>'(%d)", (int)get_smallint(c));
+		} else {
+			SB_sprintf(q->sb, "'<$stream>'(%d)", (int)get_smallint(c));
+		}
+
 		q->last_thing = WAS_OTHER;
 		return true;
 	}

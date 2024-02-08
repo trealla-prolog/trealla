@@ -31,11 +31,11 @@ static void msleep(int ms)
 
 typedef struct msg_ {
 	struct msg_ *prev, *next;
-	unsigned from_chan;
+	int from_chan;
 	cell c[];
 } msg;
 
-#define is_thread(t) (!(t)->is_queue_only && !(t)->is_mutex_only)
+#define is_thread_only(t) (!(t)->is_queue_only && !(t)->is_mutex_only)
 
 typedef struct pl_thread_ pl_thread;
 
@@ -45,9 +45,9 @@ struct pl_thread_ {
 	cell *goal, *exit_code, *at_exit;
 	msg *queue_head, *queue_tail;
 	msg *signal_head, *signal_tail;
-	void *locked_by;
-	unsigned chan, nbr_vars, at_exit_nbr_vars;
-	bool init;
+	unsigned nbr_vars, at_exit_nbr_vars, locks;
+	int chan, locked_by;
+	bool init, finished;
 	bool is_queue_only, is_mutex_only, is_detached, is_exception;
 	pl_atomic bool active;
 	lock guard;
@@ -61,25 +61,27 @@ struct pl_thread_ {
 };
 
 static pl_thread g_pl_threads[MAX_THREADS] = {0};
-static unsigned g_pl_cnt = 1;		// 0 is the primaryinstance
 static unsigned g_pl_any_threads = 0;
 
-#define THREAD_DEBUG if (1)
+#define THREAD_DEBUG if (0)
 
-#define is_threadid(c) is_thread_or_alias(q, c)
-#define is_mutexid(c) is_mutex_or_alias(q, c)
-#define is_queueid(c) is_queue_or_alias(q, c)
+#define is_thread(c) is_thread_or_alias(q, c)
+#define is_mutex(c) is_mutex_or_alias(q, c)
+#define is_queue(c) is_queue_or_alias(q, c)
 
-static pl_atomic bool s_first = true;
+#define check_thread(c) check_thread_or_alias(q, c)
+#define check_mutex(c) check_mutex_or_alias(q, c)
+#define check_queue(c) check_queue_or_alias(q, c)
 
 void thread_initialize()
 {
 	pl_thread *t = &g_pl_threads[0];
 	init_lock(&t->guard);
-	s_first = false;
 	t->chan = 0;
 	t->active = true;
 	t->init = true;
+	t->locked_by = -1;
+	t->locks = 0;
 #ifdef _WIN32
 	t->id = (void*)(size_t)GetCurrentThreadId();
 #else
@@ -94,14 +96,10 @@ static bool is_thread_or_alias(query *q, cell *c)
 	if (is_var(c))
 		return throw_error(q, c, c_ctx, "instantiation_error", "thread_or_alias");
 
-	if (!is_smallint(c))
-		return throw_error(q, c, c_ctx, "domain_error", "thread_or_alias");
+	if (!is_stream(c))
+		return throw_error(q, c, c_ctx, "existence_error", "thread_or_alias");
 
-	unsigned chan = get_smalluint(c);
-
-	if (chan >= MAX_THREADS)
-		return throw_error(q, c, c_ctx, "domain_error", "thread_or_alias");
-
+	int chan = get_stream(q, c);
 	pl_thread *t = &g_pl_threads[chan];
 
 	if (!t->active)
@@ -117,14 +115,10 @@ static bool is_mutex_or_alias(query *q, cell *c)
 	if (is_var(c))
 		return throw_error(q, c, c_ctx, "instantiation_error", "mutex_or_alias");
 
-	if (!is_smallint(c))
-		return throw_error(q, c, c_ctx, "domain_error", "mutex_or_alias");
+	if (!is_stream(c))
+		return throw_error(q, c, c_ctx, "existence_error", "mutex_or_alias");
 
-	unsigned chan = get_smalluint(c);
-
-	if (chan >= MAX_THREADS)
-		return throw_error(q, c, c_ctx, "domain_error", "mutex_or_alias");
-
+	int chan = get_stream(q, c);
 	pl_thread *t = &g_pl_threads[chan];
 
 	if (!t->active)
@@ -140,14 +134,10 @@ static bool is_queue_or_alias(query *q, cell *c)
 	if (is_var(c))
 		return throw_error(q, c, c_ctx, "instantiation_error", "queue_or_alias");
 
-	if (!is_smallint(c))
-		return throw_error(q, c, c_ctx, "domain_error", "queue_or_alias");
+	if (!is_stream(c))
+		return throw_error(q, c, c_ctx, "existence_error", "queue_or_alias");
 
-	unsigned chan = get_smalluint(c);
-
-	if (chan >= MAX_THREADS)
-		return throw_error(q, c, c_ctx, "domain_error", "queue_or_alias");
-
+	int chan = get_stream(q, c);
 	pl_thread *t = &g_pl_threads[chan];
 
 	if (!t->active)
@@ -155,6 +145,52 @@ static bool is_queue_or_alias(query *q, cell *c)
 
 	return true;
 }
+
+static bool check_thread_or_alias(query *q, cell *c)
+{
+	pl_idx c_ctx = 0;
+
+	if (is_var(c))
+		return false;
+
+	if (!is_stream(c))
+		return false;
+
+	int chan = get_stream(q, c);
+	pl_thread *t = &g_pl_threads[chan];
+	return !t->is_mutex_only && !t->is_queue_only;
+}
+
+static bool check_mutex_or_alias(query *q, cell *c)
+{
+	pl_idx c_ctx = 0;
+
+	if (is_var(c))
+		return false;
+
+	if (!is_stream(c))
+		return false;
+
+	int chan = get_stream(q, c);
+	pl_thread *t = &g_pl_threads[chan];
+	return t->is_mutex_only;
+}
+
+static bool check_queue_or_alias(query *q, cell *c)
+{
+	pl_idx c_ctx = 0;
+
+	if (is_var(c))
+		return false;
+
+	if (!is_stream(c))
+		return false;
+
+	int chan = get_stream(q, c);
+	pl_thread *t = &g_pl_threads[chan];
+	return t->is_queue_only;
+}
+
 
 static void suspend_thread(pl_thread *t, int ms)
 {
@@ -236,8 +272,11 @@ static bool do_send_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bo
 {
 	pl_thread *t = &g_pl_threads[chan];
 
-	if (!t->active || t->is_mutex_only)
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+	if (!t->active)
+		return throw_error(q, p1, p1_ctx, "domain_error", "1no_such_thread_or_queue");
+
+	if (t->is_mutex_only)
+		return throw_error(q, p1, p1_ctx, "domain_error", "2no_such_thread_or_queue");
 
 	cell *c = deep_clone_to_heap(q, p1, p1_ctx);
 	check_heap_error(c);
@@ -249,9 +288,12 @@ static bool do_send_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bo
 
 static bool bif_pl_send_2(query *q)
 {
-	GET_FIRST_ARG(p1,threadid);
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
+	GET_FIRST_ARG(p1,thread);
 	GET_NEXT_ARG(p2,any);
-	unsigned chan = get_smalluint(p1);
+	int chan = get_stream(q, p1);
+	if (chan < 0) return true;
 	return do_send_message(q, chan, p2, p2_ctx, false);
 }
 
@@ -278,11 +320,6 @@ static pl_thread *get_self()
 
 static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bool is_peek)
 {
-	if (chan >= MAX_THREADS) {
-		fprintf(stderr, "*** match %d\n", chan);
-		assert(chan < MAX_THREADS);
-	}
-
 	pl_thread *t = &g_pl_threads[chan];
 
 	while (!q->pl->halt) {
@@ -357,33 +394,44 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 
 static bool bif_thread_get_message_2(query *q)
 {
-	GET_FIRST_ARG(p1,queueid);
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
+	GET_FIRST_ARG(p1,queue);
 	GET_NEXT_ARG(p2,any);
-	unsigned chan = get_smalluint(p1);
+	int chan = get_stream(q, p1);
+	if (chan < 0) return true;
 
 	if (!do_match_message(q, chan, p2, p2_ctx, false))
 		return false;
 
+	THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
 	return true;
 }
 
 static bool bif_thread_peek_message_2(query *q)
 {
-	GET_FIRST_ARG(p1,queueid);
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
+	GET_FIRST_ARG(p1,queue);
 	GET_NEXT_ARG(p2,any);
-	unsigned chan = get_smalluint(p1);
+	int chan = get_stream(q, p1);
+	if (chan < 0) return true;
 
 	if (!do_match_message(q, chan, p2, p2_ctx, true))
 		return false;
 
+	THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
 	return true;
 }
 
 static bool bif_thread_send_message_2(query *q)
 {
-	GET_FIRST_ARG(p1,queueid);
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
+	GET_FIRST_ARG(p1,queue);
 	GET_NEXT_ARG(p2,any);
-	unsigned chan = get_smalluint(p1);
+	int chan = get_stream(q, p1);
+	if (chan < 0) return true;
 	return do_send_message(q, chan, p2, p2_ctx, false);
 }
 
@@ -435,17 +483,16 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_idx p1_ct
 
 static bool bif_pl_recv_2(query *q)
 {
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
 	GET_FIRST_ARG(p1,integer_or_var);
 	GET_NEXT_ARG(p2,any);
-	unsigned from_chan = 0;
+	int from_chan = 0;
 
 	if (is_integer(p1)) {
-		if (is_negative(p1))
-			return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
+		from_chan = get_stream(q, p1);
 
-		from_chan = get_smalluint(p1);
-
-		if (from_chan >= g_pl_cnt)
+		if (from_chan < 0)
 			return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread");
 	}
 
@@ -455,7 +502,8 @@ static bool bif_pl_recv_2(query *q)
 		return false;
 
 	cell tmp;
-	make_uint(&tmp, q->curr_chan);
+	make_int(&tmp, q->curr_chan);
+	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
@@ -469,10 +517,11 @@ static void *start_routine_thread(pl_thread *t)
     return 0;
 }
 
-static bool bif_pl_thread_2(query *q)
+static bool bif_pl_thread_3(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,atom);
+	GET_NEXT_ARG(p3,list_or_nil);
 	char *filename = DUP_STRING(q, p2);
 
 	convert_path(filename);
@@ -483,25 +532,61 @@ static bool bif_pl_thread_2(query *q)
 		return throw_error(q, p2, p2_ctx, "existence_error", "file");
 	}
 
-	acquire_lock(&g_pl_threads[0].guard);
-	unsigned chan = g_pl_cnt++;
-	pl_thread *t = &g_pl_threads[chan];
+	int n = new_stream(q->pl);
 
-	while (t->active) {
-		chan = g_pl_cnt++ % MAX_THREADS;
-		t = &g_pl_threads[chan];
+	if (n < 0)
+		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
+
+	stream *str = &q->pl->streams[n];
+	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
+	LIST_HANDLER(p3);
+
+	while (is_list(p3)) {
+		cell *h = LIST_HEAD(p3);
+		cell *c = deref(q, h, p3_ctx);
+		pl_idx c_ctx = q->latest_ctx;
+
+		if (is_var(c))
+			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+
+		cell *name = c + 1;
+		name = deref(q, name, c_ctx);
+
+		if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
+			if (is_var(name))
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+
+			if (!is_atom(name))
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+
+			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
+				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
+
+			sl_set(str->alias, DUP_STRING(q, name), NULL);
+		} else {
+			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+		}
+
+		p3 = LIST_TAIL(p3);
+		p3 = deref(q, p3, p3_ctx);
+		p3_ctx = q->latest_ctx;
+
+		if (is_var(p3))
+			return throw_error(q, p3, p3_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 	}
+
+	pl_thread *t = &g_pl_threads[n];
+	t->chan = n;
+	t->active = true;
+	t->filename = filename;
+	t->is_exception = false;
+	t->is_queue_only = false;
+	t->is_mutex_only = false;
 
 	if (!t->init) {
 		init_lock(&t->guard);
 		t->init = true;
 	}
-
-	release_lock(&g_pl_threads[0].guard);
-	t->is_exception = false;
-	t->active = true;
-	t->filename = filename;
-	t->chan = chan;
 
 #ifdef _WIN32
     SECURITY_ATTRIBUTES sa = {0};
@@ -516,8 +601,12 @@ static bool bif_pl_thread_2(query *q)
     pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread, (void*)t);
 #endif
 
+	str->fp = (void*)t;
+	str->is_thread = true;
+	str->chan = n;
 	cell tmp;
-	make_uint(&tmp, chan);
+	make_int(&tmp, n);
+	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
@@ -531,6 +620,10 @@ static void *start_routine_thread_create(pl_thread *t)
 	}
 
 	t->is_exception = t->q->did_unhandled_excpetion;
+	t->finished = true;
+
+	if (t->is_detached)
+		stream_close(t->q, t->chan);
 
 	if (!t->exit_code) {
 		query_destroy(t->q);
@@ -556,55 +649,141 @@ static void *start_routine_thread_create(pl_thread *t)
     return 0;
 }
 
-static bool bif_thread_create_4(query *q)
+static bool bif_thread_create_3(query *q)
 {
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,var);
-	GET_NEXT_ARG(p3,atom_or_var);
-	GET_NEXT_ARG(p4,any);
-	acquire_lock(&g_pl_threads[0].guard);
-	unsigned chan = g_pl_cnt++;
-	pl_thread *t = &g_pl_threads[chan];
+	GET_NEXT_ARG(p3,list_or_nil);
+	int n = new_stream(q->pl);
 
-	while (t->active) {
-		chan = g_pl_cnt++ % MAX_THREADS;
-		t = &g_pl_threads[chan];
+	if (n < 0)
+		return throw_error(q, p2, p2_ctx, "resource_error", "too_many_streams");
+
+	stream *str = &q->pl->streams[n];
+	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
+	cell *p4 = NULL;	// at_exit option
+	pl_idx p4_ctx = 0;
+	bool is_detached = false;
+
+	LIST_HANDLER(p3);
+
+	while (is_list(p3)) {
+		cell *h = LIST_HEAD(p3);
+		cell *c = deref(q, h, p3_ctx);
+		pl_idx c_ctx = q->latest_ctx;
+
+		if (is_var(c))
+			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+
+		cell *name = c + 1;
+		name = deref(q, name, c_ctx);
+
+		if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
+			if (is_var(name))
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+
+			if (!is_atom(name))
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+
+			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
+				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
+
+			sl_set(str->alias, DUP_STRING(q, name), NULL);
+		} else if (!CMP_STRING_TO_CSTR(q, c, "at_exit")) {
+			if (is_var(name))
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+
+			if (!is_callable(name))
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+
+			p4 = name;
+			p4_ctx = q->latest_ctx;
+		} else if (!CMP_STRING_TO_CSTR(q, c, "detached")) {
+			if (is_var(name))
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+
+			if (c->arity != 1)
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+
+			if (is_interned(name) && (name->val_off == g_true_s))
+				is_detached = true;
+		} else {
+			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+		}
+
+		p3 = LIST_TAIL(p3);
+		p3 = deref(q, p3, p3_ctx);
+		p3_ctx = q->latest_ctx;
+
+		if (is_var(p3))
+			return throw_error(q, p3, p3_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 	}
+
+	pl_thread *t = &g_pl_threads[n];
+	t->chan = n;
+	t->active = true;
+	t->is_queue_only = false;
+	t->is_mutex_only = false;
+	t->finished = false;
 
 	if (!t->init) {
 		init_lock(&t->guard);
 		t->init = true;
 	}
 
-	release_lock(&g_pl_threads[0].guard);
+	str->fp = (void*)t;
+	str->is_thread = true;
+	str->chan = n;
 	cell tmp;
-	make_uint(&tmp, chan);
+	make_int(&tmp, n);
+	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
 
 	if (!unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 		return false;
 
+	THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
+
 	cell *goal = deep_clone_to_heap(q, p1, p1_ctx);
 	check_heap_error(goal);
 	t->nbr_vars = rebase_vars(q, goal, 0);
+	cell *tmp2 = alloc_on_heap(q, 1 + goal->nbr_cells + 2);
+	check_heap_error(tmp2);
+	pl_idx nbr_cells = 0;
+	make_struct(tmp2+nbr_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, goal->nbr_cells+2);
+	nbr_cells += copy_cells(tmp2+nbr_cells, goal, goal->nbr_cells);
+	make_struct(tmp2+nbr_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
+	make_call(q, tmp2+nbr_cells++);
+	tmp2->nbr_cells = nbr_cells;
+
 	t->q = query_create(q->st.m, false);
 	check_heap_error(t->q);
 	t->q->thread_ptr = t;
 	t->q->trace = q->trace;
-	t->goal = deep_clone_to_heap(t->q, goal, 0);
+	t->goal = deep_clone_to_heap(t->q, tmp2, 0);
 	check_heap_error(t->goal);
-	t->chan = chan;
+	t->is_detached = false;
 	t->is_exception = false;
-	t->active = true;
-	t->q->my_chan = chan;
+	t->q->my_chan = n;
 	t->signal_head = t->queue_head = NULL;
 	t->signal_tail = t->queue_tail = NULL;
+	t->at_exit = NULL;
 
-	if (is_nonvar(p4)) {
-		cell *at_exit = deep_clone_to_heap(q, p4, p4_ctx);
-		check_heap_error(at_exit);
-		t->at_exit_nbr_vars = rebase_vars(t->q, at_exit, 0);
+	if (p4) {
+		cell *goal = deep_clone_to_heap(q, p4, p4_ctx);
+		check_heap_error(goal);
+		t->at_exit_nbr_vars = rebase_vars(q, goal, 0);
+		cell *tmp2 = alloc_on_heap(q, 1 + goal->nbr_cells + 2);
+		check_heap_error(tmp2);
+		pl_idx nbr_cells = 0;
+		make_struct(tmp2+nbr_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, goal->nbr_cells+2);
+		nbr_cells += copy_cells(tmp2+nbr_cells, goal, goal->nbr_cells);
+		make_struct(tmp2+nbr_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
+		make_call(q, tmp2+nbr_cells++);
+		tmp2->nbr_cells = nbr_cells;
 		//DUMP_TERM("at_exit", at_exit, q->st.curr_frame, 0);
-		t->at_exit = deep_clone_to_heap(t->q, at_exit, 0);
+		t->at_exit = deep_clone_to_heap(t->q, tmp2, 0);
 	}
 
 #ifdef _WIN32
@@ -617,11 +796,10 @@ static bool bif_thread_create_4(query *q)
     pthread_attr_t sa;
     pthread_attr_init(&sa);
 
-    if (is_interned(p3) && (p3->val_off == g_true_s)) {
+    if (is_detached) {
 		pthread_attr_setdetachstate(&sa, PTHREAD_CREATE_DETACHED);
 		t->is_detached = true;
-	} else
-		t->is_detached = false;
+	}
 
     pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread_create, (void*)t);
 #endif
@@ -657,15 +835,18 @@ void do_signal(query *q, void *thread_ptr)
 
 static bool bif_thread_signal_2(query *q)
 {
-	GET_FIRST_ARG(p1,threadid);
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
+	GET_FIRST_ARG(p1,thread);
 	GET_NEXT_ARG(p2,callable);
-	unsigned chan = get_smalluint(p1);
+	int chan = get_stream(q, p1);
+	if (chan < 0) return true;
 	pl_thread *t = &g_pl_threads[chan];
 
-	if (!is_thread(t))
+	if (!is_thread_only(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "signal,not_thread");
 
-	if (!do_send_message(q, get_smalluint(p1), p2, p2_ctx, true))
+	if (!do_send_message(q, chan, p2, p2_ctx, true))
 		return false;
 
 	if (t->q)
@@ -677,12 +858,15 @@ static bool bif_thread_signal_2(query *q)
 
 static bool bif_thread_join_2(query *q)
 {
-	GET_FIRST_ARG(p1,threadid);
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
+	GET_FIRST_ARG(p1,thread);
 	GET_NEXT_ARG(p2,any);
-	unsigned chan = get_smalluint(p1);
+	int chan = get_stream(q, p1);
+	if (chan < 0) return true;
 	pl_thread *t = &g_pl_threads[chan];
 
-	if (!is_thread(t))
+	if (!is_thread_only(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "join,not_thread");
 
 #ifdef _WIN32
@@ -707,19 +891,24 @@ static bool bif_thread_join_2(query *q)
 		make_atom(&tmp, g_true_s);
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	}
+
+	stream_close(t->q, t->chan);
 }
 
 static bool bif_thread_cancel_1(query *q)
 {
-	GET_FIRST_ARG(p1,threadid);
-	unsigned chan = get_smalluint(p1);
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
+	GET_FIRST_ARG(p1,thread);
+	int chan = get_stream(q, p1);
+	if (chan < 0) return true;
 
 	if (chan == 0)
 		return throw_error(q, p1, p1_ctx, "permission_error", "detach,thread,main");
 
 	pl_thread *t = &g_pl_threads[chan];
 
-	if (!is_thread(t))
+	if (!is_thread_only(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,not_thread");
 
 	t->q->halt_code = 0;
@@ -733,6 +922,7 @@ static bool bif_thread_cancel_1(query *q)
 #else
 		pthread_cancel(t->id);
 #endif
+		stream_close(t->q, t->chan);
 		query_destroy(t->q);
 	}
 
@@ -759,15 +949,18 @@ static bool bif_thread_cancel_1(query *q)
 
 static bool bif_thread_detach_1(query *q)
 {
-	GET_FIRST_ARG(p1,threadid);
-	unsigned chan = get_smalluint(p1);
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
+	GET_FIRST_ARG(p1,thread);
+	int chan = get_stream(q, p1);
+	if (chan < 0) return true;
 
 	if (chan == 0)
 		return throw_error(q, p1, p1_ctx, "permission_error", "detach,thread,main");
 
 	pl_thread *t = &g_pl_threads[chan];
 
-	if (!is_thread(t))
+	if (!is_thread_only(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "detach,not_thread");
 
 	t->q->halt_code = 0;
@@ -789,9 +982,9 @@ static bool bif_thread_self_1(query *q)
 	GET_FIRST_ARG(p1,var);
 
 #ifdef _WIN32
-	HANDLE tid = (void*)GetCurrentThreadId();
+	HANDLE id = (void*)GetCurrentThreadId();
 #else
-	pthread_t tid = pthread_self();
+	pthread_t id = pthread_self();
 #endif
 
 	for (unsigned i = 0; i < MAX_THREADS; i++) {
@@ -800,10 +993,13 @@ static bool bif_thread_self_1(query *q)
 		if (!t->active)
 			continue;
 
-		if (t->id == tid) {
+		if (t->id == id) {
 			cell tmp;
-			make_uint(&tmp, (unsigned)i);
-			return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+			make_int(&tmp, (int)i);
+			tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+			bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+			THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+			return ok;
 		}
 	}
 
@@ -812,14 +1008,18 @@ static bool bif_thread_self_1(query *q)
 
 static bool bif_thread_sleep_1(query *q)
 {
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
 	GET_FIRST_ARG(p1,number);
-	int ms = (int)(is_float(p1) ? get_float(p1) : get_smallint(p1) * 1000);
+	int ms = (int)((is_float(p1) ? get_float(p1) : get_smallint(p1)) * 1000);
 	msleep(ms);
 	return true;
 }
 
 static bool bif_thread_yield_0(query *q)
 {
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
 #ifdef _WIN32
 #elif 0
 	pthread_yield();
@@ -832,6 +1032,8 @@ static bool bif_thread_yield_0(query *q)
 
 static bool bif_thread_exit_1(query *q)
 {
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
 	GET_FIRST_ARG(p1,nonvar);
 	check_heap_error(init_tmp_heap(q));
 	cell *tmp_p1 = deep_clone_to_tmp(q, p1, p1_ctx);
@@ -865,52 +1067,325 @@ static bool bif_thread_exit_1(query *q)
 	return false;
 }
 
-static bool bif_thread_is_detached_1(query *q)
+static bool do_thread_property_pin_both(query *q)
 {
-	GET_FIRST_ARG(p1,mutexid);
-	unsigned chan = get_smalluint(p1);
+	GET_FIRST_ARG(p1,thread);
+	GET_NEXT_ARG(p2,nonvar);
+	int chan = get_stream(q, p1);
+	if (chan < 0) return true;
 	pl_thread *t = &g_pl_threads[chan];
-	return t->is_detached;
+	stream *str = &q->pl->streams[chan];
+
+	if (p2->arity != 1)
+		return throw_error(q, p2, p2_ctx, "domain_error", "mutex_property");
+
+	cell *c = deref(q, p2, p2_ctx);
+	pl_idx c_ctx = q->latest_ctx;
+
+	if (!CMP_STRING_TO_CSTR(q, p2, "alias")) {
+		sliter *iter = sl_first(str->alias);
+
+		if (!sl_next(iter, NULL))
+			return false;
+
+		const char *alias = sl_key(iter);
+		cell *tmp = alloc_on_heap(q, 2);
+		make_struct(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
+		make_cstring(tmp+1, alias);
+
+		if (!unify(q, c, c_ctx, tmp, q->st.curr_frame))
+			return false;
+
+		unshare_cell(tmp+1);
+		sl_done(iter);
+		return true;
+	} else if (!CMP_STRING_TO_CSTR(q, p2, "detached")) {
+		cell *tmp = alloc_on_heap(q, 2);
+		make_struct(tmp, new_atom(q->pl, "detached"), NULL, 1, 1);
+		make_atom(tmp+1, t->is_detached?g_true_s:g_false_s);
+		return unify(q, c, c_ctx, tmp, q->st.curr_frame);
+	} else if (!CMP_STRING_TO_CSTR(q, p2, "status")) {
+		if (!t->finished) {
+			cell *tmp = alloc_on_heap(q, 2);
+			make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
+			make_atom(tmp+1, new_atom(q->pl, "running"));
+			return unify(q, c, c_ctx, tmp, q->st.curr_frame);
+		}
+
+		if (t->is_exception) {
+			cell *tmp = alloc_on_heap(q, 3);
+			make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 2);
+			make_struct(tmp, new_atom(q->pl, "exception"), NULL, 1, 1);
+			make_atom(tmp+2, g_true_s);
+			return unify(q, c, c_ctx, tmp, q->st.curr_frame);
+		}
+
+		cell *tmp = alloc_on_heap(q, 2);
+		make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
+		make_atom(tmp+1, t->exit_code?g_false_s:g_true_s);
+		return unify(q, c, c_ctx, tmp, q->st.curr_frame);
+	} else
+		return throw_error(q, p2, p2_ctx, "domain_error", "mutex_property");
+
+	return false;
 }
 
-static bool bif_thread_is_exception_1(query *q)
-{
-	GET_FIRST_ARG(p1,mutexid);
-	unsigned chan = get_smalluint(p1);
-	pl_thread *t = &g_pl_threads[chan];
-	return t->is_exception;
-}
-
-static bool bif_message_queue_create_1(query *q)
+static bool do_thread_property_pin_property(query *q)
 {
 	GET_FIRST_ARG(p1,var);
-	acquire_lock(&g_pl_threads[0].guard);
-	unsigned chan = g_pl_cnt++;
-	pl_thread *t = &g_pl_threads[chan];
+	GET_NEXT_ARG(p2,nonvar);
+	unsigned i = 0;
 
-	while (t->active) {
-		chan = g_pl_cnt++ % MAX_THREADS;
-		t = &g_pl_threads[chan];
+	if (q->retry)
+		i = q->st.v1;
+
+	while (++i) {
+		if (i == MAX_THREADS)
+			return true;
+
+		pl_thread *t = &g_pl_threads[i];
+
+		if (!t->active || t->is_mutex_only || t->is_queue_only)
+			continue;
+
+		break;
 	}
+
+	q->st.v1 = i;
+
+	while (++i) {
+		if (i == MAX_THREADS)
+			break;
+
+		pl_thread *t = &g_pl_threads[i];
+
+		if (!t->active || t->is_mutex_only || t->is_queue_only)
+			continue;
+
+		break;
+	}
+
+	if (i != MAX_THREADS)
+		check_heap_error(push_choice(q));
+
+	cell tmp;
+	make_int(&tmp, q->st.v1);
+	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+
+	if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
+		return false;
+
+	return do_thread_property_pin_both(q);
+}
+
+static bool do_thread_property_pin_mutex(query *q)
+{
+	GET_FIRST_ARG(p1,thread);
+	GET_NEXT_ARG(p2,any);
+	int chan = get_stream(q, p1);
+	if (chan < 0) return true;
+	pl_thread *t = &g_pl_threads[chan];
+	stream *str = &q->pl->streams[chan];
+	unsigned i = 0;
+
+	if (q->retry)
+		i = ++q->st.v2;
+	else
+		q->st.v2 = 0;
+
+	if (i == 0) {
+		check_heap_error(push_choice(q));
+		sliter *iter = sl_first(str->alias);
+
+		if (!sl_next(iter, NULL))
+			return false;
+
+		const char *alias = sl_key(iter);
+		cell *tmp = alloc_on_heap(q, 2);
+		make_struct(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
+		unsigned var_nbr = create_vars(q, 1);
+		make_cstring(tmp+1, alias);
+		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+	} else if (i == 1) {
+		check_heap_error(push_choice(q));
+		cell *tmp = alloc_on_heap(q, 2);
+		make_struct(tmp, new_atom(q->pl, "detached"), NULL, 1, 1);
+		make_atom(tmp+1, t->is_detached?g_true_s:g_false_s);
+		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+	} else {
+		if (!t->finished) {
+			cell *tmp = alloc_on_heap(q, 2);
+			make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
+			make_atom(tmp+1, new_atom(q->pl, "running"));
+			return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+		}
+
+		if (t->is_exception) {
+			cell *tmp = alloc_on_heap(q, 3);
+			make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 2);
+			make_struct(tmp, new_atom(q->pl, "exception"), NULL, 1, 1);
+			make_atom(tmp+2, g_true_s);
+			return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+		}
+
+		cell *tmp = alloc_on_heap(q, 2);
+		make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
+		make_atom(tmp+1, t->exit_code?g_false_s:g_true_s);
+		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+	}
+}
+
+static bool do_thread_property_wild(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	GET_NEXT_ARG(p2,var);
+	unsigned i = 0;
+
+	if (q->retry)
+		i = q->st.v1;
+	else
+		q->st.v2 = -1;
+
+	while (++i) {
+		if (i == MAX_THREADS)
+			return true;
+
+		pl_thread *t = &g_pl_threads[i];
+
+		if (!t->active || t->is_mutex_only || t->is_queue_only)
+			continue;
+
+		break;
+	}
+
+	q->st.v1 = i;
+
+	while (++i) {
+		if (i == MAX_THREADS)
+			break;
+
+		pl_thread *t = &g_pl_threads[i];
+
+		if (!t->active || t->is_mutex_only || t->is_queue_only)
+			continue;
+
+		break;
+	}
+
+	if (i != MAX_THREADS)
+		check_heap_error(push_choice(q));
+
+	cell tmp;
+	make_int(&tmp, q->st.v1);
+	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+
+	if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
+		return false;
+
+	return do_thread_property_pin_mutex(q);
+}
+
+static bool bif_thread_property_2(query *q)
+{
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,any);
+
+	if (is_nonvar(p1) && !check_thread(p1))
+		return false;
+
+	if (check_thread(p1) && !is_var(p2))
+		return do_thread_property_pin_both(q);
+
+	if (check_thread(p1))
+		return do_thread_property_pin_mutex(q);
+
+	if (!is_var(p2))
+		return do_thread_property_pin_property(q);
+
+	return do_thread_property_wild(q);
+}
+
+static bool bif_message_queue_create_2(query *q)
+{
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
+	GET_FIRST_ARG(p1,var);
+	GET_NEXT_ARG(p2,list_or_nil);
+	int n = new_stream(q->pl);
+
+	if (n < 0)
+		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
+
+	stream *str = &q->pl->streams[n];
+	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
+	LIST_HANDLER(p2);
+
+	while (is_list(p2)) {
+		cell *h = LIST_HEAD(p2);
+		cell *c = deref(q, h, p2_ctx);
+		pl_idx c_ctx = q->latest_ctx;
+
+		if (is_var(c))
+			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+
+		cell *name = c + 1;
+		name = deref(q, name, c_ctx);
+
+		if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
+			if (is_var(name))
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+
+			if (!is_atom(name))
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+
+			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
+				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
+
+			sl_set(str->alias, DUP_STRING(q, name), NULL);
+		} else {
+			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+		}
+
+		p2 = LIST_TAIL(p2);
+		p2 = deref(q, p2, p2_ctx);
+		p2_ctx = q->latest_ctx;
+
+		if (is_var(p2))
+			return throw_error(q, p2, p2_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+	}
+
+	pl_thread *t = &g_pl_threads[n];
+	t->chan = n;
+	t->active = true;
+	t->is_queue_only = true;
+	t->is_mutex_only = false;
 
 	if (!t->init) {
 		init_lock(&t->guard);
 		t->init = true;
 	}
 
-	release_lock(&g_pl_threads[0].guard);
-	t->chan = chan;
-	t->active = true;
-	t->is_queue_only = true;
+	str->fp = (void*)t;
+	str->is_thread = true;
+	str->is_queue = true;
+	str->chan = n;
 	cell tmp;
-	make_uint(&tmp, chan);
-	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+	make_int(&tmp, n);
+	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+	THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
+	return ok;
 }
 
 static bool bif_message_queue_destroy_1(query *q)
 {
-	GET_FIRST_ARG(p1,queueid);
-	unsigned chan = get_smalluint(p1);
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
+	GET_FIRST_ARG(p1,queue);
+	int chan = get_stream(q, p1);
+	if (chan < 0) return true;
 	pl_thread *t = &g_pl_threads[chan];
 
 	if (!t->is_queue_only)
@@ -925,133 +1400,474 @@ static bool bif_message_queue_destroy_1(query *q)
 
 	t->queue_head = t->queue_tail = NULL;
 	t->active = false;
+	bif_iso_close_1(q);
 	return true;
 }
 
-static bool bif_message_queue_size_2(query *q)
+static bool do_message_queue_property_pin_both(query *q)
 {
-	GET_FIRST_ARG(p1,queueid);
-	unsigned chan = get_smalluint(p1);
-	GET_NEXT_ARG(p2,integer_or_var);
-	cell tmp;
-	unsigned size = queue_size(chan);;
-	make_uint(&tmp, size);
-	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	GET_FIRST_ARG(p1,queue);
+	GET_NEXT_ARG(p2,nonvar);
+	int chan = get_stream(q, p1);
+	if (chan < 0) return true;
+	pl_thread *t = &g_pl_threads[chan];
+	stream *str = &q->pl->streams[chan];
+
+	if (p2->arity != 1)
+		return throw_error(q, p2, p2_ctx, "domain_error", "mutex_property");
+
+	cell *c = deref(q, p2, p2_ctx);
+	pl_idx c_ctx = q->latest_ctx;
+
+	if (!CMP_STRING_TO_CSTR(q, p2, "alias")) {
+		sliter *iter = sl_first(str->alias);
+
+		if (!sl_next(iter, NULL))
+			return false;
+
+		const char *alias = sl_key(iter);
+		cell *tmp = alloc_on_heap(q, 2);
+		make_struct(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
+		make_cstring(tmp+1, alias);
+
+		if (!unify(q, c, c_ctx, tmp, q->st.curr_frame))
+			return false;
+
+		unshare_cell(tmp+1);
+		sl_done(iter);
+		return true;
+	} else if (!CMP_STRING_TO_CSTR(q, p2, "size")) {
+		sliter *iter = sl_first(str->alias);
+
+		if (!sl_next(iter, NULL))
+			return false;
+
+		const char *alias = sl_key(iter);
+		cell *tmp = alloc_on_heap(q, 2);
+		make_struct(tmp, new_atom(q->pl, "size"), NULL, 1, 1);
+		make_int(tmp+1, queue_size(chan));
+
+		if (!unify(q, c, c_ctx, tmp, q->st.curr_frame))
+			return false;
+
+		unshare_cell(tmp+1);
+		sl_done(iter);
+		return true;
+	} else
+		return throw_error(q, p2, p2_ctx, "domain_error", "mutex_property");
+
+	return false;
 }
 
-static bool bif_mutex_create_1(query *q)
+static bool do_message_queue_property_pin_property(query *q)
 {
 	GET_FIRST_ARG(p1,var);
-	acquire_lock(&g_pl_threads[0].guard);
-	unsigned chan = g_pl_cnt++;
-	pl_thread *t = &g_pl_threads[chan];
+	GET_NEXT_ARG(p2,nonvar);
+	unsigned i = 0;
 
-	while (t->active) {
-		chan = g_pl_cnt++ % MAX_THREADS;
-		t = &g_pl_threads[chan];
+	if (q->retry)
+		i = q->st.v1;
+
+	while (++i) {
+		if (i == MAX_THREADS)
+			return true;
+
+		pl_thread *t = &g_pl_threads[i];
+
+		if (!t->active || !t->is_mutex_only)
+			continue;
+
+		break;
 	}
+
+	q->st.v1 = i;
+
+	while (++i) {
+		if (i == MAX_THREADS)
+			break;
+
+		pl_thread *t = &g_pl_threads[i];
+
+		if (!t->active || !t->is_mutex_only)
+			continue;
+
+		break;
+	}
+
+	if (i != MAX_THREADS)
+		check_heap_error(push_choice(q));
+
+	cell tmp;
+	make_int(&tmp, q->st.v1);
+	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+
+	if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
+		return false;
+
+	return do_message_queue_property_pin_both(q);
+}
+
+static bool do_message_queue_property_pin_mutex(query *q)
+{
+	GET_FIRST_ARG(p1,queue);
+	GET_NEXT_ARG(p2,any);
+	int chan = get_stream(q, p1);
+	if (chan < 0) return true;
+	pl_thread *t = &g_pl_threads[chan];
+	stream *str = &q->pl->streams[chan];
+	unsigned i = 0;
+
+	if (q->retry)
+		i = ++q->st.v2;
+	else
+		q->st.v2 = 0;
+
+	if (i == 0) {
+		check_heap_error(push_choice(q));
+
+		sliter *iter = sl_first(str->alias);
+
+		if (!sl_next(iter, NULL))
+			return false;
+
+		const char *alias = sl_key(iter);
+		cell *tmp = alloc_on_heap(q, 2);
+		make_struct(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
+		unsigned var_nbr = create_vars(q, 1);
+		make_cstring(tmp+1, alias);
+		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+	}
+
+	cell *tmp = alloc_on_heap(q, 2);
+	make_struct(tmp, new_atom(q->pl, "size"), NULL, 1, 1);
+	make_int(tmp+1, queue_size(chan));
+	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+}
+
+static bool do_message_queue_property_wild(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	GET_NEXT_ARG(p2,var);
+	unsigned i = 0;
+
+	if (q->retry)
+		i = q->st.v1;
+	else
+		q->st.v2 = -1;
+
+	while (++i) {
+		if (i == MAX_THREADS)
+			return true;
+
+		pl_thread *t = &g_pl_threads[i];
+
+		if (!t->active || !t->is_queue_only)
+			continue;
+
+		break;
+	}
+
+	q->st.v1 = i;
+
+	while (++i) {
+		if (i == MAX_THREADS)
+			break;
+
+		pl_thread *t = &g_pl_threads[i];
+
+		if (!t->active || !t->is_queue_only)
+			continue;
+
+		break;
+	}
+
+	if (i != MAX_THREADS)
+		check_heap_error(push_choice(q));
+
+	cell tmp;
+	make_int(&tmp, q->st.v1);
+	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+
+	if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
+		return false;
+
+	return do_message_queue_property_pin_mutex(q);
+}
+
+static bool bif_message_queue_property_2(query *q)
+{
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,any);
+
+	if (is_nonvar(p1) && !check_queue(p1))
+		return false;
+
+	if (check_queue(p1) && !is_var(p2))
+		return do_message_queue_property_pin_both(q);
+
+	if (check_queue(p1))
+		return do_message_queue_property_pin_mutex(q);
+
+	if (!is_var(p2))
+		return do_message_queue_property_pin_property(q);
+
+	return do_message_queue_property_wild(q);
+}
+
+
+static bool bif_mutex_create_2(query *q)
+{
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
+	GET_FIRST_ARG(p1,var);
+
+	if (is_stream(p1))
+		return throw_error(q, p1, p1_ctx, "permission_error", "open,source_sink");
+
+	int n = new_stream(q->pl);
+
+	if (n < 0)
+		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
+
+	if (is_atom(p1)) {
+		stream *str = &q->pl->streams[n];
+		if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
+		sl_set(str->alias, DUP_STRING(q, p1), NULL);
+		pl_thread *t = &g_pl_threads[n];
+		t->chan = n;
+		t->active = true;
+		t->is_mutex_only = true;
+		t->is_queue_only = false;
+		t->locked_by = -1;
+		t->locks = 0;
+
+		if (!t->init) {
+			init_lock(&t->guard);
+			t->init = true;
+		}
+
+		str->fp = (void*)t;
+		str->is_thread = true;
+		str->is_mutex = true;
+		str->chan = n;
+	}
+
+	GET_NEXT_ARG(p2,list_or_nil);
+	stream *str = &q->pl->streams[n];
+	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
+	LIST_HANDLER(p2);
+
+	while (is_list(p2)) {
+		cell *h = LIST_HEAD(p2);
+		cell *c = deref(q, h, p2_ctx);
+		pl_idx c_ctx = q->latest_ctx;
+
+		if (is_var(c))
+			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+
+		cell *name = c + 1;
+		name = deref(q, name, c_ctx);
+
+		if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
+			if (is_var(name))
+				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+
+			if (!is_atom(name))
+				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+
+			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
+				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
+
+			sl_set(str->alias, DUP_STRING(q, name), NULL);
+		} else {
+			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+		}
+
+		p2 = LIST_TAIL(p2);
+		p2 = deref(q, p2, p2_ctx);
+		p2_ctx = q->latest_ctx;
+
+		if (is_var(p2))
+			return throw_error(q, p2, p2_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+	}
+
+	pl_thread *t = &g_pl_threads[n];
+	t->chan = n;
+	t->active = true;
+	t->is_mutex_only = true;
+	t->is_queue_only = false;
+	t->locked_by = -1;
+	t->locks = 0;
 
 	if (!t->init) {
 		init_lock(&t->guard);
 		t->init = true;
 	}
 
-	release_lock(&g_pl_threads[0].guard);
-	t->chan = chan;
-	t->active = true;
-	t->is_mutex_only = true;
-	cell tmp;
-	make_uint(&tmp, chan);
-	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+	str->fp = (void*)t;
+	str->is_thread = true;
+	str->is_mutex = true;
+	str->chan = n;
+
+	if (is_var(p1)) {
+		cell tmp;
+		make_int(&tmp, n);
+		tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+		bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+		THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
+		return ok;
+	}
+
+	return true;
 }
 
 static bool bif_mutex_destroy_1(query *q)
 {
-	GET_FIRST_ARG(p1,mutexid);
-	unsigned chan = get_smalluint(p1);
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
+	GET_FIRST_ARG(p1,mutex);
+	int chan = get_stream(q, p1);
+	if (chan < 0) return true;
 	pl_thread *t = &g_pl_threads[chan];
 
 	if (!t->is_mutex_only)
 		return throw_error(q, p1, p1_ctx, "permission_error", "destroy,not_mutex");
 
 	t->active = false;
+	bif_iso_close_1(q);
 	return true;
 }
 
 static bool bif_mutex_trylock_1(query *q)
 {
-	GET_FIRST_ARG(p1,mutexid);
-	unsigned chan = get_smalluint(p1);
-	pl_thread *t = &g_pl_threads[chan];
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
 
-#ifdef _WIN32
-	HANDLE tid = (void*)GetCurrentThreadId();
-#else
-	pthread_t tid = pthread_self();
-#endif
+	GET_FIRST_ARG(p1,any);
+
+	if (!is_stream(p1) && !is_atom(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "mutex_or_alias");
+
+	if (!is_stream(p1) && is_atom(p1)) {
+		int n = new_stream(q->pl);
+
+		if (n < 0)
+			return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
+
+		stream *str = &q->pl->streams[n];
+		if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
+		sl_set(str->alias, DUP_STRING(q, p1), NULL);
+		pl_thread *t = &g_pl_threads[n];
+		t->chan = n;
+		t->active = true;
+		t->is_mutex_only = true;
+		t->is_queue_only = false;
+		t->locked_by = -1;
+		t->locks = 0;
+
+		if (!t->init) {
+			init_lock(&t->guard);
+			t->init = true;
+		}
+
+		str->fp = (void*)t;
+		str->is_thread = true;
+		str->is_mutex = true;
+		str->chan = n;
+	}
+
+	int chan = get_stream(q, p1);
+	if (chan < 0) return true;
+	pl_thread *t = &g_pl_threads[chan];
 
 	if (!try_lock(&t->guard))
 		return false;
 
-	t->locked_by = (void*)tid;
-	return true;
-}
-
-static bool bif_mutex_is_locked_1(query *q)
-{
-	GET_FIRST_ARG(p1,mutexid);
-	unsigned chan = get_smalluint(p1);
-	pl_thread *t = &g_pl_threads[chan];
-
-#ifdef _WIN32
-	HANDLE tid = (void*)GetCurrentThreadId();
-#else
-	pthread_t tid = pthread_self();
-#endif
-
-	if (!try_lock(&t->guard))
-		return false;
-
-	if (t->locked_by == (void*)tid)
-		return false;
-
+	pl_thread *me = get_self();
+	t->locked_by = me->chan;
+	t->locks++;
 	return true;
 }
 
 static bool bif_mutex_lock_1(query *q)
 {
-	GET_FIRST_ARG(p1,mutexid);
-	unsigned chan = get_smalluint(p1);
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
+	GET_FIRST_ARG(p1,any);
+
+	if (!is_stream(p1) && !is_atom(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "mutex_or_alias");
+
+	if (!is_stream(p1) && is_atom(p1)) {
+		int n = new_stream(q->pl);
+
+		if (n < 0)
+			return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
+
+		stream *str = &q->pl->streams[n];
+		if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
+		sl_set(str->alias, DUP_STRING(q, p1), NULL);
+		pl_thread *t = &g_pl_threads[n];
+		t->chan = n;
+		t->active = true;
+		t->is_mutex_only = true;
+		t->is_queue_only = false;
+		t->locked_by = -1;
+		t->locks = 0;
+
+		if (!t->init) {
+			init_lock(&t->guard);
+			t->init = true;
+		}
+
+		str->fp = (void*)t;
+		str->is_thread = true;
+		str->is_mutex = true;
+		str->chan = n;
+	}
+
+	int chan = get_stream(q, p1);
+	if (chan < 0) return true;
 	pl_thread *t = &g_pl_threads[chan];
-
-#ifdef _WIN32
-	HANDLE tid = (void*)GetCurrentThreadId();
-#else
-	pthread_t tid = pthread_self();
-#endif
-
+	pl_thread *me = get_self();
 	acquire_lock(&t->guard);
-	t->locked_by = (void*)tid;
+	t->locked_by = me->chan;
+	t->locks++;
 	return true;
 }
 
 static bool bif_mutex_unlock_1(query *q)
 {
-	GET_FIRST_ARG(p1,mutexid);
-	unsigned chan = get_smalluint(p1);
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
+	GET_FIRST_ARG(p1,mutex);
+	int chan = get_stream(q, p1);
+	if (chan < 0) return true;
 	pl_thread *t = &g_pl_threads[chan];
-	t->locked_by = 0;
+	pl_thread *me = get_self();
+
+	if (t->locked_by != me->chan)
+		return throw_error(q, p1, p1_ctx, "permission_error", "mutex_unlock,not_locked_by_me");
+
+	if (--t->locks == 0)
+		t->locked_by = -1;
+
 	release_lock(&t->guard);
 	return true;
 }
 
 static bool bif_mutex_unlock_all_0(query *q)
 {
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
 #ifdef _WIN32
-	HANDLE tid = (void*)GetCurrentThreadId();
+	HANDLE id = (void*)GetCurrentThreadId();
 #else
-	pthread_t tid = pthread_self();
+	pthread_t id = pthread_self();
 #endif
+
+	pl_thread *me = get_self();
 
 	for (unsigned i = 0; i < MAX_THREADS; i++) {
 		pl_thread *t = &g_pl_threads[i];
@@ -1059,21 +1875,247 @@ static bool bif_mutex_unlock_all_0(query *q)
 		if (!t->active)
 			continue;
 
-		if (t->locked_by != (void*)tid)
+		if (t != me)
 			continue;
 
 		release_lock(&t->guard);
-		t->locked_by = 0;
+		t->locked_by = -1;
+		t->locks = 0;
 	}
 
 	return true;
 }
 
+static bool do_mutex_property_pin_both(query *q)
+{
+	GET_FIRST_ARG(p1,mutex);
+	GET_NEXT_ARG(p2,nonvar);
+	int chan = get_stream(q, p1);
+	if (chan < 0) return true;
+	pl_thread *t = &g_pl_threads[chan];
+	stream *str = &q->pl->streams[chan];
+
+	if (p2->arity != 1)
+		return throw_error(q, p2, p2_ctx, "domain_error", "mutex_property");
+
+	cell *c = deref(q, p2, p2_ctx);
+	pl_idx c_ctx = q->latest_ctx;
+
+	if (!CMP_STRING_TO_CSTR(q, p2, "alias")) {
+		sliter *iter = sl_first(str->alias);
+
+		if (!sl_next(iter, NULL))
+			return false;
+
+		const char *alias = sl_key(iter);
+		cell *tmp = alloc_on_heap(q, 2);
+		make_struct(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
+		make_cstring(tmp+1, alias);
+
+		if (!unify(q, c, c_ctx, tmp, q->st.curr_frame))
+			return false;
+
+		unshare_cell(tmp+1);
+		sl_done(iter);
+		return true;
+	} else if (!CMP_STRING_TO_CSTR(q, p2, "status")) {
+		if (t->locks == 0) {
+			cell *tmp = alloc_on_heap(q, 2);
+			make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
+			make_atom(tmp+1, new_atom(q->pl, "unlocked"));
+			return unify(q, c, c_ctx, tmp, q->st.curr_frame);
+		}
+
+		cell *tmp = alloc_on_heap(q, 4);
+		make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 3);
+		make_struct(tmp+1, new_atom(q->pl, "locked"), NULL, 2, 2);
+		make_int(tmp+2, t->locked_by);
+		tmp[2].flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+		make_int(tmp+3, t->locks);
+		return unify(q, c, c_ctx, tmp, q->st.curr_frame);
+	} else
+		return throw_error(q, p2, p2_ctx, "domain_error", "mutex_property");
+
+	return false;
+}
+
+static bool do_mutex_property_pin_property(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	GET_NEXT_ARG(p2,nonvar);
+	unsigned i = 0;
+
+	if (q->retry)
+		i = q->st.v1;
+
+	while (++i) {
+		if (i == MAX_THREADS)
+			return true;
+
+		pl_thread *t = &g_pl_threads[i];
+
+		if (!t->active || !t->is_mutex_only)
+			continue;
+
+		break;
+	}
+
+	q->st.v1 = i;
+
+	while (++i) {
+		if (i == MAX_THREADS)
+			break;
+
+		pl_thread *t = &g_pl_threads[i];
+
+		if (!t->active || !t->is_mutex_only)
+			continue;
+
+		break;
+	}
+
+	if (i != MAX_THREADS)
+		check_heap_error(push_choice(q));
+
+	cell tmp;
+	make_int(&tmp, q->st.v1);
+	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+
+	if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
+		return false;
+
+	return do_mutex_property_pin_both(q);
+}
+
+static bool do_mutex_property_pin_mutex(query *q)
+{
+	GET_FIRST_ARG(p1,mutex);
+	GET_NEXT_ARG(p2,any);
+	int chan = get_stream(q, p1);
+	if (chan < 0) return true;
+	pl_thread *t = &g_pl_threads[chan];
+	stream *str = &q->pl->streams[chan];
+	unsigned i = 0;
+
+	if (q->retry)
+		i = ++q->st.v2;
+	else
+		q->st.v2 = 0;
+
+	if (i == 0) {
+		check_heap_error(push_choice(q));
+
+		sliter *iter = sl_first(str->alias);
+
+		if (!sl_next(iter, NULL))
+			return false;
+
+		const char *alias = sl_key(iter);
+		cell *tmp = alloc_on_heap(q, 2);
+		make_struct(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
+		unsigned var_nbr = create_vars(q, 1);
+		make_cstring(tmp+1, alias);
+		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+	}
+
+	cell *tmp;
+
+	if (t->locks != 0) {
+		tmp = alloc_on_heap(q, 4);
+		make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 3);
+		make_struct(tmp+1, new_atom(q->pl, "locked"), NULL, 2, 2);
+		make_int(tmp+2, t->locked_by);
+		tmp[2].flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+		make_int(tmp+3, t->locks);
+	} else {
+		tmp = alloc_on_heap(q, 2);
+		make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
+		make_atom(tmp+1, new_atom(q->pl, "unlocked"));
+	}
+
+	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+}
+
+static bool do_mutex_property_wild(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	GET_NEXT_ARG(p2,var);
+	unsigned i = 0;
+
+	if (q->retry)
+		i = q->st.v1;
+	else
+		q->st.v2 = -1;
+
+	while (++i) {
+		if (i == MAX_THREADS)
+			return true;
+
+		pl_thread *t = &g_pl_threads[i];
+
+		if (!t->active || !t->is_mutex_only)
+			continue;
+
+		break;
+	}
+
+	q->st.v1 = i;
+
+	while (++i) {
+		if (i == MAX_THREADS)
+			break;
+
+		pl_thread *t = &g_pl_threads[i];
+
+		if (!t->active || !t->is_mutex_only)
+			continue;
+
+		break;
+	}
+
+	if (i != MAX_THREADS)
+		check_heap_error(push_choice(q));
+
+	cell tmp;
+	make_int(&tmp, q->st.v1);
+	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+
+	if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
+		return false;
+
+	return do_mutex_property_pin_mutex(q);
+}
+
+static bool bif_mutex_property_2(query *q)
+{
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,any);
+
+	if (is_nonvar(p1) && !check_mutex(p1))
+		return false;
+
+	if (check_mutex(p1) && !is_var(p2))
+		return do_mutex_property_pin_both(q);
+
+	if (check_mutex(p1))
+		return do_mutex_property_pin_mutex(q);
+
+	if (!is_var(p2))
+		return do_mutex_property_pin_property(q);
+
+	return do_mutex_property_wild(q);
+}
+
 static bool bif_pl_thread_pin_cpu_2(query *q)
 {
-	GET_FIRST_ARG(p1,threadid);
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
+	GET_FIRST_ARG(p1,thread);
 	GET_NEXT_ARG(p2,integer);
-	unsigned chan = get_smalluint(p1);
+	int chan = get_stream(q, p1);
+	if (chan < 0) return true;
 	pl_thread *t = &g_pl_threads[chan];
 
 	if (t->is_queue_only || t->is_mutex_only)
@@ -1085,9 +2127,12 @@ static bool bif_pl_thread_pin_cpu_2(query *q)
 
 static bool bif_pl_thread_set_priority_2(query *q)
 {
-	GET_FIRST_ARG(p1,threadid);
+	THREAD_DEBUG DUMP_TERM("", q->st.curr_instr, q->st.curr_frame, 1);
+
+	GET_FIRST_ARG(p1,thread);
 	GET_NEXT_ARG(p2,integer);
-	unsigned chan = get_smalluint(p1);
+	int chan = get_stream(q, p1);
+	if (chan < 0) return true;
 	int pri = get_smallint(p2);
 	pl_thread *t = &g_pl_threads[chan];
 
@@ -1097,52 +2142,42 @@ static bool bif_pl_thread_set_priority_2(query *q)
 	// Do something here
 	return true;
 }
-static bool bif_any_threads_0(query *q)
-{
-	return g_pl_any_threads != 0;
-}
-
 #endif
 
 builtins g_threads_bifs[] =
 {
 #if USE_THREADS
-	{"$pl_thread", 2, bif_pl_thread_2, "-thread,+atom", false, false, BLAH},
-	{"$pl_thread_pin_cpu", 2, bif_pl_thread_pin_cpu_2, "+thread,+integer", false, false, BLAH},
-	{"$pl_thread_set_priority", 2, bif_pl_thread_set_priority_2, "+thread,+integer", false, false, BLAH},
-	{"$pl_msg_send", 2, bif_pl_send_2, "+thread,+term", false, false, BLAH},
+	{"pl_thread", 3, bif_pl_thread_3, "-thread,+atom,+list", false, false, BLAH},
+	{"pl_thread_pin_cpu", 2, bif_pl_thread_pin_cpu_2, "+thread,+integer", false, false, BLAH},
+	{"pl_thread_set_priority", 2, bif_pl_thread_set_priority_2, "+thread,+integer", false, false, BLAH},
+	{"pl_msg_send", 2, bif_pl_send_2, "+thread,+term", false, false, BLAH},
 	{"pl_msg_recv", 2, bif_pl_recv_2, "-thread,?term", false, false, BLAH},
 
-	{"$thread_create", 4, bif_thread_create_4, ":callable,-thread,+boolean,:callable", false, false, BLAH},
-	{"$thread_cancel", 1, bif_thread_cancel_1, "+thread", false, false, BLAH},
-	{"$thread_detach", 1, bif_thread_detach_1, "+thread", false, false, BLAH},
-	{"$thread_signal", 2, bif_thread_signal_2, "+thread,:callable", false, false, BLAH},
-	{"$thread_join", 2, bif_thread_join_2, "+thread,-integer", false, false, BLAH},
-	{"$thread_is_detached", 1, bif_thread_is_detached_1, "+thread", false, false, BLAH},
-	{"$thread_is_exception", 1, bif_thread_is_exception_1, "+thread", false, false, BLAH},
-
+	{"thread_create", 3, bif_thread_create_3, ":callable,-thread,+list", false, false, BLAH},
+	{"thread_cancel", 1, bif_thread_cancel_1, "+thread", false, false, BLAH},
+	{"thread_detach", 1, bif_thread_detach_1, "+thread", false, false, BLAH},
+	{"thread_signal", 2, bif_thread_signal_2, "+thread,:callable", false, false, BLAH},
+	{"thread_join", 2, bif_thread_join_2, "+thread,-integer", false, false, BLAH},
 	{"thread_exit", 1, bif_thread_exit_1, "+term", false, false, BLAH},
 	{"thread_self", 1, bif_thread_self_1, "-integer", false, false, BLAH},
 	{"thread_sleep", 1, bif_thread_sleep_1, "+integer", false, false, BLAH},
 	{"thread_yield", 0, bif_thread_yield_0, "", false, false, BLAH},
+	{"thread_send_message", 2, bif_thread_send_message_2, "+queue,+term", false, false, BLAH},
+	{"thread_get_message", 2, bif_thread_get_message_2, "+queue,?term", false, false, BLAH},
+	{"thread_peek_message", 2, bif_thread_peek_message_2, "+queue,?term", false, false, BLAH},
+	{"thread_property", 2, bif_thread_property_2, "?thread,?term", false, false, BLAH},
 
-	{"$thread_send_message", 2, bif_thread_send_message_2, "+thread,+term", false, false, BLAH},
-	{"$thread_get_message", 2, bif_thread_get_message_2, "+thread,?term", false, false, BLAH},
-	{"$thread_peek_message", 2, bif_thread_peek_message_2, "+thread,?term", false, false, BLAH},
-
-	{"$message_queue_create", 1, bif_message_queue_create_1, "-thread", false, false, BLAH},
-	{"$message_queue_destroy", 1, bif_message_queue_destroy_1, "+thread", false, false, BLAH},
-	{"$message_queue_size", 2, bif_message_queue_size_2, "+thread,?integer", false, false, BLAH},
-
-	{"$mutex_create", 1, bif_mutex_create_1, "-thread", false, false, BLAH},
-	{"$mutex_destroy", 1, bif_mutex_destroy_1, "+thread", false, false, BLAH},
-	{"$mutex_trylock", 1, bif_mutex_trylock_1, "+thread", false, false, BLAH},
-	{"$mutex_is_locked", 1, bif_mutex_is_locked_1, "+thread", false, false, BLAH},
-	{"$mutex_lock", 1, bif_mutex_lock_1, "+thread", false, false, BLAH},
-	{"$mutex_unlock", 1, bif_mutex_unlock_1, "+thread", false, false, BLAH},
+	{"mutex_create", 2, bif_mutex_create_2, "-mutex,+list", false, false, BLAH},
+	{"mutex_destroy", 1, bif_mutex_destroy_1, "+mutex", false, false, BLAH},
+	{"mutex_trylock", 1, bif_mutex_trylock_1, "+mutex", false, false, BLAH},
+	{"mutex_lock", 1, bif_mutex_lock_1, "+mutex", false, false, BLAH},
+	{"mutex_unlock", 1, bif_mutex_unlock_1, "+mutex", false, false, BLAH},
 	{"mutex_unlock_all", 0, bif_mutex_unlock_all_0, "", false, false, BLAH},
+	{"mutex_property", 2, bif_mutex_property_2, "?mutex,?term", false, false, BLAH},
 
-	{"$any_threads", 0, bif_any_threads_0, "", false, false, BLAH},
+	{"message_queue_create", 2, bif_message_queue_create_2, "-queue,+list", false, false, BLAH},
+	{"message_queue_destroy", 1, bif_message_queue_destroy_1, "+queue", false, false, BLAH},
+	{"message_queue_property", 2, bif_message_queue_property_2, "?queue,?term", false, false, BLAH},
 #endif
 
 	{0}

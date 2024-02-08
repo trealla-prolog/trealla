@@ -417,7 +417,7 @@ int get_named_stream(prolog *pl, const char *name, size_t len)
 	for (int i = 0; i < MAX_STREAMS; i++) {
 		stream *str = &pl->streams[i];
 
-		if (!str->fp || str->ignore)
+		if (!str->fp || str->ignore || !str->alias)
 			continue;
 
 		if (sl_get(str->alias, name, NULL))
@@ -490,10 +490,10 @@ static void add_stream_properties(query *q, int n)
 	char tmpbuf[1024*8];
 	char *dst = tmpbuf;
 	*dst = '\0';
-	off_t pos = !str->is_map && !str->is_engine ? ftello(str->fp) : 0;
+	off_t pos = !str->is_map && !str->is_engine && !str->is_thread ? ftello(str->fp) : 0;
 	bool at_end_of_file = false;
 
-	if (!str->at_end_of_file && (n > 2) && !str->is_engine && !str->is_map && !str->p) {
+	if (!str->at_end_of_file && (n > 2) && !str->is_engine && !str->is_map && !str->is_thread && !str->p) {
 #if 0
 		if (str->p) {
 			if (str->p->srcptr && *str->p->srcptr) {
@@ -526,7 +526,7 @@ static void add_stream_properties(query *q, int n)
 
 	sl_done(iter);
 
-	if (!str->is_engine && !str->is_map) {
+	if (!str->is_engine && !str->is_map && !str->is_thread) {
 		char *dst2 = formatted(str->filename, strlen(str->filename), false, false);
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, file_name('%s')).\n", n, dst2);
 		free(dst2);
@@ -558,6 +558,12 @@ static void add_stream_properties(query *q, int n)
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, engine(true)).\n", n);
 	else if (str->is_map)
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, skiplist(true)).\n", n);
+	else if (str->is_mutex)
+		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, mutex(true)).\n", n);
+	else if (str->is_queue)
+		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, queue(true)).\n", n);
+	else if (str->is_thread)
+		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, thread(true)).\n", n);
 
 	parser *p = parser_create(q->st.m);
 	p->srcptr = tmpbuf;
@@ -655,6 +661,30 @@ static bool do_stream_property(query *q)
 	if (!CMP_STRING_TO_CSTR(q, p1, "engine")) {
 		cell tmp;
 		make_cstring(&tmp, str->is_engine?"true":"false");
+		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
+		unshare_cell(&tmp);
+		return ok;
+	}
+
+	if (!CMP_STRING_TO_CSTR(q, p1, "mutex")) {
+		cell tmp;
+		make_cstring(&tmp, str->is_mutex?"true":"false");
+		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
+		unshare_cell(&tmp);
+		return ok;
+	}
+
+	if (!CMP_STRING_TO_CSTR(q, p1, "queue")) {
+		cell tmp;
+		make_cstring(&tmp, str->is_queue?"true":"false");
+		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
+		unshare_cell(&tmp);
+		return ok;
+	}
+
+	if (!CMP_STRING_TO_CSTR(q, p1, "thread")) {
+		cell tmp;
+		make_cstring(&tmp, str->is_thread?"true":"false");
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		return ok;
@@ -1620,10 +1650,8 @@ static bool bif_iso_open_4(query *q)
 	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 }
 
-bool bif_iso_close_1(query *q)
+bool stream_close(query *q, int n)
 {
-	GET_FIRST_ARG(pstr,stream);
-	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	parser_destroy(str->p);
 	str->p = NULL;
@@ -1668,10 +1696,12 @@ bool bif_iso_close_1(query *q)
 	} else if (str->is_engine) {
 		query_destroy(str->engine);
 		str->engine = NULL;
+	} else if (str->is_thread) {
 	} else
 		ok = !net_close(str);
 
 	sl_destroy(str->alias);
+	str->fp = NULL;
 	str->alias = NULL; //sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	free(str->mode);
 	free(str->filename);
@@ -1680,9 +1710,16 @@ bool bif_iso_close_1(query *q)
 	str->at_end_of_file = true;
 
 	if (!ok)
-		return throw_error(q, pstr, pstr_ctx, "io_error", strerror(errno));
+		return throw_error(q, q->st.curr_instr, q->st.curr_frame, "io_error", strerror(errno));
 
 	return true;
+}
+
+bool bif_iso_close_1(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	return stream_close(q, n);
 }
 
 static bool bif_iso_close_2(query *q)

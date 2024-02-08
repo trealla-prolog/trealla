@@ -62,7 +62,6 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define ERR_IDX (~(pl_idx)0)
 #define IDX_MAX (ERR_IDX-1)
 
-#define MAX_THREADS 256
 #define MAX_SMALL_STRING ((sizeof(void*)*2)-1)
 #define MAX_VAR_POOL_SIZE 16000
 #define MAX_ARITY UINT8_MAX
@@ -72,6 +71,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define MAX_STREAMS 1024
 #define MAX_MODULES 1024
 #define MAX_IGNORES 64000
+#define MAX_THREADS MAX_STREAMS
 
 #define STREAM_BUFLEN 1024
 
@@ -541,7 +541,8 @@ struct prolog_state_ {
 
 	union {
 		struct { cell *key; bool karg1_is_ground:1, karg2_is_ground:1, karg1_is_atomic:1, karg2_is_atomic:1, recursive:1; };
-		struct { uint64_t v1, v2; };
+		struct { uint64_t uv1, uv2; };
+		struct { int64_t v1, v2; };
 		int64_t cnt;
 	};
 
@@ -588,7 +589,7 @@ struct stream_ {
 	};
 
 	size_t data_len, alloc_nbytes;
-	int ungetch;
+	int ungetch, chan;
 	unsigned srclen, rows, cols;
 	uint8_t level, eof_action;
 	bool ignore:1;
@@ -604,11 +605,12 @@ struct stream_ {
 	bool ssl:1;
 	bool pipe:1;
 	bool first_time:1;
-	bool is_memory:1;
 	bool is_map:1;
+	bool is_memory:1;
 	bool is_engine:1;
-	bool is_integer:1;
-	bool is_sparse:1;
+	bool is_thread:1;
+	bool is_queue:1;
+	bool is_mutex:1;
 };
 
 struct page_ {

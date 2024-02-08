@@ -270,7 +270,7 @@ static bool bif_iso_repeat_0(query *q)
 	return true;
 }
 
-static bool bif_iso_halt_0(query *q)
+bool bif_iso_halt_0(query *q)
 {
 	q->halt_code = 0;
 	q->halt = q->error = true;
@@ -6150,6 +6150,11 @@ static void load_properties(module *m)
 	format_property(m, tmpbuf, sizeof(tmpbuf), "clause", 2, "meta_predicate(clause(:,?))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "clause", 3, "meta_predicate(clause(:,?,?))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "call_residue_vars", 2, "meta_predicate(call_residue_vars(0,?))", false); SB_strcat(pr, tmpbuf);
+
+#if USE_THREADS
+	format_property(m, tmpbuf, sizeof(tmpbuf), "thread_create", 3, "meta_predicate(thread_create(0,-,?))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "thread_signal", 2, "meta_predicate(thread_signal(+,0))", false); SB_strcat(pr, tmpbuf);
+#endif
 
 	for (int i = 2; i <= 7; i++) {
 		char metabuf[1024];
