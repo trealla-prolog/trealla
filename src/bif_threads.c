@@ -747,8 +747,7 @@ static bool bif_thread_create_3(query *q)
 	make_struct(tmp2+nbr_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, goal->nbr_cells+2);
 	nbr_cells += copy_cells(tmp2+nbr_cells, goal, goal->nbr_cells);
 	make_struct(tmp2+nbr_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
-	make_call(q, tmp2+nbr_cells++);
-	tmp2->nbr_cells = nbr_cells;
+	make_call(q, tmp2+nbr_cells);
 
 	t->q = query_create(q->st.m, false);
 	check_heap_error(t->q);
@@ -773,8 +772,7 @@ static bool bif_thread_create_3(query *q)
 		make_struct(tmp2+nbr_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, goal->nbr_cells+2);
 		nbr_cells += copy_cells(tmp2+nbr_cells, goal, goal->nbr_cells);
 		make_struct(tmp2+nbr_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
-		make_call(q, tmp2+nbr_cells++);
-		tmp2->nbr_cells = nbr_cells;
+		make_call(q, tmp2+nbr_cells);
 		//DUMP_TERM("at_exit", at_exit, q->st.curr_frame, 0);
 		t->at_exit = deep_clone_to_heap(t->q, tmp2, 0);
 	}
