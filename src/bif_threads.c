@@ -621,7 +621,7 @@ static void *start_routine_thread_create(pl_thread *t)
 	t->is_exception = t->q->did_unhandled_excpetion;
 	t->finished = true;
 
-	if (t->is_detached)
+	if (t->is_detached && t->chan)
 		stream_close(t->q, t->chan);
 
 	if (!t->exit_code) {
@@ -891,7 +891,8 @@ static bool bif_thread_join_2(query *q)
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	}
 
-	stream_close(t->q, t->chan);
+	if (t->chan)
+		stream_close(t->q, t->chan);
 }
 
 static bool bif_thread_cancel_1(query *q)
@@ -921,7 +922,9 @@ static bool bif_thread_cancel_1(query *q)
 #else
 		pthread_cancel(t->id);
 #endif
-		stream_close(t->q, t->chan);
+		if (t->chan)
+			stream_close(t->q, t->chan);
+
 		query_destroy(t->q);
 	}
 

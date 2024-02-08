@@ -1700,13 +1700,12 @@ bool stream_close(query *q, int n)
 	} else
 		ok = !net_close(str);
 
-	sl_destroy(str->alias);
+	sl_destroy(str->alias); str->alias = NULL;
 	str->fp = NULL;
-	str->alias = NULL; //sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
-	free(str->mode);
-	free(str->filename);
-	free(str->data);
-	str->filename = NULL;
+	//str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
+	free(str->mode); str->mode = NULL;
+	free(str->filename); str->filename = NULL;
+	free(str->data); str->data = NULL;
 	str->at_end_of_file = true;
 
 	if (!ok)
