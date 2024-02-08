@@ -179,11 +179,9 @@ builtins *get_fn_ptr(void *fn);
 #define PROMPT ""
 
 #define DUMP_TERM(s,c,c_ctx,running) { \
-	fprintf(stderr, "*** %s ", s); \
-	q->quoted = true; \
+	q->nl = true; q->quoted = true; \
 	print_term(q, stderr, c, c_ctx, running); \
-	q->quoted = false; \
-	fprintf(stderr, "\n"); \
+	q->nl = false; q->quoted = false; \
 }
 
 #define CHECK_INTERRUPT() \
