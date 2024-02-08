@@ -321,13 +321,12 @@ static pl_thread *get_self()
 static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bool is_peek)
 {
 	pl_thread *t = &g_pl_threads[chan];
+	pl_thread *me = get_self();
+	uint64_t cnt = 0;
 
 	while (!q->pl->halt) {
 		if (is_peek && !t->queue_head)
 			return false;
-
-		pl_thread *me = get_self();
-		uint64_t cnt = 0;
 
 		while (!t->queue_head && !q->pl->halt) {
 			suspend_thread(me, cnt < 1000 ? 0 : cnt < 10000 ? 1 : cnt < 100000 ? 10 : 10);
@@ -523,7 +522,6 @@ static bool bif_pl_thread_3(query *q)
 	GET_NEXT_ARG(p2,atom);
 	GET_NEXT_ARG(p3,list_or_nil);
 	char *filename = DUP_STRING(q, p2);
-
 	convert_path(filename);
 	struct stat st = {0};
 
@@ -579,6 +577,7 @@ static bool bif_pl_thread_3(query *q)
 	t->chan = n;
 	t->active = true;
 	t->filename = filename;
+	t->finished = false;
 	t->is_exception = false;
 	t->is_queue_only = false;
 	t->is_mutex_only = false;
