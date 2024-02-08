@@ -340,7 +340,7 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 			return false;
 
 		while (!t->queue_head && !q->pl->halt) {
-			suspend_thread(me, cnt < 1000 ? 0 : cnt < 10000 ? 1 : cnt < 100000 ? 10 : 10);
+			suspend_thread(me, cnt < 100 ? 0 : cnt < 1000 ? 1 : cnt < 10000 ? 1 : 10);
 			cnt++;
 		}
 
@@ -505,6 +505,7 @@ static void *start_routine_thread(pl_thread *t)
 	pl->my_chan = t->chan;
 	pl_consult(pl, t->filename);
 	t->active = false;
+	t->finished = false;
     return 0;
 }
 
@@ -637,6 +638,10 @@ static void *start_routine_thread_create(pl_thread *t)
 
 	t->signal_head = t->queue_head = NULL;
 	t->signal_tail = t->queue_tail = NULL;
+
+	if (t->is_detached && t->chan)
+		t->active = false;
+
     return 0;
 }
 
@@ -656,7 +661,6 @@ static bool bif_thread_create_3(query *q)
 	cell *p4 = NULL;	// at_exit option
 	pl_idx p4_ctx = 0;
 	bool is_detached = false;
-
 	LIST_HANDLER(p3);
 
 	while (is_list(p3)) {
