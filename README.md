@@ -1155,7 +1155,7 @@ message queue associated with it. Note: the database
 	thread_create/3		# thread_create(:callable,-thread,+options)
 	thread_create/2		# thread_create(:callable,-thread)
 	thread_signal/2		# thread_signal(+thread,:callable)
-	thread_join/2		# thread_join(+thread,-integer)
+	thread_join/2		# thread_join(+thread,-term)
 	thread_cancel/1		# thread_cancel(+thread)
 	thread_detach/1		# thread_detach(+thread)
 	thread_self/1		# thread_self(-thread)
