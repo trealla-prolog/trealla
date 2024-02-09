@@ -398,17 +398,17 @@ static bool unify_integers(query *q, cell *p1, cell *p2)
 	if (is_bigint(p1) && is_bigint(p2))
 		return !mp_int_compare(&p1->val_bigint->ival, &p2->val_bigint->ival);
 
-	if (is_bigint(p1) && is_integer(p2))
+	if (is_bigint(p1) && is_smallint(p2))
 		return !mp_int_compare_value(&p1->val_bigint->ival, p2->val_int);
 
-	if (is_integer(p1) && is_rational(p2))
+	if (is_smallint(p1) && is_rational(p2))
 		return !mp_int_compare_value(&p2->val_bigint->ival, p1->val_int);
 
-	if (is_integer(p1) && is_bigint(p2))
+	if (is_smallint(p1) && is_bigint(p2))
 		return !mp_int_compare_value(&p2->val_bigint->ival, p1->val_int);
 
-	if (is_integer(p2) && is_integer(p2))
-		return (get_smallint(p1) == get_smallint(p2));
+	if (is_smallint(p1) && is_smallint(p2))
+		return p1->val_int == p2->val_int;
 
 	return false;
 }
