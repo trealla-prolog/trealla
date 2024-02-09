@@ -811,32 +811,24 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 			if (strcmp(alias, "user_input") && strcmp(alias, "user_output") && strcmp(alias, "user_error")) {
 				SB_strcat_and_free(q->sb, formatted(alias, strlen(alias), false, q->json));
 			} else if (str->is_queue) {
-				SB_sprintf(q->sb, "%d", (int)get_smallint(c)-3);
-				//SB_sprintf(q->sb, "'<$queue>'(%d)", (int)get_smallint(c));
+				SB_sprintf(q->sb, "'<$queue>'(%d)", (int)get_smallint(c));
 			} else if (str->is_mutex) {
-				SB_sprintf(q->sb, "%d", (int)get_smallint(c)-3);
-				//SB_sprintf(q->sb, "'<$mutex>'(%d)", (int)get_smallint(c));
+				SB_sprintf(q->sb, "'<$mutex>'(%d)", (int)get_smallint(c));
 			} else if (str->is_thread) {
-				SB_sprintf(q->sb, "%d", (int)get_smallint(c)-3);
-				//SB_sprintf(q->sb, "'<$thread>'(%d)", (int)get_smallint(c));
+				SB_sprintf(q->sb, "'<$thread>'(%d)", (int)get_smallint(c));
 			} else {
-				SB_sprintf(q->sb, "%d", (int)get_smallint(c)-3);
-				//SB_sprintf(q->sb, "'<$stream>'(%d)", (int)get_smallint(c));
+				SB_sprintf(q->sb, "'<$stream>'(%d)", (int)get_smallint(c));
 			}
 
 			sl_done(iter);
 		} else if (str && str->is_queue) {
-			SB_sprintf(q->sb, "%d", (int)get_smallint(c)-3);
-			//SB_sprintf(q->sb, "'<$queue>'(%d)", (int)get_smallint(c));
+			SB_sprintf(q->sb, "'<$queue>'(%d)", (int)get_smallint(c));
 		} else if (str && str->is_mutex) {
-			SB_sprintf(q->sb, "%d", (int)get_smallint(c)-3);
-			//SB_sprintf(q->sb, "'<$mutex>'(%d)", (int)get_smallint(c));
+			SB_sprintf(q->sb, "'<$mutex>'(%d)", (int)get_smallint(c));
 		} else if (str && str->is_thread) {
-			SB_sprintf(q->sb, "%d", (int)get_smallint(c)-3);
-			//SB_sprintf(q->sb, "'<$thread>'(%d)", (int)get_smallint(c));
+			SB_sprintf(q->sb, "'<$thread>'(%d)", (int)get_smallint(c));
 		} else {
-			SB_sprintf(q->sb, "%d", (int)get_smallint(c)-3);
-			//SB_sprintf(q->sb, "'<$stream>'(%d)", (int)get_smallint(c));
+			SB_sprintf(q->sb, "'<$stream>'(%d)", (int)get_smallint(c));
 		}
 
 		q->last_thing = WAS_OTHER;
@@ -848,17 +840,13 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		stream *str = &q->pl->streams[n];
 
 		if (str->is_queue) {
-			SB_sprintf(q->sb, "%d", (int)get_smallint(c)-3);
-			//SB_sprintf(q->sb, "'<$queue>'(%d)", (int)get_smallint(c));
+			SB_sprintf(q->sb, "'<$queue>'(%d)", (int)get_smallint(c));
 		} else if (str->is_mutex) {
-			SB_sprintf(q->sb, "%d", (int)get_smallint(c)-3);
-			//SB_sprintf(q->sb, "'<$mutex>'(%d)", (int)get_smallint(c));
+			SB_sprintf(q->sb, "'<$mutex>'(%d)", (int)get_smallint(c));
 		} else if (str->is_thread) {
-			SB_sprintf(q->sb, "%d", (int)get_smallint(c)-3);
-			//SB_sprintf(q->sb, "'<$thread>'(%d)", (int)get_smallint(c));
+			SB_sprintf(q->sb, "'<$thread>'(%d)", (int)get_smallint(c));
 		} else {
-			SB_sprintf(q->sb, "%d", (int)get_smallint(c)-3);
-			//SB_sprintf(q->sb, "'<$stream>'(%d)", (int)get_smallint(c));
+			SB_sprintf(q->sb, "'<$stream>'(%d)", (int)get_smallint(c));
 		}
 
 		q->last_thing = WAS_OTHER;
