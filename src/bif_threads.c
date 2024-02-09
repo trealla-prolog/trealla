@@ -660,7 +660,7 @@ static bool bif_thread_create_3(query *q)
 	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	cell *p4 = NULL;	// at_exit option
 	pl_idx p4_ctx = 0;
-	bool is_detached = false;
+	bool is_detached = false, is_alias = false;
 	LIST_HANDLER(p3);
 
 	while (is_list(p3)) {
@@ -685,6 +685,13 @@ static bool bif_thread_create_3(query *q)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 
 			sl_set(str->alias, DUP_STRING(q, name), NULL);
+			cell tmp;
+			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
+
+			if (!unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
+				return false;
+
+			is_alias = true;
 		} else if (!CMP_STRING_TO_CSTR(q, c, "at_exit")) {
 			if (is_var(name))
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
@@ -730,12 +737,15 @@ static bool bif_thread_create_3(query *q)
 	str->fp = (void*)t;
 	str->is_thread = true;
 	str->chan = n;
-	cell tmp;
-	make_int(&tmp, n);
-	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
 
-	if (!unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
-		return false;
+	if (!is_alias) {
+		cell tmp;
+		make_int(&tmp, n);
+		tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+
+		if (!unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
+			return false;
+	}
 
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
 	cell *goal = deep_clone_to_heap(q, p1, p1_ctx);
@@ -801,6 +811,7 @@ static bool bif_thread_create_3(query *q)
     pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread_create, (void*)t);
 #endif
 
+	THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
 	return true;
 }
 
@@ -1322,6 +1333,7 @@ static bool bif_message_queue_create_2(query *q)
 
 	stream *str = &q->pl->streams[n];
 	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
+	bool is_alias = false;
 	LIST_HANDLER(p2);
 
 	while (is_list(p2)) {
@@ -1346,6 +1358,13 @@ static bool bif_message_queue_create_2(query *q)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 
 			sl_set(str->alias, DUP_STRING(q, name), NULL);
+			cell tmp;
+			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
+
+			if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
+				return false;
+
+			is_alias = true;
 		} else {
 			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 		}
@@ -1373,12 +1392,18 @@ static bool bif_message_queue_create_2(query *q)
 	str->is_thread = true;
 	str->is_queue = true;
 	str->chan = n;
-	cell tmp;
-	make_int(&tmp, n);
-	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
-	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+
+	if (!is_alias) {
+		cell tmp;
+		make_int(&tmp, n);
+		tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+
+		if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
+			return false;
+	}
+
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
-	return ok;
+	return true;
 }
 
 static bool bif_message_queue_destroy_1(query *q)
@@ -1656,6 +1681,7 @@ static bool bif_mutex_create_2(query *q)
 	GET_NEXT_ARG(p2,list_or_nil);
 	stream *str = &q->pl->streams[n];
 	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
+	bool is_alias = false;
 	LIST_HANDLER(p2);
 
 	while (is_list(p2)) {
@@ -1680,6 +1706,13 @@ static bool bif_mutex_create_2(query *q)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 
 			sl_set(str->alias, DUP_STRING(q, name), NULL);
+			cell tmp;
+			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
+
+			if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
+				return false;
+
+			is_alias = true;
 		} else {
 			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 		}
@@ -1710,15 +1743,16 @@ static bool bif_mutex_create_2(query *q)
 	str->is_mutex = true;
 	str->chan = n;
 
-	if (is_var(p1)) {
+	if (is_var(p1) && !is_alias) {
 		cell tmp;
 		make_int(&tmp, n);
 		tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
-		bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-		THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
-		return ok;
+
+		if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
+			return false;
 	}
 
+	THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
 	return true;
 }
 
