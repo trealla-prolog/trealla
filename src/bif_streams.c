@@ -984,6 +984,7 @@ static bool bif_popen_4(query *q)
 					q->pl->current_error = n;
 				} else {
 					sl_set(str->alias, DUP_STRING(q, name), NULL);
+#if 0
 					cell tmp;
 					make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
 
@@ -991,6 +992,7 @@ static bool bif_popen_4(query *q)
 						return false;
 
 					is_alias = true;
+#endif
 				}
 			} else if (!CMP_STRING_TO_CSTR(q, c, "type")) {
 				if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "binary")) {
@@ -1499,6 +1501,7 @@ static bool bif_iso_open_4(query *q)
 				q->pl->current_error = n;
 			} else {
 				sl_set(str->alias, DUP_STRING(q, name), NULL);
+#if 0
 				cell tmp;
 				make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
 
@@ -1506,6 +1509,7 @@ static bool bif_iso_open_4(query *q)
 					return false;
 
 				is_alias = true;
+#endif
 			}
 		} else if (!CMP_STRING_TO_CSTR(q, c, "type")) {
 			if (is_var(name))
