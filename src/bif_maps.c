@@ -21,6 +21,7 @@ static bool bif_map_create_2(query *q)
 
 	stream *str = &q->pl->streams[n];
 	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
+	bool is_alias = false;
 	LIST_HANDLER(p4);
 
 	while (is_list(p4)) {
@@ -45,6 +46,13 @@ static bool bif_map_create_2(query *q)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 
 			sl_set(str->alias, DUP_STRING(q, name), NULL);
+			cell tmp;
+			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
+
+			if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
+				return false;
+
+			is_alias = true;
 		} else {
 			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 		}
@@ -61,10 +69,16 @@ static bool bif_map_create_2(query *q)
 	check_heap_error(str->keyval);
 	str->is_map = true;
 
-	cell tmp ;
-	make_int(&tmp, n);
-	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
-	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+	if (!is_alias) {
+		cell tmp ;
+		make_int(&tmp, n);
+		tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+
+		if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
+			return false;
+	}
+
+	return true;
 }
 
 static bool bif_map_set_3(query *q)
@@ -319,6 +333,7 @@ static bool bif_engine_create_4(query *q)
 
 	stream *str = &q->pl->streams[n];
 	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
+	bool is_alias = false;
 	LIST_HANDLER(p4);
 
 	while (is_list(p4)) {
@@ -343,6 +358,13 @@ static bool bif_engine_create_4(query *q)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 
 			sl_set(str->alias, DUP_STRING(q, name), NULL);
+			cell tmp;
+			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
+
+			if (!unify(q, p3, p3_ctx, &tmp, q->st.curr_frame))
+				return false;
+
+			is_alias = true;
 		} else {
 			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 		}
@@ -360,7 +382,7 @@ static bool bif_engine_create_4(query *q)
 			return throw_error(q, q->st.curr_instr, q->st.curr_frame, "permission_error", "open,source_sink");
 
 		sl_set(str->alias, DUP_STRING(q, p3), NULL);
-	} else {
+	} else if (!is_alias) {
 		cell tmp2;
 		make_int(&tmp2, n);
 		tmp2.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;

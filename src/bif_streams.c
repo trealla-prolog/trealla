@@ -957,7 +957,7 @@ static bool bif_popen_4(query *q)
 	check_heap_error(str->filename = strdup(filename));
 	check_heap_error(str->mode = DUP_STRING(q, p2));
 	bool binary = false;
-	uint8_t eof_action = eof_action_eof_code;
+	uint8_t eof_action = eof_action_eof_code, is_alias = false;
 	LIST_HANDLER(p4);
 
 	while (is_list(p4)) {
@@ -984,6 +984,13 @@ static bool bif_popen_4(query *q)
 					q->pl->current_error = n;
 				} else {
 					sl_set(str->alias, DUP_STRING(q, name), NULL);
+					cell tmp;
+					make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
+
+					if (!unify(q, p3, p3_ctx, &tmp, q->st.curr_frame))
+						return false;
+
+					is_alias = true;
 				}
 			} else if (!CMP_STRING_TO_CSTR(q, c, "type")) {
 				if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "binary")) {
@@ -1029,10 +1036,16 @@ static bool bif_popen_4(query *q)
 			return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 	}
 
-	cell tmp;
-	make_int(&tmp, n);
-	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
-	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+	if (!is_alias) {
+		cell tmp;
+		make_int(&tmp, n);
+		tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+
+		if (!unify(q, p3, p3_ctx, &tmp, q->st.curr_frame))
+			return false;
+	}
+
+	return true;
 }
 #endif
 
@@ -1440,7 +1453,7 @@ static bool bif_iso_open_4(query *q)
 	pl_idx mmap_ctx = 0;
 #endif
 
-	bool bom_specified = false, use_bom = false;
+	bool bom_specified = false, use_bom = false, is_alias = false;
 	LIST_HANDLER(p4);
 
 	while (is_list(p4)) {
@@ -1486,6 +1499,13 @@ static bool bif_iso_open_4(query *q)
 				q->pl->current_error = n;
 			} else {
 				sl_set(str->alias, DUP_STRING(q, name), NULL);
+				cell tmp;
+				make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
+
+				if (!unify(q, p3, p3_ctx, &tmp, q->st.curr_frame))
+					return false;
+
+				is_alias = true;
 			}
 		} else if (!CMP_STRING_TO_CSTR(q, c, "type")) {
 			if (is_var(name))
@@ -1644,10 +1664,16 @@ static bool bif_iso_open_4(query *q)
 	}
 #endif
 
-	cell tmp ;
-	make_int(&tmp, n);
-	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
-	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+	if (!is_alias) {
+		cell tmp ;
+		make_int(&tmp, n);
+		tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+
+		if (!unify(q, p3, p3_ctx, &tmp, q->st.curr_frame))
+			return false;
+	}
+
+	return true;
 }
 
 bool stream_close(query *q, int n)
