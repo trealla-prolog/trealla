@@ -331,21 +331,15 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 			is_chars_list += len;
 		}
 
+		if (e) e->vgen = save_vgen;
 		l = LIST_TAIL(l);
 
 #if USE_RATIONAL_TREES
-		if (is_var(l)) {
-			any2 = true;
-			frame *f = GET_FRAME(l_ctx);
-			slot *e = GET_SLOT(f, l->var_nbr);
+		both = 0;
+		DEREF_VAR(any2, both, save_vgen, e, e->vgen, l, l_ctx, q->vgen);
 
-			if (e->vgen == q->vgen)
-				return 0;
-
-			e->vgen = q->vgen;
-			l = deref(q, l, l_ctx);
-			l_ctx = q->latest_ctx;
-		}
+		if (both)
+			return 0;
 #else
 		l = deref(q, l, l_ctx);
 		l_ctx = q->latest_ctx;

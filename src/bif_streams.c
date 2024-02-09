@@ -6819,7 +6819,7 @@ static bool bif_sys_put_chars_1(query *q)
 	} else if (is_nil(p1)) {
 		;
 	} else
-		return throw_error(q, p1, p1_ctx, "type_error", "chars");
+		return throw_error(q, p1, p1_ctx, "type_error", "cchars");
 
 	return !ferror(str->fp);
 }
