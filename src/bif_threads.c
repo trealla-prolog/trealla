@@ -614,8 +614,10 @@ static void *start_routine_thread_create(pl_thread *t)
 	t->is_exception = t->q->did_unhandled_excpetion;
 	t->finished = true;
 
-	if (t->is_detached && t->chan)
-		stream_close(t->q, t->chan);
+	if (!t->is_detached)
+		return 0;
+
+	stream_close(t->q, t->chan);
 
 	if (!t->exit_code) {
 		query_destroy(t->q);
@@ -638,10 +640,7 @@ static void *start_routine_thread_create(pl_thread *t)
 
 	t->signal_head = t->queue_head = NULL;
 	t->signal_tail = t->queue_tail = NULL;
-
-	if (t->is_detached && t->chan)
-		t->active = false;
-
+	t->active = false;
     return 0;
 }
 
@@ -898,8 +897,30 @@ static bool bif_thread_join_2(query *q)
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	}
 
-	if (t->chan)
-		stream_close(t->q, t->chan);
+	stream_close(t->q, t->chan);
+
+	if (!t->exit_code) {
+		query_destroy(t->q);
+		t->q = NULL;
+	}
+
+	while (t->queue_head) {
+		msg *save = t->queue_head;
+		t->queue_head = t->queue_head->next;
+		unshare_cells(save->c, save->c->nbr_cells);
+		free(save);
+	}
+
+	while (t->signal_head) {
+		msg *save = t->signal_head;
+		t->signal_head = t->signal_head->next;
+		unshare_cells(save->c, save->c->nbr_cells);
+		free(save);
+	}
+
+	t->signal_head = t->queue_head = NULL;
+	t->signal_tail = t->queue_tail = NULL;
+	t->active = false;
 }
 
 static bool bif_thread_cancel_1(query *q)
@@ -921,18 +942,18 @@ static bool bif_thread_cancel_1(query *q)
 	t->q->halt = t->q->error = true;
 	msleep(10);
 
-	if (t->active) {
-#ifdef _WIN32
-		DWORD exit_code;
-		TerminateThread(t->id, &exit_code);
-#else
-		pthread_cancel(t->id);
-#endif
-		if (t->chan)
-			stream_close(t->q, t->chan);
+	if (!t->active)
+		return true;
 
-		query_destroy(t->q);
-	}
+#ifdef _WIN32
+	DWORD exit_code;
+	TerminateThread(t->id, &exit_code);
+#else
+	pthread_cancel(t->id);
+#endif
+
+	stream_close(t->q, t->chan);
+	query_destroy(t->q);
 
 	while (t->queue_head) {
 		msg *save = t->queue_head;
@@ -948,9 +969,9 @@ static bool bif_thread_cancel_1(query *q)
 		free(save);
 	}
 
-	t->active = false;
 	t->signal_head = t->queue_head = NULL;
 	t->signal_tail = t->queue_tail = NULL;
+	t->active = false;
 	t->q = NULL;
 	return true;
 }
