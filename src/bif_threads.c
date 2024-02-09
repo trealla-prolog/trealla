@@ -1183,7 +1183,7 @@ static bool do_thread_property_pin_property(query *q)
 	return do_thread_property_pin_both(q);
 }
 
-static bool do_thread_property_pin_mutex(query *q)
+static bool do_thread_property_pin_id(query *q)
 {
 	GET_FIRST_ARG(p1,thread);
 	GET_NEXT_ARG(p2,any);
@@ -1294,7 +1294,7 @@ static bool do_thread_property_wild(query *q)
 	if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
 		return false;
 
-	return do_thread_property_pin_mutex(q);
+	return do_thread_property_pin_id(q);
 }
 
 static bool bif_thread_property_2(query *q)
@@ -1311,7 +1311,7 @@ static bool bif_thread_property_2(query *q)
 	if (check_thread(p1) && !is_var(p2))
 		ok = do_thread_property_pin_both(q);
 	else if (check_thread(p1))
-		ok = do_thread_property_pin_mutex(q);
+		ok = do_thread_property_pin_id(q);
 	else if (!is_var(p2))
 		ok = do_thread_property_pin_property(q);
 	else
@@ -1533,7 +1533,7 @@ static bool do_message_queue_property_pin_property(query *q)
 	return do_message_queue_property_pin_both(q);
 }
 
-static bool do_message_queue_property_pin_mutex(query *q)
+static bool do_message_queue_property_pin_id(query *q)
 {
 	GET_FIRST_ARG(p1,queue);
 	GET_NEXT_ARG(p2,any);
@@ -1617,7 +1617,7 @@ static bool do_message_queue_property_wild(query *q)
 	if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
 		return false;
 
-	return do_message_queue_property_pin_mutex(q);
+	return do_message_queue_property_pin_id(q);
 }
 
 static bool bif_message_queue_property_2(query *q)
@@ -1633,7 +1633,7 @@ static bool bif_message_queue_property_2(query *q)
 		return do_message_queue_property_pin_both(q);
 
 	if (check_queue(p1))
-		return do_message_queue_property_pin_mutex(q);
+		return do_message_queue_property_pin_id(q);
 
 	if (!is_var(p2))
 		return do_message_queue_property_pin_property(q);
@@ -2016,7 +2016,7 @@ static bool do_mutex_property_pin_property(query *q)
 	return do_mutex_property_pin_both(q);
 }
 
-static bool do_mutex_property_pin_mutex(query *q)
+static bool do_mutex_property_pin_id(query *q)
 {
 	GET_FIRST_ARG(p1,mutex);
 	GET_NEXT_ARG(p2,any);
@@ -2112,7 +2112,7 @@ static bool do_mutex_property_wild(query *q)
 	if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
 		return false;
 
-	return do_mutex_property_pin_mutex(q);
+	return do_mutex_property_pin_id(q);
 }
 
 static bool bif_mutex_property_2(query *q)
@@ -2128,7 +2128,7 @@ static bool bif_mutex_property_2(query *q)
 		return do_mutex_property_pin_both(q);
 
 	if (check_mutex(p1))
-		return do_mutex_property_pin_mutex(q);
+		return do_mutex_property_pin_id(q);
 
 	if (!is_var(p2))
 		return do_mutex_property_pin_property(q);
