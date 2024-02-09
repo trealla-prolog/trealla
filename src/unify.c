@@ -407,7 +407,7 @@ static bool unify_integers(query *q, cell *p1, cell *p2)
 	if (is_smallint(p1) && is_bigint(p2))
 		return !mp_int_compare_value(&p2->val_bigint->ival, p1->val_int);
 
-	if (is_smallint(p1) && is_smallint(p2))
+	if (is_smallint(p2))
 		return p1->val_int == p2->val_int;
 
 	return false;
