@@ -410,6 +410,9 @@ static bool unify_integers(query *q, cell *p1, cell *p2)
 	if (is_smallint(p2))
 		return p1->val_int == p2->val_int;
 
+	if (is_stream(p1) && is_stream(p2))
+		return p1->val_int == p2->val_int;
+
 	return false;
 }
 
