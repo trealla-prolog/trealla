@@ -2833,7 +2833,7 @@ static bool do_op(query *q, cell *p3, pl_idx p3_ctx)
 
 	tmp_pri = find_op(q->st.m, C_STR(q, p3), OP_FX);
 
-	if (IS_POSTFIX(specifier) && (IS_INFIX(tmp_optype) || tmp_pri))
+	if (IS_POSTFIX(specifier) && (IS_INFIX(tmp_optype)/* || tmp_pri*/))
 		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator");
 
 	tmp_pri = find_op(q->st.m, C_STR(q, p3), OP_FY);

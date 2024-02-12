@@ -899,11 +899,6 @@ static bool bif_thread_join_2(query *q)
 
 	stream_close(t->q, t->chan);
 
-	if (!t->exit_code) {
-		query_destroy(t->q);
-		t->q = NULL;
-	}
-
 	while (t->queue_head) {
 		msg *save = t->queue_head;
 		t->queue_head = t->queue_head->next;
