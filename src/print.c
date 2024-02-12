@@ -245,6 +245,16 @@ char *formatted(const char *src, int srclen, bool dq, bool json)
 		} else if (ch == (dq?'"':'\'')) {
 			SB_putchar(sb, '\\');
 			SB_putchar(sb, ch);
+		} else if (!json && (ch > 127) && (iswblank(ch) || iswspace(ch))) {
+			SB_putchar(sb, '\\');
+			SB_putchar(sb, 'x');
+			SB_sprintf(sb, "%x", ch);
+			SB_putchar(sb, '\\');
+		} else if (!json && ((ch == 0x85) || (ch == 0xA0))) {
+			SB_putchar(sb, '\\');
+			SB_putchar(sb, 'x');
+			SB_sprintf(sb, "%x", ch);
+			SB_putchar(sb, '\\');
 		} else if (!json && (ch < ' ')) {
 			SB_putchar(sb, '\\');
 			SB_putchar(sb, 'x');

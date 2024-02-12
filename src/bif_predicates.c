@@ -5287,7 +5287,7 @@ static bool bif_char_type_2(query *q)
 	else if (!CMP_STRING_TO_CSTR(q, p2, "numeric"))
 		return iswdigit(ch);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "whitespace"))
-		return iswblank(ch) || iswspace(ch);
+		return iswblank(ch) || iswspace(ch) || (ch == 0x85) || (ch == 0xA0);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "lower") && !p2->arity)
 		return iswlower(ch);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "upper") && !p2->arity)
