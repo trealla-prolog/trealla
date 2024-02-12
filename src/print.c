@@ -250,7 +250,7 @@ char *formatted(const char *src, int srclen, bool dq, bool json)
 			SB_putchar(sb, 'x');
 			SB_sprintf(sb, "%x", ch);
 			SB_putchar(sb, '\\');
-		} else if (!json && ((ch == 0x85) || (ch == 0xA0))) {
+		} else if (!json && ((ch == 0x85) || (ch == 0xA0) || (ch == 0x2007) || (ch == 0x202f))) {
 			SB_putchar(sb, '\\');
 			SB_putchar(sb, 'x');
 			SB_sprintf(sb, "%x", ch);
