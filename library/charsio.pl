@@ -38,9 +38,10 @@ fabricate_var_name(VarType, VarName, N) :-
        )
     ).
 
-%% char_type(+Char, -Type).
+%%% char_type(?Char, ?Type).
 %
-% Given a Char, Type is one of the categories that char fits in.
+% Type is one of the categories that Char fits in.
+% At least one of the arguments must be ground.
 % Possible categories are:
 %
 % - `alnum`
@@ -96,16 +97,26 @@ fabricate_var_name(VarType, VarName, N) :-
 % Note that uppercase and lowercase transformations use a string. This is because
 % some characters do not map 1:1 between lowercase and uppercase.
 char_type(Char, Type) :-
-        '$must_be'(character, Char),
-        (   ground(Type) ->
-            (   ctype(Type) ->
-                '$char_type'(Char, Type)
-            ;   domain_error(char_type, Type, char_type/2)
-            )
-        ;   ctype(Type),
+        can_be(character, Char),
+        (   \+ ctype(Type) ->
+            domain_error(char_type, Type, char_type/2)
+        ;   true
+        ),
+        (   ground(Char) ->
+            ctype(Type),
             '$char_type'(Char, Type)
+        ;   ground(Type) ->
+            ccode(Code),
+            char_code(Char, Code),
+            '$char_type'(Char, Type)
+        ;   must_be(character, Char)
         ).
 
+
+% 0xD800 to 0xDFFF are surrogate code points used by UTF-16.
+
+ccode(Code) :- between(0, 0xD7FF, Code).
+ccode(Code) :- between(0xE000, 0x10FFFF, Code).
 
 ctype(alnum).
 ctype(alpha).
