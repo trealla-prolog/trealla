@@ -3927,8 +3927,11 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 		q->run_init = p->run_init;
 		execute(q, p->cl->cells, p->cl->nbr_vars);
 
-		p->m->pl->halt = q->halt;
-		p->m->pl->halt_code = q->halt_code;
+		if (q->halt) {
+			p->m->pl->halt = q->halt;
+			p->m->pl->halt_code = q->halt_code;
+		}
+
 		p->m->pl->status = q->status;
 		p->m->pl->error = q->error;
 		p->m->pl->is_redo = q->is_redo;
