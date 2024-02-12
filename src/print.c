@@ -118,8 +118,9 @@ bool needs_quoting(module *m, const char *src, int srclen)
 		int ch = get_char_utf8(&s);
 
 		if (((ch < 256) && strchr(g_solo, ch))
-			|| iswspace(ch)
-			|| (ch == 0xA0)
+			|| iswspace(ch) || iswblank(ch)
+			|| (ch == 0xa0) || (ch == 0x85)
+			|| (ch == 0x2007) || (ch == 0x202f)
 			)
 			return true;
 	}
