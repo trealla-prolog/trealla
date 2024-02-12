@@ -38,7 +38,7 @@ fabricate_var_name(VarType, VarName, N) :-
        )
     ).
 
-%%% char_type(?Char, ?Type).
+%% char_type(?Char, ?Type).
 %
 % Type is one of the categories that Char fits in.
 % At least one of the arguments must be ground.
