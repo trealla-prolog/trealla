@@ -670,6 +670,8 @@ static bool bif_thread_create_3(query *q)
 
 	str->fp = (void*)t;
 	str->is_thread = true;
+	str->is_queue = false;
+	str->is_mutex = false;
 	str->chan = n;
 
 	if (!is_alias) {
@@ -1342,6 +1344,7 @@ static bool bif_message_queue_create_2(query *q)
 	str->fp = (void*)t;
 	str->is_thread = true;
 	str->is_queue = true;
+	str->is_mutex = false;
 	str->chan = n;
 
 	if (!is_alias) {
@@ -1626,6 +1629,7 @@ static bool bif_mutex_create_2(query *q)
 		str->fp = (void*)t;
 		str->is_thread = true;
 		str->is_mutex = true;
+		str->is_queue = false;
 		str->chan = n;
 	}
 
@@ -1692,6 +1696,7 @@ static bool bif_mutex_create_2(query *q)
 	str->fp = (void*)t;
 	str->is_thread = true;
 	str->is_mutex = true;
+	str->is_queue = false;
 	str->chan = n;
 
 	if (is_var(p1) && !is_alias) {
