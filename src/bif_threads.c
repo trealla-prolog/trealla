@@ -280,10 +280,10 @@ static bool do_send_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bo
 	pl_thread *t = &g_pl_threads[chan];
 
 	if (!t->active)
-		return throw_error(q, p1, p1_ctx, "domain_error", "1no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
 
 	if (t->is_mutex_only)
-		return throw_error(q, p1, p1_ctx, "domain_error", "2no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
 
 	cell *c = deep_clone_to_heap(q, p1, p1_ctx);
 	check_heap_error(c);
