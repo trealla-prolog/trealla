@@ -428,81 +428,9 @@ static bool bif_thread_peek_message_2(query *q)
 	GET_NEXT_ARG(p2,any);
 	int chan = get_stream(q, p1);
 	if (chan < 0) return true;
-
 	bool ok = do_match_message(q, chan, p2, p2_ctx, true);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
 	return ok;
-}
-
-static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx, bool is_peek)
-{
-	pl_thread *t = &g_pl_threads[q->pl->my_chan];
-	uint64_t cnt = 0;
-
-	while (!t->queue_head && !q->pl->halt) {
-		suspend_thread(t, cnt < 1000 ? 0 : cnt < 10000 ? 1 : cnt < 100000 ? 10 : 100);
-		cnt++;
-	}
-
-	if (!t->queue_head && is_peek)
-		return false;
-
-	//printf("*** recv msg nbr_cells=%u\n", t->queue_head->nbr_cells);
-
-	acquire_lock(&t->guard);
-	msg *m = t->queue_head;
-
-	if (!is_peek) {
-		if (m->next)
-			m->next->prev = NULL;
-
-		if (t->queue_head == t->queue_tail)
-			t->queue_tail = NULL;
-
-		t->queue_head = m->next;
-	}
-
-	release_lock(&t->guard);
-	check_heap_error(push_choice(q));
-	check_slot(q, MAX_ARITY);
-	try_me(q, MAX_ARITY);
-	cell *c = m->c;
-	cell *tmp = deep_clone_to_heap(q, c, q->st.fp);
-	check_heap_error(tmp, release_lock(&t->guard));
-	q->curr_chan = m->from_chan;
-
-	if (!is_peek) {
-		unshare_cells(m->c, m->c->nbr_cells);
-		free(m);
-	}
-
-	drop_choice(q);
-	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
-}
-
-static bool bif_pl_recv_2(query *q)
-{
-	THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
-	GET_FIRST_ARG(p1,integer_or_var);
-	GET_NEXT_ARG(p2,any);
-	int from_chan = 0;
-
-	if (is_integer(p1)) {
-		from_chan = get_stream(q, p1);
-
-		if (from_chan < 0)
-			return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread");
-	}
-
-	pl_thread *t = &g_pl_threads[q->pl->my_chan];
-
-	if (!do_recv_message(q, from_chan, p2, p2_ctx, false))
-		return false;
-
-	cell tmp;
-	make_int(&tmp, q->curr_chan);
-	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
-	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
 static void *start_routine_thread(pl_thread *t)
@@ -2190,6 +2118,77 @@ static bool bif_pl_thread_set_priority_2(query *q)
 
 	// Do something here
 	return true;
+}
+
+static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx, bool is_peek)
+{
+	pl_thread *t = &g_pl_threads[q->pl->my_chan];
+	uint64_t cnt = 0;
+
+	while (!t->queue_head && !q->pl->halt) {
+		suspend_thread(t, cnt < 1000 ? 0 : cnt < 10000 ? 1 : cnt < 100000 ? 10 : 100);
+		cnt++;
+	}
+
+	if (!t->queue_head && is_peek)
+		return false;
+
+	//printf("*** recv msg nbr_cells=%u\n", t->queue_head->nbr_cells);
+
+	acquire_lock(&t->guard);
+	msg *m = t->queue_head;
+
+	if (!is_peek) {
+		if (m->next)
+			m->next->prev = NULL;
+
+		if (t->queue_head == t->queue_tail)
+			t->queue_tail = NULL;
+
+		t->queue_head = m->next;
+	}
+
+	release_lock(&t->guard);
+	check_heap_error(push_choice(q));
+	check_slot(q, MAX_ARITY);
+	try_me(q, MAX_ARITY);
+	cell *c = m->c;
+	cell *tmp = deep_clone_to_heap(q, c, q->st.fp);
+	check_heap_error(tmp, release_lock(&t->guard));
+	q->curr_chan = m->from_chan;
+
+	if (!is_peek) {
+		unshare_cells(m->c, m->c->nbr_cells);
+		free(m);
+	}
+
+	drop_choice(q);
+	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
+}
+
+static bool bif_pl_recv_2(query *q)
+{
+	THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
+	GET_FIRST_ARG(p1,integer_or_var);
+	GET_NEXT_ARG(p2,any);
+	int from_chan = 0;
+
+	if (is_integer(p1)) {
+		from_chan = get_stream(q, p1);
+
+		if (from_chan < 0)
+			return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread");
+	}
+
+	pl_thread *t = &g_pl_threads[q->pl->my_chan];
+
+	if (!do_recv_message(q, from_chan, p2, p2_ctx, false))
+		return false;
+
+	cell tmp;
+	make_int(&tmp, q->curr_chan);
+	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 #endif
 
