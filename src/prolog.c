@@ -422,7 +422,7 @@ void load_builtins(prolog *pl)
 static bool g_init(prolog *pl)
 {
 #if USE_THREADS
-	thread_initialize();
+	thread_initialize(pl);
 #endif
 
 	bool error = false;

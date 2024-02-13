@@ -73,11 +73,15 @@ static unsigned g_pl_any_threads = 0;
 #define check_mutex(c) check_mutex_or_alias(q, c)
 #define check_queue(c) check_queue_or_alias(q, c)
 
-void thread_initialize()
+void thread_initialize(prolog *pl)
 {
-	pl_thread *t = &g_pl_threads[0];
+	int n = new_stream(pl);
+	stream *str = &pl->streams[n];
+	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
+	sl_set(str->alias, strdup("main"), NULL);
+	pl_thread *t = &g_pl_threads[n];
 	init_lock(&t->guard);
-	t->chan = 0;
+	t->chan = n;
 	t->active = true;
 	t->init = true;
 	t->locked_by = -1;
@@ -87,6 +91,10 @@ void thread_initialize()
 #else
 	t->id = pthread_self();
 #endif
+
+	str->fp = (void*)t;
+	str->is_thread = true;
+	str->chan = n;
 }
 
 static bool is_thread_or_alias(query *q, cell *c)
