@@ -75,13 +75,18 @@ static pl_thread g_pl_threads[MAX_THREADS] = {0};
 void thread_initialize(prolog *pl)
 {
 	int n = new_stream(pl);
+	ensure(n >= 0);
 	stream *str = &pl->streams[n];
+	ensure(str);
 	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	sl_set(str->alias, strdup("main"), NULL);
 	pl_thread *t = &g_pl_threads[n];
 	init_lock(&t->guard);
 	t->chan = n;
 	t->active = true;
+	t->is_queue_only = false;
+	t->is_mutex_only = false;
+	t->finished = false;
 	t->init = true;
 	t->locked_by = -1;
 	t->locks = 0;
@@ -91,8 +96,18 @@ void thread_initialize(prolog *pl)
 	t->id = pthread_self();
 #endif
 
+	t->is_detached = true;
+	t->is_exception = false;
+	t->signal_head = t->queue_head = NULL;
+	t->signal_tail = t->queue_tail = NULL;
+	t->at_exit = NULL;
+	t->goal = NULL;
+
 	str->fp = (void*)t;
 	str->is_thread = true;
+	str->is_mutex = false;
+	str->is_queue = false;
+	str->ignore = false;
 	str->chan = n;
 }
 

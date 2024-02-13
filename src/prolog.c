@@ -421,10 +421,6 @@ void load_builtins(prolog *pl)
 
 static bool g_init(prolog *pl)
 {
-#if USE_THREADS
-	thread_initialize(pl);
-#endif
-
 	bool error = false;
 
 	g_pool = calloc(1, s_pool_size);
@@ -612,6 +608,10 @@ prolog *pl_create()
 	pl->streams[2].eof_action = eof_action_reset;
 
 	pl->streams[3].ignore = true;
+
+#if USE_THREADS
+	thread_initialize(pl);
+#endif
 
 	pl->help = sl_create((void*)fake_strcmp, (void*)ptrfree, NULL);
 	pl->fortab = sl_create((void*)fake_strcmp, NULL, NULL);
