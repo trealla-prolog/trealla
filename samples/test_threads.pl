@@ -1,22 +1,27 @@
 :- initialization(main).
 
+threads(8).
+
 main :-
 	mutex_create(_, [alias(bar)]),
 	mutex_property(bar, status(unlocked)),
-	between(1, 10, I),
+	threads(THREADS),
+	between(1, THREADS, I),
 		atomic_concat(foo, I, Alias),
 		format("Starting ~w~n", [I]),
 		thread_create(thread_run(I), _, [alias(Alias)]),
 		fail.
 main :-
-	between(1, 10, I),
+	threads(THREADS),
+	between(1, THREADS, I),
 		atomic_concat(foo, I, Alias),
 		Msg = msg(Alias),
 		format(" ...Sending ~w ~w~n", [I, Msg]),
 		thread_send_message(Alias, Msg),
 		fail.
 main :-
-	between(1, 10, I),
+	threads(THREADS),
+	between(1, THREADS, I),
 		atomic_concat(foo, I, Alias),
 		format("Joining ~w~n", [I]),
 		thread_join(Alias,_),
