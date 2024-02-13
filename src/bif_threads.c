@@ -29,13 +29,13 @@ static void msleep(int ms)
 }
 #endif
 
+#define is_thread_only(t) (!(t)->is_queue_only && !(t)->is_mutex_only)
+
 typedef struct msg_ {
 	struct msg_ *prev, *next;
 	int from_chan;
 	cell c[];
 } msg;
-
-#define is_thread_only(t) (!(t)->is_queue_only && !(t)->is_mutex_only)
 
 typedef struct pl_thread_ pl_thread;
 
@@ -61,7 +61,6 @@ struct pl_thread_ {
 };
 
 static pl_thread g_pl_threads[MAX_THREADS] = {0};
-static unsigned g_pl_any_threads = 0;
 
 #define THREAD_DEBUG if (0)
 
