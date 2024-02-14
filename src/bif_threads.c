@@ -865,7 +865,6 @@ static bool bif_thread_join_2(query *q)
 	}
 
 	stream_close(t->q, t->chan);
-
 	acquire_lock(&t->guard);
 
 	while (t->queue_head) {
@@ -912,7 +911,6 @@ static bool bif_thread_cancel_1(query *q)
 
 	stream_close(t->q, t->chan);
 	query_destroy(t->q);
-
 	acquire_lock(&t->guard);
 
 	while (t->queue_head) {
