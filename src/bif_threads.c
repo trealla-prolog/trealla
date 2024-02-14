@@ -62,7 +62,7 @@ struct pl_thread_ {
 
 static pl_thread g_pl_threads[MAX_THREADS] = {0};
 
-#define THREAD_DEBUG if (0)
+#define THREAD_DEBUG if (1)
 
 #define is_thread(c) is_thread_or_alias(q, c)
 #define is_mutex(c) is_mutex_or_alias(q, c)
@@ -680,6 +680,8 @@ static bool bif_thread_create_3(query *q)
 	t->is_queue_only = false;
 	t->is_mutex_only = false;
 	t->finished = false;
+	t->locked_by = -1;
+	t->locks = 0;
 
 	if (!t->init) {
 		init_lock(&t->guard);
@@ -1357,6 +1359,8 @@ static bool bif_message_queue_create_2(query *q)
 	t->active = true;
 	t->is_queue_only = true;
 	t->is_mutex_only = false;
+	t->locked_by = -1;
+	t->locks = 0;
 
 	if (!t->init) {
 		init_lock(&t->guard);
