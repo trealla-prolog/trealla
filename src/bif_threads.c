@@ -294,9 +294,6 @@ static bool do_send_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bo
 {
 	pl_thread *t = &g_pl_threads[chan];
 
-	if (!t->active)
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
-
 	if (t->is_mutex_only)
 		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
 
@@ -341,13 +338,14 @@ static pl_thread *get_self()
 	for (unsigned i = 0; i < MAX_THREADS; i++) {
 		pl_thread *t = &g_pl_threads[i];
 
-		if (!t->active)
+		if (t->is_queue_only || t->is_mutex_only)
 			continue;
 
 		if (t->id == tid)
 			return t;
 	}
 
+	printf("*** OOPS\n");
 	return &g_pl_threads[0];
 }
 
@@ -713,7 +711,7 @@ static bool bif_thread_create_3(query *q)
 	make_struct(tmp2+nbr_cells, g_conjunction_s, bif_iso_conjunction_2, 2, 1+goal->nbr_cells+2);
 	SET_OP(tmp2+nbr_cells, OP_XFY);
 	nbr_cells++;
-	make_struct(tmp2+nbr_cells++, new_atom(q->pl, "once"), bif_ignore_1, 1, goal->nbr_cells);
+	make_struct(tmp2+nbr_cells++, new_atom(q->pl, "ignore"), bif_ignore_1, 1, goal->nbr_cells);
 	nbr_cells += dup_cells(tmp2+nbr_cells, goal, goal->nbr_cells);
 	make_struct(tmp2+nbr_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 	make_call(q, tmp2+nbr_cells);
@@ -981,7 +979,7 @@ static bool bif_thread_self_1(query *q)
 	for (unsigned i = 0; i < MAX_THREADS; i++) {
 		pl_thread *t = &g_pl_threads[i];
 
-		if (!t->active)
+		if (t->is_queue_only || t->is_mutex_only)
 			continue;
 
 		if (t->id == id) {
@@ -1042,8 +1040,8 @@ static bool bif_thread_exit_1(query *q)
 	for (unsigned i = 0; i < MAX_THREADS; i++) {
 		pl_thread *t = &g_pl_threads[i];
 
-		//if (!t->active)
-		//	continue;
+		if (t->is_queue_only || t->is_mutex_only)
+			continue;
 
 		if (t->id == tid) {
 			t->exit_code = tmp;

@@ -812,7 +812,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	}
 
 	if ((c->tag == TAG_INTEGER) && (c->flags & FLAG_INT_STREAM)) {
-		int n = get_stream(q, c);
+		int n = get_smallint(c);
 		stream *str = &q->pl->streams[n];
 
 		if (str->is_queue) {

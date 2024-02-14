@@ -414,20 +414,27 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
 
 int get_named_stream(prolog *pl, const char *name, size_t len)
 {
+	acquire_lock(&pl->guard);
+
 	for (int i = 0; i < MAX_STREAMS; i++) {
 		stream *str = &pl->streams[i];
 
 		if (!str->fp || str->ignore || !str->alias)
 			continue;
 
-		if (sl_get(str->alias, name, NULL))
+		if (sl_get(str->alias, name, NULL)) {
+			release_lock(&pl->guard);
 			return i;
+		}
 
 		if (str->filename && (strlen(str->filename) == len)
-			&& !strncmp(str->filename, name, len))
+			&& !strncmp(str->filename, name, len)) {
+			release_lock(&pl->guard);
 			return i;
+		}
 	}
 
+	release_lock(&pl->guard);
 	return -1;
 }
 
