@@ -656,9 +656,7 @@ static bool find_exception_handler(query *q, char *ball)
 		return false;
 	}
 
-#if USE_THREADS
 	acquire_lock(&q->pl->guard);
-#endif
 
 	if (!q->is_redo)
 		fprintf(stdout, "   ");
@@ -688,11 +686,7 @@ static bool find_exception_handler(query *q, char *ball)
 	q->ball = NULL;
 	//q->error = true;
 	q->abort = true;
-
-#if USE_THREADS
 	release_lock(&q->pl->guard);
-#endif
-
 	return false;
 }
 
