@@ -576,6 +576,8 @@ static void *start_routine_thread_create(pl_thread *t)
 		t->q = NULL;
 	}
 
+	acquire_lock(&t->guard);
+
 	while (t->queue_head) {
 		msg *save = t->queue_head;
 		t->queue_head = t->queue_head->next;
@@ -593,6 +595,7 @@ static void *start_routine_thread_create(pl_thread *t)
 	t->signal_head = t->queue_head = NULL;
 	t->signal_tail = t->queue_tail = NULL;
 	t->active = false;
+	release_lock(&t->guard);
     return 0;
 }
 
@@ -828,6 +831,8 @@ static bool bif_thread_join_2(query *q)
 	if (!is_thread_only(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "join,not_thread");
 
+	acquire_lock(&t->guard);
+
 	while (t->signal_head) {
 		msg *save = t->signal_head;
 		t->signal_head = t->signal_head->next;
@@ -835,6 +840,8 @@ static bool bif_thread_join_2(query *q)
 		unshare_cells(save->c, save->c->nbr_cells);
 		free(save);
 	}
+
+	release_lock(&t->guard);
 
 #ifdef _WIN32
 	return false;
@@ -861,6 +868,8 @@ static bool bif_thread_join_2(query *q)
 
 	stream_close(t->q, t->chan);
 
+	acquire_lock(&t->guard);
+
 	while (t->queue_head) {
 		msg *save = t->queue_head;
 		t->queue_head = t->queue_head->next;
@@ -871,6 +880,7 @@ static bool bif_thread_join_2(query *q)
 	t->signal_head = t->queue_head = NULL;
 	t->signal_tail = t->queue_tail = NULL;
 	t->active = false;
+	release_lock(&t->guard);
 }
 
 static bool bif_thread_cancel_1(query *q)
@@ -905,6 +915,8 @@ static bool bif_thread_cancel_1(query *q)
 	stream_close(t->q, t->chan);
 	query_destroy(t->q);
 
+	acquire_lock(&t->guard);
+
 	while (t->queue_head) {
 		msg *save = t->queue_head;
 		t->queue_head = t->queue_head->next;
@@ -923,6 +935,7 @@ static bool bif_thread_cancel_1(query *q)
 	t->signal_tail = t->queue_tail = NULL;
 	t->active = false;
 	t->q = NULL;
+	release_lock(&t->guard);
 	return true;
 }
 
@@ -1392,8 +1405,8 @@ static bool bif_message_queue_destroy_1(query *q)
 	}
 
 	t->queue_head = t->queue_tail = NULL;
-	release_lock(&t->guard);
 	t->active = false;
+	release_lock(&t->guard);
 	bif_iso_close_1(q);
 	return true;
 }
