@@ -5277,13 +5277,12 @@ static bool bif_char_type_2(query *q)
 	else if (!CMP_STRING_TO_CSTR(q, p2, "prolog"))
 		return iswalpha(ch) || iswdigit(ch) || iswgraph(ch);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "hexadecimal_digit")) {
-		static const char *s_hex = "0123456789abcdefABCDEF";
-		return strchr(s_hex, ch);
+		return isxdigit(ch);
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "octal_digit")) {
 		static const char *s_hex = "01234567";
-		return strchr(s_hex, ch);
+		return isdigit(ch) && strchr(s_hex, ch);
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "decimal_digit"))
-		return iswdigit(ch);
+		return isdigit(ch);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "numeric"))
 		return iswdigit(ch);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "whitespace"))
