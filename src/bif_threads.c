@@ -62,7 +62,7 @@ struct pl_thread_ {
 
 static pl_thread g_pl_threads[MAX_THREADS] = {0};
 
-#define THREAD_DEBUG if (1)
+#define THREAD_DEBUG if (0)
 
 #define is_thread(c) is_thread_or_alias(q, c)
 #define is_mutex(c) is_mutex_or_alias(q, c)
@@ -707,13 +707,12 @@ static bool bif_thread_create_3(query *q)
 	cell *goal = deep_clone_to_heap(q, p1, p1_ctx);
 	check_heap_error(goal);
 	t->nbr_vars = rebase_vars(q, goal, 0);
-	cell *tmp2 = alloc_on_heap(q, 2+goal->nbr_cells+2);
+	cell *tmp2 = alloc_on_heap(q, 1+goal->nbr_cells+2);
 	check_heap_error(tmp2);
 	pl_idx nbr_cells = 0;
-	make_struct(tmp2+nbr_cells, g_conjunction_s, bif_iso_conjunction_2, 2, 1+goal->nbr_cells+2);
+	make_struct(tmp2+nbr_cells, g_conjunction_s, bif_iso_conjunction_2, 2, goal->nbr_cells+2);
 	SET_OP(tmp2+nbr_cells, OP_XFY);
 	nbr_cells++;
-	make_struct(tmp2+nbr_cells++, new_atom(q->pl, "ignore"), bif_ignore_1, 1, goal->nbr_cells);
 	nbr_cells += dup_cells(tmp2+nbr_cells, goal, goal->nbr_cells);
 	make_struct(tmp2+nbr_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 	make_call(q, tmp2+nbr_cells);
@@ -735,13 +734,12 @@ static bool bif_thread_create_3(query *q)
 		cell *goal = deep_clone_to_heap(q, p4, p4_ctx);
 		check_heap_error(goal);
 		t->at_exit_nbr_vars = rebase_vars(q, goal, 0);
-		cell *tmp2 = alloc_on_heap(q, 2+goal->nbr_cells+2);
+		cell *tmp2 = alloc_on_heap(q, 1+goal->nbr_cells+2);
 		check_heap_error(tmp2);
 		pl_idx nbr_cells = 0;
-		make_struct(tmp2+nbr_cells, g_conjunction_s, bif_iso_conjunction_2, 2, 1+goal->nbr_cells+2);
+		make_struct(tmp2+nbr_cells, g_conjunction_s, bif_iso_conjunction_2, 2, goal->nbr_cells+2);
 		SET_OP(tmp2+nbr_cells, OP_XFY);
 		nbr_cells++;
-		make_struct(tmp2+nbr_cells++, new_atom(q->pl, "ignore"), bif_ignore_1, 1, goal->nbr_cells);
 		nbr_cells += dup_cells(tmp2+nbr_cells, goal, goal->nbr_cells);
 		make_struct(tmp2+nbr_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 		make_call(q, tmp2+nbr_cells);
