@@ -1014,7 +1014,7 @@ static bool bif_thread_yield_0(query *q)
 #elif 0
 	pthread_yield();
 #else
-	sleep(0);
+	msleep(0);
 #endif
 
 	return true;
