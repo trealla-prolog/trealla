@@ -1626,9 +1626,9 @@ bool start(query *q)
 			}
 
 			if (q->tot_goals % YIELD_INTERVAL == 0) {
-				static unsigned s_cnt = 0;
+				q->s_cnt = 0;
 
-				if (!(s_cnt++ % 100))
+				if (!(q->s_cnt++ % 100))
 					check_pressure(q);
 
 				if (q->yield_at) {
@@ -1952,7 +1952,6 @@ void query_destroy(query *q)
 query *query_create(module *m, bool is_task)
 {
 	static pl_atomic uint64_t g_query_id = 0;
-
 	query *q = calloc(1, sizeof(query));
 	ensure(q);
 	q->flags.occurs_check = false;

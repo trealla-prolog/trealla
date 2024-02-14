@@ -4347,8 +4347,8 @@ static bool bif_crypto_n_random_bytes_2(query *q)
 	static bool s_seed = false;
 
 	if (!s_seed) {
-		s_seed = true;
 		srand(time(NULL));
+		s_seed = true;
 	}
 
 	GET_FIRST_ARG(p1,integer);

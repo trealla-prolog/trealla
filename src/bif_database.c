@@ -319,6 +319,8 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 	if (!pr->is_dynamic)
 		return throw_error(q, c_orig, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
+	acquire_lock(&pr->m->guard);
+
 	for (rule *r = pr->head; r; r = r->next)
 		retract_from_db(r->owner->m, r);
 
@@ -343,6 +345,7 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 
 	pr->head = pr->tail = NULL;
 	pr->cnt = 0;
+	release_lock(&pr->m->guard);
 	return true;
 }
 
@@ -869,7 +872,9 @@ bool do_erase(module* m, const char *str)
 {
 	uuid u;
 	uuid_from_buf(str, &u);
+	acquire_lock(&m->guard);
 	erase_from_db(m, &u);
+	release_lock(&m->guard);
 	return true;
 }
 

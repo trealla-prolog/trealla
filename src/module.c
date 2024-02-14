@@ -1614,12 +1614,15 @@ rule *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell
 {
 	rule *r;
 	predicate *pr;
+	acquire_lock(&m->guard);
 
 	do {
 		r = assert_begin(m, nbr_vars, nbr_temporaries, p1, consulting);
 
-		if (!r)
+		if (!r) {
+			release_lock(&m->guard);
 			return NULL;
+		}
 
 		pr = r->owner;
 
@@ -1634,7 +1637,6 @@ rule *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell
 	if (!pr->tail)
 		pr->tail = r;
 
-	acquire_lock(&m->guard);
 	assert_commit(m, r, pr, false);
 	release_lock(&m->guard);
 
@@ -1648,12 +1650,15 @@ rule *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell
 {
 	rule *r;
 	predicate *pr;
+	acquire_lock(&m->guard);
 
 	do {
 		r = assert_begin(m, nbr_vars, nbr_temporaries, p1, consulting);
 
-		if (!r)
+		if (!r) {
+			release_lock(&m->guard);
 			return NULL;
+		}
 
 		pr = r->owner;
 
@@ -1668,7 +1673,6 @@ rule *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell
 	if (!pr->head)
 		pr->head = r;
 
-	acquire_lock(&m->guard);
 	assert_commit(m, r, pr, true);
 	release_lock(&m->guard);
 
@@ -1680,7 +1684,7 @@ rule *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell
 
 // Module must be locked to enter here...
 
-bool remove_from_predicate(module *m, predicate *pr, rule *r)
+static bool remove_from_predicate(module *m, predicate *pr, rule *r)
 {
 	if (r->cl.dbgen_erased)
 		return false;

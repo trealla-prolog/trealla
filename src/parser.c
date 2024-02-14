@@ -175,9 +175,12 @@ void make_atom(cell *tmp, pl_idx offset)
 
 cell *make_nil(void)
 {
-	static cell tmp = {0};
-	tmp.tag = TAG_INTERNED;
-	tmp.nbr_cells = 1;
+	static cell tmp = {
+		.tag = TAG_INTERNED,
+		.nbr_cells = 1,
+		.val_off = 0
+	};
+
 	tmp.val_off = g_nil_s;
 	return &tmp;
 }
