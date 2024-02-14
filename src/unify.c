@@ -386,28 +386,32 @@ static bool unify_string_to_list(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl
 
 static bool unify_integers(query *q, cell *p1, cell *p2)
 {
-	if (is_bigint(p1) && is_rational(p2)) {
-		mpq_t tmp;
-		mp_int_init_copy(&tmp.num, &p1->val_bigint->ival);
-		mp_int_init_value(&tmp.den, 1);
-		bool ok = !mp_rat_compare(&p2->val_bigint->irat, &tmp);
-		mp_rat_clear(&tmp);
-		return ok;
+	if (is_bigint(p1)) {
+		if (is_rational(p2)) {
+			mpq_t tmp;
+			mp_int_init_copy(&tmp.num, &p1->val_bigint->ival);
+			mp_int_init_value(&tmp.den, 1);
+			bool ok = !mp_rat_compare(&p2->val_bigint->irat, &tmp);
+			mp_rat_clear(&tmp);
+			return ok;
+		}
+
+		if (is_bigint(p2))
+			return !mp_int_compare(&p1->val_bigint->ival, &p2->val_bigint->ival);
+
+		if (is_smallint(p2))
+			return !mp_int_compare_value(&p1->val_bigint->ival, p2->val_int);
+
+		return false;
 	}
 
-	if (is_bigint(p1) && is_bigint(p2))
-		return !mp_int_compare(&p1->val_bigint->ival, &p2->val_bigint->ival);
-
-	if (is_bigint(p1) && is_smallint(p2))
-		return !mp_int_compare_value(&p1->val_bigint->ival, p2->val_int);
-
-	if (is_smallint(p1) && is_rational(p2))
+	if (is_rational(p2))
 		return !mp_int_compare_value(&p2->val_bigint->ival, p1->val_int);
 
-	if (is_smallint(p1) && is_bigint(p2))
+	if (is_bigint(p2))
 		return !mp_int_compare_value(&p2->val_bigint->ival, p1->val_int);
 
-	if (is_smallint(p2) || is_stream(p2))
+	if (p2->tag == TAG_INTEGER)
 		return p1->val_int == p2->val_int;
 
 	return false;
