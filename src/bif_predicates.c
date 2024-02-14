@@ -5277,10 +5277,11 @@ static bool bif_char_type_2(query *q)
 	else if (!CMP_STRING_TO_CSTR(q, p2, "prolog"))
 		return iswalpha(ch) || iswdigit(ch) || iswgraph(ch);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "hexadecimal_digit")) {
-		return isxdigit(ch);
+		static const char *s_hex = "0123456789abcdefABCDEF";
+		return strchr(s_hex, ch);
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "octal_digit")) {
-		static const char *s_oct = "01234567";
-		return isdigit(ch) && strchr(s_oct, ch) ? true : false;
+		static const char *s_hex = "01234567";
+		return strchr(s_hex, ch);
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "decimal_digit"))
 		return iswdigit(ch);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "numeric"))
@@ -5292,21 +5293,21 @@ static bool bif_char_type_2(query *q)
 	else if (!CMP_STRING_TO_CSTR(q, p2, "upper") && !p2->arity)
 		return iswupper(ch);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "lower") && p2->arity) {
-		cell *arg21 = deref(q, p2+1, p2_ctx);
-		int c = peek_char_utf8(C_STR(q, arg21));
+		cell *arg1 = deref(q, p2+1, p2_ctx);
+		pl_idx arg1_ctx = q->latest_ctx;
 		char tmpbuf[20];
-		sprintf(tmpbuf, "%c", tolower(c));
-		cell tmp2;
-		make_cstring(&tmp2, tmpbuf);
-		return unify(q, p1, p1_ctx, &tmp2, q->st.curr_frame);
+		sprintf(tmpbuf, "%c", tolower(ch));
+		cell tmp;
+		make_string(&tmp, tmpbuf);
+		return unify(q, arg1, arg1_ctx, &tmp, q->st.curr_frame);
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "upper") && p2->arity) {
-		cell *arg21 = deref(q, p2+1, p2_ctx);
-		int c = peek_char_utf8(C_STR(q, arg21));
+		cell *arg1 = deref(q, p2+1, p2_ctx);
+		pl_idx arg1_ctx = q->latest_ctx;
 		char tmpbuf[20];
-		sprintf(tmpbuf, "%c", toupper(c));
-		cell tmp2;
-		make_cstring(&tmp2, tmpbuf);
-		return unify(q, p1, p1_ctx, &tmp2, q->st.curr_frame);
+		sprintf(tmpbuf, "%c", toupper(ch));
+		cell tmp;
+		make_string(&tmp, tmpbuf);
+		return unify(q, arg1, arg1_ctx, &tmp, q->st.curr_frame);
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "graphic"))
 		return iswgraph(ch) && !iswalnum(ch);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "graphic_token"))	// ???
