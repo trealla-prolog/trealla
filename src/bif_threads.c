@@ -1201,16 +1201,9 @@ static bool do_thread_property_pin_id(query *q)
 			return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 		}
 
-		if (t->exit_code) {
-			cell *tmp = alloc_on_heap(q, 1+t->exit_code->nbr_cells);
-			make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, t->exit_code->nbr_cells);
-			dup_cells(tmp+1, t->exit_code, t->exit_code->nbr_cells);
-			return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
-		}
-
 		cell *tmp = alloc_on_heap(q, 2);
 		make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
-		make_atom(tmp+1, g_false_s);
+		make_atom(tmp+1, t->exit_code?g_false_s:g_true_s);
 		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 	}
 }
