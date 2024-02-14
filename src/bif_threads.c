@@ -714,7 +714,7 @@ static bool bif_thread_create_3(query *q)
 	SET_OP(tmp2+nbr_cells, OP_XFY);
 	nbr_cells++;
 	make_struct(tmp2+nbr_cells++, new_atom(q->pl, "once"), bif_ignore_1, 1, goal->nbr_cells);
-	nbr_cells += copy_cells(tmp2+nbr_cells, goal, goal->nbr_cells);
+	nbr_cells += dup_cells(tmp2+nbr_cells, goal, goal->nbr_cells);
 	make_struct(tmp2+nbr_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 	make_call(q, tmp2+nbr_cells);
 
@@ -742,7 +742,7 @@ static bool bif_thread_create_3(query *q)
 		SET_OP(tmp2+nbr_cells, OP_XFY);
 		nbr_cells++;
 		make_struct(tmp2+nbr_cells++, new_atom(q->pl, "ignore"), bif_ignore_1, 1, goal->nbr_cells);
-		nbr_cells += copy_cells(tmp2+nbr_cells, goal, goal->nbr_cells);
+		nbr_cells += dup_cells(tmp2+nbr_cells, goal, goal->nbr_cells);
 		make_struct(tmp2+nbr_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 		make_call(q, tmp2+nbr_cells);
 		//DUMP_TERM("at_exit", tmp2, q->st.curr_frame, 0);
