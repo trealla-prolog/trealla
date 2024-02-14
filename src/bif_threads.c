@@ -545,6 +545,8 @@ static bool bif_pl_thread_3(query *q)
 
 	str->fp = (void*)t;
 	str->is_thread = true;
+	str->is_queue = false;
+	str->is_mutex = false;
 	str->chan = n;
 	cell tmp;
 	make_int(&tmp, n);
@@ -826,6 +828,14 @@ static bool bif_thread_join_2(query *q)
 	if (!is_thread_only(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "join,not_thread");
 
+	while (t->signal_head) {
+		msg *save = t->signal_head;
+		t->signal_head = t->signal_head->next;
+		execute(t->q, save->c, MAX_ARITY);
+		unshare_cells(save->c, save->c->nbr_cells);
+		free(save);
+	}
+
 #ifdef _WIN32
 	return false;
 #else
@@ -854,13 +864,6 @@ static bool bif_thread_join_2(query *q)
 	while (t->queue_head) {
 		msg *save = t->queue_head;
 		t->queue_head = t->queue_head->next;
-		unshare_cells(save->c, save->c->nbr_cells);
-		free(save);
-	}
-
-	while (t->signal_head) {
-		msg *save = t->signal_head;
-		t->signal_head = t->signal_head->next;
 		unshare_cells(save->c, save->c->nbr_cells);
 		free(save);
 	}
@@ -1350,7 +1353,7 @@ static bool bif_message_queue_create_2(query *q)
 	}
 
 	str->fp = (void*)t;
-	str->is_thread = true;
+	str->is_thread = false;
 	str->is_queue = true;
 	str->is_mutex = false;
 	str->chan = n;
@@ -1379,6 +1382,8 @@ static bool bif_message_queue_destroy_1(query *q)
 	if (!t->is_queue_only)
 		return throw_error(q, p1, p1_ctx, "permission_error", "destroy,not_queue");
 
+	acquire_lock(&t->guard);
+
 	while (t->queue_head) {
 		msg *save = t->queue_head;
 		t->queue_head = t->queue_head->next;
@@ -1387,6 +1392,7 @@ static bool bif_message_queue_destroy_1(query *q)
 	}
 
 	t->queue_head = t->queue_tail = NULL;
+	release_lock(&t->guard);
 	t->active = false;
 	bif_iso_close_1(q);
 	return true;
@@ -1635,7 +1641,7 @@ static bool bif_mutex_create_2(query *q)
 		}
 
 		str->fp = (void*)t;
-		str->is_thread = true;
+		str->is_thread = false;
 		str->is_mutex = true;
 		str->is_queue = false;
 		str->chan = n;
@@ -1702,7 +1708,7 @@ static bool bif_mutex_create_2(query *q)
 	}
 
 	str->fp = (void*)t;
-	str->is_thread = true;
+	str->is_thread = false;
 	str->is_mutex = true;
 	str->is_queue = false;
 	str->chan = n;
@@ -1767,8 +1773,9 @@ static bool bif_mutex_trylock_1(query *q)
 		}
 
 		str->fp = (void*)t;
-		str->is_thread = true;
+		str->is_thread = false;
 		str->is_mutex = true;
+		str->is_queue = false;
 		str->chan = n;
 	}
 
@@ -1816,8 +1823,9 @@ static bool bif_mutex_lock_1(query *q)
 		}
 
 		str->fp = (void*)t;
-		str->is_thread = true;
+		str->is_thread = false;
 		str->is_mutex = true;
+		str->is_queue = false;
 		str->chan = n;
 	}
 

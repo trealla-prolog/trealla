@@ -490,10 +490,10 @@ static void add_stream_properties(query *q, int n)
 	char tmpbuf[1024*8];
 	char *dst = tmpbuf;
 	*dst = '\0';
-	off_t pos = !str->is_map && !str->is_engine && !str->is_thread ? ftello(str->fp) : 0;
+	off_t pos = !str->is_map && !str->is_engine && !str->is_thread && !str->is_queue && !str->is_mutex ? ftello(str->fp) : 0;
 	bool at_end_of_file = false;
 
-	if (!str->at_end_of_file && (n > 2) && !str->is_engine && !str->is_map && !str->is_thread && !str->p) {
+	if (!str->at_end_of_file && (n > 2) && !str->is_engine && !str->is_map && !str->is_thread && !str->is_queue && !str->is_mutex && !str->p) {
 #if 0
 		if (str->p) {
 			if (str->p->srcptr && *str->p->srcptr) {
@@ -526,7 +526,7 @@ static void add_stream_properties(query *q, int n)
 
 	sl_done(iter);
 
-	if (!str->is_engine && !str->is_map && !str->is_thread) {
+	if (!str->is_engine && !str->is_map && !str->is_thread && !str->is_queue && !str->is_mutex) {
 		char *dst2 = formatted(str->filename, strlen(str->filename), false, false);
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, file_name('%s')).\n", n, dst2);
 		free(dst2);
@@ -1726,7 +1726,7 @@ bool stream_close(query *q, int n)
 	} else if (str->is_engine) {
 		query_destroy(str->engine);
 		str->engine = NULL;
-	} else if (str->is_thread) {
+	} else if (str->is_thread || str->is_queue || str->is_mutex) {
 	} else
 		ok = !net_close(str);
 
