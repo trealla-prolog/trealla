@@ -16,7 +16,7 @@ bool wrap_ffi_function(query *q, builtins *bif_ptr);
 bool wrap_ffi_predicate(query *q, builtins *bif_ptr);
 #endif
 
-#define is_callable_or_var(c) (is_interned(c) || is_cstring(c) || is_var(c))
+#define is_callable_or_var(c) (is_callable(c) || is_var(c))
 #define is_list_or_nil(c) (is_list(c) || is_nil(c))
 #define is_list_or_atom_or_var(c) (is_list(c) || is_atom(c) || is_var(c))
 #define is_list_or_nil_or_var(c) (is_list_or_nil(c) || is_var(c))
