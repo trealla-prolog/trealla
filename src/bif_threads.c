@@ -62,7 +62,7 @@ struct pl_thread_ {
 
 static pl_thread g_pl_threads[MAX_STREAMS] = {0};
 
-#define THREAD_DEBUG if (1)
+#define THREAD_DEBUG if (0)
 
 #define is_thread(c) is_thread_or_alias(q, c)
 #define is_mutex(c) is_mutex_or_alias(q, c)
@@ -297,7 +297,8 @@ static bool do_send_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bo
 	if (t->is_mutex_only)
 		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
 
-	cell *c = deep_clone_to_heap(q, p1, p1_ctx);
+	check_heap_error(init_tmp_heap(q));
+	cell *c = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(c);
 	rebase_vars(q, c, 0);
 	check_heap_error(queue_to_chan(chan, c, q->my_chan, is_signal));
@@ -703,7 +704,8 @@ static bool bif_thread_create_3(query *q)
 	}
 
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
-	cell *goal = deep_clone_to_heap(q, p1, p1_ctx);
+	check_heap_error(init_tmp_heap(q));
+	cell *goal = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(goal);
 	t->nbr_vars = rebase_vars(q, goal, 0);
 	cell *tmp2 = alloc_on_heap(q, 1+goal->nbr_cells+2);
@@ -730,7 +732,8 @@ static bool bif_thread_create_3(query *q)
 	t->at_exit = NULL;
 
 	if (p4) {
-		cell *goal = deep_clone_to_heap(q, p4, p4_ctx);
+		check_heap_error(init_tmp_heap(q));
+		cell *goal = deep_clone_to_tmp(q, p4, p4_ctx);
 		check_heap_error(goal);
 		t->at_exit_nbr_vars = rebase_vars(q, goal, 0);
 		cell *tmp2 = alloc_on_heap(q, 1+goal->nbr_cells+2);
@@ -743,7 +746,7 @@ static bool bif_thread_create_3(query *q)
 		make_struct(tmp2+nbr_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 		make_call(q, tmp2+nbr_cells);
 		//DUMP_TERM("at_exit", tmp2, q->st.curr_frame, 0);
-		t->at_exit = deep_clone_to_heap(t->q, tmp2, 0);
+		t->at_exit = tmp2;
 	}
 
 #ifdef _WIN32

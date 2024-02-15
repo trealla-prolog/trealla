@@ -299,6 +299,8 @@ bool bif_iso_retractall_1(query *q)
 		retry_choice(q);
 	}
 
+	acquire_lock(&pr->m->guard);
+
 	if (!pr->refcnt)
 		purge_predicate_dirty_list(pr);
 
@@ -308,6 +310,7 @@ bool bif_iso_retractall_1(query *q)
 		pr->idx = pr->idx2 = NULL;
 	}
 
+	release_lock(&pr->m->guard);
 	return true;
 }
 

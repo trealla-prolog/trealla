@@ -1612,9 +1612,9 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 
 rule *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting)
 {
-	rule *r;
-	predicate *pr;
 	acquire_lock(&m->guard);
+	predicate *pr;
+	rule *r;
 
 	do {
 		r = assert_begin(m, nbr_vars, nbr_temporaries, p1, consulting);
@@ -1638,19 +1638,19 @@ rule *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell
 		pr->tail = r;
 
 	assert_commit(m, r, pr, false);
-	release_lock(&m->guard);
 
 	if (!consulting && !pr->idx)
 		pr->is_processed = false;
 
+	release_lock(&m->guard);
 	return r;
 }
 
 rule *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting)
 {
-	rule *r;
-	predicate *pr;
 	acquire_lock(&m->guard);
+	predicate *pr;
+	rule *r;
 
 	do {
 		r = assert_begin(m, nbr_vars, nbr_temporaries, p1, consulting);
@@ -1674,11 +1674,11 @@ rule *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell
 		pr->head = r;
 
 	assert_commit(m, r, pr, true);
-	release_lock(&m->guard);
 
 	if (!consulting && !pr->idx)
 		pr->is_processed = false;
 
+	release_lock(&m->guard);
 	return r;
 }
 
