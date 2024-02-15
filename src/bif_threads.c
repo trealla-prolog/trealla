@@ -380,7 +380,7 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 
 		while (m) {
 			cell *c = m->c;
-			cell *tmp = deep_copy_to_heap(q, c, q->st.fp, false);
+			cell *tmp = deep_clone_to_heap(q, c, q->st.fp);
 			check_heap_error(tmp, release_lock(&t->guard));
 
 			if (unify(q, p1, p1_ctx, c, q->st.curr_frame)) {
