@@ -512,7 +512,7 @@ static bool copy_vars(query *q, cell *tmp, bool copy_attrs, const cell *from, pl
 	return true;
 }
 
-unsigned rebase_vars(query *q, cell *c, unsigned start_nbr)
+unsigned rebase_term(query *q, cell *c, unsigned start_nbr)
 {
 	q->vars = sl_create(NULL, NULL, NULL);
 	q->varno = start_nbr;

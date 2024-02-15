@@ -300,7 +300,7 @@ static bool do_send_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bo
 	check_heap_error(init_tmp_heap(q));
 	cell *c = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(c);
-	rebase_vars(q, c, 0);
+	rebase_term(q, c, 0);
 	check_heap_error(queue_to_chan(chan, c, q->my_chan, is_signal));
     resume_thread(t);
 	return true;
@@ -707,7 +707,7 @@ static bool bif_thread_create_3(query *q)
 	check_heap_error(init_tmp_heap(q));
 	cell *goal = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(goal);
-	t->nbr_vars = rebase_vars(q, goal, 0);
+	t->nbr_vars = rebase_term(q, goal, 0);
 	cell *tmp2 = alloc_on_heap(q, 1+goal->nbr_cells+2);
 	check_heap_error(tmp2);
 	pl_idx nbr_cells = 0;
@@ -722,7 +722,7 @@ static bool bif_thread_create_3(query *q)
 	check_heap_error(t->q);
 	t->q->thread_ptr = t;
 	//t->q->trace = q->trace;
-	t->goal = deep_clone_to_heap(t->q, tmp2, 0);
+	t->goal = deep_clone_to_heap(t->q, tmp2, 0);	// Copy into thread
 	check_heap_error(t->goal);
 	t->is_detached = false;
 	t->is_exception = false;
@@ -735,7 +735,7 @@ static bool bif_thread_create_3(query *q)
 		check_heap_error(init_tmp_heap(q));
 		cell *goal = deep_clone_to_tmp(q, p4, p4_ctx);
 		check_heap_error(goal);
-		t->at_exit_nbr_vars = rebase_vars(q, goal, 0);
+		t->at_exit_nbr_vars = rebase_term(q, goal, 0);
 		cell *tmp2 = alloc_on_heap(q, 1+goal->nbr_cells+2);
 		check_heap_error(tmp2);
 		pl_idx nbr_cells = 0;
@@ -746,7 +746,7 @@ static bool bif_thread_create_3(query *q)
 		make_struct(tmp2+nbr_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 		make_call(q, tmp2+nbr_cells);
 		//DUMP_TERM("at_exit", tmp2, q->st.curr_frame, 0);
-		t->at_exit = tmp2;
+		t->at_exit = deep_clone_to_heap(t->q, tmp2, 0);	// Copy into thread
 	}
 
 #ifdef _WIN32
@@ -786,13 +786,13 @@ void do_signal(query *q, void *thread_ptr)
 		t->signal_tail = NULL;
 
 	release_lock(&t->guard);
-	cell *c = m->c;
 	pl_idx c_ctx = 0;
+	cell *c = deep_clone_to_heap(q, m->c, c_ctx);	// Copy into thread
+	unshare_cells(c, c->nbr_cells);
+	free(m);
 	cell *tmp = prepare_call(q, true, c, c_ctx, 1);
 	ensure(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + c->nbr_cells;
-	unshare_cells(c, c->nbr_cells);
-	free(m);
 	make_call_redo(q, tmp+nbr_cells);
 	q->st.curr_instr = tmp;
 }
@@ -859,11 +859,15 @@ static bool bif_thread_join_2(query *q)
 		t->exit_code = NULL;
 		query_destroy(t->q);
 		t->q = NULL;
-		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+		bool ok =  unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+		THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
+		return ok;
 	} else {
 		cell tmp;
 		make_atom(&tmp, g_true_s);
-		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+		bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+		THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
+		return ok;
 	}
 
 	stream_close(t->q, t->chan);
@@ -1028,7 +1032,7 @@ static bool bif_thread_exit_1(query *q)
 	check_heap_error(init_tmp_heap(q));
 	cell *tmp_p1 = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(tmp_p1);
-	rebase_vars(q, tmp_p1, 0);
+	rebase_term(q, tmp_p1, 0);
 	cell *tmp = alloc_on_heap(q, 1+tmp_p1->nbr_cells);
 	check_heap_error(tmp);
 	make_struct(tmp, new_atom(q->pl, "exited"), NULL, 1, tmp_p1->nbr_cells);
