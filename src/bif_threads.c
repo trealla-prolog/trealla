@@ -302,7 +302,10 @@ static bool do_send_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bo
 	check_heap_error(c);
 	rebase_term(q, c, 0);
 	check_heap_error(queue_to_chan(chan, c, q->my_chan, is_signal));
-    resume_thread(t);
+
+	if (is_thread_only(t))
+		resume_thread(t);
+
 	return true;
 }
 
@@ -380,7 +383,7 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 
 		while (m) {
 			cell *c = m->c;
-			cell *tmp = deep_clone_to_heap(q, c, q->st.fp);
+			cell *tmp = deep_clone_to_heap(q, c, q->st.fp);		// Copy into thread
 			check_heap_error(tmp, release_lock(&t->guard));
 
 			if (unify(q, p1, p1_ctx, c, q->st.curr_frame)) {
