@@ -652,7 +652,6 @@ prolog *pl_create()
 	// In user space...
 
 	set_discontiguous_in_db(pl->user_m, "$predicate_property", 3);
-
 	set_multifile_in_db(pl->user_m, "$predicate_property", 3);
 
 	set_dynamic_in_db(pl->user_m, "$record_key", 2);

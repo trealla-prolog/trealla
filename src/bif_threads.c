@@ -60,7 +60,7 @@ struct pl_thread_ {
 #endif
 };
 
-static pl_thread g_pl_threads[MAX_THREADS] = {0};
+static pl_thread g_pl_threads[MAX_STREAMS] = {0};
 
 #define THREAD_DEBUG if (0)
 
@@ -335,7 +335,7 @@ static pl_thread *get_self()
 	pthread_t tid = pthread_self();
 #endif
 
-	for (unsigned i = 0; i < MAX_THREADS; i++) {
+	for (unsigned i = 0; i < MAX_STREAMS; i++) {
 		pl_thread *t = &g_pl_threads[i];
 
 		if (t->is_queue_only || t->is_mutex_only)
@@ -974,7 +974,7 @@ static bool bif_thread_self_1(query *q)
 	pthread_t id = pthread_self();
 #endif
 
-	for (unsigned i = 0; i < MAX_THREADS; i++) {
+	for (unsigned i = 0; i < MAX_STREAMS; i++) {
 		pl_thread *t = &g_pl_threads[i];
 
 		if (t->is_queue_only || t->is_mutex_only)
@@ -1035,7 +1035,7 @@ static bool bif_thread_exit_1(query *q)
 	pthread_t tid = pthread_self();
 #endif
 
-	for (unsigned i = 0; i < MAX_THREADS; i++) {
+	for (unsigned i = 0; i < MAX_STREAMS; i++) {
 		pl_thread *t = &g_pl_threads[i];
 
 		if (t->is_queue_only || t->is_mutex_only)
@@ -1125,7 +1125,7 @@ static bool do_thread_property_pin_property(query *q)
 		i = q->st.v1;
 
 	while (++i) {
-		if (i == MAX_THREADS)
+		if (i == MAX_STREAMS)
 			return true;
 
 		pl_thread *t = &g_pl_threads[i];
@@ -1139,7 +1139,7 @@ static bool do_thread_property_pin_property(query *q)
 	q->st.v1 = i;
 
 	while (++i) {
-		if (i == MAX_THREADS)
+		if (i == MAX_STREAMS)
 			break;
 
 		pl_thread *t = &g_pl_threads[i];
@@ -1150,7 +1150,7 @@ static bool do_thread_property_pin_property(query *q)
 		break;
 	}
 
-	if (i != MAX_THREADS)
+	if (i != MAX_STREAMS)
 		check_heap_error(push_choice(q));
 
 	cell tmp;
@@ -1232,7 +1232,7 @@ static bool do_thread_property_wild(query *q)
 		q->st.v2 = -1;
 
 	while (++i) {
-		if (i == MAX_THREADS)
+		if (i == MAX_STREAMS)
 			return true;
 
 		pl_thread *t = &g_pl_threads[i];
@@ -1246,7 +1246,7 @@ static bool do_thread_property_wild(query *q)
 	q->st.v1 = i;
 
 	while (++i) {
-		if (i == MAX_THREADS)
+		if (i == MAX_STREAMS)
 			break;
 
 		pl_thread *t = &g_pl_threads[i];
@@ -1257,7 +1257,7 @@ static bool do_thread_property_wild(query *q)
 		break;
 	}
 
-	if (i != MAX_THREADS)
+	if (i != MAX_STREAMS)
 		check_heap_error(push_choice(q));
 
 	cell tmp;
@@ -1474,7 +1474,7 @@ static bool do_message_queue_property_pin_property(query *q)
 		i = q->st.v1;
 
 	while (++i) {
-		if (i == MAX_THREADS)
+		if (i == MAX_STREAMS)
 			return true;
 
 		pl_thread *t = &g_pl_threads[i];
@@ -1488,7 +1488,7 @@ static bool do_message_queue_property_pin_property(query *q)
 	q->st.v1 = i;
 
 	while (++i) {
-		if (i == MAX_THREADS)
+		if (i == MAX_STREAMS)
 			break;
 
 		pl_thread *t = &g_pl_threads[i];
@@ -1499,7 +1499,7 @@ static bool do_message_queue_property_pin_property(query *q)
 		break;
 	}
 
-	if (i != MAX_THREADS)
+	if (i != MAX_STREAMS)
 		check_heap_error(push_choice(q));
 
 	cell tmp;
@@ -1561,7 +1561,7 @@ static bool do_message_queue_property_wild(query *q)
 		q->st.v2 = -1;
 
 	while (++i) {
-		if (i == MAX_THREADS)
+		if (i == MAX_STREAMS)
 			return true;
 
 		pl_thread *t = &g_pl_threads[i];
@@ -1575,7 +1575,7 @@ static bool do_message_queue_property_wild(query *q)
 	q->st.v1 = i;
 
 	while (++i) {
-		if (i == MAX_THREADS)
+		if (i == MAX_STREAMS)
 			break;
 
 		pl_thread *t = &g_pl_threads[i];
@@ -1586,7 +1586,7 @@ static bool do_message_queue_property_wild(query *q)
 		break;
 	}
 
-	if (i != MAX_THREADS)
+	if (i != MAX_STREAMS)
 		check_heap_error(push_choice(q));
 
 	cell tmp;
@@ -1881,7 +1881,7 @@ static bool bif_mutex_unlock_all_0(query *q)
 
 	pl_thread *me = get_self();
 
-	for (unsigned i = 0; i < MAX_THREADS; i++) {
+	for (unsigned i = 0; i < MAX_STREAMS; i++) {
 		pl_thread *t = &g_pl_threads[i];
 
 		if (!t->active)
@@ -1961,7 +1961,7 @@ static bool do_mutex_property_pin_property(query *q)
 		i = q->st.v1;
 
 	while (++i) {
-		if (i == MAX_THREADS)
+		if (i == MAX_STREAMS)
 			return true;
 
 		pl_thread *t = &g_pl_threads[i];
@@ -1975,7 +1975,7 @@ static bool do_mutex_property_pin_property(query *q)
 	q->st.v1 = i;
 
 	while (++i) {
-		if (i == MAX_THREADS)
+		if (i == MAX_STREAMS)
 			break;
 
 		pl_thread *t = &g_pl_threads[i];
@@ -1986,7 +1986,7 @@ static bool do_mutex_property_pin_property(query *q)
 		break;
 	}
 
-	if (i != MAX_THREADS)
+	if (i != MAX_STREAMS)
 		check_heap_error(push_choice(q));
 
 	cell tmp;
@@ -2060,7 +2060,7 @@ static bool do_mutex_property_wild(query *q)
 		q->st.v2 = -1;
 
 	while (++i) {
-		if (i == MAX_THREADS)
+		if (i == MAX_STREAMS)
 			return true;
 
 		pl_thread *t = &g_pl_threads[i];
@@ -2074,7 +2074,7 @@ static bool do_mutex_property_wild(query *q)
 	q->st.v1 = i;
 
 	while (++i) {
-		if (i == MAX_THREADS)
+		if (i == MAX_STREAMS)
 			break;
 
 		pl_thread *t = &g_pl_threads[i];
@@ -2085,7 +2085,7 @@ static bool do_mutex_property_wild(query *q)
 		break;
 	}
 
-	if (i != MAX_THREADS)
+	if (i != MAX_STREAMS)
 		check_heap_error(push_choice(q));
 
 	cell tmp;
