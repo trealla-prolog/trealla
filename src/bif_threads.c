@@ -364,15 +364,18 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 			cnt++;
 		}
 
-		if (q->pl->halt)
-			return false;
-
 		//printf("*** recv msg nbr_cells=%u\n", t->queue_head->c->nbr_cells);
+
+		acquire_lock(&t->guard);
+
+		if (!t->queue_head) {
+			release_lock(&t->guard);
+			continue;
+		}
 
 		check_heap_error(push_choice(q));
 		check_slot(q, MAX_ARITY);
 		try_me(q, MAX_ARITY);
-		acquire_lock(&t->guard);
 		msg *m = t->queue_head;
 
 		while (m) {
