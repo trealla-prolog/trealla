@@ -52,8 +52,8 @@ main :-
 	writeln(done).
 
 thread_run(I) :-
+	format(" ...Thread ~w~n", [I]),
 	between(1,2,_),
-		format(" ...Thread ~w~n", [I]),
 		thread_get_message(Msg),
 		format(" ...Got ~w got ~w~n", [I, Msg]),
 		(between(1,1000000,_), fail; true),

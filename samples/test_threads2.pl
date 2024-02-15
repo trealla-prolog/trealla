@@ -57,13 +57,15 @@ main :-
 	writeln(done).
 
 thread_run(I) :-
+	atomic_concat(foo, I, Alias),
+	format(" ...Thread ~w~n", [I]),
 	between(1,2,_),
-		format(" ...Thread ~w~n", [I]),
 		thread_get_message(Msg),
 		format(" ...Got ~w got ~w~n", [I, Msg]),
 		(between(1,1000000,_), fail; true),
 		Msg = msg(_, from(Chan)),
-		retract(Msg),
+		Msg2 = msg(Alias, from(_)),
+		retract(Msg2),
 		thread_send_message(foo, ok),
 		fail.
 thread_run(I) :-
