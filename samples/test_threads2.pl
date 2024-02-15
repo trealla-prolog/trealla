@@ -62,7 +62,6 @@ thread_run(I) :-
 	between(1,2,_),
 		thread_get_message(Msg),
 		format(" ...Got ~w got ~w~n", [I, Msg]),
-		(between(1,1000000,_), fail; true),
 		Msg = msg(_, from(Chan)),
 		Msg2 = msg(Alias, from(_)),
 		retract(Msg2),
