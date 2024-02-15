@@ -1,4 +1,5 @@
 :- initialization(main).
+:- dynamic(msg/2).
 
 threads(8).
 
@@ -17,6 +18,7 @@ main :-
 		atomic_concat(foo, I, Alias),
 		Msg = msg(Alias, from(Self)),
 		format(" ...Sending1 ~w ~w~n", [I, Msg]),
+		assertz(Msg),
 		thread_send_message(Alias, Msg),
 		fail.
 main :-
@@ -33,6 +35,7 @@ main :-
 		atomic_concat(foo, I, Alias),
 		Msg = msg(Alias, from(Self)),
 		format(" ...Sending2 ~w ~w~n", [I, Msg]),
+		assertz(Msg),
 		thread_send_message(Alias, Msg),
 		fail.
 main :-
@@ -60,6 +63,7 @@ thread_run(I) :-
 		format(" ...Got ~w got ~w~n", [I, Msg]),
 		(between(1,1000000,_), fail; true),
 		Msg = msg(_, from(Chan)),
+		retract(Msg),
 		thread_send_message(foo, ok),
 		fail.
 thread_run(I) :-
