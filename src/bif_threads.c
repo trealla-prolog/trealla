@@ -1008,6 +1008,7 @@ static bool bif_thread_yield_0(query *q)
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
 
 #ifdef _WIN32
+	msleep(0);
 #elif 0
 	pthread_yield();
 #else
