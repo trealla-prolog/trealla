@@ -62,7 +62,7 @@ struct pl_thread_ {
 
 static pl_thread g_pl_threads[MAX_STREAMS] = {0};
 
-#define THREAD_DEBUG if (0)
+#define THREAD_DEBUG if (1)
 
 #define is_thread(c) is_thread_or_alias(q, c)
 #define is_mutex(c) is_mutex_or_alias(q, c)
@@ -323,7 +323,6 @@ static bool bif_thread_send_message_2(query *q)
 	int chan = get_stream(q, p1);
 	if (chan < 0) return true;
 	bool ok = do_send_message(q, chan, p2, p2_ctx, false);
-	THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
 	return ok;
 }
 
@@ -878,6 +877,7 @@ static bool bif_thread_join_2(query *q)
 	t->signal_tail = t->queue_tail = NULL;
 	t->active = false;
 	release_lock(&t->guard);
+	THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
 }
 
 static bool bif_thread_cancel_1(query *q)
@@ -966,6 +966,7 @@ static bool bif_thread_detach_1(query *q)
 
 static bool bif_thread_self_1(query *q)
 {
+	THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
 	GET_FIRST_ARG(p1,var);
 
 #ifdef _WIN32
