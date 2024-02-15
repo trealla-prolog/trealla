@@ -373,7 +373,6 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 			continue;
 		}
 
-		check_heap_error(push_choice(q));
 		check_slot(q, MAX_ARITY);
 		try_me(q, MAX_ARITY);
 		msg *m = t->queue_head;
@@ -383,7 +382,7 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 			cell *tmp = deep_copy_to_heap(q, c, q->st.fp, false);
 			check_heap_error(tmp, release_lock(&t->guard));
 
-			if (unify(q, p1, p1_ctx, tmp, q->st.curr_frame)) {
+			if (unify(q, p1, p1_ctx, c, q->st.curr_frame)) {
 				q->curr_chan = m->from_chan;
 
 				if (!is_peek) {
@@ -407,7 +406,6 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 					free(m);
 				}
 
-				drop_choice(q);
 				return true;
 			}
 
@@ -416,7 +414,6 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 		}
 
 		release_lock(&t->guard);
-		drop_choice(q);
 
 		if (is_peek)
 			return false;
