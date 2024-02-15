@@ -1703,13 +1703,13 @@ bool stream_close(query *q, int n)
 		|| (str->fp == stderr))
 		return true;
 
-	if (q->pl->current_input == n)
+	if ((int)q->pl->current_input == n)
 		q->pl->current_input = 0;
 
-	if (q->pl->current_output == n)
+	if ((int)q->pl->current_output == n)
 		q->pl->current_output = 1;
 
-	if (q->pl->current_error == n)
+	if ((int)q->pl->current_error == n)
 		q->pl->current_error = 2;
 
 	if (sl_get(str->alias, "user_input", NULL)) {
@@ -4048,7 +4048,7 @@ static bool bif_iso_current_input_1(query *q)
 		return throw_error(q, pstr, q->st.curr_frame, "domain_error", "stream");
 
 	int n = get_stream(q, pstr);
-	return n == q->pl->current_input ? true : false;
+	return n == (int)q->pl->current_input ? true : false;
 }
 
 static bool bif_iso_current_output_1(query *q)
@@ -4066,7 +4066,7 @@ static bool bif_iso_current_output_1(query *q)
 		return throw_error(q, pstr, q->st.curr_frame, "domain_error", "stream");
 
 	int n = get_stream(q, pstr);
-	return n == q->pl->current_output ? true : false;
+	return n == (int)q->pl->current_output ? true : false;
 }
 
 static bool bif_iso_current_error_1(query *q)
@@ -4084,7 +4084,7 @@ static bool bif_iso_current_error_1(query *q)
 		return throw_error(q, pstr, q->st.curr_frame, "domain_error", "stream");
 
 	int n = get_stream(q, pstr);
-	return n == q->pl->current_error ? true : false;
+	return n == (int)q->pl->current_error ? true : false;
 }
 
 static bool bif_iso_set_input_1(query *q)

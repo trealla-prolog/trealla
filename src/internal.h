@@ -70,7 +70,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define MAX_QUEUES 255
 #define MAX_MODULES 1024
 #define MAX_IGNORES 64000
-#define MAX_STREAMS 256
+#define MAX_STREAMS 1024
 #define MAX_THREADS (MAX_STREAMS / 2)
 
 #define STREAM_BUFLEN 1024
@@ -837,7 +837,7 @@ struct prolog_ {
 	uint64_t s_last, s_cnt, seed, str_cnt;
 	pl_atomic uint64_t dbgen;
 	unsigned next_mod_id, def_max_depth, my_chan;
-	uint8_t current_input, current_output, current_error;
+	unsigned current_input, current_output, current_error;
 	int8_t halt_code, opt;
 	bool def_quoted:1;
 	bool def_double_quotes:1;
