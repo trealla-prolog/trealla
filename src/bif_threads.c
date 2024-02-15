@@ -792,11 +792,12 @@ void do_signal(query *q, void *thread_ptr)
 		t->signal_tail = NULL;
 
 	release_lock(&t->guard);
+	try_me(q, MAX_ARITY);
 	pl_idx c_ctx = 0;
-	cell *c = deep_clone_to_heap(q, m->c, c_ctx);	// Copy into thread
+	cell *c = deep_copy_to_heap(q, m->c, q->st.fp, false);	// Copy into thread
 	unshare_cells(c, c->nbr_cells);
 	free(m);
-	cell *tmp = prepare_call(q, true, c, c_ctx, 1);
+	cell *tmp = prepare_call(q, true, c, q->st.curr_frame, 1);
 	ensure(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + c->nbr_cells;
 	make_call_redo(q, tmp+nbr_cells);
