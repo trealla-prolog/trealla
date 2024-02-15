@@ -773,7 +773,6 @@ static bool bif_thread_create_3(query *q)
     pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread_create, (void*)t);
 #endif
 
-	THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
 	return true;
 }
 
