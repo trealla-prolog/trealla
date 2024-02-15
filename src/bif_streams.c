@@ -1727,7 +1727,7 @@ bool stream_close(query *q, int n)
 		sl_set(str2->alias, strdup("user_error"), NULL);
 	}
 
-	if (!str->socket)
+	if (!str->socket && !str->is_mutex && !str->is_queue && !str->is_thread)
 		del_stream_properties(q, n);
 
 	bool ok = true;
