@@ -356,14 +356,15 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 {
 	pl_thread *t = &g_pl_threads[chan];
 	pl_thread *me = get_self();
-	uint64_t cnt = 0;
 
 	while (!q->pl->halt) {
 		if (is_peek && !t->queue_head)
 			return false;
 
+		uint64_t cnt = 0;
+
 		while (!t->queue_head && !q->pl->halt) {
-			suspend_thread(me, cnt < 100 ? 0 : cnt < 1000 ? 1 : cnt < 10000 ? 1 : 10);
+			suspend_thread(me, cnt < 100 ? 0 : cnt < 1000 ? 1 : cnt < 10000 ? 10 : 100);
 			cnt++;
 		}
 
@@ -376,14 +377,14 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 			continue;
 		}
 
-		check_heap_error(push_choice(q));
-		check_slot(q, MAX_ARITY);
-		try_me(q, MAX_ARITY);
 		msg *m = t->queue_head;
 
 		while (m) {
+			check_heap_error(push_choice(q));
+			check_slot(q, MAX_ARITY);
+			try_me(q, MAX_ARITY);
 			cell *c = m->c;
-			cell *tmp = deep_clone_to_heap(q, c, q->st.fp);		// Copy into thread
+			cell *tmp = deep_copy_to_heap(q, c, q->st.fp, false);	// Copy into thread
 			check_heap_error(tmp, release_lock(&t->guard));
 
 			if (unify(q, p1, p1_ctx, c, q->st.curr_frame)) {
@@ -414,7 +415,7 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 				return true;
 			}
 
-			undo_me(q);
+			retry_choice(q);
 			m = m->next;
 		}
 
