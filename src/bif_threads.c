@@ -864,15 +864,19 @@ static bool bif_thread_join_2(query *q)
 		t->exit_code = NULL;
 		query_destroy(t->q);
 		t->q = NULL;
-		bool ok =  unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+
+		if (!unify(q, p2, p2_ctx, tmp, q->st.curr_frame))
+			return false;
+
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
-		return ok;
 	} else {
 		cell tmp;
 		make_atom(&tmp, g_true_s);
-		bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+
+		if (!unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
+			return false;
+
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
-		return ok;
 	}
 
 	stream_close(t->q, t->chan);
@@ -890,6 +894,7 @@ static bool bif_thread_join_2(query *q)
 	t->active = false;
 	release_lock(&t->guard);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
+	return true;
 }
 
 static bool bif_thread_cancel_1(query *q)
