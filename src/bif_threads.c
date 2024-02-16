@@ -341,7 +341,7 @@ static pl_thread *get_self()
 	for (unsigned i = 0; i < MAX_STREAMS; i++) {
 		pl_thread *t = &g_pl_threads[i];
 
-		if (t->is_queue_only || t->is_mutex_only)
+		if (!t->active || t->is_queue_only || t->is_mutex_only)
 			continue;
 
 		if (t->id == tid)
@@ -401,7 +401,7 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 
 					if (t->queue_tail == m)
 						t->queue_tail = m->prev;
-					}
+				}
 
 				release_lock(&t->guard);
 
@@ -990,7 +990,7 @@ static bool bif_thread_self_1(query *q)
 	for (unsigned i = 0; i < MAX_STREAMS; i++) {
 		pl_thread *t = &g_pl_threads[i];
 
-		if (t->is_queue_only || t->is_mutex_only)
+		if (!t->active || t->is_queue_only || t->is_mutex_only)
 			continue;
 
 		if (t->id == id) {
@@ -1052,7 +1052,7 @@ static bool bif_thread_exit_1(query *q)
 	for (unsigned i = 0; i < MAX_STREAMS; i++) {
 		pl_thread *t = &g_pl_threads[i];
 
-		if (t->is_queue_only || t->is_mutex_only)
+		if (!t->active || t->is_queue_only || t->is_mutex_only)
 			continue;
 
 		if (t->id == tid) {
