@@ -841,7 +841,7 @@ static bool bif_thread_join_2(query *q)
 	while (t->signal_head) {
 		msg *save = t->signal_head;
 		t->signal_head = t->signal_head->next;
-		execute(t->q, save->c, MAX_ARITY);
+		//execute(t->q, save->c, MAX_ARITY);
 		unshare_cells(save->c, save->c->nbr_cells);
 		free(save);
 	}

@@ -648,6 +648,7 @@ prolog *pl_create()
 	pl->def_max_depth = 19;
 	pl->def_quoted = true;
 	pl->def_double_quotes = true;
+	pl->rnd_first_time = true;
 
 	// In user space...
 

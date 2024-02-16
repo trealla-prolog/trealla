@@ -2753,29 +2753,33 @@ static bool bif_log10_1(query *q)
 	return true;
 }
 
-static pl_uint g_seed = 0;
-static bool g_first_time = true;
 #define random_M 0x7FFFFFFFL
 
-static pl_flt rnd(void)
+static pl_flt rnd(query *q)
 {
-	if (g_first_time) {
-		g_first_time = false;
-		g_seed = clock();
+	acquire_lock(&q->pl->guard);
+
+	if (q->pl->rnd_first_time) {
+		q->pl->rnd_first_time = false;
+		q->pl->rnd_seed = clock();
 
 		for (int i = 0; i < 3; i++)
-			rnd();
+			rnd(q);
 	}
 
-	g_seed = ((g_seed * 2743) + 5923) & random_M;
-	return((pl_flt)g_seed / (pl_flt)random_M);
+	q->pl->rnd_seed = ((q->pl->rnd_seed * 2743) + 5923) & random_M;
+	pl_flt val = ((pl_flt)q->pl->rnd_seed / (pl_flt)random_M);
+	release_lock(&q->pl->guard);
+	return val;
 }
 
 static bool bif_set_seed_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
-	g_first_time = false;
-	g_seed = p1->val_int;
+	acquire_lock(&q->pl->guard);
+	q->pl->rnd_first_time = false;
+	q->pl->rnd_seed = p1->val_int;
+	release_lock(&q->pl->guard);
 	return true;
 }
 
@@ -2783,7 +2787,7 @@ static bool bif_get_seed_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
-	make_int(&tmp, g_seed);
+	make_int(&tmp, q->pl->rnd_seed);
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
@@ -2800,7 +2804,7 @@ static bool bif_random_between_3(query *q)
 		return throw_error(q, p2, p2_ctx, "type_error", "integer");
 
 	cell tmp;
-	pl_int r = rnd() * ((int64_t)RAND_MAX+1);
+	pl_int r = rnd(q) * ((int64_t)RAND_MAX+1);
 	make_int(&tmp, get_smallint(p1) + (r % get_smallint(p2)));
 	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 }
@@ -2809,7 +2813,7 @@ static bool bif_random_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
-	make_float(&tmp, rnd());
+	make_float(&tmp, rnd(q));
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
@@ -2817,7 +2821,7 @@ static bool bif_random_integer_0(query *q)
 {
 	START_FUNCTION(q);
 	q->accum.tag = TAG_INTEGER;
-	q->accum.val_int = rnd() * ((int64_t)RAND_MAX+1);
+	q->accum.val_int = rnd(q) * ((int64_t)RAND_MAX+1);
 	return true;
 }
 
@@ -2825,7 +2829,7 @@ static bool bif_random_float_0(query *q)
 {
 	START_FUNCTION(q);
 	q->accum.tag = TAG_DOUBLE;
-	q->accum.val_float = rnd();
+	q->accum.val_float = rnd(q);
 	return true;
 }
 
@@ -2833,7 +2837,7 @@ static bool bif_rand_0(query *q)
 {
 	START_FUNCTION(q);
 	q->accum.tag = TAG_INTEGER;
-	q->accum.val_int = rnd() * ((int64_t)RAND_MAX+1);
+	q->accum.val_int = rnd(q) * ((int64_t)RAND_MAX+1);
 	return true;
 }
 
@@ -2841,7 +2845,7 @@ static bool bif_rand_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
-	make_int(&tmp, rnd() * ((int64_t)RAND_MAX+1));
+	make_int(&tmp, rnd(q) * ((int64_t)RAND_MAX+1));
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
