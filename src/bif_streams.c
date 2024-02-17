@@ -412,6 +412,9 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
 }
 #endif
 
+// FIXME: this is too slow. There should be one overall
+// alias map, not one per stream.
+
 int get_named_stream(prolog *pl, const char *name, size_t len)
 {
 	acquire_lock(&pl->guard);
@@ -878,7 +881,7 @@ static bool bif_iso_stream_property_2(query *q)
 
 			stream *str = &q->pl->streams[i];
 
-			if (!str->socket)
+			if (!str->socket && !str->is_thread && !str->is_mutex && !str->is_queue)
 				add_stream_properties(q, i);
 		}
 	}

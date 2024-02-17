@@ -573,11 +573,8 @@ static void *start_routine_thread_create(pl_thread *t)
 		return 0;
 
 	stream_close(t->q, t->chan);
-
-	if (!t->exit_code) {
-		query_destroy(t->q);
-		t->q = NULL;
-	}
+	query_destroy(t->q);
+	t->q = NULL;
 
 	acquire_lock(&t->guard);
 
@@ -849,7 +846,6 @@ static bool bif_thread_join_2(query *q)
 	release_lock(&t->guard);
 
 #ifdef _WIN32
-	return false;
 #else
 	void *retval;
 
@@ -857,29 +853,21 @@ static bool bif_thread_join_2(query *q)
 		return false;
 #endif
 
-	t->active = false;
-
 	if (t->exit_code) {
 		cell *tmp = deep_copy_to_heap(q, t->exit_code, q->st.fp, false);
 		t->exit_code = NULL;
-		query_destroy(t->q);
-		t->q = NULL;
-
-		if (!unify(q, p2, p2_ctx, tmp, q->st.curr_frame))
-			return false;
-
+		unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
 	} else {
 		cell tmp;
 		make_atom(&tmp, g_true_s);
-
-		if (!unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
-			return false;
-
+		unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
 	}
 
 	stream_close(t->q, t->chan);
+	query_destroy(t->q);
+	t->q = NULL;
 	acquire_lock(&t->guard);
 
 	while (t->queue_head) {

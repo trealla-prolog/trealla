@@ -70,7 +70,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define MAX_QUEUES 255
 #define MAX_MODULES 1024
 #define MAX_IGNORES 64000
-#define MAX_STREAMS 1024
+#define MAX_STREAMS 2048
 #define MAX_THREADS (MAX_STREAMS / 2)
 
 #define STREAM_BUFLEN 1024

@@ -656,37 +656,40 @@ static bool find_exception_handler(query *q, char *ball)
 		return false;
 	}
 
-	acquire_lock(&q->pl->guard);
+	if (!q->thread_ptr) {
+		acquire_lock(&q->pl->guard);
 
-	if (!q->is_redo)
-		fprintf(stdout, "   ");
-	else
-		fprintf(stdout, "  ");
+		if (!q->is_redo)
+			fprintf(stdout, "   ");
+		else
+			fprintf(stdout, "  ");
 
-	if (q->run_init)
-		fprintf(stdout, "\rWarning: Initialization goal exception: ");
+		if (q->run_init)
+			fprintf(stdout, "\rWarning: Initialization goal exception: ");
 
-	if (!q->run_init/*!is_interned(e) || strcmp(C_STR(q, e), "error")*/)
-		fprintf(stdout, "throw(");
+		if (!q->run_init/*!is_interned(e) || strcmp(C_STR(q, e), "error")*/)
+			fprintf(stdout, "throw(");
 
-	if (is_cyclic_term(q, e, e_ctx)) {
-		q->quoted = 1;
-		print_term(q, stdout, e, e_ctx, 0);
-	} else {
-		q->quoted = 1;
-		print_term(q, stdout, e, e_ctx, 1);
+		if (is_cyclic_term(q, e, e_ctx)) {
+			q->quoted = 1;
+			print_term(q, stdout, e, e_ctx, 0);
+		} else {
+			q->quoted = 1;
+			print_term(q, stdout, e, e_ctx, 1);
+		}
+
+		if (!q->run_init/*!is_interned(e) || strcmp(C_STR(q, e), "error")*/)
+			fprintf(stdout, ")");
+
+		fprintf(stdout, ".\n");
+		q->quoted = 0;
+		release_lock(&q->pl->guard);
 	}
 
-	if (!q->run_init/*!is_interned(e) || strcmp(C_STR(q, e), "error")*/)
-		fprintf(stdout, ")");
-
-	fprintf(stdout, ".\n");
-	q->quoted = 0;
 	q->pl->did_dump_vars = true;
 	q->ball = NULL;
 	//q->error = true;
 	q->abort = true;
-	release_lock(&q->pl->guard);
 	return false;
 }
 

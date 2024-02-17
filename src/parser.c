@@ -1251,14 +1251,14 @@ static pl_idx get_varno(parser *p, const char *src, bool in_body)
 	return i;
 }
 
-static bool get_in_body(parser *p, const char *src)
+static bool get_in_body(parser *p, const char *var_name)
 {
-	int anon = !strcmp(src, "_");
+	bool anon = !strcmp(var_name, "_");
 	size_t offset = 0;
 	unsigned i = 0;
 
 	while (p->vartab.var_pool[offset]) {
-		if (!strcmp(p->vartab.var_pool+offset, src) && !anon) {
+		if (!strcmp(p->vartab.var_pool+offset, var_name) && !anon) {
 			return p->vartab.in_body[i];
 		}
 

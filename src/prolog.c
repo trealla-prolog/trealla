@@ -15,7 +15,7 @@
 
 void convert_path(char *filename);
 
-static skiplist *s_symtab;
+static skiplist *g_symtab;
 static size_t s_pool_size = 64000, s_pool_offset = 0;
 char *g_pool = NULL;
 
@@ -74,7 +74,7 @@ static pl_idx add_to_pool(const char *name)
 	memcpy(g_pool + offset, name, len+1);
 	s_pool_offset += len + 1;
 	const char *key = strdup(name);
-	sl_set(s_symtab, key, (void*)(size_t)offset);
+	sl_set(g_symtab, key, (void*)(size_t)offset);
 	return (pl_idx)offset;
 }
 
@@ -92,7 +92,7 @@ pl_idx new_atom(prolog *pl, const char *name)
 	SPIN_LOCK(s_atomtable_lock);
 	const void *val;
 
-	if (sl_get(s_symtab, name, &val)) {
+	if (sl_get(g_symtab, name, &val)) {
 		SPIN_UNLOCK(s_atomtable_lock);
 		return (pl_idx)(size_t)val;
 	}
@@ -234,6 +234,8 @@ bool pl_restore(prolog *pl, const char *filename)
 
 static void g_destroy()
 {
+	sl_destroy(g_symtab);
+	free(g_pool);
 	free(g_tpl_lib);
 }
 
@@ -426,7 +428,7 @@ static bool g_init(prolog *pl)
 	g_pool = calloc(1, s_pool_size);
 	s_pool_offset = 0;
 
-	CHECK_SENTINEL(s_symtab = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
+	CHECK_SENTINEL(g_symtab = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
 	CHECK_SENTINEL(g_dummy_s = new_atom(pl, "dummy"), ERR_IDX);
 	CHECK_SENTINEL(g_false_s = new_atom(pl, "false"), ERR_IDX);
 	CHECK_SENTINEL(g_true_s = new_atom(pl, "true"), ERR_IDX);
