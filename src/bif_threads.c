@@ -833,18 +833,6 @@ static bool bif_thread_join_2(query *q)
 	if (!is_thread_only(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "join,not_thread");
 
-	acquire_lock(&t->guard);
-
-	while (t->signal_head) {
-		msg *save = t->signal_head;
-		t->signal_head = t->signal_head->next;
-		//execute(t->q, save->c, MAX_ARITY);
-		unshare_cells(save->c, save->c->nbr_cells);
-		free(save);
-	}
-
-	release_lock(&t->guard);
-
 #ifdef _WIN32
 #else
 	void *retval;
@@ -869,6 +857,13 @@ static bool bif_thread_join_2(query *q)
 	query_destroy(t->q);
 	t->q = NULL;
 	acquire_lock(&t->guard);
+
+	while (t->signal_head) {
+		msg *save = t->signal_head;
+		t->signal_head = t->signal_head->next;
+		unshare_cells(save->c, save->c->nbr_cells);
+		free(save);
+	}
 
 	while (t->queue_head) {
 		msg *save = t->queue_head;

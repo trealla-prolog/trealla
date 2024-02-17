@@ -196,7 +196,9 @@ bool bif_sys_clause_3(query *q)
 	return ok;
 }
 
-void purge_predicate_dirty_list(predicate *pr)
+// Module must be locked to enter here...
+
+static void predicate_purge_dirty_list(predicate *pr)
 {
 	unsigned cnt = 0;
 
@@ -211,8 +213,10 @@ void purge_predicate_dirty_list(predicate *pr)
 
 	pr->dirty_list = NULL;
 
-	if (cnt && 0)
-		printf("*** purge_predicate_dirty_list %u\n", cnt);
+#if 0
+	if (cnt)
+		printf("*** predicate_purge_dirty_list %u\n", cnt);
+#endif
 }
 
 bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
@@ -302,7 +306,7 @@ bool bif_iso_retractall_1(query *q)
 	acquire_lock(&pr->m->guard);
 
 	if (!pr->refcnt)
-		purge_predicate_dirty_list(pr);
+		predicate_purge_dirty_list(pr);
 
 	if (pr->idx && !pr->cnt) {
 		sl_destroy(pr->idx2);
@@ -328,7 +332,7 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 		retract_from_db(r->owner->m, r);
 
 	if (pr->idx && !pr->cnt) {
-		purge_predicate_dirty_list(pr);
+		predicate_purge_dirty_list(pr);
 	} else {
 		while (pr->dirty_list) {
 			rule *r = pr->dirty_list;

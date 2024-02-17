@@ -407,11 +407,9 @@ static void leave_predicate(query *q, predicate *pr)
 	if (!pr->dirty_list)
 		return;
 
-	if (!pr->is_abolished) {
-#if 0
-		purge_predicate_dirty_list(pr);
-#else
+	acquire_lock(&pr->m->guard);
 
+	if (!pr->is_abolished) {
 		// Just because this predicate is no longer in use doesn't
 		// mean there are no shared references to terms contained
 		// within. So move items on the dirty-list to the query
@@ -437,7 +435,6 @@ static void leave_predicate(query *q, predicate *pr)
 		}
 
 		pr->dirty_list = NULL;
-#endif
 
 		if (pr->idx && !pr->cnt) {
 			sl_destroy(pr->idx2);
@@ -457,6 +454,8 @@ static void leave_predicate(query *q, predicate *pr)
 
 		pr->dirty_list = NULL;
 	}
+
+	release_lock(&pr->m->guard);
 }
 
 static void unwind_trail(query *q)
@@ -1833,7 +1832,7 @@ bool execute(query *q, cell *cells, unsigned nbr_vars)
 	return start(q);
 }
 
-void purge_dirty_list(query *q)
+void query_purge_dirty_list(query *q)
 {
 	unsigned cnt = 0;
 
@@ -1846,7 +1845,7 @@ void purge_dirty_list(query *q)
 	}
 
 	if (cnt && 0)
-		printf("*** purge_dirty_list %u\n", cnt);
+		printf("*** query_purge_dirty_list %u\n", cnt);
 }
 
 void query_destroy(query *q)
@@ -1940,7 +1939,7 @@ void query_destroy(query *q)
 
 	mp_int_clear(&q->tmp_ival);
 	mp_rat_clear(&q->tmp_irat);
-	purge_dirty_list(q);
+	query_purge_dirty_list(q);
 	free(q->trails);
 	free(q->choices);
 	free(q->slots);

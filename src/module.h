@@ -41,8 +41,6 @@ void push_template(module *m, const char *name, unsigned arity, const builtins *
 void retract_from_db(module *m, rule *r);
 void make(module *m);
 
-void purge_predicate_dirty_list(predicate *pr);
-
 bool do_use_module_1(module *curr_m, cell *p);
 bool do_use_module_2(module *curr_m, cell *p);
 

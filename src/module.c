@@ -1437,6 +1437,8 @@ static void check_goal_expansion(module *m, cell *p1)
 	create_goal_expansion(m, arg1);
 }
 
+// Module must be locked to enter here...
+
 static rule *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting)
 {
 	cell *c = p1;
@@ -1539,6 +1541,8 @@ static rule *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_temporaries
 	r->owner = pr;
 	return r;
 }
+
+// Module must be locked to enter here...
 
 static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 {

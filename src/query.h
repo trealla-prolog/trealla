@@ -28,7 +28,7 @@ char *url_decode(const char *src, char *dstbuf);
 cell *do_term_variables(query *q, cell *p1, pl_idx p1_ctx);
 bool query_redo(query *q);
 bool has_next_key(query *q);
-void purge_dirty_list(query *q);
+void query_purge_dirty_list(query *q);
 bool check_slot(query *q, unsigned cnt);
 void cut(query *q);
 bool execute(query *q, cell *cells, unsigned nbr_vars);
