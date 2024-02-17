@@ -522,9 +522,6 @@ void pl_destroy(prolog *pl)
 	sl_destroy(pl->help);
 	free(pl->tabs);
 
-	if (!--g_tpl_count)
-		g_destroy();
-
 	for (int i = 0; i < MAX_STREAMS; i++) {
 		stream *str = &pl->streams[i];
 
@@ -544,17 +541,18 @@ void pl_destroy(prolog *pl)
 			}
 
 			parser_destroy(str->p);
-			str->p = NULL;
 			sl_destroy(str->alias);
-			free(str->mode);
 			free(str->filename);
+			free(str->mode);
 			free(str->data);
 		}
 	}
 
-	memset(pl->streams, 0, sizeof(pl->streams));
 	parser_destroy(pl->p);
 	free(pl);
+
+	if (!--g_tpl_count)
+		g_destroy();
 }
 
 prolog *pl_create()
