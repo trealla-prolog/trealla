@@ -626,16 +626,14 @@ prolog *pl_create()
 
 	if (!pl->system_m || pl->system_m->error) {
 		pl_destroy(pl);
-		pl = NULL;
-		return pl;
+		return NULL;
 	}
 
 	pl->user_m = module_create(pl, "user");
 
 	if (!pl->user_m || pl->user_m->error) {
 		pl_destroy(pl);
-		pl = NULL;
-		return pl;
+		return NULL;
 	}
 
 	init_lock(&pl->guard);

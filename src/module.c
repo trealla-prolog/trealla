@@ -384,12 +384,10 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 	if (c->val_off == g_neck_s)
 		return NULL;
 
-	acquire_lock(&m->guard);
 	builtins *b;
 
 	if (b = get_builtin_term(m, c, &found, &evaluable),
 		!evaluable && found && b->iso) {
-		release_lock(&m->guard);
 		return NULL;
 	}
 
@@ -399,6 +397,7 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 		pr = calloc(1, sizeof(predicate));
 		ensure(pr);
 
+		acquire_lock(&m->guard);
 		pr->prev = m->tail;
 
 		if (created)
@@ -423,6 +422,7 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 		return pr;
 	}
 
+#if 0
 	rule *r = pr->dirty_list;
 
 	while (r) {
@@ -434,8 +434,9 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 	}
 
 	pr->dirty_list = NULL;
+#endif
+
 	pr->is_abolished = false;
-	release_lock(&m->guard);
 	return pr;
 }
 
@@ -1616,17 +1617,14 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 
 rule *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting)
 {
-	acquire_lock(&m->guard);
 	predicate *pr;
 	rule *r;
 
 	do {
 		r = assert_begin(m, nbr_vars, nbr_temporaries, p1, consulting);
 
-		if (!r) {
-			release_lock(&m->guard);
+		if (!r)
 			return NULL;
-		}
 
 		pr = r->owner;
 
@@ -1635,6 +1633,7 @@ rule *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell
 	}
 	 while (!check_multifile(m, pr, r));
 
+	acquire_lock(&m->guard);
 	r->next = pr->head;
 	pr->head = r;
 
@@ -1652,17 +1651,14 @@ rule *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell
 
 rule *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting)
 {
-	acquire_lock(&m->guard);
 	predicate *pr;
 	rule *r;
 
 	do {
 		r = assert_begin(m, nbr_vars, nbr_temporaries, p1, consulting);
 
-		if (!r) {
-			release_lock(&m->guard);
+		if (!r)
 			return NULL;
-		}
 
 		pr = r->owner;
 
@@ -1671,6 +1667,7 @@ rule *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell
 	}
 	 while (!check_multifile(m, pr, r));
 
+	acquire_lock(&m->guard);
 	r->prev = pr->tail;
 	pr->tail = r;
 
@@ -2311,12 +2308,6 @@ module *module_create(prolog *pl, const char *name)
 		m = NULL;
 	}
 
-	init_lock(&m->guard);
-	acquire_lock(&pl->guard);
-	m->next = pl->modules;
-	pl->modules = m;
-	release_lock(&pl->guard);
-
 	set_discontiguous_in_db(m, "term_expansion", 2);
 	set_discontiguous_in_db(m, "goal_expansion", 2);
 
@@ -2329,5 +2320,10 @@ module *module_create(prolog *pl, const char *name)
 	set_dynamic_in_db(m, "$directive", 1);
 	set_dynamic_in_db(m, "$bb_key", 3);
 
+	init_lock(&m->guard);
+	acquire_lock(&pl->guard);
+	m->next = pl->modules;
+	pl->modules = m;
+	release_lock(&pl->guard);
 	return m;
 }
