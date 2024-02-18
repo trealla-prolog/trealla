@@ -455,7 +455,7 @@ struct predicate_ {
 	rule *dirty_list;
 	const char *filename;
 	cell *meta_args;
-	uint64_t cnt, refcnt, db_id;
+	pl_atomic uint64_t cnt, refcnt, db_id;
 	bool is_reload:1;
 	bool is_prebuilt:1;
 	bool is_public:1;
