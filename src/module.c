@@ -1438,8 +1438,6 @@ static void check_goal_expansion(module *m, cell *p1)
 	create_goal_expansion(m, arg1);
 }
 
-// Module must be locked to enter here...
-
 static rule *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting)
 {
 	cell *c = p1;
@@ -1543,8 +1541,6 @@ static rule *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_temporaries
 	return r;
 }
 
-// Module must be locked to enter here...
-
 static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 {
 	if (pr->db_id)
@@ -1617,6 +1613,7 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 
 rule *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting)
 {
+	acquire_lock(&m->guard);
 	predicate *pr;
 	rule *r;
 
@@ -1633,7 +1630,6 @@ rule *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell
 	}
 	 while (!check_multifile(m, pr, r));
 
-	acquire_lock(&m->guard);
 	r->next = pr->head;
 	pr->head = r;
 
@@ -1651,6 +1647,7 @@ rule *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell
 
 rule *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting)
 {
+	acquire_lock(&m->guard);
 	predicate *pr;
 	rule *r;
 
@@ -1667,7 +1664,6 @@ rule *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell
 	}
 	 while (!check_multifile(m, pr, r));
 
-	acquire_lock(&m->guard);
 	r->prev = pr->tail;
 	pr->tail = r;
 
@@ -1682,8 +1678,6 @@ rule *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell
 	release_lock(&m->guard);
 	return r;
 }
-
-// Module must be locked to enter here...
 
 static bool remove_from_predicate(module *m, predicate *pr, rule *r)
 {
