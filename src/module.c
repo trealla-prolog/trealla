@@ -1620,8 +1620,10 @@ rule *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell
 	do {
 		r = assert_begin(m, nbr_vars, nbr_temporaries, p1, consulting);
 
-		if (!r)
+		if (!r) {
+			release_lock(&m->guard);
 			return NULL;
+		}
 
 		pr = r->owner;
 
@@ -1654,8 +1656,10 @@ rule *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell
 	do {
 		r = assert_begin(m, nbr_vars, nbr_temporaries, p1, consulting);
 
-		if (!r)
+		if (!r) {
+			release_lock(&m->guard);
 			return NULL;
+		}
 
 		pr = r->owner;
 
@@ -1699,8 +1703,8 @@ static bool remove_from_predicate(module *m, predicate *pr, rule *r)
 
 void retract_from_db(module *m, rule *r)
 {
-	predicate *pr = r->owner;
 	acquire_lock(&m->guard);
+	predicate *pr = r->owner;
 
 	if (remove_from_predicate(m, pr, r)) {
 		r->dirty = pr->dirty_list;
