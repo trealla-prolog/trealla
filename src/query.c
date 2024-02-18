@@ -1832,7 +1832,7 @@ bool execute(query *q, cell *cells, unsigned nbr_vars)
 	return start(q);
 }
 
-void query_purge_dirty_list(query *q)
+static void query_purge_dirty_list(query *q)
 {
 	unsigned cnt = 0;
 
