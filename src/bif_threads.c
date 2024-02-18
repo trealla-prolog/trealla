@@ -747,8 +747,9 @@ static bool bif_thread_create_3(query *q)
 		nbr_cells += dup_cells(tmp2+nbr_cells, goal, goal->nbr_cells);
 		make_struct(tmp2+nbr_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 		make_call(q, tmp2+nbr_cells);
-		//DUMP_TERM("at_exit", tmp2, q->st.curr_frame, 0);
+		THREAD_DEBUG DUMP_TERM("at_exit", tmp2, q->st.curr_frame, 0);
 		t->at_exit = deep_clone_to_heap(t->q, tmp2, 0);	// Copy into thread
+		check_heap_error(t->at_exit);
 	}
 
 #ifdef _WIN32
@@ -788,6 +789,7 @@ void do_signal(query *q, void *thread_ptr)
 
 	release_lock(&t->guard);
 	try_me(q, MAX_ARITY);
+	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.fp, 0);
 	pl_idx c_ctx = 0;
 	cell *c = deep_copy_to_heap(q, m->c, q->st.fp, false);	// Copy into thread
 	unshare_cells(c, c->nbr_cells);
@@ -845,12 +847,10 @@ static bool bif_thread_join_2(query *q)
 		cell *tmp = deep_copy_to_heap(q, t->exit_code, q->st.fp, false);
 		t->exit_code = NULL;
 		unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
-		THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
 	} else {
 		cell tmp;
 		make_atom(&tmp, g_true_s);
 		unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
-		THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
 	}
 
 	stream_close(t->q, t->chan);

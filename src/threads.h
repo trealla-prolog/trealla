@@ -26,10 +26,10 @@ inline static void init_lock(lock *l)
 #ifdef _WIN32
     InitializeCriticalSection(&l->mutex);
 #else
-	pthread_mutexattr_t Attr;
-	pthread_mutexattr_init(&Attr);
-	pthread_mutexattr_settype(&Attr, PTHREAD_MUTEX_RECURSIVE);
-	pthread_mutex_init(&l->mutex, &Attr);
+	pthread_mutexattr_t attr;
+	pthread_mutexattr_init(&attr);
+	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+	pthread_mutex_init(&l->mutex, &attr);
 #endif
 }
 
