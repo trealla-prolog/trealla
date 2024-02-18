@@ -231,6 +231,7 @@ bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 			return throw_error(q, head, q->latest_ctx, "type_error", "callable");
 	}
 
+	acquire_lock(&q->st.m->guard);
 	bool match;
 
 	if (is_a_rule(p1) && get_logical_body(p1)) {
@@ -239,6 +240,8 @@ bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 		p1 = get_head(p1);
 		match = match_clause(q, p1, p1_ctx, is_retract);
 	}
+
+	release_lock(&q->st.m->guard);
 
 	if (!match || q->did_throw)
 		return match;
