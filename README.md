@@ -1143,7 +1143,7 @@ engines.
 	engine_destroy/1
 
 
-Multi-threading (Prolog queries)			##EXPERIMENTAL##
+Multi-threading (Prolog queries)
 ================================
 
 Start independent (shared state) Prolog queries as dedicated
