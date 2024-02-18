@@ -396,8 +396,6 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 	if (!pr) {
 		pr = calloc(1, sizeof(predicate));
 		ensure(pr);
-
-		acquire_lock(&m->guard);
 		pr->prev = m->tail;
 
 		if (created)
@@ -418,7 +416,6 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 		pr->key.nbr_cells = 1;
 		pr->is_noindex = m->pl->noindex || !pr->key.arity;
 		sl_app(m->index, &pr->key, pr);
-		release_lock(&m->guard);
 		return pr;
 	}
 
@@ -1613,17 +1610,14 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 
 rule *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting)
 {
-	acquire_lock(&m->guard);
 	predicate *pr;
 	rule *r;
 
 	do {
 		r = assert_begin(m, nbr_vars, nbr_temporaries, p1, consulting);
 
-		if (!r) {
-			release_lock(&m->guard);
+		if (!r)
 			return NULL;
-		}
 
 		pr = r->owner;
 
@@ -1643,23 +1637,19 @@ rule *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell
 	if (!consulting && !pr->idx)
 		pr->is_processed = false;
 
-	release_lock(&m->guard);
 	return r;
 }
 
 rule *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting)
 {
-	acquire_lock(&m->guard);
 	predicate *pr;
 	rule *r;
 
 	do {
 		r = assert_begin(m, nbr_vars, nbr_temporaries, p1, consulting);
 
-		if (!r) {
-			release_lock(&m->guard);
+		if (!r)
 			return NULL;
-		}
 
 		pr = r->owner;
 
@@ -1679,7 +1669,6 @@ rule *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell
 	if (!consulting && !pr->idx)
 		pr->is_processed = false;
 
-	release_lock(&m->guard);
 	return r;
 }
 
@@ -1703,15 +1692,12 @@ static bool remove_from_predicate(module *m, predicate *pr, rule *r)
 
 void retract_from_db(module *m, rule *r)
 {
-	acquire_lock(&m->guard);
 	predicate *pr = r->owner;
 
 	if (remove_from_predicate(m, pr, r)) {
 		r->dirty = pr->dirty_list;
 		pr->dirty_list = r;
 	}
-
-	release_lock(&m->guard);
 }
 
 static void xref_cell(module *m, clause *cl, cell *c, int last_was_colon, bool is_directive)
@@ -1845,8 +1831,6 @@ module *load_text(module *m, const char *src, const char *filename)
 
 static bool unload_realfile(module *m, const char *filename)
 {
-	acquire_lock(&m->guard);
-
 	for (predicate *pr = m->head; pr; pr = pr->next) {
 		if (pr->filename && strcmp(pr->filename, filename))
 			continue;
@@ -1877,7 +1861,6 @@ static bool unload_realfile(module *m, const char *filename)
 	}
 
 	set_unloaded(m, filename);
-	release_lock(&m->guard);
 	return true;
 }
 
@@ -2319,9 +2302,7 @@ module *module_create(prolog *pl, const char *name)
 	set_dynamic_in_db(m, "$bb_key", 3);
 
 	init_lock(&m->guard);
-	acquire_lock(&pl->guard);
 	m->next = pl->modules;
 	pl->modules = m;
-	release_lock(&pl->guard);
 	return m;
 }
