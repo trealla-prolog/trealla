@@ -561,6 +561,8 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 				canonical = true;
 			} else if (ch == 'q') {
 				quoted = true;
+			} else if (ch == 'p') {
+				q->portray_vars = true;
 			}
 
 			if (quoted)
