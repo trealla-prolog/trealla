@@ -593,9 +593,9 @@ static void *start_routine_thread_create(pl_thread *t)
 
 	t->is_exception = t->q->did_unhandled_excpetion;
 	t->finished = true;
+	do_unlock_all();
 
 	if (!t->is_detached) {
-		do_unlock_all();
 		return 0;
 	}
 
@@ -622,7 +622,6 @@ static void *start_routine_thread_create(pl_thread *t)
 	t->signal_tail = t->queue_tail = NULL;
 	t->active = false;
 	release_lock(&t->guard);
-	do_unlock_all();
     return 0;
 }
 
