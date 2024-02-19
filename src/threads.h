@@ -11,8 +11,6 @@
 #include <unistd.h>
 #endif
 
-void thread_initialize(prolog *pl);
-
 typedef struct {
 #ifdef _WIN32
     CRITICAL_SECTION mutex;

@@ -11,6 +11,7 @@ void load_builtins(prolog *pl);
 void uuid_gen(prolog *pl, uuid *u);
 void keyvalfree(const void *key, const void *val, const void *p);
 void ptrfree(const void *key, const void *val, const void *p);
+void thread_initialize(prolog *pl);
 
 #define MAX_PIDS 64
 
