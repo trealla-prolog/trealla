@@ -1945,6 +1945,7 @@ void query_destroy(query *q)
 	free(q->slots);
 	free(q->frames);
 	free(q->tmp_heap);
+	q->pl->q_cnt--;
 	free(q);
 }
 
@@ -1956,6 +1957,7 @@ query *query_create(module *m, bool is_task)
 	q->flags.occurs_check = false;
 	q->qid = g_query_id++;
 	q->pl = m->pl;
+	q->pl->q_cnt++;
 	q->st.m = m;
 	q->trace = m->pl->trace;
 	q->flags = m->flags;

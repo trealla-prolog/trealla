@@ -549,10 +549,17 @@ void pl_destroy(prolog *pl)
 	}
 
 	parser_destroy(pl->p);
-	free(pl);
 
 	if (!--g_tpl_count)
 		g_destroy();
+
+	if (pl->q_cnt) {
+		printf("*** Oops, outstanding queries: %u\n", (unsigned)pl->q_cnt);
+		sleep(1);
+	}
+
+	if (!pl->q_cnt)
+		free(pl);
 }
 
 prolog *pl_create()

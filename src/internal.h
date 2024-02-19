@@ -835,7 +835,7 @@ struct prolog_ {
 	lock guard;
 	size_t tabs_size;
 	uint64_t s_last, s_cnt, seed, str_cnt;
-	pl_atomic uint64_t dbgen;
+	pl_atomic uint64_t q_cnt, dbgen;
 	unsigned next_mod_id, def_max_depth, my_chan;
 	unsigned current_input, current_output, current_error;
 	pl_uint rnd_seed;
