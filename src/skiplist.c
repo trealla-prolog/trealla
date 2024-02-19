@@ -41,6 +41,7 @@ struct skiplist_ {
 	sliter tmp_iter;
 	sliter *iters;
 	size_t count;
+	lock guard;
 	int level;
 	unsigned seed;
 	bool is_tmp_list, wild_card, is_find;
@@ -66,6 +67,7 @@ skiplist *sl_create(int (*cmpkey)(const void*, const void*, const void*, void *)
 	skiplist *l = (skiplist*)calloc(1, sizeof(struct skiplist_));
 	if (!l) return NULL;
 
+	init_lock(&l->guard);
 	l->header = new_node_of_level(MAX_LEVELS);
 	if (!l->header) {
 		free(l);
@@ -123,6 +125,7 @@ void sl_destroy(skiplist *l)
 		free(iter);
 	}
 
+	deinit_lock(&l->guard);
 	free(l);
 }
 
@@ -499,8 +502,10 @@ sliter *sl_first(skiplist *l)
 		iter = malloc(sizeof(sliter));
 		if (!iter) return NULL;
 	} else {
+		acquire_lock(&l->guard);
 		iter = l->iters;
 		l->iters = iter->next;
+		release_lock(&l->guard);
 	}
 
 	iter->key = NULL;
@@ -649,8 +654,10 @@ sliter *sl_find_key(skiplist *l, const void *key)
 		iter = malloc(sizeof(sliter));
 		if (!iter) return NULL;
 	} else {
+		acquire_lock(&l->guard);
 		iter = l->iters;
 		l->iters = iter->next;
+		release_lock(&l->guard);
 	}
 
 	iter->key = key;
@@ -735,8 +742,10 @@ void sl_done(sliter *iter)
 	skiplist *l = iter->l;
 
 	if (!l->is_tmp_list) {
+		acquire_lock(&l->guard);
 		iter->next = l->iters;
 		l->iters = iter;
+		release_lock(&l->guard);
 	}
 
 	if (l->is_tmp_list)
