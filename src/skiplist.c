@@ -125,6 +125,7 @@ void sl_destroy(skiplist *l)
 		free(iter);
 	}
 
+	deinit_lock(&l->guard);
 	free(l);
 }
 
