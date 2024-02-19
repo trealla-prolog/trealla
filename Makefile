@@ -1,4 +1,4 @@
-GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
+utGIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
 
 CFLAGS = -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' \
 	-O3 $(OPT) -D_GNU_SOURCE \
@@ -308,6 +308,7 @@ src/query.o: src/query.c src/threads.h src/heap.h src/internal.h src/trealla.h s
  src/sre/re.h src/skiplist.h src/utf8.h src/module.h \
  src/network.h src/parser.h src/prolog.h src/query.h src/builtins.h \
  src/bif_atts.h
+src/skiplist.o: src/skiplist.c src/threads.h src/skiplist.h
 src/terms.o: src/terms.c src/threads.h src/heap.h src/internal.h src/trealla.h src/cdebug.h \
  src/stringbuf.h src/imath/imath.h src/imath/imrat.h src/imath/imath.h \
  src/sre/re.h src/skiplist.h src/utf8.h src/query.h \
@@ -321,4 +322,5 @@ src/unify.o: src/unify.c src/threads.h src/heap.h src/internal.h src/trealla.h s
  src/stringbuf.h src/imath/imath.h src/imath/imrat.h src/imath/imath.h \
  src/sre/re.h src/skiplist.h src/utf8.h src/query.h \
  src/parser.h src/builtins.h
+src/utf8.o: src/utf8.c src/utf8.h
 src/version.o: src/version.c
