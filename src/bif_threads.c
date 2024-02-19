@@ -451,6 +451,31 @@ static bool bif_thread_peek_message_2(query *q)
 	return ok;
 }
 
+static void do_unlock_all()
+{
+#ifdef _WIN32
+	HANDLE id = (void*)GetCurrentThreadId();
+#else
+	pthread_t id = pthread_self();
+#endif
+
+	pl_thread *me = get_self();
+
+	for (unsigned i = 0; i < MAX_STREAMS; i++) {
+		pl_thread *t = &g_pl_threads[i];
+
+		if (!t->active)
+			continue;
+
+		if (t != me)
+			continue;
+
+		release_lock(&t->guard);
+		t->locked_by = -1;
+		t->locks = 0;
+	}
+}
+
 static void *start_routine_thread(pl_thread *t)
 {
 	prolog *pl = pl_create();
@@ -569,13 +594,14 @@ static void *start_routine_thread_create(pl_thread *t)
 	t->is_exception = t->q->did_unhandled_excpetion;
 	t->finished = true;
 
-	if (!t->is_detached)
+	if (!t->is_detached) {
+		do_unlock_all();
 		return 0;
+	}
 
 	stream_close(t->q, t->chan);
 	query_destroy(t->q);
 	t->q = NULL;
-
 	acquire_lock(&t->guard);
 
 	while (t->queue_head) {
@@ -596,6 +622,7 @@ static void *start_routine_thread_create(pl_thread *t)
 	t->signal_tail = t->queue_tail = NULL;
 	t->active = false;
 	release_lock(&t->guard);
+	do_unlock_all();
     return 0;
 }
 
@@ -1874,29 +1901,7 @@ static bool bif_mutex_unlock_1(query *q)
 static bool bif_mutex_unlock_all_0(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
-
-#ifdef _WIN32
-	HANDLE id = (void*)GetCurrentThreadId();
-#else
-	pthread_t id = pthread_self();
-#endif
-
-	pl_thread *me = get_self();
-
-	for (unsigned i = 0; i < MAX_STREAMS; i++) {
-		pl_thread *t = &g_pl_threads[i];
-
-		if (!t->active)
-			continue;
-
-		if (t != me)
-			continue;
-
-		release_lock(&t->guard);
-		t->locked_by = -1;
-		t->locks = 0;
-	}
-
+	do_unlock_all();
 	return true;
 }
 
