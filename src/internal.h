@@ -52,7 +52,7 @@ typedef uint32_t pl_idx;
 #include "imath/imrat.h"
 #include "sre/re.h"
 #include "skiplist.h"
-#include "utf8/utf8.h"
+#include "utf8.h"
 
 #if defined(_WIN32) || defined(__wasi__)
 char *realpath(const char *path, char resolved_path[PATH_MAX]);
