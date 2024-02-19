@@ -862,6 +862,8 @@ static bool bif_thread_join_2(query *q)
 		return throw_error(q, p1, p1_ctx, "permission_error", "join,not_thread");
 
 #ifdef _WIN32
+	if (WaitForSingleObject(t->id, INFINITE) == WAIT_FAILED)
+		return false;
 #else
 	void *retval;
 
