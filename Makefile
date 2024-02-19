@@ -1,4 +1,4 @@
-utGIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
+GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
 
 CFLAGS = -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' \
 	-O3 $(OPT) -D_GNU_SOURCE \
@@ -101,7 +101,8 @@ SRCOBJECTS = tpl.o \
 	src/terms.o \
 	src/toplevel.o \
 	src/unify.o \
-	src/utf8.o
+	src/utf8.o \
+	src/version.o
 
 LIBOBJECTS +=  \
 	library/abnf.o \
@@ -149,7 +150,7 @@ ifdef ISOCLINE
 SRCOBJECTS += src/isocline/src/isocline.o
 endif
 
-OBJECTS = $(SRCOBJECTS) $(LIBOBJECTS) src/version.o
+OBJECTS = $(SRCOBJECTS) $(LIBOBJECTS)
 
 library/%.c: library/%.pl
 	echo '#include <stddef.h>' > $@
@@ -323,4 +324,3 @@ src/unify.o: src/unify.c src/threads.h src/heap.h src/internal.h src/trealla.h s
  src/sre/re.h src/skiplist.h src/utf8.h src/query.h \
  src/parser.h src/builtins.h
 src/utf8.o: src/utf8.c src/utf8.h
-src/version.o: src/version.c
