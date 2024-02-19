@@ -550,6 +550,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 		case 'q':
 		case 'w':
 		case 'a':
+		case 'p':
 		{
 			int saveq = q->quoted;
 			bool canonical = false, quoted = false;

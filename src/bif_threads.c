@@ -326,8 +326,7 @@ static bool bif_thread_send_message_2(query *q)
 	GET_NEXT_ARG(p2,any);
 	int chan = get_stream(q, p1);
 	if (chan < 0) return true;
-	bool ok = do_send_message(q, chan, p2, p2_ctx, false);
-	return ok;
+	return do_send_message(q, chan, p2, p2_ctx, false);
 }
 
 static pl_thread *get_self()
