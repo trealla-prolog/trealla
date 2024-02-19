@@ -51,7 +51,7 @@ typedef uint32_t pl_idx;
 #include "imath/imath.h"
 #include "imath/imrat.h"
 #include "sre/re.h"
-#include "skiplist/skiplist.h"
+#include "skiplist.h"
 #include "utf8/utf8.h"
 
 #if defined(_WIN32) || defined(__wasi__)
