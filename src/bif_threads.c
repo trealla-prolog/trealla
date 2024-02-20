@@ -42,7 +42,7 @@ typedef struct pl_thread_ pl_thread;
 struct pl_thread_ {
 	const char *filename;
 	query *q;
-	cell *goal, *exit_code, *at_exit;
+	cell *goal, *exit_code, *at_exit, *ball;
 	msg *queue_head, *queue_tail;
 	msg *signal_head, *signal_tail;
 	unsigned nbr_vars, at_exit_nbr_vars, locks;
@@ -584,13 +584,22 @@ static bool bif_pl_thread_3(query *q)
 static void *start_routine_thread_create(pl_thread *t)
 {
 	execute(t->q, t->goal, t->nbr_vars);
+	t->is_exception = t->q->did_unhandled_exception;
+
+	if (t->is_exception) {
+		//printf("*** exception, %u\n", t->chan);
+		t->ball = calloc(1, (sizeof(cell)*(t->q->ball->nbr_cells)));
+		dup_cells(t->ball, t->q->ball, t->q->ball->nbr_cells);
+		//query *q = t->q;
+		//DUMP_TERM("*** ", t->ball, 0, 0);
+	}
 
 	if (t->at_exit) {
+		//printf("*** at exit, %u\n", t->chan);
 		execute(t->q, t->at_exit, t->at_exit_nbr_vars);
 		t->at_exit = NULL;
 	}
 
-	t->is_exception = t->q->did_unhandled_excpetion;
 	t->finished = true;
 	do_unlock_all();
 
@@ -1119,18 +1128,18 @@ static bool do_thread_property_pin_both(query *q)
 		make_atom(tmp+1, t->is_detached?g_true_s:g_false_s);
 		return unify(q, c, c_ctx, tmp, q->st.curr_frame);
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "status")) {
+		if (t->is_exception) {
+			cell *tmp = alloc_on_heap(q, 2+t->ball->nbr_cells);
+			make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 1+t->ball->nbr_cells);
+			make_struct(tmp+1, new_atom(q->pl, "exception"), NULL, 1, t->ball->nbr_cells);
+			dup_cells(tmp+2, t->ball, t->ball->nbr_cells);
+			return unify(q, c, c_ctx, tmp, q->st.curr_frame);
+		}
+
 		if (!t->finished) {
 			cell *tmp = alloc_on_heap(q, 2);
 			make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
 			make_atom(tmp+1, new_atom(q->pl, "running"));
-			return unify(q, c, c_ctx, tmp, q->st.curr_frame);
-		}
-
-		if (t->is_exception) {
-			cell *tmp = alloc_on_heap(q, 2+t->q->ball->nbr_cells);
-			make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 1+t->q->ball->nbr_cells);
-			make_struct(tmp+1, new_atom(q->pl, "exception"), NULL, 1, t->q->ball->nbr_cells);
-			dup_cells(tmp+2, t->q->ball, t->q->ball->nbr_cells);
 			return unify(q, c, c_ctx, tmp, q->st.curr_frame);
 		}
 
@@ -1227,18 +1236,18 @@ static bool do_thread_property_pin_id(query *q)
 		make_atom(tmp+1, t->is_detached?g_true_s:g_false_s);
 		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 	} else {
+		if (t->is_exception) {
+			cell *tmp = alloc_on_heap(q, 2+t->ball->nbr_cells);
+			make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 1+t->ball->nbr_cells);
+			make_struct(tmp+1, new_atom(q->pl, "exception"), NULL, 1, t->ball->nbr_cells);
+			dup_cells(tmp+2, t->ball, t->ball->nbr_cells);
+			return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+		}
+
 		if (!t->finished) {
 			cell *tmp = alloc_on_heap(q, 2);
 			make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
 			make_atom(tmp+1, new_atom(q->pl, "running"));
-			return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
-		}
-
-		if (t->is_exception) {
-			cell *tmp = alloc_on_heap(q, 2+t->q->ball->nbr_cells);
-			make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 1+t->q->ball->nbr_cells);
-			make_struct(tmp+1, new_atom(q->pl, "exception"), NULL, 1, t->q->ball->nbr_cells);
-			dup_cells(tmp+2, t->q->ball, t->q->ball->nbr_cells);
 			return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 		}
 

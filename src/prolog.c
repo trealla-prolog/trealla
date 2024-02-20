@@ -553,9 +553,11 @@ void pl_destroy(prolog *pl)
 	if (!--g_tpl_count)
 		g_destroy();
 
+#if 0
 	if (pl->q_cnt && isatty(fileno(stdout))) {
 		printf("*** Oops, outstanding queries/threads: %u\n", (unsigned)pl->q_cnt);
 	}
+#endif
 
 	if (!pl->q_cnt)
 		free(pl);

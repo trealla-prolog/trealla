@@ -646,7 +646,7 @@ static bool find_exception_handler(query *q, char *ball)
 
 	cell *e = parse_to_heap(q, ball);
 	pl_idx e_ctx = q->st.curr_frame;
-	q->did_unhandled_excpetion = true;
+	q->did_unhandled_exception = true;
 
 	if (!strcmp(C_STR(q, e+1), "$aborted")) {
 		fprintf(stdout, "%% Execution aborted\n");
