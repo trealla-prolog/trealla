@@ -654,6 +654,9 @@ static bool find_exception_handler(query *q, char *ball)
 		q->ball = NULL;
 		q->error = true;
 		return false;
+	} else {
+		q->ball = deep_clone_to_heap(q, e, e_ctx);
+		rebase_term(q, q->ball, 0);
 	}
 
 	if (!q->thread_ptr) {
@@ -687,7 +690,6 @@ static bool find_exception_handler(query *q, char *ball)
 	}
 
 	q->pl->did_dump_vars = true;
-	q->ball = NULL;
 	//q->error = true;
 	q->abort = true;
 	return false;

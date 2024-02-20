@@ -1127,10 +1127,10 @@ static bool do_thread_property_pin_both(query *q)
 		}
 
 		if (t->is_exception) {
-			cell *tmp = alloc_on_heap(q, 3);
-			make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 2);
-			make_struct(tmp+1, new_atom(q->pl, "exception"), NULL, 1, 1);
-			make_atom(tmp+2, g_true_s);
+			cell *tmp = alloc_on_heap(q, 2+t->q->ball->nbr_cells);
+			make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 1+t->q->ball->nbr_cells);
+			make_struct(tmp+1, new_atom(q->pl, "exception"), NULL, 1, t->q->ball->nbr_cells);
+			dup_cells(tmp+2, t->q->ball, t->q->ball->nbr_cells);
 			return unify(q, c, c_ctx, tmp, q->st.curr_frame);
 		}
 
@@ -1235,10 +1235,10 @@ static bool do_thread_property_pin_id(query *q)
 		}
 
 		if (t->is_exception) {
-			cell *tmp = alloc_on_heap(q, 3);
-			make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 2);
-			make_struct(tmp+1, new_atom(q->pl, "exception"), NULL, 1, 1);
-			make_atom(tmp+2, g_true_s);
+			cell *tmp = alloc_on_heap(q, 2+t->q->ball->nbr_cells);
+			make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 1+t->q->ball->nbr_cells);
+			make_struct(tmp+1, new_atom(q->pl, "exception"), NULL, 1, t->q->ball->nbr_cells);
+			dup_cells(tmp+2, t->q->ball, t->q->ball->nbr_cells);
 			return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 		}
 
