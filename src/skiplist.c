@@ -177,7 +177,7 @@ static int random_level(unsigned *seedp)
 
 bool sl_get(skiplist *l, const void *key, const void **val)
 {
-	if (!l)
+	if (!l || l->destroyed)
 		return false;
 
 	int k;
@@ -210,7 +210,7 @@ bool sl_get(skiplist *l, const void *key, const void **val)
 
 bool sl_set(skiplist *l, const void *key, const void *val)
 {
-	if (!l)
+	if (!l || l->destroyed)
 		return false;
 
 	sl_del(l, key);
@@ -291,7 +291,7 @@ bool sl_set(skiplist *l, const void *key, const void *val)
 
 bool sl_app(skiplist *l, const void *key, const void *val)
 {
-	if (!l)
+	if (!l || l->destroyed)
 		return false;
 
 	slnode_t *update[MAX_LEVELS];
@@ -371,7 +371,7 @@ bool sl_app(skiplist *l, const void *key, const void *val)
 
 bool sl_del(skiplist *l, const void *key)
 {
-	if (!l)
+	if (!l || l->destroyed)
 		return false;
 
 	int k, m;
@@ -433,7 +433,7 @@ bool sl_del(skiplist *l, const void *key)
 
 void sl_iterate(const skiplist *l, int (*f)(const void*, const void*, const void*), const void *p1)
 {
-	if (!l)
+	if (!l || l->destroyed)
 		return;
 
 	slnode_t *p;
@@ -454,7 +454,7 @@ void sl_iterate(const skiplist *l, int (*f)(const void*, const void*, const void
 
 void sl_find(skiplist *l, const void *key, int (*f)(const void*, const void*, const void*), const void *p1)
 {
-	if (!l)
+	if (!l || l->destroyed)
 		return;
 
 	slnode_t *p, *q = 0;
@@ -491,7 +491,7 @@ void sl_find(skiplist *l, const void *key, int (*f)(const void*, const void*, co
 
 sliter *sl_first(skiplist *l)
 {
-	if (!l)
+	if (!l || l->destroyed)
 		return NULL;
 
 	sliter *iter;
@@ -591,7 +591,7 @@ void *sl_key(sliter *iter)
 
 void sl_remove(skiplist *l, const void *v)
 {
-	if (!l)
+	if (!l || l->destroyed)
 		return;
 
 	slnode_t *p;
@@ -621,7 +621,7 @@ void sl_remove(skiplist *l, const void *v)
 
 sliter *sl_find_key(skiplist *l, const void *key)
 {
-	if (!l)
+	if (!l || l->destroyed)
 		return NULL;
 
 	slnode_t *p, *q = 0;
@@ -755,7 +755,7 @@ void sl_done(sliter *iter)
 
 void sl_dump(const skiplist *l, const char *(*f)(const void*, const void*, const void*), const void *p1)
 {
-	if (!l)
+	if (!l || l->destroyed)
 		return;
 
     const slnode_t *p, *q;
