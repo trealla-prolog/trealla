@@ -559,7 +559,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 
 			if (ch == 'k') {
 				canonical = true;
-			} else if (ch == 'q') {
+			} else if ((ch == 'q') ||(ch == 'p')) {
 				quoted = true;
 			}
 
