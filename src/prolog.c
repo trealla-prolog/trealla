@@ -559,8 +559,7 @@ void pl_destroy(prolog *pl)
 	}
 #endif
 
-	if (!pl->q_cnt)
-		free(pl);
+	free(pl);
 }
 
 prolog *pl_create()

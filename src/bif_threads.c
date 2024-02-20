@@ -356,13 +356,13 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 	pl_thread *t = &g_pl_threads[chan];
 	pl_thread *me = get_self();
 
-	while (!q->pl->halt) {
+	while (!q->halt) {
 		if (is_peek && !t->queue_head)
 			return false;
 
 		uint64_t cnt = 0;
 
-		while (!t->queue_head && !q->pl->halt) {
+		while (!t->queue_head && !q->halt) {
 			suspend_thread(me, cnt < 100 ? 0 : cnt < 1000 ? 1 : cnt < 10000 ? 10 : 100);
 			cnt++;
 		}
