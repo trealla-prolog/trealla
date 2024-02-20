@@ -44,7 +44,7 @@ struct skiplist_ {
 	lock guard;
 	int level;
 	unsigned seed;
-	bool is_tmp_list, wild_card, is_find;
+	bool is_tmp_list, wild_card, is_find, destroyed;
 };
 
 #define MAX_LEVELS 16
@@ -125,6 +125,7 @@ void sl_destroy(skiplist *l)
 		free(iter);
 	}
 
+	l->destroyed = true;
 	deinit_lock(&l->guard);
 	free(l);
 }
