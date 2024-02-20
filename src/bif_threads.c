@@ -626,6 +626,12 @@ static void *start_routine_thread_create(pl_thread *t)
 		free(save);
 	}
 
+	if (t->ball) {
+		unshare_cells(t->ball, t->ball->nbr_cells);
+		free(t->ball);
+		t->ball = NULL;
+	}
+
 	t->signal_head = t->queue_head = NULL;
 	t->signal_tail = t->queue_tail = NULL;
 	t->active = false;
@@ -908,6 +914,12 @@ static bool bif_thread_join_2(query *q)
 		free(save);
 	}
 
+	if (t->ball) {
+		unshare_cells(t->ball, t->ball->nbr_cells);
+		free(t->ball);
+		t->ball = NULL;
+	}
+
 	t->signal_head = t->queue_head = NULL;
 	t->signal_tail = t->queue_tail = NULL;
 	t->active = false;
@@ -961,6 +973,12 @@ static bool bif_thread_cancel_1(query *q)
 		t->signal_head = t->signal_head->next;
 		unshare_cells(save->c, save->c->nbr_cells);
 		free(save);
+	}
+
+	if (t->ball) {
+		unshare_cells(t->ball, t->ball->nbr_cells);
+		free(t->ball);
+		t->ball = NULL;
 	}
 
 	t->signal_head = t->queue_head = NULL;
