@@ -507,13 +507,6 @@ void pl_destroy(prolog *pl)
 {
 	if (!pl) return;
 
-	pl->halt = true;
-
-#if USE_THREADS
-	if (pl->q_cnt)
-		sleep(1);
-#endif
-
 	if (pl->logfp)
 		fclose(pl->logfp);
 
