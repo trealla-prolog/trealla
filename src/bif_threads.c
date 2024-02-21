@@ -2260,7 +2260,6 @@ static bool bif_pl_recv_2(query *q)
 	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
-#endif
 
 void thread_cancel_all(prolog *pl)
 {
@@ -2277,6 +2276,7 @@ void thread_cancel_all(prolog *pl)
 		do_cancel(t);
 	}
 }
+#endif
 
 builtins g_threads_bifs[] =
 {
