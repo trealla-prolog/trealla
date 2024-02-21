@@ -41,6 +41,7 @@ typedef struct pl_thread_ pl_thread;
 
 struct pl_thread_ {
 	const char *filename;
+	prolog *pl;
 	query *q;
 	cell *goal, *exit_code, *at_exit, *ball;
 	msg *queue_head, *queue_tail;
@@ -717,6 +718,7 @@ static bool bif_thread_create_3(query *q)
 	}
 
 	pl_thread *t = &g_pl_threads[n];
+	t->pl = q->pl;
 	t->chan = n;
 	t->active = true;
 	t->is_queue_only = false;
@@ -928,27 +930,9 @@ static bool bif_thread_join_2(query *q)
 	return true;
 }
 
-static bool bif_thread_cancel_1(query *q)
+static void do_cancel(pl_thread *t)
 {
-	THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
-	GET_FIRST_ARG(p1,thread);
-	int chan = get_stream(q, p1);
-	if (chan < 0) return true;
-
-	if (chan == 0)
-		return throw_error(q, p1, p1_ctx, "permission_error", "detach,thread,main");
-
-	pl_thread *t = &g_pl_threads[chan];
-
-	if (!is_thread_only(t))
-		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,not_thread");
-
-	t->q->halt_code = 0;
-	t->q->halt = t->q->error = true;
-	msleep(10);
-
-	if (!t->active)
-		return true;
+	acquire_lock(&t->guard);
 
 #ifdef _WIN32
 	DWORD exit_code;
@@ -959,7 +943,7 @@ static bool bif_thread_cancel_1(query *q)
 
 	stream_close(t->q, t->chan);
 	query_destroy(t->q);
-	acquire_lock(&t->guard);
+	t->active = false;
 
 	while (t->queue_head) {
 		msg *save = t->queue_head;
@@ -983,9 +967,26 @@ static bool bif_thread_cancel_1(query *q)
 
 	t->signal_head = t->queue_head = NULL;
 	t->signal_tail = t->queue_tail = NULL;
-	t->active = false;
 	t->q = NULL;
 	release_lock(&t->guard);
+}
+
+static bool bif_thread_cancel_1(query *q)
+{
+	THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
+	GET_FIRST_ARG(p1,thread);
+	int chan = get_stream(q, p1);
+	if (chan < 0) return true;
+
+	if (chan == 0)
+		return throw_error(q, p1, p1_ctx, "permission_error", "detach,thread,main");
+
+	pl_thread *t = &g_pl_threads[chan];
+
+	if (!is_thread_only(t))
+		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,not_thread");
+
+	do_cancel(t);
 	return true;
 }
 
@@ -1407,6 +1408,7 @@ static bool bif_message_queue_create_2(query *q)
 	}
 
 	pl_thread *t = &g_pl_threads[n];
+	t->pl = q->pl;
 	t->chan = n;
 	t->active = true;
 	t->is_queue_only = true;
@@ -1695,6 +1697,7 @@ static bool bif_mutex_create_2(query *q)
 		if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 		sl_set(str->alias, DUP_STRING(q, p1), NULL);
 		pl_thread *t = &g_pl_threads[n];
+		t->pl = q->pl;
 		t->chan = n;
 		t->active = true;
 		t->is_mutex_only = true;
@@ -1762,6 +1765,7 @@ static bool bif_mutex_create_2(query *q)
 	}
 
 	pl_thread *t = &g_pl_threads[n];
+	t->pl = q->pl;
 	t->chan = n;
 	t->active = true;
 	t->is_mutex_only = true;
@@ -2257,6 +2261,22 @@ static bool bif_pl_recv_2(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 #endif
+
+void thread_cancel_all(prolog *pl)
+{
+
+	for (unsigned i = 0; i < MAX_STREAMS; i++) {
+		pl_thread *t = &g_pl_threads[i];
+
+		if (!is_thread_only(t) || !t->active)
+			continue;
+
+		if (t->pl != pl)
+			continue;
+
+		do_cancel(t);
+	}
+}
 
 builtins g_threads_bifs[] =
 {
