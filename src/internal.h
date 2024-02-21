@@ -106,7 +106,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_float(c) ((c)->tag == TAG_DOUBLE)
 #define is_rational(c) ((c)->tag == TAG_RATIONAL)
 #define is_indirect(c) ((c)->tag == TAG_INDIRECT)
-#define is_dbref(c) ((c)->tag == TAG_DBREF)
+#define is_dbid(c) ((c)->tag == TAG_DBID)
 #define is_blob(c) ((c)->tag == TAG_BLOB)
 #define is_end(c) ((c)->tag == TAG_END)
 
@@ -260,7 +260,7 @@ enum {
 	TAG_RATIONAL=6,
 	TAG_INDIRECT=7,
 	TAG_BLOB=8,
-	TAG_DBREF=9,
+	TAG_DBID=9,
 	TAG_END=10
 };
 
@@ -878,7 +878,7 @@ inline static void share_cell_(const cell *c)
 		(c)->val_bigint->refcnt++;
 	else if (is_blob(c))
 		(c)->val_blob->refcnt++;
-	else if (is_dbref(c))
+	else if (is_dbid(c))
 		(c)->val_blob->refcnt++;
 }
 
@@ -908,7 +908,7 @@ inline static void unshare_cell_(cell *c)
 			free((c)->val_blob);
 			c->flags = 0;
 		}
-	} else if (is_dbref(c)) {
+	} else if (is_dbid(c)) {
 		if (--c->val_blob->refcnt == 0) {
 			module *m = (module*)c->val_blob->ptr;
 			char *ref = (char*)c->val_blob->ptr2;

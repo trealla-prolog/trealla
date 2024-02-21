@@ -284,7 +284,7 @@ void make_blob(cell *tmp, void *ptr)
 void make_dbref(cell *tmp, void *ptr)
 {
 	*tmp = (cell){0};
-	tmp->tag = TAG_DBREF;
+	tmp->tag = TAG_DBID;
 	tmp->flags = FLAG_MANAGED;
 	tmp->nbr_cells = 1;
 	tmp->val_blob = ptr;
