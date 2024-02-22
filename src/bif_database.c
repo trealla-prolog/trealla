@@ -261,8 +261,10 @@ bool bif_iso_retract_1(query *q)
 		cell *cm = deref(q, p1, p1_ctx);
 		module *m = find_module(q->pl, C_STR(q, cm));
 
-		if (!m)
+		if (!m) {
+			release_lock(&q->st.m->guard);
 			return throw_error(q, cm, p1_ctx, "existence_error", "module");
+		}
 
 		p1 += p1->nbr_cells;
 	}
@@ -282,8 +284,10 @@ bool bif_iso_retractall_1(query *q)
 		cell *cm = deref(q, p1, p1_ctx);
 		module *m = find_module(q->pl, C_STR(q, cm));
 
-		if (!m)
+		if (!m) {
+			release_lock(&q->st.m->guard);
 			return throw_error(q, cm, p1_ctx, "existence_error", "module");
+		}
 
 		p1 += p1->nbr_cells;
 	}
@@ -292,6 +296,7 @@ bool bif_iso_retractall_1(query *q)
 	predicate *pr = search_predicate(q->st.m, head, NULL);
 
 	if (!pr) {
+		release_lock(&q->st.m->guard);
 		bool found = false;
 
 		if (get_builtin_term(q->st.m, head, &found, NULL), found)
@@ -301,7 +306,11 @@ bool bif_iso_retractall_1(query *q)
 	}
 
 	while (do_retract(q, p1, p1_ctx, DO_RETRACTALL)) {
-		if (q->did_throw) return true;
+		if (q->did_throw) {
+			release_lock(&q->st.m->guard);
+			return true;
+		}
+
 		q->retry = QUERY_RETRY;
 		q->tot_backtracks++;
 		retry_choice(q);
@@ -386,7 +395,6 @@ bool bif_iso_abolish_1(query *q)
 	if (get_smallint(p1_arity) > MAX_ARITY)
 		return throw_error(q, p1_arity, p1_ctx, "representation_error", "max_arity");
 
-	acquire_lock(&q->st.m->guard);
 	bool found = false;
 
 	if (get_builtin(q->pl, C_STR(q, p1_name), C_STRLEN(q, p1_name), get_smallint(p1_arity), &found, NULL), found) {
@@ -399,6 +407,7 @@ bool bif_iso_abolish_1(query *q)
 	tmp.arity = get_smallint(p1_arity);
 	CLR_OP(&tmp);
 
+	acquire_lock(&q->st.m->guard);
 	bool ok = do_abolish(q, p1, &tmp, true);
 	release_lock(&q->st.m->guard);
 	return ok;
@@ -471,16 +480,15 @@ bool bif_iso_asserta_1(query *q)
 	if (!is_interned(head) && !is_cstring(head))
 		return throw_error(q, head, q->st.curr_frame, "type_error", "callable");
 
-	acquire_lock(&q->st.m->guard);
 	bool found = false;
 
 	if (get_builtin_term(q->st.m, head, &found, NULL), found) {
 		if (!GET_OP(head)) {
-			release_lock(&q->st.m->guard);
 			return throw_error(q, head, q->st.curr_frame, "permission_error", "modify,static_procedure");
 		}
 	}
 
+	acquire_lock(&q->st.m->guard);
 	cell *tmp2, *body = get_body(tmp);
 
 	if (body && ((tmp2 = check_body_callable(body)) != NULL)) {
@@ -535,16 +543,15 @@ bool bif_iso_assertz_1(query *q)
 	if (!is_interned(head) && !is_cstring(head))
 		return throw_error(q, head, q->st.curr_frame, "type_error", "callable");
 
-	acquire_lock(&q->st.m->guard);
 	bool found = false, evaluable = false;
 
 	if (get_builtin_term(q->st.m, head, &found, &evaluable), found && !evaluable) {
 		if (!GET_OP(head)) {
-			release_lock(&q->st.m->guard);
 			return throw_error(q, head, q->st.curr_frame, "permission_error", "modify,static_procedure");
 		}
 	}
 
+	acquire_lock(&q->st.m->guard);
 	cell *tmp2, *body = get_body(tmp);
 
 	if (body && ((tmp2 = check_body_callable(body)) != NULL)) {
@@ -593,16 +600,15 @@ static bool do_asserta_2(query *q)
 	if (is_var(head))
 		return throw_error(q, head, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 
-	acquire_lock(&q->st.m->guard);
 	bool found = false;
 
 	if (get_builtin_term(q->st.m, head, &found, NULL), found) {
 		if (!GET_OP(head)) {
-			release_lock(&q->st.m->guard);
 			return throw_error(q, head, q->latest_ctx, "permission_error", "modify,static_procedure");
 		}
 	}
 
+	acquire_lock(&q->st.m->guard);
 	cell *body = get_body(p1);
 
 	if (body)
@@ -694,16 +700,15 @@ static bool do_assertz_2(query *q)
 	if (is_var(head))
 		return throw_error(q, head, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 
-	acquire_lock(&q->st.m->guard);
 	bool found = false;
 
 	if (get_builtin_term(q->st.m, head, &found, NULL), found) {
 		if (!GET_OP(head)) {
-			release_lock(&q->st.m->guard);
 			return throw_error(q, head, q->latest_ctx, "permission_error", "modify,static_procedure");
 		}
 	}
 
+	acquire_lock(&q->st.m->guard);
 	cell *body = get_body(p1);
 
 	if (body)
