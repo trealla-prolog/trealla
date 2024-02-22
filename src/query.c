@@ -399,39 +399,41 @@ static void leave_predicate(query *q, predicate *pr)
 	if (!pr || !pr->is_dynamic || !pr->refcnt)
 		return;
 
-	if (--pr->refcnt != 0)
+	acquire_lock(&pr->m->guard);
+
+	if (--pr->refcnt != 0) {
+		release_lock(&pr->m->guard);
 		return;
+	}
 
 	// Predicate is no longer being used
 
-	if (!pr->dirty_list)
+	if (!pr->dirty_list) {
+		release_lock(&pr->m->guard);
 		return;
-
-	acquire_lock(&pr->m->guard);
+	}
 
 	if (!pr->is_abolished) {
 		// Just because this predicate is no longer in use doesn't
 		// mean there are no shared references to terms contained
-		// within. So move items on the dirty-list to the query
-		// dirty-list. They will be freed up at end of the query.
+		// within. So move items on the predicate dirty-list to the
+		// query dirty-list. They will be freed up at end of the query.
 		// FIXME: this is a memory drain.
 
-		rule *r = pr->dirty_list;
-
-		while (r) {
-			delink(pr, r);
+		while (pr->dirty_list) {
+			delink(pr, pr->dirty_list);
 
 			if (pr->idx && pr->cnt) {
-				//predicate *pr = r->owner;
-				sl_remove(pr->idx2, r);
-				sl_remove(pr->idx, r);
+				//predicate *pr = pr->dirty_list->owner;
+				sl_remove(pr->idx2, pr->dirty_list);
+				sl_remove(pr->idx, pr->dirty_list);
 			}
 
-			r->cl.is_deleted = true;
-			rule *save = r->dirty;
-			r->dirty = q->dirty_list;
-			q->dirty_list = r;
-			r = save;
+			pr->dirty_list->cl.is_deleted = true;
+			rule *save = pr->dirty_list->dirty;
+			pr->dirty_list->dirty = q->dirty_list;
+			q->dirty_list = pr->dirty_list;
+			pr->dirty_list = save;
 		}
 
 		pr->dirty_list = NULL;
@@ -442,17 +444,13 @@ static void leave_predicate(query *q, predicate *pr)
 			pr->idx = pr->idx2 = NULL;
 		}
 	} else {
-		rule *r = pr->dirty_list;
-
-		while (r) {
-			delink(pr, r);
-			rule *save = r->dirty;
-			clear_clause(&r->cl);
-			free(r);
-			r = save;
+		while (pr->dirty_list) {
+			delink(pr, pr->dirty_list);
+			rule *save = pr->dirty_list;
+			pr->dirty_list = pr->dirty_list->dirty;
+			clear_clause(&save->cl);
+			free(save);
 		}
-
-		pr->dirty_list = NULL;
 	}
 
 	release_lock(&pr->m->guard);
