@@ -172,7 +172,11 @@ or memory leaks (there may be one perhaps spurious error).
 
 On *BSD* systems use *gmake* to build and do
 
-	pkg install editors/vim
+	pkg install xxd
+
+or
+
+	pkg install editors/vim   # if necessary
 
 to get the *xxd* utility.
 
