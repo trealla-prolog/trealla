@@ -3494,7 +3494,7 @@ static bool bif_statistics_2(query *q)
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "cputime") && is_var(p2)) {
 		uint64_t now = cpu_time_in_usec();
-		double elapsed = now - q->time_cpu_started;
+		double elapsed = now - q->cpu_started;
 		cell tmp;
 		make_float(&tmp, elapsed/1000/1000);
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
@@ -3513,19 +3513,19 @@ static bool bif_statistics_2(query *q)
 	if (!CMP_STRING_TO_CSTR(q, p1, "wall") && is_var(p2)) {
 		uint64_t now = get_time_in_usec();
 		cell tmp;
-		make_int(&tmp, now/1000);
+		make_uint(&tmp, now/1000);
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	}
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "runtime")) {
 		uint64_t now = cpu_time_in_usec();
-		double elapsed = now - q->time_cpu_started;
+		double elapsed = now - q->cpu_started;
 		cell tmp;
 		make_int(&tmp, elapsed/1000);
 		allocate_list(q, &tmp);
 		elapsed = now - q->time_cpu_last_started;
 		q->time_cpu_last_started = now;
-		make_int(&tmp, elapsed/1000);
+		make_uint(&tmp, elapsed/1000);
 		append_list(q, &tmp);
 		cell *l = end_list(q);
 		check_heap_error(l);
@@ -3618,7 +3618,7 @@ static bool bif_get_time_1(query *q)
 static bool bif_cpu_time_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
-	double v = ((double)cpu_time_in_usec()-q->time_cpu_started) / 1000 / 1000;
+	double v = ((double)cpu_time_in_usec()-q->cpu_started) / 1000 / 1000;
 	cell tmp;
 	make_float(&tmp, (pl_flt)v);
 	return unify (q, p1, p1_ctx, &tmp, q->st.curr_frame);

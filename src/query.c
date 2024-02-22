@@ -1962,7 +1962,7 @@ query *query_create(module *m, bool is_task)
 	q->trace = m->pl->trace;
 	q->flags = m->flags;
 	q->get_started = get_time_in_usec();
-	q->time_cpu_last_started = q->time_cpu_started = cpu_time_in_usec();
+	q->time_cpu_last_started = q->cpu_started = cpu_time_in_usec();
 	q->ops_dirty = true;
 	q->double_quotes = false;
 	q->st.prob = 1.0;

@@ -932,6 +932,9 @@ static bool bif_thread_join_2(query *q)
 
 static void do_cancel(thread *t)
 {
+	t->q->halt = true;
+	msleep(10);
+
 	acquire_lock(&t->guard);
 
 #ifdef _WIN32
@@ -2263,7 +2266,6 @@ static bool bif_pl_recv_2(query *q)
 
 void thread_cancel_all(prolog *pl)
 {
-
 	for (unsigned i = 0; i < MAX_STREAMS; i++) {
 		thread *t = &g_pl_threads[i];
 
