@@ -805,12 +805,15 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		int n = get_smallint(c);
 		stream *str = &q->pl->streams[n];
 
-		if (str->is_queue) {
-			SB_sprintf(q->sb, "'<$queue>'(%d)", (int)get_smallint(c));
-		} else if (str->is_mutex) {
-			SB_sprintf(q->sb, "'<$mutex>'(%d)", (int)get_smallint(c));
-		} else if (str->is_thread) {
-			SB_sprintf(q->sb, "'<$thread>'(%d)", (int)get_smallint(c));
+		if (c->flags & FLAG_INT_THREAD) {
+			thread *t = &q->pl->threads[n];
+			if (t->is_queue_only) {
+				SB_sprintf(q->sb, "'<$queue>'(%d)", (int)get_smallint(c));
+			} else if (t->is_mutex_only) {
+				SB_sprintf(q->sb, "'<$mutex>'(%d)", (int)get_smallint(c));
+			} else {
+				SB_sprintf(q->sb, "'<$thread>'(%d)", (int)get_smallint(c));
+			}
 		} else {
 			SB_sprintf(q->sb, "'<$stream>'(%d)", (int)get_smallint(c));
 		}

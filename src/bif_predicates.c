@@ -2404,7 +2404,7 @@ static bool bif_iso_current_prolog_flag_2(query *q)
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "max_threads")) {
 		cell tmp;
-		make_int(&tmp, MAX_THREADS);
+		make_int(&tmp, MAX_ACTUAL_THREADS);
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "hardware_threads")) {
 		cell tmp;
@@ -6241,6 +6241,26 @@ static void load_properties(module *m)
 		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, true); SB_strcat(pr, tmpbuf);
 	}
 
+	for (const builtins *ptr = g_sregex_bifs; ptr->name; ptr++) {
+		sl_app(m->pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		if (ptr->iso) { format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "iso", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf); }
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, false); SB_strcat(pr, tmpbuf);
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, true); SB_strcat(pr, tmpbuf);
+	}
+
+	for (const builtins *ptr = g_sort_bifs; ptr->name; ptr++) {
+		sl_app(m->pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		if (ptr->iso) { format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "iso", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf); }
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, false); SB_strcat(pr, tmpbuf);
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, true); SB_strcat(pr, tmpbuf);
+	}
+
 	for (const builtins *ptr = g_tasks_bifs; ptr->name; ptr++) {
 		sl_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
@@ -6313,7 +6333,7 @@ static void load_flags(query *q)
 #if USE_THREADS
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "threads", "true");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "hardware_threads", 4);
-	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "max_threads", MAX_THREADS);
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "max_threads", MAX_ACTUAL_THREADS);
 #else
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "threads", "false");
 #endif
@@ -6482,9 +6502,6 @@ builtins g_iso_bifs[] =
 	{"sub_atom", 5, bif_iso_sub_atom_5, "+atom,?before,?length,?after,?atom", true, false, BLAH},
 	{"sub_string", 5, bif_iso_sub_string_5, "+character_list,?before,?length,?after,?character_list", true, false, BLAH},
 	{"current_rule", 1, bif_iso_current_rule_1, "-term", true, false, BLAH},
-	{"sort", 2, bif_iso_sort_2, "+list,?list", true, false, BLAH},
-	{"msort", 2, bif_iso_msort_2, "+list,?list", true, false, BLAH},
-	{"keysort", 2, bif_iso_keysort_2, "+list,?list", true, false, BLAH},
 	{"end_of_file", 0, bif_iso_halt_0, NULL, true, false, BLAH},
 	{"halt", 0, bif_iso_halt_0, NULL, true, false, BLAH},
 	{"halt", 1, bif_iso_halt_1, "+integer", true, false, BLAH},
@@ -6613,12 +6630,6 @@ builtins g_other_bifs[] =
 	{"$can_be", 4, bif_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"$must_be", 2, bif_must_be_2, "+atom,+term", false, false, BLAH},
 	{"$can_be", 2, bif_can_be_2, "+atom,+term,", false, false, BLAH},
-
-	{"sre_compile", 2, bif_sre_compile_2, "+string,-string,", false, false, BLAH},
-	{"sre_matchp", 4, bif_sre_matchp_4, "+string,+string,-string,-string,", false, false, BLAH},
-	{"sre_match", 4, bif_sre_match_4, "+string,+string,-string,-string,", false, false, BLAH},
-	{"sre_substp", 4, bif_sre_substp_4, "+string,+string,-string,-string,", false, false, BLAH},
-	{"sre_subst", 4, bif_sre_subst_4, "+string,+string,-string,-string,", false, false, BLAH},
 
 	{"$det_length_rundown", 2, bif_sys_det_length_rundown_2, "?list,+integer", false, false, BLAH},
 	{"$memberchk", 3, bif_sys_memberchk_3, "?term,?list,-term", false, false, BLAH},

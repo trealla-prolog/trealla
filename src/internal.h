@@ -17,6 +17,16 @@
 #define USE_THREADS 0
 #endif
 
+#if USE_THREADS
+#ifdef _WIN32
+#include <process.h>
+#include <windows.h>
+#else
+#include <pthread.h>
+#include <unistd.h>
+#endif
+#endif
+
 #ifndef USE_RATIONAL_TREES
 #define USE_RATIONAL_TREES 1
 #endif
@@ -70,8 +80,9 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define MAX_QUEUES 255
 #define MAX_MODULES 1024
 #define MAX_IGNORES 64000
-#define MAX_STREAMS 2048
-#define MAX_THREADS (MAX_STREAMS / 2)
+#define MAX_STREAMS 1024
+#define MAX_THREADS 2048
+#define MAX_ACTUAL_THREADS (MAX_THREADS / 2)
 
 #define STREAM_BUFLEN 1024
 
@@ -270,6 +281,7 @@ enum {
 	FLAG_INT_BINARY=1<<2,				// used with TAG_INTEGER
 	FLAG_INT_HANDLE=1<<3,				// used with TAG_INTEGER
 	FLAG_INT_STREAM=1<<4,				// used with TAG_INTEGER
+	FLAG_INT_THREAD=1<<5,				// used with TAG_INTEGER
 
 	FLAG_CSTR_BLOB=1<<0,				// used with TAG_CSTR
 	FLAG_CSTR_STRING=1<<1,				// used with TAG_CSTR
@@ -613,6 +625,32 @@ struct stream_ {
 	bool is_mutex:1;
 };
 
+typedef struct msg_ msg;
+typedef struct thread_ thread;
+
+struct thread_ {
+	const char *filename;
+	prolog *pl;
+	query *q;
+	skiplist *alias;
+	cell *goal, *exit_code, *at_exit, *ball;
+	msg *queue_head, *queue_tail;
+	msg *signal_head, *signal_tail;
+	unsigned nbr_vars, at_exit_nbr_vars, nbr_locks;
+	int chan, locked_by;
+	bool is_init, is_finished, is_detached, is_exception;
+	bool is_queue_only, is_mutex_only;
+	pl_atomic bool is_active;
+	lock guard;
+#ifdef _WIN32
+    HANDLE id;
+#else
+    pthread_t id;
+    pthread_cond_t cond;
+    pthread_mutex_t mutex;
+#endif
+};
+
 struct page_ {
 	page *next;
 	cell *cells;
@@ -823,6 +861,7 @@ typedef struct {
 
 struct prolog_ {
 	stream streams[MAX_STREAMS];
+	thread threads[MAX_THREADS];
 	module *modmap[MAX_MODULES];
 	struct { pl_idx tab1[MAX_IGNORES], tab2[MAX_IGNORES]; };
 	char tmpbuf[8192];
@@ -833,7 +872,7 @@ struct prolog_ {
 	FILE *logfp;
 	lock guard;
 	size_t tabs_size;
-	uint64_t s_last, s_cnt, seed, str_cnt;
+	uint64_t s_last, s_cnt, seed, str_cnt, thr_cnt;
 	pl_atomic uint64_t q_cnt, dbgen;
 	unsigned next_mod_id, def_max_depth, my_chan;
 	unsigned current_input, current_output, current_error;

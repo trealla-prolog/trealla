@@ -65,6 +65,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 size_t slicecpy(char *dst, size_t dstlen, const char *src, size_t len);
 int new_stream(prolog *pl);
 int get_stream(query *q, cell *p1);
+int get_thread(query *q, cell *p1);
 int get_named_stream(prolog *pl, const char *name, size_t len);
 bool call_builtin(query *q, cell *c, pl_idx c_ctx);
 bool call_userfun(query *q, cell *c, pl_idx c_ctx);
@@ -81,7 +82,6 @@ void reset_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx);
 bool valid_list(query *q, cell *c, pl_idx c_ctx);
 void make_call(query *q, cell *tmp);
 void make_call_redo(query *q, cell *tmp);
-bool stream_close(query *q, int n);
 
 #if USE_THREADS
 void do_signal(query *q, void *thread_ptr);

@@ -391,3 +391,13 @@ bool bif_sort_4(query *q)
 	if (!l) return status;
 	return unify(q, p4, p4_ctx, l, q->st.curr_frame);
 }
+
+builtins g_sort_bifs[] =
+{
+	{"sort", 2, bif_iso_sort_2, "+list,?list", true, false, BLAH},
+	{"msort", 2, bif_iso_msort_2, "+list,?list", true, false, BLAH},
+	{"keysort", 2, bif_iso_keysort_2, "+list,?list", true, false, BLAH},
+
+	{0}
+};
+

@@ -1695,7 +1695,7 @@ static bool bif_iso_open_4(query *q)
 	return true;
 }
 
-bool stream_close(query *q, int n)
+static bool stream_close(query *q, int n)
 {
 	stream *str = &q->pl->streams[n];
 	parser_destroy(str->p);

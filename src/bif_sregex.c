@@ -151,3 +151,13 @@ bool bif_sre_subst_4(query *q)
 	return ok;
 }
 
+builtins g_sregex_bifs[] =
+{
+	{"sre_compile", 2, bif_sre_compile_2, "+string,-string,", false, false, BLAH},
+	{"sre_matchp", 4, bif_sre_matchp_4, "+string,+string,-string,-string,", false, false, BLAH},
+	{"sre_match", 4, bif_sre_match_4, "+string,+string,-string,-string,", false, false, BLAH},
+	{"sre_substp", 4, bif_sre_substp_4, "+string,+string,-string,-string,", false, false, BLAH},
+	{"sre_subst", 4, bif_sre_subst_4, "+string,+string,-string,-string,", false, false, BLAH},
+
+	{0}
+};
