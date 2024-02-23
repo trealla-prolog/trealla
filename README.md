@@ -210,13 +210,12 @@ Cross-compile for Windows x64
 
 To cross-compile on Linux and produce a Windows/x86-64 executable...
 
-	sudo apt install mingw-w64 wine wine64 wine-mono
-	make CC=x86_64-w64-mingw32-gcc NOSSL=1 NOFFI=1 ISOCLINE=1
+	sudo apt install mingw-w64
+	make CC=x86_64-w64-mingw32-gcc NOSSL=1 NOFFI=1 ISOCLINE=1 NOTHREADS=1
 
 ```console
 	$ file tpl.exe
 	tpl.exe: PE32+ executable (console) x86-64, for MS Windows
-	$ wine tpl.exe -g test5,halt -f samples/sieve.pl
 ```
 
 Cross-compile for Linux x86
