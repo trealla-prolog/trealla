@@ -642,12 +642,14 @@ struct thread_ {
 	bool is_queue_only, is_mutex_only;
 	pl_atomic bool is_active;
 	lock guard;
+#if USE_THREADS
 #ifdef _WIN32
     HANDLE id;
 #else
     pthread_t id;
     pthread_cond_t cond;
     pthread_mutex_t mutex;
+#endif
 #endif
 };
 
