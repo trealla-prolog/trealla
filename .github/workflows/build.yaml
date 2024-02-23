@@ -60,14 +60,14 @@
             pacman --noconfirm -S make mingw-w64-x86_64-gcc mingw-w64-x86_64-headers-git mingw-w64-x86_64-libffi mingw-w64-x86_64-dlfcn
             pacman --noconfirm -S mingw-w64-x86_64-openssl vim diffutils git
         - name: Configure line endings
-          run: git config --global core.autocrlf input  
+          run: git config --global core.autocrlf input
         - uses: actions/checkout@v3
           with:
             fetch-depth: 0
         - name: Fetch tags
           run: git fetch --tags --force origin
         - name: Build
-          run: make ISOCLINE=1 release
+          run: make ISOCLINE=1 NOTHREADS=1 release
         - name: Test
           run: make test
         - name: Make Windows-friendly
