@@ -39,6 +39,8 @@ typedef struct msg_ {
 #define is_mutex(c) is_mutex_or_alias(q, c)
 #define is_queue(c) is_queue_or_alias(q, c)
 
+#define check_thread_object(c) check_thread_or_alias_object(q, c)
+
 #define check_thread(c) check_thread_or_alias(q, c)
 #define check_mutex(c) check_mutex_or_alias(q, c)
 #define check_queue(c) check_queue_or_alias(q, c)
@@ -206,6 +208,21 @@ static bool is_queue_or_alias(query *q, cell *c)
 
 	if (!t->is_active)
 		return throw_error(q, c, c_ctx, "existence_error", "queue_or_alias");
+
+	return true;
+}
+
+static bool check_thread_or_alias_object(query *q, cell *c)
+{
+	pl_idx c_ctx = 0;
+
+	if (is_var(c))
+		return false;
+
+	int n = get_thread(q, c);
+
+	if (n < 0)
+		return false;
 
 	return true;
 }
@@ -670,8 +687,6 @@ static void *start_routine_thread_create(thread *t)
 		t->ball = NULL;
 	}
 
-	t->signal_head = t->queue_head = NULL;
-	t->signal_tail = t->queue_tail = NULL;
 	t->is_active = false;
 	release_lock(&t->guard);
     return 0;
@@ -957,8 +972,6 @@ static bool bif_thread_join_2(query *q)
 		t->ball = NULL;
 	}
 
-	t->signal_head = t->queue_head = NULL;
-	t->signal_tail = t->queue_tail = NULL;
 	t->is_active = false;
 	release_lock(&t->guard);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
@@ -1001,8 +1014,6 @@ static void do_cancel(thread *t)
 		t->ball = NULL;
 	}
 
-	t->signal_head = t->queue_head = NULL;
-	t->signal_tail = t->queue_tail = NULL;
 	t->q = NULL;
 	release_lock(&t->guard);
 }
@@ -1388,12 +1399,22 @@ static bool bif_thread_property_2(query *q)
 static bool bif_message_queue_create_2(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
-	GET_FIRST_ARG(p1,var);
+	GET_FIRST_ARG(p1,atom_or_var);
 	GET_NEXT_ARG(p2,list_or_nil);
+
+	if (check_thread_object(p1))
+		return throw_error(q, p1, p1_ctx, "permission_error", "open,source_sink");
+
 	int n = new_thread(q->pl);
 
 	if (n < 0)
 		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_threads");
+
+	if (is_atom(p1)) {
+		thread *t = &q->pl->threads[n];
+		if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
+		sl_set(t->alias, DUP_STRING(q, p1), NULL);
+	}
 
 	thread *t = &q->pl->threads[n];
 	if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
@@ -1456,7 +1477,7 @@ static bool bif_message_queue_create_2(query *q)
 
 	t->is_queue_only = true;
 
-	if (!is_alias) {
+	if (is_var(p1) && !is_alias) {
 		cell tmp;
 		make_int(&tmp, n);
 		tmp.flags |= FLAG_INT_STREAM | FLAG_INT_THREAD | FLAG_INT_HEX;
@@ -1710,9 +1731,10 @@ static bool bif_message_queue_property_2(query *q)
 static bool bif_mutex_create_2(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
-	GET_FIRST_ARG(p1,var);
+	GET_FIRST_ARG(p1,atom_or_var);
+	GET_NEXT_ARG(p2,list_or_nil);
 
-	if (is_stream(p1))
+	if (check_thread_object(p1))
 		return throw_error(q, p1, p1_ctx, "permission_error", "open,source_sink");
 
 	int n = new_thread(q->pl);
@@ -1724,11 +1746,8 @@ static bool bif_mutex_create_2(query *q)
 		thread *t = &q->pl->threads[n];
 		if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 		sl_set(t->alias, DUP_STRING(q, p1), NULL);
-		t->pl = q->pl;
-		t->is_mutex_only = true;
 	}
 
-	GET_NEXT_ARG(p2,list_or_nil);
 	thread *t = &q->pl->threads[n];
 	if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	bool is_alias = false;
@@ -2240,9 +2259,6 @@ void thread_cancel_all(prolog *pl)
 		thread *t = &pl->threads[i];
 
 		if (!is_thread_only(t) || !t->is_active)
-			continue;
-
-		if (t->pl != pl)
 			continue;
 
 		do_cancel(t);
