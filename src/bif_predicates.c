@@ -4441,8 +4441,6 @@ static bool bif_crypto_data_hash_3(query *q)
 			dst += len;
 			buflen -= len;
 		}
-
-		free(key);
 	} else if (key && is_sha384) {
 		unsigned char digest[SHA384_DIGEST_LENGTH];
 		unsigned digest_len = 0;
@@ -4453,8 +4451,6 @@ static bool bif_crypto_data_hash_3(query *q)
 			dst += len;
 			buflen -= len;
 		}
-
-		free(key);
 	} else if (key && is_sha512) {
 		unsigned char digest[SHA512_DIGEST_LENGTH];
 		unsigned digest_len = 0;
@@ -4465,8 +4461,6 @@ static bool bif_crypto_data_hash_3(query *q)
 			dst += len;
 			buflen -= len;
 		}
-
-		free(key);
 	} else if (is_sha256) {
 		unsigned char digest[SHA256_DIGEST_LENGTH];
 		SHA256((unsigned char*)C_STR(q, p1), C_STRLEN(q, p1), digest);
@@ -4495,6 +4489,9 @@ static bool bif_crypto_data_hash_3(query *q)
 			buflen -= len;
 		}
 	}
+
+	if (key)
+		free(key);
 
 	cell tmp;
 	make_string(&tmp, tmpbuf);
