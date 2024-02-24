@@ -299,6 +299,9 @@ bool bif_sys_list_attributed_1(query *q)
 			if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
 				continue;
 
+			if (!q->pl->tabs[i].ctx)
+				continue;
+
 			cell tmp;
 			make_ref(&tmp, q->pl->tabs[i].var_nbr, q->pl->tabs[i].ctx);
 			append_list(q, &tmp);
