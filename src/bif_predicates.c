@@ -6018,24 +6018,6 @@ bool bif_sys_counter_1(query *q)
 	return true;
 }
 
-bool bif_sys_retract_on_backtrack_1(query *q)
-{
-	GET_FIRST_ARG(p1,atom);
-	unsigned var_nbr;
-
-	if (!(var_nbr = create_vars(q, 1)))
-		return false;
-
-	blob *b = calloc(1, sizeof(blob));
-	b->ptr = (void*)q->st.m;
-	b->ptr2 = (void*)strdup(C_STR(q, p1));
-
-	cell c, v;
-	make_ref(&c, var_nbr, q->st.curr_frame);
-	make_dbref(&v, b);
-	return unify(q, &c, q->st.curr_frame, &v, q->st.curr_frame);
-}
-
 void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type, bool function)
 {
 	tmpbuf[0] = '\0';
@@ -6232,6 +6214,16 @@ static void load_properties(module *m)
 	}
 
 	for (const builtins *ptr = g_other_bifs; ptr->name; ptr++) {
+		sl_app(m->pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		if (ptr->iso) { format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "iso", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf); }
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, false); SB_strcat(pr, tmpbuf);
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, true); SB_strcat(pr, tmpbuf);
+	}
+
+	for (const builtins *ptr = g_db_bifs; ptr->name; ptr++) {
 		sl_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -6502,7 +6494,6 @@ builtins g_iso_bifs[] =
 	{"atom_codes", 2, bif_iso_atom_codes_2, "?number,?list", true, false, BLAH},
 	{"number_chars", 2, bif_iso_number_chars_2, "?number,?list", true, false, BLAH},
 	{"number_codes", 2, bif_iso_number_codes_2, "?number,?list", true, false, BLAH},
-	{"clause", 2, bif_iso_clause_2, "+term,?term", true, false, BLAH},
 	{"arg", 3, bif_iso_arg_3, "+integer,+term,?term", true, false, BLAH},
 	{"functor", 3, bif_iso_functor_3, "?term,?atom,?integer", true, false, BLAH},
 	{"copy_term", 2, bif_iso_copy_term_2, "+term,?term", true, false, BLAH},
@@ -6515,11 +6506,6 @@ builtins g_iso_bifs[] =
 	{"end_of_file", 0, bif_iso_halt_0, NULL, true, false, BLAH},
 	{"halt", 0, bif_iso_halt_0, NULL, true, false, BLAH},
 	{"halt", 1, bif_iso_halt_1, "+integer", true, false, BLAH},
-	{"abolish", 1, bif_iso_abolish_1, "+predicate_indicator", true, false, BLAH},
-	{"asserta", 1, bif_iso_asserta_1, "+term", true, false, BLAH},
-	{"assertz", 1, bif_iso_assertz_1, "+term", true, false, BLAH},
-	{"retract", 1, bif_iso_retract_1, "+term", true, false, BLAH},
-	{"retractall", 1, bif_iso_retractall_1, "+term", true, false, BLAH},
 	{"$legacy_current_prolog_flag", 2, bif_iso_current_prolog_flag_2, "+atom,?term", true, false, BLAH},
 	{"set_prolog_flag", 2, bif_iso_set_prolog_flag_2, "+atom,+term", true, false, BLAH},
 	{"op", 3, bif_iso_op_3, "?integer,?atom,+atom", true, false, BLAH},
@@ -6578,8 +6564,6 @@ builtins g_other_bifs[] =
 	{"get_unbuffered_char", 1, bif_get_unbuffered_char_1, "?character", false, false, BLAH},
 	{"format", 2, bif_format_2, "+string,+list", false, false, BLAH},
 	{"format", 3, bif_format_3, "+stream,+string,+list", false, false, BLAH},
-	{"abolish", 2, bif_abolish_2, "+term,+list", false, false, BLAH},
-	{"assert", 1, bif_iso_assertz_1, "+term", false, false, BLAH},
 	{"string", 1, bif_atom_1, "+term,+term", false, false, BLAH},
 	{"atomic_concat", 3, bif_atomic_concat_3, "+atomic,+atomic,?atomic", false, false, BLAH},
 	{"atomic_list_concat", 3, bif_atomic_list_concat_3, "+list,+list,-atomic", false, false, BLAH},
@@ -6612,11 +6596,7 @@ builtins g_other_bifs[] =
 	{"$char_type", 2, bif_char_type_2, "+character,+term", false, false, BLAH},
 	{"$code_type", 2, bif_char_type_2, "+integer,+term", false, false, BLAH},
 	{"uuid", 1, bif_uuid_1, "-string", false, false, BLAH},
-	{"asserta", 2, bif_asserta_2, "+term,-string", false, false, BLAH},
-	{"assertz", 2, bif_assertz_2, "+term,-string", false, false, BLAH},
 	{"instance", 2, bif_instance_2, "+string,?term", false, false, BLAH},
-	{"erase", 1, bif_erase_1, "+string", false, false, BLAH},
-	{"clause", 3, bif_clause_3, "?term,?term,-string", false, false, BLAH},
 	{"getenv", 2, bif_getenv_2, "+atom,-atom", false, false, BLAH},
 	{"setenv", 2, bif_setenv_2, "+atom,+atom", false, false, BLAH},
 	{"unsetenv", 1, bif_unsetenv_1, "+atom", false, false, BLAH},
@@ -6662,11 +6642,6 @@ builtins g_other_bifs[] =
 	{"$attributed_var", 1, bif_sys_attributed_var_1, "@variable", false, false, BLAH},
 	{"$first_non_octet", 2, bif_sys_first_non_octet_2, "+chars,-integer", false, false, BLAH},
 	{"$skip_max_list", 4, bif_sys_skip_max_list_4, "?integer,?integer?,?term,?term", false, false, BLAH},
-	{"$asserta", 2, bif_sys_asserta_2, "+term,+atom", true, false, BLAH},
-	{"$assertz", 2, bif_sys_assertz_2, "+term,+atom", true, false, BLAH},
-	{"$clause", 2, bif_sys_clause_2, "?term,?term", false, false, BLAH},
-	{"$clause", 3, bif_sys_clause_3, "?term,?term,-string", false, false, BLAH},
-	{"$retract_on_backtrack", 1, bif_sys_retract_on_backtrack_1, "+string", false, false, BLAH},
 
 #if USE_OPENSSL
 	{"crypto_data_hash", 3, bif_crypto_data_hash_3, "?string,?string,?list", false, false, BLAH},

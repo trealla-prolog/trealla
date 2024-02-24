@@ -15,7 +15,7 @@
 #include "prolog.h"
 #include "query.h"
 
-bool bif_clause_3(query *q)
+static bool bif_clause_3(query *q)
 {
 	GET_FIRST_ARG(p1,callable_or_var);
 	GET_NEXT_ARG(p2,callable_or_var);
@@ -135,7 +135,7 @@ void db_log(query *q, rule *r, enum log_type l)
 	q->quoted = 0;
 }
 
-bool bif_iso_clause_2(query *q)
+static bool bif_iso_clause_2(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,callable_or_var);
@@ -180,7 +180,7 @@ bool bif_iso_clause_2(query *q)
 	return false;
 }
 
-bool bif_sys_clause_2(query *q)
+static bool bif_sys_clause_2(query *q)
 {
 	q->access_private = true;
 	bool ok = bif_iso_clause_2(q);
@@ -188,7 +188,7 @@ bool bif_sys_clause_2(query *q)
 	return ok;
 }
 
-bool bif_sys_clause_3(query *q)
+static bool bif_sys_clause_3(query *q)
 {
 	q->access_private = true;
 	bool ok = bif_clause_3(q);
@@ -251,7 +251,7 @@ bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 	return true;
 }
 
-bool bif_iso_retract_1(query *q)
+static bool bif_iso_retract_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	acquire_lock(&q->st.m->guard);
@@ -274,7 +274,7 @@ bool bif_iso_retract_1(query *q)
 	return ok;
 }
 
-bool bif_iso_retractall_1(query *q)
+static bool bif_iso_retractall_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	acquire_lock(&q->st.m->guard);
@@ -364,7 +364,7 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 	return true;
 }
 
-bool bif_iso_abolish_1(query *q)
+static bool bif_iso_abolish_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 
@@ -466,7 +466,7 @@ static void do_term_assign_vars(parser *p)
 	}
 }
 
-bool bif_iso_asserta_1(query *q)
+static bool bif_iso_asserta_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	check_heap_error(init_tmp_heap(q));
@@ -529,7 +529,7 @@ bool bif_iso_asserta_1(query *q)
 	return true;
 }
 
-bool bif_iso_assertz_1(query *q)
+static bool bif_iso_assertz_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	check_heap_error(init_tmp_heap(q));
@@ -678,14 +678,14 @@ static bool do_asserta_2(query *q)
 	return true;
 }
 
-bool bif_asserta_2(query *q)
+static bool bif_asserta_2(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
 	GET_NEXT_ARG(p2,var);
 	return do_asserta_2(q);
 }
 
-bool bif_sys_asserta_2(query *q)
+static bool bif_sys_asserta_2(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
 	GET_NEXT_ARG(p2,atom);
@@ -778,14 +778,14 @@ static bool do_assertz_2(query *q)
 	return true;
 }
 
-bool bif_assertz_2(query *q)
+static bool bif_assertz_2(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
 	GET_NEXT_ARG(p2,var);
 	return do_assertz_2(q);
 }
 
-bool bif_sys_assertz_2(query *q)
+static bool bif_sys_assertz_2(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
 	GET_NEXT_ARG(p2,atom);
@@ -836,7 +836,7 @@ void save_db(FILE *fp, query *q, int logging)
 	q->listing = false;
 }
 
-bool bif_abolish_2(query *q)
+static bool bif_abolish_2(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,iso_list_or_nil);
@@ -937,9 +937,52 @@ bool do_erase(module* m, const char *str)
 	return true;
 }
 
-bool bif_erase_1(query *q)
+static bool bif_erase_1(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	return do_erase(q->st.m, C_STR(q, p1));
 }
+
+static bool bif_sys_retract_on_backtrack_1(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	unsigned var_nbr;
+
+	if (!(var_nbr = create_vars(q, 1)))
+		return false;
+
+	blob *b = calloc(1, sizeof(blob));
+	b->ptr = (void*)q->st.m;
+	b->ptr2 = (void*)strdup(C_STR(q, p1));
+
+	cell c, v;
+	make_ref(&c, var_nbr, q->st.curr_frame);
+	make_dbref(&v, b);
+	return unify(q, &c, q->st.curr_frame, &v, q->st.curr_frame);
+}
+
+builtins g_db_bifs[] =
+{
+	{"abolish", 1, bif_iso_abolish_1, "+predicate_indicator", true, false, BLAH},
+	{"asserta", 1, bif_iso_asserta_1, "+term", true, false, BLAH},
+	{"assertz", 1, bif_iso_assertz_1, "+term", true, false, BLAH},
+	{"retract", 1, bif_iso_retract_1, "+term", true, false, BLAH},
+	{"retractall", 1, bif_iso_retractall_1, "+term", true, false, BLAH},
+	{"clause", 2, bif_iso_clause_2, "+term,?term", true, false, BLAH},
+
+	{"assert", 1, bif_iso_assertz_1, "+term", false, false, BLAH},
+	{"asserta", 2, bif_asserta_2, "+term,-string", false, false, BLAH},
+	{"assertz", 2, bif_assertz_2, "+term,-string", false, false, BLAH},
+	{"erase", 1, bif_erase_1, "+string", false, false, BLAH},
+	{"clause", 3, bif_clause_3, "?term,?term,-string", false, false, BLAH},
+	{"abolish", 2, bif_abolish_2, "+term,+list", false, false, BLAH},
+
+	{"$asserta", 2, bif_sys_asserta_2, "+term,+atom", true, false, BLAH},
+	{"$assertz", 2, bif_sys_assertz_2, "+term,+atom", true, false, BLAH},
+	{"$clause", 2, bif_sys_clause_2, "?term,?term", false, false, BLAH},
+	{"$clause", 3, bif_sys_clause_3, "?term,?term,-string", false, false, BLAH},
+	{"$retract_on_backtrack", 1, bif_sys_retract_on_backtrack_1, "+string", false, false, BLAH},
+
+	{0}
+};
 
