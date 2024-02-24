@@ -588,10 +588,10 @@ Crypto functions
 
 Hash a plain-text data string to a hexadecimal byte string
 representing the cryptographic strength hashed value. The options
-are *algorithm(Name)* where *Name* can be *sha256*, *sha384* or *sha512*
-at the moment. If it is a var it will be unified with the default
-*sha256* algorithm. This predicate is only available when compiled
-with OpenSSL...
+are *algorithm(Name)* where *Name* can be *sha256*, *sha384* or
+*sha512*, and optionally *hmac(Key)* where *Key* is a list of integer
+byte values. This predicate is only available when compiled with
+OpenSSL...
 
 	crypto_data_hash/3          # crypto_data_hash(+data,-hash,+options)
 
