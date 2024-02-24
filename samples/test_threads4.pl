@@ -4,6 +4,7 @@ threads(8).
 
 main :-
 	threads(THREADS),
+	mutex_create(_, [alias(foo)]),
 	mutex_lock(foo),
 	between(1, THREADS, I),
 		atomic_concat(foo, I, Alias),

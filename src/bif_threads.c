@@ -1399,12 +1399,8 @@ static bool bif_thread_property_2(query *q)
 static bool bif_message_queue_create_2(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
-	GET_FIRST_ARG(p1,atom_or_var);
+	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,list_or_nil);
-
-	if (check_thread_object(p1))
-		return throw_error(q, p1, p1_ctx, "permission_error", "open,source_sink");
-
 	int n = new_thread(q->pl);
 
 	if (n < 0)
@@ -1731,11 +1727,8 @@ static bool bif_message_queue_property_2(query *q)
 static bool bif_mutex_create_2(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
-	GET_FIRST_ARG(p1,atom_or_var);
+	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,list_or_nil);
-
-	if (check_thread_object(p1))
-		return throw_error(q, p1, p1_ctx, "permission_error", "open,source_sink");
 
 	int n = new_thread(q->pl);
 
@@ -1844,23 +1837,7 @@ static bool bif_mutex_destroy_1(query *q)
 static bool bif_mutex_trylock_1(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
-	GET_FIRST_ARG(p1,any);
-
-	if (!check_mutex(p1) && !is_atom(p1))
-		return throw_error(q, p1, p1_ctx, "domain_error", "mutex_or_alias");
-
-	if (!check_mutex(p1) && is_atom(p1)) {
-		int n = new_thread(q->pl);
-
-		if (n < 0)
-			return throw_error(q, p1, p1_ctx, "resource_error", "too_many_threads");
-
-		thread *t = &q->pl->threads[n];
-		if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
-		sl_set(t->alias, DUP_STRING(q, p1), NULL);
-		t->is_mutex_only = true;
-	}
-
+	GET_FIRST_ARG(p1,mutex);
 	int n = get_thread(q, p1);
 	if (n < 0) return true;
 	thread *t = &q->pl->threads[n];
@@ -1877,23 +1854,7 @@ static bool bif_mutex_trylock_1(query *q)
 static bool bif_mutex_lock_1(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
-	GET_FIRST_ARG(p1,any);
-
-	if (!check_mutex(p1) && !is_atom(p1))
-		return throw_error(q, p1, p1_ctx, "domain_error", "mutex_or_alias");
-
-	if (!check_mutex(p1) && is_atom(p1)) {
-		int n = new_thread(q->pl);
-
-		if (n < 0)
-			return throw_error(q, p1, p1_ctx, "resource_error", "too_many_threads");
-
-		thread *t = &q->pl->threads[n];
-		if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
-		sl_set(t->alias, DUP_STRING(q, p1), NULL);
-		t->is_mutex_only = true;
-	}
-
+	GET_FIRST_ARG(p1,mutex);
 	int n = get_thread(q, p1);
 	if (n < 0) return true;
 	thread *t = &q->pl->threads[n];
