@@ -145,7 +145,7 @@ unless you choose to build without SSL/TLS support:
 
 	make NOSSL=1
 
-To build without multi-threading support:
+To build without preemptive multithreading support:
 
 	make NOTHREADS=1
 
@@ -1146,8 +1146,8 @@ engines.
 	engine_destroy/1
 
 
-Multi-threading (Prolog queries)
-================================
+Preemptive Multithreading (Prolog queries)
+==========================================
 
 Start independent (shared state) Prolog queries as dedicated
 threads and communicate via message queues. Each thread has it's own
