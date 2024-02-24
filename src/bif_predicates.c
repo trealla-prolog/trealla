@@ -19,6 +19,7 @@
 
 #if USE_OPENSSL
 #include "openssl/sha.h"
+#include "openssl/hmac.h"
 #endif
 
 #ifdef _WIN32
@@ -4380,6 +4381,8 @@ static bool bif_crypto_data_hash_3(query *q)
 	GET_NEXT_ARG(p3,list_or_nil);
 	bool is_sha384 = false, is_sha512 = false;
 	bool is_sha256 = true;
+	char *key = NULL;
+	int keylen = 0;
 	LIST_HANDLER(p3);
 
 	while (is_list(p3)) {
@@ -4410,6 +4413,9 @@ static bool bif_crypto_data_hash_3(query *q)
 					is_sha512 = true;
 				} else
 					return throw_error(q, arg, arg_ctx, "domain_error", "algorithm");
+			} else if (!CMP_STRING_TO_CSTR(q, h, "hmac") && is_iso_list(arg)
+				&& (keylen = scan_is_chars_list(q, arg, 0, true)) > 0) {
+				key = chars_list_to_string(q, arg, 0, keylen);
 			} else
 				return throw_error(q, h, h_ctx, "domain_error", "hash_option");
 		} else
@@ -4425,7 +4431,43 @@ static bool bif_crypto_data_hash_3(query *q)
 	*dst = '\0';
 	size_t buflen = sizeof(tmpbuf);
 
-	if (is_sha256) {
+	if (key && is_sha256) {
+		unsigned char digest[SHA256_DIGEST_LENGTH];
+		unsigned digest_len = 0;
+		HMAC(EVP_sha256(), key, keylen, (unsigned char*)C_STR(q, p1), C_STRLEN(q, p1), digest, &digest_len);
+
+		for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+			size_t len = snprintf(dst, buflen, "%02x", digest[i]);
+			dst += len;
+			buflen -= len;
+		}
+
+		free(key);
+	} else if (key && is_sha384) {
+		unsigned char digest[SHA384_DIGEST_LENGTH];
+		unsigned digest_len = 0;
+		HMAC(EVP_sha384(), key, keylen, (unsigned char*)C_STR(q, p1), C_STRLEN(q, p1), digest, &digest_len);
+
+		for (int i = 0; i < SHA384_DIGEST_LENGTH; i++) {
+			size_t len = snprintf(dst, buflen, "%02x", digest[i]);
+			dst += len;
+			buflen -= len;
+		}
+
+		free(key);
+	} else if (key && is_sha512) {
+		unsigned char digest[SHA512_DIGEST_LENGTH];
+		unsigned digest_len = 0;
+		HMAC(EVP_sha512(), key, keylen, (unsigned char*)C_STR(q, p1), C_STRLEN(q, p1), digest, &digest_len);
+
+		for (int i = 0; i < SHA512_DIGEST_LENGTH; i++) {
+			size_t len = snprintf(dst, buflen, "%02x", digest[i]);
+			dst += len;
+			buflen -= len;
+		}
+
+		free(key);
+	} else if (is_sha256) {
 		unsigned char digest[SHA256_DIGEST_LENGTH];
 		SHA256((unsigned char*)C_STR(q, p1), C_STRLEN(q, p1), digest);
 
