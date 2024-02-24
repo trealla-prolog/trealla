@@ -320,6 +320,11 @@ builtins *get_fn_ptr(void *fn)
 			return ptr;
 	}
 
+	for (builtins *ptr = g_csv_bifs; ptr->name; ptr++) {
+		if (ptr->fn == fn)
+			return ptr;
+	}
+
 	for (builtins *ptr = g_sregex_bifs; ptr->name; ptr++) {
 		if (ptr->fn == fn)
 			return ptr;
@@ -383,6 +388,12 @@ void load_builtins(prolog *pl)
 	}
 
 	for (const builtins *ptr = g_other_bifs; ptr->name; ptr++) {
+		sl_app(pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		sl_app(pl->help, ptr->name, ptr);
+	}
+
+	for (const builtins *ptr = g_csv_bifs; ptr->name; ptr++) {
 		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		sl_app(pl->help, ptr->name, ptr);

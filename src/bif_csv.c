@@ -358,3 +358,12 @@ bool bif_parse_csv_file_2(query *q)
 
 	return true;
 }
+
+builtins g_csv_bifs[] =
+{
+	{"parse_csv_line", 2, bif_parse_csv_line_2, "+atom,-list", false, false, BLAH},
+	{"parse_csv_line", 3, bif_parse_csv_line_3, "+atom,-compound,+list", false, false, BLAH},
+	{"parse_csv_file", 2, bif_parse_csv_file_2, "+atom,+list", false, false, BLAH},
+
+	{0}
+};

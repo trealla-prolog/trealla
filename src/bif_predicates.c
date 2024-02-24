@@ -6241,6 +6241,16 @@ static void load_properties(module *m)
 		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, true); SB_strcat(pr, tmpbuf);
 	}
 
+	for (const builtins *ptr = g_csv_bifs; ptr->name; ptr++) {
+		sl_app(m->pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		if (ptr->iso) { format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "iso", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf); }
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, false); SB_strcat(pr, tmpbuf);
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, true); SB_strcat(pr, tmpbuf);
+	}
+
 	for (const builtins *ptr = g_sregex_bifs; ptr->name; ptr++) {
 		sl_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
@@ -6558,10 +6568,6 @@ builtins g_other_bifs[] =
 	{"module_help", 3, bif_module_help_3, "+atom,+predicate_indicator,+atom", false, false, BLAH},
 	{"module_help", 2, bif_module_help_2, "+atom,+predicate_indicator", false, false, BLAH},
 	{"module_help", 1, bif_module_help_1, "+atom", false, false, BLAH},
-
-	{"parse_csv_line", 2, bif_parse_csv_line_2, "+atom,-list", false, false, BLAH},
-	{"parse_csv_line", 3, bif_parse_csv_line_3, "+atom,-compound,+list", false, false, BLAH},
-	{"parse_csv_file", 2, bif_parse_csv_file_2, "+atom,+list", false, false, BLAH},
 
 	{"abort", 0, bif_abort_0, NULL, false, false, BLAH},
 	{"sort", 4, bif_sort_4, "+integer,+atom,+list,?list", false, false, BLAH},

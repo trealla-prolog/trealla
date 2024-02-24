@@ -36,6 +36,7 @@ extern void sigfn(int s);
 extern builtins g_iso_bifs[];
 extern builtins g_sregex_bifs[];
 extern builtins g_other_bifs[];
+extern builtins g_csv_bifs[];
 extern builtins g_sort_bifs[];
 extern builtins g_ffi_bifs[];
 extern builtins g_posix_bifs[];
