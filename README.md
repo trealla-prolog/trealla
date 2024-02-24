@@ -1237,8 +1237,8 @@ For shared data in this case consider using SQLite.
 Where 'options' can be (currently just) *alias(+atom)*.
 
 ```
-	pl_msg_send/2			# pl_msg_send(+queue,@term)
-	pl_msg_recv/2			# pl_msg_recv(-queue,-term)
+	pl_msg_send/2			# pl_msg_send(+thread,+term)
+	pl_msg_recv/2			# pl_msg_recv(-thread,-term)
 
 ```
 
