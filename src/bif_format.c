@@ -674,3 +674,41 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 	return true;
 }
 
+static bool bif_format_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom_or_list);
+	GET_NEXT_ARG(p2,list_or_nil);
+
+	if (is_nil(p1)) {
+		if (is_nil(p2))
+			return true;
+		else
+			return throw_error(q, p2, p2_ctx, "domain_error", "list");
+	}
+
+	return do_format(q, NULL, 0, p1, p1_ctx, !is_nil(p2)?p2:NULL, p2_ctx);
+}
+
+static bool bif_format_3(query *q)
+{
+	GET_FIRST_ARG(pstr,any);
+	GET_NEXT_ARG(p1,atom_or_list);
+	GET_NEXT_ARG(p2,list_or_nil);
+
+	if (is_nil(p1)) {
+		if (is_nil(p2))
+			return true;
+		else
+			return throw_error(q, p2, p2_ctx, "domain_error", "list");
+	}
+
+	return do_format(q, pstr, pstr_ctx, p1, p1_ctx, !is_nil(p2)?p2:NULL, p2_ctx);
+}
+
+builtins g_format_bifs[] =
+{
+	{"format", 2, bif_format_2, "+string,+list", false, false, BLAH},
+	{"format", 3, bif_format_3, "+stream,+string,+list", false, false, BLAH},
+
+	{0}
+};

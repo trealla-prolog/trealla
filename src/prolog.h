@@ -33,20 +33,21 @@ extern void convert_path(char *filename);
 
 extern void sigfn(int s);
 
-extern builtins g_iso_bifs[];
-extern builtins g_sregex_bifs[];
-extern builtins g_other_bifs[];
 extern builtins g_atts_bifs[];
 extern builtins g_db_bifs[];
-extern builtins g_csv_bifs[];
-extern builtins g_sort_bifs[];
-extern builtins g_ffi_bifs[];
-extern builtins g_posix_bifs[];
 extern builtins g_contrib_bifs[];
-extern builtins g_streams_bifs[];
+extern builtins g_csv_bifs[];
 extern builtins g_evaluable_bifs[];
-extern builtins g_tasks_bifs[];
+extern builtins g_format_bifs[];
+extern builtins g_ffi_bifs[];
+extern builtins g_iso_bifs[];
 extern builtins g_maps_bifs[];
+extern builtins g_other_bifs[];
+extern builtins g_posix_bifs[];
+extern builtins g_sort_bifs[];
+extern builtins g_sregex_bifs[];
+extern builtins g_streams_bifs[];
+extern builtins g_tasks_bifs[];
 extern builtins g_threads_bifs[];
 
 extern void keyfree(const void *key, const void *val, const void *p);

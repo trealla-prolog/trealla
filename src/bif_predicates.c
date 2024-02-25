@@ -4304,37 +4304,6 @@ static bool bif_shell_2(query *q)
 }
 #endif
 
-static bool bif_format_2(query *q)
-{
-	GET_FIRST_ARG(p1,atom_or_list);
-	GET_NEXT_ARG(p2,list_or_nil);
-
-	if (is_nil(p1)) {
-		if (is_nil(p2))
-			return true;
-		else
-			return throw_error(q, p2, p2_ctx, "domain_error", "list");
-	}
-
-	return do_format(q, NULL, 0, p1, p1_ctx, !is_nil(p2)?p2:NULL, p2_ctx);
-}
-
-static bool bif_format_3(query *q)
-{
-	GET_FIRST_ARG(pstr,any);
-	GET_NEXT_ARG(p1,atom_or_list);
-	GET_NEXT_ARG(p2,list_or_nil);
-
-	if (is_nil(p1)) {
-		if (is_nil(p2))
-			return true;
-		else
-			return throw_error(q, p2, p2_ctx, "domain_error", "list");
-	}
-
-	return do_format(q, pstr, pstr_ctx, p1, p1_ctx, !is_nil(p2)?p2:NULL, p2_ctx);
-}
-
 // FIXME: not truly crypto strength
 
 static bool bif_crypto_n_random_bytes_2(query *q)
@@ -6601,8 +6570,6 @@ builtins g_other_bifs[] =
 	{"term_singletons", 2, bif_term_singletons_2, "+term,-list", false, false, BLAH},
 	{"get_unbuffered_code", 1, bif_get_unbuffered_code_1, "?integer", false, false, BLAH},
 	{"get_unbuffered_char", 1, bif_get_unbuffered_char_1, "?character", false, false, BLAH},
-	{"format", 2, bif_format_2, "+string,+list", false, false, BLAH},
-	{"format", 3, bif_format_3, "+stream,+string,+list", false, false, BLAH},
 	{"string", 1, bif_atom_1, "+term,+term", false, false, BLAH},
 	{"atomic_concat", 3, bif_atomic_concat_3, "+atomic,+atomic,?atomic", false, false, BLAH},
 	{"atomic_list_concat", 3, bif_atomic_list_concat_3, "+list,+list,-atomic", false, false, BLAH},

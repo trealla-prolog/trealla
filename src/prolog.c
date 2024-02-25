@@ -385,31 +385,13 @@ builtins *get_fn_ptr(void *fn)
 
 void load_builtins(prolog *pl)
 {
-	for (const builtins *ptr = g_iso_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
-
-	for (const builtins *ptr = g_evaluable_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
-
-	for (const builtins *ptr = g_other_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
-
 	for (const builtins *ptr = g_atts_bifs; ptr->name; ptr++) {
 		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		sl_app(pl->help, ptr->name, ptr);
 	}
 
-	for (const builtins *ptr = g_db_bifs; ptr->name; ptr++) {
+	for (const builtins *ptr = g_contrib_bifs; ptr->name; ptr++) {
 		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		sl_app(pl->help, ptr->name, ptr);
@@ -421,13 +403,67 @@ void load_builtins(prolog *pl)
 		sl_app(pl->help, ptr->name, ptr);
 	}
 
-	for (const builtins *ptr = g_sregex_bifs; ptr->name; ptr++) {
+	for (const builtins *ptr = g_db_bifs; ptr->name; ptr++) {
+		sl_app(pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		sl_app(pl->help, ptr->name, ptr);
+	}
+
+	for (const builtins *ptr = g_evaluable_bifs; ptr->name; ptr++) {
+		sl_app(pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		sl_app(pl->help, ptr->name, ptr);
+	}
+
+	for (const builtins *ptr = g_ffi_bifs; ptr->name; ptr++) {
+		sl_app(pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		sl_app(pl->help, ptr->name, ptr);
+	}
+
+	for (const builtins *ptr = g_format_bifs; ptr->name; ptr++) {
+		sl_app(pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		sl_app(pl->help, ptr->name, ptr);
+	}
+
+	for (const builtins *ptr = g_iso_bifs; ptr->name; ptr++) {
+		sl_app(pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		sl_app(pl->help, ptr->name, ptr);
+	}
+
+	for (const builtins *ptr = g_maps_bifs; ptr->name; ptr++) {
+		sl_app(pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		sl_app(pl->help, ptr->name, ptr);
+	}
+
+	for (const builtins *ptr = g_other_bifs; ptr->name; ptr++) {
+		sl_app(pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		sl_app(pl->help, ptr->name, ptr);
+	}
+
+	for (const builtins *ptr = g_posix_bifs; ptr->name; ptr++) {
 		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_sort_bifs; ptr->name; ptr++) {
+		sl_app(pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		sl_app(pl->help, ptr->name, ptr);
+	}
+
+	for (const builtins *ptr = g_sregex_bifs; ptr->name; ptr++) {
+		sl_app(pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		sl_app(pl->help, ptr->name, ptr);
+	}
+
+	for (const builtins *ptr = g_streams_bifs; ptr->name; ptr++) {
 		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		sl_app(pl->help, ptr->name, ptr);
@@ -440,36 +476,6 @@ void load_builtins(prolog *pl)
 	}
 
 	for (const builtins *ptr = g_threads_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
-
-	for (const builtins *ptr = g_streams_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
-
-	for (const builtins *ptr = g_maps_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
-
-	for (const builtins *ptr = g_ffi_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
-
-	for (const builtins *ptr = g_posix_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
-
-	for (const builtins *ptr = g_contrib_bifs; ptr->name; ptr++) {
 		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		sl_app(pl->help, ptr->name, ptr);

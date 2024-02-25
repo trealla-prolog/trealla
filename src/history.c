@@ -171,6 +171,13 @@ static char *functor_name_generator(const char *text, int state)
 			return strdup(name);
 	}
 
+	while ((name = g_format_bifs[s_ffi_list_index].name)) {
+		s_ffi_list_index++;
+
+		if (strncmp(name, text, s_ffi_len) == 0)
+			return strdup(name);
+	}
+
 	while ((name = g_iso_bifs[s_iso_list_index].name)) {
 		s_iso_list_index++;
 
