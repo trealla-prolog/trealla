@@ -6262,6 +6262,16 @@ static void load_properties(module *m)
 		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, true); SB_strcat(pr, tmpbuf);
 	}
 
+	for (const builtins *ptr = g_atts_bifs; ptr->name; ptr++) {
+		sl_app(m->pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
+		if (ptr->iso) { format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "iso", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf); }
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, false); SB_strcat(pr, tmpbuf);
+		format_template(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, ptr, ptr->evaluable?true:false, true); SB_strcat(pr, tmpbuf);
+	}
+
 	for (const builtins *ptr = g_db_bifs; ptr->name; ptr++) {
 		sl_app(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
@@ -6572,10 +6582,6 @@ builtins g_other_bifs[] =
 	{"statistics", 0, bif_statistics_0, NULL, false, false, BLAH},
 	{"statistics", 2, bif_statistics_2, "+atom,-term", false, false, BLAH},
 
-	{"attribute", 3, bif_attribute_3, "?atom,+atom,+integer", false, false, BLAH},
-	{"put_atts", 2, bif_put_atts_2, "@variable,+term", false, false, BLAH},
-	{"get_atts", 2, bif_get_atts_2, "@variable,-term", false, false, BLAH},
-
 	{"current_module", 1, bif_current_module_1, "-atom", false, false, BLAH},
 	{"prolog_load_context", 2, bif_prolog_load_context_2, "+atom,?term", false, false, BLAH},
 	{"strip_module", 3, bif_strip_module_3, "+callable,?atom,?callable", false, false, BLAH},
@@ -6676,9 +6682,6 @@ builtins g_other_bifs[] =
 	{"$incr", 2, bif_sys_incr_2, "@integer,+integer", false, false, BLAH},
 	{"$choice", 0, bif_sys_choice_0, NULL, false, false, BLAH},
 	{"$alarm", 1, bif_sys_alarm_1, "+integer", false, false, BLAH},
-	{"$list_attributed", 1, bif_sys_list_attributed_1, "-list", false, false, BLAH},
-	{"$unattributed_var", 1, bif_sys_unattributed_var_1, "@variable", false, false, BLAH},
-	{"$attributed_var", 1, bif_sys_attributed_var_1, "@variable", false, false, BLAH},
 	{"$first_non_octet", 2, bif_sys_first_non_octet_2, "+chars,-integer", false, false, BLAH},
 	{"$skip_max_list", 4, bif_sys_skip_max_list_4, "?integer,?integer?,?term,?term", false, false, BLAH},
 

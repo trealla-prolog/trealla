@@ -514,3 +514,16 @@ bool do_post_unification_hook(query *q, bool is_builtin)
 	q->st.curr_instr = tmp;
 	return true;
 }
+
+builtins g_atts_bifs[] =
+{
+	{"attribute", 3, bif_attribute_3, "?atom,+atom,+integer", false, false, BLAH},
+	{"put_atts", 2, bif_put_atts_2, "@variable,+term", false, false, BLAH},
+	{"get_atts", 2, bif_get_atts_2, "@variable,-term", false, false, BLAH},
+
+	{"$list_attributed", 1, bif_sys_list_attributed_1, "-list", false, false, BLAH},
+	{"$unattributed_var", 1, bif_sys_unattributed_var_1, "@variable", false, false, BLAH},
+	{"$attributed_var", 1, bif_sys_attributed_var_1, "@variable", false, false, BLAH},
+
+	{0}
+};
