@@ -657,9 +657,8 @@ static void *start_routine_thread_create(thread *t)
 	t->is_finished = true;
 	do_unlock_all(t->pl);
 
-	if (!t->is_detached) {
+	if (!t->is_detached)
 		return 0;
-	}
 
 	sl_destroy(t->alias);
 	t->alias = NULL;
