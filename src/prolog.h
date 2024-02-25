@@ -43,7 +43,7 @@ extern builtins g_sort_bifs[];
 extern builtins g_ffi_bifs[];
 extern builtins g_posix_bifs[];
 extern builtins g_contrib_bifs[];
-extern builtins g_files_bifs[];
+extern builtins g_streams_bifs[];
 extern builtins g_evaluable_bifs[];
 extern builtins g_tasks_bifs[];
 extern builtins g_maps_bifs[];

@@ -129,7 +129,56 @@ static char *functor_name_generator(const char *text, int state)
 		s_evaluable_list_index = 0; s_evaluable_len = strlen(text);
 	}
 
+	while ((name = g_atts_bifs[s_other_list_index].name)) {
+		s_other_list_index++;
+
+		if (strncmp(name, text, s_other_len) == 0)
+			return strdup(name);
+	}
+
+	while ((name = g_contrib_bifs[s_contrib_list_index].name)) {
+		s_contrib_list_index++;
+
+		if (strncmp(name, text, s_contrib_len) == 0)
+			return strdup(name);
+	}
+
+	while ((name = g_csv_bifs[s_other_list_index].name)) {
+		s_other_list_index++;
+
+		if (strncmp(name, text, s_other_len) == 0)
+			return strdup(name);
+	}
+
+	while ((name = g_db_bifs[s_other_list_index].name)) {
+		s_other_list_index++;
+
+		if (strncmp(name, text, s_other_len) == 0)
+			return strdup(name);
+	}
+
+	while ((name = g_evaluable_bifs[s_evaluable_list_index].name)) {
+		s_evaluable_list_index++;
+
+		if (strncmp(name, text, s_evaluable_len) == 0)
+			return strdup(name);
+	}
+
+	while ((name = g_ffi_bifs[s_ffi_list_index].name)) {
+		s_ffi_list_index++;
+
+		if (strncmp(name, text, s_ffi_len) == 0)
+			return strdup(name);
+	}
+
 	while ((name = g_iso_bifs[s_iso_list_index].name)) {
+		s_iso_list_index++;
+
+		if (strncmp(name, text, s_iso_len) == 0)
+			return strdup(name);
+	}
+
+	while ((name = g_maps_bifs[s_iso_list_index].name)) {
 		s_iso_list_index++;
 
 		if (strncmp(name, text, s_iso_len) == 0)
@@ -143,13 +192,6 @@ static char *functor_name_generator(const char *text, int state)
 			return strdup(name);
 	}
 
-	while ((name = g_ffi_bifs[s_ffi_list_index].name)) {
-		s_ffi_list_index++;
-
-		if (strncmp(name, text, s_ffi_len) == 0)
-			return strdup(name);
-	}
-
 	while ((name = g_posix_bifs[s_posix_list_index].name)) {
 		s_posix_list_index++;
 
@@ -157,24 +199,38 @@ static char *functor_name_generator(const char *text, int state)
 			return strdup(name);
 	}
 
-	while ((name = g_contrib_bifs[s_contrib_list_index].name)) {
-		s_contrib_list_index++;
+	while ((name = g_sort_bifs[s_other_list_index].name)) {
+		s_other_list_index++;
 
-		if (strncmp(name, text, s_contrib_len) == 0)
+		if (strncmp(name, text, s_other_len) == 0)
 			return strdup(name);
 	}
 
-	while ((name = g_files_bifs[s_files_list_index].name)) {
+	while ((name = g_sregex_bifs[s_other_list_index].name)) {
+		s_other_list_index++;
+
+		if (strncmp(name, text, s_other_len) == 0)
+			return strdup(name);
+	}
+
+	while ((name = g_streams_bifs[s_files_list_index].name)) {
 		s_files_list_index++;
 
 		if (strncmp(name, text, s_files_len) == 0)
 			return strdup(name);
 	}
 
-	while ((name = g_evaluable_bifs[s_evaluable_list_index].name)) {
-		s_evaluable_list_index++;
+	while ((name = g_tasks_bifs[s_other_list_index].name)) {
+		s_other_list_index++;
 
-		if (strncmp(name, text, s_evaluable_len) == 0)
+		if (strncmp(name, text, s_other_len) == 0)
+			return strdup(name);
+	}
+
+	while ((name = g_threads_bifs[s_other_list_index].name)) {
+		s_other_list_index++;
+
+		if (strncmp(name, text, s_other_len) == 0)
 			return strdup(name);
 	}
 
