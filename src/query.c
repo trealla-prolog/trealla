@@ -2016,7 +2016,7 @@ query *query_create_subquery(query *q, cell *curr_instr)
 
 query *query_create_task(query *q, cell *curr_instr)
 {
-	query *task = query_create_subquery(q->st.m, true);
+	query *task = query_create_subquery(q, curr_instr);
 	if (!task) return NULL;
 	task->is_task = true;
 	return task;
