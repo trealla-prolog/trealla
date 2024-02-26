@@ -805,7 +805,11 @@ static bool bif_thread_create_3(query *q)
 	cell *goal = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(goal);
 	t->nbr_vars = rebase_term(q, goal, 0);
-	cell *tmp2 = alloc_on_heap(q, 1+goal->nbr_cells+1);
+	t->q = query_create(q->st.m, false);
+	check_heap_error(t->q);
+	t->q->thread_ptr = t;
+	t->q->my_chan = n;
+	cell *tmp2 = alloc_on_heap(t->q, 1+goal->nbr_cells+1);
 	check_heap_error(tmp2);
 	pl_idx nbr_cells = 0;
 	make_struct(tmp2+nbr_cells, g_conjunction_s, bif_iso_conjunction_2, 2, goal->nbr_cells+1);
@@ -813,14 +817,7 @@ static bool bif_thread_create_3(query *q)
 	nbr_cells++;
 	nbr_cells += dup_cells(tmp2+nbr_cells, goal, goal->nbr_cells);
 	make_struct(tmp2+nbr_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
-
-	t->q = query_create(q->st.m, false);
-	check_heap_error(t->q);
-	t->q->thread_ptr = t;
-	//t->q->trace = q->trace;
-	t->goal = deep_clone_to_heap(t->q, tmp2, 0);	// Copy into thread
-	check_heap_error(t->goal);
-	t->q->my_chan = n;
+	t->goal = tmp2;
 
 	if (p4) {
 		check_heap_error(init_tmp_heap(q));
