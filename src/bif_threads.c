@@ -631,7 +631,7 @@ static bool bif_pl_thread_3(query *q)
 
 	cell tmp;
 	make_int(&tmp, n);
-	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_THREAD | FLAG_INT_HEX;
+	tmp.flags |= FLAG_INT_THREAD | FLAG_INT_HEX;
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
@@ -792,7 +792,7 @@ static bool bif_thread_create_3(query *q)
 	if (!is_alias) {
 		cell tmp;
 		make_int(&tmp, n);
-		tmp.flags |= FLAG_INT_STREAM | FLAG_INT_THREAD | FLAG_INT_HEX;
+		tmp.flags |= FLAG_INT_THREAD | FLAG_INT_HEX;
 
 		if (!unify(q, p2, p2_ctx, &tmp, q->st.curr_frame)) {
 			t->is_active = false;
@@ -1085,7 +1085,7 @@ static bool bif_thread_self_1(query *q)
 		if (t->id == id) {
 			cell tmp;
 			make_int(&tmp, (int)i);
-			tmp.flags |= FLAG_INT_STREAM | FLAG_INT_THREAD | FLAG_INT_HEX;
+			tmp.flags |= FLAG_INT_THREAD | FLAG_INT_HEX;
 			bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 			THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
 			return ok;
@@ -1257,7 +1257,7 @@ static bool do_thread_property_pin_property(query *q)
 
 	cell tmp;
 	make_int(&tmp, q->st.v1);
-	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_THREAD | FLAG_INT_HEX;
+	tmp.flags |= FLAG_INT_THREAD | FLAG_INT_HEX;
 
 	if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
 		return false;
@@ -1363,7 +1363,7 @@ static bool do_thread_property_wild(query *q)
 
 	cell tmp;
 	make_int(&tmp, q->st.v1);
-	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_THREAD | FLAG_INT_HEX;
+	tmp.flags |= FLAG_INT_THREAD | FLAG_INT_HEX;
 
 	if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
 		return false;
@@ -1475,7 +1475,7 @@ static bool bif_message_queue_create_2(query *q)
 	if (is_var(p1) && !is_alias) {
 		cell tmp;
 		make_int(&tmp, n);
-		tmp.flags |= FLAG_INT_STREAM | FLAG_INT_THREAD | FLAG_INT_HEX;
+		tmp.flags |= FLAG_INT_THREAD | FLAG_INT_HEX;
 
 		if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame)) {
 			t->is_active = false;
@@ -1608,7 +1608,7 @@ static bool do_message_queue_property_pin_property(query *q)
 
 	cell tmp;
 	make_int(&tmp, q->st.v1);
-	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_THREAD | FLAG_INT_HEX;
+	tmp.flags |= FLAG_INT_THREAD | FLAG_INT_HEX;
 
 	if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
 		return false;
@@ -1693,7 +1693,7 @@ static bool do_message_queue_property_wild(query *q)
 
 	cell tmp;
 	make_int(&tmp, q->st.v1);
-	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_THREAD | FLAG_INT_HEX;
+	tmp.flags |= FLAG_INT_THREAD | FLAG_INT_HEX;
 
 	if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
 		return false;
@@ -1804,7 +1804,7 @@ static bool bif_mutex_create_2(query *q)
 	if (is_var(p1) && !is_alias) {
 		cell tmp;
 		make_int(&tmp, n);
-		tmp.flags |= FLAG_INT_STREAM | FLAG_INT_THREAD | FLAG_INT_HEX;
+		tmp.flags |= FLAG_INT_THREAD | FLAG_INT_HEX;
 
 		if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame)) {
 			t->is_active = false;
@@ -1933,7 +1933,7 @@ static bool do_mutex_property_pin_both(query *q)
 		make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 3);
 		make_struct(tmp+1, new_atom(q->pl, "locked"), NULL, 2, 2);
 		make_int(tmp+2, t->locked_by);
-		tmp[2].flags |= FLAG_INT_STREAM | FLAG_INT_THREAD | FLAG_INT_HEX;
+		tmp[2].flags |= FLAG_INT_THREAD | FLAG_INT_HEX;
 		make_int(tmp+3, t->nbr_locks);
 		return unify(q, c, c_ctx, tmp, q->st.curr_frame);
 	} else
@@ -1982,7 +1982,7 @@ static bool do_mutex_property_pin_property(query *q)
 
 	cell tmp;
 	make_int(&tmp, q->st.v1);
-	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_THREAD | FLAG_INT_HEX;
+	tmp.flags |= FLAG_INT_THREAD | FLAG_INT_HEX;
 
 	if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
 		return false;
@@ -2027,7 +2027,7 @@ static bool do_mutex_property_pin_id(query *q)
 		make_struct(tmp, new_atom(q->pl, "status"), NULL, 1, 3);
 		make_struct(tmp+1, new_atom(q->pl, "locked"), NULL, 2, 2);
 		make_int(tmp+2, t->locked_by);
-		tmp[2].flags |= FLAG_INT_STREAM | FLAG_INT_THREAD | FLAG_INT_HEX;
+		tmp[2].flags |= FLAG_INT_THREAD | FLAG_INT_HEX;
 		make_int(tmp+3, t->nbr_locks);
 	} else {
 		tmp = alloc_on_heap(q, 2);
@@ -2080,7 +2080,7 @@ static bool do_mutex_property_wild(query *q)
 
 	cell tmp;
 	make_int(&tmp, q->st.v1);
-	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_THREAD | FLAG_INT_HEX;
+	tmp.flags |= FLAG_INT_THREAD | FLAG_INT_HEX;
 
 	if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
 		return false;
@@ -2209,7 +2209,7 @@ static bool bif_pl_recv_2(query *q)
 
 	cell tmp;
 	make_int(&tmp, q->curr_chan);
-	tmp.flags |= FLAG_INT_STREAM | FLAG_INT_THREAD | FLAG_INT_HEX;
+	tmp.flags |= FLAG_INT_THREAD | FLAG_INT_HEX;
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
