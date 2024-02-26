@@ -812,9 +812,7 @@ static bool bif_thread_create_3(query *q)
 	cell *tmp2 = alloc_on_heap(t->q, 1+goal->nbr_cells+1);
 	check_heap_error(tmp2);
 	pl_idx nbr_cells = 0;
-	make_struct(tmp2+nbr_cells, g_conjunction_s, bif_iso_conjunction_2, 2, goal->nbr_cells+1);
-	SET_OP(tmp2+nbr_cells, OP_XFY);
-	nbr_cells++;
+	make_struct(tmp2+nbr_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, goal->nbr_cells+1);
 	nbr_cells += dup_cells(tmp2+nbr_cells, goal, goal->nbr_cells);
 	make_struct(tmp2+nbr_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 	t->goal = tmp2;
@@ -827,9 +825,7 @@ static bool bif_thread_create_3(query *q)
 		cell *tmp2 = alloc_on_heap(q, 1+goal->nbr_cells+1);
 		check_heap_error(tmp2);
 		pl_idx nbr_cells = 0;
-		make_struct(tmp2+nbr_cells, g_conjunction_s, bif_iso_conjunction_2, 2, goal->nbr_cells+1);
-		SET_OP(tmp2+nbr_cells, OP_XFY);
-		nbr_cells++;
+		make_struct(tmp2+nbr_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, goal->nbr_cells+1);
 		nbr_cells += dup_cells(tmp2+nbr_cells, goal, goal->nbr_cells);
 		make_struct(tmp2+nbr_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 		THREAD_DEBUG DUMP_TERM("at_exit", tmp2, q->st.curr_frame, 0);
