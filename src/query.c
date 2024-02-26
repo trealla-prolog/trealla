@@ -1983,21 +1983,20 @@ query *query_create(module *m, bool is_task)
 
 	// Allocate these later as needed...
 
-	q->heap_size = is_task ? INITIAL_NBR_HEAP_CELLS/4 : INITIAL_NBR_HEAP_CELLS;
+	q->heap_size = INITIAL_NBR_HEAP_CELLS;
 	q->tmph_size = INITIAL_NBR_CELLS;
 
 	for (int i = 0; i < MAX_QUEUES; i++)
-		q->q_size[i] = is_task ? INITIAL_NBR_QUEUE_CELLS/4 : INITIAL_NBR_QUEUE_CELLS;
+		q->q_size[i] = INITIAL_NBR_QUEUE_CELLS;
 
 	clear_write_options(q);
 	return q;
 }
 
-query *query_create_task(query *q, cell *curr_instr)
+query *query_create_subquery(query *q, cell *curr_instr)
 {
 	query *task = query_create(q->st.m, true);
 	if (!task) return NULL;
-	task->is_task = true;
 	task->parent = q;
 	task->st.fp = 1;
 	task->p = q->p;
@@ -2012,5 +2011,13 @@ query *query_create_task(query *q, cell *curr_instr)
 	fdst->initial_slots = fdst->actual_slots = fsrc->actual_slots;
 	fdst->dbgen = ++q->pl->dbgen;
 	task->st.sp = fdst->actual_slots;
+	return task;
+}
+
+query *query_create_task(query *q, cell *curr_instr)
+{
+	query *task = query_create_subquery(q->st.m, true);
+	if (!task) return NULL;
+	task->is_task = true;
 	return task;
 }
