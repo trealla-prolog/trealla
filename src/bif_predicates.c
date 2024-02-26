@@ -2004,12 +2004,11 @@ static bool bif_duplicate_term_2(query *q)
 	if (is_var(from)) {
 		GET_NEXT_RAW_ARG(to,any);
 		tmp = deep_copy_to_heap_with_replacement(q, from, from_ctx, true, from, from_ctx, to, to_ctx);
-		check_heap_error(tmp);
 	} else {
 		tmp = deep_copy_to_heap(q, from, from_ctx, true);
-		check_heap_error(tmp);
 	}
 
+	check_heap_error(tmp);
 	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 }
 
@@ -2035,12 +2034,11 @@ static bool bif_iso_copy_term_2(query *q)
 	if (is_var(from)) {
 		GET_NEXT_RAW_ARG(to,any);
 		tmp = deep_copy_to_heap_with_replacement(q, from, from_ctx, false, from, from_ctx, to, to_ctx);
-		check_heap_error(tmp);
 	} else {
 		tmp = deep_copy_to_heap(q, from, from_ctx, false);
-		check_heap_error(tmp);
 	}
 
+	check_heap_error(tmp);
 	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 }
 
@@ -2064,12 +2062,11 @@ static bool bif_copy_term_nat_2(query *q)
 	if (is_var(from)) {
 		GET_NEXT_RAW_ARG(to,any);
 		tmp = deep_copy_to_heap_with_replacement(q, from, from_ctx, false, from, from_ctx, to, to_ctx);
-		check_heap_error(tmp);
 	} else {
 		tmp = deep_copy_to_heap(q, from, from_ctx, false);
-		check_heap_error(tmp);
 	}
 
+	check_heap_error(tmp);
 	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 }
 
