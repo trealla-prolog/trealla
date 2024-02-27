@@ -1970,7 +1970,7 @@ static bool bif_term_singletons_2(query *q)
 	return unify(q, p2, p2_ctx, tmp2, q->st.curr_frame);
 }
 
-// Copy attributes (Note: SICStus & YAP don't, Scryer & SWI do)
+// Copy attributes
 
 static bool bif_duplicate_term_2(query *q)
 {
