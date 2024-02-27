@@ -1970,9 +1970,7 @@ static bool bif_term_singletons_2(query *q)
 	return unify(q, p2, p2_ctx, tmp2, q->st.curr_frame);
 }
 
-// Copy attributes
-
-static bool bif_duplicate_term_2(query *q)
+static bool do_duplicate_term(query *q, bool copy_attrs)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
@@ -1983,7 +1981,7 @@ static bool bif_duplicate_term_2(query *q)
 		slot *e1 = GET_SLOT(f1, p1->var_nbr);
 		slot *e2 = GET_SLOT(f2, p2->var_nbr);
 
-		if (e1->c.attrs) {
+		if (e1->c.attrs && copy_attrs) {
 			e2->c.attrs = deep_copy_to_heap_with_replacement(q, e1->c.attrs, e1->c.attrs_ctx, false, p1, p1_ctx, p2, p2_ctx);
 			check_heap_error(e2->c.attrs);
 			e2->c.attrs_ctx = q->st.curr_frame;
@@ -2003,71 +2001,34 @@ static bool bif_duplicate_term_2(query *q)
 
 	if (is_var(from)) {
 		GET_NEXT_RAW_ARG(to,any);
-		tmp = deep_copy_to_heap_with_replacement(q, from, from_ctx, true, from, from_ctx, to, to_ctx);
+		tmp = deep_copy_to_heap_with_replacement(q, from, from_ctx, copy_attrs, from, from_ctx, to, to_ctx);
 	} else {
-		tmp = deep_copy_to_heap(q, from, from_ctx, true);
+		tmp = deep_copy_to_heap(q, from, from_ctx, copy_attrs);
 	}
 
 	check_heap_error(tmp);
 	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+}
+
+// Do copy attributes
+
+static bool bif_duplicate_term_2(query *q)
+{
+	return do_duplicate_term(q, true);
 }
 
 // Don't copy attributes (Note: SICStus & YAP don't, Scryer & SWI do)
 
 static bool bif_iso_copy_term_2(query *q)
 {
-	GET_FIRST_ARG(p1,any);
-	GET_NEXT_ARG(p2,any);
-
-	if (is_var(p1) && is_var(p2))
-		return true;
-
-	if (is_atomic(p1) && is_var(p2))
-		return unify(q, p1, p1_ctx, p2, p2_ctx);
-
-	if (!is_var(p2) && !has_vars(q, p1, p1_ctx))
-		return unify(q, p1, p1_ctx, p2, p2_ctx);
-
-	GET_FIRST_RAW_ARG(from,any);
-	cell *tmp;
-
-	if (is_var(from)) {
-		GET_NEXT_RAW_ARG(to,any);
-		tmp = deep_copy_to_heap_with_replacement(q, from, from_ctx, false, from, from_ctx, to, to_ctx);
-	} else {
-		tmp = deep_copy_to_heap(q, from, from_ctx, false);
-	}
-
-	check_heap_error(tmp);
-	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+	return do_duplicate_term(q, false);
 }
+
+// Don't copy attributes
 
 static bool bif_copy_term_nat_2(query *q)
 {
-	GET_FIRST_ARG(p1,any);
-	GET_NEXT_ARG(p2,any);
-
-	if (is_var(p1) && is_var(p2))
-		return true;
-
-	if (is_atomic(p1) && is_var(p2))
-		return unify(q, p1, p1_ctx, p2, p2_ctx);
-
-	if (!is_var(p2) && !has_vars(q, p1, p1_ctx))
-		return unify(q, p1, p1_ctx, p2, p2_ctx);
-
-	GET_FIRST_RAW_ARG(from,any);
-	cell *tmp;
-
-	if (is_var(from)) {
-		GET_NEXT_RAW_ARG(to,any);
-		tmp = deep_copy_to_heap_with_replacement(q, from, from_ctx, false, from, from_ctx, to, to_ctx);
-	} else {
-		tmp = deep_copy_to_heap(q, from, from_ctx, false);
-	}
-
-	check_heap_error(tmp);
-	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+	return do_duplicate_term(q, false);
 }
 
 static bool bif_iso_functor_3(query *q)
