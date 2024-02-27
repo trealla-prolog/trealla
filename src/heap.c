@@ -586,13 +586,6 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx
 		}
 	}
 
-	if (is_var(p1)) {
-		cell tmp2;
-		tmp2 = *p1;
-		tmp2.var_nbr = q->tab0_varno;
-		unify(q, &tmp2, q->st.curr_frame, tmp, q->st.curr_frame);
-	}
-
 	if (!copy_attrs)
 		return tmp;
 
