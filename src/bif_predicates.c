@@ -1998,21 +1998,7 @@ static bool do_duplicate_term(query *q, bool copy_attrs)
 
 	cell *tmp2 = deep_copy_to_heap(q, p1, p1_ctx, copy_attrs);
 	check_heap_error(tmp2);
-
-#if 1
 	return unify(q, p2, p2_ctx, tmp2, q->st.curr_frame);
-#else
-	if (!q->cycle_error)
-		return unify(q, p2, p2_ctx, tmp2, q->st.curr_frame);
-
-	GET_FIRST_RAW_ARG(from,any);
-	cell *tmp = clone_to_heap(q, from, from_ctx);
-
-	if (!unify(q, tmp, from_ctx, p2, p2_ctx))
-		return false;
-
-	return unify(q, tmp, from_ctx, tmp2, q->st.curr_frame);
-#endif
 }
 
 // Do copy attributes
