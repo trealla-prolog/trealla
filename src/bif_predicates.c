@@ -1997,15 +1997,7 @@ static bool do_duplicate_term(query *q, bool copy_attrs)
 		return unify(q, p1, p1_ctx, p2, p2_ctx);
 
 	GET_FIRST_RAW_ARG(from,any);
-	cell *tmp;
-
-	if (is_var(from)) {
-		GET_NEXT_RAW_ARG(to,any);
-		tmp = deep_copy_to_heap_with_replacement(q, from, from_ctx, copy_attrs, from, from_ctx, to, to_ctx);
-	} else {
-		tmp = deep_copy_to_heap(q, from, from_ctx, copy_attrs);
-	}
-
+	cell *tmp = deep_copy_to_heap(q, from, from_ctx, copy_attrs);
 	check_heap_error(tmp);
 	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 }
