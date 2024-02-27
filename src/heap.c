@@ -543,26 +543,16 @@ unsigned rebase_term(query *q, cell *c, unsigned start_nbr)
 
 static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs, cell *from, pl_idx from_ctx, cell *to, pl_idx to_ctx)
 {
-	cell *c = deref(q, p1, p1_ctx);
-	pl_idx c_ctx = q->latest_ctx;
 	const frame *f = GET_CURR_FRAME();
 	q->vars = sl_create(NULL, NULL, NULL);
 	q->varno = f->actual_slots;
 	q->tab_idx = 0;
 
-	if (is_var(p1)) {
-		const frame *f = GET_FRAME(p1_ctx);
-		slot *e = GET_SLOT(f, p1->var_nbr);
-		const pl_idx slot_nbr = f->base + p1->var_nbr;
-		e->vgen = q->vgen+1; // +1 because that is what deep_clone_to_tmp() will do
-		if (e->vgen == 0) e->vgen++;
-		q->tab0_varno = q->varno;
-		q->tab_idx++;
-		sl_set(q->vars, (void*)(size_t)slot_nbr, (void*)(size_t)q->varno);
-		q->varno++;
-	}
+	cell *c = deref(q, p1, p1_ctx);
+	pl_idx c_ctx = q->latest_ctx;
 
 	cell *tmp = deep_clone_to_tmp(q, c, c_ctx);
+
 	if (!tmp) {
 		sl_destroy(q->vars);
 		q->vars = NULL;

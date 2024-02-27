@@ -1996,10 +1996,19 @@ static bool do_duplicate_term(query *q, bool copy_attrs)
 	if (!is_var(p2) && !has_vars(q, p1, p1_ctx))
 		return unify(q, p1, p1_ctx, p2, p2_ctx);
 
+	cell *tmp2 = deep_copy_to_heap(q, p1, p1_ctx, copy_attrs);
+	check_heap_error(tmp2);
+
+	if (!q->cycle_error)
+		return unify(q, p2, p2_ctx, tmp2, q->st.curr_frame);
+
 	GET_FIRST_RAW_ARG(from,any);
-	cell *tmp = deep_copy_to_heap(q, from, from_ctx, copy_attrs);
-	check_heap_error(tmp);
-	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+	cell *tmp = clone_to_heap(q, from, from_ctx);
+
+	if (!unify(q, tmp, from_ctx, p2, p2_ctx))
+		return false;
+
+	return unify(q, tmp, from_ctx, tmp2, q->st.curr_frame);
 }
 
 // Do copy attributes
