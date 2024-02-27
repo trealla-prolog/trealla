@@ -18,6 +18,7 @@ void convert_path(char *filename);
 static skiplist *g_symtab;
 static size_t s_pool_size = 64000, s_pool_offset = 0;
 char *g_pool = NULL;
+static lock g_guard;
 
 pl_idx g_empty_s, g_dot_s, g_cut_s, g_nil_s, g_true_s, g_fail_s;
 pl_idx g_anon_s, g_neck_s, g_eof_s, g_lt_s, g_gt_s, g_eq_s, g_false_s;
@@ -80,16 +81,16 @@ static pl_idx add_to_pool(const char *name)
 
 pl_idx new_atom(prolog *pl, const char *name)
 {
-	acquire_lock(&pl->guard);
+	acquire_lock(&g_guard);
 	const void *val;
 
 	if (sl_get(g_symtab, name, &val)) {
-		release_lock(&pl->guard);
+		release_lock(&g_guard);
 		return (pl_idx)(size_t)val;
 	}
 
 	pl_idx off = add_to_pool(name);
-	release_lock(&pl->guard);
+	release_lock(&g_guard);
 	return off;
 }
 
@@ -228,6 +229,7 @@ static void g_destroy()
 	sl_destroy(g_symtab);
 	free(g_pool);
 	free(g_tpl_lib);
+	deinit_lock(&g_guard);
 }
 
 void ptrfree(const void *key, const void *val, const void *p)
@@ -477,6 +479,7 @@ static bool g_init(prolog *pl)
 {
 	bool error = false;
 
+	init_lock(&g_guard);
 	g_pool = calloc(1, s_pool_size);
 	s_pool_offset = 0;
 
