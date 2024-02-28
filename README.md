@@ -14,6 +14,7 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	API for calling from C (or by using WASM from Go & JS)
 	Access SQLITE databases using builtin module (uses FFI)
 	Concurrency via tasks / linda / futures / engines (generators)
+	Pre-emptive threads
 	Rational trees ##EXPERIMENTAL##
 	CLP(Z) ##EXPERIMENTAL##
 
@@ -145,7 +146,7 @@ unless you choose to build without SSL/TLS support:
 
 	make NOSSL=1
 
-To build without preemptive multithreading support:
+To build without pre-emptive multi-threading support:
 
 	make NOTHREADS=1
 
@@ -1145,13 +1146,14 @@ engines.
 	engine_destroy/1
 
 
-Preemptive Multithreading (Prolog queries)
-==========================================
+Pre-emptive Multi-threading
+===========================
 
-Start independent (shared state) Prolog queries as dedicated
-threads and communicate via message queues. Each thread has it's own
-message queue associated with it. Note: the database
-*is* shared.
+Start independent (shared state) Prolog queries as dedicated threads
+and communicate via message queues. Note: the database *is* shared.
+These predicates conform to the *ISO Prolog multi-threading
+support* standards proposal (ISO/IEC DTR 13211–5:2007), now lapsed.
+
 
 ```
 	thread_create/3		# thread_create(:callable,-thread,+options)
@@ -1220,13 +1222,13 @@ join_done
 ```
 
 
-Multi-threading (Prolog instances)			##EXPERIMENTAL##
-==================================
+Prolog instances			##EXPERIMENTAL##
+================
 
 Start independent (no shared state) Prolog instances as dedicated
-threads and communicate via message queues. Each thread has it's own
-message queue associated with it. Note: the database is *not* shared.
-For shared data in this case consider using SQLite.
+pre-emptive threads and communicate via message queues. Each thread
+has it's own message queue associated with it. Note: the database
+is *not* shared. For shared data in this case consider using SQLite.
 
 ```
 	pl_thread/3				# pl_thread(-thread,+filename,+options)
