@@ -525,7 +525,7 @@ communication...
 
 For example...
 
-```
+```console
 tpl -g "use_module(library(apply)),popen('ps -a',read,S,[]),getlines(S,Ls),close(S),maplist(print,Ls),halt"
 	PID   TTY      TIME     CMD
 	2806  tty2     00:00:00 gnome-session-b
@@ -544,7 +544,7 @@ For general *POSIX* process creation use these *SWI-compatible* calls...
 
 For example...
 
-```
+```console
 	?- process_create('ls',['-l'],[process(Pid)]),process_wait(Pid).
 	total 2552
 	   4 -rw-rw-r-- 1 andrew andrew    1813 Aug 25 10:18 ATTRIBUTION
@@ -630,7 +630,7 @@ Where options can be:
 
 Examples...
 
-```
+```console
 	?- parse_csv_line('123,2.345,3456789',T).
 	   T = ['123','2.345','3456789'].
 	?- parse_csv_line("123,2.345,3456789",T).
@@ -712,9 +712,7 @@ HTTP 1.1
 	http_patch/4			# http_patch(Url, Data, Opts)
 	http_put/4				# http_put(Url, Data, Opts)
 	http_delete/3			# http_delete(Url, Data, Opts)
-
 	http_server/2			# http_server(Goal,Opts),
-
 	http_request/5			# http_request(S, Method, Path, Ver, Hdrs)
 
 A server *Goal* takes a single arg, the connection stream.
@@ -728,7 +726,7 @@ These two are bidirectional...
 	http_location/2         # http_location(?list,?url)
 	parse_url/2             # parse_url(?url,?list)
 
-```
+```console
 	$ tpl
 	?- parse_url('http://www.xyz.org:81/hello?msg=Hello+World%21&foo=bar#xyz',P).
 	   P = [search([msg='Hello World!',foo=bar]),protocol(http),host('www.xyz.org'),port(81),path('/hello'),fragment(xyz)].
@@ -763,8 +761,8 @@ meaning return all bytes until end end of file,
 Simple regular expressions				##EXPERIMENTAL##
 ==========================
 
-This is meant as a place-holder until a proper regular expresion
-package (packages?) is included.
+This is meant as a place-holder until a proper regex package
+ is included.
 
 	sre_compile/2				# sre_compile(+pattern,-reg)
 	sre_matchp/4				# sre_matchp(+reg,+text,-match,-rest)
@@ -781,6 +779,7 @@ package (packages?) is included.
 	sre_subst_all/4				# sre_subst(+pattern,+text,+subst,-text)
 
 	sre_subst_all_in_file/4		# sre_subst_in_file(+pattern,+filename,+subst,-text)
+
 ```
 	 * Supports:
 	 * ---------
@@ -934,14 +933,12 @@ Foreign Module Interface (libffi)		##EXPERIMENTAL##
 This is a simplified interface to FFIs inspired by Adrián Arroyo Calle
 and largely supercedes the implementation given above.
 
-```
 	foreign_struct(+atom, +list)
 	use_foreign_module(+atom, +list)
-```
 
 For example...
 
-```
+```prolog
 	:- use_foreign_module('samples/libfoo.so', [
 		bar([double, sint64, -double], sint64),
 		baz([cstr, cstr], cstr)
@@ -957,7 +954,7 @@ usage downloading a file.
 This is an example using SQLITE. Given the code in
 *samples/sqlite3.pl*...
 
-```console
+```prolog
 	:- use_module(library(sqlite3)).
 
 	run :-
@@ -990,7 +987,7 @@ an event of some kind). They are called a `task` here.
 
 An example:
 
-```
+```prolog
 	:-use_module(library(http)).
 
 	geturl(Url) :-
@@ -1032,7 +1029,6 @@ Linda Co-ordination Language			##EXPERIMENTAL##
 Implements a toy (local-only) version of Linda using tasks. See:
 [swi-prolog](https://www.swi-prolog.org/pldoc/man?section=tipc-linda-clients).
 
-```
 	linda_eval/1                    # linda_eval(:goal)
 	out/1                           # out(+tuple)
 	in/1                            # in(?tuple)
@@ -1043,11 +1039,10 @@ Implements a toy (local-only) version of Linda using tasks. See:
 	bagof_rd_noblock/3              # bagof_rd_noblock(+term,+tuple,?list)
 	wait/0
 	end_wait/0
-```
 
 For example:
 
-```
+```prolog
 	:- use_module(library(linda)).
 	:- initialization(main).
 
@@ -1077,7 +1072,7 @@ For example:
 		fail.
 ```
 
-```
+```console
 	$ tpl samples/test_linda.pl
 	[consumer,B,got=,1]
 	[consumer,B,got=,2]
@@ -1098,18 +1093,16 @@ Concurrent Futures						##EXPERIMENTAL##
 Inspired by [Tau-Prolog](http://tau-prolog.org/documentation#concurrent)
 concurrent futures. Uses co-operative tasks.
 
-```
 	future/3 – Make a Future from a Prolog goal.
 	future_all/2 – Make a Future that resolves to a list of the results of an input list of futures.
 	future_any/2 – Make a Future that resolves as soon as any of the futures in a list succeeds.
 	future_cancel/1 – Cancel unfinished future.
 	future_done/1 – Check if a future finished.
 	await/2 – Wait for a Future.
-```
 
 For example:
 
-```
+```prolog
 	:- use_module(library(concurrent)).
 	:- use_module(library(http)).
 
@@ -1131,7 +1124,6 @@ Engines						##EXPERIMENTAL##
 Inspired by [SWI-Prolog](https://www.swi-prolog.org/pldoc/man?section=engine-predicates)
 engines. Uses co-operative tasks.
 
-```
 	engine_create/[3,4]
 	engine_next/2
 	engine_yield/1
@@ -1141,7 +1133,6 @@ engines. Uses co-operative tasks.
 	is_engine/1
 	current_engine/1
 	engine_destroy/1
-```
 
 
 Pre-emptive Multi-threading
@@ -1153,7 +1144,6 @@ These predicates conform to the *ISO Prolog multi-threading
 support* standards proposal (ISO/IEC DTR 13211–5:2007), now lapsed.
 
 
-```
 	thread_create/3		# thread_create(:callable,-thread,+options)
 	thread_create/2		# thread_create(:callable,-thread)
 	thread_signal/2		# thread_signal(+thread,:callable)
@@ -1166,14 +1156,12 @@ support* standards proposal (ISO/IEC DTR 13211–5:2007), now lapsed.
 	thread_yield/0		# thread_yield
 	thread_property/2	# thread_property(+thread,+term)
 	thread_property/1	# thread_property(+term)
-```
 
 Where 'options' can be *alias(+atom)*, *at_exit(:term)* and/or *detached(+boolean)*
 (the default is *NOT* detached, ie. joinable).
 
 Create a stand-alone message queue...
 
-```
 	message_queue_create/2		# message_queue_create(-queue,+options)
 	message_queue_create/1		# message_queue_create(-queue)
 	message_queue_destroy/1		# message_queue_destroy(+queue)
@@ -1184,14 +1172,12 @@ Create a stand-alone message queue...
 	thread_get_message/1		# thread_get_message(?term)
 	thread_peek_message/2		# thread_peek_message(+queue,?term)
 	thread_peek_message/1		# thread_peek_message(?term)
-```
 
 Where 'options' can be *alias(+atom)*. Note: you can send/get/peek
 to a thread as well.
 
 Create a stand-alone mutex...
 
-```
 	mutex_create/2				# mutex_create(-mutex,+options)
 	mutex_create/1				# mutex_create(-mutex)
 	mutex_destroy/1				# mutex_destroy(+mutex)
@@ -1201,7 +1187,6 @@ Create a stand-alone mutex...
 	mutex_unlock_all/0			# mutex_unlock_all
 	mutex_property/2			# mutex_property(+mutex,+term)
 	with_mutex/2				# with_mutex(+mutex,:callable)
-```
 
 Where 'options' can be *alias(+atom)*.
 
@@ -1209,16 +1194,15 @@ Note: you can trylock/lock/unlock a thread or message queue as well.
 
 For example...
 
-```
-?- thread_create((format("thread_hello~n",[]),sleep(1),format("thread_done~n",[]),thread_exit(99)), Tid, []), format("joining~n",[]), thread_join(Tid,Status), format("join_done~n",[]).
-joining
-thread_hello
-thread_done
-join_done
-   Tid = 1, Status = exited(99).
-?-
-```
-
+	```console
+	?- thread_create((format("thread_hello~n",[]),sleep(1),format("thread_done~n",[]),thread_exit(99)), Tid, []), format("joining~n",[]), thread_join(Tid,Status), format("join_done~n",[]).
+	joining
+	thread_hello
+	thread_done
+	join_done
+	   Tid = 1, Status = exited(99).
+	?-
+	```
 
 Prolog instances			##EXPERIMENTAL##
 ================
@@ -1228,22 +1212,18 @@ pre-emptive threads and communicate via message queues. Each thread
 has it's own message queue associated with it. Note: the database
 is *not* shared. For shared data in this case consider using SQLite.
 
-```
 	pl_thread/3				# pl_thread(-thread,+filename,+options)
 	pl_thread/2				# pl_thread(-thread,+filename)
-```
 
 Where 'options' can be (currently just) *alias(+atom)*.
 
-```
 	pl_msg_send/2			# pl_msg_send(+thread,+term)
 	pl_msg_recv/2			# pl_msg_recv(-thread,-term)
 
-```
 
 For example...
 
-```
+```console
 	$ cat samples/thread_calc.pl
 	:- initialization(main).
 
@@ -1274,7 +1254,7 @@ Profile
 
 Why did I put this here?
 
-```
+```console
 	$ time tpl -q -g 'main,statistics(profile,_),halt' -f ~/trealla/samples/chess.pl 2>chess.csv
 	$ head -1 chess.csv >chess_sorted.csv && tail -n+2 chess.csv | sort -k 3 -t ',' -n -r >> chess_sorted.csv
 	$ cat chess_sorted.csv
@@ -1290,4 +1270,3 @@ Why did I put this here?
 	'occupied_by/4',673316,673316,0
 	...
 ```
-
