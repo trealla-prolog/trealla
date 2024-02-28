@@ -977,20 +977,16 @@ Run...
 	[[1,'Paul',32,'California',20000.0],[2,'Allen',25,'Texas',15000.0],[3,'Teddy',23,'Norway',20000.0],[4,'Mark',25,'Rich-Mond ',65000.0],[5,'David',27,'Texas',85000.0],[6,'Kim',22,'South-Hall',45000.0]]
 ```
 
-Concurrency (tasks)						##EXPERIMENTAL##
-===================
+Concurrent Tasks						##EXPERIMENTAL##
+================
 
-Trealla is thread-safe, but single-threaded internally. Cooperative
-multitasking is available in the form of light-weight coroutines that
+Trealla is thread-safe, but single-threaded internally. Co-operative
+multi-tasking is available in the form of light-weight coroutines that
 run until they yield either explicitly or implicitly (when waiting on
 an event of some kind). They are called a `task` here.
 
 	task/[1-n]	            # concurrent form of call/1-n
 	tasklist/[2-8]          # concurrent form of maplist/1-n
-
-Note: *tasklist* limits the number of concurrent tasks to a small
-pool (4?) of tasks active at one time. New tasks are scheduled as prior
-ones complete (should this be optional?).
 
 An example:
 
@@ -1097,11 +1093,11 @@ For example:
 	done
 ```
 
-Concurrency (futures)						##EXPERIMENTAL##
-=====================
+Futures						##EXPERIMENTAL##
+=======
 
 Inspired by [Tau-Prolog](http://tau-prolog.org/documentation#concurrent)
-futures.
+futures. Uses co-operative tasks.
 
 ```
 	future/3 – Make a Future from a Prolog goal.
@@ -1129,12 +1125,13 @@ test9(C) :-
 See `samples/testconcurrent.pl`.
 
 
-Concurrency (engines)						##EXPERIMENTAL##
-=====================
+Engines						##EXPERIMENTAL##
+=======
 
 Inspired by [SWI-Prolog](https://www.swi-prolog.org/pldoc/man?section=engine-predicates)
-engines.
+engines. Uses co-operative tasks.
 
+```
 	engine_create/[3,4]
 	engine_next/2
 	engine_yield/1
@@ -1144,6 +1141,7 @@ engines.
 	is_engine/1
 	current_engine/1
 	engine_destroy/1
+```
 
 
 Pre-emptive Multi-threading
