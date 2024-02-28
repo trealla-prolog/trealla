@@ -2011,7 +2011,7 @@ static bool do_duplicate_term(query *q, bool copy_attrs)
 	cell *tmpp1 = tmp + 1;
 	cell *tmpp2 = tmpp1 + tmpp1->nbr_cells;
 	unify(q, tmpp1, q->st.curr_frame, tmpp2, q->st.curr_frame);
-	return unify(q, p2, p2_ctx, tmpp2, q->st.curr_frame);
+	return unify(q, p2, p2_ctx, tmpp1, q->st.curr_frame);
 }
 
 // Do copy attributes
