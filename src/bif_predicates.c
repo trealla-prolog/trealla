@@ -5938,7 +5938,7 @@ static bool bif_sys_get_level_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
-static bool bif_sys_dump_2(query *q)
+static bool bif_sys_dump_term_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,atom);
@@ -6655,7 +6655,7 @@ builtins g_other_bifs[] =
 	{"$alarm", 1, bif_sys_alarm_1, "+integer", false, false, BLAH},
 	{"$first_non_octet", 2, bif_sys_first_non_octet_2, "+chars,-integer", false, false, BLAH},
 	{"$skip_max_list", 4, bif_sys_skip_max_list_4, "?integer,?integer?,?term,?term", false, false, BLAH},
-	{"$dump", 2, bif_sys_dump_2, "+term, +bool", false, false, BLAH},
+	{"$dump_term", 2, bif_sys_dump_term_2, "+term, +bool", false, false, BLAH},
 
 #if USE_OPENSSL
 	{"crypto_data_hash", 3, bif_crypto_data_hash_3, "?string,?string,?list", false, false, BLAH},
