@@ -1026,11 +1026,10 @@ An example:
 	Time elapsed 0.33 secs
 ```
 
-Concurrency (linda)							##EXPERIMENTAL##
-===================
+Linda Co-ordination Language			##EXPERIMENTAL##
+============================
 
-Implements a toy (local-only) version of the Linda coordination
-language using coroutines (tasks). See:
+Implements a toy (local-only) version of Linda using tasks. See:
 [swi-prolog](https://www.swi-prolog.org/pldoc/man?section=tipc-linda-clients).
 
 ```
@@ -1049,8 +1048,8 @@ language using coroutines (tasks). See:
 For example:
 
 ```
-	:- initialization(main).
 	:- use_module(library(linda)).
+	:- initialization(main).
 
 	main :-
 		linda_eval(consumer('A')),
@@ -1093,11 +1092,11 @@ For example:
 	done
 ```
 
-Futures						##EXPERIMENTAL##
-=======
+Concurrent Futures						##EXPERIMENTAL##
+==================
 
 Inspired by [Tau-Prolog](http://tau-prolog.org/documentation#concurrent)
-futures. Uses co-operative tasks.
+concurrent futures. Uses co-operative tasks.
 
 ```
 	future/3 – Make a Future from a Prolog goal.
@@ -1110,16 +1109,17 @@ futures. Uses co-operative tasks.
 
 For example:
 
-:- use_module(library(http)).
-
 ```
-test9(C) :-
-	future(Status1, geturl("www.google.com", Status1), F1),
-	future(Status2, geturl("www.bing.com", Status2), F2),
-	future(Status3, geturl("www.duckduckgo.com", Status3), F3),
-	future_all([F1,F2,F3], F),
-	await(F, StatusCodes),
-	C = StatusCodes.
+	:- use_module(library(concurrent)).
+	:- use_module(library(http)).
+
+	test :-
+		future(Status1, geturl("www.google.com", Status1), F1),
+		future(Status2, geturl("www.bing.com", Status2), F2),
+		future(Status3, geturl("www.duckduckgo.com", Status3), F3),
+		future_all([F1,F2,F3], F),
+		await(F, StatusCodes),
+		C = StatusCodes.
 ```
 
 See `samples/testconcurrent.pl`.
