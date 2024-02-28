@@ -5967,10 +5967,10 @@ static bool bif_sys_dump_2(query *q)
 			tmp->nbr_cells, tmp->arity);
 
 		if ((tmp->tag == TAG_INTEGER) && !is_managed(tmp))
-			printf(", val=%lld", (long long)tmp->val_int);
+			printf(", %lld", (long long)tmp->val_int);
 
 		if (tmp->tag == TAG_INTERNED)
-			printf(", str='%s'", C_STR(q, tmp));
+			printf(", '%s'", C_STR(q, tmp));
 
 		if (is_ref(tmp))
 			printf(", slot=%u, ctx=%u", tmp->var_nbr, tmp->var_ctx);
