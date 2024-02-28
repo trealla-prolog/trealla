@@ -573,14 +573,15 @@ read_line_to_codes(Stream, Codes) :-
 
 sleep(Secs) :-
 	'$must_be'(Secs, number, sleep/1, _),
-	(Secs < 0 ->
-		throw(error(domain_error(not_less_than_zero, Secs), sleep/1))
-	;	true
-	),
 	Ms is Secs * 1000,
-	delay(Ms).
+	'$msleep'(Ms).
 
-:- help(sleep(+integer), [iso(false)]).
+:- help(sleep(+number), [iso(false)]).
+
+delay(Msecs) :-
+	'$msleep'(Msecs).
+
+:- help(delay(+number), [iso(false)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %

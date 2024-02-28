@@ -3502,7 +3502,7 @@ static bool bif_statistics_2(query *q)
 	return false;
 }
 
-static bool bif_delay_1(query *q)
+static bool bif_sys_msleep_1(query *q)
 {
 	if (q->retry)
 		return true;
@@ -5938,6 +5938,51 @@ static bool bif_sys_get_level_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
+static bool bif_sys_dump_2(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,atom);
+	GET_FIRST_RAW_ARG(p1x,any);
+	bool deref = p2->val_off == g_true_s;
+	p1 = deref ? p1 : p1x;
+	cell *tmp = p1;
+
+	for (unsigned i = 0; i <p1->nbr_cells; i++, tmp++) {
+		printf("[%02u] tag=%10s, nbr_cells=%u",
+			i,
+			(
+				(tmp->tag == TAG_VAR && is_ref(tmp))? "var_ref" :
+				tmp->tag == TAG_VAR ? "var" :
+				tmp->tag == TAG_INTERNED ? "interned" :
+				tmp->tag == TAG_CSTR ? "cstr" :
+				tmp->tag == TAG_CSTR ? "cstr" :
+				tmp->tag == TAG_INTEGER ? "integer" :
+				tmp->tag == TAG_DOUBLE ? "float" :
+				tmp->tag == TAG_RATIONAL ? "rational" :
+				tmp->tag == TAG_INDIRECT ? "indirect" :
+				tmp->tag == TAG_BLOB ? "blob" :
+				tmp->tag == TAG_DBID ? "dbid" :
+				"other"
+			),
+			tmp->nbr_cells);
+
+		if ((tmp->tag == TAG_INTEGER) && !is_managed(tmp))
+			printf(", val=%lld", (long long)tmp->val_int);
+
+		if (tmp->tag == TAG_INTERNED)
+			printf(", str='%s'", C_STR(q, tmp));
+
+		if (is_ref(tmp))
+			printf(", slot=%u, ctx=%u", tmp->var_nbr, tmp->var_ctx);
+		else if (is_var(tmp))
+			printf(", slot=%u", tmp->var_nbr);
+
+		printf("\n");
+	}
+
+	return true;
+}
+
 static bool bif_abort_0(query *q)
 {
 	return throw_error(q, q->st.curr_instr, q->st.curr_frame, "$aborted", "abort_error");
@@ -6501,7 +6546,6 @@ builtins g_other_bifs[] =
 	{"*->", 2, bif_if_2, "+term,+term", false, false, BLAH},
 	{"if", 3, bif_if_3, "+term,+term,+term", false, false, BLAH},
 
-	{"delay", 1, bif_delay_1, "+number", false, false, BLAH},
 	{"shell", 1, bif_shell_1, "+atom", false, false, BLAH},
 	{"shell", 2, bif_shell_2, "+atom,-integer", false, false, BLAH},
 	{"listing", 0, bif_listing_0, NULL, false, false, BLAH},
@@ -6588,6 +6632,7 @@ builtins g_other_bifs[] =
 	{"$must_be", 2, bif_must_be_2, "+atom,+term", false, false, BLAH},
 	{"$can_be", 2, bif_can_be_2, "+atom,+term,", false, false, BLAH},
 
+	{"$msleep", 1, bif_sys_msleep_1, "+number", false, false, BLAH},
 	{"$det_length_rundown", 2, bif_sys_det_length_rundown_2, "?list,+integer", false, false, BLAH},
 	{"$memberchk", 3, bif_sys_memberchk_3, "?term,?list,-term", false, false, BLAH},
 	{"$countall", 2, bif_sys_countall_2, "@callable,-integer", false, false, BLAH},
@@ -6610,6 +6655,7 @@ builtins g_other_bifs[] =
 	{"$alarm", 1, bif_sys_alarm_1, "+integer", false, false, BLAH},
 	{"$first_non_octet", 2, bif_sys_first_non_octet_2, "+chars,-integer", false, false, BLAH},
 	{"$skip_max_list", 4, bif_sys_skip_max_list_4, "?integer,?integer?,?term,?term", false, false, BLAH},
+	{"$dump", 2, bif_sys_dump_2, "+term, +bool", false, false, BLAH},
 
 #if USE_OPENSSL
 	{"crypto_data_hash", 3, bif_crypto_data_hash_3, "?string,?string,?list", false, false, BLAH},
