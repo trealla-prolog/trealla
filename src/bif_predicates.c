@@ -5955,7 +5955,6 @@ static bool bif_sys_dump_term_2(query *q)
 				tmp->tag == TAG_VAR ? "var" :
 				tmp->tag == TAG_INTERNED ? "interned" :
 				tmp->tag == TAG_CSTR ? "cstr" :
-				tmp->tag == TAG_CSTR ? "cstr" :
 				tmp->tag == TAG_INTEGER ? "integer" :
 				tmp->tag == TAG_DOUBLE ? "float" :
 				tmp->tag == TAG_RATIONAL ? "rational" :
