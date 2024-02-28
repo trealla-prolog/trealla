@@ -1996,9 +1996,22 @@ static bool do_duplicate_term(query *q, bool copy_attrs)
 	if (!is_var(p2) && !has_vars(q, p1, p1_ctx))
 		return unify(q, p1, p1_ctx, p2, p2_ctx);
 
-	cell *tmp2 = deep_copy_to_heap(q, p1, p1_ctx, copy_attrs);
-	check_heap_error(tmp2);
-	return unify(q, p2, p2_ctx, tmp2, q->st.curr_frame);
+	// You are not expected to understand this: basically we have
+	// to make sure the p1 variables get copied along with the
+	// deref'd values and they get linked.
+
+	GET_FIRST_RAW_ARG(p1x,any);
+	cell *tmp1 = deep_clone_to_heap(q, p1, p1_ctx);
+	check_heap_error(tmp1);
+	cell *tmp = alloc_on_heap(q, 1 + p1x->nbr_cells + tmp1->nbr_cells);
+	make_struct(tmp, g_eq_s, NULL, 2, p1x->nbr_cells + tmp1->nbr_cells);
+	dup_cells(tmp+1, p1x, p1x->nbr_cells);
+	dup_cells(tmp+1+p1x->nbr_cells, tmp1, tmp1->nbr_cells);
+	tmp = deep_copy_to_heap(q, tmp, q->st.curr_frame, copy_attrs);
+	cell *tmpp1 = tmp + 1;
+	cell *tmpp2 = tmpp1 + tmpp1->nbr_cells;
+	unify(q, tmpp1, q->st.curr_frame, tmpp2, q->st.curr_frame);
+	return unify(q, p2, p2_ctx, tmpp2, q->st.curr_frame);
 }
 
 // Do copy attributes

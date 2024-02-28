@@ -588,6 +588,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 	bool any1 = false, any2 = false;
 
 	while (is_iso_list(c)) {
+		CHECK_INTERRUPT();
 		cell *save_c = c;
 		pl_idx save_c_ctx = c_ctx;
 
@@ -687,7 +688,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 
 			if (q->portray_vars || q->do_dump_vars) {
 				//SB_sprintf(q->sb, "%s", q->p->vartab.var_name[q->dump_var_nbr]);
-				SB_sprintf(q->sb, "%s", q->p->vartab.var_name[save_tail->var_nbr]);
+				SB_sprintf(q->sb, "%s", q->p->vartab.var_name[v.var_nbr]);
 				//print_variable(q, save_head, save_head_ctx, running);
 			} else {
 				SB_sprintf(q->sb, "%s", "...");
@@ -1615,7 +1616,8 @@ bool print_term(query *q, FILE *fp, cell *c, pl_idx c_ctx, int running)
 void clear_write_options(query *q)
 {
 	q->print_idx = 0;
-	q->max_depth = q->quoted = 0;
+	q->max_depth = q->pl->def_max_depth;
+	q->quoted = 0;
 	q->nl = q->fullstop = q->varnames = q->ignore_ops = false;
 	q->parens = q->numbervars = q->json = q->double_quotes = false;
 	q->last_thing = WAS_OTHER;
