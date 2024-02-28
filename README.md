@@ -948,10 +948,10 @@ For example...
 	]).
 ```
 
-See the *library/raylib.pl* and *samples/testraylib.pl* for an example
+See the *library/raylib.pl* and *samples/test_raylib.pl* for an example
 usage including passing and returning structs by value.
 
-See the *library/curl.pl* and *samples/testcurl.pl* for an example
+See the *library/curl.pl* and *samples/test_curl.pl* for an example
 usage downloading a file.
 
 This is an example using SQLITE. Given the code in
@@ -1078,7 +1078,7 @@ For example:
 ```
 
 ```
-	$ tpl samples/testlinda.pl
+	$ tpl samples/test_linda.pl
 	[consumer,B,got=,1]
 	[consumer,B,got=,2]
 	[consumer,B,got=,3]
@@ -1122,7 +1122,7 @@ For example:
 		C = StatusCodes.
 ```
 
-See `samples/testconcurrent.pl`.
+See `samples/test_concurrent.pl`.
 
 
 Engines						##EXPERIMENTAL##
