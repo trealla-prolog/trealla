@@ -5948,7 +5948,7 @@ static bool bif_sys_dump_2(query *q)
 	cell *tmp = p1;
 
 	for (unsigned i = 0; i <p1->nbr_cells; i++, tmp++) {
-		printf("[%02u] tag=%10s, nbr_cells=%u",
+		printf("[%02u] tag=%10s, nbr_cells=%u, arity=%u",
 			i,
 			(
 				(tmp->tag == TAG_VAR && is_ref(tmp))? "var_ref" :
@@ -5964,7 +5964,7 @@ static bool bif_sys_dump_2(query *q)
 				tmp->tag == TAG_DBID ? "dbid" :
 				"other"
 			),
-			tmp->nbr_cells);
+			tmp->nbr_cells, tmp->arity);
 
 		if ((tmp->tag == TAG_INTEGER) && !is_managed(tmp))
 			printf(", val=%lld", (long long)tmp->val_int);
