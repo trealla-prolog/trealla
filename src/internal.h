@@ -195,7 +195,7 @@ extern char *g_pool;
 typedef struct {
 	pl_atomic int64_t refcnt;
 	size_t len;
-	char cstr[];	// allocated as len+1 bytes
+	char cstr[];	// len+1 bytes
 } strbuf;
 
 typedef struct {
@@ -444,7 +444,7 @@ struct clause_ {
 	bool is_unique:1;
 	bool is_fact:1;
 	bool is_deleted:1;
-	cell cells[];		// allocated as nbr_allocated_cells+1 bytes
+	cell cells[];		// nbr_allocated_cells+1 bytes
 };
 
 struct rule_ {
