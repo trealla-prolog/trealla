@@ -23,6 +23,8 @@ deep-binding. Source is byte-code compiled to a flattened AST that is
 interpreted at runtime. The intent and continued aim of Trealla is to
 be a small, easily ported, Prolog core.
 
+Trealla is thread-safe, but single-threaded internally.
+
 Available from: [trealla-prolog.org](https://trealla-prolog.org).
 
 Runs with [Jupyter Notebooks](https://github.com/LogtalkDotOrg/logtalk-jupyter-kernel#readme).
@@ -977,10 +979,9 @@ Run...
 Concurrent Tasks						##EXPERIMENTAL##
 ================
 
-Trealla is thread-safe, but single-threaded internally. Co-operative
-multi-tasking is available in the form of light-weight coroutines that
-run until they yield either explicitly or implicitly (when waiting on
-an event of some kind). They are called a `task` here.
+Co-operative multi-tasking is available in the form of light-weight
+coroutines that run until they yield either explicitly or implicitly
+(when waiting on an event of some kind). They are called a `task` here.
 
 	task/[1-n]	            # concurrent form of call/1-n
 	tasklist/[2-8]          # concurrent form of maplist/1-n
