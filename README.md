@@ -1174,20 +1174,24 @@ Create a stand-alone message queue...
 	thread_peek_message/2		# thread_peek_message(+queue,?term)
 	thread_peek_message/1		# thread_peek_message(?term)
 
-Where 'options' can be *alias(+atom)*. Note: you can send/get/peek
-to a thread as well.
+Where 'options' can be *alias(+atom)*.
+
+Note: you can send/get/peek to a thread as well.
 
 Create a stand-alone mutex...
 
 	mutex_create/2				# mutex_create(-mutex,+options)
 	mutex_create/1				# mutex_create(-mutex)
 	mutex_destroy/1				# mutex_destroy(+mutex)
+	mutex_property/2			# mutex_property(+mutex,+term)
+	with_mutex/2				# with_mutex(+mutex,:callable)
+
+Best avoided...
+
 	mutex_trylock/1				# mutex_trylock(+mutex)
 	mutex_lock/1				# mutex_lock(+mutex)
 	mutex_unlock/1				# mutex_unlock(+mutex)
 	mutex_unlock_all/0			# mutex_unlock_all
-	mutex_property/2			# mutex_property(+mutex,+term)
-	with_mutex/2				# with_mutex(+mutex,:callable)
 
 Where 'options' can be *alias(+atom)*.
 
