@@ -251,8 +251,6 @@ static void trim_cache(query *q)
 
 void trim_heap(query *q)
 {
-	trim_cache(q);
-
 	// q->heap_pages is a push-down stack and points to the
 	// most recent page of heap allocations...
 
