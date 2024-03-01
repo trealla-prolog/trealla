@@ -333,15 +333,6 @@ inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_id
 
 		if ((c_ctx == q->st.fp) && (v_ctx == q->st.curr_frame))
 			q->no_tco = true;
-	} else if (is_smallint(v)) {
-		e->c = *v;
-		share_cell(v);
-
-		// Why is this needed? It shouldn't be, so probably
-		// covering some other bug...
-
-		if ((c_ctx == q->st.fp) && (v_ctx == q->st.curr_frame))
-			q->no_tco = true;
 	} else {
 		e->c = *v;
 		share_cell(v);

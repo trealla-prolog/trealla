@@ -446,6 +446,8 @@ bool bif_iso_negation_1(query *q)
 	choice *ch = GET_CURR_CHOICE();
 	ch->succeed_on_retry = true;
 	q->st.curr_instr = tmp;
+	frame *f = GET_CURR_FRAME();
+	f->no_tco = true;				// Why?
 	return true;
 }
 
