@@ -213,6 +213,7 @@ static bool bif_sys_unifiable_3(query *q)
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
 		cell *c = deref(q, &e->c, e->c.var_ctx);
+		pl_idx c_ctx = q->latest_ctx;
 		cell *tmp = malloc(sizeof(cell)*(2+c->nbr_cells));
 		check_heap_error(tmp);
 		make_struct(tmp, g_unify_s, bif_iso_unify_2, 2, 1+c->nbr_cells);
@@ -220,7 +221,7 @@ static bool bif_sys_unifiable_3(query *q)
 		cell v;
 		make_ref(&v, tr->var_nbr, q->st.curr_frame);
 		tmp[1] = v;
-		dup_cells(tmp+2, c, c->nbr_cells);
+		dup_cells_by_ref(tmp+2, c, c_ctx, c->nbr_cells);
 		append_list(q, tmp);
 		free(tmp);
 		save_tp++;
@@ -2006,8 +2007,8 @@ static bool do_duplicate_term(query *q, bool copy_attrs)
 	GET_FIRST_RAW_ARG(p1x,any);
 	cell *tmp = alloc_on_heap(q, 1 + p1x->nbr_cells + tmp1->nbr_cells);
 	make_struct(tmp, g_eq_s, NULL, 2, p1x->nbr_cells + tmp1->nbr_cells);
-	dup_cells(tmp+1, p1x, p1x->nbr_cells);
-	dup_cells(tmp+1+p1x->nbr_cells, tmp1, tmp1->nbr_cells);
+	dup_cells_by_ref(tmp+1, p1x, p1x_ctx, p1x->nbr_cells);
+	dup_cells_by_ref(tmp+1+p1x->nbr_cells, tmp1, q->st.curr_frame, tmp1->nbr_cells);
 	tmp = deep_copy_to_heap(q, tmp, q->st.curr_frame, copy_attrs);
 	cell *tmpp1 = tmp + 1;
 	cell *tmpp2 = tmpp1 + tmpp1->nbr_cells;
