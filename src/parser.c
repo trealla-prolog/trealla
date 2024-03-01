@@ -851,9 +851,6 @@ static bool directives(parser *p, cell *d)
 		} else
 			name = C_STR(p, p1);
 
-		if (!strcmp(name, "clpz"))
-			p->pl->opt = false;			// Why???
-
 		if (!p->m->make) {
 			module *tmp_m;
 
@@ -878,6 +875,9 @@ static bool directives(parser *p, cell *d)
 
 			p->m = tmp_m;
 			p->pl->user_m->used[p->pl->user_m->idx_used++] = tmp_m;
+
+			if (!strcmp(name, "clpz"))
+				p->m->no_tco = true;
 		}
 
 		if (c->arity == 1)
