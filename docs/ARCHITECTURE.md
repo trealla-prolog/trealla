@@ -33,6 +33,9 @@ Where *val_off* is a byte-offset into the symbol table.
 Two interned cells will unify if their *val_off* is the same.
 An interned cell is always used for functor names.
 
+A temporary variable is one that occurs only in the head, a local
+is one that occurs only in the body.
+
 
 Var
 ===
