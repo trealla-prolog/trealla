@@ -341,9 +341,9 @@ static bool bif_iso_is_2(query *q)
 	p2.nbr_cells = 1;
 
 	if (is_var(p1) && is_number(&p2)) {
-		bool ok = unify(q, p1, p1_ctx, &p2, q->st.curr_frame);
+		set_var(q, p1, p1_ctx, &p2, q->st.curr_frame);
 		clr_accum(&q->accum);
-		return ok;
+		return true;
 	}
 
 	if (is_smallint(p1) && is_smallint(&p2))

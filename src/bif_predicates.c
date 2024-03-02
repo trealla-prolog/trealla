@@ -5972,10 +5972,13 @@ static bool bif_sys_dump_term_2(query *q)
 		if (tmp->tag == TAG_INTERNED)
 			printf(", '%s'", C_STR(q, tmp));
 
+		if (is_var(tmp))
+			printf(", local=%d, temp=%d", is_local(tmp), is_temporary(tmp));
+
 		if (is_ref(tmp))
 			printf(", slot=%u, ctx=%u", tmp->var_nbr, tmp->var_ctx);
 		else if (is_var(tmp))
-			printf(", slot=%u", tmp->var_nbr);
+			printf(", slot=%u, %s", tmp->var_nbr, C_STR(q, tmp));
 
 		printf("\n");
 	}

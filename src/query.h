@@ -48,6 +48,7 @@ void dump_vars(query *q, bool partial);
 int check_interrupt(query *q);
 bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n);
 void check_pressure(query *q);
+void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx);
 
 bool throw_error(query *q, cell *c, pl_idx c_ctx, const char *err_type, const char *expected);
 bool throw_error3(query *q, cell *c, pl_idx c_ctx, const char *err_type, const char *expected, cell *goal);

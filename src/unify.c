@@ -299,15 +299,30 @@ int compare(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
 	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
 }
 
-inline static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
+inline static bool any_choices(const query *q, const frame *f)
+{
+	if (!q->cp)
+		return false;
+
+	const choice *ch = GET_CURR_CHOICE();
+	return ch->chgen > f->chgen;
+}
+
+void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
 {
 	const frame *f = GET_FRAME(c_ctx);
 	slot *e = GET_SLOT(f, c->var_nbr);
 	cell *c_attrs = is_empty(&e->c) ? e->c.attrs : NULL;
 	pl_idx c_attrs_ctx = c_attrs ? e->c.attrs_ctx : 0;
 
-	if ((c_ctx < q->st.fp) || is_managed(v))
+	if (is_managed(v)) {
 		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
+	} else if (c_ctx == q->st.fp) {
+	} else if (c_ctx != q->st.curr_frame) {
+		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
+	} else if (q->in_unify || any_choices(q, f) || !is_local(c)) {
+		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
+	}
 
 	if (c_attrs)
 		q->run_hook = true;
@@ -719,7 +734,9 @@ bool unify(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
 	q->is_cyclic1 = q->is_cyclic2 = false;
 	q->before_hook_tp = q->st.tp;
 	if (++q->vgen == 0) q->vgen = 1;
+	q->in_unify = true;
 	bool ok = unify_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
+	q->in_unify = false;
 
 	if (q->cycle_error) {
 		if (q->flags.occurs_check == OCCURS_CHECK_TRUE)

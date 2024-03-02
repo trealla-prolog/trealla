@@ -180,6 +180,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_evaluable(c) ((c)->flags & FLAG_EVALUABLE)
 #define is_tail_call(c) ((c)->flags & FLAG_TAIL_CALL)
 #define is_temporary(c) (is_var(c) && ((c)->flags & FLAG_VAR_TEMPORARY))
+#define is_local(c) (is_var(c) && ((c)->flags & FLAG_VAR_LOCAL))
 #define is_ref(c) (is_var(c) && ((c)->flags & FLAG_VAR_REF))
 #define is_op(c) (c->flags & 0xE000) ? true : false
 #define is_callable(c) (is_interned(c) || (is_cstring(c) && !is_string(c)))
@@ -292,7 +293,8 @@ enum {
 	FLAG_VAR_FRESH=1<<1,				// used with TAG_VAR
 	FLAG_VAR_REF=1<<2,					// used with TAG_VAR
 	FLAG_VAR_TEMPORARY=1<<3,			// used with TAG_VAR
-	FLAG_VAR_CYCLIC=1<<4,				// used with TAG_VAR
+	FLAG_VAR_LOCAL=1<<4,				// used with TAG_VAR
+	FLAG_VAR_CYCLIC=1<<5,				// used with TAG_VAR
 
 	FLAG_HANDLE_DLL=1<<0,				// used with FLAG_INT_HANDLE
 	FLAG_HANDLE_FUNC=1<<1,				// used with FLAG_INT_HANDLE
@@ -566,7 +568,7 @@ struct prolog_state_ {
 
 struct choice_ {
 	prolog_state st;
-	uint64_t chgen, frame_cgen, dbgen;
+	uint64_t chgen, frame_chgen, dbgen;
 	pl_idx base, overflow, initial_slots, actual_slots;
 	bool catchme_retry:1;
 	bool catchme_exception:1;
@@ -765,6 +767,7 @@ struct query_ {
 	bool noderef:1;
 	bool double_quotes:1;
 	bool end_wait:1;
+	bool in_unify:1;
 	bool access_private:1;
 	bool did_unhandled_exception:1;
 };
@@ -776,6 +779,7 @@ struct parser_ {
 		const char *var_name[MAX_VARS];
 		uint8_t vars[MAX_VARS];
 		bool in_body[MAX_VARS];
+		bool in_head[MAX_VARS];
 	} vartab;
 
 	prolog *pl;

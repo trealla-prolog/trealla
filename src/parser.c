@@ -1231,6 +1231,12 @@ static pl_idx get_varno(parser *p, const char *src, bool in_body)
 
 	while (p->vartab.var_pool[offset]) {
 		if (!strcmp(p->vartab.var_pool+offset, src) && !anon) {
+			if (in_body)
+				p->vartab.in_body[i] = true;
+
+			if (!in_body)
+				p->vartab.in_head[i] = true;
+
 			return i;
 		}
 
@@ -1247,7 +1253,13 @@ static pl_idx get_varno(parser *p, const char *src, bool in_body)
 	}
 
 	memcpy(p->vartab.var_pool+offset, src, len+1);
-	p->vartab.in_body[i] = in_body;
+
+	if (in_body)
+		p->vartab.in_body[i] = true;
+
+	if (!in_body)
+		p->vartab.in_head[i] = true;
+
 	return i;
 }
 
@@ -1260,6 +1272,24 @@ static bool get_in_body(parser *p, const char *var_name)
 	while (p->vartab.var_pool[offset]) {
 		if (!strcmp(p->vartab.var_pool+offset, var_name) && !anon) {
 			return p->vartab.in_body[i];
+		}
+
+		offset += strlen(p->vartab.var_pool+offset) + 1;
+		i++;
+	}
+
+	return false;
+}
+
+static bool get_in_head(parser *p, const char *var_name)
+{
+	bool anon = !strcmp(var_name, "_");
+	size_t offset = 0;
+	unsigned i = 0;
+
+	while (p->vartab.var_pool[offset]) {
+		if (!strcmp(p->vartab.var_pool+offset, var_name) && !anon) {
+			return p->vartab.in_head[i];
 		}
 
 		offset += strlen(p->vartab.var_pool+offset) + 1;
@@ -1372,11 +1402,13 @@ void clause_assign_vars(parser *p, unsigned start, bool rebase)
 		if (!is_var(c))
 			continue;
 
-		// A temporary variable is one that occurs
-		// only in the head of a clause...
+		// A temporary variable is one that occurs only in the
+		// head of a clause. A local is one only in the body.
 
 		if (!get_in_body(p, C_STR(p, c)))
 			c->flags |= FLAG_VAR_TEMPORARY;
+		else if (!get_in_head(p, C_STR(p, c)))
+			c->flags |= FLAG_VAR_LOCAL;
 	}
 
 	for (unsigned i = 0; i < cl->nbr_vars; i++) {
