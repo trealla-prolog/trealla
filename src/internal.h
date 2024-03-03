@@ -440,7 +440,8 @@ typedef struct {
 
 struct clause_ {
 	uint64_t dbgen_created, dbgen_erased;
-	pl_idx cidx, nbr_allocated_cells, nbr_vars, nbr_temporaries;
+	pl_idx cidx, nbr_allocated_cells;
+	unsigned nbr_vars, nbr_temporaries;
 	bool is_first_cut:1;
 	bool is_cut_only:1;
 	bool is_unique:1;
@@ -541,7 +542,8 @@ struct frame_ {
 	cell *curr_instr;
 	uint64_t dbgen, chgen;
 	pl_idx prev_offset, hp;
-	pl_idx base, overflow, initial_slots, actual_slots;
+	pl_idx base, overflow;
+	unsigned initial_slots, actual_slots;
 	uint32_t mid;
 	bool no_tco:1;
 };
