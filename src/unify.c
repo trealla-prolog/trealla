@@ -320,7 +320,9 @@ void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
 	} else if (c_ctx == q->st.fp) {
 	} else if (c_ctx != q->st.curr_frame) {
 		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
-	} else if (q->in_unify || any_choices(q, f) || !is_local(c)) {
+	} else if (q->in_unify || any_choices(q, f)) {
+		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
+	} else if (q->in_call || !is_local(c)) {
 		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
 	}
 

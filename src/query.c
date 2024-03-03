@@ -887,6 +887,7 @@ inline static bool resume_frame(query *q)
 	if (!f->prev_offset)
 		return false;
 
+	q->in_call = false;
 	q->st.curr_instr = f->curr_instr;
 	q->st.curr_frame = q->st.curr_frame - f->prev_offset;
 	f = GET_CURR_FRAME();
