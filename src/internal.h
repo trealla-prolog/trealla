@@ -822,6 +822,7 @@ struct parser_ {
 	bool symbol:1;
 	bool reuse:1;
 	bool interactive:1;
+	bool in_body:1;
 };
 
 typedef struct loaded_file_ loaded_file;

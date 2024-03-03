@@ -1316,7 +1316,7 @@ void clause_assign_vars(parser *p, unsigned start, bool rebase)
 	}
 
 	const cell *body = get_body(cl->cells);
-	bool in_body = false;
+	bool in_body = p->in_body;
 
 	for (unsigned i = 0; i < cl->cidx; i++) {
 		cell *c = cl->cells + i;
@@ -1356,7 +1356,7 @@ void clause_assign_vars(parser *p, unsigned start, bool rebase)
 		}
 	}
 
-	in_body = false;
+	in_body = p->in_body;
 
 	for (unsigned i = 0; i < cl->cidx; i++) {
 		cell *c = cl->cells + i;
@@ -3905,6 +3905,7 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 	SB_trim(src, '.');
 	SB_strcat(src, ".");
 
+	p->in_body = true;
 	p->srcptr = SB_cstr(src);
 	bool ok;
 
