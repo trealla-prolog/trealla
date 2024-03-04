@@ -586,11 +586,6 @@ static frame *push_frame(query *q, const clause *cl)
 	return f;
 }
 
-// Temporary variables occur only in the head and so are
-// not referenced after the matching process. The parser
-// puts them at the end of the frame so here we can just
-// chop them off.
-
 static void reuse_frame(query *q, const clause *cl)
 {
 	cell *c_next = q->st.curr_instr + q->st.curr_instr->nbr_cells;
@@ -604,19 +599,18 @@ static void reuse_frame(query *q, const clause *cl)
 	f->overflow = 0;
 
 	const frame *newf = GET_FRAME(q->st.fp);
-	slot *from = GET_SLOT(newf, 0);
-	slot *to = GET_SLOT(f, 0);
 
 	for (pl_idx i = 0; i < cl->nbr_vars; i++) {
+		const slot *from = GET_SLOT(newf, i);
+		slot *to = GET_SLOT(f, i);
 		cell *c = &to->c;
 		unshare_cell(c);
+		to->c = from->c;
 
-		if (is_ref(&from->c)) {
-			if (from->c.var_ctx == q->st.fp)
-				from->c.var_ctx = q->st.curr_frame;
+		if (is_ref(&to->c)) {
+			if (to->c.var_ctx == q->st.fp)
+				to->c.var_ctx = q->st.curr_frame;
 		}
-
-		*to++ = *from++;
 	}
 
 	q->st.sp = f->base + cl->nbr_vars;

@@ -1299,6 +1299,8 @@ static bool get_in_head(parser *p, const char *var_name)
 	return false;
 }
 
+// Temporary variables are assigned last
+
 void clause_assign_vars(parser *p, unsigned start, bool rebase)
 {
 	if (!p || p->error)
