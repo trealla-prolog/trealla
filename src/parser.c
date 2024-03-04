@@ -294,7 +294,7 @@ void make_dbref(cell *tmp, void *ptr)
 void clear_clause(clause *cl)
 {
 	unshare_cells(cl->cells, cl->cidx);
-	cl->nbr_vars = cl->nbr_temporaries = 0;
+	cl->nbr_vars = 0;
 	cl->cidx = 0;
 }
 
@@ -1311,7 +1311,7 @@ void clause_assign_vars(parser *p, unsigned start, bool rebase)
 
 	if (!p->reuse) {
 		memset(&p->vartab, 0, sizeof(p->vartab));
-		cl->nbr_vars = cl->nbr_temporaries = 0;
+		cl->nbr_vars = 0;
 		p->nbr_vars = 0;
 	}
 
@@ -1413,7 +1413,6 @@ void clause_assign_vars(parser *p, unsigned start, bool rebase)
 
 	for (unsigned i = 0; i < cl->nbr_vars; i++) {
 		if (!p->vartab.in_body[i])
-			cl->nbr_temporaries++;
 
 		if (p->consulting && !p->do_read_term && (p->vartab.var_used[i] == 1) &&
 			(p->vartab.var_name[i][strlen(p->vartab.var_name[i])-1] != '_') &&
@@ -3190,7 +3189,7 @@ static bool process_term(parser *p, cell *p1)
 
 	rule *r;
 
-	if ((r = assertz_to_db(p->m, p->cl->nbr_vars, p->cl->nbr_temporaries, p1, consulting)) == NULL) {
+	if ((r = assertz_to_db(p->m, p->cl->nbr_vars, p1, consulting)) == NULL) {
 		if ((DUMP_ERRS || !p->do_read_term) && 0)
 			printf("Error: assertion failed '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 

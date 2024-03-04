@@ -1434,7 +1434,7 @@ static void check_goal_expansion(module *m, cell *p1)
 	create_goal_expansion(m, arg1);
 }
 
-static rule *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting)
+static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 {
 	cell *c = p1;
 
@@ -1528,7 +1528,6 @@ static rule *assert_begin(module *m, unsigned nbr_vars, unsigned nbr_temporaries
 	r->cl.cells[p1->nbr_cells] = (cell){0};
 	r->cl.cells[p1->nbr_cells].tag = TAG_END;
 	r->cl.nbr_vars = nbr_vars;
-	r->cl.nbr_temporaries = nbr_temporaries;
 	r->cl.nbr_allocated_cells = p1->nbr_cells;
 	r->cl.cidx = p1->nbr_cells+1;
 	r->cl.dbgen_created = ++m->pl->dbgen;
@@ -1607,13 +1606,13 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 	}
 }
 
-rule *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting)
+rule *asserta_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 {
 	predicate *pr;
 	rule *r;
 
 	do {
-		r = assert_begin(m, nbr_vars, nbr_temporaries, p1, consulting);
+		r = assert_begin(m, nbr_vars, p1, consulting);
 
 		if (!r)
 			return NULL;
@@ -1639,13 +1638,13 @@ rule *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell
 	return r;
 }
 
-rule *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting)
+rule *assertz_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 {
 	predicate *pr;
 	rule *r;
 
 	do {
-		r = assert_begin(m, nbr_vars, nbr_temporaries, p1, consulting);
+		r = assert_begin(m, nbr_vars, p1, consulting);
 
 		if (!r)
 			return NULL;

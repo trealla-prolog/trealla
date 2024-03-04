@@ -518,7 +518,7 @@ static bool bif_iso_asserta_1(query *q)
 		return throw_error(q, h, q->st.curr_frame, "type_error", "callable");
 	}
 
-	rule *r = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->nbr_temporaries, p->cl->cells, 0);
+	rule *r = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, 0);
 	release_lock(&q->st.m->guard);
 
 	if (!r)
@@ -581,7 +581,7 @@ static bool bif_iso_assertz_1(query *q)
 		return throw_error(q, h, q->st.curr_frame, "type_error", "callable");
 	}
 
-	rule *r = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->nbr_temporaries, p->cl->cells, false);
+	rule *r = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, false);
 	release_lock(&q->st.m->guard);
 
 	if (!r)
@@ -652,7 +652,7 @@ static bool do_asserta_2(query *q)
 		return throw_error(q, h, q->latest_ctx, "type_error", "callable");
 	}
 
-	rule *r = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->nbr_temporaries, p->cl->cells, 0);
+	rule *r = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, 0);
 	release_lock(&q->st.m->guard);
 
 	if (!r)
@@ -752,7 +752,7 @@ static bool do_assertz_2(query *q)
 		return throw_error(q, h, q->latest_ctx, "type_error", "callable");
 	}
 
-	rule *r = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->nbr_temporaries, p->cl->cells, false);
+	rule *r = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, false);
 	release_lock(&q->st.m->guard);
 
 	if (!r)

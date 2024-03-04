@@ -49,8 +49,8 @@ bool do_foreign_struct(module *m, cell *p);
 bool do_use_foreign_module(module *m, cell *p);
 #endif
 
-rule *asserta_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting);
-rule *assertz_to_db(module *m, unsigned nbr_vars, unsigned nbr_temporaries, cell *p1, bool consulting);
+rule *asserta_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting);
+rule *assertz_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting);
 rule *find_in_db(module *m, uuid *ref);
 rule *erase_from_db(module *m, uuid *ref);
 

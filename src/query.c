@@ -607,7 +607,7 @@ static void reuse_frame(query *q, const clause *cl)
 	slot *from = GET_SLOT(newf, 0);
 	slot *to = GET_SLOT(f, 0);
 
-	for (pl_idx i = 0; i < cl->nbr_vars - cl->nbr_temporaries; i++) {
+	for (pl_idx i = 0; i < cl->nbr_vars; i++) {
 		cell *c = &to->c;
 		unshare_cell(c);
 
@@ -619,7 +619,7 @@ static void reuse_frame(query *q, const clause *cl)
 		*to++ = *from++;
 	}
 
-	q->st.sp = f->base + cl->nbr_vars - cl->nbr_temporaries;
+	q->st.sp = f->base + cl->nbr_vars;
 	q->st.hp = f->hp;
 	q->st.r->tcos++;
 	q->tot_tcos++;
@@ -693,7 +693,6 @@ static void commit_frame(query *q, cell *body)
 		bool tail_recursive = tail_call && q->st.recursive;
 		bool vars_ok =
 			tail_recursive ? f->initial_slots == cl->nbr_vars :
-			tail_call ? f->initial_slots == (cl->nbr_vars - cl->nbr_temporaries) :
 			false;
 		bool choices = any_choices(q, f);
 		tco = vars_ok && !choices;
@@ -703,11 +702,11 @@ static void commit_frame(query *q, cell *body)
 		fprintf(stderr,
 			"*** %s/%u tco=%d,q->no_tco=%d,last_match=%d,is_det=%d,"
 			"next_key=%d,tail_call=%d/%d,vars_ok=%d,choices=%d,"
-			"cl->nbr_vars=%u/%u,f->initial_slots=%u/%u\n",
+			"cl->nbr_vars=%u,f->initial_slots=%u/%u\n",
 			C_STR(q, head), head->arity,
 			tco, q->no_tco, last_match, is_det,
 			next_key, tail_call, tail_recursive, vars_ok, choices,
-			cl->nbr_vars, cl->nbr_temporaries, f->initial_slots, f->actual_slots);
+			cl->nbr_vars, f->initial_slots, f->actual_slots);
 #endif
 	}
 
