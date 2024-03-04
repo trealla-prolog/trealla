@@ -56,13 +56,14 @@ typedef uint32_t pl_idx;
 
 #include "trealla.h"
 #include "cdebug.h"
+#include "list.h"
 #include "stringbuf.h"
 #include "threads.h"
+#include "utf8.h"
 #include "imath/imath.h"
 #include "imath/imrat.h"
 #include "sre/re.h"
 #include "skiplist.h"
-#include "utf8.h"
 
 #if defined(_WIN32) || defined(__wasi__)
 char *realpath(const char *path, char resolved_path[PATH_MAX]);
@@ -638,8 +639,7 @@ struct thread_ {
 	query *q;
 	skiplist *alias;
 	cell *goal, *exit_code, *at_exit, *ball;
-	msg *queue_head, *queue_tail;
-	msg *signal_head, *signal_tail;
+	list signals, queue;
 	unsigned nbr_vars, at_exit_nbr_vars, nbr_locks;
 	int chan, locked_by;
 	bool is_init, is_finished, is_detached, is_exception;
