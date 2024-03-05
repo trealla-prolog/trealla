@@ -415,6 +415,10 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 
 		if (!list_count(&t->queue)) {
 			release_lock(&t->guard);
+
+			if (is_peek)
+				return false;
+
 			continue;
 		}
 
