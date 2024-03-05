@@ -405,7 +405,7 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 		uint64_t cnt = 0;
 
 		while (!list_count(&t->queue) && !q->halt) {
-			suspend_thread(me, cnt < 100 ? 0 : cnt < 1000 ? 1 : cnt < 10000 ? 10 : 100);
+			suspend_thread(me, cnt < 100 ? 0 : cnt < 1000 ? 1 : cnt < 10000 ? 10 : 10);
 			cnt++;
 		}
 
@@ -891,7 +891,7 @@ static bool bif_thread_join_2(query *q)
 	void *retval;
 
 	if (pthread_join((pthread_t)t->id, &retval))
-		return false;
+		return throw_error(q, p1, p1_ctx, "system_error", "join,not_thread");
 #endif
 
 	if (t->exit_code) {
