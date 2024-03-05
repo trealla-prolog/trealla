@@ -7,7 +7,7 @@ typedef struct lnode_ {
 
 typedef struct {
     lnode *front, *back;
-    unsigned cnt;
+    volatile unsigned cnt;
 } list;
 
 #define list_init(l) { (l)->cnt = 0; (l)->front = (l)->back = NULL; }

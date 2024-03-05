@@ -29,7 +29,7 @@ static void msleep(int ms)
 #define is_thread_only(t) (!(t)->is_queue_only && !(t)->is_mutex_only)
 
 typedef struct msg_ {
-	lnode hdr;
+	lnode hdr;			// must be first
 	int from_chan;
 	cell c[];
 } msg;
@@ -113,6 +113,7 @@ static int new_thread(prolog *pl)
 	}
 
 	release_lock(&pl->guard);
+	printf("*** OOPS\n");
 	return -1;
 }
 
