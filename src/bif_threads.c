@@ -113,7 +113,6 @@ static int new_thread(prolog *pl)
 	}
 
 	release_lock(&pl->guard);
-	printf("*** OOPS\n");
 	return -1;
 }
 
@@ -1681,7 +1680,6 @@ static bool bif_mutex_create_2(query *q)
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,list_or_nil);
-
 	int n = new_thread(q->pl);
 
 	if (n < 0)
