@@ -2096,18 +2096,25 @@ static bool bif_pl_thread_set_priority_2(query *q)
 static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx, bool is_peek)
 {
 	thread *t = &q->pl->threads[q->pl->my_chan];
+
+LOOP:
+
 	uint64_t cnt = 0;
 
 	while (!list_count(&t->queue) && !q->pl->halt) {
-		suspend_thread(t, cnt < 1000 ? 0 : cnt < 10000 ? 1 : cnt < 100000 ? 10 : 100);
+		suspend_thread(t, cnt < 1000 ? 0 : cnt < 10000 ? 1 : cnt < 100000 ? 10 : 10);
 		cnt++;
 	}
 
 	acquire_lock(&t->guard);
 
-	if (!list_count(&t->queue) && is_peek) {
+	if (!list_count(&t->queue)) {
 		release_lock(&t->guard);
-		return false;
+
+		if (is_peek)
+			return false;
+
+		goto LOOP;
 	}
 
 	//printf("*** recv msg nbr_cells=%u\n", t->queue_head->nbr_cells);
