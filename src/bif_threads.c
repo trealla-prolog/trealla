@@ -14,9 +14,6 @@
 #include "query.h"
 
 #if USE_THREADS
-#ifdef _WIN32
-#define msleep Sleep
-#else
 static void msleep(int ms)
 {
 	struct timespec tv;
@@ -24,7 +21,6 @@ static void msleep(int ms)
 	tv.tv_nsec = ((ms) % 1000) * 1000 * 1000;
 	nanosleep(&tv, &tv);
 }
-#endif
 
 #define is_thread_only(t) (!(t)->is_queue_only && !(t)->is_mutex_only)
 
@@ -91,12 +87,7 @@ static int new_thread(prolog *pl)
 
 			t->is_active = true;
 			release_lock(&pl->guard);
-
-#ifdef _WIN32
-			t->id = (void*)(size_t)GetCurrentThreadId();
-#else
 			t->id = pthread_self();
-#endif
 
 			t->pl = pl;
 			t->chan = n;
@@ -277,27 +268,19 @@ static bool check_queue_or_alias(query *q, cell *c)
 
 static void suspend_thread(thread *t, int ms)
 {
-#ifdef _WIN32
-	SuspendThread(t->id);
-#else
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_nsec += 1000 * 1000 * ms;
 	pthread_mutex_lock(&t->mutex);
 	pthread_cond_timedwait(&t->cond, &t->mutex, &ts);
 	pthread_mutex_unlock(&t->mutex);
-#endif
 }
 
 static void resume_thread(thread *t)
 {
-#ifdef _WIN32
-    ResumeThread(t->id);
-#else
     pthread_mutex_lock(&t->mutex);
     pthread_cond_signal(&t->cond);
     pthread_mutex_unlock(&t->mutex);
-#endif
 }
 
 static unsigned queue_size(prolog *pl, unsigned chan)
@@ -373,11 +356,7 @@ static bool bif_thread_send_message_2(query *q)
 
 static thread *get_self(prolog *pl)
 {
-#ifdef _WIN32
-	HANDLE tid = (void*)GetCurrentThreadId();
-#else
 	pthread_t tid = pthread_self();
-#endif
 
 	for (unsigned i = 0; i < MAX_THREADS; i++) {
 		thread *t = &pl->threads[i];
@@ -487,12 +466,7 @@ static bool bif_thread_peek_message_2(query *q)
 
 static void do_unlock_all(prolog *pl)
 {
-#ifdef _WIN32
-	HANDLE id = (void*)GetCurrentThreadId();
-#else
 	pthread_t id = pthread_self();
-#endif
-
 	thread *me = get_self(pl);
 
 	for (unsigned i = 0; i < MAX_THREADS; i++) {
@@ -589,18 +563,10 @@ static bool bif_pl_thread_3(query *q)
 
 	t->filename = filename;
 
-#ifdef _WIN32
-    SECURITY_ATTRIBUTES sa = {0};
-    sa.nLength = sizeof(sa);
-    sa.lpSecurityDescriptor = 0;
-    sa.bInheritHandle = 0;
-    t->id = (void*)_beginthreadex(&sa, 0, (void*)start_routine_thread, (void*)t, 0, NULL);
-#else
     pthread_attr_t sa;
     pthread_attr_init(&sa);
     pthread_attr_setdetachstate(&sa, PTHREAD_CREATE_DETACHED);
     pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread, (void*)t);
-#endif
 
 	cell tmp;
 	make_int(&tmp, n);
@@ -804,13 +770,6 @@ static bool bif_thread_create_3(query *q)
 		check_heap_error(t->at_exit);
 	}
 
-#ifdef _WIN32
-    SECURITY_ATTRIBUTES sa = {0};
-    sa.nLength = sizeof(sa);
-    sa.lpSecurityDescriptor = 0;
-    sa.bInheritHandle = 0;
-    t->id = (void*)_beginthreadex(&sa, 0, (void*)start_routine_thread_create, (void*)t, 0, NULL);
-#else
     pthread_attr_t sa;
     pthread_attr_init(&sa);
 
@@ -820,8 +779,6 @@ static bool bif_thread_create_3(query *q)
 	}
 
     pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread_create, (void*)t);
-#endif
-
 	return true;
 }
 
@@ -884,15 +841,10 @@ static bool bif_thread_join_2(query *q)
 	if (!is_thread_only(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "join,not_thread");
 
-#ifdef _WIN32
-	if (WaitForSingleObject(t->id, INFINITE) == WAIT_FAILED)
-		return false;
-#else
 	void *retval;
 
 	if (pthread_join((pthread_t)t->id, &retval))
 		return throw_error(q, p1, p1_ctx, "system_error", "join,not_thread");
-#endif
 
 	if (t->exit_code) {
 		cell *tmp = deep_copy_to_heap(q, t->exit_code, q->st.fp, false);
@@ -936,14 +888,7 @@ static bool bif_thread_join_2(query *q)
 static void do_cancel(thread *t)
 {
 	acquire_lock(&t->guard);
-
-#ifdef _WIN32
-	DWORD exit_code;
-	TerminateThread(t->id, &exit_code);
-#else
 	pthread_cancel(t->id);
-#endif
-
 	sl_destroy(t->alias);
 	t->alias = NULL;
 	query_destroy(t->q);
@@ -1007,13 +952,8 @@ static bool bif_thread_detach_1(query *q)
 	t->q->halt_code = 0;
 	t->q->halt = t->q->error = true;
 
-	if (t->is_active) {
-#ifdef _WIN32
-		CloseHandle(t->id);
-#else
+	if (t->is_active)
 		pthread_detach(t->id);
-#endif
-	}
 
 	return true;
 }
@@ -1022,12 +962,7 @@ static bool bif_thread_self_1(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
 	GET_FIRST_ARG(p1,var);
-
-#ifdef _WIN32
-	HANDLE id = (void*)GetCurrentThreadId();
-#else
 	pthread_t id = pthread_self();
-#endif
 
 	for (unsigned i = 0; i < MAX_THREADS; i++) {
 		thread *t = &q->pl->threads[i];
@@ -1061,9 +996,7 @@ static bool bif_thread_yield_0(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
 
-#ifdef _WIN32
-	msleep(0);
-#elif 0
+#if 0
 	pthread_yield();
 #else
 	msleep(0);
@@ -1085,11 +1018,7 @@ static bool bif_thread_exit_1(query *q)
 	make_struct(tmp, new_atom(q->pl, "exited"), NULL, 1, tmp_p1->nbr_cells);
 	dup_cells(tmp+1, tmp_p1, tmp_p1->nbr_cells);
 
-#ifdef _WIN32
-	HANDLE tid = (void*)GetCurrentThreadId();
-#else
 	pthread_t tid = pthread_self();
-#endif
 
 	for (unsigned i = 0; i < MAX_THREADS; i++) {
 		thread *t = &q->pl->threads[i];
