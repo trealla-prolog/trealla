@@ -2026,24 +2026,26 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_idx p1_ct
 {
 	thread *t = &q->pl->threads[q->pl->my_chan];
 
-LOOP:
+	while (!q->halt) {
+		uint64_t cnt = 0;
 
-	uint64_t cnt = 0;
+		while (!list_count(&t->queue) && !q->pl->halt) {
+			suspend_thread(t, cnt < 1000 ? 0 : cnt < 10000 ? 1 : cnt < 100000 ? 10 : 10);
+			cnt++;
+		}
 
-	while (!list_count(&t->queue) && !q->pl->halt) {
-		suspend_thread(t, cnt < 1000 ? 0 : cnt < 10000 ? 1 : cnt < 100000 ? 10 : 10);
-		cnt++;
-	}
+		acquire_lock(&t->guard);
 
-	acquire_lock(&t->guard);
+		if (!list_count(&t->queue)) {
+			release_lock(&t->guard);
 
-	if (!list_count(&t->queue)) {
-		release_lock(&t->guard);
+			if (is_peek)
+				return false;
 
-		if (is_peek)
-			return false;
+			continue;
+		}
 
-		goto LOOP;
+		break;
 	}
 
 	//printf("*** recv msg nbr_cells=%u\n", t->queue_head->nbr_cells);
