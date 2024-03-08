@@ -481,7 +481,7 @@ bool bif_sys_block_catcher_1(query *q)
 
 bool bif_iso_catch_3(query *q)
 {
-	GET_FIRST_ARG(p1,any);
+	GET_FIRST_ARG(p1,callable);
 
 	if (q->retry && q->ball) {
 		GET_NEXT_ARG(p2,any);
@@ -520,6 +520,71 @@ bool bif_iso_catch_3(query *q)
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_catcher(q, QUERY_RETRY));
 	q->st.curr_instr = tmp;
+	return true;
+}
+
+bool bif_sys_push_reset_handler_2(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,var);
+	check_heap_error(push_reset_handler(q));
+	return true;
+}
+
+static bool find_reset_handler(query *q)
+{
+	if (!q->cp)
+		return false;
+
+	choice *ch = GET_CURR_CHOICE();
+
+	for (; ch; ch--) {
+		if (ch->reset) {
+			const frame *f = GET_FRAME(ch->st.curr_frame);
+			q->st.curr_instr = f->curr_instr;
+			q->st.curr_frame = ch->st.curr_frame - f->prev_offset;
+			//printf("*** ch->st.curr_frame=%u, f->prev_offset=%u, q->st.curr_frame=%u\n", ch->st.curr_frame, f->prev_offset, q->st.curr_frame);
+			f = GET_CURR_FRAME();
+			q->st.m = q->pl->modmap[f->mid];
+
+			GET_FIRST_ARG0(p1, any, ch->st.curr_instr);
+			GET_NEXT_ARG(p2, var);
+			cell tmp;
+
+			if (!q->ball) {
+				make_atom(&tmp, g_none_s);
+				return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+			}
+
+			if (!unify(q, p1, p1_ctx, q->ball, q->ball_ctx))
+				return false;
+
+			q->ball = NULL;
+
+			if (!unify(q, p2, p2_ctx, q->cont, q->cont_ctx))
+				return false;
+
+			return true;
+		}
+
+		if (ch == q->choices)
+			break;
+	}
+
+	return false;
+}
+
+bool bif_shift_1(query *q)
+{
+	GET_FIRST_ARG(p1,nonvar);
+	q->ball = p1;
+	q->ball_ctx = p1_ctx;
+	q->cont = q->st.curr_instr + q->st.curr_instr->nbr_cells;
+	q->cont_ctx = q->st.curr_frame;
+
+	if (!find_reset_handler(q))
+		return false;
+
 	return true;
 }
 

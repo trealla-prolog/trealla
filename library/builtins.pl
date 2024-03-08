@@ -20,7 +20,7 @@ predicate_property(P, A) :-
 	; 	(Controls = [
 			built_in,choice_construct,
 			discontiguous,private,static,
-			dynamic,foreign,tabled,multifile,
+			dynamic,foreign,multifile,
 			meta_predicate(_),iso,visible,
 			template(_)
 			],
@@ -95,6 +95,10 @@ variant(Term1, Term2) :-
 
 catch(G, E, C) :-
 	'$catch'(call(G), E, call(C)).
+
+reset(G, B, C) :-
+	'$push_reset_handler'(B, C),
+	G.
 
 :- meta_predicate(call_det(0,?)).
 

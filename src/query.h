@@ -17,6 +17,7 @@ void query_destroy(query *q);
 
 bool push_choice(query *q);
 bool push_barrier(query *q);
+bool push_reset_handler(query *q);
 bool push_catcher(query *q, enum q_retry type);
 
 bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract);
@@ -106,9 +107,9 @@ void dump_term(query *q, const char *s, const cell *c);
 
 bool bif_iso_halt_0(query *q);
 bool bif_sys_drop_barrier_1(query *q);
-bool bif_iso_throw_1(query *q);
 bool bif_sys_call_cleanup_3(query *q);
 bool bif_iso_catch_3(query *q);
+bool bif_iso_throw_1(query *q);
 bool bif_sys_block_catcher_0(query *q);
 bool bif_iso_negation_1(query *q);
 bool bif_iso_conjunction_2(query *q);
@@ -118,6 +119,8 @@ bool bif_if_2(query *q);
 bool bif_ignore_1(query *q);
 bool bif_sys_counter_1(query *q);
 bool bif_sys_countall_2(query *q);
+bool bif_sys_push_reset_handler_2(query *q);
+bool bif_shift_1(query *q);
 
 bool bif_iso_invoke_2(query *q);
 bool bif_iso_if_then_2(query *q);

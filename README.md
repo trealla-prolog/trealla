@@ -439,6 +439,9 @@ Non-standard predicates
 	offset/2
 	limit/2
 
+	reset/3						# reset(:goal,?ball,-cont)
+	shift/1						# shift(+ball)
+
 	getenv/2
 	setenv/2
 	unsetenv/1

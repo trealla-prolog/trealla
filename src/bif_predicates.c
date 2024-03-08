@@ -6119,6 +6119,7 @@ static void load_properties(module *m)
 
 	format_property(m, tmpbuf, sizeof(tmpbuf), "\\+", 1, "meta_predicate((\\+0))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "catch", 3, "meta_predicate(catch(0,?,0))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "reset", 3, "meta_predicate(reset(0,?,?))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "", 2, "meta_predicate((0,0))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), ",", 2, "meta_predicate((0,0))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), ";", 2, "meta_predicate((0;0))", false); SB_strcat(pr, tmpbuf);
@@ -6546,8 +6547,8 @@ builtins g_iso_bifs[] =
 
 builtins g_other_bifs[] =
 {
-	{"*->", 2, bif_if_2, "+term,+term", false, false, BLAH},
-	{"if", 3, bif_if_3, "+term,+term,+term", false, false, BLAH},
+	{"*->", 2, bif_if_2, ":callable,:callable", false, false, BLAH},
+	{"if", 3, bif_if_3, ":callable,:callable,:callable", false, false, BLAH},
 
 	{"shell", 1, bif_shell_1, "+atom", false, false, BLAH},
 	{"shell", 2, bif_shell_2, "+atom,-integer", false, false, BLAH},
@@ -6557,6 +6558,7 @@ builtins g_other_bifs[] =
 	{"trace", 0, bif_trace_0, NULL, false, false, BLAH},
 	{"statistics", 0, bif_statistics_0, NULL, false, false, BLAH},
 	{"statistics", 2, bif_statistics_2, "+atom,-term", false, false, BLAH},
+	{"shift", 1, bif_shift_1, "+term", false, false, BLAH},
 
 	{"current_module", 1, bif_current_module_1, "-atom", false, false, BLAH},
 	{"prolog_load_context", 2, bif_prolog_load_context_2, "+atom,?term", false, false, BLAH},
@@ -6635,6 +6637,7 @@ builtins g_other_bifs[] =
 	{"$must_be", 2, bif_must_be_2, "+atom,+term", false, false, BLAH},
 	{"$can_be", 2, bif_can_be_2, "+atom,+term,", false, false, BLAH},
 
+	{"$push_reset_handler", 2, bif_sys_push_reset_handler_2, "?term,-term", false, false, BLAH},
 	{"$msleep", 1, bif_sys_msleep_1, "+number", false, false, BLAH},
 	{"$det_length_rundown", 2, bif_sys_det_length_rundown_2, "?list,+integer", false, false, BLAH},
 	{"$memberchk", 3, bif_sys_memberchk_3, "?term,?list,-term", false, false, BLAH},

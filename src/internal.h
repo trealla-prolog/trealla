@@ -576,6 +576,7 @@ struct choice_ {
 	bool catchme_retry:1;
 	bool catchme_exception:1;
 	bool barrier:1;
+	bool reset:1;
 	bool register_cleanup:1;
 	bool block_catcher:1;
 	bool catcher:1;
@@ -691,7 +692,7 @@ struct query_ {
 	slot *slots;
 	choice *choices;
 	trail *trails;
-	cell *tmp_heap, *last_arg, *variable_names, *ball, *suspect;
+	cell *tmp_heap, *last_arg, *variable_names, *ball, *cont, *suspect;
 	cell *queue[MAX_QUEUES], *tmpq[MAX_QUEUES];
 	page *heap_pages;
 	slot *save_e;
@@ -716,7 +717,7 @@ struct query_ {
 	pl_idx tmphp, latest_ctx, popp, variable_names_ctx;
 	pl_idx frames_size, slots_size, trails_size, choices_size;
 	pl_idx hw_choices, hw_frames, hw_slots, hw_trails, hw_heap_nbr;
-	pl_idx cp, before_hook_tp, qcnt[MAX_QUEUES];
+	pl_idx cp, before_hook_tp, qcnt[MAX_QUEUES], ball_ctx, cont_ctx;
 	pl_idx heap_size, tmph_size, tot_heaps, tot_heapsize;
 	pl_idx undo_lo_tp, undo_hi_tp;
 	pl_idx q_size[MAX_QUEUES], tmpq_size[MAX_QUEUES], qp[MAX_QUEUES];
