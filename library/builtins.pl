@@ -357,6 +357,10 @@ directory_exists(F) :- exists_directory(F).
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+format(F) :- format(F, []).
+
+:- help(format(+string), [iso(false)]).
+
 :- meta_predicate(not(0)).
 
 not(X) :- X, !, fail.
