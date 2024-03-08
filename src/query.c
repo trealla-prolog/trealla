@@ -521,6 +521,10 @@ int retry_choice(query *q)
 		unwind_trail(q);
 		pl_idx curr_choice = --q->cp;
 		const choice *ch = GET_CHOICE(curr_choice);
+
+		if (ch->reset)
+			continue;
+
 		q->st = ch->st;
 
 		frame *f = GET_CURR_FRAME();
@@ -778,7 +782,7 @@ bool push_choice(query *q)
 	ch->catchme_retry =
 		ch->catchme_exception = ch->barrier = ch->register_cleanup =
 		ch->block_catcher = ch->catcher = ch->fail_on_retry =
-		ch->succeed_on_retry = false;
+		ch->succeed_on_retry = ch->reset = false;
 	return true;
 }
 
