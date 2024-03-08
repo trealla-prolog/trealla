@@ -540,14 +540,16 @@ static bool find_reset_handler(query *q)
 
 	for (; ch; ch--) {
 		if (ch->reset) {
+			ch->fail_on_retry = true;
 			const frame *f = GET_FRAME(ch->st.curr_frame);
 			q->st.curr_instr = f->curr_instr;
 			q->st.curr_frame = ch->st.curr_frame - f->prev_offset;
-			//printf("*** ch->st.curr_frame=%u, f->prev_offset=%u, q->st.curr_frame=%u\n", ch->st.curr_frame, f->prev_offset, q->st.curr_frame);
 			f = GET_CURR_FRAME();
 			q->st.m = q->pl->modmap[f->mid];
 
 			GET_FIRST_ARG0(p1, any, ch->st.curr_instr);
+			p1 = deref(q, p1, ch->st.curr_frame);
+			p1_ctx = q->latest_ctx;
 			GET_NEXT_ARG(p2, var);
 			cell tmp;
 
