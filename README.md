@@ -401,6 +401,7 @@ Non-standard predicates
 	module/1
 	line_count/2
 	atom_number/2
+	repeat/1					# repeat(+integer)
 	make/0
 
 	rdiv/2						# evaluable
