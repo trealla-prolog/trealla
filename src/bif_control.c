@@ -587,7 +587,7 @@ bool bif_shift_1(query *q)
 	cell *tmp2 = alloc_on_heap(q, 1+next->nbr_cells);
 	make_struct(tmp2, new_atom(q->pl, "cont"), NULL, 1, next->nbr_cells);
 	dup_cells_by_ref(tmp2+1, next, q->st.curr_frame, next->nbr_cells);
-	q->cont = next;
+	q->cont = tmp2;
 	q->cont_ctx = q->st.curr_frame;
 
 	if (!find_reset_handler(q))
