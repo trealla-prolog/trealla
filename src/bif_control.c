@@ -526,7 +526,7 @@ bool bif_iso_catch_3(query *q)
 bool bif_sys_push_reset_handler_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	GET_NEXT_ARG(p2,var);
+	GET_NEXT_ARG(p2,any);
 	check_heap_error(push_reset_handler(q));
 	return true;
 }
@@ -551,7 +551,7 @@ static bool find_reset_handler(query *q)
 			GET_FIRST_ARG0(p1, any, ch->st.curr_instr);
 			p1 = deref(q, p1, ch->st.curr_frame);
 			p1_ctx = q->latest_ctx;
-			GET_NEXT_ARG(p2, var);
+			GET_NEXT_ARG(p2, any);
 			cell tmp;
 
 			if (!q->ball) {
@@ -582,7 +582,12 @@ bool bif_shift_1(query *q)
 	GET_FIRST_ARG(p1,nonvar);
 	q->ball = p1;
 	q->ball_ctx = p1_ctx;
-	q->cont = q->st.curr_instr + q->st.curr_instr->nbr_cells;
+	cell *next = q->st.curr_instr + q->st.curr_instr->nbr_cells;
+
+	cell *tmp2 = alloc_on_heap(q, 1+next->nbr_cells);
+	make_struct(tmp2, new_atom(q->pl, "cont"), NULL, 1, next->nbr_cells);
+	dup_cells_by_ref(tmp2+1, next, q->st.curr_frame, next->nbr_cells);
+	q->cont = next;
 	q->cont_ctx = q->st.curr_frame;
 
 	if (!find_reset_handler(q))
