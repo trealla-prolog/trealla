@@ -521,10 +521,6 @@ int retry_choice(query *q)
 		unwind_trail(q);
 		pl_idx curr_choice = --q->cp;
 		const choice *ch = GET_CHOICE(curr_choice);
-
-		if (ch->reset)
-			continue;
-
 		q->st = ch->st;
 
 		frame *f = GET_CURR_FRAME();
@@ -534,6 +530,9 @@ int retry_choice(query *q)
 		f->actual_slots = ch->actual_slots;
 		f->overflow = ch->overflow;
 		f->base = ch->base;
+
+		if (ch->reset)
+			continue;
 
 		if (ch->catchme_exception || ch->fail_on_retry) {
 			leave_predicate(q, ch->st.pr);
