@@ -100,7 +100,8 @@ catch(G, E, C) :-
 
 reset(G, B, C) :-
 	'$push_reset_handler'(B, C),
-	G.
+	G,
+	(var(B) -> B = none; true).
 
 :- help(reset(:callable,?term,?term), [iso(false)]).
 
