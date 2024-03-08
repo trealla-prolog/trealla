@@ -540,6 +540,7 @@ static bool find_reset_handler(query *q)
 
 	for (; ch; ch--) {
 		if (ch->reset) {
+			ch->reset = false;
 			ch->fail_on_retry = true;
 			const frame *f = GET_FRAME(ch->st.curr_frame);
 			q->st.curr_instr = f->curr_instr;
