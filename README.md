@@ -14,7 +14,9 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	API for calling from C (or by using WASM from Go & JS)
 	Access SQLITE databases using builtin module (uses FFI)
 	Concurrency via tasks / linda / futures / engines (generators)
-	Pre-emptive threads
+	Pre-emptive multi-threading
+	...
+	Delimited continuations ##EXPERIMENTAL##
 	Rational trees ##EXPERIMENTAL##
 	CLP(Z) ##EXPERIMENTAL##
 
