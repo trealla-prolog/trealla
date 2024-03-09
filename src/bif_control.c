@@ -531,7 +531,6 @@ bool bif_reset_3(query *q)
 
 	cell *tmp = prepare_call(q, true, p1, p1_ctx, 2+(1+p3->nbr_cells+1)+1);
 	check_heap_error(tmp);
-	tmp[1].flags &= ~FLAG_TAIL_CALL;
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
@@ -594,7 +593,7 @@ bool bif_shift_1(query *q)
 	q->ball_ctx = p1_ctx;
 	cell *next = q->st.curr_instr + q->st.curr_instr->nbr_cells;
 	cell *tmp2 = alloc_on_heap(q, 1+next->nbr_cells);
-	make_struct(tmp2, new_atom(q->pl, "cont"), NULL, 1, next->nbr_cells);
+	make_struct(tmp2, g_cont_s, NULL, 1, next->nbr_cells);
 	dup_cells_by_ref(tmp2+1, next, q->st.curr_frame, next->nbr_cells);
 	q->cont = tmp2;
 	q->cont_ctx = q->st.curr_frame;
