@@ -96,15 +96,6 @@ variant(Term1, Term2) :-
 catch(G, E, C) :-
 	'$catch'(call(G), E, call(C)).
 
-:- meta_predicate(reset(0,?,?)).
-
-reset(G, B, C) :-
-	'$push_reset_handler'(B, C),
-	G,
-	(var(B) -> C = none; true).
-
-:- help(reset(:callable,?term,?term), [iso(false)]).
-
 :- meta_predicate(call_det(0,?)).
 
 call_det(G, Det) :-

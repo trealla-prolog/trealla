@@ -523,11 +523,29 @@ bool bif_iso_catch_3(query *q)
 	return true;
 }
 
-bool bif_sys_push_reset_handler_2(query *q)
+bool bif_reset_3(query *q)
 {
-	GET_FIRST_ARG(p1,any);
+	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,any);
+	GET_NEXT_ARG(p3,any);
 	check_heap_error(push_reset_handler(q));
+
+	cell *tmp = prepare_call(q, true, p1, p1_ctx, 2+(1+p3->nbr_cells+1)+1);
+	check_heap_error(tmp);
+	tmp[1].flags &= ~FLAG_TAIL_CALL;
+	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
+	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
+	make_uint(tmp+nbr_cells++, q->cp);
+
+	make_struct(tmp+nbr_cells++, new_atom(q->pl, "$set_if_var"), bif_sys_set_if_var_2, 2, p3->nbr_cells+1);
+	nbr_cells += dup_cells_by_ref(tmp+nbr_cells, p3, p3_ctx, p3->nbr_cells);
+	make_atom(tmp+nbr_cells++, new_atom(q->pl, "none"));
+
+	make_call(q, tmp+nbr_cells);
+	check_heap_error(push_barrier(q));
+	choice *ch = GET_CURR_CHOICE();
+	ch->fail_on_retry = true;
+	q->st.curr_instr = tmp;
 	return true;
 }
 
@@ -543,30 +561,26 @@ static bool find_reset_handler(query *q)
 			ch->reset = false;
 			ch->fail_on_retry = true;
 			const frame *f = GET_FRAME(ch->st.curr_frame);
-			q->st.curr_instr = f->curr_instr;
-			q->st.curr_frame = ch->st.curr_frame - f->prev_offset;
-			f = GET_CURR_FRAME();
-			q->st.m = q->pl->modmap[f->mid];
-			pl_idx save_ctx = q->st.curr_frame;
+			q->st.curr_instr = ch->st.curr_instr;
 			q->st.curr_frame = ch->st.curr_frame;
+			f = GET_CURR_FRAME();
+			q->st.m = ch->st.m;
 			GET_FIRST_ARG0(p1, any, ch->st.curr_instr);
 			GET_NEXT_ARG(p2, any);
-			p1 = deref(q, p1, ch->st.curr_frame);
-			p1_ctx = q->latest_ctx;
-			q->st.curr_frame = save_ctx;
+			GET_NEXT_ARG(p3, any);
 			cell tmp;
 
 			if (!q->ball) {
 				make_atom(&tmp, g_none_s);
-				return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+				return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 			}
 
-			if (!unify(q, p1, p1_ctx, q->ball, q->ball_ctx))
+			if (!unify(q, p2, p2_ctx, q->ball, q->ball_ctx))
 				return false;
 
 			q->ball = NULL;
 
-			if (!unify(q, p2, p2_ctx, q->cont, q->cont_ctx))
+			if (!unify(q, p3, p3_ctx, q->cont, q->cont_ctx))
 				return false;
 
 			return true;

@@ -119,7 +119,8 @@ bool bif_if_2(query *q);
 bool bif_ignore_1(query *q);
 bool bif_sys_counter_1(query *q);
 bool bif_sys_countall_2(query *q);
-bool bif_sys_push_reset_handler_2(query *q);
+bool bif_sys_set_if_var_2(query *q);
+bool bif_reset_3(query *q);
 bool bif_shift_1(query *q);
 
 bool bif_iso_invoke_2(query *q);
