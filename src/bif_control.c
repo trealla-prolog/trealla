@@ -585,7 +585,6 @@ bool bif_shift_1(query *q)
 	q->ball = p1;
 	q->ball_ctx = p1_ctx;
 	cell *next = q->st.curr_instr + q->st.curr_instr->nbr_cells;
-
 	cell *tmp2 = alloc_on_heap(q, 1+next->nbr_cells);
 	make_struct(tmp2, new_atom(q->pl, "cont"), NULL, 1, next->nbr_cells);
 	dup_cells_by_ref(tmp2+1, next, q->st.curr_frame, next->nbr_cells);
