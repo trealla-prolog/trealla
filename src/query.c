@@ -807,6 +807,7 @@ bool push_reset_handler(query *q)
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->reset = true;
+	ch->fail_on_retry = true;
 	return true;
 }
 

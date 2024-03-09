@@ -528,7 +528,6 @@ bool bif_reset_3(query *q)
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,any);
 	GET_NEXT_ARG(p3,any);
-	check_heap_error(push_reset_handler(q));
 
 	cell *tmp = prepare_call(q, true, p1, p1_ctx, 2+(1+p3->nbr_cells+1)+1);
 	check_heap_error(tmp);
@@ -542,9 +541,7 @@ bool bif_reset_3(query *q)
 	make_atom(tmp+nbr_cells++, g_none_s);
 
 	make_call(q, tmp+nbr_cells);
-	check_heap_error(push_barrier(q));
-	choice *ch = GET_CURR_CHOICE();
-	ch->fail_on_retry = true;
+	check_heap_error(push_reset_handler(q));
 	q->st.curr_instr = tmp;
 	return true;
 }
@@ -559,11 +556,8 @@ static bool find_reset_handler(query *q)
 	for (; ch; ch--) {
 		if (ch->reset) {
 			ch->reset = false;
-			ch->fail_on_retry = true;
-			const frame *f = GET_FRAME(ch->st.curr_frame);
 			q->st.curr_instr = ch->st.curr_instr;
 			q->st.curr_frame = ch->st.curr_frame;
-			f = GET_CURR_FRAME();
 			q->st.m = ch->st.m;
 			GET_FIRST_ARG0(p1, any, ch->st.curr_instr);
 			GET_NEXT_ARG(p2, any);
