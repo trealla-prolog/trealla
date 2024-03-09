@@ -547,11 +547,13 @@ static bool find_reset_handler(query *q)
 			q->st.curr_frame = ch->st.curr_frame - f->prev_offset;
 			f = GET_CURR_FRAME();
 			q->st.m = q->pl->modmap[f->mid];
-
+			pl_idx save_ctx = q->st.curr_frame;
+			q->st.curr_frame = ch->st.curr_frame;
 			GET_FIRST_ARG0(p1, any, ch->st.curr_instr);
+			GET_NEXT_ARG(p2, any);
 			p1 = deref(q, p1, ch->st.curr_frame);
 			p1_ctx = q->latest_ctx;
-			GET_NEXT_ARG(p2, any);
+			q->st.curr_frame = save_ctx;
 			cell tmp;
 
 			if (!q->ball) {
