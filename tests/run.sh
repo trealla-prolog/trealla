@@ -27,7 +27,7 @@ do
 
 	echo "Running $source ..."
 	$cmd "$source" >$TMP
-	diff -a "${source%.*}.expected" $TMP
+	diff -a --strip-trailing-cr "${source%.*}.expected" $TMP
 	if [ $? -eq 0 ]
 	then
 		succeeded_count=$(expr $succeeded_count + 1)
