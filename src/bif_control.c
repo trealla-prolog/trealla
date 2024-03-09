@@ -537,9 +537,9 @@ bool bif_reset_3(query *q)
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
 
-	make_struct(tmp+nbr_cells++, new_atom(q->pl, "$set_if_var"), bif_sys_set_if_var_2, 2, p3->nbr_cells+1);
+	make_struct(tmp+nbr_cells++, g_sys_set_if_var_s, bif_sys_set_if_var_2, 2, p3->nbr_cells+1);
 	nbr_cells += dup_cells_by_ref(tmp+nbr_cells, p3, p3_ctx, p3->nbr_cells);
-	make_atom(tmp+nbr_cells++, new_atom(q->pl, "none"));
+	make_atom(tmp+nbr_cells++, g_none_s);
 
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));

@@ -32,6 +32,7 @@ pl_idx g_error_s, g_slash_s, g_sys_cleanup_if_det_s;
 pl_idx g_goal_expansion_s, g_term_expansion_s, g_tm_s, g_float_s;
 pl_idx g_sys_cut_if_det_s, g_as_s, g_colon_s, g_member_s;
 pl_idx g_caret_s, g_sys_counter_s, g_catch_s, g_memberchk_s;
+pl_idx g_none_s, g_sys_set_if_var_s;
 pl_idx g_dummy_s;
 
 char *g_pool = NULL;
@@ -541,6 +542,8 @@ static bool g_init(prolog *pl)
 	CHECK_SENTINEL(g_as_s = new_atom(pl, "as"), ERR_IDX);
 	CHECK_SENTINEL(g_colon_s = new_atom(pl, ":"), ERR_IDX);
 	CHECK_SENTINEL(g_caret_s = new_atom(pl, "^"), ERR_IDX);
+	CHECK_SENTINEL(g_none_s = new_atom(pl, "none"), ERR_IDX);
+	CHECK_SENTINEL(g_sys_set_if_var_s = new_atom(pl, "$set_if_var"), ERR_IDX);
 
 	char *ptr = getenv("TPL_LIBRARY_PATH");
 
