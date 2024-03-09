@@ -18,13 +18,8 @@
 #endif
 
 #if USE_THREADS
-#ifdef _WIN32
-#include <process.h>
-#include <windows.h>
-#else
 #include <pthread.h>
 #include <unistd.h>
-#endif
 #endif
 
 #ifndef USE_RATIONAL_TREES
@@ -46,11 +41,11 @@ typedef uint32_t pl_idx;
 #define pl_atomic volatile
 #endif
 
+#define PATH_SEP_CHAR '/'
+
 #ifdef _WIN32
-#define PATH_SEP_CHAR '\\'
 #define NEWLINE_MODE "dos"
 #else
-#define PATH_SEP_CHAR '/'
 #define NEWLINE_MODE "posix"
 #endif
 
@@ -648,13 +643,9 @@ struct thread_ {
 	pl_atomic bool is_active;
 	lock guard;
 #if USE_THREADS
-#ifdef _WIN32
-    HANDLE id;
-#else
     pthread_t id;
     pthread_cond_t cond;
     pthread_mutex_t mutex;
-#endif
 #endif
 };
 
