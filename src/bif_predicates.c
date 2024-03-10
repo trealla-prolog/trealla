@@ -5719,6 +5719,29 @@ static bool bif_use_module_2(query *q)
 	return do_use_module_2(q->st.m, q->st.curr_instr);
 }
 
+static bool bif_multifile_1(query *q)
+{
+	GET_FIRST_ARG(p1,compound);
+
+	if (p1->val_off == g_colon_s) {
+		const char *mod = C_STR(q, p1+1);
+		p1 += 2;
+		const char *name = C_STR(q, p1+1);
+		unsigned arity = get_smalluint(p1+2);
+
+		if (!is_multifile_in_db(q->pl, mod, name, arity)) {
+			fprintf(stdout, "Error: not multifile %s:%s/%u\n", mod, name, arity);
+			return true;
+		}
+	} else if (p1->val_off == g_slash_s) {
+		const char *name = C_STR(q, p1+1);
+		unsigned arity = get_smalluint(p1+2);
+		set_multifile_in_db(q->st.m, name, arity);
+	}
+
+	return true;
+}
+
 static bool bif_prolog_load_context_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -6581,6 +6604,7 @@ builtins g_other_bifs[] =
 	{"use_module", 2, bif_use_module_2, "+term,+list", false, false, BLAH},
 	{"module_info", 2, bif_module_info_2, "+atom,-list", false, false, BLAH},
 	{"source_info", 2, bif_source_info_2, "+predicate_indicator,-list", false, false, BLAH},
+	{"multifile", 1, bif_multifile_1, "+term", false, false, BLAH},
 
 	{"help", 2, bif_help_2, "+predicate_indicator,+atom", false, false, BLAH},
 	{"help", 1, bif_help_1, "+predicate_indicator", false, false, BLAH},
