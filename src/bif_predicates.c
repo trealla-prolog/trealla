@@ -5737,7 +5737,8 @@ static bool bif_multifile_1(query *q)
 		const char *name = C_STR(q, p1+1);
 		unsigned arity = get_smalluint(p1+2);
 		set_multifile_in_db(q->st.m, name, arity);
-	}
+	} else
+		return false;
 
 	return true;
 }
