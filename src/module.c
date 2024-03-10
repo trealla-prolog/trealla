@@ -928,7 +928,7 @@ bool do_use_module_1(module *curr_m, cell *p)
 		}
 	}
 
-	char *filename = relative_to(curr_m->filename, dstbuf);
+	char *filename = relative_to(curr_m->filename, name);
 	module *m;
 
 	if (!(m = load_file(curr_m, filename, false))) {
