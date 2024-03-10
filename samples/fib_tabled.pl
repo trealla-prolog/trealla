@@ -2,7 +2,7 @@
 
 :- table fib/2.
 
-	fib(0,1) :- !.
+fib(0,1) :- !.
 fib(1,1) :- !.
 fib(N,R) :-
     N1 is N - 1,

@@ -1085,7 +1085,7 @@ static bool directives(parser *p, cell *d)
 				}
 			} else {
 				if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-					fprintf(stdout, "Error: unknown directive: %s/%d\n", dirname, c->arity);
+					fprintf(stdout, "Error: unknown directive1: %s/%d\n", dirname, c->arity);
 
 				p->error = true;
 				return true;
@@ -1170,9 +1170,28 @@ static bool directives(parser *p, cell *d)
 				}
 
 				set_dynamic_in_db(m, C_STR(p, c_name), arity);
+			} else if (!strcmp(dirname, "multifile")) {
+				const char *src = C_STR(p, c_name);
+
+				if (!strchr(src, ':')) {
+					set_multifile_in_db(p->m, src, arity);
+				} else {
+					char mod[256], name[256];
+					mod[0] = name[0] = '\0';
+					sscanf(src, "%255[^:]:%255s", mod, name);
+					mod[sizeof(mod)-1] = name[sizeof(name)-1] = '\0';
+
+					if (!is_multifile_in_db(p->m->pl, mod, name, arity)) {
+						if (DUMP_ERRS || !p->do_read_term)
+							fprintf(stdout, "Error: not multifile %s:%s/%u\n", mod, name, arity);
+
+						p->error = true;
+						return true;
+					}
+				}
 			} else {
 				if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-					fprintf(stdout, "Error: unknown directive: %s/%d\n", dirname, c->arity);
+					fprintf(stdout, "Error: unknown directive2: %s/%d\n", dirname, c->arity);
 
 				p->error = true;
 				return true;
@@ -1186,11 +1205,36 @@ static bool directives(parser *p, cell *d)
 		} else if (!strcmp(dirname, "meta_predicate")) {
 			set_meta_predicate_in_db(m, p1);
 			p1 += p1->nbr_cells;
+		} else if (!strcmp(dirname, "multifile")) {
+			p1 = p1 + 1;
+			if (p1->val_off == g_colon_s) {
+				const char *mod = C_STR(q, p1+1);
+				p1 += 2;
+				const char *name = C_STR(q, p1+1);
+				unsigned arity = get_smalluint(p1+2);
+
+				//printf("*** %s : %s / %u\n", mod, name, arity);
+
+				if (!is_multifile_in_db(p->m->pl, mod, name, arity)) {
+#if 0
+					if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
+						fprintf(stdout, "Error: not multifile %s:%s/%u\n", mod, name, arity);
+
+					p->error = true;
+					return true;
+#endif
+				}
+			} else if (p1->val_off == g_slash_s) {
+				const char *name = C_STR(q, p1+1);
+				unsigned arity = get_smalluint(p1+2);
+				set_multifile_in_db(p->m, name, arity);
+			} else
+				return true;
 		} else if (!strcmp(C_STR(p, p1), ",") && (p1->arity == 2))
 			p1 += 1;
 		else {
 			if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-				fprintf(stdout, "Error: unknown directive: %s/%d\n", dirname, c->arity);
+				fprintf(stdout, "Error: unknown directive3: %s/%d\n", dirname, c->arity);
 
 			p->error = true;
 			return true;
