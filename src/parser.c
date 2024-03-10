@@ -3192,6 +3192,9 @@ static bool process_term(parser *p, cell *p1)
 	if (p->m->ifs_blocked[p->m->if_depth])
 		return true;
 
+	// Note: we actually assert directives after processing
+	// so that they can be examined.
+
 	directives(p, p1);
 
 	if (p->error)
