@@ -831,8 +831,10 @@ bool do_use_module_1(module *curr_m, cell *p)
 	cell *p1 = p + 1;
 	const char *name = C_STR(curr_m, p1);
 	char dstbuf[1024*4];
+	bool is_library = false;
 
 	if (is_compound(p1) && !strcmp(name, "library")) {
+		is_library = true;
 		p1 = p1 + 1;
 		if (!is_interned(p1)) return false;
 		snprintf(dstbuf, sizeof(dstbuf), "%s", g_tpl_lib);
@@ -928,7 +930,7 @@ bool do_use_module_1(module *curr_m, cell *p)
 		}
 	}
 
-	char *filename = relative_to(curr_m->filename, name);
+	char *filename = relative_to(curr_m->filename, is_library?dstbuf:name);
 	module *m;
 
 	if (!(m = load_file(curr_m, filename, false))) {
