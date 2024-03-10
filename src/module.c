@@ -849,7 +849,7 @@ bool do_use_module_1(module *curr_m, cell *p)
 			p1++;
 		}
 
-		//printf("*** mod name %s\n", dstbuf);
+		//printf("*** mod name=%s, %s\n", name, dstbuf);
 
 		module *m;
 
@@ -928,7 +928,7 @@ bool do_use_module_1(module *curr_m, cell *p)
 		}
 	}
 
-	char *filename = relative_to(curr_m->filename, name);
+	char *filename = relative_to(curr_m->filename, dstbuf);
 	module *m;
 
 	if (!(m = load_file(curr_m, filename, false))) {
