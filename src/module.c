@@ -911,7 +911,9 @@ bool do_use_module_1(module *curr_m, cell *p)
 		    || !strcmp(name, "terms")
 		    || !strcmp(name, "types")
 			|| !strcmp(name, "iso_ext")
-		    || !strcmp(name, "files"))
+		    || !strcmp(name, "files")
+		    || !strcmp(name, "cont")
+		    )
 			return true;
 
 		for (library *lib = g_libs; lib->name; lib++) {
