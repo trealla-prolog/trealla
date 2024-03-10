@@ -1085,7 +1085,7 @@ static bool directives(parser *p, cell *d)
 				}
 			} else {
 				if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-					fprintf(stdout, "Error: unknown directive1: %s/%d\n", dirname, c->arity);
+					fprintf(stdout, "Error: unknown directive: %s/%d\n", dirname, c->arity);
 
 				p->error = true;
 				return true;
@@ -1191,7 +1191,7 @@ static bool directives(parser *p, cell *d)
 				}
 			} else {
 				if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-					fprintf(stdout, "Error: unknown directive2: %s/%d\n", dirname, c->arity);
+					fprintf(stdout, "Error: unknown directive: %s/%d\n", dirname, c->arity);
 
 				p->error = true;
 				return true;
@@ -1216,13 +1216,11 @@ static bool directives(parser *p, cell *d)
 				//printf("*** %s : %s / %u\n", mod, name, arity);
 
 				if (!is_multifile_in_db(p->m->pl, mod, name, arity)) {
-#if 0
-					if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-						fprintf(stdout, "Error: not multifile %s:%s/%u\n", mod, name, arity);
+					//if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
+					//	fprintf(stdout, "Error: not multifile %s:%s/%u\n", mod, name, arity);
 
-					p->error = true;
-					return true;
-#endif
+					//p->error = true;
+					//return true;
 				}
 			} else if (p1->val_off == g_slash_s) {
 				const char *name = C_STR(q, p1+1);
@@ -1234,7 +1232,7 @@ static bool directives(parser *p, cell *d)
 			p1 += 1;
 		else {
 			if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-				fprintf(stdout, "Error: unknown directive3: %s/%d\n", dirname, c->arity);
+				fprintf(stdout, "Error: unknown directive: %s/%d\n", dirname, c->arity);
 
 			p->error = true;
 			return true;

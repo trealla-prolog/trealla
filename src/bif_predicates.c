@@ -5730,8 +5730,8 @@ static bool bif_multifile_1(query *q)
 		unsigned arity = get_smalluint(p1+2);
 
 		if (!is_multifile_in_db(q->pl, mod, name, arity)) {
-			fprintf(stdout, "Error: not multifile %s:%s/%u\n", mod, name, arity);
-			return true;
+			//fprintf(stdout, "Error: not multifile %s:%s/%u\n", mod, name, arity);
+			//return true;
 		}
 	} else if (p1->val_off == g_slash_s) {
 		const char *name = C_STR(q, p1+1);
