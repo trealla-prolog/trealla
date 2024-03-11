@@ -1106,9 +1106,13 @@ static bool directives(parser *p, cell *d)
 		return true;
 	}
 
-	while (is_interned(p1)) {
+	//printf("*** here %s\n", dirname);
+
+	while (is_interned(p1) && (p1->val_off != g_dot_s)) {
 		module *m = p->m;
 		cell *c_id = p1;
+
+		//printf("*** here1 %s\n", C_STR(p, c_id));
 
 		if (!strcmp(C_STR(p, p1), ":") && (p1->arity == 2)) {
 			cell *c_mod = p1 + 1;
@@ -1123,6 +1127,8 @@ static bool directives(parser *p, cell *d)
 
 			c_id = p1 + 2;
 		}
+
+		//printf("*** here2 %s\n", C_STR(p, c_id));
 
 		if (!strcmp(C_STR(p, c_id), "/") && (p1->arity == 2)) {
 			cell *c_name = c_id + 1;
@@ -1147,6 +1153,7 @@ static bool directives(parser *p, cell *d)
 			cell tmp = *c_name;
 			tmp.arity = arity;
 
+
 			if (!strcmp(C_STR(p, c_id), "//"))
 				arity += 2;
 
@@ -1170,25 +1177,6 @@ static bool directives(parser *p, cell *d)
 				}
 
 				set_dynamic_in_db(m, C_STR(p, c_name), arity);
-			} else if (!strcmp(dirname, "multifile")) {
-				const char *src = C_STR(p, c_name);
-
-				if (!strchr(src, ':')) {
-					set_multifile_in_db(p->m, src, arity);
-				} else {
-					char mod[256], name[256];
-					mod[0] = name[0] = '\0';
-					sscanf(src, "%255[^:]:%255s", mod, name);
-					mod[sizeof(mod)-1] = name[sizeof(name)-1] = '\0';
-
-					if (!is_multifile_in_db(p->m->pl, mod, name, arity)) {
-						if (DUMP_ERRS || !p->do_read_term)
-							fprintf(stdout, "Error: not multifile %s:%s/%u\n", mod, name, arity);
-
-						p->error = true;
-						return true;
-					}
-				}
 			} else {
 				if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
 					fprintf(stdout, "Error: unknown directive: %s/%d\n", dirname, c->arity);
@@ -1205,37 +1193,15 @@ static bool directives(parser *p, cell *d)
 		} else if (!strcmp(dirname, "meta_predicate")) {
 			set_meta_predicate_in_db(m, p1);
 			p1 += p1->nbr_cells;
-		} else if (!strcmp(dirname, "multifile")) {
-			p1 = p1 + 1;
-			if (p1->val_off == g_colon_s) {
-				const char *mod = C_STR(q, p1+1);
-				p1 += 2;
-				const char *name = C_STR(q, p1+1);
-				unsigned arity = get_smalluint(p1+2);
-
-				//printf("*** %s : %s / %u\n", mod, name, arity);
-
-				if (!is_multifile_in_db(p->m->pl, mod, name, arity)) {
-					//if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-					//	fprintf(stdout, "Error: not multifile %s:%s/%u\n", mod, name, arity);
-
-					//p->error = true;
-					//return true;
-				}
-			} else if (p1->val_off == g_slash_s) {
-				const char *name = C_STR(q, p1+1);
-				unsigned arity = get_smalluint(p1+2);
-				set_multifile_in_db(p->m, name, arity);
-			} else
-				return true;
 		} else if (!strcmp(C_STR(p, p1), ",") && (p1->arity == 2))
 			p1 += 1;
 		else {
 			if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-				fprintf(stdout, "Error: unknown directive: %s/%d\n", dirname, c->arity);
+				fprintf(stdout, "Error: unknown directive2: %s/%d\n", dirname, c->arity);
 
 			p->error = true;
 			return true;
+			p1 += 1;
 		}
 	}
 
@@ -3195,6 +3161,13 @@ static bool process_term(parser *p, cell *p1)
 	// Note: we actually assert directives after processing
 	// so that they can be examined.
 
+#if 0
+	query *q = query_create(p->m, false);
+	check_error(q);
+	DUMP_TERM("***", p1, 0, 0);
+	query_destroy(q);
+#endif
+
 	directives(p, p1);
 
 	if (p->error)
@@ -3205,8 +3178,14 @@ static bool process_term(parser *p, cell *p1)
 	cell *h = get_head(p1);
 
 	if (is_var(h)) {
+#if 0
 		if (DUMP_ERRS || !p->do_read_term)
 			printf("Error: instantiation error, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+
+#else
+		if (is_var(p1))
+			return true;
+#endif
 
 		p->error_desc = "instantiation_error";
 		p->error = true;
