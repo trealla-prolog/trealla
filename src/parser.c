@@ -3178,14 +3178,8 @@ static bool process_term(parser *p, cell *p1)
 	cell *h = get_head(p1);
 
 	if (is_var(h)) {
-#if 0
 		if (DUMP_ERRS || !p->do_read_term)
 			printf("Error: instantiation error, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
-
-#else
-		if (is_var(p1))
-			return true;
-#endif
 
 		p->error_desc = "instantiation_error";
 		p->error = true;
@@ -3356,7 +3350,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 
 						p1 = LIST_TAIL(p1);
 
-						if (is_nil(p1))
+						if (is_nil(p1) || is_var(p1))
 							tail = true;
 					}
 
