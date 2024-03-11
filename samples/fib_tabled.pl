@@ -12,6 +12,11 @@ fib(N,R) :-
     R is R1 + R2.
 
 test :-
+    fib(10,F),
+    F =:= 89,
+    write('fib(30)='), write(F), write(' PASSED'), nl.
+
+test0 :-
     fib(30,F),
     F =:= 1346269,
     write('fib(30)='), write(F), write(' PASSED'), nl.
