@@ -14,7 +14,7 @@ fib(N,R) :-
 test :-
     fib(10,F),
     F =:= 89,
-    write('fib(30)='), write(F), write(' PASSED'), nl.
+    write('fib(10)='), write(F), write(' PASSED'), nl.
 
 test0 :-
     fib(30,F),
