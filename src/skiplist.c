@@ -391,12 +391,16 @@ bool sl_del(skiplist *l, const void *key)
 	int imid;
 
 	for (imid = 0; imid < q->nbr; imid++) {
-		if (l->cmpkey(q->bkt[imid].key, key, l->p, l) == 0)
+		if (l->cmpkey(q->bkt[imid].key, key, l->p, l) == 0) {
+			if (l->delkey)
+				l->delkey(q->bkt[imid].key, q->bkt[imid].val, l->p);
+
 			break;
+		}
 	}
 
 	if (imid >= q->nbr)
-		return NULL;
+		return false;
 
 	while (imid < (q->nbr - 1)) {
 		q->bkt[imid] = q->bkt[imid + 1];
