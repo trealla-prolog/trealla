@@ -12,9 +12,8 @@ bb_put(K, V) :-
 bb_get(K, V) :-
 	'$must_be'(K, atom, bb_get/2, _),
 	prolog_load_context(module, M),
-	M:'$bb_key'(K, V0, _),						% either 'b' or 'nb'
-	!,
-	V0 = V.
+	M:'$bb_key'(K, V, _),						% either 'b' or 'nb'
+	!.
 
 :- help(bb_get(+atom,?term), [iso(false)]).
 
@@ -28,15 +27,9 @@ bb_delete(K, V) :-
 
 :- help(bb_delete(+atom,+term), [iso(false)]).
 
-bb_update(K, O, V) :-
-	'$must_be'(K, atom, bb_update/3, _),
-	prolog_load_context(module, M),
-	M:'$bb_key'(K, O0, _),
-	!,
-	O0 = O,
-	retractall(M:'$bb_key'(K, _, _)),			% both 'b' & 'nb'
-	asserta(M:'$bb_key'(K, V, nb)),
-	!.
+bb_update(K, O, N) :-
+	bb_get(K, O),
+	bb_put(K, N).
 
 :- help(bb_update(+atom,+term,+term), [iso(false)]).
 
