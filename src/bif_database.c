@@ -102,7 +102,7 @@ static bool bif_clause_3(query *q)
 	return false;
 }
 
-void db_log(query *q, rule *r, enum log_type l)
+static void db_log(query *q, rule *r, enum log_type l)
 {
 	FILE *fp = q->pl->logfp;
 
@@ -355,12 +355,12 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 	sl_destroy(pr->idx);
 	pr->idx = pr->idx2 = NULL;
 	pr->is_processed = false;
+	pr->head = pr->tail = NULL;
+	pr->cnt = 0;
 
 	if (hard)
 		pr->is_abolished = true;
 
-	pr->head = pr->tail = NULL;
-	pr->cnt = 0;
 	return true;
 }
 

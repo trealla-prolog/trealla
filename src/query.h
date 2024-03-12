@@ -155,8 +155,6 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard);
 
 enum log_type { LOG_ASSERTA=1, LOG_ASSERTZ=2, LOG_ERASE=3 };
 
-void db_log(query *q, rule *r, enum log_type l);
-
 int uuid_from_buf(const char *s, uuid *u);
 builtins *get_fn_ptr(void *fn);
 
