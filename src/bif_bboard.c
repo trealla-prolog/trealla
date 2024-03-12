@@ -32,6 +32,11 @@ static bool bif_bb_b_put_2(query *q)
 	} else
 		m = q->st.m;
 
+	int var_nbr;
+
+	if ((var_nbr = create_vars(q, 1)) < 0)
+		return false;
+
 	snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
 	char *key = strdup(tmpbuf);
 	check_heap_error(init_tmp_heap(q));
@@ -39,10 +44,6 @@ static bool bif_bb_b_put_2(query *q)
 	cell *value = malloc(sizeof(cell)*tmp->nbr_cells);
 	dup_cells(value, tmp, tmp->nbr_cells);
 	sl_set(q->pl->keyval, key, value);
-	int var_nbr;
-
-	if ((var_nbr = create_vars(q, 1)) < 0)
-		return false;
 
 	blob *b = calloc(1, sizeof(blob));
 	b->ptr = (void*)m;
@@ -50,7 +51,8 @@ static bool bif_bb_b_put_2(query *q)
 	cell c, v;
 	make_ref(&c, var_nbr, q->st.curr_frame);
 	make_kvref(&v, b);
-	return unify(q, &c, q->st.curr_frame, &v, q->st.curr_frame);
+	unify(q, &c, q->st.curr_frame, &v, q->st.curr_frame);
+	return true;
 }
 
 static bool bif_bb_put_2(query *q)
@@ -120,7 +122,7 @@ static bool bif_bb_get_2(query *q)
 		m = q->st.m;
 
 	snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
-	const char *key = strdup(tmpbuf);
+	const char *key = tmpbuf;
 	const void *val;
 
 	if (!sl_get(q->pl->keyval, key, &val)) {
