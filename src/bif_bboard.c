@@ -34,8 +34,6 @@ static bool bif_bb_b_put_2(query *q)
 
 	snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
 	char *key = strdup(tmpbuf);
-	sl_del(q->pl->keyval, key);
-
 	check_heap_error(init_tmp_heap(q));
 	cell *tmp = deep_clone_to_tmp(q, p2, p2_ctx);
 	cell *value = malloc(sizeof(cell)*tmp->nbr_cells);
