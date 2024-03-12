@@ -213,7 +213,6 @@ bool sl_set(skiplist *l, const void *key, const void *val)
 	if (!l || l->destroyed)
 		return false;
 
-	sl_del(l, key);
 	slnode_t *update[MAX_LEVELS];
 	slnode_t *p, *q;
 	slnode_t stash;
