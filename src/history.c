@@ -150,7 +150,7 @@ static char *functor_name_generator(const char *text, int state)
 			return strdup(name);
 	}
 
-	while ((name = g_db_bifs[s_other_list_index].name)) {
+	while ((name = g_database_bifs[s_other_list_index].name)) {
 		s_other_list_index++;
 
 		if (strncmp(name, text, s_other_len) == 0)

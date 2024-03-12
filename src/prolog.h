@@ -35,7 +35,7 @@ extern void convert_path(char *filename);
 extern void sigfn(int s);
 
 extern builtins g_atts_bifs[];
-extern builtins g_db_bifs[];
+extern builtins g_database_bifs[];
 extern builtins g_contrib_bifs[];
 extern builtins g_csv_bifs[];
 extern builtins g_evaluable_bifs[];

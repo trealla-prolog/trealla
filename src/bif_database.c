@@ -961,7 +961,7 @@ static bool bif_sys_retract_on_backtrack_1(query *q)
 	return unify(q, &c, q->st.curr_frame, &v, q->st.curr_frame);
 }
 
-builtins g_db_bifs[] =
+builtins g_database_bifs[] =
 {
 	{"abolish", 1, bif_iso_abolish_1, "+predicate_indicator", true, false, BLAH},
 	{"asserta", 1, bif_iso_asserta_1, "+term", true, false, BLAH},
