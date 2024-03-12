@@ -15,6 +15,7 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	Access SQLITE databases using builtin module (uses FFI)
 	Concurrency via tasks / linda / futures / engines (generators)
 	Pre-emptive multi-threading
+	Blackboarding primitives
 	...
 	Delimited continuations ##EXPERIMENTAL##
 	Rational trees ##EXPERIMENTAL##

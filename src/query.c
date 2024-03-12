@@ -929,7 +929,7 @@ inline static void proceed(query *q)
 
 #define MAX_LOCAL_VARS (1L<<30)
 
-unsigned create_vars(query *q, unsigned cnt)
+int create_vars(query *q, unsigned cnt)
 {
 	frame *f = GET_CURR_FRAME();
 
@@ -938,7 +938,7 @@ unsigned create_vars(query *q, unsigned cnt)
 
 	if ((f->actual_slots + cnt) > MAX_LOCAL_VARS) {
 		printf("*** Ooops %s %d\n", __FILE__, __LINE__);
-		return 0;
+		return -1;
 	}
 
 	unsigned var_nbr = f->actual_slots;
@@ -955,7 +955,7 @@ unsigned create_vars(query *q, unsigned cnt)
 
 		if (!check_slot(q, cnt2)) {
 			printf("*** Ooops %s %d\n", __FILE__, __LINE__);
-			return 0;
+			return -1;
 		}
 
 		memmove(q->slots+f->overflow, q->slots+save_overflow, sizeof(slot)*cnt2);
@@ -964,7 +964,7 @@ unsigned create_vars(query *q, unsigned cnt)
 
 	if (!check_slot(q, cnt)) {
 		printf("*** Ooops %s %d\n", __FILE__, __LINE__);
-		return 0;
+		return -1;
 	}
 
 	for (unsigned i = 0; i < cnt; i++) {

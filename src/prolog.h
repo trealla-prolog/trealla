@@ -9,7 +9,7 @@ pl_idx new_atom(prolog *pl, const char *name);
 bool is_multifile_in_db(prolog *pl, const char *mod, const char *name, unsigned arity);
 void load_builtins(prolog *pl);
 void uuid_gen(prolog *pl, uuid *u);
-void keyvalfree(const void *key, const void *val, const void *p);
+void fake_free(const void *key, const void *val, const void *p);
 void ptrfree(const void *key, const void *val, const void *p);
 void thread_initialize(prolog *pl);
 void thread_cancel_all(prolog *pl);
@@ -35,6 +35,7 @@ extern void convert_path(char *filename);
 extern void sigfn(int s);
 
 extern builtins g_atts_bifs[];
+extern builtins g_bboard_bifs[];
 extern builtins g_database_bifs[];
 extern builtins g_contrib_bifs[];
 extern builtins g_csv_bifs[];

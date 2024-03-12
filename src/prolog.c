@@ -250,9 +250,17 @@ void keyfree(const void *key, const void *val, const void *p)
 	free((void*)key);
 }
 
-void keyvalfree(const void *key, const void *val, const void *p)
+void fake_free(const void *key, const void *val, const void *p)
 {
 	free((void*)key);
+	free((void*)val);
+}
+
+static void keyval_free(const void *key, const void *val, const void *p)
+{
+	free((void*)key);
+	cell *c = (cell*)val;
+	unshare_cells(c, c->nbr_cells);
 	free((void*)val);
 }
 
@@ -319,6 +327,11 @@ builtins *get_fn_ptr(void *fn)
 			return ptr;
 	}
 
+	for (builtins *ptr = g_bboard_bifs; ptr->name; ptr++) {
+		if (ptr->fn == fn)
+			return ptr;
+	}
+
 	for (builtins *ptr = g_database_bifs; ptr->name; ptr++) {
 		if (ptr->fn == fn)
 			return ptr;
@@ -380,6 +393,12 @@ builtins *get_fn_ptr(void *fn)
 void load_builtins(prolog *pl)
 {
 	for (const builtins *ptr = g_atts_bifs; ptr->name; ptr++) {
+		sl_app(pl->biftab, ptr->name, ptr);
+		if (ptr->name[0] == '$') continue;
+		sl_app(pl->help, ptr->name, ptr);
+	}
+
+	for (const builtins *ptr = g_bboard_bifs; ptr->name; ptr++) {
 		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		sl_app(pl->help, ptr->name, ptr);
@@ -648,7 +667,7 @@ prolog *pl_create()
 			g_tpl_lib = strdup("../library");
 	}
 
-	CHECK_SENTINEL(pl->keyval = sl_create((void*)fake_strcmp, (void*)keyvalfree, NULL), NULL);
+	CHECK_SENTINEL(pl->keyval = sl_create((void*)fake_strcmp, (void*)keyval_free, NULL), NULL);
 
 	pl->streams[0].fp = stdin;
 	CHECK_SENTINEL(pl->streams[0].alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);

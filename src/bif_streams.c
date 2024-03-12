@@ -2272,7 +2272,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 	xref_clause(str->p->m, str->p->cl);
 
 	if (str->p->nbr_vars) {
-		if (!create_vars(q, str->p->nbr_vars))
+		if (create_vars(q, str->p->nbr_vars) < 0)
 			return throw_error(q, p1, p1_ctx, "resource_error", "stack");
 	}
 

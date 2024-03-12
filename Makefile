@@ -73,6 +73,7 @@ endif
 SRCOBJECTS = tpl.o \
 	src/base64.o \
 	src/bif_atts.o \
+	src/bif_bboard.o \
 	src/bif_contrib.o \
 	src/bif_control.o \
 	src/bif_csv.o \

@@ -291,6 +291,16 @@ void make_dbref(cell *tmp, void *ptr)
 	tmp->val_blob->refcnt = 0;
 }
 
+void make_kvref(cell *tmp, void *ptr)
+{
+	*tmp = (cell){0};
+	tmp->tag = TAG_KVID;
+	tmp->flags = FLAG_MANAGED;
+	tmp->nbr_cells = 1;
+	tmp->val_blob = ptr;
+	tmp->val_blob->refcnt = 0;
+}
+
 void clear_clause(clause *cl)
 {
 	unshare_cells(cl->cells, cl->cidx);

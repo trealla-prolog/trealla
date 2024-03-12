@@ -65,7 +65,7 @@ static bool bif_map_create_2(query *q)
 			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 	}
 
-	str->keyval = sl_create((void*)fake_strcmp, (void*)keyvalfree, NULL);
+	str->keyval = sl_create((void*)fake_strcmp, (void*)fake_free, NULL);
 	check_heap_error(str->keyval);
 	str->is_map = true;
 
