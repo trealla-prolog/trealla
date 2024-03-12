@@ -1,3 +1,6 @@
+% Mockup of blackboarding. Needs to be
+% rewritten as builtins.
+
 bb_put(K, V) :-
 	'$must_be'(K, atom, bb_put/2, _),
 	prolog_load_context(module, M),
