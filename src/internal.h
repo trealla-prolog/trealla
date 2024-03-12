@@ -965,10 +965,9 @@ inline static void unshare_cell_(cell *c)
 		if (--c->val_blob->refcnt == 0) {
 			module *m = (module*)c->val_blob->ptr;
 			char *ref = (char*)c->val_blob->ptr2;
-
-			if (!sl_del(m->pl->keyval, c->val_blob->ptr2))
-				free(c->val_blob->ptr2);
-
+			sl_del(m->pl->keyval, ref);
+			free(c->val_blob->ptr2);
+			free(c->val_blob);
 			c->flags = 0;
 		}
 	}
