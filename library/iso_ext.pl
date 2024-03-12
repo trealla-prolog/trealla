@@ -20,10 +20,9 @@ bb_get(K, V) :-
 bb_delete(K, V) :-
 	'$must_be'(K, atom, bb_delete/2, _),
 	prolog_load_context(module, M),
-	M:'$bb_key'(K, V0, _),
+	M:'$bb_key'(K, V, _),
 	!,
-	V0 = V,
-	retractall(M:'$bb_key'(K, _, _)).			% both 'b' & 'nb'
+	retractall(M:'$bb_key'(K, V, _)).			% both 'b' & 'nb'
 
 :- help(bb_delete(+atom,+term), [iso(false)]).
 
