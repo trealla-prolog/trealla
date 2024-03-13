@@ -6,9 +6,11 @@
 #include "prolog.h"
 #include "query.h"
 
+#define is_smallatomic(c) (is_atom(c) || is_smallint(c))
+
 static bool bif_bb_b_put_2(query *q)
 {
-	GET_FIRST_ARG(p1,callable);
+	GET_FIRST_ARG(p1,nonvar);
 	GET_NEXT_ARG(p2,any);
 
 	if (is_compound(p1) &&
@@ -22,7 +24,7 @@ static bool bif_bb_b_put_2(query *q)
 		cell *p1_m = p1 + 1;
 		p1 = p1_m + p1_m->nbr_cells;
 
-		if (!is_atom(p1_m) || !is_atom(p1))
+		if (!is_atom(p1_m) || !is_smallatomic(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 		m = find_module(q->pl, C_STR(q, p1_m));
@@ -37,8 +39,11 @@ static bool bif_bb_b_put_2(query *q)
 	if ((var_nbr = create_vars(q, 1)) < 0)
 		return false;
 
+	if (is_atom(p1))
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
+	else
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:b", m->name, (int)get_smallint(p1));
 
-	snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
 	char *key = strdup(tmpbuf);
 	check_heap_error(init_tmp_heap(q), free(key));
 	cell *tmp = deep_clone_to_tmp(q, p2, p2_ctx);
@@ -61,7 +66,7 @@ static bool bif_bb_b_put_2(query *q)
 
 static bool bif_bb_put_2(query *q)
 {
-	GET_FIRST_ARG(p1,callable);
+	GET_FIRST_ARG(p1,nonvar);
 	GET_NEXT_ARG(p2,any);
 
 	if (is_compound(p1) &&
@@ -75,7 +80,7 @@ static bool bif_bb_put_2(query *q)
 		cell *p1_m = p1 + 1;
 		p1 = p1_m + p1_m->nbr_cells;
 
-		if (!is_atom(p1_m) || !is_atom(p1))
+		if (!is_atom(p1_m) || !is_smallatomic(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 		m = find_module(q->pl, C_STR(q, p1_m));
@@ -85,9 +90,18 @@ static bool bif_bb_put_2(query *q)
 	} else
 		m = q->st.m;
 
-	snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
+	if (is_atom(p1))
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
+	else
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:b", m->name, (int)get_smallint(p1));
+
 	const char *key1 = tmpbuf;
-	snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:nb", m->name, C_STR(q, p1));
+
+	if (is_atom(p1))
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:nb", m->name, C_STR(q, p1));
+	else
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:nb", m->name, (int)get_smallint(p1));
+
 	char *key = strdup(tmpbuf);
 	check_heap_error(init_tmp_heap(q), free(key));
 	cell *tmp = deep_clone_to_tmp(q, p2, p2_ctx);
@@ -104,7 +118,7 @@ static bool bif_bb_put_2(query *q)
 
 static bool bif_bb_get_2(query *q)
 {
-	GET_FIRST_ARG(p1,callable);
+	GET_FIRST_ARG(p1,nonvar);
 	GET_NEXT_ARG(p2,any);
 
 	if (is_compound(p1) &&
@@ -118,7 +132,7 @@ static bool bif_bb_get_2(query *q)
 		cell *p1_m = p1 + 1;
 		p1 = p1_m + p1_m->nbr_cells;
 
-		if (!is_atom(p1_m) || !is_atom(p1))
+		if (!is_atom(p1_m) || !is_smallatomic(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 		m = find_module(q->pl, C_STR(q, p1_m));
@@ -128,14 +142,22 @@ static bool bif_bb_get_2(query *q)
 	} else
 		m = q->st.m;
 
-	snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
+	if (is_atom(p1))
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
+	else
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:b", m->name, (int)get_smallint(p1));
+
 	const char *key = tmpbuf;
 	const void *val;
 
 	acquire_lock(&q->pl->guard);
 
 	if (!sl_get(q->pl->keyval, key, &val)) {
-		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:nb", m->name, C_STR(q, p1));
+		if (is_atom(p1))
+			snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:nb", m->name, C_STR(q, p1));
+		else
+			snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:nb", m->name, (int)get_smallint(p1));
+
 		key = tmpbuf;
 
 		if (!sl_get(q->pl->keyval, key, &val)) {
@@ -147,12 +169,15 @@ static bool bif_bb_get_2(query *q)
 	release_lock(&q->pl->guard);
 
 	cell *tmp = (cell*)val;
+
+	// FIXME: rebase && copy into frame
+
 	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 }
 
 static bool bif_bb_delete_2(query *q)
 {
-	GET_FIRST_ARG(p1,callable);
+	GET_FIRST_ARG(p1,nonvar);
 	GET_NEXT_ARG(p2,any);
 
 	if (is_compound(p1) &&
@@ -166,7 +191,7 @@ static bool bif_bb_delete_2(query *q)
 		cell *p1_m = p1 + 1;
 		p1 = p1_m + p1_m->nbr_cells;
 
-		if (!is_atom(p1_m) || !is_atom(p1))
+		if (!is_atom(p1_m) || !is_smallatomic(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 		m = find_module(q->pl, C_STR(q, p1_m));
@@ -176,14 +201,22 @@ static bool bif_bb_delete_2(query *q)
 	} else
 		m = q->st.m;
 
-	snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
+	if (is_atom(p1))
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
+	else
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:b", m->name, (int)get_smallint(p1));
+
 	const char *key = tmpbuf;
 	const void *val;
 
 	acquire_lock(&q->pl->guard);
 
 	if (!sl_get(q->pl->keyval, key, &val)) {
-		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:nb", m->name, C_STR(q, p1));
+		if (is_atom(p1))
+			snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:nb", m->name, C_STR(q, p1));
+		else
+			snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:nb", m->name, (int)get_smallint(p1));
+
 		key = tmpbuf;
 
 		if (!sl_get(q->pl->keyval, key, &val)) {
@@ -207,7 +240,7 @@ static bool bif_bb_delete_2(query *q)
 
 static bool bif_bb_update_3(query *q)
 {
-	GET_FIRST_ARG(p1,callable);
+	GET_FIRST_ARG(p1,nonvar);
 	GET_NEXT_ARG(p2,any);
 	GET_NEXT_ARG(p3,any);
 
@@ -222,7 +255,7 @@ static bool bif_bb_update_3(query *q)
 		cell *p1_m = p1 + 1;
 		p1 = p1_m + p1_m->nbr_cells;
 
-		if (!is_atom(p1_m) || !is_atom(p1))
+		if (!is_atom(p1_m) || !is_smallatomic(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 		m = find_module(q->pl, C_STR(q, p1_m));
@@ -232,14 +265,22 @@ static bool bif_bb_update_3(query *q)
 	} else
 		m = q->st.m;
 
-	snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
+	if (is_atom(p1))
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
+	else
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:b", m->name, (int)get_smallint(p1));
+
 	const char *key1 = tmpbuf;
 	const void *val;
 
 	acquire_lock(&q->pl->guard);
 
 	if (!sl_get(q->pl->keyval, key1, &val)) {
-		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:nb", m->name, C_STR(q, p1));
+		if (is_atom(p1))
+			snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:nb", m->name, C_STR(q, p1));
+		else
+			snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:nb", m->name, (int)get_smallint(p1));
+
 		key1 = tmpbuf;
 
 		if (!sl_get(q->pl->keyval, key1, &val)) {
