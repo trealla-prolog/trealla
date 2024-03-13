@@ -169,9 +169,9 @@ static bool bif_bb_get_2(query *q)
 	release_lock(&q->pl->guard);
 
 	cell *tmp = (cell*)val;
-
-	// FIXME: rebase && copy into frame
-
+	const frame *f = GET_CURR_FRAME();
+	unsigned var_nbr = rebase_term(q, tmp, f->actual_slots);
+	create_vars(q, var_nbr  - f->actual_slots);
 	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 }
 
@@ -290,6 +290,9 @@ static bool bif_bb_update_3(query *q)
 	}
 
 	cell *tmp = (cell*)val;
+	const frame *f = GET_CURR_FRAME();
+	unsigned var_nbr = rebase_term(q, tmp, f->actual_slots);
+	create_vars(q, var_nbr  - f->actual_slots);
 
 	if (!unify(q, p2, p2_ctx, tmp, q->st.curr_frame)) {
 		release_lock(&q->pl->guard);
@@ -298,9 +301,9 @@ static bool bif_bb_update_3(query *q)
 
 	char *key = strdup(key1);
 	check_heap_error(init_tmp_heap(q), (release_lock(&q->pl->guard), free(key)));
-	cell *tmp2 = deep_clone_to_tmp(q, p3, p3_ctx);
-	cell *value = malloc(sizeof(cell)*tmp2->nbr_cells);
-	dup_cells(value, tmp2, tmp2->nbr_cells);
+	tmp = deep_clone_to_tmp(q, p3, p3_ctx);
+	cell *value = malloc(sizeof(cell)*tmp->nbr_cells);
+	dup_cells(value, tmp, tmp->nbr_cells);
 	sl_del(q->pl->keyval, key1);
 	sl_set(q->pl->keyval, key, value);
 	release_lock(&q->pl->guard);
