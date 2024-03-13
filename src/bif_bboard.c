@@ -37,13 +37,17 @@ static bool bif_bb_b_put_2(query *q)
 	if ((var_nbr = create_vars(q, 1)) < 0)
 		return false;
 
+
 	snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
 	char *key = strdup(tmpbuf);
-	check_heap_error(init_tmp_heap(q));
+	check_heap_error(init_tmp_heap(q), free(key));
 	cell *tmp = deep_clone_to_tmp(q, p2, p2_ctx);
 	cell *value = malloc(sizeof(cell)*tmp->nbr_cells);
 	dup_cells(value, tmp, tmp->nbr_cells);
+
+	acquire_lock(&q->pl->guard);
 	sl_set(q->pl->keyval, key, value);
+	release_lock(&q->pl->guard);
 
 	blob *b = calloc(1, sizeof(blob));
 	b->ptr = (void*)m;
@@ -82,16 +86,19 @@ static bool bif_bb_put_2(query *q)
 		m = q->st.m;
 
 	snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
-	const char *key = tmpbuf;
-	sl_del(q->pl->keyval, key);
+	const char *key1 = tmpbuf;
 	snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:nb", m->name, C_STR(q, p1));
-	key = strdup(tmpbuf);
-	sl_del(q->pl->keyval, key);
-	check_heap_error(init_tmp_heap(q));
+	char *key = strdup(tmpbuf);
+	check_heap_error(init_tmp_heap(q), free(key));
 	cell *tmp = deep_clone_to_tmp(q, p2, p2_ctx);
 	cell *value = malloc(sizeof(cell)*tmp->nbr_cells);
 	dup_cells(value, tmp, tmp->nbr_cells);
+
+	acquire_lock(&q->pl->guard);
+	sl_del(q->pl->keyval, key1);
 	sl_set(q->pl->keyval, key, value);
+	release_lock(&q->pl->guard);
+
 	return true;
 }
 
@@ -125,13 +132,19 @@ static bool bif_bb_get_2(query *q)
 	const char *key = tmpbuf;
 	const void *val;
 
+	acquire_lock(&q->pl->guard);
+
 	if (!sl_get(q->pl->keyval, key, &val)) {
 		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:nb", m->name, C_STR(q, p1));
 		key = tmpbuf;
 
-		if (!sl_get(q->pl->keyval, key, &val))
+		if (!sl_get(q->pl->keyval, key, &val)) {
+			release_lock(&q->pl->guard);
 			return false;
+		}
 	}
+
+	release_lock(&q->pl->guard);
 
 	cell *tmp = (cell*)val;
 	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
@@ -167,20 +180,29 @@ static bool bif_bb_delete_2(query *q)
 	const char *key = tmpbuf;
 	const void *val;
 
+	acquire_lock(&q->pl->guard);
+
 	if (!sl_get(q->pl->keyval, key, &val)) {
 		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:nb", m->name, C_STR(q, p1));
 		key = tmpbuf;
 
-		if (!sl_get(q->pl->keyval, key, &val))
+		if (!sl_get(q->pl->keyval, key, &val)) {
+			release_lock(&q->pl->guard);
 			return false;
+		}
 	}
 
 	cell *tmp = (cell*)val;
 
-	if (!unify(q, p2, p2_ctx, tmp, q->st.curr_frame))
+	if (!unify(q, p2, p2_ctx, tmp, q->st.curr_frame)) {
+		release_lock(&q->pl->guard);
 		return false;
+	}
 
-	return sl_del(q->pl->keyval, key);
+	bool ok = sl_del(q->pl->keyval, key);
+	release_lock(&q->pl->guard);
+
+	return ok;
 }
 
 static bool bif_bb_update_3(query *q)
@@ -211,29 +233,37 @@ static bool bif_bb_update_3(query *q)
 		m = q->st.m;
 
 	snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
-	const char *key = tmpbuf;
+	const char *key1 = tmpbuf;
 	const void *val;
 
-	if (!sl_get(q->pl->keyval, key, &val)) {
-		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:nb", m->name, C_STR(q, p1));
-		key = tmpbuf;
+	acquire_lock(&q->pl->guard);
 
-		if (!sl_get(q->pl->keyval, key, &val))
+	if (!sl_get(q->pl->keyval, key1, &val)) {
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:nb", m->name, C_STR(q, p1));
+		key1 = tmpbuf;
+
+		if (!sl_get(q->pl->keyval, key1, &val)) {
+			release_lock(&q->pl->guard);
 			return false;
+		}
 	}
 
 	cell *tmp = (cell*)val;
 
-	if (!unify(q, p2, p2_ctx, tmp, q->st.curr_frame))
+	if (!unify(q, p2, p2_ctx, tmp, q->st.curr_frame)) {
+		release_lock(&q->pl->guard);
 		return false;
+	}
 
-	sl_del(q->pl->keyval, key);
-	key = strdup(key);
-	check_heap_error(init_tmp_heap(q));
+	char *key = strdup(key1);
+	check_heap_error(init_tmp_heap(q), (release_lock(&q->pl->guard), free(key)));
 	cell *tmp2 = deep_clone_to_tmp(q, p3, p3_ctx);
 	cell *value = malloc(sizeof(cell)*tmp2->nbr_cells);
 	dup_cells(value, tmp2, tmp2->nbr_cells);
+	sl_del(q->pl->keyval, key1);
 	sl_set(q->pl->keyval, key, value);
+	release_lock(&q->pl->guard);
+
 	return true;
 }
 
