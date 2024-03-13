@@ -419,6 +419,12 @@ Non-standard predicates
 	call_with_time_limit/2		# SWI-compatible
 	time_out/3					# SICStus-compatible
 
+	bb_b_put/2					# bb_b_put(:atom, +term)
+	bb_put/2					# bb_put(:atom, +term)
+	bb_get/2					# bb_get(:atom, ?term)
+	bb_update/3					# bb_update(:atom, ?term, ?term)
+	bb_delete/2					# bb_delete(:atom, ?term)
+
 	posix_strftime/3			# posix_strftime(+format,-text,+tm(NNN,...))
 	posix_strptime/3			# posix_strptime(+format,+text,-tm(NNN,...))
 	posix_mktime/2				# posix_mktime(+tm(NNN,...),-seconds)
