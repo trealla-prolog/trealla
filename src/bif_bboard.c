@@ -8,6 +8,15 @@
 
 #define is_smallatomic(c) (is_atom(c) || is_smallint(c))
 
+#define DO_DUMP 0
+
+#define DUMP_TERM2(s,k,c,c_ctx,running) { \
+	fprintf(stderr, "%s %s ", s, k); \
+	q->nl = true; q->quoted = true; \
+	print_term(q, stderr, c, c_ctx, running); \
+	q->nl = false; q->quoted = false; \
+}
+
 static bool bif_bb_b_put_2(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
@@ -43,6 +52,8 @@ static bool bif_bb_b_put_2(query *q)
 		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
 	else
 		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:b", m->name, (int)get_smallint(p1));
+
+	if (DO_DUMP) DUMP_TERM2("bb_b_put", tmpbuf, p2, p2_ctx, 1);
 
 	char *key = strdup(tmpbuf);
 	check_heap_error(init_tmp_heap(q), free(key));
@@ -101,6 +112,8 @@ static bool bif_bb_put_2(query *q)
 		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:nb", m->name, C_STR(q, p1));
 	else
 		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:nb", m->name, (int)get_smallint(p1));
+
+	if (DO_DUMP) DUMP_TERM2("bb_put", tmpbuf, p2, p2_ctx, 1);
 
 	char *key = strdup(tmpbuf);
 	check_heap_error(init_tmp_heap(q), free(key));
@@ -169,9 +182,16 @@ static bool bif_bb_get_2(query *q)
 	release_lock(&q->pl->guard);
 
 	cell *tmp = (cell*)val;
+
+	if (DO_DUMP) DUMP_TERM2("bb_get1", tmpbuf, tmp, q->st.curr_frame, 1);
+
 	const frame *f = GET_CURR_FRAME();
 	unsigned var_nbr = rebase_term(q, tmp, f->actual_slots);
+	//fprintf(stderr, "*** f=%u, f->actual_slots=%u, create_vars=%u\n", q->st.curr_frame, f->actual_slots, var_nbr  - f->actual_slots);
 	create_vars(q, var_nbr  - f->actual_slots);
+
+	if (DO_DUMP) DUMP_TERM2("bb_get2", tmpbuf, tmp, q->st.curr_frame, 1);
+
 	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 }
 
@@ -224,6 +244,8 @@ static bool bif_bb_delete_2(query *q)
 			return false;
 		}
 	}
+
+	if (DO_DUMP) DUMP_TERM2("bb_delete", tmpbuf, p2, p2_ctx, 1);
 
 	cell *tmp = (cell*)val;
 
@@ -294,6 +316,8 @@ static bool bif_bb_update_3(query *q)
 	unsigned var_nbr = rebase_term(q, tmp, f->actual_slots);
 	create_vars(q, var_nbr  - f->actual_slots);
 
+	if (DO_DUMP) DUMP_TERM2("bb_update", tmpbuf, p2, p2_ctx, 1);
+
 	if (!unify(q, p2, p2_ctx, tmp, q->st.curr_frame)) {
 		release_lock(&q->pl->guard);
 		return false;
@@ -306,6 +330,7 @@ static bool bif_bb_update_3(query *q)
 	dup_cells(value, tmp, tmp->nbr_cells);
 	sl_del(q->pl->keyval, key1);
 	sl_set(q->pl->keyval, key, value);
+
 	release_lock(&q->pl->guard);
 
 	return true;
