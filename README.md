@@ -449,9 +449,6 @@ Non-standard predicates
 	offset/2
 	limit/2
 
-	reset/3						# reset(:goal,?ball,-cont)
-	shift/1						# shift(+ball)
-
 	getenv/2
 	setenv/2
 	unsetenv/1
@@ -527,7 +524,8 @@ Non-standard predicates
 	open(stream(Str),...)       # with open/4 reopen a stream
 	open(F,M,S,[mmap(Ls)])      # with open/4 mmap() the file to Ls
 
-	:- help(+term,+list)		# provides a combinded mode/type declaration
+	reset/3						# reset(:goal,?ball,-cont)
+	shift/1						# shift(+ball)
 
 Note: consult/1 and load_files/2 support lists of files as args. Also
 support loading into modules eg. *consult(MOD:FILE-SPEC)*.
