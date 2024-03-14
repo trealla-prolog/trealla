@@ -377,6 +377,16 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 static bool bif_iso_abolish_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
+	prolog_lock(q->pl);
+
+	if (!is_var(p1)) {
+		if (p1->val_off == g_colon_s) {
+			p1 = p1 + 1;
+			p1 += p1->nbr_cells;
+		}
+	}
+
+	prolog_unlock(q->pl);
 
 	if (p1->arity != 2)
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
@@ -850,6 +860,16 @@ static bool bif_abolish_2(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,iso_list_or_nil);
+	prolog_lock(q->pl);
+
+	if (!is_var(p1)) {
+		if (p1->val_off == g_colon_s) {
+			p1 = p1 + 1;
+			p1 += p1->nbr_cells;
+		}
+	}
+
+	prolog_unlock(q->pl);
 
 	if (p1->arity != 2)
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
