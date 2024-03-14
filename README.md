@@ -965,8 +965,7 @@ usage including passing and returning structs by value.
 See the *library/curl.pl* and *samples/test_curl.pl* for an example
 usage downloading a file.
 
-This is an example using SQLITE. Given the code in
-*samples/sqlite3.pl*...
+This is an example using SQLITE. Given the code in *samples/sqlite3.pl*...
 
 ```prolog
 	:- use_module(library(sqlite3)).
