@@ -745,7 +745,7 @@ static bool find_exception_handler(query *q, char *ball)
 	}
 
 	if (!q->thread_ptr) {
-		acquire_lock(&q->pl->guard);
+		prolog_lock(q->pl);
 
 		if (!q->is_redo)
 			fprintf(stdout, "   ");
@@ -771,7 +771,7 @@ static bool find_exception_handler(query *q, char *ball)
 
 		fprintf(stdout, ".\n");
 		q->quoted = 0;
-		release_lock(&q->pl->guard);
+		prolog_unlock(q->pl);
 	}
 
 	q->pl->did_dump_vars = true;

@@ -2757,7 +2757,7 @@ static bool bif_log10_1(query *q)
 
 static pl_flt rnd(query *q)
 {
-	acquire_lock(&q->pl->guard);
+	prolog_lock(q->pl);
 
 	if (q->pl->rnd_first_time) {
 		q->pl->rnd_first_time = false;
@@ -2769,17 +2769,17 @@ static pl_flt rnd(query *q)
 
 	q->pl->rnd_seed = ((q->pl->rnd_seed * 2743) + 5923) & random_M;
 	pl_flt val = ((pl_flt)q->pl->rnd_seed / (pl_flt)random_M);
-	release_lock(&q->pl->guard);
+	prolog_unlock(q->pl);
 	return val;
 }
 
 static bool bif_set_seed_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
-	acquire_lock(&q->pl->guard);
+	prolog_lock(q->pl);
 	q->pl->rnd_first_time = false;
 	q->pl->rnd_seed = p1->val_int;
-	release_lock(&q->pl->guard);
+	prolog_unlock(q->pl);
 	return true;
 }
 

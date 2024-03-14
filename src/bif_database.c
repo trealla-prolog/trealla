@@ -941,9 +941,9 @@ bool do_erase(module* m, const char *str)
 {
 	uuid u;
 	uuid_from_buf(str, &u);
-	acquire_lock(&m->guard);
+	module_lock(m);
 	erase_from_db(m, &u);
-	release_lock(&m->guard);
+	module_unlock(m);
 	return true;
 }
 

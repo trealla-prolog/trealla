@@ -399,17 +399,17 @@ static void leave_predicate(query *q, predicate *pr)
 	if (!pr || !pr->is_dynamic || !pr->refcnt)
 		return;
 
-	acquire_lock(&pr->m->guard);
+	module_lock(pr->m);
 
 	if (--pr->refcnt != 0) {
-		release_lock(&pr->m->guard);
+		module_unlock(pr->m);
 		return;
 	}
 
 	// Predicate is no longer being used
 
 	if (!pr->dirty_list) {
-		release_lock(&pr->m->guard);
+		module_unlock(pr->m);
 		return;
 	}
 
@@ -453,7 +453,7 @@ static void leave_predicate(query *q, predicate *pr)
 		}
 	}
 
-	release_lock(&pr->m->guard);
+	module_unlock(pr->m);
 }
 
 static void unwind_trail(query *q)
@@ -1915,7 +1915,7 @@ void query_destroy(query *q)
 	module *m = find_module(q->pl, "concurrent");
 
 	if (m) {
-		acquire_lock(&m->guard);
+		module_lock(m);
 		predicate *pr = find_functor(m, "$future", 1);
 
 		if (pr) {
@@ -1924,14 +1924,14 @@ void query_destroy(query *q)
 			}
 		}
 
-		release_lock(&m->guard);
+		module_unlock(m);
 	}
 #endif
 
 	module *m = q->pl->modules;
 
 	while (m) {
-		acquire_lock(&m->guard);
+		module_lock(m);
 		predicate *pr = find_functor(m, "$bb_key", 3);
 
 		if (pr) {
@@ -1955,7 +1955,7 @@ void query_destroy(query *q)
 			}
 		}
 
-		release_lock(&m->guard);
+		module_unlock(m);
 		m = m->next;
 	}
 
