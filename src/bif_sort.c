@@ -6,6 +6,8 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 
+#include "sort_r.h"
+
 #include "base64.h"
 #include "heap.h"
 #include "history.h"
@@ -95,16 +97,7 @@ static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysor
 		p1_ctx = q->latest_ctx;
 	}
 
-	// On Linux qsort seems to produce a stable sort, although it's
-	// not guaranteed. On BSD systems mergesort is supposed to be.
-	// Note: bagof/setof are now using a Prolog sort/keysort that
-	// is known to be stable.
-
-#if __BSD__ || __FREEBSD__ || __APPLE__ || __MACH__ || __Darwin__ || __DragonFly__
-	mergesort(base, cnt, sizeof(basepair), nodecmp);
-#else
-	qsort(base, cnt, sizeof(basepair), nodecmp);
-#endif
+	sort_r_simple(base, cnt, sizeof(basepair), (void*)nodecmp, NULL);
 
 	for (size_t i = 0; i < cnt; i++) {
 		if (i > 0) {
@@ -292,16 +285,7 @@ static cell *nodesort4(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool ascen
 		p1_ctx = q->latest_ctx;
 	}
 
-	// On Linux qsort seems to produce a stable sort, although it's
-	// not guaranteed. On BSD systems mergesort is supposed to be.
-	// Note: bagof/setof are now using a Prolog sort/keysort that
-	// is known to be stable.
-
-#if __BSD__ || __FREEBSD__ || __APPLE__ || __MACH__ || __Darwin__ || __DragonFly__
-	mergesort(base, cnt, sizeof(basepair), nodecmp);
-#else
-	qsort(base, cnt, sizeof(basepair), nodecmp);
-#endif
+	sort_r_simple(base, cnt, sizeof(basepair), (void*)nodecmp, NULL);
 
 	for (size_t i = 0; i < cnt; i++) {
 		if (i > 0) {
