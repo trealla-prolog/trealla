@@ -14,6 +14,16 @@ void ptrfree(const void *key, const void *val, const void *p);
 void thread_initialize(prolog *pl);
 void thread_cancel_all(prolog *pl);
 
+inline static void prolog_lock(prolog *pl)
+{
+	acquire_lock(&pl->guard);
+}
+
+inline static void prolog_unlock(prolog *pl)
+{
+	release_lock(&pl->guard);
+}
+
 #define MAX_PIDS 64
 
 extern pl_idx g_empty_s, g_dot_s, g_cut_s, g_nil_s, g_true_s, g_fail_s;

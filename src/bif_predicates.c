@@ -1582,7 +1582,7 @@ static void compare_and_zero(uint64_t v1, uint64_t *v2, uint64_t *v)
 
 void uuid_gen(prolog *pl, uuid *u)
 {
-	acquire_lock(&pl->guard);
+	prolog_lock(pl);
 
 	if (!pl->seed)
 		pl->seed = (uint64_t)time(0) & MASK_FINAL;
@@ -1593,7 +1593,7 @@ void uuid_gen(prolog *pl, uuid *u)
 	u->u2 = pl->s_cnt++;
 	u->u2 <<= 48;
 	u->u2 |= pl->seed;
-	release_lock(&pl->guard);
+	prolog_unlock(pl);
 }
 
 char *uuid_to_buf(const uuid *u, char *buf, size_t buflen)

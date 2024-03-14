@@ -47,7 +47,7 @@ typedef struct msg_ {
 
 static int get_named_thread(prolog *pl, const char *name, size_t len)
 {
-	acquire_lock(&pl->guard);
+	prolog_lock(pl);
 
 	for (int i = 0; i < MAX_THREADS; i++) {
 		thread *t = &pl->threads[i];
@@ -56,24 +56,24 @@ static int get_named_thread(prolog *pl, const char *name, size_t len)
 			continue;
 
 		if (sl_get(t->alias, name, NULL)) {
-			release_lock(&pl->guard);
+			prolog_unlock(pl);
 			return i;
 		}
 
 		if (t->filename && (strlen(t->filename) == len)
 			&& !strncmp(t->filename, name, len)) {
-			release_lock(&pl->guard);
+			prolog_unlock(pl);
 			return i;
 		}
 	}
 
-	release_lock(&pl->guard);
+	prolog_unlock(pl);
 	return -1;
 }
 
 static int new_thread(prolog *pl)
 {
-	acquire_lock(&pl->guard);
+	prolog_lock(pl);
 
 	for (int i = 0; i < MAX_THREADS; i++) {
 		unsigned n = pl->thr_cnt++ % MAX_THREADS;
@@ -86,7 +86,7 @@ static int new_thread(prolog *pl)
 			}
 
 			t->is_active = true;
-			release_lock(&pl->guard);
+			prolog_unlock(pl);
 			t->id = pthread_self();
 
 			t->pl = pl;
@@ -103,7 +103,7 @@ static int new_thread(prolog *pl)
 		}
 	}
 
-	release_lock(&pl->guard);
+	prolog_unlock(pl);
 	return -1;
 }
 

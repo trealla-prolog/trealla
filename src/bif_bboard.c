@@ -61,9 +61,9 @@ static bool bif_bb_b_put_2(query *q)
 	cell *value = malloc(sizeof(cell)*tmp->nbr_cells);
 	dup_cells(value, tmp, tmp->nbr_cells);
 
-	acquire_lock(&q->pl->guard);
+	prolog_lock(q->pl);
 	sl_set(q->pl->keyval, key, value);
-	release_lock(&q->pl->guard);
+	prolog_unlock(q->pl);
 
 	blob *b = calloc(1, sizeof(blob));
 	b->ptr = (void*)m;
@@ -121,10 +121,10 @@ static bool bif_bb_put_2(query *q)
 	cell *value = malloc(sizeof(cell)*tmp->nbr_cells);
 	dup_cells(value, tmp, tmp->nbr_cells);
 
-	acquire_lock(&q->pl->guard);
+	prolog_lock(q->pl);
 	sl_del(q->pl->keyval, key1);
 	sl_set(q->pl->keyval, key, value);
-	release_lock(&q->pl->guard);
+	prolog_unlock(q->pl);
 
 	return true;
 }
@@ -163,7 +163,7 @@ static bool bif_bb_get_2(query *q)
 	const char *key = tmpbuf;
 	const void *val;
 
-	acquire_lock(&q->pl->guard);
+	prolog_lock(q->pl);
 
 	if (!sl_get(q->pl->keyval, key, &val)) {
 		if (is_atom(p1))
@@ -174,12 +174,12 @@ static bool bif_bb_get_2(query *q)
 		key = tmpbuf;
 
 		if (!sl_get(q->pl->keyval, key, &val)) {
-			release_lock(&q->pl->guard);
+			prolog_unlock(q->pl);
 			return false;
 		}
 	}
 
-	release_lock(&q->pl->guard);
+	prolog_unlock(q->pl);
 
 	cell *tmp = (cell*)val;
 
@@ -229,7 +229,7 @@ static bool bif_bb_delete_2(query *q)
 	const char *key = tmpbuf;
 	const void *val;
 
-	acquire_lock(&q->pl->guard);
+	prolog_lock(q->pl);
 
 	if (!sl_get(q->pl->keyval, key, &val)) {
 		if (is_atom(p1))
@@ -240,7 +240,7 @@ static bool bif_bb_delete_2(query *q)
 		key = tmpbuf;
 
 		if (!sl_get(q->pl->keyval, key, &val)) {
-			release_lock(&q->pl->guard);
+			prolog_unlock(q->pl);
 			return false;
 		}
 	}
@@ -250,12 +250,12 @@ static bool bif_bb_delete_2(query *q)
 	cell *tmp = (cell*)val;
 
 	if (!unify(q, p2, p2_ctx, tmp, q->st.curr_frame)) {
-		release_lock(&q->pl->guard);
+		prolog_unlock(q->pl);
 		return false;
 	}
 
 	bool ok = sl_del(q->pl->keyval, key);
-	release_lock(&q->pl->guard);
+	prolog_unlock(q->pl);
 
 	return ok;
 }
@@ -295,7 +295,7 @@ static bool bif_bb_update_3(query *q)
 	const char *key1 = tmpbuf;
 	const void *val;
 
-	acquire_lock(&q->pl->guard);
+	prolog_lock(q->pl);
 
 	if (!sl_get(q->pl->keyval, key1, &val)) {
 		if (is_atom(p1))
@@ -306,7 +306,7 @@ static bool bif_bb_update_3(query *q)
 		key1 = tmpbuf;
 
 		if (!sl_get(q->pl->keyval, key1, &val)) {
-			release_lock(&q->pl->guard);
+			prolog_unlock(q->pl);
 			return false;
 		}
 	}
@@ -319,19 +319,19 @@ static bool bif_bb_update_3(query *q)
 	if (DO_DUMP) DUMP_TERM2("bb_update", tmpbuf, p2, p2_ctx, 1);
 
 	if (!unify(q, p2, p2_ctx, tmp, q->st.curr_frame)) {
-		release_lock(&q->pl->guard);
+		prolog_unlock(q->pl);
 		return false;
 	}
 
 	char *key = strdup(key1);
-	check_heap_error(init_tmp_heap(q), (release_lock(&q->pl->guard), free(key)));
+	check_heap_error(init_tmp_heap(q), (prolog_unlock(q->pl), free(key)));
 	tmp = deep_clone_to_tmp(q, p3, p3_ctx);
 	cell *value = malloc(sizeof(cell)*tmp->nbr_cells);
 	dup_cells(value, tmp, tmp->nbr_cells);
 	sl_del(q->pl->keyval, key1);
 	sl_set(q->pl->keyval, key, value);
 
-	release_lock(&q->pl->guard);
+	prolog_unlock(q->pl);
 
 	return true;
 }
