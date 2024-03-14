@@ -636,7 +636,7 @@ Where options can be:
 	header(Boolean)				# default false, skip first (header) line in file
 	comments(Boolean)			# default false, skip lines beginning with comment character in file
 	comment(Char)				# default '#', set the comment character
-	strings(Boolean)			# default depends on type of input (atom ot string)
+	strings(Boolean)			# default depends on type of input (atom or string)
 	arity(Integer)				# default to not checking arity, otherwise throw domain_error
 	assert(Boolean)				# default false, assertz to database instead (assumed for files, needs a functor)
 	functor(Atom)				# default output is a list, create a structure (mandatory for files and with assert)
@@ -662,7 +662,7 @@ Examples...
 	   true.
 	?- f(A,B,C).
 	   A = 123, B = 2.345, C = 3456789.
-	?- time(parse_csv_file('/home/infradig/lgt3git/library/csv/test_files/tickers.csv',[functor(f),quote('\'')])).
+	?- time(parse_csv_file('/home/infradig/logtalk3/library/csv/test_files/tickers.csv',[functor(f),quote('\'')])).
 	% Parsed 35193 lines
 	% Time elapsed 0.096s, 3 Inferences, 0.000 MLips)
 		  true.
@@ -675,6 +675,7 @@ Examples...
 	;  A = 'AAA', B = 'NYSEARCA', C = 'ETF', D = 'USD', E = '2020-09-09', F = '2021-06-25'
 	;
 ```
+
 
 Application maps (dictionaries)
 ===============================
