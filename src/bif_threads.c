@@ -862,11 +862,11 @@ static bool bif_thread_join_2(query *q)
 		unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	}
 
+	acquire_lock(&t->guard);
 	sl_destroy(t->alias);
 	t->alias = NULL;
 	query_destroy(t->q);
 	t->q = NULL;
-	acquire_lock(&t->guard);
 	msg *m;
 
 	while ((m = (msg*)list_pop_front(&t->queue)) != NULL) {
