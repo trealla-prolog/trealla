@@ -413,37 +413,7 @@ static void leave_predicate(query *q, predicate *pr)
 		return;
 	}
 
-	if (!pr->is_abolished) {
-		// Just because this predicate is no longer in use doesn't
-		// mean there are no shared references to terms contained
-		// within. So move items on the predicate dirty-list to the
-		// query dirty-list. They will be freed up at end of the query.
-		// FIXME: this is a memory drain.
-
-		while (pr->dirty_list) {
-			delink(pr, pr->dirty_list);
-
-			if (pr->idx && pr->cnt) {
-				//predicate *pr = pr->dirty_list->owner;
-				sl_remove(pr->idx2, pr->dirty_list);
-				sl_remove(pr->idx, pr->dirty_list);
-			}
-
-			pr->dirty_list->cl.is_deleted = true;
-			rule *save = pr->dirty_list->dirty;
-			pr->dirty_list->dirty = q->dirty_list;
-			q->dirty_list = pr->dirty_list;
-			pr->dirty_list = save;
-		}
-
-		pr->dirty_list = NULL;
-
-		if (pr->idx && !pr->cnt) {
-			sl_destroy(pr->idx2);
-			sl_destroy(pr->idx);
-			pr->idx = pr->idx2 = NULL;
-		}
-	} else {
+	if (pr->is_abolished) {
 		while (pr->dirty_list) {
 			delink(pr, pr->dirty_list);
 			rule *save = pr->dirty_list;
@@ -451,6 +421,39 @@ static void leave_predicate(query *q, predicate *pr)
 			clear_clause(&save->cl);
 			free(save);
 		}
+
+		module_unlock(pr->m);
+		return;
+	}
+
+	// Just because this predicate is no longer in use doesn't
+	// mean there are no shared references to terms contained
+	// within. So move items on the predicate dirty-list to the
+	// query dirty-list. They will be freed up at end of the query.
+	// FIXME: this is a memory drain.
+
+	while (pr->dirty_list) {
+		delink(pr, pr->dirty_list);
+
+		if (pr->idx && pr->cnt) {
+			//predicate *pr = pr->dirty_list->owner;
+			sl_remove(pr->idx2, pr->dirty_list);
+			sl_remove(pr->idx, pr->dirty_list);
+		}
+
+		pr->dirty_list->cl.is_deleted = true;
+		rule *save = pr->dirty_list->dirty;
+		pr->dirty_list->dirty = q->dirty_list;
+		q->dirty_list = pr->dirty_list;
+		pr->dirty_list = save;
+	}
+
+	pr->dirty_list = NULL;
+
+	if (pr->idx && !pr->cnt) {
+		sl_destroy(pr->idx2);
+		sl_destroy(pr->idx);
+		pr->idx = pr->idx2 = NULL;
 	}
 
 	module_unlock(pr->m);
