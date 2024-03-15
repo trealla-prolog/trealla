@@ -587,6 +587,8 @@ void pl_destroy(prolog *pl)
 #if USE_THREADS
 	if (pl->q_cnt)
 		thread_cancel_all(pl);
+
+	thread_deinitialize(pl);
 #endif
 
 	if (pl->logfp)

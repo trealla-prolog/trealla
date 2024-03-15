@@ -12,6 +12,7 @@ void uuid_gen(prolog *pl, uuid *u);
 void fake_free(const void *key, const void *val, const void *p);
 void ptrfree(const void *key, const void *val, const void *p);
 void thread_initialize(prolog *pl);
+void thread_deinitialize(prolog *pl);
 void thread_cancel_all(prolog *pl);
 
 inline static void prolog_lock(prolog *pl)

@@ -142,6 +142,12 @@ void thread_initialize(prolog *pl)
 	t->is_detached = true;
 }
 
+void thread_deinitialize(prolog *pl)
+{
+	thread *t = &pl->threads[0];
+	sl_destroy(t->alias);
+}
+
 static bool is_thread_or_alias(query *q, cell *c)
 {
 	pl_idx c_ctx = 0;
@@ -915,6 +921,7 @@ static void do_cancel(thread *t)
 	release_lock(&t->guard);
 }
 
+#if !defined(__ANDROID__)
 static bool bif_thread_cancel_1(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
@@ -933,6 +940,7 @@ static bool bif_thread_cancel_1(query *q)
 	do_cancel(t);
 	return true;
 }
+#endif
 
 static bool bif_thread_detach_1(query *q)
 {
@@ -2121,7 +2129,11 @@ builtins g_threads_bifs[] =
 	{"pl_msg_recv", 2, bif_pl_recv_2, "-thread,?term", false, false, BLAH},
 
 	{"thread_create", 3, bif_thread_create_3, ":callable,-thread,+list", false, false, BLAH},
+
+#if !defined(__ANDROID__)
 	{"thread_cancel", 1, bif_thread_cancel_1, "+thread", false, false, BLAH},
+#endif
+
 	{"thread_detach", 1, bif_thread_detach_1, "+thread", false, false, BLAH},
 	{"thread_signal", 2, bif_thread_signal_2, "+thread,:callable", false, false, BLAH},
 	{"thread_join", 2, bif_thread_join_2, "+thread,-term", false, false, BLAH},
