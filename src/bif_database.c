@@ -246,7 +246,9 @@ bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 		return match;
 
 	rule *r = q->st.r;
+	prolog_lock(q->pl);
 	retract_from_db(r->owner->m, r);
+	prolog_unlock(q->pl);
 	bool last_match = (is_retract == DO_RETRACT) && !has_next_key(q);
 	stash_frame(q, &r->cl, last_match);
 	db_log(q, r, LOG_ERASE);
@@ -269,9 +271,7 @@ static bool bif_iso_retract_1(query *q)
 		p1 += p1->nbr_cells;
 	}
 
-	prolog_lock(q->pl);
 	bool ok = do_retract(q, p1, p1_ctx, DO_RETRACT);
-	prolog_unlock(q->pl);
 	return ok;
 }
 
@@ -291,12 +291,10 @@ static bool bif_iso_retractall_1(query *q)
 		p1 += p1->nbr_cells;
 	}
 
-	prolog_lock(q->pl);
 	cell *head = deref(q, get_head(p1), p1_ctx);
 	predicate *pr = search_predicate(q->st.m, head, NULL);
 
 	if (!pr) {
-		prolog_unlock(q->pl);
 		bool found = false;
 
 		if (get_builtin_term(q->st.m, head, &found, NULL), found)
@@ -307,7 +305,6 @@ static bool bif_iso_retractall_1(query *q)
 
 	while (do_retract(q, p1, p1_ctx, DO_RETRACTALL)) {
 		if (q->did_throw) {
-			prolog_unlock(q->pl);
 			return true;
 		}
 
@@ -325,7 +322,6 @@ static bool bif_iso_retractall_1(query *q)
 		pr->idx = pr->idx2 = NULL;
 	}
 
-	prolog_unlock(q->pl);
 	return true;
 }
 
@@ -337,8 +333,12 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 	if (!pr->is_dynamic)
 		return throw_error(q, c_orig, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
+	prolog_lock(q->pl);
+
 	for (rule *r = pr->head; r; r = r->next)
 		retract_from_db(r->owner->m, r);
+
+	prolog_unlock(q->pl);
 
 	if (pr->idx && !pr->cnt) {
 		predicate_purge_dirty_list(pr);
@@ -414,9 +414,7 @@ static bool bif_iso_abolish_1(query *q)
 	tmp.arity = get_smallint(p1_arity);
 	CLR_OP(&tmp);
 
-	prolog_lock(q->pl);
 	bool ok = do_abolish(q, p1, &tmp, true);
-	prolog_unlock(q->pl);
 	return ok;
 }
 
@@ -525,9 +523,9 @@ static bool bif_iso_asserta_1(query *q)
 
 	prolog_lock(q->pl);
 	rule *r = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, 0);
+	prolog_unlock(q->pl);
 	p->cl->cidx = 0;
 	parser_destroy(p);
-	prolog_unlock(q->pl);
 
 	if (!r)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
@@ -587,9 +585,9 @@ static bool bif_iso_assertz_1(query *q)
 
 	prolog_lock(q->pl);
 	rule *r = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, false);
+	prolog_unlock(q->pl);
 	p->cl->cidx = 0;
 	parser_destroy(p);
-	prolog_unlock(q->pl);
 
 	if (!r)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
@@ -657,9 +655,9 @@ static bool do_asserta_2(query *q)
 
 	prolog_lock(q->pl);
 	rule *r = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, 0);
+	prolog_unlock(q->pl);
 	p->cl->cidx = 0;
 	parser_destroy(p);
-	prolog_unlock(q->pl);
 
 	if (!r)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
@@ -755,9 +753,9 @@ static bool do_assertz_2(query *q)
 
 	prolog_lock(q->pl);
 	rule *r = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, false);
+	prolog_unlock(q->pl);
 	p->cl->cidx = 0;
 	parser_destroy(p);
-	prolog_unlock(q->pl);
 
 	if (!r)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
@@ -929,9 +927,7 @@ static bool bif_abolish_2(query *q)
 	tmp.arity = get_smallint(p1_arity);
 	CLR_OP(&tmp);
 
-	prolog_lock(q->pl);
 	bool ok = do_abolish(q, p1, &tmp, true);
-	prolog_unlock(q->pl);
 	return ok;
 }
 
