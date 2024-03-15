@@ -2292,6 +2292,7 @@ module *module_create(prolog *pl, const char *name)
 	if (!m->name || !m->p || m->error || !p) {
 		module_destroy(m);
 		m = NULL;
+		return m;
 	}
 
 	set_discontiguous_in_db(m, "term_expansion", 2);
