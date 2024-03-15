@@ -508,7 +508,6 @@ static bool bif_iso_asserta_1(query *q)
 		}
 	}
 
-	prolog_lock(q->pl);
 	cell *tmp2, *body = get_body(tmp);
 
 	if (body && ((tmp2 = check_body_callable(body)) != NULL)) {
@@ -517,11 +516,13 @@ static bool bif_iso_asserta_1(query *q)
 	}
 
 	pl_idx nbr_cells = tmp->nbr_cells;
+
+	prolog_lock(q->pl);
 	parser *p = q->st.m->p;
 
 	if (nbr_cells > p->cl->nbr_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(nbr_cells+1)));
-		check_heap_error(p->cl);
+		check_heap_error(p->cl, prolog_unlock(q->pl));
 		p->cl->nbr_allocated_cells = nbr_cells;
 	}
 
@@ -539,12 +540,12 @@ static bool bif_iso_asserta_1(query *q)
 	}
 
 	rule *r = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, 0);
+	p->cl->cidx = 0;
 	prolog_unlock(q->pl);
 
 	if (!r)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
-	p->cl->cidx = 0;
 	db_log(q, r, LOG_ASSERTA);
 	return true;
 }
@@ -571,20 +572,20 @@ static bool bif_iso_assertz_1(query *q)
 		}
 	}
 
-	prolog_lock(q->pl);
 	cell *tmp2, *body = get_body(tmp);
 
 	if (body && ((tmp2 = check_body_callable(body)) != NULL)) {
-		prolog_unlock(q->pl);
 		return throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
 	}
 
 	pl_idx nbr_cells = tmp->nbr_cells;
+
+	prolog_lock(q->pl);
 	parser *p = q->st.m->p;
 
 	if (nbr_cells > p->cl->nbr_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(nbr_cells+1)));
-		check_heap_error(p->cl);
+		check_heap_error(p->cl, prolog_unlock(q->pl));
 		p->cl->nbr_allocated_cells = nbr_cells;
 	}
 
@@ -602,12 +603,12 @@ static bool bif_iso_assertz_1(query *q)
 	}
 
 	rule *r = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, false);
+	p->cl->cidx = 0;
 	prolog_unlock(q->pl);
 
 	if (!r)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
-	p->cl->cidx = 0;
 	db_log(q, r, LOG_ASSERTZ);
 	return true;
 }
@@ -628,21 +629,18 @@ static bool do_asserta_2(query *q)
 		}
 	}
 
-	prolog_lock(q->pl);
 	cell *body = get_body(p1);
 
 	if (body)
 		body = deref(q, body, p1_ctx);
 
 	if (body && !is_callable(body)) {
-		prolog_unlock(q->pl);
 		return throw_error(q, body, q->latest_ctx, "type_error", "callable");
 	}
 
 	cell *tmp2;
 
 	if (body && ((tmp2 = check_body_callable(body)) != NULL)) {
-		prolog_unlock(q->pl);
 		return throw_error(q, tmp2, q->latest_ctx, "type_error", "callable");
 	}
 
@@ -651,11 +649,13 @@ static bool do_asserta_2(query *q)
 	cell *tmp = deep_copy_to_tmp(q, p1, p1_ctx, false);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = tmp->nbr_cells;
+
+	prolog_lock(q->pl);
 	parser *p = q->st.m->p;
 
 	if (nbr_cells > p->cl->nbr_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(nbr_cells+1)));
-		check_heap_error(p->cl);
+		check_heap_error(p->cl, prolog_unlock(q->pl));
 		p->cl->nbr_allocated_cells = nbr_cells;
 	}
 
@@ -673,12 +673,11 @@ static bool do_asserta_2(query *q)
 	}
 
 	rule *r = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, 0);
+	p->cl->cidx = 0;
 	prolog_unlock(q->pl);
 
 	if (!r)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
-
-	p->cl->cidx = 0;
 
 	if (!is_var(p2)) {
 		uuid u;
@@ -728,21 +727,18 @@ static bool do_assertz_2(query *q)
 		}
 	}
 
-	prolog_lock(q->pl);
 	cell *body = get_body(p1);
 
 	if (body)
 		body = deref(q, body, p1_ctx);
 
 	if (body && !is_callable(body)) {
-		prolog_unlock(q->pl);
 		return throw_error(q, body, q->latest_ctx, "type_error", "callable");
 	}
 
 	cell *tmp2;
 
 	if (body && ((tmp2 = check_body_callable(body)) != NULL)) {
-		prolog_unlock(q->pl);
 		return throw_error(q, tmp2, q->latest_ctx, "type_error", "callable");
 	}
 
@@ -751,11 +747,13 @@ static bool do_assertz_2(query *q)
 	cell *tmp = deep_copy_to_tmp(q, p1, p1_ctx, false);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = tmp->nbr_cells;
+
+	prolog_lock(q->pl);
 	parser *p = q->st.m->p;
 
 	if (nbr_cells > p->cl->nbr_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(nbr_cells+1)));
-		check_heap_error(p->cl);
+		check_heap_error(p->cl, prolog_unlock(q->pl));
 		p->cl->nbr_allocated_cells = nbr_cells;
 	}
 
@@ -773,12 +771,11 @@ static bool do_assertz_2(query *q)
 	}
 
 	rule *r = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, false);
+	p->cl->cidx = 0;
 	prolog_unlock(q->pl);
 
 	if (!r)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
-
-	p->cl->cidx = 0;
 
 	if (!is_var(p2)) {
 		uuid u;
