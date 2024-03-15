@@ -20,7 +20,6 @@ static bool bif_clause_3(query *q)
 	GET_FIRST_ARG(p1,callable_or_var);
 	GET_NEXT_ARG(p2,callable_or_var);
 	GET_NEXT_ARG(p3,atom_or_var);
-	prolog_lock(q->pl);
 
 	if (!is_var(p1)) {
 		if (p1->val_off == g_colon_s) {
@@ -29,15 +28,12 @@ static bool bif_clause_3(query *q)
 			module *m = find_module(q->pl, C_STR(q, cm));
 
 			if (!m) {
-				prolog_unlock(q->pl);
 				return throw_error(q, cm, p1_ctx, "existence_error", "module");
 			}
 
 			p1 += p1->nbr_cells;
 		}
 	}
-
-	prolog_unlock(q->pl);
 
 	if (is_var(p1) && is_var(p2) && is_var(p3))
 		return throw_error(q, p3, p3_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
@@ -144,7 +140,6 @@ static bool bif_iso_clause_2(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,callable_or_var);
-	prolog_lock(q->pl);
 
 	if (p1->val_off == g_colon_s) {
 		p1 = p1 + 1;
@@ -152,15 +147,12 @@ static bool bif_iso_clause_2(query *q)
 		module *m = find_module(q->pl, C_STR(q, cm));
 
 		if (!m) {
-			prolog_unlock(q->pl);
 			return throw_error(q, cm, p1_ctx, "existence_error", "module");
 		}
 
 		q->st.m = m;
 		p1 += p1->nbr_cells;
 	}
-
-	prolog_unlock(q->pl);
 
 	while (match_clause(q, p1, p1_ctx, DO_CLAUSE)) {
 		if (q->did_throw) return true;
@@ -264,7 +256,6 @@ bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 static bool bif_iso_retract_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
-	prolog_lock(q->pl);
 
 	if (p1->val_off == g_colon_s) {
 		p1 = p1 + 1;
@@ -272,13 +263,13 @@ static bool bif_iso_retract_1(query *q)
 		module *m = find_module(q->pl, C_STR(q, cm));
 
 		if (!m) {
-			prolog_unlock(q->pl);
 			return throw_error(q, cm, p1_ctx, "existence_error", "module");
 		}
 
 		p1 += p1->nbr_cells;
 	}
 
+	prolog_lock(q->pl);
 	bool ok = do_retract(q, p1, p1_ctx, DO_RETRACT);
 	prolog_unlock(q->pl);
 	return ok;
@@ -287,7 +278,6 @@ static bool bif_iso_retract_1(query *q)
 static bool bif_iso_retractall_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
-	prolog_lock(q->pl);
 
 	if (p1->val_off == g_colon_s) {
 		p1 = p1 + 1;
@@ -295,13 +285,13 @@ static bool bif_iso_retractall_1(query *q)
 		module *m = find_module(q->pl, C_STR(q, cm));
 
 		if (!m) {
-			prolog_unlock(q->pl);
 			return throw_error(q, cm, p1_ctx, "existence_error", "module");
 		}
 
 		p1 += p1->nbr_cells;
 	}
 
+	prolog_lock(q->pl);
 	cell *head = deref(q, get_head(p1), p1_ctx);
 	predicate *pr = search_predicate(q->st.m, head, NULL);
 
@@ -377,7 +367,6 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 static bool bif_iso_abolish_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
-	prolog_lock(q->pl);
 
 	if (!is_var(p1)) {
 		if (p1->val_off == g_colon_s) {
@@ -385,8 +374,6 @@ static bool bif_iso_abolish_1(query *q)
 			p1 += p1->nbr_cells;
 		}
 	}
-
-	prolog_unlock(q->pl);
 
 	if (p1->arity != 2)
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
@@ -516,9 +503,7 @@ static bool bif_iso_asserta_1(query *q)
 	}
 
 	pl_idx nbr_cells = tmp->nbr_cells;
-
-	prolog_lock(q->pl);
-	parser *p = q->st.m->p;
+	parser *p = parser_create(q->st.m);
 
 	if (nbr_cells > p->cl->nbr_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(nbr_cells+1)));
@@ -535,12 +520,13 @@ static bool bif_iso_asserta_1(query *q)
 		convert_to_literal(q->st.m, h);
 
 	if (!is_interned(h)) {
-		prolog_unlock(q->pl);
 		return throw_error(q, h, q->st.curr_frame, "type_error", "callable");
 	}
 
+	prolog_lock(q->pl);
 	rule *r = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, 0);
 	p->cl->cidx = 0;
+	parser_destroy(p);
 	prolog_unlock(q->pl);
 
 	if (!r)
@@ -579,9 +565,7 @@ static bool bif_iso_assertz_1(query *q)
 	}
 
 	pl_idx nbr_cells = tmp->nbr_cells;
-
-	prolog_lock(q->pl);
-	parser *p = q->st.m->p;
+	parser *p = parser_create(q->st.m);
 
 	if (nbr_cells > p->cl->nbr_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(nbr_cells+1)));
@@ -598,12 +582,13 @@ static bool bif_iso_assertz_1(query *q)
 		convert_to_literal(q->st.m, h);
 
 	if (!is_interned(h)) {
-		prolog_unlock(q->pl);
 		return throw_error(q, h, q->st.curr_frame, "type_error", "callable");
 	}
 
+	prolog_lock(q->pl);
 	rule *r = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, false);
 	p->cl->cidx = 0;
+	parser_destroy(p);
 	prolog_unlock(q->pl);
 
 	if (!r)
@@ -648,10 +633,9 @@ static bool do_asserta_2(query *q)
 	check_heap_error(init_tmp_heap(q));
 	cell *tmp = deep_copy_to_tmp(q, p1, p1_ctx, false);
 	check_heap_error(tmp);
-	pl_idx nbr_cells = tmp->nbr_cells;
 
-	prolog_lock(q->pl);
-	parser *p = q->st.m->p;
+	pl_idx nbr_cells = tmp->nbr_cells;
+	parser *p = parser_create(q->st.m);
 
 	if (nbr_cells > p->cl->nbr_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(nbr_cells+1)));
@@ -668,12 +652,13 @@ static bool do_asserta_2(query *q)
 		convert_to_literal(q->st.m, h);
 
 	if (!is_interned(h)) {
-		prolog_unlock(q->pl);
 		return throw_error(q, h, q->latest_ctx, "type_error", "callable");
 	}
 
+	prolog_lock(q->pl);
 	rule *r = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, 0);
 	p->cl->cidx = 0;
+	parser_destroy(p);
 	prolog_unlock(q->pl);
 
 	if (!r)
@@ -746,10 +731,9 @@ static bool do_assertz_2(query *q)
 	check_heap_error(init_tmp_heap(q));
 	cell *tmp = deep_copy_to_tmp(q, p1, p1_ctx, false);
 	check_heap_error(tmp);
-	pl_idx nbr_cells = tmp->nbr_cells;
 
-	prolog_lock(q->pl);
-	parser *p = q->st.m->p;
+	pl_idx nbr_cells = tmp->nbr_cells;
+	parser *p = parser_create(q->st.m);
 
 	if (nbr_cells > p->cl->nbr_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(nbr_cells+1)));
@@ -766,12 +750,13 @@ static bool do_assertz_2(query *q)
 		convert_to_literal(q->st.m, h);
 
 	if (!is_interned(h)) {
-		prolog_unlock(q->pl);
 		return throw_error(q, h, q->latest_ctx, "type_error", "callable");
 	}
 
+	prolog_lock(q->pl);
 	rule *r = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, false);
 	p->cl->cidx = 0;
+	parser_destroy(p);
 	prolog_unlock(q->pl);
 
 	if (!r)
@@ -857,7 +842,6 @@ static bool bif_abolish_2(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,iso_list_or_nil);
-	prolog_lock(q->pl);
 
 	if (!is_var(p1)) {
 		if (p1->val_off == g_colon_s) {
@@ -865,8 +849,6 @@ static bool bif_abolish_2(query *q)
 			p1 += p1->nbr_cells;
 		}
 	}
-
-	prolog_unlock(q->pl);
 
 	if (p1->arity != 2)
 		return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
@@ -934,13 +916,10 @@ static bool bif_abolish_2(query *q)
 			return throw_error(q, p2, p2_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 	}
 
-	prolog_lock(q->pl);
-
 	if (!force) {
 		bool found = false;
 
 		if (get_builtin(q->pl, C_STR(q, p1_name), C_STRLEN(q, p1_name), get_smallint(p1_arity), &found, NULL), found) {
-			prolog_unlock(q->pl);
 			return throw_error(q, p1, p1_ctx, "permission_error", "modify,static_procedure");
 		}
 	}
@@ -949,6 +928,8 @@ static bool bif_abolish_2(query *q)
 	tmp = *p1_name;
 	tmp.arity = get_smallint(p1_arity);
 	CLR_OP(&tmp);
+
+	prolog_lock(q->pl);
 	bool ok = do_abolish(q, p1, &tmp, true);
 	prolog_unlock(q->pl);
 	return ok;
