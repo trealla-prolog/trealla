@@ -433,19 +433,17 @@ static void leave_predicate(query *q, predicate *pr)
 	// FIXME: this is a memory drain.
 
 	while (pr->dirty_list) {
-		list_delink(pr, pr->dirty_list);
+		rule *r = pr->dirty_list;
+		list_delink(pr, r);
 
 		if (pr->idx && pr->cnt) {
-			sl_remove(pr->idx2, pr->dirty_list);
-			sl_remove(pr->idx, pr->dirty_list);
+			sl_remove(pr->idx2, r);
+			sl_remove(pr->idx, r);
 		}
 
-		pr->dirty_list->cl.is_deleted = true;
-
-		rule *save = pr->dirty_list->dirty;
-		pr->dirty_list->dirty = q->dirty_list;
-		q->dirty_list = pr->dirty_list;
-		pr->dirty_list = save;
+		r->cl.is_deleted = true;
+		list_push_back(&q->dirty, &r->hdr);
+		pr->dirty_list = r->dirty;
 	}
 
 	pr->dirty_list = NULL;
@@ -1860,10 +1858,9 @@ bool execute(query *q, cell *cells, unsigned nbr_vars)
 static void query_purge_dirty_list(query *q)
 {
 	unsigned cnt = 0;
+	rule *r;
 
-	while (q->dirty_list) {
-		rule *r = q->dirty_list;
-		q->dirty_list = r->dirty;
+	while ((r = (rule *)list_pop_front(&q->dirty)) != NULL) {
 		clear_clause(&r->cl);
 		free(r);
 		cnt++;

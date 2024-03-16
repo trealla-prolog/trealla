@@ -346,8 +346,7 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 		while (pr->dirty_list) {
 			rule *r = pr->dirty_list;
 			pr->dirty_list = r->dirty;
-			r->dirty = q->dirty_list;
-			q->dirty_list = r;
+			list_push_back(&q->dirty, &r->hdr);
 		}
 	}
 

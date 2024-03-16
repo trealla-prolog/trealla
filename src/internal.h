@@ -694,10 +694,10 @@ struct query_ {
 	cell *queue[MAX_QUEUES], *tmpq[MAX_QUEUES];
 	page *heap_pages;
 	slot *save_e;
-	rule *dirty_list;
 	query *tasks;
 	skiplist *vars;
 	void *thread_ptr;
+	list dirty;
 	cell accum;
 	mpz_t tmp_ival;
 	mpq_t tmp_irat;
