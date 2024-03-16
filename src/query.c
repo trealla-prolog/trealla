@@ -1332,8 +1332,8 @@ bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 		undo_me(q);
 	}
 
-	drop_choice(q);
 	leave_predicate(q, q->st.pr);
+	drop_choice(q);
 	return false;
 }
 
@@ -1423,8 +1423,8 @@ bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract
 		undo_me(q);
 	}
 
-	drop_choice(q);
 	leave_predicate(q, q->st.pr);
+	drop_choice(q);
 	return false;
 }
 
