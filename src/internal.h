@@ -837,16 +837,16 @@ typedef struct gex_ {
 struct module_ {
 	lnode hdr;						// must be first
 	module *used[MAX_MODULES];
-	module *next, *orig;
+	module *orig;
 	prolog *pl;
 	const char *filename, *name, *actual_filename;
-	predicate *head, *tail;
 	gex *gex_head, *gex_tail;
 	parser *p;
 	FILE *fp;
 	skiplist *index, *ops, *defops;
 	loaded_file *loaded_files;
 	lock guard;
+	list predicates;
 	prolog_flags flags;
 	unsigned id, idx_used, arity;
 	int if_depth;

@@ -797,7 +797,8 @@ void save_db(FILE *fp, query *q, int logging)
 	q->listing = true;
 	q->double_quotes = true;
 
-	for (predicate *pr = q->st.m->head; pr; pr = pr->next) {
+	for (predicate *pr = (predicate*)list_front(&q->st.m->predicates);
+		pr; pr = (predicate*)list_next(&pr->hdr)) {
 		if (pr->is_prebuilt)
 			continue;
 

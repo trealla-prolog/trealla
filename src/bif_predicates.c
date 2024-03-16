@@ -2875,7 +2875,8 @@ static void save_name(FILE *fp, query *q, pl_idx name, unsigned arity)
 	module *m = q->st.r ? q->st.r->owner->m : q->st.m;
 	q->listing = true;
 
-	for (predicate *pr = m->head; pr; pr = pr->next) {
+	for (predicate *pr = (predicate*)list_front(&m->predicates);
+		pr; pr = (predicate*)list_next(&pr->hdr)) {
 		if (pr->is_prebuilt && (arity == -1U))
 			continue;
 
@@ -2972,7 +2973,8 @@ static bool bif_module_info_2(query *q)
 
 	check_heap_error(init_tmp_heap(q));
 
-	for (predicate *pr = m->head; pr; pr = pr->next) {
+	for (predicate *pr = (predicate*)list_front(&m->predicates);
+		pr; pr = (predicate*)list_next(&pr->hdr)) {
 		if (!pr->is_public)
 			continue;
 
@@ -3413,7 +3415,8 @@ static bool do_profile(query *q)
 	for (lnode *n = list_front(&q->pl->modules); n; n = list_next(n)) {
 		module *m = (module *)n;
 
-		for (predicate *pr = m->head; pr; pr = pr->next) {
+		for (predicate *pr = (predicate*)list_front(&m->predicates);
+			pr; pr = (predicate*)list_next(&pr->hdr)) {
 			for (rule *r = pr->head; r; r = r->next) {
 				if (!r->attempted)
 					continue;

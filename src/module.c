@@ -398,18 +398,10 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 	if (!pr) {
 		pr = calloc(1, sizeof(predicate));
 		ensure(pr);
-		pr->prev = m->tail;
+		list_push_back(&m->predicates, &pr->hdr);
 
 		if (created)
 			*created = true;
-
-		if (m->tail)
-			m->tail->next = pr;
-
-		m->tail = pr;
-
-		if (!m->head)
-			m->head = pr;
 
 		pr->filename = m->filename;
 		pr->m = m;
@@ -420,20 +412,6 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 		sl_app(m->index, &pr->key, pr);
 		return pr;
 	}
-
-#if 0
-	rule *r = pr->dirty_list;
-
-	while (r) {
-		rule *save = r;
-		list_delink(pr, r);
-		r = r->dirty;
-		clear_clause(&save->cl);
-		free(save);
-	}
-
-	pr->dirty_list = NULL;
-#endif
 
 	pr->is_abolished = false;
 	return pr;
@@ -458,6 +436,7 @@ static void destroy_predicate(module *m, predicate *pr)
 		free(pr->meta_args);
 	}
 
+	list_remove(&m->predicates, &pr->hdr);
 	free(pr);
 }
 
@@ -690,7 +669,8 @@ rule *find_in_db(module *m, uuid *ref)
 	for (lnode *n = list_front(&m->pl->modules); n; n = list_next(n)) {
 		module *m = (module *)n;
 
-		for (predicate *pr = m->head; pr; pr = pr->next) {
+		for (predicate *pr = (predicate*)list_front(&m->predicates);
+			pr; pr = (predicate*)list_next(&pr->hdr)) {
 			if (!pr->is_dynamic)
 				continue;
 
@@ -1777,7 +1757,8 @@ void xref_clause(module *m, clause *cl)
 
 void xref_db(module *m)
 {
-	for (predicate *pr = m->head; pr; pr = pr->next) {
+	for (predicate *pr = (predicate*)list_front(&m->predicates);
+		pr; pr = (predicate*)list_next(&pr->hdr)) {
 		if (pr->is_processed)
 			continue;
 
@@ -1842,7 +1823,8 @@ module *load_text(module *m, const char *src, const char *filename)
 
 static bool unload_realfile(module *m, const char *filename)
 {
-	for (predicate *pr = m->head; pr; pr = pr->next) {
+	for (predicate *pr = (predicate*)list_front(&m->predicates);
+		pr; pr = (predicate*)list_next(&pr->hdr)) {
 		if (pr->filename && strcmp(pr->filename, filename))
 			continue;
 
@@ -2027,8 +2009,10 @@ module *load_file(module *m, const char *filename, bool including)
 			if (!sl_get(str->alias, "user_input", NULL))
 				continue;
 
-			for (predicate *pr = m->head; pr; pr = pr->next)
+			for (predicate *pr = (predicate*)list_front(&m->predicates);
+				pr; pr = (predicate*)list_next(&pr->hdr)) {
 				pr->is_reload = true;
+			}
 
 			// Process extra input line text...
 
@@ -2167,7 +2151,8 @@ static void module_save_fp(module *m, FILE *fp, int canonical, int dq)
 	q.pl = m->pl;
 	q.st.m = m;
 
-	for (predicate *pr = m->head; pr; pr = pr->next) {
+	for (predicate *pr = (predicate*)list_front(&m->predicates);
+		pr; pr = (predicate*)list_next(&pr->hdr)) {
 		if (pr->is_prebuilt)
 			continue;
 
@@ -2216,14 +2201,10 @@ void module_destroy(module *m)
 
 	sl_done(iter);
 	sl_destroy(m->ops);
+	predicate *pr;
 
-	for (predicate *pr = m->head; pr;) {
-		predicate *save = pr;
-		pr = pr->next;
-		destroy_predicate(m, save);
-	}
-
-	list_remove(&m->pl->modules, &m->hdr);
+	while ((pr = (predicate*)list_front(&m->predicates)) != NULL)
+		destroy_predicate(m, pr);
 
 	if (m->fp)
 		fclose(m->fp);
@@ -2237,6 +2218,7 @@ void module_destroy(module *m)
 	sl_destroy(m->index);
 	parser_destroy(m->p);
 	clear_loaded(m);
+	list_remove(&m->pl->modules, &m->hdr);
 	free(m);
 }
 
