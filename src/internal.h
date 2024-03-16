@@ -828,6 +828,8 @@ struct parser_ {
 
 typedef struct loaded_file_ loaded_file;
 
+// Goal expansion...
+
 typedef struct gex_ {
 	lnode hdr;						// must be first
 	struct gex_ *prev, *next, *alias;
