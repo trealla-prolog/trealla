@@ -25,7 +25,7 @@ static void msleep(int ms)
 #define is_thread_only(t) (!(t)->is_queue_only && !(t)->is_mutex_only)
 
 typedef struct msg_ {
-	lnode hdr;			// must be first
+	lnode hdr;						// must be first
 	int from_chan;
 	cell c[];
 } msg;

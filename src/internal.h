@@ -451,6 +451,7 @@ struct clause_ {
 };
 
 struct rule_ {
+	lnode hdr;						// must be first
 	predicate *owner;
 	rule *prev, *next;
 	const char *filename;
@@ -462,7 +463,7 @@ struct rule_ {
 };
 
 struct predicate_ {
-	cell key;
+	lnode hdr;						// must be first
 	predicate *prev, *next, *alias;
 	rule *head, *tail;
 	module *m;
@@ -470,6 +471,7 @@ struct predicate_ {
 	rule *dirty_list;
 	const char *filename;
 	cell *meta_args;
+	cell key;
 	pl_atomic uint64_t cnt, refcnt, db_id;
 	bool is_reload:1;
 	bool is_prebuilt:1;
@@ -679,6 +681,7 @@ struct prolog_flags_ {
 };
 
 struct query_ {
+	lnode hdr;						// must be first
 	query *prev, *next, *parent;
 	module *current_m;
 	prolog *pl;
@@ -826,11 +829,13 @@ struct parser_ {
 typedef struct loaded_file_ loaded_file;
 
 typedef struct gex_ {
-	cell key;
+	lnode hdr;						// must be first
 	struct gex_ *prev, *next, *alias;
+	cell key;
 } gex;
 
 struct module_ {
+	lnode hdr;						// must be first
 	module *used[MAX_MODULES];
 	module *next, *orig;
 	prolog *pl;
@@ -871,7 +876,8 @@ struct prolog_ {
 	module *modmap[MAX_MODULES];
 	struct { pl_idx tab1[MAX_IGNORES], tab2[MAX_IGNORES]; };
 	char tmpbuf[8192];
-	module *modules, *system_m, *user_m, *curr_m, *dcgs;
+	list modules;
+	module *system_m, *user_m, *curr_m, *dcgs;
 	var_item *tabs;
 	parser *p;
 	skiplist *biftab, *keyval, *help, *fortab;

@@ -13,13 +13,11 @@
 
 static const char *do_attribute(query *q, cell *c, unsigned arity)
 {
-	module *m = q->pl->modules;
+	for (lnode *n = list_front(&q->pl->modules); n; n = list_next(n)) {
+		module *m = (module *)n;
 
-	while (m) {
 		if ((arity == m->arity) && !CMP_STRING_TO_CSTR(q, c, m->name))
 			return m->orig->name;
-
-		m = m->next;
 	}
 
 	return q->st.m->name;

@@ -3410,7 +3410,9 @@ static bool do_profile(query *q)
 {
 	fprintf(stderr, "#functor/arity,match_attempts,matched,tcos\n");
 
-	for (module *m = q->pl->modules; m; m = m->next) {
+	for (lnode *n = list_front(&q->pl->modules); n; n = list_next(n)) {
+		module *m = (module *)n;
+
 		for (predicate *pr = m->head; pr; pr = pr->next) {
 			for (rule *r = pr->head; r; r = r->next) {
 				if (!r->attempted)
@@ -5681,7 +5683,8 @@ static bool bif_current_module_1(query *q)
 		}
 
 		check_heap_error(push_choice(q));
-		module *m = q->current_m = q->pl->modules;
+
+		module *m = (module*)list_front(&q->pl->modules);
 		cell tmp;
 		make_atom(&tmp, new_atom(q->pl, m->name));
 		return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
@@ -5690,7 +5693,7 @@ static bool bif_current_module_1(query *q)
 	if (!q->current_m)
 		return false;
 
-	module *m = q->current_m = q->current_m->next;
+	module *m = (module*)list_next(&q->current_m->hdr);
 
 	if (!m)
 		return false;
@@ -5818,7 +5821,9 @@ static bool bif_modules_1(query *q)
 	GET_FIRST_ARG(p1,var);
 	check_heap_error(init_tmp_heap(q));
 
-	for (module *m = q->pl->modules; m; m = m->next) {
+	for (lnode *n = list_front(&q->pl->modules); n; n = list_next(n)) {
+		module *m = (module *)n;
+
 		if (m->orig)
 			continue;
 

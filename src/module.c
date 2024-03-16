@@ -358,7 +358,9 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 	}
 
 
-	for (module *tmp_m = m->pl->modules; tmp_m; tmp_m = tmp_m->next) {
+	for (lnode *n = list_front(&m->pl->modules); n; n = list_next(n)) {
+		module *tmp_m = (module *)n;
+
 		if (m == tmp_m)
 			continue;
 
@@ -490,7 +492,9 @@ bool search_goal_expansion(module *m, cell *c)
 	}
 
 
-	for (module *tmp_m = m->pl->modules; tmp_m; tmp_m = tmp_m->next) {
+	for (lnode *n = list_front(&m->pl->modules); n; n = list_next(n)) {
+		module *tmp_m = (module *)n;
+
 		if (m == tmp_m)
 			continue;
 
@@ -683,7 +687,9 @@ int index_cmpkey(const void *ptr1, const void *ptr2, const void *param, void *l)
 
 rule *find_in_db(module *m, uuid *ref)
 {
-	for (m = m->pl->modules; m; m = m->next) {
+	for (lnode *n = list_front(&m->pl->modules); n; n = list_next(n)) {
+		module *m = (module *)n;
+
 		for (predicate *pr = m->head; pr; pr = pr->next) {
 			if (!pr->is_dynamic)
 				continue;
@@ -2217,16 +2223,7 @@ void module_destroy(module *m)
 		destroy_predicate(m, save);
 	}
 
-	if (m->pl->modules == m) {
-		m->pl->modules = m->next;
-	} else {
-		for (module *tmp = m->pl->modules; tmp; tmp = tmp->next) {
-			if (tmp->next == m) {
-				tmp->next = m->next;
-				break;
-			}
-		}
-	}
+	list_remove(&m->pl->modules, &m->hdr);
 
 	if (m->fp)
 		fclose(m->fp);
@@ -2308,7 +2305,6 @@ module *module_create(prolog *pl, const char *name)
 	set_dynamic_in_db(m, "$bb_key", 3);
 
 	init_lock(&m->guard);
-	m->next = pl->modules;
-	pl->modules = m;
+	list_push_back(&pl->modules, &m->hdr);
 	return m;
 }

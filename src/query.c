@@ -1931,7 +1931,7 @@ void query_destroy(query *q)
 	}
 #endif
 
-	module *m = q->pl->modules;
+	module *m = (module*)list_front(&q->pl->modules);
 
 	while (m) {
 		module_lock(m);
@@ -1959,7 +1959,7 @@ void query_destroy(query *q)
 		}
 
 		module_unlock(m);
-		m = m->next;
+		m = (module*)list_next(&m->hdr);
 	}
 
 	mp_int_clear(&q->tmp_ival);
