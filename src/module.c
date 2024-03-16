@@ -423,8 +423,8 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 	rule *r = pr->dirty_list;
 
 	while (r) {
-		delink(pr, r);
 		rule *save = r;
+		list_delink(pr, r);
 		r = r->dirty;
 		clear_clause(&save->cl);
 		free(save);

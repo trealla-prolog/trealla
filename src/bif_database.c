@@ -206,7 +206,7 @@ static void predicate_purge_dirty_list(predicate *pr)
 
 	while (pr->dirty_list) {
 		rule *r = pr->dirty_list;
-		delink(pr, r);
+		list_delink(pr, r);
 		pr->dirty_list = r->dirty;
 		clear_clause(&r->cl);
 		free(r);

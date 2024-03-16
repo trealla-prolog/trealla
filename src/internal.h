@@ -1062,7 +1062,7 @@ inline static int fake_strcmp(const void *ptr1, const void *ptr2, const void *pa
 	return strcmp(ptr1, ptr2);
 }
 
-#define delink(l, e) {											\
+#define list_delink(l, e) {											\
 	if (e->prev) e->prev->next = e->next;						\
 	if (e->next) e->next->prev = e->prev;						\
 	if (l->head == e) l->head = e->next;						\

@@ -415,8 +415,8 @@ static void leave_predicate(query *q, predicate *pr)
 
 	if (pr->is_abolished) {
 		while (pr->dirty_list) {
-			delink(pr, pr->dirty_list);
 			rule *save = pr->dirty_list;
+			list_delink(pr, pr->dirty_list);
 			pr->dirty_list = pr->dirty_list->dirty;
 			clear_clause(&save->cl);
 			free(save);
@@ -433,7 +433,7 @@ static void leave_predicate(query *q, predicate *pr)
 	// FIXME: this is a memory drain.
 
 	while (pr->dirty_list) {
-		delink(pr, pr->dirty_list);
+		list_delink(pr, pr->dirty_list);
 
 		if (pr->idx && pr->cnt) {
 			//predicate *pr = pr->dirty_list->owner;
@@ -1948,7 +1948,7 @@ void query_destroy(query *q)
 
 				if (!CMP_STRING_TO_CSTR(m, arg3, "b")) {
 					pr->cnt--;
-					delink(pr, r);
+					list_delink(pr, r);
 					rule *save = r;
 					r = r->next;
 					clear_clause(&save->cl);
