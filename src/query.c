@@ -443,7 +443,7 @@ static void leave_predicate(query *q, predicate *pr)
 
 		r->cl.is_deleted = true;
 		list_push_back(&q->dirty, &r->hdr);
-		pr->dirty_list = r->dirty;
+		pr->dirty_list = r	->dirty;
 	}
 
 	pr->dirty_list = NULL;
