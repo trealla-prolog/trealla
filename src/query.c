@@ -436,12 +436,12 @@ static void leave_predicate(query *q, predicate *pr)
 		list_delink(pr, pr->dirty_list);
 
 		if (pr->idx && pr->cnt) {
-			//predicate *pr = pr->dirty_list->owner;
 			sl_remove(pr->idx2, pr->dirty_list);
 			sl_remove(pr->idx, pr->dirty_list);
 		}
 
 		pr->dirty_list->cl.is_deleted = true;
+
 		rule *save = pr->dirty_list->dirty;
 		pr->dirty_list->dirty = q->dirty_list;
 		q->dirty_list = pr->dirty_list;
