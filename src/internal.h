@@ -464,7 +464,7 @@ struct rule_ {
 
 struct predicate_ {
 	lnode hdr;						// must be first
-	predicate *prev, *next, *alias;
+	predicate *alias;
 	rule *head, *tail;
 	module *m;
 	skiplist *idx, *idx2;
