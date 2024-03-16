@@ -396,7 +396,7 @@ static void leave_predicate(query *q, predicate *pr)
 {
 	q->st.recursive = false;
 
-	if (!pr || !pr->is_dynamic || !pr->refcnt)
+	if (!pr->is_dynamic || !pr->refcnt)
 		return;
 
 	module_lock(pr->m);

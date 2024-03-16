@@ -190,19 +190,21 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 
 extern char *g_pool;
 
+typedef pl_atomic int64_t pl_refcnt;
+
 typedef struct {
-	pl_atomic int64_t refcnt;
+	pl_refcnt refcnt;
 	size_t len;
 	char cstr[];	// 'len+1' bytes
 } strbuf;
 
 typedef struct {
-	pl_atomic int64_t refcnt;
+	pl_refcnt refcnt;
 	union { mpz_t ival; mpq_t irat; };
 } bigint;
 
 typedef struct {
-	pl_atomic int64_t refcnt;
+	pl_refcnt refcnt;
 	char *ptr, *ptr2;
 } blob;
 
