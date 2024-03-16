@@ -203,17 +203,14 @@ static bool bif_sys_clause_3(query *q)
 static void predicate_purge_dirty_list(predicate *pr)
 {
 	unsigned cnt = 0;
+	rule *r;
 
-	while (pr->dirty_list) {
-		rule *r = pr->dirty_list;
+	while ((r = (rule*)list_pop_front(&pr->dirty)) != NULL) {
 		list_delink(pr, r);
-		pr->dirty_list = r->dirty;
 		clear_clause(&r->cl);
 		free(r);
 		cnt++;
 	}
-
-	pr->dirty_list = NULL;
 
 #if 0
 	if (cnt)
@@ -343,11 +340,10 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 	if (pr->idx && !pr->cnt) {
 		predicate_purge_dirty_list(pr);
 	} else {
-		while (pr->dirty_list) {
-			rule *r = pr->dirty_list;
-			pr->dirty_list = r->dirty;
+		rule *r;
+
+		while ((r = (rule*)list_pop_front(&pr->dirty)) != NULL)
 			list_push_back(&q->dirty, &r->hdr);
-		}
 	}
 
 	sl_destroy(pr->idx2);

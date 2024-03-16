@@ -408,18 +408,18 @@ static void leave_predicate(query *q, predicate *pr)
 
 	// Predicate is no longer being used
 
-	if (!pr->dirty_list) {
+	if (!list_count(&pr->dirty)) {
 		module_unlock(pr->m);
 		return;
 	}
 
 	if (pr->is_abolished) {
-		while (pr->dirty_list) {
-			rule *save = pr->dirty_list;
-			list_delink(pr, pr->dirty_list);
-			pr->dirty_list = pr->dirty_list->dirty;
-			clear_clause(&save->cl);
-			free(save);
+		rule *r;
+
+		while ((r = (rule*)list_pop_front(&pr->dirty)) != NULL) {
+			list_delink(pr, r);
+			clear_clause(&r->cl);
+			free(r);
 		}
 
 		module_unlock(pr->m);
@@ -432,8 +432,9 @@ static void leave_predicate(query *q, predicate *pr)
 	// query dirty-list. They will be freed up at end of the query.
 	// FIXME: this is a memory drain.
 
-	while (pr->dirty_list) {
-		rule *r = pr->dirty_list;
+	rule *r;
+
+	while ((r = (rule*)list_pop_front(&pr->dirty)) != NULL) {
 		list_delink(pr, r);
 
 		if (pr->idx && pr->cnt) {
@@ -443,10 +444,7 @@ static void leave_predicate(query *q, predicate *pr)
 
 		r->cl.is_deleted = true;
 		list_push_back(&q->dirty, &r->hdr);
-		pr->dirty_list = r	->dirty;
 	}
-
-	pr->dirty_list = NULL;
 
 	if (pr->idx && !pr->cnt) {
 		sl_destroy(pr->idx2);

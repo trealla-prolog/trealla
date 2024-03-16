@@ -468,9 +468,9 @@ struct predicate_ {
 	rule *head, *tail;
 	module *m;
 	skiplist *idx, *idx2;
-	rule *dirty_list;
 	const char *filename;
 	cell *meta_args;
+	list dirty;
 	cell key;
 	pl_atomic uint64_t cnt, refcnt, db_id;
 	bool is_reload:1;

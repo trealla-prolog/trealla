@@ -1685,10 +1685,8 @@ void retract_from_db(module *m, rule *r)
 {
 	predicate *pr = r->owner;
 
-	if (remove_from_predicate(m, pr, r)) {
-		r->dirty = pr->dirty_list;
-		pr->dirty_list = r;
-	}
+	if (remove_from_predicate(m, pr, r))
+		list_push_back(&pr->dirty, &r->hdr);
 }
 
 static void xref_cell(module *m, clause *cl, cell *c, int last_was_colon, bool is_directive)
@@ -1836,8 +1834,7 @@ static bool unload_realfile(module *m, const char *filename)
 				if (!remove_from_predicate(m, pr, r))
 					continue;
 
-				r->dirty = pr->dirty_list;
-				pr->dirty_list = r;
+				list_push_back(&pr->dirty, &r->hdr);
 				pr->is_processed = false;
 			}
 		}
