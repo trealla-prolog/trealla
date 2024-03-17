@@ -4324,8 +4324,8 @@ static bool bif_crypto_data_hash_3(query *q)
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,atom_or_var);
 	GET_NEXT_ARG(p3,list_or_nil);
-	bool is_sha384 = false, is_sha512 = false;
-	bool is_sha256 = true;
+	enum {is_sha256, is_sha384, is_sha512} algo;
+	algo = is_sha256;
 	char *key = NULL;
 	int keylen = 0;
 	LIST_HANDLER(p3);
@@ -4345,17 +4345,13 @@ static bool bif_crypto_data_hash_3(query *q)
 					cell tmp;
 					make_atom(&tmp, new_atom(q->pl, "sha256"));
 					unify(q, arg, arg_ctx, &tmp, q->st.curr_frame);
-					is_sha384 = is_sha512 = false;
-					is_sha256 = true;
+					algo = is_sha256;
 				} else if (!CMP_STRING_TO_CSTR(q, arg, "sha256")) {
-					is_sha384 = is_sha512 = false;
-					is_sha256 = true;
+					algo = is_sha256;
 				} else if (!CMP_STRING_TO_CSTR(q, arg, "sha384")) {
-					is_sha256 = is_sha512 = false;
-					is_sha384 = true;
+					algo = is_sha384;
 				} else if (!CMP_STRING_TO_CSTR(q, arg, "sha512")) {
-					is_sha384 = is_sha256 = false;
-					is_sha512 = true;
+					algo = is_sha512;
 				} else
 					return throw_error(q, arg, arg_ctx, "domain_error", "algorithm");
 			} else if (!CMP_STRING_TO_CSTR(q, h, "hmac") && is_iso_list(arg)
@@ -4376,7 +4372,7 @@ static bool bif_crypto_data_hash_3(query *q)
 	*dst = '\0';
 	size_t buflen = sizeof(tmpbuf);
 
-	if (key && is_sha256) {
+	if (key && (algo == is_sha256)) {
 		unsigned char digest[SHA256_DIGEST_LENGTH];
 		unsigned digest_len = 0;
 		HMAC(EVP_sha256(), key, keylen, (unsigned char*)C_STR(q, p1), C_STRLEN(q, p1), digest, &digest_len);
@@ -4386,7 +4382,7 @@ static bool bif_crypto_data_hash_3(query *q)
 			dst += len;
 			buflen -= len;
 		}
-	} else if (key && is_sha384) {
+	} else if (key && (algo == is_sha384)) {
 		unsigned char digest[SHA384_DIGEST_LENGTH];
 		unsigned digest_len = 0;
 		HMAC(EVP_sha384(), key, keylen, (unsigned char*)C_STR(q, p1), C_STRLEN(q, p1), digest, &digest_len);
@@ -4396,7 +4392,7 @@ static bool bif_crypto_data_hash_3(query *q)
 			dst += len;
 			buflen -= len;
 		}
-	} else if (key && is_sha512) {
+	} else if (key && (algo == is_sha512)) {
 		unsigned char digest[SHA512_DIGEST_LENGTH];
 		unsigned digest_len = 0;
 		HMAC(EVP_sha512(), key, keylen, (unsigned char*)C_STR(q, p1), C_STRLEN(q, p1), digest, &digest_len);
@@ -4406,7 +4402,7 @@ static bool bif_crypto_data_hash_3(query *q)
 			dst += len;
 			buflen -= len;
 		}
-	} else if (is_sha256) {
+	} else if (algo == is_sha256) {
 		unsigned char digest[SHA256_DIGEST_LENGTH];
 		SHA256((unsigned char*)C_STR(q, p1), C_STRLEN(q, p1), digest);
 
@@ -4415,7 +4411,7 @@ static bool bif_crypto_data_hash_3(query *q)
 			dst += len;
 			buflen -= len;
 		}
-	} else if (is_sha384) {
+	} else if (algo == is_sha384) {
 		unsigned char digest[SHA384_DIGEST_LENGTH];
 		SHA384((unsigned char*)C_STR(q, p1), C_STRLEN(q, p1), digest);
 
@@ -4424,7 +4420,7 @@ static bool bif_crypto_data_hash_3(query *q)
 			dst += len;
 			buflen -= len;
 		}
-	} else if (is_sha512) {
+	} else if (algo == is_sha512) {
 		unsigned char digest[SHA512_DIGEST_LENGTH];
 		SHA512((unsigned char*)C_STR(q, p1), C_STRLEN(q, p1), digest);
 
