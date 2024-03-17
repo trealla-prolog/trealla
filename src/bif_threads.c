@@ -894,7 +894,13 @@ static bool bif_thread_join_2(query *q)
 static void do_cancel(thread *t)
 {
 	acquire_lock(&t->guard);
-	pthread_cancel(t->id);
+
+# if defined(__ANDROID__)
+   pthread_kill(t->id, 0);
+# else
+   pthread_cancel(t->id);
+# endif
+
 	sl_destroy(t->alias);
 	t->alias = NULL;
 	query_destroy(t->q);
@@ -921,7 +927,6 @@ static void do_cancel(thread *t)
 	release_lock(&t->guard);
 }
 
-#if !defined(__ANDROID__)
 static bool bif_thread_cancel_1(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
@@ -940,7 +945,6 @@ static bool bif_thread_cancel_1(query *q)
 	do_cancel(t);
 	return true;
 }
-#endif
 
 static bool bif_thread_detach_1(query *q)
 {
