@@ -443,7 +443,7 @@ static void leave_predicate(query *q, predicate *pr)
 		}
 
 		r->cl.is_deleted = true;
-		list_push_back(&q->dirty, &r->hdr);
+		list_push_back(&q->dirty, r);
 	}
 
 	if (pr->idx && !pr->cnt) {
@@ -1954,7 +1954,7 @@ void query_destroy(query *q)
 		}
 
 		module_unlock(m);
-		m = (module*)list_next(&m->hdr);
+		m = (module*)list_next(m);
 	}
 
 	mp_int_clear(&q->tmp_ival);

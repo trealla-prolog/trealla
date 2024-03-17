@@ -2876,7 +2876,7 @@ static void save_name(FILE *fp, query *q, pl_idx name, unsigned arity)
 	q->listing = true;
 
 	for (predicate *pr = (predicate*)list_front(&m->predicates);
-		pr; pr = (predicate*)list_next(&pr->hdr)) {
+		pr; pr = (predicate*)list_next(pr)) {
 		if (pr->is_prebuilt && (arity == -1U))
 			continue;
 
@@ -2974,7 +2974,7 @@ static bool bif_module_info_2(query *q)
 	check_heap_error(init_tmp_heap(q));
 
 	for (predicate *pr = (predicate*)list_front(&m->predicates);
-		pr; pr = (predicate*)list_next(&pr->hdr)) {
+		pr; pr = (predicate*)list_next(pr)) {
 		if (!pr->is_public)
 			continue;
 
@@ -3413,9 +3413,9 @@ static bool do_profile(query *q)
 	fprintf(stderr, "#functor/arity,match_attempts,matched,tcos\n");
 
 	for (module *m = (module*)list_front(&q->pl->modules);
-		m; m = (module*)list_next(&m->hdr)) {
+		m; m = (module*)list_next(m)) {
 		for (predicate *pr = (predicate*)list_front(&m->predicates);
-			pr; pr = (predicate*)list_next(&pr->hdr)) {
+			pr; pr = (predicate*)list_next(pr)) {
 			for (rule *r = pr->head; r; r = r->next) {
 				if (!r->attempted)
 					continue;
@@ -5695,7 +5695,7 @@ static bool bif_current_module_1(query *q)
 	if (!q->current_m)
 		return false;
 
-	module *m = (module*)list_next(&q->current_m->hdr);
+	module *m = (module*)list_next(q->current_m);
 
 	if (!m)
 		return false;
@@ -5824,7 +5824,7 @@ static bool bif_modules_1(query *q)
 	check_heap_error(init_tmp_heap(q));
 
 	for (module *m = (module*)list_front(&q->pl->modules);
-		m; m = (module*)list_next(&m->hdr)) {
+		m; m = (module*)list_next(m)) {
 		if (m->orig)
 			continue;
 

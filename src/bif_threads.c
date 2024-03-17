@@ -312,9 +312,9 @@ static cell *queue_to_chan(prolog *pl, unsigned chan, const cell *c, unsigned fr
 	acquire_lock(&t->guard);
 
 	if (is_signal) {
-		list_push_back(&t->signals, &m->hdr);
+		list_push_back(&t->signals, m);
 	} else {
-		list_push_back(&t->queue, &m->hdr);
+		list_push_back(&t->queue, m);
 	}
 
 	release_lock(&t->guard);
@@ -420,7 +420,7 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 				q->curr_chan = m->from_chan;
 
 				if (!is_peek)
-					list_remove(&t->queue, &m->hdr);
+					list_remove(&t->queue, m);
 
 				release_lock(&t->guard);
 
@@ -434,7 +434,7 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 			}
 
 			retry_choice(q);
-			m = (msg*)list_next(&m->hdr);
+			m = (msg*)list_next(m);
 		}
 
 		release_lock(&t->guard);

@@ -343,7 +343,7 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 		rule *r;
 
 		while ((r = (rule*)list_pop_front(&pr->dirty)) != NULL)
-			list_push_back(&q->dirty, &r->hdr);
+			list_push_back(&q->dirty, r);
 	}
 
 	sl_destroy(pr->idx2);
@@ -793,7 +793,7 @@ void save_db(FILE *fp, query *q, int logging)
 	q->double_quotes = true;
 
 	for (predicate *pr = (predicate*)list_front(&q->st.m->predicates);
-		pr; pr = (predicate*)list_next(&pr->hdr)) {
+		pr; pr = (predicate*)list_next(pr)) {
 		if (pr->is_prebuilt)
 			continue;
 
