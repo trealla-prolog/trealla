@@ -21,12 +21,6 @@ typedef struct {
 
 void list_push_front(list *l, void *n);
 void list_push_back(list *l, void *n);
-void list_insert_before(list *l, void *n, void *v);
-void list_insert_after(list *l, void *n, void *v);
-void list_replace(list *l, void *n, void *m);
-void list_concat(list *l, list *from);
-
 void *list_remove(list *l, void *n);
 void *list_pop_front(list *l);
 void *list_pop_back(list *l);
-
