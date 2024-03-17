@@ -3412,9 +3412,8 @@ static bool do_profile(query *q)
 {
 	fprintf(stderr, "#functor/arity,match_attempts,matched,tcos\n");
 
-	for (lnode *n = list_front(&q->pl->modules); n; n = list_next(n)) {
-		module *m = (module *)n;
-
+	for (module *m = (module*)list_front(&q->pl->modules);
+		m; m = (module*)list_next(&m->hdr)) {
 		for (predicate *pr = (predicate*)list_front(&m->predicates);
 			pr; pr = (predicate*)list_next(&pr->hdr)) {
 			for (rule *r = pr->head; r; r = r->next) {
@@ -5824,9 +5823,8 @@ static bool bif_modules_1(query *q)
 	GET_FIRST_ARG(p1,var);
 	check_heap_error(init_tmp_heap(q));
 
-	for (lnode *n = list_front(&q->pl->modules); n; n = list_next(n)) {
-		module *m = (module *)n;
-
+	for (module *m = (module*)list_front(&q->pl->modules);
+		m; m = (module*)list_next(&m->hdr)) {
 		if (m->orig)
 			continue;
 

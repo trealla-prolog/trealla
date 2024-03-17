@@ -6,8 +6,10 @@
 
 #include "list.h"
 
-void list_push_front(list *l, lnode *entry)
+void list_push_front(list *l, void *entry_)
 {
+	lnode *entry = entry_;
+
 #ifdef DEBUG
     assert(l && entry);
 #endif
@@ -23,8 +25,10 @@ void list_push_front(list *l, lnode *entry)
     l->cnt++;
 }
 
-void list_push_back(list *l, lnode *entry)
+void list_push_back(list *l, void *entry_)
 {
+	lnode *entry = entry_;
+
 #ifdef DEBUG
     assert(l && entry);
 #endif
@@ -40,7 +44,7 @@ void list_push_back(list *l, lnode *entry)
     l->cnt++;
 }
 
-lnode *list_pop_front(list *l)
+void *list_pop_front(list *l)
 {
 #ifdef DEBUG
     assert(l);
@@ -62,7 +66,7 @@ lnode *list_pop_front(list *l)
     return entry;
 }
 
-lnode *list_pop_back(list *l)
+void *list_pop_back(list *l)
 {
 #ifdef DEBUG
     assert(l);
@@ -84,8 +88,10 @@ lnode *list_pop_back(list *l)
     return entry;
 }
 
-lnode *list_remove(list *l, lnode *entry)
+void *list_remove(list *l, void *entry_)
 {
+	lnode *entry = entry_;
+
 #ifdef DEBUG
     assert(l && entry);
 #endif
@@ -106,8 +112,11 @@ lnode *list_remove(list *l, lnode *entry)
     return save;
 }
 
-void list_replace(list *l, lnode *entry, lnode *entry2)
+void list_replace(list *l, void *entry_, void *entry2_)
 {
+	lnode *entry = entry_;
+	lnode *entry2 = entry2_;
+
 #ifdef DEBUG
     assert(l && entry && entry2);
 #endif
@@ -126,8 +135,11 @@ void list_replace(list *l, lnode *entry, lnode *entry2)
     entry2->next = entry->next;
 }
 
-void list_insert_before(list *l, lnode *e, lnode *entry)
+void list_insert_before(list *l, void *e_, void *entry_)
 {
+	lnode *e = e_;
+	lnode *entry = entry_;
+
 #ifdef DEBUG
     assert(l && e && entry);
 #endif
@@ -145,8 +157,11 @@ void list_insert_before(list *l, lnode *e, lnode *entry)
     l->cnt++;
 }
 
-void list_insert_after(list *l, lnode *e, lnode *entry)
+void list_insert_after(list *l, void *e_, void *entry_)
 {
+	lnode *e = e_;
+	lnode *entry = entry_;
+
 #ifdef DEBUG
     assert(l && e && entry);
 #endif

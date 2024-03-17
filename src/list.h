@@ -1,5 +1,7 @@
-#ifndef LIST_H
-#define LIST_H
+#pragma once
+
+// This is an intrusive list & as such the *lnode*
+// header must be used as the first field of any struct.
 
 typedef struct lnode_ {
     struct lnode_ *prev, *next;
@@ -17,17 +19,14 @@ typedef struct {
 #define list_prev(n) (n)->prev
 #define list_next(n) (n)->next
 
-void list_push_front(list *l, lnode *n);
-void list_push_back(list *l, lnode *n);
-void list_insert_before(list *l, lnode *n, lnode *v);
-void list_insert_after(list *l, lnode *n, lnode *v);
-void list_replace(list *l, lnode *n, lnode *m);
+void list_push_front(list *l, void *n);
+void list_push_back(list *l, void *n);
+void list_insert_before(list *l, void *n, void *v);
+void list_insert_after(list *l, void *n, void *v);
+void list_replace(list *l, void *n, void *m);
 void list_concat(list *l, list *from);
 
-// After the following next/prev is not available...
+void *list_remove(list *l, void *n);
+void *list_pop_front(list *l);
+void *list_pop_back(list *l);
 
-lnode *list_remove(list *l, lnode *n);  // return orig n->next
-lnode *list_pop_front(list *l);
-lnode *list_pop_back(list *l);
-
-#endif

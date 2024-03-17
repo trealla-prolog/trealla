@@ -358,9 +358,8 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 	}
 
 
-	for (lnode *n = list_front(&m->pl->modules); n; n = list_next(n)) {
-		module *tmp_m = (module *)n;
-
+	for (module *tmp_m = (module*)list_front(&m->pl->modules);
+		tmp_m; tmp_m = (module*)list_next(&tmp_m->hdr)) {
 		if (m == tmp_m)
 			continue;
 
@@ -471,9 +470,8 @@ bool search_goal_expansion(module *m, cell *c)
 	}
 
 
-	for (lnode *n = list_front(&m->pl->modules); n; n = list_next(n)) {
-		module *tmp_m = (module *)n;
-
+	for (module *tmp_m = (module*)list_front(&m->pl->modules);
+		tmp_m; tmp_m = (module*)list_next(&tmp_m->hdr)) {
 		if (m == tmp_m)
 			continue;
 
@@ -666,9 +664,8 @@ int index_cmpkey(const void *ptr1, const void *ptr2, const void *param, void *l)
 
 rule *find_in_db(module *m, uuid *ref)
 {
-	for (lnode *n = list_front(&m->pl->modules); n; n = list_next(n)) {
-		module *m = (module *)n;
-
+	for (module *tmp_m = (module*)list_front(&m->pl->modules);
+		tmp_m; tmp_m = (module*)list_next(&tmp_m->hdr)) {
 		for (predicate *pr = (predicate*)list_front(&m->predicates);
 			pr; pr = (predicate*)list_next(&pr->hdr)) {
 			if (!pr->is_dynamic)

@@ -97,9 +97,8 @@ pl_idx new_atom(prolog *pl, const char *name)
 
 module *find_module(prolog *pl, const char *name)
 {
-	for (lnode *n = list_front(&pl->modules); n; n = list_next(n)) {
-		module *m = (module *)n;
-
+	for (module *m = (module*)list_front(&pl->modules);
+		m; m = (module*)list_next(&m->hdr)) {
 		if (!strcmp(m->name, name)) {
 			if (m->orig)
 				return m->orig;
