@@ -17,17 +17,17 @@ typedef struct {
 #define list_prev(n) (n)->prev
 #define list_next(n) (n)->next
 
-extern void list_push_front(list *l, lnode *n);
-extern void list_push_back(list *l, lnode *n);
-extern void list_insert_before(list *l, lnode *n, lnode *v);
-extern void list_insert_after(list *l, lnode *n, lnode *v);
-extern void list_replace(list *l, lnode *n, lnode *m);
-extern void list_concat(list *l, list *from);
+void list_push_front(list *l, lnode *n);
+void list_push_back(list *l, lnode *n);
+void list_insert_before(list *l, lnode *n, lnode *v);
+void list_insert_after(list *l, lnode *n, lnode *v);
+void list_replace(list *l, lnode *n, lnode *m);
+void list_concat(list *l, list *from);
 
 // After the following next/prev is not available...
 
-extern lnode *list_remove(list *l, lnode *n);  // return orig n->next
-extern lnode *list_pop_front(list *l);
-extern lnode *list_pop_back(list *l);
+lnode *list_remove(list *l, lnode *n);  // return orig n->next
+lnode *list_pop_front(list *l);
+lnode *list_pop_back(list *l);
 
 #endif
