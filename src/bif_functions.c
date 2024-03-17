@@ -293,40 +293,7 @@ bool call_builtin(query *q, cell *c, pl_idx c_ctx)
 
 bool call_userfun(query *q, cell *c, pl_idx c_ctx)
 {
-	if (q->retry)
-		return false;
-
-	if (is_string(c))
-		return throw_error(q, c, c_ctx, "type_error", "evaluable");
-
-	if (!c->match)
-		c->match = search_predicate(q->st.m, c, NULL);
-
-	if (!c->match)
-		return throw_error(q, c, c_ctx, "type_error", "evaluable");
-
-	// Currently user-defined functions are disabled...
-
 	return throw_error(q, c, c_ctx, "type_error", "evaluable");
-
-	cell *save = q->st.curr_instr;
-	pl_idx save_ctx = q->st.curr_frame;
-	cell *tmp = prepare_call(q, true, c, c_ctx, 3);
-	pl_idx nbr_cells = PREFIX_LEN + c->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+nbr_cells++, q->cp);
-	make_call(q, tmp+nbr_cells);
-	check_heap_error(push_barrier(q));
-	q->st.curr_instr = tmp;
-	bool ok = start(q);
-	q->error = false;
-
-	if (!q->did_throw) {
-		q->st.curr_instr = save;
-		q->st.curr_frame = save_ctx;
-	}
-
-	return ok;
 }
 
 static bool bif_iso_is_2(query *q)
