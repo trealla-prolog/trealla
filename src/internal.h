@@ -455,7 +455,6 @@ struct rule_ {
 	predicate *owner;
 	rule *prev, *next;
 	const char *filename;
-	rule *dirty;
 	uuid u;
 	uint64_t db_id, matched, attempted, tcos;
 	unsigned line_nbr_start, line_nbr_end;
@@ -472,7 +471,7 @@ struct predicate_ {
 	cell *meta_args;
 	list dirty;
 	cell key;
-	pl_atomic uint64_t cnt, refcnt, db_id;
+	pl_refcnt refcnt, cnt, db_id;
 	bool is_reload:1;
 	bool is_prebuilt:1;
 	bool is_public:1;
