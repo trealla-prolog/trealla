@@ -469,7 +469,6 @@ static bool bif_thread_peek_message_2(query *q)
 
 static void do_unlock_all(prolog *pl)
 {
-	pthread_t id = pthread_self();
 	thread *me = get_self(pl);
 
 	for (unsigned i = 0; i < MAX_THREADS; i++) {
