@@ -383,16 +383,6 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 	thread *me = get_self(q->pl);
 
 	while (!q->halt) {
-		if (is_peek && !list_count(&t->queue))
-			return false;
-
-		uint64_t cnt = 0;
-
-		while (!list_count(&t->queue) && !q->halt) {
-			suspend_thread(me, cnt < 100 ? 0 : cnt < 1000 ? 1 : cnt < 10000 ? 10 : 10);
-			cnt++;
-		}
-
 		//printf("*** recv msg nbr_cells=%u\n", t->queue_head->c->nbr_cells);
 
 		acquire_lock(&t->guard);
@@ -402,6 +392,13 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 
 			if (is_peek)
 				return false;
+
+			uint64_t cnt = 0;
+
+			while (!list_count(&t->queue) && !is_peek && !q->halt) {
+				suspend_thread(me, cnt < 100 ? 0 : cnt < 1000 ? 1 : cnt < 10000 ? 10 : 10);
+				cnt++;
+			}
 
 			continue;
 		}
