@@ -198,8 +198,6 @@ static bool bif_sys_clause_3(query *q)
 	return ok;
 }
 
-// Module must be locked to enter here...
-
 static void predicate_purge_dirty_list(predicate *pr)
 {
 	unsigned cnt = 0;
@@ -243,9 +241,11 @@ bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 		return match;
 
 	rule *r = q->st.r;
+
 	prolog_lock(q->pl);
 	retract_from_db(r->owner->m, r);
 	prolog_unlock(q->pl);
+
 	bool last_match = (is_retract == DO_RETRACT) && !has_next_key(q);
 	stash_frame(q, &r->cl, last_match);
 	db_log(q, r, LOG_ERASE);
@@ -335,8 +335,6 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 	for (rule *r = pr->head; r; r = r->next)
 		retract_from_db(r->owner->m, r);
 
-	prolog_unlock(q->pl);
-
 	if (pr->idx && !pr->cnt) {
 		predicate_purge_dirty_list(pr);
 	} else {
@@ -356,6 +354,7 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 	if (hard)
 		pr->is_abolished = true;
 
+	prolog_unlock(q->pl);
 	return true;
 }
 
@@ -519,6 +518,7 @@ static bool bif_iso_asserta_1(query *q)
 	prolog_lock(q->pl);
 	rule *r = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, 0);
 	prolog_unlock(q->pl);
+
 	p->cl->cidx = 0;
 	parser_destroy(p);
 
@@ -581,6 +581,7 @@ static bool bif_iso_assertz_1(query *q)
 	prolog_lock(q->pl);
 	rule *r = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, false);
 	prolog_unlock(q->pl);
+
 	p->cl->cidx = 0;
 	parser_destroy(p);
 
@@ -651,6 +652,7 @@ static bool do_asserta_2(query *q)
 	prolog_lock(q->pl);
 	rule *r = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, 0);
 	prolog_unlock(q->pl);
+
 	p->cl->cidx = 0;
 	parser_destroy(p);
 
@@ -749,6 +751,7 @@ static bool do_assertz_2(query *q)
 	prolog_lock(q->pl);
 	rule *r = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, false);
 	prolog_unlock(q->pl);
+
 	p->cl->cidx = 0;
 	parser_destroy(p);
 
@@ -931,9 +934,7 @@ bool do_erase(module* m, const char *str)
 {
 	uuid u;
 	uuid_from_buf(str, &u);
-	module_lock(m);
 	erase_from_db(m, &u);
-	module_unlock(m);
 	return true;
 }
 

@@ -399,17 +399,15 @@ static void leave_predicate(query *q, predicate *pr)
 	if (!pr->is_dynamic || !pr->refcnt)
 		return;
 
-	module_lock(pr->m);
-
-	if (--pr->refcnt != 0) {
-		module_unlock(pr->m);
+	if (--pr->refcnt != 0)
 		return;
-	}
+
+	prolog_lock(q->pl);
 
 	// Predicate is no longer being used
 
 	if (!list_count(&pr->dirty)) {
-		module_unlock(pr->m);
+		prolog_unlock(q->pl);
 		return;
 	}
 
@@ -422,7 +420,7 @@ static void leave_predicate(query *q, predicate *pr)
 			free(r);
 		}
 
-		module_unlock(pr->m);
+		prolog_unlock(q->pl);
 		return;
 	}
 
@@ -452,7 +450,7 @@ static void leave_predicate(query *q, predicate *pr)
 		pr->idx = pr->idx2 = NULL;
 	}
 
-	module_unlock(pr->m);
+	prolog_unlock(q->pl);
 }
 
 static void unwind_trail(query *q)
@@ -1913,7 +1911,6 @@ void query_destroy(query *q)
 	module *m = find_module(q->pl, "concurrent");
 
 	if (m) {
-		module_lock(m);
 		predicate *pr = find_functor(m, "$future", 1);
 
 		if (pr) {
@@ -1921,15 +1918,12 @@ void query_destroy(query *q)
 				retract_from_db(r);
 			}
 		}
-
-		module_unlock(m);
 	}
 #endif
 
 	module *m = (module*)list_front(&q->pl->modules);
 
 	while (m) {
-		module_lock(m);
 		predicate *pr = find_functor(m, "$bb_key", 3);
 
 		if (pr) {
@@ -1953,7 +1947,6 @@ void query_destroy(query *q)
 			}
 		}
 
-		module_unlock(m);
 		m = (module*)list_next(m);
 	}
 
