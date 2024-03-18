@@ -395,18 +395,19 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 
 			uint64_t cnt = 0;
 
-			while (!list_count(&t->queue) && !is_peek && !q->halt) {
+			do {
 				suspend_thread(me, cnt < 100 ? 0 : cnt < 1000 ? 1 : cnt < 10000 ? 10 : 10);
 				cnt++;
 			}
+			 while (!list_count(&t->queue) && !q->halt);
 
 			continue;
 		}
 
-		msg *m = (msg*)list_front(&t->queue);
+		msg *m = list_front(&t->queue);
 
 		while (m) {
-			check_heap_error(push_choice(q));
+			check_heap_error(push_choice(q), release_lock(&t->guard));
 			check_slot(q, MAX_ARITY);
 			try_me(q, MAX_ARITY);
 			cell *tmp = deep_copy_to_heap(q, m->c, q->st.fp, false);	// Copy into thread
@@ -430,13 +431,13 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 			}
 
 			retry_choice(q);
-			m = (msg*)list_next(m);
+			m = list_next(m);
 		}
 
 		release_lock(&t->guard);
 
 		if (is_peek)
-			return false;
+			break;
 	}
 
 	return false;
