@@ -70,35 +70,19 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 	if (!c || is_empty(c))
 		return;
 
-#if 1
 	if (is_builtin(c) && c->bif_ptr && !c->bif_ptr->fn)
 		return;
-#endif
 
-#if 0
-	if (is_builtin(c))
-		return;
-#endif
-
-#if 1
 	if (c->val_off == g_sys_drop_barrier_s)
 		return;
-#endif
 
 	if (box == CALL)
 		box = q->retry?REDO:CALL;
 
 	const char *src = C_STR(q, c);
 
-#if 1
 	if (!strcmp(src, ","))
 		return;
-#endif
-
-#if 0
-	if (!strcmp(src, ";") || !strcmp(src, "->") || !strcmp(src, "*->"))
-		return;
-#endif
 
 	q->step++;
 	SB(pr);
