@@ -612,12 +612,12 @@ static void *start_routine_thread_create(thread *t)
 
 	msg *m;
 
-	while ((m = (msg*)list_pop_front(&t->queue)) != NULL) {
+	while ((m = list_pop_front(&t->queue)) != NULL) {
 		unshare_cells(m->c, m->c->nbr_cells);
 		free(m);
 	}
 
-	while ((m = (msg*)list_pop_front(&t->signals)) != NULL) {
+	while ((m = list_pop_front(&t->signals)) != NULL) {
 		unshare_cells(m->c, m->c->nbr_cells);
 		free(m);
 	}
@@ -797,7 +797,7 @@ void do_signal(query *q, void *thread_ptr)
 		return;
 	}
 
-	msg *m = (msg*)list_pop_front(&t->signals);
+	msg *m = list_pop_front(&t->signals);
 	release_lock(&t->guard);
 	try_me(q, MAX_ARITY);
 	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.fp, 0);
@@ -868,12 +868,12 @@ static bool bif_thread_join_2(query *q)
 	t->q = NULL;
 	msg *m;
 
-	while ((m = (msg*)list_pop_front(&t->queue)) != NULL) {
+	while ((m = list_pop_front(&t->queue)) != NULL) {
 		unshare_cells(m->c, m->c->nbr_cells);
 		free(m);
 	}
 
-	while ((m = (msg*)list_pop_front(&t->signals)) != NULL) {
+	while ((m = list_pop_front(&t->signals)) != NULL) {
 		unshare_cells(m->c, m->c->nbr_cells);
 		free(m);
 	}
@@ -906,12 +906,12 @@ static void do_cancel(thread *t)
 	t->is_active = false;
 	msg *m;
 
-	while ((m = (msg*)list_pop_front(&t->queue)) != NULL) {
+	while ((m = list_pop_front(&t->queue)) != NULL) {
 		unshare_cells(m->c, m->c->nbr_cells);
 		free(m);
 	}
 
-	while ((m = (msg*)list_pop_front(&t->signals)) != NULL) {
+	while ((m = list_pop_front(&t->signals)) != NULL) {
 		unshare_cells(m->c, m->c->nbr_cells);
 		free(m);
 	}
@@ -1394,7 +1394,7 @@ static bool bif_message_queue_destroy_1(query *q)
 	acquire_lock(&t->guard);
 	msg *m;
 
-	while ((m = (msg*)list_pop_front(&t->queue)) != NULL) {
+	while ((m = list_pop_front(&t->queue)) != NULL) {
 		unshare_cells(m->c, m->c->nbr_cells);
 		free(m);
 	}
@@ -2061,18 +2061,20 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_idx p1_ct
 
 	//printf("*** recv msg nbr_cells=%u\n", t->queue_head->nbr_cells);
 
-	msg *m = (msg*)list_front(&t->queue);
+	msg *m;
 
-	if (!is_peek)
-		list_pop_front(&t->queue);
+	if (is_peek)
+		m = list_front(&t->queue);
+	else
+		m = list_pop_front(&t->queue);
 
-	release_lock(&t->guard);
 	check_heap_error(push_choice(q));
 	check_slot(q, MAX_ARITY);
 	try_me(q, MAX_ARITY);
 	cell *c = m->c;
 	cell *tmp = deep_clone_to_heap(q, c, q->st.fp);
 	check_heap_error(tmp, release_lock(&t->guard));
+	release_lock(&t->guard);
 	q->curr_chan = m->from_chan;
 
 	if (!is_peek) {
