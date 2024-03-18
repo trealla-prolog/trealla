@@ -399,10 +399,12 @@ static void leave_predicate(query *q, predicate *pr)
 	if (!pr->is_dynamic || !pr->refcnt)
 		return;
 
-	if (--pr->refcnt != 0)
-		return;
-
 	prolog_lock(q->pl);
+
+	if (--pr->refcnt != 0) {
+		prolog_unlock(q->pl);
+		return;
+	}
 
 	// Predicate is no longer being used
 
