@@ -86,9 +86,7 @@ static int new_thread(prolog *pl)
 			}
 
 			t->is_active = true;
-			prolog_unlock(pl);
 			t->id = pthread_self();
-
 			t->pl = pl;
 			t->chan = n;
 			t->is_queue_only = false;
@@ -99,6 +97,7 @@ static int new_thread(prolog *pl)
 			t->is_exception = false;
 			t->at_exit = NULL;
 			t->goal = NULL;
+			prolog_unlock(pl);
 			return n;
 		}
 	}

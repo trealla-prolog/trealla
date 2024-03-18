@@ -702,6 +702,7 @@ struct query_ {
 	mpq_t tmp_irat;
 	prolog_state st;
 	stringbuf sb_buf;
+	char tmpbuf[8192];
 	bool ignores[MAX_IGNORES];
 	uint64_t tot_goals, tot_backtracks, tot_retries, tot_matches, tot_inferences;
 	uint64_t tot_tcos, tot_frecovs, tot_srecovs;
@@ -876,7 +877,6 @@ struct prolog_ {
 	thread threads[MAX_THREADS];
 	module *modmap[MAX_MODULES];
 	struct { pl_idx tab1[MAX_IGNORES], tab2[MAX_IGNORES]; };
-	char tmpbuf[8192];
 	list modules;
 	module *system_m, *user_m, *curr_m, *dcgs;
 	var_item *tabs;

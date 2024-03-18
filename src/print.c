@@ -432,7 +432,7 @@ static const char *get_slot_name(query *q, pl_idx slot_nbr)
 {
 	for (unsigned i = 0; i < q->print_idx; i++) {
 		if (q->pl->tab1[i] == slot_nbr) {
-			return varformat(q->pl->tmpbuf, q->pl->tab2[i]);
+			return varformat(q->tmpbuf, q->pl->tab2[i]);
 		}
 	}
 
@@ -447,7 +447,7 @@ static const char *get_slot_name(query *q, pl_idx slot_nbr)
 	}
 
 	q->pl->tab2[i] = j;
-	return varformat(q->pl->tmpbuf, i);
+	return varformat(q->tmpbuf, i);
 }
 
 void print_variable(query *q, const cell *c, pl_idx c_ctx, bool running)
@@ -1034,7 +1034,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		if (running && is_interned(c) && c->arity
 			&& q->numbervars && !strcmp(src, "$VAR") && c1
 			&& is_integer(c1) && (get_smallint(c1) >= 0)) {
-			SB_sprintf(q->sb, "%s", varformat2(q->pl->tmpbuf, sizeof(q->pl->tmpbuf), c1, 0));
+			SB_sprintf(q->sb, "%s", varformat2(q->tmpbuf, sizeof(q->tmpbuf), c1, 0));
 			q->last_thing = WAS_OTHER;
 			return true;
 		}

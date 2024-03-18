@@ -2743,10 +2743,8 @@ static pl_flt rnd(query *q)
 static bool bif_set_seed_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
-	prolog_lock(q->pl);
 	q->pl->rnd_first_time = false;
 	q->pl->rnd_seed = p1->val_int;
-	prolog_unlock(q->pl);
 	return true;
 }
 
