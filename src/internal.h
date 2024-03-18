@@ -702,7 +702,7 @@ struct query_ {
 	mpq_t tmp_irat;
 	prolog_state st;
 	stringbuf sb_buf;
-	char tmpbuf[8192];
+	char tmpbuf[256];
 	bool ignores[MAX_IGNORES];
 	uint64_t tot_goals, tot_backtracks, tot_retries, tot_matches, tot_inferences;
 	uint64_t tot_tcos, tot_frecovs, tot_srecovs;
