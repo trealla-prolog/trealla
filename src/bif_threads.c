@@ -16,7 +16,7 @@
 #if USE_THREADS
 static void msleep(int ms)
 {
-	struct timespec tv;
+	struct timespec tv = {0};
 	tv.tv_sec = (ms) / 1000;
 	tv.tv_nsec = ((ms) % 1000) * 1000 * 1000;
 	nanosleep(&tv, &tv);

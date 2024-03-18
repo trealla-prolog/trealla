@@ -49,7 +49,7 @@ int check_interrupt(query *q)
 	}
 #endif
 
-	if (!q->p->interactive) {
+	if (!q || !q->p || !q->p->interactive) {
 		q->halt = true;
 		return 1;
 	}
