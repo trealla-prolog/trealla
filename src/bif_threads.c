@@ -284,7 +284,7 @@ static void suspend_thread(thread *t, int ms)
 static void resume_thread(thread *t)
 {
     pthread_mutex_lock(&t->mutex);
-    pthread_cond_signal(&t->cond);
+    pthread_cond_broadcast(&t->cond);
     pthread_mutex_unlock(&t->mutex);
 }
 
@@ -396,7 +396,7 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 			uint64_t cnt = 0;
 
 			do {
-				suspend_thread(me, cnt < 100 ? 0 : cnt < 1000 ? 1 : cnt < 10000 ? 10 : 10);
+				suspend_thread(t, cnt < 100 ? 0 : cnt < 1000 ? 1 : cnt < 10000 ? 10 : 10);
 				cnt++;
 			}
 			 while (!list_count(&t->queue) && !q->halt);
