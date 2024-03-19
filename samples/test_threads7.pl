@@ -26,7 +26,7 @@ thread_run(J) :-
 	loops(LOOPS),
 	between(1,LOOPS,I),
 		thread_get_message(foo, foo(J)),
-		%format(" ...Got ~w ~w~n", [I, foo(J)]),
+		format(" ...Got ~w ~w~n", [I, foo(J)]),
 		fail.
 thread_run(J) :-
 	format("Terminating ~w~n", [J]),
