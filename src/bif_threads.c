@@ -81,6 +81,7 @@ static int new_thread(prolog *pl)
 
 		if (!t->is_active) {
 			if (!t->is_init) {
+				pthread_cond_init(&t->cond, NULL);
 				init_lock(&t->guard);
 				t->is_init = true;
 			}
