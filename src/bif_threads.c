@@ -380,7 +380,6 @@ static thread *get_self(prolog *pl)
 static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bool is_peek)
 {
 	thread *t = &q->pl->threads[chan];
-	thread *me = get_self(q->pl);
 
 	while (!q->halt) {
 		//printf("*** recv msg nbr_cells=%u\n", t->queue_head->c->nbr_cells);
