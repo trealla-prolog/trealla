@@ -434,6 +434,75 @@ bool sl_del(skiplist *l, const void *key)
 	return true;
 }
 
+bool sl_remove(skiplist *l, const void *key, const void *val)
+{
+	if (!l || l->destroyed)
+		return false;
+
+	int k, m;
+	slnode_t *update[MAX_LEVELS];
+	slnode_t *p, *q;
+	p = l->header;
+
+	for (k = l->level - 1; k >= 0; k--) {
+		while ((q = p->forward[k]) && (l->cmpkey(q->bkt[q->nbr - 1].key, key, l->p, l) < 0))
+			p = q;
+
+		update[k] = p;
+	}
+
+	if (!(q = p->forward[0]))
+		return false;
+
+	int imid;
+
+	for (imid = 0; imid < q->nbr; imid++) {
+		if (l->cmpkey(q->bkt[imid].key, key, l->p, l) == 0) {
+			if (q->bkt[imid].val == val) {
+				if (l->delkey)
+					l->delkey(q->bkt[imid].key, q->bkt[imid].val, l->p);
+			} else
+				continue;
+
+			break;
+		}
+	}
+
+	if (imid >= q->nbr)
+		return false;
+
+	while (imid < (q->nbr - 1)) {
+		q->bkt[imid] = q->bkt[imid + 1];
+		imid++;
+	}
+
+	q->nbr--;
+	l->count--;
+
+	if (q->nbr)
+		return true;
+
+	m = l->level - 1;
+
+	for (k = 0; k <= m; k++) {
+		p = update[k];
+
+		if (!p || (p->forward[k] != q))
+			break;
+
+		p->forward[k] = q->forward[k];
+	}
+
+	free(q);
+	m = l->level - 1;
+
+	while (!l->header->forward[m] && (m > 0))
+		m--;
+
+	l->level = m + 1;
+	return true;
+}
+
 void sl_iterate(const skiplist *l, int (*f)(const void*, const void*, const void*), const void *p1)
 {
 	if (!l || l->destroyed)
@@ -562,64 +631,12 @@ bool sl_next(sliter *iter, void **val)
 	return false;
 }
 
-bool sl_next_mutable(sliter *iter, void **val)
-{
-	if (!iter)
-		return false;
-
-	while (iter->p) {
-		if (iter->idx < iter->p->nbr) {
-			if (val)
-				*val = &iter->p->bkt[iter->idx].val;
-
-			iter->key = iter->p->bkt[iter->idx].key;
-			iter->idx++;
-			return true;
-		}
-
-		iter->p = iter->p->forward[0];
-		iter->idx = 0;
-	}
-
-	return false;
-}
-
 void *sl_key(sliter *iter)
 {
 	if (!iter)
 		return NULL;
 
 	return (void*)iter->key;
-}
-
-void sl_remove(skiplist *l, const void *v)
-{
-	if (!l || l->destroyed)
-		return;
-
-	slnode_t *p;
-	p = l->header;
-	p = p->forward[0];
-
-	while (p) {
-		slnode_t *q = p->forward[0];
-
-		for (int j = 0; j < p->nbr; j++) {
-			if (p->bkt[j].val != v)
-				continue;
-
-			while (j < (p->nbr - 1)) {
-				p->bkt[j] = p->bkt[j + 1];
-				j++;
-			}
-
-			p->nbr--;
-			l->count--;
-			return;
-		}
-
-		p = q;
-	}
 }
 
 sliter *sl_find_key(skiplist *l, const void *key)
