@@ -634,7 +634,7 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 					if (sl_is_find(l))
 						break;
 
-					sl_wild_card(l);
+					sl_set_wild_card(l);
 					p1 += p1->nbr_cells;
 					p2 += p2->nbr_cells;
 					continue;

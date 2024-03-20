@@ -130,7 +130,7 @@ void sl_destroy(skiplist *l)
 	free(l);
 }
 
-void sl_wild_card(skiplist *l) { if (l) l->wild_card = true; }
+void sl_set_wild_card(skiplist *l) { if (l) l->wild_card = true; }
 bool sl_is_find(skiplist *l) { return l ? l->is_find : true; }
 size_t sl_count(const skiplist *l) { return l ? l->count : 0; }
 void sl_set_tmp(skiplist *l) { l->is_tmp_list = true; }

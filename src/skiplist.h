@@ -12,13 +12,13 @@ skiplist *sl_create(
 	const void *p
 	);
 
-void sl_set_tmp(skiplist *l);
 bool sl_set(skiplist *l, const void *k, const void *v);
 bool sl_app(skiplist *l, const void *k, const void *v);
 bool sl_get(skiplist *l, const void *k, const void **v);
 bool sl_del(skiplist *l, const void *k);
 
-void sl_wild_card(skiplist *l);
+void sl_set_wild_card(skiplist *l);
+void sl_set_tmp(skiplist *l);
 bool sl_is_find(skiplist *l);
 
 void sl_iterate(
@@ -45,9 +45,8 @@ bool sl_next_mutable(sliter *i, void **v);
 void *sl_key(sliter *i);
 
 size_t sl_iter_count(const sliter *i);
-void sl_done(sliter *i);
-
 size_t sl_count(const skiplist *l);
+void sl_done(sliter *i);
 
 void sl_dump(
 	const skiplist *l,
