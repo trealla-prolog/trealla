@@ -428,8 +428,8 @@ static void leave_predicate(query *q, predicate *pr)
 		}
 #elif 0
 		if (pr->idx && pr->cnt) {
-			sl_remove(pr->idx2, r);
-			sl_remove(pr->idx, r);
+			sl_remove(pr->idx2, r);		// buggy
+			sl_remove(pr->idx, r);		// buggy
 		}
 #endif
 
