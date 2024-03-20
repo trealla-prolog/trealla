@@ -132,7 +132,6 @@ void sl_destroy(skiplist *l)
 
 void sl_wild_card(skiplist *l) { if (l) l->wild_card = true; }
 bool sl_is_find(skiplist *l) { return l ? l->is_find : true; }
-skiplist *sl_get_map(const sliter *i) { return i->l; }
 size_t sl_count(const skiplist *l) { return l ? l->count : 0; }
 void sl_set_tmp(skiplist *l) { l->is_tmp_list = true; }
 
@@ -369,6 +368,72 @@ bool sl_app(skiplist *l, const void *key, const void *val)
 }
 
 bool sl_del(skiplist *l, const void *key)
+{
+	if (!l || l->destroyed)
+		return false;
+
+	int k, m;
+	slnode_t *update[MAX_LEVELS];
+	slnode_t *p, *q;
+	p = l->header;
+
+	for (k = l->level - 1; k >= 0; k--) {
+		while ((q = p->forward[k]) && (l->cmpkey(q->bkt[q->nbr - 1].key, key, l->p, l) < 0))
+			p = q;
+
+		update[k] = p;
+	}
+
+	if (!(q = p->forward[0]))
+		return false;
+
+	int imid;
+
+	for (imid = 0; imid < q->nbr; imid++) {
+		if (l->cmpkey(q->bkt[imid].key, key, l->p, l) == 0) {
+			if (l->delkey)
+				l->delkey(q->bkt[imid].key, q->bkt[imid].val, l->p);
+
+			break;
+		}
+	}
+
+	if (imid >= q->nbr)
+		return false;
+
+	while (imid < (q->nbr - 1)) {
+		q->bkt[imid] = q->bkt[imid + 1];
+		imid++;
+	}
+
+	q->nbr--;
+	l->count--;
+
+	if (q->nbr)
+		return true;
+
+	m = l->level - 1;
+
+	for (k = 0; k <= m; k++) {
+		p = update[k];
+
+		if (!p || (p->forward[k] != q))
+			break;
+
+		p->forward[k] = q->forward[k];
+	}
+
+	free(q);
+	m = l->level - 1;
+
+	while (!l->header->forward[m] && (m > 0))
+		m--;
+
+	l->level = m + 1;
+	return true;
+}
+
+bool sl_remove2(skiplist *l, const void *key, const void *val)
 {
 	if (!l || l->destroyed)
 		return false;

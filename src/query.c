@@ -423,6 +423,11 @@ static void leave_predicate(query *q, predicate *pr)
 
 #if 0
 		if (pr->idx && pr->cnt) {
+			sl_remove2(pr->idx2, &pr->key, r);
+			sl_remove2(pr->idx, &pr->key, r);
+		}
+#elif 0
+		if (pr->idx && pr->cnt) {
 			sl_remove(pr->idx2, r);
 			sl_remove(pr->idx, r);
 		}
@@ -922,7 +927,7 @@ int create_vars(query *q, unsigned cnt)
 		return f->actual_slots;
 
 	if ((f->actual_slots + cnt) > MAX_LOCAL_VARS) {
-		printf("*** Ooops %s %d\n", __FILE__, __LINE__);
+		printf("*** Oops %s %d\n", __FILE__, __LINE__);
 		return -1;
 	}
 
@@ -939,7 +944,7 @@ int create_vars(query *q, unsigned cnt)
 		pl_idx cnt2 = f->actual_slots - f->initial_slots;
 
 		if (!check_slot(q, cnt2)) {
-			printf("*** Ooops %s %d\n", __FILE__, __LINE__);
+			printf("*** Oops %s %d\n", __FILE__, __LINE__);
 			return -1;
 		}
 
@@ -948,7 +953,7 @@ int create_vars(query *q, unsigned cnt)
 	}
 
 	if (!check_slot(q, cnt)) {
-		printf("*** Ooops %s %d\n", __FILE__, __LINE__);
+		printf("*** Oops %s %d\n", __FILE__, __LINE__);
 		return -1;
 	}
 
@@ -970,7 +975,7 @@ static bool can_view(query *q, uint64_t dbgen, const rule *r)
 	if (r->cl.dbgen_created > dbgen)
 		return false;
 
-	if (r->cl.dbgen_erased && (r->cl.dbgen_erased <= dbgen))
+	if (r->cl.dbgen_retracted && (r->cl.dbgen_retracted <= dbgen))
 		return false;
 
 	return true;

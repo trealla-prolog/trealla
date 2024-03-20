@@ -470,16 +470,11 @@ Non-standard predicates
 	access_file/2
 	set_stream/2				# only supports alias/1 property
 
-	current_key/1
 	recorda/2-3
 	recordz/2-3
 	recorded/2-3
 	instance/2
-	asserta/2
-	assertz/2
-	clause/3
 	erase/1
-	string_length/2
 
 	string_upper/2
 	string_lower/2
@@ -496,6 +491,8 @@ Non-standard predicates
 	get_time/1                  # get_time(-Var) elapsed wall time in secs as float
 	cpu_time/1                  # cpu_time(-Var) elapsed CPU time in secs as float
 
+	current_key/1
+	string_length/2
 	sleep/1                     # sleep time in secs
 	delay/1                     # sleep time in ms
 	split/4                     # split(+string,+sep,?left,?right)

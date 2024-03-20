@@ -439,7 +439,7 @@ typedef struct {
 } uuid;
 
 struct clause_ {
-	uint64_t dbgen_created, dbgen_erased;
+	uint64_t dbgen_created, dbgen_retracted;
 	pl_idx cidx, nbr_allocated_cells;
 	unsigned nbr_vars;
 	bool is_first_cut:1;

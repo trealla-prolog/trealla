@@ -2851,17 +2851,6 @@ static bool bif_iso_op_3(query *q)
 	return true;
 }
 
-static bool bif_instance_2(query *q)
-{
-	GET_FIRST_ARG(p1,atom);
-	GET_NEXT_ARG(p2,any);
-	uuid u;
-	uuid_from_buf(C_STR(q, p1), &u);
-	rule *r = find_in_db(q->st.m, &u);
-	check_heap_error(r);
-	return unify(q, p2, p2_ctx, r->cl.cells, q->st.curr_frame);
-}
-
 static bool bif_listing_0(query *q)
 {
 	int n = q->pl->current_output;
@@ -2887,7 +2876,7 @@ static void save_name(FILE *fp, query *q, pl_idx name, unsigned arity)
 			continue;
 
 		for (rule *r = pr->head; r; r = r->next) {
-			if (r->cl.dbgen_erased)
+			if (r->cl.dbgen_retracted)
 				continue;
 
 			for (unsigned i = 0; i < MAX_IGNORES; i++)
@@ -6664,7 +6653,6 @@ builtins g_other_bifs[] =
 	{"$char_type", 2, bif_char_type_2, "+character,+term", false, false, BLAH},
 	{"$code_type", 2, bif_char_type_2, "+integer,+term", false, false, BLAH},
 	{"uuid", 1, bif_uuid_1, "-string", false, false, BLAH},
-	{"instance", 2, bif_instance_2, "+string,?term", false, false, BLAH},
 	{"getenv", 2, bif_getenv_2, "+atom,-atom", false, false, BLAH},
 	{"setenv", 2, bif_setenv_2, "+atom,+atom", false, false, BLAH},
 	{"unsetenv", 1, bif_unsetenv_1, "+atom", false, false, BLAH},

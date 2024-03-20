@@ -672,7 +672,7 @@ rule *find_in_db(module *m, uuid *ref)
 				continue;
 
 			for (rule *r = pr->head ; r; r = r->next) {
-				if (r->cl.dbgen_erased)
+				if (r->cl.dbgen_retracted)
 					continue;
 
 				if (!memcmp(&r->u, ref, sizeof(uuid)))
@@ -712,7 +712,7 @@ rule *erase_from_db(module *m, uuid *ref)
 {
 	rule *r = find_in_db(m, ref);
 	if (!r) return 0;
-	r->cl.dbgen_erased = ++m->pl->dbgen;
+	r->cl.dbgen_retracted = ++m->pl->dbgen;
 	return r;
 }
 
@@ -1392,7 +1392,7 @@ static void optimize_rule(module *m, rule *dbe_orig)
 	dbe_orig->cl.is_unique = false;
 
 	for (rule *r = dbe_orig->next; r; r = r->next) {
-		if (r->cl.dbgen_erased)
+		if (r->cl.dbgen_retracted)
 			continue;
 
 		cell *head2 = get_head(r->cl.cells);
@@ -1561,7 +1561,7 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 		for (rule *cl2 = pr->head; cl2; cl2 = cl2->next) {
 			cell *c = get_head(cl2->cl.cells);
 
-			if (cl2->cl.dbgen_erased)
+			if (cl2->cl.dbgen_retracted)
 				continue;
 
 			sl_app(pr->idx, c, cl2);
@@ -1662,10 +1662,10 @@ rule *assertz_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 
 static bool remove_from_predicate(module *m, predicate *pr, rule *r)
 {
-	if (r->cl.dbgen_erased)
+	if (r->cl.dbgen_retracted)
 		return false;
 
-	r->cl.dbgen_erased = ++m->pl->dbgen;
+	r->cl.dbgen_retracted = ++m->pl->dbgen;
 	r->filename = NULL;
 	pr->cnt--;
 
@@ -1824,7 +1824,7 @@ static bool unload_realfile(module *m, const char *filename)
 			continue;
 
 		for (rule *r = pr->head; r; r = r->next) {
-			if (r->cl.dbgen_erased)
+			if (r->cl.dbgen_retracted)
 				continue;
 
 			if (r->filename && !strcmp(r->filename, filename)) {
@@ -2151,7 +2151,7 @@ static void module_save_fp(module *m, FILE *fp, int canonical, int dq)
 			continue;
 
 		for (rule *r = pr->head; r; r = r->next) {
-			if (r->cl.dbgen_erased)
+			if (r->cl.dbgen_retracted)
 				continue;
 
 			if (canonical)

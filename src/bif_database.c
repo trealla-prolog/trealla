@@ -807,7 +807,7 @@ void save_db(FILE *fp, query *q, int logging)
 			continue;
 
 		for (rule *r = pr->head; r; r = r->next) {
-			if (r->cl.dbgen_erased)
+			if (r->cl.dbgen_retracted)
 				continue;
 
 			if (logging)
@@ -945,6 +945,17 @@ static bool bif_erase_1(query *q)
 	return do_erase(q->st.m, C_STR(q, p1));
 }
 
+static bool bif_instance_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,any);
+	uuid u;
+	uuid_from_buf(C_STR(q, p1), &u);
+	rule *r = find_in_db(q->st.m, &u);
+	check_heap_error(r);
+	return unify(q, p2, p2_ctx, r->cl.cells, q->st.curr_frame);
+}
+
 static bool bif_sys_retract_on_backtrack_1(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -977,6 +988,7 @@ builtins g_database_bifs[] =
 	{"erase", 1, bif_erase_1, "+string", false, false, BLAH},
 	{"clause", 3, bif_clause_3, "?term,?term,-string", false, false, BLAH},
 	{"abolish", 2, bif_abolish_2, "+term,+list", false, false, BLAH},
+	{"instance", 2, bif_instance_2, "+string,?term", false, false, BLAH},
 
 	{"$asserta", 2, bif_sys_asserta_2, "+term,+atom", true, false, BLAH},
 	{"$assertz", 2, bif_sys_assertz_2, "+term,+atom", true, false, BLAH},

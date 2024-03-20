@@ -360,21 +360,21 @@ not(_).
 
 :- help(not(:callable), [iso(false),deprecated(true)]).
 
-current_key(K) :- var(K), '$record_global_key'(K,_).
 recorda(K, V) :- nonvar(K), nonvar(V), asserta('$record_global_key'(K,V)).
-recordz(K, V) :- nonvar(K), nonvar(V), assertz('$record_global_key'(K,V)).
-recorded(K, V) :- nonvar(K), '$record_global_key'(K,V).
 recorda(K, V, R) :- nonvar(K), nonvar(V), asserta('$record_global_key'(K,V), R).
+recordz(K, V) :- nonvar(K), nonvar(V), assertz('$record_global_key'(K,V)).
 recordz(K, V, R) :- nonvar(K), nonvar(V), assertz('$record_global_key'(K,V), R).
+recorded(K, V) :- nonvar(K), '$record_global_key'(K,V).
 recorded(K, V, R) :- nonvar(K), clause('$record_global_key'(K,V), _, R).
+current_key(K) :- var(K), '$record_global_key'(K,_).
 
-:- help(current_key(-term), [iso(false)]).
 :- help(recorda(+term,+term), [iso(false)]).
 :- help(recorda(+term,+term,-ref), [iso(false)]).
 :- help(recordz(+term,+term), [iso(false)]).
 :- help(recordz(+term,+term,-ref), [iso(false)]).
 :- help(recorded(+term,?term), [iso(false)]).
 :- help(recorded(+term,?term,-ref), [iso(false)]).
+:- help(current_key(-term), [iso(false)]).
 
 :- meta_predicate(call_with_time_limit(+,0)).
 
