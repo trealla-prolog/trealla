@@ -6218,7 +6218,7 @@ static void load_properties(module *m)
 	}
 
 	for (const builtins *ptr = g_atts_bifs; ptr->name; ptr++) {
-		sl_app(m->pl->biftab, ptr->name, ptr);
+		sl_set(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -6228,7 +6228,7 @@ static void load_properties(module *m)
 	}
 
 	for (const builtins *ptr = g_bboard_bifs; ptr->name; ptr++) {
-		sl_app(m->pl->biftab, ptr->name, ptr);
+		sl_set(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -6238,7 +6238,7 @@ static void load_properties(module *m)
 	}
 
 	for (const builtins *ptr = g_contrib_bifs; ptr->name; ptr++) {
-		sl_app(m->pl->biftab, ptr->name, ptr);
+		sl_set(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -6248,7 +6248,7 @@ static void load_properties(module *m)
 	}
 
 	for (const builtins *ptr = g_csv_bifs; ptr->name; ptr++) {
-		sl_app(m->pl->biftab, ptr->name, ptr);
+		sl_set(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -6258,7 +6258,7 @@ static void load_properties(module *m)
 	}
 
 	for (const builtins *ptr = g_database_bifs; ptr->name; ptr++) {
-		sl_app(m->pl->biftab, ptr->name, ptr);
+		sl_set(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -6268,7 +6268,7 @@ static void load_properties(module *m)
 	}
 
 	for (const builtins *ptr = g_evaluable_bifs; ptr->name; ptr++) {
-		sl_app(m->pl->biftab, ptr->name, ptr);
+		sl_set(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -6278,7 +6278,7 @@ static void load_properties(module *m)
 	}
 
 	for (const builtins *ptr = g_ffi_bifs; ptr->name; ptr++) {
-		sl_app(m->pl->biftab, ptr->name, ptr);
+		sl_set(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -6288,7 +6288,7 @@ static void load_properties(module *m)
 	}
 
 	for (const builtins *ptr = g_iso_bifs; ptr->name; ptr++) {
-		sl_app(m->pl->biftab, ptr->name, ptr);
+		sl_set(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -6298,7 +6298,7 @@ static void load_properties(module *m)
  	}
 
 	for (const builtins *ptr = g_maps_bifs; ptr->name; ptr++) {
-		sl_app(m->pl->biftab, ptr->name, ptr);
+		sl_set(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -6308,7 +6308,7 @@ static void load_properties(module *m)
  	}
 
 	for (const builtins *ptr = g_other_bifs; ptr->name; ptr++) {
-		sl_app(m->pl->biftab, ptr->name, ptr);
+		sl_set(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -6318,7 +6318,7 @@ static void load_properties(module *m)
 	}
 
 	for (const builtins *ptr = g_posix_bifs; ptr->name; ptr++) {
-		sl_app(m->pl->biftab, ptr->name, ptr);
+		sl_set(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -6328,7 +6328,7 @@ static void load_properties(module *m)
 	}
 
 	for (const builtins *ptr = g_sort_bifs; ptr->name; ptr++) {
-		sl_app(m->pl->biftab, ptr->name, ptr);
+		sl_set(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -6338,7 +6338,7 @@ static void load_properties(module *m)
 	}
 
 	for (const builtins *ptr = g_sregex_bifs; ptr->name; ptr++) {
-		sl_app(m->pl->biftab, ptr->name, ptr);
+		sl_set(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -6348,7 +6348,7 @@ static void load_properties(module *m)
 	}
 
 	for (const builtins *ptr = g_streams_bifs; ptr->name; ptr++) {
-		sl_app(m->pl->biftab, ptr->name, ptr);
+		sl_set(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -6358,7 +6358,7 @@ static void load_properties(module *m)
  	}
 
 	for (const builtins *ptr = g_tasks_bifs; ptr->name; ptr++) {
-		sl_app(m->pl->biftab, ptr->name, ptr);
+		sl_set(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
@@ -6368,7 +6368,7 @@ static void load_properties(module *m)
 	}
 
 	for (const builtins *ptr = g_threads_bifs; ptr->name; ptr++) {
-		sl_app(m->pl->biftab, ptr->name, ptr);
+		sl_set(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);

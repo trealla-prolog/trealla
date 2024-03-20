@@ -408,7 +408,7 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 		pr->key.tag = TAG_INTERNED;
 		pr->key.nbr_cells = 1;
 		pr->is_noindex = m->pl->noindex || !pr->key.arity;
-		sl_app(m->index, &pr->key, pr);
+		sl_set(m->index, &pr->key, pr);
 		return pr;
 	}
 
@@ -1164,7 +1164,7 @@ bool set_op(module *m, const char *name, unsigned specifier, unsigned priority)
 	tmp->priority = priority;
 	tmp->specifier = specifier;
 	m->user_ops = true;
-	sl_app(m->ops, tmp->name, tmp);
+	sl_set(m->ops, tmp->name, tmp);
 	return true;
 }
 
@@ -1556,12 +1556,12 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 			if (cl2->cl.dbgen_retracted)
 				continue;
 
-			sl_app(pr->idx, c, cl2);
+			sl_set(pr->idx, c, cl2);
 
 			if (pr->idx2) {
 				cell *arg1 = FIRST_ARG(c);
 				cell *arg2 = NEXT_ARG(arg1);
-				sl_app(pr->idx2, arg2, cl2);
+				sl_set(pr->idx2, arg2, cl2);
 			}
 		}
 
@@ -1575,17 +1575,10 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 	if (arg1 && is_var(arg1))
 		pr->is_var_in_first_arg = true;
 
-	if (!append) {
-		sl_set(pr->idx, c, r);
+	sl_set(pr->idx, c, r);
 
-		if (pr->idx2 && arg2)
-			sl_set(pr->idx2, arg2, r);
-	} else {
-		sl_app(pr->idx, c, r);
-
-		if (pr->idx2 && arg2)
-			sl_app(pr->idx2, arg2, r);
-	}
+	if (pr->idx2 && arg2)
+		sl_set(pr->idx2, arg2, r);
 }
 
 rule *asserta_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
@@ -2248,7 +2241,7 @@ module *module_create(prolog *pl, const char *name)
 			op_table *tmp = malloc(sizeof(op_table));
 			ensure(tmp);
 			memcpy(tmp, ptr, sizeof(op_table));
-			sl_app(m->defops, tmp->name, tmp);
+			sl_set(m->defops, tmp->name, tmp);
 		}
 	}
 

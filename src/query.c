@@ -1182,7 +1182,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 			sl_set_tmp(tmp_idx);
 		}
 
-		sl_app(tmp_idx, (void*)(size_t)r->db_id, (void*)r);
+		sl_set(tmp_idx, (void*)(size_t)r->db_id, (void*)r);
 	}
 
 	sl_done(iter);
