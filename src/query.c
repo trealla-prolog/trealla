@@ -422,8 +422,8 @@ static void leave_predicate(query *q, predicate *pr)
 		list_delink(pr, r);
 
 		if (pr->idx && pr->cnt) {
-			sl_remove(pr->idx2, &pr->key, r);
-			sl_remove(pr->idx, &pr->key, r);
+			sl_remove(pr->idx2, r);
+			sl_remove(pr->idx, r);
 		}
 
 		r->cl.is_deleted = true;
