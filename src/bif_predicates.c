@@ -6543,16 +6543,6 @@ builtins g_iso_bifs[] =
 	{"=", 2, bif_iso_unify_2, "+term,+term", true, false, BLAH},
 	{"\\=", 2, bif_iso_notunify_2, "+term,+term", true, false, BLAH},
 
-	{"$call_cleanup", 3, bif_sys_call_cleanup_3, NULL, false, false, BLAH},
-	{"$block_catcher", 1, bif_sys_block_catcher_1, NULL, false, false, BLAH},
-	{"$cleanup_if_det", 1, bif_sys_cleanup_if_det_1, NULL, false, false, BLAH},
-	{"$drop_barrier", 1, bif_sys_drop_barrier_1, NULL, false, false, BLAH},
-	{"$timer", 0, bif_sys_timer_0, NULL, false, false, BLAH},
-	{"$elapsed", 0, bif_sys_elapsed_0, NULL, false, false, BLAH},
-	{"$lt", 2, bif_sys_lt_2, NULL, false, false, BLAH},
-	{"$gt", 2, bif_sys_gt_2, NULL, false, false, BLAH},
-	{"$ne", 2, bif_sys_ne_2, NULL, false, false, BLAH},
-
 	{"call", 1, bif_iso_call_1, ":callable", true, false, BLAH},
 	{"call", 2, bif_iso_call_n, ":callable,?term", true, false, BLAH},
 	{"call", 3, bif_iso_call_n, ":callable,?term,term", true, false, BLAH},
@@ -6616,7 +6606,6 @@ builtins g_other_bifs[] =
 	{"trace", 0, bif_trace_0, NULL, false, false, BLAH},
 	{"statistics", 0, bif_statistics_0, NULL, false, false, BLAH},
 	{"statistics", 2, bif_statistics_2, "+atom,-term", false, false, BLAH},
-	{"shift", 1, bif_shift_1, "+term", false, false, BLAH},
 
 	{"current_module", 1, bif_current_module_1, "-atom", false, false, BLAH},
 	{"prolog_load_context", 2, bif_prolog_load_context_2, "+atom,?term", false, false, BLAH},
@@ -6691,6 +6680,7 @@ builtins g_other_bifs[] =
 	{"cyclic_term", 1, bif_cyclic_term_1, "+term", false, false, BLAH},
 	{"call_residue_vars", 2, bif_call_residue_vars_2, ":callable,-list", false, false, BLAH},
 	{"reset", 3, bif_reset_3, ":callable,?term,-term", false, false, BLAH},
+	{"shift", 1, bif_shift_1, "+term", false, false, BLAH},
 
 	{"$must_be", 4, bif_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"$can_be", 4, bif_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
@@ -6726,6 +6716,16 @@ builtins g_other_bifs[] =
 #if USE_OPENSSL
 	{"crypto_data_hash", 3, bif_crypto_data_hash_3, "?string,?string,?list", false, false, BLAH},
 #endif
+
+	{"$call_cleanup", 3, bif_sys_call_cleanup_3, NULL, false, false, BLAH},
+	{"$block_catcher", 1, bif_sys_block_catcher_1, NULL, false, false, BLAH},
+	{"$cleanup_if_det", 1, bif_sys_cleanup_if_det_1, NULL, false, false, BLAH},
+	{"$drop_barrier", 1, bif_sys_drop_barrier_1, NULL, false, false, BLAH},
+	{"$timer", 0, bif_sys_timer_0, NULL, false, false, BLAH},
+	{"$elapsed", 0, bif_sys_elapsed_0, NULL, false, false, BLAH},
+	{"$lt", 2, bif_sys_lt_2, NULL, false, false, BLAH},
+	{"$gt", 2, bif_sys_gt_2, NULL, false, false, BLAH},
+	{"$ne", 2, bif_sys_ne_2, NULL, false, false, BLAH},
 
 	{0}
 };

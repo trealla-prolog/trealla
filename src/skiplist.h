@@ -17,6 +17,7 @@ bool sl_set(skiplist *l, const void *k, const void *v);
 bool sl_app(skiplist *l, const void *k, const void *v);
 bool sl_get(skiplist *l, const void *k, const void **v);
 bool sl_del(skiplist *l, const void *k);
+bool sl_remove(skiplist *l, const void *v);
 
 skiplist *sl_get_map(const sliter *i);
 void sl_wild_card(skiplist *l);
@@ -38,8 +39,6 @@ void sl_find(
 sliter *sl_find_key(skiplist *l, const void *k);
 bool sl_is_next_key(sliter *i);
 bool sl_next_key(sliter *i, void **v);
-
-void sl_remove(skiplist *l, const void *v);
 
 sliter *sl_first(skiplist *l);
 bool sl_is_next(sliter *i, void **v);

@@ -434,6 +434,38 @@ bool sl_del(skiplist *l, const void *key)
 	return true;
 }
 
+bool sl_remove(skiplist *l, const void *v)
+{
+	if (!l || l->destroyed)
+		return false;
+
+	slnode_t *p;
+	p = l->header;
+	p = p->forward[0];
+
+	while (p) {
+		slnode_t *q = p->forward[0];
+
+		for (int j = 0; j < p->nbr; j++) {
+			if (p->bkt[j].val != v)
+				continue;
+
+			while (j < (p->nbr - 1)) {
+				p->bkt[j] = p->bkt[j + 1];
+				j++;
+			}
+
+			p->nbr--;
+			l->count--;
+			return true;
+		}
+
+		p = q;
+	}
+
+	return false;
+}
+
 void sl_iterate(const skiplist *l, int (*f)(const void*, const void*, const void*), const void *p1)
 {
 	if (!l || l->destroyed)
@@ -590,36 +622,6 @@ void *sl_key(sliter *iter)
 		return NULL;
 
 	return (void*)iter->key;
-}
-
-void sl_remove(skiplist *l, const void *v)
-{
-	if (!l || l->destroyed)
-		return;
-
-	slnode_t *p;
-	p = l->header;
-	p = p->forward[0];
-
-	while (p) {
-		slnode_t *q = p->forward[0];
-
-		for (int j = 0; j < p->nbr; j++) {
-			if (p->bkt[j].val != v)
-				continue;
-
-			while (j < (p->nbr - 1)) {
-				p->bkt[j] = p->bkt[j + 1];
-				j++;
-			}
-
-			p->nbr--;
-			l->count--;
-			return;
-		}
-
-		p = q;
-	}
 }
 
 sliter *sl_find_key(skiplist *l, const void *key)
