@@ -1673,9 +1673,12 @@ static bool remove_from_predicate(module *m, predicate *pr, rule *r)
 void retract_from_db(module *m, rule *r)
 {
 	predicate *pr = r->owner;
+	module_lock(pr->m);
 
 	if (remove_from_predicate(m, pr, r))
 		list_push_back(&pr->dirty, r);
+
+	module_unlock(pr->m);
 }
 
 rule *erase_from_db(module *m, uuid *ref)
