@@ -708,14 +708,6 @@ void push_template(module *m, const char *name, unsigned arity, const builtins *
 	parser_destroy(p);
 }
 
-rule *erase_from_db(module *m, uuid *ref)
-{
-	rule *r = find_in_db(m, ref);
-	if (!r) return 0;
-	r->cl.dbgen_retracted = ++m->pl->dbgen;
-	return r;
-}
-
 void set_discontiguous_in_db(module *m, const char *name, unsigned arity)
 {
 	cell tmp = (cell){0};
@@ -1684,6 +1676,14 @@ void retract_from_db(module *m, rule *r)
 
 	if (remove_from_predicate(m, pr, r))
 		list_push_back(&pr->dirty, r);
+}
+
+rule *erase_from_db(module *m, uuid *ref)
+{
+	rule *r = find_in_db(m, ref);
+	if (!r) return 0;
+	retract_from_db(m, r);
+	return r;
 }
 
 static void xref_cell(module *m, clause *cl, cell *c, int last_was_colon, bool is_directive)
