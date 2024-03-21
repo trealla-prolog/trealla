@@ -422,8 +422,11 @@ static void leave_predicate(query *q, predicate *pr)
 		list_delink(pr, r);
 
 		if (pr->idx && pr->cnt) {
-			sl_rem(pr->idx2, &pr->key, r);
-			sl_rem(pr->idx, &pr->key, r);
+			cell *c = get_head(r->cl.cells);
+			cell *arg1 = c->arity ? FIRST_ARG(c) : NULL;
+			cell *arg2 = c->arity > 1 ? NEXT_ARG(arg1) : NULL;
+			sl_rem(pr->idx2, arg2, r);
+			sl_rem(pr->idx, c, r);
 		}
 
 
