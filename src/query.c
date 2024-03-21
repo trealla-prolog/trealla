@@ -420,6 +420,13 @@ static void leave_predicate(query *q, predicate *pr)
 
 	while ((r = (rule*)list_pop_front(&pr->dirty)) != NULL) {
 		list_delink(pr, r);
+
+		if (pr->idx && pr->cnt) {
+			sl_rem(pr->idx2, &pr->key, r);
+			sl_rem(pr->idx, &pr->key, r);
+		}
+
+
 		r->cl.is_deleted = true;
 		list_push_back(&q->dirty, r);
 	}

@@ -1575,10 +1575,17 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 	if (arg1 && is_var(arg1))
 		pr->is_var_in_first_arg = true;
 
-	sl_set(pr->idx, c, r);
+	if (!append) {
+		sl_set(pr->idx, c, r);
 
-	if (pr->idx2 && arg2)
-		sl_set(pr->idx2, arg2, r);
+		if (pr->idx2 && arg2)
+			sl_set(pr->idx2, arg2, r);
+	} else {
+		sl_set(pr->idx, c, r);
+
+		if (pr->idx2 && arg2)
+			sl_set(pr->idx2, arg2, r);
+	}
 }
 
 rule *asserta_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
@@ -1666,12 +1673,9 @@ static bool remove_from_predicate(module *m, predicate *pr, rule *r)
 void retract_from_db(module *m, rule *r)
 {
 	predicate *pr = r->owner;
-	module_lock(pr->m);
 
 	if (remove_from_predicate(m, pr, r))
 		list_push_back(&pr->dirty, r);
-
-	module_unlock(pr->m);
 }
 
 rule *erase_from_db(module *m, uuid *ref)

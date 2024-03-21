@@ -678,12 +678,12 @@ Application maps (dictionaries)
 Maps use atomic key/value pairs only and are represented as
 pseudo-streams:
 
-	map_create/2					# sl_create(-skiplist,+opts)
-	map_create/1					# sl_create(-skiplist)
-	map_set/3						# sl_set(+skiplist,+key,+value)
-	map_get/3						# sl_get(+skiplist,+key,?value)
-	map_del/2						# sl_del(+skiplist,+key)
-	map_count/2						# sl_count(+skiplist,-count)
+	map_create/2					# map_create(-skiplist,+opts)
+	map_create/1					# map_create(-skiplist)
+	map_set/3						# map_set(+skiplist,+key,+value)
+	map_get/3						# map_get(+skiplist,+key,?value)
+	map_del/2						# map_del(+skiplist,+key)
+	map_count/2						# map_count(+skiplist,-count)
 	map_list/2						# map_list(+skiplist,?list)
 	map_close/1						# map_close(+skiplist)
 
@@ -691,7 +691,7 @@ pseudo-streams:
 	$ tpl
 	?- map_create(S,[alias(foo)]).
 	   S = <$stream>(4).
-	?- map_set(foo,1,111), sl_set(foo,two,222), sl_set(foo,3,333).
+	?- map_set(foo,1,111), map_set(foo,two,222), map_set(foo,3,333).
 	   true.
 	?- map_get(foo,3,V).
 	   V = 333.
