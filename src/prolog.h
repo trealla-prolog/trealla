@@ -56,6 +56,7 @@ extern builtins g_ffi_bifs[];
 extern builtins g_iso_bifs[];
 extern builtins g_maps_bifs[];
 extern builtins g_other_bifs[];
+extern builtins g_control_bifs[];
 extern builtins g_posix_bifs[];
 extern builtins g_sort_bifs[];
 extern builtins g_sregex_bifs[];
