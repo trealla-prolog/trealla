@@ -1147,11 +1147,10 @@ engines. Uses co-operative tasks.
 Pre-emptive Multi-threading
 ===========================
 
-Start independent (shared state) Prolog queries as dedicated threads
-and communicate via message queues. Note: the database *is* shared.
-These predicates conform to the *ISO Prolog multi-threading
+Start independent (shared state) Prolog queries as dedicated POSIX
+threads and communicate via message queues. Note: the database *is*
+shared. These predicates conform to the *ISO Prolog multi-threading
 support* standards proposal (ISO/IEC DTR 13211–5:2007), now lapsed.
-
 
 	thread_create/3		# thread_create(:callable,-thread,+options)
 	thread_create/2		# thread_create(:callable,-thread)
