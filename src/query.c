@@ -429,7 +429,6 @@ static void leave_predicate(query *q, predicate *pr)
 			sl_rem(pr->idx, c, r);
 		}
 
-
 		r->cl.is_deleted = true;
 		list_push_back(&q->dirty, r);
 	}
