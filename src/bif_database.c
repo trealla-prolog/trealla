@@ -118,18 +118,18 @@ static void db_log(query *q, rule *r, enum log_type l)
 	case LOG_ASSERTA:
 		dst = print_term_to_strbuf(q, r->cl.cells, q->st.curr_frame, 1);
 		uuid_to_buf(&r->u, tmpbuf, sizeof(tmpbuf));
-		fprintf(fp, "%s:'$asserta'((%s),'%s').\n", q->st.m->name, dst, tmpbuf);
+		fprintf(fp, "%s:'$a_'((%s),'%s').\n", q->st.m->name, dst, tmpbuf);
 		free(dst);
 		break;
 	case LOG_ASSERTZ:
 		dst = print_term_to_strbuf(q, r->cl.cells, q->st.curr_frame, 1);
 		uuid_to_buf(&r->u, tmpbuf, sizeof(tmpbuf));
-		fprintf(fp, "%s:'$assertz'((%s),'%s').\n", q->st.m->name, dst, tmpbuf);
+		fprintf(fp, "%s:'$z_'((%s),'%s').\n", q->st.m->name, dst, tmpbuf);
 		free(dst);
 		break;
 	case LOG_ERASE:
 		uuid_to_buf(&r->u, tmpbuf, sizeof(tmpbuf));
-		fprintf(fp, "%s:erase('%s').\n", q->st.m->name, tmpbuf);
+		fprintf(fp, "%s:'$e_'('%s').\n", q->st.m->name, tmpbuf);
 		break;
 	}
 
@@ -990,11 +990,13 @@ builtins g_database_bifs[] =
 	{"abolish", 2, bif_abolish_2, "+term,+list", false, false, BLAH},
 	{"instance", 2, bif_instance_2, "+string,?term", false, false, BLAH},
 
-	{"$asserta", 2, bif_sys_asserta_2, "+term,+atom", true, false, BLAH},
-	{"$assertz", 2, bif_sys_assertz_2, "+term,+atom", true, false, BLAH},
 	{"$clause", 2, bif_sys_clause_2, "?term,?term", false, false, BLAH},
 	{"$clause", 3, bif_sys_clause_3, "?term,?term,-string", false, false, BLAH},
 	{"$retract_on_backtrack", 1, bif_sys_retract_on_backtrack_1, "+string", false, false, BLAH},
+
+	{"$a_", 2, bif_sys_asserta_2, "+term,+atom", true, false, BLAH},
+	{"$z_", 2, bif_sys_assertz_2, "+term,+atom", true, false, BLAH},
+	{"$e_", 1, bif_erase_1, "+atom", true, false, BLAH},
 
 	{0}
 };
