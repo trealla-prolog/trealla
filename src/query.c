@@ -1277,7 +1277,7 @@ bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 		cell *c = cl->cells;
 		bool needs_true = false;
 		p1 = orig_p1;
-		cell *c_body = get_logical_body(c);
+		const cell *c_body = get_logical_body(c);
 
 		if (p1_body && is_var(p1_body) && !c_body) {
 			p1 = deref(q, get_head(p1), p1_ctx);
@@ -1391,7 +1391,7 @@ bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract
 
 		clause *cl = &q->st.r->cl;
 		cell *head = get_head(cl->cells);
-		cell *body = get_logical_body(cl->cells);
+		const cell *body = get_logical_body(cl->cells);
 
 		// Retract(HEAD) should ignore rules (and directives)
 
