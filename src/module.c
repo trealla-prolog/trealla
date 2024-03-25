@@ -1660,13 +1660,6 @@ static bool remove_from_predicate(module *m, predicate *pr, rule *r)
 	r->cl.dbgen_retracted = ++m->pl->dbgen;
 	r->filename = NULL;
 	pr->cnt--;
-
-	if (pr->idx && !pr->cnt && !pr->refcnt) {
-		sl_destroy(pr->idx2);
-		sl_destroy(pr->idx);
-		pr->idx = pr->idx2 = NULL;
-	}
-
 	return true;
 }
 

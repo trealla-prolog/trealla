@@ -236,10 +236,10 @@ bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 		return match;
 
 	rule *r = q->st.r;
+	db_log(q, r, LOG_ERASE);
 	retract_from_db(r->owner->m, r);
 	bool last_match = (is_retract == DO_RETRACT) && !has_next_key(q);
 	stash_frame(q, &r->cl, last_match);
-	db_log(q, r, LOG_ERASE);
 	return true;
 }
 

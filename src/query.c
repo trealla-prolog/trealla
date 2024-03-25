@@ -427,10 +427,15 @@ static void leave_predicate(query *q, predicate *pr)
 			cell *arg2 = c->arity > 1 ? NEXT_ARG(arg1) : NULL;
 			sl_rem(pr->idx2, arg2, r);
 			sl_rem(pr->idx, c, r);
-		}
 
-		r->cl.is_deleted = true;
-		list_push_back(&q->dirty, r);
+			if (q->no_tco) {
+				r->cl.is_deleted = true;
+				list_push_back(&q->dirty, r);
+			} else {
+				clear_clause(&r->cl);
+				free(r);
+			}
+		}
 	}
 
 	if (pr->idx && !pr->cnt) {
@@ -725,6 +730,7 @@ static void commit_frame(query *q, cell *body)
 void stash_frame(query *q, const clause *cl, bool last_match)
 {
 	pl_idx chgen = ++q->chgen;
+	unsigned nbr_vars = cl->nbr_vars;
 
 	if (last_match) {
 		Trace(q, get_head(q->st.r->cl.cells), q->st.curr_frame, EXIT);
@@ -735,8 +741,6 @@ void stash_frame(query *q, const clause *cl, bool last_match)
 		ch->st.r = q->st.r;
 		ch->chgen = chgen;
 	}
-
-	unsigned nbr_vars = cl->nbr_vars;
 
 	if (nbr_vars) {
 		pl_idx new_frame = q->st.fp++;
