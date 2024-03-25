@@ -7,7 +7,6 @@
 #include <sys/stat.h>
 
 #include "heap.h"
-#include "list.h"
 #include "module.h"
 #include "parser.h"
 #include "prolog.h"

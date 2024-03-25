@@ -7,8 +7,6 @@
 #include <float.h>
 #include <errno.h>
 
-#include "trealla.h"
-#include "internal.h"
 #include "query.h"
 
 builtins g_contrib_bifs[] =

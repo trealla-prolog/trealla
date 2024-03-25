@@ -4,10 +4,10 @@
 #include <string.h>
 #include <sys/stat.h>
 
-#include "module.h"
-#include "parser.h"
 #include "history.h"
 #include "library.h"
+#include "module.h"
+#include "parser.h"
 #include "prolog.h"
 #include "query.h"
 

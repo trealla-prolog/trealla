@@ -6,14 +6,30 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 
-#include "base64.h"
 #include "heap.h"
-#include "history.h"
-#include "library.h"
 #include "module.h"
 #include "parser.h"
 #include "prolog.h"
 #include "query.h"
+
+static bool module_context(query *q, cell **p1, pl_idx p1_ctx)
+{
+	if (!is_var(*p1)) {
+		if ((*p1)->val_off == g_colon_s) {
+			*p1 = *p1 + 1;
+			cell *cm = deref(q, *p1, p1_ctx);
+			module *m = find_module(q->pl, C_STR(q, cm));
+
+			if (!m) {
+				return throw_error(q, cm, p1_ctx, "existence_error", "module");
+			}
+
+			*p1 += (*p1)->nbr_cells;
+		}
+	}
+
+	return true;
+}
 
 static bool bif_clause_3(query *q)
 {
@@ -21,19 +37,8 @@ static bool bif_clause_3(query *q)
 	GET_NEXT_ARG(p2,callable_or_var);
 	GET_NEXT_ARG(p3,atom_or_var);
 
-	if (!is_var(p1)) {
-		if (p1->val_off == g_colon_s) {
-			p1 = p1 + 1;
-			cell *cm = deref(q, p1, p1_ctx);
-			module *m = find_module(q->pl, C_STR(q, cm));
-
-			if (!m) {
-				return throw_error(q, cm, p1_ctx, "existence_error", "module");
-			}
-
-			p1 += p1->nbr_cells;
-		}
-	}
+	if (!module_context(q, &p1, p1_ctx))
+		return false;
 
 	if (is_var(p1) && is_var(p2) && is_var(p3))
 		return throw_error(q, p3, p3_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
@@ -141,18 +146,8 @@ static bool bif_iso_clause_2(query *q)
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,callable_or_var);
 
-	if (p1->val_off == g_colon_s) {
-		p1 = p1 + 1;
-		cell *cm = deref(q, p1, p1_ctx);
-		module *m = find_module(q->pl, C_STR(q, cm));
-
-		if (!m) {
-			return throw_error(q, cm, p1_ctx, "existence_error", "module");
-		}
-
-		q->st.m = m;
-		p1 += p1->nbr_cells;
-	}
+	if (!module_context(q, &p1, p1_ctx))
+		return false;
 
 	while (match_clause(q, p1, p1_ctx, DO_CLAUSE)) {
 		if (q->did_throw) return true;
@@ -252,17 +247,8 @@ static bool bif_iso_retract_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 
-	if (p1->val_off == g_colon_s) {
-		p1 = p1 + 1;
-		cell *cm = deref(q, p1, p1_ctx);
-		module *m = find_module(q->pl, C_STR(q, cm));
-
-		if (!m) {
-			return throw_error(q, cm, p1_ctx, "existence_error", "module");
-		}
-
-		p1 += p1->nbr_cells;
-	}
+	if (!module_context(q, &p1, p1_ctx))
+		return false;
 
 	prolog_lock(q->pl);
 	bool ok = do_retract(q, p1, p1_ctx, DO_RETRACT);
@@ -274,17 +260,8 @@ static bool bif_iso_retractall_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 
-	if (p1->val_off == g_colon_s) {
-		p1 = p1 + 1;
-		cell *cm = deref(q, p1, p1_ctx);
-		module *m = find_module(q->pl, C_STR(q, cm));
-
-		if (!m) {
-			return throw_error(q, cm, p1_ctx, "existence_error", "module");
-		}
-
-		p1 += p1->nbr_cells;
-	}
+	if (!module_context(q, &p1, p1_ctx))
+		return false;
 
 	cell *head = deref(q, get_head(p1), p1_ctx);
 	predicate *pr = search_predicate(q->st.m, head, NULL);

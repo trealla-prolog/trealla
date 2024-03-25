@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "history.h"
 #include "prolog.h"
 #include "query.h"
 
