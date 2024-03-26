@@ -1068,17 +1068,17 @@ For example:
 	producer :-
 		between(1, 10, I),
 			out({msg:I}),
-			delay(250),
+			sleep(0.25),
 			fail.
 	producer :-
-		forall(rd_noblock({msg:_}), delay(1)),
+		forall(rd_noblock({msg:_}), sleep(0.001)),
 		end_wait.
 
 	consumer(N) :-
 		in({msg:I}),
 		write(['consumer',N,'got=',I]), nl,
-		random(R), Ms is floor(R*1000),
-		delay(Ms),
+		random(R), Ms is floor(R*1000), Secs is Ms / 1000,
+		sleep(Secs),
 		fail.
 ```
 

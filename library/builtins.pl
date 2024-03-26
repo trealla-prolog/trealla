@@ -575,12 +575,6 @@ read_line_to_codes(Stream, Codes) :-
 
 :- help(read_line_to_codes(+stream,?list), [iso(false)]).
 
-delay(Msecs) :-
-	Secs is Msecs / 1000,
-	sleep(Secs).
-
-:- help(delay(+number), [iso(false)]).
-
 repeat_integer(N) :-
 	N > 0.
 repeat_integer(N0) :-
