@@ -772,7 +772,7 @@ many bytes, = 0 meaning return what is there (if non-blocking) or a var
 meaning return all bytes until end end of file,
 
 
-Simple regular expressions				##EXPERIMENTAL##
+Simple regular expressions
 ==========================
 
 This is meant as a place-holder until a proper regex package
@@ -861,7 +861,7 @@ file then regex searches can be performed quickly and efficiently over
 huge files.
 
 
-Foreign Function Interface (libffi)		##EXPERIMENTAL##
+Foreign Function Interface (libffi)
 ===================================
 
 Allows the loading of dynamic libraries and calling of foreign functions
@@ -941,7 +941,7 @@ Note: the foreign function return value is passed as an extra argument
 to the predicate call, unless it was specified to be of type *void*.
 
 
-Foreign Module Interface (libffi)		##EXPERIMENTAL##
+Foreign Module Interface (libffi)
 =================================
 
 This is a simplified interface to FFIs inspired by Adrián Arroyo Calle
