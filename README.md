@@ -10,8 +10,8 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	Strings & slices are super-efficient (especially with mmap'd files)
 	REPL with history
 	Runs on Linux, Android, FreeBSD, macOS, and WebAssembly (WASI) & Go
-	Foreign function interface (FFI) for calling out to user C code
 	API for calling from C (or by using WASM from Go & JS)
+	Foreign function interface (FFI) for calling out to user C code
 	Access SQLITE databases using builtin module (uses FFI)
 	Concurrency via tasks / linda / futures / engines (generators)
 	Pre-emptive multi-threading
@@ -217,12 +217,15 @@ Cross-compile for Windows x64
 To cross-compile on Linux and produce a Windows/x86-64 executable...
 
 	sudo apt install mingw-w64
-	make CC=x86_64-w64-mingw32-gcc NOSSL=1 NOFFI=1 ISOCLINE=1 NOTHREADS=1
+	make WIN=1
 
 ```console
 	$ file tpl.exe
 	tpl.exe: PE32+ executable (console) x86-64, for MS Windows
 ```
+
+Some have reported success with a native Windows build using msys2.
+
 
 Cross-compile for Linux x86
 ===========================
@@ -253,7 +256,7 @@ without help from these people:
 
 Special thanks to [Xin Wang](https://github.com/dram) for providing the
 testing framework, for the initial push to get serious and for being
-the first to take this work (in it's nascent form) seriously.
+the first to take this work (in it's original form) seriously.
 
 Special thanks to [Paulo Moura](https://github.com/pmoura) for his patience
 and sleuthing in the quest for Trealla to run his Logtalk project.

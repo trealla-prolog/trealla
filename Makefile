@@ -34,6 +34,14 @@ CC = $(WASI_CC)
 endif
 endif
 
+ifdef WIN
+NOFFI = 1
+NOSSL = 1
+NOTHREADS = 1
+ISOCLINE = 1
+CC = x86_64-w64-mingw32-gcc
+endif
+
 ifdef ISOCLINE
 CFLAGS += -DUSE_ISOCLINE=1
 else

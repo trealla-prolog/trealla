@@ -15,7 +15,7 @@
 
 void convert_path(char *filename);
 
-static lock g_symtab_guard = {0};
+static lock g_symtab_guard;
 static skiplist *g_symtab = NULL;
 static size_t s_pool_size = 64000, s_pool_offset = 0;
 static pl_atomic int g_tpl_count = 0;
