@@ -388,11 +388,11 @@ char *relative_to(const char *basefile, const char *relfile)
 		strcpy(tmpbuf, basefile);
 		ptr = tmpbuf + strlen(tmpbuf) - 1;
 
-		while ((ptr != tmpbuf) && (*ptr != PATH_SEP_CHAR))
+		while ((ptr != tmpbuf) && (*ptr != '/'))
 			ptr--;
 
 		if (ptr != tmpbuf)
-			*ptr++ = PATH_SEP_CHAR;
+			*ptr++ = '/';
 
 		*ptr = '\0';
 	}

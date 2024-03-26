@@ -672,7 +672,7 @@ prolog *pl_create()
 		if (g_tpl_lib) {
 			char *src = g_tpl_lib + strlen(g_tpl_lib) - 1;
 
-			while ((src != g_tpl_lib) && (*src != PATH_SEP_CHAR))
+			while ((src != g_tpl_lib) && (*src != '/'))
 				src--;
 
 			*src = '\0';

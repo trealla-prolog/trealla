@@ -862,7 +862,7 @@ bool do_use_module_1(module *curr_m, cell *p)
 			memcpy(src, lib->start, *lib->len);
 			src[*lib->len] = '\0';
 			SB(s1);
-			SB_sprintf(s1, "library%c%s", PATH_SEP_CHAR, lib->name);
+			SB_sprintf(s1, "library%c%s", '/', lib->name);
 			m = load_text(curr_m, src, SB_cstr(s1));
 			SB_free(s1);
 			free(src);

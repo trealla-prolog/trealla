@@ -41,24 +41,23 @@ typedef uint32_t pl_idx;
 #define pl_atomic volatile
 #endif
 
-#define PATH_SEP_CHAR '/'
-
 #ifdef _WIN32
 #define NEWLINE_MODE "dos"
 #else
 #define NEWLINE_MODE "posix"
 #endif
 
-#include "trealla.h"
 #include "cdebug.h"
 #include "list.h"
+#include "skiplist.h"
 #include "stringbuf.h"
 #include "threads.h"
+#include "trealla.h"
 #include "utf8.h"
+
 #include "imath/imath.h"
 #include "imath/imrat.h"
 #include "sre/re.h"
-#include "skiplist.h"
 
 #if defined(_WIN32) || defined(__wasi__)
 char *realpath(const char *path, char resolved_path[PATH_MAX]);
