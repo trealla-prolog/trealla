@@ -788,7 +788,7 @@ void save_db(FILE *fp, query *q, int logging)
 				continue;
 
 			if (logging)
-				fprintf(fp, "z_(");
+				fprintf(fp, "'$z_'(");
 
 			for (unsigned i = 0; i < MAX_IGNORES; i++)
 				q->ignores[i] = false;
