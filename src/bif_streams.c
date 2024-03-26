@@ -900,7 +900,7 @@ static bool bif_iso_stream_property_2(query *q)
 		return false;
 	}
 
-	clause *cl = &q->st.r->cl;
+	clause *cl = &q->st.curr_rule->cl;
 	GET_FIRST_ARG(pstrx,any);
 	pstrx->flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
 	stash_frame(q, cl, false);

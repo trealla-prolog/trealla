@@ -2860,7 +2860,7 @@ static bool bif_listing_0(query *q)
 
 static void save_name(FILE *fp, query *q, pl_idx name, unsigned arity)
 {
-	module *m = q->st.r ? q->st.r->owner->m : q->st.m;
+	module *m = q->st.curr_rule ? q->st.curr_rule->owner->m : q->st.m;
 	q->listing = true;
 
 	for (predicate *pr = (predicate*)list_front(&m->predicates);

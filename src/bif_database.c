@@ -54,7 +54,7 @@ static bool bif_clause_3(query *q)
 			if (!r || (!u.u1 && !u.u2))
 				break;
 
-			q->st.r = r;
+			q->st.curr_rule = r;
 			cl = &r->cl;
 			cell *head = get_head(cl->cells);
 
@@ -65,12 +65,12 @@ static bool bif_clause_3(query *q)
 				break;
 
 			char tmpbuf[128];
-			uuid_to_buf(&q->st.r->u, tmpbuf, sizeof(tmpbuf));
+			uuid_to_buf(&q->st.curr_rule->u, tmpbuf, sizeof(tmpbuf));
 			cell tmp;
 			make_cstring(&tmp, tmpbuf);
 			unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 			unshare_cell(&tmp);
-			cl = &q->st.r->cl;
+			cl = &q->st.curr_rule->cl;
 		}
 
 		cell *body = get_body(cl->cells);
@@ -151,7 +151,7 @@ static bool bif_iso_clause_2(query *q)
 
 	while (match_clause(q, p1, p1_ctx, DO_CLAUSE)) {
 		if (q->did_throw) return true;
-		clause *cl = &q->st.r->cl;
+		clause *cl = &q->st.curr_rule->cl;
 		cell *body = get_body(cl->cells);
 		bool ok;
 
@@ -235,7 +235,7 @@ bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 	if (!match || q->did_throw)
 		return match;
 
-	rule *r = q->st.r;
+	rule *r = q->st.curr_rule;
 	db_log(q, r, LOG_ERASE);
 	retract_from_db(r->owner->m, r);
 	bool last_match = (is_retract == DO_RETRACT) && !has_next_key(q);
