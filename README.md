@@ -775,8 +775,7 @@ meaning return all bytes until end end of file,
 Simple regular expressions
 ==========================
 
-This is meant as a place-holder until a proper regex package
-is included.
+This is meant as a place-holder until a proper regex package is included.
 
 	sre_compile/2				# sre_compile(+pattern,-reg)
 	sre_matchp/4				# sre_matchp(+reg,+text,-match,-rest)
