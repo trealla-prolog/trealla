@@ -1077,8 +1077,8 @@ For example:
 	consumer(N) :-
 		in({msg:I}),
 		write(['consumer',N,'got=',I]), nl,
-		random(R), Ms is floor(R*1000), Secs is Ms / 1000,
-		sleep(Secs),
+		random(R),
+		sleep(R),
 		fail.
 ```
 
