@@ -30,8 +30,8 @@ test4(C) :-
 	(future_done(F2) -> writeln(doneF2); writeln(notdoneF2)),
 	C = V.
 
-slow_predicate(X) :- delay(900), X = 41.
-fast_predicate(X) :- delay(100), X = 1.
+slow_predicate(X) :- sleep(0.9), X = 41.
+fast_predicate(X) :- sleep(0.1), X = 1.
 
 :- use_module(library(http)).
 

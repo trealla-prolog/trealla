@@ -497,7 +497,6 @@ Non-standard predicates
 	current_key/1
 	string_length/2
 	sleep/1                     # sleep time in secs
-	delay/1                     # sleep time in ms
 	split/4                     # split(+string,+sep,?left,?right)
 	shell/1
 	shell/2

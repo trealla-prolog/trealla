@@ -16,17 +16,17 @@ producer(_) :-
     between(1, 10, I),
 		out({msg:I}),
 		random(R),
-		Ms is floor(R*1000) // 2 + 1,
-		delay(Ms),
+		Secs is (floor(R*1000) // 2 + 1) / 1000,
+		sleep(Secs),
 		fail.
 producer(_) :-
-	forall(rd_noblock({msg:_}), delay(1)),
+	forall(rd_noblock({msg:_}), sleep(0.001)),
 	end_wait.
 
 consumer(N) :-
 	in({msg:I}),
 	writeq(['consumer',N,'got=',I]), nl,
 	random(R),
-	Ms is floor(R*1000) // 10 + 1,
-	delay(Ms),
+	Secs is (floor(R*1000) // 10 + 1) / 1000,
+	sleep(Secs),
 	fail.
