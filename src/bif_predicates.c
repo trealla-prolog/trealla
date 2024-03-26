@@ -3495,7 +3495,7 @@ static bool bif_statistics_2(query *q)
 	return false;
 }
 
-static bool bif_sys_msleep_1(query *q)
+static bool bif_sleep_1(query *q)
 {
 	if (q->retry)
 		return true;
@@ -3509,9 +3509,9 @@ static bool bif_sys_msleep_1(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
 
 	if (q->is_task)
-		return do_yield(q, get_smallint(p1));
+		return do_yield(q, get_smallint(p1)*1000);
 
-	int ms = is_float(p1) ? (int)get_float(p1) : get_smallint(p1);
+	int ms = (is_float(p1) ? (double)get_float(p1) : (double)get_smallint(p1)) * 1000;
 
 	while ((ms > 0) && !q->halt) {
 		CHECK_INTERRUPT();
@@ -6574,13 +6574,13 @@ builtins g_other_bifs[] =
 	{"crypto_n_random_bytes", 2, bif_crypto_n_random_bytes_2, "+integer,-codes", false, false, BLAH},
 	{"cyclic_term", 1, bif_cyclic_term_1, "+term", false, false, BLAH},
 	{"call_residue_vars", 2, bif_call_residue_vars_2, ":callable,-list", false, false, BLAH},
+	{"sleep", 1, bif_sleep_1, "+number", false, false, BLAH},
 
 	{"$must_be", 4, bif_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"$can_be", 4, bif_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"$must_be", 2, bif_must_be_2, "+atom,+term", false, false, BLAH},
 	{"$can_be", 2, bif_can_be_2, "+atom,+term,", false, false, BLAH},
 
-	{"$msleep", 1, bif_sys_msleep_1, "+number", false, false, BLAH},
 	{"$det_length_rundown", 2, bif_sys_det_length_rundown_2, "?list,+integer", false, false, BLAH},
 	{"$memberchk", 3, bif_sys_memberchk_3, "?term,?list,-term", false, false, BLAH},
 	{"$register_cleanup", 1, bif_sys_register_cleanup_1, NULL, false, false, BLAH},
