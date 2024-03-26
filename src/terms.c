@@ -163,7 +163,8 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 			if (is_var(c))
 				return true;
 
-			if (!is_var(c) && (e->vgen != q->vgen)) {
+			if (e->vgen != q->vgen) {
+				save_vgen = e->vgen;
 				e->vgen = q->vgen;
 
 				if (has_vars_internal(q, c, c_ctx, depth+1))
@@ -188,7 +189,7 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 			l_ctx = q->latest_ctx;
 
 			if (!is_var(l) && (e->vgen == q->vgen))
-				return false;
+				break;
 
 			e->vgen = q->vgen;
 		}
@@ -211,7 +212,7 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
 #if 1
 	if (depth > g_max_depth) {
-		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		q->cycle_error++;
 		return false;
 	}
@@ -243,7 +244,8 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 			if (is_var(c))
 				return true;
 
-			if (!is_var(c) && (e->vgen != q->vgen)) {
+			if (e->vgen != q->vgen) {
+				save_vgen = e->vgen;
 				e->vgen = q->vgen;
 
 				if (has_vars_internal(q, c, c_ctx, depth+1))
