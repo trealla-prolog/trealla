@@ -231,7 +231,7 @@ static bool bif_task_n(query *q)
 	}
 
 	q->st.hp = save_hp;
-	cell *tmp = prepare_call(q, false, tmp2, q->st.curr_frame, 0);
+	cell *tmp = prepare_call(q, NOPREFIX_LEN, tmp2, q->st.curr_frame, 0);
 	query *task = query_create_task(q, tmp);
 	task->yielded = task->spawned = true;
 	push_task(q, task);
