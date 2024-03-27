@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
 #include <string.h>
@@ -90,11 +91,11 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 	SB(pr);
 
 #ifdef DEBUG
-	SB_sprintf(pr, "[%u:%s:%"PRIu64":f%u:fp%u:cp%u:sp%u:hp%u:tp%u] ",
+	SB_sprintf(pr, "[%u:%s:%"PRIu64":f%u:fp%u:cp%u:sp%u:hp%u:cap%u:tp%u] ",
 		q->my_chan,
 		q->st.m->name,
 		q->step,
-		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.tp
+		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.cap, q->st.tp
 		);
 #else
 	SB_sprintf(pr, "[%u:%s:%"PRIu64":cp%u] ",
@@ -540,6 +541,7 @@ int retry_choice(query *q)
 		if (ch->register_cleanup && q->noretry)
 			q->noretry = false;
 
+		trim_cache(q);
 		trim_heap(q);
 
 		if (ch->succeed_on_retry) {
@@ -550,6 +552,7 @@ int retry_choice(query *q)
 		return 1;
 	}
 
+	trim_cache(q);
 	trim_heap(q);
 	return 0;
 }
@@ -574,6 +577,7 @@ static frame *push_frame(query *q, const clause *cl)
 	f->initial_slots = f->actual_slots = cl->nbr_vars;
 	f->chgen = ++q->chgen;
 	f->hp = q->st.hp;
+	f->cap = q->st.cap;
 	f->overflow = 0;
 	f->no_tco = false;
 
@@ -611,6 +615,7 @@ static void reuse_frame(query *q, const clause *cl)
 
 	q->st.sp = f->base + cl->nbr_vars;
 	q->st.hp = f->hp;
+	q->st.cap = f->cap;
 	q->st.curr_rule->tcos++;
 	q->tot_tcos++;
 }
@@ -1997,6 +2002,7 @@ query *query_create(module *m, bool is_task)
 
 	// Allocate these later as needed...
 
+	q->cache_size = INITIAL_NBR_HEAP_CELLS;
 	q->heap_size = INITIAL_NBR_HEAP_CELLS;
 	q->tmph_size = INITIAL_NBR_CELLS;
 
