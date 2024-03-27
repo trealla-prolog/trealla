@@ -73,8 +73,10 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 	if (is_builtin(c) && c->bif_ptr && !c->bif_ptr->fn)
 		return;
 
+#ifndef DEBUG
 	if (c->val_off == g_sys_drop_barrier_s)
 		return;
+#endif
 
 	if (box == CALL)
 		box = q->retry?REDO:CALL;
@@ -821,19 +823,18 @@ bool push_catcher(query *q, enum q_retry retry)
 
 bool drop_barrier(query *q, pl_idx cp)
 {
-	if ((q->cp-1) == cp) {
-		drop_choice(q);
+	if ((q->cp-1) != cp)
+		return false;
 
-		if (q->cp) {
-			const choice *ch = GET_CURR_CHOICE();
-			frame *f = GET_CURR_FRAME();
-			f->chgen = ch->chgen;
-		}
+	drop_choice(q);
 
-		return true;
+	if (q->cp) {
+		const choice *ch = GET_CURR_CHOICE();
+		frame *f = GET_CURR_FRAME();
+		f->chgen = ch->chgen;
 	}
 
-	return false;
+	return true;
 }
 
 void cut(query *q)
