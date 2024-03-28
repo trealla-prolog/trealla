@@ -20,6 +20,7 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	Delimited continuations ##EXPERIMENTAL##
 	Rational trees ##EXPERIMENTAL##
 	CLP(Z) ##EXPERIMENTAL##
+	CLP(B) ##UNSUPPORTED##
 
 Trealla is not WAM-based. It uses tree-walking, structure-sharing and
 deep-binding. Source is byte-code compiled to a flattened AST that is
