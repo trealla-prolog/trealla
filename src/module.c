@@ -1804,7 +1804,7 @@ module *load_text(module *m, const char *src, const char *filename)
 	}
 
 	module *save_m = p->m;
-	p->m->filename = save_filename;
+	m->filename = save_filename;
 	parser_destroy(p);
 	return save_m;
 }
