@@ -78,10 +78,8 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 		while (is_iso_list(p1) && is_iso_list(p2)) {
 			p1 = p1 + 1; p1 += p1->nbr_cells;
 			p2 = p2 + 1; p2 += p2->nbr_cells;
-			cell *c1 = p1, *c2 = p2;
-			pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
-			RESTORE_VAR(c1, c1_ctx, p1, p1_ctx, q->vgen);
-			RESTORE_VAR2(c2, c2_ctx, p2, p2_ctx, q->vgen);
+			RESTORE_VAR(p1, p1_ctx, p1, p1_ctx, q->vgen);
+			RESTORE_VAR2(p2, p2_ctx, p2, p2_ctx, q->vgen);
 
 			if ((cnt > g_max_depth) || (cnt > 6000))
 				return true;
