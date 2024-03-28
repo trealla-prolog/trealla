@@ -801,9 +801,9 @@ static bool is_check_directive(const cell *c)
 	return false;
 }
 
-bool do_use_module_1(module *curr_m, cell *p)
+bool do_use_module_1(module *curr_m, cell *c)
 {
-	cell *p1 = p + 1;
+	cell *p1 = c + 1;
 	const char *name = C_STR(curr_m, p1);
 	char dstbuf[1024*4];
 	bool is_library = false;
@@ -922,13 +922,13 @@ bool do_use_module_1(module *curr_m, cell *p)
 	return true;
 }
 
-bool do_use_module_2(module *curr_m, cell *p)
+bool do_use_module_2(module *curr_m, cell *c)
 {
-	cell *p1 = p + 1;
+	cell *p1 = c + 1;
 	cell *p2 = p1 + p1->nbr_cells;
 	LIST_HANDLER(p2);
 
-	if (!do_use_module_1(curr_m, p))
+	if (!do_use_module_1(curr_m, c))
 		return false;
 
 	while (is_iso_list(p2)) {
