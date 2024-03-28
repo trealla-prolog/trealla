@@ -5949,7 +5949,7 @@ static bool bif_sys_dump_term_2(query *q)
 			printf(", '%s'", C_STR(q, tmp));
 
 		if (is_var(tmp))
-			printf(", local=%d, temp=%d", is_local(tmp), is_temporary(tmp));
+			printf(", local=%d, temp=%d, anon=%d", is_local(tmp), is_temporary(tmp), is_anon(tmp));
 
 		if (is_ref(tmp))
 			printf(", slot=%u, ctx=%u", tmp->var_nbr, tmp->var_ctx);
