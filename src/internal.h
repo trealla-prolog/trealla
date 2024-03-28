@@ -529,7 +529,7 @@ struct trail_ {
 
 struct slot_ {
 	cell c;
-	uint16_t vgen, vgen2;
+	uint32_t vgen, vgen2;
 };
 
 // Where 'prev_offset' is the number of frames back
@@ -721,7 +721,7 @@ struct query_ {
 	prolog_flags flags;
 	enum q_retry retry;
 	int is_cyclic1, is_cyclic2, in_call;
-	uint16_t vgen;
+	uint32_t vgen;
 	int8_t halt_code;
 	int8_t quoted;
 	enum { WAS_OTHER, WAS_SPACE, WAS_COMMA, WAS_SYMBOL } last_thing;
