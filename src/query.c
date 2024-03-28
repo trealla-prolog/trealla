@@ -933,7 +933,7 @@ int create_vars(query *q, unsigned cnt)
 		return f->actual_slots;
 
 	if ((f->actual_slots + cnt) > MAX_LOCAL_VARS) {
-		printf("*** Oops %s %d\n", __FILE__, __LINE__);
+		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		return -1;
 	}
 
@@ -950,7 +950,7 @@ int create_vars(query *q, unsigned cnt)
 		pl_idx cnt2 = f->actual_slots - f->initial_slots;
 
 		if (!check_slot(q, cnt2)) {
-			printf("*** Oops %s %d\n", __FILE__, __LINE__);
+			printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 			return -1;
 		}
 
@@ -959,7 +959,7 @@ int create_vars(query *q, unsigned cnt)
 	}
 
 	if (!check_slot(q, cnt)) {
-		printf("*** Oops %s %d\n", __FILE__, __LINE__);
+		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		return -1;
 	}
 
