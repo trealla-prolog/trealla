@@ -765,7 +765,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			if (is_var(tail)) {
 				print_variable(q, tail, tail_ctx, running);
 			} else {
-				visit *me = malloc(sizeof(visit));;
+				visit *me = malloc(sizeof(visit));
 				me->next = visited;
 				me->c = tail;
 				me->c_ctx = tail_ctx;
