@@ -67,7 +67,7 @@ static bool bif_bb_b_put_2(query *q)
 
 	blob *b = calloc(1, sizeof(blob));
 	b->ptr = (void*)m;
-	b->ptr2 = (void*)key;
+	b->ptr2 = (void*)strdup(key);
 	cell c, v;
 	make_ref(&c, var_nbr, q->st.curr_frame);
 	make_kvref(&v, b);
