@@ -6891,7 +6891,7 @@ static bool bif_sys_capture_output_to_chars_1(query *q)
 	make_stringn(&tmp, src, len);
 	str->is_memory = false;
 	SB_free(str->sb);
-	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);;
+	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 	unshare_cell(&tmp);
 	return ok;
 }
@@ -6907,7 +6907,7 @@ static bool bif_sys_capture_output_to_atom_1(query *q)
 	make_cstringn(&tmp, src, len);
 	str->is_memory = false;
 	SB_free(str->sb);
-	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);;
+	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 	unshare_cell(&tmp);
 	return ok;
 }
@@ -6937,7 +6937,7 @@ static bool bif_sys_capture_error_to_chars_1(query *q)
 	make_stringn(&tmp, src, len);
 	str->is_memory = false;
 	SB_free(str->sb);
-	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);;
+	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 	unshare_cell(&tmp);
 	return ok;
 }
@@ -6953,7 +6953,7 @@ static bool bif_sys_capture_error_to_atom_1(query *q)
 	make_cstringn(&tmp, src, len);
 	str->is_memory = false;
 	SB_free(str->sb);
-	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);;
+	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 	unshare_cell(&tmp);
 	return ok;
 }

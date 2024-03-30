@@ -465,7 +465,7 @@ static void unwind_trail(query *q)
 		slot *e = GET_SLOT(f, tr->var_nbr);
 		cell *c = &e->c;
 		unshare_cell(c);
-		c->tag = TAG_EMPTY;;
+		c->tag = TAG_EMPTY;
 		c->attrs = tr->attrs;
 		c->attrs_ctx = tr->attrs_ctx;
 	}
@@ -576,6 +576,8 @@ static frame *push_frame(query *q, const clause *cl)
 
 	f->initial_slots = f->actual_slots = cl->nbr_vars;
 	f->chgen = ++q->chgen;
+	f->heap_nbr = q->st.heap_nbr;
+	f->cache_nbr = q->st.cache_nbr;
 	f->hp = q->st.hp;
 	f->cap = q->st.cap;
 	f->overflow = 0;
@@ -584,6 +586,27 @@ static frame *push_frame(query *q, const clause *cl)
 	q->st.sp = f->base + cl->nbr_vars;
 	q->st.curr_frame = new_frame;
 	return f;
+}
+
+static void trim_trail(query *q)
+{
+	if (q->undo_hi_tp)
+		return;
+
+	if (!q->cp)
+		return;
+
+	const choice *ch = GET_CURR_CHOICE();
+	pl_idx tp = ch->st.tp;
+
+	while (q->st.tp > tp) {
+		const trail *tr = q->trails + q->st.tp - 1;
+
+		if (tr->var_ctx != q->st.curr_frame)
+			break;
+
+		q->st.tp--;
+	}
 }
 
 static void reuse_frame(query *q, const clause *cl)
@@ -614,43 +637,14 @@ static void reuse_frame(query *q, const clause *cl)
 	}
 
 	q->st.sp = f->base + cl->nbr_vars;
+	q->st.heap_nbr = f->heap_nbr;
+	q->st.cache_nbr = f->cache_nbr;
 	q->st.hp = f->hp;
 	q->st.cap = f->cap;
 	q->st.curr_rule->tcos++;
 	q->tot_tcos++;
-}
-
-static void prune_trail(query *q)
-{
-	while (q->st.tp) {
-		const trail *tr = q->trails + q->st.tp - 1;
-
-		if (tr->var_ctx < q->st.curr_frame)
-			break;
-
-		q->st.tp--;
-	}
-}
-
-static void trim_trail(query *q)
-{
-	if (q->undo_hi_tp)
-		return;
-
-	if (!q->cp)
-		return;
-
-	const choice *ch = GET_CURR_CHOICE();
-	pl_idx tp = ch->st.tp;
-
-	while (q->st.tp > tp) {
-		const trail *tr = q->trails + q->st.tp - 1;
-
-		if (tr->var_ctx != q->st.curr_frame)
-			break;
-
-		q->st.tp--;
-	}
+	trim_cache(q);
+	trim_heap(q);
 }
 
 inline static bool any_choices(const query *q, const frame *f)
@@ -707,7 +701,6 @@ static void commit_frame(query *q, cell *body)
 
 	if (q->pl->opt && tco) {
 		reuse_frame(q, cl);
-		prune_trail(q);
 	} else {
 		f = push_frame(q, cl);
 
@@ -912,6 +905,8 @@ inline static void proceed(query *q)
 	q->st.curr_instr += q->st.curr_instr->nbr_cells;
 	frame *f = GET_CURR_FRAME();
 
+	// Loop here to avoild chains of last calls...
+
 	while (is_end(q->st.curr_instr)) {
 		if (q->st.curr_instr->save_ret) {
 			f->chgen = q->st.curr_instr->chgen;
@@ -995,17 +990,10 @@ static void setup_key(query *q)
 	if (q->st.key->arity > 1)
 		arg2 = deref(q, NEXT_ARG(FIRST_ARG(q->st.key)), q->st.key_ctx);
 
-	if (!is_var(arg1))
-		q->st.karg1_is_ground = true;
-
-	if (arg2 && !is_var(arg2))
-		q->st.karg2_is_ground = true;
-
-	if (is_atomic(arg1))
-		q->st.karg1_is_atomic = true;
-
-	if (arg2 && is_atomic(arg2))
-		q->st.karg2_is_atomic = true;
+	q->st.karg1_is_ground = !is_var(arg1);
+	q->st.karg2_is_ground = arg2 && !is_var(arg2);
+	q->st.karg1_is_atomic = is_atomic(arg1);
+	q->st.karg2_is_atomic = arg2 && is_atomic(arg2);
 }
 
 static void next_key(query *q)

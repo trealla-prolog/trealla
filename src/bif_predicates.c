@@ -1038,7 +1038,7 @@ static bool bif_hex_bytes_2(query *q)
 			return throw_error(q, p1, p1_ctx, "type_error", "char");
 
 		const char *src = C_STR(q, h);
-		int n = peek_char_utf8(src);;
+		int n = peek_char_utf8(src);
 		unsigned val = 0;
 
 		if (isdigit(n))
@@ -1066,7 +1066,7 @@ static bool bif_hex_bytes_2(query *q)
 			return throw_error(q, p1, p1_ctx, "type_error", "char");
 
 		src = C_STR(q, h);
-		n = peek_char_utf8(src);;
+		n = peek_char_utf8(src);
 
 		if (isdigit(n))
 			val += n - '0';
@@ -3427,18 +3427,14 @@ static bool bif_statistics_0(query *q)
 		"choices %u, "
 		"trails %u, "
 		"slots %u, "
-		"heap pages %u, "
-		"cache pages %u.\n"
+		"heap/cache %u/%u.\n"
 		"Active frames %u, "
 		"choices %u, "
 		"trails %u, "
 		"slots %u, "
-		"heap pages %u, "
-		"cache pages %u.\n"
+		"heap/cache %u/%u.\n"
 		"Backtracks %"PRIu64", "
 		"TCOs:%"PRIu64", "
-		"Recovered frames: %"PRIu64", "
-		"slots: %"PRIu64", "
 		"Queue: %u\n",
 		q->tot_inferences, q->tot_matches,
 		q->hw_frames, q->hw_choices, q->hw_trails, q->hw_slots,
@@ -3446,7 +3442,6 @@ static bool bif_statistics_0(query *q)
 		q->st.fp, q->cp, q->st.tp, q->st.sp,
 		q->st.heap_nbr, q->st.cache_nbr,
 		q->tot_retries, q->tot_tcos,
-		q->tot_frecovs, q->tot_srecovs,
 		(unsigned)q->qcnt[q->st.qnbr]
 		);
 	return true;

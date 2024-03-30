@@ -1080,7 +1080,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 			}
 
 			SB_strcatn(q->sb, src, len_str);
-			q->last_thing = is_symbol ? WAS_SYMBOL : WAS_OTHER;;
+			q->last_thing = is_symbol ? WAS_SYMBOL : WAS_OTHER;
 		}
 
 		SB_sprintf(q->sb, "%s", !braces&&quote?dq?"\"":"'":"");

@@ -541,7 +541,7 @@ struct slot_ {
 struct frame_ {
 	cell *curr_instr;
 	uint64_t dbgen, chgen;
-	pl_idx prev_offset, hp, cap;
+	pl_idx prev_offset, heap_nbr, cache_nbr, hp, cap;
 	pl_idx base, overflow;
 	unsigned initial_slots, actual_slots;
 	uint32_t mid;
@@ -704,8 +704,7 @@ struct query_ {
 	char tmpbuf[256];
 	bool ignores[MAX_IGNORES];
 	uint64_t tot_goals, tot_backtracks, tot_retries, tot_matches, tot_inferences;
-	uint64_t tot_tcos, tot_frecovs, tot_srecovs;
-	uint64_t step, qid, tmo_msecs, chgen, cycle_error;
+	uint64_t tot_tcos, step, qid, tmo_msecs, chgen, cycle_error;
 	uint64_t get_started, autofail_n, yield_at;
 	uint64_t cpu_started, time_cpu_last_started, future;
 	unsigned max_depth, max_eval_depth, print_idx, tab_idx, dump_var_nbr;
