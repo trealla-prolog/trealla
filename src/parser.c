@@ -1997,8 +1997,7 @@ static bool is_meta_arg(predicate *pr, cell *c, unsigned arg)
 		if (!is_integer(m) || (i != arg))
 			continue;
 
-		//if (get_smalluint(m) == 0)
-			return true;
+		return true;
 	}
 
 	return false;
