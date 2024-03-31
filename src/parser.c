@@ -1997,7 +1997,7 @@ static bool is_meta_arg(predicate *pr, cell *c, unsigned arg)
 		if (!is_integer(m) || (i != arg))
 			continue;
 
-		if (get_smalluint(m) == 0)
+		//if (get_smalluint(m) == 0)
 			return true;
 	}
 
@@ -2105,6 +2105,9 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 
 		while (arity--) {
 			bool meta = pr ? is_meta_arg(pr, c, i) : false;
+
+			//printf("*** *** arg=%d, meta=%d, %s/%u\n", i, meta, C_STR(q, arg), arg->arity);
+
 			c->nbr_cells -= arg->nbr_cells;
 
 			if (meta)
