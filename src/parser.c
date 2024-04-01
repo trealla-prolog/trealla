@@ -2104,21 +2104,23 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 
 		cell *arg = c + 1;
 		unsigned arity = c->arity, i = 0;
-		int extra;
 
 		while (arity--) {
+			int extra = 0;
 			bool meta = pr ? is_meta_arg(pr, c, i, &extra) : false;
 
-			//printf("*** *** arg=%d, meta=%d, %s/%u\n", i, meta, C_STR(q, arg), arg->arity);
+			//printf("*** *** arg=%d, meta=%d/%d, %s/%u\n", i, meta, extra, C_STR(q, arg), arg->arity);
 
 			c->nbr_cells -= arg->nbr_cells;
+			arg->arity += extra;
 
 			if (meta)
 				arg = goal_expansion(p, arg);
 
-			if (control)
+			if (control || meta)
 				arg = term_to_body_conversion(p, arg);
 
+			arg->arity -= extra;
 			c->nbr_cells += arg->nbr_cells;
 			arg += arg->nbr_cells;
 			i++;
