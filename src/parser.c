@@ -2042,15 +2042,22 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			|| (c->val_off == g_soft_cut_s)
 			|| (c->val_off == g_neck_s)) {
 			cell *lhs = c + 1;
+			int extra = 0;
+
+			//if ((c->val_off == g_conjunction_s) || (c->val_off == g_disjunction_s))
+			//	extra = 2;
 
 			if (is_var(lhs)) {
 				c = insert_call_here(p, c, lhs);
 				lhs = c + 1;
 			} else {
+				lhs->arity += extra;
+
 				if ((c->val_off != g_neck_s))
 					lhs = goal_expansion(p, lhs);
 
 				lhs = term_to_body_conversion(p, lhs);
+				lhs->arity -= extra;
 			}
 
 			cell *rhs = lhs + lhs->nbr_cells;
@@ -2059,8 +2066,10 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			if (is_var(rhs))
 				c = insert_call_here(p, c, rhs);
 			else {
+				rhs->arity += extra;
 				rhs = goal_expansion(p, rhs);
 				rhs = term_to_body_conversion(p, rhs);
+				rhs->arity -= extra;
 			}
 
 			c->nbr_cells = 1 + lhs->nbr_cells + rhs->nbr_cells;
@@ -2087,8 +2096,8 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			}
 		}
 	} else if (!is_head && c->arity) {
-		predicate *pr = find_predicate(p->m, c);
 		bool is_goal_expansion = find_goal_expansion(p->m, c);
+		predicate *pr = find_predicate(p->m, c);
 		bool meta = !pr || pr->is_meta_predicate || is_goal_expansion || p->m->wild_goal_expansion;
 		bool control = false;
 
