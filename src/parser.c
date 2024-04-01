@@ -2097,7 +2097,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 		else if ((c->val_off == g_catch_s) && (c->arity == 3))
 			control = true;
 
-		printf("*** %s/%u, meta=%d\n", C_STR(p, c), c->arity, meta);
+		//printf("*** %s/%u, meta=%d\n", C_STR(p, c), c->arity, meta);
 
 		if (meta)
 			c = goal_expansion(p, c);
@@ -2109,7 +2109,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 		while (arity--) {
 			bool meta = pr ? is_meta_arg(pr, c, i, &extra) : false;
 
-			printf("*** *** arg=%d, meta=%d, %s/%u\n", i, meta, C_STR(q, arg), arg->arity);
+			//printf("*** *** arg=%d, meta=%d, %s/%u\n", i, meta, C_STR(q, arg), arg->arity);
 
 			c->nbr_cells -= arg->nbr_cells;
 
