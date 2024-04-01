@@ -2041,11 +2041,10 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			|| (c->val_off == g_if_then_s)
 			|| (c->val_off == g_soft_cut_s)
 			|| (c->val_off == g_neck_s)) {
+			predicate *pr = find_predicate(p->m, c);
 			cell *lhs = c + 1;
 			int extra = 0;
-
-			//if ((c->val_off == g_conjunction_s) || (c->val_off == g_disjunction_s))
-			//	extra = 2;
+			bool meta = pr ? is_meta_arg(pr, c, 0, &extra) : false;
 
 			if (is_var(lhs)) {
 				c = insert_call_here(p, c, lhs);
@@ -2061,6 +2060,8 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			}
 
 			cell *rhs = lhs + lhs->nbr_cells;
+			extra = 0;
+			meta = pr ? is_meta_arg(pr, c, 1, &extra) : false;
 			c = p->cl->cells + c_idx;
 
 			if (is_var(rhs))
