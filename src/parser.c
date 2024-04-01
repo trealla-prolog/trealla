@@ -2041,7 +2041,8 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			|| (c->val_off == g_if_then_s)
 			|| (c->val_off == g_soft_cut_s)
 			|| (c->val_off == g_neck_s)) {
-			predicate *pr = find_predicate(p->m, c);
+			module *m = find_module(p->pl, "dcgs");
+			predicate *pr = find_predicate(m?m:p->m, c);
 			cell *lhs = c + 1;
 			int extra = 0;
 			bool meta = pr ? is_meta_arg(pr, c, 0, &extra) : false;
