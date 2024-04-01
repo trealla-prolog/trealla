@@ -1986,7 +1986,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	return goal;
 }
 
-static bool is_meta_arg(predicate *pr, cell *c, unsigned arg)
+static bool is_meta_arg(predicate *pr, cell *c, unsigned arg, int *extra)
 {
 	if (!pr->meta_args)
 		return false;
@@ -1996,6 +1996,9 @@ static bool is_meta_arg(predicate *pr, cell *c, unsigned arg)
 	for (cell *m = pr->meta_args+1; m && (i < c->arity); m += m->nbr_cells, i++) {
 		if (!is_integer(m) || (i != arg))
 			continue;
+
+		if (extra)
+			*extra = get_smallint(m);
 
 		return true;
 	}
@@ -2101,9 +2104,10 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 
 		cell *arg = c + 1;
 		unsigned arity = c->arity, i = 0;
+		int extra;
 
 		while (arity--) {
-			bool meta = pr ? is_meta_arg(pr, c, i) : false;
+			bool meta = pr ? is_meta_arg(pr, c, i, &extra) : false;
 
 			//printf("*** *** arg=%d, meta=%d, %s/%u\n", i, meta, C_STR(q, arg), arg->arity);
 
