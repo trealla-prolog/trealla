@@ -67,7 +67,7 @@
         - name: Fetch tags
           run: git fetch --tags --force origin
         - name: Build
-          run: make release
+          run: make ISOCLINE=1 release
         - name: Test
           run: make test
         - name: Make Windows-friendly
