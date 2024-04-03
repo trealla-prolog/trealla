@@ -37,7 +37,6 @@ endif
 ifdef WIN
 NOFFI = 1
 NOSSL = 1
-NOTHREADS = 1
 CC = x86_64-w64-mingw32-gcc
 endif
 
