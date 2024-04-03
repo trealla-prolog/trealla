@@ -18,14 +18,12 @@ cell *deep_clone_to_heap(query *q, cell *p1, pl_idx p1_ctx);
 cell *deep_copy_to_tmp(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs);
 cell *deep_copy_to_heap(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs);
 
-cell *alloc_on_cache(query *q, unsigned nbr_cells);
 cell *alloc_on_heap(query *q, unsigned nbr_cells);
 cell *alloc_on_tmp(query *q, unsigned nbr_cells);
 cell *alloc_on_queuen(query *q, unsigned qnbr, const cell *c);
 
 unsigned rebase_term(query *q, cell *c, unsigned start_nbr);
 
-void trim_cache(query *q);
 void trim_heap(query *q);
 
 cell *init_tmp_heap(query *q);

@@ -560,7 +560,6 @@ int retry_choice(query *q)
 		if (ch->register_cleanup && q->noretry)
 			q->noretry = false;
 
-		trim_cache(q);
 		trim_heap(q);
 
 		if (ch->succeed_on_retry) {
@@ -571,7 +570,6 @@ int retry_choice(query *q)
 		return 1;
 	}
 
-	trim_cache(q);
 	trim_heap(q);
 	return 0;
 }
@@ -596,9 +594,7 @@ static frame *push_frame(query *q, const clause *cl)
 	f->initial_slots = f->actual_slots = cl->nbr_vars;
 	f->chgen = ++q->chgen;
 	f->heap_nbr = q->st.heap_nbr;
-	f->cache_nbr = q->st.cache_nbr;
 	f->hp = q->st.hp;
-	f->cap = q->st.cap;
 	f->overflow = 0;
 	f->no_tco = false;
 
@@ -657,12 +653,9 @@ static void reuse_frame(query *q, const clause *cl)
 
 	q->st.sp = f->base + cl->nbr_vars;
 	q->st.heap_nbr = f->heap_nbr;
-	q->st.cache_nbr = f->cache_nbr;
 	q->st.hp = f->hp;
-	q->st.cap = f->cap;
 	q->st.curr_rule->tcos++;
 	q->tot_tcos++;
-	trim_cache(q);
 	trim_heap(q);
 }
 
@@ -1885,18 +1878,6 @@ void query_destroy(query *q)
 
 	q->done = true;
 
-	for (page *a = q->cache_pages; a;) {
-		cell *c = a->cells;
-
-		for (pl_idx i = 0; i < a->max_idx_used; i++, c++)
-			unshare_cell(c);
-
-		page *save = a;
-		a = a->next;
-		free(save->cells);
-		free(save);
-	}
-
 	for (page *a = q->heap_pages; a;) {
 		cell *c = a->cells;
 
@@ -2027,7 +2008,6 @@ query *query_create(module *m, bool is_task)
 
 	// Allocate these later as needed...
 
-	q->cache_size = INITIAL_NBR_HEAP_CELLS;
 	q->heap_size = INITIAL_NBR_HEAP_CELLS;
 	q->tmph_size = INITIAL_NBR_CELLS;
 

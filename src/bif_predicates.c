@@ -3408,20 +3408,20 @@ static bool bif_statistics_0(query *q)
 		"choices %u, "
 		"trails %u, "
 		"slots %u, "
-		"heap/cache %u/%u.\n"
+		"heap %u.\n"
 		"Active frames %u, "
 		"choices %u, "
 		"trails %u, "
 		"slots %u, "
-		"heap/cache %u/%u.\n"
+		"heap %u.\n"
 		"Backtracks %"PRIu64", "
 		"TCOs:%"PRIu64", "
 		"Queue: %u\n",
 		q->tot_inferences, q->tot_matches,
 		q->hw_frames, q->hw_choices, q->hw_trails, q->hw_slots,
-		q->hw_heap_nbr, q->hw_cache_nbr,
+		q->hw_heap_nbr,
 		q->st.fp, q->cp, q->st.tp, q->st.sp,
-		q->st.heap_nbr, q->st.cache_nbr,
+		q->st.heap_nbr,
 		q->tot_retries, q->tot_tcos,
 		(unsigned)q->qcnt[q->st.qnbr]
 		);
