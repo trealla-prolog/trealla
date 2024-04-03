@@ -36,6 +36,10 @@
 #define MAX_ARGS 128
 
 #ifdef _WIN32
+#define mkdir(p1,p2) mkdir(p1)
+#endif
+
+#ifdef _WIN32
 #define NEWLINE_MODE "dos"
 #else
 #define NEWLINE_MODE "posix"
