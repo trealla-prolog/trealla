@@ -300,11 +300,13 @@ enum {
 
 	FLAG_BLOB_SREGEX=1<<0,				// used with TAG_BLOB
 
-	FLAG_TAIL_CALL=1<<7,
-	FLAG_FFI=1<<8,
-	FLAG_BUILTIN=1<<9,
-	FLAG_MANAGED=1<<10,					// any ref-counted object
-	FLAG_EVALUABLE=1<<11,
+	FLAG_SPARE1=1<<6,
+	FLAG_SPARE2=1<<7,
+	FLAG_TAIL_CALL=1<<8,
+	FLAG_FFI=1<<9,
+	FLAG_BUILTIN=1<<10,
+	FLAG_MANAGED=1<<11,					// any ref-counted object
+	FLAG_EVALUABLE=1<<12,
 
 	FLAG_END=1<<13
 };
@@ -338,7 +340,7 @@ enum {
 #define SET_OP(c,op) (CLR_OP(c), (c)->flags |= (((uint16_t)(op)) << 13))
 #define CLR_OP(c) ((c)->flags &= ~((uint16_t)(0xF) << 13))
 #define GET_OP(c) (((c)->flags >> 13) & 0xF)
-#define IS_OP(c) (GET_OP(c) != 0 ? true : false)
+#define IS_OP(c) (GET_OP(c) != 0)
 
 typedef struct module_ module;
 typedef struct query_ query;
@@ -446,11 +448,11 @@ struct clause_ {
 	bool is_unique:1;
 	bool is_fact:1;
 	bool is_deleted:1;
-	cell cells[];		// 'nbr_allocated_cells' bytes
+	cell cells[];						// 'nbr_allocated_cells'
 };
 
 struct rule_ {
-	lnode hdr;						// must be first
+	lnode hdr;							// must be first
 	predicate *owner;
 	rule *prev, *next;
 	const char *filename;
@@ -461,7 +463,7 @@ struct rule_ {
 };
 
 struct predicate_ {
-	lnode hdr;						// must be first
+	lnode hdr;							// must be first
 	predicate *alias;
 	rule *head, *tail;
 	module *m;
@@ -679,7 +681,7 @@ struct prolog_flags_ {
 };
 
 struct query_ {
-	lnode hdr;						// must be first
+	lnode hdr;							// must be first
 	query *prev, *next, *parent;
 	module *current_m;
 	prolog *pl;
@@ -829,13 +831,13 @@ typedef struct loaded_file_ loaded_file;
 // Goal expansion...
 
 typedef struct gex_ {
-	lnode hdr;						// must be first
+	lnode hdr;							// must be first
 	struct gex_ *prev, *next, *alias;
 	cell key;
 } gex;
 
 struct module_ {
-	lnode hdr;						// must be first
+	lnode hdr;							// must be first
 	module *used[MAX_MODULES];
 	module *orig;
 	prolog *pl;
