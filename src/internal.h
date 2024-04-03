@@ -41,12 +41,6 @@ typedef uint32_t pl_idx;
 #define pl_atomic volatile
 #endif
 
-#ifdef _WIN32
-#define NEWLINE_MODE "dos"
-#else
-#define NEWLINE_MODE "posix"
-#endif
-
 #include "cdebug.h"
 #include "list.h"
 #include "skiplist.h"

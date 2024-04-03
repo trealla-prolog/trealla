@@ -17,16 +17,12 @@
 #include <sys/wait.h>
 #endif
 
-#ifdef _WIN32
-#define mkdir(p1,p2) mkdir(p1)
-#else
+#ifndef _WIN32
 #ifndef USE_MMAP
 #define USE_MMAP 1
 #endif
 #if USE_MMAP
-#ifndef _WIN32
 #include <sys/mman.h>
-#endif
 #endif
 #endif
 
@@ -38,6 +34,12 @@
 #include "query.h"
 
 #define MAX_ARGS 128
+
+#ifdef _WIN32
+#define NEWLINE_MODE "dos"
+#else
+#define NEWLINE_MODE "posix"
+#endif
 
 #ifdef __wasi__
 #include <limits.h>
