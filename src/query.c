@@ -30,7 +30,7 @@ static void msleep(int ms)
 #define Trace if (!(q->trace /*&& !consulting*/)) q->step++; else  trace_call
 
 static const unsigned INITIAL_NBR_QUEUE_CELLS = 1000;
-static const unsigned INITIAL_NBR_HEAP_CELLS = 4000;
+static const unsigned INITIAL_NBR_HEAP_CELLS = 8000;
 static const unsigned INITIAL_NBR_FRAMES = 1000;
 static const unsigned INITIAL_NBR_SLOTS = 1000;
 static const unsigned INITIAL_NBR_TRAILS = 1000;
@@ -90,21 +90,12 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 	q->step++;
 	SB(pr);
 
-#ifdef DEBUG
 	SB_sprintf(pr, "[%u:%s:%"PRIu64":f%u:fp%u:cp%u:sp%u:hp%u:tp%u] ",
 		q->my_chan,
 		q->st.m->name,
 		q->step,
 		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.tp
 		);
-#else
-	SB_sprintf(pr, "[%u:%s:%"PRIu64":cp%u] ",
-		q->my_chan,
-		q->st.m->name,
-		q->step,
-		q->cp
-		);
-#endif
 
 	SB_sprintf(pr, "%s ",
 		box == CALL ? "CALL" :

@@ -166,6 +166,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_quoted(c) ((c)->flags & FLAG_CSTR_QUOTED)
 #define is_fresh(c) ((c)->flags & FLAG_VAR_FRESH)
 #define is_anon(c) ((c)->flags & FLAG_VAR_ANON)
+#define is_ground(c) ((c)->flags & FLAG_GROUND)
 #define is_builtin(c) ((c)->flags & FLAG_BUILTIN)
 #define is_evaluable(c) ((c)->flags & FLAG_EVALUABLE)
 #define is_tail_call(c) ((c)->flags & FLAG_TAIL_CALL)
@@ -295,7 +296,7 @@ enum {
 	FLAG_BLOB_SREGEX=1<<0,				// used with TAG_BLOB
 
 	FLAG_SPARE1=1<<6,
-	FLAG_SPARE2=1<<7,
+	FLAG_GROUND=1<<7,
 	FLAG_TAIL_CALL=1<<8,
 	FLAG_FFI=1<<9,
 	FLAG_BUILTIN=1<<10,

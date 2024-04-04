@@ -5935,6 +5935,7 @@ static bool bif_sys_dump_term_2(query *q)
 		printf("\n");
 	}
 
+	printf("Ground=%d, no_tco=%d\n", is_ground(p1)?1:0, q->no_tco?1:0);
 	return true;
 }
 

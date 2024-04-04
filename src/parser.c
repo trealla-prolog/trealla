@@ -1315,6 +1315,18 @@ static bool get_in_head(parser *p, const char *var_name)
 	return false;
 }
 
+static void check_term_ground(cell *c)
+{
+	c->flags |= FLAG_GROUND;
+
+	for (unsigned i = 0; i < c->nbr_cells; i++) {
+		if (is_var(c+i)) {
+			c->flags &= ~ FLAG_GROUND;
+			break;
+		}
+	}
+}
+
 void clause_assign_vars(parser *p, unsigned start, bool rebase)
 {
 	if (!p || p->error)
@@ -1336,6 +1348,9 @@ void clause_assign_vars(parser *p, unsigned start, bool rebase)
 
 	for (unsigned i = 0; i < cl->cidx; i++) {
 		cell *c = cl->cells + i;
+
+		if (c->arity)
+			check_term_ground(c);
 
 		if (c == body)
 			in_body = true;
