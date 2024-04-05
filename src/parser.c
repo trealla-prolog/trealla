@@ -820,10 +820,7 @@ static bool directives(parser *p, cell *d)
 		while (arg->val_off == g_conjunction_s) {
 			cell *f = arg + 1;
 
-			if (!is_compound(f))
-				break;
-
-			if (f->val_off != g_slash_s)
+			if ((!is_compound(f)) || (f->val_off != g_slash_s))
 				break;
 
 			char *name = C_STR(p->m, f+1);
@@ -834,10 +831,7 @@ static bool directives(parser *p, cell *d)
 
 		cell *f = arg;
 
-		if (!is_compound(f))
-			return true;
-
-		if (f->val_off != g_slash_s)
+		if ((!is_compound(f)) || (f->val_off != g_slash_s))
 			return true;
 
 		char *name = C_STR(p->m, f+1);
