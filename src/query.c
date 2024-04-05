@@ -77,15 +77,18 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 #ifndef DEBUG
 	if (c->val_off == g_sys_drop_barrier_s)
 		return;
+
+	if (c->val_off == g_conjunction_s)
+		return;
+
+	if (c->val_off == g_disjunction_s)
+		return;
 #endif
 
 	if (box == CALL)
 		box = q->retry?REDO:CALL;
 
 	const char *src = C_STR(q, c);
-
-	if (!strcmp(src, ","))
-		return;
 
 	q->step++;
 	SB(pr);
