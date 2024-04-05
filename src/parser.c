@@ -832,6 +832,17 @@ static bool directives(parser *p, cell *d)
 			arg += 4;
 		}
 
+		cell *f = arg;
+
+		if (!is_compound(f))
+			return true;
+
+		if (f->val_off != g_slash_s)
+			return true;
+
+		char *name = C_STR(p->m, f+1);
+		unsigned arity = get_smallint(f+2);
+		module_duplicate(p->m->pl, p->m, name, arity);
 		return true;
 	}
 

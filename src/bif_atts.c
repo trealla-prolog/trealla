@@ -11,14 +11,17 @@
 
 #include "bif_atts.h"
 
-static const char *do_attribute(query *q, cell *c, unsigned arity)
+static const char *do_attribute(query *q, cell *c, unsigned arity, bool *found)
 {
 	for (module *m = (module*)list_front(&q->pl->modules);
 		m; m = (module*)list_next(m)) {
-		if ((arity == m->arity) && !CMP_STRING_TO_CSTR(q, c, m->name))
+		if ((arity == m->arity) && !CMP_STRING_TO_CSTR(q, c, m->name)) {
+			*found = true;
 			return m->orig->name;
+		}
 	}
 
+	*found = false;
 	return q->st.m->name;
 }
 
@@ -27,7 +30,9 @@ bool bif_attribute_3(query *q)
 	GET_FIRST_ARG(p1,atom_or_var);
 	GET_NEXT_ARG(p2,atom);
 	GET_NEXT_ARG(p3,integer);
-	const char *m_name = do_attribute(q, p2, get_smalluint(p3));
+	bool found;
+	const char *m_name = do_attribute(q, p2, get_smalluint(p3), &found);
+	if (!found) return false;
 	cell tmp;
 	make_atom(&tmp, new_atom(q->pl, m_name));
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
@@ -61,7 +66,9 @@ bool bif_put_atts_2(query *q)
 	}
 
 	unsigned a_arity = attr->arity;
-	const char *m_name = do_attribute(q, attr, a_arity);
+	bool found;
+	const char *m_name = do_attribute(q, attr, a_arity, &found);
+	if (!found) return false;
 	init_tmp_heap(q);
 
 	if (!is_minus) {
@@ -164,7 +171,9 @@ bool bif_get_atts_2(query *q)
 		attr++;
 
 	unsigned a_arity = attr->arity;
-	const char *m_name = do_attribute(q, attr, a_arity);
+	bool found;
+	const char *m_name = do_attribute(q, attr, a_arity, &found);
+	if (!found) return false;
 	cell *l = e->c.attrs;
 	pl_idx l_ctx = e->c.attrs_ctx;
 	LIST_HANDLER(l);
