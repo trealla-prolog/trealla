@@ -944,6 +944,7 @@ static bool bif_sys_retract_on_backtrack_1(query *q)
 	blob *b = calloc(1, sizeof(blob));
 	b->ptr = (void*)q->st.m;
 	b->ptr2 = (void*)strdup(C_STR(q, p1));
+	check_heap_error(b->ptr2);
 	cell c, v;
 	make_ref(&c, var_nbr, q->st.curr_frame);
 	make_dbref(&v, b);
