@@ -220,7 +220,7 @@ user:term_expansion(Term0, Term) :-
 
 
 %% seq(Seq)//
-% 
+%
 % Describes a sequence
 seq(Xs, Cs0,Cs) :-
    var(Xs),
