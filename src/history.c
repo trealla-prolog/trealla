@@ -119,6 +119,9 @@ static char *functor_name_generator(const char *text, int state)
 	static int s_evaluable_list_index, s_evaluable_len;
 	const char *name;
 
+	if (!text || !*text)
+		return NULL;
+
 	if (!state) {
 		s_iso_list_index = 0; s_iso_len = strlen(text);
 		s_other_list_index = 0; s_other_len = strlen(text);
