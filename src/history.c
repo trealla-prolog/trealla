@@ -117,6 +117,11 @@ static char *functor_name_generator(const char *text, int state)
 	static int s_contrib_list_index, s_contrib_len;
 	static int s_files_list_index, s_files_len;
 	static int s_evaluable_list_index, s_evaluable_len;
+	static int s_sort_list_index, s_sort_len;
+	static int s_streams_list_index, s_streams_len;
+	static int s_sregex_list_index, s_sregex_len;
+	static int s_tasks_list_index, s_tasks_len;
+	static int s_threads_list_index, s_threads_len;
 	const char *name;
 
 	if (!text || !*text)
@@ -130,6 +135,11 @@ static char *functor_name_generator(const char *text, int state)
 		s_contrib_list_index = 0; s_contrib_len = strlen(text);
 		s_files_list_index = 0; s_files_len = strlen(text);
 		s_evaluable_list_index = 0; s_evaluable_len = strlen(text);
+		s_sort_list_index = 0; s_sort_len = strlen(text);
+		s_streams_list_index = 0; s_streams_len = strlen(text);
+		s_sregex_list_index = 0; s_sregex_len = strlen(text);
+		s_tasks_list_index = 0; s_tasks_len = strlen(text);
+		s_threads_list_index = 0; s_threads_len = strlen(text);
 	}
 
 	while ((name = g_atts_bifs[s_other_list_index].name)) {
@@ -223,38 +233,38 @@ static char *functor_name_generator(const char *text, int state)
 			return strdup(name);
 	}
 
-	while ((name = g_sort_bifs[s_other_list_index].name)) {
-		s_other_list_index++;
+	while ((name = g_sort_bifs[s_sort_list_index].name)) {
+		s_sort_list_index++;
 
 		if (strncmp(name, text, s_other_len) == 0)
 			return strdup(name);
 	}
 
-	while ((name = g_sregex_bifs[s_other_list_index].name)) {
-		s_other_list_index++;
+	while ((name = g_sregex_bifs[s_sregex_list_index].name)) {
+		s_sregex_list_index++;
 
-		if (strncmp(name, text, s_other_len) == 0)
+		if (strncmp(name, text, s_sregex_len) == 0)
 			return strdup(name);
 	}
 
-	while ((name = g_streams_bifs[s_files_list_index].name)) {
-		s_files_list_index++;
+	while ((name = g_streams_bifs[s_streams_list_index].name)) {
+		s_streams_list_index++;
 
-		if (strncmp(name, text, s_files_len) == 0)
+		if (strncmp(name, text, s_streams_len) == 0)
 			return strdup(name);
 	}
 
-	while ((name = g_tasks_bifs[s_other_list_index].name)) {
-		s_other_list_index++;
+	while ((name = g_tasks_bifs[s_tasks_list_index].name)) {
+		s_tasks_list_index++;
 
-		if (strncmp(name, text, s_other_len) == 0)
+		if (strncmp(name, text, s_tasks_len) == 0)
 			return strdup(name);
 	}
 
-	while ((name = g_threads_bifs[s_other_list_index].name)) {
-		s_other_list_index++;
+	while ((name = g_threads_bifs[s_threads_list_index].name)) {
+		s_threads_list_index++;
 
-		if (strncmp(name, text, s_other_len) == 0)
+		if (strncmp(name, text, s_threads_len) == 0)
 			return strdup(name);
 	}
 
