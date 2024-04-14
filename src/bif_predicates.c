@@ -6342,7 +6342,7 @@ static void load_flags(query *q)
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "integer_rounding_function", "toward_zero");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, [max_depth(%u),quoted(%s),double_quotes(%s)]).\n", "answer_write_options", (unsigned)q->pl->def_max_depth, q->pl->def_quoted?"true":"false", q->pl->def_double_quotes?"true":"false");
 
-	parser *p = parser_create(m);
+	parser *p = parser_create(m->pl->user_m);
 	p->srcptr = SB_cstr(pr);
 	p->consulting = true;
 	tokenize(p, false, false);
@@ -6423,7 +6423,7 @@ static void load_ops(query *q)
 		free(dst2);
 	}
 
-	parser *p = parser_create(q->st.m);
+	parser *p = parser_create(q->pl->user_m);
 	p->srcptr = SB_cstr(pr);
 	p->consulting = true;
 	tokenize(p, false, false);
