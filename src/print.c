@@ -450,7 +450,7 @@ static const char *get_slot_name(query *q, pl_idx slot_nbr)
 	return varformat(q->tmpbuf, i);
 }
 
-void print_variable(query *q, const cell *c, pl_idx c_ctx, bool running)
+static void print_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 {
 	const frame *f = GET_FRAME(running ? c_ctx : 0);
 	pl_idx slot_nbr = running ?
