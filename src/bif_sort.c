@@ -8,19 +8,10 @@
 
 #include "sort_r.h"
 
-#include "base64.h"
 #include "heap.h"
-#include "history.h"
 #include "module.h"
-#include "parser.h"
 #include "prolog.h"
 #include "query.h"
-
-#include "bif_atts.h"
-
-#if USE_OPENSSL
-#include "openssl/sha.h"
-#endif
 
 typedef struct { query *q; cell *c; pl_idx c_ctx; int8_t arg; bool ascending:1; } basepair;
 
