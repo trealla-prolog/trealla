@@ -110,13 +110,20 @@ LOOP:
 
 static char *functor_name_generator(const char *text, int state)
 {
+	static int s_atts_list_index, s_atts_len;
+	static int s_bboard_list_index, s_bboard_len;
+	static int s_contrib_list_index, s_contrib_len;
+	static int s_control_list_index, s_control_len;
+	static int s_csv_list_index, s_csv_len;
+	static int s_database_list_index, s_database_len;
+	static int s_evaluable_list_index, s_evaluable_len;
+	static int s_ffi_list_index, s_ffi_len;
+	static int s_files_list_index, s_files_len;
+	static int s_format_list_index, s_format_len;
 	static int s_iso_list_index, s_iso_len;
 	static int s_other_list_index, s_other_len;
-	static int s_ffi_list_index, s_ffi_len;
 	static int s_posix_list_index, s_posix_len;
-	static int s_contrib_list_index, s_contrib_len;
-	static int s_files_list_index, s_files_len;
-	static int s_evaluable_list_index, s_evaluable_len;
+	static int s_maps_list_index, s_maps_len;
 	static int s_sort_list_index, s_sort_len;
 	static int s_streams_list_index, s_streams_len;
 	static int s_sregex_list_index, s_sregex_len;
@@ -128,13 +135,20 @@ static char *functor_name_generator(const char *text, int state)
 		return NULL;
 
 	if (!state) {
+		s_atts_list_index = 0; s_atts_len = strlen(text);
+		s_bboard_list_index = 0; s_bboard_len = strlen(text);
+		s_contrib_list_index = 0; s_contrib_len = strlen(text);
+		s_control_list_index = 0; s_control_len = strlen(text);
+		s_csv_list_index = 0; s_csv_len = strlen(text);
+		s_database_list_index = 0; s_database_len = strlen(text);
+		s_evaluable_list_index = 0; s_evaluable_len = strlen(text);
+		s_ffi_list_index = 0; s_ffi_len = strlen(text);
+		s_files_list_index = 0; s_files_len = strlen(text);
+		s_format_list_index = 0; s_format_len = strlen(text);
 		s_iso_list_index = 0; s_iso_len = strlen(text);
 		s_other_list_index = 0; s_other_len = strlen(text);
-		s_ffi_list_index = 0; s_ffi_len = strlen(text);
 		s_posix_list_index = 0; s_posix_len = strlen(text);
-		s_contrib_list_index = 0; s_contrib_len = strlen(text);
-		s_files_list_index = 0; s_files_len = strlen(text);
-		s_evaluable_list_index = 0; s_evaluable_len = strlen(text);
+		s_maps_list_index = 0; s_maps_len = strlen(text);
 		s_sort_list_index = 0; s_sort_len = strlen(text);
 		s_streams_list_index = 0; s_streams_len = strlen(text);
 		s_sregex_list_index = 0; s_sregex_len = strlen(text);
@@ -142,17 +156,17 @@ static char *functor_name_generator(const char *text, int state)
 		s_threads_list_index = 0; s_threads_len = strlen(text);
 	}
 
-	while ((name = g_atts_bifs[s_other_list_index].name)) {
-		s_other_list_index++;
+	while ((name = g_atts_bifs[s_atts_list_index].name)) {
+		s_atts_list_index++;
 
-		if (strncmp(name, text, s_other_len) == 0)
+		if (strncmp(name, text, s_atts_len) == 0)
 			return strdup(name);
 	}
 
-	while ((name = g_bboard_bifs[s_other_list_index].name)) {
-		s_other_list_index++;
+	while ((name = g_bboard_bifs[s_bboard_list_index].name)) {
+		s_bboard_list_index++;
 
-		if (strncmp(name, text, s_other_len) == 0)
+		if (strncmp(name, text, s_atts_len) == 0)
 			return strdup(name);
 	}
 
@@ -163,17 +177,17 @@ static char *functor_name_generator(const char *text, int state)
 			return strdup(name);
 	}
 
-	while ((name = g_csv_bifs[s_other_list_index].name)) {
-		s_other_list_index++;
+	while ((name = g_csv_bifs[s_csv_list_index].name)) {
+		s_csv_list_index++;
 
-		if (strncmp(name, text, s_other_len) == 0)
+		if (strncmp(name, text, s_csv_len) == 0)
 			return strdup(name);
 	}
 
-	while ((name = g_database_bifs[s_other_list_index].name)) {
-		s_other_list_index++;
+	while ((name = g_database_bifs[s_database_list_index].name)) {
+		s_database_list_index++;
 
-		if (strncmp(name, text, s_other_len) == 0)
+		if (strncmp(name, text, s_database_len) == 0)
 			return strdup(name);
 	}
 
@@ -191,10 +205,10 @@ static char *functor_name_generator(const char *text, int state)
 			return strdup(name);
 	}
 
-	while ((name = g_format_bifs[s_ffi_list_index].name)) {
-		s_ffi_list_index++;
+	while ((name = g_format_bifs[s_format_list_index].name)) {
+		s_format_list_index++;
 
-		if (strncmp(name, text, s_ffi_len) == 0)
+		if (strncmp(name, text, s_format_len) == 0)
 			return strdup(name);
 	}
 
@@ -205,10 +219,10 @@ static char *functor_name_generator(const char *text, int state)
 			return strdup(name);
 	}
 
-	while ((name = g_maps_bifs[s_iso_list_index].name)) {
-		s_iso_list_index++;
+	while ((name = g_maps_bifs[s_maps_list_index].name)) {
+		s_maps_list_index++;
 
-		if (strncmp(name, text, s_iso_len) == 0)
+		if (strncmp(name, text, s_maps_len) == 0)
 			return strdup(name);
 	}
 
@@ -219,10 +233,10 @@ static char *functor_name_generator(const char *text, int state)
 			return strdup(name);
 	}
 
-	while ((name = g_control_bifs[s_other_list_index].name)) {
-		s_other_list_index++;
+	while ((name = g_control_bifs[s_control_list_index].name)) {
+		s_control_list_index++;
 
-		if (strncmp(name, text, s_other_len) == 0)
+		if (strncmp(name, text, s_control_len) == 0)
 			return strdup(name);
 	}
 
