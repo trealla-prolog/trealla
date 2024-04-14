@@ -380,7 +380,7 @@ void dump_vars(query *q, bool partial)
 	q->print_idx = 0;
 
 	for (unsigned i = 0; i < p->nbr_vars; i++) {
-		if (!strcmp(p->vartab.var_name[i], "_"))
+		if (p->vartab.var_name[i][0] == '_')
 			continue;
 
 		slot *e = GET_SLOT(f, i);
@@ -397,7 +397,7 @@ void dump_vars(query *q, bool partial)
 			continue;
 
 		if (is_ref(c)) {
-			if (!strcmp(p->vartab.var_name[c->var_nbr], "_"))
+			if (p->vartab.var_name[c->var_nbr][0] == '_')
 				continue;
 		}
 
