@@ -814,12 +814,14 @@ bool do_use_module_1(module *curr_m, cell *c)
 		if (!is_interned(p1)) return false;
 		snprintf(dstbuf, sizeof(dstbuf), "%s", g_tpl_lib);
 		name = C_STR(curr_m, p1);
+		unsigned cnt = 1;
 
-		while ((p1->arity == 2) && !strcmp(name, "/"))
+		while ((p1->arity == 2) && !strcmp(name, "/")) {
+			cnt++;
 			p1++;
+		}
 
-		while (is_interned(p1) && !p1->arity
-			&& (p1->val_off != g_nil_s)) {
+		while (cnt-- && is_interned(p1) && !p1->arity && (p1->val_off != g_nil_s)) {
 			name = C_STR(curr_m, p1);
 			strcat(dstbuf, "/");
 			strcat(dstbuf, name);
