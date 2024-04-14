@@ -961,7 +961,9 @@ int create_vars(query *q, unsigned cnt)
 		q->st.sp += cnt2;
 	}
 
-	if (!check_slot(q, cnt)) {
+	// Why the 1024?
+
+	if (!check_slot(q, cnt+1024)) {
 		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		return -1;
 	}
