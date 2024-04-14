@@ -81,7 +81,7 @@ static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysor
 		p1_ctx = q->latest_ctx;
 	}
 
-	sort_r_simple(base, cnt, sizeof(basepair), (void*)nodecmp, NULL);
+	sort_r(base, cnt, sizeof(basepair), (void*)nodecmp, NULL);
 
 	for (size_t i = 0; i < cnt; i++) {
 		if (i > 0) {
@@ -269,7 +269,7 @@ static cell *nodesort4(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool ascen
 		p1_ctx = q->latest_ctx;
 	}
 
-	sort_r_simple(base, cnt, sizeof(basepair), (void*)nodecmp, NULL);
+	sort_r(base, cnt, sizeof(basepair), (void*)nodecmp, NULL);
 
 	for (size_t i = 0; i < cnt; i++) {
 		if (i > 0) {
