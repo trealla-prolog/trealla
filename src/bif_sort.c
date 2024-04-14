@@ -9,8 +9,6 @@
 #include "sort_r.h"
 
 #include "heap.h"
-#include "module.h"
-#include "prolog.h"
 #include "query.h"
 
 typedef struct { query *q; cell *c; pl_idx c_ctx; int8_t arg; bool ascending:1; } basepair;
