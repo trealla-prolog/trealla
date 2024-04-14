@@ -5617,6 +5617,7 @@ static bool bif_use_module_1(query *q)
 	if (!is_atom(p1) && !is_compound(p1)) return false;
 	check_heap_error(init_tmp_heap(q));
 	cell *tmp = deep_clone_to_tmp(q, q->st.curr_instr, q->st.curr_frame);
+	check_heap_error(tmp);
 	return do_use_module_1(q->st.m, tmp);
 }
 
