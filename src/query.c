@@ -226,6 +226,8 @@ static bool check_frame(query *q)
 
 bool check_slot(query *q, unsigned cnt)
 {
+	cnt += 1024;	// Why??
+
 	pl_idx nbr = q->st.sp + cnt;
 
 	if (q->st.sp > q->hw_slots)
@@ -963,7 +965,7 @@ int create_vars(query *q, unsigned cnt)
 
 	// Why the 1024?
 
-	if (!check_slot(q, cnt+1024)) {
+	if (!check_slot(q, cnt)) {
 		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		return -1;
 	}
