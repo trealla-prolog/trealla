@@ -3399,7 +3399,7 @@ static bool do_profile(query *q)
 	return true;
 }
 
-static bool bif_statistics_0(query *q)
+bool bif_statistics_0(query *q)
 {
 	fprintf(stdout,
 		"Goals %"PRIu64", "

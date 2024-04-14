@@ -76,6 +76,7 @@ int check_interrupt(query *q)
 				"\te         exit         - exit top-level\n"
 				"\tt         trace        - toggle tracing (creeping)\n"
 				"\tg         goals        - show goals\n"
+				"\ts         statistics   - show stats\n"
 				"\th         help         - display this help\n"
 				"");
 			goto LOOP;
@@ -89,6 +90,11 @@ int check_interrupt(query *q)
 
 		if (ch == 'g') {
 			show_goals(q, 7);
+			goto LOOP;
+		}
+
+		if (ch == 's') {
+			bif_statistics_0(q);
 			goto LOOP;
 		}
 
@@ -175,6 +181,7 @@ bool check_redo(query *q)
 				"\t;         next         - display next solution\n"
 				"\t#         digit        - display # solutions\n"
 				"\ta         all          - display all solutions\n"
+				"\ts         statistics   - display stats\n"
 				"\th         help         - display this help\n"
 			"");
 			fflush(stdout);
@@ -228,6 +235,11 @@ bool check_redo(query *q)
 
 		if (ch == '!') {
 			abort();
+		}
+
+		if (ch == 's') {
+			bif_statistics_0(q);
+			return false;
 		}
 
 		if (ch == 'e') {
