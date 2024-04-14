@@ -1,10 +1,6 @@
 #include <ctype.h>
-#include <errno.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
-#include <sys/time.h>
-#include <sys/stat.h>
 
 #include "sort_r.h"
 
