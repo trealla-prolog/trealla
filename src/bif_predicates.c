@@ -6561,8 +6561,6 @@ builtins g_other_bifs[] =
 	{"$can_be", 4, bif_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"$can_be", 2, bif_can_be_2, "+atom,+term,", false, false, BLAH},
 
-	{"must_be", 4, bif_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
-	{"can_be", 4, bif_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"must_be", 2, bif_must_be_2, "+atom,+term", false, false, BLAH},
 	{"can_be", 2, bif_can_be_2, "+atom,+term,", false, false, BLAH},
 
