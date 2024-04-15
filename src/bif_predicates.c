@@ -6557,9 +6557,14 @@ builtins g_other_bifs[] =
 	{"sleep", 1, bif_sleep_1, "+number", false, false, BLAH},
 
 	{"$must_be", 4, bif_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
-	{"$can_be", 4, bif_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"$must_be", 2, bif_must_be_2, "+atom,+term", false, false, BLAH},
+	{"$can_be", 4, bif_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"$can_be", 2, bif_can_be_2, "+atom,+term,", false, false, BLAH},
+
+	{"must_be", 4, bif_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
+	{"can_be", 4, bif_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
+	{"must_be", 2, bif_must_be_2, "+atom,+term", false, false, BLAH},
+	{"can_be", 2, bif_can_be_2, "+atom,+term,", false, false, BLAH},
 
 	{"$det_length_rundown", 2, bif_sys_det_length_rundown_2, "?list,+integer", false, false, BLAH},
 	{"$memberchk", 3, bif_sys_memberchk_3, "?term,?list,-term", false, false, BLAH},
