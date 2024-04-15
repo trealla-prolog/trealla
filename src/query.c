@@ -930,7 +930,7 @@ inline static void proceed(query *q)
 
 #define MAX_LOCAL_VARS (1L<<30)
 
-int create_vars(query *q, unsigned cnt)
+int create_vars(query *q, unsigned cnt, bool zeroit)
 {
 	frame *f = GET_CURR_FRAME();
 
@@ -963,16 +963,16 @@ int create_vars(query *q, unsigned cnt)
 		q->st.sp += cnt2;
 	}
 
-	// Why the 1024?
-
 	if (!check_slot(q, cnt)) {
-		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		return -1;
 	}
 
-	for (unsigned i = 0; i < cnt; i++) {
-		slot *e = GET_SLOT(f, f->actual_slots + i);
-		memset(e, 0, sizeof(slot));
+	if (zeroit) {
+		for (unsigned i = 0; i < cnt; i++) {
+			slot *e = GET_SLOT(f, f->actual_slots + i);
+			memset(e, 0, sizeof(slot));
+		}
 	}
 
 	q->st.sp += cnt;

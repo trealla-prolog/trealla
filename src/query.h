@@ -59,7 +59,7 @@ size_t scan_is_chars_list(query *q, cell *l, pl_idx l_ctx, bool allow_codes);
 char *chars_list_to_string(query *q, cell *p_chars, pl_idx p_chars_ctx, size_t len);
 cell *string_to_chars_list(query *q, cell *p, pl_idx p_ctx);
 
-int create_vars(query *q, unsigned cnt);
+int create_vars(query *q, unsigned cnt, bool zeroit);
 cell *skip_max_list(query *q, cell *head, pl_idx *head_ctx, pl_int max, pl_int *skip, cell *tmp);
 bool is_cyclic_term(query *q, cell *p1, pl_idx p1_ctx);
 bool is_acyclic_term(query *q, cell *p1, pl_idx p1_ctx);

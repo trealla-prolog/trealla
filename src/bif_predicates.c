@@ -108,7 +108,7 @@ static bool bif_iso_findall_3(query *q)
 			return throw_error(q, p3, p3_ctx, "type_error", "list");
 
 		if (is_compound(p1) && (!is_iso_list(p1))) {	// Why?
-			create_vars(q, 16);
+			create_vars(q, 16, true);
 		}
 
 		grab_queuen(q);
@@ -2047,7 +2047,7 @@ static bool bif_iso_functor_3(query *q)
 		} else {
 			int var_nbr = 0;
 
-			if ((var_nbr = create_vars(q, arity)) < 0)
+			if ((var_nbr = create_vars(q, arity, true)) < 0)
 				return throw_error(q, p3, p3_ctx, "resource_error", "stack");
 
 			cell *tmp = alloc_on_heap(q, 1+arity);
@@ -2205,7 +2205,7 @@ static bool bif_iso_current_predicate_1(query *q)
 		unsigned var_nbr = f->actual_slots;
 		make_ref(&tmp1, var_nbr++, q->st.curr_frame);
 		make_ref(&tmp2, var_nbr++, q->st.curr_frame);
-		create_vars(q, 2);
+		create_vars(q, 2, true);
 		bool ok = search_functor(q, p1, p1_ctx, p2, p2_ctx) ? true : false;
 		cell *tmp = alloc_on_heap(q, 3);
 		make_struct(tmp, g_slash_s, NULL, 2, 2);
@@ -5821,13 +5821,20 @@ static bool bif_sys_det_length_rundown_2(query *q)
 	GET_NEXT_ARG(p2,integer);
 	int var_nbr;
 	unsigned n = get_smalluint(p2);
+	//time_t now = time(0);
 
-	if ((var_nbr = create_vars(q, n)) < 0)
+	if ((var_nbr = create_vars(q, n, true)) < 0)
 		return throw_error(q, p2, p2_ctx, "resource_error", "stack");
+
+	//printf("*** here1 %ld\n", time(0)-now);
+	//now = time(0);
 
 	cell *l;
 	check_heap_error(l = alloc_on_heap(q, n*2+1));
 	cell *save_l = l;
+
+	//printf("*** here2 %ld\n", time(0)-now);
+	//now = time(0);
 
 	while (n) {
 		l->tag = TAG_INTERNED;
@@ -5835,11 +5842,11 @@ static bool bif_sys_det_length_rundown_2(query *q)
 		l->nbr_cells = n*2+1;
 		l->arity = 2;
 		l++;
-		make_ref(l, var_nbr++, q->st.curr_frame);
-		l->flags = FLAG_VAR_ANON;
-		l++;
+		make_ref(l++, var_nbr++, q->st.curr_frame);
 		n--;
 	}
+
+	//printf("*** here3 %ld\n", time(0)-now);
 
 	make_atom(l, g_nil_s);
 	GET_FIRST_ARG(xp1,list_or_var);

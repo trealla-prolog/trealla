@@ -938,7 +938,7 @@ static bool bif_sys_retract_on_backtrack_1(query *q)
 	GET_FIRST_ARG(p1,atom);
 	int var_nbr;
 
-	if ((var_nbr = create_vars(q, 1)) < 0)
+	if ((var_nbr = create_vars(q, 1, true)) < 0)
 		return false;
 
 	blob *b = calloc(1, sizeof(blob));
