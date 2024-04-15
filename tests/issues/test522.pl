@@ -1,5 +1,5 @@
-:- initialization(main).
 :- use_module(library(clpz)).
+:- initialization(main).
 
 main :-
 	4 #= 4 #<==> #B,
