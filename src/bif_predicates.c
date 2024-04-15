@@ -5839,11 +5839,11 @@ static bool bif_sys_det_length_rundown_2(query *q)
 	while (n) {
 		l->tag = TAG_INTERNED;
 		l->val_off = g_dot_s;
-		l->nbr_cells = n*2+1;
+		l->nbr_cells = n-- * 2 + 1;
 		l->arity = 2;
+		l->flags = 0;
 		l++;
 		make_ref(l++, var_nbr++, q->st.curr_frame);
-		n--;
 	}
 
 	//printf("*** here3 %ld\n", time(0)-now);
