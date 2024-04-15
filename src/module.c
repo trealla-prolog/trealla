@@ -96,15 +96,6 @@ static const op_table g_ops[] =
 	{0,0,0}
 };
 
-builtins *get_builtin_term(module *m, cell *c, bool *found, bool *evaluable)
-{
-	prolog *pl = m->pl;
-	const char *name = C_STR(m, c);
-	size_t len = C_STRLEN(m, c);
-	unsigned arity = c->arity;
-	return get_builtin(pl, name, len, arity, found, evaluable);
-}
-
 builtins *get_module_help(module *m, const char *name, unsigned arity, bool *found, bool *evaluable)
 {
 	sliter *iter = sl_find_key(m->pl->help, name);
