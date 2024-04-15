@@ -5829,8 +5829,8 @@ static bool bif_sys_det_length_rundown_2(query *q)
 	//printf("*** here1 %ld\n", time(0)-now);
 	//now = time(0);
 
-	cell *l;
-	check_heap_error(l = alloc_on_heap(q, n*2+1));
+	cell *l = alloc_on_heap(q, n*2+1);
+	check_heap_error(l);
 	cell *save_l = l;
 
 	//printf("*** here2 %ld\n", time(0)-now);
