@@ -5821,20 +5821,13 @@ static bool bif_sys_det_length_rundown_2(query *q)
 	GET_NEXT_ARG(p2,integer);
 	int var_nbr;
 	unsigned n = get_smalluint(p2);
-	//time_t now = time(0);
 
 	if ((var_nbr = create_vars(q, n, true)) < 0)
 		return throw_error(q, p2, p2_ctx, "resource_error", "stack");
 
-	//printf("*** here1 %ld\n", time(0)-now);
-	//now = time(0);
-
 	cell *l = alloc_on_heap(q, n*2+1);
 	check_heap_error(l);
 	cell *save_l = l;
-
-	//printf("*** here2 %ld\n", time(0)-now);
-	//now = time(0);
 
 	while (n) {
 		l->tag = TAG_INTERNED;
@@ -5845,8 +5838,6 @@ static bool bif_sys_det_length_rundown_2(query *q)
 		l++;
 		make_ref(l++, var_nbr++, q->st.curr_frame);
 	}
-
-	//printf("*** here3 %ld\n", time(0)-now);
 
 	make_atom(l, g_nil_s);
 	GET_FIRST_ARG(xp1,list_or_var);
