@@ -324,6 +324,7 @@ bool bif_parse_csv_file_2(query *q)
 	csv params = {.sep=sep, .quote=quote, .arity=arity, .trim=trim, .numbers=numbers, .use_strings=use_strings, .functor=functor};
 
 	while ((len = getline(&q->p->save_line, &q->p->n_line, q->p->fp)) != -1) {
+		CHECK_INTERRUPT();
 		char *line = q->p->save_line;
 		line_nbr++;
 
