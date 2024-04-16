@@ -1340,6 +1340,7 @@ void clause_assign_vars(parser *p, unsigned start, bool rebase)
 	clause *cl = p->cl;
 	cl->is_first_cut = false;
 	cl->is_cut_only = false;
+	cl->local_vars = false;
 	p->start_term = true;
 
 	if (!p->reuse) {
@@ -1441,10 +1442,16 @@ void clause_assign_vars(parser *p, unsigned start, bool rebase)
 		// A temporary variable is one that occurs only in the
 		// head of a clause. A local is one only in the body.
 
-		if (!get_in_body(p, C_STR(p, c)))
-			c->flags |= FLAG_VAR_TEMPORARY;
-		else if (!get_in_head(p, C_STR(p, c)))
+		bool in_head = get_in_head(p, C_STR(p, c));
+		bool in_body = get_in_body(p, C_STR(p, c));
+
+		if (!in_head) {
+			cl->local_vars = true;
 			c->flags |= FLAG_VAR_LOCAL;
+		}
+
+		if (!in_body)
+			c->flags |= FLAG_VAR_TEMPORARY;
 	}
 
 	for (unsigned i = 0; i < cl->nbr_vars; i++) {

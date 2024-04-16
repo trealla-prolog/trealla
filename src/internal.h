@@ -6,8 +6,8 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <inttypes.h>
-#include <unistd.h>
 
 #ifndef USE_OPENSSL
 #define USE_OPENSSL 0
@@ -438,6 +438,7 @@ struct clause_ {
 	uint64_t dbgen_created, dbgen_retracted;
 	pl_idx cidx, nbr_allocated_cells;
 	unsigned nbr_vars;
+	bool local_vars:1;
 	bool is_first_cut:1;
 	bool is_cut_only:1;
 	bool is_unique:1;
