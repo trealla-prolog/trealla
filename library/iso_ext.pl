@@ -42,13 +42,13 @@ forall(Cond, Action) :-
 
 
 succ(X,S) :- nonvar(X), Y=1, nonvar(Y),
-	'$must_be'(X, integer, succ/2, _), '$must_be'(Y, integer, succ/2, _), !,
+	must_be(X, integer, succ/2, _), must_be(Y, integer, succ/2, _), !,
 	(	X >= 0 -> true
 	; 	throw(error(domain_error(not_less_than_zero, X), succ/2))
 	),
 	S is X + Y.
 succ(X,S) :- var(X), Y=1, nonvar(Y), nonvar(S),
-	'$must_be'(S, integer, succ/2, _), '$must_be'(Y, integer, succ/2, _), !,
+	must_be(S, integer, succ/2, _), must_be(Y, integer, succ/2, _), !,
 	(S >= 0 -> true ; throw(error(domain_error(not_less_than_zero, S), succ/2))),
 	!,
 	S > 0,

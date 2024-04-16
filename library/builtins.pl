@@ -11,7 +11,7 @@ dcg_translate(TermIn, Term) :-
 
 predicate_property(P, A) :-
 	nonvar(P), atom(A), !,
-	'$must_be'(P, callable, predicate_property/2, _),
+	must_be(P, callable, predicate_property/2, _),
 	'$legacy_predicate_property'(P, A).
 predicate_property(P, A) :-
 	'$load_properties',
@@ -29,7 +29,7 @@ predicate_property(P, A) :-
 			;	throw(error(domain_error(predicate_property, A), P))
 		)
 	),
-	'$must_be'(P, callable, predicate_property/2, _),
+	must_be(P, callable, predicate_property/2, _),
 	(	P = (M:P2) ->
 		M:'$predicate_property'(predicate, P2, A)
 	;	'$predicate_property'(predicate, P, A)
@@ -39,7 +39,7 @@ predicate_property(P, A) :-
 
 evaluable_property(P, A) :-
 	nonvar(P), atom(A), !,
-	'$must_be'(P, callable, evaluable_property/2, _),
+	must_be(P, callable, evaluable_property/2, _),
 	'$legacy_evaluable_property'(P, A).
 evaluable_property(P, A) :-
 	'$load_properties',
@@ -49,12 +49,12 @@ evaluable_property(P, A) :-
 		memberchk(A, Controls) ->
 			true
 		;	(
-			'$must_be'(A, callable, evaluable_property/2, _),
+			must_be(A, callable, evaluable_property/2, _),
 			throw(error(domain_error(evaluable_property, A), P))
 			)
 		)
 	),
-	'$must_be'(P, callable, evaluable_property/2, _),
+	must_be(P, callable, evaluable_property/2, _),
 	(	P = (M:P2) ->
 		M:'$predicate_property'(function, P2, A)
 	;	'$predicate_property'(function, P, A)
@@ -109,8 +109,8 @@ call_det(G, Det) :-
 :- meta_predicate(findall(?,0,-,?)).
 
 findall(T, G, B, Tail) :-
-	'$can_be'(B, list, findall/4, _),
-	'$can_be'(Tail, list, findall/4, _),
+	can_be(B, list, findall/4, _),
+	can_be(Tail, list, findall/4, _),
 	findall(T, G, B0),
 	append(B0, Tail, B), !.
 
@@ -124,7 +124,7 @@ findall(T, G, B, Tail) :-
 setof(Template, Generator, Set) :-
 	( 	var(Set) ->
 		true
-	; 	'$must_be'(Set, list_or_partial_list, setof/3, _)
+	; 	must_be(Set, list_or_partial_list, setof/3, _)
 	),
 	bagof_(Template, Generator, Bag),
 	is_list_or_partial_list(Set),
@@ -135,7 +135,7 @@ setof(Template, Generator, Set) :-
 :- meta_predicate(bagof(-,0,?)).
 
 bagof(Template, Generator, Bag) :-
-	(var(Bag) -> true; '$must_be'(Bag, list_or_partial_list, bagof/3, _)),
+	(var(Bag) -> true; must_be(Bag, list_or_partial_list, bagof/3, _)),
 	bagof_(Template, Generator, Bag).
 
 :- help(bagof(+term,:callable,?list), [iso(true)]).
@@ -555,8 +555,8 @@ iso_dif(X, Y) :-
 	).
 
 numbervars(Term, N0, N) :-
-   '$must_be'(N0, integer, numbervars/3, _),
-   '$can_be'(N, integer, numbervars/3, _),
+   must_be(N0, integer, numbervars/3, _),
+   can_be(N, integer, numbervars/3, _),
    term_variables(Term, Vars),
    numberlist_(Vars, N0, N).
 
@@ -583,7 +583,7 @@ repeat_integer(N0) :-
 	repeat_integer(N1).
 
 repeat(N) :-
-	'$must_be'(N, integer, repeat/1, _),
+	must_be(N, integer, repeat/1, _),
 	repeat_integer(N).
 
 :- help(repeat(+integer), [iso(false)]).
@@ -632,7 +632,7 @@ mutex_create(Id) :-
 %
 
 error(Err, Context) :-
-	'$must_be'(Err, nonvar, error/2, _),
+	must_be(Err, nonvar, error/2, _),
 	throw(error(Err,Context)).
 
 resource_error(Resource, Context) :-

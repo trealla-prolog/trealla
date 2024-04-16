@@ -85,10 +85,10 @@ intersection([_|T], Y, Z) :- intersection(T, Y, Z).
 :- help(intersection(+list,+list,-list), [iso(false), desc('The intersection of two sets to produce a third.')]).
 
 nth1_orig(N, Es, E) :-
-	'$can_be'(integer, N),
-	'$can_be'(list_or_partial_list, Es),
+	can_be(integer, N),
+	can_be(list_or_partial_list, Es),
 	(   integer(N) ->
-		'$must_be'(N, not_less_than_zero, nth1/3, _),
+		must_be(N, not_less_than_zero, nth1/3, _),
 		N1 is N - 1,
 		nth0_index(N1, Es, E)
 	;   nth0_search(N1, Es, E),
@@ -96,10 +96,10 @@ nth1_orig(N, Es, E) :-
 	).
 
 nth0_orig(N, Es, E) :-
-	'$can_be'(integer, N),
-	'$can_be'(list_or_partial_list, Es),
+	can_be(integer, N),
+	can_be(list_or_partial_list, Es),
 	(   integer(N) ->
-		'$must_be'(N, not_less_than_zero, nth0/3, _),
+		must_be(N, not_less_than_zero, nth0/3, _),
 		nth0_index(N, Es, E)
 	;   nth0_search(N, Es, E)
 	).
@@ -304,8 +304,8 @@ unify_same(E-V, Prev-Var, E-V) :-
 		).
 
 numlist(L, U, Ns) :-
-	'$must_be'(L, integer, numlist/3, _),
-	'$must_be'(U, integer, numlist/3, _),
+	must_be(L, integer, numlist/3, _),
+	must_be(U, integer, numlist/3, _),
 	L =< U,
 	numlist_(L, U, Ns).
 
