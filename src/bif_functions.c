@@ -301,9 +301,6 @@ static bool bif_iso_is_2(query *q)
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2_tmp,any);
 
-	if (!is_number(p1) && !is_var(p1))
-		return false;
-
 	CLEANUP cell p2 = eval(q, p2_tmp);
 	p2.nbr_cells = 1;
 
@@ -312,6 +309,12 @@ static bool bif_iso_is_2(query *q)
 		clr_accum(&q->accum);
 		return true;
 	}
+
+	if (!is_number(&p2))
+		return throw_error(q, &p2, p2_tmp_ctx, "type_error", "evaluable");
+
+	if (!is_number(p1) && !is_var(p1))
+		return false;
 
 	if (is_smallint(p1) && is_smallint(&p2))
 		return (p1->val_int == p2.val_int);
