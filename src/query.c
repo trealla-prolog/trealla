@@ -497,6 +497,7 @@ void try_me(query *q, unsigned nbr_vars)
 	frame *f = GET_NEW_FRAME();
 	f->initial_slots = f->actual_slots = nbr_vars;
 	f->base = q->st.sp;
+	f->no_tco = false;
 
 	for (unsigned i = 0; i < nbr_vars; i++) {
 		slot *e = GET_SLOT(f, i);
@@ -588,13 +589,14 @@ static frame *push_frame(query *q, const clause *cl)
 	}
 
 	f->initial_slots = f->actual_slots = cl->nbr_vars;
+	f->local_vars = cl->local_vars;
+	f->no_tco = q->no_tco;
 	f->chgen = ++q->chgen;
 	f->heap_nbr = q->st.heap_nbr;
 	f->hp = q->st.hp;
 	f->overflow = 0;
-	f->no_tco = false;
 
-	q->st.sp = f->base + cl->nbr_vars;
+	q->st.sp += cl->nbr_vars;
 	q->st.curr_frame = new_frame;
 	return f;
 }
@@ -655,15 +657,9 @@ static void reuse_frame(query *q, const clause *cl)
 	trim_heap(q);
 }
 
-inline static bool any_choices(const query *q, const frame *f)
+static bool any_choices(const query *q, const frame *f)
 {
-	// Note: when in commit there is a provisional choicepoint
-	// that we should ignore, hence the '1' ...
-
-	if (q->cp == 1)
-		return false;
-
-	const choice *ch = GET_PREV_CHOICE();
+	const choice *ch = GET_PREV_CHOICE();	// Skip in-progress choice
 	return ch->chgen > f->chgen;
 }
 
@@ -684,8 +680,12 @@ static void commit_frame(query *q, cell *body)
 	if (q->st.curr_rule->owner->is_tco)
 		q->no_tco = false;
 
-	if (!q->no_tco && !f->no_tco && !q->st.m->no_tco && last_match
-			&& (q->st.fp == (q->st.curr_frame + 1))) {
+	if (!q->no_tco
+		&& !f->no_tco
+		&& !q->st.m->no_tco	// For CLPZ
+		&& last_match
+		&& (q->st.fp == (q->st.curr_frame + 1))
+		) {
 		bool tail_call = is_tail_call(q->st.curr_instr);
 		bool tail_recursive = tail_call && q->st.recursive;
 		bool vars_ok =
@@ -712,10 +712,17 @@ static void commit_frame(query *q, cell *body)
 	} else {
 		f = push_frame(q, cl);
 
-		// If matching against a fact then drop new frame...
-
-		if (q->pl->opt && !cl->nbr_vars && !body)
+#if 0
+		if (last_match
+			&& cl->is_fact
+			&& !q->no_tco
+			&& !q->st.m->no_tco		// CLPZ
+			&& !cl->local_vars
+			) {
+			q->st.sp -= cl->nbr_vars;
 			q->st.fp--;
+		}
+#endif
 	}
 
 	if (last_match) {
@@ -889,7 +896,7 @@ void cut(query *q)
 
 // Resume next goal in previous clause...
 
-inline static bool resume_frame(query *q)
+static bool resume_frame(query *q)
 {
 	const frame *f = GET_CURR_FRAME();
 
@@ -906,14 +913,23 @@ inline static bool resume_frame(query *q)
 	return true;
 }
 
+static bool my_any_choices(const query *q, const frame *f)
+{
+	if (!q->cp)
+		return false;
+
+	const choice *ch = GET_CURR_CHOICE();
+	return ch->chgen > f->chgen;
+}
+
 // Proceed to next goal in current clause...
 
-inline static void proceed(query *q)
+static void proceed(query *q)
 {
 	q->st.curr_instr += q->st.curr_instr->nbr_cells;
 	frame *f = GET_CURR_FRAME();
 
-	// Loop here to avoild chains of last calls...
+	// Loop here to avoid chains of last calls...
 
 	while (is_end(q->st.curr_instr)) {
 		cell *tmp = q->st.curr_instr;
@@ -921,6 +937,19 @@ inline static void proceed(query *q)
 		if (tmp->save_ret) {
 			f->chgen = tmp->chgen;
 			//q->st.m = q->pl->modmap[tmp->mid];
+		} else {
+#if 0
+			if (!f->local_vars
+				&& !f->no_tco
+				&& !q->st.m->no_tco		// CLPZ
+				&& (f->actual_slots == f->initial_slots)
+				&& (q->st.fp == (q->st.curr_frame + 1))
+				&& !my_any_choices(q, f)
+				) {
+				q->st.sp -= f->initial_slots;
+				q->st.fp--;
+			}
+#endif
 		}
 
 		if (!(q->st.curr_instr = tmp->save_ret))

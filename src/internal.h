@@ -350,7 +350,7 @@ typedef struct page_ page;
 typedef struct stream_ stream;
 typedef struct slot_ slot;
 typedef struct choice_ choice;
-typedef struct prolog_state_ prolog_state;
+typedef struct run_state_ run_state;
 typedef struct prolog_flags_ prolog_flags;
 typedef struct builtins_ builtins;
 
@@ -543,10 +543,11 @@ struct frame_ {
 	pl_idx base, overflow;
 	unsigned initial_slots, actual_slots;
 	uint32_t mid;
+	bool local_vars:1;
 	bool no_tco:1;
 };
 
-struct prolog_state_ {
+struct run_state_ {
 	predicate *pr;
 	cell *curr_instr;
 	rule *curr_rule;
@@ -567,7 +568,7 @@ struct prolog_state_ {
 };
 
 struct choice_ {
-	prolog_state st;
+	run_state st;
 	uint64_t chgen, frame_chgen, dbgen;
 	pl_idx base, overflow, initial_slots, actual_slots;
 	bool catchme_retry:1;
@@ -697,7 +698,7 @@ struct query_ {
 	cell accum;
 	mpz_t tmp_ival;
 	mpq_t tmp_irat;
-	prolog_state st;
+	run_state st;
 	stringbuf sb_buf;
 	char tmpbuf[256];
 	bool ignores[MAX_IGNORES];
