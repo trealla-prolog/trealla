@@ -714,10 +714,9 @@ static void commit_frame(query *q, cell *body)
 
 #if 0
 		if (last_match
-			&& cl->is_fact
+			&& !body
 			&& !q->no_tco
 			&& !q->st.m->no_tco		// CLPZ
-			&& !cl->local_vars
 			) {
 			q->st.sp -= cl->nbr_vars;
 			q->st.fp--;
