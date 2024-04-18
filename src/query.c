@@ -712,14 +712,14 @@ static void commit_frame(query *q, cell *body)
 	} else {
 		f = push_frame(q, cl);
 
-#if 0
+#if 1
 		if (last_match
 			&& !body
 			&& !q->no_tco
 			&& !q->st.m->no_tco		// CLPZ
 			) {
 			q->st.sp -= cl->nbr_vars;
-			q->st.fp--;
+			//q->st.fp--;
 		}
 #endif
 	}
