@@ -719,7 +719,6 @@ static void commit_frame(query *q, cell *body)
 			&& !q->st.m->no_tco		// CLPZ
 			) {
 			q->st.sp -= cl->nbr_vars;
-			//q->st.fp--;
 		}
 #endif
 	}
