@@ -938,19 +938,6 @@ static void proceed(query *q)
 		if (tmp->save_ret) {
 			f->chgen = tmp->chgen;
 			//q->st.m = q->pl->modmap[tmp->mid];
-		} else {
-#if 0
-			if (!f->has_local_vars
-				&& !f->no_tco
-				&& !q->st.m->no_tco		// CLPZ
-				&& (f->actual_slots == f->initial_slots)
-				&& (q->st.fp == (q->st.curr_frame + 1))
-				&& !my_any_choices(q, f)
-				) {
-				q->st.sp -= f->initial_slots;
-				q->st.fp--;
-			}
-#endif
 		}
 
 		if (!(q->st.curr_instr = tmp->save_ret))
