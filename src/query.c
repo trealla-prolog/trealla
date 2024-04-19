@@ -900,23 +900,17 @@ static bool resume_frame(query *q)
 	if (!f->prev_offset)
 		return false;
 
-#if 1
-	//printf("*** resume f->has_local_vars=%d\n", f->has_local_vars);
-
 	if (q->pl->opt
 		&& !f->has_local_vars
 		&& !f->no_tco
-		&& !q->st.m->no_tco		// CLPZ
-		&& (f->actual_slots == f->initial_slots)
 		&& (q->st.fp == (q->st.curr_frame + 1))
 		&& !my_any_choices(q, f)
 		) {
-		//fprintf(stderr, "*** RECLAIM slots %u\n", f->initial_slots);
-		q->st.sp -= f->initial_slots;
+		//fprintf(stderr, "*** RECLAIM slots %u\n", f->actual_slots);
+		q->st.sp -= f->actual_slots;
 		//fprintf(stderr, "*** RECLAIM frame\n");
 		q->st.fp--;
 	}
-#endif
 
 	if (q->in_call)
 		q->in_call--;
