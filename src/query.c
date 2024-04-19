@@ -909,9 +909,7 @@ static bool resume_frame(query *q)
 		&& (q->st.fp == (q->st.curr_frame + 1))
 		&& !my_any_choices(q, f)
 		) {
-		//fprintf(stderr, "*** RECLAIM slots %u\n", f->actual_slots);
 		q->st.sp -= f->actual_slots;
-		//fprintf(stderr, "*** RECLAIM frame\n");
 		q->st.fp--;
 	}
 
