@@ -970,7 +970,7 @@ bool do_use_module_2(module *curr_m, cell *c)
 				p2->skip = true;
 				p2->srcptr = SB_cstr(s);
 				tokenize(p2, false, false);
-				xref_clause(p2->m, p2->cl);
+				xref_clause(p2->m, p2->cl, NULL);
 				execute(q, p2->cl->cells, p2->cl->nbr_vars);
 				SB_free(s);
 			}
@@ -1672,7 +1672,7 @@ rule *erase_from_db(module *m, uuid *ref)
 	return r;
 }
 
-static void xref_cell(module *m, clause *cl, cell *c, int last_was_colon, bool is_directive)
+static void xref_cell(module *m, clause *cl, cell *c, predicate *parent, int last_was_colon, bool is_directive)
 {
 	unsigned specifier;
 
@@ -1701,12 +1701,18 @@ static void xref_cell(module *m, clause *cl, cell *c, int last_was_colon, bool i
 	}
 
 	if (!is_directive) {
-		if ((c+c->nbr_cells) >= (cl->cells + cl->cidx-1))
+		if ((c+c->nbr_cells) >= (cl->cells + cl->cidx-1)) {
 			c->flags |= FLAG_TAIL_CALL;
+			if (parent
+				&& (parent->key.val_off == c->val_off)
+				&& (parent->key.arity == c->arity)) {
+				c->flags |= FLAG_RECURSIVE_CALL;
+			}
+		}
 	}
 }
 
-void xref_clause(module *m, clause *cl)
+void xref_clause(module *m, clause *cl, predicate *parent)
 {
 	cl->is_unique = false;
 	cell *c = cl->cells;
@@ -1727,11 +1733,11 @@ void xref_clause(module *m, clause *cl)
 		// Don't want to match on module qualified predicates
 
 		if (c->val_off == g_colon_s) {
-			xref_cell(m, cl, c, 0, is_directive);
+			xref_cell(m, cl, c, parent, 0, is_directive);
 			last_was_colon = 3;
 		} else {
 			last_was_colon--;
-			xref_cell(m, cl, c, last_was_colon, is_directive);
+			xref_cell(m, cl, c, parent, last_was_colon, is_directive);
 		}
 	}
 }
@@ -1746,7 +1752,7 @@ void xref_db(module *m)
 		pr->is_processed = true;
 
 		for (rule *r = pr->head; r; r = r->next)
-			xref_clause(m, &r->cl);
+			xref_clause(m, &r->cl, pr);
 
 		if (pr->is_dynamic || pr->idx)
 			continue;

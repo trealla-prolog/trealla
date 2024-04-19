@@ -387,7 +387,7 @@ size_t scan_is_chars_list(query *q, cell *l, pl_idx l_ctx, bool allow_codes)
 
 static void enter_predicate(query *q, predicate *pr)
 {
-	q->st.recursive = q->st.pr == pr;
+	//printf("*** ENTER %s\n", C_STR(q, &pr->key));
 	q->st.pr = pr;
 
 	if (pr->is_dynamic)
@@ -396,7 +396,7 @@ static void enter_predicate(query *q, predicate *pr)
 
 static void leave_predicate(query *q, predicate *pr)
 {
-	q->st.recursive = false;
+	//printf("*** LEAVE %s\n", C_STR(q, &pr->key));
 
 	if (!pr || !pr->is_dynamic || !pr->refcnt)
 		return;
@@ -589,7 +589,7 @@ static frame *push_frame(query *q, const clause *cl)
 	}
 
 	f->initial_slots = f->actual_slots = cl->nbr_vars;
-	f->local_vars = cl->local_vars;
+	f->has_local_vars = cl->has_local_vars;
 	f->no_tco = q->no_tco;
 	f->chgen = ++q->chgen;
 	f->heap_nbr = q->st.heap_nbr;
@@ -687,22 +687,22 @@ static void commit_frame(query *q, cell *body)
 		&& (q->st.fp == (q->st.curr_frame + 1))
 		) {
 		bool tail_call = is_tail_call(q->st.curr_instr);
-		bool tail_recursive = tail_call && q->st.recursive;
-		bool vars_ok =
+		bool tail_recursive = tail_call && is_recursive_call(q->st.curr_instr);
+		bool slots_ok =
 			tail_recursive ? f->initial_slots == cl->nbr_vars :
 			false;
 		bool choices = any_choices(q, f);
-		tco = vars_ok && !choices;
+		tco = slots_ok && !choices;
 
 #if 0
 		const cell *head = get_head((cell*)cl->cells);
 		fprintf(stderr,
 			"*** %s/%u tco=%d,q->no_tco=%d,last_match=%d,is_det=%d,"
-			"next_key=%d,tail_call=%d/%d,vars_ok=%d,choices=%d,"
+			"next_key=%d,tail_call=%d/r%d,slots_ok=%d,choices=%d,"
 			"cl->nbr_vars=%u,f->initial_slots=%u/%u\n",
 			C_STR(q, head), head->arity,
 			tco, q->no_tco, last_match, is_det,
-			next_key, tail_call, tail_recursive, vars_ok, choices,
+			next_key, tail_call, tail_recursive, slots_ok, choices,
 			cl->nbr_vars, f->initial_slots, f->actual_slots);
 #endif
 	}
@@ -711,15 +711,6 @@ static void commit_frame(query *q, cell *body)
 		reuse_frame(q, cl);
 	} else {
 		f = push_frame(q, cl);
-
-		if (last_match
-			&& !body
-			&& !q->no_tco
-			&& !f->no_tco
-			&& !q->st.m->no_tco		// CLPZ
-			) {
-			q->st.sp -= cl->nbr_vars;
-		}
 	}
 
 	if (last_match) {
@@ -891,7 +882,16 @@ void cut(query *q)
 	//	q->st.tp = 0;
 }
 
-// Resume next goal in previous clause...
+static bool my_any_choices(const query *q, const frame *f)
+{
+	if (!q->cp)
+		return false;
+
+	const choice *ch = GET_CURR_CHOICE();
+	return ch->chgen > f->chgen;
+}
+
+// Resume at next goal in previous clause...
 
 static bool resume_frame(query *q)
 {
@@ -899,6 +899,24 @@ static bool resume_frame(query *q)
 
 	if (!f->prev_offset)
 		return false;
+
+#if 1
+	//printf("*** resume f->has_local_vars=%d\n", f->has_local_vars);
+
+	if (q->pl->opt
+		&& !f->has_local_vars
+		&& !f->no_tco
+		&& !q->st.m->no_tco		// CLPZ
+		&& (f->actual_slots == f->initial_slots)
+		&& (q->st.fp == (q->st.curr_frame + 1))
+		&& !my_any_choices(q, f)
+		) {
+		//fprintf(stderr, "*** RECLAIM slots %u\n", f->initial_slots);
+		q->st.sp -= f->initial_slots;
+		//fprintf(stderr, "*** RECLAIM frame\n");
+		q->st.fp--;
+	}
+#endif
 
 	if (q->in_call)
 		q->in_call--;
@@ -908,15 +926,6 @@ static bool resume_frame(query *q)
 	f = GET_CURR_FRAME();
 	q->st.m = q->pl->modmap[f->mid];
 	return true;
-}
-
-static bool my_any_choices(const query *q, const frame *f)
-{
-	if (!q->cp)
-		return false;
-
-	const choice *ch = GET_CURR_CHOICE();
-	return ch->chgen > f->chgen;
 }
 
 // Proceed to next goal in current clause...
@@ -936,7 +945,7 @@ static void proceed(query *q)
 			//q->st.m = q->pl->modmap[tmp->mid];
 		} else {
 #if 0
-			if (!f->local_vars
+			if (!f->has_local_vars
 				&& !f->no_tco
 				&& !q->st.m->no_tco		// CLPZ
 				&& (f->actual_slots == f->initial_slots)

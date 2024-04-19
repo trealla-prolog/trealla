@@ -29,7 +29,7 @@ bool find_goal_expansion(module *m, cell *c);
 bool search_goal_expansion(module *m, cell *c);
 void create_goal_expansion(module *m, cell *c);
 bool needs_quoting(module *m, const char *src, int srclen);
-void xref_clause(module *m, clause *cl);
+void xref_clause(module *m, clause *cl, predicate *parent);
 void xref_db(module *m);
 builtins *get_module_help(module *m, const char *name, unsigned arity, bool *found, bool *evaluable);
 void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type, bool function);

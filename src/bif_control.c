@@ -764,7 +764,7 @@ static cell *parse_to_heap(query *q, const char *src)
 	p2->skip = true;
 	p2->srcptr = SB_cstr(s);
 	tokenize(p2, false, false);
-	xref_clause(p2->m, p2->cl);
+	xref_clause(p2->m, p2->cl, NULL);
 	p2->read_term_slots = 0;
 	SB_free(s);
 

@@ -360,6 +360,8 @@ void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
 
 		if ((c_ctx == q->st.fp) && (v_ctx == q->st.curr_frame))
 			q->no_tco = true;
+		if (c_ctx == q->st.fp) // For env recovery
+			q->no_tco = true;
 	} else {
 		e->c = *v;
 		share_cell(v);

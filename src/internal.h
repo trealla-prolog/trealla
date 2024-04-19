@@ -170,6 +170,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_builtin(c) ((c)->flags & FLAG_BUILTIN)
 #define is_evaluable(c) ((c)->flags & FLAG_EVALUABLE)
 #define is_tail_call(c) ((c)->flags & FLAG_TAIL_CALL)
+#define is_recursive_call(c) ((c)->flags & FLAG_RECURSIVE_CALL)
 #define is_temporary(c) (is_var(c) && ((c)->flags & FLAG_VAR_TEMPORARY))
 #define is_local(c) (is_var(c) && ((c)->flags & FLAG_VAR_LOCAL))
 #define is_ref(c) (is_var(c) && ((c)->flags & FLAG_VAR_REF))
@@ -295,9 +296,9 @@ enum {
 
 	FLAG_BLOB_SREGEX=1<<0,				// used with TAG_BLOB
 
-	FLAG_SPARE1=1<<6,
-	FLAG_GROUND=1<<7,
-	FLAG_TAIL_CALL=1<<8,
+	FLAG_GROUND=1<<6,
+	FLAG_TAIL_CALL=1<<7,
+	FLAG_RECURSIVE_CALL=1<<8,
 	FLAG_FFI=1<<9,
 	FLAG_BUILTIN=1<<10,
 	FLAG_MANAGED=1<<11,					// any ref-counted object
@@ -438,7 +439,7 @@ struct clause_ {
 	uint64_t dbgen_created, dbgen_retracted;
 	pl_idx cidx, nbr_allocated_cells;
 	unsigned nbr_vars;
-	bool local_vars:1;
+	bool has_local_vars:1;
 	bool is_first_cut:1;
 	bool is_cut_only:1;
 	bool is_unique:1;
@@ -543,7 +544,7 @@ struct frame_ {
 	pl_idx base, overflow;
 	unsigned initial_slots, actual_slots;
 	uint32_t mid;
-	bool local_vars:1;
+	bool has_local_vars:1;
 	bool no_tco:1;
 };
 
@@ -555,7 +556,7 @@ struct run_state_ {
 	module *m;
 
 	union {
-		struct { cell *key; bool karg1_is_ground:1, karg2_is_ground:1, karg1_is_atomic:1, karg2_is_atomic:1, recursive:1; };
+		struct { cell *key; bool karg1_is_ground:1, karg2_is_ground:1, karg1_is_atomic:1, karg2_is_atomic:1; };
 		struct { uint64_t uv1, uv2; };
 		struct { int64_t v1, v2; };
 		int64_t cnt;

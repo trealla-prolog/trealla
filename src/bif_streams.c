@@ -2275,7 +2275,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 		return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 	}
 
-	xref_clause(str->p->m, str->p->cl);
+	xref_clause(str->p->m, str->p->cl, NULL);
 
 	if (str->p->nbr_vars) {
 		if (create_vars(q, str->p->nbr_vars, true) < 0)
