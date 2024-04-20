@@ -198,7 +198,7 @@ static void predicate_purge_dirty_list(predicate *pr)
 	unsigned cnt = 0;
 	rule *r;
 
-	while ((r = (rule*)list_pop_front(&pr->dirty)) != NULL) {
+	while ((r = list_pop_front(&pr->dirty)) != NULL) {
 		list_delink(pr, r);
 		clear_clause(&r->cl);
 		free(r);
@@ -317,7 +317,7 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 	} else {
 		rule *r;
 
-		while ((r = (rule*)list_pop_front(&pr->dirty)) != NULL)
+		while ((r = list_pop_front(&pr->dirty)) != NULL)
 			list_push_back(&q->dirty, r);
 	}
 
@@ -773,8 +773,8 @@ void save_db(FILE *fp, query *q, int logging)
 	q->listing = true;
 	q->double_quotes = true;
 
-	for (predicate *pr = (predicate*)list_front(&q->st.m->predicates);
-		pr; pr = (predicate*)list_next(pr)) {
+	for (predicate *pr = list_front(&q->st.m->predicates);
+		pr; pr = list_next(pr)) {
 		if (pr->is_prebuilt)
 			continue;
 

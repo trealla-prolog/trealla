@@ -349,8 +349,8 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 	}
 
 
-	for (module *tmp_m = (module*)list_front(&m->pl->modules);
-		tmp_m; tmp_m = (module*)list_next(tmp_m)) {
+	for (module *tmp_m = list_front(&m->pl->modules);
+		tmp_m; tmp_m = list_next(tmp_m)) {
 		if (m == tmp_m)
 			continue;
 
@@ -461,8 +461,8 @@ bool search_goal_expansion(module *m, cell *c)
 	}
 
 
-	for (module *tmp_m = (module*)list_front(&m->pl->modules);
-		tmp_m; tmp_m = (module*)list_next(tmp_m)) {
+	for (module *tmp_m = list_front(&m->pl->modules);
+		tmp_m; tmp_m = list_next(tmp_m)) {
 		if (m == tmp_m)
 			continue;
 
@@ -655,10 +655,10 @@ int index_cmpkey(const void *ptr1, const void *ptr2, const void *param, void *l)
 
 rule *find_in_db(module *m, uuid *ref)
 {
-	for (module *tmp_m = (module*)list_front(&m->pl->modules);
-		tmp_m; tmp_m = (module*)list_next(tmp_m)) {
-		for (predicate *pr = (predicate*)list_front(&m->predicates);
-			pr; pr = (predicate*)list_next(pr)) {
+	for (module *tmp_m = list_front(&m->pl->modules);
+		tmp_m; tmp_m = list_next(tmp_m)) {
+		for (predicate *pr = list_front(&m->predicates);
+			pr; pr = list_next(pr)) {
 			if (!pr->is_dynamic)
 				continue;
 
@@ -1744,8 +1744,8 @@ void xref_clause(module *m, clause *cl, predicate *parent)
 
 void xref_db(module *m)
 {
-	for (predicate *pr = (predicate*)list_front(&m->predicates);
-		pr; pr = (predicate*)list_next(pr)) {
+	for (predicate *pr = list_front(&m->predicates);
+		pr; pr = list_next(pr)) {
 		if (pr->is_processed)
 			continue;
 
@@ -1810,8 +1810,8 @@ module *load_text(module *m, const char *src, const char *filename)
 
 static bool unload_realfile(module *m, const char *filename)
 {
-	for (predicate *pr = (predicate*)list_front(&m->predicates);
-		pr; pr = (predicate*)list_next(pr)) {
+	for (predicate *pr = list_front(&m->predicates);
+		pr; pr = list_next(pr)) {
 		if (pr->filename && strcmp(pr->filename, filename))
 			continue;
 
@@ -1995,8 +1995,8 @@ module *load_file(module *m, const char *filename, bool including)
 			if (!sl_get(str->alias, "user_input", NULL))
 				continue;
 
-			for (predicate *pr = (predicate*)list_front(&m->predicates);
-				pr; pr = (predicate*)list_next(pr)) {
+			for (predicate *pr = list_front(&m->predicates);
+				pr; pr = list_next(pr)) {
 				pr->is_reload = true;
 			}
 
@@ -2137,8 +2137,8 @@ static void module_save_fp(module *m, FILE *fp, int canonical, int dq)
 	q.pl = m->pl;
 	q.st.m = m;
 
-	for (predicate *pr = (predicate*)list_front(&m->predicates);
-		pr; pr = (predicate*)list_next(pr)) {
+	for (predicate *pr = list_front(&m->predicates);
+		pr; pr = list_next(pr)) {
 		if (pr->is_prebuilt)
 			continue;
 
@@ -2189,7 +2189,7 @@ void module_destroy(module *m)
 	sl_destroy(m->ops);
 	predicate *pr;
 
-	while ((pr = (predicate*)list_front(&m->predicates)) != NULL)
+	while ((pr = list_front(&m->predicates)) != NULL)
 		destroy_predicate(m, pr);
 
 	if (m->fp)

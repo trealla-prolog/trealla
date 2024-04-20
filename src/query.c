@@ -418,7 +418,7 @@ static void leave_predicate(query *q, predicate *pr)
 	if (pr->is_abolished) {
 		rule *r;
 
-		while ((r = (rule*)list_pop_front(&pr->dirty)) != NULL) {
+		while ((r = list_pop_front(&pr->dirty)) != NULL) {
 			list_delink(pr, r);
 			clear_clause(&r->cl);
 			free(r);
@@ -436,7 +436,7 @@ static void leave_predicate(query *q, predicate *pr)
 
 	rule *r;
 
-	while ((r = (rule*)list_pop_front(&pr->dirty)) != NULL) {
+	while ((r = list_pop_front(&pr->dirty)) != NULL) {
 		list_delink(pr, r);
 
 		if (pr->idx && pr->cnt) {
@@ -1871,7 +1871,7 @@ static void query_purge_dirty_list(query *q)
 	unsigned cnt = 0;
 	rule *r;
 
-	while ((r = (rule *)list_pop_front(&q->dirty)) != NULL) {
+	while ((r = list_pop_front(&q->dirty)) != NULL) {
 		clear_clause(&r->cl);
 		free(r);
 		cnt++;
@@ -1939,7 +1939,7 @@ void query_destroy(query *q)
 	}
 #endif
 
-	module *m = (module*)list_front(&q->pl->modules);
+	module *m = list_front(&q->pl->modules);
 
 	while (m) {
 		module_lock(m);
@@ -1967,7 +1967,7 @@ void query_destroy(query *q)
 		}
 
 		module_unlock(m);
-		m = (module*)list_next(m);
+		m = list_next(m);
 	}
 
 	mp_int_clear(&q->tmp_ival);

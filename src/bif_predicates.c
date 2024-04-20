@@ -2844,8 +2844,8 @@ static void save_name(FILE *fp, query *q, pl_idx name, unsigned arity)
 	module *m = q->st.curr_rule ? q->st.curr_rule->owner->m : q->st.m;
 	q->listing = true;
 
-	for (predicate *pr = (predicate*)list_front(&m->predicates);
-		pr; pr = (predicate*)list_next(pr)) {
+	for (predicate *pr = list_front(&m->predicates);
+		pr; pr = list_next(pr)) {
 		if (pr->is_prebuilt && (arity == -1U))
 			continue;
 
@@ -2942,8 +2942,8 @@ static bool bif_module_info_2(query *q)
 
 	check_heap_error(init_tmp_heap(q));
 
-	for (predicate *pr = (predicate*)list_front(&m->predicates);
-		pr; pr = (predicate*)list_next(pr)) {
+	for (predicate *pr = list_front(&m->predicates);
+		pr; pr = list_next(pr)) {
 		if (!pr->is_public)
 			continue;
 
@@ -3381,10 +3381,10 @@ static bool do_profile(query *q)
 {
 	fprintf(stderr, "#functor/arity,match_attempts,matched,tcos\n");
 
-	for (module *m = (module*)list_front(&q->pl->modules);
-		m; m = (module*)list_next(m)) {
-		for (predicate *pr = (predicate*)list_front(&m->predicates);
-			pr; pr = (predicate*)list_next(pr)) {
+	for (module *m = list_front(&q->pl->modules);
+		m; m = list_next(m)) {
+		for (predicate *pr = list_front(&m->predicates);
+			pr; pr = list_next(pr)) {
 			for (rule *r = pr->head; r; r = r->next) {
 				if (!r->attempted)
 					continue;
@@ -5591,7 +5591,7 @@ static bool bif_current_module_1(query *q)
 
 		check_heap_error(push_choice(q));
 
-		module *m = (module*)list_front(&q->pl->modules);
+		module *m = list_front(&q->pl->modules);
 		cell tmp;
 		make_atom(&tmp, new_atom(q->pl, m->name));
 		return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
@@ -5600,7 +5600,7 @@ static bool bif_current_module_1(query *q)
 	if (!q->current_m)
 		return false;
 
-	module *m = (module*)list_next(q->current_m);
+	module *m = list_next(q->current_m);
 
 	if (!m)
 		return false;
@@ -5728,8 +5728,8 @@ static bool bif_modules_1(query *q)
 	GET_FIRST_ARG(p1,var);
 	check_heap_error(init_tmp_heap(q));
 
-	for (module *m = (module*)list_front(&q->pl->modules);
-		m; m = (module*)list_next(m)) {
+	for (module *m = list_front(&q->pl->modules);
+		m; m = list_next(m)) {
 		if (m->orig)
 			continue;
 

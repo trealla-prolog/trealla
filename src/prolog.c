@@ -97,8 +97,8 @@ pl_idx new_atom(prolog *pl, const char *name)
 
 module *find_module(prolog *pl, const char *name)
 {
-	for (module *m = (module*)list_front(&pl->modules);
-		m; m = (module*)list_next(m)) {
+	for (module *m = list_front(&pl->modules);
+		m; m = list_next(m)) {
 		if (!strcmp(m->name, name)) {
 			if (m->orig)
 				return m->orig;
@@ -611,7 +611,7 @@ void pl_destroy(prolog *pl)
 	sl_destroy(pl->biftab);
 	module *m;
 
-	while ((m = (module*)list_front(&pl->modules)) != NULL)
+	while ((m = list_front(&pl->modules)) != NULL)
 		module_destroy(m);
 
 	sl_destroy(pl->fortab);
