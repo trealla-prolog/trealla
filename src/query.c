@@ -904,7 +904,7 @@ static bool resume_frame(query *q)
 		return false;
 
 	if (q->pl->opt
-		&& !f->has_local_vars
+		&& (!f->has_local_vars || !q->in_call)
 		&& !f->no_tco
 		&& (q->st.fp == (q->st.curr_frame + 1))
 		&& !my_any_choices(q, f)
