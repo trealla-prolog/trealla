@@ -97,7 +97,6 @@ cell *get_logical_body(cell *c)
 		return NULL;
 
 	// A body of just 'true' is equivalent to no body at all,
-	// and of course vice-versa.
 
 	if (!body->arity && is_interned(body) && (body->val_off == g_true_s))
 		return NULL;

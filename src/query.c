@@ -511,9 +511,6 @@ void try_me(query *q, unsigned nbr_vars)
 
 void drop_choice(query *q)
 {
-	if (!q->cp)
-		return;
-
 	choice *ch = GET_CURR_CHOICE();
 
 	if (ch->st.iter) {
@@ -903,6 +900,9 @@ static bool resume_frame(query *q)
 	if (!f->prev_offset)
 		return false;
 
+	if (q->in_call)
+		q->in_call--;
+
 	if (q->pl->opt
 		&& (!f->has_local_vars || !q->in_call)
 		&& !f->no_tco
@@ -912,9 +912,6 @@ static bool resume_frame(query *q)
 		q->st.sp -= f->actual_slots;
 		q->st.fp--;
 	}
-
-	if (q->in_call)
-		q->in_call--;
 
 	q->st.curr_instr = f->curr_instr;
 	q->st.curr_frame = q->st.curr_frame - f->prev_offset;
@@ -1499,6 +1496,7 @@ static bool match_head(query *q)
 
 		clause *cl = &q->st.curr_rule->cl;
 		cell *head = get_head(cl->cells);
+		cell *body = get_body(cl->cells);
 		try_me(q, cl->nbr_vars);
 		q->st.curr_rule->attempted++;
 
@@ -1508,20 +1506,17 @@ static bool match_head(query *q)
 			if (q->error)
 				break;
 
-			commit_frame(q, get_body(cl->cells));
+			commit_frame(q, body);
 			return true;
 		}
 
 		undo_me(q);
 	}
 
-	if (q->cp) {
-		choice *ch = GET_CURR_CHOICE();
-		ch->st.iter = NULL;
-		drop_choice(q);
-	}
-
 	leave_predicate(q, q->st.pr);
+	choice *ch = GET_CURR_CHOICE();
+	ch->st.iter = NULL;
+	drop_choice(q);
 	return false;
 }
 
