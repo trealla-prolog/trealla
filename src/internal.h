@@ -1065,21 +1065,6 @@ inline static void init_cell(cell *c)
 	c->attrs = NULL;
 }
 
-inline static void *C_SETSTR(cell *c, const char *s, size_t n, size_t off)
-{
-	strbuf *strb = malloc(sizeof(strbuf) + (n) + 1);
-	if (!strb) return NULL;
-	memcpy(strb->cstr, s, n);
-	strb->cstr[n] = 0;
-	strb->len = n;
-	strb->refcnt = 1;
-	c->val_strb = strb;
-	c->strb_off = off;
-	c->strb_len = n;
-	c->flags |= FLAG_MANAGED | FLAG_CSTR_BLOB;
-	return strb;
-}
-
 #define list_delink(l, e) {						\
 	if (e->prev) e->prev->next = e->next;		\
 	if (e->next) e->next->prev = e->prev;		\

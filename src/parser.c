@@ -14,6 +14,21 @@
 static const unsigned INITIAL_NBR_CELLS = 1000;
 const char *g_solo = "!(){}[]|,;`'\"";
 
+static void *make_string_internal(cell *c, const char *s, size_t n, size_t off)
+{
+	strbuf *strb = malloc(sizeof(strbuf) + (n) + 1);
+	if (!strb) return NULL;
+	memcpy(strb->cstr, s, n);
+	strb->cstr[n] = 0;
+	strb->len = n;
+	strb->refcnt = 1;
+	c->val_strb = strb;
+	c->strb_off = off;
+	c->strb_len = n;
+	c->flags |= FLAG_MANAGED | FLAG_CSTR_BLOB;
+	return strb;
+}
+
 char *slicedup(const char *s, size_t n)
 {
 	char *ptr = malloc(n+1);
@@ -133,7 +148,7 @@ bool make_cstringn(cell *d, const char *s, size_t n)
 	*d = (cell){0};
 	d->tag = TAG_CSTR;
 	d->nbr_cells = 1;
-	C_SETSTR(d, s, n, 0);
+	make_string_internal(d, s, n, 0);
 	return true;
 }
 
@@ -158,7 +173,7 @@ bool make_stringn(cell *d, const char *s, size_t n)
 	d->flags = FLAG_CSTR_STRING;
 	d->nbr_cells = 1;
 	d->arity = 2;
-	C_SETSTR(d, s, n, 0);
+	make_string_internal(d, s, n, 0);
 	return true;
 }
 
@@ -3957,7 +3972,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 					c->arity = 2;
 				}
 
-				C_SETSTR(c, SB_cstr(p->token), toklen, 0);
+				make_string_internal(c, SB_cstr(p->token), toklen, 0);
 			}
 		}
 
