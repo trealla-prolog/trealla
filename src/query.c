@@ -453,6 +453,9 @@ static void leave_predicate(query *q, predicate *pr)
 				clear_clause(&r->cl);
 				free(r);
 			}
+		} else {
+			r->cl.is_deleted = true;
+			list_push_back(&q->dirty, r);
 		}
 	}
 
