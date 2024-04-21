@@ -419,7 +419,7 @@ static void leave_predicate(query *q, predicate *pr)
 		rule *r;
 
 		while ((r = list_pop_front(&pr->dirty)) != NULL) {
-			list_delink(pr, r);
+			predicate_delink(pr, r);
 			clear_clause(&r->cl);
 			free(r);
 		}
@@ -437,7 +437,7 @@ static void leave_predicate(query *q, predicate *pr)
 	rule *r;
 
 	while ((r = list_pop_front(&pr->dirty)) != NULL) {
-		list_delink(pr, r);
+		predicate_delink(pr, r);
 
 		if (pr->idx && pr->cnt) {
 			cell *c = get_head(r->cl.cells);
@@ -1944,7 +1944,7 @@ void query_destroy(query *q)
 
 				if (!CMP_STRING_TO_CSTR(m, arg3, "b")) {
 					pr->cnt--;
-					list_delink(pr, r);
+					predicate_delink(pr, r);
 					rule *save = r;
 					r = r->next;
 					clear_clause(&save->cl);

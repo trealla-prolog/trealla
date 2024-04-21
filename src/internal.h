@@ -1065,10 +1065,11 @@ inline static void init_cell(cell *c)
 	c->attrs = NULL;
 }
 
-#define list_delink(l, e) {						\
-	if (e->prev) e->prev->next = e->next;		\
-	if (e->next) e->next->prev = e->prev;		\
-	if (l->head == e) l->head = e->next;		\
-	if (l->tail == e) l->tail = e->prev;		\
+inline static void predicate_delink(predicate *pr, rule *r)
+{
+	if (r->prev) r->prev->next = r->next;
+	if (r->next) r->next->prev = r->prev;
+	if (pr->head == r) pr->head = r->next;
+	if (pr->tail == r) pr->tail = r->prev;
 }
 

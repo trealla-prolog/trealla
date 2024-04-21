@@ -199,7 +199,7 @@ static void predicate_purge_dirty_list(predicate *pr)
 	rule *r;
 
 	while ((r = list_pop_front(&pr->dirty)) != NULL) {
-		list_delink(pr, r);
+		predicate_delink(pr, r);
 		clear_clause(&r->cl);
 		free(r);
 		cnt++;
