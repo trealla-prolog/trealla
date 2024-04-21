@@ -203,19 +203,6 @@ typedef struct {
 	char *ptr, *ptr2;
 } blob;
 
-#define SET_STR(c,s,n,off) {									\
-	strbuf *strb = malloc(sizeof(strbuf) + (n) + 1);			\
-	check_error(strb);											\
-	memcpy(strb->cstr, s, n); 									\
-	strb->cstr[n] = 0;											\
-	strb->len = n;												\
-	strb->refcnt = 1;											\
-	(c)->val_strb = strb;										\
-	(c)->strb_off = off;										\
-	(c)->strb_len = n;											\
-	(c)->flags |= FLAG_MANAGED | FLAG_CSTR_BLOB;				\
-	}
-
 #define _CSTRING_STR(c) 										\
 	( is_strbuf(c) ? ((c)->val_strb->cstr + (c)->strb_off)		\
 	: is_slice(c) ? (c)->val_str								\
@@ -241,6 +228,19 @@ typedef struct {
 #define C_STR(x,c) _C_STR((x)->pl, c)
 #define C_STRLEN(x,c) _C_STRLEN((x)->pl, c)
 #define C_STRLEN_UTF8(c) substrlen_utf8(C_STR(q, c), C_STRLEN(q, c))
+
+#define C_SETSTR(c,s,n,off) {									\
+	strbuf *strb = malloc(sizeof(strbuf) + (n) + 1);			\
+	check_error(strb);											\
+	memcpy(strb->cstr, s, n); 									\
+	strb->cstr[n] = 0;											\
+	strb->len = n;												\
+	strb->refcnt = 1;											\
+	(c)->val_strb = strb;										\
+	(c)->strb_off = off;										\
+	(c)->strb_len = n;											\
+	(c)->flags |= FLAG_MANAGED | FLAG_CSTR_BLOB;				\
+	}
 
 #define GET_POOL(x,off) (g_pool + (off))
 

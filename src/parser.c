@@ -133,7 +133,7 @@ bool make_cstringn(cell *d, const char *s, size_t n)
 	*d = (cell){0};
 	d->tag = TAG_CSTR;
 	d->nbr_cells = 1;
-	SET_STR(d, s, n, 0);
+	C_SETSTR(d, s, n, 0);
 	return true;
 }
 
@@ -158,7 +158,7 @@ bool make_stringn(cell *d, const char *s, size_t n)
 	d->flags = FLAG_CSTR_STRING;
 	d->nbr_cells = 1;
 	d->arity = 2;
-	SET_STR(d, s, n, 0);
+	C_SETSTR(d, s, n, 0);
 	return true;
 }
 
@@ -3957,7 +3957,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 					c->arity = 2;
 				}
 
-				SET_STR(c, SB_cstr(p->token), toklen, 0);
+				C_SETSTR(c, SB_cstr(p->token), toklen, 0);
 			}
 		}
 
