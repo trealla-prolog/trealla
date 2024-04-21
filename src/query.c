@@ -512,19 +512,6 @@ void try_me(query *q, unsigned nbr_vars)
 	q->tot_matches++;
 }
 
-void drop_choice(query *q)
-{
-	choice *ch = GET_CURR_CHOICE();
-
-	if (ch->st.iter) {
-		sl_done(ch->st.iter);
-		ch->st.iter = NULL;
-	}
-
-	//q->st.pr = NULL;
-	--q->cp;
-}
-
 int retry_choice(query *q)
 {
 	while (q->cp) {
@@ -1517,8 +1504,6 @@ static bool match_head(query *q)
 	}
 
 	leave_predicate(q, q->st.pr);
-	choice *ch = GET_CURR_CHOICE();
-	ch->st.iter = NULL;
 	drop_choice(q);
 	return false;
 }
