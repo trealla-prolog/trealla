@@ -58,6 +58,20 @@ bool wrap_ffi_predicate(query *q, builtins *bif_ptr);
 #define is_iso_atom_or_var(c) (is_iso_atom(c) || is_var(c))
 #define is_iso_atomic_or_var(c) (is_iso_atom(c) || is_number(c) || is_var(c))
 
+bool call_builtin(query *q, cell *c, pl_idx c_ctx);
+bool call_userfun(query *q, cell *c, pl_idx c_ctx);
+
+#define eval(q,c)														\
+	is_evaluable(c) || is_builtin(c) ? (call_builtin(q,c,c##_ctx), q->accum) : \
+	is_callable(c) ? (call_userfun(q, c, c##_ctx), q->accum) : *c;		\
+	q->accum.flags = 0;													\
+	if (q->did_throw)													\
+		return true; 												\
+	if (is_var(c))													\
+		return throw_error(q, c, q->st.curr_frame, "instantiation_error", "number"); \
+	if (is_builtin(c) && c->bif_ptr && (c->bif_ptr->fn != bif_iso_float_1) && (c->bif_ptr->fn != bif_iso_integer_1)) \
+		return throw_error(q, c, q->st.curr_frame, "type_error", "evaluable");
+
 #if USE_FFI
 bool bif_sys_dlopen_3(query *q);
 bool bif_sys_dlsym_3(query *q);
@@ -233,17 +247,6 @@ inline static cell *get_raw_arg(const query *q, int n)
 
 	return c;
 }
-
-#define eval(q,c)														\
-	is_evaluable(c) || is_builtin(c) ? (call_builtin(q,c,c##_ctx), q->accum) : \
-	is_callable(c) ? (call_userfun(q, c, c##_ctx), q->accum) : *c;		\
-	q->accum.flags = 0;													\
-	if (q->did_throw)													\
-		return true; 												\
-	if (is_var(c))													\
-		return throw_error(q, c, q->st.curr_frame, "instantiation_error", "number"); \
-	if (is_builtin(c) && c->bif_ptr && (c->bif_ptr->fn != bif_iso_float_1) && (c->bif_ptr->fn != bif_iso_integer_1)) \
-		return throw_error(q, c, q->st.curr_frame, "type_error", "evaluable");
 
 #define check_heap_error(expr, ...) \
 	CHECK_SENTINEL(expr, 0, __VA_ARGS__; \

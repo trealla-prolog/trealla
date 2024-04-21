@@ -68,8 +68,6 @@ int new_stream(prolog *pl);
 int get_stream(query *q, cell *p1);
 int get_thread(query *q, cell *p1);
 int get_named_stream(prolog *pl, const char *name, size_t len);
-bool call_builtin(query *q, cell *c, pl_idx c_ctx);
-bool call_userfun(query *q, cell *c, pl_idx c_ctx);
 void do_cleanup(query *q, cell *p1, pl_idx c_ctx);
 bool drop_barrier(query *q, pl_idx cp);
 void collect_vars(query *q, cell *p1, pl_idx p1_ctx);
