@@ -194,14 +194,6 @@ inline static cell *get_body(cell *c)
 	return NULL;
 }
 
-#define init_cell(c) { 				\
-	(c)->tag = TAG_EMPTY;			\
-	(c)->flags = 0;					\
-	(c)->nbr_cells = 0;				\
-	(c)->arity = 0;					\
-	(c)->attrs = NULL;				\
-}
-
 #ifdef _WIN32
 typedef intptr_t ssize_t;
 extern ssize_t getline(char **lineptr, size_t *n, FILE *stream);

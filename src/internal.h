@@ -229,19 +229,6 @@ typedef struct {
 #define C_STRLEN(x,c) _C_STRLEN((x)->pl, c)
 #define C_STRLEN_UTF8(c) substrlen_utf8(C_STR(q, c), C_STRLEN(q, c))
 
-#define C_SETSTR(c,s,n,off) {									\
-	strbuf *strb = malloc(sizeof(strbuf) + (n) + 1);			\
-	check_error(strb);											\
-	memcpy(strb->cstr, s, n); 									\
-	strb->cstr[n] = 0;											\
-	strb->len = n;												\
-	strb->refcnt = 1;											\
-	(c)->val_strb = strb;										\
-	(c)->strb_off = off;										\
-	(c)->strb_len = n;											\
-	(c)->flags |= FLAG_MANAGED | FLAG_CSTR_BLOB;				\
-	}
-
 #define GET_POOL(x,off) (g_pool + (off))
 
 #define _CMP_SLICE(pl,c,str,len) slicecmp(_C_STR(pl, c), _C_STRLEN(pl, c), str, len)
@@ -1069,10 +1056,34 @@ inline static int fake_strcmp(const void *ptr1, const void *ptr2, const void *pa
 	return strcmp(ptr1, ptr2);
 }
 
-#define list_delink(l, e) {											\
-	if (e->prev) e->prev->next = e->next;						\
-	if (e->next) e->next->prev = e->prev;						\
-	if (l->head == e) l->head = e->next;						\
-	if (l->tail == e) l->tail = e->prev;						\
+inline static void init_cell(cell *c)
+{
+	c->tag = TAG_EMPTY;
+	c->flags = 0;
+	c->nbr_cells = 0;
+	c->arity = 0;
+	c->attrs = NULL;
+}
+
+inline static void *C_SETSTR(cell *c, const char *s, size_t n, size_t off)
+{
+	strbuf *strb = malloc(sizeof(strbuf) + (n) + 1);
+	if (!strb) return NULL;
+	memcpy(strb->cstr, s, n);
+	strb->cstr[n] = 0;
+	strb->len = n;
+	strb->refcnt = 1;
+	c->val_strb = strb;
+	c->strb_off = off;
+	c->strb_len = n;
+	c->flags |= FLAG_MANAGED | FLAG_CSTR_BLOB;
+	return strb;
+}
+
+#define list_delink(l, e) {						\
+	if (e->prev) e->prev->next = e->next;		\
+	if (e->next) e->next->prev = e->prev;		\
+	if (l->head == e) l->head = e->next;		\
+	if (l->tail == e) l->tail = e->prev;		\
 }
 
