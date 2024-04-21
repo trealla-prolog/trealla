@@ -83,7 +83,6 @@ void clr_accum(cell *p)
 	}
 
 	p->tag = TAG_INTEGER;
-	p->nbr_cells = 1;
 	p->flags = 0;
 }
 
