@@ -16,7 +16,7 @@ const char *g_solo = "!(){}[]|,;`'\"";
 
 static void *make_string_internal(cell *c, const char *s, size_t n, size_t off)
 {
-	strbuf *strb = malloc(sizeof(strbuf) + (n) + 1);
+	strbuf *strb = malloc(sizeof(strbuf) + n + 1);
 	if (!strb) return NULL;
 	memcpy(strb->cstr, s, n);
 	strb->cstr[n] = 0;
