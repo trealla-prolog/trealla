@@ -275,8 +275,6 @@ bool call_builtin(query *q, cell *c, pl_idx c_ctx)
 #endif
 	if (!c->bif_ptr->evaluable && (c->val_off != g_float_s))
 		return throw_error(q, &q->accum, q->st.curr_frame, "type_error", "evaluable");
-	//else if (q->max_eval_depth++ > g_max_depth)
-	//	return throw_error(q, q->st.curr_instr, q->st.curr_frame, "type_error", "evaluable");
 	else
 		c->bif_ptr->fn(q);
 

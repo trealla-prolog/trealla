@@ -694,7 +694,7 @@ struct query_ {
 	uint64_t tot_tcos, step, qid, tmo_msecs, chgen, cycle_error;
 	uint64_t get_started, autofail_n, yield_at;
 	uint64_t cpu_started, time_cpu_last_started, future;
-	unsigned max_depth, max_eval_depth, print_idx, tab_idx, dump_var_nbr;
+	unsigned max_depth, print_idx, tab_idx, dump_var_nbr;
 	unsigned varno, tab0_varno, curr_engine, curr_chan, my_chan, oom;
 	unsigned s_cnt;
 	pl_idx tmphp, latest_ctx, popp, variable_names_ctx;
