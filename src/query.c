@@ -470,14 +470,9 @@ static void leave_predicate(query *q, predicate *pr)
 
 static void unwind_trail(query *q)
 {
-	pl_idx tp = 0;
+	const choice *ch = GET_CURR_CHOICE();
 
-	if (q->cp) {
-		const choice *ch = GET_CURR_CHOICE();
-		tp = ch->st.tp;
-	}
-
-	while (q->st.tp > tp) {
+	while (q->st.tp > ch->st.tp) {
 		const trail *tr = q->trails + --q->st.tp;
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
