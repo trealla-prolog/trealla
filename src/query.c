@@ -434,6 +434,7 @@ static void leave_predicate(query *q, predicate *pr)
 	// query dirty-list. They will be freed up at end of the query.
 	// FIXME: this is a memory drain.
 
+	const frame *f = GET_CURR_FRAME();
 	rule *r;
 
 	while ((r = list_pop_front(&pr->dirty)) != NULL) {
@@ -446,7 +447,7 @@ static void leave_predicate(query *q, predicate *pr)
 			sl_rem(pr->idx2, arg2, r);
 			sl_rem(pr->idx, c, r);
 
-			if (q->no_tco) {
+			if (q->no_tco || true) {	// FIXME: issue #592
 				r->cl.is_deleted = true;
 				list_push_back(&q->dirty, r);
 			} else {
