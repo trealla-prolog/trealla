@@ -288,15 +288,6 @@ static bool bif_iso_retractall_1(query *q)
 		retry_choice(q);
 	}
 
-	if (!pr->refcnt)
-		predicate_purge_dirty_list(pr);
-
-	if (pr->idx && !pr->cnt) {
-		sl_destroy(pr->idx2);
-		sl_destroy(pr->idx);
-		pr->idx = pr->idx2 = NULL;
-	}
-
 	prolog_unlock(q->pl);
 	return true;
 }

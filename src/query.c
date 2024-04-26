@@ -447,7 +447,7 @@ static void leave_predicate(query *q, predicate *pr)
 			sl_rem(pr->idx2, arg2, r);
 			sl_rem(pr->idx, c, r);
 
-			if (q->no_tco || true) {	// FIXME: issue #592
+			if (q->no_tco) {
 				r->cl.is_deleted = true;
 				list_push_back(&q->dirty, r);
 			} else {
