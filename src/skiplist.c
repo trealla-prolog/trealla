@@ -210,12 +210,8 @@ bool sl_rem(skiplist *l, const void *key, const void *val)
 	int k;
 
 	for (k = l->level; k >= 0; k--) {
-		while ((q = p->forward[k]) && (l->cmpkey(q->key, key, l->p, l) <= 0)) {
-			if (q->val == val)
-				break;
-
+		while ((q = p->forward[k]) && (l->cmpkey(q->key, key, l->p, l) < 0))
 			p = q;
-		}
 
 		update[k] = p;
 	}
