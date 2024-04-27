@@ -222,6 +222,9 @@ bool sl_rem(skiplist *l, const void *key, const void *val)
 	if (l->cmpkey(q->key, key, l->p, l) != 0)
 		return false;
 
+	if (q->val != val)
+		return false;
+
 	if (l->delkey)
 		l->delkey(q->key, q->val, l->p);
 
