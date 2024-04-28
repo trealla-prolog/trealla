@@ -310,23 +310,15 @@ inline static bool any_choices(const query *q, const frame *f)
 	return ch->chgen > f->chgen;
 }
 
-void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
+static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx, unsigned depth)
 {
 	const frame *f = GET_FRAME(c_ctx);
 	slot *e = GET_SLOT(f, c->var_nbr);
 	cell *c_attrs = is_empty(&e->c) ? e->c.attrs : NULL;
 	pl_idx c_attrs_ctx = c_attrs ? e->c.attrs_ctx : 0;
 
-	if (is_managed(v)) {
+	if (is_managed(v) || (c_ctx != q->st.fp))
 		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
-	} else if (c_ctx == q->st.fp) {
-	} else if (c_ctx != q->st.curr_frame) {
-		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
-	} else if (q->in_unify || any_choices(q, f)) {
-		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
-	} else if (q->in_call || !is_local(c)) {
-		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
-	}
 
 	if (c_attrs)
 		q->run_hook = true;
@@ -354,13 +346,11 @@ void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
 		} else if (v_ctx == q->st.fp) {
 			if (!is_ground(v->val_ptr))
 				q->no_tco = true;
-			}
+		}
 	} else if (is_var(v)) {
 		make_ref(&e->c, v->var_nbr, v_ctx);
 
-		if ((c_ctx == q->st.fp) && (v_ctx == q->st.curr_frame))
-			q->no_tco = true;
-		else if (c_ctx == q->st.fp) // For env recovery
+		if (c_ctx == q->st.fp)
 			q->no_tco = true;
 	} else {
 		e->c = *v;
@@ -672,13 +662,13 @@ static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 
 	if (is_var(p1) && is_var(p2)) {
 		if (p2_ctx > p1_ctx)
-			set_var(q, p2, p2_ctx, p1, p1_ctx);
+			set_var(q, p2, p2_ctx, p1, p1_ctx, depth);
 		else if (p2_ctx < p1_ctx)
-			set_var(q, p1, p1_ctx, p2, p2_ctx);
+			set_var(q, p1, p1_ctx, p2, p2_ctx, depth);
 		else if (p2->var_nbr > p1->var_nbr)
-			set_var(q, p2, p2_ctx, p1, p1_ctx);
+			set_var(q, p2, p2_ctx, p1, p1_ctx, depth);
 		else if (p2->var_nbr < p1->var_nbr)
-			set_var(q, p1, p1_ctx, p2, p2_ctx);
+			set_var(q, p1, p1_ctx, p2, p2_ctx, depth);
 
 		return true;
 	}
@@ -704,7 +694,7 @@ static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 				was_cyclic = true;
 		}
 
-		set_var(q, p1, p1_ctx, p2, p2_ctx);
+		set_var(q, p1, p1_ctx, p2, p2_ctx, depth);
 
 		if (q->flags.occurs_check == OCCURS_CHECK_TRUE) {
 			if (!was_cyclic && is_cyclic_term(q, p2, p2_ctx))
@@ -748,11 +738,9 @@ static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 bool unify(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
 {
 	q->is_cyclic1 = q->is_cyclic2 = false;
-	if (++q->vgen == 0) q->vgen = 1;
 	q->before_hook_tp = q->st.tp;
-	q->in_unify = true;
+	if (++q->vgen == 0) q->vgen = 1;
 	bool ok = unify_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
-	q->in_unify = false;
 
 	if (q->cycle_error) {
 		if (q->flags.occurs_check == OCCURS_CHECK_TRUE)

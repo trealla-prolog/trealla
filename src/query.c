@@ -444,9 +444,13 @@ static void leave_predicate(query *q, predicate *pr)
 
 		if (pr->idx && pr->cnt) {
 			cell *c = get_head(r->cl.cells);
-			cell *arg1 = c->arity ? FIRST_ARG(c) : NULL;
-			cell *arg2 = c->arity > 1 ? NEXT_ARG(arg1) : NULL;
-			sl_rem(pr->idx2, arg2, r);
+
+			if (pr->key.arity > 1) {
+				cell *arg1 = FIRST_ARG(c);
+				cell *arg2 = NEXT_ARG(arg1);
+				sl_rem(pr->idx2, arg2, r);
+			}
+
 			sl_rem(pr->idx, c, r);
 
 			if (q->no_tco) {

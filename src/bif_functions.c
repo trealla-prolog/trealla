@@ -301,38 +301,16 @@ static bool bif_iso_is_2(query *q)
 	CLEANUP cell p2 = eval(q, p2_tmp);
 	p2.nbr_cells = 1;
 
-	if (is_var(p1) && is_number(&p2)) {
-		set_var(q, p1, p1_ctx, &p2, q->st.curr_frame);
+	if (is_number(&p2)) {
+		q->in_is = true;
+		bool ok = unify(q, p1, p1_ctx, &p2, q->st.curr_frame);
+		q->in_is = false;
 		clr_accum(&q->accum);
-		return true;
+		return ok;
 	}
 
 	if (!is_number(&p2))
 		return throw_error(q, &p2, p2_tmp_ctx, "type_error", "evaluable");
-
-	if (!is_number(p1) && !is_var(p1))
-		return false;
-
-	if (is_smallint(p1) && is_smallint(&p2))
-		return (p1->val_int == p2.val_int);
-
-	if (is_bigint(p1) && is_bigint(&p2))
-		return !mp_int_compare(&p1->val_bigint->ival, &p2.val_bigint->ival);
-
-	if (is_bigint(p1) && is_smallint(&p2))
-		return !mp_int_compare_value(&p1->val_bigint->ival, p2.val_int);
-
-	if (is_bigint(&p2) && is_smallint(p1))
-		return !mp_int_compare_value(&p2.val_bigint->ival, p1->val_int);
-
-	if (is_float(p1) && is_float(&p2))
-		return p1->val_float == p2.val_float;
-
-	if (is_atom(p1) && is_number(&p2) && !strcmp(C_STR(q, p1), "nan"))
-		return is_float(&p2)? isnan(p2.val_float) : 0;
-
-	if (is_atom(p1) && is_number(&p2) && !strcmp(C_STR(q, p1), "inf"))
-		return is_float(&p2) ? isinf(p2.val_float) : 0;
 
 	return false;
 }
