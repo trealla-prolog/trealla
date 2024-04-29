@@ -127,7 +127,7 @@ character...
 Building
 ========
 
-Written in plain-old C.
+Written in plain-old C99.
 
 	git clone https://github.com/trealla-prolog/trealla.git
 	cd trealla
