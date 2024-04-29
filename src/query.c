@@ -1628,7 +1628,7 @@ bool start(query *q)
 		q->did_throw = false;
 		q->tot_goals++;
 
-		if (is_builtin(q->st.curr_instr)) {
+		if (is_builtin(q->st.curr_instr) && q->st.curr_instr->bif_ptr) {
 			q->tot_inferences++;
 			bool status;
 
