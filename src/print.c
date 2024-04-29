@@ -454,8 +454,8 @@ static void print_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 {
 	const frame *f = GET_FRAME(running ? c_ctx : 0);
 	pl_idx slot_nbr = running ?
-		(GET_SLOT(f, c->var_nbr)-q->slots)
-		: (unsigned)c->var_nbr;
+		((pl_idx)(GET_SLOT(f, c->var_nbr)-q->slots))
+		: (pl_idx)c->var_nbr;
 
 	if (q->varnames && !is_anon(c) && running && !q->cycle_error && (c_ctx == 0)) {
 		if (q->varnames && q->p->vartab.var_name[c->var_nbr] && !is_fresh(c)) {

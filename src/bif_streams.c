@@ -12,6 +12,10 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
+#ifndef _WIN32
+#include <unistd.h>
+#endif
+
 #if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 #include <spawn.h>
 #include <sys/wait.h>
