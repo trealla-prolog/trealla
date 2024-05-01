@@ -1094,13 +1094,20 @@ static bool directives(parser *p, cell *d)
 			} else if (!strcmp(dirname, "multifile")) {
 				const char *src = C_STR(p, c_name);
 
-				if (!strchr(src, ':')) {
+				if (strcmp(src, ":")) {
 					set_multifile_in_db(p->m, src, arity);
 				} else {
-					char mod[256], name[256];
-					mod[0] = name[0] = '\0';
-					sscanf(src, "%255[^:]:%255s", mod, name);
-					mod[sizeof(mod)-1] = name[sizeof(name)-1] = '\0';
+					// multifile(:(mod,/(name,arity)))
+					cell *c_mod = c_name + 1;				// FIXME: verify
+					cell *c_slash = c_name + 2;				// FIXME: verify
+					cell *c_functor = c_slash + 1;			// FIXME: verify
+					cell *c_arity = c_slash + 2;			// FIXME: verify
+					const char *mod = C_STR(p, c_mod);
+					const char *name = C_STR(p, c_functor);
+					arity = get_smalluint(c_arity);
+
+					if (!strcmp(C_STR(p, c_slash), "//"))
+						arity += 2;
 
 					if (!is_multifile_in_db(p->m->pl, mod, name, arity)) {
 						if (DUMP_ERRS || !p->do_read_term)
@@ -1157,7 +1164,8 @@ static bool directives(parser *p, cell *d)
 
 		//printf("*** here2 %s\n", C_STR(p, c_id));
 
-		if (!strcmp(C_STR(p, c_id), "/") && (p1->arity == 2)) {
+		if ((!strcmp(C_STR(p, c_id), "/") || !strcmp(C_STR(p, c_id), "//"))
+			&& (p1->arity == 2)) {
 			cell *c_name = c_id + 1;
 
 			if (is_var(c_name)) {

@@ -1337,7 +1337,7 @@ unsigned search_op(module *m, const char *name, unsigned *specifier, bool hint_p
 	return 0;
 }
 
-static bool check_multifile(module *m, predicate *pr, rule *dbe_orig)
+static bool check_not_multifile(module *m, predicate *pr, rule *dbe_orig)
 {
 	if (pr->head
 		&& !pr->is_multifile && !pr->is_dynamic
@@ -1409,8 +1409,147 @@ static void check_goal_expansion(module *m, cell *p1)
 	create_goal_expansion(m, arg1);
 }
 
+static void xref_cell(module *m, clause *cl, cell *c, predicate *parent, int last_was_colon, bool is_directive)
+{
+	unsigned specifier;
+
+	if ((c->arity == 2)
+		&& !GET_OP(c)
+		&& (c->val_off != g_braces_s)
+		&& search_op(m, C_STR(m, c), &specifier, false)) {
+		if (IS_INFIX(specifier))
+			SET_OP(c, specifier);
+	}
+
+	bool found = false, evaluable = false;
+	c->bif_ptr = get_builtin_term(m, c, &found, &evaluable);
+
+	if (found) {
+		if (evaluable)
+			c->flags |= FLAG_EVALUABLE;
+		else
+			c->flags |= FLAG_BUILTIN;
+
+		if (c->val_off != g_call_s)
+			return;
+	} else {
+		if (last_was_colon < 1)
+			c->match = search_predicate(m, c, NULL);
+	}
+
+	if (!is_directive) {
+		if ((c+c->nbr_cells) >= (cl->cells + cl->cidx-1)) {
+			c->flags |= FLAG_TAIL_CALL;
+			if (parent
+				&& (parent->key.val_off == c->val_off)
+				&& (parent->key.arity == c->arity)) {
+				c->flags |= FLAG_RECURSIVE_CALL;
+			}
+		}
+	}
+}
+
+void xref_clause(module *m, clause *cl, predicate *parent)
+{
+	cl->is_unique = false;
+	cell *c = cl->cells;
+
+	if (c->val_off == g_sys_record_key_s)
+		return;
+
+	bool is_directive = is_check_directive(c);
+	int last_was_colon = 0;
+
+	for (pl_idx i = 0; i < cl->cidx; i++) {
+		cell *c = cl->cells + i;
+		c->flags &= ~FLAG_TAIL_CALL;
+
+		if (!is_interned(c))
+			continue;
+
+		// Don't want to match on module qualified predicates
+
+		if (c->val_off == g_colon_s) {
+			xref_cell(m, cl, c, parent, 0, is_directive);
+			last_was_colon = 3;
+		} else {
+			last_was_colon--;
+			xref_cell(m, cl, c, parent, last_was_colon, is_directive);
+		}
+	}
+}
+
+static void xref_predicate(predicate *pr)
+{
+	if (pr->is_processed)
+		return;
+
+	pr->is_processed = true;
+
+	for (rule *r = pr->head; r; r = r->next)
+		xref_clause(pr->m, &r->cl, pr);
+
+	if (pr->is_dynamic || pr->idx)
+		return;
+
+	for (rule *r = pr->head; r; r = r->next)
+		optimize_rule(pr->m, r);
+}
+
+void xref_db(module *m)
+{
+	for (predicate *pr = list_front(&m->predicates);
+		pr; pr = list_next(pr)) {
+		xref_predicate(pr);
+	}
+}
+
+bool module_dump_term(module* m, cell *p1)
+{
+	cell *tmp = p1;
+
+	for (unsigned i = 0; i <p1->nbr_cells; i++, tmp++) {
+		printf("[%02u] tag=%10s, nbr_cells=%u, arity=%u",
+			i,
+			(
+				(tmp->tag == TAG_VAR && is_ref(tmp))? "var_ref" :
+				tmp->tag == TAG_VAR ? "var" :
+				tmp->tag == TAG_INTERNED ? "interned" :
+				tmp->tag == TAG_CSTR ? "cstr" :
+				tmp->tag == TAG_INTEGER ? "integer" :
+				tmp->tag == TAG_DOUBLE ? "float" :
+				tmp->tag == TAG_RATIONAL ? "rational" :
+				tmp->tag == TAG_INDIRECT ? "indirect" :
+				tmp->tag == TAG_BLOB ? "blob" :
+				tmp->tag == TAG_DBID ? "dbid" :
+				tmp->tag == TAG_KVID ? "kvid" :
+				"other"
+			),
+			tmp->nbr_cells, tmp->arity);
+
+		if ((tmp->tag == TAG_INTEGER) && !is_managed(tmp))
+			printf(", %lld", (long long)tmp->val_int);
+
+		if (tmp->tag == TAG_INTERNED)
+			printf(", '%s'", C_STR(q, tmp));
+
+		if (is_var(tmp))
+			printf(", local=%d, temp=%d, anon=%d", is_local(tmp), is_temporary(tmp), is_anon(tmp));
+
+		if (is_ref(tmp))
+			printf(", slot=%u, ctx=%u", tmp->var_nbr, tmp->var_ctx);
+		else if (is_var(tmp))
+			printf(", slot=%u, %s", tmp->var_nbr, C_STR(q, tmp));
+
+		printf("\n");
+	}
+
+	return true;
+}
+
 static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 {
+	bool is_dirty = false;
 	cell *c = p1;
 
 	if (!is_check_directive(c)) {
@@ -1427,15 +1566,23 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 
 		if ((p1->val_off == g_neck_s) && (c->val_off == g_colon_s) && (c->arity == 2) && is_atom(FIRST_ARG(c))) {
 			const char *name = C_STR(m, FIRST_ARG(c));
-			module *tmp_m = find_module(m->pl, name);
+			module *tmp_m = find_module(m->pl, name), *save_m = m;
 
 			if (!tmp_m)
 				m = module_create(m->pl, name);
 			else
 				m = tmp_m;
 
-			move_cells(p1+1, p1+3, p1->nbr_cells-3);
-			p1->nbr_cells -= 2;
+			cell *head = p1 + 3;
+			pl_idx head_nbr_cells = head->nbr_cells;
+			cell *body = head + head_nbr_cells;
+			move_cells(p1+1, head, head_nbr_cells);
+			cell *new_body = p1 + 1 + head_nbr_cells;
+			make_struct(new_body, g_colon_s, bif_iso_invoke_2, 2, 1+body->nbr_cells);
+			SET_OP(new_body, OP_XFY);
+			make_atom(new_body+1, new_atom(m->pl, save_m->name));
+			is_dirty = true;
+			//module_dump_term(save_m, p1);
 			c = get_head(p1);
 		} else if ((c->val_off == g_colon_s) && (c->arity == 2) && is_atom(FIRST_ARG(c))) {
 			const char *name = C_STR(m, FIRST_ARG(c));
@@ -1491,6 +1638,9 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 			}
 		}
 	}
+
+	if (is_dirty)
+		pr->is_dirty = true;
 
 	if (m->prebuilt)
 		pr->is_prebuilt = true;
@@ -1597,7 +1747,7 @@ rule *asserta_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 		if (pr->head)
 			pr->head->prev = r;
 	}
-	 while (!check_multifile(m, pr, r));
+	 while (!check_not_multifile(m, pr, r));
 
 	r->next = pr->head;
 	pr->head = r;
@@ -1629,7 +1779,7 @@ rule *assertz_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 		if (pr->tail)
 			pr->tail->next = r;
 	}
-	 while (!check_multifile(m, pr, r));
+	 while (!check_not_multifile(m, pr, r));
 
 	r->prev = pr->tail;
 	pr->tail = r;
@@ -1641,6 +1791,15 @@ rule *assertz_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 
 	if (!consulting && !pr->idx)
 		pr->is_processed = false;
+
+	if (pr->is_multifile) {
+		pr->is_processed = false;
+
+		if (pr->is_dirty)
+			xref_predicate(pr);
+
+		pr->is_dirty = false;
+	}
 
 	return r;
 }
@@ -1670,96 +1829,6 @@ rule *erase_from_db(module *m, uuid *ref)
 	if (!r) return 0;
 	retract_from_db(m, r);
 	return r;
-}
-
-static void xref_cell(module *m, clause *cl, cell *c, predicate *parent, int last_was_colon, bool is_directive)
-{
-	unsigned specifier;
-
-	if ((c->arity == 2)
-		&& !GET_OP(c)
-		&& (c->val_off != g_braces_s)
-		&& search_op(m, C_STR(m, c), &specifier, false)) {
-		if (IS_INFIX(specifier))
-			SET_OP(c, specifier);
-	}
-
-	bool found = false, evaluable = false;
-	c->bif_ptr = get_builtin_term(m, c, &found, &evaluable);
-
-	if (found) {
-		if (evaluable)
-			c->flags |= FLAG_EVALUABLE;
-		else
-			c->flags |= FLAG_BUILTIN;
-
-		if (c->val_off != g_call_s)
-			return;
-	} else {
-		if (last_was_colon < 1)
-			c->match = search_predicate(m, c, NULL);
-	}
-
-	if (!is_directive) {
-		if ((c+c->nbr_cells) >= (cl->cells + cl->cidx-1)) {
-			c->flags |= FLAG_TAIL_CALL;
-			if (parent
-				&& (parent->key.val_off == c->val_off)
-				&& (parent->key.arity == c->arity)) {
-				c->flags |= FLAG_RECURSIVE_CALL;
-			}
-		}
-	}
-}
-
-void xref_clause(module *m, clause *cl, predicate *parent)
-{
-	cl->is_unique = false;
-	cell *c = cl->cells;
-
-	if (c->val_off == g_sys_record_key_s)
-		return;
-
-	bool is_directive = is_check_directive(c);
-	int last_was_colon = 0;
-
-	for (pl_idx i = 0; i < cl->cidx; i++) {
-		cell *c = cl->cells + i;
-		c->flags &= ~FLAG_TAIL_CALL;
-
-		if (!is_interned(c))
-			continue;
-
-		// Don't want to match on module qualified predicates
-
-		if (c->val_off == g_colon_s) {
-			xref_cell(m, cl, c, parent, 0, is_directive);
-			last_was_colon = 3;
-		} else {
-			last_was_colon--;
-			xref_cell(m, cl, c, parent, last_was_colon, is_directive);
-		}
-	}
-}
-
-void xref_db(module *m)
-{
-	for (predicate *pr = list_front(&m->predicates);
-		pr; pr = list_next(pr)) {
-		if (pr->is_processed)
-			continue;
-
-		pr->is_processed = true;
-
-		for (rule *r = pr->head; r; r = r->next)
-			xref_clause(m, &r->cl, pr);
-
-		if (pr->is_dynamic || pr->idx)
-			continue;
-
-		for (rule *r = pr->head; r; r = r->next)
-			optimize_rule(m, r);
-	}
 }
 
 module *load_text(module *m, const char *src, const char *filename)
