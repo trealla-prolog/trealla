@@ -136,6 +136,7 @@ static const char *set_known(module *m, const char *filename)
 	ptr->orig_filename = strdup(filename);
 	ptr->filename = strdup(filename);
 	ptr->is_loaded = false;
+	ptr->parent = NULL;
 	m->loaded_files = ptr;
 	return ptr->filename;
 }
@@ -161,6 +162,7 @@ static const char *set_loaded(module *m, const char *filename, const char *orig_
 	ptr->filename = strdup(filename);
 	ptr->when_loaded = time(0);
 	ptr->is_loaded = true;
+	ptr->parent = NULL;
 	m->loaded_files = ptr;
 	//printf("*** set_loaded '%s'\n", filename);
 	return ptr->filename;
