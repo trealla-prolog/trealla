@@ -1762,6 +1762,15 @@ rule *asserta_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 	if (!consulting && !pr->idx)
 		pr->is_processed = false;
 
+	if (pr->is_multifile && !pr->is_dynamic) {
+		pr->is_processed = false;
+
+		if (pr->is_dirty)
+			xref_predicate(pr);
+
+		pr->is_dirty = false;
+	}
+
 	return r;
 }
 
@@ -1794,7 +1803,7 @@ rule *assertz_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 	if (!consulting && !pr->idx)
 		pr->is_processed = false;
 
-	if (pr->is_multifile) {
+	if (pr->is_multifile && !pr->is_dynamic) {
 		pr->is_processed = false;
 
 		if (pr->is_dirty)
