@@ -1744,6 +1744,7 @@ static bool bif_iso_univ_2(query *q)
 			return throw_error(q, save_p2, p2_ctx, "type_error", "list");
 
 		q->st.hp = save_hp;
+		trim_heap(q);
 		arity--;
 		cell *tmp2 = get_tmp_heap(q, 0);
 		pl_idx nbr_cells = tmp_heap_used(q);
