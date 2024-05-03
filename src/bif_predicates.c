@@ -1713,11 +1713,12 @@ static bool bif_iso_univ_2(query *q)
 		if (is_var(p22))
 			return throw_error(q, p2, p2_ctx, "instantiation_error", "not_sufficiently_instantiated");
 
+		pl_idx save_hp = q->st.hp;
 		cell *tmp = deep_clone_to_heap(q, p2, p2_ctx);
 		check_heap_error(tmp);
 		p2 = tmp;
 		p2_ctx = q->st.curr_frame;
-		unsigned arity = 0, save_hp = q->st.hp;
+		unsigned arity = 0;
 		check_heap_error(init_tmp_heap(q));
 		cell *save_p2 = p2;
 		LIST_HANDLER(p2);
@@ -1742,6 +1743,7 @@ static bool bif_iso_univ_2(query *q)
 		if (!is_nil(p2))
 			return throw_error(q, save_p2, p2_ctx, "type_error", "list");
 
+		q->st.hp = save_hp;
 		arity--;
 		cell *tmp2 = get_tmp_heap(q, 0);
 		pl_idx nbr_cells = tmp_heap_used(q);
@@ -1763,7 +1765,6 @@ static bool bif_iso_univ_2(query *q)
 		if (arity > MAX_ARITY)
 			return throw_error(q, tmp2, q->st.curr_frame, "representation_error", "max_arity");
 
-		q->st.hp = save_hp;
 		check_heap_error(tmp = alloc_on_heap(q, nbr_cells));
 		dup_cells(tmp, tmp2, nbr_cells);
 		tmp->nbr_cells = nbr_cells;
