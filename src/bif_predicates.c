@@ -1775,8 +1775,6 @@ static bool bif_iso_univ_2(query *q)
 					tmp->flags |= FLAG_EVALUABLE;
 				else
 					tmp->flags |= FLAG_BUILTIN;
-			} else if ((tmp->match = search_predicate(q->st.m, tmp, NULL)) != NULL) {
-				tmp->flags &= ~FLAG_BUILTIN;
 			}
 		}
 
