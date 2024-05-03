@@ -1770,13 +1770,13 @@ static bool bif_iso_univ_2(query *q)
 		bool found = false;
 
 		if (is_callable(tmp)) {
-			if ((tmp->match = search_predicate(q->st.m, tmp, NULL)) != NULL) {
-				tmp->flags &= ~FLAG_BUILTIN;
-			} else if ((tmp->bif_ptr = get_builtin_term(q->st.m, tmp, &found, NULL)), found) {
+			if ((tmp->bif_ptr = get_builtin_term(q->st.m, tmp, &found, NULL)), found) {
 				if (tmp->bif_ptr->evaluable)
 					tmp->flags |= FLAG_EVALUABLE;
 				else
 					tmp->flags |= FLAG_BUILTIN;
+			} else if ((tmp->match = search_predicate(q->st.m, tmp, NULL)) != NULL) {
+				tmp->flags &= ~FLAG_BUILTIN;
 			}
 		}
 
