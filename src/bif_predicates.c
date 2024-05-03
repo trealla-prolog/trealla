@@ -1721,10 +1721,11 @@ static bool bif_iso_univ_2(query *q)
 		unsigned arity = 0;
 		check_heap_error(init_tmp_heap(q));
 		cell *save_p2 = p2;
-		LIST_HANDLER(p2);
+		cell *l = p2;
+		LIST_HANDLER(l);
 
-		while (is_list(p2)) {
-			cell *h = LIST_HEAD(p2);
+		while (is_list(l)) {
+			cell *h = LIST_HEAD(l);
 
 			if (is_cstring(h) && is_string(save_p2))
 				convert_to_literal(q->st.m, h);
@@ -1733,14 +1734,14 @@ static bool bif_iso_univ_2(query *q)
 			check_heap_error(tmp2);
 			copy_cells(tmp2, h, h->nbr_cells);
 
-			p2 = LIST_TAIL(p2);
+			l = LIST_TAIL(l);
 			arity++;
 		}
 
-		if (is_var(p2))
+		if (is_var(l))
 			return throw_error(q, p2, p2_ctx, "instantiation_error", "list");
 
-		if (!is_nil(p2))
+		if (!is_nil(l))
 			return throw_error(q, save_p2, p2_ctx, "type_error", "list");
 
 		q->st.hp = save_hp;
