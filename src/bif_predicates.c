@@ -1713,28 +1713,26 @@ static bool bif_iso_univ_2(query *q)
 		if (is_var(p22))
 			return throw_error(q, p2, p2_ctx, "instantiation_error", "not_sufficiently_instantiated");
 
+		cell *tmp;
 		check_heap_error(init_tmp_heap(q));
-		cell *tmp = deep_clone_to_tmp(q, p2, p2_ctx);
-		check_heap_error(tmp);
-		pl_idx tmp_start = tmp_heap_used(q);
-		p2 = tmp;
-		p2_ctx = q->st.curr_frame;
 		unsigned arity = 0;
 		cell *save_p2 = p2;
 		cell *l = p2;
+		pl_idx l_ctx = p2_ctx;
 		LIST_HANDLER(l);
 
 		while (is_list(l)) {
 			cell *h = LIST_HEAD(l);
+			h = deref(q, h, l_ctx);
+			pl_idx h_ctx = q->latest_ctx;
 
 			if (is_cstring(h) && is_string(save_p2))
 				convert_to_literal(q->st.m, h);
 
-			cell *tmp2 = alloc_on_tmp(q, h->nbr_cells);
-			check_heap_error(tmp2);
-			copy_cells(tmp2, h, h->nbr_cells);
-
+			deep_clone_to_tmp(q, h, h_ctx);
 			l = LIST_TAIL(l);
+			l = deref(q, l, l_ctx);
+			l_ctx = q->latest_ctx;
 			arity++;
 		}
 
@@ -1745,8 +1743,8 @@ static bool bif_iso_univ_2(query *q)
 			return throw_error(q, save_p2, p2_ctx, "type_error", "list");
 
 		arity--;
-		cell *tmp2 = get_tmp_heap(q, tmp_start);
-		pl_idx nbr_cells = tmp_heap_used(q) - tmp_start;
+		cell *tmp2 = get_tmp_heap(q, 0);
+		pl_idx nbr_cells = tmp_heap_used(q);
 
 		if (is_cstring(tmp2) && !is_string(save_p2)) {
 			share_cell(tmp2);
