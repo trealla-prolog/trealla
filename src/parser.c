@@ -3816,7 +3816,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			int nextch = *s;
 			bool noneg = (!SB_strcmp(p->token, "-") || !SB_strcmp(p->token, "+")) && (nextch == '='); // Hack
 
-			if (noneg) {
+			if (noneg && !p->string) {
 				if (DUMP_ERRS || !p->do_read_term)
 					fprintf(stdout, "Error: syntax error, incomplete, needs parenthesis, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
