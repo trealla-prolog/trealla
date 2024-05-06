@@ -789,7 +789,7 @@ struct parser_ {
 	bool did_getline:1;
 	bool already_loaded_error:1;
 	bool do_read_term:1;
-	bool string:1;
+	bool is_string:1;
 	bool run_init:1;
 	bool directive:1;
 	bool consulting:1;
