@@ -2797,6 +2797,7 @@ static bool bif_iso_op_3(query *q)
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,atom);
 	GET_NEXT_ARG(p3,list_or_atom);
+
 	if (is_negative(p1) || is_gt(p1,1200))
 		return throw_error(q, p1, p1_ctx, "domain_error", "operator_priority");
 
