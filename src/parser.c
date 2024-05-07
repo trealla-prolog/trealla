@@ -2310,7 +2310,7 @@ static int get_escape(parser *p, const char **_src, bool *error, bool number)
 	int ch = *src++;
 	const char *ptr = strchr(g_anti_escapes, ch);
 
-	if (ptr)
+	if (ptr && ((ch != 's') || !p->flags.strict_iso))
 		ch = g_escapes[ptr-g_anti_escapes];
 	else if ((isdigit(ch) || (ch == 'x')
 		|| (((ch == 'u') || (ch == 'U')) && (p->flags.json || !p->flags.strict_iso))
