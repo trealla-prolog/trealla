@@ -93,7 +93,7 @@ static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysor
 		pl_idx c_ctx = q->latest_ctx;
 		cell tmp;
 
-		if (is_compound(c) && !is_iso_list(c)) {
+		if (is_compound(c)) {
 			make_ref(&tmp, create_vars(q, 1, true), q->st.curr_frame);
 			unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 			c = &tmp;
@@ -144,14 +144,10 @@ static bool bif_iso_sort_2(query *q)
 	if (is_string(p2))
 		p2 = string_to_chars_list(q, p2, p2_ctx);
 
-	p1 = deep_clone_to_heap(q, p1, p1_ctx);
-	check_heap_error(p1);
-	p1_ctx = q->st.curr_frame;
-
 	bool status = false;
 	cell *l = nodesort(q, p1, p1_ctx, true, false, &status);
 	if (!l) return status;
-	return unify(q, p2, p2_ctx, l, q->st.curr_frame);
+	return unify(q, p2, p2_ctx, l, p1_ctx);
 }
 
 static bool bif_iso_msort_2(query *q)
@@ -188,14 +184,10 @@ static bool bif_iso_msort_2(query *q)
 	if (is_string(p2))
 		p2 = string_to_chars_list(q, p2, p2_ctx);
 
-	p1 = deep_clone_to_heap(q, p1, p1_ctx);
-	check_heap_error(p1);
-	p1_ctx = q->st.curr_frame;
-
 	bool status = false;
 	cell *l = nodesort(q, p1, p1_ctx, false, false, &status);
 	if (!l) return status;
-	return unify(q, p2, p2_ctx, l, q->st.curr_frame);
+	return unify(q, p2, p2_ctx, l, p1_ctx);
 }
 
 static bool bif_iso_keysort_2(query *q)
@@ -231,14 +223,10 @@ static bool bif_iso_keysort_2(query *q)
 	if (skip1 && skip2 && (skip2 > skip1))
 		return false;
 
-	//p1 = deep_clone_to_heap(q, p1, p1_ctx);
-	//check_heap_error(p1);
-	//p1_ctx = q->st.curr_frame;
-
 	bool status = false;
 	cell *l = nodesort(q, p1, p1_ctx, false, true, &status);
 	if (!l) return status;
-	return unify(q, p2, p2_ctx, l, q->st.curr_frame);
+	return unify(q, p2, p2_ctx, l, p1_ctx);
 }
 
 static cell *nodesort4(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool ascending, int arg, bool *status)
@@ -281,7 +269,7 @@ static cell *nodesort4(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool ascen
 		pl_idx c_ctx = q->latest_ctx;
 		cell tmp;
 
-		if (is_var(c) || is_compound(c)) {
+		if (is_var(c)) {
 			make_ref(&tmp, create_vars(q, 1, true), q->st.curr_frame);
 			unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 			c = &tmp;
