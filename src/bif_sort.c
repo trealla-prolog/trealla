@@ -231,9 +231,9 @@ static bool bif_iso_keysort_2(query *q)
 	if (skip1 && skip2 && (skip2 > skip1))
 		return false;
 
-	p1 = deep_clone_to_heap(q, p1, p1_ctx);
-	check_heap_error(p1);
-	p1_ctx = q->st.curr_frame;
+	//p1 = deep_clone_to_heap(q, p1, p1_ctx);
+	//check_heap_error(p1);
+	//p1_ctx = q->st.curr_frame;
 
 	bool status = false;
 	cell *l = nodesort(q, p1, p1_ctx, false, true, &status);
