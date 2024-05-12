@@ -203,7 +203,7 @@ static bool bif_yield_0(query *q)
 	return do_yield(q, 0);
 }
 
-static bool bif_task_n(query *q)
+static bool bif_call_task_n(query *q)
 {
 	pl_idx save_hp = q->st.hp;
 	cell *p0 = deep_clone_to_heap(q, q->st.curr_instr, q->st.curr_frame);
@@ -307,14 +307,14 @@ static bool bif_recv_1(query *q)
 
 builtins g_tasks_bifs[] =
 {
-	{"task", 1, bif_task_n, ":callable", false, false, BLAH},
-	{"task", 2, bif_task_n, ":callable,?term", false, false, BLAH},
-	{"task", 3, bif_task_n, ":callable,?term,?term", false, false, BLAH},
-	{"task", 4, bif_task_n, ":callable,?term,?term,?term", false, false, BLAH},
-	{"task", 5, bif_task_n, ":callable,?term,?term,?term,?term", false, false, BLAH},
-	{"task", 6, bif_task_n, ":callable,?term,?term,?term,?term,?term", false, false, BLAH},
-	{"task", 7, bif_task_n, ":callable,?term,?term,?term,?term,?term,?term", false, false, BLAH},
-	{"task", 8, bif_task_n, ":callable,?term,?term,?term,?term,?term,?term,?term", false, false, BLAH},
+	{"call_task", 1, bif_call_task_n, ":callable", false, false, BLAH},
+	{"call_task", 2, bif_call_task_n, ":callable,?term", false, false, BLAH},
+	{"call_task", 3, bif_call_task_n, ":callable,?term,?term", false, false, BLAH},
+	{"call_task", 4, bif_call_task_n, ":callable,?term,?term,?term", false, false, BLAH},
+	{"call_task", 5, bif_call_task_n, ":callable,?term,?term,?term,?term", false, false, BLAH},
+	{"call_task", 6, bif_call_task_n, ":callable,?term,?term,?term,?term,?term", false, false, BLAH},
+	{"call_task", 7, bif_call_task_n, ":callable,?term,?term,?term,?term,?term,?term", false, false, BLAH},
+	{"call_task", 8, bif_call_task_n, ":callable,?term,?term,?term,?term,?term,?term,?term", false, false, BLAH},
 
 	{"end_wait", 0, bif_end_wait_0, NULL, false, false, BLAH},
 	{"wait", 0, bif_wait_0, NULL, false, false, BLAH},

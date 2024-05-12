@@ -993,7 +993,7 @@ Co-operative multi-tasking is available in the form of light-weight
 coroutines that run until they yield either explicitly or implicitly
 (when waiting on an event of some kind). They are called a `task` here.
 
-	task/[1-n]	            # concurrent form of call/1-n
+	call_task/[1-n]	        # concurrent form of call/1-n
 	tasklist/[2-8]          # concurrent form of maplist/1-n
 
 An example:

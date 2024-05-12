@@ -22,7 +22,7 @@ future(Template, Goal, F) :-
 	Task0 = ((Goal -> (retract(F), send([F-Template])) ; (retract(F), fail))),
 	copy_term(Task0, Task),
 	write_term_to_atom(A, Task, [quoted(true)]),
-	task(callgoal_, A, F).
+	call_task(callgoal_, A, F).
 
 :- meta_predicate(future(-,0,?)).
 :- help(future(+term,+callable,?list), [iso(false)]).
@@ -94,7 +94,7 @@ strip_prefix_([[_-V]|Rest], Init, L) :-
 	strip_prefix_(Rest, [V|Init], L).
 
 % NOTE: going via an atom through callgoal/1 is to get around a bug to
-% do with passing variables in task/1. Maybe it will get fixed one day.
+% do with passing variables in call_task/1. Maybe it will get fixed one day.
 
 callgoal_(A, '$future'(N)) :-
 	read_term_from_atom(A, T, []),
