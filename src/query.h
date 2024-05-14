@@ -54,7 +54,7 @@ bool throw_error2(query *q, cell *c, pl_idx c_ctx, const char *err_type, const c
 
 size_t scan_is_chars_list2(query *q, cell *l, pl_idx l_ctx, bool allow_codes, bool *has_var, bool *is_partial);
 size_t scan_is_chars_list(query *q, cell *l, pl_idx l_ctx, bool allow_codes);
-char *chars_list_to_string(query *q, cell *p_chars, pl_idx p_chars_ctx, size_t len);
+char *chars_list_to_string(query *q, cell *p_chars, pl_idx p_chars_ctx);
 cell *string_to_chars_list(query *q, cell *p, pl_idx p_ctx);
 
 int create_vars(query *q, unsigned cnt, bool zeroit);

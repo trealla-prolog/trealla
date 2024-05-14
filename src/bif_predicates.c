@@ -4262,8 +4262,8 @@ static bool bif_crypto_data_hash_3(query *q)
 				} else
 					return throw_error(q, arg, arg_ctx, "domain_error", "algorithm");
 			} else if (!CMP_STRING_TO_CSTR(q, h, "hmac") && is_iso_list(arg)
-				&& (keylen = scan_is_chars_list(q, arg, 0, true)) > 0) {
-				key = chars_list_to_string(q, arg, 0, keylen);
+				&& (scan_is_chars_list(q, arg, 0, true)) > 0) {
+				key = chars_list_to_string(q, arg, 0);
 			} else
 				return throw_error(q, h, h_ctx, "domain_error", "hash_option");
 		} else

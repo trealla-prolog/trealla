@@ -56,12 +56,10 @@ cell *string_to_chars_list(query *q, cell *p, pl_idx p_ctx)
 	return end_list(q);
 }
 
-char *chars_list_to_string(query *q, cell *p_chars, pl_idx p_chars_ctx, size_t len)
+char *chars_list_to_string(query *q, cell *p_chars, pl_idx p_chars_ctx)
 {
-	char *tmp = malloc(len+1+1);
-	check_error(tmp);
-	char *dst = tmp;
 	LIST_HANDLER(p_chars);
+	SB(pr);
 
 	while (is_list(p_chars)) {
 		cell *h = LIST_HEAD(p_chars);
@@ -69,11 +67,11 @@ char *chars_list_to_string(query *q, cell *p_chars, pl_idx p_chars_ctx, size_t l
 
 		if (is_integer(h)) {
 			int ch = get_smallint(h);
-			dst += put_char_utf8(dst, ch);
+			SB_putchar(pr, ch);
 		} else {
 			const char *p = C_STR(q, h);
 			int ch = peek_char_utf8(p);
-			dst += put_char_utf8(dst, ch);
+			SB_putchar(pr, ch);
 		}
 
 		p_chars = LIST_TAIL(p_chars);
@@ -81,7 +79,9 @@ char *chars_list_to_string(query *q, cell *p_chars, pl_idx p_chars_ctx, size_t l
 		p_chars_ctx = q->latest_ctx;
 	}
 
-	*dst = '\0';
+	char *tmp = malloc(SB_strlen(pr)+1);
+	check_error(tmp);
+	strcpy(tmp, SB_cstr(pr));
 	return tmp;
 }
 
@@ -700,8 +700,6 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			break;
 		}
 
-		size_t tmp_len = 0;
-
 		if (is_interned(tail) && !is_compound(tail)) {
 			const char *src = C_STR(q, tail);
 
@@ -711,9 +709,9 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			}
 		} else if (q->st.m->flags.double_quote_chars && running
 			&& !q->ignore_ops && possible_chars
-			&& (tmp_len = scan_is_chars_list(q, tail, tail_ctx, false) > 0))
+			&& (scan_is_chars_list(q, tail, tail_ctx, false) > 0))
 			{
-			char *tmp_src = chars_list_to_string(q, tail, tail_ctx, tmp_len);
+			char *tmp_src = chars_list_to_string(q, tail, tail_ctx);
 
 			if ((strlen(tmp_src) == 1) && (*tmp_src == '\'')) {
 				SB_sprintf(q->sb, "|\"%s\"", tmp_src);

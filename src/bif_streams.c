@@ -970,7 +970,7 @@ static bool bif_popen_4(query *q)
 		if (!len)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-		src = chars_list_to_string(q, p1, p1_ctx, len);
+		src = chars_list_to_string(q, p1, p1_ctx);
 		filename = src;
 	}
 
@@ -1098,7 +1098,7 @@ static bool bif_process_create_3(query *q)
 		if (!len)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-		src = chars_list_to_string(q, p1, p1_ctx, len);
+		src = chars_list_to_string(q, p1, p1_ctx);
 		filename = src;
 	}
 
@@ -1464,7 +1464,7 @@ static bool bif_iso_open_4(query *q)
 		if (!len)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-		filename = src = chars_list_to_string(q, p1, p1_ctx, len);
+		filename = src = chars_list_to_string(q, p1, p1_ctx);
 	}
 
 	convert_path(filename);
@@ -4177,7 +4177,7 @@ static bool bif_sys_read_term_from_chars_4(query *q)
 		if (!srclen)
 			return throw_error(q, p_chars, p_chars_ctx, "type_error", "character");
 
-		src = chars_list_to_string(q, p_chars, p_chars_ctx, srclen);
+		src = chars_list_to_string(q, p_chars, p_chars_ctx);
 	} else {
 		if (has_var)
 			return throw_error(q, p_chars, p_chars_ctx, "instantiation_error", "var");
@@ -4272,7 +4272,7 @@ static bool bif_read_term_from_chars_3(query *q)
 		if (!len)
 			return throw_error(q, p_chars, p_chars_ctx, "type_error", "character");
 
-		src = chars_list_to_string(q, p_chars, p_chars_ctx, len);
+		src = chars_list_to_string(q, p_chars, p_chars_ctx);
 	} else {
 		if (has_var)
 			return throw_error(q, p_chars, p_chars_ctx, "instantiation_error", "var");
@@ -4334,7 +4334,7 @@ static bool bif_read_term_from_atom_3(query *q)
 		if (!len)
 			return throw_error(q, p_chars, p_chars_ctx, "type_error", "atom");
 
-		src = chars_list_to_string(q, p_chars, p_chars_ctx, len);
+		src = chars_list_to_string(q, p_chars, p_chars_ctx);
 	} else
 		return throw_error(q, p_chars, p_chars_ctx, "type_error", "atom");
 
@@ -4679,7 +4679,7 @@ static bool bif_read_file_to_string_3(query *q)
 		if (!len)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-		src = chars_list_to_string(q, p1, p1_ctx, len);
+		src = chars_list_to_string(q, p1, p1_ctx);
 		filename = src;
 	} else
 		filename = src = DUP_STRING(q, p1);
@@ -4922,7 +4922,7 @@ static bool bif_savefile_2(query *q)
 		if (!len)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-		filename = chars_list_to_string(q, p1, p1_ctx, len);
+		filename = chars_list_to_string(q, p1, p1_ctx);
 	} else
 		filename = DUP_STRING(q, p1);
 
@@ -4947,7 +4947,7 @@ static bool bif_loadfile_2(query *q)
 		if (!len)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-		filename = chars_list_to_string(q, p1, p1_ctx, len);
+		filename = chars_list_to_string(q, p1, p1_ctx);
 	} else
 		filename = DUP_STRING(q, p1);
 
@@ -5005,7 +5005,7 @@ static bool bif_getfile_2(query *q)
 		if (!len)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-		filename = chars_list_to_string(q, p1, p1_ctx, len);
+		filename = chars_list_to_string(q, p1, p1_ctx);
 	} else
 		filename = DUP_STRING(q, p1);
 
@@ -5096,7 +5096,7 @@ static bool bif_getfile_3(query *q)
 		if (!len)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-		filename = chars_list_to_string(q, p1, p1_ctx, len);
+		filename = chars_list_to_string(q, p1, p1_ctx);
 	} else
 		filename = DUP_STRING(q, p1);
 
@@ -5318,7 +5318,7 @@ static bool bif_absolute_file_name_3(query *q)
 		if (!len)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-		filename = chars_list_to_string(q, p1, p1_ctx, len);
+		filename = chars_list_to_string(q, p1, p1_ctx);
 	} else
 		filename = DUP_STRING(q, p1);
 
@@ -5564,7 +5564,7 @@ static bool bif_access_file_2(query *q)
 		if (!len)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-		filename = chars_list_to_string(q, p1, p1_ctx, len);
+		filename = chars_list_to_string(q, p1, p1_ctx);
 	} else
 		filename = DUP_STRING(q, p1);
 
@@ -5616,7 +5616,7 @@ static bool bif_exists_file_1(query *q)
 		if (!len)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-		filename = chars_list_to_string(q, p1, p1_ctx, len);
+		filename = chars_list_to_string(q, p1, p1_ctx);
 	} else
 		filename = DUP_STRING(q, p1);
 
@@ -5648,7 +5648,7 @@ static bool bif_directory_files_2(query *q)
 		if (!len)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-		filename = chars_list_to_string(q, p1, p1_ctx, len);
+		filename = chars_list_to_string(q, p1, p1_ctx);
 	} else
 		filename = DUP_STRING(q, p1);
 
@@ -5704,7 +5704,7 @@ static bool bif_delete_file_1(query *q)
 		if (!len)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-		filename = chars_list_to_string(q, p1, p1_ctx, len);
+		filename = chars_list_to_string(q, p1, p1_ctx);
 	} else
 		filename = DUP_STRING(q, p1);
 
@@ -5733,7 +5733,7 @@ static bool bif_rename_file_2(query *q)
 		if (!len)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-		filename1 = chars_list_to_string(q, p1, p1_ctx, len);
+		filename1 = chars_list_to_string(q, p1, p1_ctx);
 	} else
 		filename1 = DUP_STRING(q, p1);
 
@@ -5745,7 +5745,7 @@ static bool bif_rename_file_2(query *q)
 			return throw_error(q, p2, p2_ctx, "type_error", "atom");
 		}
 
-		filename2 = chars_list_to_string(q, p2, p2_ctx, len);
+		filename2 = chars_list_to_string(q, p2, p2_ctx);
 	} else
 		filename2 = DUP_STRING(q, p2);
 
@@ -5777,7 +5777,7 @@ static bool bif_copy_file_2(query *q)
 		if (!len)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-		filename1 = chars_list_to_string(q, p1, p1_ctx, len);
+		filename1 = chars_list_to_string(q, p1, p1_ctx);
 	} else
 		filename1 = DUP_STRING(q, p1);
 
@@ -5789,7 +5789,7 @@ static bool bif_copy_file_2(query *q)
 			return throw_error(q, p2, p2_ctx, "type_error", "atom");
 		}
 
-		filename2 = chars_list_to_string(q, p2, p2_ctx, len);
+		filename2 = chars_list_to_string(q, p2, p2_ctx);
 	} else
 		filename2 = DUP_STRING(q, p2);
 
@@ -5847,7 +5847,7 @@ static bool bif_time_file_2(query *q)
 		if (!len)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-		filename = chars_list_to_string(q, p1, p1_ctx, len);
+		filename = chars_list_to_string(q, p1, p1_ctx);
 	} else
 		filename = DUP_STRING(q, p1);
 
@@ -5877,7 +5877,7 @@ static bool bif_size_file_2(query *q)
 		if (!len)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-		filename = chars_list_to_string(q, p1, p1_ctx, len);
+		filename = chars_list_to_string(q, p1, p1_ctx);
 	} else
 		filename = DUP_STRING(q, p1);
 
@@ -5906,7 +5906,7 @@ static bool bif_exists_directory_1(query *q)
 		if (!len)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-		filename = chars_list_to_string(q, p1, p1_ctx, len);
+		filename = chars_list_to_string(q, p1, p1_ctx);
 	} else
 		filename = DUP_STRING(q, p1);
 
@@ -5937,7 +5937,7 @@ static bool bif_make_directory_1(query *q)
 		if (!len)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-		filename = chars_list_to_string(q, p1, p1_ctx, len);
+		filename = chars_list_to_string(q, p1, p1_ctx);
 	} else
 		filename = DUP_STRING(q, p1);
 
@@ -5969,7 +5969,7 @@ static bool bif_make_directory_path_1(query *q)
 		if (!len)
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
-		filename = chars_list_to_string(q, p1, p1_ctx, len);
+		filename = chars_list_to_string(q, p1, p1_ctx);
 	} else
 		filename = DUP_STRING(q, p1);
 
@@ -6028,7 +6028,7 @@ static bool bif_working_directory_2(query *q)
 				return throw_error(q, p_new, p_new_ctx, "type_error", "atom");
 			}
 
-			filename = chars_list_to_string(q, p_new, p_new_ctx, len);
+			filename = chars_list_to_string(q, p_new, p_new_ctx);
 		} else
 			filename = DUP_STRING(q, p_new);
 
@@ -6052,7 +6052,7 @@ static bool bif_chdir_1(query *q)
 
 	if (is_iso_list(p1)) {
 		size_t len = scan_is_chars_list(q, p1, p1_ctx, true);
-		filename = chars_list_to_string(q, p1, p1_ctx, len);
+		filename = chars_list_to_string(q, p1, p1_ctx);
 	} else
 		filename = DUP_STRING(q, p1);
 
@@ -6834,15 +6834,14 @@ static bool bif_sys_put_chars_1(query *q)
 	GET_FIRST_ARG(p1,any);
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
-	size_t len;
 
 	if (is_cstring(p1)) {
 		const char *src = C_STR(q, p1);
 		size_t len = C_STRLEN(q, p1);
 		net_write(src, len, str);
-	} else if ((len = scan_is_chars_list(q, p1, p1_ctx, true)) > 0) {
-		char *src = chars_list_to_string(q, p1, p1_ctx, len);
-		net_write(src, len, str);
+	} else if ((scan_is_chars_list(q, p1, p1_ctx, true)) > 0) {
+		char *src = chars_list_to_string(q, p1, p1_ctx);
+		net_write(src, strlen(src), str);
 		free(src);
 	} else if (is_nil(p1)) {
 		;
@@ -6858,15 +6857,14 @@ static bool bif_sys_put_chars_2(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,list_or_nil);
-	size_t len;
 
 	if (is_cstring(p1)) {
 		const char *src = C_STR(q, p1);
 		size_t len = C_STRLEN(q, p1);
 		net_write(src, len, str);
-	} else if ((len = scan_is_chars_list(q, p1, p1_ctx, true)) > 0) {
-		char *src = chars_list_to_string(q, p1, p1_ctx, len);
-		net_write(src, len, str);
+	} else if ((scan_is_chars_list(q, p1, p1_ctx, true)) > 0) {
+		char *src = chars_list_to_string(q, p1, p1_ctx);
+		net_write(src, strlen(src), str);
 		free(src);
 	} else if (is_nil(p1)) {
 		;
