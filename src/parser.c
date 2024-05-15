@@ -714,6 +714,10 @@ static bool directives(parser *p, cell *d)
 		return true;
 	}
 
+	if (!strcmp(dirname, "det") && (c->arity == 1)) {
+		return true;
+	}
+
 	if (!strcmp(dirname, "include") && (c->arity == 1)) {
 		if (!is_atom(p1)) return true;
 		unsigned save_line_nbr = p->line_nbr;
