@@ -6,6 +6,8 @@ extern unsigned char library_lists_pl[];
 extern unsigned int library_lists_pl_len;
 extern unsigned char library_apply_pl[];
 extern unsigned int library_apply_pl_len;
+extern unsigned char library_heaps_pl[];
+extern unsigned int library_heaps_pl_len;
 extern unsigned char library_http_pl[];
 extern unsigned int library_http_pl_len;
 extern unsigned char library_atts_pl[];
@@ -90,6 +92,7 @@ library g_libs[] = {
 	 {"format", library_format_pl, &library_format_pl_len},
 	 {"freeze", library_freeze_pl, &library_freeze_pl_len},
 	 {"gensym", library_gensym_pl, &library_gensym_pl_len},
+	 {"http", library_heaps_pl, &library_heaps_pl_len},
 	 {"http", library_http_pl, &library_http_pl_len},
 	 {"iso_ext", library_iso_ext_pl, &library_iso_ext_pl_len},
 	 {"json", library_json_pl, &library_json_pl_len},

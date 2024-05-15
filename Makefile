@@ -130,6 +130,7 @@ LIBOBJECTS +=  \
 	library/format.o \
 	library/freeze.o \
 	library/gensym.o \
+	library/heaps.o \
 	library/http.o \
 	library/iso_ext.o \
 	library/json.o \
