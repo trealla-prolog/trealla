@@ -1412,6 +1412,9 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	bool rhs_parens = rhs_pri_1 >= my_priority;
 	space = is_number(rhs) && is_negative(rhs);
 
+	if (is_interned(rhs) && !iswalpha(*C_STR(q, rhs)))
+		space = true;
+
 	if (!rhs_parens && is_prefix(rhs) && strcmp(src, "|"))
 		space = true;
 
