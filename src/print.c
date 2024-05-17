@@ -1412,9 +1412,6 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	bool rhs_parens = rhs_pri_1 >= my_priority;
 	space = is_number(rhs) && is_negative(rhs);
 
-	if (is_interned(rhs) && !iswalpha(*C_STR(q, rhs)))
-		space = true;
-
 	if (!rhs_parens && is_prefix(rhs) && strcmp(src, "|"))
 		space = true;
 
@@ -1441,6 +1438,12 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	if ((q->last_thing != WAS_SPACE) && space && !rhs_parens) {
 		SB_sprintf(q->sb, "%s", " ");
 		q->last_thing = WAS_SPACE;
+	}
+
+	if (!rhs_is_symbol
+		) {
+		if (is_interned(rhs) && !iswalpha(*C_STR(q, rhs)))
+			space = true;
 	}
 
 	if (!is_var(rhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
