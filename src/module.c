@@ -1235,7 +1235,7 @@ static unsigned search_op_internal(const module *m, const char *name, unsigned *
 		if (!IS_INFIX(ptr->specifier))
 			continue;
 
-		if (hint_prefix && !IS_PREFIX(ptr->specifier))
+		if (hint_prefix)
 			continue;
 
 		if (specifier) *specifier = ptr->specifier;
@@ -1254,7 +1254,7 @@ static unsigned search_op_internal(const module *m, const char *name, unsigned *
 		if (!IS_INFIX(ptr->specifier))
 			continue;
 
-		if (hint_prefix && !IS_PREFIX(ptr->specifier))
+		if (hint_prefix)
 			continue;
 
 		if (specifier) *specifier = ptr->specifier;
@@ -1328,19 +1328,109 @@ unsigned search_op(module *m, const char *name, unsigned *specifier, bool hint_p
 			return priority;
 	}
 
-#if 0
-	for (module *tmp_m = m->pl->modules; tmp_m; tmp_m = tmp_m->next) {
+	return 0;
+}
+
+static unsigned match_op_internal(const module *m, const char *name, unsigned *specifier, unsigned arity)
+{
+	const op_table *ptr;
+	sliter *iter = sl_find_key(m->defops, name);
+
+	while (sl_next_key(iter, (void**)&ptr)) {
+		if (!ptr->priority)
+			continue;
+
+		if ((arity == 2) && !IS_INFIX(ptr->specifier))
+			continue;
+
+		if ((arity == 1) && IS_INFIX(ptr->specifier))
+			continue;
+
+		if (specifier) *specifier = ptr->specifier;
+		unsigned n = ptr->priority;
+		sl_done(iter);
+		return n;
+	}
+
+	sl_done(iter);
+	iter = sl_find_key(m->ops, name);
+
+	while (sl_next_key(iter, (void**)&ptr)) {
+		if (!ptr->priority)
+			continue;
+
+		if ((arity == 2) && !IS_INFIX(ptr->specifier))
+			continue;
+
+		if ((arity == 1) && IS_INFIX(ptr->specifier))
+			continue;
+
+		if (specifier) *specifier = ptr->specifier;
+		unsigned n = ptr->priority;
+		sl_done(iter);
+		return n;
+	}
+
+	sl_done(iter);
+	iter = sl_find_key(m->defops, name);
+
+	while (sl_next_key(iter, (void**)&ptr)) {
+		if (!ptr->priority)
+			continue;
+
+		if ((arity == 2) && !IS_INFIX(ptr->specifier))
+			continue;
+
+		if ((arity == 1) && IS_INFIX(ptr->specifier))
+			continue;
+
+		if (specifier) *specifier = ptr->specifier;
+		unsigned n = ptr->priority;
+		sl_done(iter);
+		return n;
+	}
+
+	sl_done(iter);
+	iter = sl_find_key(m->ops, name);
+
+	while (sl_next_key(iter, (void**)&ptr)) {
+		if (!ptr->priority)
+			continue;
+
+		if ((arity == 2) && !IS_INFIX(ptr->specifier))
+			continue;
+
+		if ((arity == 1) && IS_INFIX(ptr->specifier))
+			continue;
+
+		if (specifier) *specifier = ptr->specifier;
+		unsigned n = ptr->priority;
+		sl_done(iter);
+		return n;
+	}
+
+	sl_done(iter);
+	return 0;
+}
+
+unsigned match_op(module *m, const char *name, unsigned *specifier, unsigned arity)
+{
+	unsigned priority = match_op_internal(m, name, specifier, arity);
+
+	if (priority)
+		return priority;
+
+	for (unsigned i = 0; i < m->idx_used; i++) {
+		module *tmp_m = m->used[i];
+
 		if ((m == tmp_m) || !tmp_m->user_ops)
 			continue;
 
-		priority = search_op_internal(tmp_m, name, specifier, hint_prefix);
+		priority = match_op_internal(tmp_m, name, specifier, arity);
 
-		if (priority) {
-			//m->used[m->idx_used++] = tmp_m;
+		if (priority)
 			return priority;
-		}
 	}
-#endif
 
 	return 0;
 }
