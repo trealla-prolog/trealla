@@ -639,7 +639,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 
 			visit me = {.next = visited, .c = head, .c_ctx = head_ctx};
 			parens = is_compound(head) && special_op;
-			if (parens) {  SB_sprintf(q->sb, "%s", "("); }
+			if (parens) {  SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
 			q->parens = parens;
 			print_term_to_buf_(q, head, head_ctx, running, -1, 0, depth+1, &me);
 			q->parens = false;
@@ -771,7 +771,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 				unsigned specifier = 0;
 				unsigned priority = match_op(q->st.m, C_STR(q, tail), &specifier, tail->arity);
 				bool parens = is_infix(tail) && (priority >= 1000);
-				if (parens) { SB_sprintf(q->sb, "%s", "("); }
+				if (parens) { SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
 				print_term_to_buf_(q, tail, tail_ctx, running, true, depth+1, depth+1, visited);
 				if (parens) { SB_sprintf(q->sb, "%s", ")"); }
 			}
@@ -1084,7 +1084,11 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 				&& strcmp(src, "\\") && strcmp(src, ",") && strcmp(src, ";")
 				&& strcmp(src, "[]") && strcmp(src, "{}") && !q->parens;
 
-			if ((q->last_thing == WAS_SYMBOL) && is_symbol && !q->parens && !q->quoted) {
+			//printf("*** here last_was_symbol=%d, is_symbol=%d, q->parens=%d, quote=%d\n", q->last_thing == WAS_SYMBOL, is_symbol, q->parens, quote);
+
+			if ((q->last_thing == WAS_SYMBOL) && is_symbol && !q->parens && !quote
+				&& (c->arity == 1) // Only if prefix
+				) {
 				SB_sprintf(q->sb, "%s", " ");
 				q->last_thing = WAS_SPACE;
 			}
@@ -1099,6 +1103,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		if (is_compound(c) && !is_string(c)) {
 			pl_idx arity = c->arity;
 			SB_sprintf(q->sb, "%s", braces&&!q->ignore_ops?"{":"(");
+			q->last_thing = WAS_OTHER;
 			q->parens = true;
 			bool any = false;
 
@@ -1136,7 +1141,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 						q->parens = parens = true;
 				}
 
-				if (parens) { SB_sprintf(q->sb, "%s", "("); }
+				if (parens) { SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
 
 				visit me = {.next = visited, .c = tmp, .c_ctx = tmp_ctx};
 				q->parens = parens;
@@ -1164,8 +1169,8 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		pl_idx lhs_ctx = c_ctx;
 		if (running) lhs = deref(q, lhs, lhs_ctx);
 		if (running) lhs_ctx = q->latest_ctx;
-
-		bool any = false;
+		unsigned lhs_pri = is_interned(lhs) ? match_op(q->st.m, C_STR(q, lhs), NULL, lhs->arity) : 0;
+		bool any = false, is_op_lhs = lhs_pri;
 
 		if (!is_var(lhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
 			if (q->last_thing != WAS_SPACE) SB_sprintf(q->sb, "%s", " ");
@@ -1181,8 +1186,8 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 			print_term_to_buf_(q, lhs, lhs_ctx, running, 0, 0, depth+1, &me);
 		}
 
-		bool space = (c->val_off == g_minus_s) && (is_number(lhs) || match_op(q->st.m, C_STR(q, lhs), NULL, lhs->arity));
-		if ((c->val_off == g_plus_s) && match_op(q->st.m, C_STR(q, lhs), NULL, lhs->arity) && lhs->arity) space = true;
+		bool space = (c->val_off == g_minus_s) && (is_number(lhs) || is_op_lhs);
+		if ((c->val_off == g_plus_s) && is_op_lhs) space = true;
 		if (isalpha(*src)) space = true;
 
 		if (has_visited(visited, lhs, lhs_ctx)) {
@@ -1221,19 +1226,19 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		pl_idx rhs_ctx = c_ctx;
 		if (running) rhs = deref(q, rhs, rhs_ctx);
 		if (running) rhs_ctx = q->latest_ctx;
-		bool any = false;
-
 		unsigned rhs_pri = is_interned(rhs) ? match_op(q->st.m, C_STR(q, rhs), NULL, rhs->arity) : 0;
+		bool any = false, is_op_rhs = rhs_pri;
 
 		if ((q->last_thing == WAS_SYMBOL) && !strcmp(src, "\\+")) {
 			SB_sprintf(q->sb, "%s", " ");
 			q->last_thing = WAS_SPACE;
 		}
 
-		bool space = (c->val_off == g_minus_s) && (is_number(rhs) || match_op(q->st.m, C_STR(q, rhs), NULL, rhs->arity));
-		if ((c->val_off == g_plus_s) && match_op(q->st.m, C_STR(q, rhs), NULL, rhs->arity) && rhs->arity) space = true;
+		bool space = (c->val_off == g_minus_s) && (is_number(rhs) || is_op_rhs);
+		if ((c->val_off == g_plus_s) && is_op_rhs) space = true;
 		if (isalpha(*src)) space = true;
-		if (is_op(rhs) || is_negative(rhs) || is_float(rhs)) space = true;
+		if (is_op_rhs || is_negative(rhs) || is_float(rhs)) space = true;
+		if (is_interned(rhs) && !iswalpha(*C_STR(q, rhs))) space = true;
 
 		bool parens = false;
 		if (!strcmp(src, "+") && (is_infix(rhs) || is_postfix(rhs))) parens = true;
@@ -1241,8 +1246,8 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		if (my_priority && (rhs_pri == my_priority) && strcmp(src, "-") && strcmp(src, "+")) parens = true;
 		if (!strcmp(src, "-") && (rhs_pri == my_priority) && (rhs->arity > 1)) parens = true;
 		if ((c->val_off == g_minus_s) && is_number(rhs) && !is_negative(rhs)) parens = true;
-		if ((c->val_off == g_minus_s) && match_op(q->st.m, C_STR(q, rhs), NULL, rhs->arity) && !rhs->arity) parens = true;
-		if ((c->val_off == g_plus_s) && match_op(q->st.m, C_STR(q, rhs), NULL, rhs->arity) && !rhs->arity) parens = true;
+		if ((c->val_off == g_minus_s) && search_op(q->st.m, C_STR(q, rhs), NULL, true) && !rhs->arity) parens = true;
+		if ((c->val_off == g_plus_s) && search_op(q->st.m, C_STR(q, rhs), NULL, true) && !rhs->arity) parens = true;
 
 		bool quote = q->quoted && has_spaces(src, src_len);
 
@@ -1304,12 +1309,20 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	if (running) lhs_ctx = q->latest_ctx;
 	if (running) rhs = deref(q, rhs, rhs_ctx);
 	if (running) rhs_ctx = q->latest_ctx;
+
+#if 0
+	unsigned lhs_pri = is_interned(lhs) ? match_op(q->st.m, C_STR(q, lhs), NULL, lhs->arity) : 0;
+	bool is_op_lhs = lhs_pri;
+	unsigned rhs_pri = is_interned(rhs) ? match_op(q->st.m, C_STR(q, rhs), NULL, rhs->arity) : 0;
+	bool is_op_rhs = rhs_pri;
+#endif
+
 	bool any = false;
 
 	// Print LHS..
 
-	unsigned lhs_pri_1 = is_interned(lhs) ? match_op(q->st.m, C_STR(q, lhs), NULL, rhs->arity) : 0;
-	unsigned lhs_pri_2 = is_interned(lhs) && !lhs->arity ? match_op(q->st.m, C_STR(q, lhs), NULL, lhs->arity) : 0;
+	unsigned lhs_pri_1 = is_interned(lhs) ? match_op(q->st.m, C_STR(q, lhs), NULL, lhs->arity) : 0;
+	unsigned lhs_pri_2 = is_interned(lhs) && !lhs->arity ? search_op(q->st.m, C_STR(q, lhs), NULL, true) : 0;
 
 	bool lhs_parens = lhs_pri_1 >= my_priority;
 	if ((lhs_pri_1 == my_priority) && is_op_yfx) lhs_parens = false;
@@ -1338,7 +1351,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		me.next = visited;
 		me.c = lhs;
 		me.c_ctx = lhs_ctx;
-		if (lhs_parens) { SB_sprintf(q->sb, "%s", "("); }
+		if (lhs_parens) { SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
 		q->parens = lhs_parens;
 		print_term_to_buf_(q, lhs, lhs_ctx, running, 0, 0, depth+1, &me);
 		q->parens = false;
@@ -1408,7 +1421,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	// Print RHS..
 
 	unsigned rhs_pri_1 = is_interned(rhs) ? match_op(q->st.m, C_STR(q, rhs), NULL, rhs->arity) : 0;
-	unsigned rhs_pri_2 = is_interned(rhs) && !rhs->arity ? match_op(q->st.m, C_STR(q, rhs), NULL, rhs->arity) : 0;
+	unsigned rhs_pri_2 = is_interned(rhs) && !rhs->arity ? search_op(q->st.m, C_STR(q, rhs), NULL, true) : 0;
 	bool rhs_parens = rhs_pri_1 >= my_priority;
 	space = is_number(rhs) && is_negative(rhs);
 
@@ -1438,12 +1451,6 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	if ((q->last_thing != WAS_SPACE) && space && !rhs_parens) {
 		SB_sprintf(q->sb, "%s", " ");
 		q->last_thing = WAS_SPACE;
-	}
-
-	if (!rhs_is_symbol
-		) {
-		if (is_interned(rhs) && !iswalpha(*C_STR(q, rhs)))
-			space = true;
 	}
 
 	if (!is_var(rhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
