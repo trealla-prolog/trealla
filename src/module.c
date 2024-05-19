@@ -1169,60 +1169,6 @@ bool set_op(module *m, const char *name, unsigned specifier, unsigned priority)
 	return true;
 }
 
-static unsigned find_op_internal(const module *m, const char *name, unsigned specifier)
-{
-	const op_table *ptr;
-	sliter *iter = sl_find_key(m->ops, name);
-
-	while (sl_next_key(iter, (void**)&ptr)) {
-		if (!ptr->priority)
-			continue;
-
-		if (ptr->specifier == specifier) {
-			sl_done(iter);
-			return ptr->priority;
-		}
-	}
-
-	sl_done(iter);
-	iter = sl_find_key(m->defops, name);
-
-	while (sl_next_key(iter, (void**)&ptr)) {
-		if (!ptr->priority)
-			continue;
-
-		if (ptr->specifier == specifier) {
-			sl_done(iter);
-			return ptr->priority;
-		}
-	}
-
-	sl_done(iter);
-	return 0;
-}
-
-unsigned find_op(module *m, const char *name, unsigned specifier)
-{
-	unsigned priority = find_op_internal(m, name, specifier);
-
-	if (priority)
-		return priority;
-
-	for (unsigned i = 0; i < m->idx_used; i++) {
-		module *tmp_m = m->used[i];
-
-		if ((m == tmp_m) || !tmp_m->user_ops)
-			continue;
-
-		priority = find_op_internal(tmp_m, name, specifier);
-
-		if (priority)
-			return priority;
-	}
-
-	return 0;
-}
-
 static unsigned search_op_internal(const module *m, const char *name, unsigned *specifier, bool hint_prefix)
 {
 	const op_table *ptr;

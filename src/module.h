@@ -19,7 +19,6 @@ void set_unloaded(module *m, const char *filename);
 const char *get_loaded(const module *m, const char *filename);
 void set_parent(const module *m, const char *filename, const char *parent);
 void convert_to_literal(module *m, cell *c);
-unsigned find_op(module *m, const char *name, unsigned specifier);
 unsigned search_op(module *m, const char *name, unsigned *specifier, bool hint_prefix);
 unsigned match_op(module *m, const char *name, unsigned *specifier, unsigned arity);
 bool set_op(module *m, const char *name, unsigned specifier, unsigned priority);

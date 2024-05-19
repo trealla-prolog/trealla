@@ -422,11 +422,7 @@ void dump_vars(query *q, bool partial)
 		space = false;
 
 		if (is_compound(c)) {
-			unsigned pri = find_op(q->st.m, C_STR(q, c), GET_OP(c));
-
-			if (!pri) {
-				pri = search_op(q->st.m, C_STR(q, c), NULL, false);
-			}
+			unsigned pri = search_op(q->st.m, C_STR(q, c), NULL, c->arity);
 
 			if (pri >= 700)
 				parens = true;

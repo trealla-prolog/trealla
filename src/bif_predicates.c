@@ -2768,7 +2768,7 @@ static bool do_op(query *q, cell *p3, pl_idx p3_ctx)
 		return throw_error(q, p3, p3_ctx, "permission_error", "modify,operator");
 
 	unsigned tmp_optype = 0;
-	unsigned tmp_pri = search_op(q->st.m, C_STR(q, p3), &tmp_optype, false);
+	unsigned tmp_pri = match_op(q->st.m, C_STR(q, p3), &tmp_optype, p3->arity);
 
 	if (IS_INFIX(specifier) && IS_POSTFIX(tmp_optype))
 		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator");
@@ -2776,14 +2776,10 @@ static bool do_op(query *q, cell *p3, pl_idx p3_ctx)
 	if (!tmp_pri && !pri)
 		return true;
 
-	tmp_pri = find_op(q->st.m, C_STR(q, p3), OP_FX);
-
 	if (IS_POSTFIX(specifier) && (IS_INFIX(tmp_optype)/* || tmp_pri*/))
 		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator");
 
-	tmp_pri = find_op(q->st.m, C_STR(q, p3), OP_FY);
-
-	if (IS_POSTFIX(specifier) && (IS_INFIX(tmp_optype) || tmp_pri))
+	if (IS_POSTFIX(specifier) && (IS_INFIX(tmp_optype) || (tmp_optype == OP_FY)))
 		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator");
 
 	if (!set_op(q->st.m, C_STR(q, p3), specifier, pri))
