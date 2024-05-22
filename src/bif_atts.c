@@ -38,24 +38,17 @@ bool bif_attribute_3(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
-bool bif_put_atts_2(query *q)
+static bool do_put_atts(query *q, cell *attr, pl_idx p2_ctx, bool is_minus)
 {
 	GET_FIRST_ARG(p1,var);
-	GET_NEXT_ARG(p2,callable);
 	const frame *f = GET_FRAME(p1_ctx);
 	slot *e = GET_SLOT(f, p1->var_nbr);
 	cell *c = deref(q, &e->c, e->c.var_ctx);
-	bool is_minus = p2->val_off == g_minus_s;
 	frame *fcurr = GET_CURR_FRAME();
 	fcurr->no_tco = true;
 
 	if (!c->attrs && is_minus)
 		return true;
-
-	cell *attr = p2;
-
-	if ((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s))
-		attr++;
 
 	add_trail(q, p1_ctx, p1->var_nbr, c->attrs, c->attrs_ctx);
 
@@ -123,6 +116,38 @@ bool bif_put_atts_2(query *q)
 	e->c.attrs = l;
 	e->c.attrs_ctx = q->st.curr_frame;
 	return true;
+}
+
+bool bif_put_atts_2(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	GET_NEXT_ARG(p2,callable);
+	bool is_minus = p2->val_off == g_minus_s;
+
+	if ((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s))
+		p2++;
+
+	if (is_iso_list(p2)) {
+		LIST_HANDLER(p2);
+
+		while (is_iso_list(p2)) {
+			cell *attr = LIST_HEAD(p2);
+			attr = deref(q, attr, p2_ctx);
+
+			if (!do_put_atts(q, attr, q->latest_ctx, is_minus))
+				return false;
+
+			p2 = LIST_TAIL(p2);
+			p2 = deref(q, p2, p2_ctx);
+			p2_ctx = q->latest_ctx;
+		}
+
+		if (!is_nil(p2))
+			return throw_error(q, p2, p2_ctx, "type_error", "list");
+
+		return true;
+	} else
+		return do_put_atts(q, p2, p2_ctx, is_minus);
 }
 
 bool bif_get_atts_2(query *q)
