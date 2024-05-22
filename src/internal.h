@@ -82,7 +82,6 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define GET_PREV_CHOICE() GET_CHOICE(q->cp-2)
 
 #define GET_FRAME(i) (q->frames+(i))
-#define GET_FIRST_FRAME() GET_FRAME(0)
 #define GET_CURR_FRAME() GET_FRAME(q->st.curr_frame)
 #define GET_NEW_FRAME() GET_FRAME(q->st.fp)
 
@@ -294,6 +293,7 @@ enum {
 };
 
 // The OP types are stored in the high 3 bits of the flag (13-15)
+// and only used during parsing
 
 #define	OP_FX 1
 #define	OP_FY 2
@@ -371,7 +371,7 @@ struct cell_ {
 		pl_flt val_float;
 		bigint *val_bigint;
 		blob *val_blob;
-		uint16_t priority;				// used in parsing operators
+		uint16_t priority;				// used during parsing
 
 		struct {
 			uint8_t	chr_len;

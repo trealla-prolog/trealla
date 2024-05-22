@@ -1964,7 +1964,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 		q->ignores[i] = true;
 
 	p->cl->nbr_vars = p2->cl->nbr_vars;
-	frame *f = GET_FIRST_FRAME();
+	frame *f = GET_FRAME(0);
 	char *src = NULL;
 
 	for (unsigned i = 0; i < p2->cl->nbr_vars; i++) {
