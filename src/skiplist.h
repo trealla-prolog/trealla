@@ -8,7 +8,7 @@ typedef struct sliter_ sliter;
 
 skiplist *sl_create(
 	int (*cmpkey)(const void *k1, const void *k2, const void *p, void *l),
-	void (*delkey)(void *k, void *v, const void* p),
+	void (*delkey)(void *k, void *v, const void *p),
 	const void *p
 	);
 
