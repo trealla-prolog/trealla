@@ -41,7 +41,6 @@ typedef uint32_t pl_idx;
 #define pl_atomic volatile
 #endif
 
-#include "cdebug.h"
 #include "list.h"
 #include "skiplist.h"
 #include "stringbuf.h"

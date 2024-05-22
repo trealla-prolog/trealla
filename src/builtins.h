@@ -6,6 +6,7 @@
 #include <time.h>
 
 #include "internal.h"
+#include "cdebug.h"
 
 #define MAX_FFI 1000
 
