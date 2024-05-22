@@ -52,6 +52,9 @@ static bool do_put_atts(query *q, cell *attr, pl_idx p2_ctx, bool is_minus)
 
 	add_trail(q, p1_ctx, p1->var_nbr, c->attrs, c->attrs_ctx);
 
+	if ((attr->val_off == g_minus_s) || (attr->val_off == g_plus_s))
+		attr++;
+
 	if (is_nil(attr)) {
 		e->c.flags = 0;
 		e->c.attrs = NULL;
@@ -123,9 +126,6 @@ bool bif_put_atts_2(query *q)
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,callable);
 	bool is_minus = p2->val_off == g_minus_s;
-
-	if ((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s))
-		p2++;
 
 	if (is_iso_list(p2)) {
 		LIST_HANDLER(p2);
