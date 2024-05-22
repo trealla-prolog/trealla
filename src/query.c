@@ -709,7 +709,7 @@ static void commit_frame(query *q, cell *body)
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
 		cut(q); // ???
-		trim_trail(q);
+		//trim_trail(q);	// Causes leak #542
 	} else {
 		choice *ch = GET_CURR_CHOICE();
 		ch->st.curr_rule = q->st.curr_rule;
