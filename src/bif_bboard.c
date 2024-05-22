@@ -186,9 +186,7 @@ static bool bif_bb_get_2(query *q)
 	if (DO_DUMP) DUMP_TERM2("bb_get1", tmpbuf, tmp, q->st.curr_frame, 1);
 
 	const frame *f = GET_CURR_FRAME();
-	unsigned var_nbr = rebase_term(q, tmp, f->actual_slots);
-	//fprintf(stderr, "*** f=%u, f->actual_slots=%u, create_vars=%u\n", q->st.curr_frame, f->actual_slots, var_nbr  - f->actual_slots);
-	create_vars(q, var_nbr-f->actual_slots, true);
+	rebase_term(q, tmp, f->actual_slots);
 
 	if (DO_DUMP) DUMP_TERM2("bb_get2", tmpbuf, tmp, q->st.curr_frame, 1);
 

@@ -13,21 +13,6 @@ struct heap_save {
 	pl_idx size, hp;
 };
 
-#define push_tmp_heap(q) 								\
-	struct heap_save _s;								\
-	_s.heap = q->tmp_heap;								\
-	_s.size = q->tmph_size;								\
-	_s.hp = q->tmphp;									\
-	q->tmp_heap = NULL;									\
-	q->tmphp = 0;										\
-	if (!init_tmp_heap(q)) return NULL;
-
-#define pop_tmp_heap(q)									\
-	free(q->tmp_heap);									\
-	q->tmp_heap = _s.heap;								\
-	q->tmph_size = _s.size;								\
-	q->tmphp = _s.hp;
-
 static int accum_slot(const query *q, size_t slot_nbr, unsigned var_nbr)
 {
 	const void *vnbr;
@@ -390,44 +375,44 @@ cell *prepare_call(query *q, bool prefix, cell *p1, pl_idx p1_ctx, unsigned extr
 	return tmp;
 }
 
-static bool copy_vars(query *q, cell *tmp, bool copy_attrs, const cell *from, pl_idx from_ctx, const cell *to, pl_idx to_ctx)
+static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_idx from_ctx, const cell *to, pl_idx to_ctx)
 {
-	unsigned nbr_cells = tmp->nbr_cells;
+	unsigned nbr_cells = c->nbr_cells;
 
-	for (unsigned i = 0; i < nbr_cells; i++, tmp++) {
-		if (!is_ref(tmp))
+	for (unsigned i = 0; i < nbr_cells; i++, c++) {
+		if (!is_ref(c))
 			continue;
 
-		const frame *f = GET_FRAME(tmp->var_ctx);
-		const slot *e = GET_SLOT(f, tmp->var_nbr);
-		const size_t slot_nbr = f->base + tmp->var_nbr;
+		const frame *f = GET_FRAME(c->var_ctx);
+		const slot *e = GET_SLOT(f, c->var_nbr);
+		const size_t slot_nbr = f->base + c->var_nbr;
 		int var_nbr;
 
-		if ((var_nbr = accum_slot(q, slot_nbr, q->varno)) == -1)
+		if ((var_nbr = accum_slot(q, slot_nbr, q->varno)) == -1) {
 			var_nbr = q->varno++;
+			create_vars(q, 1, true);
+		}
 
 		if (!q->tab_idx) {
 			q->tab0_varno = var_nbr;
 			q->tab_idx++;
 		}
 
-		tmp->tmp_attrs = NULL;
-		tmp->flags |= FLAG_VAR_FRESH;
-		tmp->flags |= FLAG_VAR_ANON;
+		c->tmp_attrs = NULL;
+		c->flags |= FLAG_VAR_FRESH;
+		c->flags |= FLAG_VAR_ANON;
 
-		if (from && (tmp->var_nbr == from->var_nbr) && (tmp->var_ctx == from_ctx)) {
-			tmp->var_nbr = to->var_nbr;
-			tmp->var_ctx = to_ctx;
+		if (from && (c->var_nbr == from->var_nbr) && (c->var_ctx == from_ctx)) {
+			c->var_nbr = to->var_nbr;
+			c->var_ctx = to_ctx;
 		} else {
-			tmp->var_nbr = var_nbr;
-			tmp->var_ctx = q->st.curr_frame;
+			c->var_nbr = var_nbr;
+			c->var_ctx = q->st.curr_frame;
 
 			if (copy_attrs && e->c.attrs) {
-				push_tmp_heap(q);
-				cell *tmp2 = deep_clone_to_heap(q, e->c.attrs, e->c.attrs_ctx);
-				pop_tmp_heap(q);
-				check_heap_error(tmp2);
-				tmp->tmp_attrs = tmp2;
+				const frame *f2 = GET_FRAME(c->var_ctx);
+				slot *e2 = GET_SLOT(f, c->var_nbr);
+				*e2 = *e;
 			}
 		}
 	}
@@ -441,7 +426,7 @@ unsigned rebase_term(query *q, cell *c, unsigned start_nbr)
 	q->varno = start_nbr;
 	q->tab_idx = 0;
 
-	if (!copy_vars(q, c, false, NULL, 0, NULL, 0)) {
+	if (!copy_vars(q, c, true, NULL, 0, NULL, 0)) {
 		sl_destroy(q->vars);
 		q->vars = NULL;
 		return start_nbr;
