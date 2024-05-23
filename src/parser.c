@@ -159,15 +159,6 @@ bool make_stringn(cell *d, const char *s, size_t n)
 		return true;
 	}
 
-#if 0
-	if (n < MAX_SMALL_STRING) {
-		make_smalln(d, s, n);
-		d->flags |= FLAG_CSTR_STRING;
-		d->arity = 2;
-		return true;
-	}
-#endif
-
 	*d = (cell){0};
 	d->tag = TAG_CSTR;
 	d->flags = FLAG_CSTR_STRING;

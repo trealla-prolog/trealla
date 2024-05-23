@@ -609,6 +609,12 @@ static void trim_trail(query *q)
 		if (tr->var_ctx != q->st.curr_frame)
 			break;
 
+		const frame *f = GET_FRAME(tr->var_ctx);
+		slot *e = GET_SLOT(f, tr->var_nbr);
+		cell *c = &e->c;
+		unshare_cell(c);
+		c->tag = TAG_EMPTY;
+		c->attrs = NULL;
 		q->st.tp--;
 	}
 }
@@ -711,7 +717,6 @@ static void commit_frame(query *q, cell *body)
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
 		cut(q); // ???
-		trim_trail(q);
 	} else {
 		choice *ch = GET_CURR_CHOICE();
 		ch->st.curr_rule = q->st.curr_rule;
@@ -905,6 +910,7 @@ static bool resume_frame(query *q)
 		) {
 		q->st.sp -= f->actual_slots;
 		q->st.fp--;
+		trim_trail(q);
 	}
 
 	q->st.curr_instr = f->curr_instr;
