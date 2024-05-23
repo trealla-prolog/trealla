@@ -2301,7 +2301,7 @@ static bool bif_call_residue_vars_2(query *q)
 	return true;
 }
 
-static bool bif_iso_current_prolog_flag_2(query *q)
+static bool bif_sys_current_prolog_flag_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,any);
@@ -6457,7 +6457,6 @@ builtins g_iso_bifs[] =
 	{"end_of_file", 0, bif_iso_halt_0, NULL, true, false, BLAH},
 	{"halt", 0, bif_iso_halt_0, NULL, true, false, BLAH},
 	{"halt", 1, bif_iso_halt_1, "+integer", true, false, BLAH},
-	{"$legacy_current_prolog_flag", 2, bif_iso_current_prolog_flag_2, "+atom,?term", true, false, BLAH},
 	{"set_prolog_flag", 2, bif_iso_set_prolog_flag_2, "+atom,+term", true, false, BLAH},
 	{"op", 3, bif_iso_op_3, "?integer,?atom,+atom", true, false, BLAH},
 	{"findall", 3, bif_iso_findall_3, "+term,:callable,-list", true, false, BLAH},
@@ -6555,6 +6554,7 @@ builtins g_other_bifs[] =
 	{"can_be", 4, bif_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"can_be", 2, bif_can_be_2, "+atom,+term,", false, false, BLAH},
 
+	{"$current_prolog_flag", 2, bif_sys_current_prolog_flag_2, "+atom,?term", true, false, BLAH},
 	{"$det_length_rundown", 2, bif_sys_det_length_rundown_2, "?list,+integer", false, false, BLAH},
 	{"$memberchk", 3, bif_sys_memberchk_3, "?term,?list,-term", false, false, BLAH},
 	{"$register_cleanup", 1, bif_sys_register_cleanup_1, NULL, false, false, BLAH},
