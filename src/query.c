@@ -595,11 +595,13 @@ static void trim_trail(query *q)
 	if (q->undo_hi_tp)
 		return;
 
-	if (!q->cp)
-		return;
+	pl_idx tp;
 
-	const choice *ch = GET_CURR_CHOICE();
-	pl_idx tp = ch->st.tp;
+	if (q->cp)  {
+		const choice *ch = GET_CURR_CHOICE();
+		tp = ch->st.tp;
+	} else
+		tp = 0;
 
 	while (q->st.tp > tp) {
 		const trail *tr = q->trails + q->st.tp - 1;
@@ -709,7 +711,7 @@ static void commit_frame(query *q, cell *body)
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
 		cut(q); // ???
-		//trim_trail(q);	// Causes leak #542
+		trim_trail(q);
 	} else {
 		choice *ch = GET_CURR_CHOICE();
 		ch->st.curr_rule = q->st.curr_rule;
@@ -936,7 +938,7 @@ static void proceed(query *q)
 
 #define MAX_LOCAL_VARS (1L<<30)
 
-int create_vars(query *q, unsigned cnt, bool zeroit)
+int create_vars(query *q, unsigned cnt)
 {
 	frame *f = GET_CURR_FRAME();
 
@@ -974,11 +976,9 @@ int create_vars(query *q, unsigned cnt, bool zeroit)
 		return -1;
 	}
 
-	if (zeroit) {
-		for (unsigned i = 0; i < cnt; i++) {
-			slot *e = GET_SLOT(f, f->actual_slots + i);
-			memset(e, 0, sizeof(slot));
-		}
+	for (unsigned i = 0; i < cnt; i++) {
+		slot *e = GET_SLOT(f, f->actual_slots + i);
+		memset(e, 0, sizeof(slot));
 	}
 
 	q->st.sp += cnt;

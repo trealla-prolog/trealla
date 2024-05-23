@@ -390,7 +390,7 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 
 		if ((var_nbr = accum_slot(q, slot_nbr, q->varno)) == -1) {
 			var_nbr = q->varno++;
-			create_vars(q, 1, true);
+			create_vars(q, 1);
 		}
 
 		if (!q->tab_idx) {
@@ -478,7 +478,7 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx
 	int cnt = q->varno - f->actual_slots;
 
 	if (cnt) {
-		if (create_vars(q, cnt, true) < 0) {
+		if (create_vars(q, cnt) < 0) {
 			throw_error(q, c, c_ctx, "resource_error", "stack");
 			return NULL;
 		}

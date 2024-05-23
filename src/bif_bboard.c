@@ -45,7 +45,7 @@ static bool bif_bb_b_put_2(query *q)
 
 	int var_nbr;
 
-	if ((var_nbr = create_vars(q, 1, true)) < 0)
+	if ((var_nbr = create_vars(q, 1)) < 0)
 		return false;
 
 	if (is_atom(p1))
@@ -312,7 +312,7 @@ static bool bif_bb_update_3(query *q)
 	cell *tmp = (cell*)val;
 	const frame *f = GET_CURR_FRAME();
 	unsigned var_nbr = rebase_term(q, tmp, f->actual_slots);
-	create_vars(q, var_nbr-f->actual_slots, true);
+	create_vars(q, var_nbr-f->actual_slots);
 
 	if (DO_DUMP) DUMP_TERM2("bb_update", tmpbuf, p2, p2_ctx, 1);
 
