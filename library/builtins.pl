@@ -12,7 +12,7 @@ dcg_translate(TermIn, Term) :-
 predicate_property(P, A) :-
 	nonvar(P), atom(A), !,
 	must_be(P, callable, predicate_property/2, _),
-	'$legacy_predicate_property'(P, A).
+	'$predicate_property'(P, A).
 predicate_property(P, A) :-
 	'$load_properties',
 	(	var(A) ->
@@ -40,7 +40,7 @@ predicate_property(P, A) :-
 evaluable_property(P, A) :-
 	nonvar(P), atom(A), !,
 	must_be(P, callable, evaluable_property/2, _),
-	'$legacy_evaluable_property'(P, A).
+	'$evaluable_property'(P, A).
 evaluable_property(P, A) :-
 	'$load_properties',
 	(	var(A) ->
