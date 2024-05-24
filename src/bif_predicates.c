@@ -6555,6 +6555,8 @@ builtins g_other_bifs[] =
 	{"can_be", 2, bif_can_be_2, "+atom,+term,", false, false, BLAH},
 
 	{"$legacy_current_prolog_flag", 2, bif_sys_current_prolog_flag_2, "+atom,?term", true, false, BLAH},
+	{"$legacy_predicate_property", 2, bif_sys_predicate_property_2, "+callable,?string", false, false, BLAH},
+	{"$legacy_evaluable_property", 2, bif_sys_evaluable_property_2, "+callable,?string", false, false, BLAH},
 	{"$det_length_rundown", 2, bif_sys_det_length_rundown_2, "?list,+integer", false, false, BLAH},
 	{"$memberchk", 3, bif_sys_memberchk_3, "?term,?list,-term", false, false, BLAH},
 	{"$register_cleanup", 1, bif_sys_register_cleanup_1, NULL, false, false, BLAH},
@@ -6562,8 +6564,6 @@ builtins g_other_bifs[] =
 	{"$is_partial_string", 1, bif_sys_is_partial_string_1, "+string", false, false, BLAH},
 	{"$undo_trail", 2, bif_sys_undo_trail_2, "-list,-blob", false, false, BLAH},
 	{"$redo_trail", 1, bif_sys_redo_trail_1, "+blob", false, false, BLAH},
-	{"$predicate_property", 2, bif_sys_predicate_property_2, "+callable,?string", false, false, BLAH},
-	{"$evaluable_property", 2, bif_sys_evaluable_property_2, "+callable,?string", false, false, BLAH},
 	{"$load_properties", 0, bif_sys_load_properties_0, NULL, false, false, BLAH},
 	{"$load_flags", 0, bif_sys_load_flags_0, NULL, false, false, BLAH},
 	{"$load_ops", 0, bif_sys_load_ops_0, NULL, false, false, BLAH},
