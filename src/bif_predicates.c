@@ -6554,7 +6554,7 @@ builtins g_other_bifs[] =
 	{"can_be", 4, bif_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"can_be", 2, bif_can_be_2, "+atom,+term,", false, false, BLAH},
 
-	{"$current_prolog_flag", 2, bif_sys_current_prolog_flag_2, "+atom,?term", true, false, BLAH},
+	{"$legacy_current_prolog_flag", 2, bif_sys_current_prolog_flag_2, "+atom,?term", true, false, BLAH},
 	{"$det_length_rundown", 2, bif_sys_det_length_rundown_2, "?list,+integer", false, false, BLAH},
 	{"$memberchk", 3, bif_sys_memberchk_3, "?term,?list,-term", false, false, BLAH},
 	{"$register_cleanup", 1, bif_sys_register_cleanup_1, NULL, false, false, BLAH},

@@ -64,7 +64,7 @@ evaluable_property(P, A) :-
 
 current_prolog_flag(P, A) :-
 	nonvar(P), !,
-	'$current_prolog_flag'(P, A).
+	'$legacy_current_prolog_flag'(P, A).
 current_prolog_flag(P, A) :-
 	'$load_flags',
 	'$current_prolog_flag'(P, A).
