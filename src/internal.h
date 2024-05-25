@@ -949,7 +949,7 @@ inline static void unshare_cell_(cell *c)
 	} else if (is_dbid(c)) {
 		if (--c->val_blob->refcnt == 0) {
 			module *m = (module*)c->val_blob->ptr;
-			char *ref = (char*)c->val_blob->ptr2;
+			const char *ref = (char*)c->val_blob->ptr2;
 			do_erase(m, ref);
 			free(c->val_blob->ptr2);
 			free(c->val_blob);
@@ -958,8 +958,9 @@ inline static void unshare_cell_(cell *c)
 	} else if (is_kvid(c)) {
 		if (--c->val_blob->refcnt == 0) {
 			module *m = (module*)c->val_blob->ptr;
-			char *ref = (char*)c->val_blob->ptr2;
+			const char *ref = (char*)c->val_blob->ptr2;
 			sl_del(m->pl->keyval, ref);
+			free(c->val_blob->ptr2);
 			free(c->val_blob);
 			c->flags = 0;
 		}
