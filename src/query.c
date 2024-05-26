@@ -661,7 +661,7 @@ static void reuse_frame(query *q, const clause *cl)
 	trim_heap(q);
 }
 
-static bool any_choices(const query *q, const frame *f)
+static bool commit_any_choices(const query *q, const frame *f)
 {
 	if (q->cp <= 1)
 		return false;
@@ -698,7 +698,7 @@ static void commit_frame(query *q, cell *body)
 		bool slots_ok =
 			tail_recursive ? f->initial_slots == cl->nbr_vars :
 			false;
-		bool choices = any_choices(q, f);
+		bool choices = commit_any_choices(q, f);
 		tco = slots_ok && !choices;
 
 #if 0
@@ -889,7 +889,7 @@ void cut(query *q)
 	//	q->st.tp = 0;
 }
 
-static bool my_any_choices(const query *q, const frame *f)
+static bool resume_any_choices(const query *q, const frame *f)
 {
 	if (!q->cp)
 		return false;
@@ -914,7 +914,7 @@ static bool resume_frame(query *q)
 		&& (!f->has_local_vars || !q->in_call)
 		&& !f->no_tco
 		&& (q->st.fp == (q->st.curr_frame + 1))
-		&& !my_any_choices(q, f)
+		&& !resume_any_choices(q, f)
 		) {
 		q->st.sp -= f->actual_slots;
 		q->st.fp--;

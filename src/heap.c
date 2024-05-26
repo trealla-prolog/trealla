@@ -410,9 +410,18 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 			c->var_ctx = q->st.curr_frame;
 
 			if (copy_attrs && e->c.attrs) {
+
+#if 0
+				const frame *f1 = GET_FRAME(c->var_ctx);
+				slot *e1 = GET_SLOT(f1, c->var_nbr);
+				unsigned slot_nbr = e1 - q->slots;
+				printf("*** copy attrs var_nbr=%u, ctx=%u, slot=%u, atts=%p\n", c->var_nbr, c->var_ctx, slot_nbr, (void*)e->c.attrs);
+#endif
+
 				const frame *f2 = GET_FRAME(c->var_ctx);
-				slot *e2 = GET_SLOT(f, c->var_nbr);
-				*e2 = *e;
+				slot *e2 = GET_SLOT(f2, c->var_nbr);
+				e2->c.attrs = e->c.attrs;
+				e2->c.attrs_ctx = e->c.attrs_ctx;
 			}
 		}
 	}
