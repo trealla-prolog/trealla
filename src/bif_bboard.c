@@ -58,11 +58,12 @@ static bool bif_bb_b_put_2(query *q)
 	char *key = strdup(tmpbuf);
 	check_heap_error(init_tmp_heap(q), free(key));
 	cell *tmp = deep_clone_to_tmp(q, p2, p2_ctx);
-	cell *value = malloc(sizeof(cell)*tmp->nbr_cells);
-	dup_cells(value, tmp, tmp->nbr_cells);
+	cell *val = malloc(sizeof(cell)*tmp->nbr_cells);
+	check_heap_error(val);
+	dup_cells(val, tmp, tmp->nbr_cells);
 
 	prolog_lock(q->pl);
-	sl_set(q->pl->keyval, key, value);
+	sl_set(q->pl->keyval, key, val);
 	prolog_unlock(q->pl);
 
 	blob *b = calloc(1, sizeof(blob));
@@ -120,12 +121,13 @@ static bool bif_bb_put_2(query *q)
 	char *key = strdup(tmpbuf);
 	check_heap_error(init_tmp_heap(q), free(key));
 	cell *tmp = deep_copy_to_tmp(q, p2, p2_ctx, true);
-	cell *value = malloc(sizeof(cell)*tmp->nbr_cells);
-	dup_cells(value, tmp, tmp->nbr_cells);
+	cell *val = malloc(sizeof(cell)*tmp->nbr_cells);
+	check_heap_error(val);
+	dup_cells(val, tmp, tmp->nbr_cells);
 
 	prolog_lock(q->pl);
 	sl_del(q->pl->keyval, key1);
-	sl_set(q->pl->keyval, key, value);
+	sl_set(q->pl->keyval, key, val);
 	prolog_unlock(q->pl);
 
 	return true;
@@ -272,7 +274,6 @@ static bool bif_bb_delete_2(query *q)
 
 	bool ok = sl_del(q->pl->keyval, key);
 	prolog_unlock(q->pl);
-
 	return ok;
 }
 
@@ -341,6 +342,7 @@ static bool bif_bb_update_3(query *q)
 	check_heap_error(init_tmp_heap(q), (prolog_unlock(q->pl), free(key)));
 	tmp = deep_clone_to_tmp(q, p3, p3_ctx);
 	cell *value = malloc(sizeof(cell)*tmp->nbr_cells);
+	check_heap_error(value);
 	dup_cells(value, tmp, tmp->nbr_cells);
 	sl_del(q->pl->keyval, key1);
 	sl_set(q->pl->keyval, key, value);
