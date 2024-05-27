@@ -410,7 +410,7 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 			c->var_ctx = q->st.curr_frame;
 
 			if (copy_attrs && e->c.attrs) {
-				cell *tmp = deep_copy_to_tmp(q, e->c.attrs, e->c.attrs_ctx, copy_attrs);
+				cell *tmp = deep_copy_to_tmp(q, e->c.attrs, e->c.attrs_ctx, false);
 				c->tmp_attrs = malloc(sizeof(cell)*tmp->nbr_cells);
 				dup_cells(c->tmp_attrs, tmp, tmp->nbr_cells);
 
