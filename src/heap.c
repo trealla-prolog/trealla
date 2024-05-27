@@ -410,7 +410,7 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 			c->var_ctx = q->st.curr_frame;
 
 			if (copy_attrs && e->c.attrs) {
-				cell *tmp = deep_clone_to_tmp(q, e->c.attrs, e->c.attrs_ctx);
+				cell *tmp = deep_copy_to_tmp(q, e->c.attrs, e->c.attrs_ctx, copy_attrs);
 				c->tmp_attrs = malloc(sizeof(cell)*tmp->nbr_cells);
 				dup_cells(c->tmp_attrs, tmp, tmp->nbr_cells);
 
@@ -479,7 +479,13 @@ unsigned rebase_term(query *q, cell *c, unsigned start_nbr)
 static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs, cell *from, pl_idx from_ctx, cell *to, pl_idx to_ctx)
 {
 	const frame *f = GET_CURR_FRAME();
-	q->vars = sl_create(NULL, NULL, NULL);
+	bool created = false;
+
+	if (!q->vars) {
+		q->vars = sl_create(NULL, NULL, NULL);
+		created = true;
+	}
+
 	q->varno = f->actual_slots;
 	q->tab_idx = 0;
 
@@ -489,25 +495,34 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx
 	cell *tmp = deep_clone_to_tmp(q, c, c_ctx);
 
 	if (!tmp) {
-		sl_destroy(q->vars);
-		q->vars = NULL;
+		if (created) {
+			sl_destroy(q->vars);
+			q->vars = NULL;
+		}
+
 		return NULL;
 	}
 
 	if (!copy_vars(q, tmp, copy_attrs, from, from_ctx, to, to_ctx)) {
-		sl_destroy(q->vars);
-		q->vars = NULL;
+		if (created) {
+			sl_destroy(q->vars);
+			q->vars = NULL;
+		}
+
 		return NULL;
 	}
 
-	sl_destroy(q->vars);
-	q->vars = NULL;
-	int cnt = q->varno - f->actual_slots;
+	if (created) {
+		sl_destroy(q->vars);
+		q->vars = NULL;
 
-	if (cnt) {
-		if (create_vars(q, cnt) < 0) {
-			throw_error(q, c, c_ctx, "resource_error", "stack");
-			return NULL;
+		int cnt = q->varno - f->actual_slots;
+
+		if (cnt) {
+			if (create_vars(q, cnt) < 0) {
+				throw_error(q, c, c_ctx, "resource_error", "stack");
+				return NULL;
+			}
 		}
 	}
 

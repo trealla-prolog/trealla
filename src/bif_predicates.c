@@ -1993,18 +1993,18 @@ static bool do_duplicate_term(query *q, bool copy_attrs)
 	return unify(q, p2, p2_ctx, tmpp1, q->st.curr_frame);
 }
 
-// Do copy attributes
+// Do copy attributes (Note: SICStus & YAP don't, Scryer & SWI do)
 
 static bool bif_duplicate_term_2(query *q)
 {
 	return do_duplicate_term(q, true);
 }
 
-// Don't copy attributes (Note: SICStus & YAP don't, Scryer & SWI do)
+// Do copy attributes (Note: SICStus & YAP don't, Scryer & SWI do)
 
 static bool bif_iso_copy_term_2(query *q)
 {
-	return do_duplicate_term(q, false);
+	return do_duplicate_term(q, true);
 }
 
 // Don't copy attributes
