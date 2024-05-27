@@ -491,14 +491,12 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx
 	if (!tmp) {
 		sl_destroy(q->vars);
 		q->vars = NULL;
-		printf("*** here1\n");
 		return NULL;
 	}
 
 	if (!copy_vars(q, tmp, copy_attrs, from, from_ctx, to, to_ctx)) {
 		sl_destroy(q->vars);
 		q->vars = NULL;
-		printf("*** here2\n");
 		return NULL;
 	}
 
@@ -509,7 +507,6 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx
 	if (cnt) {
 		if (create_vars(q, cnt) < 0) {
 			throw_error(q, c, c_ctx, "resource_error", "stack");
-			printf("*** here3\n");
 			return NULL;
 		}
 	}
