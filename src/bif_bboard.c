@@ -115,9 +115,11 @@ static bool bif_bb_put_2(query *q)
 
 	if (DO_DUMP) DUMP_TERM2("bb_put", tmpbuf, p2, p2_ctx, 1);
 
+	// Note: we have to save a copy of attributes...
+
 	char *key = strdup(tmpbuf);
 	check_heap_error(init_tmp_heap(q), free(key));
-	cell *tmp = deep_clone_to_tmp(q, p2, p2_ctx);
+	cell *tmp = deep_copy_to_tmp(q, p2, p2_ctx, true);
 	cell *value = malloc(sizeof(cell)*tmp->nbr_cells);
 	dup_cells(value, tmp, tmp->nbr_cells);
 
@@ -181,7 +183,8 @@ static bool bif_bb_get_2(query *q)
 
 	prolog_unlock(q->pl);
 
-	cell *tmp = (cell*)val;
+	cell *tmp = deep_copy_to_heap(q, (cell*)val, q->st.curr_frame, true);
+	check_heap_error(tmp);
 
 	if (DO_DUMP) {
 		DUMP_TERM2("bb_get1", tmpbuf, tmp, q->st.curr_frame, 1);
@@ -191,15 +194,7 @@ static bool bif_bb_get_2(query *q)
 		printf("*** Before var_nbr=%u, ctx=%u, slot=%u, atts=%p\n", tmp->var_nbr, tmp->var_ctx, slot_nbr, (void*)e1->c.attrs);
 	}
 
-	const frame *f = GET_FRAME(q->st.curr_frame);
-	unsigned vars = rebase_term(q, tmp, f->actual_slots);
-
-	if (DO_DUMP) {
-		const frame *f2 = GET_FRAME(tmp->var_ctx);
-		const slot *e2 = GET_SLOT(f2, tmp->var_nbr);
-		unsigned slot_nbr = e2 - q->slots;
-		printf("*** After var_nbr=%u, ctx=%u, slot=%u, atts=%p\n", tmp->var_nbr, tmp->var_ctx, slot_nbr, (void*)e2->c.attrs);
-	}
+	// Note: we have to restore a copy of attributes...
 
 	if (DO_DUMP) DUMP_TERM2("bb_get2", tmpbuf, tmp, tmp->var_ctx, 1);
 
@@ -265,9 +260,10 @@ static bool bif_bb_delete_2(query *q)
 		}
 	}
 
-	if (DO_DUMP) DUMP_TERM2("bb_delete", tmpbuf, p2, p2_ctx, 1);
+	cell *tmp = deep_copy_to_heap(q, (cell*)val, q->st.curr_frame, true);
+	check_heap_error(tmp, prolog_unlock(q->pl));
 
-	cell *tmp = (cell*)val;
+	if (DO_DUMP) DUMP_TERM2("bb_delete", tmpbuf, p2, p2_ctx, 1);
 
 	if (!unify(q, p2, p2_ctx, tmp, q->st.curr_frame)) {
 		prolog_unlock(q->pl);
@@ -331,10 +327,8 @@ static bool bif_bb_update_3(query *q)
 		}
 	}
 
-	cell *tmp = (cell*)val;
-	const frame *f = GET_CURR_FRAME();
-	unsigned var_nbr = rebase_term(q, tmp, f->actual_slots);
-	create_vars(q, var_nbr-f->actual_slots);
+	cell *tmp = deep_copy_to_heap(q, (cell*)val, q->st.curr_frame, true);
+	check_heap_error(tmp, prolog_unlock(q->pl));
 
 	if (DO_DUMP) DUMP_TERM2("bb_update", tmpbuf, p2, p2_ctx, 1);
 
