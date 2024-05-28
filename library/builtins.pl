@@ -718,12 +718,12 @@ current_op(A, B, C) :-
 
 print_goals_([]).
 print_goals_([Goal|Goals]) :-
-	write_term(Goal, []),
+	write(Goal),
 	(Goals == [] -> true ;	write(', ')),
 	print_goals_(Goals).
 
 dump_attvars_([], []).
-dump_attvars_([Var|Vars], [Gs|Rest]) :-
+dump_attvars_([Var2|Vars], [Gs|Rest]) :-
 	copy_term(Var, Var2, Gs),
 	Var = Var2,
 	dump_attvars_(Vars, Rest).

@@ -475,7 +475,7 @@ void dump_vars(query *q, bool partial)
 	if (any_atts) {
 		clear_write_options(q);
 		q->variable_names = vlist;
-		q->variable_names_ctx = 0;
+		q->variable_names_ctx = q->st.curr_frame;
 		q->tab_idx = 0;
 		cell p1;
 		make_atom(&p1, new_atom(q->pl, "dump_attvars"));
