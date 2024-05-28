@@ -413,28 +413,11 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 				cell *tmp = deep_copy_to_tmp(q, e->c.attrs, e->c.attrs_ctx, false);
 				c->tmp_attrs = malloc(sizeof(cell)*tmp->nbr_cells);
 				dup_cells(c->tmp_attrs, tmp, tmp->nbr_cells);
-
-#if 0
-				const frame *f1 = GET_FRAME(c->var_ctx);
-				slot *e1 = GET_SLOT(f1, c->var_nbr);
-				unsigned slot_nbr = e1 - q->slots;
-				printf("*** copy attrs1 var_nbr=%u, ctx=%u, slot=%u, atts=%p\n", c->var_nbr, c->var_ctx, slot_nbr, (void*)c->tmp_attrs);
-				DUMP_TERM("blah1", c->tmp_attrs, q->st.curr_frame, 1);
-#endif
-
 				const frame *f2 = GET_FRAME(c->var_ctx);
 				slot *e2 = GET_SLOT(f2, c->var_nbr);
 				e2->c.attrs = c->tmp_attrs;
 				e2->c.attrs_ctx = q->st.curr_frame;
 			} else if (copy_attrs && c->tmp_attrs) {
-#if 0
-				const frame *f1 = GET_FRAME(c->var_ctx);
-				slot *e1 = GET_SLOT(f1, c->var_nbr);
-				unsigned slot_nbr = e1 - q->slots;
-				printf("*** copy attrs2 var_nbr=%u, ctx=%u, slot=%u, atts=%p\n", c->var_nbr, c->var_ctx, slot_nbr, (void*)c->tmp_attrs);
-				DUMP_TERM("blah2", c->tmp_attrs, q->st.curr_frame, 1);
-#endif
-
 				const frame *f2 = GET_FRAME(c->var_ctx);
 				slot *e2 = GET_SLOT(f2, c->var_nbr);
 				e2->c.attrs = c->tmp_attrs;

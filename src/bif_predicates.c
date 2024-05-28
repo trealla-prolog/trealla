@@ -1953,21 +1953,6 @@ static bool do_duplicate_term(query *q, bool copy_attrs)
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 
-	if (is_var(p1) && is_var(p2)) {
-		const frame *f1 = GET_FRAME(p1_ctx);
-		const frame *f2 = GET_FRAME(p2_ctx);
-		slot *e1 = GET_SLOT(f1, p1->var_nbr);
-		slot *e2 = GET_SLOT(f2, p2->var_nbr);
-
-		if (e1->c.attrs && copy_attrs) {
-			e2->c.attrs = deep_copy_to_heap_with_replacement(q, e1->c.attrs, e1->c.attrs_ctx, false, p1, p1_ctx, p2, p2_ctx);
-			check_heap_error(e2->c.attrs);
-			e2->c.attrs_ctx = q->st.curr_frame;
-		}
-
-		return true;
-	}
-
 	if (is_atomic(p1) && is_var(p2))
 		return unify(q, p1, p1_ctx, p2, p2_ctx);
 
@@ -1993,11 +1978,11 @@ static bool do_duplicate_term(query *q, bool copy_attrs)
 	return unify(q, p2, p2_ctx, tmpp1, q->st.curr_frame);
 }
 
-// Do copy attributes (Note: SICStus & YAP don't, Scryer & SWI do)
+// Don't copy attributes
 
-static bool bif_duplicate_term_2(query *q)
+static bool bif_copy_term_nat_2(query *q)
 {
-	return do_duplicate_term(q, true);
+	return do_duplicate_term(q, false);
 }
 
 // Do copy attributes (Note: SICStus & YAP don't, Scryer & SWI do)
@@ -2007,11 +1992,11 @@ static bool bif_iso_copy_term_2(query *q)
 	return do_duplicate_term(q, true);
 }
 
-// Don't copy attributes
+// Do copy attributes
 
-static bool bif_copy_term_nat_2(query *q)
+static bool bif_duplicate_term_2(query *q)
 {
-	return do_duplicate_term(q, false);
+	return do_duplicate_term(q, true);
 }
 
 static bool bif_iso_functor_3(query *q)

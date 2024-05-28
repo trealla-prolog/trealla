@@ -188,17 +188,7 @@ static bool bif_bb_get_2(query *q)
 	cell *tmp = deep_copy_to_heap(q, (cell*)val, q->st.curr_frame, true);
 	check_heap_error(tmp);
 
-	if (DO_DUMP) {
-		DUMP_TERM2("bb_get1", tmpbuf, tmp, q->st.curr_frame, 1);
-		const frame *f1 = GET_FRAME(tmp->var_ctx);
-		const slot *e1 = GET_SLOT(f1, tmp->var_nbr);
-		unsigned slot_nbr = e1 - q->slots;
-		printf("*** Before var_nbr=%u, ctx=%u, slot=%u, atts=%p\n", tmp->var_nbr, tmp->var_ctx, slot_nbr, (void*)e1->c.attrs);
-	}
-
-	// Note: we have to restore a copy of attributes...
-
-	if (DO_DUMP) DUMP_TERM2("bb_get2", tmpbuf, tmp, tmp->var_ctx, 1);
+	if (DO_DUMP) DUMP_TERM2("bb_get", tmpbuf, tmp, q->st.curr_frame, 1);
 
 	if (is_var(p2) && is_var(tmp)) {
 		const frame *f = GET_FRAME(q->st.curr_frame);
@@ -265,7 +255,18 @@ static bool bif_bb_delete_2(query *q)
 	cell *tmp = deep_copy_to_heap(q, (cell*)val, q->st.curr_frame, true);
 	check_heap_error(tmp, prolog_unlock(q->pl));
 
-	if (DO_DUMP) DUMP_TERM2("bb_delete", tmpbuf, p2, p2_ctx, 1);
+	if (DO_DUMP) DUMP_TERM2("bb_delete", tmpbuf, tmp, q->st.curr_frame, 1);
+
+	if (is_var(p2) && is_var(tmp)) {
+		const frame *f = GET_FRAME(q->st.curr_frame);
+		const slot *e = GET_SLOT(f, tmp->var_nbr);
+		const frame *f2 = GET_FRAME(p2_ctx);
+		slot *e2 = GET_SLOT(f2, p2->var_nbr);
+		*e2 = *e;
+		bool ok = sl_del(q->pl->keyval, key);
+		prolog_unlock(q->pl);
+		return ok;
+	}
 
 	if (!unify(q, p2, p2_ctx, tmp, q->st.curr_frame)) {
 		prolog_unlock(q->pl);
