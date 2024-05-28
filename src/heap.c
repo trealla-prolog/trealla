@@ -462,7 +462,7 @@ unsigned rebase_term(query *q, cell *c, unsigned start_nbr)
 	sl_destroy(q->vars);
 	q->vars = NULL;
 
-	// Turn refs back into vars to decontextualize
+	// Turn refs back into vars to recontextualize
 
 	cell *tmp = c;
 
