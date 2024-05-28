@@ -466,7 +466,6 @@ static void print_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 	} else if (q->portray_vars || (q->is_dump_vars && q->cycle_error)) {
 		SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr));
 	} else if (q->is_dump_vars) {
-		//printf("*** c_ctx=%u, c->var_nbr=%u, q->p->nbr_vars=%u\n", c_ctx, c->var_nbr, q->p->nbr_vars);
 		if ((c_ctx == 0) && (c->var_nbr < q->p->nbr_vars)) {
 			SB_sprintf(q->sb, "%s", q->p->vartab.var_name[c->var_nbr]);
 		} else {
