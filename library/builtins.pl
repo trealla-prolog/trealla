@@ -718,7 +718,7 @@ current_op(A, B, C) :-
 
 print_goals_([]).
 print_goals_([Goal|Goals]) :-
-	write(Goal),
+	write_term(Goal, []),
 	(Goals == [] -> true ;	write(', ')),
 	print_goals_(Goals).
 
