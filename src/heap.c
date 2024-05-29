@@ -407,6 +407,7 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 
 			if (copy_attrs && e->c.attrs) {
 				cell *tmp = deep_copy_to_tmp(q, e->c.attrs, e->c.attrs_ctx, false);
+				check_heap_error(tmp);
 				c->tmp_attrs = malloc(sizeof(cell)*tmp->nbr_cells);
 				dup_cells(c->tmp_attrs, tmp, tmp->nbr_cells);
 				const frame *f2 = GET_FRAME(c->var_ctx);
@@ -414,10 +415,15 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 				e2->c.attrs = c->tmp_attrs;
 				e2->c.attrs_ctx = q->st.curr_frame;
 			} else if (copy_attrs && c->tmp_attrs) {
+				cell *tmp = deep_copy_to_tmp(q, c->tmp_attrs, q->st.fp, false);
+				check_heap_error(tmp);
+				cell *tmp_attrs = malloc(sizeof(cell)*tmp->nbr_cells);
+				dup_cells(tmp_attrs, tmp, tmp->nbr_cells);
 				const frame *f2 = GET_FRAME(c->var_ctx);
 				slot *e2 = GET_SLOT(f2, c->var_nbr);
-				e2->c.attrs = c->tmp_attrs;
+				e2->c.attrs = tmp_attrs;
 				e2->c.attrs_ctx = q->st.curr_frame;
+				c->tmp_attrs = NULL;
 			}
 		}
 
@@ -493,15 +499,6 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx
 	if (created) {
 		sl_destroy(q->vars);
 		q->vars = NULL;
-
-		int cnt = q->varno - f->actual_slots;
-
-		if (cnt) {
-			if (create_vars(q, cnt) < 0) {
-				throw_error(q, c, c_ctx, "resource_error", "stack");
-				return NULL;
-			}
-		}
 	}
 
 	if (!copy_attrs)

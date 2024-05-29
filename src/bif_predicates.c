@@ -5869,6 +5869,11 @@ static bool bif_sys_get_level_1(query *q)
 
 static bool do_dump_term(query *q, cell *p1, pl_idx p1_ctx, bool deref, int depth)
 {
+	if (!depth) {
+		const frame *f = GET_CURR_FRAME();
+		printf("f=%u, f->initial_slots=%u, f->actual_slots=%u\n", q->st.curr_frame, f->initial_slots, f->actual_slots);
+	}
+
 	cell *tmp = p1;
 
 	if (depth > 1)
@@ -5934,8 +5939,6 @@ static bool bif_sys_dump_term_2(query *q)
 	GET_FIRST_RAW_ARG(p1x,any);
 	bool deref = p2->val_off == g_true_s;
 	p1 = deref ? p1 : p1x;
-	const frame *f = GET_CURR_FRAME();
-	printf("f=%u, f->initial_slots=%u, f->actual_slots=%u\n", q->st.curr_frame, f->initial_slots, f->actual_slots);
 	return do_dump_term(q, p1, p1_ctx, deref, 0);
 }
 
