@@ -209,7 +209,7 @@ static bool bif_call_task_n(query *q)
 	cell *p0 = deep_clone_to_heap(q, q->st.curr_instr, q->st.curr_frame);
 	GET_FIRST_RAW_ARG0(p1,callable,p0);
 	check_heap_error(init_tmp_heap(q));
-	check_heap_error(clone_to_tmp(q, p1, p1_ctx));
+	check_heap_error(deep_clone_to_tmp(q, p1, p1_ctx));
 	unsigned arity = p1->arity;
 	unsigned args = 1;
 

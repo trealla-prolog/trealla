@@ -11,11 +11,11 @@
 
 #include "bif_atts.h"
 
-static const char *do_attribute(query *q, cell *c, unsigned arity, bool *found)
+static const char *do_attribute(query *q, cell *attr, unsigned arity, bool *found)
 {
 	for (module *m = list_front(&q->pl->modules);
 		m; m = list_next(m)) {
-		if ((arity == m->arity) && !CMP_STRING_TO_CSTR(q, c, m->name)) {
+		if ((arity == m->arity) && !CMP_STRING_TO_CSTR(q, attr, m->name)) {
 			*found = true;
 			return m->orig->name;
 		}
@@ -38,7 +38,7 @@ bool bif_attribute_3(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
-static bool do_put_atts(query *q, cell *attr, pl_idx p2_ctx, bool is_minus)
+static bool do_put_atts(query *q, cell *attr, pl_idx attr_ctx, bool is_minus)
 {
 	GET_FIRST_ARG(p1,var);
 	const frame *f = GET_FRAME(p1_ctx);
@@ -67,19 +67,25 @@ static bool do_put_atts(query *q, cell *attr, pl_idx p2_ctx, bool is_minus)
 	if (!found) return false;
 	check_heap_error(init_tmp_heap(q));
 
+	// Add this attribute value...
+
 	if (!is_minus) {
 		cell *tmp = alloc_on_tmp(q, 1+1);
 		check_heap_error(tmp);
 		make_atom(tmp, g_dot_s);
 		tmp->arity = 2;
-		tmp->nbr_cells += 1+attr->nbr_cells;
+		tmp->nbr_cells += 1;
 		make_atom(tmp+1, new_atom(q->pl, m_name));
 		tmp[1].arity = 1;
-		cell *tmp2 = deep_clone_to_tmp(q, attr, p2_ctx);
+		cell *tmp2 = deep_clone_to_tmp(q, attr, attr_ctx);
 		check_heap_error(tmp2);
 		cell *tmp3 = get_tmp_heap(q, 1);
 		tmp3->nbr_cells += tmp2->nbr_cells;
+		tmp = get_tmp_heap(q, 0);
+		tmp->nbr_cells += tmp2->nbr_cells;
 	}
+
+	// If existing attributes drop old value...
 
 	if (c->attrs) {
 		cell *l = c->attrs;
@@ -89,7 +95,8 @@ static bool do_put_atts(query *q, cell *attr, pl_idx p2_ctx, bool is_minus)
 		while (is_iso_list(l)) {
 			cell *h = LIST_HEAD(l);
 			h = deref(q, h, l_ctx);
-			cell *h1 = deref(q, h+1, q->latest_ctx);
+			pl_idx h_ctx = q->latest_ctx;
+			cell *h1 = deref(q, h+1, h_ctx);
 			pl_idx h1_ctx = q->latest_ctx;
 
 			if (CMP_STRING_TO_CSTR(q, h, m_name)
@@ -97,7 +104,7 @@ static bool do_put_atts(query *q, cell *attr, pl_idx p2_ctx, bool is_minus)
 				|| (h1->arity != a_arity)) {
 				append_list(q, h);
 			} else if (is_minus) {
-				if (!unify(q, attr, p2_ctx, h1, h1_ctx))
+				if (!unify(q, attr, attr_ctx, h1, h1_ctx))
 					return false;
 			}
 
@@ -133,8 +140,9 @@ bool bif_put_atts_2(query *q)
 		while (is_iso_list(p2)) {
 			cell *attr = LIST_HEAD(p2);
 			attr = deref(q, attr, p2_ctx);
+			pl_idx attr_ctx = q->latest_ctx;
 
-			if (!do_put_atts(q, attr, q->latest_ctx, is_minus))
+			if (!do_put_atts(q, attr, attr_ctx, is_minus))
 				return false;
 
 			p2 = LIST_TAIL(p2);

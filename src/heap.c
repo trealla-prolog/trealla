@@ -191,6 +191,9 @@ void trim_heap(query *q)
 #define deep_copy(c) \
 	(!q->noderef || (is_ref(c) && (c->var_ctx <= q->st.curr_frame) && !is_anon(c)))
 
+// Note: convert vars to refs
+// Note: doesn't increment ref counts
+
 static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
 	if (depth >= g_max_depth) {
@@ -203,8 +206,6 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 	cell *tmp = alloc_on_tmp(q, 1);
 	if (!tmp) return NULL;
 	copy_cells(tmp, p1, 1);
-
-	// Convert vars to refs...
 
 	if (is_var(tmp) && !is_ref(tmp)) {
 		tmp->flags |= FLAG_VAR_REF;
@@ -304,7 +305,7 @@ cell *clone_to_heap(query *q, cell *p1, pl_idx p1_ctx)
 	if (!init_tmp_heap(q))
 		return NULL;
 
-	p1 = clone_to_tmp(q, p1, p1_ctx);
+	p1 = deep_clone_to_tmp(q, p1, p1_ctx);
 	if (!p1) return p1;
 	cell *tmp = alloc_on_heap(q, p1->nbr_cells);
 	if (!tmp) return NULL;
@@ -342,11 +343,6 @@ cell *append_to_tmp(query *q, cell *p1, pl_idx p1_ctx)
 	}
 
 	return tmp;
-}
-
-cell *clone_to_tmp(query *q, cell *p1, pl_idx p1_ctx)
-{
-	return append_to_tmp(q, p1, p1_ctx);
 }
 
 cell *prepare_call(query *q, bool prefix, cell *p1, pl_idx p1_ctx, unsigned extras)
