@@ -5867,11 +5867,16 @@ static bool bif_sys_get_level_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
-static bool do_dump_term(query *q, cell *p1, pl_idx p1_ctx)
+static bool do_dump_term(query *q, cell *p1, pl_idx p1_ctx, bool deref, int depth)
 {
 	cell *tmp = p1;
 
-	for (unsigned i = 0; i <p1->nbr_cells; i++, tmp++) {
+	if (depth > 1)
+		return true;
+
+	for (unsigned i = 0; i < p1->nbr_cells; i++, tmp++) {
+		if (depth) printf("  ");
+
 		printf("[%02u] tag=%10s, nbr_cells=%u, arity=%u",
 			i,
 			(
@@ -5904,10 +5909,21 @@ static bool do_dump_term(query *q, cell *p1, pl_idx p1_ctx)
 		else if (is_var(tmp))
 			printf(", slot=%u, %s", tmp->var_nbr, C_STR(q, tmp));
 
+		if (is_var(tmp) && deref) {
+			const frame *f = GET_FRAME(is_ref(tmp)?tmp->var_ctx:p1_ctx);
+			slot *e = GET_SLOT(f, tmp->var_nbr);
+
+			if (e->c.attrs) {
+				printf("\n");
+				do_dump_term(q, e->c.attrs, e->c.attrs_ctx, deref, depth+1);
+				continue;
+			}
+		}
+
 		printf("\n");
 	}
 
-	printf("Ground=%d, no_tco=%d\n", is_ground(p1)?1:0, q->no_tco?1:0);
+	if (!depth) printf("Ground=%d, no_tco=%d\n", is_ground(p1)?1:0, q->no_tco?1:0);
 	return true;
 }
 
@@ -5918,7 +5934,9 @@ static bool bif_sys_dump_term_2(query *q)
 	GET_FIRST_RAW_ARG(p1x,any);
 	bool deref = p2->val_off == g_true_s;
 	p1 = deref ? p1 : p1x;
-	return do_dump_term(q, p1, p1_ctx);
+	const frame *f = GET_CURR_FRAME();
+	printf("f=%u, f->initial_slots=%u, f->actual_slots=%u\n", q->st.curr_frame, f->initial_slots, f->actual_slots);
+	return do_dump_term(q, p1, p1_ctx, deref, 0);
 }
 
 static bool bif_abort_0(query *q)

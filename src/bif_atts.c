@@ -65,7 +65,7 @@ static bool do_put_atts(query *q, cell *attr, pl_idx p2_ctx, bool is_minus)
 	bool found;
 	const char *m_name = do_attribute(q, attr, a_arity, &found);
 	if (!found) return false;
-	init_tmp_heap(q);
+	check_heap_error(init_tmp_heap(q));
 
 	if (!is_minus) {
 		cell *tmp = alloc_on_tmp(q, 1+1);
@@ -75,7 +75,7 @@ static bool do_put_atts(query *q, cell *attr, pl_idx p2_ctx, bool is_minus)
 		tmp->nbr_cells += 1+attr->nbr_cells;
 		make_atom(tmp+1, new_atom(q->pl, m_name));
 		tmp[1].arity = 1;
-		cell *tmp2 = clone_to_tmp(q, attr, p2_ctx);
+		cell *tmp2 = deep_clone_to_tmp(q, attr, p2_ctx);
 		check_heap_error(tmp2);
 		cell *tmp3 = get_tmp_heap(q, 1);
 		tmp3->nbr_cells += tmp2->nbr_cells;

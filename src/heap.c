@@ -467,10 +467,9 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx
 	if (!q->vars) {
 		q->vars = sl_create(NULL, NULL, NULL);
 		created = true;
+		q->varno = f->actual_slots;
+		q->tab_idx = 0;
 	}
-
-	q->varno = f->actual_slots;
-	q->tab_idx = 0;
 
 	cell *c = deref(q, p1, p1_ctx);
 	pl_idx c_ctx = q->latest_ctx;
