@@ -413,16 +413,15 @@ static bool bif_iso_disjunction_2(query *q)
 		}
 	}
 
-	GET_FIRST_ARG(p1,callable);
-
 	if (q->retry) {
-		q->st.curr_instr = p1;
+		q->st.curr_instr++;
 		return true;
 	}
 
 	// Do this to skip the next arg on success.
 
 	check_heap_error(push_choice(q));
+	GET_FIRST_ARG(p1,callable);
 	cell *tmp = prepare_call(q, PREFIX_LEN, p1, p1_ctx, 1);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
