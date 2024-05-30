@@ -5945,11 +5945,14 @@ static bool bif_sys_dump_term_2(query *q)
 static bool bif_sys_integer_in_radix_3(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
-	GET_NEXT_ARG(p2,integer);
+	GET_NEXT_ARG(p2,smallint);
 	GET_NEXT_ARG(p3,var);
 
-	if (!is_positive(p2))
-		return throw_error(q, p2, p2_ctx, "domain_error", "positive");
+	if (!is_positive(p1) && !is_zero(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "integer");
+
+	if (!is_positive(p2) || (get_smallint(p2) == 1))
+		return throw_error(q, p2, p2_ctx, "domain_error", "integer");
 
 	int radix = get_smallint(p2);
 
