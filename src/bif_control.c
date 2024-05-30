@@ -406,12 +406,12 @@ static bool bif_iso_disjunction_2(query *q)
 		}
 	}
 
-	check_heap_error(push_choice(q));
 	GET_FIRST_ARG(p1,callable);
 	cell *tmp = prepare_call(q, PREFIX_LEN, p1, p1_ctx, 1);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 	make_call(q, tmp+nbr_cells);
+	check_heap_error(push_choice(q));
 	q->st.curr_instr = tmp;
 	return true;
 }
