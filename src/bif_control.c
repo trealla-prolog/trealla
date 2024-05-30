@@ -380,6 +380,11 @@ bool bif_iso_conjunction_2(query *q)
 
 static bool bif_iso_disjunction_2(query *q)
 {
+	if (q->retry) {
+		q->st.curr_instr++;
+		return true;
+	}
+
 	cell *c = q->st.curr_instr+1;
 
 	if (is_callable(c)) {
@@ -399,11 +404,6 @@ static bool bif_iso_disjunction_2(query *q)
 			cell *p3 = p2 + p2->nbr_cells;
 			return soft_do_if_then_else(q, p1, p2, p3);
 		}
-	}
-
-	if (q->retry) {
-		q->st.curr_instr++;
-		return true;
 	}
 
 	check_heap_error(push_choice(q));
