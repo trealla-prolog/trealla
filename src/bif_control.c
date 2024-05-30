@@ -418,8 +418,6 @@ static bool bif_iso_disjunction_2(query *q)
 		return true;
 	}
 
-	// Do this to skip the next arg on success.
-
 	check_heap_error(push_choice(q));
 	GET_FIRST_ARG(p1,callable);
 	cell *tmp = prepare_call(q, PREFIX_LEN, p1, p1_ctx, 1);
