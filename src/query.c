@@ -688,7 +688,6 @@ static void commit_frame(query *q, cell *body)
 		q->no_tco = false;
 
 	if (!q->no_tco
-		//&& !f->no_tco
 		&& !q->st.m->no_tco	// For CLPZ
 		&& last_match
 		&& (q->st.fp == (q->st.curr_frame + 1))
