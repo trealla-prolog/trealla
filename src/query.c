@@ -1656,7 +1656,7 @@ bool start(query *q)
 #endif
 				status = q->st.curr_instr->bif_ptr->fn(q);
 
-			if (q->retry == QUERY_NOSKIPARG) {
+			if (q->retry == QUERY_NOOP) {
 				q->retry = QUERY_OK;
 				continue;
 			}

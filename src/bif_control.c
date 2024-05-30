@@ -330,8 +330,7 @@ static bool bif_if_2(query *q)
 static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 {
 	if (q->retry) {
-		q->retry = QUERY_NOSKIPARG;
-		q->st.curr_instr = p3;
+		q->st.curr_instr = p2;
 		return true;
 	}
 
@@ -353,8 +352,7 @@ static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 static bool soft_do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 {
 	if (q->retry) {
-		q->retry = QUERY_NOSKIPARG;
-		q->st.curr_instr = p3;
+		q->st.curr_instr = p2;
 		return true;
 	}
 
@@ -385,7 +383,7 @@ static bool bif_if_3(query *q)
 bool bif_iso_conjunction_2(query *q)
 {
 	q->tot_inferences--;
-	q->retry = QUERY_NOSKIPARG;
+	q->retry = QUERY_NOOP;
 	q->st.curr_instr++;
 	return true;
 }
@@ -418,9 +416,7 @@ static bool bif_iso_disjunction_2(query *q)
 	GET_FIRST_ARG(p1,callable);
 
 	if (q->retry) {
-		GET_NEXT_ARG(p2,callable);
-		q->retry = QUERY_NOSKIPARG;
-		q->st.curr_instr = p2;
+		q->st.curr_instr = p1;
 		return true;
 	}
 
