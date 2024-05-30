@@ -497,7 +497,7 @@ rational_numerator_denominator(R, N, D) :-
 	N is numerator(R),
 	D is denominator(R).
 
-:- help(rational_numerator_denominator(+rational,-integr,-integer), [iso(false)]).
+:- help(rational_numerator_denominator(+rational,-integer,-integer), [iso(false)]).
 
 '$skip_list'(Skip, Xs0, Xs) :- '$skip_max_list'(Skip,_, Xs0, Xs).
 
@@ -542,10 +542,6 @@ with_output_to(atom(Cs), Goal) :-
 		once(Goal),
 		'$capture_output_to_atom'(Cs)
 	), !.
-
-sl_create(S) :- sl_create(S,[]).
-
-:- help(sl_create(--stream), [iso(false)]).
 
 iso_dif(X, Y) :-
 	X \== Y,
