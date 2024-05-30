@@ -5942,6 +5942,34 @@ static bool bif_sys_dump_term_2(query *q)
 	return do_dump_term(q, p1, p1_ctx, deref, 0);
 }
 
+static bool bif_sys_integer_in_radix_3(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,integer);
+	GET_NEXT_ARG(p3,var);
+
+	if (!is_positive(p2))
+		return throw_error(q, p2, p2_ctx, "domain_error", "positive");
+
+	int radix = get_smallint(p2);
+
+	cell tmp;
+
+	if (is_bigint(p1)) {
+		size_t len = mp_int_string_len(&p1->val_bigint->ival, radix) - 1;
+		char *dst = malloc(len+1);
+		mp_int_to_string(&p1->val_bigint->ival, radix, dst, len+1);
+		make_string(&tmp, dst);
+		free(dst);
+	} else {
+		char tmpbuf[256];
+		sprint_int(tmpbuf, sizeof(tmpbuf), get_smallint(p1), radix);
+		make_string(&tmp, tmpbuf);
+	}
+
+	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+}
+
 static bool bif_abort_0(query *q)
 {
 	return throw_error(q, q->st.curr_instr, q->st.curr_frame, "$aborted", "abort_error");
@@ -6587,6 +6615,7 @@ builtins g_other_bifs[] =
 	{"$first_non_octet", 2, bif_sys_first_non_octet_2, "+chars,-integer", false, false, BLAH},
 	{"$skip_max_list", 4, bif_sys_skip_max_list_4, "?integer,?integer?,?term,?term", false, false, BLAH},
 	{"$dump_term", 2, bif_sys_dump_term_2, "+term, +bool", false, false, BLAH},
+	{"$integer_in_radix", 3, bif_sys_integer_in_radix_3, "+integer,+integer,-string", false, false, BLAH},
 
 #if USE_OPENSSL
 	{"crypto_data_hash", 3, bif_crypto_data_hash_3, "?string,?string,?list", false, false, BLAH},
