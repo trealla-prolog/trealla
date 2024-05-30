@@ -799,6 +799,22 @@ bool push_barrier(query *q)
 	return true;
 }
 
+bool push_succeed_on_retry(query *q)
+{
+	check_heap_error(push_barrier(q));
+	choice *ch = GET_CURR_CHOICE();
+	ch->succeed_on_retry = true;
+	return true;
+}
+
+bool push_fail_on_retry(query *q)
+{
+	check_heap_error(push_barrier(q));
+	choice *ch = GET_CURR_CHOICE();
+	ch->fail_on_retry = true;
+	return true;
+}
+
 // A reset adds the ability to do locate
 // delimited continuations
 

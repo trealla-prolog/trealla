@@ -239,9 +239,7 @@ static bool bif_iso_notunify_2(query *q)
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_struct(tmp+nbr_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
-	check_heap_error(push_barrier(q));
-	choice *ch = GET_CURR_CHOICE();
-	ch->succeed_on_retry = true;
+	check_heap_error(push_succeed_on_retry(q));
 	q->st.curr_instr = tmp;
 	return true;
 }
@@ -2279,9 +2277,7 @@ static bool bif_call_residue_vars_2(query *q)
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
-	check_heap_error(push_barrier(q));
-	choice *ch = GET_CURR_CHOICE();
-	ch->fail_on_retry = true;
+	check_heap_error(push_fail_on_retry(q));
 	q->st.curr_instr = tmp;
 	return true;
 }
@@ -5347,9 +5343,7 @@ static bool bif_call_nth_2(query *q)
 		tmp[nbr_cells++].nbr_cells = 1;
 		make_int(tmp+nbr_cells++, 0);
 		make_call(q, tmp+nbr_cells);
-		check_heap_error(push_barrier(q));
-		choice *ch = GET_CURR_CHOICE();
-		ch->fail_on_retry = true;
+		check_heap_error(push_fail_on_retry(q));
 		q->st.curr_instr = tmp;
 		return true;
 	}
@@ -5363,9 +5357,7 @@ static bool bif_call_nth_2(query *q)
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
-	check_heap_error(push_barrier(q));
-	choice *ch = GET_CURR_CHOICE();
-	ch->fail_on_retry = true;
+	check_heap_error(push_fail_on_retry(q));
 	q->st.curr_instr = tmp;
 	return true;
 }
@@ -5980,9 +5972,7 @@ static bool bif_abort_0(query *q)
 
 static bool bif_sys_choice_0(query *q)
 {
-	check_heap_error(push_choice(q));
-	choice *ch = GET_CURR_CHOICE();
-	ch->fail_on_retry = true;
+	check_heap_error(push_fail_on_retry(q));
 	return true;
 }
 

@@ -17,6 +17,8 @@ void query_destroy(query *q);
 
 bool push_choice(query *q);
 bool push_barrier(query *q);
+bool push_succeed_on_retry(query *q);
+bool push_fail_on_retry(query *q);
 bool push_reset_handler(query *q);
 bool push_catcher(query *q, enum q_retry type);
 
