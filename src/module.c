@@ -1465,6 +1465,19 @@ static void xref_cell(module *m, clause *cl, cell *c, predicate *parent, int las
 			SET_OP(c, specifier);
 	}
 
+	if ((c->arity == 2) && (c->val_off == g_is_s)) {
+		cell *lhs = c + 1;
+
+		if (is_var(lhs) && !is_local(lhs)) {
+			for (pl_idx i = 0; i < cl->cidx; i++) {
+				cell *c2 = cl->cells + i;
+
+				if (is_var(c2) && (c2->var_nbr == lhs->var_nbr))
+					c2->flags |= FLAG_VAR_TEMPORARY;
+			}
+		}
+	}
+
 	bool found = false, evaluable = false;
 	c->bif_ptr = get_builtin_term(m, c, &found, &evaluable);
 

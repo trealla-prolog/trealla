@@ -350,7 +350,7 @@ static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx
 	} else if (is_var(v)) {
 		make_ref(&e->c, v->var_nbr, v_ctx);
 
-		if (c_ctx == q->st.fp)
+		if ((c_ctx == q->st.fp) && !is_temporary(c))
 			q->no_tco = true;
 	} else {
 		e->c = *v;
