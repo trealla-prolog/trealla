@@ -272,8 +272,8 @@ enum {
 	FLAG_VAR_ANON=1<<0,					// used with TAG_VAR
 	FLAG_VAR_FRESH=1<<1,				// used with TAG_VAR
 	FLAG_VAR_REF=1<<2,					// used with TAG_VAR
-	FLAG_VAR_TEMPORARY=1<<3,			// used with TAG_VAR
-	FLAG_VAR_LOCAL=1<<4,				// used with TAG_VAR
+	FLAG_VAR_TEMPORARY=1<<3,			// used with TAG_VAR (occurs in head only)
+	FLAG_VAR_LOCAL=1<<4,				// used with TAG_VAR (occurs in body only)
 	FLAG_VAR_CYCLIC=1<<5,				// used with TAG_VAR
 
 	FLAG_HANDLE_DLL=1<<0,				// used with FLAG_INT_HANDLE

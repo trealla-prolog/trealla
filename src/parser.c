@@ -1472,8 +1472,8 @@ void clause_assign_vars(parser *p, unsigned start, bool rebase)
 			c->flags |= FLAG_VAR_LOCAL;
 		}
 
-		if (!var_in_body && !in_body)
-			c->flags |= FLAG_VAR_TEMPORARY;
+		//if (!var_in_body && !in_body)
+		//	c->flags |= FLAG_VAR_TEMPORARY;
 	}
 
 	for (unsigned i = 0; i < cl->nbr_vars; i++) {
