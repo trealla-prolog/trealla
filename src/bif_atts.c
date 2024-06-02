@@ -506,7 +506,7 @@ bool bif_sys_redo_trail_1(query * q)
 	return true;
 }
 
-bool do_post_unification_hook(query *q, bool is_builtin)
+bool do_post_unification_hook(query *q)
 {
 	q->run_hook = false;
 	q->undo_lo_tp = q->before_hook_tp;
@@ -545,11 +545,7 @@ bool do_post_unification_hook(query *q, bool is_builtin)
 	if (!tmp[1].match)
 		return throw_error(q, tmp+1, q->st.curr_frame, "existence_error", "procedure");
 
-	if (is_builtin)
-		make_call(q, tmp+2);
-	else
-		make_call_redo(q, tmp+2);
-
+	make_call(q, tmp+2);
 	q->st.curr_instr = tmp;
 	return true;
 }

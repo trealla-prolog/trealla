@@ -81,7 +81,6 @@ void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs, pl_idx a
 void reset_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx);
 bool valid_list(query *q, cell *c, pl_idx c_ctx);
 void make_call(query *q, cell *tmp);
-void make_call_redo(query *q, cell *tmp);
 
 #if USE_THREADS
 void do_signal(query *q, void *thread_ptr);
