@@ -261,7 +261,7 @@ void make_call_redo(query *q, cell *tmp)
 {
 	make_end(tmp);
 	const frame *f = GET_CURR_FRAME();
-	tmp->save_ret = q->st.curr_instr;		// save the return instruction
+	tmp->save_ret = q->st.curr_instr;	// save the return instruction
 	tmp->chgen = f->chgen;				// ... choice-generation
 	tmp->mid = q->st.m->id;				// ... current-module
 }
