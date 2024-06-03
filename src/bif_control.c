@@ -142,8 +142,11 @@ static bool bif_iso_call_n(query *q)
 		if (!is_atom(cm) && !is_var(cm))
 			return throw_error(q, cm, p1_ctx, "type_error", "callable");
 
-		module *m = find_module(q->pl, C_STR(q, cm));
-		if (m) q->st.m = m;
+		if (!is_var(cm)) {
+			module *m = find_module(q->pl, C_STR(q, cm));
+			if (m) q->st.m = m;
+		}
+
 		p1 += 2;
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;

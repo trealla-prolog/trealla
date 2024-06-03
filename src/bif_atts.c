@@ -50,16 +50,18 @@ static bool do_put_atts(query *q, cell *attr, pl_idx attr_ctx, bool is_minus)
 	if (!c->attrs && is_minus)
 		return true;
 
-	add_trail(q, p1_ctx, p1->var_nbr, c->attrs, c->attrs_ctx);
-
 	if ((attr->val_off == g_minus_s) || (attr->val_off == g_plus_s))
 		attr++;
 
 	if (is_nil(attr)) {
-		e->c.flags = 0;
+		if (e->c.attrs)
+			add_trail(q, p1_ctx, p1->var_nbr, c->attrs, c->attrs_ctx);
+
 		e->c.attrs = NULL;
 		return true;
 	}
+
+	add_trail(q, p1_ctx, p1->var_nbr, c->attrs, c->attrs_ctx);
 
 	unsigned a_arity = attr->arity;
 	bool found;
