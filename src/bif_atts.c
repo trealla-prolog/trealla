@@ -490,7 +490,7 @@ bool bif_sys_redo_trail_1(query * q)
 	GET_FIRST_ARG(p1,any);
 
 	if (!is_blob(p1))
-		return true;
+		return false;
 
 	const bind_state *save = (bind_state*)p1->val_blob;
 
