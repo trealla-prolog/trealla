@@ -712,11 +712,12 @@ current_op(A, B, C) :-
 
 % Debugging...
 
-print_goals_([]).
-print_goals_([Goal|Goals]) :-
+print_goals_(_, []).
+print_goals_(Any, [Goal|Goals]) :-
+	(Any -> write(', ') ; true),
 	write(Goal),
 	(Goals == [] -> true ;	write(', ')),
-	print_goals_(Goals).
+	print_goals_(false, Goals).
 
 dump_attvars_([], []).
 dump_attvars_([Var|Vars], [Gs|Rest]) :-
@@ -724,13 +725,13 @@ dump_attvars_([Var|Vars], [Gs|Rest]) :-
 	Var = Var2,
 	dump_attvars_(Vars, Rest).
 
-dump_attvars :-
+dump_attvars(Any) :-
 	'$list_attributed'(Vs0),
 	sort(Vs0, Vs),
 	dump_attvars_(Vs, Gs0),
 	flatten(Gs0, Gs1),
 	sort(Gs1, Gs),
-	print_goals_(Gs).
+	print_goals_(Any, Gs).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %

@@ -464,7 +464,7 @@ void dump_vars(query *q, bool partial)
 	bool any_atts = any_attributed(q);
 
 	if (any && any_atts)
-		fprintf(stdout, "%s", ", ");
+		fprintf(stdout, "%s", "");
 	else if (any_atts && !q->is_redo)
 		fprintf(stdout, "%s", "   ");
 	else if (any_atts)
@@ -477,10 +477,11 @@ void dump_vars(query *q, bool partial)
 		q->variable_names = vlist;
 		q->variable_names_ctx = q->st.curr_frame;
 		q->tab_idx = 0;
-		cell p1;
-		make_atom(&p1, new_atom(q->pl, "dump_attvars"));
-		cell *tmp = prepare_call(q, NOPREFIX_LEN, &p1, q->st.curr_frame, 1);
-		pl_idx nbr_cells = p1.nbr_cells;
+		cell p1[2];
+		make_struct(p1+0, new_atom(q->pl, "dump_attvars"), NULL, 1, 1);
+		make_atom(p1+1, any ? g_true_s : g_false_s);
+		cell *tmp = prepare_call(q, NOPREFIX_LEN, p1, q->st.curr_frame, 1);
+		pl_idx nbr_cells = p1->nbr_cells;
 		make_end(tmp+nbr_cells);
 		q->st.curr_instr = tmp;
 		q->in_attvar_print = true;
