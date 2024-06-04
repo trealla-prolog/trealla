@@ -147,6 +147,10 @@ inline static cell *get_var(query *q, cell *c, pl_idx c_ctx)
 	while (is_var(&e->c)) {
 		c_ctx = e->c.var_ctx;
 		c = &e->c;
+
+		if (is_ref(c))
+			c_ctx = c->var_ctx;
+
 		f = GET_FRAME(c_ctx);
 		e = GET_SLOT(f, c->var_nbr);
 	}
