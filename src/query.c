@@ -1334,17 +1334,7 @@ bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 				p1_body = deref(q, p1_body, p1_ctx);
 				pl_idx p1_body_ctx = q->latest_ctx;
 				cell tmp;
-				tmp.tag = TAG_INTERNED;
-				tmp.arity = 0;
-				tmp.nbr_cells = 1;
-				tmp.flags = FLAG_BUILTIN;
-				tmp.val_off = g_true_s;
-				static builtins *s_fn_ptr = NULL;
-
-				if (!s_fn_ptr)
-					s_fn_ptr = get_fn_ptr(bif_iso_true_0);
-
-				tmp.bif_ptr = s_fn_ptr;
+				make_struct(&tmp, g_true_s, bif_iso_true_0, 0, 0);
 				ok = unify(q, p1_body, p1_body_ctx, &tmp, q->st.curr_frame);
 			} else
 				ok = true;
