@@ -50,7 +50,7 @@ static bool do_put_atts(query *q, cell *attr, pl_idx attr_ctx, bool is_minus)
 	if (!c->attrs && is_minus)
 		return true;
 
-	if ((attr->val_off == g_minus_s) || (attr->val_off == g_plus_s))
+	if (((attr->val_off == g_minus_s) || (attr->val_off == g_plus_s)) && (attr->arity == 1))
 		attr++;
 
 	if (is_nil(attr)) {
@@ -133,7 +133,7 @@ bool bif_put_atts_2(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,callable);
-	bool is_minus = p2->val_off == g_minus_s;
+	bool is_minus = (p2->val_off == g_minus_s) && (p2->arity == 1);
 
 	if (is_iso_list(p2)) {
 		LIST_HANDLER(p2);
@@ -164,9 +164,9 @@ bool bif_get_atts_2(query *q)
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,callable_or_var);
 	const frame *f = GET_FRAME(p1_ctx);
-	bool is_minus = !is_var(p2) && p2->val_off == g_minus_s;
 	slot *e = GET_SLOT(f, p1->var_nbr);
 	cell *c = deref(q, &e->c, e->c.var_ctx);
+	bool is_minus = !is_var(p2) && (p2->val_off == g_minus_s) && (p2->arity == 1);
 
 	if (!c->attrs || is_nil(c->attrs))
 		return is_minus ? true : false;
@@ -181,6 +181,7 @@ bool bif_get_atts_2(query *q)
 			cell *h = LIST_HEAD(l);
 			h = deref(q, h, l_ctx);
 			cell *h1 = deref(q, h+1, q->latest_ctx);
+			pl_idx h1_ctx = q->latest_ctx;
 
 			if (!is_nil(h1))
 				append_list(q, h1);
@@ -201,7 +202,7 @@ bool bif_get_atts_2(query *q)
 
 	cell *attr = p2;
 
-	if ((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s))
+	if (((p2->val_off == g_minus_s) || (p2->val_off == g_plus_s)) && (p2->arity == 1))
 		attr++;
 
 	unsigned a_arity = attr->arity;
@@ -215,7 +216,8 @@ bool bif_get_atts_2(query *q)
 	while (is_iso_list(l)) {
 		cell *h = LIST_HEAD(l);
 		h = deref(q, h, l_ctx);
-		cell *h1 = deref(q, h+1, q->latest_ctx);
+		pl_idx h_ctx = q->latest_ctx;
+		cell *h1 = deref(q, h+1, h_ctx);
 		pl_idx h1_ctx = q->latest_ctx;
 
 		if (!CMP_STRING_TO_CSTR(q, h, m_name)
@@ -372,6 +374,7 @@ bool bif_sys_attributed_var_1(query *q)
 		cell *h = LIST_HEAD(l);
 		h = deref(q, h, l_ctx);
 		cell *h1 = deref(q, h+1, l_ctx);
+		pl_idx h1_ctx = q->latest_ctx;
 
 		if (!is_nil(h1))
 			append_list(q, h1);
