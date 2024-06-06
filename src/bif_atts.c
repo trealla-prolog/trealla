@@ -514,39 +514,10 @@ bool do_post_unification_hook(query *q)
 	q->undo_lo_tp = q->before_hook_tp;
 	q->undo_hi_tp = q->st.tp;
 	q->before_hook_tp = 0;
-
 	cell *tmp = alloc_on_heap(q, 3);
 	check_heap_error(tmp);
-	// Needed for follow() to work
-	tmp[0].tag = TAG_INTERNED;
-	tmp[0].arity = 0;
-	tmp[0].nbr_cells = 1;
-	tmp[0].flags = FLAG_BUILTIN;
-	tmp[0].val_off = g_true_s;
-
-	static void *s_fn_ptr1 = NULL;
-
-	if (!s_fn_ptr1)
-		s_fn_ptr1 = get_fn_ptr(bif_iso_true_0);
-
-	tmp[0].bif_ptr = s_fn_ptr1;
-
-	tmp[1].tag = TAG_INTERNED;
-	tmp[1].nbr_cells = 1;
-	tmp[1].arity = 0;
-	tmp[1].flags = 0;
-	tmp[1].val_off = g_post_unify_hook_s;
-
-	static void *s_fn_ptr2 = NULL;
-
-	if (!s_fn_ptr2)
-		s_fn_ptr2 = search_predicate(q->st.m, tmp+1, NULL);
-
-	tmp[1].match = s_fn_ptr2;
-
-	if (!tmp[1].match)
-		return throw_error(q, tmp+1, q->st.curr_frame, "existence_error", "procedure");
-
+	make_struct(tmp+0, g_true_s, bif_iso_true_0, 0, 0);
+	make_struct(tmp+1, g_post_unify_hook_s, NULL, 0, 0);
 	make_call(q, tmp+2);
 	q->st.curr_instr = tmp;
 	return true;
