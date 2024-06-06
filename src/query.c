@@ -257,7 +257,7 @@ void make_call(query *q, cell *tmp)
 	tmp->mid = q->st.m->id;				// ... current-module
 }
 
-void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs, pl_idx attrs_ctx)
+void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs)
 {
 	if (!check_trail(q)) {
 		q->error = false;
@@ -268,7 +268,6 @@ void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs, pl_idx a
 	tr->var_ctx = c_ctx;
 	tr->var_nbr = c_var_nbr;
 	tr->attrs = attrs;
-	tr->attrs_ctx = attrs_ctx;
 }
 
 const char *dump_id(const void *k, const void *v, const void *p)
@@ -478,7 +477,6 @@ static void unwind_trail(query *q)
 		unshare_cell(c);
 		c->tag = TAG_EMPTY;
 		c->attrs = tr->attrs;
-		c->attrs_ctx = tr->attrs_ctx;
 	}
 }
 

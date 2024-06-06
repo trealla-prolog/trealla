@@ -55,13 +55,13 @@ static bool do_put_atts(query *q, cell *attr, pl_idx attr_ctx, bool is_minus)
 
 	if (is_nil(attr)) {
 		if (e->c.attrs)
-			add_trail(q, p1_ctx, p1->var_nbr, c->attrs, c->attrs_ctx);
+			add_trail(q, p1_ctx, p1->var_nbr, c->attrs);
 
 		e->c.attrs = NULL;
 		return true;
 	}
 
-	add_trail(q, p1_ctx, p1->var_nbr, c->attrs, c->attrs_ctx);
+	add_trail(q, p1_ctx, p1->var_nbr, c->attrs);
 
 	unsigned a_arity = attr->arity;
 	bool found;
@@ -91,7 +91,7 @@ static bool do_put_atts(query *q, cell *attr, pl_idx attr_ctx, bool is_minus)
 
 	if (c->attrs) {
 		cell *l = c->attrs;
-		pl_idx l_ctx = c->attrs_ctx;
+		pl_idx l_ctx = q->st.curr_frame;
 		LIST_HANDLER(l);
 
 		while (is_iso_list(l)) {
@@ -126,7 +126,6 @@ static bool do_put_atts(query *q, cell *attr, pl_idx attr_ctx, bool is_minus)
 	}
 
 	e->c.attrs = l;
-	e->c.attrs_ctx = q->st.curr_frame;
 	return true;
 }
 
@@ -174,7 +173,7 @@ bool bif_get_atts_2(query *q)
 
 	if (is_var(p2)) {
 		cell *l = c->attrs;
-		pl_idx l_ctx = c->attrs_ctx;
+		pl_idx l_ctx = q->st.curr_frame;
 		init_tmp_heap(q);
 		LIST_HANDLER(l);
 
@@ -210,7 +209,7 @@ bool bif_get_atts_2(query *q)
 	const char *m_name = do_attribute(q, attr, a_arity, &found);
 	if (!found) return false;
 	cell *l = e->c.attrs;
-	pl_idx l_ctx = e->c.attrs_ctx;
+	pl_idx l_ctx = q->st.curr_frame;
 	LIST_HANDLER(l);
 
 	while (is_iso_list(l)) {
@@ -273,7 +272,7 @@ bool any_attributed(query *q)
 		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
 			continue;
 
-		//DUMP_TERM("atts", c->attrs, c->attrs_ctx, 1);
+		//DUMP_TERM("atts", c->attrs, q->st.curr_frame, 1);
 
 		cell *v = c->attrs;
 		bool any = false;
@@ -328,9 +327,9 @@ bool bif_sys_list_attributed_1(query *q)
 		if (!is_compound(c->attrs))
 			continue;
 
-		//DUMP_TERM("here", c->attrs, c->attrs_ctx, 0);
+		//DUMP_TERM("here", c->attrs, q->st.curr_frame, 0);
 
-		collect_vars(q, c->attrs, c->attrs_ctx);
+		collect_vars(q, c->attrs, q->st.curr_frame);
 
 		for (unsigned i = 0; i < q->tab_idx; i++) {
 			const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
@@ -365,7 +364,7 @@ bool bif_sys_attributed_var_1(query *q)
 		return false;
 
 	cell *l = c->attrs;
-	pl_idx l_ctx = e->c.attrs_ctx;
+	pl_idx l_ctx = q->st.curr_frame;
 	init_tmp_heap(q);
 	LIST_HANDLER(l);
 
@@ -469,8 +468,7 @@ bool bif_sys_undo_trail_2(query *q)
 		append_list(q, tmp);
 		init_cell(&e->c);
 		e->c.attrs = tr->attrs;
-		e->c.attrs_ctx = tr->attrs_ctx;
-		//if (tr->attrs) DUMP_TERM("$undo2 trail", tr->attrs, tr->attrs_ctx, 0);
+		//if (tr->attrs) DUMP_TERM("$undo2 trail", tr->attrs, q->st.curr_frame, 0);
 	}
 
 	cell *tmp = end_list(q);

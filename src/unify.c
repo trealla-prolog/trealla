@@ -315,10 +315,9 @@ static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx
 	const frame *f = GET_FRAME(c_ctx);
 	slot *e = GET_SLOT(f, c->var_nbr);
 	cell *c_attrs = is_empty(&e->c) ? e->c.attrs : NULL;
-	pl_idx c_attrs_ctx = c_attrs ? e->c.attrs_ctx : 0;
 
 	if (is_managed(v) || (c_ctx != q->st.fp))
-		add_trail(q, c_ctx, c->var_nbr, c_attrs, c_attrs_ctx);
+		add_trail(q, c_ctx, c->var_nbr, c_attrs);
 
 	if (c_attrs)
 		q->run_hook = true;

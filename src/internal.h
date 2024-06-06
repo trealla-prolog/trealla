@@ -407,7 +407,6 @@ struct cell_ {
 
 		struct {
 			cell *attrs;				// used with TAG_EMPTY in slot
-			pl_idx attrs_ctx;			// to set attributes on a var
 		};
 
 		struct {
@@ -509,7 +508,7 @@ typedef struct {
 
 struct trail_ {
 	cell *attrs;
-	pl_idx var_ctx, attrs_ctx;
+	pl_idx var_ctx;
 	uint32_t var_nbr;
 };
 

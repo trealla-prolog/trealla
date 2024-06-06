@@ -5912,7 +5912,7 @@ static bool do_dump_term(query *q, cell *p1, pl_idx p1_ctx, bool deref, int dept
 
 			if (e->c.attrs) {
 				printf("\n");
-				do_dump_term(q, e->c.attrs, e->c.attrs_ctx, deref, depth+1);
+				do_dump_term(q, e->c.attrs, q->st.curr_frame, deref, depth+1);
 				continue;
 			}
 		}
