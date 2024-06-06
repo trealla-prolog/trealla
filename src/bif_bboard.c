@@ -43,11 +43,6 @@ static bool bif_bb_b_put_2(query *q)
 	} else
 		m = q->st.m;
 
-	int var_nbr;
-
-	if ((var_nbr = create_vars(q, 1)) < 0)
-		return false;
-
 	if (is_atom(p1))
 		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
 	else
@@ -66,11 +61,16 @@ static bool bif_bb_b_put_2(query *q)
 	sl_set(q->pl->keyval, key, val);
 	prolog_unlock(q->pl);
 
+	int var_nbr;
+
+	if ((var_nbr = create_vars(q, 1)) < 0)
+		return false;
+
+	cell c, v;
+	make_ref(&c, var_nbr, q->st.curr_frame);
 	blob *b = calloc(1, sizeof(blob));
 	b->ptr = (void*)m;
 	b->ptr2 = (void*)strdup(key);
-	cell c, v;
-	make_ref(&c, var_nbr, q->st.curr_frame);
 	make_kvref(&v, b);
 	unify(q, &c, q->st.curr_frame, &v, q->st.curr_frame);
 	return true;
