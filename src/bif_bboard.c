@@ -57,10 +57,6 @@ static bool bif_bb_b_put_2(query *q)
 	check_heap_error(val);
 	dup_cells(val, tmp, tmp->nbr_cells);
 
-	prolog_lock(q->pl);
-	sl_set(q->pl->keyval, key, val);
-	prolog_unlock(q->pl);
-
 	int var_nbr;
 
 	if ((var_nbr = create_vars(q, 1)) < 0)
@@ -72,7 +68,14 @@ static bool bif_bb_b_put_2(query *q)
 	b->ptr = (void*)m;
 	b->ptr2 = (void*)strdup(key);
 	make_kvref(&v, b);
-	unify(q, &c, q->st.curr_frame, &v, q->st.curr_frame);
+
+	if (!unify(q, &c, q->st.curr_frame, &v, q->st.curr_frame))
+		return false;
+
+	prolog_lock(q->pl);
+	sl_set(q->pl->keyval, key, val);
+	prolog_unlock(q->pl);
+
 	return true;
 }
 
