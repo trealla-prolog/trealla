@@ -5769,11 +5769,9 @@ static bool bif_sys_register_cleanup_1(query *q)
 {
 	if (q->retry) {
 		GET_FIRST_ARG(p1,callable);
-		cell *tmp = prepare_call(q, PREFIX_LEN, p1, p1_ctx, 5);
+		cell *tmp = prepare_call(q, PREFIX_LEN, p1, p1_ctx, 3);
 		pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 		make_struct(tmp+nbr_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
-		make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-		make_uint(tmp+nbr_cells++, q->cp);
 		make_struct(tmp+nbr_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
 		make_call(q, tmp+nbr_cells);
 		q->st.curr_instr = tmp;
