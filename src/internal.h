@@ -980,9 +980,9 @@ inline static pl_idx copy_cells(cell *dst, const cell *src, pl_idx nbr_cells)
 
 inline static pl_idx copy_cells_by_ref(cell *dst, const cell *src, pl_idx src_ctx, pl_idx nbr_cells)
 {
-	memcpy(dst, src, sizeof(cell)*nbr_cells);
+	for (pl_idx i = 0; i < nbr_cells; i++, src++, dst++) {
+		*dst = *src;
 
-	for (pl_idx i = 0; i < nbr_cells; i++, src++) {
 		if (is_var(dst) && !is_ref(dst)) {
 			dst->flags |= FLAG_VAR_REF;
 			dst->var_ctx = src_ctx;
@@ -994,20 +994,19 @@ inline static pl_idx copy_cells_by_ref(cell *dst, const cell *src, pl_idx src_ct
 
 inline static pl_idx dup_cells(cell *dst, const cell *src, pl_idx nbr_cells)
 {
-	memcpy(dst, src, sizeof(cell)*nbr_cells);
-
-	for (pl_idx i = 0; i < nbr_cells; i++, src++)
+	for (pl_idx i = 0; i < nbr_cells; i++, src++, dst++) {
+		*dst = *src;
 		share_cell(src);
+	}
 
 	return nbr_cells;
 }
 
 inline static pl_idx dup_cells_by_ref(cell *dst, const cell *src, pl_idx src_ctx, pl_idx nbr_cells)
 {
-	memcpy(dst, src, sizeof(cell)*nbr_cells);
-
-	for (pl_idx i = 0; i < nbr_cells; i++, dst++) {
-		share_cell(dst);
+	for (pl_idx i = 0; i < nbr_cells; i++, src++, dst++) {
+		*dst = *src;
+		share_cell(src);
 
 		if (is_var(dst) && !is_ref(dst)) {
 			dst->flags |= FLAG_VAR_REF;
