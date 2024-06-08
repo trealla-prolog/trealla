@@ -380,7 +380,7 @@ void dump_vars(query *q, bool partial)
 	q->print_idx = 0;
 
 	for (unsigned i = 0; i < p->nbr_vars; i++) {
-		if (!strcmp(p->vartab.var_name[i], ""))
+		if (!strcmp(p->vartab.var_name[i], "_"))
 			continue;
 
 		slot *e = GET_SLOT(f, i);
