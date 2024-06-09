@@ -591,6 +591,8 @@ thread_property(P) :-
 	thread_self(Id),
 	thread_property(Id, P).
 
+:- meta_predicate(with_mutex(-,0)).
+
 with_mutex(Id, Goal) :-
 	setup_call_cleanup(mutex_lock(Id), once(Goal), mutex_unlock(Id)).
 
