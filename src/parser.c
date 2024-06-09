@@ -2348,13 +2348,13 @@ void read_integer(parser *p, mp_int v2, int base, const char **srcptr)
 	int spaces = 0;
 
 	while (*src) {
-		if ((base == 2) && ((*src < '0') || (*src > '1')))
+		if ((base == 2) && !isbdigit(*src))
 			break;
 
-		if ((base == 8) && ((*src < '0') || (*src > '7')))
+		if ((base == 8) && !isodigit(*src))
 			break;
 
-		if ((base == 10) && ((*src < '0') || (*src > '9')))
+		if ((base == 10) && !isdigit(*src))
 			break;
 
 		if ((base == 16) && !isxdigit(*src))
