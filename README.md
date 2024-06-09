@@ -252,33 +252,15 @@ Contributions are welcome.
 Acknowledgements
 ================
 
-This project started in March 2020 and it would not be where it is today
-without help from these people:
+This project (in current incarnation) started in March 2020 and it
+would not be where it is today without help from these people:
 
-Special thanks to [Xin Wang](https://github.com/dram) for providing the
-testing framework, for the initial push to get serious and for being
-the first to take this work (in it's original form) seriously.
-
-Special thanks to [Paulo Moura](https://github.com/pmoura) for his patience
-and sleuthing in the quest for Trealla to run his Logtalk project.
-
-Special thanks to [Markus Triska](https://github.com/triska) for
-driving the use of packed UTF-8 strings for character-lists. For the
-idea of mmap()-ing files as strings. For his rigorous approach to types
-and for bug-checking. Also for use of his CLP(Z) & format libraries.
-
-Special thanks to [Jos De Roo](https://github.com/josd) for his testing
-against some classic Prolog examples and his EYE project.
-
-Special thanks to [Christian Thaeter](https://github.com/cehteh) for his
-work with code cleanup and development ideas.
-
-Special thanks to [Ulrich Neumerkel](https://github.com/uwn) for his
-DCG reference library, for his drive towards ISO standardization.
-
-Special thanks to [Guregu](https://github.com/guregu) for his heroic
-efforts with JS / WASM / WASI and other acronyms I know nothing about.
-
+	- [Xin Wang](https://github.com/dram)
+	- [Paulo Moura](https://github.com/pmoura)
+	- [Markus Triska](https://github.com/triska)
+	- [Jos De Roo](https://github.com/josd)
+	- [Ulrich Neumerkel](https://github.com/uwn)
+	- [Guregu](https://github.com/guregu)
 
 Strings
 =======
