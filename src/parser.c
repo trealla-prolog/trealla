@@ -3832,8 +3832,10 @@ unsigned tokenize(parser *p, bool args, bool consing)
 				|| (nextch == ']')
 				|| (nextch == '}')
 			) {
-				specifier = 0;
-				priority = 0;
+				if ((SB_strcmp(p->token, "-") && SB_strcmp(p->token, "+")) || consing) {
+					specifier = 0;
+					priority = 0;
+				}
 			}
 		}
 
