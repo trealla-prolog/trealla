@@ -39,7 +39,7 @@ size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, 
 		mem = realloc(*addr, elem_size * elements);
 		if (mem) break;
 		elements = min_elements + (elements - min_elements) / 2;
-		//message("memory pressure reduce %lu to %lu", max_elements, elements);
+		//message("memory pressure apply_operators %lu to %lu", max_elements, elements);
 	}
 	 while (elements > min_elements);
 

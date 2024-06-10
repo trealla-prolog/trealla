@@ -1343,7 +1343,7 @@ static void check_term_ground(cell *c)
 	}
 }
 
-void clause_assign_vars(parser *p, unsigned start, bool rebase)
+void assign_vars(parser *p, unsigned start, bool rebase)
 {
 	if (!p || p->error)
 		return;
@@ -1488,7 +1488,7 @@ void clause_assign_vars(parser *p, unsigned start, bool rebase)
 	c->nbr_cells = 1;
 }
 
-static bool reduce(parser *p, pl_idx start_idx, bool last_op)
+static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 {
 	pl_idx lowest = IDX_MAX, work_idx, end_idx = p->cl->cidx - 1;
 	bool do_work = false, bind_le = false;
@@ -1722,7 +1722,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 
 static bool analyze(parser *p, pl_idx start_idx, bool last_op)
 {
-	while (reduce(p, start_idx, last_op))
+	while (apply_operators(p, start_idx, last_op))
 		;
 
 	return !p->error;
@@ -3214,13 +3214,6 @@ static bool process_term(parser *p, cell *p1)
 	// Note: we actually assert directives after processing
 	// so that they can be examined.
 
-#if 0
-	query *q = query_create(p->m, false);
-	check_error(q);
-	DUMP_TERM("***", p1, 0, 0);
-	query_destroy(q);
-#endif
-
 	directives(p, p1);
 
 	if (p->error)
@@ -3337,7 +3330,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 					return 0;
 				}
 
-				clause_assign_vars(p, p->read_term_slots, false);
+				assign_vars(p, p->read_term_slots, false);
 
 				if (p->consulting && check_body_callable(p->cl->cells)) {
 					if (DUMP_ERRS || !p->do_read_term)

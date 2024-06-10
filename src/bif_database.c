@@ -393,10 +393,10 @@ static unsigned count_non_anons(uint8_t *mask, unsigned bit)
 	return bits;
 }
 
-static void do_term_assign_vars(parser *p)
+static void term_assign_vars(parser *p)
 {
 	pl_idx nbr_cells = p->cl->cidx;
-	clause_assign_vars(p, 0, true);
+	assign_vars(p, 0, true);
 	memset(p->vartab.vars, 0, sizeof(p->vartab.vars));
 
 	for (pl_idx i = 0; i < nbr_cells; i++) {
@@ -473,7 +473,7 @@ static bool bif_iso_asserta_1(query *q)
 	}
 
 	p->cl->cidx = dup_cells(p->cl->cells, tmp, nbr_cells);
-	do_term_assign_vars(p);
+	term_assign_vars(p);
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
 
@@ -536,7 +536,7 @@ static bool bif_iso_assertz_1(query *q)
 	}
 
 	p->cl->cidx = dup_cells(p->cl->cells, tmp, nbr_cells);
-	do_term_assign_vars(p);
+	term_assign_vars(p);
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
 
@@ -607,7 +607,7 @@ static bool do_asserta_2(query *q)
 	}
 
 	p->cl->cidx = dup_cells(p->cl->cells, tmp, nbr_cells);
-	do_term_assign_vars(p);
+	term_assign_vars(p);
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
 
@@ -706,7 +706,7 @@ static bool do_assertz_2(query *q)
 	}
 
 	p->cl->cidx = dup_cells(p->cl->cells, tmp, nbr_cells);
-	do_term_assign_vars(p);
+	term_assign_vars(p);
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
 
