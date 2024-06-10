@@ -1493,6 +1493,8 @@ static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 	pl_idx lowest = IDX_MAX, work_idx, end_idx = p->cl->cidx - 1;
 	bool do_work = false, bind_le = false;
 
+	// Two passes: first find the lowest priority un-applied operator...
+
 	for (pl_idx i = start_idx; i < p->cl->cidx;) {
 		cell *c = p->cl->cells + i;
 
@@ -1524,6 +1526,8 @@ static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 
 	if (!do_work)
 		return false;
+
+	// Then apply args to that operator...
 
 	pl_idx last_idx = (unsigned)-1;
 
