@@ -88,16 +88,6 @@ bool bif_iso_integer_1(query *q);
 bool do_yield(query *q, int msecs);
 void do_yield_at(query *q, unsigned int time_in_ms);
 
-inline static void make_indirect(cell *tmp, cell *v, pl_idx v_ctx)
-{
-	tmp->tag = TAG_INDIRECT;
-	tmp->nbr_cells = 1;
-	tmp->arity = 0;
-	tmp->flags = 0;
-	tmp->val_ptr = v;
-	tmp->var_ctx = v_ctx;
-}
-
 inline static void init_queuen(query *q)
 {
 	free(q->queue[q->st.qnbr]);

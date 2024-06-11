@@ -365,11 +365,7 @@ void reset_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
 	if (is_compound(v)) {
 		make_indirect(&e->c, v, v_ctx);
 	} else if (is_var(v)) {
-		e->c.tag = TAG_VAR;
-		e->c.nbr_cells = 1;
-		e->c.flags |= FLAG_VAR_REF;
-		e->c.var_nbr = v->var_nbr;
-		e->c.var_ctx = v_ctx;
+		make_ref(&e->c, v->var_nbr, v_ctx);
 	} else {
 		e->c = *v;
 		share_cell(v);

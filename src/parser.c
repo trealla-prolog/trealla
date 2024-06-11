@@ -210,16 +210,6 @@ void make_var(cell *tmp, pl_idx off, unsigned var_nbr)
 		tmp->flags |= FLAG_VAR_ANON;
 }
 
-void make_ref(cell *tmp, unsigned var_nbr, pl_idx ctx)
-{
-	*tmp = (cell){0};
-	tmp->tag = TAG_VAR;
-	tmp->nbr_cells = 1;
-	tmp->flags = FLAG_VAR_REF;
-	tmp->var_nbr = var_nbr;
-	tmp->var_ctx = ctx;
-}
-
 void make_float(cell *tmp, pl_flt v)
 {
 	*tmp = (cell){0};

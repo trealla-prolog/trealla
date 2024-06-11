@@ -22,7 +22,6 @@ void make_int(cell *tmp, pl_int v);
 void make_float(cell *tmp, pl_flt v);
 void make_ptr(cell *tmp, void *v);
 void make_var(cell *tmp, pl_idx off, unsigned var_nbr);
-void make_ref(cell *tmp, unsigned var_nbr, pl_idx ctx);
 void make_end(cell *tmp);
 void make_atom(cell *tmp, pl_idx offset);
 void make_smalln(cell *tmp, const char *s, size_t n);
@@ -58,6 +57,26 @@ void make_struct_(cell *tmp, pl_idx offset, unsigned arity, pl_idx extra_cells);
 		tmp_make->bif_ptr = s_fn_ptr_##fn; \
 		tmp_make->flags = FLAG_BUILTIN; \
 	} \
+}
+
+inline static void make_ref(cell *tmp, unsigned var_nbr, pl_idx ctx)
+{
+	*tmp = (cell){0};
+	tmp->tag = TAG_VAR;
+	tmp->nbr_cells = 1;
+	tmp->flags = FLAG_VAR_REF;
+	tmp->var_nbr = var_nbr;
+	tmp->var_ctx = ctx;
+}
+
+inline static void make_indirect(cell *tmp, cell *v, pl_idx v_ctx)
+{
+	tmp->tag = TAG_INDIRECT;
+	tmp->nbr_cells = 1;
+	tmp->arity = 0;
+	tmp->flags = 0;
+	tmp->val_ptr = v;
+	tmp->var_ctx = v_ctx;
 }
 
 extern const char *g_solo;
