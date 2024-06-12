@@ -96,7 +96,9 @@ bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx 
 		} else if (params->use_strings) {
 			if (SB_strlen(pr)) {
 				cell tmp;
-				unsigned vnbr = create_vars(q, 1);
+				int vnbr = create_vars(q, 1);
+				if (vnbr < 0)
+					return throw_error(q, p2, p2_ctx, "resource_error", "stack");
 				make_ref(&tmp, vnbr, q->st.curr_frame);
 				check_heap_error(make_stringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
 				unify(q, &tmpc, q->st.curr_frame, &tmp, q->st.curr_frame);
@@ -105,7 +107,9 @@ bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx 
 				make_atom(&tmpc, g_nil_s);
 		} else {
 			cell tmp;
-			unsigned vnbr = create_vars(q, 1);
+			int vnbr = create_vars(q, 1);
+			if (vnbr < 0)
+				return throw_error(q, p2, p2_ctx, "resource_error", "stack");
 			make_ref(&tmp, vnbr, q->st.curr_frame);
 			check_heap_error(make_cstringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
 			unify(q, &tmpc, q->st.curr_frame, &tmp, q->st.curr_frame);
@@ -144,7 +148,9 @@ bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx 
 		if (params->use_strings) {
 			if (SB_strlen(pr)) {
 				cell tmp;
-				unsigned vnbr = create_vars(q, 1);
+				int vnbr = create_vars(q, 1);
+				if (vnbr < 0)
+					return throw_error(q, p2, p2_ctx, "resource_error", "stack");
 				make_ref(&tmp, vnbr, q->st.curr_frame);
 				check_heap_error(make_stringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
 				unify(q, &tmpc, q->st.curr_frame, &tmp, q->st.curr_frame);
@@ -153,7 +159,9 @@ bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx 
 				make_atom(&tmpc, g_nil_s);
 		} else {
 			cell tmp;
-			unsigned vnbr = create_vars(q, 1);
+			int vnbr = create_vars(q, 1);
+			if (vnbr < 0)
+				return throw_error(q, p2, p2_ctx, "resource_error", "stack");
 			make_ref(&tmp, vnbr, q->st.curr_frame);
 			check_heap_error(make_cstringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
 			unify(q, &tmpc, q->st.curr_frame, &tmp, q->st.curr_frame);

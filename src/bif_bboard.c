@@ -60,7 +60,7 @@ static bool bif_bb_b_put_2(query *q)
 	int var_nbr;
 
 	if ((var_nbr = create_vars(q, 1)) < 0)
-		return false;
+		return throw_error(q, p1, p1_ctx, "resource_error", "stack");
 
 	cell c, v;
 	make_ref(&c, var_nbr, q->st.curr_frame);

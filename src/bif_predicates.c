@@ -108,7 +108,8 @@ static bool bif_iso_findall_3(query *q)
 			return throw_error(q, p3, p3_ctx, "type_error", "list");
 
 		if (is_compound(p1) && (!is_iso_list(p1))) {	// Why?
-			create_vars(q, 16);
+			if (create_vars(q, 16) < 0)
+				return throw_error(q, p3, p3_ctx, "resource_error", "stack");
 		}
 
 		grab_queuen(q);
@@ -2185,7 +2186,8 @@ static bool bif_iso_current_predicate_1(query *q)
 		unsigned var_nbr = f->actual_slots;
 		make_ref(&tmp1, var_nbr++, q->st.curr_frame);
 		make_ref(&tmp2, var_nbr++, q->st.curr_frame);
-		create_vars(q, 2);
+		if (create_vars(q, 2) < 0)
+			return throw_error(q, p1, p1_ctx, "resource_error", "stack");
 		bool ok = search_functor(q, p1, p1_ctx, p2, p2_ctx) ? true : false;
 		cell *tmp = alloc_on_heap(q, 3);
 		make_struct(tmp, g_slash_s, NULL, 2, 2);

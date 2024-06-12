@@ -759,7 +759,7 @@ static cell *parse_to_heap(query *q, const char *src)
 	if (p2->nbr_vars) {
 		if (create_vars(q, p2->nbr_vars) < 0) {
 			parser_destroy(p2);
-			return false;
+			return NULL;
 		}
 	}
 
