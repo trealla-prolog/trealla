@@ -361,7 +361,6 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 			if (pr->is_prebuilt && prebuilt)
 				*prebuilt = true;
 
-			m->used[m->idx_used++] = tmp_m;
 			return pr;
 		}
 	}
