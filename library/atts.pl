@@ -1,8 +1,7 @@
 :- module(atts, [
 		op(1199, fx, attribute),
 		term_attributed_variables/2,
-		copy_term/3,
-		'$post_unify_hook'/0
+		copy_term/3
 	]).
 
 :- use_module(library(apply)).
@@ -12,28 +11,6 @@ msb(_X, _N) :- writeln(oops_msb).
 lsb(_X, _N) :- writeln(oops_lsb).
 popcount(_X, _N) :- writeln(oops_popcount).
 lcm(_X, _N, _) :- writeln(oops_lcm).
-
-'$post_unify_hook' :-
-	'$undo_trail'(Vars, State),
-	process_vars_(Vars, [], Goals),
-	'$redo_trail'(State),
-	maplist(call, Goals).
-
-process_vars_([], Goals, Goals).
-process_vars_([Var-Val|Vars], SoFar, Goals) :-
-	(	get_atts(Var, Atts) ->
-		process_var_(Atts, Var, Val, SoFar, MoreGoals),
-		process_vars_(Vars, MoreGoals, Goals)
-	;	process_vars_(Vars, SoFar, Goals)
-	).
-
-process_var_([], _, _, Goals, Goals).
-process_var_([Att|Atts], Var, Val, SoFar, Goals) :-
-	functor(Att, F, A),
-	attribute(M, F, A),
-	M:verify_attributes(Var, Val, NewGoals),
-	append(SoFar, NewGoals, MoreGoals),
-	process_var_(Atts, Var, Val, MoreGoals, Goals).
 
 term_attvars_([], VsIn, VsIn).
 term_attvars_([H|T], VsIn, VsOut) :-
