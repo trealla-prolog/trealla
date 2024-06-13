@@ -1,7 +1,8 @@
 :- module(atts, [
 		op(1199, fx, attribute),
 		term_attributed_variables/2,
-		copy_term/3
+		copy_term/3,
+		'$post_unify_hook'/0
 	]).
 
 :- use_module(library(apply)).
