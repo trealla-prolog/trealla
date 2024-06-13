@@ -769,10 +769,11 @@ static bool directives(parser *p, cell *d)
 			//	fprintf(stdout, "Error: module already loaded: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_nbr);
 			//
 			p->already_loaded_error = true;
-			p->m = tmp_m;
 
 			if (tmp_m != p->m)
 				p->m->used[p->m->idx_used++] = tmp_m;
+
+			p->m = tmp_m;
 
 			return true;
 		}
@@ -879,8 +880,10 @@ static bool directives(parser *p, cell *d)
 				return true;
 			}
 
+			if (tmp_m != p->m)
+				p->m->used[p->m->idx_used++] = tmp_m;
+
 			p->m = tmp_m;
-			p->pl->user_m->used[p->pl->user_m->idx_used++] = tmp_m;
 
 			if (!strcmp(name, "clpz"))
 				p->m->no_tco = true;
