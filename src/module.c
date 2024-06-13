@@ -350,7 +350,6 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 		}
 	}
 
-
 	for (module *tmp_m = list_front(&m->pl->modules);
 		tmp_m; tmp_m = list_next(tmp_m)) {
 		if (m == tmp_m)
