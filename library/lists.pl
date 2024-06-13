@@ -277,7 +277,7 @@ tolist_((T1,T2), [T1|Rest]) :- !,
 tolist_(T, [T|[]]).
 
 list_to_set(Ls0, Ls) :-
-		maplist(lists:with_var, Ls0, LVs0),
+		maplist(with_var, Ls0, LVs0),
 		keysort(LVs0, LVs),
 		same_elements(LVs),
 		pick_firsts(LVs0, Ls).
@@ -295,7 +295,7 @@ with_var(E, E-_).
 
 same_elements([]).
 same_elements([EV|EVs]) :-
-		foldl(lists:unify_same, EVs, EV, _).
+		foldl(unify_same, EVs, EV, _).
 
 unify_same(E-V, Prev-Var, E-V) :-
 		(   Prev == E ->
@@ -387,14 +387,13 @@ transpose(Ls, Ts) :-
 
 lists_transpose([], []).
 lists_transpose([L|Ls], Ts) :-
-        maplist(lists:same_length(L), Ls),
-        foldl(lists:transpose_, L, Ts, [L|Ls], _).
+        maplist(same_length(L), Ls),
+        foldl(transpose_, L, Ts, [L|Ls], _).
 
 transpose_(_, Fs, Lists0, Lists) :-
-        maplist(lists:list_first_rest, Lists0, Fs, Lists).
+        maplist(list_first_rest, Lists0, Fs, Lists).
 
 list_first_rest([L|Ls], L, Ls).
-
 
 foldl(G, L, V0, V) :-
 	foldl_(L, G, V0, V).
@@ -433,9 +432,9 @@ foldl_([H1|T1], [H2|T2], [H3|T3], [H4|T4], G, V0, V) :-
 :- help(foldl(:callable,+list,+list,+list,+var,-var), [iso(false)]).
 :- help(foldl(:callable,+list,+list,+list,+list,+var,-var), [iso(false)]).
 :- meta_predicate foldl(4, ?, ?, ?, ?).
-:- meta_predicate foldl(5, ?, ?, ?, ?).
-:- meta_predicate foldl(6, ?, ?, ?, ?).
-:- meta_predicate foldl(7, ?, ?, ?, ?).
+:- meta_predicate foldl(5, ?, ?, ?, ?, ?).
+:- meta_predicate foldl(6, ?, ?, ?, ?, ?, ?).
+:- meta_predicate foldl(7, ?, ?, ?, ?, ?, ?, ?).
 
 
 include(G, L, Included) :-

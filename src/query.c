@@ -1120,7 +1120,7 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 			make_struct(tmp, g_colon_s, bif_iso_invoke_2, 2, 1+k->nbr_cells);
 			SET_OP(tmp, OP_XFY); tmp++;
 			make_atom(tmp++, new_atom(q->pl, q->st.m->name));
-		} else if (is_smallint(m) && is_positive(m) && (get_smallint(m) <= 9) && is_atom(FIRST_ARG(k))) {
+		} else if (is_smallint(m) && is_positive(m) && (get_smallint(m) <= 9)) {
 			make_struct(tmp, g_colon_s, bif_iso_invoke_2, 2, 1+k->nbr_cells);
 			SET_OP(tmp, OP_XFY); tmp++;
 			make_atom(tmp++, new_atom(q->pl, q->st.m->name));
