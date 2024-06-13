@@ -927,11 +927,8 @@ static bool bif_instance_2(query *q)
 static bool bif_sys_retract_on_backtrack_1(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
-	int var_nbr;
-
-	if ((var_nbr = create_vars(q, 1)) < 0)
-		return throw_error(q, p1, p1_ctx, "resource_error", "stack");
-
+	int var_nbr = create_vars(q, 1);
+	check_heap_error(var_nbr != -1);
 	blob *b = calloc(1, sizeof(blob));
 	b->ptr = (void*)q->st.m;
 	b->ptr2 = (void*)strdup(C_STR(q, p1));

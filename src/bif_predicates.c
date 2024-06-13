@@ -2026,11 +2026,8 @@ static bool bif_iso_functor_3(query *q)
 		if (!arity) {
 			unify(q, p1, p1_ctx, p2, p2_ctx);
 		} else {
-			int var_nbr = 0;
-
-			if ((var_nbr = create_vars(q, arity)) < 0)
-				return throw_error(q, p3, p3_ctx, "resource_error", "stack");
-
+			int var_nbr = create_vars(q, arity);
+			check_heap_error(var_nbr != -1);
 			cell *tmp = alloc_on_heap(q, 1+arity);
 			check_heap_error(tmp);
 			*tmp = (cell){0};
@@ -5790,12 +5787,9 @@ static bool bif_sys_det_length_rundown_2(query *q)
 {
 	GET_FIRST_ARG(p1,list_or_var);
 	GET_NEXT_ARG(p2,integer);
-	int var_nbr;
 	unsigned n = get_smalluint(p2);
-
-	if ((var_nbr = create_vars(q, n)) < 0)
-		return throw_error(q, p2, p2_ctx, "resource_error", "stack");
-
+	int var_nbr = create_vars(q, n);
+	check_heap_error(var_nbr != -1);
 	cell *l = alloc_on_heap(q, n*2+1);
 	check_heap_error(l);
 	cell *save_l = l;

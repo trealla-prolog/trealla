@@ -57,10 +57,8 @@ static bool bif_bb_b_put_2(query *q)
 	check_heap_error(val);
 	dup_cells(val, tmp, tmp->nbr_cells);
 
-	int var_nbr;
-
-	if ((var_nbr = create_vars(q, 1)) < 0)
-		return throw_error(q, p1, p1_ctx, "resource_error", "stack");
+	int var_nbr = create_vars(q, 1);
+	check_heap_error(var_nbr != -1);
 
 	cell c, v;
 	make_ref(&c, var_nbr, q->st.curr_frame);

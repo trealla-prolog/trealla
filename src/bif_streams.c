@@ -604,8 +604,7 @@ static bool del_stream_properties(query *q, int n)
 	make_atom(tmp+0, g_sys_stream_property_s);
 	make_int(tmp+1, n);
 	int vnbr = create_vars(q, 1);
-	if (vnbr < 0)
-		return false;
+	check_heap_error(vnbr != -1);
 	make_ref(tmp+2, vnbr, q->st.curr_frame);
 	tmp->nbr_cells = 3;
 	tmp->arity = 2;
