@@ -350,25 +350,6 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 		}
 	}
 
-#if 1
-	// This should not be necessary...
-
-	for (module *tmp_m = list_front(&m->pl->modules);
-		tmp_m; tmp_m = list_next(tmp_m)) {
-		if (m == tmp_m)
-			continue;
-
-		pr = find_predicate(tmp_m, c);
-
-		if (pr) {
-			if (pr->is_prebuilt && prebuilt)
-				*prebuilt = true;
-
-			return pr;
-		}
-	}
-#endif
-
 	return NULL;
 }
 
