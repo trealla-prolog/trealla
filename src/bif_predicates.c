@@ -5525,14 +5525,13 @@ bool bif_iso_invoke_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_var);
 	GET_NEXT_ARG(p2,callable);
+	module *m = q->st.m;
 
 	if (is_atom(p1)) {
-		module *m = find_module(q->pl, C_STR(q, p1));
+		m = find_module(q->pl, C_STR(q, p1));
 
 		if (!m)
 			m = module_create(q->pl, C_STR(q, p1));
-
-		q->st.m = m;
 	}
 
 	cell *tmp = prepare_call(q, PREFIX_LEN, p2, p2_ctx, 1);
@@ -5544,6 +5543,7 @@ bool bif_iso_invoke_2(query *q)
 
 	nbr_cells += p2->nbr_cells;
 	make_call(q, tmp+nbr_cells);
+	q->st.m = m;
 	q->st.curr_instr = tmp;
 	q->st.curr_frame = p2_ctx;
 	return true;

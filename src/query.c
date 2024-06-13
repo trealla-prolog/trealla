@@ -946,7 +946,7 @@ static void proceed(query *q)
 
 		if (tmp->save_ret) {
 			f->chgen = tmp->chgen;
-			//q->st.m = q->pl->modmap[tmp->mid];
+			q->st.m = q->pl->modmap[tmp->mid];
 		}
 
 		if (!(q->st.curr_instr = tmp->save_ret))
