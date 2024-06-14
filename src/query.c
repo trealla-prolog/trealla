@@ -859,14 +859,6 @@ void cut(query *q)
 				break;
 		}
 
-		const frame *f2 = GET_FRAME(ch->st.curr_frame);
-
-		if ((ch->st.fp == (q->st.curr_frame + 1))
-			&& (f2->actual_slots == 0)
-			) {
-				q->st.fp = ch->st.fp;
-		}
-
 		leave_predicate(q, ch->st.pr);
 		drop_choice(q);
 
@@ -882,9 +874,6 @@ void cut(query *q)
 
 		ch--;
 	}
-
-	//if (!q->cp && !q->undo_hi_tp)
-	//	q->st.tp = 0;
 }
 
 static bool resume_any_choices(const query *q, const frame *f)
