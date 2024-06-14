@@ -5545,7 +5545,6 @@ bool bif_iso_invoke_2(query *q)
 	make_call(q, tmp+nbr_cells);
 	q->st.m = m;
 	q->st.curr_instr = tmp;
-	q->st.curr_frame = p2_ctx;
 	return true;
 }
 
