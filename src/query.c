@@ -803,19 +803,13 @@ bool push_fail_on_retry(query *q)
 	return true;
 }
 
-// A reset adds the ability to do locate
-// delimited continuations
-
 bool push_reset_handler(query *q)
 {
-	check_heap_error(push_barrier(q));
+	check_heap_error(push_fail_on_retry(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->reset = true;
-	ch->fail_on_retry = true;
 	return true;
 }
-
-// A catcher adds the ability to trap exceptions.
 
 bool push_catcher(query *q, enum q_retry retry)
 {
