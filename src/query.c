@@ -846,9 +846,10 @@ bool drop_barrier(query *q, pl_idx cp)
 void cut(query *q)
 {
 	const frame *f = GET_CURR_FRAME();
-	choice *ch = GET_CURR_CHOICE();
 
 	while (q->cp) {
+		choice *ch = GET_CURR_CHOICE();
+
 		// A normal cut can't break out of a barrier...
 
 		if (ch->barrier) {
