@@ -114,9 +114,9 @@ static bool bif_bb_put_2(query *q)
 	const char *key1 = tmpbuf1;
 
 	if (is_atom(p1))
-		snprintf(tmpbuf2, sizeof(tmpbuf2), "%s:%s:nb", m->name, C_STR(q, p1));
+		snprintf(tmpbuf2, sizeof(tmpbuf2), "%s:%s", m->name, C_STR(q, p1));
 	else
-		snprintf(tmpbuf2, sizeof(tmpbuf2), "%s:%d:nb", m->name, (int)get_smallint(p1));
+		snprintf(tmpbuf2, sizeof(tmpbuf2), "%s:%d", m->name, (int)get_smallint(p1));
 
 	if (DO_DUMP) DUMP_TERM2("bb_put", tmpbuf2, p2, p2_ctx, 1);
 
@@ -176,9 +176,9 @@ static bool bif_bb_get_2(query *q)
 
 	if (!sl_get(q->pl->keyval, key, &val)) {
 		if (is_atom(p1))
-			snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:nb", m->name, C_STR(q, p1));
+			snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s", m->name, C_STR(q, p1));
 		else
-			snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:nb", m->name, (int)get_smallint(p1));
+			snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d", m->name, (int)get_smallint(p1));
 
 		key = tmpbuf;
 
@@ -234,9 +234,9 @@ static bool bif_bb_delete_2(query *q)
 		m = q->st.m;
 
 	if (is_atom(p1))
-		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:nb", m->name, C_STR(q, p1));
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s", m->name, C_STR(q, p1));
 	else
-		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:nb", m->name, (int)get_smallint(p1));
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d", m->name, (int)get_smallint(p1));
 
 	const char *key = tmpbuf;
 	const void *val;
@@ -302,9 +302,9 @@ static bool bif_bb_update_3(query *q)
 		m = q->st.m;
 
 	if (is_atom(p1))
-		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:nb", m->name, C_STR(q, p1));
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s", m->name, C_STR(q, p1));
 	else
-		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:nb", m->name, (int)get_smallint(p1));
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d", m->name, (int)get_smallint(p1));
 
 	char *key = tmpbuf;
 	const void *val;
