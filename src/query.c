@@ -1913,37 +1913,6 @@ void query_destroy(query *q)
 	}
 #endif
 
-	module *m = list_front(&q->pl->modules);
-
-	while (m) {
-		module_lock(m);
-		predicate *pr = find_functor(m, "$bb_key", 3);
-
-		if (pr) {
-			rule *r = pr->head;
-
-			while (r) {
-				cell *c = r->cl.cells;
-				cell *arg1 = c + 1;
-				cell *arg2 = arg1 + arg1->nbr_cells;
-				cell *arg3 = arg2 + arg2->nbr_cells;
-
-				if (!CMP_STRING_TO_CSTR(m, arg3, "b")) {
-					pr->cnt--;
-					predicate_delink(pr, r);
-					rule *save = r;
-					r = r->next;
-					clear_clause(&save->cl);
-					free(save);
-				} else
-					r = r->next;
-			}
-		}
-
-		module_unlock(m);
-		m = list_next(m);
-	}
-
 	mp_int_clear(&q->tmp_ival);
 	mp_rat_clear(&q->tmp_irat);
 	query_purge_dirty_list(q);
