@@ -351,6 +351,7 @@ static bool bif_bb_update_3(query *q)
 	check_heap_error(value);
 	dup_cells(value, tmp, tmp->nbr_cells);
 	sl_del(q->pl->keyval, key1);
+	sl_del(q->pl->keyval, key);
 	sl_set(q->pl->keyval, key, value);
 
 	prolog_unlock(q->pl);
