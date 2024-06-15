@@ -70,6 +70,9 @@ static bool bif_bb_b_put_2(query *q)
 	if (!unify(q, &c, q->st.curr_frame, &v, q->st.curr_frame))
 		return false;
 
+	frame *f = GET_CURR_FRAME();
+	f->no_tco = true;
+
 	prolog_lock(q->pl);
 	sl_set(q->pl->keyval, key, val);
 	prolog_unlock(q->pl);
@@ -119,8 +122,8 @@ static bool bif_bb_put_2(query *q)
 
 	// Note: we have to save a copy of attributes...
 
-	char *key = strdup(tmpbuf2);
-	check_heap_error(init_tmp_heap(q), free(key));
+	char *key2 = strdup(tmpbuf2);
+	check_heap_error(init_tmp_heap(q), free(key2));
 	cell *tmp = deep_copy_to_tmp(q, p2, p2_ctx, true);
 	cell *val = malloc(sizeof(cell)*tmp->nbr_cells);
 	check_heap_error(val);
@@ -128,7 +131,8 @@ static bool bif_bb_put_2(query *q)
 
 	prolog_lock(q->pl);
 	sl_del(q->pl->keyval, key1);
-	sl_set(q->pl->keyval, key, val);
+	sl_del(q->pl->keyval, key2);
+	sl_set(q->pl->keyval, key2, val);
 	prolog_unlock(q->pl);
 
 	return true;
