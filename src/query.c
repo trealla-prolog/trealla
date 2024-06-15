@@ -877,11 +877,8 @@ void cut(query *q)
 	}
 }
 
-static bool resume_any_choices(const query *q, const frame *f)
+inline static bool resume_any_choices(const query *q, const frame *f)
 {
-	if (!q->cp)
-		return false;
-
 	const choice *ch = GET_CURR_CHOICE();
 	return ch->chgen > f->chgen;
 }
@@ -902,10 +899,10 @@ static bool resume_frame(query *q)
 		&& (!f->has_local_vars || !q->in_call)
 		&& !f->no_tco
 		&& (q->st.fp == (q->st.curr_frame + 1))
-		&& !resume_any_choices(q, f)
+		&& (!q->cp || !resume_any_choices(q, f))
 		) {
-		q->st.sp -= f->actual_slots;
 		q->st.fp--;
+		q->st.sp -= f->actual_slots;
 		trim_slots(q);
 	}
 
