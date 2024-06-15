@@ -234,9 +234,9 @@ static bool bif_bb_delete_2(query *q)
 		m = q->st.m;
 
 	if (is_atom(p1))
-		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:nb", m->name, C_STR(q, p1));
 	else
-		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:b", m->name, (int)get_smallint(p1));
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:nb", m->name, (int)get_smallint(p1));
 
 	const char *key = tmpbuf;
 	const void *val;
@@ -244,17 +244,8 @@ static bool bif_bb_delete_2(query *q)
 	prolog_lock(q->pl);
 
 	if (!sl_get(q->pl->keyval, key, &val)) {
-		if (is_atom(p1))
-			snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:nb", m->name, C_STR(q, p1));
-		else
-			snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:nb", m->name, (int)get_smallint(p1));
-
-		key = tmpbuf;
-
-		if (!sl_get(q->pl->keyval, key, &val)) {
-			prolog_unlock(q->pl);
-			return false;
-		}
+		prolog_unlock(q->pl);
+		return false;
 	}
 
 	cell *tmp = deep_copy_to_heap(q, (cell*)val, q->st.fp, true);
@@ -311,27 +302,18 @@ static bool bif_bb_update_3(query *q)
 		m = q->st.m;
 
 	if (is_atom(p1))
-		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:nb", m->name, C_STR(q, p1));
 	else
-		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:b", m->name, (int)get_smallint(p1));
+		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:nb", m->name, (int)get_smallint(p1));
 
-	const char *key1 = tmpbuf;
+	char *key = tmpbuf;
 	const void *val;
 
 	prolog_lock(q->pl);
 
-	if (!sl_get(q->pl->keyval, key1, &val)) {
-		if (is_atom(p1))
-			snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:nb", m->name, C_STR(q, p1));
-		else
-			snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:nb", m->name, (int)get_smallint(p1));
-
-		key1 = tmpbuf;
-
-		if (!sl_get(q->pl->keyval, key1, &val)) {
-			prolog_unlock(q->pl);
-			return false;
-		}
+	if (!sl_get(q->pl->keyval, key, &val)) {
+		prolog_unlock(q->pl);
+		return false;
 	}
 
 	cell *tmp = deep_copy_to_heap(q, (cell*)val, q->st.fp, true);
@@ -344,13 +326,12 @@ static bool bif_bb_update_3(query *q)
 		return false;
 	}
 
-	char *key = strdup(key1);
+	key = strdup(tmpbuf);
 	check_heap_error(init_tmp_heap(q), (prolog_unlock(q->pl), free(key)));
 	tmp = deep_clone_to_tmp(q, p3, p3_ctx);
 	cell *value = malloc(sizeof(cell)*tmp->nbr_cells);
 	check_heap_error(value);
 	dup_cells(value, tmp, tmp->nbr_cells);
-	sl_del(q->pl->keyval, key1);
 	sl_del(q->pl->keyval, key);
 	sl_set(q->pl->keyval, key, value);
 
