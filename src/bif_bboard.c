@@ -87,7 +87,7 @@ static bool bif_bb_put_2(query *q)
 		return throw_error(q, p1, p1_ctx, "type_error", "callable");
 
 	module *m;
-	char tmpbuf[1024];
+	char tmpbuf1[1024], tmpbuf2[1024];
 
 	if (is_compound(p1)) {
 		cell *p1_m = p1 + 1;
@@ -104,22 +104,22 @@ static bool bif_bb_put_2(query *q)
 		m = q->st.m;
 
 	if (is_atom(p1))
-		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
+		snprintf(tmpbuf1, sizeof(tmpbuf1), "%s:%s:b", m->name, C_STR(q, p1));
 	else
-		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:b", m->name, (int)get_smallint(p1));
+		snprintf(tmpbuf1, sizeof(tmpbuf1), "%s:%d:b", m->name, (int)get_smallint(p1));
 
-	const char *key1 = tmpbuf;
+	const char *key1 = tmpbuf1;
 
 	if (is_atom(p1))
-		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:nb", m->name, C_STR(q, p1));
+		snprintf(tmpbuf2, sizeof(tmpbuf2), "%s:%s:nb", m->name, C_STR(q, p1));
 	else
-		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:nb", m->name, (int)get_smallint(p1));
+		snprintf(tmpbuf2, sizeof(tmpbuf2), "%s:%d:nb", m->name, (int)get_smallint(p1));
 
-	if (DO_DUMP) DUMP_TERM2("bb_put", tmpbuf, p2, p2_ctx, 1);
+	if (DO_DUMP) DUMP_TERM2("bb_put", tmpbuf2, p2, p2_ctx, 1);
 
 	// Note: we have to save a copy of attributes...
 
-	char *key = strdup(tmpbuf);
+	char *key = strdup(tmpbuf2);
 	check_heap_error(init_tmp_heap(q), free(key));
 	cell *tmp = deep_copy_to_tmp(q, p2, p2_ctx, true);
 	cell *val = malloc(sizeof(cell)*tmp->nbr_cells);
