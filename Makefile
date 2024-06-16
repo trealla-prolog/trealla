@@ -14,8 +14,6 @@ LDFLAGS += -L$(HOMEBREW_PREFIX)/opt/libffi/lib -L$(HOMEBREW_PREFIX)/opt/openssl@
 CFLAGS += -I$(HOMEBREW_PREFIX)/opt/libffi/include -I$(HOMEBREW_PREFIX)/opt/openssl@3/include
 endif
 
-LDFLAGS += -latomic
-
 ifndef NOPEDANTIC
 CFLAGS += -Wno-unused-but-set-variable
 endif
@@ -66,6 +64,7 @@ endif
 ifndef NOTHREADS
 CFLAGS += -DUSE_THREADS=1 -pthread
 LDFLAGS += -pthread
+LDFLAGS += -latomic
 endif
 
 ifdef LTO

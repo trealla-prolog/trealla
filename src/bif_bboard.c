@@ -41,7 +41,7 @@ static bool bif_bb_b_put_2(query *q)
 		if (!m)
 			m = module_create(q->pl, C_STR(q, p1_m));
 	} else
-		m = q->st.m;
+		m = q->pl->global_bb ? q->pl->user_m : q->st.m;
 
 	if (is_atom(p1))
 		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
@@ -104,7 +104,7 @@ static bool bif_bb_put_2(query *q)
 		if (!m)
 			m = module_create(q->pl, C_STR(q, p1_m));
 	} else
-		m = q->st.m;
+		m = q->pl->global_bb ? q->pl->user_m : q->st.m;
 
 	if (is_atom(p1))
 		snprintf(tmpbuf1, sizeof(tmpbuf1), "%s:%s:b", m->name, C_STR(q, p1));
@@ -162,7 +162,7 @@ static bool bif_bb_get_2(query *q)
 		if (!m)
 			m = module_create(q->pl, C_STR(q, p1_m));
 	} else
-		m = q->st.m;
+		m = q->pl->global_bb ? q->pl->user_m : q->st.m;
 
 	if (is_atom(p1))
 		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
@@ -190,7 +190,7 @@ static bool bif_bb_get_2(query *q)
 
 	prolog_unlock(q->pl);
 
-	cell *tmp = deep_copy_to_heap(q, (cell*)val, q->st.fp, true);
+	cell *tmp = deep_copy_to_heap(q, (cell*)val, q->st.curr_frame, true);
 	check_heap_error(tmp);
 
 	if (DO_DUMP) DUMP_TERM2("bb_get", tmpbuf, tmp, q->st.curr_frame, 1);
@@ -231,7 +231,7 @@ static bool bif_bb_delete_2(query *q)
 		if (!m)
 			m = module_create(q->pl, C_STR(q, p1_m));
 	} else
-		m = q->st.m;
+		m = q->pl->global_bb ? q->pl->user_m : q->st.m;
 
 	if (is_atom(p1))
 		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s", m->name, C_STR(q, p1));
@@ -299,7 +299,7 @@ static bool bif_bb_update_3(query *q)
 		if (!m)
 			m = module_create(q->pl, C_STR(q, p1_m));
 	} else
-		m = q->st.m;
+		m = q->pl->global_bb ? q->pl->user_m : q->st.m;
 
 	if (is_atom(p1))
 		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s", m->name, C_STR(q, p1));
