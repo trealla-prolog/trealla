@@ -9,7 +9,7 @@
 		list_sum/2, list_prod/2, list_max/2, list_min/2,	% Modern
 		list_to_conjunction/2, conjunction_to_list/2,
 		list_to_set/2, numlist/3, length/2, reverse/2,
-		partition/4, exclude/3, include/3,
+		partition/4, exclude/3, include/3, permutation/2,
 		foldl/4, foldl/5, foldl/6, foldl/7
 	]).
 
@@ -472,3 +472,27 @@ partition([], _, [], []).
 
 :- help(partition(:callable,?list,?list), [iso(false)]).
 :- meta_predicate(partition(1, ?, ?, ?)).
+
+permutation(Xs, Ys) :-
+    '$skip_max_list'(Xlen, _, Xs, XTail),
+    '$skip_max_list'(Ylen, _, Ys, YTail),
+    (   XTail == [], YTail == []            % both proper lists
+    ->  Xlen == Ylen
+    ;   var(XTail), YTail == []             % partial, proper
+    ->  length(Xs, Ylen)
+    ;   XTail == [], var(YTail)             % proper, partial
+    ->  length(Ys, Xlen)
+    ;   var(XTail), var(YTail)              % partial, partial
+    ->  length(Xs, Len),
+        length(Ys, Len)
+    ;   must_be(list, Xs),                  % either is not a list
+        must_be(list, Ys)
+    ),
+    perm_(Xs, Ys).
+
+perm_([], []).
+perm_(List, [First|Perm]) :-
+    select(First, List, Rest),
+    perm_(Rest, Perm).
+
+:- help(permutation(?list,?list), [iso(false)]).
