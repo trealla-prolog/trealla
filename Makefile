@@ -14,13 +14,7 @@ LDFLAGS += -L$(HOMEBREW_PREFIX)/opt/libffi/lib -L$(HOMEBREW_PREFIX)/opt/openssl@
 CFLAGS += -I$(HOMEBREW_PREFIX)/opt/libffi/include -I$(HOMEBREW_PREFIX)/opt/openssl@3/include
 endif
 
-ifneq (,$(filter aarch64 armv,$(uname_M)))
-	LDFLAGS += -latomic
-else
-ifneq (,$(findstring armv,$(uname_M)))
-	LDFLAGS += -latomic
-endif
-endif
+LDFLAGS += -latomic
 
 ifndef NOPEDANTIC
 CFLAGS += -Wno-unused-but-set-variable
