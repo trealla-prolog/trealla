@@ -4,7 +4,7 @@
 		append/2, append/3,
 		subtract/3, union/3, intersection/3, is_set/1,
 		nth1/3, nth0/3, nth1/4, nth0/4,
-		last/2, flatten/2, same_length/2, transpose/2,
+		last/2, same_length/2, transpose/2,
 		sum_list/2, prod_list/2, max_list/2, min_list/2,	% SWI
 		list_sum/2, list_prod/2, list_max/2, list_min/2,	% Modern
 		list_to_conjunction/2, conjunction_to_list/2,
@@ -170,23 +170,6 @@ last_([], Last, Last).
 last_([X|Xs], _, Last) :- last_(Xs, X, Last).
 
 :- help(last(+list,-term), [iso(false)]).
-
-flatten(List, FlatList) :-
-	flatten_(List, [], FlatList0),
-	!,
-	FlatList = FlatList0.
-
-flatten_(Var, Tl, [Var|Tl]) :-
-	var(Var),
-	!.
-flatten_([], Tl, Tl) :- !.
-flatten_([Hd|Tl], Tail, List) :-
-	!,
-	flatten_(Hd, FlatHeadTail, List),
-	flatten_(Tl, Tail, FlatHeadTail).
-flatten_(NonList, Tl, [NonList|Tl]).
-
-:- help(flatten(+list,-list), [iso(false)]).
 
 same_length([], []).
 same_length([_|As], [_|Bs]) :- same_length(As, Bs).
