@@ -512,6 +512,10 @@ bool bif_sys_redo_trail_1(query * q)
 bool do_post_unification_hook(query *q)
 {
 	q->run_hook = false;
+
+	if (!q->st.curr_instr)
+		return false;
+
 	q->undo_lo_tp = q->before_hook_tp;
 	q->undo_hi_tp = q->st.tp;
 	q->before_hook_tp = 0;
