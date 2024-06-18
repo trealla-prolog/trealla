@@ -237,7 +237,7 @@ bool bif_iso_call_1(query *q)
 
 static bool bif_iso_once_1(query *q)
 {
-	GET_FIRST_ARG(p1,any);
+	GET_FIRST_ARG(p1,callable);
 
 	if ((is_builtin(p1) && !is_evaluable(p1)) || !p1->arity) {
 		check_heap_error(init_tmp_heap(q));
@@ -267,7 +267,7 @@ static bool bif_iso_once_1(query *q)
 
 static bool bif_ignore_1(query *q)
 {
-	GET_FIRST_ARG(p1,any);
+	GET_FIRST_ARG(p1,callable);
 	check_heap_error(init_tmp_heap(q));
 	cell *tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
 	check_heap_error(tmp2);
@@ -433,7 +433,7 @@ static bool bif_iso_disjunction_2(query *q)
 
 static bool bif_iso_negation_1(query *q)
 {
-	GET_FIRST_ARG(p1,any);
+	GET_FIRST_ARG(p1,callable);
 	cell *tmp = prepare_call(q, PREFIX_LEN, p1, p1_ctx, 5);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
