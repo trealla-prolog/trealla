@@ -23,7 +23,7 @@ static bool bif_bb_b_put_2(query *q)
 	GET_NEXT_ARG(p2,any);
 
 	if (is_compound(p1) &&
-		((p1->val_off != g_colon_s)  ||  (p1->arity != 2)))
+		((p1->val_off != g_colon_s) || (p1->arity != 2)))
 		return throw_error(q, p1, p1_ctx, "type_error", "callable");
 
 	module *m;
@@ -86,7 +86,7 @@ static bool bif_bb_put_2(query *q)
 	GET_NEXT_ARG(p2,any);
 
 	if (is_compound(p1) &&
-		((p1->val_off != g_colon_s)  ||  (p1->arity != 2)))
+		((p1->val_off != g_colon_s) || (p1->arity != 2)))
 		return throw_error(q, p1, p1_ctx, "type_error", "callable");
 
 	module *m;
@@ -144,7 +144,7 @@ static bool bif_bb_get_2(query *q)
 	GET_NEXT_ARG(p2,any);
 
 	if (is_compound(p1) &&
-		((p1->val_off != g_colon_s)  ||  (p1->arity != 2)))
+		((p1->val_off != g_colon_s) || (p1->arity != 2)))
 		return throw_error(q, p1, p1_ctx, "type_error", "callable");
 
 	module *m;
@@ -213,7 +213,7 @@ static bool bif_bb_delete_2(query *q)
 	GET_NEXT_ARG(p2,any);
 
 	if (is_compound(p1) &&
-		((p1->val_off != g_colon_s)  ||  (p1->arity != 2)))
+		((p1->val_off != g_colon_s) || (p1->arity != 2)))
 		return throw_error(q, p1, p1_ctx, "type_error", "callable");
 
 	module *m;
@@ -281,7 +281,7 @@ static bool bif_bb_update_3(query *q)
 	GET_NEXT_ARG(p3,any);
 
 	if (is_compound(p1) &&
-		((p1->val_off != g_colon_s)  ||  (p1->arity != 2)))
+		((p1->val_off != g_colon_s) || (p1->arity != 2)))
 		return throw_error(q, p1, p1_ctx, "type_error", "callable");
 
 	module *m;
