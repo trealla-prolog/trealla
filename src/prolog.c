@@ -757,6 +757,7 @@ prolog *pl_create()
 	pl->def_quoted = true;
 	pl->def_double_quotes = true;
 	pl->rnd_first_time = true;
+	pl->global_bb = true;		// Fow now, as tabling seems to need it
 
 	// In user space...
 

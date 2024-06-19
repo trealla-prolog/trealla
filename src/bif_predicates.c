@@ -2322,6 +2322,10 @@ static bool bif_sys_current_prolog_flag_2(query *q)
 		cell tmp;
 		make_atom(&tmp, q->pl->quiet ? g_false_s : g_true_s);
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	} else if (!CMP_STRING_TO_CSTR(q, p1, "global_bb")) {
+		cell tmp;
+		make_atom(&tmp, q->pl->global_bb ? g_true_s : g_false_s);
+		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 #if USE_THREADS
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "threads")) {
 		cell tmp;
@@ -2613,6 +2617,14 @@ static bool bif_iso_set_prolog_flag_2(query *q)
 			q->st.m->flags.debug = true;
 		else if (!CMP_STRING_TO_CSTR(q, p2, "false") || !CMP_STRING_TO_CSTR(q, p2, "off"))
 			q->st.m->flags.debug = false;
+		else {
+			return flag_value_error(q, p1, p2);
+		}
+	} else if (!CMP_STRING_TO_CSTR(q, p1, "global_bb")) {
+		if (!CMP_STRING_TO_CSTR(q, p2, "true") || !CMP_STRING_TO_CSTR(q, p2, "on"))
+			q->pl->global_bb = true;
+		else if (!CMP_STRING_TO_CSTR(q, p2, "false") || !CMP_STRING_TO_CSTR(q, p2, "off"))
+			q->pl->global_bb = false;
 		else {
 			return flag_value_error(q, p1, p2);
 		}
@@ -6346,6 +6358,7 @@ static void load_flags(query *q)
 #else
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "threads", "false");
 #endif
+	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "global_bb", q->pl->global_bb?"true":"false");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "verbose", q->pl->quiet?"false":"true");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "dialect", "trealla");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "bounded", "false");
