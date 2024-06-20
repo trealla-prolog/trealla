@@ -509,13 +509,9 @@ bool bif_sys_redo_trail_1(query * q)
 	return true;
 }
 
-bool do_post_unification_hook(query *q)
+bool do_post_unification_hook(query *q, bool is_builtin)
 {
 	q->run_hook = false;
-
-	if (!q->st.curr_instr)
-		return false;
-
 	q->undo_lo_tp = q->before_hook_tp;
 	q->undo_hi_tp = q->st.tp;
 	q->before_hook_tp = 0;
@@ -523,7 +519,12 @@ bool do_post_unification_hook(query *q)
 	check_heap_error(tmp);
 	make_struct(tmp+0, g_true_s, bif_iso_true_0, 0, 0);
 	make_struct(tmp+1, g_post_unify_hook_s, NULL, 0, 0);
-	make_call(q, tmp+2);
+
+	if (is_builtin)
+		make_call(q, tmp+2);
+	else
+		make_call_redo(q, tmp+2);
+
 	q->st.curr_instr = tmp;
 	return true;
 }

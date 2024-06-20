@@ -12,6 +12,6 @@ bool bif_sys_attributed_var_1(query *q);
 bool bif_sys_undo_trail_2(query *q);
 bool bif_sys_redo_trail_1(query *q);
 
-bool do_post_unification_hook(query *q);
+bool do_post_unification_hook(query *q, bool is_builtin);
 bool any_attributed(query *q);
 

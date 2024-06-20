@@ -257,6 +257,15 @@ void make_call(query *q, cell *tmp)
 	tmp->mid = q->st.m->id;				// ... current-module
 }
 
+void make_call_redo(query *q, cell *tmp)
+{
+	make_end(tmp);
+	const frame *f = GET_CURR_FRAME();
+	tmp->save_ret = q->st.curr_instr;	// save the return instruction
+	tmp->chgen = f->chgen;				// ... choice-generation
+	tmp->mid = q->st.m->id;				// ... current-module
+}
+
 void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs)
 {
 	if (!check_trail(q)) {
@@ -1660,7 +1669,7 @@ bool start(query *q)
 			}
 
 			if (q->run_hook)
-				do_post_unification_hook(q);
+				do_post_unification_hook(q, true);
 
 			Trace(q, save_cell, save_ctx, EXIT);
 			proceed(q);
@@ -1685,7 +1694,7 @@ bool start(query *q)
 			}
 
 			if (q->run_hook)
-				do_post_unification_hook(q);
+				do_post_unification_hook(q, false);
 		}
 
 		MORE:
