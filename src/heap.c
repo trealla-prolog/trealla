@@ -420,6 +420,16 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 	return true;
 }
 
+void deref_term(cell *c)
+{
+	pl_idx nbr_cells = c->nbr_cells;
+
+	for (unsigned i = 0; i < nbr_cells; i++, c++) {
+		if (is_ref(c))
+			c->flags &= ~FLAG_VAR_REF;
+	}
+}
+
 unsigned rebase_term(query *q, cell *c, unsigned start_nbr)
 {
 	q->vars = sl_create(NULL, NULL, NULL);
