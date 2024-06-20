@@ -207,7 +207,7 @@ static cell *deep_clone2_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 	if (!tmp) return NULL;
 	copy_cells(tmp, p1, 1);
 
-	if (is_var(tmp) && !is_ref(tmp)) {
+	if (is_var(tmp) && !is_ref(tmp) && !q->noderef) {
 		tmp->flags |= FLAG_VAR_REF;
 		tmp->var_ctx = p1_ctx;
 	}
@@ -534,6 +534,14 @@ cell *deep_copy_to_heap_with_replacement(query *q, cell *p1, pl_idx p1_ctx, bool
 	if (!tmp2) return NULL;
 	dup_cells(tmp2, tmp, tmp->nbr_cells);
 	return tmp2;
+}
+
+cell *shallow_copy_to_heap(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
+{
+	q->noderef = true;
+	cell *tmp = deep_copy_to_heap(q, p1, p1_ctx, copy_attrs);
+	q->noderef = false;
+	return tmp;
 }
 
 cell *alloc_on_queuen(query *q, unsigned qnbr, const cell *c)

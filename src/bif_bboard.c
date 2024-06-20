@@ -190,9 +190,7 @@ static bool bif_bb_get_2(query *q)
 
 	prolog_unlock(q->pl);
 
-	q->noderef = true;
-	cell *tmp = deep_copy_to_heap(q, (cell*)val, q->st.curr_frame, true);
-	q->noderef = false;
+	cell *tmp = shallow_copy_to_heap(q, (cell*)val, q->st.curr_frame, true);
 	check_heap_error(tmp);
 
 	if (DO_DUMP) DUMP_TERM2("bb_get", tmpbuf, tmp, q->st.curr_frame, 1);
@@ -250,9 +248,7 @@ static bool bif_bb_delete_2(query *q)
 		return false;
 	}
 
-	q->noderef = true;
-	cell *tmp = deep_copy_to_heap(q, (cell*)val, q->st.fp, true);
-	q->noderef = false;
+	cell *tmp = shallow_copy_to_heap(q, (cell*)val, q->st.fp, true);
 	check_heap_error(tmp, prolog_unlock(q->pl));
 
 	if (DO_DUMP) DUMP_TERM2("bb_delete", tmpbuf, tmp, q->st.curr_frame, 1);
