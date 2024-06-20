@@ -1610,7 +1610,7 @@ int uuid_from_buf(const char *s, uuid *u)
 static bool bif_iso_arg_3(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
-	GET_NEXT_ARG(p2,compound);
+	GET_NEXT_ARG(p2,structure);
 	GET_NEXT_ARG(p3,any);
 
 	if (is_negative(p1))
