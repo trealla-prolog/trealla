@@ -425,9 +425,8 @@ bool bif_sys_undo_trail_2(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,var);
-	q->run_hook = false;
 
-	if (q->undo_hi_tp <= q->undo_lo_tp)
+	if (q->undo_hi_tp == q->undo_lo_tp)
 		return unify(q, p1, p1_ctx, make_nil(), q->st.curr_frame);
 
 	pl_idx slots = q->undo_hi_tp - q->undo_lo_tp;
@@ -466,13 +465,11 @@ bool bif_sys_undo_trail_2(query *q)
 
 	cell *tmp = end_list(q);
 	check_heap_error(tmp, free(save));
-
-	if (!unify(q, p1, p1_ctx, tmp, q->st.curr_frame))
-		return false;
-
+	unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 	cell tmp2;
 	make_blob(&tmp2, &save->b);
-	return unify(q, p2, p2_ctx, &tmp2, q->st.curr_frame);
+	unify(q, p2, p2_ctx, &tmp2, q->st.curr_frame);
+	return true;
 }
 
 bool bif_sys_redo_trail_1(query * q)
@@ -487,6 +484,7 @@ bool bif_sys_redo_trail_1(query * q)
 		*e = save->e[j];
 	}
 
+
 	return true;
 }
 
@@ -495,7 +493,6 @@ bool do_post_unify_hook(query *q, bool is_builtin)
 	q->run_hook = false;
 	q->undo_lo_tp = q->before_hook_tp;
 	q->undo_hi_tp = q->st.tp;
-	q->before_hook_tp = 0;
 	cell *tmp = alloc_on_heap(q, 3);
 	check_heap_error(tmp);
 	make_struct(tmp+0, g_true_s, bif_iso_true_0, 0, 0);
