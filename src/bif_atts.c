@@ -442,8 +442,6 @@ bool bif_sys_undo_trail_2(query *q)
 	save->hi_tp = q->undo_hi_tp;
 	init_tmp_heap(q);
 
-	// Unbind & save our vars
-
 	for (pl_idx i = q->undo_lo_tp, j = 0; i < q->undo_hi_tp; i++, j++) {
 		const trail *tr = q->trails + i;
 		const frame *f = GET_FRAME(tr->var_ctx);
@@ -452,7 +450,6 @@ bool bif_sys_undo_trail_2(query *q)
 		cell *c = &e->c;
 		pl_idx c_ctx = e->c.var_ctx;
 		set_occurs(tr->var_nbr, tr->var_ctx, c, c_ctx);
-		//printf("*** unbind [%u:%u] hi_tp=%u, tag=%u, tr->var_ctx=%u, tr->var_nbr=%u\n", j, i, q->undo_hi_tp, e->c.tag, tr->var_ctx, tr->var_nbr);
 		cell lhs, rhs;
 		make_ref(&lhs, tr->var_nbr, tr->var_ctx);
 
@@ -460,8 +457,6 @@ bool bif_sys_undo_trail_2(query *q)
 			make_indirect(&rhs, c, c_ctx);
 		else
 			rhs = *c;
-
-		//DUMP_TERM("$undo1 rhs", &e->c, e->c.var_ctx, 0);
 
 		cell tmp[3];
 		make_struct(tmp, g_minus_s, NULL, 2, 2);
@@ -471,12 +466,10 @@ bool bif_sys_undo_trail_2(query *q)
 		append_list(q, tmp);
 		init_cell(&e->c);
 		e->c.attrs = tr->attrs;
-		//if (tr->attrs) DUMP_TERM("$undo2 trail", tr->attrs, q->st.curr_frame, 0);
 	}
 
 	cell *tmp = end_list(q);
 	check_heap_error(tmp, free(save));
-	//DUMP_TERM("undolist tmp", tmp, q->st.curr_frame, 0);
 
 	if (!unify(q, p1, p1_ctx, tmp, q->st.curr_frame))
 		return false;
@@ -488,22 +481,14 @@ bool bif_sys_undo_trail_2(query *q)
 
 bool bif_sys_redo_trail_1(query * q)
 {
-	GET_FIRST_ARG(p1,any);
-
-	if (!is_blob(p1))
-		return false;
-
+	GET_FIRST_ARG(p1,blob);
 	const bind_state *save = (bind_state*)p1->val_blob;
 
 	for (pl_idx i = save->lo_tp, j = 0; i < save->hi_tp; i++, j++) {
-		//if (is_empty(&save->e[j].c))
-		//	continue;
 		const trail *tr = q->trails + i;
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
 		*e = save->e[j];
-		//printf("*** rebind [%u:%u] hi_tp=%u, tag=%u, ctx=%u, var=%u\n", j, i, q->undo_hi_tp, e->c.tag, tr->var_ctx, tr->var_nbr);
-		//DUMP_TERM("$redo1 rhs", &e->c, e->c.var_ctx, 0);
 	}
 
 	return true;
@@ -519,12 +504,7 @@ bool do_post_unify_hook(query *q, bool is_builtin)
 	check_heap_error(tmp);
 	make_struct(tmp+0, g_true_s, bif_iso_true_0, 0, 0);
 	make_struct(tmp+1, g_post_unify_hook_s, NULL, 0, 0);
-
-	if (is_builtin)
-		make_call(q, tmp+2);
-	else
-		make_call_redo(q, tmp+2);
-
+	is_builtin ? make_call(q, tmp+2) : make_call_redo(q, tmp+2);
 	q->st.curr_instr = tmp;
 	return true;
 }
