@@ -489,7 +489,6 @@ bool bif_sys_redo_trail_1(query * q)
 		*e = save->e[j];
 	}
 
-
 	return true;
 }
 
