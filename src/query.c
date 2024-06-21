@@ -1708,7 +1708,7 @@ bool start(query *q)
 			}
 
 			while (q->cp) {
-				choice *ch = GET_CURR_CHOICE();
+				const choice *ch = GET_CURR_CHOICE();
 
 				if (!ch->barrier)
 					break;
