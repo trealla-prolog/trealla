@@ -509,7 +509,7 @@ bool bif_sys_redo_trail_1(query * q)
 	return true;
 }
 
-bool do_post_unification_hook(query *q, bool is_builtin)
+bool do_post_unify_hook(query *q, bool is_builtin)
 {
 	q->run_hook = false;
 	q->undo_lo_tp = q->before_hook_tp;

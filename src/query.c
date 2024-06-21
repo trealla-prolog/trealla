@@ -1669,7 +1669,7 @@ bool start(query *q)
 			}
 
 			if (q->run_hook)
-				do_post_unification_hook(q, true);
+				do_post_unify_hook(q, true);
 
 			Trace(q, save_cell, save_ctx, EXIT);
 			proceed(q);
@@ -1694,7 +1694,7 @@ bool start(query *q)
 			}
 
 			if (q->run_hook)
-				do_post_unification_hook(q, false);
+				do_post_unify_hook(q, false);
 		}
 
 		MORE:
