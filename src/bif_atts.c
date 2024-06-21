@@ -460,7 +460,7 @@ bool bif_sys_undo_trail_2(query *q)
 
 		cell tmp[3];
 		make_struct(tmp, g_minus_s, NULL, 2, 2);
-		SET_OP(&tmp[0], OP_YFX);
+		SET_OP(tmp, OP_YFX);
 		tmp[1] = lhs;
 		tmp[2] = rhs;
 		append_list(q, tmp);
