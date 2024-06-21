@@ -426,16 +426,18 @@ bool bif_sys_undo_trail_2(query *q)
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,var);
 
-	if (q->undo_hi_tp == q->undo_lo_tp)
-		return unify(q, p1, p1_ctx, make_nil(), q->st.curr_frame);
+	if (q->undo_hi_tp == q->undo_lo_tp) {
+		unify(q, p1, p1_ctx, make_nil(), q->st.curr_frame);
+		return true;
+	}
 
 	pl_idx slots = q->undo_hi_tp - q->undo_lo_tp;
 	bind_state *save = malloc(sizeof(bind_state)+(sizeof(slot)*slots));
-	check_error(save);
+	check_heap_error(save);
 	save->b.ptr = save->b.ptr2 = NULL;
 	save->lo_tp = q->undo_lo_tp;
 	save->hi_tp = q->undo_hi_tp;
-	init_tmp_heap(q);
+	check_heap_error(init_tmp_heap(q), free(save));
 
 	for (pl_idx i = q->undo_lo_tp, j = 0; i < q->undo_hi_tp; i++, j++) {
 		const trail *tr = q->trails + i;
