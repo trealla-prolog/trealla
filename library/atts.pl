@@ -2,14 +2,6 @@
 		op(1199, fx, attribute)
 	]).
 
-:- use_module(library(apply)).
-:- use_module(library(lists), [append/3]).
-
-msb(_X, _N) :- writeln(oops_msb).
-lsb(_X, _N) :- writeln(oops_lsb).
-popcount(_X, _N) :- writeln(oops_popcount).
-lcm(_X, _N, _) :- writeln(oops_lcm).
-
 get_attr(Var, Module, Value) :-
 	var(Var),
 	Access =.. [Module, Value],
