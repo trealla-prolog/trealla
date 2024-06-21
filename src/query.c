@@ -252,7 +252,7 @@ void make_call(query *q, cell *tmp)
 	make_end(tmp);
 	const frame *f = GET_CURR_FRAME();
 	cell *c = q->st.curr_instr;
-	tmp->save_ret = c + c->nbr_cells;	// save next as the return instruction
+	tmp->ret_instr = c + c->nbr_cells;	// save next as the return instruction
 	tmp->chgen = f->chgen;				// ... choice-generation
 	tmp->mid = q->st.m->id;				// ... current-module
 }
@@ -261,7 +261,7 @@ void make_call_redo(query *q, cell *tmp)
 {
 	make_end(tmp);
 	const frame *f = GET_CURR_FRAME();
-	tmp->save_ret = q->st.curr_instr;	// save the return instruction
+	tmp->ret_instr = q->st.curr_instr;	// save the return instruction
 	tmp->chgen = f->chgen;				// ... choice-generation
 	tmp->mid = q->st.m->id;				// ... current-module
 }
@@ -567,7 +567,7 @@ static frame *push_frame(query *q, const clause *cl)
 
 	// Avoid long chains of useless returns...
 
-	if (is_end(next_cell) && !next_cell->save_ret && curr_f->curr_instr) {
+	if (is_end(next_cell) && !next_cell->ret_instr && curr_f->curr_instr) {
 		f->prev_offset = (new_frame - q->st.curr_frame) + curr_f->prev_offset;
 		f->curr_instr = curr_f->curr_instr;
 	} else {
@@ -934,12 +934,12 @@ static void proceed(query *q)
 	while (is_end(q->st.curr_instr)) {
 		cell *tmp = q->st.curr_instr;
 
-		if (tmp->save_ret) {
+		if (tmp->ret_instr) {
 			f->chgen = tmp->chgen;
 			q->st.m = q->pl->modmap[tmp->mid];
 		}
 
-		if (!(q->st.curr_instr = tmp->save_ret))
+		if (!(q->st.curr_instr = tmp->ret_instr))
 			break;
 	}
 }
