@@ -274,8 +274,6 @@ bool any_attributed(query *q)
 		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
 			continue;
 
-		//DUMP_TERM("atts", c->attrs, q->st.curr_frame, 1);
-
 		cell *v = c->attrs;
 		bool any = false;
 
@@ -328,8 +326,6 @@ bool bif_sys_list_attributed_1(query *q)
 
 		if (!is_compound(c->attrs))
 			continue;
-
-		//DUMP_TERM("here", c->attrs, q->st.curr_frame, 0);
 
 		collect_vars(q, c->attrs, q->st.curr_frame);
 
