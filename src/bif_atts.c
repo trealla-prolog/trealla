@@ -54,14 +54,6 @@ static bool do_put_atts(query *q, cell *attr, pl_idx attr_ctx, bool is_minus)
 	if (((attr->val_off == g_minus_s) || (attr->val_off == g_plus_s)) && (attr->arity == 1))
 		attr++;
 
-	if (is_nil(attr)) {
-		if (e->c.attrs)
-			add_trail(q, p1_ctx, p1->var_nbr, c->attrs);
-
-		e->c.attrs = NULL;
-		return true;
-	}
-
 	add_trail(q, p1_ctx, p1->var_nbr, c->attrs);
 
 	unsigned a_arity = attr->arity;
@@ -170,7 +162,7 @@ bool bif_get_atts_2(query *q)
 	pl_idx c_ctx = q->latest_ctx;
 	bool is_minus = !is_var(p2) && (p2->val_off == g_minus_s) && (p2->arity == 1);
 
-	if (!c->attrs || is_nil(c->attrs))
+	if (!c->attrs)
 		return is_minus ? true : false;
 
 	if (is_var(p2)) {
@@ -273,7 +265,7 @@ bool any_attributed(query *q)
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		pl_idx c_ctx = q->latest_ctx;
 
-		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
+		if (!is_empty(c) || !c->attrs)
 			continue;
 
 		cell *v = c->attrs;
@@ -310,7 +302,7 @@ bool bif_sys_list_attributed_1(query *q)
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		pl_idx c_ctx = q->latest_ctx;
 
-		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
+		if (!is_empty(c) || !c->attrs)
 			continue;
 
 		cell tmp;
@@ -323,7 +315,7 @@ bool bif_sys_list_attributed_1(query *q)
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		pl_idx c_ctx = q->latest_ctx;
 
-		if (!is_empty(c) || !c->attrs || is_nil(c->attrs))
+		if (!is_empty(c) || !c->attrs)
 			continue;
 
 		if (!is_compound(c->attrs))
@@ -336,7 +328,7 @@ bool bif_sys_list_attributed_1(query *q)
 			slot *e = GET_SLOT(f, q->pl->tabs[i].var_nbr);
 			cell *v = deref(q, &e->c, e->c.var_ctx);
 
-			if (!is_empty(v) || !v->attrs || is_nil(v->attrs))
+			if (!is_empty(v) || !v->attrs)
 				continue;
 
 			if (!q->pl->tabs[i].ctx)
@@ -361,7 +353,7 @@ bool bif_sys_attributed_var_1(query *q)
 	cell *c = deref(q, &e->c, e->c.var_ctx);
 	pl_idx c_ctx = q->latest_ctx;
 
-	if (!c->attrs || is_nil(c->attrs))
+	if (!c->attrs)
 		return false;
 
 	cell *l = c->attrs;
