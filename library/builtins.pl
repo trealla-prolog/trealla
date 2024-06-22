@@ -155,7 +155,6 @@ process_var_([Att|Atts], Var, Val, SoFar, Goals) :-
 	append(SoFar, NewGoals, MoreGoals),
 	process_var_(Atts, Var, Val, MoreGoals, Goals).
 
-
 term_attvars_([], VsIn, VsIn).
 term_attvars_([H|T], VsIn, VsOut) :-
 	(	'$attributed_var'(H) ->
