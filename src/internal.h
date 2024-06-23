@@ -257,11 +257,10 @@ enum {
 
 enum {
 	FLAG_INT_HEX=1<<0,					// used with TAG_INTEGER
-	FLAG_INT_OCTAL=1<<1,				// used with TAG_INTEGER
-	FLAG_INT_BINARY=1<<2,				// used with TAG_INTEGER
-	FLAG_INT_HANDLE=1<<3,				// used with TAG_INTEGER
-	FLAG_INT_STREAM=1<<4,				// used with TAG_INTEGER
-	FLAG_INT_THREAD=1<<5,				// used with TAG_INTEGER
+	FLAG_INT_HANDLE=1<<1,				// used with TAG_INTEGER
+	FLAG_INT_STREAM=1<<2,				// used with TAG_INTEGER
+	FLAG_INT_THREAD=1<<3,				// used with TAG_INTEGER
+	FLAG_INT_MAP=1<<4,					// used with TAG_INTEGER
 
 	FLAG_CSTR_BLOB=1<<0,				// used with TAG_CSTR
 	FLAG_CSTR_STRING=1<<1,				// used with TAG_CSTR

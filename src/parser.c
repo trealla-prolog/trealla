@@ -2505,7 +2505,6 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 		}
 
 		p->v.tag = TAG_INTEGER;
-		p->v.flags |= FLAG_INT_BINARY;
 		*srcptr = s;
 		return true;
 	}
@@ -2529,7 +2528,6 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 		}
 
 		p->v.tag = TAG_INTEGER;
-		p->v.flags |= FLAG_INT_OCTAL;
 		*srcptr = s;
 		return true;
 	}
@@ -2553,7 +2551,6 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 		}
 
 		p->v.tag = TAG_INTEGER;
-		p->v.flags |= FLAG_INT_HEX;
 		*srcptr = s;
 		return true;
 	}

@@ -129,7 +129,7 @@ USE_RESULT bool bif_sys_dlsym_3(query *q)
 	if (!ptr) return false;
 	cell tmp;
 	make_uint(&tmp, (pl_int)(size_t)ptr);
-	tmp.flags |= FLAG_INT_HANDLE | FLAG_INT_OCTAL;
+	tmp.flags |= FLAG_INT_HANDLE;
 	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 }
 

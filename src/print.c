@@ -817,6 +817,12 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		return true;
 	}
 
+	if ((c->tag == TAG_INTEGER) && (c->flags & FLAG_INT_MAP)) {
+		SB_sprintf(q->sb, "'<$map>'(%d)", (int)get_smallint(c));
+		q->last_thing = WAS_OTHER;
+		return true;
+	}
+
 	if ((c->tag == TAG_INTEGER) && (c->flags & FLAG_INT_STREAM)) {
 		SB_sprintf(q->sb, "'<$stream>'(%d)", (int)get_smallint(c));
 		q->last_thing = WAS_OTHER;
@@ -860,26 +866,6 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 	if (is_bigint(c)) {
 		int radix = 10;
-
-		if (q->listing) {
-			if (q->listing) {
-				if (c->flags & FLAG_INT_BINARY)
-					radix = 2;
-				else if (c->flags & FLAG_INT_HEX)
-					radix = 16;
-				else if ((c->flags & FLAG_INT_OCTAL) && !running)
-					radix = 8;
-			}
-
-			if (c->flags & FLAG_INT_BINARY) {
-				SB_sprintf(q->sb, "%s0b", is_negative(c)?"-":"");
-			} else if (c->flags & FLAG_INT_HEX) {
-				SB_sprintf(q->sb, "%s0x", is_negative(c)?"-":"");
-			} else if ((c->flags & FLAG_INT_OCTAL) && !running) {
-				SB_sprintf(q->sb, "%s0o", is_negative(c)?"-":"");
-			}
-		}
-
 		size_t len = mp_int_string_len(&c->val_bigint->ival, radix) - 1;
 		char *dst2 = malloc(len+1);
 		mp_int_to_string(&c->val_bigint->ival, radix, dst2, len+1);
@@ -892,25 +878,8 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	if (is_smallint(c)) {
 		//if (dstlen) printf("*** int %d,  was=%d, is=%d\n", (int)c->val_int, q->last_thing_was_symbol, false);
 		char tmpbuf[256];
-
-		if (q->listing) {
-			if (((c->flags & FLAG_INT_HEX) || (c->flags & FLAG_INT_BINARY))) {
-				SB_sprintf(q->sb, "%s0x", get_smallint(c)<0?"-":"");
-				sprint_int(tmpbuf, sizeof(tmpbuf), get_smallint(c), 16);
-				SB_sprintf(q->sb, "%s", tmpbuf);
-			} else if ((c->flags & FLAG_INT_OCTAL) && !running) {
-				SB_sprintf(q->sb, "%s0o", get_smallint(c)<0?"-":"");
-				sprint_int(tmpbuf, sizeof(tmpbuf), get_smallint(c), 8);
-				SB_sprintf(q->sb, "%s", tmpbuf);
-			} else {
-				sprint_int(tmpbuf, sizeof(tmpbuf), get_smallint(c), 10);
-				SB_sprintf(q->sb, "%s", tmpbuf);
-			}
-		} else {
-			sprint_int(tmpbuf, sizeof(tmpbuf), get_smallint(c), 10);
-			SB_sprintf(q->sb, "%s", tmpbuf);
-		}
-
+		sprint_int(tmpbuf, sizeof(tmpbuf), get_smallint(c), 10);
+		SB_sprintf(q->sb, "%s", tmpbuf);
 		q->last_thing = WAS_OTHER;
 		return true;
 	}

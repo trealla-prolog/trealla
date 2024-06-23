@@ -72,7 +72,7 @@ static bool bif_map_create_2(query *q)
 	if (!is_alias) {
 		cell tmp ;
 		make_int(&tmp, n);
-		tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+		tmp.flags |= FLAG_INT_STREAM | FLAG_INT_MAP | FLAG_INT_HEX;
 
 		if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
 			return false;
@@ -385,7 +385,7 @@ static bool bif_engine_create_4(query *q)
 	} else if (!is_alias) {
 		cell tmp2;
 		make_int(&tmp2, n);
-		tmp2.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+		tmp2.flags |= FLAG_INT_STREAM | FLAG_INT_MAP | FLAG_INT_HEX;
 		unify(q, p3, p3_ctx, &tmp2, q->st.curr_frame);
 	}
 
@@ -505,7 +505,7 @@ static bool bif_engine_self_1(query *q)
 
 	cell tmp2;
 	make_int(&tmp2, q->curr_engine);
-	tmp2.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+	tmp2.flags |= FLAG_INT_STREAM | FLAG_INT_MAP | FLAG_INT_HEX;
 	return unify(q, p1, p1_ctx, &tmp2, q->st.curr_frame);
 }
 
