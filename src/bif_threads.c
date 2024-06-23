@@ -70,6 +70,31 @@ static int get_named_thread(prolog *pl, const char *name, size_t len)
 	return -1;
 }
 
+int get_thread(query *q, cell *p1)
+{
+	if (is_atom(p1)) {
+		int n = get_named_thread(q->pl, C_STR(q, p1), C_STRLEN(q, p1));
+
+		if (n < 0)
+			return -1;
+
+		return n;
+	}
+
+	if (p1->tag != TAG_INTEGER)
+		return -1;
+
+	if (!(p1->flags & FLAG_INT_THREAD))
+		return -1;
+
+	int n = get_smallint(p1);
+
+	if (!q->pl->threads[n].is_active)
+		return -1;
+
+	return n;
+}
+
 static int new_thread(prolog *pl)
 {
 	prolog_lock(pl);
@@ -104,31 +129,6 @@ static int new_thread(prolog *pl)
 
 	prolog_unlock(pl);
 	return -1;
-}
-
-int get_thread(query *q, cell *p1)
-{
-	if (is_atom(p1)) {
-		int n = get_named_thread(q->pl, C_STR(q, p1), C_STRLEN(q, p1));
-
-		if (n < 0)
-			return -1;
-
-		return n;
-	}
-
-	if (p1->tag != TAG_INTEGER)
-		return -1;
-
-	if (!(p1->flags & FLAG_INT_THREAD))
-		return -1;
-
-	int n = get_smallint(p1);
-
-	if (!q->pl->threads[n].is_active)
-		return -1;
-
-	return n;
 }
 
 void thread_initialize(prolog *pl)

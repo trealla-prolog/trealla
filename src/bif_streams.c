@@ -451,28 +451,6 @@ int get_named_stream(prolog *pl, const char *name, size_t len)
 	return -1;
 }
 
-int new_stream(prolog *pl)
-{
-	prolog_lock(pl);
-
-	for (int i = 0; i < MAX_STREAMS; i++) {
-		unsigned n = pl->str_cnt++ % MAX_STREAMS;
-
-		if (n < 4)
-			continue;
-
-		stream *str = &pl->streams[n];
-
-		if (!str->fp && !str->ignore) {
-			prolog_unlock(pl);
-			return n;
-		}
-	}
-
-	prolog_unlock(pl);
-	return -1;
-}
-
 int get_stream(query *q, cell *p1)
 {
 	if (is_atom(p1)) {
@@ -496,6 +474,28 @@ int get_stream(query *q, cell *p1)
 		return -1;
 
 	return n;
+}
+
+int new_stream(prolog *pl)
+{
+	prolog_lock(pl);
+
+	for (int i = 0; i < MAX_STREAMS; i++) {
+		unsigned n = pl->str_cnt++ % MAX_STREAMS;
+
+		if (n < 4)
+			continue;
+
+		stream *str = &pl->streams[n];
+
+		if (!str->fp && !str->ignore) {
+			prolog_unlock(pl);
+			return n;
+		}
+	}
+
+	prolog_unlock(pl);
+	return -1;
 }
 
 static bool is_closed_stream(prolog *pl, cell *p1)
