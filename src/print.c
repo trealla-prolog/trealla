@@ -107,7 +107,7 @@ bool needs_quoting(module *m, const char *src, int srclen)
 	if (!iswalnum(ch) && strchr(src, '_'))
 		return true;
 
-	if (iswupper(ch) || isdigit(ch) || (ch == '_'))
+	if (iswupper(ch) || iswdigit(ch) || (ch == '_'))
 		return true;
 
 	const char *s = src;
@@ -163,7 +163,7 @@ static bool op_needs_quoting(module *m, const char *src, int srclen)
 
 	int ch = peek_char_utf8(src);
 
-	if (iswupper(ch) || isdigit(ch) || (ch == '_'))
+	if (iswupper(ch) || iswdigit(ch) || (ch == '_'))
 		return true;
 
 	if (search_op(m, src, NULL, false))
@@ -1193,6 +1193,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		cell *save_rhs = rhs;
 		pl_idx save_rhs_ctx = c_ctx;
 		pl_idx rhs_ctx = c_ctx;
+		const char *rhs_src = C_STR(q, rhs);
 		if (running) rhs = deref(q, rhs, rhs_ctx);
 		if (running) rhs_ctx = q->latest_ctx;
 		unsigned rhs_pri = is_interned(rhs) ? match_op(q->st.m, C_STR(q, rhs), NULL, rhs->arity) : 0;
@@ -1207,7 +1208,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		if ((c->val_off == g_plus_s) && is_op_rhs) space = true;
 		if (isalpha(*src)) space = true;
 		if (is_op_rhs || is_negative(rhs) || is_float(rhs)) space = true;
-		if (is_interned(rhs) && !iswalpha(*C_STR(q, rhs))) space = true;
+		if (is_interned(rhs) && !iswalpha(peek_char_utf8(rhs_src))) space = true;
 
 		bool parens = false;
 		if (!strcmp(src, "+") && (is_infix(rhs) || is_postfix(rhs))) parens = true;
@@ -1221,8 +1222,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		bool quote = q->quoted && has_spaces(src, src_len);
 
 		if (is_interned(rhs) && !rhs->arity && !parens) {
-			const char *rhs_src = C_STR(q, rhs);
-			if (!iswalpha(*rhs_src) && !isdigit(*rhs_src) && strcmp(rhs_src, "[]") && strcmp(rhs_src, "{}"))
+			if (!iswalnum(peek_char_utf8(rhs_src)) && strcmp(rhs_src, "[]") && strcmp(rhs_src, "{}"))
 				space = 1;
 		}
 
@@ -1274,6 +1274,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	cell *rhs = lhs + lhs->nbr_cells;
 	cell *save_rhs = rhs;
 	pl_idx rhs_ctx = c_ctx;
+	const char *rhs_src = C_STR(q, rhs);
 	if (running) lhs = deref(q, lhs, lhs_ctx);
 	if (running) lhs_ctx = q->latest_ctx;
 	if (running) rhs = deref(q, rhs, rhs_ctx);
@@ -1331,7 +1332,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 	if (is_interned(lhs) && !lhs->arity && !lhs_parens) {
 		const char *lhs_src = C_STR(q, lhs);
-		if (!isalpha(*lhs_src) && !isdigit(*lhs_src) && (*lhs_src != '$')
+		if (!iswalpha(peek_char_utf8(lhs_src)) && !iswdigit(peek_char_utf8(lhs_src)) && (peek_char_utf8(lhs_src) != '$')
 			&& strcmp(src, ",") && strcmp(src, ";")
 			&& strcmp(lhs_src, "[]") && strcmp(lhs_src, "{}")
 			)
@@ -1361,7 +1362,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	// Print OP..
 
 	//q->last_thing_was_symbol += is_symbol;
-	space = iswalpha(*src) || (q->last_thing == WAS_SYMBOL);
+	space = iswalpha(peek_char_utf8(src)) || (q->last_thing == WAS_SYMBOL);
 
 	if (q->listing && !depth && !strcmp(src, ":-"))
 		space = true;
@@ -1398,15 +1399,10 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		space = true;
 
 	bool rhs_is_symbol = is_interned(rhs) && !rhs->arity
-		&& !iswalpha(*C_STR(q, rhs))
+		&& !iswalpha(peek_char_utf8(rhs_src))
 		&& !needs_quoting(q->st.m, C_STR(q, rhs), C_STRLEN(q, rhs))
 		&& strcmp(C_STR(q, rhs), "[]") && strcmp(C_STR(q, rhs), "{}")
 		&& !rhs_parens;
-
-	if (is_atom(rhs) && (peek_char_utf8(C_STR(q, rhs)) > 255)
-		&& !needs_quoting(q->st.m, C_STR(q, rhs), C_STRLEN(q, rhs))
-		)
-		space = true;
 
 	if (rhs_is_symbol && strcmp(C_STR(q, rhs), "[]") && strcmp(C_STR(q, rhs), "{}") && strcmp(C_STR(q, rhs), "!"))
 		space = true;
