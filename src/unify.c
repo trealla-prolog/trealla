@@ -17,7 +17,7 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 
 #if USE_RATIONAL_TREES
 		slot *e1 = NULL, *e2 = NULL;
-		uint32_t save_vgen, save_vgen2;
+		uint32_t save_vgen = 0, save_vgen2 = 0;
 		int both = 0;
 
 		DEREF_VAR(any1, both, save_vgen, e1, e1->vgen, c1, c1_ctx, q->vgen);
@@ -111,7 +111,7 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 
 #if USE_RATIONAL_TREES
 		slot *e1 = NULL, *e2 = NULL;
-		uint32_t save_vgen, save_vgen2;
+		uint32_t save_vgen = 0, save_vgen2 = 0;
 		int both = 0;
 
 		DEREF_VAR(any, both, save_vgen, e1, e1->vgen, c1, c1_ctx, q->vgen);
@@ -516,7 +516,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 
 #if USE_RATIONAL_TREES
 		slot *e1 = NULL, *e2 = NULL;
-		uint32_t save_vgen, save_vgen2;
+		uint32_t save_vgen = 0, save_vgen2 = 0;
 		int both = 0;
 
 		DEREF_VAR(any1, both, save_vgen, e1, e1->vgen, c1, c1_ctx, q->vgen);
@@ -611,7 +611,7 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 
 #if USE_RATIONAL_TREES
 		slot *e1 = NULL, *e2 = NULL;
-		uint32_t save_vgen, save_vgen2;
+		uint32_t save_vgen = 0, save_vgen2 = 0;
 		int both = 0;
 
 		DEREF_VAR(any, both, save_vgen, e1, e1->vgen, c1, c1_ctx, q->vgen);
