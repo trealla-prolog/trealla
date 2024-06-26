@@ -20,7 +20,6 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	Delimited continuations ##EXPERIMENTAL##
 	Rational trees ##EXPERIMENTAL##
 	CLP(Z) ##EXPERIMENTAL##
-	CLP(B) ##UNSUPPORTED##
 
 
 Available from: [trealla-prolog.org](https://trealla-prolog.org).
