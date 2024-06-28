@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
+#include <time.h>
 #include <ctype.h>
 #include <errno.h>
 #include <locale.h>
@@ -152,6 +153,8 @@ int main(int ac, char *av[])
 int main(int ac, char *av[], char * envp[])
 {
 #endif
+
+	srand(time(NULL));
 	setlocale(LC_ALL, "");
 	setlocale(LC_NUMERIC, "C");
 	g_envp = envp;
