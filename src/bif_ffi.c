@@ -31,7 +31,8 @@ enum {
 	TAG_INT,
 	TAG_ULONG,
 	TAG_LONG,
-	TAG_FLOAT,
+	TAG_FP32,
+	TAG_FP64,
 	TAG_CCSTR,
 	TAG_STRUCT
 };
@@ -162,7 +163,7 @@ static void register_struct(prolog *pl, const char *name, unsigned arity, void *
 		ptr->names[i] = names[i];
 	}
 
-	sl_set(pl->fortab, ptr->name, ptr);
+	sl_app(pl->fortab, ptr->name, ptr);
 }
 
 // TODO: pre-compile the type definitions so it doesn't have
@@ -186,7 +187,7 @@ static void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn,
 
 	ptr->ret_type = ret_type;
 	ptr->ret_name = ret_name;
-	sl_set(pl->biftab, ptr->name, ptr);
+	sl_app(pl->biftab, ptr->name, ptr);
 }
 
 USE_RESULT bool bif_sys_register_function_4(query *q)
@@ -250,9 +251,9 @@ USE_RESULT bool bif_sys_register_function_4(query *q)
 			else if (!strcmp(src, "slong"))
 				arg_types[idx++] = TAG_LONG;
 			else if (!strcmp(src, "float"))
-				arg_types[idx++] = TAG_FLOAT;
+				arg_types[idx++] = TAG_FP32;
 			else if (!strcmp(src, "double"))
-				arg_types[idx++] = TAG_DOUBLE;
+				arg_types[idx++] = TAG_FP64;
 			else if (!strcmp(src, "ptr"))
 				arg_types[idx++] = TAG_INDIRECT;
 			else if (!strcmp(src, "cstr"))
@@ -293,9 +294,9 @@ USE_RESULT bool bif_sys_register_function_4(query *q)
 	else if (!strcmp(src, "sint"))
 		ret_type = TAG_INT;
 	else if (!strcmp(src, "float"))
-		ret_type = TAG_FLOAT;
+		ret_type = TAG_FP32;
 	else if (!strcmp(src, "double"))
-		ret_type = TAG_DOUBLE;
+		ret_type = TAG_FP64;
 	else if (!strcmp(src, "ptr"))
 		ret_type = TAG_INDIRECT;
 	else if (!strcmp(src, "cstr"))
@@ -389,13 +390,13 @@ bool do_register_struct(module *m, query *q, void *handle, const char *symbol, c
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "slong"))
 				arg_types[idx++] = MARK_OUT(TAG_LONG);
 			else if (!strcmp(src, "float"))
-				arg_types[idx++] = TAG_FLOAT;
+				arg_types[idx++] = TAG_FP32;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "float"))
-				arg_types[idx++] = MARK_OUT(TAG_FLOAT);
+				arg_types[idx++] = MARK_OUT(TAG_FP32);
 			else if (!strcmp(src, "double"))
-				arg_types[idx++] = TAG_DOUBLE;
+				arg_types[idx++] = TAG_FP64;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "double"))
-				arg_types[idx++] = MARK_OUT(TAG_DOUBLE);
+				arg_types[idx++] = MARK_OUT(TAG_FP64);
 			else if (!strcmp(src, "ptr"))
 				arg_types[idx++] = TAG_INDIRECT;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ptr"))
@@ -510,13 +511,13 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "slong"))
 				arg_types[idx++] = MARK_OUT(TAG_LONG);
 			else if (!strcmp(src, "float"))
-				arg_types[idx++] = TAG_FLOAT;
+				arg_types[idx++] = TAG_FP32;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "float"))
-				arg_types[idx++] = MARK_OUT(TAG_FLOAT);
+				arg_types[idx++] = MARK_OUT(TAG_FP32);
 			else if (!strcmp(src, "double"))
-				arg_types[idx++] = TAG_DOUBLE;
+				arg_types[idx++] = TAG_FP64;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "double"))
-				arg_types[idx++] = MARK_OUT(TAG_DOUBLE);
+				arg_types[idx++] = MARK_OUT(TAG_FP64);
 			else if (!strcmp(src, "ptr"))
 				arg_types[idx++] = TAG_INDIRECT;
 			else if (!strcmp(src, "-") && !strcmp(C_STR(m, h+1), "ptr"))
@@ -593,11 +594,11 @@ bool do_register_predicate(module *m, query *q, void *handle, const char *symbol
 		arg_types[idx++] = MARK_OUT(TAG_LONG);
 		ret_type = TAG_LONG;
 	} else if (!strcmp(src, "float")) {
-		arg_types[idx++] = MARK_OUT(TAG_FLOAT);
-		ret_type = TAG_FLOAT;
+		arg_types[idx++] = MARK_OUT(TAG_FP32);
+		ret_type = TAG_FP32;
 	} else if (!strcmp(src, "double")) {
-		arg_types[idx++] = MARK_OUT(TAG_DOUBLE);
-		ret_type = TAG_DOUBLE;
+		arg_types[idx++] = MARK_OUT(TAG_FP64);
+		ret_type = TAG_FP64;
 	} else if (!strcmp(src, "ptr")) {
 		arg_types[idx++] = MARK_OUT(TAG_INDIRECT);
 		ret_type = TAG_INDIRECT;
@@ -680,9 +681,9 @@ bool wrap_ffi_function(query *q, builtins *ptr)
 			;
 		else if ((ptr->types[i] == TAG_INDIRECT) && is_smallint(c))
 			;
-		else if ((ptr->types[i] == TAG_FLOAT) && is_float(c))
+		else if ((ptr->types[i] == TAG_FP32) && is_float(c))
 			;
-		else if ((ptr->types[i] == TAG_DOUBLE) && is_float(c))
+		else if ((ptr->types[i] == TAG_FP64) && is_float(c))
 			;
 		else if ((ptr->types[i] != c->tag) && !is_var(c))
 			return throw_error(q, c, c_ctx, "type_error",
@@ -700,8 +701,8 @@ bool wrap_ffi_function(query *q, builtins *ptr)
 			ptr->types[i] == TAG_INT ? "integer" :
 			ptr->types[i] == TAG_SHORT ? "integer" :
 			ptr->types[i] == TAG_LONG ? "integer" :
-			ptr->types[i] == TAG_FLOAT ? "float" :
-			ptr->types[i] == TAG_DOUBLE ? "float" :
+			ptr->types[i] == TAG_FP32 ? "float" :
+			ptr->types[i] == TAG_FP64 ? "float" :
 			ptr->types[i] == TAG_CSTR ? "atom" :
 			ptr->types[i] == TAG_CCSTR ? "atom" :
 			ptr->types[i] == TAG_INDIRECT ? "stream" :
@@ -765,13 +766,13 @@ bool wrap_ffi_function(query *q, builtins *ptr)
 			arg_types[i] = &ffi_type_slong;
 		else if (ptr->types[i] == MARK_OUT(TAG_LONG))
 			arg_types[i] = &ffi_type_pointer;
-		else if (ptr->types[i] == TAG_FLOAT)
+		else if (ptr->types[i] == TAG_FP32)
 			arg_types[i] = &ffi_type_float;
-		else if (ptr->types[i] == MARK_OUT(TAG_FLOAT))
+		else if (ptr->types[i] == MARK_OUT(TAG_FP32))
 			arg_types[i] = &ffi_type_pointer;
-		else if (ptr->types[i] == TAG_DOUBLE)
+		else if (ptr->types[i] == TAG_FP64)
 			arg_types[i] = &ffi_type_double;
-		else if (ptr->types[i] == MARK_OUT(TAG_DOUBLE))
+		else if (ptr->types[i] == MARK_OUT(TAG_FP64))
 			arg_types[i] = &ffi_type_pointer;
 		else if (ptr->types[i] == TAG_INDIRECT)
 			arg_types[i] = &ffi_type_pointer;
@@ -870,16 +871,16 @@ bool wrap_ffi_function(query *q, builtins *ptr)
 		} else if (ptr->types[i] == MARK_OUT(TAG_LONG)) {
 			s_args[i] = &cells[i].val_ffi_slong;
 			arg_values[i] = &cells[i].val_ffi_slong;
-		} else if (ptr->types[i] == TAG_FLOAT) {
+		} else if (ptr->types[i] == TAG_FP32) {
 			cells[i].val_ffi_float = c->val_float;
 			arg_values[i] = &cells[i].val_ffi_float;
-		} else if (ptr->types[i] == MARK_OUT(TAG_FLOAT)) {
+		} else if (ptr->types[i] == MARK_OUT(TAG_FP32)) {
 			s_args[i] = &cells[i].val_ffi_float;
 			arg_values[i] = &s_args[i];
-		} else if (ptr->types[i] == TAG_DOUBLE) {
+		} else if (ptr->types[i] == TAG_FP64) {
 			cells[i].val_ffi_double = c->val_float;
 			arg_values[i] = &cells[i].val_ffi_double;
-		} else if (ptr->types[i] == MARK_OUT(TAG_DOUBLE)) {
+		} else if (ptr->types[i] == MARK_OUT(TAG_FP64)) {
 			s_args[i] = &cells[i].val_ffi_float;
 			arg_values[i] = &s_args[i];
 		} else if (ptr->types[i] == TAG_INDIRECT) {
@@ -947,9 +948,9 @@ bool wrap_ffi_function(query *q, builtins *ptr)
 		make_int(&tmp, r.val_ffi_sshort);
 	else if (ptr->ret_type == TAG_LONG)
 		make_int(&tmp, r.val_ffi_slong);
-	else if (ptr->ret_type == TAG_FLOAT)
+	else if (ptr->ret_type == TAG_FP32)
 		make_float(&tmp, r.val_ffi_float);
-	else if (ptr->ret_type == TAG_DOUBLE)
+	else if (ptr->ret_type == TAG_FP64)
 		make_float(&tmp, r.val_ffi_double);
 	else if (ptr->ret_type == TAG_INDIRECT)
 		make_cstring(&tmp, r.val_ffi_pointer);
@@ -1008,9 +1009,9 @@ static bool handle_struct1(query *q, foreign_struct *sptr, nested_elements *nest
 			nested[depth].elements[cnt] = &ffi_type_sshort;
 		else if (sptr->types[cnt] == TAG_LONG)
 			nested[depth].elements[cnt] = &ffi_type_slong;
-		else if (sptr->types[cnt] == TAG_FLOAT)
+		else if (sptr->types[cnt] == TAG_FP32)
 			nested[depth].elements[cnt] = &ffi_type_float;
-		else if (sptr->types[cnt] == TAG_DOUBLE)
+		else if (sptr->types[cnt] == TAG_FP64)
 			nested[depth].elements[cnt] = &ffi_type_double;
 		else if (sptr->types[cnt] == TAG_CSTR)
 			nested[depth].elements[cnt] = &ffi_type_pointer;
@@ -1182,9 +1183,9 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 			;
 		else if ((ptr->types[i] == TAG_INDIRECT) && is_atom(c))
 			;
-		else if ((ptr->types[i] == TAG_FLOAT) && is_float(c))
+		else if ((ptr->types[i] == TAG_FP32) && is_float(c))
 			;
-		else if ((ptr->types[i] == TAG_DOUBLE) && is_float(c))
+		else if ((ptr->types[i] == TAG_FP64) && is_float(c))
 			;
 		else if ((ptr->types[i] == TAG_STRUCT) && is_iso_list(c))
 			;
@@ -1204,8 +1205,8 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 			ptr->types[i] == TAG_INT ? "integer" :
 			ptr->types[i] == TAG_SHORT ? "integer" :
 			ptr->types[i] == TAG_LONG ? "integer" :
-			ptr->types[i] == TAG_FLOAT ? "float" :
-			ptr->types[i] == TAG_DOUBLE ? "float" :
+			ptr->types[i] == TAG_FP32 ? "float" :
+			ptr->types[i] == TAG_FP64 ? "float" :
 			ptr->types[i] == TAG_CSTR ? "atom" :
 			ptr->types[i] == TAG_CCSTR ? "atom" :
 			ptr->types[i] == TAG_INDIRECT ? "stream" :
@@ -1269,13 +1270,13 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 			arg_types[i] = &ffi_type_slong;
 		else if (ptr->types[i] == MARK_OUT(TAG_LONG))
 			arg_types[i] = &ffi_type_pointer;
-		else if (ptr->types[i] == TAG_FLOAT)
+		else if (ptr->types[i] == TAG_FP32)
 			arg_types[i] = &ffi_type_float;
-		else if (ptr->types[i] == MARK_OUT(TAG_FLOAT))
+		else if (ptr->types[i] == MARK_OUT(TAG_FP32))
 			arg_types[i] = &ffi_type_pointer;
-		else if (ptr->types[i] == TAG_DOUBLE)
+		else if (ptr->types[i] == TAG_FP64)
 			arg_types[i] = &ffi_type_double;
-		else if (ptr->types[i] == MARK_OUT(TAG_DOUBLE))
+		else if (ptr->types[i] == MARK_OUT(TAG_FP64))
 			arg_types[i] = &ffi_type_pointer;
 		else if (ptr->types[i] == TAG_INDIRECT)
 			arg_types[i] = &ffi_type_pointer;
@@ -1434,19 +1435,19 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 			s_args[pos] = &cells[pos].val_ffi_slong;
 			arg_values[pos] = &cells[pos].val_ffi_slong;
 			pos++;
-		} else if (ptr->types[i] == TAG_FLOAT) {
+		} else if (ptr->types[i] == TAG_FP32) {
 			cells[pos].val_ffi_float = c->val_float;
 			arg_values[pos] = &cells[pos].val_ffi_float;
 			pos++;
-		} else if (ptr->types[i] == MARK_OUT(TAG_FLOAT)) {
+		} else if (ptr->types[i] == MARK_OUT(TAG_FP32)) {
 			s_args[pos] = &cells[pos].val_ffi_float;
 			arg_values[pos] = &s_args[pos];
 			pos++;
-		} else if (ptr->types[i] == TAG_DOUBLE) {
+		} else if (ptr->types[i] == TAG_FP64) {
 			cells[pos].val_ffi_double = c->val_float;
 			arg_values[pos] = &cells[pos].val_ffi_double;
 			pos++;
-		} else if (ptr->types[i] == MARK_OUT(TAG_DOUBLE)) {
+		} else if (ptr->types[i] == MARK_OUT(TAG_FP64)) {
 			s_args[pos] = &cells[pos].val_ffi_float;
 			arg_values[pos] = &s_args[pos];
 			pos++;
@@ -1593,10 +1594,10 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 		case(TAG_LONG):
 			ffi_ret_type = &ffi_type_slong;
 			break;
-		case(TAG_FLOAT):
+		case(TAG_FP32):
 			ffi_ret_type = &ffi_type_float;
 			break;
-		case(TAG_DOUBLE):
+		case(TAG_FP64):
 			ffi_ret_type = &ffi_type_double;
 			break;
 		case(TAG_INDIRECT):
@@ -1715,11 +1716,11 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 				make_int(&tmp, cells[i].val_ffi_slong);
 				bool ok = unify (q, c, c_ctx, &tmp, q->st.curr_frame);
 				if (ok != true) return ok;
-			} else if (ptr->types[i] == MARK_OUT(TAG_FLOAT)) {
+			} else if (ptr->types[i] == MARK_OUT(TAG_FP32)) {
 				make_float(&tmp, cells[i].val_ffi_float);
 				bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 				if (ok != true) return ok;
-			} else if (ptr->types[i] == MARK_OUT(TAG_DOUBLE)) {
+			} else if (ptr->types[i] == MARK_OUT(TAG_FP64)) {
 				make_float(&tmp, cells[i].val_ffi_double);
 				bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 				if (ok != true) return ok;
@@ -1801,11 +1802,11 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 		make_int(&tmp, r.val_ffi_slong);
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		if (ok != true) return ok;
-	} else if (ptr->ret_type == TAG_FLOAT) {
+	} else if (ptr->ret_type == TAG_FP32) {
 		make_float(&tmp, r.val_ffi_float);
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		if (ok != true) return ok;
-	} else if (ptr->ret_type == TAG_DOUBLE) {
+	} else if (ptr->ret_type == TAG_FP64) {
 		make_float(&tmp, r.val_ffi_double);
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		if (ok != true) return ok;
