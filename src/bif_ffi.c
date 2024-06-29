@@ -163,7 +163,7 @@ static void register_struct(prolog *pl, const char *name, unsigned arity, void *
 		ptr->names[i] = names[i];
 	}
 
-	sl_app(pl->fortab, ptr->name, ptr);
+	sl_set(pl->fortab, ptr->name, ptr);
 }
 
 // TODO: pre-compile the type definitions so it doesn't have
@@ -187,7 +187,7 @@ static void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn,
 
 	ptr->ret_type = ret_type;
 	ptr->ret_name = ret_name;
-	sl_app(pl->biftab, ptr->name, ptr);
+	sl_set(pl->biftab, ptr->name, ptr);
 }
 
 USE_RESULT bool bif_sys_register_function_4(query *q)
