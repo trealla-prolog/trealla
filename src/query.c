@@ -846,7 +846,7 @@ bool drop_barrier(query *q, pl_idx cp)
 	if (q->cp) {
 		const choice *ch = GET_CURR_CHOICE();
 		frame *f = GET_CURR_FRAME();
-		f->chgen = ch->frame_chgen;
+		f->chgen = ch->chgen;
 	}
 
 	return true;
