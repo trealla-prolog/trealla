@@ -9,6 +9,7 @@
 	gsl_matrix_set_identity/1,
 	gsl_linalg_LU_solve/5,
 	gsl_linalg_LU_det/3,
+	gsl_matrix_minmax/3,
 	gsl_matrix_max/2,
 	gsl_matrix_min/2
 	]).
@@ -40,6 +41,7 @@
 	gsl_matrix_set_zero([ptr], void),
 	gsl_matrix_set_identity([ptr], void),
 
+	gsl_matrix_minmax([ptr,-double,-double], void),
 	gsl_matrix_max([ptr], double),
 	gsl_matrix_min([ptr], double),
 
