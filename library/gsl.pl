@@ -8,7 +8,9 @@
 	gsl_matrix_set_zero/1,
 	gsl_matrix_set_identity/1,
 	gsl_linalg_LU_solve/5,
-	gsl_linalg_LU_det/3
+	gsl_linalg_LU_det/3,
+	gsl_matrix_max/2,
+	gsl_matrix_min/2
 	]).
 
 % GNU Scientific Library
@@ -32,12 +34,15 @@
 	gsl_matrix_free([ptr], void),
 	gsl_matrix_memcpy([ptr,ptr], sint),
 
-	gsl_matrix_set([ptr,uint64,uint64,fp64], void),
-	gsl_matrix_get([ptr,uint64,uint64], fp64),
-	gsl_matrix_set_all([ptr,fp64], void),
+	gsl_matrix_set([ptr,uint64,uint64,double], void),
+	gsl_matrix_get([ptr,uint64,uint64], double),
+	gsl_matrix_set_all([ptr,double], void),
 	gsl_matrix_set_zero([ptr], void),
 	gsl_matrix_set_identity([ptr], void),
 
+	gsl_matrix_max([ptr], double),
+	gsl_matrix_min([ptr], double),
+
 	gsl_linalg_LU_solve([ptr,ptr,ptr,ptr], sint),
-	gsl_linalg_LU_det([ptr,sint], fp64)
+	gsl_linalg_LU_det([ptr,sint], double)
 	]).
