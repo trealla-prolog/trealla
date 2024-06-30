@@ -16,7 +16,7 @@
 
 % GNU Scientific Library
 %
-% UNDER DEVELOPENT, EXPERIMENTAL
+% UNDER DEVELOPMENT, EXPERIMENTAL
 %
 % UBUNTU: sudo apt install libgsl-dev
 %
