@@ -1,11 +1,25 @@
 :- module(gsl, [
 
-	% Matrices...
+	gsl_vector_alloc/2,
+	gsl_vector_calloc/2,
+	gsl_vector_free/1,
+	gsl_vector_ptr/3,
+	gsl_vector_const_ptr/3,
+	gsl_vector_memcpy/3,
+	gsl_vector_swap/3,
+	gsl_vector_set/3,
+	gsl_vector_get/3,
+	gsl_vector_set_all/2,
+	gsl_vector_set_zero/1,
+	gsl_vector_set_basis/3,
 
 	gsl_matrix_alloc/3,
 	gsl_matrix_calloc/3,
 	gsl_matrix_free/1,
+	gsl_matrix_ptr/4,
+	gsl_matrix_const_ptr/4,
 	gsl_matrix_memcpy/3,
+	gsl_matrix_swap/3,
 	gsl_matrix_set/4,
 	gsl_matrix_get/4,
 	gsl_matrix_set_all/2,
@@ -21,7 +35,7 @@
 	gsl_linalg_LU_det/3
 	]).
 
-% GNU Scientific Library
+% GNU Scientific Library v2.8
 %
 % UNDER DEVELOPMENT, EXPERIMENTAL
 %
@@ -53,17 +67,31 @@
 */
 
 :- use_foreign_module('libgsl.so', [
+	gsl_vector_alloc([ulong], ptr),
+	gsl_vector_calloc([ulong], ptr),
+	gsl_vector_free([ptr], void),
+	gsl_vector_memcpy([ptr,ptr], sint),
+	gsl_vector_swap([ptr,ptr], sint),
+	gsl_vector_ptr([ptr,ulong], -ptr),
+	gsl_vector_const_ptr([ptr,ulong], -ptr),
+	gsl_vector_set([ptr,ulong,double], void),
+	gsl_vector_get([ptr,ulong], double),
+	gsl_vector_set_all([ptr,double], void),
+	gsl_vector_set_zero([ptr], void),
+	gsl_vector_set_basis([ptr,ulong], sint),
+
 	gsl_matrix_alloc([ulong,ulong], ptr),
 	gsl_matrix_calloc([ulong,ulong], ptr),
 	gsl_matrix_free([ptr], void),
 	gsl_matrix_memcpy([ptr,ptr], sint),
-
+	gsl_matrix_swap([ptr,ptr], sint),
+	gsl_matrix_ptr([ptr,ulong,ulong], -ptr),
+	gsl_matrix_const_ptr([ptr,ulong,ulong], -ptr),
 	gsl_matrix_set([ptr,ulong,ulong,double], void),
 	gsl_matrix_get([ptr,ulong,ulong], double),
 	gsl_matrix_set_all([ptr,double], void),
 	gsl_matrix_set_zero([ptr], void),
 	gsl_matrix_set_identity([ptr], void),
-
 	gsl_matrix_minmax([ptr,-double,-double], void),
 	gsl_matrix_max([ptr], double),
 	gsl_matrix_min([ptr], double),
