@@ -29,8 +29,6 @@
 	gsl_matrix_max/2,
 	gsl_matrix_min/2,
 
-	% Linear Algebra...
-
 	gsl_linalg_LU_solve/5,
 	gsl_linalg_LU_det/3
 	]).
