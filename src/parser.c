@@ -963,7 +963,11 @@ static bool directives(parser *p, cell *d)
 			return true;
 		}
 
-		do_use_foreign_module(p->m, c);
+		if (!do_use_foreign_module(p->m, c)) {
+			p->error = true;
+			return true;
+		}
+
 		return true;
 	}
 #endif
@@ -1122,13 +1126,9 @@ static bool directives(parser *p, cell *d)
 		return true;
 	}
 
-	//printf("*** here %s\n", dirname);
-
 	while (is_interned(p1) && (p1->val_off != g_dot_s)) {
 		module *m = p->m;
 		cell *c_id = p1;
-
-		//printf("*** here1 %s\n", C_STR(p, c_id));
 
 		if (!strcmp(C_STR(p, p1), ":") && (p1->arity == 2)) {
 			cell *c_mod = p1 + 1;
@@ -1143,8 +1143,6 @@ static bool directives(parser *p, cell *d)
 
 			c_id = p1 + 2;
 		}
-
-		//printf("*** here2 %s\n", C_STR(p, c_id));
 
 		if ((!strcmp(C_STR(p, c_id), "/") || !strcmp(C_STR(p, c_id), "//"))
 			&& (p1->arity == 2)) {
@@ -1889,9 +1887,6 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 	if (!CMP_STRING_TO_CSTR(p, goal, "phrase") && !p->consulting)
 		return goal;
-
-	//printf("*** here %s/%u\n", C_STR(p, goal), (goal)->arity);
-	//printf("*** ***  %s/%u\n", C_STR(p, goal+1), (goal+1)->arity);
 
 	//if (search_predicate(p->m, goal, NULL))
 	//	return goal;
@@ -3395,8 +3390,10 @@ unsigned tokenize(parser *p, bool args, bool consing)
 							tail = true;
 					}
 
-					if (!tail && !process_term(p, p1))
+					if (!tail && !process_term(p, p1)) {
+						p->error = true;
 						return 0;
+					}
 
 					if (p->already_loaded_error)
 						return 0;
