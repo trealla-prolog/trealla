@@ -1,7 +1,7 @@
 :- module(gsl, [
 
 	gsl_vector_alloc/2,
-	gsl_vector_calloc/2,
+	gsl_vector_calloc/2,		% GSL 2.8 only?
 	gsl_vector_free/1,
 	gsl_vector_ptr/3,
 	gsl_vector_const_ptr/3,
@@ -14,7 +14,7 @@
 	gsl_vector_set_basis/3,
 
 	gsl_matrix_alloc/3,
-	gsl_matrix_calloc/3,
+	gsl_matrix_calloc/3,		% GSL 2.8 only?
 	gsl_matrix_free/1,
 	gsl_matrix_ptr/4,
 	gsl_matrix_const_ptr/4,
@@ -35,7 +35,7 @@
 	gsl_linalg_LU_det/3
 	]).
 
-% GNU Scientific Library v2.8
+% GNU Scientific Library (GSL) v2.8
 %
 % UNDER DEVELOPMENT, EXPERIMENTAL
 %
