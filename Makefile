@@ -135,6 +135,7 @@ LIBOBJECTS +=  \
 	library/format.o \
 	library/freeze.o \
 	library/gensym.o \
+	library/gsl.o \
 	library/heaps.o \
 	library/http.o \
 	library/iso_ext.o \
