@@ -7040,7 +7040,7 @@ static bool bif_portray_clause_2(query *q)
 static bool bif_is_stream_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	return is_stream(p1);
+	return is_stream(p1) && !(p1->flags & FLAG_INT_ALIAS);
 }
 
 static bool bif_alias_2(query *q)
