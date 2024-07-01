@@ -13,12 +13,12 @@
 	gsl_matrix_set_identity/1,
 	gsl_matrix_minmax/3,
 	gsl_matrix_max/2,
-	gsl_matrix_min/2
+	gsl_matrix_min/2,
 
 	% Linear Algebra...
 
 	gsl_linalg_LU_solve/5,
-	gsl_linalg_LU_det/3,
+	gsl_linalg_LU_det/3
 	]).
 
 % GNU Scientific Library
@@ -43,13 +43,13 @@
 */
 
 :- use_foreign_module('libgsl.so', [
-	gsl_matrix_alloc([uint64,uint64], ptr),
-	gsl_matrix_calloc([uint64,uint64], ptr),
+	gsl_matrix_alloc([ulong,ulong], ptr),
+	gsl_matrix_calloc([ulong,ulong], ptr),
 	gsl_matrix_free([ptr], void),
 	gsl_matrix_memcpy([ptr,ptr], sint),
 
-	gsl_matrix_set([ptr,uint64,uint64,double], void),
-	gsl_matrix_get([ptr,uint64,uint64], double),
+	gsl_matrix_set([ptr,ulong,ulong,double], void),
+	gsl_matrix_get([ptr,ulong,ulong], double),
 	gsl_matrix_set_all([ptr,double], void),
 	gsl_matrix_set_zero([ptr], void),
 	gsl_matrix_set_identity([ptr], void),
