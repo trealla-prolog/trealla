@@ -7068,6 +7068,16 @@ static bool bif_alias_2(query *q)
 	stream *str = &q->pl->streams[n];
 	cell tmp;
 	make_uint(&tmp, (size_t)str->handle);
+
+	if (str->is_map)
+		tmp.flags |= FLAG_INT_STREAM | FLAG_INT_MAP | FLAG_INT_HEX;
+	else if (str->is_thread)
+		tmp.flags |= FLAG_INT_THREAD | FLAG_INT_HEX;
+	else if (str->is_alias)
+		tmp.flags |= FLAG_INT_ALIAS | FLAG_INT_HEX;
+	else
+		tmp.flags |= FLAG_INT_STREAM | FLAG_INT_HEX;
+
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
