@@ -817,6 +817,12 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		return true;
 	}
 
+	if ((c->tag == TAG_INTEGER) && (c->flags & FLAG_INT_ALIAS)) {
+		SB_sprintf(q->sb, "'<$alias>'(%d)", (int)get_smallint(c));
+		q->last_thing = WAS_OTHER;
+		return true;
+	}
+
 	if ((c->tag == TAG_INTEGER) && (c->flags & FLAG_INT_MAP)) {
 		SB_sprintf(q->sb, "'<$map>'(%d)", (int)get_smallint(c));
 		q->last_thing = WAS_OTHER;

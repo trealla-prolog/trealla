@@ -34,12 +34,22 @@
 /*
 	$ tpl
 	?- use_module(library(gsl)).
-	   true.
+		true.
 	?- gsl_matrix_calloc(10,10,M),
 		gsl_matrix_set_identity(M),
 		gsl_matrix_minmax(M,Min,Max),
 		gsl_matrix_free(M).
-   M = 109675795343088, Min = 0.0, Max = 1.0.
+	M = 109675795343088, Min = 0.0, Max = 1.0.
+
+	Or, working with aliases...
+
+	?- gsl_matrix_calloc(10,10,M), alias(M,foo).
+		M = 95297409861920.
+	?- alias(M,foo),
+		gsl_matrix_set_identity(M),
+		gsl_matrix_minmax(M,Min,Max),
+		gsl_matrix_free(M).
+		M = 95297409861920, Min = 0.0, Max = 1.0..
 */
 
 :- use_foreign_module('libgsl.so', [

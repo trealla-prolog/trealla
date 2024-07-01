@@ -261,6 +261,7 @@ enum {
 	FLAG_INT_STREAM=1<<2,				// used with TAG_INTEGER
 	FLAG_INT_THREAD=1<<3,				// used with TAG_INTEGER
 	FLAG_INT_MAP=1<<4,					// used with TAG_INTEGER
+	FLAG_INT_ALIAS=1<<5,				// used with TAG_INTEGER
 
 	FLAG_CSTR_BLOB=1<<0,				// used with TAG_CSTR
 	FLAG_CSTR_STRING=1<<1,				// used with TAG_CSTR
@@ -574,6 +575,7 @@ struct stream_ {
 		FILE *fp;
 		skiplist *keyval;
 		query *engine;
+		void *handle;
 	};
 
 	stringbuf sb_buf;
@@ -612,6 +614,7 @@ struct stream_ {
 	bool is_thread:1;
 	bool is_queue:1;
 	bool is_mutex:1;
+	bool is_alias:1;
 };
 
 typedef struct msg_ msg;

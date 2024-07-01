@@ -639,7 +639,9 @@ void pl_destroy(prolog *pl)
 				&& (str->fp != stdout)
 				&& (str->fp != stderr)
 			) {
-				if (str->is_map)
+				if (str->is_alias)
+					;
+				else if (str->is_map)
 					sl_destroy(str->keyval);
 				else if (str->is_engine)
 					query_destroy(str->engine);

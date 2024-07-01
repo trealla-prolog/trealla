@@ -589,6 +589,8 @@ static void add_stream_properties(query *q, int n)
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, queue(true)).\n", n);
 	else if (str->is_thread)
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, thread(true)).\n", n);
+	else if (str->is_alias)
+		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, alias(true)).\n", n);
 
 	parser *p = parser_create(q->st.m);
 	p->srcptr = tmpbuf;
@@ -1748,12 +1750,11 @@ static bool stream_close(query *q, int n)
 
 	bool ok = true;
 
-	if (str->is_map) {
+	if (str->is_alias) {
+	} else if (str->is_map) {
 		sl_destroy(str->keyval);
-		str->keyval = NULL;
 	} else if (str->is_engine) {
 		query_destroy(str->engine);
-		str->engine = NULL;
 	} else if (str->is_thread || str->is_queue || str->is_mutex) {
 	} else
 		ok = !net_close(str);
@@ -7042,6 +7043,34 @@ static bool bif_is_stream_1(query *q)
 	return is_stream(p1);
 }
 
+static bool bif_alias_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer_or_var);
+
+	if (is_integer(p1)) {
+		GET_NEXT_ARG(p2,atom);
+		int n = new_stream(q->pl);
+		char *src = NULL;
+
+		if (n < 0)
+			return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
+
+		stream *str = &q->pl->streams[n];
+		if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
+		sl_set(str->alias, DUP_STRING(q, p2), NULL);
+		str->is_alias = true;
+		str->handle = (void*)get_smalluint(p1);
+		return true;
+	}
+
+	GET_NEXT_ARG(p2,stream);
+	int n = get_stream(q, p2);
+	stream *str = &q->pl->streams[n];
+	cell tmp;
+	make_uint(&tmp, (size_t)str->handle);
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
 builtins g_streams_bifs[] =
 {
 	// ISO...
@@ -7165,6 +7194,8 @@ builtins g_streams_bifs[] =
 	{"accept", 2, bif_accept_2, "+stream,--stream", false, false, BLAH},
 	{"bread", 3, bif_bread_3, "+stream,+integer,-string", false, false, BLAH},
 	{"bwrite", 2, bif_bwrite_2, "+stream,-string", false, false, BLAH},
+
+	{"alias", 2, bif_alias_2, "+blob,+atom", false, false, BLAH},
 
 	{"$capture_output", 0, bif_sys_capture_output_0, NULL, false, false, BLAH},
 	{"$capture_output_to_chars", 1, bif_sys_capture_output_to_chars_1, "-string", false, false, BLAH},
