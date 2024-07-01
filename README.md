@@ -448,7 +448,7 @@ Non-standard predicates
 	is_absolute_file_name/1
 	access_file/2
 	set_stream/2				# only supports alias/1 property
-	alias(?integer,+atom)
+	alias/2						# alias(?integer,+atom)
 
 	recorda/2-3
 	recordz/2-3
