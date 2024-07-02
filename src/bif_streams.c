@@ -6961,6 +6961,69 @@ static bool bif_sys_capture_error_to_atom_1(query *q)
 	return ok;
 }
 
+static bool bif_sys_gsl_vector_write_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	typedef struct {
+		size_t size1, tda;
+		double *data;
+		void *gsl_block;
+		int owner;
+	} gsl_matrix;
+	gsl_matrix *m = (void*)(size_t)get_smalluint(p1);
+	GET_NEXT_ARG(p2,stream);
+	int n = q->pl->current_output;
+	stream *str = &q->pl->streams[n];
+
+	fprintf(str->fp, "#%llu,%u,%.1f\n",
+		(unsigned long long)m->size1,
+		(unsigned)m->size1,
+		0.0);
+
+	for (unsigned i = 0; i < m->size1; i++) {
+		double val = m->data[i * m->tda];
+		fprintf(str->fp, "%g", val);
+		fprintf(str->fp, "\n");
+	}
+
+	return true;
+}
+
+static bool bif_sys_gsl_matrix_write_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	typedef struct {
+		size_t size1, size2, tda;
+		double *data;
+		void *gsl_block;
+		int owner;
+	} gsl_matrix;
+	gsl_matrix *m = (void*)(size_t)get_smalluint(p1);
+	GET_NEXT_ARG(p2,stream);
+	int n = q->pl->current_output;
+	stream *str = &q->pl->streams[n];
+
+	fprintf(str->fp, "#%llu,%ux%u,%.1f\n",
+		(unsigned long long)m->size1*m->size2,
+		(unsigned)m->size1,
+		(unsigned)m->size2,
+		0.0);
+
+	for (unsigned i = 0; i < m->size1; i++) {
+		for (unsigned j = 0; j < m->size2; j++) {
+			if (j != 0)
+				fprintf(str->fp, ",");
+
+			double val = m->data[i * m->tda + j];
+			fprintf(str->fp, "%g", val);
+		}
+
+		fprintf(str->fp, "\n");
+	}
+
+	return true;
+}
+
 static bool bif_set_stream_2(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
@@ -7214,6 +7277,9 @@ builtins g_streams_bifs[] =
 	{"$capture_error", 0, bif_sys_capture_error_0, NULL, false, false, BLAH},
 	{"$capture_error_to_chars", 1, bif_sys_capture_error_to_chars_1, "-string", false, false, BLAH},
 	{"$capture_error_to_atom", 1, bif_sys_capture_error_to_atom_1, "-atom", false, false, BLAH},
+
+	{"$gsl_vector_write", 2, bif_sys_gsl_vector_write_2, "+integer,+stream", false, false, BLAH},
+	{"$gsl_matrix_write", 2, bif_sys_gsl_matrix_write_2, "+integer,+stream", false, false, BLAH},
 
 #if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 	{"process_create", 3, bif_process_create_3, "+atom,+list,+list", false, false, BLAH},
