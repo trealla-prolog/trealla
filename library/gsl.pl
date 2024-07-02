@@ -48,7 +48,7 @@
 %
 % UNDER DEVELOPMENT, EXPERIMENTAL
 %
-% UBUNTU: sudo apt install libgsl-dev
+% UBUNTU: sudo apt install libgsl-dev libgslcblas0
 %
 % REF: https://www.gnu.org/software/gsl/doc/html/index.html
 %
@@ -77,6 +77,8 @@
 
 :- foreign_struct(gsl_vector, [ulong,ulong,ptr,ptr,sint]).
 :- foreign_struct(gsl_matrix, [ulong,ulong,ulong,ptr,ptr,sint]).
+
+:- use_foreign_module('libgslcblas.so', []).
 
 :- use_foreign_module('libgsl.so', [
 	gsl_vector_alloc([ulong], ptr),
