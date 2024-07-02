@@ -103,8 +103,3 @@
 	gsl_linalg_LU_det([ptr,sint], double)
 	]).
 
-mat_write(_M, S) :-
-	is_stream(S),
-	format(S, "#~d,~dx~d,~g~n", [Tot, Rows, Cols, 0.0]).
-
-

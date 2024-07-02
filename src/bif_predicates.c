@@ -5984,6 +5984,34 @@ static bool bif_sys_choice_0(query *q)
 	return true;
 }
 
+static bool bif_sys_gsl_vector_write_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	typedef struct {
+		size_t rows, cols, tda;
+		double *data;
+		void *gsl_block;
+		int owner;
+	} gsl_vector;
+	gsl_vector *ptr = (void*)(size_t)get_smalluint(p1);
+	GET_NEXT_ARG(p2,stream);
+	return true;
+}
+
+static bool bif_sys_gsl_matrix_write_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	typedef struct {
+		size_t rows, cols, tda;
+		double *data;
+		void *gsl_block;
+		int owner;
+	} gsl_matrix;
+	gsl_matrix *ptr = (void*)(size_t)get_smalluint(p1);
+	GET_NEXT_ARG(p2,stream);
+	return true;
+}
+
 static bool bif_iso_compare_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_var);
@@ -6618,6 +6646,8 @@ builtins g_other_bifs[] =
 	{"$skip_max_list", 4, bif_sys_skip_max_list_4, "?integer,?integer?,?term,?term", false, false, BLAH},
 	{"$dump_term", 2, bif_sys_dump_term_2, "+term, +bool", false, false, BLAH},
 	{"$integer_in_radix", 3, bif_sys_integer_in_radix_3, "+integer,+integer,-string", false, false, BLAH},
+	{"$gsl_vector_write", 2, bif_sys_gsl_vector_write_2, "+integer,+stream", false, false, BLAH},
+	{"$gsl_matrix_write", 2, bif_sys_gsl_matrix_write_2, "+integer,+stream", false, false, BLAH},
 
 #if USE_OPENSSL
 	{"crypto_data_hash", 3, bif_crypto_data_hash_3, "?string,?string,?list", false, false, BLAH},
