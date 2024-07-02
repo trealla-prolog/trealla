@@ -105,4 +105,14 @@
 
 vec_write(V,S) :- '$gsl_vector_write'(V,S).
 
+vec_read(M,S,Size1) :-
+	'$gsl_matrix_alloc'(S,Size1),
+	gsl_vector_alloc(Size1,M),
+	'$gsl_vector_read'(V,S).
+
 mat_write(M,S) :- '$gsl_matrix_write'(M,S).
+
+mat_read(M,S,Size1,Size2) :-
+	'$gsl_matrix_alloc'(S,Size1,Size2),
+	gsl_matrix_alloc(Size1,Size2,M),
+	'$gsl_matrix_read'(M,S).
