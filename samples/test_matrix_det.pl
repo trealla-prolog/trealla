@@ -1,5 +1,7 @@
 :- use_module(library(gsl)).
 
+% M is mutable here, should probably work on a copy
+
 mat_lup_det(M,Size,Det) :-
 	gsl_permutation_alloc(Size,P),
 	gsl_linalg_LU_decomp(M,P,Signum,_),
