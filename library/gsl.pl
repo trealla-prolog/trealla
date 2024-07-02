@@ -116,24 +116,6 @@
 	gsl_linalg_LU_det([ptr,sint], double)
 	]).
 
-mat_lup_det(M,Size,Det) :-
-	gsl_permutation_alloc(Size,P),
-	gsl_linalg_LU_decomp(M,P,Signum,_),
-	gsl_vector_alloc(Size,B),
-	(
-		between(1,Size,I),
-			I2 is I - 1,
-			V is float(I),
-			gsl_vector_set(B,I2,V),
-			fail; true
-	),
-	gsl_vector_alloc(Size,X),
-	gsl_linalg_LU_solve(M,P,B,X,_),
-	gsl_permutation_free(P),
-	gsl_vector_free(B),
-	gsl_vector_free(X),
-	gsl_linalg_LU_det(M,Signum,Det).
-
 vec_write(V,S) :- '$gsl_vector_write'(V,S).
 
 vec_read(V,S,Size1) :-
