@@ -29,9 +29,18 @@
 	gsl_matrix_max/2,
 	gsl_matrix_min/2,
 
+	gsl_permutation_alloc/2,
+	gsl_permutation_free/1,
+
+	gsl_linalg_LU_decomp/4,
 	gsl_linalg_LU_solve/5,
 	gsl_linalg_LU_det/3,
 
+	mat_lup_det/3,
+
+	vec_read/3,
+	vec_write/2,
+	mat_read/4,
 	mat_write/2
 	]).
 
@@ -99,9 +108,20 @@
 	gsl_matrix_max([ptr], double),
 	gsl_matrix_min([ptr], double),
 
+	gsl_permutation_alloc([sint], ptr),
+	gsl_permutation_free([ptr], void),
+
+	gsl_linalg_LU_decomp([ptr,ptr,-sint], sint),
 	gsl_linalg_LU_solve([ptr,ptr,ptr,ptr], sint),
 	gsl_linalg_LU_det([ptr,sint], double)
 	]).
+
+mat_lup_det(M,Size,Det) :-
+	gsl_permutation_alloc(Size,P),
+	gsl_linalg_LU_decomp(M,P,Signum,_),
+	gsl_linalg_LU_solve(M,P,_B,_X,_),
+	gsl_linalg_LU_det(M,Signum,Det),
+	gsl_permutation_free(P).
 
 vec_write(V,S) :- '$gsl_vector_write'(V,S).
 
