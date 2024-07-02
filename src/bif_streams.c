@@ -6961,43 +6961,49 @@ static bool bif_sys_capture_error_to_atom_1(query *q)
 	return ok;
 }
 
+typedef struct {
+	size_t size1, stride;
+	double *data;
+	void *gsl_block;
+	int owner;
+} gsl_vector;
+
 static bool bif_sys_gsl_vector_write_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
-	typedef struct {
-		size_t size1, tda;
-		double *data;
-		void *gsl_block;
-		int owner;
-	} gsl_matrix;
-	gsl_matrix *m = (void*)(size_t)get_smalluint(p1);
+	gsl_vector *v = (void*)(size_t)get_smalluint(p1);
 	GET_NEXT_ARG(p2,stream);
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
 
-	fprintf(str->fp, "#%llu,%u,%.1f\n",
-		(unsigned long long)m->size1,
-		(unsigned)m->size1,
+	fprintf(str->fp, "#%llu,%ux1,%.1f\n",
+		(unsigned long long)v->size1,
+		(unsigned)v->size1,
 		0.0);
 
-	for (unsigned i = 0; i < m->size1; i++) {
-		double val = m->data[i * m->tda];
+	for (unsigned i = 0; i < v->size1; i++) {
+		double val = v->data[i * v->stride];
+
+		if (i != 0)
+			fprintf(str->fp, ",");
+
 		fprintf(str->fp, "%g", val);
-		fprintf(str->fp, "\n");
 	}
 
+	fprintf(str->fp, "\n");
 	return true;
 }
+
+typedef struct {
+	size_t size1, size2, tda;
+	double *data;
+	void *gsl_block;
+	int owner;
+} gsl_matrix;
 
 static bool bif_sys_gsl_matrix_write_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
-	typedef struct {
-		size_t size1, size2, tda;
-		double *data;
-		void *gsl_block;
-		int owner;
-	} gsl_matrix;
 	gsl_matrix *m = (void*)(size_t)get_smalluint(p1);
 	GET_NEXT_ARG(p2,stream);
 	int n = q->pl->current_output;

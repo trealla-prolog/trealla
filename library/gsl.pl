@@ -103,6 +103,6 @@
 	gsl_linalg_LU_det([ptr,sint], double)
 	]).
 
-vec_write(V,S) :- '$gsl_vector_write'(M,S).
+vec_write(V,S) :- '$gsl_vector_write'(V,S).
 
 mat_write(M,S) :- '$gsl_matrix_write'(M,S).
