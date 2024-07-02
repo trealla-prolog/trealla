@@ -119,7 +119,11 @@
 mat_lup_det(M,Size,Det) :-
 	gsl_permutation_alloc(Size,P),
 	gsl_linalg_LU_decomp(M,P,Signum,_),
-	gsl_linalg_LU_solve(M,P,_B,_X,_),
+
+	% B=????
+	gsl_vector_alloc(Size,X),
+	gsl_linalg_LU_solve(M,P,_B,X,_),
+
 	gsl_linalg_LU_det(M,Signum,Det),
 	gsl_permutation_free(P).
 
