@@ -55,27 +55,6 @@
 %
 % Contributions to add new definitions are most welcome!
 
-/*
-	$ tpl
-	?- use_module(library(gsl)).
-		true.
-	?- gsl_matrix_calloc(10,10,M),
-		gsl_matrix_set_identity(M),
-		gsl_matrix_minmax(M,Min,Max),
-		gsl_matrix_free(M).
-	M = 109675795343088, Min = 0.0, Max = 1.0.
-
-	Or, working with aliases...
-
-	?- gsl_matrix_calloc(10,10,M), alias(M,foo).
-		M = 95297409861920.
-	?- alias(M,foo),
-		gsl_matrix_set_identity(M),
-		gsl_matrix_minmax(M,Min,Max),
-		gsl_matrix_free(M).
-		M = 95297409861920, Min = 0.0, Max = 1.0..
-*/
-
 :- foreign_struct(gsl_vector, [ulong,ulong,ptr,ptr,sint]).
 :- foreign_struct(gsl_matrix, [ulong,ulong,ulong,ptr,ptr,sint]).
 
@@ -121,12 +100,15 @@
 	gsl_linalg_LU_det([ptr,sint], double)
 	]).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 :- use_module(library(lists)).
 
 % new_vec(V, [1,2,3])
 
 new_vec(V, L) :-
 	length(L, Size),
+	Size > 0,
 	gsl_vector_alloc(Size, V),
 	new_vec_(V, 0, L).
 
@@ -149,8 +131,10 @@ vec_read(V, S, Size1) :-
 
 new_mat(M, L) :-
 	length(L, Rows),
+	Rows > 0,
 	L = [H|T],
 	length(H, Cols),
+	Cols > 0,
 	gsl_matrix_calloc(Rows, Cols, M),
 	new_row_(M, 0, L).
 
