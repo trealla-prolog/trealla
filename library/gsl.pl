@@ -38,8 +38,7 @@
 	gsl_linalg_LU_solve/5,
 	gsl_linalg_LU_det/3,
 
-	mat_lup_det/3,
-
+	new_vec/2,
 	vec_read/3,
 	vec_write/2,
 	mat_read/4,
@@ -122,16 +121,34 @@
 	gsl_linalg_LU_det([ptr,sint], double)
 	]).
 
-vec_write(V,S) :- '$gsl_vector_write'(V,S).
+:- use_module(library(lists)).
 
-vec_read(V,S,Size1) :-
-	'$gsl_vector_alloc'(S,Size1),
-	gsl_vector_alloc(Size1,V),
-	'$gsl_vector_read'(V,S).
+% new_vec(V, [1,2,3])
 
-mat_write(M,S) :- '$gsl_matrix_write'(M,S).
+new_vec(V, L) :-
+	length(L, Size),
+	gsl_vector_alloc(Size, V),
+	new_vec_(V, 0, L).
 
-mat_read(M,S,Size1,Size2) :-
-	'$gsl_matrix_alloc'(S,Size1,Size2),
-	gsl_matrix_alloc(Size1,Size2,M),
-	'$gsl_matrix_read'(M,S).
+new_vec_(_, _, []).
+new_vec_(V, I, [H|T]) :-
+	H2 is float(H),
+	gsl_vector_set(V, I, H2),
+	I2 is I + 1,
+	new_vec_(V, I2, T).
+
+vec_write(V, S) :-
+	'$gsl_vector_write'(V,S).
+
+vec_read(V, S, Size1) :-
+	'$gsl_vector_alloc'(S, Size1),
+	gsl_vector_alloc(Size1, V),
+	'$gsl_vector_read'(V, S).
+
+mat_write(M, S) :-
+	'$gsl_matrix_write'(M,S).
+
+mat_read(M, S, Size1, Size2) :-
+	'$gsl_matrix_alloc'(S, Size1, Size2),
+	gsl_matrix_alloc(Size1, Size2, M),
+	'$gsl_matrix_read'(M, S).
