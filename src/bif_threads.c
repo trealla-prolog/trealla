@@ -70,7 +70,7 @@ static int get_named_thread(prolog *pl, const char *name, size_t len)
 	return -1;
 }
 
-int get_thread(query *q, cell *p1)
+static int get_thread(query *q, cell *p1)
 {
 	if (is_atom(p1)) {
 		int n = get_named_thread(q->pl, C_STR(q, p1), C_STRLEN(q, p1));
@@ -104,13 +104,15 @@ static int new_thread(prolog *pl)
 		thread *t = &pl->threads[n];
 
 		if (!t->is_active) {
+			t->is_active = true;
+			prolog_unlock(pl);
+
 			if (!t->is_init) {
 				pthread_cond_init(&t->cond, NULL);
 				init_lock(&t->guard);
 				t->is_init = true;
 			}
 
-			t->is_active = true;
 			t->id = pthread_self();
 			t->pl = pl;
 			t->chan = n;
@@ -122,7 +124,6 @@ static int new_thread(prolog *pl)
 			t->is_exception = false;
 			t->at_exit = NULL;
 			t->goal = NULL;
-			prolog_unlock(pl);
 			return n;
 		}
 	}

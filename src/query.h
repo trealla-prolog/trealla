@@ -67,7 +67,6 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 size_t slicecpy(char *dst, size_t dstlen, const char *src, size_t len);
 int new_stream(prolog *pl);
 int get_stream(query *q, cell *p1);
-int get_thread(query *q, cell *p1);
 int get_named_stream(prolog *pl, const char *name, size_t len);
 void do_cleanup(query *q, cell *p1, pl_idx c_ctx);
 bool drop_barrier(query *q, pl_idx cp);
