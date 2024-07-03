@@ -41,6 +41,7 @@
 	new_vec/2,
 	vec_read/3,
 	vec_write/2,
+	new_mat/2,
 	mat_read/4,
 	mat_write/2
 	]).
