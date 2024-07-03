@@ -326,8 +326,10 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 		return pr;
 	}
 
-	if (m->pl->user_m) {
-		pr = find_predicate(m->pl->user_m, c);
+	for (unsigned i = 0; i < m->idx_used; i++) {
+		module *tmp_m = m->used[i];
+
+		pr = find_predicate(tmp_m, c);
 
 		if (pr) {
 			if (pr->is_prebuilt && prebuilt)
@@ -337,10 +339,8 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 		}
 	}
 
-	for (unsigned i = 0; i < m->idx_used; i++) {
-		module *tmp_m = m->used[i];
-
-		pr = find_predicate(tmp_m, c);
+	if (m->pl->user_m) {
+		pr = find_predicate(m->pl->user_m, c);
 
 		if (pr) {
 			if (pr->is_prebuilt && prebuilt)
