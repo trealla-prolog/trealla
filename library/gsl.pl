@@ -145,6 +145,28 @@ vec_read(V, S, Size1) :-
 	gsl_vector_alloc(Size1, V),
 	'$gsl_vector_read'(V, S).
 
+% new_mat(M, [[1.1,1.2,1.3],[2.1,2.2,2.3],[3.1,3.2,3.3]])
+
+new_mat(M, L) :-
+	length(L, Rows),
+	L = [H|T],
+	length(H, Cols),
+	gsl_matrix_calloc(Rows, Cols, M),
+	new_row_(M, 0, L).
+
+new_row_(_, _, []).
+new_row_(M, Row, [H|T]) :-
+	new_col_(M, Row, 0, H),
+	Row2 is Row + 1,
+	new_row_(M, Row2, T).
+
+new_col_(_, _, _, []).
+new_col_(M, Row, Col, [H|T]) :-
+	H2 is float(H),
+	gsl_matrix_set(M, Row, Col, H2),
+	Col2 is Col + 1,
+	new_col_(M, Row, Col2, T).
+
 mat_write(M, S) :-
 	'$gsl_matrix_write'(M,S).
 
