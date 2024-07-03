@@ -1,5 +1,7 @@
 :- module(gsl, [
 
+	gsl_set_error_handler_off/1,
+
 	gsl_vector_alloc/2,
 	gsl_vector_calloc/2,
 	gsl_vector_free/1,
@@ -81,6 +83,8 @@
 :- use_foreign_module('libgslcblas.so', []).
 
 :- use_foreign_module('libgsl.so', [
+	gsl_set_error_handler_off([], ptr),
+
 	gsl_vector_alloc([ulong], ptr),
 	gsl_vector_calloc([ulong], ptr),
 	gsl_vector_free([ptr], void),
