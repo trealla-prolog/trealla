@@ -6184,8 +6184,8 @@ static bool bif_server_3(query *q)
 	str->sslptr = NULL;
 
 	if (str->fp == NULL) {
-		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 		close(fd);
+		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
 
 	if (!str->ssl)
