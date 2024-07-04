@@ -7279,6 +7279,17 @@ static bool bif_alias_2(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
+static bool bif_sys_stream_to_file_2(query *q)
+{
+	GET_FIRST_ARG(p1,stream);
+	int n = get_stream(q, p1);
+	stream *str = &q->pl->streams[n];
+	GET_NEXT_ARG(p2,var);
+	cell tmp;
+	make_ptr(&tmp, str->fp);
+	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+}
+
 builtins g_streams_bifs[] =
 {
 	// ISO...
@@ -7404,6 +7415,8 @@ builtins g_streams_bifs[] =
 	{"bwrite", 2, bif_bwrite_2, "+stream,-string", false, false, BLAH},
 
 	{"alias", 2, bif_alias_2, "+blob,+atom", false, false, BLAH},
+
+	{"$stream_to_file", 2, bif_alias_2, "+stream,-integer", false, false, BLAH},
 
 	{"$capture_output", 0, bif_sys_capture_output_0, NULL, false, false, BLAH},
 	{"$capture_output_to_chars", 1, bif_sys_capture_output_to_chars_1, "-string", false, false, BLAH},

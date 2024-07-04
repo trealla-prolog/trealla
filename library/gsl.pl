@@ -31,6 +31,8 @@
 	gsl_matrix_max/2,
 	gsl_matrix_min/2,
 	gsl_matrix_transpose/2,
+	gsl_matrix_fwrite/3,
+	gsl_matrix_fread/3,
 
 	gsl_permutation_alloc/2,
 	gsl_permutation_free/1,
@@ -98,6 +100,8 @@
 	gsl_matrix_max([ptr], double),
 	gsl_matrix_min([ptr], double),
 	gsl_matrix_transpose([ptr], sint),
+	gsl_matrix_fwrite([ptr,ptr], sint),
+	gsl_matrix_fread([ptr,ptr], sint),
 
 	gsl_permutation_alloc([sint], ptr),
 	gsl_permutation_free([ptr], void),
