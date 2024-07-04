@@ -38,6 +38,8 @@
 	gsl_linalg_LU_solve/5,
 	gsl_linalg_LU_det/3,
 
+	mat_lup_det/3,
+
 	new_vec/2,
 	vec_read/3,
 	vec_write/2,
@@ -103,6 +105,29 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+mat_lup_det(M0, Size, Det) :-
+	gsl_matrix_alloc(Size, Size, M),
+	gsl_matrix_memcpy(M, M0, _),
+	gsl_permutation_alloc(Size, P),
+	gsl_linalg_LU_decomp(M, P, Signum, _),
+	gsl_vector_alloc(Size, B),
+	(
+		between(1, Size, I),
+			I2 is I - 1,
+			V is float(I),
+			gsl_vector_set(B, I2, V),
+			fail; true
+	),
+	gsl_vector_alloc(Size, X),
+	gsl_linalg_LU_solve(M, P, B, X, _),
+	gsl_vector_free(X),
+	gsl_vector_free(B),
+	gsl_permutation_free(P),
+	gsl_linalg_LU_det(M, Signum, Det),
+	gsl_matrix_free(M).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 :- use_module(library(lists)).
 
 % new_vec(V, [1,2,3])
@@ -127,6 +152,8 @@ vec_read(V, S, Size1) :-
 	'$gsl_vector_alloc'(S, Size1),
 	gsl_vector_alloc(Size1, V),
 	'$gsl_vector_read'(V, S).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % new_mat(M, [[1.1,1.2,1.3],[2.1,2.2,2.3],[3.1,3.2,3.3]])
 
