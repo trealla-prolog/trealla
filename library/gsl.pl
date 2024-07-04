@@ -147,13 +147,13 @@ new_vec_(V, I, [H|T]) :-
 
 vec_list(V, L) :-
 	'$gsl_vector_size'(V, Size),
-	vec_list_(V, Size, Size, [], L).
+	vec_list_(V, Size, [], L).
 
-vec_list_(_, 0, _, L, L) :- !.
-vec_list_(V, Col, Size, L0, L) :-
+vec_list_(_, 0, L, L) :- !.
+vec_list_(V, Col, L0, L) :-
 	Col2 is Col - 1,
 	gsl_vector_get(V, Col2, Val),
-	vec_list_(V, Col2, Size, [Val|L0], L).
+	vec_list_(V, Col2, [Val|L0], L).
 
 vec_write(V, S) :-
 	'$gsl_vector_write'(V,S).
