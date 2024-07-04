@@ -75,7 +75,7 @@
 	mat_list/2,
 	mat_read/4,
 	mat_write/2,
-	mat_lup_det/3
+	mat_lup_det/2
 	]).
 
 % GNU Scientific Library (GSL) v2.8
@@ -163,7 +163,11 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-mat_lup_det(M0, Size, Det) :-
+mat_lup_det(M0, Det) :-
+	'$gsl_matrix_size'(M0, Rows, Cols),
+	(Rows =:= Cols -> true; throw(error(domain_error(matrix_not_square, (Rows * Cols)), matrix_lup_det/2))),
+	Size is Rows,
+	(Size > 0 -> true; throw(error(domain_error(matrix_empty, Size), matrix_lup_det/2))),
 	gsl_matrix_alloc(Size, Size, M),
 	gsl_matrix_memcpy(M, M0, _),
 	gsl_permutation_alloc(Size, P),
