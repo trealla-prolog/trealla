@@ -30,6 +30,7 @@
 	gsl_matrix_minmax/3,
 	gsl_matrix_max/2,
 	gsl_matrix_min/2,
+	gsl_matrix_transpose/2,
 
 	gsl_permutation_alloc/2,
 	gsl_permutation_free/1,
@@ -96,6 +97,7 @@
 	gsl_matrix_minmax([ptr,-double,-double], void),
 	gsl_matrix_max([ptr], double),
 	gsl_matrix_min([ptr], double),
+	gsl_matrix_transpose([ptr], sint),
 
 	gsl_permutation_alloc([sint], ptr),
 	gsl_permutation_free([ptr], void),
@@ -127,6 +129,10 @@ mat_lup_det(M0, Size, Det) :-
 	gsl_permutation_free(P),
 	gsl_linalg_LU_det(M, Signum, Det),
 	gsl_matrix_free(M).
+
+mat_transpose(M) :-
+	'$gsl_matrix_size'(M, Rows, Cols),
+	gsl_matrix_transpose(M, _).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
