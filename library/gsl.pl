@@ -165,9 +165,9 @@
 
 mat_lup_det(M0, Det) :-
 	'$gsl_matrix_size'(M0, Rows, Cols),
-	(Rows =:= Cols -> true; throw(error(domain_error(matrix_not_square, (Rows * Cols)), matrix_lup_det/2))),
+	(Rows =:= Cols -> true; throw(error(domain_error(matrix_not_square, (Rows * Cols)), mat_lup_det/2))),
 	Size is Rows,
-	(Size > 0 -> true; throw(error(domain_error(matrix_empty, Size), matrix_lup_det/2))),
+	(Size > 0 -> true; throw(error(domain_error(matrix_empty, Size), mat_lup_det/2))),
 	gsl_matrix_alloc(Size, Size, M),
 	gsl_matrix_memcpy(M, M0, _),
 	gsl_permutation_alloc(Size, P),
