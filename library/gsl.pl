@@ -138,12 +138,22 @@ new_vec(V, L) :-
 	gsl_vector_alloc(Size, V),
 	new_vec_(V, 0, L).
 
-new_vec_(_, _, []).
+new_vec_(_, _, []) :- !.
 new_vec_(V, I, [H|T]) :-
 	H2 is float(H),
 	gsl_vector_set(V, I, H2),
 	I2 is I + 1,
 	new_vec_(V, I2, T).
+
+vec_list(V, L) :-
+	'$gsl_vector_size'(V, Size),
+	vec_list_(V, Size, Size, [], L).
+
+vec_list_(_, 0, _, L, L) :- !.
+vec_list_(V, Col, Size, L0, L) :-
+	Col2 is Col - 1,
+	gsl_vector_get(V, Col2, Val),
+	vec_list_(V, Col2, Size, [Val|L0], L).
 
 vec_write(V, S) :-
 	'$gsl_vector_write'(V,S).
@@ -166,7 +176,7 @@ new_mat(M, L) :-
 	gsl_matrix_calloc(Rows, Cols, M),
 	new_row_(M, 0, L).
 
-new_row_(_, _, []).
+new_row_(_, _, []) :- !.
 new_row_(M, Row, [H|T]) :-
 	new_col_(M, Row, 0, H),
 	Row2 is Row + 1,

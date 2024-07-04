@@ -7021,18 +7021,18 @@ static bool bif_sys_gsl_vector_alloc_2(query *q)
 static bool bif_sys_gsl_vector_read_2(query *q)
 {
 	GET_FIRST_ARG(p0,integer);
-	gsl_vector *m = (void*)(size_t)get_smalluint(p0);
+	gsl_vector *v = (void*)(size_t)get_smalluint(p0);
 	GET_NEXT_ARG(p1,stream);
 	int n = get_stream(q, p1);
 	stream *str = &q->pl->streams[n];
 
-	for (unsigned i = 0; i < m->size1; i++) {
+	for (unsigned i = 0; i < v->size1; i++) {
 		double val;
 
 		if (fscanf(str->fp, "%lg", &val) <= 0)
 			return false;
 
-		m->data[i * m->stride] = val;
+		v->data[i * v->stride] = val;
 
 		int ch = fgetc(str->fp);
 
@@ -7041,6 +7041,16 @@ static bool bif_sys_gsl_vector_read_2(query *q)
 	}
 
 	return true;
+}
+
+static bool bif_sys_gsl_vector_size_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	gsl_vector *v = (void*)(size_t)get_smalluint(p1);
+	GET_NEXT_ARG(p2,integer_or_var);
+	cell tmp;
+	make_uint(&tmp, v->size1);
+	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 }
 
 typedef struct {
@@ -7131,6 +7141,22 @@ static bool bif_sys_gsl_matrix_read_2(query *q)
 	}
 
 	return true;
+}
+
+static bool bif_sys_gsl_matrix_size_3(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	gsl_matrix *m = (void*)(size_t)get_smalluint(p1);
+	GET_NEXT_ARG(p2,integer_or_var);
+	GET_NEXT_ARG(p3,integer_or_var);
+	cell tmp;
+	make_uint(&tmp, m->size1);
+
+	if (!unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
+		return false;
+
+	make_uint(&tmp, m->size2);
+	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 }
 
 static bool bif_set_stream_2(query *q)
@@ -7390,9 +7416,12 @@ builtins g_streams_bifs[] =
 	{"$gsl_vector_write", 2, bif_sys_gsl_vector_write_2, "+integer,+stream", false, false, BLAH},
 	{"$gsl_vector_alloc", 2, bif_sys_gsl_vector_alloc_2, "+stream,-integer", false, false, BLAH},
 	{"$gsl_vector_read", 2, bif_sys_gsl_vector_read_2, "+integer,+stream", false, false, BLAH},
+	{"$gsl_vector_size", 2, bif_sys_gsl_vector_size_2, "+integer,-integer", false, false, BLAH},
+
 	{"$gsl_matrix_write", 2, bif_sys_gsl_matrix_write_2, "+integer,+stream", false, false, BLAH},
 	{"$gsl_matrix_alloc", 3, bif_sys_gsl_matrix_alloc_3, "+stream,-integer,-integer", false, false, BLAH},
 	{"$gsl_matrix_read", 2, bif_sys_gsl_matrix_read_2, "+integer,+stream", false, false, BLAH},
+	{"$gsl_matrix_size", 3, bif_sys_gsl_matrix_size_3, "+integer,-integer,-integer", false, false, BLAH},
 
 #if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 	{"process_create", 3, bif_process_create_3, "+atom,+list,+list", false, false, BLAH},
