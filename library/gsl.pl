@@ -207,7 +207,6 @@ mat_list_col_(M, Row, Col, L0, L) :-
 	gsl_matrix_get(M, Row, NewCol, Val),
 	mat_list_col_(M, Row, NewCol, [Val|L0], L).
 
-
 mat_write(M, S) :-
 	'$gsl_matrix_write'(M, S).
 
