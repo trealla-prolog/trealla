@@ -41,6 +41,10 @@
 	gsl_matrix_swap_rows/4,
 	gsl_matrix_swap_columns/4,
 	gsl_matrix_swap_rowcol/4,
+	gsl_matrix_add/3,
+	gsl_matrix_sub/3,
+	gsl_matrix_mul_elements/3,
+	gsl_matrix_div_elements/3,
 
 	gsl_permutation_alloc/2,
 	gsl_permutation_free/1,
@@ -118,6 +122,10 @@
 	gsl_matrix_swap_rows([ptr,ulong,ulong], sint),
 	gsl_matrix_swap_cols([ptr,ulong,ulong], sint),
 	gsl_matrix_swap_rowcol([ptr,ulong,ulong], sint),
+	gsl_matrix_swap_add([ptr,ptr], sint),
+	gsl_matrix_swap_sub([ptr,ptr], sint),
+	gsl_matrix_swap_mul_elements([ptr,ptr], sint),
+	gsl_matrix_swap_div_elements([ptr,ptr], sint),
 
 	gsl_permutation_alloc([sint], ptr),
 	gsl_permutation_free([ptr], void),
