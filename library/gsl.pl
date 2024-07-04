@@ -151,12 +151,12 @@ vec_list(V, L) :-
 
 vec_list_(_, 0, L, L) :- !.
 vec_list_(V, Col, L0, L) :-
-	Col2 is Col - 1,
-	gsl_vector_get(V, Col2, Val),
-	vec_list_(V, Col2, [Val|L0], L).
+	NewCol is Col - 1,
+	gsl_vector_get(V, NewCol, Val),
+	vec_list_(V, NewCol, [Val|L0], L).
 
 vec_write(V, S) :-
-	'$gsl_vector_write'(V,S).
+	'$gsl_vector_write'(V, S).
 
 vec_read(V, S, Size1) :-
 	'$gsl_vector_alloc'(S, Size1),
@@ -189,8 +189,25 @@ new_col_(M, Row, Col, [H|T]) :-
 	Col2 is Col + 1,
 	new_col_(M, Row, Col2, T).
 
+mat_list(M, L) :-
+	'$gsl_matrix_size'(M, Size1, Size2),
+	mat_list_row_(M, Size1, Size2, [], L).
+
+mat_list_row_(_, 0, _, L, L) :- !.
+mat_list_row_(M, Row, Size2, L0, L) :-
+	NewRow is Row - 1,
+	mat_list_col_(M, NewRow, Size2, [], NewL),
+	mat_list_row_(M, NewRow, Size2, [NewL|L0], L).
+
+mat_list_col_(_, _, 0, L, L) :- !.
+mat_list_col_(M, Row, Col, L0, L) :-
+	NewCol is Col - 1,
+	gsl_matrix_get(M, Row, NewCol, Val),
+	mat_list_col_(M, Row, NewCol, [Val|L0], L).
+
+
 mat_write(M, S) :-
-	'$gsl_matrix_write'(M,S).
+	'$gsl_matrix_write'(M, S).
 
 mat_read(M, S, Size1, Size2) :-
 	'$gsl_matrix_alloc'(S, Size1, Size2),
