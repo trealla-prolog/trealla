@@ -38,14 +38,16 @@
 	gsl_linalg_LU_solve/5,
 	gsl_linalg_LU_det/3,
 
-	mat_lup_det/3,
-
 	new_vec/2,
+	vec_list/2,
 	vec_read/3,
 	vec_write/2,
+
 	new_mat/2,
+	mat_list/2,
 	mat_read/4,
-	mat_write/2
+	mat_write/2,
+	mat_lup_det/3
 	]).
 
 % GNU Scientific Library (GSL) v2.8
