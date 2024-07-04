@@ -130,9 +130,6 @@ mat_lup_det(M0, Size, Det) :-
 	gsl_linalg_LU_det(M, Signum, Det),
 	gsl_matrix_free(M).
 
-mat_transpose(M) :-
-	'$gsl_matrix_size'(M, Rows, Cols),
-	gsl_matrix_transpose(M, _).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
