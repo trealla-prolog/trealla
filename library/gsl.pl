@@ -70,12 +70,14 @@
 	vec_list/2,
 	vec_read/3,
 	vec_write/2,
+	vec_random/2,
 
 	new_mat/2,
 	mat_list/2,
 	mat_read/4,
 	mat_write/2,
-	mat_lup_det/2
+	mat_lup_det/2,
+	mat_random/3
 	]).
 
 % GNU Scientific Library (GSL) v2.8
@@ -162,6 +164,31 @@
 	]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+vec_random(V, Cols) :-
+	gsl_vector_alloc(Cols, V),
+	(
+		between(1, Cols, J),
+			J2 is J - 1,
+			random(Val),
+			gsl_vector_set(V, J2, Val),
+			fail; true
+	).
+
+mat_random(M, Rows, Cols) :-
+	gsl_matrix_alloc(Rows, Cols, M),
+	(
+		between(1, Rows, I),
+			I2 is I - 1,
+			(
+				between(1, Cols, J),
+					J2 is J - 1,
+					random(Val),
+					gsl_matrix_set(M, I2, J2, Val),
+					fail; true
+			),
+			fail; true
+	).
 
 mat_lup_det(M0, Det) :-
 	'$gsl_matrix_size'(M0, Rows, Cols),
