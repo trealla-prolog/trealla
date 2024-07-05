@@ -71,6 +71,13 @@ current_prolog_flag(P, A) :-
 
 :- help(current_prolog_flag(+callable,+term), [iso(true)]).
 
+cfor(I0,J0,K) :-
+	I is I0,
+	J is J0,
+	between(I, J, K).
+
+:- help(cfor(+evaluable,+evaluable,-var), [iso(false),desc('C-style for loop')]).
+
 subsumes_term(G, S) :-
 	\+ \+ (
 	 term_variables(S, V1),

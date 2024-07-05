@@ -167,21 +167,18 @@
 
 vec_random(V, Cols) :-
 	gsl_vector_alloc(Cols, V),
-	( between(1, Cols, J),
-		J2 is J - 1,
+	( cfor(0, Cols-1, J),
 		random(Val),
-		gsl_vector_set(V, J2, Val),
+		gsl_vector_set(V, J, Val),
 		fail; true
 	).
 
 mat_random(M, Rows, Cols) :-
 	gsl_matrix_alloc(Rows, Cols, M),
-	( between(1, Rows, I),
-		I2 is I - 1,
-		( between(1, Cols, J),
-			J2 is J - 1,
+	( cfor(0, Rows-1, I),
+		( cfor(0, Cols-1, J),
 			random(Val),
-			gsl_matrix_set(M, I2, J2, Val),
+			gsl_matrix_set(M, I, J, Val),
 			fail; true
 		),
 		fail; true
@@ -197,10 +194,9 @@ mat_lup_det(M0, Det) :-
 	gsl_permutation_alloc(Size, P),
 	gsl_linalg_LU_decomp(M, P, Signum, _),
 	gsl_vector_alloc(Size, B),
-	( between(1, Size, I),
-		I2 is I - 1,
-		V is float(I),
-		gsl_vector_set(B, I2, V),
+	( cfor(0, Size-1, I),
+		V is float(I+1),
+		gsl_vector_set(B, I, V),
 		fail; true
 	),
 	gsl_vector_alloc(Size, X),
