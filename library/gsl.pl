@@ -185,7 +185,7 @@ mat_random(M, Rows, Cols) :-
 	).
 
 check_error_(Goal, Check, Action) :-
-	Goal, ( Check; (Action, fail)).
+	Goal, ( Check; (Action, Goal =.. [Pred|_], throw(domain_error(Pred, Check)))).
 
 mat_lup_det(M0, Det0) :-
 	'$gsl_matrix_size'(M0, Rows, Cols),
