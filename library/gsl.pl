@@ -185,7 +185,8 @@ mat_random(M, Rows, Cols) :-
 	).
 
 check_error_(Goal, Check, Action) :-
-	Goal, ( Check; (Action, Goal =.. [Pred|_], throw(domain_error(Pred, Check)))).
+	Goal, (Check; (Action, Goal =.. [Pred|_], throw(domain_error(Pred, Check)))),
+	!.
 
 mat_lup_det(M0, Det0) :-
 	'$gsl_matrix_size'(M0, Rows, Cols),
@@ -209,7 +210,7 @@ mat_lup_det(M0, Det0) :-
 	gsl_vector_alloc(Size, X),
 	check_error_(
 		gsl_linalg_LU_solve(M, P, B, X, Status2),
-		Status2 =:= 0,
+		Status2 =< 1,
 		(gsl_vector_free(X),gsl_vector_free(B),gsl_permutation_free(P))
 		),
 	gsl_vector_free(X),
