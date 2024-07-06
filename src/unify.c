@@ -310,7 +310,7 @@ inline static bool any_choices(const query *q, const frame *f)
 	return ch->chgen > f->chgen;
 }
 
-static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx, unsigned depth)
+static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
 {
 	const frame *f = GET_FRAME(c_ctx);
 	slot *e = GET_SLOT(f, c->var_nbr);
@@ -655,13 +655,13 @@ static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 
 	if (is_var(p1) && is_var(p2)) {
 		if (p2_ctx > p1_ctx)
-			set_var(q, p2, p2_ctx, p1, p1_ctx, depth);
+			set_var(q, p2, p2_ctx, p1, p1_ctx);
 		else if (p2_ctx < p1_ctx)
-			set_var(q, p1, p1_ctx, p2, p2_ctx, depth);
+			set_var(q, p1, p1_ctx, p2, p2_ctx);
 		else if (p2->var_nbr > p1->var_nbr)
-			set_var(q, p2, p2_ctx, p1, p1_ctx, depth);
+			set_var(q, p2, p2_ctx, p1, p1_ctx);
 		else if (p2->var_nbr < p1->var_nbr)
-			set_var(q, p1, p1_ctx, p2, p2_ctx, depth);
+			set_var(q, p1, p1_ctx, p2, p2_ctx);
 
 		return true;
 	}
@@ -687,7 +687,7 @@ static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 				was_cyclic = true;
 		}
 
-		set_var(q, p1, p1_ctx, p2, p2_ctx, depth);
+		set_var(q, p1, p1_ctx, p2, p2_ctx);
 
 		if (q->flags.occurs_check == OCCURS_CHECK_TRUE) {
 			if (!was_cyclic && is_cyclic_term(q, p2, p2_ctx))
