@@ -184,7 +184,7 @@ mat_random(M, Rows, Cols) :-
 		fail; true
 	).
 
-mat_lup_det(M0, Det) :-
+mat_lup_det(M0, Det0) :-
 	'$gsl_matrix_size'(M0, Rows, Cols),
 	(Rows =:= Cols -> true; throw(error(domain_error(matrix_not_square, (Rows * Cols)), mat_lup_det/2))),
 	Size is Rows,
@@ -205,7 +205,8 @@ mat_lup_det(M0, Det) :-
 	gsl_vector_free(B),
 	gsl_permutation_free(P),
 	gsl_linalg_LU_det(M, Signum, Det),
-	gsl_matrix_free(M).
+	gsl_matrix_free(M),
+	Det0 is Det.			% checks for NAN
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

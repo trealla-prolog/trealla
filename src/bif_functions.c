@@ -301,18 +301,17 @@ static bool bif_iso_is_2(query *q)
 	CLEANUP cell p2 = eval(q, p2_tmp);
 	p2.nbr_cells = 1;
 
-	if (is_number(&p2)) {
-		q->in_is = true;
-		bool ok = unify(q, p1, p1_ctx, &p2, q->st.curr_frame);
-		q->in_is = false;
-		clr_accum(&q->accum);
-		return ok;
-	}
-
 	if (!is_number(&p2))
 		return throw_error(q, &p2, p2_tmp_ctx, "type_error", "evaluable");
 
-	return false;
+	if (is_float(&p2) && isnan(p2.val_float))
+		return throw_error(q, &p2, q->st.curr_frame, "evaluation_error", "undefined");
+
+	q->in_is = true;
+	bool ok = unify(q, p1, p1_ctx, &p2, q->st.curr_frame);
+	q->in_is = false;
+	clr_accum(&q->accum);
+	return ok;
 }
 
 bool bif_iso_float_1(query *q)
