@@ -1214,6 +1214,9 @@ static bool directives(parser *p, cell *d)
 		} else if (!strcmp(dirname, "encoding")) {
 			p1 += 1;
 		} else if (!strcmp(dirname, "meta_predicate")) {
+			if (p1->val_off == g_conjunction_s)
+				p1 += 1;
+
 			set_meta_predicate_in_db(m, p1);
 			p1 += p1->nbr_cells;
 		} else if (!strcmp(C_STR(p, p1), ",") && (p1->arity == 2))
