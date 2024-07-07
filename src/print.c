@@ -1213,13 +1213,13 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		bool space = (c->val_off == g_minus_s) && (is_number(rhs) || is_op_rhs);
 		if ((c->val_off == g_plus_s) && is_op_rhs) space = true;
 		if (isalpha(*src)) space = true;
-		if (is_op_rhs || is_negative(rhs) || is_float(rhs)) space = true;
-		if (is_interned(rhs) && !iswalpha(peek_char_utf8(rhs_src))) space = true;
+		if (/*is_op_rhs ||*/ is_negative(rhs) || is_float(rhs)) space = true;
+		if (is_interned(rhs) && !iswalpha(peek_char_utf8(rhs_src)) && !is_op(rhs)) space = true;
 
 		bool parens = false;
 		if (!strcmp(src, "+") && (is_infix(rhs) || is_postfix(rhs))) parens = true;
 		if (rhs_pri > my_priority) parens = true;
-		if (my_priority && (rhs_pri == my_priority) && strcmp(src, "-") && strcmp(src, "+")) parens = true;
+		//if (my_priority && (rhs_pri == my_priority) && strcmp(src, "-") && strcmp(src, "+")) parens = true;
 		if (!strcmp(src, "-") && (rhs_pri == my_priority) && (rhs->arity > 1)) parens = true;
 		if ((c->val_off == g_minus_s) && is_number(rhs) && !is_negative(rhs)) parens = true;
 		if ((c->val_off == g_minus_s) && search_op(q->st.m, C_STR(q, rhs), NULL, true) && !rhs->arity) parens = true;
