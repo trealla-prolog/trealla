@@ -438,7 +438,7 @@ bool bif_sys_undo_trail_2(query *q)
 		const trail *tr = q->trails + i;
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
-		save->e[j] = *e;
+		save->e[j].c = e->c;
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		pl_idx c_ctx = q->latest_ctx;
 		set_occurs(tr->var_nbr, tr->var_ctx, c, c_ctx);
@@ -478,7 +478,7 @@ bool bif_sys_redo_trail_1(query * q)
 		const trail *tr = q->trails + i;
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
-		*e = save->e[j];
+		e->c = save->e[j].c;
 	}
 
 	return true;

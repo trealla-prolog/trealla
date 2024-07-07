@@ -141,9 +141,11 @@ flatten_(NonList, Tl, [NonList|Tl]).
 :- help(flatten(+list,-list), [iso(false)]).
 
 '$post_unify_hook' :-
-	'$undo_trail'(Vars, State),
-	process_vars_(Vars, [], Goals),
-	'$redo_trail'(State),
+	setup_call_cleanup(
+		'$undo_trail'(Vars, State),
+		process_vars_(Vars, [], Goals),
+		'$redo_trail'(State)
+		),
 	maplist(call, Goals).
 
 process_vars_([], Goals, Goals).
