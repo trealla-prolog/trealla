@@ -7098,20 +7098,26 @@ static bool bif_sys_gsl_matrix_alloc_3(query *q)
 	GET_NEXT_ARG(p3,var);
 
 	unsigned long long tot = 0;
-	unsigned rows = 0, cols = 0;
+	long rows = 0, cols = 0;
 	double def_value = 0.0;
 	bool sparse = false;
 	char tmpbuf[128];
 	tmpbuf[0] = '\0';
 
-	if ((n = fscanf(str->fp, "%*c%llu,%u%*c%u,%lg,%127s\n", &tot, &rows, &cols, &def_value, tmpbuf)) < 3)
+	if ((n = fscanf(str->fp, "%*c%llu,%ld%*c%ld,%lg,%127s\n", &tot, &rows, &cols, &def_value, tmpbuf)) < 3)
 		return throw_error(q, p1, p1_ctx, "domain_error", "header_error");
+
+	if ((rows <= 0) || (cols <= 0))
+		return throw_error(q, p1, p1_ctx, "domain_error", "matrix_dimensions");
+
+	if ((rows >= INT32_MAX) || (cols >= INT32_MAX))
+		return throw_error(q, p1, p1_ctx, "domain_error", "matrix_dimensions");
 
 	tmpbuf[sizeof(tmpbuf)-1] = '\0';
 	cell tmp;
-	make_uint(&tmp, rows);
+	make_int(&tmp, rows);
 	unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
-	make_uint(&tmp, cols);
+	make_int(&tmp, cols);
 	unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 	return true;
 }
