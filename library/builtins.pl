@@ -21,8 +21,8 @@ predicate_property(P, A) :-
 			built_in,choice_construct,
 			discontiguous,private,static,
 			dynamic,foreign,multifile,
-			meta_predicate(_),iso,visible,
-			template(_)
+			meta_predicate(_),imported_from(_),template(_),
+			iso,visible
 			],
 			memberchk(A, Controls) ->
 				true

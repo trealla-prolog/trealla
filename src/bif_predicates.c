@@ -5547,6 +5547,8 @@ bool bif_iso_invoke_2(query *q)
 
 		if (!m)
 			m = module_create(q->pl, C_STR(q, p1));
+
+		q->st.m = m;
 	}
 
 	cell *tmp = prepare_call(q, PREFIX_LEN, p2, p2_ctx, 1);
@@ -5558,7 +5560,6 @@ bool bif_iso_invoke_2(query *q)
 
 	nbr_cells += p2->nbr_cells;
 	make_call(q, tmp+nbr_cells);
-	q->st.m = m;
 	q->st.curr_instr = tmp;
 	return true;
 }
