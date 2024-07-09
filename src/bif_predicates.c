@@ -14,8 +14,6 @@
 #include "prolog.h"
 #include "query.h"
 
-#include "bif_atts.h"
-
 #if USE_OPENSSL
 #include "openssl/sha.h"
 #include "openssl/hmac.h"

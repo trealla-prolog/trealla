@@ -9,8 +9,6 @@
 #include "prolog.h"
 #include "query.h"
 
-#include "bif_atts.h"
-
 static const char *do_attribute(query *q, cell *attr, unsigned arity, bool *found)
 {
 	for (module *m = list_front(&q->pl->modules);

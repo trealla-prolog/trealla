@@ -12,8 +12,6 @@
 #include "prolog.h"
 #include "query.h"
 
-#include "bif_atts.h"
-
 #ifdef _WIN32
 #include <windows.h>
 #define msleep Sleep

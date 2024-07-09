@@ -8,8 +8,6 @@
 #include "prolog.h"
 #include "query.h"
 
-#include "bif_atts.h"
-
 static void show_goals(query *q, int nbr)
 {
 	frame *f = GET_CURR_FRAME();
