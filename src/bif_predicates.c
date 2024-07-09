@@ -6624,8 +6624,6 @@ builtins g_other_bifs[] =
 	{"$register_cleanup", 1, bif_sys_register_cleanup_1, NULL, false, false, BLAH},
 	{"$get_level", 1, bif_sys_get_level_1, "?integer", false, false, BLAH},
 	{"$is_partial_string", 1, bif_sys_is_partial_string_1, "+string", false, false, BLAH},
-	{"$undo_trail", 2, bif_sys_undo_trail_2, "-list,-blob", false, false, BLAH},
-	{"$redo_trail", 1, bif_sys_redo_trail_1, "+blob", false, false, BLAH},
 	{"$load_properties", 0, bif_sys_load_properties_0, NULL, false, false, BLAH},
 	{"$load_flags", 0, bif_sys_load_flags_0, NULL, false, false, BLAH},
 	{"$load_ops", 0, bif_sys_load_ops_0, NULL, false, false, BLAH},

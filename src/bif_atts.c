@@ -25,7 +25,7 @@ static const char *do_attribute(query *q, cell *attr, unsigned arity, bool *foun
 	return q->st.m->name;
 }
 
-bool bif_attribute_3(query *q)
+static bool bif_attribute_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_var);
 	GET_NEXT_ARG(p2,atom);
@@ -122,7 +122,7 @@ static bool do_put_atts(query *q, cell *attr, pl_idx attr_ctx, bool is_minus)
 	return true;
 }
 
-bool bif_put_atts_2(query *q)
+static bool bif_put_atts_2(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,callable);
@@ -152,7 +152,7 @@ bool bif_put_atts_2(query *q)
 		return do_put_atts(q, p2, p2_ctx, is_minus);
 }
 
-bool bif_get_atts_2(query *q)
+static bool bif_get_atts_2(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,callable_or_var);
@@ -291,7 +291,7 @@ bool any_attributed(query *q)
 	return false;
 }
 
-bool bif_sys_list_attributed_1(query *q)
+static bool bif_sys_list_attributed_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	check_heap_error(init_tmp_heap(q));
@@ -345,7 +345,7 @@ bool bif_sys_list_attributed_1(query *q)
 	return unify(q, p1, p1_ctx, l, 0);
 }
 
-bool bif_sys_attributed_var_1(query *q)
+static bool bif_sys_attributed_var_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	const frame *f = GET_FRAME(p1_ctx);
@@ -384,7 +384,7 @@ bool bif_sys_attributed_var_1(query *q)
 	return true;
 }
 
-bool bif_sys_unattributed_var_1(query *q)
+static bool bif_sys_unattributed_var_1(query *q)
 {
 	return !bif_sys_attributed_var_1(q);
 }
@@ -416,7 +416,7 @@ static void set_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c, pl_idx c_ctx)
 	}
 }
 
-bool bif_sys_undo_trail_2(query *q)
+static bool bif_sys_undo_trail_2(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,var);
@@ -469,7 +469,7 @@ bool bif_sys_undo_trail_2(query *q)
 	return true;
 }
 
-bool bif_sys_redo_trail_1(query * q)
+static bool bif_sys_redo_trail_1(query * q)
 {
 	GET_FIRST_ARG(p1,blob);
 	const bind_state *save = (bind_state*)p1->val_blob;
@@ -507,6 +507,8 @@ builtins g_atts_bifs[] =
 	{"$list_attributed", 1, bif_sys_list_attributed_1, "-list", false, false, BLAH},
 	{"$unattributed_var", 1, bif_sys_unattributed_var_1, "@variable", false, false, BLAH},
 	{"$attributed_var", 1, bif_sys_attributed_var_1, "@variable", false, false, BLAH},
+	{"$undo_trail", 2, bif_sys_undo_trail_2, "-list,-blob", false, false, BLAH},
+	{"$redo_trail", 1, bif_sys_redo_trail_1, "+blob", false, false, BLAH},
 
 	{0}
 };
