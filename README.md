@@ -159,12 +159,19 @@ Older compilers may require:
 
 to avoid issues with newer flags.
 
-Then...
+Finally...
+
+	make install
+
+to install locally.
+
+Optionally...
 
 	make test
 
-There should be no errors, Further (if valgrind is installed)...
+and there should be no errors, Further (if valgrind is installed)...
 
+	make check 			# or, more extensively
 	make leaks
 
 Should show no memory out-of-bounds, null-pointer, use after free
