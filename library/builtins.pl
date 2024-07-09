@@ -24,9 +24,10 @@ predicate_property(P, A) :-
 			meta_predicate(_),imported_from(_),template(_),
 			iso,visible
 			],
-			memberchk(A, Controls) ->
+			( memberchk(A, Controls) ->
 				true
 			;	throw(error(domain_error(predicate_property, A), P))
+			)
 		)
 	),
 	must_be(P, callable, predicate_property/2, _),
@@ -46,11 +47,12 @@ evaluable_property(P, A) :-
 	(	var(A) ->
 		true
 	; 	(Controls = [iso,built_in,static,dynamic,template(_),template(_,_)],
-		memberchk(A, Controls) ->
-			true
-		;	(
-			must_be(A, callable, evaluable_property/2, _),
-			throw(error(domain_error(evaluable_property, A), P))
+			(memberchk(A, Controls) ->
+				true
+			;	(
+				must_be(A, callable, evaluable_property/2, _),
+				throw(error(domain_error(evaluable_property, A), P))
+				)
 			)
 		)
 	),
@@ -141,11 +143,9 @@ flatten_(NonList, Tl, [NonList|Tl]).
 :- help(flatten(+list,-list), [iso(false)]).
 
 '$post_unify_hook' :-
-	setup_call_cleanup(
-		'$undo_trail'(Vars, State),
-		process_vars_(Vars, [], Goals),
-		'$redo_trail'(State)
-		),
+	'$undo_trail'(Vars, State),
+	process_vars_(Vars, [], Goals),
+	'$redo_trail'(State),
 	maplist(call, Goals).
 
 process_vars_([], Goals, Goals).
