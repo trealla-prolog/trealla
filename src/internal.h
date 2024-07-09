@@ -720,7 +720,6 @@ struct query_ {
 	bool noretry:1;
 	bool is_redo:1;
 	bool run_hook:1;
-	bool in_hook:1;
 	bool do_dump_vars:1;
 	bool is_dump_vars:1;
 	bool portray_vars:1;
