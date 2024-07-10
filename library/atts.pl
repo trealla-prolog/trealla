@@ -1,5 +1,8 @@
 :- module(atts, [
-		op(1199, fx, attribute)
+		op(1199, fx, attribute),
+		get_attr/3,
+		put_attr/3,
+		del_attr/2
 	]).
 
 % Compatability
