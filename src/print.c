@@ -1280,6 +1280,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	cell *rhs = lhs + lhs->nbr_cells;
 	cell *save_rhs = rhs;
 	pl_idx rhs_ctx = c_ctx;
+	const char *lhs_src = C_STR(q, lhs);
 	const char *rhs_src = C_STR(q, rhs);
 	if (running) lhs = deref(q, lhs, lhs_ctx);
 	if (running) lhs_ctx = q->latest_ctx;
@@ -1369,6 +1370,9 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 	//q->last_thing_was_symbol += is_symbol;
 	space = iswalpha(peek_char_utf8(src)) || (q->last_thing == WAS_SYMBOL);
+
+	if (!strcmp(lhs_src, "!"))
+		space = false;
 
 	if (q->listing && !depth && !strcmp(src, ":-"))
 		space = true;
