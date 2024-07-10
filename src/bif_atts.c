@@ -229,6 +229,7 @@ static bool bif_get_atts_2(query *q)
 	return is_minus ? true : false;
 }
 
+#if 0
 static bool check_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c, pl_idx c_ctx)
 {
 	bool any = false;
@@ -253,6 +254,7 @@ static bool check_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c, pl_idx c_ctx
 
 	return !any;
 }
+#endif
 
 bool any_attributed(query *q)
 {
