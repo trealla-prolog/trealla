@@ -2,6 +2,8 @@
 		op(1199, fx, attribute)
 	]).
 
+% Compatability
+
 get_attr(Var, Module, Value) :-
 	var(Var),
 	Access =.. [Module, Value],
