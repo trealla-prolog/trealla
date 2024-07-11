@@ -351,15 +351,8 @@ void reset_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
 {
 	const frame *f = GET_FRAME(c_ctx);
 	slot *e = GET_SLOT(f, c->var_nbr);
-
-	if (is_compound(v)) {
-		make_indirect(&e->c, v, v_ctx);
-	} else if (is_var(v)) {
-		make_ref(&e->c, v->var_nbr, v_ctx);
-	} else {
-		e->c = *v;
-		share_cell(v);
-	}
+	e->c = *v;
+	share_cell(v);
 }
 
 static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth);
