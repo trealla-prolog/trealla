@@ -73,14 +73,6 @@ bool call_userfun(query *q, cell *c, pl_idx c_ctx);
 	if (is_builtin(c) && c->bif_ptr && (c->bif_ptr->fn != bif_iso_float_1) && (c->bif_ptr->fn != bif_iso_integer_1)) \
 		return throw_error(q, c, q->st.curr_frame, "type_error", "evaluable");
 
-#if USE_FFI
-bool bif_sys_dlopen_3(query *q);
-bool bif_sys_dlsym_3(query *q);
-bool bif_sys_dlclose_1(query *q);
-bool bif_sys_ffi_register_function_4(query *q);
-bool bif_sys_ffi_register_predicate_4(query *q);
-#endif
-
 bool bif_iso_add_2(query *q);
 bool bif_iso_float_1(query *q);
 bool bif_iso_integer_1(query *q);
