@@ -70,10 +70,11 @@ typedef struct foreign_struct_ {
 	const char *names[MAX_ARITY];
 } foreign_struct;
 
-static foreign_struct g_ffi_structs[MAX_FFI] =
-{
-	{0}
-};
+static foreign_struct g_ffi_structs[MAX_FFI] = {{0}};
+
+typedef struct nested_elements {
+	ffi_type *elements[MAX_FFI_ARGS];
+} nested_elements;
 
 #if USE_FFI
 void *do_dlopen(const char *filename, int flag)
@@ -646,7 +647,7 @@ bool wrap_ffi_function(query *q, builtins *ptr)
 	cell *c = p1;
 	pl_idx c_ctx = p1_ctx;
 
-	ffi_cif cif;
+	ffi_cif cif = {0};
 	ffi_type *arg_types[MAX_FFI_ARGS];
 	void *arg_values[MAX_FFI_ARGS];
 	void *s_args[MAX_FFI_ARGS];
@@ -914,9 +915,12 @@ bool wrap_ffi_function(query *q, builtins *ptr)
 	}
 
 	ffi_type *ffi_ret_type = NULL;
+	ffi_status ok;
 
-	if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, ptr->arity, ffi_ret_type, arg_types) != FFI_OK)
+	if ((ok = ffi_prep_cif(&cif, FFI_DEFAULT_ABI, ptr->arity, ffi_ret_type, arg_types)) != FFI_OK) {
+		printf("Error: ffi_prep_cif status=%d\n", ok);
 		return false;
+	}
 
 	result r;
 	ffi_call(&cif, FFI_FN(ptr->fn), &r, arg_values);
@@ -967,11 +971,6 @@ bool wrap_ffi_function(query *q, builtins *ptr)
 	q->accum = tmp;
 	return true;
 }
-
-typedef struct nested_elements {
-	ffi_type *elements[MAX_FFI_ARGS];
-}
- nested_elements;
 
 static bool handle_struct1(query *q, foreign_struct *sptr, nested_elements *nested, ffi_type *types, unsigned *pdepth)
 {
@@ -1551,9 +1550,9 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 	printf("\n");
 #endif
 
-	// Can pre-compile the return type...
+	// Can pre-compile the return type... NO!
 
-	if (!ptr->ffi_ret_type) {
+	if (true /* !ptr->ffi_ret_type */) {
 		switch(ptr->ret_type) {
 		case(FFI_TAG_UINT8):
 			ffi_ret_type = &ffi_type_uint8;
@@ -1888,9 +1887,8 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 			cnt++;
 		}
 
-		cell *tmp = end_list(q);
-		bool ok = unify(q, c, c_ctx, tmp, q->st.curr_frame);
-		if (ok != true) return ok;
+		if (!unify(q, c, c_ctx, end_list(q), q->st.curr_frame))
+			return false;
 	}
 
 	return true;

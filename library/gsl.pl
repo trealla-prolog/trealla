@@ -24,6 +24,8 @@
 	gsl_vector_add_constant/3,
 	gsl_vector_sum/2,
 
+	gsl_vector_subvector/4,
+
 	gsl_matrix_alloc/3,
 	gsl_matrix_calloc/3,
 	gsl_matrix_free/1,
@@ -59,21 +61,35 @@
 	gsl_matrix_scale_rows/3,
 	gsl_matrix_add_constant/3,
 
+	gsl_matrix_submatrix/6,
+	gsl_matrix_row/3,
+	gsl_matrix_column/3,
+	gsl_matrix_subrow/5,
+	gsl_matrix_subcolumn/5,
+	gsl_matrix_diagonal/2,
+	gsl_matrix_subdiagonal/3,
+	gsl_matrix_superdiagonal/3,
+
 	gsl_permutation_alloc/2,
 	gsl_permutation_free/1,
+
+	gsl_eigen_symmv_alloc/2,
+	gsl_eigen_symmv/4,
+	gsl_eigen_symmv_free/1,
+	gsl_eigen_symmv_sort/3,
 
 	gsl_linalg_LU_decomp/4,
 	gsl_linalg_LU_solve/5,
 	gsl_linalg_LU_det/3,
 
-	new_vec/2,
-	vec_list/2,
+	vec_from_list/2,
+	vec_to_list/2,
 	vec_read/3,
 	vec_write/2,
 	vec_random/2,
 
-	new_mat/2,
-	mat_list/2,
+	mat_from_list/2,
+	mat_to_list/2,
 	mat_read/4,
 	mat_write/2,
 	mat_lup_det/2,
@@ -90,8 +106,10 @@
 %
 % Contributions to add new definitions are most welcome!
 
-:- foreign_struct(gsl_vector, [ulong,ulong,ptr,ptr,sint]).
-:- foreign_struct(gsl_matrix, [ulong,ulong,ulong,ptr,ptr,sint]).
+:- use_module(library(lists)).
+
+:- foreign_struct(gsl_vector_view, [ulong,ulong,ptr,ptr,sint]).
+:- foreign_struct(gsl_matrix_view, [ulong,ulong,ulong,ptr,ptr,sint]).
 
 :- use_foreign_module('libgslcblas.so', []).
 
@@ -119,6 +137,8 @@
 	gsl_vector_scale([ptr,double], sint),
 	gsl_vector_add_constant([ptr,double], sint),
 	gsl_vector_sum([ptr], double),
+
+	gsl_vector_subvector([ptr,ulong,ulong], gsl_vector_view),
 
 	gsl_matrix_alloc([ulong,ulong], ptr),
 	gsl_matrix_calloc([ulong,ulong], ptr),
@@ -155,15 +175,36 @@
 	gsl_matrix_scale_rows([ptr,ptr], sint),
 	gsl_matrix_add_constant([ptr,double], sint),
 
+	gsl_matrix_submatrix([ptr,ulong,ulong,ulong,ulong], gsl_matrix_view),
+	gsl_matrix_row([ptr,ulong], gsl_vector_view),
+	gsl_matrix_column([ptr,ulong], gsl_vector_view),
+	gsl_matrix_subrow([ptr,ulong,ulong,ulong], gsl_vector_view),
+	gsl_matrix_subcolumn([ptr,ulong,ulong,ulong], gsl_vector_view),
+	gsl_matrix_diagonal([ptr], gsl_vector_view),
+	gsl_matrix_subdiagonal([ptr,ulong], gsl_vector_view),
+	gsl_matrix_superdiagonal([ptr,ulong], gsl_vector_view),
+
 	gsl_permutation_alloc([sint], ptr),
 	gsl_permutation_free([ptr], void),
+
+	gsl_eigen_symmv_alloc([sint], ptr),
+	gsl_eigen_symmv([ptr,ptr,ptr,ptr], void),
+	gsl_eigen_symmv_free([ptr], void),
+	gsl_eigen_symmv_sort([ptr,ptr,sint], void),
 
 	gsl_linalg_LU_decomp([ptr,ptr,-sint], sint),
 	gsl_linalg_LU_solve([ptr,ptr,ptr,ptr], sint),
 	gsl_linalg_LU_det([ptr,sint], double)
 	]).
 
+gslConst(gslGSL_EIGEN_SORT_VAL_ASC, 0).
+gslConst(gslGSL_EIGEN_SORT_VAL_DESC, 1).
+gslConst(gslGSL_EIGEN_SORT_ABS_ASC, 2).
+gslConst(gslGSL_EIGEN_SORT_ABS_DESC, 3).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Create vector of random values
 
 vec_random(V, Cols) :-
 	gsl_vector_alloc(Cols, V),
@@ -172,6 +213,8 @@ vec_random(V, Cols) :-
 		gsl_vector_set(V, J, Val),
 		fail; true
 	).
+
+% Create matrix of random values
 
 mat_random(M, Rows, Cols) :-
 	gsl_matrix_alloc(Rows, Cols, M),
@@ -187,6 +230,8 @@ mat_random(M, Rows, Cols) :-
 check_error_(Goal, Check, Action) :-
 	Goal, (Check; (Action, Goal =.. [Pred|_], throw(domain_error(Pred, Check)))),
 	!.
+
+% Calculate LU(P) determinant of square matrix
 
 mat_lup_det(M0, Det0) :-
 	'$gsl_matrix_size'(M0, Rows, Cols),
@@ -223,32 +268,30 @@ mat_lup_det(M0, Det0) :-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- use_module(library(lists)).
+% Eg. vec_from_list(V, [1,2,3])
 
-% new_vec(V, [1,2,3])
-
-new_vec(V, L) :-
+vec_from_list(V, L) :-
 	length(L, Size),
 	Size > 0,
 	gsl_vector_alloc(Size, V),
-	new_vec_(V, 0, L).
+	vec_from_list_(V, 0, L).
 
-new_vec_(_, _, []) :- !.
-new_vec_(V, I, [H|T]) :-
+vec_from_list_(_, _, []) :- !.
+vec_from_list_(V, I, [H|T]) :-
 	H2 is float(H),
 	gsl_vector_set(V, I, H2),
 	I2 is I + 1,
-	new_vec_(V, I2, T).
+	vec_from_list_(V, I2, T).
 
-vec_list(V, L) :-
+vec_to_list(V, L) :-
 	'$gsl_vector_size'(V, Size),
-	vec_list_(V, Size, [], L).
+	vec_to_list_(V, Size, [], L).
 
-vec_list_(_, 0, L, L) :- !.
-vec_list_(V, Col, L0, L) :-
+vec_to_list_(_, 0, L, L) :- !.
+vec_to_list_(V, Col, L0, L) :-
 	NewCol is Col - 1,
 	gsl_vector_get(V, NewCol, Val),
-	vec_list_(V, NewCol, [Val|L0], L).
+	vec_to_list_(V, NewCol, [Val|L0], L).
 
 vec_write(V, S) :-
 	'$gsl_vector_write'(V, S).
@@ -260,9 +303,9 @@ vec_read(V, S, Size1) :-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% new_mat(M, [[1,2,3],[4,5,6],[7,8,9]])
+% Eg. mat_from_list(M, [[1,2,3],[4,5,6],[7,8,9]])
 
-new_mat(M, L) :-
+mat_from_list(M, L) :-
 	length(L, Rows),
 	Rows > 0,
 	L = [H|T],
@@ -284,21 +327,21 @@ new_col_(M, Row, Col, [H|T]) :-
 	Col2 is Col + 1,
 	new_col_(M, Row, Col2, T).
 
-mat_list(M, L) :-
+mat_to_list(M, L) :-
 	'$gsl_matrix_size'(M, Size1, Size2),
-	mat_list_row_(M, Size1, Size2, [], L).
+	mat_to_list_row_(M, Size1, Size2, [], L).
 
-mat_list_row_(_, 0, _, L, L) :- !.
-mat_list_row_(M, Row, Size2, L0, L) :-
+mat_to_list_row_(_, 0, _, L, L) :- !.
+mat_to_list_row_(M, Row, Size2, L0, L) :-
 	NewRow is Row - 1,
-	mat_list_col_(M, NewRow, Size2, [], NewL),
-	mat_list_row_(M, NewRow, Size2, [NewL|L0], L).
+	mat_to_list_col_(M, NewRow, Size2, [], NewL),
+	mat_to_list_row_(M, NewRow, Size2, [NewL|L0], L).
 
-mat_list_col_(_, _, 0, L, L) :- !.
-mat_list_col_(M, Row, Col, L0, L) :-
+mat_to_list_col_(_, _, 0, L, L) :- !.
+mat_to_list_col_(M, Row, Col, L0, L) :-
 	NewCol is Col - 1,
 	gsl_matrix_get(M, Row, NewCol, Val),
-	mat_list_col_(M, Row, NewCol, [Val|L0], L).
+	mat_to_list_col_(M, Row, NewCol, [Val|L0], L).
 
 mat_write(M, S) :-
 	'$gsl_matrix_write'(M, S).

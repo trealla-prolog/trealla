@@ -1,5 +1,7 @@
 :- use_module(library(gsl)).
 
+% Calculate the determinant of a matrix...
+
 main :-
 	open('samples/test_matrix_det.mat',read,S),
 	mat_read(M,S,Rows,Cols),
