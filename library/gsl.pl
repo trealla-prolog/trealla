@@ -270,7 +270,7 @@ mat_eigen(M, Vals, Vecs) :-
 	(Rows =:= Cols -> true; throw(error(domain_error(matrix_not_square, (Rows * Cols)), mat_eigen/3))),
 	Size is Rows,
 	gsl_vector_calloc(Size,Eval),
-	gsl_matrix_calloc(Size,4,Evec),
+	gsl_matrix_calloc(Size,Size,Evec),
 	gsl_eigen_symmv_alloc(Size,W),
 	gsl_eigen_symmv(M,Eval,Evec,W),
 	gsl_eigen_symmv_free(W),
