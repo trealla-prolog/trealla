@@ -265,6 +265,38 @@ mat_lup_det(M0, Det0) :-
 	gsl_matrix_free(M),
 	Det0 is Det.			% checks for NAN
 
+% Calculate the eigenvalues/eigenvectors of a matrix...
+
+mat_eigen(M, Vals, Vecs) :-
+	'$gsl_matrix_size'(M, Rows, Cols),
+	(Rows =:= Cols -> true; throw(error(domain_error(matrix_not_square, (Rows * Cols)), mat_eigen/3))),
+	Size is Rows,
+	gsl_vector_calloc(Size,Eval),
+	gsl_matrix_calloc(Size,4,Evec),
+	gsl_eigen_symmv_alloc(Size,W),
+	gsl_eigen_symmv(M,Eval,Evec,W),
+	gsl_eigen_symmv_free(W),
+	gslConst(gslGSL_EIGEN_SORT_ABS_ASC,Val),
+	gsl_eigen_symmv_sort(Eval,Evec,Val),
+	Size1 is Size - 1,
+
+	findall(Eval_i,
+		(between(0,Size1,I),
+			gsl_vector_get(Eval,I,Eval_i)
+		), Vals
+	),
+
+	findall(L,
+		(between(0,Size1,I),
+			gsl_matrix_column(Evec,I,Evec_i),
+			'$struct_to_pointer'(Evec_i,V),
+			vec_to_list(V,L)
+		), Vecs
+	),
+
+	gsl_vector_free(Eval),
+	gsl_matrix_free(Evec).
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
