@@ -22,11 +22,10 @@ main :-
 		gsl_vector_get(Eval,I,Eval_i),
 		gsl_matrix_column(Evec,I,Evec_i),
 
-		% TODO: just dump the vector view meta-data for now
-		format("[~d] eigenvalue=~g, eigenvector=~w~n", [I,Eval_i,Evec_i]),
-		%'$ffi_make_pointer'(Evec_i,V),
-		%vec_to_list(V,L),
-		%write(L), nl,
+		format("[~d] eigenvalue = ~g, eigenvector = ", [I,Eval_i]),
+		'$struct_to_pointer'(Evec_i,V),
+		vec_to_list(V,L),
+		write(L), nl,
 
 		fail;
 	gsl_vector_free(Eval),

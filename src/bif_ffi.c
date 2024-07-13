@@ -156,7 +156,7 @@ static bool bif_sys_dlclose_1(query *q)
 	return do_dlclose((void*)handle) ? false : true;
 }
 
-static int max_struct_idx = 0, max_ffi_idx = 0;
+static int max_struct_idx = 0, max_ffi_idx = 8;
 
 static void register_struct(prolog *pl, const char *name, unsigned arity, void *fn, uint8_t *types, const char **names)
 {
@@ -1914,9 +1914,57 @@ static bool bif_use_foreign_module_2(query *q)
 	return do_use_foreign_module(q->st.m, q->st.curr_instr);
 }
 
-bool bif_sys_struct_to_pointer_2(query *q)
+static bool bif_sys_struct_to_pointer_2(query *q)
 {
-	return false;
+	GET_FIRST_ARG(p1,list);
+	GET_NEXT_ARG(p2,var);
+	LIST_HANDLER(p1);
+	cell *c = LIST_HEAD(p1);
+	const char *name = C_STR(q, c);
+	foreign_struct *sptr = NULL;
+
+	if (!sl_get(q->pl->fortab, name, (void*)&sptr)) {
+		printf("wrapper: not found struct: %s\n", name);
+		return false;
+	}
+
+	p1 = LIST_TAIL(p1);
+	char tmpbuf[256];
+	char *dst = tmpbuf;
+	unsigned i = 0;
+
+	while (is_iso_list(p1)) {
+		cell *h = LIST_HEAD(p1);
+		uint8_t type = sptr->types[i];
+		result rs;
+
+		if (type == FFI_TAG_ULONG) {
+			rs.val_ffi_uint64 = h->val_uint;
+			memcpy(dst, &rs.val_ffi_uint64, sizeof(rs.val_ffi_uint64));
+			dst += sizeof(rs.val_ffi_uint64);
+		} else if (type == FFI_TAG_SINT) {
+			rs.val_ffi_sint = h->val_int;
+			memcpy(dst, &rs.val_ffi_sint, sizeof(rs.val_ffi_sint));
+			dst += sizeof(rs.val_ffi_sint);
+			;
+		} else if (type == FFI_TAG_PTR) {
+			rs.val_ffi_pointer = (void*)(size_t)h->val_uint;
+			memcpy(dst, &rs.val_ffi_pointer, sizeof(rs.val_ffi_pointer));
+			dst += sizeof(rs.val_ffi_pointer);
+		} else
+			printf("*** struct to ptr %u\n", i);
+
+		p1 = LIST_TAIL(p1);
+		i++;
+	}
+
+	size_t len = dst - tmpbuf;
+	char *ptr = malloc(len);
+	memcpy(ptr, tmpbuf, len);
+
+	cell tmp;
+	make_uint(&tmp, (size_t)(void*)ptr);
+	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 }
 #endif
 
@@ -1933,6 +1981,8 @@ builtins g_ffi_bifs[MAX_FFI] =
 	{"foreign_struct", 2, bif_foreign_struct_2, "+atom,+list", false, false, BLAH},
 	{"use_foreign_module", 2, bif_use_foreign_module_2, "+atom,+list", false, false, BLAH},
 #endif
+
+	// 8 builtins: see 'max_ffi_idx'
 
 	{0}
 };
