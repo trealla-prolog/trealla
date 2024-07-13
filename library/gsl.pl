@@ -98,8 +98,6 @@
 
 % GNU Scientific Library (GSL) v2.8
 %
-% UNDER DEVELOPMENT, EXPERIMENTAL
-%
 % UBUNTU: sudo apt install libgsl-dev libgslcblas0
 %
 % REF: https://www.gnu.org/software/gsl/doc/html/index.html
