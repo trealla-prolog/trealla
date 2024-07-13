@@ -265,7 +265,7 @@ mat_lup_det(M0, Det0) :-
 	gsl_matrix_free(M),
 	Det0 is Det.			% checks for NAN
 
-% Calculate the eigenvalues/eigenvectors of a matrix...
+% Calculate the eigenvalues/eigenvectors of a square matrix...
 
 mat_eigen(M, Vals, Vecs) :-
 	'$gsl_matrix_size'(M, Rows, Cols),
@@ -296,7 +296,6 @@ mat_eigen(M, Vals, Vecs) :-
 
 	gsl_vector_free(Eval),
 	gsl_matrix_free(Evec).
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
