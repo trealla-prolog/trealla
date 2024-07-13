@@ -1942,11 +1942,66 @@ static bool bif_sys_struct_to_pointer_2(query *q)
 			rs.val_ffi_uint64 = h->val_uint;
 			memcpy(dst, &rs.val_ffi_uint64, sizeof(rs.val_ffi_uint64));
 			dst += sizeof(rs.val_ffi_uint64);
+		} else if (type == FFI_TAG_LONG) {
+			rs.val_ffi_sint64 = h->val_int;
+			memcpy(dst, &rs.val_ffi_sint64, sizeof(rs.val_ffi_sint64));
+			dst += sizeof(rs.val_ffi_sint64);
+		} else if (type == FFI_TAG_USHORT) {
+			rs.val_ffi_ushort = h->val_uint;
+			memcpy(dst, &rs.val_ffi_ushort, sizeof(rs.val_ffi_ushort));
+			dst += sizeof(rs.val_ffi_ushort);
+		} else if (type == FFI_TAG_SHORT) {
+			rs.val_ffi_sshort = h->val_int;
+			memcpy(dst, &rs.val_ffi_sshort, sizeof(rs.val_ffi_sshort));
+			dst += sizeof(rs.val_ffi_sshort);
 		} else if (type == FFI_TAG_SINT) {
 			rs.val_ffi_sint = h->val_int;
 			memcpy(dst, &rs.val_ffi_sint, sizeof(rs.val_ffi_sint));
 			dst += sizeof(rs.val_ffi_sint);
-			;
+		} else if (type == FFI_TAG_UINT) {
+			rs.val_ffi_uint = h->val_uint;
+			memcpy(dst, &rs.val_ffi_uint, sizeof(rs.val_ffi_uint));
+			dst += sizeof(rs.val_ffi_uint);
+		} else if (type == FFI_TAG_SINT8) {
+			rs.val_ffi_sint8 = h->val_int;
+			memcpy(dst, &rs.val_ffi_sint8, sizeof(rs.val_ffi_sint8));
+			dst += sizeof(rs.val_ffi_sint);
+		} else if (type == FFI_TAG_UINT8) {
+			rs.val_ffi_uint8 = h->val_uint;
+			memcpy(dst, &rs.val_ffi_uint8, sizeof(rs.val_ffi_uint8));
+			dst += sizeof(rs.val_ffi_uint);
+		} else if (type == FFI_TAG_SINT16) {
+			rs.val_ffi_sint16 = h->val_int;
+			memcpy(dst, &rs.val_ffi_sint16, sizeof(rs.val_ffi_sint16));
+			dst += sizeof(rs.val_ffi_sint16);
+		} else if (type == FFI_TAG_UINT16) {
+			rs.val_ffi_uint16 = h->val_uint;
+			memcpy(dst, &rs.val_ffi_uint16, sizeof(rs.val_ffi_uint16));
+			dst += sizeof(rs.val_ffi_uint16);
+		} else if (type == FFI_TAG_SINT32) {
+			rs.val_ffi_sint32 = h->val_int;
+			memcpy(dst, &rs.val_ffi_sint32, sizeof(rs.val_ffi_sint32));
+			dst += sizeof(rs.val_ffi_sint32);
+		} else if (type == FFI_TAG_UINT32) {
+			rs.val_ffi_uint32 = h->val_uint;
+			memcpy(dst, &rs.val_ffi_uint32, sizeof(rs.val_ffi_uint32));
+			dst += sizeof(rs.val_ffi_uint32);
+		} else if (type == FFI_TAG_SINT64) {
+			rs.val_ffi_sint64 = h->val_int;
+			memcpy(dst, &rs.val_ffi_sint64, sizeof(rs.val_ffi_sint64));
+			dst += sizeof(rs.val_ffi_sint64);
+		} else if (type == FFI_TAG_UINT64) {
+			rs.val_ffi_uint64 = h->val_uint;
+			memcpy(dst, &rs.val_ffi_uint64, sizeof(rs.val_ffi_uint64));
+			dst += sizeof(rs.val_ffi_uint64);
+		} else if (type == FFI_TAG_FP32) {
+			rs.val_ffi_float = h->val_float;
+			memcpy(dst, &rs.val_ffi_float, sizeof(rs.val_ffi_float));
+			dst += sizeof(rs.val_ffi_float);
+		} else if (type == FFI_TAG_FP64) {
+			rs.val_ffi_double = h->val_float;
+			memcpy(dst, &rs.val_ffi_double, sizeof(rs.val_ffi_double));
+			dst += sizeof(rs.val_ffi_double);
 		} else if (type == FFI_TAG_PTR) {
 			rs.val_ffi_pointer = (void*)(size_t)h->val_uint;
 			memcpy(dst, &rs.val_ffi_pointer, sizeof(rs.val_ffi_pointer));
