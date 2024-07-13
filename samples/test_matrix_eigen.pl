@@ -24,7 +24,6 @@ Compare the output from above:
  to:
 
 	$ octave -q
-	QSocketNotifier: Can only be used with threads started with QThread
 	octave:1> [v,d] = eig(hilb(4));
 	octave:2> diag(d)
 	ans =
