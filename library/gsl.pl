@@ -278,18 +278,22 @@ mat_eigen(M, Vals, Vecs) :-
 	gsl_eigen_symmv_sort(Eval,Evec,Val),
 	Size1 is Size - 1,
 
-	findall(Eval_i,
+	findall(
+		Eval_i,
 		(between(0,Size1,I),
 			gsl_vector_get(Eval,I,Eval_i)
-		), Vals
+		),
+		Vals
 	),
 
-	findall(L,
+	findall(
+		L,
 		(between(0,Size1,I),
 			gsl_matrix_column(Evec,I,Evec_i),
 			'$struct_to_pointer'(Evec_i,V),
 			vec_to_list(V,L)
-		), Vecs
+		),
+		Vecs
 	),
 
 	gsl_vector_free(Eval),
