@@ -28,7 +28,11 @@ static void msleep(int ms)
 
 bool do_yield(query *q, int msecs)
 {
+#ifdef __wasi__
+	if (!q->is_task && !q->pl->is_query)
+#else
 	if (!q->is_task)
+#endif
 		return true;
 
 	q->yield_at = 0;
@@ -36,6 +40,29 @@ bool do_yield(query *q, int msecs)
 	q->tmo_msecs = get_time_in_usec() / 1000;
 	q->tmo_msecs += msecs > 0 ? msecs : 1;
 	check_heap_error(push_choice(q));
+	return false;
+}
+
+bool do_yield_then(query *q, bool status)
+{
+#ifdef __wasi__
+	if (!q->is_task && !q->pl->is_query)
+#else
+	if (!q->is_task)
+#endif
+		return true;
+
+	q->yield_at = 0;
+	q->yielded = true;
+	q->tmo_msecs = get_time_in_usec() / 1000 + 1;
+	// Push a choice point with the same result as the goal we hijacked
+	// With that we can continue as if the yield didn't happen
+	check_heap_error(push_choice(q));
+	choice *ch = GET_CURR_CHOICE();
+	if (status)
+		ch->succeed_on_retry = true;
+	else
+		ch->fail_on_retry = true;
 	return false;
 }
 

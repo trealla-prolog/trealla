@@ -1558,9 +1558,6 @@ char *print_term_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running)
 
 bool print_term_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int running)
 {
-	if (q->retry)
-		return true;
-
 	q->did_quote = false;
 	q->last_thing = WAS_SPACE;
 	SB_init(q->sb);

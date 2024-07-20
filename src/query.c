@@ -1646,7 +1646,7 @@ bool start(query *q)
 					uint64_t now = get_time_in_usec() / 1000;
 
 					if (now > q->yield_at)  {
-						do_yield(q, 0);
+						do_yield_then(q, status);
 						break;
 					}
 				}
