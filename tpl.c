@@ -315,7 +315,7 @@ int main(int ac, char *av[], char * envp[])
 	}
 
 	if (version)
-		printf("Trealla Prolog (c) Infradig 2020-2023, %s\n", g_version);
+		printf("Trealla Prolog (c) Infradig 2020-2024, %s\n", g_version);
 
 	if (version == 2) {
 		fprintf(stdout, "Usage:\n");
