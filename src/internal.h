@@ -541,7 +541,7 @@ struct run_state_ {
 	module *m;
 
 	union {
-		struct { cell *key; bool karg1_is_ground:1, karg2_is_ground:1, karg1_is_atomic:1, karg2_is_atomic:1; };
+		struct { cell *key; bool karg1_is_ground:1, karg2_is_ground:1, karg1_is_atomic:1, karg2_is_atomic:1, recursive:1;};
 		struct { uint64_t uv1, uv2; };
 		struct { int64_t v1, v2; };
 		int64_t cnt;
