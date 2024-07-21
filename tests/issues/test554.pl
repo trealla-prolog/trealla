@@ -1,3 +1,5 @@
+:-initialization(main).
+
 :- use_module(library(freeze)).
 
 foo(1).

@@ -1,0 +1,4 @@
+'https://josd.github.io/cigol#path'('http://example.org/#angers','http://example.org/#nantes').
+'https://josd.github.io/cigol#path'('http://example.org/#paris','http://example.org/#nantes').
+'https://josd.github.io/cigol#path'('http://example.org/#chartres','http://example.org/#nantes').
+'https://josd.github.io/cigol#path'('http://example.org/#lemans','http://example.org/#nantes').
