@@ -403,19 +403,16 @@ static void leave_predicate(query *q, predicate *pr)
 
 	sl_done(q->st.iter);
 	q->st.iter = NULL;
-	module_lock(pr->m);
 
-	if (--pr->refcnt != 0) {
-		module_unlock(pr->m);
+	if (--pr->refcnt != 0)
 		return;
-	}
 
 	// Predicate is no longer being used
 
-	if (!list_count(&pr->dirty)) {
-		module_unlock(pr->m);
+	if (!list_count(&pr->dirty))
 		return;
-	}
+
+	module_lock(pr->m);
 
 	if (pr->is_abolished) {
 		rule *r;
