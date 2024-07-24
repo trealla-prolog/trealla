@@ -502,8 +502,6 @@ void try_me(query *q, unsigned nbr_vars)
 		memset(e, 0, sizeof(slot));
 	}
 
-	q->has_vars = false;
-	q->no_tco = false;
 	q->tot_matches++;
 }
 
