@@ -96,9 +96,9 @@
 	mat_random/3
 	]).
 
-% GNU Scientific Library (GSL) v2.8
+% GNU Scientific Library (GSL)
 %
-% UBUNTU: sudo apt install libgsl-dev libgslcblas0
+% UBUNTU: sudo apt install libgsl-dev
 %
 % REF: https://www.gnu.org/software/gsl/doc/html/index.html
 %
