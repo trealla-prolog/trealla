@@ -2751,15 +2751,13 @@ static bool do_op(query *q, cell *p3, pl_idx p3_ctx)
 	if (pri && !CMP_STRING_TO_CSTR(q, p3, "|") && (!IS_INFIX(specifier) || (pri < 1001)))
 		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator");
 
-#if 1
-	if (!CMP_STRING_TO_CSTR(q, p3, "[]"))
-		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator");
-#endif
+	if (IS_INFIX(specifier)) {
+		if (!CMP_STRING_TO_CSTR(q, p3, "[]"))
+			return throw_error(q, p3, p3_ctx, "permission_error", "create,operator");
 
-#if 1
-	if (!CMP_STRING_TO_CSTR(q, p3, "{}"))
-		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator");
-#endif
+		if (!CMP_STRING_TO_CSTR(q, p3, "{}"))
+			return throw_error(q, p3, p3_ctx, "permission_error", "create,operator");
+	}
 
 	if (!CMP_STRING_TO_CSTR(q, p3, ","))
 		return throw_error(q, p3, p3_ctx, "permission_error", "modify,operator");
