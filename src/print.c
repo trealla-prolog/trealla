@@ -908,7 +908,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 		char tmpbuf[256];
 		sprintf(tmpbuf, "%.*g", 17, get_float(c));
-		if (!q->json) reformat_float(q, tmpbuf, c->val_float);
+		if (!q->json && !isnan(c->val_float)) reformat_float(q, tmpbuf, c->val_float);
 		SB_sprintf(q->sb, "%s", tmpbuf);
 		q->last_thing = WAS_OTHER;
 		return true;
