@@ -70,9 +70,11 @@
 	gsl_matrix_subdiagonal/3,
 	gsl_matrix_superdiagonal/3,
 
+	gsl_permutation_calloc/2,
 	gsl_permutation_alloc/2,
 	gsl_permutation_free/1,
 
+	gsl_eigen_symmv_calloc/2,
 	gsl_eigen_symmv_alloc/2,
 	gsl_eigen_symmv/4,
 	gsl_eigen_symmv_free/1,
@@ -182,9 +184,11 @@
 	gsl_matrix_subdiagonal([ptr,ulong], gsl_vector_view),
 	gsl_matrix_superdiagonal([ptr,ulong], gsl_vector_view),
 
+	gsl_permutation_calloc([ulong], ptr),
 	gsl_permutation_alloc([ulong], ptr),
 	gsl_permutation_free([ptr], void),
 
+	gsl_eigen_symmv_calloc([ulong], ptr),
 	gsl_eigen_symmv_alloc([ulong], ptr),
 	gsl_eigen_symmv([ptr,ptr,ptr,ptr], void),
 	gsl_eigen_symmv_free([ptr], void),
