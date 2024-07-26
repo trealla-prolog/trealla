@@ -72,6 +72,7 @@
 
 	gsl_permutation_calloc/2,
 	gsl_permutation_alloc/2,
+	gsl_permutation_init/1,
 	gsl_permutation_free/1,
 
 	gsl_eigen_symmv_calloc/2,
@@ -186,6 +187,7 @@
 
 	gsl_permutation_calloc([ulong], ptr),
 	gsl_permutation_alloc([ulong], ptr),
+	gsl_permutation_init([ptr], void),
 	gsl_permutation_free([ptr], void),
 
 	gsl_eigen_symmv_calloc([ulong], ptr),
