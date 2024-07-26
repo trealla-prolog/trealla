@@ -242,7 +242,7 @@ mat_lup_det(M0, Det0) :-
 	check_error_(
 		gsl_linalg_LU_decomp(M, P, Signum, Status1),
 		Status1 =:= 0,
-		gsl_matrix_free(M)
+		(gsl_permutation_free(P), gsl_matrix_free(M))
 		),
 	gsl_vector_alloc(Size, B),
 	( cfor(0, Size-1, I),
@@ -254,7 +254,7 @@ mat_lup_det(M0, Det0) :-
 	check_error_(
 		gsl_linalg_LU_solve(M, P, B, X, Status2),
 		Status2 =< 1,
-		(gsl_vector_free(X),gsl_vector_free(B),gsl_permutation_free(P))
+		(gsl_vector_free(X), gsl_vector_free(B), gsl_permutation_free(P))
 		),
 	gsl_vector_free(X),
 	gsl_vector_free(B),
