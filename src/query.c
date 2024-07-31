@@ -177,7 +177,7 @@ static bool check_trail(query *q)
 
 	pl_idx new_trailssize = alloc_grow(q, (void**)&q->trails, sizeof(trail), q->st.tp, q->trails_size*4/3, false);
 	if (!new_trailssize) {
-		q->error = true;
+		q->oom = q->error = true;
 		return false;
 	}
 
@@ -195,7 +195,7 @@ static bool check_choice(query *q)
 
 	pl_idx new_choicessize = alloc_grow(q, (void**)&q->choices, sizeof(choice), q->cp, q->choices_size*4/3, false);
 	if (!new_choicessize) {
-		q->error = true;
+		q->oom = q->error = true;
 		return false;
 	}
 
@@ -214,7 +214,7 @@ static bool check_frame(query *q)
 	pl_idx new_framessize = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.fp, q->frames_size*4/3, false);
 
 	if (!new_framessize) {
-		q->error = true;
+		q->oom = q->error = true;
 		return false;
 	}
 
@@ -237,7 +237,7 @@ bool check_slot(query *q, unsigned cnt)
 	pl_idx new_slotssize = alloc_grow(q, (void**)&q->slots, sizeof(slot), nbr, nbr*4/3, false);
 
 	if (!new_slotssize) {
-		q->error = true;
+		q->oom = q->error = true;
 		return false;
 	}
 
@@ -942,7 +942,8 @@ int create_vars(query *q, unsigned cnt)
 		return f->actual_slots;
 
 	if ((f->actual_slots + cnt) > MAX_LOCAL_VARS) {
-		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		q->oom = q->error = true;
 		return -1;
 	}
 
@@ -959,7 +960,7 @@ int create_vars(query *q, unsigned cnt)
 		pl_idx cnt2 = f->actual_slots - f->initial_slots;
 
 		if (!check_slot(q, cnt2)) {
-			printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+			//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 			return -1;
 		}
 
@@ -1716,11 +1717,9 @@ bool start(query *q)
 		}
 
 		if (q->oom) {
-			if (q->oom++ == 99) {
-				q->error = true;
-				printf("\n%%terminated\n");
-				break;
-			}
+			q->error = true;
+			printf("\nsystem_error(out_of_memory). %%terminated\n");
+			break;
 		}
 	}
 
