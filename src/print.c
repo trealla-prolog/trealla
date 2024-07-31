@@ -953,7 +953,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 		while (is_list(l)) {
 			if (q->max_depth && (cnt++ >= q->max_depth)) {
-				SB_sprintf(q->sb, "%s", "\"||... ");
+				SB_sprintf(q->sb, "%s", "\"");
 				closing_quote = false;
 				break;
 			}
