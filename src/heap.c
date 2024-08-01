@@ -400,21 +400,8 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 				check_heap_error(tmp);
 				c->tmp_attrs = malloc(sizeof(cell)*tmp->nbr_cells);
 				dup_cells(c->tmp_attrs, tmp, tmp->nbr_cells);
-				const frame *f2 = GET_FRAME(c->var_ctx);
-				slot *e2 = GET_SLOT(f2, c->var_nbr);
-				e2->c.attrs = c->tmp_attrs;
-			} else if (copy_attrs && c->tmp_attrs) {
-				cell *tmp = deep_copy_to_tmp(q, c->tmp_attrs, q->st.fp, false);
-				check_heap_error(tmp);
-				cell *tmp_attrs = malloc(sizeof(cell)*tmp->nbr_cells);
-				dup_cells(tmp_attrs, tmp, tmp->nbr_cells);
-				const frame *f2 = GET_FRAME(c->var_ctx);
-				slot *e2 = GET_SLOT(f2, c->var_nbr);
-				e2->c.attrs = tmp_attrs;
-				c->tmp_attrs = NULL;
 			}
 		}
-
 	}
 
 	return true;
@@ -489,19 +476,6 @@ static cell *deep_copy_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx
 		q->vars = NULL;
 	}
 
-	if (!copy_attrs)
-		return tmp;
-
-	c = tmp;
-
-	for (pl_idx i = 0; i < tmp->nbr_cells; i++, c++) {
-		if (is_var(c) && c->tmp_attrs) {
-			const frame *f = GET_FRAME(c->var_ctx);
-			slot *e = GET_SLOT(f, c->var_nbr);
-			e->c.attrs = c->tmp_attrs;
-		}
-	}
-
 	return tmp;
 }
 
@@ -520,6 +494,22 @@ cell *deep_copy_to_heap(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
 	cell *tmp2 = alloc_on_heap(q, tmp->nbr_cells);
 	if (!tmp2) return NULL;
 	dup_cells(tmp2, tmp, tmp->nbr_cells);
+
+	if (!copy_attrs)
+		return tmp2;
+
+	cell *c = tmp2;
+
+	for (pl_idx i = 0; i < tmp2->nbr_cells; i++, c++) {
+		if (is_var(c) && c->tmp_attrs) {
+			const frame *f = GET_FRAME(c->var_ctx);
+			slot *e = GET_SLOT(f, c->var_nbr);
+			e->c.attrs = deep_clone_to_heap(q, c->tmp_attrs, q->st.curr_frame);
+			free(c->tmp_attrs);
+			c->tmp_attrs = NULL;
+		}
+	}
+
 	return tmp2;
 }
 
@@ -533,15 +523,47 @@ cell *deep_copy_to_heap_with_replacement(query *q, cell *p1, pl_idx p1_ctx, bool
 	cell *tmp2 = alloc_on_heap(q, tmp->nbr_cells);
 	if (!tmp2) return NULL;
 	dup_cells(tmp2, tmp, tmp->nbr_cells);
+
+	if (!copy_attrs)
+		return tmp2;
+
+	cell *c = tmp2;
+
+	for (pl_idx i = 0; i < tmp2->nbr_cells; i++, c++) {
+		if (is_var(c) && c->tmp_attrs) {
+			const frame *f = GET_FRAME(c->var_ctx);
+			slot *e = GET_SLOT(f, c->var_nbr);
+			e->c.attrs = deep_clone_to_heap(q, c->tmp_attrs, q->st.curr_frame);
+			free(c->tmp_attrs);
+			c->tmp_attrs = NULL;
+		}
+	}
+
 	return tmp2;
 }
 
 cell *shallow_copy_to_heap(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
 {
 	q->noderef = true;
-	cell *tmp = deep_copy_to_heap(q, p1, p1_ctx, copy_attrs);
+	cell *tmp2 = deep_copy_to_heap(q, p1, p1_ctx, copy_attrs);
 	q->noderef = false;
-	return tmp;
+
+	if (!copy_attrs)
+		return tmp2;
+
+	cell *c = tmp2;
+
+	for (pl_idx i = 0; i < tmp2->nbr_cells; i++, c++) {
+		if (is_var(c) && c->tmp_attrs) {
+			const frame *f = GET_FRAME(c->var_ctx);
+			slot *e = GET_SLOT(f, c->var_nbr);
+			e->c.attrs = deep_clone_to_heap(q, c->tmp_attrs, q->st.curr_frame);
+			free(c->tmp_attrs);
+			c->tmp_attrs = NULL;
+		}
+	}
+
+	return tmp2;
 }
 
 cell *alloc_on_queuen(query *q, unsigned qnbr, const cell *c)
