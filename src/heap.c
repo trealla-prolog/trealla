@@ -396,10 +396,16 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 			c->var_ctx = q->st.curr_frame;
 
 			if (copy_attrs && e->c.attrs) {
-				cell *tmp = deep_copy_to_tmp(q, e->c.attrs, q->st.curr_frame, false);
+				cell *save_tmp_heap = q->tmp_heap;
+				pl_idx save_tmp_hp = q->tmphp;
+				q->tmp_heap = NULL;
+				cell *tmp = deep_copy_to_heap(q, e->c.attrs, q->st.curr_frame, false);
 				check_heap_error(tmp);
 				c->tmp_attrs = malloc(sizeof(cell)*tmp->nbr_cells);
 				dup_cells(c->tmp_attrs, tmp, tmp->nbr_cells);
+				free(q->tmp_heap);
+				q->tmp_heap = save_tmp_heap;
+				q->tmphp = save_tmp_hp;
 			}
 		}
 	}
