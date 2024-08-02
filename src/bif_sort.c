@@ -42,6 +42,11 @@ static int nodecmp(const void *ptr1, const void *ptr2)
 		return ok < 0 ? 1 : ok > 0 ? -1 : 0;
 }
 
+static int nodecmp_(const void *ptr1, const void *ptr2, const void *data)
+{
+	return nodecmp(ptr1, ptr2);
+}
+
 static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysort, bool *status)
 {
 	pl_int max = PL_INT_MAX, skip = 0;
@@ -81,7 +86,7 @@ static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysor
 		p1_ctx = q->latest_ctx;
 	}
 
-	sort_r(base, cnt, sizeof(basepair), (void*)nodecmp, NULL);
+	sort_r(base, cnt, sizeof(basepair), (void*)nodecmp_, NULL);
 
 	for (size_t i = 0; i < cnt; i++) {
 		if (i > 0) {
@@ -260,7 +265,7 @@ static cell *nodesort4(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool ascen
 		p1_ctx = q->latest_ctx;
 	}
 
-	sort_r(base, cnt, sizeof(basepair), (void*)nodecmp, NULL);
+	sort_r(base, cnt, sizeof(basepair), (void*)nodecmp_, NULL);
 
 	for (size_t i = 0; i < cnt; i++) {
 		if (i > 0) {
