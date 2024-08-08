@@ -3,21 +3,18 @@
 #include <stdio.h>
 #include <string.h>
 
-// A string buffer
+// A dynamically allocating string buffer
 
-#define SB_LEN 1024
+#define SB_LEN 256			// Initial size
 
 typedef struct {
-	char tmpbuf[SB_LEN];
+	char tmpbuf[SB_LEN];	// No allocs if less than this
 	char *buf, *dst;
 	size_t buf_size;
 } stringbuf;
 
 #define SB(pr) stringbuf pr##_buf;								\
-	pr##_buf.buf_size = SB_LEN;									\
-	pr##_buf.buf = pr##_buf.tmpbuf;								\
-	pr##_buf.dst = pr##_buf.buf;								\
-	*pr##_buf.dst = '\0';
+	SB_init(pr);
 
 #define SB_alloc(pr,len) stringbuf pr##_buf; 					\
 	pr##_buf.buf_size = len;									\
@@ -34,7 +31,8 @@ typedef struct {
 			pr##_buf.buf = realloc(pr##_buf.buf, 				\
 				(pr##_buf.buf_size += ((len)-rem)) + 256 + 1);	\
 		} else {												\
-			pr##_buf.buf = malloc((pr##_buf.buf_size += ((len)-rem)) + 256 + 1); \
+			pr##_buf.buf = malloc((pr##_buf.buf_size += 		\
+				((len)-rem)) + 256 + 1); 						\
 			memcpy(pr##_buf.buf, pr##_buf.tmpbuf, offset+1);	\
 		}														\
 		ensure(pr##_buf.buf);									\
@@ -43,6 +41,8 @@ typedef struct {
 }
 
 #define SB_init(pr) {											\
+	pr##_buf.buf_size = sizeof(pr##_buf.tmpbuf);				\
+	pr##_buf.buf = pr##_buf.tmpbuf;								\
 	pr##_buf.dst = pr##_buf.buf;								\
 	if (pr##_buf.buf) pr##_buf.dst[0] = '\0';					\
 }
@@ -140,12 +140,10 @@ typedef struct {
 }
 
 #define SB_cstr(pr) pr##_buf.buf ? pr##_buf.buf : ""
-
 #define SB_strcmp(pr,s) strcmp(pr##_buf.buf?pr##_buf.buf:"", s)
 
 #define SB_free(pr) {											\
 	if (pr##_buf.buf != pr##_buf.tmpbuf)						\
 		free(pr##_buf.buf);										\
-	pr##_buf.buf_size = 0;										\
-	pr##_buf.buf = pr##_buf.dst = NULL;							\
+	SB_init(pr);												\
 }
