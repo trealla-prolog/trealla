@@ -322,9 +322,9 @@ static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx
 	if (c_attrs)
 		q->run_hook = true;
 
-	// If anything outside the current frame (q->st.curr_frame) points
-	// inside the current frame then we can't TCO.
-	// If anything points inside the next (q->st.fp) frame then ditto.
+	// If anything outside the current frame points inside the
+	// current frame then we can't TCO.
+	// If anything points inside the next frame then ditto.
 
 	if (is_var(v)) {
 		make_ref(&e->c, v->var_nbr, v_ctx);
