@@ -409,7 +409,10 @@ void dump_vars(query *q, bool partial)
 		else
 			fprintf(stdout, " ");
 
-		fprintf(stdout, "%s = ", p->vartab.var_name[i]);
+		if (is_rational(c))
+			fprintf(stdout, "%s is ", p->vartab.var_name[i]);
+		else
+			fprintf(stdout, "%s = ", p->vartab.var_name[i]);
 
 		int j = check_duplicate_result(q, i, c, c_ctx);
 
