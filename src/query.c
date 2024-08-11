@@ -675,7 +675,7 @@ static void commit_frame(query *q, cell *body)
 	bool last_match = is_det || cl->is_first_cut || !next_key;
 	bool tco = false;
 
-#if 0
+#if 1
 	if (q->st.curr_rule->owner->is_tco)
 		q->no_tco = false;
 #endif
