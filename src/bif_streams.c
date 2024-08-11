@@ -2777,12 +2777,17 @@ bool parse_write_params(query *q, cell *c, pl_idx c_ctx, cell **vnames, pl_idx *
 
 		cell *c1_orig = c1;
 		pl_idx c1_orig_ctx = c1_ctx;
+		bool any1 = false, any2 = false;
 		LIST_HANDLER(c1);
 
 		while (is_list(c1)) {
 			cell *h = LIST_HEAD(c1);
-			h = deref(q, h, c1_ctx);
-			pl_idx h_ctx = q->latest_ctx;
+			pl_idx h_ctx = c1_ctx;
+
+			slot *e = NULL;
+			uint32_t save_vgen = 0;
+			int both = 0;
+			DEREF_VAR(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
 
 			if (is_var(h)) {
 				throw_error(q, h, h_ctx, "instantiation_error", "write_option");
@@ -2821,8 +2826,20 @@ bool parse_write_params(query *q, cell *c, pl_idx c_ctx, cell **vnames, pl_idx *
 			}
 
 			c1 = LIST_TAIL(c1);
+
+#if USE_RATIONAL_TREES
+			both = 0;
+			DEREF_VAR(any2, both, save_vgen, e, e->vgen, c1, c1_ctx, q->vgen);
+
+			if (both) {
+				throw_error(q, c, c_ctx, "domain_error", "write_option");
+				return false;
+			}
+#else
+			c1 = LIST_TAIL(c1);
 			c1 = deref(q, c1, c1_ctx);
 			c1_ctx = q->latest_ctx;
+#endif
 		}
 
 		if (is_var(c1)) {

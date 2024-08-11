@@ -522,7 +522,6 @@ static void print_string_canonical(query *q, cell *c, pl_idx c_ctx, int running,
 
 	while (is_list(c)) {
 		cell *h = LIST_HEAD(c);
-
 		const char *src = C_STR(q, h);
 
 		if (needs_quoting(q->st.m, src, strlen(src))) {
@@ -555,7 +554,6 @@ static void print_string_list(query *q, cell *c, pl_idx c_ctx, int running, bool
 
 	while (is_list(c)) {
 		cell *h = LIST_HEAD(c);
-
 		const char *src = C_STR(q, h);
 
 		if (needs_quoting(q->st.m, src, strlen(src)) && q->quoted) {
