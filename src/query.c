@@ -681,13 +681,13 @@ static void commit_frame(query *q, cell *body)
 #endif
 
 	if (!q->no_tco
-		&& !q->st.m->no_tco	// For CLPZ
 		&& last_match
 		&& (q->st.fp == (q->st.curr_frame + 1))
+		&& !q->st.m->no_tco	// For CLPZ
 		) {
 		bool tail_call = is_tail_call(q->st.curr_instr);
 		bool tail_recursive = tail_call && is_recursive_call(q->st.curr_instr);
-		bool slots_ok = f->initial_slots <= cl->nbr_vars;
+		bool slots_ok = !f->initial_slots || (f->initial_slots <= cl->nbr_vars);
 		bool choices = commit_any_choices(q, f);
 		tco = slots_ok && tail_recursive && !choices;
 
