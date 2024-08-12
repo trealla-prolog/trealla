@@ -675,7 +675,7 @@ static void commit_frame(query *q, cell *body)
 	bool last_match = is_det || cl->is_first_cut || !next_key;
 	bool tco = false;
 
-#if 1
+#if 0
 	if (q->st.curr_rule->owner->is_tco)
 		q->no_tco = false;
 #endif
@@ -688,8 +688,7 @@ static void commit_frame(query *q, cell *body)
 		bool tail_call = is_tail_call(q->st.curr_instr);
 		bool tail_recursive = tail_call && is_recursive_call(q->st.curr_instr);
 		bool slots_ok = !f->initial_slots || (f->initial_slots <= cl->nbr_vars);
-		bool choices = commit_any_choices(q, f);
-		tco = slots_ok && tail_recursive && !choices;
+		tco = slots_ok && tail_recursive && !commit_any_choices(q, f);
 
 #if 0
 		const cell *head = get_head((cell*)cl->cells);
