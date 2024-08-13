@@ -687,7 +687,7 @@ static void commit_frame(query *q, cell *body)
 		) {
 		bool tail_call = is_tail_call(q->st.curr_instr);
 		bool tail_recursive = tail_call && is_recursive_call(q->st.curr_instr);
-		bool slots_ok = !f->initial_slots || (f->initial_slots <= cl->nbr_vars);
+		bool slots_ok = f->initial_slots <= cl->nbr_vars;
 		tco = slots_ok && tail_recursive && !commit_any_choices(q, f);
 
 #if 0
