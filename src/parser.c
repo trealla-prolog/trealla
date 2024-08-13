@@ -1257,6 +1257,23 @@ static void check_first_cut(clause *cl)
 	}
 }
 
+static void check_complex(clause *cl)
+{
+	cell *c = get_head(cl->cells);
+	cell *save_c = c;
+	c++;
+
+	for (unsigned i = 0; i < c->arity; i++) {
+		if (is_iso_list(c)) {
+			save_c->flags |= FLAG_COMPLEX;
+			//printf("*** complex %s/%u\n", C_STR(cl->owner, save_c), save_c->arity);
+			break;
+		}
+
+		c += c->nbr_cells;
+	}
+}
+
 static pl_idx get_varno(parser *p, const char *src, bool in_body)
 {
 	int anon = !strcmp(src, "_");
@@ -3265,6 +3282,7 @@ static bool process_term(parser *p, cell *p1)
 	}
 
 	check_first_cut(&r->cl);
+	check_complex(&r->cl);
 	r->cl.is_fact = !get_logical_body(r->cl.cells);
 	r->cl.has_local_vars = p->cl->has_local_vars;
 	r->line_nbr_start = p->line_nbr_start;

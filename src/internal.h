@@ -170,6 +170,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_recursive_call(c) ((c)->flags & FLAG_RECURSIVE_CALL)
 #define is_temporary(c) (is_var(c) && ((c)->flags & FLAG_VAR_TEMPORARY))
 #define is_local(c) (is_var(c) && ((c)->flags & FLAG_VAR_LOCAL))
+#define is_complex(c) ((c)->flags & FLAG_COMPLEX)
 #define is_ref(c) (is_var(c) && ((c)->flags & FLAG_VAR_REF))
 #define is_op(c) (c->flags & 0xE000) ? true : false
 #define is_callable(c) (is_interned(c) || (is_cstring(c) && !is_string(c)))
@@ -280,6 +281,7 @@ enum {
 
 	FLAG_BLOB_SREGEX=1<<0,				// used with TAG_BLOB
 
+	FLAG_COMPLEX=1<<5,
 	FLAG_GROUND=1<<6,
 	FLAG_TAIL_CALL=1<<7,
 	FLAG_RECURSIVE_CALL=1<<8,
