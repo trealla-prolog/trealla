@@ -1248,9 +1248,9 @@ static bool do_sub_atom(query *q, cell *p1, cell *p2, pl_idx p2_ctx, cell *p3, p
 	if (after < 0)
 		return false;
 
-	q->st.v1 = before + (len ? len : 1);
+	q->st.v1 = before + 1;
 
-	if (after && strstr(src2+(len?len:1), s))
+	if (after && strstr(src2+1, s))
 		check_heap_error(push_choice(q));
 
 	cell tmp;
