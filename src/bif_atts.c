@@ -44,7 +44,7 @@ static bool do_put_atts(query *q, cell *attr, pl_idx attr_ctx, bool is_minus)
 	cell *c = deref(q, &e->c, e->c.var_ctx);
 	pl_idx c_ctx = q->latest_ctx;
 	frame *fcurr = GET_CURR_FRAME();
-	fcurr->no_tco = true;
+	//fcurr->no_tco = true;
 
 	if (!c->attrs && is_minus)
 		return true;
