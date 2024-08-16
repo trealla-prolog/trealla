@@ -626,7 +626,11 @@ static void reuse_frame(query *q, const clause *cl)
 
 	frame *f = GET_CURR_FRAME();
 	f->initial_slots = f->actual_slots = cl->nbr_vars;
+	f->has_local_vars = cl->has_local_vars;
+	f->no_tco = q->no_tco;
 	f->chgen = ++q->chgen;
+	f->heap_nbr = q->st.heap_nbr;
+	f->hp = q->st.hp;
 	f->overflow = 0;
 
 	const frame *newf = GET_FRAME(q->st.fp);
@@ -898,7 +902,7 @@ static bool resume_frame(query *q)
 
 	if (q->pl->opt
 		&& (!f->has_local_vars || !q->in_call)
-		&& !f->no_tco
+		&& !f->no_tco && 0
 		&& (q->st.fp == (q->st.curr_frame + 1))
 		&& (!q->cp || !resume_any_choices(q, f))
 		) {
