@@ -884,6 +884,9 @@ void cut(query *q)
 
 inline static bool resume_any_choices(const query *q, const frame *f)
 {
+	if (q->cp == 0)
+		return false;
+
 	const choice *ch = GET_CURR_CHOICE();
 	return ch->chgen > f->chgen;
 }
@@ -905,7 +908,7 @@ static bool resume_frame(query *q)
 		&& !f->no_tco
 		&& (!f->has_local_vars || !q->in_call)
 		&& (q->st.fp == (q->st.curr_frame + 1))
-		&& (!q->cp || !resume_any_choices(q, f))
+		&& !resume_any_choices(q, f)
 		) {
 		q->st.fp--;
 		q->st.sp -= f->actual_slots;
