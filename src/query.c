@@ -900,10 +900,10 @@ static bool resume_frame(query *q)
 	if (!f->prev_offset)
 		return false;
 
+#if 0
 	if (q->in_call)
 		q->in_call--;
 
-#if 0
 	if (q->pl->opt
 		&& !f->no_tco
 		&& (!f->has_local_vars || !q->in_call)
