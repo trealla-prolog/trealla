@@ -882,7 +882,7 @@ void cut(query *q)
 	}
 }
 
-inline static bool resume_any_choices(const query *q, const frame *f)
+static bool resume_any_choices(const query *q, const frame *f)
 {
 	if (q->cp == 0)
 		return false;
