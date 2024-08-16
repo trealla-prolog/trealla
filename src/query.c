@@ -900,9 +900,10 @@ static bool resume_frame(query *q)
 	if (q->in_call)
 		q->in_call--;
 
+#if 0
 	if (q->pl->opt
+		&& !f->no_tco
 		&& (!f->has_local_vars || !q->in_call)
-		&& !f->no_tco && 0
 		&& (q->st.fp == (q->st.curr_frame + 1))
 		&& (!q->cp || !resume_any_choices(q, f))
 		) {
@@ -910,6 +911,7 @@ static bool resume_frame(query *q)
 		q->st.sp -= f->actual_slots;
 		trim_slots(q);
 	}
+#endif
 
 	q->st.curr_instr = f->curr_instr;
 	q->st.curr_frame = q->st.curr_frame - f->prev_offset;
