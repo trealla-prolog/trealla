@@ -496,12 +496,8 @@ void try_me(query *q, unsigned nbr_vars)
 	f->initial_slots = f->actual_slots = nbr_vars;
 	f->base = q->st.sp;
 	//f->no_tco = false;
-
-	for (unsigned i = 0; i < nbr_vars; i++) {
-		slot *e = GET_SLOT(f, i);
-		memset(e, 0, sizeof(slot));
-	}
-
+	slot *e = GET_SLOT(f, 0);
+	memset(e, 0, sizeof(slot)*nbr_vars);
 	q->tot_matches++;
 }
 
