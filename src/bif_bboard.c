@@ -51,8 +51,7 @@ static bool bif_bb_b_put_2(query *q)
 	if (DO_DUMP) DUMP_TERM2("bb_b_put", tmpbuf, p2, p2_ctx, 1);
 
 	char *key = strdup(tmpbuf);
-	check_heap_error(init_tmp_heap(q), free(key));
-	cell *tmp = deep_clone_to_tmp(q, p2, p2_ctx);
+	cell *tmp = deep_copy_to_heap(q, p2, p2_ctx, true);
 	cell *val = malloc(sizeof(cell)*tmp->nbr_cells);
 	check_heap_error(val);
 	dup_cells(val, tmp, tmp->nbr_cells);
@@ -123,8 +122,7 @@ static bool bif_bb_put_2(query *q)
 	// Note: we have to save a copy of attributes...
 
 	char *key2 = strdup(tmpbuf2);
-	check_heap_error(init_tmp_heap(q), free(key2));
-	cell *tmp = deep_copy_to_tmp(q, p2, p2_ctx, true);
+	cell *tmp = deep_copy_to_heap(q, p2, p2_ctx, true);
 	cell *val = malloc(sizeof(cell)*tmp->nbr_cells);
 	check_heap_error(val);
 	dup_cells(val, tmp, tmp->nbr_cells);
@@ -190,7 +188,7 @@ static bool bif_bb_get_2(query *q)
 
 	prolog_unlock(q->pl);
 
-	cell *tmp = shallow_copy_to_heap(q, (cell*)val, q->st.curr_frame, true);
+	cell *tmp = deep_copy_to_heap(q, (cell*)val, q->st.curr_frame, true);
 	check_heap_error(tmp);
 
 	if (DO_DUMP) DUMP_TERM2("bb_get", tmpbuf, tmp, q->st.curr_frame, 1);
@@ -248,7 +246,7 @@ static bool bif_bb_delete_2(query *q)
 		return false;
 	}
 
-	cell *tmp = shallow_copy_to_heap(q, (cell*)val, q->st.fp, true);
+	cell *tmp = deep_copy_to_heap(q, (cell*)val, q->st.fp, true);
 	check_heap_error(tmp, prolog_unlock(q->pl));
 
 	if (DO_DUMP) DUMP_TERM2("bb_delete", tmpbuf, tmp, q->st.curr_frame, 1);

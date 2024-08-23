@@ -548,30 +548,6 @@ cell *deep_copy_to_heap_with_replacement(query *q, cell *p1, pl_idx p1_ctx, bool
 	return tmp2;
 }
 
-cell *shallow_copy_to_heap(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
-{
-	q->noderef = true;
-	cell *tmp2 = deep_copy_to_heap(q, p1, p1_ctx, copy_attrs);
-	q->noderef = false;
-
-	if (!copy_attrs)
-		return tmp2;
-
-	cell *c = tmp2;
-
-	for (pl_idx i = 0; i < tmp2->nbr_cells; i++, c++) {
-		if (is_var(c) && c->tmp_attrs) {
-			const frame *f = GET_FRAME(c->var_ctx);
-			slot *e = GET_SLOT(f, c->var_nbr);
-			e->c.attrs = deep_clone_to_heap(q, c->tmp_attrs, q->st.curr_frame);
-			free(c->tmp_attrs);
-			c->tmp_attrs = NULL;
-		}
-	}
-
-	return tmp2;
-}
-
 cell *alloc_on_queuen(query *q, unsigned qnbr, const cell *c)
 {
 	if (!q->queue[qnbr]) {
