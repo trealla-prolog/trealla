@@ -1611,9 +1611,9 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 			const char *name = C_STR(m, FIRST_ARG(c));
 			module *tmp_m = find_module(m->pl, name), *save_m = m;
 
-			if (!tmp_m)
-				m = module_create(m->pl, name);
-			else
+			if (!tmp_m) {
+				//m = module_create(m->pl, name);
+			} else
 				m = tmp_m;
 
 			cell *head = p1 + 3;
@@ -1631,9 +1631,9 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 			const char *name = C_STR(m, FIRST_ARG(c));
 			module *tmp_m = find_module(m->pl, name);
 
-			if (!tmp_m)
-				m = module_create(m->pl, name);
-			else
+			if (!tmp_m) {
+				//m = module_create(m->pl, name);
+			} else
 				m = tmp_m;
 
 			move_cells(p1, p1+2, p1->nbr_cells-2);
