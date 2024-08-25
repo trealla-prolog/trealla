@@ -5565,6 +5565,9 @@ bool bif_iso_invoke_2(query *q)
 	if (is_atom(p1)) {
 		m = find_module(q->pl, C_STR(q, p1));
 
+		if (!m && strcmp(C_STR(q, p1), "loader"))
+			return throw_error(q, p1, q->st.curr_frame, "existence_error", "module");
+
 		if (m)
 			q->st.m = m;
 	}
