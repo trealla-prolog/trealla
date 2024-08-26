@@ -39,7 +39,7 @@ static bool bif_bb_b_put_2(query *q)
 		m = find_module(q->pl, C_STR(q, p1_m));
 
 		if (!m)
-			m = module_create(q->pl, C_STR(q, p1_m));
+			return throw_error(q, p1_m, p1_ctx, "existence_error", "module");
 	} else
 		m = q->pl->global_bb ? q->pl->user_m : q->st.m;
 
@@ -101,7 +101,7 @@ static bool bif_bb_put_2(query *q)
 		m = find_module(q->pl, C_STR(q, p1_m));
 
 		if (!m)
-			m = module_create(q->pl, C_STR(q, p1_m));
+			return throw_error(q, p1_m, p1_ctx, "existence_error", "module");
 	} else
 		m = q->pl->global_bb ? q->pl->user_m : q->st.m;
 
@@ -158,7 +158,7 @@ static bool bif_bb_get_2(query *q)
 		m = find_module(q->pl, C_STR(q, p1_m));
 
 		if (!m)
-			m = module_create(q->pl, C_STR(q, p1_m));
+			return throw_error(q, p1_m, p1_ctx, "existence_error", "module");
 	} else
 		m = q->pl->global_bb ? q->pl->user_m : q->st.m;
 
@@ -227,7 +227,7 @@ static bool bif_bb_delete_2(query *q)
 		m = find_module(q->pl, C_STR(q, p1_m));
 
 		if (!m)
-			m = module_create(q->pl, C_STR(q, p1_m));
+			return throw_error(q, p1_m, p1_ctx, "existence_error", "module");
 	} else
 		m = q->pl->global_bb ? q->pl->user_m : q->st.m;
 
@@ -295,7 +295,7 @@ static bool bif_bb_update_3(query *q)
 		m = find_module(q->pl, C_STR(q, p1_m));
 
 		if (!m)
-			m = module_create(q->pl, C_STR(q, p1_m));
+			return throw_error(q, p1_m, p1_ctx, "existence_error", "module");
 	} else
 		m = q->pl->global_bb ? q->pl->user_m : q->st.m;
 
