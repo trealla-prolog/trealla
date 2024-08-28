@@ -841,22 +841,13 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		return true;
 	}
 
-	// BLIOB
+	// BLOB
 
 	if (is_blob(c)) {
 		SB_sprintf(q->sb, "'<$blob>'(%p)", c->val_ptr);
 		q->last_thing = WAS_OTHER;
 		return true;
 	}
-
-#if 0
-	// INDIRECT (?)
-
-	if (is_indirect(c)) {
-		c = c->val_ptr;
-		c_ctx = c->var_ctx;
-	}
-#endif
 
 	// NEGATIVE
 
@@ -910,25 +901,21 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		return true;
 	}
 
-	// pi
-
-	if (is_float(c) && (get_float(c) == M_PI)) {
-		SB_sprintf(q->sb, "%s", "3.141592653589793");
-		q->last_thing = WAS_OTHER;
-		return true;
-	}
-
-	// e
-
-	if (is_float(c) && (get_float(c) == M_E)) {
-		SB_sprintf(q->sb, "%s", "2.718281828459045");
-		q->last_thing = WAS_OTHER;
-		return true;
-	}
-
 	// FLOAT
 
 	if (is_float(c)) {
+		if (get_float(c) == M_PI) {
+			SB_sprintf(q->sb, "%s", "3.141592653589793");
+			q->last_thing = WAS_OTHER;
+			return true;
+		}
+
+		if (get_float(c) == M_E) {
+			SB_sprintf(q->sb, "%s", "2.718281828459045");
+			q->last_thing = WAS_OTHER;
+			return true;
+		}
+
 		if (c->val_float == 0.0)
 			c->val_float = fabs(c->val_float);
 
@@ -1003,7 +990,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		return true;
 	}
 
-	// ATOM / COMPOUND
+	// VAR / ATOM / COMPOUND
 
 	const char *src = !is_ref(c) ? C_STR(q, c) : "_";
 	size_t src_len = !is_ref(c) ? C_STRLEN(q, c) : 1;
@@ -1028,12 +1015,6 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 			my_priority = pri;
 		}
 	}
-
-	bool is_op_infix = is_op && IS_INFIX(my_specifier);
-	bool is_op_prefix = is_op && IS_PREFIX(my_specifier);
-	bool is_op_postfix = is_op && IS_POSTFIX(my_specifier);
-	bool is_op_yfx = is_op_infix && (my_specifier == OP_YFX);
-	bool is_op_xfy = is_op_infix && (my_specifier == OP_XFY);
 
 	// CANONICAL
 
@@ -1168,9 +1149,13 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 	// OP
 
-	size_t srclen = src_len;
+	bool is_op_infix = is_op && IS_INFIX(my_specifier);
+	bool is_op_prefix = is_op && IS_PREFIX(my_specifier);
+	bool is_op_postfix = is_op && IS_POSTFIX(my_specifier);
+	bool is_op_yfx = is_op_infix && (my_specifier == OP_YFX);
+	bool is_op_xfy = is_op_infix && (my_specifier == OP_XFY);
 
-	// POSTFIX
+	size_t srclen = src_len;
 
 	if (is_op_postfix) {
 		cell *lhs = c + 1;
@@ -1222,8 +1207,6 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		q->last_thing = WAS_OTHER;
 		return true;
 	}
-
-	// PREFIX
 
 	if (is_op_prefix) {
 		if (q->last_thing == WAS_SYMBOL) {
@@ -1308,7 +1291,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		return true;
 	}
 
-	// INFIX
+	// Is infix
 
 	cell *lhs = c + 1;
 	cell *save_lhs = lhs;
