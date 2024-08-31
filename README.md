@@ -299,6 +299,8 @@ Non-standard predicates
 	module/2					# module(+atom,force)
 	modules/1					# modules(-list)
 
+	load_text/2					# load_text(+string,+opts)
+
 	listing/0
 	listing/1					# listing(+PI)
 

@@ -3704,6 +3704,47 @@ static bool bif_is_list_or_partial_list_1(query *q)
 	return is_partial;
 }
 
+static bool bif_load_text_2(query *q)
+{
+	GET_FIRST_ARG(p1,string);
+	GET_NEXT_ARG(p2,list_or_nil);
+	LIST_HANDLER(p2);
+	const char *src = C_STR(q, p1);
+	module *m = q->st.m;
+
+	while (is_iso_list(p2)) {
+		cell *h = LIST_HEAD(p2);
+		cell *c = deref(q, h, p2_ctx);
+		pl_idx c_ctx = q->latest_ctx;
+
+		if (is_compound(c) && (c->arity == 1)) {
+			cell *name = c + 1;
+			name = deref(q, name, c_ctx);
+
+			if (!CMP_STRING_TO_CSTR(q, c, "module") && is_atom(name)) {
+				const char *name_s = C_STR(q, name);
+				m = find_module(q->pl, name_s);
+
+				if (!m) {
+					if (q->p->command)
+						fprintf(stdout, "Info: created module '%s'\n", name_s);
+
+					m = module_create(q->pl, name_s);
+				}
+			} else
+				return throw_error(q, c, q->latest_ctx, "domain_error", "option");
+		} else
+			return throw_error(q, c, q->latest_ctx, "domain_error", "option");
+
+		p2 = LIST_TAIL(p2);
+		p2 = deref(q, p2, p2_ctx);
+		p2_ctx = q->latest_ctx;
+	}
+
+	load_text(m, src, q->st.m->filename);
+	return true;
+}
+
 static bool bif_must_be_4(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -6631,6 +6672,7 @@ builtins g_other_bifs[] =
 	{"cyclic_term", 1, bif_cyclic_term_1, "+term", false, false, BLAH},
 	{"call_residue_vars", 2, bif_call_residue_vars_2, ":callable,-list", false, false, BLAH},
 	{"sleep", 1, bif_sleep_1, "+number", false, false, BLAH},
+	{"load_text", 2, bif_load_text_2, "+string,+list", false, false, BLAH},
 
 	{"must_be", 4, bif_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"must_be", 2, bif_must_be_2, "+atom,+term", false, false, BLAH},
