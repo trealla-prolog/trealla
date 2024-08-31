@@ -3740,6 +3740,7 @@ static bool bif_load_text_2(query *q)
 						fprintf(stdout, "Info: created module '%s'\n", name_s);
 
 					m = module_create(q->pl, name_s);
+					check_heap_error(m);
 				}
 			} else
 				return throw_error(q, c, q->latest_ctx, "domain_error", "option");
@@ -5791,6 +5792,7 @@ static bool bif_module_2(query *q)
 				fprintf(stdout, "Info: created module '%s'\n", name);
 
 			m = module_create(q->pl, name);
+			check_heap_error(m);
 		} else
 			return 0;
 	}
