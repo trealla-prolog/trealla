@@ -5718,11 +5718,30 @@ static bool bif_module_1(query *q)
 	const char *name = C_STR(q, p1);
 	module *m = find_module(q->pl, name);
 
-	if (!m) {
-		if (q->p->command)
-			fprintf(stdout, "Info: created module '%s'\n", name);
+	if (!m)
+		return 0;
 
-		m = module_create(q->pl, name);
+	q->st.m = m;
+	return true;
+}
+
+static bool bif_module_2(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,atom);
+	const char *name = C_STR(q, p1);
+	module *m = find_module(q->pl, name);
+	const char *s = C_STR(q, p2);
+	bool force = !strcmp(s, "force");
+
+	if (!m) {
+		if (force) {
+			if (q->p->command)
+				fprintf(stdout, "Info: created module '%s'\n", name);
+
+			m = module_create(q->pl, name);
+		} else
+			return 0;
 	}
 
 	q->st.m = m;
@@ -6546,6 +6565,7 @@ builtins g_other_bifs[] =
 	{"prolog_load_context", 2, bif_prolog_load_context_2, "+atom,?term", false, false, BLAH},
 	{"strip_module", 3, bif_strip_module_3, "+callable,?atom,?callable", false, false, BLAH},
 	{"module", 1, bif_module_1, "?atom", false, false, BLAH},
+	{"module", 2, bif_module_2, "+atom,+atom", false, false, BLAH},
 	{"modules", 1, bif_modules_1, "-list", false, false, BLAH},
 	{"using", 0, bif_using_0, NULL, false, false, BLAH},
 	{"use_module", 1, bif_use_module_1, "+term", false, false, BLAH},
