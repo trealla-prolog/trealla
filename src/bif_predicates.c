@@ -5770,62 +5770,12 @@ static bool bif_module_1(query *q)
 	const char *name = C_STR(q, p1);
 	module *m = find_module(q->pl, name);
 
-	if (!m)
-		return 0;
-
-	q->st.m = m;
-	return true;
-}
-
-static bool bif_module_2(query *q)
-{
-	GET_FIRST_ARG(p1,atom);
-	GET_NEXT_ARG(p2,list_or_nil);
-	const char *name = C_STR(q, p1);
-	module *m = find_module(q->pl, name);
-	const char *s = C_STR(q, p2);
-	bool force = false;
-	LIST_HANDLER(p2);
-
-	while (is_list(p2)) {
-		cell *h = LIST_HEAD(p2);
-		cell *c = deref(q, h, p2_ctx);
-
-		if (is_var(c))
-			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
-
-		if (is_compound(c) && (c->arity == 1)) {
-			cell *name = c + 1;
-			name = deref(q, name, q->latest_ctx);
-
-			if (!CMP_STRING_TO_CSTR(q, c, "force")) {
-				if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "true")) {
-					force = true;
-				} else if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "false")) {
-					force = false;
-				}
-			} else
-				return throw_error(q, c, q->latest_ctx, "domain_error", "stream_option");
-		} else
-			return throw_error(q, c, q->latest_ctx, "domain_error", "stream_option");
-
-		p2 = LIST_TAIL(p2);
-		p2 = deref(q, p2, p2_ctx);
-		p2_ctx = q->latest_ctx;
-
-		if (is_var(p2))
-			return throw_error(q, p2, p2_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
-	}
-
 	if (!m) {
-		if (force) {
-			if (q->p->command)
-				fprintf(stdout, "Info: created module '%s'\n", name);
+		if (q->p->command)
+			fprintf(stdout, "Info: created module '%s'\n", name);
 
-			m = module_create(q->pl, name);
-			check_heap_error(m);
-		} else
-			return 0;
+		m = module_create(q->pl, name);
+		check_heap_error(m);
 	}
 
 	q->st.m = m;
@@ -6649,7 +6599,6 @@ builtins g_other_bifs[] =
 	{"prolog_load_context", 2, bif_prolog_load_context_2, "+atom,?term", false, false, BLAH},
 	{"strip_module", 3, bif_strip_module_3, "+callable,?atom,?callable", false, false, BLAH},
 	{"module", 1, bif_module_1, "?atom", false, false, BLAH},
-	{"module", 2, bif_module_2, "+atom,+atom", false, false, BLAH},
 	{"modules", 1, bif_modules_1, "-list", false, false, BLAH},
 	{"using", 0, bif_using_0, NULL, false, false, BLAH},
 	{"use_module", 1, bif_use_module_1, "+term", false, false, BLAH},

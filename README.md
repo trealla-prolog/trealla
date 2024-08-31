@@ -296,7 +296,6 @@ Non-standard predicates
 	module_info/2				# module_info(+atom, -list)
 
 	module/1					# module(?atom)
-	module/2					# module(+atom,+opts)
 	modules/1					# modules(-list)
 
 	load_text/2					# load_text(+atom,+opts)
