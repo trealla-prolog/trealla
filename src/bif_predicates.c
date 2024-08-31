@@ -5780,11 +5780,42 @@ static bool bif_module_1(query *q)
 static bool bif_module_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
-	GET_NEXT_ARG(p2,atom);
+	GET_NEXT_ARG(p2,list_or_nil);
 	const char *name = C_STR(q, p1);
 	module *m = find_module(q->pl, name);
 	const char *s = C_STR(q, p2);
-	bool force = !strcmp(s, "force");
+	bool force = false;
+	LIST_HANDLER(p2);
+
+	while (is_list(p2)) {
+		cell *h = LIST_HEAD(p2);
+		cell *c = deref(q, h, p2_ctx);
+
+		if (is_var(c))
+			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+
+		if (is_compound(c) && (c->arity == 1)) {
+			cell *name = c + 1;
+			name = deref(q, name, q->latest_ctx);
+
+			if (!CMP_STRING_TO_CSTR(q, c, "force")) {
+				if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "true")) {
+					force = true;
+				} else if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "false")) {
+					force = false;
+				}
+			} else
+				return throw_error(q, c, q->latest_ctx, "domain_error", "stream_option");
+		} else
+			return throw_error(q, c, q->latest_ctx, "domain_error", "stream_option");
+
+		p2 = LIST_TAIL(p2);
+		p2 = deref(q, p2, p2_ctx);
+		p2_ctx = q->latest_ctx;
+
+		if (is_var(p2))
+			return throw_error(q, p2, p2_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+	}
 
 	if (!m) {
 		if (force) {
