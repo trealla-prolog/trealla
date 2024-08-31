@@ -3706,10 +3706,20 @@ static bool bif_is_list_or_partial_list_1(query *q)
 
 static bool bif_load_text_2(query *q)
 {
-	GET_FIRST_ARG(p1,string);
+	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,list_or_nil);
 	LIST_HANDLER(p2);
-	const char *src = C_STR(q, p1);
+	const char *src = NULL;
+
+	if (is_cstring(p1)) {
+		src = C_STR(q, p1);
+	} else if (scan_is_chars_list(q, p1, p1_ctx, true) > 0) {
+		src = chars_list_to_string(q, p1, p1_ctx);
+	} else if (is_nil(p1)) {
+		return false;
+	} else
+		return throw_error(q, p1, p1_ctx, "type_error", "chars");
+
 	module *m = q->st.m;
 
 	while (is_iso_list(p2)) {
