@@ -1038,7 +1038,7 @@ static void next_key(query *q)
 bool has_next_key(query *q)
 {
 	if (q->st.iter)
-		return sl_is_next(q->st.iter, NULL);
+		return sl_has_next(q->st.iter, NULL);
 
 	if (!q->st.curr_rule->next)
 		return false;
