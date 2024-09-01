@@ -5648,8 +5648,7 @@ static bool bif_current_module_1(query *q)
 		}
 
 		check_heap_error(push_choice(q));
-
-		module *m = list_front(&q->pl->modules);
+		module *m = q->current_m = list_front(&q->pl->modules);
 		cell tmp;
 		make_atom(&tmp, new_atom(q->pl, m->name));
 		return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
@@ -5658,7 +5657,7 @@ static bool bif_current_module_1(query *q)
 	if (!q->current_m)
 		return false;
 
-	module *m = list_next(q->current_m);
+	module *m = q->current_m = list_next(q->current_m);
 
 	if (!m)
 		return false;
