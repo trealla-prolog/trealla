@@ -25,18 +25,10 @@ sliter *sl_find_key(skiplist *l, const void *k);
 bool sl_next_key(sliter *i, void **v);
 
 sliter *sl_first(skiplist *l);
-bool sl_is_next(sliter *i, void **v);
+bool sl_has_next(sliter *i, void **v);
 bool sl_next(sliter *i, void **v);
 void *sl_key(sliter *i);
 
 void sl_done(sliter *i);
-
 size_t sl_count(const skiplist *l);
-
-void sl_dump(
-	const skiplist *l,
-	const char *(*f)(const void* k, const void* v, const void *p),
-	const void *p
-	);
-
 void sl_destroy(skiplist *l);

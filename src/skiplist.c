@@ -322,7 +322,7 @@ sliter *sl_first(skiplist *l)
 	return iter;
 }
 
-bool sl_is_next(sliter *iter, void **val)
+bool sl_has_next(sliter *iter, void **val)
 {
 	if (!iter)
 		return false;
@@ -438,23 +438,4 @@ void sl_done(sliter *iter)
 
 	if (l->is_tmp_list)
 		sl_destroy(l);
-}
-
-void sl_dump(const skiplist *l, const char *(*f)(const void*, const void*, const void*), const void *p1)
-{
-	if (!l || l->is_destroyed)
-		return;
-
-	const slnode_t *p, *q;
-	p = l->header;
-	p = p->forward[0];
-
-	while (p) {
-		q = p->forward[0];
-		printf("%s ", f(p->key, p->val, p1));
-		printf("\n");
-		p = q;
-	}
-
-	printf("\n");
 }
