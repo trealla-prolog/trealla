@@ -3991,17 +3991,13 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 	SB(src);
 
 	if (dump) {
-		SB_sprintf(src, "__G_=(%s", pSrc);
-		SB_trim_ws(src);
-		SB_trim(src, '.');
-		SB_strcat(src, "),__G_.");
-	} else {
-		SB_sprintf(src, "%s", pSrc);
-		SB_trim_ws(src);
-		SB_trim(src, '.');
-		SB_strcat(src, ".");
+		SB_strcat(src, "true,");
 	}
 
+	SB_sprintf(src, "%s", pSrc);
+	SB_trim_ws(src);
+	SB_trim(src, '.');
+	SB_strcat(src, ".");
 	p->in_body = true;
 	p->srcptr = SB_cstr(src);
 	bool ok;
