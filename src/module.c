@@ -358,7 +358,7 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 	if (created) *created = false;
 	bool found, evaluable;
 
-	if (c->val_off == g_neck_s)
+	if ((c->val_off == g_neck_s) || is_var(c))
 		return NULL;
 
 	builtins *b;
