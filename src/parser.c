@@ -3295,7 +3295,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 {
 	pl_idx arg_idx = p->cl->cidx, save_idx = 0;
 	bool last_op = true, is_func = false, last_num = false;
-	bool last_bar = false, last_quoted = false;
+	bool last_bar = false;
 	bool last_prefix = false, last_postfix = false;
 	int entered = p->entered;
 	unsigned arity = 1;
@@ -3861,7 +3861,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			priority = 0;
 		}
 
-		if (priority && IS_INFIX(specifier) && last_op && !last_postfix && !last_quoted) {
+		if (priority && IS_INFIX(specifier) && last_op && !last_postfix) {
 			specifier = 0;
 			priority = 0;
 		}
@@ -3919,7 +3919,6 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			break;
 		}
 
-		last_quoted = p->is_quoted;
 		last_op = SB_strcmp(p->token, ")") && priority;
 		last_postfix = last_op && IS_POSTFIX(specifier);
 		last_prefix = last_op && IS_PREFIX(specifier);
@@ -3942,7 +3941,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			set_float(c, get_float(&p->v));
 		} else if (!p->is_string && (!p->is_quoted || is_func || p->is_op || p->is_var
 			|| (get_builtin(p->m->pl, SB_cstr(p->token), SB_strlen(p->token), 0, &found, NULL), found)
-			|| (p->is_quoted && !SB_strcmp(p->token, "[]"))
+			|| !SB_strcmp(p->token, "[]")
 			)) {
 
 			if (is_func && !SB_strcmp(p->token, "."))

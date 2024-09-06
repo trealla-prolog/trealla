@@ -1644,6 +1644,9 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 	if (!c || !m)
 		return NULL;
 
+	if (is_cstring(c))
+		convert_to_literal(m, c);
+
 	predicate *pr = find_predicate(m, c);
 
 	if (pr && !consulting && !pr->is_dynamic)
