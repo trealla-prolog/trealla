@@ -50,7 +50,6 @@ typedef uint32_t pl_idx;
 
 #include "imath/imath.h"
 #include "imath/imrat.h"
-#include "sre/re.h"
 
 #if defined(_WIN32) || defined(__wasi__)
 char *realpath(const char *path, char resolved_path[PATH_MAX]);

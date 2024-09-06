@@ -4,6 +4,8 @@
 #include "prolog.h"
 #include "query.h"
 
+#include "sre/re.h"
+
 bool bif_sre_compile_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
