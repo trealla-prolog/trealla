@@ -481,6 +481,7 @@ static bool bif_iso_asserta_1(query *q)
 		convert_to_literal(q->st.m, h);
 
 	if (!is_interned(h)) {
+		parser_destroy(p);
 		return throw_error(q, h, q->st.curr_frame, "type_error", "callable");
 	}
 
@@ -544,6 +545,7 @@ static bool bif_iso_assertz_1(query *q)
 		convert_to_literal(q->st.m, h);
 
 	if (!is_interned(h)) {
+		parser_destroy(p);
 		return throw_error(q, h, q->st.curr_frame, "type_error", "callable");
 	}
 
@@ -714,6 +716,7 @@ static bool do_assertz_2(query *q)
 		convert_to_literal(q->st.m, h);
 
 	if (!is_interned(h)) {
+		parser_destroy(p);
 		return throw_error(q, h, q->latest_ctx, "type_error", "callable");
 	}
 
