@@ -1512,13 +1512,13 @@ void xref_clause(module *m, clause *cl, predicate *parent)
 
 		// Don't want to match on module qualified predicates
 
-		if (c->val_off == g_colon_s) {
-			xref_cell(m, cl, c, parent, 0, is_directive);
-			last_was_colon = 3;
-		} else {
-			last_was_colon--;
+		//if (c->val_off == g_colon_s) {
+		//	xref_cell(m, cl, c, parent, 0, is_directive);
+		//	last_was_colon = 3;
+		//} else {
+		//	last_was_colon--;
 			xref_cell(m, cl, c, parent, last_was_colon, is_directive);
-		}
+		//}
 	}
 }
 

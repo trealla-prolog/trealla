@@ -160,7 +160,6 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_strbuf(c) (is_cstr_blob(c) && !((c)->flags & FLAG_CSTR_SLICE))
 #define is_list(c) (is_iso_list(c) || is_string(c))
 #define is_nil(c) (is_interned(c) && !(c)->arity && ((c)->val_off == g_nil_s))
-#define is_quoted(c) ((c)->flags & FLAG_CSTR_QUOTED)
 #define is_fresh(c) ((c)->flags & FLAG_VAR_FRESH)
 #define is_anon(c) ((c)->flags & FLAG_VAR_ANON)
 #define is_ground(c) ((c)->flags & FLAG_GROUND)
@@ -266,8 +265,7 @@ enum {
 
 	FLAG_CSTR_BLOB=1<<0,				// used with TAG_CSTR
 	FLAG_CSTR_STRING=1<<1,				// used with TAG_CSTR
-	FLAG_CSTR_QUOTED=1<<2,				// used with TAG_CSTR
-	FLAG_CSTR_SLICE=1<<3,				// used with TAG_CSTR
+	FLAG_CSTR_SLICE=1<<2,				// used with TAG_CSTR
 
 	FLAG_VAR_ANON=1<<0,					// used with TAG_VAR
 	FLAG_VAR_FRESH=1<<1,				// used with TAG_VAR
