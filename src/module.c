@@ -1601,14 +1601,6 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 	if (!is_check_directive(c)) {
 		c = get_head(p1);
 
-#if 0
-		if (is_string(c)) {
-			if (consulting)
-				fprintf(stdout, "Error: not callable %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
-			return NULL;
-		}
-#endif
-
 		if ((c->val_off == g_neck_s) && (c->arity == 1)) {
 			if (consulting)
 				fprintf(stdout, "Error: permission error modifying %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
@@ -1647,13 +1639,19 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 			} else
 				m = tmp_m;
 
-			move_cells(p1, p1+2, p1->nbr_cells-2);
-			c = get_head(p1);
+			c = get_head(p1) + 2;
 		}
 	}
 
 	if (!c || !m)
 		return NULL;
+
+	if (is_string(c)) {
+		if (consulting)
+			fprintf(stdout, "Error: not callable %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
+
+		return NULL;
+	}
 
 	if (is_cstring(c))
 		convert_to_literal(m, c);

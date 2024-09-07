@@ -477,14 +477,6 @@ static bool bif_iso_asserta_1(query *q)
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
 
-	if (is_cstring(h))
-		convert_to_literal(q->st.m, h);
-
-	if (!is_interned(h)) {
-		parser_destroy(p);
-		return throw_error(q, h, q->st.curr_frame, "type_error", "callable");
-	}
-
 	prolog_lock(q->pl);
 	rule *r = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, 0);
 	prolog_unlock(q->pl);
@@ -540,14 +532,6 @@ static bool bif_iso_assertz_1(query *q)
 	term_assign_vars(p);
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
-
-	if (is_cstring(h))
-		convert_to_literal(q->st.m, h);
-
-	if (!is_interned(h)) {
-		parser_destroy(p);
-		return throw_error(q, h, q->st.curr_frame, "type_error", "callable");
-	}
 
 	prolog_lock(q->pl);
 	rule *r = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, false);
@@ -612,13 +596,6 @@ static bool do_asserta_2(query *q)
 	term_assign_vars(p);
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
-
-	if (is_cstring(h))
-		convert_to_literal(q->st.m, h);
-
-	if (!is_interned(h)) {
-		return throw_error(q, h, q->latest_ctx, "type_error", "callable");
-	}
 
 	prolog_lock(q->pl);
 	rule *r = asserta_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, 0);
@@ -711,14 +688,6 @@ static bool do_assertz_2(query *q)
 	term_assign_vars(p);
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
-
-	if (is_cstring(h))
-		convert_to_literal(q->st.m, h);
-
-	if (!is_interned(h)) {
-		parser_destroy(p);
-		return throw_error(q, h, q->latest_ctx, "type_error", "callable");
-	}
 
 	prolog_lock(q->pl);
 	rule *r = assertz_to_db(q->st.m, p->cl->nbr_vars, p->cl->cells, false);

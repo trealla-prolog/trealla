@@ -5624,9 +5624,6 @@ bool bif_iso_invoke_2(query *q)
 			q->st.m = m;
 	}
 
-	if (is_cstring(p2))
-		convert_to_literal(q->st.m, p2);
-
 	cell *tmp = prepare_call(q, PREFIX_LEN, p2, p2_ctx, 1);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = PREFIX_LEN;

@@ -326,6 +326,7 @@ void parser_destroy(parser *p)
 	if (p->cl) {
 		clear_clause(p->cl);
 		free(p->cl);
+		p->cl = NULL;
 	}
 
 	free(p);
