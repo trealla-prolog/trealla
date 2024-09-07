@@ -1071,7 +1071,6 @@ void convert_to_literal(module *m, cell *c)
 	c->val_off = off;
 	c->match = NULL;
 	c->flags = 0;
-	c->arity = 0;
 	free(src);
 }
 
