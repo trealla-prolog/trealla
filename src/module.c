@@ -1615,6 +1615,10 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 			module *tmp_m = find_module(m->pl, name), *save_m = m;
 
 			if (!tmp_m) {
+				if (consulting)
+					fprintf(stdout, "Error: existence error module %s:(%s)/%u\n", name, C_STR(m, c), c->arity);
+
+				return NULL;
 				//m = module_create(m->pl, name);
 			} else
 				m = tmp_m;
@@ -1635,6 +1639,10 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 			module *tmp_m = find_module(m->pl, name);
 
 			if (!tmp_m) {
+				if (consulting)
+					fprintf(stdout, "Error: extistence error module %s:(%s)/%u\n", name, C_STR(m, c), c->arity);
+
+				return NULL;
 				//m = module_create(m->pl, name);
 			} else
 				m = tmp_m;
