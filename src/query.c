@@ -1432,8 +1432,9 @@ static bool match_head(query *q)
 
 		if (is_interned(c))
 			pr = c->match;
-		else if (is_cstring(c))
+		else if (is_cstring(c)) {
 			convert_to_literal(q->st.m, c);
+		}
 
 		if (!pr || is_evaluable(c) || is_builtin(c)) {
 			pr = search_predicate(q->st.m, c, NULL);
