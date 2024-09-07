@@ -1064,6 +1064,9 @@ bool do_use_foreign_module(module *m, cell *p)
 
 void convert_to_literal(module *m, cell *c)
 {
+	if (is_string(c))
+		c->arity = 0;
+
 	char *src = DUP_STRING(m, c);
 	pl_idx off = new_atom(m->pl, src);
 	unshare_cell(c);
