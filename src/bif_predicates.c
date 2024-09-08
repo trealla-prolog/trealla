@@ -5614,6 +5614,9 @@ bool bif_iso_invoke_2(query *q)
 	GET_NEXT_ARG(p2,callable);
 	module *m = q->st.m;
 
+	if (is_cstring(p2))
+		convert_to_literal(m, p2);
+
 	if (is_atom(p1)) {
 		m = find_module(q->pl, C_STR(q, p1));
 
