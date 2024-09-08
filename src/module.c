@@ -1627,7 +1627,7 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 			cell *body = head + head_nbr_cells;
 			move_cells(p1+1, head, head_nbr_cells);
 			cell *new_body = p1 + 1 + head_nbr_cells;
-			make_struct(new_body, g_colon_s, bif_iso_invoke_2, 2, 1+body->nbr_cells);
+			make_struct(new_body, g_colon_s, bif_iso_qualify_2, 2, 1+body->nbr_cells);
 			SET_OP(new_body, OP_XFY);
 			make_atom(new_body+1, new_atom(m->pl, save_m->name));
 			is_dirty = true;

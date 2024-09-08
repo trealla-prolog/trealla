@@ -1105,11 +1105,11 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 		else if (!is_interned(k) || is_iso_list(k))
 			;
 		else if (is_interned(m) && (m->val_off == g_colon_s)) {
-			make_struct(tmp, g_colon_s, bif_iso_invoke_2, 2, 1+k->nbr_cells);
+			make_struct(tmp, g_colon_s, bif_iso_qualify_2, 2, 1+k->nbr_cells);
 			SET_OP(tmp, OP_XFY); tmp++;
 			make_atom(tmp++, new_atom(q->pl, q->st.m->name));
 		} else if (is_smallint(m) && is_positive(m) && (get_smallint(m) <= 9)) {
-			make_struct(tmp, g_colon_s, bif_iso_invoke_2, 2, 1+k->nbr_cells);
+			make_struct(tmp, g_colon_s, bif_iso_qualify_2, 2, 1+k->nbr_cells);
 			SET_OP(tmp, OP_XFY); tmp++;
 			make_atom(tmp++, new_atom(q->pl, q->st.m->name));
 		}

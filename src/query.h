@@ -112,7 +112,7 @@ bool bif_iso_true_0(query *q);
 bool bif_iso_fail_0(query *q);
 bool bif_iso_call_1(query *q);
 bool bif_iso_conjunction_2(query *q);
-bool bif_iso_invoke_2(query *q);
+bool bif_iso_qualify_2(query *q);
 bool bif_iso_cut_0(query *q);
 bool bif_iso_unify_2(query *q);
 bool bif_sys_cleanup_if_det_1(query *q);

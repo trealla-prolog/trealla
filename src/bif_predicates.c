@@ -5608,7 +5608,7 @@ static bool bif_get_unbuffered_char_1(query *q)
 
 // module:goal
 
-bool bif_iso_invoke_2(query *q)
+bool bif_iso_qualify_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_var);
 	GET_NEXT_ARG(p2,callable);
@@ -6544,7 +6544,7 @@ static void load_ops(query *q)
 
 builtins g_iso_bifs[] =
 {
-	{":", 2, bif_iso_invoke_2, "+atom,:callable", true, false, BLAH},
+	{":", 2, bif_iso_qualify_2, "+atom,:callable", true, false, BLAH},
 	{"=..", 2, bif_iso_univ_2, "+term,?list", true, false, BLAH},
 	{"=", 2, bif_iso_unify_2, "+term,+term", true, false, BLAH},
 	{"\\=", 2, bif_iso_notunify_2, "+term,+term", true, false, BLAH},
