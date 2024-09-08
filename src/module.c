@@ -1634,7 +1634,7 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 			//module_dump_term(save_m, p1);
 			c = get_head(p1);
 
-			if (is_string(c)) {
+			if (!is_callable(c) || is_iso_list(c)) {
 				if (consulting)
 					fprintf(stdout, "Error: not callable %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
 
@@ -1653,7 +1653,7 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 			} else
 				m = tmp_m;
 
-			if (is_string(p1+2)) {
+			if (!is_callable(p1+2) || is_iso_list(p1+2)) {
 				if (consulting)
 					fprintf(stdout, "Error: not callable %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
 
