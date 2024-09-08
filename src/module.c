@@ -1619,7 +1619,6 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 					fprintf(stdout, "Error: existence error module %s:(%s)/%u\n", name, C_STR(m, c), c->arity);
 
 				return NULL;
-				//m = module_create(m->pl, name);
 			} else
 				m = tmp_m;
 
@@ -1643,11 +1642,11 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 					fprintf(stdout, "Error: extistence error module %s:(%s)/%u\n", name, C_STR(m, c), c->arity);
 
 				return NULL;
-				//m = module_create(m->pl, name);
 			} else
 				m = tmp_m;
 
-			c = get_head(p1) + 2;
+			move_cells(p1, p1+2, p1->nbr_cells-2);
+			c = get_head(p1);
 		}
 	}
 
