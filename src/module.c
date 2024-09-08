@@ -1633,6 +1633,14 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 			is_dirty = true;
 			//module_dump_term(save_m, p1);
 			c = get_head(p1);
+
+			if (is_string(c)) {
+				if (consulting)
+					fprintf(stdout, "Error: not callable %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
+
+				return NULL;
+			}
+
 		} else if ((c->val_off == g_colon_s) && (c->arity == 2) && is_atom(FIRST_ARG(c))) {
 			const char *name = C_STR(m, FIRST_ARG(c));
 			module *tmp_m = find_module(m->pl, name);
@@ -1645,6 +1653,14 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 			} else
 				m = tmp_m;
 
+			if (is_string(p1+2)) {
+				if (consulting)
+					fprintf(stdout, "Error: not callable %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
+
+				return NULL;
+			}
+
+
 			move_cells(p1, p1+2, p1->nbr_cells-2);
 			c = get_head(p1);
 		}
@@ -1652,13 +1668,6 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 
 	if (!c || !m)
 		return NULL;
-
-	if (is_string(c)) {
-		if (consulting)
-			fprintf(stdout, "Error: not callable %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
-
-		return NULL;
-	}
 
 	if (is_cstring(c))
 		convert_to_literal(m, c);
