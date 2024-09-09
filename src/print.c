@@ -1255,6 +1255,11 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		SB_strcatn(q->sb, src, srclen);
 		if (quote) { SB_sprintf(q->sb, "%s", quote?"' ":""); }
 
+		if (!strcmp(src, "\\+"))
+			q->last_thing = WAS_SYMBOL;
+		else
+			q->last_thing = WAS_OTHER;
+
 		if (has_visited(visited, rhs, rhs_ctx)) {
 			if (q->is_dump_vars) {
 				SB_sprintf(q->sb, "%s", !is_ref(save_rhs) ? C_STR(q, save_rhs) : "_");
@@ -1282,7 +1287,6 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		me.c = rhs;
 		me.c_ctx = rhs_ctx;
 
-		q->last_thing = WAS_OTHER;
 		if (parens) { SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
 		q->parens = parens;
 		print_term_to_buf_(q, rhs, rhs_ctx, running, 0, 0, depth+1, &me);
