@@ -1255,7 +1255,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		SB_strcatn(q->sb, src, srclen);
 		if (quote) { SB_sprintf(q->sb, "%s", quote?"' ":""); }
 
-		if (!strcmp(src, "\\+"))
+		if (!iswalpha(peek_char_utf8(src)))
 			q->last_thing = WAS_SYMBOL;
 		else
 			q->last_thing = WAS_OTHER;
