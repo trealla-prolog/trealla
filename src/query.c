@@ -1931,7 +1931,7 @@ void query_destroy(query *q)
 	free(q);
 }
 
-query *query_create(module *m, bool is_task)
+query *query_create(module *m, bool is_sub_query)
 {
 	static pl_atomic uint64_t g_query_id = 0;
 	query *q = calloc(1, sizeof(query));
@@ -1955,10 +1955,10 @@ query *query_create(module *m, bool is_task)
 
 	// Allocate these now...
 
-	q->frames_size = is_task ? 100 : INITIAL_NBR_FRAMES;
-	q->choices_size = is_task ? 100 : INITIAL_NBR_CHOICES;
-	q->slots_size = is_task ? 1000 : INITIAL_NBR_SLOTS;
-	q->trails_size = is_task ? 1000 : INITIAL_NBR_TRAILS;
+	q->frames_size = is_sub_query ? 100 : INITIAL_NBR_FRAMES;
+	q->choices_size = is_sub_query ? 100 : INITIAL_NBR_CHOICES;
+	q->slots_size = is_sub_query ? 1000 : INITIAL_NBR_SLOTS;
+	q->trails_size = is_sub_query ? 1000 : INITIAL_NBR_TRAILS;
 
 	ensure(q->frames = calloc(q->frames_size, sizeof(frame)), NULL);
 	ensure(q->choices = calloc(q->choices_size, sizeof(choice)), NULL);
