@@ -937,7 +937,7 @@ bool do_use_module_2(module *curr_m, cell *c)
 				pr2->alias = pr;
 			} else if (is_structure(lhs) && is_structure(rhs)) {
 				// assertz(goal_expansion(rhs, module:lhs))
-				query *q = query_create(curr_m, false);
+				query *q = query_create(curr_m);
 				check_error(q);
 				q->varnames = true;
 				char *dst1 = print_canonical_to_strbuf(q, rhs, 0, 0);

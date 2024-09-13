@@ -10,7 +10,7 @@ typedef struct {
 	const char *functor;
 } csv;
 
-query *query_create(module *m, bool sub_query);
+query *query_create(module *m);
 query *query_create_subquery(query *q, cell *curr_instr);
 query *query_create_task(query *q, cell *curr_instr);
 void query_destroy(query *q);

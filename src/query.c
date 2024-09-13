@@ -29,10 +29,10 @@ static void msleep(int ms)
 
 static const unsigned INITIAL_NBR_QUEUE_CELLS = 1000;
 static const unsigned INITIAL_NBR_HEAP_CELLS = 1000;
-static const unsigned INITIAL_NBR_FRAMES = 1000;
-static const unsigned INITIAL_NBR_SLOTS = 4000;
-static const unsigned INITIAL_NBR_TRAILS = 4000;
-static const unsigned INITIAL_NBR_CHOICES = 1000;
+static const unsigned INITIAL_NBR_SLOTS = 1000;
+static const unsigned INITIAL_NBR_TRAILS = 1000;
+static const unsigned INITIAL_NBR_CHOICES = 100;
+static const unsigned INITIAL_NBR_FRAMES = 100;
 static const unsigned INITIAL_NBR_CELLS = 100;
 
 int g_tpl_interrupt = 0;
@@ -1931,7 +1931,7 @@ void query_destroy(query *q)
 	free(q);
 }
 
-query *query_create(module *m, bool is_sub_query)
+query *query_create(module *m)
 {
 	static pl_atomic uint64_t g_query_id = 0;
 	query *q = calloc(1, sizeof(query));
@@ -1955,10 +1955,10 @@ query *query_create(module *m, bool is_sub_query)
 
 	// Allocate these now...
 
-	q->frames_size = is_sub_query ? 100 : INITIAL_NBR_FRAMES;
-	q->choices_size = is_sub_query ? 100 : INITIAL_NBR_CHOICES;
-	q->slots_size = is_sub_query ? 1000 : INITIAL_NBR_SLOTS;
-	q->trails_size = is_sub_query ? 1000 : INITIAL_NBR_TRAILS;
+	q->frames_size = INITIAL_NBR_FRAMES;
+	q->choices_size = INITIAL_NBR_CHOICES;
+	q->slots_size = INITIAL_NBR_SLOTS;
+	q->trails_size = INITIAL_NBR_TRAILS;
 
 	ensure(q->frames = calloc(q->frames_size, sizeof(frame)), NULL);
 	ensure(q->choices = calloc(q->choices_size, sizeof(choice)), NULL);
@@ -1979,7 +1979,7 @@ query *query_create(module *m, bool is_sub_query)
 
 query *query_create_subquery(query *q, cell *curr_instr)
 {
-	query *task = query_create(q->st.m, true);
+	query *task = query_create(q->st.m);
 	if (!task) return NULL;
 	task->parent = q;
 	task->st.fp = 1;
