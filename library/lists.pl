@@ -423,12 +423,12 @@ foldl_([H1|T1], [H2|T2], [H3|T3], [H4|T4], G, V0, V) :-
 include(G, L, Included) :-
 	include_(L, G, Included).
 
-	include_([], _, []).
-	include_([X1|Xs1], P, Included) :-
-		(   call(P, X1) -> Included = [X1|Included1]
-		;   Included = Included1
-		),
-		include_(Xs1, P, Included1).
+include_([], _, []).
+include_([X1|Xs1], P, Included) :-
+	(   call(P, X1) -> Included = [X1|Included1]
+	;   Included = Included1
+	),
+	include_(Xs1, P, Included1).
 
 :- help(include(:callable,?list), [iso(false)]).
 :- meta_predicate(include(1, ?, ?)).
