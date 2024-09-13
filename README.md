@@ -1250,9 +1250,9 @@ Profile
 Why did I put this here?
 
 ```console
-	$ time tpl -q -g 'main,statistics(profile,_),halt' -f ~/trealla/samples/chess.pl 2>chess.csv
-	$ head -1 chess.csv >chess_sorted.csv && tail -n+2 chess.csv | sort -k 3 -t ',' -n -r >> chess_sorted.csv
-	$ cat chess_sorted.csv
+	$ time tpl -q -g 'main,statistics(profile,_),halt' -f ~/trealla/samples/out.pl 2>out.csv
+	$ head -1 out.csv >out_sorted.csv && tail -n+2 out.csv | sort -k 3 -t ',' -n -r >> out_sorted.csv
+	$ cat out_sorted.csv
 	#functor/arity,match_attempts,matched,tcos
 	'member_/3',20505037,20036023,19362515
 	'can_step/5',1149136,288705,189915
