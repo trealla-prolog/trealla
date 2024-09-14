@@ -432,9 +432,13 @@ void dump_vars(query *q, bool partial)
 				parens = true;
 		}
 
-		if (is_atom(c) && !is_string(c) && C_STRLEN(q, c) && !is_nil(c)) {
+		if (is_atom(c)
+			&& !is_string(c)
+			//&& C_STRLEN(q, c)
+			&& !is_nil(c)) {
 			if (search_op(q->st.m, C_STR(q, c), NULL, false)
-				&& !needs_quoting(q->st.m, C_STR(q, c), C_STRLEN(q, c)))
+				//&& !needs_quoting(q->st.m, C_STR(q, c), C_STRLEN(q, c))
+				)
 				parens = true;
 
 			if (!parens) {
