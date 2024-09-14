@@ -560,8 +560,8 @@ static void print_string_list(query *q, cell *c, pl_idx c_ctx, int running, bool
 			SB_sprintf(q->sb, "%s", "'");
 			SB_strcat_and_free(q->sb, formatted(C_STR(q, h), C_STRLEN(q, h), false, false));
 			SB_sprintf(q->sb, "%s", "'");
-		} else {
-			SB_sprintf(q->sb, "%s", C_STR(q, h));
+		} else{
+			SB_strcat_and_free(q->sb, formatted(C_STR(q, h), C_STRLEN(q, h), false, false));
 		}
 
 		c = LIST_TAIL(c);
