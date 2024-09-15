@@ -161,6 +161,9 @@ static bool op_needs_quoting(module *m, const char *src, int srclen)
 	if (!strcmp(src, "{}") || !strcmp(src, "[]") || !strcmp(src, "!"))
 		return false;
 
+	if (!srclen)
+		return true;
+
 	int ch = peek_char_utf8(src);
 
 	if (iswupper(ch) || iswdigit(ch) || (ch == '_'))
