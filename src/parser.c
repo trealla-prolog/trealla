@@ -1630,7 +1630,7 @@ static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 
 			if (off > end_idx) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stdout, "Error: syntax error, missing operand, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stdout, "Error: syntax error, missing operand to prefix, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 				p->error_desc = "operand_missing";
 				p->error = true;
@@ -1694,7 +1694,7 @@ static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 
 		if (nolhs || (off > end_idx)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, missing operand, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stdout, "Error: syntax error, missing operand to infix, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error_desc = "operand_missing";
 			p->error = true;
