@@ -3315,12 +3315,15 @@ unsigned tokenize(parser *p, bool args, bool consing)
 
 		if (!p->quote_char
 			&& !SB_strcmp(p->token, ".")
-		    && (*p->srcptr != ',')
-		    && (*p->srcptr != '(')
-		    && (*p->srcptr != ')')
-		    && (*p->srcptr != ']')
-		    && (*p->srcptr != '}')
-		    ) {
+			&& (*p->srcptr != ',')
+			&& (*p->srcptr != '(')
+			&& (*p->srcptr != ')')
+			&& (*p->srcptr != ']')
+			&& (*p->srcptr != '}')
+			&& !iswalnum(*p->srcptr)
+			) {
+
+			//printf("*** here %s\n", p->srcptr);
 
 			if (p->nesting_parens || p->nesting_brackets || p->nesting_braces) {
 				if (DUMP_ERRS || !p->do_read_term)
