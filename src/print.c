@@ -1311,6 +1311,8 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	if (running) rhs_ctx = q->latest_ctx;
 
 	bool any = false;
+	int quote = q->quoted && has_spaces(src, src_len);
+	if (op_needs_quoting(q->st.m, src, src_len)) quote = 1;
 
 	// Print LHS..
 
@@ -1364,7 +1366,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 	bool extra_space = false;
 
-	if ((q->last_thing != WAS_SPACE) && space) {
+	if ((q->last_thing != WAS_SPACE) && space && !quote) {
 		SB_sprintf(q->sb, "%s", " ");
 		q->last_thing = WAS_SPACE;
 		extra_space = true;
@@ -1380,7 +1382,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	if (!*src || ((q->last_thing == WAS_SYMBOL) && is_symbol && !lhs_parens && !q->parens))
 		space = true;
 
-	if ((q->last_thing != WAS_SPACE) && !is_symbol && space) {
+	if ((q->last_thing != WAS_SPACE) && !is_symbol && space && !quote) {
 		SB_sprintf(q->sb, "%s", " ");
 		q->last_thing = WAS_SPACE;
 	}
@@ -1396,13 +1398,11 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	if (q->listing && !depth && !strcmp(src, ":-"))
 		space = true;
 
-	if ((q->last_thing != WAS_SPACE) && space) {
+	if ((q->last_thing != WAS_SPACE) && space && !quote) {
 		SB_sprintf(q->sb, "%s", " ");
 		q->last_thing = WAS_SPACE;
 	}
 
-	int quote = q->quoted && has_spaces(src, src_len);
-	if (op_needs_quoting(q->st.m, src, src_len)) quote = 1;
 	if (quote) { SB_sprintf(q->sb, "%s", quote?"'":""); }
 	SB_strcatn(q->sb, src, srclen);
 	if (quote) { SB_sprintf(q->sb, "%s", quote?"'":""); }
@@ -1415,7 +1415,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	if (extra_space)
 		space = true;
 
-	if ((q->last_thing != WAS_SPACE) && space) {
+	if ((q->last_thing != WAS_SPACE) && space && !quote) {
 		SB_sprintf(q->sb, "%s", " ");
 		q->last_thing = WAS_SPACE;
 	}
@@ -1445,7 +1445,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	if (rhs_pri_2 > 0)
 		rhs_parens = true;
 
-	if ((q->last_thing != WAS_SPACE) && space && !rhs_parens) {
+	if ((q->last_thing != WAS_SPACE) && space && !rhs_parens && !quote) {
 		SB_sprintf(q->sb, "%s", " ");
 		q->last_thing = WAS_SPACE;
 	}
