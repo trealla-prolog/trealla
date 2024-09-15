@@ -1403,9 +1403,9 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 	int quote = q->quoted && has_spaces(src, src_len);
 	if (op_needs_quoting(q->st.m, src, src_len)) quote = 1;
-	if (quote) { SB_sprintf(q->sb, "%s", quote?" '":""); }
+	if (quote) { SB_sprintf(q->sb, "%s", quote?"'":""); }
 	SB_strcatn(q->sb, src, srclen);
-	if (quote) { SB_sprintf(q->sb, "%s", quote?"' ":""); }
+	if (quote) { SB_sprintf(q->sb, "%s", quote?"'":""); }
 	q->last_thing = strcmp(src, "|") ? WAS_SYMBOL : WAS_OTHER;
 
 	if (q->listing && !depth && !strcmp(src, ":-")) {
