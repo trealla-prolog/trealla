@@ -210,7 +210,7 @@ static bool op_needs_quoting(module *m, const char *src, int srclen)
 
 static bool has_spaces(const char *src, int srclen)
 {
-	if (!*src || !strcmp(src, "."))
+	if (!*src)
 		return true;
 
 	while (srclen > 0) {
@@ -1202,7 +1202,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 			q->last_thing = WAS_SPACE;
 		}
 
-		int quote = q->quoted && has_spaces(src, src_len);
+		int quote = q->quoted && needs_quoting(q->st.m, src, src_len);
 		if (quote) { SB_sprintf(q->sb, "%s", quote?" '":""); }
 
 		SB_strcatn(q->sb, src, srclen);
@@ -1247,7 +1247,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		if ((c->val_off == g_minus_s) && search_op(q->st.m, C_STR(q, rhs), NULL, true) && !rhs->arity) parens = true;
 		if ((c->val_off == g_plus_s) && search_op(q->st.m, C_STR(q, rhs), NULL, true) && !rhs->arity) parens = true;
 
-		bool quote = q->quoted && has_spaces(src, src_len);
+		bool quote = q->quoted && needs_quoting(q->st.m, src, src_len);
 
 		if (is_interned(rhs) && !rhs->arity && !parens) {
 			if (!iswalnum(peek_char_utf8(rhs_src)) && strcmp(rhs_src, "[]") && strcmp(rhs_src, "{}"))
