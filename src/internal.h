@@ -150,7 +150,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 
 #define is_smallint(c) (is_integer(c) && !((c)->flags & FLAG_MANAGED))
 #define is_bigint(c) (is_integer(c) && ((c)->flags & FLAG_MANAGED))
-#define is_boolean(c) ((is_interned(c) && !(c)->arity && ((c->val_off == g_true_s) || (c->val_off == g_false_s))))
+#define is_boolean(c) ((is_interned(c) && !(c)->arity && (((c)->val_off == g_true_s) || ((c)->val_off == g_false_s))))
 #define is_atom(c) ((is_interned(c) && !(c)->arity) || is_cstring(c))
 #define is_string(c) (is_cstring(c) && ((c)->flags & FLAG_CSTR_STRING))
 #define is_managed(c) ((c)->flags & FLAG_MANAGED)
@@ -170,7 +170,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_local(c) (is_var(c) && ((c)->flags & FLAG_VAR_LOCAL))
 #define is_complex(c) ((c)->flags & FLAG_COMPLEX)
 #define is_ref(c) (is_var(c) && ((c)->flags & FLAG_VAR_REF))
-#define is_op(c) (c->flags & 0xE000) ? true : false
+#define is_op(c) ((c)->flags & 0xE000) ? true : false
 #define is_callable(c) (is_interned(c) || (is_cstring(c) && !is_string(c)))
 #define is_compound(c) (is_interned(c) && (c)->arity)
 #define is_structure(c) (is_compound(c) || is_string(c))
