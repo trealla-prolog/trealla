@@ -1225,6 +1225,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		if (running) rhs = deref(q, rhs, rhs_ctx);
 		if (running) rhs_ctx = q->latest_ctx;
 		unsigned rhs_pri = is_interned(rhs) ? match_op(q->st.m, C_STR(q, rhs), NULL, rhs->arity) : 0;
+		unsigned rhs_pri_2 = is_interned(rhs) && !rhs->arity ? search_op(q->st.m, C_STR(q, rhs), NULL, true) : 0;
 		bool any = false, is_op_rhs = rhs_pri;
 
 		if ((q->last_thing == WAS_SYMBOL) && !strcmp(src, "\\+")) {
@@ -1240,6 +1241,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 		bool parens = false;
 		if (!strcmp(src, "+") && (is_infix(rhs) || is_postfix(rhs))) parens = true;
+		if (rhs_pri > my_priority) parens = true;
 		if ((rhs_pri > 0) && !rhs->arity) parens = true;
 		//if (my_priority && (rhs_pri == my_priority) && strcmp(src, "-") && strcmp(src, "+")) parens = true;
 		if (!strcmp(src, "-") && (rhs_pri == my_priority) && (rhs->arity > 1)) parens = true;
