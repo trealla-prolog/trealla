@@ -3334,6 +3334,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			&& (*p->srcptr != '}')
 			&& !iswalnum(*p->srcptr)
 			&& (*p->srcptr != '_')
+			&& ((*p->srcptr != ' ') || !p->is_op)
 			) {
 
 			//printf("*** here %s\n", p->srcptr);
