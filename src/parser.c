@@ -2664,6 +2664,8 @@ inline static bool is_matching_pair(int ch, int next_ch, int lh, int rh)
 	return (ch == lh) && (next_ch == rh);
 }
 
+// FIXME
+
 static bool valid_float(const char *src)
 {
 	if (*src == '.')
@@ -3130,12 +3132,14 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 	ch = get_char_utf8(&src);
 	int next_ch = peek_char_utf8(src);
 
+#if 0
 	if ((ch == '.') && iswspace(next_ch)) {
 		SB_putchar(p->token, ch);
 		p->is_op = search_op(p->m, SB_cstr(p->token), NULL, false);
 		p->srcptr = (char*)src;
 		return true;
 	}
+#endif
 
 	p->srcptr = (char*)src;
 
@@ -3202,8 +3206,10 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		if (ch_next == '%')
 			break;
 
+#if 0
 		if ((ch == '.') && iswspace(ch_next))
 			break;
+#endif
 
 		if (p->flags.json && (ch_next == '-'))
 			break;
