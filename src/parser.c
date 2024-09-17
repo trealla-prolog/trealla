@@ -2424,6 +2424,9 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 	p->v.flags = 0;
 	const char *s = *srcptr;
 
+	if (*s == '.')
+		return false;
+
 	LOOP:
 
 	if ((*s == '.') && isdigit(s[1])) {
