@@ -2666,6 +2666,9 @@ inline static bool is_matching_pair(int ch, int next_ch, int lh, int rh)
 
 static bool valid_float(const char *src)
 {
+	if (*src == '.')
+		return false;
+
 	if (*src == '-')
 		src++;
 
