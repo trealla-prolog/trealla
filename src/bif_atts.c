@@ -271,8 +271,6 @@ bool any_attributed(query *q)
 		cell *v = c->attrs;
 		bool any = false;
 
-		//DUMP_TERM("***", v, q->st.curr_frame, 1);
-
 		while (is_iso_list(v)) {
 			cell *h = v + 1;
 
