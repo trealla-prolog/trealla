@@ -1240,7 +1240,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 		bool parens = false;
 		if (!strcmp(src, "+") && (is_infix(rhs) || is_postfix(rhs))) parens = true;
-		if (rhs_pri > my_priority) parens = true;
+		if ((rhs_pri > 0) && !rhs->arity) parens = true;
 		//if (my_priority && (rhs_pri == my_priority) && strcmp(src, "-") && strcmp(src, "+")) parens = true;
 		if (!strcmp(src, "-") && (rhs_pri == my_priority) && (rhs->arity > 1)) parens = true;
 		if ((c->val_off == g_minus_s) && is_number(rhs) && !is_negative(rhs)) parens = true;
