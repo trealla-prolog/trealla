@@ -210,7 +210,7 @@ static bool op_needs_quoting(module *m, const char *src, int srclen)
 
 static bool has_spaces(const char *src, int srclen)
 {
-	if (!*src)
+	if (!*src || !strcmp(src, "."))
 		return true;
 
 	while (srclen > 0) {
