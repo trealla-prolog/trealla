@@ -1258,9 +1258,9 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 		if (quote) { SB_sprintf(q->sb, "%s", quote?"'":""); }
 		SB_strcatn(q->sb, src, srclen);
-		if (quote) { SB_sprintf(q->sb, "%s", quote?"' ":""); }
-
-		if (!iswalpha(peek_char_utf8(src)))
+		if (quote)
+			{ SB_sprintf(q->sb, "%s", quote?"' ":""); q->last_thing = WAS_SPACE; }
+		else if (!iswalpha(peek_char_utf8(src)))
 			q->last_thing = WAS_SYMBOL;
 		else
 			q->last_thing = WAS_OTHER;
@@ -1275,7 +1275,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 			return true;
 		}
 
-		if (space || parens) {
+		if ((q->last_thing != WAS_SPACE) && (space || parens)) {
 			SB_sprintf(q->sb, "%s", " ");
 			q->last_thing = WAS_SPACE;
 		}
