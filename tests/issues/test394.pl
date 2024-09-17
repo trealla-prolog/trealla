@@ -1,4 +1,3 @@
-:- initialization(main).
 :- use_module(library(dif)).
 
 ti(G=Rs) :-
@@ -18,3 +17,4 @@ main :-
 	findall(G-Rs, ti(G=Rs), L),
 	write(L), nl.
 
+:- initialization(main).
