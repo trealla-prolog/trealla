@@ -29,7 +29,8 @@ read_chunks(S, Tmp, Data) :-
 	bread(S, Len, Tmp2),
 	getline(S, _),
 	append(Tmp, Tmp2, Tmp3),
-	read_chunks(S, Tmp3, Data).
+	read_chunks(S, Tmp3, Data),
+	!.
 read_chunks(_, Data, Data).
 
 read_body(S, Hdrs, Data) :-
