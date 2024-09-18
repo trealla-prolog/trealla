@@ -5448,6 +5448,23 @@ static bool bif_call_nth_2(query *q)
 	return true;
 }
 
+static bool bif_string_concat_3(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,atom);
+	GET_NEXT_ARG(p3,atom_or_var);
+	SB(pr);
+	SB_strcpy(pr, C_STR(q, p1));
+	SB_strcat(pr, C_STR(q, p2));
+	const char *src = SB_cstr(pr);
+	cell tmp;
+	make_string(&tmp, src);
+	SB_free(pr);
+	int ok  = unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
+	return ok;
+}
+
 static bool bif_string_length_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_list_or_nil);
@@ -6661,6 +6678,7 @@ builtins g_other_bifs[] =
 	{"limit", 2, bif_limit_2, "+integer,:callable", false, false, BLAH},
 	{"offset", 2, bif_offset_2, "+integer,+callable", false, false, BLAH},
 	{"unifiable", 3, bif_sys_unifiable_3, "+term,+term,-list", false, false, BLAH},
+	{"string_concat", 3, bif_string_concat_3, "+string,+string,?string", false, false, BLAH},
 	{"string_length", 2, bif_string_length_2, "+string,?integer", false, false, BLAH},
 	{"crypto_n_random_bytes", 2, bif_crypto_n_random_bytes_2, "+integer,-codes", false, false, BLAH},
 	{"cyclic_term", 1, bif_cyclic_term_1, "+term", false, false, BLAH},

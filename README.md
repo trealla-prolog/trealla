@@ -482,6 +482,7 @@ Non-standard predicates
 	cpu_time/1                  # cpu_time(-Var) elapsed CPU time in secs as float
 
 	current_key/1
+	string_concat/3				# string_concat(+string,+string,?string)
 	string_length/2
 	sleep/1                     # sleep time in secs
 	split/4                     # split(+string,+sep,?left,?right)

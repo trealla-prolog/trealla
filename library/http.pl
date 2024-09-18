@@ -26,10 +26,10 @@ read_chunks(S, Tmp, Data) :-
 	getline(S, Line),
 	hex_chars(Len, Line),
 	Len > 0,
+	!,
 	bread(S, Len, Tmp2),
 	getline(S, _),
-	append(Tmp, Tmp2, Tmp3),
-	!,
+	string_concat(Tmp, Tmp2, Tmp3),
 	read_chunks(S, Tmp3, Data).
 read_chunks(_, Data, Data).
 
