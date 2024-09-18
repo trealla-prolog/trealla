@@ -6607,7 +6607,7 @@ static bool bif_client_5(query *q)
 
 				if (is_atom(c)) {
 					ssl = !CMP_STRING_TO_CSTR(q, c, "https") ? 1 : 0;
-					port = 443;
+					if (ssl) port = 443;
 				}
 			} else if (!CMP_STRING_TO_CSTR(q, c, "port")) {
 				c = c + 1;
