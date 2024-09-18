@@ -4719,9 +4719,9 @@ static bool bif_hex_chars_2(query *q)
 	const char *s = src;
 	mpz_t v2;
 	mp_int_init(&v2);
-	mp_small val;
-	read_integer(q->p, &v2, 16, &s);
+	mp_int_read_cstring(&v2, 16, (char*)src, NULL);
 	free(src);
+	mp_small val;
 	cell tmp = {0};
 
 	if (mp_int_to_int(&v2, &val) == MP_RANGE) {
@@ -4732,7 +4732,7 @@ static bool bif_hex_chars_2(query *q)
 		mp_int_init_copy(&tmp.val_bigint->ival, &v2);
 		tmp.flags |= FLAG_MANAGED;
 	} else {
-		make_int(&tmp, val);
+		make_uint(&tmp, (unsigned long long)val);
 	}
 
 	mp_int_clear(&v2);
