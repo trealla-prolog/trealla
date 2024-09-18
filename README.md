@@ -707,7 +707,6 @@ HTTP 1.1
 
 	:- use_module(library(http)).
 
-	http_open/3				# http_get(List, Stream, Opts)
 	http_get/3				# http_get(Url, Data, Opts)
 	http_post/4				# http_post(Url, Data, Opts)
 	http_patch/4			# http_patch(Url, Data, Opts)
@@ -715,6 +714,11 @@ HTTP 1.1
 	http_delete/3			# http_delete(Url, Data, Opts)
 	http_server/2			# http_server(Goal,Opts),
 	http_request/5			# http_request(S, Method, Path, Ver, Hdrs)
+
+```console
+	?- http_get("https://github.com/trealla-prolog/trealla", Data, [status_code(Code)]).
+	   Data = '', Code = 200.   # Why is Data empty?
+```
 
 A server *Goal* takes a single arg, the connection stream.
 
