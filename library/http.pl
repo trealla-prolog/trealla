@@ -55,7 +55,7 @@ http_open(UrlList, S, Opts) :-
 	format(S, '~s /~s HTTP/~d.~d\r~nHost: ~s\r~nConnection: keep-alive\r~n\r~n', [UMethod,Path,Major,Minor,Host]),
 	read_response(S, Code),
 	findall(Hdr, read_header(S, Hdr), Hdrs),
-	ignore(d_get(Hdrs, "location", Location),
+	ignore(d_get(Hdrs, "location", Location)),
 	ignore(memberchk(status_code(Code), OptList)),
 	ignore(memberchk(headers(Hdrs), OptList)),
 	ignore(memberchk(final_url(Location), OptList)).
