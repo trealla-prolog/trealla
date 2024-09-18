@@ -707,6 +707,7 @@ HTTP 1.1
 
 	:- use_module(library(http)).
 
+	http_open/3				# http_get(Url, Stream, Opts)
 	http_get/3				# http_get(Url, Data, Opts)
 	http_post/4				# http_post(Url, Data, Opts)
 	http_patch/4			# http_patch(Url, Data, Opts)
