@@ -7280,7 +7280,7 @@ static bool bif_alias_2(query *q)
 		if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 		sl_set(str->alias, DUP_STRING(q, p2), NULL);
 		str->is_alias = true;
-		str->handle = (void*)get_smalluint(p1);
+		str->handle = (void*)(size_t)get_smalluint(p1);
 		return true;
 	}
 
