@@ -3559,7 +3559,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			continue;
 		}
 
-		if (!p->quote_char && !args && !consing && last_op && !SB_strcmp(p->token, ",")) {
+		if (!p->quote_char && !args && !consing && last_op && !last_postfix && !SB_strcmp(p->token, ",")) {
 			if (DUMP_ERRS || !p->do_read_term)
 				fprintf(stdout, "Error: syntax error, quotes needed around operator '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 
