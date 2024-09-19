@@ -3568,23 +3568,11 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			break;
 		}
 
-		if (!p->quote_char && args && !consing && p->is_op /*&& last_op*/ && SB_strcmp(p->token, ",")) {
-			unsigned specifier = 0;
-			unsigned priority = search_op(p->m, SB_cstr(p->token), &specifier, last_op && !last_postfix);
-
-			if (!last_op && (priority > 999)) {
-				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stdout, "Error: syntax error, parens needed around operator '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
-
-				p->error_desc = "parens_needed";
-				p->error = true;
-				break;
-			}
-		}
-
-		if (!p->quote_char && consing && p->is_op && SB_strcmp(p->token, ",") && SB_strcmp(p->token, "|")) {
-			unsigned specifier = 0;
-			unsigned priority = search_op(p->m, SB_cstr(p->token), &specifier, last_op && !last_postfix);
+		if (!p->quote_char && args && !consing && p->is_op /*&& last_op*/
+			&& SB_strcmp(p->token, "|")
+ 			&& SB_strcmp(p->token, ",")
+ 			) {
+			unsigned priority = search_op(p->m, SB_cstr(p->token), NULL, false);
 
 			if (!last_op && (priority > 999)) {
 				if (DUMP_ERRS || !p->do_read_term)
@@ -3831,7 +3819,17 @@ unsigned tokenize(parser *p, bool args, bool consing)
 				break;
 			}
 
-			priority = search_op(p->m, SB_cstr(p->token), &specifier, last_op && !last_postfix);
+			priority = get_op(p->m, SB_cstr(p->token), specifier=OP_XF);
+			if (!priority) priority = get_op(p->m, SB_cstr(p->token), specifier=OP_YF);
+			if (!priority) specifier = 0;
+			eat_space(p);
+			int ch = peek_char_utf8(p->srcptr);
+			bool blah = !iswalpha(ch) &&  (ch != '_') && priority;
+
+			if (!blah) {
+				bool prefer_unifix = last_op || blah;
+				priority = search_op(p->m, SB_cstr(p->token), &specifier, prefer_unifix);
+			}
 		}
 
 		if (!SB_strcmp(p->token, "!") &&
