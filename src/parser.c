@@ -1577,7 +1577,7 @@ static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 
 		// Prefix...
 
-		if (is_prefix(c)) {
+		if (is_fx(c)) {
 			const cell *rhs = c + 1;
 
 			if (is_fx(rhs) && !rhs->arity && (rhs->priority == c->priority)) {
