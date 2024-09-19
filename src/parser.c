@@ -3822,8 +3822,8 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			priority = get_op(p->m, SB_cstr(p->token), specifier=OP_XF);
 			if (!priority) priority = get_op(p->m, SB_cstr(p->token), specifier=OP_YF);
 			if (!priority) specifier = 0;
-			eat_space(p);
-			int ch = peek_char_utf8(p->srcptr);
+			const char *src = eat_space(p);
+			int ch = peek_char_utf8(src);
 			bool blah = !iswalpha(ch) && (ch != '_') && (ch != '(') && priority;
 
 			if (!blah) {
