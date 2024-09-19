@@ -2766,7 +2766,7 @@ static bool do_op(query *q, cell *p3, pl_idx p3_ctx)
 	unsigned tmp_pri = match_op(q->st.m, C_STR(q, p3), &tmp_optype, p3->arity);
 
 	if (IS_INFIX(specifier) && IS_POSTFIX(tmp_optype))
-		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator1");
+		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator");
 
 	if (!tmp_pri && !pri)
 		return true;
