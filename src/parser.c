@@ -3936,7 +3936,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 		}
 
 		last_op = SB_strcmp(p->token, ")") && priority;
-		last_postfix = last_op && IS_POSTFIX(specifier);
+		last_postfix = IS_POSTFIX(specifier);
 		last_prefix = last_op && IS_PREFIX(specifier);
 
 		p->start_term = false;
