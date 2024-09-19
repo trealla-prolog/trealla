@@ -3824,7 +3824,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			if (!priority) specifier = 0;
 			eat_space(p);
 			int ch = peek_char_utf8(p->srcptr);
-			bool blah = !iswalpha(ch) &&  (ch != '_') && priority;
+			bool blah = !iswalpha(ch) && (ch != '_') && (ch != '(') && priority;
 
 			if (!blah) {
 				bool prefer_unifix = last_op || blah;
