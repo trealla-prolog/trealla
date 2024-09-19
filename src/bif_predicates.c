@@ -2766,16 +2766,20 @@ static bool do_op(query *q, cell *p3, pl_idx p3_ctx)
 	unsigned tmp_pri = match_op(q->st.m, C_STR(q, p3), &tmp_optype, p3->arity);
 
 	if (IS_INFIX(specifier) && IS_POSTFIX(tmp_optype))
-		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator");
+		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator1");
 
 	if (!tmp_pri && !pri)
 		return true;
 
+#if 0
 	if (IS_POSTFIX(specifier) && (IS_INFIX(tmp_optype)/* || tmp_pri*/))
-		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator");
+		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator2");
+#endif
 
-	if (IS_POSTFIX(specifier) && (IS_INFIX(tmp_optype) || (tmp_optype == OP_FY)))
-		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator");
+#if 0
+	if (IS_POSTFIX(specifier) && IS_INFIX(tmp_optype))
+		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator3");
+#endif
 
 	if (!set_op(q->st.m, C_STR(q, p3), specifier, pri))
 		return throw_error(q, p3, p3_ctx, "resource_error", "too_many_ops");
