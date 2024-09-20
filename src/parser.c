@@ -1644,7 +1644,6 @@ static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 		// Postfix...
 
 		const cell *rhs = c + 1;
-		cell save = *c;
 
 		if (is_xf(rhs) && (rhs->priority == c->priority)) {
 			if (DUMP_ERRS || !p->do_read_term)
@@ -1664,16 +1663,29 @@ static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 			return false;
 		}
 
+		cell save = *c;
+
 		if (is_postfix(c)) {
+			pl_idx off = last_idx;
+
+			if (off > end_idx) {
+				if (DUMP_ERRS || !p->do_read_term)
+					fprintf(stdout, "Error: syntax error, missing operand to postfix, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+
+				p->error_desc = "operand_missing";
+				p->error = true;
+				return false;
+			}
+
 			cell *lhs = p->cl->cells + last_idx;
 			save.nbr_cells += lhs->nbr_cells;
 			pl_idx cells_to_move = lhs->nbr_cells;
-			lhs = c - 1;
+			cell *save_c = lhs;
 
 			while (cells_to_move--)
-				*c-- = *lhs--;
+				*c++ = *lhs++;
 
-			*c = save;
+			*save_c = save;
 			break;
 		}
 
@@ -1690,6 +1702,7 @@ static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 
 		pl_idx off = (pl_idx)(rhs - p->cl->cells);
 		bool nolhs = last_idx == IDX_MAX;
+
 		if (i == start_idx) nolhs = true;
 
 		if (nolhs || (off > end_idx)) {
@@ -3358,7 +3371,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			}
 
 			if (analyze(p, 0, last_op)) {
-				if (p->cl->cells->nbr_cells <= (p->cl->cidx-1)) {
+				if (p->cl->cells->nbr_cells < p->cl->cidx) {
 					if (DUMP_ERRS || !p->do_read_term)
 						printf("Error: syntax error, operator expected unfinished input '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 
