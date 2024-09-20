@@ -1668,6 +1668,9 @@ static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 		if (is_postfix(c)) {
 			pl_idx off = last_idx;
 
+			// Here, instead of an error, we should check if the
+			// same op exists as prefix and convert it if so...
+
 			if (off > end_idx) {
 				if (DUMP_ERRS || !p->do_read_term)
 					fprintf(stdout, "Error: syntax error, missing operand to postfix, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
