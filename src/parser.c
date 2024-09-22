@@ -1668,9 +1668,6 @@ static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 		if (is_postfix(c)) {
 			pl_idx off = last_idx;
 
-			// Here, instead of an error, we should check if the
-			// same op exists as prefix and convert it if so...
-
 			if (off > end_idx) {
 				if (DUMP_ERRS || !p->do_read_term)
 					fprintf(stdout, "Error: syntax error, missing operand to postfix, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
@@ -3835,8 +3832,8 @@ unsigned tokenize(parser *p, bool args, bool consing)
 				break;
 			}
 
-			priority = get_op(p->m, SB_cstr(p->token), specifier=OP_XF);
-			if (!priority) priority = get_op(p->m, SB_cstr(p->token), specifier=OP_YF);
+			if (!last_op) priority = get_op(p->m, SB_cstr(p->token), specifier=OP_XF);
+			if (!priority && !last_op) priority = get_op(p->m, SB_cstr(p->token), specifier=OP_YF);
 			if (!priority) specifier = 0;
 			const char *src = eat_space(p);
 			int ch = peek_char_utf8(src);
