@@ -515,10 +515,10 @@ static void add_stream_properties(query *q, int n)
 	char tmpbuf[1024*8];
 	char *dst = tmpbuf;
 	*dst = '\0';
-	off_t pos = !str->is_map && !str->is_engine && !str->is_thread && !str->is_queue && !str->is_mutex ? ftello(str->fp) : 0;
+	off_t pos = !str->is_map && !str->is_engine && !str->is_queue && !str->is_mutex ? ftello(str->fp) : 0;
 	bool at_end_of_file = false;
 
-	if (!str->at_end_of_file && (n > 2) && !str->is_engine && !str->is_map && !str->is_thread && !str->is_queue && !str->is_mutex && !str->p) {
+	if (!str->at_end_of_file && (n > 2) && !str->is_engine && !str->is_map && !str->is_queue && !str->is_mutex && !str->p) {
 #if 0
 		if (str->p) {
 			if (str->p->srcptr && *str->p->srcptr) {
@@ -551,7 +551,7 @@ static void add_stream_properties(query *q, int n)
 
 	sl_done(iter);
 
-	if (!str->is_engine && !str->is_map && !str->is_thread && !str->is_queue && !str->is_mutex) {
+	if (!str->is_engine && !str->is_map && !str->is_queue && !str->is_mutex) {
 		char *dst2 = formatted(str->filename, strlen(str->filename), false, false);
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, file_name('%s')).\n", n, dst2);
 		free(dst2);
@@ -587,8 +587,6 @@ static void add_stream_properties(query *q, int n)
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, mutex(true)).\n", n);
 	else if (str->is_queue)
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, queue(true)).\n", n);
-	else if (str->is_thread)
-		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, thread(true)).\n", n);
 	else if (str->is_alias)
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, alias(true)).\n", n);
 
@@ -706,14 +704,6 @@ static bool do_stream_property(query *q)
 	if (!CMP_STRING_TO_CSTR(q, p1, "queue")) {
 		cell tmp;
 		make_cstring(&tmp, str->is_queue?"true":"false");
-		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
-		unshare_cell(&tmp);
-		return ok;
-	}
-
-	if (!CMP_STRING_TO_CSTR(q, p1, "thread")) {
-		cell tmp;
-		make_cstring(&tmp, str->is_thread?"true":"false");
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		return ok;
@@ -895,7 +885,7 @@ static bool bif_iso_stream_property_2(query *q)
 
 			stream *str = &q->pl->streams[i];
 
-			if (!str->socket && !str->is_thread && !str->is_mutex && !str->is_queue)
+			if (!str->socket && !str->is_mutex && !str->is_queue)
 				add_stream_properties(q, i);
 		}
 	}
@@ -1745,7 +1735,7 @@ static bool stream_close(query *q, int n)
 		sl_set(str2->alias, strdup("user_error"), NULL);
 	}
 
-	if (!str->socket && !str->is_mutex && !str->is_queue && !str->is_thread)
+	if (!str->socket && !str->is_mutex && !str->is_queue)
 		del_stream_properties(q, n);
 
 	bool ok = true;
@@ -1755,7 +1745,7 @@ static bool stream_close(query *q, int n)
 		sl_destroy(str->keyval);
 	} else if (str->is_engine) {
 		query_destroy(str->engine);
-	} else if (str->is_thread || str->is_queue || str->is_mutex) {
+	} else if (str->is_queue || str->is_mutex) {
 	} else
 		ok = !net_close(str);
 
@@ -7292,8 +7282,6 @@ static bool bif_alias_2(query *q)
 
 	if (str->is_map)
 		tmp.flags |= FLAG_INT_STREAM | FLAG_INT_MAP | FLAG_INT_HEX;
-	else if (str->is_thread)
-		tmp.flags |= FLAG_INT_THREAD | FLAG_INT_HEX;
 	else if (str->is_alias)
 		tmp.flags |= FLAG_INT_ALIAS | FLAG_INT_HEX;
 	else

@@ -645,7 +645,7 @@ void pl_destroy(prolog *pl)
 					sl_destroy(str->keyval);
 				else if (str->is_engine)
 					query_destroy(str->engine);
-				else if (str->is_thread || str->is_queue || str->is_mutex)
+				else if (str->is_queue || str->is_mutex)
 					;
 				else if (str->fp && (i > 2))
 					fclose(str->fp);
