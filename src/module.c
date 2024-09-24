@@ -2212,8 +2212,7 @@ module *load_file(module *m, const char *filename, bool including)
 			if (!sl_get(str->alias, "user_input", NULL))
 				continue;
 
-			for (predicate *pr = list_front(&m->predicates);
-				pr; pr = list_next(pr)) {
+			for (predicate *pr = list_front(&m->predicates); pr; pr = list_next(pr)) {
 				pr->is_reload = true;
 			}
 
@@ -2230,6 +2229,12 @@ module *load_file(module *m, const char *filename, bool including)
 				if (!tokenize(p, false, false)) {
 					if (p->end_of_file) {
 						m->pl->p->srcptr = p->srcptr;
+						parser_destroy(p);
+						return m;
+					}
+
+					if (p->error) {
+						m->pl->p->srcptr = NULL;
 						parser_destroy(p);
 						return m;
 					}
