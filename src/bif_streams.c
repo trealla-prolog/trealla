@@ -1894,6 +1894,10 @@ static bool bif_iso_nl_0(query *q)
 {
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
+
+	if (str->binary)
+		return throw_error(q, q->st.curr_instr, q->st.curr_frame, "permission_error", "output,binary_stream");
+
 	fputc('\n', str->fp);
 	int err = fflush(str->fp);
 
@@ -1911,6 +1915,9 @@ static bool bif_iso_nl_1(query *q)
 
 	if (!strcmp(str->mode, "read"))
 		return throw_error(q, pstr, q->st.curr_frame, "permission_error", "output,stream");
+
+	if (str->binary)
+		return throw_error(q, pstr, q->st.curr_frame, "permission_error", "output,binary_stream");
 
 	fputc('\n', str->fp);
 	int err = fflush(str->fp);
