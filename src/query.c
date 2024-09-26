@@ -430,7 +430,6 @@ static void leave_predicate(query *q, predicate *pr)
 	// query dirty-list. They will be freed up at end of the query.
 	// FIXME: this is a memory drain.
 
-	const frame *f = GET_CURR_FRAME();
 	rule *r;
 
 	while ((r = list_pop_front(&pr->dirty)) != NULL) {
@@ -664,6 +663,7 @@ static bool commit_any_choices(const query *q, const frame *f)
 static void commit_frame(query *q)
 {
 	clause *cl = &q->st.curr_rule->cl;
+	cell *head = get_head(cl->cells);
 	cell *body = get_body(cl->cells);
 	frame *f = GET_CURR_FRAME();
 	f->mid = q->st.m->id;
@@ -675,7 +675,6 @@ static void commit_frame(query *q)
 	bool next_key = has_next_key(q);
 	bool last_match = is_det || cl->is_first_cut || !next_key;
 	bool tco = false;
-	cell *head = get_head(cl->cells);
 	bool is_complex = is_complex(head);
 
 	// Use the help directive with [iso(true)]
@@ -709,12 +708,12 @@ static void commit_frame(query *q)
 
 #if 0
 	// Matching a fact...
-	if (q->pl->opt && !body && last_match && !cl->nbr_vars) {
+	if (q->pl->opt && !body && last_match && is_det && !cl->nbr_vars) {
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
 		//cut(q); 				// ???
 		trim_trail(q);
-		Trace(q, get_head(q->st.curr_rule->cl.cells), q->st.curr_frame, EXIT);
+		Trace(q, head, q->st.curr_frame, EXIT);
 		q->st.curr_instr += q->st.curr_instr->nbr_cells;
 		q->st.iter = NULL;
 		return;
