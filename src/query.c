@@ -565,8 +565,8 @@ static frame *push_frame(query *q, const clause *cl)
 	}
 
 	f->initial_slots = f->actual_slots = cl->nbr_vars;
-	//f->has_local_vars = cl->has_local_vars;
-	//f->no_tco = q->no_tco;
+	f->has_local_vars = cl->has_local_vars;
+	f->no_tco = q->no_tco;
 	f->chgen = ++q->chgen;
 	f->heap_nbr = q->st.heap_nbr;
 	f->hp = q->st.hp;
@@ -622,8 +622,8 @@ static void reuse_frame(query *q, const clause *cl)
 
 	frame *f = GET_CURR_FRAME();
 	f->initial_slots = f->actual_slots = cl->nbr_vars;
-	//f->has_local_vars = cl->has_local_vars;
-	//f->no_tco = q->no_tco;
+	f->has_local_vars = cl->has_local_vars;
+	f->no_tco = q->no_tco;
 	f->chgen = ++q->chgen;
 	f->heap_nbr = q->st.heap_nbr;
 	f->hp = q->st.hp;
