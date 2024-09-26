@@ -661,9 +661,10 @@ static bool commit_any_choices(const query *q, const frame *f)
 	return ch->chgen > f->chgen;
 }
 
-static void commit_frame(query *q, cell *body)
+static void commit_frame(query *q)
 {
-	const clause *cl = &q->st.curr_rule->cl;
+	clause *cl = &q->st.curr_rule->cl;
+	cell *body = get_body(cl->cells);
 	frame *f = GET_CURR_FRAME();
 	f->mid = q->st.m->id;
 
@@ -674,7 +675,7 @@ static void commit_frame(query *q, cell *body)
 	bool next_key = has_next_key(q);
 	bool last_match = is_det || cl->is_first_cut || !next_key;
 	bool tco = false;
-	cell *head = get_head(q->st.curr_rule->cl.cells);
+	cell *head = get_head(cl->cells);
 	bool is_complex = is_complex(head);
 
 	// Use the help directive with [iso(true)]
@@ -705,6 +706,20 @@ static void commit_frame(query *q, cell *body)
 			cl->nbr_vars, f->initial_slots, f->actual_slots);
 #endif
 	}
+
+#if 0
+	// Matching a fact...
+	if (q->pl->opt && !body && last_match && !cl->nbr_vars) {
+		leave_predicate(q, q->st.pr);
+		drop_choice(q);
+		//cut(q); 				// ???
+		trim_trail(q);
+		Trace(q, get_head(q->st.curr_rule->cl.cells), q->st.curr_frame, EXIT);
+		q->st.curr_instr += q->st.curr_instr->nbr_cells;
+		q->st.iter = NULL;
+		return;
+	}
+#endif
 
 	if (q->pl->opt && tco) {
 		reuse_frame(q, cl);
@@ -1481,7 +1496,6 @@ static bool match_head(query *q)
 
 		clause *cl = &q->st.curr_rule->cl;
 		cell *head = get_head(cl->cells);
-		cell *body = get_body(cl->cells);
 		try_me(q, cl->nbr_vars);
 		q->st.curr_rule->attempted++;
 
@@ -1491,7 +1505,7 @@ static bool match_head(query *q)
 			if (q->error)
 				break;
 
-			commit_frame(q, body);
+			commit_frame(q);
 			return true;
 		}
 
