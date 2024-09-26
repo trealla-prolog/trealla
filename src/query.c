@@ -708,6 +708,7 @@ static void commit_frame(query *q)
 
 #if 0
 	// Matching a fact...
+
 	if (q->pl->opt && !body && last_match && is_det && !cl->nbr_vars) {
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
