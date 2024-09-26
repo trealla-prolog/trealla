@@ -737,7 +737,7 @@ static void commit_frame(query *q)
 		ch->chgen = f->chgen;
 	}
 
-	Trace(q, get_head(q->st.curr_rule->cl.cells), q->st.curr_frame, EXIT);
+	Trace(q, get_head(cl->cells), q->st.curr_frame, EXIT);
 	q->st.curr_instr = body;
 }
 
