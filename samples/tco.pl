@@ -14,5 +14,8 @@ test3(0) :- !, statistics, fail.
 test3(I) :- f(I, _), I2 is I-1, test3(I2).
 
 main :-
-	test1(100000); test2(200000); test3(300000); true.
+	test1(100000);
+	test2(200000);
+	test3(300000);
+	true.
 
