@@ -411,9 +411,10 @@ static bool bif_iso_disjunction_2(query *q)
 	}
 
 	GET_FIRST_ARG(p1,callable);
-	cell *tmp = prepare_call(q, PREFIX_LEN, p1, p1_ctx, 1);
+	cell *tmp = prepare_call(q, PREFIX_LEN, p1, p1_ctx, 2);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
+	make_struct(tmp+nbr_cells++, g_true_s, bif_iso_true_0, 0, 0); // see query fact matching
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_choice(q));
 	q->st.curr_instr = tmp;
