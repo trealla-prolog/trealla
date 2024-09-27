@@ -706,7 +706,6 @@ static void commit_frame(query *q)
 #endif
 	}
 
-#if 1
 	// Matching a fact (see disjunction in bif_control.c)...
 
 	if (q->pl->opt && !body && last_match && is_det && !cl->nbr_vars) {
@@ -719,7 +718,6 @@ static void commit_frame(query *q)
 		q->st.iter = NULL;
 		return;
 	}
-#endif
 
 	if (q->pl->opt && tco) {
 		reuse_frame(q, cl);
