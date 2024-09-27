@@ -23,7 +23,7 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	CLP(Z) ##EXPERIMENTAL##
 
 
-Available from: [trealla-prolog.org](https://trealla-prolog.org).
+Available from: [https://github.com/trealla-prolog/trealla](https://github.com/trealla-prolog/trealla).
 
 Runs with [Jupyter Notebooks](https://github.com/LogtalkDotOrg/logtalk-jupyter-kernel#readme).
 
