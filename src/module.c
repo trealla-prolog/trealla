@@ -1588,7 +1588,7 @@ void xref_clause(module *m, clause *cl, predicate *parent)
 		//	last_was_colon = 3;
 		//} else {
 		//	last_was_colon--;
-			xref_cell(m, cl, c, parent, last_was_colon, is_directive);
+		xref_cell(m, cl, c, parent, last_was_colon, is_directive);
 		//}
 	}
 }
