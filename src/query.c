@@ -738,6 +738,7 @@ static void commit_frame(query *q)
 
 	Trace(q, get_head(cl->cells), q->st.curr_frame, EXIT);
 	q->st.curr_instr = body;
+	q->st.iter = NULL;
 }
 
 void stash_frame(query *q, const clause *cl, bool last_match)
