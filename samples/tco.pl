@@ -6,6 +6,8 @@ f.
 test2(0) :- !, statistics, nl, fail.
 test2(N) :- f, N1 is N-1, test2(N1).
 
+% No local vars & no structures, yet not recovered...
+
 f(1).
 
 test3(0) :- !, statistics, nl, fail.

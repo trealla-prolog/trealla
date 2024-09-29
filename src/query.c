@@ -709,7 +709,7 @@ static void commit_frame(query *q)
 	// Matching a fact (see disjunction in bif_control.c)...
 	// !q->has_vars ??? test for no vars left ?
 
-	if (q->pl->opt && !body && last_match && !q->has_vars && !cl->nbr_vars) {
+	if (q->pl->opt && !body && last_match && !q->has_indirects && !cl->nbr_vars) {
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
 		//cut(q); 				// ???
