@@ -706,10 +706,9 @@ static void commit_frame(query *q)
 #endif
 	}
 
-#if 0
 	// Matching a fact (see disjunction in bif_control.c)...
 
-	if (q->pl->opt && last_match && !body && !cl->nbr_vars) {
+	if (q->pl->opt && last_match && !body && !cl->nbr_vars && !q->st.pr->key.arity) {
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
 		//cut(q); 				// ???
@@ -719,7 +718,6 @@ static void commit_frame(query *q)
 		q->st.iter = NULL;
 		return;
 	}
-#endif
 
 	if (q->pl->opt && tco) {
 		reuse_frame(q, cl);
