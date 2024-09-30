@@ -668,7 +668,7 @@ static void commit_frame(query *q)
 	frame *f = GET_CURR_FRAME();
 	f->mid = q->st.m->id;
 
-	if (!q->st.curr_rule->owner->is_prebuilt)
+	if (!q->st.curr_rule->owner->is_builtin)
 		q->st.m = q->st.curr_rule->owner->m;
 
 	bool is_det = !q->has_vars && cl->is_unique;

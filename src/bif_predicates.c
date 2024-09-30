@@ -2145,7 +2145,7 @@ static bool search_functor(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		if (src[0] == '$')
 			continue;
 
-		if (pr->is_abolished || pr->is_prebuilt)
+		if (pr->is_abolished || pr->is_builtin)
 			continue;
 
 		try_me(q, MAX_VARS);
@@ -2841,7 +2841,7 @@ static void save_name(FILE *fp, query *q, pl_idx name, unsigned arity)
 
 	for (predicate *pr = list_front(&m->predicates);
 		pr; pr = list_next(pr)) {
-		if (pr->is_prebuilt && (arity == -1U))
+		if (pr->is_builtin && (arity == -1U))
 			continue;
 
 		if (name != pr->key.val_off)
@@ -5101,7 +5101,7 @@ static bool bif_sys_predicate_property_2(query *q)
 	if (!pr)
 		return false;
 
-	if (!pr->is_dynamic && !is_var(p2)) {
+	if (pr->is_builtin) {
 		make_atom(&tmp, new_atom(q->pl, "built_in"));
 
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
@@ -5142,11 +5142,6 @@ static bool bif_sys_predicate_property_2(query *q)
 		if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
 			return true;
 	}
-
-	make_atom(&tmp, new_atom(q->pl, "static"));
-
-	if (unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
-		return true;
 
 	make_atom(&tmp, new_atom(q->pl, "meta_predicate"));
 

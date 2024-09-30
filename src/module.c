@@ -320,7 +320,7 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 	predicate *pr = find_predicate(m, c);
 
 	if (pr) {
-		if (pr->is_prebuilt && prebuilt)
+		if (pr->is_builtin && prebuilt)
 			*prebuilt = true;
 
 		return pr;
@@ -332,7 +332,7 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 		pr = find_predicate(tmp_m, c);
 
 		if (pr) {
-			if (pr->is_prebuilt && prebuilt)
+			if (pr->is_builtin && prebuilt)
 				*prebuilt = true;
 
 			return pr;
@@ -343,7 +343,7 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 		pr = find_predicate(m->pl->user_m, c);
 
 		if (pr) {
-			if (pr->is_prebuilt && prebuilt)
+			if (pr->is_builtin && prebuilt)
 				*prebuilt = true;
 
 			return pr;
@@ -1781,7 +1781,7 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 		pr->is_dirty = true;
 
 	if (m->prebuilt)
-		pr->is_prebuilt = true;
+		pr->is_builtin = true;
 
 	size_t dbe_size = sizeof(rule) + (sizeof(cell) * (p1->nbr_cells+1));
 	rule *r = calloc(1, dbe_size);
@@ -2360,7 +2360,7 @@ static void module_save_fp(module *m, FILE *fp, int canonical, int dq)
 
 	for (predicate *pr = list_front(&m->predicates);
 		pr; pr = list_next(pr)) {
-		if (pr->is_prebuilt)
+		if (pr->is_builtin)
 			continue;
 
 		for (rule *r = pr->head; r; r = r->next) {

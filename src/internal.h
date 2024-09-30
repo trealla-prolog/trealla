@@ -454,7 +454,7 @@ struct predicate_ {
 	cell key;
 	pl_refcnt refcnt, cnt, db_id;
 	bool is_reload:1;
-	bool is_prebuilt:1;
+	bool is_builtin:1;
 	bool is_public:1;
 	bool is_dynamic:1;
 	bool is_meta_predicate:1;

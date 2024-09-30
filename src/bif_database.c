@@ -738,7 +738,7 @@ void save_db(FILE *fp, query *q, int logging)
 
 	for (predicate *pr = list_front(&q->st.m->predicates);
 		pr; pr = list_next(pr)) {
-		if (pr->is_prebuilt)
+		if (pr->is_builtin)
 			continue;
 
 		const char *src = C_STR(q, &pr->key);
