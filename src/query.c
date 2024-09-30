@@ -708,8 +708,9 @@ static void commit_frame(query *q)
 
 	// Matching a fact (see disjunction in bif_control.c)...
 
-	if (q->pl->opt && last_match && !body && !cl->nbr_vars
-		&& !q->st.pr->key.arity
+	if (q->pl->opt && last_match && !body
+		&& !cl->nbr_vars			// must be ground
+		&& !q->st.pr->key.arity		// simple for now
 		) {
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
