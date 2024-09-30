@@ -1741,7 +1741,7 @@ bool start(query *q)
 
 		if (q->oom) {
 			q->error = true;
-			printf("\nsystem_error(out_of_memory). %%terminated\n");
+			printf("\nresource_error(out_of_memory). %%query terminated\n");
 			break;
 		}
 	}
