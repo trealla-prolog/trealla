@@ -595,7 +595,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 
 		if (q->max_depth && (print_list >= q->max_depth)) {
 			SB_ungetchar(q->sb);
-			SB_sprintf(q->sb, "%s", "]");
+			SB_sprintf(q->sb, "%s", "|...]");
 			q->last_thing = WAS_OTHER;
 			q->cycle_error = true;
 			break;
