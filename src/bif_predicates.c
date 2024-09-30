@@ -6313,6 +6313,7 @@ static void load_properties(module *m)
 	for (const builtins *ptr = g_ffi_bifs; ptr->name; ptr++) {
 		sl_set(m->pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
+		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "foreign", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "built_in", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "static", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf);
 		if (ptr->iso) { format_property(m, tmpbuf, sizeof(tmpbuf), ptr->name, ptr->arity, "iso", ptr->evaluable?true:false); SB_strcat(pr, tmpbuf); }
