@@ -1768,7 +1768,6 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 					push_property(m, C_STR(m, c), c->arity, "built_in");
 
 				push_property(m, C_STR(m, c), c->arity, "static");
-				push_property(m, C_STR(m, c), c->arity, "interpreted");
 			}
 
 			if (consulting && m->make_public) {
