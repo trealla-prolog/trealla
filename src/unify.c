@@ -336,6 +336,7 @@ static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx
 		}
 	} else if (is_compound(v)) {
 		make_indirect(&e->c, v, v_ctx);
+		q->has_indirects = true;
 
 		if ((c_ctx != q->st.curr_frame) && (v_ctx == q->st.curr_frame)) {
 			if (!is_ground(v))
@@ -708,8 +709,10 @@ static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 	if (is_iso_list(p1) && is_iso_list(p2))
 		return unify_lists(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 
-	if (p1->arity || p2->arity)
+	if (p1->arity || p2->arity) {
 		return unify_structs(q, p1, p1_ctx, p2, p2_ctx, depth+1);
+		if (depth) q->has_compounds = true;
+	}
 
 	return g_disp[p1->tag].fn(q, p1, p2);
 }

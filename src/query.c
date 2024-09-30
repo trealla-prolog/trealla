@@ -710,7 +710,8 @@ static void commit_frame(query *q)
 
 	if (q->pl->opt && last_match && !body
 		&& !cl->nbr_vars			// must be ground
-		&& !q->st.pr->key.arity		// simple for now
+		&& !q->has_indirects
+		&& !q->has_compounds
 		) {
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
