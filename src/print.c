@@ -662,7 +662,8 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 
 		if (has_visited(visited, tail, tail_ctx)
 			|| ((tail == save_c) && (tail_ctx == save_c_ctx))
-			|| (q->max_depth && (print_depth >= q->max_depth))) {
+			//|| (q->max_depth && (print_depth >= q->max_depth))
+			) {
 			SB_sprintf(q->sb, "%s", "|");
 
 #if 0
