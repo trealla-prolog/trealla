@@ -11,8 +11,6 @@ f(1).
 test3(0) :- !, statistics, nl, fail.
 test3(N) :- f(_), N1 is N-1, test3(N1).
 
-% No local vars & no structures, yet not recovered...
-
 f(_, _).
 
 test4(0) :- !, statistics, fail.

@@ -711,7 +711,7 @@ static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 
 	if (p1->arity || p2->arity) {
 		return unify_structs(q, p1, p1_ctx, p2, p2_ctx, depth+1);
-		if (depth) q->has_compounds = true;
+		if (depth) q->has_structs = true;
 	}
 
 	return g_disp[p1->tag].fn(q, p1, p2);

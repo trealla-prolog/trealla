@@ -709,9 +709,8 @@ static void commit_frame(query *q)
 	// Matching a fact (see disjunction in bif_control.c)...
 
 	if (q->pl->opt && last_match && !body
-		&& !cl->nbr_vars			// must be ground
 		&& !q->has_indirects
-		&& !q->has_compounds
+		&& !q->has_structs
 		) {
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
