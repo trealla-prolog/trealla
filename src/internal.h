@@ -725,7 +725,6 @@ struct query_ {
 	bool no_tco:1;
 	bool has_vars:1;
 	bool has_indirects:1;
-	bool has_structs:1;
 	bool error:1;
 	bool did_throw:1;
 	bool trace:1;
