@@ -714,7 +714,6 @@ static void commit_frame(query *q)
 		) {
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
-		//cut(q); 				// ???
 		trim_trail(q);
 		Trace(q, head, q->st.curr_frame, EXIT);
 		q->st.curr_instr += q->st.curr_instr->nbr_cells;
@@ -731,7 +730,6 @@ static void commit_frame(query *q)
 	if (last_match) {
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
-		//cut(q); 				// ???
 		trim_trail(q);
 	} else {
 		choice *ch = GET_CURR_CHOICE();
