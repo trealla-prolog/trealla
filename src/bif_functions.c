@@ -275,6 +275,8 @@ bool call_builtin(query *q, cell *c, pl_idx c_ctx)
 #endif
 	if (!c->bif_ptr->evaluable && (c->val_off != g_float_s))
 		return throw_error(q, &q->accum, q->st.curr_frame, "type_error", "evaluable");
+	else if (q->max_eval_depth++ > g_max_depth)
+		return throw_error(q, q->st.curr_instr, q->st.curr_frame, "type_error", "evaluable");
 	else
 		c->bif_ptr->fn(q);
 
@@ -297,6 +299,7 @@ static bool bif_iso_is_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2_tmp,any);
+	q->max_eval_depth = 0;
 
 	CLEANUP cell p2 = eval(q, p2_tmp);
 	p2.nbr_cells = 1;
