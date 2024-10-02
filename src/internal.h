@@ -457,6 +457,7 @@ struct predicate_ {
 	bool is_builtin:1;
 	bool is_public:1;
 	bool is_dynamic:1;
+	bool is_tabled:1;
 	bool is_meta_predicate:1;
 	bool is_multifile:1;
 	bool is_discontiguous:1;

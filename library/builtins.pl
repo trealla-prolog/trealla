@@ -22,7 +22,7 @@ predicate_property(P, A) :-
 			discontiguous,private,static,
 			dynamic,foreign,multifile,
 			meta_predicate(_),imported_from(_),template(_),
-			iso,visible
+			iso,visible,tabled
 			],
 			( memberchk(A, Controls) ->
 				true
