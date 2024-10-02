@@ -3317,12 +3317,11 @@ static bool process_term(parser *p, cell *p1)
 	return true;
 }
 
-unsigned tokenize(parser *p, bool args, bool consing)
+unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 {
 	pl_idx arg_idx = p->cl->cidx, save_idx = 0;
 	bool last_op = true, is_func = false, last_num = false;
-	bool last_bar = false;
-	bool last_prefix = false, last_postfix = false;
+	bool last_bar = false, last_prefix = false, last_postfix = false;
 	int entered = p->entered;
 	unsigned arity = 1;
 	p->depth++;
@@ -3572,7 +3571,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			continue;
 		}
 
-		if (!p->quote_char && !args && !consing && last_op && !last_postfix && !SB_strcmp(p->token, ",")) {
+		if (!p->quote_char && !is_arg_processing && !is_consing && last_op && !last_postfix && !SB_strcmp(p->token, ",")) {
 			if (DUMP_ERRS || !p->do_read_term)
 				fprintf(stdout, "Error: syntax error, quotes needed around operator '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 
@@ -3581,7 +3580,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			break;
 		}
 
-		if (!p->quote_char && args && !consing && p->is_op /*&& last_op*/
+		if (!p->quote_char && is_arg_processing && !is_consing && p->is_op /*&& last_op*/
 			&& SB_strcmp(p->token, "|")
  			&& SB_strcmp(p->token, ",")
  			) {
@@ -3597,7 +3596,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			}
 		}
 
-		if (!p->quote_char && consing && !SB_strcmp(p->token, ",")) {
+		if (!p->quote_char && is_consing && !SB_strcmp(p->token, ",")) {
 			if ((arg_idx == p->cl->cidx) || !p->cl->cidx) {
 				if (DUMP_ERRS || !p->do_read_term)
 					fprintf(stdout, "Error: syntax error, missing arg '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
@@ -3634,8 +3633,8 @@ unsigned tokenize(parser *p, bool args, bool consing)
 		}
 
 		if (!p->quote_char &&
-			((args && !SB_strcmp(p->token, ",")) ||
-			(consing && !p->was_consing && !p->start_term && (!SB_strcmp(p->token, ",") || !SB_strcmp(p->token, "|")))
+			((is_arg_processing && !SB_strcmp(p->token, ",")) ||
+			(is_consing && !p->was_consing && !p->start_term && (!SB_strcmp(p->token, ",") || !SB_strcmp(p->token, "|")))
 			)) {
 			if ((arg_idx == p->cl->cidx) || !p->cl->cidx) {
 				if (DUMP_ERRS || !p->do_read_term)
@@ -3658,7 +3657,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 				break;
 			}
 
-			if (args) {
+			if (is_arg_processing) {
 				arity++;
 
 				if (arity > MAX_ARITY) {
@@ -3671,9 +3670,9 @@ unsigned tokenize(parser *p, bool args, bool consing)
 				}
 			}
 
-			if (consing && !SB_strcmp(p->token, "|")) {
+			if (is_consing && !SB_strcmp(p->token, "|")) {
 				p->was_consing = last_bar = true;
-				//consing = false;
+				//is_consing = false;
 			}
 
 			p->last_close = false;
@@ -3682,7 +3681,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			continue;
 		}
 
-		if (!p->is_quoted && consing && p->start_term && !SB_strcmp(p->token, "|")) {
+		if (!p->is_quoted && is_consing && p->start_term && !SB_strcmp(p->token, "|")) {
 			if (DUMP_ERRS || !p->do_read_term)
 				fprintf(stdout, "Error: syntax error, parsing list '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
 
@@ -3691,7 +3690,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 			break;
 		}
 
-		if (!p->is_quoted && p->was_consing && consing && !SB_strcmp(p->token, "|")) {
+		if (!p->is_quoted && p->was_consing && is_consing && !SB_strcmp(p->token, "|")) {
 			if (DUMP_ERRS || !p->do_read_term)
 				fprintf(stdout, "Error: syntax error, parsing list '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
 
@@ -3878,14 +3877,14 @@ unsigned tokenize(parser *p, bool args, bool consing)
 				|| (nextch == ']')
 				|| (nextch == '}')
 			) {
-				if ((SB_strcmp(p->token, "-") && SB_strcmp(p->token, "+")) || consing) {
+				if ((SB_strcmp(p->token, "-") && SB_strcmp(p->token, "+")) || is_consing) {
 					specifier = 0;
 					priority = 0;
 				}
 			}
 		}
 
-		if (priority && IS_POSTFIX(specifier) && args && last_op) {
+		if (priority && IS_POSTFIX(specifier) && is_arg_processing && last_op) {
 			specifier = 0;
 			priority = 0;
 		}
@@ -3906,7 +3905,7 @@ unsigned tokenize(parser *p, bool args, bool consing)
 
 		is_func = last_op && is_interned(&p->v) && !specifier && !last_num && (*p->srcptr == '(');
 
-		if (!is_func && last_op && (args && priority >= 1200) && !p->is_quoted) {
+		if (!is_func && last_op && (is_arg_processing && priority >= 1200) && !p->is_quoted) {
 			if (DUMP_ERRS || !p->do_read_term)
 				fprintf(stdout, "Error: syntax error, parens needed around operator '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 
