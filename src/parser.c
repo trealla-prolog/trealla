@@ -2801,7 +2801,10 @@ static bool check_space_before_function(parser *p, int ch, const char *src)
 {
 	if (iswspace(ch) && SB_strcmp(p->token, ".")) {
 		p->srcptr = (char*)src;
-		src = eat_space(p);
+		//src = eat_space(p);
+
+		while (iswblank(*src))
+			src++;
 
 		if (!src || !*src) {
 			if (DUMP_ERRS || !p->do_read_term)
@@ -3100,6 +3103,12 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					p->quote_char = -1;
 			} else
 				p->quote_char = -1;
+
+			p->srcptr = (char*)src;
+			int ch = peek_char_utf8(src);
+
+			if (!check_space_before_function(p, ch, src))
+				return false;
 
 			p->srcptr = (char*)src;
 			return true;
