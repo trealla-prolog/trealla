@@ -636,11 +636,6 @@ static void reuse_frame(query *q, const clause *cl)
 		cell *c = &to->c;
 		unshare_cell(c);
 		to->c = from->c;
-
-		if (is_ref(&to->c)) {
-			if (to->c.var_ctx == q->st.fp)
-				to->c.var_ctx = q->st.curr_frame;
-		}
 	}
 
 	q->st.sp = f->base + cl->nbr_vars;
