@@ -2799,30 +2799,30 @@ char *eat_space(parser *p)
 
 static bool check_space_before_function(parser *p, int ch, const char *src)
 {
-	if (!iswspace(ch))
-		return true;
+	if (iswspace(ch) && SB_strcmp(p->token, ".")) {
+		p->srcptr = (char*)src;
+		//src = eat_space(p);
 
-	p->srcptr = (char*)src;
+		while (iswblank(*src))
+			src++;
 
-	while (iswblank(*src))
-		src++;
+		if (!src || !*src) {
+			if (DUMP_ERRS || !p->do_read_term)
+				fprintf(stdout, "Error: syntax error, incomplete statement, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
-	if (!src || !*src) {
-		if (DUMP_ERRS || !p->do_read_term)
-			fprintf(stdout, "Error: syntax error, incomplete statement, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+			p->error_desc = "incomplete_statement";
+			p->error = true;
+			return false;
+		}
 
-		p->error_desc = "incomplete_statement";
-		p->error = true;
-		return false;
-	}
+		if (!p->is_op && (*src == '(')) {
+			if (DUMP_ERRS || !p->do_read_term)
+				fprintf(stdout, "Error: syntax error, operator expected before parens, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
-	if ((!p->is_op || p->is_quoted) && (*src == '(')) {
-		if (DUMP_ERRS || !p->do_read_term)
-			fprintf(stdout, "Error: syntax error, operator expected before parens, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
-
-		p->error_desc = "operator_expected";
-		p->error = true;
-		return false;
+			p->error_desc = "operator_expected";
+			p->error = true;
+			return false;
+		}
 	}
 
 	return true;
