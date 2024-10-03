@@ -675,12 +675,13 @@ static void commit_frame(query *q)
 	bool next_key = has_next_key(q);
 	bool last_match = is_det || cl->is_first_cut || !next_key;
 	bool tco = false;
-	bool is_complex = is_complex(head);
 
-	// Use the help directive with [iso(true)]
+	// Use with the help directive [tco(true)]
 
+#if 0
 	if (q->st.curr_rule->owner->is_tco)
 		q->no_tco = false;
+#endif
 
 	if (!q->no_tco
 		&& last_match
@@ -708,9 +709,7 @@ static void commit_frame(query *q)
 
 	// Matching a fact (see disjunction in bif_control.c)...
 
-	if (q->pl->opt && last_match && !body
-		&& !q->has_indirects
-		) {
+	if (q->pl->opt && last_match && !body && !q->has_indirects) {
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
 		trim_trail(q);
