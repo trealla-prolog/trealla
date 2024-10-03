@@ -2816,7 +2816,7 @@ static bool check_space_before_function(parser *p, int ch, const char *src)
 		return false;
 	}
 
-	if (!p->is_op && (*src == '(')) {
+	if ((!p->is_op || p->is_quoted) && (*src == '(')) {
 		if (DUMP_ERRS || !p->do_read_term)
 			fprintf(stdout, "Error: syntax error, operator expected before parens, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
