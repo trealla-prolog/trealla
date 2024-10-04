@@ -2799,7 +2799,7 @@ char *eat_space(parser *p)
 
 static bool check_space_before_function(parser *p, int ch, const char *src)
 {
-	if (iswspace(ch) && SB_strcmp(p->token, ".")) {
+	if (iswspace(ch) && (SB_strcmp(p->token, ".") || p->is_quoted)) {
 		p->srcptr = (char*)src;
 		//src = eat_space(p);
 
