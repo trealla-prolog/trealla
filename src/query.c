@@ -1465,7 +1465,7 @@ static bool match_head(query *q)
 
 		find_key(q, pr, c, c_ctx);
 		enter_predicate(q, pr);
-		frame *f = GET_FRAME(q->st.curr_frame);
+		frame *f = GET_CURR_FRAME();
 		f->dbgen = q->pl->dbgen;
 	} else
 		next_key(q);
@@ -1478,7 +1478,7 @@ static bool match_head(query *q)
 	check_heap_error(check_slot(q, MAX_ARITY));
 	check_heap_error(check_frame(q));
 	check_heap_error(push_choice(q));
-	const frame *f = GET_FRAME(q->st.curr_frame);
+	const frame *f = GET_CURR_FRAME();
 
 	for (; q->st.curr_rule; next_key(q)) {
 		if (!can_view(q, f->dbgen, q->st.curr_rule))
