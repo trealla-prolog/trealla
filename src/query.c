@@ -624,10 +624,10 @@ static void reuse_frame(query *q, const clause *cl)
 	f->overflow = 0;
 
 	const frame *newf = GET_FRAME(q->st.fp);
+	const slot *from = GET_SLOT(newf, 0);
+	slot *to = GET_SLOT(f, 0);
 
-	for (pl_idx i = 0; i < cl->nbr_vars; i++) {
-		const slot *from = GET_SLOT(newf, i);
-		slot *to = GET_SLOT(f, i);
+	for (pl_idx i = 0; i < cl->nbr_vars; i++, from++, to++) {
 		cell *c = &to->c;
 		unshare_cell(c);
 		to->c = from->c;
