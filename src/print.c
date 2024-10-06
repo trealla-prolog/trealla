@@ -123,6 +123,9 @@ bool needs_quoting(module *m, const char *src, int srclen)
 			|| (ch == 0x2007) || (ch == 0x202f)
 			)
 			return true;
+
+		if (!iswalnum(ch) && (ch != '_') && !(iswgraph(ch) && (ch <= 255)))
+			return true;
 	}
 
 	int cnt = 0, alphas = 0, graphs = 0;
