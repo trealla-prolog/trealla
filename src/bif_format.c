@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "heap.h"
 #include "network.h"
+#include "prolog.h"
 #include "query.h"
 
 static int format_integer(char *dst, cell *c, int grouping, int sep, int decimals, int radix)
@@ -546,11 +548,24 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 			len = format_integer(dst, c, 0, ',', 0, !argval?-8:-argval);
 			break;
 
+		case 'p': {
+			cell p1[1+c->nbr_cells];
+			make_struct(p1, new_atom(q->pl, "portray"), NULL, 1, c->nbr_cells);
+			dup_cells_by_ref(p1+1, c, c_ctx, c->nbr_cells);
+			cell *tmp = prepare_call(q, NOPREFIX_LEN, p1, q->st.curr_frame, 1);
+			pl_idx nbr_cells = p1->nbr_cells;
+			make_end(tmp+nbr_cells);
+			query *q2 = query_create_subquery(q, tmp);
+			q->st.curr_instr = tmp;
+			start(q2);
+			query_destroy(q2);
+			break;
+		}
+
 		case 'k':
 		case 'q':
 		case 'w':
 		case 'a':
-		case 'p':
 		{
 			int saveq = q->quoted;
 			bool canonical = false, quoted = false;
