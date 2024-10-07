@@ -1600,8 +1600,7 @@ bool start(query *q)
 		Trace(q, q->st.curr_instr, q->st.curr_frame, CALL);
 		cell *save_cell = q->st.curr_instr;
 		pl_idx save_ctx = q->st.curr_frame;
-		q->cycle_error = false;
-		q->did_throw = false;
+		q->cycle_error = q->did_throw = false;
 		q->tot_goals++;
 
 		if (is_builtin(q->st.curr_instr) && q->st.curr_instr->bif_ptr) {
@@ -1623,7 +1622,7 @@ bool start(query *q)
 				continue;
 			}
 
-			if (q->tot_goals % YIELD_INTERVAL == 0) {
+			if (!(q->tot_goals % YIELD_INTERVAL)) {
 				q->s_cnt = 0;
 
 				if (!(q->s_cnt++ % 100))
