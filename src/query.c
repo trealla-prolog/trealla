@@ -1688,15 +1688,6 @@ bool start(query *q)
 				continue;
 			}
 
-			while (q->cp) {
-				const choice *ch = GET_CURR_CHOICE();
-
-				if (!ch->barrier)
-					break;
-
-				drop_choice(q);
-			}
-
 			if (q->p && !q->run_init && any_outstanding_choices(q)) {
 				if (!check_redo(q))
 					break;
