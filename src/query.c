@@ -25,7 +25,7 @@ static void msleep(int ms)
 }
 #endif
 
-#define Trace if (!(q->trace /*&& !consulting*/)) q->step++; else trace_call
+#define Trace(p1,p2,p3,p4) { q->step++; if (q->trace /*&& !consulting*/) trace_call(p1,p2,p3,p4); }
 
 static const unsigned INITIAL_NBR_QUEUE_CELLS = 1000;
 static const unsigned INITIAL_NBR_HEAP_CELLS = 1000;
