@@ -2053,6 +2053,8 @@ static bool unload_realfile(module *m, const char *filename)
 				pr->is_abolished = true;
 		} else
 			xref_db(m);
+
+		list_remove(&m->predicates, pr);
 	}
 
 	set_unloaded(m, filename);
