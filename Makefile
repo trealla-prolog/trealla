@@ -118,6 +118,7 @@ SRCOBJECTS = tpl.o \
 
 LIBOBJECTS +=  \
 	library/abnf.o \
+	library/aggregate.o \
 	library/apply.o \
 	library/arithmetic.o \
 	library/assoc.o \

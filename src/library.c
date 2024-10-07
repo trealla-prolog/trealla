@@ -76,9 +76,12 @@ extern unsigned char library_clpz_pl[];
 extern unsigned int library_clpz_pl_len;
 extern unsigned char library_iso_ext_pl[];
 extern unsigned int library_iso_ext_pl_len;
+extern unsigned char library_aggregate_pl[];
+extern unsigned int library_aggregate_pl_len;
 
 library g_libs[] = {
 	 {"abnf", library_abnf_pl, &library_abnf_pl_len},
+	 {"aggregate", library_aggregate_pl, &library_aggregate_pl_len},
 	 {"apply", library_apply_pl, &library_apply_pl_len},
 	 {"arithmetic", library_arithmetic_pl, &library_arithmetic_pl_len},
 	 {"assoc", library_assoc_pl, &library_assoc_pl_len},
