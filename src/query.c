@@ -685,7 +685,6 @@ static void commit_frame(query *q)
 		tco = slots_ok && tail_recursive && choices;
 
 #if 0
-		const cell *head = get_head((cell*)cl->cells);
 		fprintf(stderr,
 			"*** %s/%u tco=%d,q->no_tco=%d,last_match=%d,is_det=%d,"
 			"next_key=%d,tail_call=%d/r%d,slots_ok=%d,choices=%d,"
@@ -725,7 +724,7 @@ static void commit_frame(query *q)
 		ch->chgen = f->chgen;
 	}
 
-	Trace(q, get_head(cl->cells), q->st.curr_frame, EXIT);
+	Trace(q, head, q->st.curr_frame, EXIT);
 	q->st.curr_instr = body;
 	q->st.iter = NULL;
 }
