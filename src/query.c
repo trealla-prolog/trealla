@@ -468,8 +468,9 @@ static void leave_predicate(query *q, predicate *pr)
 	module_unlock(pr->m);
 }
 
-static void unwind_trail(query *q)
+void undo_me(query *q)
 {
+	q->tot_retries++;
 	const choice *ch = GET_CURR_CHOICE();
 
 	while (q->st.tp > ch->st.tp) {
@@ -481,12 +482,6 @@ static void unwind_trail(query *q)
 		c->tag = TAG_EMPTY;
 		c->attrs = tr->attrs;
 	}
-}
-
-void undo_me(query *q)
-{
-	q->tot_retries++;
-	unwind_trail(q);
 }
 
 void try_me(query *q, unsigned nbr_vars)
@@ -502,7 +497,7 @@ void try_me(query *q, unsigned nbr_vars)
 int retry_choice(query *q)
 {
 	while (q->cp) {
-		unwind_trail(q);
+		undo_me(q);
 		pl_idx curr_choice = --q->cp;
 		const choice *ch = GET_CHOICE(curr_choice);
 		q->st = ch->st;
