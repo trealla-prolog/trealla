@@ -61,12 +61,13 @@ void make_struct_(cell *tmp, pl_idx offset, unsigned arity, pl_idx extra_cells);
 
 inline static void make_ref(cell *tmp, unsigned var_nbr, pl_idx ctx)
 {
-	*tmp = (cell){0};
 	tmp->tag = TAG_VAR;
 	tmp->nbr_cells = 1;
+	tmp->arity = 0;
 	tmp->flags = FLAG_VAR_REF;
 	tmp->var_nbr = var_nbr;
 	tmp->var_ctx = ctx;
+	tmp->attrs = NULL;
 }
 
 inline static void make_indirect(cell *tmp, cell *v, pl_idx v_ctx)
