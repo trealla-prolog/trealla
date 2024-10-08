@@ -695,7 +695,8 @@ static void commit_frame(query *q)
 
 	if (q->pl->opt && last_match && !body
 		&& !q->has_indirects
-		//&& !q->has_vars
+		&& !q->has_vars
+		&& !cl->nbr_vars
 		) {
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
