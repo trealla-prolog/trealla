@@ -3468,6 +3468,30 @@ static bool bif_statistics_2(query *q)
 		return unify(q, p2, p2_ctx, l, q->st.curr_frame);
 	}
 
+	if (!CMP_STRING_TO_CSTR(q, p1, "active_frames") && is_var(p2)) {
+		cell tmp;
+		make_int(&tmp, q->st.fp);
+		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	}
+
+	if (!CMP_STRING_TO_CSTR(q, p1, "active_choices") && is_var(p2)) {
+		cell tmp;
+		make_int(&tmp, q->st.cp);
+		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	}
+
+	if (!CMP_STRING_TO_CSTR(q, p1, "active_trails") && is_var(p2)) {
+		cell tmp;
+		make_int(&tmp, q->st.tp);
+		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	}
+
+	if (!CMP_STRING_TO_CSTR(q, p1, "active_slots") && is_var(p2)) {
+		cell tmp;
+		make_int(&tmp, q->st.sp);
+		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	}
+
 	return false;
 }
 
