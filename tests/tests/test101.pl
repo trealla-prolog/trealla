@@ -22,7 +22,7 @@ statistics.
 
 main :-
 	write(test1), write(': '), test1(1000000);
-	write(test2), write(': '), test2(1000000);
+	%write(test2), write(': '), test2(1000000);
 	%write(test3), write(': '), test3(1000000);
 	%write(test4), write(': '), test4(1000000);
 	%write(test5), write(': '), test5(1000000);
