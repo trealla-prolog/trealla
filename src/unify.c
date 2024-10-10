@@ -323,10 +323,10 @@ static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx
 		q->run_hook = true;
 
 	if (is_compound(v) && (v_ctx == q->st.fp))
-		q->no_tco = true;
+		q->no_fact = true;
 
 	if (is_managed(v))
-		q->no_tco = true;
+		q->no_fact = true;
 
 	// If anything outside the current frame points inside the
 	// current frame then we can't TCO.

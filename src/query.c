@@ -691,8 +691,7 @@ static void commit_frame(query *q)
 	// Matching a ground fact (see disjunction in bif_control.c)...
 
 	if (q->pl->opt && last_match && !body
-		&& !cl->nbr_vars
-		&& !q->no_tco
+		&& !q->no_fact
 		) {
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
