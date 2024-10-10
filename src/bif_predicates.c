@@ -4856,7 +4856,7 @@ static bool bif_getenv_2(query *q)
 static bool bif_setenv_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
-	GET_NEXT_ARG(p2,atom_or_int);
+	GET_NEXT_ARG(p2,atom_or_integer);
 
 	if (is_bigint(p2))
 		return throw_error(q, p2, p2_ctx, "domain_error", "small_integer_range");
@@ -5233,7 +5233,7 @@ static bool bif_sys_evaluable_property_2(query *q)
 
 static bool bif_char_type_2(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_int);
+	GET_FIRST_ARG(p1,atom_or_integer);
 	GET_NEXT_ARG(p2,atom_or_compound);
 	int ch;
 

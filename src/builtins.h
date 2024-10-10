@@ -27,7 +27,7 @@ bool wrap_ffi_predicate(query *q, builtins *bif_ptr);
 #define is_compound_or_var(c) (is_compound(c) || is_var(c))
 #define is_atomic_or_var(c) (is_atomic(c) || is_var(c))
 #define is_atom_or_var(c) (is_atom(c) || is_var(c))
-#define is_atom_or_int(c) (is_atom(c) || is_integer(c))
+#define is_atom_or_integer(c) (is_atom(c) || is_integer(c))
 #define is_atom_or_list_or_nil(c) (is_atom(c) || is_list_or_nil(c))
 #define is_atom_or_compound(c) (is_atom(c) || is_compound(c))
 #define is_number_or_var(c) (is_number(c) || is_var(c))
