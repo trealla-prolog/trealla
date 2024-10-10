@@ -653,9 +653,6 @@ static void commit_frame(query *q)
 	frame *f = GET_CURR_FRAME();
 	f->mid = q->st.m->id;
 
-	if (!q->st.curr_rule->owner->is_builtin)
-		q->st.m = q->st.curr_rule->owner->m;
-
 	bool is_det = !q->has_vars && cl->is_unique;
 	bool next_key = has_next_key(q);
 	bool last_match = is_det || cl->is_first_cut || !next_key;
@@ -691,13 +688,11 @@ static void commit_frame(query *q)
 #endif
 	}
 
-	// Matching a fact (see disjunction in bif_control.c)...
+	// Matching a ground fact (see disjunction in bif_control.c)...
 
 	if (q->pl->opt && last_match && !body
-		&& !q->no_tco
-		&& !q->has_vars
 		&& !cl->nbr_vars
-		&& cl->is_unique
+		&& !q->no_tco
 		) {
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
@@ -707,6 +702,9 @@ static void commit_frame(query *q)
 		q->st.iter = NULL;
 		return;
 	}
+
+	if (!q->st.curr_rule->owner->is_builtin)
+		q->st.m = q->st.curr_rule->owner->m;
 
 	if (q->pl->opt && tco) {
 		reuse_frame(q, cl);

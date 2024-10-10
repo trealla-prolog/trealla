@@ -1,4 +1,5 @@
 :- initialization(main).
+
 test1(0) :- !, statistics(active_frames, Fs), statistics(active_choices, Cs), statistics(active_trails, Ts), statistics(active_slots, Ss), write([Fs,Cs,Ts,Ss]), nl, fail.
 test1(N) :- N1 is N-1, test1(N1).
 
