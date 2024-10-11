@@ -370,7 +370,6 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 			continue;
 
 		const frame *f = GET_FRAME(c->var_ctx);
-		const slot *e = GET_SLOT(f, c->var_nbr);
 		const size_t slot_nbr = f->base + c->var_nbr;
 		int var_nbr;
 
@@ -378,6 +377,8 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 			var_nbr = q->varno++;
 			create_vars(q, 1);
 		}
+
+		const slot *e = GET_SLOT(f, c->var_nbr);	// After create_vars
 
 		if (!q->tab_idx) {
 			q->tab0_varno = var_nbr;
