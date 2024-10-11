@@ -47,7 +47,7 @@ sys_aggr_init(set(X), X, []) :- !.
 sys_aggr_init((F,G), (X,Y), (C,D)) :- !,
    sys_aggr_init(F, X, C),
    sys_aggr_init(G, Y, D).
-sys_aggr_init(A, _) :-
+sys_aggr_init(A, _, _) :-
    throw(error(type_error(aggregate,A),_)).
 
 % sys_aggr_next(+Aggregate, +Term, +Term, -Term)
