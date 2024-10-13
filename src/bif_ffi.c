@@ -691,6 +691,10 @@ bool wrap_ffi_function(query *q, builtins *ptr)
 			;
 		else if ((ptr->types[i] == FFI_TAG_FP64) && is_float(c))
 			;
+		else if ((ptr->types[i] == FFI_TAG_C_STR) && is_atom(c))
+			;
+		else if ((ptr->types[i] == FFI_TAG_C_CSTR) && is_atom(c))
+			;
 		else if ((ptr->types[i] != c->tag) && !is_var(c))
 			return throw_error(q, c, c_ctx, "type_error",
 			ptr->types[i] == FFI_TAG_UINT8 ? "integer" :
@@ -1190,6 +1194,10 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 		else if ((ptr->types[i] == FFI_TAG_FP32) && is_float(c))
 			;
 		else if ((ptr->types[i] == FFI_TAG_FP64) && is_float(c))
+			;
+		else if ((ptr->types[i] == FFI_TAG_C_STR) && is_atom(c))
+			;
+		else if ((ptr->types[i] == FFI_TAG_C_CSTR) && is_atom(c))
 			;
 		else if ((ptr->types[i] == FFI_TAG_STRUCT) && is_iso_list(c))
 			;
