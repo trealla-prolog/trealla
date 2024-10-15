@@ -366,7 +366,7 @@ void reset_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
 
 static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth);
 
-static bool unify_string_to_list(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
+static bool unify_string_to_list(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
 	LIST_HANDLER(p1);
 	LIST_HANDLER(p2);
@@ -393,7 +393,7 @@ static bool unify_string_to_list(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl
 	return unify_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
 }
 
-static bool unify_integers(query *q, cell *p1, cell *p2)
+static bool unify_integers(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
 	if (is_bigint(p1)) {
 		if (is_rational(p2)) {
@@ -426,7 +426,7 @@ static bool unify_integers(query *q, cell *p1, cell *p2)
 	return false;
 }
 
-static bool unify_rationals(query *q, cell *p1, cell *p2)
+static bool unify_rationals(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
 	if (is_rational(p1) && is_rational(p2))
 		return !mp_rat_compare(&p1->val_bigint->irat, &p2->val_bigint->irat);
@@ -446,7 +446,7 @@ static bool unify_rationals(query *q, cell *p1, cell *p2)
 	return false;
 }
 
-static bool unify_reals(query *q, cell *p1, cell *p2)
+static bool unify_reals(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
 	if (is_float(p2))
 		return get_float(p1) == get_float(p2);
@@ -454,7 +454,7 @@ static bool unify_reals(query *q, cell *p1, cell *p2)
 	return false;
 }
 
-static bool unify_literals(query *q, cell *p1, cell *p2)
+static bool unify_literals(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
 	if (is_interned(p2))
 		return p1->val_off == p2->val_off;
@@ -465,7 +465,7 @@ static bool unify_literals(query *q, cell *p1, cell *p2)
 	return false;
 }
 
-static bool unify_cstrings(query *q, cell *p1, cell *p2)
+static bool unify_cstrings(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
 	if (is_cstring(p2) && (C_STRLEN(q, p1) == C_STRLEN(q, p2)))
 		return !memcmp(C_STR(q, p1), C_STR(q, p2), C_STRLEN(q, p1));
@@ -478,7 +478,7 @@ static bool unify_cstrings(query *q, cell *p1, cell *p2)
 
 struct dispatch {
 	uint8_t tag;
-	bool (*fn)(query*, cell*, cell*);
+	bool (*fn)(query*, cell*, pl_idx, cell*, pl_idx, unsigned);
 };
 
 static const struct dispatch g_disp[] =
@@ -635,6 +635,33 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 	return true;
 }
 
+static bool unify_var(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
+{
+	bool was_cyclic = false;
+
+	if (q->flags.occurs_check == OCCURS_CHECK_TRUE) {
+		if (is_cyclic_term(q, p2, p2_ctx))
+			was_cyclic = true;
+	} else if (q->flags.occurs_check == OCCURS_CHECK_ERROR) {
+		if (is_cyclic_term(q, p2, p2_ctx))
+			was_cyclic = true;
+	}
+
+	set_var(q, p1, p1_ctx, p2, p2_ctx);
+
+	if (q->flags.occurs_check == OCCURS_CHECK_TRUE) {
+		if (!was_cyclic && is_cyclic_term(q, p2, p2_ctx))
+			return false;
+	} else if (q->flags.occurs_check == OCCURS_CHECK_ERROR) {
+		if (!was_cyclic && is_cyclic_term(q, p2, p2_ctx)) {
+			q->cycle_error = true;
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
 #if 1
@@ -659,65 +686,38 @@ static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 	}
 
 	if (is_var(p2)) {
-		cell *tmp = p2;
-		pl_idx tmp_ctx = p2_ctx;
-		p2 = p1;
-		p2_ctx = p1_ctx;
-		p1 = tmp;
-		p1_ctx = tmp_ctx;
-	} else if ((depth > 1) && is_var(p1))
-		q->has_vars = true;
+		return unify_var(q, p2, p2_ctx, p1, p1_ctx, depth);
+	} else if (is_var(p1)) {
+		if (depth > 1)
+			q->has_vars = true;
 
-	if (is_var(p1)) {
-		bool was_cyclic = false;
-
-		if (q->flags.occurs_check == OCCURS_CHECK_TRUE) {
-			if (is_cyclic_term(q, p2, p2_ctx))
-				was_cyclic = true;
-		} else if (q->flags.occurs_check == OCCURS_CHECK_ERROR) {
-			if (is_cyclic_term(q, p2, p2_ctx))
-				was_cyclic = true;
-		}
-
-		set_var(q, p1, p1_ctx, p2, p2_ctx);
-
-		if (q->flags.occurs_check == OCCURS_CHECK_TRUE) {
-			if (!was_cyclic && is_cyclic_term(q, p2, p2_ctx))
-				return false;
-		} else if (q->flags.occurs_check == OCCURS_CHECK_ERROR) {
-			if (!was_cyclic && is_cyclic_term(q, p2, p2_ctx)) {
-				q->cycle_error = true;
-				return false;
-			}
-		}
-
-		return true;
+		return unify_var(q, p1, p1_ctx, p2, p2_ctx, depth);
 	}
+
+	if (is_iso_list(p1) && is_iso_list(p2))
+		return unify_lists(q, p1, p1_ctx, p2, p2_ctx, depth);
 
 	if (is_string(p1)) {
 		if (is_string(p2))
-			return unify_cstrings(q, p1, p2);
+			return unify_cstrings(q, p1, p1_ctx, p2, p2_ctx, depth);
 
 		if (is_iso_list(p2))
-			return unify_string_to_list(q, p1, p1_ctx, p2, p2_ctx);
+			return unify_string_to_list(q, p1, p1_ctx, p2, p2_ctx, depth);
 
 		return false;
 	}
 
 	if (is_string(p2)) {
 		if (is_iso_list(p1))
-			return unify_string_to_list(q, p2, p2_ctx, p1, p1_ctx);
+			return unify_string_to_list(q, p2, p2_ctx, p1, p1_ctx, depth);
 
 		return false;
 	}
 
-	if (is_iso_list(p1) && is_iso_list(p2))
-		return unify_lists(q, p1, p1_ctx, p2, p2_ctx, depth+1);
-
 	if (p1->arity || p2->arity)
 		return unify_structs(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 
-	return g_disp[p1->tag].fn(q, p1, p2);
+	return g_disp[p1->tag].fn(q, p1, p1_ctx, p2, p2_ctx, depth);
 }
 
 bool unify(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
