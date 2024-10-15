@@ -454,17 +454,6 @@ static bool unify_reals(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 	return false;
 }
 
-static bool unify_literals(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
-{
-	if (is_interned(p2))
-		return p1->val_off == p2->val_off;
-
-	if (is_cstring(p2) && (C_STRLEN(q, p1) == C_STRLEN(q, p2)))
-		return !memcmp(C_STR(q, p2), GET_POOL(q, p1->val_off), C_STRLEN(q, p1));
-
-	return false;
-}
-
 static bool unify_cstrings(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
 	if (is_cstring(p2) && (C_STRLEN(q, p1) == C_STRLEN(q, p2)))
@@ -475,23 +464,6 @@ static bool unify_cstrings(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 
 	return false;
 }
-
-struct dispatch {
-	uint8_t tag;
-	bool (*fn)(query*, cell*, pl_idx, cell*, pl_idx, unsigned);
-};
-
-static const struct dispatch g_disp[] =
-{
-	{TAG_EMPTY, NULL},
-	{TAG_VAR, NULL},
-	{TAG_INTERNED, unify_literals},
-	{TAG_CSTR, unify_cstrings},
-	{TAG_INTEGER, unify_integers},
-	{TAG_DOUBLE, unify_reals},
-	{TAG_RATIONAL, unify_rationals},
-	{0}
-};
 
 static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
@@ -662,6 +634,40 @@ static bool unify_var(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx
 	return true;
 }
 
+static bool unify_interned(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
+{
+	if (is_iso_list(p1) && is_iso_list(p2))
+		return unify_lists(q, p1, p1_ctx, p2, p2_ctx, depth);
+
+	if (p1->arity || p2->arity)
+		return unify_structs(q, p1, p1_ctx, p2, p2_ctx, depth+1);
+
+	if (is_interned(p2))
+		return p1->val_off == p2->val_off;
+
+	if (is_cstring(p2) && (C_STRLEN(q, p1) == C_STRLEN(q, p2)))
+		return !memcmp(C_STR(q, p2), GET_POOL(q, p1->val_off), C_STRLEN(q, p1));
+
+	return false;
+}
+
+struct dispatch {
+	uint8_t tag;
+	bool (*fn)(query*, cell*, pl_idx, cell*, pl_idx, unsigned);
+};
+
+static const struct dispatch g_disp[] =
+{
+	{TAG_EMPTY, NULL},
+	{TAG_VAR, NULL},
+	{TAG_INTERNED, unify_interned},
+	{TAG_CSTR, unify_cstrings},
+	{TAG_INTEGER, unify_integers},
+	{TAG_DOUBLE, unify_reals},
+	{TAG_RATIONAL, unify_rationals},
+	{0}
+};
+
 static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
 #if 1
@@ -694,9 +700,6 @@ static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		return unify_var(q, p1, p1_ctx, p2, p2_ctx, depth);
 	}
 
-	if (is_iso_list(p1) && is_iso_list(p2))
-		return unify_lists(q, p1, p1_ctx, p2, p2_ctx, depth);
-
 	if (is_string(p1)) {
 		if (is_string(p2))
 			return unify_cstrings(q, p1, p1_ctx, p2, p2_ctx, depth);
@@ -713,9 +716,6 @@ static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 
 		return false;
 	}
-
-	if (p1->arity || p2->arity)
-		return unify_structs(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 
 	return g_disp[p1->tag].fn(q, p1, p1_ctx, p2, p2_ctx, depth);
 }
