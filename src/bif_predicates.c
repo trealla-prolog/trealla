@@ -2136,7 +2136,6 @@ static bool search_functor(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		q->st.f_iter = sl_first(q->st.m->index);
 
 	check_heap_error(push_choice(q));
-	check_heap_error(check_slot(q, MAX_VARS));
 	predicate *pr = NULL;
 
 	while (sl_next(q->st.f_iter, (void*)&pr)) {
@@ -2148,17 +2147,14 @@ static bool search_functor(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		if (pr->is_abolished || pr->is_builtin)
 			continue;
 
-		try_me(q, MAX_VARS);
 		cell tmpn, tmpa;
 		make_atom(&tmpn, pr->key.val_off);
 		make_int(&tmpa, pr->key.arity);
 
-		if (unify(q, p1, p1_ctx, &tmpn, q->st.fp)
-			&& unify(q, p2, p2_ctx, &tmpa, q->st.fp)) {
+		if (unify(q, p1, p1_ctx, &tmpn, q->st.curr_frame)
+			&& unify(q, p2, p2_ctx, &tmpa, q->st.curr_frame)) {
 			return true;
 		}
-
-		undo_me(q);
 	}
 
 	sl_done(q->st.f_iter);
