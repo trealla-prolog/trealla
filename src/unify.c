@@ -322,10 +322,7 @@ static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx
 	if (c_attrs)
 		q->run_hook = true;
 
-	if (is_compound(v) && (v_ctx == q->st.fp))
-		q->no_fact = true;
-
-	if (is_managed(v))
+	if ((is_compound(v) || is_managed(v)) && (v_ctx == q->st.fp))
 		q->no_fact = true;
 
 	// If anything outside the current frame points inside the
