@@ -776,7 +776,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 				visited = me;
 				unsigned specifier = 0;
 				unsigned priority = match_op(q->st.m, C_STR(q, tail), &specifier, tail->arity);
-				bool parens = is_infix(tail) && (priority >= 1000);
+				bool parens = (is_infix(tail) || is_prefix(tail)) && (priority >= 1000);
 				if (parens) { SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
 				print_term_to_buf_(q, tail, tail_ctx, running, true, depth+1, depth+1, visited);
 				if (parens) { SB_sprintf(q->sb, "%s", ")"); }
