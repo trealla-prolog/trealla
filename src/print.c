@@ -1255,6 +1255,8 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		if ((c->val_off == g_minus_s) && search_op(q->st.m, C_STR(q, rhs), NULL, true) && !rhs->arity) parens = true;
 		if ((c->val_off == g_plus_s) && search_op(q->st.m, C_STR(q, rhs), NULL, true) && !rhs->arity) parens = true;
 
+		if (!strcmp(src, "?-") || !strcmp(src, ":-")) space = 1;
+
 		bool quote = q->quoted && needs_quoting(q->st.m, src, src_len);
 
 		if (is_interned(rhs) && !rhs->arity && !parens) {
