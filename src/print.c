@@ -636,6 +636,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 					|| !strcmp(C_STR(q, head), "|")
 					|| !strcmp(C_STR(q, head), ";")
 					|| !strcmp(C_STR(q, head), ":-")
+					|| !strcmp(C_STR(q, head), "?-")
 					|| !strcmp(C_STR(q, head), "->")
 					|| !strcmp(C_STR(q, head), "*->")
 					|| !strcmp(C_STR(q, head), "-->"));
