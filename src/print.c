@@ -631,7 +631,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			bool special_op = false;
 
 			if (is_interned(head)) {
-				special_op = (
+				special_op = (						// TODO: Change to use priority >
 					!strcmp(C_STR(q, head), ",")
 					|| !strcmp(C_STR(q, head), "|")
 					|| !strcmp(C_STR(q, head), ";")
