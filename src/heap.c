@@ -168,11 +168,6 @@ void trim_heap(query *q)
 		if (a->nbr < q->st.heap_nbr)
 			break;
 
-		cell *c = a->cells;
-
-		for (pl_idx i = 0; i < a->idx; i++, c++)
-			unshare_cell(c);
-
 		page *save = a;
 		q->heap_pages = a = a->next;
 		free(save->cells);
@@ -183,7 +178,6 @@ void trim_heap(query *q)
 
 	for (pl_idx i = q->st.hp; a && (i < a->idx); i++) {
 		cell *c = a->cells + i;
-		unshare_cell(c);
 		init_cell(c);
 	}
 }
@@ -357,7 +351,7 @@ cell *prepare_call(query *q, bool prefix, cell *p1, pl_idx p1_ctx, unsigned extr
 	}
 
 	cell *dst = tmp + (prefix ? PREFIX_LEN : NOPREFIX_LEN);
-	dup_cells_by_ref(dst, p1, p1_ctx, p1->nbr_cells);
+	copy_cells_by_ref(dst, p1, p1_ctx, p1->nbr_cells);
 	return tmp;
 }
 
