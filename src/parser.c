@@ -1815,11 +1815,12 @@ static bool dcg_expansion(parser *p)
 	parser *p2 = parser_create(p->m);
 	check_error(p2);
 	p2->srcptr = src;
+	tokenize(p2, false, false);
 
-	if (!tokenize(p2, false, false)) {
+	if (p2->error) {
 		parser_destroy(p2);
+		query_destroy(q);
 		p->error = true;
-		free(src);
 		return false;
 	}
 
@@ -1896,6 +1897,14 @@ static bool term_expansion(parser *p)
 	check_error(p2);
 	p2->srcptr = src;
 	tokenize(p2, false, false);
+
+	if (p2->error) {
+		parser_destroy(p2);
+		query_destroy(q);
+		p->error = true;
+		return false;
+	}
+
 	xref_clause(p2->m, p2->cl, NULL);
 	free(src);
 
@@ -2258,6 +2267,13 @@ bool virtual_term(parser *p, const char *src)
 	p2->consulting = true;
 	p2->srcptr = (char*)src;
 	tokenize(p2, false, false);
+
+	if (p2->error) {
+		parser_destroy(p2);
+		p->error = true;
+		return false;
+	}
+
 	parser_destroy(p2);
 	return true;
 }
@@ -4059,8 +4075,9 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 		p->line_nbr = 1;
 		p->one_shot = true;
 		p->consulting = false;
+		tokenize(p, false, false);
 
-		if (!tokenize(p, false, false)) {
+		if (p->error) {
 			p->m->pl->error = p->error;
 			break;
 		}
