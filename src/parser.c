@@ -1968,6 +1968,14 @@ static cell *goal_expansion(parser *p, cell *goal)
 	p2->skip = true;
 	p2->srcptr = SB_cstr(s);
 	tokenize(p2, false, false);
+
+	if (p2->error) {
+		parser_destroy(p2);
+		query_destroy(q);
+		p->error = true;
+		return goal;
+	}
+
 	xref_clause(p2->m, p2->cl, NULL);
 	execute(q, p2->cl->cells, p2->cl->nbr_vars);
 	SB_free(s);
@@ -2021,6 +2029,14 @@ static cell *goal_expansion(parser *p, cell *goal)
 	p2->reuse = true;
 	p2->srcptr = src;
 	tokenize(p2, false, false);
+
+	if (p2->error) {
+		parser_destroy(p2);
+		query_destroy(q);
+		p->error = true;
+		return goal;
+	}
+
 	xref_clause(p2->m, p2->cl, NULL);
 	free(src);
 
@@ -3389,6 +3405,8 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 				}
 
 				assign_vars(p, p->read_term_slots, false);
+
+				if (p->error) return 0;
 
 				if (p->consulting && check_body_callable(p->cl->cells)) {
 					if (DUMP_ERRS || !p->do_read_term)
