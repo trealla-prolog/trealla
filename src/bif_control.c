@@ -260,7 +260,7 @@ static bool bif_iso_once_1(query *q)
 
 // if -> ! ; true
 
-static bool bif_ignore_1(query *q)
+bool bif_ignore_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	check_heap_error(init_tmp_heap(q));
