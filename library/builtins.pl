@@ -488,6 +488,9 @@ time_out(Goal, Time, Result) :-
 print(T) :- format(user_output, "~p", [T]).
 print(S, T) :- format(S, "~p", [T]).
 
+:- help(print(+term), [iso(false)]).
+:- help(print(+stream,+term), [iso(false)]).
+
 writeln(T) :- write(T), nl.
 
 :- help(writeln(+term), [iso(false)]).
