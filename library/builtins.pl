@@ -485,11 +485,8 @@ time_out(Goal, Time, Result) :-
 
 :- help(time_out(:callable,+integer,?atom), [iso(false)]).
 
-print(T) :- bwrite(user_output, T), nl.
-print(S, T) :- bwrite(S, T), nl.
-
-:- help(print(+term), [iso(false)]).
-:- help(print(+stream,+term), [iso(false)]).
+print(T) :- format(user_output, "~p", [T]).
+print(S, T) :- format(S, "~p", [T]).
 
 writeln(T) :- write(T), nl.
 
