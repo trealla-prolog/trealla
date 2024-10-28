@@ -2,4 +2,4 @@
 
 main :-
 	X = f(X), X == X,
-	writeq(X), nl.
+	write_term(X,[max_depth(5)]), nl.

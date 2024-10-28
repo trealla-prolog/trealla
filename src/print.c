@@ -1104,7 +1104,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 				if (running) tmp = deref(q, tmp, tmp_ctx);
 				if (running) tmp_ctx = q->latest_ctx;
 
-				if (has_visited(visited, tmp, tmp_ctx)) {
+				if (q->is_dump_vars && has_visited(visited, tmp, tmp_ctx)) {
 					tmp = c;
 					tmp_ctx = c_ctx;
 					SB_sprintf(q->sb, "%s", !is_ref(tmp) ? C_STR(q, tmp) : "_");
@@ -1189,7 +1189,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		if ((c->val_off == g_plus_s) && is_op_lhs) space = true;
 		if (isalpha(*src)) space = true;
 
-		if (has_visited(visited, lhs, lhs_ctx)) {
+		if (q->is_dump_vars && has_visited(visited, lhs, lhs_ctx)) {
 			if (q->is_dump_vars) {
 				SB_sprintf(q->sb, "%s", !is_ref(save_lhs) ? C_STR(q, save_lhs) : "_");
 			} else
@@ -1270,7 +1270,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		else
 			q->last_thing = WAS_OTHER;
 
-		if (has_visited(visited, rhs, rhs_ctx)) {
+		if (q->is_dump_vars && has_visited(visited, rhs, rhs_ctx)) {
 			if (q->is_dump_vars) {
 				SB_sprintf(q->sb, "%s", !is_ref(save_rhs) ? C_STR(q, save_rhs) : "_");
 			} else
@@ -1344,7 +1344,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		if (q->last_thing != WAS_SPACE) SB_sprintf(q->sb, "%s", " ");
 		SB_sprintf(q->sb, "%s", "...");
 		q->last_thing = WAS_SYMBOL;
-	} else if (has_visited(visited, lhs, lhs_ctx)) {
+	} else if (q->is_dump_vars && has_visited(visited, lhs, lhs_ctx)) {
 		if (q->is_dump_vars) {
 			SB_sprintf(q->sb, "%s", !is_ref(save_lhs) ? C_STR(q, save_lhs) : "_");
 		} else
@@ -1464,7 +1464,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		if (q->last_thing != WAS_SPACE) SB_sprintf(q->sb, "%s", " ");
 		SB_sprintf(q->sb, "%s", "...");
 		q->last_thing = WAS_SYMBOL;
-	} else if (has_visited(visited, rhs, rhs_ctx)) {
+	} else if (q->is_dump_vars && has_visited(visited, rhs, rhs_ctx)) {
 		if (q->is_dump_vars) {
 			SB_sprintf(q->sb, "%s", !is_ref(save_rhs) ? C_STR(q, save_rhs) : "_");
 		} else
