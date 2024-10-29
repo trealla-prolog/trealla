@@ -1649,6 +1649,7 @@ void clear_write_options(query *q)
 	q->quoted = 0;
 	q->nl = q->fullstop = q->varnames = q->ignore_ops = false;
 	q->parens = q->numbervars = q->json = q->double_quotes = false;
+	q->portrayed = false;
 	q->last_thing = WAS_OTHER;
 	q->variable_names = NULL;
 	q->cycle_error = false;
