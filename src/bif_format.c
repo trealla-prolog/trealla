@@ -727,10 +727,18 @@ static bool bif_format_2(query *q)
 
 static bool bif_format_3(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,any);
 	GET_NEXT_ARG(p1,atom_or_list);
 	GET_NEXT_ARG(p2,list_or_nil);
+
+	if (is_closed_stream(q->pl, pstr))
+		return throw_error(q, pstr, pstr_ctx, "existence_error", "stream");
+
 	int n = get_stream(q, pstr);
+
+	if (n < 0)
+		return throw_error(q, pstr, pstr_ctx, "domain_error", "stream_or_alias");
+
 	stream *str = &q->pl->streams[n];
 
 	if (!strcmp(str->mode, "read"))
