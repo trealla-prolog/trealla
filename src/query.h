@@ -104,10 +104,7 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int
 void dump_term(query *q, const char *s, const cell *c);
 
 bool bif_iso_halt_0(query *q);
-bool bif_sys_drop_barrier_1(query *q);
-bool bif_sys_call_cleanup_3(query *q);
-bool bif_sys_set_if_var_2(query *q);
-
+bool bif_iso_close_1(query *q);
 bool bif_iso_true_0(query *q);
 bool bif_iso_fail_0(query *q);
 bool bif_iso_call_1(query *q);
@@ -115,6 +112,10 @@ bool bif_iso_conjunction_2(query *q);
 bool bif_iso_qualify_2(query *q);
 bool bif_iso_cut_0(query *q);
 bool bif_iso_unify_2(query *q);
+
+bool bif_sys_drop_barrier_1(query *q);
+bool bif_sys_call_cleanup_3(query *q);
+bool bif_sys_set_if_var_2(query *q);
 bool bif_sys_cleanup_if_det_1(query *q);
 bool bif_sys_queue_1(query *q);
 bool bif_parse_csv_file_2(query *q);
@@ -125,10 +126,8 @@ bool bif_sre_matchp_4(query *q);
 bool bif_sre_match_4(query *q);
 bool bif_sre_substp_4(query *q);
 bool bif_sre_subst_4(query *q);
-bool bif_iso_close_1(query *q);
 bool bif_call_0(query *q, cell *p1, pl_idx p1_ctx);
 bool bif_statistics_0(query *q);
-bool bif_ignore_1(query *q);
 
 void save_db(FILE *fp, query *q, int logging);
 char *uuid_to_buf(const uuid *u, char *buf, size_t buflen);
