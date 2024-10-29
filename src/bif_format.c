@@ -556,7 +556,6 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 			pl_idx nbr_cells = p1->nbr_cells;
 			make_end(tmp+nbr_cells);
 			query *q2 = query_create_subquery(q, tmp);
-			q->st.curr_instr = tmp;
 			start(q2);
 			query_destroy(q2);
 			break;
