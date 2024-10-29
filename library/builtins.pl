@@ -485,25 +485,27 @@ time_out(Goal, Time, Result) :-
 
 :- help(time_out(:callable,+integer,?atom), [iso(false)]).
 
-'$portray_compound'(T) :-
+'$portray_term'(S, T) :-
 	compound(T), !,
 	functor(T, _, Args),
 	T =.. [Functor|_],
-	writeq(Functor), write('('),
+	writeq(S, Functor), write(S, '('),
 	(between(1, Args, I),
 		arg(I, T, Arg),
-		'$portray'(Arg),
-		(I < Args -> write(',') ; true),
+		'$portray'(S, Arg),
+		(I < Args -> write(S, ',') ; true),
 		fail  ; true),
-	write(')').
-'$portray_compound'(T) :-
-	writeq(T).
+	write(S, ')').
+'$portray_term'(S, T) :-
+	writeq(S, T).
 
-'$portray'(T) :-
-	(catch(once(portray(T)), _, write(T)), !) ;
-	'$portray_compound'(T).
+'$portray'(S, T) :-
+	current_output(S0),
+	set_output(S),
+	((catch(once(portray(T)), _, write(T)), !) ; '$portray_term'(S, T)),
+	set_output(S0).
 
-print(T) :- format(user_output, "~p", [T]).
+print(T) :- current_output(S), format(S, "~p", [T]).
 print(S, T) :- format(S, "~p", [T]).
 
 :- help(print(+term), [iso(false)]).
