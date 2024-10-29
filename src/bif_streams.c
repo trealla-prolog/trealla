@@ -498,7 +498,7 @@ int new_stream(prolog *pl)
 	return -1;
 }
 
-static bool is_closed_stream(prolog *pl, cell *p1)
+bool is_closed_stream(prolog *pl, cell *p1)
 {
 	if (!(p1->flags & FLAG_INT_STREAM))
 		return false;
