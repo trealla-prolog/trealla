@@ -505,6 +505,10 @@ time_out(Goal, Time, Result) :-
 	((catch(once(portray(T)), _, write(T)), !) ; '$portray_term'(S, T)),
 	set_output(S0).
 
+'$portray'(T) :-
+	current_output(S),
+	((catch(once(portray(T)), _, write(T)), !) ; '$portray_term'(S, T)).
+
 print(T) :- current_output(S), format(S, "~p", [T]).
 print(S, T) :- format(S, "~p", [T]).
 
