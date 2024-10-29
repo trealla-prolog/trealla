@@ -549,10 +549,9 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 			break;
 
 		case 'p': {
-			cell p1[1+1+c->nbr_cells];
-			make_struct(p1+0, new_atom(q->pl, "ignore"), bif_ignore_1, 1, 1+c->nbr_cells);
-			make_struct(p1+1, new_atom(q->pl, "portray"), NULL, 1, c->nbr_cells);
-			dup_cells_by_ref(p1+2, c, c_ctx, c->nbr_cells);
+			cell p1[1+c->nbr_cells];
+			make_struct(p1+0, new_atom(q->pl, "$portray"), NULL, 1, c->nbr_cells);
+			dup_cells_by_ref(p1+1, c, c_ctx, c->nbr_cells);
 			cell *tmp = prepare_call(q, NOPREFIX_LEN, p1, q->st.curr_frame, 1);
 			pl_idx nbr_cells = p1->nbr_cells;
 			make_end(tmp+nbr_cells);
