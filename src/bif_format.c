@@ -571,6 +571,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 			query *q2 = query_create_subquery(q, tmp);
 			start(q2);
 			query_destroy(q2);
+			clear_write_options(q);
 			break;
 		}
 

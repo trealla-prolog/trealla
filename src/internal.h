@@ -735,6 +735,7 @@ struct query_ {
 	bool json:1;
 	bool nl:1;
 	bool fullstop:1;
+	bool portrayed:1;
 	bool ignore_ops:1;
 	bool numbervars:1;
 	bool halt:1;

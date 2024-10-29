@@ -2677,6 +2677,18 @@ bool parse_write_params(query *q, cell *c, pl_idx c_ctx, cell **vnames, pl_idx *
 		}
 
 		q->fullstop = !CMP_STRING_TO_CSTR(q, c1, "true");
+	} else if (!CMP_STRING_TO_CSTR(q, c, "portrayed")) {
+		if (is_var(c1)) {
+			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
+			return false;
+		}
+
+		if (!is_interned(c1) || (CMP_STRING_TO_CSTR(q, c1, "true") && CMP_STRING_TO_CSTR(q, c1, "false"))) {
+			throw_error(q, c, c_ctx, "domain_error", "write_option");
+			return false;
+		}
+
+		q->portrayed = !CMP_STRING_TO_CSTR(q, c1, "true");
 	} else if (!CMP_STRING_TO_CSTR(q, c, "nl")) {
 		if (is_var(c1)) {
 			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
@@ -2904,6 +2916,22 @@ static bool bif_iso_write_term_2(query *q)
 		return throw_error(q, p2_orig, p2_orig_ctx, "type_error", "list");
 	}
 
+	if (q->portrayed) {
+		cell *c = p1;
+		pl_idx c_ctx = p1_ctx;
+		cell p1[1+c->nbr_cells];
+		make_struct(p1+0, new_atom(q->pl, "$portray"), NULL, 1, c->nbr_cells);
+		dup_cells_by_ref(p1+1, c, c_ctx, c->nbr_cells);
+		cell *tmp = prepare_call(q, NOPREFIX_LEN, p1, q->st.curr_frame, 1);
+		pl_idx nbr_cells = p1->nbr_cells;
+		make_end(tmp+nbr_cells);
+		query *q2 = query_create_subquery(q, tmp);
+		start(q2);
+		query_destroy(q2);
+		clear_write_options(q);
+		return !ferror(str->fp);
+	}
+
 	q->variable_names = vnames;
 	q->variable_names_ctx = vnames_ctx;
 
@@ -2971,6 +2999,23 @@ static bool bif_iso_write_term_3(query *q)
 	if (!is_nil(p2)) {
 		clear_write_options(q);
 		return throw_error(q, p2_orig, p2_orig_ctx, "type_error", "list");
+	}
+
+	if (q->portrayed) {
+		cell *c = p1;
+		pl_idx c_ctx = p1_ctx;
+		cell p1[1+1+c->nbr_cells];
+		make_struct(p1+0, new_atom(q->pl, "$portray"), NULL, 2, 1+c->nbr_cells);
+		p1[1] = *pstr;
+		dup_cells_by_ref(p1+2, c, c_ctx, c->nbr_cells);
+		cell *tmp = prepare_call(q, NOPREFIX_LEN, p1, q->st.curr_frame, 1);
+		pl_idx nbr_cells = p1->nbr_cells;
+		make_end(tmp+nbr_cells);
+		query *q2 = query_create_subquery(q, tmp);
+		start(q2);
+		query_destroy(q2);
+		clear_write_options(q);
+		return !ferror(str->fp);
 	}
 
 	q->latest_ctx = p1_ctx;
