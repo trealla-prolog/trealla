@@ -514,6 +514,8 @@ Non-standard predicates
 	reset/3						# reset(:goal,?ball,-cont)
 	shift/1						# shift(+ball)
 
+	term_variables/3
+
 Note: consult/1 and load_files/2 support lists of files as args. Also
 support loading into modules eg. *consult(MOD:FILE-SPEC)*.
 
