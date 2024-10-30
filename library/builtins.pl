@@ -202,205 +202,99 @@ copy_term(Term, Copy, Gs) :-
 
 :- help(copy_term(+term,?term,+list), [iso(false)]).
 
+term_variables(P1, P2, P3) :-
+	term_variables(P1, P4),
+	append(P4, P3, P2).
+
+:- help(term_variables(+term,-list,?tail), [iso(false)]).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Derived from code by R.A. O'Keefe
+%
 
 :- meta_predicate(setof(-,0,?)).
-
-setof(Template, Generator, Set) :-
-	( 	var(Set) ->
-		true
-	; 	must_be(Set, list_or_partial_list, setof/3, _)
-	),
-	bagof_(Template, Generator, Bag),
-	is_list_or_partial_list(Set),
-	sort(Bag, Set).
-
 :- help(setof(+term,+callable,?list), [iso(true)]).
 
 :- meta_predicate(bagof(-,0,?)).
-
-bagof(Template, Generator, Bag) :-
-	(var(Bag) -> true; must_be(Bag, list_or_partial_list, bagof/3, _)),
-	bagof_(Template, Generator, Bag).
-
 :- help(bagof(+term,:callable,?list), [iso(true)]).
 
-bagof_(Template, Generator, Bag) :-
-	acyclic_term(Generator),
-	free_variables_(Generator, Template, [], Vars, 1),
-	Vars \== [],
-	!,
-	Key =.. [(.)|Vars],
-	functor(Key, (.), N),
-	findall(Key-Template, Generator, Recorded),
-	replace_instance_(Recorded, Key, N, _, OmniumGatherum),
-	keysort(OmniumGatherum, Gamut), !,
-	concordant_subset_(Gamut, Key, Answer),
-	Bag = Answer.
-bagof_(Template, Generator, Bag) :-
-	findall(Template, Generator, Bag0),
-	Bag0 \== [],
-	Bag = Bag0.
+/************************************************************/
+/* bagof/3 and setof/3                                      */
+/************************************************************/
 
-_^Goal :- Goal.
+/**
+ * bagof(T, X1^…^Xn^G, L): [ISO 8.10.2]
+ * The predicate determines all the solutions to the goal G,
+ * whereby collecting copies of the template T and the
+ * witness. The predicate then repeatedly succeeds for
+ * the witness and the list of associated templates.
+ */
+% bagof(+Term, +Goal, -List)
+bagof(T, G, L) :-
+	(var(L) -> true; must_be(L, list_or_partial_list, bagof/3, _)),
+	acyclic_term(G),
+	sys_globals_kernel(T^G, W, H),
+	findall(W-T, H, J),
+	sys_same_vars(J, _),
+	keysort(J, K),
+	sys_enum_runs(K, W, L).
 
-replace_instance_([], _, _, _, []) :- !.
-replace_instance_([NewKey-Term|Xs], Key, NVars, Vars, [NewKey-Term|NewBag]) :-
-	replace_key_variables_(NVars, Key, Vars, NewKey), !,
-	replace_instance_(Xs, Key, NVars, Vars, NewBag).
+/**
+ * setof(T, X1^…^Xn^G, L): [ISO 8.10.3]
+ * The predicate determines all the solutions to the goal G,
+ * whereby collecting copies of the template T and the
+ * witness. The predicate then repeatedly succeeds for
+ * the witness and the set of associated templates.
+ */
+% setof(+Term, +Goal, -List)
+setof(T, G, L) :-
+	(var(L) -> true; must_be(L, list_or_partial_list, setof/3, _)),
+	acyclic_term(G),
+	sys_globals_kernel(T^G, W, H),
+	findall(W-T, H, J),
+	sys_same_vars(J, _),
+	sort(J, K),
+	sys_enum_runs(K, W, L).
 
+% sys_same_vars(+Pairs, +List)
+sys_same_vars([K-_|L], V) :-
+	term_variables(K, V, _),
+	sys_same_vars(L, V).
+sys_same_vars([], _).
 
-%   Original R.A. O'Keefe comment:
-%   There is a bug in the compiled version of arg in Dec-10 Prolog,
-%   hence the rather strange code.  Only two calls on arg are needed
-%   in Dec-10 interpreted Prolog or C-Prolog.
+% sys_enum_runs(+Pairs, +Term, -List)
+sys_enum_runs([K-V|L], W, Q) :-
+	sys_key_run(L, K, R, H),
+	(K = W, Q = [V|R], (H = [], !; true); sys_enum_runs(H, W, Q)).
 
-replace_key_variables_(0, _, _, _) :- !.
-replace_key_variables_(N, OldKey, Vars0, NewKey) :-
-	arg(N, NewKey, Arg),
-	nonvar(Arg), !,
-	replace_variables_(Arg, Vars0, Vars1),
-	M is N-1,
-	replace_key_variables_(M, OldKey, Vars1, NewKey).
-replace_key_variables_(N, OldKey, Vars, NewKey) :-
-	%arg(N, OldKey, OldVar),
-	arg(N, NewKey, _OldVar),
-	M is N-1,
-	replace_key_variables_(M, OldKey, Vars, NewKey).
+% sys_key_run(+Pairs, +Term, -List, -Pairs)
+sys_key_run([K-V|L], J, [V|R], H) :- K == J, !,
+	sys_key_run(L, J, R, H).
+sys_key_run(L, _, [], L).
 
-replace_variables_(Term, [Var|Vars], Vars) :-
-	var(Term), !,
-	Term = Var.
-replace_variables_(Term, Vars, Vars) :-
-	atomic(Term), !.
-replace_variables_(Term, Vars0, Vars) :-
-	functor(Term, _, Arity),
-	replace_variables_term_(Arity, Term, Vars0, Vars).
+/********************************************************************/
+/* Helpers                                                          */
+/********************************************************************/
 
-replace_variables_term_(0, _, Vars, Vars) :- !.
-replace_variables_term_(N, Term, Vars0, Vars) :-
-	arg(N, Term, Arg),
-	(	cyclic_term(Arg) ->
-		N1 is N-1,
-		replace_variables_term_(N1, Term, Vars0, Vars)
-	;	replace_variables_(Arg, Vars0, Vars1),
-		N1 is N-1,
-		replace_variables_term_(N1, Term, Vars1, Vars)
-	).
+% sys_goal_split(+Goal, -List, -Goal)
+sys_globals_kernel(G, W, H) :-
+	sys_goal_split(G, I, H),
+	term_variables(H, A),
+	term_variables(I, B),
+	sys_var_subtract(A, B, W).
 
-/*
-%   concordant_subset_([Key-Val list], Key, [Val list]).
-%   takes a list of Key-Val pairs which has been keysorted to bring
-%   all the identical keys together, and enumerates each different
-%   Key and the corresponding lists of values.
-*/
+% sys_goal_split(+Goal, -List, -Goal)
+sys_goal_split(G, [], G) :- var(G), !.
+sys_goal_split(V^G, [V|L], H) :- !,
+	sys_goal_split(G, L, H).
+sys_goal_split(G, [], G).
 
-concordant_subset_([Key-Val|Rest], Clavis, Answer) :-
-	concordant_subset_(Rest, Key, List, More),
-	concordant_subset_(More, Key, [Val|List], Clavis, Answer).
-
-/*
-%   concordant_subset_(Rest, Key, List, More)
-%   strips off all the Key-Val pairs from the from of Rest,
-%   putting the Val elements into List, and returning the
-%   left-over pairs, if any, as More.
-*/
-
-concordant_subset_([Key-Val|Rest], Clavis, List, More) :-
-	subsumes_term(Key, Clavis),
-	subsumes_term(Clavis, Key),
-	!,
-	Key = Clavis,
-	List = [Val|Rest2],
-	concordant_subset_(Rest, Clavis, Rest2, More).
-concordant_subset_(More, _, [], More).
-
-/*
-%   concordant_subset_/5 tries the current subset, and if that
-%   doesn't work if backs up and tries the next subset.  The
-%   first clause is there to save a choicepoint when this is
-%   the last possible subset.
-*/
-
-concordant_subset_([],   Key, Subset, Key, Subset) :- !.
-concordant_subset_(_,    Key, Subset, Key, Subset).
-concordant_subset_(More, _,   _,   Clavis, Answer) :-
-	concordant_subset_(More, Clavis, Answer).
-
-% 0 disables use of explicit_binding_, 1 enables them
-% setof stuff still uses 1, that's closer to it's usual implementation
-free_variables_(A,B,C,D) :- free_variables_(A,B,C,D,0).
-
-% ---extracted from: not.pl --------------------%
-
-%   Author : R.A.O'Keefe
-%   Updated: 17 November 1983
-%   Purpose: "suspicious" negation
-
-%   In order to handle variables properly, we have to find all the
-%   universally quantified variables in the Generator.  All variables
-%   as yet unbound are universally quantified, unless
-% a)  they occur in the template
-% b)  they are bound by X^P, setof, or bagof
-%   free_variables_(Generator, Template, OldList, NewList,CheckBindings=0,1)
-%   finds this set, using OldList as an accumulator.
-
-free_variables_(Term, Bound, VarList, [Term|VarList],_) :-
-	var(Term),
-	term_is_free_of_(Bound, Term),
-	list_is_free_of_(VarList, Term),
-	!.
-free_variables_(Term, _, VarList, VarList,_) :-
-	var(Term),
-	!.
-free_variables_(Term, Bound, OldList, NewList, 1) :-
-	explicit_binding_(Term, Bound, NewTerm, NewBound),
-	!,
-	free_variables_(NewTerm, NewBound, OldList, NewList, 1).
-free_variables_(Term, Bound, OldList, NewList, _) :-
-	functor(Term, _, N),
-	free_variables_(N, Term, Bound, OldList, NewList, 0).
-
-free_variables_(0,    _,     _, VarList, VarList, _) :- !.
-free_variables_(N, Term, Bound, OldList, NewList, B) :-
-	arg(N, Term, Argument),
-	(	cyclic_term(Argument) ->
-		M is N-1, !,
-		free_variables_(M, Term, Bound, OldList, NewList, B)
-	;	free_variables_(Argument, Bound, OldList, MidList, B),
-		M is N-1, !,
-		free_variables_(M, Term, Bound, MidList, NewList, B)
-	).
-
-%   explicit_binding_ checks for goals known to existentially quantify
-%   one or more variables.  In particular "not" is quite common.
-
-explicit_binding_(\+(_),     Bound, fail, Bound ).
-explicit_binding_(not(_),    Bound, fail, Bound ).
-explicit_binding_(Term^Goal, Bound, Goal, Bound+Vars) :-
-	term_variables(Term, Vars).
-explicit_binding_(setof(Var,Goal,Set),  Bound, Goal-Set, Bound+Var).
-explicit_binding_(bagof(Var,Goal,Bag),  Bound, Goal-Bag, Bound+Var).
-
-term_is_free_of_(Term, Var) :-
-	var(Term), !,
-	Term \== Var.
-term_is_free_of_(Term, Var) :-
-	functor(Term, _, N),
-	term_is_free_of_(N, Term, Var).
-
-term_is_free_of_(0, _, _) :- !.
-term_is_free_of_(N, Term, Var) :-
-	arg(N, Term, Argument),
-	term_is_free_of_(Argument, Var),
-	M is N-1, !,
-	term_is_free_of_(M, Term, Var).
-
-list_is_free_of_([], _).
-list_is_free_of_([Head|Tail], Var) :-
-	Head \== Var,
-	list_is_free_of_(Tail, Var).
+% sys_var_subtract(+List, +List, -List)
+sys_var_subtract([X|L], R, T) :-
+	member(Y, R), Y == X, !,
+	sys_var_subtract(L, R, T).
+sys_var_subtract([X|L], R, [X|S]) :-
+	sys_var_subtract(L, R, S).
+sys_var_subtract([], _, []).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -110,6 +110,9 @@ static bool bif_iso_findall_3(query *q)
 				return throw_error(q, p3, p3_ctx, "resource_error", "stack");
 		}
 
+		if (check_body_callable(p2))
+			return throw_error(q, p2, p2_ctx, "type_error", "callable");
+
 		grab_queuen(q);
 
 		if (q->st.qnbr == MAX_QUEUES)
