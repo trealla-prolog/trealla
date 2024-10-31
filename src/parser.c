@@ -597,6 +597,12 @@ static bool directives(parser *p, cell *d)
 	if (d->arity != 1)
 		return false;
 
+	if (is_list(c)) {
+		printf("WARNING: directive to load '%s' not allowed\n", C_STR(p, c+1));
+		p->error = true;
+		return false;
+	}
+
 	d->val_off = new_atom(p->pl, "$directive");
 	CLR_OP(d);
 
@@ -691,6 +697,7 @@ static bool directives(parser *p, cell *d)
 	}
 
 	if (!strcmp(dirname, "det") && (c->arity == 1)) {
+		printf("WARNING: %s\n", dirname);
 		return true;
 	}
 
