@@ -883,6 +883,8 @@ bool do_use_module_1(module *curr_m, cell *c)
 
 	char *filename = relative_to(curr_m->filename, is_library?dstbuf:name);
 
+	//printf("*** %s / %s / %s\n", curr_m->filename, is_library?dstbuf:name, filename);
+
 	if (!(m = load_file(curr_m, filename, false))) {
 		fprintf(stdout, "Warning: module file not found: %s\n", filename);
 		free(filename);

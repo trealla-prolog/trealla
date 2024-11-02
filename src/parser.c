@@ -374,7 +374,7 @@ char *relative_to(const char *basefile, const char *relfile)
 	ensure(tmpbuf);
 	char *ptr = tmpbuf;
 
-	if (!strncmp(relfile, "../", 3)) {
+	if (!strncmp(relfile, "../", 3) || !strchr(relfile, '/')) {
 		strcpy(tmpbuf, basefile);
 		ptr = tmpbuf + strlen(tmpbuf) - 1;
 
