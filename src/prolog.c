@@ -153,16 +153,14 @@ bool pl_query(prolog *pl, const char *s, pl_sub_query **subq, unsigned int yield
 	if (!pl || !*s || !subq)
 		return false;
 
-	if (!pl->p)
-		pl->p = parser_create(pl->curr_m);
-	else
-		reset(pl->p);
-
+	pl->p = parser_create(pl->curr_m);
 	if (!pl->p) return false;
 	pl->p->command = true;
 	pl->is_query = true;
 	bool ok = run(pl->p, s, true, (query**)subq, yield_time_in_ms);
 	if (get_status(pl)) pl->curr_m = pl->p->m;
+	parser_destroy(pl->p);
+	pl->p = NULL;
 	return ok;
 }
 
