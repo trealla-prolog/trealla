@@ -42,7 +42,7 @@ static const op_table g_ops[] =
 	{"initialization", OP_FX, 1150},
 	//{"set_prolog_flag", OP_FX, 1150},
 	//{"module", OP_FX, 1150},
-	{"use_module", OP_FX, 1150},
+	//{"use_module", OP_FX, 1150},
 	{"ensure_loaded", OP_FX, 1150},
 	{"meta_predicate", OP_FX, 1150},
 
