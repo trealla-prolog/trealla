@@ -5672,16 +5672,7 @@ bool bif_iso_qualify_2(query *q)
 			q->st.m = m;
 	}
 
-	cell *tmp = prepare_call(q, PREFIX_LEN, p2, p2_ctx, 1);
-	check_heap_error(tmp);
-	pl_idx nbr_cells = PREFIX_LEN;
-
-	if (!is_builtin(p2))
-		tmp[nbr_cells].match = find_predicate(q->st.m, p2);
-
-	nbr_cells += p2->nbr_cells;
-	make_call(q, tmp+nbr_cells);
-	q->st.curr_instr = tmp;
+	q->st.curr_instr += 1;
 	return true;
 }
 
