@@ -2429,7 +2429,7 @@ void module_destroy(module *m)
 
 	pi *ex;
 
-	while ((ex = list_pop_front(&m->exports)) != NULL)
+	while ((ex = list_pop_front(&m->imports)) != NULL)
 		free(ex);
 
 	while (m->gex_head) {

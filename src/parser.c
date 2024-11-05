@@ -891,7 +891,7 @@ static bool directives(parser *p, cell *d)
 
 			if (tmp_m != p->m) {
 				p->m->used[p->m->idx_used++] = tmp_m;
-				list_init(&p->m->exports);
+				list_init(&p->m->imports);
 			}
 
 			p->m = tmp_m;
@@ -934,6 +934,7 @@ static bool directives(parser *p, cell *d)
 						return true;
 					}
 
+#if 0
 					// Collect all the exports. TODO: When someone does a use_module
 					// or equivalent it should build a similar (or cut-down) list of
 					// imports in it's own module, pointing to this module of course.
@@ -944,6 +945,7 @@ static bool directives(parser *p, cell *d)
 					g->key = tmp;
 					g->m = p->m;
 					list_push_back(&p->m->exports, g);
+#endif
 
 					char tmpbuf[1024];
 					snprintf(tmpbuf, sizeof(tmpbuf), "imported_from(%s)", p->m->name);

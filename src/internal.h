@@ -832,7 +832,7 @@ struct module_ {
 	skiplist *index, *ops, *defops;
 	loaded_file *loaded_files;
 	lock guard;
-	list predicates, exports;
+	list predicates, imports;
 	prolog_flags flags;
 	unsigned id, idx_used, arity;
 	int if_depth;
