@@ -889,8 +889,10 @@ static bool directives(parser *p, cell *d)
 				return true;
 			}
 
-			if (tmp_m != p->m)
+			if (tmp_m != p->m) {
 				p->m->used[p->m->idx_used++] = tmp_m;
+				list_init(&p->m->exports);
+			}
 
 			p->m = tmp_m;
 
@@ -932,9 +934,16 @@ static bool directives(parser *p, cell *d)
 						return true;
 					}
 
-					//push_property(p->m, C_STR(p, &tmp), tmp.arity, "static");
-					//push_property(p->m, C_STR(p, &tmp), tmp.arity, "visible");
-					//push_property(p->m, C_STR(p, &tmp), tmp.arity, "interpreted");
+					// Collect all the exports. TODO: When someone does a use_module
+					// or equivalent it should build a similar (or cut-down) list of
+					// imports in it's own module, pointing to this module of course.
+					// How do we do an import via 'as/2' or do we not do that?
+
+					pi* g;
+					g = calloc(1, sizeof(pi));
+					g->key = tmp;
+					g->m = p->m;
+					list_push_back(&p->m->exports, g);
 
 					char tmpbuf[1024];
 					snprintf(tmpbuf, sizeof(tmpbuf), "imported_from(%s)", p->m->name);

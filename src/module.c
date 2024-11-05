@@ -420,7 +420,7 @@ bool find_goal_expansion(module *m, cell *c)
 	if (m->wild_goal_expansion)
 		return true;
 
-	for (gex *g = m->gex_head; g; g = g->next) {
+	for (pi *g = m->gex_head; g; g = g->next) {
 		if ((g->key.val_off == c->val_off) && (g->key.arity == c->arity))
 			return true;
 	}
@@ -463,7 +463,7 @@ void create_goal_expansion(module *m, cell *c)
 	if (find_goal_expansion(m, c))
 		return;
 
-	gex *g = calloc(1, sizeof(gex));
+	pi *g = calloc(1, sizeof(pi));
 	ensure(g);
 	g->prev = m->gex_tail;
 
@@ -2427,14 +2427,19 @@ void module_destroy(module *m)
 	while ((pr = list_front(&m->predicates)) != NULL)
 		destroy_predicate(m, pr);
 
-	if (m->fp)
-		fclose(m->fp);
+	pi *ex;
+
+	while ((ex = list_pop_front(&m->exports)) != NULL)
+		free(ex);
 
 	while (m->gex_head) {
-		gex *save = m->gex_head;
+		pi *save = m->gex_head;
 		m->gex_head = m->gex_head->next;
 		free(save);
 	}
+
+	if (m->fp)
+		fclose(m->fp);
 
 	sl_destroy(m->index);
 	parser_destroy(m->p);
