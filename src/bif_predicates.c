@@ -5668,11 +5668,19 @@ bool bif_iso_qualify_2(query *q)
 		if (!m && strcmp(C_STR(q, p1), "loader"))
 			return throw_error(q, p1, q->st.curr_frame, "existence_error", "module");
 
-		if (m)
-			q->st.m = m;
 	}
 
-	q->st.curr_instr += 1;
+	cell *tmp = prepare_call(q, PREFIX_LEN, p2, p2_ctx, 1);
+	check_heap_error(tmp);
+	pl_idx nbr_cells = PREFIX_LEN;
+
+	if (!is_builtin(p2))
+		tmp[nbr_cells].match = find_predicate(q->st.m, p2);
+
+	nbr_cells += p2->nbr_cells;
+	make_call(q, tmp+nbr_cells);
+	q->st.curr_instr = tmp;
+	q->st.m = m;
 	return true;
 }
 
