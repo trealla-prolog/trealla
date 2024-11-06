@@ -2427,11 +2427,6 @@ void module_destroy(module *m)
 	while ((pr = list_front(&m->predicates)) != NULL)
 		destroy_predicate(m, pr);
 
-	pi *ex;
-
-	while ((ex = list_pop_front(&m->imports)) != NULL)
-		free(ex);
-
 	while (m->gex_head) {
 		pi *save = m->gex_head;
 		m->gex_head = m->gex_head->next;

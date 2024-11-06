@@ -815,8 +815,7 @@ typedef struct loaded_file_ loaded_file;
 
 typedef struct pi_ {
 	lnode hdr;							// must be first
-	struct pi_ *prev, *next, *alias;	// ???
-	module *m;
+	struct pi_ *prev, *next;			// ???
 	cell key;
 } pi;
 
@@ -832,7 +831,7 @@ struct module_ {
 	skiplist *index, *ops, *defops;
 	loaded_file *loaded_files;
 	lock guard;
-	list predicates, imports;
+	list predicates;
 	prolog_flags flags;
 	unsigned id, idx_used, arity;
 	int if_depth;
