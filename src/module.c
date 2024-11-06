@@ -958,13 +958,20 @@ bool do_use_module_2(module *curr_m, cell *c)
 				execute(q, p2->cl->cells, p2->cl->nbr_vars);
 				SB_free(s);
 			}
-#if 0
 		} else {
 			cell *lhs = head;
 
 			if (is_structure(lhs) && (lhs->arity == 2) && (lhs->val_off == g_slash_s)) {
+				cell *c = lhs + 1;
+
+				if (c->val_off == g_maplist_s) {
+					p2 = LIST_TAIL(p2);
+					continue;
+				}
+
+				//printf("*** %s/%u\n", C_STR(q, lhs+1), (unsigned)get_smalluint(lhs+2));
 				// assertz(goal_expansion(rhs, module:lhs))
-				query *q = query_create(curr_m, false);
+				query *q = query_create(curr_m);
 				check_error(q);
 				q->varnames = true;
 				char *dst1 = print_canonical_to_strbuf(q, lhs+1, 0, 0);
@@ -1006,11 +1013,10 @@ bool do_use_module_2(module *curr_m, cell *c)
 				p2->skip = true;
 				p2->srcptr = SB_cstr(s);
 				tokenize(p2, false, false);
-				xref_clause(p2->m, p2->cl);
+				xref_clause(p2->m, p2->cl, NULL);
 				execute(q, p2->cl->cells, p2->cl->nbr_vars);
 				SB_free(s);
 			}
-#endif
 		}
 
 		p2 = LIST_TAIL(p2);

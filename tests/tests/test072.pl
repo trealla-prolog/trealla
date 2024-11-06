@@ -1,5 +1,4 @@
 :- initialization(main(10)).
-:- use_module(library(apply)).
 :- use_module(library(lists)).
 
 main(Size) :-

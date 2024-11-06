@@ -571,6 +571,27 @@ static bool conditionals(parser *p, cell *d)
 	return false;
 }
 
+static bool make_rule(module *m, const char *src)
+{
+	printf("*** %s\n", src);
+	parser *p = parser_create(m);
+	if (!p) return false;
+	p->flags = m->flags;
+	p->internal = true;
+	p->consulting = true;
+	p->one_shot = true;
+
+	tokenize(p, false, false);
+
+	if (p->error || !p->end_of_term) {
+		printf("ERROR: make_rule: '%s'\n", src);
+		return false;
+	}
+
+	parser_destroy(p);
+	return true;
+}
+
 static bool directives(parser *p, cell *d)
 {
 	p->skip = false;
@@ -931,12 +952,6 @@ static bool directives(parser *p, cell *d)
 						p->error = true;
 						return true;
 					}
-
-					// TODO:
-					//	use_module(library(lists), [member/2]) becomes...
-					//	member(P1,P2) :- lists::member(p1, P2)
-					//	use_module(library(lists), [append/3 as my_append/3]) becomes...
-					//	my_append(P1,P2,P3) :- lists::append(P1,P2,P3)
 
 					char tmpbuf[1024];
 					snprintf(tmpbuf, sizeof(tmpbuf), "imported_from(%s)", p->m->name);
