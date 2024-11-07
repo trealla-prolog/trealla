@@ -956,9 +956,10 @@ static bool directives(parser *p, cell *d)
 					char tmpbuf[1024];
 					snprintf(tmpbuf, sizeof(tmpbuf), "imported_from(%s)", p->m->name);
 					push_property(save_m, C_STR(p, &tmp), tmp.arity, tmpbuf);
-					//push_property(save_m, C_STR(p, &tmp), tmp.arity, "static");
-					//push_property(save_m, C_STR(p, &tmp), tmp.arity, "visible");
-					//push_property(save_m, C_STR(p, &tmp), tmp.arity, "interpreted");
+					//push_property(p->m, C_STR(p, &tmp), tmp.arity, "static");
+					//push_property(p->m, C_STR(p, &tmp), tmp.arity, "visible");
+					//push_property(p->m, C_STR(p, &tmp), tmp.arity, "interpreted");
+					push_property(p->m, C_STR(p, &tmp), tmp.arity, "public");
 					pr->is_public = true;
 				} else if (!strcmp(C_STR(p, head), "op") && (head->arity == 3)) {
 					do_op(p, head, true);

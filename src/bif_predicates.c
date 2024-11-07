@@ -5730,10 +5730,6 @@ static bool bif_use_module_2(query *q)
 	GET_NEXT_ARG(p2,list_or_nil);
 	check_heap_error(init_tmp_heap(q));
 	cell *tmp = deep_clone_to_tmp(q, q->st.curr_instr, q->st.curr_frame);
-
-	if (!do_use_module_1(q->st.m, tmp))
-		return false;
-
 	return do_use_module_2(q->st.m, tmp);
 }
 

@@ -838,7 +838,6 @@ struct module_ {
 	bool ifs_done[MAX_IF_DEPTH];
 	bool user_ops:1;
 	bool prebuilt:1;
-	bool make_public:1;
 	bool loaded_properties:1;
 	bool loading:1;
 	bool error:1;

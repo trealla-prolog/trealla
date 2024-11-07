@@ -326,6 +326,7 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 		return pr;
 	}
 
+#if 0
 	for (unsigned i = 0; i < m->idx_used; i++) {
 		module *tmp_m = m->used[i];
 
@@ -335,9 +336,15 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 			if (pr->is_builtin && prebuilt)
 				*prebuilt = true;
 
+#if 1
+			if (!pr->is_public)
+				continue;
+#endif
+
 			return pr;
 		}
 	}
+#endif
 
 	if (m->pl->user_m) {
 		pr = find_predicate(m->pl->user_m, c);
@@ -777,8 +784,9 @@ static bool is_check_directive(const cell *c)
 	return false;
 }
 
-bool do_use_module_1(module *curr_m, cell *c)
+static bool do_use_module(module *curr_m, cell *c, module **mptr)
 {
+	*mptr = NULL;
 	cell *p1 = c + 1;
 	const char *name = C_STR(curr_m, p1);
 	char dstbuf[1024*4];
@@ -812,6 +820,7 @@ bool do_use_module_1(module *curr_m, cell *c)
 			if (m != curr_m)
 				curr_m->used[curr_m->idx_used++] = m;
 
+			*mptr = m;
 			return true;
 		}
 
@@ -848,6 +857,7 @@ bool do_use_module_1(module *curr_m, cell *c)
 			if (m != curr_m)
 				curr_m->used[curr_m->idx_used++] = m;
 
+			*mptr = m;
 			return !m->error;
 		}
 	}
@@ -858,6 +868,7 @@ bool do_use_module_1(module *curr_m, cell *c)
 		if (m != curr_m)
 			curr_m->used[curr_m->idx_used++] = m;
 
+		*mptr = m;
 		return true;
 	}
 
@@ -878,6 +889,7 @@ bool do_use_module_1(module *curr_m, cell *c)
 		if (m != curr_m)
 			curr_m->used[curr_m->idx_used++] = m;
 
+		*mptr = m;
 		return !m->error;
 	}
 
@@ -896,7 +908,73 @@ bool do_use_module_1(module *curr_m, cell *c)
 	if (m != curr_m)
 		curr_m->used[curr_m->idx_used++] = m;
 
+	*mptr = m;
 	return !m->error;
+}
+
+bool do_use_module_1(module *curr_m, cell *c)
+{
+	cell *p1 = c + 1;
+	module *m;
+
+	if (!do_use_module(curr_m, c, &m))
+		return false;
+
+	if (!m)
+		return true;
+
+	for (predicate *pr = list_front(&m->predicates);
+		pr; pr = list_next(pr)) {
+		if (!pr->is_public)
+			continue;
+
+		// assertz(goal_expansion(rhs, module:lhs))
+		cell *lhs = &pr->key;
+		//printf("*** %s/%u :- %s:%s/%u\n", C_STR(m, lhs), lhs->arity, m->name, C_STR(m, lhs), lhs->arity);
+		query *q = query_create(curr_m);
+		check_error(q);
+		SB(s);
+		SB_sprintf(s, "assertz(goal_expansion('%s'", C_STR(m, lhs));
+		unsigned arity = lhs->arity;
+		unsigned i = 0;
+
+		while (arity--) {
+			if (i) { SB_sprintf(s, "%s", ","); }
+			else { SB_sprintf(s, "%s", "("); }
+			SB_sprintf(s, "_%u", i);
+			i++;
+		}
+
+		if (i) { SB_sprintf(s, "%s", ")"); }
+		SB_sprintf(s, ",%s:'%s'", m->name, C_STR(m, lhs));
+		arity = lhs->arity;
+		i = 0;
+
+		while (arity--) {
+			if (i) { SB_sprintf(s, "%s", ","); }
+			else { SB_sprintf(s, "%s", "("); }
+			SB_sprintf(s, "_%u", i);
+			i++;
+		}
+
+		if (i) { SB_sprintf(s, "%s", ")"); }
+
+		SB_sprintf(s, "%s", ")).");
+
+		//printf("*** ==== %s\n", SB_cstr(s));
+
+		parser *p2 = parser_create(curr_m);
+		check_error(p2, query_destroy(q));
+		q->p = p2;
+		p2->skip = true;
+		p2->srcptr = SB_cstr(s);
+		tokenize(p2, false, false);
+		xref_clause(p2->m, p2->cl, NULL);
+		execute(q, p2->cl->cells, p2->cl->nbr_vars);
+		SB_free(s);
+	}
+
+	return true;
 }
 
 bool do_use_module_2(module *curr_m, cell *c)
@@ -904,13 +982,16 @@ bool do_use_module_2(module *curr_m, cell *c)
 	cell *p1 = c + 1;
 	cell *p2 = p1 + p1->nbr_cells;
 	LIST_HANDLER(p2);
+	module *m;
 
-	if (!do_use_module_1(curr_m, c))
+	if (!do_use_module(curr_m, c, &m))
 		return false;
+
+	if (!m)
+		return true;
 
 	while (is_iso_list(p2)) {
 		cell *head = LIST_HEAD(p2);
-
 		if (is_interned(head) && (head->arity == 2)
 			&& ((head->val_off == g_as_s) || (head->val_off == g_colon_s))) {
 			cell *lhs = head + 1;
@@ -919,6 +1000,16 @@ bool do_use_module_2(module *curr_m, cell *c)
 			if (is_structure(lhs) && (lhs->arity == 2)
 				&& (lhs->val_off == g_slash_s)
 				&& is_atom(rhs)) {
+
+				cell tmp = *(lhs + 1);
+				tmp.arity = get_smalluint(lhs + 2);
+				predicate *pr = find_predicate(m, &tmp);
+
+				if (!pr || !pr->is_public) {
+					p2 = LIST_TAIL(p2);
+					continue;
+				}
+
 				// assertz(goal_expansion(rhs, module:lhs))
 				query *q = query_create(curr_m);
 				check_error(q);
@@ -1045,6 +1136,16 @@ bool do_use_module_2(module *curr_m, cell *c)
 			cell *lhs = head;
 
 			if (is_structure(lhs) && (lhs->arity == 2) && (lhs->val_off == g_slash_s)) {
+				//printf("*** %s/%u\n", C_STR(q, lhs+1), (unsigned)get_smalluint(lhs+2));
+				cell tmp = *(lhs + 1);
+				tmp.arity = get_smalluint(lhs + 2);
+				predicate *pr = find_predicate(m, &tmp);
+
+				if (!pr || !pr->is_public) {
+					p2 = LIST_TAIL(p2);
+					continue;
+				}
+
 				cell *c = lhs + 1;
 
 				if (c->val_off == g_maplist_s) {
@@ -1052,7 +1153,6 @@ bool do_use_module_2(module *curr_m, cell *c)
 					continue;
 				}
 
-				//printf("*** %s/%u\n", C_STR(q, lhs+1), (unsigned)get_smalluint(lhs+2));
 				// assertz(goal_expansion(rhs, module:lhs))
 				query *q = query_create(curr_m);
 				check_error(q);
@@ -1853,11 +1953,6 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 					push_property(m, C_STR(m, c), c->arity, "built_in");
 
 				push_property(m, C_STR(m, c), c->arity, "static");
-			}
-
-			if (consulting && m->make_public) {
-				push_property(m, C_STR(m, c), c->arity, "public");
-				pr->is_public = true;
 			}
 		}
 	}
