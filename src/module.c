@@ -928,13 +928,56 @@ bool do_use_module_2(module *curr_m, cell *c)
 			} else if (is_structure(lhs) && (lhs->arity == 2)
 				&& (lhs->val_off == g_slash_s)
 				&& is_structure(lhs) && (lhs->arity == rhs->arity)) {
-				cell tmp = *(lhs+1);
-				tmp.arity = get_smalluint(lhs+2);
-				predicate *pr = find_predicate(curr_m->used[curr_m->idx_used-1], &tmp);
-				tmp.val_off = (rhs+1)->val_off;
-				predicate *pr2 = create_predicate(curr_m, &tmp, NULL);
-				pr2->alias = pr;
-			} else if (is_structure(lhs) && is_structure(rhs)) {
+				// assertz(goal_expansion(rhs, module:lhs))
+				query *q = query_create(curr_m);
+				check_error(q);
+				q->varnames = true;
+				char *dst1 = print_canonical_to_strbuf(q, rhs+1, 0, 0);
+				q->varnames = false;
+				SB(s);
+				module *mod = curr_m->used[curr_m->idx_used-1];
+				SB_sprintf(s, "assertz(goal_expansion(%s", dst1);
+				unsigned arity = get_smalluint(lhs+2);
+				unsigned i = 0;
+
+				while (arity--) {
+					if (i) { SB_sprintf(s, "%s", ","); }
+					else { SB_sprintf(s, "%s", "("); }
+					SB_sprintf(s, "_%u", i);
+					i++;
+				}
+
+				if (i) { SB_sprintf(s, "%s", ")"); }
+				char *dst2 = print_canonical_to_strbuf(q, lhs+1, 0, 0);
+				SB_sprintf(s, ",%s:%s", mod->name, dst2);
+
+				arity = get_smalluint(lhs+2);
+				i = 0;
+
+				while (arity--) {
+					if (i) { SB_sprintf(s, "%s", ","); }
+					else { SB_sprintf(s, "%s", "("); }
+					SB_sprintf(s, "_%u", i);
+					i++;
+				}
+
+				if (i) { SB_sprintf(s, "%s", ")"); }
+
+				SB_sprintf(s, "%s", ")).");
+				free(dst2);
+				free(dst1);
+
+				parser *p2 = parser_create(curr_m);
+				check_error(p2, query_destroy(q));
+				q->p = p2;
+				p2->skip = true;
+				p2->srcptr = SB_cstr(s);
+				//printf("*** here: %s\n", p2->srcptr);
+				tokenize(p2, false, false);
+				xref_clause(p2->m, p2->cl, NULL);
+				execute(q, p2->cl->cells, p2->cl->nbr_vars);
+				SB_free(s);
+			} else if (is_structure(lhs) && is_structure(rhs)) {	// What's this???
 				// assertz(goal_expansion(rhs, module:lhs))
 				query *q = query_create(curr_m);
 				check_error(q);
