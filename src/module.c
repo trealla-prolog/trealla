@@ -328,6 +328,7 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 
 	// TODO: only do this if not use_module(name [])
 
+#if 0
 	for (unsigned i = 0; i < m->idx_used; i++) {
 		module *tmp_m = m->used[i];
 
@@ -345,6 +346,7 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 			return pr;
 		}
 	}
+#endif
 
 	if (m->pl->user_m) {
 		pr = find_predicate(m->pl->user_m, c);
@@ -918,6 +920,8 @@ bool do_use_module_1(module *curr_m, cell *c)
 	if (!do_use_module(curr_m, c, &m))
 		return false;
 
+	// TODO: import all public predicates
+
 	return true;
 }
 
@@ -927,6 +931,9 @@ bool do_use_module_2(module *curr_m, cell *c)
 
 	if (!do_use_module(curr_m, c, &m))
 		return false;
+
+	if (!m)
+		return true;
 
 	cell *p1 = c + 1;
 	cell *p2 = p1 + p1->nbr_cells;
@@ -945,7 +952,7 @@ bool do_use_module_2(module *curr_m, cell *c)
 				&& is_atom(rhs)) {
 				cell tmp = *(lhs+1);
 				tmp.arity = get_smalluint(lhs+2);
-				predicate *pr = find_predicate(curr_m->used[curr_m->idx_used-1], &tmp);
+				predicate *pr = find_predicate(m, &tmp);
 				tmp.val_off = rhs->val_off;
 				predicate *pr2 = create_predicate(curr_m, &tmp, NULL);
 				pr2->alias = pr;
@@ -954,41 +961,16 @@ bool do_use_module_2(module *curr_m, cell *c)
 				&& is_structure(lhs) && (lhs->arity == rhs->arity)) {
 				cell tmp = *(lhs+1);
 				tmp.arity = get_smalluint(lhs+2);
-				predicate *pr = find_predicate(curr_m->used[curr_m->idx_used-1], &tmp);
+				predicate *pr = find_predicate(m, &tmp);
 				tmp.val_off = (rhs+1)->val_off;
 				predicate *pr2 = create_predicate(curr_m, &tmp, NULL);
 				pr2->alias = pr;
-#if 0
-			} else if (is_structure(lhs) && is_structure(rhs)) {
-				// assertz(goal_expansion(rhs, module:lhs))
-				query *q = query_create(curr_m);
-				check_error(q);
-				q->varnames = true;
-				char *dst1 = print_canonical_to_strbuf(q, rhs, 0, 0);
-				char *dst2 = print_canonical_to_strbuf(q, lhs, 0, 0);
-				q->varnames = false;
-				SB(s);
-				module *mod = curr_m->used[curr_m->idx_used-1];
-				SB_sprintf(s, "assertz(goal_expansion(%s,%s:%s)).", dst1, mod->name, dst2);
-				free(dst2);
-				free(dst1);
-
-				parser *p2 = parser_create(curr_m);
-				check_error(p2, query_destroy(q));
-				q->p = p2;
-				p2->skip = true;
-				p2->srcptr = SB_cstr(s);
-				tokenize(p2, false, false);
-				xref_clause(p2->m, p2->cl, NULL);
-				execute(q, p2->cl->cells, p2->cl->nbr_vars);
-				SB_free(s);
-#endif
 			}
 		} else {
 			cell *lhs = head;
 
-#if 0
-			if (is_structure(lhs) && (lhs->arity == 2) && (lhs->val_off == g_slash_s)) {
+			if (is_structure(lhs) && (lhs->arity == 2)
+				&& (lhs->val_off == g_slash_s)) {
 				cell *c = lhs + 1;
 
 				if (c->val_off == g_maplist_s) {
@@ -996,55 +978,12 @@ bool do_use_module_2(module *curr_m, cell *c)
 					continue;
 				}
 
-				//printf("*** %s/%u\n", C_STR(q, lhs+1), (unsigned)get_smalluint(lhs+2));
-				// assertz(goal_expansion(rhs, module:lhs))
-				query *q = query_create(curr_m);
-				check_error(q);
-				q->varnames = true;
-				char *dst1 = print_canonical_to_strbuf(q, lhs+1, 0, 0);
-				q->varnames = false;
-				SB(s);
-				module *mod = curr_m->used[curr_m->idx_used-1];
-				SB_sprintf(s, "assertz(goal_expansion(%s", dst1);
-				unsigned arity = get_smalluint(lhs+2);
-				unsigned i = 0;
-
-				while (arity--) {
-					if (i) { SB_sprintf(s, "%s", ","); }
-					else { SB_sprintf(s, "%s", "("); }
-					SB_sprintf(s, "_%u", i);
-					i++;
-				}
-
-				if (i) { SB_sprintf(s, "%s", ")"); }
-				SB_sprintf(s, ",%s:%s", mod->name, dst1);
-
-				arity = get_smalluint(lhs+2);
-				i = 0;
-
-				while (arity--) {
-					if (i) { SB_sprintf(s, "%s", ","); }
-					else { SB_sprintf(s, "%s", "("); }
-					SB_sprintf(s, "_%u", i);
-					i++;
-				}
-
-				if (i) { SB_sprintf(s, "%s", ")"); }
-
-				SB_sprintf(s, "%s", ")).");
-				free(dst1);
-
-				parser *p2 = parser_create(curr_m);
-				check_error(p2, query_destroy(q));
-				q->p = p2;
-				p2->skip = true;
-				p2->srcptr = SB_cstr(s);
-				tokenize(p2, false, false);
-				xref_clause(p2->m, p2->cl, NULL);
-				execute(q, p2->cl->cells, p2->cl->nbr_vars);
-				SB_free(s);
+				cell tmp = *(lhs+1);
+				tmp.arity = get_smalluint(lhs+2);
+				predicate *pr = find_predicate(m, &tmp);
+				predicate *pr2 = create_predicate(curr_m, &tmp, NULL);
+				pr2->alias = pr;
 			}
-#endif
 		}
 
 		p2 = LIST_TAIL(p2);
