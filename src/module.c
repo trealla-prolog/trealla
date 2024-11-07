@@ -326,6 +326,8 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 		return pr;
 	}
 
+	// TODO: only do this if not use_module(name [])
+
 	for (unsigned i = 0; i < m->idx_used; i++) {
 		module *tmp_m = m->used[i];
 
@@ -334,6 +336,11 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 		if (pr) {
 			if (pr->is_builtin && prebuilt)
 				*prebuilt = true;
+
+			if (!pr->is_public
+				&& strcmp(tmp_m->name, "clpz")	// Hack for verify_attributes not qualifying goals
+				)
+				continue;
 
 			return pr;
 		}
