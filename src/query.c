@@ -1240,12 +1240,6 @@ bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 			q->st.curr_rule = NULL;
 			return false;
 		}
-
-		if (pr->alias) {
-			c->val_off = pr->alias->key.val_off;
-			pr = pr->alias;
-		}
-
 		if (!pr->is_dynamic)
 			return throw_error(q, c, c_ctx, "permission_error", "modify,static_procedure");
 
@@ -1344,11 +1338,6 @@ bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract
 			return false;
 		}
 
-		if (pr->alias) {
-			c->val_off = pr->alias->key.val_off;
-			pr = pr->alias;
-		}
-
 		if (!pr->is_dynamic) {
 			if (is_retract == DO_CLAUSE) {
 				if (!q->access_private)
@@ -1426,11 +1415,6 @@ static bool match_head(query *q)
 					q->error = true;
 
 				return false;
-			}
-
-			if (pr->alias) {
-				c->val_off = pr->alias->key.val_off;
-				pr = pr->alias;
 			}
 
 			c->match = pr;
