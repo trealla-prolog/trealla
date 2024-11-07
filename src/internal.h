@@ -444,6 +444,7 @@ struct rule_ {
 
 struct predicate_ {
 	lnode hdr;							// must be first
+	predicate *alias;
 	rule *head, *tail;
 	module *m;
 	skiplist *idx, *idx2;
@@ -838,6 +839,7 @@ struct module_ {
 	bool ifs_done[MAX_IF_DEPTH];
 	bool user_ops:1;
 	bool prebuilt:1;
+	bool make_public:1;
 	bool loaded_properties:1;
 	bool loading:1;
 	bool error:1;
