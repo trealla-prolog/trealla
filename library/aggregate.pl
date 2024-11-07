@@ -3,6 +3,10 @@
 	aggregate/3
 	]).
 
+:- meta_predicate
+	aggregate_all(?,0,-),
+	aggregate(?,^,-).
+
 /**
  * aggregate_all(A, G, S):
  * The predicate aggregates A for the solutions of G and unifies the
