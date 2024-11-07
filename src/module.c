@@ -784,8 +784,9 @@ static bool is_check_directive(const cell *c)
 	return false;
 }
 
-bool do_use_module_1(module *curr_m, cell *c)
+static bool do_use_module(module *curr_m, cell *c, module **mptr)
 {
+	*mptr = NULL;
 	cell *p1 = c + 1;
 	const char *name = C_STR(curr_m, p1);
 	char dstbuf[1024*4];
@@ -819,6 +820,7 @@ bool do_use_module_1(module *curr_m, cell *c)
 			if (m != curr_m)
 				curr_m->used[curr_m->idx_used++] = m;
 
+			*mptr = m;
 			return true;
 		}
 
@@ -855,6 +857,7 @@ bool do_use_module_1(module *curr_m, cell *c)
 			if (m != curr_m)
 				curr_m->used[curr_m->idx_used++] = m;
 
+			*mptr = m;
 			return !m->error;
 		}
 	}
@@ -865,6 +868,7 @@ bool do_use_module_1(module *curr_m, cell *c)
 		if (m != curr_m)
 			curr_m->used[curr_m->idx_used++] = m;
 
+		*mptr = m;
 		return true;
 	}
 
@@ -885,6 +889,7 @@ bool do_use_module_1(module *curr_m, cell *c)
 		if (m != curr_m)
 			curr_m->used[curr_m->idx_used++] = m;
 
+		*mptr = m;
 		return !m->error;
 	}
 
@@ -906,14 +911,26 @@ bool do_use_module_1(module *curr_m, cell *c)
 	return !m->error;
 }
 
+bool do_use_module_1(module *curr_m, cell *c)
+{
+	module *m;
+
+	if (!do_use_module(curr_m, c, &m))
+		return false;
+
+	return true;
+}
+
 bool do_use_module_2(module *curr_m, cell *c)
 {
+	module *m;
+
+	if (!do_use_module(curr_m, c, &m))
+		return false;
+
 	cell *p1 = c + 1;
 	cell *p2 = p1 + p1->nbr_cells;
 	LIST_HANDLER(p2);
-
-	if (!do_use_module_1(curr_m, c))
-		return false;
 
 	while (is_iso_list(p2)) {
 		cell *head = LIST_HEAD(p2);
@@ -941,6 +958,7 @@ bool do_use_module_2(module *curr_m, cell *c)
 				tmp.val_off = (rhs+1)->val_off;
 				predicate *pr2 = create_predicate(curr_m, &tmp, NULL);
 				pr2->alias = pr;
+#if 0
 			} else if (is_structure(lhs) && is_structure(rhs)) {
 				// assertz(goal_expansion(rhs, module:lhs))
 				query *q = query_create(curr_m);
@@ -964,10 +982,12 @@ bool do_use_module_2(module *curr_m, cell *c)
 				xref_clause(p2->m, p2->cl, NULL);
 				execute(q, p2->cl->cells, p2->cl->nbr_vars);
 				SB_free(s);
+#endif
 			}
 		} else {
 			cell *lhs = head;
 
+#if 0
 			if (is_structure(lhs) && (lhs->arity == 2) && (lhs->val_off == g_slash_s)) {
 				cell *c = lhs + 1;
 
@@ -1024,6 +1044,7 @@ bool do_use_module_2(module *curr_m, cell *c)
 				execute(q, p2->cl->cells, p2->cl->nbr_vars);
 				SB_free(s);
 			}
+#endif
 		}
 
 		p2 = LIST_TAIL(p2);
