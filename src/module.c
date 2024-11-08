@@ -926,6 +926,16 @@ bool do_use_module_1(module *curr_m, cell *c)
 		if (!pr->is_public)
 			continue;
 
+		if (find_predicate(curr_m, &pr->key)
+			&& (curr_m != pr->m)
+			&& strcmp(pr->m->name, "format")			// Hack???
+			&& !pr->m->prebuilt
+			) {
+			fprintf(stdout, "Error: permission error import failed: %s/%u, %s\n", C_STR(curr_m, &pr->key), pr->key.arity, get_loaded(m, m->filename));
+			m->error = true;
+			return false;
+		}
+
 		predicate *pr2 = create_predicate(curr_m, &pr->key, NULL);
 		pr2->alias = pr;
 	}
