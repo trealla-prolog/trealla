@@ -910,6 +910,7 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 	if (m != curr_m)
 		curr_m->used[curr_m->idx_used++] = m;
 
+	*mptr = m;
 	return !m->error;
 }
 
@@ -920,7 +921,17 @@ bool do_use_module_1(module *curr_m, cell *c)
 	if (!do_use_module(curr_m, c, &m))
 		return false;
 
-	// TODO: import all public predicates
+	if (!m)
+		return true;
+
+	for (predicate *pr = list_front(&m->predicates);
+		pr; pr = list_next(pr)) {
+		if (!pr->is_public)
+			continue;
+
+		predicate *pr2 = create_predicate(curr_m, &pr->key, NULL);
+		pr2->alias = pr;
+	}
 
 	return true;
 }
@@ -971,13 +982,6 @@ bool do_use_module_2(module *curr_m, cell *c)
 
 			if (is_structure(lhs) && (lhs->arity == 2)
 				&& (lhs->val_off == g_slash_s)) {
-				cell *c = lhs + 1;
-
-				if (c->val_off == g_maplist_s) {
-					p2 = LIST_TAIL(p2);
-					continue;
-				}
-
 				cell tmp = *(lhs+1);
 				tmp.arity = get_smalluint(lhs+2);
 				predicate *pr = find_predicate(m, &tmp);
