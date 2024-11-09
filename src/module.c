@@ -825,7 +825,6 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 
 		// These are some modules that don't exist in Trealla
 		// but the predicates probably pop up somewhere else.
-		// They are implemented as builtins.
 
 		if (!strcmp(name, "between")
 		    || !strcmp(name, "samsort")
@@ -835,6 +834,7 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 			|| !strcmp(name, "crypto")
 		    || !strcmp(name, "files")
 		    || !strcmp(name, "time")
+		    || !strcmp(name, "apply")
 		    || !strcmp(name, "cont")
 		    )
 			return true;
