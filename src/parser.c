@@ -953,9 +953,6 @@ static bool directives(parser *p, cell *d)
 						return true;
 					}
 
-					//char tmpbuf[1024];
-					//snprintf(tmpbuf, sizeof(tmpbuf), "imported_from(%s)", p->m->name);
-					//push_property(save_m, C_STR(p, &tmp), tmp.arity, tmpbuf);
 					pr->is_public = true;
 				} else if (!strcmp(C_STR(p, head), "op") && (head->arity == 3)) {
 					do_op(p, head, true);

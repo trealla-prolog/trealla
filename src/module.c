@@ -911,6 +911,15 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 	return !m->error;
 }
 
+static void do_import_predicate(module *curr_m, module *m, predicate *pr)
+{
+	predicate *pr2 = create_predicate(curr_m, &pr->key, NULL);
+	pr2->alias = pr;
+	char tmpbuf[1024];
+	snprintf(tmpbuf, sizeof(tmpbuf), "imported_from(%s)", m->name);
+	push_property(curr_m, C_STR(m, &pr->key), pr->key.arity, tmpbuf);
+}
+
 bool do_use_module_1(module *curr_m, cell *c)
 {
 	module *m;
@@ -936,11 +945,7 @@ bool do_use_module_1(module *curr_m, cell *c)
 			return false;
 		}
 
-		predicate *pr2 = create_predicate(curr_m, &pr->key, NULL);
-		pr2->alias = pr;
-		char tmpbuf[1024];
-		snprintf(tmpbuf, sizeof(tmpbuf), "imported_from(%s)", m->name);
-		push_property(curr_m, C_STR(m, &pr->key), pr->key.arity, tmpbuf);
+		do_import_predicate(curr_m, m, pr);
 	}
 
 	return true;
@@ -975,11 +980,7 @@ bool do_use_module_2(module *curr_m, cell *c)
 				tmp.arity = get_smalluint(lhs+2);
 				predicate *pr = find_predicate(m, &tmp);
 				tmp.val_off = rhs->val_off;
-				predicate *pr2 = create_predicate(curr_m, &tmp, NULL);
-				pr2->alias = pr;
-				char tmpbuf[1024];
-				snprintf(tmpbuf, sizeof(tmpbuf), "imported_from(%s)", m->name);
-				push_property(curr_m, C_STR(m, &pr->key), pr->key.arity, tmpbuf);
+				do_import_predicate(curr_m, m, pr);
 			} else if (is_structure(lhs) && (lhs->arity == 2)
 				&& (lhs->val_off == g_slash_s)
 				&& is_structure(lhs) && (lhs->arity == rhs->arity)) {
@@ -987,11 +988,7 @@ bool do_use_module_2(module *curr_m, cell *c)
 				tmp.arity = get_smalluint(lhs+2);
 				predicate *pr = find_predicate(m, &tmp);
 				tmp.val_off = (rhs+1)->val_off;
-				predicate *pr2 = create_predicate(curr_m, &tmp, NULL);
-				pr2->alias = pr;
-				char tmpbuf[1024];
-				snprintf(tmpbuf, sizeof(tmpbuf), "imported_from(%s)", m->name);
-				push_property(curr_m, C_STR(m, &pr->key), pr->key.arity, tmpbuf);
+				do_import_predicate(curr_m, m, pr);
 			}
 		} else {
 			cell *lhs = head;
@@ -1001,11 +998,7 @@ bool do_use_module_2(module *curr_m, cell *c)
 				cell tmp = *(lhs+1);
 				tmp.arity = get_smalluint(lhs+2);
 				predicate *pr = find_predicate(m, &tmp);
-				predicate *pr2 = create_predicate(curr_m, &tmp, NULL);
-				pr2->alias = pr;
-				char tmpbuf[1024];
-				snprintf(tmpbuf, sizeof(tmpbuf), "imported_from(%s)", m->name);
-				push_property(curr_m, C_STR(m, &pr->key), pr->key.arity, tmpbuf);
+				do_import_predicate(curr_m, m, pr);
 			}
 		}
 
