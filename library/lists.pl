@@ -9,7 +9,7 @@
 		list_sum/2, list_prod/2, list_max/2, list_min/2,	% Modern
 		list_to_conjunction/2, conjunction_to_list/2,
 		list_to_set/2, numlist/3, length/2, reverse/2,
-		partition/4, exclude/3, include/3, permutation/2,
+		exclude/3, include/3, permutation/2,
 		foldl/4, foldl/5, foldl/6, foldl/7,
 		maplist/2, maplist/3, maplist/4, maplist/5, maplist/6, maplist/7, maplist/8, maplist/9,
 		tasklist/2, tasklist/3, tasklist/4, tasklist/5, tasklist/6, tasklist/7, tasklist/8, tasklist/9
@@ -447,15 +447,6 @@ exclude_([X1|Xs1], P, Included) :-
 
 :- help(exclude(:callable,?list), [iso(false)]).
 :- meta_predicate(exclude(2, ?, ?)).
-
-partition([X|L], Y, [X|L1], L2) :-
-	X @< Y, !,
-	partition(L, Y, L1, L2).
-partition([X|L], Y, L1, [X|L2]) :-
-	partition(L, Y, L1, L2).
-partition([], _, [], []).
-
-:- help(partition(?list,?term,?list,?list), [iso(false)]).
 
 permutation(Xs, Ys) :-
     '$skip_max_list'(Xlen, _, Xs, XTail),
