@@ -433,7 +433,7 @@ include_([X1|Xs1], P, Included) :-
 	include_(Xs1, P, Included1).
 
 :- help(include(:callable,?list), [iso(false)]).
-:- meta_predicate(include(1, ?, ?)).
+:- meta_predicate(include(2, ?, ?)).
 
 exclude(G, L, Included) :-
 	exclude_(L, G, Included).
@@ -446,7 +446,7 @@ exclude_([X1|Xs1], P, Included) :-
 	exclude_(Xs1, P, Included1).
 
 :- help(exclude(:callable,?list), [iso(false)]).
-:- meta_predicate(exclude(1, ?, ?)).
+:- meta_predicate(exclude(2, ?, ?)).
 
 partition([X|L], Y, [X|L1], L2) :-
 	X @< Y, !,
@@ -455,8 +455,7 @@ partition([X|L], Y, L1, [X|L2]) :-
 	partition(L, Y, L1, L2).
 partition([], _, [], []).
 
-:- help(partition(:callable,?list,?list), [iso(false)]).
-:- meta_predicate(partition(1, ?, ?, ?)).
+:- help(partition(?list,?term,?list,?list), [iso(false)]).
 
 permutation(Xs, Ys) :-
     '$skip_max_list'(Xlen, _, Xs, XTail),

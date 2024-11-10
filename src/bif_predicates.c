@@ -6252,6 +6252,12 @@ static void load_properties(module *m)
 	format_property(m, tmpbuf, sizeof(tmpbuf), "maplist", 6, "meta_predicate(maplist(5,?,?,?,?,?))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "maplist", 7, "meta_predicate(maplist(6,?,?,?,?,?,?))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "maplist", 8, "meta_predicate(maplist(7,?,?,?,?,?,?,?))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "include", 3, "meta_predicate(include(2,?,?))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "exclude", 3, "meta_predicate(exclude(2,?,?))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "foldl", 3, "meta_predicate(foldl(2,?,?))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "foldl", 4, "meta_predicate(foldl(3,?,?,?))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "foldl", 5, "meta_predicate(foldl(4,?,?,?,?))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "foldl", 6, "meta_predicate(foldl(5,?,?,?,?,?))", false); SB_strcat(pr, tmpbuf);
 
 #if USE_THREADS
 	format_property(m, tmpbuf, sizeof(tmpbuf), "thread_create", 3, "meta_predicate(thread_create(0,-,?))", false); SB_strcat(pr, tmpbuf);
