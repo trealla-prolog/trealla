@@ -964,7 +964,7 @@ bool do_use_module_1(module *curr_m, cell *c)
 			&& strcmp(pr->m->name, "format")			// Hack???
 			&& !pr->m->prebuilt
 			) {
-			fprintf(stdout, "Error: permission error import failed: %s:%s/%u, %s\n", pr->m->name, C_STR(curr_m, &pr->key), pr->key.arity, get_loaded(m, m->filename));
+			fprintf(stdout, "Error: permission to import failed: %s:%s/%u, %s\n", pr->m->name, C_STR(curr_m, &pr->key), pr->key.arity, get_loaded(m, m->filename));
 			m->error = true;
 			return false;
 		}
