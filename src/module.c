@@ -911,8 +911,18 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 	return !m->error;
 }
 
-static void do_import_predicate(module *curr_m, module *m, predicate *pr)
+static bool do_import_predicate(module *curr_m, module *m, predicate *pr)
 {
+	if (find_predicate(curr_m, &pr->key)
+		&& (curr_m != pr->m)
+		&& strcmp(pr->m->name, "format")			// Hack???
+		&& !pr->m->prebuilt
+		) {
+		fprintf(stdout, "Error: permission to import failed: %s:%s/%u, %s\n", pr->m->name, C_STR(curr_m, &pr->key), pr->key.arity, get_loaded(m, m->filename));
+		m->error = true;
+		return false;
+	}
+
 	predicate *pr2 = create_predicate(curr_m, &pr->key, NULL);
 	pr2->alias = pr;
 	char tmpbuf[1024];
@@ -923,7 +933,7 @@ static void do_import_predicate(module *curr_m, module *m, predicate *pr)
 		push_property(curr_m, C_STR(m, &pr->key), pr->key.arity, "dynamic");
 
 	if (!pr->meta_args)
-		return;
+		return true;
 
 	SB(pr);
 	SB_sprintf(pr, "meta_predicate(%s(", C_STR(m, &pr->key));
@@ -942,6 +952,7 @@ static void do_import_predicate(module *curr_m, module *m, predicate *pr)
 
 	SB_strcat(pr, "))");
 	push_property(curr_m, C_STR(m, &pr->key), pr->key.arity, SB_cstr(pr));
+	return true;
 }
 
 bool do_use_module_1(module *curr_m, cell *c)
@@ -959,17 +970,7 @@ bool do_use_module_1(module *curr_m, cell *c)
 		if (!pr->is_public)
 			continue;
 
-		if (find_predicate(curr_m, &pr->key)
-			&& (curr_m != pr->m)
-			&& strcmp(pr->m->name, "format")			// Hack???
-			&& !pr->m->prebuilt
-			) {
-			fprintf(stdout, "Error: permission to import failed: %s:%s/%u, %s\n", pr->m->name, C_STR(curr_m, &pr->key), pr->key.arity, get_loaded(m, m->filename));
-			m->error = true;
-			return false;
-		}
-
-		do_import_predicate(curr_m, m, pr);
+		return do_import_predicate(curr_m, m, pr);
 	}
 
 	return true;
