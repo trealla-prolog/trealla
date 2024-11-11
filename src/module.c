@@ -970,7 +970,8 @@ bool do_use_module_1(module *curr_m, cell *c)
 		if (!pr->is_public)
 			continue;
 
-		return do_import_predicate(curr_m, m, pr);
+		if (!do_import_predicate(curr_m, m, pr))
+			return false;
 	}
 
 	return true;
