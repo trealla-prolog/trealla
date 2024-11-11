@@ -956,6 +956,12 @@ static bool directives(parser *p, cell *d)
 					pr->is_public = true;
 				} else if (!strcmp(C_STR(p, head), "op") && (head->arity == 3)) {
 					do_op(p, head, true);
+				} else {
+					if (DUMP_ERRS || !p->do_read_term)
+						fprintf(stdout, "Error: predicate export failed, '%s' in %s:%d\n", C_STR(p, head), get_loaded(p->m, p->m->filename), p->line_nbr);
+
+					p->error = true;
+					return true;
 				}
 			}
 
