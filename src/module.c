@@ -911,32 +911,32 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 	return !m->error;
 }
 
-static bool do_import_predicate(module *curr_m, module *m, predicate *pr)
+static bool do_import_predicate(module *curr_m, module *m, predicate *pr, cell *as)
 {
-	if (find_predicate(curr_m, &pr->key)
+	if (find_predicate(curr_m, as)
 		&& (curr_m != pr->m)
 		&& strcmp(pr->m->name, "format")			// Hack???
 		&& !pr->m->prebuilt
 		) {
-		fprintf(stdout, "Error: permission to import failed: %s:%s/%u, %s\n", pr->m->name, C_STR(curr_m, &pr->key), pr->key.arity, get_loaded(m, m->filename));
+		fprintf(stdout, "Error: permission to import failed: %s:%s/%u, %s\n", pr->m->name, C_STR(curr_m, as), as->arity, get_loaded(m, m->filename));
 		m->error = true;
 		return false;
 	}
 
-	predicate *pr2 = create_predicate(curr_m, &pr->key, NULL);
+	predicate *pr2 = create_predicate(curr_m, as, NULL);
 	pr2->alias = pr;
 	char tmpbuf[1024];
 	snprintf(tmpbuf, sizeof(tmpbuf), "imported_from(%s)", m->name);
 	push_property(curr_m, C_STR(m, &pr->key), pr->key.arity, tmpbuf);
 
 	if (pr->is_dynamic)
-		push_property(curr_m, C_STR(m, &pr->key), pr->key.arity, "dynamic");
+		push_property(curr_m, C_STR(m, as), as->arity, "dynamic");
 
 	if (!pr->meta_args)
 		return true;
 
 	SB(pr);
-	SB_sprintf(pr, "meta_predicate(%s(", C_STR(m, &pr->key));
+	SB_sprintf(pr, "meta_predicate(%s(", C_STR(m, as));
 	cell *key = pr->meta_args + 1;
 
 	for (unsigned i = 0; i < pr->key.arity; i++, key++) {
@@ -951,7 +951,7 @@ static bool do_import_predicate(module *curr_m, module *m, predicate *pr)
 	}
 
 	SB_strcat(pr, "))");
-	push_property(curr_m, C_STR(m, &pr->key), pr->key.arity, SB_cstr(pr));
+	push_property(curr_m, C_STR(m, as), as->arity, SB_cstr(pr));
 	return true;
 }
 
@@ -970,7 +970,7 @@ bool do_use_module_1(module *curr_m, cell *c)
 		if (!pr->is_public)
 			continue;
 
-		if (!do_import_predicate(curr_m, m, pr))
+		if (!do_import_predicate(curr_m, m, pr, &pr->key))
 			return false;
 	}
 
@@ -1006,7 +1006,7 @@ bool do_use_module_2(module *curr_m, cell *c)
 				tmp.arity = get_smalluint(lhs+2);
 				predicate *pr = find_predicate(m, &tmp);
 				tmp.val_off = rhs->val_off;
-				do_import_predicate(curr_m, m, pr);
+				do_import_predicate(curr_m, m, pr, &tmp);
 			} else if (is_structure(lhs) && (lhs->arity == 2)
 				&& (lhs->val_off == g_slash_s)
 				&& is_structure(lhs) && (lhs->arity == rhs->arity)) {
@@ -1014,7 +1014,7 @@ bool do_use_module_2(module *curr_m, cell *c)
 				tmp.arity = get_smalluint(lhs+2);
 				predicate *pr = find_predicate(m, &tmp);
 				tmp.val_off = (rhs+1)->val_off;
-				do_import_predicate(curr_m, m, pr);
+				do_import_predicate(curr_m, m, pr, &tmp);
 			}
 		} else {
 			cell *lhs = head;
@@ -1024,7 +1024,7 @@ bool do_use_module_2(module *curr_m, cell *c)
 				cell tmp = *(lhs+1);
 				tmp.arity = get_smalluint(lhs+2);
 				predicate *pr = find_predicate(m, &tmp);
-				do_import_predicate(curr_m, m, pr);
+				do_import_predicate(curr_m, m, pr, &pr->key);
 			}
 		}
 
