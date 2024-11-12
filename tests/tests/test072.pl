@@ -20,7 +20,7 @@ repeat(X, N, [X|R]) :-
 var_list(N, L) :-
     length(L, N).
 
-transpose(M, T) :-
+my_transpose(M, T) :-
     [H|_] = M,
     length(H, NCols),
     from_to(1, NCols, L),
@@ -188,7 +188,7 @@ square(Size, M, Total, Frequencies, Permutation) :-
     ad_partition(Size, Partition),
     rep_perm(Size, Partition, Permutation),
     list_permute(Permutation, M, P),
-    transpose(P, M),
+    my_transpose(P, M),
     distinct(M),
     eval_matrix(M, Frequencies),
     total(Frequencies, Total).
