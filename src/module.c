@@ -1005,6 +1005,7 @@ bool do_use_module_2(module *curr_m, cell *c)
 				cell tmp = *(lhs+1);
 				tmp.arity = get_smalluint(lhs+2);
 				predicate *pr = find_predicate(m, &tmp);
+				if (!pr) return false;
 				tmp.val_off = rhs->val_off;
 				do_import_predicate(curr_m, m, pr, &tmp);
 			} else if (is_structure(lhs) && (lhs->arity == 2)
@@ -1013,6 +1014,7 @@ bool do_use_module_2(module *curr_m, cell *c)
 				cell tmp = *(lhs+1);
 				tmp.arity = get_smalluint(lhs+2);
 				predicate *pr = find_predicate(m, &tmp);
+				if (!pr) return false;
 				tmp.val_off = (rhs+1)->val_off;
 				do_import_predicate(curr_m, m, pr, &tmp);
 			}
@@ -1024,6 +1026,7 @@ bool do_use_module_2(module *curr_m, cell *c)
 				cell tmp = *(lhs+1);
 				tmp.arity = get_smalluint(lhs+2);
 				predicate *pr = find_predicate(m, &tmp);
+				if (!pr) return false;
 				do_import_predicate(curr_m, m, pr, &pr->key);
 			}
 		}
