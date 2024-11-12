@@ -1486,8 +1486,8 @@ static bool check_not_multifile(module *m, predicate *pr, rule *dbe_orig)
 
 	if (pr->alias) {
 		//fprintf(stderr, "Warning: overwriting %s:'%s'/%u\n", pr->m->name, C_STR(m, &pr->key), pr->key.arity);
-		pr->meta_args = NULL;
-		pr->alias = NULL;
+		//pr->meta_args = NULL;
+		//pr->alias = NULL;
 	}
 
 	return true;
