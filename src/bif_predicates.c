@@ -1257,11 +1257,11 @@ static bool do_sub_atom(query *q, cell *p1, cell *p2, pl_idx p2_ctx, cell *p3, p
 		check_heap_error(push_choice(q));
 
 	cell tmp;
-	make_int(&tmp, before);
+	make_int(&tmp, pos_at_offset(C_STR(q, p1), C_STRLEN(q, p1), before));
 	unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	make_int(&tmp, len);
 	unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
-	make_int(&tmp, after);
+	make_int(&tmp, pos_at_offset(C_STR(q, p1), C_STRLEN(q, p1), after));
 	unify(q, p4, p4_ctx, &tmp, q->st.curr_frame);
 	return true;
 }
@@ -1283,11 +1283,9 @@ static bool bif_iso_sub_string_5(query *q)
 	if (is_integer(p4) && is_negative(p4))
 		return throw_error(q, p4, p4_ctx, "domain_error", "not_less_than_zero");
 
-#if 0
 	if (!is_var(p1) && is_var(p2) && is_var(p3) && is_var(p4) && !is_var(p5)) {
 		return do_sub_atom(q, p1, p2, p2_ctx, p3, p3_ctx, p4, p4_ctx, p5);
 	}
-#endif
 
 	const size_t len_p1 = C_STRLEN_UTF8(p1);
 	size_t before = 0, len = 0, after = 0;

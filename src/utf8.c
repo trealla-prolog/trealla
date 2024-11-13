@@ -261,3 +261,16 @@ size_t offset_at_pos(const char *buffer, size_t buflen, size_t i)
 
 	return src - buffer;
 }
+
+size_t pos_at_offset(const char *buffer, size_t buflen, size_t i)
+{
+	const char *src = buffer;
+	size_t idx = 0;
+
+	while (src < (buffer+i)) {
+		get_char_utf8(&src);
+		idx++;
+	}
+
+	return idx;
+}
