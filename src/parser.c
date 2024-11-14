@@ -4034,11 +4034,11 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			set_smallint(c, get_smallint(&p->v));
 		} else if (p->v.tag == TAG_DOUBLE) {
 			set_float(c, get_float(&p->v));
-		} else if (!p->is_string && (!p->is_quoted || is_func || p->is_op || p->is_var
+		} else if (!p->is_string
+			&& (!p->is_quoted || is_func || p->is_op || p->is_var
 			|| (get_builtin(p->m->pl, SB_cstr(p->token), SB_strlen(p->token), 0, &found, NULL), found)
-			|| !SB_strcmp(p->token, "[]")
-			)) {
-
+			|| !SB_strcmp(p->token, "[]"))
+			) {
 			if (is_func && !SB_strcmp(p->token, "."))
 				c->priority = 0;
 
@@ -4049,7 +4049,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			ensure(c->val_off != ERR_IDX);
 		} else {
 			c->tag = TAG_CSTR;
-			size_t toklen =SB_strlen(p->token);
+			size_t toklen = SB_strlen(p->token);
 
 			if ((toklen < MAX_SMALL_STRING) && !p->is_string) {
 				memcpy(c->val_chr, SB_cstr(p->token), toklen);
