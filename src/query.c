@@ -623,8 +623,7 @@ static void reuse_frame(query *q, const clause *cl)
 	slot *to = GET_SLOT(f, 0);
 
 	for (pl_idx i = 0; i < cl->nbr_vars; i++, from++, to++) {
-		cell *c = &to->c;
-		unshare_cell(c);
+		unshare_cell(&to->c);
 		to->c = from->c;
 	}
 
