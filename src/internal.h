@@ -722,7 +722,6 @@ struct query_ {
 	bool portray_vars:1;
 	bool status:1;
 	bool no_tco:1;
-	bool no_fact:1;
 	bool has_vars:1;
 	bool error:1;
 	bool did_throw:1;

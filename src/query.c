@@ -689,12 +689,9 @@ static void commit_frame(query *q)
 
 	// Matching a ground fact (see disjunction in bif_control.c)...
 
-	if (q->pl->opt && last_match && !body
-		&& !q->no_fact && !cl->nbr_vars
-		) {
+	if (q->pl->opt && last_match && !body && !cl->nbr_vars) {
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
-		//trim_trail(q);
 		Trace(q, head, q->st.curr_frame, EXIT);
 		q->st.curr_instr += q->st.curr_instr->nbr_cells;
 		q->st.iter = NULL;
