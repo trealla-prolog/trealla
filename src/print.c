@@ -1187,7 +1187,8 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 		bool space = (c->val_off == g_minus_s) && (is_number(lhs) || is_op_lhs);
 		if ((c->val_off == g_plus_s) && is_op_lhs) space = true;
-		if (isalpha(*src)) space = true;
+		int ch = peek_char_utf8(src);
+		if (iswalpha(ch)) space = true;
 
 		if (q->is_dump_vars && has_visited(visited, lhs, lhs_ctx)) {
 			if (q->is_dump_vars) {
@@ -1237,7 +1238,8 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 		bool space = (c->val_off == g_minus_s) && (is_number(rhs) || is_op_rhs);
 		if ((c->val_off == g_plus_s) && is_op_rhs) space = true;
-		if (isalpha(*src)) space = true;
+		int ch = peek_char_utf8(src);
+		if (iswalpha(ch)) space = true;
 		if (/*is_op_rhs ||*/ is_negative(rhs) || is_float(rhs)) space = true;
 		if (is_interned(rhs) && !iswalpha(peek_char_utf8(rhs_src)) && !is_op(rhs)) space = true;
 
