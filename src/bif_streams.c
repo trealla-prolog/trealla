@@ -4378,7 +4378,7 @@ static bool bif_read_term_from_atom_3(query *q)
 	char *src;
 	size_t len;
 
-	if (is_cstring(p_chars)) {
+	if (is_atom(p_chars)) {
 		len = C_STRLEN(q, p_chars);
 		src = malloc(len+1+1);	// final +1 is for look-ahead
 		check_heap_error(src);

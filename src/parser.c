@@ -4035,7 +4035,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 		} else if (p->v.tag == TAG_DOUBLE) {
 			set_float(c, get_float(&p->v));
 		} else if (!p->is_string
-			&& (!p->is_quoted || is_func || p->is_op || p->is_var
+			&& (!p->is_quoted || is_func || p->is_op || p->is_var || p->consulting
 			|| (get_builtin(p->m->pl, SB_cstr(p->token), SB_strlen(p->token), 0, &found, NULL), found)
 			|| !SB_strcmp(p->token, "[]"))
 			) {

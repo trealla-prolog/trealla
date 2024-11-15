@@ -347,10 +347,6 @@ static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx
 	} else if (is_managed(v)) {
 		e->c = *v;
 		share_cell(v);
-
-		if ((c_ctx != q->st.curr_frame) && (v_ctx == q->st.curr_frame)) {
-			q->no_tco = true;
-		}
 	} else {
 		e->c = *v;
 	}
