@@ -666,8 +666,8 @@ static void commit_frame(query *q)
 
 	if (!q->no_tco
 		&& last_match
-		&& (q->st.fp == (q->st.curr_frame + 1))
-		&& !q->st.m->no_tco	// For CLPZ
+		&& (q->st.fp == (q->st.curr_frame + 1))	// At top of frame stack
+		&& !q->st.m->no_tco						// For CLPZ
 		) {
 		bool tail_call = is_tail_call(q->st.curr_instr);
 		bool tail_recursive = tail_call && is_recursive_call(q->st.curr_instr);

@@ -111,43 +111,6 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 
 #define is_iso_atom(c) ((is_interned(c) || is_cstring(c)) && !(c)->arity)
 #define is_iso_list(c) (is_interned(c) && ((c)->arity == 2) && ((c)->val_off == g_dot_s))
-
-#define get_list_head(c) ((c) + 1)
-#define get_list_tail(c) (get_list_head(c) + get_list_head(c)->nbr_cells)
-
-#define get_float(c) (c)->val_float
-#define set_float(c,v) (c)->val_float = (v)
-#define get_smallint(c) (c)->val_int
-#define set_smallint(c,v) (c)->val_int = (v)
-#define get_smalluint(c) (c)->val_uint
-#define set_smalluint(c,v) (c)->val_uint = (v)
-
-#define neg_bigint(c) (c)->val_bigint->ival.sign = MP_NEG
-#define neg_smallint(c) (c)->val_int = -llabs((c)->val_int)
-#define neg_float(c) (c)->val_float = -fabs((c)->val_float)
-
-#define is_zero(c) (is_bigint(c) ?							\
-	mp_int_compare_zero(&(c)->val_bigint->ival) == 0 :		\
-	is_smallint(c) ? get_smallint(c) == 0 :					\
-	is_float(c) ? get_float(c) == 0.0 : false)
-
-#define is_negative(c) (is_bigint(c) ?						\
-	(c)->val_bigint->ival.sign == MP_NEG :					\
-	is_smallint(c) ? get_smallint(c) < 0 :					\
-	is_float(c) ? get_float(c) < 0.0 : false)
-
-#define is_positive(c) (is_bigint(c) ?						\
-	mp_int_compare_zero(&(c)->val_bigint->ival) > 0 :		\
-	is_smallint(c) ? get_smallint(c) > 0 :					\
-	is_float(c) ? get_float(c) > 0.0 : false)
-
-#define is_gt(c,n) (get_smallint(c) > (n))
-#define is_ge(c,n) (get_smallint(c) >= (n))
-#define is_eq(c,n) (get_smallint(c) == (n))
-#define is_ne(c,n) (get_smallint(c) != (n))
-#define is_le(c,n) (get_smallint(c) <= (n))
-#define is_lt(c,n) (get_smallint(c) < (n))
-
 #define is_smallint(c) (is_integer(c) && !((c)->flags & FLAG_MANAGED))
 #define is_bigint(c) (is_integer(c) && ((c)->flags & FLAG_MANAGED))
 #define is_boolean(c) ((is_interned(c) && !(c)->arity && (((c)->val_off == g_true_s) || ((c)->val_off == g_false_s))))
@@ -178,6 +141,43 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_atomic(c) (is_atom(c) || is_number(c))
 #define is_iso_atomic(c) (is_iso_atom(c) || is_number(c))
 #define is_nonvar(c) !is_var(c)
+
+#define is_gt(c,n) (get_smallint(c) > (n))
+#define is_ge(c,n) (get_smallint(c) >= (n))
+#define is_eq(c,n) (get_smallint(c) == (n))
+#define is_ne(c,n) (get_smallint(c) != (n))
+#define is_le(c,n) (get_smallint(c) <= (n))
+#define is_lt(c,n) (get_smallint(c) < (n))
+
+#define get_list_head(c) ((c) + 1)
+#define get_list_tail(c) (get_list_head(c) + get_list_head(c)->nbr_cells)
+
+#define get_float(c) (c)->val_float
+#define set_float(c,v) (c)->val_float = (v)
+#define get_smallint(c) (c)->val_int
+#define set_smallint(c,v) (c)->val_int = (v)
+#define get_smalluint(c) (c)->val_uint
+#define set_smalluint(c,v) (c)->val_uint = (v)
+
+#define neg_bigint(c) (c)->val_bigint->ival.sign = MP_NEG
+#define neg_smallint(c) (c)->val_int = -llabs((c)->val_int)
+#define neg_float(c) (c)->val_float = -fabs((c)->val_float)
+
+#define is_zero(c) (is_bigint(c) ?							\
+	mp_int_compare_zero(&(c)->val_bigint->ival) == 0 :		\
+	is_smallint(c) ? get_smallint(c) == 0 :					\
+	is_float(c) ? get_float(c) == 0.0 : false)
+
+#define is_negative(c) (is_bigint(c) ?						\
+	(c)->val_bigint->ival.sign == MP_NEG :					\
+	is_smallint(c) ? get_smallint(c) < 0 :					\
+	is_float(c) ? get_float(c) < 0.0 : false)
+
+#define is_positive(c) (is_bigint(c) ?						\
+	mp_int_compare_zero(&(c)->val_bigint->ival) > 0 :		\
+	is_smallint(c) ? get_smallint(c) > 0 :					\
+	is_float(c) ? get_float(c) > 0.0 : false)
+
 
 extern char *g_pool;
 
