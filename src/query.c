@@ -637,7 +637,7 @@ static void reuse_frame(query *q, const clause *cl)
 
 static bool commit_any_choices(const query *q, const frame *f)
 {
-	if (q->cp <= 1)
+	if (q->cp == 1)
 		return false;
 
 	const choice *ch = GET_PREV_CHOICE();	// Skip in-progress choice
