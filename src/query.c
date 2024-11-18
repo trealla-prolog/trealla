@@ -546,23 +546,13 @@ static frame *push_frame(query *q, const clause *cl)
 	const cell *next_cell = q->st.curr_instr + q->st.curr_instr->nbr_cells;
 	pl_idx new_frame = q->st.fp++;
 	frame *f = GET_FRAME(new_frame);
-
-	// Avoid long chains of useless returns...
-
-	if (is_end(next_cell) && !next_cell->ret_instr && curr_f->curr_instr) {
-		f->prev_offset = (new_frame - q->st.curr_frame) + curr_f->prev_offset;
-		f->curr_instr = curr_f->curr_instr;
-	} else {
-		f->prev_offset = new_frame - q->st.curr_frame;
-		f->curr_instr = q->st.curr_instr;
-	}
-
+	f->prev_offset = new_frame - q->st.curr_frame;
+	f->curr_instr = q->st.curr_instr;
 	f->initial_slots = f->actual_slots = cl->nbr_vars;
 	f->chgen = ++q->chgen;
 	f->heap_nbr = q->st.heap_nbr;
 	f->hp = q->st.hp;
 	f->overflow = 0;
-
 	q->st.sp += cl->nbr_vars;
 	q->st.curr_frame = new_frame;
 	return f;
