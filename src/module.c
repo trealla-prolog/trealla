@@ -916,6 +916,7 @@ static bool do_import_predicate(module *curr_m, module *m, predicate *pr, cell *
 	if (find_predicate(curr_m, as)
 		&& (curr_m != pr->m)
 		&& strcmp(pr->m->name, "format")			// Hack???
+		&& strcmp(pr->m->name, "charsio")			// Hack???
 		&& !pr->m->prebuilt
 		) {
 		fprintf(stdout, "Error: permission to import failed: %s:%s/%u, %s\n", pr->m->name, C_STR(curr_m, as), as->arity, get_loaded(m, m->filename));

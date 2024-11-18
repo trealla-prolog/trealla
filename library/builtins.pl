@@ -517,14 +517,11 @@ read_term_from_chars_(T, Cs, Rest) :-
 read_term_from_chars_(T, Opts, Cs, Rest) :-
 	'$read_term_from_chars'(T, Opts, Cs, Rest).
 
-:- help(read_term_from_chars_(?term,+chars,-chars), [iso(false)]).
-:- help(read_term_from_chars_(?term,+list,+chars,-chars), [iso(false)]).
-
 read_from_atom(A, T) :- read_term_from_atom(A, T, []).
 read_from_chars(Cs, T) :- read_term_from_chars(Cs, T, []).
 
-:- help(read_term_from_atom(+atom,?term), [iso(false)]).
-:- help(read_term_from_chars(+chars,?term), [iso(false)]).
+:- help(read_from_atom(+atom,?term), [iso(false)]).
+:- help(read_from_chars(+chars,?term), [iso(false)]).
 
 with_output_to(chars(Cs), Goal) :-
 	setup_call_cleanup(
