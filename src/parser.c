@@ -1606,7 +1606,7 @@ static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 
 			if (is_fx(rhs) && !rhs->arity && (rhs->priority == c->priority)) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stdout, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 				p->error_desc = "operator_clash";
 				p->error = true;
@@ -1618,7 +1618,7 @@ static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 			if ((((pl_idx)(rhs - p->cl->cells)) < end_idx)
 				&& is_xf(rhs) && (rhs->priority == c->priority)) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stdout, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 				p->error_desc = "operator_clash";
 				p->error = true;
@@ -1631,7 +1631,7 @@ static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 
 			if (is_infix(rhs) && !rhs->arity && (rhs->priority > c->priority)) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stdout, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 				p->error_desc = "operator_clash";
 				p->error = true;
@@ -1640,7 +1640,7 @@ static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 
 			if (is_prefix(rhs) && !rhs->arity && (rhs->priority > c->priority)) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stdout, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 				p->error_desc = "operator_clash";
 				p->error = true;
@@ -1654,7 +1654,7 @@ static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 
 			if (off > end_idx) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stdout, "Error: syntax error, missing operand to prefix, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, missing operand to prefix, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 				p->error_desc = "operand_missing";
 				p->error = true;
@@ -1671,7 +1671,7 @@ static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 
 		if (is_xf(rhs) && (rhs->priority == c->priority)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error_desc = "operator_clash";
 			p->error = true;
@@ -1680,7 +1680,7 @@ static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 
 		if (is_prefix(rhs) && !rhs->arity && (rhs->priority > c->priority)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error_desc = "operator_clash";
 			p->error = true;
@@ -1694,7 +1694,7 @@ static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 
 			if (off > end_idx) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stdout, "Error: syntax error, missing operand to postfix, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, missing operand to postfix, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 				p->error_desc = "operand_missing";
 				p->error = true;
@@ -1717,7 +1717,7 @@ static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 
 		if (is_infix(rhs) && !rhs->arity) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error_desc = "operator_clash";
 			p->error = true;
@@ -1731,7 +1731,7 @@ static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 
 		if (nolhs || (off > end_idx)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, missing operand to infix, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, missing operand to infix, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error_desc = "operand_missing";
 			p->error = true;
@@ -1742,7 +1742,7 @@ static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 
 		if (is_infix(lhs) && !lhs->arity) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error_desc = "operator_clash";
 			p->error = true;
@@ -1768,7 +1768,7 @@ static bool apply_operators(parser *p, pl_idx start_idx, bool last_op)
 				&& (is_xfx(next))
 				&& (next->priority == c->priority)) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stdout, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 				p->error_desc = "operator_clash";
 				p->error = true;
@@ -2406,7 +2406,7 @@ static int get_escape(parser *p, const char **_src, bool *error, bool number)
 			src--;
 		else if (!unicode && (*src++ != '\\')) {
 			//if (DUMP_ERRS || !p->do_read_term)
-			//	fprintf(stdout, "Error: syntax error, closing \\ missing\n");
+			//	fprintf(stderr, "Error: syntax error, closing \\ missing\n");
 			*_src = src;
 			*error = true;
 			return 0;
@@ -2414,7 +2414,7 @@ static int get_escape(parser *p, const char **_src, bool *error, bool number)
 
 		if ((unsigned)ch > 0x10FFFF) {
 			//if (DUMP_ERRS || !p->do_read_term)
-			//	fprintf(stdout, "Error: syntax error, illegal character code\n");
+			//	fprintf(stderr, "Error: syntax error, illegal character code\n");
 			*_src = src;
 			*error = true;
 			return 0;
@@ -2453,7 +2453,7 @@ void read_integer(parser *p, mp_int v2, int base, const char **srcptr)
 
 		if (spaces > 1) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, illegal character, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, illegal character, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			*srcptr = src;
 			p->error = true;
@@ -2500,7 +2500,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 	if ((*s == '.') && isdigit(s[1])) {
 		if (DUMP_ERRS || !p->do_read_term)
-			fprintf(stdout, "Error: syntax error, parsing number1, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+			fprintf(stderr, "Error: syntax error, parsing number1, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 		p->error_desc = "number";
 		p->error = true;
@@ -2526,7 +2526,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 				if (*s != '\'') {
 					if (DUMP_ERRS || !p->do_read_term)
-						fprintf(stdout, "Error: syntax error, parsing number2, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+						fprintf(stderr, "Error: syntax error, parsing number2, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 					p->error_desc = "number";
 					p->error = true;
@@ -2539,7 +2539,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 			if (!*s || iscntrl(*s)) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stdout, "Error: syntax error, parsing number3, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, parsing number3, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 				p->error_desc = "number";
 				p->error = true;
@@ -2553,7 +2553,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 #if 1
 		} else if ((*s == '\'') && p->flags.strict_iso && search_op(p->m, "", NULL, false)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, parsing number4, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, parsing number4, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error_desc = "number";
 			p->error = true;
@@ -2564,7 +2564,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 		if (p->error) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, parsing number5, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, parsing number5, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error_desc = "number";
 			p->error = true;
@@ -2661,7 +2661,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 		if ((int)v && (errno == ERANGE)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, float overflow %g, %s:%d\n", v, get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, float overflow %g, %s:%d\n", v, get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error_desc = "float_overflow";
 			p->error = true;
@@ -2681,7 +2681,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 		if ((int)v && (errno == ERANGE)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: syntax error, float overflow %g, %s:%d\n", v, get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, float overflow %g, %s:%d\n", v, get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error_desc = "float_overflow";
 			p->error = true;
@@ -2718,7 +2718,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 	if (ch == '(') {
 		if (DUMP_ERRS || !p->do_read_term)
-			fprintf(stdout, "Error: syntax error, parsing number, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+			fprintf(stderr, "Error: syntax error, parsing number, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 		p->error_desc = "number";
 		p->error = true;
