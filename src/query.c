@@ -884,19 +884,17 @@ static void proceed(query *q)
 	q->st.curr_instr += q->st.curr_instr->nbr_cells;
 	frame *f = GET_CURR_FRAME();
 
-	// Loop here to avoid chains of last calls...
+	if (!is_end(q->st.curr_instr))
+		return;
 
-	while (is_end(q->st.curr_instr)) {
-		cell *tmp = q->st.curr_instr;
+	cell *tmp = q->st.curr_instr;
 
-		if (tmp->ret_instr) {
-			f->chgen = tmp->chgen;
-			q->st.m = q->pl->modmap[tmp->mid];
-		}
-
-		if (!(q->st.curr_instr = tmp->ret_instr))
-			break;
+	if (tmp->ret_instr) {
+		f->chgen = tmp->chgen;
+		q->st.m = q->pl->modmap[tmp->mid];
 	}
+
+	q->st.curr_instr = tmp->ret_instr;
 }
 
 #define MAX_LOCAL_VARS (1L<<30)
