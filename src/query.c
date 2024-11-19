@@ -882,7 +882,6 @@ static bool resume_frame(query *q)
 static void proceed(query *q)
 {
 	q->st.curr_instr += q->st.curr_instr->nbr_cells;
-	frame *f = GET_CURR_FRAME();
 
 	if (!is_end(q->st.curr_instr))
 		return;
@@ -890,6 +889,7 @@ static void proceed(query *q)
 	cell *tmp = q->st.curr_instr;
 
 	if (tmp->ret_instr) {
+		frame *f = GET_CURR_FRAME();
 		f->chgen = tmp->chgen;
 		q->st.m = q->pl->modmap[tmp->mid];
 	}
