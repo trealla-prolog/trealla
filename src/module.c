@@ -915,11 +915,17 @@ static bool do_import_predicate(module *curr_m, module *m, predicate *pr, cell *
 {
 	if (find_predicate(curr_m, as)
 		&& (curr_m != pr->m)
-		&& strcmp(pr->m->name, "format")			// Hack???
-		&& strcmp(pr->m->name, "charsio")			// Hack???
 		&& !pr->m->prebuilt
 		) {
-		fprintf(stdout, "Error: permission to import failed: %s:%s/%u, %s\n", pr->m->name, C_STR(curr_m, as), as->arity, get_loaded(m, m->filename));
+
+		if (!strcmp(pr->m->name, "format")			// Hack???
+			|| !strcmp(pr->m->name, "charsio")		// Hack???
+			|| !strcmp(pr->m->name, "clpb")		// Hack???
+			|| !strcmp(pr->m->name, "clpz")		// Hack???
+			)
+			return true;
+
+		fprintf(stderr, "Error: permission to import failed: %s:%s/%u, from %s, %s\n", curr_m->name, C_STR(curr_m, as), as->arity, pr->m->name, get_loaded(m, m->filename));
 		m->error = true;
 		return false;
 	}
@@ -1061,7 +1067,7 @@ bool do_use_foreign_module(module *m, cell *p)
 	void *handle = do_dlopen(name, 0);
 
 	if (!handle) {
-		fprintf(stdout, "Error: foreign module creation failed: %s, %s\n", name, get_loaded(m, m->filename));
+		fprintf(stderr, "Error: foreign module creation failed: %s, %s\n", name, get_loaded(m, m->filename));
 		m->error = true;
 		return false;
 	}
@@ -1694,7 +1700,7 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 
 		if ((c->val_off == g_neck_s) && (c->arity == 1)) {
 			if (consulting)
-				fprintf(stdout, "Error: permission error modifying %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
+				fprintf(stderr, "Error: permission error modifying %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
 
 			return NULL;
 		}
@@ -1707,7 +1713,7 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 
 			if (!tmp_m) {
 				if (consulting)
-					fprintf(stdout, "Error: existence error module %s:(%s)/%u\n", name, C_STR(m, c), c->arity);
+					fprintf(stderr, "Error: existence error module %s:(%s)/%u\n", name, C_STR(m, c), c->arity);
 
 				return NULL;
 			} else
@@ -1727,7 +1733,7 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 
 			if (!is_callable(c) || is_iso_list(c)) {
 				if (consulting)
-					fprintf(stdout, "Error: not callable %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
+					fprintf(stderr, "Error: not callable %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
 
 				return NULL;
 			}
@@ -1738,7 +1744,7 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 
 			if (!tmp_m) {
 				if (consulting)
-					fprintf(stdout, "Error: extistence error module %s:(%s)/%u\n", name, C_STR(m, c), c->arity);
+					fprintf(stderr, "Error: extistence error module %s:(%s)/%u\n", name, C_STR(m, c), c->arity);
 
 				return NULL;
 			} else
@@ -1746,7 +1752,7 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 
 			if (!is_callable(p1+2) || is_iso_list(p1+2)) {
 				if (consulting)
-					fprintf(stdout, "Error: not callable %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
+					fprintf(stderr, "Error: not callable %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
 
 				return NULL;
 			}
@@ -1775,7 +1781,7 @@ static rule *assert_begin(module *m, unsigned nbr_vars, cell *p1, bool consultin
 		pr = create_predicate(m, c, &created);
 
 		if (!pr && consulting)
-			fprintf(stdout, "Error: permission error modifying %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
+			fprintf(stderr, "Error: permission error modifying %s:(%s)/%u\n", m->name, C_STR(m, c), c->arity);
 
 		check_error(pr);
 
@@ -2013,7 +2019,7 @@ module *load_text(module *m, const char *src, const char *filename)
 
 	if (!p->error && !p->already_loaded_error && !p->end_of_term && p->cl->cidx) {
 		if (DUMP_ERRS || !p->do_read_term)
-			fprintf(stdout, "Error: syntax error, incomplete statement, %s:%d\n", filename, p->line_nbr);
+			fprintf(stderr, "Error: syntax error, incomplete statement, %s:%d\n", filename, p->line_nbr);
 
 		p->error = true;
 	}
@@ -2155,7 +2161,7 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including)
 
 	if (!p->error && !p->already_loaded_error && !p->end_of_term && p->cl->cidx) {
 		if (DUMP_ERRS || !p->do_read_term)
-			fprintf(stdout, "Error: syntax error, incomplete statement, %s:%d\n", filename, p->line_nbr);
+			fprintf(stderr, "Error: syntax error, incomplete statement, %s:%d\n", filename, p->line_nbr);
 
 		p->error = true;
 	}
@@ -2423,7 +2429,7 @@ bool save_file(module *m, const char *filename)
 	FILE *fp = fopen(filename, "w");
 
 	if (!fp) {
-		fprintf(stdout, "Error: file '%s' cannot be created\n", filename);
+		fprintf(stderr, "Error: file '%s' cannot be created\n", filename);
 		return false;
 	}
 

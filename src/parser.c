@@ -361,7 +361,7 @@ static void consultall(parser *p, cell *l)
 			char *s = C_STR(p, h);
 
 			if (!load_file(p->m, s, false))
-				fprintf(stdout, "Error: file not found: '%s'\n", s);
+				fprintf(stderr, "Error: file not found: '%s'\n", s);
 		}
 
 		l = LIST_TAIL(l);
@@ -397,7 +397,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 
 	if (!is_integer(p1) || !is_interned(p2) || (!is_atom(p3) && !is_list(p3))) {
 		if (DUMP_ERRS || !p->do_read_term)
-			fprintf(stdout, "Error: unknown op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+			fprintf(stderr, "Error: unknown op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 		p->error = true;
 		return;
@@ -422,7 +422,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 		specifier = OP_YFX;
 	else {
 		if (DUMP_ERRS || !p->do_read_term)
-			fprintf(stdout, "Error: unknown op spec tag, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+			fprintf(stderr, "Error: unknown op spec tag, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 		free(spec);
 		return;
@@ -439,7 +439,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 
 			if (!set_op(p->m, name, specifier, get_smallint(p1))) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stdout, "Error: could not set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: could not set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 				free(name);
 				continue;
@@ -448,7 +448,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 			if (make_public) {
 				if (!set_op(p->pl->user_m, name, specifier, get_smallint(p1))) {
 					if (DUMP_ERRS || !p->do_read_term)
-						fprintf(stdout, "Error: could not set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+						fprintf(stderr, "Error: could not set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 					free(name);
 					continue;
@@ -466,7 +466,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 
 		if (!set_op(p->m, name, specifier, get_smallint(p1))) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: could not set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: could not set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			free(name);
 			return;
@@ -475,7 +475,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 		if (make_public) {
 			if (!set_op(p->pl->user_m, name, specifier, get_smallint(p1))) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stdout, "Error: could not set op, %s:%u\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: could not set op, %s:%u\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 				free(name);
 				return;
@@ -730,7 +730,7 @@ static bool directives(parser *p, cell *d)
 
 		if (!load_file(p->m, filename, true)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: not found: %s:%d\n", filename, p->line_nbr);
+				fprintf(stderr, "Error: not found: %s:%d\n", filename, p->line_nbr);
 
 			free(filename);
 			p->line_nbr = save_line_nbr;
@@ -753,7 +753,7 @@ static bool directives(parser *p, cell *d)
 
 		if (!load_file(p->m, filename, false)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: not found: %s:%d\n", filename, p->line_nbr);
+				fprintf(stderr, "Error: not found: %s:%d\n", filename, p->line_nbr);
 
 			free(filename);
 			p->line_nbr = save_line_nbr;
@@ -784,7 +784,7 @@ static bool directives(parser *p, cell *d)
 			name = tmpbuf;
 		} else if (!is_atom(p1)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: pragma name not an atom, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: pragma name not an atom, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error = true;
 			return true;
@@ -795,7 +795,7 @@ static bool directives(parser *p, cell *d)
 
 		if ((tmp_m = find_module(p->m->pl, name)) != NULL) {
 			//if (DUMP_ERRS || !p->do_read_term)
-			//	fprintf(stdout, "Error: module already loaded: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_nbr);
+			//	fprintf(stderr, "Error: module already loaded: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_nbr);
 			//
 			p->already_loaded_error = true;
 
@@ -810,7 +810,7 @@ static bool directives(parser *p, cell *d)
 		tmp_m = module_create(p->m->pl, name);
 		if (!tmp_m) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: module creation failed: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: module creation failed: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error = true;
 			return true;
@@ -881,7 +881,7 @@ static bool directives(parser *p, cell *d)
 			name = tmpbuf;
 		} else if (!is_atom(p1)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stdout, "Error: module name not an atom, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: module name not an atom, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 			p->error = true;
 			return true;
@@ -893,7 +893,7 @@ static bool directives(parser *p, cell *d)
 
 			if ((tmp_m = find_module(p->m->pl, name)) != NULL) {
 				//if (DUMP_ERRS || !p->do_read_term)
-				//	fprintf(stdout, "Error: module already loaded: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_nbr);
+				//	fprintf(stderr, "Error: module already loaded: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_nbr);
 				//
 				p->already_loaded_error = true;
 				p->m = tmp_m;
@@ -904,7 +904,7 @@ static bool directives(parser *p, cell *d)
 
 			if (!tmp_m) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stdout, "Error: module creation failed: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: module creation failed: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_nbr);
 
 				p->error = true;
 				return true;
@@ -947,7 +947,7 @@ static bool directives(parser *p, cell *d)
 						module_destroy(p->m);
 						p->m = NULL;
 						if (DUMP_ERRS || !p->do_read_term)
-							fprintf(stdout, "Error: predicate creation failed, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+							fprintf(stderr, "Error: predicate creation failed, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 						p->error = true;
 						return true;
@@ -958,7 +958,7 @@ static bool directives(parser *p, cell *d)
 					do_op(p, head, true);
 				} else {
 					if (DUMP_ERRS || !p->do_read_term)
-						fprintf(stdout, "Error: predicate export failed, '%s' in %s:%d\n", C_STR(p, head), get_loaded(p->m, p->m->filename), p->line_nbr);
+						fprintf(stderr, "Error: predicate export failed, '%s' in %s:%d\n", C_STR(p, head), get_loaded(p->m, p->m->filename), p->line_nbr);
 
 					p->error = true;
 					return true;
@@ -1028,7 +1028,7 @@ static bool directives(parser *p, cell *d)
 				p->m->flags.double_quote_chars = true;
 			} else {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stdout, "Error: unknown value, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: unknown value, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
 				p->error = true;
 				return true;
@@ -1071,7 +1071,7 @@ static bool directives(parser *p, cell *d)
 
 			if (is_var(c_name)) {
 				if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-					fprintf(stdout, "Error: uninstantiated: %s/%d\n", dirname, c->arity);
+					fprintf(stderr, "Error: uninstantiated: %s/%d\n", dirname, c->arity);
 
 				p->error = true;
 				return true;
@@ -1098,7 +1098,7 @@ static bool directives(parser *p, cell *d)
 
 				if (pr && !pr->is_dynamic && pr->head) {
 					if (DUMP_ERRS || !p->do_read_term)
-						fprintf(stdout, "Error: no permission to modify static predicate %s:%s/%u, %s:%d\n", p->m->name, C_STR(p->m, c_name), arity, get_loaded(p->m, p->m->filename), p->line_nbr);
+						fprintf(stderr, "Error: no permission to modify static predicate %s:%s/%u, %s:%d\n", p->m->name, C_STR(p->m, c_name), arity, get_loaded(p->m, p->m->filename), p->line_nbr);
 
 					p->error = true;
 					return true;
@@ -1130,7 +1130,7 @@ static bool directives(parser *p, cell *d)
 
 					if (!is_multifile_in_db(p->m->pl, mod, name, arity)) {
 						if (DUMP_ERRS || !p->do_read_term)
-							fprintf(stdout, "Error: not multifile %s:%s/%u\n", mod, name, arity);
+							fprintf(stderr, "Error: not multifile %s:%s/%u\n", mod, name, arity);
 
 						p->error = true;
 						return true;
@@ -1138,7 +1138,7 @@ static bool directives(parser *p, cell *d)
 				}
 			} else {
 				if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-					fprintf(stdout, "Error: unknown directive: %s/%d\n", dirname, c->arity);
+					fprintf(stderr, "Error: unknown directive: %s/%d\n", dirname, c->arity);
 
 				p->error = true;
 				return true;
@@ -1153,7 +1153,7 @@ static bool directives(parser *p, cell *d)
 
 	if (is_var(p1)) {
 		if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-			fprintf(stdout, "Error: uninstantiated: %s/%d\n", dirname, c->arity);
+			fprintf(stderr, "Error: uninstantiated: %s/%d\n", dirname, c->arity);
 
 		p->error = true;
 		return true;
@@ -1183,7 +1183,7 @@ static bool directives(parser *p, cell *d)
 
 			if (is_var(c_name)) {
 				if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-					fprintf(stdout, "Error: uninstantiated: %s/%d\n", dirname, c->arity);
+					fprintf(stderr, "Error: uninstantiated: %s/%d\n", dirname, c->arity);
 
 				p->error = true;
 				return true;
@@ -1218,7 +1218,7 @@ static bool directives(parser *p, cell *d)
 
 				if (pr && !pr->is_dynamic && pr->head) {
 					if (DUMP_ERRS || !p->do_read_term)
-						fprintf(stdout, "Error: no permission to modify static predicate %s:%s/%u, %s:%d\n", m->name, C_STR(p->m, c_name), arity, get_loaded(p->m, p->m->filename), p->line_nbr);
+						fprintf(stderr, "Error: no permission to modify static predicate %s:%s/%u, %s:%d\n", m->name, C_STR(p->m, c_name), arity, get_loaded(p->m, p->m->filename), p->line_nbr);
 
 					p->error = true;
 					return true;
@@ -1227,7 +1227,7 @@ static bool directives(parser *p, cell *d)
 				set_dynamic_in_db(m, C_STR(p, c_name), arity);
 			} else {
 				if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-					fprintf(stdout, "Error: unknown directive: %s/%d\n", dirname, c->arity);
+					fprintf(stderr, "Error: unknown directive: %s/%d\n", dirname, c->arity);
 
 				p->error = true;
 				return true;
@@ -1248,7 +1248,7 @@ static bool directives(parser *p, cell *d)
 			p1 += 1;
 		else {
 			if (((DUMP_ERRS || !p->do_read_term)) && !p->m->pl->quiet)
-				fprintf(stdout, "Error: unknown directive2: %s/%d\n", dirname, c->arity);
+				fprintf(stderr, "Error: unknown directive2: %s/%d\n", dirname, c->arity);
 
 			p->error = true;
 			return true;
@@ -1323,7 +1323,7 @@ static pl_idx get_varno(parser *p, const char *src, bool in_body)
 	size_t len = strlen(src);
 
 	if ((offset+len+1) >= MAX_VAR_POOL_SIZE) {
-		fprintf(stdout, "Error: var pool exhausted, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+		fprintf(stderr, "Error: var pool exhausted, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 		p->error = true;
 		return 0;
 	}
@@ -1435,7 +1435,7 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		c->var_nbr += start;
 
 		if (c->var_nbr == MAX_VARS) {
-			fprintf(stdout, "Error: max vars reached, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+			fprintf(stderr, "Error: max vars reached, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 			p->error = true;
 			return;
 		}
@@ -1475,7 +1475,7 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		c->var_nbr += start;
 
 		if (c->var_nbr == MAX_VARS) {
-			fprintf(stdout, "Error: max vars reached, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+			fprintf(stderr, "Error: max vars reached, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 			p->error = true;
 			return;
 		}
