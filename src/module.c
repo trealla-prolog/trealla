@@ -913,19 +913,19 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 
 static bool do_import_predicate(module *curr_m, module *m, predicate *pr, cell *as)
 {
-	if (find_predicate(curr_m, as)
+	predicate *tmp_pr;
+
+	if (((tmp_pr = find_predicate(curr_m, as)) != NULL)
 		&& (curr_m != pr->m)
 		&& !pr->m->prebuilt
 		) {
 
 		if (!strcmp(pr->m->name, "format")			// Hack???
 			|| !strcmp(pr->m->name, "charsio")		// Hack???
-			|| !strcmp(pr->m->name, "clpb")		// Hack???
-			|| !strcmp(pr->m->name, "clpz")		// Hack???
 			)
 			return true;
 
-		fprintf(stderr, "Error: permission to import failed: %s:%s/%u, from %s, %s\n", curr_m->name, C_STR(curr_m, as), as->arity, pr->m->name, get_loaded(m, m->filename));
+		fprintf(stderr, "Error: permission to import failed: %s:%s/%u, from %s, %s\n", curr_m->name, C_STR(curr_m, as), as->arity, pr->m->name, get_loaded(m, tmp_pr->filename));
 		m->error = true;
 		return false;
 	}
