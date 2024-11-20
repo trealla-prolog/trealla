@@ -36,11 +36,13 @@ cell *deep_copy_to_heap_with_replacement(query *q, cell *p1, pl_idx p1_ctx, bool
 
 void fix_list(cell *c);
 
+// These allocate on the heap...
+
 void allocate_structure(query *q, const char *functor, const cell *c);
 void append_structure(query *q, const cell *c);
 cell *end_structure(query *q);
 
 void allocate_list(query *q, const cell *c);
 void append_list(query *q, const cell *c);
-cell *end_list(query *q);
 cell *end_list_unsafe(query *q);
+cell *end_list(query *q);

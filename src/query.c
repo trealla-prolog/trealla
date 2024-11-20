@@ -590,19 +590,6 @@ static void reuse_frame(query *q, const clause *cl)
 	trim_heap(q);
 }
 
-static void trim_slots(query *q)
-{
-	const frame *f = GET_CURR_FRAME();
-
-	for (unsigned i = 0; i < f->actual_slots; i++) {
-		slot *e = GET_SLOT(f, i);
-		cell *c = &e->c;
-		unshare_cell(c);
-		c->tag = TAG_EMPTY;
-		c->attrs = NULL;
-	}
-}
-
 static void trim_trail(query *q)
 {
 	if (q->undo_hi_tp)
@@ -628,7 +615,7 @@ static void trim_trail(query *q)
 
 static bool commit_any_choices(const query *q, const frame *f)
 {
-	if (q->cp == 1)
+	if (q->cp == 1)							// Skip in-progress choice
 		return false;
 
 	const choice *ch = GET_PREV_CHOICE();	// Skip in-progress choice
