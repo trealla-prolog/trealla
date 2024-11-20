@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "heap.h"
 #include "module.h"
 #include "parser.h"
 #include "prolog.h"

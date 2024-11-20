@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "heap.h"
 #include "network.h"
 #include "prolog.h"
 #include "query.h"

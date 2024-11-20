@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <signal.h>
 
-#include "heap.h"
 #include "history.h"
 #include "module.h"
 #include "prolog.h"

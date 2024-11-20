@@ -7,7 +7,6 @@
 #include <sys/stat.h>
 
 #include "base64.h"
-#include "heap.h"
 #include "history.h"
 #include "module.h"
 #include "parser.h"

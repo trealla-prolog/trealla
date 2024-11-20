@@ -5,7 +5,6 @@
 #include <string.h>
 #include <time.h>
 
-#include "heap.h"
 #include "module.h"
 #include "network.h"
 #include "parser.h"

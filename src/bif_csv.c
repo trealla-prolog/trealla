@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "heap.h"
 #include "module.h"
 #include "query.h"
 

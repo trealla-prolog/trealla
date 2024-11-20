@@ -6,7 +6,6 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 
-#include "heap.h"
 #include "module.h"
 #include "parser.h"
 #include "prolog.h"

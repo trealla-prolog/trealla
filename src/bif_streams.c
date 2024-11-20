@@ -30,7 +30,6 @@
 #endif
 #endif
 
-#include "heap.h"
 #include "module.h"
 #include "network.h"
 #include "parser.h"

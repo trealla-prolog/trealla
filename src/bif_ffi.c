@@ -8,7 +8,6 @@
 #include <ffi.h>
 #endif
 
-#include "heap.h"
 #include "module.h"
 #include "prolog.h"
 #include "query.h"

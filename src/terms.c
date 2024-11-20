@@ -1,6 +1,5 @@
 #include <stdlib.h>
 
-#include "heap.h"
 #include "query.h"
 
 bool accum_var(query *q, const cell *c, pl_idx c_ctx)

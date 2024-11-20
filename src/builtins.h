@@ -7,6 +7,7 @@
 
 #include "internal.h"
 #include "cdebug.h"
+#include "heap.h"
 
 #define MAX_FFI 1000
 

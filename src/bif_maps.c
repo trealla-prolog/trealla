@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <float.h>
 
-#include "heap.h"
 #include "prolog.h"
 #include "query.h"
 
