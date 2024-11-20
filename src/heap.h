@@ -1,7 +1,5 @@
 #pragma once
 
-#include "internal.h"
-
 #define NOPREFIX_LEN 0
 #define PREFIX_LEN 1
 
