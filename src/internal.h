@@ -757,9 +757,9 @@ struct query_ {
 
 struct parser_ {
 	struct {
-		char var_pool[MAX_VAR_POOL_SIZE];
-		unsigned var_used[MAX_VARS];
-		const char *var_name[MAX_VARS];
+		char pool[MAX_VAR_POOL_SIZE];
+		unsigned used[MAX_VARS];
+		const char *name[MAX_VARS];
 		uint8_t vars[MAX_VARS];
 		bool in_body[MAX_VARS];
 		bool in_head[MAX_VARS];
