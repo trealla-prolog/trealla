@@ -21,7 +21,8 @@ void convert_path(char *filename);
 
 static lock g_symtab_guard;
 static skiplist *g_symtab = NULL;
-static size_t s_pool_size = 64000, s_pool_offset = 0;
+static const size_t INITIAL_GLOBAL_ATOMS_SIZE = 64000;
+static size_t s_global_atoms_size = INITIAL_GLOBAL_ATOMS_SIZE, s_global_atoms_offset = 0;
 static pl_atomic int g_tpl_count = 0;
 
 pl_idx g_empty_s, g_dot_s, g_cut_s, g_nil_s, g_true_s, g_fail_s;
@@ -39,7 +40,7 @@ pl_idx g_caret_s, g_sys_counter_s, g_catch_s, g_memberchk_s;
 pl_idx g_cont_s, g_sys_set_if_var_s, g_is_s, g_maplist_s;
 pl_idx g_dummy_s;
 
-char *g_pool = NULL;
+char *g_global_atoms = NULL;
 char *g_tpl_lib = NULL;
 int g_ac = 0, g_avc = 1;
 char **g_av = NULL, *g_argv0 = NULL;
@@ -61,24 +62,24 @@ bool is_multifile_in_db(prolog *pl, const char *mod, const char *name, unsigned 
 	return pr->is_multifile ? true : false;
 }
 
-static pl_idx add_to_pool(const char *name)
+static pl_idx add_to_global_atoms(const char *name)
 {
-	size_t offset = s_pool_offset, len = strlen(name);
+	size_t offset = s_global_atoms_offset, len = strlen(name);
 
-	while ((offset+len+1+1) >= s_pool_size) {
-		size_t nbytes = (size_t)s_pool_size * 3 / 2;
-		char *tmp = realloc(g_pool, nbytes);
+	while ((offset+len+1+1) >= s_global_atoms_size) {
+		size_t nbytes = (size_t)s_global_atoms_size * 3 / 2;
+		char *tmp = realloc(g_global_atoms, nbytes);
 		if (!tmp) return ERR_IDX;
-		g_pool = tmp;
-		memset(g_pool + s_pool_size, 0, nbytes - s_pool_size);
-		s_pool_size = nbytes;
+		g_global_atoms = tmp;
+		memset(g_global_atoms + s_global_atoms_size, 0, nbytes - s_global_atoms_size);
+		s_global_atoms_size = nbytes;
 	}
 
 	if ((offset + len + 1) >= UINT32_MAX)
 		return ERR_IDX;
 
-	memcpy(g_pool + offset, name, len+1);
-	s_pool_offset += len + 1;
+	memcpy(g_global_atoms + offset, name, len+1);
+	s_global_atoms_offset += len + 1;
 	const char *key = strdup(name);
 	sl_set(g_symtab, key, (void*)(size_t)offset);
 	return (pl_idx)offset;
@@ -94,7 +95,7 @@ pl_idx new_atom(prolog *pl, const char *name)
 		return (pl_idx)(size_t)val;
 	}
 
-	pl_idx off = add_to_pool(name);
+	pl_idx off = add_to_global_atoms(name);
 	release_lock(&g_symtab_guard);
 	return off;
 }
@@ -231,7 +232,7 @@ bool pl_restore(prolog *pl, const char *filename)
 static void g_destroy()
 {
 	sl_destroy(g_symtab);
-	free(g_pool);
+	free(g_global_atoms);
 	free(g_tpl_lib);
 	deinit_lock(&g_symtab_guard);
 }
@@ -521,8 +522,8 @@ static bool g_init(prolog *pl)
 	bool error = false;
 
 	init_lock(&g_symtab_guard);
-	g_pool = calloc(1, s_pool_size);
-	s_pool_offset = 0;
+	g_global_atoms = calloc(1, s_global_atoms_size);
+	s_global_atoms_offset = 0;
 
 	CHECK_SENTINEL(g_symtab = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
 	CHECK_SENTINEL(g_dummy_s = new_atom(pl, "dummy"), ERR_IDX);

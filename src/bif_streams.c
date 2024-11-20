@@ -6716,7 +6716,7 @@ static bool bif_client_5(query *q)
 	if (!str->filename || !str->mode) {
 		sl_destroy(str->alias);
 		free(str->filename);
-		free(str->mode); //cehteh: maybe from pool?
+		free(str->mode);
 		return false;
 	}
 

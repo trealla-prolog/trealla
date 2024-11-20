@@ -179,7 +179,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 	is_float(c) ? get_float(c) > 0.0 : false)
 
 
-extern char *g_pool;
+extern char *g_global_atoms;
 
 typedef pl_atomic int64_t pl_refcnt;
 
@@ -212,12 +212,12 @@ typedef struct {
 	)
 
 #define _C_STR(pl,c) 											\
-	( !is_cstring(c) ? (g_pool + (c)->val_off)					\
+	( !is_cstring(c) ? (g_global_atoms + (c)->val_off)					\
 	: _CSTRING_STR(c) 											\
 	)
 
 #define _C_STRLEN(pl,c) 										\
-	( !is_cstring(c) ? strlen(g_pool + (c)->val_off)			\
+	( !is_cstring(c) ? strlen(g_global_atoms + (c)->val_off)			\
 	: _CSTRING_LEN(c)											\
 	)
 
@@ -225,7 +225,7 @@ typedef struct {
 #define C_STRLEN(x,c) _C_STRLEN((x)->pl, c)
 #define C_STRLEN_UTF8(c) substrlen_utf8(C_STR(q, c), C_STRLEN(q, c))
 
-#define GET_POOL(x,off) (g_pool + (off))
+#define GET_POOL(x,off) (g_global_atoms + (off))
 
 #define _CMP_SLICE(pl,c,str,len) slicecmp(_C_STR(pl, c), _C_STRLEN(pl, c), str, len)
 #define _CMP_SLICE2(pl,c,str) slicecmp2(_C_STR(pl, c), _C_STRLEN(pl, c), str)
