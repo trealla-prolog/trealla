@@ -545,7 +545,7 @@ static frame *push_frame(query *q, const clause *cl)
 	const cell *next_cell = q->st.curr_instr + q->st.curr_instr->nbr_cells;
 	pl_idx new_frame = q->st.fp++;
 	frame *f = GET_FRAME(new_frame);
-	f->prev_offset = new_frame - q->st.curr_frame;
+	f->prev = q->st.curr_frame;
 	f->curr_instr = q->st.curr_instr;
 	f->initial_slots = f->actual_slots = cl->nbr_vars;
 	f->chgen = ++q->chgen;
@@ -717,7 +717,7 @@ void stash_frame(query *q, const clause *cl, bool last_match)
 	if (nbr_vars) {
 		pl_idx new_frame = q->st.fp++;
 		frame *f = GET_FRAME(new_frame);
-		f->prev_offset = new_frame - q->st.curr_frame;
+		f->prev = q->st.curr_frame;
 		f->curr_instr = NULL;
 		f->chgen = chgen;
 		f->overflow = 0;
@@ -853,11 +853,11 @@ static bool resume_frame(query *q)
 {
 	const frame *f = GET_CURR_FRAME();
 
-	if (!f->prev_offset)
+	if (f->prev == (pl_idx)-1)
 		return false;
 
 	q->st.curr_instr = f->curr_instr;
-	q->st.curr_frame = q->st.curr_frame - f->prev_offset;
+	q->st.curr_frame = f->prev;
 	f = GET_CURR_FRAME();
 	q->st.m = q->pl->modmap[f->mid];
 	return true;
@@ -1769,9 +1769,10 @@ bool execute(query *q, cell *cells, unsigned nbr_vars)
 
 	q->cp = 0;
 
-	frame *f = q->frames + q->st.curr_frame;
+	frame *f = q->frames;
 	f->initial_slots = f->actual_slots = nbr_vars;
 	f->dbgen = ++q->pl->dbgen;
+	f->prev = (pl_idx)-1;
 	return start(q);
 }
 

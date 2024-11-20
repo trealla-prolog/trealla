@@ -23,11 +23,11 @@ static void show_goals(query *q, int nbr)
 		q->quoted = false;
 		printf("\n");
 
-		if (!f->prev_offset)
+		if (f->prev == (pl_idx)-1)
 			break;
 
 		c = f->curr_instr;
-		c_ctx = q->st.curr_frame - f->prev_offset;
+		c_ctx = f->prev;
 		f = GET_FRAME(c_ctx);
 	}
 }

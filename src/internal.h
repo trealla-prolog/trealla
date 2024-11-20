@@ -516,7 +516,7 @@ struct slot_ {
 	uint32_t vgen, vgen2;
 };
 
-// Where 'prev_offset' is the number of frames back
+// Where 'prev' is the previous frame
 // Where *initial_slots* is the initial number allocated
 // Where *actual_slots* is the actual number in use (some maybe created)
 // Where *base* is the offset to first slot in use
@@ -525,7 +525,7 @@ struct slot_ {
 struct frame_ {
 	cell *curr_instr;
 	uint64_t dbgen, chgen;
-	pl_idx prev_offset, heap_nbr, hp;
+	pl_idx prev, heap_nbr, hp;
 	pl_idx base, overflow;
 	unsigned initial_slots, actual_slots;
 	uint32_t mid;
