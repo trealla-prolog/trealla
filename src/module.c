@@ -925,7 +925,7 @@ static bool do_import_predicate(module *curr_m, module *m, predicate *pr, cell *
 			)
 			return true;
 
-		fprintf(stderr, "Error: permission to import failed: %s:%s/%u, from %s, %s\n", curr_m->name, C_STR(curr_m, as), as->arity, pr->m->name, get_loaded(m, tmp_pr->filename));
+		fprintf(stderr, "Error: permission to import failed: %s:%s/%u from %s, see %s\n", curr_m->name, C_STR(curr_m, as), as->arity, pr->m->name, get_loaded(m, tmp_pr->filename));
 		m->error = true;
 		return false;
 	}
