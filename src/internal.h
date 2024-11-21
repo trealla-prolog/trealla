@@ -408,7 +408,7 @@ struct cell_ {
 		};
 
 		struct {
-			cell *ret_instr;				// used with TAG_EMPTY saves
+			cell *ret_instr;			// used with TAG_EMPTY saves
 			uint64_t chgen;				// choice generation on call
 		};
 	};
