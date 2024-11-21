@@ -488,6 +488,7 @@ void try_me(query *q, unsigned nbr_vars)
 	frame *f = GET_NEW_FRAME();
 	f->initial_slots = f->actual_slots = nbr_vars;
 	f->base = q->st.sp;
+	f->no_tco = false;
 	slot *e = GET_SLOT(f, 0);
 	memset(e, 0, sizeof(slot)*nbr_vars);
 	q->tot_matches++;
@@ -549,14 +550,15 @@ static frame *push_frame(query *q, const clause *cl)
 	f->curr_instr = q->st.curr_instr;
 	f->initial_slots = f->actual_slots = cl->nbr_vars;
 	f->chgen = ++q->chgen;
+	f->has_local_vars = cl->has_local_vars;
 	f->heap_nbr = q->st.heap_nbr;
+	f->no_tco = q->no_tco;
 	f->hp = q->st.hp;
 	f->overflow = 0;
 	q->st.sp += cl->nbr_vars;
 	q->st.curr_frame = new_frame;
 	return f;
 }
-
 
 static void reuse_frame(query *q, const clause *cl)
 {
@@ -662,17 +664,6 @@ static void commit_frame(query *q)
 			next_key, tail_call, tail_recursive, slots_ok, choices,
 			cl->nbr_vars, f->initial_slots, f->actual_slots);
 #endif
-	}
-
-	// Matching a ground fact (see disjunction in bif_control.c)...
-
-	if (q->pl->opt && last_match && !body && !cl->nbr_vars) {
-		leave_predicate(q, q->st.pr);
-		drop_choice(q);
-		Trace(q, head, q->st.curr_frame, EXIT);
-		q->st.curr_instr += q->st.curr_instr->nbr_cells;
-		q->st.iter = NULL;
-		return;
 	}
 
 	if (!q->st.curr_rule->owner->is_builtin)
@@ -847,6 +838,15 @@ void cut(query *q)
 	}
 }
 
+static bool resume_any_choices(const query *q, const frame *f)
+{
+	if (!q->cp)
+		return false;
+
+	const choice *ch = GET_CURR_CHOICE();
+	return ch->chgen > f->chgen;
+}
+
 // Resume at next goal in previous clause...
 
 static bool resume_frame(query *q)
@@ -855,6 +855,16 @@ static bool resume_frame(query *q)
 
 	if (f->prev == (pl_idx)-1)
 		return false;
+
+	if (q->pl->opt
+		&& !f->no_tco
+		&& !f->has_local_vars
+		&& (q->st.fp == (q->st.curr_frame + 1))
+		&& !resume_any_choices(q, f)
+		) {
+		q->st.sp -= f->actual_slots;
+		q->st.fp--;
+	}
 
 	q->st.curr_instr = f->curr_instr;
 	q->st.curr_frame = f->prev;

@@ -529,6 +529,8 @@ struct frame_ {
 	pl_idx base, overflow;
 	unsigned initial_slots, actual_slots;
 	uint32_t mid;
+	bool has_local_vars:1;
+	bool no_tco:1;
 };
 
 struct run_state_ {
