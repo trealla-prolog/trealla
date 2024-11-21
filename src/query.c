@@ -1782,7 +1782,6 @@ bool execute(query *q, cell *cells, unsigned nbr_vars)
 	frame *f = q->frames;
 	f->initial_slots = f->actual_slots = nbr_vars;
 	f->dbgen = ++q->pl->dbgen;
-	f->prev = (pl_idx)-1;
 	return start(q);
 }
 
@@ -1899,6 +1898,9 @@ query *query_create(module *m)
 
 	for (int i = 0; i < MAX_QUEUES; i++)
 		q->q_size[i] = INITIAL_NBR_QUEUE_CELLS;
+
+	frame *f = GET_CURR_FRAME();
+	f->prev = (pl_idx)-1;
 
 	clear_write_options(q);
 	return q;
