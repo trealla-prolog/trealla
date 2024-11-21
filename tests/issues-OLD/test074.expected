@@ -1,6 +1,6 @@
 clause(cup(_3),(liftable(_3),holds_liquid(_3)))
 clause(liftable(_3),(light(_3),part(_3,handle)))
 clause(light(_3),small(_3))
-clause(holds_liquid(_3),(part(_3,_59),concave(_59),points_up(_59)))
+clause(holds_liquid(_3),(part(_3,_61),concave(_61),points_up(_61)))
 clause(concave(bowl),true)
-cup(_3):-(small(_3),part(_3,handle)),part(_3,_59),concave(_59),points_up(_59)
+cup(_3):-(small(_3),part(_3,handle)),part(_3,_61),concave(_61),points_up(_61)
