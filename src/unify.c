@@ -330,8 +330,6 @@ static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx
 
 		if ((c_ctx != q->st.curr_frame) && (v_ctx == q->st.curr_frame)) {
 			q->no_tco = true;
-		} else if (v_ctx == q->st.fp) {
-			q->no_tco = true;
 		}
 	} else if (is_compound(v)) {
 		make_indirect(&e->c, v, v_ctx);
