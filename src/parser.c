@@ -13,21 +13,6 @@
 static const unsigned INITIAL_NBR_CELLS = 1000;
 const char *g_solo = "!(){}[]|,;`'\"";
 
-static void *make_string_internal(cell *c, const char *s, size_t n, size_t off)
-{
-	strbuf *strb = malloc(sizeof(strbuf) + n + 1);
-	if (!strb) return NULL;
-	memcpy(strb->cstr, s, n);
-	strb->cstr[n] = 0;
-	strb->len = n;
-	strb->refcnt = 1;
-	c->val_strb = strb;
-	c->strb_off = off;
-	c->strb_len = n;
-	c->flags |= FLAG_MANAGED | FLAG_CSTR_BLOB;
-	return strb;
-}
-
 char *slicedup(const char *s, size_t n)
 {
 	char *ptr = malloc(n+1);
@@ -130,6 +115,21 @@ size_t slicecpy(char *dst, size_t dstlen, const char *src, size_t len)
 
 	*dst = '\0';
 	return dst - save;
+}
+
+static void *make_string_internal(cell *c, const char *s, size_t n, size_t off)
+{
+	strbuf *strb = malloc(sizeof(strbuf) + n + 1);
+	if (!strb) return NULL;
+	memcpy(strb->cstr, s, n);
+	strb->cstr[n] = 0;
+	strb->len = n;
+	strb->refcnt = 1;
+	c->val_strb = strb;
+	c->strb_off = off;
+	c->strb_len = n;
+	c->flags |= FLAG_MANAGED | FLAG_CSTR_BLOB;
+	return strb;
 }
 
 bool make_cstringn(cell *d, const char *s, size_t n)
