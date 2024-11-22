@@ -27,7 +27,6 @@ test :-
     write('.'),
     nl,
     fail.
-test :-
-    halt.
+test.
 
 :- initialization(test).
