@@ -28,4 +28,4 @@ testmem(Lim) :-
 % EndOfTestFile (end-of-test-gnu-file-dot-pl)
 
 main :-
-	run(5000);halt.
+	run(5000);true.
