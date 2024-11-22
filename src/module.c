@@ -897,7 +897,7 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 	//printf("*** %s / %s / %s\n", curr_m->filename, is_library?dstbuf:name, filename);
 
 	if (!(m = load_file(curr_m, filename, false))) {
-		fprintf(stdout, "Warning: module file not found: %s\n", filename);
+		fprintf(stderr, "Warning: module file not found: %s\n", filename);
 		free(filename);
 		return false;
 	}

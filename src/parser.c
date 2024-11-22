@@ -1048,7 +1048,7 @@ static bool directives(parser *p, cell *d)
 			else if (!strcmp(C_STR(p, p2), "false") || !strcmp(C_STR(p, p2), "off"))
 				p->m->flags.strict_iso = false;
 		} else {
-			//fprintf(stdout, "Warning: unknown flag: %s\n", C_STR(p, p1));
+			//fprintf(stderr, "Warning: unknown flag: %s\n", C_STR(p, p1));
 		}
 
 		p->flags = p->m->flags;
@@ -1522,7 +1522,7 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 			(*p->vartab.name[i] != '_')) {
 			if (!p->m->pl->quiet
 				&& !((cl->cells->val_off == g_neck_s) && cl->cells->arity == 1))
-				fprintf(stdout, "Warning: singleton: %s, near %s:%d\n", p->vartab.name[i], get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Warning: singleton: %s, near %s:%d\n", p->vartab.name[i], get_loaded(p->m, p->m->filename), p->line_nbr);
 		}
 	}
 
