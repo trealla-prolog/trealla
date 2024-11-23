@@ -630,15 +630,9 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			bool special_op = false;
 
 			if (is_interned(head)) {
-				special_op = (						// TODO: Change to use priority >
-					!strcmp(C_STR(q, head), ",")
-					|| !strcmp(C_STR(q, head), "|")
-					|| !strcmp(C_STR(q, head), ";")
-					|| !strcmp(C_STR(q, head), ":-")
-					|| !strcmp(C_STR(q, head), "?-")
-					|| !strcmp(C_STR(q, head), "->")
-					|| !strcmp(C_STR(q, head), "*->")
-					|| !strcmp(C_STR(q, head), "-->"));
+				unsigned specifier = 0;
+				unsigned priority = match_op(q->st.m, C_STR(q, head), &specifier, head->arity);
+				special_op = (priority >= 1000);
 			}
 
 			visit me = {.next = visited, .c = head, .c_ctx = head_ctx};
