@@ -526,6 +526,7 @@ int retry_choice(query *q)
 		if (ch->register_cleanup && q->noretry)
 			q->noretry = false;
 
+		trim_cache(q);
 		trim_heap(q);
 
 		if (ch->succeed_on_retry) {
@@ -1819,6 +1820,18 @@ void query_destroy(query *q)
 		free(save);
 	}
 
+	for (page *a = q->cache_pages; a;) {
+		cell *c = a->cells;
+
+		for (pl_idx i = 0; i < a->max_idx_used; i++, c++)
+			unshare_cell(c);
+
+		page *save = a;
+		a = a->next;
+		free(save->cells);
+		free(save);
+	}
+
 	for (int i = 0; i < MAX_QUEUES; i++)
 		free(q->queue[i]);
 
@@ -1893,6 +1906,7 @@ query *query_create(module *m)
 
 	// Allocate these later as needed...
 
+	q->cache_size = INITIAL_NBR_HEAP_CELLS;
 	q->heap_size = INITIAL_NBR_HEAP_CELLS;
 	q->tmph_size = INITIAL_NBR_CELLS;
 
