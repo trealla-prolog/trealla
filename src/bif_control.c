@@ -182,12 +182,13 @@ static bool bif_iso_call_n(query *q)
 
 	cell *tmp = prepare_call(q, PREFIX_LEN, tmp2, q->st.curr_frame, 2);
 	check_heap_error(tmp);
+	tmp[PREFIX_LEN].flags &= ~FLAG_TAIL_CALL;
 	pl_idx nbr_cells = PREFIX_LEN + tmp2->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_true_s, bif_iso_true_0, 0, 0); // see query fact matching
 	make_call(q, tmp+nbr_cells);
 
 	if (is_tail_call(q->st.curr_instr))
-		tmp[1].flags |= FLAG_TAIL_CALL;
+		tmp[PREFIX_LEN].flags |= FLAG_TAIL_CALL;
 
 	q->st.curr_instr = tmp;
 	return true;
@@ -210,7 +211,7 @@ bool bif_iso_call_1(query *q)
 
 	cell *tmp = prepare_call(q, PREFIX_LEN, p1, p1_ctx, 3);
 	check_heap_error(tmp);
-	tmp[1].flags &= ~FLAG_TAIL_CALL;
+	tmp[PREFIX_LEN].flags &= ~FLAG_TAIL_CALL;
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
@@ -218,7 +219,7 @@ bool bif_iso_call_1(query *q)
 	check_heap_error(push_fail_on_retry(q));
 
 	if (is_tail_call(q->st.curr_instr))
-		tmp[1].flags |= FLAG_TAIL_CALL;
+		tmp[PREFIX_LEN].flags |= FLAG_TAIL_CALL;
 
 	q->st.curr_instr = tmp;
 	return true;
@@ -243,7 +244,7 @@ static bool bif_iso_once_1(query *q)
 
 	cell *tmp = prepare_call(q, PREFIX_LEN, p1, p1_ctx, 4);
 	check_heap_error(tmp);
-	tmp[1].flags &= ~FLAG_TAIL_CALL;
+	tmp[PREFIX_LEN].flags &= ~FLAG_TAIL_CALL;
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
@@ -269,7 +270,7 @@ static bool bif_ignore_1(query *q)
 
 	cell *tmp = prepare_call(q, PREFIX_LEN, tmp2, q->st.curr_frame, 4);
 	check_heap_error(tmp);
-	tmp[1].flags &= ~FLAG_TAIL_CALL;
+	tmp[PREFIX_LEN].flags &= ~FLAG_TAIL_CALL;
 	pl_idx nbr_cells = PREFIX_LEN + tmp2->nbr_cells;
 	make_struct(tmp+nbr_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
