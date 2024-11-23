@@ -537,6 +537,7 @@ int retry_choice(query *q)
 		return 1;
 	}
 
+	trim_cache(q);
 	trim_heap(q);
 	return 0;
 }
@@ -589,6 +590,7 @@ static void reuse_frame(query *q, const clause *cl)
 	q->st.hp = f->hp;
 	q->st.curr_rule->tcos++;
 	q->tot_tcos++;
+	trim_cache(q);
 	trim_heap(q);
 }
 
