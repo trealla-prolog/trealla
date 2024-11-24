@@ -211,12 +211,14 @@ static bool bif_iso_call_n(query *q)
 	if (!call_check(q, tmp2, &status, true))
 		return status;
 
-	cell *tmp = prepare_call(q, PREFIX_LEN, tmp2, q->st.curr_frame, 2);
+	cell *tmp = prepare_call(q, PREFIX_LEN, tmp2, q->st.curr_frame, 3 );
 	check_heap_error(tmp);
 	tmp[PREFIX_LEN].flags &= ~FLAG_TAIL_CALL;
 	pl_idx nbr_cells = PREFIX_LEN + tmp2->nbr_cells;
-	make_struct(tmp+nbr_cells++, g_true_s, bif_iso_true_0, 0, 0); // see query fact matching
+	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
+	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
+	check_heap_error(push_fail_on_retry(q));
 
 	if (is_tail_call(q->st.curr_instr))
 		tmp[PREFIX_LEN].flags |= FLAG_TAIL_CALL;
