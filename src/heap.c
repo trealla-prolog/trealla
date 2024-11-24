@@ -178,63 +178,6 @@ void trim_heap(query *q)
 	}
 }
 
-cell *alloc_on_cache(query *q, unsigned nbr_cells)
-{
-	if (((uint64_t)q->st.cap + nbr_cells) > UINT32_MAX)
-		return NULL;
-
-	if (!q->cache_pages) {
-		page *a = calloc(1, sizeof(page));
-		if (!a) return NULL;
-		a->next = q->cache_pages;
-		unsigned n = MAX_OF(q->cache_size, nbr_cells);
-		a->cells = calloc(a->page_size=n, sizeof(cell));
-		if (!a->cells) { free(a); return NULL; }
-		a->nbr = q->st.cache_nbr++;
-		q->cache_pages = a;
-	}
-
-	if ((q->st.cap + nbr_cells) >= q->cache_pages->page_size) {
-		page *a = calloc(1, sizeof(page));
-		if (!a) return NULL;
-		a->next = q->cache_pages;
-		unsigned n = MAX_OF(q->cache_size, nbr_cells);
-		a->cells = calloc(a->page_size=n, sizeof(cell));
-		if (!a->cells) { free(a); return NULL; }
-		a->nbr = q->st.cache_nbr++;
-		q->cache_pages = a;
-		q->st.cap = 0;
-	}
-
-	cell *c = q->cache_pages->cells + q->st.cap;
-	q->st.cap += nbr_cells;
-	q->cache_pages->idx = q->st.cap;
-	return c;
-}
-
-void trim_cache(query *q)
-{
-	// q->heap_pages is a push-down stack and points to the
-	// most recent page of heap allocations...
-
-	for (page *a = q->cache_pages; a;) {
-		if (a->nbr < q->st.cache_nbr)
-			break;
-
-		page *save = a;
-		q->cache_pages = a = a->next;
-		free(save->cells);
-		free(save);
-	}
-
-	const page *a = q->cache_pages;
-
-	for (pl_idx i = q->st.cap; a && (i < a->idx); i++) {
-		cell *c = a->cells + i;
-		init_cell(c);
-	}
-}
-
 #define deep_copy(c) \
 	(!q->noderef || (is_ref(c) && (c->var_ctx <= q->st.curr_frame) && !is_anon(c)))
 
@@ -395,7 +338,7 @@ cell *append_to_tmp(query *q, cell *p1, pl_idx p1_ctx)
 cell *prepare_call(query *q, bool prefix, cell *p1, pl_idx p1_ctx, unsigned extras)
 {
 	unsigned nbr_cells = (prefix ? PREFIX_LEN : NOPREFIX_LEN) + p1->nbr_cells + extras;
-	cell *tmp = alloc_on_cache(q, nbr_cells);
+	cell *tmp = alloc_on_heap(q, nbr_cells);
 	if (!tmp) return NULL;
 
 	if (prefix) {

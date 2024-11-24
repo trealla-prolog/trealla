@@ -3493,12 +3493,6 @@ static bool bif_statistics_2(query *q)
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	}
 
-	if (!CMP_STRING_TO_CSTR(q, p1, "cache") && is_var(p2)) {
-		cell tmp;
-		make_int(&tmp, q->st.cap);
-		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
-	}
-
 	return false;
 }
 

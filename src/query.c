@@ -90,11 +90,11 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 	q->step++;
 	SB(pr);
 
-	SB_sprintf(pr, "[%u:%s:%"PRIu64":f%u:fp%u:cp%u:sp%u:hp%u:cap%u:tp%u] ",
+	SB_sprintf(pr, "[%u:%s:%"PRIu64":f%u:fp%u:cp%u:sp%u:hp%u:tp%u] ",
 		q->my_chan,
 		q->st.m->name,
 		q->step,
-		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.cap, q->st.tp
+		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.tp
 		);
 
 	SB_sprintf(pr, "%s ",
@@ -526,7 +526,6 @@ int retry_choice(query *q)
 		if (ch->register_cleanup && q->noretry)
 			q->noretry = false;
 
-		trim_cache(q);
 		trim_heap(q);
 
 		if (ch->succeed_on_retry) {
@@ -537,7 +536,6 @@ int retry_choice(query *q)
 		return 1;
 	}
 
-	trim_cache(q);
 	trim_heap(q);
 	return 0;
 }
@@ -554,8 +552,8 @@ static frame *push_frame(query *q, const clause *cl)
 	f->chgen = ++q->chgen;
 	f->has_local_vars = cl->has_local_vars;
 	f->heap_nbr = q->st.heap_nbr;
-	f->no_tco = q->no_tco;
 	f->hp = q->st.hp;
+	f->no_tco = q->no_tco;
 	f->overflow = 0;
 	q->st.sp += cl->nbr_vars;
 	q->st.curr_frame = new_frame;
@@ -586,11 +584,8 @@ static void reuse_frame(query *q, const clause *cl)
 	}
 
 	q->st.sp = f->base + cl->nbr_vars;
-	q->st.heap_nbr = f->heap_nbr;
-	q->st.hp = f->hp;
 	q->st.curr_rule->tcos++;
 	q->tot_tcos++;
-	trim_cache(q);
 	trim_heap(q);
 }
 
@@ -865,6 +860,9 @@ static bool resume_frame(query *q)
 		&& (q->st.fp == (q->st.curr_frame + 1))
 		&& !resume_any_choices(q, f)
 		) {
+		q->st.hp = f->hp;
+		q->st.heap_nbr = f->heap_nbr;
+		trim_heap(q);
 		q->st.sp -= f->actual_slots;
 		q->st.fp--;
 	}
@@ -1822,18 +1820,6 @@ void query_destroy(query *q)
 		free(save);
 	}
 
-	for (page *a = q->cache_pages; a;) {
-		cell *c = a->cells;
-
-		for (pl_idx i = 0; i < a->max_idx_used; i++, c++)
-			unshare_cell(c);
-
-		page *save = a;
-		a = a->next;
-		free(save->cells);
-		free(save);
-	}
-
 	for (int i = 0; i < MAX_QUEUES; i++)
 		free(q->queue[i]);
 
@@ -1908,7 +1894,6 @@ query *query_create(module *m)
 
 	// Allocate these later as needed...
 
-	q->cache_size = INITIAL_NBR_HEAP_CELLS;
 	q->heap_size = INITIAL_NBR_HEAP_CELLS;
 	q->tmph_size = INITIAL_NBR_CELLS;
 
