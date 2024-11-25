@@ -901,7 +901,6 @@ extern bool do_erase(module *m, const char *str);
 extern unsigned g_cpu_count;
 
 #define share_cell(c) if (is_managed(c)) share_cell_(c)
-#define unshare_cell(c) if (is_managed(c)) unshare_cell_(c)
 
 inline static void share_cell_(const cell *c)
 {
@@ -918,6 +917,8 @@ inline static void share_cell_(const cell *c)
 	else if (is_kvid(c))
 		(c)->val_blob->refcnt++;
 }
+
+#define unshare_cell(c) if (is_managed(c)) unshare_cell_(c)
 
 inline static void unshare_cell_(cell *c)
 {
