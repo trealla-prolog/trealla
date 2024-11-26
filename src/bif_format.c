@@ -701,6 +701,21 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 	return true;
 }
 
+static bool bif_format_1(query *q)
+{
+	GET_FIRST_ARG(p1,atom_or_list);
+	int n = q->pl->current_output;
+	stream *str = &q->pl->streams[n];
+
+	if (str->binary) {
+		cell tmp;
+		make_int(&tmp, n);
+		return throw_error(q, &tmp, q->st.curr_frame, "permission_error", "output,binary_stream");
+	}
+
+	return do_format(q, NULL, 0, p1, p1_ctx, NULL, q->st.curr_frame);
+}
+
 static bool bif_format_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_list);
@@ -761,6 +776,7 @@ static bool bif_format_3(query *q)
 
 builtins g_format_bifs[] =
 {
+	{"format", 1, bif_format_1, "+string", false, false, BLAH},
 	{"format", 2, bif_format_2, "+string,+list", false, false, BLAH},
 	{"format", 3, bif_format_3, "+stream,+string,+list", false, false, BLAH},
 

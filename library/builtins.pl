@@ -329,10 +329,6 @@ directory_exists(F) :- exists_directory(F).
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-format(F) :- format(F, []).
-
-:- help(format(+string), [iso(false)]).
-
 :- meta_predicate(not(0)).
 
 not(X) :- X, !, fail.
@@ -412,10 +408,6 @@ print(S, T) :- format(S, "~p", [T]).
 writeln(T) :- write(T), nl.
 
 :- help(writeln(+term), [iso(false)]).
-
-format(stderr, F) :- format(stderr, F, []).
-
-:- help(format(stderr, +term), [iso(false)]).
 
 open(F, M, S) :- open(F, M, S, []).
 
