@@ -23,7 +23,7 @@
 	} \
 	if (errno == ENOMEM)										\
 		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
-	q->accum.flags = FLAG_MANAGED;								\
+	q->accum.flags = (FLAG_MANAGED | FLAG_INT_BIG);								\
 	q->accum.val_bigint->refcnt = 0;							\
 }
 
@@ -39,7 +39,7 @@
 	} \
 	if (errno == ENOMEM)										\
 		return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory"); \
-	q->accum.flags = FLAG_MANAGED;								\
+	q->accum.flags = (FLAG_MANAGED | FLAG_INT_BIG);								\
 	q->accum.val_bigint->refcnt = 0;							\
 }
 
@@ -54,7 +54,7 @@
 		if (mp_rat_init_copy(&q->accum.val_bigint->irat, &q->tmp_irat) == MP_MEMORY) {\
 			return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
 		} \
-		q->accum.flags = FLAG_MANAGED;								\
+		q->accum.flags = (FLAG_MANAGED | FLAG_INT_BIG);								\
 		q->accum.val_bigint->refcnt = 0;							\
 	} else { \
 		q->accum.tag = TAG_INTEGER;										\
@@ -64,7 +64,7 @@
 		if (mp_int_init_copy(&q->accum.val_bigint->ival, &q->tmp_irat.num) == MP_MEMORY) {\
 			return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
 		} \
-		q->accum.flags = FLAG_MANAGED;								\
+		q->accum.flags = (FLAG_MANAGED | FLAG_INT_BIG);								\
 		q->accum.val_bigint->refcnt = 0;							\
 	} \
 	if (errno == ENOMEM)										\
@@ -512,7 +512,7 @@ static bool bif_numerator_1(query *q)
 	mp_int_init_copy(&q->accum.val_bigint->ival, &p1.val_bigint->irat.num);
 	if (errno == ENOMEM)
 		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory");
-	q->accum.flags = FLAG_MANAGED;
+	q->accum.flags = (FLAG_MANAGED | FLAG_INT_BIG);
 	q->accum.val_bigint->refcnt = 0;
 	return true;
 }
@@ -540,7 +540,7 @@ static bool bif_denominator_1(query *q)
 	mp_int_init_copy(&q->accum.val_bigint->ival, &p1.val_bigint->irat.den);
 	if (errno == ENOMEM)
 		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory");
-	q->accum.flags = FLAG_MANAGED;
+	q->accum.flags = (FLAG_MANAGED | FLAG_INT_BIG);
 	q->accum.val_bigint->refcnt = 0;
 	return true;
 }

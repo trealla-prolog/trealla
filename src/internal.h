@@ -111,8 +111,8 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 
 #define is_iso_atom(c) ((is_interned(c) || is_cstring(c)) && !(c)->arity)
 #define is_iso_list(c) (is_interned(c) && ((c)->arity == 2) && ((c)->val_off == g_dot_s))
-#define is_smallint(c) (is_integer(c) && !((c)->flags & FLAG_MANAGED))
-#define is_bigint(c) (is_integer(c) && ((c)->flags & FLAG_MANAGED))
+#define is_smallint(c) (is_integer(c) && !((c)->flags & FLAG_INT_BIG))
+#define is_bigint(c) (is_integer(c) && ((c)->flags & FLAG_INT_BIG))
 #define is_boolean(c) ((is_interned(c) && !(c)->arity && (((c)->val_off == g_true_s) || ((c)->val_off == g_false_s))))
 #define is_atom(c) ((is_interned(c) && !(c)->arity) || is_cstring(c))
 #define is_string(c) (is_cstring(c) && ((c)->flags & FLAG_CSTR_STRING))
@@ -255,12 +255,14 @@ enum {
 };
 
 enum {
-	FLAG_INT_HEX=1<<0,					// used with TAG_INTEGER
+	FLAG_SPARE=1<<0,
+
 	FLAG_INT_HANDLE=1<<1,				// used with TAG_INTEGER
 	FLAG_INT_STREAM=1<<2,				// used with TAG_INTEGER
 	FLAG_INT_THREAD=1<<3,				// used with TAG_INTEGER
 	FLAG_INT_MAP=1<<4,					// used with TAG_INTEGER
 	FLAG_INT_ALIAS=1<<5,				// used with TAG_INTEGER
+	FLAG_INT_BIG=1<<6,					// used with TAG_INTEGER
 
 	FLAG_CSTR_BLOB=1<<0,				// used with TAG_CSTR
 	FLAG_CSTR_STRING=1<<1,				// used with TAG_CSTR
@@ -278,13 +280,13 @@ enum {
 
 	FLAG_BLOB_SREGEX=1<<0,				// used with TAG_BLOB
 
-	FLAG_COMPLEX=1<<5,
-	FLAG_GROUND=1<<6,
-	FLAG_TAIL_CALL=1<<7,
-	FLAG_RECURSIVE_CALL=1<<8,
-	FLAG_BUILTIN=1<<9,
-	FLAG_MANAGED=1<<10,					// any ref-counted object
-	FLAG_EVALUABLE=1<<11,
+	FLAG_COMPLEX=1<<6,
+	FLAG_GROUND=1<<7,
+	FLAG_TAIL_CALL=1<<8,
+	FLAG_RECURSIVE_CALL=1<<9,
+	FLAG_BUILTIN=1<<10,
+	FLAG_MANAGED=1<<11,					// any ref-counted object
+	FLAG_EVALUABLE=1<<12,
 
 	FLAG_END=1<<13
 };

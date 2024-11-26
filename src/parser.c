@@ -128,7 +128,7 @@ static void *make_string_internal(cell *c, const char *s, size_t n, size_t off)
 	c->val_strb = strb;
 	c->strb_off = off;
 	c->strb_len = n;
-	c->flags |= FLAG_MANAGED | FLAG_CSTR_BLOB;
+	c->flags |= (FLAG_MANAGED | FLAG_CSTR_BLOB);
 	return strb;
 }
 
@@ -2593,7 +2593,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 			p->v.val_bigint->refcnt = 1;
 			mp_int_init_copy(&p->v.val_bigint->ival, &v2);
 			if (neg) p->v.val_bigint->ival.sign = MP_NEG;
-			p->v.flags |= FLAG_MANAGED;
+			p->v.flags |= FLAG_INT_BIG;
 		} else {
 			set_smallint(&p->v, val);
 			if (neg) p->v.val_int = -p->v.val_int;
@@ -2616,7 +2616,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 			p->v.val_bigint->refcnt = 1;
 			mp_int_init_copy(&p->v.val_bigint->ival, &v2);
 			if (neg) p->v.val_bigint->ival.sign = MP_NEG;
-			p->v.flags |= FLAG_MANAGED;
+			p->v.flags |= FLAG_INT_BIG;
 		} else {
 			set_smallint(&p->v, val);
 			if (neg) p->v.val_int = -p->v.val_int;
@@ -2639,7 +2639,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 			p->v.val_bigint->refcnt = 1;
 			mp_int_init_copy(&p->v.val_bigint->ival, &v2);
 			if (neg) p->v.val_bigint->ival.sign = MP_NEG;
-			p->v.flags |= FLAG_MANAGED;
+			p->v.flags |= FLAG_INT_BIG;
 		} else {
 			set_smallint(&p->v, val);
 			if (neg) p->v.val_int = -p->v.val_int;
@@ -2699,7 +2699,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 		p->v.val_bigint->refcnt = 1;
 		mp_int_init_copy(&p->v.val_bigint->ival, &v2);
 		if (neg) p->v.val_bigint->ival.sign = MP_NEG;
-		p->v.flags |= FLAG_MANAGED;
+		p->v.flags |= FLAG_INT_BIG;
 	} else {
 		set_smallint(&p->v, val);
 		if (neg) p->v.val_int = -p->v.val_int;
