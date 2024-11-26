@@ -282,10 +282,9 @@ enum {
 	FLAG_GROUND=1<<6,
 	FLAG_TAIL_CALL=1<<7,
 	FLAG_RECURSIVE_CALL=1<<8,
-	FLAG_FFI=1<<9,
-	FLAG_BUILTIN=1<<10,
-	FLAG_MANAGED=1<<11,					// any ref-counted object
-	FLAG_EVALUABLE=1<<12,
+	FLAG_BUILTIN=1<<9,
+	FLAG_MANAGED=1<<10,					// any ref-counted object
+	FLAG_EVALUABLE=1<<11,
 
 	FLAG_END=1<<13
 };
