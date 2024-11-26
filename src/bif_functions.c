@@ -81,7 +81,10 @@ void clr_accum(cell *p)
 		free(p->val_bigint);
 	}
 
+#ifdef FE_INVALID
 	feclearexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW);
+#endif
+
 	p->tag = TAG_INTEGER;
 	p->flags = 0;
 }
