@@ -927,14 +927,7 @@ static bool bif_iso_ceiling_1(query *q)
 
 	if (is_float(&p1)) {
 		q->accum.val_int = (pl_int)ceil(p1.val_float);
-
-#ifdef FE_INVALID
-		if (fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW)) {
-			mp_int_set_double(&q->tmp_ival, p1.val_float);
-			SET_ACCUM();
-		} else
-#endif
-			q->accum.tag = TAG_INTEGER;
+		q->accum.tag = TAG_INTEGER;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else if (is_smallint(&p1)) {
