@@ -906,17 +906,17 @@ extern unsigned g_cpu_count;
 inline static void share_cell_(const cell *c)
 {
 	if (is_strbuf(c))
-		(c)->val_strb->refcnt++;
+		c->val_strb->refcnt++;
 	else if (is_bigint(c))
-		(c)->val_bigint->refcnt++;
+		c->val_bigint->refcnt++;
 	else if (is_rational(c))
-		(c)->val_bigint->refcnt++;
+		c->val_bigint->refcnt++;
 	else if (is_blob(c))
-		(c)->val_blob->refcnt++;
+		c->val_blob->refcnt++;
 	else if (is_dbid(c))
-		(c)->val_blob->refcnt++;
+		c->val_blob->refcnt++;
 	else if (is_kvid(c))
-		(c)->val_blob->refcnt++;
+		c->val_blob->refcnt++;
 }
 
 #define unshare_cell(c) if (is_managed(c)) unshare_cell_(c)
@@ -924,27 +924,27 @@ inline static void share_cell_(const cell *c)
 inline static void unshare_cell_(cell *c)
 {
 	if (is_strbuf(c)) {
-		if (--(c)->val_strb->refcnt == 0) {
-			free((c)->val_strb);
+		if (--c->val_strb->refcnt == 0) {
+			free(c->val_strb);
 			c->flags = 0;
 		}
 	} else if (is_bigint(c)) {
-		if (--(c)->val_bigint->refcnt == 0)	{
-			mp_int_clear(&(c)->val_bigint->ival);
-			free((c)->val_bigint);
+		if (--c->val_bigint->refcnt == 0)	{
+			mp_int_clear(&c->val_bigint->ival);
+			free(c->val_bigint);
 			c->flags = 0;
 		}
 	} else if (is_rational(c)) {
-		if (--(c)->val_bigint->refcnt == 0)	{
-			mp_rat_clear(&(c)->val_bigint->irat);
-			free((c)->val_bigint);
+		if (--c->val_bigint->refcnt == 0)	{
+			mp_rat_clear(&c->val_bigint->irat);
+			free(c->val_bigint);
 			c->flags = 0;
 		}
 	} else if (is_blob(c)) {
-		if (--(c)->val_blob->refcnt == 0) {
-			free((c)->val_blob->ptr2);
-			free((c)->val_blob->ptr);
-			free((c)->val_blob);
+		if (--c->val_blob->refcnt == 0) {
+			free(c->val_blob->ptr2);
+			free(c->val_blob->ptr);
+			free(c->val_blob);
 			c->flags = 0;
 		}
 	} else if (is_dbid(c)) {
