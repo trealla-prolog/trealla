@@ -4761,7 +4761,7 @@ static bool bif_hex_chars_2(query *q)
 		check_heap_error(tmp.val_bigint);
 		tmp.val_bigint->refcnt = 1;
 		mp_int_init_copy(&tmp.val_bigint->ival, &v2);
-		tmp.flags |= ((FLAG_MANAGED | FLAG_INT_BIG) | FLAG_INT_BIG);
+		tmp.flags |= FLAG_INT_BIG | FLAG_MANAGED | FLAG_INT_BIG;
 	} else {
 		make_uint(&tmp, (unsigned long long)val);
 	}
@@ -4816,7 +4816,7 @@ static bool bif_octal_chars_2(query *q)
 		check_heap_error(tmp.val_bigint);
 		tmp.val_bigint->refcnt = 1;
 		mp_int_init_copy(&tmp.val_bigint->ival, &v2);
-		tmp.flags |= (FLAG_MANAGED | FLAG_INT_BIG);
+		tmp.flags |= FLAG_INT_BIG | FLAG_MANAGED;
 	} else {
 		make_uint(&tmp, (unsigned long long)val);
 	}

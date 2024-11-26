@@ -1813,6 +1813,16 @@ void query_destroy(query *q)
 		free(save);
 	}
 
+	while (q->st.tp > 0) {
+		const trail *tr = q->trails + --q->st.tp;
+		const frame *f = GET_FRAME(tr->var_ctx);
+		slot *e = GET_SLOT(f, tr->var_nbr);
+		cell *c = &e->c;
+		unshare_cell(c);
+		c->tag = TAG_EMPTY;
+		c->attrs = tr->attrs;
+	}
+
 	for (int i = 0; i < MAX_QUEUES; i++)
 		free(q->queue[i]);
 
