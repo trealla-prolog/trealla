@@ -81,6 +81,7 @@ void clr_accum(cell *p)
 		free(p->val_bigint);
 	}
 
+	feclearexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW);
 	p->tag = TAG_INTEGER;
 	p->flags = 0;
 }
@@ -861,8 +862,15 @@ static bool bif_iso_truncate_1(query *q)
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
 	if (is_float(&p1)) {
-		q->accum.val_int = (pl_int)p1.val_float;
-		q->accum.tag = TAG_INTEGER;
+		q->accum.val_int = (pl_int)floor(p1.val_float);
+
+#ifdef FE_INVALID
+		if (fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW)) {
+			mp_int_set_double(&q->tmp_ival, p1.val_float);
+			SET_ACCUM();
+		} else
+#endif
+			q->accum.tag = TAG_INTEGER;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else if (is_smallint(&p1)) {
@@ -920,7 +928,14 @@ static bool bif_iso_ceiling_1(query *q)
 
 	if (is_float(&p1)) {
 		q->accum.val_int = (pl_int)ceil(p1.val_float);
-		q->accum.tag = TAG_INTEGER;
+
+#ifdef FE_INVALID
+		if (fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW)) {
+			mp_int_set_double(&q->tmp_ival, p1.val_float);
+			SET_ACCUM();
+		} else
+#endif
+			q->accum.tag = TAG_INTEGER;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else if (is_smallint(&p1)) {
@@ -984,7 +999,14 @@ static bool bif_iso_floor_1(query *q)
 
 	if (is_float(&p1)) {
 		q->accum.val_int = (pl_int)floor(p1.val_float);
-		q->accum.tag = TAG_INTEGER;
+
+#ifdef FE_INVALID
+		if (fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW)) {
+			mp_int_set_double(&q->tmp_ival, p1.val_float);
+			SET_ACCUM();
+		} else
+#endif
+			q->accum.tag = TAG_INTEGER;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else if (is_smallint(&p1)) {
