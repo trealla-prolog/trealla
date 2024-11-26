@@ -644,7 +644,6 @@ static bool do_stream_property(query *q)
 		cell tmp;
 		make_int(&tmp, fileno(str->fp));
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
-		unshare_cell(&tmp);
 		return ok;
 	}
 
@@ -655,7 +654,6 @@ static bool do_stream_property(query *q)
 		cell tmp;
 		make_uint(&tmp, (size_t)str->fp);
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
-		unshare_cell(&tmp);
 		return ok;
 	}
 
@@ -1275,7 +1273,6 @@ static bool bif_process_create_3(query *q)
 				make_int(&tmp, n);
 				tmp.flags |= FLAG_INT_STREAM;
 				unify(q, ns, ns_ctx, &tmp, q->st.curr_frame);
-
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stderr") && !CMP_STRING_TO_CSTR(q, name, "stream")) {
 				cell *ns = deref(q, name, name_ctx);
 				int n = get_stream(q, ns);
