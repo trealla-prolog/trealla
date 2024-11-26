@@ -865,7 +865,7 @@ static bool bif_iso_truncate_1(query *q)
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
 	if (is_float(&p1)) {
-		q->accum.val_int = (pl_int)floor(p1.val_float);
+		q->accum.val_int = (pl_int)trunc(p1.val_float);
 
 #ifdef FE_INVALID
 		if (fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW)) {
