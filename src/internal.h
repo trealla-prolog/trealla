@@ -1019,18 +1019,6 @@ inline static pl_idx dup_cells_by_ref(cell *dst, const cell *src, pl_idx src_ctx
 	return nbr_cells;
 }
 
-inline static void share_cells(cell *src, pl_idx nbr_cells)
-{
-	for (pl_idx i = 0; i < nbr_cells; i++, src++)
-		share_cell(src);
-}
-
-inline static void unshare_cells(cell *src, pl_idx nbr_cells)
-{
-	for (pl_idx i = 0; i < nbr_cells; i++, src++)
-		unshare_cell(src);
-}
-
 #define LIST_HANDLER(l) cell l##_h_tmp, l##_t_tmp
 #define LIST_HEAD(l) list_head(l, &l##_h_tmp)
 #define LIST_TAIL(l) list_tail(l, &l##_t_tmp)

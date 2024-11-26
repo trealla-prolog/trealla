@@ -287,6 +287,19 @@ void make_kvref(cell *tmp, void *ptr)
 	tmp->val_blob->refcnt = 0;
 }
 
+void share_cells(cell *src, pl_idx nbr_cells)
+{
+	for (pl_idx i = 0; i < nbr_cells; i++, src++)
+		share_cell(src);
+}
+
+void unshare_cells(cell *src, pl_idx nbr_cells)
+{
+	for (pl_idx i = 0; i < nbr_cells; i++, src++)
+		unshare_cell(src);
+}
+
+
 void clear_clause(clause *cl)
 {
 	unshare_cells(cl->cells, cl->cidx);

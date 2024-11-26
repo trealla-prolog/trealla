@@ -16,6 +16,8 @@ char *eat_space(parser *p);
 bool virtual_term(parser *p, const char *src);
 bool get_token(parser *p, bool last_op, bool was_postfix);
 void read_integer(parser *p, mp_int v2, int base, const char **srcptr);
+void share_cells(cell *src, pl_idx nbr_cells);
+void unshare_cells(cell *src, pl_idx nbr_cells);
 
 void make_uint(cell *tmp, pl_uint v);
 void make_int(cell *tmp, pl_int v);
