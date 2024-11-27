@@ -4142,12 +4142,7 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 		}
 
 		query *q = query_create(p->m);
-
-		if (!q) {
-			p->srcptr = NULL;
-			SB_free(src);
-			return false;
-		}
+		check_heap_error(q, p->srcptr = NULL, SB_free(src));
 
 		if (subq)
 			*subq = q;
