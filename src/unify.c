@@ -328,10 +328,6 @@ static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx
 	if (is_var(v)) {
 		make_ref(&e->c, v->var_nbr, v_ctx);
 
-		if ((c_ctx != q->st.curr_frame) && (v_ctx == q->st.curr_frame)) {
-			q->no_tco = true;
-		}
-
 		if (c_ctx == q->st.fp)
 			q->no_tco = true;
 	} else if (is_compound(v)) {
