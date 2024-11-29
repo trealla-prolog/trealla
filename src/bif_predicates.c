@@ -1955,6 +1955,7 @@ static bool do_duplicate_term(query *q, bool copy_attrs)
 	check_heap_error(tmp1);
 	GET_FIRST_RAW_ARG(p1x,any);
 	cell *tmp = alloc_on_heap(q, 1 + p1x->nbr_cells + tmp1->nbr_cells);
+	check_heap_error(tmp);
 	make_struct(tmp, g_eq_s, NULL, 2, p1x->nbr_cells + tmp1->nbr_cells);
 	dup_cells_by_ref(tmp+1, p1x, p1x_ctx, p1x->nbr_cells);
 	dup_cells_by_ref(tmp+1+p1x->nbr_cells, tmp1, q->st.curr_frame, tmp1->nbr_cells);
