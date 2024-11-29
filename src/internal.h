@@ -526,7 +526,7 @@ struct slot_ {
 struct frame_ {
 	cell *curr_instr;
 	uint64_t dbgen, chgen;
-	pl_idx prev, base, overflow;
+	pl_idx prev, base, overflow, hp, heap_nbr;
 	unsigned initial_slots, actual_slots;
 	uint32_t mid;
 	bool has_local_vars:1;

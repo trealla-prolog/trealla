@@ -548,6 +548,8 @@ static frame *push_frame(query *q, const clause *cl)
 	frame *f = GET_FRAME(new_frame);
 	f->prev = q->st.curr_frame;
 	f->curr_instr = q->st.curr_instr;
+	f->hp = q->st.hp;
+	f->heap_nbr = q->st.heap_nbr;
 	f->initial_slots = f->actual_slots = cl->nbr_vars;
 	f->chgen = ++q->chgen;
 	f->has_local_vars = cl->has_local_vars;
@@ -579,6 +581,8 @@ static void reuse_frame(query *q, const clause *cl)
 		to->c = from->c;
 	}
 
+	q->st.hp = f->hp;
+	q->st.heap_nbr = f->heap_nbr;
 	q->st.sp = f->base + cl->nbr_vars;
 	q->st.curr_rule->tcos++;
 	q->tot_tcos++;
