@@ -540,6 +540,29 @@ int retry_choice(query *q)
 	return 0;
 }
 
+static void trim_trail(query *q)
+{
+	if (q->undo_hi_tp)
+		return;
+
+	pl_idx tp;
+
+	if (q->cp)  {
+		const choice *ch = GET_CURR_CHOICE();
+		tp = ch->st.tp;
+	} else
+		tp = 0;
+
+	while (q->st.tp > tp) {
+		const trail *tr = q->trails + q->st.tp - 1;
+
+		if (tr->var_ctx != q->st.curr_frame)
+			break;
+
+		q->st.tp--;
+	}
+}
+
 static frame *push_frame(query *q, const clause *cl)
 {
 	const frame *curr_f = GET_CURR_FRAME();
@@ -581,35 +604,13 @@ static void reuse_frame(query *q, const clause *cl)
 		to->c = from->c;
 	}
 
+	trim_trail(q);
 	q->st.hp = f->hp;
 	q->st.heap_nbr = f->heap_nbr;
 	q->st.sp = f->base + cl->nbr_vars;
 	q->st.curr_rule->tcos++;
 	q->tot_tcos++;
 	trim_heap(q);
-}
-
-static void trim_trail(query *q)
-{
-	if (q->undo_hi_tp)
-		return;
-
-	pl_idx tp;
-
-	if (q->cp)  {
-		const choice *ch = GET_CURR_CHOICE();
-		tp = ch->st.tp;
-	} else
-		tp = 0;
-
-	while (q->st.tp > tp) {
-		const trail *tr = q->trails + q->st.tp - 1;
-
-		if (tr->var_ctx != q->st.curr_frame)
-			break;
-
-		q->st.tp--;
-	}
 }
 
 static bool commit_any_choices(const query *q, const frame *f)
