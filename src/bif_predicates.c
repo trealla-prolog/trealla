@@ -1935,7 +1935,7 @@ static bool bif_term_singletons_2(query *q)
 	return unify(q, p2, p2_ctx, tmp2, q->st.curr_frame);
 }
 
-static bool do_duplicate_term(query *q, bool copy_attrs)
+static bool do_sys_copy_term(query *q, bool copy_attrs)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
@@ -1970,21 +1970,21 @@ static bool do_duplicate_term(query *q, bool copy_attrs)
 
 static bool bif_copy_term_nat_2(query *q)
 {
-	return do_duplicate_term(q, false);
+	return do_sys_copy_term(q, false);
 }
 
 // Do copy attributes (Note: SICStus & YAP don't, Scryer & SWI do)
 
 static bool bif_iso_copy_term_2(query *q)
 {
-	return do_duplicate_term(q, true);
+	return do_sys_copy_term(q, true);
 }
 
 // Do copy attributes
 
 static bool bif_duplicate_term_2(query *q)
 {
-	return do_duplicate_term(q, true);
+	return do_sys_copy_term(q, true);
 }
 
 static bool bif_iso_functor_3(query *q)
