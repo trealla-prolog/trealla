@@ -194,7 +194,6 @@ inline static cell *deref_var_(query *q, cell *c, pl_idx c_ctx)
 inline static cell *get_first_arg(query *q)
 {
 	q->last_arg = q->st.curr_instr + 1;
-	q->latest_ctx = q->st.curr_frame;
 	return deref(q, q->last_arg, q->st.curr_frame);
 }
 
