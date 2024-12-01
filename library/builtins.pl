@@ -200,7 +200,7 @@ copy_term(Term, Copy, Gs) :-
 	term_attributed_variables(Copy, Vs),
 	collect_goals_(Vs, [], Gs).
 
-:- help(copy_term(+term,?term,+list), [iso(false)]).
+:- help(copy_term(+term,?term,-list), [iso(false)]).
 
 term_variables(P1, P2, P3) :-
 	term_variables(P1, P4),
