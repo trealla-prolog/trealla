@@ -259,7 +259,7 @@ bool any_attributed(query *q)
 {
 	const frame *f = GET_FRAME(0);
 
-	for (unsigned i = 0; i < f->initial_slots; i++) {
+	for (unsigned i = 0; i < f->actual_slots; i++) {
 		slot *e = GET_SLOT(f, i);
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		pl_idx c_ctx = q->latest_ctx;
@@ -296,7 +296,7 @@ static bool bif_sys_list_attributed_1(query *q)
 	check_heap_error(init_tmp_heap(q));
 	const frame *f = GET_FRAME(0);
 
-	for (unsigned i = 0; i < f->initial_slots; i++) {
+	for (unsigned i = 0; i < f->actual_slots; i++) {
 		slot *e = GET_SLOT(f, i);
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		pl_idx c_ctx = q->latest_ctx;
@@ -309,7 +309,7 @@ static bool bif_sys_list_attributed_1(query *q)
 		append_list(q, &tmp);
 	}
 
-	for (unsigned i = 0; i < f->initial_slots; i++) {
+	for (unsigned i = 0; i < f->actual_slots; i++) {
 		slot *e = GET_SLOT(f, i);
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		pl_idx c_ctx = q->latest_ctx;
