@@ -173,12 +173,12 @@ inline static cell *deref_var_(query *q, cell *c, pl_idx c_ctx)
 
 #define GET_FIRST_RAW_ARG(p,vt) \
 	cell *p = get_first_raw_arg(q); \
-	pl_idx p##_ctx = q->st.curr_frame; \
+	pl_idx p##_ctx = q->latest_ctx; \
 	if (!is_##vt(p)) { return q->did_throw ? false : throw_error(q, p, p##_ctx, "type_error", #vt); }
 
 #define GET_FIRST_RAW_ARG0(p,vt,p0) \
 	cell *p = get_first_raw_arg0(q,p0); \
-	pl_idx p##_ctx = q->st.curr_frame; \
+	pl_idx p##_ctx = q->latest_ctx; \
 	if (!is_##vt(p)) { return q->did_throw ? false : throw_error(q, p, p##_ctx, "type_error", #vt); }
 
 #define GET_NEXT_ARG(p,vt) \
@@ -188,12 +188,13 @@ inline static cell *deref_var_(query *q, cell *c, pl_idx c_ctx)
 
 #define GET_NEXT_RAW_ARG(p,vt) \
 	cell *p = get_next_raw_arg(q); \
-	pl_idx p##_ctx = q->st.curr_frame; \
+	pl_idx p##_ctx = q->latest_ctx; \
 	if (!is_##vt(p)) { return q->did_throw ? false : throw_error(q, p, p##_ctx, "type_error", #vt); }
 
 inline static cell *get_first_arg(query *q)
 {
 	q->last_arg = q->st.curr_instr + 1;
+	q->latest_ctx = q->st.curr_frame;
 	return deref(q, q->last_arg, q->st.curr_frame);
 }
 
@@ -206,12 +207,14 @@ inline static cell *get_first_arg0(query *q, cell *p0)
 inline static cell *get_first_raw_arg(query *q)
 {
 	q->last_arg = q->st.curr_instr + 1;
+	q->latest_ctx = q->st.curr_frame;
 	return q->last_arg;
 }
 
 inline static cell *get_first_raw_arg0(query *q, cell *p0)
 {
 	q->last_arg = p0 + 1;
+	q->latest_ctx = q->st.curr_frame;
 	return q->last_arg;
 }
 
@@ -224,16 +227,18 @@ inline static cell *get_next_arg(query *q)
 inline static cell *get_next_raw_arg(query *q)
 {
 	q->last_arg += q->last_arg->nbr_cells;
+	q->latest_ctx = q->st.curr_frame;
 	return q->last_arg;
 }
 
-inline static cell *get_raw_arg(const query *q, int n)
+inline static cell *get_raw_arg(query *q, int n)
 {
 	cell *c = q->st.curr_instr + 1;
 
 	for (int i = 1; i < n; i++)
 		c += c->nbr_cells;
 
+	q->latest_ctx = q->st.curr_frame;
 	return c;
 }
 
