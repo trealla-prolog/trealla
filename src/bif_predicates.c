@@ -1946,11 +1946,6 @@ static bool do_sys_copy_term(query *q, bool copy_attrs)
 	if (!is_var(p2) && !has_vars(q, p1, p1_ctx))
 		return unify(q, p1, p1_ctx, p2, p2_ctx);
 
-	if (!copy_attrs) {
-		cell *tmp = deep_copy_to_heap(q, p1, p1_ctx, false);
-		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
-	}
-
 	// You are not expected to understand this: basically we have
 	// to make sure the p1 variables get copied along with the
 	// deref'd values and they get linked.
