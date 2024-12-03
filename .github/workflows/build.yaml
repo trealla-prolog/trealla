@@ -24,10 +24,12 @@
             fetch-depth: 0
         - name: Install deps (Linux)
           run: |
+            sudo apt-get update
             sudo apt-get install libreadline-dev xxd libffi-dev libssl-dev
           if: matrix.os == 'ubuntu-latest'
         - name: Install deps (macOS)
           run: |
+            brew update
             brew install readline vim libffi openssl make
             echo "$(brew --prefix)/opt/make/libexec/gnubin" >> $GITHUB_PATH
           if: matrix.os == 'macos-latest'
