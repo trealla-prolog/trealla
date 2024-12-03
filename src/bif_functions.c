@@ -2797,50 +2797,6 @@ static bool bif_rand_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
-static bool bif_sys_set_prob_1(query *q)
-{
-	GET_FIRST_ARG(p1,any);
-	double p;
-
-	if (is_float(p1))
-		p = p1->val_float;
-	else if (is_smallint(p1))
-		p = p1->val_int;
-	else if (is_compound(p1) && (p1->arity == 2) && !strcmp(C_STR(q, p1), "/")) {
-		cell *c1 = p1+1;
-
-		if (!is_smallint(c1))
-			return throw_error(q, p1, p1_ctx, "type_error", "integer");
-
-		cell *c2 = p1+2;
-
-		if (!is_smallint(c2))
-			return throw_error(q, p1, p1_ctx, "type_error", "integer");
-
-		p = (pl_flt)c1->val_int / c2->val_int;
-	} else
-		return throw_error(q, p1, p1_ctx, "type_error", "number");
-
-	if (p < 0.0)
-		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
-
-	if (p > 1.0)
-		return throw_error(q, p1, p1_ctx, "domain_error", "range_error");
-
-	q->st.prob *= p;
-	return true;
-}
-
-static bool bif_sys_get_prob_1(query *q)
-{
-	GET_FIRST_ARG(p1,var);
-	cell tmp;
-	make_float(&tmp, q->st.prob);
-	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-	q->st.prob = 1.0;
-	return ok;
-}
-
 static pl_int gcd(pl_int num, pl_int remainder)
 {
 	if (remainder == 0)
@@ -2982,9 +2938,6 @@ builtins g_evaluable_bifs[] =
 	{"rand", 1, bif_rand_1, "?integer", false, false, BLAH},
 	{"random", 1, bif_random_1, "?integer", false, false, BLAH},
 	{"random_between", 3, bif_random_between_3, "?integer,?integer,-integer", false, false, BLAH},
-
-	{"$set_prob", 1, bif_sys_set_prob_1, "+real", false, false, BLAH},
-	{"$get_prob", 1, bif_sys_get_prob_1, "-real", false, false, BLAH},
 
 	// Functions...
 

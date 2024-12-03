@@ -1882,7 +1882,6 @@ query *query_create(module *m)
 	q->time_cpu_last_started = q->cpu_started = cpu_time_in_usec();
 	q->ops_dirty = true;
 	q->double_quotes = false;
-	q->st.prob = 1.0;
 	q->max_depth = m->pl->def_max_depth;
 	mp_int_init(&q->tmp_ival);
 	mp_rat_init(&q->tmp_irat);

@@ -549,7 +549,6 @@ struct run_state_ {
 
 	uint64_t timer_started;
 	pl_idx curr_frame, fp, hp, cp, tp, sp, heap_nbr, key_ctx;
-	float prob;
 	uint8_t qnbr;
 };
 
