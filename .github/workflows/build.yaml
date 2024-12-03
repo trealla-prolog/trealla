@@ -24,7 +24,7 @@
             fetch-depth: 0
         - name: Install deps (Linux)
           run: |
-            sudo apt-get install libreadline-dev xxd libffi-dev libssl-dev
+            sudo apt-get install libreadline-dev vim libffi-dev libssl-dev
           if: matrix.os == 'ubuntu-latest'
         - name: Install deps (macOS)
           run: |
