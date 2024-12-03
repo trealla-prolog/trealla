@@ -1973,11 +1973,11 @@ static bool bif_copy_term_nat_2(query *q)
 	return do_sys_copy_term(q, false);
 }
 
-// Do copy attributes (Note: SICStus & YAP don't, Scryer & SWI do)
+// Don't copy attributes (Note: SICStus & YAP don't, Scryer & SWI do)
 
 static bool bif_iso_copy_term_2(query *q)
 {
-	return do_sys_copy_term(q, true);
+	return do_sys_copy_term(q, false);
 }
 
 // Do copy attributes
