@@ -1950,15 +1950,12 @@ static bool do_sys_copy_term(query *q, bool copy_attrs)
 	// to make sure the p1 variables get copied along with the
 	// deref'd values and they get linked.
 
-	check_heap_error(init_tmp_heap(q));
-	cell *tmp1 = deep_clone_to_tmp(q, p1, p1_ctx);
-	check_heap_error(tmp1);
 	GET_FIRST_RAW_ARG(p1x,any);
-	cell *tmp = alloc_on_heap(q, 1 + p1x->nbr_cells + tmp1->nbr_cells);
+	cell *tmp = alloc_on_heap(q, 1 + p1x->nbr_cells + p1->nbr_cells);
 	check_heap_error(tmp);
-	make_struct(tmp, g_eq_s, NULL, 2, p1x->nbr_cells + tmp1->nbr_cells);
+	make_struct(tmp, g_eq_s, NULL, 2, p1x->nbr_cells + p1->nbr_cells);
 	dup_cells_by_ref(tmp+1, p1x, p1x_ctx, p1x->nbr_cells);
-	dup_cells_by_ref(tmp+1+p1x->nbr_cells, tmp1, p1_ctx, tmp1->nbr_cells);
+	dup_cells_by_ref(tmp+1+p1x->nbr_cells, p1, p1_ctx, p1->nbr_cells);
 	tmp = deep_copy_to_heap(q, tmp, q->st.curr_frame, copy_attrs);
 	check_heap_error(tmp);
 	cell *tmpp1 = tmp + 1;
