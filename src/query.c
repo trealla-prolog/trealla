@@ -857,7 +857,7 @@ static bool resume_frame(query *q)
 
 	if (q->pl->opt
 		&& !f->unify_no_tco
-		&& !f->has_local_vars
+		&& !f->has_local_vars	// ????
 		&& (q->st.fp == (q->st.curr_frame + 1))
 		&& !resume_any_choices(q, f)
 		) {
