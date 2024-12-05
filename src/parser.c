@@ -697,7 +697,7 @@ static bool directives(parser *p, cell *d)
 		pl_idx p1_ctx = 0;
 		query q = (query){0};
 		q.pl = p->pl;
-		q.st.m = p->m;
+		q.st.curr_m = p->m;
 		char *dst = print_term_to_strbuf(&q, p1, p1_ctx, 0);
 		builtins *ptr = calloc(1, sizeof(builtins));
 		ensure(ptr);
@@ -4165,7 +4165,7 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 		p->m->pl->is_redo = q->is_redo;
 
 		ok = !q->error;
-		p->m = q->st.m;
+		p->m = q->st.curr_m;
 		query_destroy(q);
 
 		if (p->pl->is_query)

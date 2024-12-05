@@ -40,7 +40,7 @@ static bool bif_bb_b_put_2(query *q)
 		if (!m)
 			return throw_error(q, p1_m, p1_ctx, "existence_error", "module");
 	} else
-		m = q->pl->global_bb ? q->pl->user_m : q->st.m;
+		m = q->pl->global_bb ? q->pl->user_m : q->st.curr_m;
 
 	if (is_atom(p1))
 		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
@@ -102,7 +102,7 @@ static bool bif_bb_put_2(query *q)
 		if (!m)
 			return throw_error(q, p1_m, p1_ctx, "existence_error", "module");
 	} else
-		m = q->pl->global_bb ? q->pl->user_m : q->st.m;
+		m = q->pl->global_bb ? q->pl->user_m : q->st.curr_m;
 
 	if (is_atom(p1))
 		snprintf(tmpbuf1, sizeof(tmpbuf1), "%s:%s:b", m->name, C_STR(q, p1));
@@ -159,7 +159,7 @@ static bool bif_bb_get_2(query *q)
 		if (!m)
 			return throw_error(q, p1_m, p1_ctx, "existence_error", "module");
 	} else
-		m = q->pl->global_bb ? q->pl->user_m : q->st.m;
+		m = q->pl->global_bb ? q->pl->user_m : q->st.curr_m;
 
 	if (is_atom(p1))
 		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s:b", m->name, C_STR(q, p1));
@@ -228,7 +228,7 @@ static bool bif_bb_delete_2(query *q)
 		if (!m)
 			return throw_error(q, p1_m, p1_ctx, "existence_error", "module");
 	} else
-		m = q->pl->global_bb ? q->pl->user_m : q->st.m;
+		m = q->pl->global_bb ? q->pl->user_m : q->st.curr_m;
 
 	if (is_atom(p1))
 		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s", m->name, C_STR(q, p1));
@@ -296,7 +296,7 @@ static bool bif_bb_update_3(query *q)
 		if (!m)
 			return throw_error(q, p1_m, p1_ctx, "existence_error", "module");
 	} else
-		m = q->pl->global_bb ? q->pl->user_m : q->st.m;
+		m = q->pl->global_bb ? q->pl->user_m : q->st.curr_m;
 
 	if (is_atom(p1))
 		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s", m->name, C_STR(q, p1));

@@ -92,7 +92,7 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 
 	SB_sprintf(pr, "[%u:%s:%"PRIu64":f%u:fp%u:cp%u:sp%u:hp%u:tp%u] ",
 		q->my_chan,
-		q->st.m->name,
+		q->st.curr_m->name,
 		q->step,
 		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.tp
 		);
@@ -251,7 +251,7 @@ void make_call(query *q, cell *tmp)
 	cell *c = q->st.curr_instr;
 	tmp->ret_instr = c + c->nbr_cells;	// save next as the return instruction
 	tmp->chgen = f->chgen;				// ... choice-generation
-	tmp->mid = q->st.m->id;				// ... current-module
+	tmp->mid = q->st.curr_m->id;				// ... current-module
 }
 
 void make_call_redo(query *q, cell *tmp)
@@ -260,7 +260,7 @@ void make_call_redo(query *q, cell *tmp)
 	const frame *f = GET_CURR_FRAME();
 	tmp->ret_instr = q->st.curr_instr;	// save the return instruction
 	tmp->chgen = f->chgen;				// ... choice-generation
-	tmp->mid = q->st.m->id;				// ... current-module
+	tmp->mid = q->st.curr_m->id;				// ... current-module
 }
 
 void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs)
@@ -293,7 +293,7 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 	bool any1 = false, any2 = false;
 	LIST_HANDLER(l);
 
-	while (is_list(l) && (q->st.m->flags.double_quote_chars || allow_codes)) {
+	while (is_list(l) && (q->st.curr_m->flags.double_quote_chars || allow_codes)) {
 		cell *h = LIST_HEAD(l);
 		pl_idx h_ctx = l_ctx;
 		slot *e = NULL;
@@ -350,7 +350,7 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 		pl_idx l2_ctx = save_l_ctx;
 		LIST_HANDLER(l2);
 
-		while (is_list(l2) && (q->st.m->flags.double_quote_chars || allow_codes)) {
+		while (is_list(l2) && (q->st.curr_m->flags.double_quote_chars || allow_codes)) {
 			cell *h = LIST_HEAD(l2);
 			l2 = LIST_TAIL(l2);
 			RESTORE_VAR(l2, l2_ctx, l2, l2_ctx, q->vgen);
@@ -628,7 +628,7 @@ static void commit_frame(query *q)
 	cell *head = get_head(cl->cells);
 	cell *body = get_body(cl->cells);
 	frame *f = GET_CURR_FRAME();
-	f->mid = q->st.m->id;
+	f->mid = q->st.curr_m->id;
 
 	bool is_det = !q->has_vars && cl->is_unique;
 	bool next_key = has_next_key(q);
@@ -645,7 +645,7 @@ static void commit_frame(query *q)
 	if (!q->no_tco
 		&& last_match
 		&& (q->st.fp == (q->st.curr_frame + 1))	// At top of frame stack
-		&& !q->st.m->no_tco						// For CLPZ
+		&& !q->st.curr_m->no_tco						// For CLPZ
 		) {
 		bool tail_call = is_tail_call(q->st.curr_instr);
 		bool tail_recursive = tail_call && is_recursive_call(q->st.curr_instr);
@@ -666,7 +666,7 @@ static void commit_frame(query *q)
 	}
 
 	if (!q->st.curr_rule->owner->is_builtin)
-		q->st.m = q->st.curr_rule->owner->m;
+		q->st.curr_m = q->st.curr_rule->owner->m;
 
 	if (q->pl->opt && tco) {
 		reuse_frame(q, cl);
@@ -868,7 +868,7 @@ static bool resume_frame(query *q)
 	q->st.curr_instr = f->curr_instr;
 	q->st.curr_frame = f->prev;
 	f = GET_CURR_FRAME();
-	q->st.m = q->pl->modmap[f->mid];
+	q->st.curr_m = q->pl->modmap[f->mid];
 	return true;
 }
 
@@ -886,7 +886,7 @@ static void proceed(query *q)
 	if (tmp->ret_instr) {
 		frame *f = GET_CURR_FRAME();
 		f->chgen = tmp->chgen;
-		q->st.m = q->pl->modmap[tmp->mid];
+		q->st.curr_m = q->pl->modmap[tmp->mid];
 	}
 
 	q->st.curr_instr = tmp->ret_instr;
@@ -1024,16 +1024,16 @@ bool has_next_key(query *q)
 		//DUMP_TERM("next", dkey, q->st.curr_frame, 0);
 
 		if (karg1) {
-			if (index_cmpkey(karg1, FIRST_ARG(dkey), q->st.m, NULL) != 0)
+			if (index_cmpkey(karg1, FIRST_ARG(dkey), q->st.curr_m, NULL) != 0)
 				continue;
 		}
 
 		if (karg2) {
-			if (index_cmpkey(karg2, NEXT_ARG(FIRST_ARG(dkey)), q->st.m, NULL) != 0)
+			if (index_cmpkey(karg2, NEXT_ARG(FIRST_ARG(dkey)), q->st.curr_m, NULL) != 0)
 				continue;
 		}
 
-		//if (index_cmpkey(q->st.key, dkey, q->st.m, NULL) == 0)
+		//if (index_cmpkey(q->st.key, dkey, q->st.curr_m, NULL) == 0)
 			return true;
 	}
 
@@ -1058,11 +1058,11 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 		else if (is_interned(m) && (m->val_off == g_colon_s)) {
 			make_struct(tmp, g_colon_s, bif_iso_qualify_2, 2, 1+k->nbr_cells);
 			SET_OP(tmp, OP_XFY); tmp++;
-			make_atom(tmp++, new_atom(q->pl, q->st.m->name));
+			make_atom(tmp++, new_atom(q->pl, q->st.curr_m->name));
 		} else if (is_smallint(m) && is_positive(m) && (get_smallint(m) <= 9)) {
 			make_struct(tmp, g_colon_s, bif_iso_qualify_2, 2, 1+k->nbr_cells);
 			SET_OP(tmp, OP_XFY); tmp++;
-			make_atom(tmp++, new_atom(q->pl, q->st.m->name));
+			make_atom(tmp++, new_atom(q->pl, q->st.curr_m->name));
 		}
 
 		tmp += dup_cells(tmp, k, k->nbr_cells);
@@ -1195,17 +1195,17 @@ bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 		if (is_interned(c))
 			pr = c->match;
 		else if (is_cstring(c))
-			convert_to_literal(q->st.m, c);
+			convert_to_literal(q->st.curr_m, c);
 
 		if (!pr || is_evaluable(c) || is_builtin(c)) {
-			pr = search_predicate(q->st.m, c, NULL);
+			pr = search_predicate(q->st.curr_m, c, NULL);
 			c->match = pr;
 		}
 
 		if (!pr) {
 			bool found = false;
 
-			if (get_builtin_term(q->st.m, c, &found, NULL), found)
+			if (get_builtin_term(q->st.curr_m, c, &found, NULL), found)
 				return throw_error(q, c, c_ctx, "permission_error", "modify,static_procedure");
 
 			q->st.curr_rule = NULL;
@@ -1294,17 +1294,17 @@ bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract
 		if (is_interned(c))
 			pr = c->match;
 		else if (is_cstring(c))
-			convert_to_literal(q->st.m, c);
+			convert_to_literal(q->st.curr_m, c);
 
 		if (!pr || is_evaluable(c) || is_builtin(c)) {
-			pr = search_predicate(q->st.m, c, NULL);
+			pr = search_predicate(q->st.curr_m, c, NULL);
 			c->match = pr;
 		}
 
 		if (!pr) {
 			bool found = false;
 
-			if (get_builtin_term(q->st.m, p1, &found, NULL), found) {
+			if (get_builtin_term(q->st.curr_m, p1, &found, NULL), found) {
 				if (is_retract != DO_CLAUSE)
 					return throw_error(q, p1, p1_ctx, "permission_error", "modify,static_procedure");
 				else
@@ -1382,15 +1382,15 @@ static bool match_head(query *q)
 		if (is_interned(c))
 			pr = c->match;
 		else if (is_cstring(c)) {
-			convert_to_literal(q->st.m, c);
+			convert_to_literal(q->st.curr_m, c);
 		}
 
 		if (!pr || is_evaluable(c) || is_builtin(c)) {
-			pr = search_predicate(q->st.m, c, NULL);
+			pr = search_predicate(q->st.curr_m, c, NULL);
 
 			if (!pr) {
 				if (!is_end(c) && !(is_interned(c) && !strcmp(C_STR(q, c), "initialization"))) {
-					if (q->st.m->flags.unknown == UNK_ERROR)
+					if (q->st.curr_m->flags.unknown == UNK_ERROR)
 						return throw_error(q, c, c_ctx, "existence_error", "procedure");
 					return false;
 				} else
@@ -1875,7 +1875,7 @@ query *query_create(module *m)
 	q->qid = g_query_id++;
 	q->pl = m->pl;
 	q->pl->q_cnt++;
-	q->st.m = m;
+	q->st.curr_m = m;
 	q->trace = m->pl->trace;
 	q->flags = m->flags;
 	q->get_started = get_time_in_usec();
@@ -1916,7 +1916,7 @@ query *query_create(module *m)
 
 query *query_create_subquery(query *q, cell *curr_instr)
 {
-	query *task = query_create(q->st.m);
+	query *task = query_create(q->st.curr_m);
 	if (!task) return NULL;
 	task->parent = q;
 	task->st.fp = 1;

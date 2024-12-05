@@ -196,12 +196,12 @@ bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx 
 
 	bool found = false, evaluable = false;
 
-	if (get_builtin_term(q->st.m, l, &found, &evaluable), found && !evaluable) {
+	if (get_builtin_term(q->st.curr_m, l, &found, &evaluable), found && !evaluable) {
 		if (!GET_OP(l))
 			return throw_error(q, l, q->st.curr_frame, "permission_error", "modify,static_procedure");
 	}
 
-	if (!assertz_to_db(q->st.m, 0, l, false))
+	if (!assertz_to_db(q->st.curr_m, 0, l, false))
 		return throw_error(q, l, q->st.curr_frame, "permission_error", "modify_static_procedure");
 
 	return true;

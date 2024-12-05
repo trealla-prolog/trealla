@@ -19,7 +19,7 @@ static const char *do_attribute(query *q, cell *attr, unsigned arity, bool *foun
 	}
 
 	*found = false;
-	return q->st.m->name;
+	return q->st.curr_m->name;
 }
 
 static bool bif_attribute_3(query *q)

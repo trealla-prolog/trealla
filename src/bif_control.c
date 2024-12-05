@@ -104,9 +104,9 @@ static bool call_check(query *q, cell *tmp2, bool *status, bool calln)
 	if (!tmp2->match) {
 		bool found = false;
 
-		if ((tmp2->bif_ptr = get_builtin_term(q->st.m, tmp2, &found, NULL)), found) {
+		if ((tmp2->bif_ptr = get_builtin_term(q->st.curr_m, tmp2, &found, NULL)), found) {
 			tmp2->flags |= FLAG_BUILTIN;
-		} else if ((tmp2->match = search_predicate(q->st.m, tmp2, NULL)) != NULL) {
+		} else if ((tmp2->match = search_predicate(q->st.curr_m, tmp2, NULL)) != NULL) {
 			tmp2->flags &= ~FLAG_BUILTIN;
 		} else {
 			tmp2->flags &= ~FLAG_BUILTIN;
@@ -117,7 +117,7 @@ static bool call_check(query *q, cell *tmp2, bool *status, bool calln)
 		const char *functor = C_STR(q, tmp2);
 		unsigned specifier;
 
-		if (search_op(q->st.m, functor, &specifier, false))
+		if (search_op(q->st.curr_m, functor, &specifier, false))
 			SET_OP(tmp2, specifier);
 	}
 
@@ -174,7 +174,7 @@ static bool bif_iso_call_n(query *q)
 
 		if (!is_var(cm)) {
 			module *m = find_module(q->pl, C_STR(q, cm));
-			if (m) q->st.m = m;
+			if (m) q->st.curr_m = m;
 		}
 
 		p1 += 2;
@@ -202,7 +202,7 @@ static bool bif_iso_call_n(query *q)
 
 	if (is_cstring(tmp2)) {
 		share_cell(tmp2);
-		convert_to_literal(q->st.m, tmp2);
+		convert_to_literal(q->st.curr_m, tmp2);
 	}
 
 	tmp2->match = NULL;
@@ -561,7 +561,7 @@ static bool find_reset_handler(query *q)
 			ch->reset = false;
 			q->st.curr_instr = ch->st.curr_instr;
 			q->st.curr_frame = ch->st.curr_frame;
-			q->st.m = ch->st.m;
+			q->st.curr_m = ch->st.curr_m;
 			GET_FIRST_ARG0(p1, any, ch->st.curr_instr);
 			GET_NEXT_ARG(p2, any);
 			GET_NEXT_ARG(p3, any);
@@ -744,7 +744,7 @@ static cell *parse_to_heap(query *q, const char *src)
 {
 	SB(s);
 	SB_sprintf(s, "%s.", src);
-	parser *p2 = parser_create(q->st.m);
+	parser *p2 = parser_create(q->st.curr_m);
 	check_error(p2);
 	frame *f = GET_CURR_FRAME();
 	p2->read_term_slots = f->actual_slots;
@@ -910,8 +910,8 @@ bool throw_error3(query *q, cell *c, pl_idx c_ctx, const char *err_type, const c
 		is_abolish = true;
 
 	bool is_builtin = false, evaluable = false;
-	get_builtin_term(q->st.m, c, &is_builtin, &evaluable);
-	bool is_op = search_op(q->st.m, C_STR(q, c), NULL, true) > 0;
+	get_builtin_term(q->st.curr_m, c, &is_builtin, &evaluable);
+	bool is_op = search_op(q->st.curr_m, C_STR(q, c), NULL, true) > 0;
 
 	cell *tmp;
 
@@ -1130,7 +1130,7 @@ bool throw_error2(query *q, cell *c, pl_idx c_ctx, const char *err_type, const c
 
 bool throw_error(query *q, cell *c, pl_idx c_ctx, const char *err_type, const char *expected)
 {
-	if ((q->st.m->flags.syntax_error == UNK_FAIL) && !strcmp(err_type, "syntax_error"))
+	if ((q->st.curr_m->flags.syntax_error == UNK_FAIL) && !strcmp(err_type, "syntax_error"))
 		return false;
 
 	return throw_error3(q, c, c_ctx, err_type, expected, q->st.curr_instr);

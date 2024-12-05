@@ -756,7 +756,7 @@ void set_meta_predicate_in_db(module *m, cell *c)
 	if (pr) {
 		query q = (query){0};
 		q.pl = m->pl;
-		q.st.m = m;
+		q.st.curr_m = m;
 		char *dst = print_canonical_to_strbuf(&q, c, 0, 0);
 		char tmpbuf[1024];
 		snprintf(tmpbuf, sizeof(tmpbuf), "meta_predicate(%s)", dst);
@@ -2403,7 +2403,7 @@ static void module_save_fp(module *m, FILE *fp, int canonical, int dq)
 	pl_idx ctx = 0;
 	query q = (query){0};
 	q.pl = m->pl;
-	q.st.m = m;
+	q.st.curr_m = m;
 
 	for (predicate *pr = list_front(&m->predicates);
 		pr; pr = list_next(pr)) {

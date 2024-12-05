@@ -589,7 +589,7 @@ static void add_stream_properties(query *q, int n)
 	else if (str->is_alias)
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, alias(true)).\n", n);
 
-	parser *p = parser_create(q->st.m);
+	parser *p = parser_create(q->st.curr_m);
 	p->srcptr = tmpbuf;
 	p->consulting = true;
 	tokenize(p, false, false);
@@ -833,7 +833,7 @@ static void clear_streams_properties(query *q)
 	tmp.nbr_cells = 1;
 	tmp.arity = 2;
 
-	predicate *pr = find_predicate(q->st.m, &tmp);
+	predicate *pr = find_predicate(q->st.curr_m, &tmp);
 
 	if (pr) {
 		for (rule *r = pr->head; r;) {
@@ -2030,9 +2030,9 @@ static bool parse_read_params(query *q, stream *str, cell *c, pl_idx c_ctx, cell
 bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, char *src)
 {
 	if (!str->p) {
-		str->p = parser_create(q->st.m);
+		str->p = parser_create(q->st.curr_m);
 		check_heap_error(str->p);
-		str->p->flags = q->st.m->flags;
+		str->p->flags = q->st.curr_m->flags;
 		str->p->fp = str->fp;
 		if (q->p) str->p->no_fp = q->p->no_fp;
 	} else
@@ -2870,7 +2870,7 @@ static bool bif_iso_write_term_2(query *q)
 		return throw_error(q, &tmp, q->st.curr_frame, "permission_error", "output,binary_stream");
 	}
 
-	q->flags = q->st.m->flags;
+	q->flags = q->st.curr_m->flags;
 	q->numbervars = false;
 	cell *p2_orig = p2, *vnames = NULL;
 	pl_idx p2_orig_ctx = p2_ctx, vnames_ctx = 0;
@@ -2954,7 +2954,7 @@ static bool bif_iso_write_term_3(query *q)
 		return throw_error(q, &tmp, q->st.curr_frame, "permission_error", "output,binary_stream");
 	}
 
-	q->flags = q->st.m->flags;
+	q->flags = q->st.curr_m->flags;
 	q->numbervars = false;
 	cell *p2_orig = p2, *vnames = NULL;
 	pl_idx p2_orig_ctx = p2_ctx, vnames_ctx;
@@ -4187,8 +4187,8 @@ static bool bif_sys_read_term_from_chars_4(query *q)
 		return throw_error(q, p_chars, p_chars_ctx, "type_error", "character");
 	}
 
-	str->p = parser_create(q->st.m);
-	str->p->flags = q->st.m->flags;
+	str->p = parser_create(q->st.curr_m);
+	str->p->flags = q->st.curr_m->flags;
 	str->p->fp = str->fp;
 	reset(str->p);
 	str->p->srcptr = src;
@@ -4282,8 +4282,8 @@ static bool bif_read_term_from_chars_3(query *q)
 		return throw_error(q, p_chars, p_chars_ctx, "type_error", "character");
 	}
 
-	str->p = parser_create(q->st.m);
-	str->p->flags = q->st.m->flags;
+	str->p = parser_create(q->st.curr_m);
+	str->p->flags = q->st.curr_m->flags;
 	str->p->fp = str->fp;
 	reset(str->p);
 	char *save_src = src;
@@ -4361,7 +4361,7 @@ static bool bif_write_term_to_atom_3(query *q)
 	GET_NEXT_ARG(p2,list_or_nil);
 	cell *vnames = NULL;
 	pl_idx vnames_ctx = 0;
-	q->flags = q->st.m->flags;
+	q->flags = q->st.curr_m->flags;
 	LIST_HANDLER(p2);
 
 	while (is_list(p2)) {
@@ -4393,7 +4393,7 @@ static bool bif_write_term_to_chars_3(query *q)
 	GET_NEXT_ARG(p_chars,atom_or_var);
 	cell *vnames = NULL;
 	pl_idx vnames_ctx = 0;
-	q->flags = q->st.m->flags;
+	q->flags = q->st.curr_m->flags;
 	LIST_HANDLER(p2);
 
 	while (is_list(p2)) {
@@ -4425,7 +4425,7 @@ static bool bif_write_canonical_to_chars_3(query *q)
 	GET_NEXT_ARG(p2,list_or_nil);
 	cell *vnames = NULL;
 	pl_idx vnames_ctx = 0;
-	q->flags = q->st.m->flags;
+	q->flags = q->st.curr_m->flags;
 	LIST_HANDLER(p2);
 
 	while (is_list(p2)) {
@@ -4777,12 +4777,12 @@ static bool do_consult(query *q, cell *p1, pl_idx p1_ctx)
 {
 	if (is_atom(p1)) {
 		char *src = DUP_STRING(q, p1);
-		char *filename = relative_to(q->st.m->filename, src);
+		char *filename = relative_to(q->st.curr_m->filename, src);
 		convert_path(filename);
-		unload_file(q->st.m, filename);
+		unload_file(q->st.curr_m, filename);
 		free(src);
 
-		if (!load_file(q->st.m, filename, false)) {
+		if (!load_file(q->st.curr_m, filename, false)) {
 			free(filename);
 			return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 		}
@@ -4805,9 +4805,9 @@ static bool do_consult(query *q, cell *p1, pl_idx p1_ctx)
 
 	module *tmp_m = module_create(q->pl, C_STR(q, mod));
 	char *filename = C_STR(q, file);
-	filename = relative_to(q->st.m->filename, filename);
+	filename = relative_to(q->st.curr_m->filename, filename);
 	convert_path(filename);
-	unload_file(q->st.m, filename);
+	unload_file(q->st.curr_m, filename);
 
 	if (!load_file(tmp_m, filename, false)) {
 		module_destroy(tmp_m);
@@ -4823,9 +4823,9 @@ static bool do_deconsult(query *q, cell *p1, pl_idx p1_ctx)
 {
 	if (is_atom(p1)) {
 		char *src = DUP_STRING(q, p1);
-		char *filename = relative_to(q->st.m->filename, src);
+		char *filename = relative_to(q->st.curr_m->filename, src);
 		convert_path(filename);
-		unload_file(q->st.m, filename);
+		unload_file(q->st.curr_m, filename);
 		free(filename);
 		free(src);
 		return true;
@@ -4845,9 +4845,9 @@ static bool do_deconsult(query *q, cell *p1, pl_idx p1_ctx)
 
 	module *tmp_m = module_create(q->pl, C_STR(q, mod));
 	char *filename = C_STR(q, file);
-	filename = relative_to(q->st.m->filename, filename);
+	filename = relative_to(q->st.curr_m->filename, filename);
 	convert_path(filename);
-	unload_file(q->st.m, filename);
+	unload_file(q->st.curr_m, filename);
 	free(filename);
 	return true;
 }

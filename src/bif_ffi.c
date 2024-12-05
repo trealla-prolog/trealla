@@ -638,7 +638,7 @@ bool bif_sys_register_predicate_4(query *q)
 	if (!(p1->flags & FLAG_INT_HANDLE) && !(p1->flags & FLAG_HANDLE_DLL))
 		return throw_error(q, p1, p1_ctx, "existence_error", "handle");
 
-	return do_register_predicate(q->st.m, q, (void*)(size_t)get_smallint(p1), C_STR(q, p2), p3, p3_ctx, C_STR(q, p4));
+	return do_register_predicate(q->st.curr_m, q, (void*)(size_t)get_smallint(p1), C_STR(q, p2), p3, p3_ctx, C_STR(q, p4));
 }
 
 bool wrap_ffi_function(query *q, builtins *ptr)
@@ -1910,7 +1910,7 @@ static bool bif_foreign_struct_2(query *q)
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,list_or_nil);
 
-	return do_foreign_struct(q->st.m, q->st.curr_instr);
+	return do_foreign_struct(q->st.curr_m, q->st.curr_instr);
 }
 
 static bool bif_use_foreign_module_2(query *q)
@@ -1918,7 +1918,7 @@ static bool bif_use_foreign_module_2(query *q)
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,list_or_nil);
 
-	return do_use_foreign_module(q->st.m, q->st.curr_instr);
+	return do_use_foreign_module(q->st.curr_m, q->st.curr_instr);
 }
 
 static bool bif_sys_struct_to_pointer_2(query *q)

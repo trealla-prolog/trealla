@@ -645,7 +645,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 	}
 
 	if (str == NULL) {
-		int n = q->st.m->pl->current_output;
+		int n = q->st.curr_m->pl->current_output;
 		stream *str = &q->pl->streams[n];
 		net_write(tmpbuf, len, str);
 	} else if (is_compound(str)

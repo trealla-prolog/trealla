@@ -391,7 +391,7 @@ static bool bif_engine_create_4(query *q)
 	str->first_time = str->is_engine = true;
 	str->curr_yield = NULL;
 
-	str->engine = query_create(q->st.m);
+	str->engine = query_create(q->st.curr_m);
 	str->engine->curr_engine = n;
 	str->engine->is_engine = true;
 	str->engine->trace = q->trace;

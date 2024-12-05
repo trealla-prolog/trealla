@@ -538,7 +538,7 @@ struct run_state_ {
 	cell *curr_instr;
 	rule *curr_rule;
 	sliter *iter, *f_iter;
-	module *m;
+	module *curr_m;
 
 	union {
 		struct { cell *key; bool karg1_is_ground:1, karg2_is_ground:1, karg1_is_atomic:1, karg2_is_atomic:1;};
