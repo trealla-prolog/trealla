@@ -607,10 +607,10 @@ static void reuse_frame(query *q, const clause *cl)
 	trim_trail(q);
 	q->st.hp = f->hp;
 	q->st.heap_nbr = f->heap_nbr;
+	trim_heap(q);
 	q->st.sp = f->base + cl->nbr_vars;
 	q->st.curr_rule->tcos++;
 	q->tot_tcos++;
-	trim_heap(q);
 }
 
 static bool commit_any_choices(const query *q, const frame *f)
