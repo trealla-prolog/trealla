@@ -11,6 +11,8 @@ f(1) :- true.
 test3(0) :- !, statistics(frames, Fs), statistics(choices, Cs), statistics(trails, Ts), statistics(slots, Ss), write([Fs,Cs,Ts,Ss]), nl, fail.
 test3(N) :- f(_), N1 is N-1, test3(N1).
 
+% TODO
+
 f(_, _) :- true.
 test4(0) :- !, statistics(frames, Fs), statistics(choices, Cs), statistics(trails, Ts), statistics(slots, Ss), write([Fs,Cs,Ts,Ss]), nl, fail.
 test4(N) :- f(N, _), N1 is N-1, test4(N1).
