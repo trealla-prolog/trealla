@@ -861,6 +861,9 @@ static bool resume_frame(query *q)
 		&& (q->st.fp == (q->st.curr_frame + 1))
 		&& !resume_any_choices(q, f)
 		) {
+		q->st.hp = f->hp;
+		q->st.heap_nbr = f->heap_nbr;
+		trim_heap(q);
 		q->st.sp -= f->actual_slots;
 		q->st.fp--;
 	}
