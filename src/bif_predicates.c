@@ -1712,11 +1712,11 @@ static bool bif_iso_univ_2(query *q)
 			cell *h = LIST_HEAD(l);
 			h = deref(q, h, l_ctx);
 			pl_idx h_ctx = q->latest_ctx;
+			cell *tmp = deep_clone_to_tmp(q, h, h_ctx);
 
-			if (is_cstring(h) && is_string(save_p2))
-				convert_to_literal(q->st.curr_m, h);
+			if (is_cstring(tmp) && is_string(save_p2))
+				convert_to_literal(q->st.curr_m, tmp);
 
-			deep_clone_to_tmp(q, h, h_ctx);
 			l = LIST_TAIL(l);
 			l = deref(q, l, l_ctx);
 			l_ctx = q->latest_ctx;
