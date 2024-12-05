@@ -26,7 +26,7 @@ bool bif_iso_cut_0(query *q)
 
 bool bif_sys_drop_barrier_1(query *q)
 {
-	GET_FIRST_RAW_ARG(p1,integer)
+	GET_FIRST_ARG(p1,integer)
 	q->tot_inferences--;
 	drop_barrier(q, get_smalluint(p1));
 
