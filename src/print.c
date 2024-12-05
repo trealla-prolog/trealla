@@ -622,7 +622,8 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			pl_idx v_ctx = c_ctx;
 
 			if (q->portray_vars || q->do_dump_vars) {
-				SB_sprintf(q->sb, "%s", q->p->vartab.name[q->dump_var_nbr]);
+				//SB_sprintf(q->sb, "%s", q->p->vartab.name[q->dump_var_nbr]);
+				SB_sprintf(q->sb, "%s", C_STR(q, save_head));
 			} else {
 				SB_sprintf(q->sb, "%s", "...");
 			}
