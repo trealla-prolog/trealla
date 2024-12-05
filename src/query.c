@@ -445,7 +445,7 @@ static void leave_predicate(query *q, predicate *pr)
 
 			sl_rem(pr->idx, c, r);
 
-			if (q->no_tco) {
+			if (q->unify_no_tco) {
 				r->cl.is_deleted = true;
 				list_push_back(&q->dirty, r);
 			} else {
@@ -488,7 +488,7 @@ void try_me(query *q, unsigned nbr_vars)
 	frame *f = GET_NEW_FRAME();
 	f->initial_slots = f->actual_slots = nbr_vars;
 	f->base = q->st.sp;
-	f->no_tco = false;
+	f->unify_no_tco = false;
 	slot *e = GET_SLOT(f, 0);
 	memset(e, 0, sizeof(slot)*nbr_vars);
 	q->tot_matches++;
@@ -576,7 +576,7 @@ static frame *push_frame(query *q, const clause *cl)
 	f->initial_slots = f->actual_slots = cl->nbr_vars;
 	f->chgen = ++q->chgen;
 	f->has_local_vars = cl->has_local_vars;
-	f->no_tco = q->no_tco;
+	f->unify_no_tco = q->unify_no_tco;
 	f->overflow = 0;
 	q->st.sp += cl->nbr_vars;
 	q->st.curr_frame = new_frame;
@@ -639,10 +639,10 @@ static void commit_frame(query *q)
 
 #if 0
 	if (q->st.curr_rule->owner->is_tco)
-		q->no_tco = false;
+		q->unify_no_tco = false;
 #endif
 
-	if (!q->no_tco
+	if (!q->unify_no_tco
 		&& last_match
 		&& (q->st.fp == (q->st.curr_frame + 1))	// At top of frame stack
 		&& !q->st.curr_m->no_tco						// For CLPZ
@@ -655,11 +655,11 @@ static void commit_frame(query *q)
 
 #if 0
 		fprintf(stderr,
-			"*** %s/%u tco=%d,q->no_tco=%d,last_match=%d,is_det=%d,"
+			"*** %s/%u tco=%d,q->unify_no_tco=%d,last_match=%d,is_det=%d,"
 			"next_key=%d,tail_call=%d/r%d,slots_ok=%d,choices=%d,"
 			"cl->nbr_vars=%u,f->initial_slots=%u/%u\n",
 			C_STR(q, head), head->arity,
-			tco, q->no_tco, last_match, is_det,
+			tco, q->unify_no_tco, last_match, is_det,
 			next_key, tail_call, tail_recursive, slots_ok, choices,
 			cl->nbr_vars, f->initial_slots, f->actual_slots);
 #endif
@@ -856,7 +856,7 @@ static bool resume_frame(query *q)
 		return false;
 
 	if (q->pl->opt
-		&& !f->no_tco
+		&& !f->unify_no_tco
 		&& !f->has_local_vars
 		&& (q->st.fp == (q->st.curr_frame + 1))
 		&& !resume_any_choices(q, f)
