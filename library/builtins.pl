@@ -109,7 +109,7 @@ catch(G, E, C) :-
 
 call_det(G, Det) :-
 	'$get_level'(L1),
-	G,
+	call(G),
 	'$get_level'(L2),
 	(L1 = L2 -> Det = true; Det = false).
 
