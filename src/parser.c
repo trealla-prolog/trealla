@@ -337,6 +337,7 @@ void parser_destroy(parser *p)
 
 	if (p->cl) {
 		clear_clause(p->cl);
+		free(p->cl->alt);
 		free(p->cl);
 		p->cl = NULL;
 	}
@@ -1864,6 +1865,7 @@ static bool dcg_expansion(parser *p)
 	free(src);
 
 	clear_clause(p->cl);
+	free(p->cl->alt);
 	free(p->cl);
 	p->cl = p2->cl;					// Take the completed clause
 	p->nbr_vars = p2->nbr_vars;
@@ -1945,6 +1947,7 @@ static bool term_expansion(parser *p)
 	free(src);
 
 	clear_clause(p->cl);
+	free(p->cl->alt);
 	free(p->cl);
 	p->cl = p2->cl;					// Take the completed clause
 	p->nbr_vars = p2->nbr_vars;
@@ -2110,6 +2113,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	memcpy(goal, p2->cl->cells, sizeof(cell)*new_cells);
 	p->cl->cidx += new_cells;
 	clear_clause(p2->cl);
+	free(p2->cl->alt);
 	free(p2->cl);
 	p2->cl = NULL;
 
