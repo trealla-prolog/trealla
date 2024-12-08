@@ -892,20 +892,7 @@ static bool bif_iso_round_1(query *q)
 	CLEANUP cell p1 = eval(q, p1_tmp);
 
 	if (is_float(&p1)) {
-		pl_flt f = fabs(p1.val_float);
-
-#ifdef FE_UPWARD
-		if ((f - floor(f)) > 0.5)
-			fesetround(FE_TONEAREST);
-		else if ((f - floor(f)) == 0.5)
-			fesetround(FE_UPWARD);
-		else
-			fesetround(FE_TONEAREST);
-#else
-		fesetround(FE_TONEAREST);
-#endif
-
-		q->accum.val_int = llrint(p1.val_float);
+		q->accum.val_int = floor(p1.val_float+0.5);
 
 #ifdef FE_INVALID
 		if (fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW)) {
