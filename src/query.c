@@ -1404,6 +1404,7 @@ static bool match_head(query *q)
 				return false;
 			}
 
+			c->flags = 0;
 			c->match = pr;
 		}
 
