@@ -897,8 +897,10 @@ static bool bif_iso_round_1(query *q)
 #ifdef FE_UPWARD
 		if ((f - floor(f)) > 0.5)
 			fesetround(FE_TONEAREST);
-		else
+		else if ((f - floor(f)) == 0.5)
 			fesetround(FE_UPWARD);
+		else
+			fesetround(FE_TONEAREST);
 #else
 		fesetround(FE_TONEAREST);
 #endif
