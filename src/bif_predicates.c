@@ -5653,6 +5653,8 @@ bool bif_iso_qualify_2(query *q)
 		if (!m && strcmp(C_STR(q, p1), "loader"))
 			return throw_error(q, p1, q->st.curr_frame, "existence_error", "module");
 
+		if (!m)
+			m = q->st.curr_m;
 	}
 
 	cell *tmp = prepare_call(q, PREFIX_LEN, p2, p2_ctx, 4);
