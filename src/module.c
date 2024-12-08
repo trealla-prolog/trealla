@@ -1959,6 +1959,13 @@ rule *assertz_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 	}
 	 while (!check_not_multifile(m, pr, r));
 
+	// TODO: compress cells
+
+	if (consulting) {
+		r->cl.alt = calloc(1, sizeof(cell) * r->cl.cidx);
+		copy_cells(r->cl.alt, r->cl.cells, r->cl.cidx);
+	}
+
 	r->prev = pr->tail;
 	pr->tail = r;
 

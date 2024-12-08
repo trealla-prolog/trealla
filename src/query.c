@@ -416,6 +416,7 @@ static void leave_predicate(query *q, predicate *pr)
 		while ((r = list_pop_front(&pr->dirty)) != NULL) {
 			predicate_delink(pr, r);
 			clear_clause(&r->cl);
+			free(r->cl.alt);
 			free(r);
 		}
 
@@ -450,6 +451,7 @@ static void leave_predicate(query *q, predicate *pr)
 				list_push_back(&q->dirty, r);
 			} else {
 				clear_clause(&r->cl);
+				free(r->cl.alt);
 				free(r);
 			}
 		} else {
@@ -1794,6 +1796,7 @@ static void query_purge_dirty_list(query *q)
 
 	while ((r = list_pop_front(&q->dirty)) != NULL) {
 		clear_clause(&r->cl);
+		free(r->cl.alt);
 		free(r);
 		cnt++;
 	}
