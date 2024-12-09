@@ -1961,9 +1961,14 @@ rule *assertz_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 
 	// TODO: compress cells
 
-	if (consulting) {
-		r->cl.alt = malloc(sizeof(cell) * r->cl.cidx);
-		copy_cells(r->cl.alt, r->cl.cells, r->cl.cidx);
+	if (consulting && !pr->is_dynamic) {
+		cell *body = get_body(r->cl.cells);
+
+		if (body) {
+			pl_idx nbr_cells = r->cl.cidx - (body - r->cl.cells);
+			r->cl.alt = malloc(sizeof(cell) * nbr_cells);
+			copy_cells(r->cl.alt, body, nbr_cells);
+		}
 	}
 
 	r->prev = pr->tail;

@@ -687,7 +687,7 @@ static void commit_frame(query *q)
 	}
 
 	Trace(q, head, q->st.curr_frame, EXIT);
-	q->st.curr_instr = body;
+	q->st.curr_instr = cl->alt ? cl->alt : body;
 	q->st.iter = NULL;
 }
 
