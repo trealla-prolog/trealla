@@ -1964,7 +1964,7 @@ rule *assertz_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 	if (consulting && !pr->is_dynamic && m->pl->opt) {
 		cell *body = get_body(r->cl.cells);
 
-		if (body) {
+		if (body && 0) {
 			pl_idx nbr_cells = r->cl.cidx - (body - r->cl.cells);
 			r->cl.alt = malloc(sizeof(cell) * nbr_cells);
 			cell *dst = r->cl.alt, *src = body;
@@ -1981,9 +1981,7 @@ rule *assertz_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 				nbr_cells -= n;
 			}
 
-			if (nbr_cells)
-				dst += copy_cells(dst, src, nbr_cells);
-
+			dst += copy_cells(dst, src, nbr_cells);
 			r->cl.cidx = dst - r->cl.alt;
 		}
 	}
