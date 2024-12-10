@@ -1944,8 +1944,10 @@ rule *asserta_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 static void compile(rule *r, cell *body)
 {
 #if 0
+	r->cl.alt = body;
 #elif 1
 	pl_idx nbr_cells = r->cl.cidx - (body - r->cl.cells);
+	printf("*** cidx=%u, nbr_cells=%u\n", r->cl.cidx, nbr_cells);
 	r->cl.alt = malloc(sizeof(cell) * nbr_cells);
 	cell *dst = r->cl.alt, *src = body;
 	copy_cells(dst, src, nbr_cells);
@@ -1968,7 +1970,6 @@ static void compile(rule *r, cell *body)
 
 	assert(src->tag == TAG_END);
 	copy_cells(dst, src, 1);
-	r->cl.cidx = dst - r->cl.alt;
 #endif
 }
 
@@ -1989,8 +1990,6 @@ rule *assertz_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 			pr->tail->next = r;
 	}
 	 while (!check_not_multifile(m, pr, r));
-
-	// TODO: compress cells
 
 	if (consulting && !pr->is_dynamic && m->pl->opt) {
 		cell *body = get_body(r->cl.cells);

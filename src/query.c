@@ -568,7 +568,6 @@ static void trim_trail(query *q)
 static frame *push_frame(query *q, const clause *cl)
 {
 	const frame *curr_f = GET_CURR_FRAME();
-	const cell *next_cell = q->st.curr_instr + q->st.curr_instr->nbr_cells;
 	pl_idx new_frame = q->st.fp++;
 	frame *f = GET_FRAME(new_frame);
 	f->prev = q->st.curr_frame;
