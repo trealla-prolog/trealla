@@ -1541,6 +1541,42 @@ static void check_goal_expansion(module *m, cell *p1)
 	create_goal_expansion(m, arg1);
 }
 
+static void compile(rule *r, cell *body)
+{
+#if 0
+	// Do nothing
+#elif 0
+	// Do nothing, but on a copy
+
+	pl_idx nbr_cells = r->cl.cidx - (body - r->cl.cells);
+	//printf("*** cidx=%u, nbr_cells=%u\n", r->cl.cidx, nbr_cells);
+	r->cl.alt = malloc(sizeof(cell) * nbr_cells);
+	cell *dst = r->cl.alt, *src = body;
+	copy_cells(dst, src, nbr_cells);
+#else
+	// Remove top-level conjunctions
+
+	pl_idx nbr_cells = r->cl.cidx - (body - r->cl.cells);
+	r->cl.alt = malloc(sizeof(cell) * nbr_cells);
+	cell *dst = r->cl.alt, *src = body;
+
+	while (!is_end(src)) {
+		if (src->val_off == g_conjunction_s) {
+			src++;
+			nbr_cells--;
+		}
+
+		pl_idx n = copy_cells(dst, src, src->nbr_cells);
+		dst += n;
+		src += n;
+		nbr_cells -= n;
+	}
+
+	assert(src->tag == TAG_END);
+	copy_cells(dst, src, 1);
+#endif
+}
+
 static void xref_cell(module *m, clause *cl, cell *c, predicate *parent, int last_was_colon, bool is_directive)
 {
 	cell *body = cl->cells;
@@ -1631,8 +1667,16 @@ static void xref_predicate(predicate *pr)
 
 	pr->is_processed = true;
 
-	for (rule *r = pr->head; r; r = r->next)
+	for (rule *r = pr->head; r; r = r->next) {
 		xref_clause(pr->m, &r->cl, pr);
+
+		if (pr->m->pl->opt) {
+			cell *body = get_body(r->cl.cells);
+
+			if (body)
+				compile(r, body);
+		}
+	}
 
 	if (pr->is_dynamic || pr->idx)
 		return;
@@ -1941,38 +1985,6 @@ rule *asserta_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 	return r;
 }
 
-static void compile(rule *r, cell *body)
-{
-#if 0
-	//r->cl.alt = body;
-#elif 1
-	pl_idx nbr_cells = r->cl.cidx - (body - r->cl.cells);
-	//printf("*** cidx=%u, nbr_cells=%u\n", r->cl.cidx, nbr_cells);
-	r->cl.alt = malloc(sizeof(cell) * nbr_cells);
-	cell *dst = r->cl.alt, *src = body;
-	copy_cells(dst, src, nbr_cells);
-#else
-	pl_idx nbr_cells = r->cl.cidx - (body - r->cl.cells);
-	r->cl.alt = malloc(sizeof(cell) * nbr_cells);
-	cell *dst = r->cl.alt, *src = body;
-
-	while (!is_end(src)) {
-		if (src->val_off == g_conjunction_s) {
-			src++;
-			nbr_cells--;
-		}
-
-		pl_idx n = copy_cells(dst, src, src->nbr_cells);
-		dst += n;
-		src += n;
-		nbr_cells -= n;
-	}
-
-	assert(src->tag == TAG_END);
-	copy_cells(dst, src, 1);
-#endif
-}
-
 rule *assertz_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 {
 	predicate *pr;
@@ -1990,13 +2002,6 @@ rule *assertz_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 			pr->tail->next = r;
 	}
 	 while (!check_not_multifile(m, pr, r));
-
-	if (consulting && !pr->is_dynamic && m->pl->opt) {
-		cell *body = get_body(r->cl.cells);
-
-		if (body)
-			compile(r, body);
-	}
 
 	r->prev = pr->tail;
 	pr->tail = r;
