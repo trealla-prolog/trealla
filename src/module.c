@@ -1545,10 +1545,8 @@ static void compile_term(cell **dst, cell **src)
 {
 	if ((*src)->val_off == g_conjunction_s) {
 		*src += 1;
-		pl_idx n = copy_cells(*dst, *src, (*src)->nbr_cells);
-		*dst += n;
-		*src += n;
-		compile_term(dst, src);
+		compile_term(dst, src);		// LHS
+		compile_term(dst, src);		// RHS
 		return;
 	} else {
 		pl_idx n = copy_cells(*dst, *src, (*src)->nbr_cells);
