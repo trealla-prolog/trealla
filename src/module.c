@@ -1541,30 +1541,6 @@ static void check_goal_expansion(module *m, cell *p1)
 	create_goal_expansion(m, arg1);
 }
 
-static void compile_term(cell **dst, cell **src)
-{
-	if ((*src)->val_off == g_conjunction_s) {
-		*src += 1;
-		compile_term(dst, src);		// LHS
-		compile_term(dst, src);		// RHS
-		return;
-	} else {
-		pl_idx n = copy_cells(*dst, *src, (*src)->nbr_cells);
-		*dst += n;
-		*src += n;
-	}
-}
-
-static void compile_clause(clause *cl, cell *body)
-{
-	pl_idx nbr_cells = cl->cidx - (body - cl->cells);
-	cl->alt = malloc(sizeof(cell) * nbr_cells);
-	cell *dst = cl->alt, *src = body;
-	compile_term(&dst, &src);
-	assert(src->tag == TAG_END);
-	copy_cells(dst, src, 1);
-}
-
 static void xref_cell(module *m, clause *cl, cell *c, predicate *parent, int last_was_colon, bool is_directive)
 {
 	cell *body = cl->cells;

@@ -19,6 +19,9 @@ void read_integer(parser *p, mp_int v2, int base, const char **srcptr);
 void share_cells(cell *src, pl_idx nbr_cells);
 void unshare_cells(cell *src, pl_idx nbr_cells);
 
+void compile_term(cell **dst, cell **src);
+void compile_clause(clause *cl, cell *body);
+
 void make_uint(cell *tmp, pl_uint v);
 void make_int(cell *tmp, pl_int v);
 void make_float(cell *tmp, pl_flt v);

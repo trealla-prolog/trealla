@@ -329,6 +329,30 @@ static cell *make_a_cell(parser *p)
 	return ret;
 }
 
+void compile_term(cell **dst, cell **src)
+{
+	if ((*src)->val_off == g_conjunction_s) {
+		*src += 1;
+		compile_term(dst, src);		// LHS
+		compile_term(dst, src);		// RHS
+		return;
+	} else {
+		pl_idx n = copy_cells(*dst, *src, (*src)->nbr_cells);
+		*dst += n;
+		*src += n;
+	}
+}
+
+void compile_clause(clause *cl, cell *body)
+{
+	pl_idx nbr_cells = cl->cidx - (body - cl->cells);
+	cl->alt = malloc(sizeof(cell) * nbr_cells);
+	cell *dst = cl->alt, *src = body;
+	compile_term(&dst, &src);
+	assert(src->tag == TAG_END);
+	copy_cells(dst, src, 1);
+}
+
 void parser_destroy(parser *p)
 {
 	if (!p) return;

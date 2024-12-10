@@ -6086,10 +6086,22 @@ static bool bif_abort_0(query *q)
 	return throw_error(q, q->st.curr_instr, q->st.curr_frame, "$aborted", "abort_error");
 }
 
-static bool bif_sys_choice_0(query *q)
+static bool bif_sys_fail_on_retry_1(query *q)
 {
+	GET_FIRST_ARG(p1,var);
+	cell tmp;
+	make_uint(&tmp, (pl_uint)q->cp);
 	check_heap_error(push_fail_on_retry(q));
-	return true;
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+static bool bif_sys_succeed_on_retry_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	cell tmp;
+	make_uint(&tmp, (pl_uint)q->cp);
+	check_heap_error(push_succeed_on_retry(q));
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
 static bool bif_iso_compare_3(query *q)
@@ -6725,7 +6737,8 @@ builtins g_other_bifs[] =
 	{"$list", 1, bif_sys_list_1, "-list", false, false, BLAH},
 	{"$queue", 1, bif_sys_queue_1, "+term", false, false, BLAH},
 	{"$incr", 2, bif_sys_incr_2, "@integer,+integer", false, false, BLAH},
-	{"$choice", 0, bif_sys_choice_0, NULL, false, false, BLAH},
+	{"$fail_on_retry", 1, bif_sys_fail_on_retry_1, "-integer", false, false, BLAH},
+	{"$succeed_on_retry", 1, bif_sys_succeed_on_retry_1, "-integer", false, false, BLAH},
 	{"$alarm", 1, bif_sys_alarm_1, "+integer", false, false, BLAH},
 	{"$first_non_octet", 2, bif_sys_first_non_octet_2, "+chars,-integer", false, false, BLAH},
 	{"$skip_max_list", 4, bif_sys_skip_max_list_4, "?integer,?integer?,?term,?term", false, false, BLAH},
