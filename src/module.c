@@ -1943,6 +1943,13 @@ rule *asserta_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 
 static void compile(rule *r, cell *body)
 {
+#if 0
+#elif 1
+	pl_idx nbr_cells = r->cl.cidx - (body - r->cl.cells);
+	r->cl.alt = malloc(sizeof(cell) * nbr_cells);
+	cell *dst = r->cl.alt, *src = body;
+	copy_cells(dst, src, nbr_cells);
+#else
 	pl_idx nbr_cells = r->cl.cidx - (body - r->cl.cells);
 	r->cl.alt = malloc(sizeof(cell) * nbr_cells);
 	cell *dst = r->cl.alt, *src = body;
@@ -1959,8 +1966,10 @@ static void compile(rule *r, cell *body)
 		nbr_cells -= n;
 	}
 
-	dst += copy_cells(dst, src, nbr_cells);
+	assert(src->tag == TAG_END);
+	copy_cells(dst, src, 1);
 	r->cl.cidx = dst - r->cl.alt;
+#endif
 }
 
 rule *assertz_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
