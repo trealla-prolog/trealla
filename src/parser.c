@@ -329,6 +329,10 @@ static cell *make_a_cell(parser *p)
 	return ret;
 }
 
+// Eventually control structures will be pre-compiled
+// so they don't get allocated on the heap at run-time.
+// For now just strip conjunctions.
+
 void compile_term(cell **dst, cell **src)
 {
 	if ((*src)->val_off == g_conjunction_s) {
