@@ -1541,6 +1541,22 @@ static void check_goal_expansion(module *m, cell *p1)
 	create_goal_expansion(m, arg1);
 }
 
+static void compile_term(cell **dst, cell **src)
+{
+	if ((*src)->val_off == g_conjunction_s) {
+		*src += 1;
+		pl_idx n = copy_cells(*dst, *src, (*src)->nbr_cells);
+		*dst += n;
+		*src += n;
+		compile_term(dst, src);
+		return;
+	} else {
+		pl_idx n = copy_cells(*dst, *src, (*src)->nbr_cells);
+		*dst += n;
+		*src += n;
+	}
+}
+
 static void compile_clause(clause *cl, cell *body)
 {
 #if 0
@@ -1551,19 +1567,7 @@ static void compile_clause(clause *cl, cell *body)
 	pl_idx nbr_cells = cl->cidx - (body - cl->cells);
 	cl->alt = malloc(sizeof(cell) * nbr_cells);
 	cell *dst = cl->alt, *src = body;
-
-	while (!is_end(src)) {
-		if (src->val_off == g_conjunction_s) {
-			src++;
-			nbr_cells--;
-		}
-
-		pl_idx n = copy_cells(dst, src, src->nbr_cells);
-		dst += n;
-		src += n;
-		nbr_cells -= n;
-	}
-
+	compile_term(&dst, &src);
 	assert(src->tag == TAG_END);
 	copy_cells(dst, src, 1);
 #endif
