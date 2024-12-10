@@ -1941,6 +1941,28 @@ rule *asserta_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 	return r;
 }
 
+static void compile(rule *r, cell *body)
+{
+	pl_idx nbr_cells = r->cl.cidx - (body - r->cl.cells);
+	r->cl.alt = malloc(sizeof(cell) * nbr_cells);
+	cell *dst = r->cl.alt, *src = body;
+
+	while (!is_end(src)) {
+		if (src->val_off == g_conjunction_s) {
+			src++;
+			nbr_cells--;
+		}
+
+		pl_idx n = copy_cells(dst, src, src->nbr_cells);
+		dst += n;
+		src += n;
+		nbr_cells -= n;
+	}
+
+	dst += copy_cells(dst, src, nbr_cells);
+	r->cl.cidx = dst - r->cl.alt;
+}
+
 rule *assertz_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 {
 	predicate *pr;
@@ -1964,26 +1986,8 @@ rule *assertz_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 	if (consulting && !pr->is_dynamic && m->pl->opt) {
 		cell *body = get_body(r->cl.cells);
 
-		if (body && 0) {
-			pl_idx nbr_cells = r->cl.cidx - (body - r->cl.cells);
-			r->cl.alt = malloc(sizeof(cell) * nbr_cells);
-			cell *dst = r->cl.alt, *src = body;
-
-			while (!is_end(src)) {
-				if (src->val_off == g_conjunction_s) {
-					src++;
-					nbr_cells--;
-				}
-
-				pl_idx n = copy_cells(dst, src, src->nbr_cells);
-				dst += n;
-				src += n;
-				nbr_cells -= n;
-			}
-
-			dst += copy_cells(dst, src, nbr_cells);
-			r->cl.cidx = dst - r->cl.alt;
-		}
+		if (body)
+			compile(r, body);
 	}
 
 	r->prev = pr->tail;
