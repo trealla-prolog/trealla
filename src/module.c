@@ -1541,24 +1541,16 @@ static void check_goal_expansion(module *m, cell *p1)
 	create_goal_expansion(m, arg1);
 }
 
-static void compile(rule *r, cell *body)
+static void compile_clause(clause *cl, cell *body)
 {
 #if 0
 	// Do nothing
-#elif 0
-	// Do nothing, but on a copy
-
-	pl_idx nbr_cells = r->cl.cidx - (body - r->cl.cells);
-	//printf("*** cidx=%u, nbr_cells=%u\n", r->cl.cidx, nbr_cells);
-	r->cl.alt = malloc(sizeof(cell) * nbr_cells);
-	cell *dst = r->cl.alt, *src = body;
-	copy_cells(dst, src, nbr_cells);
-#else
+#elif 1
 	// Remove top-level conjunctions
 
-	pl_idx nbr_cells = r->cl.cidx - (body - r->cl.cells);
-	r->cl.alt = malloc(sizeof(cell) * nbr_cells);
-	cell *dst = r->cl.alt, *src = body;
+	pl_idx nbr_cells = cl->cidx - (body - cl->cells);
+	cl->alt = malloc(sizeof(cell) * nbr_cells);
+	cell *dst = cl->alt, *src = body;
 
 	while (!is_end(src)) {
 		if (src->val_off == g_conjunction_s) {
@@ -1679,7 +1671,7 @@ static void xref_predicate(predicate *pr)
 			cell *body = get_body(r->cl.cells);
 
 			if (body)
-				compile(r, body);
+				compile_clause(&r->cl, body);
 		}
 	}
 
