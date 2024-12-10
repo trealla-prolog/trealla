@@ -276,6 +276,22 @@ void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs)
 	tr->attrs = attrs;
 }
 
+cell *prepare_call(query *q, bool prefix, cell *p1, pl_idx p1_ctx, unsigned extras)
+{
+	unsigned nbr_cells = (prefix ? PREFIX_LEN : NOPREFIX_LEN) + p1->nbr_cells + extras;
+	cell *tmp = alloc_on_heap(q, nbr_cells);
+	if (!tmp) return NULL;
+
+	if (prefix) {
+		// Placeholder needed for follow() to work, get's skipped
+		make_struct(tmp, g_dummy_s, bif_iso_true_0, 0, 0);
+	}
+
+	cell *dst = tmp + (prefix ? PREFIX_LEN : NOPREFIX_LEN);
+	dup_cells_by_ref(dst, p1, p1_ctx, p1->nbr_cells);
+	return tmp;
+}
+
 const char *dump_id(const void *k, const void *v, const void *p)
 {
 	uint64_t id = (uint64_t)(size_t)k;
