@@ -1557,18 +1557,12 @@ static void compile_term(cell **dst, cell **src)
 
 static void compile_clause(clause *cl, cell *body)
 {
-#if 0
-	// Do nothing
-#elif 1
-	// Remove top-level conjunctions
-
 	pl_idx nbr_cells = cl->cidx - (body - cl->cells);
 	cl->alt = malloc(sizeof(cell) * nbr_cells);
 	cell *dst = cl->alt, *src = body;
 	compile_term(&dst, &src);
 	assert(src->tag == TAG_END);
 	copy_cells(dst, src, 1);
-#endif
 }
 
 static void xref_cell(module *m, clause *cl, cell *c, predicate *parent, int last_was_colon, bool is_directive)
@@ -1668,6 +1662,7 @@ static void xref_predicate(predicate *pr)
 	if (pr->is_dynamic || pr->idx)
 		return;
 
+#if 1
 	for (rule *r = pr->head; r; r = r->next) {
 		if (pr->m->pl->opt) {
 			cell *body = get_body(r->cl.cells);
@@ -1676,6 +1671,7 @@ static void xref_predicate(predicate *pr)
 				compile_clause(&r->cl, body);
 		}
 	}
+#endif
 
 	for (rule *r = pr->head; r; r = r->next)
 		optimize_rule(pr->m, r);
