@@ -1543,6 +1543,7 @@ static void check_goal_expansion(module *m, cell *p1)
 
 static void xref_cell(module *m, clause *cl, cell *c, predicate *parent, int last_was_colon, bool is_directive)
 {
+	cell *body = cl->cells;
 	unsigned specifier;
 
 	if ((c->arity == 2)
@@ -1557,8 +1558,8 @@ static void xref_cell(module *m, clause *cl, cell *c, predicate *parent, int las
 		cell *lhs = c + 1;
 
 		if (is_var(lhs) && !is_local(lhs)) {
-			for (pl_idx i = 0; i < cl->cidx; i++) {
-				cell *c2 = cl->cells + i;
+			cell *c2 = body;
+			for (pl_idx i = 0; i < cl->cidx; i++, c2++) {
 
 				if (is_var(c2) && (c2->var_nbr == lhs->var_nbr))
 					c2->flags |= FLAG_VAR_TEMPORARY;
@@ -1583,7 +1584,7 @@ static void xref_cell(module *m, clause *cl, cell *c, predicate *parent, int las
 	}
 
 	if (!is_directive) {
-		if ((c+c->nbr_cells) >= (cl->cells + cl->cidx-1)) {
+		if ((c+c->nbr_cells) >= (body + cl->cidx-1)) {
 			c->flags |= FLAG_TAIL_CALL;
 			if (parent
 				&& (parent->key.val_off == c->val_off)
@@ -1605,8 +1606,7 @@ void xref_clause(module *m, clause *cl, predicate *parent)
 	bool is_directive = is_check_directive(c);
 	int last_was_colon = 0;
 
-	for (pl_idx i = 0; i < cl->cidx; i++) {
-		cell *c = cl->cells + i;
+	for (pl_idx i = 0; i < cl->cidx; i++, c++) {
 		c->flags &= ~FLAG_TAIL_CALL;
 
 		if (!is_interned(c))
@@ -1631,11 +1631,21 @@ static void xref_predicate(predicate *pr)
 
 	pr->is_processed = true;
 
-	for (rule *r = pr->head; r; r = r->next)
+	for (rule *r = pr->head; r; r = r->next) {
 		xref_clause(pr->m, &r->cl, pr);
+	}
 
 	if (pr->is_dynamic || pr->idx)
 		return;
+
+	for (rule *r = pr->head; r; r = r->next) {
+		if (pr->m->pl->opt) {
+			cell *body = get_body(r->cl.cells);
+
+			if (body)
+				compile_clause(&r->cl, body);
+		}
+	}
 
 	for (rule *r = pr->head; r; r = r->next)
 		optimize_rule(pr->m, r);

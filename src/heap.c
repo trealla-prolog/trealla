@@ -337,22 +337,6 @@ cell *append_to_tmp(query *q, cell *p1, pl_idx p1_ctx)
 	return tmp;
 }
 
-cell *prepare_call(query *q, bool prefix, cell *p1, pl_idx p1_ctx, unsigned extras)
-{
-	unsigned nbr_cells = (prefix ? PREFIX_LEN : NOPREFIX_LEN) + p1->nbr_cells + extras;
-	cell *tmp = alloc_on_heap(q, nbr_cells);
-	if (!tmp) return NULL;
-
-	if (prefix) {
-		// Placeholder needed for follow() to work, get's skipped
-		make_struct(tmp, g_dummy_s, bif_iso_true_0, 0, 0);
-	}
-
-	cell *dst = tmp + (prefix ? PREFIX_LEN : NOPREFIX_LEN);
-	dup_cells_by_ref(dst, p1, p1_ctx, p1->nbr_cells);
-	return tmp;
-}
-
 static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_idx from_ctx, const cell *to, pl_idx to_ctx)
 {
 	unsigned nbr_cells = c->nbr_cells;

@@ -58,10 +58,12 @@ bool do_yield_then(query *q, bool status)
 	// With that we can continue as if the yield didn't happen
 	check_heap_error(push_choice(q));
 	choice *ch = GET_CURR_CHOICE();
+
 	if (status)
 		ch->succeed_on_retry = true;
 	else
 		ch->fail_on_retry = true;
+
 	return false;
 }
 
