@@ -1669,7 +1669,12 @@ static void xref_predicate(predicate *pr)
 
 	for (rule *r = pr->head; r; r = r->next) {
 		xref_clause(pr->m, &r->cl, pr);
+	}
 
+	if (pr->is_dynamic || pr->idx)
+		return;
+
+	for (rule *r = pr->head; r; r = r->next) {
 		if (pr->m->pl->opt) {
 			cell *body = get_body(r->cl.cells);
 
@@ -1677,9 +1682,6 @@ static void xref_predicate(predicate *pr)
 				compile(r, body);
 		}
 	}
-
-	if (pr->is_dynamic || pr->idx)
-		return;
 
 	for (rule *r = pr->head; r; r = r->next)
 		optimize_rule(pr->m, r);
