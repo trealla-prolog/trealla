@@ -788,7 +788,6 @@ struct parser_ {
 	bool already_loaded_error:1;
 	bool do_read_term:1;
 	bool is_string:1;
-	bool run_init:1;
 	bool directive:1;
 	bool consulting:1;
 	bool internal:1;
@@ -848,6 +847,7 @@ struct module_ {
 	bool wild_goal_expansion:1;
 	bool no_tco:1;
 	bool make:1;
+	bool run_init:1;
 };
 
 typedef struct {

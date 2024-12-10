@@ -669,7 +669,7 @@ static bool directives(parser *p, cell *d)
 	CLR_OP(d);
 
 	if (!strcmp(dirname, "initialization") && (c->arity == 1)) {
-		p->run_init = true;
+		p->m->run_init = true;
 		return false;
 	}
 
@@ -4153,7 +4153,7 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 		if (!p->cl->cidx)
 			break;
 
-		if (!p->error && !p->end_of_term && !p->run_init) {
+		if (!p->error && !p->end_of_term && !p->m->run_init) {
 			fprintf(stderr, "Error: syntax error, missing operand or operator, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 			p->error = true;
 		}
@@ -4184,7 +4184,7 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 
 		q->p = p;
 		q->do_dump_vars = dump;
-		q->run_init = p->run_init;
+		q->run_init = p->m->run_init;
 		execute(q, p->cl->cells, p->cl->nbr_vars);
 
 		if (q->halt) {

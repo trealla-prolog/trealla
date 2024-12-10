@@ -2043,7 +2043,7 @@ module *load_text(module *m, const char *src, const char *filename)
 		p->m->pl->halt = false;
 		p->directive = true;
 
-		if (p->run_init) {
+		if (p->m->run_init) {
 			p->consulting = false;
 			p->command = true;
 			SB(src);
@@ -2053,6 +2053,7 @@ module *load_text(module *m, const char *src, const char *filename)
 				p->m->pl->status = false;
 
 			SB_free(src);
+			p->m->run_init = false;
 		}
 
 		p->command = p->directive = false;
@@ -2185,7 +2186,7 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including)
 		int save = p->m->pl->quiet;
 		p->directive = true;
 
-		if (p->run_init) {
+		if (p->m->run_init && !including) {
 			p->command = true;
 			p->consulting = false;
 			SB(src);
@@ -2195,6 +2196,7 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including)
 				p->m->pl->status = false;
 
 			SB_free(src);
+			p->m->run_init = false;
 		}
 
 		p->command = p->directive = false;
