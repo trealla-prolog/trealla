@@ -1943,11 +1943,11 @@ rule *asserta_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting)
 
 static void compile(rule *r, cell *body)
 {
-#if 1
+#if 0
 	//r->cl.alt = body;
 #elif 1
 	pl_idx nbr_cells = r->cl.cidx - (body - r->cl.cells);
-	printf("*** cidx=%u, nbr_cells=%u\n", r->cl.cidx, nbr_cells);
+	//printf("*** cidx=%u, nbr_cells=%u\n", r->cl.cidx, nbr_cells);
 	r->cl.alt = malloc(sizeof(cell) * nbr_cells);
 	cell *dst = r->cl.alt, *src = body;
 	copy_cells(dst, src, nbr_cells);
