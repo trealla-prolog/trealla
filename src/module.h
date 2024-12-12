@@ -11,8 +11,8 @@ bool module_dump_term(module* m, cell *p1);
 
 bool restore_log(module *m, const char *filename);
 bool save_file(module *m, const char *filename);
-module *load_file(module *m, const char *filename, bool including);
-module *load_fp(module *m, FILE *fp, const char *filename, bool including);
+module *load_file(module *m, const char *filename, bool including, bool init);
+module *load_fp(module *m, FILE *fp, const char *filename, bool including, bool init);
 module *load_text(module *m, const char *src, const char *filename);
 bool unload_file(module *m, const char *filename);
 void set_unloaded(module *m, const char *filename);

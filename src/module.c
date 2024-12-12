@@ -270,7 +270,7 @@ void make(module *m)
 					unload_file(m, ptr->filename);
 
 				unload_file(m, parent_filename);
-				load_file(m, parent_filename, false);
+				load_file(m, parent_filename, false, true);
 				free(parent_filename);
 			}
 		}
@@ -897,7 +897,7 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 
 	//printf("*** %s / %s / %s\n", curr_m->filename, is_library?dstbuf:name, filename);
 
-	if (!(m = load_file(curr_m, filename, false))) {
+	if (!(m = load_file(curr_m, filename, false, true))) {
 		fprintf(stderr, "Warning: module file not found: %s\n", filename);
 		free(filename);
 		return false;
@@ -2144,7 +2144,7 @@ bool unload_file(module *m, const char *filename)
 	return ok;
 }
 
-module *load_fp(module *m, FILE *fp, const char *filename, bool including)
+module *load_fp(module *m, FILE *fp, const char *filename, bool including, bool init)
 {
 	parser *p = parser_create(m);
 	if (!p) return NULL;
@@ -2186,7 +2186,7 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including)
 		int save = p->m->pl->quiet;
 		p->directive = true;
 
-		if (p->m->run_init && !including) {
+		if (p->m->run_init && init) {
 			p->command = true;
 			p->consulting = false;
 			SB(src);
@@ -2240,7 +2240,7 @@ bool restore_log(module *m, const char *filename)
 	return true;
 }
 
-module *load_file(module *m, const char *filename, bool including)
+module *load_file(module *m, const char *filename, bool including, bool init)
 {
 	const char *orig_filename = filename;
 
@@ -2288,7 +2288,7 @@ module *load_file(module *m, const char *filename, bool including)
 				parser_destroy(p);
 			}
 
-			module *save_m = load_fp(m, str->fp, filename, including);
+			module *save_m = load_fp(m, str->fp, filename, including, init);
 			clearerr(str->fp);
 			return save_m;
 		}
@@ -2382,7 +2382,7 @@ module *load_file(module *m, const char *filename, bool including)
 		ensure(tmpbuf);
 		strcpy(tmpbuf, orig_filename);
 		strcat(tmpbuf, ".pl");
-		m = load_file(m, tmpbuf, including);
+		m = load_file(m, tmpbuf, including, init);
 		free(tmpbuf);
 		return m;
 	}
@@ -2405,7 +2405,7 @@ module *load_file(module *m, const char *filename, bool including)
 		fseek(fp, 0, SEEK_SET);
 
 	clearerr(fp);
-	module *save_m = load_fp(m, fp, filename, including);
+	module *save_m = load_fp(m, fp, filename, including, init);
 	fclose(fp);
 	free(realbuf);
 	return save_m;

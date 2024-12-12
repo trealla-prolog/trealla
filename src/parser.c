@@ -401,7 +401,7 @@ static void consultall(parser *p, cell *l)
 		else {
 			char *s = C_STR(p, h);
 
-			if (!load_file(p->m, s, false))
+			if (!load_file(p->m, s, false, true))
 				fprintf(stderr, "Error: file not found: '%s'\n", s);
 		}
 
@@ -769,7 +769,7 @@ static bool directives(parser *p, cell *d)
 		const char *name = C_STR(p, p1);
 		char *filename = relative_to(p->m->filename, name);
 
-		if (!load_file(p->m, filename, true)) {
+		if (!load_file(p->m, filename, true, false)) {
 			if (DUMP_ERRS || !p->do_read_term)
 				fprintf(stderr, "Error: not found: %s:%d\n", filename, p->line_nbr);
 
@@ -792,7 +792,7 @@ static bool directives(parser *p, cell *d)
 		const char *name = C_STR(p, p1);
 		char *filename = relative_to(p->m->filename, name);
 
-		if (!load_file(p->m, filename, false)) {
+		if (!load_file(p->m, filename, false, false)) {
 			if (DUMP_ERRS || !p->do_read_term)
 				fprintf(stderr, "Error: not found: %s:%d\n", filename, p->line_nbr);
 

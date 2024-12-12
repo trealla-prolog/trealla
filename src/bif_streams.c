@@ -4782,7 +4782,7 @@ static bool do_consult(query *q, cell *p1, pl_idx p1_ctx)
 		unload_file(q->st.curr_m, filename);
 		free(src);
 
-		if (!load_file(q->st.curr_m, filename, false)) {
+		if (!load_file(q->st.curr_m, filename, false, true)) {
 			free(filename);
 			return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 		}
@@ -4809,7 +4809,7 @@ static bool do_consult(query *q, cell *p1, pl_idx p1_ctx)
 	convert_path(filename);
 	unload_file(q->st.curr_m, filename);
 
-	if (!load_file(tmp_m, filename, false)) {
+	if (!load_file(tmp_m, filename, false, true)) {
 		module_destroy(tmp_m);
 		free(filename);
 		return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");

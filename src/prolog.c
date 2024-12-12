@@ -209,12 +209,12 @@ bool pl_done(pl_sub_query *subq)
 
 bool pl_consult_fp(prolog *pl, FILE *fp, const char *filename)
 {
-	return load_fp(pl->user_m, fp, filename, false) != NULL;
+	return load_fp(pl->user_m, fp, filename, false, true) != NULL;
 }
 
 bool pl_consult(prolog *pl, const char *filename)
 {
-	return load_file(pl->user_m, filename, false);
+	return load_file(pl->user_m, filename, false, true);
 }
 
 bool pl_logging(prolog *pl, const char *filename)

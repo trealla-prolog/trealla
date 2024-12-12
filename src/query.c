@@ -1492,7 +1492,7 @@ static bool consultall(query *q, cell *l, pl_idx l_ctx)
 		char *s = DUP_STRING(q, l);
 		unload_file(q->p->m, s);
 
-		if (!load_file(q->p->m, s, false)) {
+		if (!load_file(q->p->m, s, false, true)) {
 			free(s);
 			return throw_error(q, l, l_ctx, "existence_error", "source_sink");
 		}
@@ -1518,7 +1518,7 @@ static bool consultall(query *q, cell *l, pl_idx l_ctx)
 			char *s = DUP_STRING(q, h);
 			unload_file(q->p->m, s);
 
-			if (!load_file(q->p->m, s, false)) {
+			if (!load_file(q->p->m, s, false, true)) {
 				free(s);
 				return throw_error(q, h, q->st.curr_frame, "existence_error", "source_sink");
 			}
