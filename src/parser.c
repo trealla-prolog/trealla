@@ -341,18 +341,15 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		return;
 #if 1
 	} else if ((*src)->val_off == g_negation_s) {
+		unsigned var_nbr = cl->nbr_vars++;
 		*src += 1;
 		make_struct((*dst)++, g_sys_succeed_on_retry_s, bif_sys_succeed_on_retry_2, 2, 2);	// #1
-		make_var((*dst)++, g_anon_s, cl->nbr_vars);											// #2
+		make_var((*dst)++, g_anon_s, var_nbr);												// #2
 		make_uint((*dst)++, 3+(*src)->nbr_cells+(7-3));										// #3
-
-		pl_idx n = copy_cells(*dst, *src, (*src)->nbr_cells);
-		*dst += n;
-		*src += n;
-
+		compile_term(cl, dst, src);
 		make_struct((*dst)++, g_cut_s, bif_iso_cut_0, 0, 0);								// #4
 		make_struct((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);			// #5
-		make_var((*dst)++, g_anon_s, cl->nbr_vars);											// #6
+		make_var((*dst)++, g_anon_s, var_nbr);												// #6
 		make_struct((*dst)++, g_fail_s, bif_iso_fail_0, 0, 0);								// #7
 		cl->nbr_vars++;
 		return;
