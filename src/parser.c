@@ -352,7 +352,7 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		make_struct((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_nbr);
 		make_struct((*dst)++, g_fail_s, bif_iso_fail_0, 0, 0);
-		make_uint(save_dst+2, (*dst) - save_dst);					// Real value
+		make_uint(save_dst+2, *dst - save_dst);					// Real value
 		return;
 #endif
 	} else {
