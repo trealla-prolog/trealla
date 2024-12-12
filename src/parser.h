@@ -49,7 +49,7 @@ int do_dlclose(void *handle);
 
 void make_struct_(cell *tmp, pl_idx offset, unsigned arity, pl_idx extra_cells);
 
-#define make_struct(tmp, offset, fn, arity, extra_cells) { \
+#define make_instr(tmp, offset, fn, arity, extra_cells) { \
 	cell *tmp_make = tmp; \
 	make_struct_(tmp_make, offset, arity, extra_cells); \
 	\

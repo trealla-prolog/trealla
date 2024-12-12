@@ -158,7 +158,7 @@ static bool bif_iso_clause_2(query *q)
 			ok = unify(q, p2, p2_ctx, body, q->st.fp);
 		else {
 			cell tmp;
-			make_struct(&tmp, g_true_s, bif_iso_true_0, 0, 0);
+			make_instr(&tmp, g_true_s, bif_iso_true_0, 0, 0);
 			ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 		}
 

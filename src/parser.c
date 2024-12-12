@@ -344,14 +344,14 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		unsigned var_nbr = cl->nbr_vars++;
 		*src += 1;
 		cell *save_dst = *dst;
-		make_struct((*dst)++, g_sys_succeed_on_retry_s, bif_sys_succeed_on_retry_2, 2, 2);
+		make_instr((*dst)++, g_sys_succeed_on_retry_s, bif_sys_succeed_on_retry_2, 2, 2);
 		make_var((*dst)++, g_anon_s, var_nbr);
 		make_uint((*dst)++, 0);										// Dummy value
 		compile_term(cl, dst, src);
-		make_struct((*dst)++, g_cut_s, bif_iso_cut_0, 0, 0);
-		make_struct((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
+		make_instr((*dst)++, g_cut_s, bif_iso_cut_0, 0, 0);
+		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_nbr);
-		make_struct((*dst)++, g_fail_s, bif_iso_fail_0, 0, 0);
+		make_instr((*dst)++, g_fail_s, bif_iso_fail_0, 0, 0);
 		make_uint(save_dst+2, *dst - save_dst);						// Real value
 		return;
 #endif
@@ -360,10 +360,10 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		unsigned var_nbr = cl->nbr_vars++;
 		*src += 1;
 		cell *save_dst = *dst;
-		make_struct((*dst)++, g_sys_succeed_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
+		make_instr((*dst)++, g_sys_succeed_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_nbr);
 		compile_term(cl, dst, src);
-		make_struct((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
+		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_nbr);
 		return;
 #endif
@@ -1878,7 +1878,7 @@ static bool dcg_expansion(parser *p)
 	q->trace = false;
 	cell *c = p->cl->cells;
 	cell *tmp = alloc_on_heap(q, 1+c->nbr_cells+1+1);
-	make_struct(tmp, new_atom(p->pl, "dcg_translate"), NULL, 2, c->nbr_cells+1);
+	make_instr(tmp, new_atom(p->pl, "dcg_translate"), NULL, 2, c->nbr_cells+1);
 	dup_cells(tmp+1, p->cl->cells, c->nbr_cells);
 	make_ref(tmp+1+c->nbr_cells, p->cl->nbr_vars, 0);
 	make_end(tmp+1+c->nbr_cells+1);
@@ -1962,7 +1962,7 @@ static bool term_expansion(parser *p)
 	cell *c = p->cl->cells;
 	cell *tmp = alloc_on_heap(q, 1+c->nbr_cells+2);
 	unsigned nbr_cells = 0;
-	make_struct(tmp+nbr_cells++, new_atom(p->pl, "term_expansion"), NULL, 2, c->nbr_cells+1);
+	make_instr(tmp+nbr_cells++, new_atom(p->pl, "term_expansion"), NULL, 2, c->nbr_cells+1);
 	dup_cells(tmp+nbr_cells, p->cl->cells, c->nbr_cells);
 	nbr_cells += c->nbr_cells;
 	make_ref(tmp+nbr_cells++, p->cl->nbr_vars, 0);
@@ -2215,7 +2215,7 @@ static cell *insert_call_here(parser *p, cell *c, cell *p1)
 		*dst-- = *last--;
 
 	p1 = p->cl->cells + p1_idx;
-	make_struct(p1, g_call_s, bif_iso_call_1, 1, 1);
+	make_instr(p1, g_call_s, bif_iso_call_1, 1, 1);
 	p->cl->cidx++;
 	return p->cl->cells + c_idx;
 }

@@ -99,7 +99,7 @@ static bool bif_posix_strptime_3(query *q)
 		return false;
 
 	cell *tmp = alloc_on_heap(q, 10);
-	make_struct(tmp, g_tm_s, NULL, 9, 0);
+	make_instr(tmp, g_tm_s, NULL, 9, 0);
 	pl_idx nbr_cells = 1;
 	make_int(tmp+nbr_cells++, tm.tm_sec);
 	make_int(tmp+nbr_cells++, tm.tm_min);
@@ -155,7 +155,7 @@ static bool bif_posix_gmtime_2(query *q)
 		return 0;
 
 	cell *tmp = alloc_on_heap(q, 10);
-	make_struct(tmp, g_tm_s, NULL, 9, 0);
+	make_instr(tmp, g_tm_s, NULL, 9, 0);
 	pl_idx nbr_cells = 1;
 	make_int(tmp+nbr_cells++, tm.tm_sec);
 	make_int(tmp+nbr_cells++, tm.tm_min);
@@ -182,7 +182,7 @@ static bool bif_posix_localtime_2(query *q)
 		return 0;
 
 	cell *tmp = alloc_on_heap(q, 10);
-	make_struct(tmp, g_tm_s, NULL, 9, 0);
+	make_instr(tmp, g_tm_s, NULL, 9, 0);
 	pl_idx nbr_cells = 1;
 	make_int(tmp+nbr_cells++, tm.tm_sec);
 	make_int(tmp+nbr_cells++, tm.tm_min);

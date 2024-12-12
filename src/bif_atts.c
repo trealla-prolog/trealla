@@ -450,7 +450,7 @@ static bool bif_sys_undo_trail_2(query *q)
 			rhs = *c;
 
 		cell tmp[3];
-		make_struct(tmp, g_minus_s, NULL, 2, 2);
+		make_instr(tmp, g_minus_s, NULL, 2, 2);
 		SET_OP(tmp, OP_YFX);
 		tmp[1] = lhs;
 		tmp[2] = rhs;
@@ -490,8 +490,8 @@ bool do_post_unify_hook(query *q, bool is_builtin)
 	q->undo_hi_tp = q->st.tp;
 	cell *tmp = alloc_on_heap(q, 3);
 	check_heap_error(tmp);
-	make_struct(tmp+0, g_true_s, bif_iso_true_0, 0, 0);
-	make_struct(tmp+1, g_post_unify_hook_s, NULL, 0, 0);
+	make_instr(tmp+0, g_true_s, bif_iso_true_0, 0, 0);
+	make_instr(tmp+1, g_post_unify_hook_s, NULL, 0, 0);
 	is_builtin ? make_call(q, tmp+2) : make_call_redo(q, tmp+2);
 	q->st.curr_instr = tmp;
 	return true;
