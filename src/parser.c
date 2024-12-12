@@ -343,16 +343,16 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 	} else if ((*src)->val_off == g_negation_s) {
 		unsigned var_nbr = cl->nbr_vars++;
 		*src += 1;
-		make_struct((*dst)++, g_sys_succeed_on_retry_s, bif_sys_succeed_on_retry_2, 2, 2);	// #1
-		make_var((*dst)++, g_anon_s, var_nbr);												// #2
-		make_uint((*dst)++, 3+(*src)->nbr_cells+4);											// #3
-		pl_idx n = copy_cells(*dst, *src, (*src)->nbr_cells);
-		*dst += n;
-		*src += n;
-		make_struct((*dst)++, g_cut_s, bif_iso_cut_0, 0, 0);								// #1
-		make_struct((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);			// #2
-		make_var((*dst)++, g_anon_s, var_nbr);												// #3
-		make_struct((*dst)++, g_fail_s, bif_iso_fail_0, 0, 0);								// #4
+		cell *save_dst = *dst;
+		make_struct((*dst)++, g_sys_succeed_on_retry_s, bif_sys_succeed_on_retry_2, 2, 2);
+		make_var((*dst)++, g_anon_s, var_nbr);
+		make_uint((*dst)++, 0);										// Dummy value
+		compile_term(cl, dst, src);
+		make_struct((*dst)++, g_cut_s, bif_iso_cut_0, 0, 0);
+		make_struct((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
+		make_var((*dst)++, g_anon_s, var_nbr);
+		make_struct((*dst)++, g_fail_s, bif_iso_fail_0, 0, 0);
+		make_uint(save_dst+2, (*dst) - save_dst);					// Real value
 		return;
 #endif
 	} else {
