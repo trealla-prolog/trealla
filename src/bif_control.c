@@ -94,7 +94,7 @@ bool bif_call_0(query *q, cell *p1, pl_idx p1_ctx)
 	return true;
 }
 
-static bool call_check(query *q, cell *tmp2, bool *status, bool calln)
+bool call_check(query *q, cell *tmp2, bool *status, bool calln)
 {
 	if (tmp2->val_off == g_colon_s) {
 		tmp2 = tmp2 + 1;

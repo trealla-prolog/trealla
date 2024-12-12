@@ -355,7 +355,7 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		make_uint(save_dst+2, *dst - save_dst);						// Real value
 		return;
 #endif
-#if 1
+#if 0
 	} else if (((*src)->val_off == g_call_s) && ((*src)->arity == 1)) {
 		unsigned var_nbr = cl->nbr_vars++;
 		*src += 1;
