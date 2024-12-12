@@ -351,7 +351,6 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		make_struct((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);			// #2
 		make_var((*dst)++, g_anon_s, var_nbr);												// #3
 		make_struct((*dst)++, g_fail_s, bif_iso_fail_0, 0, 0);								// #4
-		cl->nbr_vars++;
 		return;
 #endif
 	} else {
