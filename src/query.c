@@ -548,7 +548,8 @@ int retry_choice(query *q)
 
 		if (ch->succeed_on_retry) {
 			leave_predicate(q, ch->st.pr);
-			return -1;
+			q->st.curr_instr += ch->skip ? ch->skip : 0;
+			return ch->skip ? -2 : -1;
 		}
 
 		return 1;
@@ -767,11 +768,12 @@ bool push_barrier(query *q)
 	return true;
 }
 
-bool push_succeed_on_retry(query *q)
+bool push_succeed_on_retry(query *q, pl_idx skip)
 {
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->succeed_on_retry = true;
+	ch->skip = skip;
 	return true;
 }
 
@@ -1562,9 +1564,12 @@ bool start(query *q)
 				break;
 
 			if (ok < 0) {
-				proceed(q);
 				q->retry = false;
-				goto MORE;
+
+				if (ok == -1) {
+					proceed(q);
+					goto MORE;
+				}
 			}
 		}
 

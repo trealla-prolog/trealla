@@ -37,6 +37,7 @@ pl_idx g_goal_expansion_s, g_term_expansion_s, g_tm_s, g_float_s;
 pl_idx g_sys_cut_if_det_s, g_as_s, g_colon_s, g_member_s;
 pl_idx g_caret_s, g_sys_counter_s, g_catch_s, g_memberchk_s;
 pl_idx g_cont_s, g_sys_set_if_var_s, g_is_s, g_maplist_s;
+pl_idx g_sys_succeed_on_retry_s, g_sys_fail_on_retry_s;
 pl_idx g_dummy_s;
 
 char *g_global_atoms = NULL;
@@ -586,6 +587,8 @@ static bool g_init(prolog *pl)
 	CHECK_SENTINEL(g_cont_s = new_atom(pl, "cont"), ERR_IDX);
 	CHECK_SENTINEL(g_sys_set_if_var_s = new_atom(pl, "$set_if_var"), ERR_IDX);
 	CHECK_SENTINEL(g_is_s = new_atom(pl, "is"), ERR_IDX);
+	CHECK_SENTINEL(g_sys_succeed_on_retry_s = new_atom(pl, "$succeed_on_retry"), ERR_IDX);
+	CHECK_SENTINEL(g_sys_fail_on_retry_s = new_atom(pl, "$fail_on_retry"), ERR_IDX);
 
 	char *ptr = getenv("TPL_LIBRARY_PATH");
 

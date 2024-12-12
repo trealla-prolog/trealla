@@ -329,9 +329,8 @@ static cell *make_a_cell(parser *p)
 	return ret;
 }
 
-// Eventually control structures will be pre-compiled
-// so they don't get allocated on the heap at run-time.
-// For now just strip conjunctions.
+// Control structures can be pre-compiled so they don't
+// get allocated on the heap at run-time...
 
 void compile_term(cell **dst, cell **src)
 {
@@ -340,6 +339,23 @@ void compile_term(cell **dst, cell **src)
 		compile_term(dst, src);		// LHS
 		compile_term(dst, src);		// RHS
 		return;
+#if 1
+	} else if ((*src)->val_off == g_negation_s) {
+		*src += 1;
+		make_struct((*dst)++, g_sys_succeed_on_retry_s, bif_sys_succeed_on_retry_2, 2, 2);	// #1
+		make_var((*dst)++, g_anon_s, 99);													// #2
+		make_uint((*dst)++, 3+(*src)->nbr_cells+(7-3));										// #3
+
+		pl_idx n = copy_cells(*dst, *src, (*src)->nbr_cells);
+		*dst += n;
+		*src += n;
+
+		make_struct((*dst)++, g_cut_s, bif_iso_cut_0, 0, 0);								// #4
+		make_struct((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);			// #5
+		make_var((*dst)++, g_anon_s, 99);													// #6
+		make_struct((*dst)++, g_fail_s, bif_iso_fail_0, 0, 0);								// #7
+		return;
+#endif
 	} else {
 		pl_idx n = copy_cells(*dst, *src, (*src)->nbr_cells);
 		*dst += n;
@@ -350,7 +366,7 @@ void compile_term(cell **dst, cell **src)
 void compile_clause(clause *cl, cell *body)
 {
 	pl_idx nbr_cells = cl->cidx - (body - cl->cells);
-	cl->alt = malloc(sizeof(cell) * nbr_cells);
+	cl->alt = malloc(sizeof(cell) * nbr_cells*10);
 	cell *dst = cl->alt, *src = body;
 	compile_term(&dst, &src);
 	assert(src->tag == TAG_END);

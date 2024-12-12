@@ -278,7 +278,7 @@ static bool bif_ignore_1(query *q)
 	make_struct(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_call(q, tmp+nbr_cells);
-	check_heap_error(push_succeed_on_retry(q));
+	check_heap_error(push_succeed_on_retry(q, 0));
 	q->st.curr_instr = tmp;
 	return true;
 }
@@ -445,7 +445,7 @@ static bool bif_iso_negation_1(query *q)
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_struct(tmp+nbr_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
-	check_heap_error(push_succeed_on_retry(q));
+	check_heap_error(push_succeed_on_retry(q, 0));
 	q->st.curr_instr = tmp;
 	return true;
 }
@@ -686,7 +686,7 @@ static bool bif_sys_countall_2(query *q)
 	make_ref(tmp+nbr_cells++, p2->var_nbr, p2_ctx);
 	make_struct(tmp+nbr_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
-	check_heap_error(push_succeed_on_retry(q));
+	check_heap_error(push_succeed_on_retry(q, 0));
 	q->st.curr_instr = tmp;
 	return true;
 }
