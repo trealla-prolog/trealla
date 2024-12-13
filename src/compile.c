@@ -14,7 +14,6 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-#if 0
 	if (((*src)->val_off == g_once_s) && ((*src)->arity == 1)) {
 		unsigned var_nbr = cl->nbr_vars++;
 		*src += 1;
@@ -29,7 +28,6 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		make_var((*dst)++, g_anon_s, var_nbr);
 		return;
 	}
-#endif
 
 	if (((*src)->val_off == g_ignore_s) && ((*src)->arity == 1)) {
 		unsigned var_nbr = cl->nbr_vars++;
