@@ -115,6 +115,7 @@ bool bif_iso_qualify_2(query *q);
 bool bif_iso_cut_0(query *q);
 bool bif_iso_unify_2(query *q);
 
+bool bif_sys_call_check_1(query *q);
 bool bif_sys_succeed_on_retry_2(query *q);
 bool bif_sys_fail_on_retry_1(query *q);
 bool bif_sys_drop_barrier_1(query *q);
