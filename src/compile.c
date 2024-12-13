@@ -7,7 +7,7 @@
 
 static void compile_term(clause *cl, cell **dst, cell **src)
 {
-	if ((*src)->val_off == g_conjunction_s) {
+	if (((*src)->val_off == g_conjunction_s) && ((*src)->arity == 2)) {
 		*src += 1;
 		compile_term(cl, dst, src);		// LHS
 		compile_term(cl, dst, src);		// RHS
@@ -47,7 +47,7 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 	}
 
 #if 0
-	if ((*src)->val_off == g_negation_s) {
+	if (((*src)->val_off == g_negation_s) && ((*src)->arity == 1)) {
 		unsigned var_nbr = cl->nbr_vars++;
 		*src += 1;
 		cell *save_dst = *dst;
