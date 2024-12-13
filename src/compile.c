@@ -31,7 +31,6 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 	}
 #endif
 
-#if 0
 	if (((*src)->val_off == g_ignore_s) && ((*src)->arity == 1)) {
 		unsigned var_nbr = cl->nbr_vars++;
 		*src += 1;
@@ -48,7 +47,6 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		make_uint(save_dst+2, *dst - save_dst);						// Real value
 		return;
 	}
-#endif
 
 #if 0
 	if (((*src)->val_off == g_negation_s) && ((*src)->arity == 1)) {
