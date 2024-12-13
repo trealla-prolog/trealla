@@ -98,6 +98,7 @@ SRCOBJECTS = tpl.o \
 	src/bif_streams.o \
 	src/bif_tasks.o \
 	src/bif_threads.o \
+	src/compile.o \
 	src/heap.o \
 	src/history.o \
 	src/library.o \
@@ -290,6 +291,11 @@ src/bif_threads.o: src/bif_threads.c src/threads.h src/heap.h src/internal.h \
  src/imath/imrat.h src/imath/imath.h src/skiplist.h src/list.h \
  src/utf8.h src/history.h src/library.h src/module.h src/parser.h \
  src/prolog.h src/query.h src/builtins.h
+src/compile.o: src/compile.c src/threads.h src/heap.h src/internal.h src/trealla.h \
+ src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
+ src/imath/imath.h src/skiplist.h src/list.h src/utf8.h \
+ src/history.h src/library.h src/module.h src/parser.h src/prolog.h \
+ src/query.h src/builtins.h
 src/heap.o: src/heap.c src/heap.h src/threads.h src/internal.h src/trealla.h src/cdebug.h \
  src/stringbuf.h src/imath/imath.h src/imath/imrat.h src/imath/imath.h \
  src/skiplist.h src/list.h src/utf8.h src/prolog.h \
