@@ -853,7 +853,7 @@ static bool bif_thread_join_2(query *q)
 		unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 	} else {
 		cell tmp;
-		make_atom(&tmp, g_true_s);
+		make_instr(&tmp, g_true_s, bif_iso_true_0, 0, 0);
 		unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	}
 
