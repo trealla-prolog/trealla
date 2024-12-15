@@ -983,7 +983,7 @@ Run...
 Concurrent Tasks						##EXPERIMENTAL##
 ================
 
-Co-operative multi-tasking is available in the form of light-weight
+Co-operative multitasking is available in the form of light-weight
 coroutines that run until they yield either explicitly or implicitly
 (when waiting on an event of some kind). They are called a `task` here.
 
@@ -1140,12 +1140,12 @@ engines. Uses co-operative tasks.
 	engine_destroy/1
 
 
-Pre-emptive Multi-threading
-===========================
+Pre-emptive Multithreading
+==========================
 
 Start independent (shared state) Prolog queries as dedicated POSIX
 threads and communicate via message queues. Note: the database *is*
-shared. These predicates conform to the *ISO Prolog multi-threading
+shared. These predicates conform to the *ISO Prolog multithreading
 support* standards proposal (ISO/IEC DTR 13211–5:2007), now lapsed.
 
 	thread_create/3		# thread_create(:callable,-thread,+options)
