@@ -22,7 +22,7 @@ call_cleanup(G, C) :-
 :- help(call_cleanup(:callable,:callable), [iso(false)]).
 
 setup_call_cleanup(S, G, C) :-
-	call(S), !,
+	once(S),
 	(var(C) -> throw(error(instantiation_error, setup_call_cleanup/3)); true),
 	'$register_cleanup'(ignore(C)),
 	'$call_cleanup'(

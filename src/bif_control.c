@@ -909,6 +909,9 @@ bool throw_error3(query *q, cell *c, pl_idx c_ctx, const char *err_type, const c
 	if (!strcmp(C_STR(q, q->st.curr_instr), "abolish"))
 		is_abolish = true;
 
+	if (!strcmp(C_STR(q, q->st.curr_instr), "$call_check"))
+		strcpy(functor, "call");
+
 	bool is_builtin = false, evaluable = false;
 	get_builtin_term(q->st.curr_m, c, &is_builtin, &evaluable);
 	bool is_op = search_op(q->st.curr_m, C_STR(q, c), NULL, true) > 0;
@@ -1164,7 +1167,6 @@ builtins g_control_bifs[] =
 	{"shift", 1, bif_shift_1, "+term", false, false, BLAH},
 	{"between", 3, bif_between_3, "+integer,+integer,-integer", false, false, BLAH},
 
-	{"$once", 1, bif_iso_once_1, ":callable", true, false, BLAH},
 	{"$catch", 3, bif_iso_catch_3, ":callable,?term,:callable", true, false, BLAH},
 	{"$counter", 1, bif_sys_counter_1, NULL, false, false, BLAH},
 	{"$countall", 2, bif_sys_countall_2, "@callable,-integer", false, false, BLAH},
