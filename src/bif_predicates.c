@@ -2848,7 +2848,9 @@ static void save_name(FILE *fp, query *q, pl_idx name, unsigned arity, bool alt)
 					if (!is_end(c))
 						printf(",");
 				}
-			} else
+			} else if (alt)
+				fprintf(fp, "true");
+			else
 				print_term(q, fp, r->cl.cells, 0, 0);
 
 			fprintf(fp, ".\n");
