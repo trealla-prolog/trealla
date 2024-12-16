@@ -485,7 +485,7 @@ static bool bif_reset_3(query *q)
 	GET_NEXT_ARG(p2,any);
 	GET_NEXT_ARG(p3,any);
 
-	cell *tmp = prepare_call(q, PREFIX_LEN, p1, p1_ctx, 3+1+p3->nbr_cells+3);
+	cell *tmp = prepare_call(q, PREFIX_LEN, p1, p1_ctx, 3+p3->nbr_cells+2);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 	make_instr(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
