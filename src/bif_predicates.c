@@ -6024,7 +6024,7 @@ static bool bif_sys_memberchk_3(query *q)
 	return true;
 }
 
-static bool bif_sys_get_level_1(query *q)
+bool bif_sys_get_level_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	cell tmp;
@@ -6143,15 +6143,6 @@ static bool bif_abort_0(query *q)
 	return throw_error(q, q->st.curr_instr, q->st.curr_frame, "$aborted", "abort_error");
 }
 
-bool bif_sys_fail_on_retry_1(query *q)
-{
-	GET_FIRST_ARG(p1,var);
-	cell tmp;
-	make_uint(&tmp, (pl_uint)q->cp);
-	check_heap_error(push_fail_on_retry(q));
-	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-}
-
 bool call_check(query *q, cell *tmp2, bool *status, bool calln)
 {
 	if (tmp2->val_off == g_colon_s) {
@@ -6202,6 +6193,24 @@ bool bif_sys_call_check_1(query *q)
 	}
 
 	return true;
+}
+
+bool bif_sys_reset_handler_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	cell tmp;
+	make_uint(&tmp, (pl_uint)q->cp);
+	check_heap_error(push_reset_handler(q));
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+bool bif_sys_fail_on_retry_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	cell tmp;
+	make_uint(&tmp, (pl_uint)q->cp);
+	check_heap_error(push_fail_on_retry(q));
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
 bool bif_sys_succeed_on_retry_2(query *q)

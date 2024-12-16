@@ -14,13 +14,15 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		return;
 	}
 
+	cell *p1 = (*src);
+
 	if (((*src)->val_off == g_once_s) && ((*src)->arity == 1) && !is_var((*src)+1)) {
 		unsigned var_nbr = cl->nbr_vars++;
 		*src += 1;
 		cell *save_dst = *dst;
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_nbr);
-		make_instr((*dst)++, g_sys_call_check_s, bif_sys_call_check_1, 1, (*src)->nbr_cells);
+		make_instr((*dst)++, g_sys_call_check_s, bif_sys_call_check_1, 1, p1->nbr_cells);
 		*dst += copy_cells(*dst, *src, (*src)->nbr_cells);
 		compile_term(cl, dst, src);
 		make_instr((*dst)++, g_cut_s, bif_iso_cut_0, 0, 0);
@@ -36,7 +38,7 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		make_instr((*dst)++, g_sys_succeed_on_retry_s, bif_sys_succeed_on_retry_2, 2, 2);
 		make_var((*dst)++, g_anon_s, var_nbr);
 		make_uint((*dst)++, 0);										// Dummy value
-		make_instr((*dst)++, g_sys_call_check_s, bif_sys_call_check_1, 1, (*src)->nbr_cells);
+		make_instr((*dst)++, g_sys_call_check_s, bif_sys_call_check_1, 1, p1->nbr_cells);
 		*dst += copy_cells(*dst, *src, (*src)->nbr_cells);
 		compile_term(cl, dst, src);
 		make_instr((*dst)++, g_cut_s, bif_iso_cut_0, 0, 0);
@@ -69,11 +71,27 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		cell *save_dst = *dst;
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_nbr);
-		make_instr((*dst)++, g_sys_call_check_s, bif_sys_call_check_1, 1, (*src)->nbr_cells);
+		make_instr((*dst)++, g_sys_call_check_s, bif_sys_call_check_1, 1, p1->nbr_cells);
 		*dst += copy_cells(*dst, *src, (*src)->nbr_cells);
 		compile_term(cl, dst, src);
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_nbr);
+		return;
+	}
+
+	if (((*src)->val_off == g_reset_s) && ((*src)->arity == 3)) {
+		unsigned var_nbr = cl->nbr_vars++;
+		*src += 1;
+		cell *p2 = p1 + p1->nbr_cells;
+		cell *p3 = p2 + p2->nbr_cells;
+		make_instr((*dst)++, g_sys_get_level_s, bif_sys_get_level_1, 1, 1);
+		make_var((*dst)++, g_anon_s, var_nbr);
+		(*dst) += copy_cells((*dst), p1, p1->nbr_cells);
+		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
+		make_var((*dst)++, g_anon_s, var_nbr);
+		make_instr((*dst)++, g_sys_set_if_var_s, bif_sys_set_if_var_2, 2, p3->nbr_cells+1);
+		(*dst) += copy_cells((*dst), p3, p3->nbr_cells);
+		make_atom((*dst)++, g_none_s);
 		return;
 	}
 
