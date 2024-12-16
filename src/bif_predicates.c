@@ -2844,16 +2844,14 @@ static void save_name(FILE *fp, query *q, pl_idx name, unsigned arity, bool alt)
 				while (!is_end(c)) {
 					print_term(q, fp, c, 0, 0);
 					c += c->nbr_cells;
-
-					if (!is_end(c))
-						printf(",");
+					printf("\n");
 				}
 			} else if (alt)
 				fprintf(fp, "true");
-			else
+			else {
 				print_term(q, fp, r->cl.cells, 0, 0);
-
-			fprintf(fp, ".\n");
+				fprintf(fp, ".\n");
+			}
 		}
 	}
 
