@@ -910,6 +910,153 @@ static bool bif_sys_retract_on_backtrack_1(query *q)
 	return unify(q, &c, q->st.curr_frame, &v, q->st.curr_frame);
 }
 
+static bool bif_listing_0(query *q)
+{
+	int n = q->pl->current_output;
+	stream *str = &q->pl->streams[n];
+	save_db(str->fp, q, 0);
+	return true;
+}
+
+static void save_name(FILE *fp, query *q, pl_idx name, unsigned arity, bool alt)
+{
+	module *m = q->st.curr_rule ? q->st.curr_rule->owner->m : q->st.curr_m;
+	q->listing = true;
+
+	for (predicate *pr = list_front(&m->predicates);
+		pr; pr = list_next(pr)) {
+		if (pr->is_builtin && (arity == -1U))
+			continue;
+
+		if (name != pr->key.val_off)
+			continue;
+
+		if ((arity != pr->key.arity) && (arity != -1U))
+			continue;
+
+		for (rule *r = pr->head; r; r = r->next) {
+			if (r->cl.dbgen_retracted)
+				continue;
+
+			for (unsigned i = 0; i < MAX_IGNORES; i++)
+				q->ignores[i] = false;
+
+			q->print_idx = 0;
+
+			if (alt) {
+				print_term(q, fp, get_head(r->cl.cells), 0, 0);
+				printf(":-\n");
+			}
+
+			if (alt && r->cl.alt) {
+				cell *c = r->cl.alt;
+
+				while (!is_end(c)) {
+					printf("  ");
+					print_term(q, fp, c, 0, 0);
+					c += c->nbr_cells;
+					printf("\n");
+				}
+			} else if (alt)
+				fprintf(fp, "  true\n");
+			else {
+				print_term(q, fp, r->cl.cells, 0, 0);
+				fprintf(fp, ".\n");
+			}
+		}
+	}
+
+	q->listing = false;
+}
+
+static bool bif_listing_1(query *q)
+{
+	GET_FIRST_ARG(p1,callable);
+	pl_idx name = p1->val_off;
+	unsigned arity = -1;
+
+	if (p1->val_off == g_colon_s) {
+		p1 = p1 + 1;
+		cell *cm = deref(q, p1, p1_ctx);
+		module *m = find_module(q->pl, C_STR(q, cm));
+
+		if (!m)
+			return throw_error(q, cm, p1_ctx, "existence_error", "module");
+
+		p1 += p1->nbr_cells;
+	}
+
+	if (p1->arity) {
+		if (CMP_STRING_TO_CSTR(q, p1, "/") && CMP_STRING_TO_CSTR(q, p1, "//"))
+			return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+		cell *p2 = p1 + 1;
+
+		if (!is_atom(p2))
+			return throw_error(q, p2, p1_ctx, "type_error", "atom");
+
+		cell *p3 = p2 + p2->nbr_cells;
+
+		if (!is_integer(p3))
+			return throw_error(q, p3, p1_ctx, "type_error", "integer");
+
+		name = new_atom(q->pl, C_STR(q, p2));
+		arity = get_smallint(p3);
+
+		if (!CMP_STRING_TO_CSTR(q, p1, "//"))
+			arity += 2;
+	}
+
+	int n = q->pl->current_output;
+	stream *str = &q->pl->streams[n];
+	save_name(str->fp, q, name, arity, false);
+	return true;
+}
+
+static bool bif_sys_xlisting_1(query *q)
+{
+	GET_FIRST_ARG(p1,callable);
+	pl_idx name = p1->val_off;
+	unsigned arity = -1;
+
+	if (p1->val_off == g_colon_s) {
+		p1 = p1 + 1;
+		cell *cm = deref(q, p1, p1_ctx);
+		module *m = find_module(q->pl, C_STR(q, cm));
+
+		if (!m)
+			return throw_error(q, cm, p1_ctx, "existence_error", "module");
+
+		p1 += p1->nbr_cells;
+	}
+
+	if (p1->arity) {
+		if (CMP_STRING_TO_CSTR(q, p1, "/") && CMP_STRING_TO_CSTR(q, p1, "//"))
+			return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+		cell *p2 = p1 + 1;
+
+		if (!is_atom(p2))
+			return throw_error(q, p2, p1_ctx, "type_error", "atom");
+
+		cell *p3 = p2 + p2->nbr_cells;
+
+		if (!is_integer(p3))
+			return throw_error(q, p3, p1_ctx, "type_error", "integer");
+
+		name = new_atom(q->pl, C_STR(q, p2));
+		arity = get_smallint(p3);
+
+		if (!CMP_STRING_TO_CSTR(q, p1, "//"))
+			arity += 2;
+	}
+
+	int n = q->pl->current_output;
+	stream *str = &q->pl->streams[n];
+	save_name(str->fp, q, name, arity, true);
+	return true;
+}
+
 builtins g_database_bifs[] =
 {
 	{"abolish", 1, bif_iso_abolish_1, "+predicate_indicator", true, false, BLAH},
@@ -926,6 +1073,10 @@ builtins g_database_bifs[] =
 	{"clause", 3, bif_clause_3, "?term,?term,-string", false, false, BLAH},
 	{"abolish", 2, bif_abolish_2, "+term,+list", false, false, BLAH},
 	{"instance", 2, bif_instance_2, "+string,?term", false, false, BLAH},
+
+	{"listing", 0, bif_listing_0, NULL, false, false, BLAH},
+	{"listing", 1, bif_listing_1, "+predicate_indicator", false, false, BLAH},
+	{"$xlisting", 1, bif_sys_xlisting_1, "+predicate_indicator", false, false, BLAH},
 
 	{"$clause", 2, bif_sys_clause_2, "?term,?term", false, false, BLAH},
 	{"$clause", 3, bif_sys_clause_3, "?term,?term,-string", false, false, BLAH},
