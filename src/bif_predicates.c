@@ -2813,7 +2813,7 @@ static bool bif_listing_0(query *q)
 	return true;
 }
 
-static void save_name(FILE *fp, query *q, pl_idx name, unsigned arity)
+static void save_name(FILE *fp, query *q, pl_idx name, unsigned arity, bool alt)
 {
 	module *m = q->st.curr_rule ? q->st.curr_rule->owner->m : q->st.curr_m;
 	q->listing = true;
@@ -2837,7 +2837,20 @@ static void save_name(FILE *fp, query *q, pl_idx name, unsigned arity)
 				q->ignores[i] = false;
 
 			q->print_idx = 0;
-			print_term(q, fp, r->cl.cells, 0, 0);
+
+			if (alt) {
+				cell *c = r->cl.alt;
+
+				while (!is_end(c)) {
+					print_term(q, fp, c, 0, 0);
+					c += c->nbr_cells;
+
+					if (!is_end(c))
+						printf(",");
+				}
+			} else
+				print_term(q, fp, r->cl.cells, 0, 0);
+
 			fprintf(fp, ".\n");
 		}
 	}
@@ -2885,7 +2898,51 @@ static bool bif_listing_1(query *q)
 
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
-	save_name(str->fp, q, name, arity);
+	save_name(str->fp, q, name, arity, false);
+	return true;
+}
+
+static bool bif_xlisting_1(query *q)
+{
+	GET_FIRST_ARG(p1,callable);
+	pl_idx name = p1->val_off;
+	unsigned arity = -1;
+
+	if (p1->val_off == g_colon_s) {
+		p1 = p1 + 1;
+		cell *cm = deref(q, p1, p1_ctx);
+		module *m = find_module(q->pl, C_STR(q, cm));
+
+		if (!m)
+			return throw_error(q, cm, p1_ctx, "existence_error", "module");
+
+		p1 += p1->nbr_cells;
+	}
+
+	if (p1->arity) {
+		if (CMP_STRING_TO_CSTR(q, p1, "/") && CMP_STRING_TO_CSTR(q, p1, "//"))
+			return throw_error(q, p1, p1_ctx, "type_error", "predicate_indicator");
+
+		cell *p2 = p1 + 1;
+
+		if (!is_atom(p2))
+			return throw_error(q, p2, p1_ctx, "type_error", "atom");
+
+		cell *p3 = p2 + p2->nbr_cells;
+
+		if (!is_integer(p3))
+			return throw_error(q, p3, p1_ctx, "type_error", "integer");
+
+		name = new_atom(q->pl, C_STR(q, p2));
+		arity = get_smallint(p3);
+
+		if (!CMP_STRING_TO_CSTR(q, p1, "//"))
+			arity += 2;
+	}
+
+	int n = q->pl->current_output;
+	stream *str = &q->pl->streams[n];
+	save_name(str->fp, q, name, arity, true);
 	return true;
 }
 
@@ -6653,6 +6710,7 @@ builtins g_other_bifs[] =
 	{"shell", 2, bif_shell_2, "+atom,-integer", false, false, BLAH},
 	{"listing", 0, bif_listing_0, NULL, false, false, BLAH},
 	{"listing", 1, bif_listing_1, "+predicate_indicator", false, false, BLAH},
+	{"xlisting", 1, bif_xlisting_1, "+predicate_indicator", false, false, BLAH},
 	{"time", 1, bif_time_1, ":callable", false, false, BLAH},
 	{"trace", 0, bif_trace_0, NULL, false, false, BLAH},
 	{"statistics", 0, bif_statistics_0, NULL, false, false, BLAH},
