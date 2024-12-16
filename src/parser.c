@@ -3507,6 +3507,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 					if (!p1->arity && !strcmp(C_STR(p, p1), "end_of_file")) {
 						p->end_of_term = true;
 						p->end_of_file = true;
+						xref_db(p->m);
 						return 0;
 					}
 				}
