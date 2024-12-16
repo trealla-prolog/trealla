@@ -2838,7 +2838,7 @@ static void save_name(FILE *fp, query *q, pl_idx name, unsigned arity, bool alt)
 
 			q->print_idx = 0;
 
-			if (alt) {
+			if (alt && r->cl.alt) {
 				cell *c = r->cl.alt;
 
 				while (!is_end(c)) {
@@ -2902,7 +2902,7 @@ static bool bif_listing_1(query *q)
 	return true;
 }
 
-static bool bif_xlisting_1(query *q)
+static bool bif_sys_xlisting_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	pl_idx name = p1->val_off;
@@ -6152,6 +6152,42 @@ bool bif_sys_fail_on_retry_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
+bool call_check(query *q, cell *tmp2, bool *status, bool calln)
+{
+	if (tmp2->val_off == g_colon_s) {
+		tmp2 = tmp2 + 1;
+		tmp2 += tmp2->nbr_cells;
+	}
+
+	if (!tmp2->match) {
+		bool found = false;
+
+		if ((tmp2->bif_ptr = get_builtin_term(q->st.curr_m, tmp2, &found, NULL)), found) {
+			tmp2->flags |= FLAG_BUILTIN;
+		} else if ((tmp2->match = search_predicate(q->st.curr_m, tmp2, NULL)) != NULL) {
+			tmp2->flags &= ~FLAG_BUILTIN;
+		} else {
+			tmp2->flags &= ~FLAG_BUILTIN;
+		}
+	}
+
+	if (calln && (tmp2->arity <= 2)) {
+		const char *functor = C_STR(q, tmp2);
+		unsigned specifier;
+
+		if (search_op(q->st.curr_m, functor, &specifier, false))
+			SET_OP(tmp2, specifier);
+	}
+
+	if ((tmp2 = check_body_callable(tmp2)) != NULL) {
+		*status = throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
+		return false;
+	}
+
+	*status = true;
+	return true;
+}
+
 bool bif_sys_call_check_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
@@ -6710,7 +6746,7 @@ builtins g_other_bifs[] =
 	{"shell", 2, bif_shell_2, "+atom,-integer", false, false, BLAH},
 	{"listing", 0, bif_listing_0, NULL, false, false, BLAH},
 	{"listing", 1, bif_listing_1, "+predicate_indicator", false, false, BLAH},
-	{"xlisting", 1, bif_xlisting_1, "+predicate_indicator", false, false, BLAH},
+	{"$xlisting", 1, bif_sys_xlisting_1, "+predicate_indicator", false, false, BLAH},
 	{"time", 1, bif_time_1, ":callable", false, false, BLAH},
 	{"trace", 0, bif_trace_0, NULL, false, false, BLAH},
 	{"statistics", 0, bif_statistics_0, NULL, false, false, BLAH},
