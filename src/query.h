@@ -125,6 +125,7 @@ bool bif_sys_cleanup_if_det_1(query *q);
 bool bif_sys_queue_1(query *q);
 bool bif_sys_get_level_1(query *q);
 bool bif_sys_set_if_var_2(query *q);
+bool bif_sys_jump_1(query *q);
 bool bif_parse_csv_file_2(query *q);
 bool bif_parse_csv_line_3(query *q);
 bool bif_parse_csv_line_2(query *q);

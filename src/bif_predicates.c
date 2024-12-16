@@ -6032,6 +6032,13 @@ bool bif_sys_get_level_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
+bool bif_sys_jump_1(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	q->st.curr_instr += get_smallint(p1);
+	return true;
+}
+
 static bool do_dump_term(query *q, cell *p1, pl_idx p1_ctx, bool deref, int depth)
 {
 	if (!depth) {
@@ -6219,8 +6226,9 @@ bool bif_sys_succeed_on_retry_2(query *q)
 	GET_NEXT_ARG(p2,integer);
 	cell tmp;
 	make_uint(&tmp, (pl_uint)q->cp);
+	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 	check_heap_error(push_succeed_on_retry(q, get_smalluint(p2)));
-	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+	return ok;
 }
 
 static bool bif_iso_compare_3(query *q)
@@ -6868,6 +6876,7 @@ builtins g_other_bifs[] =
 	{"$call_cleanup", 3, bif_sys_call_cleanup_3, NULL, false, false, BLAH},
 	{"$cleanup_if_det", 1, bif_sys_cleanup_if_det_1, NULL, false, false, BLAH},
 	{"$drop_barrier", 1, bif_sys_drop_barrier_1, NULL, false, false, BLAH},
+	{"$jump", 1, bif_sys_jump_1, NULL, false, false, BLAH},
 	{"$timer", 0, bif_sys_timer_0, NULL, false, false, BLAH},
 	{"$elapsed", 0, bif_sys_elapsed_0, NULL, false, false, BLAH},
 	{"$lt", 2, bif_sys_lt_2, NULL, false, false, BLAH},
