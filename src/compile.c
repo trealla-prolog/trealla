@@ -14,7 +14,7 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-#if 1
+#if 0
 	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)) {
 		unsigned var_nbr = cl->nbr_vars++;
 		*src += 1;
