@@ -14,7 +14,7 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_once_s) && ((*src)->arity == 1)) {
+	if (((*src)->val_off == g_once_s) && ((*src)->arity == 1) && !is_var((*src)+1)) {
 		unsigned var_nbr = cl->nbr_vars++;
 		*src += 1;
 		cell *save_dst = *dst;
@@ -29,7 +29,7 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_ignore_s) && ((*src)->arity == 1)) {
+	if (((*src)->val_off == g_ignore_s) && ((*src)->arity == 1) && !is_var((*src)+1)) {
 		unsigned var_nbr = cl->nbr_vars++;
 		*src += 1;
 		cell *save_dst = *dst;
@@ -46,7 +46,7 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_negation_s) && ((*src)->arity == 1)) {
+	if (((*src)->val_off == g_negation_s) && ((*src)->arity == 1) && !is_var((*src)+1)) {
 		unsigned var_nbr = cl->nbr_vars++;
 		*src += 1;
 		cell *save_dst = *dst;
