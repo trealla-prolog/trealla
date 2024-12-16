@@ -120,7 +120,6 @@ bool bif_sys_succeed_on_retry_2(query *q);
 bool bif_sys_fail_on_retry_1(query *q);
 bool bif_sys_drop_barrier_1(query *q);
 bool bif_sys_call_cleanup_3(query *q);
-bool bif_sys_set_if_var_2(query *q);
 bool bif_sys_cleanup_if_det_1(query *q);
 bool bif_sys_queue_1(query *q);
 bool bif_parse_csv_file_2(query *q);

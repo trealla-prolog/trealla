@@ -1488,6 +1488,18 @@ static bool any_outstanding_choices(query *q)
 	return q->cp > 0;
 }
 
+void do_cleanup(query *q, cell *c, pl_idx c_ctx)
+{
+	cell *tmp = prepare_call(q, PREFIX_LEN, c, c_ctx, 4);
+	ensure(tmp);
+	pl_idx nbr_cells = PREFIX_LEN + c->nbr_cells;
+	make_instr(tmp+nbr_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
+	make_instr(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
+	make_uint(tmp+nbr_cells++, q->cp);
+	make_call(q, tmp+nbr_cells);
+	q->st.curr_instr = tmp;
+}
+
 static bool consultall(query *q, cell *l, pl_idx l_ctx)
 {
 	if (is_string(l)) {

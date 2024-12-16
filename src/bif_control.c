@@ -38,18 +38,6 @@ bool bif_sys_drop_barrier_1(query *q)
 	return true;
 }
 
-void do_cleanup(query *q, cell *c, pl_idx c_ctx)
-{
-	cell *tmp = prepare_call(q, PREFIX_LEN, c, c_ctx, 4);
-	ensure(tmp);
-	pl_idx nbr_cells = PREFIX_LEN + c->nbr_cells;
-	make_instr(tmp+nbr_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
-	make_instr(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+nbr_cells++, q->cp);
-	make_call(q, tmp+nbr_cells);
-	q->st.curr_instr = tmp;
-}
-
 bool bif_sys_cleanup_if_det_1(query *q)
 {
 	q->tot_inferences--;
@@ -91,42 +79,6 @@ bool bif_call_0(query *q, cell *p1, pl_idx p1_ctx)
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_fail_on_retry(q));
 	q->st.curr_instr = tmp;
-	return true;
-}
-
-bool call_check(query *q, cell *tmp2, bool *status, bool calln)
-{
-	if (tmp2->val_off == g_colon_s) {
-		tmp2 = tmp2 + 1;
-		tmp2 += tmp2->nbr_cells;
-	}
-
-	if (!tmp2->match) {
-		bool found = false;
-
-		if ((tmp2->bif_ptr = get_builtin_term(q->st.curr_m, tmp2, &found, NULL)), found) {
-			tmp2->flags |= FLAG_BUILTIN;
-		} else if ((tmp2->match = search_predicate(q->st.curr_m, tmp2, NULL)) != NULL) {
-			tmp2->flags &= ~FLAG_BUILTIN;
-		} else {
-			tmp2->flags &= ~FLAG_BUILTIN;
-		}
-	}
-
-	if (calln && (tmp2->arity <= 2)) {
-		const char *functor = C_STR(q, tmp2);
-		unsigned specifier;
-
-		if (search_op(q->st.curr_m, functor, &specifier, false))
-			SET_OP(tmp2, specifier);
-	}
-
-	if ((tmp2 = check_body_callable(tmp2)) != NULL) {
-		*status = throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
-		return false;
-	}
-
-	*status = true;
 	return true;
 }
 
@@ -516,7 +468,7 @@ static bool bif_iso_catch_3(query *q)
 	return true;
 }
 
-bool bif_sys_set_if_var_2(query *q)
+static bool bif_sys_set_if_var_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
