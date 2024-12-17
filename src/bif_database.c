@@ -1054,6 +1054,7 @@ static bool bif_sys_xlisting_1(query *q)
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
 	save_name(str->fp, q, name, arity, true);
+	fprintf(str->fp, "\n");
 	return true;
 }
 

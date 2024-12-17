@@ -17,7 +17,8 @@ void query_destroy(query *q);
 
 bool push_choice(query *q);
 bool push_barrier(query *q);
-bool push_succeed_on_retry(query *q, pl_idx skip);
+bool push_succeed_on_retry_with_barrier(query *q, pl_idx skip);
+bool push_succeed_on_retry_no_barrier(query *q, pl_idx skip);
 bool push_fail_on_retry(query *q);
 bool push_reset_handler(query *q);
 bool push_catcher(query *q, enum q_retry type);
@@ -118,6 +119,7 @@ bool bif_if_2(query *q);
 bool bif_iso_if_then_2(query *q);
 
 bool bif_sys_call_check_1(query *q);
+bool bif_sys_succeed_on_retry_1(query *q);
 bool bif_sys_succeed_on_retry_2(query *q);
 bool bif_sys_fail_on_retry_1(query *q);
 bool bif_sys_drop_barrier_1(query *q);

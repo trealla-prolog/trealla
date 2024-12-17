@@ -225,7 +225,7 @@ static bool bif_iso_notunify_2(query *q)
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_instr(tmp+nbr_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
-	check_heap_error(push_succeed_on_retry(q, 0));
+	check_heap_error(push_succeed_on_retry_with_barrier(q, 0));
 	q->st.curr_instr = tmp;
 	return true;
 }
@@ -6079,6 +6079,13 @@ bool bif_sys_fail_on_retry_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
+bool bif_sys_succeed_on_retry_1(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	check_heap_error(push_succeed_on_retry_no_barrier(q, get_smalluint(p1)));
+	return true;
+}
+
 bool bif_sys_succeed_on_retry_2(query *q)
 {
 	GET_FIRST_ARG(p1,var);
@@ -6086,7 +6093,7 @@ bool bif_sys_succeed_on_retry_2(query *q)
 	cell tmp;
 	make_uint(&tmp, (pl_uint)q->cp);
 	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-	check_heap_error(push_succeed_on_retry(q, get_smalluint(p2)));
+	check_heap_error(push_succeed_on_retry_with_barrier(q, get_smalluint(p2)));
 	return ok;
 }
 
@@ -6722,6 +6729,7 @@ builtins g_other_bifs[] =
 	{"$queue", 1, bif_sys_queue_1, "+term", false, false, BLAH},
 	{"$incr", 2, bif_sys_incr_2, "@integer,+integer", false, false, BLAH},
 	{"$fail_on_retry", 1, bif_sys_fail_on_retry_1, "-integer", false, false, BLAH},
+	{"$succeed_on_retry", 1, bif_sys_succeed_on_retry_1, "+integer", false, false, BLAH},
 	{"$succeed_on_retry", 2, bif_sys_succeed_on_retry_2, "-integer,+integer", false, false, BLAH},
 	{"$call_check", 1, bif_sys_call_check_1, "+callable", false, false, BLAH},
 	{"$alarm", 1, bif_sys_alarm_1, "+integer", false, false, BLAH},
