@@ -48,9 +48,7 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		return;
 #endif
 	}
-#endif
 
-#if 0
 	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)) {
 		*src += 1;
 		cell *save_dst1 = *dst;
