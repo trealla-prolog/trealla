@@ -50,8 +50,7 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 
 	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)
 		&& is_callable(c) && c->bif_ptr
-		&& (c->bif_ptr->fn == bif_if_2)) {
-#if 0
+		&& (c->bif_ptr->fn == bif_soft_if_2)) {
 		*src += 2;
 		unsigned var_nbr = cl->nbr_vars++;
 		cell *save_dst1 = *dst;
@@ -71,12 +70,6 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		make_uint(save_dst2+1, *dst - save_dst2);					// Real value
 		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Why????
 		return;
-#else
-		pl_idx n = copy_cells(*dst, *src, (*src)->nbr_cells);
-		*dst += n;
-		*src += n;
-		return;
-#endif
 	}
 
 	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)) {
