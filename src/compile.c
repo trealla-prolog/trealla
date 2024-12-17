@@ -56,13 +56,13 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		cell *save_dst1 = *dst;
 		make_instr((*dst)++, g_sys_succeed_on_retry_s, bif_sys_succeed_on_retry_1, 1, 1);
 		make_uint((*dst)++, 0);										// Dummy value
-		compile_term(cl, dst, src);		// LHS
+		compile_term(cl, dst, src);									// LHS
 		cell *save_dst2 = *dst;
 		make_instr((*dst)++, g_sys_jump_s, bif_sys_jump_1, 1, 1);
 		make_uint((*dst)++, 0);										// Dummy value
 		cell *save_dst3 = *dst;
 		make_uint(save_dst1+1, *dst - save_dst1);					// Real value
-		compile_term(cl, dst, src);		// RHS
+		compile_term(cl, dst, src);									// RHS
 		make_uint(save_dst2+1, *dst - save_dst3);					// Real value
 		return;
 	}
