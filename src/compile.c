@@ -14,7 +14,7 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-#if 0
+#if 1
 	cell *c = (*src) + 1;
 
 	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)
@@ -58,10 +58,10 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		cell *save_dst2 = *dst;
 		make_instr((*dst)++, g_sys_jump_s, bif_sys_jump_1, 1, 1);
 		make_uint((*dst)++, 0);										// Dummy value
-		cell *save_dst3 = *dst;
 		make_uint(save_dst1+1, *dst - save_dst1);					// Real value
 		compile_term(cl, dst, src);									// RHS
-		make_uint(save_dst2+1, *dst - save_dst3);					// Real value
+		make_uint(save_dst2+1, *dst - save_dst2);					// Real value
+		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Why????
 		return;
 	}
 #endif
