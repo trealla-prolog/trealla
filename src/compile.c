@@ -20,7 +20,7 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		&& is_callable(c) && c->bif_ptr
 		&& (c->bif_ptr->fn == bif_iso_if_then_2)) {
 #if 0
-		*src += 1;
+		*src += 2;
 		unsigned var_nbr = cl->nbr_vars++;
 		cell *save_dst1 = *dst;
 		make_instr((*dst)++, g_sys_succeed_on_retry_s, bif_sys_succeed_on_retry_2, 2, 2);
@@ -52,7 +52,7 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		&& is_callable(c) && c->bif_ptr
 		&& (c->bif_ptr->fn == bif_if_2)) {
 #if 0
-		*src += 1;
+		*src += 2;
 		unsigned var_nbr = cl->nbr_vars++;
 		cell *save_dst1 = *dst;
 		make_instr((*dst)++, g_sys_succeed_on_retry_s, bif_sys_succeed_on_retry_2, 2, 2);
