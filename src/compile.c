@@ -65,10 +65,8 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		make_instr((*dst)++, g_sys_jump_s, bif_sys_jump_1, 1, 1);
 		make_uint((*dst)++, 0);										// Dummy value
 		make_uint(save_dst1+2, *dst - save_dst1);					// Real value
-		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Why????
 		compile_term(cl, dst, src);									// Arg3
 		make_uint(save_dst2+1, *dst - save_dst2);					// Real value
-		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Why????
 		return;
 	}
 
