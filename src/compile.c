@@ -50,7 +50,7 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 
 	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)
 		&& is_callable(c) && c->bif_ptr
-		&& (c->bif_ptr->fn == bif_soft_if_2)) {
+		&& (c->bif_ptr->fn == bif_soft_if_then_2)) {
 		*src += 2;
 		unsigned var_nbr = cl->nbr_vars++;
 		cell *save_dst1 = *dst;

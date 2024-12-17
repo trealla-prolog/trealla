@@ -256,7 +256,7 @@ bool bif_iso_if_then_2(query *q)
 
 // if *-> then
 
-bool bif_soft_if_2(query *q)
+bool bif_soft_if_then_2(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,callable);
@@ -356,7 +356,7 @@ static bool bif_iso_disjunction_2(query *q)
 			return do_if_then_else(q, p1, p2, p3);
 		}
 
-		if (c->bif_ptr && (c->bif_ptr->fn == bif_soft_if_2)) {
+		if (c->bif_ptr && (c->bif_ptr->fn == bif_soft_if_then_2)) {
 			cell *p1 = c + 1;
 			cell *p2 = p1 + p1->nbr_cells;
 			cell *p3 = p2 + p2->nbr_cells;
@@ -1101,7 +1101,7 @@ builtins g_control_bifs[] =
 	{"throw", 1, bif_iso_throw_1, "+term", true, false, BLAH},
 	{"once", 1, bif_iso_once_1, ":callable", true, false, BLAH},
 
-	{"*->", 2, bif_soft_if_2, ":callable,:callable", false, false, BLAH},
+	{"*->", 2, bif_soft_if_then_2, ":callable,:callable", false, false, BLAH},
 	{"if", 3, bif_if_3, ":callable,:callable,:callable", false, false, BLAH},
 	{"ignore", 1, bif_ignore_1, ":callable", false, false, BLAH},
 	{"reset", 3, bif_reset_3, ":callable,?term,-term", false, false, BLAH},
