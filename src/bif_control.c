@@ -237,7 +237,7 @@ static bool bif_ignore_1(query *q)
 
 // if -> then
 
-static bool bif_iso_if_then_2(query *q)
+bool bif_iso_if_then_2(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,callable);
@@ -256,7 +256,7 @@ static bool bif_iso_if_then_2(query *q)
 
 // if *-> then
 
-static bool bif_if_2(query *q)
+bool bif_if_2(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,callable);
@@ -351,9 +351,6 @@ static bool bif_iso_disjunction_2(query *q)
 	cell *c = q->st.curr_instr+1;
 
 	if (is_callable(c)) {
-		if (is_cstring(c) && (c->val_off == g_nil_s))
-			return throw_error(q, c, q->st.curr_frame, "type_error", "callable");
-
 		if (c->bif_ptr && (c->bif_ptr->fn == bif_iso_if_then_2)) {
 			cell *p1 = q->st.curr_instr + 2;
 			cell *p2 = p1 + p1->nbr_cells;
