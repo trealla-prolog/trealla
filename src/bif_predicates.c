@@ -225,7 +225,7 @@ static bool bif_iso_notunify_2(query *q)
 	make_uint(tmp+nbr_cells++, q->cp);
 	make_instr(tmp+nbr_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
 	make_call(q, tmp+nbr_cells);
-	check_heap_error(push_succeed_on_retry_with_barrier(q, 0));
+	check_heap_error(push_succeed_on_retry(q, 0));
 	q->st.curr_instr = tmp;
 	return true;
 }
@@ -6093,7 +6093,7 @@ bool bif_sys_succeed_on_retry_2(query *q)
 	cell tmp;
 	make_uint(&tmp, (pl_uint)q->cp);
 	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-	check_heap_error(push_succeed_on_retry_with_barrier(q, get_smalluint(p2)));
+	check_heap_error(push_succeed_on_retry(q, get_smalluint(p2)));
 	return ok;
 }
 

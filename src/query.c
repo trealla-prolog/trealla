@@ -777,7 +777,7 @@ bool push_succeed_on_retry_no_barrier(query *q, pl_idx skip)
 	return true;
 }
 
-bool push_succeed_on_retry_with_barrier(query *q, pl_idx skip)
+bool push_succeed_on_retry(query *q, pl_idx skip)
 {
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
