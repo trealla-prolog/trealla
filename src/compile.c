@@ -20,6 +20,7 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		&& is_callable(c) && c->bif_ptr
 		&& (c->bif_ptr->fn == bif_iso_if_then_2)) {
 #if 0
+		*src += 1;
 		unsigned var_nbr = cl->nbr_vars++;
 		cell *save_dst1 = *dst;
 		make_instr((*dst)++, g_sys_succeed_on_retry_s, bif_sys_succeed_on_retry_2, 2, 2);
@@ -50,11 +51,26 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)
 		&& is_callable(c) && c->bif_ptr
 		&& (c->bif_ptr->fn == bif_if_2)) {
-#if 0 	// TODO
-		cell *p1 = c + 1;
-		cell *p2 = p1 + p1->nbr_cells;
-		cell *p3 = p2 + p2->nbr_cells;
-		return soft_do_if_then_else(q, p1, p2, p3);
+#if 0
+		*src += 1;
+		unsigned var_nbr = cl->nbr_vars++;
+		cell *save_dst1 = *dst;
+		make_instr((*dst)++, g_sys_succeed_on_retry_s, bif_sys_succeed_on_retry_2, 2, 2);
+		make_var((*dst)++, g_anon_s, var_nbr);
+		make_uint((*dst)++, 0);										// Dummy value
+		compile_term(cl, dst, src);									// Arg1
+		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
+		make_var((*dst)++, g_anon_s, var_nbr);
+		compile_term(cl, dst, src);									// Arg2
+		cell *save_dst2 = *dst;
+		make_instr((*dst)++, g_sys_jump_s, bif_sys_jump_1, 1, 1);
+		make_uint((*dst)++, 0);										// Dummy value
+		make_uint(save_dst1+2, *dst - save_dst1);					// Real value
+		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Why????
+		compile_term(cl, dst, src);									// Arg3
+		make_uint(save_dst2+1, *dst - save_dst2);					// Real value
+		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Why????
+		return;
 #else
 		pl_idx n = copy_cells(*dst, *src, (*src)->nbr_cells);
 		*dst += n;
