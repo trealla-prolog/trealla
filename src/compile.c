@@ -14,13 +14,12 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-#if 1
 	cell *c = (*src) + 1;
 
 	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)
 		&& is_callable(c) && c->bif_ptr
 		&& (c->bif_ptr->fn == bif_iso_if_then_2)) {
-#if 0
+#if 0 	// TODO
 		cell *p1 = c + 1;
 		cell *p2 = p1 + p1->nbr_cells;
 		cell *p3 = p2 + p2->nbr_cells;
@@ -36,7 +35,7 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)
 		&& is_callable(c) && c->bif_ptr
 		&& (c->bif_ptr->fn == bif_if_2)) {
-#if 0
+#if 0 	// TODO
 		cell *p1 = c + 1;
 		cell *p2 = p1 + p1->nbr_cells;
 		cell *p3 = p2 + p2->nbr_cells;
@@ -64,7 +63,6 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Why????
 		return;
 	}
-#endif
 
 	if (((*src)->val_off == g_call_s) && ((*src)->arity == 1) && !is_var((*src)+1)) {
 		unsigned var_nbr = cl->nbr_vars++;
