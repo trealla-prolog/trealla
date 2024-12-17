@@ -177,4 +177,5 @@ void compile_clause(clause *cl, cell *body)
 	compile_term(cl, &dst, &src);
 	assert(src->tag == TAG_END);
 	copy_cells(dst, src, 1);
+	cl->alt = realloc(cl->alt, sizeof(cell)*((dst-cl->alt)+1));
 }
