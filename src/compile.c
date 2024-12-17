@@ -15,22 +15,36 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 	}
 
 #if 0
-	cell *c = (*src)+1;
+	cell *c = (*src) + 1;
 
-	if (is_callable(c)) {
-		if (c->bif_ptr && (c->bif_ptr->fn == bif_iso_if_then_2)) {
-			cell *p1 = q->st.curr_instr + 2;
-			cell *p2 = p1 + p1->nbr_cells;
-			cell *p3 = p2 + p2->nbr_cells;
-			return do_if_then_else(q, p1, p2, p3);
-		}
+	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)
+		&& is_callable(c) && c->bif_ptr
+		&& (c->bif_ptr->fn == bif_iso_if_then_2)) {
+#if 0
+		cell *p1 = c + 1;
+		cell *p2 = p1 + p1->nbr_cells;
+		cell *p3 = p2 + p2->nbr_cells;
+		return do_if_then_else(q, p1, p2, p3);
+#else
+		pl_idx n = copy_cells(*dst, *src, (*src)->nbr_cells);
+		*dst += n;
+		*src += n;
+#endif
+	}
 
-		if (c->bif_ptr && (c->bif_ptr->fn == bif_if_2)) {
-			cell *p1 = q->st.curr_instr + 2;
-			cell *p2 = p1 + p1->nbr_cells;
-			cell *p3 = p2 + p2->nbr_cells;
-			return soft_do_if_then_else(q, p1, p2, p3);
-		}
+	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)
+		&& is_callable(c) && c->bif_ptr
+		&& (c->bif_ptr->fn == bif_if_2)) {
+#if 0
+		cell *p1 = c + 1;
+		cell *p2 = p1 + p1->nbr_cells;
+		cell *p3 = p2 + p2->nbr_cells;
+		return soft_do_if_then_else(q, p1, p2, p3);
+#else
+		pl_idx n = copy_cells(*dst, *src, (*src)->nbr_cells);
+		*dst += n;
+		*src += n;
+#endif
 	}
 #endif
 
