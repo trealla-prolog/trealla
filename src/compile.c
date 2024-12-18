@@ -27,16 +27,16 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_instr((*dst)++, g_sys_succeed_on_retry_s, bif_sys_succeed_on_retry_2, 2, 2);
 		make_var((*dst)++, g_anon_s, var_nbr);
 		make_uint((*dst)++, 0);										// Dummy value
-		compile_term(pr, cl, dst, src);									// Arg1
+		compile_term(pr, cl, dst, src);								// Arg1
 		make_instr((*dst)++, g_cut_s, bif_iso_cut_0, 0, 0);
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_nbr);
-		compile_term(pr, cl, dst, src);									// Arg2
+		compile_term(pr, cl, dst, src);								// Arg2
 		cell *save_dst2 = *dst;
 		make_instr((*dst)++, g_sys_jump_s, bif_sys_jump_1, 1, 1);
 		make_uint((*dst)++, 0);										// Dummy value
 		make_uint(save_dst1+2, *dst - save_dst1);					// Real value
-		compile_term(pr, cl, dst, src);									// Arg3
+		compile_term(pr, cl, dst, src);								// Arg3
 		make_uint(save_dst2+1, *dst - save_dst2);					// Real value
 		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Why????
 		return;
@@ -65,7 +65,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_instr((*dst)++, g_sys_jump_s, bif_sys_jump_1, 1, 1);
 		make_uint((*dst)++, 0);										// Dummy value
 		make_uint(save_dst1+2, *dst - save_dst1);					// Real value
-		compile_term(pr, cl, dst, src);									// Arg3
+		compile_term(pr, cl, dst, src);								// Arg3
 		make_uint(save_dst2+1, *dst - save_dst2);					// Real value
 		return;
 	}
@@ -75,12 +75,12 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		cell *save_dst1 = *dst;
 		make_instr((*dst)++, g_sys_succeed_on_retry_s, bif_sys_succeed_on_retry_1, 1, 1);
 		make_uint((*dst)++, 0);										// Dummy value
-		compile_term(pr, cl, dst, src);									// LHS
+		compile_term(pr, cl, dst, src);								// LHS
 		cell *save_dst2 = *dst;
 		make_instr((*dst)++, g_sys_jump_s, bif_sys_jump_1, 1, 1);
 		make_uint((*dst)++, 0);										// Dummy value
 		make_uint(save_dst1+1, *dst - save_dst1);					// Real value
-		compile_term(pr, cl, dst, src);									// RHS
+		compile_term(pr, cl, dst, src);								// RHS
 		make_uint(save_dst2+1, *dst - save_dst2);					// Real value
 		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Why????
 		return;
@@ -96,12 +96,12 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		compile_term(pr, cl, dst, src);									// Arg1
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_nbr);
-		compile_term(pr, cl, dst, src);									// Arg2
+		compile_term(pr, cl, dst, src);								// Arg2
 		cell *save_dst2 = *dst;
 		make_instr((*dst)++, g_sys_jump_s, bif_sys_jump_1, 1, 1);
 		make_uint((*dst)++, 0);										// Dummy value
 		make_uint(save_dst1+2, *dst - save_dst1);					// Real value
-		compile_term(pr, cl, dst, src);									// Arg3
+		compile_term(pr, cl, dst, src);								// Arg3
 		make_uint(save_dst2+1, *dst - save_dst2);					// Real value
 		return;
 	}
@@ -168,11 +168,11 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		*src += 1;
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_nbr);
-		compile_term(pr, cl, dst, src);									// Arg1
+		compile_term(pr, cl, dst, src);								// Arg1
 		make_instr((*dst)++, g_cut_s, bif_iso_cut_0, 0, 0);
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_nbr);
-		compile_term(pr, cl, dst, src);									// Arg2
+		compile_term(pr, cl, dst, src);								// Arg2
 		return;
 	}
 
@@ -181,10 +181,10 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		*src += 1;
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_nbr);
-		compile_term(pr, cl, dst, src);									// Arg1
+		compile_term(pr, cl, dst, src);								// Arg1
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_nbr);
-		compile_term(pr, cl, dst, src);									// Arg2
+		compile_term(pr, cl, dst, src);								// Arg2
 		return;
 	}
 
