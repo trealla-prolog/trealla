@@ -1643,7 +1643,7 @@ static void xref_predicate(predicate *pr)
 			cell *body = get_body(r->cl.cells);
 
 			if (body)
-				compile_clause(&r->cl, body);
+				compile_clause(pr, &r->cl, body);
 		}
 	}
 
