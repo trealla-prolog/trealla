@@ -227,12 +227,12 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		*src += 1;
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_nbr);
-		compile_term(pr, cl, dst, src);		// arg1
+		compile_term(pr, cl, dst, src);								// Arg1
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_nbr);
-		*src += (*src)->nbr_cells;		// arg2
+		*src += (*src)->nbr_cells;									// Arg2
 		make_instr((*dst)++, g_sys_set_if_var_s, bif_sys_set_if_var_2, 2, (*src)->nbr_cells+1);
-		compile_term(pr, cl, dst, src);		// arg3
+		compile_term(pr, cl, dst, src);								// Arg3
 		make_atom((*dst)++, g_none_s);
 		return;
 	}
