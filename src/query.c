@@ -548,7 +548,7 @@ int retry_choice(query *q)
 
 		if (ch->succeed_on_retry) {
 			leave_predicate(q, ch->st.pr);
-			q->st.curr_instr += ch->skip ? ch->skip : 0;
+			q->st.curr_instr += ch->skip;
 			return ch->skip ? -2 : -1;
 		}
 
