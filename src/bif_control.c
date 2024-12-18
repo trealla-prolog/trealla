@@ -278,7 +278,7 @@ bool bif_soft_if_then_2(query *q)
 static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 {
 	if (q->retry) {
-		q->st.curr_instr = p2;
+		q->st.curr_instr = p2;	// get's skipped, goes to p3
 		return true;
 	}
 
@@ -301,7 +301,7 @@ static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 static bool do_soft_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 {
 	if (q->retry) {
-		q->st.curr_instr = p2;
+		q->st.curr_instr = p2;	// get's skipped, goes to p3
 		return true;
 	}
 
