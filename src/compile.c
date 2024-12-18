@@ -120,6 +120,8 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 	}
 
 #if 0
+	// This is not worth doing as the conditions are very rare
+
 	if (((*src)->val_off == g_call_s) && ((*src)->arity > 1) && is_ground(*src)) {
 		unsigned var_nbr = cl->nbr_vars++;
 		unsigned arity = (*src)->arity;
