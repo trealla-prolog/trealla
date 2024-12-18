@@ -82,6 +82,19 @@ bool bif_call_0(query *q, cell *p1, pl_idx p1_ctx)
 	return true;
 }
 
+bool bif_sys_call_1(query *q)
+{
+	GET_FIRST_RAW_ARG(p1,callable);
+	bool status;
+
+	if (!call_check(q, p1, &status, true))
+		return status;
+
+	q->st.curr_instr++;
+	q->retry = QUERY_NOOP;
+	return true;
+}
+
 bool bif_iso_call_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
@@ -1108,6 +1121,7 @@ builtins g_control_bifs[] =
 	{"shift", 1, bif_shift_1, "+term", false, false, BLAH},
 	{"between", 3, bif_between_3, "+integer,+integer,-integer", false, false, BLAH},
 
+	{"$call", 1, bif_sys_call_1, ":callable", true, false, BLAH},
 	{"$catch", 3, bif_iso_catch_3, ":callable,?term,:callable", true, false, BLAH},
 	{"$counter", 1, bif_sys_counter_1, NULL, false, false, BLAH},
 	{"$countall", 2, bif_sys_countall_2, "@callable,-integer", false, false, BLAH},

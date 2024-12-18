@@ -127,24 +127,18 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_nbr);
 		cell *save_dst = *dst;
+		make_instr((*dst)++, g_sys_call_s, bif_sys_call_1, 1, 0);
+		cell *save_dst1 = *dst;
+		cell *save_dst2 = *dst;
 		compile_term(pr, cl, dst, src);
+		save_dst->nbr_cells += *dst - save_dst2;
 
 		for (unsigned i = 1; i < arity; i++) {
 			cell *save_dst2 = *dst;
 			compile_term(pr, cl, dst, src);
 			save_dst->nbr_cells += *dst - save_dst2;
-			save_dst->arity++;
-		}
-
-		cell *tmp2 = save_dst;
-		bool found = false;
-
-		if ((tmp2->bif_ptr = get_builtin_term(pr->m, tmp2, &found, NULL)), found) {
-			tmp2->flags |= FLAG_BUILTIN;
-		} else if ((tmp2->match = search_predicate(pr->m, tmp2, NULL)) != NULL) {
-			tmp2->flags &= ~FLAG_BUILTIN;
-		} else {
-			tmp2->flags &= ~FLAG_BUILTIN;
+			save_dst1->nbr_cells += *dst - save_dst2;
+			save_dst1->arity++;
 		}
 
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
