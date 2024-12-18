@@ -132,6 +132,31 @@ static void compile_term(clause *cl, cell **dst, cell **src)
 		return;
 	}
 
+	if (((*src)->val_off == g_if_then_s) && ((*src)->arity == 2) && !is_var((*src)+1)) {
+		unsigned var_nbr = cl->nbr_vars++;
+		*src += 1;
+		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
+		make_var((*dst)++, g_anon_s, var_nbr);
+		compile_term(cl, dst, src);									// Arg1
+		make_instr((*dst)++, g_cut_s, bif_iso_cut_0, 0, 0);
+		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
+		make_var((*dst)++, g_anon_s, var_nbr);
+		compile_term(cl, dst, src);									// Arg2
+		return;
+	}
+
+	if (((*src)->val_off == g_soft_cut_s) && ((*src)->arity == 2) && !is_var((*src)+1)) {
+		unsigned var_nbr = cl->nbr_vars++;
+		*src += 1;
+		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
+		make_var((*dst)++, g_anon_s, var_nbr);
+		compile_term(cl, dst, src);									// Arg1
+		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
+		make_var((*dst)++, g_anon_s, var_nbr);
+		compile_term(cl, dst, src);									// Arg2
+		return;
+	}
+
 	if (((*src)->val_off == g_ignore_s) && ((*src)->arity == 1) && !is_var((*src)+1)) {
 		unsigned var_nbr = cl->nbr_vars++;
 		*src += 1;
