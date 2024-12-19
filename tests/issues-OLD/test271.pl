@@ -6,10 +6,9 @@ from_generator(Goal, Value, Optional) :-
 	catch(Goal, Error, true),
 	(	var(Error) ->
 		Optional = optional(Value)
-	;	Optional = empty,
-		!
+	;	Optional = empty, !
 	).
-from_generator(_, _, empty).
+from_generator(_, _, oops).
 
 :-initialization(main).
 

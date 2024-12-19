@@ -295,7 +295,7 @@ static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 		return true;
 	}
 
-	cell *tmp = prepare_call(q, PREFIX_LEN, p1, q->st.curr_frame, 4+p2->nbr_cells+2);
+	cell *tmp = prepare_call(q, PREFIX_LEN, p1, q->st.curr_frame, 3+p2->nbr_cells+2);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 	make_instr(tmp+nbr_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
