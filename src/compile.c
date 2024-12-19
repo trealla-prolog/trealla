@@ -258,6 +258,6 @@ void compile_clause(predicate *pr, clause *cl, cell *body)
 	cell *dst = cl->alt, *src = body;
 	compile_term(pr, cl, &dst, &src);
 	assert(src->tag == TAG_END);
-	copy_cells(dst, src, 1);
-	cl->alt = realloc(cl->alt, sizeof(cell)*((dst-cl->alt)+1));
+	dst += copy_cells(dst, src, 1);
+	cl->alt = realloc(cl->alt, sizeof(cell)*((dst-cl->alt)));
 }
