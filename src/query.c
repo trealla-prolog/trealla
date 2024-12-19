@@ -72,6 +72,15 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 		return;
 
 #ifndef DEBUG
+	if (c->val_off == g_sys_succeed_on_retry_s)
+		return;
+
+	if (c->val_off == g_sys_fail_on_retry_s)
+		return;
+
+	if (c->val_off == g_sys_jump_s)
+		return;
+
 	if (c->val_off == g_sys_drop_barrier_s)
 		return;
 
