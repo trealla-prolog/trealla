@@ -106,6 +106,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_uint(save_dst1+2, *dst - save_dst1);					// Real value
 		compile_term(pr, cl, dst, src);								// Arg3
 		make_uint(save_dst2+1, *dst - save_dst2);					// Real value
+		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Why????
 		return;
 	}
 
