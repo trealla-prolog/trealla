@@ -84,6 +84,9 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 	if (c->val_off == g_sys_drop_barrier_s)
 		return;
 
+	if (c->val_off == g_sys_block_catcher_s)
+		return;
+
 	if (c->val_off == g_conjunction_s)
 		return;
 
