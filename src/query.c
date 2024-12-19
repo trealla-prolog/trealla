@@ -740,6 +740,7 @@ bool push_choice(query *q)
 	check_heap_error(check_choice(q));
 	const frame *f = GET_CURR_FRAME();
 	choice *ch = GET_CHOICE(q->cp++);
+	ch->skip = 0;
 	ch->st = q->st;
 	ch->dbgen = f->dbgen;
 	ch->frame_chgen = ch->chgen = f->chgen;
@@ -751,6 +752,7 @@ bool push_choice(query *q)
 		ch->catchme_exception = ch->barrier = ch->register_cleanup =
 		ch->block_catcher = ch->catcher = ch->fail_on_retry =
 		ch->succeed_on_retry = ch->reset = false;
+
 	return true;
 }
 

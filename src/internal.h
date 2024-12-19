@@ -560,12 +560,12 @@ struct choice_ {
 	bool catchme_retry:1;
 	bool catchme_exception:1;
 	bool barrier:1;
-	bool reset:1;
 	bool register_cleanup:1;
 	bool block_catcher:1;
 	bool catcher:1;
 	bool fail_on_retry:1;
 	bool succeed_on_retry:1;
+	bool reset:1;
 };
 
 enum { eof_action_eof_code, eof_action_error, eof_action_reset };
