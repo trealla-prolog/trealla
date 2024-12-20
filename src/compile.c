@@ -75,8 +75,8 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		*dst += n;
 		*src += n;
 		return;
-	}
 #endif
+	}
 
 	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)) {
 		*src += 1;
