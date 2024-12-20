@@ -40,7 +40,6 @@ forall(Cond, Action) :-
 :- meta_predicate(forall(0,0)).
 :- help(forall(:callable,:callable), [iso(false)]).
 
-
 succ(X,S) :- nonvar(X), Y=1, nonvar(Y),
 	must_be(X, integer, succ/2, _), must_be(Y, integer, succ/2, _), !,
 	(X >= 0 -> true ; throw(error(domain_error(not_less_than_zero, X), succ/2))),
