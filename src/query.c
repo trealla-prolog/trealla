@@ -768,9 +768,17 @@ bool push_choice(query *q)
 	return true;
 }
 
+bool push_succeed_on_retry_no_barrier(query *q, pl_idx skip)
+{
+	check_heap_error(push_choice(q));
+	choice *ch = GET_CURR_CHOICE();
+	ch->succeed_on_retry = true;
+	ch->skip = skip;
+	return true;
+}
+
 // A barrier is used when making a call, it sets a new
 // choice generation so that normal cuts are contained.
-// This is because there is no separate choice stack.
 
 bool push_barrier(query *q)
 {
@@ -779,15 +787,6 @@ bool push_barrier(query *q)
 	choice *ch = GET_CURR_CHOICE();
 	ch->chgen = f->chgen = ++q->chgen;
 	ch->barrier = true;
-	return true;
-}
-
-bool push_succeed_on_retry_no_barrier(query *q, pl_idx skip)
-{
-	check_heap_error(push_choice(q));
-	choice *ch = GET_CURR_CHOICE();
-	ch->succeed_on_retry = true;
-	ch->skip = skip;
 	return true;
 }
 
