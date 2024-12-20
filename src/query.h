@@ -126,7 +126,6 @@ bool bif_sys_make_barrier_0(query *q);
 bool bif_sys_drop_barrier_1(query *q);
 bool bif_sys_reset_handler_1(query *q);
 bool bif_sys_call_cleanup_3(query *q);
-bool bif_sys_cleanup_if_det_1(query *q);
 bool bif_sys_queue_1(query *q);
 bool bif_sys_get_level_1(query *q);
 bool bif_sys_set_if_var_2(query *q);

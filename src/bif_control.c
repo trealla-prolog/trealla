@@ -24,7 +24,17 @@ bool bif_iso_cut_0(query *q)
 	return true;
 }
 
-bool bif_sys_cleanup_if_det_1(query *q)
+// goal , goal
+
+bool bif_iso_conjunction_2(query *q)
+{
+	q->tot_inferences--;
+	q->retry = QUERY_NOOP;
+	q->st.curr_instr++;
+	return true;
+}
+
+static bool bif_sys_cleanup_if_det_1(query *q)
 {
 	q->tot_inferences--;
 	GET_FIRST_RAW_ARG(p1,integer)
@@ -314,16 +324,6 @@ static bool bif_if_3(query *q)
 	cell *p2 = p1 + p1->nbr_cells;
 	cell *p3 = p2 + p2->nbr_cells;
 	return do_soft_if_then_else(q, p1, p2, p3);
-}
-
-// goal , goal
-
-bool bif_iso_conjunction_2(query *q)
-{
-	q->tot_inferences--;
-	q->retry = QUERY_NOOP;
-	q->st.curr_instr++;
-	return true;
 }
 
 // goal ; goal
@@ -1103,6 +1103,7 @@ builtins g_control_bifs[] =
 	{"$countall", 2, bif_sys_countall_2, "@callable,-integer", false, false, BLAH},
 	{"$block_catcher", 1, bif_sys_block_catcher_1, NULL, false, false, BLAH},
 	{"$set_if_var", 2, bif_sys_set_if_var_2, "?term,+term", false, false, BLAH},
+	{"$cleanup_if_det", 1, bif_sys_cleanup_if_det_1, NULL, false, false, BLAH},
 
 	{0}
 };

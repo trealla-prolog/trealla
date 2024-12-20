@@ -6759,7 +6759,6 @@ builtins g_other_bifs[] =
 	{"$dump_term", 2, bif_sys_dump_term_2, "+term,+bool", false, false, BLAH},
 	{"$integer_in_radix", 3, bif_sys_integer_in_radix_3, "+integer,+integer,-string", false, false, BLAH},
 	{"$call_cleanup", 3, bif_sys_call_cleanup_3, NULL, false, false, BLAH},
-	{"$cleanup_if_det", 1, bif_sys_cleanup_if_det_1, NULL, false, false, BLAH},
 	{"$make_barrier", 0, bif_sys_make_barrier_0, NULL, false, false, BLAH},
 	{"$drop_barrier", 1, bif_sys_drop_barrier_1, "+integer", false, false, BLAH},
 	{"$jump", 1, bif_sys_jump_1, NULL, false, false, BLAH},
