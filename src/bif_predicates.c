@@ -5891,6 +5891,27 @@ bool bif_sys_get_level_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
+bool bif_sys_drop_barrier_1(query *q)
+{
+	GET_FIRST_ARG(p1,integer)
+	q->tot_inferences--;
+	drop_barrier(q, get_smalluint(p1));
+
+	if (q->cp) {
+		const choice *ch = GET_CURR_CHOICE();
+		q->st.timer_started = ch->st.timer_started;
+	}
+
+	return true;
+}
+
+bool bif_sys_make_barrier_0(query *q)
+{
+	q->tot_inferences--;
+	check_heap_error(push_barrier(q));
+	return true;
+}
+
 bool bif_sys_jump_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
@@ -6739,7 +6760,8 @@ builtins g_other_bifs[] =
 	{"$integer_in_radix", 3, bif_sys_integer_in_radix_3, "+integer,+integer,-string", false, false, BLAH},
 	{"$call_cleanup", 3, bif_sys_call_cleanup_3, NULL, false, false, BLAH},
 	{"$cleanup_if_det", 1, bif_sys_cleanup_if_det_1, NULL, false, false, BLAH},
-	{"$drop_barrier", 1, bif_sys_drop_barrier_1, NULL, false, false, BLAH},
+	{"$make_barrier", 0, bif_sys_make_barrier_0, NULL, false, false, BLAH},
+	{"$drop_barrier", 1, bif_sys_drop_barrier_1, "+integer", false, false, BLAH},
 	{"$jump", 1, bif_sys_jump_1, NULL, false, false, BLAH},
 	{"$timer", 0, bif_sys_timer_0, NULL, false, false, BLAH},
 	{"$elapsed", 0, bif_sys_elapsed_0, NULL, false, false, BLAH},

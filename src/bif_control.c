@@ -24,20 +24,6 @@ bool bif_iso_cut_0(query *q)
 	return true;
 }
 
-bool bif_sys_drop_barrier_1(query *q)
-{
-	GET_FIRST_ARG(p1,integer)
-	q->tot_inferences--;
-	drop_barrier(q, get_smalluint(p1));
-
-	if (q->cp) {
-		const choice *ch = GET_CURR_CHOICE();
-		q->st.timer_started = ch->st.timer_started;
-	}
-
-	return true;
-}
-
 bool bif_sys_cleanup_if_det_1(query *q)
 {
 	q->tot_inferences--;
