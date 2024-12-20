@@ -290,12 +290,6 @@ bool bif_soft_if_then_2(query *q)
 
 static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 {
-	if (q->retry) {
-		q->st.curr_instr = p3;
-		q->retry = QUERY_NOOP;
-		return true;
-	}
-
 	cell *tmp = prepare_call(q, PREFIX_LEN, p1, q->st.curr_frame, 3+p2->nbr_cells+2);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
@@ -314,12 +308,6 @@ static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 
 static bool do_soft_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 {
-	if (q->retry) {
-		q->st.curr_instr = p3;
-		q->retry = QUERY_NOOP;
-		return true;
-	}
-
 	cell *tmp = prepare_call(q, PREFIX_LEN, p1, q->st.curr_frame, 2+p2->nbr_cells+1);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
