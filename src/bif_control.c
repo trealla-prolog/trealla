@@ -323,6 +323,13 @@ static bool bif_if_3(query *q)
 	cell *p1 = q->st.curr_instr + 1;
 	cell *p2 = p1 + p1->nbr_cells;
 	cell *p3 = p2 + p2->nbr_cells;
+
+	if (q->retry) {
+		q->st.curr_instr = p3;
+		q->retry = QUERY_NOOP;
+		return true;
+	}
+
 	return do_soft_if_then_else(q, p1, p2, p3);
 }
 

@@ -43,7 +43,7 @@ extern pl_idx g_caret_s, g_sys_counter_s, g_catch_s, g_memberchk_s;
 extern pl_idx g_cont_s, g_sys_set_if_var_s, g_is_s, g_maplist_s;
 extern pl_idx g_sys_succeed_on_retry_s, g_sys_fail_on_retry_s;
 extern pl_idx g_sys_call_check_s, g_ignore_s, g_sys_reset_handler_s;
-extern pl_idx g_reset_s, g_sys_get_level_s, g_sys_jump_s, g_if__s;
+extern pl_idx g_reset_s, g_sys_get_level_s, g_sys_jump_s, g_if_s;
 extern pl_idx g_sys_call_s;
 extern pl_idx g_dummy_s;
 

@@ -39,7 +39,7 @@ pl_idx g_caret_s, g_sys_counter_s, g_catch_s, g_memberchk_s;
 pl_idx g_cont_s, g_sys_set_if_var_s, g_is_s, g_maplist_s;
 pl_idx g_sys_succeed_on_retry_s, g_sys_fail_on_retry_s;
 pl_idx g_sys_call_check_s, g_ignore_s, g_sys_reset_handler_s;
-pl_idx g_reset_s, g_sys_get_level_s, g_sys_jump_s, g_if__s;
+pl_idx g_reset_s, g_sys_get_level_s, g_sys_jump_s, g_if_s;
 pl_idx g_sys_call_s;
 pl_idx g_dummy_s;
 
@@ -598,7 +598,7 @@ static bool g_init(prolog *pl)
 	CHECK_SENTINEL(g_sys_jump_s = new_atom(pl, "$jump"), ERR_IDX);
 	CHECK_SENTINEL(g_reset_s = new_atom(pl, "reset"), ERR_IDX);
 	CHECK_SENTINEL(g_ignore_s = new_atom(pl, "ignore"), ERR_IDX);
-	CHECK_SENTINEL(g_if__s = new_atom(pl, "if_"), ERR_IDX);
+	CHECK_SENTINEL(g_if_s = new_atom(pl, "if"), ERR_IDX);
 	CHECK_SENTINEL(g_sys_call_s = new_atom(pl, "$call"), ERR_IDX);
 
 	char *ptr = getenv("TPL_LIBRARY_PATH");

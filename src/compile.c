@@ -94,7 +94,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_if__s) && ((*src)->arity == 3)) {
+	if (((*src)->val_off == g_if_s) && ((*src)->arity == 3)) {
 		*src += 1;
 		unsigned var_nbr = cl->nbr_vars++;
 		cell *save_dst1 = *dst;
