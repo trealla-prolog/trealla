@@ -1429,7 +1429,7 @@ static bool match_head(query *q)
 			convert_to_literal(q->st.curr_m, c);
 		}
 
-		if (!pr || is_evaluable(c) || is_builtin(c)) {
+		if (!pr) {
 			pr = search_predicate(q->st.curr_m, c, NULL);
 
 			if (!pr) {
