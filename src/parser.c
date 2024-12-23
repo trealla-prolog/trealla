@@ -1838,10 +1838,8 @@ static bool dcg_expansion(parser *p)
 	cell *arg1 = tmp + 1;
 	cell *arg2 = arg1 + arg1->nbr_cells;
 	c = deref(q, arg2, 0);
-	int save_max_depth = q->max_depth;
 	q->max_depth = -1;
 	char *src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
-	q->max_depth = save_max_depth;
 
 	if (!src) {
 		query_destroy(q);
@@ -1925,10 +1923,8 @@ static bool term_expansion(parser *p)
 	cell *arg1 = tmp + 1;
 	cell *arg2 = arg1 + arg1->nbr_cells;
 	c = deref(q, arg2, 0);
-	int save_max_depth = q->max_depth;
 	q->max_depth = -1;
 	char *src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
-	q->max_depth = save_max_depth;
 
 	if (!src) {
 		query_destroy(q);
@@ -1997,10 +1993,8 @@ static cell *goal_expansion(parser *p, cell *goal)
 	check_error(q);
 	q->trace = false;
 	q->varnames = true;
-	int save_max_depth = q->max_depth;
 	q->max_depth = -1;
 	char *dst = print_canonical_to_strbuf(q, goal, 0, 0);
-	q->max_depth = save_max_depth;
 	q->varnames = false;
 	SB(s);
 	SB_sprintf(s, "goal_expansion((%s),_TermOut), !.", dst);
@@ -2066,10 +2060,8 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		q->varnames = true;
-		int save_max_depth = q->max_depth;
 		q->max_depth = -1;
 		src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
-		q->max_depth = save_max_depth;
 		q->varnames = false;
 		strcat(src, ".");
 		break;
