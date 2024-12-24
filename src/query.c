@@ -559,7 +559,6 @@ int retry_choice(query *q)
 		trim_heap(q);
 
 		if (ch->succeed_on_retry) {
-			leave_predicate(q, ch->st.pr);
 			q->st.curr_instr += ch->skip;
 			return ch->skip ? -2 : -1;
 		}
@@ -622,7 +621,6 @@ static void reuse_frame(query *q, const clause *cl)
 
 	frame *f = GET_CURR_FRAME();
 	f->initial_slots = f->actual_slots = cl->nbr_vars;
-	f->chgen = ++q->chgen;
 	f->overflow = 0;
 
 	const frame *newf = GET_FRAME(q->st.fp);
