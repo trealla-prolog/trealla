@@ -333,6 +333,9 @@ Non-standard predicates
 	write_canonical_to_atom/3   # write_canonical_to_atom(?atom,?term,+oplist)
 	term_to_atom/2              # term_to_atom(?atom,?term)
 
+	writeln/1
+	writeln/2
+
 	setrand/1                   # set_seed(+integer) set random number seed
 	srandom/1                   # set_seed(+integer) set random number seed
 	set_seed/1                  # set_seed(+integer) set random number seed

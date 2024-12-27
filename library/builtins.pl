@@ -409,6 +409,10 @@ writeln(T) :- write(T), nl.
 
 :- help(writeln(+term), [iso(false)]).
 
+writeln(S, T) :- write(S, T), nl.
+
+:- help(writeln(+stream,+term), [iso(false)]).
+
 open(F, M, S) :- open(F, M, S, []).
 
 :- help(open(+atom,+atom,--stream), [iso(true)]).
