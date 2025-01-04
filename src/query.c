@@ -1653,7 +1653,7 @@ bool start(query *q)
 				if (!(q->s_cnt++ % 100))
 					check_pressure(q);
 
-				if (q->yield_at) {
+				if (q->yield_at && !q->run_hook) {
 					uint64_t now = get_time_in_usec() / 1000;
 
 					if (now > q->yield_at)  {
