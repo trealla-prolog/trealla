@@ -524,52 +524,6 @@ void try_me(query *q, unsigned nbr_vars)
 	q->tot_matches++;
 }
 
-int retry_choice(query *q)
-{
-	while (q->cp) {
-		undo_me(q);
-		pl_idx curr_choice = --q->cp;
-		const choice *ch = GET_CHOICE(curr_choice);
-		q->st = ch->st;
-
-		frame *f = GET_CURR_FRAME();
-		f->dbgen = ch->dbgen;
-		f->chgen = ch->frame_chgen;
-		f->initial_slots = ch->initial_slots;
-		f->actual_slots = ch->actual_slots;
-		f->overflow = ch->overflow;
-		f->base = ch->base;
-
-		if (ch->reset)
-			continue;
-
-		if (ch->catchme_exception || ch->fail_on_retry) {
-			leave_predicate(q, ch->st.pr);
-			continue;
-		}
-
-		if (!ch->register_cleanup && q->noretry) {
-			leave_predicate(q, ch->st.pr);
-			continue;
-		}
-
-		if (ch->register_cleanup && q->noretry)
-			q->noretry = false;
-
-		trim_heap(q);
-
-		if (ch->succeed_on_retry) {
-			q->st.curr_instr += ch->skip;
-			return ch->skip ? -2 : -1;
-		}
-
-		return 1;
-	}
-
-	trim_heap(q);
-	return 0;
-}
-
 static void trim_trail(query *q)
 {
 	if (q->undo_hi_tp)
@@ -743,6 +697,52 @@ void stash_frame(query *q, const clause *cl, bool last_match)
 	}
 
 	q->st.iter = NULL;
+}
+
+int retry_choice(query *q)
+{
+	while (q->cp) {
+		undo_me(q);
+		pl_idx curr_choice = --q->cp;
+		const choice *ch = GET_CHOICE(curr_choice);
+		q->st = ch->st;
+
+		frame *f = GET_CURR_FRAME();
+		f->dbgen = ch->dbgen;
+		f->chgen = ch->frame_chgen;
+		f->initial_slots = ch->initial_slots;
+		f->actual_slots = ch->actual_slots;
+		f->overflow = ch->overflow;
+		f->base = ch->base;
+
+		if (ch->reset)
+			continue;
+
+		if (ch->catchme_exception || ch->fail_on_retry) {
+			leave_predicate(q, ch->st.pr);
+			continue;
+		}
+
+		if (!ch->register_cleanup && q->noretry) {
+			leave_predicate(q, ch->st.pr);
+			continue;
+		}
+
+		if (ch->register_cleanup && q->noretry)
+			q->noretry = false;
+
+		trim_heap(q);
+
+		if (ch->succeed_on_retry) {
+			q->st.curr_instr += ch->skip;
+			return ch->skip ? -2 : -1;
+		}
+
+		return 1;
+	}
+
+	trim_heap(q);
+	return 0;
 }
 
 bool push_choice(query *q)
