@@ -54,7 +54,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 	// T1 *-> T2 ; T3
 
 	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)
-		&& is_callable(c) && c->bif_ptr && c->bif_ptr && (c->arity == 2)
+		&& is_callable(c) && c->bif_ptr && (c->arity == 2)
 		&& (c->bif_ptr->fn == bif_soft_if_then_2)) {
 #if 0
 		*src += 2;
