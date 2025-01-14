@@ -834,14 +834,13 @@ bool drop_barrier(query *q, pl_idx cp)
 	if ((q->cp-1) != cp)
 		return false;
 
-	drop_choice(q);
-
 	if (q->cp) {
 		const choice *ch = GET_CURR_CHOICE();
 		frame *f = GET_CURR_FRAME();
-		f->chgen = ch->chgen;
+		f->chgen = ch->frame_chgen;
 	}
 
+	drop_choice(q);
 	return true;
 }
 
