@@ -259,11 +259,11 @@ bool check_slot(query *q, unsigned cnt)
 void make_call(query *q, cell *tmp)
 {
 	make_end(tmp);
-	const frame *f = GET_CURR_FRAME();
 	cell *c = q->st.curr_instr;
 	tmp->ret_instr = c + c->nbr_cells;	// save next as the return instruction
+	const frame *f = GET_CURR_FRAME();
 	tmp->chgen = f->chgen;				// ... choice-generation
-	tmp->mid = q->st.curr_m->id;				// ... current-module
+	tmp->mid = q->st.curr_m->id;		// ... current-module
 }
 
 void make_call_redo(query *q, cell *tmp)
@@ -272,7 +272,7 @@ void make_call_redo(query *q, cell *tmp)
 	const frame *f = GET_CURR_FRAME();
 	tmp->ret_instr = q->st.curr_instr;	// save the return instruction
 	tmp->chgen = f->chgen;				// ... choice-generation
-	tmp->mid = q->st.curr_m->id;				// ... current-module
+	tmp->mid = q->st.curr_m->id;		// ... current-module
 }
 
 void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs)
