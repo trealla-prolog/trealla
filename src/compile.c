@@ -88,6 +88,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Why????
 		return;
 	}
+#endif
 
 	// T1 -> T2
 
@@ -119,7 +120,6 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		compile_term(pr, cl, dst, src);								// Arg2
 		return;
 	}
-#endif
 
 	if (((*src)->val_off == g_if_s) && ((*src)->arity == 3)) {
 		*src += 1;
