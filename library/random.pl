@@ -1,6 +1,6 @@
 :- module(random, [
 	maybe/0, maybe/1, maybe/2,
-	random_integer/2,
+	random_integer/3,
 	set_random/1]).
 
 set_random(seed(random)) :-
