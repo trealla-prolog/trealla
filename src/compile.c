@@ -17,7 +17,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 	cell *c = (*src) + 1;
 
-#if 1
+#if 0
 	// T1 -> T2 ; T3
 
 	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)
