@@ -750,9 +750,9 @@ static bool bif_format_3(query *q)
 
 	int n = get_stream(q, pstr);
 
-	if (n < 0) {
-		//return throw_error(q, pstr, pstr_ctx, "domain_error", "stream_or_alias");
-	} else {
+	if ((n < 0) && !is_compound(pstr)) {
+		return throw_error(q, pstr, pstr_ctx, "domain_error", "stream_or_alias");
+	} else if (!is_compound(pstr)) {
 		stream *str = &q->pl->streams[n];
 
 		if (!strcmp(str->mode, "read"))
