@@ -22,7 +22,7 @@
 current_time(T) :-
 	posix_time(Epoch),
 	posix_localtime(Epoch, TM),
-	posix_strftime('[''Y''=%Y,m=%m,d=%d,''H''=%H,''M''=%M,''S''=%S,y=%y,b=%b,''B''=%B,a=%a,''A''=%A,w=%w,u=%u,''U''=%U,''W''=%W,j=%j,''D''=%D,x=%x,finis]', T0, TM),
+	posix_strftime('[''Y''="%Y",m="%m",d="%d",''H''="%H",''M''="%M",''S''="%S",y="%y",b="%b",''B''="%B",a="%a",''A''="%A",w="%w",u="%u",''U''="%U",''W''="%W",j="%j",''D''="%D",x="%x",finis]', T0, TM),
 	read_from_atom(T0, T).
 
 %% format_time(FormatString, TimeStamp)//
