@@ -420,8 +420,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 				return throw_error(q, c, q->st.curr_frame, "type_error", "float");
 			}
 
-			len = argval;
-			if (len <= 40) len = 40;
+			len = argval || argval_specified ? argval : 40;
 			CHECK_BUF(len);
 
 			if (argval || argval_specified) {
@@ -445,8 +444,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 				return throw_error(q, c, q->st.curr_frame, "type_error", "float");
 			}
 
-			len = argval;
-			if (len <= 40) len = 40;
+			len = argval || argval_specified ? argval : 40;
 			CHECK_BUF(len);
 
 			if (argval || argval_specified) {
@@ -469,8 +467,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 				return throw_error(q, c, q->st.curr_frame, "type_error", "float");
 			}
 
-			len = argval;
-			if (len <= 40) len = 40;
+			len = argval || argval_specified ? argval : 40;
 			CHECK_BUF(len);
 
 			if (argval || argval_specified)
@@ -753,25 +750,26 @@ static bool bif_format_3(query *q)
 
 	int n = get_stream(q, pstr);
 
-	if (n < 0)
-		return throw_error(q, pstr, pstr_ctx, "domain_error", "stream_or_alias");
+	if (n < 0) {
+		//return throw_error(q, pstr, pstr_ctx, "domain_error", "stream_or_alias");
+	} else {
+		stream *str = &q->pl->streams[n];
 
-	stream *str = &q->pl->streams[n];
+		if (!strcmp(str->mode, "read"))
+			return throw_error(q, pstr, pstr_ctx, "permission_error", "output,stream");
 
-	if (!strcmp(str->mode, "read"))
-		return throw_error(q, pstr, pstr_ctx, "permission_error", "output,stream");
+		if (str->binary) {
+			cell tmp;
+			make_int(&tmp, n);
+			return throw_error(q, &tmp, pstr_ctx, "permission_error", "output,binary_stream");
+		}
 
-	if (str->binary) {
-		cell tmp;
-		make_int(&tmp, n);
-		return throw_error(q, &tmp, pstr_ctx, "permission_error", "output,binary_stream");
-	}
-
-	if (is_nil(p1)) {
-		if (is_nil(p2))
-			return true;
-		else
-			return throw_error(q, p2, p2_ctx, "domain_error", "list");
+		if (is_nil(p1)) {
+			if (is_nil(p2))
+				return true;
+			else
+				return throw_error(q, p2, p2_ctx, "domain_error", "list");
+		}
 	}
 
 	return do_format(q, pstr, pstr_ctx, p1, p1_ctx, !is_nil(p2)?p2:NULL, p2_ctx);
