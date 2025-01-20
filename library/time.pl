@@ -15,7 +15,6 @@
 :- use_module(library(error)).
 :- use_module(library(dcgs)).
 :- use_module(library(lists)).
-:- use_module(library(charsio), [read_from_chars/2]).
 
 %% current_time(-T)
 %
@@ -24,23 +23,10 @@
 %  attributes of the time stamp.
 
 current_time(T) :-
-	date_time(Y, M, D, HH, MM, SS),
-	format(string(Y2), "~d", [Y]),
-	format(string(M2), "~|~`0t~d~2+", [M]),
-	format(string(D2), "~|~`0t~d~2+", [D]),
-	format(string(HH2), "~|~`0t~d~2+", [HH]),
-	format(string(MM2), "~|~`0t~d~2+", [MM]),
-	format(string(SS2), "~|~`0t~d~2+", [SS]),
-	Yy is Y mod 100, format(string(Yy2), "~|~`0t~d~2+", [Yy]),
-	T = [
-		'Y'= Y2,
-		'm'= M2,
-		'd'= D2,
-		'H'= HH2,
-		'M'= MM2,
-		'S'= HH2,
-		'y'= Yy2
-	].
+	posix_time(Epoch),
+	posix_localtime(Epoch, TM),
+	posix_strftime('[''Y''=%Y,m=%m,d=%d,''H''=%H,''M''=%M,''S''=%S,y=%y,b=%b,''B''=%B,a=%a,''A''=%A,w=%w,u=%u,''U''=%U,''W''=%W,j=%j,''D''=%D,x=%x,finis]', T0, TM),
+	read_from_atom(T0, T).
 
 %% format_time(FormatString, TimeStamp)//
 %
