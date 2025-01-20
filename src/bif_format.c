@@ -420,7 +420,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 				return throw_error(q, c, q->st.curr_frame, "type_error", "float");
 			}
 
-			len = argval || argval_specified ? argval : 40;
+			len = 1000;
 			CHECK_BUF(len);
 
 			if (argval || argval_specified) {
@@ -444,7 +444,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 				return throw_error(q, c, q->st.curr_frame, "type_error", "float");
 			}
 
-			len = argval || argval_specified ? argval : 40;
+			len = 1000;
 			CHECK_BUF(len);
 
 			if (argval || argval_specified) {
@@ -467,7 +467,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 				return throw_error(q, c, q->st.curr_frame, "type_error", "float");
 			}
 
-			len = argval || argval_specified ? argval : 40;
+			len = 1000;
 			CHECK_BUF(len);
 
 			if (argval || argval_specified)
