@@ -1,7 +1,4 @@
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-   Written 2020-2024 by Markus Triska (triska@metalevel.at)
-   Part of Scryer Prolog.
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+% Modified from Scryer prolog
 
 /** This library provides predicates for reasoning about time.
 */
