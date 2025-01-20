@@ -27,7 +27,7 @@
 
 static bool bif_posix_strftime_3(query *q)
 {
-	GET_FIRST_ARG(p1,string);
+	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p3,var);
 	GET_NEXT_ARG(p2,compound);
 
@@ -89,7 +89,7 @@ static bool bif_posix_strftime_3(query *q)
 #ifndef _WIN32
 static bool bif_posix_strptime_3(query *q)
 {
-	GET_FIRST_ARG(p1,string);
+	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,string);
 	GET_NEXT_ARG(p3,var);
 
