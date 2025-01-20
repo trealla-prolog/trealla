@@ -425,8 +425,10 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 
 			if (argval || argval_specified) {
 				if (ch == 'e')
+					//len = snprintf(dst, len, "%.*e", argval?argval:1, is_float(c) ? (argval?get_float(c):floor(get_float(c))) : get_smallint(c));
 					len = snprintf(dst, len, "%.*e", argval, is_float(c) ? get_float(c) : get_smallint(c));
 				else
+					//len = snprintf(dst, len, "%.*E", argval?argval:1, is_float(c) ? (argval?get_float(c):floor(get_float(c))) : get_smallint(c));
 					len = snprintf(dst, len, "%.*E", argval, is_float(c) ? get_float(c) : get_smallint(c));
 			} else {
 				if (ch == 'e')
@@ -449,8 +451,10 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 
 			if (argval || argval_specified) {
 				if (ch == 'g')
+					//len = snprintf(dst, len, "%.*g", argval?argval:1, is_float(c) ? (argval?get_float(c):floor(get_float(c))) : get_smallint(c));
 					len = snprintf(dst, len, "%.*g", argval, is_float(c) ? get_float(c) : get_smallint(c));
 				else
+					//len = snprintf(dst, len, "%.*G", argval?argval:1, is_float(c) ? (argval?get_float(c):floor(get_float(c))) : get_smallint(c));
 					len = snprintf(dst, len, "%.*G", argval, is_float(c) ? get_float(c) : get_smallint(c));
 			} else {
 				if (ch == 'g')
@@ -471,6 +475,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 			CHECK_BUF(len);
 
 			if (argval || argval_specified)
+				//len = snprintf(dst, len, "%.*f", argval?argval:1, is_float(c) ? (argval?get_float(c):floor(get_float(c))) : get_smallint(c));
 				len = snprintf(dst, len, "%.*f", argval, is_float(c) ? get_float(c) : get_smallint(c));
 			else
 				len = snprintf(dst, len, "%f", is_float(c) ? get_float(c) : get_smallint(c));
