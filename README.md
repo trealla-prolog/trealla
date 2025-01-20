@@ -417,8 +417,8 @@ Non-standard predicates
 	bb_update/3					# bb_update(:atom, ?term, ?term)
 	bb_delete/2					# bb_delete(:atom, ?term)
 
-	posix_strftime/3			# posix_strftime(+format,-text,+tm(NNN,...))
-	posix_strptime/3			# posix_strptime(+format,+text,-tm(NNN,...))
+	posix_strftime/3			# posix_strftime(+format,-string,+tm(NNN,...))
+	posix_strptime/3			# posix_strptime(+format,+string,-tm(NNN,...))
 	posix_mktime/2				# posix_mktime(+tm(NNN,...),-seconds)
 	posix_gmtime/2				# posix_gmtime(+seconds,-tm(NNN,...))
 	posix_localtime/2			# posix_localtime(+seconds,-tm(NNN,...))
