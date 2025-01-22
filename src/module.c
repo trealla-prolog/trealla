@@ -559,6 +559,8 @@ static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, 
 			return 1;
 		else
 			return -1;
+	} else if (is_string(p1) && is_string(p2)) {
+		return strcmp(C_STR(m, p1), C_STR(m, p2));
 	} else if (is_list(p1)) {
 		if (is_list(p2)) {
 			LIST_HANDLER(p1);
