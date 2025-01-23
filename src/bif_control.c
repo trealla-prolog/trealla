@@ -346,15 +346,15 @@ static bool bif_iso_disjunction_2(query *q)
 
 	cell *c = q->st.curr_instr+1;
 
-	if (is_callable(c)) {
-		if (c->bif_ptr && (c->bif_ptr->fn == bif_iso_if_then_2)) {
+	if (is_callable(c) && c->bif_ptr && (c->arity == 2)) {
+		if (c->bif_ptr->fn == bif_iso_if_then_2) {
 			cell *p1 = c + 1;
 			cell *p2 = p1 + p1->nbr_cells;
 			cell *p3 = p2 + p2->nbr_cells;
 			return do_if_then_else(q, p1, p2, p3);
 		}
 
-		if (c->bif_ptr && (c->bif_ptr->fn == bif_soft_if_then_2)) {
+		if (c->bif_ptr->fn == bif_soft_if_then_2) {
 			cell *p1 = c + 1;
 			cell *p2 = p1 + p1->nbr_cells;
 			cell *p3 = p2 + p2->nbr_cells;
