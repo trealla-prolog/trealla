@@ -733,7 +733,7 @@ int retry_choice(query *q)
 
 		trim_heap(q);
 
-		if (ch->succeed_on_retry) {
+		if (ch->succeed_on_retry && !ch->reset) {
 			q->st.curr_instr += ch->skip;
 			return ch->skip ? -2 : -1;
 		}
