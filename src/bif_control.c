@@ -318,7 +318,7 @@ static bool do_soft_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 	return true;
 }
 
-// if_(if,then,else)
+// if(if,then,else)
 
 static bool bif_if_3(query *q)
 {
