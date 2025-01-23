@@ -24,6 +24,14 @@ bool bif_iso_cut_0(query *q)
 	return true;
 }
 
+bool bif_iso_cut_1(query *q)
+{
+	GET_FIRST_RAW_ARG(p1,integer)
+	choice *ch = GET_CHOICE(get_smalluint(p1));
+	ch->reset = true;
+	return true;
+}
+
 // goal , goal
 
 bool bif_iso_conjunction_2(query *q)
@@ -305,9 +313,11 @@ static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 
 static bool do_soft_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 {
-	cell *tmp = prepare_call(q, PREFIX_LEN, p1, q->st.curr_frame, 2+p2->nbr_cells+2);
+	cell *tmp = prepare_call(q, PREFIX_LEN, p1, q->st.curr_frame, 4+p2->nbr_cells+2);
 	check_heap_error(tmp);
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
+	make_instr(tmp+nbr_cells++, g_cut_s, bif_iso_cut_1, 1, 1);
+	make_uint(tmp+nbr_cells++, q->cp);
 	make_instr(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
 	nbr_cells += dup_cells_by_ref(tmp+nbr_cells, p2, q->st.curr_frame, p2->nbr_cells);
@@ -1106,6 +1116,7 @@ builtins g_control_bifs[] =
 	{"shift", 1, bif_shift_1, "+term", false, false, BLAH},
 	{"between", 3, bif_between_3, "+integer,+integer,-integer", false, false, BLAH},
 
+	{"!", 1, bif_iso_cut_1, NULL, false, false, BLAH},
 	{"$call", 1, bif_sys_call_1, ":callable", true, false, BLAH},
 	{"$catch", 3, bif_iso_catch_3, ":callable,?term,:callable", true, false, BLAH},
 	{"$counter", 1, bif_sys_counter_1, NULL, false, false, BLAH},
