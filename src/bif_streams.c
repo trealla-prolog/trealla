@@ -6724,6 +6724,7 @@ static bool bif_bread_3(query *q)
 				break;
 
 			if (feof(str->fp)) {
+				clearerr(str->fp);
 				free(str->data);
 				str->data = NULL;
 				return false;
