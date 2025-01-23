@@ -1116,7 +1116,7 @@ builtins g_control_bifs[] =
 	{"shift", 1, bif_shift_1, "+term", false, false, BLAH},
 	{"between", 3, bif_between_3, "+integer,+integer,-integer", false, false, BLAH},
 
-	{"!", 1, bif_iso_cut_1, NULL, false, false, BLAH},
+	{"!", 1, bif_iso_cut_1, "+integer", false, false, BLAH},
 	{"$call", 1, bif_sys_call_1, ":callable", true, false, BLAH},
 	{"$catch", 3, bif_iso_catch_3, ":callable,?term,:callable", true, false, BLAH},
 	{"$counter", 1, bif_sys_counter_1, NULL, false, false, BLAH},
