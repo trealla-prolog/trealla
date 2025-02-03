@@ -19,7 +19,7 @@
             - ubuntu-latest
             - macos-latest
       steps:
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4
           with:
             fetch-depth: 0
         - name: Install deps (Linux)
@@ -40,7 +40,7 @@
         - name: Test
           run: make test
         - name: Upload artifacts
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4
           with:
             name: ${{ format('tpl-{0}-{1}', runner.os, runner.arch) }}
             path: |
@@ -63,7 +63,7 @@
             pacman --noconfirm -S mingw-w64-x86_64-openssl vim diffutils git
         - name: Configure line endings
           run: git config --global core.autocrlf input
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4
           with:
             fetch-depth: 0
         - name: Fetch tags
@@ -89,7 +89,7 @@
             mv ATTRIBUTION ATTRIBUTION.txt
             mv LICENSE LICENSE.txt
         - name: Upload artifacts
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4
           with:
             name: ${{ format('tpl-{0}-{1}', runner.os, runner.arch) }}
             path: |
@@ -110,7 +110,7 @@
         WASI_VERSION: 19
         BINARYEN_VERSION: 109
       steps:
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4
           with:
             fetch-depth: 0
         - name: Fetch tags
@@ -145,7 +145,7 @@
             chmod +x tpl
             make test
         - name: Upload artifacts
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4
           with:
             name: tpl-wasm-wasi
             path: |
@@ -161,7 +161,7 @@
       runs-on: ubuntu-latest
       steps:
         - name: Download artifacts
-          uses: actions/download-artifact@v3
+          uses: actions/download-artifact@v4
           with:
             path: artifacts
         - name: List files
