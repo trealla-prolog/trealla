@@ -164,20 +164,16 @@ void trim_heap(query *q)
 		if (a->nbr < q->st.heap_nbr)
 			break;
 
+		cell *c = a->cells;
+
+		for (pl_idx i = 0; i < a->idx; i++, c++)
+			unshare_cell(c);
+
 		page *save = a;
 		q->heap_pages = a = a->next;
 		free(save->cells);
 		free(save);
 	}
-
-#if 0
-	const page *a = q->heap_pages;
-
-	for (pl_idx i = q->st.hp; a && (i < a->idx); i++) {
-		cell *c = a->cells + i;
-		init_cell(c);
-	}
-#endif
 }
 
 #define deep_copy(c) \
