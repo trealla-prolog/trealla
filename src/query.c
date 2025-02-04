@@ -409,6 +409,28 @@ size_t scan_is_chars_list(query *q, cell *l, pl_idx l_ctx, bool allow_codes)
 	return scan_is_chars_list2(q, l, l_ctx, allow_codes, &has_var, &is_partial);
 }
 
+bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n)
+{
+	if (!n) {
+		make_atom(d, g_empty_s);
+		return true;
+	}
+
+	if (is_slice(orig)) {
+		*d = *orig;
+		d->val_str += off;
+		d->str_len = n;
+		return true;
+	}
+
+	const char *s = C_STR(q, orig);
+
+	if (is_string(orig))
+		return make_stringn(d, s+off, n);
+
+	return make_cstringn(d, s+off, n);
+}
+
 static void enter_predicate(query *q, predicate *pr)
 {
 	//printf("*** ENTER %s\n", C_STR(q, &pr->key));

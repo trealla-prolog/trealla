@@ -47,34 +47,6 @@ static void init_queue(query *q)
 static pl_idx queue_used(const query *q) { return q->qp[0]; }
 static cell *get_queue(query *q) { return q->queue[0]; }
 
-bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n)
-{
-	if (!n) {
-		make_atom(d, g_empty_s);
-		return true;
-	}
-
-	if (is_slice(orig)) {
-		*d = *orig;
-		d->val_str += off;
-		d->str_len = n;
-		return true;
-	}
-
-	if ((n < MAX_SMALL_STRING) && !is_string(orig)) {
-		const char *s = C_STR(q, orig);
-		make_smalln(d, s+off, n);
-		return true;
-	}
-
-	const char *s = C_STR(q, orig);
-
-	if (is_string(orig))
-		return make_stringn(d, s+off, n);
-
-	return make_cstringn(d, s+off, n);
-}
-
 static bool bif_iso_findall_3(query *q)
 {
 	GET_FIRST_ARG(p1,any);
