@@ -51,9 +51,6 @@ size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, 
 	return elements;
 }
 
-// The tmp heap is used for temporary allocations (a scratch-pad)
-// for work in progress. As such it can survive a realloc() call.
-
 cell *init_tmp_heap(query *q)
 {
 	if (q->tmp_heap && (q->tmph_size > 1000) && false) {
@@ -90,6 +87,10 @@ cell *preinit_tmp_heap(query *q, pl_idx n)
 	return q->tmp_heap;
 }
 
+// The tmp heap is used for temporary allocations (a scratch-pad)
+// for work in progress. As such it can survive a realloc() call.
+// No need to incr refcnt on tmp heap cells.
+
 cell *alloc_on_tmp(query *q, unsigned nbr_cells)
 {
 	if (((uint64_t)q->tmphp + nbr_cells) > UINT32_MAX)
@@ -106,74 +107,6 @@ cell *alloc_on_tmp(query *q, unsigned nbr_cells)
 	cell *c = q->tmp_heap + q->tmphp;
 	q->tmphp = new_size;
 	return c;
-}
-
-// The heap is used for data allocations and a realloc() can't be
-// done as it will invalidate existing pointers. Build any compounds
-// first on the tmp heap, then allocate in one go here and copy in.
-// When more space is need allocate a new page and keep them in the
-// page list. Backtracking will garbage collect and free as needed.
-
-cell *alloc_on_heap(query *q, unsigned nbr_cells)
-{
-	if (((uint64_t)q->st.hp + nbr_cells) > UINT32_MAX)
-		return NULL;
-
-	if (!q->heap_pages) {
-		page *a = calloc(1, sizeof(page));
-		if (!a) return NULL;
-		a->next = q->heap_pages;
-		unsigned n = MAX_OF(q->heap_size, nbr_cells);
-		a->cells = calloc(a->page_size=n, sizeof(cell));
-		if (!a->cells) { free(a); return NULL; }
-		a->nbr = q->st.heap_nbr++;
-		q->heap_pages = a;
-	}
-
-	if ((q->st.hp + nbr_cells) >= q->heap_pages->page_size) {
-		page *a = calloc(1, sizeof(page));
-		if (!a) return NULL;
-		a->next = q->heap_pages;
-		unsigned n = MAX_OF(q->heap_size, nbr_cells);
-		a->cells = calloc(a->page_size=n, sizeof(cell));
-		if (!a->cells) { free(a); return NULL; }
-		a->nbr = q->st.heap_nbr++;
-		q->heap_pages = a;
-		q->st.hp = 0;
-	}
-
-	if (q->st.heap_nbr > q->hw_heap_nbr)
-		q->hw_heap_nbr = q->st.heap_nbr;
-
-	cell *c = q->heap_pages->cells + q->st.hp;
-	q->st.hp += nbr_cells;
-	q->heap_pages->idx = q->st.hp;
-
-	if (q->heap_pages->idx > q->heap_pages->max_idx_used)
-		q->heap_pages->max_idx_used = q->heap_pages->idx;
-
-	return c;
-}
-
-void trim_heap(query *q)
-{
-	// q->heap_pages is a push-down stack and points to the
-	// most recent page of heap allocations...
-
-	for (page *a = q->heap_pages; a;) {
-		if (a->nbr < q->st.heap_nbr)
-			break;
-
-		cell *c = a->cells;
-
-		for (pl_idx i = 0; i < a->idx; i++, c++)
-			unshare_cell(c);
-
-		page *save = a;
-		q->heap_pages = a = a->next;
-		free(save->cells);
-		free(save);
-	}
 }
 
 #define deep_copy(c) \
@@ -288,32 +221,6 @@ cell *deep_clone_to_tmp(query *q, cell *p1, pl_idx p1_ctx)
 	return rec;
 }
 
-cell *clone_to_heap(query *q, cell *p1, pl_idx p1_ctx)
-{
-	if (!init_tmp_heap(q))
-		return NULL;
-
-	p1 = deep_clone_to_tmp(q, p1, p1_ctx);
-	if (!p1) return p1;
-	cell *tmp = alloc_on_heap(q, p1->nbr_cells);
-	if (!tmp) return NULL;
-	dup_cells(tmp, p1, p1->nbr_cells);
-	return tmp;
-}
-
-cell *deep_clone_to_heap(query *q, cell *p1, pl_idx p1_ctx)
-{
-	if (!init_tmp_heap(q))
-		return NULL;
-
-	p1 = deep_clone_to_tmp(q, p1, p1_ctx);
-	if (!p1) return p1;
-	cell *tmp = alloc_on_heap(q, p1->nbr_cells);
-	if (!tmp) return NULL;
-	dup_cells(tmp, p1, p1->nbr_cells);
-	return tmp;
-}
-
 cell *append_to_tmp(query *q, cell *p1, pl_idx p1_ctx)
 {
 	cell *tmp = alloc_on_tmp(q, p1->nbr_cells);
@@ -374,7 +281,7 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 				cell *tmp = deep_copy_to_heap(q, e->c.attrs, q->st.curr_frame, false);
 				check_heap_error(tmp);
 				c->tmp_attrs = malloc(sizeof(cell)*tmp->nbr_cells);
-				dup_cells(c->tmp_attrs, tmp, tmp->nbr_cells);
+				copy_cells(c->tmp_attrs, tmp, tmp->nbr_cells);
 				free(q->tmp_heap);
 				q->tmp_heap = save_tmp_heap;
 				q->tmphp = save_tmp_hp;
@@ -462,6 +369,80 @@ cell *deep_copy_to_tmp(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
 	return deep_copy_to_tmp_with_replacement(q, p1, p1_ctx, copy_attrs, NULL, 0, NULL, 0);
 }
 
+// The heap is used for data allocations and a realloc() can't be
+// done as it will invalidate existing pointers. Build any compounds
+// first on the tmp heap, then allocate in one go here and copy in.
+// When more space is need allocate a new page and keep them in the
+// page list. Backtracking will garbage collect and free as needed.
+// Need to incr refcnt on heap cells.
+
+cell *alloc_on_heap(query *q, unsigned nbr_cells)
+{
+	if (((uint64_t)q->st.hp + nbr_cells) > UINT32_MAX)
+		return NULL;
+
+	if (!q->heap_pages) {
+		page *a = calloc(1, sizeof(page));
+		if (!a) return NULL;
+		a->next = q->heap_pages;
+		unsigned n = MAX_OF(q->heap_size, nbr_cells);
+		a->cells = calloc(a->page_size=n, sizeof(cell));
+		if (!a->cells) { free(a); return NULL; }
+		a->nbr = q->st.heap_nbr++;
+		q->heap_pages = a;
+	}
+
+	if ((q->st.hp + nbr_cells) >= q->heap_pages->page_size) {
+		page *a = calloc(1, sizeof(page));
+		if (!a) return NULL;
+		a->next = q->heap_pages;
+		unsigned n = MAX_OF(q->heap_size, nbr_cells);
+		a->cells = calloc(a->page_size=n, sizeof(cell));
+		if (!a->cells) { free(a); return NULL; }
+		a->nbr = q->st.heap_nbr++;
+		q->heap_pages = a;
+		q->st.hp = 0;
+	}
+
+	if (q->st.heap_nbr > q->hw_heap_nbr)
+		q->hw_heap_nbr = q->st.heap_nbr;
+
+	cell *c = q->heap_pages->cells + q->st.hp;
+	q->st.hp += nbr_cells;
+	q->heap_pages->idx = q->st.hp;
+
+	if (q->heap_pages->idx > q->heap_pages->max_idx_used)
+		q->heap_pages->max_idx_used = q->heap_pages->idx;
+
+	return c;
+}
+
+cell *clone_to_heap(query *q, cell *p1, pl_idx p1_ctx)
+{
+	if (!init_tmp_heap(q))
+		return NULL;
+
+	p1 = deep_clone_to_tmp(q, p1, p1_ctx);
+	if (!p1) return p1;
+	cell *tmp = alloc_on_heap(q, p1->nbr_cells);
+	if (!tmp) return NULL;
+	dup_cells(tmp, p1, p1->nbr_cells);
+	return tmp;
+}
+
+cell *deep_clone_to_heap(query *q, cell *p1, pl_idx p1_ctx)
+{
+	if (!init_tmp_heap(q))
+		return NULL;
+
+	p1 = deep_clone_to_tmp(q, p1, p1_ctx);
+	if (!p1) return p1;
+	cell *tmp = alloc_on_heap(q, p1->nbr_cells);
+	if (!tmp) return NULL;
+	dup_cells(tmp, p1, p1->nbr_cells);
+	return tmp;
+}
+
 cell *deep_copy_to_heap(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
 {
 	if (!init_tmp_heap(q))
@@ -520,25 +501,25 @@ cell *deep_copy_to_heap_with_replacement(query *q, cell *p1, pl_idx p1_ctx, bool
 	return tmp2;
 }
 
-cell *alloc_on_queuen(query *q, unsigned qnbr, const cell *c)
+void trim_heap(query *q)
 {
-	if (!q->queue[qnbr]) {
-		q->queue[qnbr] = malloc(sizeof(cell)*q->q_size[qnbr]);
-		if (!q->queue[qnbr]) return NULL;
-	}
+	// q->heap_pages is a push-down stack and points to the
+	// most recent page of heap allocations...
 
-	while ((q->qp[qnbr]+c->nbr_cells) >= q->q_size[qnbr]) {
-		size_t n = q->q_size[qnbr] + q->q_size[qnbr] / 2;
-		void *ptr = realloc(q->queue[qnbr], sizeof(cell)*n);
-		if (!ptr) return NULL;
-		q->queue[qnbr] = ptr;
-		q->q_size[qnbr] = n;
-	}
+	for (page *a = q->heap_pages; a;) {
+		if (a->nbr < q->st.heap_nbr)
+			break;
 
-	cell *dst = q->queue[qnbr] + q->qp[qnbr];
-	q->qp[qnbr] += dup_cells(dst, c, c->nbr_cells);
-	q->qcnt[qnbr]++;
-	return dst;
+		cell *c = a->cells;
+
+		for (pl_idx i = 0; i < a->idx; i++, c++)
+			unshare_cell(c);
+
+		page *save = a;
+		q->heap_pages = a = a->next;
+		free(save->cells);
+		free(save);
+	}
 }
 
 void fix_list(cell *c)
@@ -575,7 +556,7 @@ void append_list(query *q, const cell *c)
 	tmp->arity = 2;
 	tmp->flags = 0;
 	tmp++;
-	copy_cells(tmp, c, c->nbr_cells);
+	dup_cells(tmp, c, c->nbr_cells);
 }
 
 cell *end_list(query *q)
@@ -614,7 +595,7 @@ cell *end_list_unsafe(query *q)
 
 	tmp = alloc_on_heap(q, nbr_cells);
 	if (!tmp) return NULL;
-	copy_cells(tmp, get_tmp_heap(q, 0), nbr_cells);
+	copy_cells(tmp, get_tmp_heap(q, 0), nbr_cells);		// unsafe
 	tmp->nbr_cells = nbr_cells;
 	fix_list(tmp);
 	return tmp;
@@ -664,3 +645,27 @@ cell *end_structure(query *q)
 
 	return tmp;
 }
+
+// Queues are another beast
+
+cell *alloc_on_queuen(query *q, unsigned qnbr, const cell *c)
+{
+	if (!q->queue[qnbr]) {
+		q->queue[qnbr] = malloc(sizeof(cell)*q->q_size[qnbr]);
+		if (!q->queue[qnbr]) return NULL;
+	}
+
+	while ((q->qp[qnbr]+c->nbr_cells) >= q->q_size[qnbr]) {
+		size_t n = q->q_size[qnbr] + q->q_size[qnbr] / 2;
+		void *ptr = realloc(q->queue[qnbr], sizeof(cell)*n);
+		if (!ptr) return NULL;
+		q->queue[qnbr] = ptr;
+		q->q_size[qnbr] = n;
+	}
+
+	cell *dst = q->queue[qnbr] + q->qp[qnbr];
+	q->qp[qnbr] += dup_cells(dst, c, c->nbr_cells);
+	q->qcnt[qnbr]++;
+	return dst;
+}
+

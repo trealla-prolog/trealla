@@ -38,24 +38,24 @@ bool bif_sre_matchp_4(query *q)
 	const char *text = C_STR(q, p2);
 	int len = 0;
 	int off = re_matchp(re, text, &len);
-	cell tmp1, tmp2;
+	cell tmp;
 
 	if (!len)
-		make_atom(&tmp1, g_nil_s);
+		make_atom(&tmp, g_nil_s);
 	else
-		make_slice(q, &tmp1, p2, off, len);
+		make_slice(q, &tmp, p2, off, len);
 
-	bool ok = unify(q, p3, p3_ctx, &tmp1, q->st.curr_frame);
-	unshare_cell(&tmp1);
+	bool ok = unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
 	if (!ok) return false;
 
 	if ((size_t)(off + len) >= C_STRLEN(q, p2))
-		make_atom(&tmp2, g_nil_s);
+		make_atom(&tmp, g_nil_s);
 	else
-		make_slice(q, &tmp2, p2, off + len, C_STRLEN(q, p2)-(off+len));
+		make_slice(q, &tmp, p2, off + len, C_STRLEN(q, p2)-(off+len));
 
-	ok = unify(q, p4, p4_ctx, &tmp2, q->st.curr_frame);
-	unshare_cell(&tmp2);
+	ok = unify(q, p4, p4_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
 	return ok;
 }
 
@@ -69,24 +69,24 @@ bool bif_sre_match_4(query *q)
 	const char *text = C_STR(q, p2);
 	int len = 0;
 	int off = re_match(pattern, text, &len);
-	cell tmp1, tmp2;
+	cell tmp;
 
 	if (!len)
-		make_atom(&tmp1, g_nil_s);
+		make_atom(&tmp, g_nil_s);
 	else
-		make_slice(q, &tmp1, p2, off, len);
+		make_slice(q, &tmp, p2, off, len);
 
-	bool ok = unify(q, p3, p3_ctx, &tmp1, q->st.curr_frame);
-	unshare_cell(&tmp1);
+	bool ok = unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
 	if (!ok) return false;
 
 	if ((size_t)(off + len) >= C_STRLEN(q, p2))
-		make_atom(&tmp2, g_nil_s);
+		make_atom(&tmp, g_nil_s);
 	else
-		make_slice(q, &tmp2, p2, off + len, C_STRLEN(q, p2)-(off+len));
+		make_slice(q, &tmp, p2, off + len, C_STRLEN(q, p2)-(off+len));
 
-	ok = unify(q, p4, p4_ctx, &tmp2, q->st.curr_frame);
-	unshare_cell(&tmp2);
+	ok = unify(q, p4, p4_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
 	return ok;
 }
 
@@ -100,24 +100,24 @@ bool bif_sre_substp_4(query *q)
 	const char *text = C_STR(q, p2);
 	int len = 0;
 	int off = re_matchp(re, text, &len);
-	cell tmp1, tmp2;
+	cell tmp;
 
 	if (!len)
-		make_stringn(&tmp1, text, C_STRLEN(q, p2));
+		make_stringn(&tmp, text, C_STRLEN(q, p2));
 	else
-		make_slice(q, &tmp1, p2, 0, off);
+		make_slice(q, &tmp, p2, 0, off);
 
-	bool ok = unify(q, p3, p3_ctx, &tmp1, q->st.curr_frame);
-	unshare_cell(&tmp1);
+	bool ok = unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
 	if (!ok) return false;
 
 	if ((size_t)(off + len) >= C_STRLEN(q, p2))
-		make_atom(&tmp2, g_nil_s);
+		make_atom(&tmp, g_nil_s);
 	else
-		make_slice(q, &tmp2, p2, off + len, C_STRLEN(q, p2)-(off+len));
+		make_slice(q, &tmp, p2, off + len, C_STRLEN(q, p2)-(off+len));
 
-	ok = unify(q, p4, p4_ctx, &tmp2, q->st.curr_frame);
-	unshare_cell(&tmp2);
+	ok = unify(q, p4, p4_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
 	return ok;
 }
 
@@ -131,24 +131,24 @@ bool bif_sre_subst_4(query *q)
 	const char *text = C_STR(q, p2);
 	int len = 0;
 	int off = re_match(pattern, text, &len);
-	cell tmp1, tmp2;
+	cell tmp;
 
 	if (!len)
-		make_stringn(&tmp1, text, C_STRLEN(q, p2));
+		make_stringn(&tmp, text, C_STRLEN(q, p2));
 	else
-		make_slice(q, &tmp1, p2, 0, off);
+		make_slice(q, &tmp, p2, 0, off);
 
-	bool ok = unify(q, p3, p3_ctx, &tmp1, q->st.curr_frame);
-	unshare_cell(&tmp1);
+	bool ok = unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
 	if (!ok) return false;
 
 	if ((size_t)(off + len) >= C_STRLEN(q, p2))
-		make_atom(&tmp2, g_nil_s);
+		make_atom(&tmp, g_nil_s);
 	else
-		make_slice(q, &tmp2, p2, off + len, C_STRLEN(q, p2)-(off+len));
+		make_slice(q, &tmp, p2, off + len, C_STRLEN(q, p2)-(off+len));
 
-	ok = unify(q, p4, p4_ctx, &tmp2, q->st.curr_frame);
-	unshare_cell(&tmp2);
+	ok = unify(q, p4, p4_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
 	return ok;
 }
 
