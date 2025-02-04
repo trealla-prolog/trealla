@@ -556,7 +556,7 @@ void append_list(query *q, const cell *c)
 	tmp->arity = 2;
 	tmp->flags = 0;
 	tmp++;
-	dup_cells(tmp, c, c->nbr_cells);
+	copy_cells(tmp, c, c->nbr_cells);
 }
 
 cell *end_list(query *q)
