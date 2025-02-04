@@ -30,7 +30,6 @@ void do_yield_at(query *q, unsigned int time_in_ms);
 
 char *url_encode(const char *src, int len, char *dstbuf);
 char *url_decode(const char *src, char *dstbuf);
-cell *do_term_variables(query *q, cell *p1, pl_idx p1_ctx);
 bool query_redo(query *q);
 bool has_next_key(query *q);
 bool check_slot(query *q, unsigned cnt);

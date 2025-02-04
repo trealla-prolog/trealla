@@ -1775,7 +1775,7 @@ static bool bif_iso_univ_2(query *q)
 	return unify(q, p2, p2_ctx, l, p1_ctx);
 }
 
-cell *do_term_variables(query *q, cell *p1, pl_idx p1_ctx)
+static cell *do_term_variables(query *q, cell *p1, pl_idx p1_ctx)
 {
 	frame *f = GET_CURR_FRAME();
 	q->varno = f->actual_slots;
