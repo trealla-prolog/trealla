@@ -531,6 +531,7 @@ void undo_me(query *q)
 		cell *c = &e->c;
 		unshare_cell(c);
 		c->tag = TAG_EMPTY;
+		c->flags = 0;
 		c->attrs = tr->attrs;
 	}
 }
@@ -1903,16 +1904,6 @@ void query_destroy(query *q)
 	for (pl_idx i = 0; i < q->st.sp; i++, e++) {
 		cell *c = &e->c;
 		unshare_cell(c);
-	}
-
-	while (q->st.tp > 0) {
-		const trail *tr = q->trails + --q->st.tp;
-		const frame *f = GET_FRAME(tr->var_ctx);
-		slot *e = GET_SLOT(f, tr->var_nbr);
-		cell *c = &e->c;
-		c->tag = TAG_EMPTY;
-		c->flags = 0;
-		c->attrs = tr->attrs;
 	}
 
 	for (int i = 0; i < MAX_QUEUES; i++) {
