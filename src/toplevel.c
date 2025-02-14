@@ -373,7 +373,7 @@ void dump_vars(query *q, bool partial)
 	// dump them out...
 
 	cell *vlist = end_list(q);
-	bool space = false;
+	bool want_space = false;
 	q->print_idx = 0;
 
 	for (unsigned i = 0; i < p->nbr_vars; i++) {
@@ -425,7 +425,7 @@ void dump_vars(query *q, bool partial)
 		}
 
 		bool parens = false;
-		space = false;
+		want_space = false;
 
 		if (is_compound(c)) {
 			unsigned pri = search_op(q->st.curr_m, C_STR(q, c), NULL, c->arity);
@@ -448,8 +448,16 @@ void dump_vars(query *q, bool partial)
 				int ch = peek_char_utf8(src);
 
 				if (!iswalpha(ch) && (ch != '_'))
-					space = true;
+					want_space = true;
 			}
+		}
+
+		if (is_postfix(c)) {
+			const char *src = C_STR(q, c);
+			int ch = peek_char_utf8(src);
+
+			if (!iswalpha(ch) && (ch != '_'))
+				want_space = true;
 		}
 
 		if (parens) fputc('(', stdout);
@@ -466,8 +474,8 @@ void dump_vars(query *q, bool partial)
 		print_term(q, stdout, c, c_ctx, 1);
 
 		if (parens) fputc(')', stdout);
-		if (q->last_thing == WAS_SYMBOL) space = true;
-		if (q->did_quote) space = false;
+		if (q->last_thing == WAS_SYMBOL) want_space = true;
+		if (q->did_quote) want_space = false;
 		any = true;
 	}
 
@@ -507,7 +515,7 @@ void dump_vars(query *q, bool partial)
 	q->is_input = false;
 
 	if (any && !partial) {
-		if (space) fprintf(stdout, " ");
+		if (want_space) fprintf(stdout, " ");
 		fprintf(stdout, ".\n");
 	}
 
