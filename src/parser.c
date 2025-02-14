@@ -1718,9 +1718,11 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			save.nbr_cells += lhs->nbr_cells;
 			pl_idx cells_to_move = lhs->nbr_cells;
 			cell *save_c = lhs;
+			const cell *src = c - 1;
+			cell *dst = c;
 
 			while (cells_to_move--)
-				*c++ = *lhs++;
+				*dst-- = *src--;
 
 			*save_c = save;
 			break;
