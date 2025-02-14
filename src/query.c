@@ -1911,6 +1911,7 @@ void query_destroy(query *q)
 		slot *e = GET_SLOT(f, tr->var_nbr);
 		cell *c = &e->c;
 		c->tag = TAG_EMPTY;
+		c->flags = 0;
 		c->attrs = tr->attrs;
 	}
 
