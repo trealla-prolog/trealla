@@ -1898,12 +1898,18 @@ void query_destroy(query *q)
 		free(save);
 	}
 
+	slot *e = q->slots;
+
+	for (pl_idx i = 0; i < q->st.sp; i++, e++) {
+		cell *c = &e->c;
+		unshare_cell(c);
+	}
+
 	while (q->st.tp > 0) {
 		const trail *tr = q->trails + --q->st.tp;
 		const frame *f = GET_FRAME(tr->var_ctx);
 		slot *e = GET_SLOT(f, tr->var_nbr);
 		cell *c = &e->c;
-		unshare_cell(c);
 		c->tag = TAG_EMPTY;
 		c->attrs = tr->attrs;
 	}
@@ -1914,13 +1920,6 @@ void query_destroy(query *q)
 			unshare_cell(c);
 
 		free(q->queue[i]);
-	}
-
-	slot *e = q->slots;
-
-	for (pl_idx i = 0; i < q->st.sp; i++, e++) {
-		cell *c = &e->c;
-		unshare_cell(c);
 	}
 
 	while (q->tasks) {
