@@ -1203,7 +1203,8 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 		SB_strcatn(q->sb, src, srclen);
 		if (quote) { SB_sprintf(q->sb, "%s", quote?"'":""); }
-		q->last_thing = WAS_OTHER;
+		if (q->last_thing != WAS_SPACE) { SB_sprintf(q->sb, "%s", " "); q->last_thing = WAS_SPACE; }
+		else q->last_thing = WAS_OTHER;
 		return true;
 	}
 
