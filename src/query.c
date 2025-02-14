@@ -909,11 +909,13 @@ static bool resume_any_choices(const query *q, const frame *f)
 
 static void trim_frame(query *q, const frame *f)
 {
+#if 0
 	for (unsigned i = 0; i < f->actual_slots; i++) {
 		slot *e = GET_SLOT(f, i);
 		cell *c = &e->c;
 		unshare_cell(c);
 	}
+#endif
 
 	q->st.sp -= f->actual_slots;
 	q->st.fp--;
