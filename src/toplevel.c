@@ -515,7 +515,7 @@ void dump_vars(query *q, bool partial)
 	q->is_input = false;
 
 	if (any && !partial) {
-		if (want_space) fprintf(stdout, " ");
+		if (want_space && (q->last_thing != WAS_SPACE)) fprintf(stdout, " ");
 		fprintf(stdout, ".\n");
 	}
 
