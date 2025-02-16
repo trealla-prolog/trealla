@@ -731,7 +731,7 @@ static bool find_exception_handler(query *q, char *ball)
 		q->ball = parse_to_heap(q, ball);
 		q->retry = QUERY_EXCEPTION;
 
-		if (bif_iso_catch_3(q) != true) {
+		if (!bif_iso_catch_3(q)) {
 			q->ball = NULL;
 			continue;
 		}
