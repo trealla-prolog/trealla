@@ -4177,7 +4177,9 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 
 		ok = !q->error;
 		p->m = q->st.curr_m;
-		query_destroy(q);
+
+		if (!subq)
+			query_destroy(q);
 
 		if (p->pl->is_query)
 			break;
