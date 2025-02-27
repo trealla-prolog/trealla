@@ -26,7 +26,7 @@ bool bif_iso_cut_0(query *q)
 
 bool bif_sys_cut_1(query *q)
 {
-	GET_FIRST_RAW_ARG(p1,integer)
+	GET_FIRST_ARG(p1,integer)
 	choice *ch = GET_CHOICE(get_smalluint(p1));
 	ch->reset = true;
 	return true;
