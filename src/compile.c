@@ -17,7 +17,6 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 	cell *c = (*src) + 1;
 
-#if 0
 	// T1 -> T2 ; T3
 
 	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)
@@ -121,7 +120,6 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		compile_term(pr, cl, dst, src);								// Arg2
 		return;
 	}
-#endif
 
 	if (((*src)->val_off == g_if_s) && ((*src)->arity == 3)) {
 		*src += 1;
@@ -193,6 +191,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
+#if 0
 	if (((*src)->val_off == g_negation_s) && ((*src)->arity == 1) && !is_var((*src)+1)) {
 		unsigned var_nbr = cl->nbr_vars++;
 		cl->has_local_vars = true;
@@ -210,6 +209,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);
 		return;
 	}
+#endif
 
 	if (((*src)->val_off == g_reset_s) && ((*src)->arity == 3) && !is_var((*src)+1)) {
 		unsigned var_nbr = cl->nbr_vars++;
