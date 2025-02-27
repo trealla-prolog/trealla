@@ -159,37 +159,6 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-#if 0
-	// This is not worth doing as the conditions are very rare
-
-	if (((*src)->val_off == g_call_s) && ((*src)->arity > 1) && is_ground(*src)) {
-		unsigned var_nbr = cl->nbr_vars++;
-		cl->has_local_vars = true;
-		unsigned arity = (*src)->arity;
-		*src += 1;
-		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
-		make_var((*dst)++, g_anon_s, var_nbr);
-		cell *save_dst = *dst;
-		make_instr((*dst)++, g_sys_call_s, bif_sys_call_1, 1, 0);
-		cell *save_dst1 = *dst;
-		cell *save_dst2 = *dst;
-		compile_term(pr, cl, dst, src);
-		save_dst->nbr_cells += *dst - save_dst2;
-
-		for (unsigned i = 1; i < arity; i++) {
-			cell *save_dst2 = *dst;
-			compile_term(pr, cl, dst, src);
-			save_dst->nbr_cells += *dst - save_dst2;
-			save_dst1->nbr_cells += *dst - save_dst2;
-			save_dst1->arity++;
-		}
-
-		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-		make_var((*dst)++, g_anon_s, var_nbr);
-		return;
-	}
-#endif
-
 	if (((*src)->val_off == g_once_s) && ((*src)->arity == 1) && !is_var((*src)+1)) {
 		unsigned var_nbr = cl->nbr_vars++;
 		cl->has_local_vars = true;
