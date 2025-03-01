@@ -6,6 +6,13 @@
 #include "prolog.h"
 #include "query.h"
 
+static void copy_term(cell **dst, cell **src)
+{
+	unsigned n = copy_cells(*dst, *src, (*src)->nbr_cells);
+	*dst += n;
+	*src += n;
+}
+
 static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 {
 	if (((*src)->val_off == g_conjunction_s) && ((*src)->arity == 2)) {
@@ -202,9 +209,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 #if 0
 		compile_term(pr, cl, dst, src);
 #else
-		unsigned n = copy_cells(*dst, *src, (*src)->nbr_cells);
-		*dst += n;
-		*src += n;
+		copy_term(dst, src);
 #endif
 		make_instr((*dst)++, g_cut_s, bif_iso_cut_0, 0, 0);
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
@@ -231,9 +236,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	pl_idx n = copy_cells(*dst, *src, (*src)->nbr_cells);
-	*dst += n;
-	*src += n;
+	copy_term(dst, src);
 }
 
 void compile_clause(predicate *pr, clause *cl, cell *body)
