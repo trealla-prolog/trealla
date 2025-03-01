@@ -134,15 +134,11 @@ Then...
 
 	make
 
-To build without libffi:
+To build without FFI:
 
 	make NOFFI=1
 
-On Debian+ systems you may need to install OpenSSL:
-
-	sudo apt install libssl-dev
-
-unless you choose to build without SSL/TLS support:
+To build without SSL:
 
 	make NOSSL=1
 
