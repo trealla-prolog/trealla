@@ -40,7 +40,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_uint(save_dst1+2, *dst - save_dst1);					// Real value1
 		compile_term(pr, cl, dst, src);								// Arg3
 		make_uint(save_dst2+1, *dst - save_dst2);					// Real value2
-		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);
+		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Landing
 		return;
 	}
 
@@ -68,7 +68,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_uint(save_dst1+2, *dst - save_dst1);					// Real value1
 		compile_term(pr, cl, dst, src);								// Arg3
 		make_uint(save_dst2+1, *dst - save_dst2);					// Real value2
-		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);
+		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Landing
 		return;
 	}
 
@@ -86,7 +86,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_uint(save_dst1+1, *dst - save_dst1);					// Real value1
 		compile_term(pr, cl, dst, src);								// RHS
 		make_uint(save_dst2+1, *dst - save_dst2);					// Real value2
-		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);
+		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Landing
 		return;
 	}
 
@@ -139,7 +139,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_uint(save_dst1+2, *dst - save_dst1);					// Real value1
 		compile_term(pr, cl, dst, src);								// Arg3
 		make_uint(save_dst2+1, *dst - save_dst2);					// Real value2
-		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);
+		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Landing
 		return;
 	}
 
@@ -187,7 +187,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_nbr);
 		make_uint(save_dst+2, *dst - save_dst);						// Real value
-		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);
+		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Landing
 		return;
 	}
 
@@ -211,7 +211,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_var((*dst)++, g_anon_s, var_nbr);
 		make_instr((*dst)++, g_fail_s, bif_iso_fail_0, 0, 0);
 		make_uint(save_dst+2, *dst - save_dst);						// Real value
-		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);
+		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Landing
 		return;
 	}
 
