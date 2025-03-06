@@ -887,9 +887,9 @@ void cut(query *q)
 		drop_choice(q);
 
 		if (ch->register_cleanup && !ch->fail_on_retry) {
-			cell *c = ch->st.curr_instr;
+			cell *c = FIRST_ARG(ch->st.curr_instr);
 			pl_idx c_ctx = ch->st.curr_frame;
-			c = deref(q, FIRST_ARG(c), c_ctx);
+			c = deref(q, c, c_ctx);
 			c_ctx = q->latest_ctx;
 			do_cleanup(q, c, c_ctx);
 			break;
