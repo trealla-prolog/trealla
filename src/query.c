@@ -871,7 +871,7 @@ void cut(query *q)
 	const frame *f = GET_CURR_FRAME();
 
 	while (q->cp) {
-		choice *ch = GET_CURR_CHOICE();
+		const choice *ch = GET_CURR_CHOICE();
 
 		// A normal cut can't break out of a barrier...
 
