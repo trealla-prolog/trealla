@@ -429,7 +429,7 @@ static bool bif_iso_catch_3(query *q)
 
 	if (q->retry && q->ball) {
 		GET_NEXT_ARG(p2,any);
-		return unify(q, p2, p2_ctx, q->ball, q->st.curr_frame);
+		return unify(q, p2, p2_ctx, q->ball, q->ball_ctx);
 	}
 
 	// Second time through? Try the recover goal...
@@ -559,7 +559,7 @@ bool bif_sys_call_cleanup_3(query *q)
 
 	if (q->retry && q->ball) {
 		GET_NEXT_ARG(p2,any);
-		cell *tmp = deep_clone_to_heap(q, q->ball, q->st.curr_frame);
+		cell *tmp = deep_clone_to_heap(q, q->ball, q->ball_ctx);
 		check_heap_error(tmp);
 		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 	}
@@ -729,6 +729,7 @@ static bool find_exception_handler(query *q, char *ball)
 			continue;
 
 		q->ball = parse_to_heap(q, ball);
+		q->ball_ctx = q->st.curr_frame;
 		q->retry = QUERY_EXCEPTION;
 
 		if (!bif_iso_catch_3(q)) {
@@ -752,6 +753,7 @@ static bool find_exception_handler(query *q, char *ball)
 		return false;
 	} else {
 		q->ball = deep_clone_to_heap(q, e, e_ctx);
+		q->ball_ctx = q->st.curr_frame;
 		rebase_term(q, q->ball, 0);
 	}
 
