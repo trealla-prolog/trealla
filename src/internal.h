@@ -562,7 +562,6 @@ struct choice_ {
 	bool barrier:1;
 	bool register_cleanup:1;
 	bool block_catcher:1;
-	bool catcher:1;
 	bool fail_on_retry:1;
 	bool succeed_on_retry:1;
 	bool reset:1;

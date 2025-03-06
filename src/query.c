@@ -783,7 +783,7 @@ bool push_choice(query *q)
 	ch->base = f->base;
 	ch->catchme_retry =
 		ch->catchme_exception = ch->barrier = ch->register_cleanup =
-		ch->block_catcher = ch->catcher = ch->fail_on_retry =
+		ch->block_catcher = ch->fail_on_retry =
 		ch->succeed_on_retry = ch->reset = false;
 
 	return true;
@@ -840,7 +840,6 @@ bool push_catcher(query *q, enum q_retry retry)
 {
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
-	ch->catcher = true;
 
 	if (retry == QUERY_RETRY)
 		ch->catchme_retry = true;
