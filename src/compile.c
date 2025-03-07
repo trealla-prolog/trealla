@@ -115,7 +115,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 	// T1 *-> T2
 
-	if (((*src)->val_off == g_soft_cut_s) && ((*src)->arity == 2) && !is_var((*src)+1)) {
+	if (((*src)->val_off == g_soft_cut_s) && ((*src)->arity == 2)) {
 		unsigned var_nbr = cl->nbr_vars++;
 		cl->has_local_vars = true;
 		*src += 1;
