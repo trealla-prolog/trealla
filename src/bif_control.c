@@ -597,98 +597,6 @@ bool bif_sys_call_cleanup_3(query *q)
 	return true;
 }
 
-static bool bif_sys_counter_1(query *q)
-{
-	GET_FIRST_ARG(p1,integer_or_var);
-	pl_uint n = 0;
-
-	if (is_smallint(p1))
-		n = get_smalluint(p1);
-
-	cell tmp;
-	make_uint(&tmp, n+1);
-	GET_RAW_ARG(1, p1_raw);
-	reset_var(q, p1_raw, p1_raw_ctx, &tmp, q->st.curr_frame);
-	return true;
-}
-
-static bool bif_sys_countall_2(query *q)
-{
-	GET_FIRST_ARG(p1,callable);
-	GET_NEXT_ARG(p2,var);
-
-	check_heap_error(init_tmp_heap(q));
-	cell *tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
-	check_heap_error(tmp2);
-	bool status;
-
-	if (!call_check(q, tmp2, &status, false))
-		return status;
-
-	cell n;
-	make_uint(&n, 0);
-	reset_var(q, p2, p2_ctx, &n, q->st.curr_frame);
-	cell *tmp = prepare_call(q, PREFIX_LEN, tmp2, q->st.curr_frame, 4);
-	check_heap_error(tmp);
-	pl_idx nbr_cells = PREFIX_LEN + tmp2->nbr_cells;
-	make_instr(tmp+nbr_cells++, g_sys_counter_s, bif_sys_counter_1, 1, 1);
-	make_ref(tmp+nbr_cells++, p2->var_nbr, p2_ctx);
-	make_instr(tmp+nbr_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
-	make_call(q, tmp+nbr_cells);
-	check_heap_error(push_succeed_on_retry(q, 0));
-	q->st.curr_instr = tmp;
-	return true;
-}
-
-static bool bif_between_3(query *q)
-{
-	GET_FIRST_ARG(p1,integer);
-	GET_NEXT_ARG(p2,integer);
-	GET_NEXT_ARG(p3,integer_or_var);
-
-	if (is_bigint(p1))
-		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
-
-	if (is_bigint(p2))
-		return throw_error(q, p2, p1_ctx, "domain_error", "small_integer_range");
-
-	if (is_bigint(p3))
-		return throw_error(q, p3, p3_ctx, "domain_error", "small_integer_range");
-
-	if (!q->retry) {
-		if (get_smallint(p1) > get_smallint(p2))
-			return false;
-
-		if (!is_var(p3)) {
-			if (get_smallint(p3) > get_smallint(p2))
-				return false;
-
-			if (get_smallint(p3) < get_smallint(p1))
-				return false;
-
-			return true;
-		}
-
-		if (get_smallint(p1) != get_smallint(p2)) {
-			q->st.cnt = get_smallint(p1);
-			check_heap_error(push_choice(q));
-		}
-
-		return unify(q, p3, p3_ctx, p1, p1_ctx);
-	}
-
-	int64_t cnt = q->st.cnt;
-	cell tmp;
-	make_int(&tmp, ++cnt);
-
-	if (cnt != get_smallint(p2)) {
-		q->st.cnt = cnt;
-		check_heap_error(push_choice(q));
-	}
-
-	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
-}
-
 static cell *parse_to_heap(query *q, const char *src)
 {
 	SB(s);
@@ -1116,13 +1024,10 @@ builtins g_control_bifs[] =
 	{"ignore", 1, bif_ignore_1, ":callable", false, false, BLAH},
 	{"reset", 3, bif_reset_3, ":callable,?term,-term", false, false, BLAH},
 	{"shift", 1, bif_shift_1, "+term", false, false, BLAH},
-	{"between", 3, bif_between_3, "+integer,+integer,-integer", false, false, BLAH},
 
 	{"$cut", 1, bif_sys_cut_1, "+integer", false, false, BLAH},
 	{"$call", 1, bif_sys_call_1, ":callable", true, false, BLAH},
 	{"$catch", 3, bif_iso_catch_3, ":callable,?term,:callable", true, false, BLAH},
-	{"$counter", 1, bif_sys_counter_1, NULL, false, false, BLAH},
-	{"$countall", 2, bif_sys_countall_2, "@callable,-integer", false, false, BLAH},
 	{"$block_catcher", 1, bif_sys_block_catcher_1, NULL, false, false, BLAH},
 	{"$set_if_var", 2, bif_sys_set_if_var_2, "?term,+term", false, false, BLAH},
 	{"$cleanup_if_det", 1, bif_sys_cleanup_if_det_1, NULL, false, false, BLAH},

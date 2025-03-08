@@ -6103,6 +6103,98 @@ static bool bif_iso_compare_3(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
+static bool bif_sys_counter_1(query *q)
+{
+	GET_FIRST_ARG(p1,integer_or_var);
+	pl_uint n = 0;
+
+	if (is_smallint(p1))
+		n = get_smalluint(p1);
+
+	cell tmp;
+	make_uint(&tmp, n+1);
+	GET_RAW_ARG(1, p1_raw);
+	reset_var(q, p1_raw, p1_raw_ctx, &tmp, q->st.curr_frame);
+	return true;
+}
+
+static bool bif_sys_countall_2(query *q)
+{
+	GET_FIRST_ARG(p1,callable);
+	GET_NEXT_ARG(p2,var);
+
+	check_heap_error(init_tmp_heap(q));
+	cell *tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
+	check_heap_error(tmp2);
+	bool status;
+
+	if (!call_check(q, tmp2, &status, false))
+		return status;
+
+	cell n;
+	make_uint(&n, 0);
+	reset_var(q, p2, p2_ctx, &n, q->st.curr_frame);
+	cell *tmp = prepare_call(q, PREFIX_LEN, tmp2, q->st.curr_frame, 4);
+	check_heap_error(tmp);
+	pl_idx nbr_cells = PREFIX_LEN + tmp2->nbr_cells;
+	make_instr(tmp+nbr_cells++, g_sys_counter_s, bif_sys_counter_1, 1, 1);
+	make_ref(tmp+nbr_cells++, p2->var_nbr, p2_ctx);
+	make_instr(tmp+nbr_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
+	make_call(q, tmp+nbr_cells);
+	check_heap_error(push_succeed_on_retry(q, 0));
+	q->st.curr_instr = tmp;
+	return true;
+}
+
+static bool bif_between_3(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,integer);
+	GET_NEXT_ARG(p3,integer_or_var);
+
+	if (is_bigint(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
+
+	if (is_bigint(p2))
+		return throw_error(q, p2, p1_ctx, "domain_error", "small_integer_range");
+
+	if (is_bigint(p3))
+		return throw_error(q, p3, p3_ctx, "domain_error", "small_integer_range");
+
+	if (!q->retry) {
+		if (get_smallint(p1) > get_smallint(p2))
+			return false;
+
+		if (!is_var(p3)) {
+			if (get_smallint(p3) > get_smallint(p2))
+				return false;
+
+			if (get_smallint(p3) < get_smallint(p1))
+				return false;
+
+			return true;
+		}
+
+		if (get_smallint(p1) != get_smallint(p2)) {
+			q->st.cnt = get_smallint(p1);
+			check_heap_error(push_choice(q));
+		}
+
+		return unify(q, p3, p3_ctx, p1, p1_ctx);
+	}
+
+	int64_t cnt = q->st.cnt;
+	cell tmp;
+	make_int(&tmp, ++cnt);
+
+	if (cnt != get_smallint(p2)) {
+		q->st.cnt = cnt;
+		check_heap_error(push_choice(q));
+	}
+
+	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+}
+
 void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type, bool function)
 {
 	tmpbuf[0] = '\0';
@@ -6689,6 +6781,7 @@ builtins g_other_bifs[] =
 	{"call_residue_vars", 2, bif_call_residue_vars_2, ":callable,-list", false, false, BLAH},
 	{"sleep", 1, bif_sleep_1, "+number", false, false, BLAH},
 	{"load_text", 2, bif_load_text_2, "+string,+list", false, false, BLAH},
+	{"between", 3, bif_between_3, "+integer,+integer,-integer", false, false, BLAH},
 
 	{"must_be", 4, bif_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"must_be", 2, bif_must_be_2, "+atom,+term", false, false, BLAH},
@@ -6699,6 +6792,8 @@ builtins g_other_bifs[] =
 	{"crypto_data_hash", 3, bif_crypto_data_hash_3, "?string,?string,?list", false, false, BLAH},
 #endif
 
+	{"$countall", 2, bif_sys_countall_2, "@callable,-integer", false, false, BLAH},
+	{"$counter", 1, bif_sys_counter_1, NULL, false, false, BLAH},
 	{"$legacy_current_prolog_flag", 2, bif_sys_current_prolog_flag_2, "+atom,?term", true, false, BLAH},
 	{"$legacy_predicate_property", 2, bif_sys_predicate_property_2, "+callable,?string", false, false, BLAH},
 	{"$legacy_evaluable_property", 2, bif_sys_evaluable_property_2, "+callable,?string", false, false, BLAH},
