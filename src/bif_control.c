@@ -423,7 +423,7 @@ static bool bif_sys_block_catcher_1(query *q)
 	return true;
 }
 
-bool bif_iso_catch_3(query *q)
+static bool bif_iso_catch_3(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 

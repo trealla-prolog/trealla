@@ -150,25 +150,6 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-#if 0
-	if (((*src)->val_off == g_catch_s) && ((*src)->arity == 3)) {
-		*src += 1;
-		cell *save_dst1 = *dst;
-		make_instr((*dst)++, g_sys_catch_s, bif_iso_catch_3, 3, 0);
-		cell *save_dst2 = *dst;
-		make_instr((*dst)++, g_call_s, bif_iso_call_1, 1, 0);
-		compile_term(pr, cl, dst, src);								// Arg1
-		save_dst2->nbr_cells = *dst - save_dst2;
-		copy_term(dst, src);										// Arg2
-		cell *save_dst3 = *dst;
-		make_instr((*dst)++, g_call_s, bif_iso_call_1, 1, 0);
-		compile_term(pr, cl, dst, src);								// Arg3
-		save_dst3->nbr_cells = *dst - save_dst3;
-		save_dst1->nbr_cells = *dst - save_dst1;
-		return;
-	}
-#endif
-
 	if (((*src)->val_off == g_call_s) && ((*src)->arity == 1)) {
 		unsigned var_nbr = cl->nbr_vars++;
 		cl->has_local_vars = true;
