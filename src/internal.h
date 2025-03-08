@@ -178,6 +178,11 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 	is_smallint(c) ? get_smallint(c) > 0 :					\
 	is_float(c) ? get_float(c) > 0.0 : false)
 
+#define is_not_less_than_zero(c) (is_bigint(c) ?			\
+	mp_int_compare_zero(&(c)->val_bigint->ival) >= 0 :		\
+	is_smallint(c) ? get_smallint(c) >= 0 :					\
+	is_float(c) ? get_float(c) >= 0.0 : false)
+
 
 extern char *g_global_atoms;
 
