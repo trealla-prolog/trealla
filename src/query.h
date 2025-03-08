@@ -106,6 +106,7 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int
 
 void dump_term(query *q, const char *s, const cell *c);
 
+bool bif_iso_catch_3(query *q);
 bool bif_iso_halt_0(query *q);
 bool bif_iso_close_1(query *q);
 bool bif_iso_true_0(query *q);

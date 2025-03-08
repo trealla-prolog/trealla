@@ -423,9 +423,9 @@ static bool bif_sys_block_catcher_1(query *q)
 	return true;
 }
 
-static bool bif_iso_catch_3(query *q)
+bool bif_iso_catch_3(query *q)
 {
-	GET_FIRST_ARG(p1,callable);
+	GET_FIRST_ARG(p1,any);
 
 	if (q->retry && q->ball) {
 		GET_NEXT_ARG(p2,any);
@@ -438,7 +438,7 @@ static bool bif_iso_catch_3(query *q)
 		check_pressure(q);
 		q->error = false;
 		GET_NEXT_ARG(p2,any);
-		GET_NEXT_ARG(p3,callable);
+		GET_NEXT_ARG(p3,any);
 		q->retry = QUERY_OK;
 		cell *tmp = prepare_call(q, PREFIX_LEN, p3, p3_ctx, 3);
 		check_heap_error(tmp);
@@ -480,7 +480,7 @@ bool bif_sys_set_if_var_2(query *q)
 
 static bool bif_reset_3(query *q)
 {
-	GET_FIRST_ARG(p1,callable);
+	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 	GET_NEXT_ARG(p3,any);
 
