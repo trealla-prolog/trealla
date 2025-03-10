@@ -85,7 +85,14 @@ LOOP:
 		int ch = get_char_utf8(&s);
 		char *end_ptr = cmd + strlen(cmd) - (strlen(cmd) ? 1 : 0);
 
-		while (((*end_ptr != '.') || (*end_ptr == '%')) && (end_ptr != cmd)) {
+		char *s2 = strchr(cmd, '%');
+
+		if (s2) {
+			*s2 = '\0';
+			end_ptr--;
+		}
+
+		while (isspace(*end_ptr)) {
 			*end_ptr = '\0';
 			end_ptr--;
 		}
