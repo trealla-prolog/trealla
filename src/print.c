@@ -796,6 +796,8 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		return false;
 	}
 
+	if (q->is_dump_vars) printf("*** print_term_to_buf_ c=%p, c_ctx=%u\n", c, c_ctx);
+
 	// THREAD OBJECTS
 
 	if ((c->tag == TAG_INTEGER) && (c->flags & FLAG_INT_THREAD)) {
@@ -1096,6 +1098,8 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 				pl_idx tmp_ctx = c_ctx;
 				if (running) tmp = deref(q, tmp, tmp_ctx);
 				if (running) tmp_ctx = q->latest_ctx;
+
+				if (q->is_dump_vars) printf("*** print struct tmp=%p, tmp_ctx=%u\n", tmp, tmp_ctx);
 
 				if (q->is_dump_vars && has_visited(visited, tmp, tmp_ctx)) {
 					tmp = c;
@@ -1485,6 +1489,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 bool print_term_to_buf(query *q, cell *c, pl_idx c_ctx, int running, int cons)
 {
+	if (q->is_dump_vars) printf("*** print_term_to_buf c=%p, c_ctx=%u\n", c, c_ctx);
 	visit me;
 	me.next = NULL;
 	me.c = c;
@@ -1613,6 +1618,8 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int runn
 
 bool print_term(query *q, FILE *fp, cell *c, pl_idx c_ctx, int running)
 {
+	if (q->is_dump_vars) printf("*** print_term c=%p, c_ctx=%u\n", c, c_ctx);
+
 	q->did_quote = false;
 	q->last_thing = WAS_SPACE;
 	SB_init(q->sb);

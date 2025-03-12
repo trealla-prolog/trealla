@@ -196,11 +196,21 @@ collect_goals_([V|T], GsIn, GsOut) :-
 	collect_goals_(T, GsOut2, GsOut).
 
 copy_term(Term, Copy, Gs) :-
-	duplicate_term(Term, Copy),
+	'$duplicate_term'(Term, Copy, 1),
 	term_attributed_variables(Copy, Vs),
 	collect_goals_(Vs, [], Gs).
 
 :- help(copy_term(+term,?term,-list), [iso(false)]).
+
+copy_term(Term, Copy) :-
+	'$duplicate_term'(Term, Copy, 1).
+
+:- help(copy_term(+term,?term), [iso(true)]).
+
+copy_term_nat(Term, Copy) :-
+	'$duplicate_term'(Term, Copy, 0).
+
+:- help(copy_term_nat(+term,?term), [iso(false)]).
 
 term_variables(P1, P2, P3) :-
 	term_variables(P1, P4),

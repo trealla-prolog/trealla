@@ -1907,10 +1907,12 @@ static bool bif_term_singletons_2(query *q)
 	return unify(q, p2, p2_ctx, tmp2, q->st.curr_frame);
 }
 
-static bool do_sys_copy_term(query *q, bool copy_attrs)
+static bool bif_sys_duplicate_term_3(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
+	GET_NEXT_ARG(p3,integer);
+	bool copy_attrs = get_smalluint(p3);
 
 	if (is_atomic(p1) && is_var(p2))
 		return unify(q, p1, p1_ctx, p2, p2_ctx);
@@ -1932,29 +1934,11 @@ static bool do_sys_copy_term(query *q, bool copy_attrs)
 	check_heap_error(tmp);
 	cell *tmpp1 = tmp + 1;
 	cell *tmpp2 = tmpp1 + tmpp1->nbr_cells;
-	unify(q, tmpp1, q->st.curr_frame, tmpp2, q->st.curr_frame);
+
+	if (!unify(q, tmpp1, q->st.curr_frame, tmpp2, q->st.curr_frame))
+		return false;
+
 	return unify(q, p2, p2_ctx, tmpp1, q->st.curr_frame);
-}
-
-// Don't copy attributes
-
-static bool bif_copy_term_nat_2(query *q)
-{
-	return do_sys_copy_term(q, false);
-}
-
-// Don't copy attributes (Note: SICStus & YAP don't, Scryer & SWI do)
-
-static bool bif_iso_copy_term_2(query *q)
-{
-	return do_sys_copy_term(q, false);
-}
-
-// Do copy attributes
-
-static bool bif_duplicate_term_2(query *q)
-{
-	return do_sys_copy_term(q, true);
 }
 
 static bool bif_iso_functor_3(query *q)
@@ -6680,7 +6664,7 @@ builtins g_iso_bifs[] =
 	{"number_codes", 2, bif_iso_number_codes_2, "?number,?list", true, false, BLAH},
 	{"arg", 3, bif_iso_arg_3, "+integer,+term,?term", true, false, BLAH},
 	{"functor", 3, bif_iso_functor_3, "?term,?atom,?integer", true, false, BLAH},
-	{"copy_term", 2, bif_iso_copy_term_2, "+term,?term", true, false, BLAH},
+	{"$duplicate_term", 3, bif_sys_duplicate_term_3, "+term,?term,+integer", true, false, BLAH},
 	{"term_variables", 2, bif_iso_term_variables_2, "+term,-list", true, false, BLAH},
 	{"atom_length", 2, bif_iso_atom_length_2, "?list,?integer", true, false, BLAH},
 	{"atom_concat", 3, bif_iso_atom_concat_3, "+atom,+atom,?atom", true, false, BLAH},
@@ -6768,8 +6752,6 @@ builtins g_other_bifs[] =
 	{"getenv", 2, bif_getenv_2, "+atom,-atom", false, false, BLAH},
 	{"setenv", 2, bif_setenv_2, "+atom,+atom", false, false, BLAH},
 	{"unsetenv", 1, bif_unsetenv_1, "+atom", false, false, BLAH},
-	{"duplicate_term", 2, bif_duplicate_term_2, "+term,-term", false, false, BLAH},
-	{"copy_term_nat", 2, bif_copy_term_nat_2, "+term,-term", false, false, BLAH},
 	{"call_nth", 2, bif_call_nth_2, ":callable,+integer", false, false, BLAH},
 	{"limit", 2, bif_limit_2, "+integer,:callable", false, false, BLAH},
 	{"offset", 2, bif_offset_2, "+integer,+callable", false, false, BLAH},
