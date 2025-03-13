@@ -1099,7 +1099,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 				if (running) tmp = deref(q, tmp, tmp_ctx);
 				if (running) tmp_ctx = q->latest_ctx;
 
-				if (q->is_dump_vars) printf("*** print struct tmp=%p, tmp_ctx=%u\n", tmp, tmp_ctx);
+				//if (q->is_dump_vars) printf("*** print struct tmp=%p, tmp_ctx=%u\n", tmp, tmp_ctx);
 
 				if (q->is_dump_vars && has_visited(visited, tmp, tmp_ctx)) {
 					tmp = c;
