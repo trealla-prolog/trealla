@@ -2187,38 +2187,6 @@ static bool bif_iso_acyclic_term_1(query *q)
 	return is_acyclic_term(q, p1, p1_ctx) ? true : false;
 }
 
-static bool bif_call_residue_vars_2(query *q)
-{
-	GET_FIRST_ARG(p1,callable);
-	GET_NEXT_ARG(p2,list_or_nil_or_var);
-
-	bool is_partial = false;
-
-	// This checks for a valid list (it allows for partial but acyclic lists)...
-
-	if (is_iso_list(p2) && !check_list(q, p2, p2_ctx, &is_partial, NULL))
-		return throw_error(q, p2, p2_ctx, "type_error", "list");
-
-	cell *tmp = prepare_call(q, PREFIX_LEN, p1, p1_ctx, 6);
-	check_heap_error(tmp);
-	tmp[1].flags &= ~FLAG_TAIL_CALL;
-	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
-	make_instr(tmp+nbr_cells++, new_atom(q->pl, "term_attributed_variables"), NULL, 2, 2);
-	make_indirect(tmp+nbr_cells++, p1, p1_ctx);
-
-	if (is_var(p2))
-		make_ref(tmp+nbr_cells++, p2->var_nbr, p2_ctx);
-	else
-		make_indirect(tmp+nbr_cells++, p2, p2_ctx);
-
-	make_instr(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+nbr_cells++, q->cp);
-	make_call(q, tmp+nbr_cells);
-	check_heap_error(push_fail_on_retry(q));
-	q->st.curr_instr = tmp;
-	return true;
-}
-
 static bool bif_sys_current_prolog_flag_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -6762,7 +6730,6 @@ builtins g_other_bifs[] =
 	{"string_length", 2, bif_string_length_2, "+string,?integer", false, false, BLAH},
 	{"crypto_n_random_bytes", 2, bif_crypto_n_random_bytes_2, "+integer,-codes", false, false, BLAH},
 	{"cyclic_term", 1, bif_cyclic_term_1, "+term", false, false, BLAH},
-	{"call_residue_vars", 2, bif_call_residue_vars_2, ":callable,-list", false, false, BLAH},
 	{"sleep", 1, bif_sleep_1, "+number", false, false, BLAH},
 	{"load_text", 2, bif_load_text_2, "+string,+list", false, false, BLAH},
 	{"between", 3, bif_between_3, "+integer,+integer,-integer", false, false, BLAH},

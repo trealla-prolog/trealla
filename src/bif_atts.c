@@ -388,6 +388,38 @@ static bool bif_sys_unattributed_var_1(query *q)
 	return !bif_sys_attributed_var_1(q);
 }
 
+static bool bif_call_residue_vars_2(query *q)
+{
+	GET_FIRST_ARG(p1,callable);
+	GET_NEXT_ARG(p2,list_or_nil_or_var);
+
+	bool is_partial = false;
+
+	// This checks for a valid list (it allows for partial but acyclic lists)...
+
+	if (is_iso_list(p2) && !check_list(q, p2, p2_ctx, &is_partial, NULL))
+		return throw_error(q, p2, p2_ctx, "type_error", "list");
+
+	cell *tmp = prepare_call(q, PREFIX_LEN, p1, p1_ctx, 6);
+	check_heap_error(tmp);
+	tmp[1].flags &= ~FLAG_TAIL_CALL;
+	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
+	make_instr(tmp+nbr_cells++, new_atom(q->pl, "term_attributed_variables"), NULL, 2, 2);
+	make_indirect(tmp+nbr_cells++, p1, p1_ctx);
+
+	if (is_var(p2))
+		make_ref(tmp+nbr_cells++, p2->var_nbr, p2_ctx);
+	else
+		make_indirect(tmp+nbr_cells++, p2, p2_ctx);
+
+	make_instr(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
+	make_uint(tmp+nbr_cells++, q->cp);
+	make_call(q, tmp+nbr_cells);
+	check_heap_error(push_fail_on_retry(q));
+	q->st.curr_instr = tmp;
+	return true;
+}
+
 typedef struct {
 	blob b;
 	pl_idx lo_tp, hi_tp;
@@ -502,6 +534,7 @@ builtins g_atts_bifs[] =
 	{"attribute", 3, bif_attribute_3, "?atom,+atom,+integer", false, false, BLAH},
 	{"put_atts", 2, bif_put_atts_2, "@variable,+term", false, false, BLAH},
 	{"get_atts", 2, bif_get_atts_2, "@variable,-term", false, false, BLAH},
+	{"call_residue_vars", 2, bif_call_residue_vars_2, ":callable,-list", false, false, BLAH},
 
 	{"$list_attributed", 1, bif_sys_list_attributed_1, "-list", false, false, BLAH},
 	{"$unattributed_var", 1, bif_sys_unattributed_var_1, "@variable", false, false, BLAH},
