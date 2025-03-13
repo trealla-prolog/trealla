@@ -392,7 +392,6 @@ static bool bif_call_residue_vars_2(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	GET_NEXT_ARG(p2,list_or_nil_or_var);
-
 	bool is_partial = false;
 
 	// This checks for a valid list (it allows for partial but acyclic lists)...
