@@ -151,6 +151,28 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
+#if 0
+	if (((*src)->val_off == g_call_s) && ((*src)->arity > 1) && !is_var((*src)+1)) {
+		unsigned var_nbr = cl->nbr_vars++;
+		cl->has_local_vars = true;
+		int arity = (*src)->arity - 1;
+		*src += 1;
+		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
+		make_var((*dst)++, g_anon_s, var_nbr);
+		cell *save_dst = *dst;
+		copy_term(dst, src);
+		save_dst->arity = arity;
+
+		while (arity-- > 0)
+			copy_term(dst, src);
+
+		save_dst->nbr_cells = *dst - save_dst;
+		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
+		make_var((*dst)++, g_anon_s, var_nbr);
+		return;
+	}
+#endif
+
 	if (((*src)->val_off == g_call_s) && ((*src)->arity == 1) && !is_var((*src)+1)) {
 		unsigned var_nbr = cl->nbr_vars++;
 		cl->has_local_vars = true;
