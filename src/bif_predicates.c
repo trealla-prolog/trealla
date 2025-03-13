@@ -6262,7 +6262,6 @@ static void load_properties(module *m)
 	format_property(m, tmpbuf, sizeof(tmpbuf), "abolish", 1, "meta_predicate(abolish(:))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "clause", 2, "meta_predicate(clause(:,?))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "clause", 3, "meta_predicate(clause(:,?,?))", false); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "call_residue_vars", 2, "meta_predicate(call_residue_vars(0,?))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "bb_b_put", 2, "meta_predicate(bb_b_put(:,?))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "bb_put", 2, "meta_predicate(bb_put(:,?))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "bb_get", 2, "meta_predicate(bb_get(:,?))", false); SB_strcat(pr, tmpbuf);
