@@ -1966,36 +1966,38 @@ static bool bif_iso_functor_3(query *q)
 
 		unsigned arity = get_smallint(p3);
 
-		if (!arity) {
-			unify(q, p1, p1_ctx, p2, p2_ctx);
-		} else {
-			int var_nbr = create_vars(q, arity);
-			check_heap_error(var_nbr != -1);
-			cell *tmp = alloc_on_heap(q, 1+arity);
-			check_heap_error(tmp);
-			*tmp = (cell){0};
-			tmp[0].tag = TAG_INTERNED;
-			tmp[0].arity = arity;
-			tmp[0].nbr_cells = 1 + arity;
+		if (!arity)
+			return unify(q, p1, p1_ctx, p2, p2_ctx);
 
-			if (is_cstring(p2)) {
-				tmp[0].val_off = new_atom(q->pl, C_STR(q, p2));
-			} else
-				tmp[0].val_off = p2->val_off;
+		int var_nbr = create_vars(q, arity);
+		check_heap_error(var_nbr != -1);
+		cell *tmp = alloc_on_heap(q, 1+arity);
+		check_heap_error(tmp);
+		*tmp = (cell){0};
+		tmp[0].tag = TAG_INTERNED;
+		tmp[0].arity = arity;
+		tmp[0].nbr_cells = 1 + arity;
 
-			for (unsigned i = 1; i <= arity; i++) {
-				memset(tmp+i, 0, sizeof(cell));
-				tmp[i].tag = TAG_VAR;
-				tmp[i].nbr_cells = 1;
-				tmp[i].var_nbr = var_nbr++;
-				tmp[i].var_ctx = q->st.curr_frame;
-				tmp[i].flags = FLAG_VAR_REF | FLAG_VAR_FRESH | FLAG_VAR_ANON;
-			}
+		if (is_cstring(p2)) {
+			tmp[0].val_off = new_atom(q->pl, C_STR(q, p2));
+		} else
+			tmp[0].val_off = p2->val_off;
 
-			unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
+		for (unsigned i = 1; i <= arity; i++) {
+			memset(tmp+i, 0, sizeof(cell));
+			tmp[i].tag = TAG_VAR;
+			tmp[i].nbr_cells = 1;
+			tmp[i].var_nbr = var_nbr++;
+			tmp[i].var_ctx = q->st.curr_frame;
+			tmp[i].flags = FLAG_VAR_REF | FLAG_VAR_FRESH | FLAG_VAR_ANON;
 		}
 
-		return true;
+		bool status;
+
+		if (!call_check(q, tmp, &status, false))
+			return status;
+
+		return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 	}
 
 	cell tmp = *p1;
