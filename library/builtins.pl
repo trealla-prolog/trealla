@@ -178,6 +178,13 @@ term_attributed_variables(Term, Vs) :-
 
 :- help(term_attributed_variables(+term,-list), [iso(false), desc('Return list of attributed variables in term')]).
 
+call_residue_vars(G, Ls) :-
+	G,
+	term_attributed_variables(G, Ls).
+
+:- help(call_residue_vars(+term,-list), [iso(false), desc('Return list of attributed variables after goal')]).
+:- meta_predicate(call_residue_vars(0,?)).
+
 collect_goals_(_, [], GsIn, GsIn).
 collect_goals_(V, [H|T], GsIn, GsOut) :-
 	nonvar(H),
