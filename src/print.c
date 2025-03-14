@@ -1159,7 +1159,12 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		if (running) lhs = deref(q, lhs, lhs_ctx);
 		if (running) lhs_ctx = q->latest_ctx;
 		unsigned lhs_pri = is_interned(lhs) ? match_op(q->st.curr_m, C_STR(q, lhs), NULL, lhs->arity) : 0;
-		bool any = false, is_op_lhs = lhs_pri;
+		bool any = false, is_op_lhs = lhs_pri, parens = false;
+		bool space = (c->val_off == g_minus_s) && (is_number(lhs) || is_op_lhs);
+		if ((c->val_off == g_plus_s) && is_op_lhs) space = true;
+		int ch = peek_char_utf8(src);
+		if (iswalpha(ch)) space = true;
+		if (lhs_pri >= my_priority) { parens = true; space = false; }
 
 		if (!is_var(lhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
 			if (q->last_thing != WAS_SPACE) SB_sprintf(q->sb, "%s", " ");
@@ -1172,13 +1177,13 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 			me.c = lhs;
 			me.c_ctx = lhs_ctx;
 			pl_idx lhs_ctx = running ? q->latest_ctx : 0;
-			print_term_to_buf_(q, lhs, lhs_ctx, running, 0, 0, depth+1, &me);
-		}
 
-		bool space = (c->val_off == g_minus_s) && (is_number(lhs) || is_op_lhs);
-		if ((c->val_off == g_plus_s) && is_op_lhs) space = true;
-		int ch = peek_char_utf8(src);
-		if (iswalpha(ch)) space = true;
+			if (parens) { SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
+
+			print_term_to_buf_(q, lhs, lhs_ctx, running, 0, 0, depth+1, &me);
+
+			if (parens) { SB_sprintf(q->sb, "%s", ")"); q->last_thing = WAS_OTHER; }
+		}
 
 		if (q->is_dump_vars && has_visited(visited, lhs, lhs_ctx)) {
 			if (q->is_dump_vars) {
@@ -1196,7 +1201,10 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		}
 
 		int quote = q->quoted && needs_quoting(q->st.curr_m, src, src_len);
-		if (quote) { SB_sprintf(q->sb, "%s", quote?" '":""); }
+		if (quote) {
+			if (!parens) SB_sprintf(q->sb, "%s", " ");
+			SB_sprintf(q->sb, "%s", quote?"'":"");
+		}
 
 		SB_strcatn(q->sb, src, srclen);
 		if (quote) { SB_sprintf(q->sb, "%s", quote?"'":""); }
