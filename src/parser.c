@@ -591,7 +591,7 @@ static bool make_rule(module *m, const char *src)
 	if (!p) return false;
 	p->flags = m->flags;
 	p->internal = true;
-	p->consulting = true;
+	p->is_consulting = true;
 	p->one_shot = true;
 
 	tokenize(p, false, false);
@@ -612,7 +612,7 @@ static bool directives(parser *p, cell *d)
 	if (!is_interned(d))
 		return false;
 
-	if (is_list(d) && p->command) {
+	if (is_list(d) && p->is_command) {
 		consultall(p, d);
 		p->skip = true;
 		return false;
@@ -1531,7 +1531,7 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 	for (unsigned i = 0; i < cl->nbr_vars; i++) {
 		if (!p->vartab.in_body[i])
 
-		if (p->consulting && !p->do_read_term && (p->vartab.used[i] == 1) &&
+		if (p->is_consulting && !p->do_read_term && (p->vartab.used[i] == 1) &&
 			(p->vartab.name[i][strlen(p->vartab.name[i])-1] != '_') &&
 			(*p->vartab.name[i] != '_')) {
 			if (!p->m->pl->quiet
@@ -1562,7 +1562,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 		}
 
 #if 0
-		if (!p->consulting)
+		if (!p->is_consulting)
 			printf("*** OP1 start=%u '%s' type=%u, specifier=%u, pri=%u, last_op=%d, is_op=%d\n", start_idx, C_STR(p, c), c->tag, GET_OP(c), c->priority, last_op, IS_OP(c));
 #endif
 
@@ -1605,7 +1605,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 		}
 
 #if 0
-		if (!p->consulting)
+		if (!p->is_consulting)
 			printf("*** OP2 last=%u/start=%u '%s' type=%u, specifier=%u, pri=%u, last_op=%d, is_op=%d\n", last_idx, start_idx, C_STR(p, c), c->tag, GET_OP(c), c->priority, last_op, IS_OP(c));
 #endif
 
@@ -1810,7 +1810,7 @@ void reset(parser *p)
 	clear_clause(p->cl);
 	p->nbr_vars = 0;
 	p->start_term = true;
-	p->comment = false;
+	p->is_comment = false;
 	p->error = false;
 	p->last_close = false;
 	p->nesting_parens = p->nesting_brackets = p->nesting_braces = 0;
@@ -1980,7 +1980,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	if (!search_goal_expansion(p->m, goal))
 		return goal;
 
-	if (!CMP_STRING_TO_CSTR(p, goal, "phrase") && !p->consulting)
+	if (!CMP_STRING_TO_CSTR(p, goal, "phrase") && !p->is_consulting)
 		return goal;
 
 	//if (search_predicate(p->m, goal, NULL))
@@ -2310,7 +2310,7 @@ bool virtual_term(parser *p, const char *src)
 {
 	parser *p2 = parser_create(p->m);
 	check_error(p2);
-	p2->consulting = true;
+	p2->is_consulting = true;
 	p2->srcptr = (char*)src;
 	tokenize(p2, false, false);
 
@@ -2832,14 +2832,14 @@ char *eat_space(parser *p)
 		}
 
 		do {
-			if (!p->comment && (src[0] == '/') && (src[1] == '*')) {
-				p->comment = true;
+			if (!p->is_comment && (src[0] == '/') && (src[1] == '*')) {
+				p->is_comment = true;
 				src += 2;
 				continue;
 			}
 
-			if (p->comment && (src[0] == '*') && (src[1] == '/')) {
-				p->comment = false;
+			if (p->is_comment && (src[0] == '*') && (src[1] == '/')) {
+				p->is_comment = false;
 				src += 2;
 
 				if (!is_number(&p->v))	// For number_chars
@@ -2852,10 +2852,10 @@ char *eat_space(parser *p)
 			if (*src == '\n')
 				p->line_nbr++;
 
-			if (p->comment)
+			if (p->is_comment)
 				src++;
 
-			if (!*src && p->comment && p->fp) {
+			if (!*src && p->is_comment && p->fp) {
 				if (p->no_fp || getline(&p->save_line, &p->n_line, p->fp) == -1) {
 					if (DUMP_ERRS || !p->do_read_term)
 						fprintf(stderr, "Error: syntax error, parsing number1, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
@@ -2868,7 +2868,7 @@ char *eat_space(parser *p)
 				src = p->srcptr = p->save_line;
 			}
 		}
-		 while (*src && p->comment);
+		 while (*src && p->is_comment);
 	}
 	 while (!done);
 
@@ -2929,7 +2929,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 	p->v.flags = 0;
 	p->v.nbr_cells = 1;
 	p->quote_char = 0;
-	p->was_string = p->is_string = p->is_quoted = p->is_var = p->is_op = p->symbol = false;
+	p->was_string = p->is_string = p->is_quoted = p->is_var = p->is_op = p->is_symbol = false;
 
 	if (p->dq_consing && (*src == '"') && (src[1] == '"')) {
 		src++;
@@ -3293,7 +3293,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		return false;
 	}
 
-	p->symbol = true;
+	p->is_symbol = true;
 
 	do {
 		SB_putchar(p->token, ch);
@@ -3421,7 +3421,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 		int ch = peek_char_utf8(SB_cstr(p->token));
 		fprintf(stderr,
 			"Debug: '%s' (%d) line_nbr=%d, symbol=%d, quoted=%d, tag=%u, op=%d, lastop=%d, string=%d\n",
-			SB_cstr(p->token), ch, p->line_nbr, p->symbol, p->quote_char, p->v.tag, p->is_op, last_op, p->is_string);
+			SB_cstr(p->token), ch, p->line_nbr, p->is_symbol, p->quote_char, p->v.tag, p->is_op, last_op, p->is_string);
 #endif
 
 		if (!p->quote_char
@@ -3470,11 +3470,11 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 				if (p->error) return 0;
 
-				if (p->consulting && check_body_callable(p->cl->cells)) {
+				if ((p->is_consulting || p->is_command) && !p->skip && check_body_callable(p->cl->cells)) {
 					if (DUMP_ERRS || !p->do_read_term)
 						printf("Error: type error, not callable, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
-					p->error_desc = "operator_expected";
+					p->error_desc = "not callable";
 					p->error = true;
 					return 0;
 				}
@@ -3482,7 +3482,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 				xref_clause(p->m, p->cl, NULL);
 				term_to_body(p);
 
-				if (p->consulting && !p->skip) {
+				if ((p->is_consulting || p->is_command) && !p->skip) {
 					if (is_var(p->cl->cells)) {
 						if (DUMP_ERRS || !p->do_read_term)
 							printf("Error: instantiation error, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
@@ -3494,7 +3494,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 						if (DUMP_ERRS || !p->do_read_term)
 							printf("Error: type error, callable, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
 
-						p->error_desc = "type_error";
+						p->error_desc = "not callable";
 						p->error = true;
 						return 0;
 					}
@@ -3518,7 +3518,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 					}
 				}
 
-				if (p->consulting && !p->skip) {
+				if (p->is_consulting && !p->skip) {
 					// Term expansion can return a list...
 
 					cell *p1 = p->cl->cells;
@@ -3958,7 +3958,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 			int nextch = *s;
 
-			if (IS_PREFIX(specifier) && p->symbol && last_prefix)
+			if (IS_PREFIX(specifier) && p->is_symbol && last_prefix)
 				;
 			else if ((nextch == ',')
 				|| (nextch == ';')
@@ -4058,7 +4058,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 		} else if (p->v.tag == TAG_DOUBLE) {
 			set_float(c, get_float(&p->v));
 		} else if (!p->is_string
-			&& (!p->is_quoted || is_func || p->is_op || p->is_var || p->consulting
+			&& (!p->is_quoted || is_func || p->is_op || p->is_var || p->is_consulting
 			|| (get_builtin(p->m->pl, SB_cstr(p->token), SB_strlen(p->token), 0, &found, NULL), found)
 			|| !SB_strcmp(p->token, "[]"))
 			) {
@@ -4121,7 +4121,7 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 		p->line_nbr_start = 0;
 		p->line_nbr = 1;
 		p->one_shot = true;
-		p->consulting = false;
+		p->is_consulting = false;
 		tokenize(p, false, false);
 
 		if (p->error) {

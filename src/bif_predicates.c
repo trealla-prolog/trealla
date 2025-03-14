@@ -3593,7 +3593,7 @@ static bool bif_load_text_2(query *q)
 				m = find_module(q->pl, name_s);
 
 				if (!m) {
-					if (q->p->command)
+					if (q->p->is_command)
 						fprintf(stdout, "Info: created module '%s'\n", name_s);
 
 					m = module_create(q->pl, name_s);
@@ -5646,7 +5646,7 @@ static bool bif_sys_module_1(query *q)
 	module *m = find_module(q->pl, name);
 
 	if (!m) {
-		if (q->p->command)
+		if (q->p->is_command)
 			fprintf(stdout, "Info: created module '%s'\n", name);
 
 		m = module_create(q->pl, name);
@@ -6420,7 +6420,7 @@ static void load_properties(module *m)
 
 	parser *p = parser_create(m);
 	p->srcptr = SB_cstr(pr);
-	p->consulting = true;
+	p->is_consulting = true;
 	tokenize(p, false, false);
 	parser_destroy(p);
 	SB_free(pr);
@@ -6470,7 +6470,7 @@ static void load_flags(query *q)
 
 	parser *p = parser_create(m->pl->user_m);
 	p->srcptr = SB_cstr(pr);
-	p->consulting = true;
+	p->is_consulting = true;
 	tokenize(p, false, false);
 	parser_destroy(p);
 	SB_free(pr);
@@ -6551,7 +6551,7 @@ static void load_ops(query *q)
 
 	parser *p = parser_create(q->pl->user_m);
 	p->srcptr = SB_cstr(pr);
-	p->consulting = true;
+	p->is_consulting = true;
 	tokenize(p, false, false);
 	parser_destroy(p);
 	//printf("*** %s load_ops %s\n", q->st.curr_m->name, SB_cstr(pr));

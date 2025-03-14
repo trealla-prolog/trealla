@@ -591,7 +591,7 @@ static void add_stream_properties(query *q, int n)
 
 	parser *p = parser_create(q->st.curr_m);
 	p->srcptr = tmpbuf;
-	p->consulting = true;
+	p->is_consulting = true;
 	tokenize(p, false, false);
 	parser_destroy(p);
 }

@@ -675,7 +675,7 @@ void push_property(module *m, const char *name, unsigned arity, const char *type
 	format_property(m, tmpbuf, sizeof(tmpbuf), name, arity, type, false);
 	parser *p = parser_create(m);
 	p->srcptr = tmpbuf;
-	p->consulting = true;
+	p->is_consulting = true;
 	p->internal = true;
 	tokenize(p, false, false);
 	parser_destroy(p);
@@ -687,7 +687,7 @@ void push_template(module *m, const char *name, unsigned arity, const builtins *
 	format_template(m, tmpbuf, sizeof(tmpbuf), name, arity, ptr, false, NULL);
 	parser *p = parser_create(m);
 	p->srcptr = tmpbuf;
-	p->consulting = true;
+	p->is_consulting = true;
 	p->internal = true;
 	tokenize(p, false, false);
 	parser_destroy(p);
@@ -2026,7 +2026,7 @@ module *load_text(module *m, const char *src, const char *filename)
 	check_error(p);
 	const char *save_filename = p->m->filename;
 	p->m->filename = set_known(m, filename);
-	p->consulting = true;
+	p->is_consulting = true;
 	p->srcptr = (char*)src;
 	tokenize(p, false, false);
 
@@ -2042,11 +2042,11 @@ module *load_text(module *m, const char *src, const char *filename)
 		int save = p->m->pl->quiet;
 		//p->m->pl->quiet = true;
 		p->m->pl->halt = false;
-		p->directive = true;
+		p->is_directive = true;
 
 		if (p->m->run_init) {
-			p->consulting = false;
-			p->command = true;
+			p->is_consulting = false;
+			p->is_command = true;
 			SB(src);
 			SB_sprintf(src, "forall(%s:retract(('$directive'(initialization(__G_)))), (once(__G_); format('Error: ~w~n', [__G_])))", p->m->name);
 
@@ -2057,7 +2057,7 @@ module *load_text(module *m, const char *src, const char *filename)
 			p->m->run_init = false;
 		}
 
-		p->command = p->directive = false;
+		p->is_command = p->is_directive = false;
 		p->m->pl->quiet = save;
 	}
 
@@ -2151,7 +2151,7 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including, bool 
 	if (!p) return NULL;
 	const char *save_filename = m->filename;
 	if (!including) m->filename = set_known(m, filename);
-	p->consulting = true;
+	p->is_consulting = true;
 	p->fp = fp;
 	bool ok = false;
 
@@ -2185,11 +2185,11 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including, bool 
 	if (!p->error && !p->already_loaded_error) {
 		xref_db(p->m);
 		int save = p->m->pl->quiet;
-		p->directive = true;
+		p->is_directive = true;
 
 		if (p->m->run_init && init) {
-			p->command = true;
-			p->consulting = false;
+			p->is_command = true;
+			p->is_consulting = false;
 			SB(src);
 			SB_sprintf(src, "forall(%s:retract(('$directive'(initialization(__G_)))), (once(__G_); format('Error: ~w~n', [__G_])))", p->m->name);
 
@@ -2200,7 +2200,7 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including, bool 
 			p->m->run_init = false;
 		}
 
-		p->command = p->directive = false;
+		p->is_command = p->is_directive = false;
 		p->m->pl->quiet = save;
 	}
 
@@ -2268,7 +2268,7 @@ module *load_file(module *m, const char *filename, bool including, bool init)
 				parser *p = parser_create(m);
 				if (!p) return NULL;
 				p->srcptr = m->pl->p->srcptr;
-				p->consulting = true;
+				p->is_consulting = true;
 				p->m = m;
 
 				if (!tokenize(p, false, false)) {
@@ -2532,7 +2532,7 @@ module *module_create(prolog *pl, const char *name)
 
 	parser *p = parser_create(m);
 	if (p) {
-		p->consulting = true;
+		p->is_consulting = true;
 		xref_db(p->m);
 		parser_destroy(p);
 	}
