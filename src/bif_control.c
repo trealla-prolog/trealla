@@ -641,7 +641,6 @@ bool bif_sys_call_check_1(query *q)
 		check_heap_error(init_tmp_heap(q));
 		p1 = deep_clone_to_tmp(q, p1, p1_ctx);
 		check_heap_error(p1);
-		p1_ctx = q->st.curr_frame;
 		bool status;
 		return call_check(q, p1, &status, false) ? true : status;
 	}
