@@ -5949,58 +5949,6 @@ static bool bif_abort_0(query *q)
 	return throw_error(q, q->st.curr_instr, q->st.curr_frame, "$aborted", "abort_error");
 }
 
-bool call_check(query *q, cell *tmp2, bool *status, bool calln)
-{
-	if (tmp2->val_off == g_colon_s) {
-		tmp2 = tmp2 + 1;
-		tmp2 += tmp2->nbr_cells;
-	}
-
-	if (!tmp2->match) {
-		bool found = false;
-
-		if ((tmp2->bif_ptr = get_builtin_term(q->st.curr_m, tmp2, &found, NULL)), found) {
-			tmp2->flags |= FLAG_BUILTIN;
-		} else if ((tmp2->match = search_predicate(q->st.curr_m, tmp2, NULL)) != NULL) {
-			tmp2->flags &= ~FLAG_BUILTIN;
-		} else {
-			tmp2->flags &= ~FLAG_BUILTIN;
-		}
-	}
-
-	if (calln && (tmp2->arity <= 2)) {
-		const char *functor = C_STR(q, tmp2);
-		unsigned specifier;
-
-		if (search_op(q->st.curr_m, functor, &specifier, false))
-			SET_OP(tmp2, specifier);
-	}
-
-	if ((tmp2 = check_body_callable(tmp2)) != NULL) {
-		*status = throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
-		return false;
-	}
-
-	*status = true;
-	return true;
-}
-
-bool bif_sys_call_check_1(query *q)
-{
-	GET_FIRST_ARG(p1,callable);
-
-	if ((is_builtin(p1) && !is_evaluable(p1)) || !p1->arity) {
-		check_heap_error(init_tmp_heap(q));
-		p1 = deep_clone_to_tmp(q, p1, p1_ctx);
-		check_heap_error(p1);
-		p1_ctx = q->st.curr_frame;
-		bool status;
-		return call_check(q, p1, &status, false) ? true : status;
-	}
-
-	return true;
-}
-
 bool bif_sys_reset_handler_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
@@ -6762,7 +6710,6 @@ builtins g_other_bifs[] =
 	{"$fail_on_retry", 1, bif_sys_fail_on_retry_1, "-integer", false, false, BLAH},
 	{"$succeed_on_retry", 1, bif_sys_succeed_on_retry_1, "+integer", false, false, BLAH},
 	{"$succeed_on_retry", 2, bif_sys_succeed_on_retry_2, "-integer,+integer", false, false, BLAH},
-	{"$call_check", 1, bif_sys_call_check_1, "+callable", false, false, BLAH},
 	{"$alarm", 1, bif_sys_alarm_1, "+integer", false, false, BLAH},
 	{"$first_non_octet", 2, bif_sys_first_non_octet_2, "+chars,-integer", false, false, BLAH},
 	{"$skip_max_list", 4, bif_sys_skip_max_list_4, "?integer,?integer?,?term,?term", false, false, BLAH},
