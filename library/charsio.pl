@@ -15,7 +15,7 @@ get_line_to_chars(Stream, Cs0, Cs) :-
 
 get_n_chars(Stream, N, Cs) :-
     bread(Stream, N, Cs0),
-    Cs0 == Cs.
+    Cs0 = Cs.
 
 read_from_chars(Cs, T) :-
     read_term_from_chars(Cs, T, []).
