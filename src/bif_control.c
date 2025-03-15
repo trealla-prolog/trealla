@@ -156,7 +156,6 @@ static bool bif_iso_call_n(query *q)
 
 	check_heap_error(init_tmp_heap(q));
 	unsigned arity = p1->arity, args = 1, xarity = q->st.curr_instr->arity;
-
 	check_heap_error(deep_clone_to_tmp(q, p1, p1_ctx));
 
 	while (args++ < xarity) {
