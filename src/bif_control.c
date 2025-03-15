@@ -604,7 +604,7 @@ bool call_check(query *q, cell *tmp2, bool *status, bool calln)
 		tmp2 += tmp2->nbr_cells;
 	}
 
-	if (!tmp2->match) {
+	if (calln && !tmp2->match) {
 		bool found = false;
 
 		if ((tmp2->bif_ptr = get_builtin_term(q->st.curr_m, tmp2, &found, NULL)), found) {
