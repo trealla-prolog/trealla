@@ -1,7 +1,11 @@
 #include <stdlib.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 #include <stdio_ext.h>
+#endif
+
 #include <signal.h>
 #include <string.h>
 #include <time.h>
