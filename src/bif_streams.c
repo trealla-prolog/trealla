@@ -6808,7 +6808,7 @@ static bool bif_bflush_1(query *q)
 	GET_FIRST_ARG(pstr,stream);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
-	str->fp->_IO_read_ptr = str->fp->_IO_read_end;
+	str->fp = freopen(NULL, "r", str->fp);
 	free(str->data);
 	str->data = NULL;
 	str->data_len = 0;
