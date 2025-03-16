@@ -6,6 +6,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdio_ext.h>
 #include <string.h>
 #include <time.h>
 #include <signal.h>
@@ -6808,11 +6809,15 @@ static bool bif_bflush_1(query *q)
 	GET_FIRST_ARG(pstr,stream);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
-	//fpurge(str->fp);
+
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
+	__fpurge(str->fp);
+#else
 	char ch;
 
 	while ((net_read(&ch, 1, str) > 0) && (ch != '\n'))
 		;
+#endif
 
 	free(str->data);
 	str->data = NULL;

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdio_ext.h>
 #include <signal.h>
 #include <string.h>
 #include <time.h>
@@ -1948,6 +1949,19 @@ void query_destroy(query *q)
 		module_unlock(m);
 	}
 #endif
+
+	for (int i = 0; i < 3; i++) {
+		stream *str = &q->pl->streams[i];
+
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
+		__fpurge(str->fp);
+#endif
+
+		free(str->data);
+		str->data = NULL;
+		str->data_len = 0;
+		str->srclen = 0;
+	}
 
 	mp_int_clear(&q->tmp_ival);
 	mp_rat_clear(&q->tmp_irat);
