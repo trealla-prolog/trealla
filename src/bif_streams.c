@@ -6,11 +6,6 @@
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
-
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && !defined(__APPLE__)
-#include <stdio_ext.h>
-#endif
-
 #include <string.h>
 #include <time.h>
 #include <signal.h>
@@ -6813,16 +6808,7 @@ static bool bif_bflush_1(query *q)
 	GET_FIRST_ARG(pstr,stream);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
-
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && !defined(__APPLE__)
-	__fpurge(str->fp);
-#else
-	char ch;
-
-	while ((net_read(&ch, 1, str) > 0) && (ch != '\n'))
-		;
-#endif
-
+	str->fp->_IO_read_ptr = str->fp->_IO_read_end;
 	free(str->data);
 	str->data = NULL;
 	str->data_len = 0;

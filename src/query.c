@@ -1,11 +1,6 @@
 #include <stdlib.h>
 #include <stdlib.h>
 #include <stdio.h>
-
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && !defined(__APPLE__)
-#include <stdio_ext.h>
-#endif
-
 #include <signal.h>
 #include <string.h>
 #include <time.h>
@@ -1956,11 +1951,7 @@ void query_destroy(query *q)
 
 	for (int i = 0; i < 3; i++) {
 		stream *str = &q->pl->streams[i];
-
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && !defined(__APPLE__)
-		__fpurge(str->fp);
-#endif
-
+		str->fp->_IO_read_ptr = str->fp->_IO_read_end;
 		free(str->data);
 		str->data = NULL;
 		str->data_len = 0;
