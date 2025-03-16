@@ -504,6 +504,7 @@ Non-standard predicates
 	read_line_to_string/2		# removes terminator
 	read_file_to_string/3
 	bread/3                     # bread(+stream,?len,-string)
+	bflush/1                    # bflush(+stream)
 	bwrite/2                    # bwrite(+stream,+string)
 	replace/4                   # replace(+string,+old,+new,-string)
 

@@ -6803,6 +6803,23 @@ static bool bif_bread_3(query *q)
 	return ok;
 }
 
+static bool bif_bflush_1(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+	//fpurge(str->fp);
+	char ch;
+
+	while ((net_read(&ch, 1, str) > 0) && (ch != '\n'))
+		;
+
+	free(str->data);
+	str->data = NULL;
+	str->data_len = 0;
+	return true;
+}
+
 static bool bif_bwrite_2(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
@@ -7423,6 +7440,7 @@ builtins g_streams_bifs[] =
 	{"server", 3, bif_server_3, "+atom,--stream,+list", false, false, BLAH},
 	{"accept", 2, bif_accept_2, "+stream,--stream", false, false, BLAH},
 	{"bread", 3, bif_bread_3, "+stream,+integer,-string", false, false, BLAH},
+	{"bflush", 1, bif_bflush_1, "+stream", false, false, BLAH},
 	{"bwrite", 2, bif_bwrite_2, "+stream,-string", false, false, BLAH},
 
 	{"alias", 2, bif_alias_2, "+blob,+atom", false, false, BLAH},
