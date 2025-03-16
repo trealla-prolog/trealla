@@ -1949,18 +1949,6 @@ void query_destroy(query *q)
 	}
 #endif
 
-	for (int i = 0; i < 3; i++) {
-		stream *str = &q->pl->streams[i];
-
-		if (!strcmp(str->mode, "read")) {
-			str->fp = freopen(NULL, "r", str->fp);
-			free(str->data);
-			str->data = NULL;
-			str->data_len = 0;
-			str->srclen = 0;
-		}
-	}
-
 	mp_int_clear(&q->tmp_ival);
 	mp_rat_clear(&q->tmp_irat);
 	query_purge_dirty_list(q);

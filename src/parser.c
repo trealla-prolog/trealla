@@ -4188,6 +4188,13 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 			break;
 	}
 
+	stream *str = &p->pl->streams[0];
+	str->fp = freopen(NULL, "r", str->fp);
+	free(str->data);
+	str->data = NULL;
+	str->data_len = 0;
+	str->srclen = 0;
+
 	p->srcptr = NULL;
 	SB_free(src);
 	return ok;
