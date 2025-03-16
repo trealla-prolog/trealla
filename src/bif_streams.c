@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && !defined(__APPLE__)
 #include <stdio_ext.h>
 #endif
 
@@ -6814,7 +6814,7 @@ static bool bif_bflush_1(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && !defined(__APPLE__)
 	__fpurge(str->fp);
 #else
 	char ch;

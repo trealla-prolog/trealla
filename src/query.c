@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && !defined(__APPLE__)
 #include <stdio_ext.h>
 #endif
 
@@ -1957,7 +1957,7 @@ void query_destroy(query *q)
 	for (int i = 0; i < 3; i++) {
 		stream *str = &q->pl->streams[i];
 
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && !defined(__APPLE__)
 		__fpurge(str->fp);
 #endif
 
