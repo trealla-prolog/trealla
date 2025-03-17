@@ -51,6 +51,10 @@ size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, 
 	return elements;
 }
 
+// The tmp heap is used for temporary allocations (a scratch-pad)
+// for work in progress. As such it can survive a realloc() call.
+// No need to incr refcnt on tmp heap cells.
+
 cell *init_tmp_heap(query *q)
 {
 	if (q->tmp_heap && (q->tmph_size > 1000) && false) {
@@ -65,37 +69,11 @@ cell *init_tmp_heap(query *q)
 	}
 
 	q->tmphp = 0;
-	q->cycle_error = false;
 	return q->tmp_heap;
 }
-
-cell *preinit_tmp_heap(query *q, pl_idx n)
-{
-	if (q->tmp_heap && (q->tmph_size < n)) {
-		free(q->tmp_heap);
-		q->tmp_heap = NULL;
-		q->tmph_size = n;
-	}
-
-	if (!q->tmp_heap) {
-		q->tmp_heap = malloc(n * sizeof(cell));
-		if (!q->tmp_heap) return NULL;
-	}
-
-	q->tmphp = 0;
-	q->cycle_error = false;
-	return q->tmp_heap;
-}
-
-// The tmp heap is used for temporary allocations (a scratch-pad)
-// for work in progress. As such it can survive a realloc() call.
-// No need to incr refcnt on tmp heap cells.
 
 cell *alloc_on_tmp(query *q, unsigned nbr_cells)
 {
-	if (((uint64_t)q->tmphp + nbr_cells) > UINT32_MAX)
-		return NULL;
-
 	pl_idx new_size = q->tmphp + nbr_cells;
 
 	if (new_size >= q->tmph_size) {
@@ -378,9 +356,6 @@ cell *deep_copy_to_tmp(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
 
 cell *alloc_on_heap(query *q, unsigned nbr_cells)
 {
-	if (((uint64_t)q->st.hp + nbr_cells) > UINT32_MAX)
-		return NULL;
-
 	if (!q->heap_pages) {
 		page *a = calloc(1, sizeof(page));
 		if (!a) return NULL;
