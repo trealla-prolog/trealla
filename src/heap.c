@@ -394,19 +394,6 @@ cell *alloc_on_heap(query *q, unsigned nbr_cells)
 	return c;
 }
 
-cell *clone_to_heap(query *q, cell *p1, pl_idx p1_ctx)
-{
-	if (!init_tmp_heap(q))
-		return NULL;
-
-	p1 = deep_clone_to_tmp(q, p1, p1_ctx);
-	if (!p1) return p1;
-	cell *tmp = alloc_on_heap(q, p1->nbr_cells);
-	if (!tmp) return NULL;
-	dup_cells(tmp, p1, p1->nbr_cells);
-	return tmp;
-}
-
 cell *deep_clone_to_heap(query *q, cell *p1, pl_idx p1_ctx)
 {
 	if (!init_tmp_heap(q))
