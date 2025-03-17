@@ -95,7 +95,7 @@ cell *alloc_on_tmp(query *q, unsigned nbr_cells)
 // Note: convert vars to refs
 // Note: doesn't increment ref counts
 
-static cell *clone2_term_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
+static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
 	if (depth >= g_max_depth) {
 		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
@@ -129,7 +129,7 @@ static cell *clone2_term_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 			int both = 0;
 			if (deep_copy(h)) DEREF_CHECKED(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
 			if (both) q->cycle_error = true;
-			cell *rec = clone2_term_to_tmp(q, h, h_ctx, depth+1);
+			cell *rec = clone_term_to_tmp_internal(q, h, h_ctx, depth+1);
 			if (!rec) return NULL;
 			if (e) e->vgen = save_vgen;
 
@@ -150,7 +150,7 @@ static cell *clone2_term_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 			}
 		}
 
-		cell *rec = clone2_term_to_tmp(q, p1, p1_ctx, depth+1);
+		cell *rec = clone_term_to_tmp_internal(q, p1, p1_ctx, depth+1);
 		if (!rec) return NULL;
 
 		if (any2) {
@@ -182,7 +182,7 @@ static cell *clone2_term_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 		int both = 0;
 		if (deep_copy(c)) DEREF_CHECKED(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
 		if (both) q->cycle_error = true;
-		cell *rec = clone2_term_to_tmp(q, c, c_ctx, depth+1);
+		cell *rec = clone_term_to_tmp_internal(q, c, c_ctx, depth+1);
 		if (!rec) return NULL;
 		if (e) e->vgen = save_vgen;
 		p1 += p1->nbr_cells;
@@ -196,7 +196,7 @@ static cell *clone2_term_to_tmp(query *q, cell *p1, pl_idx p1_ctx, unsigned dept
 cell *clone_term_to_tmp(query *q, cell *p1, pl_idx p1_ctx)
 {
 	if (++q->vgen == 0) q->vgen = 1;
-	cell *rec = clone2_term_to_tmp(q, p1, p1_ctx, 0);
+	cell *rec = clone_term_to_tmp_internal(q, p1, p1_ctx, 0);
 	if (!rec) return NULL;
 	return rec;
 }
