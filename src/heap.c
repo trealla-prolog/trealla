@@ -57,11 +57,13 @@ size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, 
 
 cell *init_tmp_heap(query *q)
 {
-	if (q->tmp_heap && (q->tmph_size > 1000) && false) {
+#if 0
+	if (q->tmp_heap && (q->tmph_size > 1000)) {
 		free(q->tmp_heap);
 		q->tmp_heap = NULL;
 		q->tmph_size = 1000;
 	}
+#endif
 
 	if (!q->tmp_heap) {
 		q->tmp_heap = malloc(q->tmph_size * sizeof(cell));

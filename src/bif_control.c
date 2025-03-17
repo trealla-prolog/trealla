@@ -86,12 +86,48 @@ bool bif_call_0(query *q, cell *p1, pl_idx p1_ctx)
 	return true;
 }
 
+bool call_check(query *q, cell *tmp2, bool *status, bool calln)
+{
+	if (tmp2->val_off == g_colon_s) {
+		tmp2 = tmp2 + 1;
+		tmp2 += tmp2->nbr_cells;
+	}
+
+	if (calln) {
+		bool found = false;
+
+		if ((tmp2->match = search_predicate(q->st.curr_m, tmp2, NULL)) != NULL) {
+			tmp2->flags &= ~FLAG_BUILTIN;
+		} else if ((tmp2->bif_ptr = get_builtin_term(q->st.curr_m, tmp2, &found, NULL)), found) {
+			tmp2->flags |= FLAG_BUILTIN;
+		} else {
+			tmp2->flags &= ~FLAG_BUILTIN;
+		}
+	}
+
+	if (calln && is_builtin(tmp2) && (tmp2->arity <= 2)) {
+		const char *functor = C_STR(q, tmp2);
+		unsigned specifier;
+
+		if (search_op(q->st.curr_m, functor, &specifier, false))
+			SET_OP(tmp2, specifier);
+	}
+
+	if (is_builtin(tmp2) && (tmp2 = check_body_callable(tmp2)) != NULL) {
+		*status = throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
+		return false;
+	}
+
+	*status = true;
+	return true;
+}
+
 bool bif_sys_call_1(query *q)
 {
 	GET_FIRST_RAW_ARG(p1,callable);
 	bool status;
 
-	if (!call_check(q, p1, &status, true))
+	if (!call_check(q, p1, &status, false))
 		return status;
 
 	q->st.curr_instr++;
@@ -593,42 +629,6 @@ bool bif_sys_call_cleanup_3(query *q)
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_catcher(q, QUERY_RETRY));
 	q->st.curr_instr = tmp;
-	return true;
-}
-
-bool call_check(query *q, cell *tmp2, bool *status, bool calln)
-{
-	if (tmp2->val_off == g_colon_s) {
-		tmp2 = tmp2 + 1;
-		tmp2 += tmp2->nbr_cells;
-	}
-
-	if (calln) {
-		bool found = false;
-
-		if ((tmp2->match = search_predicate(q->st.curr_m, tmp2, NULL)) != NULL) {
-			tmp2->flags &= ~FLAG_BUILTIN;
-		} else if ((tmp2->bif_ptr = get_builtin_term(q->st.curr_m, tmp2, &found, NULL)), found) {
-			tmp2->flags |= FLAG_BUILTIN;
-		} else {
-			tmp2->flags &= ~FLAG_BUILTIN;
-		}
-	}
-
-	if (calln && is_builtin(tmp2) && (tmp2->arity <= 2)) {
-		const char *functor = C_STR(q, tmp2);
-		unsigned specifier;
-
-		if (search_op(q->st.curr_m, functor, &specifier, false))
-			SET_OP(tmp2, specifier);
-	}
-
-	if (is_builtin(tmp2) && (tmp2 = check_body_callable(tmp2)) != NULL) {
-		*status = throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
-		return false;
-	}
-
-	*status = true;
 	return true;
 }
 
