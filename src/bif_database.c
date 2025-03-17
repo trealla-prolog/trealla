@@ -437,7 +437,7 @@ static bool bif_iso_asserta_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	check_heap_error(init_tmp_heap(q));
-	cell *tmp = deep_copy_to_tmp(q, p1, p1_ctx, false);
+	cell *tmp = copy_term_to_tmp(q, p1, p1_ctx, false);
 	check_heap_error(tmp);
 	cell *head = get_head(tmp);
 
@@ -494,7 +494,7 @@ static bool bif_iso_assertz_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	check_heap_error(init_tmp_heap(q));
-	cell *tmp = deep_copy_to_tmp(q, p1, p1_ctx, false);
+	cell *tmp = copy_term_to_tmp(q, p1, p1_ctx, false);
 	check_heap_error(tmp);
 	cell *head = get_head(tmp);
 
@@ -579,7 +579,7 @@ static bool do_asserta_2(query *q)
 
 	GET_NEXT_ARG(p2,atom_or_var);
 	check_heap_error(init_tmp_heap(q));
-	cell *tmp = deep_copy_to_tmp(q, p1, p1_ctx, false);
+	cell *tmp = copy_term_to_tmp(q, p1, p1_ctx, false);
 	check_heap_error(tmp);
 
 	pl_idx nbr_cells = tmp->nbr_cells;
@@ -671,7 +671,7 @@ static bool do_assertz_2(query *q)
 
 	GET_NEXT_ARG(p2,atom_or_var);
 	check_heap_error(init_tmp_heap(q));
-	cell *tmp = deep_copy_to_tmp(q, p1, p1_ctx, false);
+	cell *tmp = copy_term_to_tmp(q, p1, p1_ctx, false);
 	check_heap_error(tmp);
 
 	pl_idx nbr_cells = tmp->nbr_cells;

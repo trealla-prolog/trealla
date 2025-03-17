@@ -888,7 +888,7 @@ static bool bif_iso_stream_property_2(query *q)
 	}
 
 	check_heap_error(init_tmp_heap(q));
-	cell *tmp = deep_clone_to_tmp(q, q->st.curr_instr, q->st.curr_frame);
+	cell *tmp = clone_term_to_tmp(q, q->st.curr_instr, q->st.curr_frame);
 	check_heap_error(tmp);
 	tmp->val_off = g_sys_stream_property_s;
 

@@ -396,7 +396,7 @@ static bool bif_engine_create_4(query *q)
 	str->engine->is_engine = true;
 	str->engine->trace = q->trace;
 
-	cell *p0 = deep_copy_to_heap(q, q->st.curr_instr, q->st.curr_frame, false);
+	cell *p0 = copy_term_to_heap(q, q->st.curr_instr, q->st.curr_frame, false);
 	unify(q, q->st.curr_instr, q->st.curr_frame, p0, q->st.curr_frame);
 	check_heap_error(p0);
 
@@ -410,7 +410,7 @@ static bool bif_engine_create_4(query *q)
 	make_call(q, tmp+nbr_cells);
 	check_heap_error(push_barrier(q));
 	q->st.curr_instr = tmp;
-	str->pattern = deep_clone_to_heap(q, xp1, xp1_ctx);
+	str->pattern = clone_term_to_heap(q, xp1, xp1_ctx);
 	return true;
 }
 
@@ -432,7 +432,7 @@ static bool bif_engine_next_2(query *q)
 	}
 
 	if (str->curr_yield) {
-		cell *tmp = deep_copy_to_heap(q, str->curr_yield, 0, false);
+		cell *tmp = copy_term_to_heap(q, str->curr_yield, 0, false);
 		str->curr_yield = NULL;
 		return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 	}
@@ -442,7 +442,7 @@ static bool bif_engine_next_2(query *q)
 			return false;
 	}
 
-	cell *tmp = deep_copy_to_heap(str->engine, str->pattern, 0, false);
+	cell *tmp = copy_term_to_heap(str->engine, str->pattern, 0, false);
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }
 
@@ -460,7 +460,7 @@ static bool bif_engine_yield_1(query *q)
 	else if (q->retry)
 		return true;
 
-	str->curr_yield = deep_clone_to_heap(q, p1, p1_ctx);
+	str->curr_yield = clone_term_to_heap(q, p1, p1_ctx);
 	return do_yield(q, 0);
 }
 
@@ -474,7 +474,7 @@ static bool bif_engine_post_2(query *q)
 	if (!str->is_engine)
 		return throw_error(q, pstr, pstr_ctx, "existence_error", "not_an_engine");
 
-	str->curr_yield = deep_clone_to_heap(q, p1, p1_ctx);
+	str->curr_yield = clone_term_to_heap(q, p1, p1_ctx);
 	return true;
 }
 
@@ -490,7 +490,7 @@ static bool bif_engine_fetch_1(query *q)
 	if (!str->curr_yield)
 		return throw_error(q, q->st.curr_instr, q->st.curr_frame, "existence_error", "no_data");
 
-	cell *tmp = deep_copy_to_heap(q, str->curr_yield, 0, false);
+	cell *tmp = copy_term_to_heap(q, str->curr_yield, 0, false);
 	str->curr_yield = NULL;
 	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 }

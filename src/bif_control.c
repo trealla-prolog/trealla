@@ -128,7 +128,7 @@ bool bif_iso_call_1(query *q)
 
 	if ((is_builtin(p1) && !is_evaluable(p1)) || !p1->arity) {
 		check_heap_error(init_tmp_heap(q));
-		p1 = deep_clone_to_tmp(q, p1, p1_ctx);
+		p1 = clone_term_to_tmp(q, p1, p1_ctx);
 		check_heap_error(p1);
 		p1_ctx = q->st.curr_frame;
 		bool status;
@@ -179,11 +179,11 @@ static bool bif_iso_call_n(query *q)
 
 	check_heap_error(init_tmp_heap(q));
 	unsigned arity = p1->arity, args = 1, xarity = q->st.curr_instr->arity;
-	check_heap_error(deep_clone_to_tmp(q, p1, p1_ctx));
+	check_heap_error(clone_term_to_tmp(q, p1, p1_ctx));
 
 	while (args++ < xarity) {
 		GET_NEXT_ARG(p2,any);
-		check_heap_error(deep_clone_to_tmp(q, p2, p2_ctx));
+		check_heap_error(clone_term_to_tmp(q, p2, p2_ctx));
 		arity++;
 	}
 
@@ -226,7 +226,7 @@ static bool bif_iso_once_1(query *q)
 
 	if ((is_builtin(p1) && !is_evaluable(p1)) || !p1->arity) {
 		check_heap_error(init_tmp_heap(q));
-		p1 = deep_clone_to_tmp(q, p1, p1_ctx);
+		p1 = clone_term_to_tmp(q, p1, p1_ctx);
 		check_heap_error(p1);
 		p1_ctx = q->st.curr_frame;
 		bool status;
@@ -254,7 +254,7 @@ static bool bif_ignore_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	check_heap_error(init_tmp_heap(q));
-	cell *tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
+	cell *tmp2 = clone_term_to_tmp(q, p1, p1_ctx);
 	check_heap_error(tmp2);
 	bool status;
 
@@ -581,7 +581,7 @@ bool bif_sys_call_cleanup_3(query *q)
 
 	if (q->retry && q->ball) {
 		GET_NEXT_ARG(p2,any);
-		cell *tmp = deep_clone_to_heap(q, q->ball, q->ball_ctx);
+		cell *tmp = clone_term_to_heap(q, q->ball, q->ball_ctx);
 		check_heap_error(tmp);
 		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 	}
@@ -625,7 +625,7 @@ bool bif_sys_call_check_1(query *q)
 
 	if ((is_builtin(p1) && !is_evaluable(p1)) || !p1->arity) {
 		check_heap_error(init_tmp_heap(q));
-		p1 = deep_clone_to_tmp(q, p1, p1_ctx);
+		p1 = clone_term_to_tmp(q, p1, p1_ctx);
 		check_heap_error(p1);
 		bool status;
 		return call_check(q, p1, &status, false) ? true : status;
@@ -656,7 +656,7 @@ static cell *parse_to_heap(query *q, const char *src)
 		}
 	}
 
-	cell *tmp = deep_clone_to_heap(q, p2->cl->cells, q->st.curr_frame);
+	cell *tmp = clone_term_to_heap(q, p2->cl->cells, q->st.curr_frame);
 	check_error(tmp, parser_destroy(p2));
 	parser_destroy(p2);
 	return tmp;
@@ -697,7 +697,7 @@ static bool find_exception_handler(query *q, char *ball)
 		q->error = true;
 		return false;
 	} else {
-		q->ball = deep_clone_to_heap(q, e, e_ctx);
+		q->ball = clone_term_to_heap(q, e, e_ctx);
 		q->ball_ctx = q->st.curr_frame;
 		rebase_term(q, q->ball, 0);
 	}

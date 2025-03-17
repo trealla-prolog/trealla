@@ -69,7 +69,7 @@ static bool do_put_atts(query *q, cell *attr, pl_idx attr_ctx, bool is_minus)
 		tmp->nbr_cells += 1;
 		make_atom(tmp+1, new_atom(q->pl, m_name));
 		tmp[1].arity = 1;
-		cell *tmp2 = deep_clone_to_tmp(q, attr, attr_ctx);
+		cell *tmp2 = clone_term_to_tmp(q, attr, attr_ctx);
 		check_heap_error(tmp2);
 		cell *tmp3 = get_tmp_heap(q, 1);
 		tmp3->nbr_cells += tmp2->nbr_cells;

@@ -234,10 +234,10 @@ static bool bif_yield_0(query *q)
 static bool bif_call_task_n(query *q)
 {
 	pl_idx save_hp = q->st.hp;
-	cell *p0 = deep_clone_to_heap(q, q->st.curr_instr, q->st.curr_frame);
+	cell *p0 = clone_term_to_heap(q, q->st.curr_instr, q->st.curr_frame);
 	GET_FIRST_RAW_ARG0(p1,callable,p0);
 	check_heap_error(init_tmp_heap(q));
-	check_heap_error(deep_clone_to_tmp(q, p1, p1_ctx));
+	check_heap_error(clone_term_to_tmp(q, p1, p1_ctx));
 	unsigned arity = p1->arity;
 	unsigned args = 1;
 
@@ -302,7 +302,7 @@ static bool bif_send_1(query *q)
 	GET_FIRST_ARG(p1,nonvar);
 	query *dstq = q->parent && !q->parent->done ? q->parent : q;
 	check_heap_error(init_tmp_heap(q));
-	cell *c = deep_clone_to_tmp(q, p1, p1_ctx);
+	cell *c = clone_term_to_tmp(q, p1, p1_ctx);
 	check_heap_error(c);
 
 	for (pl_idx i = 0; i < c->nbr_cells; i++) {

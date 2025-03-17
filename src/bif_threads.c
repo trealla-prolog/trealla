@@ -328,7 +328,7 @@ static bool do_send_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bo
 		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
 
 	check_heap_error(init_tmp_heap(q));
-	cell *c = deep_clone_to_tmp(q, p1, p1_ctx);
+	cell *c = clone_term_to_tmp(q, p1, p1_ctx);
 	check_heap_error(c);
 	rebase_term(q, c, 0);
 	check_heap_error(queue_to_chan(q->pl, chan, c, q->my_chan, is_signal));
@@ -409,7 +409,7 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 			check_heap_error(push_choice(q), release_lock(&t->guard));
 			check_slot(q, MAX_ARITY);
 			try_me(q, MAX_ARITY);
-			cell *tmp = deep_copy_to_heap(q, m->c, q->st.fp, false);	// Copy into thread
+			cell *tmp = copy_term_to_heap(q, m->c, q->st.fp, false);	// Copy into thread
 			check_heap_error(tmp, release_lock(&t->guard));
 
 			if (unify(q, p1, p1_ctx, tmp, q->st.curr_frame)) {
@@ -740,7 +740,7 @@ static bool bif_thread_create_3(query *q)
 
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
 	check_heap_error(init_tmp_heap(q));
-	cell *goal = deep_clone_to_tmp(q, p1, p1_ctx);
+	cell *goal = clone_term_to_tmp(q, p1, p1_ctx);
 	check_heap_error(goal);
 	t->nbr_vars = rebase_term(q, goal, 0);
 	t->q = query_create(q->st.curr_m);
@@ -757,7 +757,7 @@ static bool bif_thread_create_3(query *q)
 
 	if (p4) {
 		check_heap_error(init_tmp_heap(q));
-		cell *goal = deep_clone_to_tmp(q, p4, p4_ctx);
+		cell *goal = clone_term_to_tmp(q, p4, p4_ctx);
 		check_heap_error(goal);
 		t->at_exit_nbr_vars = rebase_term(q, goal, 0);
 		cell *tmp2 = alloc_on_heap(q, 1+goal->nbr_cells+1);
@@ -767,7 +767,7 @@ static bool bif_thread_create_3(query *q)
 		nbr_cells += dup_cells(tmp2+nbr_cells, goal, goal->nbr_cells);
 		make_instr(tmp2+nbr_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 		THREAD_DEBUG DUMP_TERM("at_exit", tmp2, q->st.curr_frame, 0);
-		t->at_exit = deep_clone_to_heap(t->q, tmp2, 0);	// Copy into thread
+		t->at_exit = clone_term_to_heap(t->q, tmp2, 0);	// Copy into thread
 		check_heap_error(t->at_exit);
 	}
 
@@ -798,7 +798,7 @@ void do_signal(query *q, void *thread_ptr)
 	try_me(q, MAX_ARITY);
 	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.fp, 0);
 	pl_idx c_ctx = 0;
-	cell *c = deep_copy_to_heap(q, m->c, q->st.fp, false);	// Copy into thread
+	cell *c = copy_term_to_heap(q, m->c, q->st.fp, false);	// Copy into thread
 	unshare_cells(c, c->nbr_cells);
 	free(m);
 	cell *tmp = prepare_call(q, PREFIX_LEN, c, q->st.curr_frame, 1);
@@ -848,7 +848,7 @@ static bool bif_thread_join_2(query *q)
 		return throw_error(q, p1, p1_ctx, "system_error", "join,not_thread");
 
 	if (t->exit_code) {
-		cell *tmp = deep_copy_to_heap(q, t->exit_code, q->st.fp, false);
+		cell *tmp = copy_term_to_heap(q, t->exit_code, q->st.fp, false);
 		t->exit_code = NULL;
 		unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 	} else {
@@ -1017,7 +1017,7 @@ static bool bif_thread_exit_1(query *q)
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
 	GET_FIRST_ARG(p1,nonvar);
 	check_heap_error(init_tmp_heap(q));
-	cell *tmp_p1 = deep_clone_to_tmp(q, p1, p1_ctx);
+	cell *tmp_p1 = clone_term_to_tmp(q, p1, p1_ctx);
 	check_heap_error(tmp_p1);
 	rebase_term(q, tmp_p1, 0);
 	cell *tmp = alloc_on_heap(q, 1+tmp_p1->nbr_cells);
@@ -2068,7 +2068,7 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_idx p1_ct
 	check_slot(q, MAX_ARITY);
 	try_me(q, MAX_ARITY);
 	cell *c = m->c;
-	cell *tmp = deep_clone_to_heap(q, c, q->st.fp);
+	cell *tmp = clone_term_to_heap(q, c, q->st.fp);
 	check_heap_error(tmp, release_lock(&t->guard));
 	release_lock(&t->guard);
 	q->curr_chan = m->from_chan;

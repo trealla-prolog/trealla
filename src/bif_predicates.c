@@ -106,7 +106,7 @@ static bool bif_iso_findall_3(query *q)
 		check_heap_error(tmp, free(solns));
 		make_instr(tmp, g_dot_s, NULL, 2, 0);
 		q->noderef = true;
-		tmp = deep_copy_to_tmp(q, c, q->st.curr_frame, false);
+		tmp = copy_term_to_tmp(q, c, q->st.curr_frame, false);
 		q->noderef = false;
 		check_heap_error(tmp, free(solns));
 	}
@@ -1684,7 +1684,7 @@ static bool bif_iso_univ_2(query *q)
 			cell *h = LIST_HEAD(l);
 			h = deref(q, h, l_ctx);
 			pl_idx h_ctx = q->latest_ctx;
-			cell *tmp = deep_clone_to_tmp(q, h, h_ctx);
+			cell *tmp = clone_term_to_tmp(q, h, h_ctx);
 
 			if (is_cstring(tmp) && is_string(save_p2))
 				convert_to_literal(q->st.curr_m, tmp);
@@ -1930,7 +1930,7 @@ static bool bif_sys_duplicate_term_3(query *q)
 	make_instr(tmp, g_eq_s, NULL, 2, p1x->nbr_cells + p1->nbr_cells);
 	dup_cells_by_ref(tmp+1, p1x, p1x_ctx, p1x->nbr_cells);
 	dup_cells_by_ref(tmp+1+p1x->nbr_cells, p1, p1_ctx, p1->nbr_cells);
-	tmp = deep_copy_to_heap(q, tmp, q->st.curr_frame, copy_attrs);
+	tmp = copy_term_to_heap(q, tmp, q->st.curr_frame, copy_attrs);
 	check_heap_error(tmp);
 	cell *tmpp1 = tmp + 1;
 	cell *tmpp2 = tmpp1 + tmpp1->nbr_cells;
@@ -2620,7 +2620,7 @@ bool bif_sys_queue_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	check_heap_error(init_tmp_heap(q), q->st.qnbr--);
-	cell *tmp = deep_clone_to_tmp(q, p1, p1_ctx);
+	cell *tmp = clone_term_to_tmp(q, p1, p1_ctx);
 	check_heap_error(tmp, q->st.qnbr--);
 	check_heap_error(alloc_on_queuen(q, q->st.qnbr, tmp), q->st.qnbr--);
 	return true;
@@ -5553,7 +5553,7 @@ static bool bif_use_module_1(query *q)
 	GET_FIRST_ARG(p1,any);
 	if (!is_atom(p1) && !is_compound(p1)) return false;
 	check_heap_error(init_tmp_heap(q));
-	cell *tmp = deep_clone_to_tmp(q, q->st.curr_instr, q->st.curr_frame);
+	cell *tmp = clone_term_to_tmp(q, q->st.curr_instr, q->st.curr_frame);
 	return do_use_module_1(q->st.curr_m, tmp);
 }
 
@@ -5562,7 +5562,7 @@ static bool bif_use_module_2(query *q)
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,list_or_nil);
 	check_heap_error(init_tmp_heap(q));
-	cell *tmp = deep_clone_to_tmp(q, q->st.curr_instr, q->st.curr_frame);
+	cell *tmp = clone_term_to_tmp(q, q->st.curr_instr, q->st.curr_frame);
 	return do_use_module_2(q->st.curr_m, tmp);
 }
 
@@ -6026,7 +6026,7 @@ static bool bif_sys_countall_2(query *q)
 	GET_NEXT_ARG(p2,var);
 
 	check_heap_error(init_tmp_heap(q));
-	cell *tmp2 = deep_clone_to_tmp(q, p1, p1_ctx);
+	cell *tmp2 = clone_term_to_tmp(q, p1, p1_ctx);
 	check_heap_error(tmp2);
 	bool status;
 
