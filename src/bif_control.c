@@ -122,19 +122,6 @@ bool call_check(query *q, cell *tmp2, bool *status, bool calln)
 	return true;
 }
 
-bool bif_sys_call_1(query *q)
-{
-	GET_FIRST_RAW_ARG(p1,callable);
-	bool status;
-
-	if (!call_check(q, p1, &status, false))
-		return status;
-
-	q->st.curr_instr++;
-	q->retry = QUERY_NOOP;
-	return true;
-}
-
 bool bif_iso_call_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
@@ -1076,7 +1063,6 @@ builtins g_control_bifs[] =
 	{"shift", 1, bif_shift_1, "+term", false, false, BLAH},
 
 	{"$cut", 1, bif_sys_cut_1, "+integer", false, false, BLAH},
-	{"$call", 1, bif_sys_call_1, ":callable", true, false, BLAH},
 	{"$catch", 3, bif_iso_catch_3, ":callable,?term,:callable", true, false, BLAH},
 	{"$block_catcher", 1, bif_sys_block_catcher_1, NULL, false, false, BLAH},
 	{"$set_if_var", 2, bif_sys_set_if_var_2, "?term,+term", false, false, BLAH},
