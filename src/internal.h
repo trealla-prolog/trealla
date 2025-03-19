@@ -131,7 +131,6 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_recursive_call(c) ((c)->flags & FLAG_RECURSIVE_CALL)
 #define is_temporary(c) (is_var(c) && ((c)->flags & FLAG_VAR_TEMPORARY))
 #define is_local(c) (is_var(c) && ((c)->flags & FLAG_VAR_LOCAL))
-#define is_complex(c) ((c)->flags & FLAG_COMPLEX)
 #define is_ref(c) (is_var(c) && ((c)->flags & FLAG_VAR_REF))
 #define is_op(c) ((c)->flags & 0xE000) ? true : false
 #define is_callable(c) (is_interned(c) || (is_cstring(c) && !is_string(c)))
@@ -260,14 +259,12 @@ enum {
 };
 
 enum {
-	FLAG_SPARE=1<<0,
-
-	FLAG_INT_HANDLE=1<<1,				// used with TAG_INTEGER
-	FLAG_INT_STREAM=1<<2,				// used with TAG_INTEGER
-	FLAG_INT_THREAD=1<<3,				// used with TAG_INTEGER
-	FLAG_INT_MAP=1<<4,					// used with TAG_INTEGER
-	FLAG_INT_ALIAS=1<<5,				// used with TAG_INTEGER
-	FLAG_INT_BIG=1<<6,					// used with TAG_INTEGER
+	FLAG_INT_HANDLE=1<<0,				// used with TAG_INTEGER
+	FLAG_INT_STREAM=1<<1,				// used with TAG_INTEGER
+	FLAG_INT_THREAD=1<<2,				// used with TAG_INTEGER
+	FLAG_INT_MAP=1<<3,					// used with TAG_INTEGER
+	FLAG_INT_ALIAS=1<<4,				// used with TAG_INTEGER
+	FLAG_INT_BIG=1<<5,					// used with TAG_INTEGER
 
 	FLAG_CSTR_BLOB=1<<0,				// used with TAG_CSTR
 	FLAG_CSTR_STRING=1<<1,				// used with TAG_CSTR
@@ -276,16 +273,15 @@ enum {
 	FLAG_VAR_ANON=1<<0,					// used with TAG_VAR
 	FLAG_VAR_FRESH=1<<1,				// used with TAG_VAR
 	FLAG_VAR_REF=1<<2,					// used with TAG_VAR
-	FLAG_VAR_TEMPORARY=1<<3,			// used with TAG_VAR (occurs in head only)
-	FLAG_VAR_LOCAL=1<<4,				// used with TAG_VAR (occurs in body only)
-	FLAG_VAR_CYCLIC=1<<5,				// used with TAG_VAR
+	FLAG_VAR_CYCLIC=1<<3,				// used with TAG_VAR
+	FLAG_VAR_TEMPORARY=1<<4,			// used with TAG_VAR (occurs in head only)
+	FLAG_VAR_LOCAL=1<<5,				// used with TAG_VAR (occurs in body only)
 
 	FLAG_HANDLE_DLL=1<<0,				// used with FLAG_INT_HANDLE
 	FLAG_HANDLE_FUNC=1<<1,				// used with FLAG_INT_HANDLE
 
 	FLAG_BLOB_SREGEX=1<<0,				// used with TAG_BLOB
 
-	FLAG_COMPLEX=1<<6,
 	FLAG_GROUND=1<<7,
 	FLAG_TAIL_CALL=1<<8,
 	FLAG_RECURSIVE_CALL=1<<9,
