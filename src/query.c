@@ -1465,7 +1465,6 @@ static bool match_head(query *q)
 		}
 
 		if (!pr || is_evaluable(c) || is_builtin(c)) {
-			DEBUG_MATCH printf("*** here !pr\n");
 			pr = search_predicate(q->st.curr_m, c, NULL);
 
 			if (!pr) {
