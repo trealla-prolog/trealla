@@ -1503,7 +1503,24 @@ static bool check_not_multifile(module *m, predicate *pr, rule *dbe_orig)
 	return true;
 }
 
-static void optimize_rule(module *m, rule *dbe_orig)
+static void check_goal_expansion(module *m, cell *p1)
+{
+	cell *h = get_head(p1);
+
+	if (h->val_off != g_goal_expansion_s)
+		return;
+
+	cell *arg1 = h + 1;
+
+	if (is_var(arg1)) {
+		m->wild_goal_expansion = true;
+		return;
+	}
+
+	create_goal_expansion(m, arg1);
+}
+
+static void check_unique(module *m, rule *dbe_orig)
 {
 	cell *head = get_head(dbe_orig->cl.cells);
 	bool matched = false;
@@ -1523,23 +1540,6 @@ static void optimize_rule(module *m, rule *dbe_orig)
 
 	if (!matched)
 		dbe_orig->cl.is_unique = true;
-}
-
-static void check_goal_expansion(module *m, cell *p1)
-{
-	cell *h = get_head(p1);
-
-	if (h->val_off != g_goal_expansion_s)
-		return;
-
-	cell *arg1 = h + 1;
-
-	if (is_var(arg1)) {
-		m->wild_goal_expansion = true;
-		return;
-	}
-
-	create_goal_expansion(m, arg1);
 }
 
 static void xref_cell(module *m, clause *cl, cell *c, predicate *parent, int last_was_colon, bool is_directive)
@@ -1649,7 +1649,7 @@ static void xref_predicate(predicate *pr)
 	}
 
 	for (rule *r = pr->head; r; r = r->next)
-		optimize_rule(pr->m, r);
+		check_unique(pr->m, r);
 }
 
 void xref_db(module *m)
