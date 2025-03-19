@@ -356,7 +356,7 @@ struct cell_ {
 	uint16_t flags;
 
 	union {
-		uint32_t nbr_cells;
+		uint32_t nbr_cells;			// number of cells
 		uint32_t mid;				// used with TAG_EMPTY so not counted
 	};
 
