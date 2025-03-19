@@ -395,9 +395,8 @@ struct cell_ {
 
 		struct {
 			union {
-				cell *val_ptr;
-				predicate *match;
-				builtins *bif_ptr;
+				predicate *match;		// used with TAG_INTERNED
+				builtins *bif_ptr;		// used with TAG_INTERNED
 				cell *tmp_attrs;		// used with TAG_VAR in copy_term
 			};
 
@@ -407,6 +406,10 @@ struct cell_ {
 				uint32_t val_off;		// used with TAG_VAR & TAG_INTERNED
 				pl_idx var_ctx;			// used with TAG_VAR & FLAG_VAR_REF
 			};
+		};
+
+		struct {
+			cell *val_ptr;				// used with TAG_INDIRECT
 		};
 
 		struct {
