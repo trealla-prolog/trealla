@@ -1864,7 +1864,7 @@ static bool dcg_expansion(parser *p)
 		return false;
 	}
 
-	xref_clause(p2->m, p2->cl, NULL);
+	process_clause(p2->m, p2->cl, NULL);
 	free(src);
 
 	clear_clause(p->cl);
@@ -1947,7 +1947,7 @@ static bool term_expansion(parser *p)
 		return false;
 	}
 
-	xref_clause(p2->m, p2->cl, NULL);
+	process_clause(p2->m, p2->cl, NULL);
 	free(src);
 
 	clear_clause(p->cl);
@@ -2029,7 +2029,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 		return goal;
 	}
 
-	xref_clause(p2->m, p2->cl, NULL);
+	process_clause(p2->m, p2->cl, NULL);
 	execute(q, p2->cl->cells, p2->cl->nbr_vars);
 	SB_free(s);
 	p->pl->in_goal_expansion = false;
@@ -2091,7 +2091,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 		return goal;
 	}
 
-	xref_clause(p2->m, p2->cl, NULL);
+	process_clause(p2->m, p2->cl, NULL);
 	free(src);
 
 	// Push the updated vatab back...
@@ -3479,7 +3479,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 					return 0;
 				}
 
-				xref_clause(p->m, p->cl, NULL);
+				process_clause(p->m, p->cl, NULL);
 				term_to_body(p);
 
 				if ((p->is_consulting || p->is_command) && !p->skip) {
@@ -3513,7 +3513,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 					if (!p1->arity && !strcmp(C_STR(p, p1), "end_of_file")) {
 						p->end_of_term = true;
 						p->end_of_file = true;
-						xref_db(p->m);
+						process_db(p->m);
 						return 0;
 					}
 				}
