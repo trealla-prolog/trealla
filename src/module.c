@@ -1520,6 +1520,21 @@ static void check_goal_expansion(module *m, cell *p1)
 	create_goal_expansion(m, arg1);
 }
 
+static void optimize_match(module *m, cell *c)
+{
+	for (rule *r = c->match->head; r; r = r->next) {
+		if (r->cl.dbgen_retracted)
+			continue;
+
+		cell *head = get_head(r->cl.cells);
+
+		if (!index_cmpkey(head, c, m, NULL)) {
+			//c->rmatch = r;
+			break;
+		}
+	}
+}
+
 static void check_unique(module *m, rule *dbe_orig)
 {
 	cell *head = get_head(dbe_orig->cl.cells);
@@ -1580,8 +1595,12 @@ static void xref_cell(module *m, clause *cl, cell *c, predicate *parent, int las
 		if (c->val_off != g_call_s)
 			return;
 	} else {
-		if (last_was_colon < 1)
+		if (last_was_colon < 1) {
 			c->match = search_predicate(m, c, NULL);
+
+			if (c->match && !c->match->idx)
+				optimize_match(m, c);
+		}
 	}
 
 	if (!is_directive) {
