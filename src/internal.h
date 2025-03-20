@@ -274,10 +274,10 @@ enum {
 	FLAG_VAR_FRESH=1<<1,				// used with TAG_VAR
 	FLAG_VAR_REF=1<<2,					// used with TAG_VAR
 	FLAG_VAR_CYCLIC=1<<3,				// used with TAG_VAR
-	FLAG_VAR_GLOBAL=1<<4,				// used with TAG_VAR
-	FLAG_VAR_VOID=1<<5,					// used with TAG_VAR
-	FLAG_VAR_TEMPORARY=1<<6,			// used with TAG_VAR
-	FLAG_VAR_LOCAL=1<<7,				// used with TAG_VAR
+	FLAG_VAR_VOID=1<<4,					// used with TAG_VAR
+	FLAG_VAR_TEMPORARY=1<<5,			// used with TAG_VAR
+	FLAG_VAR_LOCAL=1<<6,				// used with TAG_VAR
+	FLAG_VAR_GLOBAL=1<<7,				// used with TAG_VAR
 
 	FLAG_HANDLE_DLL=1<<0,				// used with FLAG_HANDLE
 	FLAG_HANDLE_FUNC=1<<1,				// used with FLAG_HANDLE
