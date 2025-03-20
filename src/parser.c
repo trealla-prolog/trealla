@@ -1499,7 +1499,7 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		// A variable is void iff it has only one occurance, it's lifetime is zero.
 		// A variable is temporary iff it appears more than once, with no
 		// occurance in the body, it's lifetime is the that of the unification.
-		// A variable is local iff it appears more than once with at least once
+		// A variable is local iff it appears more than once with at least one
 		// occurance in the body, it's lifetime is that of it's environment.
 
 		unsigned var_in_head = get_in_head(p, C_STR(p, c));
