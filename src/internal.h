@@ -124,11 +124,11 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_nil(c) (is_interned(c) && !(c)->arity && ((c)->val_off == g_nil_s))
 #define is_fresh(c) ((c)->flags & FLAG_VAR_FRESH)
 #define is_anon(c) ((c)->flags & FLAG_VAR_ANON)
-#define is_ground(c) ((c)->flags & FLAG_GROUND)
-#define is_builtin(c) ((c)->flags & FLAG_BUILTIN)
-#define is_evaluable(c) ((c)->flags & FLAG_EVALUABLE)
-#define is_tail_call(c) ((c)->flags & FLAG_TAIL_CALL)
-#define is_recursive_call(c) ((c)->flags & FLAG_RECURSIVE_CALL)
+#define is_ground(c) ((c)->flags & FLAG_INTERNED_GROUND)
+#define is_builtin(c) ((c)->flags & FLAG_INTERNED_BUILTIN)
+#define is_evaluable(c) ((c)->flags & FLAG_INTERNED_EVALUABLE)
+#define is_tail_call(c) ((c)->flags & FLAG_INTERNED_TAIL_CALL)
+#define is_recursive_call(c) ((c)->flags & FLAG_INTERNED_RECURSIVE_CALL)
 #define is_temporary(c) (is_var(c) && ((c)->flags & FLAG_VAR_TEMPORARY))
 #define is_local(c) (is_var(c) && ((c)->flags & FLAG_VAR_LOCAL))
 #define is_ref(c) (is_var(c) && ((c)->flags & FLAG_VAR_REF))
@@ -274,22 +274,24 @@ enum {
 	FLAG_VAR_FRESH=1<<1,				// used with TAG_VAR
 	FLAG_VAR_REF=1<<2,					// used with TAG_VAR
 	FLAG_VAR_CYCLIC=1<<3,				// used with TAG_VAR
-	FLAG_VAR_TEMPORARY=1<<4,			// used with TAG_VAR (occurs in head only)
-	FLAG_VAR_LOCAL=1<<5,				// used with TAG_VAR (occurs in body only)
+	FLAG_VAR_GLOBAL=1<<4,				// used with TAG_VAR
+	FLAG_VAR_VOID=1<<5,					// used with TAG_VAR
+	FLAG_VAR_TEMPORARY=1<<6,			// used with TAG_VAR
+	FLAG_VAR_LOCAL=1<<7,				// used with TAG_VAR
 
-	FLAG_HANDLE_DLL=1<<0,				// used with FLAG_INT_HANDLE
-	FLAG_HANDLE_FUNC=1<<1,				// used with FLAG_INT_HANDLE
+	FLAG_HANDLE_DLL=1<<0,				// used with FLAG_HANDLE
+	FLAG_HANDLE_FUNC=1<<1,				// used with FLAG_HANDLE
 
 	FLAG_BLOB_SREGEX=1<<0,				// used with TAG_BLOB
 
-	FLAG_GROUND=1<<7,
-	FLAG_TAIL_CALL=1<<8,
-	FLAG_RECURSIVE_CALL=1<<9,
-	FLAG_BUILTIN=1<<10,
-	FLAG_MANAGED=1<<11,					// any ref-counted object
-	FLAG_EVALUABLE=1<<12,
+	FLAG_INTERNED_GROUND=1<<0,
+	FLAG_INTERNED_TAIL_CALL=1<<1,
+	FLAG_INTERNED_RECURSIVE_CALL=1<<2,
+	FLAG_INTERNED_BUILTIN=1<<3,
+	FLAG_INTERNED_EVALUABLE=1<<4,
 
-	FLAG_END=1<<13
+	FLAG_MANAGED=1<<12,					// any ref-counted object
+	FLAG_END=1<<13						// DO NOT USE
 };
 
 // The OP types are stored in the high 3 bits of the flag (13-15)

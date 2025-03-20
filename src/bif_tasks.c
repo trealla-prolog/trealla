@@ -253,9 +253,9 @@ static bool bif_call_task_n(query *q)
 	bool found = false;
 
 	if ((tmp2->match = search_predicate(q->st.curr_m, tmp2, NULL)) != NULL) {
-		tmp2->flags &= ~FLAG_BUILTIN;
+		tmp2->flags &= ~FLAG_INTERNED_BUILTIN;
 	} else if ((tmp2->bif_ptr = get_builtin_term(q->st.curr_m, tmp2, &found, NULL)), found) {
-		tmp2->flags |= FLAG_BUILTIN;
+		tmp2->flags |= FLAG_INTERNED_BUILTIN;
 	}
 
 	q->st.hp = save_hp;

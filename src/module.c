@@ -1555,27 +1555,14 @@ static void process_cell(module *m, clause *cl, cell *c, predicate *parent, int 
 			SET_OP(c, specifier);
 	}
 
-	if ((c->arity == 2) && (c->val_off == g_is_s)) {
-		cell *lhs = c + 1;
-
-		if (is_var(lhs) && !is_local(lhs)) {
-			cell *c2 = body;
-			for (pl_idx i = 0; i < cl->cidx; i++, c2++) {
-
-				if (is_var(c2) && (c2->var_nbr == lhs->var_nbr))
-					c2->flags |= FLAG_VAR_TEMPORARY;
-			}
-		}
-	}
-
 	bool found = false, evaluable = false;
 	c->bif_ptr = get_builtin_term(m, c, &found, &evaluable);
 
 	if (found) {
 		if (evaluable)
-			c->flags |= FLAG_EVALUABLE;
+			c->flags |= FLAG_INTERNED_EVALUABLE;
 		else
-			c->flags |= FLAG_BUILTIN;
+			c->flags |= FLAG_INTERNED_BUILTIN;
 
 		if (c->val_off != g_call_s)
 			return;
@@ -1584,15 +1571,16 @@ static void process_cell(module *m, clause *cl, cell *c, predicate *parent, int 
 			c->match = search_predicate(m, c, NULL);
 	}
 
-	if (!is_directive) {
-		if ((c+c->nbr_cells) >= (body + cl->cidx-1)) {
-			c->flags |= FLAG_TAIL_CALL;
+	if (!is_directive
+		&& is_interned(c)
+		&& ((c+c->nbr_cells) >= (body + cl->cidx-1))
+		) {
+			c->flags |= FLAG_INTERNED_TAIL_CALL;
 			if (parent
 				&& (parent->key.val_off == c->val_off)
 				&& (parent->key.arity == c->arity)) {
-				c->flags |= FLAG_RECURSIVE_CALL;
+				c->flags |= FLAG_INTERNED_RECURSIVE_CALL;
 			}
-		}
 	}
 }
 
@@ -1608,8 +1596,6 @@ void process_clause(module *m, clause *cl, predicate *parent)
 	int last_was_colon = 0;
 
 	for (pl_idx i = 0; i < cl->cidx; i++, c++) {
-		c->flags &= ~FLAG_TAIL_CALL;
-
 		if (!is_interned(c))
 			continue;
 

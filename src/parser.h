@@ -59,7 +59,7 @@ void make_struct_(cell *tmp, pl_idx offset, unsigned arity, pl_idx extra_cells);
 			s_fn_ptr_##fn = get_fn_ptr(fn); \
 		\
 		tmp_make->bif_ptr = s_fn_ptr_##fn; \
-		tmp_make->flags = FLAG_BUILTIN; \
+		tmp_make->flags = FLAG_INTERNED_BUILTIN; \
 	} \
 }
 

@@ -97,11 +97,11 @@ bool call_check(query *q, cell *tmp2, bool *status, bool calln)
 		bool found = false;
 
 		if ((tmp2->match = search_predicate(q->st.curr_m, tmp2, NULL)) != NULL) {
-			tmp2->flags &= ~FLAG_BUILTIN;
+			tmp2->flags &= ~FLAG_INTERNED_BUILTIN;
 		} else if ((tmp2->bif_ptr = get_builtin_term(q->st.curr_m, tmp2, &found, NULL)), found) {
-			tmp2->flags |= FLAG_BUILTIN;
+			tmp2->flags |= FLAG_INTERNED_BUILTIN;
 		} else {
-			tmp2->flags &= ~FLAG_BUILTIN;
+			tmp2->flags &= ~FLAG_INTERNED_BUILTIN;
 		}
 	}
 
@@ -139,7 +139,7 @@ bool bif_iso_call_1(query *q)
 
 	cell *tmp = prepare_call(q, PREFIX_LEN, p1, p1_ctx, 3);
 	check_heap_error(tmp);
-	tmp[PREFIX_LEN].flags &= ~FLAG_TAIL_CALL;
+	tmp[PREFIX_LEN].flags &= ~FLAG_INTERNED_TAIL_CALL;
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 	make_instr(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
@@ -147,7 +147,7 @@ bool bif_iso_call_1(query *q)
 	check_heap_error(push_fail_on_retry(q));
 
 	if (is_tail_call(q->st.curr_instr))
-		tmp[PREFIX_LEN].flags |= FLAG_TAIL_CALL;
+		tmp[PREFIX_LEN].flags |= FLAG_INTERNED_TAIL_CALL;
 
 	q->st.curr_instr = tmp;
 	return true;
@@ -204,7 +204,7 @@ static bool bif_iso_call_n(query *q)
 
 	cell *tmp = prepare_call(q, PREFIX_LEN, tmp2, q->st.curr_frame, 3 );
 	check_heap_error(tmp);
-	tmp[PREFIX_LEN].flags &= ~FLAG_TAIL_CALL;
+	tmp[PREFIX_LEN].flags &= ~FLAG_INTERNED_TAIL_CALL;
 	pl_idx nbr_cells = PREFIX_LEN + tmp2->nbr_cells;
 	make_instr(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+nbr_cells++, q->cp);
@@ -212,7 +212,7 @@ static bool bif_iso_call_n(query *q)
 	check_heap_error(push_fail_on_retry(q));
 
 	if (is_tail_call(q->st.curr_instr))
-		tmp[PREFIX_LEN].flags |= FLAG_TAIL_CALL;
+		tmp[PREFIX_LEN].flags |= FLAG_INTERNED_TAIL_CALL;
 
 	q->st.curr_instr = tmp;
 	return true;
@@ -237,7 +237,7 @@ static bool bif_iso_once_1(query *q)
 
 	cell *tmp = prepare_call(q, PREFIX_LEN, p1, p1_ctx, 4);
 	check_heap_error(tmp);
-	tmp[PREFIX_LEN].flags &= ~FLAG_TAIL_CALL;
+	tmp[PREFIX_LEN].flags &= ~FLAG_INTERNED_TAIL_CALL;
 	pl_idx nbr_cells = PREFIX_LEN + p1->nbr_cells;
 	make_instr(tmp+nbr_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
 	make_instr(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
@@ -263,7 +263,7 @@ static bool bif_ignore_1(query *q)
 
 	cell *tmp = prepare_call(q, PREFIX_LEN, tmp2, q->st.curr_frame, 4);
 	check_heap_error(tmp);
-	tmp[PREFIX_LEN].flags &= ~FLAG_TAIL_CALL;
+	tmp[PREFIX_LEN].flags &= ~FLAG_INTERNED_TAIL_CALL;
 	pl_idx nbr_cells = PREFIX_LEN + tmp2->nbr_cells;
 	make_instr(tmp+nbr_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
 	make_instr(tmp+nbr_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);

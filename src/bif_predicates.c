@@ -1731,9 +1731,9 @@ static bool bif_iso_univ_2(query *q)
 		if (is_callable(tmp)) {
 			if ((tmp->bif_ptr = get_builtin_term(q->st.curr_m, tmp, &found, NULL)), found) {
 				if (tmp->bif_ptr->evaluable)
-					tmp->flags |= FLAG_EVALUABLE;
+					tmp->flags |= FLAG_INTERNED_EVALUABLE;
 				else
-					tmp->flags |= FLAG_BUILTIN;
+					tmp->flags |= FLAG_INTERNED_BUILTIN;
 			}
 		}
 
@@ -1756,7 +1756,7 @@ static bool bif_iso_univ_2(query *q)
 	tmp.arity = 0;
 
 	if (is_builtin(p1)) {
-		tmp.flags &= ~FLAG_BUILTIN;
+		tmp.flags &= ~FLAG_INTERNED_BUILTIN;
 		tmp.bif_ptr = NULL;
 	}
 

@@ -1326,10 +1326,9 @@ static pl_idx get_varno(parser *p, const char *src, bool in_body)
 	memcpy(p->vartab.pool+offset, src, len+1);
 
 	if (in_body)
-		p->vartab.in_body[i] = true;
-
-	if (!in_body)
-		p->vartab.in_head[i] = true;
+		p->vartab.in_body[i]++;
+	else
+		p->vartab.in_head[i]++;
 
 	return i;
 }
@@ -1372,11 +1371,11 @@ static unsigned get_in_body(parser *p, const char *name)
 
 static void check_term_ground(cell *c)
 {
-	c->flags |= FLAG_GROUND;
+	c->flags |= FLAG_INTERNED_GROUND;
 
 	for (unsigned i = 0; i < c->nbr_cells; i++) {
 		if (is_var(c+i)) {
-			c->flags &= ~ FLAG_GROUND;
+			c->flags &= ~ FLAG_INTERNED_GROUND;
 			break;
 		}
 	}
