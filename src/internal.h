@@ -765,9 +765,9 @@ struct parser_ {
 		char pool[MAX_VAR_POOL_SIZE];
 		unsigned used[MAX_VARS];
 		const char *name[MAX_VARS];
+		unsigned in_body[MAX_VARS];
+		unsigned in_head[MAX_VARS];
 		uint8_t vars[MAX_VARS];
-		bool in_body[MAX_VARS];
-		bool in_head[MAX_VARS];
 	} vartab;
 
 	prolog *pl;

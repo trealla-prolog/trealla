@@ -1304,10 +1304,9 @@ static pl_idx get_varno(parser *p, const char *src, bool in_body)
 	while (p->vartab.pool[offset]) {
 		if (!strcmp(p->vartab.pool+offset, src) && !anon) {
 			if (in_body)
-				p->vartab.in_body[i] = true;
-
-			if (!in_body)
-				p->vartab.in_head[i] = true;
+				p->vartab.in_body[i]++;
+			else
+				p->vartab.in_head[i]++;
 
 			return i;
 		}
@@ -1335,25 +1334,7 @@ static pl_idx get_varno(parser *p, const char *src, bool in_body)
 	return i;
 }
 
-static bool get_in_body(parser *p, const char *name)
-{
-	bool anon = !strcmp(name, "_");
-	size_t offset = 0;
-	unsigned i = 0;
-
-	while (p->vartab.pool[offset]) {
-		if (!strcmp(p->vartab.pool+offset, name) && !anon) {
-			return p->vartab.in_body[i];
-		}
-
-		offset += strlen(p->vartab.pool+offset) + 1;
-		i++;
-	}
-
-	return false;
-}
-
-static bool get_in_head(parser *p, const char *name)
+static unsigned get_in_head(parser *p, const char *name)
 {
 	bool anon = !strcmp(name, "_");
 	size_t offset = 0;
@@ -1368,7 +1349,25 @@ static bool get_in_head(parser *p, const char *name)
 		i++;
 	}
 
-	return false;
+	return 0;
+}
+
+static unsigned get_in_body(parser *p, const char *name)
+{
+	bool anon = !strcmp(name, "_");
+	size_t offset = 0;
+	unsigned i = 0;
+
+	while (p->vartab.pool[offset]) {
+		if (!strcmp(p->vartab.pool+offset, name) && !anon) {
+			return p->vartab.in_body[i];
+		}
+
+		offset += strlen(p->vartab.pool+offset) + 1;
+		i++;
+	}
+
+	return 0;
 }
 
 static void check_term_ground(cell *c)
@@ -1495,18 +1494,24 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		if (!is_var(c))
 			continue;
 
-		// A temporary variable is one that occurs only in the
-		// head of a clause. A local is one only in the body.
+		// A variable is global iff it occurs at least once in a structured term, it's
+		// lifetime is indeterminate. All other variables can be classified as...
+		// A variable is void iff it has only one occurance, it's lifetime is zero.
+		// A variable is temporary iff it appears more than once, with no
+		// occurance in the body, it's lifetime is the that of the unification.
+		// A variable is local iff it appears more than once with at least once
+		// occurance in the body, it's lifetime is that of it's environment.
 
-		bool var_in_head = get_in_head(p, C_STR(p, c));
-		bool var_in_body = get_in_body(p, C_STR(p, c));
+		unsigned var_in_head = get_in_head(p, C_STR(p, c));
+		unsigned var_in_body = get_in_body(p, C_STR(p, c));
+		unsigned occurrances = var_in_head + var_in_body;
 
-		if (!var_in_head && in_body) {
+		if ((occurrances > 1) && var_in_body) {
 			cl->has_local_vars = true;
 			c->flags |= FLAG_VAR_LOCAL;
 		}
 
-		if (!var_in_body && !in_body) {
+		if ((occurrances > 1) && !var_in_body) {
 			c->flags |= FLAG_VAR_TEMPORARY;
 		}
 	}
