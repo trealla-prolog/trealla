@@ -1938,7 +1938,11 @@ static bool bif_sys_duplicate_term_3(query *q)
 	if (!unify(q, tmpp1, q->st.curr_frame, tmpp2, q->st.curr_frame))
 		return false;
 
-	return unify(q, p2, p2_ctx, tmpp1, q->st.curr_frame);
+	// Reget as slots may have reallocated...
+
+	GET_FIRST_ARG(p1xx,any);
+	GET_NEXT_ARG(p2xx,any);
+	return unify(q, p2xx, p2xx_ctx, tmpp1, q->st.curr_frame);
 }
 
 static bool bif_iso_functor_3(query *q)
