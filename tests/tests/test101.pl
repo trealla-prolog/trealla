@@ -19,6 +19,10 @@ f(_, g(_), g(g(_))) :- true, true, true.
 test5(0) :- !, statistics(frames, Fs), statistics(choices, Cs), statistics(trails, Ts), statistics(slots, Ss), write([f,Fs,c,Cs,t,Ts,s,Ss]), nl, fail.
 test5(N) :- f(I, g(N), g(g(_))), N1 is N-1, test5(N1).
 
+g(X, Y) :- Y is X + 1, true, true, true.
+test6(0) :- !, statistics(frames, Fs), statistics(choices, Cs), statistics(trails, Ts), statistics(slots, Ss), write([f,Fs,c,Cs,t,Ts,s,Ss]), nl, fail.
+test6(N) :- g(N, _), N1 is N-1, test6(N1).
+
 statistics.
 
 main :-
@@ -27,5 +31,6 @@ main :-
 	write(test3), write(': '), test3(100000);
 	write(test4), write(': '), test4(100000);
 	write(test5), write(': '), test5(100000);
+	write(test6), write(': '), test6(100000);
 	true.
 
