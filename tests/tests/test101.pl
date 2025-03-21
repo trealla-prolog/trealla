@@ -3,19 +3,19 @@
 test1(0) :- !, statistics(frames, Fs), statistics(choices, Cs), statistics(trails, Ts), statistics(slots, Ss), write([f,Fs,c,Cs,t,Ts,s,Ss]), nl, fail.
 test1(N) :- N1 is N-1, test1(N1).
 
-f :- true.
+f :- true, true, true.
 test2(0) :- !, statistics(frames, Fs), statistics(choices, Cs), statistics(trails, Ts), statistics(slots, Ss), write([f,Fs,c,Cs,t,Ts,s,Ss]), nl, fail.
 test2(N) :- f, N1 is N-1, test2(N1).
 
-f(_) :- true.
+f(_) :- true, true, true.
 test3(0) :- !, statistics(frames, Fs), statistics(choices, Cs), statistics(trails, Ts), statistics(slots, Ss), write([f,Fs,c,Cs,t,Ts,s,Ss]), nl, fail.
 test3(N) :- f(_), N1 is N-1, test3(N1).
 
-f(X, X) :- true.
+f(X, X) :- true, true, true.
 test4(0) :- !, statistics(frames, Fs), statistics(choices, Cs), statistics(trails, Ts), statistics(slots, Ss), write([f,Fs,c,Cs,t,Ts,s,Ss]), nl, fail.
 test4(N) :- f(_, _), N1 is N-1, test4(N1).
 
-f(_, g(_), g(g(_))) :- true.
+f(_, g(_), g(g(_))) :- true, true, true.
 test5(0) :- !, statistics(frames, Fs), statistics(choices, Cs), statistics(trails, Ts), statistics(slots, Ss), write([f,Fs,c,Cs,t,Ts,s,Ss]), nl, fail.
 test5(N) :- f(I, g(N), g(g(_))), N1 is N-1, test5(N1).
 
