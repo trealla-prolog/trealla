@@ -334,17 +334,11 @@ static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx
 		make_indirect(&e->c, v, v_ctx);
 
 		if ((c_ctx != q->st.curr_frame) && (v_ctx == q->st.curr_frame)) {
-			if (!is_ground(v)) {
-				frame *v_f = GET_FRAME(v_ctx);
-				v_f->unify_no_tco = true;
+			if (!is_ground(v))
 				q->unify_no_tco = true;
-			}
 		} else if (v_ctx == q->st.fp) {
-			if (!is_ground(v)) {
-				frame *v_f = GET_FRAME(v_ctx);
-				v_f->unify_no_tco = true;
+			if (!is_ground(v))
 				q->unify_no_tco = true;
-			}
 		}
 	} else if (is_managed(v)) {
 		e->c = *v;
