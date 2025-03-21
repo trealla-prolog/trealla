@@ -11,7 +11,7 @@ f(_) :- true.
 test3(0) :- !, statistics(frames, Fs), statistics(choices, Cs), statistics(trails, Ts), statistics(slots, Ss), write([f,Fs,c,Cs,t,Ts,s,Ss]), nl, fail.
 test3(N) :- f(N), N1 is N-1, test3(N1).
 
-% TODO
+% TODO: arg2 var -> var
 
 f(_, _) :- true.
 test4(0) :- !, statistics(frames, Fs), statistics(choices, Cs), statistics(trails, Ts), statistics(slots, Ss), write([f,Fs,c,Cs,t,Ts,s,Ss]), nl, fail.
