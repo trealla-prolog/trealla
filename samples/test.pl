@@ -1,7 +1,4 @@
-:- use_module(library(format)).
-:- use_module(library(dict)).
 :- use_module(library(http)).
-:- use_module(library(pio)).
 
 geturl(Url) :-
 	http_get(Url,_Data,[status_code(Code),final_url(Location)]), !,
