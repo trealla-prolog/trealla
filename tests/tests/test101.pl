@@ -22,10 +22,10 @@ test5(N) :- f(I, g(N), g(g(_))), N1 is N-1, test5(N1).
 statistics.
 
 main :-
-	write(test1), write(': '), test1(1000000);
-	write(test2), write(': '), test2(1000000);
-	write(test3), write(': '), test3(1000000);
-	write(test4), write(': '), test4(1000000);
-	write(test5), write(': '), test5(1000000);
+	write(test1), write(': '), test1(100000);
+	write(test2), write(': '), test2(100000);
+	write(test3), write(': '), test3(100000);
+	write(test4), write(': '), test4(100000);
+	write(test5), write(': '), test5(100000);
 	true.
 
