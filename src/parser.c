@@ -1508,10 +1508,10 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		if ((occurrances > 1) && var_in_body) {
 			cl->has_local_vars = true;
 			c->flags |= FLAG_VAR_LOCAL;
-		}
-
-		if ((occurrances > 1) && !var_in_body) {
+		} else if ((occurrances > 1) && !var_in_body) {
 			c->flags |= FLAG_VAR_TEMPORARY;
+		} if (occurrances == 1) {
+			c->flags |= FLAG_VAR_VOID;
 		}
 	}
 
