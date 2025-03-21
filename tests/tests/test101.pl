@@ -9,13 +9,11 @@ test2(N) :- f, N1 is N-1, test2(N1).
 
 f(_) :- true.
 test3(0) :- !, statistics(frames, Fs), statistics(choices, Cs), statistics(trails, Ts), statistics(slots, Ss), write([f,Fs,c,Cs,t,Ts,s,Ss]), nl, fail.
-test3(N) :- f(N), N1 is N-1, test3(N1).
+test3(N) :- f(_), N1 is N-1, test3(N1).
 
-% TODO: arg2 var -> var
-
-f(_, _) :- true.
+f(X, X) :- true.
 test4(0) :- !, statistics(frames, Fs), statistics(choices, Cs), statistics(trails, Ts), statistics(slots, Ss), write([f,Fs,c,Cs,t,Ts,s,Ss]), nl, fail.
-test4(N) :- f(N, _), N1 is N-1, test4(N1).
+test4(N) :- f(_, _), N1 is N-1, test4(N1).
 
 f(_, g(_), g(g(_))) :- true.
 test5(0) :- !, statistics(frames, Fs), statistics(choices, Cs), statistics(trails, Ts), statistics(slots, Ss), write([f,Fs,c,Cs,t,Ts,s,Ss]), nl, fail.

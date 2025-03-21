@@ -1505,6 +1505,9 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		unsigned var_in_body = get_in_body(p, C_STR(p, c));
 		unsigned occurrances = var_in_head + var_in_body;
 
+		if (!occurrances)		// Anonymous vars
+			occurrances = 1;
+
 		if ((occurrances > 1) && var_in_body) {
 			cl->has_local_vars = true;
 			c->flags |= FLAG_VAR_LOCAL;
