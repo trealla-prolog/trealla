@@ -606,7 +606,6 @@ static void *start_routine_thread_create(thread *t)
 	query_destroy(t->q);
 	t->q = NULL;
 	acquire_lock(&t->guard);
-
 	msg *m;
 
 	while ((m = list_pop_front(&t->queue)) != NULL) {
