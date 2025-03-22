@@ -11,7 +11,7 @@ typedef struct lnode_ lnode;
 
 typedef struct {
 	lnode *front, *back;
-	unsigned cnt;
+	pl_atomic unsigned cnt;
 } list;
 
 void list_init(list *l);

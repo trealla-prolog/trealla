@@ -1,4 +1,4 @@
-#include "list.h"
+#include "internal.h"
 
 void list_init(list *l)
 {
