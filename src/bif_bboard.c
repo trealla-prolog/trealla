@@ -138,7 +138,6 @@ static bool bif_bb_put_2(query *q)
 static bool bif_bb_get_2(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
-	GET_NEXT_ARG(p2,any);
 
 	if (is_compound(p1) &&
 		((p1->val_off != g_colon_s) || (p1->arity != 2)))
@@ -189,6 +188,8 @@ static bool bif_bb_get_2(query *q)
 
 	cell *tmp = copy_term_to_heap(q, (cell*)val, q->st.curr_frame, true);
 	check_heap_error(tmp);
+	GET_FIRST_ARG(p1x,nonvar);
+	GET_NEXT_ARG(p2,any);
 
 	if (DO_DUMP) DUMP_TERM2("bb_get", tmpbuf, tmp, q->st.curr_frame, 1);
 
@@ -207,7 +208,6 @@ static bool bif_bb_get_2(query *q)
 static bool bif_bb_delete_2(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
-	GET_NEXT_ARG(p2,any);
 
 	if (is_compound(p1) &&
 		((p1->val_off != g_colon_s) || (p1->arity != 2)))
@@ -247,6 +247,8 @@ static bool bif_bb_delete_2(query *q)
 
 	cell *tmp = copy_term_to_heap(q, (cell*)val, q->st.fp, true);
 	check_heap_error(tmp, prolog_unlock(q->pl));
+	GET_FIRST_ARG(p1x,nonvar);
+	GET_NEXT_ARG(p2,any);
 
 	if (DO_DUMP) DUMP_TERM2("bb_delete", tmpbuf, tmp, q->st.curr_frame, 1);
 
@@ -274,8 +276,6 @@ static bool bif_bb_delete_2(query *q)
 static bool bif_bb_update_3(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
-	GET_NEXT_ARG(p2,any);
-	GET_NEXT_ARG(p3,any);
 
 	if (is_compound(p1) &&
 		((p1->val_off != g_colon_s) || (p1->arity != 2)))
@@ -317,6 +317,9 @@ static bool bif_bb_update_3(query *q)
 	cell *tmp = copy_term_to_heap(q, (cell*)val, q->st.fp, true);
 	q->noderef = false;
 	check_heap_error(tmp, prolog_unlock(q->pl));
+	GET_FIRST_ARG(p1x,nonvar);
+	GET_NEXT_ARG(p2,any);
+	GET_NEXT_ARG(p3,any);
 
 	if (DO_DUMP) DUMP_TERM2("bb_update", tmpbuf, p2, p2_ctx, 1);
 
