@@ -41,8 +41,8 @@ void push_template(module *m, const char *name, unsigned arity, const builtins *
 void retract_from_db(module *m, rule *r);
 bool do_use_module_1(module *m, cell *p);
 bool do_use_module_2(module *m, cell *p);
-rule *asserta_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting);
-rule *assertz_to_db(module *m, unsigned nbr_vars, cell *p1, bool consulting);
+rule *asserta_to_db(module *m, unsigned num_vars, cell *p1, bool consulting);
+rule *assertz_to_db(module *m, unsigned num_vars, cell *p1, bool consulting);
 rule *find_in_db(module *m, uuid *ref);
 rule *erase_from_db(module *m, uuid *ref);
 void set_meta_predicate_in_db(module *m, cell *c);

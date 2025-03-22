@@ -305,7 +305,7 @@ static bool bif_iso_is_2(query *q)
 	q->max_eval_depth = 0;
 
 	CLEANUP cell p2 = eval(q, p2_tmp);
-	p2.nbr_cells = 1;
+	p2.num_cells = 1;
 
 	if (!is_number(&p2))
 		return throw_error(q, &p2, p2_tmp_ctx, "type_error", "evaluable");

@@ -100,16 +100,16 @@ static bool bif_posix_strptime_3(query *q)
 
 	cell *tmp = alloc_on_heap(q, 10);
 	make_instr(tmp, g_tm_s, NULL, 9, 0);
-	pl_idx nbr_cells = 1;
-	make_int(tmp+nbr_cells++, tm.tm_sec);
-	make_int(tmp+nbr_cells++, tm.tm_min);
-	make_int(tmp+nbr_cells++, tm.tm_hour);
-	make_int(tmp+nbr_cells++, tm.tm_mday);
-	make_int(tmp+nbr_cells++, tm.tm_mon);
-	make_int(tmp+nbr_cells++, tm.tm_year);
-	make_int(tmp+nbr_cells++, tm.tm_wday);
-	make_int(tmp+nbr_cells++, tm.tm_yday);
-	make_int(tmp+nbr_cells++, tm.tm_isdst);
+	pl_idx num_cells = 1;
+	make_int(tmp+num_cells++, tm.tm_sec);
+	make_int(tmp+num_cells++, tm.tm_min);
+	make_int(tmp+num_cells++, tm.tm_hour);
+	make_int(tmp+num_cells++, tm.tm_mday);
+	make_int(tmp+num_cells++, tm.tm_mon);
+	make_int(tmp+num_cells++, tm.tm_year);
+	make_int(tmp+num_cells++, tm.tm_wday);
+	make_int(tmp+num_cells++, tm.tm_yday);
+	make_int(tmp+num_cells++, tm.tm_isdst);
 
 	return unify(q, p3, p3_ctx, tmp, q->st.curr_frame);
 }
@@ -156,16 +156,16 @@ static bool bif_posix_gmtime_2(query *q)
 
 	cell *tmp = alloc_on_heap(q, 10);
 	make_instr(tmp, g_tm_s, NULL, 9, 0);
-	pl_idx nbr_cells = 1;
-	make_int(tmp+nbr_cells++, tm.tm_sec);
-	make_int(tmp+nbr_cells++, tm.tm_min);
-	make_int(tmp+nbr_cells++, tm.tm_hour);
-	make_int(tmp+nbr_cells++, tm.tm_mday);
-	make_int(tmp+nbr_cells++, tm.tm_mon);
-	make_int(tmp+nbr_cells++, tm.tm_year);
-	make_int(tmp+nbr_cells++, tm.tm_wday);
-	make_int(tmp+nbr_cells++, tm.tm_yday);
-	make_int(tmp+nbr_cells++, tm.tm_isdst);
+	pl_idx num_cells = 1;
+	make_int(tmp+num_cells++, tm.tm_sec);
+	make_int(tmp+num_cells++, tm.tm_min);
+	make_int(tmp+num_cells++, tm.tm_hour);
+	make_int(tmp+num_cells++, tm.tm_mday);
+	make_int(tmp+num_cells++, tm.tm_mon);
+	make_int(tmp+num_cells++, tm.tm_year);
+	make_int(tmp+num_cells++, tm.tm_wday);
+	make_int(tmp+num_cells++, tm.tm_yday);
+	make_int(tmp+num_cells++, tm.tm_isdst);
 
 	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 }
@@ -183,16 +183,16 @@ static bool bif_posix_localtime_2(query *q)
 
 	cell *tmp = alloc_on_heap(q, 10);
 	make_instr(tmp, g_tm_s, NULL, 9, 0);
-	pl_idx nbr_cells = 1;
-	make_int(tmp+nbr_cells++, tm.tm_sec);
-	make_int(tmp+nbr_cells++, tm.tm_min);
-	make_int(tmp+nbr_cells++, tm.tm_hour);
-	make_int(tmp+nbr_cells++, tm.tm_mday);
-	make_int(tmp+nbr_cells++, tm.tm_mon);
-	make_int(tmp+nbr_cells++, tm.tm_year);
-	make_int(tmp+nbr_cells++, tm.tm_wday);
-	make_int(tmp+nbr_cells++, tm.tm_yday);
-	make_int(tmp+nbr_cells++, tm.tm_isdst);
+	pl_idx num_cells = 1;
+	make_int(tmp+num_cells++, tm.tm_sec);
+	make_int(tmp+num_cells++, tm.tm_min);
+	make_int(tmp+num_cells++, tm.tm_hour);
+	make_int(tmp+num_cells++, tm.tm_mday);
+	make_int(tmp+num_cells++, tm.tm_mon);
+	make_int(tmp+num_cells++, tm.tm_year);
+	make_int(tmp+num_cells++, tm.tm_wday);
+	make_int(tmp+num_cells++, tm.tm_yday);
+	make_int(tmp+num_cells++, tm.tm_isdst);
 
 	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 }

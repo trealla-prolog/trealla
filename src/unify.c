@@ -39,8 +39,8 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 		if (val) return val;
 #endif
 
-		p1 = p1 + 1; p1 += p1->nbr_cells;
-		p2 = p2 + 1; p2 += p2->nbr_cells;
+		p1 = p1 + 1; p1 += p1->num_cells;
+		p2 = p2 + 1; p2 += p2->num_cells;
 
 #if USE_RATIONAL_TREES
 		e1 = e2 = NULL;
@@ -77,8 +77,8 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 		unsigned cnt = 0;
 
 		while (is_iso_list(p1) && is_iso_list(p2)) {
-			p1 = p1 + 1; p1 += p1->nbr_cells;
-			p2 = p2 + 1; p2 += p2->nbr_cells;
+			p1 = p1 + 1; p1 += p1->num_cells;
+			p2 = p2 + 1; p2 += p2->num_cells;
 			RESTORE_VAR(p1, p1_ctx, p1, p1_ctx, q->vgen);
 			RESTORE_VAR2(p2, p2_ctx, p2, p2_ctx, q->vgen);
 
@@ -135,8 +135,8 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		if (val) return val;
 #endif
 
-		p1 += p1->nbr_cells;
-		p2 += p2->nbr_cells;
+		p1 += p1->num_cells;
+		p2 += p2->num_cells;
 		i++;
 	}
 
@@ -495,8 +495,8 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 			return false;
 #endif
 
-		p1 = p1 + 1; p1 += p1->nbr_cells;
-		p2 = p2 + 1; p2 += p2->nbr_cells;
+		p1 = p1 + 1; p1 += p1->num_cells;
+		p2 = p2 + 1; p2 += p2->num_cells;
 
 #if USE_RATIONAL_TREES
 		e1 = e2 = NULL;
@@ -533,8 +533,8 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 		unsigned cnt = 0;
 
 		while (is_iso_list(p1) && is_iso_list(p2)) {
-			p1 = p1 + 1; p1 += p1->nbr_cells;
-			p2 = p2 + 1; p2 += p2->nbr_cells;
+			p1 = p1 + 1; p1 += p1->num_cells;
+			p2 = p2 + 1; p2 += p2->num_cells;
 			RESTORE_VAR(p1, p1_ctx, p1, p1_ctx, q->vgen);
 			RESTORE_VAR2(p2, p2_ctx, p2, p2_ctx, q->vgen);
 
@@ -592,8 +592,8 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 		if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
 			return false;
 #endif
-		p1 += p1->nbr_cells;
-		p2 += p2->nbr_cells;
+		p1 += p1->num_cells;
+		p2 += p2->num_cells;
 	}
 
 	return true;

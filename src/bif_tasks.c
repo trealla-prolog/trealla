@@ -79,7 +79,7 @@ static cell *pop_queue(query *q)
 		return NULL;
 
 	cell *c = q->queue[0] + q->popp;
-	q->popp += c->nbr_cells;
+	q->popp += c->num_cells;
 
 	if (q->popp == q->qp[0])
 		q->popp = q->qp[0] = 0;
@@ -248,7 +248,7 @@ static bool bif_call_task_n(query *q)
 	}
 
 	cell *tmp2 = get_tmp_heap(q, 0);
-	tmp2->nbr_cells = tmp_heap_used(q);
+	tmp2->num_cells = tmp_heap_used(q);
 	tmp2->arity = arity;
 	bool found = false;
 
@@ -268,7 +268,7 @@ static bool bif_call_task_n(query *q)
 
 static bool bif_fork_0(query *q)
 {
-	cell *curr_instr = q->st.curr_instr + q->st.curr_instr->nbr_cells;
+	cell *curr_instr = q->st.curr_instr + q->st.curr_instr->num_cells;
 	query *task = query_create_task(q, curr_instr);
 	task->yielded = true;
 	push_task(q, task);
@@ -305,7 +305,7 @@ static bool bif_send_1(query *q)
 	cell *c = clone_term_to_tmp(q, p1, p1_ctx);
 	check_heap_error(c);
 
-	for (pl_idx i = 0; i < c->nbr_cells; i++) {
+	for (pl_idx i = 0; i < c->num_cells; i++) {
 		cell *c2 = c + i;
 		share_cell(c2);
 	}

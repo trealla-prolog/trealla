@@ -471,7 +471,7 @@ static void print_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 	} else if (q->portray_vars || (q->is_dump_vars && q->cycle_error)) {
 		SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr));
 	} else if (q->is_dump_vars) {
-		if ((c_ctx == 0) && (c->var_nbr < q->p->nbr_vars)) {
+		if ((c_ctx == 0) && (c->var_nbr < q->p->num_vars)) {
 			SB_sprintf(q->sb, "%s", q->p->vartab.name[c->var_nbr]);
 		} else {
 			SB_sprintf(q->sb, "_%s", get_slot_name(q, slot_nbr));
@@ -651,7 +651,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		if (is_interned(head) && (C_STRLEN_UTF8(head) == 1) && q->double_quotes)
 			possible_chars = true;
 
-		cell *tail = c + 1; tail += tail->nbr_cells;
+		cell *tail = c + 1; tail += tail->num_cells;
 		pl_idx tail_ctx = c_ctx;
 		cell *save_tail = tail;
 		pl_idx save_tail_ctx = tail_ctx;
@@ -1088,7 +1088,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 			q->parens = true;
 			bool any = false;
 
-			for (c++; arity--; c += c->nbr_cells) {
+			for (c++; arity--; c += c->num_cells) {
 				cell *tmp = c;
 				pl_idx tmp_ctx = c_ctx;
 				if (running) tmp = deref(q, tmp, tmp_ctx);
@@ -1311,7 +1311,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	cell *lhs = c + 1;
 	cell *save_lhs = lhs;
 	pl_idx lhs_ctx = c_ctx;
-	cell *rhs = lhs + lhs->nbr_cells;
+	cell *rhs = lhs + lhs->num_cells;
 	cell *save_rhs = rhs;
 	pl_idx rhs_ctx = c_ctx;
 	const char *lhs_src = C_STR(q, lhs);

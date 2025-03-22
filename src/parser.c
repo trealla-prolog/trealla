@@ -38,7 +38,7 @@ cell *list_head(cell *l, cell *tmp)
 	const char *src = is_slice(l) ? l->val_str : is_strbuf(l) ? (char*)l->val_strb->cstr + l->strb_off : (char*)l->val_chr + l->val_off;
 	size_t char_len = len_char_utf8(src);
 	tmp->tag = TAG_CSTR;
-	tmp->nbr_cells = 1;
+	tmp->num_cells = 1;
 	tmp->flags = 0;
 	tmp->arity = 0;
 	memcpy(tmp->val_chr, src, char_len);
@@ -51,7 +51,7 @@ cell *list_tail(cell *l, cell *tmp)
 {
 	if (!is_string(l)) {
 		cell *h = l + 1;
-		return h + h->nbr_cells;
+		return h + h->num_cells;
 	}
 
 	const char *src = is_slice(l) ? l->val_str : is_strbuf(l) ? (char*)l->val_strb->cstr + l->strb_off : (char*)l->val_chr;
@@ -60,7 +60,7 @@ cell *list_tail(cell *l, cell *tmp)
 
 	if (str_len == char_len) {
 		tmp->tag = TAG_INTERNED;
-		tmp->nbr_cells = 1;
+		tmp->num_cells = 1;
 		tmp->arity = 0;
 		tmp->flags = 0;
 		tmp->val_off = g_nil_s;
@@ -146,7 +146,7 @@ bool make_cstringn(cell *d, const char *s, size_t n)
 
 	*d = (cell){0};
 	d->tag = TAG_CSTR;
-	d->nbr_cells = 1;
+	d->num_cells = 1;
 	make_string_internal(d, s, n, 0);
 	return true;
 }
@@ -161,7 +161,7 @@ bool make_stringn(cell *d, const char *s, size_t n)
 	*d = (cell){0};
 	d->tag = TAG_CSTR;
 	d->flags = FLAG_CSTR_STRING;
-	d->nbr_cells = 1;
+	d->num_cells = 1;
 	d->arity = 2;
 	make_string_internal(d, s, n, 0);
 	return true;
@@ -171,7 +171,7 @@ void make_atom(cell *tmp, pl_idx offset)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_INTERNED;
-	tmp->nbr_cells = 1;
+	tmp->num_cells = 1;
 	tmp->val_off = offset;
 }
 
@@ -179,7 +179,7 @@ cell *make_nil(void)
 {
 	static cell tmp = {
 		.tag = TAG_INTERNED,
-		.nbr_cells = 1,
+		.num_cells = 1,
 		.val_off = 0
 	};
 
@@ -191,7 +191,7 @@ void make_smalln(cell *tmp, const char *s, size_t n)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_CSTR;
-	tmp->nbr_cells = 1;
+	tmp->num_cells = 1;
 	memcpy(tmp->val_chr, s, n);
 	tmp->val_chr[n] = '\0';
 	tmp->chr_len = n;
@@ -201,7 +201,7 @@ void make_var(cell *tmp, pl_idx off, unsigned var_nbr)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_VAR;
-	tmp->nbr_cells = 1;
+	tmp->num_cells = 1;
 	tmp->var_nbr = var_nbr;
 	tmp->val_off = off;
 
@@ -213,7 +213,7 @@ void make_float(cell *tmp, pl_flt v)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_DOUBLE;
-	tmp->nbr_cells = 1;
+	tmp->num_cells = 1;
 	tmp->val_float = v;
 }
 
@@ -221,7 +221,7 @@ void make_int(cell *tmp, pl_int v)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_INTEGER;
-	tmp->nbr_cells = 1;
+	tmp->num_cells = 1;
 	set_smallint(tmp, v);
 }
 
@@ -229,7 +229,7 @@ void make_uint(cell *tmp, pl_uint v)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_INTEGER;
-	tmp->nbr_cells = 1;
+	tmp->num_cells = 1;
 	set_smalluint(tmp, v);
 }
 
@@ -237,7 +237,7 @@ void make_ptr(cell *tmp, void *v)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_INTEGER;
-	tmp->nbr_cells = 1;
+	tmp->num_cells = 1;
 	tmp->val_ptr = v;
 }
 
@@ -245,7 +245,7 @@ void make_struct_(cell *tmp, pl_idx offset, unsigned arity, pl_idx extra_cells)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_INTERNED;
-	tmp->nbr_cells = 1 + extra_cells;
+	tmp->num_cells = 1 + extra_cells;
 	tmp->arity = arity;
 	tmp->val_off = offset;
 }
@@ -254,7 +254,7 @@ void make_end(cell *tmp)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_END;
-	tmp->nbr_cells = 1;
+	tmp->num_cells = 1;
 }
 
 void make_blob(cell *tmp, void *ptr)
@@ -262,7 +262,7 @@ void make_blob(cell *tmp, void *ptr)
 	*tmp = (cell){0};
 	tmp->tag = TAG_BLOB;
 	tmp->flags = FLAG_MANAGED;
-	tmp->nbr_cells = 1;
+	tmp->num_cells = 1;
 	tmp->val_blob = ptr;
 	tmp->val_blob->refcnt = 0;
 }
@@ -272,7 +272,7 @@ void make_dbref(cell *tmp, void *ptr)
 	*tmp = (cell){0};
 	tmp->tag = TAG_DBID;
 	tmp->flags = FLAG_MANAGED;
-	tmp->nbr_cells = 1;
+	tmp->num_cells = 1;
 	tmp->val_blob = ptr;
 	tmp->val_blob->refcnt = 0;
 }
@@ -282,20 +282,20 @@ void make_kvref(cell *tmp, void *ptr)
 	*tmp = (cell){0};
 	tmp->tag = TAG_KVID;
 	tmp->flags = FLAG_MANAGED;
-	tmp->nbr_cells = 1;
+	tmp->num_cells = 1;
 	tmp->val_blob = ptr;
 	tmp->val_blob->refcnt = 0;
 }
 
-void share_cells(cell *src, pl_idx nbr_cells)
+void share_cells(cell *src, pl_idx num_cells)
 {
-	for (pl_idx i = 0; i < nbr_cells; i++, src++)
+	for (pl_idx i = 0; i < num_cells; i++, src++)
 		share_cell(src);
 }
 
-void unshare_cells(cell *src, pl_idx nbr_cells)
+void unshare_cells(cell *src, pl_idx num_cells)
 {
-	for (pl_idx i = 0; i < nbr_cells; i++, src++)
+	for (pl_idx i = 0; i < num_cells; i++, src++)
 		unshare_cell(src);
 }
 
@@ -303,19 +303,19 @@ void unshare_cells(cell *src, pl_idx nbr_cells)
 void clear_clause(clause *cl)
 {
 	unshare_cells(cl->cells, cl->cidx);
-	cl->nbr_vars = 0;
+	cl->num_vars = 0;
 	cl->cidx = 0;
 }
 
 static bool make_room(parser *p, unsigned nbr)
 {
-	if ((p->cl->cidx+nbr) >= p->cl->nbr_allocated_cells) {
-		pl_idx nbr_cells = (p->cl->nbr_allocated_cells + nbr) * 3 / 2;
+	if ((p->cl->cidx+nbr) >= p->cl->num_allocated_cells) {
+		pl_idx num_cells = (p->cl->num_allocated_cells + nbr) * 3 / 2;
 
-		clause *cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*nbr_cells));
+		clause *cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*num_cells));
 		ensure(cl);
 		p->cl = cl;
-		p->cl->nbr_allocated_cells = nbr_cells;
+		p->cl->num_allocated_cells = num_cells;
 	}
 
 	return true;
@@ -351,10 +351,10 @@ parser *parser_create(module *m)
 	ensure(p);
 	p->pl = m->pl;
 	p->m = m;
-	pl_idx nbr_cells = INITIAL_NBR_CELLS;
-	p->cl = calloc(1, sizeof(clause)+(sizeof(cell)*nbr_cells));
+	pl_idx num_cells = INITIAL_NBR_CELLS;
+	p->cl = calloc(1, sizeof(clause)+(sizeof(cell)*num_cells));
 	ensure(p->cl, free(p));
-	p->cl->nbr_allocated_cells = nbr_cells;
+	p->cl->num_allocated_cells = num_cells;
 	p->start_term = true;
 	p->flags = m->flags;
 	p->line_nbr = 1;
@@ -654,7 +654,7 @@ static bool directives(parser *p, cell *d)
 
 	if (!strcmp(dirname, "help") && (c->arity == 2)) {
 		if (!is_compound(p1)) return true;
-		cell *p2 = p1 + p1->nbr_cells;
+		cell *p2 = p1 + p1->num_cells;
 		if (!is_iso_list_or_nil(p2)) return true;
 		LIST_HANDLER(p2);
 		char *desc = NULL;
@@ -1234,7 +1234,7 @@ static bool directives(parser *p, cell *d)
 				return true;
 			}
 
-			p1 += p1->nbr_cells;
+			p1 += p1->num_cells;
 		} else if (!strcmp(dirname, "create_prolog_flag")) {
 			p1 += 1;
 		} else if (!strcmp(dirname, "encoding")) {
@@ -1244,7 +1244,7 @@ static bool directives(parser *p, cell *d)
 				p1 += 1;
 
 			set_meta_predicate_in_db(m, p1);
-			p1 += p1->nbr_cells;
+			p1 += p1->num_cells;
 		} else if (!strcmp(C_STR(p, p1), ",") && (p1->arity == 2))
 			p1 += 1;
 		else {
@@ -1361,7 +1361,7 @@ static void check_term_ground(cell *c)
 {
 	c->flags |= FLAG_INTERNED_GROUND;
 
-	for (unsigned i = 0; i < c->nbr_cells; i++) {
+	for (unsigned i = 0; i < c->num_cells; i++) {
 		if (is_var(c+i)) {
 			c->flags &= ~ FLAG_INTERNED_GROUND;
 			break;
@@ -1382,8 +1382,8 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 
 	if (!p->reuse) {
 		memset(&p->vartab, 0, sizeof(p->vartab));
-		cl->nbr_vars = 0;
-		p->nbr_vars = 0;
+		cl->num_vars = 0;
+		p->num_vars = 0;
 	}
 
 	const cell *body = get_body(cl->cells);
@@ -1425,8 +1425,8 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		p->vartab.name[c->var_nbr] = C_STR(p, c);
 
 		if (p->vartab.used[c->var_nbr]++ == 0) {
-			cl->nbr_vars++;
-			p->nbr_vars++;
+			cl->num_vars++;
+			p->num_vars++;
 		}
 	}
 
@@ -1465,8 +1465,8 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		p->vartab.name[c->var_nbr] = C_STR(p, c);
 
 		if (p->vartab.used[c->var_nbr]++ == 0) {
-			cl->nbr_vars++;
-			p->nbr_vars++;
+			cl->num_vars++;
+			p->num_vars++;
 		}
 	}
 
@@ -1506,7 +1506,7 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		}
 	}
 
-	for (unsigned i = 0; i < cl->nbr_vars; i++) {
+	for (unsigned i = 0; i < cl->num_vars; i++) {
 		if (!p->vartab.in_body[i])
 
 		if (p->is_consulting && !p->do_read_term && (p->vartab.used[i] == 1) &&
@@ -1521,7 +1521,7 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 	cell *c = make_a_cell(p);
 	ensure(c);
 	c->tag = TAG_END;
-	c->nbr_cells = 1;
+	c->num_cells = 1;
 }
 
 static bool reduce(parser *p, pl_idx start_idx, bool last_op)
@@ -1534,8 +1534,8 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 	for (pl_idx i = start_idx; i < p->cl->cidx;) {
 		cell *c = p->cl->cells + i;
 
-		if ((c->nbr_cells > 1) || !is_interned(c) || !c->priority) {
-			i += c->nbr_cells;
+		if ((c->num_cells > 1) || !is_interned(c) || !c->priority) {
+			i += c->num_cells;
 			continue;
 		}
 
@@ -1570,15 +1570,15 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 	for (pl_idx i = start_idx; i <= end_idx;) {
 		cell *c = p->cl->cells + i;
 
-		if ((c->nbr_cells > 1) || !is_interned(c) || !c->priority) {
+		if ((c->num_cells > 1) || !is_interned(c) || !c->priority) {
 			last_idx = i;
-			i += c->nbr_cells;
+			i += c->num_cells;
 			continue;
 		}
 
 		if ((c->priority != lowest) || (i != work_idx)) {
 			last_idx = i;
-			i += c->nbr_cells;
+			i += c->num_cells;
 			continue;
 		}
 
@@ -1604,7 +1604,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 				return false;
 			}
 
-			rhs += rhs->nbr_cells;
+			rhs += rhs->num_cells;
 
 			if ((((pl_idx)(rhs - p->cl->cells)) < end_idx)
 				&& is_xf(rhs) && (rhs->priority == c->priority)) {
@@ -1652,7 +1652,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 				return false;
 			}
 
-			c->nbr_cells += rhs->nbr_cells;
+			c->num_cells += rhs->num_cells;
 			break;
 		}
 
@@ -1693,8 +1693,8 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			}
 
 			cell *lhs = p->cl->cells + last_idx;
-			save.nbr_cells += lhs->nbr_cells;
-			pl_idx cells_to_move = lhs->nbr_cells;
+			save.num_cells += lhs->num_cells;
+			pl_idx cells_to_move = lhs->num_cells;
 			cell *save_c = lhs;
 			const cell *src = c - 1;
 			cell *dst = c;
@@ -1742,19 +1742,19 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			return false;
 		}
 
-		save.nbr_cells += lhs->nbr_cells;
-		pl_idx cells_to_move = lhs->nbr_cells;
+		save.num_cells += lhs->num_cells;
+		pl_idx cells_to_move = lhs->num_cells;
 		lhs = c - 1;
 
 		while (cells_to_move--)
 			*c-- = *lhs--;
 
 		*c = save;
-		c->nbr_cells += rhs->nbr_cells;
+		c->num_cells += rhs->num_cells;
 		c->arity = 2;
 
 		if (is_xfx(c)) {
-			cell *next = c + c->nbr_cells;
+			cell *next = c + c->num_cells;
 			i = next - p->cl->cells;
 
 			if ((i <= end_idx)
@@ -1786,7 +1786,7 @@ static bool analyze(parser *p, pl_idx start_idx, bool last_op)
 void reset(parser *p)
 {
 	clear_clause(p->cl);
-	p->nbr_vars = 0;
+	p->num_vars = 0;
 	p->start_term = true;
 	p->is_comment = false;
 	p->error = false;
@@ -1802,12 +1802,12 @@ static bool dcg_expansion(parser *p)
 
 	q->trace = false;
 	cell *c = p->cl->cells;
-	cell *tmp = alloc_on_heap(q, 1+c->nbr_cells+1+1);
-	make_instr(tmp, new_atom(p->pl, "dcg_translate"), NULL, 2, c->nbr_cells+1);
-	dup_cells(tmp+1, p->cl->cells, c->nbr_cells);
-	make_ref(tmp+1+c->nbr_cells, p->cl->nbr_vars, 0);
-	make_end(tmp+1+c->nbr_cells+1);
-	bool ok = execute(q, tmp, p->cl->nbr_vars+1);
+	cell *tmp = alloc_on_heap(q, 1+c->num_cells+1+1);
+	make_instr(tmp, new_atom(p->pl, "dcg_translate"), NULL, 2, c->num_cells+1);
+	dup_cells(tmp+1, p->cl->cells, c->num_cells);
+	make_ref(tmp+1+c->num_cells, p->cl->num_vars, 0);
+	make_end(tmp+1+c->num_cells+1);
+	bool ok = execute(q, tmp, p->cl->num_vars+1);
 
 	if (!ok || q->abort) {
 		query_destroy(q);
@@ -1816,7 +1816,7 @@ static bool dcg_expansion(parser *p)
 	}
 
 	cell *arg1 = tmp + 1;
-	cell *arg2 = arg1 + arg1->nbr_cells;
+	cell *arg2 = arg1 + arg1->num_cells;
 	c = deref(q, arg2, 0);
 	q->max_depth = -1;
 	char *src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
@@ -1849,7 +1849,7 @@ static bool dcg_expansion(parser *p)
 	free(p->cl->alt);
 	free(p->cl);
 	p->cl = p2->cl;					// Take the completed clause
-	p->nbr_vars = p2->nbr_vars;
+	p->num_vars = p2->num_vars;
 	p2->cl = NULL;
 	parser_destroy(p2);
 	return true;
@@ -1886,14 +1886,14 @@ static bool term_expansion(parser *p)
 	check_error(q);
 	q->trace = false;
 	cell *c = p->cl->cells;
-	cell *tmp = alloc_on_heap(q, 1+c->nbr_cells+2);
-	unsigned nbr_cells = 0;
-	make_instr(tmp+nbr_cells++, new_atom(p->pl, "term_expansion"), NULL, 2, c->nbr_cells+1);
-	dup_cells(tmp+nbr_cells, p->cl->cells, c->nbr_cells);
-	nbr_cells += c->nbr_cells;
-	make_ref(tmp+nbr_cells++, p->cl->nbr_vars, 0);
-	make_end(tmp+nbr_cells);
-	execute(q, tmp, p->cl->nbr_vars+1);
+	cell *tmp = alloc_on_heap(q, 1+c->num_cells+2);
+	unsigned num_cells = 0;
+	make_instr(tmp+num_cells++, new_atom(p->pl, "term_expansion"), NULL, 2, c->num_cells+1);
+	dup_cells(tmp+num_cells, p->cl->cells, c->num_cells);
+	num_cells += c->num_cells;
+	make_ref(tmp+num_cells++, p->cl->num_vars, 0);
+	make_end(tmp+num_cells);
+	execute(q, tmp, p->cl->num_vars+1);
 
 	if (q->retry != QUERY_OK) {
 		query_destroy(q);
@@ -1901,7 +1901,7 @@ static bool term_expansion(parser *p)
 	}
 
 	cell *arg1 = tmp + 1;
-	cell *arg2 = arg1 + arg1->nbr_cells;
+	cell *arg2 = arg1 + arg1->num_cells;
 	c = deref(q, arg2, 0);
 	q->max_depth = -1;
 	char *src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
@@ -1932,7 +1932,7 @@ static bool term_expansion(parser *p)
 	free(p->cl->alt);
 	free(p->cl);
 	p->cl = p2->cl;					// Take the completed clause
-	p->nbr_vars = p2->nbr_vars;
+	p->num_vars = p2->num_vars;
 	p2->cl = NULL;
 
 	parser_destroy(p2);
@@ -1992,7 +1992,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	parser *p2 = parser_create(p->m);
 	check_error(p2, query_destroy(q));
 	q->p = p2;
-	p2->cl->nbr_vars = p->cl->nbr_vars;
+	p2->cl->num_vars = p->cl->num_vars;
 	p2->vartab = p->vartab;
 	p2->reuse = true;
 	p2->line_nbr = p->line_nbr;
@@ -2008,7 +2008,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	}
 
 	process_clause(p2->m, p2->cl, NULL);
-	execute(q, p2->cl->cells, p2->cl->nbr_vars);
+	execute(q, p2->cl->cells, p2->cl->num_vars);
 	SB_free(s);
 	p->pl->in_goal_expansion = false;
 	//printf("-- goal_expansion %s/%u\n", C_STR(p, goal), goal->arity);
@@ -2019,14 +2019,14 @@ static cell *goal_expansion(parser *p, cell *goal)
 		return goal;
 	}
 
-	for (unsigned i = 0; i < p->cl->nbr_vars; i++)
+	for (unsigned i = 0; i < p->cl->num_vars; i++)
 		q->ignores[i] = true;
 
-	p->cl->nbr_vars = p2->cl->nbr_vars;
+	p->cl->num_vars = p2->cl->num_vars;
 	frame *f = GET_FRAME(0);
 	char *src = NULL;
 
-	for (unsigned i = 0; i < p2->cl->nbr_vars; i++) {
+	for (unsigned i = 0; i < p2->cl->num_vars; i++) {
 		if (!p2->vartab.name[i])
 			continue;
 
@@ -2056,7 +2056,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	}
 
 	reset(p2);
-	p2->cl->nbr_vars = p->cl->nbr_vars;
+	p2->cl->num_vars = p->cl->num_vars;
 	p2->vartab = p->vartab;
 	p2->reuse = true;
 	p2->srcptr = src;
@@ -2074,15 +2074,15 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 	// Push the updated vatab back...
 
-	p->cl->nbr_vars = p2->cl->nbr_vars;
+	p->cl->num_vars = p2->cl->num_vars;
 	p->vartab = p2->vartab;
 
 	// snip the old goal...
 
 	const unsigned goal_idx = goal - p->cl->cells;
-	unsigned trailing = p->cl->cidx - (goal_idx + goal->nbr_cells);
-	p->cl->cidx -= goal->nbr_cells;
-	memmove(goal, goal + goal->nbr_cells, sizeof(cell)*trailing);
+	unsigned trailing = p->cl->cidx - (goal_idx + goal->num_cells);
+	p->cl->cidx -= goal->num_cells;
+	memmove(goal, goal + goal->num_cells, sizeof(cell)*trailing);
 
 	// make room for new goal...
 
@@ -2118,7 +2118,7 @@ static bool is_meta_arg(predicate *pr, cell *c, unsigned arg, int *extra)
 
 	unsigned i = 0;
 
-	for (cell *m = pr->meta_args+1; m && (i < c->arity); m += m->nbr_cells, i++) {
+	for (cell *m = pr->meta_args+1; m && (i < c->arity); m += m->num_cells, i++) {
 		if (!is_integer(m) || (i != arg))
 			continue;
 
@@ -2176,7 +2176,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 				lhs->arity -= extra;
 			}
 
-			cell *rhs = lhs + lhs->nbr_cells;
+			cell *rhs = lhs + lhs->num_cells;
 			extra = 0;
 			c = p->cl->cells + c_idx;
 
@@ -2189,7 +2189,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 				rhs->arity -= extra;
 			}
 
-			c->nbr_cells = 1 + lhs->nbr_cells + rhs->nbr_cells;
+			c->num_cells = 1 + lhs->num_cells + rhs->num_cells;
 		}
 	} else if (is_prefix(c)) {
 		if (c->val_off == g_neck_s) {
@@ -2203,13 +2203,13 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 				rhs = term_to_body_conversion(p, rhs);
 			}
 
-			c->nbr_cells = 1 + rhs->nbr_cells;
+			c->num_cells = 1 + rhs->num_cells;
 		} else if (c->val_off == g_negation_s) {
 			cell *rhs = c + 1;
 
 			if (!is_var(rhs)) {
 				rhs = goal_expansion(p, rhs);
-				c->nbr_cells = 1 + rhs->nbr_cells;
+				c->num_cells = 1 + rhs->num_cells;
 			}
 		}
 	} else if (!is_head && c->arity) {
@@ -2232,7 +2232,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 		while (arity--) {
 			int extra = 0;
 			bool meta = pr ? is_meta_arg(pr, c, i, &extra) : false;
-			c->nbr_cells -= arg->nbr_cells;
+			c->num_cells -= arg->num_cells;
 			arg->arity += extra;
 
 			if (meta)
@@ -2242,8 +2242,8 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 				arg = term_to_body_conversion(p, arg);
 
 			arg->arity -= extra;
-			c->nbr_cells += arg->nbr_cells;
-			arg += arg->nbr_cells;
+			c->num_cells += arg->num_cells;
+			arg += arg->num_cells;
 			i++;
 		}
 	}
@@ -2255,7 +2255,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 void term_to_body(parser *p)
 {
 	term_to_body_conversion(p, p->cl->cells);
-	p->cl->cells->nbr_cells = p->cl->cidx - 1;	// Drops TAG_END
+	p->cl->cells->num_cells = p->cl->cidx - 1;	// Drops TAG_END
 }
 
 cell *check_body_callable(cell *c)
@@ -2272,7 +2272,7 @@ cell *check_body_callable(cell *c)
 			if ((tmp = check_body_callable(lhs)) != NULL)
 				return tmp;
 
-			cell *rhs = lhs + lhs->nbr_cells;
+			cell *rhs = lhs + lhs->num_cells;
 
 			if ((tmp = check_body_callable(rhs)) != NULL)
 				return tmp;
@@ -2306,7 +2306,7 @@ cell *make_interned(parser *p, pl_idx offset)
 {
 	cell *c = make_a_cell(p);
 	c->tag = TAG_INTERNED;
-	c->nbr_cells = 1;
+	c->num_cells = 1;
 	c->val_off = offset;
 	return c;
 }
@@ -2905,7 +2905,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 	bool neg = false;
 	p->v.tag = TAG_INTERNED;
 	p->v.flags = 0;
-	p->v.nbr_cells = 1;
+	p->v.num_cells = 1;
 	p->quote_char = 0;
 	p->was_string = p->is_string = p->is_quoted = p->is_var = p->is_op = p->is_symbol = false;
 
@@ -3364,7 +3364,7 @@ static bool process_term(parser *p, cell *p1)
 
 	rule *r;
 
-	if ((r = assertz_to_db(p->m, p->cl->nbr_vars, p1, consulting)) == NULL) {
+	if ((r = assertz_to_db(p->m, p->cl->num_vars, p1, consulting)) == NULL) {
 		if ((DUMP_ERRS || !p->do_read_term) && 0)
 			printf("Error: assertion failed '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 
@@ -3375,9 +3375,9 @@ static bool process_term(parser *p, cell *p1)
 	check_first_cut(&r->cl);
 	r->cl.is_fact = !get_logical_body(r->cl.cells);
 	r->cl.has_local_vars = p->cl->has_local_vars;
-	r->line_nbr_start = p->line_nbr_start;
-	r->line_nbr_end = p->line_nbr;
-	p->line_nbr_start = 0;
+	r->line_num_start = p->line_num_start;
+	r->line_num_end = p->line_nbr;
+	p->line_num_start = 0;
 	return true;
 }
 
@@ -3434,7 +3434,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			}
 
 			if (analyze(p, 0, last_op)) {
-				if (p->cl->cells->nbr_cells < p->cl->cidx) {
+				if (p->cl->cells->num_cells < p->cl->cidx) {
 					if (DUMP_ERRS || !p->do_read_term)
 						printf("Error: syntax error, operator expected unfinished input '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
 
@@ -3542,8 +3542,8 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			continue;
 		}
 
-		if (!p->line_nbr_start)
-			p->line_nbr_start = p->line_nbr;
+		if (!p->line_num_start)
+			p->line_num_start = p->line_nbr;
 
 		p->end_of_term = false;
 
@@ -3588,7 +3588,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 				break;
 
 			c = p->cl->cells + save_idx;
-			c->nbr_cells = p->cl->cidx - save_idx;
+			c->num_cells = p->cl->cidx - save_idx;
 			fix_list(c);
 			last_num = false;
 			continue;
@@ -3609,7 +3609,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 				break;
 
 			c = p->cl->cells+save_idx;
-			c->nbr_cells = p->cl->cidx - save_idx;
+			c->num_cells = p->cl->cidx - save_idx;
 			p->start_term = p->last_close = false;
 			last_op = false;
 			last_num = false;
@@ -3629,7 +3629,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			if (is_func) {
 				cell *c = p->cl->cells + save_idx;
 				c->arity = tmp_arity;
-				c->nbr_cells = p->cl->cidx - save_idx;
+				c->num_cells = p->cl->cidx - save_idx;
 			}
 
 			is_func = last_op = false;
@@ -4020,7 +4020,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 		p->start_term = false;
 		cell *c = make_a_cell(p);
-		c->nbr_cells = 1;
+		c->num_cells = 1;
 		c->tag = p->v.tag;
 		c->flags = p->v.flags;
 		SET_OP(c,specifier);
@@ -4095,7 +4095,7 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 
 	while (p->srcptr && *p->srcptr) {
 		reset(p);
-		p->line_nbr_start = 0;
+		p->line_num_start = 0;
 		p->line_nbr = 1;
 		p->one_shot = true;
 		p->is_consulting = false;
@@ -4141,7 +4141,7 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 		q->p = p;
 		q->do_dump_vars = dump;
 		q->run_init = p->m->run_init;
-		execute(q, p->cl->cells, p->cl->nbr_vars);
+		execute(q, p->cl->cells, p->cl->num_vars);
 
 		if (q->halt) {
 			p->m->pl->halt = q->halt;

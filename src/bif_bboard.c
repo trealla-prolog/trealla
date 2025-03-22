@@ -30,7 +30,7 @@ static bool bif_bb_b_put_2(query *q)
 
 	if (is_compound(p1)) {
 		cell *p1_m = p1 + 1;
-		p1 = p1_m + p1_m->nbr_cells;
+		p1 = p1_m + p1_m->num_cells;
 
 		if (!is_atom(p1_m) || !is_smallatomic(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
@@ -51,9 +51,9 @@ static bool bif_bb_b_put_2(query *q)
 
 	char *key = strdup(tmpbuf);
 	cell *tmp = copy_term_to_heap(q, p2, p2_ctx, true);
-	cell *val = malloc(sizeof(cell)*tmp->nbr_cells);
+	cell *val = malloc(sizeof(cell)*tmp->num_cells);
 	check_heap_error(val);
-	dup_cells(val, tmp, tmp->nbr_cells);
+	dup_cells(val, tmp, tmp->num_cells);
 
 	int var_nbr = create_vars(q, 1);
 	check_heap_error(var_nbr != -1);
@@ -92,7 +92,7 @@ static bool bif_bb_put_2(query *q)
 
 	if (is_compound(p1)) {
 		cell *p1_m = p1 + 1;
-		p1 = p1_m + p1_m->nbr_cells;
+		p1 = p1_m + p1_m->num_cells;
 
 		if (!is_atom(p1_m) || !is_smallatomic(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
@@ -122,9 +122,9 @@ static bool bif_bb_put_2(query *q)
 
 	char *key2 = strdup(tmpbuf2);
 	cell *tmp = copy_term_to_heap(q, p2, p2_ctx, true);
-	cell *val = malloc(sizeof(cell)*tmp->nbr_cells);
+	cell *val = malloc(sizeof(cell)*tmp->num_cells);
 	check_heap_error(val);
-	dup_cells(val, tmp, tmp->nbr_cells);
+	dup_cells(val, tmp, tmp->num_cells);
 
 	prolog_lock(q->pl);
 	sl_del(q->pl->keyval, key1);
@@ -149,7 +149,7 @@ static bool bif_bb_get_2(query *q)
 
 	if (is_compound(p1)) {
 		cell *p1_m = p1 + 1;
-		p1 = p1_m + p1_m->nbr_cells;
+		p1 = p1_m + p1_m->num_cells;
 
 		if (!is_atom(p1_m) || !is_smallatomic(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
@@ -218,7 +218,7 @@ static bool bif_bb_delete_2(query *q)
 
 	if (is_compound(p1)) {
 		cell *p1_m = p1 + 1;
-		p1 = p1_m + p1_m->nbr_cells;
+		p1 = p1_m + p1_m->num_cells;
 
 		if (!is_atom(p1_m) || !is_smallatomic(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
@@ -286,7 +286,7 @@ static bool bif_bb_update_3(query *q)
 
 	if (is_compound(p1)) {
 		cell *p1_m = p1 + 1;
-		p1 = p1_m + p1_m->nbr_cells;
+		p1 = p1_m + p1_m->num_cells;
 
 		if (!is_atom(p1_m) || !is_smallatomic(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
@@ -328,9 +328,9 @@ static bool bif_bb_update_3(query *q)
 	key = strdup(tmpbuf);
 	check_heap_error(init_tmp_heap(q), (prolog_unlock(q->pl), free(key)));
 	tmp = clone_term_to_tmp(q, p3, p3_ctx);
-	cell *value = malloc(sizeof(cell)*tmp->nbr_cells);
+	cell *value = malloc(sizeof(cell)*tmp->num_cells);
 	check_heap_error(value);
-	dup_cells(value, tmp, tmp->nbr_cells);
+	dup_cells(value, tmp, tmp->num_cells);
 	sl_del(q->pl->keyval, key);
 	sl_set(q->pl->keyval, key, value);
 

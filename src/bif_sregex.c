@@ -17,7 +17,7 @@ bool bif_sre_compile_2(query *q)
 	cell tmp = {0};
 	tmp.tag = TAG_BLOB;
 	tmp.flags = FLAG_MANAGED | FLAG_BLOB_SREGEX;
-	tmp.nbr_cells = 1;
+	tmp.num_cells = 1;
 	tmp.val_blob = malloc(sizeof(blob));
 	check_heap_error(tmp.val_blob);
 	tmp.val_blob->ptr = (void*)reg;

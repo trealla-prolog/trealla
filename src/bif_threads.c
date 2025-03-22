@@ -119,7 +119,7 @@ static int new_thread(prolog *pl)
 			t->is_mutex_only = false;
 			t->is_finished = false;
 			t->locked_by = -1;
-			t->nbr_locks = 0;
+			t->num_locks = 0;
 			t->is_exception = false;
 			t->at_exit = NULL;
 			t->goal = NULL;
@@ -299,15 +299,15 @@ static unsigned queue_size(prolog *pl, unsigned chan)
 
 static cell *queue_to_chan(prolog *pl, unsigned chan, const cell *c, unsigned from_chan, bool is_signal)
 {
-	//printf("*** send to chan=%u, nbr_cells=%u\n", chan, c->nbr_cells);
+	//printf("*** send to chan=%u, num_cells=%u\n", chan, c->num_cells);
 	thread *t = &pl->threads[chan];
-	msg *m = calloc(1, sizeof(msg) + (sizeof(cell)*c->nbr_cells));
+	msg *m = calloc(1, sizeof(msg) + (sizeof(cell)*c->num_cells));
 
 	if (!m)
 		return NULL;
 
 	m->from_chan = from_chan;
-	dup_cells(m->c, c, c->nbr_cells);
+	dup_cells(m->c, c, c->num_cells);
 	acquire_lock(&t->guard);
 
 	if (is_signal) {
@@ -382,7 +382,7 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 	thread *t = &q->pl->threads[chan];
 
 	while (!q->halt) {
-		//printf("*** recv msg nbr_cells=%u\n", t->queue_head->c->nbr_cells);
+		//printf("*** recv msg num_cells=%u\n", t->queue_head->c->num_cells);
 
 		acquire_lock(&t->guard);
 
@@ -421,7 +421,7 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 				release_lock(&t->guard);
 
 				if (!is_peek) {
-					unshare_cells(m->c, m->c->nbr_cells);
+					unshare_cells(m->c, m->c->num_cells);
 					free(m);
 				}
 
@@ -481,7 +481,7 @@ static void do_unlock_all(prolog *pl)
 
 		release_lock(&t->guard);
 		t->locked_by = -1;
-		t->nbr_locks = 0;
+		t->num_locks = 0;
 	}
 }
 
@@ -577,20 +577,20 @@ static bool bif_pl_thread_3(query *q)
 
 static void *start_routine_thread_create(thread *t)
 {
-	execute(t->q, t->goal, t->nbr_vars);
+	execute(t->q, t->goal, t->num_vars);
 	t->is_exception = t->q->did_unhandled_exception;
 
 	if (t->is_exception) {
 		//printf("*** exception, %u\n", t->chan);
-		t->ball = calloc(1, (sizeof(cell)*(t->q->ball->nbr_cells)));
-		dup_cells(t->ball, t->q->ball, t->q->ball->nbr_cells);
+		t->ball = calloc(1, (sizeof(cell)*(t->q->ball->num_cells)));
+		dup_cells(t->ball, t->q->ball, t->q->ball->num_cells);
 		//query *q = t->q;
 		//DUMP_TERM("*** ", t->ball, 0, 0);
 	}
 
 	if (t->at_exit) {
 		//printf("*** at exit, %u\n", t->chan);
-		execute(t->q, t->at_exit, t->at_exit_nbr_vars);
+		execute(t->q, t->at_exit, t->at_exit_num_vars);
 		t->at_exit = NULL;
 	}
 
@@ -609,17 +609,17 @@ static void *start_routine_thread_create(thread *t)
 	msg *m;
 
 	while ((m = list_pop_front(&t->queue)) != NULL) {
-		unshare_cells(m->c, m->c->nbr_cells);
+		unshare_cells(m->c, m->c->num_cells);
 		free(m);
 	}
 
 	while ((m = list_pop_front(&t->signals)) != NULL) {
-		unshare_cells(m->c, m->c->nbr_cells);
+		unshare_cells(m->c, m->c->num_cells);
 		free(m);
 	}
 
 	if (t->ball) {
-		unshare_cells(t->ball, t->ball->nbr_cells);
+		unshare_cells(t->ball, t->ball->num_cells);
 		free(t->ball);
 		t->ball = NULL;
 	}
@@ -742,30 +742,30 @@ static bool bif_thread_create_3(query *q)
 	check_heap_error(init_tmp_heap(q));
 	cell *goal = clone_term_to_tmp(q, p1, p1_ctx);
 	check_heap_error(goal);
-	t->nbr_vars = rebase_term(q, goal, 0);
+	t->num_vars = rebase_term(q, goal, 0);
 	t->q = query_create(q->st.curr_m);
 	check_heap_error(t->q);
 	t->q->thread_ptr = t;
 	t->q->my_chan = n;
-	cell *tmp2 = alloc_on_heap(t->q, 1+goal->nbr_cells+1);
+	cell *tmp2 = alloc_on_heap(t->q, 1+goal->num_cells+1);
 	check_heap_error(tmp2);
-	pl_idx nbr_cells = 0;
-	make_instr(tmp2+nbr_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, goal->nbr_cells+1);
-	nbr_cells += dup_cells(tmp2+nbr_cells, goal, goal->nbr_cells);
-	make_instr(tmp2+nbr_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
+	pl_idx num_cells = 0;
+	make_instr(tmp2+num_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, goal->num_cells+1);
+	num_cells += dup_cells(tmp2+num_cells, goal, goal->num_cells);
+	make_instr(tmp2+num_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 	t->goal = tmp2;
 
 	if (p4) {
 		check_heap_error(init_tmp_heap(q));
 		cell *goal = clone_term_to_tmp(q, p4, p4_ctx);
 		check_heap_error(goal);
-		t->at_exit_nbr_vars = rebase_term(q, goal, 0);
-		cell *tmp2 = alloc_on_heap(q, 1+goal->nbr_cells+1);
+		t->at_exit_num_vars = rebase_term(q, goal, 0);
+		cell *tmp2 = alloc_on_heap(q, 1+goal->num_cells+1);
 		check_heap_error(tmp2);
-		pl_idx nbr_cells = 0;
-		make_instr(tmp2+nbr_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, goal->nbr_cells+1);
-		nbr_cells += dup_cells(tmp2+nbr_cells, goal, goal->nbr_cells);
-		make_instr(tmp2+nbr_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
+		pl_idx num_cells = 0;
+		make_instr(tmp2+num_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, goal->num_cells+1);
+		num_cells += dup_cells(tmp2+num_cells, goal, goal->num_cells);
+		make_instr(tmp2+num_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 		THREAD_DEBUG DUMP_TERM("at_exit", tmp2, q->st.curr_frame, 0);
 		t->at_exit = clone_term_to_heap(t->q, tmp2, 0);	// Copy into thread
 		check_heap_error(t->at_exit);
@@ -799,12 +799,12 @@ void do_signal(query *q, void *thread_ptr)
 	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.fp, 0);
 	pl_idx c_ctx = 0;
 	cell *c = copy_term_to_heap(q, m->c, q->st.fp, false);	// Copy into thread
-	unshare_cells(c, c->nbr_cells);
+	unshare_cells(c, c->num_cells);
 	free(m);
 	cell *tmp = prepare_call(q, PREFIX_LEN, c, q->st.curr_frame, 1);
 	ensure(tmp);
-	pl_idx nbr_cells = PREFIX_LEN + c->nbr_cells;
-	make_call(q, tmp+nbr_cells);
+	pl_idx num_cells = PREFIX_LEN + c->num_cells;
+	make_call(q, tmp+num_cells);
 	q->st.curr_instr = tmp;
 }
 
@@ -865,17 +865,17 @@ static bool bif_thread_join_2(query *q)
 	msg *m;
 
 	while ((m = list_pop_front(&t->queue)) != NULL) {
-		unshare_cells(m->c, m->c->nbr_cells);
+		unshare_cells(m->c, m->c->num_cells);
 		free(m);
 	}
 
 	while ((m = list_pop_front(&t->signals)) != NULL) {
-		unshare_cells(m->c, m->c->nbr_cells);
+		unshare_cells(m->c, m->c->num_cells);
 		free(m);
 	}
 
 	if (t->ball) {
-		unshare_cells(t->ball, t->ball->nbr_cells);
+		unshare_cells(t->ball, t->ball->num_cells);
 		free(t->ball);
 		t->ball = NULL;
 	}
@@ -903,17 +903,17 @@ static void do_cancel(thread *t)
 	msg *m;
 
 	while ((m = list_pop_front(&t->queue)) != NULL) {
-		unshare_cells(m->c, m->c->nbr_cells);
+		unshare_cells(m->c, m->c->num_cells);
 		free(m);
 	}
 
 	while ((m = list_pop_front(&t->signals)) != NULL) {
-		unshare_cells(m->c, m->c->nbr_cells);
+		unshare_cells(m->c, m->c->num_cells);
 		free(m);
 	}
 
 	if (t->ball) {
-		unshare_cells(t->ball, t->ball->nbr_cells);
+		unshare_cells(t->ball, t->ball->num_cells);
 		free(t->ball);
 		t->ball = NULL;
 	}
@@ -1020,10 +1020,10 @@ static bool bif_thread_exit_1(query *q)
 	cell *tmp_p1 = clone_term_to_tmp(q, p1, p1_ctx);
 	check_heap_error(tmp_p1);
 	rebase_term(q, tmp_p1, 0);
-	cell *tmp = alloc_on_heap(q, 1+tmp_p1->nbr_cells);
+	cell *tmp = alloc_on_heap(q, 1+tmp_p1->num_cells);
 	check_heap_error(tmp);
-	make_instr(tmp, new_atom(q->pl, "exited"), NULL, 1, tmp_p1->nbr_cells);
-	dup_cells(tmp+1, tmp_p1, tmp_p1->nbr_cells);
+	make_instr(tmp, new_atom(q->pl, "exited"), NULL, 1, tmp_p1->num_cells);
+	dup_cells(tmp+1, tmp_p1, tmp_p1->num_cells);
 
 	pthread_t tid = pthread_self();
 
@@ -1082,10 +1082,10 @@ static bool do_thread_property_pin_both(query *q)
 		return unify(q, c, c_ctx, tmp, q->st.curr_frame);
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "status")) {
 		if (t->is_exception) {
-			cell *tmp = alloc_on_heap(q, 2+t->ball->nbr_cells);
-			make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1+t->ball->nbr_cells);
-			make_instr(tmp+1, new_atom(q->pl, "exception"), NULL, 1, t->ball->nbr_cells);
-			dup_cells(tmp+2, t->ball, t->ball->nbr_cells);
+			cell *tmp = alloc_on_heap(q, 2+t->ball->num_cells);
+			make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1+t->ball->num_cells);
+			make_instr(tmp+1, new_atom(q->pl, "exception"), NULL, 1, t->ball->num_cells);
+			dup_cells(tmp+2, t->ball, t->ball->num_cells);
 			return unify(q, c, c_ctx, tmp, q->st.curr_frame);
 		}
 
@@ -1189,10 +1189,10 @@ static bool do_thread_property_pin_id(query *q)
 		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 	} else {
 		if (t->is_exception) {
-			cell *tmp = alloc_on_heap(q, 2+t->ball->nbr_cells);
-			make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1+t->ball->nbr_cells);
-			make_instr(tmp+1, new_atom(q->pl, "exception"), NULL, 1, t->ball->nbr_cells);
-			dup_cells(tmp+2, t->ball, t->ball->nbr_cells);
+			cell *tmp = alloc_on_heap(q, 2+t->ball->num_cells);
+			make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1+t->ball->num_cells);
+			make_instr(tmp+1, new_atom(q->pl, "exception"), NULL, 1, t->ball->num_cells);
+			dup_cells(tmp+2, t->ball, t->ball->num_cells);
 			return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 		}
 
@@ -1391,7 +1391,7 @@ static bool bif_message_queue_destroy_1(query *q)
 	msg *m;
 
 	while ((m = list_pop_front(&t->queue)) != NULL) {
-		unshare_cells(m->c, m->c->nbr_cells);
+		unshare_cells(m->c, m->c->num_cells);
 		free(m);
 	}
 
@@ -1733,7 +1733,7 @@ static bool bif_mutex_trylock_1(query *q)
 
 	thread *me = get_self(q->pl);
 	t->locked_by = me->chan;
-	t->nbr_locks++;
+	t->num_locks++;
 	return true;
 }
 
@@ -1747,7 +1747,7 @@ static bool bif_mutex_lock_1(query *q)
 	thread *me = get_self(q->pl);
 	acquire_lock(&t->guard);
 	t->locked_by = me->chan;
-	t->nbr_locks++;
+	t->num_locks++;
 	return true;
 }
 
@@ -1763,7 +1763,7 @@ static bool bif_mutex_unlock_1(query *q)
 	if (t->locked_by != me->chan)
 		return throw_error(q, p1, p1_ctx, "permission_error", "mutex_unlock,not_locked_by_me");
 
-	if (--t->nbr_locks == 0)
+	if (--t->num_locks == 0)
 		t->locked_by = -1;
 
 	release_lock(&t->guard);
@@ -1809,7 +1809,7 @@ static bool do_mutex_property_pin_both(query *q)
 		sl_done(iter);
 		return true;
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "status")) {
-		if (t->nbr_locks == 0) {
+		if (t->num_locks == 0) {
 			cell *tmp = alloc_on_heap(q, 2);
 			make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
 			make_atom(tmp+1, new_atom(q->pl, "unlocked"));
@@ -1821,7 +1821,7 @@ static bool do_mutex_property_pin_both(query *q)
 		make_instr(tmp+1, new_atom(q->pl, "locked"), NULL, 2, 2);
 		make_int(tmp+2, t->locked_by);
 		tmp[2].flags |= FLAG_INT_THREAD;
-		make_int(tmp+3, t->nbr_locks);
+		make_int(tmp+3, t->num_locks);
 		return unify(q, c, c_ctx, tmp, q->st.curr_frame);
 	} else
 		return throw_error(q, p2, p2_ctx, "domain_error", "mutex_property");
@@ -1909,13 +1909,13 @@ static bool do_mutex_property_pin_id(query *q)
 
 	cell *tmp;
 
-	if (t->nbr_locks != 0) {
+	if (t->num_locks != 0) {
 		tmp = alloc_on_heap(q, 4);
 		make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 3);
 		make_instr(tmp+1, new_atom(q->pl, "locked"), NULL, 2, 2);
 		make_int(tmp+2, t->locked_by);
 		tmp[2].flags |= FLAG_INT_THREAD;
-		make_int(tmp+3, t->nbr_locks);
+		make_int(tmp+3, t->num_locks);
 	} else {
 		tmp = alloc_on_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
@@ -2055,7 +2055,7 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_idx p1_ct
 		break;
 	}
 
-	//printf("*** recv msg nbr_cells=%u\n", t->queue_head->nbr_cells);
+	//printf("*** recv msg num_cells=%u\n", t->queue_head->num_cells);
 
 	msg *m;
 
@@ -2074,7 +2074,7 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_idx p1_ct
 	q->curr_chan = m->from_chan;
 
 	if (!is_peek) {
-		unshare_cells(m->c, m->c->nbr_cells);
+		unshare_cells(m->c, m->c->num_cells);
 		free(m);
 	}
 

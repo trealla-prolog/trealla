@@ -219,13 +219,13 @@ inline static cell *get_first_raw_arg0(query *q, cell *p0)
 
 inline static cell *get_next_arg(query *q)
 {
-	q->last_arg += q->last_arg->nbr_cells;
+	q->last_arg += q->last_arg->num_cells;
 	return deref(q, q->last_arg, q->st.curr_frame);
 }
 
 inline static cell *get_next_raw_arg(query *q)
 {
-	q->last_arg += q->last_arg->nbr_cells;
+	q->last_arg += q->last_arg->num_cells;
 	q->latest_ctx = q->st.curr_frame;
 	return q->last_arg;
 }
@@ -235,7 +235,7 @@ inline static cell *get_raw_arg(query *q, int n)
 	cell *c = q->st.curr_instr + 1;
 
 	for (int i = 1; i < n; i++)
-		c += c->nbr_cells;
+		c += c->num_cells;
 
 	q->latest_ctx = q->st.curr_frame;
 	return c;

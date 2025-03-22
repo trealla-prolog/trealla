@@ -85,7 +85,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define GET_NEW_FRAME() GET_FRAME(q->st.fp)
 
 #define FIRST_ARG(c) ((c)+1)
-#define NEXT_ARG(c) ((c)+(c)->nbr_cells)
+#define NEXT_ARG(c) ((c)+(c)->num_cells)
 
 #define GET_SLOT(f,i) ((i) < (f)->initial_slots ? 			\
 	(q->slots+(f)->base+(i)) : 								\
@@ -151,7 +151,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_lt(c,n) (get_smallint(c) < (n))
 
 #define get_list_head(c) ((c) + 1)
-#define get_list_tail(c) (get_list_head(c) + get_list_head(c)->nbr_cells)
+#define get_list_tail(c) (get_list_head(c) + get_list_head(c)->num_cells)
 
 #define get_float(c) (c)->val_float
 #define set_float(c,v) (c)->val_float = (v)
@@ -347,7 +347,7 @@ typedef struct builtins_ builtins;
 
 // Using a fixed-size cell allows having arrays of cells, which is
 // basically what a Term is. A compound is a variable length array of
-// cells, the length specified by 'nbr_cells' field in the 1st cell.
+// cells, the length specified by 'num_cells' field in the 1st cell.
 // A cell is a tagged union.
 // The size should be 24 bytes... (1 + 2) * 8
 
@@ -360,7 +360,7 @@ struct cell_ {
 	uint16_t flags;
 
 	union {
-		uint32_t nbr_cells;			// number of cells
+		uint32_t num_cells;			// number of cells
 		uint32_t mid;				// used with TAG_EMPTY so not counted
 	};
 
@@ -429,8 +429,8 @@ typedef struct {
 
 struct clause_ {
 	uint64_t dbgen_created, dbgen_retracted;
-	pl_idx cidx, nbr_allocated_cells;
-	unsigned nbr_vars;
+	pl_idx cidx, num_allocated_cells;
+	unsigned num_vars;
 	bool has_local_vars:1;
 	bool is_first_cut:1;
 	bool is_cut_only:1;
@@ -438,7 +438,7 @@ struct clause_ {
 	bool is_fact:1;
 	bool is_deleted:1;
 	cell *alt;							// alternate representation
-	cell cells[];						// 'nbr_allocated_cells'
+	cell cells[];						// 'num_allocated_cells'
 };
 
 struct rule_ {
@@ -448,7 +448,7 @@ struct rule_ {
 	const char *filename;
 	uuid u;
 	uint64_t db_id, matched, attempted, tcos;
-	unsigned line_nbr_start, line_nbr_end;
+	unsigned line_num_start, line_num_end;
 	clause cl;
 };
 
@@ -632,7 +632,7 @@ struct thread_ {
 	skiplist *alias;
 	cell *goal, *exit_code, *at_exit, *ball;
 	list signals, queue;
-	unsigned nbr_vars, at_exit_nbr_vars, nbr_locks;
+	unsigned num_vars, at_exit_num_vars, num_locks;
 	int chan, locked_by;
 	bool is_init, is_finished, is_detached, is_exception;
 	bool is_queue_only, is_mutex_only;
@@ -782,8 +782,8 @@ struct parser_ {
 	prolog_flags flags;
 	char *save_line, *srcptr, *error_desc;
 	size_t token_size, n_line, pos_start;
-	unsigned line_nbr, line_nbr_start;
-	unsigned depth, read_term_slots, nbr_vars;
+	unsigned line_nbr, line_num_start;
+	unsigned depth, read_term_slots, num_vars;
 	unsigned nesting_parens, nesting_braces, nesting_brackets;
 	int quote_char, entered;
 	int8_t dq_consing;
@@ -974,21 +974,21 @@ inline static void unshare_cell_(cell *c)
 	}
 }
 
-inline static pl_idx move_cells(cell *dst, const cell *src, pl_idx nbr_cells)
+inline static pl_idx move_cells(cell *dst, const cell *src, pl_idx num_cells)
 {
-	memmove(dst, src, sizeof(cell)*(nbr_cells));
-	return nbr_cells;
+	memmove(dst, src, sizeof(cell)*(num_cells));
+	return num_cells;
 }
 
-inline static pl_idx copy_cells(cell *dst, const cell *src, pl_idx nbr_cells)
+inline static pl_idx copy_cells(cell *dst, const cell *src, pl_idx num_cells)
 {
-	memcpy(dst, src, sizeof(cell)*(nbr_cells));
-	return nbr_cells;
+	memcpy(dst, src, sizeof(cell)*(num_cells));
+	return num_cells;
 }
 
-inline static pl_idx copy_cells_by_ref(cell *dst, const cell *src, pl_idx src_ctx, pl_idx nbr_cells)
+inline static pl_idx copy_cells_by_ref(cell *dst, const cell *src, pl_idx src_ctx, pl_idx num_cells)
 {
-	for (pl_idx i = 0; i < nbr_cells; i++, src++, dst++) {
+	for (pl_idx i = 0; i < num_cells; i++, src++, dst++) {
 		*dst = *src;
 
 		if (is_var(dst) && !is_ref(dst)) {
@@ -997,22 +997,22 @@ inline static pl_idx copy_cells_by_ref(cell *dst, const cell *src, pl_idx src_ct
 		}
 	}
 
-	return nbr_cells;
+	return num_cells;
 }
 
-inline static pl_idx dup_cells(cell *dst, const cell *src, pl_idx nbr_cells)
+inline static pl_idx dup_cells(cell *dst, const cell *src, pl_idx num_cells)
 {
-	for (pl_idx i = 0; i < nbr_cells; i++, src++, dst++) {
+	for (pl_idx i = 0; i < num_cells; i++, src++, dst++) {
 		*dst = *src;
 		share_cell(src);
 	}
 
-	return nbr_cells;
+	return num_cells;
 }
 
-inline static pl_idx dup_cells_by_ref(cell *dst, const cell *src, pl_idx src_ctx, pl_idx nbr_cells)
+inline static pl_idx dup_cells_by_ref(cell *dst, const cell *src, pl_idx src_ctx, pl_idx num_cells)
 {
-	for (pl_idx i = 0; i < nbr_cells; i++, src++, dst++) {
+	for (pl_idx i = 0; i < num_cells; i++, src++, dst++) {
 		*dst = *src;
 		share_cell(src);
 
@@ -1022,7 +1022,7 @@ inline static pl_idx dup_cells_by_ref(cell *dst, const cell *src, pl_idx src_ctx
 		}
 	}
 
-	return nbr_cells;
+	return num_cells;
 }
 
 #define LIST_HANDLER(l) cell l##_h_tmp, l##_t_tmp
@@ -1055,7 +1055,7 @@ inline static void init_cell(cell *c)
 {
 	c->tag = TAG_EMPTY;
 	c->flags = 0;
-	c->nbr_cells = 0;
+	c->num_cells = 0;
 	c->arity = 0;
 	c->attrs = NULL;
 }

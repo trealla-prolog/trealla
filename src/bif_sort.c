@@ -23,8 +23,8 @@ static int nodecmp(const void *ptr1, const void *ptr2)
 		p2 = p2 + 1;
 
 		while (--arg > 0) {
-			p1 += p1->nbr_cells;
-			p2 += p2->nbr_cells;
+			p1 += p1->num_cells;
+			p2 += p2->num_cells;
 		}
 
 		p1 = deref(q, p1, p1_ctx);

@@ -66,15 +66,15 @@ static bool do_put_atts(query *q, cell *attr, pl_idx attr_ctx, bool is_minus)
 		check_heap_error(tmp);
 		make_atom(tmp, g_dot_s);
 		tmp->arity = 2;
-		tmp->nbr_cells += 1;
+		tmp->num_cells += 1;
 		make_atom(tmp+1, new_atom(q->pl, m_name));
 		tmp[1].arity = 1;
 		cell *tmp2 = clone_term_to_tmp(q, attr, attr_ctx);
 		check_heap_error(tmp2);
 		cell *tmp3 = get_tmp_heap(q, 1);
-		tmp3->nbr_cells += tmp2->nbr_cells;
+		tmp3->num_cells += tmp2->num_cells;
 		tmp = get_tmp_heap(q, 0);
-		tmp->nbr_cells += tmp2->nbr_cells;
+		tmp->num_cells += tmp2->num_cells;
 	}
 
 	// If existing attributes drop old value...
@@ -233,7 +233,7 @@ static bool check_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c, pl_idx c_ctx
 {
 	bool any = false;
 
-	for (unsigned nbr_cells = c->nbr_cells; nbr_cells--; c++) {
+	for (unsigned num_cells = c->num_cells; num_cells--; c++) {
 		if (!is_var(c))
 			continue;
 
@@ -278,7 +278,7 @@ bool any_attributed(query *q)
 			if (!is_op(h))
 				any = true;
 
-			v = v + 1; v += v->nbr_cells;
+			v = v + 1; v += v->num_cells;
 		}
 
 		if (!any)
@@ -396,7 +396,7 @@ typedef struct {
 
 static void set_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c, pl_idx c_ctx)
 {
-	for (unsigned nbr_cells = c->nbr_cells; nbr_cells--; c++) {
+	for (unsigned num_cells = c->num_cells; num_cells--; c++) {
 		if (!is_var(c))
 			continue;
 

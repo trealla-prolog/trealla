@@ -34,7 +34,7 @@ bool query_redo(query *q);
 bool has_next_key(query *q);
 bool check_slot(query *q, unsigned cnt);
 void cut(query *q);
-bool execute(query *q, cell *cells, unsigned nbr_vars);
+bool execute(query *q, cell *cells, unsigned num_vars);
 void undo_me(query *q);
 int retry_choice(query *q);
 void assign_vars(parser *p, unsigned start, bool rebase);
@@ -193,7 +193,7 @@ inline static cell *get_body(cell *c)
 {
 	if (is_a_rule(c)) {
 		cell *h = c + 1;
-		cell *b = h + h->nbr_cells;
+		cell *b = h + h->num_cells;
 
 		if (is_end(b))
 			return NULL;

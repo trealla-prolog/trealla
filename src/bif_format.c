@@ -91,7 +91,7 @@ static int get_next_char(query *q, list_reader_t *fmt)
 	} else
 		return -1;
 
-	fmt->p = fmt->p + fmt->p->nbr_cells;
+	fmt->p = fmt->p + fmt->p->num_cells;
 	fmt->p = deref(q, fmt->p, fmt->p_ctx);
 	fmt->p_ctx = q->latest_ctx;
 	return ch;
@@ -112,7 +112,7 @@ static cell *get_next_cell(query *q, list_reader_t *fmt, bool *is_var, pl_idx *c
 	}
 
 	cell *head = fmt->p + 1;
-	cell *tail = head + head->nbr_cells;
+	cell *tail = head + head->num_cells;
 
 	head = deref(q, head, fmt->p_ctx);
 	*ctx = q->latest_ctx;
@@ -554,24 +554,24 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 
 		case 'p': {
 			cell *tmp;
-			pl_idx nbr_cells;
+			pl_idx num_cells;
 
 			if (str) {
-				cell p1[1+1+c->nbr_cells];
-				make_instr(p1+0, new_atom(q->pl, "$portray"), NULL, 2, 1+c->nbr_cells);
+				cell p1[1+1+c->num_cells];
+				make_instr(p1+0, new_atom(q->pl, "$portray"), NULL, 2, 1+c->num_cells);
 				p1[1] = *str;
-				dup_cells_by_ref(p1+2, c, c_ctx, c->nbr_cells);
+				dup_cells_by_ref(p1+2, c, c_ctx, c->num_cells);
 				tmp = prepare_call(q, NOPREFIX_LEN, p1, q->st.curr_frame, 1);
-				nbr_cells = p1->nbr_cells;
+				num_cells = p1->num_cells;
 			} else {
-				cell p1[1+c->nbr_cells];
-				make_instr(p1+0, new_atom(q->pl, "$portray"), NULL, 1, c->nbr_cells);
-				dup_cells_by_ref(p1+1, c, c_ctx, c->nbr_cells);
+				cell p1[1+c->num_cells];
+				make_instr(p1+0, new_atom(q->pl, "$portray"), NULL, 1, c->num_cells);
+				dup_cells_by_ref(p1+1, c, c_ctx, c->num_cells);
 				tmp = prepare_call(q, NOPREFIX_LEN, p1, q->st.curr_frame, 1);
-				nbr_cells = p1->nbr_cells;
+				num_cells = p1->num_cells;
 			}
 
-			make_end(tmp+nbr_cells);
+			make_end(tmp+num_cells);
 			query *q2 = query_create_subquery(q, tmp);
 			start(q2);
 			query_destroy(q2);

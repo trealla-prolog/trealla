@@ -60,7 +60,7 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 			collect_vars_internal(q, h, h_ctx, depth+1);
 
 		if (e) e->vgen = save_vgen;
-		l = l + 1; l += l->nbr_cells;
+		l = l + 1; l += l->num_cells;
 		e = NULL;
 		both = 0;
 
@@ -75,7 +75,7 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 		l_ctx = p1_ctx;
 
 		while (is_iso_list(l)) {
-			l = l + 1; l += l->nbr_cells;
+			l = l + 1; l += l->num_cells;
 			cell *c = l;
 			pl_idx c_ctx = l_ctx;
 			RESTORE_VAR(c, c_ctx, l, l_ctx, q->vgen);
@@ -127,7 +127,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 			collect_vars_internal(q, c, c_ctx, depth+1);
 
 		if (e) e->vgen = save_vgen;
-		p1 += p1->nbr_cells;
+		p1 += p1->num_cells;
 	}
 }
 
@@ -179,7 +179,7 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 				return true;
 		}
 
-		l = l + 1; l += l->nbr_cells;
+		l = l + 1; l += l->num_cells;
 
 		if (is_var(l)) {
 			if (is_ref(l))
@@ -201,7 +201,7 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 	l_ctx = p1_ctx;
 
 	while (is_iso_list(l)) {
-		l = l + 1; l += l->nbr_cells;
+		l = l + 1; l += l->num_cells;
 		cell *c = l;
 		pl_idx c_ctx = l_ctx;
 		RESTORE_VAR(c, c_ctx, l, l_ctx, q->vgen);
@@ -260,7 +260,7 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 				return true;
 		}
 
-		p1 += p1->nbr_cells;
+		p1 += p1->num_cells;
 	}
 
 	return false;
@@ -296,7 +296,7 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 			return true;
 
 		if (e) e->vgen = save_vgen;
-		l = l + 1; l += l->nbr_cells;
+		l = l + 1; l += l->num_cells;
 		e = NULL;
 		both = 0;
 
@@ -311,7 +311,7 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 		l_ctx = p1_ctx;
 
 		while (is_iso_list(l)) {
-			l = l + 1; l += l->nbr_cells;
+			l = l + 1; l += l->num_cells;
 			cell *c = l;
 			pl_idx c_ctx = l_ctx;
 			RESTORE_VAR(c, c_ctx, l, l_ctx, q->vgen);
@@ -357,7 +357,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned 
 			return true;
 
 		if (e) e->vgen = save_vgen;
-		p1 += p1->nbr_cells;
+		p1 += p1->num_cells;
 	}
 
 	return false;
@@ -382,7 +382,7 @@ inline static cell *term_next(query *q, cell *c, pl_idx *c_ctx, bool *done)
 	}
 
 	c += 1;
-	c += c->nbr_cells;
+	c += c->num_cells;
 	c = deref(q, c, *c_ctx);
 	*c_ctx = q->latest_ctx;
 	return c;

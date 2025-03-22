@@ -348,7 +348,7 @@ void dump_vars(query *q, bool partial)
 	for (unsigned i = 0; i < MAX_IGNORES; i++)
 		q->ignores[i] = false;
 
-	for (unsigned i = 0; i < p->nbr_vars; i++) {
+	for (unsigned i = 0; i < p->num_vars; i++) {
 		int j;
 
 		if ((p->vartab.name[i][0] == '_')
@@ -361,7 +361,7 @@ void dump_vars(query *q, bool partial)
 
 	init_tmp_heap(q);
 
-	for (unsigned i = 0; i < p->nbr_vars; i++) {
+	for (unsigned i = 0; i < p->num_vars; i++) {
 		cell tmp[3];
 		make_instr(tmp, g_eq_s, NULL, 2, 2);
 		make_atom(tmp+1, new_atom(q->pl, p->vartab.name[i]));
@@ -376,7 +376,7 @@ void dump_vars(query *q, bool partial)
 	bool want_space = false;
 	q->print_idx = 0;
 
-	for (unsigned i = 0; i < p->nbr_vars; i++) {
+	for (unsigned i = 0; i < p->num_vars; i++) {
 		if (!strcmp(p->vartab.name[i], "__G_"))
 			continue;
 
@@ -499,8 +499,8 @@ void dump_vars(query *q, bool partial)
 		make_instr(p1+0, new_atom(q->pl, "dump_attvars"), NULL, 1, 1);
 		make_atom(p1+1, any ? g_true_s : g_false_s);
 		cell *tmp = prepare_call(q, NOPREFIX_LEN, p1, q->st.curr_frame, 1);
-		pl_idx nbr_cells = p1->nbr_cells;
-		make_end(tmp+nbr_cells);
+		pl_idx num_cells = p1->num_cells;
+		make_end(tmp+num_cells);
 		q->st.curr_instr = tmp;
 		q->in_attvar_print = true;
 		bool save_trace = q->trace;

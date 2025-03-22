@@ -16,8 +16,8 @@ char *eat_space(parser *p);
 bool virtual_term(parser *p, const char *src);
 bool get_token(parser *p, bool last_op, bool was_postfix);
 void read_integer(parser *p, mp_int v2, int base, const char **srcptr);
-void share_cells(cell *src, pl_idx nbr_cells);
-void unshare_cells(cell *src, pl_idx nbr_cells);
+void share_cells(cell *src, pl_idx num_cells);
+void unshare_cells(cell *src, pl_idx num_cells);
 
 void compile_clause(predicate *pr, clause *cl, cell *body);
 
@@ -66,7 +66,7 @@ void make_struct_(cell *tmp, pl_idx offset, unsigned arity, pl_idx extra_cells);
 inline static void make_ref(cell *tmp, unsigned var_nbr, pl_idx ctx)
 {
 	tmp->tag = TAG_VAR;
-	tmp->nbr_cells = 1;
+	tmp->num_cells = 1;
 	tmp->arity = 0;
 	tmp->flags = FLAG_VAR_REF;
 	tmp->var_nbr = var_nbr;
@@ -77,7 +77,7 @@ inline static void make_ref(cell *tmp, unsigned var_nbr, pl_idx ctx)
 inline static void make_indirect(cell *tmp, cell *v, pl_idx v_ctx)
 {
 	tmp->tag = TAG_INDIRECT;
-	tmp->nbr_cells = 1;
+	tmp->num_cells = 1;
 	tmp->arity = 0;
 	tmp->flags = 0;
 	tmp->val_ptr = v;
