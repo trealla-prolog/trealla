@@ -383,8 +383,6 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 	thread *t = &q->pl->threads[chan];
 
 	while (!q->halt) {
-		//printf("*** recv msg num_cells=%u\n", t->queue_head->c->num_cells);
-
 		acquire_lock(&t->guard);
 
 		if (!list_count(&t->queue)) {
@@ -2037,28 +2035,24 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_idx p1_ct
 	thread *t = &q->pl->threads[q->pl->my_chan];
 
 	while (!q->halt) {
-		uint64_t cnt = 0;
-
-		while (!list_count(&t->queue) && !q->pl->halt) {
-			suspend_thread(t, cnt < 1000 ? 0 : cnt < 10000 ? 1 : cnt < 100000 ? 10 : 10);
-			cnt++;
-		}
-
 		acquire_lock(&t->guard);
 
-		if (!list_count(&t->queue)) {
-			release_lock(&t->guard);
+		if (list_count(&t->queue))
+			break;
 
-			if (is_peek)
-				return false;
+		release_lock(&t->guard);
 
-			continue;
+		if (is_peek)
+			return false;
+
+		uint64_t cnt = 0;
+
+		do {
+			suspend_thread(t, cnt < 100 ? 0 : cnt < 1000 ? 1 : cnt < 10000 ? 10 : 10);
+			cnt++;
 		}
-
-		break;
+		 while (!list_count(&t->queue) && !q->halt);
 	}
-
-	//printf("*** recv msg num_cells=%u\n", t->queue_head->num_cells);
 
 	msg *m;
 
