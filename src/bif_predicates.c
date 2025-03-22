@@ -1975,6 +1975,8 @@ static bool bif_iso_functor_3(query *q)
 
 		int var_nbr = create_vars(q, arity);
 		check_heap_error(var_nbr != -1);
+		GET_FIRST_ARG(p1,any);
+		GET_NEXT_ARG(p2,any);
 		cell *tmp = alloc_on_heap(q, 1+arity);
 		check_heap_error(tmp);
 		*tmp = (cell){0};
@@ -2130,6 +2132,7 @@ static bool bif_iso_current_predicate_1(query *q)
 		make_ref(&tmp2, var_nbr++, q->st.curr_frame);
 		if (create_vars(q, 2) < 0)
 			return throw_error(q, p1, p1_ctx, "resource_error", "stack");
+		GET_FIRST_ARG(p_pi,any);
 		bool ok = search_functor(q, p1, p1_ctx, p2, p2_ctx) ? true : false;
 		cell *tmp = alloc_on_heap(q, 3);
 		make_instr(tmp, g_slash_s, NULL, 2, 2);
