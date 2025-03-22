@@ -377,8 +377,9 @@ static thread *get_self(prolog *pl)
 	return &pl->threads[0];
 }
 
-static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bool is_peek)
+static bool do_match_message(query *q, unsigned chan, bool is_peek)
 {
+	GET_FIRST_ARG(pq,queue);
 	thread *t = &q->pl->threads[chan];
 
 	while (!q->halt) {
@@ -411,8 +412,10 @@ static bool do_match_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, b
 			try_me(q, MAX_ARITY);
 			cell *tmp = copy_term_to_heap(q, m->c, q->st.fp, false);	// Copy into thread
 			check_heap_error(tmp, release_lock(&t->guard));
+			GET_FIRST_ARG(p1,queue);
+			GET_NEXT_ARG(p2,any);
 
-			if (unify(q, p1, p1_ctx, tmp, q->st.curr_frame)) {
+			if (unify(q, p2, p2_ctx, tmp, q->st.curr_frame)) {
 				q->curr_chan = m->from_chan;
 
 				if (!is_peek)
@@ -446,10 +449,9 @@ static bool bif_thread_get_message_2(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
 	GET_FIRST_ARG(p1,queue);
-	GET_NEXT_ARG(p2,any);
 	int n = get_thread(q, p1);
 	if (n < 0) return true;
-	bool ok = do_match_message(q, n, p2, p2_ctx, false);
+	bool ok = do_match_message(q, n, false);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
 	return ok;
 }
@@ -458,10 +460,9 @@ static bool bif_thread_peek_message_2(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
 	GET_FIRST_ARG(p1,queue);
-	GET_NEXT_ARG(p2,any);
 	int n = get_thread(q, p1);
 	if (n < 0) return true;
-	bool ok = do_match_message(q, n, p2, p2_ctx, true);
+	bool ok = do_match_message(q, n, true);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.curr_instr, q->st.curr_frame, 1);
 	return ok;
 }
@@ -834,7 +835,6 @@ static bool bif_thread_join_2(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.curr_instr, q->st.curr_frame, 1);
 	GET_FIRST_ARG(p1,thread);
-	GET_NEXT_ARG(p2,any);
 	int n = get_thread(q, p1);
 	if (n < 0) return true;
 	thread *t = &q->pl->threads[n];
@@ -850,8 +850,12 @@ static bool bif_thread_join_2(query *q)
 	if (t->exit_code) {
 		cell *tmp = copy_term_to_heap(q, t->exit_code, q->st.fp, false);
 		t->exit_code = NULL;
+		GET_FIRST_ARG(p1,thread);
+		GET_NEXT_ARG(p2,any);
 		unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 	} else {
+		GET_FIRST_ARG(p1,thread);
+		GET_NEXT_ARG(p2,any);
 		cell tmp;
 		make_instr(&tmp, g_true_s, bif_iso_true_0, 0, 0);
 		unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
