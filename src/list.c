@@ -1,5 +1,36 @@
 #include "list.h"
 
+void list_init(list *l)
+{
+	l->front = l->back = 0;
+	l->cnt = 0;
+}
+
+unsigned list_count(list *l)
+{
+	return l->cnt;
+}
+
+void *list_front(list *l)
+{
+	return l->front;
+}
+
+void *list_back(list *l)
+{
+	return l->back;
+}
+
+void *list_prev(void *n)
+{
+	return ((lnode*)n)->prev;
+}
+
+void *list_next(void *n)
+{
+	return ((lnode*)n)->next;
+}
+
 void list_push_front(list *l, void *entry_)
 {
 	lnode *entry = entry_;
