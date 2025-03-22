@@ -477,7 +477,6 @@ struct predicate_ {
 	bool is_processed:1;
 	bool is_var_in_first_arg:1;
 	bool is_iso:1;
-	bool is_tco:1;
 	bool is_dirty:1;
 };
 

@@ -642,13 +642,6 @@ static void commit_frame(query *q)
 	bool last_match = is_det || cl->is_first_cut || !next_key;
 	bool tco = false;
 
-	// Use with the help directive [tco(true)]
-
-#if 0
-	if (q->st.curr_rule->owner->is_tco)
-		q->unify_no_tco = false;
-#endif
-
 	if (!q->unify_no_tco
 		&& last_match
 		&& (q->st.fp == (q->st.curr_frame + 1))	// At top of frame stack
