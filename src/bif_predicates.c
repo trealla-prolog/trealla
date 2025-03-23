@@ -4660,7 +4660,7 @@ static bool bif_octal_chars_2(query *q)
 	return ok;
 }
 
-static bool bif_atom_1(query *q)
+static bool bif_string_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	return is_string(p1);
@@ -6642,7 +6642,7 @@ builtins g_other_bifs[] =
 	{"term_singletons", 2, bif_term_singletons_2, "+term,-list", false, false, BLAH},
 	{"get_unbuffered_code", 1, bif_get_unbuffered_code_1, "?integer", false, false, BLAH},
 	{"get_unbuffered_char", 1, bif_get_unbuffered_char_1, "?character", false, false, BLAH},
-	{"string", 1, bif_atom_1, "+term,+term", false, false, BLAH},
+	{"string", 1, bif_string_1, "+term", false, false, BLAH},
 	{"atomic_concat", 3, bif_atomic_concat_3, "+atomic,+atomic,?atomic", false, false, BLAH},
 	{"atomic_list_concat", 3, bif_atomic_list_concat_3, "+list,+list,-atomic", false, false, BLAH},
 	{"replace", 4, bif_replace_4, "+string,+integer,+integer,-string", false, false, BLAH},
