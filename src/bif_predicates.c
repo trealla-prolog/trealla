@@ -6621,8 +6621,6 @@ builtins g_other_bifs[] =
 	{"current_module", 1, bif_current_module_1, "-atom", false, false, BLAH},
 	{"prolog_load_context", 2, bif_prolog_load_context_2, "+atom,?term", false, false, BLAH},
 	{"strip_module", 3, bif_strip_module_3, "+callable,?atom,?callable", false, false, BLAH},
-	{"$module", 1, bif_sys_module_1, "?atom", false, false, BLAH},
-	{"$modules", 1, bif_sys_modules_1, "-list", false, false, BLAH},
 	{"using", 0, bif_using_0, NULL, false, false, BLAH},
 	{"use_module", 1, bif_use_module_1, "+term", false, false, BLAH},
 	{"use_module", 2, bif_use_module_2, "+term,+list", false, false, BLAH},
@@ -6697,6 +6695,8 @@ builtins g_other_bifs[] =
 	{"crypto_data_hash", 3, bif_crypto_data_hash_3, "?string,?string,?list", false, false, BLAH},
 #endif
 
+	{"$module", 1, bif_sys_module_1, "?atom", false, false, BLAH},
+	{"$modules", 1, bif_sys_modules_1, "-list", false, false, BLAH},
 	{"$countall", 2, bif_sys_countall_2, "@callable,-integer", false, false, BLAH},
 	{"$counter", 1, bif_sys_counter_1, NULL, false, false, BLAH},
 	{"$legacy_current_prolog_flag", 2, bif_sys_current_prolog_flag_2, "+atom,?term", true, false, BLAH},

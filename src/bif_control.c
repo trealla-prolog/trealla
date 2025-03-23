@@ -1055,6 +1055,7 @@ builtins g_control_bifs[] =
 	{"call", 8, bif_iso_call_n, ":callable,?term,?term,?term,?term,?term,?term,?term", true, false, BLAH},
 	{"throw", 1, bif_iso_throw_1, "+term", true, false, BLAH},
 	{"once", 1, bif_iso_once_1, ":callable", true, false, BLAH},
+	{"$catch", 3, bif_iso_catch_3, ":callable,?term,:callable", true, false, BLAH},
 
 	{"*->", 2, bif_soft_if_then_2, ":callable,:callable", false, false, BLAH},
 	{"if", 3, bif_if_3, ":callable,:callable,:callable", false, false, BLAH},
@@ -1063,7 +1064,6 @@ builtins g_control_bifs[] =
 	{"shift", 1, bif_shift_1, "+term", false, false, BLAH},
 
 	{"$cut", 1, bif_sys_cut_1, "+integer", false, false, BLAH},
-	{"$catch", 3, bif_iso_catch_3, ":callable,?term,:callable", true, false, BLAH},
 	{"$block_catcher", 1, bif_sys_block_catcher_1, NULL, false, false, BLAH},
 	{"$set_if_var", 2, bif_sys_set_if_var_2, "?term,+term", false, false, BLAH},
 	{"$cleanup_if_det", 1, bif_sys_cleanup_if_det_1, NULL, false, false, BLAH},
