@@ -1917,8 +1917,8 @@ static bool bif_sys_duplicate_term_3(query *q)
 	if (is_atomic(p1) && is_var(p2))
 		return unify(q, p1, p1_ctx, p2, p2_ctx);
 
-	if (!is_var(p2) && !has_vars(q, p1, p1_ctx))
-		return unify(q, p1, p1_ctx, p2, p2_ctx);
+	//if (!is_var(p2) && !has_vars(q, p1, p1_ctx))
+	//	return unify(q, p1, p1_ctx, p2, p2_ctx);
 
 	// You are not expected to understand this: basically we have
 	// to make sure the p1 variables get copied along with the
