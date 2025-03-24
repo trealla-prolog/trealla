@@ -413,7 +413,7 @@ struct cell_ {
 		};
 
 		struct {
-			cell *val_attrs;				// used with TAG_EMPTY in slot
+			cell *val_attrs;			// used with TAG_EMPTY in slot
 		};
 
 		struct {
