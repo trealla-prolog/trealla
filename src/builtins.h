@@ -120,8 +120,18 @@ inline static cell *take_queuen(query *q)
 	return save;
 }
 
-inline static cell *deref_var_(query *q, cell *c, pl_idx c_ctx)
+inline static cell *deref(query *q, cell *c, pl_idx c_ctx)
 {
+	if (is_indirect(c)) {
+		q->latest_ctx = c->var_ctx;
+		return c->val_ptr;
+	}
+
+	if (!is_var(c)) {
+		q->latest_ctx = c_ctx;
+		return c;
+	}
+
 	if (is_ref(c))
 		c_ctx = c->var_ctx;
 
@@ -151,11 +161,6 @@ inline static cell *deref_var_(query *q, cell *c, pl_idx c_ctx)
 
 	return &e->c;
 }
-
-#define deref(q,c,c_ctx) \
-	is_var(c) ? deref_var_(q, c, c_ctx) : \
-	is_indirect(c) ? (q->latest_ctx = (c)->var_ctx, (c)->val_ptr) : \
-	(q->latest_ctx = (c_ctx), (c))
 
 #define GET_RAW_ARG(n,p) \
 	cell *p = get_raw_arg(q,n); \
