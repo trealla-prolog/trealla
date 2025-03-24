@@ -20,7 +20,7 @@ cell *clone_term_to_heap(query *q, cell *p1, pl_idx p1_ctx);
 cell *copy_term_to_heap(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs);
 void trim_heap(query *q);
 
-cell *alloc_on_queuen(query *q, unsigned qnbr, const cell *c);
+cell *alloc_on_queuen(query *q, unsigned qnum, const cell *c);
 
 void fix_list(cell *c);
 unsigned rebase_term(query *q, cell *c, unsigned start_nbr);

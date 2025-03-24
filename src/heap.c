@@ -10,14 +10,14 @@ struct heap_save {
 	pl_idx size, hp;
 };
 
-static int accum_slot(const query *q, size_t slot_nbr, unsigned var_nbr)
+static int accum_slot(const query *q, size_t slot_nbr, unsigned var_num)
 {
 	const void *vnbr;
 
 	if (sl_get(q->vars, (void*)(size_t)slot_nbr, &vnbr))
 		return (unsigned)(size_t)vnbr;
 
-	sl_set(q->vars, (void*)(size_t)slot_nbr, (void*)(size_t)var_nbr);
+	sl_set(q->vars, (void*)(size_t)slot_nbr, (void*)(size_t)var_num);
 	return -1;
 }
 
@@ -229,29 +229,29 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 			continue;
 
 		const frame *f = GET_FRAME(c->var_ctx);
-		const size_t slot_nbr = f->base + c->var_nbr;
-		int var_nbr;
+		const size_t slot_nbr = f->base + c->var_num;
+		int var_num;
 
-		if ((var_nbr = accum_slot(q, slot_nbr, q->varno)) == -1) {
-			var_nbr = q->varno++;
+		if ((var_num = accum_slot(q, slot_nbr, q->varno)) == -1) {
+			var_num = q->varno++;
 			create_vars(q, 1);
 		}
 
-		const slot *e = GET_SLOT(f, c->var_nbr);	// After create_vars
+		const slot *e = GET_SLOT(f, c->var_num);	// After create_vars
 
 		if (!q->tab_idx) {
-			q->tab0_varno = var_nbr;
+			q->tab0_varno = var_num;
 			q->tab_idx++;
 		}
 
 		c->flags |= FLAG_VAR_FRESH;
 		c->flags |= FLAG_VAR_ANON;
 
-		if (from && (c->var_nbr == from->var_nbr) && (c->var_ctx == from_ctx)) {
-			c->var_nbr = to->var_nbr;
+		if (from && (c->var_num == from->var_num) && (c->var_ctx == from_ctx)) {
+			c->var_num = to->var_num;
 			c->var_ctx = to_ctx;
 		} else {
-			c->var_nbr = var_nbr;
+			c->var_num = var_num;
 			c->var_ctx = q->st.curr_frame;
 
 			if (copy_attrs && e->c.attrs) {
@@ -365,7 +365,7 @@ cell *alloc_on_heap(query *q, unsigned num_cells)
 		unsigned n = MAX_OF(q->heap_size, num_cells);
 		a->cells = calloc(a->page_size=n, sizeof(cell));
 		if (!a->cells) { free(a); return NULL; }
-		a->nbr = q->st.heap_nbr++;
+		a->num = q->st.heap_num++;
 		q->heap_pages = a;
 	}
 
@@ -376,13 +376,13 @@ cell *alloc_on_heap(query *q, unsigned num_cells)
 		unsigned n = MAX_OF(q->heap_size, num_cells);
 		a->cells = calloc(a->page_size=n, sizeof(cell));
 		if (!a->cells) { free(a); return NULL; }
-		a->nbr = q->st.heap_nbr++;
+		a->num = q->st.heap_num++;
 		q->heap_pages = a;
 		q->st.hp = 0;
 	}
 
-	if (q->st.heap_nbr > q->hw_heap_nbr)
-		q->hw_heap_nbr = q->st.heap_nbr;
+	if (q->st.heap_num > q->hw_heap_num)
+		q->hw_heap_num = q->st.heap_num;
 
 	cell *c = q->heap_pages->cells + q->st.hp;
 	q->st.hp += num_cells;
@@ -426,7 +426,7 @@ cell *copy_term_to_heap(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
 	for (pl_idx i = 0; i < tmp2->num_cells; i++, c++) {
 		if (is_var(c) && c->tmp_attrs) {
 			const frame *f = GET_FRAME(c->var_ctx);
-			slot *e = GET_SLOT(f, c->var_nbr);
+			slot *e = GET_SLOT(f, c->var_num);
 			e->c.attrs = clone_term_to_heap(q, c->tmp_attrs, q->st.curr_frame);
 			free(c->tmp_attrs);
 			c->tmp_attrs = NULL;
@@ -455,7 +455,7 @@ static cell *copy_term_to_heap_with_replacement(query *q, cell *p1, pl_idx p1_ct
 	for (pl_idx i = 0; i < tmp2->num_cells; i++, c++) {
 		if (is_var(c) && c->tmp_attrs) {
 			const frame *f = GET_FRAME(c->var_ctx);
-			slot *e = GET_SLOT(f, c->var_nbr);
+			slot *e = GET_SLOT(f, c->var_num);
 			e->c.attrs = clone_term_to_heap(q, c->tmp_attrs, q->st.curr_frame);
 			free(c->tmp_attrs);
 			c->tmp_attrs = NULL;
@@ -471,7 +471,7 @@ void trim_heap(query *q)
 	// most recent page of heap allocations...
 
 	for (page *a = q->heap_pages; a;) {
-		if (a->nbr < q->st.heap_nbr)
+		if (a->num < q->st.heap_num)
 			break;
 
 		cell *c = a->cells;
@@ -612,24 +612,24 @@ cell *end_structure(query *q)
 
 // Queues are another beast
 
-cell *alloc_on_queuen(query *q, unsigned qnbr, const cell *c)
+cell *alloc_on_queuen(query *q, unsigned qnum, const cell *c)
 {
-	if (!q->queue[qnbr]) {
-		q->queue[qnbr] = malloc(sizeof(cell)*q->q_size[qnbr]);
-		if (!q->queue[qnbr]) return NULL;
+	if (!q->queue[qnum]) {
+		q->queue[qnum] = malloc(sizeof(cell)*q->q_size[qnum]);
+		if (!q->queue[qnum]) return NULL;
 	}
 
-	while ((q->qp[qnbr]+c->num_cells) >= q->q_size[qnbr]) {
-		size_t n = q->q_size[qnbr] + q->q_size[qnbr] / 2;
-		void *ptr = realloc(q->queue[qnbr], sizeof(cell)*n);
+	while ((q->qp[qnum]+c->num_cells) >= q->q_size[qnum]) {
+		size_t n = q->q_size[qnum] + q->q_size[qnum] / 2;
+		void *ptr = realloc(q->queue[qnum], sizeof(cell)*n);
 		if (!ptr) return NULL;
-		q->queue[qnbr] = ptr;
-		q->q_size[qnbr] = n;
+		q->queue[qnum] = ptr;
+		q->q_size[qnum] = n;
 	}
 
-	cell *dst = q->queue[qnbr] + q->qp[qnbr];
-	q->qp[qnbr] += dup_cells(dst, c, c->num_cells);
-	q->qcnt[qnbr]++;
+	cell *dst = q->queue[qnum] + q->qp[qnum];
+	q->qp[qnum] += dup_cells(dst, c, c->num_cells);
+	q->qcnt[qnum]++;
 	return dst;
 }
 

@@ -404,8 +404,8 @@ static void term_assign_vars(parser *p)
 		if (!is_var(c))
 			continue;
 
-		assert(c->var_nbr < MAX_VARS);
-		p->vartab.vars[c->var_nbr]++;
+		assert(c->var_num < MAX_VARS);
+		p->vartab.vars[c->var_num]++;
 	}
 
 	for (pl_idx i = 0; i < num_cells; i++) {
@@ -414,16 +414,16 @@ static void term_assign_vars(parser *p)
 		if (!is_var(c))
 			continue;
 
-		unsigned var_nbr = count_non_anons(p->vartab.vars, c->var_nbr);
+		unsigned var_num = count_non_anons(p->vartab.vars, c->var_num);
 
 		char ch = 'A';
-		ch += var_nbr % 26;
-		unsigned n = var_nbr / 26;
+		ch += var_num % 26;
+		unsigned n = var_num / 26;
 		char tmpbuf[80];
 
-		if (p->vartab.vars[c->var_nbr] == 1)
+		if (p->vartab.vars[c->var_num] == 1)
 			snprintf(tmpbuf, sizeof(tmpbuf), "%s", "_");
-		else if (var_nbr < 26)
+		else if (var_num < 26)
 			snprintf(tmpbuf, sizeof(tmpbuf), "%c", ch);
 		else
 			snprintf(tmpbuf, sizeof(tmpbuf), "%c%d", ch, n);
@@ -898,14 +898,14 @@ static bool bif_instance_2(query *q)
 static bool bif_sys_retract_on_backtrack_1(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
-	int var_nbr = create_vars(q, 1);
-	check_heap_error(var_nbr != -1);
+	int var_num = create_vars(q, 1);
+	check_heap_error(var_num != -1);
 	blob *b = calloc(1, sizeof(blob));
 	b->ptr = (void*)q->st.curr_m;
 	b->ptr2 = (void*)strdup(C_STR(q, p1));
 	check_heap_error(b->ptr2);
 	cell c, v;
-	make_ref(&c, var_nbr, q->st.curr_frame);
+	make_ref(&c, var_num, q->st.curr_frame);
 	make_dbref(&v, b);
 	return unify(q, &c, q->st.curr_frame, &v, q->st.curr_frame);
 }

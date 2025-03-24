@@ -412,10 +412,10 @@ static const char *varformat2(char *tmpbuf, size_t tmpbuf_len, cell *c, unsigned
 	else
 		mp_int_init_copy(&tmp, &c->val_bigint->ival);
 
-	mp_small nbr;
-	mp_int_mod_value(&tmp, 26, &nbr);
+	mp_small num;
+	mp_int_mod_value(&tmp, 26, &num);
 	char *dst = tmpbuf;
-	dst += sprintf(dst, "%c", 'A'+(unsigned)(nbr));
+	dst += sprintf(dst, "%c", 'A'+(unsigned)(num));
 	mp_int_div_value(&tmp, 26, &tmp, NULL);
 
 	if (mp_int_compare_zero(&tmp) > 0)
@@ -425,11 +425,11 @@ static const char *varformat2(char *tmpbuf, size_t tmpbuf_len, cell *c, unsigned
 	return tmpbuf;
 }
 
-static const char *varformat(char *tmpbuf, unsigned long long nbr)
+static const char *varformat(char *tmpbuf, unsigned long long num)
 {
 	char *dst = tmpbuf;
-	dst += sprintf(dst, "%c", 'A'+(unsigned)(nbr%26));
-	if ((nbr/26) > 0) dst += sprintf(dst, "%"PRIu64"", (int64_t)(nbr/26));
+	dst += sprintf(dst, "%c", 'A'+(unsigned)(num%26));
+	if ((num/26) > 0) dst += sprintf(dst, "%"PRIu64"", (int64_t)(num/26));
 	return tmpbuf;
 }
 
@@ -459,20 +459,20 @@ static void print_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 {
 	const frame *f = GET_FRAME(running ? c_ctx : 0);
 	pl_idx slot_nbr = running ?
-		((pl_idx)(GET_SLOT(f, c->var_nbr)-q->slots))
-		: (pl_idx)c->var_nbr;
+		((pl_idx)(GET_SLOT(f, c->var_num)-q->slots))
+		: (pl_idx)c->var_num;
 
 	if (q->varnames && !is_anon(c) && running && !q->cycle_error && (c_ctx == 0)) {
-		if (q->varnames && q->p->vartab.name[c->var_nbr] && !is_fresh(c)) {
-			SB_sprintf(q->sb, "%s", q->p->vartab.name[c->var_nbr]);
+		if (q->varnames && q->p->vartab.name[c->var_num] && !is_fresh(c)) {
+			SB_sprintf(q->sb, "%s", q->p->vartab.name[c->var_num]);
 		} else {
 			SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr));
 		}
 	} else if (q->portray_vars || (q->is_dump_vars && q->cycle_error)) {
 		SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr));
 	} else if (q->is_dump_vars) {
-		if ((c_ctx == 0) && (c->var_nbr < q->p->num_vars)) {
-			SB_sprintf(q->sb, "%s", q->p->vartab.name[c->var_nbr]);
+		if ((c_ctx == 0) && (c->var_num < q->p->num_vars)) {
+			SB_sprintf(q->sb, "%s", q->p->vartab.name[c->var_num]);
 		} else {
 			SB_sprintf(q->sb, "_%s", get_slot_name(q, slot_nbr));
 		}
@@ -499,7 +499,7 @@ static bool dump_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 		cell *v = running ? deref(q, h+2, h_ctx) : h+2;
 		pl_idx v_ctx = running ? q->latest_ctx : 0;
 
-		if (is_var(v) && (v->var_nbr == c->var_nbr) && (v_ctx == c_ctx)) {
+		if (is_var(v) && (v->var_num == c->var_num) && (v_ctx == c_ctx)) {
 			if (0 && !strcmp(C_STR(q, name), "_")) {
 				print_variable(q, v, v_ctx, running);
 			} else {
@@ -622,7 +622,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			pl_idx v_ctx = c_ctx;
 
 			if (q->portray_vars || q->do_dump_vars) {
-				//SB_sprintf(q->sb, "%s", q->p->vartab.name[q->dump_var_nbr]);
+				//SB_sprintf(q->sb, "%s", q->p->vartab.name[q->dump_var_num]);
 				SB_sprintf(q->sb, "%s", C_STR(q, save_head));
 			} else {
 				SB_sprintf(q->sb, "%s", "...");
@@ -665,11 +665,11 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			SB_sprintf(q->sb, "%s", "|");
 
 #if 0
-			if (is_var(c+1)) printf("*** c+1 = %u/%u\n", (c+1)->var_nbr, c_ctx);
-			if (is_var(tail)) printf("*** tail = %u/%u\n", tail->var_nbr, tail_ctx);
-			if (is_var(save_tail)) printf("*** save_tail = %u/%u\n", save_tail->var_nbr, save_tail_ctx);
-			if (is_var(save_c)) printf("*** save_c = %u/%u\n", save_c->var_nbr, save_c_ctx);
-			if (is_var(orig_c)) printf("*** orig_c = %u/%u\n", orig_c->var_nbr, orig_c_ctx);
+			if (is_var(c+1)) printf("*** c+1 = %u/%u\n", (c+1)->var_num, c_ctx);
+			if (is_var(tail)) printf("*** tail = %u/%u\n", tail->var_num, tail_ctx);
+			if (is_var(save_tail)) printf("*** save_tail = %u/%u\n", save_tail->var_num, save_tail_ctx);
+			if (is_var(save_c)) printf("*** save_c = %u/%u\n", save_c->var_num, save_c_ctx);
+			if (is_var(orig_c)) printf("*** orig_c = %u/%u\n", orig_c->var_num, orig_c_ctx);
 #endif
 
 			cell v = *(c+1);
@@ -682,13 +682,13 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 				v = *save_tail;
 				v_ctx = save_tail_ctx;
 			} else {
-				v.var_nbr = q->dump_var_nbr;
+				v.var_num = q->dump_var_num;
 				v_ctx = 0;
 			}
 
 			if ((q->portray_vars || q->do_dump_vars) && (orig_c_ctx == 0)) {
 				//print_variable(q, save_head, save_head_ctx, running);
-				SB_sprintf(q->sb, "%s", q->p->vartab.name[v.var_nbr]);
+				SB_sprintf(q->sb, "%s", q->p->vartab.name[v.var_num]);
 			} else {
 				SB_sprintf(q->sb, "%s", "...");
 			}

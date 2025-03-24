@@ -400,7 +400,7 @@ struct cell_ {
 				cell *tmp_attrs;		// used with TAG_VAR in copy_term
 			};
 
-			uint32_t var_nbr;			// used with TAG_VAR
+			uint32_t var_num;			// used with TAG_VAR
 
 			union {
 				uint32_t val_off;		// used with TAG_VAR & TAG_INTERNED
@@ -512,12 +512,12 @@ typedef struct {
 } op_table;
 
 // Where *ctx* is the context of the var
-// And *var_nbr* is the slot within that context
+// And *var_num* is the slot within that context
 
 struct trail_ {
 	cell *attrs;
 	pl_idx var_ctx;
-	uint32_t var_nbr;
+	uint32_t var_num;
 };
 
 struct slot_ {
@@ -534,7 +534,7 @@ struct slot_ {
 struct frame_ {
 	cell *curr_instr;
 	uint64_t dbgen, chgen;
-	pl_idx prev, base, overflow, hp, heap_nbr;
+	pl_idx prev, base, overflow, hp, heap_num;
 	unsigned initial_slots, actual_slots;
 	uint32_t mid;
 	bool has_local_vars:1;
@@ -556,8 +556,8 @@ struct run_state_ {
 	};
 
 	uint64_t timer_started;
-	pl_idx curr_frame, fp, hp, cp, tp, sp, heap_nbr, key_ctx;
-	uint8_t qnbr;
+	pl_idx curr_frame, fp, hp, cp, tp, sp, heap_num, key_ctx;
+	uint8_t qnum;
 };
 
 struct choice_ {
@@ -649,7 +649,7 @@ struct page_ {
 	page *next;
 	cell *cells;
 	pl_idx idx, max_idx_used, page_size;
-	unsigned nbr;
+	unsigned num;
 };
 
 enum q_retry { QUERY_OK=0, QUERY_NOOP=1, QUERY_RETRY=2, QUERY_EXCEPTION=3 };
@@ -699,12 +699,12 @@ struct query_ {
 	uint64_t tot_tcos, step, qid, tmo_msecs, chgen, cycle_error;
 	uint64_t get_started, autofail_n, yield_at;
 	uint64_t cpu_started, time_cpu_last_started, future;
-	unsigned max_depth, max_eval_depth, print_idx, tab_idx, dump_var_nbr;
+	unsigned max_depth, max_eval_depth, print_idx, tab_idx, dump_var_num;
 	unsigned varno, tab0_varno, curr_engine, curr_chan, my_chan, oom;
 	unsigned s_cnt;
 	pl_idx tmphp, latest_ctx, popp, variable_names_ctx;
 	pl_idx frames_size, slots_size, trails_size, choices_size;
-	pl_idx hw_choices, hw_frames, hw_slots, hw_trails, hw_heap_nbr;
+	pl_idx hw_choices, hw_frames, hw_slots, hw_trails, hw_heap_num;
 	pl_idx cp, before_hook_tp, qcnt[MAX_QUEUES], ball_ctx, cont_ctx;
 	pl_idx heap_size, tmph_size, tot_heaps, tot_heapsize;
 	pl_idx undo_lo_tp, undo_hi_tp;
@@ -782,7 +782,7 @@ struct parser_ {
 	prolog_flags flags;
 	char *save_line, *srcptr, *error_desc;
 	size_t token_size, n_line, pos_start;
-	unsigned line_nbr, line_num_start;
+	unsigned line_num, line_num_start;
 	unsigned depth, read_term_slots, num_vars;
 	unsigned nesting_parens, nesting_braces, nesting_brackets;
 	int quote_char, entered;
@@ -858,7 +858,7 @@ struct module_ {
 
 typedef struct {
 	pl_idx ctx, val_off;
-	unsigned var_nbr, cnt;
+	unsigned var_num, cnt;
 	bool is_anon;
 } var_item;
 

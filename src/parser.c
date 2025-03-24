@@ -197,12 +197,12 @@ void make_smalln(cell *tmp, const char *s, size_t n)
 	tmp->chr_len = n;
 }
 
-void make_var(cell *tmp, pl_idx off, unsigned var_nbr)
+void make_var(cell *tmp, pl_idx off, unsigned var_num)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_VAR;
 	tmp->num_cells = 1;
-	tmp->var_nbr = var_nbr;
+	tmp->var_num = var_num;
 	tmp->val_off = off;
 
 	if (off == g_anon_s)
@@ -307,10 +307,10 @@ void clear_clause(clause *cl)
 	cl->cidx = 0;
 }
 
-static bool make_room(parser *p, unsigned nbr)
+static bool make_room(parser *p, unsigned num)
 {
-	if ((p->cl->cidx+nbr) >= p->cl->num_allocated_cells) {
-		pl_idx num_cells = (p->cl->num_allocated_cells + nbr) * 3 / 2;
+	if ((p->cl->cidx+num) >= p->cl->num_allocated_cells) {
+		pl_idx num_cells = (p->cl->num_allocated_cells + num) * 3 / 2;
 
 		clause *cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*num_cells));
 		ensure(cl);
@@ -357,7 +357,7 @@ parser *parser_create(module *m)
 	p->cl->num_allocated_cells = num_cells;
 	p->start_term = true;
 	p->flags = m->flags;
-	p->line_nbr = 1;
+	p->line_num = 1;
 	return p;
 }
 
@@ -410,7 +410,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 
 	if (!is_integer(p1) || !is_interned(p2) || (!is_atom(p3) && !is_list(p3))) {
 		if (DUMP_ERRS || !p->do_read_term)
-			fprintf(stderr, "Error: unknown op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+			fprintf(stderr, "Error: unknown op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 		p->error = true;
 		return;
@@ -435,7 +435,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 		specifier = OP_YFX;
 	else {
 		if (DUMP_ERRS || !p->do_read_term)
-			fprintf(stderr, "Error: unknown op spec tag, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+			fprintf(stderr, "Error: unknown op spec tag, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 		free(spec);
 		return;
@@ -452,7 +452,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 
 			if (!set_op(p->m, name, specifier, get_smallint(p1))) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: could not set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: could not set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 				free(name);
 				continue;
@@ -461,7 +461,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 			if (make_public) {
 				if (!set_op(p->pl->user_m, name, specifier, get_smallint(p1))) {
 					if (DUMP_ERRS || !p->do_read_term)
-						fprintf(stderr, "Error: could not set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+						fprintf(stderr, "Error: could not set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 					free(name);
 					continue;
@@ -479,7 +479,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 
 		if (!set_op(p->m, name, specifier, get_smallint(p1))) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: could not set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: could not set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 			free(name);
 			return;
@@ -488,7 +488,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 		if (make_public) {
 			if (!set_op(p->pl->user_m, name, specifier, get_smallint(p1))) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: could not set op, %s:%u\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: could not set op, %s:%u\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 				free(name);
 				return;
@@ -725,16 +725,16 @@ static bool directives(parser *p, cell *d)
 
 	if (!strcmp(dirname, "include") && (c->arity == 1)) {
 		if (!is_atom(p1)) return true;
-		unsigned save_line_nbr = p->line_nbr;
+		unsigned save_line_nbr = p->line_num;
 		const char *name = C_STR(p, p1);
 		char *filename = relative_to(p->m->filename, name);
 
 		if (!load_file(p->m, filename, true, false)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: not found: %s:%d\n", filename, p->line_nbr);
+				fprintf(stderr, "Error: not found: %s:%d\n", filename, p->line_num);
 
 			free(filename);
-			p->line_nbr = save_line_nbr;
+			p->line_num = save_line_nbr;
 			p->error = true;
 			return true;
 		}
@@ -742,28 +742,28 @@ static bool directives(parser *p, cell *d)
 		//printf("*** include %s, parent = %s\n", p->m->actual_filename, p->m->filename);
 		set_parent(p->m, p->m->actual_filename, p->m->filename);
 		free(filename);
-		p->line_nbr = save_line_nbr;
+		p->line_num = save_line_nbr;
 		return true;
 	}
 
 	if (!strcmp(dirname, "ensure_loaded") && (c->arity == 1)) {
 		if (!is_atom(p1)) return true;
-		unsigned save_line_nbr = p->line_nbr;
+		unsigned save_line_nbr = p->line_num;
 		const char *name = C_STR(p, p1);
 		char *filename = relative_to(p->m->filename, name);
 
 		if (!load_file(p->m, filename, false, false)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: not found: %s:%d\n", filename, p->line_nbr);
+				fprintf(stderr, "Error: not found: %s:%d\n", filename, p->line_num);
 
 			free(filename);
-			p->line_nbr = save_line_nbr;
+			p->line_num = save_line_nbr;
 			p->error = true;
 			return true;
 		}
 
 		free(filename);
-		p->line_nbr = save_line_nbr;
+		p->line_num = save_line_nbr;
 		return true;
 	}
 
@@ -785,7 +785,7 @@ static bool directives(parser *p, cell *d)
 			name = tmpbuf;
 		} else if (!is_atom(p1)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: pragma name not an atom, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: pragma name not an atom, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error = true;
 			return true;
@@ -796,7 +796,7 @@ static bool directives(parser *p, cell *d)
 
 		if ((tmp_m = find_module(p->m->pl, name)) != NULL) {
 			//if (DUMP_ERRS || !p->do_read_term)
-			//	fprintf(stderr, "Error: module already loaded: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_nbr);
+			//	fprintf(stderr, "Error: module already loaded: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_num);
 			//
 			p->already_loaded_error = true;
 
@@ -811,7 +811,7 @@ static bool directives(parser *p, cell *d)
 		tmp_m = module_create(p->m->pl, name);
 		if (!tmp_m) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: module creation failed: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: module creation failed: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error = true;
 			return true;
@@ -882,7 +882,7 @@ static bool directives(parser *p, cell *d)
 			name = tmpbuf;
 		} else if (!is_atom(p1)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: module name not an atom, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: module name not an atom, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error = true;
 			return true;
@@ -894,7 +894,7 @@ static bool directives(parser *p, cell *d)
 
 			if ((tmp_m = find_module(p->m->pl, name)) != NULL) {
 				//if (DUMP_ERRS || !p->do_read_term)
-				//	fprintf(stderr, "Error: module already loaded: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_nbr);
+				//	fprintf(stderr, "Error: module already loaded: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_num);
 				//
 				p->already_loaded_error = true;
 				p->m = tmp_m;
@@ -905,7 +905,7 @@ static bool directives(parser *p, cell *d)
 
 			if (!tmp_m) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: module creation failed: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: module creation failed: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error = true;
 				return true;
@@ -948,7 +948,7 @@ static bool directives(parser *p, cell *d)
 						module_destroy(p->m);
 						p->m = NULL;
 						if (DUMP_ERRS || !p->do_read_term)
-							fprintf(stderr, "Error: predicate creation failed, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+							fprintf(stderr, "Error: predicate creation failed, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 						p->error = true;
 						return true;
@@ -959,7 +959,7 @@ static bool directives(parser *p, cell *d)
 					do_op(p, head, true);
 				} else {
 					if (DUMP_ERRS || !p->do_read_term)
-						fprintf(stderr, "Error: predicate export failed, '%s' in %s:%d\n", C_STR(p, head), get_loaded(p->m, p->m->filename), p->line_nbr);
+						fprintf(stderr, "Error: predicate export failed, '%s' in %s:%d\n", C_STR(p, head), get_loaded(p->m, p->m->filename), p->line_num);
 
 					p->error = true;
 					return true;
@@ -1029,7 +1029,7 @@ static bool directives(parser *p, cell *d)
 				p->m->flags.double_quote_chars = true;
 			} else {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: unknown value, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: unknown value, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error = true;
 				return true;
@@ -1099,7 +1099,7 @@ static bool directives(parser *p, cell *d)
 
 				if (pr && !pr->is_dynamic && pr->head) {
 					if (DUMP_ERRS || !p->do_read_term)
-						fprintf(stderr, "Error: no permission to modify static predicate %s:%s/%u, %s:%d\n", p->m->name, C_STR(p->m, c_name), arity, get_loaded(p->m, p->m->filename), p->line_nbr);
+						fprintf(stderr, "Error: no permission to modify static predicate %s:%s/%u, %s:%d\n", p->m->name, C_STR(p->m, c_name), arity, get_loaded(p->m, p->m->filename), p->line_num);
 
 					p->error = true;
 					return true;
@@ -1219,7 +1219,7 @@ static bool directives(parser *p, cell *d)
 
 				if (pr && !pr->is_dynamic && pr->head) {
 					if (DUMP_ERRS || !p->do_read_term)
-						fprintf(stderr, "Error: no permission to modify static predicate %s:%s/%u, %s:%d\n", m->name, C_STR(p->m, c_name), arity, get_loaded(p->m, p->m->filename), p->line_nbr);
+						fprintf(stderr, "Error: no permission to modify static predicate %s:%s/%u, %s:%d\n", m->name, C_STR(p->m, c_name), arity, get_loaded(p->m, p->m->filename), p->line_num);
 
 					p->error = true;
 					return true;
@@ -1306,7 +1306,7 @@ static pl_idx get_varno(parser *p, const char *src, bool in_body)
 	size_t len = strlen(src);
 
 	if ((offset+len+1) >= MAX_VAR_POOL_SIZE) {
-		fprintf(stderr, "Error: var pool exhausted, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+		fprintf(stderr, "Error: var pool exhausted, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 		p->error = true;
 		return 0;
 	}
@@ -1409,22 +1409,22 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 
 		if (rebase) {
 			char tmpbuf[20];
-			snprintf(tmpbuf, sizeof(tmpbuf), "___V%u", c->var_nbr);
-			c->var_nbr = get_varno(p, tmpbuf, in_body);
+			snprintf(tmpbuf, sizeof(tmpbuf), "___V%u", c->var_num);
+			c->var_num = get_varno(p, tmpbuf, in_body);
 		} else
-			c->var_nbr = get_varno(p, C_STR(p, c), in_body);
+			c->var_num = get_varno(p, C_STR(p, c), in_body);
 
-		c->var_nbr += start;
+		c->var_num += start;
 
-		if (c->var_nbr == MAX_VARS) {
-			fprintf(stderr, "Error: max vars reached, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+		if (c->var_num == MAX_VARS) {
+			fprintf(stderr, "Error: max vars reached, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 			p->error = true;
 			return;
 		}
 
-		p->vartab.name[c->var_nbr] = C_STR(p, c);
+		p->vartab.name[c->var_num] = C_STR(p, c);
 
-		if (p->vartab.used[c->var_nbr]++ == 0) {
+		if (p->vartab.used[c->var_num]++ == 0) {
 			cl->num_vars++;
 			p->num_vars++;
 		}
@@ -1449,22 +1449,22 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 
 		if (rebase) {
 			char tmpbuf[20];
-			snprintf(tmpbuf, sizeof(tmpbuf), "___V%u", c->var_nbr);
-			c->var_nbr = get_varno(p, tmpbuf, in_body);
+			snprintf(tmpbuf, sizeof(tmpbuf), "___V%u", c->var_num);
+			c->var_num = get_varno(p, tmpbuf, in_body);
 		} else
-			c->var_nbr = get_varno(p, C_STR(p, c), in_body);
+			c->var_num = get_varno(p, C_STR(p, c), in_body);
 
-		c->var_nbr += start;
+		c->var_num += start;
 
-		if (c->var_nbr == MAX_VARS) {
-			fprintf(stderr, "Error: max vars reached, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+		if (c->var_num == MAX_VARS) {
+			fprintf(stderr, "Error: max vars reached, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 			p->error = true;
 			return;
 		}
 
-		p->vartab.name[c->var_nbr] = C_STR(p, c);
+		p->vartab.name[c->var_num] = C_STR(p, c);
 
-		if (p->vartab.used[c->var_nbr]++ == 0) {
+		if (p->vartab.used[c->var_num]++ == 0) {
 			cl->num_vars++;
 			p->num_vars++;
 		}
@@ -1514,7 +1514,7 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 			(*p->vartab.name[i] != '_')) {
 			if (!p->m->pl->quiet
 				&& !((cl->cells->val_off == g_neck_s) && cl->cells->arity == 1))
-				fprintf(stderr, "Warning: singleton: %s, near %s:%d\n", p->vartab.name[i], get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Warning: singleton: %s, near %s:%d\n", p->vartab.name[i], get_loaded(p->m, p->m->filename), p->line_num);
 		}
 	}
 
@@ -1597,7 +1597,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 
 			if (is_fx(rhs) && !rhs->arity && (rhs->priority == c->priority)) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "operator_clash";
 				p->error = true;
@@ -1609,7 +1609,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			if ((((pl_idx)(rhs - p->cl->cells)) < end_idx)
 				&& is_xf(rhs) && (rhs->priority == c->priority)) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "operator_clash";
 				p->error = true;
@@ -1622,7 +1622,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 
 			if (is_infix(rhs) && !rhs->arity && (rhs->priority > c->priority)) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "operator_clash";
 				p->error = true;
@@ -1631,7 +1631,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 
 			if (is_prefix(rhs) && !rhs->arity && (rhs->priority > c->priority)) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "operator_clash";
 				p->error = true;
@@ -1645,7 +1645,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 
 			if (off > end_idx) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: syntax error, missing operand to prefix, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, missing operand to prefix, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "operand_missing";
 				p->error = true;
@@ -1662,7 +1662,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 
 		if (is_xf(rhs) && (rhs->priority == c->priority)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "operator_clash";
 			p->error = true;
@@ -1671,7 +1671,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 
 		if (is_prefix(rhs) && !rhs->arity && (rhs->priority > c->priority)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "operator_clash";
 			p->error = true;
@@ -1685,7 +1685,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 
 			if (off > end_idx) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: syntax error, missing operand to postfix, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, missing operand to postfix, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "operand_missing";
 				p->error = true;
@@ -1710,7 +1710,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 
 		if (is_infix(rhs) && !rhs->arity) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "operator_clash";
 			p->error = true;
@@ -1724,7 +1724,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 
 		if (nolhs || (off > end_idx)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, missing operand to infix, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, missing operand to infix, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "operand_missing";
 			p->error = true;
@@ -1735,7 +1735,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 
 		if (is_infix(lhs) && !lhs->arity) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "operator_clash";
 			p->error = true;
@@ -1761,7 +1761,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 				&& (is_xfx(next))
 				&& (next->priority == c->priority)) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "operator_clash";
 				p->error = true;
@@ -1995,7 +1995,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	p2->cl->num_vars = p->cl->num_vars;
 	p2->vartab = p->vartab;
 	p2->reuse = true;
-	p2->line_nbr = p->line_nbr;
+	p2->line_num = p->line_num;
 	p2->skip = true;
 	p2->srcptr = SB_cstr(s);
 	tokenize(p2, false, false);
@@ -2453,7 +2453,7 @@ void read_integer(parser *p, mp_int v2, int base, const char **srcptr)
 
 		if (spaces > 1) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, illegal character, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, illegal character, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 			*srcptr = src;
 			p->error = true;
@@ -2500,7 +2500,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 	if ((*s == '.') && isdigit(s[1])) {
 		if (DUMP_ERRS || !p->do_read_term)
-			fprintf(stderr, "Error: syntax error, parsing number1, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+			fprintf(stderr, "Error: syntax error, parsing number1, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 		p->error_desc = "number";
 		p->error = true;
@@ -2526,7 +2526,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 				if (*s != '\'') {
 					if (DUMP_ERRS || !p->do_read_term)
-						fprintf(stderr, "Error: syntax error, parsing number2, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+						fprintf(stderr, "Error: syntax error, parsing number2, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 					p->error_desc = "number";
 					p->error = true;
@@ -2539,7 +2539,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 			if (!*s || iscntrl(*s)) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: syntax error, parsing number3, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, parsing number3, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "number";
 				p->error = true;
@@ -2553,7 +2553,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 #if 1
 		} else if ((*s == '\'') && p->flags.strict_iso && search_op(p->m, "", NULL, false)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, parsing number4, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, parsing number4, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "number";
 			p->error = true;
@@ -2564,7 +2564,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 		if (p->error) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, parsing number5, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, parsing number5, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "number";
 			p->error = true;
@@ -2661,7 +2661,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 		if ((int)v && (errno == ERANGE)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, float overflow %g, %s:%d\n", v, get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, float overflow %g, %s:%d\n", v, get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "float_overflow";
 			p->error = true;
@@ -2681,7 +2681,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 		if ((int)v && (errno == ERANGE)) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, float overflow %g, %s:%d\n", v, get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, float overflow %g, %s:%d\n", v, get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "float_overflow";
 			p->error = true;
@@ -2718,7 +2718,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 	if (ch == '(') {
 		if (DUMP_ERRS || !p->do_read_term)
-			fprintf(stderr, "Error: syntax error, parsing number, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+			fprintf(stderr, "Error: syntax error, parsing number, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 		p->error_desc = "number";
 		p->error = true;
@@ -2769,7 +2769,7 @@ char *eat_space(parser *p)
 
 		while (iswspace(ch)) {
 			if (ch == '\n')
-				p->line_nbr++;
+				p->line_num++;
 
 			get_char_utf8(&src);
 			ch = peek_char_utf8(src);
@@ -2780,7 +2780,7 @@ char *eat_space(parser *p)
 				src++;
 
 			if (*src == '\n')
-				p->line_nbr++;
+				p->line_num++;
 
 			//src++;
 			done = false;
@@ -2792,7 +2792,7 @@ char *eat_space(parser *p)
 				src++;
 
 			if (*src == '\n')
-				p->line_nbr++;
+				p->line_num++;
 
 			if (*src) {
 				src++;
@@ -2828,7 +2828,7 @@ char *eat_space(parser *p)
 			}
 
 			if (*src == '\n')
-				p->line_nbr++;
+				p->line_num++;
 
 			if (p->is_comment)
 				src++;
@@ -2836,7 +2836,7 @@ char *eat_space(parser *p)
 			if (!*src && p->is_comment && p->fp) {
 				if (p->no_fp || getline(&p->save_line, &p->n_line, p->fp) == -1) {
 					if (DUMP_ERRS || !p->do_read_term)
-						fprintf(stderr, "Error: syntax error, parsing number1, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+						fprintf(stderr, "Error: syntax error, parsing number1, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 					p->error = true;
 					return NULL;
@@ -2864,7 +2864,7 @@ static bool check_space_before_function(parser *p, int ch, const char *src)
 
 		if (!src || !*src) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, incomplete statement, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, incomplete statement, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "incomplete_statement";
 			p->error = true;
@@ -2873,7 +2873,7 @@ static bool check_space_before_function(parser *p, int ch, const char *src)
 
 		if (!p->is_op && (*src == '(')) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, operator expected before parens, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, operator expected before parens, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "operator_expected";
 			p->error = true;
@@ -2932,7 +2932,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 			if (p->error) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: syntax error, illegal character escape <<%s>>, %s:%d\n", p->srcptr, get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, illegal character escape <<%s>>, %s:%d\n", p->srcptr, get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "illegal_character_escape";
 				p->error = true;
@@ -2976,7 +2976,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 		if (next_ch == '/') {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, near %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, near %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "incomplete_statement";
 			p->error = true;
@@ -2987,7 +2987,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 		if (!src || !*src) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, incomplete statement, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, incomplete statement, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "incomplete_statement";
 			p->error = true;
@@ -3012,7 +3012,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 			if ((strchr(dst, '.') || strchr(dst, 'e') || strchr(dst, 'E')) && !strchr(dst, '\'')) {
 				if (!valid_float(SB_cstr(p->token))) {
 					if (DUMP_ERRS || !p->do_read_term)
-						fprintf(stderr, "Error: syntax error, float, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+						fprintf(stderr, "Error: syntax error, float, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 					p->error_desc = "float";
 					p->error = true;
@@ -3032,7 +3032,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 		if (ch == '(') {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, parsing number, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, parsing number, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "number";
 			p->error = true;
@@ -3068,7 +3068,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 			for (int ch; (ch = get_char_utf8(&src));) {
 				if (ch == '\n') {
 					if (DUMP_ERRS || !p->do_read_term)
-						fprintf(stderr, "Error: syntax error, unterminated quoted atom, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+						fprintf(stderr, "Error: syntax error, unterminated quoted atom, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 					p->error_desc = "unterminated_quoted_atom";
 					p->error = true;
@@ -3085,7 +3085,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 				if (ch < ' ') {
 					if (DUMP_ERRS || !p->do_read_term)
-						fprintf(stderr, "Error: syntax error, invalid quoted character, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+						fprintf(stderr, "Error: syntax error, invalid quoted character, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 					p->error_desc = "invalid_quoted_character";
 					p->error = true;
@@ -3099,12 +3099,12 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 					if (!p->error) {
 						if (ch2 == '\n') {
-							//p->line_nbr++;
+							//p->line_num++;
 							continue;
 						}
 					} else {
 						if (DUMP_ERRS || !p->do_read_term)
-							fprintf(stderr, "Error: syntax error, illegal character escape <<%s>>, %s:%d\n", p->srcptr, get_loaded(p->m, p->m->filename), p->line_nbr);
+							fprintf(stderr, "Error: syntax error, illegal character escape <<%s>>, %s:%d\n", p->srcptr, get_loaded(p->m, p->m->filename), p->line_num);
 
 						p->error_desc = "illegal_character_escape";
 						p->error = true;
@@ -3121,7 +3121,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					p->srcptr = "";
 
 					if (DUMP_ERRS || !p->do_read_term)
-						fprintf(stderr, "Error: syntax error, unterminated quoted atom, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+						fprintf(stderr, "Error: syntax error, unterminated quoted atom, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 					p->error_desc = "unterminated_quoted_atom";
 					p->error = true;
@@ -3263,7 +3263,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		is_matching_pair(ch, next_ch, '}','(') ||
 		is_matching_pair(ch, next_ch, '}','(')) {
 		if (DUMP_ERRS || !p->do_read_term)
-			fprintf(stderr, "Error: syntax error, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+			fprintf(stderr, "Error: syntax error, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 		p->error_desc = "operator_expected";
 		p->error = true;
@@ -3334,14 +3334,14 @@ static bool process_term(parser *p, cell *p1)
 
 	if (is_var(h)) {
 		if (DUMP_ERRS || !p->do_read_term)
-			printf("Error: instantiation error, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+			printf("Error: instantiation error, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 		p->error_desc = "instantiation_error";
 		p->error = true;
 		return false;
 	} else if (is_number(h)) {
 		if (DUMP_ERRS || !p->do_read_term)
-			printf("Error: type error, callable, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+			printf("Error: type error, callable, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 		p->error_desc = "type_error";
 		p->error = true;
@@ -3366,7 +3366,7 @@ static bool process_term(parser *p, cell *p1)
 
 	if ((r = assertz_to_db(p->m, p->cl->num_vars, p1, consulting)) == NULL) {
 		if ((DUMP_ERRS || !p->do_read_term) && 0)
-			printf("Error: assertion failed '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
+			printf("Error: assertion failed '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_num);
 
 		p->error = true;
 		return false;
@@ -3376,7 +3376,7 @@ static bool process_term(parser *p, cell *p1)
 	r->cl.is_fact = !get_logical_body(r->cl.cells);
 	r->cl.has_local_vars = p->cl->has_local_vars;
 	r->line_num_start = p->line_num_start;
-	r->line_num_end = p->line_nbr;
+	r->line_num_end = p->line_num;
 	p->line_num_start = 0;
 	return true;
 }
@@ -3397,8 +3397,8 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 #if 0
 		int ch = peek_char_utf8(SB_cstr(p->token));
 		fprintf(stderr,
-			"Debug: '%s' (%d) line_nbr=%d, symbol=%d, quoted=%d, tag=%u, op=%d, lastop=%d, string=%d\n",
-			SB_cstr(p->token), ch, p->line_nbr, p->is_symbol, p->quote_char, p->v.tag, p->is_op, last_op, p->is_string);
+			"Debug: '%s' (%d) line_num=%d, symbol=%d, quoted=%d, tag=%u, op=%d, lastop=%d, string=%d\n",
+			SB_cstr(p->token), ch, p->line_num, p->is_symbol, p->quote_char, p->v.tag, p->is_op, last_op, p->is_string);
 #endif
 
 		if (!p->quote_char
@@ -3417,7 +3417,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 			if (p->nesting_parens || p->nesting_brackets || p->nesting_braces) {
 				if (DUMP_ERRS || !p->do_read_term)
-					printf("Error: syntax error, mismatched parens/brackets/braces, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					printf("Error: syntax error, mismatched parens/brackets/braces, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "mismatched_parens_or_brackets_or_braces";
 				p->error = true;
@@ -3426,7 +3426,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 			if (!p->cl->cidx) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: syntax error, incomplete statement, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, incomplete statement, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "incomplete_statement";
 				p->error = true;
@@ -3436,7 +3436,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			if (analyze(p, 0, last_op)) {
 				if (p->cl->cells->num_cells < p->cl->cidx) {
 					if (DUMP_ERRS || !p->do_read_term)
-						printf("Error: syntax error, operator expected unfinished input '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
+						printf("Error: syntax error, operator expected unfinished input '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_num);
 
 					p->error_desc = "operator_expected";
 					p->error = true;
@@ -3449,7 +3449,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 				if ((p->is_consulting || p->is_command) && !p->skip && check_body_callable(p->cl->cells)) {
 					if (DUMP_ERRS || !p->do_read_term)
-						printf("Error: type error, not callable, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+						printf("Error: type error, not callable, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 					p->error_desc = "not callable";
 					p->error = true;
@@ -3462,14 +3462,14 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 				if ((p->is_consulting || p->is_command) && !p->skip) {
 					if (is_var(p->cl->cells)) {
 						if (DUMP_ERRS || !p->do_read_term)
-							printf("Error: instantiation error, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+							printf("Error: instantiation error, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 						p->error_desc = "instantiation_error";
 						p->error = true;
 						return 0;
 					} else if (is_number(p->cl->cells)) {
 						if (DUMP_ERRS || !p->do_read_term)
-							printf("Error: type error, callable, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+							printf("Error: type error, callable, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 						p->error_desc = "not callable";
 						p->error = true;
@@ -3543,14 +3543,14 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 		}
 
 		if (!p->line_num_start)
-			p->line_num_start = p->line_nbr;
+			p->line_num_start = p->line_num;
 
 		p->end_of_term = false;
 
 		if (!p->quote_char && !last_op &&
 			(!SB_strcmp(p->token, "[") || !SB_strcmp(p->token, "{"))) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, needs operator '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, needs operator '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "needs_operator";
 			p->error = true;
@@ -3559,7 +3559,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 		if (!p->quote_char && p->last_close && !SB_strcmp(p->token, "(")) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, needs operator '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, needs operator '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "needs_operator";
 			p->error = true;
@@ -3640,7 +3640,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 		if (!p->quote_char && !is_arg_processing && !is_consing && last_op && !last_postfix && !SB_strcmp(p->token, ",")) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, quotes needed around operator '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, quotes needed around operator '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "quotes_needed";
 			p->error = true;
@@ -3655,7 +3655,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 			if (!last_op && (priority > 999)) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: syntax error, parens needed around operator '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, parens needed around operator '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "parens_needed";
 				p->error = true;
@@ -3666,7 +3666,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 		if (!p->quote_char && is_consing && !SB_strcmp(p->token, ",")) {
 			if ((arg_idx == p->cl->cidx) || !p->cl->cidx) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: syntax error, missing arg '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, missing arg '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "args";
 				p->error = true;
@@ -3675,7 +3675,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 			if ((*p->srcptr == ',') && !p->flags.double_quote_codes) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: syntax error, missing element '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, missing element '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "missing_element";
 				p->error = true;
@@ -3684,7 +3684,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 			if (p->was_consing || last_op) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: syntax error, parsing list '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, parsing list '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "list";
 				p->error = true;
@@ -3705,7 +3705,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			)) {
 			if ((arg_idx == p->cl->cidx) || !p->cl->cidx) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: syntax error, missing arg '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, missing arg '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "args";
 				p->error = true;
@@ -3717,7 +3717,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 			if (*p->srcptr == ',') {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: syntax error, missing arg '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, missing arg '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "args";
 				p->error = true;
@@ -3729,7 +3729,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 				if (arity > MAX_ARITY) {
 					if (DUMP_ERRS || !p->do_read_term)
-						fprintf(stderr, "Error: max arity reached, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+						fprintf(stderr, "Error: max arity reached, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 					p->error_desc = "max_arity";
 					p->error = true;
@@ -3750,7 +3750,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 		if (!p->is_quoted && is_consing && p->start_term && !SB_strcmp(p->token, "|")) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, parsing list '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, parsing list '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "list";
 			p->error = true;
@@ -3759,7 +3759,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 		if (!p->is_quoted && p->was_consing && is_consing && !SB_strcmp(p->token, "|")) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, parsing list '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, parsing list '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "list";
 			p->error = true;
@@ -3768,7 +3768,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 		if (!p->is_quoted && p->was_consing && last_bar && !SB_strcmp(p->token, "]")) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, parsing list '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, parsing list '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "list";
 			p->error = true;
@@ -3778,7 +3778,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 		if (!p->quote_char && p->start_term &&
 			(!SB_strcmp(p->token, "]") || !SB_strcmp(p->token, ")") || !SB_strcmp(p->token, "}"))) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, start of rule expected, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, start of rule expected, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "start_expected";
 			p->error = true;
@@ -3788,7 +3788,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 		if (!p->quote_char && !SB_strcmp(p->token, ")")) {
 			if (arg_idx == p->cl->cidx) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: syntax error, missing arg '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, missing arg '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "args";
 				p->error = true;
@@ -3797,7 +3797,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 			if (entered != '(') {
 				if (DUMP_ERRS || !p->do_read_term)
-					printf("Error: syntax error, mismatched parens/brackets/braces, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					printf("Error: syntax error, mismatched parens/brackets/braces, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "mismatched_parens_or_brackets_or_braces";
 				p->error = true;
@@ -3813,7 +3813,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 		if (!p->quote_char && !SB_strcmp(p->token, "]")) {
 			if (arg_idx == p->cl->cidx) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: syntax error, missing arg '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, missing arg '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "args";
 				p->error = true;
@@ -3822,7 +3822,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 			if (entered != '[') {
 				if (DUMP_ERRS || !p->do_read_term)
-					printf("Error: syntax error, mismatched parens/brackets/braces, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					printf("Error: syntax error, mismatched parens/brackets/braces, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "mismatched_parens_or_brackets_or_braces";
 				p->error = true;
@@ -3838,7 +3838,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 		if (!p->quote_char && !SB_strcmp(p->token, "}")) {
 			if (arg_idx == p->cl->cidx) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: syntax error, missing arg '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, missing arg '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "args";
 				p->error = true;
@@ -3847,7 +3847,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 			if (entered != '{') {
 				if (DUMP_ERRS || !p->do_read_term)
-					printf("Error: syntax error, mismatched parens/brackets/braces, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					printf("Error: syntax error, mismatched parens/brackets/braces, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "mismatched_parens_or_brackets_or_braces";
 				p->error = true;
@@ -3864,7 +3864,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 		if (p->is_var && (*p->srcptr == '(')) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, var as functor, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, var as functor, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "variable_cannot_be_functor";
 			p->error = true;
@@ -3879,7 +3879,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 			if (!s || !*s) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: syntax error, incomplete, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, incomplete, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "incomplete";
 				p->error = true;
@@ -3891,7 +3891,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 			if (noneg && !p->is_string) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: syntax error, incomplete, needs parenthesis, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, incomplete, needs parenthesis, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "incomplete";
 				p->error = true;
@@ -3926,7 +3926,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 			if (!s || !*s) {
 				if (DUMP_ERRS || !p->do_read_term)
-					fprintf(stderr, "Error: syntax error, incomplete, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+					fprintf(stderr, "Error: syntax error, incomplete, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "error_incomplete";
 				p->error = true;
@@ -3974,7 +3974,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 		if (!is_func && last_op && (is_arg_processing && priority >= 1200) && !p->is_quoted) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, parens needed around operator '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, parens needed around operator '%s', %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "parens_needed";
 			p->error = true;
@@ -3983,7 +3983,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 		if ((p->was_string || p->is_string) && is_func) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, near \"%s\", expected atom, %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, near \"%s\", expected atom, %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "expected_atom";
 			p->error = true;
@@ -3998,7 +3998,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 		if (!p->is_op && !is_func && last_op && last_postfix) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, near '%s', operator expected postfix '%s', %s:%d\n", SB_cstr(p->token), p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, near '%s', operator expected postfix '%s', %s:%d\n", SB_cstr(p->token), p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "operator_expected";
 			p->error = true;
@@ -4007,7 +4007,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 		if ((!p->is_op || IS_PREFIX(specifier)) && !is_func && !last_op) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, near '%s', operator expected, %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_nbr);
+				fprintf(stderr, "Error: syntax error, near '%s', operator expected, %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "operator_expected";
 			p->error = true;
@@ -4075,7 +4075,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yield_time_in_ms)
 {
 	if ((*pSrc == '.') && !pSrc[1]) {
-		fprintf(stderr, "Error: syntax error, incomplete statement, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+		fprintf(stderr, "Error: syntax error, incomplete statement, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 		return false;
 	}
 
@@ -4096,7 +4096,7 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 	while (p->srcptr && *p->srcptr) {
 		reset(p);
 		p->line_num_start = 0;
-		p->line_nbr = 1;
+		p->line_num = 1;
 		p->one_shot = true;
 		p->is_consulting = false;
 		tokenize(p, false, false);
@@ -4110,7 +4110,7 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 			break;
 
 		if (!p->error && !p->end_of_term && !p->m->run_init) {
-			fprintf(stderr, "Error: syntax error, missing operand or operator, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_nbr);
+			fprintf(stderr, "Error: syntax error, missing operand or operator, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 			p->error = true;
 		}
 

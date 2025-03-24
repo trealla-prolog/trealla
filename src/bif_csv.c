@@ -319,7 +319,7 @@ bool bif_parse_csv_file_2(query *q)
 
 	q->p->fp = fopen(C_STR(q, p1), "r");
 	if (!q->p->fp) return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
-	unsigned line_nbr = 0;
+	unsigned line_num = 0;
 	pl_idx save_hp = q->st.hp;
 	frame *f = GET_CURR_FRAME();
 	frame save_f = *f;
@@ -329,7 +329,7 @@ bool bif_parse_csv_file_2(query *q)
 	while ((len = getline(&q->p->save_line, &q->p->n_line, q->p->fp)) != -1) {
 		CHECK_INTERRUPT();
 		char *line = q->p->save_line;
-		line_nbr++;
+		line_num++;
 
 		if (header) {
 			header = false;
@@ -340,7 +340,7 @@ bool bif_parse_csv_file_2(query *q)
 			continue;
 
 		if (!do_parse_csv_line(q, &params, line, NULL, 0)) {
-			//fprintf(stderr, "Error: line %u\n", line_nbr);
+			//fprintf(stderr, "Error: line %u\n", line_num);
 			free(q->p->save_line);
 			q->p->save_line = NULL;
 			fclose(q->p->fp);
@@ -358,7 +358,7 @@ bool bif_parse_csv_file_2(query *q)
 	q->p->fp = NULL;
 
 	if (!q->pl->quiet)
-		printf("%% Parsed %u lines\n", line_nbr);
+		printf("%% Parsed %u lines\n", line_num);
 
 	return true;
 }

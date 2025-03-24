@@ -71,7 +71,7 @@ static bool bif_iso_findall_3(query *q)
 
 		grab_queuen(q);
 
-		if (q->st.qnbr == MAX_QUEUES)
+		if (q->st.qnum == MAX_QUEUES)
 			return throw_error(q, p2, p2_ctx, "resource_error", "max_queues");
 
 		cell *tmp = prepare_call(q, PREFIX_LEN, p2, p2_ctx, 1+p1->num_cells+2);
@@ -149,7 +149,7 @@ static bool bif_sys_unifiable_3(query *q)
 	while (save_tp < q->st.tp) {
 		const trail *tr = q->trails + save_tp;
 		const frame *f = GET_FRAME(tr->var_ctx);
-		slot *e = GET_SLOT(f, tr->var_nbr);
+		slot *e = GET_SLOT(f, tr->var_num);
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		pl_idx c_ctx = q->latest_ctx;
 		cell *tmp = malloc(sizeof(cell)*(2+c->num_cells));
@@ -157,7 +157,7 @@ static bool bif_sys_unifiable_3(query *q)
 		make_instr(tmp, g_unify_s, bif_iso_unify_2, 2, 1+c->num_cells);
 		SET_OP(tmp, OP_XFX);
 		cell v;
-		make_ref(&v, tr->var_nbr, q->st.curr_frame);
+		make_ref(&v, tr->var_num, q->st.curr_frame);
 		tmp[1] = v;
 		dup_cells_by_ref(tmp+2, c, c_ctx, c->num_cells);
 		append_list(q, tmp);
@@ -1793,7 +1793,7 @@ static cell *do_term_variables(query *q, cell *p1, pl_idx p1_ctx)
 			tmp[idx].arity = 2;
 			tmp[idx].num_cells = ((cnt-done)*2)+1;
 			idx++;
-			make_ref(tmp+idx, q->pl->tabs[i].var_nbr, q->pl->tabs[i].ctx);
+			make_ref(tmp+idx, q->pl->tabs[i].var_num, q->pl->tabs[i].ctx);
 
 			if (q->pl->tabs[i].is_anon)
 				tmp[idx].flags |= FLAG_VAR_ANON;
@@ -1866,7 +1866,7 @@ static cell *do_term_singletons(query *q, cell *p1, pl_idx p1_ctx)
 			tmp[idx].arity = 2;
 			tmp[idx].num_cells = ((cnt2-done)*2)+1;
 			idx++;
-			make_ref(tmp+idx, q->pl->tabs[i].var_nbr, q->pl->tabs[i].ctx);
+			make_ref(tmp+idx, q->pl->tabs[i].var_num, q->pl->tabs[i].ctx);
 
 			if (q->pl->tabs[i].is_anon)
 				tmp[idx].flags |= FLAG_VAR_ANON;
@@ -1976,8 +1976,8 @@ static bool bif_iso_functor_3(query *q)
 		if (!arity)
 			return unify(q, p1, p1_ctx, p2, p2_ctx);
 
-		int var_nbr = create_vars(q, arity);
-		check_heap_error(var_nbr != -1);
+		int var_num = create_vars(q, arity);
+		check_heap_error(var_num != -1);
 		GET_FIRST_ARG(p1,any);
 		GET_NEXT_ARG(p2,any);
 		cell *tmp = alloc_on_heap(q, 1+arity);
@@ -1996,7 +1996,7 @@ static bool bif_iso_functor_3(query *q)
 			memset(tmp+i, 0, sizeof(cell));
 			tmp[i].tag = TAG_VAR;
 			tmp[i].num_cells = 1;
-			tmp[i].var_nbr = var_nbr++;
+			tmp[i].var_num = var_num++;
 			tmp[i].var_ctx = q->st.curr_frame;
 			tmp[i].flags = FLAG_VAR_REF | FLAG_VAR_FRESH | FLAG_VAR_ANON;
 		}
@@ -2130,9 +2130,9 @@ static bool bif_iso_current_predicate_1(query *q)
 		pl_idx p1_ctx = q->st.curr_frame;
 		pl_idx p2_ctx = q->st.curr_frame;
 		frame *f = GET_CURR_FRAME();
-		unsigned var_nbr = f->actual_slots;
-		make_ref(&tmp1, var_nbr++, q->st.curr_frame);
-		make_ref(&tmp2, var_nbr++, q->st.curr_frame);
+		unsigned var_num = f->actual_slots;
+		make_ref(&tmp1, var_num++, q->st.curr_frame);
+		make_ref(&tmp2, var_num++, q->st.curr_frame);
 		if (create_vars(q, 2) < 0)
 			return throw_error(q, p1, p1_ctx, "resource_error", "stack");
 		GET_FIRST_ARG(p_pi,any);
@@ -2629,10 +2629,10 @@ static bool bif_sys_list_1(query *q)
 bool bif_sys_queue_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	check_heap_error(init_tmp_heap(q), q->st.qnbr--);
+	check_heap_error(init_tmp_heap(q), q->st.qnum--);
 	cell *tmp = clone_term_to_tmp(q, p1, p1_ctx);
-	check_heap_error(tmp, q->st.qnbr--);
-	check_heap_error(alloc_on_queuen(q, q->st.qnbr, tmp), q->st.qnbr--);
+	check_heap_error(tmp, q->st.qnum--);
+	check_heap_error(alloc_on_queuen(q, q->st.qnum, tmp), q->st.qnum--);
 	return true;
 }
 
@@ -3245,11 +3245,11 @@ bool bif_statistics_0(query *q)
 		"Queue: %u\n",
 		q->tot_inferences, q->tot_matches,
 		q->hw_frames, q->hw_choices, q->hw_trails, q->hw_slots,
-		q->hw_heap_nbr,
+		q->hw_heap_num,
 		q->st.fp, q->cp, q->st.tp, q->st.sp,
-		q->st.heap_nbr,
+		q->st.heap_num,
 		q->tot_retries, q->tot_tcos,
-		(unsigned)q->qcnt[q->st.qnbr]
+		(unsigned)q->qcnt[q->st.qnum]
 		);
 	return true;
 }
@@ -3432,7 +3432,7 @@ static bool bif_split_string_4(query *q)
 	int pad = peek_char_utf8(C_STR(q, p3));
 	const char *start = src, *ptr;
 	cell *l = NULL;
-	int nbr = 1;
+	int num = 1;
 
 	if (!*start)
 		return unify(q, p4, p4_ctx, make_nil(), q->st.curr_frame);
@@ -5762,8 +5762,8 @@ static bool bif_sys_det_length_rundown_2(query *q)
 	GET_FIRST_ARG(p1,list_or_var);
 	GET_NEXT_ARG(p2,integer);
 	unsigned n = get_smalluint(p2);
-	int var_nbr = create_vars(q, n);
-	check_heap_error(var_nbr != -1);
+	int var_num = create_vars(q, n);
+	check_heap_error(var_num != -1);
 	cell *l = alloc_on_heap(q, n*2+1);
 	check_heap_error(l);
 	cell *save_l = l;
@@ -5775,7 +5775,7 @@ static bool bif_sys_det_length_rundown_2(query *q)
 		l->arity = 2;
 		l->flags = 0;
 		l++;
-		make_ref(l++, var_nbr++, q->st.curr_frame);
+		make_ref(l++, var_num++, q->st.curr_frame);
 	}
 
 	make_atom(l, g_nil_s);
@@ -5891,13 +5891,13 @@ static bool do_dump_term(query *q, cell *p1, pl_idx p1_ctx, bool deref, int dept
 			printf(", global=%d, void=%d, local=%d, temp=%d, anon=%d", is_global(tmp), is_void(tmp), is_local(tmp), is_temporary(tmp), is_anon(tmp));
 
 		if (is_ref(tmp))
-			printf(", slot=%u, ctx=%u", tmp->var_nbr, tmp->var_ctx);
+			printf(", slot=%u, ctx=%u", tmp->var_num, tmp->var_ctx);
 		else if (is_var(tmp))
-			printf(", slot=%u, %s", tmp->var_nbr, C_STR(q, tmp));
+			printf(", slot=%u, %s", tmp->var_num, C_STR(q, tmp));
 
 		if (is_var(tmp) && deref) {
 			const frame *f = GET_FRAME(is_ref(tmp)?tmp->var_ctx:p1_ctx);
-			slot *e = GET_SLOT(f, tmp->var_nbr);
+			slot *e = GET_SLOT(f, tmp->var_num);
 
 			if (e->c.attrs) {
 				printf("\n");
@@ -6049,7 +6049,7 @@ static bool bif_sys_countall_2(query *q)
 	check_heap_error(tmp);
 	pl_idx num_cells = PREFIX_LEN + tmp2->num_cells;
 	make_instr(tmp+num_cells++, g_sys_counter_s, bif_sys_counter_1, 1, 1);
-	make_ref(tmp+num_cells++, p2->var_nbr, p2_ctx);
+	make_ref(tmp+num_cells++, p2->var_num, p2_ctx);
 	make_instr(tmp+num_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
 	make_call(q, tmp+num_cells);
 	check_heap_error(push_succeed_on_retry(q, 0));

@@ -5,7 +5,7 @@
 bool accum_var(query *q, const cell *c, pl_idx c_ctx)
 {
 	const frame *f = GET_FRAME(c_ctx);
-	const slot *e = GET_SLOT(f, c->var_nbr);
+	const slot *e = GET_SLOT(f, c->var_num);
 	const void *v;
 
 	if (sl_get(q->vars, e, &v)) {
@@ -29,7 +29,7 @@ bool accum_var(query *q, const cell *c, pl_idx c_ctx)
 	}
 
 	q->pl->tabs[q->tab_idx].ctx = c_ctx;
-	q->pl->tabs[q->tab_idx].var_nbr = c->var_nbr;
+	q->pl->tabs[q->tab_idx].var_num = c->var_num;
 	q->pl->tabs[q->tab_idx].val_off = c->val_off;
 	q->pl->tabs[q->tab_idx].is_anon = is_anon(c) ? true : false;
 	q->pl->tabs[q->tab_idx].cnt = 1;
@@ -157,7 +157,7 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 				c_ctx = c->var_ctx;
 
 			const frame *f = GET_FRAME(c_ctx);
-			slot *e = GET_SLOT(f, c->var_nbr);
+			slot *e = GET_SLOT(f, c->var_num);
 			uint32_t save_vgen = 0;
 			c = deref(q, c, c_ctx);
 			c_ctx = q->latest_ctx;
@@ -186,7 +186,7 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 				l_ctx = l->var_ctx;
 
 			const frame *f = GET_FRAME(l_ctx);
-			slot *e = GET_SLOT(f, l->var_nbr);
+			slot *e = GET_SLOT(f, l->var_num);
 			l = deref(q, l, l_ctx);
 			l_ctx = q->latest_ctx;
 
@@ -238,7 +238,7 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 
 		if (is_var(c)) {
 			frame *f = GET_FRAME(c_ctx);
-			slot *e = GET_SLOT(f, c->var_nbr);
+			slot *e = GET_SLOT(f, c->var_num);
 			uint32_t save_vgen = 0;
 			c = deref(q, c, c_ctx);
 			c_ctx = q->latest_ctx;

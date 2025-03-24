@@ -1679,9 +1679,9 @@ bool module_dump_term(module* m, cell *p1)
 			printf(", local=%d, temp=%d, anon=%d", is_local(tmp), is_temporary(tmp), is_anon(tmp));
 
 		if (is_ref(tmp))
-			printf(", slot=%u, ctx=%u", tmp->var_nbr, tmp->var_ctx);
+			printf(", slot=%u, ctx=%u", tmp->var_num, tmp->var_ctx);
 		else if (is_var(tmp))
-			printf(", slot=%u, %s", tmp->var_nbr, C_STR(q, tmp));
+			printf(", slot=%u, %s", tmp->var_num, C_STR(q, tmp));
 
 		printf("\n");
 	}
@@ -2018,7 +2018,7 @@ module *load_text(module *m, const char *src, const char *filename)
 
 	if (!p->error && !p->already_loaded_error && !p->end_of_term && p->cl->cidx) {
 		if (DUMP_ERRS || !p->do_read_term)
-			fprintf(stderr, "Error: syntax error, incomplete statement, %s:%d\n", filename, p->line_nbr);
+			fprintf(stderr, "Error: syntax error, incomplete statement, %s:%d\n", filename, p->line_num);
 
 		p->error = true;
 	}
@@ -2161,7 +2161,7 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including, bool 
 
 	if (!p->error && !p->already_loaded_error && !p->end_of_term && p->cl->cidx) {
 		if (DUMP_ERRS || !p->do_read_term)
-			fprintf(stderr, "Error: syntax error, incomplete statement, %s:%d\n", filename, p->line_nbr);
+			fprintf(stderr, "Error: syntax error, incomplete statement, %s:%d\n", filename, p->line_num);
 
 		p->error = true;
 	}

@@ -559,7 +559,7 @@ static void add_stream_properties(query *q, int n)
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, file(%llu)).\n", n, (unsigned long long)(size_t)str->fp);
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, mode(%s)).\n", n, str->mode);
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, type(%s)).\n", n, str->binary ? "binary" : "text");
-		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, line_count(%d)).\n", n, str->p ? str->p->line_nbr : 1);
+		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, line_count(%d)).\n", n, str->p ? str->p->line_num : 1);
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, position(%llu)).\n", n, (unsigned long long)(pos != -1 ? pos : 0));
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, reposition(%s)).\n", n, (n < 3) || str->socket ? "false" : "true");
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, end_of_stream(%s)).\n", n, str->at_end_of_file ? "past" : at_end_of_file ? "at" : "not");
@@ -819,7 +819,7 @@ static bool do_stream_property(query *q)
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "line_count") && !is_var(pstr)) {
 		cell tmp;
-		make_int(&tmp, str->p->line_nbr);
+		make_int(&tmp, str->p->line_num);
 		return unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 	}
 
@@ -2086,7 +2086,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 		if (str->p->error)
 			return throw_error(q, q->st.curr_instr, q->st.curr_frame, "syntax_error", str->p->error_desc?str->p->error_desc:"read_term");
 
-		str->p->line_num_start = str->p->line_nbr;
+		str->p->line_num_start = str->p->line_num;
 		str->p->srcptr = src;
 	}
 
@@ -2100,7 +2100,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 
 		if (!src && (!str->p->srcptr || !*str->p->srcptr || (*str->p->srcptr == '\n'))) {
 			if (str->p->srcptr && (*str->p->srcptr == '\n'))
-				str->p->line_nbr++;
+				str->p->line_num++;
 
 			if (str->p->no_fp || getline(&str->p->save_line, &str->p->n_line, str->fp) == -1) {
 				if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
@@ -2160,7 +2160,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 						p = h+2;
 						p = deref(q, p, h_ctx);
 						p_ctx = q->latest_ctx;
-						make_int(&tmp, str->p->line_nbr);
+						make_int(&tmp, str->p->line_num);
 						unify(q, p, p_ctx, &tmp, q->st.curr_frame);
 					}
 
@@ -2256,7 +2256,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 			p = h+2;
 			p = deref(q, p, h_ctx);
 			p_ctx = q->latest_ctx;
-			make_int(&tmp, str->p->line_nbr);
+			make_int(&tmp, str->p->line_num);
 
 			if (!unify(q, p, p_ctx, &tmp, q->st.curr_frame))
 				return false;
@@ -2300,7 +2300,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 				tmp[idx].arity = 2;
 				tmp[idx++].num_cells = ((cnt-done)*2)+1;
 				cell v;
-				make_ref(&v, q->pl->tabs[i].var_nbr, q->st.curr_frame);
+				make_ref(&v, q->pl->tabs[i].var_num, q->st.curr_frame);
 				tmp[idx++] = v;
 				done++;
 			}
@@ -2352,7 +2352,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 				tmp[idx++] = v;
 				make_atom(&v, q->pl->tabs[i].val_off);
 				tmp[idx++] = v;
-				make_ref(&v, q->pl->tabs[i].var_nbr, q->st.curr_frame);
+				make_ref(&v, q->pl->tabs[i].var_num, q->st.curr_frame);
 				v.flags |= FLAG_VAR_FRESH;
 				tmp[idx++] = v;
 				done++;
@@ -2411,7 +2411,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 				tmp[idx++] = v;
 				make_atom(&v, q->pl->tabs[i].val_off);
 				tmp[idx++] = v;
-				make_ref(&v, q->pl->tabs[i].var_nbr, q->st.curr_frame);
+				make_ref(&v, q->pl->tabs[i].var_num, q->st.curr_frame);
 				v.flags |= FLAG_VAR_FRESH;
 				tmp[idx++] = v;
 				done++;
@@ -3249,7 +3249,7 @@ static bool bif_iso_get_char_1(query *q)
 		str->did_getc = false;
 
 		if (str->p)
-			str->p->line_nbr++;
+			str->p->line_num++;
 	}
 
 	char tmpbuf[80];
@@ -3320,7 +3320,7 @@ static bool bif_iso_get_char_2(query *q)
 		str->did_getc = false;
 
 		if (str->p)
-			str->p->line_nbr++;
+			str->p->line_num++;
 	}
 
 	char tmpbuf[80];
@@ -3393,7 +3393,7 @@ static bool bif_iso_get_code_1(query *q)
 		str->did_getc = false;
 
 		if (str->p)
-			str->p->line_nbr++;
+			str->p->line_num++;
 	} else if (ch == EOF)
 		str->did_getc = false;
 
@@ -3469,7 +3469,7 @@ static bool bif_iso_get_code_2(query *q)
 		str->did_getc = false;
 
 		if (str->p)
-			str->p->line_nbr++;
+			str->p->line_num++;
 	}
 
 	cell tmp;
@@ -5025,7 +5025,7 @@ static bool bif_getfile_2(query *q)
 
 	char *line = NULL;
 	size_t len = 0;
-	int nbr = 1;
+	int num = 1;
 	check_heap_error(init_tmp_heap(q));
 
 	while (getline(&line, &len, fp) != -1) {
@@ -5116,7 +5116,7 @@ static bool bif_getfile_3(query *q)
 
 	char *line = NULL;
 	size_t len = 0;
-	int nbr = 1;
+	int num = 1;
 	check_heap_error(init_tmp_heap(q));
 
 	while (getline(&line, &len, fp) != -1) {
@@ -5154,7 +5154,7 @@ static bool bif_getlines_1(query *q)
 	stream *str = &q->pl->streams[n];
 	char *line = NULL;
 	size_t len = 0;
-	int nbr = 1;
+	int num = 1;
 	check_heap_error(init_tmp_heap(q));
 
 	while (getline(&line, &len, str->fp) != -1) {
@@ -5190,7 +5190,7 @@ static bool bif_getlines_2(query *q)
 	stream *str = &q->pl->streams[n];
 	char *line = NULL;
 	size_t len = 0;
-	int nbr = 1;
+	int num = 1;
 	check_heap_error(init_tmp_heap(q));
 
 	while (getline(&line, &len, str->fp) != -1) {
@@ -5227,7 +5227,7 @@ static bool bif_getlines_3(query *q)
 	stream *str = &q->pl->streams[n];
 	char *line = NULL;
 	size_t len = 0;
-	int nbr = 1;
+	int num = 1;
 	bool terminator = get_terminator(q, p2, p2_ctx);
 	check_heap_error(init_tmp_heap(q));
 

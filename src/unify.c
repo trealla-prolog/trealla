@@ -161,7 +161,7 @@ static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx 
 			if (p1_ctx > p2_ctx)
 				return 1;
 
-			return p1->var_nbr < p2->var_nbr ? -1 : p1->var_nbr > p2->var_nbr ? 1 : 0;
+			return p1->var_num < p2->var_num ? -1 : p1->var_num > p2->var_num ? 1 : 0;
 		}
 
 		return -1;
@@ -312,11 +312,11 @@ inline static bool any_choices(const query *q, const frame *f)
 static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
 {
 	const frame *f = GET_FRAME(c_ctx);
-	slot *e = GET_SLOT(f, c->var_nbr);
+	slot *e = GET_SLOT(f, c->var_num);
 	cell *c_attrs = is_empty(&e->c) ? e->c.attrs : NULL;
 
 	if (is_managed(v) || (c_ctx != q->st.fp))
-		add_trail(q, c_ctx, c->var_nbr, c_attrs);
+		add_trail(q, c_ctx, c->var_num, c_attrs);
 
 	if (c_attrs)
 		q->run_hook = true;
@@ -326,7 +326,7 @@ static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx
 	// If anything points inside the next frame then ditto.
 
 	if (is_var(v)) {
-		make_ref(&e->c, v->var_nbr, v_ctx);
+		make_ref(&e->c, v->var_num, v_ctx);
 
 		if ((c_ctx == q->st.fp) && !is_temporary(c) && !is_void(c))
 			q->unify_no_tco = true;
@@ -351,7 +351,7 @@ static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx
 void reset_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
 {
 	const frame *f = GET_FRAME(c_ctx);
-	slot *e = GET_SLOT(f, c->var_nbr);
+	slot *e = GET_SLOT(f, c->var_num);
 	e->c = *v;
 	share_cell(v);
 }
@@ -675,9 +675,9 @@ static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 			set_var(q, p2, p2_ctx, p1, p1_ctx);
 		else if (p2_ctx < p1_ctx)
 			set_var(q, p1, p1_ctx, p2, p2_ctx);
-		else if (p2->var_nbr > p1->var_nbr)
+		else if (p2->var_num > p1->var_num)
 			set_var(q, p2, p2_ctx, p1, p1_ctx);
-		else if (p2->var_nbr < p1->var_nbr)
+		else if (p2->var_num < p1->var_num)
 			set_var(q, p1, p1_ctx, p2, p2_ctx);
 
 		return true;

@@ -55,11 +55,11 @@ static bool bif_bb_b_put_2(query *q)
 	check_heap_error(val);
 	dup_cells(val, tmp, tmp->num_cells);
 
-	int var_nbr = create_vars(q, 1);
-	check_heap_error(var_nbr != -1);
+	int var_num = create_vars(q, 1);
+	check_heap_error(var_num != -1);
 
 	cell c, v;
-	make_ref(&c, var_nbr, q->st.curr_frame);
+	make_ref(&c, var_num, q->st.curr_frame);
 	blob *b = calloc(1, sizeof(blob));
 	b->ptr = (void*)m;
 	b->ptr2 = (void*)strdup(key);
@@ -195,9 +195,9 @@ static bool bif_bb_get_2(query *q)
 
 	if (is_var(p2) && is_var(tmp)) {
 		const frame *f = GET_FRAME(q->st.curr_frame);
-		const slot *e = GET_SLOT(f, tmp->var_nbr);
+		const slot *e = GET_SLOT(f, tmp->var_num);
 		const frame *f2 = GET_FRAME(p2_ctx);
-		slot *e2 = GET_SLOT(f2, p2->var_nbr);
+		slot *e2 = GET_SLOT(f2, p2->var_num);
 		*e2 = *e;
 		return true;
 	}
@@ -254,9 +254,9 @@ static bool bif_bb_delete_2(query *q)
 
 	if (is_var(p2) && is_var(tmp)) {
 		const frame *f = GET_FRAME(q->st.curr_frame);
-		const slot *e = GET_SLOT(f, tmp->var_nbr);
+		const slot *e = GET_SLOT(f, tmp->var_num);
 		const frame *f2 = GET_FRAME(p2_ctx);
-		slot *e2 = GET_SLOT(f2, p2->var_nbr);
+		slot *e2 = GET_SLOT(f2, p2->var_num);
 		*e2 = *e;
 		bool ok = sl_del(q->pl->keyval, key);
 		prolog_unlock(q->pl);

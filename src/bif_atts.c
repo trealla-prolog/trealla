@@ -39,7 +39,7 @@ static bool do_put_atts(query *q, cell *attr, pl_idx attr_ctx, bool is_minus)
 {
 	GET_FIRST_ARG(p1,var);
 	const frame *f = GET_FRAME(p1_ctx);
-	slot *e = GET_SLOT(f, p1->var_nbr);
+	slot *e = GET_SLOT(f, p1->var_num);
 	cell *c = deref(q, &e->c, e->c.var_ctx);
 	pl_idx c_ctx = q->latest_ctx;
 	frame *fcurr = GET_CURR_FRAME();
@@ -51,7 +51,7 @@ static bool do_put_atts(query *q, cell *attr, pl_idx attr_ctx, bool is_minus)
 	if (((attr->val_off == g_minus_s) || (attr->val_off == g_plus_s)) && (attr->arity == 1))
 		attr++;
 
-	add_trail(q, p1_ctx, p1->var_nbr, c->attrs);
+	add_trail(q, p1_ctx, p1->var_num, c->attrs);
 
 	unsigned a_arity = attr->arity;
 	bool found;
@@ -154,7 +154,7 @@ static bool bif_get_atts_2(query *q)
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,callable_or_var);
 	const frame *f = GET_FRAME(p1_ctx);
-	slot *e = GET_SLOT(f, p1->var_nbr);
+	slot *e = GET_SLOT(f, p1->var_num);
 	cell *c = deref(q, &e->c, e->c.var_ctx);
 	pl_idx c_ctx = q->latest_ctx;
 	bool is_minus = !is_var(p2) && (p2->val_off == g_minus_s) && (p2->arity == 1);
@@ -229,7 +229,7 @@ static bool bif_get_atts_2(query *q)
 }
 
 #if 0
-static bool check_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c, pl_idx c_ctx)
+static bool check_occurs(unsigned var_num, pl_idx var_ctx, cell *c, pl_idx c_ctx)
 {
 	bool any = false;
 
@@ -242,7 +242,7 @@ static bool check_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c, pl_idx c_ctx
 		if (is_ref(c))
 			ctx = c->var_ctx;
 
-		if (var_nbr != c->var_nbr)
+		if (var_num != c->var_num)
 			continue;
 
 		if (var_ctx != ctx)
@@ -324,7 +324,7 @@ static bool bif_sys_list_attributed_1(query *q)
 
 		for (unsigned i = 0; i < q->tab_idx; i++) {
 			const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
-			slot *e = GET_SLOT(f, q->pl->tabs[i].var_nbr);
+			slot *e = GET_SLOT(f, q->pl->tabs[i].var_num);
 			cell *v = deref(q, &e->c, e->c.var_ctx);
 
 			if (!is_empty(v) || !v->attrs)
@@ -334,7 +334,7 @@ static bool bif_sys_list_attributed_1(query *q)
 				continue;
 
 			cell tmp;
-			make_ref(&tmp, q->pl->tabs[i].var_nbr, q->pl->tabs[i].ctx);
+			make_ref(&tmp, q->pl->tabs[i].var_num, q->pl->tabs[i].ctx);
 			append_list(q, &tmp);
 		}
 	}
@@ -348,7 +348,7 @@ static bool bif_sys_attributed_var_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	const frame *f = GET_FRAME(p1_ctx);
-	slot *e = GET_SLOT(f, p1->var_nbr);
+	slot *e = GET_SLOT(f, p1->var_num);
 	cell *c = deref(q, &e->c, e->c.var_ctx);
 	pl_idx c_ctx = q->latest_ctx;
 
@@ -394,7 +394,7 @@ typedef struct {
 	slot e[];
 } bind_state;
 
-static void set_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c, pl_idx c_ctx)
+static void set_occurs(unsigned var_num, pl_idx var_ctx, cell *c, pl_idx c_ctx)
 {
 	for (unsigned num_cells = c->num_cells; num_cells--; c++) {
 		if (!is_var(c))
@@ -405,7 +405,7 @@ static void set_occurs(unsigned var_nbr, pl_idx var_ctx, cell *c, pl_idx c_ctx)
 		if (is_ref(c))
 			ctx = c->var_ctx;
 
-		if (var_nbr != c->var_nbr)
+		if (var_num != c->var_num)
 			continue;
 
 		if (var_ctx != ctx)
@@ -436,13 +436,13 @@ static bool bif_sys_undo_trail_2(query *q)
 	for (pl_idx i = q->undo_lo_tp, j = 0; i < q->undo_hi_tp; i++, j++) {
 		const trail *tr = q->trails + i;
 		const frame *f = GET_FRAME(tr->var_ctx);
-		slot *e = GET_SLOT(f, tr->var_nbr);
+		slot *e = GET_SLOT(f, tr->var_num);
 		save->e[j].c = e->c;
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		pl_idx c_ctx = q->latest_ctx;
-		set_occurs(tr->var_nbr, tr->var_ctx, c, c_ctx);
+		set_occurs(tr->var_num, tr->var_ctx, c, c_ctx);
 		cell lhs, rhs;
-		make_ref(&lhs, tr->var_nbr, tr->var_ctx);
+		make_ref(&lhs, tr->var_num, tr->var_ctx);
 
 		if (is_compound(c))
 			make_indirect(&rhs, c, c_ctx);
@@ -476,7 +476,7 @@ static bool bif_sys_redo_trail_1(query * q)
 	for (pl_idx i = save->lo_tp, j = 0; i < save->hi_tp; i++, j++) {
 		const trail *tr = q->trails + i;
 		const frame *f = GET_FRAME(tr->var_ctx);
-		slot *e = GET_SLOT(f, tr->var_nbr);
+		slot *e = GET_SLOT(f, tr->var_num);
 		e->c = save->e[j].c;
 	}
 

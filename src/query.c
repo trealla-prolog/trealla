@@ -57,7 +57,7 @@ void dump_term(query *q, const char *s, const cell *c)
 		if (is_atom(c))
 			printf("%s ", C_STR(q, c));
 		else if (is_var(c))
-			printf("_%u ", c->var_nbr);
+			printf("_%u ", c->var_num);
 		else if (is_compound(c))
 			printf("%s/%u ", C_STR(q, c), c->arity);
 
@@ -239,15 +239,15 @@ bool check_slot(query *q, unsigned cnt)
 {
 	cnt += 1024;	// Why??
 
-	pl_idx nbr = q->st.sp + cnt;
+	pl_idx num = q->st.sp + cnt;
 
 	if (q->st.sp > q->hw_slots)
 		q->hw_slots = q->st.sp;
 
-	if (nbr < q->slots_size)
+	if (num < q->slots_size)
 		return true;
 
-	pl_idx new_slotssize = alloc_grow(q, (void**)&q->slots, sizeof(slot), nbr, nbr*2, false);
+	pl_idx new_slotssize = alloc_grow(q, (void**)&q->slots, sizeof(slot), num, num*2, false);
 
 	if (!new_slotssize) {
 		q->oom = q->error = true;
@@ -286,7 +286,7 @@ void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs)
 
 	trail *tr = q->trails + q->st.tp++;
 	tr->var_ctx = c_ctx;
-	tr->var_nbr = c_var_nbr;
+	tr->var_num = c_var_nbr;
 	tr->attrs = attrs;
 }
 
@@ -529,7 +529,7 @@ void undo_me(query *q)
 	while (q->st.tp > ch->st.tp) {
 		const trail *tr = q->trails + --q->st.tp;
 		const frame *f = GET_FRAME(tr->var_ctx);
-		slot *e = GET_SLOT(f, tr->var_nbr);
+		slot *e = GET_SLOT(f, tr->var_num);
 		cell *c = &e->c;
 		unshare_cell(c);
 		c->tag = TAG_EMPTY;
@@ -580,7 +580,7 @@ static frame *push_frame(query *q, const clause *cl)
 	f->prev = q->st.curr_frame;
 	f->curr_instr = q->st.curr_instr;
 	f->hp = q->st.hp;
-	f->heap_nbr = q->st.heap_nbr;
+	f->heap_num = q->st.heap_num;
 	f->initial_slots = f->actual_slots = cl->num_vars;
 	f->chgen = ++q->chgen;
 	f->has_local_vars = cl->has_local_vars;
@@ -613,7 +613,7 @@ static void reuse_frame(query *q, const clause *cl)
 
 	trim_trail(q);
 	q->st.hp = f->hp;
-	q->st.heap_nbr = f->heap_nbr;
+	q->st.heap_num = f->heap_num;
 	trim_heap(q);
 	q->st.sp = f->base + cl->num_vars;
 	q->st.curr_rule->tcos++;
@@ -931,7 +931,7 @@ static bool resume_frame(query *q)
 		&& !resume_any_choices(q, f)
 		) {
 		q->st.hp = f->hp;
-		q->st.heap_nbr = f->heap_nbr;
+		q->st.heap_num = f->heap_num;
 		trim_heap(q);
 		trim_frame(q, f);
 	}
@@ -978,7 +978,7 @@ int create_vars(query *q, unsigned cnt)
 		return -1;
 	}
 
-	unsigned var_nbr = f->actual_slots;
+	unsigned var_num = f->actual_slots;
 
 	if ((f->base + f->initial_slots) >= q->st.sp) {
 		f->initial_slots += cnt;
@@ -1011,7 +1011,7 @@ int create_vars(query *q, unsigned cnt)
 
 	q->st.sp += cnt;
 	f->actual_slots += cnt;
-	return var_nbr;
+	return var_num;
 }
 
 static bool can_view(query *q, uint64_t dbgen, const rule *r)
