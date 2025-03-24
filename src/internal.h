@@ -129,9 +129,9 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_evaluable(c) (is_interned(c) && ((c)->flags & FLAG_INTERNED_EVALUABLE))
 #define is_tail_call(c) ((c)->flags & FLAG_INTERNED_TAIL_CALL)
 #define is_recursive_call(c) ((c)->flags & FLAG_INTERNED_RECURSIVE_CALL)
-#define is_temporary(c) (!is_global(c) && ((c)->flags & FLAG_VAR_TEMPORARY))
-#define is_local(c) (!is_global(c) && ((c)->flags & FLAG_VAR_LOCAL))
-#define is_void(c) (!is_global(c) && ((c)->flags & FLAG_VAR_VOID))
+#define is_temporary(c) ((c)->flags & FLAG_VAR_TEMPORARY)
+#define is_local(c) ((c)->flags & FLAG_VAR_LOCAL)
+#define is_void(c) ((c)->flags & FLAG_VAR_VOID)
 #define is_global(c) ((c)->flags & FLAG_VAR_GLOBAL)
 #define is_ref(c) (is_var(c) && ((c)->flags & FLAG_VAR_REF))
 #define is_op(c) ((c)->flags & 0xE000) ? true : false
