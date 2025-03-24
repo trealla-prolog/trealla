@@ -793,6 +793,7 @@ void do_signal(query *q, void *thread_ptr)
 
 	msg *m = list_pop_front(&t->signals);
 	release_lock(&t->guard);
+	check_slot(q, MAX_ARITY);
 	try_me(q, MAX_ARITY);
 	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.fp, 0);
 	pl_idx c_ctx = 0;
@@ -845,6 +846,8 @@ static bool bif_thread_join_2(query *q)
 		return throw_error(q, p1, p1_ctx, "system_error", "join,not_thread");
 
 	if (t->exit_code) {
+		check_slot(q, MAX_ARITY);
+		try_me(q, MAX_ARITY);
 		cell *tmp = copy_term_to_heap(q, t->exit_code, q->st.fp, false);
 		t->exit_code = NULL;
 		GET_FIRST_ARG(p1,thread);
