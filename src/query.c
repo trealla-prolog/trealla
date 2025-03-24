@@ -636,7 +636,7 @@ static void commit_frame(query *q)
 	cell *head = get_head(cl->cells);
 	cell *body = get_body(cl->cells);
 	frame *f = GET_CURR_FRAME();
-	f->mid = q->st.curr_m->id;
+	f->curr_m = q->st.curr_m;
 
 	bool is_det = !q->has_vars && cl->is_unique;
 	bool next_key = has_next_key(q);
@@ -940,7 +940,7 @@ static bool resume_frame(query *q)
 	q->st.curr_instr = f->curr_instr;
 	q->st.curr_frame = f->prev;
 	f = GET_CURR_FRAME();
-	q->st.curr_m = q->pl->modmap[f->mid];
+	q->st.curr_m = f->curr_m;
 	return true;
 }
 

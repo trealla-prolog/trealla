@@ -417,8 +417,8 @@ struct cell_ {
 		};
 
 		struct {
-			cell *ret_instr;			// used with TAG_EMPTY saves
-			uint64_t chgen;				// choice generation on call
+			cell *ret_instr;			// used with TAG_EMPTY in call
+			uint64_t chgen;				// saves choice generation
 		};
 	};
 };
@@ -532,10 +532,10 @@ struct slot_ {
 
 struct frame_ {
 	cell *curr_instr;
+	module *curr_m;
 	uint64_t dbgen, chgen;
 	pl_idx prev, base, overflow, hp, heap_num;
 	unsigned initial_slots, actual_slots;
-	uint32_t mid;
 	bool has_local_vars:1;
 	bool unify_no_tco:1;
 };
