@@ -400,7 +400,7 @@ struct cell_ {
 				cell *tmp_attrs;		// used with TAG_VAR in copy_term
 			};
 
-			uint32_t var_num;			// used with TAG_VAR
+			pl_idx var_num;				// used with TAG_VAR
 
 			union {
 				uint32_t val_off;		// used with TAG_VAR & TAG_INTERNED
@@ -516,8 +516,7 @@ typedef struct {
 
 struct trail_ {
 	cell *attrs;
-	pl_idx var_ctx;
-	uint32_t var_num;
+	pl_idx var_ctx, var_num;
 };
 
 struct slot_ {
