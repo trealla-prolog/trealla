@@ -29,11 +29,11 @@ static void msleep(int ms)
 #define DEBUG_MATCH if (0)
 
 static const unsigned INITIAL_NBR_QUEUE_CELLS = 1000;
-static const unsigned INITIAL_NBR_HEAP_CELLS = 1000;
-static const unsigned INITIAL_NBR_SLOTS = 1000;
-static const unsigned INITIAL_NBR_TRAILS = 1000;
-static const unsigned INITIAL_NBR_CHOICES = 100;
-static const unsigned INITIAL_NBR_FRAMES = 100;
+static const unsigned INITIAL_NBR_HEAP_CELLS = 10000;
+static const unsigned INITIAL_NBR_SLOTS = 10000;
+static const unsigned INITIAL_NBR_TRAILS = 10000;
+static const unsigned INITIAL_NBR_CHOICES = 1000;
+static const unsigned INITIAL_NBR_FRAMES = 1000;
 static const unsigned INITIAL_NBR_CELLS = 100;
 
 int g_tpl_interrupt = 0;
@@ -189,6 +189,7 @@ static bool check_trail(query *q)
 		return true;
 
 	pl_idx new_trailssize = alloc_grow(q, (void**)&q->trails, sizeof(trail), q->st.tp, q->trails_size*2, false);
+
 	if (!new_trailssize) {
 		q->oom = q->error = true;
 		return false;
@@ -207,6 +208,7 @@ static bool check_choice(query *q)
 		return true;
 
 	pl_idx new_choicessize = alloc_grow(q, (void**)&q->choices, sizeof(choice), q->cp, q->choices_size*2, false);
+
 	if (!new_choicessize) {
 		q->oom = q->error = true;
 		return false;
