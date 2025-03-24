@@ -5899,9 +5899,9 @@ static bool do_dump_term(query *q, cell *p1, pl_idx p1_ctx, bool deref, int dept
 			const frame *f = GET_FRAME(is_ref(tmp)?tmp->var_ctx:p1_ctx);
 			slot *e = GET_SLOT(f, tmp->var_num);
 
-			if (e->c.attrs) {
+			if (e->c.val_attrs) {
 				printf("\n");
-				do_dump_term(q, e->c.attrs, q->st.curr_frame, deref, depth+1);
+				do_dump_term(q, e->c.val_attrs, q->st.curr_frame, deref, depth+1);
 				continue;
 			}
 		}

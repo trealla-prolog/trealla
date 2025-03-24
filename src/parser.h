@@ -71,7 +71,7 @@ inline static void make_ref(cell *tmp, unsigned var_num, pl_idx ctx)
 	tmp->flags = FLAG_VAR_REF;
 	tmp->var_num = var_num;
 	tmp->var_ctx = ctx;
-	tmp->attrs = NULL;
+	tmp->val_attrs = NULL;
 }
 
 inline static void make_indirect(cell *tmp, cell *v, pl_idx v_ctx)

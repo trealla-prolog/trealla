@@ -533,7 +533,7 @@ void undo_me(query *q)
 		cell *c = &e->c;
 		unshare_cell(c);
 		c->tag = TAG_EMPTY;
-		c->attrs = tr->attrs;
+		c->val_attrs = tr->attrs;
 	}
 }
 
@@ -907,7 +907,7 @@ static void trim_frame(query *q, const frame *f)
 		cell *c = &e->c;
 		unshare_cell(c);
 		c->tag = TAG_EMPTY;
-		c->attrs = NULL;
+		c->val_attrs = NULL;
 	}
 
 	q->st.sp -= f->actual_slots;

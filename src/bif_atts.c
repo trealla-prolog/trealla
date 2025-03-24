@@ -45,13 +45,13 @@ static bool do_put_atts(query *q, cell *attr, pl_idx attr_ctx, bool is_minus)
 	frame *fcurr = GET_CURR_FRAME();
 	//fcurr->no_tco = true;
 
-	if (!c->attrs && is_minus)
+	if (!c->val_attrs && is_minus)
 		return true;
 
 	if (((attr->val_off == g_minus_s) || (attr->val_off == g_plus_s)) && (attr->arity == 1))
 		attr++;
 
-	add_trail(q, p1_ctx, p1->var_num, c->attrs);
+	add_trail(q, p1_ctx, p1->var_num, c->val_attrs);
 
 	unsigned a_arity = attr->arity;
 	bool found;
@@ -79,8 +79,8 @@ static bool do_put_atts(query *q, cell *attr, pl_idx attr_ctx, bool is_minus)
 
 	// If existing attributes drop old value...
 
-	if (c->attrs) {
-		cell *l = c->attrs;
+	if (c->val_attrs) {
+		cell *l = c->val_attrs;
 		pl_idx l_ctx = c_ctx;
 		LIST_HANDLER(l);
 
@@ -111,11 +111,11 @@ static bool do_put_atts(query *q, cell *attr, pl_idx attr_ctx, bool is_minus)
 
 	if (is_nil(l)) {
 		e->c.flags = 0;
-		e->c.attrs = NULL;
+		e->c.val_attrs = NULL;
 		return true;
 	}
 
-	e->c.attrs = l;
+	e->c.val_attrs = l;
 	return true;
 }
 
@@ -159,11 +159,11 @@ static bool bif_get_atts_2(query *q)
 	pl_idx c_ctx = q->latest_ctx;
 	bool is_minus = !is_var(p2) && (p2->val_off == g_minus_s) && (p2->arity == 1);
 
-	if (!c->attrs)
+	if (!c->val_attrs)
 		return is_minus ? true : false;
 
 	if (is_var(p2)) {
-		cell *l = c->attrs;
+		cell *l = c->val_attrs;
 		pl_idx l_ctx = c_ctx;
 		init_tmp_heap(q);
 		LIST_HANDLER(l);
@@ -200,7 +200,7 @@ static bool bif_get_atts_2(query *q)
 	bool found;
 	const char *m_name = do_attribute(q, attr, a_arity, &found);
 	if (!found) return false;
-	cell *l = c->attrs;
+	cell *l = c->val_attrs;
 	pl_idx l_ctx = c_ctx;
 	LIST_HANDLER(l);
 
@@ -264,10 +264,10 @@ bool any_attributed(query *q)
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		pl_idx c_ctx = q->latest_ctx;
 
-		if (!is_empty(c) || !c->attrs)
+		if (!is_empty(c) || !c->val_attrs)
 			continue;
 
-		cell *v = c->attrs;
+		cell *v = c->val_attrs;
 		bool any = false;
 
 		while (is_iso_list(v)) {
@@ -301,7 +301,7 @@ static bool bif_sys_list_attributed_1(query *q)
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		pl_idx c_ctx = q->latest_ctx;
 
-		if (!is_empty(c) || !c->attrs)
+		if (!is_empty(c) || !c->val_attrs)
 			continue;
 
 		cell tmp;
@@ -314,20 +314,20 @@ static bool bif_sys_list_attributed_1(query *q)
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		pl_idx c_ctx = q->latest_ctx;
 
-		if (!is_empty(c) || !c->attrs)
+		if (!is_empty(c) || !c->val_attrs)
 			continue;
 
-		if (!is_compound(c->attrs))
+		if (!is_compound(c->val_attrs))
 			continue;
 
-		collect_vars(q, c->attrs, c_ctx);
+		collect_vars(q, c->val_attrs, c_ctx);
 
 		for (unsigned i = 0; i < q->tab_idx; i++) {
 			const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
 			slot *e = GET_SLOT(f, q->pl->tabs[i].var_num);
 			cell *v = deref(q, &e->c, e->c.var_ctx);
 
-			if (!is_empty(v) || !v->attrs)
+			if (!is_empty(v) || !v->val_attrs)
 				continue;
 
 			if (!q->pl->tabs[i].ctx)
@@ -352,10 +352,10 @@ static bool bif_sys_attributed_var_1(query *q)
 	cell *c = deref(q, &e->c, e->c.var_ctx);
 	pl_idx c_ctx = q->latest_ctx;
 
-	if (!c->attrs)
+	if (!c->val_attrs)
 		return false;
 
-	cell *l = c->attrs;
+	cell *l = c->val_attrs;
 	pl_idx l_ctx = c_ctx;
 	init_tmp_heap(q);
 	LIST_HANDLER(l);
@@ -456,7 +456,7 @@ static bool bif_sys_undo_trail_2(query *q)
 		tmp[2] = rhs;
 		append_list(q, tmp);
 		init_cell(&e->c);
-		e->c.attrs = tr->attrs;
+		e->c.val_attrs = tr->attrs;
 	}
 
 	cell *tmp = end_list(q);

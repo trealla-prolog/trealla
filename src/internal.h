@@ -413,7 +413,7 @@ struct cell_ {
 		};
 
 		struct {
-			cell *attrs;				// used with TAG_EMPTY in slot
+			cell *val_attrs;				// used with TAG_EMPTY in slot
 		};
 
 		struct {
@@ -1053,7 +1053,7 @@ inline static void init_cell(cell *c)
 	c->flags = 0;
 	c->num_cells = 0;
 	c->arity = 0;
-	c->attrs = NULL;
+	c->val_attrs = NULL;
 }
 
 inline static void predicate_delink(predicate *pr, rule *r)
