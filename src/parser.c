@@ -915,9 +915,6 @@ static bool directives(parser *p, cell *d)
 				p->m->used[p->m->idx_used++] = tmp_m;
 
 			p->m = tmp_m;
-
-			if (!strcmp(name, "clpz"))
-				p->m->no_tco = true;
 		}
 
 		if (c->arity == 1)

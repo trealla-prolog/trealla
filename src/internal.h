@@ -850,7 +850,6 @@ struct module_ {
 	bool error:1;
 	bool ignore_vars:1;
 	bool wild_goal_expansion:1;
-	bool no_tco:1;
 	bool make:1;
 	bool run_init:1;
 };

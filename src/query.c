@@ -633,8 +633,6 @@ static bool commit_any_choices(const query *q, const frame *f)
 static void commit_frame(query *q)
 {
 	clause *cl = &q->st.curr_rule->cl;
-	cell *head = get_head(cl->cells);
-	cell *body = get_body(cl->cells);
 	frame *f = GET_CURR_FRAME();
 	f->curr_m = q->st.curr_m;
 
@@ -646,7 +644,6 @@ static void commit_frame(query *q)
 	if (!q->unify_no_tco
 		&& last_match
 		&& (q->st.fp == (q->st.curr_frame + 1))		// At top of frame stack
-		//&& !q->st.curr_m->no_tco					// For CLPZ
 		) {
 		bool tail_call = is_tail_call(q->st.curr_instr);
 		bool tail_recursive = tail_call && is_recursive_call(q->st.curr_instr);
@@ -684,8 +681,8 @@ static void commit_frame(query *q)
 		ch->chgen = f->chgen;
 	}
 
-	Trace(q, head, q->st.curr_frame, EXIT);
-	q->st.curr_instr = cl->alt ? cl->alt : body;
+	Trace(q, get_head(cl->cells), q->st.curr_frame, EXIT);
+	q->st.curr_instr = cl->alt ? cl->alt : get_body(cl->cells);
 	q->st.iter = NULL;
 }
 
