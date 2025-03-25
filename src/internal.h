@@ -964,8 +964,6 @@ inline static void unshare_cell_(cell *c)
 			free(c->val_blob);
 		}
 	}
-
-	c->flags = 0;
 }
 
 inline static pl_idx move_cells(cell *dst, const cell *src, pl_idx num_cells)
