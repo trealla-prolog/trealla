@@ -1707,7 +1707,7 @@ bool start(query *q)
 
 			Trace(q, save_cell, save_ctx, EXIT);
 			proceed(q);
-		} else if (is_iso_list(q->st.curr_instr)) {
+		} else if (!q->run_init && is_iso_list(q->st.curr_instr)) {
 			if (!consultall(q, q->st.curr_instr, q->st.curr_frame)) {
 				Trace(q, q->st.curr_instr, q->st.curr_frame, FAIL);
 				q->retry = QUERY_RETRY;
