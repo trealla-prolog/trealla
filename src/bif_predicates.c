@@ -179,7 +179,7 @@ bool bif_iso_unify_2(query *q)
 	return unify(q, p1, p1_ctx, p2, p2_ctx);
 }
 
-static bool bif_iso_notunify_2(query *q)
+static bool bif_iso_notunifiable_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
@@ -6573,7 +6573,7 @@ builtins g_iso_bifs[] =
 	{":", 2, bif_iso_qualify_2, "+atom,:callable", true, false, BLAH},
 	{"=..", 2, bif_iso_univ_2, "+term,?list", true, false, BLAH},
 	{"=", 2, bif_iso_unify_2, "+term,+term", true, false, BLAH},
-	{"\\=", 2, bif_iso_notunify_2, "+term,+term", true, false, BLAH},
+	{"\\=", 2, bif_iso_notunifiable_2, "+term,+term", true, false, BLAH},
 
 	{"repeat", 0, bif_iso_repeat_0, NULL, true, false, BLAH},
 	{"atom", 1, bif_iso_atom_1, "+term", true, false, BLAH},
