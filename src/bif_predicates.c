@@ -5640,7 +5640,7 @@ static bool bif_strip_module_3(query *q)
 	return unify(q, p3, p3_ctx, p1, p1_ctx);
 }
 
-static bool bif_sys_module_1(query *q)
+bool bif_sys_module_1(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_var);
 
