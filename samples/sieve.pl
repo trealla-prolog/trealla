@@ -20,7 +20,7 @@ remove(P,[I|Is],Nis) :-
     remove(P,Is,Nis).
 remove(P,[I|Is],[I|Nis]) :-
     X is I mod P,
-    X \= 0,
+    X =\= 0,
     remove(P,Is,Nis).
 
 test :-
