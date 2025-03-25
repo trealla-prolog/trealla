@@ -255,16 +255,12 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-#if 0
-	if (((*src)->val_off == g_colon_s) && ((*src)->arity == 2)
-		&& !is_var((*src)+1)
-		&& !is_var(((*src)+1)+((*src)+1)->num_cells)
+	if (((*src)->val_off == g_colon_s) && ((*src)->arity == 2) && !is_var((*src)+1)
 		) {
 		unsigned var_num1 = cl->num_vars++;
 		unsigned var_num2 = cl->num_vars++;
 		cl->has_local_vars = true;
 		*src += 1;
-		cell *save_src1 = *src;
 		make_instr((*dst)++, g_sys_module_s, bif_sys_module_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_num1);
 		make_instr((*dst)++, g_sys_module_s, bif_sys_module_1, 1, (*src)->num_cells);
@@ -274,13 +270,12 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_instr((*dst)++, g_sys_call_check_s, bif_sys_call_check_1, 1, (*src)->num_cells);
 		*dst += copy_cells(*dst, *src, (*src)->num_cells);			// Arg2
 		copy_term(dst, src);										// Arg2
-		make_instr((*dst)++, g_sys_module_s, bif_sys_module_1, 1, save_src1->num_cells);
+		make_instr((*dst)++, g_sys_module_s, bif_sys_module_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_num1);
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_num2);
 		return;
 	}
-#endif
 
 	copy_term(dst, src);
 }
@@ -288,7 +283,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 void compile_clause(predicate *pr, clause *cl, cell *body)
 {
 	pl_idx num_cells = cl->cidx - (body - cl->cells);
-	cl->alt = malloc(sizeof(cell) * num_cells*100);
+	cl->alt = malloc(sizeof(cell) * num_cells*100+1024);
 	cell *dst = cl->alt, *src = body;
 	compile_term(pr, cl, &dst, &src);
 	assert(src->tag == TAG_END);

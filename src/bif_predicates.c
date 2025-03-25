@@ -5653,8 +5653,11 @@ bool bif_sys_module_1(query *q)
 	const char *name = C_STR(q, p1);
 	module *m = find_module(q->pl, name);
 
+	if (!strcmp(name, "loader"))
+		return true;
+
 	if (!m) {
-		if (q->p->is_command)
+		if (q->p->is_command && !q->run_init)
 			fprintf(stdout, "Info: created module '%s'\n", name);
 
 		m = module_create(q->pl, name);
