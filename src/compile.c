@@ -233,6 +233,28 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
+	if (((*src)->val_off == g_notunify_s) && ((*src)->arity == 2)) {
+		unsigned var_num = cl->num_vars++;
+		cl->has_local_vars = true;
+		*src += 1;
+		cell *save_dst = *dst;
+		make_instr((*dst)++, g_sys_succeed_on_retry_s, bif_sys_succeed_on_retry_2, 2, 2);
+		make_var((*dst)++, g_anon_s, var_num);
+		make_uint((*dst)++, 0);										// Dummy value
+		cell *save_dst1 = *dst;
+		make_instr((*dst), g_unify_s, bif_iso_unify_2, 2, 0);
+		SET_OP(*dst, OP_XFX); (*dst)++;
+		copy_term(dst, src);
+		copy_term(dst, src);
+		save_dst1->num_cells = *dst - save_dst1;					// Real value
+		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
+		make_var((*dst)++, g_anon_s, var_num);
+		make_instr((*dst)++, g_fail_s, bif_iso_fail_0, 0, 0);
+		make_uint(save_dst+2, *dst - save_dst);						// Real value
+		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Landing
+		return;
+	}
+
 	copy_term(dst, src);
 }
 
