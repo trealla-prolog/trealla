@@ -29,11 +29,11 @@ static void msleep(int ms)
 #define DEBUG_MATCH if (0)
 
 static const unsigned INITIAL_NBR_QUEUE_CELLS = 1000;
-static const unsigned INITIAL_NBR_HEAP_CELLS = 10000;
-static const unsigned INITIAL_NBR_SLOTS = 10000;
-static const unsigned INITIAL_NBR_TRAILS = 10000;
-static const unsigned INITIAL_NBR_CHOICES = 1000;
-static const unsigned INITIAL_NBR_FRAMES = 1000;
+static const unsigned INITIAL_NBR_HEAP_CELLS = 1000;
+static const unsigned INITIAL_NBR_SLOTS = 1000;
+static const unsigned INITIAL_NBR_TRAILS = 1000;
+static const unsigned INITIAL_NBR_CHOICES = 100;
+static const unsigned INITIAL_NBR_FRAMES = 100;
 static const unsigned INITIAL_NBR_CELLS = 100;
 
 int g_tpl_interrupt = 0;
