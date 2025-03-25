@@ -1635,7 +1635,9 @@ bool start(query *q)
 					goto MORE;
 				}
 			}
-		} else if (!is_callable(q->st.curr_instr)) {
+		}
+
+		if (!is_callable(q->st.curr_instr)) {
 			if (is_var(q->st.curr_instr)) {
 				cell *p1 = deref(q, q->st.curr_instr, q->st.curr_frame);
 				pl_idx p1_ctx = q->latest_ctx;
