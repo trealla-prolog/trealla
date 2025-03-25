@@ -189,10 +189,8 @@ static bool bif_iso_notunify_2(query *q)
 	cell *tmp = prepare_call(q, PREFIX_LEN, &tmp2, q->st.curr_frame, p1->num_cells+p2->num_cells+4);
 	pl_idx num_cells = PREFIX_LEN;
 	tmp[num_cells++].num_cells += p1->num_cells+p2->num_cells;
-	dup_cells_by_ref(tmp+num_cells, p1, p1_ctx, p1->num_cells);
-	num_cells += p1->num_cells;
-	dup_cells_by_ref(tmp+num_cells, p2, p2_ctx, p2->num_cells);
-	num_cells += p2->num_cells;
+	num_cells += dup_cells_by_ref(tmp+num_cells, p1, p1_ctx, p1->num_cells);
+	num_cells += dup_cells_by_ref(tmp+num_cells, p2, p2_ctx, p2->num_cells);
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+num_cells++, q->cp);
 	make_instr(tmp+num_cells++, g_fail_s, bif_iso_fail_0, 0, 0);

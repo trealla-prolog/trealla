@@ -5,15 +5,15 @@ primes(Limit,Ps) :-
 integers(Low,High,[Low|Rest]) :-
     Low =< High,
     M is Low+1,
-    integers(M,High,Rest), !.
+    integers(M,High,Rest).
 integers(_,_,[]).
 
-sift([],[]) :- !.
+sift([],[]).
 sift([I|Is],[I|Ps]) :-
     remove(I,Is,New),
     sift(New,Ps).
 
-remove(_,[],[]) :- !.
+remove(_,[],[]).
 remove(P,[I|Is],Nis) :-
     0 is I mod P,
     !,
