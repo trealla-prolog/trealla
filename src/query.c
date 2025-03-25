@@ -448,7 +448,7 @@ static void leave_predicate(query *q, predicate *pr)
 {
 	//printf("*** LEAVE %s\n", C_STR(q, &pr->key));
 
-	if (!pr || !pr->is_dynamic || !pr->refcnt)
+	if (!pr->is_dynamic || !pr->refcnt)
 		return;
 
 	sl_done(q->st.iter);
@@ -645,14 +645,13 @@ static void commit_frame(query *q)
 
 	if (!q->unify_no_tco
 		&& last_match
-		&& (q->st.fp == (q->st.curr_frame + 1))	// At top of frame stack
-		&& !q->st.curr_m->no_tco						// For CLPZ
+		&& (q->st.fp == (q->st.curr_frame + 1))		// At top of frame stack
+		//&& !q->st.curr_m->no_tco					// For CLPZ
 		) {
 		bool tail_call = is_tail_call(q->st.curr_instr);
 		bool tail_recursive = tail_call && is_recursive_call(q->st.curr_instr);
 		bool slots_ok = f->initial_slots <= cl->num_vars;
-		bool choices = !commit_any_choices(q, f);
-		tco = slots_ok && tail_recursive && choices;
+		tco = slots_ok && tail_recursive && !commit_any_choices(q, f);
 
 #if 0
 		fprintf(stderr,
