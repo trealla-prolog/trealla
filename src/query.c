@@ -641,6 +641,10 @@ static void commit_frame(query *q)
 	bool last_match = is_det || cl->is_first_cut || !next_key;
 	bool tco = false;
 
+#if 0
+	fprintf(stderr, "*** q->unify_no_tco=%d, last_match=%d\n", q->unify_no_tco, last_match);
+#endif
+
 	if (!q->unify_no_tco
 		&& last_match
 		&& (q->st.fp == (q->st.curr_frame + 1))		// At top of frame stack
@@ -648,9 +652,12 @@ static void commit_frame(query *q)
 		bool tail_call = is_tail_call(q->st.curr_instr);
 		bool tail_recursive = tail_call && is_recursive_call(q->st.curr_instr);
 		bool slots_ok = f->initial_slots <= cl->num_vars;
-		tco = slots_ok && tail_recursive && !commit_any_choices(q, f);
+		bool choices = commit_any_choices(q, f);
+		tco = slots_ok && tail_recursive && !choices;
 
 #if 0
+		cell *head = get_head(cl->cells);
+
 		fprintf(stderr,
 			"*** %s/%u tco=%d,q->unify_no_tco=%d,last_match=%d,is_det=%d,"
 			"next_key=%d,tail_call=%d/r%d,slots_ok=%d,choices=%d,"
