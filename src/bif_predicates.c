@@ -5844,39 +5844,6 @@ bool bif_sys_drop_barrier_1(query *q)
 	return true;
 }
 
-bool bif_sys_chars_codes_2(query *q)
-{
-	GET_FIRST_ARG(p1,atom_or_var);
-	GET_NEXT_ARG(p2,string_or_var);
-
-	if (is_var(p1) && is_var(p2))
-		return throw_error(q, p1, p1_ctx, "instantiation_error", "not_sufficiently_instantiated");
-
-	if (!is_var(p1) && !is_var(p2))
-		return unify(q, p1, p1_ctx, p2, p2_ctx);
-
-	if (is_var(p1)) {
-		cell tmp = *p2;
-		share_cell(p2);
-		tmp.flags &= ~FLAG_CSTR_CODES;
-		return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-	}
-
-	if (is_var(p2)) {
-		cell tmp;
-
-		if (is_iso_atom(p1))
-			make_cstring(&tmp, C_STR(q, p1));
-		else
-			tmp = *p1;
-
-		tmp.flags |= FLAG_CSTR_STRING | FLAG_CSTR_CODES;
-		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
-	}
-
-	return false;
-}
-
 bool bif_sys_jump_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
@@ -6762,7 +6729,6 @@ builtins g_other_bifs[] =
 	{"$integer_in_radix", 3, bif_sys_integer_in_radix_3, "+integer,+integer,-string", false, false, BLAH},
 	{"$call_cleanup", 3, bif_sys_call_cleanup_3, NULL, false, false, BLAH},
 	{"$drop_barrier", 1, bif_sys_drop_barrier_1, "+integer", false, false, BLAH},
-	{"$chars_codes", 2, bif_sys_chars_codes_2, "?chars,?codes", false, false, BLAH},
 	{"$jump", 1, bif_sys_jump_1, NULL, false, false, BLAH},
 	{"$timer", 0, bif_sys_timer_0, NULL, false, false, BLAH},
 	{"$elapsed", 0, bif_sys_elapsed_0, NULL, false, false, BLAH},
