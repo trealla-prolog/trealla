@@ -606,7 +606,7 @@ static bool bif_iso_number_chars_2(query *q)
 static bool bif_iso_atom_codes_2(query *q)
 {
 	GET_FIRST_ARG(p1,iso_atom_or_var);
-	GET_NEXT_ARG(p2,iso_list_or_nil_or_var);
+	GET_NEXT_ARG(p2,list_or_nil_or_var);
 
 	if (is_var(p1) && is_var(p2))
 		return throw_error(q, p1, p1_ctx, "instantiation_error", "not_sufficiently_instantiated");
@@ -663,7 +663,6 @@ static bool bif_iso_atom_codes_2(query *q)
 		while (is_list(p2)) {
 			cell *head = LIST_HEAD(p2);
 			head = deref(q, head, p2_ctx);
-
 			pl_int val = get_smallint(head);
 
 			if (val < 0)
@@ -696,6 +695,7 @@ static bool bif_iso_atom_codes_2(query *q)
 		return ok;
 	}
 
+#if 1
 	const char *src = C_STR(q, p1);
 	size_t len = C_STRLEN(q, p1);
 	cell tmp;
@@ -718,12 +718,23 @@ static bool bif_iso_atom_codes_2(query *q)
 	cell *l = end_list(q);
 	check_heap_error(l);
 	return unify(q, p2, p2_ctx, l, q->st.curr_frame);
+#else
+	cell tmp;
+
+	if (is_iso_atom(p1))
+		make_cstring(&tmp, C_STR(q, p1));
+	else
+		tmp = *p1;
+
+	tmp.flags |= FLAG_CSTR_STRING | FLAG_CSTR_CODES;
+	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+#endif
 }
 
 static bool bif_string_codes_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	GET_NEXT_ARG(p2,iso_list_or_nil_or_var);
+	GET_NEXT_ARG(p2,list_or_nil_or_var);
 
 	if (is_var(p1) && is_var(p2))
 		return throw_error(q, p1, p1_ctx, "instantiation_error", "not_sufficiently_instantiated");
@@ -783,7 +794,6 @@ static bool bif_string_codes_2(query *q)
 		while (is_list(p2)) {
 			cell *head = LIST_HEAD(p2);
 			head = deref(q, head, p2_ctx);
-
 			pl_int val = get_smallint(head);
 
 			if (val < 0)
@@ -809,30 +819,22 @@ static bool bif_string_codes_2(query *q)
 			return throw_error(q, p2, p2_ctx, "type_error", "list");
 
 		cell tmp;
-		make_cstringn(&tmp, SB_cstr(pr), SB_strlen(pr));
+		make_stringn(&tmp, SB_cstr(pr), SB_strlen(pr));
 		SB_free(pr);
 		bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		return ok;
 	}
 
-	const char *tmpbuf = C_STR(q, p1);
-	size_t len = C_STRLEN(q, p1);
-	const char *src = tmpbuf;
 	cell tmp;
-	len -= len_char_utf8(src);
-	make_int(&tmp, get_char_utf8(&src));
-	allocate_list(q, &tmp);
 
-	while (len) {
-		len -= len_char_utf8(src);
-		make_int(&tmp, get_char_utf8(&src));
-		append_list(q, &tmp);
-	}
+	if (is_iso_atom(p1))
+		make_cstring(&tmp, C_STR(q, p1));
+	else
+		tmp = *p1;
 
-	cell *l = end_list(q);
-	check_heap_error(l);
-	return unify(q, p2, p2_ctx, l, q->st.curr_frame);
+	tmp.flags |= FLAG_CSTR_STRING | FLAG_CSTR_CODES;
+	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 }
 
 static bool bif_hex_bytes_2(query *q)
