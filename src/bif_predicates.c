@@ -695,7 +695,7 @@ static bool bif_iso_atom_codes_2(query *q)
 		return ok;
 	}
 
-#if 1
+#if 0
 	const char *src = C_STR(q, p1);
 	size_t len = C_STRLEN(q, p1);
 	cell tmp;
@@ -722,7 +722,7 @@ static bool bif_iso_atom_codes_2(query *q)
 	cell tmp;
 
 	if (is_iso_atom(p1))
-		make_cstring(&tmp, C_STR(q, p1));
+		make_string(&tmp, C_STR(q, p1));
 	else
 		tmp = *p1;
 
@@ -829,7 +829,7 @@ static bool bif_string_codes_2(query *q)
 	cell tmp;
 
 	if (is_iso_atom(p1))
-		make_cstring(&tmp, C_STR(q, p1));
+		make_string(&tmp, C_STR(q, p1));
 	else
 		tmp = *p1;
 
