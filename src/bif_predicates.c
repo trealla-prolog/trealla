@@ -1008,7 +1008,7 @@ static bool bif_hex_bytes_2(query *q)
 static bool bif_iso_number_codes_2(query *q)
 {
 	GET_FIRST_ARG(p1,number_or_var);
-	GET_NEXT_ARG(p2,iso_list_or_nil_or_var);
+	GET_NEXT_ARG(p2,list_or_nil_or_var);
 	cell *orig_p2 = p2;
 
 	if (is_var(p1) && is_var(p2))
