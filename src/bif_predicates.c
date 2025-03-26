@@ -629,7 +629,7 @@ static bool bif_iso_atom_codes_2(query *q)
 
 	// Verify the list
 
-	if (!is_var(p2)) {
+	if (!is_var(p2) && !is_codes(p2)) {
 		cell *save_p2 = p2;
 		pl_idx save_p2_ctx = p2_ctx;
 		LIST_HANDLER(p2);
@@ -695,30 +695,6 @@ static bool bif_iso_atom_codes_2(query *q)
 		return ok;
 	}
 
-#if 0
-	const char *src = C_STR(q, p1);
-	size_t len = C_STRLEN(q, p1);
-	cell tmp;
-	len -= len_char_utf8(src);
-	make_int(&tmp, get_char_utf8(&src));
-	allocate_list(q, &tmp);
-
-	while (len) {
-		CHECK_INTERRUPT();
-		int char_len = len_char_utf8(src);
-
-		if (char_len > 6)
-			return throw_error(q, p1, p1_ctx, "representation_error", "character_code");
-
-		len -= char_len;
-		make_int(&tmp, get_char_utf8(&src));
-		append_list(q, &tmp);
-	}
-
-	cell *l = end_list(q);
-	check_heap_error(l);
-	return unify(q, p2, p2_ctx, l, q->st.curr_frame);
-#else
 	cell tmp;
 
 	if (is_iso_atom(p1))
@@ -728,7 +704,6 @@ static bool bif_iso_atom_codes_2(query *q)
 
 	tmp.flags |= FLAG_CSTR_STRING | FLAG_CSTR_CODES;
 	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
-#endif
 }
 
 static bool bif_string_codes_2(query *q)
@@ -760,7 +735,7 @@ static bool bif_string_codes_2(query *q)
 
 	// Verify the list
 
-	if (!is_var(p2)) {
+	if (!is_var(p2) && !is_codes(p2)) {
 		cell *save_p2 = p2;
 		pl_idx save_p2_ctx = p2_ctx;
 		LIST_HANDLER(p2);
