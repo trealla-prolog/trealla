@@ -120,7 +120,6 @@ static char *functor_name_generator(const char *text, int state)
 {
 	static int s_atts_list_index, s_atts_len;
 	static int s_bboard_list_index, s_bboard_len;
-	static int s_contrib_list_index, s_contrib_len;
 	static int s_control_list_index, s_control_len;
 	static int s_csv_list_index, s_csv_len;
 	static int s_database_list_index, s_database_len;
@@ -145,7 +144,6 @@ static char *functor_name_generator(const char *text, int state)
 	if (!state) {
 		s_atts_list_index = 0; s_atts_len = strlen(text);
 		s_bboard_list_index = 0; s_bboard_len = strlen(text);
-		s_contrib_list_index = 0; s_contrib_len = strlen(text);
 		s_control_list_index = 0; s_control_len = strlen(text);
 		s_csv_list_index = 0; s_csv_len = strlen(text);
 		s_database_list_index = 0; s_database_len = strlen(text);
@@ -175,13 +173,6 @@ static char *functor_name_generator(const char *text, int state)
 		s_bboard_list_index++;
 
 		if (strncmp(name, text, s_atts_len) == 0)
-			return strdup(name);
-	}
-
-	while ((name = g_contrib_bifs[s_contrib_list_index].name)) {
-		s_contrib_list_index++;
-
-		if (strncmp(name, text, s_contrib_len) == 0)
 			return strdup(name);
 	}
 

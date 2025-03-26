@@ -401,11 +401,6 @@ builtins *get_fn_ptr(void *fn)
 			return ptr;
 	}
 
-	for (builtins *ptr = g_contrib_bifs; ptr->name; ptr++) {
-		if (ptr->fn == fn)
-			return ptr;
-	}
-
 	return NULL;
 }
 
@@ -418,12 +413,6 @@ void load_builtins(prolog *pl)
 	}
 
 	for (const builtins *ptr = g_bboard_bifs; ptr->name; ptr++) {
-		sl_set(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_set(pl->help, ptr->name, ptr);
-	}
-
-	for (const builtins *ptr = g_contrib_bifs; ptr->name; ptr++) {
 		sl_set(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
 		sl_set(pl->help, ptr->name, ptr);

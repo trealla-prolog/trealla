@@ -54,7 +54,6 @@ extern void sigfn(int s);
 extern builtins g_atts_bifs[];
 extern builtins g_bboard_bifs[];
 extern builtins g_database_bifs[];
-extern builtins g_contrib_bifs[];
 extern builtins g_csv_bifs[];
 extern builtins g_evaluable_bifs[];
 extern builtins g_format_bifs[];
