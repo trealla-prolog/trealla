@@ -5862,7 +5862,6 @@ bool bif_sys_string_codes_2(query *q)
 
 	if (is_var(p2)) {
 		cell tmp = *p1;
-		//share_cell(p1);
 		tmp.flags |= FLAG_CSTR_STRING | FLAG_CSTR_CODES;
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	}
