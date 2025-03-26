@@ -100,6 +100,7 @@ void clr_accum(cell *p)
 #else
 
 #define ON_OVERFLOW(op,v1,v2)									\
+	pl_int tmp = (pl_int)v1 op v2;								\
 	if ((v1) >= INT32_MAX ||									\
 		(v1) <= INT32_MIN ||									\
 		(v2) >= INT32_MAX ||									\
@@ -119,7 +120,7 @@ void clr_accum(cell *p)
 			mp_int_clear(&tmp); \
 			SET_ACCUM(); \
 		} else { \
-			q->accum.val_int = p1.val_int op p2.val_int; \
+			q->accum.val_int = tmp; \
 			q->accum.tag = TAG_INTEGER; \
 		} \
 	} else if (is_bigint(&p1)) { \
