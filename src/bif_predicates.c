@@ -5847,9 +5847,6 @@ bool bif_sys_chars_codes_2(query *q)
 	GET_FIRST_ARG(p1,atom_or_var);
 	GET_NEXT_ARG(p2,string_or_var);
 
-	if (is_iso_atom(p1))
-		return bif_iso_atom_codes_2(q);
-
 	if (is_var(p1) && is_var(p2))
 		return throw_error(q, p1, p1_ctx, "instantiation_error", "not_sufficiently_instantiated");
 
@@ -5864,7 +5861,13 @@ bool bif_sys_chars_codes_2(query *q)
 	}
 
 	if (is_var(p2)) {
-		cell tmp = *p1;
+		cell tmp;
+
+		if (is_iso_atom(p1))
+			make_cstring(&tmp, C_STR(q, p1));
+		else
+			tmp = *p1;
+
 		tmp.flags |= FLAG_CSTR_STRING | FLAG_CSTR_CODES;
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	}
