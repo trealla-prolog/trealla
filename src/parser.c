@@ -36,14 +36,21 @@ cell *list_head(cell *l, cell *tmp)
 		return l + 1;
 
 	const char *src = is_slice(l) ? l->val_str : is_strbuf(l) ? (char*)l->val_strb->cstr + l->strb_off : (char*)l->val_chr + l->val_off;
-	size_t char_len = len_char_utf8(src);
-	tmp->tag = TAG_CSTR;
 	tmp->num_cells = 1;
 	tmp->flags = 0;
 	tmp->arity = 0;
-	memcpy(tmp->val_chr, src, char_len);
-	tmp->val_chr[char_len] = '\0';
-	tmp->chr_len = char_len;
+
+	if (is_codes(l)) {
+		tmp->tag = TAG_INTEGER;
+		tmp->val_int = peek_char_utf8(src);
+	} else {
+		size_t char_len = len_char_utf8(src);
+		tmp->tag = TAG_CSTR;
+		memcpy(tmp->val_chr, src, char_len);
+		tmp->val_chr[char_len] = '\0';
+		tmp->chr_len = char_len;
+	}
+
 	return tmp;
 }
 

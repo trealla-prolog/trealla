@@ -968,7 +968,13 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 			cell *h = LIST_HEAD(l);
 			cell *c = running ? deref(q, h, c_ctx) : h;
-			SB_strcat_and_free(q->sb, formatted(C_STR(q, c), C_STRLEN(q, c), true, q->json));
+
+			if (is_smallint(c)) {
+				SB_putchar(q->sb, c->val_uint);
+			} else {
+				SB_strcat_and_free(q->sb, formatted(C_STR(q, c), C_STRLEN(q, c), true, q->json));
+			}
+
 			l = LIST_TAIL(l);
 			l = running ? deref(q, l, c_ctx) : l;
 			c_ctx = running ? q->latest_ctx : 0;
