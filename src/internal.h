@@ -116,6 +116,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_boolean(c) ((is_interned(c) && !(c)->arity && (((c)->val_off == g_true_s) || ((c)->val_off == g_false_s))))
 #define is_atom(c) ((is_interned(c) && !(c)->arity) || is_cstring(c))
 #define is_string(c) (is_cstring(c) && ((c)->flags & FLAG_CSTR_STRING))
+#define is_codes(c) (is_string(c) && ((c)->flags & FLAG_CSTR_CODES))
 #define is_managed(c) ((c)->flags & FLAG_MANAGED)
 #define is_cstr_blob(c) (is_cstring(c) && ((c)->flags & FLAG_CSTR_BLOB))
 #define is_slice(c) (is_cstr_blob(c) && ((c)->flags & FLAG_CSTR_SLICE))
@@ -218,12 +219,12 @@ typedef struct {
 	)
 
 #define _C_STR(pl,c) 											\
-	( !is_cstring(c) ? (g_global_atoms + (c)->val_off)					\
+	( !is_cstring(c) ? (g_global_atoms + (c)->val_off)			\
 	: _CSTRING_STR(c) 											\
 	)
 
 #define _C_STRLEN(pl,c) 										\
-	( !is_cstring(c) ? strlen(g_global_atoms + (c)->val_off)			\
+	( !is_cstring(c) ? strlen(g_global_atoms + (c)->val_off)	\
 	: _CSTRING_LEN(c)											\
 	)
 
@@ -269,8 +270,9 @@ enum {
 	FLAG_INT_BIG=1<<5,					// used with TAG_INTEGER
 
 	FLAG_CSTR_BLOB=1<<0,				// used with TAG_CSTR
-	FLAG_CSTR_STRING=1<<1,				// used with TAG_CSTR
-	FLAG_CSTR_SLICE=1<<2,				// used with TAG_CSTR
+	FLAG_CSTR_SLICE=1<<1,				// used with TAG_CSTR
+	FLAG_CSTR_STRING=1<<2,				// used with TAG_CSTR	String of chars
+	FLAG_CSTR_CODES=1<<3,				// used with TAG_CSTR	String of codes
 
 	FLAG_VAR_ANON=1<<0,					// used with TAG_VAR
 	FLAG_VAR_FRESH=1<<1,				// used with TAG_VAR
