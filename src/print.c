@@ -365,19 +365,18 @@ size_t sprint_int(char *dst, size_t dstlen, pl_int n, int base)
 	return dst - save_dst;
 }
 
+static void format_double(double num, char *res) {
+	sprintf(res,"%.16g", num);
+
+	if (strtod(res, NULL) != num)
+		sprintf(res, "%.17g", num);
+}
+
+// Make sure we have a trailing dot if needed...
+
 static void reformat_float(query *q, char *tmpbuf, pl_flt v)
 {
-	if ((!strchr(tmpbuf, 'e') && !strchr(tmpbuf, 'E'))
-		&& !q->ignore_ops) {
-		char tmpbuf3[256];
-		sprintf(tmpbuf3, "%.*g", 15, v);
-		size_t len3 = strlen(tmpbuf3);
-		size_t len = strlen(tmpbuf);
-
-		if ((len - len3) > 1)
-			strcpy(tmpbuf, tmpbuf3);
-	}
-
+	format_double(v, tmpbuf);
 	char tmpbuf2[256];
 	strcpy(tmpbuf2, tmpbuf);
 	const char *src = tmpbuf2;
@@ -901,24 +900,16 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	// FLOAT
 
 	if (is_float(c)) {
-		if (get_float(c) == M_PI) {
-			SB_sprintf(q->sb, "%s", "3.141592653589793");
-			q->last_thing = WAS_OTHER;
-			return true;
-		}
-
-		if (get_float(c) == M_E) {
-			SB_sprintf(q->sb, "%s", "2.718281828459045");
-			q->last_thing = WAS_OTHER;
-			return true;
-		}
-
 		if (c->val_float == 0.0)
 			c->val_float = fabs(c->val_float);
 
 		char tmpbuf[256];
-		sprintf(tmpbuf, "%.*g", 17, get_float(c));
-		if (!q->json && !isnan(c->val_float) && !isinf(c->val_float)) reformat_float(q, tmpbuf, c->val_float);
+
+		if (!q->json && !isnan(c->val_float) && !isinf(c->val_float))
+			reformat_float(q, tmpbuf, c->val_float);
+		else
+			sprintf(tmpbuf, "%.*g", 17, get_float(c));
+
 		SB_sprintf(q->sb, "%s", tmpbuf);
 		q->last_thing = WAS_OTHER;
 		return true;
