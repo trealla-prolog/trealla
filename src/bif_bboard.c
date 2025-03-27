@@ -50,7 +50,7 @@ static bool bif_bb_b_put_2(query *q)
 	if (DO_DUMP) DUMP_TERM2("bb_b_put", tmpbuf, p2, p2_ctx, 1);
 
 	char *key = strdup(tmpbuf);
-	cell *tmp = copy_term_to_heap(q, p2, p2_ctx, true);
+	cell *tmp = copy_term_to_tmp(q, p2, p2_ctx, true);
 	cell *val = malloc(sizeof(cell)*tmp->num_cells);
 	check_heap_error(val);
 	dup_cells(val, tmp, tmp->num_cells);
@@ -121,7 +121,7 @@ static bool bif_bb_put_2(query *q)
 	// Note: we have to save a copy of attributes...
 
 	char *key2 = strdup(tmpbuf2);
-	cell *tmp = copy_term_to_heap(q, p2, p2_ctx, true);
+	cell *tmp = copy_term_to_tmp(q, p2, p2_ctx, true);
 	cell *val = malloc(sizeof(cell)*tmp->num_cells);
 	check_heap_error(val);
 	dup_cells(val, tmp, tmp->num_cells);
@@ -186,7 +186,8 @@ static bool bif_bb_get_2(query *q)
 
 	prolog_unlock(q->pl);
 
-	cell *tmp = copy_term_to_heap(q, (cell*)val, q->st.curr_frame, true);
+	try_me(q, MAX_ARITY);
+	cell *tmp = copy_term_to_heap(q, (cell*)val, q->st.fp, true);
 	check_heap_error(tmp);
 	GET_FIRST_ARG(p1x,nonvar);
 	GET_NEXT_ARG(p2,any);
@@ -245,6 +246,7 @@ static bool bif_bb_delete_2(query *q)
 		return false;
 	}
 
+	try_me(q, MAX_ARITY);
 	cell *tmp = copy_term_to_heap(q, (cell*)val, q->st.fp, true);
 	check_heap_error(tmp, prolog_unlock(q->pl));
 	GET_FIRST_ARG(p1x,nonvar);
@@ -313,6 +315,7 @@ static bool bif_bb_update_3(query *q)
 		return false;
 	}
 
+	try_me(q, MAX_ARITY);
 	q->noderef = true;
 	cell *tmp = copy_term_to_heap(q, (cell*)val, q->st.fp, true);
 	q->noderef = false;
@@ -329,8 +332,7 @@ static bool bif_bb_update_3(query *q)
 	}
 
 	key = strdup(tmpbuf);
-	check_heap_error(init_tmp_heap(q), (prolog_unlock(q->pl), free(key)));
-	tmp = clone_term_to_tmp(q, p3, p3_ctx);
+	tmp = copy_term_to_tmp(q, p3, p3_ctx, true);
 	cell *value = malloc(sizeof(cell)*tmp->num_cells);
 	check_heap_error(value);
 	dup_cells(value, tmp, tmp->num_cells);
