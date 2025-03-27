@@ -446,6 +446,9 @@ static void enter_predicate(query *q, predicate *pr)
 
 static void leave_predicate(query *q, predicate *pr)
 {
+	if (!pr)
+		return;
+
 	//printf("*** LEAVE %s\n", C_STR(q, &pr->key));
 
 	if (!pr->is_dynamic || !pr->refcnt)
