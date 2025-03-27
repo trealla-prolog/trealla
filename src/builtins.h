@@ -129,9 +129,6 @@ inline static cell *take_queuen(query *q)
 #define GET_CURR_FRAME() GET_FRAME(q->st.curr_frame)
 #define GET_NEW_FRAME() GET_FRAME(q->st.fp)
 
-#define FIRST_ARG(c) ((c)+1)
-#define NEXT_ARG(c) ((c)+(c)->num_cells)
-
 #define GET_SLOT(f,i) ((i) < (f)->initial_slots ? 			\
 	(q->slots+(f)->base+(i)) : 								\
 	(q->slots+(f)->overflow+((i)-(f)->initial_slots)) 		\
@@ -178,6 +175,9 @@ inline static cell *deref(query *q, cell *c, pl_idx c_ctx)
 
 	return &e->c;
 }
+
+#define FIRST_ARG(c) ((c)+1)
+#define NEXT_ARG(c) ((c)+(c)->num_cells)
 
 #define GET_RAW_ARG(n,p) \
 	cell *p = get_raw_arg(q,n); \
