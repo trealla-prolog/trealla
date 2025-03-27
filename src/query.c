@@ -731,6 +731,7 @@ int retry_choice(query *q)
 		frame *f = GET_CURR_FRAME();
 		f->dbgen = ch->dbgen;
 		f->chgen = ch->frame_chgen;
+		f->initial_slots = ch->initial_slots;
 		f->actual_slots = ch->actual_slots;
 		f->overflow = ch->overflow;
 		f->base = ch->base;
@@ -774,6 +775,7 @@ bool push_choice(query *q)
 	ch->st = q->st;
 	ch->dbgen = f->dbgen;
 	ch->frame_chgen = ch->chgen = f->chgen;
+	ch->initial_slots = f->initial_slots;
 	ch->actual_slots = f->actual_slots;
 	ch->overflow = f->overflow;
 	ch->base = f->base;
