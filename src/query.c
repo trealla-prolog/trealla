@@ -612,7 +612,6 @@ static void reuse_frame(query *q, const clause *cl)
 		to->c = from->c;
 	}
 
-	trim_trail(q);
 	q->st.hp = f->hp;
 	q->st.heap_num = f->heap_num;
 	trim_heap(q);
