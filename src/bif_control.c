@@ -93,7 +93,7 @@ bool call_check(query *q, cell *tmp2, bool *status, bool calln)
 		tmp2 += tmp2->num_cells;
 	}
 
-	if (calln) {
+	if (calln || !tmp2->arity) {
 		bool found = false;
 
 		if ((tmp2->match = search_predicate(q->st.curr_m, tmp2, NULL)) != NULL) {

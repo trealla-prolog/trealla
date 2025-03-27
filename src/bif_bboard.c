@@ -50,8 +50,7 @@ static bool bif_bb_b_put_2(query *q)
 	if (DO_DUMP) DUMP_TERM2("bb_b_put", tmpbuf, p2, p2_ctx, 1);
 
 	char *key = strdup(tmpbuf);
-	check_error(init_tmp_heap(q));
-	cell *tmp = copy_term_to_tmp(q, p2, p2_ctx, true);
+	cell *tmp = copy_term_to_heap(q, p2, p2_ctx, true);
 	cell *val = malloc(sizeof(cell)*tmp->num_cells);
 	check_heap_error(val);
 	dup_cells(val, tmp, tmp->num_cells);
@@ -122,8 +121,7 @@ static bool bif_bb_put_2(query *q)
 	// Note: we have to save a copy of attributes...
 
 	char *key2 = strdup(tmpbuf2);
-	check_error(init_tmp_heap(q));
-	cell *tmp = copy_term_to_tmp(q, p2, p2_ctx, true);
+	cell *tmp = copy_term_to_heap(q, p2, p2_ctx, true);
 	cell *val = malloc(sizeof(cell)*tmp->num_cells);
 	check_heap_error(val);
 	dup_cells(val, tmp, tmp->num_cells);
@@ -334,8 +332,7 @@ static bool bif_bb_update_3(query *q)
 	}
 
 	key = strdup(tmpbuf);
-	check_error(init_tmp_heap(q));
-	tmp = copy_term_to_tmp(q, p3, p3_ctx, true);
+	tmp = copy_term_to_heap(q, p3, p3_ctx, true);
 	cell *value = malloc(sizeof(cell)*tmp->num_cells);
 	check_heap_error(value);
 	dup_cells(value, tmp, tmp->num_cells);
