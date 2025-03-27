@@ -731,7 +731,6 @@ int retry_choice(query *q)
 		frame *f = GET_CURR_FRAME();
 		f->dbgen = ch->dbgen;
 		f->chgen = ch->frame_chgen;
-		f->initial_slots = ch->initial_slots;
 		f->actual_slots = ch->actual_slots;
 		f->overflow = ch->overflow;
 		f->base = ch->base;
@@ -775,7 +774,6 @@ bool push_choice(query *q)
 	ch->st = q->st;
 	ch->dbgen = f->dbgen;
 	ch->frame_chgen = ch->chgen = f->chgen;
-	ch->initial_slots = f->initial_slots;
 	ch->actual_slots = f->actual_slots;
 	ch->overflow = f->overflow;
 	ch->base = f->base;
@@ -976,7 +974,6 @@ int create_vars(query *q, unsigned cnt)
 		return f->actual_slots;
 
 	if ((f->actual_slots + cnt) > MAX_LOCAL_VARS) {
-		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		q->oom = q->error = true;
 		return -1;
 	}
@@ -994,7 +991,7 @@ int create_vars(query *q, unsigned cnt)
 		pl_idx cnt2 = f->actual_slots - f->initial_slots;
 
 		if (!check_slot(q, cnt2)) {
-			//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+			q->error = true;
 			return -1;
 		}
 
@@ -1003,7 +1000,7 @@ int create_vars(query *q, unsigned cnt)
 	}
 
 	if (!check_slot(q, cnt)) {
-		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		q->error = true;
 		return -1;
 	}
 
