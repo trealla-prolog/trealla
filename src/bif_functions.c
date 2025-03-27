@@ -550,6 +550,27 @@ static bool bif_denominator_1(query *q)
 	return true;
 }
 
+static bool bif_rationalize_1(query *q)
+{
+	START_FUNCTION(q);
+	GET_FIRST_ARG(p1_tmp,any);
+	CLEANUP cell p1 = eval(q, p1_tmp);
+
+	if (!is_number(&p1))
+		return throw_error(q, &p1, q->st.curr_frame, "type_error", "number"); \
+
+	char tmpbuf[256];
+
+	if (is_integer(&p1))
+		sprintf(tmpbuf, "%lld", (long long)p1.val_int);
+	else
+		sprintf(tmpbuf, "%.16g", p1.val_float);
+
+	mp_rat_read_decimal(&q->tmp_irat, 10, tmpbuf);
+	SET_RAT_ACCUM2();
+	return true;
+}
+
 static bool bif_rational_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -2978,7 +2999,7 @@ builtins g_evaluable_bifs[] =
 	{"erfc", 1, bif_erfc_1, "+number,-float", false, true, BLAH},
 
 	{"atan2", 2, bif_iso_atan2_2, "+number,+number,-float", true, true, BLAH},
-	{"copysign", 2, bif_iso_copysign_2, "+number,-number", true, true, BLAH},
+	{"copysign", 2, bif_iso_copysign_2, "+number,-number", false, true, BLAH},
 	{"truncate", 1, bif_iso_truncate_1, "+float,-integer", true, true, BLAH},
 	{"round", 1, bif_iso_round_1, "+float,-integer", true, true, BLAH},
 	{"ceiling", 1, bif_iso_ceiling_1, "+float,-integer", true, true, BLAH},
@@ -2990,6 +3011,7 @@ builtins g_evaluable_bifs[] =
 	{"denominator", 1, bif_denominator_1, "+rational,-integer", false, true, BLAH},
 	{"rational", 1, bif_rational_1, "+term", false, false, BLAH},
 	{"rdiv", 2, bif_rdiv_2, "+integer,+integer,-rational", false, true, BLAH},
+	{"rationalize", 1, bif_rationalize_1, "+number,-rational", false, true, BLAH},
 
 	{"divmod", 4, bif_divmod_4, "+integer,+integer,?integer,?integer", false, false, BLAH},
 	{"log", 2, bif_log_2, "+number,+number,-float", false, true, BLAH},
