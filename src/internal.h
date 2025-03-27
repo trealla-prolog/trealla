@@ -76,22 +76,6 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define MAX_OF(a,b) (a) > (b) ? (a) : (b)
 #define MIN_OF(a,b) (a) < (b) ? (a) : (b)
 
-#define GET_CHOICE(i) (q->choices+(i))
-#define GET_CURR_CHOICE() GET_CHOICE(q->cp-1)
-#define GET_PREV_CHOICE() GET_CHOICE(q->cp-2)
-
-#define GET_FRAME(i) (q->frames+(i))
-#define GET_CURR_FRAME() GET_FRAME(q->st.curr_frame)
-#define GET_NEW_FRAME() GET_FRAME(q->st.fp)
-
-#define FIRST_ARG(c) ((c)+1)
-#define NEXT_ARG(c) ((c)+(c)->num_cells)
-
-#define GET_SLOT(f,i) ((i) < (f)->initial_slots ? 			\
-	(q->slots+(f)->base+(i)) : 								\
-	(q->slots+(f)->overflow+((i)-(f)->initial_slots)) 		\
-	)
-
 // Primary type...
 
 #define is_empty(c) ((c)->tag == TAG_EMPTY)
