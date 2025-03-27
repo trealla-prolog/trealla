@@ -437,7 +437,6 @@ bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n)
 
 static void enter_predicate(query *q, predicate *pr)
 {
-	//printf("*** ENTER %s\n", C_STR(q, &pr->key));
 	q->st.pr = pr;
 
 	if (pr->is_dynamic)
@@ -448,8 +447,6 @@ static void leave_predicate(query *q, predicate *pr)
 {
 	if (!pr)
 		return;
-
-	//printf("*** LEAVE %s\n", C_STR(q, &pr->key));
 
 	if (!pr->is_dynamic || !pr->refcnt)
 		return;
