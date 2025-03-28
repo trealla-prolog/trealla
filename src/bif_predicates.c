@@ -137,7 +137,6 @@ static bool bif_sys_unifiable_3(query *q)
 	pl_idx save_tp = q->st.tp;
 
 	if (!unify(q, p1, p1_ctx, p2, p2_ctx) && !q->cycle_error) {
-		undo_me(q);
 		drop_choice(q);
 		return false;
 	}
@@ -5767,7 +5766,7 @@ static bool bif_sys_memberchk_3(query *q)
 	GET_NEXT_ARG(p2,list_or_nil_or_var);
 	GET_NEXT_ARG(p3,var);
 	LIST_HANDLER(p2);
-	push_choice(q);
+	check_heap_error(push_choice(q));
 
 	while (is_list(p2)) {
 		cell *h = LIST_HEAD(p2);
