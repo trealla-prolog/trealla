@@ -129,10 +129,15 @@ inline static cell *take_queuen(query *q)
 #define GET_CURR_FRAME() GET_FRAME(q->st.curr_frame)
 #define GET_NEW_FRAME() GET_FRAME(q->st.fp)
 
-#define GET_SLOT(f,i) ((i) < (f)->initial_slots ? 			\
-	(q->slots+(f)->base+(i)) : 								\
-	(q->slots+(f)->overflow+((i)-(f)->initial_slots)) 		\
-	)
+#define GET_SLOT(f,var_num) get_slot(q, f, var_num)
+
+inline static slot *get_slot(const query *q, const frame *f, unsigned var_num)
+{
+	if (var_num < f->initial_slots)
+		return q->slots + f->base + var_num;
+	else
+		return q->slots + f->overflow +(var_num - f->initial_slots);
+}
 
 inline static cell *deref(query *q, cell *c, pl_idx c_ctx)
 {
