@@ -5738,6 +5738,10 @@ static bool bif_sys_det_length_rundown_2(query *q)
 {
 	GET_FIRST_ARG(p1,list_or_var);
 	GET_NEXT_ARG(p2,integer);
+
+	if (is_bigint(p2) || (get_smallint(p2) > INT32_MAX))
+		return throw_error(q, p2, p2_ctx, "resource_error", "memory");
+
 	unsigned n = get_smalluint(p2);
 	int var_num = create_vars(q, n);
 	check_heap_error(var_num != -1);
