@@ -141,12 +141,13 @@ inline static slot *get_slot(const query *q, const frame *f, unsigned var_num)
 
 inline static cell *deref(query *q, cell *c, pl_idx c_ctx)
 {
-	if (!is_var(c)) {
-		if (is_indirect(c))
-			q->latest_ctx = c->var_ctx;
-		else
-			q->latest_ctx = c_ctx;
+	if (is_indirect(c)) {
+		q->latest_ctx = c->var_ctx;
+		return c->val_ptr;
+	}
 
+	if (!is_var(c)) {
+		q->latest_ctx = c_ctx;
 		return c;
 	}
 
