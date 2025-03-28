@@ -550,6 +550,53 @@ static bool bif_denominator_1(query *q)
 	return true;
 }
 
+#include <stdio.h>
+#include <stdbool.h>
+
+// Structure to represent a ratio
+typedef struct {
+    long numerator;
+    long denominator;
+} Ratio;
+
+// Function to create a ratio
+Ratio make_ratio(long num, long den) {
+    Ratio r = {num, den};
+    return r;
+}
+
+// Mediant function
+Ratio mediant(Ratio r1, Ratio r2) {
+    Ratio result;
+    result.numerator = r1.numerator + r2.numerator;
+    result.denominator = r1.denominator + r2.denominator;
+    return result;
+}
+
+// Approximate function
+Ratio approximate(Ratio low, Ratio high, double target) {
+    Ratio mid = mediant(low, high);
+    double mid_float = (double)mid.numerator / mid.denominator;
+
+    if (target < mid_float) {
+        return approximate(low, mid, target);
+    }
+    else if (target == mid_float) {
+        return mid;
+    }
+    else {
+        return approximate(mid, high, target);
+    }
+}
+
+// Rationalize function
+Ratio rationalize(double f) {
+    Ratio zero = make_ratio(0, 1);
+    // Using a large number to represent 1/0 (infinity)
+    Ratio inf = make_ratio(1, 0);
+    return approximate(zero, inf, f);
+}
+
 static bool bif_rationalize_1(query *q)
 {
 	START_FUNCTION(q);
@@ -559,14 +606,13 @@ static bool bif_rationalize_1(query *q)
 	if (!is_number(&p1))
 		return throw_error(q, &p1, q->st.curr_frame, "type_error", "number"); \
 
-	char tmpbuf[256];
+	Ratio r = rationalize(is_float(&p1)? p1.val_float:(double)p1.val_int);
 
-	if (is_integer(&p1))
-		sprintf(tmpbuf, "%lld", (long long)p1.val_int);
-	else
-		sprintf(tmpbuf, "%.16g", p1.val_float);
+	if (mp_int_set_value(&q->tmp_irat.num, r.numerator) == MP_MEMORY)
+		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory");
+	if (mp_int_set_value(&q->tmp_irat.den, r.denominator) == MP_MEMORY)
+		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory");
 
-	mp_rat_read_decimal(&q->tmp_irat, 10, tmpbuf);
 	SET_RAT_ACCUM2();
 	return true;
 }
