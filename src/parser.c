@@ -3461,7 +3461,9 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 				}
 
 				process_clause(p->m, p->cl, NULL);
-				term_to_body(p);
+
+				if (!p->one_shot)
+					term_to_body(p);
 
 				if ((p->is_consulting || p->is_command) && !p->skip) {
 					if (is_var(p->cl->cells)) {
