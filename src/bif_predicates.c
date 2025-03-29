@@ -4233,10 +4233,8 @@ static bool bif_crypto_data_hash_3(query *q)
 }
 #endif
 
-static int do_b64encode_2(query *q)
+static int do_b64encode_2(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
 {
-	GET_FIRST_ARG(p1,atom);
-	GET_NEXT_ARG(p2,var);
 	const char *str = C_STR(q, p1);
 	size_t len = C_STRLEN(q, p1);
 	char *dstbuf = malloc((len*3)+1);	// BASE64 can increase length x3
@@ -4250,10 +4248,8 @@ static int do_b64encode_2(query *q)
 	return ok;
 }
 
-static int do_b64decode_2(query *q)
+static int do_b64decode_2(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
 {
-	GET_FIRST_ARG(p1,var);
-	GET_NEXT_ARG(p2,atom);
 	const char *str = C_STR(q, p2);
 	size_t len = C_STRLEN(q, p2);
 	char *dstbuf = malloc(len+1);
@@ -4269,13 +4265,32 @@ static int do_b64decode_2(query *q)
 
 static bool bif_base64_3(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_var);
-	GET_NEXT_ARG(p2,atom_or_var);
+	GET_FIRST_ARG(p1,list_or_atom_or_var);
+	GET_NEXT_ARG(p2,list_or_atom_or_var);
 
-	if ((is_atom(p1) || is_list(p1)) && is_var(p2))
-		return do_b64encode_2(q);
-	else if (is_var(p1) && (is_atom(p2) || is_string(p2)))
-		return do_b64decode_2(q);
+	if (is_atom(p1))
+		return do_b64encode_2(q, p1, p1_ctx, p2, p2_ctx);
+	else if (is_list(p2)) {
+		LIST_HANDLER(p2);
+		SB(pr);
+
+		while (is_list(p2)) {
+			cell *h = LIST_HEAD(p2);
+			h = deref(q, h, p2_ctx);
+			SB_sprintf(pr, "%s", C_STR(q, h));
+			p2 = LIST_TAIL(p2);
+			p2 = deref(q, p2, p2_ctx);
+			p2_ctx = q->latest_ctx;
+		}
+
+		cell tmp;
+		make_string(&tmp, SB_cstr(pr));
+		SB_free(pr);
+		bool ok = do_b64decode_2(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+		unshare_cell(&tmp);
+		return ok;
+	} else if (is_atom(p2))
+		return do_b64decode_2(q, p1, p1_ctx, p2, p2_ctx);
 
 	return throw_error(q, p1, p1_ctx, "instantiation_error", "atom");
 }
