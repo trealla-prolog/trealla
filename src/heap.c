@@ -427,7 +427,10 @@ cell *copy_term_to_heap(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
 		if (is_var(c) && c->tmp_attrs) {
 			const frame *f = GET_FRAME(c->var_ctx);
 			slot *e = GET_SLOT(f, c->var_num);
-			e->c.val_attrs = clone_term_to_heap(q, c->tmp_attrs, q->st.curr_frame);
+			cell *tmp3 = alloc_on_heap(q, c->tmp_attrs->num_cells);
+			if (!tmp3) return NULL;
+			dup_cells(tmp3, c->tmp_attrs, c->tmp_attrs->num_cells);
+			e->c.val_attrs = tmp3;
 			free(c->tmp_attrs);
 			c->tmp_attrs = NULL;
 		}
