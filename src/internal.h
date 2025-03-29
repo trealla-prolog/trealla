@@ -916,22 +916,26 @@ inline static void unshare_cell_(cell *c)
 	if (is_strbuf(c)) {
 		if (--c->val_strb->refcnt == 0) {
 			free(c->val_strb);
+			c->flags = 0;
 		}
 	} else if (is_bigint(c)) {
 		if (--c->val_bigint->refcnt == 0)	{
 			mp_int_clear(&c->val_bigint->ival);
 			free(c->val_bigint);
+			c->flags = 0;
 		}
 	} else if (is_rational(c)) {
 		if (--c->val_bigint->refcnt == 0)	{
 			mp_rat_clear(&c->val_bigint->irat);
 			free(c->val_bigint);
+			c->flags = 0;
 		}
 	} else if (is_blob(c)) {
 		if (--c->val_blob->refcnt == 0) {
 			free(c->val_blob->ptr2);
 			free(c->val_blob->ptr);
 			free(c->val_blob);
+			c->flags = 0;
 		}
 	} else if (is_dbid(c)) {
 		if (--c->val_blob->refcnt == 0) {
@@ -940,6 +944,7 @@ inline static void unshare_cell_(cell *c)
 			do_erase(m, ref);
 			free(c->val_blob->ptr2);
 			free(c->val_blob);
+			c->flags = 0;
 		}
 	} else if (is_kvid(c)) {
 		if (--c->val_blob->refcnt == 0) {
@@ -948,6 +953,7 @@ inline static void unshare_cell_(cell *c)
 			sl_del(m->pl->keyval, ref);
 			free(c->val_blob->ptr2);
 			free(c->val_blob);
+			c->flags = 0;
 		}
 	}
 }
