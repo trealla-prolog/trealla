@@ -560,13 +560,13 @@ typedef struct {
 } Ratio;
 
 // Function to create a ratio
-Ratio make_ratio(long num, long den) {
+static Ratio make_ratio(long num, long den) {
     Ratio r = {num, den};
     return r;
 }
 
 // Mediant function
-Ratio mediant(Ratio r1, Ratio r2) {
+static Ratio mediant(Ratio r1, Ratio r2) {
     Ratio result;
     result.numerator = r1.numerator + r2.numerator;
     result.denominator = r1.denominator + r2.denominator;
@@ -574,23 +574,26 @@ Ratio mediant(Ratio r1, Ratio r2) {
 }
 
 // Approximate function
-Ratio approximate(Ratio low, Ratio high, double target) {
+static Ratio approximate(Ratio low, Ratio high, double target) {
+LOOP:
     Ratio mid = mediant(low, high);
     double mid_float = (double)mid.numerator / mid.denominator;
 
     if (target < mid_float) {
-        return approximate(low, mid, target);
+		high = mid;
+		goto LOOP;
     }
     else if (target == mid_float) {
         return mid;
     }
     else {
-        return approximate(mid, high, target);
+		low = mid;
+		goto LOOP;
     }
 }
 
 // Rationalize function
-Ratio rationalize(double f) {
+static Ratio rationalize(double f) {
     Ratio zero = make_ratio(0, 1);
     // Using a large number to represent 1/0 (infinity)
     Ratio inf = make_ratio(1, 0);
