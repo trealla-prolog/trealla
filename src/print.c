@@ -680,7 +680,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			} else if (is_var(save_tail) && !q->do_dump_vars) {
 				v = *save_tail;
 				v_ctx = save_tail_ctx;
-			} else {
+			} else if (!q->do_dump_vars) {
 				v.var_num = q->dump_var_num;
 				v_ctx = 0;
 			}
