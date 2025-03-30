@@ -555,41 +555,40 @@ static bool bif_denominator_1(query *q)
 
 // Structure to represent a ratio
 typedef struct {
-    long numerator;
-    long denominator;
+	int64_t numerator;
+	int64_t denominator;
 } Ratio;
 
 // Function to create a ratio
-static Ratio make_ratio(long num, long den) {
-    Ratio r = {num, den};
-    return r;
+static Ratio make_ratio(int64_t num, int64_t den)
+{
+	Ratio r = {num, den};
+	return r;
 }
 
 // Mediant function
-static Ratio mediant(Ratio r1, Ratio r2) {
-    Ratio result;
-    result.numerator = r1.numerator + r2.numerator;
-    result.denominator = r1.denominator + r2.denominator;
-    return result;
+static Ratio mediant(Ratio r1, Ratio r2)
+{
+	Ratio result;
+	result.numerator = r1.numerator + r2.numerator;
+	result.denominator = r1.denominator + r2.denominator;
+	return result;
 }
 
 // Approximate function
-static Ratio approximate(Ratio low, Ratio high, double target) {
-LOOP:
-    Ratio mid = mediant(low, high);
-    double mid_float = (double)mid.numerator / mid.denominator;
+static Ratio approximate(Ratio low, Ratio high, double target)
+{
+	for (;;) {
+		Ratio mid = mediant(low, high);
+		double mid_float = (double)mid.numerator / mid.denominator;
 
-    if (target < mid_float) {
-		high = mid;
-		goto LOOP;
-    }
-    else if (target == mid_float) {
-        return mid;
-    }
-    else {
-		low = mid;
-		goto LOOP;
-    }
+		if (target < mid_float)
+			high = mid;
+		else if (target == mid_float)
+			return mid;
+		else
+			low = mid;
+	}
 }
 
 // Rationalize function
