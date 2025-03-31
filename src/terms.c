@@ -87,7 +87,7 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 
 static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
-#if 1
+#if 0
 	if (depth > g_max_depth) {
 		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		q->cycle_error++;
@@ -212,9 +212,9 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 
 static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
-#if 1
+#if 0
 	if (depth > g_max_depth) {
-		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		q->cycle_error++;
 		return false;
 	}

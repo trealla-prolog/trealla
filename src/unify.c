@@ -118,7 +118,7 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 			if (val) return val;
 		}
 
-		if (q->cycle_error)
+		if (q->cycle_error > 6)
 			break;
 
 		if (e1) e1->vgen = save_vgen;
@@ -579,11 +579,11 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 				return false;
 		}
 
+		if (q->cycle_error > 6)
+			break;
+
 		if (e1) e1->vgen = save_vgen;
 		if (e2) e2->vgen2 = save_vgen2;
-
-		if (q->cycle_error > 10) // ??
-			break;
 #else
 		c1 = deref(q, c1, c1_ctx);
 		c1_ctx = q->latest_ctx;
@@ -619,7 +619,7 @@ static bool unify_var(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx
 			return false;
 	} else if (q->flags.occurs_check == OCCURS_CHECK_ERROR) {
 		if (!was_cyclic && is_cyclic_term(q, p2, p2_ctx)) {
-			q->cycle_error = true;
+			q->cycle_error = 1;
 			return false;
 		}
 	}
