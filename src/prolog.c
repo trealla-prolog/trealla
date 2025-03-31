@@ -603,7 +603,7 @@ static bool g_init(prolog *pl)
 #if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 	struct rlimit rlp;
 	getrlimit(RLIMIT_STACK, &rlp);
-	g_max_depth = rlp.rlim_cur / 1024 / 2; // divide by 2 for safety
+	g_max_depth = (rlp.rlim_cur - 1024) / 1024;
 #endif
 
 	return error;
