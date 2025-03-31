@@ -49,9 +49,6 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 		DEREF_VAR(any2, both1, save_vgen, e1, e1->vgen, p1, p1_ctx, q->vgen);
 		DEREF_VAR(any2, both2, save_vgen2, e2, e2->vgen2, p2, p2_ctx, q->vgen);
 
-		if (both1 && both2)
-			break;
-
 		if (both1)
 			q->is_cyclic1++;
 
@@ -59,7 +56,7 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 			q->is_cyclic2++;
 
 		if (q->is_cyclic1 && q->is_cyclic2)
-			break;
+			return 0;
 #else
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
@@ -290,7 +287,7 @@ static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx 
 		return compare_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 	}
 
-	if (is_iso_list(p1) && is_iso_list(p2))
+	if (is_iso_list(p1) && is_iso_list(p2) && 0)
 		return compare_lists(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 
 	return compare_structs(q, p1, p1_ctx, p2, p2_ctx, depth+1);
