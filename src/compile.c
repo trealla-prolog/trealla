@@ -265,6 +265,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
+#if 1
 	if (((*src)->val_off == g_maplist_s) && ((*src)->arity == 2)) {
 		unsigned var_num0 = cl->num_vars++;
 		unsigned var_num1 = cl->num_vars++;
@@ -301,8 +302,6 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_instr((*dst)++, g_sys_jump_if_nil_s, bif_sys_jump_if_nil_2, 2, 2);
 		make_var((*dst)++, g_anon_s, var_num3);						// T
 		make_uint((*dst)++, 0);										// Dummy value
-		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-		make_var((*dst)++, g_anon_s, var_num1);
 		make_instr((*dst)++, g_sys_undo_s, bif_sys_undo_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_num0);						// L0
 		make_instr((*dst)++, g_eq_s, bif_iso_unify_2, 2, 2);		// L0=T
@@ -317,8 +316,11 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		(*dst)++;
 		make_uint(save_dst2+2, *dst - save_dst2);					// Real value
 		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Landing
+		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
+		make_var((*dst)++, g_anon_s, var_num1);
 		return;
 	}
+#endif
 
 	copy_term(dst, src);
 }
