@@ -41,6 +41,7 @@ pl_idx g_sys_succeed_on_retry_s, g_sys_fail_on_retry_s;
 pl_idx g_sys_call_check_s, g_ignore_s, g_sys_reset_handler_s;
 pl_idx g_reset_s, g_sys_get_level_s, g_sys_jump_s, g_if_s;
 pl_idx g_sys_call_s, g_sys_cut_s, g_notunify_s, g_sys_module_s;
+pl_idx g_sys_reunify_s, g_sys_undo_s, g_sys_jump_if_nil_s;
 pl_idx g_dummy_s;
 
 char *g_global_atoms = NULL;
@@ -553,6 +554,9 @@ static bool g_init(prolog *pl)
 	CHECK_SENTINEL(g_lt_s = new_atom(pl, "<"), ERR_IDX);
 	CHECK_SENTINEL(g_gt_s = new_atom(pl, ">"), ERR_IDX);
 	CHECK_SENTINEL(g_eq_s = new_atom(pl, "="), ERR_IDX);
+	CHECK_SENTINEL(g_sys_reunify_s = new_atom(pl, "$reunify"), ERR_IDX);
+	CHECK_SENTINEL(g_sys_undo_s = new_atom(pl, "$undo"), ERR_IDX);
+	CHECK_SENTINEL(g_sys_jump_if_nil_s = new_atom(pl, "$jump_if_nil"), ERR_IDX);
 	CHECK_SENTINEL(g_once_s = new_atom(pl, "once"), ERR_IDX);
 	CHECK_SENTINEL(g_throw_s = new_atom(pl, "throw"), ERR_IDX);
 	CHECK_SENTINEL(g_error_s = new_atom(pl, "error"), ERR_IDX);

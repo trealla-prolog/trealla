@@ -178,6 +178,13 @@ bool bif_iso_unify_2(query *q)
 	return unify(q, p1, p1_ctx, p2, p2_ctx);
 }
 
+bool bif_sys_undo_1(query *q)
+{
+	GET_FIRST_RAW_ARG(p1,var);
+	undo_var(q, p1, p1_ctx);
+	return true;
+}
+
 static bool bif_iso_notunifiable_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -5869,6 +5876,17 @@ bool bif_sys_jump_1(query *q)
 	return true;
 }
 
+bool bif_sys_jump_if_nil_2(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,integer);
+
+	if (is_nil(p1))
+		q->st.curr_instr += get_smallint(p2);
+
+	return true;
+}
+
 static bool do_dump_term(query *q, cell *p1, pl_idx p1_ctx, bool deref, int depth)
 {
 	if (!depth) {
@@ -6740,11 +6758,13 @@ builtins g_other_bifs[] =
 	{"$call_cleanup", 3, bif_sys_call_cleanup_3, NULL, false, false, BLAH},
 	{"$drop_barrier", 1, bif_sys_drop_barrier_1, "+integer", false, false, BLAH},
 	{"$jump", 1, bif_sys_jump_1, NULL, false, false, BLAH},
+	{"$jump_if_nil", 2, bif_sys_jump_if_nil_2, "+term,+integer", false, false, BLAH},
 	{"$timer", 0, bif_sys_timer_0, NULL, false, false, BLAH},
 	{"$elapsed", 0, bif_sys_elapsed_0, NULL, false, false, BLAH},
 	{"$lt", 2, bif_sys_lt_2, NULL, false, false, BLAH},
 	{"$gt", 2, bif_sys_gt_2, NULL, false, false, BLAH},
 	{"$ne", 2, bif_sys_ne_2, NULL, false, false, BLAH},
+	{"$undo", 2, bif_sys_undo_1, "+var", true, false, BLAH},
 
 	{0}
 };
