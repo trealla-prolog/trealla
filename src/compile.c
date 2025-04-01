@@ -153,7 +153,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_var((*dst)++, g_anon_s, var_num);
 		make_instr((*dst)++, g_sys_call_check_s, bif_sys_call_check_1, 1, (*src)->num_cells);
 		*dst += copy_cells(*dst, *src, (*src)->num_cells);
-		compile_term(pr, cl, dst, src);
+		compile_term(pr, cl, dst, src);								// Arg1
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_num);
 		return;
@@ -166,7 +166,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_var((*dst)++, g_anon_s, var_num);
 		make_instr((*dst)++, g_sys_call_check_s, bif_sys_call_check_1, 1, (*src)->num_cells);
 		*dst += copy_cells(*dst, *src, (*src)->num_cells);
-		compile_term(pr, cl, dst, src);
+		compile_term(pr, cl, dst, src);								// Arg1
 		make_instr((*dst)++, g_cut_s, bif_iso_cut_0, 0, 0);
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_num);
@@ -182,7 +182,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_uint((*dst)++, 0);										// Dummy value
 		make_instr((*dst)++, g_sys_call_check_s, bif_sys_call_check_1, 1, (*src)->num_cells);
 		*dst += copy_cells(*dst, *src, (*src)->num_cells);
-		compile_term(pr, cl, dst, src);
+		compile_term(pr, cl, dst, src);								// Arg1
 		make_instr((*dst)++, g_cut_s, bif_iso_cut_0, 0, 0);
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_num);
