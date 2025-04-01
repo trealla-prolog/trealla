@@ -709,7 +709,9 @@ static bool bif_iso_atom_codes_2(query *q)
 		tmp = *p1;
 
 	tmp.flags |= FLAG_CSTR_STRING | FLAG_CSTR_CODES;
-	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
+	return ok;
 }
 
 static bool bif_string_codes_2(query *q)
@@ -815,7 +817,9 @@ static bool bif_string_codes_2(query *q)
 		tmp = *p1;
 
 	tmp.flags |= FLAG_CSTR_STRING | FLAG_CSTR_CODES;
-	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
+	return ok;
 }
 
 static bool bif_hex_bytes_2(query *q)
