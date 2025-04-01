@@ -365,6 +365,7 @@ void undo_var(query *q, const cell *c, pl_idx c_ctx)
 	unshare_cell(&e->c);
 	e->c.tag = TAG_EMPTY;
 	e->c.val_attrs = NULL;
+	// TO-DO: undo on trail
 }
 
 static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth);
