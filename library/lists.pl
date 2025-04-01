@@ -8,7 +8,7 @@
 		sum_list/2, prod_list/2, max_list/2, min_list/2,	% SWI
 		list_sum/2, list_prod/2, list_max/2, list_min/2,	% Modern
 		list_to_conjunction/2, conjunction_to_list/2,
-		list_to_set/2, numlist/3, length/2, reverse/2,
+		list_to_set/2, length/2, reverse/2,
 		exclude/3, include/3, permutation/2,
 		foldl/4, foldl/5, foldl/6, foldl/7,
 		maplist/2, maplist/3, maplist/4, maplist/5, maplist/6, maplist/7, maplist/8, maplist/9,
@@ -287,9 +287,6 @@ unify_same(E-V, Prev-Var, E-V) :-
 			Var = V
 		;   true
 		).
-
-numlist(L, U, Ns) :-
-	'$numlist'(L, U, Ns).
 
 is_set(Set) :-
 	'$skip_list'(Len, Set, Tail),

@@ -5477,7 +5477,7 @@ static bool bif_get_unbuffered_char_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
-static bool bif_sys_numlist_3(query *q)
+static bool bif_numlist_3(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
 	GET_NEXT_ARG(p2,integer);
@@ -6699,6 +6699,7 @@ builtins g_other_bifs[] =
 	{"sleep", 1, bif_sleep_1, "+number", false, false, BLAH},
 	{"load_text", 2, bif_load_text_2, "+string,+list", false, false, BLAH},
 	{"between", 3, bif_between_3, "+integer,+integer,-integer", false, false, BLAH},
+	{"numlist", 3, bif_numlist_3, "+integer,+integer,-list", false, false, BLAH},
 
 	{"must_be", 4, bif_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"must_be", 2, bif_must_be_2, "+atom,+term", false, false, BLAH},
@@ -6744,7 +6745,6 @@ builtins g_other_bifs[] =
 	{"$lt", 2, bif_sys_lt_2, NULL, false, false, BLAH},
 	{"$gt", 2, bif_sys_gt_2, NULL, false, false, BLAH},
 	{"$ne", 2, bif_sys_ne_2, NULL, false, false, BLAH},
-	{"$numlist", 3, bif_sys_numlist_3, "+integer,+integer,-list", false, false, BLAH},
 
 	{0}
 };
