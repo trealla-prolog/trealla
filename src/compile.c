@@ -290,6 +290,12 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		save_dst->arity++;
 		save_dst->num_cells++;
 		make_var((*dst)++, g_anon_s, var_num2);						// H
+
+#if 0
+		make_instr((*dst)++, g_sys_call_check_s, bif_sys_call_check_1, 1, *dst-save_dst);
+		*dst += copy_cells(*dst, *src, *dst-save_dst);
+#endif
+
 		*src += (*src)->num_cells;
 		cell *save_dst2 = *dst;
 		make_instr((*dst)++, g_sys_jump_if_nil_s, bif_sys_jump_if_nil_2, 2, 2);
@@ -307,7 +313,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_instr((*dst)++, g_sys_undo_s, bif_sys_undo_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_num3);						// T
 		make_instr((*dst)++, g_sys_jump_s, bif_sys_jump_1, 1, 1);
-		make_int((*dst), -(ssize_t)((*dst)-save_dst0));				// jump to true
+		make_int((*dst), -(ssize_t)((*dst)-save_dst0));				// jump to previous true
 		(*dst)++;
 		make_uint(save_dst2+2, *dst - save_dst2);					// Real value
 		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Landing
