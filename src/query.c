@@ -927,6 +927,12 @@ static bool resume_frame(query *q)
 	if (f->prev == (pl_idx)-1)
 		return false;
 
+#if 0
+	printf("*** q->st.curr_frame=%d, f->unify_no_tco=%d, f->has_local_vars=%d, any_choices=%d\n",
+		(unsigned)q->st.curr_frame,
+		(unsigned)f->unify_no_tco, (unsigned)f->has_local_vars, (unsigned)resume_any_choices(q, f));
+#endif
+
 	if (q->pl->opt
 		&& !f->unify_no_tco
 		&& !f->has_local_vars	// ????
