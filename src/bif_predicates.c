@@ -5477,6 +5477,31 @@ static bool bif_get_unbuffered_char_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
+static bool bif_sys_numlist_3(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,integer);
+	GET_NEXT_ARG(p3,var);
+	long long from = get_smallint(p1);
+	long long to = get_smallint(p2);
+
+	if (from > to)
+		return false;
+
+	long long cnt = (to - from) + 1;
+	check_heap_error(init_tmp_heap(q));
+
+	while (cnt--) {
+		cell tmp;
+		make_int(&tmp,  from++);
+		append_list(q, &tmp);
+	}
+
+	cell *l = end_list(q);
+	check_heap_error(l);
+	return unify(q, p3, p3_ctx, l, q->st.curr_frame);
+}
+
 // module:goal
 
 bool bif_iso_qualify_2(query *q)
@@ -6719,6 +6744,7 @@ builtins g_other_bifs[] =
 	{"$lt", 2, bif_sys_lt_2, NULL, false, false, BLAH},
 	{"$gt", 2, bif_sys_gt_2, NULL, false, false, BLAH},
 	{"$ne", 2, bif_sys_ne_2, NULL, false, false, BLAH},
+	{"$numlist", 3, bif_sys_numlist_3, "+integer,+integer,-list", false, false, BLAH},
 
 	{0}
 };

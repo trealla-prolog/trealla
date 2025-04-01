@@ -289,19 +289,7 @@ unify_same(E-V, Prev-Var, E-V) :-
 		).
 
 numlist(L, U, Ns) :-
-	must_be(L, integer, numlist/3, _),
-	must_be(U, integer, numlist/3, _),
-	L =< U,
-	numlist_(L, U, Ns).
-
-numlist_(U, U, List) :-
-	!,
-	List = [U].
-numlist_(L, U, [L|Ns]) :-
-	L2 is L+1,
-	numlist_(L2, U, Ns).
-
-:- help(numlist(+integer,+integer,?list), [iso(false), desc('Produce list of numbers from start to finish.')]).
+	'$numlist'(L, U, Ns).
 
 is_set(Set) :-
 	'$skip_list'(Len, Set, Tail),
