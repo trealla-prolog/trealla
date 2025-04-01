@@ -939,6 +939,7 @@ static bool resume_frame(query *q)
 		&& (q->st.fp == (q->st.curr_frame + 1))
 		&& !resume_any_choices(q, f)
 		) {
+		q->tot_recovs++;
 		q->st.hp = f->hp;
 		q->st.heap_num = f->heap_num;
 		trim_heap(q);
