@@ -73,7 +73,7 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 	if (is_builtin(c) && c->bif_ptr && !c->bif_ptr->fn)
 		return;
 
-#ifndef DEBUG
+#if 0
 	if (c->val_off == g_sys_succeed_on_retry_s)
 		return;
 
@@ -88,7 +88,9 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 
 	if (c->val_off == g_sys_block_catcher_s)
 		return;
+#endif
 
+#ifndef DEBUG
 	if (c->val_off == g_conjunction_s)
 		return;
 

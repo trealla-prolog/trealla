@@ -287,7 +287,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		*dst += copy_cells(*dst, arg1, arg1->num_cells);			// L
 
 		cell *save_dst0 = *dst;
-		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// LOOP
+		make_instr((*dst)++, g_sys_loop_s, bif_iso_true_0, 0, 0);	// LOOP
 
 		make_instr((*dst)++, g_eq_s, bif_iso_unify_2, 2, 1+3);		// L1=[H1|T1]
 		make_var((*dst)++, g_anon_s, var_numL1);					// L1
@@ -337,7 +337,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_var((*dst)++, g_anon_s, var_num1);
 
 		make_uint(save_dst3, *dst - save_dst3);						// Real value
-		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Landing
+		make_instr((*dst)++, g_sys_end_s, bif_iso_true_0, 0, 0);	// Landing
 		return;
 	}
 
@@ -377,7 +377,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		*dst += copy_cells(*dst, arg2, arg2->num_cells);			// L
 
 		cell *save_dst0 = *dst;
-		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// LOOP
+		make_instr((*dst)++, g_sys_loop_s, bif_iso_true_0, 0, 0);	// LOOP
 
 		make_instr((*dst)++, g_eq_s, bif_iso_unify_2, 2, 1+3);		// L1=[H1|T1]
 		make_var((*dst)++, g_anon_s, var_numL1);					// L1
@@ -454,7 +454,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 		make_uint(save_dst31, *dst - save_dst31);					// Real value
 		make_uint(save_dst32, *dst - save_dst31);					// Real value
-		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Landing
+		make_instr((*dst)++, g_sys_end_s, bif_iso_true_0, 0, 0);	// Landing
 		return;
 	}
 #endif
