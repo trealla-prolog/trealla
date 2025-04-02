@@ -265,7 +265,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-#if 1
+#if 0
 	if (((*src)->val_off == g_maplist_s) && ((*src)->arity == 2)) {
 		unsigned var_num0 = cl->num_vars++;
 		unsigned var_num1 = cl->num_vars++;
