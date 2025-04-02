@@ -265,7 +265,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-#if 0
+#if 1
 	if (((*src)->val_off == g_maplist_s) && ((*src)->arity == 2)) {
 		unsigned var_num0 = cl->num_vars++;
 		unsigned var_num1 = cl->num_vars++;
@@ -273,7 +273,13 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		unsigned var_num3 = cl->num_vars++;
 		*src += 1;
 		cell *f = *src;
-		cell *arg1 = f += f->num_cells;
+		cell *arg1 = f + f->num_cells;
+
+		cell *save_dst3 = *dst;
+		make_instr((*dst)++, g_sys_jump_if_nil_s, bif_sys_jump_if_nil_2, 2, arg1->num_cells+1);
+		*dst += copy_cells(*dst, arg1, arg1->num_cells);
+		make_uint((*dst)++, 0);										// Dummy value
+
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_num1);
 		make_instr((*dst)++, g_eq_s, bif_iso_unify_2, 2, 1+arg1->num_cells); // L0=L
@@ -321,9 +327,11 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_int((*dst), -(ssize_t)((*dst)-save_dst0));				// jump to previous true
 		(*dst)++;
 		make_uint(save_dst2+2, *dst - save_dst2);					// Real value
-		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Landing
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_num1);
+
+		make_uint(save_dst3+2, *dst - save_dst3);					// Real value
+		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Landing
 		return;
 	}
 #endif
