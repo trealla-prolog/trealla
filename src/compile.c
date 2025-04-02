@@ -266,7 +266,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 	}
 
 	if (((*src)->val_off == g_maplist_s) && ((*src)->arity == 2) && !is_var((*src)+1)) {
-		unsigned var_num0 = cl->num_vars++;
+		unsigned var_numL1 = cl->num_vars++;
 		unsigned var_num1 = cl->num_vars++;
 		unsigned var_numH1 = cl->num_vars++;
 		unsigned var_numT1 = cl->num_vars++;
@@ -281,14 +281,15 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_num1);
+
 		make_instr((*dst)++, g_eq_s, bif_iso_unify_2, 2, 1+arg1->num_cells); // L1=L
-		make_var((*dst)++, g_anon_s, var_num0);						// L1
+		make_var((*dst)++, g_anon_s, var_numL1);					// L1
 		*dst += copy_cells(*dst, arg1, arg1->num_cells);			// L
 
 		cell *save_dst0 = *dst;
 		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// LOOP
 		make_instr((*dst)++, g_eq_s, bif_iso_unify_2, 2, 1+3);		// L1=[H1|T1]
-		make_var((*dst)++, g_anon_s, var_num0);						// L1
+		make_var((*dst)++, g_anon_s, var_numL1);					// L1
 		make_instr((*dst)++, g_dot_s, NULL, 2, 2);
 		make_var((*dst)++, g_anon_s, var_numH1);					// H1
 		make_var((*dst)++, g_anon_s, var_numT1);					// T1
@@ -313,15 +314,17 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_instr((*dst)++, g_sys_jump_if_nil_s, bif_sys_jump_if_nil_2, 2, 2);
 		make_var((*dst)++, g_anon_s, var_numT1);					// T1
 		make_uint((*dst)++, 0);										// Dummy value
+
 		make_instr((*dst)++, g_sys_undo_s, bif_sys_undo_1, 1, 1);
-		make_var((*dst)++, g_anon_s, var_num0);						// L1
+		make_var((*dst)++, g_anon_s, var_numL1);					// L1
 		make_instr((*dst)++, g_eq_s, bif_iso_unify_2, 2, 2);		// L1=T1
-		make_var((*dst)++, g_anon_s, var_num0);						// L1
+		make_var((*dst)++, g_anon_s, var_numL1);					// L1
 		make_var((*dst)++, g_anon_s, var_numT1);					// T1
 		make_instr((*dst)++, g_sys_undo_s, bif_sys_undo_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_numH1);					// H1
 		make_instr((*dst)++, g_sys_undo_s, bif_sys_undo_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_numT1);					// T1
+
 		make_instr((*dst)++, g_sys_jump_s, bif_sys_jump_1, 1, 1);
 		make_int((*dst), -(ssize_t)((*dst)-save_dst0));				// jump to LOOP
 		(*dst)++;
