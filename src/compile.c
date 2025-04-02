@@ -274,9 +274,9 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		cell *f = *src;
 		cell *arg1 = f + f->num_cells;
 
+		cell *save_dst3 = *dst;
 		make_instr((*dst)++, g_sys_jump_if_nil_s, bif_sys_jump_if_nil_2, 2, arg1->num_cells+1);
 		*dst += copy_cells(*dst, arg1, arg1->num_cells);
-		cell *save_dst3 = *dst;
 		make_uint((*dst)++, 0);										// Dummy value
 
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
@@ -332,9 +332,11 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		(*dst)++;
 
 		make_uint(save_dst2+2, *dst - save_dst2);					// Real value
+		make_instr((*dst)++, g_sys_end_s, bif_iso_true_0, 0, 0);	// Landing
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_num1);
-		make_uint(save_dst3, *dst - save_dst3);						// Real value
+
+		make_uint(save_dst3+2, *dst - save_dst3);						// Real value
 		make_instr((*dst)++, g_sys_end_s, bif_iso_true_0, 0, 0);	// Landing
 		return;
 	}
@@ -353,14 +355,14 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		cell *arg1 = f + f->num_cells;
 		cell *arg2 = arg1 + arg1->num_cells;
 
+		cell *save_dst31 = *dst;
 		make_instr((*dst)++, g_sys_jump_if_nil_s, bif_sys_jump_if_nil_2, 2, arg1->num_cells+1);
 		*dst += copy_cells(*dst, arg1, arg1->num_cells);
-		cell *save_dst31 = *dst;
 		make_uint((*dst)++, 0);										// Dummy value
 
+		cell *save_dst32 = *dst;
 		make_instr((*dst)++, g_sys_jump_if_nil_s, bif_sys_jump_if_nil_2, 2, arg2->num_cells+1);
 		*dst += copy_cells(*dst, arg2, arg2->num_cells);
-		cell *save_dst32 = *dst;
 		make_uint((*dst)++, 0);										// Dummy value
 
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
@@ -446,12 +448,12 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 		make_uint(save_dst21+2, *dst - save_dst21);					// Real value
 		make_uint(save_dst22+2, *dst - save_dst22);					// Real value
-
+		make_instr((*dst)++, g_sys_end_s, bif_iso_true_0, 0, 0);	// Landing
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_num1);
 
-		make_uint(save_dst31, *dst - save_dst31);					// Real value
-		make_uint(save_dst32, *dst - save_dst31);					// Real value
+		make_uint(save_dst31+2, *dst - save_dst31);					// Real value
+		make_uint(save_dst32+2, *dst - save_dst31);					// Real value
 		make_instr((*dst)++, g_sys_end_s, bif_iso_true_0, 0, 0);	// Landing
 		return;
 	}
