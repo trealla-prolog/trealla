@@ -938,7 +938,7 @@ bool valid_list(query *q, cell *c, pl_idx c_ctx)
 #if !defined(_WIN32) && !defined(__wasi__)
 static bool bif_popen_4(query *q)
 {
-	GET_FIRST_ARG(p1,atom);
+	GET_FIRST_ARG(p1,source_sink);
 	GET_NEXT_ARG(p2,atom);
 	GET_NEXT_ARG(p3,var);
 	GET_NEXT_ARG(p4,list_or_nil);
@@ -952,7 +952,7 @@ static bool bif_popen_4(query *q)
 
 	if (is_atom(p1))
 		filename = src = DUP_STRING(q, p1);
-	else
+	else if (!is_iso_list(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "source_sink");
 
 	if (is_iso_list(p1)) {
@@ -1422,7 +1422,7 @@ static void *mmap(void *start, size_t length, int prot, int flags, int fd, off_t
 
 static bool bif_iso_open_4(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_compound);
+	GET_FIRST_ARG(p1,source_sink);
 	GET_NEXT_ARG(p2,atom);
 	GET_NEXT_ARG(p3,var);
 	GET_NEXT_ARG(p4,list_or_nil);
@@ -1445,7 +1445,7 @@ static bool bif_iso_open_4(query *q)
 		filename = oldstr->filename;
 	} else if (is_atom(p1))
 		filename = src = DUP_STRING(q, p1);
-	else
+	else if (!is_iso_list(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "source_sink");
 
 	if (is_iso_list(p1)) {
@@ -4669,7 +4669,7 @@ static bool bif_read_line_to_string_2(query *q)
 
 static bool bif_read_file_to_string_3(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_list);
+	GET_FIRST_ARG(p1,source_sink);
 	GET_NEXT_ARG(p2,var);
 	GET_NEXT_ARG(p3,list_or_nil);
 	char *filename;
@@ -4854,7 +4854,7 @@ static bool do_deconsult(query *q, cell *p1, pl_idx p1_ctx)
 
 static bool bif_load_files_2(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_list);
+	GET_FIRST_ARG(p1,source_sink);
 
 	if (is_atom(p1)) {
 		check_heap_error(do_consult(q, p1, p1_ctx));
@@ -4878,7 +4878,7 @@ static bool bif_load_files_2(query *q)
 
 static bool bif_unload_files_1(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_compound);
+	GET_FIRST_ARG(p1,source_sink);
 
 	if (is_atom(p1)) {
 		check_heap_error(do_deconsult(q, p1, p1_ctx));
@@ -4912,7 +4912,7 @@ static bool bif_make_0(query *q)
 
 static bool bif_savefile_2(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_list);
+	GET_FIRST_ARG(p1,source_sink);
 	GET_NEXT_ARG(p2,atom);
 	char *filename;
 
@@ -4937,7 +4937,7 @@ static bool bif_savefile_2(query *q)
 
 static bool bif_loadfile_2(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_list);
+	GET_FIRST_ARG(p1,source_sink);
 	GET_NEXT_ARG(p2,var);
 	char *filename;
 
@@ -4995,7 +4995,7 @@ static bool bif_loadfile_2(query *q)
 
 static bool bif_getfile_2(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_list);
+	GET_FIRST_ARG(p1,source_sink);
 	GET_NEXT_ARG(p2,var);
 	char *filename;
 
@@ -5084,7 +5084,7 @@ static bool get_terminator(query *q, cell *l, pl_idx l_ctx)
 
 static bool bif_getfile_3(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_list);
+	GET_FIRST_ARG(p1,source_sink);
 	GET_NEXT_ARG(p2,var);
 	GET_NEXT_ARG(p3,list_or_nil);
 	char *filename;
@@ -5554,7 +5554,7 @@ static bool bif_getline_3(query *q)
 
 static bool bif_access_file_2(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_list);
+	GET_FIRST_ARG(p1,source_sink);
 	GET_NEXT_ARG(p2,atom);
 	char *filename;
 
@@ -5607,7 +5607,7 @@ static bool bif_access_file_2(query *q)
 
 static bool bif_exists_file_1(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_list);
+	GET_FIRST_ARG(p1,source_sink);
 	char *filename;
 
 	if (is_iso_list(p1)) {
@@ -5638,7 +5638,7 @@ static bool bif_exists_file_1(query *q)
 
 static bool bif_directory_files_2(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_list);
+	GET_FIRST_ARG(p1,source_sink);
 	GET_NEXT_ARG(p2,var);
 	char *filename;
 
@@ -5695,7 +5695,7 @@ static bool bif_directory_files_2(query *q)
 
 static bool bif_delete_file_1(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_list);
+	GET_FIRST_ARG(p1,source_sink);
 	char *filename;
 
 	if (is_iso_list(p1)) {
@@ -5723,8 +5723,8 @@ static bool bif_delete_file_1(query *q)
 
 static bool bif_rename_file_2(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_list);
-	GET_NEXT_ARG(p2,atom_or_list);
+	GET_FIRST_ARG(p1,source_sink);
+	GET_NEXT_ARG(p2,source_sink);
 	char *filename1, *filename2;
 
 	if (is_iso_list(p1)) {
@@ -5767,8 +5767,8 @@ static bool bif_rename_file_2(query *q)
 
 static bool bif_copy_file_2(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_list);
-	GET_NEXT_ARG(p2,atom_or_list);
+	GET_FIRST_ARG(p1,source_sink);
+	GET_NEXT_ARG(p2,source_sink);
 	char *filename1, *filename2;
 
 	if (is_iso_list(p1)) {
@@ -5837,7 +5837,7 @@ static bool bif_copy_file_2(query *q)
 
 static bool bif_time_file_2(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_list);
+	GET_FIRST_ARG(p1,source_sink);
 	GET_NEXT_ARG(p2,var);
 	char *filename;
 
@@ -5867,7 +5867,7 @@ static bool bif_time_file_2(query *q)
 
 static bool bif_size_file_2(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_list);
+	GET_FIRST_ARG(p1,source_sink);
 	GET_NEXT_ARG(p2,integer_or_var);
 	char *filename;
 
@@ -5897,7 +5897,7 @@ static bool bif_size_file_2(query *q)
 
 static bool bif_exists_directory_1(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_list);
+	GET_FIRST_ARG(p1,source_sink);
 	char *filename;
 
 	if (is_iso_list(p1)) {
@@ -5928,7 +5928,7 @@ static bool bif_exists_directory_1(query *q)
 
 static bool bif_make_directory_1(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_list);
+	GET_FIRST_ARG(p1,source_sink);
 	char *filename;
 
 	if (is_iso_list(p1)) {
@@ -5960,7 +5960,7 @@ static bool bif_make_directory_1(query *q)
 
 static bool bif_make_directory_path_1(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_list);
+	GET_FIRST_ARG(p1,source_sink);
 	char *filename;
 
 	if (is_iso_list(p1)) {
@@ -6047,7 +6047,7 @@ static bool bif_working_directory_2(query *q)
 
 static bool bif_chdir_1(query *q)
 {
-	GET_FIRST_ARG(p1,atom_or_list);
+	GET_FIRST_ARG(p1,source_sink);
 	char *filename;
 
 	if (is_iso_list(p1)) {

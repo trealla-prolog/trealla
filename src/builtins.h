@@ -53,6 +53,7 @@ bool wrap_ffi_predicate(query *q, builtins *bif_ptr);
 #define is_chars(q,c,ctx) (is_nil(c) || is_string(c) || scan_is_chars_list(q, c, ctx, false) || (is_cstring(c) && !CMP_STRING_TO_CSTR(q, c, "[]")))
 #define is_sregex(c) (is_blob(c) && ((c)->flags & FLAG_BLOB_SREGEX))
 #define is_string_or_var(c) (is_string(c) || is_var(c))
+#define is_source_sink(c) (is_atom(c) || is_compound(c))
 #define is_any(c) true
 
 #define is_iso_list_or_nil(c) (is_iso_list(c) || is_nil(c))
