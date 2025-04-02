@@ -332,10 +332,8 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		(*dst)++;
 
 		make_uint(save_dst2+2, *dst - save_dst2);					// Real value
-
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_num1);
-
 		make_uint(save_dst3, *dst - save_dst3);						// Real value
 		make_instr((*dst)++, g_sys_end_s, bif_iso_true_0, 0, 0);	// Landing
 		return;
