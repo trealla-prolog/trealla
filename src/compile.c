@@ -279,6 +279,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_instr((*dst)++, g_eq_s, bif_iso_unify_2, 2, 1+arg1->num_cells); // L0=L
 		make_var((*dst)++, g_anon_s, var_num0);						// L0
 		*dst += copy_cells(*dst, arg1, arg1->num_cells);			// L
+
 		cell *save_dst0 = *dst;
 		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// true
 		make_instr((*dst)++, g_eq_s, bif_iso_unify_2, 2, 1+3);		// L0=[H|T]
@@ -286,16 +287,21 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_instr((*dst)++, g_dot_s, NULL, 2, 2);
 		make_var((*dst)++, g_anon_s, var_num2);						// H
 		make_var((*dst)++, g_anon_s, var_num3);						// T
+
 		cell *save_dst = *dst;
 		copy_term(dst, src);										// Functor
 		save_dst->arity++;
 		save_dst->num_cells++;
 		make_var((*dst)++, g_anon_s, var_num2);						// H
 
-#if 0
-		make_instr((*dst)++, g_sys_call_check_s, bif_sys_call_check_1, 1, *dst-save_dst);
-		*dst += copy_cells(*dst, *src, *dst-save_dst);
-#endif
+		bool found;
+
+		if ((save_dst->match = search_predicate(pr->m, save_dst, NULL)) != NULL)
+			save_dst->flags &= ~FLAG_INTERNED_BUILTIN;
+		 else if ((save_dst->bif_ptr = get_builtin_term(pr->m, save_dst, &found, NULL)), found)
+			save_dst->flags |= FLAG_INTERNED_BUILTIN;
+		else
+			save_dst->flags &= ~FLAG_INTERNED_BUILTIN;
 
 		*src += (*src)->num_cells;
 		cell *save_dst2 = *dst;
