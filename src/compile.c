@@ -328,6 +328,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_instr((*dst)++, g_sys_jump_s, bif_sys_jump_1, 1, 1);
 		make_int((*dst), -(ssize_t)((*dst)-save_dst0));				// jump to LOOP
 		(*dst)++;
+
 		make_uint(save_dst2+2, *dst - save_dst2);					// Real value
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_num1);
