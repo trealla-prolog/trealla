@@ -7317,7 +7317,7 @@ builtins g_streams_bifs[] =
 {
 	// ISO...
 
-	{"open", 4, bif_iso_open_4, "+atom,+mode,--stream,+list", true, false, BLAH},
+	{"open", 4, bif_iso_open_4, "+source_sink,+mode,--stream,+list", true, false, BLAH},
 	{"close", 1, bif_iso_close_1, "+stream", true, false, BLAH},
 	{"close", 2, bif_iso_close_2, "+stream,+opts", true, false, BLAH},
 	{"read_term", 2, bif_iso_read_term_2, "+stream,-term", true, false, BLAH},
@@ -7398,25 +7398,25 @@ builtins g_streams_bifs[] =
 	{"load_files", 2, bif_load_files_2, "+atom,+list", false, false, BLAH},
 	{"unload_files", 1, bif_unload_files_1, "+atom", false, false, BLAH},
 	{"make", 0, bif_make_0, NULL, false, false, BLAH},
-	{"getfile", 2, bif_getfile_2, "+atom,-list", false, false, BLAH},
-	{"getfile", 3, bif_getfile_3, "+atom,-list,+list", false, false, BLAH},
-	{"loadfile", 2, bif_loadfile_2, "+atom,-atom", false, false, BLAH},
-	{"savefile", 2, bif_savefile_2, "+atom,+atom", false, false, BLAH},
-	{"rename_file", 2, bif_rename_file_2, "+atom,+atom", false, false, BLAH},
-	{"copy_file", 2, bif_copy_file_2, "+atom,+atom", false, false, BLAH},
-	{"directory_files", 2, bif_directory_files_2, "+atom,-list", false, false, BLAH},
-	{"delete_file", 1, bif_delete_file_1, "+atom", false, false, BLAH},
-	{"exists_file", 1, bif_exists_file_1, "+atom", false, false, BLAH},
-	{"access_file", 2, bif_access_file_2, "+atom,+atom", false, false, BLAH},
-	{"time_file", 2, bif_time_file_2, "+atom,-float", false, false, BLAH},
-	{"size_file", 2, bif_size_file_2, "+atom,-integer", false, false, BLAH},
-	{"exists_directory", 1, bif_exists_directory_1, "+atom", false, false, BLAH},
-	{"make_directory", 1, bif_make_directory_1, "+atom", false, false, BLAH},
-	{"make_directory_path", 1, bif_make_directory_path_1, "+atom", false, false, BLAH},
-	{"working_directory", 2, bif_working_directory_2, "-atom,+atom", false, false, BLAH},
-	{"absolute_file_name", 3, bif_absolute_file_name_3, "+atom,-atom,+list", false, false, BLAH},
-	{"is_absolute_file_name", 1, bif_is_absolute_file_name_1, "+atom", false, false, BLAH},
-	{"chdir", 1, bif_chdir_1, "+atom", false, false, BLAH},
+	{"getfile", 2, bif_getfile_2, "+source_sink,-list", false, false, BLAH},
+	{"getfile", 3, bif_getfile_3, "+source_sink,-list,+list", false, false, BLAH},
+	{"loadfile", 2, bif_loadfile_2, "+source_sink,-atom", false, false, BLAH},
+	{"savefile", 2, bif_savefile_2, "+source_sink,+source_sink", false, false, BLAH},
+	{"rename_file", 2, bif_rename_file_2, "+source_sink,+source_sink", false, false, BLAH},
+	{"copy_file", 2, bif_copy_file_2, "+source_sink,+source_sink", false, false, BLAH},
+	{"directory_files", 2, bif_directory_files_2, "+source_sink,-list", false, false, BLAH},
+	{"delete_file", 1, bif_delete_file_1, "+source_sink", false, false, BLAH},
+	{"exists_file", 1, bif_exists_file_1, "+source_sink", false, false, BLAH},
+	{"access_file", 2, bif_access_file_2, "+source_sink,+atom", false, false, BLAH},
+	{"time_file", 2, bif_time_file_2, "+source_sink,-float", false, false, BLAH},
+	{"size_file", 2, bif_size_file_2, "+source_sink,-integer", false, false, BLAH},
+	{"exists_directory", 1, bif_exists_directory_1, "+source_sink", false, false, BLAH},
+	{"make_directory", 1, bif_make_directory_1, "+source_sink", false, false, BLAH},
+	{"make_directory_path", 1, bif_make_directory_path_1, "+source_sink", false, false, BLAH},
+	{"working_directory", 2, bif_working_directory_2, "-atom,+source_sink", false, false, BLAH},
+	{"absolute_file_name", 3, bif_absolute_file_name_3, "+source_sink,-atom,+list", false, false, BLAH},
+	{"is_absolute_file_name", 1, bif_is_absolute_file_name_1, "+source_sink", false, false, BLAH},
+	{"chdir", 1, bif_chdir_1, "+source_sink", false, false, BLAH},
 	{"$put_chars", 1, bif_sys_put_chars_1, "+string", false, false, BLAH},
 	{"$put_chars", 2, bif_sys_put_chars_2, "+stream,+string", false, false, BLAH},
 	{"read_term_from_atom", 3, bif_read_term_from_atom_3, "+atom,?term,+list", false, false, BLAH},
@@ -7469,7 +7469,7 @@ builtins g_streams_bifs[] =
 #endif
 
 #if !defined(_WIN32) && !defined(__wasi__)
-	{"popen", 4, bif_popen_4, "+atom,+atom,--stream,+list", false, false, BLAH},
+	{"popen", 4, bif_popen_4, "+source_sink,+atom,--stream,+list", false, false, BLAH},
 #endif
 
 	{0}
