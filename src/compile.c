@@ -347,16 +347,6 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		cell *arg1 = f + f->num_cells;
 		cell *arg2 = arg1 + arg1->num_cells;
 
-		cell *save_dst31 = *dst;
-		make_instr((*dst)++, g_sys_jump_if_nil_s, bif_sys_jump_if_nil_2, 2, arg1->num_cells+1);
-		*dst += copy_cells(*dst, arg1, arg1->num_cells);
-		make_uint((*dst)++, 0);										// Dummy value
-
-		cell *save_dst32 = *dst;
-		make_instr((*dst)++, g_sys_jump_if_nil_s, bif_sys_jump_if_nil_2, 2, arg2->num_cells+1);
-		*dst += copy_cells(*dst, arg2, arg2->num_cells);
-		make_uint((*dst)++, 0);										// Dummy value
-
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_num1);
 
@@ -371,6 +361,16 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		cell *save_dst0 = *dst;
 		make_instr((*dst)++, g_sys_loop_s, bif_iso_true_0, 0, 0);	// LOOP
 
+		cell *save_dst31 = *dst;
+		make_instr((*dst)++, g_sys_jump_if_nil_s, bif_sys_jump_if_nil_2, 2, 2);
+		make_var((*dst)++, g_anon_s, var_numL1);					// L1
+		make_uint((*dst)++, 0);										// Dummy value
+
+		cell *save_dst32 = *dst;
+		make_instr((*dst)++, g_sys_jump_if_nil_s, bif_sys_jump_if_nil_2, 2, 2);
+		make_var((*dst)++, g_anon_s, var_numL2);					// L1
+		make_uint((*dst)++, 0);										// Dummy value
+\
 		make_instr((*dst)++, g_eq_s, bif_iso_unify_2, 2, 1+3);		// L1=[H1|T1]
 		make_var((*dst)++, g_anon_s, var_numL1);					// L1
 		make_instr((*dst)++, g_dot_s, NULL, 2, 2);
@@ -404,16 +404,6 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		*src += (*src)->num_cells;
 		*src += (*src)->num_cells;
 
-		cell *save_dst21 = *dst;
-		make_instr((*dst)++, g_sys_jump_if_nil_s, bif_sys_jump_if_nil_2, 2, 2);
-		make_var((*dst)++, g_anon_s, var_numT1);					// T1
-		make_uint((*dst)++, 0);										// Dummy value
-
-		cell *save_dst22 = *dst;
-		make_instr((*dst)++, g_sys_jump_if_nil_s, bif_sys_jump_if_nil_2, 2, 2);
-		make_var((*dst)++, g_anon_s, var_numT2);					// T2
-		make_uint((*dst)++, 0);										// Dummy value
-
 		make_instr((*dst)++, g_sys_undo_s, bif_sys_undo_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_numL1);					// L1
 		make_instr((*dst)++, g_eq_s, bif_iso_unify_2, 2, 2);		// L1=T1
@@ -438,15 +428,11 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_int((*dst), -(ssize_t)((*dst)-save_dst0));				// jump to LOOP
 		(*dst)++;
 
-		make_uint(save_dst21+2, *dst - save_dst21);					// Real value
-		make_uint(save_dst22+2, *dst - save_dst22);					// Real value
+		make_uint(save_dst31+2, *dst - save_dst31);					// Real value
+		make_uint(save_dst32+2, *dst - save_dst32);					// Real value
 		make_instr((*dst)++, g_sys_end_s, bif_iso_true_0, 0, 0);	// Landing
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_num1);
-
-		make_uint(save_dst31+2, *dst - save_dst31);					// Real value
-		make_uint(save_dst32+2, *dst - save_dst31);					// Real value
-		make_instr((*dst)++, g_sys_end_s, bif_iso_true_0, 0, 0);	// Landing
 		return;
 	}
 #endif
