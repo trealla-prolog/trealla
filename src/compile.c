@@ -289,7 +289,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_var((*dst)++, g_anon_s, var_numL1);					// L1
 		make_uint((*dst)++, 0);										// Dummy value
 
-		make_instr((*dst)++, g_eq_s, bif_iso_unify_2, 2, 1+3);		// L1=[H1|T1]
+		make_instr((*dst)++, g_eq_s, bif_iso_unify_2, 2, 4);		// L1=[H1|T1]
 		make_var((*dst)++, g_anon_s, var_numL1);					// L1
 		make_instr((*dst)++, g_dot_s, NULL, 2, 2);
 		make_var((*dst)++, g_anon_s, var_numH1);					// H1
@@ -371,13 +371,13 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_var((*dst)++, g_anon_s, var_numL2);					// L1
 		make_uint((*dst)++, 0);										// Dummy value
 
-		make_instr((*dst)++, g_eq_s, bif_iso_unify_2, 2, 1+3);		// L1=[H1|T1]
+		make_instr((*dst)++, g_eq_s, bif_iso_unify_2, 2, 4);		// L1=[H1|T1]
 		make_var((*dst)++, g_anon_s, var_numL1);					// L1
 		make_instr((*dst)++, g_dot_s, NULL, 2, 2);
 		make_var((*dst)++, g_anon_s, var_numH1);					// H1
 		make_var((*dst)++, g_anon_s, var_numT1);					// T1
 
-		make_instr((*dst)++, g_eq_s, bif_iso_unify_2, 2, 1+3);		// L2=[H2|T2]
+		make_instr((*dst)++, g_eq_s, bif_iso_unify_2, 2, 4);		// L2=[H2|T2]
 		make_var((*dst)++, g_anon_s, var_numL2);					// L2
 		make_instr((*dst)++, g_dot_s, NULL, 2, 2);
 		make_var((*dst)++, g_anon_s, var_numH2);					// H2
