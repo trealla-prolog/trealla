@@ -266,8 +266,8 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 	}
 
 	if (((*src)->val_off == g_maplist_s) && ((*src)->arity == 2) && !is_var((*src)+1)) {
-		unsigned var_numL1 = cl->num_vars++;
 		unsigned var_num1 = cl->num_vars++;
+		unsigned var_numL1 = cl->num_vars++;
 		unsigned var_numH1 = cl->num_vars++;
 		unsigned var_numT1 = cl->num_vars++;
 		*src += 1;
