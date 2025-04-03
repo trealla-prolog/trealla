@@ -368,7 +368,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 		cell *save_dst32 = *dst;
 		make_instr((*dst)++, g_sys_jump_if_nil_s, bif_sys_jump_if_nil_2, 2, 2);
-		make_var((*dst)++, g_anon_s, var_numL2);					// L1
+		make_var((*dst)++, g_anon_s, var_numL2);					// L2
 		make_uint((*dst)++, 0);										// Dummy value
 
 		make_instr((*dst)++, g_eq_s, bif_iso_unify_2, 2, 4);		// L1=[H1|T1]
