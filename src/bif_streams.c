@@ -6716,6 +6716,12 @@ static bool bif_bread_3(query *q)
 			str->data_len = 0;
 		}
 
+		if (str->ungetch) {
+			unsigned n = put_char_utf8(str->data, str->ungetch);
+			str->data_len += n;
+			str->ungetch = 0;
+		}
+
 		for (;;) {
 			len = get_smallint(p1) - str->data_len;
 			size_t nbytes = net_read(str->data+str->data_len, len, str);
@@ -6754,6 +6760,12 @@ static bool bif_bread_3(query *q)
 			str->data_len = 0;
 		}
 
+		if (str->ungetch) {
+			unsigned n = put_char_utf8(str->data, str->ungetch);
+			str->data_len += n;
+			str->ungetch = 0;
+		}
+
 		size_t nbytes = net_read(str->data, str->alloc_nbytes, str);
 		str->data[nbytes] = '\0';
 		str->data = realloc(str->data, nbytes+1);
@@ -6771,6 +6783,12 @@ static bool bif_bread_3(query *q)
 		str->data = malloc((str->alloc_nbytes=1024)+1);
 		check_heap_error(str->data);
 		str->data_len = 0;
+	}
+
+	if (str->ungetch) {
+		unsigned n = put_char_utf8(str->data, str->ungetch);
+		str->data_len += n;
+		str->ungetch = 0;
 	}
 
 	for (;;) {
