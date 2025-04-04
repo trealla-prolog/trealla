@@ -1638,20 +1638,18 @@ static bool bif_iso_open_4(query *q)
 #endif
 
 	if (!strcmp(str->mode, "read") && !str->binary && (!bom_specified || use_bom)) {
-		if (fseek(str->fp, 0, SEEK_SET) == 0) {
-			int ch = xgetc_utf8(net_getc, str);
+		int ch = xgetc_utf8(net_getc, str);
 
-			if (feof(str->fp))
-				clearerr(str->fp);
+		if (feof(str->fp))
+			clearerr(str->fp);
 
-			if ((unsigned)ch == 0xFEFF) {
-				str->bom = true;
+		if ((unsigned)ch == 0xFEFF) {
+			str->bom = true;
 #if USE_MMAP
-				offset = 3;
+			offset = 3;
 #endif
-			} else
-				fseek(str->fp, 0, SEEK_SET);
-		}
+		} else
+			fseek(str->fp, 0, SEEK_SET);
 	} else if (!strcmp(str->mode, "write") && !str->binary && use_bom) {
 		int ch = 0xFEFF;
 		char tmpbuf[10];
