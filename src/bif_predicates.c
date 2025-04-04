@@ -5874,6 +5874,22 @@ bool bif_sys_drop_barrier_1(query *q)
 	return true;
 }
 
+bool bif_create_var_1(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+
+	if (!is_var(p1))
+		return true;
+
+	unsigned var_num = create_vars(q, 1);
+	const frame *f = GET_FRAME(p1_ctx);
+	slot *e = GET_SLOT(f, p1->var_num);
+	cell tmp;
+	make_var(&tmp, g_anon_s, var_num);
+	e->c = tmp;
+	return true;
+}
+
 bool bif_sys_jump_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
@@ -6770,6 +6786,7 @@ builtins g_other_bifs[] =
 	{"$gt", 2, bif_sys_gt_2, NULL, false, false, BLAH},
 	{"$ne", 2, bif_sys_ne_2, NULL, false, false, BLAH},
 	{"$undo", 2, bif_sys_undo_1, "+var", true, false, BLAH},
+	{"$create_var", 1, bif_create_var_1, "-var", false, false, BLAH},
 
 	{0}
 };

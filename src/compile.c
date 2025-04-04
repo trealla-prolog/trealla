@@ -265,6 +265,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
+#if 0
 	if (((*src)->val_off == g_maplist_s) && ((*src)->arity == 2) && !is_var((*src)+1)) {
 		unsigned var_num1 = cl->num_vars++;
 		unsigned var_numL1 = cl->num_vars++;
@@ -332,6 +333,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_var((*dst)++, g_anon_s, var_num1);
 		return;
 	}
+#endif
 
 #if 0
 	if (((*src)->val_off == g_maplist_s) && ((*src)->arity == 3) && !is_var((*src)+1)) {
