@@ -5874,7 +5874,7 @@ bool bif_sys_drop_barrier_1(query *q)
 	return true;
 }
 
-bool bif_create_var_1(query *q)
+bool bif_sys_create_var_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 
@@ -6786,7 +6786,7 @@ builtins g_other_bifs[] =
 	{"$gt", 2, bif_sys_gt_2, NULL, false, false, BLAH},
 	{"$ne", 2, bif_sys_ne_2, NULL, false, false, BLAH},
 	{"$undo", 2, bif_sys_undo_1, "+var", true, false, BLAH},
-	{"$create_var", 1, bif_create_var_1, "-var", false, false, BLAH},
+	{"$create_var", 1, bif_sys_create_var_1, "-var", false, false, BLAH},
 
 	{0}
 };
