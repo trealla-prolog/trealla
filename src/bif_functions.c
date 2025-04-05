@@ -570,6 +570,9 @@ static bool bif_rdiv_2(query *q)
 	if (!is_integer(&p2))
 		return throw_error(q, &p2, q->st.curr_frame, "type_error", "integer");
 
+	if (is_zero(&p2))
+		return throw_error(q, &p2, q->st.curr_frame, "evaluation_error", "zero_divisor");
+
 	if (is_rational(&p1) && is_rational(&p2)) {
 		if (mp_int_mul(&p1.val_bigint->irat.num, &p2.val_bigint->irat.den, &q->tmp_irat.num) == MP_MEMORY)
 			return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory");
