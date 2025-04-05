@@ -832,3 +832,65 @@ sre_subst_all_(Reg, TextIn, Subst, L0, L) :-
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+/********************************************************/
+/* Float Approximation                                  */
+/********************************************************/
+
+/**
+ * See also:
+ * Continued Fractions on the Stern-Brocot Tree
+ * https://www.cut-the-knot.org/blue/ContinuedFractions.shtml
+ */
+
+/**
+ * rationalize(X):
+ * If X is a number then the function returns an approximate rational number.
+ */
+% rationalize(+Number, -Rational)
+rationalize(F, C/B) :- F < 0, !,
+   H is -F,
+   rationalize(H, A/B),
+   C is -A.
+rationalize(F, R) :-
+   rat_start(F, V, W),
+   divmod(V, W, D, U),
+   rat_iter(W/U, D/1, 1/0, F, R).
+
+% rat_start(+Number, -Integer, -Integer)
+rat_start(F, V, W) :-
+   parts(F, M, E),
+   (E < 0 ->
+       V = M, W is 2^(-E);
+       V is M*E^2, W = 1).
+
+% rat_iter(+Rational, +Rational, +Rational, +Number, -Rational)
+rat_iter(_, X, _, Y, X) :- X =:= Y, !.
+rat_iter(_/0, X, _, _, X) :- !.
+rat_iter(V/W, M/N, P/Q, Y, X) :-
+   divmod(V, W, D, U),
+   R is D*M+P,
+   S is D*N+Q,
+   rat_iter(W/U, R/S, M/N, Y, X).
+
+/********************************************************/
+/* IEEE Simulation                                      */
+/********************************************************/
+
+% parts(+Number, -Integer, -Integer)
+parts(F, M, E) :-
+   logb(F, G),
+   E is G-52,
+   U is -E,
+   scalb(F, U, N),
+   M is truncate(N).
+
+% scalb(+Number, +Integer, -Number)
+scalb(M, E, R) :-
+   R is M*2**E.
+
+% logb(+NUmber, -Integer)
+logb(M, E) :-
+   E is floor(log(M)/log(2)).
+
+:- help(rationalize(+number,-rational), [iso(false)]).

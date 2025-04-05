@@ -399,6 +399,7 @@ Non-standard predicates
 	numerator/1					# evaluable
 	denominator/1				# evaluable
 	rational/1
+	rationalize/2				# rationalize(+number,-rational)
 
 	with_output_to(chars(Cs), Goal)		# SWI-compatible
 	with_output_to(string(Cs), Goal)	# SWI-compatible

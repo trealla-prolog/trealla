@@ -550,75 +550,6 @@ static bool bif_denominator_1(query *q)
 	return true;
 }
 
-#include <stdio.h>
-#include <stdbool.h>
-
-// Structure to represent a ratio
-typedef struct {
-	int64_t numerator;
-	int64_t denominator;
-} Ratio;
-
-// Function to create a ratio
-static Ratio make_ratio(int64_t num, int64_t den)
-{
-	Ratio r = {num, den};
-	return r;
-}
-
-// Mediant function
-static Ratio mediant(Ratio r1, Ratio r2)
-{
-	Ratio result;
-	result.numerator = r1.numerator + r2.numerator;
-	result.denominator = r1.denominator + r2.denominator;
-	return result;
-}
-
-// Approximate function
-static Ratio approximate(Ratio low, Ratio high, double target)
-{
-	for (;;) {
-		Ratio mid = mediant(low, high);
-		double mid_float = (double)mid.numerator / mid.denominator;
-
-		if (target < mid_float)
-			high = mid;
-		else if (target == mid_float)
-			return mid;
-		else
-			low = mid;
-	}
-}
-
-// Rationalize function
-static Ratio rationalize(double f) {
-    Ratio zero = make_ratio(0, 1);
-    // Using a large number to represent 1/0 (infinity)
-    Ratio inf = make_ratio(1, 0);
-    return approximate(zero, inf, f);
-}
-
-static bool bif_rationalize_1(query *q)
-{
-	START_FUNCTION(q);
-	GET_FIRST_ARG(p1_tmp,any);
-	CLEANUP cell p1 = eval(q, p1_tmp);
-
-	if (!is_number(&p1))
-		return throw_error(q, &p1, q->st.curr_frame, "type_error", "number"); \
-
-	Ratio r = rationalize(is_float(&p1)? p1.val_float:(double)p1.val_int);
-
-	if (mp_int_set_value(&q->tmp_irat.num, r.numerator) == MP_MEMORY)
-		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory");
-	if (mp_int_set_value(&q->tmp_irat.den, r.denominator) == MP_MEMORY)
-		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory");
-
-	SET_RAT_ACCUM2();
-	return true;
-}
-
 static bool bif_rational_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -3059,7 +2990,6 @@ builtins g_evaluable_bifs[] =
 	{"denominator", 1, bif_denominator_1, "+rational,-integer", false, true, BLAH},
 	{"rational", 1, bif_rational_1, "+term", false, false, BLAH},
 	{"rdiv", 2, bif_rdiv_2, "+integer,+integer,-rational", false, true, BLAH},
-	{"rationalize", 1, bif_rationalize_1, "+number,-rational", false, true, BLAH},
 
 	{"divmod", 4, bif_divmod_4, "+integer,+integer,?integer,?integer", false, false, BLAH},
 	{"log", 2, bif_log_2, "+number,+number,-float", false, true, BLAH},
