@@ -1511,8 +1511,6 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 	}
 
 	for (unsigned i = 0; i < cl->num_vars; i++) {
-		if (!p->vartab.in_body[i])
-
 		if (p->is_consulting && !p->do_read_term && (p->vartab.used[i] == 1) &&
 			(p->vartab.name[i][strlen(p->vartab.name[i])-1] != '_') &&
 			(*p->vartab.name[i] != '_')) {
