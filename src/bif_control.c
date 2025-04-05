@@ -105,7 +105,7 @@ bool call_check(query *q, cell *tmp2, bool *status, bool calln)
 		}
 	}
 
-	if (calln && is_builtin(tmp2) && (tmp2->arity <= 2)) {
+	if (calln && (tmp2->arity <= 2) && is_builtin(tmp2)) {
 		const char *functor = C_STR(q, tmp2);
 		unsigned specifier;
 
@@ -113,7 +113,7 @@ bool call_check(query *q, cell *tmp2, bool *status, bool calln)
 			SET_OP(tmp2, specifier);
 	}
 
-	if (is_builtin(tmp2) && (tmp2 = check_body_callable(tmp2)) != NULL) {
+	if ((tmp2->arity == 2) && is_builtin(tmp2) && (tmp2 = check_body_callable(tmp2)) != NULL) {
 		*status = throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
 		return false;
 	}
