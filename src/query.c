@@ -294,19 +294,15 @@ void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs)
 	tr->attrs = attrs;
 }
 
-cell *prepare_call(query *q, bool prefix, cell *p1, pl_idx p1_ctx, unsigned extras)
+cell *prepare_call(query *q, bool noskip, cell *p1, pl_idx p1_ctx, unsigned extras)
 {
-	unsigned num_cells = (prefix ? PREFIX_LEN : NOPREFIX_LEN) + p1->num_cells + extras;
+	unsigned num_cells = p1->num_cells + extras;
 	cell *tmp = alloc_on_heap(q, num_cells);
 	if (!tmp) return NULL;
 
-	if (prefix) {
-		// Placeholder needed for proceed() to work, get's skipped
-		make_instr(tmp, g_dummy_s, bif_iso_true_0, 0, 0);
-	}
+	q->noskip = true;
 
-	cell *dst = tmp + (prefix ? PREFIX_LEN : NOPREFIX_LEN);
-	dup_cells_by_ref(dst, p1, p1_ctx, p1->num_cells);
+	dup_cells_by_ref(tmp, p1, p1_ctx, p1->num_cells);
 	return tmp;
 }
 
@@ -961,7 +957,10 @@ static bool resume_frame(query *q)
 
 static void proceed(query *q)
 {
-	q->st.curr_instr += q->st.curr_instr->num_cells;
+	if (!q->noskip)
+		q->st.curr_instr += q->st.curr_instr->num_cells;
+
+	q->noskip = false;
 
 	if (!is_end(q->st.curr_instr))
 		return;
