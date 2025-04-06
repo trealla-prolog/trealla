@@ -561,13 +561,13 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 				make_instr(p1+0, new_atom(q->pl, "$portray"), NULL, 2, 1+c->num_cells);
 				p1[1] = *str;
 				dup_cells_by_ref(p1+2, c, c_ctx, c->num_cells);
-				tmp = prepare_call(q, NOPREFIX_LEN, p1, q->st.curr_frame, 1);
+				tmp = prepare_call(q, CALL_SKIP, p1, q->st.curr_frame, 1);
 				num_cells = p1->num_cells;
 			} else {
 				cell p1[1+c->num_cells];
 				make_instr(p1+0, new_atom(q->pl, "$portray"), NULL, 1, c->num_cells);
 				dup_cells_by_ref(p1+1, c, c_ctx, c->num_cells);
-				tmp = prepare_call(q, NOPREFIX_LEN, p1, q->st.curr_frame, 1);
+				tmp = prepare_call(q, CALL_SKIP, p1, q->st.curr_frame, 1);
 				num_cells = p1->num_cells;
 			}
 

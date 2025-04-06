@@ -2907,7 +2907,7 @@ static bool bif_iso_write_term_2(query *q)
 		cell p1[1+c->num_cells];
 		make_instr(p1+0, new_atom(q->pl, "$portray"), NULL, 1, c->num_cells);
 		dup_cells_by_ref(p1+1, c, c_ctx, c->num_cells);
-		cell *tmp = prepare_call(q, NOPREFIX_LEN, p1, q->st.curr_frame, 1);
+		cell *tmp = prepare_call(q, CALL_SKIP, p1, q->st.curr_frame, 1);
 		pl_idx num_cells = p1->num_cells;
 		make_end(tmp+num_cells);
 		query *q2 = query_create_subquery(q, tmp);
@@ -2992,7 +2992,7 @@ static bool bif_iso_write_term_3(query *q)
 		make_instr(p1+0, new_atom(q->pl, "$portray"), NULL, 2, 1+c->num_cells);
 		p1[1] = *pstr;
 		dup_cells_by_ref(p1+2, c, c_ctx, c->num_cells);
-		cell *tmp = prepare_call(q, NOPREFIX_LEN, p1, q->st.curr_frame, 1);
+		cell *tmp = prepare_call(q, CALL_SKIP, p1, q->st.curr_frame, 1);
 		pl_idx num_cells = p1->num_cells;
 		make_end(tmp+num_cells);
 		query *q2 = query_create_subquery(q, tmp);

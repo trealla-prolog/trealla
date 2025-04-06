@@ -800,7 +800,7 @@ void do_signal(query *q, void *thread_ptr)
 	cell *c = copy_term_to_heap(q, m->c, q->st.fp, false);	// Copy into thread
 	unshare_cells(c, c->num_cells);
 	free(m);
-	cell *tmp = prepare_call(q, PREFIX_LEN, c, q->st.curr_frame, 1);
+	cell *tmp = prepare_call(q, CALL_NOSKIP, c, q->st.curr_frame, 1);
 	ensure(tmp);
 	pl_idx num_cells = c->num_cells;
 	make_call(q, tmp+num_cells);

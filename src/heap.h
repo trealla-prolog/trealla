@@ -1,7 +1,7 @@
 #pragma once
 
-#define NOPREFIX_LEN 0
-#define PREFIX_LEN 0
+#define CALL_SKIP 0
+#define CALL_NOSKIP 0
 
 size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, size_t max_elements, bool zeroit);
 

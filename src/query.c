@@ -299,9 +299,7 @@ cell *prepare_call(query *q, bool noskip, cell *p1, pl_idx p1_ctx, unsigned extr
 	unsigned num_cells = p1->num_cells + extras;
 	cell *tmp = alloc_on_heap(q, num_cells);
 	if (!tmp) return NULL;
-
 	q->noskip = true;
-
 	dup_cells_by_ref(tmp, p1, p1_ctx, p1->num_cells);
 	return tmp;
 }
@@ -1553,7 +1551,7 @@ static bool any_outstanding_choices(query *q)
 
 void do_cleanup(query *q, cell *c, pl_idx c_ctx)
 {
-	cell *tmp = prepare_call(q, PREFIX_LEN, c, c_ctx, 4);
+	cell *tmp = prepare_call(q, CALL_NOSKIP, c, c_ctx, 4);
 	ensure(tmp);
 	pl_idx num_cells = c->num_cells;
 	make_instr(tmp+num_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
