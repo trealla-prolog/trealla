@@ -802,7 +802,7 @@ void do_signal(query *q, void *thread_ptr)
 	free(m);
 	cell *tmp = prepare_call(q, PREFIX_LEN, c, q->st.curr_frame, 1);
 	ensure(tmp);
-	pl_idx num_cells = PREFIX_LEN + c->num_cells;
+	pl_idx num_cells = c->num_cells;
 	make_call(q, tmp+num_cells);
 	q->st.curr_instr = tmp;
 }

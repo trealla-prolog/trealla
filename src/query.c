@@ -1555,7 +1555,7 @@ void do_cleanup(query *q, cell *c, pl_idx c_ctx)
 {
 	cell *tmp = prepare_call(q, PREFIX_LEN, c, c_ctx, 4);
 	ensure(tmp);
-	pl_idx num_cells = PREFIX_LEN + c->num_cells;
+	pl_idx num_cells = c->num_cells;
 	make_instr(tmp+num_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+num_cells++, q->cp);
