@@ -205,18 +205,7 @@ cell *append_to_tmp(query *q, cell *p1, pl_idx p1_ctx)
 {
 	cell *tmp = alloc_on_tmp(q, p1->num_cells);
 	if (!tmp) return NULL;
-	cell *src = p1, *dst = tmp;
-
-	for (pl_idx i = 0; i < p1->num_cells; i++, dst++, src++) {
-		*dst = *src;
-
-		if (!is_var(src) || is_ref(src))
-			continue;
-
-		dst->flags |= FLAG_VAR_REF;
-		dst->var_ctx = p1_ctx;
-	}
-
+	copy_cells_by_ref(tmp, p1, p1_ctx, p1->num_cells);
 	return tmp;
 }
 
