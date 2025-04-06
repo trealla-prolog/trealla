@@ -173,7 +173,7 @@ static bool bif_iso_call_n(query *q)
 
 	cell *tmp = prepare_call(q, PREFIX_LEN, tmp2, q->st.curr_frame, 3);
 	check_heap_error(tmp);
-	tmp[PREFIX_LEN].flags &= ~FLAG_INTERNED_TAIL_CALL;
+	tmp->flags &= ~FLAG_INTERNED_TAIL_CALL;
 	pl_idx num_cells = PREFIX_LEN + tmp2->num_cells;
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+num_cells++, q->cp);
@@ -181,7 +181,7 @@ static bool bif_iso_call_n(query *q)
 	check_heap_error(push_fail_on_retry(q));
 
 	if (is_tail_call(q->st.curr_instr))
-		tmp[PREFIX_LEN].flags |= FLAG_INTERNED_TAIL_CALL;
+		tmp->flags |= FLAG_INTERNED_TAIL_CALL;
 
 	q->st.curr_instr = tmp;
 	return true;
@@ -204,7 +204,7 @@ bool bif_iso_call_1(query *q)
 
 	cell *tmp = prepare_call(q, PREFIX_LEN, p1, p1_ctx, 3);
 	check_heap_error(tmp);
-	tmp[PREFIX_LEN].flags &= ~FLAG_INTERNED_TAIL_CALL;
+	tmp->flags &= ~FLAG_INTERNED_TAIL_CALL;
 	pl_idx num_cells = PREFIX_LEN + p1->num_cells;
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+num_cells++, q->cp);
@@ -212,7 +212,7 @@ bool bif_iso_call_1(query *q)
 	check_heap_error(push_fail_on_retry(q));
 
 	if (is_tail_call(q->st.curr_instr))
-		tmp[PREFIX_LEN].flags |= FLAG_INTERNED_TAIL_CALL;
+		tmp->flags |= FLAG_INTERNED_TAIL_CALL;
 
 	q->st.curr_instr = tmp;
 	return true;
@@ -237,7 +237,7 @@ static bool bif_iso_once_1(query *q)
 
 	cell *tmp = prepare_call(q, PREFIX_LEN, p1, p1_ctx, 4);
 	check_heap_error(tmp);
-	tmp[PREFIX_LEN].flags &= ~FLAG_INTERNED_TAIL_CALL;
+	tmp->flags &= ~FLAG_INTERNED_TAIL_CALL;
 	pl_idx num_cells = PREFIX_LEN + p1->num_cells;
 	make_instr(tmp+num_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
@@ -267,7 +267,7 @@ static bool bif_ignore_1(query *q)
 
 	cell *tmp = prepare_call(q, PREFIX_LEN, p1, q->st.curr_frame, 4);
 	check_heap_error(tmp);
-	tmp[PREFIX_LEN].flags &= ~FLAG_INTERNED_TAIL_CALL;
+	tmp->flags &= ~FLAG_INTERNED_TAIL_CALL;
 	pl_idx num_cells = PREFIX_LEN + p1->num_cells;
 	make_instr(tmp+num_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
