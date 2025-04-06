@@ -301,7 +301,7 @@ cell *prepare_call(query *q, bool prefix, cell *p1, pl_idx p1_ctx, unsigned extr
 	if (!tmp) return NULL;
 
 	if (prefix) {
-		// Placeholder needed for follow() to work, get's skipped
+		// Placeholder needed for proceed() to work, get's skipped
 		make_instr(tmp, g_dummy_s, bif_iso_true_0, 0, 0);
 	}
 
