@@ -1,7 +1,7 @@
 #pragma once
 
-#define CALL_SKIP 0
-#define CALL_NOSKIP 0
+#define CALL_SKIP false
+#define CALL_NOSKIP true
 
 size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, size_t max_elements, bool zeroit);
 

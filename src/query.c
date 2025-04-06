@@ -299,7 +299,7 @@ cell *prepare_call(query *q, bool noskip, cell *p1, pl_idx p1_ctx, unsigned extr
 	unsigned num_cells = p1->num_cells + extras;
 	cell *tmp = alloc_on_heap(q, num_cells);
 	if (!tmp) return NULL;
-	q->noskip = true;
+	q->noskip = noskip;
 	dup_cells_by_ref(tmp, p1, p1_ctx, p1->num_cells);
 	return tmp;
 }
