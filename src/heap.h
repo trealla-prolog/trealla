@@ -5,7 +5,6 @@
 
 size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, size_t max_elements, bool zeroit);
 
-cell *init_tmp_heap(query *q);
 cell *alloc_on_tmp(query *q, unsigned num_cells);
 cell *append_to_tmp(query *q, cell *p1, pl_idx p1_ctx);
 cell *clone_term_to_tmp(query *q, cell *p1, pl_idx p1_ctx);
@@ -35,3 +34,15 @@ void allocate_list(query *q, const cell *c);
 void append_list(query *q, const cell *c);
 cell *end_list_unsafe(query *q);
 cell *end_list(query *q);
+
+inline static cell *init_tmp_heap(query *q)
+{
+	if (!q->tmp_heap) {
+		q->tmp_heap = malloc(q->tmph_size * sizeof(cell));
+		if (!q->tmp_heap) return NULL;
+	}
+
+	q->tmphp = 0;
+	return q->tmp_heap;
+}
+

@@ -55,25 +55,6 @@ size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, 
 // for work in progress. As such it can survive a realloc() call.
 // No need to incr refcnt on tmp heap cells.
 
-cell *init_tmp_heap(query *q)
-{
-#if 0
-	if (q->tmp_heap && (q->tmph_size > 1000)) {
-		free(q->tmp_heap);
-		q->tmp_heap = NULL;
-		q->tmph_size = 1000;
-	}
-#endif
-
-	if (!q->tmp_heap) {
-		q->tmp_heap = malloc(q->tmph_size * sizeof(cell));
-		if (!q->tmp_heap) return NULL;
-	}
-
-	q->tmphp = 0;
-	return q->tmp_heap;
-}
-
 cell *alloc_on_tmp(query *q, unsigned num_cells)
 {
 	pl_idx new_size = q->tmphp + num_cells;
