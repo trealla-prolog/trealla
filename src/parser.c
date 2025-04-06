@@ -1505,7 +1505,7 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 			c->flags |= FLAG_VAR_LOCAL;
 		} else if ((occurrances > 1) && !var_in_body) {
 			c->flags |= FLAG_VAR_TEMPORARY;
-		} if (occurrances == 1) {
+		} if ((occurrances == 1) && var_in_body) {
 			c->flags |= FLAG_VAR_VOID;
 		}
 	}
