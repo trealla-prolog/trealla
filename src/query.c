@@ -1127,7 +1127,7 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 	cell *tmp = alloc_on_heap(q, q->st.key->num_cells*3);	// alloc max possible
 	check_heap_error(tmp);
 	cell *save_tmp = tmp;
-	tmp += copy_cells(tmp, q->st.key, 1);
+	tmp += dup_cells_by_ref(tmp, q->st.key, q->st.key_ctx, 1);
 
 	// Expand module-sensitive args...
 
@@ -1146,7 +1146,7 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 			make_atom(tmp++, new_atom(q->pl, q->st.curr_m->name));
 		}
 
-		tmp += dup_cells_by_ref(tmp, k, q->st.key_ctx, k->num_cells);
+		tmp += dup_cells(tmp, k, k->num_cells);
 	}
 
 	save_tmp->num_cells = tmp - save_tmp;
@@ -1169,6 +1169,10 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 
 		if (key->arity) {
 			if (pr->is_multifile || pr->is_meta_predicate) {
+				q->st.key = clone_term_to_heap(q, key, key_ctx);
+				check_heap_error(q->st.key);
+				q->st.key_ctx = q->st.curr_frame;
+
 				if (pr->is_meta_predicate) {
 					if (!expand_meta_predicate(q, pr))
 						return false;
@@ -1181,11 +1185,13 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 		return true;
 	}
 
-	if (pr->is_multifile || pr->is_meta_predicate) {
-		if (pr->is_meta_predicate) {
-			if (!expand_meta_predicate(q, pr))
-				return false;
-		}
+	check_heap_error(init_tmp_heap(q));
+	key = clone_term_to_tmp(q, key, key_ctx);
+	key_ctx = q->st.curr_frame;
+
+	if (pr->is_meta_predicate) {
+		if (!expand_meta_predicate(q, pr))
+			return false;
 	}
 
 	cell *arg1 = key->arity ? FIRST_ARG(key) : NULL;
