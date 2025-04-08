@@ -918,10 +918,11 @@ static bool bif_listing_0(query *q)
 	return true;
 }
 
-static void save_name(FILE *fp, query *q, pl_idx name, unsigned arity, bool alt)
+static bool save_name(FILE *fp, query *q, pl_idx name, unsigned arity, bool alt)
 {
 	module *m = q->st.curr_rule ? q->st.curr_rule->owner->m : q->st.curr_m;
 	q->listing = true;
+	bool any = false;
 
 	for (predicate *pr = list_front(&m->predicates);
 		pr; pr = list_next(pr)) {
@@ -933,6 +934,8 @@ static void save_name(FILE *fp, query *q, pl_idx name, unsigned arity, bool alt)
 
 		if ((arity != pr->key.arity) && (arity != -1U))
 			continue;
+
+		any = true;
 
 		for (rule *r = pr->head; r; r = r->next) {
 			if (r->cl.dbgen_retracted)
@@ -967,6 +970,7 @@ static void save_name(FILE *fp, query *q, pl_idx name, unsigned arity, bool alt)
 	}
 
 	q->listing = false;
+	return any;
 }
 
 static bool bif_listing_1(query *q)
@@ -1009,8 +1013,7 @@ static bool bif_listing_1(query *q)
 
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
-	save_name(str->fp, q, name, arity, false);
-	return true;
+	return save_name(str->fp, q, name, arity, false);
 }
 
 static bool bif_sys_xlisting_1(query *q)
