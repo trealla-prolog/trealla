@@ -1062,6 +1062,14 @@ static bool bif_sys_xlisting_1(query *q)
 			arity += 2;
 	}
 
+	cell tmp;
+	make_atom(&tmp, name);
+	tmp.arity = arity;
+	bool found;
+
+	if (get_builtin_term(q->st.curr_m, &tmp, &found, NULL), found)
+		return throw_error(q, &tmp, p1_ctx, "permission_error", "access,private_procedure");
+
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
 	save_name(str->fp, q, name, arity, true);
