@@ -14,11 +14,18 @@ get_line_to_chars(Stream, Cs0, Cs) :-
     partial_string(Line,Cs0,Cs).
 
 get_n_chars(Stream, N, Cs) :-
-    bread(Stream, N, Cs0),
-    Cs0 = Cs.
+	( N == 0 ->
+		peek_char(_),
+		Cs = []
+	;
+		bread(Stream, N, Cs0),
+		Cs0 = Cs
+	).
 
 read_from_chars(Cs, T) :-
     read_term_from_chars(Cs, T, []).
+
+:- help(read_from_chars(+chars,?term), [iso(false)]).
 
 fabricate_var_name(VarType, VarName, N) :-
     char_code('A', AC),

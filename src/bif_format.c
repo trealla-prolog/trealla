@@ -362,7 +362,8 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 
 		switch(ch) {
 		case 's':
-			if (is_atom(c)) {
+			if (is_nil(c)) {
+			} else if (is_atom(c)) {
 				int len = noargval ? (int)C_STRLEN_UTF8(c) : MIN_OF(argval, (int)C_STRLEN_UTF8(c));
 				const char *src = C_STR(q, c);
 
