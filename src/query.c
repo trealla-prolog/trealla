@@ -1185,13 +1185,15 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 		return true;
 	}
 
-	check_heap_error(init_tmp_heap(q));
-	key = clone_term_to_tmp(q, key, key_ctx);
-	key_ctx = q->st.curr_frame;
+	if (pr->is_multifile || pr->is_meta_predicate) {
+		check_heap_error(init_tmp_heap(q));
+		key = clone_term_to_tmp(q, key, key_ctx);
+		key_ctx = q->st.curr_frame;
 
-	if (pr->is_meta_predicate) {
-		if (!expand_meta_predicate(q, pr))
-			return false;
+		if (pr->is_meta_predicate) {
+			if (!expand_meta_predicate(q, pr))
+				return false;
+		}
 	}
 
 	cell *arg1 = key->arity ? FIRST_ARG(key) : NULL;
