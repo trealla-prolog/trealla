@@ -1943,47 +1943,47 @@ static bool term_expansion(parser *p)
 	return term_expansion(p);
 }
 
-static void expand_meta_predicate(parser *p, predicate *pr, cell *c)
+static void expand_meta_predicate(parser *p, predicate *pr, cell *goal)
 {
-	//printf("*** here1 %s:%s/%u meta=%d\n", pr->m->name, C_STR(p, c), c->arity, pr->is_meta_predicate);
-
 	// Expand module-sensitive args...
 
-	unsigned arity = c->arity;
-	cell tmpbuf[2];
-	cell *tmp = tmpbuf;
+	unsigned arity = goal->arity;
 
-	for (cell *k = c+1, *m = pr->meta_args+1; arity--; k += k->num_cells, m += m->num_cells) {
+	for (cell *k = goal+1, *m = pr->meta_args+1; arity--; k += k->num_cells, m += m->num_cells) {
+		cell tmpbuf[2];
+
 		if ((k->arity == 2) && (k->val_off == g_colon_s) && is_atom(FIRST_ARG(k)))
-			;
+			continue;
 		else if (!is_interned(k) || is_iso_list(k))
-			;
+			continue;
 		else if (is_interned(m) && (m->val_off == g_colon_s)) {
-			make_instr(tmp, g_colon_s, bif_iso_qualify_2, 2, 1+k->num_cells);
-			SET_OP(tmp, OP_XFY); tmp++;
-			make_atom(tmp++, new_atom(p->pl, p->m->name));
+			//printf("*** here1 %s:%s/%u meta=%d\n", pr->m->name, C_STR(p, goal), goal->arity, pr->is_meta_predicate);
+			make_instr(tmpbuf+0, g_colon_s, bif_iso_qualify_2, 2, 1+k->num_cells);
+			SET_OP(tmpbuf+0, OP_XFY);;
+			make_atom(tmpbuf+1, new_atom(p->pl, p->m->name));
 		} else if (is_smallint(m) && is_positive(m) && (get_smallint(m) <= 9)) {
-			make_instr(tmp, g_colon_s, bif_iso_qualify_2, 2, 1+k->num_cells);
-			SET_OP(tmp, OP_XFY); tmp++;
-			make_atom(tmp++, new_atom(p->pl, p->m->name));
-		}
+			//printf("*** here2 %s:%s/%u meta=%d\n", pr->m->name, C_STR(p, goal), goal->arity, pr->is_meta_predicate);
+			make_instr(tmpbuf+0, g_colon_s, bif_iso_qualify_2, 2, 1+k->num_cells);
+			SET_OP(tmpbuf+0, OP_XFY);
+			make_atom(tmpbuf+1, new_atom(p->pl, p->m->name));
+		} else
+			continue;
 
-		tmpbuf->num_cells = 2 + k->num_cells;
-
-#if 0
 		// get some space...
 
-		const unsigned new_cells = p2->cl->cidx-1;		// skip TAG_END
-		trailing = p->cl->cidx - goal_idx;
+		unsigned new_cells = 2, k_idx = k - p->cl->cells;
+		unsigned trailing = (p->cl->cidx - k_idx) + 1;
 		make_room(p, new_cells);
-		goal = p->cl->cells + goal_idx;
-		memmove(goal+new_cells, goal, sizeof(cell)*trailing);
+
+		// shift up...
+
+		memmove(k+new_cells, k, sizeof(cell)*trailing);
 
 		// paste the new goal...
 
-		memcpy(goal, p2->cl->cells, sizeof(cell)*new_cells);
+		memcpy(k, tmpbuf, sizeof(cell)*new_cells);
 		p->cl->cidx += new_cells;
-#endif
+		goal->num_cells += new_cells;
 	}
 }
 
@@ -2136,6 +2136,9 @@ static cell *goal_expansion(parser *p, cell *goal)
 	trailing = p->cl->cidx - goal_idx;
 	make_room(p, new_cells);
 	goal = p->cl->cells + goal_idx;
+
+	// shift up...
+
 	memmove(goal+new_cells, goal, sizeof(cell)*trailing);
 
 	// paste the new goal...
