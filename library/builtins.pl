@@ -671,7 +671,6 @@ type_error(Type, Term, Context) :-
 % NOTE: this doesn't display var names properly...
 
 pretty(PI) :-
-	use_module(library(format)),
 	nonvar(PI),
 	(   PI = Name/Arity0 ->
 		Arity = Arity0
