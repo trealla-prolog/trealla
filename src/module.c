@@ -2245,9 +2245,8 @@ module *load_file(module *m, const char *filename, bool including, bool init)
 			if (!sl_get(str->alias, "user_input", NULL))
 				continue;
 
-			for (predicate *pr = list_front(&m->predicates); pr; pr = list_next(pr)) {
+			for (predicate *pr = list_front(&m->predicates); pr; pr = list_next(pr))
 				pr->is_reload = true;
-			}
 
 			// Process extra input line text...
 
