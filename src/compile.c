@@ -272,6 +272,14 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		unsigned var_numH1 = cl->num_vars++;
 		unsigned var_numT1 = cl->num_vars++;
 		*src += 1;
+
+		const cell *m = NULL;
+
+		if (((*src)->val_off == g_colon_s) && ((*src)->arity == 2)) {
+			m = (*src)++;
+			(*src) += (*src)->num_cells;
+		}
+
 		cell *f = *src;
 		cell *arg1 = f + f->num_cells;
 
@@ -296,11 +304,19 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_var((*dst)++, g_anon_s, var_numH1);					// H1
 		make_var((*dst)++, g_anon_s, var_numT1);					// T1
 
+		cell *save_dst2 = *dst;
+
+		if (m) {
+			(*dst) += copy_cells(*dst, m++, 1);
+			(*dst) += copy_cells(*dst, m, 1);
+		}
+
 		cell *save_dst = *dst;
 		copy_term(dst, src);										// Functor
+		make_var((*dst)++, g_anon_s, var_numH1);					// H1
 		save_dst->arity++;
 		save_dst->num_cells++;
-		make_var((*dst)++, g_anon_s, var_numH1);					// H1
+		save_dst2->num_cells++;
 
 		bool found;
 
