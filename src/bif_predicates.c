@@ -1669,7 +1669,7 @@ static bool bif_iso_univ_2(query *q)
 			cell *h = LIST_HEAD(l);
 			h = deref(q, h, l_ctx);
 			pl_idx h_ctx = q->latest_ctx;
-			cell *tmp = clone_term_to_tmp(q, h, h_ctx);
+			cell *tmp = append_to_tmp(q, h, h_ctx);
 
 			if (is_cstring(tmp) && is_string(save_p2))
 				convert_to_literal(q->st.curr_m, tmp);
