@@ -706,7 +706,7 @@ void set_discontiguous_in_db(module *m, const char *name, unsigned arity)
 	if (pr && !pr->is_discontiguous) {
 		push_property(m, name, arity, "discontiguous");
 		pr->is_discontiguous = true;
-	} else
+	} else if (!pr)
 		m->error = true;
 }
 
@@ -723,7 +723,7 @@ void set_multifile_in_db(module *m, const char *name, pl_idx arity)
 	if (pr && !pr->is_multifile) {
 		push_property(m, name, arity, "multifile");
 		pr->is_multifile = true;
-	} else
+	} else if (!pr)
 		m->error = true;
 }
 
@@ -740,7 +740,7 @@ void set_dynamic_in_db(module *m, const char *name, unsigned arity)
 	if (pr && !pr->is_dynamic) {
 		push_property(m, name, arity, "dynamic");
 		pr->is_dynamic = true;
-	} else
+	} else if (!pr)
 		m->error = true;
 }
 
@@ -774,7 +774,7 @@ void set_meta_predicate_in_db(module *m, cell *c)
 		pr->is_meta_predicate = true;
 		pr->meta_args = malloc(sizeof(cell)*c->num_cells);
 		dup_cells(pr->meta_args, c, c->num_cells);
-	} else
+	} else if (!pr)
 		m->error = true;
 }
 
