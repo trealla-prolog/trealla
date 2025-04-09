@@ -1588,7 +1588,9 @@ static bool consultall(query *q, cell *l, pl_idx l_ctx)
 				return false;
 		} else {
 			char *s = DUP_STRING(q, h);
-			unload_file(q->p->m, s);
+
+			if (q->p->m != q->pl->user_m)
+				unload_file(q->p->m, s);
 
 			if (!load_file(q->p->m, s, false, true)) {
 				free(s);
