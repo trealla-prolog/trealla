@@ -1945,8 +1945,6 @@ static bool term_expansion(parser *p)
 
 static void expand_meta_predicate(parser *p, predicate *pr, cell *goal)
 {
-	// Expand module-sensitive args...
-
 	unsigned arity = goal->arity;
 
 	for (cell *k = goal+1, *m = pr->meta_args+1; arity--; k += k->num_cells, m += m->num_cells) {
@@ -1957,12 +1955,10 @@ static void expand_meta_predicate(parser *p, predicate *pr, cell *goal)
 		else if (!is_interned(k) || is_iso_list(k))
 			continue;
 		else if (is_interned(m) && (m->val_off == g_colon_s)) {
-			//printf("*** here1 %s:%s/%u meta=%d\n", pr->m->name, C_STR(p, goal), goal->arity, pr->is_meta_predicate);
 			make_instr(tmpbuf+0, g_colon_s, bif_iso_qualify_2, 2, 1+k->num_cells);
 			SET_OP(tmpbuf+0, OP_XFY);;
 			make_atom(tmpbuf+1, new_atom(p->pl, p->m->name));
 		} else if (is_smallint(m) && is_positive(m) && (get_smallint(m) <= 9)) {
-			//printf("*** here2 %s:%s/%u meta=%d\n", pr->m->name, C_STR(p, goal), goal->arity, pr->is_meta_predicate);
 			make_instr(tmpbuf+0, g_colon_s, bif_iso_qualify_2, 2, 1+k->num_cells);
 			SET_OP(tmpbuf+0, OP_XFY);
 			make_atom(tmpbuf+1, new_atom(p->pl, p->m->name));
