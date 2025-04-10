@@ -492,15 +492,15 @@ load_files(Files) :- load_files(Files,[]).
 
 consult(Files) :- load_files(Files,[]).
 
-:- help(consult(+list), [iso(false)]).
+:- help(consult(+list), [iso(false),deprecated(true)]).
 
 reconsult(Files) :- load_files(Files,[]).
 
-:- help(reconsult(+list), [iso(false)]).
+:- help(reconsult(+list), [iso(false),deprecated(true)]).
 
 deconsult(Files) :- unload_files(Files).
 
-:- help(deconsult(+list), [iso(false)]).
+:- help(deconsult(+list), [iso(false),deprecated(true)]).
 
 ?=(X, Y) :- \+ unifiable(X, Y, [_|_]).
 
