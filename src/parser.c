@@ -1082,13 +1082,19 @@ static bool directives(parser *p, cell *d)
 				return true;
 			}
 
-			if (!is_atom(c_name))
-				continue;
+			if (!is_atom(c_name)) {
+				fprintf(stderr, "Error: predicate-indicator %s, %s:%d\n", p->m->name, get_loaded(p->m, p->m->filename), p->line_num);
+				p->error = true;
+				return true;
+			}
 
 			cell *c_arity = h + 2;
 
-			if (!is_integer(c_arity))
-				continue;
+			if (!is_integer(c_arity)) {
+				fprintf(stderr, "Error: predicate-indicator %s, %s:%d\n", p->m->name, get_loaded(p->m, p->m->filename), p->line_num);
+				p->error = true;
+				return true;
+			}
 
 			unsigned arity = get_smallint(c_arity);
 
@@ -1194,13 +1200,19 @@ static bool directives(parser *p, cell *d)
 				return true;
 			}
 
-			if (!is_atom(c_name))
+			if (!is_atom(c_name)) {
+				fprintf(stderr, "Error: predicate-indicator %s, %s:%d\n", p->m->name, get_loaded(p->m, p->m->filename), p->line_num);
+				p->error = true;
 				return true;
+			}
 
 			cell *c_arity = c_id + 2;
 
-			if (!is_integer(c_arity))
+			if (!is_integer(c_arity)) {
+				fprintf(stderr, "Error: predicate-indicator %s, %s:%d\n", p->m->name, get_loaded(p->m, p->m->filename), p->line_num);
+				p->error = true;
 				return true;
+			}
 
 			unsigned arity = get_smallint(c_arity);
 			cell tmp = *c_name;
