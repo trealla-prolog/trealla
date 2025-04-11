@@ -937,7 +937,7 @@ static bool resume_frame(query *q)
 		q->tot_recovs++;
 		q->st.hp = f->hp;
 		q->st.heap_num = f->heap_num;
-		trim_heap(q);
+		//trim_heap(q);
 		trim_frame(q, f);
 	}
 
