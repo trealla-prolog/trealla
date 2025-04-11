@@ -1498,7 +1498,8 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 			continue;
 
 		// A variable is global iff it occurs at least once in a structured term, it's
-		// lifetime is indeterminate. All other variables can be classified as...
+		// lifetime is indeterminate. TO-DO
+		// All other variables can be classified as...
 		// A variable is void iff it has only one occurance, it's lifetime is zero.
 		// A variable is temporary iff it appears more than once, with no
 		// occurance in the body, it's lifetime is the that of the unification.
