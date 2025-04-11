@@ -265,9 +265,9 @@ bool check_slot(query *q, unsigned cnt)
 void make_call(query *q, cell *tmp)
 {
 	make_end(tmp);
+	const frame *f = GET_CURR_FRAME();
 	cell *c = q->st.curr_instr;
 	tmp->ret_instr = c + c->num_cells;	// save next as the return instruction
-	const frame *f = GET_CURR_FRAME();
 	tmp->chgen = f->chgen;				// ... choice-generation
 	tmp->mid = q->st.curr_m->id;		// ... current-module
 }
