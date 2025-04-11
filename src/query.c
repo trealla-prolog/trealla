@@ -580,8 +580,7 @@ static frame *push_frame(query *q, const clause *cl)
 	f->heap_num = q->st.heap_num;
 	f->initial_slots = f->actual_slots = cl->num_vars;
 	f->chgen = ++q->chgen;
-	f->has_local_vars = cl->has_local_vars;
-	f->unify_no_tco = q->unify_no_tco;
+	f->unify_no_tco = cl->unify_no_tco || q->unify_no_tco;
 	f->overflow = 0;
 	q->st.sp += cl->num_vars;
 	q->st.curr_frame = new_frame;
@@ -923,14 +922,13 @@ static bool resume_frame(query *q)
 		return false;
 
 #if 0
-	printf("*** q->st.curr_frame=%d, f->unify_no_tco=%d, f->has_local_vars=%d, any_choices=%d\n",
+	printf("*** q->st.curr_frame=%d, f->unify_no_tco=%d, any_choices=%d\n",
 		(unsigned)q->st.curr_frame,
-		(unsigned)f->unify_no_tco, (unsigned)f->has_local_vars, (unsigned)resume_any_choices(q, f));
+		(unsigned)f->unify_no_tco, (unsigned)resume_any_choices(q, f));
 #endif
 
 	if (q->pl->opt
 		&& !f->unify_no_tco
-		&& !f->has_local_vars	// ????
 		&& (q->st.fp == (q->st.curr_frame + 1))
 		&& !resume_any_choices(q, f)
 		) {
