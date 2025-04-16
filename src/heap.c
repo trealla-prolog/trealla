@@ -335,7 +335,7 @@ cell *alloc_on_heap(query *q, unsigned num_cells)
 		unsigned n = MAX_OF(q->heap_size, num_cells);
 		a->cells = calloc(a->page_size=n, sizeof(cell));
 		if (!a->cells) { free(a); return NULL; }
-		a->num = q->st.heap_num++;
+		a->num = ++q->st.heap_num;
 		q->heap_pages = a;
 	}
 
@@ -346,7 +346,7 @@ cell *alloc_on_heap(query *q, unsigned num_cells)
 		unsigned n = MAX_OF(q->heap_size, num_cells);
 		a->cells = calloc(a->page_size=n, sizeof(cell));
 		if (!a->cells) { free(a); return NULL; }
-		a->num = q->st.heap_num++;
+		a->num = ++q->st.heap_num;
 		q->heap_pages = a;
 		q->st.hp = 0;
 	}
@@ -444,7 +444,7 @@ void trim_heap(query *q)
 	// most recent page of heap allocations...
 
 	for (page *a = q->heap_pages; a;) {
-		if (a->num < q->st.heap_num)
+		if (a->num <= q->st.heap_num)
 			break;
 
 		cell *c = a->cells;

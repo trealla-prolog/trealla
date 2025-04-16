@@ -666,7 +666,7 @@ static void commit_frame(query *q)
 	if (!q->st.curr_rule->owner->is_builtin)
 		q->st.curr_m = q->st.curr_rule->owner->m;
 
-	if (q->pl->opt && tco) {
+	if (tco && q->pl->opt) {
 		reuse_frame(q, cl);
 	} else {
 		f = push_frame(q, cl);
@@ -887,15 +887,6 @@ void cut(query *q)
 	}
 }
 
-static bool resume_any_choices(const query *q, const frame *f)
-{
-	if (!q->cp)
-		return false;
-
-	const choice *ch = GET_CURR_CHOICE();
-	return ch->chgen > f->chgen;
-}
-
 static void trim_frame(query *q, const frame *f)
 {
 #if 0
@@ -910,6 +901,15 @@ static void trim_frame(query *q, const frame *f)
 
 	q->st.sp -= f->actual_slots;
 	q->st.fp--;
+}
+
+static bool resume_any_choices(const query *q, const frame *f)
+{
+	if (!q->cp)
+		return false;
+
+	const choice *ch = GET_CURR_CHOICE();
+	return ch->chgen > f->chgen;
 }
 
 // Resume at next goal in previous clause...
@@ -935,7 +935,7 @@ static bool resume_frame(query *q)
 		q->tot_recovs++;
 		q->st.hp = f->hp;
 		q->st.heap_num = f->heap_num;
-		//trim_heap(q);
+		trim_heap(q);
 		trim_frame(q, f);
 	}
 
