@@ -2102,10 +2102,15 @@ static bool search_functor(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 
 static bool bif_iso_current_predicate_1(query *q)
 {
-	GET_FIRST_ARG(p_pi,any);
+	GET_FIRST_ARG(p_pi,compound);
+
+	if (p_pi->arity != 2)
+		return throw_error(q, p_pi, p_pi_ctx, "type_error", "predicate_indicator");
 
 	if (!CMP_STRING_TO_CSTR(q, p_pi, ":")) {
-		q->st.curr_m = find_module(q->pl, C_STR(q, p_pi+1));
+		module *tmp_m = find_module(q->pl, C_STR(q, p_pi+1));
+		if(!tmp_m) return false;
+		q->st.curr_m = tmp_m;
 		p_pi += 2;
 	}
 
