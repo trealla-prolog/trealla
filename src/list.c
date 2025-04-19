@@ -72,7 +72,6 @@ void *list_pop_front(list *l)
     else
         l->back = 0;
 
-    entry->next = 0;
     l->cnt--;
     return entry;
 }
@@ -90,7 +89,6 @@ void *list_pop_back(list *l)
     else
         l->front = 0;
 
-    entry->prev = 0;
     l->cnt--;
     return entry;
 }
@@ -110,7 +108,6 @@ void *list_remove(list *l, void *entry_)
         entry->next->prev = entry->prev;
 
     lnode *save = entry->next;
-    entry->next = entry->prev = 0;
     l->cnt--;
     return save;
 }

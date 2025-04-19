@@ -4773,7 +4773,7 @@ static bool bif_read_file_to_string_3(query *q)
 	return ok;
 }
 
-static bool do_consult(query *q, cell *p1, pl_idx p1_ctx)
+bool do_consult(query *q, cell *p1, pl_idx p1_ctx)
 {
 	if (is_atom(p1)) {
 		char *src = DUP_STRING(q, p1);
@@ -4804,10 +4804,11 @@ static bool do_consult(query *q, cell *p1, pl_idx p1_ctx)
 		return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 	module *tmp_m = module_create(q->pl, C_STR(q, mod));
-	char *filename = C_STR(q, file);
-	filename = relative_to(q->st.curr_m->filename, filename);
+	char *src = DUP_STRING(q, file);
+	char *filename = relative_to(q->st.curr_m->filename, src);
+	free(src);
 	convert_path(filename);
-	unload_file(q->st.curr_m, filename);
+	unload_file(tmp_m, filename);
 
 	if (!load_file(tmp_m, filename, false, true)) {
 		module_destroy(tmp_m);
@@ -4824,10 +4825,10 @@ static bool do_deconsult(query *q, cell *p1, pl_idx p1_ctx)
 	if (is_atom(p1)) {
 		char *src = DUP_STRING(q, p1);
 		char *filename = relative_to(q->st.curr_m->filename, src);
+		free(src);
 		convert_path(filename);
 		unload_file(q->st.curr_m, filename);
 		free(filename);
-		free(src);
 		return true;
 	}
 
@@ -4844,8 +4845,9 @@ static bool do_deconsult(query *q, cell *p1, pl_idx p1_ctx)
 		return throw_error(q, p1, p1_ctx, "type_error", "source_sink");
 
 	module *tmp_m = module_create(q->pl, C_STR(q, mod));
-	char *filename = C_STR(q, file);
-	filename = relative_to(q->st.curr_m->filename, filename);
+	char *src = DUP_STRING(q, file);
+	char *filename = relative_to(q->st.curr_m->filename, src);
+	free(src);
 	convert_path(filename);
 	unload_file(q->st.curr_m, filename);
 	free(filename);

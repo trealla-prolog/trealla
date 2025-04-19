@@ -2083,7 +2083,7 @@ static bool unload_realfile(module *m, const char *filename)
 		} else
 			process_db(m);
 
-		list_remove(&m->predicates, pr);
+		//list_remove(&m->predicates, pr);
 	}
 
 	set_unloaded(m, filename);

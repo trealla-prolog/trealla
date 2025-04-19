@@ -1554,15 +1554,7 @@ void do_cleanup(query *q, cell *c, pl_idx c_ctx)
 static bool consultall(query *q, cell *l, pl_idx l_ctx)
 {
 	if (is_string(l)) {
-		char *s = DUP_STRING(q, l);
-		unload_file(q->p->m, s);
-
-		if (!load_file(q->p->m, s, false, true)) {
-			free(s);
-			return throw_error(q, l, l_ctx, "existence_error", "source_sink");
-		}
-
-		free(s);
+		do_consult(q, l, l_ctx);
 		return true;
 	}
 
@@ -1580,17 +1572,7 @@ static bool consultall(query *q, cell *l, pl_idx l_ctx)
 			if (consultall(q, h, h_ctx) != true)
 				return false;
 		} else {
-			char *s = DUP_STRING(q, h);
-
-			if (q->p->m != q->pl->user_m)
-				unload_file(q->p->m, s);
-
-			if (!load_file(q->p->m, s, false, true)) {
-				free(s);
-				return throw_error(q, h, q->st.curr_frame, "existence_error", "source_sink");
-			}
-
-			free(s);
+			do_consult(q, h, h_ctx);
 		}
 
 		l = LIST_TAIL(l);
