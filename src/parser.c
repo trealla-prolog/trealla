@@ -310,6 +310,8 @@ void unshare_cells(cell *src, pl_idx num_cells)
 void clear_clause(clause *cl)
 {
 	unshare_cells(cl->cells, cl->cidx);
+	free(cl->alt);
+	cl->alt = NULL;
 	cl->num_vars = 0;
 	cl->cidx = 0;
 }
@@ -344,9 +346,7 @@ void parser_destroy(parser *p)
 
 	if (p->cl) {
 		clear_clause(p->cl);
-		free(p->cl->alt);
 		free(p->cl);
-		p->cl = NULL;
 	}
 
 	free(p);
@@ -1861,7 +1861,6 @@ static bool dcg_expansion(parser *p)
 	free(src);
 
 	clear_clause(p->cl);
-	free(p->cl->alt);
 	free(p->cl);
 	p->cl = p2->cl;					// Take the completed clause
 	p->num_vars = p2->num_vars;
@@ -1944,7 +1943,6 @@ static bool term_expansion(parser *p)
 	free(src);
 
 	clear_clause(p->cl);
-	free(p->cl->alt);
 	free(p->cl);
 	p->cl = p2->cl;					// Take the completed clause
 	p->num_vars = p2->num_vars;
@@ -2156,10 +2154,6 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 	memcpy(goal, p2->cl->cells, sizeof(cell)*new_cells);
 	p->cl->cidx += new_cells;
-	clear_clause(p2->cl);
-	free(p2->cl->alt);
-	free(p2->cl);
-	p2->cl = NULL;
 
 	//DUMP_TERM("new", p->cl->cells, 0, 0);
 

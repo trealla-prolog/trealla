@@ -405,7 +405,6 @@ static void destroy_predicate(module *m, predicate *pr)
 	for (rule *r = pr->head; r;) {
 		rule *save = r->next;
 		clear_clause(&r->cl);
-		free(r->cl.alt);
 		free(r);
 		r = save;
 	}
@@ -1478,7 +1477,6 @@ static bool check_not_multifile(module *m, predicate *pr, rule *dbe_orig)
 
 				if (r != dbe_orig) {
 					clear_clause(&r->cl);
-					free(r->cl.alt);
 					free(r);
 				}
 			}
@@ -2359,8 +2357,10 @@ module *load_file(module *m, const char *filename, bool including, bool init)
 	if (including)
 		set_unloaded(m, realbuf);
 
-	else if (is_loaded(m, realbuf))
+	else if (is_loaded(m, realbuf)) {
+		free(realbuf);
 		return m;
+	}
 
 	struct stat st = {0};
 	stat(filename, &st);
@@ -2372,6 +2372,7 @@ module *load_file(module *m, const char *filename, bool including, bool init)
 		strcat(tmpbuf, ".pl");
 		m = load_file(m, tmpbuf, including, init);
 		free(tmpbuf);
+		free(realbuf);
 		return m;
 	}
 

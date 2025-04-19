@@ -271,7 +271,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 void compile_clause(predicate *pr, clause *cl, cell *body)
 {
 	pl_idx num_cells = cl->cidx - (body - cl->cells);
-	cl->alt = malloc(sizeof(cell) * num_cells*100+1024);
+	cl->alt = malloc(sizeof(cell)*num_cells*100+1024); // FIXME
 	cell *dst = cl->alt, *src = body;
 	compile_term(pr, cl, &dst, &src);
 	assert(src->tag == TAG_END);
