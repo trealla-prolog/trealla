@@ -19,7 +19,7 @@ static const char *do_attribute(query *q, cell *attr, unsigned arity, bool *foun
 	}
 
 	*found = false;
-	return q->st.curr_m->name;
+	return q->st.m->name;
 }
 
 static bool bif_attribute_3(query *q)
@@ -493,7 +493,7 @@ bool do_post_unify_hook(query *q, bool is_builtin)
 	make_instr(tmp+0, g_true_s, bif_iso_true_0, 0, 0);
 	make_instr(tmp+1, g_post_unify_hook_s, NULL, 0, 0);
 	is_builtin ? make_call(q, tmp+2) : make_call_redo(q, tmp+2);
-	q->st.curr_instr = tmp;
+	q->st.instr = tmp;
 	return true;
 }
 

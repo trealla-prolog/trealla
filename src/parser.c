@@ -693,7 +693,7 @@ static bool directives(parser *p, cell *d)
 		pl_idx p1_ctx = 0;
 		query q = (query){0};
 		q.pl = p->pl;
-		q.st.curr_m = p->m;
+		q.st.m = p->m;
 		char *dst = print_term_to_strbuf(&q, p1, p1_ctx, 0);
 		builtins *ptr = calloc(1, sizeof(builtins));
 		ensure(ptr);
@@ -3425,7 +3425,7 @@ static bool process_term(parser *p, cell *p1)
 		h->arity = 0;
 	}
 
-	rule *r;
+	db_entry *r;
 
 	if ((r = assertz_to_db(p->m, p->cl->num_vars, p1, consulting)) == NULL) {
 		if ((DUMP_ERRS || !p->do_read_term) && 0)
@@ -3843,7 +3843,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 		if (!p->quote_char && p->start_term &&
 			(!SB_strcmp(p->token, "]") || !SB_strcmp(p->token, ")") || !SB_strcmp(p->token, "}"))) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, start of rule expected, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+				fprintf(stderr, "Error: syntax error, start of db_entry expected, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "start_expected";
 			p->error = true;
@@ -4218,7 +4218,7 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 		p->m->pl->is_redo = q->is_redo;
 
 		ok = !q->error;
-		p->m = q->st.curr_m;
+		p->m = q->st.m;
 
 		if (!subq)
 			query_destroy(q);

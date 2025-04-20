@@ -328,7 +328,7 @@ static bool bif_engine_create_4(query *q)
 	int n = new_stream(q->pl);
 
 	if (n < 0)
-		return throw_error(q, q->st.curr_instr, q->st.curr_frame, "resource_error", "too_many_streams");
+		return throw_error(q, q->st.instr, q->st.curr_frame, "resource_error", "too_many_streams");
 
 	stream *str = &q->pl->streams[n];
 	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
@@ -378,7 +378,7 @@ static bool bif_engine_create_4(query *q)
 
 	if (is_atom(p3)) {
 		if (get_named_stream(q->pl, C_STR(q, p3), C_STRLEN(q, p3)) >= 0)
-			return throw_error(q, q->st.curr_instr, q->st.curr_frame, "permission_error", "open,source_sink");
+			return throw_error(q, q->st.instr, q->st.curr_frame, "permission_error", "open,source_sink");
 
 		sl_set(str->alias, DUP_STRING(q, p3), NULL);
 	} else if (!is_alias) {
@@ -391,13 +391,13 @@ static bool bif_engine_create_4(query *q)
 	str->first_time = str->is_engine = true;
 	str->curr_yield = NULL;
 
-	str->engine = query_create(q->st.curr_m);
+	str->engine = query_create(q->st.m);
 	str->engine->curr_engine = n;
 	str->engine->is_engine = true;
 	str->engine->trace = q->trace;
 
-	cell *p0 = copy_term_to_heap(q, q->st.curr_instr, q->st.curr_frame, false);
-	unify(q, q->st.curr_instr, q->st.curr_frame, p0, q->st.curr_frame);
+	cell *p0 = copy_term_to_heap(q, q->st.instr, q->st.curr_frame, false);
+	unify(q, q->st.instr, q->st.curr_frame, p0, q->st.curr_frame);
 	check_heap_error(p0);
 
 	q = str->engine;		// Operating in engine now
@@ -409,7 +409,7 @@ static bool bif_engine_create_4(query *q)
 	pl_idx num_cells = xp2->num_cells;
 	make_call(q, tmp+num_cells);
 	check_heap_error(push_barrier(q));
-	q->st.curr_instr = tmp;
+	q->st.instr = tmp;
 	str->pattern = clone_term_to_heap(q, xp1, xp1_ctx);
 	return true;
 }
@@ -428,7 +428,7 @@ static bool bif_engine_next_2(query *q)
 
 	if (str->first_time) {
 		str->first_time = false;
-		execute(str->engine, str->engine->st.curr_instr, MAX_ARITY);
+		execute(str->engine, str->engine->st.instr, MAX_ARITY);
 	}
 
 	if (str->curr_yield) {
@@ -451,7 +451,7 @@ static bool bif_engine_yield_1(query *q)
 	GET_FIRST_ARG(p1,any);
 
 	if (!q->is_engine)
-		return throw_error(q, q->st.curr_instr, q->st.curr_frame, "permission_error", "not_an_engine");
+		return throw_error(q, q->st.instr, q->st.curr_frame, "permission_error", "not_an_engine");
 
 	stream *str = &q->pl->streams[q->curr_engine];
 
@@ -483,12 +483,12 @@ static bool bif_engine_fetch_1(query *q)
 	GET_FIRST_ARG(p1,any);
 
 	if (!q->is_engine)
-		return throw_error(q, q->st.curr_instr, q->st.curr_frame, "existence_error", "not_an_engine");
+		return throw_error(q, q->st.instr, q->st.curr_frame, "existence_error", "not_an_engine");
 
 	stream *str = &q->pl->streams[q->curr_engine];
 
 	if (!str->curr_yield)
-		return throw_error(q, q->st.curr_instr, q->st.curr_frame, "existence_error", "no_data");
+		return throw_error(q, q->st.instr, q->st.curr_frame, "existence_error", "no_data");
 
 	cell *tmp = copy_term_to_heap(q, str->curr_yield, 0, false);
 	str->curr_yield = NULL;

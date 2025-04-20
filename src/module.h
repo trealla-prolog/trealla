@@ -38,13 +38,13 @@ void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, u
 void format_template(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const builtins *ptr, bool function, bool alt);
 void push_property(module *m, const char *name, unsigned arity, const char *type);
 void push_template(module *m, const char *name, unsigned arity, const builtins *ptr);
-void retract_from_db(module *m, rule *r);
+void retract_from_db(module *m, db_entry *r);
 bool do_use_module_1(module *m, cell *p);
 bool do_use_module_2(module *m, cell *p);
-rule *asserta_to_db(module *m, unsigned num_vars, cell *p1, bool consulting);
-rule *assertz_to_db(module *m, unsigned num_vars, cell *p1, bool consulting);
-rule *find_in_db(module *m, uuid *ref);
-rule *erase_from_db(module *m, uuid *ref);
+db_entry *asserta_to_db(module *m, unsigned num_vars, cell *p1, bool consulting);
+db_entry *assertz_to_db(module *m, unsigned num_vars, cell *p1, bool consulting);
+db_entry *find_in_db(module *m, uuid *ref);
+db_entry *erase_from_db(module *m, uuid *ref);
 void set_meta_predicate_in_db(module *m, cell *c);
 void set_discontiguous_in_db(module *m, const char *name, unsigned arity);
 void set_dynamic_in_db(module *m, const char *name, unsigned arity);

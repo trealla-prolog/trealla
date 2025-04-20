@@ -139,7 +139,7 @@ bool pl_eval(prolog *pl, const char *s, bool interactive)
 	if (!*s)
 		return false;
 
-	pl->p = parser_create(pl->curr_m);
+	pl->p = parser_create(pl->m);
 	if (!pl->p) return false;
 
 	if (interactive && isatty(fileno(stdin)))
@@ -148,7 +148,7 @@ bool pl_eval(prolog *pl, const char *s, bool interactive)
 	pl->p->interactive = interactive;
 	pl->p->is_command = true;
 	bool ok = run(pl->p, s, true, NULL, 0);
-	if (get_status(pl)) pl->curr_m = pl->p->m;
+	if (get_status(pl)) pl->m = pl->p->m;
 	parser_destroy(pl->p);
 	pl->p = NULL;
 	return ok;
@@ -159,12 +159,12 @@ bool pl_query(prolog *pl, const char *s, pl_sub_query **subq, unsigned int yield
 	if (!pl || !*s || !subq)
 		return false;
 
-	pl->p = parser_create(pl->curr_m);
+	pl->p = parser_create(pl->m);
 	if (!pl->p) return false;
 	pl->p->is_command = true;
 	pl->is_query = true;
 	bool ok = run(pl->p, s, true, (query**)subq, yield_time_in_ms);
-	if (get_status(pl)) pl->curr_m = pl->p->m;
+	if (get_status(pl)) pl->m = pl->p->m;
 	parser_destroy(pl->p);
 	pl->p = NULL;
 	return ok;
@@ -763,7 +763,7 @@ prolog *pl_create()
 
 	init_lock(&pl->guard);
 	pl->user_m->flags.strict_iso = false;
-	pl->curr_m = pl->user_m;
+	pl->m = pl->user_m;
 
 	pl->current_input = 0;		// STDIN
 	pl->current_output = 1;		// STDOUT

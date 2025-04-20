@@ -48,12 +48,12 @@ static bool bif_clause_3(query *q)
 		if (!is_var(p3)) {
 			uuid u;
 			uuid_from_buf(C_STR(q, p3), &u);
-			rule *r = find_in_db(q->st.curr_m, &u);
+			db_entry *r = find_in_db(q->st.m, &u);
 
 			if (!r || (!u.u1 && !u.u2))
 				break;
 
-			q->st.curr_rule = r;
+			q->st.dbe = r;
 			cl = &r->cl;
 			cell *head = get_head(cl->cells);
 
@@ -64,12 +64,12 @@ static bool bif_clause_3(query *q)
 				break;
 
 			char tmpbuf[128];
-			uuid_to_buf(&q->st.curr_rule->u, tmpbuf, sizeof(tmpbuf));
+			uuid_to_buf(&q->st.dbe->u, tmpbuf, sizeof(tmpbuf));
 			cell tmp;
 			make_cstring(&tmp, tmpbuf);
 			unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 			unshare_cell(&tmp);
-			cl = &q->st.curr_rule->cl;
+			cl = &q->st.dbe->cl;
 		}
 
 		cell *body = get_body(cl->cells);
@@ -107,7 +107,7 @@ static bool bif_clause_3(query *q)
 	return false;
 }
 
-static void db_log(query *q, rule *r, enum log_type l)
+static void db_log(query *q, db_entry *r, enum log_type l)
 {
 	FILE *fp = q->pl->logfp;
 
@@ -122,18 +122,18 @@ static void db_log(query *q, rule *r, enum log_type l)
 	case LOG_ASSERTA:
 		dst = print_term_to_strbuf(q, r->cl.cells, q->st.curr_frame, 1);
 		uuid_to_buf(&r->u, tmpbuf, sizeof(tmpbuf));
-		fprintf(fp, "%s:'$a_'((%s),'%s').\n", q->st.curr_m->name, dst, tmpbuf);
+		fprintf(fp, "%s:'$a_'((%s),'%s').\n", q->st.m->name, dst, tmpbuf);
 		free(dst);
 		break;
 	case LOG_ASSERTZ:
 		dst = print_term_to_strbuf(q, r->cl.cells, q->st.curr_frame, 1);
 		uuid_to_buf(&r->u, tmpbuf, sizeof(tmpbuf));
-		fprintf(fp, "%s:'$z_'((%s),'%s').\n", q->st.curr_m->name, dst, tmpbuf);
+		fprintf(fp, "%s:'$z_'((%s),'%s').\n", q->st.m->name, dst, tmpbuf);
 		free(dst);
 		break;
 	case LOG_ERASE:
 		uuid_to_buf(&r->u, tmpbuf, sizeof(tmpbuf));
-		fprintf(fp, "%s:'$e_'('%s').\n", q->st.curr_m->name, tmpbuf);
+		fprintf(fp, "%s:'$e_'('%s').\n", q->st.m->name, tmpbuf);
 		break;
 	}
 
@@ -150,7 +150,7 @@ static bool bif_iso_clause_2(query *q)
 
 	while (match_clause(q, p1, p1_ctx, DO_CLAUSE)) {
 		if (q->did_throw) return true;
-		clause *cl = &q->st.curr_rule->cl;
+		clause *cl = &q->st.dbe->cl;
 		cell *body = get_body(cl->cells);
 		bool ok;
 
@@ -195,7 +195,7 @@ static bool bif_sys_clause_3(query *q)
 static void predicate_purge_dirty_list(predicate *pr)
 {
 	unsigned cnt = 0;
-	rule *r;
+	db_entry *r;
 
 	while ((r = list_pop_front(&pr->dirty)) != NULL) {
 		predicate_delink(pr, r);
@@ -234,7 +234,7 @@ bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 	if (!match || q->did_throw)
 		return match;
 
-	rule *r = q->st.curr_rule;
+	db_entry *r = q->st.dbe;
 	db_log(q, r, LOG_ERASE);
 	retract_from_db(r->owner->m, r);
 	bool last_match = (is_retract == DO_RETRACT) && !has_next_key(q);
@@ -263,12 +263,12 @@ static bool bif_iso_retractall_1(query *q)
 		return false;
 
 	cell *head = deref(q, get_head(p1), p1_ctx);
-	predicate *pr = search_predicate(q->st.curr_m, head, NULL);
+	predicate *pr = search_predicate(q->st.m, head, NULL);
 
 	if (!pr) {
 		bool found = false;
 
-		if (get_builtin_term(q->st.curr_m, head, &found, NULL), found)
+		if (get_builtin_term(q->st.m, head, &found, NULL), found)
 			return throw_error(q, head, q->latest_ctx, "permission_error", "modify,static_procedure");
 
 		return true;
@@ -293,19 +293,19 @@ static bool bif_iso_retractall_1(query *q)
 
 bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 {
-	predicate *pr = search_predicate(q->st.curr_m, c_pi, NULL);
+	predicate *pr = search_predicate(q->st.m, c_pi, NULL);
 	if (!pr) return true;
 
 	if (!pr->is_dynamic)
 		return throw_error(q, c_orig, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
-	for (rule *r = pr->head; r; r = r->next)
+	for (db_entry *r = pr->head; r; r = r->next)
 		retract_from_db(r->owner->m, r);
 
 	if (pr->idx && !pr->cnt) {
 		predicate_purge_dirty_list(pr);
 	} else {
-		rule *r;
+		db_entry *r;
 
 		while ((r = list_pop_front(&pr->dirty)) != NULL)
 			list_push_back(&q->dirty, r);
@@ -449,7 +449,7 @@ static bool bif_iso_asserta_1(query *q)
 
 	bool found = false;
 
-	if (get_builtin_term(q->st.curr_m, head, &found, NULL), found) {
+	if (get_builtin_term(q->st.m, head, &found, NULL), found) {
 		if (!GET_OP(head)) {
 			return throw_error(q, head, q->st.curr_frame, "permission_error", "modify,static_procedure");
 		}
@@ -463,7 +463,7 @@ static bool bif_iso_asserta_1(query *q)
 	}
 
 	pl_idx num_cells = tmp->num_cells;
-	parser *p = parser_create(q->st.curr_m);
+	parser *p = parser_create(q->st.m);
 
 	if (num_cells > p->cl->num_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
@@ -477,7 +477,7 @@ static bool bif_iso_asserta_1(query *q)
 	cell *h = get_head(p->cl->cells);
 
 	prolog_lock(q->pl);
-	rule *r = asserta_to_db(q->st.curr_m, p->cl->num_vars, p->cl->cells, 0);
+	db_entry *r = asserta_to_db(q->st.m, p->cl->num_vars, p->cl->cells, 0);
 	prolog_unlock(q->pl);
 
 	p->cl->cidx = 0;
@@ -506,7 +506,7 @@ static bool bif_iso_assertz_1(query *q)
 
 	bool found = false, evaluable = false;
 
-	if (get_builtin_term(q->st.curr_m, head, &found, &evaluable), found && !evaluable) {
+	if (get_builtin_term(q->st.m, head, &found, &evaluable), found && !evaluable) {
 		if (!GET_OP(head)) {
 			return throw_error(q, head, q->st.curr_frame, "permission_error", "modify,static_procedure");
 		}
@@ -519,7 +519,7 @@ static bool bif_iso_assertz_1(query *q)
 	}
 
 	pl_idx num_cells = tmp->num_cells;
-	parser *p = parser_create(q->st.curr_m);
+	parser *p = parser_create(q->st.m);
 
 	if (num_cells > p->cl->num_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
@@ -533,7 +533,7 @@ static bool bif_iso_assertz_1(query *q)
 	cell *h = get_head(p->cl->cells);
 
 	prolog_lock(q->pl);
-	rule *r = assertz_to_db(q->st.curr_m, p->cl->num_vars, p->cl->cells, false);
+	db_entry *r = assertz_to_db(q->st.m, p->cl->num_vars, p->cl->cells, false);
 	prolog_unlock(q->pl);
 
 	p->cl->cidx = 0;
@@ -556,7 +556,7 @@ static bool do_asserta_2(query *q)
 
 	bool found = false;
 
-	if (get_builtin_term(q->st.curr_m, head, &found, NULL), found) {
+	if (get_builtin_term(q->st.m, head, &found, NULL), found) {
 		if (!GET_OP(head)) {
 			return throw_error(q, head, q->latest_ctx, "permission_error", "modify,static_procedure");
 		}
@@ -583,7 +583,7 @@ static bool do_asserta_2(query *q)
 	check_heap_error(tmp);
 
 	pl_idx num_cells = tmp->num_cells;
-	parser *p = parser_create(q->st.curr_m);
+	parser *p = parser_create(q->st.m);
 
 	if (num_cells > p->cl->num_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
@@ -597,7 +597,7 @@ static bool do_asserta_2(query *q)
 	cell *h = get_head(p->cl->cells);
 
 	prolog_lock(q->pl);
-	rule *r = asserta_to_db(q->st.curr_m, p->cl->num_vars, p->cl->cells, 0);
+	db_entry *r = asserta_to_db(q->st.m, p->cl->num_vars, p->cl->cells, 0);
 	prolog_unlock(q->pl);
 
 	p->cl->cidx = 0;
@@ -648,7 +648,7 @@ static bool do_assertz_2(query *q)
 
 	bool found = false;
 
-	if (get_builtin_term(q->st.curr_m, head, &found, NULL), found) {
+	if (get_builtin_term(q->st.m, head, &found, NULL), found) {
 		if (!GET_OP(head)) {
 			return throw_error(q, head, q->latest_ctx, "permission_error", "modify,static_procedure");
 		}
@@ -675,7 +675,7 @@ static bool do_assertz_2(query *q)
 	check_heap_error(tmp);
 
 	pl_idx num_cells = tmp->num_cells;
-	parser *p = parser_create(q->st.curr_m);
+	parser *p = parser_create(q->st.m);
 
 	if (num_cells > p->cl->num_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
@@ -689,7 +689,7 @@ static bool do_assertz_2(query *q)
 	cell *h = get_head(p->cl->cells);
 
 	prolog_lock(q->pl);
-	rule *r = assertz_to_db(q->st.curr_m, p->cl->num_vars, p->cl->cells, false);
+	db_entry *r = assertz_to_db(q->st.m, p->cl->num_vars, p->cl->cells, false);
 	prolog_unlock(q->pl);
 
 	p->cl->cidx = 0;
@@ -735,7 +735,7 @@ void save_db(FILE *fp, query *q, int logging)
 	q->listing = true;
 	q->double_quotes = true;
 
-	for (predicate *pr = list_front(&q->st.curr_m->predicates);
+	for (predicate *pr = list_front(&q->st.m->predicates);
 		pr; pr = list_next(pr)) {
 		if (pr->is_builtin)
 			continue;
@@ -745,7 +745,7 @@ void save_db(FILE *fp, query *q, int logging)
 		if (src[0] == '$')
 			continue;
 
-		for (rule *r = pr->head; r; r = r->next) {
+		for (db_entry *r = pr->head; r; r = r->next) {
 			if (r->cl.dbgen_retracted)
 				continue;
 
@@ -881,7 +881,7 @@ bool do_erase(module* m, const char *str)
 static bool bif_erase_1(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
-	return do_erase(q->st.curr_m, C_STR(q, p1));
+	return do_erase(q->st.m, C_STR(q, p1));
 }
 
 static bool bif_instance_2(query *q)
@@ -890,7 +890,7 @@ static bool bif_instance_2(query *q)
 	GET_NEXT_ARG(p2,any);
 	uuid u;
 	uuid_from_buf(C_STR(q, p1), &u);
-	rule *r = find_in_db(q->st.curr_m, &u);
+	db_entry *r = find_in_db(q->st.m, &u);
 	check_heap_error(r);
 	return unify(q, p2, p2_ctx, r->cl.cells, q->st.curr_frame);
 }
@@ -901,7 +901,7 @@ static bool bif_sys_retract_on_backtrack_1(query *q)
 	int var_num = create_vars(q, 1);
 	check_heap_error(var_num != -1);
 	blob *b = calloc(1, sizeof(blob));
-	b->ptr = (void*)q->st.curr_m;
+	b->ptr = (void*)q->st.m;
 	b->ptr2 = (void*)strdup(C_STR(q, p1));
 	check_heap_error(b->ptr2);
 	cell c, v;
@@ -920,7 +920,7 @@ static bool bif_listing_0(query *q)
 
 static bool save_name(FILE *fp, query *q, pl_idx name, unsigned arity, bool alt)
 {
-	module *m = q->st.curr_rule ? q->st.curr_rule->owner->m : q->st.curr_m;
+	module *m = q->st.dbe ? q->st.dbe->owner->m : q->st.m;
 	q->listing = true;
 	bool any = false;
 
@@ -937,7 +937,7 @@ static bool save_name(FILE *fp, query *q, pl_idx name, unsigned arity, bool alt)
 
 		any = true;
 
-		for (rule *r = pr->head; r; r = r->next) {
+		for (db_entry *r = pr->head; r; r = r->next) {
 			if (r->cl.dbgen_retracted)
 				continue;
 
@@ -1016,7 +1016,7 @@ static bool bif_listing_1(query *q)
 	tmp.arity = arity;
 	bool found;
 
-	if (get_builtin_term(q->st.curr_m, &tmp, &found, NULL), found)
+	if (get_builtin_term(q->st.m, &tmp, &found, NULL), found)
 		return throw_error(q, &tmp, p1_ctx, "permission_error", "access,private_procedure");
 
 	int n = q->pl->current_output;
@@ -1067,7 +1067,7 @@ static bool bif_sys_xlisting_1(query *q)
 	tmp.arity = arity;
 	bool found;
 
-	if (get_builtin_term(q->st.curr_m, &tmp, &found, NULL), found)
+	if (get_builtin_term(q->st.m, &tmp, &found, NULL), found)
 		return throw_error(q, &tmp, p1_ctx, "permission_error", "access,private_procedure");
 
 	int n = q->pl->current_output;

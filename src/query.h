@@ -11,8 +11,8 @@ typedef struct {
 } csv;
 
 query *query_create(module *m);
-query *query_create_subquery(query *q, cell *curr_instr);
-query *query_create_task(query *q, cell *curr_instr);
+query *query_create_subquery(query *q, cell *instr);
+query *query_create_task(query *q, cell *instr);
 void query_destroy(query *q);
 
 bool push_choice(query *q);

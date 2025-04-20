@@ -147,7 +147,7 @@ static bool bif_wait_0(query *q)
 				task->tmo_msecs = 0;
 			}
 
-			if (!task->yielded || !task->st.curr_instr || task->error) {
+			if (!task->yielded || !task->st.instr || task->error) {
 				query *save = task;
 				task = pop_task(q, task);
 				query_destroy(save);
@@ -195,7 +195,7 @@ static bool bif_await_0(query *q)
 				task->tmo_msecs = 0;
 			}
 
-			if (!task->yielded || !task->st.curr_instr || task->error) {
+			if (!task->yielded || !task->st.instr || task->error) {
 				query *save = task;
 				task = pop_task(q, task);
 				query_destroy(save);
@@ -234,14 +234,14 @@ static bool bif_yield_0(query *q)
 static bool bif_call_task_n(query *q)
 {
 	pl_idx save_hp = q->st.hp;
-	cell *p0 = clone_term_to_heap(q, q->st.curr_instr, q->st.curr_frame);
+	cell *p0 = clone_term_to_heap(q, q->st.instr, q->st.curr_frame);
 	GET_FIRST_RAW_ARG0(p1,callable,p0);
 	check_heap_error(init_tmp_heap(q));
 	check_heap_error(clone_term_to_tmp(q, p1, p1_ctx));
 	unsigned arity = p1->arity;
 	unsigned args = 1;
 
-	while (args++ < q->st.curr_instr->arity) {
+	while (args++ < q->st.instr->arity) {
 		GET_NEXT_RAW_ARG(p2,any);
 		check_heap_error(append_to_tmp(q, p2, p2_ctx));
 		arity++;
@@ -252,9 +252,9 @@ static bool bif_call_task_n(query *q)
 	tmp2->arity = arity;
 	bool found = false;
 
-	if ((tmp2->match = search_predicate(q->st.curr_m, tmp2, NULL)) != NULL) {
+	if ((tmp2->match = search_predicate(q->st.m, tmp2, NULL)) != NULL) {
 		tmp2->flags &= ~FLAG_INTERNED_BUILTIN;
-	} else if ((tmp2->bif_ptr = get_builtin_term(q->st.curr_m, tmp2, &found, NULL)), found) {
+	} else if ((tmp2->bif_ptr = get_builtin_term(q->st.m, tmp2, &found, NULL)), found) {
 		tmp2->flags |= FLAG_INTERNED_BUILTIN;
 	}
 
@@ -268,8 +268,8 @@ static bool bif_call_task_n(query *q)
 
 static bool bif_fork_0(query *q)
 {
-	cell *curr_instr = q->st.curr_instr + q->st.curr_instr->num_cells;
-	query *task = query_create_task(q, curr_instr);
+	cell *instr = q->st.instr + q->st.instr->num_cells;
+	query *task = query_create_task(q, instr);
 	task->yielded = true;
 	push_task(q, task);
 	return false;
