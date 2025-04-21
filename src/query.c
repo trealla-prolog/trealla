@@ -269,16 +269,16 @@ void make_call(query *q, cell *tmp)
 	cell *c = q->st.instr;
 	tmp->ret_instr = c + c->num_cells;	// save next as the return instruction
 	tmp->chgen = f->chgen;				// ... choice-generation
-	tmp->mid = q->st.m->id;		// ... current-module
+	tmp->mid = q->st.m->id;				// ... current-module
 }
 
 void make_call_redo(query *q, cell *tmp)
 {
 	make_end(tmp);
 	const frame *f = GET_CURR_FRAME();
-	tmp->ret_instr = q->st.instr;	// save the return instruction
+	tmp->ret_instr = q->st.instr;		// save the return instruction
 	tmp->chgen = f->chgen;				// ... choice-generation
-	tmp->mid = q->st.m->id;		// ... current-module
+	tmp->mid = q->st.m->id;				// ... current-module
 }
 
 void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs)
@@ -570,8 +570,7 @@ static void trim_trail(query *q)
 static frame *push_frame(query *q, const clause *cl)
 {
 	const frame *curr_f = GET_CURR_FRAME();
-	pl_idx new_frame = q->st.fp++;
-	frame *f = GET_FRAME(new_frame);
+	frame *f = GET_FRAME(q->st.fp);
 	f->prev = q->st.curr_frame;
 	f->instr = q->st.instr;
 	f->hp = q->st.hp;
@@ -581,7 +580,7 @@ static frame *push_frame(query *q, const clause *cl)
 	f->unify_no_tco = cl->unify_no_tco || q->unify_no_tco;
 	f->overflow = 0;
 	q->st.sp += cl->num_vars;
-	q->st.curr_frame = new_frame;
+	q->st.curr_frame = q->st.fp++;
 	return f;
 }
 
@@ -701,13 +700,13 @@ void stash_frame(query *q, const clause *cl, bool last_match)
 	}
 
 	if (num_vars) {
-		pl_idx new_frame = q->st.fp++;
-		frame *f = GET_FRAME(new_frame);
+		frame *f = GET_FRAME(q->st.fp);
 		f->prev = q->st.curr_frame;
 		f->instr = NULL;
 		f->chgen = chgen;
 		f->overflow = 0;
 		q->st.sp += num_vars;
+		q->st.fp++;
 	}
 
 	q->st.iter = NULL;
