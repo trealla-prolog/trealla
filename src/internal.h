@@ -510,11 +510,12 @@ struct slot_ {
 	uint32_t vgen, vgen2;
 };
 
-// Where 'prev' is the previous frame
-// Where *initial_slots* is the initial number allocated
-// Where *actual_slots* is the actual number in use (some maybe created)
+// Where *prev* is the previous frame
+// Where *initial_slots* is the number allocated
+// Where *actual_slots* is the number allocated+created
 // Where *base* is the offset to first slot in use
-// Where *overflow* is where new slots are allocated (actual_slots > initial_slots)
+// Where *overflow* is where new slots are created (actual_slots > initial_slots)
+// Where *chgen* is the choice generation that created this frame
 
 struct frame_ {
 	cell *instr;
@@ -543,6 +544,9 @@ struct run_state_ {
 	pl_idx curr_frame, fp, hp, cp, tp, sp, heap_num;
 	uint8_t qnum;
 };
+
+// Where *chgen* is the choice generation
+// Where *orig_chgen* is the choice generation of the frame this belongs to
 
 struct choice_ {
 	run_state st;
