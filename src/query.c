@@ -1559,7 +1559,7 @@ void do_cleanup(query *q, cell *c, pl_idx c_ctx)
 static bool consultall(query *q, cell *l, pl_idx l_ctx)
 {
 	if (is_string(l)) {
-		do_consult(q, l, l_ctx);
+		do_load_file(q, l, l_ctx);
 		return true;
 	}
 
@@ -1577,7 +1577,7 @@ static bool consultall(query *q, cell *l, pl_idx l_ctx)
 			if (consultall(q, h, h_ctx) != true)
 				return false;
 		} else {
-			do_consult(q, h, h_ctx);
+			do_load_file(q, h, h_ctx);
 		}
 
 		l = LIST_TAIL(l);

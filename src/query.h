@@ -87,7 +87,7 @@ void make_call(query *q, cell *tmp);
 void make_call_redo(query *q, cell *tmp);
 bool do_post_unify_hook(query *q, bool is_builtin);
 bool any_attributed(query *q);
-bool do_consult(query *q, cell *p1, pl_idx p1_ctx);
+bool do_load_file(query *q, cell *p1, pl_idx p1_ctx);
 
 #if USE_THREADS
 void do_signal(query *q, void *thread_ptr);

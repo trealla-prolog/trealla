@@ -4773,7 +4773,7 @@ static bool bif_read_file_to_string_3(query *q)
 	return ok;
 }
 
-bool do_consult(query *q, cell *p1, pl_idx p1_ctx)
+bool do_load_file(query *q, cell *p1, pl_idx p1_ctx)
 {
 	if (is_atom(p1)) {
 		char *src = DUP_STRING(q, p1);
@@ -4820,7 +4820,7 @@ bool do_consult(query *q, cell *p1, pl_idx p1_ctx)
 	return true;
 }
 
-static bool do_deconsult(query *q, cell *p1, pl_idx p1_ctx)
+static bool do_unload_file(query *q, cell *p1, pl_idx p1_ctx)
 {
 	if (is_atom(p1)) {
 		char *src = DUP_STRING(q, p1);
@@ -4859,10 +4859,8 @@ static bool bif_load_files_2(query *q)
 	GET_FIRST_ARG(p1,source_sink);
 	GET_NEXT_ARG(p2,list_or_nil);
 
-	if (is_atom(p1)) {
-		check_heap_error(do_consult(q, p1, p1_ctx));
-		return true;
-	}
+	if (is_atom(p1))
+		return do_load_file(q, p1, p1_ctx);
 
 	LIST_HANDLER(p1);
 
@@ -4870,7 +4868,10 @@ static bool bif_load_files_2(query *q)
 		cell *h = LIST_HEAD(p1);
 		cell *c = deref(q, h, p1_ctx);
 		pl_idx c_ctx = q->latest_ctx;
-		check_heap_error(do_consult(q, c, c_ctx));
+
+		if (!do_load_file(q, c, c_ctx))
+			return false;
+
 		p1 = LIST_TAIL(p1);
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
@@ -4883,10 +4884,8 @@ static bool bif_unload_files_1(query *q)
 {
 	GET_FIRST_ARG(p1,source_sink);
 
-	if (is_atom(p1)) {
-		check_heap_error(do_deconsult(q, p1, p1_ctx));
-		return true;
-	}
+	if (is_atom(p1))
+		return do_unload_file(q, p1, p1_ctx);
 
 	LIST_HANDLER(p1);
 
@@ -4894,7 +4893,10 @@ static bool bif_unload_files_1(query *q)
 		cell *h = LIST_HEAD(p1);
 		cell *c = deref(q, h, p1_ctx);
 		pl_idx c_ctx = q->latest_ctx;
-		check_heap_error(do_deconsult(q, c, c_ctx));
+
+		if (!do_unload_file(q, c, c_ctx))
+			return false;
+
 		p1 = LIST_TAIL(p1);
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
