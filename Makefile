@@ -1,4 +1,5 @@
 GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
+COMPILER_IS_GCC := $(shell $(CC) --version | grep -E -o 'g?cc')
 
 CFLAGS = -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' \
 	-O3 $(OPT) -D_GNU_SOURCE \
@@ -63,7 +64,8 @@ endif
 ifndef NOTHREADS
 CFLAGS += -DUSE_THREADS=1 -pthread
 LDFLAGS += -pthread
-ifeq ($(shell uname),Darwin)
+# -latomic only works for gcc
+ifeq ($(COMPILER_IS_GCC),)
 LDFLAGS +=
 else
 LDFLAGS += -latomic
