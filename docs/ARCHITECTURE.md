@@ -350,6 +350,10 @@ goals. Choices can back-track to a given context.
 Since only index numbers are used to refer to frames (a *ctx* number)
 the frame space can be easily resized.
 
+One of the most important properties of a frame is the choice generation.
+This number signifies the choice point used to create the frame. A cut
+needs to drop choice points back to this point.
+
 
 Slots
 =====
@@ -372,29 +376,37 @@ A collection of slots constitute an environment and belong to a frame.
 
 
 Choices
-========
+=======
 
-Similar...
+A choice is an element in the choice stack. There a number of choice
+types (really should be called a control point) and it contains the
+index of the highest heap, slot & trail used at this point. On
+backtracking excess space can be freed. It also contains the index
+number of the frame which created it and a record of the frame state
+(nbr of vars etc) at the time the choice was created. On backtracking
+vars (slots space) can be trimmed back (if possible) and the frame
+state is restored. It also contains flags related to managing cuts &
+call cleanup etc.
 
-A control point (usually a choice) contains the index of the
-highest heap, slot & trail used at this point. On backtracking excess
-space can be freed.
+Apart from basic choice points other types of contol points are
+barriers and catchers.
 
-It also contains the index number of the frame which created it and a
-record of the frame state (nbr of vars etc) at the time the choice
-was created. On backtracking vars (slots space) can be trimmed back
-(if possible) and the frame state restored.
+One of the most important properties of a choice point is the choice
+generation signifiying when it was created. A cut will drop choice
+points with a generation more recent than the frame it originated in.
 
-It also contains flags related to managing cuts & call cleanup etc.
+A barrier temporarily updates the frame choice generation to create
+a pseudo frame to block cuts, this is used by call/n and friends. When
+a barrier is dropped the frame choice generation is restored to its
+prior value.
 
-Apart from choice points other types of contol points are barriers
-and catchers.
+Catchers are another ball game.
 
 
 Trail
 =====
 
-Similar... TODO
+... TODO ...
 
 
 Heap
