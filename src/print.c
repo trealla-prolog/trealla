@@ -78,7 +78,7 @@ char *chars_list_to_string(query *q, cell *p_chars, pl_idx p_chars_ctx)
 		p_chars_ctx = q->latest_ctx;
 	}
 
-	char *tmp = malloc(SB_strlen(pr)+1);
+	char *tmp = malloc(SB_strlen(pr)+1+1);	// Allow for optional '.' at end, plus null
 	check_error(tmp);
 	strcpy(tmp, SB_cstr(pr));
 	return tmp;
