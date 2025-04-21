@@ -336,11 +336,9 @@ static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx
 
 		if ((v_ctx >= q->st.curr_frame) && !is_ground(v))
 			q->unify_no_tco = true;
-	} else if (is_managed(v)) {
-		e->c = *v;
-		share_cell(v);
 	} else {
 		e->c = *v;
+		share_cell(v);
 	}
 }
 
