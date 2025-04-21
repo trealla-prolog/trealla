@@ -573,8 +573,6 @@ static frame *push_frame(query *q, const clause *cl)
 	frame *f = GET_FRAME(q->st.fp);
 	f->prev = q->st.curr_frame;
 	f->instr = q->st.instr;
-	f->hp = q->st.hp;
-	f->heap_num = q->st.heap_num;
 	f->initial_slots = f->actual_slots = cl->num_vars;
 	f->chgen = ++q->chgen;
 	f->unify_no_tco = cl->unify_no_tco || q->unify_no_tco;
@@ -604,8 +602,6 @@ static void reuse_frame(query *q, const clause *cl)
 		to->c = from->c;
 	}
 
-	q->st.hp = f->hp;
-	q->st.heap_num = f->heap_num;
 	trim_heap(q);
 	q->st.sp = f->base + cl->num_vars;
 	q->st.dbe->tcos++;
@@ -935,8 +931,6 @@ static bool resume_frame(query *q)
 		&& !resume_any_choices(q, f)
 		) {
 		q->tot_recovs++;
-		q->st.hp = f->hp;
-		q->st.heap_num = f->heap_num;
 		trim_heap(q);
 		trim_frame(q, f);
 	}
