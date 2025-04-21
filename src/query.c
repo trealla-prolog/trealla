@@ -887,7 +887,7 @@ void cut(query *q)
 
 static void trim_frame(query *q, const frame *f)
 {
-#if 0
+#if 1
 	for (unsigned i = 0; i < f->actual_slots; i++) {
 		slot *e = GET_SLOT(f, i);
 		cell *c = &e->c;
