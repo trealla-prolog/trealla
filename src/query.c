@@ -618,7 +618,7 @@ static bool commit_any_choices(const query *q, const frame *f)
 		return false;
 
 	const choice *ch = GET_PREV_CHOICE();	// Skip in-progress choice
-	return ch->chgen > f->chgen;
+	return ch->gen > f->chgen;
 }
 
 static void commit_frame(query *q)
@@ -676,7 +676,7 @@ static void commit_frame(query *q)
 	} else {
 		choice *ch = GET_CURR_CHOICE();
 		ch->st.dbe = q->st.dbe;
-		ch->chgen = f->chgen;
+		ch->gen = f->chgen;
 	}
 
 	Trace(q, get_head(cl->cells), q->st.curr_frame, EXIT);
@@ -696,7 +696,7 @@ void stash_frame(query *q, const clause *cl, bool last_match)
 	} else {
 		choice *ch = GET_CURR_CHOICE();
 		ch->st.dbe = q->st.dbe;
-		ch->chgen = chgen;
+		ch->gen = chgen;
 	}
 
 	if (num_vars) {
@@ -722,7 +722,7 @@ int retry_choice(query *q)
 
 		frame *f = GET_CURR_FRAME();
 		f->dbgen = ch->dbgen;
-		f->chgen = ch->orig_chgen;
+		f->chgen = ch->chgen;
 		f->initial_slots = ch->initial_slots;
 		f->actual_slots = ch->actual_slots;
 		f->overflow = ch->overflow;
@@ -770,7 +770,7 @@ bool push_choice(query *q)
 	// it on retry. On cut we commit to it.
 
 	ch->dbgen = f->dbgen;
-	ch->orig_chgen = ch->chgen = f->chgen;
+	ch->chgen = ch->gen = f->chgen;
 	ch->initial_slots = f->initial_slots;
 	ch->actual_slots = f->actual_slots;
 	ch->overflow = f->overflow;
@@ -801,7 +801,7 @@ bool push_barrier(query *q)
 	check_heap_error(push_choice(q));
 	frame *f = GET_CURR_FRAME();
 	choice *ch = GET_CURR_CHOICE();
-	ch->chgen = f->chgen = ++q->chgen;
+	ch->gen = f->chgen = ++q->chgen;
 	ch->barrier = true;
 	return true;
 }
@@ -853,7 +853,7 @@ bool drop_barrier(query *q, pl_idx cp)
 
 	const choice *ch = GET_CURR_CHOICE();
 	frame *f = GET_CURR_FRAME();
-	f->chgen = ch->orig_chgen;
+	f->chgen = ch->chgen;
 	drop_choice(q);
 	return true;
 }
@@ -868,10 +868,10 @@ void cut(query *q)
 		// A normal cut can't break out of a barrier...
 
 		if (ch->barrier) {
-			if (ch->chgen <= f->chgen)
+			if (ch->gen <= f->chgen)
 				break;
 		} else {
-			if (ch->chgen < f->chgen)
+			if (ch->gen < f->chgen)
 				break;
 		}
 
@@ -911,7 +911,7 @@ static bool resume_any_choices(const query *q, const frame *f)
 		return false;
 
 	const choice *ch = GET_CURR_CHOICE();
-	return ch->chgen > f->chgen;
+	return ch->gen > f->chgen;
 }
 
 // Resume at next goal in previous clause...

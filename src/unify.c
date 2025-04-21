@@ -307,7 +307,7 @@ inline static bool any_choices(const query *q, const frame *f)
 		return false;
 
 	const choice *ch = GET_CURR_CHOICE();
-	return ch->chgen > f->chgen;
+	return ch->gen > f->chgen;
 }
 
 static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
