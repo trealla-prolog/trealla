@@ -546,7 +546,7 @@ struct run_state_ {
 
 struct choice_ {
 	run_state st;
-	uint64_t chgen, frame_chgen, dbgen;
+	uint64_t chgen, orig_chgen, dbgen;
 	pl_idx base, overflow, initial_slots, actual_slots, skip;
 	bool catchme_retry:1;
 	bool catchme_exception:1;

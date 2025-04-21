@@ -723,7 +723,7 @@ int retry_choice(query *q)
 
 		frame *f = GET_CURR_FRAME();
 		f->dbgen = ch->dbgen;
-		f->chgen = ch->frame_chgen;
+		f->chgen = ch->orig_chgen;
 		f->initial_slots = ch->initial_slots;
 		f->actual_slots = ch->actual_slots;
 		f->overflow = ch->overflow;
@@ -766,12 +766,17 @@ bool push_choice(query *q)
 	choice *ch = GET_CHOICE(q->cp++);
 	ch->skip = 0;
 	ch->st = q->st;
+
+	// Keep a record of the frame state, we need to restore
+	// it on retry. On cut we commit to it.
+
 	ch->dbgen = f->dbgen;
-	ch->frame_chgen = ch->chgen = f->chgen;
+	ch->orig_chgen = ch->chgen = f->chgen;
 	ch->initial_slots = f->initial_slots;
 	ch->actual_slots = f->actual_slots;
 	ch->overflow = f->overflow;
 	ch->base = f->base;
+
 	ch->catchme_retry =
 		ch->catchme_exception = ch->barrier = ch->register_cleanup =
 		ch->block_catcher = ch->fail_on_retry =
@@ -780,7 +785,7 @@ bool push_choice(query *q)
 	return true;
 }
 
-bool push_succeed_on_retry_no_barrier(query *q, pl_idx skip)
+bool push_succeed_on_retry(query *q, pl_idx skip)
 {
 	check_heap_error(push_choice(q));
 	choice *ch = GET_CURR_CHOICE();
@@ -802,7 +807,7 @@ bool push_barrier(query *q)
 	return true;
 }
 
-bool push_succeed_on_retry(query *q, pl_idx skip)
+bool push_succeed_on_retry_with_barrier(query *q, pl_idx skip)
 {
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
@@ -811,7 +816,7 @@ bool push_succeed_on_retry(query *q, pl_idx skip)
 	return true;
 }
 
-bool push_fail_on_retry(query *q)
+bool push_fail_on_retry_with_barrier(query *q)
 {
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
@@ -821,7 +826,7 @@ bool push_fail_on_retry(query *q)
 
 bool push_reset_handler(query *q)
 {
-	check_heap_error(push_fail_on_retry(q));
+	check_heap_error(push_fail_on_retry_with_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->reset = true;
 	return true;
@@ -849,7 +854,7 @@ bool drop_barrier(query *q, pl_idx cp)
 
 	const choice *ch = GET_CURR_CHOICE();
 	frame *f = GET_CURR_FRAME();
-	f->chgen = ch->frame_chgen;
+	f->chgen = ch->orig_chgen;
 	drop_choice(q);
 	return true;
 }

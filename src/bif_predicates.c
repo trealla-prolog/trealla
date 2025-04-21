@@ -201,7 +201,7 @@ static bool bif_iso_notunifiable_2(query *q)
 	make_uint(tmp+num_cells++, q->cp);
 	make_instr(tmp+num_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
 	make_call(q, tmp+num_cells);
-	check_heap_error(push_succeed_on_retry(q, 0));
+	check_heap_error(push_succeed_on_retry_with_barrier(q, 0));
 	q->st.instr = tmp;
 	return true;
 }
@@ -5301,7 +5301,7 @@ static bool bif_call_nth_2(query *q)
 		tmp[num_cells++].num_cells = 1;
 		make_int(tmp+num_cells++, 0);
 		make_call(q, tmp+num_cells);
-		check_heap_error(push_fail_on_retry(q));
+		check_heap_error(push_fail_on_retry_with_barrier(q));
 		q->st.instr = tmp;
 		return true;
 	}
@@ -5315,7 +5315,7 @@ static bool bif_call_nth_2(query *q)
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+num_cells++, q->cp);
 	make_call(q, tmp+num_cells);
-	check_heap_error(push_fail_on_retry(q));
+	check_heap_error(push_fail_on_retry_with_barrier(q));
 	q->st.instr = tmp;
 	return true;
 }
@@ -5549,7 +5549,7 @@ bool bif_iso_qualify_2(query *q)
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+num_cells++, q->cp);
 	make_call(q, tmp+num_cells);
-	check_heap_error(push_fail_on_retry(q));
+	check_heap_error(push_fail_on_retry_with_barrier(q));
 	q->st.instr = tmp;
 	q->st.m = m;
 	return true;
@@ -6035,14 +6035,14 @@ bool bif_sys_fail_on_retry_1(query *q)
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
 	make_uint(&tmp, (pl_uint)q->cp);
-	check_heap_error(push_fail_on_retry(q));
+	check_heap_error(push_fail_on_retry_with_barrier(q));
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
 bool bif_sys_succeed_on_retry_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
-	check_heap_error(push_succeed_on_retry_no_barrier(q, get_smalluint(p1)));
+	check_heap_error(push_succeed_on_retry(q, get_smalluint(p1)));
 	return true;
 }
 
@@ -6053,7 +6053,7 @@ bool bif_sys_succeed_on_retry_2(query *q)
 	cell tmp;
 	make_uint(&tmp, (pl_uint)q->cp);
 	// Do the unify after the push to save a trail
-	check_heap_error(push_succeed_on_retry(q, get_smalluint(p2)));
+	check_heap_error(push_succeed_on_retry_with_barrier(q, get_smalluint(p2)));
 	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 	return ok;
 }
@@ -6115,7 +6115,7 @@ static bool bif_sys_countall_2(query *q)
 	make_ref(tmp+num_cells++, p2->var_num, p2_ctx);
 	make_instr(tmp+num_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
 	make_call(q, tmp+num_cells);
-	check_heap_error(push_succeed_on_retry(q, 0));
+	check_heap_error(push_succeed_on_retry_with_barrier(q, 0));
 	q->st.instr = tmp;
 	return true;
 }

@@ -33,9 +33,6 @@ Where *val_off* is a byte-offset into the symbol table.
 Two interned cells will unify if their *val_off* is the same.
 An interned cell is always used for functor names.
 
-A temporary variable is one that occurs only in the head, a local
-is one that occurs only in the body.
-
 
 Var
 ===
@@ -63,7 +60,7 @@ Where *nbr_cells* is always 1.
 Where *val_off* is a byte_offset into the symbol table.
 Where *var_nbr* is the index into the current context
 
-A variables will usually only be found in asserted database rules.
+A variable will usually only be found in asserted database rules.
 Such a variable, when matched, will have an implied context. For
 example when matching against a term (in a rule) all variables
 in the term will be relative (the *var_nbr*) to the context.
@@ -71,10 +68,6 @@ in the term will be relative (the *var_nbr*) to the context.
 
 Ref
 ===
-
-A reference is a variable with an implicit context. They are
-generated when copying terms or making instructions.
-
 
 ```
         +----------+---------+----------+---------+
@@ -98,6 +91,9 @@ Where *flags* is FLAG_REF
 Where *nbr_cells* is always 1.
 Where *var_ctx* is the context (or environment)
 Where *var_nbr* is the index into the specified context
+
+A reference is a variable with an explicit context. They are
+generated when copying terms or making instructions dynamically.
 
 
 Integer
@@ -172,7 +168,7 @@ Double
 Where *tag* is TAG_DOUBLE.
 Where *arity* is always 0
 Where *nbr_cells* is always 1.
-Where *val_real* is a floating-point *double*.
+Where *val_real* is a floating point *double*.
 
 
 Cstring
@@ -274,7 +270,8 @@ String
 ======
 
 A string is an optimized form of a chars-list and can be a BLOB of
-either type. The *arity* is 2 and the *flag* has FLAG_STRING set.
+either type. The *arity* is 2 but has no functor and the *flag*
+has FLAG_STRING set.
 
 
 Compound
@@ -302,6 +299,9 @@ Where *arity* is > 0.
 Where *nbr_cells* is > 1 and includes the args.
 Where *val_off* is a byte-offset into the symbol table of the functor name.
 Where args are the following cells (see *nbr_cells*).
+
+The first cell is the functor, the args follow based on arity. Compounds
+can be nested to arbirary depth.
 
 
 List
@@ -365,7 +365,8 @@ the slot space can be easily resized.
 
 During execution of a builtin predicate (a C function) active slot
 pointers (if any) may need to be refreshed after creating new variables
-(eg. in length/2, copy_term/2 etc).
+(eg. in length/2, copy_term/2 etc) as possibly the slot space was
+reallocated.
 
 A collection of slots constitute an environment and belong to a frame.
 
@@ -375,7 +376,7 @@ Choices
 
 Similar...
 
-A control-point (usually a choice-point) contains the index of the
+A control point (usually a choice) contains the index of the
 highest heap, slot & trail used at this point. On backtracking excess
 space can be freed.
 
@@ -386,7 +387,7 @@ was created. On backtracking vars (slots space) can be trimmed back
 
 It also contains flags related to managing cuts & call cleanup etc.
 
-Apart from choice-points other types of contol-points are barriers
+Apart from choice points other types of contol points are barriers
 and catchers.
 
 
@@ -407,3 +408,6 @@ to this end terms are first built in a temporary space and copied
 into a suitably sized page.
 
 Excess heap pages may be freed on backtracking or with cuts.
+
+Non-compiled control structures are built on the heap and called. This
+space can be freed at the call return if no choice points are active.
