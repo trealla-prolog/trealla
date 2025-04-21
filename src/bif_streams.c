@@ -4857,6 +4857,7 @@ static bool do_deconsult(query *q, cell *p1, pl_idx p1_ctx)
 static bool bif_load_files_2(query *q)
 {
 	GET_FIRST_ARG(p1,source_sink);
+	GET_NEXT_ARG(p2,list_or_nil);
 
 	if (is_atom(p1)) {
 		check_heap_error(do_consult(q, p1, p1_ctx));
