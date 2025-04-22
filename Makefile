@@ -65,10 +65,10 @@ ifndef NOTHREADS
 CFLAGS += -DUSE_THREADS=1 -pthread
 LDFLAGS += -pthread
 # -latomic only works for gcc
-ifeq ($(COMPILER_IS_GCC),)
-LDFLAGS +=
-else
+ifeq ($(COMPILER_IS_GCC),gcc)
 LDFLAGS += -latomic
+else
+LDFLAGS +=
 endif
 endif
 
