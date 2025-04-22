@@ -521,7 +521,7 @@ struct frame_ {
 	cell *instr;
 	module *m;
 	uint64_t dbgen, chgen;
-	pl_idx prev, base, overflow;
+	pl_idx prev, base, overflow, hp, heap_num;
 	unsigned initial_slots, actual_slots;
 	bool unify_no_tco:1;
 };
