@@ -60,7 +60,7 @@
         - name: Install deps
           run: |
             pacman --noconfirm -S make mingw-w64-x86_64-gcc mingw-w64-x86_64-headers-git mingw-w64-x86_64-libffi mingw-w64-x86_64-dlfcn
-            pacman --noconfirm -S mingw-w64-x86_64-openssl vim diffutils git
+            pacman --noconfirm -S mingw-w64-x86_64-openssl mingw-w64-x86_64-libwinpthread vim diffutils git
         - name: Configure line endings
           run: git config --global core.autocrlf input
         - uses: actions/checkout@v4
@@ -74,13 +74,15 @@
           run: make test
         - name: Make Windows-friendly
           run: |
-            cp ${MINGW_PREFIX}/bin/{libcrypto-3-x64.dll,libssl-3-x64.dll,libffi-8.dll,libdl.dll} .
+            cp ${MINGW_PREFIX}/bin/{libcrypto-3-x64.dll,libssl-3-x64.dll,libffi-8.dll,libdl.dll,libwinpthread-1.dll} .
             echo -e "\n\nOpenSSL (libcrypto-3-x64.dll, libssl-3-x64.dll):\n" >> ATTRIBUTION
             cat ${MINGW_PREFIX}/share/licenses/openssl/LICENSE >> ATTRIBUTION
             echo -e "\n\nlibffi: (libffi-8.dll)\n" >> ATTRIBUTION
             cat ${MINGW_PREFIX}/share/licenses/libffi/LICENSE >> ATTRIBUTION
             echo -e "\n\ndlfcn: (libdl.dll)\n" >> ATTRIBUTION
             cat ${MINGW_PREFIX}/share/licenses/dlfcn/LICENSE >> ATTRIBUTION
+            echo -e "\n\nlibwinpthread:\n" >> ATTRIBUTION
+            cat ${MINGW_PREFIX}/share/licenses/libwinpthread/COPYING >> ATTRIBUTION
             echo -e "\n\nisocline:\n" >> ATTRIBUTION
             cat src/isocline/LICENSE >> ATTRIBUTION
             if [ ! -f "tpl.exe" ]; then
@@ -101,6 +103,7 @@
               libssl-3-x64.dll
               libffi-8.dll
               libdl.dll
+              libwinpthread-1.dll
 
     # Roughly matches https://github.com/WebAssembly/wasi-sdk#install
     wasm:
