@@ -5769,25 +5769,6 @@ static bool bif_sys_alarm_1(query *q)
 #endif
 }
 
-static bool bif_sys_register_cleanup_1(query *q)
-{
-	if (q->retry) {
-		GET_FIRST_ARG(p1,callable);
-		cell *tmp = prepare_call(q, CALL_NOSKIP, p1, p1_ctx, 3);
-		pl_idx num_cells = p1->num_cells;
-		make_instr(tmp+num_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
-		make_instr(tmp+num_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
-		make_call(q, tmp+num_cells);
-		q->st.instr = tmp;
-		return true;
-	}
-
-	check_heap_error(push_choice(q));
-	choice *ch = GET_CURR_CHOICE();
-	ch->register_cleanup = true;
-	return true;
-}
-
 static bool bif_sys_det_length_rundown_2(query *q)
 {
 	GET_FIRST_ARG(p1,list_or_var);
@@ -5851,28 +5832,6 @@ static bool bif_sys_memberchk_3(query *q)
 		return false;
 
 	unify(q, p3, p3_ctx, p2, p2_ctx);
-	return true;
-}
-
-bool bif_sys_get_level_1(query *q)
-{
-	GET_FIRST_ARG(p1,any);
-	cell tmp;
-	make_int(&tmp, q->cp);
-	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-}
-
-bool bif_sys_drop_barrier_1(query *q)
-{
-	GET_FIRST_ARG(p1,integer)
-	q->tot_inferences--;
-	drop_barrier(q, get_smalluint(p1));
-
-	if (q->cp) {
-		const choice *ch = GET_CURR_CHOICE();
-		q->st.timer_started = ch->st.timer_started;
-	}
-
 	return true;
 }
 
@@ -6028,34 +5987,6 @@ bool bif_sys_reset_handler_1(query *q)
 	make_uint(&tmp, (pl_uint)q->cp);
 	check_heap_error(push_reset_handler(q));
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-}
-
-bool bif_sys_fail_on_retry_1(query *q)
-{
-	GET_FIRST_ARG(p1,var);
-	cell tmp;
-	make_uint(&tmp, (pl_uint)q->cp);
-	check_heap_error(push_fail_on_retry_with_barrier(q));
-	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-}
-
-bool bif_sys_succeed_on_retry_1(query *q)
-{
-	GET_FIRST_ARG(p1,integer);
-	check_heap_error(push_succeed_on_retry(q, get_smalluint(p1)));
-	return true;
-}
-
-bool bif_sys_succeed_on_retry_2(query *q)
-{
-	GET_FIRST_ARG(p1,var);
-	GET_NEXT_ARG(p2,integer);
-	cell tmp;
-	make_uint(&tmp, (pl_uint)q->cp);
-	// Do the unify after the push to save a trail
-	check_heap_error(push_succeed_on_retry_with_barrier(q, get_smalluint(p2)));
-	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-	return ok;
 }
 
 static bool bif_iso_compare_3(query *q)
@@ -6760,8 +6691,6 @@ builtins g_other_bifs[] =
 	{"$legacy_evaluable_property", 2, bif_sys_evaluable_property_2, "+callable,?string", false, false, BLAH},
 	{"$det_length_rundown", 2, bif_sys_det_length_rundown_2, "?list,+integer", false, false, BLAH},
 	{"$memberchk", 3, bif_sys_memberchk_3, "?term,?list,-term", false, false, BLAH},
-	{"$register_cleanup", 1, bif_sys_register_cleanup_1, NULL, false, false, BLAH},
-	{"$get_level", 1, bif_sys_get_level_1, "?integer", false, false, BLAH},
 	{"$is_partial_string", 1, bif_sys_is_partial_string_1, "+string", false, false, BLAH},
 	{"$load_properties", 0, bif_sys_load_properties_0, NULL, false, false, BLAH},
 	{"$load_flags", 0, bif_sys_load_flags_0, NULL, false, false, BLAH},
@@ -6770,16 +6699,11 @@ builtins g_other_bifs[] =
 	{"$list", 1, bif_sys_list_1, "-list", false, false, BLAH},
 	{"$queue", 1, bif_sys_queue_1, "+term", false, false, BLAH},
 	{"$incr", 2, bif_sys_incr_2, "@integer,+integer", false, false, BLAH},
-	{"$fail_on_retry", 1, bif_sys_fail_on_retry_1, "-integer", false, false, BLAH},
-	{"$succeed_on_retry", 1, bif_sys_succeed_on_retry_1, "+integer", false, false, BLAH},
-	{"$succeed_on_retry", 2, bif_sys_succeed_on_retry_2, "-integer,+integer", false, false, BLAH},
 	{"$alarm", 1, bif_sys_alarm_1, "+integer", false, false, BLAH},
 	{"$first_non_octet", 2, bif_sys_first_non_octet_2, "+chars,-integer", false, false, BLAH},
 	{"$skip_max_list", 4, bif_sys_skip_max_list_4, "?integer,?integer?,?term,?term", false, false, BLAH},
 	{"$dump_term", 2, bif_sys_dump_term_2, "+term,+bool", false, false, BLAH},
 	{"$integer_in_radix", 3, bif_sys_integer_in_radix_3, "+integer,+integer,-string", false, false, BLAH},
-	{"$call_cleanup", 3, bif_sys_call_cleanup_3, NULL, false, false, BLAH},
-	{"$drop_barrier", 1, bif_sys_drop_barrier_1, "+integer", false, false, BLAH},
 	{"$jump", 1, bif_sys_jump_1, NULL, false, false, BLAH},
 	{"$jump_if_nil", 2, bif_sys_jump_if_nil_2, "+term,+integer", false, false, BLAH},
 	{"$timer", 0, bif_sys_timer_0, NULL, false, false, BLAH},

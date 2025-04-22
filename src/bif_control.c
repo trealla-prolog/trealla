@@ -638,6 +638,75 @@ bool bif_sys_call_check_1(query *q)
 	return true;
 }
 
+static bool bif_sys_register_cleanup_1(query *q)
+{
+	if (q->retry) {
+		GET_FIRST_ARG(p1,callable);
+		cell *tmp = prepare_call(q, CALL_NOSKIP, p1, p1_ctx, 3);
+		pl_idx num_cells = p1->num_cells;
+		make_instr(tmp+num_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
+		make_instr(tmp+num_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
+		make_call(q, tmp+num_cells);
+		q->st.instr = tmp;
+		return true;
+	}
+
+	check_heap_error(push_choice(q));
+	choice *ch = GET_CURR_CHOICE();
+	ch->register_cleanup = true;
+	return true;
+}
+
+bool bif_sys_get_level_1(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	cell tmp;
+	make_int(&tmp, q->cp);
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+bool bif_sys_drop_barrier_1(query *q)
+{
+	GET_FIRST_ARG(p1,integer)
+	q->tot_inferences--;
+	drop_barrier(q, get_smalluint(p1));
+
+	if (q->cp) {
+		const choice *ch = GET_CURR_CHOICE();
+		q->st.timer_started = ch->st.timer_started;
+	}
+
+	return true;
+}
+
+bool bif_sys_fail_on_retry_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	cell tmp;
+	make_uint(&tmp, (pl_uint)q->cp);
+	check_heap_error(push_fail_on_retry_with_barrier(q));
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+}
+
+bool bif_sys_succeed_on_retry_1(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	check_heap_error(push_succeed_on_retry(q, get_smalluint(p1)));
+	return true;
+}
+
+bool bif_sys_succeed_on_retry_2(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	GET_NEXT_ARG(p2,integer);
+	cell tmp;
+	make_uint(&tmp, (pl_uint)q->cp);
+	// Do the unify after the push to save a trail
+	check_heap_error(push_succeed_on_retry_with_barrier(q, get_smalluint(p2)));
+	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+	return ok;
+}
+
 static cell *parse_to_heap(query *q, const char *src)
 {
 	SB(s);
@@ -1072,6 +1141,13 @@ builtins g_control_bifs[] =
 	{"$set_if_var", 2, bif_sys_set_if_var_2, "?term,+term", false, false, BLAH},
 	{"$cleanup_if_det", 1, bif_sys_cleanup_if_det_1, NULL, false, false, BLAH},
 	{"$call_check", 1, bif_sys_call_check_1, "+callable", false, false, BLAH},
+	{"$drop_barrier", 1, bif_sys_drop_barrier_1, "+integer", false, false, BLAH},
+	{"$get_level", 1, bif_sys_get_level_1, "?integer", false, false, BLAH},
+	{"$register_cleanup", 1, bif_sys_register_cleanup_1, NULL, false, false, BLAH},
+	{"$call_cleanup", 3, bif_sys_call_cleanup_3, NULL, false, false, BLAH},
+	{"$fail_on_retry", 1, bif_sys_fail_on_retry_1, "-integer", false, false, BLAH},
+	{"$succeed_on_retry", 1, bif_sys_succeed_on_retry_1, "+integer", false, false, BLAH},
+	{"$succeed_on_retry", 2, bif_sys_succeed_on_retry_2, "-integer,+integer", false, false, BLAH},
 
 	{0}
 };
