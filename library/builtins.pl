@@ -80,6 +80,19 @@ cfor(I0,J0,K) :-
 
 :- help(cfor(+evaluable,+evaluable,-var), [iso(false),desc('C-style for loop')]).
 
+repeat_integer_(N) :-
+	N > 0.
+repeat_integer_(N0) :-
+	N0 > 0,
+	N1 is N0 - 1,
+	repeat_integer_(N1).
+
+repeat(N) :-
+	must_be(N, integer, repeat/1, _),
+	repeat_integer_(N).
+
+:- help(repeat(+integer), [iso(false)]).
+
 subsumes_term(G, S) :-
 	\+ \+ (
 	 term_variables(S, V1),
@@ -582,19 +595,6 @@ read_line_to_codes(Stream, Codes) :-
 	string_codes(String, Codes).
 
 :- help(read_line_to_codes(+stream,?list), [iso(false)]).
-
-repeat_integer(N) :-
-	N > 0.
-repeat_integer(N0) :-
-	N0 > 0,
-	N1 is N0 - 1,
-	repeat_integer(N1).
-
-repeat(N) :-
-	must_be(N, integer, repeat/1, _),
-	repeat_integer(N).
-
-:- help(repeat(+integer), [iso(false)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %

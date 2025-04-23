@@ -392,6 +392,7 @@ Non-standard predicates
 	module/1
 	line_count/2
 	atom_number/2
+	cfor/3						# cfor(+evaluable,+evaluable,-var)
 	repeat/1					# repeat(+integer)
 	make/0
 
