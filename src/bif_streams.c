@@ -2287,12 +2287,12 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 
 	if (vars) {
 		unsigned cnt = q->tab_idx;
-		check_heap_error(init_tmp_heap(q));
-		cell *tmp = alloc_on_tmp(q, (cnt*2)+1);
-		check_heap_error(tmp);
 		unsigned idx = 0;
 
 		if (cnt) {
+			check_heap_error(init_tmp_heap(q));
+			cell *tmp = alloc_on_tmp(q, (cnt*2)+1);
+			check_heap_error(tmp);
 			unsigned done = 0;
 
 			for (unsigned i = 0; i < q->tab_idx; i++) {
@@ -2325,8 +2325,6 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 	if (varnames) {
 		unsigned cnt = 0;
 		check_heap_error(init_tmp_heap(q));
-		cell *tmp = alloc_on_tmp(q, (cnt*4)+1);
-		check_heap_error(tmp);
 		unsigned idx = 0;
 
 		for (unsigned i = 0; i < q->tab_idx; i++) {
@@ -2337,6 +2335,8 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 		}
 
 		if (cnt) {
+			cell *tmp = alloc_on_tmp(q, (cnt*4)+1);
+			check_heap_error(tmp);
 			unsigned done = 0;
 
 			for (unsigned i = 0; i < q->tab_idx; i++) {
@@ -2378,8 +2378,6 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 	if (sings) {
 		unsigned cnt = 0;
 		check_heap_error(init_tmp_heap(q));
-		cell *tmp = alloc_on_tmp(q, (cnt*4)+1);
-		check_heap_error(tmp);
 		unsigned idx = 0;
 
 		for (unsigned i = 0; i < q->tab_idx; i++) {
@@ -2393,6 +2391,8 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 		}
 
 		if (cnt) {
+			cell *tmp = alloc_on_tmp(q, (cnt*4)+1);
+			check_heap_error(tmp);
 			unsigned done = 0;
 
 			for (unsigned i = 0; i < q->tab_idx; i++) {

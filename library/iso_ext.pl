@@ -35,7 +35,7 @@ setup_call_cleanup(S, G, C) :-
 :- help(setup_call_cleanup(:callable,:callable,:callable), [iso(false)]).
 
 forall(Cond, Action) :-
-	\+ (Cond, \+ call(Action)).
+	\+ (Cond, \+ Action).
 
 :- meta_predicate(forall(0,0)).
 :- help(forall(:callable,:callable), [iso(false)]).
