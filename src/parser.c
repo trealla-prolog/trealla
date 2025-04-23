@@ -1516,11 +1516,11 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		if ((occurrances > 1) && var_in_body) {
 			cl->unify_no_tco = true;				// FIXME
 			c->flags |= FLAG_VAR_LOCAL;
-		} else if ((occurrances > 1) && !var_in_body) {
+		} else if ((occurrances > 1) && !var_in_body)
 			c->flags |= FLAG_VAR_TEMPORARY;
-		} if (occurrances == 1) {
+
+		if (occurrances == 1)
 			c->flags |= FLAG_VAR_VOID;
-		}
 	}
 
 	for (unsigned i = 0; i < cl->num_vars; i++) {
