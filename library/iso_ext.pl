@@ -15,7 +15,7 @@ call_cleanup(G, C) :-
 	'$call_cleanup'(
 		call(G),
 		Err,
-		( catch(ignore(C), _, true), throw(Err))
+		(catch(ignore(C), _, true), throw(Err))
 	).
 
 :- meta_predicate(call_cleanup(0,0)).
@@ -35,7 +35,7 @@ setup_call_cleanup(S, G, C) :-
 :- help(setup_call_cleanup(:callable,:callable,:callable), [iso(false)]).
 
 forall(Cond, Action) :-
-	\+ (call(Cond), \+ call(Action)).
+	\+ (Cond, \+ call(Action)).
 
 :- meta_predicate(forall(0,0)).
 :- help(forall(:callable,:callable), [iso(false)]).
