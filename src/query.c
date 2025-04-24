@@ -1154,7 +1154,6 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 {
 	q->st.iter = NULL;
-
 	q->st.karg1_is_ground = q->st.karg2_is_ground = false;
 	q->st.karg1_is_atomic = q->st.karg2_is_atomic = false;
 	q->st.key = key;
