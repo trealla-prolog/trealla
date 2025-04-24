@@ -328,6 +328,9 @@ cell *copy_term_to_tmp(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
 
 cell *alloc_on_heap(query *q, unsigned num_cells)
 {
+	frame *f = GET_CURR_FRAME();
+	f->unify_no_tco = true;
+
 	if (!q->heap_pages) {
 		page *a = calloc(1, sizeof(page));
 		if (!a) return NULL;

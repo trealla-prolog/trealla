@@ -577,7 +577,7 @@ static frame *push_frame(query *q, const clause *cl)
 	f->chgen = ++q->chgen;
 	f->hp = q->st.hp;
 	f->heap_num = q->st.heap_num;
-	f->unify_no_tco = cl->unify_no_tco || q->unify_no_tco || q->query_no_tco;
+	f->unify_no_tco = q->unify_no_tco || q->query_no_tco;
 	f->overflow = 0;
 	q->st.sp += cl->num_vars;
 	q->st.curr_frame = q->st.fp++;
@@ -594,7 +594,7 @@ static void reuse_frame(query *q, const clause *cl)
 	frame *f = GET_CURR_FRAME();
 	f->initial_slots = f->actual_slots = cl->num_vars;
 	f->overflow = 0;
-	f->unify_no_tco = cl->unify_no_tco || q->unify_no_tco || q->query_no_tco;
+	f->unify_no_tco = q->unify_no_tco || q->query_no_tco;
 
 	const frame *newf = GET_FRAME(q->st.fp);
 	const slot *from = GET_SLOT(newf, 0);
@@ -799,8 +799,9 @@ bool push_succeed_on_retry(query *q, pl_idx skip)
 
 bool push_barrier(query *q)
 {
-	check_heap_error(push_choice(q));
 	frame *f = GET_CURR_FRAME();
+	f->unify_no_tco = true;
+	check_heap_error(push_choice(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->gen = f->chgen = ++q->chgen;
 	ch->barrier = true;
@@ -975,6 +976,7 @@ static void proceed(query *q)
 int create_vars(query *q, unsigned cnt)
 {
 	frame *f = GET_CURR_FRAME();
+	f->unify_no_tco = true;
 
 	if (!cnt)
 		return f->actual_slots;

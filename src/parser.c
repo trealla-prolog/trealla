@@ -1393,7 +1393,6 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 	clause *cl = p->cl;
 	cl->is_first_cut = false;
 	cl->is_cut_only = false;
-	cl->unify_no_tco = false;
 	p->start_term = true;
 
 	if (!p->reuse) {
@@ -1513,10 +1512,9 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		if (!occurrances)		// Anonymous vars weren't
 			occurrances = 1;	// counted it seems
 
-		if ((occurrances > 1) && var_in_body) {
-			cl->unify_no_tco = true;				// FIXME
+		if ((occurrances > 1) && var_in_body)
 			c->flags |= FLAG_VAR_LOCAL;
-		} else if ((occurrances > 1) && !var_in_body)
+		else if ((occurrances > 1) && !var_in_body)
 			c->flags |= FLAG_VAR_TEMPORARY;
 
 		if (occurrances == 1)
@@ -3437,7 +3435,6 @@ static bool process_term(parser *p, cell *p1)
 
 	check_first_cut(&r->cl);
 	r->cl.is_fact = !get_logical_body(r->cl.cells);
-	r->cl.unify_no_tco = p->cl->unify_no_tco;
 	r->line_num_start = p->line_num_start;
 	r->line_num_end = p->line_num;
 	p->line_num_start = 0;

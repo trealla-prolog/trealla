@@ -417,7 +417,6 @@ struct clause_ {
 	uint64_t dbgen_created, dbgen_retracted;
 	pl_idx cidx, num_allocated_cells;
 	unsigned num_vars;
-	bool unify_no_tco:1;
 	bool is_first_cut:1;
 	bool is_cut_only:1;
 	bool is_unique:1;
