@@ -594,6 +594,7 @@ static void reuse_frame(query *q, const clause *cl)
 	frame *f = GET_CURR_FRAME();
 	f->initial_slots = f->actual_slots = cl->num_vars;
 	f->overflow = 0;
+	f->unify_no_tco = cl->unify_no_tco || q->unify_no_tco || q->query_no_tco;
 
 	const frame *newf = GET_FRAME(q->st.fp);
 	const slot *from = GET_SLOT(newf, 0);
