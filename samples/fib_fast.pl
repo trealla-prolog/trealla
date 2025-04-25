@@ -1,7 +1,7 @@
+fib(0,0) :- !.
 fib(A,B) :-
-    fib(A,1,1,B).
+    fib(A,0,1,B).
 
-fib(0,_,A,A).
 fib(1,_,A,A).
 fib(A,B,C,D) :-
     A > 1,
