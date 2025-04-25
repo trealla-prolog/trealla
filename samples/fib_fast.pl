@@ -1,13 +1,13 @@
 fib(0,0) :- !.
 fib(A,B) :-
-    fib(A,0,1,B).
+    fib_(A,0,1,B).
 
-fib(1,_,A,A).
-fib(A,B,C,D) :-
+fib_(1,_,A,A).
+fib_(A,B,C,D) :-
     A > 1,
     E is A-1,
     F is B+C,
-    fib(E,C,F,D).
+    fib_(E,C,F,D).
 
 test :-
     fib(10,F),
