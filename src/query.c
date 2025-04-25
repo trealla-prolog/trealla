@@ -1122,7 +1122,6 @@ bool has_next_key(query *q)
 
 static bool expand_meta_predicate(query *q, predicate *pr)
 {
-	q->query_no_tco = true;
 	unsigned arity = q->st.key->arity;
 	cell *tmp = alloc_on_heap(q, q->st.key->num_cells*3);	// alloc max possible
 	check_heap_error(tmp);
