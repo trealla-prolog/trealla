@@ -715,7 +715,6 @@ struct query_ {
 	bool portray_vars:1;
 	bool status:1;
 	bool unify_no_tco:1;
-	bool query_no_tco:1;
 	bool has_vars:1;
 	bool error:1;
 	bool did_throw:1;

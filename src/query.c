@@ -577,7 +577,7 @@ static frame *push_frame(query *q, const clause *cl)
 	f->chgen = ++q->chgen;
 	f->hp = q->st.hp;
 	f->heap_num = q->st.heap_num;
-	f->unify_no_tco = q->unify_no_tco || q->query_no_tco;
+	f->unify_no_tco = q->unify_no_tco;
 	f->overflow = 0;
 	q->st.sp += cl->num_vars;
 	q->st.curr_frame = q->st.fp++;
@@ -594,7 +594,7 @@ static void reuse_frame(query *q, const clause *cl)
 	frame *f = GET_CURR_FRAME();
 	f->initial_slots = f->actual_slots = cl->num_vars;
 	f->overflow = 0;
-	f->unify_no_tco = q->unify_no_tco || q->query_no_tco;
+	f->unify_no_tco = q->unify_no_tco;
 
 	const frame *newf = GET_FRAME(q->st.fp);
 	const slot *from = GET_SLOT(newf, 0);
@@ -1268,7 +1268,6 @@ bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 		cell *c = deref(q, get_head(p1), p1_ctx);
 		pl_idx c_ctx = q->latest_ctx;
 		predicate *pr = NULL;
-		q->query_no_tco = false;
 
 		if (is_interned(c))
 			pr = c->match;
@@ -1368,7 +1367,6 @@ bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract
 		cell *c = p1;
 		pl_idx c_ctx = p1_ctx;
 		predicate *pr = NULL;
-		q->query_no_tco = false;
 
 		if (is_interned(c))
 			pr = c->match;
@@ -1457,7 +1455,6 @@ static bool match_head(query *q)
 		cell *c = q->st.instr;
 		pl_idx c_ctx = q->st.curr_frame;
 		predicate *pr = NULL;
-		q->query_no_tco = false;
 
 		if (is_interned(c))
 			pr = c->match;
