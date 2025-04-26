@@ -35,15 +35,6 @@ static void msleep(int ms)
 }
 #endif
 
-#if 0
-static void init_queue(query *q)
-{
-	free(q->queue[0]);
-	q->queue[0] = NULL;
-	q->qp[0] = 0;
-}
-#endif
-
 static pl_idx queue_used(const query *q) { return q->qp[0]; }
 static cell *get_queue(query *q) { return q->queue[0]; }
 
