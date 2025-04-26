@@ -810,7 +810,7 @@ bool push_barrier(query *q)
 bool push_succeed_on_retry_with_barrier(query *q, pl_idx skip)
 {
 	frame *f = GET_CURR_FRAME();
-	f->unify_no_tco = true;
+	f->unify_no_tco = true;				// FIXME
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->succeed_on_retry = true;
