@@ -701,10 +701,8 @@ bool bif_sys_succeed_on_retry_2(query *q)
 	GET_NEXT_ARG(p2,integer);
 	cell tmp;
 	make_uint(&tmp, (pl_uint)q->cp);
-	// Do the unify after the push to save a trail
 	check_heap_error(push_succeed_on_retry_with_barrier(q, get_smalluint(p2)));
-	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-	return ok;
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
 static cell *parse_to_heap(query *q, const char *src)
