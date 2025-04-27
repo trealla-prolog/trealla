@@ -568,6 +568,37 @@ static void trim_trail(query *q)
 	}
 }
 
+static void trim_locals(query *q)
+{
+	// Local vars can be discarded...
+
+	while (q->st.tp) {
+		trail *tr = q->trails + q->st.tp - 1;
+
+		if (tr->var_ctx < q->st.curr_frame)
+			break;
+
+		if (!tr->is_local)
+			break;
+
+		q->st.tp--;
+	}
+}
+
+static void trim_frame(query *q, const frame *f)
+{
+	for (unsigned i = 0; i < f->actual_slots; i++) {
+		slot *e = GET_SLOT(f, i);
+		cell *c = &e->c;
+		unshare_cell(c);
+		c->tag = TAG_EMPTY;
+		c->val_attrs = NULL;
+	}
+
+	q->st.sp -= f->actual_slots;
+	q->st.fp--;
+}
+
 static frame *push_frame(query *q, const clause *cl)
 {
 	const frame *curr_f = GET_CURR_FRAME();
@@ -893,34 +924,6 @@ void cut(query *q)
 	}
 }
 
-static void trim_frame(query *q, const frame *f)
-{
-	// Local vars can be discarded...
-
-	while (q->st.tp) {
-		trail *tr = q->trails + q->st.tp - 1;
-
-		if (tr->var_ctx < q->st.curr_frame)
-			break;
-
-		if (!tr->is_local)
-			break;
-
-		q->st.tp--;
-	}
-
-	for (unsigned i = 0; i < f->actual_slots; i++) {
-		slot *e = GET_SLOT(f, i);
-		cell *c = &e->c;
-		unshare_cell(c);
-		c->tag = TAG_EMPTY;
-		c->val_attrs = NULL;
-	}
-
-	q->st.sp -= f->actual_slots;
-	q->st.fp--;
-}
-
 static bool resume_any_choices(const query *q, const frame *f)
 {
 	if (!q->cp)
@@ -954,6 +957,7 @@ static bool resume_frame(query *q)
 		q->st.hp = f->hp;
 		q->st.heap_num = f->heap_num;
 		trim_heap(q);
+		trim_locals(q);
 		trim_frame(q, f);
 	}
 
