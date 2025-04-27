@@ -193,8 +193,9 @@ int get_char_utf8(const char **_src)
 
 // Note: 'fn' is a byte-getter function (eg. fgetc)
 
-int xgetc_utf8(int(*fn)(void*), void *p1)
+int xgetc_utf8(void* p0, void *p1)
 {
+	int(*fn)(void*) = p0;
 	unsigned int n = 0;
 	int expect = 1;
 

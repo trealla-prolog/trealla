@@ -14,7 +14,7 @@
  * This allows supplying a getter function...
  */
 
-extern int xgetc_utf8(int(*fn)(), void*);
+extern int xgetc_utf8(void*, void*);
 
 /*
  *  These relate to similar stdc functions...
