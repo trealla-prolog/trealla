@@ -996,7 +996,6 @@ static void proceed(query *q)
 int create_vars(query *q, unsigned cnt)
 {
 	frame *f = GET_CURR_FRAME();
-	f->unify_no_tco = true;
 
 	if (!cnt)
 		return f->actual_slots;
