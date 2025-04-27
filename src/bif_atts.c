@@ -51,7 +51,7 @@ static bool do_put_atts(query *q, cell *attr, pl_idx attr_ctx, bool is_minus)
 	if (((attr->val_off == g_minus_s) || (attr->val_off == g_plus_s)) && (attr->arity == 1))
 		attr++;
 
-	add_trail(q, p1_ctx, p1->var_num, c->val_attrs);
+	add_trail(q, p1_ctx, p1->var_num, c->val_attrs, false);
 
 	unsigned a_arity = attr->arity;
 	bool found;

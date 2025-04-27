@@ -281,7 +281,7 @@ void make_call_redo(query *q, cell *tmp)
 	tmp->mid = q->st.m->id;				// ... current-module
 }
 
-void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs)
+void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs, bool is_local)
 {
 	if (!check_trail(q)) {
 		q->error = false;
@@ -292,6 +292,7 @@ void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs)
 	tr->var_ctx = c_ctx;
 	tr->var_num = c_var_nbr;
 	tr->attrs = attrs;
+	tr->is_local = is_local;
 }
 
 cell *prepare_call(query *q, bool noskip, cell *p1, pl_idx p1_ctx, unsigned extras)
@@ -894,6 +895,20 @@ void cut(query *q)
 
 static void trim_frame(query *q, const frame *f)
 {
+	// Local vars can be discarded...
+
+	while (q->st.tp) {
+		trail *tr = q->trails + q->st.tp - 1;
+
+		if (tr->var_ctx < q->st.curr_frame)
+			break;
+
+		if (!tr->is_local)
+			break;
+
+		q->st.tp--;
+	}
+
 	for (unsigned i = 0; i < f->actual_slots; i++) {
 		slot *e = GET_SLOT(f, i);
 		cell *c = &e->c;
