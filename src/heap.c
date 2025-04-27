@@ -330,9 +330,6 @@ cell *copy_term_to_tmp(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
 
 cell *alloc_on_heap(query *q, unsigned num_cells)
 {
-	frame *f = GET_CURR_FRAME();
-	f->unify_no_tco = true;
-
 	if (!q->heap_pages) {
 		page *a = calloc(1, sizeof(page));
 		if (!a) return NULL;
@@ -387,6 +384,8 @@ cell *copy_term_to_heap(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
 	if (!init_tmp_heap(q))
 		return NULL;
 
+	frame *f = GET_CURR_FRAME();
+	f->unify_no_tco = true;				// FIXME: memory waste
 	cell *tmp = copy_term_to_tmp_with_replacement(q, p1, p1_ctx, copy_attrs, NULL, 0, NULL, 0);
 	if (!tmp) return tmp;
 	cell *tmp2 = alloc_on_heap(q, tmp->num_cells);
@@ -483,6 +482,8 @@ void allocate_list(query *q, const cell *c)
 	if (!init_tmp_heap(q))
 		return;
 
+	frame *f = GET_CURR_FRAME();
+	f->unify_no_tco = true;				// FIXME: memory waste
 	append_list(q, c);
 }
 
@@ -550,6 +551,8 @@ void allocate_structure(query *q, const char *functor, const cell *c)
 	if (!init_tmp_heap(q))
 		return;
 
+	frame *f = GET_CURR_FRAME();
+	f->unify_no_tco = true;				// FIXME: memory waste
 	cell *tmp = alloc_on_tmp(q, 1);
 	if (!tmp) return;
 	tmp->tag = TAG_INTERNED;
