@@ -1503,7 +1503,7 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		if (!occurrances)		// Anonymous vars weren't
 			occurrances = 1;	// counted it seems
 
-		if (!var_in_head)
+		if (var_in_body)
 			c->flags |= FLAG_VAR_LOCAL;
 		else if (!var_in_body)
 			c->flags |= FLAG_VAR_TEMPORARY;
