@@ -556,6 +556,7 @@ struct choice_ {
 	bool block_catcher:1;
 	bool fail_on_retry:1;
 	bool succeed_on_retry:1;
+	bool unify_no_tco:1;
 	bool reset:1;
 };
 

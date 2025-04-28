@@ -758,6 +758,7 @@ int retry_choice(query *q)
 		f->chgen = ch->chgen;
 		f->initial_slots = ch->initial_slots;
 		f->actual_slots = ch->actual_slots;
+		f->unify_no_tco = ch->unify_no_tco;
 		f->overflow = ch->overflow;
 		f->base = ch->base;
 
@@ -806,6 +807,7 @@ bool push_choice(query *q)
 	ch->chgen = ch->gen = f->chgen;
 	ch->initial_slots = f->initial_slots;
 	ch->actual_slots = f->actual_slots;
+	ch->unify_no_tco = f->unify_no_tco;
 	ch->overflow = f->overflow;
 	ch->base = f->base;
 
