@@ -208,6 +208,7 @@ void make_var(cell *tmp, pl_idx off, unsigned var_num)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_VAR;
+	tmp->flags = FLAG_VAR_LOCAL;
 	tmp->num_cells = 1;
 	tmp->var_num = var_num;
 	tmp->val_off = off;
