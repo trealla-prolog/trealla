@@ -837,6 +837,7 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 		    || !strcmp(name, "files")
 		    || !strcmp(name, "apply")
 		    || !strcmp(name, "cont")
+		    || !strcmp(name, "os")
 		    )
 			return true;
 
