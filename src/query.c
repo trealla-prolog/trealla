@@ -1620,7 +1620,7 @@ bool start(query *q)
 		if (g_tpl_interrupt) {
 			switch (check_interrupt(q)) {
 				case 1: return true;
-				case -1: q->retry = true; continue;
+				case -1: q->retry = true;
 				default: continue;
 			}
 		}
@@ -1633,18 +1633,10 @@ bool start(query *q)
 #endif
 
 		if (q->retry) {
-			int ok = retry_choice(q);
-
-			if (!ok)
-				break;
-
-			if (ok < 0) {
-				q->retry = false;
-
-				if (ok == -1) {
-					proceed(q);
-					goto MORE;
-				}
+			switch (retry_choice(q)) {
+				case 0: done = true; continue;
+				case -1: proceed(q); goto MORE;
+				case -2: q->retry = false; break;
 			}
 		}
 
