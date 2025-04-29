@@ -612,13 +612,13 @@ instantiated...
 Parsing CSV with builtins
 =========================
 
-Fast, efficient parsing of CSV files...
+Fast, efficient parsing of CSV files.
+
+Reading:
 
 	parse_csv_line/2			# parse_csv_line(+atom,-list)
 	parse_csv_line/3			# parse_csv_line(+atom,-compound,+options)
 	parse_csv_file/2			# parse_csv_file(+filename,+options)
-
-	write_csv_file/3			# write_csv_file(+filename,+list,+options)
 
 Where options can be:
 
@@ -632,6 +632,15 @@ Where options can be:
 	assert(Boolean)				# default false, assertz to database instead (assumed for files, needs a functor)
 	functor(Atom)				# default output is a list, create a structure (mandatory for files and with assert)
 	quote(Char)					# default to double-quote
+	sep(Char)					# default to comma for .csv or unknown files & TAB for .tsv files
+
+Writing:
+
+	write_csv_file/3			# write_csv_file(+filename,+list,+options)
+
+Where options can be:
+
+	strings(Boolean)			# default depends on type of input (atom or string)
 	sep(Char)					# default to comma for .csv or unknown files & TAB for .tsv files
 
 Examples...

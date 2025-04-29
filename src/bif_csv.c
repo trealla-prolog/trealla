@@ -453,6 +453,7 @@ bool bif_write_csv_file_3(query *q)
 	q->p->fp = fopen(C_STR(q, p1), "w");
 	if (!q->p->fp) return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 
+	q->double_quotes = true;
 	LIST_HANDLER(p2);
 
 	while (is_list(p2)) {
@@ -475,6 +476,7 @@ bool bif_write_csv_file_3(query *q)
 	}
 
 	fclose(q->p->fp);
+	clear_write_options(q);
 	q->p->fp = NULL;
 	return true;
 }
