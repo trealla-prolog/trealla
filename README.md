@@ -646,6 +646,13 @@ Where options can be:
 Examples...
 
 ```console
+	? L=[["1 1",12,'1 3'],[],['21','','23']], write_csv_file('x.csv',L,[]).
+
+	$ cat x.csv
+	"1 1",12,1 3
+
+	21,,23
+
 	?- parse_csv_line('123,2.345,3456789',T).
 	   T = ['123','2.345','3456789'].
 	?- parse_csv_line("123,2.345,3456789",T).
