@@ -667,7 +667,7 @@ static void commit_frame(query *q)
 	fprintf(stderr, "*** q->unify_no_tco=%d, last_match=%d\n", q->unify_no_tco, last_match);
 #endif
 
-	if (!q->unify_no_tco && !q->unify_no_tco
+	if (!q->unify_no_tco
 		&& last_match
 		&& (q->st.fp == (q->st.curr_frame + 1))		// At top of frame stack
 		) {
