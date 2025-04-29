@@ -1641,18 +1641,15 @@ bool start(query *q)
 		}
 
 		if (!is_callable(q->st.instr)) {
-			if (is_var(q->st.instr)) {
-				cell *p1 = deref(q, q->st.instr, q->st.curr_frame);
-				pl_idx p1_ctx = q->latest_ctx;
+			cell *p1 = deref(q, q->st.instr, q->st.curr_frame);
+			pl_idx p1_ctx = q->latest_ctx;
 
-				if (!bif_call_0(q, p1, p1_ctx)) {
-					if (is_var(p1))
-						break;
+			if (!bif_call_0(q, p1, p1_ctx)) {
+				if (is_var(p1))
+					break;
 
-					continue;
-				}
-			} else
-				return throw_error(q, q->st.instr, q->st.curr_frame, "type_error", "callable");
+				continue;
+			}
 		}
 
 		Trace(q, q->st.instr, q->st.curr_frame, CALL);
