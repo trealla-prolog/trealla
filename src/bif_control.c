@@ -88,11 +88,6 @@ bool bif_call_0(query *q, cell *p1, pl_idx p1_ctx)
 
 bool call_check(query *q, cell *tmp2, bool *status, bool calln)
 {
-	if (tmp2->val_off == g_colon_s) {
-		tmp2 = tmp2 + 1;
-		tmp2 += tmp2->num_cells;
-	}
-
 	if (calln || !tmp2->arity) {
 		bool found = false;
 
@@ -100,17 +95,17 @@ bool call_check(query *q, cell *tmp2, bool *status, bool calln)
 			tmp2->flags &= ~FLAG_INTERNED_BUILTIN;
 		} else if ((tmp2->bif_ptr = get_builtin_term(q->st.m, tmp2, &found, NULL)), found) {
 			tmp2->flags |= FLAG_INTERNED_BUILTIN;
+
+			if (calln && (tmp2->arity <= 2)) {
+				const char *functor = C_STR(q, tmp2);
+				unsigned specifier;
+
+				if (search_op(q->st.m, functor, &specifier, false))
+					SET_OP(tmp2, specifier);
+			}
 		} else {
 			tmp2->flags &= ~FLAG_INTERNED_BUILTIN;
 		}
-	}
-
-	if (calln && (tmp2->arity <= 2) && is_builtin(tmp2)) {
-		const char *functor = C_STR(q, tmp2);
-		unsigned specifier;
-
-		if (search_op(q->st.m, functor, &specifier, false))
-			SET_OP(tmp2, specifier);
 	}
 
 	if ((tmp2->arity == 2) && is_builtin(tmp2) && (tmp2 = check_body_callable(tmp2)) != NULL) {
