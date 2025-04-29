@@ -618,6 +618,8 @@ Fast, efficient parsing of CSV files...
 	parse_csv_line/3			# parse_csv_line(+atom,-compound,+options)
 	parse_csv_file/2			# parse_csv_file(+filename,+options)
 
+	write_csv_file/3			# write_csv_file(+filename,+list,+options)
+
 Where options can be:
 
 	trim(Boolean)				# default false, trims leading and trailing whitespace

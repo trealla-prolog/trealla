@@ -357,17 +357,134 @@ bool bif_parse_csv_file_2(query *q)
 	fclose(q->p->fp);
 	q->p->fp = NULL;
 
+#if 0
 	if (!q->pl->quiet)
 		printf("%% Parsed %u lines\n", line_num);
+#endif
 
+	return true;
+}
+
+static bool do_write_csv_line(query *q, csv *params, cell *l, pl_idx l_ctx)
+{
+	LIST_HANDLER(l);
+
+	while (is_list(l)) {
+		cell *h = LIST_HEAD(l);
+		h = deref(q,h,l_ctx);
+		pl_idx h_ctx = q->latest_ctx;
+
+		char *dst = print_term_to_strbuf(q, h, h_ctx, 1);
+		size_t len = strlen(dst);
+
+		if (fwrite(dst, 1, len, q->p->fp) < len) {
+			printf("Error: write_csv_file\n");
+			return false;
+		}
+
+		free(dst);
+
+		l = LIST_TAIL(l);
+		l = deref(q,l,l_ctx);
+		l_ctx = q->latest_ctx;
+
+		if (!is_nil(l))
+			fputc(params->sep, q->p->fp);
+	}
+
+	fputc('\n', q->p->fp);
+	return true;
+}
+
+bool bif_write_csv_file_3(query *q)
+{
+	GET_FIRST_ARG(p1,atom);
+	GET_NEXT_ARG(p2,list_or_nil);
+	GET_NEXT_ARG(p3,list_or_nil);
+	bool trim = false, numbers = false, use_strings = false;
+	bool header = false, comments = false;
+	const char *functor = NULL;
+	int sep = ',', quote = '"', comment = '#';
+	unsigned arity = 0;
+	LIST_HANDLER(p3);
+
+	const char *ext = strrchr(C_STR(q, p1), '.');
+
+	if (ext && !strcmp(ext, ".tsv"))
+		sep = '\t';
+
+	while (is_list(p3)) {
+		cell *h = LIST_HEAD(p3);
+		h = deref(q,h,p3_ctx);
+
+		if (is_compound(h) && (h->arity == 1)) {
+			cell *c = h + 1;
+
+			if (!strcmp("trim", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))
+				trim = true;
+			else if (!strcmp("numbers", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))
+				numbers = true;
+			else if (!strcmp("comments", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))
+				comments = true;
+			else if (!strcmp("header", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))
+				header = true;
+			else if (!strcmp("strings", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))
+				use_strings = true;
+			else if (!strcmp("strings", C_STR(q, h)) && is_atom(c) && (c->val_off == g_false_s))
+				use_strings = false;
+			else if (!strcmp("arity", C_STR(q, h)) && is_smallint(c))
+				arity = get_smallint(c);
+			else if (!strcmp("functor", C_STR(q, h)) && is_atom(c))
+				functor = C_STR(q, c);
+			else if (!strcmp("comment", C_STR(q, h)) && is_atom(c) && (C_STRLEN_UTF8(c) == 1))
+				comment = peek_char_utf8(C_STR(q, c));
+			else if (!strcmp("sep", C_STR(q, h)) && is_atom(c) && (C_STRLEN_UTF8(c) == 1))
+				sep = peek_char_utf8(C_STR(q, c));
+			else if (!strcmp("quote", C_STR(q, h)) && is_atom(c) && (C_STRLEN_UTF8(c) == 1))
+				quote = peek_char_utf8(C_STR(q, c));
+		}
+
+		p3 = LIST_TAIL(p3);
+		p3 = deref(q,p3,p3_ctx);
+		p3_ctx = q->latest_ctx;
+	}
+
+	csv params = {.sep=sep, .quote=quote, .arity=arity, .trim=trim, .numbers=numbers, .use_strings=use_strings, .functor=functor};
+	q->p->fp = fopen(C_STR(q, p1), "w");
+	if (!q->p->fp) return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
+
+	LIST_HANDLER(p2);
+
+	while (is_list(p2)) {
+		cell *h = LIST_HEAD(p2);
+		h = deref(q,h,p2_ctx);
+		pl_idx h_ctx = q->latest_ctx;
+
+		if (!is_list_or_nil(h))
+			return throw_error(q, h, h_ctx, "type_error", "list");
+
+		if (!do_write_csv_line(q, &params, h, h_ctx)) {
+			fclose(q->p->fp);
+			q->p->fp = NULL;
+			return false;
+		}
+
+		p2 = LIST_TAIL(p2);
+		p2 = deref(q,p2,p2_ctx);
+		p2_ctx = q->latest_ctx;
+	}
+
+	fclose(q->p->fp);
+	q->p->fp = NULL;
 	return true;
 }
 
 builtins g_csv_bifs[] =
 {
 	{"parse_csv_line", 2, bif_parse_csv_line_2, "+atom,-list", false, false, BLAH},
-	{"parse_csv_line", 3, bif_parse_csv_line_3, "+atom,-compound,+list", false, false, BLAH},
+	{"parse_csv_line", 3, bif_parse_csv_line_3, "+atom,-compound,+options", false, false, BLAH},
 	{"parse_csv_file", 2, bif_parse_csv_file_2, "+atom,+list", false, false, BLAH},
+	{"write_csv_file", 3, bif_write_csv_file_3, "+atom,+list,+options", false, false, BLAH},
 
 	{0}
 };
