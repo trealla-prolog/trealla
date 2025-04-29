@@ -5516,6 +5516,7 @@ static bool bif_numlist_3(query *q)
 
 	cell *l = end_list(q);
 	check_heap_error(l);
+	l->flags |= FLAG_INTERNED_GROUND;
 	return unify(q, p3, p3_ctx, l, q->st.curr_frame);
 }
 
