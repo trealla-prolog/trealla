@@ -3727,7 +3727,10 @@ static bool bif_must_be_4(query *q)
 
 		if (!check_list(q, p1, p1_ctx, &is_partial, NULL) && !is_partial)
 			return throw_error2(q, p1, p1_ctx, "type_error", "list", p3);
-	}
+	} else if (!strcmp(src, "not_less_than_zero") && !is_integer(p1)) {
+		return throw_error(q, p1, p2_ctx, "type_error", "number");
+	} else if (!strcmp(src, "not_less_than_zero") && is_negative(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
 
 	return true;
 }
@@ -3834,7 +3837,10 @@ static bool do_must_be_2(query *q, cell *p2, pl_idx p2_ctx, cell *p1, pl_idx p1_
 
 		if (!check_list(q, p1, p1_ctx, &is_partial, NULL) && !is_partial)
 			return throw_error(q, p1, p1_ctx, "type_error", "list");
-	}
+	} else if (!strcmp(src, "not_less_than_zero") && !is_integer(p1)) {
+		return throw_error(q, p1, p2_ctx, "type_error", "number");
+	} else if (!strcmp(src, "not_less_than_zero") && is_negative(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
 
 	return true;
 }
@@ -3888,7 +3894,10 @@ static bool bif_can_be_4(query *q)
 
 		if (!check_list(q, p1, p1_ctx, &is_partial, NULL) && !is_partial)
 			return throw_error2(q, p1, p1_ctx, "type_error", "list", p3);
-	}
+	} else if (!strcmp(src, "not_less_than_zero") && !is_number(p1)) {
+		return throw_error(q, p1, p2_ctx, "type_error", "integer");
+	} else if (!strcmp(src, "not_less_than_zero") && is_negative(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "not_less_than_zero");
 
 	return true;
 }
@@ -3935,7 +3944,10 @@ static bool bif_can_be_2(query *q)
 
 		if (!check_list(q, p1, p1_ctx, &is_partial, NULL) && !is_partial)
 			return throw_error(q, p1, p1_ctx, "type_error", "list");
-	}
+	} else if (!strcmp(src, "not_less_than_zero") && !is_number(p1)) {
+		return throw_error(q, p1, p2_ctx, "type_error", "integer");
+	} else if (!strcmp(src, "not_less_than_zero") && is_negative(p1))
+		return throw_error(q, p1, p2_ctx, "domain_error", "not_less_than_zero");
 
 	return true;
 }

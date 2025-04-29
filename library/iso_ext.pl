@@ -40,18 +40,16 @@ forall(Cond, Action) :-
 :- meta_predicate(forall(0,0)).
 :- help(forall(:callable,:callable), [iso(false)]).
 
-succ(X,S) :- nonvar(X), Y=1, nonvar(Y),
-	must_be(X, integer, succ/2, _), must_be(Y, integer, succ/2, _), !,
-	(X >= 0 -> true ; throw(error(domain_error(not_less_than_zero, X), succ/2))),
-	S is X + Y.
-succ(X,S) :- var(X), Y=1, nonvar(Y), nonvar(S),
-	must_be(S, integer, succ/2, _), must_be(Y, integer, succ/2, _), !,
-	(S >= 0 -> true ; throw(error(domain_error(not_less_than_zero, S), succ/2))),
-	!,
-	S > 0,
-	X is S - Y.
-succ(_,_) :-
-	throw(error(instantiation_error, succ/2)).
+succ(I, S) :-
+    can_be(not_less_than_zero, I),
+    can_be(not_less_than_zero, S),
+    (   integer(S) ->
+        S > 0,
+        I is S-1
+    ;   integer(I) ->
+        S is I+1
+    ;   instantiation_error(succ/2)
+    ).
 
 :- help(succ(?integer,+integer), [iso(false)]).
 :- help(succ(+integer,-integer), [iso(false)]).
