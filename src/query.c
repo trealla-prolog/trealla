@@ -664,7 +664,12 @@ static void commit_frame(query *q)
 	bool tco = false;
 
 #if 0
-	fprintf(stderr, "*** q->unify_no_tco=%d, last_match=%d\n", q->unify_no_tco, last_match);
+	if (last_match) {
+		fprintf(stderr, "*** q->unify_no_tco=%d, last_match=%d %s/%u\n",
+			q->unify_no_tco, last_match,
+			C_STR(q, q->st.key), q->st.key->arity
+			);
+	}
 #endif
 
 	if (!q->unify_no_tco
