@@ -96,6 +96,10 @@ static bool bif_iso_findall_3(query *q)
 		cell *tmp = alloc_on_tmp(q, 1);
 		check_heap_error(tmp, free(solns));
 		make_instr(tmp, g_dot_s, NULL, 2, 0);
+
+		if (is_atomic(c))
+			tmp->flags = FLAG_INTERNED_GROUND;
+
 		q->noderef = true;
 		tmp = copy_term_to_tmp(q, c, q->st.curr_frame, false);
 		q->noderef = false;
