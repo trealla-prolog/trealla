@@ -3362,6 +3362,9 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 	if (SB_strcmp(p->token, "(") && !check_space_before_function(p, ch, src))
 		return false;
 
+	if (!SB_strcmp(p->token, ".") && next_ch == '|')
+		p->quote_char = '\'';
+
 	return true;
 }
 
