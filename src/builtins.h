@@ -371,3 +371,43 @@ inline static bool START_FUNCTION(query *q)
 
 	return false;
 }
+
+
+bool bif_iso_halt_0(query *q);
+bool bif_iso_close_1(query *q);
+bool bif_iso_true_0(query *q);
+bool bif_iso_fail_0(query *q);
+bool bif_iso_call_1(query *q);
+bool bif_iso_conjunction_2(query *q);
+bool bif_iso_qualify_2(query *q);
+bool bif_iso_cut_0(query *q);
+bool bif_iso_unify_2(query *q);
+bool bif_iso_if_then_2(query *q);
+bool bif_soft_if_then_2(query *q);
+bool bif_sys_call_check_1(query *q);
+bool bif_sys_succeed_on_retry_1(query *q);
+bool bif_sys_succeed_on_retry_2(query *q);
+bool bif_sys_fail_on_retry_1(query *q);
+bool bif_sys_drop_barrier_1(query *q);
+bool bif_sys_reset_handler_1(query *q);
+bool bif_sys_call_cleanup_3(query *q);
+bool bif_sys_queue_1(query *q);
+bool bif_sys_get_level_1(query *q);
+bool bif_sys_set_if_var_2(query *q);
+bool bif_sys_jump_1(query *q);
+bool bif_sys_jump_if_nil_2(query *q);
+bool bif_sys_cut_1(query *q);
+bool bif_parse_csv_file_2(query *q);
+bool bif_parse_csv_line_3(query *q);
+bool bif_parse_csv_line_2(query *q);
+bool bif_sre_compile_2(query *q);
+bool bif_sre_matchp_4(query *q);
+bool bif_sre_match_4(query *q);
+bool bif_sre_substp_4(query *q);
+bool bif_sre_subst_4(query *q);
+bool bif_call_0(query *q, cell *p1, pl_idx p1_ctx);
+bool bif_statistics_0(query *q);
+bool bif_sys_module_1(query *q);
+bool bif_sys_undo_1(query *q);
+bool bif_sys_create_var_1(query *q);
+bool bif_sys_match_1(query *q);

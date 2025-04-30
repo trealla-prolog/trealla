@@ -52,6 +52,7 @@ void check_pressure(query *q);
 cell *prepare_call(query *q, bool noskip, cell *p1, pl_idx p1_ctx, unsigned extras);
 bool call_check(query *q, cell *tmp2, bool *status, bool calln);
 bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n);
+bool match_head(query *q);
 
 bool throw_error(query *q, cell *c, pl_idx c_ctx, const char *err_type, const char *expected);
 bool throw_error3(query *q, cell *c, pl_idx c_ctx, const char *err_type, const char *expected, cell *goal);
@@ -145,6 +146,7 @@ bool bif_statistics_0(query *q);
 bool bif_sys_module_1(query *q);
 bool bif_sys_undo_1(query *q);
 bool bif_sys_create_var_1(query *q);
+bool bif_sys_match_1(query *q);
 
 void save_db(FILE *fp, query *q, int logging);
 char *uuid_to_buf(const uuid *u, char *buf, size_t buflen);

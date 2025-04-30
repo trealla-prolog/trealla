@@ -1472,7 +1472,7 @@ bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract
 	return false;
 }
 
-static bool match_head(query *q)
+bool match_head(query *q)
 {
 	if (!q->retry) {
 		cell *c = q->st.instr;
