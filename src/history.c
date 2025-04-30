@@ -87,7 +87,7 @@ LOOP:
 
 		char *s2 = strchr(cmd, '%');
 
-		if (s2) {
+		if (s2 && !strchr(cmd, '"') && !strchr(cmd, '\'')) {
 			*s2 = '\0';
 			end_ptr--;
 		}
