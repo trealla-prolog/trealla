@@ -5511,7 +5511,9 @@ static bool bif_numlist_3(query *q)
 	while (cnt--) {
 		cell tmp;
 		make_int(&tmp,  from++);
-		append_list(q, &tmp);
+		cell *l = append_list(q, &tmp);
+		if (!l) return false;
+		l->flags |= FLAG_INTERNED_GROUND;
 	}
 
 	cell *l = end_list(q);

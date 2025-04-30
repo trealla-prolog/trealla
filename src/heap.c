@@ -477,22 +477,24 @@ void fix_list(cell *c)
 
 // Defer check until end_list()
 
-void allocate_list(query *q, const cell *c)
+cell *allocate_list(query *q, const cell *c)
 {
 	if (!init_tmp_heap(q))
-		return;
+		return NULL;
 
 	frame *f = GET_CURR_FRAME();
 	f->unify_no_tco = true;				// FIXME: memory waste
 	append_list(q, c);
+	return get_tmp_heap(q, 0);
 }
 
 // Defer check until end_list()
 
-void append_list(query *q, const cell *c)
+cell *append_list(query *q, const cell *c)
 {
 	cell *tmp = alloc_on_tmp(q, 1+c->num_cells);
-	if (!tmp) return;
+	if (!tmp) return NULL;
+	cell *save = tmp;
 	tmp->tag = TAG_INTERNED;
 	tmp->num_cells = 1 + c->num_cells;
 	tmp->val_off = g_dot_s;
@@ -500,6 +502,7 @@ void append_list(query *q, const cell *c)
 	tmp->flags = 0;
 	tmp++;
 	copy_cells(tmp, c, c->num_cells);
+	return save;
 }
 
 cell *end_list(query *q)
@@ -546,32 +549,34 @@ cell *end_list_unsafe(query *q)
 
 // Defer check until end_list()
 
-void allocate_structure(query *q, const char *functor, const cell *c)
+cell *allocate_structure(query *q, const char *functor, const cell *c)
 {
 	if (!init_tmp_heap(q))
-		return;
+		return NULL;
 
 	frame *f = GET_CURR_FRAME();
 	f->unify_no_tco = true;				// FIXME: memory waste
 	cell *tmp = alloc_on_tmp(q, 1);
-	if (!tmp) return;
+	if (!tmp) return NULL;
 	tmp->tag = TAG_INTERNED;
 	tmp->num_cells = 1;
 	tmp->val_off = new_atom(q->pl, functor);
 	tmp->arity = 0;
 	tmp->flags = 0;
 	append_structure(q, c);
+	return get_tmp_heap(q, 0);
 }
 
 // Defer check until end_list()
 
-void append_structure(query *q, const cell *c)
+cell *append_structure(query *q, const cell *c)
 {
 	cell *tmp = alloc_on_tmp(q, c->num_cells);
-	if (!tmp) return;
+	if (!tmp) return NULL;
 	copy_cells(tmp, c, c->num_cells);
 	tmp = q->tmp_heap;
 	tmp->arity++;
+	return tmp;
 }
 
 cell *end_structure(query *q)

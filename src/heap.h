@@ -26,12 +26,12 @@ unsigned rebase_term(query *q, cell *c, unsigned start_nbr);
 
 // These allocate on the heap...
 
-void allocate_structure(query *q, const char *functor, const cell *c);
-void append_structure(query *q, const cell *c);
+cell *allocate_structure(query *q, const char *functor, const cell *c);
+cell *append_structure(query *q, const cell *c);
 cell *end_structure(query *q);
 
-void allocate_list(query *q, const cell *c);
-void append_list(query *q, const cell *c);
+cell *allocate_list(query *q, const cell *c);
+cell *append_list(query *q, const cell *c);
 cell *end_list_unsafe(query *q);
 cell *end_list(query *q);
 
