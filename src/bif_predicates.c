@@ -5920,6 +5920,9 @@ static bool do_dump_term(query *q, cell *p1, pl_idx p1_ctx, bool deref, int dept
 		else if (is_var(tmp))
 			printf(", slot=%u, %s", tmp->var_num, C_STR(q, tmp));
 
+		if (is_interned(tmp) && tmp->arity)
+			printf(", ground=%d", is_ground(tmp)?1:0);
+
 		if (is_var(tmp) && deref) {
 			const frame *f = GET_FRAME(is_ref(tmp)?tmp->var_ctx:p1_ctx);
 			slot *e = GET_SLOT(f, tmp->var_num);
