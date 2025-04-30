@@ -523,7 +523,8 @@ struct frame_ {
 	uint64_t dbgen, chgen;
 	pl_idx prev, base, overflow, hp, heap_num;
 	unsigned initial_slots, actual_slots;
-	bool unify_no_tco:1;
+	bool no_recov:1;
+	bool no_tco:1;
 };
 
 struct run_state_ {
@@ -556,7 +557,8 @@ struct choice_ {
 	bool block_catcher:1;
 	bool fail_on_retry:1;
 	bool succeed_on_retry:1;
-	bool unify_no_tco:1;
+	bool no_recov:1;
+	bool no_tco:1;
 	bool reset:1;
 };
 
@@ -716,7 +718,8 @@ struct query_ {
 	bool is_dump_vars:1;
 	bool portray_vars:1;
 	bool status:1;
-	bool unify_no_tco:1;
+	bool no_recov:1;
+	bool no_tco:1;
 	bool has_vars:1;
 	bool error:1;
 	bool did_throw:1;

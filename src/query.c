@@ -494,7 +494,7 @@ static void leave_predicate(query *q, predicate *pr)
 
 			sl_rem(pr->idx, c, r);
 
-			if (q->unify_no_tco || true) {
+			if (q->no_tco || true) {
 				r->cl.is_deleted = true;
 				list_push_back(&q->dirty, r);
 			} else {
@@ -537,7 +537,8 @@ void try_me(query *q, unsigned num_vars)
 	frame *f = GET_NEW_FRAME();
 	f->initial_slots = f->actual_slots = num_vars;
 	f->base = q->st.sp;
-	f->unify_no_tco = false;
+	f->no_recov = false;
+	f->no_tco = false;
 	slot *e = GET_SLOT(f, 0);
 	memset(e, 0, sizeof(slot)*num_vars);
 	q->tot_matches++;
@@ -607,7 +608,8 @@ static frame *push_frame(query *q, const clause *cl)
 	f->chgen = ++q->chgen;
 	f->hp = q->st.hp;
 	f->heap_num = q->st.heap_num;
-	f->unify_no_tco = q->unify_no_tco;
+	f->no_recov = q->no_recov;
+	f->no_tco = q->no_tco;
 	f->overflow = 0;
 	q->st.sp += cl->num_vars;
 	q->st.curr_frame = q->st.fp++;
@@ -624,7 +626,8 @@ static void reuse_frame(query *q, const clause *cl)
 	frame *f = GET_CURR_FRAME();
 	f->initial_slots = f->actual_slots = cl->num_vars;
 	f->overflow = 0;
-	f->unify_no_tco = q->unify_no_tco;
+	f->no_recov = q->no_recov;
+	f->no_tco = q->no_tco;
 
 	const frame *newf = GET_FRAME(q->st.fp);
 	const slot *from = GET_SLOT(newf, 0);
@@ -665,14 +668,14 @@ static void commit_frame(query *q)
 
 #if 0
 	if (last_match) {
-		fprintf(stderr, "*** q->unify_no_tco=%d, last_match=%d %s/%u\n",
-			q->unify_no_tco, last_match,
+		fprintf(stderr, "*** q->no_tco=%d, last_match=%d %s/%u\n",
+			q->no_tco, last_match,
 			C_STR(q, q->st.key), q->st.key->arity
 			);
 	}
 #endif
 
-	if (!q->unify_no_tco
+	if (!q->no_tco
 		&& last_match
 		&& (q->st.fp == (q->st.curr_frame + 1))		// At top of frame stack
 		) {
@@ -686,11 +689,11 @@ static void commit_frame(query *q)
 		cell *head = get_head(cl->cells);
 
 		fprintf(stderr,
-			"*** %s/%u tco=%d,q->unify_no_tco=%d,last_match=%d,is_det=%d,"
+			"*** %s/%u tco=%d,q->no_tco=%d,last_match=%d,is_det=%d,"
 			"next_key=%d,tail_call=%d/r%d,slots_ok=%d,choices=%d,"
 			"cl->num_vars=%u,f->initial_slots=%u/%u\n",
 			C_STR(q, head), head->arity,
-			tco, q->unify_no_tco, last_match, is_det,
+			tco, q->no_tco, last_match, is_det,
 			next_key, tail_call, tail_recursive, slots_ok, choices,
 			cl->num_vars, f->initial_slots, f->actual_slots);
 #endif
@@ -761,7 +764,8 @@ int retry_choice(query *q)
 		f->chgen = ch->chgen;
 		f->initial_slots = ch->initial_slots;
 		f->actual_slots = ch->actual_slots;
-		f->unify_no_tco = ch->unify_no_tco;
+		f->no_recov = ch->no_recov;
+		f->no_tco = ch->no_tco;
 		f->overflow = ch->overflow;
 		f->base = ch->base;
 
@@ -810,7 +814,8 @@ bool push_choice(query *q)
 	ch->chgen = ch->gen = f->chgen;
 	ch->initial_slots = f->initial_slots;
 	ch->actual_slots = f->actual_slots;
-	ch->unify_no_tco = f->unify_no_tco;
+	ch->no_recov = f->no_recov;
+	ch->no_tco = f->no_tco;
 	ch->overflow = f->overflow;
 	ch->base = f->base;
 
@@ -847,7 +852,7 @@ bool push_barrier(query *q)
 bool push_succeed_on_retry_with_barrier(query *q, pl_idx skip)
 {
 	frame *f = GET_CURR_FRAME();
-	f->unify_no_tco = true;				// FIXME: memory waste
+	f->no_tco = true;				// FIXME: memory waste
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->succeed_on_retry = true;
@@ -948,13 +953,13 @@ static bool resume_frame(query *q)
 		return false;
 
 #if 0
-	printf("*** q->st.curr_frame=%d, f->unify_no_tco=%d, any_choices=%d\n",
+	printf("*** q->st.curr_frame=%d, f->no_tco=%d, any_choices=%d\n",
 		(unsigned)q->st.curr_frame,
-		(unsigned)f->unify_no_tco, (unsigned)resume_any_choices(q, f));
+		(unsigned)f->no_tco, (unsigned)resume_any_choices(q, f));
 #endif
 
 	if (q->pl->opt
-		&& !f->unify_no_tco
+		&& !f->no_tco
 		&& (q->st.fp == (q->st.curr_frame + 1))
 		&& !resume_any_choices(q, f)
 		) {
