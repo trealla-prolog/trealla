@@ -3357,12 +3357,15 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 	p->is_op = search_op(p->m, SB_cstr(p->token), NULL, false);
 	p->srcptr = (char*)src;
 
+	if (*src)
+		src = eat_space(p);
+
 	ch = peek_char_utf8(src);
 
 	if (SB_strcmp(p->token, "(") && !check_space_before_function(p, ch, src))
 		return false;
 
-	if (!SB_strcmp(p->token, ".") && next_ch == '|')
+	if (!SB_strcmp(p->token, ".") && ch == '|')
 		p->quote_char = '\'';
 
 	return true;
