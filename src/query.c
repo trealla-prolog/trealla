@@ -951,9 +951,9 @@ static bool resume_frame(query *q)
 		return false;
 
 #if 0
-	printf("*** q->st.curr_frame=%d, f->no_tco=%d, any_choices=%d\n",
+	printf("*** q->st.curr_frame=%d, f->no_recov=%d, any_choices=%d\n",
 		(unsigned)q->st.curr_frame,
-		(unsigned)f->no_tco, (unsigned)resume_any_choices(q, f));
+		(unsigned)f->no_recov, (unsigned)resume_any_choices(q, f));
 #endif
 
 	if (q->pl->opt
