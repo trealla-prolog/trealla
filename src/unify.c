@@ -329,8 +329,10 @@ static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx
 	if (is_var(v)) {
 		make_ref(&e->c, v->var_num, v_ctx);
 
-		if ((c_ctx == q->st.fp) && !is_temporary(c) && !is_void(c))
-			q->no_tco = q->no_recov = true;
+		if ((c_ctx == q->st.fp) && !is_temporary(c) && !is_void(c)) {
+			q->no_tco = true;
+			q->no_recov = true;	// FIXME: shouldn't be needed
+		}
 	} else if (is_compound(v)) {
 		make_indirect(&e->c, v, v_ctx);
 
