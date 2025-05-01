@@ -537,8 +537,6 @@ void try_me(query *q, unsigned num_vars)
 	frame *f = GET_NEW_FRAME();
 	f->initial_slots = f->actual_slots = num_vars;
 	f->base = q->st.sp;
-	f->no_recov = false;
-	f->no_tco = false;
 	slot *e = GET_SLOT(f, 0);
 	memset(e, 0, sizeof(slot)*num_vars);
 	q->tot_matches++;
@@ -601,15 +599,15 @@ static void trim_frame(query *q, const frame *f)
 static frame *push_frame(query *q, const clause *cl)
 {
 	const frame *curr_f = GET_CURR_FRAME();
-	frame *f = GET_FRAME(q->st.fp);
+	frame *f = GET_NEW_FRAME();
 	f->prev = q->st.curr_frame;
 	f->instr = q->st.instr;
 	f->initial_slots = f->actual_slots = cl->num_vars;
 	f->chgen = ++q->chgen;
 	f->hp = q->st.hp;
 	f->heap_num = q->st.heap_num;
-	f->no_recov = q->no_recov;
 	f->no_tco = q->no_tco;
+	f->no_recov = q->no_recov;
 	f->overflow = 0;
 	q->st.sp += cl->num_vars;
 	q->st.curr_frame = q->st.fp++;
@@ -626,8 +624,8 @@ static void reuse_frame(query *q, const clause *cl)
 	frame *f = GET_CURR_FRAME();
 	f->initial_slots = f->actual_slots = cl->num_vars;
 	f->overflow = 0;
-	f->no_recov = q->no_recov;
 	f->no_tco = q->no_tco;
+	f->no_recov = q->no_recov;
 
 	const frame *newf = GET_FRAME(q->st.fp);
 	const slot *from = GET_SLOT(newf, 0);
@@ -852,7 +850,7 @@ bool push_barrier(query *q)
 bool push_succeed_on_retry_with_barrier(query *q, pl_idx skip)
 {
 	frame *f = GET_CURR_FRAME();
-	f->no_tco = true;				// FIXME: memory waste
+	f->no_recov = true;				// FIXME: memory waste
 	check_heap_error(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->succeed_on_retry = true;
@@ -959,7 +957,7 @@ static bool resume_frame(query *q)
 #endif
 
 	if (q->pl->opt
-		&& !f->no_tco
+		&& !f->no_recov
 		&& (q->st.fp == (q->st.curr_frame + 1))
 		&& !resume_any_choices(q, f)
 		) {
