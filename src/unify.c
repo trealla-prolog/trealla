@@ -336,8 +336,10 @@ static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx
 	} else if (is_compound(v)) {
 		make_indirect(&e->c, v, v_ctx);
 
-		if ((v_ctx >= q->st.curr_frame) && !is_ground(v))
-			q->no_tco = q->no_recov = true;
+		if ((v_ctx >= q->st.curr_frame) && !is_ground(v)) {
+			q->no_tco = true;
+			q->no_recov = true;
+		}
 	} else {
 		e->c = *v;
 		share_cell(v);
