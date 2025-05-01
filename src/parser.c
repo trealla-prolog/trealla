@@ -1374,18 +1374,6 @@ static unsigned get_in_body(parser *p, const char *name)
 	return 0;
 }
 
-static void check_term_ground(cell *c)
-{
-	c->flags |= FLAG_INTERNED_GROUND;
-
-	for (unsigned i = 0; i < c->num_cells; i++) {
-		if (is_var(c+i)) {
-			c->flags &= ~ FLAG_INTERNED_GROUND;
-			break;
-		}
-	}
-}
-
 void assign_vars(parser *p, unsigned start, bool rebase)
 {
 	if (!p || p->error)
@@ -1407,9 +1395,6 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 
 	for (unsigned i = 0; i < cl->cidx; i++) {
 		cell *c = cl->cells + i;
-
-		if (c->arity)
-			check_term_ground(c);
 
 		if (c == body)
 			in_body = true;

@@ -96,10 +96,6 @@ static bool bif_iso_findall_3(query *q)
 		cell *tmp = alloc_on_tmp(q, 1);
 		check_heap_error(tmp, free(solns));
 		make_instr(tmp, g_dot_s, NULL, 2, 0);
-
-		if (is_atomic(c))
-			tmp->flags = FLAG_INTERNED_GROUND;
-
 		q->noderef = true;
 		tmp = copy_term_to_tmp(q, c, q->st.curr_frame, false);
 		q->noderef = false;
@@ -5517,12 +5513,10 @@ static bool bif_numlist_3(query *q)
 		make_int(&tmp,  from++);
 		cell *l = append_list(q, &tmp);
 		if (!l) return false;
-		l->flags |= FLAG_INTERNED_GROUND;
 	}
 
 	cell *l = end_list(q);
 	check_heap_error(l);
-	l->flags |= FLAG_INTERNED_GROUND;
 	return unify(q, p3, p3_ctx, l, q->st.curr_frame);
 }
 
