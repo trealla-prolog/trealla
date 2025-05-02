@@ -96,7 +96,8 @@
 	mat_read/4,
 	mat_write/2,
 	mat_lup_det/2,
-	mat_random/3
+	mat_random/3,
+	mat_eigen/3
 	]).
 
 % GNU Scientific Library (GSL)
@@ -347,7 +348,7 @@ vec_read(V, S, Size1) :-
 mat_from_list(M, L) :-
 	length(L, Rows),
 	Rows > 0,
-	L = [H|T],
+	L = [H|_],
 	length(H, Cols),
 	Cols > 0,
 	gsl_matrix_calloc(Rows, Cols, M),

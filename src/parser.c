@@ -2590,7 +2590,6 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 		} else if ((*s == '\'') && s[1] == '\'') {
 			s++;
 			v = *s++;
-#if 1
 		} else if ((*s == '\'') && p->flags.strict_iso && search_op(p->m, "", NULL, false)) {
 			if (DUMP_ERRS || !p->do_read_term)
 				fprintf(stderr, "Error: syntax error, parsing number4, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
@@ -2598,7 +2597,6 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 			p->error_desc = "number";
 			p->error = true;
 			return false;
-#endif
 		} else
 			v = get_char_utf8(&s);
 
