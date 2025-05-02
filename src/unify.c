@@ -301,15 +301,6 @@ int compare(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
 	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
 }
 
-inline static bool any_choices(const query *q, const frame *f)
-{
-	if (!q->cp)
-		return false;
-
-	const choice *ch = GET_CURR_CHOICE();
-	return ch->gen > f->chgen;
-}
-
 static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
 {
 	const frame *f = GET_FRAME(c_ctx);
