@@ -20,6 +20,21 @@ repeat(X, N, [X|R]) :-
 var_list(N, L) :-
     length(L, N).
 
+flatten(List, FlatList) :-
+	flatten(List, [], FlatList0),
+	!,
+	FlatList = FlatList0.
+
+flatten(Var, Tl, [Var|Tl]) :-
+	var(Var),
+	!.
+flatten([], Tl, Tl) :- !.
+flatten([Hd|Tl], Tail, List) :-
+	!,
+	flatten(Hd, FlatHeadTail, List),
+	flatten(Tl, Tail, FlatHeadTail).
+flatten(NonList, Tl, [NonList|Tl]).
+
 my_transpose(M, T) :-
     [H|_] = M,
     length(H, NCols),

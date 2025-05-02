@@ -1,3 +1,6 @@
+:- meta_predicate(countall(0,?)).
+:- help(countall(:callable,?integer), [iso(true)]).
+
 countall(_, N) :-
 	integer(N),
 	(N >= 0 -> true; throw(error(domain_error(not_less_than_zero, N), countall/2))),
@@ -6,8 +9,8 @@ countall(G, N) :-
 	'$countall'(call(G), N0),
 	N = N0.
 
-:- meta_predicate(countall(0,?)).
-:- help(countall(:callable,?integer), [iso(true)]).
+:- meta_predicate(call_cleanup(0,0)).
+:- help(call_cleanup(:callable,:callable), [iso(false)]).
 
 call_cleanup(G, C) :-
 	(var(C) -> throw(error(instantiation_error, call_cleanup/3)); true),
@@ -18,8 +21,8 @@ call_cleanup(G, C) :-
 		(catch(ignore(C), _, true), throw(Err))
 	).
 
-:- meta_predicate(call_cleanup(0,0)).
-:- help(call_cleanup(:callable,:callable), [iso(false)]).
+:- meta_predicate(setup_call_cleanup(0,0,0)).
+:- help(setup_call_cleanup(:callable,:callable,:callable), [iso(false)]).
 
 setup_call_cleanup(S, G, C) :-
 	once(S),
@@ -31,14 +34,14 @@ setup_call_cleanup(S, G, C) :-
 		(catch(ignore(C), _, true), throw(Err))
 	).
 
-:- meta_predicate(setup_call_cleanup(0,0,0)).
-:- help(setup_call_cleanup(:callable,:callable,:callable), [iso(false)]).
+:- meta_predicate(forall(0,0)).
+:- help(forall(:callable,:callable), [iso(false)]).
 
 forall(Cond, Action) :-
 	\+ (Cond, \+ Action).
 
-:- meta_predicate(forall(0,0)).
-:- help(forall(:callable,:callable), [iso(false)]).
+:- help(succ(?integer,+integer), [iso(false)]).
+:- help(succ(+integer,-integer), [iso(false)]).
 
 succ(I, S) :-
     can_be(not_less_than_zero, I),
@@ -51,6 +54,60 @@ succ(I, S) :-
     ;   instantiation_error(succ/2)
     ).
 
-:- help(succ(?integer,+integer), [iso(false)]).
-:- help(succ(+integer,-integer), [iso(false)]).
+:- help(cfor(+evaluable,+evaluable,-var), [iso(false),desc('C-style for loop')]).
 
+cfor(I0,J0,K) :-
+	I is I0,
+	J is J0,
+	between(I, J, K).
+
+:- help(variant(+term,+term), [iso(false)]).
+
+% definition taken from the SWI-Prolog documentation
+variant(Term1, Term2) :-
+	% avoid trouble in any shared variables
+	copy_term(Term1, Term1Copy),
+	copy_term(Term2, Term2Copy),
+	% ground and compare the term copies
+	numbervars(Term1Copy, 0, N),
+	numbervars(Term2Copy, 0, N),
+	Term1Copy == Term2Copy.
+
+:- help(call_det(:callable,?boolean), [iso(false)]).
+:- meta_predicate(call_det(0,?)).
+
+call_det(G, Det) :-
+	'$get_level'(L1),
+	call(G),
+	'$get_level'(L2),
+	(L1 = L2 -> Det = true; Det = false).
+
+:- meta_predicate(findall(?,0,-,?)).
+:- help(findall(+term,:callable,-list,+list), [iso(false)]).
+
+findall(T, G, B, Tail) :-
+	can_be(B, list, findall/4, _),
+	can_be(Tail, list, findall/4, _),
+	findall(T, G, B0),
+	append(B0, Tail, B), !.
+
+:- meta_predicate(call_with_time_limit(+,0)).
+:- help(call_with_time_limit(+millisecs,:callable), [iso(false)]).
+
+call_with_time_limit(Time, Goal) :-
+	Time0 is truncate(Time * 1000),
+	'$alarm'(Time0),
+	(	catch(once(Goal), E, ('$alarm'(0), throw(E))) ->
+		'$alarm'(0)
+	;	('$alarm'(0), fail)
+	).
+
+:- meta_predicate(time_out(0,+,-)).
+:- help(time_out(:callable,+integer,?atom), [iso(false)]).
+
+time_out(Goal, Time, Result) :-
+	'$alarm'(Time),
+	(	catch(once(Goal), E, ('$alarm'(0), throw(E))) ->
+		('$alarm'(0), Result = success)
+	;	('$alarm'(0), fail)
+	).

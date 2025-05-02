@@ -73,13 +73,6 @@ current_prolog_flag(P, A) :-
 
 :- help(current_prolog_flag(+callable,+term), [iso(true)]).
 
-cfor(I0,J0,K) :-
-	I is I0,
-	J is J0,
-	between(I, J, K).
-
-:- help(cfor(+evaluable,+evaluable,-var), [iso(false),desc('C-style for loop')]).
-
 repeat_integer_(N) :-
 	N > 0.
 repeat_integer_(N0) :-
@@ -103,57 +96,8 @@ subsumes_term(G, S) :-
 
 :- help(subsumes_term(+term,+term), [iso(true)]).
 
-% definition taken from the SWI-Prolog documentation
-variant(Term1, Term2) :-
-	% avoid trouble in any shared variables
-	copy_term(Term1, Term1Copy),
-	copy_term(Term2, Term2Copy),
-	% ground and compare the term copies
-	numbervars(Term1Copy, 0, N),
-	numbervars(Term2Copy, 0, N),
-	Term1Copy == Term2Copy.
-
-:- help(variant(+term,+term), [iso(false)]).
-
 catch(G, E, C) :-
 	'$catch'(call(G), E, call(C)).
-
-:- meta_predicate(call_det(0,?)).
-
-call_det(G, Det) :-
-	'$get_level'(L1),
-	call(G),
-	'$get_level'(L2),
-	(L1 = L2 -> Det = true; Det = false).
-
-:- help(call_det(:callable,?boolean), [iso(false)]).
-
-:- meta_predicate(findall(?,0,-,?)).
-
-findall(T, G, B, Tail) :-
-	can_be(B, list, findall/4, _),
-	can_be(Tail, list, findall/4, _),
-	findall(T, G, B0),
-	append(B0, Tail, B), !.
-
-:- help(findall(+term,:callable,-list,+list), [iso(false)]).
-
-flatten(List, FlatList) :-
-	flatten_(List, [], FlatList0),
-	!,
-	FlatList = FlatList0.
-
-flatten_(Var, Tl, [Var|Tl]) :-
-	var(Var),
-	!.
-flatten_([], Tl, Tl) :- !.
-flatten_([Hd|Tl], Tail, List) :-
-	!,
-	flatten_(Hd, FlatHeadTail, List),
-	flatten_(Tl, Tail, FlatHeadTail).
-flatten_(NonList, Tl, [NonList|Tl]).
-
-:- help(flatten(+list,-list), [iso(false)]).
 
 '$post_unify_hook' :-
 	'$undo_trail'(Vars, State),
@@ -381,29 +325,6 @@ current_key(K) :- var(K), '$record_global_key'(K,_).
 :- help(recorded(+term,?term), [iso(false),deprecated(true)]).
 :- help(recorded(+term,?term,-ref), [iso(false),deprecated(true)]).
 :- help(current_key(-term), [iso(false),deprecated(true)]).
-
-:- meta_predicate(call_with_time_limit(+,0)).
-
-call_with_time_limit(Time, Goal) :-
-	Time0 is truncate(Time * 1000),
-	'$alarm'(Time0),
-	(	catch(once(Goal), E, ('$alarm'(0), throw(E))) ->
-		'$alarm'(0)
-	;	('$alarm'(0), fail)
-	).
-
-:- help(call_with_time_limit(+millisecs,:callable), [iso(false)]).
-
-:- meta_predicate(time_out(0,+,-)).
-
-time_out(Goal, Time, Result) :-
-	'$alarm'(Time),
-	(	catch(once(Goal), E, ('$alarm'(0), throw(E))) ->
-		('$alarm'(0), Result = success)
-	;	('$alarm'(0), fail)
-	).
-
-:- help(time_out(:callable,+integer,?atom), [iso(false)]).
 
 '$portray_term'(S, T) :-
 	compound(T), !,
@@ -732,6 +653,21 @@ print_goals_(Any, [Goal|Goals]) :-
 	(Goals == [] -> true ;	write(', ')),
 	print_goals_(false, Goals).
 
+flatten_(List, FlatList) :-
+	flatten_(List, [], FlatList0),
+	!,
+	FlatList = FlatList0.
+
+flatten_(Var, Tl, [Var|Tl]) :-
+	var(Var),
+	!.
+flatten_([], Tl, Tl) :- !.
+flatten_([Hd|Tl], Tail, List) :-
+	!,
+	flatten_(Hd, FlatHeadTail, List),
+	flatten_(Tl, Tail, FlatHeadTail).
+flatten_(NonList, Tl, [NonList|Tl]).
+
 dump_attvars_([], []).
 dump_attvars_([Var|Vars], [Gs|Rest]) :-
 	copy_term(Var, Var2, Gs),
@@ -742,7 +678,7 @@ dump_attvars(Any) :-
 	'$list_attributed'(Vs0),
 	sort(Vs0, Vs),
 	dump_attvars_(Vs, Gs0),
-	flatten(Gs0, Gs1),
+	flatten_(Gs0, Gs1),
 	sort(Gs1, Gs),
 	print_goals_(Any, Gs).
 
