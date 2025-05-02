@@ -40,7 +40,7 @@ int g_tpl_interrupt = 0;
 
 typedef enum { CALL, EXIT, REDO, NEXT, FAIL } box_t;
 
-#define YIELD_INTERVAL 10000	// Goal interval between yield checks
+#define YIELD_INTERVAL 100000	// Goal interval between yield checks
 #define REDUCE_PRESSURE 1
 #define PRESSURE_FACTOR 4
 #define TRACE_MEM 0
@@ -600,15 +600,15 @@ static frame *push_frame(query *q, const clause *cl)
 {
 	const frame *curr_f = GET_CURR_FRAME();
 	frame *f = GET_NEW_FRAME();
-	f->prev = q->st.curr_frame;
-	f->instr = q->st.instr;
-	f->initial_slots = f->actual_slots = cl->num_vars;
+	f->overflow = 0;
+	f->no_tco = q->no_tco;
+	f->no_recov = q->no_recov;
 	f->chgen = ++q->chgen;
 	f->hp = q->st.hp;
 	f->heap_num = q->st.heap_num;
-	f->no_tco = q->no_tco;
-	f->no_recov = q->no_recov;
-	f->overflow = 0;
+	f->prev = q->st.curr_frame;
+	f->instr = q->st.instr;
+
 	q->st.sp += cl->num_vars;
 	q->st.curr_frame = q->st.fp++;
 	return f;
@@ -623,7 +623,6 @@ static void reuse_frame(query *q, const clause *cl)
 
 	frame *f = GET_CURR_FRAME();
 	f->initial_slots = f->actual_slots = cl->num_vars;
-	f->overflow = 0;
 	f->no_tco = q->no_tco;
 	f->no_recov = q->no_recov;
 
@@ -1079,17 +1078,16 @@ static void setup_key(query *q)
 
 static void next_key(query *q)
 {
-	if (q->st.iter) {
-		if (!sl_next(q->st.iter, (void*)&q->st.dbe)) {
-			q->st.dbe = NULL;
-			sl_done(q->st.iter);
-			q->st.iter = NULL;
-		}
-
+	if (!q->st.iter) {
+		q->st.dbe = q->st.dbe->next;
 		return;
 	}
 
-	q->st.dbe = q->st.dbe->next;
+	if (!sl_next(q->st.iter, (void*)&q->st.dbe)) {
+		q->st.dbe = NULL;
+		sl_done(q->st.iter);
+		q->st.iter = NULL;
+	}
 }
 
 bool has_next_key(query *q)
@@ -1302,7 +1300,9 @@ bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 
 		if (!pr || is_evaluable(c) || is_builtin(c)) {
 			pr = search_predicate(q->st.m, c, NULL);
-			c->match = pr;
+
+			if (pr)
+				c->match = pr;
 		}
 
 		if (!pr) {
@@ -1401,7 +1401,9 @@ bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract
 
 		if (!pr || is_evaluable(c) || is_builtin(c)) {
 			pr = search_predicate(q->st.m, c, NULL);
-			c->match = pr;
+
+			if (pr)
+				c->match = pr;
 		}
 
 		if (!pr) {
@@ -1490,8 +1492,11 @@ bool match_head(query *q)
 
 		if (!pr || is_evaluable(c) || is_builtin(c)) {
 			pr = search_predicate(q->st.m, c, NULL);
-			c->match = pr;
-			c->flags = 0;
+
+			if (pr) {
+				c->match = pr;
+				c->flags = 0;
+			}
 		}
 
 		if (!pr) {
@@ -1682,7 +1687,7 @@ bool start(query *q)
 			if (!(q->tot_goals % YIELD_INTERVAL)) {
 				q->s_cnt = 0;
 
-				if (!(q->s_cnt++ % 100))
+				if (!(q->s_cnt++ % 10000))
 					check_pressure(q);
 
 				if (q->yield_at && !q->run_hook) {
