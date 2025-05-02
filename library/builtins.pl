@@ -9,6 +9,12 @@ dcg_translate(TermIn, Term) :-
 	nonvar(TermIn),
 	dcg_rule(TermIn, Term).
 
+:- help(writeln(+term), [iso(false)]).
+:- help(writeln(+stream,+term), [iso(false)]).
+
+writeln(T) :- write(T), nl.
+writeln(S, T) :- write(S, T), nl.
+
 predicate_property(P, A) :-
 	nonvar(P), atom(A), !,
 	must_be(P, callable, predicate_property/2, _),

@@ -112,12 +112,6 @@ time_out(Goal, Time, Result) :-
 	;	('$alarm'(0), fail)
 	).
 
-:- help(writeln(+term), [iso(false)]).
-:- help(writeln(+stream,+term), [iso(false)]).
-
-writeln(T) :- write(T), nl.
-writeln(S, T) :- write(S, T), nl.
-
 :- help(not(:callable), [iso(false),deprecated(true)]).
 :- meta_predicate(not(0)).
 
