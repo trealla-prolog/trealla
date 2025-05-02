@@ -1488,7 +1488,7 @@ bool match_head(query *q)
 			convert_to_literal(q->st.m, c);
 		}
 
-		if (!pr) {
+		if (!pr || is_evaluable(c) || is_builtin(c)) {
 			pr = search_predicate(q->st.m, c, NULL);
 			c->match = pr;
 			c->flags = 0;
