@@ -432,6 +432,8 @@ bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n)
 
 static void enter_predicate(query *q, predicate *pr)
 {
+	frame *f = GET_FRAME(q->st.curr_frame);
+	f->dbgen = q->pl->dbgen;
 	q->st.pr = pr;
 
 	if (pr->is_dynamic)
@@ -1325,8 +1327,6 @@ bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 
 		find_key(q, pr, c, c_ctx);
 		enter_predicate(q, pr);
-		frame *f = GET_FRAME(q->st.curr_frame);
-		f->dbgen = q->pl->dbgen;
 	} else {
 		next_key(q);
 	}
@@ -1435,8 +1435,6 @@ bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract
 
 		find_key(q, pr, c, c_ctx);
 		enter_predicate(q, pr);
-		frame *f = GET_FRAME(q->st.curr_frame);
-		f->dbgen = q->pl->dbgen;
 	} else {
 		next_key(q);
 	}
@@ -1517,8 +1515,6 @@ bool match_head(query *q)
 
 		find_key(q, pr, c, c_ctx);
 		enter_predicate(q, pr);
-		frame *f = GET_CURR_FRAME();
-		f->dbgen = q->pl->dbgen;
 	} else
 		next_key(q);
 
