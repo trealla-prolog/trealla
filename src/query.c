@@ -611,12 +611,14 @@ static frame *push_frame(query *q)
 	f->prev = q->st.curr_frame;
 	f->instr = q->st.instr;
 
-	q->st.sp += f->initial_slots;
+	q->st.sp += f->actual_slots;
 	q->st.curr_frame = q->st.fp++;
 	return f;
 }
 
-static void reuse_frame(query *q, const clause *cl)
+// Note: TCO's clause may not be the caller clause... hence num_vars
+
+static void reuse_frame(query *q, unsigned num_vars)
 {
 	cell *c_next = q->st.instr + q->st.instr->num_cells;
 
@@ -624,7 +626,7 @@ static void reuse_frame(query *q, const clause *cl)
 		drop_choice(q);
 
 	frame *f = GET_CURR_FRAME();
-	f->initial_slots = f->actual_slots = cl->num_vars;
+	f->initial_slots = f->actual_slots = num_vars;
 	f->no_tco = q->no_tco;
 	f->no_recov = q->no_recov;
 
@@ -632,7 +634,7 @@ static void reuse_frame(query *q, const clause *cl)
 	const slot *from = GET_SLOT(newf, 0);
 	slot *to = GET_SLOT(f, 0);
 
-	for (pl_idx i = 0; i < cl->num_vars; i++, from++, to++) {
+	for (pl_idx i = 0; i < num_vars; i++, from++, to++) {
 		unshare_cell(&to->c);
 		to->c = from->c;
 	}
@@ -640,7 +642,7 @@ static void reuse_frame(query *q, const clause *cl)
 	q->st.hp = f->hp;
 	q->st.heap_num = f->heap_num;
 	trim_heap(q);
-	q->st.sp = f->base + cl->num_vars;
+	q->st.sp = f->base + f->actual_slots;
 	q->st.dbe->tcos++;
 	q->tot_tcos++;
 }
@@ -702,7 +704,7 @@ static void commit_frame(query *q)
 		q->st.m = q->st.dbe->owner->m;
 
 	if (tco && q->pl->opt) {
-		reuse_frame(q, cl);
+		reuse_frame(q, cl->num_vars);
 	} else {
 		f = push_frame(q);
 	}
