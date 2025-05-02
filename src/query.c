@@ -518,32 +518,6 @@ static void leave_predicate(query *q, predicate *pr)
 	module_unlock(pr->m);
 }
 
-void undo_me(query *q)
-{
-	q->tot_retries++;
-	const choice *ch = GET_CURR_CHOICE();
-
-	while (q->st.tp > ch->st.tp) {
-		const trail *tr = q->trails + --q->st.tp;
-		const frame *f = GET_FRAME(tr->var_ctx);
-		slot *e = GET_SLOT(f, tr->var_num);
-		cell *c = &e->c;
-		unshare_cell(c);
-		c->tag = TAG_EMPTY;
-		c->val_attrs = tr->attrs;
-	}
-}
-
-void try_me(query *q, unsigned num_vars)
-{
-	frame *f = GET_NEW_FRAME();
-	f->initial_slots = f->actual_slots = num_vars;
-	f->base = q->st.sp;
-	slot *e = GET_SLOT(f, 0);
-	memset(e, 0, sizeof(slot)*num_vars);
-	q->tot_matches++;
-}
-
 static void trim_trail(query *q)
 {
 	if (q->undo_hi_tp)
@@ -596,6 +570,32 @@ static void trim_frame(query *q, const frame *f)
 
 	q->st.sp -= f->actual_slots;
 	q->st.fp--;
+}
+
+void undo_me(query *q)
+{
+	q->tot_retries++;
+	const choice *ch = GET_CURR_CHOICE();
+
+	while (q->st.tp > ch->st.tp) {
+		const trail *tr = q->trails + --q->st.tp;
+		const frame *f = GET_FRAME(tr->var_ctx);
+		slot *e = GET_SLOT(f, tr->var_num);
+		cell *c = &e->c;
+		unshare_cell(c);
+		c->tag = TAG_EMPTY;
+		c->val_attrs = tr->attrs;
+	}
+}
+
+void try_me(query *q, unsigned num_vars)
+{
+	frame *f = GET_NEW_FRAME();
+	f->initial_slots = f->actual_slots = num_vars;
+	f->base = q->st.sp;
+	slot *e = GET_SLOT(f, 0);
+	memset(e, 0, sizeof(slot)*num_vars);
+	q->tot_matches++;
 }
 
 static frame *push_frame(query *q, const clause *cl)
