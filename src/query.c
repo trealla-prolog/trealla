@@ -598,7 +598,7 @@ void try_me(query *q, unsigned num_vars)
 	q->tot_matches++;
 }
 
-static frame *push_frame(query *q, const clause *cl)
+static frame *push_frame(query *q)
 {
 	const frame *curr_f = GET_CURR_FRAME();
 	frame *f = GET_NEW_FRAME();
@@ -611,7 +611,7 @@ static frame *push_frame(query *q, const clause *cl)
 	f->prev = q->st.curr_frame;
 	f->instr = q->st.instr;
 
-	q->st.sp += cl->num_vars;
+	q->st.sp += f->initial_slots;
 	q->st.curr_frame = q->st.fp++;
 	return f;
 }
@@ -704,7 +704,7 @@ static void commit_frame(query *q)
 	if (tco && q->pl->opt) {
 		reuse_frame(q, cl);
 	} else {
-		f = push_frame(q, cl);
+		f = push_frame(q);
 	}
 
 	if (last_match) {
