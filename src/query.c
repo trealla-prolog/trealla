@@ -1488,22 +1488,21 @@ bool match_head(query *q)
 			convert_to_literal(q->st.m, c);
 		}
 
-		if (!pr || is_evaluable(c) || is_builtin(c)) {
+		if (!pr) {
 			pr = search_predicate(q->st.m, c, NULL);
-
-			if (!pr) {
-				if (!is_end(c) && !(is_interned(c) && !strcmp(C_STR(q, c), "initialization"))) {
-					if (q->st.m->flags.unknown == UNK_ERROR)
-						return throw_error(q, c, c_ctx, "existence_error", "procedure");
-					return false;
-				} else
-					q->error = true;
-
-				return false;
-			}
-
 			c->match = pr;
 			c->flags = 0;
+		}
+
+		if (!pr) {
+			if (!is_end(c) && !(is_interned(c) && !strcmp(C_STR(q, c), "initialization"))) {
+				if (q->st.m->flags.unknown == UNK_ERROR)
+					return throw_error(q, c, c_ctx, "existence_error", "procedure");
+				return false;
+			} else
+				q->error = true;
+
+			return false;
 		}
 
 		if (pr->alias) {
