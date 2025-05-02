@@ -111,3 +111,22 @@ time_out(Goal, Time, Result) :-
 		('$alarm'(0), Result = success)
 	;	('$alarm'(0), fail)
 	).
+
+:- help(writeln(+term), [iso(false)]).
+:- help(writeln(+stream,+term), [iso(false)]).
+
+writeln(T) :- write(T), nl.
+writeln(S, T) :- write(S, T), nl.
+
+:- help(not(:callable), [iso(false),deprecated(true)]).
+:- meta_predicate(not(0)).
+
+not(X) :- X, !, fail.
+not(_).
+
+:- help(term_variables(+term,-list,?tail), [iso(false)]).
+
+term_variables(P1, P2, P3) :-
+	term_variables(P1, P4),
+	append(P4, P3, P2).
+

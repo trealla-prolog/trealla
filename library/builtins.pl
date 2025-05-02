@@ -176,12 +176,6 @@ copy_term_nat(Term, Copy) :-
 
 :- help(copy_term_nat(+term,?term), [iso(false)]).
 
-term_variables(P1, P2, P3) :-
-	term_variables(P1, P4),
-	append(P4, P3, P2).
-
-:- help(term_variables(+term,-list,?tail), [iso(false)]).
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 
@@ -303,13 +297,6 @@ directory_exists(F) :- exists_directory(F).
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- meta_predicate(not(0)).
-
-not(X) :- X, !, fail.
-not(_).
-
-:- help(not(:callable), [iso(false),deprecated(true)]).
-
 recorda(K, V) :- nonvar(K), nonvar(V), asserta('$record_global_key'(K,V)).
 recorda(K, V, R) :- nonvar(K), nonvar(V), asserta('$record_global_key'(K,V), R).
 recordz(K, V) :- nonvar(K), nonvar(V), assertz('$record_global_key'(K,V)).
@@ -355,14 +342,6 @@ print(S, T) :- format(S, "~p", [T]).
 
 :- help(print(+term), [iso(false)]).
 :- help(print(+stream,+term), [iso(false)]).
-
-writeln(T) :- write(T), nl.
-
-:- help(writeln(+term), [iso(false)]).
-
-writeln(S, T) :- write(S, T), nl.
-
-:- help(writeln(+stream,+term), [iso(false)]).
 
 open(F, M, S) :- open(F, M, S, []).
 
@@ -508,8 +487,6 @@ numberlist_([], N, N).
 numberlist_(['$VAR'(N0)|Vars], N0, N) :-
    N1 is N0+1,
    numberlist_(Vars, N1, N).
-
-:- help(numberlist(+list,?integer,?integer), [iso(false)]).
 
 read_line_to_codes(Stream, Codes) :-
 	read_line_to_string(Stream, String),
