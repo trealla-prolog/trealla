@@ -746,7 +746,7 @@ void save_db(FILE *fp, query *q, int logging)
 			continue;
 
 		for (db_entry *r = pr->head; r; r = r->next) {
-			if (r->cl.dbgen_retracted)
+			if (r->dbgen_retracted)
 				continue;
 
 			if (logging)
@@ -938,7 +938,7 @@ static bool save_name(FILE *fp, query *q, pl_idx name, unsigned arity, bool alt)
 		any = true;
 
 		for (db_entry *r = pr->head; r; r = r->next) {
-			if (r->cl.dbgen_retracted)
+			if (r->dbgen_retracted)
 				continue;
 
 			for (unsigned i = 0; i < MAX_IGNORES; i++)

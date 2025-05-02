@@ -414,7 +414,6 @@ typedef struct {
 } uuid;
 
 struct clause_ {
-	uint64_t dbgen_created, dbgen_retracted;
 	pl_idx cidx, num_allocated_cells;
 	unsigned num_vars;
 	bool is_first_cut:1;
@@ -433,6 +432,7 @@ struct db_entry_ {
 	const char *filename;
 	uuid u;
 	uint64_t db_id, matched, attempted, tcos;
+	uint64_t dbgen_created, dbgen_retracted;
 	unsigned line_num_start, line_num_end;
 	clause cl;
 };

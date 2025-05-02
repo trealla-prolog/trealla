@@ -1055,10 +1055,10 @@ static bool can_view(query *q, uint64_t dbgen, const db_entry *r)
 	if (r->cl.is_deleted)
 		return false;
 
-	if (r->cl.dbgen_created > dbgen)
+	if (r->dbgen_created > dbgen)
 		return false;
 
-	if (r->cl.dbgen_retracted && (r->cl.dbgen_retracted <= dbgen))
+	if (r->dbgen_retracted && (r->dbgen_retracted <= dbgen))
 		return false;
 
 	return true;

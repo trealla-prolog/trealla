@@ -656,7 +656,7 @@ db_entry *find_in_db(module *m, uuid *ref)
 				continue;
 
 			for (db_entry *r = pr->head ; r; r = r->next) {
-				if (r->cl.dbgen_retracted)
+				if (r->dbgen_retracted)
 					continue;
 
 				if (!memcmp(&r->u, ref, sizeof(uuid)))
@@ -1529,7 +1529,7 @@ static void check_unique(module *m, db_entry *dbe_orig)
 	dbe_orig->cl.is_unique = false;
 
 	for (db_entry *r = dbe_orig->next; r; r = r->next) {
-		if (r->cl.dbgen_retracted)
+		if (r->dbgen_retracted)
 			continue;
 
 		cell *head2 = get_head(r->cl.cells);
@@ -1823,7 +1823,7 @@ static db_entry *assert_begin(module *m, unsigned num_vars, cell *p1, bool consu
 	r->cl.num_vars = num_vars;
 	r->cl.num_allocated_cells = p1->num_cells;
 	r->cl.cidx = p1->num_cells+1;
-	r->cl.dbgen_created = ++m->pl->dbgen;
+	r->dbgen_created = ++m->pl->dbgen;
 	r->filename = m->filename;
 	r->owner = pr;
 	return r;
@@ -1864,7 +1864,7 @@ static void assert_commit(module *m, db_entry *r, predicate *pr, bool append)
 		for (db_entry *cl2 = pr->head; cl2; cl2 = cl2->next) {
 			cell *c = get_head(cl2->cl.cells);
 
-			if (cl2->cl.dbgen_retracted)
+			if (cl2->dbgen_retracted)
 				continue;
 
 			sl_set(pr->idx, c, cl2);
@@ -1983,10 +1983,10 @@ db_entry *assertz_to_db(module *m, unsigned num_vars, cell *p1, bool consulting)
 
 static bool remove_from_predicate(module *m, predicate *pr, db_entry *r)
 {
-	if (r->cl.dbgen_retracted)
+	if (r->dbgen_retracted)
 		return false;
 
-	r->cl.dbgen_retracted = ++m->pl->dbgen;
+	r->dbgen_retracted = ++m->pl->dbgen;
 	r->filename = NULL;
 	pr->cnt--;
 	return true;
@@ -2063,7 +2063,7 @@ static bool unload_realfile(module *m, const char *filename)
 			continue;
 
 		for (db_entry *r = pr->head; r; r = r->next) {
-			if (r->cl.dbgen_retracted)
+			if (r->dbgen_retracted)
 				continue;
 
 			if (r->filename && !strcmp(r->filename, filename)) {
@@ -2416,7 +2416,7 @@ static void module_save_fp(module *m, FILE *fp, int canonical, int dq)
 			continue;
 
 		for (db_entry *r = pr->head; r; r = r->next) {
-			if (r->cl.dbgen_retracted)
+			if (r->dbgen_retracted)
 				continue;
 
 			if (canonical)
