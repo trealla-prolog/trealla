@@ -628,9 +628,9 @@ static void reuse_frame(query *q, unsigned num_vars)
 	const slot *from = GET_SLOT(newf, 0);
 	slot *to = GET_SLOT(f, 0);
 
-	for (pl_idx i = 0; i < num_vars; i++, from++, to++) {
+	for (pl_idx i = 0; i < num_vars; i++) {
 		unshare_cell(&to->c);
-		to->c = from->c;
+		to++->c = from++->c;
 	}
 
 	f->initial_slots = f->actual_slots = num_vars;
