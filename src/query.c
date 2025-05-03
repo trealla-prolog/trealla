@@ -598,9 +598,8 @@ void try_me(query *q, unsigned num_vars)
 	q->tot_matches++;
 }
 
-static frame *push_frame(query *q)
+static void push_frame(query *q)
 {
-	const frame *curr_f = GET_CURR_FRAME();
 	frame *f = GET_NEW_FRAME();
 	f->overflow = 0;
 	f->no_tco = q->no_tco;
@@ -610,13 +609,12 @@ static frame *push_frame(query *q)
 	f->heap_num = q->st.heap_num;
 	f->prev = q->st.curr_frame;
 	f->instr = q->st.instr;
-
 	q->st.sp += f->actual_slots;
 	q->st.curr_frame = q->st.fp++;
-	return f;
 }
 
-// Note: TCO's clause may not be the caller clause... hence num_vars
+// Note: TCO's clause may not be the caller clause... hence passing
+// num_vars. Currently restricted to the same predicate though.
 
 static void reuse_frame(query *q, unsigned num_vars)
 {
@@ -626,10 +624,6 @@ static void reuse_frame(query *q, unsigned num_vars)
 		drop_choice(q);
 
 	frame *f = GET_CURR_FRAME();
-	f->initial_slots = f->actual_slots = num_vars;
-	f->no_tco = q->no_tco;
-	f->no_recov = q->no_recov;
-
 	const frame *newf = GET_FRAME(q->st.fp);
 	const slot *from = GET_SLOT(newf, 0);
 	slot *to = GET_SLOT(f, 0);
@@ -639,12 +633,13 @@ static void reuse_frame(query *q, unsigned num_vars)
 		to->c = from->c;
 	}
 
-	q->st.hp = f->hp;
-	q->st.heap_num = f->heap_num;
-	trim_heap(q);
+	f->initial_slots = f->actual_slots = num_vars;
 	q->st.sp = f->base + f->actual_slots;
 	q->st.dbe->tcos++;
 	q->tot_tcos++;
+	q->st.hp = f->hp;
+	q->st.heap_num = f->heap_num;
+	trim_heap(q);
 }
 
 static bool commit_any_choices(const query *q, const frame *f)
@@ -684,7 +679,7 @@ static void commit_frame(query *q)
 		bool tail_recursive = tail_call && is_recursive_call(q->st.instr);
 		bool slots_ok = f->initial_slots <= cl->num_vars;
 		bool choices = commit_any_choices(q, f);
-		tco = slots_ok && tail_recursive && !choices;
+		tco = slots_ok && tail_call && !choices;
 
 #if 0
 		cell *head = get_head(cl->cells);
@@ -706,7 +701,7 @@ static void commit_frame(query *q)
 	if (tco && q->pl->opt) {
 		reuse_frame(q, cl->num_vars);
 	} else {
-		f = push_frame(q);
+		push_frame(q);
 	}
 
 	if (last_match) {
@@ -716,7 +711,7 @@ static void commit_frame(query *q)
 	} else {
 		choice *ch = GET_CURR_CHOICE();
 		ch->st.dbe = q->st.dbe;
-		ch->gen = f->chgen;
+		ch->gen = q->chgen;
 	}
 
 	Trace(q, get_head(cl->cells), q->st.curr_frame, EXIT);
