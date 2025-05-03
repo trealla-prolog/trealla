@@ -714,7 +714,6 @@ static void commit_frame(query *q)
 		ch->gen = q->chgen;
 	}
 
-	Trace(q, get_head(cl->cells), q->st.curr_frame, EXIT);
 	q->st.instr = cl->alt ? cl->alt : get_body(cl->cells);
 	q->st.iter = NULL;
 }
@@ -953,6 +952,7 @@ static bool resume_frame(query *q)
 		(unsigned)q->st.curr_frame,
 		(unsigned)f->no_recov, (unsigned)resume_any_choices(q, f));
 #endif
+	Trace(q, get_head(f->instr), q->st.curr_frame, EXIT);
 
 	if (q->pl->opt
 		&& !f->no_recov
