@@ -657,6 +657,7 @@ static void commit_frame(query *q)
 	frame *f = GET_CURR_FRAME();
 	f->m = q->st.m;
 
+	db_entry *save_dbe = q->st.dbe;
 	bool is_det = !q->has_vars && cl->is_unique;
 	bool next_key = has_next_key(q);
 	bool last_match = is_det || cl->is_first_cut || !next_key;
@@ -699,6 +700,7 @@ static void commit_frame(query *q)
 		q->st.m = q->st.dbe->owner->m;
 
 	if (tco && q->pl->opt) {
+		Trace(q, get_head(save_dbe->cl.cells), q->st.curr_frame, EXIT);
 		reuse_frame(q, cl->num_vars);
 	} else {
 		push_frame(q);
