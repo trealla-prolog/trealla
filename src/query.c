@@ -659,8 +659,7 @@ static void commit_frame(query *q)
 
 	db_entry *save_dbe = q->st.dbe;
 	bool is_det = !q->has_vars && cl->is_unique;
-	bool next_key = has_next_key(q);
-	bool last_match = is_det || cl->is_first_cut || !next_key;
+	bool last_match = is_det || cl->is_first_cut || !has_next_key(q);
 	bool tco = false;
 
 #if 0
