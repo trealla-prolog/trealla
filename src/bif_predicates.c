@@ -3220,6 +3220,7 @@ bool bif_statistics_0(query *q)
 		"slots %u, "
 		"heap %u.\n"
 		"Backtracks %"PRIu64", "
+		"Retries %"PRIu64", "
 		"TCOs:%"PRIu64", "
 		"Frame recovs:%"PRIu64", "
 		"Queue: %u\n",
@@ -3228,7 +3229,7 @@ bool bif_statistics_0(query *q)
 		q->hw_heap_num,
 		q->st.fp, q->cp, q->st.tp, q->st.sp,
 		q->st.heap_num,
-		q->tot_retries, q->tot_tcos, q->tot_recovs,
+		q->tot_backtracks, q->tot_retries, q->tot_tcos, q->tot_recovs,
 		(unsigned)q->qcnt[q->st.qnum]
 		);
 	return true;

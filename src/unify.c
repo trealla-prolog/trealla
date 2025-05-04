@@ -301,6 +301,20 @@ int compare(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
 	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
 }
 
+void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs, bool is_local)
+{
+	if (!check_trail(q)) {
+		q->error = false;
+		return;
+	}
+
+	trail *tr = q->trails + q->st.tp++;
+	tr->var_ctx = c_ctx;
+	tr->var_num = c_var_nbr;
+	tr->attrs = attrs;
+	tr->is_local = is_local;
+}
+
 static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx)
 {
 	const frame *f = GET_FRAME(c_ctx);

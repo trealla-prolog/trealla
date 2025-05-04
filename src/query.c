@@ -180,7 +180,7 @@ void check_pressure(query *q)
 #endif
 }
 
-static bool check_trail(query *q)
+bool check_trail(query *q)
 {
 	if (q->st.tp > q->hw_trails)
 		q->hw_trails = q->st.tp;
@@ -277,20 +277,6 @@ void make_call_redo(query *q, cell *tmp)
 	tmp->ret_instr = q->st.instr;		// save the return instruction
 	tmp->chgen = f->chgen;				// ... choice-generation
 	tmp->mid = q->st.m->id;				// ... current-module
-}
-
-void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs, bool is_local)
-{
-	if (!check_trail(q)) {
-		q->error = false;
-		return;
-	}
-
-	trail *tr = q->trails + q->st.tp++;
-	tr->var_ctx = c_ctx;
-	tr->var_num = c_var_nbr;
-	tr->attrs = attrs;
-	tr->is_local = is_local;
 }
 
 cell *prepare_call(query *q, bool noskip, cell *p1, pl_idx p1_ctx, unsigned extras)
@@ -428,6 +414,56 @@ bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n)
 		return make_stringn(d, s+off, n);
 
 	return make_cstringn(d, s+off, n);
+}
+
+#define MAX_LOCAL_VARS (1L<<30)
+
+int create_vars(query *q, unsigned cnt)
+{
+	frame *f = GET_CURR_FRAME();
+
+	if (!cnt)
+		return f->actual_slots;
+
+	if ((f->actual_slots + cnt) > MAX_LOCAL_VARS) {
+		q->oom = q->error = true;
+		return -1;
+	}
+
+	unsigned var_num = f->actual_slots;
+
+	if ((f->base + f->initial_slots) >= q->st.sp) {
+		f->initial_slots += cnt;
+	} else if (!f->overflow) {
+		f->overflow = q->st.sp;
+	} else if ((f->overflow + (f->actual_slots - f->initial_slots)) == q->st.sp) {
+	} else {
+		pl_idx save_overflow = f->overflow;
+		f->overflow = q->st.sp;
+		pl_idx cnt2 = f->actual_slots - f->initial_slots;
+
+		if (!check_slot(q, cnt2)) {
+			q->error = true;
+			return -1;
+		}
+
+		memmove(q->slots+f->overflow, q->slots+save_overflow, sizeof(slot)*cnt2);
+		q->st.sp += cnt2;
+	}
+
+	if (!check_slot(q, cnt)) {
+		q->error = true;
+		return -1;
+	}
+
+	for (unsigned i = 0; i < cnt; i++) {
+		slot *e = GET_SLOT(f, f->actual_slots + i);
+		memset(e, 0, sizeof(slot));
+	}
+
+	q->st.sp += cnt;
+	f->actual_slots += cnt;
+	return var_num;
 }
 
 static void enter_predicate(query *q, predicate *pr)
@@ -999,56 +1035,6 @@ static void proceed(query *q)
 	}
 
 	q->st.instr = tmp->ret_instr;
-}
-
-#define MAX_LOCAL_VARS (1L<<30)
-
-int create_vars(query *q, unsigned cnt)
-{
-	frame *f = GET_CURR_FRAME();
-
-	if (!cnt)
-		return f->actual_slots;
-
-	if ((f->actual_slots + cnt) > MAX_LOCAL_VARS) {
-		q->oom = q->error = true;
-		return -1;
-	}
-
-	unsigned var_num = f->actual_slots;
-
-	if ((f->base + f->initial_slots) >= q->st.sp) {
-		f->initial_slots += cnt;
-	} else if (!f->overflow) {
-		f->overflow = q->st.sp;
-	} else if ((f->overflow + (f->actual_slots - f->initial_slots)) == q->st.sp) {
-	} else {
-		pl_idx save_overflow = f->overflow;
-		f->overflow = q->st.sp;
-		pl_idx cnt2 = f->actual_slots - f->initial_slots;
-
-		if (!check_slot(q, cnt2)) {
-			q->error = true;
-			return -1;
-		}
-
-		memmove(q->slots+f->overflow, q->slots+save_overflow, sizeof(slot)*cnt2);
-		q->st.sp += cnt2;
-	}
-
-	if (!check_slot(q, cnt)) {
-		q->error = true;
-		return -1;
-	}
-
-	for (unsigned i = 0; i < cnt; i++) {
-		slot *e = GET_SLOT(f, f->actual_slots + i);
-		memset(e, 0, sizeof(slot));
-	}
-
-	q->st.sp += cnt;
-	f->actual_slots += cnt;
-	return var_num;
 }
 
 static bool can_view(query *q, uint64_t dbgen, const db_entry *r)
