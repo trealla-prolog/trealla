@@ -1646,7 +1646,7 @@ bool start(query *q)
 		q->cycle_error = q->did_throw = false;
 		q->tot_goals++;
 
-		if (is_builtin(q->st.instr) && q->st.instr->bif_ptr) {
+		if (is_builtin(q->st.instr)) {
 			q->tot_inferences++;
 			bool status;
 
