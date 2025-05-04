@@ -1099,7 +1099,7 @@ bool has_next_key(query *q)
 			return false;
 	}
 
-	cell *karg1 = NULL, *karg2 = NULL;
+	const cell *karg1 = NULL, *karg2 = NULL;
 	cell *save_arg1 = FIRST_ARG(q->st.key);
 
 	if (q->st.karg1_is_ground)
