@@ -1099,7 +1099,7 @@ bool has_next_key(query *q)
 			return false;
 	}
 
-	const cell *karg1 = NULL, *karg2 = NULL;
+	cell *karg1 = NULL, *karg2 = NULL;
 	cell *save_arg1 = FIRST_ARG(q->st.key);
 
 	if (q->st.karg1_is_ground)
@@ -1110,8 +1110,8 @@ bool has_next_key(query *q)
 
 	//DUMP_TERM("key ", q->st.key, q->st.key_ctx, 1);
 
-	for (const db_entry *next = q->st.dbe->next; next; next = next->next) {
-		const cell *dkey = next->cl.cells;
+	for (db_entry *next = q->st.dbe->next; next; next = next->next) {
+		cell *dkey = next->cl.cells;
 
 		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
 			dkey++;
@@ -1128,7 +1128,7 @@ bool has_next_key(query *q)
 				continue;
 		}
 
-		//if (index_cmpkey(q->st.key, dkey, q->st.m, NULL) == 0)
+		if (index_cmpkey(q->st.key, dkey, q->st.m, NULL) == 0)
 			return true;
 	}
 
