@@ -684,7 +684,8 @@ struct query_ {
 	char tmpbuf[256];
 	bool ignores[MAX_IGNORES];
 	uint64_t tot_goals, tot_backtracks, tot_retries, tot_matches, tot_inferences;
-	uint64_t tot_tcos, tot_recovs, step, qid, tmo_msecs, chgen, cycle_error;
+	uint64_t tot_tcos, tot_recovs, tot_matched;
+	uint64_t step, qid, tmo_msecs, chgen, cycle_error;
 	uint64_t get_started, autofail_n, yield_at;
 	uint64_t cpu_started, time_cpu_last_started, future;
 	unsigned max_depth, max_eval_depth, print_idx, tab_idx, dump_var_num;

@@ -653,6 +653,9 @@ static bool commit_any_choices(const query *q, const frame *f)
 
 static void commit_frame(query *q)
 {
+	q->st.dbe->matched++;
+	q->tot_matched++;
+
 	clause *cl = &q->st.dbe->cl;
 	frame *f = GET_CURR_FRAME();
 	f->m = q->st.m;
@@ -1537,8 +1540,6 @@ bool match_head(query *q)
 		DEBUG_MATCH printf("*** here\n");
 
 		if (unify(q, q->st.key, q->st.key_ctx, head, q->st.fp)) {
-			q->st.dbe->matched++;
-
 			if (q->error)
 				break;
 
