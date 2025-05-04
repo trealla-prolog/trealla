@@ -699,7 +699,8 @@ static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 	}
 
 	if (is_var(p2)) {
-		return unify_var(q, p2, p2_ctx, p1, p1_ctx, depth);
+		set_var(q, p2, p2_ctx, p1, p1_ctx);
+		return true;
 	} else if (is_var(p1)) {
 		if (depth > 1)
 			q->has_vars = true;
