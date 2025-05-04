@@ -1053,11 +1053,12 @@ static bool can_view(query *q, uint64_t dbgen, const db_entry *r)
 
 static void setup_key(query *q)
 {
-	cell *arg1 = deref(q, FIRST_ARG(q->st.key), q->st.key_ctx);
+	cell *save_arg1 = FIRST_ARG(q->st.key);
+	cell *arg1 = deref(q, save_arg1, q->st.key_ctx);
 	cell *arg2 = NULL;
 
 	if (q->st.key->arity > 1)
-		arg2 = deref(q, NEXT_ARG(FIRST_ARG(q->st.key)), q->st.key_ctx);
+		arg2 = deref(q, NEXT_ARG(save_arg1), q->st.key_ctx);
 
 	q->st.karg1_is_ground = !is_var(arg1);
 	q->st.karg2_is_ground = arg2 && !is_var(arg2);
@@ -1099,12 +1100,13 @@ bool has_next_key(query *q)
 	}
 
 	const cell *karg1 = NULL, *karg2 = NULL;
+	cell *save_arg1 = FIRST_ARG(q->st.key);
 
 	if (q->st.karg1_is_ground)
-		karg1 = deref(q, FIRST_ARG(q->st.key), q->st.key_ctx);
+		karg1 = deref(q, save_arg1, q->st.key_ctx);
 
 	if (q->st.karg2_is_ground)
-		karg2 = deref(q, NEXT_ARG(FIRST_ARG(q->st.key)), q->st.key_ctx);
+		karg2 = deref(q, NEXT_ARG(save_arg1), q->st.key_ctx);
 
 	//DUMP_TERM("key ", q->st.key, q->st.key_ctx, 1);
 
@@ -1176,7 +1178,6 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 
 	if (!pr->idx) {
 		q->st.dbe = pr->head;
-		DEBUG_MATCH printf("*** here !pr->idx\n");
 
 		if (key->arity) {
 			if (pr->is_meta_predicate) {
@@ -1523,7 +1524,6 @@ bool match_head(query *q)
 		cell *head = get_head(cl->cells);
 		try_me(q, cl->num_vars);
 		q->st.dbe->attempted++;
-		DEBUG_MATCH printf("*** here\n");
 
 		if (unify(q, q->st.key, q->st.key_ctx, head, q->st.fp)) {
 			if (q->error)
