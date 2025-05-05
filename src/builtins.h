@@ -358,18 +358,14 @@ inline static cell *get_raw_arg(query *q, int n)
 	}
 
 
-inline static bool START_FUNCTION(query *q)
-{
-	extern bool throw_error(query *q, cell *c, pl_idx c_ctx, const char *err_type, const char *expected);
-	errno = 0;
-
-	if (q->eval)
-		return true;
-
-	if (!q->st.m->flags.unknown)
-		return throw_error(q, q->st.instr, q->st.curr_frame, "existence_error", "procedure");
-
-	return false;
+#define START_FUNCTION(q) { \
+	errno = 0; \
+	if (!q->eval) { \
+		if (!q->st.m->flags.unknown) \
+			return throw_error(q, q->st.instr, q->st.curr_frame, "existence_error", "procedure"); \
+		else \
+			return false; \
+	} \
 }
 
 
