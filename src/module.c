@@ -2499,6 +2499,7 @@ module *module_create(prolog *pl, const char *name)
 	m->flags.syntax_error = UNK_ERROR;
 	m->flags.double_quote_chars = true;
 	m->flags.character_escapes = true;
+	m->flags.occurs_check = false;
 	m->error = false;
 	m->id = ++pl->next_mod_id;
 	m->defops = sl_create((void*)fake_strcmp, NULL, NULL);
