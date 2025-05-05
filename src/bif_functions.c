@@ -81,10 +81,6 @@ void clr_accum(cell *p)
 		free(p->val_bigint);
 	}
 
-#ifdef FE_INVALID
-	feclearexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW);
-#endif
-
 	p->tag = TAG_INTEGER;
 	p->flags = 0;
 }
@@ -904,6 +900,7 @@ static bool bif_iso_truncate_1(query *q)
 		if (fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW)) {
 			mp_int_set_double(&q->tmp_ival, p1.val_float);
 			SET_ACCUM();
+			feclearexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW);
 		} else
 #endif
 			q->accum.tag = TAG_INTEGER;
@@ -931,6 +928,7 @@ static bool bif_iso_round_1(query *q)
 		if (fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW)) {
 			mp_int_set_double(&q->tmp_ival, p1.val_float);
 			SET_ACCUM();
+			feclearexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW);
 		} else
 #endif
 			q->accum.tag = TAG_INTEGER;
@@ -958,6 +956,7 @@ static bool bif_iso_ceiling_1(query *q)
 		if (fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW)) {
 			mp_int_set_double(&q->tmp_ival, p1.val_float);
 			SET_ACCUM();
+			feclearexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW);
 		} else
 #endif
 			q->accum.tag = TAG_INTEGER;
@@ -1029,6 +1028,7 @@ static bool bif_iso_floor_1(query *q)
 		if (fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW)) {
 			mp_int_set_double(&q->tmp_ival, p1.val_float);
 			SET_ACCUM();
+			feclearexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW);
 		} else
 #endif
 			q->accum.tag = TAG_INTEGER;
