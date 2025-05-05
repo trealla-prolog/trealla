@@ -749,7 +749,6 @@ struct query_ {
 	bool noderef:1;
 	bool double_quotes:1;
 	bool end_wait:1;
-	bool in_is:1;
 	bool access_private:1;
 	bool did_unhandled_exception:1;
 };

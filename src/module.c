@@ -1628,6 +1628,8 @@ static void process_predicate(predicate *pr)
 		return;
 
 	for (db_entry *r = pr->head; r; r = r->next) {
+		check_unique(pr->m, r);
+
 		if (pr->m->pl->opt) {
 			cell *body = get_body(r->cl.cells);
 
@@ -1635,9 +1637,6 @@ static void process_predicate(predicate *pr)
 				compile_clause(pr, &r->cl, body);
 		}
 	}
-
-	for (db_entry *r = pr->head; r; r = r->next)
-		check_unique(pr->m, r);
 }
 
 void process_db(module *m)
