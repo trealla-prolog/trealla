@@ -92,6 +92,7 @@ SRCOBJECTS = tpl.o \
 	src/bif_format.o \
 	src/bif_functions.o \
 	src/bif_maps.o \
+	src/bif_os.o \
 	src/bif_posix.o \
 	src/bif_predicates.o \
 	src/bif_sort.o \
@@ -253,6 +254,10 @@ src/bif_functions.o: src/bif_functions.c src/threads.h src/heap.h src/internal.h
  src/utf8.h src/module.h src/prolog.h src/query.h src/parser.h \
  src/builtins.h
 src/bif_maps.o: src/bif_maps.c src/threads.h src/heap.h src/internal.h src/trealla.h \
+ src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
+ src/imath/imath.h src/skiplist.h src/list.h src/utf8.h \
+ src/prolog.h src/query.h src/parser.h src/builtins.h
+src/bif_os.o: src/bif_os.c src/threads.h src/heap.h src/internal.h src/trealla.h \
  src/cdebug.h src/stringbuf.h src/imath/imath.h src/imath/imrat.h \
  src/imath/imath.h src/skiplist.h src/list.h src/utf8.h \
  src/prolog.h src/query.h src/parser.h src/builtins.h
