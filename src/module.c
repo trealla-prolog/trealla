@@ -147,7 +147,6 @@ static const char *set_loaded(module *m, const char *filename, const char *orig_
 
 	while (ptr) {
 		if (!strcmp(ptr->filename, filename)) {
-			//printf("*** set_loaded '%s'\n", filename);
 			ptr->is_loaded = true;
 			return ptr->filename;
 		}
@@ -164,7 +163,6 @@ static const char *set_loaded(module *m, const char *filename, const char *orig_
 	ptr->is_loaded = true;
 	ptr->parent = NULL;
 	m->loaded_files = ptr;
-	//printf("*** set_loaded '%s'\n", filename);
 	return ptr->filename;
 }
 
@@ -174,7 +172,6 @@ void set_unloaded(module *m, const char *filename)
 
 	while (ptr) {
 		if (!strcmp(ptr->filename, filename)) {
-			//printf("*** set_unloaded '%s'\n", filename);
 			ptr->is_loaded = false;
 			return;
 		}
@@ -813,8 +810,6 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 			p1++;
 		}
 
-		//printf("*** mod name=%s, %s\n", name, dstbuf);
-
 		module *m;
 
 		if ((m = find_module(curr_m->pl, name)) != NULL) {
@@ -895,8 +890,6 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 	}
 
 	char *filename = relative_to(curr_m->filename, is_library?dstbuf:name);
-
-	//printf("*** %s / %s / %s\n", curr_m->filename, is_library?dstbuf:name, filename);
 
 	if (!(m = load_file(curr_m, filename, false, true))) {
 		fprintf(stderr, "Warning: module file not found: %s\n", filename);

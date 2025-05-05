@@ -594,7 +594,6 @@ static bool conditionals(parser *p, cell *d)
 
 static bool make_rule(module *m, const char *src)
 {
-	printf("*** %s\n", src);
 	parser *p = parser_create(m);
 	if (!p) return false;
 	p->flags = m->flags;
@@ -747,7 +746,6 @@ static bool directives(parser *p, cell *d)
 			return true;
 		}
 
-		//printf("*** include %s, parent = %s\n", p->m->actual_filename, p->m->filename);
 		set_parent(p->m, p->m->actual_filename, p->m->filename);
 		free(filename);
 		p->line_num = save_line_nbr;
@@ -3457,8 +3455,6 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			&& (*p->srcptr != '_')
 			&& ((*p->srcptr != ' ') || !p->is_op)
 			) {
-
-			//printf("*** here %s\n", p->srcptr);
 
 			if (p->nesting_parens || p->nesting_brackets || p->nesting_braces) {
 				if (DUMP_ERRS || !p->do_read_term)
