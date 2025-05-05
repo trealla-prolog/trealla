@@ -470,7 +470,9 @@ static void print_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 	} else if (q->portray_vars || (q->is_dump_vars && q->cycle_error)) {
 		SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr));
 	} else if (q->is_dump_vars) {
-		if ((c_ctx == 0) && (c->var_num < q->p->num_vars)) {
+		if (is_anon(c)) {
+			SB_sprintf(q->sb, "%s", "_");
+		} else if ((c_ctx == 0) && (c->var_num < q->p->num_vars)) {
 			SB_sprintf(q->sb, "%s", q->p->vartab.name[c->var_num]);
 		} else {
 			SB_sprintf(q->sb, "_%s", get_slot_name(q, slot_nbr));
