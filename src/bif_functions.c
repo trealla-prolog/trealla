@@ -310,34 +310,9 @@ static bool bif_iso_is_2(query *q)
 	if (is_float(&p2) && isnan(p2.val_float))
 		return throw_error(q, &p2, q->st.curr_frame, "evaluation_error", "undefined");
 
-	if (is_var(p1) && is_number(&p2)) {
-		bool ok = unify(q, p1, p1_ctx, &p2, q->st.curr_frame);
-		clr_accum(&q->accum);
-		return ok;
-	}
-
-	if (is_smallint(p1) && is_smallint(&p2))
-		return (p1->val_int == p2.val_int);
-
-	if (is_bigint(p1) && is_bigint(&p2))
-		return !mp_int_compare(&p1->val_bigint->ival, &p2.val_bigint->ival);
-
-	if (is_bigint(p1) && is_smallint(&p2))
-		return !mp_int_compare_value(&p1->val_bigint->ival, p2.val_int);
-
-	if (is_bigint(&p2) && is_smallint(p1))
-		return !mp_int_compare_value(&p2.val_bigint->ival, p1->val_int);
-
-	if (is_float(p1) && is_float(&p2))
-		return p1->val_float == p2.val_float;
-
-	if (is_atom(p1) && is_number(&p2) && !strcmp(C_STR(q, p1), "nan"))
-		return is_float(&p2)? isnan(p2.val_float) : 0;
-
-	if (is_atom(p1) && is_number(&p2) && !strcmp(C_STR(q, p1), "inf"))
-		return is_float(&p2) ? isinf(p2.val_float) : 0;
-
-	return false;
+	bool ok = unify(q, p1, p1_ctx, &p2, q->st.curr_frame);
+	clr_accum(&q->accum);
+	return ok;
 }
 
 bool bif_iso_float_1(query *q)
