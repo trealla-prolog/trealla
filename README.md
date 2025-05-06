@@ -640,6 +640,7 @@ Writing:
 
 Where options can be:
 
+	append(Boolean)				# default is to truncate file, or append to file
 	strings(Boolean)			# default depends on type of input (atom or string)
 	sep(Char)					# default to comma for .csv or unknown files & TAB for .tsv files
 
