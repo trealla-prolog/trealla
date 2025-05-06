@@ -134,8 +134,7 @@ bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx 
 		SB_init(pr);
 
 		if (params->trim) {
-			while (iswspace(*src))
-				get_char_utf8(&src);
+			while (iswspace(*src))				get_char_utf8(&src);
 		}
 	}
 
@@ -402,7 +401,7 @@ bool bif_write_csv_file_3(query *q)
 	GET_NEXT_ARG(p2,list_or_nil);
 	GET_NEXT_ARG(p3,list_or_nil);
 	bool trim = false, numbers = false, use_strings = false;
-	bool header = false, comments = false;
+	bool header = false, comments = false, append = false;
 	const char *functor = NULL;
 	int sep = ',', quote = '"', comment = '#';
 	unsigned arity = 0;
@@ -426,6 +425,8 @@ bool bif_write_csv_file_3(query *q)
 				numbers = true;
 			else if (!strcmp("comments", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))
 				comments = true;
+			else if (!strcmp("append", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))
+				append = true;
 			else if (!strcmp("header", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))
 				header = true;
 			else if (!strcmp("strings", C_STR(q, h)) && is_atom(c) && (c->val_off == g_true_s))
@@ -450,7 +451,7 @@ bool bif_write_csv_file_3(query *q)
 	}
 
 	csv params = {.sep=sep, .quote=quote, .arity=arity, .trim=trim, .numbers=numbers, .use_strings=use_strings, .functor=functor};
-	q->p->fp = fopen(C_STR(q, p1), "w");
+	q->p->fp = fopen(C_STR(q, p1), append?"a":"w");
 	if (!q->p->fp) return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 
 	q->double_quotes = true;
