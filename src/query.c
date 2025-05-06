@@ -1965,7 +1965,6 @@ query *query_create(module *m)
 	q->max_depth = m->pl->def_max_depth;
 	mp_int_init(&q->tmp_ival);
 	mp_rat_init(&q->tmp_irat);
-	clr_accum(&q->accum);
 
 	// Allocate these now...
 

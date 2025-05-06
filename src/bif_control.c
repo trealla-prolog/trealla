@@ -461,9 +461,13 @@ static bool bif_iso_catch_3(query *q)
 		GET_NEXT_ARG(p2,any);
 		GET_NEXT_ARG(p3,any);
 		q->retry = QUERY_OK;
-		cell *tmp = prepare_call(q, CALL_NOSKIP, p3, p3_ctx, 3);
+		cell tmp2;
+		make_instr(&tmp2, g_call_s, bif_iso_call_1, 1, 0);
+		cell *tmp = prepare_call(q, CALL_NOSKIP, &tmp2, p3_ctx, p3->num_cells+3);
 		check_heap_error(tmp);
-		pl_idx num_cells = p3->num_cells;
+		tmp->num_cells += p3->num_cells;
+		pl_idx num_cells = 1;
+		num_cells += copy_cells_by_ref(tmp+num_cells, p3, p3_ctx, p3->num_cells);
 		make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_uint(tmp+num_cells++, q->cp);
 		make_call(q, tmp+num_cells);
@@ -477,9 +481,13 @@ static bool bif_iso_catch_3(query *q)
 
 	// First time through? Try the primary goal...
 
-	cell *tmp = prepare_call(q, CALL_NOSKIP, p1, p1_ctx, 3);
+	cell tmp2;
+	make_instr(&tmp2, g_call_s, bif_iso_call_1, 1, 0);
+	cell *tmp = prepare_call(q, CALL_NOSKIP, &tmp2, p1_ctx, p1->num_cells+3);
 	check_heap_error(tmp);
-	pl_idx num_cells = p1->num_cells;
+	tmp->num_cells += p1->num_cells;
+	pl_idx num_cells = 1;
+	num_cells += copy_cells_by_ref(tmp+num_cells, p1, p1_ctx, p1->num_cells);
 	make_instr(tmp+num_cells++, g_sys_block_catcher_s, bif_sys_block_catcher_1, 1, 1);
 	make_uint(tmp+num_cells++, q->cp);
 	make_call(q, tmp+num_cells);
@@ -1129,7 +1137,7 @@ builtins g_control_bifs[] =
 	{"call", 8, bif_iso_call_n, ":callable,?term,?term,?term,?term,?term,?term,?term", true, false, BLAH},
 	{"throw", 1, bif_iso_throw_1, "+term", true, false, BLAH},
 	{"once", 1, bif_iso_once_1, ":callable", true, false, BLAH},
-	{"$catch", 3, bif_iso_catch_3, ":callable,?term,:callable", true, false, BLAH},
+	{"catch", 3, bif_iso_catch_3, ":callable,?term,:callable", true, false, BLAH},
 
 	{"*->", 2, bif_soft_if_then_2, ":callable,:callable", false, false, BLAH},
 	{"if", 3, bif_if_3, ":callable,:callable,:callable", false, false, BLAH},

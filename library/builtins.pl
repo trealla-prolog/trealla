@@ -102,9 +102,6 @@ subsumes_term(G, S) :-
 
 :- help(subsumes_term(+term,+term), [iso(true)]).
 
-catch(G, E, C) :-
-	'$catch'(call(G), E, call(C)).
-
 '$post_unify_hook' :-
 	'$undo_trail'(Vars, State),
 	process_vars_(Vars, [], Goals),
