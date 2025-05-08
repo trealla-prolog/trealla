@@ -532,7 +532,7 @@ static void leave_predicate(query *q, predicate *pr)
 
 			sl_rem(pr->idx, c, r);
 
-			if (q->no_tco || true) {
+			if (true) {
 				r->cl.is_deleted = true;
 				list_push_back(&q->dirty, r);
 			} else {
@@ -638,7 +638,6 @@ static void push_frame(query *q)
 {
 	frame *f = GET_NEW_FRAME();
 	f->overflow = 0;
-	f->no_tco = q->no_tco;
 	f->no_recov = q->no_recov;
 	f->chgen = ++q->chgen;
 	f->hp = q->st.hp;
@@ -670,7 +669,7 @@ static void reuse_frame(query *q, unsigned num_vars)
 	}
 
 	f->initial_slots = f->actual_slots = num_vars;
-	f->no_recov = f->no_tco = false;
+	f->no_recov = false;
 	q->st.sp = f->base + f->actual_slots;
 	q->st.dbe->tcos++;
 	q->tot_tcos++;
@@ -711,7 +710,7 @@ static void commit_frame(query *q)
 	}
 #endif
 
-	if (!q->no_tco
+	if (!q->no_tco && !f->no_recov
 		&& last_match
 		&& (q->st.fp == (q->st.curr_frame + 1))		// At top of frame stack
 		) {
@@ -801,7 +800,6 @@ int retry_choice(query *q)
 		f->initial_slots = ch->initial_slots;
 		f->actual_slots = ch->actual_slots;
 		f->no_recov = ch->no_recov;
-		f->no_tco = ch->no_tco;
 		f->overflow = ch->overflow;
 		f->base = ch->base;
 
@@ -851,7 +849,6 @@ bool push_choice(query *q)
 	ch->initial_slots = f->initial_slots;
 	ch->actual_slots = f->actual_slots;
 	ch->no_recov = f->no_recov;
-	ch->no_tco = f->no_tco;
 	ch->overflow = f->overflow;
 	ch->base = f->base;
 

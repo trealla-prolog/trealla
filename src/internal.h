@@ -524,7 +524,6 @@ struct frame_ {
 	pl_idx prev, base, overflow, hp, heap_num;
 	unsigned initial_slots, actual_slots;
 	bool no_recov:1;
-	bool no_tco:1;
 };
 
 struct run_state_ {
@@ -558,7 +557,6 @@ struct choice_ {
 	bool fail_on_retry:1;
 	bool succeed_on_retry:1;
 	bool no_recov:1;
-	bool no_tco:1;
 	bool reset:1;
 };
 
