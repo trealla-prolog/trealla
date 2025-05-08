@@ -145,8 +145,9 @@ static bool bif_put_atts_2(query *q)
 			return throw_error(q, p2, p2_ctx, "type_error", "list");
 
 		return true;
-	} else
-		return do_put_atts(q, p2, p2_ctx, is_minus);
+	}
+
+	return do_put_atts(q, p2, p2_ctx, is_minus);
 }
 
 static bool bif_get_atts_2(query *q)

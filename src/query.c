@@ -670,6 +670,7 @@ static void reuse_frame(query *q, unsigned num_vars)
 	}
 
 	f->initial_slots = f->actual_slots = num_vars;
+	f->no_recov = f->no_tco = false;
 	q->st.sp = f->base + f->actual_slots;
 	q->st.dbe->tcos++;
 	q->tot_tcos++;
