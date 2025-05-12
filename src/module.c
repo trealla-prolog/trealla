@@ -1571,6 +1571,7 @@ static void process_cell(module *m, clause *cl, cell *c, predicate *parent, int 
 		&& ((c+c->num_cells) >= (body + cl->cidx-1))
 		) {
 			c->flags |= FLAG_INTERNED_TAIL_CALL;
+
 			if (parent
 				&& (parent->key.val_off == c->val_off)
 				&& (parent->key.arity == c->arity)) {
@@ -1808,7 +1809,6 @@ static db_entry *assert_begin(module *m, unsigned num_vars, cell *p1, bool consu
 	size_t dbe_size = sizeof(db_entry) + (sizeof(cell) * (p1->num_cells+1));
 	db_entry *r = calloc(1, dbe_size);
 	ensure(r);
-
 	copy_cells(r->cl.cells, p1, p1->num_cells);
 	r->cl.cells[p1->num_cells] = (cell){0};
 	r->cl.cells[p1->num_cells].tag = TAG_END;
@@ -1828,7 +1828,6 @@ static void assert_commit(module *m, db_entry *r, predicate *pr, bool append)
 
 	pr->db_id++;
 	pr->cnt++;
-
 	uuid_gen(m->pl, &r->u);
 
 	// Note: indexing here refers to the dynamic index...
