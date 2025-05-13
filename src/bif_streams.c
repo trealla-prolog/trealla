@@ -5320,8 +5320,10 @@ static bool bif_absolute_file_name_3(query *q)
 	if (is_iso_list(p1)) {
 		size_t len = scan_is_chars_list(q, p1, p1_ctx, true);
 
-		if (!len)
+		if (!len) {
+			free(here);
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
+		}
 
 		filename = chars_list_to_string(q, p1, p1_ctx);
 	} else
@@ -5369,6 +5371,7 @@ static bool bif_absolute_file_name_3(query *q)
 		char *ptr = getenv(envbuf);
 
 		if (!ptr) {
+			free(here);
 			free(filename);
 			return throw_error(q, p1, p1_ctx, "existence_error", "environment_variable");
 		}
@@ -5414,11 +5417,10 @@ static bool bif_absolute_file_name_3(query *q)
 		}
 	}
 
-	free(filename);
-
 	if (cwd != here)
 		free(cwd);
 
+	free(filename);
 	free(here);
 	cell tmp;
 
