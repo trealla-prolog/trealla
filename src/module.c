@@ -1468,12 +1468,9 @@ static bool check_not_multifile(module *m, predicate *pr, db_entry *dbe_orig)
 
 			while (pr->head) {
 				db_entry *r = pr->head;
-				pr->head = pr->head->next;
-
-				if (r != dbe_orig) {
-					clear_clause(&r->cl);
-					free(r);
-				}
+				pr->head = r->next;
+				clear_clause(&r->cl);
+				free(r);
 			}
 
 			sl_destroy(pr->idx2);
