@@ -5,7 +5,7 @@
 
 // A dynamically allocating string buffer
 
-#define SB_LEN 256			// Initial size
+#define SB_LEN 1024			// Initial size
 
 typedef struct {
 	char tmpbuf[SB_LEN];	// No allocs if less than this
