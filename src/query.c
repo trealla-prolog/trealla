@@ -974,7 +974,7 @@ static bool resume_any_choices(const query *q, const frame *f)
 		return false;
 
 	const choice *ch = GET_CURR_CHOICE();
-	return ch->gen > f->chgen;
+	return ch->gen >= f->chgen;
 }
 
 // Resume at next goal in previous clause...
