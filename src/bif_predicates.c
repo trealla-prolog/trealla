@@ -1370,8 +1370,6 @@ static bool do_atom_concat_3(query *q)
 
 	GET_RAW_ARG(1,p1_raw);
 	GET_RAW_ARG(2,p2_raw);
-	unshare_cell(p1);
-	unshare_cell(p2);
 	cell tmp;
 	check_heap_error(make_slice(q, &tmp, p3, 0, len1+len));
 	reset_var(q, p1_raw, p1_raw_ctx, &tmp, q->st.curr_frame);
