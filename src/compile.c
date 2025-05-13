@@ -281,6 +281,9 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 void compile_clause(predicate *pr, clause *cl, cell *body)
 {
+	if (cl->alt)
+		return;
+
 	pl_idx num_cells = cl->cidx - (body - cl->cells);
 	cl->alt = malloc(sizeof(cell)*num_cells*100+1024); // FIXME
 	cell *dst = cl->alt, *src = body;

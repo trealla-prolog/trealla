@@ -187,6 +187,8 @@ cell *make_nil(void)
 	static cell tmp = {
 		.tag = TAG_INTERNED,
 		.num_cells = 1,
+		.flags = 0,
+		.arity = 0,
 		.val_off = 0
 	};
 
