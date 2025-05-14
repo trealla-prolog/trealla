@@ -32,8 +32,22 @@ static void msleep(int ms)
 #ifndef __wasi__
 static bool bif_shell_1(query *q)
 {
-	GET_FIRST_ARG(p1,atom);
-	int status = system(C_STR(q, p1));
+	GET_FIRST_ARG(p1,source_sink);
+	char *filename;
+
+	if (is_iso_list(p1)) {
+		size_t len = scan_is_chars_list(q, p1, p1_ctx, true);
+
+		if (!len)
+			return throw_error(q, p1, p1_ctx, "type_error", "source_sink");
+
+		filename = chars_list_to_string(q, p1, p1_ctx);
+	} else
+		filename = DUP_STRING(q, p1);
+
+	int status = system(filename);
+	free(filename);
+
 	if (status == 0)
 		return true;
 	else
@@ -42,9 +56,22 @@ static bool bif_shell_1(query *q)
 
 static bool bif_shell_2(query *q)
 {
-	GET_FIRST_ARG(p1,atom);
+	GET_FIRST_ARG(p1,source_sink);
 	GET_NEXT_ARG(p2,var);
-	int status = system(C_STR(q, p1));
+	char *filename;
+
+	if (is_iso_list(p1)) {
+		size_t len = scan_is_chars_list(q, p1, p1_ctx, true);
+
+		if (!len)
+			return throw_error(q, p1, p1_ctx, "type_error", "string");
+
+		filename = chars_list_to_string(q, p1, p1_ctx);
+	} else
+		filename = DUP_STRING(q, p1);
+
+	int status = system(filename);
+	free(filename);
 	cell tmp;
 	make_int(&tmp, status);
 	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
