@@ -90,9 +90,22 @@ static bool bif_shell_2(query *q)
 
 static bool bif_getenv_2(query *q)
 {
-	GET_FIRST_ARG(p1,atom);
+	GET_FIRST_ARG(p1,source_sink);
 	GET_NEXT_ARG(p2,atom_or_var);
-	const char *value = getenv(C_STR(q, p1));
+	char *filename;
+
+	if (is_iso_list(p1)) {
+		size_t len = scan_is_chars_list(q, p1, p1_ctx, true);
+
+		if (!len)
+			return throw_error(q, p1, p1_ctx, "type_error", "source_sink");
+
+		filename = chars_list_to_string(q, p1, p1_ctx);
+	} else
+		filename = DUP_STRING(q, p1);
+
+	const char *value = getenv(filename);
+	free(filename);
 
 	if (!value)
 		return false;
