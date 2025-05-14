@@ -29,7 +29,10 @@ read_chunks(S, Tmp, Data) :-
 	!,
 	bread(S, Len, Tmp2),
 	getline(S, _),
-	string_concat(Tmp, Tmp2, Tmp3),
+	(	Tmp = "" ->
+		Tmp3 = Tmp2
+	; 	string_concat(Tmp, Tmp2, Tmp3)
+	),
 	read_chunks(S, Tmp3, Data).
 read_chunks(_, Data, Data).
 
