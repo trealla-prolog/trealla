@@ -2343,11 +2343,11 @@ static bool bif_sys_current_prolog_flag_2(query *q)
 
 		int i = g_avc;
 		cell tmp;
-		make_cstring(&tmp, g_av[i++]);
+		make_string(&tmp, g_av[i++]);
 		allocate_list(q, &tmp);
 
 		while (i < g_ac) {
-			make_cstring(&tmp, g_av[i++]);
+			make_string(&tmp, g_av[i++]);
 			append_list(q, &tmp);
 		}
 
