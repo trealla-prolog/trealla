@@ -7452,7 +7452,7 @@ builtins g_streams_bifs[] =
 	{"write_term_to_chars", 3, bif_write_term_to_chars_3, "?term,+list,?string", false, false, BLAH},
 	{"write_canonical_to_chars", 3, bif_write_canonical_to_chars_3, "?string,?term,+list", false, false, BLAH},
 	{"read_line_to_string", 2, bif_read_line_to_string_2, "+stream,-string", false, false, BLAH},
-	{"read_file_to_string", 3, bif_read_file_to_string_3, "+atom,-string,+options", false, false, BLAH},
+	{"read_file_to_string", 3, bif_read_file_to_string_3, "+source_sink,-string,+options", false, false, BLAH},
 
 	{"http_location", 2, bif_http_location_2, "?list,?atom", false, false, BLAH},
 	{"parse_url", 2, bif_parse_url_2, "?atom,?list", false, false, BLAH},
