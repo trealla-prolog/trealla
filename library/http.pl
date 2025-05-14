@@ -70,6 +70,7 @@ process(Url, S, Opts) :-
 	(memberchk(method(Method), OptList) -> true ; Method = Method2),
 	(memberchk(version(Major-Minor), OptList) -> true ; (Major = 1, Minor = 1)),
 	client(Url, Host, Path, S, OptList),
+	writeln(['Host=',Host,'Path=',Path]),
 	string_upper(Method, UMethod),
 	(	memberchk(header("content-type", Ct), OptList) -> format(atom(Ctype), "Content-Type: ~w\r~n",[Ct])
 	;	Ctype = ''

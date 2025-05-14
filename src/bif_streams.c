@@ -6087,7 +6087,7 @@ static void parse_host(const char *src, char hostname[1024], char path[4096], un
 	if (*src == ':')
 		sscanf(src, ":%u/%4095s", port, path);
 	else
-		sscanf(src, "%1023[^:/]:%u/%4095s", hostname, port, path);
+		sscanf(src, "%1023[^/]%4095s", hostname, path);
 
 	hostname[1023] = '\0';
 	path[4095] = '\0';
