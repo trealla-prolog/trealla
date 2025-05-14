@@ -405,3 +405,14 @@ bool bif_sys_module_1(query *q);
 bool bif_sys_undo_1(query *q);
 bool bif_sys_create_var_1(query *q);
 bool bif_sys_match_1(query *q);
+
+#define GET_SOURCE_SINK(p1, p1_ctx, filename) { \
+	if (is_iso_list(p1)) { \
+		size_t len = scan_is_chars_list(q, p1, p1_ctx, true); \
+		if (!len) \
+			return throw_error(q, p1, p1_ctx, "type_error", "source_sink"); \
+		filename = chars_list_to_string(q, p1, p1_ctx); \
+	} else \
+		filename = DUP_STRING(q, p1); \
+}
+
