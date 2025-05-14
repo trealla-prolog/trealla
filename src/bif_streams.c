@@ -6091,6 +6091,9 @@ static void parse_host(const char *src, char hostname[1024], char path[4096], un
 
 	hostname[1023] = '\0';
 	path[4095] = '\0';
+
+	if (path[0] == '/')
+		strcpy(path, path+1);
 }
 
 static bool bif_server_3(query *q)
