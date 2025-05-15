@@ -384,8 +384,6 @@ cell *copy_term_to_heap(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
 	if (!init_tmp_heap(q))
 		return NULL;
 
-	frame *f = GET_CURR_FRAME();
-	f->no_recov = true;				// FIXME: memory waste
 	cell *tmp = copy_term_to_tmp_with_replacement(q, p1, p1_ctx, copy_attrs, NULL, 0, NULL, 0);
 	if (!tmp) return tmp;
 	cell *tmp2 = alloc_on_heap(q, tmp->num_cells);
@@ -482,8 +480,6 @@ cell *allocate_list(query *q, const cell *c)
 	if (!init_tmp_heap(q))
 		return NULL;
 
-	frame *f = GET_CURR_FRAME();
-	f->no_recov = true;				// FIXME: memory waste
 	append_list(q, c);
 	return get_tmp_heap(q, 0);
 }
@@ -554,8 +550,6 @@ cell *allocate_structure(query *q, const char *functor, const cell *c)
 	if (!init_tmp_heap(q))
 		return NULL;
 
-	frame *f = GET_CURR_FRAME();
-	f->no_recov = true;				// FIXME: memory waste
 	cell *tmp = alloc_on_tmp(q, 1);
 	if (!tmp) return NULL;
 	tmp->tag = TAG_INTERNED;
