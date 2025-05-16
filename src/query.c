@@ -1145,9 +1145,12 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 	// Expand module-sensitive args...
 
 	for (cell *k = q->st.key+1, *m = pr->meta_args+1; arity--; k += k->num_cells, m += m->num_cells) {
-		if ((k->arity == 2) && (k->val_off == g_colon_s) && is_atom(FIRST_ARG(k)))
+		cell *k0 = deref(q, k, q->st.key_ctx);
+		pl_idx k0_ctx = q->latest_ctx;
+
+		if ((k0->arity == 2) && (k0->val_off == g_colon_s) && is_atom(FIRST_ARG(k0)))
 			;
-		else if (!is_interned(k) || is_iso_list(k))
+		else if (!is_interned(k0) || is_iso_list(k0))
 			;
 		else if (is_interned(m) && (m->val_off == g_colon_s)) {
 			make_instr(tmp, g_colon_s, bif_iso_qualify_2, 2, 1+k->num_cells);
