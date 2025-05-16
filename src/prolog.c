@@ -48,8 +48,8 @@ pl_idx g_dummy_s;
 
 char *g_global_atoms = NULL;
 char *g_tpl_lib = NULL;
-int g_ac = 0, g_avc = 1;
-char **g_av = NULL, *g_argv0 = NULL;
+int g_ac = 0, g_avc = 1, g_argvc = 0;
+char **g_av = NULL, **g_argv = NULL, *g_argv0 = NULL;
 unsigned g_max_depth = 6000;			// default recursion limit (Linux)
 unsigned g_cpu_count = 4;				// FIXME: query system
 

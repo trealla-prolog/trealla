@@ -2357,11 +2357,11 @@ static bool bif_sys_current_prolog_flag_2(query *q)
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "raw_argv")) {
 		int i = 0;
 		cell tmp;
-		make_string(&tmp, g_av[i++]);
+		make_string(&tmp, g_argv[i++]);
 		allocate_list(q, &tmp);
 
-		while (i < g_ac) {
-			make_string(&tmp, g_av[i++]);
+		while (i < g_argvc) {
+			make_string(&tmp, g_argv[i++]);
 			append_list(q, &tmp);
 		}
 
@@ -5136,6 +5136,46 @@ static bool bif_numlist_3(query *q)
 	return unify(q, p3, p3_ctx, l, q->st.curr_frame);
 }
 
+static bool bif_argv_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+
+	if (g_avc >= g_ac)
+		return unify(q, p1, p1_ctx, make_nil(), q->st.curr_frame);
+
+	int i = g_avc;
+	cell tmp;
+	make_string(&tmp, g_av[i++]);
+	allocate_list(q, &tmp);
+
+	while (i < g_ac) {
+		make_string(&tmp, g_av[i++]);
+		append_list(q, &tmp);
+	}
+
+	cell *l = end_list(q);
+	check_heap_error(l);
+	return unify(q, p1, p1_ctx, l, q->st.curr_frame);
+}
+
+static bool bif_raw_argv_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	int i = 0;
+	cell tmp;
+	make_string(&tmp, g_argv[i++]);
+	allocate_list(q, &tmp);
+
+	while (i < g_argvc) {
+		make_string(&tmp, g_argv[i++]);
+		append_list(q, &tmp);
+	}
+
+	cell *l = end_list(q);
+	check_heap_error(l);
+	return unify(q, p1, p1_ctx, l, q->st.curr_frame);
+}
+
 // module:goal
 
 bool bif_iso_qualify_2(query *q)
@@ -6250,6 +6290,8 @@ builtins g_other_bifs[] =
 	{"load_text", 2, bif_load_text_2, "+string,+list", false, false, BLAH},
 	{"between", 3, bif_between_3, "+integer,+integer,-integer", false, false, BLAH},
 	{"numlist", 3, bif_numlist_3, "+integer,+integer,-list", false, false, BLAH},
+	{"argv", 1, bif_argv_1, "-list", false, false, BLAH},
+	{"raw_argv", 1, bif_raw_argv_1, "-list", false, false, BLAH},
 
 	{"must_be", 4, bif_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"must_be", 2, bif_must_be_2, "+atom,+term", false, false, BLAH},

@@ -160,6 +160,8 @@ int main(int ac, char *av[], char * envp[])
 	g_envp = envp;
 	const char *homedir;
 	g_argv0 = av[0];
+	g_argv = av;
+	g_argvc = ac;
 
 	if ((homedir = getenv("HOME")) == NULL)
 		homedir = ".";
