@@ -395,6 +395,8 @@ Non-standard predicates
 	cfor/3						# cfor(+evaluable,+evaluable,-var)
 	repeat/1					# repeat(+integer)
 	make/0
+	argv/1						# argv(-list)
+	raw_argv/1					# raw_argv(-list)
 
 	rdiv/2						# evaluable
 	numerator/1					# evaluable
