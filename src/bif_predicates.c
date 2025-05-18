@@ -5516,7 +5516,7 @@ static bool do_dump_term(query *q, cell *p1, pl_idx p1_ctx, bool deref, int dept
 		printf("\n");
 	}
 
-	if (!depth) printf("Ground=%d, no_tco=%d\n", is_ground(p1)?1:0, q->no_tco?1:0);
+	if (!depth) printf("Ground=%d, no_recov=%d\n", is_ground(p1)?1:0, q->no_recov?1:0);
 	return true;
 }
 

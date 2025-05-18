@@ -703,15 +703,15 @@ static void commit_frame(query *q)
 
 #if 0
 	if (last_match) {
-		fprintf(stderr, "*** q->no_tco=%d, last_match=%d %s/%u, q->st.curr_frame=%u,q->st.fp=%u\n",
-			q->no_tco, last_match,
+		fprintf(stderr, "*** q->no_recov=%d, last_match=%d %s/%u, q->st.curr_frame=%u,q->st.fp=%u\n",
+			q->no_recov, last_match,
 			C_STR(q, q->st.key), q->st.key->arity,
 			q->st.curr_frame, q->st.fp
 			);
 	}
 #endif
 
-	if (!q->no_tco
+	if (!q->no_recov
 		&& last_match
 		&& (q->st.fp == (q->st.curr_frame + 1))		// At top of frame stack
 		) {
@@ -725,11 +725,11 @@ static void commit_frame(query *q)
 		cell *head = get_head(cl->cells);
 
 		fprintf(stderr,
-			"*** %s/%u tco=%d,q->no_tco=%d,last_match=%d,is_det=%d,"
+			"*** %s/%u tco=%d,q->no_recov=%d,last_match=%d,is_det=%d,"
 			"tail_call=%d/r%d,slots_ok=%d,choices=%d,"
 			"cl->num_vars=%u,f->initial_slots=%u/%u\n",
 			C_STR(q, head), head->arity,
-			tco, q->no_tco, last_match, is_det,
+			tco, q->no_recov, last_match, is_det,
 			tail_call, tail_recursive, slots_ok, choices,
 			cl->num_vars, f->initial_slots, f->actual_slots);
 #endif

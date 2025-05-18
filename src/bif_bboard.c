@@ -69,7 +69,7 @@ static bool bif_bb_b_put_2(query *q)
 		return false;
 
 	//frame *f = GET_CURR_FRAME();
-	//f->no_tco = true;
+	//f->no_recov = true;
 
 	prolog_lock(q->pl);
 	sl_set(q->pl->keyval, key, val);
