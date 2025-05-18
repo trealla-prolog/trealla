@@ -68,9 +68,6 @@ static bool bif_bb_b_put_2(query *q)
 	if (!unify(q, &c, q->st.curr_frame, &v, q->st.curr_frame))
 		return false;
 
-	//frame *f = GET_CURR_FRAME();
-	//f->no_recov = true;
-
 	prolog_lock(q->pl);
 	sl_set(q->pl->keyval, key, val);
 	prolog_unlock(q->pl);
