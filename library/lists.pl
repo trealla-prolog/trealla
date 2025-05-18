@@ -513,6 +513,14 @@ maplist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], [E6|T6], [E7|T7], G) :-
 	call(G, E1, E2, E3, E4, E5, E6, E7),
 	maplist_(T1, T2, T3, T4, T5, T6, T7, G).
 
+maplist(G, L1, L2, L3, L4, L5, L6, L7, L8) :-
+	maplist_(L1, L2, L3, L4, L5, L6, L7, L8, G).
+
+maplist_([], [], [], [], [], [], [], [], _).
+maplist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], [E6|T6], [E7|T7], [E8|T8], G) :-
+	call(G, E1, E2, E3, E4, E5, E6, E7, E8),
+	maplist_(T1, T2, T3, T4, T5, T6, T7, T8, G).
+
 :- meta_predicate(maplist(1, ?)).
 :- meta_predicate(maplist(2, ?, ?)).
 :- meta_predicate(maplist(3, ?, ?, ?)).
