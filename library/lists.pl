@@ -520,7 +520,6 @@ maplist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], [E6|T6], [E7|T7], G) :-
 :- meta_predicate(maplist(5, ?, ?, ?, ?, ?)).
 :- meta_predicate(maplist(6, ?, ?, ?, ?, ?, ?)).
 :- meta_predicate(maplist(7, ?, ?, ?, ?, ?, ?, ?)).
-:- meta_predicate(maplist(8, ?, ?, ?, ?, ?, ?, ?, ?)).
 
 :- help(maplist(:callable,+list), [iso(false)]).
 :- help(maplist(:callable,+list,+list), [iso(false)]).
@@ -529,7 +528,6 @@ maplist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], [E6|T6], [E7|T7], G) :-
 :- help(maplist(:callable,+list,+list,+list,+list,+list), [iso(false)]).
 :- help(maplist(:callable,+list,+list,+list,+list,+list,+list), [iso(false)]).
 :- help(maplist(:callable,+list,+list,+list,+list,+list,+list,+list), [iso(false)]).
-:- help(maplist(:callable,+list,+list,+list,+list,+list,+list,+list,+list), [iso(false)]).
 
 tasklist(G, L) :-
 	tasklist_(L, G).
@@ -595,7 +593,6 @@ tasklist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], [E6|T6], [E7|T7], G) :-
 :- meta_predicate(tasklist(5, ?, ?, ?, ?, ?)).
 :- meta_predicate(tasklist(6, ?, ?, ?, ?, ?, ?)).
 :- meta_predicate(tasklist(7, ?, ?, ?, ?, ?, ?, ?)).
-:- meta_predicate(tasklist(8, ?, ?, ?, ?, ?, ?, ?, ?)).
 */
 
 :- help(tasklist(:callable,+list), [iso(false)]).
@@ -605,4 +602,3 @@ tasklist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], [E6|T6], [E7|T7], G) :-
 :- help(tasklist(:callable,+list,+list,+list,+list,+list), [iso(false)]).
 :- help(tasklist(:callable,+list,+list,+list,+list,+list,+list), [iso(false)]).
 :- help(tasklist(:callable,+list,+list,+list,+list,+list,+list,+list), [iso(false)]).
-:- help(tasklist(:callable,+list,+list,+list,+list,+list,+list,+list,+list), [iso(false)]).
