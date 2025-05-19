@@ -11,8 +11,8 @@
 		list_to_set/2, length/2, reverse/2,
 		exclude/3, include/3, permutation/2,
 		foldl/4, foldl/5, foldl/6, foldl/7,
-		maplist/2, maplist/3, maplist/4, maplist/5, maplist/6, maplist/7, maplist/8, maplist/9,
-		tasklist/2, tasklist/3, tasklist/4, tasklist/5, tasklist/6, tasklist/7, tasklist/8, tasklist/9
+		maplist/2, maplist/3, maplist/4, maplist/5, maplist/6, maplist/7, maplist/8,
+		tasklist/2, tasklist/3, tasklist/4, tasklist/5, tasklist/6, tasklist/7, tasklist/8
 	]).
 
 reverse(Xs, Ys) :-
@@ -513,14 +513,6 @@ maplist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], [E6|T6], [E7|T7], G) :-
 	call(G, E1, E2, E3, E4, E5, E6, E7),
 	maplist_(T1, T2, T3, T4, T5, T6, T7, G).
 
-maplist(G, L1, L2, L3, L4, L5, L6, L7, L8) :-
-	maplist_(L1, L2, L3, L4, L5, L6, L7, L8, G).
-
-maplist_([], [], [], [], [], [], [], [], _).
-maplist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], [E6|T6], [E7|T7], [E8|T8], G) :-
-	call(G, E1, E2, E3, E4, E5, E6, E7, E8),
-	maplist_(T1, T2, T3, T4, T5, T6, T7, T8, G).
-
 :- meta_predicate(maplist(1, ?)).
 :- meta_predicate(maplist(2, ?, ?)).
 :- meta_predicate(maplist(3, ?, ?, ?)).
@@ -537,6 +529,7 @@ maplist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], [E6|T6], [E7|T7], [E8|T8],
 :- help(maplist(:callable,+list,+list,+list,+list,+list), [iso(false)]).
 :- help(maplist(:callable,+list,+list,+list,+list,+list,+list), [iso(false)]).
 :- help(maplist(:callable,+list,+list,+list,+list,+list,+list,+list), [iso(false)]).
+:- help(maplist(:callable,+list,+list,+list,+list,+list,+list,+list,+list), [iso(false)]).
 
 tasklist(G, L) :-
 	tasklist_(L, G).
@@ -589,18 +582,10 @@ tasklist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], [E6|T6], G) :-
 tasklist(G, L1, L2, L3, L4, L5, L6, L7) :-
 	tasklist_(L1, L2, L3, L4, L5, L6, L7, G).
 
-tasklist(G, L1, L2, L3, L4, L5, L6, L7, L8) :-
-	tasklist_(L1, L2, L3, L4, L5, L6, L7, L8, G).
-
 tasklist_([], [], [], [], [], [], [], _) :- wait.
 tasklist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], [E6|T6], [E7|T7], G) :-
 	call_task(G, E1, E2, E3, E4, E5, E6, E7),
 	tasklist_(T1, T2, T3, T4, T5, T6, T7, G).
-
-tasklist_([], [], [], [], [], [], [], [], _) :- wait.
-tasklist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], [E6|T6], [E7|T7], [E8|T8], G) :-
-	call_task(G, E1, E2, E3, E4, E5, E6, E7, E8),
-	tasklist_(T1, T2, T3, T4, T5, T6, T7, T8, G).
 
 /*
 :- meta_predicate(tasklist(1, ?)).
@@ -610,7 +595,7 @@ tasklist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], [E6|T6], [E7|T7], [E8|T8]
 :- meta_predicate(tasklist(5, ?, ?, ?, ?, ?)).
 :- meta_predicate(tasklist(6, ?, ?, ?, ?, ?, ?)).
 :- meta_predicate(tasklist(7, ?, ?, ?, ?, ?, ?, ?)).
-:- meta_predicate(tasklist(8, ?, ?, ?, ?, ?, ?, ?)).
+:- meta_predicate(tasklist(8, ?, ?, ?, ?, ?, ?, ?, ?)).
 */
 
 :- help(tasklist(:callable,+list), [iso(false)]).
