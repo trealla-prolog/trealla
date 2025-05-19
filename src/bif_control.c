@@ -467,7 +467,7 @@ static bool bif_iso_catch_3(query *q)
 		check_heap_error(tmp);
 		tmp->num_cells += p3->num_cells;
 		pl_idx num_cells = 1;
-		num_cells += copy_cells_by_ref(tmp+num_cells, p3, p3_ctx, p3->num_cells);
+		num_cells += dup_cells_by_ref(tmp+num_cells, p3, p3_ctx, p3->num_cells);
 		make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_uint(tmp+num_cells++, q->cp);
 		make_call(q, tmp+num_cells);
@@ -487,7 +487,7 @@ static bool bif_iso_catch_3(query *q)
 	check_heap_error(tmp);
 	tmp->num_cells += p1->num_cells;
 	pl_idx num_cells = 1;
-	num_cells += copy_cells_by_ref(tmp+num_cells, p1, p1_ctx, p1->num_cells);
+	num_cells += dup_cells_by_ref(tmp+num_cells, p1, p1_ctx, p1->num_cells);
 	make_instr(tmp+num_cells++, g_sys_block_catcher_s, bif_sys_block_catcher_1, 1, 1);
 	make_uint(tmp+num_cells++, q->cp);
 	make_call(q, tmp+num_cells);
