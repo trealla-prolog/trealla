@@ -368,10 +368,10 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 
 	if (b = get_builtin_term(m, c, &found, &evaluable),
 		!evaluable && found && b->iso) {
-		if (m->p->is_consulting) {
+		if (m->p->is_consulting)
 			fprintf(stderr, "Error: permission error modifying %s/%u\n", C_STR(m, c), c->arity);
-			return NULL;
-		}
+
+		return NULL;
 	}
 
 	predicate *pr = find_predicate_(m, c, true);

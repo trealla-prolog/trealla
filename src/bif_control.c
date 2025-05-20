@@ -70,22 +70,6 @@ static bool bif_sys_cleanup_if_det_1(query *q)
 	return true;
 }
 
-bool bif_call_0(query *q, cell *p1, pl_idx p1_ctx)
-{
-	if (!is_callable(p1))
-		return throw_error(q, p1, p1_ctx, "type_error", "callable");
-
-	cell *tmp = prepare_call(q, CALL_NOSKIP, p1, p1_ctx, 3);
-	check_heap_error(tmp);
-	pl_idx num_cells = p1->num_cells;
-	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+num_cells++, q->cp);
-	make_call(q, tmp+num_cells);
-	check_heap_error(push_fail_on_retry_with_barrier(q));
-	q->st.instr = tmp;
-	return true;
-}
-
 bool call_check(query *q, cell *tmp2, bool *status, bool calln)
 {
 	if (calln || !tmp2->arity) {
@@ -114,6 +98,29 @@ bool call_check(query *q, cell *tmp2, bool *status, bool calln)
 	}
 
 	*status = true;
+	return true;
+}
+
+bool bif_call_0(query *q, cell *p1, pl_idx p1_ctx)
+{
+	if (!is_callable(p1))
+		return throw_error(q, p1, p1_ctx, "type_error", "callable");
+
+	if (!p1->match) {
+		bool status;
+
+		if (!call_check(q, p1, &status, true))
+			return status;
+	}
+
+	cell *tmp = prepare_call(q, CALL_NOSKIP, p1, p1_ctx, 3);
+	check_heap_error(tmp);
+	pl_idx num_cells = p1->num_cells;
+	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
+	make_uint(tmp+num_cells++, q->cp);
+	make_call(q, tmp+num_cells);
+	check_heap_error(push_fail_on_retry_with_barrier(q));
+	q->st.instr = tmp;
 	return true;
 }
 

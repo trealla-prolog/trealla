@@ -1967,7 +1967,7 @@ static bool bif_iso_functor_3(query *q)
 
 		bool status;
 
-		if (!call_check(q, tmp, &status, true))
+		if (!call_check(q, tmp, &status, false))
 			return status;
 
 		return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
