@@ -100,7 +100,7 @@ static bool bif_clause_3(query *q)
 			break;
 
 		q->retry = QUERY_RETRY;
-		q->tot_backtracks++;
+		q->total_backtracks++;
 		retry_choice(q);
 	}
 
@@ -169,7 +169,7 @@ static bool bif_iso_clause_2(query *q)
 		}
 
 		q->retry = QUERY_RETRY;
-		q->tot_backtracks++;
+		q->total_backtracks++;
 		retry_choice(q);
 	}
 
@@ -283,7 +283,7 @@ static bool bif_iso_retractall_1(query *q)
 		}
 
 		q->retry = QUERY_RETRY;
-		q->tot_backtracks++;
+		q->total_backtracks++;
 		retry_choice(q);
 	}
 

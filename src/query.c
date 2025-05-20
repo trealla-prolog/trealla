@@ -610,7 +610,7 @@ static void trim_frame(query *q, const frame *f)
 
 void undo_me(query *q)
 {
-	q->tot_retries++;
+	q->total_retries++;
 	const choice *ch = GET_CURR_CHOICE();
 
 	while (q->st.tp > ch->st.tp) {
@@ -631,7 +631,7 @@ void try_me(query *q, unsigned num_vars)
 	f->base = q->st.sp;
 	slot *e = GET_SLOT(f, 0);
 	memset(e, 0, sizeof(slot)*num_vars);
-	q->tot_matches++;
+	q->total_matches++;
 }
 
 static void push_frame(query *q)
@@ -672,7 +672,7 @@ static void reuse_frame(query *q, unsigned num_vars)
 	f->no_recov = false;
 	q->st.sp = f->base + f->actual_slots;
 	q->st.dbe->tcos++;
-	q->tot_tcos++;
+	q->total_tcos++;
 	q->st.hp = f->hp;
 	q->st.heap_num = f->heap_num;
 	trim_heap(q);
@@ -690,7 +690,7 @@ static bool commit_any_choices(const query *q, const frame *f)
 static void commit_frame(query *q)
 {
 	q->st.dbe->matched++;
-	q->tot_matched++;
+	q->total_matched++;
 
 	clause *cl = &q->st.dbe->cl;
 	frame *f = GET_CURR_FRAME();
@@ -998,7 +998,7 @@ static bool resume_frame(query *q)
 		&& (q->st.fp == (q->st.curr_frame + 1))
 		&& !resume_any_choices(q, f)
 		) {
-		q->tot_recovs++;
+		q->total_recovs++;
 		q->st.hp = f->hp;
 		q->st.heap_num = f->heap_num;
 		trim_heap(q);
@@ -1645,10 +1645,10 @@ bool start(query *q)
 		cell *save_cell = q->st.instr;
 		pl_idx save_ctx = q->st.curr_frame;
 		q->cycle_error = q->did_throw = false;
-		q->tot_goals++;
+		q->total_goals++;
 
 		if (is_builtin(q->st.instr)) {
-			q->tot_inferences++;
+			q->total_inferences++;
 			bool status;
 
 #if USE_FFI
@@ -1666,7 +1666,7 @@ bool start(query *q)
 				continue;
 			}
 
-			if (!(q->tot_goals % YIELD_INTERVAL)) {
+			if (!(q->total_goals % YIELD_INTERVAL)) {
 				q->s_cnt = 0;
 
 				if (!(q->s_cnt++ % 10000))
@@ -1689,7 +1689,7 @@ bool start(query *q)
 				if (q->yielded)
 					break;
 
-				q->tot_backtracks++;
+				q->total_backtracks++;
 				continue;
 			}
 
@@ -1702,19 +1702,19 @@ bool start(query *q)
 			if (!consultall(q, q->st.instr, q->st.curr_frame)) {
 				Trace(q, q->st.instr, q->st.curr_frame, FAIL);
 				q->retry = QUERY_RETRY;
-				q->tot_backtracks++;
+				q->total_backtracks++;
 				continue;
 			}
 
 			Trace(q, save_cell, save_ctx, EXIT);
 			proceed(q);
 		} else {
-			q->tot_inferences++;
+			q->total_inferences++;
 
 			if (!match_head(q)) {
 				Trace(q, q->st.instr, q->st.curr_frame, FAIL);
 				q->retry = QUERY_RETRY;
-				q->tot_backtracks++;
+				q->total_backtracks++;
 				continue;
 			}
 
