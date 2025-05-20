@@ -4131,18 +4131,18 @@ bool run(parser *p, const char *prolog_src, bool dump, query **subq, unsigned in
 		return false;
 	}
 
-	SB(src);
+	SB(pr);
 
 	if (dump) {
-		SB_strcat(src, "true,");
+		SB_strcat(pr, "true,");
 	}
 
-	SB_sprintf(src, "%s", prolog_src);
-	SB_trim_ws(src);
-	SB_trim(src, '.');
-	SB_strcat(src, ".");
+	SB_sprintf(pr, "%s", prolog_src);
+	SB_trim_ws(pr);
+	SB_trim(pr, '.');
+	SB_strcat(pr, ".");
 	p->in_body = true;
-	p->srcptr = SB_cstr(src);
+	p->srcptr = SB_cstr(pr);
 	bool ok;
 
 	while (p->srcptr && *p->srcptr) {
@@ -4170,19 +4170,19 @@ bool run(parser *p, const char *prolog_src, bool dump, query **subq, unsigned in
 			p->pl->did_dump_vars = true;
 			p->srcptr = NULL;
 			p->m->pl->error = p->error;
-			SB_free(src);
+			SB_free(pr);
 			return false;
 		}
 
 		if (p->skip) {
 			p->m->pl->status = true;
 			p->srcptr = NULL;
-			SB_free(src);
+			SB_free(pr);
 			return true;
 		}
 
 		query *q = query_create(p->m);
-		check_heap_error(q, p->srcptr = NULL, SB_free(src));
+		check_heap_error(q, p->srcptr = NULL, SB_free(pr));
 
 		if (subq)
 			*subq = q;
@@ -4203,7 +4203,6 @@ bool run(parser *p, const char *prolog_src, bool dump, query **subq, unsigned in
 		p->m->pl->status = q->status;
 		p->m->pl->error = q->error;
 		p->m->pl->is_redo = q->is_redo;
-
 		ok = !q->error;
 		p->m = q->st.m;
 
@@ -4223,8 +4222,7 @@ bool run(parser *p, const char *prolog_src, bool dump, query **subq, unsigned in
 	str->data = NULL;
 	str->data_len = 0;
 	str->srclen = 0;
-
 	p->srcptr = NULL;
-	SB_free(src);
+	SB_free(pr);
 	return ok;
 }
