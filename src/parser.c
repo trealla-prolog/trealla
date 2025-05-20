@@ -4124,9 +4124,9 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 	return !p->error ? 1 : 0;
 }
 
-bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yield_time_in_ms)
+bool run(parser *p, const char *prolog_src, bool dump, query **subq, unsigned int yield_time_in_ms)
 {
-	if ((*pSrc == '.') && !pSrc[1]) {
+	if ((*prolog_src == '.') && !prolog_src[1]) {
 		fprintf(stderr, "Error: syntax error, incomplete statement, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 		return false;
 	}
@@ -4137,7 +4137,7 @@ bool run(parser *p, const char *pSrc, bool dump, query **subq, unsigned int yiel
 		SB_strcat(src, "true,");
 	}
 
-	SB_sprintf(src, "%s", pSrc);
+	SB_sprintf(src, "%s", prolog_src);
 	SB_trim_ws(src);
 	SB_trim(src, '.');
 	SB_strcat(src, ".");
