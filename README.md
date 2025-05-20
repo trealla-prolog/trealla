@@ -126,7 +126,8 @@ Written in plain-old C99.
 	git clone https://github.com/trealla-prolog/trealla.git
 	cd trealla
 
-On Debian+ systems you may need to install GNU readline, xxd & libffi
+On Debian-like systems, you will need to install the following
+packages to set up a build environment:
 
 	sudo apt install build-essential git libreadline-dev libffi-dev libssl-dev xxd
 
