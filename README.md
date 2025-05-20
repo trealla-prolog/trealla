@@ -128,7 +128,7 @@ Written in plain-old C99.
 
 On Debian+ systems you may need to install GNU readline, xxd & libffi
 
-	sudo apt install libreadline-dev libffi-dev libssl-dev xxd
+	sudo apt install build-essential git libreadline-dev libffi-dev libssl-dev xxd
 
 Then...
 
