@@ -3188,12 +3188,12 @@ bool bif_statistics_0(query *q)
 		"TCOs:%"PRIu64", "
 		"Frame recovs:%"PRIu64", "
 		"Queue: %u\n",
-		q->tot_inferences, q->tot_matches, q->tot_matched,
+		q->total_inferences, q->total_matches, q->total_matched,
 		q->hw_frames, q->hw_choices, q->hw_trails, q->hw_slots,
 		q->hw_heap_num,
 		q->st.fp, q->cp, q->st.tp, q->st.sp,
 		q->st.heap_num,
-		q->tot_backtracks, q->tot_retries, q->tot_tcos, q->tot_recovs,
+		q->total_backtracks, q->total_retries, q->total_tcos, q->total_recovs,
 		(unsigned)q->qcnt[q->st.qnum]
 		);
 	return true;

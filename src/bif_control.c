@@ -36,7 +36,7 @@ bool bif_sys_cut_1(query *q)
 
 bool bif_iso_conjunction_2(query *q)
 {
-	q->tot_inferences--;
+	q->total_inferences--;
 	q->retry = QUERY_NOOP;
 	q->st.instr++;
 	return true;
@@ -44,7 +44,7 @@ bool bif_iso_conjunction_2(query *q)
 
 static bool bif_sys_cleanup_if_det_1(query *q)
 {
-	q->tot_inferences--;
+	q->total_inferences--;
 	GET_FIRST_RAW_ARG(p1,integer)
 	choice *ch = GET_CURR_CHOICE();
 
@@ -671,7 +671,7 @@ bool bif_sys_get_level_1(query *q)
 bool bif_sys_drop_barrier_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer)
-	q->tot_inferences--;
+	q->total_inferences--;
 	drop_barrier(q, get_smalluint(p1));
 
 	if (q->cp) {

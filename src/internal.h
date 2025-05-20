@@ -685,8 +685,8 @@ struct query_ {
 	stringbuf sb_buf;
 	char tmpbuf[256];
 	bool ignores[MAX_IGNORES];
-	uint64_t tot_goals, tot_backtracks, tot_retries, tot_matches, tot_inferences;
-	uint64_t tot_tcos, tot_recovs, tot_matched;
+	uint64_t total_goals, total_backtracks, total_retries, total_matches, total_inferences;
+	uint64_t total_tcos, total_recovs, total_matched;
 	uint64_t step, qid, tmo_msecs, chgen, cycle_error;
 	uint64_t get_started, autofail_n, yield_at;
 	uint64_t cpu_started, time_cpu_last_started, future;
@@ -697,7 +697,7 @@ struct query_ {
 	pl_idx frames_size, slots_size, trails_size, choices_size;
 	pl_idx hw_choices, hw_frames, hw_slots, hw_trails, hw_heap_num;
 	pl_idx cp, before_hook_tp, qcnt[MAX_QUEUES], ball_ctx, cont_ctx;
-	pl_idx heap_size, tmph_size, tot_heaps, tot_heapsize;
+	pl_idx heap_size, tmph_size, total_heaps, total_heapsize;
 	pl_idx undo_lo_tp, undo_hi_tp;
 	pl_idx q_size[MAX_QUEUES], tmpq_size[MAX_QUEUES], qp[MAX_QUEUES];
 	prolog_flags flags;
