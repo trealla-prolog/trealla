@@ -505,6 +505,9 @@ struct trail_ {
 	bool is_local:1;
 };
 
+// Where *c* is the (possibly) instantiated cell in the current frame
+// Where *vgen* & *vgen2* represent the visit generation to check for cyclic terms
+
 struct slot_ {
 	cell c;
 	uint32_t vgen, vgen2;
