@@ -68,7 +68,7 @@ static bool bif_iso_findall_3(query *q)
 		check_heap_error(tmp, drop_queuen(q));
 		pl_idx num_cells = p2->num_cells;
 		make_instr(tmp+num_cells++, g_sys_queue_s, bif_sys_queue_1, 1, p1->num_cells);
-		num_cells += copy_cells_by_ref(tmp+num_cells, p1, p1_ctx, p1->num_cells);
+		num_cells += dup_cells_by_ref(tmp+num_cells, p1, p1_ctx, p1->num_cells);
 		make_instr(tmp+num_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
 		make_call(q, tmp+num_cells);
 		check_heap_error(push_barrier(q), drop_queuen(q));
@@ -1143,20 +1143,11 @@ static bool bif_iso_number_codes_2(query *q)
 	print_term_to_buf(q, p1, p1_ctx, 1, 0);
 	q->ignore_ops = false;
 	q->quoted = 0;
-	const char *src = SB_cstr(q->sb);
 	cell tmp;
-	make_int(&tmp, *src);
-	allocate_list(q, &tmp);
-
-	while (*++src) {
-		make_int(&tmp, *src);
-		append_list(q, &tmp);
-	}
-
-	cell *l = end_list(q);
-	check_heap_error(l);
+	make_string(&tmp, SB_cstr(q->sb));
+	tmp.flags |= FLAG_CSTR_CODES;
 	SB_free(q->sb);
-	return unify(q, p2, p2_ctx, l, q->st.curr_frame);
+	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 }
 
 static bool do_sub_atom(query *q, cell *p1, cell *p2, pl_idx p2_ctx, cell *p3, pl_idx p3_ctx, cell *p4, pl_idx p4_ctx, cell *p5)
