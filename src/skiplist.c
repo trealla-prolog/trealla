@@ -82,8 +82,6 @@ skiplist *sl_create(int (*cmpkey)(const void*, const void*, const void*, void *)
 	l->header->val = NULL;
 	l->cmpkey = cmpkey ? cmpkey : default_cmpkey;
 	l->delkey = delkey;
-	l->is_tmp_list = false;
-	l->wild_card = false;
 	l->p = p;
 	return l;
 }
@@ -307,23 +305,20 @@ sliter *sl_first(skiplist *l)
 	if (l->is_tmp_list)
 		iter = &l->tmp_iter;
 	else {
-		acquire_lock(&l->guard);
-
 		if (!l->iters) {
 			iter = malloc(sizeof(sliter));
 			if (!iter) return NULL;
 		} else {
+			acquire_lock(&l->guard);
 			iter = l->iters;
 			l->iters = iter->next;
+			release_lock(&l->guard);
 		}
-
-		release_lock(&l->guard);
 	}
 
 	iter->key = NULL;
 	iter->l = l;
 	iter->p = l->header->forward[0];
-	iter->next = NULL;
 	return iter;
 }
 
@@ -389,23 +384,20 @@ sliter *sl_find_key(skiplist *l, const void *key)
 	if (l->is_tmp_list)
 		iter = &l->tmp_iter;
 	else {
-		acquire_lock(&l->guard);
-
 		if (!l->iters) {
 			iter = malloc(sizeof(sliter));
 			if (!iter) return NULL;
 		} else {
+			acquire_lock(&l->guard);
 			iter = l->iters;
 			l->iters = iter->next;
+			release_lock(&l->guard);
 		}
-
-		release_lock(&l->guard);
 	}
 
 	iter->key = (void*)key;
 	iter->l = l;
 	iter->p = q;
-	iter->next = NULL;
 	return iter;
 }
 
