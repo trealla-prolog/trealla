@@ -1065,8 +1065,10 @@ static bool do_thread_property_pin_both(query *q)
 	if (!CMP_STRING_TO_CSTR(q, p2, "alias")) {
 		sliter *iter = sl_first(t->alias);
 
-		if (!sl_next(iter, NULL))
+		if (!sl_next(iter, NULL)) {
+			sl_done(iter);
 			return false;
+		}
 
 		const char *alias = sl_key(iter);
 		sl_done(iter);
@@ -1176,8 +1178,10 @@ static bool do_thread_property_pin_id(query *q)
 		check_heap_error(push_choice(q));
 		sliter *iter = sl_first(t->alias);
 
-		if (!sl_next(iter, NULL))
+		if (!sl_next(iter, NULL)) {
+			sl_done(iter);
 			return false;
+		}
 
 		const char *alias = sl_key(iter);
 		sl_done(iter);
@@ -1424,8 +1428,10 @@ static bool do_message_queue_property_pin_both(query *q)
 	if (!CMP_STRING_TO_CSTR(q, p2, "alias")) {
 		sliter *iter = sl_first(t->alias);
 
-		if (!sl_next(iter, NULL))
+		if (!sl_next(iter, NULL)) {
+			sl_done(iter);
 			return false;
+		}
 
 		const char *alias = sl_key(iter);
 		sl_done(iter);
@@ -1441,8 +1447,10 @@ static bool do_message_queue_property_pin_both(query *q)
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "size")) {
 		sliter *iter = sl_first(t->alias);
 
-		if (!sl_next(iter, NULL))
+		if (!sl_next(iter, NULL)) {
+			sl_done(iter);
 			return false;
+		}
 
 		const char *alias = sl_key(iter);
 		sl_done(iter);
@@ -1527,8 +1535,10 @@ static bool do_message_queue_property_pin_id(query *q)
 		check_heap_error(push_choice(q));
 		sliter *iter = sl_first(t->alias);
 
-		if (!sl_next(iter, NULL))
+		if (!sl_next(iter, NULL)) {
+			sl_done(iter);
 			return false;
+		}
 
 		const char *alias = sl_key(iter);
 		sl_done(iter);
@@ -1800,8 +1810,10 @@ static bool do_mutex_property_pin_both(query *q)
 	if (!CMP_STRING_TO_CSTR(q, p2, "alias")) {
 		sliter *iter = sl_first(t->alias);
 
-		if (!sl_next(iter, NULL))
+		if (!sl_next(iter, NULL)) {
+			sl_done(iter);
 			return false;
+		}
 
 		const char *alias = sl_key(iter);
 		sl_done(iter);
@@ -1902,8 +1914,10 @@ static bool do_mutex_property_pin_id(query *q)
 
 		sliter *iter = sl_first(t->alias);
 
-		if (!sl_next(iter, NULL))
+		if (!sl_next(iter, NULL)) {
+			sl_done(iter);
 			return false;
+		}
 
 		const char *alias = sl_key(iter);
 		sl_done(iter);
