@@ -444,8 +444,6 @@ void sl_done(sliter *iter)
 		iter->next = l->iters;
 		l->iters = iter;
 		release_lock(&l->guard);
-	}
-
-	if (l->is_tmp_list)
+	} else
 		sl_destroy(l);
 }
