@@ -1069,6 +1069,7 @@ static bool do_thread_property_pin_both(query *q)
 			return false;
 
 		const char *alias = sl_key(iter);
+		sl_done(iter);
 		cell *tmp = alloc_on_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		make_cstring(tmp+1, alias);
@@ -1077,7 +1078,6 @@ static bool do_thread_property_pin_both(query *q)
 			return false;
 
 		unshare_cell(tmp+1);
-		sl_done(iter);
 		return true;
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "detached")) {
 		cell *tmp = alloc_on_heap(q, 2);
@@ -1180,6 +1180,7 @@ static bool do_thread_property_pin_id(query *q)
 			return false;
 
 		const char *alias = sl_key(iter);
+		sl_done(iter);
 		cell *tmp = alloc_on_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		check_heap_error(create_vars(q, 1) != -1);
@@ -1427,6 +1428,7 @@ static bool do_message_queue_property_pin_both(query *q)
 			return false;
 
 		const char *alias = sl_key(iter);
+		sl_done(iter);
 		cell *tmp = alloc_on_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		make_cstring(tmp+1, alias);
@@ -1435,7 +1437,6 @@ static bool do_message_queue_property_pin_both(query *q)
 			return false;
 
 		unshare_cell(tmp+1);
-		sl_done(iter);
 		return true;
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "size")) {
 		sliter *iter = sl_first(t->alias);
@@ -1444,6 +1445,7 @@ static bool do_message_queue_property_pin_both(query *q)
 			return false;
 
 		const char *alias = sl_key(iter);
+		sl_done(iter);
 		cell *tmp = alloc_on_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "size"), NULL, 1, 1);
 		make_int(tmp+1, queue_size(q->pl, n));
@@ -1452,7 +1454,6 @@ static bool do_message_queue_property_pin_both(query *q)
 			return false;
 
 		unshare_cell(tmp+1);
-		sl_done(iter);
 		return true;
 	} else
 		return throw_error(q, p2, p2_ctx, "domain_error", "queue_property");
@@ -1530,6 +1531,7 @@ static bool do_message_queue_property_pin_id(query *q)
 			return false;
 
 		const char *alias = sl_key(iter);
+		sl_done(iter);
 		cell *tmp = alloc_on_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		check_heap_error(create_vars(q, 1) != -1);
@@ -1802,6 +1804,7 @@ static bool do_mutex_property_pin_both(query *q)
 			return false;
 
 		const char *alias = sl_key(iter);
+		sl_done(iter);
 		cell *tmp = alloc_on_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		make_cstring(tmp+1, alias);
@@ -1810,7 +1813,6 @@ static bool do_mutex_property_pin_both(query *q)
 			return false;
 
 		unshare_cell(tmp+1);
-		sl_done(iter);
 		return true;
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "status")) {
 		if (t->num_locks == 0) {
@@ -1904,6 +1906,7 @@ static bool do_mutex_property_pin_id(query *q)
 			return false;
 
 		const char *alias = sl_key(iter);
+		sl_done(iter);
 		cell *tmp = alloc_on_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		check_heap_error(create_vars(q, 1) != -1);
