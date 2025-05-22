@@ -486,6 +486,10 @@ static void print_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 
 static bool dump_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 {
+	const frame *f = GET_FRAME(running ? c_ctx : 0);
+	pl_idx slot_nbr = running ?
+		((pl_idx)(GET_SLOT(f, c->var_num)-q->slots))
+		: (pl_idx)c->var_num;
 	cell *l = q->variable_names;
 	pl_idx l_ctx = q->variable_names_ctx;
 	LIST_HANDLER(l);
@@ -502,7 +506,11 @@ static bool dump_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 			if (0 && !strcmp(C_STR(q, name), "_")) {
 				print_variable(q, v, v_ctx, running);
 			} else {
-				SB_sprintf(q->sb, "%s", C_STR(q, name));
+				if (q->is_dump_vars) {
+					SB_sprintf(q->sb, "_%s", get_slot_name(q, slot_nbr));
+				} else {
+					SB_sprintf(q->sb, "%s", C_STR(q, name));
+				}
 			}
 
 			q->last_thing = WAS_OTHER;
