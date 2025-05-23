@@ -2431,7 +2431,7 @@ static bool bif_iso_neg_1(query *q)
 	return true;
 }
 
-static bool bif_iso_seq_2(query *q)
+static bool bif_iso_compare_eq_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
@@ -2439,7 +2439,7 @@ static bool bif_iso_seq_2(query *q)
 	return res == 0;
 }
 
-static bool bif_iso_sne_2(query *q)
+static bool bif_iso_compare_ne_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
@@ -2447,7 +2447,7 @@ static bool bif_iso_sne_2(query *q)
 	return res != 0;
 }
 
-static bool bif_iso_slt_2(query *q)
+static bool bif_iso_compare_lt_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
@@ -2455,7 +2455,7 @@ static bool bif_iso_slt_2(query *q)
 	return res < 0;
 }
 
-static bool bif_iso_sle_2(query *q)
+static bool bif_iso_compare_le_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
@@ -2463,7 +2463,7 @@ static bool bif_iso_sle_2(query *q)
 	return res <= 0;
 }
 
-static bool bif_iso_sgt_2(query *q)
+static bool bif_iso_compare_gt_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
@@ -2471,7 +2471,7 @@ static bool bif_iso_sgt_2(query *q)
 	return res > 0;
 }
 
-static bool bif_iso_sge_2(query *q)
+static bool bif_iso_compare_ge_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
@@ -2528,7 +2528,7 @@ static bool bif_iso_sge_2(query *q)
 		return p1.val_float op f2; \
 	}
 
-static bool bif_iso_neq_2(query *q)
+static bool bif_iso_numeric_eq_2(query *q)
 {
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
@@ -2538,7 +2538,7 @@ static bool bif_iso_neq_2(query *q)
 	return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable");
 }
 
-static bool bif_iso_nne_2(query *q)
+static bool bif_iso_numeric_ne_2(query *q)
 {
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
@@ -2548,7 +2548,7 @@ static bool bif_iso_nne_2(query *q)
 	return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable");
 }
 
-static bool bif_iso_nge_2(query *q)
+static bool bif_iso_numeric_ge_2(query *q)
 {
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
@@ -2558,7 +2558,7 @@ static bool bif_iso_nge_2(query *q)
 	return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable");
 }
 
-static bool bif_iso_ngt_2(query *q)
+static bool bif_iso_numeric_gt_2(query *q)
 {
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
@@ -2568,7 +2568,7 @@ static bool bif_iso_ngt_2(query *q)
 	return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable");
 }
 
-static bool bif_iso_nle_2(query *q)
+static bool bif_iso_numeric_le_2(query *q)
 {
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
@@ -2578,7 +2578,7 @@ static bool bif_iso_nle_2(query *q)
 	return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable");
 }
 
-static bool bif_iso_nlt_2(query *q)
+static bool bif_iso_numeric_lt_2(query *q)
 {
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
@@ -2911,19 +2911,19 @@ builtins g_evaluable_bifs[] =
 {
 	// Predicate...
 
-	{"=:=", 2, bif_iso_neq_2, "+number,+number", true, false, BLAH},
-	{"=\\=", 2, bif_iso_nne_2, "+number,+number", true, false, BLAH},
-	{">", 2, bif_iso_ngt_2, "+number,+number", true, false, BLAH},
-	{">=", 2, bif_iso_nge_2, "+number,+number", true, false, BLAH},
-	{"=<", 2, bif_iso_nle_2, "+number,+number", true, false, BLAH},
-	{"<", 2, bif_iso_nlt_2, "+number,+number", true, false, BLAH},
+	{"=:=", 2, bif_iso_numeric_eq_2, "+number,+number", true, false, BLAH},
+	{"=\\=", 2, bif_iso_numeric_ne_2, "+number,+number", true, false, BLAH},
+	{">", 2, bif_iso_numeric_gt_2, "+number,+number", true, false, BLAH},
+	{">=", 2, bif_iso_numeric_ge_2, "+number,+number", true, false, BLAH},
+	{"=<", 2, bif_iso_numeric_le_2, "+number,+number", true, false, BLAH},
+	{"<", 2, bif_iso_numeric_lt_2, "+number,+number", true, false, BLAH},
 
-	{"==", 2, bif_iso_seq_2, "+term,+term", true, false, BLAH},
-	{"\\==", 2, bif_iso_sne_2, "+term,+term", true, false, BLAH},
-	{"@>", 2, bif_iso_sgt_2, "+term,+term", true, false, BLAH},
-	{"@>=", 2, bif_iso_sge_2, "+term,+term", true, false, BLAH},
-	{"@=<", 2, bif_iso_sle_2, "+term,+term", true, false, BLAH},
-	{"@<", 2, bif_iso_slt_2, "+term,+term", true, false, BLAH},
+	{"==", 2, bif_iso_compare_eq_2, "+term,+term", true, false, BLAH},
+	{"\\==", 2, bif_iso_compare_ne_2, "+term,+term", true, false, BLAH},
+	{"@>", 2, bif_iso_compare_gt_2, "+term,+term", true, false, BLAH},
+	{"@>=", 2, bif_iso_compare_ge_2, "+term,+term", true, false, BLAH},
+	{"@=<", 2, bif_iso_compare_le_2, "+term,+term", true, false, BLAH},
+	{"@<", 2, bif_iso_compare_lt_2, "+term,+term", true, false, BLAH},
 
 	{"is", 2, bif_iso_is_2, "?number,+number", true, false, BLAH},
 	{"float", 1, bif_iso_float_1, "+number", true, false, BLAH},
