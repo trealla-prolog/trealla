@@ -5365,7 +5365,9 @@ static bool bif_sys_det_length_rundown_2(query *q)
 		l->arity = 2;
 		l->flags = 0;
 		l++;
-		make_ref(l++, var_num++, q->st.curr_frame);
+		make_var(l, g_anon_s, var_num++);
+		l->flags |= FLAG_VAR_ANON | FLAG_VAR_VOID;
+		l++;
 	}
 
 	make_atom(l, g_nil_s);

@@ -498,9 +498,16 @@ static bool dump_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 		cell *v = running ? deref(q, h+2, h_ctx) : h+2;
 		pl_idx v_ctx = running ? q->latest_ctx : 0;
 
+		const frame *f = GET_FRAME(running ? v_ctx : 0);
+		pl_idx slot_nbr = running ?
+			((pl_idx)(GET_SLOT(f, v->var_num)-q->slots))
+			: (pl_idx)c->var_num;
+
 		if (is_var(v) && (v->var_num == c->var_num) && (v_ctx == c_ctx)) {
 			if (0 && !strcmp(C_STR(q, name), "_")) {
 				print_variable(q, v, v_ctx, running);
+			} else if (q->is_dump_vars && !strcmp(C_STR(q, name), "_")) {
+				SB_sprintf(q->sb, "_%s", get_slot_name(q, slot_nbr));
 			} else {
 				SB_sprintf(q->sb, "%s", C_STR(q, name));
 			}
@@ -1029,7 +1036,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 			return true;
 		}
 
-		if (is_var(c) /*&& !is_anon(c)*/ && q->variable_names) {
+		if (is_var(c) && q->variable_names) {
 			if (dump_variable(q, c, c_ctx, running))
 				return true;
 		}
