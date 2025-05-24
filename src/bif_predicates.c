@@ -4870,10 +4870,13 @@ static bool bif_char_type_2(query *q)
 		|| (ch == '<') || (ch == '=') || (ch == '>')
 		|| (ch == '?') || (ch == '@') || (ch == '^')
 		|| (ch == '~');
-#if 0
-	else if (!CMP_STRING_TO_CSTR(q, p2, "graphic_token"))	// ???
-		return iswgraph(ch) && !iswalnum(ch);
-#endif
+	else if (!CMP_STRING_TO_CSTR(q, p2, "graphic_token"))
+		return (ch == '#') || (ch == '$') || (ch == '&')
+		|| (ch == '*') || (ch == '+') || (ch == '-')
+		|| (ch == '.') || (ch == '/') || (ch == ':')
+		|| (ch == '<') || (ch == '=') || (ch == '>')
+		|| (ch == '?') || (ch == '@') || (ch == '^')
+		|| (ch == '~');
 	else if (!CMP_STRING_TO_CSTR(q, p2, "ascii_graphic"))
 		return iswgraph(ch) && (ch < 128);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "ascii"))
