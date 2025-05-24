@@ -4864,11 +4864,18 @@ static bool bif_char_type_2(query *q)
 		make_string(&tmp, tmpbuf);
 		return unify(q, arg21, arg21_ctx, &tmp, q->st.curr_frame);
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "graphic"))
-		return iswgraph(ch) && !iswalnum(ch);
+		return (ch == '#') || (ch == '$') || (ch == '&')
+		|| (ch == '*') || (ch == '+') || (ch == '-')
+		|| (ch == '.') || (ch == '/') || (ch == ':')
+		|| (ch == '<') || (ch == '=') || (ch == '>')
+		|| (ch == '?') || (ch == '@') || (ch == '^')
+		|| (ch == '~');
+#if 0
 	else if (!CMP_STRING_TO_CSTR(q, p2, "graphic_token"))	// ???
 		return iswgraph(ch) && !iswalnum(ch);
-	else if (!CMP_STRING_TO_CSTR(q, p2, "ascii_graphic"))	// ???
-		return iswgraph(ch) && iswalnum(ch) && (ch < 128);
+#endif
+	else if (!CMP_STRING_TO_CSTR(q, p2, "ascii_graphic"))
+		return iswgraph(ch) && (ch < 128);
 	else if (!CMP_STRING_TO_CSTR(q, p2, "ascii"))
 		return ch < 128;
 	else if (!CMP_STRING_TO_CSTR(q, p2, "ascii_punctuation"))
