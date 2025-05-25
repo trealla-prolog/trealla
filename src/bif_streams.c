@@ -2353,7 +2353,6 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 				make_atom(&v, q->pl->tabs[i].val_off);
 				tmp[idx++] = v;
 				make_ref(&v, q->pl->tabs[i].var_num, q->st.curr_frame);
-				v.flags |= FLAG_VAR_FRESH;
 				tmp[idx++] = v;
 				done++;
 			}
@@ -2412,7 +2411,6 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 				make_atom(&v, q->pl->tabs[i].val_off);
 				tmp[idx++] = v;
 				make_ref(&v, q->pl->tabs[i].var_num, q->st.curr_frame);
-				v.flags |= FLAG_VAR_FRESH;
 				tmp[idx++] = v;
 				done++;
 			}

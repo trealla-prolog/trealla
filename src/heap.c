@@ -214,7 +214,6 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 			q->tab_idx++;
 		}
 
-		c->flags |= FLAG_VAR_FRESH;
 		c->flags |= FLAG_VAR_ANON;
 		c->flags |= FLAG_VAR_LOCAL;
 		c->flags |= FLAG_VAR_VOID;

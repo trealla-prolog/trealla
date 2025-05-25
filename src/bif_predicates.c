@@ -1962,7 +1962,7 @@ static bool bif_iso_functor_3(query *q)
 			tmp[i].num_cells = 1;
 			tmp[i].var_num = var_num++;
 			tmp[i].var_ctx = q->st.curr_frame;
-			tmp[i].flags = FLAG_VAR_REF | FLAG_VAR_FRESH | FLAG_VAR_ANON;
+			tmp[i].flags = FLAG_VAR_REF | FLAG_VAR_ANON;
 		}
 
 		bool status;

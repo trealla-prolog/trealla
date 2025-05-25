@@ -107,7 +107,6 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_strbuf(c) (is_cstr_blob(c) && !((c)->flags & FLAG_CSTR_SLICE))
 #define is_list(c) (is_iso_list(c) || is_string(c))
 #define is_nil(c) (is_interned(c) && !(c)->arity && ((c)->val_off == g_nil_s))
-#define is_fresh(c) ((c)->flags & FLAG_VAR_FRESH)
 #define is_anon(c) ((c)->flags & FLAG_VAR_ANON)
 #define is_ground(c) ((c)->flags & FLAG_INTERNED_GROUND)
 #define is_builtin(c) (is_interned(c) && (c)->flags & FLAG_INTERNED_BUILTIN)
@@ -259,13 +258,12 @@ enum {
 	FLAG_CSTR_CODES=1<<3,				// used with TAG_CSTR	String of codes
 
 	FLAG_VAR_ANON=1<<0,					// used with TAG_VAR
-	FLAG_VAR_FRESH=1<<1,				// used with TAG_VAR
-	FLAG_VAR_REF=1<<2,					// used with TAG_VAR
-	FLAG_VAR_CYCLIC=1<<3,				// used with TAG_VAR
-	FLAG_VAR_GLOBAL=1<<4,				// used with TAG_VAR
-	FLAG_VAR_TEMPORARY=1<<5,			// used with TAG_VAR
-	FLAG_VAR_LOCAL=1<<6,				// used with TAG_VAR
-	FLAG_VAR_VOID=1<<7,					// used with TAG_VAR
+	FLAG_VAR_REF=1<<1,					// used with TAG_VAR
+	FLAG_VAR_CYCLIC=1<<2,				// used with TAG_VAR
+	FLAG_VAR_GLOBAL=1<<3,				// used with TAG_VAR
+	FLAG_VAR_TEMPORARY=1<<4,			// used with TAG_VAR
+	FLAG_VAR_LOCAL=1<<5,				// used with TAG_VAR
+	FLAG_VAR_VOID=1<<6,					// used with TAG_VAR
 
 	FLAG_HANDLE_DLL=1<<0,				// used with FLAG_HANDLE
 	FLAG_HANDLE_FUNC=1<<1,				// used with FLAG_HANDLE
