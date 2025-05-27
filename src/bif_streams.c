@@ -1125,7 +1125,6 @@ static bool bif_process_create_3(query *q)
     posix_spawnattr_t attrp;
     posix_spawnattr_init(&attrp);
     cell *ppid = NULL;
-    const char *cwd = NULL;
     pl_idx ppid_ctx = 0;
 	LIST_HANDLER(p3);
 
@@ -4842,7 +4841,6 @@ static bool do_unload_file(query *q, cell *p1, pl_idx p1_ctx)
 	if (!is_atom(mod) || !is_atom(file))
 		return throw_error(q, p1, p1_ctx, "type_error", "source_sink");
 
-	module *tmp_m = module_create(q->pl, C_STR(q, mod));
 	char *src = DUP_STRING(q, file);
 	char *filename = relative_to(q->st.m->filename, src);
 	free(src);
@@ -5028,7 +5026,6 @@ static bool bif_getfile_2(query *q)
 
 	char *line = NULL;
 	size_t len = 0;
-	int num = 1;
 	check_heap_error(init_tmp_heap(q));
 
 	while (getline(&line, &len, fp) != -1) {
@@ -5119,7 +5116,6 @@ static bool bif_getfile_3(query *q)
 
 	char *line = NULL;
 	size_t len = 0;
-	int num = 1;
 	check_heap_error(init_tmp_heap(q));
 
 	while (getline(&line, &len, fp) != -1) {
@@ -5157,7 +5153,6 @@ static bool bif_getlines_1(query *q)
 	stream *str = &q->pl->streams[n];
 	char *line = NULL;
 	size_t len = 0;
-	int num = 1;
 	check_heap_error(init_tmp_heap(q));
 
 	while (getline(&line, &len, str->fp) != -1) {
@@ -5193,7 +5188,6 @@ static bool bif_getlines_2(query *q)
 	stream *str = &q->pl->streams[n];
 	char *line = NULL;
 	size_t len = 0;
-	int num = 1;
 	check_heap_error(init_tmp_heap(q));
 
 	while (getline(&line, &len, str->fp) != -1) {
@@ -5230,7 +5224,6 @@ static bool bif_getlines_3(query *q)
 	stream *str = &q->pl->streams[n];
 	char *line = NULL;
 	size_t len = 0;
-	int num = 1;
 	bool terminator = get_terminator(q, p2, p2_ctx);
 	check_heap_error(init_tmp_heap(q));
 
@@ -6056,7 +6049,6 @@ static bool bif_chdir_1(query *q)
 	char *filename;
 
 	if (is_iso_list(p1)) {
-		size_t len = scan_is_chars_list(q, p1, p1_ctx, true);
 		filename = chars_list_to_string(q, p1, p1_ctx);
 	} else
 		filename = DUP_STRING(q, p1);
@@ -7048,7 +7040,6 @@ static bool bif_sys_gsl_vector_alloc_2(query *q)
 	unsigned long long tot = 0;
 	unsigned rows = 0, cols = 0;
 	double def_value = 0.0;
-	bool sparse = false;
 	char tmpbuf[128];
 	tmpbuf[0] = '\0';
 
@@ -7144,7 +7135,6 @@ static bool bif_sys_gsl_matrix_alloc_3(query *q)
 	unsigned long long tot = 0;
 	long rows = 0, cols = 0;
 	double def_value = 0.0;
-	bool sparse = false;
 	char tmpbuf[128];
 	tmpbuf[0] = '\0';
 
@@ -7299,7 +7289,6 @@ static bool bif_alias_2(query *q)
 	if (is_integer(p1)) {
 		GET_NEXT_ARG(p2,atom);
 		int n = new_stream(q->pl);
-		char *src = NULL;
 
 		if (n < 0)
 			return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");

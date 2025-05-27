@@ -209,8 +209,6 @@ static bool is_queue_or_alias(query *q, cell *c)
 
 static bool check_thread_or_alias_object(query *q, cell *c)
 {
-	pl_idx c_ctx = 0;
-
 	if (is_var(c))
 		return false;
 
@@ -224,8 +222,6 @@ static bool check_thread_or_alias_object(query *q, cell *c)
 
 static bool check_thread_or_alias(query *q, cell *c)
 {
-	pl_idx c_ctx = 0;
-
 	if (is_var(c))
 		return false;
 
@@ -240,8 +236,6 @@ static bool check_thread_or_alias(query *q, cell *c)
 
 static bool check_mutex_or_alias(query *q, cell *c)
 {
-	pl_idx c_ctx = 0;
-
 	if (is_var(c))
 		return false;
 
@@ -256,8 +250,6 @@ static bool check_mutex_or_alias(query *q, cell *c)
 
 static bool check_queue_or_alias(query *q, cell *c)
 {
-	pl_idx c_ctx = 0;
-
 	if (is_var(c))
 		return false;
 
@@ -796,7 +788,6 @@ void do_signal(query *q, void *thread_ptr)
 	check_slot(q, MAX_ARITY);
 	try_me(q, MAX_ARITY);
 	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.fp, 0);
-	pl_idx c_ctx = 0;
 	cell *c = copy_term_to_heap(q, m->c, q->st.fp, false);	// Copy into thread
 	unshare_cells(c, c->num_cells);
 	free(m);
@@ -1452,7 +1443,6 @@ static bool do_message_queue_property_pin_both(query *q)
 			return false;
 		}
 
-		const char *alias = sl_key(iter);
 		sl_done(iter);
 		cell *tmp = alloc_on_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "size"), NULL, 1, 1);
@@ -2040,7 +2030,6 @@ static bool bif_pl_thread_set_priority_2(query *q)
 	GET_NEXT_ARG(p2,integer);
 	int n = get_thread(q, p1);
 	if (n < 0) return true;
-	int pri = get_smallint(p2);
 	thread *t = &q->pl->threads[n];
 
 	if (t->is_queue_only || t->is_mutex_only)
@@ -2112,8 +2101,6 @@ static bool bif_pl_recv_2(query *q)
 		if (from_chan < 0)
 			return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread");
 	}
-
-	thread *t = &q->pl->threads[q->pl->my_chan];
 
 	if (!do_recv_message(q, from_chan, p2, p2_ctx, false))
 		return false;

@@ -3288,7 +3288,6 @@ static bool bif_split_string_4(query *q)
 	int pad = peek_char_utf8(C_STR(q, p3));
 	const char *start = src, *ptr;
 	cell *l = NULL;
-	int num = 1;
 
 	if (!*start)
 		return unify(q, p4, p4_ctx, make_nil(), q->st.curr_frame);
@@ -4368,7 +4367,6 @@ static bool bif_hex_chars_2(query *q)
 	}
 
 	char *src = DUP_STRING(q, p2);
-	const char *s = src;
 	mpz_t v2;
 	mp_int_init(&v2);
 	mp_int_read_cstring(&v2, 16, (char*)src, NULL);
@@ -4423,7 +4421,6 @@ static bool bif_octal_chars_2(query *q)
 	}
 
 	char *src = DUP_STRING(q, p2);
-	const char *s = src;
 	mpz_t v2;
 	mp_int_init(&v2);
 	mp_int_read_cstring(&v2, 8, (char*)src, NULL);

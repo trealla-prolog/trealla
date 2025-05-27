@@ -486,7 +486,6 @@ void create_goal_expansion(module *m, cell *c)
 
 static int predicate_cmpkey(const void *ptr1, const void *ptr2, const void *param, void *l)
 {
-	const module *m = (const module*)param;
 	const cell *p1 = (const cell*)ptr1;
 	const cell *p2 = (const cell*)ptr2;
 
@@ -504,7 +503,6 @@ static int predicate_cmpkey(const void *ptr1, const void *ptr2, const void *para
 
 static int index_cmpkey_(const void *ptr1, const void *ptr2, const void *param, void *l)
 {
-	const module *m = (const module*)param;
 	cell *p1 = (cell*)ptr1;
 	cell *p2 = (cell*)ptr2;
 

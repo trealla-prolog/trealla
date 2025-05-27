@@ -171,7 +171,6 @@ static bool bif_get_atts_2(query *q)
 			cell *h = LIST_HEAD(l);
 			h = deref(q, h, l_ctx);
 			cell *h1 = deref(q, h+1, q->latest_ctx);
-			pl_idx h1_ctx = q->latest_ctx;
 
 			if (!is_nil(h1))
 				append_list(q, h1);
@@ -261,7 +260,6 @@ bool any_attributed(query *q)
 	for (unsigned i = 0; i < f->actual_slots; i++) {
 		slot *e = GET_SLOT(f, i);
 		cell *c = deref(q, &e->c, e->c.var_ctx);
-		pl_idx c_ctx = q->latest_ctx;
 
 		if (!is_empty(c) || !c->val_attrs)
 			continue;
@@ -298,7 +296,6 @@ static bool bif_sys_list_attributed_1(query *q)
 	for (unsigned i = 0; i < f->actual_slots; i++) {
 		slot *e = GET_SLOT(f, i);
 		cell *c = deref(q, &e->c, e->c.var_ctx);
-		pl_idx c_ctx = q->latest_ctx;
 
 		if (!is_empty(c) || !c->val_attrs)
 			continue;
@@ -363,7 +360,6 @@ static bool bif_sys_attributed_var_1(query *q)
 		cell *h = LIST_HEAD(l);
 		h = deref(q, h, l_ctx);
 		cell *h1 = deref(q, h+1, l_ctx);
-		pl_idx h1_ctx = q->latest_ctx;
 
 		if (!is_nil(h1))
 			append_list(q, h1);
