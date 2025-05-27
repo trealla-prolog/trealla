@@ -7455,7 +7455,7 @@ builtins g_streams_bifs[] =
 
 	{"alias", 2, bif_alias_2, "+blob,+atom", false, false, BLAH},
 
-	{"$stream_to_file", 2, bif_alias_2, "+stream,-integer", false, false, BLAH},
+	{"$stream_to_file", 2, bif_sys_stream_to_file_2, "+stream,-integer", false, false, BLAH},
 
 	{"$capture_output", 0, bif_sys_capture_output_0, NULL, false, false, BLAH},
 	{"$capture_output_to_chars", 1, bif_sys_capture_output_to_chars_1, "-string", false, false, BLAH},

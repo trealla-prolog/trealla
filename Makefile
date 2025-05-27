@@ -5,7 +5,6 @@ CFLAGS = -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' \
 	-O3 $(OPT) -D_GNU_SOURCE \
 	-Wall -Wextra \
 	-Wno-unused-parameter \
-	-Wno-unused-function \
 	-Wno-unused-variable
 LDFLAGS = -L/usr/local/lib -lm
 

@@ -23,15 +23,6 @@
 #define setenv(p1,p2,p3) _putenv_s(p1,p2)
 #define msleep Sleep
 #define localtime_r(p1,p2) localtime(p1)
-#else
-#include <unistd.h>
-static void msleep(int ms)
-{
-	struct timespec tv = {0};
-	tv.tv_sec = (ms) / 1000;
-	tv.tv_nsec = ((ms) % 1000) * 1000 * 1000;
-	nanosleep(&tv, &tv);
-}
 #endif
 
 static pl_idx queue_used(const query *q) { return q->qp[0]; }

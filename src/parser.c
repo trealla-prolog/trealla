@@ -594,6 +594,7 @@ static bool conditionals(parser *p, cell *d)
 	return false;
 }
 
+#if 0
 static bool make_rule(module *m, const char *src)
 {
 	parser *p = parser_create(m);
@@ -613,6 +614,7 @@ static bool make_rule(module *m, const char *src)
 	parser_destroy(p);
 	return true;
 }
+#endif
 
 static bool directives(parser *p, cell *d)
 {
