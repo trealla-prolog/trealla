@@ -12,6 +12,8 @@
 #include "parser.h"
 #include "query.h"
 
+#define THREE_DOTS 0
+
 typedef struct visit_ visit;
 
 struct visit_ {
@@ -424,19 +426,19 @@ static const char *varformat2(char *tmpbuf, size_t tmpbuf_len, cell *c, unsigned
 	return tmpbuf;
 }
 
-static const char *varformat(char *tmpbuf, unsigned long long num)
+static const char *varformat(char *tmpbuf, unsigned long long num, bool listing)
 {
 	char *dst = tmpbuf;
-	dst += sprintf(dst, "%c", 'A'+(unsigned)(num%26));
+	dst += sprintf(dst, "%s%c", listing?"":"_", 'A'+(unsigned)(num%26));
 	if ((num/26) > 0) dst += sprintf(dst, "%"PRIu64"", (int64_t)(num/26));
 	return tmpbuf;
 }
 
-static const char *get_slot_name(query *q, pl_idx slot_nbr)
+static const char *get_slot_name(query *q, pl_idx slot_nbr, bool listing)
 {
 	for (unsigned i = 0; i < q->print_idx; i++) {
 		if (q->pl->tab1[i] == slot_nbr) {
-			return varformat(q->tmpbuf, q->pl->tab2[i]);
+			return varformat(q->tmpbuf, q->pl->tab2[i], listing);
 		}
 	}
 
@@ -451,7 +453,7 @@ static const char *get_slot_name(query *q, pl_idx slot_nbr)
 	}
 
 	q->pl->tab2[i] = j;
-	return varformat(q->tmpbuf, i);
+	return varformat(q->tmpbuf, i, listing);
 }
 
 static void print_variable(query *q, cell *c, pl_idx c_ctx, bool running)
@@ -465,18 +467,18 @@ static void print_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 		if (q->varnames && q->p->vartab.name[c->var_num]) {
 			SB_sprintf(q->sb, "%s", q->p->vartab.name[c->var_num]);
 		} else {
-			SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr));
+			SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars));
 		}
 	} else if (q->portray_vars || (q->is_dump_vars && q->cycle_error)) {
-		SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr));
+		SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars));
 	} else if (q->is_dump_vars) {
 		if ((c_ctx == 0) && (c->var_num < q->p->num_vars)) {
 			SB_sprintf(q->sb, "%s", q->p->vartab.name[c->var_num]);
 		} else {
-			SB_sprintf(q->sb, "_%s", get_slot_name(q, slot_nbr));
+			SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars));
 		}
 	} else if (q->listing) {
-		SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr));
+		SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars));
 	} else if (!running && !is_ref(c)) {
 		SB_sprintf(q->sb, "%s", C_STR(q, c));
 	} else {
@@ -507,7 +509,7 @@ static bool dump_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 			if (0 && !strcmp(C_STR(q, name), "_")) {
 				print_variable(q, v, v_ctx, running);
 			} else if (q->is_dump_vars && !strcmp(C_STR(q, name), "_")) {
-				SB_sprintf(q->sb, "_%s", get_slot_name(q, slot_nbr));
+				SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars));
 			} else {
 				SB_sprintf(q->sb, "%s", C_STR(q, name));
 			}
@@ -627,7 +629,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			cell v = *(c+1);
 			pl_idx v_ctx = c_ctx;
 
-			if (q->portray_vars || q->do_dump_vars) {
+			if ((q->portray_vars || q->do_dump_vars) && !THREE_DOTS) {
 				//SB_sprintf(q->sb, "%s", q->p->vartab.name[q->dump_var_num]);
 				SB_sprintf(q->sb, "%s", C_STR(q, save_head));
 			} else {
@@ -692,7 +694,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 				v_ctx = 0;
 			}
 
-			if ((q->portray_vars || q->do_dump_vars) && (orig_c_ctx == 0) && q->is_dump_vars) {
+			if ((q->portray_vars || q->do_dump_vars) && (orig_c_ctx == 0) && q->is_dump_vars && !THREE_DOTS) {
 				//print_variable(q, save_head, save_head_ctx, running);
 				SB_sprintf(q->sb, "%s", q->p->vartab.name[v.var_num]);
 			} else {
