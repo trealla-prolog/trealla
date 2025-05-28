@@ -1094,7 +1094,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 				if (q->is_dump_vars && has_visited(visited, tmp, tmp_ctx)) {
 					tmp = c;
 					tmp_ctx = c_ctx;
-					SB_sprintf(q->sb, "%s", !is_ref(tmp) ? C_STR(q, tmp) : "_");
+					SB_sprintf(q->sb, "%s", !is_ref(tmp) ? "..." : "_");
 					if (arity) {SB_sprintf(q->sb, "%s", ","); }
 					continue;
 				}
