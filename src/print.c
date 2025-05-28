@@ -477,6 +477,8 @@ static void print_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 		} else {
 			SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars));
 		}
+	} else if (q->listing && is_anon(c)) {
+		SB_sprintf(q->sb, "%s", C_STR(q, c));
 	} else if (q->listing) {
 		SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars));
 	} else if (!running && !is_ref(c)) {
