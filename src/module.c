@@ -77,7 +77,6 @@ static const op_table g_ops[] =
 	{"rdiv", OP_YFX, 400},
 	{"rem", OP_YFX, 400},
 	{"mod", OP_YFX, 400},
-	{"xor", OP_YFX, 400},
 	{"<<", OP_YFX, 400},
 	{">>", OP_YFX, 400},
 	{"**", OP_XFX, 200},
