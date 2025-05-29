@@ -245,30 +245,30 @@ enum {
 };
 
 enum {
-	FLAG_INT_HANDLE=1<<0,				// used with TAG_INTEGER
-	FLAG_INT_STREAM=1<<1,				// used with TAG_INTEGER
-	FLAG_INT_THREAD=1<<2,				// used with TAG_INTEGER
-	FLAG_INT_MAP=1<<3,					// used with TAG_INTEGER
-	FLAG_INT_ALIAS=1<<4,				// used with TAG_INTEGER
-	FLAG_INT_BIG=1<<5,					// used with TAG_INTEGER
+	FLAG_INT_HANDLE=1<<0,
+	FLAG_INT_STREAM=1<<1,
+	FLAG_INT_THREAD=1<<2,
+	FLAG_INT_MAP=1<<3,
+	FLAG_INT_ALIAS=1<<4,
+	FLAG_INT_BIG=1<<5,
 
-	FLAG_CSTR_BLOB=1<<0,				// used with TAG_CSTR
-	FLAG_CSTR_SLICE=1<<1,				// used with TAG_CSTR
-	FLAG_CSTR_STRING=1<<2,				// used with TAG_CSTR	String of chars
-	FLAG_CSTR_CODES=1<<3,				// used with TAG_CSTR	String of codes
+	FLAG_CSTR_BLOB=1<<0,
+	FLAG_CSTR_SLICE=1<<1,
+	FLAG_CSTR_STRING=1<<2,				// string of chars
+	FLAG_CSTR_CODES=1<<3,				// string of codes
 
-	FLAG_VAR_ANON=1<<0,					// used with TAG_VAR
-	FLAG_VAR_REF=1<<1,					// used with TAG_VAR
-	FLAG_VAR_CYCLIC=1<<2,				// used with TAG_VAR
-	FLAG_VAR_GLOBAL=1<<3,				// used with TAG_VAR
-	FLAG_VAR_TEMPORARY=1<<4,			// used with TAG_VAR
-	FLAG_VAR_LOCAL=1<<5,				// used with TAG_VAR
-	FLAG_VAR_VOID=1<<6,					// used with TAG_VAR
+	FLAG_VAR_ANON=1<<0,
+	FLAG_VAR_REF=1<<1,
+	FLAG_VAR_CYCLIC=1<<2,
+	FLAG_VAR_GLOBAL=1<<3,
+	FLAG_VAR_TEMPORARY=1<<4,
+	FLAG_VAR_LOCAL=1<<5,
+	FLAG_VAR_VOID=1<<6,
 
-	FLAG_HANDLE_DLL=1<<0,				// used with FLAG_HANDLE
-	FLAG_HANDLE_FUNC=1<<1,				// used with FLAG_HANDLE
+	FLAG_HANDLE_DLL=1<<0,
+	FLAG_HANDLE_FUNC=1<<1,
 
-	FLAG_BLOB_SREGEX=1<<0,				// used with TAG_BLOB
+	FLAG_BLOB_SREGEX=1<<0,
 
 	FLAG_INTERNED_GROUND=1<<0,
 	FLAG_INTERNED_TAIL_CALL=1<<1,

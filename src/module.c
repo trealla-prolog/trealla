@@ -1575,6 +1575,20 @@ static void process_cell(module *m, clause *cl, cell *c, predicate *parent, int 
 				c->flags |= FLAG_INTERNED_RECURSIVE_CALL;
 			}
 	}
+
+#if 0
+	bool any = false;
+
+	for (unsigned i = 1; i < c->num_cells; i++) {
+		if (is_var(c+i)) {
+			any = true;
+			break;
+		}
+	}
+
+	if (!any && is_compound(c))
+		c->flags |= FLAG_INTERNED_GROUND;
+#endif
 }
 
 void process_clause(module *m, clause *cl, predicate *parent)
