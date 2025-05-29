@@ -1577,16 +1577,16 @@ static void process_cell(module *m, clause *cl, cell *c, predicate *parent, int 
 	}
 
 #if 0
-	bool any = false;
+	bool any_vars = false;
 
 	for (unsigned i = 1; i < c->num_cells; i++) {
 		if (is_var(c+i)) {
-			any = true;
+			any_vars = true;
 			break;
 		}
 	}
 
-	if (!any && is_compound(c))
+	if (!any_vars)
 		c->flags |= FLAG_INTERNED_GROUND;
 #endif
 }
