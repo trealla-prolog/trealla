@@ -176,22 +176,6 @@ static bool bif_iso_clause_2(query *q)
 	return false;
 }
 
-static bool bif_sys_clause_2(query *q)
-{
-	q->access_private = true;
-	bool ok = bif_iso_clause_2(q);
-	q->access_private = false;
-	return ok;
-}
-
-static bool bif_sys_clause_3(query *q)
-{
-	q->access_private = true;
-	bool ok = bif_clause_3(q);
-	q->access_private = false;
-	return ok;
-}
-
 static void predicate_purge_dirty_list(predicate *pr)
 {
 	unsigned cnt = 0;
@@ -895,21 +879,6 @@ static bool bif_instance_2(query *q)
 	return unify(q, p2, p2_ctx, r->cl.cells, q->st.curr_frame);
 }
 
-static bool bif_sys_retract_on_backtrack_1(query *q)
-{
-	GET_FIRST_ARG(p1,atom);
-	int var_num = create_vars(q, 1);
-	check_heap_error(var_num != -1);
-	blob *b = calloc(1, sizeof(blob));
-	b->ptr = (void*)q->st.m;
-	b->ptr2 = (void*)strdup(C_STR(q, p1));
-	check_heap_error(b->ptr2);
-	cell c, v;
-	make_ref(&c, var_num, q->st.curr_frame);
-	make_dbref(&v, b);
-	return unify(q, &c, q->st.curr_frame, &v, q->st.curr_frame);
-}
-
 static bool bif_listing_0(query *q)
 {
 	int n = q->pl->current_output;
@@ -1097,10 +1066,6 @@ builtins g_database_bifs[] =
 	{"listing", 0, bif_listing_0, NULL, false, false, BLAH},
 	{"listing", 1, bif_listing_1, "+predicate_indicator", false, false, BLAH},
 	{"$xlisting", 1, bif_sys_xlisting_1, "+predicate_indicator", false, false, BLAH},
-
-	{"$clause", 2, bif_sys_clause_2, "?term,?term", false, false, BLAH},
-	{"$clause", 3, bif_sys_clause_3, "?term,?term,-string", false, false, BLAH},
-	{"$retract_on_backtrack", 1, bif_sys_retract_on_backtrack_1, "+string", false, false, BLAH},
 
 	{"$a_", 2, bif_sys_asserta_2, "+term,+atom", true, false, BLAH},
 	{"$z_", 2, bif_sys_assertz_2, "+term,+atom", true, false, BLAH},
