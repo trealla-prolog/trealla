@@ -339,7 +339,7 @@ static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx
 	} else if (is_compound(v)) {
 		make_indirect(&e->c, v, v_ctx);
 
-		if ((v_ctx >= q->st.curr_frame) && !is_ground(v)) {
+		if (v_ctx >= q->st.curr_frame) {
 			q->no_recov = true;
 		}
 	} else {

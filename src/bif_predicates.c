@@ -1869,10 +1869,7 @@ static bool bif_sys_duplicate_term_3(query *q)
 	GET_NEXT_ARG(p3,integer);
 	bool copy_attrs = get_smalluint(p3);
 
-	if (is_atomic(p1) || is_ground(p1))
-		return unify(q, p1, p1_ctx, p2, p2_ctx);
-
-	if (is_atomic(p2) || is_ground(p2))
+	if (is_atomic(p1) || is_atomic(p2))
 		return unify(q, p1, p1_ctx, p2, p2_ctx);
 
 	// You are not expected to understand this: basically we have
@@ -5490,9 +5487,6 @@ static bool do_dump_term(query *q, cell *p1, pl_idx p1_ctx, bool deref, int dept
 		else if (is_var(tmp))
 			printf(", slot=%u, %s", tmp->var_num, C_STR(q, tmp));
 
-		if (is_interned(tmp) && tmp->arity)
-			printf(", ground=%d", is_ground(tmp)?1:0);
-
 		if (is_var(tmp) && deref) {
 			const frame *f = GET_FRAME(is_ref(tmp)?tmp->var_ctx:p1_ctx);
 			slot *e = GET_SLOT(f, tmp->var_num);
@@ -5507,7 +5501,7 @@ static bool do_dump_term(query *q, cell *p1, pl_idx p1_ctx, bool deref, int dept
 		printf("\n");
 	}
 
-	if (!depth) printf("Ground=%d, no_recov=%d\n", is_ground(p1)?1:0, q->no_recov?1:0);
+	if (!depth) printf("no_recov=%d\n", q->no_recov?1:0);
 	return true;
 }
 

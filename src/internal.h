@@ -108,7 +108,6 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_list(c) (is_iso_list(c) || is_string(c))
 #define is_nil(c) (is_interned(c) && !(c)->arity && ((c)->val_off == g_nil_s))
 #define is_anon(c) ((c)->flags & FLAG_VAR_ANON)
-#define is_ground(c) ((c)->flags & FLAG_INTERNED_GROUND)
 #define is_builtin(c) (is_interned(c) && (c)->flags & FLAG_INTERNED_BUILTIN)
 #define is_evaluable(c) (is_interned(c) && ((c)->flags & FLAG_INTERNED_EVALUABLE))
 #define is_tail_call(c) ((c)->flags & FLAG_INTERNED_TAIL_CALL)
@@ -270,11 +269,10 @@ enum {
 
 	FLAG_BLOB_SREGEX=1<<0,
 
-	FLAG_INTERNED_GROUND=1<<0,
-	FLAG_INTERNED_TAIL_CALL=1<<1,
-	FLAG_INTERNED_RECURSIVE_CALL=1<<2,
-	FLAG_INTERNED_BUILTIN=1<<3,
-	FLAG_INTERNED_EVALUABLE=1<<4,
+	FLAG_INTERNED_TAIL_CALL=1<<0,
+	FLAG_INTERNED_RECURSIVE_CALL=1<<1,
+	FLAG_INTERNED_BUILTIN=1<<2,
+	FLAG_INTERNED_EVALUABLE=1<<3,
 
 	FLAG_MANAGED=1<<12,					// any ref-counted object
 	FLAG_END=1<<13						// DO NOT USE
