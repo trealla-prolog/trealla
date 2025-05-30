@@ -1,5 +1,7 @@
 :- use_module(library(concurrent)).
 
+writeln(T) :- writeq(T), nl.
+
 test1(C) :-
 	future(X, slow_predicate(X), F1),
 	future(X, fast_predicate(X), F2),

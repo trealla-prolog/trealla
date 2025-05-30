@@ -1,5 +1,7 @@
 :- use_module(library(http)).
 
+writeln(T) :- writeq(T), nl.
+
 geturl(Url) :-
 	http_get(Url,_Data,[status_code(Code),final_url(Location)]), !,
 	format("Job [~w] ~w ==> ~w done~n",[Url,Code,Location]).

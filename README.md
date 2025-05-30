@@ -330,9 +330,6 @@ Non-standard predicates
 	write_canonical_to_atom/3   # write_canonical_to_atom(?atom,?term,+oplist)
 	term_to_atom/2              # term_to_atom(?atom,?term)
 
-	writeln/1
-	writeln/2
-
 	setrand/1                   # set_seed(+integer) set random number seed
 	srandom/1                   # set_seed(+integer) set random number seed
 	set_seed/1                  # set_seed(+integer) set random number seed
@@ -1033,7 +1030,7 @@ An example:
 	test54 :-
 		L = ['www.google.com','www.bing.com','www.duckduckgo.com'],
 		maplist(geturl,L),
-		writeln('Finished').
+		write('Finished\n').
 
 	$ tpl samples/test -g "time(test54),halt"
 	Job [www.google.com] 200 ==> www.google.com done
@@ -1047,7 +1044,7 @@ An example:
 	test56 :-
 		L = ['www.google.com','www.bing.com','www.duckduckgo.com'],
 		tasklist(geturl,L),
-		writeln('Finished').
+		write('Finished\n').
 
 	$ tpl samples/test -g "time(test56),halt"
 	Job [www.duckduckgo.com] 200 ==> https://duckduckgo.com done
