@@ -9,8 +9,8 @@ dcg_translate(TermIn, Term) :-
 	nonvar(TermIn),
 	dcg_rule(TermIn, Term).
 
-:- help(writeln(+term), [iso(false)]).
-:- help(writeln(+stream,+term), [iso(false)]).
+:- help(writeln(+term), [iso(false),deprecated(true)]).
+:- help(writeln(+stream,+term), [iso(false),deprecated(true)]).
 
 writeln(T) :- write(T), nl.
 writeln(S, T) :- write(S, T), nl.
