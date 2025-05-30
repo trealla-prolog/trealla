@@ -3,8 +3,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/time.h>
-#include <sys/stat.h>
 
 #include "base64.h"
 #include "module.h"
@@ -17,14 +15,6 @@
 #include "openssl/hmac.h"
 #endif
 
-#ifdef _WIN32
-#include <windows.h>
-#define unsetenv(p1)
-#define setenv(p1,p2,p3) _putenv_s(p1,p2)
-#define msleep Sleep
-#define localtime_r(p1,p2) localtime(p1)
-#endif
-
 static pl_idx queue_used(const query *q) { return q->qp[0]; }
 static cell *get_queue(query *q) { return q->queue[0]; }
 
@@ -33,6 +23,8 @@ static bool bif_iso_findall_3(query *q)
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,callable);
 	GET_NEXT_ARG(p3,list_or_nil_or_var);
+	frame *f = GET_CURR_FRAME();
+	f->no_recov = true;
 
 	if (!q->retry) {
 		bool is_partial = false;
