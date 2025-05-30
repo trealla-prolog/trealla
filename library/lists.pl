@@ -7,7 +7,6 @@
 		last/2, same_length/2, transpose/2,
 		sum_list/2, prod_list/2, max_list/2, min_list/2,	% SWI
 		list_sum/2, list_prod/2, list_max/2, list_min/2,	% Modern
-		list_to_conjunction/2, conjunction_to_list/2,
 		list_to_set/2, length/2, reverse/2,
 		exclude/3, include/3, permutation/2,
 		foldl/4, foldl/5, foldl/6, foldl/7,
