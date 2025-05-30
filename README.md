@@ -445,12 +445,12 @@ Non-standard predicates
 
 	directory_files/2
 	delete_file/1
-	exists_file/1               # also file_exists/1
+	exists_file/1
 	rename_file/2
 	copy_file/2
 	time_file/2
 	size_file/2
-	exists_directory/1          # also directory_exists/1
+	exists_directory/1
 	make_directory/1
 	make_directory_path/1
 	working_directory/2
