@@ -288,8 +288,6 @@ put(S,C) :- put_code(S, C).
 see(F) :- open(F, read, S), set_input(S).
 tell(F) :- open(F, write, S), set_output(S).
 append(F) :- open(F, append, S), set_output(S).
-file_exists(F) :- exists_file(F).
-directory_exists(F) :- exists_directory(F).
 
 :- help(get0(?integer), [iso(false),deprecated(true)]).
 :- help(get0(+stream,?integer), [iso(false),deprecated(true)]).
@@ -300,8 +298,6 @@ directory_exists(F) :- exists_directory(F).
 :- help(see(+filename), [iso(false),deprecated(true)]).
 :- help(tell(+filename), [iso(false),deprecated(true)]).
 :- help(append(+filename), [iso(false),deprecated(true)]).
-:- help(file_exists(+filename), [iso(false),deprecated(true)]).
-:- help(directory_exists(+filename), [iso(false),deprecated(true)]).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
