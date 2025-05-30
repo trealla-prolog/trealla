@@ -1575,6 +1575,18 @@ static void process_cell(module *m, clause *cl, cell *c, predicate *parent, int 
 				c->flags |= FLAG_INTERNED_RECURSIVE_CALL;
 			}
 	}
+
+	bool any_vars = false;
+
+	for (unsigned i = 1; i < c->num_cells; i++) {
+		if (is_var(c+i)) {
+			any_vars = true;
+			break;
+		}
+	}
+
+	if (!any_vars)
+		c->flags |= FLAG_INTERNED_GROUND;
 }
 
 void process_clause(module *m, clause *cl, predicate *parent)

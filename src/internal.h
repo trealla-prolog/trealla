@@ -116,6 +116,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_local(c) ((c)->flags & FLAG_VAR_LOCAL)
 #define is_void(c) ((c)->flags & FLAG_VAR_VOID)
 #define is_global(c) ((c)->flags & FLAG_VAR_GLOBAL)
+#define is_ground(c) ((c)->flags & FLAG_INTERNED_GROUND)
 #define is_ref(c) (is_var(c) && ((c)->flags & FLAG_VAR_REF))
 #define is_op(c) ((c)->flags & 0xE000) ? true : false
 #define is_callable(c) (is_interned(c) || (is_cstring(c) && !is_string(c)))
@@ -273,6 +274,7 @@ enum {
 	FLAG_INTERNED_RECURSIVE_CALL=1<<1,
 	FLAG_INTERNED_BUILTIN=1<<2,
 	FLAG_INTERNED_EVALUABLE=1<<3,
+	FLAG_INTERNED_GROUND=1<<4,
 
 	FLAG_MANAGED=1<<12,					// any ref-counted object
 	FLAG_END=1<<13						// DO NOT USE
