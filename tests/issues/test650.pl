@@ -3,8 +3,8 @@
 a(1).
 a(2).
 
-test :- a(X), (writeln(X)->!;xyz), fail.
-test :- writeln(oops).
+test :- a(X), (write(X)->nl,!;xyz), fail.
+test :- write(oops), nl.
 
 main :- test.
 main.

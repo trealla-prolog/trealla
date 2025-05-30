@@ -6,19 +6,19 @@ main :-
 
 main1 :-
 	NV1=nv1,
-	when((nonvar(NV1) ; nonvar(NV2)), writeln(ok1)),
-	writeln(here11),
+	when((nonvar(NV1) ; nonvar(NV2)), (write(ok1), nl)),
+	write(here11), nl,
 	NV2=nv2,
-	writeln(here12).
+	write(here12), nl.
 
 main2 :-
 	NV1=nv1,
-	when((nonvar(NV1) , nonvar(NV2)), writeln(ok2)),
-	writeln(here21),
+	when((nonvar(NV1) , nonvar(NV2)), (write(ok2), nl)),
+	write(here21), nl,
 	NV2=nv2,
-	writeln(here22).
+	write(here22), nl.
 
 main3 :-
 	NV=nv,
-	when(nonvar(NV), writeln(ok3)),
-	writeln(here3).
+	when(nonvar(NV), (write(ok3), nl)),
+	write(here3), nl.
