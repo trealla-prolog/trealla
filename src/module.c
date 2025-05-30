@@ -1585,7 +1585,7 @@ static void process_cell(module *m, clause *cl, cell *c, predicate *parent, int 
 		}
 	}
 
-	if (!any_vars && is_interned(c))
+	if (!any_vars && is_compound(c))
 		c->flags |= FLAG_INTERNED_GROUND;
 }
 
