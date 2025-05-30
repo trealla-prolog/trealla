@@ -461,12 +461,6 @@ Non-standard predicates
 	set_stream/2				# only supports alias/1 property
 	alias/2						# alias(?integer,+atom)
 
-	recorda/2-3
-	recordz/2-3
-	recorded/2-3
-	instance/2
-	erase/1
-
 	string_upper/2
 	string_lower/2
 	atom_upper/2
