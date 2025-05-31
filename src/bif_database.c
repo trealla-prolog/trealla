@@ -412,7 +412,7 @@ static void term_assign_vars(parser *p)
 		else
 			snprintf(tmpbuf, sizeof(tmpbuf), "%c%d", ch, n);
 
-		c->val_off = new_atom(p->m->pl, tmpbuf);
+		c->val_off = new_atom(p->pl, tmpbuf);
 		c->flags = 0;
 	}
 }
@@ -447,7 +447,8 @@ static bool bif_iso_asserta_1(query *q)
 	}
 
 	pl_idx num_cells = tmp->num_cells;
-	parser *p = parser_create(q->st.m);
+	module_lock(q->st.m);
+	parser *p = q->st.m->p;
 
 	if (num_cells > p->cl->num_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
@@ -459,13 +460,11 @@ static bool bif_iso_asserta_1(query *q)
 	term_assign_vars(p);
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
-
 	prolog_lock(q->pl);
 	db_entry *r = asserta_to_db(q->st.m, p->cl->num_vars, p->cl->cells, 0);
 	prolog_unlock(q->pl);
-
 	p->cl->cidx = 0;
-	parser_destroy(p);
+	module_unlock(q->st.m);
 
 	if (!r)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
@@ -503,7 +502,8 @@ static bool bif_iso_assertz_1(query *q)
 	}
 
 	pl_idx num_cells = tmp->num_cells;
-	parser *p = parser_create(q->st.m);
+	module_lock(q->st.m);
+	parser *p = q->st.m->p;
 
 	if (num_cells > p->cl->num_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
@@ -515,13 +515,11 @@ static bool bif_iso_assertz_1(query *q)
 	term_assign_vars(p);
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
-
 	prolog_lock(q->pl);
 	db_entry *r = assertz_to_db(q->st.m, p->cl->num_vars, p->cl->cells, false);
 	prolog_unlock(q->pl);
-
 	p->cl->cidx = 0;
-	parser_destroy(p);
+	module_unlock(q->st.m);
 
 	if (!r)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
@@ -567,7 +565,8 @@ static bool do_asserta_2(query *q)
 	check_heap_error(tmp);
 
 	pl_idx num_cells = tmp->num_cells;
-	parser *p = parser_create(q->st.m);
+	module_lock(q->st.m);
+	parser *p = q->st.m->p;
 
 	if (num_cells > p->cl->num_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
@@ -579,13 +578,11 @@ static bool do_asserta_2(query *q)
 	term_assign_vars(p);
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
-
 	prolog_lock(q->pl);
 	db_entry *r = asserta_to_db(q->st.m, p->cl->num_vars, p->cl->cells, 0);
 	prolog_unlock(q->pl);
-
 	p->cl->cidx = 0;
-	parser_destroy(p);
+	module_unlock(q->st.m);
 
 	if (!r)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
@@ -659,7 +656,8 @@ static bool do_assertz_2(query *q)
 	check_heap_error(tmp);
 
 	pl_idx num_cells = tmp->num_cells;
-	parser *p = parser_create(q->st.m);
+	module_lock(q->st.m);
+	parser *p = q->st.m->p;
 
 	if (num_cells > p->cl->num_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
@@ -671,13 +669,11 @@ static bool do_assertz_2(query *q)
 	term_assign_vars(p);
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
-
 	prolog_lock(q->pl);
 	db_entry *r = assertz_to_db(q->st.m, p->cl->num_vars, p->cl->cells, false);
 	prolog_unlock(q->pl);
-
 	p->cl->cidx = 0;
-	parser_destroy(p);
+	module_unlock(q->st.m);
 
 	if (!r)
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");

@@ -1845,10 +1845,7 @@ static void assert_commit(module *m, db_entry *r, predicate *pr, bool append)
 		return;
 
 	if (!pr->idx) {
-		unsigned INDEX_THRESHHOLD =
-			(pr->is_dynamic && pr->is_multifile)
-			|| (*C_STR(m,&pr->key) == '$')
-			? 1500 : 500;
+		unsigned INDEX_THRESHHOLD = 500;
 
 		if (pr->cnt < INDEX_THRESHHOLD)
 			return;
@@ -2027,9 +2024,9 @@ module *load_text(module *m, const char *src, const char *filename)
 
 	if (!p->error) {
 		process_db(p->m);
-		int save = p->m->pl->quiet;
-		//p->m->pl->quiet = true;
-		p->m->pl->halt = false;
+		int save = p->pl->quiet;
+		//p->pl->quiet = true;
+		p->pl->halt = false;
 		p->is_directive = true;
 
 		if (p->m->run_init) {
@@ -2039,14 +2036,14 @@ module *load_text(module *m, const char *src, const char *filename)
 			SB_sprintf(src, "forall(%s:retract(('$directive'(initialization(__G_)))), (once(__G_); format('Error: ~w~n', [__G_])))", p->m->name);
 
 			if (run(p, SB_cstr(src), false, NULL, 0))
-				p->m->pl->status = false;
+				p->pl->status = false;
 
 			SB_free(src);
 			p->m->run_init = false;
 		}
 
 		p->is_command = p->is_directive = false;
-		p->m->pl->quiet = save;
+		p->pl->quiet = save;
 	}
 
 	module *save_m = p->m;
@@ -2172,7 +2169,7 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including, bool 
 
 	if (!p->error && !p->already_loaded_error) {
 		process_db(p->m);
-		int save = p->m->pl->quiet;
+		int save = p->pl->quiet;
 		p->is_directive = true;
 
 		if (p->m->run_init && init) {
@@ -2182,14 +2179,14 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including, bool 
 			SB_sprintf(src, "forall(%s:retract(('$directive'(initialization(__G_)))), (once(__G_); format('Error: ~w~n', [__G_])))", p->m->name);
 
 			if (run(p, SB_cstr(src), false, NULL, 0))
-				p->m->pl->status = false;
+				p->pl->status = false;
 
 			SB_free(src);
 			p->m->run_init = false;
 		}
 
 		p->is_command = p->is_directive = false;
-		p->m->pl->quiet = save;
+		p->pl->quiet = save;
 	}
 
 	ok = !p->error;
