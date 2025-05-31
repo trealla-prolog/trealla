@@ -1,16 +1,9 @@
 :- meta_predicate(do_n(+, 0, -)).
 
-%%	bench_peirera is det.
-%%	bench_peirera(+SpeedupOrName) is det.
-%
-%	=|?- bench_peirera|= is the same as =|?- bench_peirera(1)|=.
-%
-%	@param SpeedupOrName If number, run all tests speedup by N; if
-%			     atom, run named test at speddup 1.
-
-bench_peirera :-
+run :-
 	benches.
-bench_peirera(SpeedupOrName) :-
+
+run(SpeedupOrName) :-
 	(   number(SpeedupOrName)
 	->  benches(SpeedupOrName)
 	;   bench_mark(SpeedupOrName)
