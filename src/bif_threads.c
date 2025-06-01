@@ -1068,12 +1068,7 @@ static bool do_thread_property_pin_both(query *q)
 		cell *tmp = alloc_on_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		make_cstring(tmp+1, alias);
-
-		if (!unify(q, c, c_ctx, tmp, q->st.curr_frame))
-			return false;
-
-		unshare_cell(tmp+1);
-		return true;
+		return unify(q, c, c_ctx, tmp, q->st.curr_frame);
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "detached")) {
 		cell *tmp = alloc_on_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "detached"), NULL, 1, 1);
@@ -1431,12 +1426,7 @@ static bool do_message_queue_property_pin_both(query *q)
 		cell *tmp = alloc_on_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		make_cstring(tmp+1, alias);
-
-		if (!unify(q, c, c_ctx, tmp, q->st.curr_frame))
-			return false;
-
-		unshare_cell(tmp+1);
-		return true;
+		return unify(q, c, c_ctx, tmp, q->st.curr_frame);
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "size")) {
 		sliter *iter = sl_first(t->alias);
 
@@ -1812,12 +1802,7 @@ static bool do_mutex_property_pin_both(query *q)
 		cell *tmp = alloc_on_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		make_cstring(tmp+1, alias);
-
-		if (!unify(q, c, c_ctx, tmp, q->st.curr_frame))
-			return false;
-
-		unshare_cell(tmp+1);
-		return true;
+		return unify(q, c, c_ctx, tmp, q->st.curr_frame);
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "status")) {
 		if (t->num_locks == 0) {
 			cell *tmp = alloc_on_heap(q, 2);

@@ -901,6 +901,7 @@ static bool bif_hex_bytes_2(query *q)
 			cell tmp;
 			make_cstring(&tmp, tmpbuf);
 			unify(q, h11, h11_ctx, &tmp, q->st.curr_frame);
+			unshare_cell(&tmp);
 
 			unsigned n2 = n & 0xF;
 			if (n2 < 10) ch = '0' + n2;
@@ -908,9 +909,12 @@ static bool bif_hex_bytes_2(query *q)
 			put_char_utf8(tmpbuf, ch);
 			make_cstring(&tmp, tmpbuf);
 
-			if (!unify(q, h12, h12_ctx, &tmp, q->st.curr_frame))
+			if (!unify(q, h12, h12_ctx, &tmp, q->st.curr_frame)) {
+				unshare_cell(&tmp);
 				return false;
+			}
 
+			unshare_cell(&tmp);
 			p1 = LIST_TAIL(p1);
 			p1 = deref(q, p1, p1_ctx);
 			p1_ctx = q->latest_ctx;
@@ -1128,7 +1132,9 @@ static bool bif_iso_number_codes_2(query *q)
 	make_string(&tmp, SB_cstr(q->sb));
 	tmp.flags |= FLAG_CSTR_CODES;
 	SB_free(q->sb);
-	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
+	return ok;
 }
 
 static bool do_sub_atom(query *q, cell *p1, cell *p2, pl_idx p2_ctx, cell *p3, pl_idx p3_ctx, cell *p4, pl_idx p4_ctx, cell *p5)
@@ -5533,7 +5539,9 @@ static bool bif_sys_integer_in_radix_3(query *q)
 		make_string(&tmp, tmpbuf);
 	}
 
-	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+	bool ok = unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
+	return ok;
 }
 
 static bool bif_abort_0(query *q)
