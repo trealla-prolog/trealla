@@ -536,7 +536,7 @@ static bool bif_iso_number_chars_2(query *q)
 		stream *str = &q->pl->streams[n];
 
 		if (!str->p)
-			str->p = parser_create(q->pl->user_m);
+			str->p = parser_create(q->st.m);
 
 		parser *p = str->p;
 		reset(p);
@@ -1088,7 +1088,7 @@ static bool bif_iso_number_codes_2(query *q)
 		stream *str = &q->pl->streams[n];
 
 		if (!str->p)
-			str->p = parser_create(q->pl->user_m);
+			str->p = parser_create(q->st.m);
 
 		parser *p = str->p;
 		reset(p);
