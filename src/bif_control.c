@@ -1142,7 +1142,6 @@ builtins g_control_bifs[] =
 	{"call", 6, bif_iso_call_n, ":callable,?term,?term,?term,?term,?term", true, false, BLAH},
 	{"call", 7, bif_iso_call_n, ":callable,?term,?term,?term,?term,?term,?term", true, false, BLAH},
 	{"call", 8, bif_iso_call_n, ":callable,?term,?term,?term,?term,?term,?term,?term", true, false, BLAH},
-	{"call", 9, bif_iso_call_n, ":callable,?term,?term,?term,?term,?term,?term,?term,?term", true, false, BLAH},
 	{"throw", 1, bif_iso_throw_1, "+term", true, false, BLAH},
 	{"once", 1, bif_iso_once_1, ":callable", true, false, BLAH},
 	{"catch", 3, bif_iso_catch_3, ":callable,?term,:callable", true, false, BLAH},
