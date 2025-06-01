@@ -4835,7 +4835,9 @@ static bool bif_char_type_2(query *q)
 		put_char_utf8(tmpbuf, tolower(ch));
 		cell tmp;
 		make_string(&tmp, tmpbuf);
-		return unify(q, arg21, arg21_ctx, &tmp, q->st.curr_frame);
+		bool ok = unify(q, arg21, arg21_ctx, &tmp, q->st.curr_frame);
+		unshare_cell(&tmp);
+		return ok;
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "upper") && p2->arity) {
 		cell *arg21 = deref(q, p2+1, p2_ctx);
 		pl_idx arg21_ctx = q->latest_ctx;
@@ -4843,7 +4845,9 @@ static bool bif_char_type_2(query *q)
 		put_char_utf8(tmpbuf, toupper(ch));
 		cell tmp;
 		make_string(&tmp, tmpbuf);
-		return unify(q, arg21, arg21_ctx, &tmp, q->st.curr_frame);
+		bool ok = unify(q, arg21, arg21_ctx, &tmp, q->st.curr_frame);
+		unshare_cell(&tmp);
+		return ok;
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "graphic"))
 		return (ch == '#') || (ch == '$') || (ch == '&')
 		|| (ch == '*') || (ch == '+') || (ch == '-')

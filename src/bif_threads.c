@@ -1068,7 +1068,13 @@ static bool do_thread_property_pin_both(query *q)
 		cell *tmp = alloc_on_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		make_cstring(tmp+1, alias);
-		return unify(q, c, c_ctx, tmp, q->st.curr_frame);
+
+		if (!unify(q, c, c_ctx, tmp, q->st.curr_frame)) {
+			unshare_cell(tmp+1);
+			return false;
+		}
+
+		return true;
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "detached")) {
 		cell *tmp = alloc_on_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "detached"), NULL, 1, 1);
@@ -1177,7 +1183,13 @@ static bool do_thread_property_pin_id(query *q)
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		check_heap_error(create_vars(q, 1) != -1);
 		make_cstring(tmp+1, alias);
-		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+
+		if (!unify(q, p2, p2_ctx, tmp, q->st.curr_frame)) {
+			unshare_cell(tmp+1);
+			return false;
+		}
+
+		return true;
 	} else if (i == 1) {
 		check_heap_error(push_choice(q));
 		cell *tmp = alloc_on_heap(q, 2);
@@ -1426,7 +1438,13 @@ static bool do_message_queue_property_pin_both(query *q)
 		cell *tmp = alloc_on_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		make_cstring(tmp+1, alias);
-		return unify(q, c, c_ctx, tmp, q->st.curr_frame);
+
+		if (!unify(q, c, c_ctx, tmp, q->st.curr_frame)) {
+			unshare_cell(tmp+1);
+			return false;
+		}
+
+		return true;
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "size")) {
 		sliter *iter = sl_first(t->alias);
 
@@ -1528,7 +1546,13 @@ static bool do_message_queue_property_pin_id(query *q)
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		check_heap_error(create_vars(q, 1) != -1);
 		make_cstring(tmp+1, alias);
-		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+
+		if (!unify(q, p2, p2_ctx, tmp, q->st.curr_frame)) {
+			unshare_cell(tmp+1);
+			return false;
+		}
+
+		return true;
 	}
 
 	cell *tmp = alloc_on_heap(q, 2);
@@ -1802,7 +1826,13 @@ static bool do_mutex_property_pin_both(query *q)
 		cell *tmp = alloc_on_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		make_cstring(tmp+1, alias);
-		return unify(q, c, c_ctx, tmp, q->st.curr_frame);
+
+		if (!unify(q, c, c_ctx, tmp, q->st.curr_frame)) {
+			unshare_cell(tmp+1);
+			return false;
+		}
+
+		return true;
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "status")) {
 		if (t->num_locks == 0) {
 			cell *tmp = alloc_on_heap(q, 2);
@@ -1902,7 +1932,13 @@ static bool do_mutex_property_pin_id(query *q)
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		check_heap_error(create_vars(q, 1) != -1);
 		make_cstring(tmp+1, alias);
-		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+
+		if (!unify(q, p2, p2_ctx, tmp, q->st.curr_frame)) {
+			unshare_cell(tmp+1);
+			return false;
+		}
+
+		return true;
 	}
 
 	cell *tmp;
