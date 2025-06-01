@@ -23,8 +23,6 @@ static bool bif_iso_findall_3(query *q)
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,callable);
 	GET_NEXT_ARG(p3,list_or_nil_or_var);
-	frame *f = GET_CURR_FRAME();
-	f->no_recov = true;
 
 	if (!q->retry) {
 		bool is_partial = false;
