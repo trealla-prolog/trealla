@@ -2717,6 +2717,7 @@ static bool bif_help_0(query *q)
 			fprintf(stdout, "%s/%u: %s%s%s\n", fn->name, fn->arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
 	}
 
+	sl_done(iter);
 	return true;
 }
 
@@ -2827,6 +2828,7 @@ static bool bif_help_1(query *q)
 				fprintf(stdout, "%% %s/%u: %s%s%s\n", fn->name, fn->arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
 		}
 
+		sl_done(iter);
 		return true;
 	}
 
@@ -2892,6 +2894,7 @@ static bool bif_help_2(query *q)
 				fprintf(stdout, "%% %s/%u: %s%s%s\n", fn->name, fn->arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
 		}
 
+		sl_done(iter);
 		return true;
 	}
 
@@ -2955,6 +2958,7 @@ static bool bif_module_help_1(query *q)
 			fprintf(stdout, "%% %s/%u: %s%s%s\n", fn->name, fn->arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
 	}
 
+	sl_done(iter);
 	return true;
 }
 
@@ -2986,6 +2990,7 @@ static bool bif_module_help_2(query *q)
 				fprintf(stdout, "%% %s/%u: %s%s%s\n", fn->name, fn->arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
 		}
 
+		sl_done(iter);
 		return true;
 	}
 
@@ -3054,6 +3059,7 @@ static bool bif_module_help_3(query *q)
 				fprintf(stdout, "%% %s/%u: %s%s%s\n", fn->name, fn->arity, fn->name, fn->iso?" [ISO]":"", fn->evaluable?" [EVALUABLE]":"");
 		}
 
+		sl_done(iter);
 		return true;
 	}
 
@@ -6125,6 +6131,7 @@ static void load_ops(query *q)
 		free(dst2);
 	}
 
+	sl_done(iter);
 	parser *p = parser_create(q->pl->user_m);
 	p->srcptr = SB_cstr(pr);
 	p->is_consulting = true;
