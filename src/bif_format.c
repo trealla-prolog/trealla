@@ -653,7 +653,23 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 	if (str == NULL) {
 		int n = q->st.m->pl->current_output;
 		stream *str = &q->pl->streams[n];
-		net_write(tmpbuf, len, str);
+		const char *tmpsrc = tmpbuf;
+
+		while (len) {
+			size_t tmpbuf_free = net_write(tmpsrc, len, str);
+
+			if (!tmpbuf_free) {
+				if (feof(str->fp) || ferror(str->fp)) {
+					free(tmpbuf);
+					fprintf(stderr, "Error: end of file on write\n");
+					return false;
+				}
+			}
+
+			clearerr(str->fp);
+			len -= tmpbuf_free;
+			tmpsrc += tmpbuf_free;
+		}
 	} else if (is_compound(str)
 		&& ((CMP_STRING_TO_CSTR(q, str, "atom")
 		&& CMP_STRING_TO_CSTR(q, str, "chars")

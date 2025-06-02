@@ -305,15 +305,17 @@ sliter *sl_first(skiplist *l)
 	if (l->is_tmp_list)
 		iter = &l->tmp_iter;
 	else {
+		acquire_lock(&l->guard);
+
 		if (!l->iters) {
 			iter = malloc(sizeof(sliter));
 			if (!iter) return NULL;
 		} else {
-			acquire_lock(&l->guard);
 			iter = l->iters;
 			l->iters = iter->next;
-			release_lock(&l->guard);
 		}
+
+		release_lock(&l->guard);
 	}
 
 	iter->key = NULL;
@@ -384,15 +386,17 @@ sliter *sl_find_key(skiplist *l, const void *key)
 	if (l->is_tmp_list)
 		iter = &l->tmp_iter;
 	else {
+		acquire_lock(&l->guard);
+
 		if (!l->iters) {
 			iter = malloc(sizeof(sliter));
 			if (!iter) return NULL;
 		} else {
-			acquire_lock(&l->guard);
 			iter = l->iters;
 			l->iters = iter->next;
-			release_lock(&l->guard);
 		}
+
+		release_lock(&l->guard);
 	}
 
 	iter->key = (void*)key;
