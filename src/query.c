@@ -478,14 +478,11 @@ static void enter_predicate(query *q, predicate *pr)
 
 static void leave_predicate(query *q, predicate *pr)
 {
-	if (!pr)
-		return;
+	sl_done(q->st.iter);
+	q->st.iter = NULL;
 
 	if (!pr->is_dynamic || !pr->refcnt)
 		return;
-
-	sl_done(q->st.iter);
-	q->st.iter = NULL;
 
 	if (--pr->refcnt != 0)
 		return;

@@ -434,12 +434,14 @@ void sl_done(sliter *iter)
 		return;
 
 	skiplist *l = iter->l;
+	acquire_lock(&l->guard);
 
 	if (!l->is_tmp_list) {
-		acquire_lock(&l->guard);
 		iter->next = l->iters;
 		l->iters = iter;
 		release_lock(&l->guard);
-	} else
+	} else {
+		release_lock(&l->guard);
 		sl_destroy(l);
+	}
 }
