@@ -481,6 +481,9 @@ static void leave_predicate(query *q, predicate *pr)
 	sl_done(q->st.iter);
 	q->st.iter = NULL;
 
+	if (!pr)
+		return;
+
 	if (!pr->is_dynamic || !pr->refcnt)
 		return;
 
