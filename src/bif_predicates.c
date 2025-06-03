@@ -1315,6 +1315,30 @@ static bool bif_iso_sub_atom_5(query *q)
 	return bif_iso_sub_string_5(q);
 }
 
+// NOTE: this just handles the mode(S,S,+) case...
+
+static bool do_atom_concat_equal_3(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	GET_NEXT_ARG(p2,var);
+	GET_NEXT_ARG(p3,atom);
+
+	if (C_STRLEN_UTF8(p3) & 1)
+		return false;
+
+	size_t len3 = C_STRLEN(q, p3);
+	cell tmp;
+	check_heap_error(make_slice(q, &tmp, p3, 0, len3/2));
+
+	if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
+		return false;
+
+	if (!unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
+		return false;
+
+	return true;
+}
+
 // NOTE: this just handles the mode(-,-,+) case...
 
 static bool do_atom_concat_3(query *q)
@@ -1323,10 +1347,18 @@ static bool do_atom_concat_3(query *q)
 		GET_FIRST_ARG(p1,var);
 		GET_NEXT_ARG(p2,var);
 		GET_NEXT_ARG(p3,atom);
+
+		if ((p1->var_ctx == p2->var_ctx) && (p1->var_num == p2->var_num))
+			return do_atom_concat_equal_3(q);
+
 		cell tmp;
 		make_atom(&tmp, g_empty_s);
-		unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-		unify(q, p2, p2_ctx, p3, q->st.curr_frame);
+
+		if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
+			return false;
+
+		if (!unify(q, p2, p2_ctx, p3, q->st.curr_frame))
+			return false;
 
 		if (C_STRLEN(q, p3))
 			check_heap_error(push_choice(q));
