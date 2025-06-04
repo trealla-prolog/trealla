@@ -182,8 +182,15 @@ void thread_initialize(prolog *pl)
 
 void thread_deinitialize(prolog *pl)
 {
-	thread *t = &pl->threads[0];
-	sl_destroy(t->alias);
+	for (int i = 0; i < MAX_THREADS; i++) {
+		thread *t = &pl->threads[i];
+
+		if (!t->is_init)
+			continue;
+
+		sl_destroy(t->alias);
+		t->alias = NULL;
+	}
 }
 
 static bool is_thread_or_alias(query *q, cell *c)
