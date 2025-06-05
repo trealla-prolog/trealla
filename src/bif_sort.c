@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "sort_r.h"
-
 #include "query.h"
 
 typedef struct { query *q; cell *c; pl_idx c_ctx; int8_t arg; bool ascending:1; } basepair;
@@ -85,7 +83,11 @@ static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysor
 		p1_ctx = q->latest_ctx;
 	}
 
-	sort_r(base, cnt, sizeof(basepair), (void*)nodecmp_, NULL);
+#if defined __FreeBSD__ || __DragonFly__
+	mergesort(base, cnt, sizeof(basepair), (void*)nodecmp_);
+#else
+	qsort(base, cnt, sizeof(basepair), (void*)nodecmp_);
+#endif
 
 	for (size_t i = 0; i < cnt; i++) {
 		if (i > 0) {
@@ -264,7 +266,11 @@ static cell *nodesort4(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool ascen
 		p1_ctx = q->latest_ctx;
 	}
 
-	sort_r(base, cnt, sizeof(basepair), (void*)nodecmp_, NULL);
+#if defined __FreeBSD__ || __DragonFly__
+	mergesort(base, cnt, sizeof(basepair), (void*)nodecmp_);
+#else
+	qsort(base, cnt, sizeof(basepair), (void*)nodecmp_);
+#endif
 
 	for (size_t i = 0; i < cnt; i++) {
 		if (i > 0) {
