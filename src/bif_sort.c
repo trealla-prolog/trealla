@@ -83,7 +83,8 @@ static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysor
 		p1_ctx = q->latest_ctx;
 	}
 
-#if defined __FreeBSD__ || __DragonFly__
+#if (defined __APPLE__ || defined __MACH__ || defined __DARWIN__ \
+	|| defined __FreeBSD__ || defined __DragonFly__)
 	mergesort(base, cnt, sizeof(basepair), (void*)nodecmp_);
 #else
 	qsort(base, cnt, sizeof(basepair), (void*)nodecmp_);
