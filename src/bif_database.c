@@ -1086,7 +1086,6 @@ builtins g_database_bifs[] =
 	{"retractall", 1, bif_iso_retractall_1, "+term", true, false, BLAH},
 	{"clause", 2, bif_iso_clause_2, "+term,?term", true, false, BLAH},
 
-	{"assert", 1, bif_iso_assertz_1, "+term", false, false, BLAH},
 	{"asserta", 2, bif_asserta_2, "+term,-string", false, false, BLAH},
 	{"assertz", 2, bif_assertz_2, "+term,-string", false, false, BLAH},
 	{"erase", 1, bif_erase_1, "+string", false, false, BLAH},
