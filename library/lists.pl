@@ -5,8 +5,8 @@
 		subtract/3, union/3, intersection/3, is_set/1,
 		nth1/3, nth0/3, nth1/4, nth0/4,
 		last/2, same_length/2, transpose/2,
-		sum_list/2, prod_list/2, max_list/2, min_list/2,	% SWI
-		list_sum/2, list_prod/2, list_max/2, list_min/2,	% Modern
+		sum_list/2, max_list/2, min_list/2,	% SWI
+		list_sum/2, list_max/2, list_min/2,	% Modern
 		list_to_set/2, length/2, reverse/2,
 		exclude/3, include/3, permutation/2,
 		foldl/4, foldl/5, foldl/6,
@@ -191,21 +191,6 @@ list_sum_([X|Xs], Sum0, Sum) :-
 
 :- help(list_sum(+list,?integer), [iso(false), desc('Add all values of a list.')]).
 :- help(sum_list(+list,?integer), [iso(false), desc('Add all values of a list.')]).
-
-list_prod(Xs, Prod) :-
-	list_prod_(Xs, 1, Prod).
-
-prod_list(Xs, Prod) :-
-	list_prod_(Xs, 1, Prod).
-
-list_prod_([], Prod0, Prod) :-
-	Prod = Prod0.
-list_prod_([X|Xs], Prod0, Prod) :-
-	Prod1 is Prod0 * X,
-	list_prod_(Xs, Prod1, Prod).
-
-:- help(list_prod(+list,?integer), [iso(false), desc('Multiplay all values of a list.')]).
-:- help(prod_list(+list,?integer), [iso(false), desc('Multiplay all values of a list.')]).
 
 list_max([H|T], Max) :-
 	list_max_(T, H, Max).
