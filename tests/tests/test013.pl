@@ -1,4 +1,5 @@
 :-initialization(main).
+:- use_module(library(lists)).
 
 main :-
 	atom_length('一二三',L1),

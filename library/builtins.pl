@@ -1,5 +1,4 @@
 :- pragma(builtins, [once(true)]).
-:- use_module(library(iso_ext)).
 :- use_module(library(lists)).
 
 expand_term((H --> B), Out) :-
@@ -9,11 +8,11 @@ dcg_translate(TermIn, Term) :-
 	nonvar(TermIn),
 	dcg_rule(TermIn, Term).
 
-:- help(writeln(+term), [iso(false),deprecated(true)]).
-:- help(writeln(+stream,+term), [iso(false),deprecated(true)]).
-
 writeln(T) :- write(T), nl.
 writeln(S, T) :- write(S, T), nl.
+
+:- help(writeln(+term), [iso(false),deprecated(true)]).
+:- help(writeln(+stream,+term), [iso(false),deprecated(true)]).
 
 predicate_property(P, A) :-
 	nonvar(P), atom(A), !,
