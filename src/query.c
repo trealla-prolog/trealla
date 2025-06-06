@@ -658,14 +658,14 @@ static void reuse_frame(query *q, unsigned num_vars)
 	if (c_next->val_off == g_sys_drop_barrier_s)
 		drop_choice(q);
 
-	frame *f = GET_CURR_FRAME();
 	const frame *newf = GET_FRAME(q->st.fp);
-	const slot *from = GET_SLOT(newf, 0);
-	slot *to = GET_SLOT(f, 0);
+	frame *f = GET_CURR_FRAME();
 
 	for (pl_idx i = 0; i < num_vars; i++) {
+		const slot *from = GET_SLOT(newf, i);
+		slot *to = GET_SLOT(f, i);
 		unshare_cell(&to->c);
-		to++->c = from++->c;
+		to->c = from->c;
 	}
 
 	f->initial_slots = f->actual_slots = num_vars;
