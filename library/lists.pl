@@ -9,7 +9,7 @@
 		list_sum/2, list_prod/2, list_max/2, list_min/2,	% Modern
 		list_to_set/2, length/2, reverse/2,
 		exclude/3, include/3, permutation/2,
-		foldl/4, foldl/5, foldl/6, foldl/7,
+		foldl/4, foldl/5, foldl/6,
 		maplist/2, maplist/3, maplist/4, maplist/5, maplist/6, maplist/7, maplist/8,
 		tasklist/2, tasklist/3, tasklist/4, tasklist/5, tasklist/6, tasklist/7, tasklist/8
 	]).
@@ -369,18 +369,9 @@ foldl_([H1|T1], [H2|T2], [H3|T3], G, V0, V) :-
 	call(G, H1, H2, H3, V0, V1),
 	foldl_(T1, T2, T3, G, V1, V).
 
-foldl(G, L1, L2, L3, L4, V0, V) :-
-	foldl_(L1, L2, L3, L4, G, V0, V).
-
-foldl_([], [], [], [], _, V, V).
-foldl_([H1|T1], [H2|T2], [H3|T3], [H4|T4], G, V0, V) :-
-	call(G, H1, H2, H3, H4, V0, V1),
-	foldl_(T1, T2, T3, T4, G, V1, V).
-
 :- help(foldl(:callable,+list,+var,-var), [iso(false)]).
 :- help(foldl(:callable,+list,+list,+var,-var), [iso(false)]).
 :- help(foldl(:callable,+list,+list,+list,+var,-var), [iso(false)]).
-:- help(foldl(:callable,+list,+list,+list,+list,+var,-var), [iso(false)]).
 :- meta_predicate foldl(3, ?, ?, ?).
 :- meta_predicate foldl(4, ?, ?, ?, ?).
 :- meta_predicate foldl(5, ?, ?, ?, ?, ?).
