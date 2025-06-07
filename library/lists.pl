@@ -165,10 +165,10 @@ nth_aux(Element, [Head| Tail], Position0, Position, [Head| Rest]) :-
 	Position1 is Position0 + 1,
 	nth_aux(Element, Tail, Position1, Position, Rest).
 
-last([X|Xs], Last) :- last_(Xs, X, Last).
+last([H|T], Last) :- last_(T, H, Last).
 
 last_([], Last, Last).
-last_([X|Xs], _, Last) :- last_(Xs, X, Last).
+last_([H|T], _, Last) :- last_(T, H, Last).
 
 :- help(last(+list,-term), [iso(false)]).
 
@@ -185,9 +185,9 @@ sum_list(Xs, Sum) :-
 
 list_sum_([], Sum0, Sum) :-
 	Sum = Sum0.
-list_sum_([X|Xs], Sum0, Sum) :-
-	Sum1 is Sum0 + X,
-	list_sum_(Xs, Sum1, Sum).
+list_sum_([H|T], Sum0, Sum) :-
+	Sum1 is Sum0 + H,
+	list_sum_(T, Sum1, Sum).
 
 :- help(list_sum(+list,?integer), [iso(false), desc('Add all values of a list.')]).
 :- help(sum_list(+list,?integer), [iso(false), desc('Add all values of a list.')]).
