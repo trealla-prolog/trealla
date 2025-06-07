@@ -241,7 +241,7 @@ static bool bif_iso_nonvar_1(query *q)
 static bool bif_iso_ground_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
-	return !has_vars(q, p1, p1_ctx);
+	return is_ground(p1) || !has_vars(q, p1, p1_ctx);
 }
 
 static bool bif_iso_callable_1(query *q)
@@ -5152,11 +5152,13 @@ static bool bif_numlist_3(query *q)
 		cell tmp;
 		make_int(&tmp,  from++);
 		cell *l = append_list(q, &tmp);
-		if (!l) return false;
+		check_heap_error(l);
+		l->flags |= FLAG_INTERNED_GROUND;
 	}
 
 	cell *l = end_list(q);
 	check_heap_error(l);
+	l->flags |= FLAG_INTERNED_GROUND;
 	return unify(q, p3, p3_ctx, l, q->st.curr_frame);
 }
 
