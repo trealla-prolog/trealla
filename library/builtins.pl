@@ -482,25 +482,6 @@ read_line_to_codes(Stream, Codes) :-
 
 :- help(read_line_to_codes(+stream,?list), [iso(false)]).
 
-list_to_conjunction(List0, T) :-
-	reverse(List0, List),
-	toconjunction_(List, true, T).
-
-toconjunction_([], In, In).
-toconjunction_([H|T], true, Out) :- !,
-	Out2 = H,
-	toconjunction_(T, Out2, Out).
-toconjunction_([H|T], In, Out) :-
-	Out2 = (H, In),
-	toconjunction_(T, Out2, Out).
-
-conjunction_to_list(T, List) :-
-	tolist_(T, List).
-
-tolist_((T1,T2), [T1|Rest]) :- !,
-	tolist_(T2, Rest).
-tolist_(T, [T|[]]).
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 
