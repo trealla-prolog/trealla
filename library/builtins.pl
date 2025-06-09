@@ -8,8 +8,8 @@ dcg_translate(TermIn, Term) :-
 	nonvar(TermIn),
 	dcg_rule(TermIn, Term).
 
-writeln(T) :- write(T), nl.
-writeln(S, T) :- write(S, T), nl.
+writeln(T) :- write(T), nl.				% SWI
+writeln(S, T) :- write(S, T), nl.		% SWI
 
 :- help(writeln(+term), [iso(false),deprecated(true)]).
 :- help(writeln(+stream,+term), [iso(false),deprecated(true)]).
@@ -90,16 +90,6 @@ repeat(N) :-
 	repeat_integer_(N).
 
 :- help(repeat(+integer), [iso(false)]).
-
-subsumes_term(G, S) :-
-	\+ \+ (
-	 term_variables(S, V1),
-	 G = S,
-	 term_variables(V1, V2),
-	 V2 == V1
-	).
-
-:- help(subsumes_term(+term,+term), [iso(true)]).
 
 argv(L) :- current_prolog_flag(argv, L).
 raw_argv(L) :- current_prolog_flag(raw_argv, L).

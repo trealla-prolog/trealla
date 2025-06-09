@@ -1,6 +1,16 @@
 :- meta_predicate(countall(0,?)).
 :- help(countall(:callable,?integer), [iso(true)]).
 
+subsumes_term(G, S) :-
+	\+ \+ (
+	 term_variables(S, V1),
+	 G = S,
+	 term_variables(V1, V2),
+	 V2 == V1
+	).
+
+:- help(subsumes_term(+term,+term), [iso(true)]).
+
 countall(_, N) :-
 	integer(N),
 	(N >= 0 -> true; throw(error(domain_error(not_less_than_zero, N), countall/2))),
