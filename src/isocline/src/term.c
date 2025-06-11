@@ -164,7 +164,7 @@ ic_private void term_set_attr( term_t* term, attr_t attr ) {
   if (attr.x.bgcolor != term->attr.x.bgcolor && attr.x.bgcolor != IC_COLOR_NONE) {
     term_bgcolor(term,attr.x.bgcolor);
     if (term->palette < ANSIRGB && color_is_rgb(attr.x.bgcolor)) {
-      term->attr.x.bgcolor = attr.x.bgcolor; 
+      term->attr.x.bgcolor = attr.x.bgcolor;
     }
   }
   if (attr.x.bold != term->attr.x.bold && attr.x.bold != IC_NONE) {
@@ -178,7 +178,7 @@ ic_private void term_set_attr( term_t* term, attr_t attr ) {
   }
   if (attr.x.italic != term->attr.x.italic && attr.x.italic != IC_NONE) {
     term_italic(term,attr.x.italic == IC_ON);
-  }  
+  }
   assert(attr.x.color == term->attr.x.color || attr.x.color == IC_COLOR_NONE);
   assert(attr.x.bgcolor == term->attr.x.bgcolor || attr.x.bgcolor == IC_COLOR_NONE);
   assert(attr.x.bold == term->attr.x.bold || attr.x.bold == IC_NONE);
@@ -206,7 +206,7 @@ ic_private void term_writef(term_t* term, const char* fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   term_vwritef(term,fmt,ap);
-  va_end(ap);  
+  va_end(ap);
 }
 
 ic_private void term_vwritef(term_t* term, const char* fmt, va_list args ) {
@@ -234,20 +234,20 @@ ic_private void term_write_formatted_n( term_t* term, const char* s, const attr_
     ssize_t n = 0;
     while( i+n < len && s[i+n] != 0 ) {
       if (!attr_is_eq(attr,attrs[i+n])) {
-        if (n > 0) { 
+        if (n > 0) {
           term_write_n( term, s+i, n );
           i += n;
           n = 0;
         }
         attr = attrs[i];
         term_set_attr( term, attr_update_with(default_attr,attr) );
-      }  
-      n++;    
+      }
+      n++;
     }
     if (n > 0) {
       term_write_n( term, s+i, n );
       i += n;
-      n = 0;    
+      n = 0;
     }
     assert(s[i] != 0 || i == len);
     term_set_attr(term, default_attr);
@@ -282,7 +282,7 @@ ic_private void term_write(term_t* term, const char* s) {
 ic_private void term_write_n(term_t* term, const char* s, ssize_t n) {
   if (s == NULL || n <= 0) return;
   // write to buffer to reduce flicker and to process escape sequences (this may flush too)
-  term_append_buf(term, s, n);  
+  term_append_buf(term, s, n);
 }
 
 
@@ -297,7 +297,7 @@ ic_private void term_flush(term_t* term) {
     term_write_direct(term, sbuf_string(term->buf), sbuf_len(term->buf));
     //term_show_cursor(term,true);
     sbuf_clear(term->buf);
-  }  
+  }
 }
 
 ic_private buffer_mode_t term_set_buffer_mode(term_t* term, buffer_mode_t mode) {
@@ -312,12 +312,12 @@ ic_private buffer_mode_t term_set_buffer_mode(term_t* term, buffer_mode_t mode) 
 }
 
 static void term_check_flush(term_t* term, bool contains_nl) {
-  if (term->bufmode == UNBUFFERED || 
+  if (term->bufmode == UNBUFFERED ||
       sbuf_len(term->buf) > 4000 ||
-      (term->bufmode == LINEBUFFERED && contains_nl)) 
+      (term->bufmode == LINEBUFFERED && contains_nl))
   {
     term_flush(term);
-  }  
+  }
 }
 
 //-------------------------------------------------------------
@@ -326,21 +326,21 @@ static void term_check_flush(term_t* term, bool contains_nl) {
 
 static void term_init_raw(term_t* term);
 
-ic_private term_t* term_new(alloc_t* mem, tty_t* tty, bool nocolor, bool silent, int fd_out ) 
+ic_private term_t* term_new(alloc_t* mem, tty_t* tty, bool nocolor, bool silent, int fd_out )
 {
   term_t* term = mem_zalloc_tp(mem, term_t);
   if (term == NULL) return NULL;
 
   term->fd_out  = (fd_out < 0 ? STDOUT_FILENO : fd_out);
   term->nocolor = nocolor || (isatty(term->fd_out) == 0);
-  term->silent  = silent;  
+  term->silent  = silent;
   term->mem     = mem;
   term->tty     = tty;     // can be NULL
   term->width   = 80;
   term->height  = 25;
   term->is_utf8 = tty_is_utf8(tty);
   term->palette = ANSI16; // almost universally supported
-  term->buf     = sbuf_new(mem);  
+  term->buf     = sbuf_new(mem);
   term->bufmode = LINEBUFFERED;
   term->attr    = attr_default();
 
@@ -351,16 +351,16 @@ ic_private term_t* term_new(alloc_t* mem, tty_t* tty, bool nocolor, bool silent,
   if (!term->nocolor) {
     // detect color palette
     // COLORTERM takes precedence
-    const char* colorterm = getenv("COLORTERM");  
-    const char* eterm = getenv("TERM");    
-    if (ic_contains(colorterm,"24bit") || ic_contains(colorterm,"truecolor") || ic_contains(colorterm,"direct")) { 
-      term->palette = ANSIRGB; 
+    const char* colorterm = getenv("COLORTERM");
+    const char* eterm = getenv("TERM");
+    if (ic_contains(colorterm,"24bit") || ic_contains(colorterm,"truecolor") || ic_contains(colorterm,"direct")) {
+      term->palette = ANSIRGB;
     }
-    else if (ic_contains(colorterm,"8bit") || ic_contains(colorterm,"256color")) { term->palette = ANSI256; } 
+    else if (ic_contains(colorterm,"8bit") || ic_contains(colorterm,"256color")) { term->palette = ANSI256; }
     else if (ic_contains(colorterm,"4bit") || ic_contains(colorterm,"16color"))  { term->palette = ANSI16; }
     else if (ic_contains(colorterm,"3bit") || ic_contains(colorterm,"8color"))   { term->palette = ANSI8; }
-    else if (ic_contains(colorterm,"1bit") || ic_contains(colorterm,"nocolor") || ic_contains(colorterm,"monochrome")) { 
-      term->palette = MONOCHROME; 
+    else if (ic_contains(colorterm,"1bit") || ic_contains(colorterm,"nocolor") || ic_contains(colorterm,"monochrome")) {
+      term->palette = MONOCHROME;
     }
     // otherwise check for some specific terminals
     else if (getenv("WT_SESSION") != NULL) { term->palette = ANSIRGB; } // Windows terminal
@@ -374,24 +374,24 @@ ic_private term_t* term_new(alloc_t* mem, tty_t* tty, bool nocolor, bool silent,
       else if (ic_contains(eterm,"alacritty") || ic_contains(eterm,"kitty")) {
         term->palette = ANSIRGB;
       }
-      else if (ic_contains(eterm,"256color") || ic_contains(eterm,"gnome")) { 
+      else if (ic_contains(eterm,"256color") || ic_contains(eterm,"gnome")) {
         term->palette = ANSI256;
-      }  
+      }
       else if (ic_contains(eterm,"16color")){ term->palette = ANSI16; }
       else if (ic_contains(eterm,"8color")) { term->palette = ANSI8; }
-      else if (ic_contains(eterm,"monochrome") || ic_contains(eterm,"nocolor") || ic_contains(eterm,"dumb")) { 
-        term->palette = MONOCHROME; 
+      else if (ic_contains(eterm,"monochrome") || ic_contains(eterm,"nocolor") || ic_contains(eterm,"dumb")) {
+        term->palette = MONOCHROME;
       }
     }
     debug_msg("term: color-bits: %d (COLORTERM=%s, TERM=%s)\n", term_get_color_bits(term), colorterm, eterm);
   }
-  
+
   // read COLUMS/LINES from the environment for a better initial guess.
   const char* env_columns = getenv("COLUMNS");
   if (env_columns != NULL) { ic_atoz(env_columns, &term->width); }
   const char* env_lines = getenv("LINES");
   if (env_lines != NULL)   { ic_atoz(env_lines, &term->height); }
-  
+
   // initialize raw terminal output and terminal dimensions
   term_init_raw(term);
   term_update_dim(term);
@@ -403,8 +403,8 @@ ic_private term_t* term_new(alloc_t* mem, tty_t* tty, bool nocolor, bool silent,
 ic_private bool term_is_interactive(const term_t* term) {
   ic_unused(term);
   // check dimensions (0 is used for debuggers)
-  // if (term->width <= 0) return false; 
-  
+  // if (term->width <= 0) return false;
+
   // check editing support
   const char* eterm = getenv("TERM");
   debug_msg("term: TERM=%s\n", eterm);
@@ -438,13 +438,13 @@ ic_private void term_free(term_t* term) {
 
 //-------------------------------------------------------------
 // For best portability and applications inserting CSI SGR (ESC[ .. m)
-// codes themselves in strings, we interpret these at the 
+// codes themselves in strings, we interpret these at the
 // lowest level so we can have a `term_get_attr` function which
 // is needed for bracketed styles etc.
 //-------------------------------------------------------------
 
 static void term_append_esc(term_t* term, const char* const s, ssize_t len) {
-  if (s[1]=='[' && s[len-1] == 'm') {    
+  if (s[1]=='[' && s[len-1] == 'm') {
     // it is a CSI SGR sequence: ESC[ ... m
     if (term->nocolor) return;       // ignore escape sequences if nocolor is set
     term->attr = attr_update_with(term->attr, attr_from_esc_sgr(s,len));
@@ -482,10 +482,10 @@ static void term_append_buf( term_t* term, const char* s, ssize_t len ) {
     // handle ascii sequences in bulk
     ssize_t ascii = 0;
     ssize_t next;
-    while ((next = str_next_ofs(s, len, pos+ascii, NULL)) > 0 && 
-            (uint8_t)s[pos + ascii] > '\x1B' && (uint8_t)s[pos + ascii] <= 0x7F ) 
+    while ((next = str_next_ofs(s, len, pos+ascii, NULL)) > 0 &&
+            (uint8_t)s[pos + ascii] > '\x1B' && (uint8_t)s[pos + ascii] <= 0x7F )
     {
-      ascii += next;      
+      ascii += next;
     }
     if (ascii > 0) {
       sbuf_append_n(term->buf, s+pos, ascii);
@@ -510,9 +510,9 @@ static void term_append_buf( term_t* term, const char* s, ssize_t len ) {
       sbuf_append_n(term->buf, s+pos, next);
     }
     pos += next;
-  }  
+  }
   // possibly flush
-  term_check_flush(term, newline);  
+  term_check_flush(term, newline);
 }
 
 //-------------------------------------------------------------
@@ -523,7 +523,7 @@ static void term_append_buf( term_t* term, const char* s, ssize_t len ) {
 
 // write to the console without further processing
 static bool term_write_direct(term_t* term, const char* s, ssize_t n) {
-  ssize_t count = 0; 
+  ssize_t count = 0;
   while( count < n ) {
     ssize_t nwritten = write(term->fd_out, s + count, to_size_t(n - count));
     if (nwritten > 0) {
@@ -613,7 +613,7 @@ static void term_cursor_visible( term_t* term, bool visible ) {
   SetConsoleCursorInfo(term->hcon,&info);
 }
 
-static void term_erase_line( term_t* term, ssize_t mode ) {  
+static void term_erase_line( term_t* term, ssize_t mode ) {
   CONSOLE_SCREEN_BUFFER_INFO info;
   if (!GetConsoleScreenBufferInfo( term->hcon, &info )) return;
   DWORD written;
@@ -632,7 +632,7 @@ static void term_erase_line( term_t* term, ssize_t mode ) {
     length  = info.dwCursorPosition.X;
   }
   else {
-    // to end of line    
+    // to end of line
     length = (ssize_t)info.srWindow.Right - info.dwCursorPosition.X + 1;
     start = info.dwCursorPosition;
   }
@@ -650,7 +650,7 @@ static void term_clear_screen(term_t* term, ssize_t mode) {
   ssize_t width = (ssize_t)info.dwSize.X;
   if (mode == 2) {
     // entire screen
-    length = width * info.dwSize.Y;    
+    length = width * info.dwSize.Y;
   }
   else if (mode == 1) {
     // to cursor
@@ -680,9 +680,9 @@ static WORD attr_color[8] = {
 static void term_set_win_attr( term_t* term, attr_t ta ) {
   WORD def_attr = term->hcon_default_attr;
   CONSOLE_SCREEN_BUFFER_INFO info;
-  if (!GetConsoleScreenBufferInfo( term->hcon, &info )) return;  
+  if (!GetConsoleScreenBufferInfo( term->hcon, &info )) return;
   WORD cur_attr = info.wAttributes;
-  WORD attr = cur_attr; 
+  WORD attr = cur_attr;
   if (ta.x.color != IC_COLOR_NONE) {
     if (ta.x.color >= IC_ANSI_BLACK && ta.x.color <= IC_ANSI_SILVER) {
       attr = (attr & 0xFFF0) | attr_color[ta.x.color - IC_ANSI_BLACK];
@@ -700,7 +700,7 @@ static void term_set_win_attr( term_t* term, attr_t ta ) {
     }
     else if (ta.x.bgcolor >= IC_ANSI_GRAY && ta.x.bgcolor <= IC_ANSI_WHITE) {
       attr = (attr & 0xFF0F) | (WORD)(attr_color[ta.x.bgcolor - IC_ANSI_GRAY] << 4) | BACKGROUND_INTENSITY;
-    } 
+    }
     else if (ta.x.bgcolor == IC_ANSI_DEFAULT) {
       attr = (attr & 0xFF0F) | (def_attr & 0x00F0);
     }
@@ -710,7 +710,7 @@ static void term_set_win_attr( term_t* term, attr_t ta ) {
   }
   if (ta.x.reverse != IC_NONE) {
     attr = (attr & ~COMMON_LVB_REVERSE_VIDEO) | (ta.x.reverse == IC_ON ? COMMON_LVB_REVERSE_VIDEO : 0);
-  }  
+  }
   if (attr != cur_attr) {
     SetConsoleTextAttribute(term->hcon, attr);
   }
@@ -724,10 +724,10 @@ static ssize_t esc_param( const char* s, ssize_t def ) {
 }
 
 static void esc_param2( const char* s, ssize_t* p1, ssize_t* p2, ssize_t def ) {
-  if (*s == '?') s++; 
+  if (*s == '?') s++;
   *p1 = def;
   *p2 = def;
-  ic_atoz2(s, p1, p2);  
+  ic_atoz2(s, p1, p2);
 }
 
 // Emulate escape sequences on older windows.
@@ -749,15 +749,15 @@ static void term_write_esc( term_t* term, const char* s, ssize_t len ) {
     case 'D':
       term_move_cursor(term, 0, -1, esc_param(s+2, 1));
       break;
-    case 'H': 
+    case 'H':
       esc_param2(s+2, &row, &col, 1);
       term_move_cursor_to(term, row, col);
       break;
     case 'K':
       term_erase_line(term, esc_param(s+2, 0));
       break;
-    case 'm': 
-      term_set_win_attr( term, attr_from_esc_sgr(s,len) ); 
+    case 'm':
+      term_set_win_attr( term, attr_from_esc_sgr(s,len) );
       break;
 
     // support some less standard escape codes (currently not used by isocline)
@@ -776,7 +776,7 @@ static void term_write_esc( term_t* term, const char* s, ssize_t len ) {
       col = esc_param(s+2, 1);
       term_move_cursor_to(term, row, col);
       break;
-    case 'J': 
+    case 'J':
       term_clear_screen(term, esc_param(s+2, 0));
       break;
     case 'h':
@@ -784,14 +784,14 @@ static void term_write_esc( term_t* term, const char* s, ssize_t len ) {
         term_cursor_visible(term, true);
       }
       break;
-    case 'l': 
+    case 'l':
       if (strncmp(s+2, "?25l", 4) == 0) {
         term_cursor_visible(term, false);
       }
       break;
-    case 's': 
+    case 's':
       term_cursor_save(term);
-      break;    
+      break;
     case 'u':
       term_cursor_restore(term);
       break;
@@ -811,10 +811,10 @@ static void term_write_esc( term_t* term, const char* s, ssize_t len ) {
 
 static bool term_write_direct(term_t* term, const char* s, ssize_t len ) {
   term_cursor_visible(term,false); // reduce flicker
-  ssize_t pos = 0;    
+  ssize_t pos = 0;
   if ((term->hcon_mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0) {
     // use the builtin virtual terminal processing. (enables truecolor for example)
-    term_write_console(term, s, len);   
+    term_write_console(term, s, len);
     pos = len;
   }
   else {
@@ -824,21 +824,21 @@ static bool term_write_direct(term_t* term, const char* s, ssize_t len ) {
       // (We don't need to handle utf-8 separately as we set the codepage to always be in utf-8 mode)
       ssize_t nonctrl = 0;
       ssize_t next;
-      while( (next = str_next_ofs( s, len, pos+nonctrl, NULL )) > 0 && 
+      while( (next = str_next_ofs( s, len, pos+nonctrl, NULL )) > 0 &&
               (uint8_t)s[pos + nonctrl] >= ' ' && (uint8_t)s[pos + nonctrl] <= 0x7F) {
         nonctrl += next;
       }
       if (nonctrl > 0) {
         term_write_console(term, s+pos, nonctrl);
         pos += nonctrl;
-      }    
+      }
       if (next <= 0) break;
 
       if ((uint8_t)s[pos] >= 0x80) {
         // utf8 is already processed
         term_write_console(term, s+pos, next);
       }
-      else if (next > 1 && s[pos] == '\x1B') {                                
+      else if (next > 1 && s[pos] == '\x1B') {
         // handle control (note: str_next_ofs considers whole CSI escape sequences at a time)
         term_write_esc(term, s+pos, next);
       }
@@ -853,7 +853,7 @@ static bool term_write_direct(term_t* term, const char* s, ssize_t len ) {
   }
   term_cursor_visible(term,true);
   assert(pos == len);
-  return (pos == len); 
+  return (pos == len);
 
 }
 #endif
@@ -867,29 +867,29 @@ static bool term_write_direct(term_t* term, const char* s, ssize_t len ) {
 #if !defined(_WIN32)
 
 // send escape query that may return a response on the tty
-static bool term_esc_query_raw( term_t* term, const char* query, char* buf, ssize_t buflen ) 
+static bool term_esc_query_raw( term_t* term, const char* query, char* buf, ssize_t buflen )
 {
   if (buf==NULL || buflen <= 0 || query[0] == 0) return false;
   bool osc = (query[1] == ']');
   if (!term_write_direct(term, query, ic_strlen(query))) return false;
-  debug_msg("term: read tty query response to: ESC %s\n", query + 1);  
+  debug_msg("term: read tty query response to: ESC %s\n", query + 1);
   return tty_read_esc_response( term->tty, query[1], osc, buf, buflen );
 }
 
-static bool term_esc_query( term_t* term, const char* query, char* buf, ssize_t buflen ) 
+static bool term_esc_query( term_t* term, const char* query, char* buf, ssize_t buflen )
 {
-  if (!tty_start_raw(term->tty)) return false;  
-  bool ok = term_esc_query_raw(term,query,buf,buflen);  
+  if (!tty_start_raw(term->tty)) return false;
+  bool ok = term_esc_query_raw(term,query,buf,buflen);
   tty_end_raw(term->tty);
   return ok;
 }
 
 // get the cursor position via an ESC[6n
-static bool term_get_cursor_pos( term_t* term, ssize_t* row, ssize_t* col) 
+static bool term_get_cursor_pos( term_t* term, ssize_t* row, ssize_t* col)
 {
   // send escape query
   char buf[128];
-  if (!term_esc_query(term,"\x1B[6n",buf,128)) return false; 
+  if (!term_esc_query(term,"\x1B[6n",buf,128)) return false;
   if (!ic_atoz2(buf,row,col)) return false;
   return true;
 }
@@ -898,7 +898,7 @@ static void term_set_cursor_pos( term_t* term, ssize_t row, ssize_t col ) {
   term_writef( term, IC_CSI "%zd;%zdH", row, col );
 }
 
-ic_private bool term_update_dim(term_t* term) {  
+ic_private bool term_update_dim(term_t* term) {
   ssize_t cols = 0;
   ssize_t rows = 0;
   struct winsize ws;
@@ -930,12 +930,12 @@ ic_private bool term_update_dim(term_t* term) {
 
   // update width and return whether it changed.
   bool changed = (term->width != cols || term->height != rows);
-  debug_msg("terminal dim: %zd,%zd: %s\n", rows, cols, changed ? "changed" : "unchanged");  
-  if (cols > 0) { 
+  debug_msg("terminal dim: %zd,%zd: %s\n", rows, cols, changed ? "changed" : "unchanged");
+  if (cols > 0) {
     term->width = cols;
     term->height = rows;
   }
-  return changed;  
+  return changed;
 }
 
 #else
@@ -945,8 +945,8 @@ ic_private bool term_update_dim(term_t* term) {
     term->hcon = GetConsoleWindow();
   }
   ssize_t rows = 0;
-  ssize_t cols = 0;  
-  CONSOLE_SCREEN_BUFFER_INFO sbinfo;  
+  ssize_t cols = 0;
+  CONSOLE_SCREEN_BUFFER_INFO sbinfo;
   if (GetConsoleScreenBufferInfo(term->hcon, &sbinfo)) {
      cols = (ssize_t)sbinfo.srWindow.Right - (ssize_t)sbinfo.srWindow.Left + 1;
      rows = (ssize_t)sbinfo.srWindow.Bottom - (ssize_t)sbinfo.srWindow.Top + 1;
@@ -997,13 +997,13 @@ static bool term_esc_query_color_raw(term_t* term, int color_idx, uint32_t* colo
   rgb++; // skip ':'
   unsigned int r,g,b;
   if (sscanf(rgb,"%x/%x/%x",&r,&g,&b) != 3) return false;
-  if (rgb[2]!='/') { // 48-bit rgb, hexadecimal round to 24-bit     
+  if (rgb[2]!='/') { // 48-bit rgb, hexadecimal round to 24-bit
     r = (r+0x7F)/0x100;   // note: can "overflow", e.g. 0xFFFF -> 0x100. (and we need `ic_cap8` to convert.)
     g = (g+0x7F)/0x100;
-    b = (b+0x7F)/0x100; 
+    b = (b+0x7F)/0x100;
   }
   *color = (ic_cap8(r)<<16) | (ic_cap8(g)<<8) | ic_cap8(b);
-  debug_msg("color query: %02x,%02x,%02x: %06x\n", r, g, b, *color);  
+  debug_msg("color query: %02x,%02x,%02x: %06x\n", r, g, b, *color);
   return true;
 }
 
@@ -1036,8 +1036,8 @@ static void term_update_ansi16(term_t* term) {
       if (!term_esc_query_color_raw(term, i, &color)) break;
       debug_msg("term ansi color %d: 0x%06x\n", i, color);
       ansi256[i] = color;
-    }  
-    tty_end_raw(term->tty);  
+    }
+    tty_end_raw(term->tty);
   }
   #endif
 }
@@ -1051,7 +1051,7 @@ static void term_init_raw(term_t* term) {
 #else
 
 ic_private void term_start_raw(term_t* term) {
-  if (term->raw_enabled++ > 0) return;  
+  if (term->raw_enabled++ > 0) return;
   CONSOLE_SCREEN_BUFFER_INFO info;
   if (GetConsoleScreenBufferInfo(term->hcon, &info)) {
     term->hcon_orig_attr = info.wAttributes;
@@ -1060,7 +1060,7 @@ ic_private void term_start_raw(term_t* term) {
   SetConsoleOutputCP(CP_UTF8);
   if (term->hcon_mode == 0) {
     // first time initialization
-    DWORD mode = ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_LVB_GRID_WORLDWIDE;   // for \r \n and \b    
+    DWORD mode = ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_LVB_GRID_WORLDWIDE;   // for \r \n and \b
     // use escape sequence handling if available and the terminal supports it (so we can use rgb colors in Windows terminal)
     // Unfortunately, in plain powershell, we can successfully enable terminal processing
     // but it still fails to render correctly; so we require the palette be large enough (like in Windows Terminal)
@@ -1078,7 +1078,7 @@ ic_private void term_start_raw(term_t* term) {
   }
   else {
     SetConsoleMode(term->hcon, term->hcon_mode);
-  }  
+  }
 }
 
 ic_private void term_end_raw(term_t* term, bool force) {
@@ -1103,15 +1103,15 @@ static void term_init_raw(term_t* term) {
   if (GetConsoleScreenBufferInfoEx(term->hcon, &info)) {
     // store default attributes
     term->hcon_default_attr = info.wAttributes;
-    // update our color table with the actual colors used.    
+    // update our color table with the actual colors used.
     for (unsigned i = 0; i < 16; i++) {
       COLORREF cr = info.ColorTable[i];
       uint32_t color = (ic_cap8(GetRValue(cr))<<16) | (ic_cap8(GetGValue(cr))<<8) | ic_cap8(GetBValue(cr)); // COLORREF = BGR
-      // index is also in reverse in the bits 0 and 2 
+      // index is also in reverse in the bits 0 and 2
       unsigned j = (i&0x08) | ((i&0x04)>>2) | (i&0x02) | (i&0x01)<<2;
       debug_msg("term: ansi color %d is 0x%06x\n", j, color);
       ansi256[j] = color;
-    }    
+    }
   }
   else {
     DWORD err = GetLastError();

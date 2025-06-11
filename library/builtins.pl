@@ -78,19 +78,6 @@ current_prolog_flag(P, A) :-
 
 :- help(current_prolog_flag(+callable,+term), [iso(true)]).
 
-repeat_integer_(N) :-
-	N > 0.
-repeat_integer_(N0) :-
-	N0 > 0,
-	N1 is N0 - 1,
-	repeat_integer_(N1).
-
-repeat(N) :-
-	must_be(N, integer, repeat/1, _),
-	repeat_integer_(N).
-
-:- help(repeat(+integer), [iso(false)]).
-
 argv(L) :- current_prolog_flag(argv, L).
 raw_argv(L) :- current_prolog_flag(raw_argv, L).
 
