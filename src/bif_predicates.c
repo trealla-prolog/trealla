@@ -5059,13 +5059,15 @@ static bool bif_call_nth_2(query *q)
 		return throw_error(q, p2, p2_ctx, "domain_error", "not_less_than_zero");
 
 	if (is_var(p2)) {
-		cell *tmp = prepare_call(q, CALL_NOSKIP, p1, p1_ctx, 4);
+		cell *tmp = prepare_call(q, CALL_NOSKIP, p1, p1_ctx, 6);
 		pl_idx num_cells = p1->num_cells;
 		make_instr(tmp+num_cells++, g_sys_incr_s, bif_sys_incr_2, 2, 2);
 		GET_RAW_ARG(2,p2_raw);
 		tmp[num_cells] = *p2_raw;
 		tmp[num_cells++].num_cells = 1;
 		make_int(tmp+num_cells++, 0);
+		make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
+		make_uint(tmp+num_cells++, q->cp);
 		make_call(q, tmp+num_cells);
 		check_heap_error(push_fail_on_retry_with_barrier(q));
 		q->st.instr = tmp;
