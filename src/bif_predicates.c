@@ -32,11 +32,6 @@ static bool bif_iso_findall_3(query *q)
 		if (is_iso_list(p3) && !check_list(q, p3, p3_ctx, &is_partial, NULL) && !is_partial)
 			return throw_error(q, p3, p3_ctx, "type_error", "list");
 
-		if (is_compound(p1) && (!is_iso_list(p1))) {	// Why?
-			if (create_vars(q, 16) < 0)
-				return throw_error(q, p3, p3_ctx, "resource_error", "stack");
-		}
-
 		check_heap_error(init_tmp_heap(q));
 		cell *tmp2 = clone_term_to_tmp(q, p2, p2_ctx);
 		check_heap_error(tmp2);
