@@ -1693,6 +1693,12 @@ static bool bif_iso_powi_2(query *q)
 		if ((llabs(p1.val_int) != 1) && (p2.val_int < 0))
 			return throw_error(q, &p1, q->st.curr_frame, "type_error", "float");
 
+		if (p2.val_int == 0) {
+			q->accum.val_int = 1;
+			q->accum.tag = TAG_INTEGER;
+			return true;
+		}
+
 		if (p2.val_int < 0) {
 			q->accum.val_int = pow(p1.val_int, p2.val_int);
 			q->accum.tag = TAG_INTEGER;
