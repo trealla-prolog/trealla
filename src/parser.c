@@ -2559,8 +2559,17 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 	if (!isdigit(*s))
 		return false;
 
-	if ((*s == '0') && (s[1] == '\'') && !((s[2] == '\\') && (s[3] == '\n'))
+	if ((s[0] == '0') && (s[1] == '\'') && !((s[2] == '\\') && (s[3] == '\n'))
 		&& (!search_op(p->m, "", NULL, false) || ((s[2] == '\'') && (s[3] == '\'')))) {
+		if (!s[2]) {
+			if (DUMP_ERRS || !p->do_read_term)
+				fprintf(stderr, "Error: syntax error, parsing number2, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+
+			p->error_desc = "number";
+			p->error = true;
+			return false;
+		}
+
 		s += 2;
 		int v;
 
@@ -2975,11 +2984,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		int ch = get_char_utf8(&src);
 
 		if ((ch == '\\') && p->flags.character_escapes) {
-			/* if (peek_char_utf8(src) == '"') {
-				p->error = true;
-			} else */ {
-				ch = get_escape(p, &src, &p->error, false);
-			}
+			ch = get_escape(p, &src, &p->error, false);
 
 			if (p->error) {
 				if (DUMP_ERRS || !p->do_read_term)
