@@ -2975,7 +2975,11 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		int ch = get_char_utf8(&src);
 
 		if ((ch == '\\') && p->flags.character_escapes) {
-			ch = get_escape(p, &src, &p->error, false);
+			if (peek_char_utf8(src) == '"') {
+				p->error = true;
+			} else {
+				ch = get_escape(p, &src, &p->error, false);
+			}
 
 			if (p->error) {
 				if (DUMP_ERRS || !p->do_read_term)
