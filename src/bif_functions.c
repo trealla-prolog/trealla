@@ -300,7 +300,6 @@ static bool bif_iso_is_2(query *q)
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2_tmp,any);
 	q->max_eval_depth = 0;
-
 	CLEANUP cell p2 = eval(q, p2_tmp);
 	p2.num_cells = 1;
 
@@ -2538,6 +2537,7 @@ static bool bif_iso_numeric_eq_2(query *q)
 {
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
+	q->max_eval_depth = 0;
 	CLEANUP cell p1 = eval(q, p1_tmp);
 	CLEANUP cell p2 = eval(q, p2_tmp);
 	COMPARE_OP(==,p1,p2);
@@ -2548,6 +2548,7 @@ static bool bif_iso_numeric_ne_2(query *q)
 {
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
+	q->max_eval_depth = 0;
 	CLEANUP cell p1 = eval(q, p1_tmp);
 	CLEANUP cell p2 = eval(q, p2_tmp);
 	COMPARE_OP(!=,p1,p2);
@@ -2558,6 +2559,7 @@ static bool bif_iso_numeric_ge_2(query *q)
 {
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
+	q->max_eval_depth = 0;
 	CLEANUP cell p1 = eval(q, p1_tmp);
 	CLEANUP cell p2 = eval(q, p2_tmp);
 	COMPARE_OP(>=,p1,p2);
@@ -2568,6 +2570,7 @@ static bool bif_iso_numeric_gt_2(query *q)
 {
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
+	q->max_eval_depth = 0;
 	CLEANUP cell p1 = eval(q, p1_tmp);
 	CLEANUP cell p2 = eval(q, p2_tmp);
 	COMPARE_OP(>,p1,p2);
@@ -2578,6 +2581,7 @@ static bool bif_iso_numeric_le_2(query *q)
 {
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
+	q->max_eval_depth = 0;
 	CLEANUP cell p1 = eval(q, p1_tmp);
 	CLEANUP cell p2 = eval(q, p2_tmp);
 	COMPARE_OP(<=,p1,p2);
@@ -2588,6 +2592,7 @@ static bool bif_iso_numeric_lt_2(query *q)
 {
 	GET_FIRST_ARG(p1_tmp,any);
 	GET_NEXT_ARG(p2_tmp,any);
+	q->max_eval_depth = 0;
 	CLEANUP cell p1 = eval(q, p1_tmp);
 	CLEANUP cell p2 = eval(q, p2_tmp);
 	COMPARE_OP(<,p1,p2);
