@@ -2975,9 +2975,9 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		int ch = get_char_utf8(&src);
 
 		if ((ch == '\\') && p->flags.character_escapes) {
-			if (peek_char_utf8(src) == '"') {
+			/* if (peek_char_utf8(src) == '"') {
 				p->error = true;
-			} else {
+			} else */ {
 				ch = get_escape(p, &src, &p->error, false);
 			}
 
