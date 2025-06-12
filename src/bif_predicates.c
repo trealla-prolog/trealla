@@ -37,7 +37,11 @@ static bool bif_iso_findall_3(query *q)
 				return throw_error(q, p3, p3_ctx, "resource_error", "stack");
 		}
 
-		if (check_body_callable(p2))
+		check_heap_error(init_tmp_heap(q));
+		cell *tmp2 = clone_term_to_tmp(q, p2, p2_ctx);
+		check_heap_error(tmp2);
+
+		if (check_body_callable(tmp2))
 			return throw_error(q, p2, p2_ctx, "type_error", "callable");
 
 		grab_queuen(q);
@@ -45,9 +49,9 @@ static bool bif_iso_findall_3(query *q)
 		if (q->st.qnum == MAX_QUEUES)
 			return throw_error(q, p2, p2_ctx, "resource_error", "max_queues");
 
-		cell *tmp = prepare_call(q, CALL_NOSKIP, p2, p2_ctx, 1+p1->num_cells+2);
+		cell *tmp = prepare_call(q, CALL_NOSKIP, tmp2, p2_ctx, 1+p1->num_cells+2);
 		check_heap_error(tmp, drop_queuen(q));
-		pl_idx num_cells = p2->num_cells;
+		pl_idx num_cells = tmp2->num_cells;
 		make_instr(tmp+num_cells++, g_sys_queue_s, bif_sys_queue_1, 1, p1->num_cells);
 		num_cells += dup_cells_by_ref(tmp+num_cells, p1, p1_ctx, p1->num_cells);
 		make_instr(tmp+num_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
