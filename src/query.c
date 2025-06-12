@@ -297,7 +297,7 @@ const char *dump_id(const void *k, const void *v, const void *p)
 	return tmpbuf;
 }
 
-static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool allow_codes, bool *has_var, bool *is_partial)
+static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool allow_codes, bool *has_var, bool *is_partial, cell **cptr)
 {
 	*is_partial = *has_var = false;
 	size_t is_chars_list = 0;
@@ -372,8 +372,8 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 #endif
 
 	if (is_var(l)) {
-		is_chars_list = 0;
 		*has_var = *is_partial = true;
+		if (cptr) *cptr = l;
 	} else if (is_string(l))
 		;
 	else if (!is_interned(l) || !is_nil(l))
@@ -382,16 +382,16 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 	return is_chars_list;
 }
 
-size_t scan_is_chars_list2(query *q, cell *l, pl_idx l_ctx, bool allow_codes, bool *has_var, bool *is_partial)
+size_t scan_is_chars_list2(query *q, cell *l, pl_idx l_ctx, bool allow_codes, bool *has_var, bool *is_partial, cell **cptr)
 {
 	if (++q->vgen == 0) q->vgen = 1;
-	return scan_is_chars_list_internal(q, l, l_ctx, allow_codes, has_var, is_partial);
+	return scan_is_chars_list_internal(q, l, l_ctx, allow_codes, has_var, is_partial, cptr);
 }
 
 size_t scan_is_chars_list(query *q, cell *l, pl_idx l_ctx, bool allow_codes)
 {
 	bool has_var, is_partial;
-	return scan_is_chars_list2(q, l, l_ctx, allow_codes, &has_var, &is_partial);
+	return scan_is_chars_list2(q, l, l_ctx, allow_codes, &has_var, &is_partial, NULL);
 }
 
 bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n)

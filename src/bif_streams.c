@@ -4172,7 +4172,7 @@ static bool bif_sys_read_term_from_chars_4(query *q)
 		srclen = C_STRLEN(q, p_chars);
 	} else if (!check_list(q, p_chars, p_chars_ctx, &is_partial, NULL)) {
 		return throw_error(q, p_chars, p_chars_ctx, "type_error", "list");
-	} else if ((srclen = scan_is_chars_list2(q, p_chars, p_chars_ctx, false, &has_var, &is_partial)) > 0) {
+	} else if ((srclen = scan_is_chars_list2(q, p_chars, p_chars_ctx, false, &has_var, &is_partial, NULL)) > 0) {
 		if (!srclen)
 			return throw_error(q, p_chars, p_chars_ctx, "type_error", "character");
 
@@ -4267,7 +4267,7 @@ static bool bif_read_term_from_chars_3(query *q)
 		src[len] = '\0';
 	} else if (!check_list(q, p_chars, p_chars_ctx, &is_partial, NULL)) {
 		return throw_error(q, p_chars, p_chars_ctx, "type_error", "list");
-	} else if ((len = scan_is_chars_list2(q, p_chars, p_chars_ctx, false, &has_var, &is_partial)) > 0) {
+	} else if ((len = scan_is_chars_list2(q, p_chars, p_chars_ctx, false, &has_var, &is_partial, NULL)) > 0) {
 		if (!len)
 			return throw_error(q, p_chars, p_chars_ctx, "type_error", "character");
 

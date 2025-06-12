@@ -3406,7 +3406,7 @@ static bool bif_sys_is_partial_string_1(query *q)
 		return false;
 
 	bool has_var, is_partial;
-	scan_is_chars_list2(q, p1, p1_ctx, true, &has_var, &is_partial);
+	scan_is_chars_list2(q, p1, p1_ctx, true, &has_var, &is_partial, NULL);
 	return is_partial;
 }
 

@@ -937,13 +937,14 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	// STRING / CHARS
 
 	int is_chars_list = is_string(c) && q->double_quotes;
-	bool possible_chars = false;
+	bool possible_chars = false, has_var = false, is_partial = false;
+	cell *v = NULL;
 
 	if (is_interned(c) && (C_STRLEN_UTF8(c) == 1) && !q->ignore_ops && q->double_quotes)
 		possible_chars = true;
 
 	if (!is_chars_list && running && possible_chars
-		&& (scan_is_chars_list(q, c, c_ctx, false) > 0))
+		&& (scan_is_chars_list2(q, c, c_ctx, false, &has_var, &is_partial, &v) > 0))
 		is_chars_list += q->st.m->flags.double_quote_chars && scan_is_chars_list(q, c, c_ctx, false);
 
 	if (is_chars_list) {
@@ -975,6 +976,12 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		}
 
 		if (closing_quote) SB_sprintf(q->sb, "%s", "\"");
+
+		if (is_partial) {
+			SB_strcat(q->sb, "||");
+			print_variable(q, v, 0, 1);
+		}
+
 		q->last_thing = WAS_OTHER;
 		return true;
 	}
