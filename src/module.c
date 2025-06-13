@@ -402,15 +402,15 @@ static void destroy_predicate(module *m, predicate *pr)
 	sl_del(m->index, &pr->key);
 
 	while (pr->head) {
-		db_entry *r = pr->head;
-		pr->head = r->next;
-		clear_clause(&r->cl);
-		free(r);
+		db_entry *tmp = pr->head;
+		pr->head = tmp->next;
+		clear_clause(&tmp->cl);
+		free(tmp);
 	}
 
+	pr->head = pr->tail = NULL;
 	sl_destroy(pr->idx2);
 	sl_destroy(pr->idx);
-	pr->head = NULL;
 
 	if (pr->meta_args) {
 		unshare_cells(pr->meta_args, pr->meta_args->num_cells);
@@ -1468,21 +1468,21 @@ static bool check_not_multifile(module *m, predicate *pr, db_entry *r)
 				fprintf(stderr, "Warning: overwriting '%s'/%u\n", C_STR(m, &pr->key), pr->key.arity);
 
 			while (pr->head) {
-				db_entry *r = pr->head;
-				pr->head = r->next;
-				clear_clause(&r->cl);
-				free(r);
+				db_entry *tmp = pr->head;
+				pr->head = tmp->next;
+				clear_clause(&tmp->cl);
+				free(tmp);
 			}
 
-			sl_destroy(pr->idx2);
-			sl_destroy(pr->idx);
-			pr->idx2 = pr->idx = NULL;
 			pr->head = pr->tail = NULL;
 			pr->is_processed = false;
 			pr->is_reload = false;
 			pr->meta_args = NULL;
 			pr->alias = NULL;
 			pr->cnt = 0;
+			sl_destroy(pr->idx2);
+			sl_destroy(pr->idx);
+			pr->idx2 = pr->idx = NULL;
 			return false;
 		}
 	}
