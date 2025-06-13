@@ -401,15 +401,16 @@ static void destroy_predicate(module *m, predicate *pr)
 {
 	sl_del(m->index, &pr->key);
 
-	for (db_entry *r = pr->head; r;) {
-		db_entry *save = r->next;
+	while (pr->head) {
+		db_entry *r = pr->head;
+		pr->head = r->next;
 		clear_clause(&r->cl);
 		free(r);
-		r = save;
 	}
 
 	sl_destroy(pr->idx2);
 	sl_destroy(pr->idx);
+	pr->head = NULL;
 
 	if (pr->meta_args) {
 		unshare_cells(pr->meta_args, pr->meta_args->num_cells);
