@@ -66,7 +66,7 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 	}
 
 #if USE_RATIONAL_TREES
-	if (any2) {
+	if (any2 && q->is_cyclic1 && q->is_cyclic2) {
 		cell *p1 = orig_p1;
 		pl_idx p1_ctx = orig_p1_ctx;
 		cell *p2 = orig_p2;
@@ -539,7 +539,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 	}
 
 #if USE_RATIONAL_TREES
-	if (any2) {
+	if (any2 && q->is_cyclic1 && q->is_cyclic2) {
 		cell *p1 = orig_p1;
 		pl_idx p1_ctx = orig_p1_ctx;
 		cell *p2 = orig_p2;
