@@ -403,7 +403,7 @@ static void destroy_predicate(module *m, predicate *pr)
 
 	while (pr->head) {
 		db_entry *tmp = pr->head;
-		pr->head = tmp->next;
+		pr->head = pr->head->next;
 		clear_clause(&tmp->cl);
 		free(tmp);
 	}
@@ -1469,7 +1469,7 @@ static bool check_not_multifile(module *m, predicate *pr, db_entry *r)
 
 			while (pr->head) {
 				db_entry *tmp = pr->head;
-				pr->head = tmp->next;
+				pr->head = pr->head->next;
 				clear_clause(&tmp->cl);
 				free(tmp);
 			}
@@ -1483,6 +1483,7 @@ static bool check_not_multifile(module *m, predicate *pr, db_entry *r)
 			sl_destroy(pr->idx2);
 			sl_destroy(pr->idx);
 			pr->idx2 = pr->idx = NULL;
+			free(r);
 			return false;
 		}
 	}
@@ -1909,11 +1910,11 @@ db_entry *asserta_to_db(module *m, unsigned num_vars, cell *p1, bool consulting)
 			return NULL;
 
 		pr = r->owner;
-
-		if (pr->head)
-			pr->head->prev = r;
 	}
 	 while (!check_not_multifile(m, pr, r));
+
+	if (pr->head)
+		pr->head->prev = r;
 
 	r->next = pr->head;
 	pr->head = r;
@@ -1950,11 +1951,11 @@ db_entry *assertz_to_db(module *m, unsigned num_vars, cell *p1, bool consulting)
 			return NULL;
 
 		pr = r->owner;
-
-		if (pr->tail)
-			pr->tail->next = r;
 	}
 	 while (!check_not_multifile(m, pr, r));
+
+	if (pr->tail)
+		pr->tail->next = r;
 
 	r->prev = pr->tail;
 	pr->tail = r;
