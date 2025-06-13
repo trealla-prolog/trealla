@@ -1457,13 +1457,13 @@ unsigned get_op(module *m, const char *name, unsigned specifier)
 	return 0;
 }
 
-static bool check_not_multifile(module *m, predicate *pr, db_entry *dbe_orig)
+static bool check_not_multifile(module *m, predicate *pr, db_entry *r)
 {
 	if (pr->head
 		&& !pr->is_multifile && !pr->is_dynamic
 		&& (C_STR(m, &pr->key)[0] != '$')
 		) {
-		if ((dbe_orig->filename != pr->head->filename) || pr->is_reload) {
+		if ((r->filename != pr->head->filename) || pr->is_reload) {
 			if (pr->head->filename)
 				fprintf(stderr, "Warning: overwriting '%s'/%u\n", C_STR(m, &pr->key), pr->key.arity);
 
