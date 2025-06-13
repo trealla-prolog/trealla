@@ -67,10 +67,10 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 
 #if USE_RATIONAL_TREES
 	if (any2) {
-		p1 = orig_p1;
-		p1_ctx = orig_p1_ctx;
-		p2 = orig_p2;
-		p2_ctx = orig_p2_ctx;
+		cell *p1 = orig_p1;
+		pl_idx p1_ctx = orig_p1_ctx;
+		cell *p2 = orig_p2;
+		pl_idx p2_ctx = orig_p2_ctx;
 		unsigned cnt = 0;
 
 		while (is_iso_list(p1) && is_iso_list(p2)) {
@@ -540,10 +540,10 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 
 #if USE_RATIONAL_TREES
 	if (any2) {
-		p1 = orig_p1;
-		p1_ctx = orig_p1_ctx;
-		p2 = orig_p2;
-		p2_ctx = orig_p2_ctx;
+		cell *p1 = orig_p1;
+		pl_idx p1_ctx = orig_p1_ctx;
+		cell *p2 = orig_p2;
+		pl_idx p2_ctx = orig_p2_ctx;
 		unsigned cnt = 0;
 
 		while (is_iso_list(p1) && is_iso_list(p2)) {
