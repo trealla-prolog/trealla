@@ -2776,7 +2776,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 		if (DUMP_ERRS || !p->do_read_term)
 			fprintf(stderr, "Error: syntax error, parsing number, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
-		p->error_desc = "number";
+		p->error_desc = "unexpected_char";
 		p->error = true;
 		return false;
 	}
