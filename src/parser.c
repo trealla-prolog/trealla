@@ -2561,7 +2561,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 	if ((s[0] == '0') && (s[1] == '\'') && !((s[2] == '\\') && (s[3] == '\n'))
 		&& (!search_op(p->m, "", NULL, false) || ((s[2] == '\'') && (s[3] == '\'')))) {
-		if (!s[2]) {
+		if (!s[2] || (s[2] == '\n')) {
 			if (DUMP_ERRS || !p->do_read_term)
 				fprintf(stderr, "Error: syntax error, parsing number2, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
