@@ -2611,7 +2611,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 			v = get_escape(p, &s, &p->error, true);
 
-			if ((!*s || iscntrl(*s) || (save_ch == '0')) && (v != '\n')) {
+			if ((!*s || iscntrl(*s) || (save_ch == '0')) && !iscntrl(v)) {
 				//printf("*** s=%d, iscntrl=%d, save_ch=%d, v=%d\n", *s, iscntrl(*s), save_ch, v);
 
 				if (DUMP_ERRS || !p->do_read_term)
