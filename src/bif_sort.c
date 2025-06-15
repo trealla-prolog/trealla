@@ -87,7 +87,7 @@ static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysor
 	|| defined __FreeBSD__ || defined __DragonFly__)
 	mergesort(base, cnt, sizeof(basepair), (void*)nodecmp_);
 #else
-	qsort(base, cnt, sizeof(basepair), (void*)nodecmp_);
+	qsort(base, cnt, sizeof(basepair), (void*)nodecmp);
 #endif
 
 	for (size_t i = 0; i < cnt; i++) {
