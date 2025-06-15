@@ -49,28 +49,9 @@ attribute_goals(Var) -->
 frozen(Term, Goal) :-
 	copy_term(Term, Term2, Gs),
 	Term = Term2,
-	flatten_(Gs, Gs2),
-	list_to_conjunction(Gs2, Fresh),
+	lists:flatten(Gs, Gs2),
+	lists:list_to_conjunction(Gs2, Fresh),
 	Fresh = Goal.
 
 :- help(freeze(+var,:callable), [iso(false),desc('Delay the execution of Goal until Var is bound (i.e., is not a variable or attributed variable).')]).
 :- help(frozen(@term,-callable), [iso(false),desc('Unify Goal with the goal or conjunction of goals delayed on some attributed variable in Term.')]).
-
-list_to_conjunction(List0, T) :-
-	reverse(List0, List),
-	toconjunction_(List, true, T).
-
-toconjunction_([], In, In).
-toconjunction_([H|T], true, Out) :- !,
-	Out2 = H,
-	toconjunction_(T, Out2, Out).
-toconjunction_([H|T], In, Out) :-
-	Out2 = (H, In),
-	toconjunction_(T, Out2, Out).
-
-conjunction_to_list(T, List) :-
-	tolist_(T, List).
-
-tolist_((T1,T2), [T1|Rest]) :- !,
-	tolist_(T2, Rest).
-tolist_(T, [T|[]]).
