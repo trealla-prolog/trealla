@@ -2559,6 +2559,18 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 	if (!isdigit(*s))
 		return false;
 
+	//if ((s[0] == '0') && (s[1] == '\''))
+	//	printf("*** %s\n", s);
+
+	if ((s[0] == '0') && (s[1] == '\'') && (s[2] == '\'') && ((s[3] == '\n') || !s[3])) {
+		if (DUMP_ERRS || !p->do_read_term)
+			fprintf(stderr, "Error: syntax error, parsing number2, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+
+		p->error_desc = "number";
+		p->error = true;
+		return false;
+	}
+
 	if ((s[0] == '0') && (s[1] == '\'') && !((s[2] == '\\') && (s[3] == '\n'))
 		&& (!search_op(p->m, "", NULL, false) || ((s[2] == '\'') && (s[3] == '\'')))) {
 		if (!s[2] || (s[2] == '\n')) {
@@ -2595,7 +2607,11 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 				goto LOOP;
 			}
 
-			if (!*s || iscntrl(*s)) {
+			int save_ch = s[0];
+
+			v = get_escape(p, &s, &p->error, true);
+
+			if (!*s || iscntrl(*s) || (save_ch == '0')) {
 				if (DUMP_ERRS || !p->do_read_term)
 					fprintf(stderr, "Error: syntax error, parsing number3, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -2604,7 +2620,6 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 				return false;
 			}
 
-			v = get_escape(p, &s, &p->error, true);
 		} else if ((*s == '\'') && s[1] == '\'') {
 			s++;
 			v = *s++;
