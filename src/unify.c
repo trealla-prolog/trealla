@@ -147,6 +147,10 @@ static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx 
 	if ((depth > g_max_depth) || (depth > 6000)) {
 		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		q->cycle_error++;
+
+		if (g_tpl_interrupt)
+			return false;
+
 		return 0;
 	}
 #endif
@@ -680,6 +684,10 @@ static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 	if ((depth > g_max_depth) || (depth > 6000)) {
 		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		q->cycle_error++;
+
+		if (g_tpl_interrupt)
+			return false;
+
 		return true;
 	}
 #endif
