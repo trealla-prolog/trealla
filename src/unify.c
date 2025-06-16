@@ -146,8 +146,7 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 
 static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
-#if 1
-	if ((depth > g_max_depth) || (depth > 60)) {
+	if (depth > 60) {
 		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		q->cycle_error++;
 
@@ -156,7 +155,6 @@ static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx 
 
 		return 0;
 	}
-#endif
 
 	if (is_var(p1)) {
 		if (is_var(p2)) {
@@ -686,8 +684,7 @@ static const struct dispatch g_disp[] =
 
 static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
-#if 1
-	if ((depth > g_max_depth) || (depth > 60)) {
+	if (depth > 60) {
 		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		q->cycle_error++;
 
@@ -696,7 +693,6 @@ static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 
 		return true;
 	}
-#endif
 
 	if (is_var(p1) && is_var(p2)) {
 		if (p2_ctx > p1_ctx)
