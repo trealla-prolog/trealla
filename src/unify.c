@@ -68,28 +68,6 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 #endif
 	}
 
-#if USE_RATIONAL_TREES
-	if (any2 && q->is_cyclic1 && q->is_cyclic2) {
-		cell *p1 = orig_p1;
-		pl_idx p1_ctx = orig_p1_ctx;
-		cell *p2 = orig_p2;
-		pl_idx p2_ctx = orig_p2_ctx;
-		unsigned cnt = 0;
-
-		while (is_iso_list(p1) && is_iso_list(p2)) {
-			p1 = p1 + 1; p1 += p1->num_cells;
-			p2 = p2 + 1; p2 += p2->num_cells;
-			RESTORE_VAR(p1, p1_ctx, p1, p1_ctx, q->vgen);
-			RESTORE_VAR2(p2, p2_ctx, p2, p2_ctx, q->vgen);
-
-			if (cnt > 6)
-				return true;
-
-			cnt++;
-		}
-	}
-#endif
-
 	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 }
 
