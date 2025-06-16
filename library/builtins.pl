@@ -605,7 +605,7 @@ dump_attvars(Any) :-
 	'$list_attributed'(Vs0),
 	sort(Vs0, Vs),
 	dump_attvars_(Vs, Gs0),
-	flatten_(Gs0, Gs1),
+	flatten(Gs0, Gs1),
 	sort(Gs1, Gs),
 	print_goals_(Any, Gs).
 
