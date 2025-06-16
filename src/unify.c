@@ -82,7 +82,7 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 			RESTORE_VAR(p1, p1_ctx, p1, p1_ctx, q->vgen);
 			RESTORE_VAR2(p2, p2_ctx, p2, p2_ctx, q->vgen);
 
-			if ((cnt > g_max_depth) || (cnt > 6000))
+			if (cnt > 6)
 				return true;
 
 			cnt++;
@@ -560,7 +560,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 			RESTORE_VAR(p1, p1_ctx, p1, p1_ctx, q->vgen);
 			RESTORE_VAR2(p2, p2_ctx, p2, p2_ctx, q->vgen);
 
-			if ((cnt > g_max_depth) || (cnt > 6000))
+			if (cnt > 6)
 				return true;
 
 			cnt++;
