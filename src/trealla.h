@@ -6,7 +6,7 @@
 typedef struct prolog_ prolog;
 typedef struct {} pl_sub_query;
 
-prolog *pl_create();
+prolog *pl_create(void);
 void pl_destroy(prolog*);
 
 bool pl_consult(prolog*, const char *filename);
