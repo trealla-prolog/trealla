@@ -2571,11 +2571,31 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 		return false;
 	}
 
+	if ((s[0] == '0') && (s[1] == '\'') && (s[2] == '\\') && isdigit(s[3])) {
+		char *s2 = (char*)s+3;
+		long v = strtol(s2, &s2, 8);
+
+		if (*s2 != '\\') {
+			if (DUMP_ERRS || !p->do_read_term)
+				fprintf(stderr, "Error: syntax error, parsing octal, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+
+			p->error_desc = "number";
+			p->error = true;
+			return false;
+		}
+
+		s2++;
+		p->v.tag = TAG_INTEGER;
+		set_smallint(&p->v, v);
+		*srcptr = s2;
+		return true;
+	}
+
 	if ((s[0] == '0') && (s[1] == '\'') && !((s[2] == '\\') && (s[3] == '\n'))
 		&& (!search_op(p->m, "", NULL, false) || ((s[2] == '\'') && (s[3] == '\'')))) {
 		if (!s[2] || (s[2] == '\n')) {
 			if (DUMP_ERRS || !p->do_read_term)
-				fprintf(stderr, "Error: syntax error, parsing number2, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+				fprintf(stderr, "Error: syntax error, parsing number2a, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "number";
 			p->error = true;
@@ -2596,7 +2616,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 				if (*s != '\'') {
 					if (DUMP_ERRS || !p->do_read_term)
-						fprintf(stderr, "Error: syntax error, parsing number2, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+						fprintf(stderr, "Error: syntax error, parsing number2b, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 					p->error_desc = "number";
 					p->error = true;
