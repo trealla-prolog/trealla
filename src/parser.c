@@ -2573,9 +2573,9 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 	if ((s[0] == '0') && (s[1] == '\'') && (s[2] == '\\') && isdigit(s[3])) {
 		char *s2 = (char*)s+3;
-		long v = strtol(s2, &s2, 8);
+		long long v = strtoll(s2, &s2, 8);
 
-		if (*s2 != '\\') {
+		if ((*s2 != '\\') || (v >= INT64_MAX)) {
 			if (DUMP_ERRS || !p->do_read_term)
 				fprintf(stderr, "Error: syntax error, parsing octal, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -3171,9 +3171,43 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 				if ((ch == p->quote_char) && (*src == ch)) {
 					ch = *src++;
-				} else if (ch == p->quote_char) {
+				} else if ((ch == p->quote_char) && (ch == '\'')) {
 					p->quote_char = 0;
 					break;
+				} else if (ch == p->quote_char) {
+					const char *save_src = src;
+					p->srcptr = (char*)src;
+					src = eat_space(p);
+
+					if (*src != '|') {
+						src = (char*)save_src;
+						p->quote_char = 0;
+						break;
+					}
+
+					src++;
+					p->srcptr = (char*)src;
+					src = eat_space(p);
+
+					if (*src != '|') {
+						src = (char*)save_src;
+						p->quote_char = 0;
+						break;
+					}
+
+					src++;
+					p->srcptr = (char*)src;
+					src = eat_space(p);
+
+					if (iswupper(*src) || (*src == '_')) {
+					} else if (*src != '"') {
+						src = (char*)save_src;
+						p->quote_char = 0;
+						break;
+					}
+
+					src++;
+					continue;
 				}
 
 				if (ch < ' ') {
