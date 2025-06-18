@@ -3232,8 +3232,9 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 						//printf("*** p->token=%s\n", save_src);
 						SB_init(p->token);
 						p->srcptr = save_src;
-						p->fp = NULL;
+						p->no_fp = 1;
 						tokenize(p, true, true);
+						p->no_fp = 0;
 						free(save_src);
 						//printf("*** src=%s\n", src);
 						p->srcptr = (char*)src;
