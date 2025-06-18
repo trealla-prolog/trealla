@@ -3200,6 +3200,48 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					src = eat_space(p);
 
 					if (iswupper(*src) || (*src == '_')) {
+						src = (char*)src;
+						p->quote_char = 0;
+						char *save_src = strdup(SB_cstr(p->token));
+						const char *src2 = save_src;
+						SB_init(p->token);
+						SB_putchar(p->token, '[');
+						bool any = false;
+
+						while ((ch = get_char_utf8(&src2)) != 0) {
+							if (any)
+								SB_putchar(p->token, ',');
+
+							SB_putchar(p->token, ch);
+							any = true;
+						}
+
+						SB_putchar(p->token, '|');
+
+						while ((ch = peek_char_utf8(src)) != 0) {
+							if (!iswalnum(ch) && (ch != '_'))
+								break;
+
+							get_char_utf8(&src);
+							SB_putchar(p->token, ch);
+						}
+
+						SB_putchar(p->token, ']');
+						free(save_src);
+						save_src = strdup(SB_cstr(p->token));
+						//printf("*** p->token=%s\n", save_src);
+						SB_init(p->token);
+						p->srcptr = save_src;
+						p->fp = NULL;
+						tokenize(p, true, true);
+						free(save_src);
+						//printf("*** src=%s\n", src);
+						p->srcptr = (char*)src;
+						p->was_consing = true;
+						SB_init(p->token);
+						p->is_quoted = false;
+						p->was_partial = true;
+						break;
 					} else if (*src != '"') {
 						src = (char*)save_src;
 						p->quote_char = 0;
@@ -3527,6 +3569,12 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 	while (get_token(p, last_op, last_postfix) && !g_tpl_interrupt) {
 		if (p->error && !p->do_read_term)
 			break;
+
+		if (p->was_partial) {
+			p->was_partial = false;
+			last_op = false;
+			continue;
+		}
 
 #if 0
 		int ch = peek_char_utf8(SB_cstr(p->token));

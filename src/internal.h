@@ -782,6 +782,7 @@ struct parser_ {
 	bool error, if_depth[MAX_IF_DEPTH];
 	bool was_consing:1;
 	bool was_string:1;
+	bool was_partial:1;
 	bool did_getline:1;
 	bool already_loaded_error:1;
 	bool do_read_term:1;
