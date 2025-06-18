@@ -3058,7 +3058,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		src += 1;
 	}
 
-	if ((*src == '\'') && (src[1] == '-') && (src[2] == '\'') && last_op) {
+	if (!is_neg && (*src == '\'') && (src[1] == '-') && (src[2] == '\'') && last_op) {
 		is_neg = true;
 		src += 3;
 	}
