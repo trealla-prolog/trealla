@@ -3200,6 +3200,35 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					src = eat_space(p);
 
 					if (iswupper(*src) || (*src == '_')) {
+						src = (char*)src;
+						p->quote_char = 0;
+						char *save_src = strdup(SB_cstr(p->token));
+						const char *src2 = save_src;
+						SB_init(p->token);
+						SB_putchar(p->token, '[');
+						bool any = false;
+
+						while ((ch = get_char_utf8(&src2)) != 0) {
+							if (any)
+								SB_strcat(p->token, ",");
+
+							SB_putchar(p->token, ch);
+							any = true;
+						}
+
+						SB_putchar(p->token, '|');
+
+						while ((ch = peek_char_utf8(src)) != 0) {
+							if (!iswalnum(ch) && (ch != '_'))
+								break;
+
+							get_char_utf8(&src);
+							SB_putchar(p->token, ch);
+						}
+
+						SB_putchar(p->token, ']');
+						free(save_src);
+						break;
 					} else if (*src != '"') {
 						src = (char*)save_src;
 						p->quote_char = 0;
