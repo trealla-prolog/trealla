@@ -3180,7 +3180,6 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					src = eat_space(p);
 
 					if (*src != '|') {
-						src = (char*)save_src;
 						p->quote_char = 0;
 						break;
 					}
