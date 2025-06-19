@@ -23,28 +23,6 @@
 #include "prolog.h"
 #include "cdebug.h"
 
-int history_getch(void)
-{
-#if !defined(_WIN32) && !defined(__wasi__)
-	struct termios oldattr, newattr;
-
-	if (tcgetattr(STDIN_FILENO, &oldattr) != 0)
-		return -1;
-
-	newattr = oldattr;
-	newattr.c_lflag &= ~(ICANON | ECHO);
-
-	if (tcsetattr(STDIN_FILENO, TCSANOW, &newattr) != 0)
-		return -1;
-#endif
-	int ch = fgetc_utf8(stdin);
-#if !defined(_WIN32) && !defined(__wasi__)
-	if (tcsetattr(STDIN_FILENO, TCSANOW, &oldattr) != 0)
-		return -1;
-#endif
-	return ch;
-}
-
 int history_getch_fd(int fd)
 {
 #if !defined(_WIN32) && !defined(__wasi__)
@@ -65,6 +43,11 @@ int history_getch_fd(int fd)
 		return -1;
 #endif
 	return ch;
+}
+
+int history_getch(void)
+{
+	return history_getch_fd(STDIN_FILENO);
 }
 
 static char g_filename[1024];
