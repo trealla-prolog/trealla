@@ -513,8 +513,7 @@ static bool bif_iso_number_chars_2(query *q)
 				return throw_error(q, head, q->latest_ctx, "type_error", "atom");
 			}
 
-			const char *src = C_STR(q, head);
-			int ch = *src;
+			int ch = peek_char_utf8(C_STR(q, head));
 
 			if (!ch)
 				return throw_error(q, head, q->latest_ctx, "type_error", "character");
