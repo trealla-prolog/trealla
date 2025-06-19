@@ -3203,20 +3203,25 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 						src = (char*)src;
 						p->quote_char = 0;
 						char *save_src = strdup(SB_cstr(p->token));
-						const char *src2 = save_src;
 						SB_init(p->token);
-						SB_putchar(p->token, '[');
-						bool any = false;
 
-						while ((ch = get_char_utf8(&src2)) != 0) {
-							if (any)
-								SB_putchar(p->token, ',');
+						if (strlen(save_src)) {
+							const char *src2 = save_src;
+							SB_putchar(p->token, '[');
+							bool any = false;
 
-							SB_putchar(p->token, ch);
-							any = true;
+							while ((ch = get_char_utf8(&src2)) != 0) {
+								if (any)
+									SB_putchar(p->token, ',');
+
+								SB_putchar(p->token, ch);
+								any = true;
+							}
+
+							SB_putchar(p->token, '|');
+						} else {
+							SB_putchar(p->token, '(');
 						}
-
-						SB_putchar(p->token, '|');
 
 						while ((ch = peek_char_utf8(src)) != 0) {
 							if (!iswalnum(ch) && (ch != '_'))
@@ -3226,7 +3231,12 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 							SB_putchar(p->token, ch);
 						}
 
-						SB_putchar(p->token, ']');
+						if (strlen(save_src)) {
+							SB_putchar(p->token, ']');
+						} else {
+							SB_putchar(p->token, ')');
+						}
+
 						free(save_src);
 						save_src = strdup(SB_cstr(p->token));
 						//printf("*** p->token=%s\n", save_src);

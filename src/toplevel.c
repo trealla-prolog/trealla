@@ -135,6 +135,8 @@ bool check_redo(query *q)
 	if (q->in_attvar_print)
 		return true;
 
+	q->retries++;
+
 	if (q->do_dump_vars && q->cp) {
 		dump_vars(q, true);
 
@@ -197,7 +199,7 @@ bool check_redo(query *q)
 			q->retry = QUERY_RETRY;
 			q->pl->did_dump_vars = false;
 			q->fail_on_retry = true;
-			q->autofail_n = isdigit(ch) ? (unsigned)ch - '0' : ch == 'f' ? 5 : UINT_MAX;
+			q->autofail_n = isdigit(ch) ? (unsigned)ch - '0' : ch == 'f' ? 5-(q->retries%5) : UINT_MAX;
 			break;
 		}
 
