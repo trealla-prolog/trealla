@@ -216,7 +216,7 @@ Cross-compile for Windows x64
 To cross-compile on Linux and produce a Windows/x86-64 executable...
 
 	sudo apt install mingw-w64
-	make WIN=1
+	make WIN=1 NOFFI=1 NOSSL=1
 
 ```console
 	$ file tpl.exe

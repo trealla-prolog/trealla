@@ -43,14 +43,20 @@ int history_getch_fd(int fd)
 {
 #if !defined(_WIN32) && !defined(__wasi__)
 	struct termios oldattr, newattr;
-	tcgetattr(fd, &oldattr);
+
+	if (tcgetattr(fd, &oldattr) != 0)
+		return -1;
+
 	newattr = oldattr;
 	newattr.c_lflag &= ~(ICANON | ECHO);
-	tcsetattr(fd, TCSANOW, &newattr);
+
+	if (tcsetattr(fd, TCSANOW, &newattr) != 0)
+		return -1;
 #endif
 	int ch = fgetc_utf8(stdin);
 #if !defined(_WIN32) && !defined(__wasi__)
-	tcsetattr(fd, TCSANOW, &oldattr);
+	if (tcsetattr(fd, TCSANOW, &oldattr) != 0)
+		return -1;
 #endif
 	return ch;
 }
