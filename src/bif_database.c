@@ -286,7 +286,7 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 	for (db_entry *r = pr->head; r; r = r->next)
 		retract_from_db(r->owner->m, r);
 
-	if (pr->idx && !pr->cnt) {
+	if (pr->idx && !pr->refcnt) {
 		predicate_purge_dirty_list(pr);
 	} else {
 		db_entry *r;
