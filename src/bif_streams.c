@@ -6553,7 +6553,7 @@ static bool bif_http_location_2(query *q)
 
 static bool bif_client_5(query *q)
 {
-	GET_FIRST_ARG(p1,atom);
+	GET_FIRST_ARG(p1,source_sink);
 	GET_NEXT_ARG(p2,var);
 	GET_NEXT_ARG(p3,var);
 	GET_NEXT_ARG(p4,var);
@@ -6563,6 +6563,24 @@ static bool bif_client_5(query *q)
 	int udp = 0, nodelay = 1, nonblock = 0, ssl = 0, domain = 0, level = 0;
 	hostname[0] = path[0] = '\0';
 	unsigned port = 80;
+	char *src = NULL;
+	char *filename;
+
+	if (is_atom(p1))
+		filename = src = DUP_STRING(q, p1);
+	else if (!is_iso_list(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "source_sink");
+
+	if (is_iso_list(p1)) {
+		size_t len = scan_is_chars_list(q, p1, p1_ctx, true);
+
+		if (!len)
+			return throw_error(q, p1, p1_ctx, "type_error", "atom");
+
+		src = chars_list_to_string(q, p1, p1_ctx);
+		filename = src;
+	}
+
 	LIST_HANDLER(p5);
 
 	while (is_list(p5)) {
@@ -6615,8 +6633,9 @@ static bool bif_client_5(query *q)
 		p5_ctx = q->latest_ctx;
 	}
 
-	const char *url = C_STR(q, p1);
+	const char *url = filename;
 	parse_host(url, hostname, path, &port, &ssl, &domain);
+	if (src) free(src);
 	nonblock = q->is_task;
 
 	while (is_list(p5)) {
@@ -7446,7 +7465,7 @@ builtins g_streams_bifs[] =
 
 	{"http_location", 2, bif_http_location_2, "?list,?atom", false, false, BLAH},
 	{"parse_url", 2, bif_parse_url_2, "?atom,?list", false, false, BLAH},
-	{"client", 5, bif_client_5, "+atom,-atom,-atom,-atom,+list", false, false, BLAH},
+	{"client", 5, bif_client_5, "+source_sink,-atom,-atom,-atom,+list", false, false, BLAH},
 	{"server", 3, bif_server_3, "+atom,--stream,+list", false, false, BLAH},
 	{"accept", 2, bif_accept_2, "+stream,--stream", false, false, BLAH},
 	{"bread", 3, bif_bread_3, "+stream,+integer,-string", false, false, BLAH},
