@@ -98,7 +98,6 @@ void do_signal(query *q, void *thread_ptr);
 int compare(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx);
 bool unify(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx);
 
-bool print_term_to_buf(query *q, cell *c, pl_idx c_ctx, int running, int cons);
 bool print_term(query *q, FILE *fp, cell *c, pl_idx c_ctx, int running);
 bool print_term_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int running);
 char *print_term_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running);

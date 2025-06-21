@@ -1489,7 +1489,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	return true;
 }
 
-bool print_term_to_buf(query *q, cell *c, pl_idx c_ctx, int running, int cons)
+static bool print_term_to_buf(query *q, cell *c, pl_idx c_ctx, int running, int cons)
 {
 	visit me;
 	me.next = NULL;
