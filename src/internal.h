@@ -639,7 +639,7 @@ struct thread_ {
 struct page_ {
 	page *next;
 	cell *cells;
-	pl_idx idx, max_idx_used, page_size;
+	pl_idx idx, page_size;
 	unsigned num;
 };
 

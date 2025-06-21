@@ -358,10 +358,6 @@ cell *alloc_on_heap(query *q, unsigned num_cells)
 	cell *c = q->heap_pages->cells + q->st.hp;
 	q->st.hp += num_cells;
 	q->heap_pages->idx = q->st.hp;
-
-	if (q->heap_pages->idx > q->heap_pages->max_idx_used)
-		q->heap_pages->max_idx_used = q->heap_pages->idx;
-
 	return c;
 }
 
