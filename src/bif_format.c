@@ -489,8 +489,9 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 				return throw_error(q, c, q->st.curr_frame, "type_error", "integer");
 			}
 
-			print_term_to_buf(q, c, 0, 0, false);
-			len = SB_strlen(q->sb);
+			char *tmpbuf2 = print_term_to_strbuf(q, c, 0, 0);
+			len = strlen(tmpbuf2);
+			free(tmpbuf2);
 			CHECK_BUF(len*2+1);
 			len = format_integer(dst, c, noargval?3:argval, '_', 0, 10);
 			break;
@@ -501,8 +502,9 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 				return throw_error(q, c, q->st.curr_frame, "type_error", "integer");
 			}
 
-			print_term_to_buf(q, c, 0, 0, false);
-			len = SB_strlen(q->sb);
+			tmpbuf2 = print_term_to_strbuf(q, c, 0, 0);
+			len = strlen(tmpbuf2);
+			free(tmpbuf2);
 			CHECK_BUF(len*2+1);
 			len = format_integer(dst, c, 0, ',', noargval?0:argval, 10);
 			break;
@@ -513,8 +515,9 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 				return throw_error(q, c, q->st.curr_frame, "type_error", "integer");
 			}
 
-			print_term_to_buf(q, c, 0, 0, false);
-			len = SB_strlen(q->sb);
+			tmpbuf2 = print_term_to_strbuf(q, c, 0, 0);
+			len = strlen(tmpbuf2);
+			free(tmpbuf2);
 			CHECK_BUF(len*2+1);
 			len = format_integer(dst, c, 3, ',', noargval?0:argval, 10);
 			break;
@@ -530,8 +533,9 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 				return throw_error(q, c, q->st.curr_frame, "type_error", "integer");
 			}
 
-			print_term_to_buf(q, c, 0, 0, false);
-			len = SB_strlen(q->sb);
+			tmpbuf2 = print_term_to_strbuf(q, c, 0, 0);
+			len = strlen(tmpbuf2);
+			free(tmpbuf2);
 			CHECK_BUF(len*10);
 			len = format_integer(dst, c, 0, ',', 0, !argval?8:argval);
 			break;
@@ -547,8 +551,9 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 				return throw_error(q, c, q->st.curr_frame, "type_error", "integer");
 			}
 
-			print_term_to_buf(q, c, 0, 0, false);
-			len = SB_strlen(q->sb);
+			tmpbuf2 = print_term_to_strbuf(q, c, 0, 0);
+			len = strlen(tmpbuf2);
+			free(tmpbuf2);
 			CHECK_BUF(len*10);
 			len = format_integer(dst, c, 0, ',', 0, !argval?-8:-argval);
 			break;
