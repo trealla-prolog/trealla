@@ -384,12 +384,11 @@ void trim_heap(query *q)
 	if (!q->heap_pages)
 		return;
 
-#if 0
 	while (q->heap_pages->idx > q->st.hp) {
 		cell *c = q->heap_pages->cells + --q->heap_pages->idx;
 		unshare_cell(c);
+		c->tag = TAG_EMPTY;
 	}
-#endif
 }
 
 cell *clone_term_to_heap(query *q, cell *p1, pl_idx p1_ctx)
