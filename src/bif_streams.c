@@ -1673,12 +1673,17 @@ static bool bif_iso_open_4(query *q)
 		void *addr = mmap(0, len, prot, MAP_PRIVATE, fd, offset);
 		check_error(addr);
 		cell tmp = {0};
-		tmp.tag = TAG_CSTR;
-		tmp.flags = FLAG_CSTR_BLOB | FLAG_CSTR_STRING | FLAG_CSTR_SLICE;
-		tmp.num_cells = 1;
-		tmp.arity = 2;
-		tmp.val_str = addr;
-		tmp.str_len = len;
+
+		if (len) {
+			tmp.tag = TAG_CSTR;
+			tmp.flags = FLAG_CSTR_BLOB | FLAG_CSTR_STRING | FLAG_CSTR_SLICE;
+			tmp.num_cells = 1;
+			tmp.arity = 2;
+			tmp.val_str = addr;
+			tmp.str_len = len;
+		} else
+			make_atom(&tmp, g_nil_s);
+
 		unify(q, mmap_var, mmap_ctx, &tmp, q->st.curr_frame);
 	}
 #endif
