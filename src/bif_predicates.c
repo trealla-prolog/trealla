@@ -503,6 +503,7 @@ static bool bif_iso_number_chars_2(query *q)
 		SB(pr);
 		SB_check(pr, cnt+1+1);
 		LIST_HANDLER(p2);
+		bool first = true;
 
 		while (is_list(p2)) {
 			cell *head = LIST_HEAD(p2);
@@ -515,13 +516,14 @@ static bool bif_iso_number_chars_2(query *q)
 
 			int ch = peek_char_utf8(C_STR(q, head));
 
-			if (!ch || (ch == '+'))
+			if (!ch || ((ch == '+') && first))
 				return throw_error(q, head, q->latest_ctx, "type_error", "character");
 
 			SB_putchar(pr, ch);
 			cell *tail = LIST_TAIL(p2);
 			p2 = deref(q, tail, p2_ctx);
 			p2_ctx = q->latest_ctx;
+			first = false;
 		}
 
 		if (!is_nil(p2)) {
