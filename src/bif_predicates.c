@@ -555,7 +555,7 @@ static bool bif_iso_number_chars_2(query *q)
 			return ok;
 		}
 
-		if (!is_number(&p->v) || *p->srcptr || p->error) {
+		if (!is_number(&p->v) || *p->srcptr || p->error || (p->cl->cidx > 1)) {
 			p->srcptr = NULL;
 			SB_free(pr);
 			return throw_error(q, orig_p2, p2_ctx, "syntax_error", p->error&&p->error_desc?p->error_desc:"unexpected_char");
