@@ -4987,7 +4987,12 @@ static bool bif_loadfile_2(query *q)
 	s[st.st_size] = '\0';
 	fclose(fp);
 	cell tmp;
-	make_stringn(&tmp, s, len);
+
+	if (!len)
+		make_atom(&tmp, g_nil_s);
+	else
+		make_stringn(&tmp, s, len);
+
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
 	unshare_cell(&tmp);
 	free(s);
