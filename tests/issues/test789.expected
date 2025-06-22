@@ -1,1 +1,1 @@
-   Warning: Initialization goal exception: error(type_error(character,+),number_chars/2).
+   Warning: Initialization goal exception: error(syntax_error(character),number_chars/2).
