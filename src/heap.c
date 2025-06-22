@@ -327,27 +327,6 @@ cell *copy_term_to_tmp(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
 // page list. Backtracking will garbage collect and free as needed.
 // Need to incr refcnt on heap cells.
 
-void trim_heap(query *q)
-{
-	// q->heap_pages is a push-down stack and points to the
-	// most recent page of heap allocations...
-
-	for (page *a = q->heap_pages; a;) {
-		if (a->num <= q->st.heap_num)
-			break;
-
-		cell *c = a->cells;
-
-		for (pl_idx i = 0; i < a->idx; i++, c++)
-			unshare_cell(c);
-
-		page *save = a;
-		q->heap_pages = a = a->next;
-		free(save->cells);
-		free(save);
-	}
-}
-
 cell *alloc_on_heap(query *q, unsigned num_cells)
 {
 	if (!q->heap_pages) {
@@ -380,6 +359,37 @@ cell *alloc_on_heap(query *q, unsigned num_cells)
 	q->st.hp += num_cells;
 	q->heap_pages->idx = q->st.hp;
 	return c;
+}
+
+void trim_heap(query *q)
+{
+	// q->heap_pages is a push-down stack and points to the
+	// most recent page of heap allocations...
+
+	for (page *a = q->heap_pages; a;) {
+		if (a->num <= q->st.heap_num)
+			break;
+
+		cell *c = a->cells;
+
+		for (pl_idx i = 0; i < a->idx; i++, c++)
+			unshare_cell(c);
+
+		page *save = a;
+		q->heap_pages = a = a->next;
+		free(save->cells);
+		free(save);
+	}
+
+	if (!q->heap_pages)
+		return;
+
+#if 0
+	while (q->heap_pages->idx > q->st.hp) {
+		cell *c = q->heap_pages->cells + --q->heap_pages->idx;
+		unshare_cell(c);
+	}
+#endif
 }
 
 cell *clone_term_to_heap(query *q, cell *p1, pl_idx p1_ctx)
