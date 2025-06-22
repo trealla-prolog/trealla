@@ -3076,6 +3076,11 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		src += 1;
 	}
 
+	if ((src[0] == '\'') && (src[1] == '\\') && (src[2] == '\n') && (src[3] == '-') && (src[4] == '\'')) {
+		is_neg = true;
+		src += 5;
+	}
+
 	if (!is_neg && (*src == '\'') && (src[1] == '-') && (src[2] == '\'') && last_op) {
 		is_neg = true;
 		src += 3;

@@ -1,5 +1,5 @@
 :- initialization(main).
 
 main :-
-	number_chars(N,"\'\\\n-\' 1"),
+	number_chars(N,"0'\\"),
 	write(N), nl.
