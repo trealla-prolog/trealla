@@ -1097,7 +1097,7 @@ static bool bif_iso_number_codes_2(query *q)
 		p->flags = q->st.m->flags;
 		p->srcptr = SB_cstr(pr);
 		p->do_read_term = true;
-		bool ok = tokenize(p, false, false);
+		bool ok = get_token(p, true, false);
 		p->do_read_term = false;
 
 		if (q->did_throw) {
