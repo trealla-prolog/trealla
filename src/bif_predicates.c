@@ -516,17 +516,14 @@ static bool bif_iso_number_chars_2(query *q)
 
 			int ch = peek_char_utf8(C_STR(q, head));
 
-			if (!ch || (!isdigit(ch) && (ch != ' ') && first))
+			if (!ch || (!isdigit(ch) && (ch != ' ') && (ch != '-') && (ch != '\n') && first))
 				return throw_error(q, head, q->latest_ctx, "syntax_error", "illegal_character");
 
 			if (!iswspace(ch) && first) {
-				SB_putchar(pr, ch);
 				first = false;
 			}
 
-			if (iswspace(ch) && !first)
-				return throw_error(q, head, q->latest_ctx, "syntax_error", "illegal_character");
-
+			SB_putchar(pr, ch);
 			cell *tail = LIST_TAIL(p2);
 			p2 = deref(q, tail, p2_ctx);
 			p2_ctx = q->latest_ctx;
