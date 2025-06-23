@@ -503,7 +503,6 @@ static bool bif_iso_number_chars_2(query *q)
 		SB(pr);
 		SB_check(pr, cnt+1+1);
 		LIST_HANDLER(p2);
-		bool first = true;
 
 		while (is_list(p2)) {
 			cell *head = LIST_HEAD(p2);
@@ -516,15 +515,8 @@ static bool bif_iso_number_chars_2(query *q)
 
 			int ch = peek_char_utf8(C_STR(q, head));
 
-			if (!ch || (
-				!isdigit(ch) && (ch != ' ') && (ch != '-')
-				&& (ch != '\n')  && (ch != '%')   && (ch != '/') && first
-				))
+			if (!ch)
 				return throw_error(q, head, q->latest_ctx, "syntax_error", "illegal_character");
-
-			if (!iswspace(ch) && first) {
-				first = false;
-			}
 
 			SB_putchar(pr, ch);
 			cell *tail = LIST_TAIL(p2);
@@ -549,7 +541,7 @@ static bool bif_iso_number_chars_2(query *q)
 		p->flags = q->st.m->flags;
 		p->srcptr = SB_cstr(pr);
 		p->do_read_term = true;
-		bool ok = tokenize(p, false, false);
+		bool ok = get_token(p, true, false);
 		p->do_read_term = false;
 
 		if (q->did_throw) {
