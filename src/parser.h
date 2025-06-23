@@ -2,8 +2,6 @@
 
 #include "internal.h"
 
-#define DUMP_ERRS 0
-
 parser *parser_create(module *m);
 void parser_destroy(parser *p);
 

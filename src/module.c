@@ -2018,7 +2018,7 @@ module *load_text(module *m, const char *src, const char *filename)
 	tokenize(p, false, false);
 
 	if (!p->error && !p->already_loaded_error && !p->end_of_term && p->cl->cidx) {
-		if (DUMP_ERRS || !p->do_read_term)
+		if (!p->do_read_term)
 			fprintf(stderr, "Error: syntax error, incomplete statement, %s:%d\n", filename, p->line_num);
 
 		p->error = true;
@@ -2161,7 +2161,7 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including, bool 
 	 while (ok && !p->already_loaded_error && !g_tpl_interrupt);
 
 	if (!p->error && !p->already_loaded_error && !p->end_of_term && p->cl->cidx) {
-		if (DUMP_ERRS || !p->do_read_term)
+		if (!p->do_read_term)
 			fprintf(stderr, "Error: syntax error, incomplete statement, %s:%d\n", filename, p->line_num);
 
 		p->error = true;

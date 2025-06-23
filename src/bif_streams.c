@@ -2042,6 +2042,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 	} else
 		reset(str->p);
 
+	str->p->do_read_term = true;
 	str->p->one_shot = true;
 	cell *vars = NULL, *varnames = NULL, *sings = NULL;
 	pl_idx vars_ctx = 0, varnames_ctx = 0, sings_ctx = 0;
@@ -2193,7 +2194,6 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 
 	frame *f = GET_CURR_FRAME();
 	str->p->read_term_slots = f->actual_slots;
-	str->p->do_read_term = true;
 	tokenize(str->p, false, false);
 	str->p->read_term_slots = 0;
 
