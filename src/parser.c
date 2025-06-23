@@ -2944,7 +2944,7 @@ char *eat_space(parser *p)
 			if (p->is_comment)
 				src++;
 
-			if (!*src && p->is_comment && p->fp) {
+			if ((!src || !*src) && p->is_comment && p->fp) {
 				if (p->no_fp || getline(&p->save_line, &p->n_line, p->fp) == -1) {
 					if (!p->do_read_term)
 						fprintf(stderr, "Error: syntax error, parsing number, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
