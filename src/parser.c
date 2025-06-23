@@ -2875,6 +2875,19 @@ char *eat_space(parser *p)
 	bool done;
 
 	do {
+		if (!src) {
+			if (p->no_fp || getline(&p->save_line, &p->n_line, p->fp) == -1) {
+				if (!p->do_read_term)
+					fprintf(stderr, "Error: syntax error, parsing number, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+
+				p->error = true;
+				return NULL;
+			}
+
+			p->did_getline = true;
+			src = p->srcptr = p->save_line;
+		}
+
 		done = true;
 		int ch = peek_char_utf8(src);
 
