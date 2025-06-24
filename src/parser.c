@@ -3674,7 +3674,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 				if (p->error) return 0;
 
-				if ((p->is_consulting || p->is_command) && !p->skip && check_body_callable(p->cl->cells)) {
+				if ((p->is_consulting /*|| p->is_command*/) && !p->skip && check_body_callable(p->cl->cells)) {
 					if (!p->do_read_term)
 						printf("Error: type error, not callable, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
