@@ -55,20 +55,20 @@ static bool do_put_atts(query *q, cell *attr, pl_idx attr_ctx, bool is_minus)
 	bool found;
 	const char *m_name = do_attribute(q, attr, a_arity, &found);
 	if (!found) return false;
-	check_heap_error(init_tmp_heap(q));
+	check_memory(init_tmp_heap(q));
 
 	// Add this attribute value...
 
 	if (!is_minus) {
 		cell *tmp = alloc_on_tmp(q, 1+1);
-		check_heap_error(tmp);
+		check_memory(tmp);
 		make_atom(tmp, g_dot_s);
 		tmp->arity = 2;
 		tmp->num_cells += 1;
 		make_atom(tmp+1, new_atom(q->pl, m_name));
 		tmp[1].arity = 1;
 		cell *tmp2 = clone_term_to_tmp(q, attr, attr_ctx);
-		check_heap_error(tmp2);
+		check_memory(tmp2);
 		cell *tmp3 = get_tmp_heap(q, 1);
 		tmp3->num_cells += tmp2->num_cells;
 		tmp = get_tmp_heap(q, 0);
@@ -105,7 +105,7 @@ static bool do_put_atts(query *q, cell *attr, pl_idx attr_ctx, bool is_minus)
 	}
 
 	cell *l = end_list(q);
-	check_heap_error(l);
+	check_memory(l);
 
 	if (is_nil(l)) {
 		e->c.flags = 0;
@@ -181,7 +181,7 @@ static bool bif_get_atts_2(query *q)
 		}
 
 		l = end_list(q);
-		check_heap_error(l);
+		check_memory(l);
 
 		if (is_nil(l))
 			return false;
@@ -290,7 +290,7 @@ bool any_attributed(query *q)
 static bool bif_sys_list_attributed_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
-	check_heap_error(init_tmp_heap(q));
+	check_memory(init_tmp_heap(q));
 	const frame *f = GET_FRAME(0);
 
 	for (unsigned i = 0; i < f->actual_slots; i++) {
@@ -336,7 +336,7 @@ static bool bif_sys_list_attributed_1(query *q)
 	}
 
 	cell *l = end_list(q);
-	check_heap_error(l);
+	check_memory(l);
 	return unify(q, p1, p1_ctx, l, 0);
 }
 
@@ -370,7 +370,7 @@ static bool bif_sys_attributed_var_1(query *q)
 	}
 
 	l = end_list(q);
-	check_heap_error(l);
+	check_memory(l);
 
 	if (is_nil(l))
 		return false;
@@ -422,11 +422,11 @@ static bool bif_sys_undo_trail_2(query *q)
 
 	pl_idx slots = q->undo_hi_tp - q->undo_lo_tp;
 	bind_state *save = malloc(sizeof(bind_state)+(sizeof(slot)*slots));
-	check_heap_error(save);
+	check_memory(save);
 	save->b.ptr = save->b.ptr2 = NULL;
 	save->lo_tp = q->undo_lo_tp;
 	save->hi_tp = q->undo_hi_tp;
-	check_heap_error(init_tmp_heap(q), free(save));
+	check_memory(init_tmp_heap(q), free(save));
 
 	for (pl_idx i = q->undo_lo_tp, j = 0; i < q->undo_hi_tp; i++, j++) {
 		const trail *tr = q->trails + i;
@@ -455,7 +455,7 @@ static bool bif_sys_undo_trail_2(query *q)
 	}
 
 	cell *tmp = end_list(q);
-	check_heap_error(tmp, free(save));
+	check_memory(tmp, free(save));
 	unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 	cell tmp2;
 	make_blob(&tmp2, &save->b);
@@ -484,7 +484,7 @@ bool do_post_unify_hook(query *q, bool is_builtin)
 	q->undo_lo_tp = q->before_hook_tp;
 	q->undo_hi_tp = q->st.tp;
 	cell *tmp = alloc_on_heap(q, 3);
-	check_heap_error(tmp);
+	check_memory(tmp);
 	make_instr(tmp+0, g_true_s, bif_iso_true_0, 0, 0);
 	make_instr(tmp+1, g_post_unify_hook_s, NULL, 0, 0);
 	is_builtin ? make_call(q, tmp+2) : make_call_redo(q, tmp+2);

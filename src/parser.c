@@ -4359,7 +4359,7 @@ bool run(parser *p, const char *prolog_src, bool dump, query **subq, unsigned in
 		}
 
 		query *q = query_create(p->m);
-		check_heap_error(q, p->srcptr = NULL, SB_free(pr));
+		check_memory(q, p->srcptr = NULL, SB_free(pr));
 
 		if (subq)
 			*subq = q;

@@ -96,9 +96,9 @@ bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx 
 			if (SB_strlen(pr)) {
 				cell tmp;
 				int vnbr = create_vars(q, 1);
-				check_heap_error(vnbr != -1);
+				check_memory(vnbr != -1);
 				make_ref(&tmp, vnbr, q->st.curr_frame);
-				check_heap_error(make_stringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
+				check_memory(make_stringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
 				unify(q, &tmpc, q->st.curr_frame, &tmp, q->st.curr_frame);
 				unshare_cell(&tmpc);
 			} else
@@ -106,9 +106,9 @@ bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx 
 		} else {
 			cell tmp;
 			int vnbr = create_vars(q, 1);
-			check_heap_error(vnbr != -1);
+			check_memory(vnbr != -1);
 			make_ref(&tmp, vnbr, q->st.curr_frame);
-			check_heap_error(make_cstringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
+			check_memory(make_cstringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
 			unify(q, &tmpc, q->st.curr_frame, &tmp, q->st.curr_frame);
 			unshare_cell(&tmpc);
 		}
@@ -145,9 +145,9 @@ bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx 
 			if (SB_strlen(pr)) {
 				cell tmp;
 				int vnbr = create_vars(q, 1);
-				check_heap_error(vnbr != -1);
+				check_memory(vnbr != -1);
 				make_ref(&tmp, vnbr, q->st.curr_frame);
-				check_heap_error(make_stringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
+				check_memory(make_stringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
 				unify(q, &tmpc, q->st.curr_frame, &tmp, q->st.curr_frame);
 				unshare_cell(&tmpc);
 			} else
@@ -155,9 +155,9 @@ bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx 
 		} else {
 			cell tmp;
 			int vnbr = create_vars(q, 1);
-			check_heap_error(vnbr != -1);
+			check_memory(vnbr != -1);
 			make_ref(&tmp, vnbr, q->st.curr_frame);
-			check_heap_error(make_cstringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
+			check_memory(make_cstringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
 			unify(q, &tmpc, q->st.curr_frame, &tmp, q->st.curr_frame);
 			unshare_cell(&tmpc);
 		}
@@ -188,7 +188,7 @@ bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx 
 	}
 
 	cell *l = params->functor ? end_structure(q) : end_list(q);
-	check_heap_error(l);
+	check_memory(l);
 
 	if (p2)
 		return unify(q, p2, p2_ctx, l, q->st.curr_frame);

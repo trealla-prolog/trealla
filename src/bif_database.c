@@ -420,9 +420,9 @@ static void term_assign_vars(parser *p)
 static bool bif_iso_asserta_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
-	check_heap_error(init_tmp_heap(q));
+	check_memory(init_tmp_heap(q));
 	cell *tmp = copy_term_to_tmp(q, p1, p1_ctx, false);
-	check_heap_error(tmp);
+	check_memory(tmp);
 	cell *head = get_head(tmp);
 
 	if (is_var(head))
@@ -451,7 +451,7 @@ static bool bif_iso_asserta_1(query *q)
 
 	if (num_cells > p->cl->num_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
-		check_heap_error(p->cl, prolog_unlock(q->pl));
+		check_memory(p->cl, prolog_unlock(q->pl));
 		p->cl->num_allocated_cells = num_cells;
 	}
 
@@ -477,9 +477,9 @@ static bool bif_iso_asserta_1(query *q)
 static bool bif_iso_assertz_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
-	check_heap_error(init_tmp_heap(q));
+	check_memory(init_tmp_heap(q));
 	cell *tmp = copy_term_to_tmp(q, p1, p1_ctx, false);
-	check_heap_error(tmp);
+	check_memory(tmp);
 	cell *head = get_head(tmp);
 
 	if (is_var(head))
@@ -507,7 +507,7 @@ static bool bif_iso_assertz_1(query *q)
 
 	if (num_cells > p->cl->num_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
-		check_heap_error(p->cl, prolog_unlock(q->pl));
+		check_memory(p->cl, prolog_unlock(q->pl));
 		p->cl->num_allocated_cells = num_cells;
 	}
 
@@ -562,16 +562,16 @@ static bool do_asserta_2(query *q)
 	}
 
 	GET_NEXT_ARG(p2,atom_or_var);
-	check_heap_error(init_tmp_heap(q));
+	check_memory(init_tmp_heap(q));
 	cell *tmp = copy_term_to_tmp(q, p1, p1_ctx, false);
-	check_heap_error(tmp);
+	check_memory(tmp);
 
 	pl_idx num_cells = tmp->num_cells;
 	parser *p = parser_create(q->st.m);
 
 	if (num_cells > p->cl->num_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
-		check_heap_error(p->cl, prolog_unlock(q->pl));
+		check_memory(p->cl, prolog_unlock(q->pl));
 		p->cl->num_allocated_cells = num_cells;
 	}
 
@@ -654,16 +654,16 @@ static bool do_assertz_2(query *q)
 	}
 
 	GET_NEXT_ARG(p2,atom_or_var);
-	check_heap_error(init_tmp_heap(q));
+	check_memory(init_tmp_heap(q));
 	cell *tmp = copy_term_to_tmp(q, p1, p1_ctx, false);
-	check_heap_error(tmp);
+	check_memory(tmp);
 
 	pl_idx num_cells = tmp->num_cells;
 	parser *p = parser_create(q->st.m);
 
 	if (num_cells > p->cl->num_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
-		check_heap_error(p->cl, prolog_unlock(q->pl));
+		check_memory(p->cl, prolog_unlock(q->pl));
 		p->cl->num_allocated_cells = num_cells;
 	}
 
@@ -875,7 +875,7 @@ static bool bif_instance_2(query *q)
 	uuid u;
 	uuid_from_buf(C_STR(q, p1), &u);
 	db_entry *r = find_in_db(q->st.m, &u);
-	check_heap_error(r);
+	check_memory(r);
 	return unify(q, p2, p2_ctx, r->cl.cells, q->st.curr_frame);
 }
 
@@ -899,11 +899,11 @@ static bool bif_sys_retract_on_backtrack_1(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
 	int var_num = create_vars(q, 1);
-	check_heap_error(var_num != -1);
+	check_memory(var_num != -1);
 	blob *b = calloc(1, sizeof(blob));
 	b->ptr = (void*)q->st.m;
 	b->ptr2 = (void*)strdup(C_STR(q, p1));
-	check_heap_error(b->ptr2);
+	check_memory(b->ptr2);
 	cell c, v;
 	make_ref(&c, var_num, q->st.curr_frame);
 	make_dbref(&v, b);

@@ -19,7 +19,7 @@ bool bif_sre_compile_2(query *q)
 	tmp.flags = FLAG_MANAGED | FLAG_BLOB_SREGEX;
 	tmp.num_cells = 1;
 	tmp.val_blob = malloc(sizeof(blob));
-	check_heap_error(tmp.val_blob);
+	check_memory(tmp.val_blob);
 	tmp.val_blob->ptr = (void*)reg;
 	tmp.val_blob->ptr2 = (void*)buf;
 	tmp.val_blob->refcnt = 1;

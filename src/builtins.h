@@ -277,7 +277,7 @@ inline static cell *get_raw_arg(query *q, int n)
 	return c;
 }
 
-#define check_heap_error(expr, ...) \
+#define check_memory(expr, ...) \
 	CHECK_SENTINEL(expr, 0, __VA_ARGS__; \
 	return throw_error(q, q->st.instr, q->st.curr_frame, "resource_error", "memory"))
 

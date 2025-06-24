@@ -599,11 +599,11 @@ static void add_stream_properties(query *q, int n)
 static bool del_stream_properties(query *q, int n)
 {
 	cell *tmp = alloc_on_heap(q, 3);
-	check_heap_error(tmp);
+	check_memory(tmp);
 	make_atom(tmp+0, g_sys_stream_property_s);
 	make_int(tmp+1, n);
 	int vnbr = create_vars(q, 1);
-	check_heap_error(vnbr != -1);
+	check_memory(vnbr != -1);
 	make_ref(tmp+2, vnbr, q->st.curr_frame);
 	tmp->num_cells = 3;
 	tmp->arity = 2;
@@ -887,9 +887,9 @@ static bool bif_iso_stream_property_2(query *q)
 		}
 	}
 
-	check_heap_error(init_tmp_heap(q));
+	check_memory(init_tmp_heap(q));
 	cell *tmp = clone_term_to_tmp(q, q->st.instr, q->st.curr_frame);
-	check_heap_error(tmp);
+	check_memory(tmp);
 	tmp->val_off = g_sys_stream_property_s;
 
 	if (match_clause(q, tmp, q->st.curr_frame, DO_CLAUSE) != true) {
@@ -970,8 +970,8 @@ static bool bif_popen_4(query *q)
 	stream *str = &q->pl->streams[n];
 	str->pipe = true;
 	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
-	check_heap_error(str->filename = strdup(filename));
-	check_heap_error(str->mode = DUP_STRING(q, p2));
+	check_memory(str->filename = strdup(filename));
+	check_memory(str->mode = DUP_STRING(q, p2));
 	bool binary = false;
 	uint8_t eof_action = eof_action_eof_code, is_alias = false;
 	LIST_HANDLER(p4);
@@ -1458,9 +1458,9 @@ static bool bif_iso_open_4(query *q)
 
 	convert_path(filename);
 	stream *str = &q->pl->streams[n];
-	check_heap_error(str->filename = strdup(filename));
+	check_memory(str->filename = strdup(filename));
 	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
-	check_heap_error(str->mode = DUP_STRING(q, p2));
+	check_memory(str->mode = DUP_STRING(q, p2));
 	bool binary = false, repo = true;
 	uint8_t eof_action = eof_action_eof_code;
 	free(src);
@@ -2035,7 +2035,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 {
 	if (!str->p) {
 		str->p = parser_create(q->st.m);
-		check_heap_error(str->p);
+		check_memory(str->p);
 		str->p->flags = q->st.m->flags;
 		str->p->fp = str->fp;
 		if (q->p) str->p->no_fp = q->p->no_fp;
@@ -2294,9 +2294,9 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 		unsigned idx = 0;
 
 		if (cnt) {
-			check_heap_error(init_tmp_heap(q));
+			check_memory(init_tmp_heap(q));
 			cell *tmp = alloc_on_tmp(q, (cnt*2)+1);
-			check_heap_error(tmp);
+			check_memory(tmp);
 			unsigned done = 0;
 
 			for (unsigned i = 0; i < q->tab_idx; i++) {
@@ -2315,7 +2315,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 
 			cell *save = tmp;
 			tmp = alloc_on_heap(q, idx);
-			check_heap_error(tmp);
+			check_memory(tmp);
 			dup_cells(tmp, save, idx);
 			tmp->num_cells = idx;
 			if (!unify(q, vars, vars_ctx, tmp, q->st.curr_frame))
@@ -2328,7 +2328,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 
 	if (varnames) {
 		unsigned cnt = 0;
-		check_heap_error(init_tmp_heap(q));
+		check_memory(init_tmp_heap(q));
 		unsigned idx = 0;
 
 		for (unsigned i = 0; i < q->tab_idx; i++) {
@@ -2340,7 +2340,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 
 		if (cnt) {
 			cell *tmp = alloc_on_tmp(q, (cnt*4)+1);
-			check_heap_error(tmp);
+			check_memory(tmp);
 			unsigned done = 0;
 
 			for (unsigned i = 0; i < q->tab_idx; i++) {
@@ -2367,7 +2367,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 
 			cell *save = tmp;
 			tmp = alloc_on_heap(q, idx);
-			check_heap_error(tmp);
+			check_memory(tmp);
 			dup_cells(tmp, save, idx);
 			tmp->num_cells = idx;
 			if (!unify(q, varnames, varnames_ctx, tmp, q->st.curr_frame))
@@ -2380,7 +2380,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 
 	if (sings) {
 		unsigned cnt = 0;
-		check_heap_error(init_tmp_heap(q));
+		check_memory(init_tmp_heap(q));
 		unsigned idx = 0;
 
 		for (unsigned i = 0; i < q->tab_idx; i++) {
@@ -2395,7 +2395,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 
 		if (cnt) {
 			cell *tmp = alloc_on_tmp(q, (cnt*4)+1);
-			check_heap_error(tmp);
+			check_memory(tmp);
 			unsigned done = 0;
 
 			for (unsigned i = 0; i < q->tab_idx; i++) {
@@ -2425,7 +2425,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 
 			cell *save = tmp;
 			tmp = alloc_on_heap(q, idx);
-			check_heap_error(tmp);
+			check_memory(tmp);
 			dup_cells(tmp, save, idx);
 			tmp->num_cells = idx;
 			if (!unify(q, sings, sings_ctx, tmp, q->st.curr_frame))
@@ -2437,7 +2437,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 	}
 
 	cell *tmp = alloc_on_heap(q, str->p->cl->cidx-1);
-	check_heap_error(tmp);
+	check_memory(tmp);
 	dup_cells(tmp, str->p->cl->cells, str->p->cl->cidx-1);
 	bool ok = unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
 	clear_clause(str->p->cl);
@@ -4267,7 +4267,7 @@ static bool bif_read_term_from_chars_3(query *q)
 	} else if (is_string(p_chars)) {
 		len = C_STRLEN(q, p_chars);
 		src = malloc(len+1+1);		// +1 is to allow adding a '.'
-		check_heap_error(src);
+		check_memory(src);
 		memcpy(src, C_STR(q, p_chars), len);
 		src[len] = '\0';
 	} else if (!check_list(q, p_chars, p_chars_ctx, &is_partial, NULL)) {
@@ -4331,7 +4331,7 @@ static bool bif_read_term_from_atom_3(query *q)
 	if (is_atom(p_chars)) {
 		len = C_STRLEN(q, p_chars);
 		src = malloc(len+1+1);	// final +1 is for look-ahead
-		check_heap_error(src);
+		check_memory(src);
 		memcpy(src, C_STR(q, p_chars), len);
 		src[len] = '\0';
 	} else if ((len = scan_is_chars_list(q, p_chars, p_chars_ctx, false)) > 0) {
@@ -4757,7 +4757,7 @@ static bool bif_read_file_to_string_3(query *q)
 
 	size_t len = st.st_size - offset;
 	char *s = malloc(len+1);
-	check_heap_error(s, fclose(fp));
+	check_memory(s, fclose(fp));
 
 	if (fread(s, 1, len, fp) != (size_t)len) {
 		free(s);
@@ -4934,7 +4934,7 @@ static bool bif_savefile_2(query *q)
 
 	convert_path(filename);
 	FILE *fp = fopen(filename, "wb");
-	check_heap_error(fp);
+	check_memory(fp);
 	fwrite(C_STR(q, p2), 1, C_STRLEN(q, p2), fp);
 	fclose(fp);
 	free(filename);
@@ -4981,7 +4981,7 @@ static bool bif_loadfile_2(query *q)
 
 	size_t len = st.st_size - offset;
 	char *s = malloc(len+1);
-	check_heap_error(s, fclose(fp));
+	check_memory(s, fclose(fp));
 
 	if (fread(s, 1, len, fp) != (size_t)len) {
 		free(s);
@@ -5036,7 +5036,7 @@ static bool bif_getfile_2(query *q)
 
 	char *line = NULL;
 	size_t len = 0;
-	check_heap_error(init_tmp_heap(q));
+	check_memory(init_tmp_heap(q));
 
 	while (getline(&line, &len, fp) != -1) {
 		int len = strlen(line);
@@ -5059,7 +5059,7 @@ static bool bif_getfile_2(query *q)
 	free(line);
 	fclose(fp);
 	cell *l = end_list(q);
-	check_heap_error(l);
+	check_memory(l);
 	unify(q, p2, p2_ctx, l, q->st.curr_frame);
 	return true;
 }
@@ -5126,7 +5126,7 @@ static bool bif_getfile_3(query *q)
 
 	char *line = NULL;
 	size_t len = 0;
-	check_heap_error(init_tmp_heap(q));
+	check_memory(init_tmp_heap(q));
 
 	while (getline(&line, &len, fp) != -1) {
 		int len = strlen(line);
@@ -5151,7 +5151,7 @@ static bool bif_getfile_3(query *q)
 	free(line);
 	fclose(fp);
 	cell *l = end_list(q);
-	check_heap_error(l);
+	check_memory(l);
 	unify(q, p2, p2_ctx, l, q->st.curr_frame);
 	return true;
 }
@@ -5163,7 +5163,7 @@ static bool bif_getlines_1(query *q)
 	stream *str = &q->pl->streams[n];
 	char *line = NULL;
 	size_t len = 0;
-	check_heap_error(init_tmp_heap(q));
+	check_memory(init_tmp_heap(q));
 
 	while (getline(&line, &len, str->fp) != -1) {
 		int len = strlen(line);
@@ -5185,7 +5185,7 @@ static bool bif_getlines_1(query *q)
 
 	free(line);
 	cell *l = end_list(q);
-	check_heap_error(l);
+	check_memory(l);
 	unify(q, p1, p1_ctx, l, q->st.curr_frame);
 	return true;
 }
@@ -5198,7 +5198,7 @@ static bool bif_getlines_2(query *q)
 	stream *str = &q->pl->streams[n];
 	char *line = NULL;
 	size_t len = 0;
-	check_heap_error(init_tmp_heap(q));
+	check_memory(init_tmp_heap(q));
 
 	while (getline(&line, &len, str->fp) != -1) {
 		int len = strlen(line);
@@ -5220,7 +5220,7 @@ static bool bif_getlines_2(query *q)
 
 	free(line);
 	cell *l = end_list(q);
-	check_heap_error(l);
+	check_memory(l);
 	unify(q, p1, p1_ctx, l, q->st.curr_frame);
 	return true;
 }
@@ -5235,7 +5235,7 @@ static bool bif_getlines_3(query *q)
 	char *line = NULL;
 	size_t len = 0;
 	bool terminator = get_terminator(q, p2, p2_ctx);
-	check_heap_error(init_tmp_heap(q));
+	check_memory(init_tmp_heap(q));
 
 	while (getline(&line, &len, str->fp) != -1) {
 		int len = strlen(line);
@@ -5259,7 +5259,7 @@ static bool bif_getlines_3(query *q)
 
 	free(line);
 	cell *l = end_list(q);
-	check_heap_error(l);
+	check_memory(l);
 	unify(q, p1, p1_ctx, l, q->st.curr_frame);
 	return true;
 }
@@ -5315,7 +5315,7 @@ static bool bif_absolute_file_name_3(query *q)
 	char *filename = NULL;
 	char cwdbuf[1024*4];
 	char *here = strdup(getcwd(cwdbuf, sizeof(cwdbuf)));
-	check_heap_error(here);
+	check_memory(here);
 	char *cwd = here;
 
 	if (is_iso_list(p1)) {
@@ -5379,7 +5379,7 @@ static bool bif_absolute_file_name_3(query *q)
 
 		size_t buflen = strlen(ptr)+1+strlen(s)+1;
 		tmpbuf = malloc(buflen);
-		check_heap_error(tmpbuf);
+		check_memory(tmpbuf);
 		snprintf(tmpbuf, buflen, "%s/%s", ptr, s);
 		convert_path(tmpbuf);
 		char *tmpbuf2;
@@ -5394,7 +5394,7 @@ static bool bif_absolute_file_name_3(query *q)
 			if ((tmpbuf = realpath(cwd, NULL)) == NULL)
 				tmpbuf = realpath(".", NULL);
 
-			check_heap_error(tmpbuf);
+			check_memory(tmpbuf);
 
 			if ((*s != '/') && (*s != '\\')
 #ifdef _WIN32
@@ -5403,17 +5403,17 @@ static bool bif_absolute_file_name_3(query *q)
 				) {
 				size_t buflen = strlen(tmpbuf)+1+strlen(s)+1;
 				char *tmp = malloc(buflen);
-				check_heap_error(tmp, free(tmpbuf));
+				check_memory(tmp, free(tmpbuf));
 				snprintf(tmp, buflen, "%s/%s", tmpbuf, s);
 				convert_path(tmp);
 				free(tmpbuf);
 				tmpbuf = fixup(tmp);
-				check_heap_error(tmpbuf);
+				check_memory(tmpbuf);
 				free(tmp);
 			} else {
 				free(tmpbuf);
 				tmpbuf = fixup(s);
-				check_heap_error(tmpbuf);
+				check_memory(tmpbuf);
 			}
 		}
 	}
@@ -6205,8 +6205,8 @@ static bool bif_server_3(query *q)
 	stream *str = &q->pl->streams[n];
 	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	sl_set(str->alias, strdup(hostname), NULL);
-	check_heap_error(str->filename = DUP_STRING(q, p1));
-	check_heap_error(str->mode = strdup("update"));
+	check_memory(str->filename = DUP_STRING(q, p1));
+	check_memory(str->mode = strdup("update"));
 	str->nodelay = nodelay;
 	str->nonblock = nonblock;
 	str->udp = udp;
@@ -6254,8 +6254,8 @@ static bool bif_accept_2(query *q)
 
 	stream *str2 = &q->pl->streams[n];
 	sl_set(str2->alias, strdup(str->filename), NULL);
-	check_heap_error(str2->filename = strdup(str->filename));
-	check_heap_error(str2->mode = strdup("update"));
+	check_memory(str2->filename = strdup(str->filename));
+	check_memory(str2->mode = strdup("update"));
 	str2->socket = true;
 	str2->nodelay = str->nodelay;
 	str2->nonblock = str->nonblock;
@@ -6280,7 +6280,7 @@ static bool bif_accept_2(query *q)
 	if (!str->ssl)
 		net_set_nonblocking(str2);
 
-	check_heap_error(push_choice(q));
+	check_memory(push_choice(q));
 	cell tmp;
 	make_int(&tmp, n);
 	tmp.flags |= FLAG_INT_STREAM;
@@ -6345,7 +6345,7 @@ static bool do_parse_parts(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 
 				size_t len1 = C_STRLEN(q, c+1);
 				char *dstbuf1 = malloc(len1+1);
-				check_heap_error(dstbuf1);
+				check_memory(dstbuf1);
 				url_encode(C_STR(q, c+1), len1, dstbuf1);
 				dst += sprintf(dst, "%s", dstbuf1);
 				free(dstbuf1);
@@ -6353,7 +6353,7 @@ static bool do_parse_parts(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 				if (is_atom(c+2)) {
 					size_t len2 = C_STRLEN(q, c+2);
 					char *dstbuf2 = malloc(len2+1);
-					check_heap_error(dstbuf2);
+					check_memory(dstbuf2);
 					url_encode(C_STR(q, c+2), len2, dstbuf2);
 					dst += sprintf(dst, "=%s", dstbuf2);
 					free(dstbuf2);
@@ -6362,7 +6362,7 @@ static bool do_parse_parts(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 					snprintf(tmpbuf, sizeof(tmpbuf), "%lld", (long long)get_smallint(c+2));
 					size_t len2 = strlen(tmpbuf);
 					char *dstbuf2 = malloc(len2+1);
-					check_heap_error(dstbuf2);
+					check_memory(dstbuf2);
 					url_encode(tmpbuf, len2, dstbuf2);
 					dst += sprintf(dst, "=%s", dstbuf2);
 					free(dstbuf2);
@@ -6371,7 +6371,7 @@ static bool do_parse_parts(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 					snprintf(tmpbuf, sizeof(tmpbuf), "%.17g", get_float(c+2));
 					size_t len2 = strlen(tmpbuf);
 					char *dstbuf2 = malloc(len2+1);
-					check_heap_error(dstbuf2);
+					check_memory(dstbuf2);
 					url_encode(tmpbuf, len2, dstbuf2);
 					dst += sprintf(dst, "=%s", dstbuf2);
 					free(dstbuf2);
@@ -6441,14 +6441,14 @@ static bool do_parse_url(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 
 				len = strlen(key);
 				dstbuf = malloc(len+1);
-				check_heap_error(dstbuf);
+				check_memory(dstbuf);
 				url_decode(key, dstbuf);
 				make_cstring(tmp+1, dstbuf);
 				free(dstbuf);
 
 				len = strlen(search2);
 				dstbuf = malloc(len+1);
-				check_heap_error(dstbuf);
+				check_memory(dstbuf);
 				url_decode(search2, dstbuf);
 				make_cstring(tmp+2, dstbuf);
 				free(dstbuf);
@@ -6473,14 +6473,14 @@ static bool do_parse_url(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 
 		len = strlen(key);
 		dstbuf = malloc(len+1);
-		check_heap_error(dstbuf);
+		check_memory(dstbuf);
 		url_decode(key, dstbuf);
 		make_cstring(tmp+1, dstbuf);
 		free(dstbuf);
 
 		len = strlen(search2);
 		dstbuf = malloc(len+1);
-		check_heap_error(dstbuf);
+		check_memory(dstbuf);
 		url_decode(search2, dstbuf);
 		make_cstring(tmp+2, dstbuf);
 		free(dstbuf);
@@ -6526,7 +6526,7 @@ static bool do_parse_url(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 	if (path[0]) {
 		len = strlen(path);
 		dstbuf = malloc(len+1);
-		check_heap_error(dstbuf);
+		check_memory(dstbuf);
 		url_decode(path, dstbuf);
 		src = dstbuf;
 		make_instr(tmp, new_atom(q->pl, "path"), NULL, 1, 1);
@@ -6538,7 +6538,7 @@ static bool do_parse_url(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 	if (fragment[0]) {
 		len = strlen(fragment);
 		dstbuf = malloc(len+1);
-		check_heap_error(dstbuf);
+		check_memory(dstbuf);
 		url_decode(path, dstbuf);
 		src = dstbuf;
 		make_instr(tmp, new_atom(q->pl, "fragment"), NULL, 1, 1);
@@ -6696,8 +6696,8 @@ static bool bif_client_5(query *q)
 	stream *str = &q->pl->streams[n];
 	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	sl_set(str->alias, DUP_STRING(q, p1), NULL);
-	check_heap_error(str->filename = DUP_STRING(q, p1));
-	check_heap_error(str->mode = strdup("update"));
+	check_memory(str->filename = DUP_STRING(q, p1));
+	check_memory(str->mode = strdup("update"));
 	str->socket = true;
 	str->nodelay = nodelay;
 	str->nonblock = nonblock;
@@ -6720,7 +6720,7 @@ static bool bif_client_5(query *q)
 
 	if (str->ssl) {
 		str->sslptr = net_enable_ssl(fd, hostname, 0, str->level, certfile);
-		check_heap_error (str->sslptr, close(fd));
+		check_memory (str->sslptr, close(fd));
 	}
 
 	if (nonblock && !str->ssl)
@@ -6754,7 +6754,7 @@ static bool bif_bread_3(query *q)
 	if (is_integer(p1) && is_positive(p1)) {
 		if (!str->data) {
 			str->data = malloc(get_smallint(p1)+1);
-			check_heap_error(str->data);
+			check_memory(str->data);
 			str->data_len = 0;
 		}
 
@@ -6798,7 +6798,7 @@ static bool bif_bread_3(query *q)
 	if (is_integer(p1)) {
 		if (!str->data) {
 			str->data = malloc((str->alloc_nbytes=1024)+1);
-			check_heap_error(str->data);
+			check_memory(str->data);
 			str->data_len = 0;
 		}
 
@@ -6811,7 +6811,7 @@ static bool bif_bread_3(query *q)
 		size_t nbytes = net_read(str->data, str->alloc_nbytes, str);
 		str->data[nbytes] = '\0';
 		str->data = realloc(str->data, nbytes+1);
-		check_heap_error(str->data);
+		check_memory(str->data);
 		cell tmp;
 		make_stringn(&tmp, str->data, nbytes);
 		bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
@@ -6823,7 +6823,7 @@ static bool bif_bread_3(query *q)
 
 	if (!str->data) {
 		str->data = malloc((str->alloc_nbytes=1024)+1);
-		check_heap_error(str->data);
+		check_memory(str->data);
 		str->data_len = 0;
 	}
 
@@ -6844,7 +6844,7 @@ static bool bif_bread_3(query *q)
 
 		if (str->alloc_nbytes == str->data_len) {
 			str->data = realloc(str->data, (str->alloc_nbytes*=2)+1);
-			check_heap_error(str->data);
+			check_memory(str->data);
 		}
 	}
 
