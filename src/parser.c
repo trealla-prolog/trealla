@@ -2571,7 +2571,8 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 		return false;
 	}
 
-	if ((s[0] == '0') && (s[1] == '\'') && (s[2] == '\'') && ((s[3] == '\n') || !s[3])) {
+	if ((s[0] == '0') && (s[1] == '\'') && (s[2] == '\'')
+		&& (iswspace(s[3]) || (s[3] == '.') || (s[3] == ',') || (s[3] == ';') || !s[3])) {
 		if (!p->do_read_term)
 			fprintf(stderr, "Error: syntax error, parsing number, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
