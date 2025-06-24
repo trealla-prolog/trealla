@@ -3688,23 +3688,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 				if (!p->one_shot)
 					term_to_body(p);
 
-				if ((p->is_consulting || p->is_command) && !p->skip) {
-					if (is_var(p->cl->cells)) {
-						if (!p->do_read_term)
-							printf("Error: instantiation error, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
-
-						p->error_desc = "instantiation_error";
-						p->error = true;
-						return 0;
-					} else if (is_number(p->cl->cells)) {
-						if (!p->do_read_term)
-							printf("Error: type error, callable, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
-
-						p->error_desc = "not callable";
-						p->error = true;
-						return 0;
-					}
-
+				if ((p->is_consulting /*|| p->is_command*/) && !p->skip) {
 					term_expansion(p);
 					cell *p1 = p->cl->cells;
 
