@@ -3678,7 +3678,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 					if (!p->do_read_term)
 						printf("Error: type error, not callable, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
-					p->error_desc = "not callable";
+					p->error_desc = "callable";
 					p->error = true;
 					return 0;
 				}
