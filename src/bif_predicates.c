@@ -5439,6 +5439,26 @@ static bool bif_sys_memberchk_3(query *q)
 	return true;
 }
 
+bool bif_sys_make_string_2(query *q)
+{
+	GET_FIRST_ARG(p1,iso_list);
+	GET_NEXT_ARG(p2,var);
+	bool has_vars, is_partial;
+	size_t len = scan_is_chars_list2(q, p1, p1_ctx, true, &has_vars, &is_partial, NULL);
+
+	if (has_vars || !len)
+		return false;
+
+	char *src = chars_list_to_string(q, p1, p1_ctx);
+	check_memory(src);
+	cell tmp;
+	make_stringn(&tmp, src, len);
+	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	unshare_cell(&tmp);
+	free(src);
+	return ok;
+}
+
 bool bif_sys_create_var_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -6304,6 +6324,7 @@ builtins g_other_bifs[] =
 	{"$ne", 2, bif_sys_ne_2, NULL, false, false, BLAH},
 	{"$undo", 2, bif_sys_undo_1, "+var", true, false, BLAH},
 	{"$create_var", 1, bif_sys_create_var_1, "-var", false, false, BLAH},
+	{"$make_string", 2, bif_sys_make_string_2, "+list,-string", false, false, BLAH},
 
 	{0}
 };
