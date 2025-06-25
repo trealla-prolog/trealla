@@ -715,6 +715,18 @@ bool unify(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
 	q->has_vars = q->no_recov = false;
 	q->before_hook_tp = q->st.tp;
 	if (++q->vgen == 0) q->vgen = 1;
+	cell *tmp = p1;
+	pl_idx tmp_ctx = p1_ctx;
+
+	if (is_var(p2)) {
+		tmp = p2;
+		tmp_ctx = p2_ctx;
+		p2 = p1;
+		p2_ctx = p1_ctx;
+		p1 = tmp;
+		p1_ctx = tmp_ctx;
+	}
+
 	bool ok = unify_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
 
 	if (q->cycle_error) {
