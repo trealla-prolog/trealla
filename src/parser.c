@@ -3090,15 +3090,26 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		src += 1;
 	}
 
-	if ((src[0] == '\'') && (src[1] == '\\') && (src[2] == '\n') && (src[3] == '-') && (src[4] == '\'')) {
-		is_neg = true;
-		src += 5;
-	}
+	if ((src[0] == '\'') && (src[1] == '\\') && (src[2] == '\n')) {
+		src++;
 
-	if (!is_neg && (*src == '\'') && (src[1] == '-') && (src[2] == '\'') && last_op) {
+		while ((src[0] == '\\') && (src[1] == '\n'))
+			src += 2;
+
+		if ((src[0] == '-') && (src[1] == '\'')) {
+			is_neg = true;
+			src += 2;
+		}
+
+		if (!is_neg && (src[0] == '-') && (src[1] == '\'') && last_op) {
+			is_neg = true;
+			src += 2;
+		}
+	} else if (!is_neg && (*src == '\'') && (src[1] == '-') && (src[2] == '\'') && last_op) {
 		is_neg = true;
 		src += 3;
 	}
+
 
 	if (is_neg) {
 		p->srcptr = (char*)src;
