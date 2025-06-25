@@ -3098,7 +3098,15 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		src += 1;
 	}
 
-	if ((src[0] == '\'') && (src[1] == '\\') && (src[2] == '\n')) {
+	if ((src[0] == '\'') && (src[1] == '-') && (src[2] == '\\')) {
+		src += 2;
+		src = eat_continuation(src);
+
+		if (*src == '\'') {
+			is_neg = true;
+			src++;
+		}
+	} else if ((src[0] == '\'') && (src[1] == '\\') && (src[2] == '\n')) {
 		src++;
 		src = eat_continuation(src);
 
