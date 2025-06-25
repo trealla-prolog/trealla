@@ -245,6 +245,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
+#if 0    // see issue #806
 	if (((*src)->val_off == g_colon_s) && ((*src)->arity == 2) && !is_var((c))
 		) {
 		unsigned var_num1 = cl->num_vars++;
@@ -265,6 +266,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_var((*dst)++, g_anon_s, var_num2);
 		return;
 	}
+#endif
 
 #if 0
 	if (!is_builtin(*src) && !is_var(c)) {

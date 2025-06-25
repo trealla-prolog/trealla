@@ -5176,6 +5176,11 @@ bool bif_iso_qualify_2(query *q)
 			m = q->st.m;
 	}
 
+	bool status;
+
+	if (!call_check(q, p2, &status, false))
+		return status;
+
 	cell *tmp = prepare_call(q, CALL_NOSKIP, p2, p2_ctx, 4);
 	check_memory(tmp);
 	pl_idx num_cells = 0;

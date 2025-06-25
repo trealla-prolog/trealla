@@ -412,6 +412,7 @@ typedef struct {
 } uuid;
 
 struct clause_ {
+	cell *alt;							// alternate representation
 	pl_idx cidx, num_allocated_cells;
 	unsigned num_vars;
 	bool is_first_cut:1;
@@ -419,7 +420,6 @@ struct clause_ {
 	bool is_unique:1;
 	bool is_fact:1;
 	bool is_deleted:1;
-	cell *alt;							// alternate representation
 	cell cells[];						// 'num_allocated_cells'
 };
 

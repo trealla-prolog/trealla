@@ -1,1 +1,1 @@
-   Warning: Initialization goal exception: error(existence_error(procedure,bar/0),bar/0).
+   Warning: Initialization goal exception: error(existence_error(module,foo),(:)/2).
