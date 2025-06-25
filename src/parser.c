@@ -3019,6 +3019,14 @@ static bool contains_null(const char *src, size_t len)
 	return false;
 }
 
+const char *eat_continuation(const char* src)
+{
+	while ((src[0] == '\\') && (src[1] == '\n'))
+		src += 2;
+
+	return src;
+}
+
 bool get_token(parser *p, bool last_op, bool was_postfix)
 {
 	if (p->error || !p->srcptr || !*p->srcptr)
@@ -3092,9 +3100,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 	if ((src[0] == '\'') && (src[1] == '\\') && (src[2] == '\n')) {
 		src++;
-
-		while ((src[0] == '\\') && (src[1] == '\n'))
-			src += 2;
+		src = eat_continuation(src);
 
 		if ((src[0] == '-') && (src[1] == '\'')) {
 			is_neg = true;
