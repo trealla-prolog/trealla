@@ -3102,12 +3102,15 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		src++;
 		src = eat_continuation(src);
 
-		if ((src[0] == '-') && (src[1] == '\'')) {
-			is_neg = true;
-			src += 2;
-		}
+		if (*src == '-') {
+			src++;
+			src = eat_continuation(src);
 
-		if (!is_neg && (src[0] == '-') && (src[1] == '\'') && last_op) {
+			if (*src == '\'') {
+				is_neg = true;
+				src++;
+			}
+		} else if (!is_neg && (src[0] == '-') && (src[1] == '\'') && last_op) {
 			is_neg = true;
 			src += 2;
 		}
