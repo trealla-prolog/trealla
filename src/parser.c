@@ -3103,6 +3103,13 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		if (*src == '\'') {
 			is_neg = true;
 			src++;
+		} else if (*src != '\'') {
+			if (!p->do_read_term)
+				fprintf(stderr, "Error: syntax error, near %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+
+			p->error_desc = "unterminated";
+			p->error = true;
+			return false;
 		}
 	} else if ((src[0] == '\'') && (src[1] == '\\') && (src[2] == '\n')) {
 		src++;
@@ -3115,6 +3122,13 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 			if (*src == '\'') {
 				is_neg = true;
 				src++;
+			} else if (*src != '\'') {
+				if (!p->do_read_term)
+					fprintf(stderr, "Error: syntax error, near %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+
+				p->error_desc = "unterminated";
+				p->error = true;
+				return false;
 			}
 		} else if (!is_neg && (src[0] == '-') && (src[1] == '\'') && last_op) {
 			is_neg = true;
