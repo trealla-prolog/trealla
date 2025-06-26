@@ -24,7 +24,7 @@ static void msleep(int ms)
 }
 #endif
 
-#define Trace(p1,p2,p3,p4) { q->step++; if (q->trace /*&& !consulting*/) trace_call(p1,p2,p3,p4); }
+#define Trace(p1,p2,p3,p4) if (q->trace /*&& !consulting*/) trace_call(p1,p2,p3,p4)
 
 #define DEBUG_MATCH if (0)
 
