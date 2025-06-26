@@ -3125,7 +3125,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: syntax error, near %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
-			p->error_desc = "incomplete_statement";
+			p->error_desc = "unterminatedt";
 			p->error = true;
 			return false;
 		}
