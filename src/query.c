@@ -643,7 +643,7 @@ static void push_frame(query *q)
 
 	// Avoid long chains of useless returns...
 
-	if (is_end(next_cell) && !next_cell->ret_instr) {
+	if (q->pl->opt && is_end(next_cell) && !next_cell->ret_instr) {
 		f->prev = curr_f->prev;
 		f->instr = curr_f->instr;
 	} else {
