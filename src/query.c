@@ -1022,11 +1022,10 @@ static void proceed(query *q)
 		q->st.instr += q->st.instr->num_cells;
 
 	q->noskip = false;
-
-	if (!is_end(q->st.instr))
-		return;
-
 	cell *tmp = q->st.instr;
+
+	if (!is_end(tmp))
+		return;
 
 	if (tmp->ret_instr) {
 		frame *f = GET_CURR_FRAME();
