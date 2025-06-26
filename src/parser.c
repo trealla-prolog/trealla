@@ -3121,6 +3121,13 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		} else if (!is_neg && (src[0] == '-') && (src[1] == '\'') && last_op) {
 			is_neg = true;
 			src += 2;
+		} else if (*src != '\'') {
+			if (!p->do_read_term)
+				fprintf(stderr, "Error: syntax error, near %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+
+			p->error_desc = "incomplete_statement";
+			p->error = true;
+			return false;
 		}
 	} else if (!is_neg && (*src == '\'') && (src[1] == '-') && (src[2] == '\'') && last_op) {
 		is_neg = true;
