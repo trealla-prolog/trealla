@@ -638,13 +638,24 @@ void try_me(query *q, unsigned num_vars)
 static void push_frame(query *q)
 {
 	frame *f = GET_NEW_FRAME();
+	const frame *curr_f = GET_CURR_FRAME();
+	const cell *next_cell = q->st.instr + q->st.instr->num_cells;
+
+	// Avoid long chains of useless returns...
+
+	if (is_end(next_cell) && !next_cell->ret_instr) {
+		f->prev = curr_f->prev;
+		f->instr = curr_f->instr;
+	} else {
+		f->prev = q->st.curr_frame;
+		f->instr = q->st.instr;
+	}
+
 	f->overflow = 0;
 	f->no_recov = q->no_recov;
 	f->chgen = ++q->chgen;
 	f->hp = q->st.hp;
 	f->heap_num = q->st.heap_num;
-	f->prev = q->st.curr_frame;
-	f->instr = q->st.instr;
 	q->st.sp += f->actual_slots;
 	q->st.curr_frame = q->st.fp++;
 }
