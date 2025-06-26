@@ -1,3 +1,6 @@
+:- use_module(library(format)).
+:- use_module(library(lists)).
+
 str --> "e".
 str --> "a", str.
 

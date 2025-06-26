@@ -2040,6 +2040,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 		parser_destroy(p2);
 		query_destroy(q);
 		p->error = true;
+		SB_free(s);
 		return goal;
 	}
 
@@ -2102,6 +2103,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 		parser_destroy(p2);
 		query_destroy(q);
 		p->error = true;
+		free(src);
 		return goal;
 	}
 
@@ -2118,6 +2120,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	const unsigned goal_idx = goal - p->cl->cells;
 	unsigned trailing = p->cl->cidx - (goal_idx + goal->num_cells);
 	p->cl->cidx -= goal->num_cells;
+	unshare_cells(goal, goal->num_cells);
 	memmove(goal, goal + goal->num_cells, sizeof(cell)*trailing);
 
 	// make room for new goal...

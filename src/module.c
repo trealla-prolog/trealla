@@ -931,7 +931,7 @@ static bool do_import_predicate(module *curr_m, module *m, predicate *pr, cell *
 		return false;
 	}
 
-	if (find_predicate(curr_m, as))
+	if ((tmp_pr = find_predicate_(curr_m, as, true)) != NULL)
 		return true;
 
 	predicate *pr2 = create_predicate(curr_m, as, NULL);
@@ -2062,35 +2062,16 @@ module *load_text(module *m, const char *src, const char *filename)
 
 static bool unload_realfile(module *m, const char *filename)
 {
-	for (predicate *pr = list_front(&m->predicates);
-		pr; pr = list_next(pr)) {
-		if (pr->filename && strcmp(pr->filename, filename))
+
+	for (predicate *pr = list_front(&m->predicates); pr; ) {
+		if (pr->filename && strcmp(pr->filename, filename)) {
+			pr = list_next(pr);
 			continue;
-
-		for (db_entry *r = pr->head; r; r = r->next) {
-			if (r->dbgen_retracted)
-				continue;
-
-			if (r->filename && !strcmp(r->filename, filename)) {
-				if (!remove_from_predicate(m, pr, r))
-					continue;
-
-				list_push_back(&pr->dirty, r);
-				pr->is_processed = false;
-			}
 		}
 
-		sl_destroy(pr->idx2);
-		sl_destroy(pr->idx);
-		pr->idx2 = pr->idx = NULL;
-
-		if (!pr->cnt) {
-			if (!pr->is_multifile && !pr->is_dynamic)
-				pr->is_abolished = true;
-		} else
-			process_db(m);
-
-		//list_remove(&m->predicates, pr);
+		predicate *save = pr;
+		pr = list_next(pr);
+		destroy_predicate(m, save);
 	}
 
 	set_unloaded(m, filename);
