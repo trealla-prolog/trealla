@@ -814,8 +814,19 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 		module *m;
 
 		if ((m = find_module(curr_m->pl, name)) != NULL) {
-			if (m != curr_m)
-				curr_m->used[curr_m->idx_used++] = m;
+			if (m != curr_m) {
+				bool found = false;
+
+				for (unsigned i = 0; i < curr_m->idx_used; i++) {
+					if (curr_m->used[curr_m->idx_used] == m) {
+						found = true;
+						break;
+					}
+				}
+
+				if (found)
+					curr_m->used[curr_m->idx_used++] = m;
+			}
 
 			*mptr = m;
 			return true;
