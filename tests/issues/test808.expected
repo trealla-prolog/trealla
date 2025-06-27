@@ -1,1 +1,1 @@
-   Warning: Initialization goal exception: error(syntax_error(incomplete),number_chars/2).
+   Warning: Initialization goal exception: error(syntax_error(unterminated_quoted_atom),number_chars/2).
