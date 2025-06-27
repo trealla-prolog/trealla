@@ -704,22 +704,23 @@ void clear_property(module *m, const char *name, unsigned arity)
 
 		db_entry *save = r;
 		r = r->next;
-#if 0
-		retract_from_db(m, save);
-#else
-		predicate_delink(pr, save);
-		cell *c = get_head(save->cl.cells);
 
-		if (pr->key.arity > 1) {
-			cell *arg1 = FIRST_ARG(c);
-			cell *arg2 = NEXT_ARG(arg1);
-			sl_rem(pr->idx2, arg2, save);
+		if (pr->refcnt)
+			retract_from_db(m, save);
+		else {
+			predicate_delink(pr, save);
+			cell *c = get_head(save->cl.cells);
+
+			if (pr->key.arity > 1) {
+				cell *arg1 = FIRST_ARG(c);
+				cell *arg2 = NEXT_ARG(arg1);
+				sl_rem(pr->idx2, arg2, save);
+			}
+
+			sl_rem(pr->idx, c, save);
+			clear_clause(&save->cl);
+			free(save);
 		}
-
-		sl_rem(pr->idx, c, save);
-		clear_clause(&save->cl);
-		free(save);
-#endif
 	}
 }
 
