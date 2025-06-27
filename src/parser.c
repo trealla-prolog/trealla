@@ -3011,7 +3011,6 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 	const char *src = p->srcptr;
 
 	SB_init(p->token);
-	bool neg = false;
 	p->v.tag = TAG_INTERNED;
 	p->v.flags = 0;
 	p->v.num_cells = 1;
@@ -3067,6 +3066,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 	// Numbers...
 
 	const char *tmpptr = src;
+	bool neg = false;
 
 	if (p->last_neg) {
 		p->last_neg = false;
