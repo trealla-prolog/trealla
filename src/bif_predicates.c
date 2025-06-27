@@ -541,7 +541,7 @@ static bool bif_iso_number_chars_2(query *q)
 		p->flags = q->st.m->flags;
 		p->srcptr = SB_cstr(pr);
 		p->do_read_term = true;
-		bool ok = get_token(p, true, false);
+		bool ok = tokenize(p, false, false);
 		p->do_read_term = false;
 
 		if (q->did_throw) {
@@ -550,7 +550,10 @@ static bool bif_iso_number_chars_2(query *q)
 			return ok;
 		}
 
-		if (!is_number(&p->v) || *p->srcptr || p->error || (p->cl->cidx > 1)) {
+		if (!is_number(&p->v) || *p->srcptr || p->error
+			|| p->nesting_parens || p->nesting_braces || p->nesting_brackets
+			|| (p->cl->cidx > 1)
+			) {
 			p->srcptr = NULL;
 			SB_free(pr);
 			return throw_error(q, orig_p2, p2_ctx, "syntax_error", p->error&&p->error_desc?p->error_desc:"unexpected_char");
@@ -1097,7 +1100,7 @@ static bool bif_iso_number_codes_2(query *q)
 		p->flags = q->st.m->flags;
 		p->srcptr = SB_cstr(pr);
 		p->do_read_term = true;
-		bool ok = get_token(p, true, false);
+		bool ok = tokenize(p, false, false);
 		p->do_read_term = false;
 
 		if (q->did_throw) {
@@ -1106,7 +1109,10 @@ static bool bif_iso_number_codes_2(query *q)
 			return ok;
 		}
 
-		if (!is_number(&p->v) || *p->srcptr || p->error) {
+		if (!is_number(&p->v) || *p->srcptr || p->error
+			|| p->nesting_parens || p->nesting_braces || p->nesting_brackets
+			|| (p->cl->cidx > 1)
+			) {
 			p->srcptr = NULL;
 			SB_free(pr);
 			return throw_error(q, orig_p2, p2_ctx, "syntax_error", p->error?p->error_desc:"unexpected_char");

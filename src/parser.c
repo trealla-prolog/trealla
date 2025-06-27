@@ -3064,102 +3064,17 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		return false;
 	}
 
-	// -ve numbers (note there are no explicitly +ve numbers)
-
-	bool is_neg = false;
-	const char *save_src = src;
-
-	if ((*src == '-') && last_op && !was_postfix) {
-		is_neg = true;
-		src += 1;
-	}
-
-	if ((src[0] == '\'') && (src[1] == '-') && (src[2] == '\\')) {
-		src += 2;
-		src = eat_continuation(src);
-
-		if (*src == '\'') {
-			is_neg = true;
-			src++;
-		} else if (*src != '\'') {
-			if (!p->do_read_term)
-				fprintf(stderr, "Error: syntax error, near %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
-
-			p->error_desc = "unterminated";
-			p->error = true;
-			return false;
-		}
-	} else if ((src[0] == '\'') && (src[1] == '\\') && (src[2] == '\n')) {
-		src++;
-		src = eat_continuation(src);
-
-		if (*src == '-') {
-			src++;
-			src = eat_continuation(src);
-
-			if (*src == '\'') {
-				is_neg = true;
-				src++;
-			} else if (*src != '\'') {
-				if (!p->do_read_term)
-					fprintf(stderr, "Error: syntax error, near %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
-
-				p->error_desc = "unterminated";
-				p->error = true;
-				return false;
-			}
-		} else if (!is_neg && (src[0] == '-') && (src[1] == '\'') && last_op) {
-			is_neg = true;
-			src += 2;
-		} else if (*src != '\'') {
-			if (!p->do_read_term)
-				fprintf(stderr, "Error: syntax error, near %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
-
-			p->error_desc = "unterminated";
-			p->error = true;
-			return false;
-		}
-	} else if (!is_neg && (*src == '\'') && (src[1] == '-') && (src[2] == '\'') && last_op) {
-		is_neg = true;
-		src += 3;
-	}
-
-
-	if (is_neg) {
-		p->srcptr = (char*)src;
-		int next_ch = peek_char_utf8(src);
-
-		if (next_ch == '/') {
-			if (!p->do_read_term)
-				fprintf(stderr, "Error: syntax error, near %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
-
-			p->error_desc = "incomplete_statement";
-			p->error = true;
-			return false;
-		}
-
-		src = eat_space(p);
-
-		if (!src || !*src) {
-			if (!p->do_read_term)
-				fprintf(stderr, "Error: syntax error, incomplete statement, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
-
-			p->error_desc = "incomplete_statement";
-			p->error = true;
-			return false;
-		}
-
-		if (isdigit(*src))
-			neg = true;
-		else
-			src = save_src;
-	}
-
 	// Numbers...
 
 	const char *tmpptr = src;
 
+	if (p->last_neg) {
+		p->last_neg = false;
+		neg = true;
+	}
+
 	if ((*src != '-') && parse_number(p, &src, neg)) {
+		if (neg) p->cl->cidx--;
 		SB_strcatn(p->token, tmpptr, src-tmpptr);
 		const char *dst = SB_cstr(p->token);
 
@@ -3196,6 +3111,8 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 		return true;
 	}
+
+	p->last_neg = false;
 
 	// Quoted...
 
@@ -3407,6 +3324,9 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 			if (!check_space_before_function(p, ch, src))
 				return false;
 
+			if (!strcmp(SB_cstr(p->token), "-") && last_op && !was_postfix)
+				p->last_neg = true;
+
 			p->srcptr = (char*)src;
 			return true;
 		}
@@ -3542,6 +3462,9 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 	if (!SB_strcmp(p->token, ".") && ch == '|')
 		p->quote_char = '\'';
+
+	if (!strcmp(SB_cstr(p->token), "-") && last_op && !was_postfix)
+		p->last_neg = true;
 
 	return true;
 }

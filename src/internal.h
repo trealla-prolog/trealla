@@ -802,6 +802,7 @@ struct parser_ {
 	bool is_op:1;
 	bool skip:1;
 	bool last_close:1;
+	bool last_neg:1;
 	bool no_fp:1;
 	bool reuse:1;
 	bool interactive:1;
@@ -924,13 +925,13 @@ inline static void unshare_cell_(cell *c)
 	if (is_strbuf(c)) {
 		if (--c->val_strb->refcnt == 0) {
 			free(c->val_strb);
-			c->flags = 0;
+			c->tag = TAG_EMPTY;
 		}
 	} else if (is_bigint(c)) {
 		if (--c->val_bigint->refcnt == 0)	{
 			mp_int_clear(&c->val_bigint->ival);
 			free(c->val_bigint);
-			c->flags = 0;
+			c->tag = TAG_EMPTY;
 		}
 	} else if (is_rational(c)) {
 		if (--c->val_bigint->refcnt == 0)	{
@@ -943,7 +944,7 @@ inline static void unshare_cell_(cell *c)
 			free(c->val_blob->ptr2);
 			free(c->val_blob->ptr);
 			free(c->val_blob);
-			c->flags = 0;
+			c->tag = TAG_EMPTY;
 		}
 	} else if (is_dbid(c)) {
 		if (--c->val_blob->refcnt == 0) {
@@ -952,7 +953,7 @@ inline static void unshare_cell_(cell *c)
 			do_erase(m, ref);
 			free(c->val_blob->ptr2);
 			free(c->val_blob);
-			c->flags = 0;
+			c->tag = TAG_EMPTY;
 		}
 	} else if (is_kvid(c)) {
 		if (--c->val_blob->refcnt == 0) {
@@ -961,7 +962,7 @@ inline static void unshare_cell_(cell *c)
 			sl_del(m->pl->keyval, ref);
 			free(c->val_blob->ptr2);
 			free(c->val_blob);
-			c->flags = 0;
+			c->tag = TAG_EMPTY;
 		}
 	}
 }
