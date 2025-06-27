@@ -3137,7 +3137,9 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 			p->is_string = true;
 
 		for (;;) {
-			for (int ch; (ch = get_char_utf8(&src));) {
+			int ch;
+
+			for (; (ch = get_char_utf8(&src));) {
 				if (ch == '\n') {
 					if (!p->do_read_term)
 						fprintf(stderr, "Error: syntax error, unterminated quoted atom, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
@@ -3318,8 +3320,17 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 			} else
 				p->quote_char = -1;
 
+			if (!src || !ch) {
+				if (!p->do_read_term)
+					fprintf(stderr, "Error: syntax error, unterminated quoted atom, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+
+				p->error_desc = "unterminated_quoted_atom";
+				p->error = true;
+				return false;
+			}
+
 			p->srcptr = (char*)src;
-			int ch = peek_char_utf8(src);
+			ch = peek_char_utf8(src);
 
 			if (!check_space_before_function(p, ch, src))
 				return false;
