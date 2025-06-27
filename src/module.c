@@ -668,6 +668,7 @@ db_entry *find_in_db(module *m, uuid *ref)
 
 void push_property(module *m, const char *name, unsigned arity, const char *type)
 {
+	//printf("*** PUSH %s/%u\n", name, arity);
 	char tmpbuf[1024];
 	format_property(m, tmpbuf, sizeof(tmpbuf), name, arity, type, false);
 	parser *p = parser_create(m);
@@ -676,6 +677,50 @@ void push_property(module *m, const char *name, unsigned arity, const char *type
 	p->internal = true;
 	tokenize(p, false, false);
 	parser_destroy(p);
+}
+
+void clear_property(module *m, const char *name, unsigned arity)
+{
+	cell tmp;
+	make_atom(&tmp, new_atom(m->pl, "$predicate_property"));
+	tmp.arity = 3;
+	predicate *pr = find_predicate(m, &tmp);
+	if (!pr) return;
+
+	for (db_entry *r = pr->head; r;) {
+		cell *p0 = r->cl.cells;
+		cell *p1 = p0 + 1;
+		cell *p2 = p1 + p1->num_cells;
+
+		if (strcmp(C_STR(m, p2), name)) {
+			r = r->next;
+			continue;
+		}
+
+		if (p2->arity != arity) {
+			r = r->next;
+			continue;
+		}
+
+		db_entry *save = r;
+		r = r->next;
+#if 0
+		retract_from_db(m, save);
+#else
+		predicate_delink(pr, save);
+		cell *c = get_head(save->cl.cells);
+
+		if (pr->key.arity > 1) {
+			cell *arg1 = FIRST_ARG(c);
+			cell *arg2 = NEXT_ARG(arg1);
+			sl_rem(pr->idx2, arg2, save);
+		}
+
+		sl_rem(pr->idx, c, save);
+		clear_clause(&save->cl);
+		free(save);
+#endif
+	}
 }
 
 void push_template(module *m, const char *name, unsigned arity, const builtins *ptr)
@@ -934,6 +979,7 @@ static bool do_import_predicate(module *curr_m, module *m, predicate *pr, cell *
 	if ((tmp_pr = find_predicate_(curr_m, as, true)) != NULL)
 		return true;
 
+	clear_property(curr_m, C_STR(m, &pr->key), pr->key.arity);
 	predicate *pr2 = create_predicate(curr_m, as, NULL);
 	pr2->alias = pr;
 	char tmpbuf[1024];
@@ -963,7 +1009,6 @@ static bool do_import_predicate(module *curr_m, module *m, predicate *pr, cell *
 
 	SB_strcat(pr, "))");
 	push_property(curr_m, C_STR(m, as), as->arity, SB_cstr(pr));
-	SB_free(pr);
 	return true;
 }
 
@@ -1800,6 +1845,8 @@ static db_entry *assert_begin(module *m, unsigned num_vars, cell *p1, bool consu
 		if (created) {
 			if (is_check_directive(p1))
 				pr->is_check_directive = true;
+
+			clear_property(m, C_STR(m, c), c->arity);
 
 			if (!consulting) {
 				push_property(m, C_STR(m, c), c->arity, "dynamic");
