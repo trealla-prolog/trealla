@@ -963,6 +963,7 @@ static bool do_import_predicate(module *curr_m, module *m, predicate *pr, cell *
 
 	SB_strcat(pr, "))");
 	push_property(curr_m, C_STR(m, as), as->arity, SB_cstr(pr));
+	SB_free(pr);
 	return true;
 }
 
