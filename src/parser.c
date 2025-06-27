@@ -594,28 +594,6 @@ static bool conditionals(parser *p, cell *d)
 	return false;
 }
 
-#if 0
-static bool make_rule(module *m, const char *src)
-{
-	parser *p = parser_create(m);
-	if (!p) return false;
-	p->flags = m->flags;
-	p->internal = true;
-	p->is_consulting = true;
-	p->one_shot = true;
-
-	tokenize(p, false, false);
-
-	if (p->error || !p->end_of_term) {
-		printf("ERROR: make_rule: '%s'\n", src);
-		return false;
-	}
-
-	parser_destroy(p);
-	return true;
-}
-#endif
-
 static bool directives(parser *p, cell *d)
 {
 	p->skip = false;
@@ -3472,16 +3450,6 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 	ch = get_char_utf8(&src);
 	int next_ch = peek_char_utf8(src);
-
-#if 0
-	if ((ch == '.') && iswspace(next_ch)) {
-		SB_putchar(p->token, ch);
-		p->is_op = search_op(p->m, SB_cstr(p->token), NULL, false);
-		p->srcptr = (char*)src;
-		return true;
-	}
-#endif
-
 	p->srcptr = (char*)src;
 
 	if ((ch == '(') || (ch == '[') || (ch == '{') || (ch == ',')
@@ -3546,11 +3514,6 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 		if (ch_next == '%')
 			break;
-
-#if 0
-		if ((ch == '.') && iswspace(ch_next))
-			break;
-#endif
 
 		if (p->flags.json && (ch_next == '-'))
 			break;
@@ -3669,13 +3632,6 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			last_op = false;
 			continue;
 		}
-
-#if 0
-		int ch = peek_char_utf8(SB_cstr(p->token));
-		fprintf(stderr,
-			"Debug: '%s' (%d) line_num=%d, symbol=%d, quoted=%d, tag=%u, op=%d, lastop=%d, string=%d\n",
-			SB_cstr(p->token), ch, p->line_num, p->is_symbol, p->quote_char, p->v.tag, p->is_op, last_op, p->is_string);
-#endif
 
 		if (!p->quote_char
 			&& !SB_strcmp(p->token, ".")
