@@ -550,7 +550,7 @@ static bool bif_iso_number_chars_2(query *q)
 			return ok;
 		}
 
-		if (!is_number(&p->v) || *p->srcptr || p->error
+		if (!is_number(&p->v) || p->error
 			|| p->nesting_parens || p->nesting_braces || p->nesting_brackets
 			|| (p->cl->cidx > 1)
 			) {
@@ -1109,7 +1109,7 @@ static bool bif_iso_number_codes_2(query *q)
 			return ok;
 		}
 
-		if (!is_number(&p->v) || *p->srcptr || p->error
+		if (!is_number(&p->v) || p->error
 			|| p->nesting_parens || p->nesting_braces || p->nesting_brackets
 			|| (p->cl->cidx > 1)
 			) {
