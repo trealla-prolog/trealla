@@ -458,8 +458,7 @@ int create_vars(query *q, unsigned cnt)
 
 	for (unsigned i = 0; i < cnt; i++) {
 		slot *e = GET_SLOT(f, f->actual_slots + i);
-		e->c.tag = TAG_EMPTY;
-		e->c.val_attrs = NULL;
+		memset(e, 0, sizeof(slot));
 	}
 
 	q->st.sp += cnt;
