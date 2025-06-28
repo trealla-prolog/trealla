@@ -529,23 +529,14 @@ static bool bif_iso_number_chars_2(query *q)
 			return throw_error(q, orig_p2, p2_ctx, "type_error", "list");
 		}
 
-		int n = q->pl->current_input;
-		stream *str = &q->pl->streams[n];
-
-		if (!str->p)
-			str->p = parser_create(q->st.m);
-
-		parser *p = str->p;
-		reset(p);
-		p->error = false;
-		p->flags = q->st.m->flags;
+		parser *p = parser_create(q->st.m);
 		p->srcptr = SB_cstr(pr);
 		p->do_read_term = true;
 		bool ok = tokenize(p, false, false);
 		p->do_read_term = false;
 
 		if (q->did_throw) {
-			p->srcptr = NULL;
+			parser_destroy(p);
 			SB_free(pr);
 			return ok;
 		}
@@ -554,12 +545,12 @@ static bool bif_iso_number_chars_2(query *q)
 			|| p->nesting_parens || p->nesting_braces || p->nesting_brackets
 			|| (p->cl->cidx > 1)
 			) {
-			p->srcptr = NULL;
+			parser_destroy(p);
 			SB_free(pr);
 			return throw_error(q, orig_p2, p2_ctx, "syntax_error", p->error&&p->error_desc?p->error_desc:"unexpected_char");
 		}
 
-		p->srcptr = NULL;
+		parser_destroy(p);
 		SB_free(pr);
 		cell tmp = p->v;
 		bool ok2 = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
@@ -1088,22 +1079,14 @@ static bool bif_iso_number_codes_2(query *q)
 			return throw_error(q, orig_p2, p2_ctx, "type_error", "list");
 		}
 
-		int n = q->pl->current_input;
-		stream *str = &q->pl->streams[n];
-
-		if (!str->p)
-			str->p = parser_create(q->st.m);
-
-		parser *p = str->p;
-		reset(p);
-		p->error = false;
-		p->flags = q->st.m->flags;
+		parser *p = parser_create(q->st.m);
 		p->srcptr = SB_cstr(pr);
 		p->do_read_term = true;
 		bool ok = tokenize(p, false, false);
 		p->do_read_term = false;
 
 		if (q->did_throw) {
+			parser_destroy(p);
 			p->srcptr = NULL;
 			SB_free(pr);
 			return ok;
@@ -1113,12 +1096,12 @@ static bool bif_iso_number_codes_2(query *q)
 			|| p->nesting_parens || p->nesting_braces || p->nesting_brackets
 			|| (p->cl->cidx > 1)
 			) {
-			p->srcptr = NULL;
+			parser_destroy(p);
 			SB_free(pr);
 			return throw_error(q, orig_p2, p2_ctx, "syntax_error", p->error?p->error_desc:"unexpected_char");
 		}
 
-		p->srcptr = NULL;
+		parser_destroy(p);
 		SB_free(pr);
 		cell tmp = p->v;
 		bool ok2 = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
