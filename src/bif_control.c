@@ -808,7 +808,7 @@ static bool find_exception_handler(query *q, char *ball)
 		if (is_cyclic_term(q, e, e_ctx)) {
 			q->quoted = 1;
 			print_term(q, stdout, e, e_ctx, 0);
-		} else {
+		} else if (!is_empty(e)) {
 			q->quoted = 1;
 			print_term(q, stdout, e, e_ctx, 1);
 		}
@@ -816,7 +816,7 @@ static bool find_exception_handler(query *q, char *ball)
 		//if (!q->run_init/*!is_interned(e) || strcmp(C_STR(q, e), "error")*/)
 		//	fprintf(stdout, ")");
 
-		fprintf(stdout, ".\n");
+		if (!is_empty(e)) fprintf(stdout, ".\n");
 		q->quoted = 0;
 		prolog_unlock(q->pl);
 	}
