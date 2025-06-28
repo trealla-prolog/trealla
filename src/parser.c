@@ -2535,9 +2535,6 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 	if (!isdigit(*s))
 		return false;
 
-	//if ((s[0] == '0') && (s[1] == '\''))
-	//	printf("*** %s\n", s);
-
 	if ((s[0] == '0') && (s[1] == '\'') && iscntrl(s[2])) {
 		if (!p->do_read_term)
 			fprintf(stderr, "Error: syntax error, parsing number, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
