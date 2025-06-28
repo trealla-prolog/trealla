@@ -4,7 +4,7 @@
 #include "module.h"
 #include "query.h"
 
-bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx p2_ctx)
+bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *p2, pl_idx p2_ctx)
 {
 	bool quoted = false, was_quoted = false, first = true, was_sep = false;
 	unsigned chars = 0, args = 0;
@@ -47,13 +47,13 @@ bool do_parse_csv_line(query *q, csv *params, const char *src, cell *p2, pl_idx 
 			if (*src && (*src != '\r') && (*src != '\n'))
 				continue;
 
-			if (quoted && q->p->fp) {
+			if (quoted && p->fp) {
 				ssize_t len;
 
-				if ((len = getline(&q->p->save_line, &q->p->n_line, q->p->fp)) == -1)
+				if ((len = getline(&p->save_line, &p->n_line, p->fp)) == -1)
 					return true;
 
-				src = q->p->save_line;
+				src = p->save_line;
 				continue;
 			}
 		}
@@ -211,7 +211,10 @@ bool bif_parse_csv_line_2(query *q)
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,var);
 	csv params = {.sep=',', .quote='"', .arity=0, .trim=false, .numbers=false, .use_strings=is_string(p1), .functor=NULL};
-	return do_parse_csv_line(q, &params, C_STR(q,p1), p2, p2_ctx);
+	parser *p = parser_create(q->st.m);
+	bool ok = do_parse_csv_line(q, p, &params, C_STR(q,p1), p2, p2_ctx);
+	parser_destroy(p);
+	return ok;
 }
 
 bool bif_parse_csv_line_3(query *q)
@@ -258,7 +261,10 @@ bool bif_parse_csv_line_3(query *q)
 	}
 
 	csv params = {.sep=sep, .quote=quote, .arity=arity, .trim=trim, .numbers=numbers, .use_strings=use_strings, .functor=functor};
-	return do_parse_csv_line(q, &params, C_STR(q,p1), !do_assert||!functor ? p2 : NULL, p2_ctx);
+	parser *p = parser_create(q->st.m);
+	bool ok = do_parse_csv_line(q, p, &params, C_STR(q,p1), !do_assert||!functor ? p2 : NULL, p2_ctx);
+	parser_destroy(p);
+	return ok;
 }
 
 bool bif_parse_csv_file_2(query *q)
@@ -271,8 +277,8 @@ bool bif_parse_csv_file_2(query *q)
 	int sep = ',', quote = '"', comment = '#';
 	unsigned arity = 0;
 	LIST_HANDLER(p3);
-
 	const char *ext = strrchr(C_STR(q, p1), '.');
+	parser *p = parser_create(q->st.m);
 
 	if (ext && !strcmp(ext, ".tsv"))
 		sep = '\t';
@@ -316,8 +322,8 @@ bool bif_parse_csv_file_2(query *q)
 	if (!functor)
 		return throw_error(q, p3, p3_ctx, "domain_error", "missing_functor");
 
-	q->p->fp = fopen(C_STR(q, p1), "r");
-	if (!q->p->fp) return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
+	p->fp = fopen(C_STR(q, p1), "r");
+	if (!p->fp) { parser_destroy(p); return throw_error(q, p1, p1_ctx, "existence_error", "source_sink"); }
 	unsigned line_num = 0;
 	pl_idx save_hp = q->st.hp;
 	frame *f = GET_CURR_FRAME();
@@ -325,9 +331,9 @@ bool bif_parse_csv_file_2(query *q)
 	ssize_t len;
 	csv params = {.sep=sep, .quote=quote, .arity=arity, .trim=trim, .numbers=numbers, .use_strings=use_strings, .functor=functor};
 
-	while ((len = getline(&q->p->save_line, &q->p->n_line, q->p->fp)) != -1) {
+	while ((len = getline(&p->save_line, &p->n_line, p->fp)) != -1) {
 		CHECK_INTERRUPT();
-		char *line = q->p->save_line;
+		char *line = p->save_line;
 		line_num++;
 
 		if (header) {
@@ -338,12 +344,13 @@ bool bif_parse_csv_file_2(query *q)
 		if ((comments && (line[0] == comment)) || !line[0] || (line[0] == '\r') || (line[0] == '\n'))
 			continue;
 
-		if (!do_parse_csv_line(q, &params, line, NULL, 0)) {
+		if (!do_parse_csv_line(q, p, &params, line, NULL, 0)) {
 			//fprintf(stderr, "Error: line %u\n", line_num);
-			free(q->p->save_line);
-			q->p->save_line = NULL;
-			fclose(q->p->fp);
-			q->p->fp = NULL;
+			free(p->save_line);
+			p->save_line = NULL;
+			fclose(p->fp);
+			p->fp = NULL;
+			parser_destroy(p);
 			return false;
 		}
 
@@ -351,10 +358,9 @@ bool bif_parse_csv_file_2(query *q)
 		q->st.hp = save_hp;
 	}
 
-	free(q->p->save_line);
-	q->p->save_line = NULL;
-	fclose(q->p->fp);
-	q->p->fp = NULL;
+	free(p->save_line);
+	fclose(p->fp);
+	parser_destroy(p);
 
 #if 0
 	if (!q->pl->quiet)
@@ -364,7 +370,7 @@ bool bif_parse_csv_file_2(query *q)
 	return true;
 }
 
-static bool do_write_csv_line(query *q, csv *params, cell *l, pl_idx l_ctx)
+static bool do_write_csv_line(query *q, parser* p, csv *params, cell *l, pl_idx l_ctx)
 {
 	LIST_HANDLER(l);
 
@@ -376,7 +382,7 @@ static bool do_write_csv_line(query *q, csv *params, cell *l, pl_idx l_ctx)
 		char *dst = print_term_to_strbuf(q, h, h_ctx, 1);
 		size_t len = strlen(dst);
 
-		if (fwrite(dst, 1, len, q->p->fp) < len) {
+		if (fwrite(dst, 1, len, p->fp) < len) {
 			printf("Error: write_csv_file\n");
 			return false;
 		}
@@ -388,10 +394,10 @@ static bool do_write_csv_line(query *q, csv *params, cell *l, pl_idx l_ctx)
 		l_ctx = q->latest_ctx;
 
 		if (!is_nil(l))
-			fputc(params->sep, q->p->fp);
+			fputc(params->sep, p->fp);
 	}
 
-	fputc('\n', q->p->fp);
+	fputc('\n', p->fp);
 	return true;
 }
 
@@ -406,8 +412,8 @@ bool bif_write_csv_file_3(query *q)
 	int sep = ',', quote = '"', comment = '#';
 	unsigned arity = 0;
 	LIST_HANDLER(p3);
-
 	const char *ext = strrchr(C_STR(q, p1), '.');
+	parser *p = parser_create(q->st.m);
 
 	if (ext && !strcmp(ext, ".tsv"))
 		sep = '\t';
@@ -451,9 +457,8 @@ bool bif_write_csv_file_3(query *q)
 	}
 
 	csv params = {.sep=sep, .quote=quote, .arity=arity, .trim=trim, .numbers=numbers, .use_strings=use_strings, .functor=functor};
-	q->p->fp = fopen(C_STR(q, p1), append?"a":"w");
-	if (!q->p->fp) return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
-
+	p->fp = fopen(C_STR(q, p1), append?"a":"w");
+	if (!p->fp) { parser_destroy(p); return throw_error(q, p1, p1_ctx, "existence_error", "source_sink"); }
 	q->double_quotes = true;
 	LIST_HANDLER(p2);
 
@@ -465,9 +470,9 @@ bool bif_write_csv_file_3(query *q)
 		if (!is_list_or_nil(h))
 			return throw_error(q, h, h_ctx, "type_error", "list");
 
-		if (!do_write_csv_line(q, &params, h, h_ctx)) {
-			fclose(q->p->fp);
-			q->p->fp = NULL;
+		if (!do_write_csv_line(q, p, &params, h, h_ctx)) {
+			fclose(p->fp);
+			p->fp = NULL;
 			return false;
 		}
 
@@ -476,9 +481,9 @@ bool bif_write_csv_file_3(query *q)
 		p2_ctx = q->latest_ctx;
 	}
 
-	fclose(q->p->fp);
+	fclose(p->fp);
+	parser_destroy(p);
 	clear_write_options(q);
-	q->p->fp = NULL;
 	return true;
 }
 
