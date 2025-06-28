@@ -3176,7 +3176,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					p->srcptr = (char*)src;
 					src = eat_space(p);
 
-					if (iswalpha(*src) || (*src == '_')) {
+					if (iswalnum(*src) || (*src == '_')) {
 						src = (char*)src;
 						p->quote_char = 0;
 						char *save_src = strdup(SB_cstr(p->token));
