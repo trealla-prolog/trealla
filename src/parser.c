@@ -3571,6 +3571,13 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			continue;
 		}
 
+#if 0
+		int ch = peek_char_utf8(SB_cstr(p->token));
+		fprintf(stderr,
+			"Debug: '%s' (%d) line_num=%d, symbol=%d, quoted=%d, tag=%u, op=%d, lastop=%d, string=%d\n",
+			SB_cstr(p->token), ch, p->line_num, p->is_symbol, p->quote_char, p->v.tag, p->is_op, last_op, p->is_string);
+#endif
+
 		if (!p->quote_char
 			&& !SB_strcmp(p->token, ".")
 			&& (*p->srcptr != ',')
