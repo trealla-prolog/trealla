@@ -4239,10 +4239,10 @@ bool run(parser *p, const char *prolog_src, bool dump, query **subq, unsigned in
 		SB_strcat(pr, "true,");
 	}
 
-	SB_sprintf(pr, "%s", prolog_src);
+	SB_sprintf(pr, "call((%s", prolog_src);
 	SB_trim_ws(pr);
 	SB_trim(pr, '.');
-	SB_strcat(pr, ".");
+	SB_strcat(pr, ")).");
 	p->in_body = true;
 	p->srcptr = SB_cstr(pr);
 	bool ok;
