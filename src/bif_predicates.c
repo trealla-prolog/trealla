@@ -550,9 +550,10 @@ static bool bif_iso_number_chars_2(query *q)
 			return throw_error(q, orig_p2, p2_ctx, "syntax_error", p->error&&p->error_desc?p->error_desc:"unexpected_char");
 		}
 
-		parser_destroy(p);
 		SB_free(pr);
 		cell tmp = p->v;
+		share_cell(&tmp);
+		parser_destroy(p);
 		bool ok2 = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		return ok2;
@@ -1101,9 +1102,10 @@ static bool bif_iso_number_codes_2(query *q)
 			return throw_error(q, orig_p2, p2_ctx, "syntax_error", p->error?p->error_desc:"unexpected_char");
 		}
 
-		parser_destroy(p);
 		SB_free(pr);
 		cell tmp = p->v;
+		share_cell(&tmp);
+		parser_destroy(p);
 		bool ok2 = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 		unshare_cell(&tmp);
 		return ok2;
