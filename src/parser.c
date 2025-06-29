@@ -341,7 +341,7 @@ static cell *make_a_cell(parser *p)
 	return ret;
 }
 
-void reset(parser *p)
+void parser_reset(parser *p)
 {
 	p->was_consing = p->was_string = p->was_partial = p->did_getline \
 		= p->already_loaded_error = p->do_read_term = p->internal = p->one_shot \
@@ -350,10 +350,10 @@ void reset(parser *p)
 		= p->is_string = p->is_quoted = p->is_var = p->is_op = p->skip = p->last_close \
 		= p->last_neg = p->no_fp = p->reuse = p->interactive = p->in_body = 0;
 
+	memset(&p->vartab, 0, sizeof(p->vartab));
 	p->nesting_parens = p->nesting_brackets = p->nesting_braces = p->num_vars = 0;
 	p->start_term = true;
 	p->error = false;
-
 	p->dq_consing = 0;
 	p->error_desc = NULL;
 	p->cl->cidx = 0;
@@ -2078,7 +2078,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 		return goal;
 	}
 
-	reset(p2);
+	parser_reset(p2);
 	p2->cl->num_vars = p->cl->num_vars;
 	p2->vartab = p->vartab;
 	p2->reuse = true;
@@ -4263,7 +4263,7 @@ bool run(parser *p, const char *prolog_src, bool dump, query **subq, unsigned in
 	bool ok;
 
 	while (p->srcptr && *p->srcptr) {
-		reset(p);
+		parser_reset(p);
 		p->line_num_start = 0;
 		p->line_num = 1;
 		p->one_shot = true;

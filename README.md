@@ -507,7 +507,7 @@ Non-standard predicates
 	open(stream(Str),...)       # with open/4 reopen a stream
 	open(F,M,S,[mmap(Ls)])      # with open/4 mmap() the file to Ls
 
-	reset/3						# reset(:goal,?ball,-cont)
+	reset/3						# parser_reset(:goal,?ball,-cont)
 	shift/1						# shift(+ball)
 
 	term_variables/3

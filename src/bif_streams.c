@@ -2040,7 +2040,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 		str->p->fp = str->fp;
 		if (q->top) str->p->no_fp = q->top->no_fp;
 	} else
-		reset(str->p);
+		parser_reset(str->p);
 
 	str->p->do_read_term = true;
 	str->p->one_shot = true;
@@ -4192,7 +4192,7 @@ static bool bif_sys_read_term_from_chars_4(query *q)
 	str->p = parser_create(q->st.m);
 	str->p->flags = q->st.m->flags;
 	str->p->fp = str->fp;
-	reset(str->p);
+	parser_reset(str->p);
 	str->p->srcptr = src;
 
 	if (!src || !*src) {
@@ -4287,7 +4287,7 @@ static bool bif_read_term_from_chars_3(query *q)
 	str->p = parser_create(q->st.m);
 	str->p->flags = q->st.m->flags;
 	str->p->fp = str->fp;
-	reset(str->p);
+	parser_reset(str->p);
 	char *save_src = src;
 	str->p->srcptr = src;
 
