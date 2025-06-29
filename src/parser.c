@@ -350,6 +350,7 @@ void parser_reset(parser *p)
 		= p->is_string = p->is_quoted = p->is_var = p->is_op = p->skip = p->last_close \
 		= p->last_neg = p->no_fp = p->reuse = p->interactive = p->in_body = 0;
 
+	SB_init(p->token);
 	memset(&p->vartab, 0, sizeof(p->vartab));
 	p->nesting_parens = p->nesting_brackets = p->nesting_braces = p->num_vars = 0;
 	p->start_term = true;
@@ -2861,6 +2862,9 @@ static bool valid_float(const char *src)
 
 char *eat_space(parser *p)
 {
+	if (!*p->srcptr)
+		return p->srcptr;
+
 	p->did_getline = false;
 	const char *src = p->srcptr;
 	bool done;
@@ -3001,6 +3005,9 @@ static bool check_space_before_function(parser *p, int ch, const char *src)
 
 static bool contains_null(const char *src, size_t len)
 {
+	if (!*src)
+		return false;
+
 	for (size_t i = 0; i < len; i++) {
 		if (!*src++)
 			return true;
