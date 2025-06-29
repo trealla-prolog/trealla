@@ -343,14 +343,22 @@ static cell *make_a_cell(parser *p)
 
 void reset(parser *p)
 {
-	p->num_vars = 0;
+	p->was_consing = p->was_string = p->was_partial = p->did_getline \
+		= p->already_loaded_error = p->do_read_term = p->internal = p->one_shot \
+		= p->start_term = p->end_of_term = p->end_of_file = p->is_directive \
+		= p->is_command = p->is_comment = p->is_consulting = p->is_symbol
+		= p->is_string = p->is_quoted = p->is_var = p->is_op = p->skip = p->last_close \
+		= p->last_neg = p->no_fp = p->reuse = p->interactive = p->in_body = 0;
+
+	p->nesting_parens = p->nesting_brackets = p->nesting_braces = p->num_vars = 0;
 	p->start_term = true;
-	p->is_comment = false;
 	p->error = false;
-	p->last_close = false;
-	p->nesting_parens = p->nesting_brackets = p->nesting_braces = 0;
+
+	p->dq_consing = 0;
 	p->error_desc = NULL;
 	p->cl->cidx = 0;
+	p->line_num = 1;
+	p->flags = p->m->flags;
 }
 
 void parser_destroy(parser *p)
