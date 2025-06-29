@@ -46,7 +46,7 @@ int check_interrupt(query *q)
 	}
 #endif
 
-	if (!q || !q->p || !q->p->interactive) {
+	if (!q || !q->top || !q->top->interactive) {
 		q->halt = true;
 		return 1;
 	}
@@ -340,7 +340,7 @@ void dump_vars(query *q, bool partial)
 	if (q->in_attvar_print)
 		return;
 
-	parser *p = q->p;
+	parser *p = q->top;
 	const frame *f = GET_FRAME(0);
 	q->is_dump_vars = true;
 	q->tab_idx = 0;

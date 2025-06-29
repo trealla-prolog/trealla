@@ -2038,7 +2038,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 		check_memory(str->p);
 		str->p->flags = q->st.m->flags;
 		str->p->fp = str->fp;
-		if (q->p) str->p->no_fp = q->p->no_fp;
+		if (q->top) str->p->no_fp = q->top->no_fp;
 	} else
 		reset(str->p);
 

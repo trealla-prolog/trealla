@@ -2005,7 +2005,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	p->pl->in_goal_expansion = true;
 	parser *p2 = parser_create(p->m);
 	check_error(p2, query_destroy(q));
-	q->p = p2;
+	q->top = p2;
 	p2->cl->num_vars = p->cl->num_vars;
 	p2->vartab = p->vartab;
 	p2->reuse = true;
@@ -4299,7 +4299,7 @@ bool run(parser *p, const char *prolog_src, bool dump, query **subq, unsigned in
 		if (yield_time_in_ms > 0)
 			do_yield_at(q, yield_time_in_ms);
 
-		q->p = p;
+		q->top = p;
 		q->do_dump_vars = dump;
 		q->run_init = p->m->run_init;
 		execute(q, p->cl->cells, p->cl->num_vars);

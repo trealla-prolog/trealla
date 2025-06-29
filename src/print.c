@@ -464,16 +464,16 @@ static void print_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 		: (pl_idx)c->var_num;
 
 	if (q->varnames && !is_anon(c) && running && !q->cycle_error && (c_ctx == 0)) {
-		if (q->varnames && q->p->vartab.name[c->var_num]) {
-			SB_sprintf(q->sb, "%s", q->p->vartab.name[c->var_num]);
+		if (q->varnames && q->top->vartab.name[c->var_num]) {
+			SB_sprintf(q->sb, "%s", q->top->vartab.name[c->var_num]);
 		} else {
 			SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars));
 		}
 	} else if (q->portray_vars || (q->is_dump_vars && q->cycle_error)) {
 		SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars));
 	} else if (q->is_dump_vars) {
-		if ((c_ctx == 0) && (c->var_num < q->p->num_vars)) {
-			SB_sprintf(q->sb, "%s", q->p->vartab.name[c->var_num]);
+		if ((c_ctx == 0) && (c->var_num < q->top->num_vars)) {
+			SB_sprintf(q->sb, "%s", q->top->vartab.name[c->var_num]);
 		} else {
 			SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars));
 		}
@@ -625,7 +625,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 
 		if (has_visited(visited, head, head_ctx)) {
 			if ((q->portray_vars || q->do_dump_vars) && !THREE_DOTS) {
-				//SB_sprintf(q->sb, "%s", q->p->vartab.name[q->dump_var_num]);
+				//SB_sprintf(q->sb, "%s", q->top->vartab.name[q->dump_var_num]);
 				SB_sprintf(q->sb, "%s", C_STR(q, save_head));
 			} else {
 				SB_sprintf(q->sb, "%s", "...");
@@ -691,7 +691,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 
 			if ((q->portray_vars || q->do_dump_vars) && (orig_c_ctx == 0) && q->is_dump_vars && !THREE_DOTS) {
 				print_variable(q, save_tail, save_tail_ctx, running);
-				//SB_sprintf(q->sb, "%s", q->p->vartab.name[v.var_num]);
+				//SB_sprintf(q->sb, "%s", q->top->vartab.name[v.var_num]);
 			} else {
 				SB_sprintf(q->sb, "%s", "...");
 			}

@@ -1742,7 +1742,7 @@ bool start(query *q)
 				continue;
 			}
 
-			if (q->p && !q->run_init && any_outstanding_choices(q)) {
+			if (q->top && !q->run_init && any_outstanding_choices(q)) {
 				if (!check_redo(q))
 					break;
 
@@ -2010,7 +2010,7 @@ query *query_create_subquery(query *q, cell *instr)
 	if (!task) return NULL;
 	task->parent = q;
 	task->st.fp = 1;
-	task->p = q->p;
+	task->top = q->top;
 
 	cell *tmp = prepare_call(task, false, instr, q->st.curr_frame, 1);
 	pl_idx num_cells = tmp->num_cells;

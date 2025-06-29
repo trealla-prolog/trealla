@@ -3462,7 +3462,7 @@ static bool bif_load_text_2(query *q)
 				m = find_module(q->pl, name_s);
 
 				if (!m) {
-					if (q->p->is_command)
+					if (q->top->is_command)
 						fprintf(stdout, "Info: created module '%s'\n", name_s);
 
 					m = module_create(q->pl, name_s);
@@ -5322,7 +5322,7 @@ bool bif_sys_module_1(query *q)
 		return true;
 
 	if (!m) {
-		if (q->p->is_command && !q->run_init)
+		if (q->top->is_command && !q->run_init)
 			fprintf(stdout, "Info: created module '%s'\n", name);
 
 		m = module_create(q->pl, name);
