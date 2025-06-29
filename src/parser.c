@@ -2591,6 +2591,15 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 		return true;
 	}
 
+	if ((s[0] == '0') && (s[1] == '\'') && (s[2] == '\\') && ((s[3] == '+') || (s[3] == '-'))) {
+		if (!p->do_read_term)
+			fprintf(stderr, "Error: syntax error, parsing octal, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+
+		p->error_desc = "number";
+		p->error = true;
+		return false;
+	}
+
 	if ((s[0] == '0') && (s[1] == '\'') && !((s[2] == '\\') && (s[3] == '\n'))
 		&& (!search_op(p->m, "", NULL, false) || ((s[2] == '\'') && (s[3] == '\'')))) {
 		if (!s[2] || (s[2] == '\n')) {
