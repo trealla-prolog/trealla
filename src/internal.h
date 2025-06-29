@@ -666,7 +666,7 @@ struct query_ {
 	query *prev, *next, *parent;
 	module *current_m;
 	prolog *pl;
-	parser *top;
+	parser *top, *p;
 	frame *frames;
 	slot *slots;
 	choice *choices;

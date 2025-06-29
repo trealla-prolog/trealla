@@ -1948,6 +1948,7 @@ void query_destroy(query *q)
 	mp_int_clear(&q->tmp_ival);
 	mp_rat_clear(&q->tmp_irat);
 	query_purge_dirty_list(q);
+	parser_destroy(q->p);
 	free(q->trails);
 	free(q->choices);
 	free(q->slots);
@@ -1962,6 +1963,7 @@ query *query_create(module *m)
 	static pl_atomic uint64_t g_query_id = 0;
 	query *q = calloc(1, sizeof(query));
 	ensure(q);
+	q->p = parser_create(m);
 	q->flags.occurs_check = false;
 	q->qid = g_query_id++;
 	q->pl = m->pl;

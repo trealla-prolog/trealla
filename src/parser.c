@@ -341,6 +341,18 @@ static cell *make_a_cell(parser *p)
 	return ret;
 }
 
+void reset(parser *p)
+{
+	p->num_vars = 0;
+	p->start_term = true;
+	p->is_comment = false;
+	p->error = false;
+	p->last_close = false;
+	p->nesting_parens = p->nesting_brackets = p->nesting_braces = 0;
+	p->error_desc = NULL;
+	p->cl->cidx = 0;
+}
+
 void parser_destroy(parser *p)
 {
 	if (!p) return;
@@ -1755,18 +1767,6 @@ static bool analyze(parser *p, pl_idx start_idx, bool last_op)
 		;
 
 	return !p->error;
-}
-
-void reset(parser *p)
-{
-	clear_clause(p->cl);
-	p->num_vars = 0;
-	p->start_term = true;
-	p->is_comment = false;
-	p->error = false;
-	p->last_close = false;
-	p->nesting_parens = p->nesting_brackets = p->nesting_braces = 0;
-	p->error_desc = NULL;
 }
 
 static bool dcg_expansion(parser *p)
