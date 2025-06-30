@@ -95,7 +95,7 @@ static pl_idx add_to_global_atoms(const char *name)
 		return ERR_IDX;
 	}
 
-	printf("*** add offset=%llu, %s/%u\n", (long long unsigned)offset, name, (unsigned)len);
+	//printf("*** add offset=%llu, %s/%u\n", (long long unsigned)offset, name, (unsigned)len);
 	memcpy(g_global_atoms + offset, name, len+1);
 	s_global_atoms_offset += len + 1;
 	const char *key = strdup(name);
