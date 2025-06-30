@@ -21,7 +21,7 @@ void convert_path(char *filename);
 
 static lock g_symtab_guard;
 static skiplist *g_symtab = NULL;
-static size_t s_global_atoms_size = 64000, s_global_atoms_offset = 0;
+static size_t s_global_atoms_size = 1024*128, s_global_atoms_offset = 0;
 static pl_atomic int g_tpl_count = 0;
 
 pl_idx g_empty_s, g_dot_s, g_cut_s, g_nil_s, g_true_s, g_fail_s;
@@ -73,12 +73,20 @@ static pl_idx add_to_global_atoms(const char *name)
 	size_t offset = s_global_atoms_offset, len = strlen(name);
 
 	while ((offset+len+1+1) >= s_global_atoms_size) {
-		size_t nbytes = (size_t)s_global_atoms_size * 3 / 2;
-		char *tmp = realloc(g_global_atoms, nbytes);
-		if (!tmp) return ERR_IDX;
+		printf("*** nbytes=%llu\n", (long long unsigned)s_global_atoms_size);
+		size_t nbytes = (size_t)s_global_atoms_size * 2;
+		void *tmp = realloc(g_global_atoms, nbytes);
+
+		if (!tmp) {
+			printf("ERROR: too many atoms\n");
+			abort();
+			return ERR_IDX;
+		}
+
 		g_global_atoms = tmp;
 		memset(g_global_atoms + s_global_atoms_size, 0, nbytes - s_global_atoms_size);
 		s_global_atoms_size = nbytes;
+		printf("*** new size=%llu\n", (long long unsigned)s_global_atoms_size);
 	}
 
 	if ((offset + len + 1) >= UINT32_MAX) {
@@ -87,6 +95,7 @@ static pl_idx add_to_global_atoms(const char *name)
 		return ERR_IDX;
 	}
 
+	printf("*** add offset=%llu, %s/%u\n", (long long unsigned)offset, name, (unsigned)len);
 	memcpy(g_global_atoms + offset, name, len+1);
 	s_global_atoms_offset += len + 1;
 	const char *key = strdup(name);
@@ -531,7 +540,7 @@ static bool g_init(prolog *pl)
 	bool error = false;
 
 	init_lock(&g_symtab_guard);
-	g_global_atoms = calloc(1, s_global_atoms_size);
+	g_global_atoms = calloc(s_global_atoms_size, 1);
 	s_global_atoms_offset = 0;
 
 	CHECK_SENTINEL(g_symtab = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);

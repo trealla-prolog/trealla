@@ -1919,8 +1919,11 @@ static bool bif_iso_functor_3(query *q)
 
 		unsigned arity = get_smallint(p3);
 
-		if (!arity)
-			return unify(q, p1, p1_ctx, p2, p2_ctx);
+		if (!arity) {
+			cell tmp = *p2;
+			convert_to_literal(q->st.m, &tmp);
+			return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+		}
 
 		int var_num = create_vars(q, arity);
 		check_memory(var_num != -1);
