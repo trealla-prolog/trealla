@@ -82,7 +82,8 @@ static pl_idx add_to_global_atoms(const char *name)
 	}
 
 	if ((offset + len + 1) >= UINT32_MAX) {
-		assert("too many atoms");
+		printf("ERROR: too many atoms\n");
+		abort();
 		return ERR_IDX;
 	}
 
