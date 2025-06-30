@@ -359,7 +359,6 @@ void parser_reset(parser *p)
 	p->dq_consing = 0;
 	p->error_desc = NULL;
 	p->cl->cidx = 0;
-	p->line_num = 1;
 	p->flags = p->m->flags;
 }
 
