@@ -1426,7 +1426,7 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 			return;
 		}
 
-		p->vartab.name[c->var_num] = C_STR(p, c);
+		p->vartab.off[c->var_num] = c->val_off;
 
 		if (p->vartab.used[c->var_num]++ == 0) {
 			cl->num_vars++;
@@ -1466,7 +1466,7 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 			return;
 		}
 
-		p->vartab.name[c->var_num] = C_STR(p, c);
+		p->vartab.off[c->var_num] = c->val_off;
 
 		if (p->vartab.used[c->var_num]++ == 0) {
 			cl->num_vars++;
@@ -1502,12 +1502,12 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 	}
 
 	for (unsigned i = 0; i < cl->num_vars; i++) {
-		if (p->is_consulting && !p->do_read_term && (p->vartab.used[i] == 1) &&
-			(p->vartab.name[i][strlen(p->vartab.name[i])-1] != '_') &&
-			(*p->vartab.name[i] != '_')) {
+		if (p->is_consulting && !p->do_read_term && (p->vartab.used[i] == 1)
+			// && (p->vartab.name[i][strlen(p->vartab.name[i])-1] != '_')
+			&& (GET_POOL(p, p->vartab.off[i])[0] != '_')) {
 			if (!p->pl->quiet
 				&& !((cl->cells->val_off == g_neck_s) && cl->cells->arity == 1))
-				fprintf(stderr, "Warning: singleton: %s, near %s:%d\n", p->vartab.name[i], get_loaded(p->m, p->m->filename), p->line_num);
+				fprintf(stderr, "Warning: singleton: %s, near %s:%d\n", GET_POOL(p, p->vartab.off[i]), get_loaded(p->m, p->m->filename), p->line_num);
 		}
 	}
 
@@ -2051,10 +2051,10 @@ static cell *goal_expansion(parser *p, cell *goal)
 	char *src = NULL;
 
 	for (unsigned i = 0; i < p2->cl->num_vars; i++) {
-		if (!p2->vartab.name[i])
+		if (!p2->vartab.off[i])
 			continue;
 
-		if (strcmp(p2->vartab.name[i], "_TermOut"))
+		if (strcmp(GET_POOL(p, p2->vartab.off[i]), "_TermOut"))
 			continue;
 
 		slot *e = GET_SLOT(f, i);

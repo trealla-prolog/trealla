@@ -464,8 +464,8 @@ static void print_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 		: (pl_idx)c->var_num;
 
 	if (q->varnames && !is_anon(c) && running && !q->cycle_error && (c_ctx == 0)) {
-		if (q->varnames && q->top->vartab.name[c->var_num]) {
-			SB_sprintf(q->sb, "%s", q->top->vartab.name[c->var_num]);
+		if (q->varnames && q->top->vartab.off[c->var_num]) {
+			SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num]));
 		} else {
 			SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars));
 		}
@@ -473,7 +473,7 @@ static void print_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 		SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars));
 	} else if (q->is_dump_vars) {
 		if ((c_ctx == 0) && (c->var_num < q->top->num_vars)) {
-			SB_sprintf(q->sb, "%s", q->top->vartab.name[c->var_num]);
+			SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num]));
 		} else {
 			SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars));
 		}

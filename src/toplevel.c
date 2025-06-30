@@ -354,9 +354,9 @@ void dump_vars(query *q, bool partial)
 	for (unsigned i = 0; i < p->num_vars; i++) {
 		int j;
 
-		if ((p->vartab.name[i][0] == '_')
-			&& isalpha(p->vartab.name[i][1])
-			&& ((j = varunformat(p->vartab.name[i]+1)) != -1))
+		if ((GET_POOL(q, p->vartab.off[i])[0] == '_')
+			&& isalpha(GET_POOL(q, p->vartab.off[i])[1])
+			&& ((j = varunformat(GET_POOL(q, p->vartab.off[i])+1)) != -1))
 			q->ignores[j] = true;
 	}
 
@@ -367,7 +367,7 @@ void dump_vars(query *q, bool partial)
 	for (unsigned i = 0; i < p->num_vars; i++) {
 		cell tmp[3];
 		make_instr(tmp, g_eq_s, NULL, 2, 2);
-		make_atom(tmp+1, new_atom(q->pl, p->vartab.name[i]));
+		make_atom(tmp+1, p->vartab.off[i]);
 		make_var(tmp+2, g_anon_s, i);
 		append_list(q, tmp);
 	}
@@ -380,13 +380,13 @@ void dump_vars(query *q, bool partial)
 	q->print_idx = 0;
 
 	for (unsigned i = 0; i < p->num_vars; i++) {
-		if (!strcmp(p->vartab.name[i], "__G_"))
+		if (!strcmp(GET_POOL(q, p->vartab.off[i]), "__G_"))
 			continue;
 
-		if (!strcmp(p->vartab.name[i], "_"))
+		if (!strcmp(GET_POOL(q, p->vartab.off[i]), "_"))
 			continue;
 
-		if (p->vartab.name[i][0] == '_')
+		if (GET_POOL(q, p->vartab.off[i])[0] == '_')
 			continue;
 
 		slot *e = GET_SLOT(f, i);
@@ -403,7 +403,7 @@ void dump_vars(query *q, bool partial)
 			continue;
 
 		if (is_ref(c)) {
-			if (p->vartab.name[c->var_num][0] == '_')
+			if (GET_POOL(q, p->vartab.off[c->var_num])[0] == '_')
 				continue;
 		}
 
@@ -415,14 +415,14 @@ void dump_vars(query *q, bool partial)
 			fprintf(stdout, " ");
 
 		if (is_rational(c))
-			fprintf(stdout, "%s is ", p->vartab.name[i]);
+			fprintf(stdout, "%s is ", GET_POOL(q, p->vartab.off[i]));
 		else
-			fprintf(stdout, "%s = ", p->vartab.name[i]);
+			fprintf(stdout, "%s = ", GET_POOL(q, p->vartab.off[i]));
 
 		int j = check_duplicate_result(q, i, c, c_ctx);
 
 		if ((j >= 0) && ((unsigned)j != i)) {
-			fprintf(stdout, "%s", p->vartab.name[j]);
+			fprintf(stdout, "%s", GET_POOL(q, p->vartab.off[j]));
 			any = true;
 			continue;
 		}

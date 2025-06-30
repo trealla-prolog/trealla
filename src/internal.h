@@ -759,9 +759,9 @@ struct parser_ {
 	struct {
 		char pool[MAX_VAR_POOL_SIZE];
 		unsigned used[MAX_VARS];
-		const char *name[MAX_VARS];
 		unsigned in_body[MAX_VARS];
 		unsigned in_head[MAX_VARS];
+		pl_idx off[MAX_VARS];
 		uint8_t vars[MAX_VARS];
 	} vartab;
 
