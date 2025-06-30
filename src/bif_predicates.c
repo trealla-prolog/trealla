@@ -1922,6 +1922,13 @@ static bool bif_iso_functor_3(query *q)
 		if (!arity) {
 			cell tmp = *p2;
 			convert_to_literal(q->st.m, &tmp);
+
+			if (tmp.val_off == ERR_IDX) {
+				q->oom = true;
+				return false;
+			}
+
+			check_memory(tmp.val_off != ERR_IDX);
 			return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 		}
 
@@ -1938,6 +1945,13 @@ static bool bif_iso_functor_3(query *q)
 
 		if (is_cstring(p2)) {
 			tmp[0].val_off = new_atom(q->pl, C_STR(q, p2));
+
+			if (tmp[0].val_off == ERR_IDX) {
+				q->oom = true;
+				return false;
+			}
+
+			check_memory(tmp[0].val_off != ERR_IDX);
 		} else
 			tmp[0].val_off = p2->val_off;
 

@@ -1062,3 +1062,5 @@ inline static void predicate_delink(predicate *pr, db_entry *r)
 	if (pr->tail == r) pr->tail = r->prev;
 }
 
+#define ensure(cond, ...) if (!(cond)) { printf("Error: no memory %s %d\n", __FILE__, __LINE__); abort(); }
+
