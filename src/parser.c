@@ -3159,9 +3159,9 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 			p->is_string = true;
 
 		for (;;) {
-			int ch;
+			int ch = 0;
 
-			for (; (ch = get_char_utf8(&src));) {
+			for (; *src && (ch = get_char_utf8(&src));) {
 				if (ch == '\n') {
 					if (!p->do_read_term)
 						fprintf(stderr, "Error: syntax error, unterminated quoted atom, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
@@ -3303,6 +3303,9 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 				}
 
 				SB_putchar(p->token, ch);
+
+				if (!*src)
+					break;
 			}
 
 			if (p->quote_char && p->fp) {
@@ -3349,7 +3352,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 			} else
 				p->quote_char = -1;
 
-			if (!src || !ch) {
+			if (!src || !*src || !ch) {
 				if (!p->do_read_term)
 					fprintf(stderr, "Error: syntax error, unterminated quoted atom, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -3358,14 +3361,17 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 				return false;
 			}
 
-			p->srcptr = (char*)src;
-			ch = peek_char_utf8(src);
+			if (*src) {
+				p->srcptr = (char*)src;
+				ch = peek_char_utf8(src);
 
-			if (!check_space_before_function(p, ch, src))
-				return false;
+				if (!check_space_before_function(p, ch, src))
+					return false;
 
-			if (!strcmp(SB_cstr(p->token), "-") && last_op && !was_postfix)
-				p->last_neg = true;
+				if (!strcmp(SB_cstr(p->token), "-") && last_op && !was_postfix)
+					p->last_neg = true;
+			} else
+				src = NULL;
 
 			p->srcptr = (char*)src;
 			return true;

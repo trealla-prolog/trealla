@@ -529,6 +529,7 @@ static bool bif_iso_number_chars_2(query *q)
 			return throw_error(q, orig_p2, p2_ctx, "type_error", "list");
 		}
 
+		SB_putchar(pr, '\0');
 		parser *p = q->p;
 		parser_reset(p);
 		p->srcptr = SB_cstr(pr);
@@ -1079,6 +1080,7 @@ static bool bif_iso_number_codes_2(query *q)
 			return throw_error(q, orig_p2, p2_ctx, "type_error", "list");
 		}
 
+		SB_putchar(pr, '\0');
 		parser *p = q->p;
 		parser_reset(p);
 		p->srcptr = SB_cstr(pr);
