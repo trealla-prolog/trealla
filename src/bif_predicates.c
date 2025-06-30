@@ -532,6 +532,7 @@ static bool bif_iso_number_chars_2(query *q)
 		parser *p = q->p;
 		parser_reset(p);
 		p->srcptr = SB_cstr(pr);
+		p->is_number_chars = true;
 		p->do_read_term = true;
 		bool ok = tokenize(p, false, false);
 		p->do_read_term = false;
@@ -1081,6 +1082,7 @@ static bool bif_iso_number_codes_2(query *q)
 		parser *p = q->p;
 		parser_reset(p);
 		p->srcptr = SB_cstr(pr);
+		p->is_number_chars = true;
 		p->do_read_term = true;
 		bool ok = tokenize(p, false, false);
 		p->do_read_term = false;

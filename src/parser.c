@@ -348,7 +348,8 @@ void parser_reset(parser *p)
 		= p->start_term = p->end_of_term = p->end_of_file = p->is_directive \
 		= p->is_command = p->is_comment = p->is_consulting = p->is_symbol
 		= p->is_string = p->is_quoted = p->is_var = p->is_op = p->skip = p->last_close \
-		= p->last_neg = p->no_fp = p->reuse = p->interactive = p->in_body = 0;
+		= p->last_neg = p->no_fp = p->reuse = p->interactive = p->in_body
+		= p->is_number_chars = 0;
 
 	SB_init(p->token);
 	memset(&p->vartab, 0, sizeof(p->vartab));
@@ -3392,10 +3393,11 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 		int ch_start = peek_char_utf8(SB_cstr(p->token));
 
-		if ((!p->flags.var_prefix && !p->flags.json && iswupper(ch_start)) || (ch_start == '_'))
-			p->is_var = true;
-		else if (search_op(p->m, SB_cstr(p->token), NULL, false))
-			p->is_op = true;
+		if ((!p->flags.var_prefix && !p->flags.json && iswupper(ch_start)) || (ch_start == '_')) {
+			if (!p->is_number_chars) p->is_var = true;
+		} else if (search_op(p->m, SB_cstr(p->token), NULL, false)) {
+			if (!p->is_number_chars) p->is_op = true;
+		}
 
 		p->srcptr = (char*)src;
 		int ch = peek_char_utf8(src);

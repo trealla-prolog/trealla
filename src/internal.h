@@ -807,6 +807,7 @@ struct parser_ {
 	bool reuse:1;
 	bool interactive:1;
 	bool in_body:1;
+	bool is_number_chars:1;
 };
 
 typedef struct loaded_file_ loaded_file;
