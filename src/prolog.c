@@ -81,8 +81,10 @@ static pl_idx add_to_global_atoms(const char *name)
 		s_global_atoms_size = nbytes;
 	}
 
-	if ((offset + len + 1) >= UINT32_MAX)
+	if ((offset + len + 1) >= UINT32_MAX) {
+		assert("too many atoms");
 		return ERR_IDX;
+	}
 
 	memcpy(g_global_atoms + offset, name, len+1);
 	s_global_atoms_offset += len + 1;
