@@ -73,7 +73,6 @@ static pl_idx add_to_global_atoms(const char *name)
 	size_t offset = s_global_atoms_offset, len = strlen(name);
 
 	while ((offset+len+1+1) >= s_global_atoms_size) {
-		printf("*** nbytes=%llu\n", (long long unsigned)s_global_atoms_size);
 		size_t nbytes = (size_t)s_global_atoms_size * 2;
 		void *tmp = realloc(g_global_atoms, nbytes);
 
@@ -86,7 +85,6 @@ static pl_idx add_to_global_atoms(const char *name)
 		g_global_atoms = tmp;
 		memset(g_global_atoms + s_global_atoms_size, 0, nbytes - s_global_atoms_size);
 		s_global_atoms_size = nbytes;
-		printf("*** new size=%llu\n", (long long unsigned)s_global_atoms_size);
 	}
 
 	if ((offset + len + 1) >= UINT32_MAX) {
@@ -95,7 +93,6 @@ static pl_idx add_to_global_atoms(const char *name)
 		return ERR_IDX;
 	}
 
-	//printf("*** add offset=%llu, %s/%u\n", (long long unsigned)offset, name, (unsigned)len);
 	memcpy(g_global_atoms + offset, name, len+1);
 	s_global_atoms_offset += len + 1;
 	const char *key = strdup(name);
