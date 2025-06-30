@@ -77,7 +77,7 @@ static pl_idx add_to_global_atoms(const char *name)
 		void *tmp = realloc(g_global_atoms, nbytes);
 
 		if (!tmp) {
-			printf("ERROR: too many atoms\n");
+			printf("ERROR: no memory, too many atoms\n");
 			abort();
 			return ERR_IDX;
 		}
