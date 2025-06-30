@@ -501,7 +501,6 @@ static bool bif_iso_number_chars_2(query *q)
 
 	if (!is_var(p2) && !any_vars) {
 		SB(pr);
-		SB_check(pr, cnt+1+1);
 		LIST_HANDLER(p2);
 
 		while (is_list(p2)) {
@@ -1039,18 +1038,11 @@ static bool bif_iso_number_codes_2(query *q)
 
 	if (!is_var(p2) && !any_vars) {
 		SB(pr);
-		SB_check(pr, (cnt*6)+1+1);
 		LIST_HANDLER(p2);
 
 		while (is_list(p2)) {
 			cell *head = LIST_HEAD(p2);
 			head = deref(q, head, p2_ctx);
-
-			if (!is_integer(head)) {
-				SB_free(pr);
-				return throw_error(q, head, q->latest_ctx, "type_error", "integer");
-			}
-
 			int val = get_smallint(head);
 
 			if (val < 0) {
@@ -1062,11 +1054,6 @@ static bool bif_iso_number_codes_2(query *q)
 			cell *tail = LIST_TAIL(p2);
 			p2 = deref(q, tail, p2_ctx);
 			p2_ctx = q->latest_ctx;
-		}
-
-		if (!is_nil(p2)) {
-			SB_free(pr);
-			return throw_error(q, orig_p2, p2_ctx, "type_error", "list");
 		}
 
 		SB_putchar(pr, '\0');
