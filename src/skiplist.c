@@ -186,7 +186,7 @@ bool sl_set(skiplist *l, const void *key, const void *val)
 	}
 
 	q = new_node_of_level(k + 1);
-	if(!q) return false;
+	if (!q) return false;
 	q->key = (void *)key;
 	q->val = (void*)val;
 
