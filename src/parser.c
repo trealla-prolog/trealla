@@ -4232,8 +4232,10 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			if (p->is_var)
 				c->tag = TAG_VAR;
 
-			c->val_off = new_atom(p->pl, SB_cstr(p->token));
-			ensure(c->val_off != ERR_IDX);
+			if (!p->is_number_chars) {
+				c->val_off = new_atom(p->pl, SB_cstr(p->token));
+				ensure(c->val_off != ERR_IDX);
+			}
 		} else {
 			c->tag = TAG_CSTR;
 			size_t toklen = SB_strlen(p->token);
@@ -4248,7 +4250,8 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 					c->arity = 2;
 				}
 
-				make_string_internal(c, SB_cstr(p->token), toklen, 0);
+				if (!p->is_number_chars)
+					make_string_internal(c, SB_cstr(p->token), toklen, 0);
 			}
 		}
 
