@@ -507,12 +507,6 @@ static bool bif_iso_number_chars_2(query *q)
 		while (is_list(p2)) {
 			cell *head = LIST_HEAD(p2);
 			head = deref(q, head, p2_ctx);
-
-			if (!is_atom(head)) {
-				SB_free(pr);
-				return throw_error(q, head, q->latest_ctx, "type_error", "atom");
-			}
-
 			int ch = peek_char_utf8(C_STR(q, head));
 
 			if (!ch)
@@ -522,11 +516,6 @@ static bool bif_iso_number_chars_2(query *q)
 			cell *tail = LIST_TAIL(p2);
 			p2 = deref(q, tail, p2_ctx);
 			p2_ctx = q->latest_ctx;
-		}
-
-		if (!is_nil(p2)) {
-			SB_free(pr);
-			return throw_error(q, orig_p2, p2_ctx, "type_error", "list");
 		}
 
 		SB_putchar(pr, '\0');
@@ -553,9 +542,9 @@ static bool bif_iso_number_chars_2(query *q)
 		}
 
 		SB_free(pr);
-		cell tmp = p->v;
-		bool ok2 = unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-		unshare_cell(&tmp);
+		cell *tmp = &p->v;
+		bool ok2 = unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
+		unshare_cell(tmp);
 		return ok2;
 	}
 
