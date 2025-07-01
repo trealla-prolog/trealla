@@ -75,22 +75,16 @@ static pl_idx add_to_global_atoms(const char *name)
 	while ((offset+len+1+1) >= s_global_atoms_size) {
 		size_t nbytes = (size_t)s_global_atoms_size * 2;
 		void *tmp = realloc(g_global_atoms, nbytes);
-
-		if (!tmp)
-			return ERR_IDX;
-
+		if (!tmp) return ERR_IDX;
 		g_global_atoms = tmp;
 		memset(g_global_atoms + s_global_atoms_size, 0, nbytes - s_global_atoms_size);
 		s_global_atoms_size = nbytes;
 	}
 
-#if 1
-	if ((offset + len + 1) >= (UINT32_MAX))
+	const size_t s_lim = 1024*1024*1024;
+
+	if ((offset + len + 1) >= s_lim)
 		return ERR_IDX;
-#else
-	if (offset > 1024*1024) // DEBUG
-		return ERR_IDX;
-#endif
 
 	memcpy(g_global_atoms + offset, name, len+1);
 	s_global_atoms_offset += len + 1;
