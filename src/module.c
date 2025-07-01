@@ -1139,12 +1139,14 @@ bool do_use_foreign_module(module *m, cell *p)
 
 void convert_to_literal(module *m, cell *c)
 {
+	if (is_string(c))
+		c->arity = 0;
+
 	pl_idx off = new_atom(m->pl, C_STR(m, c));
 	c->tag = TAG_INTERNED;
 	c->val_off = off;
 	c->match = NULL;
 	c->flags = 0;
-	c->arity = 0;
 }
 
 predicate *find_functor(module *m, const char *name, unsigned arity)
