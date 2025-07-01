@@ -1922,8 +1922,9 @@ static bool bif_iso_functor_3(query *q)
 		if (!arity) {
 			cell tmp = *p2;
 
-			if (is_atom(p2)) {
-				convert_to_literal(q->st.m, &tmp);
+			if (!is_interned(p2)) {
+				tmp.tag = TAG_INTERNED;
+				tmp.val_off = new_atom(q->pl, C_STR(q, p2));
 
 #if 1
 				if (tmp.val_off == ERR_IDX) {
@@ -1949,7 +1950,7 @@ static bool bif_iso_functor_3(query *q)
 		tmp[0].arity = arity;
 		tmp[0].num_cells = 1 + arity;
 
-		if (is_cstring(p2)) {
+		if (!is_interned(p2)) {
 			tmp[0].val_off = new_atom(q->pl, C_STR(q, p2));
 
 #if 1
