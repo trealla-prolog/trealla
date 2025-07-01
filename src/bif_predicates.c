@@ -1925,6 +1925,7 @@ static bool bif_iso_functor_3(query *q)
 			if (!is_interned(p2)) {
 				tmp.tag = TAG_INTERNED;
 				tmp.flags = 0;
+				tmp.arity = 0;
 				tmp.val_off = new_atom(q->pl, C_STR(q, p2));
 
 #if 1
