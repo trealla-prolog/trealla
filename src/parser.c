@@ -343,17 +343,18 @@ static cell *make_a_cell(parser *p)
 
 void parser_reset(parser *p)
 {
-	p->was_consing = p->was_string = p->was_partial = p->did_getline \
-		= p->already_loaded_error = p->do_read_term = p->internal = p->one_shot \
-		= p->start_term = p->end_of_term = p->end_of_file = p->is_directive \
-		= p->is_command = p->is_comment = p->is_consulting = p->is_symbol
-		= p->is_string = p->is_quoted = p->is_var = p->is_op = p->skip = p->last_close \
-		= p->last_neg = p->no_fp = p->reuse = p->interactive = p->in_body
-		= p->is_number_chars = 0;
+	p->was_consing = p->was_string = p->was_partial = p->did_getline = false;
+	p->already_loaded_error = p->do_read_term = p->internal = p->one_shot = false;
+	p->start_term = p->end_of_term = p->end_of_file = p->is_directive  = false;
+	p->is_command = p->is_comment = p->is_consulting = p->is_symbol = false;
+	p->is_string = p->is_quoted = p->is_var = p->is_op = p->skip = p->last_close = false;
+	p->last_neg = p->no_fp = p->reuse= p->in_body = false;
+	p->is_number_chars = false;
 
 	SB_init(p->token);
 	memset(&p->vartab, 0, sizeof(p->vartab));
-	p->nesting_parens = p->nesting_brackets = p->nesting_braces = p->num_vars = 0;
+	p->nesting_parens = p->nesting_brackets = p->nesting_braces = 0;
+	p->num_vars = 0;
 	p->start_term = true;
 	p->error = false;
 	p->dq_consing = 0;
