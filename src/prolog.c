@@ -21,7 +21,7 @@ void convert_path(char *filename);
 
 static lock g_symtab_guard;
 static skiplist *g_symtab = NULL;
-static size_t s_global_atoms_size = 1024*128, s_global_atoms_offset = 0;
+static size_t s_global_atoms_size = 64000, s_global_atoms_offset = 0;
 static pl_atomic int g_tpl_count = 0;
 
 pl_idx g_empty_s, g_dot_s, g_cut_s, g_nil_s, g_true_s, g_fail_s;
