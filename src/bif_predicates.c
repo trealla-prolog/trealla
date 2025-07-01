@@ -1922,7 +1922,7 @@ static bool bif_iso_functor_3(query *q)
 		if (!arity) {
 			cell tmp = *p2;
 
-			if (!is_interned(p2)) {
+			if (!is_interned(p2) && !is_number(p2)) {
 				tmp.tag = TAG_INTERNED;
 				tmp.flags = 0;
 				tmp.arity = 0;
