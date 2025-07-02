@@ -692,7 +692,7 @@ struct query_ {
 	uint64_t get_started, autofail_n, yield_at;
 	uint64_t cpu_started, time_cpu_last_started, future;
 	unsigned max_depth, max_eval_depth, print_idx, tab_idx, dump_var_num;
-	unsigned varno, tab0_varno, curr_engine, curr_chan, my_chan, oom;
+	unsigned varno, tab0_varno, curr_engine, curr_chan, my_chan;
 	unsigned s_cnt, retries;
 	pl_idx tmphp, latest_ctx, popp, variable_names_ctx;
 	pl_idx frames_size, slots_size, trails_size, choices_size;
@@ -708,6 +708,7 @@ struct query_ {
 	int8_t halt_code;
 	int8_t quoted;
 	enum { WAS_OTHER, WAS_SPACE, WAS_COMMA, WAS_SYMBOL } last_thing;
+	bool oom:1;
 	bool thread_signal:1;
 	bool done:1;
 	bool noskip:1;

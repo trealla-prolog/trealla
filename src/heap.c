@@ -40,7 +40,7 @@ size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, 
 	 while (elements > min_elements);
 
 	if (!mem) {
-		q->oom = 1;
+		q->oom = true;
 		return 0;
 	}
 
