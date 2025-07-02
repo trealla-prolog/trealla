@@ -73,7 +73,7 @@ static pl_idx add_to_global_atoms(const char *name)
 	size_t offset = s_global_atoms_offset, len = strlen(name);
 
 	while ((offset+len+1+1) >= s_global_atoms_size) {
-		size_t nbytes = (size_t)s_global_atoms_size * 2;
+		size_t nbytes = (size_t)s_global_atoms_size * 3 / 2;
 		void *tmp = realloc(g_global_atoms, nbytes);
 		if (!tmp) return ERR_IDX;
 		g_global_atoms = tmp;
