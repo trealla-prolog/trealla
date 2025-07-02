@@ -1299,7 +1299,11 @@ static bool do_atom_concat_equal_3(query *q)
 	if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
 		return false;
 
-	if (!unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
+	GET_FIRST_ARG(p1x,atom);
+	GET_NEXT_ARG(p2x,atom_or_var);
+	check_memory(make_slice(q, &tmp, p3, len3/2, len3/2));
+
+	if (!unify(q, p2x, p2x_ctx, &tmp, q->st.curr_frame))
 		return false;
 
 	return true;
@@ -1323,7 +1327,10 @@ static bool do_atom_concat_3(query *q)
 		if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
 			return false;
 
-		if (!unify(q, p2, p2_ctx, p3, q->st.curr_frame))
+		GET_FIRST_ARG(p1x,atom);
+		GET_NEXT_ARG(p2x,atom_or_var);
+
+		if (!unify(q, p2x, p2x_ctx, p3, q->st.curr_frame))
 			return false;
 
 		if (C_STRLEN(q, p3))
