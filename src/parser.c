@@ -2639,8 +2639,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 			}
 
 			int save_ch = s[0];
-
-			v = get_escape(p, &s, &p->error, true);
+			v = get_escape(p, &s, &p->error, false);
 
 			if (((save_ch == '0')) && !iscntrl(v)) {
 				//printf("*** *s=%d, iscntrl=%d, save_ch=%d, v=%d\n", *s, iscntrl(*s), save_ch, v);
