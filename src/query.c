@@ -188,7 +188,7 @@ bool check_trail(query *q)
 	if (q->st.tp < q->trails_size)
 		return true;
 
-	pl_idx new_trailssize = alloc_grow(q, (void**)&q->trails, sizeof(trail), q->st.tp, q->trails_size*2, false);
+	pl_idx new_trailssize = alloc_grow(q, (void**)&q->trails, sizeof(trail), q->st.tp, q->trails_size*3/2, false);
 
 	if (!new_trailssize) {
 		q->oom = q->error = true;
@@ -207,7 +207,7 @@ static bool check_choice(query *q)
 	if (q->cp < q->choices_size)
 		return true;
 
-	pl_idx new_choicessize = alloc_grow(q, (void**)&q->choices, sizeof(choice), q->cp, q->choices_size*2, false);
+	pl_idx new_choicessize = alloc_grow(q, (void**)&q->choices, sizeof(choice), q->cp, q->choices_size*3/2, false);
 
 	if (!new_choicessize) {
 		q->oom = q->error = true;
@@ -226,7 +226,7 @@ static bool check_frame(query *q)
 	if (q->st.fp < q->frames_size)
 		return true;
 
-	pl_idx new_framessize = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.fp, q->frames_size*2, false);
+	pl_idx new_framessize = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.fp, q->frames_size*3/2, false);
 
 	if (!new_framessize) {
 		q->oom = q->error = true;
@@ -249,7 +249,7 @@ bool check_slot(query *q, unsigned cnt)
 	if (num < q->slots_size)
 		return true;
 
-	pl_idx new_slotssize = alloc_grow(q, (void**)&q->slots, sizeof(slot), num, num*2, false);
+	pl_idx new_slotssize = alloc_grow(q, (void**)&q->slots, sizeof(slot), num, num*3/2, false);
 
 	if (!new_slotssize) {
 		q->oom = q->error = true;
