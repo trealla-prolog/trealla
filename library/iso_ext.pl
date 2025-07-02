@@ -1,5 +1,4 @@
-:- meta_predicate(countall(0,?)).
-:- help(countall(:callable,?integer), [iso(true)]).
+:- help(subsumes_term(+term,+term), [iso(true)]).
 
 subsumes_term(G, S) :-
 	\+ \+ (
@@ -9,7 +8,8 @@ subsumes_term(G, S) :-
 	 V2 == V1
 	).
 
-:- help(subsumes_term(+term,+term), [iso(true)]).
+:- meta_predicate(countall(0,?)).
+:- help(countall(:callable,?integer), [iso(true)]).
 
 countall(_, N) :-
 	integer(N),
