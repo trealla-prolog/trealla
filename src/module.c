@@ -2120,7 +2120,13 @@ static bool unload_realfile(module *m, const char *filename)
 
 		predicate *save = pr;
 		pr = list_next(pr);
+
+#if 0
 		destroy_predicate(m, save);
+#else
+		sl_del(m->index, &save->key);
+		save->is_abolished = true;
+#endif
 	}
 
 	set_unloaded(m, filename);

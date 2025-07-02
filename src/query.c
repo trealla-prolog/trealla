@@ -1487,6 +1487,9 @@ bool match_head(query *q)
 			convert_to_literal(q->st.m, c);
 		}
 
+		if (pr && pr->is_abolished)
+			pr = search_predicate(q->st.m, c, NULL);
+
 		if (!pr || is_evaluable(c) || is_builtin(c)) {
 			pr = search_predicate(q->st.m, c, NULL);
 
