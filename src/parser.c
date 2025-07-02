@@ -1791,7 +1791,7 @@ static bool dcg_expansion(parser *p)
 	dup_cells(tmp+1, p->cl->cells, c->num_cells);
 	make_ref(tmp+1+c->num_cells, p->cl->num_vars, 0);
 	make_end(tmp+1+c->num_cells+1);
-	bool ok = execute(q, tmp, p->cl->num_vars+1);
+	bool ok = execute(q, tmp, p->cl->num_vars+MAX_ARITY);
 
 	if (!ok || q->abort) {
 		query_destroy(q);
