@@ -5651,7 +5651,7 @@ static bool bif_sys_counter_1(query *q)
 
 	cell tmp;
 	make_uint(&tmp, n+1);
-	GET_RAW_ARG(1, p1_raw);
+	GET_FIRST_RAW_ARG(p1_raw,var);
 	reset_var(q, p1_raw, p1_raw_ctx, &tmp, q->st.curr_frame);
 	return true;
 }
