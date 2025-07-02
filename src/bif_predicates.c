@@ -1909,7 +1909,7 @@ static bool bif_iso_functor_3(query *q)
 	if (is_var(p1)) {
 		GET_NEXT_ARG(p3,any);
 
-		if (!is_atomic(p2))
+		if (!is_iso_atomic(p2))
 			return throw_error(q, p2, p2_ctx, "type_error", "atomic");
 
 		if (!is_integer(p3))
