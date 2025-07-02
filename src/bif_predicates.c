@@ -1926,27 +1926,8 @@ static bool bif_iso_functor_3(query *q)
 
 		unsigned arity = get_smallint(p3);
 
-		if (!arity) {
-			cell tmp = *p2;
-
-			if (!is_interned(p2) && !is_number(p2)) {
-				tmp.tag = TAG_INTERNED;
-				tmp.flags = 0;
-				tmp.arity = 0;
-				tmp.val_off = new_atom(q->pl, C_STR(q, p2));
-
-#if 1
-				if (tmp.val_off == ERR_IDX) {
-					q->oom = true;
-					return false;
-				}
-#endif
-
-				check_memory(tmp.val_off != ERR_IDX);
-			}
-
-			return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
-		}
+		if (!arity)
+			return unify(q, p1, p1_ctx, p2, p2_ctx);
 
 		int var_num = create_vars(q, arity);
 		check_memory(var_num != -1);
