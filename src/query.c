@@ -191,7 +191,7 @@ bool check_trail(query *q)
 	pl_idx new_trailssize = alloc_grow(q, (void**)&q->trails, sizeof(trail), q->st.tp, q->trails_size*2, false);
 
 	if (!new_trailssize) {
-		q->error = true;
+		q->oom = q->error = true;
 		return false;
 	}
 
@@ -210,7 +210,7 @@ static bool check_choice(query *q)
 	pl_idx new_choicessize = alloc_grow(q, (void**)&q->choices, sizeof(choice), q->cp, q->choices_size*2, false);
 
 	if (!new_choicessize) {
-		q->error = true;
+		q->oom = q->error = true;
 		return false;
 	}
 
@@ -229,7 +229,7 @@ static bool check_frame(query *q)
 	pl_idx new_framessize = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.fp, q->frames_size*2, false);
 
 	if (!new_framessize) {
-		q->error = true;
+		q->oom = q->error = true;
 		return false;
 	}
 
@@ -252,7 +252,7 @@ bool check_slot(query *q, unsigned cnt)
 	pl_idx new_slotssize = alloc_grow(q, (void**)&q->slots, sizeof(slot), num, num*2, false);
 
 	if (!new_slotssize) {
-		q->error = true;
+		q->oom = q->error = true;
 		return false;
 	}
 
@@ -426,7 +426,7 @@ int create_vars(query *q, unsigned cnt)
 		return f->actual_slots;
 
 	if ((f->actual_slots + cnt) > MAX_LOCAL_VARS) {
-		q->error = true;
+		q->oom = q->error = true;
 		return -1;
 	}
 
