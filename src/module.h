@@ -32,7 +32,7 @@ bool search_goal_expansion(module *m, cell *c);
 void create_goal_expansion(module *m, cell *c);
 bool needs_quoting(module *m, const char *src, int srclen);
 void process_clause(module *m, clause *cl, predicate *parent);
-void process_db(module *m);
+void process_module(module *m);
 builtins *get_module_help(module *m, const char *name, unsigned arity, bool *found, bool *evaluable);
 void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type, bool function);
 void format_template(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const builtins *ptr, bool function, bool alt);

@@ -1682,7 +1682,7 @@ static void process_predicate(predicate *pr)
 	}
 }
 
-void process_db(module *m)
+void process_module(module *m)
 {
 	for (predicate *pr = list_front(&m->predicates);
 		pr; pr = list_next(pr)) {
@@ -2065,7 +2065,7 @@ module *load_text(module *m, const char *src, const char *filename)
 	}
 
 	if (!p->error) {
-		process_db(p->m);
+		process_module(p->m);
 		int save = p->pl->quiet;
 		//p->pl->quiet = true;
 		p->pl->halt = false;
@@ -2197,7 +2197,7 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including, bool 
 	module *save_m = p->m;
 
 	if (!p->error && !p->already_loaded_error) {
-		process_db(p->m);
+		process_module(p->m);
 		int save = p->pl->quiet;
 		p->is_directive = true;
 
@@ -2550,7 +2550,7 @@ module *module_create(prolog *pl, const char *name)
 	parser *p = parser_create(m);
 	if (p) {
 		p->is_consulting = true;
-		process_db(p->m);
+		process_module(p->m);
 		parser_destroy(p);
 	}
 
