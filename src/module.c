@@ -385,7 +385,7 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 	return pr;
 }
 
-static void abolish_predicate(module *m, predicate *pr)
+static void abolish_predicate(predicate *pr)
 {
 	while (pr->head) {
 		db_entry *tmp = pr->head;
@@ -689,18 +689,24 @@ static void purge_properties(predicate *pr)
 		cell *p1 = f + 1;
 		cell *p2 = p1 + p1->num_cells;
 
-		if ((pr->key.arity != p2->arity) || (pr->key.val_off != p2->val_off))
+		if ((pr->key.arity != p2->arity) || (pr->key.val_off != p2->val_off)) {
+			r = r->next;
 			continue;
+		}
+
 
 		r->dbgen_retracted = ++pr->m->pl->dbgen;
 		pr2->cnt--;
 		db_entry *save = r;
 		r = r->next;
 
+#if 0
+		// TO-DO: delink save from db_entries
 		if (!pr2->refcnt) {
 			clear_clause(&save->cl);
-			free(r);
+			free(save);
 		}
+#endif
 	}
 }
 
@@ -2147,15 +2153,19 @@ module *load_text(module *m, const char *src, const char *filename)
 
 static bool unload_realfile(module *m, const char *filename)
 {
-
 	for (predicate *pr = list_front(&m->predicates); pr; ) {
 		if (pr->filename && strcmp(pr->filename, filename)) {
 			pr = list_next(pr);
 			continue;
 		}
 
-		abolish_predicate(m, pr);
 		purge_properties(pr);
+
+		if (!pr->refcnt)
+			abolish_predicate(pr);
+		else
+			pr->is_abolished = true;
+
 		pr = list_next(pr);
 	}
 
