@@ -684,10 +684,7 @@ static void purge_properties(predicate *pr)
 	predicate *pr2 = find_predicate(pr->m, &tmp);
 	if (!pr2) return;
 
-	for (db_entry *r = pr2->head ; r; r = r->next) {
-		if (r->dbgen_retracted)
-			continue;
-
+	for (db_entry *r = pr2->head ; r; ) {
 		cell *f = r->cl.cells;
 		cell *p1 = f + 1;
 		cell *p2 = p1 + p1->num_cells;
@@ -697,6 +694,13 @@ static void purge_properties(predicate *pr)
 
 		r->dbgen_retracted = ++pr->m->pl->dbgen;
 		pr2->cnt--;
+		db_entry *save = r;
+		r = r->next;
+
+		if (!pr2->refcnt) {
+			clear_clause(&save->cl);
+			free(r);
+		}
 	}
 }
 
