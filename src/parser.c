@@ -2367,6 +2367,12 @@ static int get_octal(const char **srcptr)
 static int get_hex(const char **srcptr, unsigned n, bool *error)
 {
 	const char *src = *srcptr;
+
+	if (*src == '\\') {
+		*error = true;
+		return 0;
+	}
+
 	unsigned orig_n = n;
 	int v = 0;
 
@@ -2418,9 +2424,9 @@ static int get_escape(parser *p, const char **_src, bool *error, bool number)
 		&& !number) {
 		bool unicode = false;
 
-		if (ch == 'x')
+		if (ch == 'x') {
 			ch = get_hex(&src, UINT_MAX, error);
-		else if (ch == 'U') {
+		} else if (ch == 'U') {
 			ch = get_hex(&src, 8, error);
 			unicode = true;
 		} else if (ch == 'u') {
@@ -2641,7 +2647,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 			int save_ch = s[0];
 			v = get_escape(p, &s, &p->error, false);
 
-			if (((save_ch == '0')) && !iscntrl(v)) {
+			if ((((save_ch == '0')) && !iscntrl(v)) || p->error) {
 				//printf("*** *s=%d, iscntrl=%d, save_ch=%d, v=%d\n", *s, iscntrl(*s), save_ch, v);
 
 				if (!p->do_read_term)
