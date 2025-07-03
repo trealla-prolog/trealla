@@ -392,6 +392,7 @@ static void abolish_predicate(module *m, predicate *pr)
 		pr->head = pr->head->next;
 		clear_clause(&tmp->cl);
 		free(tmp);
+		pr->cnt--;
 	}
 
 	pr->head = pr->tail = NULL;
@@ -673,6 +674,30 @@ db_entry *find_in_db(module *m, uuid *ref)
 	}
 
 	return NULL;
+}
+
+static void purge_properties(predicate *pr)
+{
+	cell tmp;
+	make_atom(&tmp, new_atom(pr->m->pl, "$predicate_property"));
+	tmp.arity = 3;
+	predicate *pr2 = find_predicate(pr->m, &tmp);
+	if (!pr2) return;
+
+	for (db_entry *r = pr2->head ; r; r = r->next) {
+		if (r->dbgen_retracted)
+			continue;
+
+		cell *f = r->cl.cells;
+		cell *p1 = f + 1;
+		cell *p2 = p1 + p1->num_cells;
+
+		if ((pr->key.arity != p2->arity) || (pr->key.val_off != p2->val_off))
+			continue;
+
+		r->dbgen_retracted = ++pr->m->pl->dbgen;
+		pr2->cnt--;
+	}
 }
 
 void push_property(module *m, const char *name, unsigned arity, const char *type)
@@ -2126,6 +2151,7 @@ static bool unload_realfile(module *m, const char *filename)
 		}
 
 		abolish_predicate(m, pr);
+		purge_properties(pr);
 		pr = list_next(pr);
 	}
 
