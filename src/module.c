@@ -385,6 +385,27 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 	return pr;
 }
 
+static void abolish_predicate(module *m, predicate *pr)
+{
+	while (pr->head) {
+		db_entry *tmp = pr->head;
+		pr->head = pr->head->next;
+		clear_clause(&tmp->cl);
+		free(tmp);
+	}
+
+	pr->head = pr->tail = NULL;
+	sl_destroy(pr->idx2);
+	sl_destroy(pr->idx);
+	pr->idx = pr->idx2 = NULL;
+
+	if (pr->meta_args) {
+		unshare_cells(pr->meta_args, pr->meta_args->num_cells);
+		free(pr->meta_args);
+		pr->meta_args = NULL;
+	}
+}
+
 static void destroy_predicate(module *m, predicate *pr)
 {
 	sl_del(m->index, &pr->key);
@@ -959,6 +980,7 @@ static bool do_import_predicate(module *curr_m, module *m, predicate *pr, cell *
 	if (((tmp_pr = find_predicate(curr_m, as)) != NULL)
 		&& (curr_m != pr->m)
 		&& !pr->m->prebuilt
+		&& 0
 		) {
 		fprintf(stderr, "Error: permission to import failed: %s:%s/%u from %s, see %s\n", curr_m->name, C_STR(curr_m, as), as->arity, pr->m->name, get_loaded(m, tmp_pr->filename));
 		m->error = true;
@@ -2103,15 +2125,8 @@ static bool unload_realfile(module *m, const char *filename)
 			continue;
 		}
 
-		predicate *save = pr;
+		abolish_predicate(m, pr);
 		pr = list_next(pr);
-
-#if 0
-		destroy_predicate(m, save);
-#else
-		//sl_del(m->index, &save->key);
-		save->is_abolished = true;
-#endif
 	}
 
 	set_unloaded(m, filename);
