@@ -277,7 +277,7 @@ void make(module *m)
 	m->make = false;
 }
 
-static predicate *find_predicate_(module *m, cell *c, bool abolished)
+ predicate *find_predicate(module *m, cell *c)
 {
 	cell tmp = *c;
 	tmp.tag = TAG_INTERNED;
@@ -292,7 +292,7 @@ static predicate *find_predicate_(module *m, cell *c, bool abolished)
 	predicate *pr = NULL;
 
 	while (sl_next_key(iter, (void*)&pr)) {
-		if (!pr || (pr->is_abolished && !abolished))
+		if (!pr || pr->is_abolished)
 			continue;
 
 		sl_done(iter);
@@ -301,11 +301,6 @@ static predicate *find_predicate_(module *m, cell *c, bool abolished)
 
 	sl_done(iter);
 	return NULL;
-}
-
-predicate *find_predicate(module *m, cell *c)
-{
-	return find_predicate_(m, c, false);
 }
 
 predicate *search_predicate(module *m, cell *c, bool *prebuilt)
@@ -373,27 +368,20 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 		return NULL;
 	}
 
-	predicate *pr = find_predicate_(m, c, true);
+	predicate *pr = calloc(1, sizeof(predicate));
+	ensure(pr);
+	list_push_back(&m->predicates, pr);
 
-	if (!pr) {
-		pr = calloc(1, sizeof(predicate));
-		ensure(pr);
-		list_push_back(&m->predicates, pr);
+	if (created)
+		*created = true;
 
-		if (created)
-			*created = true;
-
-		pr->filename = m->filename;
-		pr->m = m;
-		pr->key = *c;
-		pr->key.tag = TAG_INTERNED;
-		pr->key.num_cells = 1;
-		pr->is_noindex = m->pl->noindex || !pr->key.arity;
-		sl_set(m->index, &pr->key, pr);
-		return pr;
-	}
-
-	pr->is_abolished = false;
+	pr->filename = m->filename;
+	pr->m = m;
+	pr->key = *c;
+	pr->key.tag = TAG_INTERNED;
+	pr->key.num_cells = 1;
+	pr->is_noindex = m->pl->noindex || !pr->key.arity;
+	sl_set(m->index, &pr->key, pr);
 	return pr;
 }
 
@@ -976,9 +964,6 @@ static bool do_import_predicate(module *curr_m, module *m, predicate *pr, cell *
 		m->error = true;
 		return false;
 	}
-
-	if ((tmp_pr = find_predicate_(curr_m, as, true)) != NULL)
-		return true;
 
 	clear_property(curr_m, C_STR(m, &pr->key), pr->key.arity);
 	predicate *pr2 = create_predicate(curr_m, as, NULL);
@@ -2124,7 +2109,7 @@ static bool unload_realfile(module *m, const char *filename)
 #if 0
 		destroy_predicate(m, save);
 #else
-		sl_del(m->index, &save->key);
+		//sl_del(m->index, &save->key);
 		save->is_abolished = true;
 #endif
 	}
