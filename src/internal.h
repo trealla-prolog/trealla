@@ -438,7 +438,7 @@ struct db_entry_ {
 struct predicate_ {
 	lnode hdr;							// must be first
 	predicate *alias;
-	db_entry *head, *tail;
+	db_entry *head, *tail;				// Why not use list?
 	module *m;
 	skiplist *idx, *idx2;
 	const char *filename;
