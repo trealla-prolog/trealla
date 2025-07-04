@@ -11,18 +11,18 @@ typedef struct lnode_ lnode;
 
 typedef struct {
 	lnode *front, *back;
-	unsigned cnt;
+	unsigned long long cnt;
 } list;
 
 void list_init(list *l);
-unsigned list_count(list *l);
-void *list_front(list *l);
-void *list_back(list *l);
-void *list_prev(void *n);
-void *list_next(void *n);
-
 void list_push_front(list *l, void *n);
 void list_push_back(list *l, void *n);
 void *list_remove(list *l, void *n);
 void *list_pop_front(list *l);
 void *list_pop_back(list *l);
+
+inline static unsigned long long list_count(list *l) { return l->cnt; }
+inline static void *list_front(list *l) { return l->front; }
+inline static void *list_back(list *l) { return l->back; }
+inline static void *list_prev(void *n) { return ((lnode*)n)->prev; }
+inline static void *list_next(void *n) { return ((lnode*)n)->next; }
