@@ -440,7 +440,7 @@ struct predicate_ {
 	predicate *alias;
 	db_entry *head, *tail;				// Why not use list?
 	module *m;
-	skiplist *idx, *idx2;
+	skiplist *idx1, *idx2;
 	const char *filename;
 	cell *meta_args;
 	list dirty;

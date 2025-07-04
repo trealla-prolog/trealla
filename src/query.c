@@ -521,7 +521,7 @@ static void leave_predicate(query *q, predicate *pr)
 	while ((r = list_pop_front(&pr->dirty)) != NULL) {
 		predicate_delink(pr, r);
 
-		if (pr->idx && pr->cnt) {
+		if (pr->idx1 && pr->cnt) {
 			cell *c = get_head(r->cl.cells);
 
 			if (pr->key.arity > 1) {
@@ -530,7 +530,7 @@ static void leave_predicate(query *q, predicate *pr)
 				sl_rem(pr->idx2, arg2, r);
 			}
 
-			sl_rem(pr->idx, c, r);
+			sl_rem(pr->idx1, c, r);
 
 			if (true) {
 				r->cl.is_deleted = true;
@@ -545,10 +545,10 @@ static void leave_predicate(query *q, predicate *pr)
 		}
 	}
 
-	if (pr->idx && !pr->cnt) {
+	if (pr->idx1 && !pr->cnt) {
 		sl_destroy(pr->idx2);
-		sl_destroy(pr->idx);
-		pr->idx = pr->idx2 = NULL;
+		sl_destroy(pr->idx1);
+		pr->idx1 = pr->idx2 = NULL;
 	}
 
 	module_unlock(pr->m);
@@ -1187,7 +1187,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 	q->st.key = key;
 	q->st.key_ctx = key_ctx;
 
-	if (!pr->idx) {
+	if (!pr->idx1) {
 		q->st.dbe = pr->head;
 
 		if (key->arity) {
@@ -1215,7 +1215,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 	}
 
 	cell *arg1 = key->arity ? FIRST_ARG(key) : NULL;
-	skiplist *idx = pr->idx;
+	skiplist *idx = pr->idx1;
 
 	if (arg1 && (is_var(arg1) || pr->is_var_in_first_arg)) {
 		if (!pr->idx2) {

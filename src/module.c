@@ -397,8 +397,8 @@ static void abolish_predicate(predicate *pr)
 
 	pr->head = pr->tail = NULL;
 	sl_destroy(pr->idx2);
-	sl_destroy(pr->idx);
-	pr->idx = pr->idx2 = NULL;
+	sl_destroy(pr->idx1);
+	pr->idx1 = pr->idx2 = NULL;
 
 	if (pr->meta_args) {
 		unshare_cells(pr->meta_args, pr->meta_args->num_cells);
@@ -420,7 +420,7 @@ static void destroy_predicate(module *m, predicate *pr)
 
 	pr->head = pr->tail = NULL;
 	sl_destroy(pr->idx2);
-	sl_destroy(pr->idx);
+	sl_destroy(pr->idx1);
 
 	if (pr->meta_args) {
 		unshare_cells(pr->meta_args, pr->meta_args->num_cells);
@@ -768,7 +768,7 @@ void clear_property(module *m, const char *name, unsigned arity)
 				sl_rem(pr->idx2, arg2, save);
 			}
 
-			sl_rem(pr->idx, c, save);
+			sl_rem(pr->idx1, c, save);
 			clear_clause(&save->cl);
 			free(save);
 		}
@@ -1583,8 +1583,8 @@ static bool check_not_multifile(module *m, predicate *pr, db_entry *r)
 			pr->alias = NULL;
 			pr->cnt = 0;
 			sl_destroy(pr->idx2);
-			sl_destroy(pr->idx);
-			pr->idx2 = pr->idx = NULL;
+			sl_destroy(pr->idx1);
+			pr->idx2 = pr->idx1 = NULL;
 			free(r);
 			return false;
 		}
@@ -1731,7 +1731,7 @@ static void process_predicate(predicate *pr)
 		process_clause(pr->m, &r->cl, pr);
 	}
 
-	if (pr->is_dynamic || pr->idx)
+	if (pr->is_dynamic || pr->idx1)
 		return;
 
 	for (db_entry *r = pr->head; r; r = r->next) {
@@ -1950,14 +1950,14 @@ static void assert_commit(module *m, db_entry *r, predicate *pr, bool append)
 	if (pr->is_noindex)
 		return;
 
-	if (!pr->idx) {
+	if (!pr->idx1) {
 		unsigned INDEX_THRESHHOLD = 500;
 
 		if (pr->cnt < INDEX_THRESHHOLD)
 			return;
 
-		pr->idx = sl_create(index_cmpkey, NULL, m);
-		ensure(pr->idx);
+		pr->idx1 = sl_create(index_cmpkey, NULL, m);
+		ensure(pr->idx1);
 
 		if (pr->key.arity > 1) {
 			pr->idx2 = sl_create(index_cmpkey, NULL, m);
@@ -1970,7 +1970,7 @@ static void assert_commit(module *m, db_entry *r, predicate *pr, bool append)
 			if (cl2->dbgen_retracted)
 				continue;
 
-			sl_set(pr->idx, c, cl2);
+			sl_set(pr->idx1, c, cl2);
 
 			if (pr->idx2) {
 				cell *arg1 = FIRST_ARG(c);
@@ -1990,12 +1990,12 @@ static void assert_commit(module *m, db_entry *r, predicate *pr, bool append)
 		pr->is_var_in_first_arg = true;
 
 	if (!append) {
-		sl_set(pr->idx, c, r);
+		sl_set(pr->idx1, c, r);
 
 		if (pr->idx2 && arg2)
 			sl_set(pr->idx2, arg2, r);
 	} else {
-		sl_set(pr->idx, c, r);
+		sl_set(pr->idx1, c, r);
 
 		if (pr->idx2 && arg2)
 			sl_set(pr->idx2, arg2, r);
@@ -2028,7 +2028,7 @@ db_entry *asserta_to_db(module *m, unsigned num_vars, cell *p1, bool consulting)
 
 	assert_commit(m, r, pr, false);
 
-	if (!consulting && !pr->idx)
+	if (!consulting && !pr->idx1)
 		pr->is_processed = false;
 
 	if (pr->is_multifile && !pr->is_dynamic) {
@@ -2069,7 +2069,7 @@ db_entry *assertz_to_db(module *m, unsigned num_vars, cell *p1, bool consulting)
 
 	assert_commit(m, r, pr, true);
 
-	if (!consulting && !pr->idx)
+	if (!consulting && !pr->idx1)
 		pr->is_processed = false;
 
 	if (pr->is_multifile && !pr->is_dynamic) {

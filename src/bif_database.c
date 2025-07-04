@@ -286,7 +286,7 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 	for (db_entry *r = pr->head; r; r = r->next)
 		retract_from_db(r->owner->m, r);
 
-	if (pr->idx && !pr->refcnt) {
+	if (pr->idx1 && !pr->refcnt) {
 		predicate_purge_dirty_list(pr);
 	} else {
 		db_entry *r;
@@ -296,8 +296,8 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 	}
 
 	sl_destroy(pr->idx2);
-	sl_destroy(pr->idx);
-	pr->idx = pr->idx2 = NULL;
+	sl_destroy(pr->idx1);
+	pr->idx1 = pr->idx2 = NULL;
 	pr->is_processed = false;
 	pr->head = pr->tail = NULL;
 	pr->cnt = 0;
