@@ -424,7 +424,7 @@ struct clause_ {
 };
 
 struct rule_ {
-	lnode hdr;							// must be first
+	linode hdr;							// must be first
 	predicate *owner;
 	rule *prev, *next;
 	const char *filename;
@@ -438,7 +438,7 @@ struct rule_ {
 // Note: use head/tail as an entry can't be on two intrusive lists
 
 struct predicate_ {
-	lnode hdr;							// must be first
+	linode hdr;							// must be first
 	predicate *alias;
 	rule *head, *tail;
 	module *m;
@@ -664,7 +664,7 @@ struct prolog_flags_ {
 };
 
 struct query_ {
-	lnode hdr;							// must be first
+	linode hdr;							// must be first
 	query *prev, *next, *parent;
 	module *current_m;
 	prolog *pl;
@@ -818,13 +818,13 @@ typedef struct loaded_file_ loaded_file;
 // Predicate indicator...
 
 typedef struct pi_ {
-	lnode hdr;							// must be first
+	linode hdr;							// must be first
 	struct pi_ *prev, *next;			// ???
 	cell key;
 } pi;
 
 struct module_ {
-	lnode hdr;							// must be first
+	linode hdr;							// must be first
 	module *used[MAX_MODULES];
 	module *orig;
 	prolog *pl;

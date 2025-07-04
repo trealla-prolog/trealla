@@ -8,7 +8,7 @@ void list_init(list *l)
 
 void list_push_front(list *l, void *entry_)
 {
-	lnode *entry = entry_;
+	linode *entry = entry_;
     entry->prev = 0;
 
     if ((entry->next = l->front) == 0)
@@ -22,7 +22,7 @@ void list_push_front(list *l, void *entry_)
 
 void list_push_back(list *l, void *entry_)
 {
-	lnode *entry = entry_;
+	linode *entry = entry_;
     entry->next = 0;
 
     if ((entry->prev = l->back) == 0)
@@ -39,7 +39,7 @@ void *list_pop_front(list *l)
     if (!l->front)
         return 0;
 
-    lnode *entry = l->front;
+    linode *entry = l->front;
     l->front = l->front->next;
 
     if (l->front)
@@ -56,7 +56,7 @@ void *list_pop_back(list *l)
     if (!l->back)
         return 0;
 
-    lnode *entry = l->back;
+    linode *entry = l->back;
     l->back = l->back->prev;
 
     if (l->back)
@@ -70,7 +70,7 @@ void *list_pop_back(list *l)
 
 void *list_remove(list *l, void *entry_)
 {
-	lnode *entry = entry_;
+	linode *entry = entry_;
 
     if (l->front == entry)
         l->front = entry->next;
@@ -82,7 +82,7 @@ void *list_remove(list *l, void *entry_)
     else
         entry->next->prev = entry->prev;
 
-    lnode *save = entry->next;
+    linode *save = entry->next;
     l->cnt--;
     return save;
 }
