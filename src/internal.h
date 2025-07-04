@@ -435,10 +435,12 @@ struct rule_ {
 	clause cl;
 };
 
+// Note: use head/tail as an entry can't be on two intrusive lists
+
 struct predicate_ {
 	lnode hdr;							// must be first
 	predicate *alias;
-	rule *head, *tail;				// Why not use list?
+	rule *head, *tail;
 	module *m;
 	skiplist *idx1, *idx2;
 	const char *filename;
