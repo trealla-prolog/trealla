@@ -3571,7 +3571,7 @@ static bool process_term(parser *p, cell *p1)
 		h->arity = 0;
 	}
 
-	db_entry *r;
+	rule *r;
 
 	if ((r = assertz_to_db(p->m, p->cl->num_vars, p1, consulting)) == NULL) {
 		if ((!p->do_read_term) && 0)
@@ -3976,7 +3976,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 		if (!p->quote_char && p->start_term &&
 			(!SB_strcmp(p->token, "]") || !SB_strcmp(p->token, ")") || !SB_strcmp(p->token, "}"))) {
 			if (!p->do_read_term)
-				fprintf(stderr, "Error: syntax error, start of db_entry expected, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+				fprintf(stderr, "Error: syntax error, start of rule expected, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "start_expected";
 			p->error = true;

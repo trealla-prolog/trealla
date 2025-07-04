@@ -346,7 +346,7 @@ Non-standard predicates
 	reset_gensym/1				# reset_gensym(+atom)
 
 	call_residue_vars/2
-	expand_term/2               # expand_term(+db_entry,-Term)
+	expand_term/2               # expand_term(+rule,-Term)
 	sub_string/5				# sub_string(+string,?before,?len,?after,?substring)
 	atomic_concat/3             # atomic_concat(+atom,+list,-list)
 	atomic_list_concat/2	    # atomic_list_concat(L,Atom)

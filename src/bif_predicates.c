@@ -2791,7 +2791,7 @@ static bool bif_source_info_2(query *q)
 
 	check_memory(init_tmp_heap(q));
 
-	for (db_entry *r = pr->head; r; r = r->next) {
+	for (rule *r = pr->head; r; r = r->next) {
 		cell tmp[8];
 		make_instr(tmp+0, g_dot_s, NULL, 2, 7);
 		make_instr(tmp+1, new_atom(q->pl, "filename"), NULL, 1, 1);
@@ -3149,7 +3149,7 @@ static bool do_profile(query *q)
 		m; m = list_next(m)) {
 		for (predicate *pr = list_front(&m->predicates);
 			pr; pr = list_next(pr)) {
-			for (db_entry *r = pr->head; r; r = r->next) {
+			for (rule *r = pr->head; r; r = r->next) {
 				if (!r->attempted)
 					continue;
 

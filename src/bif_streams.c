@@ -836,8 +836,8 @@ static void clear_streams_properties(query *q)
 	predicate *pr = find_predicate(q->st.m, &tmp);
 
 	if (pr) {
-		for (db_entry *r = pr->head; r;) {
-			db_entry *save = r;
+		for (rule *r = pr->head; r;) {
+			rule *save = r;
 			r = r->next;
 			retract_from_db(pr->m, save);
 		}

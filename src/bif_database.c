@@ -48,7 +48,7 @@ static bool bif_clause_3(query *q)
 		if (!is_var(p3)) {
 			uuid u;
 			uuid_from_buf(C_STR(q, p3), &u);
-			db_entry *r = find_in_db(q->st.m, &u);
+			rule *r = find_in_db(q->st.m, &u);
 
 			if (!r || (!u.u1 && !u.u2))
 				break;
@@ -107,7 +107,7 @@ static bool bif_clause_3(query *q)
 	return false;
 }
 
-static void db_log(query *q, db_entry *r, enum log_type l)
+static void db_log(query *q, rule *r, enum log_type l)
 {
 	FILE *fp = q->pl->logfp;
 
@@ -179,7 +179,7 @@ static bool bif_iso_clause_2(query *q)
 static void predicate_purge_dirty_list(predicate *pr)
 {
 	unsigned cnt = 0;
-	db_entry *r;
+	rule *r;
 
 	while ((r = list_pop_front(&pr->dirty)) != NULL) {
 		predicate_delink(pr, r);
@@ -218,7 +218,7 @@ bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 	if (!match || q->did_throw)
 		return match;
 
-	db_entry *r = q->st.dbe;
+	rule *r = q->st.dbe;
 	db_log(q, r, LOG_ERASE);
 	retract_from_db(r->owner->m, r);
 	bool last_match = (is_retract == DO_RETRACT) && !has_next_key(q);
@@ -283,13 +283,13 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 	if (!pr->is_dynamic)
 		return throw_error(q, c_orig, q->st.curr_frame, "permission_error", "modify,static_procedure");
 
-	for (db_entry *r = pr->head; r; r = r->next)
+	for (rule *r = pr->head; r; r = r->next)
 		retract_from_db(r->owner->m, r);
 
 	if (pr->idx1 && !pr->refcnt) {
 		predicate_purge_dirty_list(pr);
 	} else {
-		db_entry *r;
+		rule *r;
 
 		while ((r = list_pop_front(&pr->dirty)) != NULL)
 			list_push_back(&q->dirty, r);
@@ -461,7 +461,7 @@ static bool bif_iso_asserta_1(query *q)
 	cell *h = get_head(p->cl->cells);
 
 	prolog_lock(q->pl);
-	db_entry *r = asserta_to_db(q->st.m, p->cl->num_vars, p->cl->cells, 0);
+	rule *r = asserta_to_db(q->st.m, p->cl->num_vars, p->cl->cells, 0);
 	prolog_unlock(q->pl);
 
 	p->cl->cidx = 0;
@@ -517,7 +517,7 @@ static bool bif_iso_assertz_1(query *q)
 	cell *h = get_head(p->cl->cells);
 
 	prolog_lock(q->pl);
-	db_entry *r = assertz_to_db(q->st.m, p->cl->num_vars, p->cl->cells, false);
+	rule *r = assertz_to_db(q->st.m, p->cl->num_vars, p->cl->cells, false);
 	prolog_unlock(q->pl);
 
 	p->cl->cidx = 0;
@@ -581,7 +581,7 @@ static bool do_asserta_2(query *q)
 	cell *h = get_head(p->cl->cells);
 
 	prolog_lock(q->pl);
-	db_entry *r = asserta_to_db(q->st.m, p->cl->num_vars, p->cl->cells, 0);
+	rule *r = asserta_to_db(q->st.m, p->cl->num_vars, p->cl->cells, 0);
 	prolog_unlock(q->pl);
 
 	p->cl->cidx = 0;
@@ -673,7 +673,7 @@ static bool do_assertz_2(query *q)
 	cell *h = get_head(p->cl->cells);
 
 	prolog_lock(q->pl);
-	db_entry *r = assertz_to_db(q->st.m, p->cl->num_vars, p->cl->cells, false);
+	rule *r = assertz_to_db(q->st.m, p->cl->num_vars, p->cl->cells, false);
 	prolog_unlock(q->pl);
 
 	p->cl->cidx = 0;
@@ -729,7 +729,7 @@ void save_db(FILE *fp, query *q, int logging)
 		if (src[0] == '$')
 			continue;
 
-		for (db_entry *r = pr->head; r; r = r->next) {
+		for (rule *r = pr->head; r; r = r->next) {
 			if (r->dbgen_retracted)
 				continue;
 
@@ -874,7 +874,7 @@ static bool bif_instance_2(query *q)
 	GET_NEXT_ARG(p2,any);
 	uuid u;
 	uuid_from_buf(C_STR(q, p1), &u);
-	db_entry *r = find_in_db(q->st.m, &u);
+	rule *r = find_in_db(q->st.m, &u);
 	check_memory(r);
 	return unify(q, p2, p2_ctx, r->cl.cells, q->st.curr_frame);
 }
@@ -937,7 +937,7 @@ static bool save_name(FILE *fp, query *q, pl_idx name, unsigned arity, bool alt)
 
 		any = true;
 
-		for (db_entry *r = pr->head; r; r = r->next) {
+		for (rule *r = pr->head; r; r = r->next) {
 			if (r->dbgen_retracted)
 				continue;
 

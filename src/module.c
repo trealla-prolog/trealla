@@ -388,7 +388,7 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 static void abolish_predicate(predicate *pr)
 {
 	while (pr->head) {
-		db_entry *tmp = pr->head;
+		rule *tmp = pr->head;
 		pr->head = pr->head->next;
 		clear_clause(&tmp->cl);
 		free(tmp);
@@ -412,7 +412,7 @@ static void destroy_predicate(module *m, predicate *pr)
 	sl_del(m->index, &pr->key);
 
 	while (pr->head) {
-		db_entry *tmp = pr->head;
+		rule *tmp = pr->head;
 		pr->head = pr->head->next;
 		clear_clause(&tmp->cl);
 		free(tmp);
@@ -654,7 +654,7 @@ int index_cmpkey(const void *ptr1, const void *ptr2, const void *param, void *l)
 	return index_cmpkey_(ptr1, ptr2, param, l);
 }
 
-db_entry *find_in_db(module *m, uuid *ref)
+rule *find_in_db(module *m, uuid *ref)
 {
 	for (module *tmp_m = list_front(&m->pl->modules);
 		tmp_m; tmp_m = list_next(tmp_m)) {
@@ -663,7 +663,7 @@ db_entry *find_in_db(module *m, uuid *ref)
 			if (!pr->is_dynamic)
 				continue;
 
-			for (db_entry *r = pr->head ; r; r = r->next) {
+			for (rule *r = pr->head ; r; r = r->next) {
 				if (r->dbgen_retracted)
 					continue;
 
@@ -684,7 +684,7 @@ static void purge_properties(predicate *pr)
 	predicate *pr2 = find_predicate(pr->m, &tmp);
 	if (!pr2) return;
 
-	for (db_entry *r = pr2->head ; r; ) {
+	for (rule *r = pr2->head ; r; ) {
 		cell *f = r->cl.cells;
 		cell *p1 = f + 1;
 		cell *p2 = p1 + p1->num_cells;
@@ -697,7 +697,7 @@ static void purge_properties(predicate *pr)
 
 		r->dbgen_retracted = ++pr->m->pl->dbgen;
 		pr2->cnt--;
-		db_entry *save = r;
+		rule *save = r;
 		r = r->next;
 
 		if (!pr2->refcnt) {
@@ -738,7 +738,7 @@ void clear_property(module *m, const char *name, unsigned arity)
 	predicate *pr = find_predicate(m, &tmp);
 	if (!pr) return;
 
-	for (db_entry *r = pr->head; r;) {
+	for (rule *r = pr->head; r;) {
 		cell *p0 = r->cl.cells;
 		cell *p1 = p0 + 1;
 		cell *p2 = p1 + p1->num_cells;
@@ -753,7 +753,7 @@ void clear_property(module *m, const char *name, unsigned arity)
 			continue;
 		}
 
-		db_entry *save = r;
+		rule *save = r;
 		r = r->next;
 
 		if (pr->refcnt)
@@ -1559,7 +1559,7 @@ unsigned get_op(module *m, const char *name, unsigned specifier)
 	return 0;
 }
 
-static bool check_not_multifile(module *m, predicate *pr, db_entry *r)
+static bool check_not_multifile(module *m, predicate *pr, rule *r)
 {
 	if (pr->head
 		&& !pr->is_multifile && !pr->is_dynamic
@@ -1570,7 +1570,7 @@ static bool check_not_multifile(module *m, predicate *pr, db_entry *r)
 				fprintf(stderr, "Warning: overwriting '%s'/%u\n", C_STR(m, &pr->key), pr->key.arity);
 
 			while (pr->head) {
-				db_entry *tmp = pr->head;
+				rule *tmp = pr->head;
 				pr->head = pr->head->next;
 				clear_clause(&tmp->cl);
 				free(tmp);
@@ -1616,13 +1616,13 @@ static void check_goal_expansion(module *m, cell *p1)
 	create_goal_expansion(m, arg1);
 }
 
-static void check_unique(module *m, db_entry *dbe_orig)
+static void check_unique(module *m, rule *r_orig)
 {
-	cell *head = get_head(dbe_orig->cl.cells);
+	cell *head = get_head(r_orig->cl.cells);
 	bool matched = false;
-	dbe_orig->cl.is_unique = false;
+	r_orig->cl.is_unique = false;
 
-	for (db_entry *r = dbe_orig->next; r; r = r->next) {
+	for (rule *r = r_orig->next; r; r = r->next) {
 		if (r->dbgen_retracted)
 			continue;
 
@@ -1635,7 +1635,7 @@ static void check_unique(module *m, db_entry *dbe_orig)
 	}
 
 	if (!matched)
-		dbe_orig->cl.is_unique = true;
+		r_orig->cl.is_unique = true;
 }
 
 static void process_cell(module *m, clause *cl, cell *c, predicate *parent, int last_was_colon, bool is_directive)
@@ -1727,14 +1727,14 @@ static void process_predicate(predicate *pr)
 
 	pr->is_processed = true;
 
-	for (db_entry *r = pr->head; r; r = r->next) {
+	for (rule *r = pr->head; r; r = r->next) {
 		process_clause(pr->m, &r->cl, pr);
 	}
 
 	if (pr->is_dynamic || pr->idx1)
 		return;
 
-	for (db_entry *r = pr->head; r; r = r->next) {
+	for (rule *r = pr->head; r; r = r->next) {
 		check_unique(pr->m, r);
 
 		if (pr->m->pl->opt) {
@@ -1797,7 +1797,7 @@ bool module_dump_term(module* m, cell *p1)
 	return true;
 }
 
-static db_entry *assert_begin(module *m, unsigned num_vars, cell *p1, bool consulting)
+static rule *assert_begin(module *m, unsigned num_vars, cell *p1, bool consulting)
 {
 	bool is_dirty = false;
 	cell *c = p1;
@@ -1921,8 +1921,8 @@ static db_entry *assert_begin(module *m, unsigned num_vars, cell *p1, bool consu
 	if (m->prebuilt)
 		pr->is_builtin = true;
 
-	size_t dbe_size = sizeof(db_entry) + (sizeof(cell) * (p1->num_cells+1));
-	db_entry *r = calloc(1, dbe_size);
+	size_t dbe_size = sizeof(rule) + (sizeof(cell) * (p1->num_cells+1));
+	rule *r = calloc(1, dbe_size);
 	ensure(r);
 	copy_cells(r->cl.cells, p1, p1->num_cells);
 	r->cl.cells[p1->num_cells] = (cell){0};
@@ -1936,7 +1936,7 @@ static db_entry *assert_begin(module *m, unsigned num_vars, cell *p1, bool consu
 	return r;
 }
 
-static void assert_commit(module *m, db_entry *r, predicate *pr, bool append)
+static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 {
 	if (pr->db_id)
 		r->db_id = append ? pr->db_id : -pr->db_id;
@@ -1964,7 +1964,7 @@ static void assert_commit(module *m, db_entry *r, predicate *pr, bool append)
 			ensure(pr->idx2);
 		}
 
-		for (db_entry *cl2 = pr->head; cl2; cl2 = cl2->next) {
+		for (rule *cl2 = pr->head; cl2; cl2 = cl2->next) {
 			cell *c = get_head(cl2->cl.cells);
 
 			if (cl2->dbgen_retracted)
@@ -2002,10 +2002,10 @@ static void assert_commit(module *m, db_entry *r, predicate *pr, bool append)
 	}
 }
 
-db_entry *asserta_to_db(module *m, unsigned num_vars, cell *p1, bool consulting)
+rule *asserta_to_db(module *m, unsigned num_vars, cell *p1, bool consulting)
 {
 	predicate *pr;
-	db_entry *r;
+	rule *r;
 
 	do {
 		r = assert_begin(m, num_vars, p1, consulting);
@@ -2043,10 +2043,10 @@ db_entry *asserta_to_db(module *m, unsigned num_vars, cell *p1, bool consulting)
 	return r;
 }
 
-db_entry *assertz_to_db(module *m, unsigned num_vars, cell *p1, bool consulting)
+rule *assertz_to_db(module *m, unsigned num_vars, cell *p1, bool consulting)
 {
 	predicate *pr;
-	db_entry *r;
+	rule *r;
 
 	do {
 		r = assert_begin(m, num_vars, p1, consulting);
@@ -2084,7 +2084,7 @@ db_entry *assertz_to_db(module *m, unsigned num_vars, cell *p1, bool consulting)
 	return r;
 }
 
-static bool remove_from_predicate(module *m, predicate *pr, db_entry *r)
+static bool remove_from_predicate(module *m, predicate *pr, rule *r)
 {
 	if (r->dbgen_retracted)
 		return false;
@@ -2095,7 +2095,7 @@ static bool remove_from_predicate(module *m, predicate *pr, db_entry *r)
 	return true;
 }
 
-void retract_from_db(module *m, db_entry *r)
+void retract_from_db(module *m, rule *r)
 {
 	predicate *pr = r->owner;
 
@@ -2103,9 +2103,9 @@ void retract_from_db(module *m, db_entry *r)
 		list_push_back(&pr->dirty, r);
 }
 
-db_entry *erase_from_db(module *m, uuid *ref)
+rule *erase_from_db(module *m, uuid *ref)
 {
-	db_entry *r = find_in_db(m, ref);
+	rule *r = find_in_db(m, ref);
 	if (!r) return 0;
 	retract_from_db(m, r);
 	return r;
@@ -2503,7 +2503,7 @@ static void module_save_fp(module *m, FILE *fp, int canonical, int dq)
 		if (pr->is_builtin)
 			continue;
 
-		for (db_entry *r = pr->head; r; r = r->next) {
+		for (rule *r = pr->head; r; r = r->next) {
 			if (r->dbgen_retracted)
 				continue;
 

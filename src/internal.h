@@ -315,7 +315,7 @@ enum {
 typedef struct module_ module;
 typedef struct query_ query;
 typedef struct predicate_ predicate;
-typedef struct db_entry_ db_entry;
+typedef struct rule_ rule;
 typedef struct cell_ cell;
 typedef struct clause_ clause;
 typedef struct trail_ trail;
@@ -423,10 +423,10 @@ struct clause_ {
 	cell cells[];						// 'num_allocated_cells'
 };
 
-struct db_entry_ {
+struct rule_ {
 	lnode hdr;							// must be first
 	predicate *owner;
-	db_entry *prev, *next;
+	rule *prev, *next;
 	const char *filename;
 	uuid u;
 	uint64_t db_id, matched, attempted, tcos;
@@ -438,7 +438,7 @@ struct db_entry_ {
 struct predicate_ {
 	lnode hdr;							// must be first
 	predicate *alias;
-	db_entry *head, *tail;				// Why not use list?
+	rule *head, *tail;				// Why not use list?
 	module *m;
 	skiplist *idx1, *idx2;
 	const char *filename;
@@ -530,7 +530,7 @@ struct frame_ {
 struct run_state_ {
 	predicate *pr;
 	cell *instr;
-	db_entry *dbe;
+	rule *dbe;
 	sliter *iter, *f_iter;
 	module *m;
 
@@ -1055,7 +1055,7 @@ inline static void init_cell(cell *c)
 	c->val_attrs = NULL;
 }
 
-inline static void predicate_delink(predicate *pr, db_entry *r)
+inline static void predicate_delink(predicate *pr, rule *r)
 {
 	if (r->prev) r->prev->next = r->next;
 	if (r->next) r->next->prev = r->prev;

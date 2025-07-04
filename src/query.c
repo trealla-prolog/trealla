@@ -498,7 +498,7 @@ static void leave_predicate(query *q, predicate *pr)
 	module_lock(pr->m);
 
 	if (pr->is_abolished) {
-		db_entry *r;
+		rule *r;
 
 		while ((r = list_pop_front(&pr->dirty)) != NULL) {
 			predicate_delink(pr, r);
@@ -516,7 +516,7 @@ static void leave_predicate(query *q, predicate *pr)
 	// query dirty-list. They will be freed up at end of the query.
 	// FIXME: this is a memory drain.
 
-	db_entry *r;
+	rule *r;
 
 	while ((r = list_pop_front(&pr->dirty)) != NULL) {
 		predicate_delink(pr, r);
@@ -707,7 +707,7 @@ static void commit_frame(query *q)
 	frame *f = GET_CURR_FRAME();
 	f->m = q->st.m;
 
-	db_entry *save_dbe = q->st.dbe;
+	rule *save_dbe = q->st.dbe;
 	bool is_det = !q->has_vars && cl->is_unique;
 	bool last_match = is_det || cl->is_first_cut || !has_next_key(q);
 	bool tco = false;
@@ -1046,7 +1046,7 @@ static void proceed(query *q)
 	q->st.instr = tmp->ret_instr;
 }
 
-static bool can_view(query *q, uint64_t dbgen, const db_entry *r)
+static bool can_view(query *q, uint64_t dbgen, const rule *r)
 {
 	if (r->cl.is_deleted)
 		return false;
@@ -1119,7 +1119,7 @@ bool has_next_key(query *q)
 
 	//DUMP_TERM("key ", q->st.key, q->st.key_ctx, 1);
 
-	for (db_entry *next = q->st.dbe->next; next; next = next->next) {
+	for (rule *next = q->st.dbe->next; next; next = next->next) {
 		cell *dkey = next->cl.cells;
 
 		if ((dkey->val_off == g_neck_s) && (dkey->arity == 2))
@@ -1252,7 +1252,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 	// the results and return them sorted as an iterator...
 
 	skiplist *tmp_idx = NULL;
-	const db_entry *r;
+	const rule *r;
 
 	while (sl_next_key(iter, (void*)&r)) {
 #if DEBUGIDX
@@ -1885,7 +1885,7 @@ bool execute(query *q, cell *cells, unsigned num_vars)
 static void query_purge_dirty_list(query *q)
 {
 	unsigned cnt = 0;
-	db_entry *r;
+	rule *r;
 
 	while ((r = list_pop_front(&q->dirty)) != NULL) {
 		clear_clause(&r->cl);
@@ -1945,7 +1945,7 @@ void query_destroy(query *q)
 		predicate *pr = find_functor(m, "$future", 1);
 
 		if (pr) {
-			for (db_entry *r = pr->head; r; r = r->next) {
+			for (rule *r = pr->head; r; r = r->next) {
 				retract_from_db(r);
 			}
 		}
