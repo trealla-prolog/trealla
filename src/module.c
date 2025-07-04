@@ -700,16 +700,20 @@ static void purge_properties(predicate *pr)
 		db_entry *save = r;
 		r = r->next;
 
-#if 0
-		// TO-DO: delink save from db_entries,
-		// means changing 'predicate' to use 'list' type
-		// instead of head/tail pointers.
-
 		if (!pr2->refcnt) {
+			if (save->prev)
+				save->prev->next = save->next;
+			else
+				pr->head = save->next;
+
+			if (save->next)
+				save->next->prev = save->prev;
+			else
+				pr->tail = save->next;
+
 			clear_clause(&save->cl);
 			free(save);
 		}
-#endif
 	}
 }
 
