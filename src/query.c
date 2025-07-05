@@ -1937,23 +1937,6 @@ void query_destroy(query *q)
 		q->tasks = task;
 	}
 
-#if 0
-	module *m = find_module(q->pl, "concurrent");
-
-	if (m) {
-		module_lock(m);
-		predicate *pr = find_functor(m, "$future", 1);
-
-		if (pr) {
-			for (rule *r = pr->head; r; r = r->next) {
-				retract_from_db(r);
-			}
-		}
-
-		module_unlock(m);
-	}
-#endif
-
 	mp_int_clear(&q->tmp_ival);
 	mp_rat_clear(&q->tmp_irat);
 	query_purge_dirty_list(q);
