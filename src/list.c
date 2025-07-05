@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "list.h"
 
 void list_init(list *l)
@@ -8,7 +9,7 @@ void list_init(list *l)
 
 void list_push_front(list *l, void *entry_)
 {
-	linode *entry = entry_;
+	lnode *entry = entry_;
     entry->prev = 0;
 
     if ((entry->next = l->front) == 0)
@@ -22,7 +23,7 @@ void list_push_front(list *l, void *entry_)
 
 void list_push_back(list *l, void *entry_)
 {
-	linode *entry = entry_;
+	lnode *entry = entry_;
     entry->next = 0;
 
     if ((entry->prev = l->back) == 0)
@@ -39,7 +40,7 @@ void *list_pop_front(list *l)
     if (!l->front)
         return 0;
 
-    linode *entry = l->front;
+    lnode *entry = l->front;
     l->front = l->front->next;
 
     if (l->front)
@@ -56,7 +57,7 @@ void *list_pop_back(list *l)
     if (!l->back)
         return 0;
 
-    linode *entry = l->back;
+    lnode *entry = l->back;
     l->back = l->back->prev;
 
     if (l->back)
@@ -70,7 +71,7 @@ void *list_pop_back(list *l)
 
 void *list_remove(list *l, void *entry_)
 {
-	linode *entry = entry_;
+	lnode *entry = entry_;
 
     if (l->front == entry)
         l->front = entry->next;
@@ -82,7 +83,81 @@ void *list_remove(list *l, void *entry_)
     else
         entry->next->prev = entry->prev;
 
-    linode *save = entry->next;
+    lnode *save = entry->next;
     l->cnt--;
     return save;
+}
+
+void listx_init(listx *l)
+{
+	l->front = l->back = 0;
+	l->cnt = 0;
+}
+
+void listx_push_front(listx *l, void *entry_)
+{
+	lxnode *entry = malloc(sizeof(lxnode));
+	entry->entry = entry_;
+    entry->prev = 0;
+
+    if ((entry->next = l->front) == 0)
+        l->back = entry;
+    else
+        l->front->prev = entry;
+
+    l->front = entry;
+    l->cnt++;
+}
+
+void listx_push_back(listx *l, void *entry_)
+{
+	lxnode *entry = malloc(sizeof(lxnode));
+	entry->entry = entry_;
+    entry->next = 0;
+
+    if ((entry->prev = l->back) == 0)
+        l->front = entry;
+    else
+        l->back->next = entry;
+
+    l->back = entry;
+    l->cnt++;
+}
+
+void *listx_pop_front(listx *l)
+{
+    if (!l->front)
+        return 0;
+
+    lxnode *entry = l->front;
+    void *e = entry->entry;
+    l->front = l->front->next;
+
+    if (l->front)
+        l->front->prev = 0;
+    else
+        l->back = 0;
+
+    l->cnt--;
+    free(entry);
+    return e;
+}
+
+void *listx_pop_back(listx *l)
+{
+    if (!l->back)
+        return 0;
+
+    lxnode *entry = l->back;
+    void *e = entry->entry;
+    l->back = l->back->prev;
+
+    if (l->back)
+        l->back->next = 0;
+    else
+        l->front = 0;
+
+    l->cnt--;
+    free(entry);
+    return e;
 }
