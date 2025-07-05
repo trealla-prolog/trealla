@@ -94,33 +94,33 @@ void listx_init(listx *l)
 	l->cnt = 0;
 }
 
-void listx_push_front(listx *l, void *entry_)
+void listx_push_front(listx *l, void *entry)
 {
-	lxnode *entry = malloc(sizeof(lxnode));
-	entry->entry = entry_;
-    entry->prev = 0;
+	lxnode *n = malloc(sizeof(lxnode));
+	n->entry = entry;
+    n->prev = 0;
 
-    if ((entry->next = l->front) == 0)
-        l->back = entry;
+    if ((n->next = l->front) == 0)
+        l->back = n;
     else
-        l->front->prev = entry;
+        l->front->prev = n;
 
-    l->front = entry;
+    l->front = n;
     l->cnt++;
 }
 
-void listx_push_back(listx *l, void *entry_)
+void listx_push_back(listx *l, void *entry)
 {
-	lxnode *entry = malloc(sizeof(lxnode));
-	entry->entry = entry_;
-    entry->next = 0;
+	lxnode *n = malloc(sizeof(lxnode));
+	n->entry = entry;
+    n->next = 0;
 
-    if ((entry->prev = l->back) == 0)
-        l->front = entry;
+    if ((n->prev = l->back) == 0)
+        l->front = n;
     else
-        l->back->next = entry;
+        l->back->next = n;
 
-    l->back = entry;
+    l->back = n;
     l->cnt++;
 }
 
@@ -129,8 +129,8 @@ void *listx_pop_front(listx *l)
     if (!l->front)
         return 0;
 
-    lxnode *entry = l->front;
-    void *e = entry->entry;
+    lxnode *n = l->front;
+    void *e = n->entry;
     l->front = l->front->next;
 
     if (l->front)
@@ -139,7 +139,7 @@ void *listx_pop_front(listx *l)
         l->back = 0;
 
     l->cnt--;
-    free(entry);
+    free(n);
     return e;
 }
 
@@ -148,8 +148,8 @@ void *listx_pop_back(listx *l)
     if (!l->back)
         return 0;
 
-    lxnode *entry = l->back;
-    void *e = entry->entry;
+    lxnode *n = l->back;
+    void *e = n->entry;
     l->back = l->back->prev;
 
     if (l->back)
@@ -158,6 +158,6 @@ void *listx_pop_back(listx *l)
         l->front = 0;
 
     l->cnt--;
-    free(entry);
+    free(n);
     return e;
 }
