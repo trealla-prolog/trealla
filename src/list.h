@@ -38,8 +38,8 @@ typedef struct {
 } listx;
 
 void listx_init(listx *l);
-void listx_push_front(listx *l, void *n);
-void listx_push_back(listx *l, void *n);
+void listx_push_front(listx *l, void *e);
+void listx_push_back(listx *l, void *e);
 void *listx_pop_front(listx *l);
 void *listx_pop_back(listx *l);
 
