@@ -94,10 +94,10 @@ void listx_init(listx *l)
 	l->cnt = 0;
 }
 
-void listx_push_front(listx *l, void *entry)
+void listx_push_front(listx *l, void *e)
 {
 	lxnode *n = malloc(sizeof(lxnode));
-	n->entry = entry;
+	n->entry = e;
     n->prev = 0;
 
     if ((n->next = l->front) == 0)
@@ -109,10 +109,10 @@ void listx_push_front(listx *l, void *entry)
     l->cnt++;
 }
 
-void listx_push_back(listx *l, void *entry)
+void listx_push_back(listx *l, void *e)
 {
 	lxnode *n = malloc(sizeof(lxnode));
-	n->entry = entry;
+	n->entry = e;
     n->next = 0;
 
     if ((n->prev = l->back) == 0)
