@@ -7,31 +7,31 @@ void list_init(list *l)
 	l->cnt = 0;
 }
 
-void list_push_front(list *l, void *entry_)
+void list_push_front(list *l, void *n_)
 {
-	lnode *entry = entry_;
-    entry->prev = 0;
+	lnode *n = n_;
+    n->prev = 0;
 
-    if ((entry->next = l->front) == 0)
-        l->back = entry;
+    if ((n->next = l->front) == 0)
+        l->back = n;
     else
-        l->front->prev = entry;
+        l->front->prev = n;
 
-    l->front = entry;
+    l->front = n;
     l->cnt++;
 }
 
-void list_push_back(list *l, void *entry_)
+void list_push_back(list *l, void *n_)
 {
-	lnode *entry = entry_;
-    entry->next = 0;
+	lnode *n = n_;
+    n->next = 0;
 
-    if ((entry->prev = l->back) == 0)
-        l->front = entry;
+    if ((n->prev = l->back) == 0)
+        l->front = n;
     else
-        l->back->next = entry;
+        l->back->next = n;
 
-    l->back = entry;
+    l->back = n;
     l->cnt++;
 }
 
@@ -40,7 +40,7 @@ void *list_pop_front(list *l)
     if (!l->front)
         return 0;
 
-    lnode *entry = l->front;
+    lnode *n = l->front;
     l->front = l->front->next;
 
     if (l->front)
@@ -49,7 +49,7 @@ void *list_pop_front(list *l)
         l->back = 0;
 
     l->cnt--;
-    return entry;
+    return n;
 }
 
 void *list_pop_back(list *l)
@@ -57,7 +57,7 @@ void *list_pop_back(list *l)
     if (!l->back)
         return 0;
 
-    lnode *entry = l->back;
+    lnode *n = l->back;
     l->back = l->back->prev;
 
     if (l->back)
@@ -66,24 +66,24 @@ void *list_pop_back(list *l)
         l->front = 0;
 
     l->cnt--;
-    return entry;
+    return n;
 }
 
-void *list_remove(list *l, void *entry_)
+void *list_remove(list *l, void *n_)
 {
-	lnode *entry = entry_;
+	lnode *n = n_;
 
-    if (l->front == entry)
-        l->front = entry->next;
+    if (l->front == n)
+        l->front = n->next;
     else
-        entry->prev->next = entry->next;
+        n->prev->next = n->next;
 
-    if (l->back == entry)
-        l->back = entry->prev;
+    if (l->back == n)
+        l->back = n->prev;
     else
-        entry->next->prev = entry->prev;
+        n->next->prev = n->prev;
 
-    lnode *save = entry->next;
+    lnode *save = n->next;
     l->cnt--;
     return save;
 }
