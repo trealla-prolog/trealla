@@ -808,12 +808,12 @@ prolog *pl_create()
 	// Load some common libraries...
 
 	for (library *lib = g_libs; lib->name; lib++) {
-		if (!strcmp(lib->name, "builtins")			// Always need this
-			|| !strcmp(lib->name, "dcgs")			// Common
-			|| !strcmp(lib->name, "iso_ext")		// Common
-			//|| !strcmp(lib->name, "freeze")			// Common
-			|| !strcmp(lib->name, "dif")			// Common
+		if (!strcmp(lib->name, "builtins")
 			|| !strcmp(lib->name, "lists")			// Common
+			|| !strcmp(lib->name, "iso_ext")		// Common
+			|| !strcmp(lib->name, "dcgs")			// Common
+			|| !strcmp(lib->name, "freeze")			// Common
+			|| !strcmp(lib->name, "dif")			// Common
 			) {
 			size_t len = *lib->len;
 			char *src = malloc(len+1);
