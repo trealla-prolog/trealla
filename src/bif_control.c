@@ -72,6 +72,8 @@ static bool bif_sys_cleanup_if_det_1(query *q)
 
 bool call_check(query *q, cell *tmp2, bool *status, bool calln)
 {
+	cell *save_tmp2 = tmp2;
+
 	if (calln || !tmp2->arity) {
 		bool found = false;
 
@@ -93,7 +95,7 @@ bool call_check(query *q, cell *tmp2, bool *status, bool calln)
 	}
 
 	if ((tmp2->arity == 2) && is_builtin(tmp2) && (tmp2 = check_body_callable(tmp2)) != NULL) {
-		*status = throw_error(q, tmp2, q->st.curr_frame, "type_error", "callable");
+		*status = throw_error(q, save_tmp2, q->st.curr_frame, "type_error", "callable");
 		return false;
 	}
 
