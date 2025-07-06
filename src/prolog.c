@@ -795,7 +795,6 @@ prolog *pl_create()
 	set_multifile_in_db(pl->user_m, "$predicate_property", 3);
 	set_multifile_in_db(pl->user_m, "portray", 1);
 
-	set_dynamic_in_db(pl->user_m, "$record_key", 2);
 	set_dynamic_in_db(pl->user_m, "$op", 3);
 	set_dynamic_in_db(pl->user_m, "$predicate_property", 3);
 	set_dynamic_in_db(pl->user_m, "$current_prolog_flag", 2);
@@ -812,7 +811,7 @@ prolog *pl_create()
 		if (!strcmp(lib->name, "builtins")			// Always need this
 			|| !strcmp(lib->name, "dcgs")			// Common
 			|| !strcmp(lib->name, "iso_ext")		// Common
-			|| !strcmp(lib->name, "freeze")			// Common
+			//|| !strcmp(lib->name, "freeze")			// Common
 			|| !strcmp(lib->name, "dif")			// Common
 			|| !strcmp(lib->name, "lists")			// Common
 			) {
