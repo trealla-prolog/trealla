@@ -122,8 +122,8 @@ static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx 
 		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		q->cycle_error++;
 
-		if (g_tpl_interrupt)
-			return false;
+		//if (g_tpl_interrupt)
+		//	return false;
 
 		return 0;
 	}
@@ -654,8 +654,8 @@ static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		q->cycle_error++;
 
-		if (g_tpl_interrupt)
-			return false;
+		//if (g_tpl_interrupt)
+		//	return false;
 
 		return true;
 	}

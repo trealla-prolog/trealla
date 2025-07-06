@@ -846,7 +846,7 @@ static bool bif_iso_throw_1(query *q)
 
 bool throw_error3(query *q, cell *c, pl_idx c_ctx, const char *err_type, const char *expected, cell *goal)
 {
-	if (g_tpl_interrupt || q->halt || q->pl->halt)
+	if (/*g_tpl_interrupt ||*/ q->halt || q->pl->halt)
 		return false;
 
 	q->did_throw = true;

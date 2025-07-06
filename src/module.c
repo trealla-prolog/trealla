@@ -2249,6 +2249,9 @@ module *load_fp(module *m, FILE *fp, const char *filename, bool including, bool 
 	}
 	 while (ok && !p->already_loaded_error && !g_tpl_interrupt);
 
+	if (g_tpl_interrupt)
+		return NULL;
+
 	if (!p->error && !p->already_loaded_error && !p->end_of_term && p->cl->cidx) {
 		if (!p->do_read_term)
 			fprintf(stderr, "Error: syntax error, incomplete statement, %s:%d\n", filename, p->line_num);
