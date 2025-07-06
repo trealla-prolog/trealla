@@ -41,7 +41,7 @@ cell *list_head(cell *l, cell *tmp)
 	tmp->arity = 0;
 
 	if (is_codes(l)) {
-		tmp->tag = TAG_INTEGER;
+		tmp->tag = TAG_INT;
 		tmp->val_int = peek_char_utf8(src);
 	} else {
 		size_t char_len = len_char_utf8(src);
@@ -222,7 +222,7 @@ void make_var(cell *tmp, pl_idx off, unsigned var_num)
 void make_float(cell *tmp, pl_flt v)
 {
 	*tmp = (cell){0};
-	tmp->tag = TAG_DOUBLE;
+	tmp->tag = TAG_FLOAT;
 	tmp->num_cells = 1;
 	tmp->val_float = v;
 }
@@ -230,7 +230,7 @@ void make_float(cell *tmp, pl_flt v)
 void make_int(cell *tmp, pl_int v)
 {
 	*tmp = (cell){0};
-	tmp->tag = TAG_INTEGER;
+	tmp->tag = TAG_INT;
 	tmp->num_cells = 1;
 	set_smallint(tmp, v);
 }
@@ -238,7 +238,7 @@ void make_int(cell *tmp, pl_int v)
 void make_uint(cell *tmp, pl_uint v)
 {
 	*tmp = (cell){0};
-	tmp->tag = TAG_INTEGER;
+	tmp->tag = TAG_INT;
 	tmp->num_cells = 1;
 	set_smalluint(tmp, v);
 }
@@ -246,7 +246,7 @@ void make_uint(cell *tmp, pl_uint v)
 void make_ptr(cell *tmp, void *v)
 {
 	*tmp = (cell){0};
-	tmp->tag = TAG_INTEGER;
+	tmp->tag = TAG_INT;
 	tmp->num_cells = 1;
 	tmp->val_ptr = v;
 }
@@ -2593,7 +2593,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 		}
 
 		s2++;
-		p->v.tag = TAG_INTEGER;
+		p->v.tag = TAG_INT;
 		set_smallint(&p->v, v);
 		*srcptr = s2;
 		return true;
@@ -2680,7 +2680,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 			return false;
 		}
 
-		p->v.tag = TAG_INTEGER;
+		p->v.tag = TAG_INT;
 		set_smallint(&p->v, v);
 		if (neg) set_smallint(&p->v, -get_smallint(&p->v));
 		*srcptr = s;
@@ -2710,7 +2710,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 			mp_int_clear(&v2);
 		}
 
-		p->v.tag = TAG_INTEGER;
+		p->v.tag = TAG_INT;
 		*srcptr = s;
 		return true;
 	}
@@ -2733,7 +2733,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 			mp_int_clear(&v2);
 		}
 
-		p->v.tag = TAG_INTEGER;
+		p->v.tag = TAG_INT;
 		*srcptr = s;
 		return true;
 	}
@@ -2756,7 +2756,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 			mp_int_clear(&v2);
 		}
 
-		p->v.tag = TAG_INTEGER;
+		p->v.tag = TAG_INT;
 		*srcptr = s;
 		return true;
 	}
@@ -2764,7 +2764,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 	read_integer(p, &v2, 10, &s);
 
 	if (p->flags.json && s && ((*s == 'e') || (*s == 'E')) && isdigit(s[1])) {
-		p->v.tag = TAG_DOUBLE;
+		p->v.tag = TAG_FLOAT;
 		errno = 0;
 		pl_flt v = strtod(tmpptr, &tmpptr);
 
@@ -2784,7 +2784,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 	}
 
 	if (s && (*s == '.') && isdigit(s[1])) {
-		p->v.tag = TAG_DOUBLE;
+		p->v.tag = TAG_FLOAT;
 		errno = 0;
 		pl_flt v = strtod(tmpptr, &tmpptr);
 
@@ -2817,7 +2817,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 	mp_int_clear(&v2);
 	int ch;
-	p->v.tag = TAG_INTEGER;
+	p->v.tag = TAG_INT;
 
 	if ((s[-1] == '.') || isspace(s[-1]))
 		s--;
@@ -3078,7 +3078,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		SB_sprintf(p->token, "%u", ch);
 		p->srcptr = (char*)src;
 		set_smallint(&p->v, ch);
-		p->v.tag = TAG_INTEGER;
+		p->v.tag = TAG_INT;
 		p->dq_consing = -1;
 		return true;
 	}
@@ -4230,7 +4230,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			c->val_bigint = p->v.val_bigint;
 		} else if (is_smallint(&p->v)) {
 			set_smallint(c, get_smallint(&p->v));
-		} else if (p->v.tag == TAG_DOUBLE) {
+		} else if (p->v.tag == TAG_FLOAT) {
 			set_float(c, get_float(&p->v));
 		} else if (!p->is_string
 			&& (!p->is_quoted || is_func || p->is_op || p->is_var || p->is_consulting

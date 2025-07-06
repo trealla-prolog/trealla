@@ -4371,7 +4371,7 @@ static bool bif_hex_chars_2(query *q)
 	cell tmp = {0};
 
 	if (mp_int_to_int(&v2, &val) == MP_RANGE) {
-		tmp.tag = TAG_INTEGER;
+		tmp.tag = TAG_INT;
 		tmp.val_bigint = malloc(sizeof(bigint));
 		check_memory(tmp.val_bigint);
 		tmp.val_bigint->refcnt = 1;
@@ -4425,7 +4425,7 @@ static bool bif_octal_chars_2(query *q)
 	cell tmp = {0};
 
 	if (mp_int_to_int(&v2, &val) == MP_RANGE) {
-		tmp.tag = TAG_INTEGER;
+		tmp.tag = TAG_INT;
 		tmp.val_bigint = malloc(sizeof(bigint));
 		check_memory(tmp.val_bigint);
 		tmp.val_bigint->refcnt = 1;
@@ -5503,9 +5503,9 @@ static bool do_dump_term(query *q, cell *p1, pl_idx p1_ctx, bool deref, int dept
 				tmp->tag == TAG_VAR ? "var" :
 				tmp->tag == TAG_INTERNED ? "interned" :
 				tmp->tag == TAG_CSTR ? "cstr" :
-				tmp->tag == TAG_INTEGER ? "integer" :
-				tmp->tag == TAG_DOUBLE ? "float" :
-				tmp->tag == TAG_RATIONAL ? "rational" :
+				tmp->tag == TAG_INT ? "integer" :
+				tmp->tag == TAG_FLOAT ? "float" :
+				tmp->tag == TAG_RAT ? "rational" :
 				tmp->tag == TAG_INDIRECT ? "indirect" :
 				tmp->tag == TAG_BLOB ? "blob" :
 				tmp->tag == TAG_DBID ? "dbid" :
@@ -5514,7 +5514,7 @@ static bool do_dump_term(query *q, cell *p1, pl_idx p1_ctx, bool deref, int dept
 			),
 			tmp->num_cells, tmp->arity);
 
-		if ((tmp->tag == TAG_INTEGER) && !is_managed(tmp))
+		if ((tmp->tag == TAG_INT) && !is_managed(tmp))
 			printf(", %lld", (long long)tmp->val_int);
 
 		if (tmp->tag == TAG_INTERNED)

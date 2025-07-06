@@ -461,7 +461,7 @@ int get_stream(query *q, cell *p1)
 		return n;
 	}
 
-	if (p1->tag != TAG_INTEGER)
+	if (p1->tag != TAG_INT)
 		return -1;
 
 	if (!(p1->flags & FLAG_INT_STREAM))

@@ -403,7 +403,7 @@ static bool unify_integers(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 	if (is_bigint(p2))
 		return !mp_int_compare_value(&p2->val_bigint->ival, p1->val_int);
 
-	if (p2->tag == TAG_INTEGER)
+	if (p2->tag == TAG_INT)
 		return p1->val_int == p2->val_int;
 
 	return false;
@@ -429,10 +429,10 @@ static bool unify_rationals(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx 
 	return false;
 }
 
-static bool unify_reals(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
+static bool unify_floats(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
 	if (is_float(p2))
-		return get_float(p1) == get_float(p2);
+		return p1->val_float == p2->val_float;
 
 	return false;
 }
@@ -642,9 +642,9 @@ static const struct dispatch g_disp[] =
 	{TAG_VAR, NULL},
 	{TAG_INTERNED, unify_interned},
 	{TAG_CSTR, unify_cstrings},
-	{TAG_INTEGER, unify_integers},
-	{TAG_DOUBLE, unify_reals},
-	{TAG_RATIONAL, unify_rationals},
+	{TAG_INT, unify_integers},
+	{TAG_FLOAT, unify_floats},
+	{TAG_RAT, unify_rationals},
 	{0}
 };
 

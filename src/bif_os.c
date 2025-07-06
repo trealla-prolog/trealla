@@ -145,7 +145,7 @@ static bool bif_sleep_1(query *q)
 static bool bif_now_0(query *q)
 {
 	pl_int secs = get_time_in_usec() / 1000 / 1000;
-	q->accum.tag = TAG_INTEGER;
+	q->accum.tag = TAG_INT;
 	set_smallint(&q->accum, secs);
 	return true;
 }

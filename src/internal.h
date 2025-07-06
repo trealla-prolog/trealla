@@ -82,9 +82,9 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_var(c) ((c)->tag == TAG_VAR)
 #define is_interned(c) ((c)->tag == TAG_INTERNED)
 #define is_cstring(c) ((c)->tag == TAG_CSTR)
-#define is_integer(c) ((c)->tag == TAG_INTEGER)
-#define is_float(c) ((c)->tag == TAG_DOUBLE)
-#define is_rational(c) ((c)->tag == TAG_RATIONAL)
+#define is_integer(c) ((c)->tag == TAG_INT)
+#define is_float(c) ((c)->tag == TAG_FLOAT)
+#define is_rational(c) ((c)->tag == TAG_RAT)
 #define is_indirect(c) ((c)->tag == TAG_INDIRECT)
 #define is_dbid(c) ((c)->tag == TAG_DBID)
 #define is_kvid(c) ((c)->tag == TAG_KVID)
@@ -234,9 +234,9 @@ enum {
 	TAG_VAR=1,
 	TAG_INTERNED=2,
 	TAG_CSTR=3,
-	TAG_INTEGER=4,
-	TAG_DOUBLE=5,
-	TAG_RATIONAL=6,
+	TAG_INT=4,
+	TAG_FLOAT=5,
+	TAG_RAT=6,
 	TAG_INDIRECT=7,
 	TAG_BLOB=8,
 	TAG_DBID=9,

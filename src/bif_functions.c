@@ -14,7 +14,7 @@
 #define SET_ACCUM() {											\
 	if (errno == ENOMEM)										\
 		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
-	q->accum.tag = TAG_INTEGER;										\
+	q->accum.tag = TAG_INT;										\
 	q->accum.val_bigint = malloc(sizeof(bigint));				\
 	if (errno == ENOMEM)										\
 		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
@@ -30,7 +30,7 @@
 #define SET_ACCUM2() {											\
 	if (errno == ENOMEM)										\
 		return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory"); \
-	q->accum.tag = TAG_INTEGER;										\
+	q->accum.tag = TAG_INT;										\
 	q->accum.val_bigint = malloc(sizeof(bigint));				\
 	if (errno == ENOMEM)										\
 		return throw_error(q, p1, q->st.curr_frame, "resource_error", "memory"); \
@@ -47,7 +47,7 @@
 	if (errno == ENOMEM)										\
 		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
 	if (mp_int_compare_value(&q->tmp_irat.den, 1)) { \
-		q->accum.tag = TAG_RATIONAL;										\
+		q->accum.tag = TAG_RAT;										\
 		q->accum.val_bigint = malloc(sizeof(bigint));				\
 		if (errno == ENOMEM)										\
 			return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
@@ -57,7 +57,7 @@
 		q->accum.flags = FLAG_INT_BIG | FLAG_MANAGED;								\
 		q->accum.val_bigint->refcnt = 0;							\
 	} else { \
-		q->accum.tag = TAG_INTEGER;										\
+		q->accum.tag = TAG_INT;										\
 		q->accum.val_bigint = malloc(sizeof(bigint));				\
 		if (errno == ENOMEM)										\
 			return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
@@ -81,7 +81,7 @@ static void clr_accum(cell *p)
 		free(p->val_bigint);
 	}
 
-	p->tag = TAG_INTEGER;
+	p->tag = TAG_INT;
 	p->flags = 0;
 }
 
@@ -117,7 +117,7 @@ static void clr_accum(cell *p)
 			SET_ACCUM(); \
 		} else { \
 			q->accum.val_int = tmp; \
-			q->accum.tag = TAG_INTEGER; \
+			q->accum.tag = TAG_INT; \
 		} \
 	} else if (is_bigint(&p1)) { \
 		if (is_bigint(&p2)) { \
@@ -132,7 +132,7 @@ static void clr_accum(cell *p)
 				mp_small i; \
 				mp_int_to_int(&q->tmp_ival, &i); \
 				q->accum.val_int = i; \
-				q->accum.tag = TAG_INTEGER; \
+				q->accum.tag = TAG_INT; \
 				q->accum.flags = 0; \
 			} \
 		} else if (is_smallint(&p2)) { \
@@ -144,7 +144,7 @@ static void clr_accum(cell *p)
 			pl_flt d = BIGINT_TO_DOUBLE(&p1.val_bigint->ival); \
 			q->accum.val_float = d op p2.val_float; \
 			if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow"); \
-			q->accum.tag = TAG_DOUBLE; \
+			q->accum.tag = TAG_FLOAT; \
 			q->accum.flags = 0; \
 		} \
 	} else if (is_bigint(&p2)) { \
@@ -162,21 +162,21 @@ static void clr_accum(cell *p)
 			pl_flt d = BIGINT_TO_DOUBLE(&p2.val_bigint->ival); \
 			q->accum.val_float = p1.val_float op d; \
 			if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow"); \
-			q->accum.tag = TAG_DOUBLE; \
+			q->accum.tag = TAG_FLOAT; \
 			q->accum.flags = 0; \
 		} \
 	} else if (is_smallint(&p1) && is_float(&p2)) { \
 		q->accum.val_float = (pl_flt)p1.val_int op p2.val_float; \
 		if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow"); \
-		q->accum.tag = TAG_DOUBLE; \
+		q->accum.tag = TAG_FLOAT; \
 	} else if (is_float(&p1) && is_float(&p2)) { \
 		q->accum.val_float = p1.val_float op p2.val_float; \
 		if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow"); \
-		q->accum.tag = TAG_DOUBLE; \
+		q->accum.tag = TAG_FLOAT; \
 	} else if (is_float(&p1) && is_smallint(&p2)) { \
 		q->accum.val_float = p1.val_float op p2.val_int; \
 		if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow"); \
-		q->accum.tag = TAG_DOUBLE; \
+		q->accum.tag = TAG_FLOAT; \
 	} else if (is_rational(&p1)) { \
 		if (is_rational(&p2)) { \
 			mp_rat_##op2(&p1.val_bigint->irat, &p2.val_bigint->irat, &q->tmp_irat); \
@@ -323,14 +323,14 @@ bool bif_iso_float_1(query *q)
 
 		if (is_float(&p1)) {
 			q->accum.val_float = p1.val_float;
-			q->accum.tag = TAG_DOUBLE;
+			q->accum.tag = TAG_FLOAT;
 			return true;
 		}
 
 		if (is_rational(&p1)) {
 			q->accum.val_float = RATIONAL_TO_DOUBLE(&p1.val_bigint->irat);
 			if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
-			q->accum.tag = TAG_DOUBLE;
+			q->accum.tag = TAG_FLOAT;
 			q->accum.flags = 0;
 			return true;
 		}
@@ -338,13 +338,13 @@ bool bif_iso_float_1(query *q)
 		if (is_bigint(&p1)) {
 			q->accum.val_float = BIGINT_TO_DOUBLE(&p1.val_bigint->ival);
 			if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
-			q->accum.tag = TAG_DOUBLE;
+			q->accum.tag = TAG_FLOAT;
 			return true;
 		}
 
 		if (is_smallint(&p1)) {
 			q->accum.val_float = (pl_flt)p1.val_int;
-			q->accum.tag = TAG_DOUBLE;
+			q->accum.tag = TAG_FLOAT;
 			return true;
 		}
 
@@ -369,7 +369,7 @@ bool bif_iso_integer_1(query *q)
 
 		if (is_float(&p1) && (p1.val_float < (pl_flt)PL_INT_MAX) && (p1.val_float > (pl_flt)PL_INT_MIN)) {
 			q->accum.val_int = (pl_int)p1.val_float;
-			q->accum.tag = TAG_INTEGER;
+			q->accum.tag = TAG_INT;
 			return true;
 		}
 
@@ -413,7 +413,7 @@ static bool bif_iso_sign_1(query *q)
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
-	q->accum.tag = TAG_INTEGER;
+	q->accum.tag = TAG_INT;
 	q->accum.flags = 0;
 
 	if (is_smallint(&p1))
@@ -423,7 +423,7 @@ static bool bif_iso_sign_1(query *q)
 	else if (is_rational(&p1))
 		q->accum.val_int = mp_rat_compare_zero(&p1.val_bigint->irat);
 	else if (is_float(&p1)) {
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 		q->accum.val_float = p1.val_float < 0 ? -1 : p1.val_float > 0  ? 1 : 0;
 	} else
 		return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable");
@@ -469,7 +469,7 @@ static bool bif_iso_epsilon_0(query *q)
 {
 	START_FUNCTION(q);
 	q->accum.val_float = DBL_EPSILON;
-	q->accum.tag = TAG_DOUBLE;
+	q->accum.tag = TAG_FLOAT;
 	return true;
 }
 
@@ -477,7 +477,7 @@ static bool bif_iso_pi_0(query *q)
 {
 	START_FUNCTION(q);
 	q->accum.val_float = M_PI;
-	q->accum.tag = TAG_DOUBLE;
+	q->accum.tag = TAG_FLOAT;
 	return true;
 }
 
@@ -485,7 +485,7 @@ static bool bif_iso_e_0(query *q)
 {
 	START_FUNCTION(q);
 	q->accum.val_float = M_E;
-	q->accum.tag = TAG_DOUBLE;
+	q->accum.tag = TAG_FLOAT;
 	return true;
 }
 
@@ -503,7 +503,7 @@ static bool bif_numerator_1(query *q)
 		return true;
 	}
 
-	q->accum.tag = TAG_INTEGER;
+	q->accum.tag = TAG_INT;
 	q->accum.val_bigint = malloc(sizeof(bigint));
 	if (errno == ENOMEM)
 		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory");
@@ -531,7 +531,7 @@ static bool bif_denominator_1(query *q)
 		return true;
 	}
 
-	q->accum.tag = TAG_INTEGER;
+	q->accum.tag = TAG_INT;
 	q->accum.val_bigint = malloc(sizeof(bigint));
 	if (errno == ENOMEM)
 		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory");
@@ -650,7 +650,7 @@ static bool bif_iso_exp_1(query *q)
 
 		q->accum.val_float = exp(BIGINT_TO_DOUBLE(&p1.val_bigint->ival));
 		if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 
 	} else if (is_smallint(&p1)) {
 		q->accum.val_float = exp((pl_flt)p1.val_int);
@@ -658,7 +658,7 @@ static bool bif_iso_exp_1(query *q)
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
 
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 
 	} else if (is_float(&p1)) {
 		q->accum.val_float = exp(p1.val_float);
@@ -666,7 +666,7 @@ static bool bif_iso_exp_1(query *q)
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
 
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -688,26 +688,26 @@ static bool bif_iso_sqrt_1(query *q)
 
 		q->accum.val_float = sqrt(BIGINT_TO_DOUBLE(&p1.val_bigint->ival));
 		if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_rational(&p1)) {
 		if (mp_rat_compare_zero(&p1.val_bigint->irat) < 0)
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "undefined");
 
 		q->accum.val_float = sqrt(RATIONAL_TO_DOUBLE(&p1.val_bigint->irat));
 		if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_smallint(&p1)) {
 		if (p1.val_int < 0)
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "undefined");
 
 		q->accum.val_float = sqrt((pl_flt)p1.val_int);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1)) {
 		if (p1.val_float == -1)
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "undefined");
 
 		q->accum.val_float = sqrt(p1.val_float);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -729,26 +729,26 @@ static bool bif_iso_log_1(query *q)
 
 		q->accum.val_float = log(BIGINT_TO_DOUBLE(&p1.val_bigint->ival));
 		if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} if (is_rational(&p1)) {
 		if (mp_rat_compare_zero(&p1.val_bigint->irat) <= 0)
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "undefined");
 
 		q->accum.val_float = log(RATIONAL_TO_DOUBLE(&p1.val_bigint->irat));
 		if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_smallint(&p1)) {
 		if (p1.val_int <= 0)
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "undefined");
 
 		q->accum.val_float = log((pl_flt)p1.val_int);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1)) {
 		if (p1.val_float <= 0.0)
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "undefined");
 
 		q->accum.val_float = log(p1.val_float);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -789,7 +789,7 @@ static bool bif_popcount_1(query *q)
 		q->accum.val_int = count;
 	}
 
-	q->accum.tag = TAG_INTEGER;
+	q->accum.tag = TAG_INT;
 	return true;
 }
 
@@ -823,7 +823,7 @@ static bool bif_lsb_1(query *q)
 		q->accum.val_int = lsb;
 	}
 
-	q->accum.tag = TAG_INTEGER;
+	q->accum.tag = TAG_INT;
 	return true;
 }
 
@@ -857,7 +857,7 @@ static bool bif_msb_1(query *q)
 		q->accum.val_int = msb;
 	}
 
-	q->accum.tag = TAG_INTEGER;
+	q->accum.tag = TAG_INT;
 	return true;
 }
 
@@ -877,7 +877,7 @@ static bool bif_iso_truncate_1(query *q)
 			feclearexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW);
 		} else
 #endif
-			q->accum.tag = TAG_INTEGER;
+			q->accum.tag = TAG_INT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else if (is_smallint(&p1)) {
@@ -905,7 +905,7 @@ static bool bif_iso_round_1(query *q)
 			feclearexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW);
 		} else
 #endif
-			q->accum.tag = TAG_INTEGER;
+			q->accum.tag = TAG_INT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else if (is_smallint(&p1)) {
@@ -933,7 +933,7 @@ static bool bif_iso_ceiling_1(query *q)
 			feclearexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW);
 		} else
 #endif
-			q->accum.tag = TAG_INTEGER;
+			q->accum.tag = TAG_INT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else if (is_smallint(&p1)) {
@@ -953,7 +953,7 @@ static bool bif_iso_float_integer_part_1(query *q)
 
 	if (is_float(&p1)) {
 		q->accum.val_float = (pl_int)p1.val_float;
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else if (is_smallint(&p1)) {
@@ -977,7 +977,7 @@ static bool bif_iso_float_fractional_part_1(query *q)
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
 
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else if (is_smallint(&p1)) {
@@ -1005,7 +1005,7 @@ static bool bif_iso_floor_1(query *q)
 			feclearexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW);
 		} else
 #endif
-			q->accum.tag = TAG_INTEGER;
+			q->accum.tag = TAG_INT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else if (is_smallint(&p1)) {
@@ -1025,16 +1025,16 @@ static bool bif_iso_sin_1(query *q)
 
 	if (is_smallint(&p1)) {
 		q->accum.val_float = sin((pl_flt)p1.val_int);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_bigint(&p1)) {
 		q->accum.val_float = sin(BIGINT_TO_DOUBLE(&p1.val_bigint->ival));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_rational(&p1)) {
 		q->accum.val_float = sin(RATIONAL_TO_DOUBLE(&p1.val_bigint->irat));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1)) {
 		q->accum.val_float = sin(p1.val_float);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -1058,16 +1058,16 @@ static bool bif_iso_cos_1(query *q)
 
 	if (is_smallint(&p1)) {
 		q->accum.val_float = cos((pl_flt)p1.val_int);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_bigint(&p1)) {
 		q->accum.val_float = cos(BIGINT_TO_DOUBLE(&p1.val_bigint->ival));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_rational(&p1)) {
 		q->accum.val_float = cos(RATIONAL_TO_DOUBLE(&p1.val_bigint->irat));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1)) {
 		q->accum.val_float = cos(p1.val_float);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -1093,22 +1093,22 @@ static bool bif_iso_tan_1(query *q)
 		q->accum.val_float = tan((pl_flt)p1.val_int);
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_bigint(&p1)) {
 		q->accum.val_float = tan(BIGINT_TO_DOUBLE(&p1.val_bigint->ival));
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_rational(&p1)) {
 		q->accum.val_float = tan(RATIONAL_TO_DOUBLE(&p1.val_bigint->irat));
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1)) {
 		q->accum.val_float = tan(p1.val_float);
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -1132,16 +1132,16 @@ static bool bif_iso_asin_1(query *q)
 
 	if (is_smallint(&p1)) {
 		q->accum.val_float = asin((pl_flt)p1.val_int);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_bigint(&p1)) {
 		q->accum.val_float = asin(BIGINT_TO_DOUBLE(&p1.val_bigint->ival));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_rational(&p1)) {
 		q->accum.val_float = asin(RATIONAL_TO_DOUBLE(&p1.val_bigint->irat));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1)) {
 		q->accum.val_float = asin(p1.val_float);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -1165,16 +1165,16 @@ static bool bif_iso_acos_1(query *q)
 
 	if (is_smallint(&p1)) {
 		q->accum.val_float = acos((pl_flt)p1.val_int);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_bigint(&p1)) {
 		q->accum.val_float = acos(BIGINT_TO_DOUBLE(&p1.val_bigint->ival));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_rational(&p1)) {
 		q->accum.val_float = acos(RATIONAL_TO_DOUBLE(&p1.val_bigint->irat));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1)) {
 		q->accum.val_float = acos(p1.val_float);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -1198,16 +1198,16 @@ static bool bif_iso_atan_1(query *q)
 
 	if (is_smallint(&p1)) {
 		q->accum.val_float = atan((pl_flt)p1.val_int);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_bigint(&p1)) {
 		q->accum.val_float = atan(BIGINT_TO_DOUBLE(&p1.val_bigint->ival));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_rational(&p1)) {
 		q->accum.val_float = atan(RATIONAL_TO_DOUBLE(&p1.val_bigint->irat));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1)) {
 		q->accum.val_float = atan(p1.val_float);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -1236,25 +1236,25 @@ static bool bif_iso_atan2_2(query *q)
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "undefined");
 
 		q->accum.val_float = atan2((pl_flt)p1.val_int, (pl_flt)p2.val_int);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_smallint(&p1) && is_float(&p2)) {
 		if ((p1.val_int == 0) && (p2.val_float == 0.0))
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "undefined");
 
 		q->accum.val_float = atan2((pl_flt)p1.val_int, p2.val_float);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1) && is_float(&p2)) {
 		if ((p1.val_float == 0.0) && (p2.val_int == 0))
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "undefined");
 
 		q->accum.val_float = atan2(p1.val_float, p2.val_float);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1) && is_smallint(&p2)) {
 		if ((p1.val_float == 0.0) && (p2.val_int == 0))
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "undefined");
 
 		q->accum.val_float = atan2(p1.val_float, (pl_flt)p2.val_int);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -1278,16 +1278,16 @@ static bool bif_sinh_1(query *q)
 
 	if (is_smallint(&p1)) {
 		q->accum.val_float = sinh((pl_flt)p1.val_int);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_bigint(&p1)) {
 		q->accum.val_float = sinh(BIGINT_TO_DOUBLE(&p1.val_bigint->ival));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_rational(&p1)) {
 		q->accum.val_float = sinh(RATIONAL_TO_DOUBLE(&p1.val_bigint->irat));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1)) {
 		q->accum.val_float = sinh(p1.val_float);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -1311,16 +1311,16 @@ static bool bif_cosh_1(query *q)
 
 	if (is_smallint(&p1)) {
 		q->accum.val_float = cosh((pl_flt)p1.val_int);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_bigint(&p1)) {
 		q->accum.val_float = cosh(BIGINT_TO_DOUBLE(&p1.val_bigint->ival));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_rational(&p1)) {
 		q->accum.val_float = cosh(RATIONAL_TO_DOUBLE(&p1.val_bigint->irat));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1)) {
 		q->accum.val_float = cosh(p1.val_float);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -1344,16 +1344,16 @@ static bool bif_tanh_1(query *q)
 
 	if (is_smallint(&p1)) {
 		q->accum.val_float = tanh((pl_flt)p1.val_int);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_bigint(&p1)) {
 		q->accum.val_float = tanh(BIGINT_TO_DOUBLE(&p1.val_bigint->ival));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_rational(&p1)) {
 		q->accum.val_float = tanh(RATIONAL_TO_DOUBLE(&p1.val_bigint->irat));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1)) {
 		q->accum.val_float = tanh(p1.val_float);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -1377,16 +1377,16 @@ static bool bif_asinh_1(query *q)
 
 	if (is_smallint(&p1)) {
 		q->accum.val_float = asinh((pl_flt)p1.val_int);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_bigint(&p1)) {
 		q->accum.val_float = asinh(BIGINT_TO_DOUBLE(&p1.val_bigint->ival));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_rational(&p1)) {
 		q->accum.val_float = asinh(RATIONAL_TO_DOUBLE(&p1.val_bigint->irat));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1)) {
 		q->accum.val_float = asinh(p1.val_float);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -1410,16 +1410,16 @@ static bool bif_acosh_1(query *q)
 
 	if (is_smallint(&p1)) {
 		q->accum.val_float = acosh((pl_flt)p1.val_int);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_bigint(&p1)) {
 		q->accum.val_float = acosh(BIGINT_TO_DOUBLE(&p1.val_bigint->ival));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_rational(&p1)) {
 		q->accum.val_float = acosh(RATIONAL_TO_DOUBLE(&p1.val_bigint->irat));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1)) {
 		q->accum.val_float = acosh(p1.val_float);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -1443,17 +1443,17 @@ static bool bif_atanh_1(query *q)
 
 	if (is_smallint(&p1)) {
 		q->accum.val_float = atanh((pl_flt)p1.val_int);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_bigint(&p1)) {
 		q->accum.val_float = atanh(BIGINT_TO_DOUBLE(&p1.val_bigint->ival));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_rational(&p1)) {
 		q->accum.val_float = atanh(RATIONAL_TO_DOUBLE(&p1.val_bigint->irat));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1)) {
 		q->accum.val_float = atanh(p1.val_float);
 		if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "undefined");
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -1477,17 +1477,17 @@ static bool bif_erf_1(query *q)
 
 	if (is_smallint(&p1)) {
 		q->accum.val_float = erf((pl_flt)p1.val_int);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_bigint(&p1)) {
 		q->accum.val_float = erf(BIGINT_TO_DOUBLE(&p1.val_bigint->ival));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_rational(&p1)) {
 		q->accum.val_float = erf(RATIONAL_TO_DOUBLE(&p1.val_bigint->irat));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1)) {
 		q->accum.val_float = erf(p1.val_float);
 		if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "undefined");
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -1511,17 +1511,17 @@ static bool bif_erfc_1(query *q)
 
 	if (is_smallint(&p1)) {
 		q->accum.val_float = 1.0 - erf((pl_flt)p1.val_int);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_bigint(&p1)) {
 		q->accum.val_float = 1.0 - erf(BIGINT_TO_DOUBLE(&p1.val_bigint->ival));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_rational(&p1)) {
 		q->accum.val_float = 1.0 - erf(RATIONAL_TO_DOUBLE(&p1.val_bigint->irat));
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1)) {
 		q->accum.val_float = 1.0 - erf(p1.val_float);
 		if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "undefined");
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -1551,20 +1551,20 @@ static bool bif_iso_copysign_2(query *q)
 		if (p2.val_int < 0)
 			q->accum.val_int = -llabs((long long)p1.val_int);
 
-		q->accum.tag = TAG_INTEGER;
+		q->accum.tag = TAG_INT;
 	} else if (is_smallint(&p1) && is_float(&p2)) {
 		q->accum = p1;
 
 		if (p2.val_float < 0.0)
 			q->accum.val_int = -llabs((long long)p1.val_int);
 
-		q->accum.tag = TAG_INTEGER;
+		q->accum.tag = TAG_INT;
 	} else if (is_float(&p1) && is_float(&p2)) {
 		q->accum.val_float = copysign(p1.val_float, p2.val_float);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1) && is_smallint(&p2)) {
 		q->accum.val_float = copysign(p1.val_float, p2.val_int);
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1) || is_var(&p2)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -1588,7 +1588,7 @@ static bool bif_iso_pow_2(query *q)
 
 		q->accum.val_float = pow(BIGINT_TO_DOUBLE(&p1.val_bigint->ival), (pl_flt)p2.val_int);
 		if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 		return true;
 	}
 
@@ -1601,7 +1601,7 @@ static bool bif_iso_pow_2(query *q)
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
 
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_smallint(&p1) && is_float(&p2)) {
 		if ((p1.val_int == 0) && (p2.val_float < 0.0))
 			return throw_error(q, &p2, q->st.curr_frame, "evaluation_error", "undefined");
@@ -1611,7 +1611,7 @@ static bool bif_iso_pow_2(query *q)
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
 
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1) && is_float(&p2)) {
 		if ((p1.val_float == 0.0) && (p2.val_float < 0.0))
 			return throw_error(q, &p2, q->st.curr_frame, "evaluation_error", "undefined");
@@ -1621,7 +1621,7 @@ static bool bif_iso_pow_2(query *q)
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
 
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1) && is_smallint(&p2)) {
 		if ((p1.val_float == 0.0) && (p2.val_int < 0))
 			return throw_error(q, &p2, q->st.curr_frame, "evaluation_error", "undefined");
@@ -1631,7 +1631,7 @@ static bool bif_iso_pow_2(query *q)
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
 
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1) || is_var(&p2)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -1694,13 +1694,13 @@ static bool bif_iso_powi_2(query *q)
 
 		if (p2.val_int == 0) {
 			q->accum.val_int = 1;
-			q->accum.tag = TAG_INTEGER;
+			q->accum.tag = TAG_INT;
 			return true;
 		}
 
 		if (p2.val_int < 0) {
 			q->accum.val_int = pow(p1.val_int, p2.val_int);
-			q->accum.tag = TAG_INTEGER;
+			q->accum.tag = TAG_INT;
 			return true;
 		}
 
@@ -1721,28 +1721,28 @@ static bool bif_iso_powi_2(query *q)
 		mp_small i;
 		mp_int_to_int(&q->tmp_ival, &i);
 		q->accum.val_int = i;
-		q->accum.tag = TAG_INTEGER;
+		q->accum.tag = TAG_INT;
 	} else if (is_smallint(&p1) && is_float(&p2)) {
 		q->accum.val_float = pow(p1.val_int, p2.val_float);
 
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
 
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1) && is_float(&p2)) {
 		q->accum.val_float = pow(p1.val_float, p2.val_float);
 
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
 
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1) && is_smallint(&p2)) {
 		q->accum.val_float = pow(p1.val_float, p2.val_int);
 
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
 
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1) || is_var(&p2)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -1773,7 +1773,7 @@ static bool bif_iso_divide_2(query *q)
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "zero_divisor");
 
 		q->accum.val_float /= d;
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_bigint(&p1) && is_smallint(&p2)) {
 		q->accum.val_float = BIGINT_TO_DOUBLE(&p1.val_bigint->ival);
 		if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
@@ -1782,14 +1782,14 @@ static bool bif_iso_divide_2(query *q)
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "zero_divisor");
 
 		q->accum.val_float /= p2.val_int;
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_bigint(&p1) && is_float(&p2)) {
 		if (p2.val_float == 0.0)
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "zero_divisor");
 
 		q->accum.val_float = BIGINT_TO_DOUBLE(&p1.val_bigint->ival) / p2.val_float;
 		if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_bigint(&p2) && is_smallint(&p1)) {
 		q->accum.val_float = p1.val_int;
 		pl_flt d = BIGINT_TO_DOUBLE(&p2.val_bigint->ival);
@@ -1803,7 +1803,7 @@ static bool bif_iso_divide_2(query *q)
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
 
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_bigint(&p2) && is_float(&p1)) {
 		pl_flt d = BIGINT_TO_DOUBLE(&p2.val_bigint->ival);
 		if (isinf(d)) return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
@@ -1814,7 +1814,7 @@ static bool bif_iso_divide_2(query *q)
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
 
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_smallint(&p1) && is_smallint(&p2)) {
 		if (p2.val_int == 0)
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "zero_divisor");
@@ -1824,7 +1824,7 @@ static bool bif_iso_divide_2(query *q)
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
 
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_smallint(&p1) && is_float(&p2)) {
 		if (p2.val_float == 0.0)
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "zero_divisor");
@@ -1834,7 +1834,7 @@ static bool bif_iso_divide_2(query *q)
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
 
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1) && is_float(&p2)) {
 		if (p2.val_float == 0.0)
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "zero_divisor");
@@ -1844,7 +1844,7 @@ static bool bif_iso_divide_2(query *q)
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
 
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1) && is_smallint(&p2)) {
 		if (p2.val_int == 0)
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "zero_divisor");
@@ -1854,7 +1854,7 @@ static bool bif_iso_divide_2(query *q)
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
 
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_var(&p1) || is_var(&p2)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -1927,7 +1927,7 @@ static bool bif_iso_mod_2(query *q)
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "zero_divisor");
 
 		q->accum.val_int = mod(p1.val_int, p2.val_int);
-		q->accum.tag = TAG_INTEGER;
+		q->accum.tag = TAG_INT;
 	} else if (is_bigint(&p1) && is_bigint(&p2)) {
 		big_mod(&p1.val_bigint->ival, &p2.val_bigint->ival, &q->tmp_ival);
 		SET_ACCUM();
@@ -2006,7 +2006,7 @@ static bool bif_iso_div_2(query *q)
 			q->accum.val_int = q->accum.val_int + p2.val_int;
 
 		q->accum.val_int = (p1.val_int - q->accum.val_int) / p2.val_int;
-		q->accum.tag = TAG_INTEGER;
+		q->accum.tag = TAG_INT;
 	} else if (is_var(&p1) || is_var(&p2)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else if (!is_integer(&p1)) {
@@ -2031,7 +2031,7 @@ static bool bif_iso_rem_2(query *q)
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "zero_divisor");
 
 		q->accum.val_int = p1.val_int % p2.val_int;
-		q->accum.tag = TAG_INTEGER;
+		q->accum.tag = TAG_INT;
 	} if (is_bigint(&p1) && is_bigint(&p2)) {
 		mp_int_mod(&p1.val_bigint->ival, &p2.val_bigint->ival, &q->tmp_ival);
 		SET_ACCUM();
@@ -2072,7 +2072,7 @@ static bool bif_iso_max_2(query *q)
 		else
 			q->accum = p2;
 
-		q->accum.tag = TAG_INTEGER;
+		q->accum.tag = TAG_INT;
 	} else if (is_bigint(&p1)) {
 		if (is_bigint(&p2)) {
 			if (mp_int_compare(&p1.val_bigint->ival, &p2.val_bigint->ival) >= 0) {
@@ -2165,7 +2165,7 @@ static bool bif_iso_min_2(query *q)
 		else
 			q->accum = p2;
 
-		q->accum.tag = TAG_INTEGER;
+		q->accum.tag = TAG_INT;
 	} if (is_bigint(&p1)) {
 		if (is_bigint(&p2)) {
 			if (mp_int_compare(&p1.val_bigint->ival, &p2.val_bigint->ival) <= 0) {
@@ -2272,7 +2272,7 @@ static bool bif_iso_xor_2(query *q)
 		SET_ACCUM();
 	} else if (is_smallint(&p1) && is_smallint(&p2)) {
 		q->accum.val_int = p1.val_int ^ p2.val_int;
-		q->accum.tag = TAG_INTEGER;
+		q->accum.tag = TAG_INT;
 	} else if (is_var(&p1) || is_var(&p2)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else if (!is_integer(&p1)) {
@@ -2309,7 +2309,7 @@ static bool bif_iso_or_2(query *q)
 		SET_ACCUM();
 	} else if (is_smallint(&p1) && is_smallint(&p2)) {
 		q->accum.val_int = p1.val_int | p2.val_int;
-		q->accum.tag = TAG_INTEGER;
+		q->accum.tag = TAG_INT;
 	} else if (is_var(&p1) || is_var(&p2)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else if (!is_integer(&p1)) {
@@ -2346,7 +2346,7 @@ static bool bif_iso_and_2(query *q)
 		SET_ACCUM();
 	} else if (is_smallint(&p1) && is_smallint(&p2)) {
 		q->accum.val_int = p1.val_int & p2.val_int;
-		q->accum.tag = TAG_INTEGER;
+		q->accum.tag = TAG_INT;
 	} else if (is_var(&p1) || is_var(&p2)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else if (!is_integer(&p1)) {
@@ -2373,7 +2373,7 @@ static bool bif_iso_shl_2(query *q)
 		q->accum.val_int = p1.val_int << p2.val_int;
 
 		if ((q->accum.val_int >= 0) && (p2.val_int < 64)) {
-			q->accum.tag = TAG_INTEGER;
+			q->accum.tag = TAG_INT;
 			return true;
 		}
 
@@ -2406,7 +2406,7 @@ static bool bif_iso_shr_2(query *q)
 		SET_ACCUM();
 	} if (is_smallint(&p1) && is_smallint(&p2)) {
 		q->accum.val_int = p1.val_int >> p2.val_int;
-		q->accum.tag = TAG_INTEGER;
+		q->accum.tag = TAG_INT;
 	} else if (is_var(&p1) || is_var(&p2)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else if (!is_integer(&p1)) {
@@ -2426,7 +2426,7 @@ static bool bif_iso_neg_1(query *q)
 
 	if (is_smallint(&p1)) {
 		q->accum.val_int = ~p1.val_int;
-		q->accum.tag = TAG_INTEGER;
+		q->accum.tag = TAG_INT;
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
@@ -2651,28 +2651,28 @@ static bool bif_log_2(query *q)
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
 
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_smallint(&p1) && is_float(&p2)) {
 		q->accum.val_float = log(p2.val_float) / log(p1.val_int);
 
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
 
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1) && is_smallint(&p2)) {
 		q->accum.val_float = log(p2.val_int) / log(p1.val_float);
 
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
 
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1) && is_float(&p2)) {
 		q->accum.val_float = log(p2.val_float) / log(p1.val_float);
 
 		if (isinf(q->accum.val_float))
 			return throw_error(q, &q->accum, q->st.curr_frame, "evaluation_error", "float_overflow");
 
-		q->accum.tag = TAG_DOUBLE;
+		q->accum.tag = TAG_FLOAT;
 	}
 
 	return true;
@@ -2693,7 +2693,7 @@ static bool bif_log10_1(query *q)
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "undefined");
 		} else {
 			q->accum.val_float = log10(p1.val_int);
-			q->accum.tag = TAG_DOUBLE;
+			q->accum.tag = TAG_FLOAT;
 		}
 	} else if (is_float(&p1)) {
 		if (p1.val_float == 0.0) {
@@ -2702,7 +2702,7 @@ static bool bif_log10_1(query *q)
 			return throw_error(q, &p1, q->st.curr_frame, "evaluation_error", "undefined");
 		} else {
 			q->accum.val_float = log10(p1.val_float);
-			q->accum.tag = TAG_DOUBLE;
+			q->accum.tag = TAG_FLOAT;
 		}
 	} else {
 		return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable");
@@ -2776,7 +2776,7 @@ static bool bif_random_1(query *q)
 static bool bif_random_integer_0(query *q)
 {
 	START_FUNCTION(q);
-	q->accum.tag = TAG_INTEGER;
+	q->accum.tag = TAG_INT;
 	q->accum.val_int = rnd(q) * ((int64_t)RAND_MAX+1);
 	return true;
 }
@@ -2784,7 +2784,7 @@ static bool bif_random_integer_0(query *q)
 static bool bif_random_float_0(query *q)
 {
 	START_FUNCTION(q);
-	q->accum.tag = TAG_DOUBLE;
+	q->accum.tag = TAG_FLOAT;
 	q->accum.val_float = rnd(q);
 	return true;
 }
@@ -2792,7 +2792,7 @@ static bool bif_random_float_0(query *q)
 static bool bif_rand_0(query *q)
 {
 	START_FUNCTION(q);
-	q->accum.tag = TAG_INTEGER;
+	q->accum.tag = TAG_INT;
 	q->accum.val_int = rnd(q) * ((int64_t)RAND_MAX+1);
 	return true;
 }
@@ -2838,7 +2838,7 @@ static bool bif_gcd_2(query *q)
 		SET_ACCUM();
 	} else if (is_smallint(&p1) && is_smallint(&p2)) {
 		q->accum.val_int = gcd(p1.val_int, p2.val_int);
-		q->accum.tag = TAG_INTEGER;
+		q->accum.tag = TAG_INT;
 	} else if (is_var(&p1) || is_var(&p2)) {
 		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
 	} else if (!is_integer(&p1)) {

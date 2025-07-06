@@ -801,7 +801,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 	// THREAD OBJECTS
 
-	if ((c->tag == TAG_INTEGER) && (c->flags & FLAG_INT_THREAD)) {
+	if ((c->tag == TAG_INT) && (c->flags & FLAG_INT_THREAD)) {
 		int n = get_smallint(c);
 		thread *t = &q->pl->threads[n];
 
@@ -819,7 +819,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 	// ALIAS
 
-	if ((c->tag == TAG_INTEGER) && (c->flags & FLAG_INT_ALIAS)) {
+	if ((c->tag == TAG_INT) && (c->flags & FLAG_INT_ALIAS)) {
 		SB_sprintf(q->sb, "'$alias'(%d)", (int)get_smallint(c));
 		q->last_thing = WAS_OTHER;
 		return true;
@@ -827,7 +827,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 	// MAP
 
-	if ((c->tag == TAG_INTEGER) && (c->flags & FLAG_INT_MAP)) {
+	if ((c->tag == TAG_INT) && (c->flags & FLAG_INT_MAP)) {
 		SB_sprintf(q->sb, "'$map'(%d)", (int)get_smallint(c));
 		q->last_thing = WAS_OTHER;
 		return true;
@@ -835,7 +835,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 	// STREAM
 
-	if ((c->tag == TAG_INTEGER) && (c->flags & FLAG_INT_STREAM)) {
+	if ((c->tag == TAG_INT) && (c->flags & FLAG_INT_STREAM)) {
 		SB_sprintf(q->sb, "'$stream'(%d)", (int)get_smallint(c));
 		q->last_thing = WAS_OTHER;
 		return true;
