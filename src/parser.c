@@ -3227,14 +3227,13 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 								if (any)
 									SB_putchar(p->token, ',');
 
-								if (isdigit(ch))
-									SB_putchar(p->token, '\'');
+								SB_putchar(p->token, '\'');
+
+								if ((ch == '\'') || (ch == '\\'))
+									SB_putchar(p->token, '\\');
 
 								SB_putchar(p->token, ch);
-
-								if (isdigit(ch))
-									SB_putchar(p->token, '\'');
-
+								SB_putchar(p->token, '\'');
 								any = true;
 							}
 
