@@ -981,7 +981,9 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 		if (is_partial) {
 			SB_strcat(q->sb, "||");
+			if (is_op(l)) SB_putchar(q->sb, '(');
 			print_term_to_buf_(q, l, 0, 1, 0, depth+1, depth+1, NULL);
+			if (is_op(l)) SB_putchar(q->sb, ')');
 		}
 
 		q->last_thing = WAS_OTHER;
