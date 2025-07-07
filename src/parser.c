@@ -3229,10 +3229,15 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 								SB_putchar(p->token, '\'');
 
-								if ((ch == '\'') || (ch == '\\'))
-									SB_putchar(p->token, '\\');
+								char *ptr = strchr(g_escapes, ch);
 
-								SB_putchar(p->token, ch);
+								if (ptr) {
+									size_t n = ptr - g_escapes;
+									SB_putchar(p->token, '\\');
+									SB_putchar(p->token, g_anti_escapes[n]);
+								} else
+									SB_putchar(p->token, ch);
+
 								SB_putchar(p->token, '\'');
 								any = true;
 							}
