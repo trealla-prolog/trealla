@@ -3211,7 +3211,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 						|| (ch == '(') || ch == ')'
 						|| (ch == '[') || ch == ']'
 						|| (ch == '{') || ch == '}'
-						|| (ch == '-') || ch == '+'
+						|| (ch == '-')
 						) {
 						src = (char*)src;
 						p->quote_char = 0;
