@@ -1,17 +1,24 @@
 :- initialization(main).
 
 main :-
-	 X = "abc"||(1*(1+2)), write(X), nl, fail.
+	 X = "abc"||(1*(1+2)),
+	 write_term(X,[double_quotes(true)]), nl, fail.
 main :-
-	 X = "abc"||-123, write(X), nl, fail.
+	 X = "abc"||-123,
+	 write_term(X,[double_quotes(true)]), nl, fail.
 main :-
-	 X = "abc"||_, write(X), nl, fail.
+	 X = "abc"||_,
+	 write_term(X,[double_quotes(true)]), nl, fail.
 main :-
-	 X = "abc"||"def", write(X), nl, fail.
+	 X = "abc"||"def",
+	 write_term(X,[double_quotes(true)]), nl, fail.
 main :-
-	 X = "abc"||f(_), write(X), nl, fail.
+	 X = "abc"||f(_),
+	 write_term(X,[double_quotes(true)]), nl, fail.
 main :-
-	 X = "abc"||[1,2,3], write(X), nl, fail.
+	 X = "abc"||[1,2,3],
+	 write_term(X,[double_quotes(true)]), nl, fail.
 main :-
-	 X = "abc"||{1,2,3}, write(X), nl, fail.
+	 X = "abc"||{1,2,3},
+	 write_term(X,[double_quotes(true)]), nl, fail.
 main.
