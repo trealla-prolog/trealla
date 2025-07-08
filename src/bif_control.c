@@ -765,6 +765,7 @@ static bool find_exception_handler(query *q, char *ball)
 			continue;
 
 		q->ball = parse_to_heap(q, ball);
+		check_memory(q->ball);
 		q->ball_ctx = q->st.curr_frame;
 		q->retry = QUERY_EXCEPTION;
 
