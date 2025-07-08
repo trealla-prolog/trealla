@@ -835,6 +835,7 @@ static bool bif_iso_throw_1(query *q)
 	q->parens = q->numbervars = true;
 	q->quoted = true;
 	char *ball = print_term_to_strbuf(q, p1, p1_ctx, 1);
+	check_memory(ball);
 	clear_write_options(q);
 
 	if (!find_exception_handler(q, ball)) {
