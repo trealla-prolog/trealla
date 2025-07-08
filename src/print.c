@@ -1589,6 +1589,7 @@ char *print_term_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running)
 	SB_init(q->sb);
 	print_term_to_buf(q, c, c_ctx, running, false);
 	char *buf = malloc(SB_strlen(q->sb)+1+1); // dcg_expansion needs this extra char space
+	if (!buf) return NULL;
 	strcpy(buf, SB_cstr(q->sb));
 	SB_free(q->sb);
 	return buf;
