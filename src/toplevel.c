@@ -36,8 +36,8 @@ int check_interrupt(query *q)
 {
 #ifndef _WIN32
 	if (g_tpl_interrupt == SIGALRM) {
-		signal(SIGINT, &sigfn);
 		g_tpl_interrupt = 0;
+		signal(SIGINT, &sigfn);
 
 		if (!throw_error(q, q->st.instr, q->st.curr_frame, "time_limit_exceeded", "timed_out"))
 			q->retry = true;
@@ -51,8 +51,8 @@ int check_interrupt(query *q)
 		return 1;
 	}
 
-	signal(SIGINT, &sigfn);
 	g_tpl_interrupt = 0;
+	signal(SIGINT, &sigfn);
 
 	for (;;) {
 		printf("\nAction or (h)elp: ");

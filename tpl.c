@@ -35,8 +35,8 @@
 
 void sigfn(int s)
 {
-	signal(SIGINT, &sigfn);
 	g_tpl_interrupt = s;
+	signal(SIGINT, &sigfn);
 }
 
 #ifndef __wasi__
