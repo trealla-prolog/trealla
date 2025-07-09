@@ -1334,10 +1334,14 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 	// Print LHS..
 
-	unsigned lhs_pri_1 = is_interned(lhs) ? match_op(q->st.m, C_STR(q, lhs), NULL, lhs->arity) : 0;
-	unsigned lhs_pri_2 = is_interned(lhs) && !lhs->arity ? search_op(q->st.m, C_STR(q, lhs), NULL, true) : 0;
+
+	unsigned lhs_specifier = 0;
+	unsigned lhs_pri_1 = is_interned(lhs) ? match_op(q->st.m, C_STR(q, lhs), &lhs_specifier, lhs->arity) : 0;
+	unsigned lhs_pri_2 = is_interned(lhs) && !lhs->arity ? search_op(q->st.m, C_STR(q, lhs), &lhs_specifier, true) : 0;
+	bool lhs_postfix = (lhs->arity == 1) && IS_POSTFIX(lhs_specifier);
 
 	bool lhs_parens = lhs_pri_1 >= my_priority;
+	if (lhs_postfix) lhs_parens = true;
 	if ((lhs_pri_1 == my_priority) && is_op_yfx) lhs_parens = false;
 	if (lhs_pri_2 > 0) lhs_parens = true;
 	if (is_compound(lhs) && (lhs_pri_1 <= my_priority) && (lhs->val_off == g_plus_s)) { lhs_parens = false; }
@@ -1368,7 +1372,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		q->parens = lhs_parens;
 		print_term_to_buf_(q, lhs, lhs_ctx, running, 0, 0, depth+1, &me);
 		q->parens = false;
-		if (lhs_parens) { SB_sprintf(q->sb, "%s", ")"); }
+		if (lhs_parens) { SB_sprintf(q->sb, "%s", ")"); q->last_thing = WAS_OTHER; }
 	}
 
 	bool space = false;
