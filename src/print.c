@@ -1174,7 +1174,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		if ((c->val_off == g_plus_s) && is_op_lhs) space = true;
 		int ch = peek_char_utf8(src);
 		if (iswalpha(ch)) space = true;
-		if (lhs_pri >= my_priority) { parens = true; space = false; }
+		if (lhs_pri > my_priority) { parens = true; space = false; }
 
 		if (!is_var(lhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
 			if (q->last_thing != WAS_SPACE) SB_sprintf(q->sb, "%s", " ");
