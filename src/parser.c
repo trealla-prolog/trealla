@@ -1552,7 +1552,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			do_work = true;
 		}
 
-		bind_le = is_xfy(c) || is_fy(c) ? true : false;
+		bind_le = is_xfy(c) || is_fy(c) ? true || is_yf(c): false;
 		i++;
 	}
 
