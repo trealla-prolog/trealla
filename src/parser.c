@@ -4183,7 +4183,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			}
 		}
 
-		if (priority && IS_POSTFIX(specifier) && is_arg_processing && last_op) {
+		if (priority && IS_POSTFIX(specifier) && is_arg_processing && last_op && !last_postfix) {
 			specifier = 0;
 			priority = 0;
 		}
