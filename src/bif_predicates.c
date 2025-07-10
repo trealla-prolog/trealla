@@ -2247,7 +2247,7 @@ static bool bif_sys_current_prolog_flag_2(query *q)
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "strict_iso")) {
 		cell tmp;
 
-		if (!q->st.m->flags.strict_iso)
+		if (q->st.m->flags.strict_iso)
 			make_atom(&tmp, g_on_s);
 		else
 			make_atom(&tmp, g_off_s);
@@ -2650,23 +2650,17 @@ static bool do_op(query *q, cell *p3, pl_idx p3_ctx)
 	unsigned tmp_optype = 0;
 	unsigned tmp_pri = match_op(q->st.m, C_STR(q, p3), &tmp_optype, p3->arity);
 
-#if 0
-	if (IS_INFIX(specifier) && IS_POSTFIX(tmp_optype))
+	if (IS_INFIX(specifier) && IS_POSTFIX(tmp_optype) && (true || q->st.m->flags.strict_iso))
 		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator");
-#endif
 
 	if (!tmp_pri && !pri)
 		return true;
 
-#if 0
-	if (IS_POSTFIX(specifier) && (IS_INFIX(tmp_optype)/* || tmp_pri*/))
-		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator2");
-#endif
+	if (IS_POSTFIX(specifier) && (IS_INFIX(tmp_optype)/* || tmp_pri*/) && (true || q->st.m->flags.strict_iso))
+		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator");
 
-#if 0
-	if (IS_POSTFIX(specifier) && IS_INFIX(tmp_optype))
-		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator3");
-#endif
+	if (IS_POSTFIX(specifier) && IS_INFIX(tmp_optype) && (true || q->st.m->flags.strict_iso))
+		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator");
 
 	if (!set_op(q->st.m, C_STR(q, p3), specifier, pri))
 		return throw_error(q, p3, p3_ctx, "resource_error", "too_many_ops");

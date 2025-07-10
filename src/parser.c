@@ -4228,7 +4228,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			save_idx = p->cl->cidx;
 		}
 
-		if (!p->is_op && !is_func && last_op && last_postfix) {
+		if (!p->is_op && !is_func && last_op && last_postfix && 0) {
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: syntax error, near '%s', operator expected postfix '%s', %s:%d\n", SB_cstr(p->token), p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_num);
 
