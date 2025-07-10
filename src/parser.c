@@ -482,6 +482,25 @@ static void do_op(parser *p, cell *c, bool make_public)
 		if (is_atom(h)) {
 			char *name = DUP_STRING(p, h);
 
+			unsigned tmp_optype = 0;
+			unsigned tmp_pri = match_op(p->m, name, &tmp_optype, p3->arity);
+
+			if (IS_INFIX(specifier) && IS_POSTFIX(tmp_optype) && (true || p->m->flags.strict_iso)) {
+				if (!p->do_read_term)
+					fprintf(stderr, "Error: permission error set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+
+				free(name);
+				return;
+			}
+
+			if (IS_POSTFIX(specifier) && IS_INFIX(tmp_optype) && (true || p->m->flags.strict_iso)) {
+				if (!p->do_read_term)
+					fprintf(stderr, "Error: permission error set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+
+				free(name);
+				return;
+			}
+
 			if (!set_op(p->m, name, specifier, get_smallint(p1))) {
 				if (!p->do_read_term)
 					fprintf(stderr, "Error: could not set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
@@ -508,30 +527,6 @@ static void do_op(parser *p, cell *c, bool make_public)
 
 	if (is_atom(p3) && !is_nil(p3)) {
 		char *name = DUP_STRING(p, p3);
-		unsigned specifier, pri = get_smallint(p1);
-
-		if (!CMP_STRING_TO_CSTR(q, p2, "fx"))
-			specifier = OP_FX;
-		else if (!CMP_STRING_TO_CSTR(q, p2, "fy"))
-			specifier = OP_FY;
-		else if (!CMP_STRING_TO_CSTR(q, p2, "xf"))
-			specifier = OP_XF;
-		else if (!CMP_STRING_TO_CSTR(q, p2, "xfx"))
-			specifier = OP_XFX;
-		else if (!CMP_STRING_TO_CSTR(q, p2, "xfy"))
-			specifier = OP_XFY;
-		else if (!CMP_STRING_TO_CSTR(q, p2, "yf"))
-			specifier = OP_YF;
-		else if (!CMP_STRING_TO_CSTR(q, p2, "yfx"))
-			specifier = OP_YFX;
-		else {
-			if (!p->do_read_term)
-				fprintf(stderr, "Error: could not set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
-
-			free(name);
-			return;
-		}
-
 		unsigned tmp_optype = 0;
 		unsigned tmp_pri = match_op(p->m, name, &tmp_optype, p3->arity);
 
