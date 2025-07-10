@@ -1168,8 +1168,10 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		pl_idx lhs_ctx = c_ctx;
 		if (running) lhs = deref(q, lhs, lhs_ctx);
 		if (running) lhs_ctx = q->latest_ctx;
-		unsigned lhs_pri = is_interned(lhs) ? match_op(q->st.m, C_STR(q, lhs), NULL, lhs->arity) : 0;
-		bool is_op_lhs = lhs_pri, parens = false;
+		unsigned lhs_specifier = false;
+		unsigned lhs_pri = is_interned(lhs) ? match_op(q->st.m, C_STR(q, lhs), &lhs_specifier, lhs->arity) : 0;
+		bool is_lhs_postfix = IS_POSTFIX(lhs_specifier);
+		bool is_op_lhs = lhs_pri, parens = is_lhs_postfix;
 		bool space = (c->val_off == g_minus_s) && (is_number(lhs) || is_op_lhs);
 		if ((c->val_off == g_plus_s) && is_op_lhs) space = true;
 		int ch = peek_char_utf8(src);
@@ -1218,7 +1220,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 		SB_strcatn(q->sb, src, srclen);
 		if (quote) { SB_sprintf(q->sb, "%s", quote?"'":""); }
-		if (q->last_thing != WAS_SPACE) { SB_sprintf(q->sb, "%s", " "); q->last_thing = WAS_SPACE; }
+		//if (q->last_thing != WAS_SPACE) { SB_sprintf(q->sb, "%s", " "); q->last_thing = WAS_SPACE; }
 		else q->last_thing = WAS_OTHER;
 		return true;
 	}
