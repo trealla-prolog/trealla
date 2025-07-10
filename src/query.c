@@ -1117,14 +1117,17 @@ bool has_next_key(query *q)
 			return false;
 	}
 
-	const cell *karg1 = NULL, *karg2 = NULL;
-	cell *save_arg1 = FIRST_ARG(q->st.key);
+	cell *karg1 = FIRST_ARG(q->st.key), *karg2 = NULL, *karg3 = NULL;
+	cell *save_arg1 = karg1;
 
 	if (q->st.karg1_is_ground)
 		karg1 = deref(q, save_arg1, q->st.key_ctx);
 
 	if (q->st.karg2_is_ground)
 		karg2 = deref(q, NEXT_ARG(save_arg1), q->st.key_ctx);
+
+	if (q->st.karg3_is_ground)
+		karg3 = deref(q, NEXT_ARG(NEXT_ARG(save_arg1)), q->st.key_ctx);
 
 	//DUMP_TERM("key ", q->st.key, q->st.key_ctx, 1);
 
@@ -1143,6 +1146,11 @@ bool has_next_key(query *q)
 
 		if (karg2) {
 			if (index_cmpkey(karg2, NEXT_ARG(FIRST_ARG(dkey)), q->st.m, NULL) != 0)
+				continue;
+		}
+
+		if (karg3) {
+			if (index_cmpkey(karg3, NEXT_ARG(NEXT_ARG(FIRST_ARG(dkey))), q->st.m, NULL) != 0)
 				continue;
 		}
 
