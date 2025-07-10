@@ -4321,7 +4321,7 @@ bool run(parser *p, const char *prolog_src, bool dump, query **subq, unsigned in
 	}
 
 	if (*prolog_src != '[') {
-		SB_sprintf(pr, "call((%s", prolog_src);
+		SB_sprintf(pr, "((%s", prolog_src);
 	} else {
 		SB_sprintf(pr, "%s", prolog_src);
 	}
