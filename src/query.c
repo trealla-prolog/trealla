@@ -1062,17 +1062,23 @@ static bool can_view(query *q, uint64_t dbgen, const rule *r)
 
 static void setup_key(query *q)
 {
-	cell *save_arg1 = FIRST_ARG(q->st.key);
+	cell *save_arg1 = FIRST_ARG(q->st.key), *save_arg2 = NULL;
 	cell *arg1 = deref(q, save_arg1, q->st.key_ctx);
-	cell *arg2 = NULL;
-
-	if (q->st.key->arity > 1)
-		arg2 = deref(q, NEXT_ARG(save_arg1), q->st.key_ctx);
 
 	q->st.karg1_is_ground = !is_var(arg1);
-	q->st.karg2_is_ground = arg2 && !is_var(arg2);
 	q->st.karg1_is_atomic = is_atomic(arg1);
-	q->st.karg2_is_atomic = arg2 && is_atomic(arg2);
+
+	if (q->st.key->arity > 1) {
+		cell *arg2 = deref(q, save_arg2 = NEXT_ARG(save_arg1), q->st.key_ctx);
+		q->st.karg2_is_ground = arg2 && !is_var(arg2);
+		q->st.karg2_is_atomic = arg2 && is_atomic(arg2);
+	}
+
+	if (q->st.key->arity > 2) {
+		cell *arg3 = deref(q, NEXT_ARG(save_arg2), q->st.key_ctx);
+		q->st.karg3_is_ground = arg3 && !is_var(arg3);
+		q->st.karg3_is_atomic = arg3 && is_atomic(arg3);
+	}
 }
 
 static void next_key(query *q)
@@ -1105,6 +1111,9 @@ bool has_next_key(query *q)
 			return false;
 
 		if ((q->st.key->arity == 2) && q->st.karg1_is_atomic && q->st.karg2_is_atomic)
+			return false;
+
+		if ((q->st.key->arity == 3) && q->st.karg1_is_atomic && q->st.karg2_is_atomic && q->st.karg3_is_atomic)
 			return false;
 	}
 
@@ -1182,8 +1191,8 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 {
 	q->st.iter = NULL;
-	q->st.karg1_is_ground = q->st.karg2_is_ground = false;
-	q->st.karg1_is_atomic = q->st.karg2_is_atomic = false;
+	q->st.karg1_is_ground = q->st.karg2_is_ground = q->st.karg3_is_ground = false;
+	q->st.karg1_is_atomic = q->st.karg2_is_atomic = q->st.karg3_is_atomic = false;
 	q->st.key = key;
 	q->st.key_ctx = key_ctx;
 
