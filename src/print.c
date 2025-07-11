@@ -1343,11 +1343,11 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	bool lhs_postfix = (lhs->arity == 1) && IS_POSTFIX(lhs_specifier);
 
 	bool lhs_parens = lhs_pri_1 >= my_priority;
-	if (lhs_postfix) lhs_parens = true;
+	//if (lhs_postfix) lhs_parens = true;
 	if ((lhs_pri_1 == my_priority) && is_op_yfx) lhs_parens = false;
 	if (lhs_pri_2 > 0) lhs_parens = true;
 	if (is_compound(lhs) && (lhs_pri_1 <= my_priority) && (lhs->val_off == g_plus_s)) { lhs_parens = false; }
-	bool lhs_space = false;
+	bool lhs_space = lhs_postfix;
 
 	if ((q->last_thing != WAS_SPACE) && lhs_space) {
 		SB_sprintf(q->sb, "%s", " ");
@@ -1390,10 +1390,10 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 	bool extra_space = false;
 
-	if ((q->last_thing != WAS_SPACE) && space && !quote) {
+	if ((q->last_thing != WAS_SPACE) && (space || lhs_space) && !quote) {
 		SB_sprintf(q->sb, "%s", " ");
 		q->last_thing = WAS_SPACE;
-		extra_space = true;
+		if (!lhs_space) extra_space = true;
 	}
 
 	int ch = peek_char_utf8(src);
