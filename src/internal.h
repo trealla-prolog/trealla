@@ -294,6 +294,8 @@ enum {
 #define IS_PREFIX(op) (((op) == OP_FX) || ((op) == OP_FY))
 #define IS_POSTFIX(op) (((op) == OP_XF) || ((op) == OP_YF))
 #define IS_INFIX(op) (((op) == OP_XFX) || ((op) == OP_XFY) || ((op) == OP_YFX))
+#define IS_XF(op) ((op) == OP_XF)
+#define IS_YF(op) ((op) == OP_YF)
 
 #define is_prefix(c) IS_PREFIX(GET_OP(c))
 #define is_postfix(c) IS_POSTFIX(GET_OP(c))

@@ -1148,7 +1148,6 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	bool is_op_postfix = is_op && IS_POSTFIX(my_specifier);
 	bool is_op_yfx = is_op_infix && (my_specifier == OP_YFX);
 	bool is_op_xfy = is_op_infix && (my_specifier == OP_XFY);
-
 	size_t srclen = src_len;
 
 	if (is_op_postfix) {
@@ -1160,7 +1159,10 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		unsigned lhs_specifier = false;
 		unsigned lhs_pri = is_interned(lhs) ? match_op(q->st.m, C_STR(q, lhs), &lhs_specifier, lhs->arity) : 0;
 		bool is_lhs_postfix = IS_POSTFIX(lhs_specifier);
-		bool is_op_lhs = lhs_pri, parens = is_lhs_postfix;
+		bool is_lhs_xf = IS_XF(lhs_specifier);
+		bool is_lhs_yf = IS_YF(lhs_specifier);
+		bool is_op_lhs = lhs_pri;
+		bool parens = is_lhs_xf;
 		bool space = (c->val_off == g_minus_s) && (is_number(lhs) || is_op_lhs);
 		if ((c->val_off == g_plus_s) && is_op_lhs) space = true;
 		int ch = peek_char_utf8(src);
@@ -1180,10 +1182,9 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 			pl_idx lhs_ctx = running ? q->latest_ctx : 0;
 
 			if (parens) { SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
-
 			print_term_to_buf_(q, lhs, lhs_ctx, running, 0, 0, depth+1, &me);
-
 			if (parens) { SB_sprintf(q->sb, "%s", ")"); q->last_thing = WAS_OTHER; }
+			q->last_thing = WAS_OTHER;
 		}
 
 		if (q->is_dump_vars && has_visited(visited, lhs, lhs_ctx)) {
@@ -1196,7 +1197,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 			return true;
 		}
 
-		if ((q->last_thing != WAS_SPACE) && space) {
+		if ((q->last_thing != WAS_SPACE) && (space || is_lhs_yf)) {
 			SB_sprintf(q->sb, "%s", " ");
 			q->last_thing = WAS_SPACE;
 		}
