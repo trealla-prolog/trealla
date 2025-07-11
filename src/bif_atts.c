@@ -275,7 +275,8 @@ bool any_attributed(query *q)
 			if (!is_op(h))
 				any = true;
 
-			v = v + 1; v += v->num_cells;
+			v = v + 1;
+			v += v->num_cells;
 		}
 
 		if (!any)
