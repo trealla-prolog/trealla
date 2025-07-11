@@ -675,20 +675,6 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			if (is_var(orig_c)) printf("*** orig_c = %u/%u\n", orig_c->var_num, orig_c_ctx);
 #endif
 
-			cell v = *(c+1);
-			pl_idx v_ctx = c_ctx;
-
-			if (is_var(c+1) && !q->do_dump_vars) {
-				v = *(c+1);
-				v_ctx = c_ctx;
-			} else if (is_var(save_tail) && !q->do_dump_vars) {
-				v = *save_tail;
-				v_ctx = save_tail_ctx;
-			} else if (!q->do_dump_vars) {
-				v.var_num = q->dump_var_num;
-				v_ctx = 0;
-			}
-
 			if ((q->portray_vars || q->do_dump_vars) && (orig_c_ctx == 0) && q->is_dump_vars && !THREE_DOTS) {
 				print_variable(q, save_tail, save_tail_ctx, running);
 				//SB_sprintf(q->sb, "%s", q->top->vartab.name[v.var_num]);
