@@ -346,6 +346,63 @@ static bool bif_sys_list_attributed_1(query *q)
 	return unify(q, p1, p1_ctx, l, 0);
 }
 
+static bool bif_sys_mark_start_1(query * q)
+{
+	GET_FIRST_ARG(p1,var);
+	cell mark;
+	make_uint(&mark, q->st.tp);
+	unify(q, p1, p1_ctx, &mark, q->st.curr_frame);
+	return true;
+}
+
+static bool bif_sys_list_attributed_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,var);
+	check_memory(init_tmp_heap(q));
+	pl_idx mark = get_smalluint(p1);
+
+	for (unsigned j = mark; j < q->st.tp; j++) {
+		const trail *tr = q->trails + j;
+		const frame *f = GET_FRAME(tr->var_ctx);
+		slot *e = GET_SLOT(f, tr->var_num);
+		cell *c = deref(q, &e->c, e->c.var_ctx);
+		pl_idx c_ctx = q->latest_ctx;
+
+		if (!is_empty(c) || !c->val_attrs)
+			continue;
+
+		cell tmp;
+		make_ref(&tmp, tr->var_num, tr->var_ctx);
+		append_list(q, &tmp);
+
+		if (!is_compound(c->val_attrs))
+				continue;
+
+		collect_vars(q, c->val_attrs, c_ctx);
+
+		for (unsigned i = 0; i < q->tab_idx; i++) {
+			const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
+			slot *e = GET_SLOT(f, q->pl->tabs[i].var_num);
+			cell *v = deref(q, &e->c, e->c.var_ctx);
+
+			if (!is_empty(v) || !v->val_attrs)
+				continue;
+
+			if (!q->pl->tabs[i].ctx)
+				continue;
+
+			cell tmp;
+			make_ref(&tmp, q->pl->tabs[i].var_num, q->pl->tabs[i].ctx);
+			append_list(q, &tmp);
+		}
+	}
+
+	cell *l = end_list(q);
+	check_memory(l);
+	return unify(q, p2, p2_ctx, l, 0);
+}
+
 static bool bif_sys_attributed_var_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
@@ -505,10 +562,12 @@ builtins g_atts_bifs[] =
 	{"get_atts", 2, bif_get_atts_2, "@variable,-term", false, false, BLAH},
 
 	{"$list_attributed", 1, bif_sys_list_attributed_1, "-list", false, false, BLAH},
+	{"$list_attributed", 2, bif_sys_list_attributed_2, "+integer,-list", false, false, BLAH},
 	{"$unattributed_var", 1, bif_sys_unattributed_var_1, "@variable", false, false, BLAH},
 	{"$attributed_var", 1, bif_sys_attributed_var_1, "@variable", false, false, BLAH},
 	{"$undo_trail", 2, bif_sys_undo_trail_2, "-list,-blob", false, false, BLAH},
 	{"$redo_trail", 1, bif_sys_redo_trail_1, "+blob", false, false, BLAH},
+	{"$mark_start", 1, bif_sys_mark_start_1, "-integer", false, false, BLAH},
 
 	{0}
 };

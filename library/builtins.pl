@@ -121,8 +121,10 @@ term_attributed_variables(Term, Vs) :-
 :- help(term_attributed_variables(+term,-list), [iso(false), desc('Return list of attributed variables in term')]).
 
 call_residue_vars(G, Ls) :-
+	'$mark_start'(Mark),
 	G,
-	term_attributed_variables(G, Ls).
+	'$list_attributed'(Mark, Ls0),
+	sort(Ls0, Ls).
 
 :- help(call_residue_vars(+term,-list), [iso(false), desc('Return list of attributed variables after goal')]).
 :- meta_predicate(call_residue_vars(0,?)).
