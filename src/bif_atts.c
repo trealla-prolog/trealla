@@ -255,34 +255,36 @@ static bool check_occurs(unsigned var_num, pl_idx var_ctx, cell *c, pl_idx c_ctx
 
 bool any_attributed(query *q)
 {
-	const frame *f = GET_FRAME(0);
+	for (unsigned j = 0; j < q->st.fp; j++) {
+		const frame *f = GET_FRAME(j);
 
-	for (unsigned i = 0; i < f->actual_slots; i++) {
-		slot *e = GET_SLOT(f, i);
-		cell *c = deref(q, &e->c, e->c.var_ctx);
+		for (unsigned i = 0; i < f->actual_slots; i++) {
+			slot *e = GET_SLOT(f, i);
+			cell *c = deref(q, &e->c, e->c.var_ctx);
 
-		if (!is_empty(c) || !c->val_attrs)
-			continue;
+			if (!is_empty(c) || !c->val_attrs)
+				continue;
 
-		cell *v = c->val_attrs;
-		bool any = false;
+			cell *v = c->val_attrs;
+			bool any = false;
 
-		while (is_iso_list(v)) {
-			cell *h = v + 1;
+			while (is_iso_list(v)) {
+				cell *h = v + 1;
 
-			//  Ignore \== created by dif/2, but what are they?
+				//  Ignore \== created by dif/2, but what are they?
 
-			if (!is_op(h))
-				any = true;
+				if (!is_op(h))
+					any = true;
 
-			v = v + 1;
-			v += v->num_cells;
+				v = v + 1;
+				v += v->num_cells;
+			}
+
+			if (!any)
+				continue;
+
+			return true;
 		}
-
-		if (!any)
-			continue;
-
-		return true;
 	}
 
 	return false;
@@ -292,47 +294,50 @@ static bool bif_sys_list_attributed_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	check_memory(init_tmp_heap(q));
-	const frame *f = GET_FRAME(0);
 
-	for (unsigned i = 0; i < f->actual_slots; i++) {
-		slot *e = GET_SLOT(f, i);
-		cell *c = deref(q, &e->c, e->c.var_ctx);
+	for (unsigned j = 0; j < q->st.fp; j++) {
+		const frame *f = GET_FRAME(j);
 
-		if (!is_empty(c) || !c->val_attrs)
-			continue;
+		for (unsigned i = 0; i < f->actual_slots; i++) {
+			slot *e = GET_SLOT(f, i);
+			cell *c = deref(q, &e->c, e->c.var_ctx);
 
-		cell tmp;
-		make_ref(&tmp, i, 0);
-		append_list(q, &tmp);
-	}
-
-	for (unsigned i = 0; i < f->actual_slots; i++) {
-		slot *e = GET_SLOT(f, i);
-		cell *c = deref(q, &e->c, e->c.var_ctx);
-		pl_idx c_ctx = q->latest_ctx;
-
-		if (!is_empty(c) || !c->val_attrs)
-			continue;
-
-		if (!is_compound(c->val_attrs))
-			continue;
-
-		collect_vars(q, c->val_attrs, c_ctx);
-
-		for (unsigned i = 0; i < q->tab_idx; i++) {
-			const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
-			slot *e = GET_SLOT(f, q->pl->tabs[i].var_num);
-			cell *v = deref(q, &e->c, e->c.var_ctx);
-
-			if (!is_empty(v) || !v->val_attrs)
-				continue;
-
-			if (!q->pl->tabs[i].ctx)
+			if (!is_empty(c) || !c->val_attrs)
 				continue;
 
 			cell tmp;
-			make_ref(&tmp, q->pl->tabs[i].var_num, q->pl->tabs[i].ctx);
+			make_ref(&tmp, i, j);
 			append_list(q, &tmp);
+		}
+
+		for (unsigned i = 0; i < f->actual_slots; i++) {
+			slot *e = GET_SLOT(f, i);
+			cell *c = deref(q, &e->c, e->c.var_ctx);
+			pl_idx c_ctx = q->latest_ctx;
+
+			if (!is_empty(c) || !c->val_attrs)
+				continue;
+
+			if (!is_compound(c->val_attrs))
+				continue;
+
+			collect_vars(q, c->val_attrs, c_ctx);
+
+			for (unsigned i = 0; i < q->tab_idx; i++) {
+				const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
+				slot *e = GET_SLOT(f, q->pl->tabs[i].var_num);
+				cell *v = deref(q, &e->c, e->c.var_ctx);
+
+				if (!is_empty(v) || !v->val_attrs)
+					continue;
+
+				if (!q->pl->tabs[i].ctx)
+					continue;
+
+				cell tmp;
+				make_ref(&tmp, q->pl->tabs[i].var_num, q->pl->tabs[i].ctx);
+				append_list(q, &tmp);
+			}
 		}
 	}
 
