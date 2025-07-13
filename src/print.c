@@ -525,6 +525,7 @@ static bool dump_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 		l_ctx = running ? q->latest_ctx : 0;
 	}
 
+	//printf("*** no dump %u ctx=%u\n", c->var_num, c_ctx);
 	return false;
 }
 
@@ -987,7 +988,17 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		return true;
 	}
 
-	// VAR / ATOM / COMPOUND
+	// VAR
+
+	if (is_var(c) && q->is_dump_vars) {
+		if (!dump_variable(q, c, c_ctx, running))
+			print_variable(q, c, c_ctx, running);
+
+		return true;
+	}
+
+	// ATOM / COMPOUND
+
 
 	const char *src = !is_ref(c) ? C_STR(q, c) : "_";
 	size_t src_len = !is_ref(c) ? C_STRLEN(q, c) : 1;

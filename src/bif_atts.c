@@ -301,6 +301,7 @@ static bool bif_sys_list_attributed_1(query *q)
 		for (unsigned i = 0; i < f->actual_slots; i++) {
 			slot *e = GET_SLOT(f, i);
 			cell *c = deref(q, &e->c, e->c.var_ctx);
+			pl_idx c_ctx = q->latest_ctx;
 
 			if (!is_empty(c) || !c->val_attrs)
 				continue;
@@ -308,34 +309,25 @@ static bool bif_sys_list_attributed_1(query *q)
 			cell tmp;
 			make_ref(&tmp, i, j);
 			append_list(q, &tmp);
-		}
-
-		for (unsigned i = 0; i < f->actual_slots; i++) {
-			slot *e = GET_SLOT(f, i);
-			cell *c = deref(q, &e->c, e->c.var_ctx);
-			pl_idx c_ctx = q->latest_ctx;
-
-			if (!is_empty(c) || !c->val_attrs)
-				continue;
 
 			if (!is_compound(c->val_attrs))
 				continue;
 
 			collect_vars(q, c->val_attrs, c_ctx);
 
-			for (unsigned i = 0; i < q->tab_idx; i++) {
-				const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
-				slot *e = GET_SLOT(f, q->pl->tabs[i].var_num);
-				cell *v = deref(q, &e->c, e->c.var_ctx);
+			for (unsigned k = 0; k < q->tab_idx; k++) {
+				const frame *f = GET_FRAME(q->pl->tabs[k].ctx);
+				slot *e = GET_SLOT(f, q->pl->tabs[k].var_num);
+				cell *v = &e->c;
 
-				if (!is_empty(v) || !v->val_attrs)
+				if (!v->val_attrs)
 					continue;
 
-				if (!q->pl->tabs[i].ctx)
-					continue;
+				//if (!q->pl->tabs[k].ctx)
+				//	continue;
 
 				cell tmp;
-				make_ref(&tmp, q->pl->tabs[i].var_num, q->pl->tabs[i].ctx);
+				make_ref(&tmp, q->pl->tabs[k].var_num, q->pl->tabs[k].ctx);
 				append_list(q, &tmp);
 			}
 		}
@@ -377,23 +369,23 @@ static bool bif_sys_list_attributed_2(query *q)
 		append_list(q, &tmp);
 
 		if (!is_compound(c->val_attrs))
-				continue;
+			continue;
 
 		collect_vars(q, c->val_attrs, c_ctx);
 
-		for (unsigned i = 0; i < q->tab_idx; i++) {
-			const frame *f = GET_FRAME(q->pl->tabs[i].ctx);
-			slot *e = GET_SLOT(f, q->pl->tabs[i].var_num);
-			cell *v = deref(q, &e->c, e->c.var_ctx);
+		for (unsigned k = 0; k < q->tab_idx; k++) {
+			const frame *f = GET_FRAME(q->pl->tabs[k].ctx);
+			slot *e = GET_SLOT(f, q->pl->tabs[k].var_num);
+			cell *v = &e->c;
 
-			if (!is_empty(v) || !v->val_attrs)
+			if (!v->val_attrs)
 				continue;
 
-			if (!q->pl->tabs[i].ctx)
-				continue;
+			//if (!q->pl->tabs[k].ctx)
+			//	continue;
 
 			cell tmp;
-			make_ref(&tmp, q->pl->tabs[i].var_num, q->pl->tabs[i].ctx);
+			make_ref(&tmp, q->pl->tabs[k].var_num, q->pl->tabs[k].ctx);
 			append_list(q, &tmp);
 		}
 	}

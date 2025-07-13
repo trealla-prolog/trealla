@@ -28,9 +28,9 @@ bool accum_var(query *q, const cell *c, pl_idx c_ctx)
 		check_error(!q->pl->tabs);
 	}
 
-	q->pl->tabs[q->tab_idx].ctx = c_ctx;
-	q->pl->tabs[q->tab_idx].var_num = c->var_num;
 	q->pl->tabs[q->tab_idx].val_off = c->val_off;
+	q->pl->tabs[q->tab_idx].var_num = c->var_num;
+	q->pl->tabs[q->tab_idx].ctx = c_ctx;
 	q->pl->tabs[q->tab_idx].is_anon = is_anon(c) ? true : false;
 	q->pl->tabs[q->tab_idx].cnt = 1;
 	q->tab_idx++;

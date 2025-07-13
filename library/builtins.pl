@@ -599,11 +599,12 @@ print_goals_(Any, [Goal|Goals]) :-
 
 dump_attvars_([], []).
 dump_attvars_([Var|Vars], [Gs|Rest]) :-
-	copy_term(Var, _, Gs),
+	term_attributed_variables(Var, Vs),
+	collect_goals_(Vs, [], Gs),
 	dump_attvars_(Vars, Rest).
 
 dump_attvars(Any) :-
-	'$list_attributed'(0, Vs0),
+	'$list_attributed'(Vs0),
 	sort(Vs0, Vs),
 	dump_attvars_(Vs, Gs0),
 	flatten(Gs0, Gs1),

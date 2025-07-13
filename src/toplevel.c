@@ -377,6 +377,9 @@ void dump_vars(query *q, bool partial)
 
 	cell *vlist = end_list(q);
 	bool want_space = false;
+	clear_write_options(q);
+	q->variable_names = vlist;
+	q->variable_names_ctx = 0;
 	q->print_idx = 0;
 
 	for (unsigned i = 0; i < p->num_vars; i++) {
@@ -464,14 +467,11 @@ void dump_vars(query *q, bool partial)
 		}
 
 		if (parens) fputc('(', stdout);
-		q->variable_names = vlist;
-		q->variable_names_ctx = 0;
-		q->numbervars = true;
 		q->max_depth = q->pl->def_max_depth;
 		q->double_quotes = q->pl->def_double_quotes;
 		q->quoted = q->pl->def_quoted ? 1 : 0;
 		q->parens = parens;
-		q->dump_var_num = i;
+		//q->dump_var_num = i;
 		e->vgen = ++q->vgen;
 
 		print_term(q, stdout, c, c_ctx, 1);
@@ -493,11 +493,12 @@ void dump_vars(query *q, bool partial)
 
 	// Print residual goals of attributed variables...
 
+	clear_write_options(q);
+	q->variable_names = vlist;
+	q->variable_names_ctx = 0;
+	q->print_idx = 0;
+
 	if (any_atts) {
-		clear_write_options(q);
-		q->variable_names = vlist;
-		q->variable_names_ctx = q->st.curr_frame;
-		q->tab_idx = 0;
 		cell p1[2];
 		make_instr(p1+0, new_atom(q->pl, "dump_attvars"), NULL, 1, 1);
 		make_atom(p1+1, any ? g_true_s : g_false_s);
