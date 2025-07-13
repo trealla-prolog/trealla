@@ -290,54 +290,6 @@ bool any_attributed(query *q)
 	return false;
 }
 
-static bool bif_sys_list_attributed_1(query *q)
-{
-	GET_FIRST_ARG(p1,var);
-	check_memory(init_tmp_heap(q));
-
-	for (unsigned j = 0; j < q->st.fp; j++) {
-		const frame *f = GET_FRAME(j);
-
-		for (unsigned i = 0; i < f->actual_slots; i++) {
-			slot *e = GET_SLOT(f, i);
-			cell *c = deref(q, &e->c, e->c.var_ctx);
-			pl_idx c_ctx = q->latest_ctx;
-
-			if (!is_empty(c) || !c->val_attrs)
-				continue;
-
-			cell tmp;
-			make_ref(&tmp, i, j);
-			append_list(q, &tmp);
-
-			if (!is_compound(c->val_attrs))
-				continue;
-
-			collect_vars(q, c->val_attrs, c_ctx);
-
-			for (unsigned k = 0; k < q->tab_idx; k++) {
-				const frame *f = GET_FRAME(q->pl->tabs[k].ctx);
-				slot *e = GET_SLOT(f, q->pl->tabs[k].var_num);
-				cell *v = &e->c;
-
-				if (!v->val_attrs)
-					continue;
-
-				//if (!q->pl->tabs[k].ctx)
-				//	continue;
-
-				cell tmp;
-				make_ref(&tmp, q->pl->tabs[k].var_num, q->pl->tabs[k].ctx);
-				append_list(q, &tmp);
-			}
-		}
-	}
-
-	cell *l = end_list(q);
-	check_memory(l);
-	return unify(q, p1, p1_ctx, l, 0);
-}
-
 static bool bif_sys_mark_start_1(query * q)
 {
 	GET_FIRST_ARG(p1,var);
@@ -363,6 +315,9 @@ static bool bif_sys_list_attributed_2(query *q)
 
 		if (!is_empty(c) || !c->val_attrs)
 			continue;
+
+		//if (!c_ctx)
+		//	continue;
 
 		cell tmp;
 		make_ref(&tmp, tr->var_num, tr->var_ctx);
@@ -553,7 +508,6 @@ builtins g_atts_bifs[] =
 	{"put_atts", 2, bif_put_atts_2, "@variable,+term", false, false, BLAH},
 	{"get_atts", 2, bif_get_atts_2, "@variable,-term", false, false, BLAH},
 
-	{"$list_attributed", 1, bif_sys_list_attributed_1, "-list", false, false, BLAH},
 	{"$list_attributed", 2, bif_sys_list_attributed_2, "+integer,-list", false, false, BLAH},
 	{"$unattributed_var", 1, bif_sys_unattributed_var_1, "@variable", false, false, BLAH},
 	{"$attributed_var", 1, bif_sys_attributed_var_1, "@variable", false, false, BLAH},
