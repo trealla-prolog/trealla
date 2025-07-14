@@ -354,20 +354,20 @@ length_addendum([_|Xs], N, M) :-
 
 :- help(length(?term,?integer), [iso(false), desc('Number of elements in list.')]).
 
-transpose(Ls, Ts) :-
-        lists_transpose(Ls, Ts).
-
-:- help(transpose(?list,?list), [iso(false), desc('Transpose list of lists.')]).
-
-lists_transpose([], []).
-lists_transpose([L|Ls], Ts) :-
-        maplist(same_length(L), Ls),
-        foldl(transpose_, L, Ts, [L|Ls], _).
+list_first_rest([L|Ls], L, Ls).
 
 transpose_(_, Fs, Lists0, Lists) :-
         maplist(list_first_rest, Lists0, Fs, Lists).
 
-list_first_rest([L|Ls], L, Ls).
+lists_transpose_([], []).
+lists_transpose_([L|Ls], Ts) :-
+        maplist(same_length(L), Ls),
+        foldl(transpose_, L, Ts, [L|Ls], _).
+
+transpose(Ls, Ts) :-
+        lists_transpose_(Ls, Ts).
+
+:- help(transpose(?list,?list), [iso(false), desc('Transpose list of lists.')]).
 
 foldl(G, L, V0, V) :-
 	foldl_(L, G, V0, V).
