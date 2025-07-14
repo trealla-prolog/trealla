@@ -317,18 +317,12 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 		return pr;
 	}
 
-	// TODO: only do this if not use_module(name [])
-
 	for (unsigned i = 0; i < m->idx_used; i++) {
 		module *tmp_m = m->used[i];
 
 		pr = find_predicate(tmp_m, c);
 
 		if (pr) {
-			if (strcmp(tmp_m->name, "clpz")	// Hack for verify_attributes not qualifying goals
-				)
-				continue;
-
 			if (pr->is_builtin && prebuilt)
 				*prebuilt = true;
 
