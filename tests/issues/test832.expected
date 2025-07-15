@@ -1,1 +1,1 @@
-   Warning: Initialization goal exception: error(type_error(callable,((fail,_4=_5),1)),(:)/2).
+   Warning: Initialization goal exception: error(type_error(callable,((fail,_4=_5),1)),call/1).
