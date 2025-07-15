@@ -8,6 +8,6 @@
 
 main :-
     X in 1 .. 2,
-    copy_term(X, _, Attrs),
+    copy_term(X, X, Attrs),
     write(Attrs), nl.
 

@@ -147,9 +147,10 @@ collect_goals_([V|T], GsIn, GsOut) :-
 	collect_goals_(T, GsOut2, GsOut).
 
 copy_term(Term, Copy, Gs) :-
-	'$duplicate_term'(Term, Copy, 1),
-	term_attributed_variables(Copy, Vs),
-	collect_goals_(Vs, [], Gs).
+	'$duplicate_term'(Term, Copy0, 1),
+	term_attributed_variables(Copy0, Vs),
+	collect_goals_(Vs, [], Gs),
+	Copy = Copy0.
 
 :- help(copy_term(+term,?term,-list), [iso(false)]).
 
