@@ -634,7 +634,7 @@ void try_me(query *q, unsigned num_vars)
 	q->total_matches++;
 }
 
-static void push_frame(query *q, bool noopt)
+static void push_frame(query *q)
 {
 	frame *f = GET_NEW_FRAME();
 	const frame *curr_f = GET_CURR_FRAME();
@@ -642,7 +642,7 @@ static void push_frame(query *q, bool noopt)
 
 	// Avoid long chains of useless returns...
 
-	if (!noopt && q->pl->opt && is_end(next_cell) && !next_cell->ret_instr) {
+	if (q->pl->opt && is_end(next_cell) && !next_cell->ret_instr) {
 		f->prev = curr_f->prev;
 		f->instr = curr_f->instr;
 	} else {
@@ -746,20 +746,14 @@ static void commit_frame(query *q)
 #endif
 	}
 
-	bool noopt = false;
-
-	if (!q->st.dbe->owner->is_builtin) {
-		if (q->st.m != q->st.dbe->owner->m)
-			noopt = true;
-
+	if (!q->st.dbe->owner->is_builtin)
 		q->st.m = q->st.dbe->owner->m;
-	}
 
 	if (tco && q->pl->opt) {
 		Trace(q, get_head(save_dbe->cl.cells), q->st.curr_frame, EXIT);
 		reuse_frame(q, cl->num_vars);
 	} else {
-		push_frame(q, noopt);
+		push_frame(q);
 	}
 
 	if (last_match) {
