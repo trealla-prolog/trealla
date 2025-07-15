@@ -322,15 +322,13 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 	for (unsigned i = 0; i < m->idx_used; i++) {
 		module *tmp_m = m->used[i];
 
-		if (strcmp(tmp_m->name, "dcgs")
-			&& strcmp(tmp_m->name, "clpz")
-			&& strcmp(tmp_m->name, "lists")
-		)
-			continue;
-
 		pr = find_predicate(tmp_m, c);
 
 		if (pr) {
+			if (strcmp(tmp_m->name, "clpz")	// Hack for verify_attributes not qualifying goals
+				)
+				continue;
+
 			if (pr->is_builtin && prebuilt)
 				*prebuilt = true;
 

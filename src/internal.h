@@ -835,7 +835,7 @@ struct module_ {
 	module *used[MAX_MODULES];
 	module *orig;
 	prolog *pl;
-	pi *gex_head, *gex_tail;			// goal expansion
+	pi *gex_head, *gex_tail;			// goal expansion ??? (see pi_ above, why not use list?)
 	parser *p;
 	FILE *fp;
 	const char *filename, *name, *actual_filename;

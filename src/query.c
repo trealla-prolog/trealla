@@ -746,11 +746,14 @@ static void commit_frame(query *q)
 #endif
 	}
 
-	bool noopt = !q->st.dbe->owner->is_builtin
-		&& (q->st.m != q->st.dbe->owner->m);
+	bool noopt = false;
 
-	//if (!q->st.dbe->owner->is_builtin)
-	//	q->st.m = q->st.dbe->owner->m;
+	if (!q->st.dbe->owner->is_builtin) {
+		if (q->st.m != q->st.dbe->owner->m)
+			noopt = true;
+
+		q->st.m = q->st.dbe->owner->m;
+	}
 
 	if (tco && q->pl->opt) {
 		Trace(q, get_head(save_dbe->cl.cells), q->st.curr_frame, EXIT);
