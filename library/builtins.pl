@@ -8,11 +8,13 @@ dcg_translate(TermIn, Term) :-
 	nonvar(TermIn),
 	dcg_rule(TermIn, Term).
 
+:- help(writeln(+term), [iso(false),deprecated(true)]).
+:- help(writeln(+stream,+term), [iso(false),deprecated(true)]).
+
 writeln(T) :- write(T), nl.				% SWI
 writeln(S, T) :- write(S, T), nl.		% SWI
 
-:- help(writeln(+term), [iso(false),deprecated(true)]).
-:- help(writeln(+stream,+term), [iso(false),deprecated(true)]).
+:- help(predicate_property(+callable,+term), [iso(true)]).
 
 predicate_property(P, A) :-
 	nonvar(P), atom(A), !,
@@ -41,7 +43,7 @@ predicate_property(P, A) :-
 	;	'$predicate_property'(predicate, P, A)
 	).
 
-:- help(predicate_property(+callable,+term), [iso(true)]).
+:- help(evaluable_property(+callable,+term), [iso(true)]).
 
 evaluable_property(P, A) :-
 	nonvar(P), atom(A), !,
@@ -67,7 +69,7 @@ evaluable_property(P, A) :-
 	;	'$predicate_property'(function, P, A)
 	).
 
-:- help(evaluable_property(+callable,+term), [iso(true)]).
+:- help(current_prolog_flag(+callable,+term), [iso(true)]).
 
 current_prolog_flag(P, A) :-
 	nonvar(P), !,
@@ -76,13 +78,11 @@ current_prolog_flag(P, A) :-
 	'$load_flags',
 	'$current_prolog_flag'(P, A).
 
-:- help(current_prolog_flag(+callable,+term), [iso(true)]).
+:- help(argv(-list), [iso(false)]).
+:- help(raw_argv(-list), [iso(false)]).
 
 argv(L) :- current_prolog_flag(argv, L).
 raw_argv(L) :- current_prolog_flag(raw_argv, L).
-
-:- help(argv(-list), [iso(false)]).
-:- help(raw_argv(-list), [iso(false)]).
 
 '$post_unify_hook' :-
 	'$undo_trail'(Vars, State),
@@ -106,6 +106,8 @@ process_var_([Att|Atts], Var, Val, SoFar, Goals) :-
 	append(SoFar, NewGoals, MoreGoals),
 	process_var_(Atts, Var, Val, MoreGoals, Goals).
 
+:- help(term_attributed_variables(+term,-list), [iso(false), desc('Return list of attributed variables in term')]).
+
 term_attvars_([], VsIn, VsIn).
 term_attvars_([H|T], VsIn, VsOut) :-
 	(	'$attributed_var'(H) ->
@@ -118,7 +120,8 @@ term_attributed_variables(Term, Vs) :-
 	term_variables(Term, Vs0),
 	term_attvars_(Vs0, [], Vs).
 
-:- help(term_attributed_variables(+term,-list), [iso(false), desc('Return list of attributed variables in term')]).
+:- help(call_residue_vars(+term,-list), [iso(false), desc('Return list of attributed variables after goal')]).
+:- meta_predicate(call_residue_vars(0,?)).
 
 call_residue_vars(G, Ls) :-
 	'$mark_start'(Mark),
@@ -126,8 +129,13 @@ call_residue_vars(G, Ls) :-
 	'$list_attributed'(Mark, Ls0),
 	sort(Ls0, Ls).
 
-:- help(call_residue_vars(+term,-list), [iso(false), desc('Return list of attributed variables after goal')]).
-:- meta_predicate(call_residue_vars(0,?)).
+:- help(copy_term(+term,?term,-list), [iso(false)]).
+
+copy_term(Term, Copy, Gs) :-
+	'$duplicate_term'(Term, Copy0, 1),
+	term_attributed_variables(Copy0, Vs),
+	collect_goals_(Vs, [], Gs),
+	Copy = Copy0.
 
 collect_goals_(_, [], GsIn, GsIn).
 collect_goals_(V, [H|T], GsIn, GsOut) :-
@@ -146,36 +154,21 @@ collect_goals_([V|T], GsIn, GsOut) :-
 	collect_goals_(V, Ls, GsIn, GsOut2),
 	collect_goals_(T, GsOut2, GsOut).
 
-copy_term(Term, Copy, Gs) :-
-	'$duplicate_term'(Term, Copy0, 1),
-	term_attributed_variables(Copy0, Vs),
-	collect_goals_(Vs, [], Gs),
-	Copy = Copy0.
-
-:- help(copy_term(+term,?term,-list), [iso(false)]).
+:- help(copy_term(+term,?term), [iso(true)]).
 
 copy_term(Term, Copy) :-
 	'$duplicate_term'(Term, Copy, 1).
 
-:- help(copy_term(+term,?term), [iso(true)]).
+:- help(copy_term_nat(+term,?term), [iso(false)]).
 
 copy_term_nat(Term, Copy) :-
 	'$duplicate_term'(Term, Copy, 0).
 
-:- help(copy_term_nat(+term,?term), [iso(false)]).
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 
-:- meta_predicate(setof(-,0,?)).
-:- help(setof(+term,+callable,?list), [iso(true)]).
-
 :- meta_predicate(bagof(-,0,?)).
 :- help(bagof(+term,:callable,?list), [iso(true)]).
-
-/************************************************************/
-/* bagof/3 and setof/3                                      */
-/************************************************************/
 
 /**
  * bagof(T, X1^…^Xn^G, L): [ISO 8.10.2]
@@ -188,11 +181,14 @@ copy_term_nat(Term, Copy) :-
 bagof(T, G, L) :-
 	(var(L) -> true; must_be(L, list_or_partial_list, bagof/3, _)),
 	acyclic_term(G),
-	sys_globals_kernel(T^G, W, H),
+	sys_globals_kernel_(T^G, W, H),
 	findall(W-T, H, J),
-	sys_same_vars(J, _),
+	sys_same_vars_(J, _),
 	keysort(J, K),
-	sys_enum_runs(K, W, L).
+	sys_enum_runs_(K, W, L).
+
+:- meta_predicate(setof(-,0,?)).
+:- help(setof(+term,+callable,?list), [iso(true)]).
 
 /**
  * setof(T, X1^…^Xn^G, L): [ISO 8.10.3]
@@ -205,68 +201,58 @@ bagof(T, G, L) :-
 setof(T, G, L) :-
 	(var(L) -> true; must_be(L, list_or_partial_list, setof/3, _)),
 	acyclic_term(G),
-	sys_globals_kernel(T^G, W, H),
+	sys_globals_kernel_(T^G, W, H),
 	findall(W-T, H, J),
-	sys_same_vars(J, _),
+	sys_same_vars_(J, _),
 	sort(J, K),
-	sys_enum_runs(K, W, L).
+	sys_enum_runs_(K, W, L).
 
-% sys_same_vars(+Pairs, +List)
-sys_same_vars([K-_|L], V) :-
+% sys_same_vars_(+Pairs, +List)
+sys_same_vars_([K-_|L], V) :-
 	term_variables(K, V, _),
-	sys_same_vars(L, V).
-sys_same_vars([], _).
+	sys_same_vars_(L, V).
+sys_same_vars_([], _).
 
-% sys_enum_runs(+Pairs, +Term, -List)
-sys_enum_runs([K-V|L], W, Q) :-
-	sys_key_run(L, K, R, H),
-	(K = W, Q = [V|R], (H = [], !; true); sys_enum_runs(H, W, Q)).
+% sys_enum_runs_(+Pairs, +Term, -List)
+sys_enum_runs_([K-V|L], W, Q) :-
+	sys_key_run_(L, K, R, H),
+	(K = W, Q = [V|R], (H = [], !; true); sys_enum_runs_(H, W, Q)).
 
-% sys_key_run(+Pairs, +Term, -List, -Pairs)
-sys_key_run([K-V|L], J, [V|R], H) :- K == J, !,
-	sys_key_run(L, J, R, H).
-sys_key_run(L, _, [], L).
+% sys_key_run_(+Pairs, +Term, -List, -Pairs)
+sys_key_run_([K-V|L], J, [V|R], H) :- K == J, !,
+	sys_key_run_(L, J, R, H).
+sys_key_run_(L, _, [], L).
 
 /********************************************************************/
 /* Helpers                                                          */
 /********************************************************************/
 
-% sys_goal_split(+Goal, -List, -Goal)
-sys_globals_kernel(G, W, H) :-
-	sys_goal_split(G, I, H),
+% sys_goal_split_(+Goal, -List, -Goal)
+sys_globals_kernel_(G, W, H) :-
+	sys_goal_split_(G, I, H),
 	term_variables(H, A),
 	term_variables(I, B),
-	sys_var_subtract(A, B, W).
+	sys_var_subtract_(A, B, W).
 
-% sys_goal_split(+Goal, -List, -Goal)
-sys_goal_split(G, [], G) :- var(G), !.
-sys_goal_split(V^G, [V|L], H) :- !,
-	sys_goal_split(G, L, H).
-sys_goal_split(G, [], G).
+% sys_goal_split_(+Goal, -List, -Goal)
+sys_goal_split_(G, [], G) :- var(G), !.
+sys_goal_split_(V^G, [V|L], H) :- !,
+	sys_goal_split_(G, L, H).
+sys_goal_split_(G, [], G).
 
-% sys_var_subtract(+List, +List, -List)
-sys_var_subtract([X|L], R, T) :-
+% sys_var_subtract_(+List, +List, -List)
+sys_var_subtract_([X|L], R, T) :-
 	member(Y, R), Y == X, !,
-	sys_var_subtract(L, R, T).
-sys_var_subtract([X|L], R, [X|S]) :-
-	sys_var_subtract(L, R, S).
-sys_var_subtract([], _, []).
+	sys_var_subtract_(L, R, T).
+sys_var_subtract_([X|L], R, [X|S]) :-
+	sys_var_subtract_(L, R, S).
+sys_var_subtract_([], _, []).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Edinburgh...
-
-get0(C) :- get_code(C).
-get0(S, C) :- get_code(S, C).
-display(T) :- write_canonical(T).
-display(S, T) :- write_canonical(S, T).
-put(C) :- put_code(C).
-put(S,C) :- put_code(S, C).
-see(F) :- open(F, read, S), set_input(S).
-tell(F) :- open(F, write, S), set_output(S).
-append(F) :- open(F, append, S), set_output(S).
 
 :- help(get0(?integer), [iso(false),deprecated(true)]).
 :- help(get0(+stream,?integer), [iso(false),deprecated(true)]).
@@ -277,6 +263,16 @@ append(F) :- open(F, append, S), set_output(S).
 :- help(see(+filename), [iso(false),deprecated(true)]).
 :- help(tell(+filename), [iso(false),deprecated(true)]).
 :- help(append(+filename), [iso(false),deprecated(true)]).
+
+get0(C) :- get_code(C).
+get0(S, C) :- get_code(S, C).
+display(T) :- write_canonical(T).
+display(S, T) :- write_canonical(S, T).
+put(C) :- put_code(C).
+put(S,C) :- put_code(S, C).
+see(F) :- open(F, read, S), set_input(S).
+tell(F) :- open(F, write, S), set_output(S).
+append(F) :- open(F, append, S), set_output(S).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -305,15 +301,15 @@ append(F) :- open(F, append, S), set_output(S).
 	current_output(S),
 	((catch(once(portray(T)), _, write(T)), !) ; '$portray_term'(S, T)).
 
-print(T) :- current_output(S), format(S, "~p", [T]).
-print(S, T) :- format(S, "~p", [T]).
-
 :- help(print(+term), [iso(false)]).
 :- help(print(+stream,+term), [iso(false)]).
 
-open(F, M, S) :- open(F, M, S, []).
+print(T) :- current_output(S), format(S, "~p", [T]).
+print(S, T) :- format(S, "~p", [T]).
 
 :- help(open(+atom,+atom,--stream), [iso(true)]).
+
+open(F, M, S) :- open(F, M, S, []).
 
 :- meta_predicate(engine_create(?,0,?)).
 
@@ -328,32 +324,34 @@ engine_post(E, T, R) :-
 current_engine(E) :-
 	stream_property(E, engine(true)).
 
-samsort(L, R) :- msort(L, R).
-
 :- help(samsort(+list,?list), [iso(false)]).
 
-atomic_list_concat(L, Atom) :- atomic_list_concat(L, '', Atom).
+samsort(L, R) :- msort(L, R).
 
 :- help(atomic_list_concat(+list,+atomic), [iso(false)]).
+
+atomic_list_concat(L, Atom) :- atomic_list_concat(L, '', Atom).
 
 partial_string(S, P) :- append(S, _, P).
 partial_string(S, P, V) :- append(S, V, P).
 
-chars_base64(Plain, Base64, Opts) :- base64(Plain, Base64, Opts).
-
 :- help(chars_base64(+atom,?atom,+list), [iso(false)]).
 
-chars_urlenc(Plain, Url, Opts) :- urlenc(Plain, Url, Opts).
+chars_base64(Plain, Base64, Opts) :- base64(Plain, Base64, Opts).
 
 :- help(chars_urlenc(+atom,?atom,+list), [iso(false)]).
 
-term_to_atom(T, S) :- write_term_to_chars(T, [], S).
+chars_urlenc(Plain, Url, Opts) :- urlenc(Plain, Url, Opts).
 
 :- help(term_to_atom(+term,?atom), [iso(false)]).
 
-absolute_file_name(R, A) :- absolute_file_name(R, A, []).
+term_to_atom(T, S) :- write_term_to_chars(T, [], S).
 
 :- help(absolute_filename(+atom,?atom), [iso(false)]).
+
+absolute_file_name(R, A) :- absolute_file_name(R, A, []).
+
+:- help(client(+atom,-atom,-atom,--stream), [iso(false)]).
 
 client(Url, S) :- client(Url, _, _, S, []).
 
@@ -361,11 +359,11 @@ client(Url, S) :- client(Url, _, _, S, []).
 
 client(Url, Host, Path, S) :- client(Url, Host, Path, S, []).
 
-:- help(client(+atom,-atom,-atom,--stream), [iso(false)]).
+:- help(server(+atom,--stream), [iso(false)]).
 
 server(Host, S) :- server(Host, S, []).
 
-:- help(server(+atom,--stream), [iso(false)]).
+:- help(load_files(+list), [iso(false)]).
 
 load_files(Files) :- load_files(Files,[]).
 
@@ -373,37 +371,33 @@ load_files(Files) :- load_files(Files,[]).
 
 consult(Files) :- load_files(Files,[]).
 
-:- help(consult(+list), [iso(false),deprecated(true)]).
+:- help(reconsult(+list), [iso(false),deprecated(true)]).
 
 reconsult(Files) :- load_files(Files,[]).
 
-:- help(reconsult(+list), [iso(false),deprecated(true)]).
+:- help(deconsult(+list), [iso(false),deprecated(true)]).
 
 deconsult(Files) :- unload_files(Files).
 
-:- help(deconsult(+list), [iso(false),deprecated(true)]).
+:- help('?='(+term,+term), [iso(false)]).
 
 ?=(X, Y) :- \+ unifiable(X, Y, [_|_]).
 
-:- help('?='(+term,+term), [iso(false)]).
+:- help(atom_number(+atom,-number), [iso(false)]).
 
 atom_number(A, N) :- atom_codes(A,Codes), number_codes(N, Codes).
 
-:- help(atom_number(+atom,-number), [iso(false)]).
+:- help(rational_numerator_denominator(+rational,-integer,-integer), [iso(false)]).
 
 rational_numerator_denominator(R, N, D) :-
 	N is numerator(R),
 	D is denominator(R).
 
-:- help(rational_numerator_denominator(+rational,-integer,-integer), [iso(false)]).
-
 '$skip_list'(Skip, Xs0, Xs) :- '$skip_max_list'(Skip,_, Xs0, Xs).
 
-:- help('$skip_list'(+p1,?p2,?p3,-p4), [iso(false)]).
+:- help(term_hash(+term,+list,-integer), [iso(false)]).
 
 term_hash(Term, _Opts, Hash) :- term_hash(Term, Hash).
-
-:- help(term_hash(+term,+list,-integer), [iso(false)]).
 
 read_term_from_chars_(T, Cs, Rest) :-
 	'$read_term_from_chars'(T, [], Cs, Rest).
@@ -411,9 +405,9 @@ read_term_from_chars_(T, Cs, Rest) :-
 read_term_from_chars_(T, Opts, Cs, Rest) :-
 	'$read_term_from_chars'(T, Opts, Cs, Rest).
 
-read_from_atom(A, T) :- read_term_from_atom(A, T, []).
-
 :- help(read_from_atom(+atom,?term), [iso(false)]).
+
+read_from_atom(A, T) :- read_term_from_atom(A, T, []).
 
 with_output_to(chars(Cs), Goal) :-
 	setup_call_cleanup(
@@ -443,24 +437,24 @@ iso_dif(X, Y) :-
 	;	throw(error(instantiation_error,iso_dif/2))
 	).
 
+:- help(numbervars(+term,+integer,?integer), [iso(false)]).
+
 numbervars(Term, N0, N) :-
    must_be(N0, integer, numbervars/3, _),
    can_be(N, integer, numbervars/3, _),
    term_variables(Term, Vars),
    numberlist_(Vars, N0, N).
 
-:- help(numbervars(+term,+integer,?integer), [iso(false)]).
-
 numberlist_([], N, N).
 numberlist_(['$VAR'(N0)|Vars], N0, N) :-
    N1 is N0+1,
    numberlist_(Vars, N1, N).
 
+:- help(read_line_to_codes(+stream,?list), [iso(false)]).
+
 read_line_to_codes(Stream, Codes) :-
 	read_line_to_string(Stream, String),
 	string_codes(String, Codes).
-
-:- help(read_line_to_codes(+stream,?list), [iso(false)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -514,27 +508,21 @@ error(Err, Context) :-
 resource_error(Resource, Context) :-
    throw(error(resource_error(Resource), Context)).
 
-:- help(resource_error(+term,+term), [iso(false)]).
-
 instantiation_error(Context) :-
 	throw(error(instantiation_error, Context)).
-
-:- help(instantiation_error(+term), [iso(false)]).
 
 domain_error(Type, Term, Context) :-
 	throw(error(domain_error(Type, Term), Context)).
 
-:- help(domain_error(+atom,+term,+term), [iso(false)]).
-
 type_error(Type, Term, Context) :-
 	throw(error(type_error(Type, Term), Context)).
-
-:- help(type_error(+atom,+term,+term), [iso(false)]).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % NOTE: this doesn't display var names properly...
+
+:- help(pretty(+predicateindicator), [iso(false)]).
 
 pretty(PI) :-
 	nonvar(PI),
@@ -555,10 +543,10 @@ pretty(PI) :-
 	;   true
 	).
 
-:- help(pretty(+predicateindicator), [iso(false)]).
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
+
+:- help(current_op(?integer,?atom,?atom), [iso(true)]).
 
 current_op(A, B, C) :- var(A), var(B), var(C),
 	!,
@@ -583,8 +571,6 @@ current_op(A, _, _) :- nonvar(A),
 current_op(A, B, C) :-
 	( '$ops_dirty' -> (retractall('$op'(_,_,_)),'$load_ops') ; true ),
 	'$op'(C, B, A).
-
-:- help(current_op(?integer,?atom,?atom), [iso(true)]).
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -615,6 +601,8 @@ dump_attvars(Any) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 
+:- help(sre_match_all_in_file(+pattern,+filename,-list), [iso(false)]).
+
 sre_match_all_in_file(Pat, Filename, L) :-
 	setup_call_cleanup(
 		open(Filename, read, S, [mmap(Cs)]),
@@ -622,7 +610,7 @@ sre_match_all_in_file(Pat, Filename, L) :-
 		close(S)
 	).
 
-:- help(sre_match_all_in_file(+pattern,+filename,-list), [iso(false)]).
+:- help(sre_match_all(+pattern,+text,-list), [iso(false)]).
 
 sre_match_all(Pat, Text, L) :-
 	sre_compile(Pat, Reg),
@@ -637,7 +625,7 @@ sre_match_all_(Reg, TextIn, L0, L) :-
 	;	L = L0
 	).
 
-:- help(sre_match_all(+pattern,+text,-list), [iso(false)]).
+:- help(sre_match_all_pos_in_file(+pattern,+filename,-list), [iso(false)]).
 
 sre_match_all_pos_in_file(Pat, Filename, L) :-
 	setup_call_cleanup(
@@ -646,7 +634,7 @@ sre_match_all_pos_in_file(Pat, Filename, L) :-
 		close(S)
 	).
 
-:- help(sre_match_all_pos_in_file(+pattern,+filename,-list), [iso(false)]).
+:- help(sre_match_all_pos(+pattern,+subst,-list), [iso(false)]).
 
 sre_match_all_pos(Pat, Text, L) :-
 	sre_compile(Pat, Reg),
@@ -666,7 +654,7 @@ sre_match_all_pos_(Reg, TextIn, Offset, L0, L) :-
 	;	L = L0
 	).
 
-:- help(sre_match_all_pos(+pattern,+subst,-list), [iso(false)]).
+:- help(sre_subst_all_in_file(+pattern,+filename,+subst,-list), [iso(false)]).
 
 sre_subst_all_in_file(Pat, Filename, Subst, L) :-
 	setup_call_cleanup(
@@ -675,7 +663,7 @@ sre_subst_all_in_file(Pat, Filename, Subst, L) :-
 		close(S)
 	).
 
-:- help(sre_subst_all_in_file(+pattern,+filename,+subst,-list), [iso(false)]).
+:- help(sre_subst_all(+pattern,+text,+subst,-text), [iso(false)]).
 
 sre_subst_all(Pat, Text, Subst, L) :-
 	sre_compile(Pat, Reg),
@@ -691,14 +679,14 @@ sre_subst_all_(Reg, TextIn, Subst, L0, L) :-
 	;	L = [Prefix|L0]
 	).
 
-:- help(sre_subst_all(+pattern,+text,+subst,-text), [iso(false)]).
-
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 /********************************************************/
 /* Float Approximation                                  */
 /********************************************************/
+
+:- help(rationalize(+number,-rational), [iso(false)]).
 
 /**
  * See also:
@@ -756,4 +744,3 @@ scalb(M, E, R) :-
 logb(M, E) :-
    E is floor(log(M)/log(2)).
 
-:- help(rationalize(+number,-rational), [iso(false)]).
