@@ -525,6 +525,11 @@ static bool dump_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 		l_ctx = running ? q->latest_ctx : 0;
 	}
 
+	if (true) {
+		SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[q->dump_var_num]));
+		return true;
+	}
+
 	//printf("*** no dump %u ctx=%u\n", c->var_num, c_ctx);
 	return false;
 }
@@ -1284,7 +1289,8 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 		if (q->is_dump_vars && has_visited(visited, rhs, rhs_ctx)) {
 			if (q->is_dump_vars) {
-				SB_sprintf(q->sb, "%s", !is_ref(save_rhs) ? C_STR(q, save_rhs) : "_");
+				if (!dump_variable(q, save_rhs, rhs_ctx, 1))
+					print_variable(q, save_rhs, rhs_ctx, 1);
 			} else
 				print_variable(q, save_rhs, rhs_ctx, 1);
 
