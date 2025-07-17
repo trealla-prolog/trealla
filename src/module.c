@@ -317,6 +317,20 @@ predicate *search_predicate(module *m, cell *c, bool *prebuilt)
 		return pr;
 	}
 
+	for (unsigned i = 0; i < m->idx_used; i++) {
+		module *tmp_m = m->used[i];
+
+		// Only search modules if CLPZ... ???
+
+		if (strcmp(tmp_m->name, "clpz"))
+			continue;
+
+		pr = find_predicate(tmp_m, c);
+
+		if (pr)
+			return pr;
+	}
+
 	if (m->pl->user_m) {
 		pr = find_predicate(m->pl->user_m, c);
 
