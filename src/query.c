@@ -769,6 +769,7 @@ static void commit_frame(query *q)
 	}
 
 	q->st.instr = cl->alt ? cl->alt : get_body(cl->cells);
+	if (!q->st.instr) q->st.instr = cl->cells + (cl->cidx-1);
 	q->st.iter = NULL;
 }
 
