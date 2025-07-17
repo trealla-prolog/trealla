@@ -723,10 +723,8 @@ bool bif_sys_match_1(query *q)
 	q->st.instr = p1;
 	q->noskip = true;
 
-	if (!match_head(q)) {
-		q->retry = QUERY_RETRY;
+	if (!match_head(q))
 		return false;
-	}
 
 	return true;
 }
