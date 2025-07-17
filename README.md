@@ -576,8 +576,7 @@ parsing and printing mechanisms.
 Definite Clause Grammars
 ========================
 
-Uses Ulrich Neumerkel's standard reference library. DCG rules are
-translated automatically as this library is auto-included.
+Uses Ulrich Neumerkel's standard reference library.
 
 	:- use_module(library(dcgs)).
 

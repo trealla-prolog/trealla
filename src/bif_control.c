@@ -722,7 +722,13 @@ bool bif_sys_match_1(query *q)
 	GET_FIRST_ARG(p1,callable);
 	q->st.instr = p1;
 	q->noskip = true;
-	return match_head(q);
+
+	if (!match_head(q)) {
+		q->retry = QUERY_RETRY;
+		return false;
+	}
+
+	return true;
 }
 
 static cell *parse_to_heap(query *q, const char *src)

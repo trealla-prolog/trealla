@@ -810,7 +810,6 @@ prolog *pl_create()
 	for (library *lib = g_libs; lib->name; lib++) {
 		if (!strcmp(lib->name, "builtins")
 			|| !strcmp(lib->name, "iso_ext")		// Common
-			|| !strcmp(lib->name, "dcgs")			// Common
 			|| !strcmp(lib->name, "dif")			// ???
 			) {
 			size_t len = *lib->len;

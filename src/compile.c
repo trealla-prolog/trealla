@@ -262,11 +262,9 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 	}
 
 #if 0
-	if (!is_builtin(*src) && !is_var(c)) {
-		cell *save_dst = *dst;
-		make_instr((*dst)++, g_sys_match_s, bif_sys_match_1, 1, 0);
+	if (!is_builtin(*src)) {
+		make_instr((*dst)++, g_sys_match_s, bif_sys_match_1, 1, (*src)->num_cells);
 		copy_term(dst, src);
-		save_dst->num_cells = *dst - save_dst;
 		return;
 	}
 #endif
