@@ -629,7 +629,10 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		if (running) head_ctx = q->latest_ctx;
 		int parens = 0;
 
-		if (has_visited(visited, head, head_ctx)) {
+		if (q->do_dump_vars && is_var(save_head) && is_cyclic_term(q, head, c_ctx)) {
+			print_variable(q, save_head, c_ctx, 0);
+			q->last_thing = WAS_OTHER;
+		} else if (has_visited(visited, head, head_ctx)) {
 			if ((q->portray_vars || q->do_dump_vars) && !THREE_DOTS) {
 				//SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[q->dump_var_num]));
 				SB_sprintf(q->sb, "%s", C_STR(q, save_head));
@@ -667,7 +670,13 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		if (running) tail = deref(q, tail, tail_ctx);
 		if (running) tail_ctx = q->latest_ctx;
 
-		if (has_visited(visited, tail, tail_ctx)
+		if (q->do_dump_vars && is_var(save_tail) && is_cyclic_term(q, tail, c_ctx)) {
+			SB_sprintf(q->sb, "%s", "|");
+			print_variable(q, save_tail, c_ctx, 0);
+			SB_sprintf(q->sb, "%s", "]");
+			q->last_thing = WAS_OTHER;
+			break;
+		} else if (has_visited(visited, tail, tail_ctx)
 			|| ((tail == save_c) && (tail_ctx == save_c_ctx))
 			//|| (q->max_depth && (print_depth >= q->max_depth))
 			) {
@@ -1112,11 +1121,17 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 				if (running) tmp = deref(q, tmp, tmp_ctx);
 				if (running) tmp_ctx = q->latest_ctx;
 
-				if (q->is_dump_vars && has_visited(visited, tmp, tmp_ctx)) {
+				if (q->do_dump_vars && is_var(c) && is_cyclic_term(q, tmp, c_ctx)) {
+					print_variable(q, c, c_ctx, 0);
+					if (arity) {SB_sprintf(q->sb, "%s", ","); }
+					q->last_thing = WAS_OTHER;
+					continue;
+				} else if (q->is_dump_vars && has_visited(visited, tmp, tmp_ctx)) {
 					tmp = c;
 					tmp_ctx = c_ctx;
 					SB_sprintf(q->sb, "%s", !is_ref(tmp) ? "..." : "_");
 					if (arity) {SB_sprintf(q->sb, "%s", ","); }
+					q->last_thing = WAS_OTHER;
 					continue;
 				}
 
@@ -1188,7 +1203,11 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		if (iswalpha(ch)) space = true;
 		if (lhs_pri > my_priority) { parens = true; space = false; }
 
-		if (!is_var(lhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
+		if (q->do_dump_vars && is_var(save_lhs) && is_cyclic_term(q, lhs, c_ctx)) {
+			print_variable(q, save_lhs, lhs_ctx, 0);
+			q->last_thing = WAS_OTHER;
+			return true;
+		} else if (!is_var(lhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
 			if (q->last_thing != WAS_SPACE) SB_sprintf(q->sb, "%s", " ");
 			SB_sprintf(q->sb, "%s", "...");
 			q->last_thing = WAS_SYMBOL;
@@ -1290,7 +1309,11 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		else
 			q->last_thing = WAS_OTHER;
 
-		if (q->is_dump_vars && has_visited(visited, rhs, rhs_ctx)) {
+		if (q->do_dump_vars && is_var(save_rhs) && is_cyclic_term(q, rhs, c_ctx)) {
+			print_variable(q, save_rhs, rhs_ctx, 0);
+			q->last_thing = WAS_OTHER;
+			return true;
+		} else if (q->is_dump_vars && has_visited(visited, rhs, rhs_ctx)) {
 			if (q->is_dump_vars) {
 				if (!dump_variable(q, save_rhs, rhs_ctx, 1))
 					print_variable(q, save_rhs, rhs_ctx, 1);
@@ -1364,7 +1387,10 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		q->last_thing = WAS_SPACE;
 	}
 
-	if (!is_var(lhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
+	if (q->do_dump_vars && is_var(save_lhs) && is_cyclic_term(q, lhs, c_ctx)) {
+		dump_variable(q, save_lhs, c_ctx, 0);
+		q->last_thing = WAS_OTHER;
+	} else if (!is_var(lhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
 		if (q->last_thing != WAS_SPACE) SB_sprintf(q->sb, "%s", " ");
 		SB_sprintf(q->sb, "%s", "...");
 		q->last_thing = WAS_SYMBOL;
@@ -1482,7 +1508,10 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		q->last_thing = WAS_SPACE;
 	}
 
-	if (!is_var(rhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
+	if (q->do_dump_vars && is_var(save_rhs) && is_cyclic_term(q, rhs, c_ctx)) {
+		print_variable(q, save_rhs, rhs_ctx, 0);
+		q->last_thing = WAS_OTHER;
+	} else if (!is_var(rhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
 		if (q->last_thing != WAS_SPACE) SB_sprintf(q->sb, "%s", " ");
 		SB_sprintf(q->sb, "%s", "...");
 		q->last_thing = WAS_SYMBOL;
