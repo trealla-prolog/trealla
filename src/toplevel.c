@@ -389,7 +389,7 @@ void dump_vars(query *q, bool partial)
 		if (!strcmp(GET_POOL(q, p->vartab.off[i]), "_"))
 			continue;
 
-		if (GET_POOL(q, p->vartab.off[i])[0] == '_')
+		if (q->pl->quiet && GET_POOL(q, p->vartab.off[i])[0] == '_')
 			continue;
 
 		slot *e = GET_SLOT(f, i);
