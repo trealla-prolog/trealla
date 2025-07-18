@@ -488,6 +488,9 @@ static void print_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 
 static bool dump_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 {
+	if (!q->variable_names)
+		return false;
+
 	cell *l = q->variable_names;
 	pl_idx l_ctx = q->variable_names_ctx;
 	LIST_HANDLER(l);
