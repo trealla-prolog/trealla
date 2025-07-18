@@ -685,8 +685,11 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			pl_idx v_ctx = c_ctx;
 
 			if ((q->portray_vars || q->do_dump_vars) && (orig_c_ctx == 0) && q->is_dump_vars && !THREE_DOTS) {
-				//print_variable(q, save_tail, save_tail_ctx, running);
-				SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[v.var_num]));
+				if (q->do_dump_vars) {
+					if (!dump_variable(q, save_tail, tail_ctx, running))
+						print_variable(q, save_tail, save_tail_ctx, running);
+				} else
+					SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[v.var_num]));
 			} else {
 				SB_sprintf(q->sb, "%s", "...");
 			}
