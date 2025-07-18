@@ -12,8 +12,6 @@
 #include "parser.h"
 #include "query.h"
 
-#define THREE_DOTS 0
-
 typedef struct visit_ visit;
 
 struct visit_ {
@@ -633,7 +631,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			print_variable(q, save_head, c_ctx, 0);
 			q->last_thing = WAS_OTHER;
 		} else if (has_visited(visited, head, head_ctx)) {
-			if ((q->portray_vars || q->do_dump_vars) && !THREE_DOTS) {
+			if (q->portray_vars || q->do_dump_vars) {
 				//SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[q->dump_var_num]));
 				SB_sprintf(q->sb, "%s", C_STR(q, save_head));
 			} else {
@@ -693,7 +691,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			cell v = *(c+1);
 			pl_idx v_ctx = c_ctx;
 
-			if ((q->portray_vars || q->do_dump_vars) && (orig_c_ctx == 0) && q->is_dump_vars && !THREE_DOTS) {
+			if ((q->portray_vars || q->do_dump_vars) && (orig_c_ctx == 0) && q->is_dump_vars) {
 				if (q->do_dump_vars) {
 					if (!dump_variable(q, save_tail, tail_ctx, running))
 						print_variable(q, save_tail, save_tail_ctx, running);
