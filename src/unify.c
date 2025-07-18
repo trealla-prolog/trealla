@@ -265,7 +265,7 @@ static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx 
 		return compare_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 	}
 
-	if (is_iso_list(p1) && is_iso_list(p2) && 0)
+	if (is_iso_list(p1) && is_iso_list(p2))
 		return compare_lists(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 
 	return compare_structs(q, p1, p1_ctx, p2, p2_ctx, depth+1);
