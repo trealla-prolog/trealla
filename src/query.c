@@ -432,7 +432,7 @@ int create_vars(query *q, unsigned cnt)
 
 	unsigned var_num = f->actual_slots;
 
-	if ((f->base + f->initial_slots) >= q->st.sp) {
+	if (!f->op && ((f->base + f->initial_slots) >= q->st.sp)) {
 		f->initial_slots += cnt;
 	} else if (!f->op) {
 		f->op = q->st.sp;
