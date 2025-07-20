@@ -323,7 +323,7 @@ typedef struct clause_ clause;
 typedef struct trail_ trail;
 typedef struct frame_ frame;
 typedef struct parser_ parser;
-typedef struct page_ page;
+typedef struct heap_page_ heap_page;
 typedef struct stream_ stream;
 typedef struct slot_ slot;
 typedef struct choice_ choice;
@@ -645,8 +645,8 @@ struct thread_ {
 	bool is_mutex_only:1;
 };
 
-struct page_ {
-	page *next;
+struct heap_page_ {
+	heap_page *next;
 	cell *cells;
 	pl_idx idx, page_size;
 	unsigned num;
@@ -682,7 +682,7 @@ struct query_ {
 	trail *trails;
 	cell *tmp_heap, *last_arg, *variable_names, *ball, *cont, *suspect;
 	cell *queue[MAX_QUEUES], *tmpq[MAX_QUEUES];
-	page *heap_pages;
+	heap_page *heap_pages;
 	slot *save_e;
 	query *tasks;
 	skiplist *vars;
