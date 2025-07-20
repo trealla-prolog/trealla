@@ -430,6 +430,11 @@ int create_vars(query *q, unsigned cnt)
 		return -1;
 	}
 
+	if (!check_slot(q, cnt)) {
+		q->error = true;
+		return -1;
+	}
+
 	unsigned var_num = f->actual_slots;
 
 	if (!f->op && ((f->base + f->initial_slots) >= q->st.sp)) {
@@ -449,11 +454,6 @@ int create_vars(query *q, unsigned cnt)
 
 		memmove(q->slots+f->op, q->slots+save_overflow, sizeof(slot)*cnt2);
 		q->st.sp += cnt2;
-	}
-
-	if (!check_slot(q, cnt)) {
-		q->error = true;
-		return -1;
 	}
 
 	for (unsigned i = 0; i < cnt; i++) {
