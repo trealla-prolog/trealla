@@ -62,6 +62,11 @@ static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysor
 		cell *h = LIST_HEAD(p1);
 		h = deref(q, h, p1_ctx);
 		pl_idx h_ctx = q->latest_ctx;
+		base[idx].c = h;
+		base[idx].c_ctx = h_ctx;
+		base[idx].q = q;
+		base[idx].ascending = true;
+		base[idx].arg = keysort ? 1 : 0;
 
 		if (keysort) {
 			if (!is_compound(h) || strcmp(C_STR(q, h), "-")) {
@@ -71,16 +76,10 @@ static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysor
 			}
 		}
 
-		base[idx].c = h;
-		base[idx].c_ctx = h_ctx;
-		base[idx].q = q;
-		base[idx].ascending = true;
-		base[idx].arg = keysort ? 1 : 0;
-		idx++;
-
 		p1 = LIST_TAIL(p1);
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
+		idx++;
 	}
 
 #if (defined __APPLE__ || defined __MACH__ || defined __DARWIN__ \
@@ -96,8 +95,8 @@ static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysor
 				continue;
 		}
 
-		cell *c = deref(q, base[i].c, base[i].c_ctx);
-		pl_idx c_ctx = q->latest_ctx;
+		cell *c = base[i].c;
+		pl_idx c_ctx = base[i].c_ctx;
 		cell tmp;
 
 		if (is_compound(c)) {
@@ -261,10 +260,10 @@ static cell *nodesort4(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool ascen
 		base[idx].q = q;
 		base[idx].ascending = ascending;
 		base[idx].arg = arg;
-		idx++;
 		p1 = LIST_TAIL(p1);
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
+		idx++;
 	}
 
 #if defined __FreeBSD__ || __DragonFly__
@@ -279,8 +278,8 @@ static cell *nodesort4(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool ascen
 				continue;
 		}
 
-		cell *c = deref(q, base[i].c, base[i].c_ctx);
-		pl_idx c_ctx = q->latest_ctx;
+		cell *c = base[i].c;
+		pl_idx c_ctx = base[i].c_ctx;
 		cell tmp;
 
 		if (is_var(c)) {
