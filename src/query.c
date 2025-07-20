@@ -594,7 +594,7 @@ static void trim_locals(query *q)
 	}
 }
 
-static void trim_frame(query *q, const frame *f)
+static void trim_slots(query *q, const frame *f)
 {
 	for (unsigned i = 0; i < f->actual_slots; i++) {
 		slot *e = GET_SLOT(f, i);
@@ -1017,7 +1017,7 @@ static bool resume_frame(query *q)
 		q->st.heap_num = f->heap_num;
 		trim_heap(q);
 		trim_locals(q);
-		trim_frame(q, f);
+		trim_slots(q, f);
 	}
 
 	q->st.instr = f->instr;
