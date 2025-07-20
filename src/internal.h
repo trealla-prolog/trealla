@@ -517,6 +517,7 @@ struct slot_ {
 };
 
 // Overfow is how we expand a frame's environment (slots).
+// Can form a chain of overflow records in pathological cases.
 
 struct overflow_ {
 	overflow *next;
