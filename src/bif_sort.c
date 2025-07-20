@@ -56,7 +56,7 @@ static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysor
 	basepair *base = malloc(sizeof(basepair)*cnt);
 	check_error(base);
 	LIST_HANDLER(p1);
-	size_t idx = 0;
+	size_t idx = 0, vars = 0;
 
 	while (is_list(p1)) {
 		cell *h = LIST_HEAD(p1);
@@ -67,6 +67,9 @@ static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysor
 		base[idx].q = q;
 		base[idx].ascending = true;
 		base[idx].arg = keysort ? 1 : 0;
+
+		if (is_compound(h))
+			vars++;
 
 		if (keysort) {
 			if (!is_compound(h) || strcmp(C_STR(q, h), "-")) {
@@ -89,6 +92,11 @@ static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysor
 	qsort(base, cnt, sizeof(basepair), (void*)nodecmp);
 #endif
 
+	int vnbr = create_vars(q, vars);
+
+	if (vnbr < 0)
+		return NULL;
+
 	for (size_t i = 0; i < cnt; i++) {
 		if (i > 0) {
 			if (dedup && !nodecmp(&base[i], &base[i-1]))
@@ -100,10 +108,7 @@ static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysor
 		cell tmp;
 
 		if (is_compound(c)) {
-			int vnbr = create_vars(q, 1);
-			if (vnbr < 0)
-				return NULL;
-			make_ref(&tmp, vnbr, q->st.curr_frame);
+			make_ref(&tmp, vnbr++, q->st.curr_frame);
 			unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 			c = &tmp;
 		}
@@ -250,7 +255,7 @@ static cell *nodesort4(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool ascen
 	basepair *base = malloc(sizeof(basepair)*cnt);
 	check_error(base);
 	LIST_HANDLER(p1);
-	size_t idx = 0;
+	size_t idx = 0, vars = 0;
 
 	while (is_list(p1)) {
 		cell *h = deref(q, LIST_HEAD(p1), p1_ctx);
@@ -260,6 +265,10 @@ static cell *nodesort4(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool ascen
 		base[idx].q = q;
 		base[idx].ascending = ascending;
 		base[idx].arg = arg;
+
+		if (is_compound(h))
+			vars++;
+
 		p1 = LIST_TAIL(p1);
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
@@ -272,6 +281,11 @@ static cell *nodesort4(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool ascen
 	qsort(base, cnt, sizeof(basepair), (void*)nodecmp_);
 #endif
 
+	int vnbr = create_vars(q, vars);
+
+	if (vnbr < 0)
+		return NULL;
+
 	for (size_t i = 0; i < cnt; i++) {
 		if (i > 0) {
 			if (dedup && !nodecmp(&base[i], &base[i-1]))
@@ -283,10 +297,7 @@ static cell *nodesort4(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool ascen
 		cell tmp;
 
 		if (is_var(c)) {
-			int vnbr = create_vars(q, 1);
-			if (vnbr < 0)
-				return NULL;
-			make_ref(&tmp, vnbr, q->st.curr_frame);
+			make_ref(&tmp, vnbr++, q->st.curr_frame);
 			unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 			c = &tmp;
 		}
