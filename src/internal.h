@@ -528,7 +528,7 @@ struct overflow_ {
 // Where *initial_slots* is the number allocated
 // Where *actual_slots* is the number allocated+created
 // Where *base* is the offset to first slot in use
-// Where *op* is where new slots are created (actual_slots > initial_slots)
+// Where *op* is the offset to first overflow slot in use
 // Where *chgen* is the choice generation that created this frame
 
 struct frame_ {
