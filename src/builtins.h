@@ -145,7 +145,7 @@ inline static slot *get_slot(const query *q, const frame *f, unsigned var_num)
 	if (var_num < f->initial_slots)
 		return q->slots + f->base + var_num;
 	else
-		return q->slots + f->overflow + (var_num - f->initial_slots);
+		return q->slots + f->op + (var_num - f->initial_slots);
 }
 
 inline static cell *deref(query *q, cell *c, pl_idx c_ctx)

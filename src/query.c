@@ -434,12 +434,12 @@ int create_vars(query *q, unsigned cnt)
 
 	if ((f->base + f->initial_slots) >= q->st.sp) {
 		f->initial_slots += cnt;
-	} else if (!f->overflow) {
-		f->overflow = q->st.sp;
-	} else if ((f->overflow + (f->actual_slots - f->initial_slots)) == q->st.sp) {
+	} else if (!f->op) {
+		f->op = q->st.sp;
+	} else if ((f->op + (f->actual_slots - f->initial_slots)) == q->st.sp) {
 	} else {
-		pl_idx save_overflow = f->overflow;
-		f->overflow = q->st.sp;
+		pl_idx save_overflow = f->op;
+		f->op = q->st.sp;
 		pl_idx cnt2 = f->actual_slots - f->initial_slots;
 
 		if (!check_slot(q, cnt2)) {
@@ -447,7 +447,7 @@ int create_vars(query *q, unsigned cnt)
 			return -1;
 		}
 
-		memmove(q->slots+f->overflow, q->slots+save_overflow, sizeof(slot)*cnt2);
+		memmove(q->slots+f->op, q->slots+save_overflow, sizeof(slot)*cnt2);
 		q->st.sp += cnt2;
 	}
 
@@ -594,7 +594,7 @@ static void trim_locals(query *q)
 	}
 }
 
-static void trim_slots(query *q, const frame *f)
+static void trim_frame(query *q, const frame *f)
 {
 	for (unsigned i = 0; i < f->actual_slots; i++) {
 		slot *e = GET_SLOT(f, i);
@@ -652,7 +652,7 @@ static void push_frame(query *q)
 		f->instr = q->st.instr;
 	}
 
-	f->overflow = 0;
+	f->op = 0;
 	f->no_recov = q->no_recov;
 	f->chgen = ++q->chgen;
 	f->hp = q->st.hp;
@@ -793,7 +793,7 @@ void stash_frame(query *q, const clause *cl, bool last_match)
 		f->prev = q->st.curr_frame;
 		f->instr = NULL;
 		f->chgen = chgen;
-		f->overflow = 0;
+		f->op = 0;
 		q->st.sp += num_vars;
 		q->st.fp++;
 	}
@@ -815,7 +815,7 @@ int retry_choice(query *q)
 		f->initial_slots = ch->initial_slots;
 		f->actual_slots = ch->actual_slots;
 		f->no_recov = ch->no_recov;
-		f->overflow = ch->overflow;
+		f->op = ch->op;
 		f->base = ch->base;
 
 		if (ch->reset)
@@ -864,7 +864,7 @@ bool push_choice(query *q)
 	ch->initial_slots = f->initial_slots;
 	ch->actual_slots = f->actual_slots;
 	ch->no_recov = f->no_recov;
-	ch->overflow = f->overflow;
+	ch->op = f->op;
 	ch->base = f->base;
 
 	ch->catchme_retry =
@@ -1017,7 +1017,7 @@ static bool resume_frame(query *q)
 		q->st.heap_num = f->heap_num;
 		trim_heap(q);
 		trim_locals(q);
-		trim_slots(q, f);
+		trim_frame(q, f);
 	}
 
 	q->st.instr = f->instr;

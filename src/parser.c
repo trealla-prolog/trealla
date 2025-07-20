@@ -2807,7 +2807,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 		if ((int)v && (errno == ERANGE)) {
 			if (!p->do_read_term)
-				fprintf(stderr, "Error: syntax error, float overflow %g, %s:%d\n", v, get_loaded(p->m, p->m->filename), p->line_num);
+				fprintf(stderr, "Error: syntax error, float op %g, %s:%d\n", v, get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "float_overflow";
 			p->error = true;
@@ -2827,7 +2827,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 		if ((int)v && (errno == ERANGE)) {
 			if (!p->do_read_term)
-				fprintf(stderr, "Error: syntax error, float overflow %g, %s:%d\n", v, get_loaded(p->m, p->m->filename), p->line_num);
+				fprintf(stderr, "Error: syntax error, float op %g, %s:%d\n", v, get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "float_overflow";
 			p->error = true;

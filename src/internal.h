@@ -330,6 +330,7 @@ typedef struct choice_ choice;
 typedef struct run_state_ run_state;
 typedef struct prolog_flags_ prolog_flags;
 typedef struct builtins_ builtins;
+typedef struct overflow_ overflow;
 
 // Using a fixed-size cell allows having arrays of cells, which is
 // basically what a Term is. A compound is a variable length array of
@@ -515,18 +516,23 @@ struct slot_ {
 	uint32_t vgen, vgen2;
 };
 
+struct overflow_ {
+	overflow *next;
+	pl_idx op, num_slots;
+};
+
 // Where *prev* is the previous frame
 // Where *initial_slots* is the number allocated
 // Where *actual_slots* is the number allocated+created
 // Where *base* is the offset to first slot in use
-// Where *overflow* is where new slots are created (actual_slots > initial_slots)
+// Where *op* is where new slots are created (actual_slots > initial_slots)
 // Where *chgen* is the choice generation that created this frame
 
 struct frame_ {
 	cell *instr;
 	module *m;
 	uint64_t dbgen, chgen;
-	pl_idx prev, base, overflow, hp, heap_num;
+	pl_idx prev, base, op, hp, heap_num;
 	unsigned initial_slots, actual_slots;
 	bool no_recov:1;
 };
@@ -558,7 +564,7 @@ struct run_state_ {
 struct choice_ {
 	run_state st;
 	uint64_t gen, chgen, dbgen;
-	pl_idx base, overflow, initial_slots, actual_slots, skip;
+	pl_idx base, op, initial_slots, actual_slots, skip;
 	bool catchme_retry:1;
 	bool catchme_exception:1;
 	bool barrier:1;
