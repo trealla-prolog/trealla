@@ -330,7 +330,6 @@ typedef struct choice_ choice;
 typedef struct run_state_ run_state;
 typedef struct prolog_flags_ prolog_flags;
 typedef struct builtins_ builtins;
-typedef struct overflow_ overflow;
 
 // Using a fixed-size cell allows having arrays of cells, which is
 // basically what a Term is. A compound is a variable length array of
