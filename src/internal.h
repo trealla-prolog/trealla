@@ -516,14 +516,6 @@ struct slot_ {
 	uint32_t vgen, vgen2;
 };
 
-// Overfow is how we expand a frame's environment (slots).
-// Can form a chain of overflow records in pathological cases.
-
-struct overflow_ {
-	overflow *next;
-	pl_idx op, num_slots;
-};
-
 // Where *prev* is the previous frame
 // Where *initial_slots* is the number allocated
 // Where *actual_slots* is the number allocated+created
@@ -534,7 +526,6 @@ struct overflow_ {
 struct frame_ {
 	cell *instr;
 	module *m;
-	overflow *over;						// TO-DO: next!
 	uint64_t dbgen, chgen;
 	pl_idx prev, base, op, hp, heap_num;
 	unsigned initial_slots, actual_slots;
