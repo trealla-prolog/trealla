@@ -630,7 +630,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		if (running) head_ctx = q->latest_ctx;
 		int parens = 0;
 
-		if (q->do_dump_vars && is_var(save_head) && is_cyclic_term(q, head, c_ctx)) {
+		if (q->do_dump_vars && is_var(save_head) && 0 && is_cyclic_term(q, head, c_ctx)) {
 			print_variable(q, save_head, c_ctx, 0);
 			q->last_thing = WAS_OTHER;
 		} else if (has_visited(visited, head, head_ctx)) {
@@ -671,7 +671,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		if (running) tail = deref(q, tail, tail_ctx);
 		if (running) tail_ctx = q->latest_ctx;
 
-		if (q->do_dump_vars && is_var(save_tail) && is_cyclic_term(q, tail, c_ctx)) {
+		if (q->do_dump_vars && is_var(save_tail) && 0 && is_cyclic_term(q, tail, c_ctx)) {
 			SB_sprintf(q->sb, "%s", "|");
 			print_variable(q, save_tail, c_ctx, 0);
 			SB_sprintf(q->sb, "%s", "]");
@@ -1122,7 +1122,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 				if (running) tmp = deref(q, tmp, tmp_ctx);
 				if (running) tmp_ctx = q->latest_ctx;
 
-				if (q->do_dump_vars && is_var(c) && is_cyclic_term(q, tmp, c_ctx)) {
+				if (q->do_dump_vars && is_var(c) && 0 && is_cyclic_term(q, tmp, c_ctx)) {
 					print_variable(q, c, c_ctx, 0);
 					if (arity) {SB_sprintf(q->sb, "%s", ","); }
 					q->last_thing = WAS_OTHER;
@@ -1204,7 +1204,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		if (iswalpha(ch)) space = true;
 		if (lhs_pri > my_priority) { parens = true; space = false; }
 
-		if (q->do_dump_vars && is_var(save_lhs) && is_cyclic_term(q, lhs, c_ctx)) {
+		if (q->do_dump_vars && is_var(save_lhs) && 0 && is_cyclic_term(q, lhs, c_ctx)) {
 			print_variable(q, save_lhs, lhs_ctx, 0);
 			q->last_thing = WAS_OTHER;
 			return true;
@@ -1310,7 +1310,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		else
 			q->last_thing = WAS_OTHER;
 
-		if (q->do_dump_vars && is_var(save_rhs) && is_cyclic_term(q, rhs, c_ctx)) {
+		if (q->do_dump_vars && is_var(save_rhs) && 0 && is_cyclic_term(q, rhs, c_ctx)) {
 			print_variable(q, save_rhs, rhs_ctx, 0);
 			q->last_thing = WAS_OTHER;
 			return true;
@@ -1388,7 +1388,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		q->last_thing = WAS_SPACE;
 	}
 
-	if (q->do_dump_vars && is_var(save_lhs) && is_cyclic_term(q, lhs, c_ctx)) {
+	if (q->do_dump_vars && is_var(save_lhs) && 0 && is_cyclic_term(q, lhs, c_ctx)) {
 		dump_variable(q, save_lhs, c_ctx, 0);
 		q->last_thing = WAS_OTHER;
 	} else if (!is_var(lhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
@@ -1509,7 +1509,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		q->last_thing = WAS_SPACE;
 	}
 
-	if (q->do_dump_vars && is_var(save_rhs) && is_cyclic_term(q, rhs, c_ctx)) {
+	if (q->do_dump_vars && is_var(save_rhs) && 0 && is_cyclic_term(q, rhs, c_ctx)) {
 		print_variable(q, save_rhs, rhs_ctx, 0);
 		q->last_thing = WAS_OTHER;
 	} else if (!is_var(rhs) && q->max_depth && ((depth+1) >= q->max_depth)) {
