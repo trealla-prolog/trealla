@@ -94,8 +94,10 @@ static cell *nodesort(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool keysor
 
 	int vnbr = create_vars(q, vars);
 
-	if (vnbr < 0)
+	if (vnbr < 0) {
+		free(base);
 		return NULL;
+	}
 
 	for (size_t i = 0; i < cnt; i++) {
 		if (i > 0) {
@@ -283,8 +285,10 @@ static cell *nodesort4(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool ascen
 
 	int vnbr = create_vars(q, vars);
 
-	if (vnbr < 0)
+	if (vnbr < 0) {
+		free(base);
 		return NULL;
+	}
 
 	for (size_t i = 0; i < cnt; i++) {
 		if (i > 0) {
