@@ -526,7 +526,7 @@ static bool dump_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 		l_ctx = running ? q->latest_ctx : 0;
 	}
 
-	if (true) {
+	if (true && 0) {
 		SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[q->dump_var_num]));
 		return true;
 	}
