@@ -14,7 +14,7 @@ vx(X) :- -X=X.
 EOF
 
 $TPL $TMPPL <<EOF >$TMP
-vx(Y), X = 1.
+vx(Y), vx(Z), X = 1.
 halt.
 EOF
 
