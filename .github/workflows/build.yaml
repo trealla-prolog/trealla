@@ -18,10 +18,16 @@
           os:
             - ubuntu-latest
             - macos-latest
+            - freebsd-latest
       steps:
         - uses: actions/checkout@v4
           with:
             fetch-depth: 0
+        - name: Install deps (FreeBSD)
+          run: |
+            sudo pkg update
+            sudo pkg install readline xxd libffi openssl
+          if: matrix.os == 'freebsd-latest'
         - name: Install deps (Linux)
           run: |
             sudo apt-get update
