@@ -9,7 +9,7 @@ cat >$TMPPL <<EOF
 vx(X) :- -X=X.
 EOF
 
-$TPL $TMPPL <<EOF >$TMP
+$TPL $TMPPL >$TMP <<EOF
 vx(Y), vx(Z), X = 1.
 halt.
 EOF
