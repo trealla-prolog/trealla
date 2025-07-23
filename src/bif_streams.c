@@ -30,6 +30,7 @@
 #endif
 #endif
 
+#include "history.h"
 #include "module.h"
 #include "network.h"
 #include "parser.h"
@@ -6904,6 +6905,20 @@ static bool bif_bwrite_2(query *q)
 	return true;
 }
 
+static bool bif_sys_readline_2(query *q)
+{
+	GET_FIRST_ARG(p1,string);
+	GET_NEXT_ARG(p2,var);
+	int n = q->pl->current_output;
+	stream *str = &q->pl->streams[n];
+	char *s = history_readline_eol(q->pl, C_STR(q, p1), '.');
+	if (!s) return false;
+	cell tmp;
+	make_string(&tmp, s);
+	free(s);
+	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+}
+
 static bool bif_sys_put_chars_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -7500,14 +7515,13 @@ builtins g_streams_bifs[] =
 	{"alias", 2, bif_alias_2, "+blob,+atom", false, false, BLAH},
 
 	{"$stream_to_file", 2, bif_sys_stream_to_file_2, "+stream,-integer", false, false, BLAH},
-
 	{"$capture_output", 0, bif_sys_capture_output_0, NULL, false, false, BLAH},
 	{"$capture_output_to_chars", 1, bif_sys_capture_output_to_chars_1, "-string", false, false, BLAH},
 	{"$capture_output_to_atom", 1, bif_sys_capture_output_to_atom_1, "-atom", false, false, BLAH},
-
 	{"$capture_error", 0, bif_sys_capture_error_0, NULL, false, false, BLAH},
 	{"$capture_error_to_chars", 1, bif_sys_capture_error_to_chars_1, "-string", false, false, BLAH},
 	{"$capture_error_to_atom", 1, bif_sys_capture_error_to_atom_1, "-atom", false, false, BLAH},
+	{"$readline", 2, bif_sys_readline_2, "+string,-string", false, false, BLAH},
 
 	{"$gsl_vector_write", 2, bif_sys_gsl_vector_write_2, "+integer,+stream", false, false, BLAH},
 	{"$gsl_vector_alloc", 2, bif_sys_gsl_vector_alloc_2, "+stream,-integer", false, false, BLAH},
