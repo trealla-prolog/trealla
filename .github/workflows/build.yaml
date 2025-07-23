@@ -30,7 +30,7 @@
         - name: Install deps (macOS)
           run: |
             brew update
-            brew install readline vim libffi openssl make
+            brew install readline vim libffi openssl make timeout
             echo "$(brew --prefix)/opt/make/libexec/gnubin" >> $GITHUB_PATH
           if: matrix.os == 'macos-latest'
         - name: Fetch tags
