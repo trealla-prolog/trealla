@@ -24,7 +24,7 @@ do
 	esac
 
 	echo "Running $source ..."
-	$cmd "$source" >$TMP
+	timeout 30 $cmd "$source" >$TMP
 	diff -a --strip-trailing-cr "${source%.*}.expected" $TMP
 	if [ $? -eq 0 ]
 	then
