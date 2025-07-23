@@ -13,4 +13,3 @@ length(L,3).
 halt.
 EOF
 
-rm $TMPPL

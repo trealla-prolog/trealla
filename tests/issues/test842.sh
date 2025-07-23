@@ -13,5 +13,3 @@ $TPL $TMPPL >$TMP <<EOF
 vx(Y), vx(Z), X = 1.
 halt.
 EOF
-
-rm $TMPPL
