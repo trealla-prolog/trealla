@@ -1,13 +1,7 @@
 #!/bin/sh
 
-# set -e
-
-TPL=./tpl
-
 TMP=tmp.out
 TMPPL=tmp.pl
-
-trap "rm -f $TMPPL" EXIT
 
 cat >$TMPPL <<EOF
 vx(X) :- -X=X.
