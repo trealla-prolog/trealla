@@ -17,7 +17,7 @@ do
 			cmd="$TPL -q -f -g halt "
 			;;
 		*.sh)
-			cmd="env TPL=$TPL sh"
+			cmd="env TPL=$TPL bash"
 			;;
 		*)
 			continue
