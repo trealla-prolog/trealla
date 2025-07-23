@@ -336,7 +336,7 @@ int main(int ac, char *av[], char * envp[])
 		fprintf(stdout, "  -w, --watchdog\t- create watchdog\n");
 		fprintf(stdout, "  --consult\t\t- consult from STDIN\n");
 		fprintf(stdout, "  --log file\t\t- enable log file\n");
-		fprintf(stdout, "  --restore file\t\t- reload log file\n");
+		//fprintf(stdout, "  --restore file\t\t- reload log file\n");
 	}
 
 	if (version) {
