@@ -1,6 +1,9 @@
 #!/bin/sh
+
 TMP=tmp.out
 TMPPL=tmp.pl
+
+trap "rm -f $TMPPL" EXIT
 
 cat >$TMPPL <<EOF
 EOF
