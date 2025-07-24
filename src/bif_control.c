@@ -204,6 +204,24 @@ bool bif_iso_call_1(query *q)
 
 		if (!call_check(q, p1, &status, false))
 			return status;
+	} else if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
+		cell *cm = p1 + 1;
+		cm = deref(q, cm, p1_ctx);
+
+		if (!is_atom(cm) && !is_var(cm))
+			return throw_error(q, cm, p1_ctx, "type_error", "callable");
+
+		if (!is_var(cm)) {
+			module *m = find_module(q->pl, C_STR(q, cm));
+			if (m) q->st.m = m;
+		}
+
+		p1 += 2;
+		p1 = deref(q, p1, p1_ctx);
+		p1_ctx = q->latest_ctx;
+
+		if (!is_callable(p1))
+			return throw_error(q, p1, p1_ctx, "type_error", "callable");
 	}
 
 	cell *tmp = prepare_call(q, CALL_NOSKIP, p1, p1_ctx, 3);
@@ -237,6 +255,24 @@ static bool bif_iso_once_1(query *q)
 
 		if (!call_check(q, p1, &status, false))
 			return status;
+	} else if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
+		cell *cm = p1 + 1;
+		cm = deref(q, cm, p1_ctx);
+
+		if (!is_atom(cm) && !is_var(cm))
+			return throw_error(q, cm, p1_ctx, "type_error", "callable");
+
+		if (!is_var(cm)) {
+			module *m = find_module(q->pl, C_STR(q, cm));
+			if (m) q->st.m = m;
+		}
+
+		p1 += 2;
+		p1 = deref(q, p1, p1_ctx);
+		p1_ctx = q->latest_ctx;
+
+		if (!is_callable(p1))
+			return throw_error(q, p1, p1_ctx, "type_error", "callable");
 	}
 
 	cell *tmp = prepare_call(q, CALL_NOSKIP, p1, p1_ctx, 4);
@@ -267,6 +303,24 @@ static bool bif_ignore_1(query *q)
 
 		if (!call_check(q, p1, &status, false))
 			return status;
+	} else if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
+		cell *cm = p1 + 1;
+		cm = deref(q, cm, p1_ctx);
+
+		if (!is_atom(cm) && !is_var(cm))
+			return throw_error(q, cm, p1_ctx, "type_error", "callable");
+
+		if (!is_var(cm)) {
+			module *m = find_module(q->pl, C_STR(q, cm));
+			if (m) q->st.m = m;
+		}
+
+		p1 += 2;
+		p1 = deref(q, p1, p1_ctx);
+		p1_ctx = q->latest_ctx;
+
+		if (!is_callable(p1))
+			return throw_error(q, p1, p1_ctx, "type_error", "callable");
 	}
 
 	cell *tmp = prepare_call(q, CALL_NOSKIP, p1, q->st.curr_frame, 4);

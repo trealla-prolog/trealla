@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <signal.h>
 #include <string.h>
 #include <time.h>
 
@@ -1794,87 +1793,6 @@ bool start(query *q)
 		dump_vars(q, false);
 
 	return true;
-}
-
-#ifdef _WIN32
-
-#define MS_PER_SEC      1000ULL     // MS = milliseconds
-#define US_PER_MS       1000ULL     // US = microseconds
-#define HNS_PER_US      10ULL       // HNS = hundred-nanoseconds (e.g., 1 hns = 100 ns)
-#define NS_PER_US       1000ULL
-
-#define HNS_PER_SEC     (MS_PER_SEC * US_PER_MS * HNS_PER_US)
-#define NS_PER_HNS      (100ULL)    // NS = nanoseconds
-#define NS_PER_SEC      (MS_PER_SEC * US_PER_MS * NS_PER_US)
-
-static int clock_gettime_monotonic(struct timespec *tv)
-{
-	static LARGE_INTEGER ticksPerSec = {0};
-	LARGE_INTEGER ticks;
-	double seconds;
-
-	if (!ticksPerSec.QuadPart) {
-		QueryPerformanceFrequency(&ticksPerSec);
-		if (!ticksPerSec.QuadPart) {
-			errno = ENOTSUP;
-			return -1;
-		}
-	}
-
-	QueryPerformanceCounter(&ticks);
-	seconds = (double) ticks.QuadPart / (double) ticksPerSec.QuadPart;
-	tv->tv_sec = (time_t)seconds;
-	tv->tv_nsec = (long)((ULONGLONG)(seconds * NS_PER_SEC) % NS_PER_SEC);
-	return 0;
-}
-
-static int clock_gettime_realtime(struct timespec *tv)
-{
-	FILETIME ft;
-	ULARGE_INTEGER hnsTime;
-	GetSystemTimeAsFileTime(&ft);
-	hnsTime.LowPart = ft.dwLowDateTime;
-	hnsTime.HighPart = ft.dwHighDateTime;
-
-	// To get POSIX Epoch as baseline, subtract the number of hns intervals from Jan 1, 1601 to Jan 1, 1970.
-	hnsTime.QuadPart -= (11644473600ULL * HNS_PER_SEC);
-
-	// modulus by hns intervals per second first, then convert to ns, as not to lose resolution
-	tv->tv_nsec = (long) ((hnsTime.QuadPart % HNS_PER_SEC) * NS_PER_HNS);
-	tv->tv_sec = (long) (hnsTime.QuadPart / HNS_PER_SEC);
-	return 0;
-}
-
-static int my_clock_gettime(clockid_t type, struct timespec *tp)
-{
-	if (type == CLOCK_MONOTONIC)
-		return clock_gettime_monotonic(tp);
-	else if (type == CLOCK_REALTIME)
-		return clock_gettime_realtime(tp);
-
-    errno = ENOTSUP;
-    return -1;
-}
-#else
-#define my_clock_gettime clock_gettime
-#endif
-
-uint64_t cpu_time_in_usec(void)
-{
-	struct timespec now = {0};
-#ifdef CLOCK_PROCESS_CPUTIME_ID
-	my_clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &now);
-#else
-	my_clock_gettime(CLOCK_MONOTONIC, &now);
-#endif
-	return (uint64_t)(now.tv_sec * 1000 * 1000) + (now.tv_nsec / 1000);
-}
-
-uint64_t get_time_in_usec(void)
-{
-	struct timespec now = {0};
-	my_clock_gettime(CLOCK_REALTIME, &now);
-	return (uint64_t)(now.tv_sec * 1000 * 1000) + (now.tv_nsec / 1000);
 }
 
 bool execute(query *q, cell *cells, unsigned num_vars)
