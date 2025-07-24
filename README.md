@@ -185,13 +185,18 @@ or
 
 to get the *xxd* utility.
 
+On macOS:
+
+	brew install libffi openssl make coreutils bash
+
+	brew install vim readline # if necessary
+
 For unbounded arithmetic Trealla uses a modified fork of the
 [imath](https://github.com/infradig/imath)
 library, which is partially included in the source. Note, unbounded
 integers (aka. bigints) are for arithmetic purposes only and will give a
 type_error when used in places not expected. The *imath* library has a bug
-whereby printing large numbers becomes exponentially slower (100K+ digits)
-and will require a switch to *libtomath* at some point to remedy.
+whereby printing large numbers becomes exponentially slower (100K+ digits).
 
 
 WebAssembly (WASI)
