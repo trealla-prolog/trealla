@@ -744,7 +744,7 @@ HTTP 1.1
 
 ```console
 	?- http_get("https://github.com/trealla-prolog/trealla", Data, [status_code(Code)]).
-	   Data = "\n\n\n\n\n\n<!DOCTYPE html>\n<html\n...", Code = 200.
+	   Data = "\n\n\n\n\n\n<!DOCTYPE html>\n<html\n"||... , Code = 200.
 ```
 
 A server *Goal* takes a single arg, the connection stream.
