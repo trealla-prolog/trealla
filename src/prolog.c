@@ -131,6 +131,7 @@ bool did_dump_vars(prolog *pl) { return pl->did_dump_vars; }
 int get_halt_code(prolog *pl) { return pl->halt_code; }
 
 void set_trace(prolog *pl) { pl->trace = true; }
+void set_autofail(prolog *pl) { pl->autofail = true; }
 void set_quiet(prolog *pl) { pl->quiet = true; }
 void set_opt(prolog *pl, int level) { pl->opt = level; }
 

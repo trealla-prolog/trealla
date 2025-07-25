@@ -31,6 +31,7 @@ bool get_redo(prolog*);
 bool did_dump_vars(prolog*);
 
 void set_trace(prolog*);
+void set_autofail(prolog*);
 void set_quiet(prolog*);
 void set_noindex(prolog*);
 void set_opt(prolog*, int onoff);

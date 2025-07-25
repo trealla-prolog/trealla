@@ -53,6 +53,7 @@ where options can be:
 	-h, --help         - help
 	-d, --daemonize    - daemonize
 	-w, --watchdog     - create watchdog
+	--autofail         - autofail queries at the toplevel
 	--consult          - consult from STDIN
 
 For example:

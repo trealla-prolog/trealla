@@ -155,7 +155,7 @@ bool check_redo(query *q)
 	if (q->pl->is_query)
 		return q->cp;
 
-	if (q->fail_on_retry && (q->autofail_n > 1)) {
+	if (q->pl->autofail || (q->fail_on_retry && (q->autofail_n > 1))) {
 		q->autofail_n--;
 		printf("\n; ");
 		fflush(stdout);

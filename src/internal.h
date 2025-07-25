@@ -894,6 +894,7 @@ struct prolog_ {
 	bool status:1;
 	bool error:1;
 	bool did_dump_vars:1;
+	bool autofail:1;
 	bool quiet:1;
 	bool noindex:1;
 	bool iso_only:1;

@@ -1133,7 +1133,8 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 				} else if (q->is_dump_vars && has_visited(visited, tmp, tmp_ctx)) {
 					tmp = c;
 					tmp_ctx = c_ctx;
-					SB_sprintf(q->sb, "%s", !is_ref(tmp) ? "..." : "_");
+					//SB_sprintf(q->sb, "%s", !is_ref(tmp) ? "..." : "_");
+					SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num]));
 					if (arity) {SB_sprintf(q->sb, "%s", ","); }
 					q->last_thing = WAS_OTHER;
 					continue;
