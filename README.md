@@ -753,8 +753,6 @@ A server *Goal* takes a single arg, the connection stream.
 Networking					##EXPERIMENTAL##
 ==========
 
-These two are bidirectional...
-
 	http_location/2         # http_location(?list,?url)
 	parse_url/2             # parse_url(?url,?list)
 
@@ -1004,6 +1002,118 @@ Run...
 	[[1,'Paul',32,'California',20000.0],[2,'Allen',25,'Texas',15000.0],[3,'Teddy',23,'Norway',20000.0],[4,'Mark',25,'Rich-Mond ',65000.0],[5,'David',27,'Texas',85000.0],[6,'Kim',22,'South-Hall',45000.0]]
 ```
 
+
+ISO Prolog Multithreading
+=========================
+
+Start independent (shared state) Prolog queries as dedicated POSIX
+threads and communicate via message queues. Note: the database *is*
+shared. These predicates conform to the *ISO Prolog multithreading
+support* standards proposal (ISO/IEC DTR 13211–5:2007), now lapsed.
+
+	thread_create/3		# thread_create(:callable,-thread,+options)
+	thread_create/2		# thread_create(:callable,-thread)
+	thread_signal/2		# thread_signal(+thread,:callable)
+	thread_join/2		# thread_join(+thread,-term)
+	thread_cancel/1		# thread_cancel(+thread)
+	thread_detach/1		# thread_detach(+thread)
+	thread_self/1		# thread_self(-thread)
+	thread_exit/1		# thread_exit(+term)
+	thread_sleep/1		# thread_sleep(+integer)
+	thread_yield/0		# thread_yield
+	thread_property/2	# thread_property(+thread,+term)
+	thread_property/1	# thread_property(+term)
+
+Where 'options' can be *alias(+atom)*, *at_exit(:term)* and/or *detached(+boolean)*
+(the default is *NOT* detached, ie. joinable).
+
+Create a stand-alone message queue...
+
+	message_queue_create/2		# message_queue_create(-queue,+options)
+	message_queue_create/1		# message_queue_create(-queue)
+	message_queue_destroy/1		# message_queue_destroy(+queue)
+	message_queue_property/2	# message_queue_property(+queue,+term)
+	thread_send_message/2		# thread_send_message(+queue,+term)
+	thread_send_message/1		# thread_send_message(+term)
+	thread_get_message/2		# thread_get_message(+queue,?term)
+	thread_get_message/1		# thread_get_message(?term)
+	thread_peek_message/2		# thread_peek_message(+queue,?term)
+	thread_peek_message/1		# thread_peek_message(?term)
+
+Where 'options' can be *alias(+atom)*.
+
+Create a stand-alone mutex...
+
+	mutex_create/2				# mutex_create(-mutex,+options)
+	mutex_create/1				# mutex_create(-mutex)
+	mutex_destroy/1				# mutex_destroy(+mutex)
+	mutex_property/2			# mutex_property(+mutex,+term)
+	with_mutex/2				# with_mutex(+mutex,:callable)
+
+	mutex_trylock/1				# mutex_trylock(+mutex)
+	mutex_lock/1				# mutex_lock(+mutex)
+	mutex_unlock/1				# mutex_unlock(+mutex)
+	mutex_unlock_all/0			# mutex_unlock_all
+
+Where 'options' can be *alias(+atom)*. Use of mutexes other than
+*with_mutex/2* should generally be avoided.
+
+For example...
+
+	```console
+	?- thread_create((format("thread_hello~n",[]),sleep(1),format("thread_done~n",[]),thread_exit(99)), Tid, []), format("joining~n",[]), thread_join(Tid,Status), format("join_done~n",[]).
+	joining
+	thread_hello
+	thread_done
+	join_done
+	   Tid = 1, Status = exited(99).
+	?-
+	```
+
+Prolog instances			##EXPERIMENTAL##
+================
+
+Start independent (no shared state) Prolog instances as dedicated
+pre-emptive threads and communicate via message queues. Each thread
+has it's own message queue associated with it. Note: the database
+is *not* shared. For shared state consider using the blackboard.
+
+	pl_thread/3				# pl_thread(-thread,+filename,+options)
+	pl_thread/2				# pl_thread(-thread,+filename)
+
+Where 'options' can be (currently just) *alias(+atom)*.
+
+	pl_msg_send/2			# pl_msg_send(+thread,+term)
+	pl_msg_recv/2			# pl_msg_recv(-thread,-term)
+
+
+For example...
+
+```console
+	$ cat samples/thread_calc.pl
+	:- initialization(main).
+
+	% At the moment we only do sqrt here...
+
+	main :-
+		write('Calculator running...'), nl,
+		repeat,
+			pl_msg_recv(Tid, Term),
+			Term = sqrt(X, Y),
+			Y is sqrt(X),
+			pl_msg_send(Tid, Term),
+			fail.
+
+	$ tpl
+	?- pl_thread(_, 'samples/thread_calc.pl', [alias(calc)]).
+	Calculator running...
+	?- Term = sqrt(2, V),
+		pl_msg_send(calc, Term),
+		pl_msg_recv(_, Term).
+	   Term = sqrt(2,1.4142135623731), V = 1.4142135623731.
+	?-
+```
+
 Concurrent Tasks						##EXPERIMENTAL##
 ================
 
@@ -1162,118 +1272,6 @@ engines. Uses co-operative tasks.
 	is_engine/1
 	current_engine/1
 	engine_destroy/1
-
-
-Pre-emptive Multithreading
-==========================
-
-Start independent (shared state) Prolog queries as dedicated POSIX
-threads and communicate via message queues. Note: the database *is*
-shared. These predicates conform to the *ISO Prolog multithreading
-support* standards proposal (ISO/IEC DTR 13211–5:2007), now lapsed.
-
-	thread_create/3		# thread_create(:callable,-thread,+options)
-	thread_create/2		# thread_create(:callable,-thread)
-	thread_signal/2		# thread_signal(+thread,:callable)
-	thread_join/2		# thread_join(+thread,-term)
-	thread_cancel/1		# thread_cancel(+thread)
-	thread_detach/1		# thread_detach(+thread)
-	thread_self/1		# thread_self(-thread)
-	thread_exit/1		# thread_exit(+term)
-	thread_sleep/1		# thread_sleep(+integer)
-	thread_yield/0		# thread_yield
-	thread_property/2	# thread_property(+thread,+term)
-	thread_property/1	# thread_property(+term)
-
-Where 'options' can be *alias(+atom)*, *at_exit(:term)* and/or *detached(+boolean)*
-(the default is *NOT* detached, ie. joinable).
-
-Create a stand-alone message queue...
-
-	message_queue_create/2		# message_queue_create(-queue,+options)
-	message_queue_create/1		# message_queue_create(-queue)
-	message_queue_destroy/1		# message_queue_destroy(+queue)
-	message_queue_property/2	# message_queue_property(+queue,+term)
-	thread_send_message/2		# thread_send_message(+queue,+term)
-	thread_send_message/1		# thread_send_message(+term)
-	thread_get_message/2		# thread_get_message(+queue,?term)
-	thread_get_message/1		# thread_get_message(?term)
-	thread_peek_message/2		# thread_peek_message(+queue,?term)
-	thread_peek_message/1		# thread_peek_message(?term)
-
-Where 'options' can be *alias(+atom)*.
-
-Create a stand-alone mutex...
-
-	mutex_create/2				# mutex_create(-mutex,+options)
-	mutex_create/1				# mutex_create(-mutex)
-	mutex_destroy/1				# mutex_destroy(+mutex)
-	mutex_property/2			# mutex_property(+mutex,+term)
-	with_mutex/2				# with_mutex(+mutex,:callable)
-
-	mutex_trylock/1				# mutex_trylock(+mutex)
-	mutex_lock/1				# mutex_lock(+mutex)
-	mutex_unlock/1				# mutex_unlock(+mutex)
-	mutex_unlock_all/0			# mutex_unlock_all
-
-Where 'options' can be *alias(+atom)*. Use of mutexes other than
-*with_mutex/2* should generally be avoided.
-
-For example...
-
-	```console
-	?- thread_create((format("thread_hello~n",[]),sleep(1),format("thread_done~n",[]),thread_exit(99)), Tid, []), format("joining~n",[]), thread_join(Tid,Status), format("join_done~n",[]).
-	joining
-	thread_hello
-	thread_done
-	join_done
-	   Tid = 1, Status = exited(99).
-	?-
-	```
-
-Prolog instances			##EXPERIMENTAL##
-================
-
-Start independent (no shared state) Prolog instances as dedicated
-pre-emptive threads and communicate via message queues. Each thread
-has it's own message queue associated with it. Note: the database
-is *not* shared. For shared state consider using the blackboard.
-
-	pl_thread/3				# pl_thread(-thread,+filename,+options)
-	pl_thread/2				# pl_thread(-thread,+filename)
-
-Where 'options' can be (currently just) *alias(+atom)*.
-
-	pl_msg_send/2			# pl_msg_send(+thread,+term)
-	pl_msg_recv/2			# pl_msg_recv(-thread,-term)
-
-
-For example...
-
-```console
-	$ cat samples/thread_calc.pl
-	:- initialization(main).
-
-	% At the moment we only do sqrt here...
-
-	main :-
-		write('Calculator running...'), nl,
-		repeat,
-			pl_msg_recv(Tid, Term),
-			Term = sqrt(X, Y),
-			Y is sqrt(X),
-			pl_msg_send(Tid, Term),
-			fail.
-
-	$ tpl
-	?- pl_thread(_, 'samples/thread_calc.pl', [alias(calc)]).
-	Calculator running...
-	?- Term = sqrt(2, V),
-		pl_msg_send(calc, Term),
-		pl_msg_recv(_, Term).
-	   Term = sqrt(2,1.4142135623731), V = 1.4142135623731.
-	?-
-```
 
 
 Profile
