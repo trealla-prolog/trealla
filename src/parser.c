@@ -1341,11 +1341,11 @@ static void check_first_cut(clause *cl)
 	}
 }
 
-static pl_idx get_varno(parser *p, const char *src, bool in_body)
+static pl_idx get_varno(parser *p, const char *src, bool in_body, unsigned depth)
 {
 	int anon = !strcmp(src, "_");
 	size_t offset = 0;
-	unsigned i = 0;
+	unsigned i = 0, nesting_offset = p->is_consulting ? 0 : 2;
 
 	while (p->vartab.pool[offset]) {
 		if (!strcmp(p->vartab.pool+offset, src) && !anon) {
@@ -1353,6 +1353,9 @@ static pl_idx get_varno(parser *p, const char *src, bool in_body)
 				p->vartab.in_body[i]++;
 			else
 				p->vartab.in_head[i]++;
+
+			if (depth > p->vartab.depth[i])
+				p->vartab.depth[i] = depth - nesting_offset;
 
 			return i;
 		}
@@ -1376,6 +1379,7 @@ static pl_idx get_varno(parser *p, const char *src, bool in_body)
 	else
 		p->vartab.in_head[i]++;
 
+	p->vartab.depth[i] = depth - nesting_offset;
 	return i;
 }
 
@@ -1452,9 +1456,9 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		if (rebase) {
 			char tmpbuf[20];
 			snprintf(tmpbuf, sizeof(tmpbuf), "___V%u", c->var_num);
-			c->var_num = get_varno(p, tmpbuf, in_body);
+			c->var_num = get_varno(p, tmpbuf, in_body, c->var_num);
 		} else
-			c->var_num = get_varno(p, C_STR(p, c), in_body);
+			c->var_num = get_varno(p, C_STR(p, c), in_body, c->var_num);
 
 		c->var_num += start;
 
@@ -1492,9 +1496,9 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		if (rebase) {
 			char tmpbuf[20];
 			snprintf(tmpbuf, sizeof(tmpbuf), "___V%u", c->var_num);
-			c->var_num = get_varno(p, tmpbuf, in_body);
+			c->var_num = get_varno(p, tmpbuf, in_body, c->var_num);
 		} else
-			c->var_num = get_varno(p, C_STR(p, c), in_body);
+			c->var_num = get_varno(p, C_STR(p, c), in_body, c->var_num);
 
 		c->var_num += start;
 
@@ -1526,17 +1530,30 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		unsigned var_in_head = get_in_head(p, C_STR(p, c));
 		unsigned var_in_body = get_in_body(p, C_STR(p, c));
 		unsigned occurrances = var_in_head + var_in_body;
+		bool var_is_global = false;
+
+		if (var_in_head && (p->vartab.depth[c->var_num] > 1)) {
+			//printf("*** head %s depth=%u\n", C_STR(p, c), p->vartab.depth[c->var_num]);
+			var_is_global = true;
+		} else if (var_in_body && (p->vartab.depth[c->var_num] > 1)) {
+			//printf("*** body %s depth=%u\n", C_STR(p, c), p->vartab.depth[c->var_num]);
+			var_is_global = true;
+		}
 
 		if (!occurrances)		// Anonymous vars weren't
 			occurrances = 1;	// counted it seems
 
-		if (var_in_body)
-			c->flags |= FLAG_VAR_LOCAL;
-		else if (!var_in_body)
-			c->flags |= FLAG_VAR_TEMPORARY;
+		if (var_is_global) {
+			c->flags |= FLAG_VAR_GLOBAL;
+		} else {
+			if (var_in_body)
+				c->flags |= FLAG_VAR_LOCAL;
+			else if (!var_in_body)
+				c->flags |= FLAG_VAR_TEMPORARY;
 
-		if (occurrances == 1)
-			c->flags |= FLAG_VAR_VOID;
+			if (occurrances == 1)
+				c->flags |= FLAG_VAR_VOID;
+		}
 	}
 
 	for (unsigned i = 0; i < cl->num_vars; i++) {
@@ -4311,8 +4328,10 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			if (is_func && !SB_strcmp(p->token, "."))
 				c->priority = 0;
 
-			if (p->is_var)
+			if (p->is_var) {
 				c->tag = TAG_VAR;
+				c->var_num = p->nesting_braces + p->nesting_brackets + p->nesting_parens;
+			}
 
 			if (!p->is_number_chars) {
 				c->val_off = new_atom(p->pl, SB_cstr(p->token));

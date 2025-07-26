@@ -5515,7 +5515,10 @@ static bool do_dump_term(query *q, cell *p1, pl_idx p1_ctx, bool deref, int dept
 			printf(", '%s'", C_STR(q, tmp));
 
 		if (is_var(tmp))
-			printf(", global=%d, void=%d, local=%d, temp=%d, anon=%d", is_global(tmp), is_void(tmp), is_local(tmp), is_temporary(tmp), is_anon(tmp));
+			printf(", global=%d, void=%d, local=%d, temp=%d, anon=%d",
+				is_global(tmp)?1:0, is_void(tmp)?1:0,
+				is_local(tmp)?1:0, is_temporary(tmp)?1:0,
+				is_anon(tmp)?1:0);
 
 		if (is_ref(tmp))
 			printf(", slot=%u, ctx=%u", tmp->var_num, tmp->var_ctx);
