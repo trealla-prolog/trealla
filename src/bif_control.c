@@ -115,7 +115,7 @@ bool bif_call_0(query *q, cell *p1, pl_idx p1_ctx)
 			return status;
 	}
 
-	cell *tmp = prepare_call(q, CALL_NOSKIP, p1, p1_ctx, 3);
+	cell *tmp = prepare_call(q, CALL_SKIP, p1, p1_ctx, 3);
 	check_memory(tmp);
 	pl_idx num_cells = p1->num_cells;
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
