@@ -1530,13 +1530,11 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		unsigned var_in_head = get_in_head(p, C_STR(p, c));
 		unsigned var_in_body = get_in_body(p, C_STR(p, c));
 		unsigned occurrances = var_in_head + var_in_body;
-		bool var_is_global = false;
+		bool var_is_global = is_global(c);
 
 		if (var_in_head && (p->vartab.depth[c->var_num] > 1)) {
-			//printf("*** head %s depth=%u\n", C_STR(p, c), p->vartab.depth[c->var_num]);
 			var_is_global = true;
 		} else if (var_in_body && (p->vartab.depth[c->var_num] > 1)) {
-			//printf("*** body %s depth=%u\n", C_STR(p, c), p->vartab.depth[c->var_num]);
 			var_is_global = true;
 		}
 
@@ -1666,7 +1664,10 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 		}
 
 		if (is_prefix(c)) {
-			const cell *rhs = c + 1;
+			cell *rhs = c + 1;
+
+			if (is_var(rhs))
+				rhs->flags |= FLAG_VAR_GLOBAL;
 
 			if (is_infix(rhs) && !rhs->arity && (rhs->priority > c->priority)) {
 				if (!p->do_read_term)
@@ -1706,7 +1707,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 
 		// Postfix...
 
-		const cell *rhs = c + 1;
+		cell *rhs = c + 1;
 
 		if (is_xf(rhs) && (rhs->priority == c->priority)) {
 			if (!p->do_read_term)
@@ -1741,6 +1742,10 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			}
 
 			cell *lhs = p->cl->cells + last_idx;
+
+			if (is_var(lhs))
+				lhs->flags |= FLAG_VAR_GLOBAL;
+
 			save.num_cells += lhs->num_cells;
 			pl_idx cells_to_move = lhs->num_cells;
 			cell *save_c = lhs;
@@ -1779,7 +1784,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			return false;
 		}
 
-		const cell *lhs = p->cl->cells + last_idx;
+		cell *lhs = p->cl->cells + last_idx;
 
 		if (is_infix(lhs) && !lhs->arity) {
 			if (!p->do_read_term)
@@ -1789,6 +1794,12 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			p->error = true;
 			return false;
 		}
+
+		if (is_var(lhs))
+			lhs->flags |= FLAG_VAR_GLOBAL;
+
+		if (is_var(rhs))
+			rhs->flags |= FLAG_VAR_GLOBAL;
 
 		save.num_cells += lhs->num_cells;
 		pl_idx cells_to_move = lhs->num_cells;
@@ -4328,9 +4339,12 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			if (is_func && !SB_strcmp(p->token, "."))
 				c->priority = 0;
 
+			// We temporarily make use of 'var_num' to hold the nesting info
+			// on the var, used for determining later if it's a global or not.
+
 			if (p->is_var) {
 				c->tag = TAG_VAR;
-				c->var_num = p->nesting_braces + p->nesting_brackets + p->nesting_parens;
+				c->var_num = (2*p->nesting_braces) + (2*p->nesting_brackets) + p->nesting_parens;
 			}
 
 			if (!p->is_number_chars) {
