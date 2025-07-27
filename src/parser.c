@@ -1421,7 +1421,7 @@ static unsigned get_in_body(parser *p, const char *name)
 
 void assign_vars(parser *p, unsigned start, bool rebase)
 {
-	if (!p || p->error)
+	if (p->error)
 		return;
 
 	clause *cl = p->cl;
@@ -1443,49 +1443,6 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 
 		if (c == body)
 			in_body = true;
-
-		if (!in_body)
-			continue;
-
-		if (!is_var(c))
-			continue;
-
-		if (c->val_off == g_anon_s)
-			c->flags |= FLAG_VAR_ANON;
-
-		if (rebase) {
-			char tmpbuf[20];
-			snprintf(tmpbuf, sizeof(tmpbuf), "___V%u", c->var_num);
-			c->var_num = get_varno(p, tmpbuf, in_body, c->var_num);
-		} else
-			c->var_num = get_varno(p, C_STR(p, c), in_body, c->var_num);
-
-		c->var_num += start;
-
-		if (c->var_num == MAX_VARS) {
-			fprintf(stderr, "Error: max vars reached, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
-			p->error = true;
-			return;
-		}
-
-		p->vartab.off[c->var_num] = c->val_off;
-
-		if (p->vartab.used[c->var_num]++ == 0) {
-			cl->num_vars++;
-			p->num_vars++;
-		}
-	}
-
-	in_body = p->in_body;
-
-	for (unsigned i = 0; i < cl->cidx; i++) {
-		cell *c = cl->cells + i;
-
-		if (c == body)
-			in_body = true;
-
-		if (in_body)
-			break;
 
 		if (!is_var(c))
 			continue;
