@@ -484,6 +484,18 @@ static void print_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 	} else {
 		SB_sprintf(q->sb, "_%u", (unsigned)slot_nbr);
 	}
+
+#if 0
+	if (is_global(c)) {
+		SB_sprintf(q->sb, "%s", "g");
+	} else if (is_void(c)) {
+		SB_sprintf(q->sb, "%s", "v");
+	} else if (is_local(c)) {
+		SB_sprintf(q->sb, "%s", "l");
+	} else if (is_temporary(c)) {
+		SB_sprintf(q->sb, "%s", "t");
+	}
+#endif
 }
 
 static bool dump_variable(query *q, cell *c, pl_idx c_ctx, bool running)
