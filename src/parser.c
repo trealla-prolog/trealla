@@ -1795,7 +1795,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			return false;
 		}
 
-		if (is_var(lhs))
+		if (is_var(lhs) && (c->val_off == g_eq_s))
 			lhs->flags |= FLAG_VAR_GLOBAL;
 
 		if (is_var(rhs))
