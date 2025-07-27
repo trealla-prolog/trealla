@@ -299,7 +299,7 @@ static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx
 	cell *c_attrs = is_empty(&e->c) ? e->c.val_attrs : NULL;
 
 	if (is_managed(v) || (c_ctx != q->st.fp))
-		add_trail(q, c_ctx, c->var_num, c_attrs, is_local(c));
+		add_trail(q, c_ctx, c->var_num, c_attrs, !is_global(c));
 
 	if (c_attrs)
 		q->run_hook = true;
