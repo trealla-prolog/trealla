@@ -1666,9 +1666,6 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 		if (is_prefix(c)) {
 			cell *rhs = c + 1;
 
-			if (is_var(rhs))
-				rhs->flags |= FLAG_VAR_GLOBAL;
-
 			if (is_infix(rhs) && !rhs->arity && (rhs->priority > c->priority)) {
 				if (!p->do_read_term)
 					fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
@@ -1742,10 +1739,6 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			}
 
 			cell *lhs = p->cl->cells + last_idx;
-
-			if (is_var(lhs))
-				lhs->flags |= FLAG_VAR_GLOBAL;
-
 			save.num_cells += lhs->num_cells;
 			pl_idx cells_to_move = lhs->num_cells;
 			cell *save_c = lhs;
@@ -1795,12 +1788,6 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			return false;
 		}
 
-		if (is_var(lhs) && (c->val_off == g_eq_s))
-			lhs->flags |= FLAG_VAR_GLOBAL;
-
-		if (is_var(rhs))
-			rhs->flags |= FLAG_VAR_GLOBAL;
-
 		save.num_cells += lhs->num_cells;
 		pl_idx cells_to_move = lhs->num_cells;
 		lhs = c - 1;
@@ -1825,6 +1812,19 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 				p->error_desc = "operator_clash";
 				p->error = true;
 				return false;
+			}
+		}
+
+		c = p->cl->cells + last_idx;
+		lhs = c + 1;
+		rhs = lhs + lhs->num_cells;
+
+		if (is_var(lhs) && (c->val_off == g_eq_s)) {
+			c = rhs;
+
+			for (unsigned i = 0; i < rhs->num_cells; i++, c++) {
+				if (is_var(c))
+					c->flags |= FLAG_VAR_GLOBAL;
 			}
 		}
 
