@@ -559,9 +559,10 @@ static void print_string_canonical(query *q, cell *c, pl_idx c_ctx, int running,
 
 	while (is_list(c)) {
 		cell *h = LIST_HEAD(c);
-		const char *src = C_STR(q, h);
 
-		if (needs_quoting(q->st.m, src, strlen(src))) {
+		if (is_number(h)) {
+			SB_sprintf(q->sb, "%d", (int)h->val_int);
+		} else if (needs_quoting(q->st.m, C_STR(q, h), C_STRLEN(q, h))) {
 			SB_sprintf(q->sb, "%s", "'");
 			SB_strcat_and_free(q->sb, formatted(C_STR(q, h), C_STRLEN(q, h), false, false));
 			SB_sprintf(q->sb, "%s", "'");
@@ -591,9 +592,10 @@ static void print_string_list(query *q, cell *c, pl_idx c_ctx, int running, bool
 
 	while (is_list(c)) {
 		cell *h = LIST_HEAD(c);
-		const char *src = C_STR(q, h);
 
-		if (needs_quoting(q->st.m, src, strlen(src)) && q->quoted) {
+		if (is_number(h)) {
+			SB_sprintf(q->sb, "%d", (int)h->val_int);
+		} else if (needs_quoting(q->st.m, C_STR(q, h), C_STRLEN(q, h)) && q->quoted) {
 			SB_sprintf(q->sb, "%s", "'");
 			SB_strcat_and_free(q->sb, formatted(C_STR(q, h), C_STRLEN(q, h), false, false));
 			SB_sprintf(q->sb, "%s", "'");
