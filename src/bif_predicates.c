@@ -766,8 +766,10 @@ static bool bif_string_codes_2(query *q)
 
 	if (is_iso_atom(p1))
 		make_string(&tmp, C_STR(q, p1));
-	else
+	else {
 		tmp = *p1;
+		share_cell(&tmp);
+	}
 
 	tmp.flags |= FLAG_CSTR_STRING | FLAG_CSTR_CODES;
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
