@@ -2498,11 +2498,13 @@ static int get_escape(parser *p, const char **_src, bool *error, bool number)
 			ch = get_hex(&src, 4, error);
 			unicode = true;
 
+#if 0
 			if (((unsigned)ch > 0xd800) && (src[0] == '\\') && (src[1] == 'u')) {
 				src += 2;
 				int ch2 = get_hex(&src, 4, error);
 				ch = (((unsigned)ch - 0xd800) * 0x400) + ((unsigned)ch2 - 0xdc00) + 0x10000;
 			}
+#endif
 		} else {
 			src--;
 			ch = get_octal(&src);
