@@ -1516,13 +1516,8 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		}
 	}
 
-	in_body = p->in_body;
-
 	for (unsigned i = 0; i < cl->cidx; i++) {
 		cell *c = cl->cells + i;
-
-		if (c == body)
-			in_body = true;
 
 		if (!is_var(c))
 			continue;
