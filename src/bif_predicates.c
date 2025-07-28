@@ -764,7 +764,7 @@ static bool bif_string_codes_2(query *q)
 
 	cell tmp;
 
-	if (is_iso_atom(p1))
+	if (is_iso_atom(p1) || !is_codes(p1))
 		make_string(&tmp, C_STR(q, p1));
 	else {
 		tmp = *p1;
