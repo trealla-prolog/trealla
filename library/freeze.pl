@@ -1,4 +1,4 @@
-:- module(freeze, [ freeze/2, frozen/2]).
+:- module(freeze, [freeze/2]).
 
 /** Provides the constraint `freeze/2`.
 */
@@ -6,7 +6,8 @@
 :- use_module(library(atts)).
 :- use_module(library(dcgs)).
 
-:- meta_predicate(freeze(-, 0)).
+:- meta_predicate freeze(-, 0).
+
 :- attribute frozen/1.
 
 verify_attributes(Var, Other, Goals) :-
@@ -37,21 +38,5 @@ freeze(X, Goal) :-
 attribute_goals(Var) -->
     { get_atts(Var, frozen(Goals)),
       put_atts(Var, -frozen(_)) },
-    [freeze(Var, Goals)].
+    [freeze:freeze(Var, Goals)].
 
-
-
-/** Provides the predicate `frozen/2`.
-*/
-
-:- use_module(library(lists)).
-
-frozen(Term, Goal) :-
-	copy_term(Term, Term2, Gs),
-	Term = Term2,
-	lists:flatten(Gs, Gs2),
-	lists:list_to_conjunction(Gs2, Fresh),
-	Fresh = Goal.
-
-:- help(freeze(+var,:callable), [iso(false),desc('Delay the execution of Goal until Var is bound (i.e., is not a variable or attributed variable).')]).
-:- help(frozen(@term,-callable), [iso(false),desc('Unify Goal with the goal or conjunction of goals delayed on some attributed variable in Term.')]).
