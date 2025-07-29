@@ -1380,6 +1380,7 @@ static pl_idx get_varno(parser *p, const char *src, bool in_body, unsigned depth
 		p->vartab.in_head[i]++;
 
 	p->vartab.depth[i] = depth - nesting_offset;
+	p->vartab.num_vars++;
 	return i;
 }
 
@@ -1471,11 +1472,7 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		}
 
 		p->vartab.off[c->var_num] = c->val_off;
-
-		if (p->vartab.used[c->var_num]++ == 0) {
-			cl->num_vars++;
-			p->num_vars++;
-		}
+		p->vartab.used[c->var_num]++;
 	}
 
 	// Then the head...
@@ -1513,12 +1510,11 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		}
 
 		p->vartab.off[c->var_num] = c->val_off;
-
-		if (p->vartab.used[c->var_num]++ == 0) {
-			cl->num_vars++;
-			p->num_vars++;
-		}
+		p->vartab.used[c->var_num]++;
 	}
+
+	cl->num_vars = p->vartab.num_vars;
+	p->num_vars = p->vartab.num_vars;
 
 	// Now set flags...
 

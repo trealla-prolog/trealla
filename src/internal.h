@@ -774,6 +774,7 @@ struct parser_ {
 		unsigned in_head[MAX_VARS];
 		pl_idx off[MAX_VARS];
 		uint8_t vars[MAX_VARS];
+		unsigned num_vars;
 	} vartab;
 
 	prolog *pl;
