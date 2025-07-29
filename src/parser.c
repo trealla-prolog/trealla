@@ -1524,6 +1524,8 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		if (!is_var(c))
 			continue;
 
+		c->flags &= ~FLAG_VAR_REF;
+
 		unsigned var_in_head = get_in_head(p, C_STR(p, c));
 		unsigned var_in_body = get_in_body(p, C_STR(p, c));
 		unsigned occurrances = var_in_head + var_in_body;

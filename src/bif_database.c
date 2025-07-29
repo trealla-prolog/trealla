@@ -364,59 +364,6 @@ static bool bif_iso_abolish_1(query *q)
 	return ok;
 }
 
-static unsigned count_non_anons(uint8_t *mask, unsigned bit)
-{
-	unsigned bits = 0;
-
-	for (unsigned i = 0; i < bit; i++) {
-		if (mask[i] > 1)
-			bits++;
-	}
-
-	return bits;
-}
-
-static void term_assign_vars(parser *p)
-{
-	pl_idx num_cells = p->cl->cidx;
-	assign_vars(p, 0, true);
-	memset(p->vartab.vars, 0, sizeof(p->vartab.vars));
-
-	for (pl_idx i = 0; i < num_cells; i++) {
-		cell *c = p->cl->cells+i;
-
-		if (!is_var(c))
-			continue;
-
-		assert(c->var_num < MAX_VARS);
-		p->vartab.vars[c->var_num]++;
-	}
-
-	for (pl_idx i = 0; i < num_cells; i++) {
-		cell *c = p->cl->cells+i;
-
-		if (!is_var(c))
-			continue;
-
-		unsigned var_num = count_non_anons(p->vartab.vars, c->var_num);
-
-		char ch = 'A';
-		ch += var_num % 26;
-		unsigned n = var_num / 26;
-		char tmpbuf[80];
-
-		if (p->vartab.vars[c->var_num] == 1)
-			snprintf(tmpbuf, sizeof(tmpbuf), "%s", "_");
-		else if (var_num < 26)
-			snprintf(tmpbuf, sizeof(tmpbuf), "%c", ch);
-		else
-			snprintf(tmpbuf, sizeof(tmpbuf), "%c%d", ch, n);
-
-		c->val_off = new_atom(p->m->pl, tmpbuf);
-		c->flags = 0;
-	}
-}
-
 static bool bif_iso_asserta_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
@@ -456,7 +403,7 @@ static bool bif_iso_asserta_1(query *q)
 	}
 
 	p->cl->cidx = dup_cells(p->cl->cells, tmp, num_cells);
-	term_assign_vars(p);
+	assign_vars(p, 0, true);
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
 
@@ -512,7 +459,7 @@ static bool bif_iso_assertz_1(query *q)
 	}
 
 	p->cl->cidx = dup_cells(p->cl->cells, tmp, num_cells);
-	term_assign_vars(p);
+	assign_vars(p, 0, true);
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
 
@@ -576,7 +523,7 @@ static bool do_asserta_2(query *q)
 	}
 
 	p->cl->cidx = dup_cells(p->cl->cells, tmp, num_cells);
-	term_assign_vars(p);
+	assign_vars(p, 0, true);
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
 
@@ -668,7 +615,7 @@ static bool do_assertz_2(query *q)
 	}
 
 	p->cl->cidx = dup_cells(p->cl->cells, tmp, num_cells);
-	term_assign_vars(p);
+	assign_vars(p, 0, true);
 	term_to_body(p);
 	cell *h = get_head(p->cl->cells);
 
