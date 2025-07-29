@@ -1435,6 +1435,8 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		p->num_vars = 0;
 	}
 
+	// Assign body variables first (why?)...
+
 	const cell *body = get_body(cl->cells);
 	bool in_body = p->in_body;
 
@@ -1476,6 +1478,8 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		}
 	}
 
+	// Then the head...
+
 	in_body = p->in_body;
 
 	for (unsigned i = 0; i < cl->cidx; i++) {
@@ -1515,6 +1519,8 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 			p->num_vars++;
 		}
 	}
+
+	// Now set flags...
 
 	for (unsigned i = 0; i < cl->cidx; i++) {
 		cell *c = cl->cells + i;
