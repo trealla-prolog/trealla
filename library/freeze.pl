@@ -1,4 +1,4 @@
-:- module(freeze, [freeze/2]).
+:- module(freeze, [freeze/2, frozen/2]).
 
 /** Provides the constraint `freeze/2`.
 */
@@ -40,3 +40,9 @@ attribute_goals(Var) -->
       put_atts(Var, -frozen(_)) },
     [freeze:freeze(Var, Goals)].
 
+frozen(Term, Goal) :-
+	copy_term(Term, Term2, Gs),
+	Term = Term2,
+	lists:flatten(Gs, Gs2),
+	lists:list_to_conjunction(Gs2, Fresh),
+	Fresh = Goal.
