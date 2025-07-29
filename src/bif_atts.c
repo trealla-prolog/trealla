@@ -8,7 +8,7 @@
 #include "prolog.h"
 #include "query.h"
 
-static const char *do_attribute(query *q, cell *attr, unsigned arity, bool *found)
+static const char *find_attribute(query *q, cell *attr, unsigned arity, bool *found)
 {
 	for (module *m = list_front(&q->pl->modules);
 		m; m = list_next(m)) {
@@ -28,7 +28,7 @@ static bool bif_attribute_3(query *q)
 	GET_NEXT_ARG(p2,atom);
 	GET_NEXT_ARG(p3,integer);
 	bool found;
-	const char *m_name = do_attribute(q, p2, get_smalluint(p3), &found);
+	const char *m_name = find_attribute(q, p2, get_smalluint(p3), &found);
 	if (!found) return false;
 	cell tmp;
 	make_atom(&tmp, new_atom(q->pl, m_name));
@@ -49,11 +49,11 @@ static bool do_put_atts(query *q, cell *attr, pl_idx attr_ctx, bool is_minus)
 	if (((attr->val_off == g_minus_s) || (attr->val_off == g_plus_s)) && (attr->arity == 1))
 		attr++;
 
-	add_trail(q, p1_ctx, p1->var_num, c->val_attrs, false);
+	add_trail(q, p1_ctx, p1->var_num, c->val_attrs);
 
 	unsigned a_arity = attr->arity;
 	bool found;
-	const char *m_name = do_attribute(q, attr, a_arity, &found);
+	const char *m_name = find_attribute(q, attr, a_arity, &found);
 	if (!found) return false;
 	check_memory(init_tmp_heap(q));
 
@@ -196,7 +196,7 @@ static bool bif_get_atts_2(query *q)
 
 	unsigned a_arity = attr->arity;
 	bool found;
-	const char *m_name = do_attribute(q, attr, a_arity, &found);
+	const char *m_name = find_attribute(q, attr, a_arity, &found);
 	if (!found) return false;
 	cell *l = c->val_attrs;
 	pl_idx l_ctx = c_ctx;

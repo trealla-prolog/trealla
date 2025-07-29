@@ -504,7 +504,6 @@ typedef struct {
 struct trail_ {
 	cell *attrs;
 	pl_idx var_ctx, var_num;
-	bool is_local:1;
 };
 
 // Where *c* is the (possibly) instantiated cell in the current frame

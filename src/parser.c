@@ -1472,7 +1472,7 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		p->vartab.used[c->var_num]++;
 	}
 
-	// Then the head...
+	// ... then the head...
 
 	in_body = p->in_body;
 
