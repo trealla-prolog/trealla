@@ -20,7 +20,7 @@ A compact, efficient Prolog interpreter with ISO Prolog aspirations.
 	FFIs for GNU Scientific Library (GSL), SQLite, Raylib
 	Delimited continuations ##EXPERIMENTAL##
 	Rational trees ##EXPERIMENTAL##
-	CLP(Z) ##EXPERIMENTAL##
+	CLP(Z)
 
 
 Available from: [https://github.com/trealla-prolog/trealla](https://github.com/trealla-prolog/trealla).
