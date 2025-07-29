@@ -1453,9 +1453,6 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		if (!is_var(c))
 			continue;
 
-		if (c->val_off == g_anon_s)
-			c->flags |= FLAG_VAR_ANON;
-
 		if (rebase) {
 			char tmpbuf[20];
 			snprintf(tmpbuf, sizeof(tmpbuf), "___V%u", c->var_num);
@@ -1491,9 +1488,6 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		if (!is_var(c))
 			continue;
 
-		if (c->val_off == g_anon_s)
-			c->flags |= FLAG_VAR_ANON;
-
 		if (rebase) {
 			char tmpbuf[20];
 			snprintf(tmpbuf, sizeof(tmpbuf), "___V%u", c->var_num);
@@ -1525,6 +1519,9 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 			continue;
 
 		c->flags &= ~FLAG_VAR_REF;
+
+		if (c->val_off == g_anon_s)
+			c->flags |= FLAG_VAR_ANON;
 
 		unsigned var_in_head = get_in_head(p, C_STR(p, c));
 		unsigned var_in_body = get_in_body(p, C_STR(p, c));
