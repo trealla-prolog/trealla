@@ -40,9 +40,17 @@ attribute_goals(Var) -->
       put_atts(Var, -frozen(_)) },
     [freeze:freeze(Var, Goals)].
 
+%% frozen(Var, Goal)
+
+:- use_module(library(lists)).
+
 frozen(Term, Goal) :-
 	copy_term(Term, Term2, Gs),
-	Term = Term2,
-	lists:flatten(Gs, Gs2),
-	lists:list_to_conjunction(Gs2, Fresh),
-	Fresh = Goal.
+	( Gs = [] ->
+		Goal = true
+	;
+		Term = Term2,
+		flatten(Gs, Gs2),
+		list_to_conjunction(Gs2, Fresh),
+		Fresh = Goal
+	).
