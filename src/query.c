@@ -576,23 +576,6 @@ static void trim_trail(query *q)
 	}
 }
 
-static void trim_locals(query *q)
-{
-	// Local vars can be discarded...
-
-	while (q->st.tp) {
-		trail *tr = q->trails + q->st.tp - 1;
-
-		if (tr->var_ctx < q->st.curr_frame)
-			break;
-
-		if (!tr->is_local)
-			break;
-
-		q->st.tp--;
-	}
-}
-
 static void trim_frame(query *q, const frame *f)
 {
 	for (unsigned i = 0; i < f->actual_slots; i++) {
@@ -1015,7 +998,6 @@ static bool resume_frame(query *q)
 		q->st.hp = f->hp;
 		q->st.heap_num = f->heap_num;
 		trim_heap(q);
-		trim_locals(q);
 		trim_frame(q, f);
 	}
 
