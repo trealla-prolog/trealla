@@ -8,7 +8,7 @@ trap "rm -f $TMPPL" EXIT
 cat >$TMPPL <<EOF
 EOF
 
-$TPL $TMPPL >$TMP <<EOF
+$TPL -f $TMPPL >$TMP <<EOF
 length(L,3).
 halt.
 EOF

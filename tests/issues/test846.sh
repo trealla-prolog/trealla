@@ -11,7 +11,7 @@ p(X,Y) :- X = a(f(X,Y)), Y = b(g(X,Y)).
 p(X,Y) :- X = s(s(X,Y),_), Y = s(Y,X).
 EOF
 
-$TPL --autofail $TMPPL >$TMP <<EOF
+$TPL --autofail -f $TMPPL >$TMP <<EOF
 p(X,Y).
 halt.
 EOF
