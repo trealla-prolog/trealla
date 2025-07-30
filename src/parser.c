@@ -4479,7 +4479,7 @@ bool run(parser *p, const char *prolog_src, bool dump, query **subq, unsigned in
 	}
 
 	stream *str = &p->pl->streams[0];
-	str->fp = freopen(NULL, "r", str->fp);
+	fflush(str->fp);
 	free(str->data);
 	str->data = NULL;
 	str->data_len = 0;

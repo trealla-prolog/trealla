@@ -41,9 +41,15 @@ endif
 ifdef ISOCLINE
 CFLAGS += -DUSE_ISOCLINE=1
 else
+
 ifndef WASI
+ifdef EDITLINE
+LDFLAGS += -ledit
+else
 LDFLAGS += -lreadline
 endif
+endif
+
 endif
 
 ifndef NOFFI
