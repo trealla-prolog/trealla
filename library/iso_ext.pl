@@ -73,15 +73,11 @@ cfor(I0,J0,K) :-
 
 :- help(variant(+term,+term), [iso(false)]).
 
-% definition taken from the SWI-Prolog documentation
-variant(Term1, Term2) :-
-	% avoid trouble in any shared variables
-	copy_term(Term1, Term1Copy),
-	copy_term(Term2, Term2Copy),
-	% ground and compare the term copies
-	numbervars(Term1Copy, 0, N),
-	numbervars(Term2Copy, 0, N),
-	Term1Copy == Term2Copy.
+variant(X,Y) :-
+	\+ \+ ( copy_term(X,XC),
+		subsumes_term(XC,Y),
+		subsumes_term(Y,XC)
+	).
 
 :- help(call_det(:callable,?boolean), [iso(false)]).
 :- meta_predicate(call_det(0,?)).
