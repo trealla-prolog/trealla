@@ -17,7 +17,9 @@
 
 #if !defined(USE_ISOCLINE) && !defined(USE_EDITLINE) && !defined(__wasi__)
 #include <readline/readline.h>
+#if !defined __DragonFly__
 #include <readline/history.h>
+#endif
 #endif
 
 #if !defined(_WIN32) && !defined(__wasi__)
@@ -303,17 +305,21 @@ static char **functor_name_completion(const char *text, int start, int end)
 
 void history_load(const char *filename)
 {
+#if !defined __DragonFly__
 	snprintf(g_filename, sizeof(g_filename), "%s", filename);
 	using_history();
 	read_history(g_filename);
+#endif
 	rl_attempted_completion_function = functor_name_completion;
 }
 
 void history_save(void)
 {
+#if !defined __DragonFly__
 	write_history(g_filename);
 	//rl_clear_history();
 	clear_history();
+#endif
 }
 #endif
 
