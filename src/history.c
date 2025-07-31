@@ -12,7 +12,9 @@
 #if defined(USE_EDITLINE) && !defined(__wasi__)
 #include <histedit.h>
 #include <editline/readline.h>
+#if defined __NetBSD__
 #include <editline/history.h>
+#endif
 #endif
 
 #if !defined(USE_ISOCLINE) && !defined(USE_EDITLINE) && !defined(__wasi__)
