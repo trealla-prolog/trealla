@@ -5515,6 +5515,9 @@ static bool do_dump_term(query *q, cell *p1, pl_idx p1_ctx, bool deref, int dept
 		if ((tmp->tag == TAG_INT) && !is_managed(tmp))
 			printf(", %lld", (long long)tmp->val_int);
 
+		if (tmp->arity && (tmp->tag == TAG_INTERNED))
+			printf(", ground=%u", is_ground(tmp)?1:0);
+
 		if (tmp->tag == TAG_INTERNED)
 			printf(", '%s'", C_STR(q, tmp));
 
