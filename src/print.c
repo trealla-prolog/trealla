@@ -818,7 +818,8 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int cons, unsigned print_depth, unsigned depth, visit *visited)
 {
 	if (depth > g_max_depth) {
-		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		//printf("*** OOPS %u, %s %d\n", depth, __FILE__, __LINE__);
+		SB_sprintf(q->sb, "%s", "...");
 		q->cycle_error = true;
 		q->last_thing = WAS_OTHER;
 		return false;
