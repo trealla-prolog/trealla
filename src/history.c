@@ -11,6 +11,8 @@
 
 #if defined(USE_EDITLINE) && !defined(__wasi__)
 #include <histedit.h>
+#include <editline/readline.h>
+#include <editline/history.h>
 #endif
 
 #if !defined(USE_ISOCLINE) && !defined(USE_EDITLINE) && !defined(__wasi__)
