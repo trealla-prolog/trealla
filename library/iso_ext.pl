@@ -12,6 +12,7 @@ subsumes_term(G, S) :-
 :- help(countall(:callable,?integer), [iso(true)]).
 
 countall(_, N) :-
+	can_be(N, integer, countall/2, _),
 	integer(N),
 	(N >= 0 -> true; throw(error(domain_error(not_less_than_zero, N), countall/2))),
 	fail.
