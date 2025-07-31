@@ -115,16 +115,8 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 
 		if (!both && is_var(c) && !(c->flags & FLAG_VAR_CYCLIC))
 			accum_var(q, c, c_ctx);
-		else if (!both) {
-			if (!arity && is_compound(c) && !is_iso_list(c)) {
-				p1 = c + 1;
-				p1_ctx = c_ctx;
-				arity = c->arity;
-				continue;
-			}
-
+		else if (!both)
 			collect_vars_internal(q, c, c_ctx, depth+1);
-		}
 
 		if (e) e->vgen = save_vgen;
 		p1 += p1->num_cells;
@@ -242,26 +234,12 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 				save_vgen = e->vgen;
 				e->vgen = q->vgen;
 
-				if (!arity && is_compound(c) && !is_iso_list(c)) {
-					p1 = c + 1;
-					p1_ctx = c_ctx;
-					arity = c->arity;
-					continue;
-				}
-
 				if (has_vars_internal(q, c, c_ctx, depth+1))
 					return true;
 			}
 
 			e->vgen = save_vgen;
 		} else {
-			if (!arity && is_compound(c) && !is_iso_list(c)) {
-				p1 = c + 1;
-				p1_ctx = c_ctx;
-				arity = c->arity;
-				continue;
-			}
-
 			if (has_vars_internal(q, c, c_ctx, depth+1))
 				return true;
 		}
@@ -350,13 +328,6 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned 
 
 		if (both)
 			return true;
-
-		if (!arity && is_compound(c) && !is_iso_list(c)) {
-			p1 = c + 1;
-			p1_ctx = c_ctx;
-			arity = c->arity;
-			continue;
-		}
 
 		if (is_cyclic_term_internal(q, c, c_ctx, depth+1))
 			return true;
