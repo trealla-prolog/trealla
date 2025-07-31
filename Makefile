@@ -36,6 +36,9 @@ endif
 ifdef WIN
 ISOCLINE = 1
 CC = x86_64-w64-mingw32-gcc
+ifndef NOFFI
+LDFLAGS += -ldl
+endif
 endif
 
 ifdef ISOCLINE
