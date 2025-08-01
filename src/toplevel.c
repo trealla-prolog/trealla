@@ -345,6 +345,7 @@ void dump_vars(query *q, bool partial)
 	q->is_dump_vars = true;
 	q->tab_idx = 0;
 	bool any = false;
+	clear_write_options(q);
 
 	// Build the ignore list for var name clashes....
 
@@ -377,7 +378,6 @@ void dump_vars(query *q, bool partial)
 
 	cell *vlist = end_list(q);
 	bool want_space = false;
-	clear_write_options(q);
 	q->variable_names = vlist;
 	q->variable_names_ctx = 0;
 	q->print_idx = 0;
@@ -399,8 +399,6 @@ void dump_vars(query *q, bool partial)
 
 		cell *c = deref(q, &e->c, 0);
 		pl_idx c_ctx = q->latest_ctx;
-
-		//printf("\n*** %s c->tag=%u, c->flags=%u\n", C_STR(q, c), c->tag, c->flags);
 
 		if (is_var(c) && is_anon(c))
 			continue;
