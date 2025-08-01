@@ -94,7 +94,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 		return;
 	}
 
-	if (!is_compound(p1) || is_ground(p1))
+	if (!is_compound(p1) /*|| is_ground(p1)*/)
 		return;
 
 	if (is_iso_list(p1)) {
