@@ -37,7 +37,6 @@ ifdef WIN
 ISOCLINE = 1
 CC = x86_64-w64-mingw32-gcc
 ifndef NOFFI
-LDFLAGS += -ldl
 endif
 endif
 
@@ -56,7 +55,7 @@ endif
 
 ifndef NOFFI
 CFLAGS += -DUSE_FFI=1 -I/usr/local/opt/libffi/include
-LDFLAGS += -lffi
+LDFLAGS += -lffi -ldl
 endif
 
 ifndef NOSSL
