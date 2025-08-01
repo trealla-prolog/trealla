@@ -51,7 +51,7 @@ void make_struct_(cell *tmp, pl_idx offset, unsigned arity, pl_idx extra_cells);
 	cell *tmp_make = tmp; \
 	make_struct_(tmp_make, offset, arity, extra_cells); \
 	\
-	if (fn != NULL) { \
+	if ((void*)fn != NULL) { \
 		static builtins *s_fn_ptr_##fn = NULL; \
 		if (!s_fn_ptr_##fn) \
 			s_fn_ptr_##fn = get_fn_ptr(fn); \
