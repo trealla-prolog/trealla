@@ -13,10 +13,6 @@ LDFLAGS += -L$(HOMEBREW_PREFIX)/opt/libffi/lib -L$(HOMEBREW_PREFIX)/opt/openssl@
 CFLAGS += -I$(HOMEBREW_PREFIX)/opt/libffi/include -I$(HOMEBREW_PREFIX)/opt/openssl@3/include
 endif
 
-ifndef NOPEDANTIC
-CFLAGS += -Wno-unused-but-set-variable
-endif
-
 ifdef WASI
 CFLAGS += -std=c11 -Isrc/wasm \
 	-D_WASI_EMULATED_MMAN -D_WASI_EMULATED_SIGNAL \
