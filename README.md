@@ -148,7 +148,8 @@ To build without pre-emptive multi-threading support:
 
 	make NOTHREADS=1
 
-To build with the included ISOCLINE sources (default is to use GNU Readline):
+To build with the included ISOCLINE sources (default is to use GNU Readline,
+except Windows):
 
 	make ISOCLINE=1
 
