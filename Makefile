@@ -1,3 +1,5 @@
+.POSIX:
+
 GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
 COMPILER_IS_GCC := $(shell $(CC) --version | grep -E -o 'g?cc')
 
