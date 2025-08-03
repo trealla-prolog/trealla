@@ -179,25 +179,6 @@ void check_pressure(query *q)
 #endif
 }
 
-bool check_trail(query *q)
-{
-	if (q->st.tp > q->hw_trails)
-		q->hw_trails = q->st.tp;
-
-	if (q->st.tp < q->trails_size)
-		return true;
-
-	pl_idx new_trailssize = alloc_grow(q, (void**)&q->trails, sizeof(trail), q->st.tp, q->trails_size*3/2, false);
-
-	if (!new_trailssize) {
-		q->oom = q->error = true;
-		return false;
-	}
-
-	q->trails_size = new_trailssize;
-	return true;
-}
-
 static bool check_choice(query *q)
 {
 	if (q->cp > q->hw_choices)

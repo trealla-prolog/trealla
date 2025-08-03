@@ -278,6 +278,25 @@ int compare(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
 	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
 }
 
+static bool check_trail(query *q)
+{
+	if (q->st.tp > q->hw_trails)
+		q->hw_trails = q->st.tp;
+
+	if (q->st.tp < q->trails_size)
+		return true;
+
+	pl_idx new_trailssize = alloc_grow(q, (void**)&q->trails, sizeof(trail), q->st.tp, q->trails_size*3/2, false);
+
+	if (!new_trailssize) {
+		q->oom = q->error = true;
+		return false;
+	}
+
+	q->trails_size = new_trailssize;
+	return true;
+}
+
 void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs)
 {
 	if (!check_trail(q)) {
