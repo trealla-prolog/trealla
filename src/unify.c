@@ -716,7 +716,7 @@ bool unify(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
 	q->before_hook_tp = q->st.tp;
 	if (++q->vgen == 0) q->vgen = 1;
 
-	if (is_var(p2)) {
+	if (!is_var(p1) && is_var(p2)) {
 		cell *tmp = p2;
 		pl_idx tmp_ctx = p2_ctx;
 		p2 = p1;
