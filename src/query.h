@@ -78,7 +78,6 @@ void collect_vars(query *q, cell *p1, pl_idx p1_ctx);
 bool check_list(query *q, cell *p1, pl_idx p1_ctx, bool *is_partial, pl_int *skip);
 bool parse_write_params(query *q, cell *c, pl_idx c_ctx, cell **vnames, pl_idx *vnames_ctx);
 bool has_vars(query *q, cell *p1, pl_idx p1_ctx);
-bool accum_var(query *q, const cell *c, pl_idx c_ctx);
 void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs);
 void reset_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx);
 void undo_var(query *q, const cell *c, pl_idx c_ctx);

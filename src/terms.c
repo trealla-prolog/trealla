@@ -4,7 +4,7 @@
 
 typedef struct { lnode hdr; cell *c; pl_idx c_ctx; } snode;
 
-bool accum_var(query *q, const cell *c, pl_idx c_ctx)
+static bool accum_var(query *q, const cell *c, pl_idx c_ctx)
 {
 	const frame *f = GET_FRAME(c_ctx);
 	const slot *e = GET_SLOT(f, c->var_num);
