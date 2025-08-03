@@ -727,11 +727,6 @@ bool unify(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
 
 	bool ok = unify_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
 
-	if (q->no_recov) {
-		frame *f = GET_CURR_FRAME();
-		f->no_recov = true;
-	}
-
 	if (q->cycle_error) {
 		if (q->flags.occurs_check == OCCURS_CHECK_TRUE)
 			return false;
@@ -740,5 +735,13 @@ bool unify(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
 			return throw_error(q, p2, p2_ctx, "representation_error", "term");
 	}
 
-	return ok;
+	if (!ok)
+		return false;
+
+	if (q->no_recov) {
+		frame *f = GET_CURR_FRAME();
+		f->no_recov = true;
+	}
+
+	return true;
 }
