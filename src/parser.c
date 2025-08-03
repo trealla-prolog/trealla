@@ -1540,13 +1540,12 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 		if (var_is_global) {
 			c->flags |= FLAG_VAR_GLOBAL;
 		} else {
-			if (var_in_body)
-				c->flags |= FLAG_VAR_LOCAL;
-			else if (!var_in_body)
-				c->flags |= FLAG_VAR_TEMPORARY;
-
 			if (occurrances == 1)
 				c->flags |= FLAG_VAR_VOID;
+			else if (!var_in_body)
+				c->flags |= FLAG_VAR_TEMPORARY;
+			else if (var_in_body)
+				c->flags |= FLAG_VAR_LOCAL;
 		}
 	}
 

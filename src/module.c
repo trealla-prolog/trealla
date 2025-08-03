@@ -1663,7 +1663,6 @@ static void process_cell(module *m, clause *cl, cell *c, predicate *parent, int 
 	}
 
 	if (!is_directive
-		&& is_interned(c)
 		&& ((c+c->num_cells) >= (body + cl->cidx-1))
 		) {
 			c->flags |= FLAG_INTERNED_TAIL_CALL;
@@ -1705,13 +1704,13 @@ void process_clause(module *m, clause *cl, predicate *parent)
 
 		// Don't want to match on module qualified predicates
 
-		//if (c->val_off == g_colon_s) {
-		//	process_cell(m, cl, c, parent, 0, is_directive);
-		//	last_was_colon = 3;
-		//} else {
-		//	last_was_colon--;
-		process_cell(m, cl, c, parent, last_was_colon, is_directive);
-		//}
+		if (c->val_off == g_colon_s) {
+			process_cell(m, cl, c, parent, 0, is_directive);
+			last_was_colon = 3;
+		} else {
+			last_was_colon--;
+			process_cell(m, cl, c, parent, last_was_colon, is_directive);
+		}
 	}
 }
 
