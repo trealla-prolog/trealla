@@ -251,7 +251,7 @@ void make_ptr(cell *tmp, void *v)
 	tmp->val_ptr = v;
 }
 
-void make_struct_(cell *tmp, pl_idx offset, unsigned arity, pl_idx extra_cells)
+void make_struct(cell *tmp, pl_idx offset, unsigned arity, pl_idx extra_cells)
 {
 	*tmp = (cell){0};
 	tmp->tag = TAG_INTERNED;

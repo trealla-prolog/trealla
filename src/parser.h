@@ -45,11 +45,11 @@ bool do_register_struct(module *m, query *q, void *handle, const char *symbol, c
 int do_dlclose(void *handle);
 #endif
 
-void make_struct_(cell *tmp, pl_idx offset, unsigned arity, pl_idx extra_cells);
+void make_struct(cell *tmp, pl_idx offset, unsigned arity, pl_idx extra_cells);
 
 #define make_instr(tmp, offset, fn, arity, extra_cells) { \
 	cell *tmp_make = tmp; \
-	make_struct_(tmp_make, offset, arity, extra_cells); \
+	make_struct(tmp_make, offset, arity, extra_cells); \
 	\
 	if ((void*)fn != NULL) { \
 		static builtins *s_fn_ptr_##fn = NULL; \
