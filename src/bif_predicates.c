@@ -5503,87 +5503,6 @@ bool bif_sys_jump_if_nil_2(query *q)
 	return true;
 }
 
-static bool do_dump_term(query *q, cell *p1, pl_idx p1_ctx, bool deref, int depth)
-{
-	if (!depth) {
-		const frame *f = GET_CURR_FRAME();
-		printf("f=%u, f->initial_slots=%u, f->actual_slots=%u\n", q->st.curr_frame, f->initial_slots, f->actual_slots);
-	}
-
-	cell *tmp = p1;
-
-	if (depth > 1)
-		return true;
-
-	for (unsigned i = 0; i < p1->num_cells; i++, tmp++) {
-		if (depth) printf("  ");
-
-		printf("[%02u] tag=%10s, num_cells=%u, arity=%u",
-			i,
-			(
-				(tmp->tag == TAG_VAR && is_ref(tmp))? "var_ref" :
-				tmp->tag == TAG_VAR ? "var" :
-				tmp->tag == TAG_INTERNED ? "interned" :
-				tmp->tag == TAG_CSTR ? "cstr" :
-				tmp->tag == TAG_INT ? "integer" :
-				tmp->tag == TAG_FLOAT ? "float" :
-				tmp->tag == TAG_RAT ? "rational" :
-				tmp->tag == TAG_INDIRECT ? "indirect" :
-				tmp->tag == TAG_BLOB ? "blob" :
-				tmp->tag == TAG_DBID ? "dbid" :
-				tmp->tag == TAG_KVID ? "kvid" :
-				"other"
-			),
-			tmp->num_cells, tmp->arity);
-
-		if ((tmp->tag == TAG_INT) && !is_managed(tmp))
-			printf(", %lld", (long long)tmp->val_int);
-
-		if (tmp->arity && (tmp->tag == TAG_INTERNED))
-			printf(", ground=%u", is_ground(tmp)?1:0);
-
-		if (tmp->tag == TAG_INTERNED)
-			printf(", '%s'", C_STR(q, tmp));
-
-		if (is_var(tmp))
-			printf(", global=%d, void=%d, local=%d, temp=%d, anon=%d",
-				is_global(tmp)?1:0, is_void(tmp)?1:0,
-				is_local(tmp)?1:0, is_temporary(tmp)?1:0,
-				is_anon(tmp)?1:0);
-
-		if (is_ref(tmp))
-			printf(", slot=%u, ctx=%u", tmp->var_num, tmp->var_ctx);
-		else if (is_var(tmp))
-			printf(", slot=%u, %s", tmp->var_num, C_STR(q, tmp));
-
-		if (is_var(tmp) && deref) {
-			const frame *f = GET_FRAME(is_ref(tmp)?tmp->var_ctx:p1_ctx);
-			slot *e = GET_SLOT(f, tmp->var_num);
-
-			if (e->c.val_attrs) {
-				printf("\n");
-				do_dump_term(q, e->c.val_attrs, q->st.curr_frame, deref, depth+1);
-				continue;
-			}
-		}
-
-		printf("\n");
-	}
-
-	if (!depth) printf("no_recov=%d\n", q->no_recov?1:0);
-	return true;
-}
-
-static bool bif_sys_dump_term_2(query *q)
-{
-	GET_FIRST_ARG(p1,any);
-	GET_NEXT_ARG(p2,atom);
-	GET_FIRST_RAW_ARG(p1x,any);
-	bool deref = p2->val_off == g_true_s;
-	p1 = deref ? p1 : p1x;
-	return do_dump_term(q, p1, p1_ctx, deref, 0);
-}
-
 static bool bif_sys_integer_in_radix_3(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
@@ -6331,7 +6250,6 @@ builtins g_other_bifs[] =
 	{"$incr", 2, bif_sys_incr_2, "@integer,+integer", false, false, BLAH},
 	{"$first_non_octet", 2, bif_sys_first_non_octet_2, "+chars,-integer", false, false, BLAH},
 	{"$skip_max_list", 4, bif_sys_skip_max_list_4, "?integer,?integer?,?term,?term", false, false, BLAH},
-	{"$dump_term", 2, bif_sys_dump_term_2, "+term,+bool", false, false, BLAH},
 	{"$integer_in_radix", 3, bif_sys_integer_in_radix_3, "+integer,+integer,-string", false, false, BLAH},
 	{"$jump", 1, bif_sys_jump_1, NULL, false, false, BLAH},
 	{"$jump_if_nil", 2, bif_sys_jump_if_nil_2, "+term,+integer", false, false, BLAH},
