@@ -49,8 +49,6 @@ static bool bif_bb_b_put_2(query *q)
 
 	if (DO_DUMP) DUMP_TERM2("bb_b_put", tmpbuf, p2, p2_ctx, 1);
 
-	// TODO: we have to save a copy of attributes, is this why CLPB has problems?
-
 	char *key = strdup(tmpbuf);
 	cell *tmp = copy_term_to_heap(q, p2, p2_ctx, true);
 	pl_idx num_cells = tmp->num_cells;
@@ -117,8 +115,6 @@ static bool bif_bb_put_2(query *q)
 		snprintf(tmpbuf2, sizeof(tmpbuf2), "%s:%d", m->name, (int)get_smallint(p1));
 
 	if (DO_DUMP) DUMP_TERM2("bb_put", tmpbuf2, p2, p2_ctx, 1);
-
-	// TODO: we have to save a copy of attributes, is this why CLPB has problems?
 
 	char *key2 = strdup(tmpbuf2);
 	cell *tmp = copy_term_to_heap(q, p2, p2_ctx, true);
