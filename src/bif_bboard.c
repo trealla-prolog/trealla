@@ -50,7 +50,8 @@ static bool bif_bb_b_put_2(query *q)
 	if (DO_DUMP) DUMP_TERM2("bb_b_put", tmpbuf, p2, p2_ctx, 1);
 
 	char *key = strdup(tmpbuf);
-	cell *tmp = clone_term_to_heap(q, p2, p2_ctx);
+	check_memory(init_tmp_heap(q));
+	cell *tmp = clone_term_to_tmp(q, p2, p2_ctx);
 	pl_idx num_cells = tmp->num_cells;
 	cell *val = malloc(sizeof(cell)*num_cells);
 	check_memory(val);
@@ -117,7 +118,8 @@ static bool bif_bb_put_2(query *q)
 	if (DO_DUMP) DUMP_TERM2("bb_put", tmpbuf2, p2, p2_ctx, 1);
 
 	char *key2 = strdup(tmpbuf2);
-	cell *tmp = clone_term_to_heap(q, p2, p2_ctx);
+	check_memory(init_tmp_heap(q));
+	cell *tmp = clone_term_to_tmp(q, p2, p2_ctx);
 	pl_idx num_cells = tmp->num_cells;
 	cell *val = malloc(sizeof(cell)*num_cells);
 	check_memory(val);
