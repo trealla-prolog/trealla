@@ -53,7 +53,8 @@ static bool bif_bb_b_put_2(query *q)
 
 	char *key = strdup(tmpbuf);
 	cell *tmp = copy_term_to_heap(q, p2, p2_ctx, true);
-	cell *val = malloc(sizeof(cell)*tmp->num_cells);
+	pl_idx num_cells = tmp->num_cells;
+	cell *val = malloc(sizeof(cell)*num_cells);
 	check_memory(val);
 	dup_cells(val, tmp, tmp->num_cells);
 
@@ -121,7 +122,8 @@ static bool bif_bb_put_2(query *q)
 
 	char *key2 = strdup(tmpbuf2);
 	cell *tmp = copy_term_to_heap(q, p2, p2_ctx, true);
-	cell *val = malloc(sizeof(cell)*tmp->num_cells);
+	pl_idx num_cells = tmp->num_cells;
+	cell *val = malloc(sizeof(cell)*num_cells);
 	check_memory(val);
 	dup_cells(val, tmp, tmp->num_cells);
 
