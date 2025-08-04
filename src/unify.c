@@ -56,7 +56,7 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 			q->is_cyclic2++;
 
 		if (q->is_cyclic1 && q->is_cyclic2)
-			return 0;
+			break;
 #else
 		p1 = deref(q, p1, p1_ctx);
 		p1_ctx = q->latest_ctx;
