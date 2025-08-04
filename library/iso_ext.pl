@@ -142,8 +142,8 @@ bb_b_put(Key, Value) :-
 	copy_term(Value, NewValue, Gs),
 	'$bb_b_put'(Key, NewValue-Gs).
 
-bb_get(Key, Value) :-
-	'$bb_get'(Key, Value-Gs),
+bb_get(Key, OldValue) :-
+	'$bb_get'(Key, OldValue-Gs),
 	maplist(call, Gs).
 
 bb_update(Key, OldValue, Value) :-
