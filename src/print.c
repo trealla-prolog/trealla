@@ -652,8 +652,8 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			q->last_thing = WAS_OTHER;
 		} else if (has_visited(visited, head, head_ctx)) {
 			if (q->portray_vars || q->do_dump_vars) {
-				//SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[q->dump_var_num]));
-				SB_sprintf(q->sb, "%s", C_STR(q, save_head));
+				SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[q->dump_var_num]));
+				//SB_sprintf(q->sb, "%s", C_STR(q, save_head));
 			} else {
 				SB_sprintf(q->sb, "%s", "...");
 			}
