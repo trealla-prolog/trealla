@@ -931,9 +931,8 @@ static bool print_interned(query *q, cell *c, pl_idx c_ctx, bool running, unsign
 				} else if (q->is_dump_vars && has_visited(visited, tmp, tmp_ctx)) {
 					tmp = c;
 					tmp_ctx = c_ctx;
-					//SB_sprintf(q->sb, "%s", !is_ref(tmp) ? "..." : "_");
-					if (c_ctx == 0)	{ SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num])); }
-					else SB_sprintf(q->sb, "%s", "...");
+					if (c_ctx == 0) { SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num])); }
+					else { SB_sprintf(q->sb, "%s", !is_ref(tmp) ? "..." : "_"); }
 					if (arity) {SB_sprintf(q->sb, "%s", ","); }
 					q->last_thing = WAS_OTHER;
 					continue;
