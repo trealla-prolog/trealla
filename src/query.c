@@ -325,19 +325,13 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 		if (e) e->vgen = save_vgen;
 		l = LIST_TAIL(l);
 
-#if USE_RATIONAL_TREES
 		both = 0;
 		DEREF_VAR(any2, both, save_vgen, e, e->vgen, l, l_ctx, q->vgen);
 
 		if (both)
 			return 0;
-#else
-		l = deref(q, l, l_ctx);
-		l_ctx = q->latest_ctx;
-#endif
 	}
 
-#if USE_RATIONAL_TREES
 	if (any2) {
 		cell *l2 = save_l;
 		pl_idx l2_ctx = save_l_ctx;
@@ -349,7 +343,6 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 			RESTORE_VAR(l2, l2_ctx, l2, l2_ctx, q->vgen);
 		}
 	}
-#endif
 
 	if (is_var(l)) {
 		*has_var = *is_partial = true;

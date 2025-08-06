@@ -2825,7 +2825,6 @@ bool parse_write_params(query *q, cell *c, pl_idx c_ctx, cell **vnames, pl_idx *
 
 			c1 = LIST_TAIL(c1);
 
-#if USE_RATIONAL_TREES
 			both = 0;
 			DEREF_VAR(any2, both, save_vgen, e, e->vgen, c1, c1_ctx, q->vgen);
 
@@ -2833,11 +2832,6 @@ bool parse_write_params(query *q, cell *c, pl_idx c_ctx, cell **vnames, pl_idx *
 				throw_error(q, c, c_ctx, "domain_error", "write_option");
 				return false;
 			}
-#else
-			c1 = LIST_TAIL(c1);
-			c1 = deref(q, c1, c1_ctx);
-			c1_ctx = q->latest_ctx;
-#endif
 		}
 
 		if (is_var(c1)) {

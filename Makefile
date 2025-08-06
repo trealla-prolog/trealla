@@ -60,10 +60,6 @@ CFLAGS += -DUSE_OPENSSL=1 -I/usr/local/opt/openssl/include
 LDFLAGS += -L/usr/local/opt/openssl/lib -lssl -lcrypto
 endif
 
-ifdef NORATIONAL_TREES
-CFLAGS += -DUSE_RATIONAL_TREES=0
-endif
-
 ifndef NOTHREADS
 CFLAGS += -DUSE_THREADS=1 -pthread
 LDFLAGS += -pthread

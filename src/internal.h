@@ -22,10 +22,6 @@
 #include <unistd.h>
 #endif
 
-#ifndef USE_RATIONAL_TREES
-#define USE_RATIONAL_TREES 1
-#endif
-
 typedef double pl_flt;
 typedef intmax_t pl_int;
 typedef uintmax_t pl_uint;

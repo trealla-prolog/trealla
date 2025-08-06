@@ -2,6 +2,8 @@
 
 #include "query.h"
 
+typedef struct { lnode hdr; cell *c1, *c2; pl_idx c1_ctx, c2_ctx; } snode;
+
 static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth);
 
 static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
@@ -14,7 +16,6 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 		cell *c1 = p1 + 1, *c2 = p2 + 1;
 		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 
-#if USE_RATIONAL_TREES
 		slot *e1 = NULL, *e2 = NULL;
 		uint32_t save_vgen = 0, save_vgen2 = 0;
 		int both = 0;
@@ -29,20 +30,10 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 
 		if (e1) e1->vgen = save_vgen;
 		if (e2) e2->vgen2 = save_vgen2;
-#else
-		c1 = deref(q, c1, c1_ctx);
-		c1_ctx = q->latest_ctx;
-		c2 = deref(q, c2, c2_ctx);
-		c2_ctx = q->latest_ctx;
-
-		int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
-		if (val) return val;
-#endif
 
 		p1 = p1 + 1; p1 += p1->num_cells;
 		p2 = p2 + 1; p2 += p2->num_cells;
 
-#if USE_RATIONAL_TREES
 		e1 = e2 = NULL;
 		int both1 = 0, both2 = 0;
 
@@ -57,12 +48,6 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 
 		if (q->is_cyclic1 && q->is_cyclic2)
 			break;
-#else
-		p1 = deref(q, p1, p1_ctx);
-		p1_ctx = q->latest_ctx;
-		p2 = deref(q, p2, p2_ctx);
-		p2_ctx = q->latest_ctx;
-#endif
 	}
 
 	return compare_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1);
@@ -83,7 +68,6 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		cell *c1 = p1, *c2 = p2;
 		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 
-#if USE_RATIONAL_TREES
 		slot *e1 = NULL, *e2 = NULL;
 		uint32_t save_vgen = 0, save_vgen2 = 0;
 		int both = 0;
@@ -98,15 +82,6 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 
 		if (e1) e1->vgen = save_vgen;
 		if (e2) e2->vgen2 = save_vgen2;
-
-#else
-		c1 = deref(q, p1, p1_ctx);
-		c1_ctx = q->latest_ctx;
-		c2 = deref(q, p2, p2_ctx);
-		c2_ctx = q->latest_ctx;
-		int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
-		if (val) return val;
-#endif
 
 		p1 += p1->num_cells;
 		p2 += p2->num_cells;
@@ -468,18 +443,14 @@ static bool unify_cstrings(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 
 static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
-#if USE_RATIONAL_TREES
 	cell *orig_p1 = p1, *orig_p2 = p2;
 	pl_idx orig_p1_ctx = p1_ctx, orig_p2_ctx = p2_ctx;
-#endif
-
 	bool any1 = false, any2 = false;
 
 	while (is_iso_list(p1) && is_iso_list(p2)) {
 		cell *c1 = p1 + 1, *c2 = p2 + 1;
 		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 
-#if USE_RATIONAL_TREES
 		slot *e1 = NULL, *e2 = NULL;
 		uint32_t save_vgen = 0, save_vgen2 = 0;
 		int both = 0;
@@ -494,20 +465,9 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 
 		if (e1) e1->vgen = save_vgen;
 		if (e2) e2->vgen2 = save_vgen2;
-#else
-		c1 = deref(q, c1, c1_ctx);
-		c1_ctx = q->latest_ctx;
-		c2 = deref(q, c2, c2_ctx);
-		c2_ctx = q->latest_ctx;
-
-		if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
-			return false;
-#endif
-
 		p1 = p1 + 1; p1 += p1->num_cells;
 		p2 = p2 + 1; p2 += p2->num_cells;
 
-#if USE_RATIONAL_TREES
 		e1 = e2 = NULL;
 		int both1 = 0, both2 = 0;
 
@@ -525,15 +485,8 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 
 		if (q->is_cyclic1 && q->is_cyclic2)
 			break;
-#else
-		p1 = deref(q, p1, p1_ctx);
-		p1_ctx = q->latest_ctx;
-		p2 = deref(q, p2, p2_ctx);
-		p2_ctx = q->latest_ctx;
-#endif
 	}
 
-#if USE_RATIONAL_TREES
 	if (any2 && q->is_cyclic1 && q->is_cyclic2) {
 		cell *p1 = orig_p1;
 		pl_idx p1_ctx = orig_p1_ctx;
@@ -553,7 +506,6 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 			cnt++;
 		}
 	}
-#endif
 
 	return unify_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1);
 }
@@ -566,6 +518,7 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 	if (p1->val_off != p2->val_off)
 		return false;
 
+#if 1
 	bool any = false;
 	unsigned arity = p1->arity;
 	p1++; p2++;
@@ -574,7 +527,6 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 		cell *c1 = p1, *c2 = p2;
 
-#if USE_RATIONAL_TREES
 		slot *e1 = NULL, *e2 = NULL;
 		uint32_t save_vgen = 0, save_vgen2 = 0;
 		int both = 0;
@@ -589,19 +541,72 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 
 		if (e1) e1->vgen = save_vgen;
 		if (e2) e2->vgen2 = save_vgen2;
-#else
-		c1 = deref(q, c1, c1_ctx);
-		c1_ctx = q->latest_ctx;
-		c2 = deref(q, c2, c2_ctx);
-		c2_ctx = q->latest_ctx;
-
-		if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
-			return false;
-#endif
 		p1 += p1->num_cells;
 		p2 += p2->num_cells;
 	}
+#else
+	// Transform recursion into stack iteration...
 
+	list stack = {0};
+	snode *n = malloc(sizeof(snode));
+	n->c1 = p1;
+	n->c1_ctx = p1_ctx;
+	n->c1 = p2;
+	n->c2_ctx = p2_ctx;
+	list_push_back(&stack, n);
+
+	while ((n = (snode*)list_pop_front(&stack)) != NULL) {
+		cell *p1 = n->c1;
+		pl_idx p1_ctx = n->c1_ctx;
+		cell *p2 = n->c2;
+		pl_idx p2_ctx = n->c2_ctx;
+		free(n);
+
+		if (!is_compound(p1) || is_iso_list(p1)) {
+			if (!unify_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1)) {
+				while ((n = (snode*)list_pop_front(&stack)) != NULL)
+					free(n);
+
+				return true;
+			}
+		}
+
+		bool any = false;
+		unsigned arity = p1->arity;
+		p1++;
+
+		while (arity--) {
+			cell *c1 = p1, *c2 = p2;
+			pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
+			slot *e1 = NULL, *e2 = NULL;
+			uint32_t save_vgen1 = 0, save_vgen2 = 0;
+			int both = 0;
+
+			DEREF_VAR(any, both, save_vgen1, e1, e1->vgen, c1, c1_ctx, q->vgen);
+			DEREF_VAR(any, both, save_vgen2, e2, e2->vgen, c2, c2_ctx, q->vgen);
+
+			if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1)) {
+				while ((n = (snode*)list_pop_front(&stack)) != NULL)
+					free(n);
+
+				return true;
+			}
+
+			if (!both && is_compound(c1) && is_compound(c2)) {
+				n = malloc(sizeof(snode));
+				n->c1 = c1;
+				n->c1_ctx = c1_ctx;
+				list_push_back(&stack, n);
+			} else if (e1) {
+				e1->vgen = save_vgen1;
+				e2->vgen = save_vgen2;
+			}
+
+			p1 += p1->num_cells;
+			p2 += p2->num_cells;
+		}
+	}
+#endif
 	return true;
 }
 
