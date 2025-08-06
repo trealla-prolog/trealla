@@ -118,7 +118,7 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 
 static int compare_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
-	if (depth > 60) {
+	if (depth > 30) {
 		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		q->cycle_error++;
 
