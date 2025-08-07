@@ -141,64 +141,42 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
 	cell *l = p1;
 	pl_idx l_ctx = p1_ctx;
+	bool any1 = false, any2 = false;
 
 	while (is_iso_list(l)) {
-		cell *c = l + 1;
-		pl_idx c_ctx = l_ctx;
+		cell *h = l + 1;
+		pl_idx h_ctx = l_ctx;
+		slot *e = NULL;
+		uint32_t save_vgen = 0;
+		int both = 0;
 
-		if (is_var(c)) {
-			if (is_ref(c))
-				c_ctx = c->var_ctx;
+		DEREF_VAR(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
 
-			const frame *f = GET_FRAME(c_ctx);
-			slot *e = GET_SLOT(f, c->var_num);
-			uint32_t save_vgen = 0;
-			c = deref(q, c, c_ctx);
-			c_ctx = q->latest_ctx;
-
-			if (is_var(c))
+		if (!both)
+			if (has_vars_internal(q, h, h_ctx, depth+1))
 				return true;
 
-			if (e->vgen != q->vgen) {
-				save_vgen = e->vgen;
-				e->vgen = q->vgen;
-
-				if (has_vars_internal(q, c, c_ctx, depth+1))
-					return true;
-			}
-
-			if (e) e->vgen = save_vgen;
-		} else {
-			if (has_vars_internal(q, c, c_ctx, depth+1))
-				return true;
-		}
-
+		if (e) e->vgen = save_vgen;
 		l = l + 1; l += l->num_cells;
+		e = NULL;
+		both = 0;
 
-		if (is_var(l)) {
-			if (is_ref(l))
-				l_ctx = l->var_ctx;
+		DEREF_VAR(any2, both, save_vgen, e, e->vgen, l, l_ctx, q->vgen);
 
-			const frame *f = GET_FRAME(l_ctx);
-			slot *e = GET_SLOT(f, l->var_num);
-			l = deref(q, l, l_ctx);
-			l_ctx = q->latest_ctx;
-
-			if (!is_var(l) && (e->vgen == q->vgen))
-				break;
-
-			e->vgen = q->vgen;
-		}
+		if (both)
+			return false;
 	}
 
-	l = p1;
-	l_ctx = p1_ctx;
+	if (any2) {
+		l = p1;
+		l_ctx = p1_ctx;
 
-	while (is_iso_list(l)) {
-		l = l + 1; l += l->num_cells;
-		cell *c = l;
-		pl_idx c_ctx = l_ctx;
-		RESTORE_VAR(c, c_ctx, l, l_ctx, q->vgen);
+		while (is_iso_list(l)) {
+			l = l + 1; l += l->num_cells;
+			cell *c = l;
+			pl_idx c_ctx = l_ctx;
+			RESTORE_VAR(c, c_ctx, l, l_ctx, q->vgen);
+		}
 	}
 
 	return has_vars_internal(q, l, l_ctx, depth+1);
