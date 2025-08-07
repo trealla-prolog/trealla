@@ -35,14 +35,5 @@ cell *append_list(query *q, const cell *c);
 cell *end_list_unsafe(query *q);
 cell *end_list(query *q);
 
-inline static cell *init_tmp_heap(query *q)
-{
-	if (!q->tmp_heap) {
-		q->tmp_heap = malloc(q->tmph_size * sizeof(cell));
-		if (!q->tmp_heap) return NULL;
-	}
-
-	q->tmphp = 0;
-	return q->tmp_heap;
-}
+cell *init_tmp_heap(query *q);
 

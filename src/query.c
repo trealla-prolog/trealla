@@ -143,10 +143,10 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 void check_pressure(query *q)
 {
 #if REDUCE_PRESSURE
-	if (q->tmp_heap && (q->tmph_size > 4000)) {
+	if (q->tmp_heap && (q->tmph_size > INITIAL_NBR_HEAP_CELLS)) {
 		free(q->tmp_heap);
 		q->tmp_heap = NULL;
-		q->tmph_size = 1000;
+		q->tmph_size = INITIAL_NBR_HEAP_CELLS;
 	}
 
 	if (q->trails_size > (INITIAL_NBR_TRAILS*PRESSURE_FACTOR)) {
@@ -1879,7 +1879,7 @@ query *query_create(module *m)
 	// Allocate these later as needed...
 
 	q->heap_size = INITIAL_NBR_HEAP_CELLS;
-	q->tmph_size = INITIAL_NBR_CELLS;
+	q->tmph_size = INITIAL_NBR_HEAP_CELLS;
 
 	for (int i = 0; i < MAX_QUEUES; i++)
 		q->q_size[i] = INITIAL_NBR_QUEUE_CELLS;
