@@ -151,7 +151,6 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_idx p1_ctx, unsig
 		return tmp;
 	}
 
-	bool any = false;
 	unsigned arity = p1->arity;
 	p1++;
 
@@ -160,6 +159,7 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_idx p1_ctx, unsig
 		cell *c = p1;
 		pl_idx c_ctx = p1_ctx;
 		uint32_t save_vgen = 0;
+		bool any = false;
 		int both = 0;
 		if (deep_copy(c)) DEREF_CHECKED(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
 		if (both) q->cycle_error = true;
