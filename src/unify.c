@@ -15,7 +15,6 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 	while (is_iso_list(p1) && is_iso_list(p2)) {
 		cell *c1 = p1 + 1, *c2 = p2 + 1;
 		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
-
 		slot *e1 = NULL, *e2 = NULL;
 		uint32_t save_vgen = 0, save_vgen2 = 0;
 		int both = 0;
@@ -30,10 +29,8 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 
 		if (e1) e1->vgen = save_vgen;
 		if (e2) e2->vgen2 = save_vgen2;
-
 		p1 = p1 + 1; p1 += p1->num_cells;
 		p2 = p2 + 1; p2 += p2->num_cells;
-
 		e1 = e2 = NULL;
 		int both1 = 0, both2 = 0;
 
@@ -62,12 +59,10 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 	int arity = p1->arity;
 	p1 = p1 + 1;
 	p2 = p2 + 1;
-	int i = 0;
 
 	while (arity--) {
 		cell *c1 = p1, *c2 = p2;
 		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
-
 		slot *e1 = NULL, *e2 = NULL;
 		uint32_t save_vgen = 0, save_vgen2 = 0;
 		int both = 0;
@@ -85,7 +80,6 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 
 		p1 += p1->num_cells;
 		p2 += p2->num_cells;
-		i++;
 	}
 
 	return 0;
@@ -450,7 +444,6 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 	while (is_iso_list(p1) && is_iso_list(p2)) {
 		cell *c1 = p1 + 1, *c2 = p2 + 1;
 		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
-
 		slot *e1 = NULL, *e2 = NULL;
 		uint32_t save_vgen = 0, save_vgen2 = 0;
 		int both = 0;
@@ -467,7 +460,6 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 		if (e2) e2->vgen2 = save_vgen2;
 		p1 = p1 + 1; p1 += p1->num_cells;
 		p2 = p2 + 1; p2 += p2->num_cells;
-
 		e1 = e2 = NULL;
 		int both1 = 0, both2 = 0;
 
@@ -485,26 +477,6 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 
 		if (q->is_cyclic1 && q->is_cyclic2)
 			break;
-	}
-
-	if (any2 && q->is_cyclic1 && q->is_cyclic2) {
-		cell *p1 = orig_p1;
-		pl_idx p1_ctx = orig_p1_ctx;
-		cell *p2 = orig_p2;
-		pl_idx p2_ctx = orig_p2_ctx;
-		unsigned cnt = 0;
-
-		while (is_iso_list(p1) && is_iso_list(p2)) {
-			p1 = p1 + 1; p1 += p1->num_cells;
-			p2 = p2 + 1; p2 += p2->num_cells;
-			RESTORE_VAR(p1, p1_ctx, p1, p1_ctx, q->vgen);
-			RESTORE_VAR2(p2, p2_ctx, p2, p2_ctx, q->vgen);
-
-			if (cnt > 6)
-				return true;
-
-			cnt++;
-		}
 	}
 
 	return unify_internal(q, p1, p1_ctx, p2, p2_ctx, depth+1);
