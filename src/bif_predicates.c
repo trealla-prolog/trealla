@@ -1905,6 +1905,19 @@ static bool bif_sys_duplicate_term_3(query *q)
 	return unify(q, p2xx, p2xx_ctx, tmpp1, q->st.curr_frame);
 }
 
+static bool bif_sys_clone_term_2(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,any);
+
+	if (is_atomic(p1) || is_atomic(p2))
+		return unify(q, p1, p1_ctx, p2, p2_ctx);
+
+	cell *tmp = clone_term_to_heap(q, p1, p1_ctx);
+	check_memory(tmp);
+	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+}
+
 static bool bif_iso_functor_3(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -6231,6 +6244,7 @@ builtins g_other_bifs[] =
 	{"crypto_data_hash", 3, bif_crypto_data_hash_3, "?string,?string,?list", false, false, BLAH},
 #endif
 
+	{"$clone_term", 2, bif_sys_clone_term_2, "+term,?term", false, false, BLAH},
 	{"$module", 1, bif_sys_module_1, "?atom", false, false, BLAH},
 	{"$modules", 1, bif_sys_modules_1, "-list", false, false, BLAH},
 	{"$countall", 2, bif_sys_countall_2, "@callable,-integer", false, false, BLAH},
