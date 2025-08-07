@@ -298,21 +298,14 @@ static cell *copy_term_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx
 		return NULL;
 	}
 
-	if (!copy_vars(q, tmp, copy_attrs, from, from_ctx, to, to_ctx)) {
-		if (created) {
-			sl_destroy(q->vars);
-			q->vars = NULL;
-		}
-
-		return NULL;
-	}
+	bool ok = copy_vars(q, tmp, copy_attrs, from, from_ctx, to, to_ctx);
 
 	if (created) {
 		sl_destroy(q->vars);
 		q->vars = NULL;
 	}
 
-	return tmp;
+	return ok ? tmp : NULL;
 }
 
 cell *copy_term_to_tmp(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
