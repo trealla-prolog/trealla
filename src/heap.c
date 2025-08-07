@@ -285,28 +285,22 @@ unsigned rebase_term(query *q, cell *c, unsigned start_nbr)
 
 static cell *copy_term_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs, cell *from, pl_idx from_ctx, cell *to, pl_idx to_ctx)
 {
-	const frame *f = GET_CURR_FRAME();
-	bool created = false;
-
-	if (!q->vars) {
-		q->vars = sl_create(NULL, NULL, NULL);
-		created = true;
-		q->varno = f->actual_slots;
-		q->tab_idx = 0;
-	}
-
 	cell *c = deref(q, p1, p1_ctx);
 	pl_idx c_ctx = q->latest_ctx;
 
 	cell *tmp = clone_term_to_tmp(q, c, c_ctx);
 
-	if (!tmp) {
-		if (created) {
-			sl_destroy(q->vars);
-			q->vars = NULL;
-		}
-
+	if (!tmp)
 		return NULL;
+
+	bool created = false;
+
+	if (!q->vars) {
+		q->vars = sl_create(NULL, NULL, NULL);
+		created = true;
+		const frame *f = GET_CURR_FRAME();
+		q->varno = f->actual_slots;
+		q->tab_idx = 0;
 	}
 
 	bool ok = copy_vars(q, tmp, copy_attrs, from, from_ctx, to, to_ctx);
@@ -439,37 +433,6 @@ cell *copy_term_to_heap(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
 
 	return tmp2;
 }
-
-#if 0
-static cell *copy_term_to_heap_with_replacement(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs, cell *from, pl_idx from_ctx, cell *to, pl_idx to_ctx)
-{
-	if (!init_tmp_heap(q))
-		return NULL;
-
-	cell *tmp = copy_term_to_tmp_with_replacement(q, p1, p1_ctx, copy_attrs, from, from_ctx, to, to_ctx);
-	if (!tmp) return tmp;
-	cell *tmp2 = alloc_on_heap(q, tmp->num_cells);
-	if (!tmp2) return NULL;
-	dup_cells(tmp2, tmp, tmp->num_cells);
-
-	if (!copy_attrs)
-		return tmp2;
-
-	cell *c = tmp2;
-
-	for (pl_idx i = 0; i < tmp2->num_cells; i++, c++) {
-		if (is_var(c) && c->tmp_attrs) {
-			const frame *f = GET_FRAME(c->var_ctx);
-			slot *e = GET_SLOT(f, c->var_num);
-			e->c.val_attrs = clone_term_to_heap(q, c->tmp_attrs, q->st.curr_frame);
-			free(c->tmp_attrs);
-			c->tmp_attrs = NULL;
-		}
-	}
-
-	return tmp2;
-}
-#endif
 
 void fix_list(cell *c)
 {
