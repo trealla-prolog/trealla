@@ -1783,7 +1783,7 @@ static bool bif_iso_term_variables_2(query *q)
 	if (is_iso_list(p2) && !check_list(q, p2, p2_ctx, &is_partial, NULL) && !is_partial)
 		return throw_error(q, p2, p2_ctx, "type_error", "list");
 
-	if (!is_var(p1) && (!is_compound(p1) || is_ground(p1)))
+	if (!is_var(p1) && (!is_compound(p1) /*|| is_ground(p1)*/))
 		return unify(q, p2, p2_ctx, make_nil(), q->st.curr_frame);
 
 	cell *tmp = do_term_variables(q, p1, p1_ctx);
