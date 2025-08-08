@@ -1892,6 +1892,9 @@ static bool bif_sys_duplicate_term_3(query *q)
 	cell *tmpp1 = tmp + 1;
 	cell *tmpp2 = tmpp1 + tmpp1->num_cells;
 
+	if (!q->has_vars && is_compound(tmpp1))
+		tmpp1->flags |= FLAG_INTERNED_GROUND;
+
 	if (!q->has_vars && is_compound(tmpp2))
 		tmpp2->flags |= FLAG_INTERNED_GROUND;
 

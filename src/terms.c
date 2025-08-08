@@ -89,12 +89,14 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 
 static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
-	if (is_var(p1) && !(p1->flags & FLAG_VAR_CYCLIC)) {
-		accum_var(q, p1, p1_ctx);
+	if (is_var(p1)) {
+		if (!(p1->flags & FLAG_VAR_CYCLIC))
+			accum_var(q, p1, p1_ctx);
+
 		return;
 	}
 
-	if (!is_compound(p1) || is_ground(p1))
+	if (!is_compound(p1) /*|| is_ground(p1)*/)
 		return;
 
 	if (is_iso_list(p1)) {
