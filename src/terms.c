@@ -115,9 +115,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 
 		DEREF_VAR(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
 
-		if (!both && is_var(c) && !(c->flags & FLAG_VAR_CYCLIC))
-			accum_var(q, c, c_ctx);
-		else if (!both && is_compound(c))
+		if (!both)
 			collect_vars_internal(q, c, c_ctx, depth+1);
 
 		if (e) e->vgen = save_vgen;
@@ -329,7 +327,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned 
 		if (both)
 			return true;
 
-		if (is_compound(c) && is_cyclic_term_internal(q, c, c_ctx, depth+1))
+		if (is_cyclic_term_internal(q, c, c_ctx, depth+1))
 			return true;
 
 		if (e) e->vgen = save_vgen;
