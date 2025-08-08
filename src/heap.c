@@ -303,7 +303,9 @@ static cell *copy_term_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx
 		q->tab_idx = 0;
 	}
 
+	q->has_vars = false;
 	bool ok = copy_vars(q, tmp, copy_attrs, from, from_ctx, to, to_ctx);
+	q->has_vars = sl_count(q->vars);
 
 	if (created) {
 		sl_destroy(q->vars);

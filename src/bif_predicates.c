@@ -1890,10 +1890,12 @@ static bool bif_sys_duplicate_term_3(query *q)
 	tmp = copy_term_to_heap(q, tmp, q->st.curr_frame, copy_attrs);
 	check_memory(tmp);
 	cell *tmpp1 = tmp + 1;
+	cell *tmpp2 = tmpp1 + tmpp1->num_cells;
+
+	if (!q->has_vars && is_compound(tmpp2))
+		tmpp2->flags |= FLAG_INTERNED_GROUND;
 
 	if (q->cycle_error) {
-		cell *tmpp2 = tmpp1 + tmpp1->num_cells;
-
 		if (!unify(q, tmpp1, q->st.curr_frame, tmpp2, q->st.curr_frame))
 			return false;
 	}
