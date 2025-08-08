@@ -100,6 +100,9 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_idx p1_ctx, unsig
 	if (!tmp) return NULL;
 	copy_cells(tmp, p1, 1);
 
+	if (is_var(p1))
+		q->has_vars = true;
+
 	if (is_var(tmp) && !is_ref(tmp) && !q->noderef) {
 		tmp->flags |= FLAG_VAR_REF;
 		tmp->var_ctx = p1_ctx;
@@ -188,6 +191,7 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_idx p1_ctx, unsig
 cell *clone_term_to_tmp(query *q, cell *p1, pl_idx p1_ctx)
 {
 	if (++q->vgen == 0) q->vgen = 1;
+	q->has_vars = false;
 	cell *rec = clone_term_to_tmp_internal(q, p1, p1_ctx, 0);
 	if (!rec) return NULL;
 	return rec;
@@ -195,6 +199,7 @@ cell *clone_term_to_tmp(query *q, cell *p1, pl_idx p1_ctx)
 
 cell *append_to_tmp(query *q, cell *p1, pl_idx p1_ctx)
 {
+	q->has_vars = false;
 	cell *tmp = alloc_on_tmp(q, p1->num_cells);
 	if (!tmp) return NULL;
 	copy_cells_by_ref(tmp, p1, p1_ctx, p1->num_cells);
@@ -257,6 +262,7 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 unsigned rebase_term(query *q, cell *c, unsigned start_nbr)
 {
 	q->vars = sl_create(NULL, NULL, NULL);
+	q->has_vars = false;
 	q->varno = start_nbr;
 	q->tab_idx = 0;
 
@@ -303,9 +309,7 @@ static cell *copy_term_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx
 		q->tab_idx = 0;
 	}
 
-	q->has_vars = false;
 	bool ok = copy_vars(q, tmp, copy_attrs, from, from_ctx, to, to_ctx);
-	q->has_vars = sl_count(q->vars);
 
 	if (created) {
 		sl_destroy(q->vars);
@@ -317,6 +321,7 @@ static cell *copy_term_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx
 
 cell *copy_term_to_tmp(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
 {
+	q->has_vars = false;
 	return copy_term_to_tmp_with_replacement(q, p1, p1_ctx, copy_attrs, NULL, 0, NULL, 0);
 }
 
@@ -396,6 +401,7 @@ cell *clone_term_to_heap(query *q, cell *p1, pl_idx p1_ctx)
 	if (!init_tmp_heap(q))
 		return NULL;
 
+	q->has_vars = false;
 	p1 = clone_term_to_tmp(q, p1, p1_ctx);
 	if (!p1) return p1;
 	cell *tmp = alloc_on_heap(q, p1->num_cells);
@@ -409,6 +415,7 @@ cell *copy_term_to_heap(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
 	if (!init_tmp_heap(q))
 		return NULL;
 
+	q->has_vars = false;
 	cell *tmp = copy_term_to_tmp_with_replacement(q, p1, p1_ctx, copy_attrs, NULL, 0, NULL, 0);
 	if (!tmp) return tmp;
 	cell *tmp2 = alloc_on_heap(q, tmp->num_cells);
@@ -455,6 +462,7 @@ cell *allocate_list(query *q, const cell *c)
 	if (!init_tmp_heap(q))
 		return NULL;
 
+	q->has_vars = false;
 	append_list(q, c);
 	return get_tmp_heap(q, 0);
 }
@@ -525,6 +533,7 @@ cell *allocate_structure(query *q, const char *functor, const cell *c)
 	if (!init_tmp_heap(q))
 		return NULL;
 
+	q->has_vars = false;
 	cell *tmp = alloc_on_tmp(q, 1);
 	if (!tmp) return NULL;
 	tmp->tag = TAG_INTERNED;

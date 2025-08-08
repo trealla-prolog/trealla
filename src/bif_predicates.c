@@ -1920,6 +1920,10 @@ static bool bif_sys_clone_term_2(query *q)
 
 	cell *tmp = clone_term_to_heap(q, p1, p1_ctx);
 	check_memory(tmp);
+
+	if (!q->has_vars && is_compound(tmp))
+		tmp->flags |= FLAG_INTERNED_GROUND;
+
 	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 }
 

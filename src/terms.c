@@ -2,7 +2,7 @@
 
 #include "query.h"
 
-typedef struct { lnode hdr; cell *c; pl_idx c_ctx; } snode;
+typedef struct { lnode hdr; cell *c; pl_idx c_ctx; slot *e; uint32_t save_vgen; } snode;
 
 static bool accum_var(query *q, const cell *c, pl_idx c_ctx)
 {
@@ -199,11 +199,15 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 	snode *n = malloc(sizeof(snode));
 	n->c = p1;
 	n->c_ctx = p1_ctx;
+	n->e = NULL;
+	n->save_vgen = 0;
 	list_push_back(&stack, n);
 
 	while ((n = (snode*)list_pop_front(&stack)) != NULL) {
 		cell *p1 = n->c;
 		pl_idx p1_ctx = n->c_ctx;
+		slot *e = n->e;
+		uint32_t save_vgen = n->save_vgen;
 		free(n);
 
 		if (!is_compound(p1) || is_iso_list(p1)) {
@@ -213,6 +217,8 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 
 				return true;
 			}
+
+			continue;
 		}
 
 		bool any = false;
@@ -239,12 +245,17 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 				n = malloc(sizeof(snode));
 				n->c = c;
 				n->c_ctx = c_ctx;
+				n->e = e;
+				n->save_vgen = save_vgen;
 				list_push_back(&stack, n);
 			} else if (e)
 				e->vgen = save_vgen;
 
 			p1 += p1->num_cells;
 		}
+
+		if (e)
+			e->vgen = save_vgen;
 	}
 
 	return false;
