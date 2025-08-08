@@ -162,6 +162,10 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_idx p1_ctx, unsig
 
 		tmp = get_tmp_heap(q, save_idx);
 		tmp->num_cells = tmp_heap_used(q) - save_idx;
+
+		if (!q->has_vars)
+			tmp->flags |= FLAG_INTERNED_GROUND;
+
 		return tmp;
 	}
 
@@ -185,6 +189,10 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_idx p1_ctx, unsig
 
 	tmp = get_tmp_heap(q, save_idx);
 	tmp->num_cells = tmp_heap_used(q) - save_idx;
+
+	if (!q->has_vars)
+		tmp->flags |= FLAG_INTERNED_GROUND;
+
 	return tmp;
 }
 
