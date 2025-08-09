@@ -1990,12 +1990,12 @@ static bool bif_iso_functor_3(query *q)
 	cell tmp = *p1;
 	tmp.num_cells = 1;
 	tmp.arity = 0;
+	tmp.flags = 0;
 	CLR_OP(&tmp);
 
 	if (is_string(p1)) {
 		tmp.tag = TAG_INTERNED;
 		tmp.val_off = g_dot_s;
-		tmp.flags = 0;
 	}
 
 	if (!unify(q, p2, p2_ctx, &tmp, q->st.curr_frame))
