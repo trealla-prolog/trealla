@@ -35,7 +35,6 @@ static const op_table g_ops[] =
 	{"public", OP_FX, 1150},
 	{"discontiguous", OP_FX, 1150},
 	{"multifile", OP_FX, 1150},
-	{"attribute", OP_FX, 1150},
 	//{"op", OP_FX, 1150},
 	//{"table", OP_FX, 1150},
 	{"dynamic", OP_FX, 1150},
