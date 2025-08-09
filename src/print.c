@@ -855,7 +855,7 @@ static bool print_interned(query *q, cell *c, pl_idx c_ctx, bool running, unsign
 		cell *c1 = c->arity ? deref(q, FIRST_ARG(c), c_ctx) : NULL;
 
 		if (running && is_interned(c) && c->arity
-			&& q->numbervars && !strcmp(src, "$VAR") && c1
+			&& q->numbervars && (c->val_off == g_sys_var_s) && c1
 			&& is_integer(c1) && (get_smallint(c1) >= 0)) {
 			SB_sprintf(q->sb, "%s", varformat2(q->tmpbuf, sizeof(q->tmpbuf), c1, 0));
 			q->last_thing = WAS_OTHER;
