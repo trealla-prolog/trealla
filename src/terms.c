@@ -218,6 +218,9 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 				return true;
 			}
 
+			if (e)
+				e->vgen = save_vgen;
+
 			continue;
 		}
 
