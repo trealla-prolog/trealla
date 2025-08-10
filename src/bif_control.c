@@ -70,32 +70,33 @@ static bool bif_sys_cleanup_if_det_1(query *q)
 	return true;
 }
 
-bool call_check(query *q, cell *tmp2, bool *status, bool calln)
+bool call_check(query *q, cell *p1, bool *status, bool calln)
 {
-	cell *save_tmp2 = tmp2;
+	cell *save_p1 = p1;
 
-	if (calln || !tmp2->arity) {
+	if (calln || !p1->arity) {
 		bool found = false;
 
-		if ((tmp2->match = search_predicate(q->st.m, tmp2, NULL)) != NULL) {
-			tmp2->flags &= ~FLAG_INTERNED_BUILTIN;
-		} else if ((tmp2->bif_ptr = get_builtin_term(q->st.m, tmp2, &found, NULL)), found) {
-			tmp2->flags |= FLAG_INTERNED_BUILTIN;
+		if ((p1->match = search_predicate(q->st.m, p1, NULL)) != NULL) {
+			p1->flags &= ~FLAG_INTERNED_BUILTIN;
+		} else if ((p1->bif_ptr = get_builtin_term(q->st.m, p1, &found, NULL)), found) {
+			p1->flags |= FLAG_INTERNED_BUILTIN;
 
-			if (calln && (tmp2->arity <= 2)) {
-				const char *functor = C_STR(q, tmp2);
+			if (calln && (p1->arity <= 2)) {
+				const char *functor = C_STR(q, p1);
 				unsigned specifier;
 
 				if (search_op(q->st.m, functor, &specifier, false))
-					SET_OP(tmp2, specifier);
+					SET_OP(p1, specifier);
 			}
 		} else {
-			tmp2->flags &= ~FLAG_INTERNED_BUILTIN;
+			p1->flags &= ~FLAG_INTERNED_BUILTIN;
 		}
 	}
 
-	if ((tmp2->arity == 2) && is_builtin(tmp2) && (tmp2 = check_body_callable(tmp2)) != NULL) {
-		*status = throw_error(q, save_tmp2, q->st.curr_frame, "type_error", "callable");
+	if (!calln && (p1->arity == 2) && is_builtin(p1)
+		&& (p1 = check_body_callable(p1)) != NULL) {
+		*status = throw_error(q, save_p1, q->st.curr_frame, "type_error", "callable");
 		return false;
 	}
 
