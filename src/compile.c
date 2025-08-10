@@ -181,13 +181,15 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-#if 0
+#if 1
 	if (((*src)->val_off == g_call_s) && ((*src)->arity > 1) && !is_var(c)) {
 		unsigned var_num = cl->num_vars++;
 		unsigned arity = (*src)->arity - 1;
+		unsigned save_num_cells = (*src)->num_cells;
 		*src += 1;
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_num);
+		make_instr((*dst)++, g_sys_call_check_s, bif_sys_call_check_1, 1, save_num_cells-1);
 		cell *save_dst = *dst;
 		copy_term(dst, src);										// Functor
 		save_dst->arity += arity;
@@ -197,6 +199,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 		save_dst->num_cells = *dst - save_dst;
 		calln_check(pr->m, save_dst);
+		*dst += copy_cells(*dst, save_dst, save_dst->num_cells);
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_num);
 		return;
