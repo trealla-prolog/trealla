@@ -498,28 +498,6 @@ mutex_create(Id) :-
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-
-error(Err, Context) :-
-	must_be(Err, nonvar, error/2, _),
-	throw(error(Err,Context)).
-
-resource_error(Resource, Context) :-
-   throw(error(resource_error(Resource), Context)).
-
-instantiation_error(Context) :-
-	throw(error(instantiation_error, Context)).
-
-domain_error(Type, Term, Context) :-
-	throw(error(domain_error(Type, Term), Context)).
-
-type_error(Type, Term, Context) :-
-	throw(error(type_error(Type, Term), Context)).
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 % NOTE: this doesn't display var names properly...
 
 :- help(pretty(+predicateindicator), [iso(false)]).
