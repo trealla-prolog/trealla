@@ -1875,7 +1875,7 @@ static bool bif_sys_duplicate_term_3(query *q)
 	GET_NEXT_ARG(p3,integer);
 	bool copy_attrs = get_smalluint(p3);
 
-	if (is_atomic(p1) || is_atomic(p2))
+	if (is_atomic(p1) || is_atomic(p2) || is_ground(p1) || is_ground(p2))
 		return unify(q, p1, p1_ctx, p2, p2_ctx);
 
 	// You are not expected to understand this: basically we have
@@ -1910,7 +1910,7 @@ static bool bif_sys_clone_term_2(query *q)
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 
-	if (is_atomic(p1) || is_atomic(p2))
+	if (is_atomic(p1) || is_atomic(p2) || is_ground(p1) || is_ground(p2))
 		return unify(q, p1, p1_ctx, p2, p2_ctx);
 
 	cell *tmp = clone_term_to_heap(q, p1, p1_ctx);
