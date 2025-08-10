@@ -693,7 +693,9 @@ bool bif_sys_call_check_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 
-	if ((is_builtin(p1) && !is_evaluable(p1)) || !p1->arity) {
+	if ((is_builtin(p1) && !is_evaluable(p1)
+		&& ((p1->val_off == g_conjunction_s) || (p1->val_off == g_disjunction_s))
+		) || !p1->arity) {
 		check_memory(init_tmp_heap(q));
 		p1 = clone_term_to_tmp(q, p1, p1_ctx);
 		check_memory(p1);

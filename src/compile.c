@@ -13,7 +13,7 @@ static void copy_term(cell **dst, cell **src)
 	*src += n;
 }
 
-void calln_check(module *m, cell *p1)
+static void calln_check(module *m, cell *p1)
 {
 	bool found = false;
 
@@ -181,7 +181,6 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-#if 1
 	if (((*src)->val_off == g_call_s) && ((*src)->arity > 1) && !is_var(c)) {
 		unsigned var_num = cl->num_vars++;
 		unsigned arity = (*src)->arity - 1;
@@ -204,7 +203,6 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_var((*dst)++, g_anon_s, var_num);
 		return;
 	}
-#endif
 
 	if (((*src)->val_off == g_once_s) && ((*src)->arity == 1) && !is_var(c)) {
 		unsigned var_num = cl->num_vars++;
