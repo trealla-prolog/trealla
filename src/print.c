@@ -1503,10 +1503,12 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 	if (is_chars_list) {
 		cell *l = c;
+		pl_idx l_ctx = c_ctx;
 		SB_sprintf(q->sb, "%s", "\"");
 		unsigned cnt = 0;
 		LIST_HANDLER(l);
 		bool closing_quote = true;
+		bool any = false;
 
 		while (is_list(l)) {
 			if (q->max_depth && (cnt++ >= q->max_depth)) {
@@ -1516,17 +1518,33 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 			}
 
 			cell *h = LIST_HEAD(l);
-			cell *c = running ? deref(q, h, c_ctx) : h;
+			pl_idx h_ctx = l_ctx;
+			slot *e = NULL;
+			uint32_t save_vgen = 0;
+			int both = 0;
 
-			if (is_smallint(c)) {
-				SB_putchar(q->sb, c->val_uint);
+			if (running) {
+				DEREF_VAR(any, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
+				if (e) e->vgen = save_vgen;
+			}
+
+			if (is_smallint(h) && !both) {
+				SB_putchar(q->sb, h->val_uint);
 			} else {
-				SB_strcat_and_free(q->sb, formatted(C_STR(q, c), C_STRLEN(q, c), true, q->json));
+				SB_strcat_and_free(q->sb, formatted(C_STR(q, h), C_STRLEN(q, h), true, q->json));
 			}
 
 			l = LIST_TAIL(l);
-			l = running ? deref(q, l, c_ctx) : l;
-			c_ctx = running ? q->latest_ctx : 0;
+			e = NULL;
+			both = 0;
+			any = false;
+
+			if (running) DEREF_VAR(any, both, save_vgen, e, e->vgen, l, l_ctx, q->vgen);
+
+			if (both) {
+				q->cycle_error = true;
+				break;
+			}
 		}
 
 		if (closing_quote) SB_sprintf(q->sb, "%s", "\"");
@@ -1534,7 +1552,11 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		if (is_partial) {
 			SB_strcat(q->sb, "||");
 			if (is_op(l)) SB_putchar(q->sb, '(');
-			print_term_to_buf_(q, l, 0, 1, 0, depth+1, depth+1, NULL);
+			if (q->cycle_error) {
+				if (!dump_variable(q, c, c_ctx, 1))
+					print_variable(q, c, c_ctx, 1);
+			} else
+				print_term_to_buf_(q, l, 0, running, 0, depth+1, depth+1, NULL);
 			if (is_op(l)) SB_putchar(q->sb, ')');
 		}
 

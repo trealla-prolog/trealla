@@ -328,11 +328,13 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 		both = 0;
 		DEREF_VAR(any2, both, save_vgen, e, e->vgen, l, l_ctx, q->vgen);
 
-		if (both)
-			return 0;
+		if (both) {
+			*is_partial = true;
+			break;
+		}
 	}
 
-	if (any2) {
+	if (any2 && !*is_partial) {
 		cell *l2 = save_l;
 		pl_idx l2_ctx = save_l_ctx;
 		LIST_HANDLER(l2);
