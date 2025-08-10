@@ -190,7 +190,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_var((*dst)++, g_anon_s, var_num);
 		cell *save_dst = *dst;
 		copy_term(dst, src);										// Functor
-		save_dst->arity = arity;
+		save_dst->arity += arity;
 
 		while (arity--)
 			copy_term(dst, src);									// Args
