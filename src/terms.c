@@ -361,7 +361,7 @@ bool is_cyclic_term(query *q, cell *p1, pl_idx p1_ctx)
 
 bool is_acyclic_term(query *q, cell *p1, pl_idx p1_ctx)
 {
-	return !is_cyclic_term_internal(q, p1, p1_ctx, 0);
+	return !is_cyclic_term(q, p1, p1_ctx);
 }
 
 inline static cell *term_next(query *q, cell *c, pl_idx *c_ctx, bool *done)
