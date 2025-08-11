@@ -206,7 +206,9 @@ bool bif_iso_call_1(query *q)
 
 		if (!call_check(q, p1, &status, false))
 			return status;
-	} else if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
+	}
+
+	if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
 		cell *cm = p1 + 1;
 		cm = deref(q, cm, p1_ctx);
 
@@ -257,7 +259,9 @@ static bool bif_iso_once_1(query *q)
 
 		if (!call_check(q, p1, &status, false))
 			return status;
-	} else if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
+	}
+
+	if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
 		cell *cm = p1 + 1;
 		cm = deref(q, cm, p1_ctx);
 
@@ -305,7 +309,9 @@ static bool bif_ignore_1(query *q)
 
 		if (!call_check(q, p1, &status, false))
 			return status;
-	} else if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
+	}
+
+	if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
 		cell *cm = p1 + 1;
 		cm = deref(q, cm, p1_ctx);
 
