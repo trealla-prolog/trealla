@@ -522,7 +522,7 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 static bool unify_var(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
 	bool was_cyclic = false;
-	bool check = !is_local(p1);
+	bool check = is_global(p1);
 
 	if (q->flags.occurs_check == OCCURS_CHECK_TRUE) {
 		if (check && is_cyclic_term(q, p2, p2_ctx))
