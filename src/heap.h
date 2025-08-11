@@ -17,6 +17,7 @@ cell *copy_term_to_tmp(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs);
 cell *alloc_on_heap(query *q, unsigned num_cells);
 cell *clone_term_to_heap(query *q, cell *p1, pl_idx p1_ctx);
 cell *copy_term_to_heap(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs);
+cell *copy_term_to_heap_with_replacement(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs, cell *from, pl_idx from_ctx, cell *to, pl_idx to_ctx);
 void trim_heap(query *q);
 
 cell *alloc_on_queuen(query *q, unsigned qnum, const cell *c);
