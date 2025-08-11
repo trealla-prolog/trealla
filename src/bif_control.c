@@ -940,7 +940,7 @@ bool throw_error3(query *q, cell *c, pl_idx c_ctx, const char *err_type, const c
 	if (!strcmp(expected, "smallint"))
 		expected = "integer";
 
-	if (!is_var(c)) {
+	if (!is_var(c) || q->cycle_error) {
 		char *tmpbuf = DUP_STRING(q, goal);
 		snprintf(functor, sizeof(functor), "%s", tmpbuf);
 		functor[sizeof(functor)-1] = '\0';
@@ -969,7 +969,7 @@ bool throw_error3(query *q, cell *c, pl_idx c_ctx, const char *err_type, const c
 
 	cell *tmp;
 
-	if (is_var(c)) {
+	if (is_var(c) && !q->cycle_error) {
 		err_type = "instantiation_error";
 		//printf("error(%s,%s).\n", err_type, expected);
 		tmp = alloc_on_heap(q, 3);
