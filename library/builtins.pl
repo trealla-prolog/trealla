@@ -133,7 +133,7 @@ call_residue_vars(G, Ls) :-
 :- help(copy_term(+term,?term,-list), [iso(false)]).
 
 copy_term(Term, Copy, Gs) :-
-	'$duplicate_term'(Term, Copy0, 1),
+	copy_term(Term, Copy0),
 	term_attributed_variables(Copy0, Vs),
 	collect_goals_(Vs, [], Gs),
 	Copy = Copy0.
