@@ -414,8 +414,10 @@ static bool bif_iso_asserta_1(query *q)
 	p->cl->cidx = 0;
 	parser_destroy(p);
 
-	if (!r)
+	if (!r) {
+		h = copy_term_to_heap(q, h, q->st.curr_frame, false);
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
+	}
 
 	db_log(q, r, LOG_ASSERTA);
 	return true;
@@ -470,8 +472,10 @@ static bool bif_iso_assertz_1(query *q)
 	p->cl->cidx = 0;
 	parser_destroy(p);
 
-	if (!r)
+	if (!r) {
+		h = copy_term_to_heap(q, h, q->st.curr_frame, false);
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
+	}
 
 	db_log(q, r, LOG_ASSERTZ);
 	return true;
@@ -534,8 +538,10 @@ static bool do_asserta_2(query *q)
 	p->cl->cidx = 0;
 	parser_destroy(p);
 
-	if (!r)
+	if (!r) {
+		h = copy_term_to_heap(q, h, q->st.curr_frame, false);
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
+	}
 
 	if (!is_var(p2)) {
 		uuid u;
@@ -626,8 +632,10 @@ static bool do_assertz_2(query *q)
 	p->cl->cidx = 0;
 	parser_destroy(p);
 
-	if (!r)
+	if (!r) {
+		h = copy_term_to_heap(q, h, q->st.curr_frame, false);
 		return throw_error(q, h, q->st.curr_frame, "permission_error", "modify,static_procedure");
+	}
 
 	if (!is_var(p2)) {
 		uuid u;
