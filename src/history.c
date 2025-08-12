@@ -371,7 +371,7 @@ LOOP:
 void history_load(const char *filename)
 {
 	snprintf(g_filename, sizeof(g_filename), "%s", filename);
-	ic_set_history(g_filename, 999);
+	ic_set_history(g_filename, 9999);
 
 	ic_enable_brace_matching(false);
 	ic_enable_brace_insertion(false);
