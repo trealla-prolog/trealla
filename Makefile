@@ -10,8 +10,8 @@ CFLAGS = -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' \
 LDFLAGS = -L/usr/local/lib -lm
 
 ifdef HOMEBREW_PREFIX
-LDFLAGS += -L$(HOMEBREW_PREFIX)/opt/libffi/lib -L$(HOMEBREW_PREFIX)/opt/openssl@3/lib
-CFLAGS += -I$(HOMEBREW_PREFIX)/opt/libffi/include -I$(HOMEBREW_PREFIX)/opt/openssl@3/include
+LDFLAGS += -L$(HOMEBREW_PREFIX)/opt/libffi/lib -L$(HOMEBREW_PREFIX)/opt/openssl@3/lib -L$(HOMEBREW_PREFIX)/opt/readline/lib
+CFLAGS += -I$(HOMEBREW_PREFIX)/opt/libffi/include -I$(HOMEBREW_PREFIX)/opt/openssl@3/include -I$(HOMEBREW_PREFIX)/opt/readline/include
 endif
 
 ifdef WASI
@@ -56,8 +56,8 @@ LDFLAGS += -lffi -ldl
 endif
 
 ifndef NOSSL
-CFLAGS += -DUSE_OPENSSL=1 -I/usr/local/opt/openssl/include
-LDFLAGS += -L/usr/local/opt/openssl/lib -lssl -lcrypto
+CFLAGS += -DUSE_OPENSSL=1
+LDFLAGS += -lssl -lcrypto
 endif
 
 ifndef NOTHREADS
