@@ -197,17 +197,6 @@ bool bif_iso_call_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 
-	if ((is_builtin(p1) && (p1->arity == 2)) || !p1->arity) {
-		check_memory(init_tmp_heap(q));
-		p1 = clone_term_to_tmp(q, p1, p1_ctx);
-		check_memory(p1);
-		p1_ctx = q->st.curr_frame;
-		bool status;
-
-		if (!call_check(q, p1, &status, false))
-			return status;
-	}
-
 	if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
 		cell *cm = p1 + 1;
 		cm = deref(q, cm, p1_ctx);
@@ -226,6 +215,17 @@ bool bif_iso_call_1(query *q)
 
 		if (!is_callable(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "callable");
+	}
+
+	if ((is_builtin(p1) && (p1->arity == 2)) || !p1->arity) {
+		check_memory(init_tmp_heap(q));
+		p1 = clone_term_to_tmp(q, p1, p1_ctx);
+		check_memory(p1);
+		p1_ctx = q->st.curr_frame;
+		bool status;
+
+		if (!call_check(q, p1, &status, false))
+			return status;
 	}
 
 	cell *tmp = prepare_call(q, CALL_NOSKIP, p1, p1_ctx, 3);
