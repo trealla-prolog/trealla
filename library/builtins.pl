@@ -133,10 +133,9 @@ call_residue_vars(G, Ls) :-
 :- help(copy_term(+term,?term,-list), [iso(false)]).
 
 copy_term(Term, Copy, Gs) :-
-	copy_term(Term, Copy0),
-	term_attributed_variables(Copy0, Vs),
-	collect_goals_(Vs, [], Gs),
-	Copy = Copy0.
+	copy_term(Term, Copy),
+	term_attributed_variables(Copy, Vs),
+	collect_goals_(Vs, [], Gs).
 
 collect_goals_(_, [], GsIn, GsIn).
 collect_goals_(V, [H|T], GsIn, GsOut) :-
