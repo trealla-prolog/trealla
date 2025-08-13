@@ -127,7 +127,7 @@ Written in plain-old C99.
 	git clone https://github.com/trealla-prolog/trealla.git
 	cd trealla
 
-On Debian-like systems, you will need to install the following
+On Debian-like systems, you will need to install (if not alread( the following
 packages to set up a build environment:
 
 	sudo apt install build-essential git libreadline-dev libffi-dev libssl-dev xxd
@@ -148,7 +148,7 @@ To build without pre-emptive multi-threading support:
 
 	make NOTHREADS=1
 
-To build with the included ISOCLINE sources (default is to use GNU Readline,
+To build (as a last resort) with the included ISOCLINE sources (default is to use GNU Readline,
 except Windows):
 
 	make ISOCLINE=1
@@ -175,7 +175,7 @@ and there should be no errors, Further (if valgrind is installed)...
 	make leaks
 
 Should show no memory out-of-bounds, null-pointer, use after free
-or memory leaks (there may be one perhaps spurious error).
+or memory leaks (there may a few spurious errors).
 
 On *BSD* systems use *gmake* to build and do
 
@@ -189,9 +189,19 @@ to get the *xxd* utility.
 
 On macOS:
 
-	brew install libffi openssl make coreutils bash
-
+	brew install libffi openssl make coreutils bash readline
 	brew install vim readline # if necessary
+
+Use the Brew version of readline and heed the warnings about adding:
+
+	export LDFLAGS=-L/opt/homebrew/opt/readline/lib
+	export CPPFLAGS=-I/opt/homebrew/opt/readline/include
+
+as there may be history file issues otherwise.
+
+
+Unbounded integers (Bigints) and Rationals
+==========================================
 
 For unbounded arithmetic Trealla uses a modified fork of the
 [imath](https://github.com/infradig/imath)

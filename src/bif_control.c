@@ -157,7 +157,7 @@ static bool bif_iso_call_n(query *q)
 	check_memory(append_to_tmp(q, p1, p1_ctx));
 
 	while (args++ < xarity) {
-		GET_NEXT_ARG(p2,any);
+		GET_NEXT_RAW_ARG(p2,any);
 		check_memory(append_to_tmp(q, p2, p2_ctx));
 		arity++;
 	}
@@ -197,16 +197,7 @@ bool bif_iso_call_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 
-	if ((is_builtin(p1) && (p1->arity == 2)) || !p1->arity) {
-		check_memory(init_tmp_heap(q));
-		p1 = clone_term_to_tmp(q, p1, p1_ctx);
-		check_memory(p1);
-		p1_ctx = q->st.curr_frame;
-		bool status;
-
-		if (!call_check(q, p1, &status, false))
-			return status;
-	} else if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
+	if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
 		cell *cm = p1 + 1;
 		cm = deref(q, cm, p1_ctx);
 
@@ -224,6 +215,17 @@ bool bif_iso_call_1(query *q)
 
 		if (!is_callable(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "callable");
+	}
+
+	if ((is_builtin(p1) && (p1->arity == 2)) || !p1->arity) {
+		check_memory(init_tmp_heap(q));
+		p1 = clone_term_to_tmp(q, p1, p1_ctx);
+		check_memory(p1);
+		p1_ctx = q->st.curr_frame;
+		bool status;
+
+		if (!call_check(q, p1, &status, false))
+			return status;
 	}
 
 	cell *tmp = prepare_call(q, CALL_NOSKIP, p1, p1_ctx, 3);
@@ -257,7 +259,9 @@ static bool bif_iso_once_1(query *q)
 
 		if (!call_check(q, p1, &status, false))
 			return status;
-	} else if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
+	}
+
+	if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
 		cell *cm = p1 + 1;
 		cm = deref(q, cm, p1_ctx);
 
@@ -305,7 +309,9 @@ static bool bif_ignore_1(query *q)
 
 		if (!call_check(q, p1, &status, false))
 			return status;
-	} else if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
+	}
+
+	if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
 		cell *cm = p1 + 1;
 		cm = deref(q, cm, p1_ctx);
 
@@ -940,7 +946,7 @@ bool throw_error3(query *q, cell *c, pl_idx c_ctx, const char *err_type, const c
 	if (!strcmp(expected, "smallint"))
 		expected = "integer";
 
-	if (!is_var(c)) {
+	if (!is_var(c) || q->cycle_error) {
 		char *tmpbuf = DUP_STRING(q, goal);
 		snprintf(functor, sizeof(functor), "%s", tmpbuf);
 		functor[sizeof(functor)-1] = '\0';
@@ -969,7 +975,7 @@ bool throw_error3(query *q, cell *c, pl_idx c_ctx, const char *err_type, const c
 
 	cell *tmp;
 
-	if (is_var(c)) {
+	if (is_var(c) && !q->cycle_error) {
 		err_type = "instantiation_error";
 		//printf("error(%s,%s).\n", err_type, expected);
 		tmp = alloc_on_heap(q, 3);

@@ -1803,13 +1803,11 @@ static cell *do_term_singletons(query *q, cell *p1, pl_idx p1_ctx)
 	const unsigned cnt = q->tab_idx;
 	unsigned cnt2 = 0;
 
-	if (cnt) {
-		for (unsigned i = 0; i < cnt; i++) {
-			if (q->pl->tabs[i].cnt != 1)
-				continue;
+	for (unsigned i = 0; i < cnt; i++) {
+		if (q->pl->tabs[i].is_anon)
+			continue;
 
-			cnt2++;
-		}
+		cnt2++;
 	}
 
 	if (!init_tmp_heap(q)) return NULL;
@@ -1820,7 +1818,7 @@ static cell *do_term_singletons(query *q, cell *p1, pl_idx p1_ctx)
 		unsigned idx = 0;
 
 		for (unsigned i = 0, done = 0; i < cnt; i++) {
-			if (q->pl->tabs[i].cnt != 1)
+			if (q->pl->tabs[i].is_anon)
 				continue;
 
 			make_atom(tmp+idx, g_dot_s);
@@ -1868,41 +1866,54 @@ static bool bif_term_singletons_2(query *q)
 	return unify(q, p2, p2_ctx, tmp2, q->st.curr_frame);
 }
 
-static bool bif_sys_duplicate_term_3(query *q)
+static bool bif_iso_copy_term_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
-	GET_NEXT_ARG(p3,integer);
-	bool copy_attrs = get_smalluint(p3);
+	bool copy_attrs = true;
 
 	if (is_atomic(p1) || is_atomic(p2))
 		return unify(q, p1, p1_ctx, p2, p2_ctx);
 
-	// You are not expected to understand this: basically we have
-	// to make sure the p1 variables get copied along with the
-	// deref'd values and they get linked.
-
 	GET_FIRST_RAW_ARG(p1x,any);
-	cell *tmp = alloc_on_heap(q, 1 + p1x->num_cells + p1->num_cells);
-	check_memory(tmp);
-	make_instr(tmp, g_eq_s, NULL, 2, p1x->num_cells + p1->num_cells);
-	dup_cells_by_ref(tmp+1, p1x, p1x_ctx, p1x->num_cells);
-	dup_cells_by_ref(tmp+1+p1x->num_cells, p1, p1_ctx, p1->num_cells);
-	tmp = copy_term_to_heap(q, tmp, q->st.curr_frame, copy_attrs);
-	check_memory(tmp);
-	cell *tmpp1 = tmp + 1;
-	cell *tmpp2 = tmpp1 + tmpp1->num_cells;
+	GET_NEXT_RAW_ARG(p2x,any);
+	cell *tmp;
 
-	if (q->cycle_error) {
-		if (!unify(q, tmpp1, q->st.curr_frame, tmpp2, q->st.curr_frame))
-			return false;
-	}
+	if (is_var(p1x) && is_var(p2x))
+		tmp = copy_term_to_heap_with_replacement(q, p1, p1_ctx, copy_attrs, p1x, p1x_ctx, p2x, p2x_ctx);
+	else
+		tmp = copy_term_to_heap(q, p1, p1_ctx, copy_attrs);
 
 	// Reget as slots may have reallocated...
 
 	GET_FIRST_ARG(p1xx,any);
 	GET_NEXT_ARG(p2xx,any);
-	return unify(q, p2xx, p2xx_ctx, tmpp1, q->st.curr_frame);
+	return unify(q, p2xx, p2xx_ctx, tmp, q->st.curr_frame);
+}
+
+static bool bif_iso_copy_term_nat_2(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,any);
+	bool copy_attrs = false;
+
+	if (is_atomic(p1) || is_atomic(p2))
+		return unify(q, p1, p1_ctx, p2, p2_ctx);
+
+	GET_FIRST_RAW_ARG(p1x,any);
+	GET_NEXT_RAW_ARG(p2x,any);
+	cell *tmp;
+
+	if (is_var(p1x) && is_var(p2x))
+		tmp = copy_term_to_heap_with_replacement(q, p1, p1_ctx, copy_attrs, p1x, p1x_ctx, p2x, p2x_ctx);
+	else
+		tmp = copy_term_to_heap(q, p1, p1_ctx, copy_attrs);
+
+	// Reget as slots may have reallocated...
+
+	GET_FIRST_ARG(p1xx,any);
+	GET_NEXT_ARG(p2xx,any);
+	return unify(q, p2xx, p2xx_ctx, tmp, q->st.curr_frame);
 }
 
 static bool bif_sys_clone_term_2(query *q)
@@ -6154,7 +6165,8 @@ builtins g_iso_bifs[] =
 	{"number_codes", 2, bif_iso_number_codes_2, "?number,?list", true, false, BLAH},
 	{"arg", 3, bif_iso_arg_3, "+integer,+term,?term", true, false, BLAH},
 	{"functor", 3, bif_iso_functor_3, "?term,?atom,?integer", true, false, BLAH},
-	{"$duplicate_term", 3, bif_sys_duplicate_term_3, "+term,?term,+integer", true, false, BLAH},
+	{"copy_term", 2, bif_iso_copy_term_2, "+term,?term", true, false, BLAH},
+	{"copy_term_nat", 2, bif_iso_copy_term_nat_2, "+term,?term", true, false, BLAH},
 	{"term_variables", 2, bif_iso_term_variables_2, "+term,-list", true, false, BLAH},
 	{"atom_length", 2, bif_iso_atom_length_2, "?list,?integer", true, false, BLAH},
 	{"atom_concat", 3, bif_iso_atom_concat_3, "+atom,+atom,?atom", true, false, BLAH},
