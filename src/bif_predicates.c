@@ -1924,6 +1924,7 @@ static bool bif_iso_copy_term_2(query *q)
 
 	// Reget as slots may have reallocated...
 
+	check_memory(tmp);
 	GET_FIRST_ARG(p1xx,any);
 	GET_NEXT_ARG(p2xx,any);
 	return unify(q, p2xx, p2xx_ctx, tmp, q->st.curr_frame);
