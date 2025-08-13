@@ -1866,44 +1866,6 @@ static bool bif_term_singletons_2(query *q)
 	return unify(q, p2, p2_ctx, tmp2, q->st.curr_frame);
 }
 
-static bool bif_sys_duplicate_term_3(query *q)
-{
-	GET_FIRST_ARG(p1,any);
-	GET_NEXT_ARG(p2,any);
-	GET_NEXT_ARG(p3,integer);
-	bool copy_attrs = get_smalluint(p3);
-
-	if (is_atomic(p1) || is_atomic(p2))
-		return unify(q, p1, p1_ctx, p2, p2_ctx);
-
-	// You are not expected to understand this: basically we have
-	// to make sure the p1 variables get copied along with the
-	// deref'd values and they get linked.
-
-	GET_FIRST_RAW_ARG(p1x,any);
-	cell *tmp = alloc_on_heap(q, 1 + p1x->num_cells + p1->num_cells);
-	check_memory(tmp);
-	make_instr(tmp, g_eq_s, NULL, 2, p1x->num_cells + p1->num_cells);
-	dup_cells_by_ref(tmp+1, p1x, p1x_ctx, p1x->num_cells);
-	dup_cells_by_ref(tmp+1+p1x->num_cells, p1, p1_ctx, p1->num_cells);
-	tmp = copy_term_to_heap(q, tmp, q->st.curr_frame, copy_attrs);
-	check_memory(tmp);
-	cell *tmpp1 = tmp + 1;
-	cell *tmpp2 = tmpp1 + tmpp1->num_cells;
-
-	if (q->cycle_error) {
-		if (!unify(q, tmpp1, q->st.curr_frame, tmpp2, q->st.curr_frame))
-			return false;
-	}
-
-	// Reget as slots may have reallocated...
-
-	GET_FIRST_ARG(p1xx,any);
-	GET_NEXT_ARG(p2xx,any);
-	return unify(q, p2xx, p2xx_ctx, tmpp1, q->st.curr_frame);
-}
-
-
 static bool bif_iso_copy_term_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -6203,7 +6165,6 @@ builtins g_iso_bifs[] =
 	{"number_codes", 2, bif_iso_number_codes_2, "?number,?list", true, false, BLAH},
 	{"arg", 3, bif_iso_arg_3, "+integer,+term,?term", true, false, BLAH},
 	{"functor", 3, bif_iso_functor_3, "?term,?atom,?integer", true, false, BLAH},
-	{"$duplicate_term", 3, bif_sys_duplicate_term_3, "+term,?term,+integer", true, false, BLAH},
 	{"copy_term", 2, bif_iso_copy_term_2, "+term,?term", true, false, BLAH},
 	{"copy_term_nat", 2, bif_iso_copy_term_nat_2, "+term,?term", true, false, BLAH},
 	{"term_variables", 2, bif_iso_term_variables_2, "+term,-list", true, false, BLAH},
