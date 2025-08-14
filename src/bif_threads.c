@@ -413,8 +413,7 @@ static thread *get_self(prolog *pl)
 			return t;
 	}
 
-	printf("*** OOPS\n");
-	return &pl->threads[0];
+	return NULL;
 }
 
 static bool do_match_message(query *q, unsigned chan, bool is_peek)
@@ -488,7 +487,12 @@ static bool bif_thread_get_message_2(query *q)
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.curr_frame, 1);
 	GET_FIRST_ARG(p1,queue);
 	int n = get_thread(q, p1);
-	if (n < 0) return true;
+
+	if (n < 0) {
+		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.curr_frame, 1);
+		return true;
+	}
+
 	bool ok = do_match_message(q, n, false);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.curr_frame, 1);
 	return ok;
@@ -499,7 +503,12 @@ static bool bif_thread_peek_message_2(query *q)
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.curr_frame, 1);
 	GET_FIRST_ARG(p1,queue);
 	int n = get_thread(q, p1);
-	if (n < 0) return true;
+
+	if (n < 0) {
+		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.curr_frame, 1);
+		return true;
+	}
+
 	bool ok = do_match_message(q, n, true);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.curr_frame, 1);
 	return ok;
@@ -933,11 +942,11 @@ static void do_cancel(thread *t)
 {
 	acquire_lock(&t->guard);
 
-# if defined(__ANDROID__)
+#if defined(__ANDROID__)
    pthread_kill(t->id, 0);
-# else
+#else
    pthread_cancel(t->id);
-# endif
+#endif
 
 	sl_destroy(t->alias);
 	t->alias = NULL;
@@ -1454,6 +1463,7 @@ static bool bif_message_queue_destroy_1(query *q)
 	t->alias = NULL;
 	t->is_active = false;
 	release_lock(&t->guard);
+	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.curr_frame, 1);
 	return true;
 }
 
@@ -1785,6 +1795,7 @@ static bool bif_mutex_destroy_1(query *q)
 	sl_destroy(t->alias);
 	t->alias = NULL;
 	t->is_active = false;
+	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.curr_frame, 1);
 	return true;
 }
 
