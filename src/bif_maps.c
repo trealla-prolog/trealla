@@ -65,7 +65,7 @@ static bool bif_map_create_2(query *q)
 	}
 
 	str->keyval = sl_create((void*)fake_strcmp, (void*)fake_free, NULL);
-	check_memory(str->keyval);
+	checked(str->keyval);
 	str->is_map = true;
 
 	if (!is_alias) {
@@ -102,7 +102,7 @@ static bool bif_map_set_3(query *q)
 	else
 		return throw_error(q, p1, p1_ctx, "type_error", "integer");
 
-	check_memory(key);
+	checked(key);
 	char *val = NULL;
 
 	if (is_integer(p2)) {
@@ -120,7 +120,7 @@ static bool bif_map_set_3(query *q)
 		return throw_error(q, p2, p2_ctx, "type_error", "integer");
 	}
 
-	check_memory(val);
+	checked(val);
 	sl_set(str->keyval, key, val);
 	return true;
 }
@@ -147,7 +147,7 @@ static bool bif_map_get_3(query *q)
 	else
 		return throw_error(q, p2, p2_ctx, "type_error", "integer");
 
-	check_memory(key);
+	checked(key);
 	char *val = NULL;
 
 	if (!sl_get(str->keyval, key, (void*)&val)) {
@@ -210,7 +210,7 @@ static bool bif_map_del_2(query *q)
 	else
 		return throw_error(q, p1, p1_ctx, "type_error", "integer");
 
-	check_memory(key);
+	checked(key);
 	sl_del(str->keyval, key);
 	return true;
 }
@@ -227,7 +227,7 @@ static bool bif_map_list_2(query *q)
 	GET_NEXT_ARG(p1,list_or_var);
 	sliter *iter = sl_first(str->keyval);
 	char *val = NULL;
-	check_memory(init_tmp_heap(q));
+	checked(init_tmp_heap(q));
 
 	while (sl_next(iter, (void**)&val)) {
 		void *key = sl_key(iter);
@@ -398,7 +398,7 @@ static bool bif_engine_create_4(query *q)
 
 	cell *p0 = copy_term_to_heap(q, q->st.instr, q->st.curr_frame, false);
 	unify(q, q->st.instr, q->st.curr_frame, p0, q->st.curr_frame);
-	check_memory(p0);
+	checked(p0);
 
 	q = str->engine;		// Operating in engine now
 
@@ -408,7 +408,7 @@ static bool bif_engine_create_4(query *q)
 	cell *tmp = prepare_call(q, CALL_NOSKIP, xp2, xp2_ctx, 1);
 	pl_idx num_cells = xp2->num_cells;
 	make_call(q, tmp+num_cells);
-	check_memory(push_barrier(q));
+	checked(push_barrier(q));
 	q->st.instr = tmp;
 	str->pattern = clone_term_to_heap(q, xp1, xp1_ctx);
 	return true;

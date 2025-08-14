@@ -423,7 +423,7 @@ static bool bif_time_1(query *q)
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 	make_uint(tmp+num_cells++, q->cp);
 	make_call(q, tmp+num_cells);
-	check_memory(push_barrier(q));
+	checked(push_barrier(q));
 	q->st.instr = tmp;
 	return true;
 }

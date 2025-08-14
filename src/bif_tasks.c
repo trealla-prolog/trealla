@@ -38,7 +38,7 @@ bool do_yield(query *q, int msecs)
 	q->yielded = true;
 	q->tmo_msecs = get_time_in_usec() / 1000;
 	q->tmo_msecs += msecs > 0 ? msecs : 1;
-	check_memory(push_choice(q));
+	checked(push_choice(q));
 	return false;
 }
 
@@ -56,7 +56,7 @@ bool do_yield_then(query *q, bool status)
 	q->tmo_msecs = get_time_in_usec() / 1000 + 1;
 	// Push a choice point with the same result as the goal we hijacked
 	// With that we can continue as if the yield didn't happen
-	check_memory(push_choice(q));
+	checked(push_choice(q));
 	choice *ch = GET_CURR_CHOICE();
 
 	if (status)
@@ -219,7 +219,7 @@ static bool bif_await_0(query *q)
 	if (!q->tasks)
 		return false;
 
-	check_memory(push_choice(q));
+	checked(push_choice(q));
 	return true;
 }
 
@@ -236,14 +236,14 @@ static bool bif_call_task_n(query *q)
 	pl_idx save_hp = q->st.hp;
 	cell *p0 = clone_term_to_heap(q, q->st.instr, q->st.curr_frame);
 	GET_FIRST_RAW_ARG0(p1,callable,p0);
-	check_memory(init_tmp_heap(q));
-	check_memory(clone_term_to_tmp(q, p1, p1_ctx));
+	checked(init_tmp_heap(q));
+	checked(clone_term_to_tmp(q, p1, p1_ctx));
 	unsigned arity = p1->arity;
 	unsigned args = 1;
 
 	while (args++ < q->st.instr->arity) {
 		GET_NEXT_RAW_ARG(p2,any);
-		check_memory(append_to_tmp(q, p2, p2_ctx));
+		checked(append_to_tmp(q, p2, p2_ctx));
 		arity++;
 	}
 
@@ -301,16 +301,16 @@ static bool bif_send_1(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
 	query *dstq = q->parent && !q->parent->done ? q->parent : q;
-	check_memory(init_tmp_heap(q));
+	checked(init_tmp_heap(q));
 	cell *c = clone_term_to_tmp(q, p1, p1_ctx);
-	check_memory(c);
+	checked(c);
 
 	for (pl_idx i = 0; i < c->num_cells; i++) {
 		cell *c2 = c + i;
 		share_cell(c2);
 	}
 
-	check_memory(alloc_on_queuen(dstq, 0, c));
+	checked(alloc_on_queuen(dstq, 0, c));
 	q->yielded = true;
 	return true;
 }
@@ -327,7 +327,7 @@ static bool bif_recv_1(query *q)
 		if (unify(q, p1, p1_ctx, c, q->st.curr_frame))
 			return true;
 
-		check_memory(alloc_on_queuen(q, 0, c));
+		checked(alloc_on_queuen(q, 0, c));
 	}
 
 	return false;

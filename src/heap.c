@@ -253,7 +253,7 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 				pl_idx save_tmp_hp = q->tmphp;
 				q->tmp_heap = NULL;
 				cell *tmp = copy_term_to_heap(q, e->c.val_attrs, q->st.curr_frame, false);
-				check_memory(tmp);
+				checked(tmp);
 				c->tmp_attrs = malloc(sizeof(cell)*tmp->num_cells);
 				copy_cells(c->tmp_attrs, tmp, tmp->num_cells);
 				free(q->tmp_heap);

@@ -1740,11 +1740,11 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 				bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(FFI_TAG_C_STR)) {
-				check_memory(make_cstring(&tmp, cells[i].val_ffi_pointer));
+				checked(make_cstring(&tmp, cells[i].val_ffi_pointer));
 				bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 				if (ok != true) return ok;
 			} else if (ptr->types[i] == MARK_OUT(FFI_TAG_C_CSTR)) {
-				check_memory(make_cstring(&tmp, cells[i].val_ffi_pointer));
+				checked(make_cstring(&tmp, cells[i].val_ffi_pointer));
 				bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 				if (ok != true) return ok;
 			}
@@ -1826,12 +1826,12 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		if (ok != true) return ok;
 	} else if (ptr->ret_type == FFI_TAG_C_STR) {
-		check_memory(make_cstring(&tmp, r.val_ffi_pointer));
+		checked(make_cstring(&tmp, r.val_ffi_pointer));
 		free(r.val_ffi_pointer);
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		if (ok != true) return ok;
 	} else if (ptr->ret_type == FFI_TAG_C_CSTR) {
-		check_memory(make_cstring(&tmp, r.val_ffi_pointer));
+		checked(make_cstring(&tmp, r.val_ffi_pointer));
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 		if (ok != true) return ok;
 	} else if (ptr->ret_type == FFI_TAG_STRUCT) {
