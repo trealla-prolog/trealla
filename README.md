@@ -191,7 +191,7 @@ On macOS:
 
 	brew install libffi openssl coreutils readline
 
-and it's important to use the `bash` version of `readline`.
+and it's important to use the `brew` version of `readline`.
 
 
 Unbounded integers (Bigints) and Rationals
