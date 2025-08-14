@@ -189,15 +189,9 @@ to get the *xxd* utility.
 
 On macOS:
 
-	brew install libffi openssl make coreutils bash readline
-	brew install vim readline # if necessary
+	brew install libffi openssl coreutils readline
 
-Use the Brew version of readline and heed the warnings about adding:
-
-	export LDFLAGS=-L/opt/homebrew/opt/readline/lib
-	export CPPFLAGS=-I/opt/homebrew/opt/readline/include
-
-as there may be history file issues otherwise.
+and it's important to use the `bash` version of `readline`.
 
 
 Unbounded integers (Bigints) and Rationals
