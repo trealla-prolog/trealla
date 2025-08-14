@@ -727,6 +727,8 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			break;
 		}
 
+		bool has_vars = false, is_partial = false;
+
 		if (is_interned(tail) && !is_compound(tail)) {
 			const char *src = C_STR(q, tail);
 
@@ -736,7 +738,8 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 			}
 		} else if (q->st.m->flags.double_quote_chars && running
 			&& !q->ignore_ops && possible_chars
-			&& (scan_is_chars_list(q, tail, tail_ctx, false) > 0))
+			&& (scan_is_chars_list2(q, tail, tail_ctx, false, &has_vars, &is_partial, NULL) > 0)
+			&& !is_partial)
 			{
 			char *tmp_src = chars_list_to_string(q, tail, tail_ctx);
 
