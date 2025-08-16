@@ -1178,8 +1178,8 @@ Implements a toy (local-only) version of Linda using tasks. See:
 	out/1                           # out(+tuple)
 	in/1                            # in(?tuple)
 	rd/1                            # rd(?tuple)
-	in_noblock/1                    # in_noblock(?tuple)
-	rd_noblock/1                    # rd_noblock(?tuple)
+	inp/1                           # inp(?tuple)
+	rdp/1                           # rdp(?tuple)
 	bagof_in_noblock/3              # bagof_in_noblock(+term,+tuple,?list)
 	bagof_rd_noblock/3              # bagof_rd_noblock(+term,+tuple,?list)
 	wait/0
@@ -1238,12 +1238,12 @@ Concurrent Futures						##EXPERIMENTAL##
 Inspired by [Tau-Prolog](http://tau-prolog.org/documentation#concurrent)
 concurrent futures. Uses co-operative tasks.
 
-	future/3 – Make a Future from a Prolog goal.
-	future_all/2 – Make a Future that resolves to a list of the results of an input list of futures.
-	future_any/2 – Make a Future that resolves as soon as any of the futures in a list succeeds.
-	future_cancel/1 – Cancel unfinished future.
-	future_done/1 – Check if a future finished.
-	await/2 – Wait for a Future.
+	future/3          # Make a Future from a Prolog goal.
+	future_all/2      # Make a Future that resolves to a list of the results of an input list of futures.
+	future_any/2      # Make a Future that resolves as soon as any of the futures in a list succeeds.
+	future_cancel/1   # Cancel unfinished future.
+	future_done/1     # Check if a future finished.
+	await/2           # Wait for a Future.
 
 For example:
 

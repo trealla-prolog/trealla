@@ -1,10 +1,10 @@
 :- module(linda, [
 	linda_eval/1, linda_eval/2,
 	out/1,
-	in_noblock/1, rd_noblock/1,
+	inp/1, rdp/1,
 	in/1, rd/1,
-	bagof_in_noblock/3,
-	bagof_rd_noblock/3
+	bagof_inp/3,
+	bagof_rdp/3
 	]).
 
 :- dynamic(linda/1).
@@ -26,10 +26,10 @@ out(Tuple) :-
 	assertz('$linda'(Tuple)),
 	yield.
 
-in_noblock(Tuple) :-
+inp(Tuple) :-
 	retract('$linda'(Tuple)).
 
-rd_noblock(Tuple) :-
+rdp(Tuple) :-
 	'$linda'(Tuple).
 
 in(Tuple) :-
@@ -52,10 +52,10 @@ turn_(Free^Generator, Functor, Goal) :-
 turn_(Generator, Functor, Goal) :-
 	Goal =.. [Functor,Generator].
 
-bagof_in_noblock(Template, Tuple, Bag) :-
-	turn_(Tuple, in_noblock, Goal),
+bagof_inp(Template, Tuple, Bag) :-
+	turn_(Tuple, inp, Goal),
 	bagof(Template, Goal, Bag).
 
-bagof_rd_noblock(Template, Tuple, Bag) :-
-	turn_(Tuple, rd_noblock, Goal),
+bagof_rdp(Template, Tuple, Bag) :-
+	turn_(Tuple, rdp, Goal),
 	bagof(Template, Goal, Bag).
