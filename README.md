@@ -1206,7 +1206,7 @@ For example:
 			sleep(0.25),
 			fail.
 	producer :-
-		forall(rd_noblock({msg:_}), sleep(0.001)),
+		forall(rdp({msg:_}), sleep(0.001)),
 		end_wait.
 
 	consumer(N) :-
