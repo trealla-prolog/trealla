@@ -577,7 +577,11 @@ static void trim_frame(query *q, const frame *f)
 
 void undo_me(query *q)
 {
+	if (!q->cp)
+		return;
+
 	q->total_retries++;
+
 	const choice *ch = GET_CURR_CHOICE();
 
 	while (q->st.tp > ch->st.tp) {
