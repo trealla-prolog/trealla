@@ -165,10 +165,12 @@ inline static cell *deref(query *q, cell *c, pl_idx c_ctx)
 
 	const frame *f = GET_FRAME(c_ctx);
 	slot *e = GET_SLOT(f, c->var_num);
+	unsigned derefs = 1;
 
 	while (is_var(&e->c)) {
 		c_ctx = e->c.var_ctx;
 		c = &e->c;
+		derefs++;
 
 		if (is_ref(c))
 			c_ctx = c->var_ctx;
@@ -176,6 +178,9 @@ inline static cell *deref(query *q, cell *c, pl_idx c_ctx)
 		f = GET_FRAME(c_ctx);
 		e = GET_SLOT(f, c->var_num);
 	}
+
+	if (derefs > q->hw_deref)
+		q->hw_deref = derefs;
 
 	if (is_indirect(&e->c)) {
 		q->latest_ctx = e->c.var_ctx;
