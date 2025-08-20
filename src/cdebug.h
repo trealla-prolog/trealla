@@ -12,4 +12,4 @@
 #define CHECK_SENTINEL(expr, err_sentinel, ...) CHECK_SENTINEL_((expr), err_sentinel, ## __VA_ARGS__, error=true)
 #define CHECK_SENTINEL_(expr, err_sentinel, on_error, ...) do { if((expr) == err_sentinel){on_error;}} while (0)
 
-#define check_error(expr, ...) CHECK_SENTINEL(expr, 0, __VA_ARGS__; return false)
+#define check_error(expr, ...) CHECK_SENTINEL(expr, 0, __VA_ARGS__; return 0)
