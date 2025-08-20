@@ -39,7 +39,7 @@ static bool do_put_atts(query *q, cell *attr, pl_idx attr_ctx, bool is_minus)
 {
 	GET_FIRST_ARG(p1,var);
 	const frame *f = GET_FRAME(p1_ctx);
-	slot *e = GET_SLOT(f, p1->var_num);
+	slot *e = get_slot(q, f, p1->var_num);
 	cell *c = deref(q, &e->c, e->c.var_ctx);
 	pl_idx c_ctx = q->latest_ctx;
 
@@ -153,7 +153,7 @@ static bool bif_get_atts_2(query *q)
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,callable_or_var);
 	const frame *f = GET_FRAME(p1_ctx);
-	slot *e = GET_SLOT(f, p1->var_num);
+	slot *e = get_slot(q, f, p1->var_num);
 	cell *c = deref(q, &e->c, e->c.var_ctx);
 	pl_idx c_ctx = q->latest_ctx;
 	bool is_minus = !is_var(p2) && (p2->val_off == g_minus_s) && (p2->arity == 1);
@@ -259,7 +259,7 @@ bool any_attributed(query *q)
 		const frame *f = GET_FRAME(j);
 
 		for (unsigned i = 0; i < f->actual_slots; i++) {
-			slot *e = GET_SLOT(f, i);
+			slot *e = get_slot(q, f, i);
 			cell *c = deref(q, &e->c, e->c.var_ctx);
 
 			if (!is_empty(c) || !c->val_attrs)
@@ -309,7 +309,7 @@ static bool bif_sys_list_attributed_2(query *q)
 	for (unsigned j = mark; j < q->st.tp; j++) {
 		const trail *tr = q->trails + j;
 		const frame *f = GET_FRAME(tr->var_ctx);
-		slot *e = GET_SLOT(f, tr->var_num);
+		slot *e = get_slot(q, f, tr->var_num);
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		pl_idx c_ctx = q->latest_ctx;
 
@@ -330,7 +330,7 @@ static bool bif_sys_list_attributed_2(query *q)
 
 		for (unsigned k = 0; k < q->tab_idx; k++) {
 			const frame *f = GET_FRAME(q->pl->tabs[k].ctx);
-			slot *e = GET_SLOT(f, q->pl->tabs[k].var_num);
+			slot *e = get_slot(q, f, q->pl->tabs[k].var_num);
 			cell *v = &e->c;
 
 			if (!v->val_attrs)
@@ -354,7 +354,7 @@ static bool bif_sys_attributed_var_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	const frame *f = GET_FRAME(p1_ctx);
-	slot *e = GET_SLOT(f, p1->var_num);
+	slot *e = get_slot(q, f, p1->var_num);
 	cell *c = deref(q, &e->c, e->c.var_ctx);
 	pl_idx c_ctx = q->latest_ctx;
 
@@ -441,7 +441,7 @@ static bool bif_sys_undo_trail_2(query *q)
 	for (pl_idx i = q->undo_lo_tp, j = 0; i < q->undo_hi_tp; i++, j++) {
 		const trail *tr = q->trails + i;
 		const frame *f = GET_FRAME(tr->var_ctx);
-		slot *e = GET_SLOT(f, tr->var_num);
+		slot *e = get_slot(q, f, tr->var_num);
 		save->e[j].c = e->c;
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		pl_idx c_ctx = q->latest_ctx;
@@ -481,7 +481,7 @@ static bool bif_sys_redo_trail_1(query * q)
 	for (pl_idx i = save->lo_tp, j = 0; i < save->hi_tp; i++, j++) {
 		const trail *tr = q->trails + i;
 		const frame *f = GET_FRAME(tr->var_ctx);
-		slot *e = GET_SLOT(f, tr->var_num);
+		slot *e = get_slot(q, f, tr->var_num);
 		e->c = save->e[j].c;
 	}
 

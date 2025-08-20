@@ -7,7 +7,7 @@ typedef struct { lnode hdr; cell *c; pl_idx c_ctx; slot *e; uint32_t save_vgen; 
 static bool accum_var(query *q, const cell *c, pl_idx c_ctx)
 {
 	const frame *f = GET_FRAME(c_ctx);
-	const slot *e = GET_SLOT(f, c->var_num);
+	const slot *e = get_slot(q, f, c->var_num);
 	const void *v;
 
 	if (sl_get(q->vars, e, &v)) {

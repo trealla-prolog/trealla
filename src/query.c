@@ -441,7 +441,7 @@ int create_vars(query *q, unsigned cnt)
 	}
 
 	for (unsigned i = 0; i < cnt; i++) {
-		slot *e = GET_SLOT(f, f->actual_slots + i);
+		slot *e = get_slot(q, f, f->actual_slots + i);
 		memset(e, 0, sizeof(slot));
 	}
 
@@ -564,7 +564,7 @@ static void trim_trail(query *q)
 static void trim_frame(query *q, const frame *f)
 {
 	for (unsigned i = 0; i < f->actual_slots; i++) {
-		slot *e = GET_SLOT(f, i);
+		slot *e = get_slot(q, f, i);
 		cell *c = &e->c;
 		unshare_cell(c);
 		c->tag = TAG_EMPTY;
@@ -587,7 +587,7 @@ void undo_me(query *q)
 	while (q->st.tp > ch->st.tp) {
 		const trail *tr = q->trails + --q->st.tp;
 		const frame *f = GET_FRAME(tr->var_ctx);
-		slot *e = GET_SLOT(f, tr->var_num);
+		slot *e = get_slot(q, f, tr->var_num);
 		cell *c = &e->c;
 		unshare_cell(c);
 		c->tag = TAG_EMPTY;
@@ -600,7 +600,7 @@ void try_me(query *q, unsigned num_vars)
 	frame *f = GET_NEW_FRAME();
 	f->initial_slots = f->actual_slots = num_vars;
 	f->base = q->st.sp;
-	slot *e = GET_SLOT(f, 0);
+	slot *e = get_slot(q, f, 0);
 	memset(e, 0, sizeof(slot)*num_vars);
 	q->total_matches++;
 }
@@ -644,8 +644,8 @@ static void reuse_frame(query *q, unsigned num_vars)
 
 	frame *f = GET_CURR_FRAME();
 	const frame *newf = GET_FRAME(q->st.fp);
-	const slot *from = GET_SLOT(newf, 0);
-	slot *to = GET_SLOT(f, 0);
+	const slot *from = get_slot(q, newf, 0);
+	slot *to = get_slot(q, f, 0);
 
 	for (pl_idx i = 0; i < num_vars; i++) {
 		unshare_cell(&to->c);

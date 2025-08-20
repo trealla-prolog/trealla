@@ -920,7 +920,7 @@ static bool do_dump_term(query *q, cell *p1, pl_idx p1_ctx, bool deref, int dept
 
 		if (is_var(tmp) && deref) {
 			const frame *f = GET_FRAME(is_ref(tmp)?tmp->var_ctx:p1_ctx);
-			slot *e = GET_SLOT(f, tmp->var_num);
+			slot *e = get_slot(q, f, tmp->var_num);
 
 			if (e->c.val_attrs) {
 				printf("\n");

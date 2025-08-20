@@ -230,7 +230,7 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 			create_vars(q, 1);
 		}
 
-		const slot *e = GET_SLOT(f, c->var_num);	// After create_vars
+		const slot *e = get_slot(q, f, c->var_num);	// After create_vars
 
 		if (!q->tab_idx) {
 			q->tab0_varno = var_num;
@@ -437,7 +437,7 @@ cell *copy_term_to_heap(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
 	for (pl_idx i = 0; i < tmp2->num_cells; i++, c++) {
 		if (is_var(c) && c->tmp_attrs) {
 			const frame *f = GET_FRAME(c->var_ctx);
-			slot *e = GET_SLOT(f, c->var_num);
+			slot *e = get_slot(q, f, c->var_num);
 			cell *tmp3 = alloc_on_heap(q, c->tmp_attrs->num_cells);
 			if (!tmp3) return NULL;
 			dup_cells(tmp3, c->tmp_attrs, c->tmp_attrs->num_cells);
@@ -469,7 +469,7 @@ cell *copy_term_to_heap_with_replacement(query *q, cell *p1, pl_idx p1_ctx, bool
 	for (pl_idx i = 0; i < tmp2->num_cells; i++, c++) {
 		if (is_var(c) && c->tmp_attrs) {
 			const frame *f = GET_FRAME(c->var_ctx);
-			slot *e = GET_SLOT(f, c->var_num);
+			slot *e = get_slot(q, f, c->var_num);
 			e->c.val_attrs = clone_term_to_heap(q, c->tmp_attrs, q->st.curr_frame);
 			free(c->tmp_attrs);
 			c->tmp_attrs = NULL;

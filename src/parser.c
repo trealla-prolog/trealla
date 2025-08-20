@@ -2118,7 +2118,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 		if (strcmp(GET_POOL(p, p2->vartab.off[i]), "_TermOut"))
 			continue;
 
-		slot *e = GET_SLOT(f, i);
+		slot *e = get_slot(q, f, i);
 
 		if (is_empty(&e->c))
 			continue;

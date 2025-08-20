@@ -119,7 +119,7 @@ static bool bif_sys_unifiable_3(query *q)
 	while (save_tp < q->st.tp) {
 		const trail *tr = q->trails + save_tp;
 		const frame *f = GET_FRAME(tr->var_ctx);
-		slot *e = GET_SLOT(f, tr->var_num);
+		slot *e = get_slot(q, f, tr->var_num);
 		cell *c = deref(q, &e->c, e->c.var_ctx);
 		pl_idx c_ctx = q->latest_ctx;
 		cell *tmp = malloc(sizeof(cell)*(2+c->num_cells));
@@ -5543,7 +5543,7 @@ bool bif_sys_create_var_1(query *q)
 
 	unsigned var_num = create_vars(q, 1);
 	const frame *f = GET_FRAME(p1_ctx);
-	slot *e = GET_SLOT(f, p1->var_num);
+	slot *e = get_slot(q, f, p1->var_num);
 	cell tmp;
 	make_var(&tmp, g_anon_s, var_num);
 	e->c = tmp;

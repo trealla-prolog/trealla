@@ -195,9 +195,9 @@ static bool bif_bb_get_2(query *q)
 
 	if (is_var(p2) && is_var(tmp)) {
 		const frame *f = GET_FRAME(q->st.curr_frame);
-		const slot *e = GET_SLOT(f, tmp->var_num);
+		const slot *e = get_slot(q, f, tmp->var_num);
 		const frame *f2 = GET_FRAME(p2_ctx);
-		slot *e2 = GET_SLOT(f2, p2->var_num);
+		slot *e2 = get_slot(q, f2, p2->var_num);
 		*e2 = *e;
 		return true;
 	}
@@ -255,9 +255,9 @@ static bool bif_bb_delete_2(query *q)
 
 	if (is_var(p2) && is_var(tmp)) {
 		const frame *f = GET_FRAME(q->st.curr_frame);
-		const slot *e = GET_SLOT(f, tmp->var_num);
+		const slot *e = get_slot(q, f, tmp->var_num);
 		const frame *f2 = GET_FRAME(p2_ctx);
-		slot *e2 = GET_SLOT(f2, p2->var_num);
+		slot *e2 = get_slot(q, f2, p2->var_num);
 		*e2 = *e;
 		bool ok = sl_del(q->pl->keyval, key);
 		prolog_unlock(q->pl);
