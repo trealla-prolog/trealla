@@ -139,10 +139,9 @@ inline static cell *take_queuen(query *q)
 
 inline static slot *get_slot(const query *q, const frame *f, unsigned var_num)
 {
-	if (var_num < f->initial_slots)
-		return q->slots + f->base + var_num;
-
-	return q->slots + f->op + (var_num - f->initial_slots);
+	return var_num < f->initial_slots
+		? q->slots + f->base + var_num
+		: q->slots + f->op + (var_num - f->initial_slots);
 }
 
 inline static cell *deref(query *q, cell *c, pl_idx c_ctx)
