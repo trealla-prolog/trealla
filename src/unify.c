@@ -16,7 +16,7 @@ static int compare_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_
 		cell *c1 = p1 + 1, *c2 = p2 + 1;
 		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 		slot *e1 = NULL, *e2 = NULL;
-		uint32_t save_vgen = 0, save_vgen2 = 0;
+		uint32_t save_vgen, save_vgen2;
 		int both = 0;
 
 		DEREF_VAR(any1, both, save_vgen, e1, e1->vgen, c1, c1_ctx, q->vgen);
@@ -65,7 +65,7 @@ static int compare_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		cell *c1 = p1, *c2 = p2;
 		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 		slot *e1 = NULL, *e2 = NULL;
-		uint32_t save_vgen = 0, save_vgen2 = 0;
+		uint32_t save_vgen, save_vgen2;
 		int both = 0;
 
 		DEREF_VAR(any, both, save_vgen, e1, e1->vgen, c1, c1_ctx, q->vgen);
@@ -445,7 +445,7 @@ static bool unify_lists(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_c
 		cell *c1 = p1 + 1, *c2 = p2 + 1;
 		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 		slot *e1 = NULL, *e2 = NULL;
-		uint32_t save_vgen = 0, save_vgen2 = 0;
+		uint32_t save_vgen, save_vgen2;
 		int both = 0;
 
 		DEREF_VAR(any1, both, save_vgen, e1, e1->vgen, c1, c1_ctx, q->vgen);
@@ -494,7 +494,7 @@ static bool unify_structs(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2
 		pl_idx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 		cell *c1 = p1, *c2 = p2;
 		slot *e1 = NULL, *e2 = NULL;
-		uint32_t save_vgen = 0, save_vgen2 = 0;
+		uint32_t save_vgen, save_vgen2;
 		bool any = false;
 		int both = 0;
 

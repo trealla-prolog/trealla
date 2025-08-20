@@ -51,7 +51,7 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 		cell *h = l + 1;
 		pl_idx h_ctx = l_ctx;
 		slot *e = NULL;
-		uint32_t save_vgen = 0;
+		uint32_t save_vgen;
 		int both = 0;
 
 		DEREF_VAR(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
@@ -112,7 +112,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 		cell *c = p1;
 		pl_idx c_ctx = p1_ctx;
 		slot *e = NULL;
-		uint32_t save_vgen = 0;
+		uint32_t save_vgen;
 		int both = 0;
 
 		DEREF_VAR(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
@@ -147,7 +147,7 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 		cell *h = l + 1;
 		pl_idx h_ctx = l_ctx;
 		slot *e = NULL;
-		uint32_t save_vgen = 0;
+		uint32_t save_vgen;
 		int both = 0;
 
 		DEREF_VAR(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
@@ -235,7 +235,7 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 		cell *h = l + 1;
 		pl_idx h_ctx = l_ctx;
 		slot *e = NULL;
-		uint32_t save_vgen = 0;
+		uint32_t save_vgen;
 		int both = 0;
 
 		DEREF_VAR(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
@@ -288,7 +288,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned 
 		cell *c = p1;
 		pl_idx c_ctx = p1_ctx;
 		slot *e = NULL;
-		uint32_t save_vgen = 0;
+		uint32_t save_vgen;
 		int both = 0;
 
 		DEREF_VAR(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
