@@ -160,8 +160,6 @@ builtins *get_fn_ptr(void *fn);
 #include <io.h>
 #endif
 
-#define PROMPT ""
-
 #define DUMP_TERM(s,c,c_ctx,running) { \
 	q->nl = true; q->quoted = true; \
 	print_term(q, stderr, c, c_ctx, running); \

@@ -38,6 +38,7 @@
 #include "query.h"
 
 #define MAX_ARGS 128
+#define PROMPT ""
 
 #ifdef _WIN32
 #define mkdir(p1,p2) mkdir(p1)
