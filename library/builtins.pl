@@ -332,9 +332,6 @@ samsort(L, R) :- msort(L, R).
 
 atomic_list_concat(L, Atom) :- atomic_list_concat(L, '', Atom).
 
-partial_string(S, P) :- append(S, _, P).
-partial_string(S, P, V) :- append(S, V, P).
-
 :- help(chars_base64(+atom,?atom,+list), [iso(false)]).
 
 chars_base64(Plain, Base64, Opts) :- base64(Plain, Base64, Opts).
