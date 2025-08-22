@@ -1866,7 +1866,6 @@ static bool bif_term_singletons_2(query *q)
 	return unify(q, p2, p2_ctx, tmp2, q->st.curr_frame);
 }
 
-#if 1
 static bool bif_sys_duplicate_term_3(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -1903,9 +1902,12 @@ static bool bif_sys_duplicate_term_3(query *q)
 	GET_NEXT_ARG(p2xx,any);
 	return unify(q, p2xx, p2xx_ctx, tmpp1, q->st.curr_frame);
 }
-#else
+
 static bool bif_iso_copy_term_2(query *q)
 {
+	GET_FIRST_RAW_ARG(p1r,any);
+	q->dump_var_num = is_var(p1r) ? p1r->var_num : -1;
+	q->dump_var_ctx = is_var(p1r) ? p1r_ctx : -1;
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 	bool copy_attrs = true;
@@ -1932,6 +1934,9 @@ static bool bif_iso_copy_term_2(query *q)
 
 static bool bif_iso_copy_term_nat_2(query *q)
 {
+	GET_FIRST_RAW_ARG(p1r,any);
+	q->dump_var_num = is_var(p1r) ? p1r->var_num : -1;
+	q->dump_var_ctx = is_var(p1r) ? p1r_ctx : -1;
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 	bool copy_attrs = false;
@@ -1954,13 +1959,13 @@ static bool bif_iso_copy_term_nat_2(query *q)
 	GET_NEXT_ARG(p2xx,any);
 	return unify(q, p2xx, p2xx_ctx, tmp, q->st.curr_frame);
 }
-#endif
+
 
 static bool bif_sys_clone_term_2(query *q)
 {
-	GET_FIRST_RAW_ARG(p1x,any);
-	q->dump_var_num = is_var(p1x) ? p1x->var_num : -1;
-	q->dump_var_ctx = is_var(p1x) ? p1x_ctx : -1;
+	GET_FIRST_RAW_ARG(p1r,any);
+	q->dump_var_num = is_var(p1r) ? p1r->var_num : -1;
+	q->dump_var_ctx = is_var(p1r) ? p1r_ctx : -1;
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 
@@ -6209,8 +6214,8 @@ builtins g_iso_bifs[] =
 	{"number_codes", 2, bif_iso_number_codes_2, "?number,?list", true, false, BLAH},
 	{"arg", 3, bif_iso_arg_3, "+integer,+term,?term", true, false, BLAH},
 	{"functor", 3, bif_iso_functor_3, "?term,?atom,?integer", true, false, BLAH},
-	//{"copy_term", 2, bif_iso_copy_term_2, "+term,?term", true, false, BLAH},
-	//{"copy_term_nat", 2, bif_iso_copy_term_nat_2, "+term,?term", false, false, BLAH},
+	{"xcopy_term", 2, bif_iso_copy_term_2, "+term,?term", true, false, BLAH},
+	{"xcopy_term_nat", 2, bif_iso_copy_term_nat_2, "+term,?term", false, false, BLAH},
 	{"term_variables", 2, bif_iso_term_variables_2, "+term,-list", true, false, BLAH},
 	{"atom_length", 2, bif_iso_atom_length_2, "?list,?integer", true, false, BLAH},
 	{"atom_concat", 3, bif_iso_atom_concat_3, "+atom,+atom,?atom", true, false, BLAH},
