@@ -865,7 +865,7 @@ static bool bif_sys_retract_on_backtrack_1(query *q)
 	return unify(q, &c, q->st.curr_frame, &v, q->st.curr_frame);
 }
 
-static bool do_dump_term(query *q, cell *p1, pl_idx p1_ctx, bool deref, int depth)
+static bool do_dump_term(query *q, cell *p1x, pl_idx p1x_ctx, cell *p1, pl_idx p1_ctx, bool deref, int depth)
 {
 	if (!depth) {
 		const frame *f = GET_CURR_FRAME();
@@ -922,9 +922,9 @@ static bool do_dump_term(query *q, cell *p1, pl_idx p1_ctx, bool deref, int dept
 			const frame *f = GET_FRAME(is_ref(tmp)?tmp->var_ctx:p1_ctx);
 			slot *e = get_slot(q, f, tmp->var_num);
 
-			if (e->c.val_attrs) {
+			if (e->c.val_attrs && 0) {
 				printf("\n");
-				do_dump_term(q, e->c.val_attrs, q->st.curr_frame, deref, depth+1);
+				do_dump_term(q, p1x, p1x_ctx, e->c.val_attrs, q->st.curr_frame, deref, depth+1);
 				continue;
 			}
 		}
@@ -988,7 +988,7 @@ static bool save_name(FILE *fp, query *q, pl_idx name, unsigned arity, bool alt,
 				} else
 					fprintf(fp, "  true\n");
 			} else if (dump) {
-				do_dump_term(q, r->cl.cells, 0, 0, 0);
+				do_dump_term(q, r->cl.cells, 0, r->cl.cells, 0, 0, 0);
 			} else {
 				print_term(q, fp, r->cl.cells, 0, 0);
 				fprintf(fp, ".\n");
@@ -1111,7 +1111,7 @@ static bool bif_sys_dump_term_2(query *q)
 	GET_FIRST_RAW_ARG(p1x,any);
 	bool deref = p2->val_off == g_true_s;
 	p1 = deref ? p1 : p1x;
-	return do_dump_term(q, p1, p1_ctx, deref, 0);
+	return do_dump_term(q, p1x, p1x_ctx, p1, p1_ctx, deref, 0);
 }
 
 static bool bif_sys_dlisting_1(query *q)
