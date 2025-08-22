@@ -1903,69 +1903,47 @@ static bool bif_sys_duplicate_term_3(query *q)
 	return unify(q, p2xx, p2xx_ctx, tmpp1, q->st.curr_frame);
 }
 
-static bool bif_iso_copy_term_2(query *q)
+static bool do_copy_term(query *q, bool copy_attrs)
 {
-	GET_FIRST_RAW_ARG(p1r,any);
-	q->dump_var_num = is_var(p1r) ? p1r->var_num : -1;
-	q->dump_var_ctx = is_var(p1r) ? p1r_ctx : -1;
+	GET_FIRST_RAW_ARG(p1x,any);
+	GET_NEXT_RAW_ARG(p2x,any);
+	q->dump_var_num = is_var(p1x) ? p1x->var_num : -1;
+	q->dump_var_ctx = is_var(p1x) ? p1x_ctx : -1;
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
-	bool copy_attrs = true;
 
 	if (is_atomic(p1) || is_atomic(p2))
 		return unify(q, p1, p1_ctx, p2, p2_ctx);
 
-	GET_FIRST_RAW_ARG(p1x,any);
-	GET_NEXT_RAW_ARG(p2x,any);
 	cell *tmp;
 
 	if (is_var(p1x) && is_var(p2x))
 		tmp = copy_term_to_heap_with_replacement(q, p1, p1_ctx, copy_attrs, p1x, p1x_ctx, p2x, p2x_ctx);
 	else
 		tmp = copy_term_to_heap(q, p1, p1_ctx, copy_attrs);
+
+	q->dump_var_num = -1;
+	q->dump_var_ctx = -1;
 
 	// Reget as slots may have reallocated...
 
 	checked(tmp);
-	GET_FIRST_ARG(p1xx,any);
-	GET_NEXT_ARG(p2xx,any);
-	return unify(q, p2xx, p2xx_ctx, tmp, q->st.curr_frame);
+	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+}
+
+static bool bif_iso_copy_term_2(query *q)
+{
+	return do_copy_term(q, true);
 }
 
 static bool bif_iso_copy_term_nat_2(query *q)
 {
-	GET_FIRST_RAW_ARG(p1r,any);
-	q->dump_var_num = is_var(p1r) ? p1r->var_num : -1;
-	q->dump_var_ctx = is_var(p1r) ? p1r_ctx : -1;
-	GET_FIRST_ARG(p1,any);
-	GET_NEXT_ARG(p2,any);
-	bool copy_attrs = false;
-
-	if (is_atomic(p1) || is_atomic(p2))
-		return unify(q, p1, p1_ctx, p2, p2_ctx);
-
-	GET_FIRST_RAW_ARG(p1x,any);
-	GET_NEXT_RAW_ARG(p2x,any);
-	cell *tmp;
-
-	if (is_var(p1x) && is_var(p2x))
-		tmp = copy_term_to_heap_with_replacement(q, p1, p1_ctx, copy_attrs, p1x, p1x_ctx, p2x, p2x_ctx);
-	else
-		tmp = copy_term_to_heap(q, p1, p1_ctx, copy_attrs);
-
-	// Reget as slots may have reallocated...
-
-	GET_FIRST_ARG(p1xx,any);
-	GET_NEXT_ARG(p2xx,any);
-	return unify(q, p2xx, p2xx_ctx, tmp, q->st.curr_frame);
+	return do_copy_term(q, false);
 }
 
 
 static bool bif_sys_clone_term_2(query *q)
 {
-	GET_FIRST_RAW_ARG(p1r,any);
-	q->dump_var_num = is_var(p1r) ? p1r->var_num : -1;
-	q->dump_var_ctx = is_var(p1r) ? p1r_ctx : -1;
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 
