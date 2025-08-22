@@ -132,9 +132,17 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_idx p1_ctx, unsig
 			cell *t = p1;
 			pl_idx t_ctx = p1_ctx;
 
+			if (is_var(t) && (t->var_num == q->dump_var_num) && (t_ctx == q->dump_var_ctx)) {
+				q->cycle_error = true;
+				break;
+			}
+
 			both = 0;
 			if (deep_copy(t)) DEREF_CHECKED(any2, both, save_vgen, e, e->vgen, t, t_ctx, q->vgen);
-			if (both) q->cycle_error = true;
+
+			if (both)
+				q->cycle_error = true;
+
 			p1 = t;
 			p1_ctx = t_ctx;
 

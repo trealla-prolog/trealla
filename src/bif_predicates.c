@@ -1958,6 +1958,9 @@ static bool bif_iso_copy_term_nat_2(query *q)
 
 static bool bif_sys_clone_term_2(query *q)
 {
+	GET_FIRST_RAW_ARG(p1x,any);
+	q->dump_var_num = is_var(p1x) ? p1x->var_num : -1;
+	q->dump_var_ctx = is_var(p1x) ? p1x_ctx : -1;
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 
