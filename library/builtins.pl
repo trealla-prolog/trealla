@@ -154,16 +154,6 @@ collect_goals_([V|T], GsIn, GsOut) :-
 	collect_goals_(V, Ls, GsIn, GsOut2),
 	collect_goals_(T, GsOut2, GsOut).
 
-:- help(copy_term(+term,?term), [iso(true)]).
-
-copy_term(Term, Copy) :-
-	'$duplicate_term'(Term, Copy, 1).
-
-:- help(copy_term_nat(+term,?term), [iso(false)]).
-
-copy_term_nat(Term, Copy) :-
-	'$duplicate_term'(Term, Copy, 0).
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 
