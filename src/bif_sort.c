@@ -311,7 +311,7 @@ static cell *nodesort4(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool ascen
 		pl_idx c_ctx = base[i].c_ctx;
 		cell tmp;
 
-		if (is_var(c)) {
+		if (is_compound(c)) {
 			make_ref(&tmp, vnbr++, q->st.curr_frame);
 			unify(q, c, c_ctx, &tmp, q->st.curr_frame);
 			c = &tmp;
