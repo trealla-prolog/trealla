@@ -154,6 +154,18 @@ collect_goals_([V|T], GsIn, GsOut) :-
 	collect_goals_(V, Ls, GsIn, GsOut2),
 	collect_goals_(T, GsOut2, GsOut).
 
+sort(A, B) :-
+	'$sort'(A, B).
+
+msort(A, B) :-
+	'$msort'(A, B).
+
+keysort(A, B) :-
+	'$keysort'(A, B).
+
+sort(A, B, C, D) :-
+	'$sort'(A, B, C, D).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 
