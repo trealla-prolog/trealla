@@ -873,8 +873,8 @@ static bool find_exception_handler(query *q, char *ball)
 		if (q->run_init && !q->error)
 			fprintf(stdout, "\rWarning: Initialization goal exception: ");
 
-		//if (!q->run_init/*!is_interned(e) || strcmp(C_STR(q, e), "error")*/)
-		//	fprintf(stdout, "throw(");
+		if (!q->run_init/*!is_interned(e) || strcmp(C_STR(q, e), "error")*/)
+			fprintf(stdout, "throw(");
 
 		if (is_cyclic_term(q, e, e_ctx)) {
 			q->quoted = 1;
@@ -884,8 +884,8 @@ static bool find_exception_handler(query *q, char *ball)
 			print_term(q, stdout, e, e_ctx, 1);
 		}
 
-		//if (!q->run_init/*!is_interned(e) || strcmp(C_STR(q, e), "error")*/)
-		//	fprintf(stdout, ")");
+		if (!q->run_init/*!is_interned(e) || strcmp(C_STR(q, e), "error")*/)
+			fprintf(stdout, ")");
 
 		if (!is_empty(e)) fprintf(stdout, ".\n");
 		q->quoted = 0;
@@ -902,6 +902,7 @@ static bool bif_iso_throw_1(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
 	q->parens = q->numbervars = true;
+	q->is_dump_vars = true;
 	q->quoted = true;
 	char *ball = print_term_to_strbuf(q, p1, p1_ctx, 1);
 	checked(ball);
