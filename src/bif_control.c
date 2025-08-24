@@ -876,13 +876,8 @@ static bool find_exception_handler(query *q, char *ball)
 		if (!q->run_init/*!is_interned(e)*/ && strcmp(C_STR(q, e), "error"))
 			fprintf(stdout, "throw(");
 
-		if (is_cyclic_term(q, e, e_ctx)) {
-			q->quoted = 1;
-			print_term(q, stdout, e, e_ctx, 0);
-		} else if (!is_empty(e)) {
-			q->quoted = 1;
-			print_term(q, stdout, e, e_ctx, 1);
-		}
+		q->quoted = 1;
+		print_term(q, stdout, e, e_ctx, 1);
 
 		if (!q->run_init/*!is_interned(e)*/ && strcmp(C_STR(q, e), "error"))
 			fprintf(stdout, ")");
