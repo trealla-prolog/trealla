@@ -1918,8 +1918,6 @@ query *query_create_subquery(query *q, cell *instr)
 	subq->st.fp = 1;
 	subq->top = q->top;
 
-	// TODO: clone environment for current frame
-
 	cell *tmp = prepare_call(subq, false, instr, q->st.curr_frame, 1);
 	pl_idx num_cells = tmp->num_cells;
 	make_end(tmp+num_cells);
