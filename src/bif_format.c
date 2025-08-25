@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "module.h"
 #include "network.h"
 #include "prolog.h"
 #include "query.h"
@@ -561,27 +562,57 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 		case 'p': {
 			cell *tmp;
 			pl_idx num_cells;
+			cell pc = {0};
+			make_atom(&pc, new_atom(q->pl, "portray"));
+			pc.arity = str ? 2 : 1;
 
-			if (str) {
-				cell p1[1+1+c->num_cells];
-				make_instr(p1+0, new_atom(q->pl, "$portray"), NULL, 2, 1+c->num_cells);
-				p1[1] = *str;
-				dup_cells_by_ref(p1+2, c, c_ctx, c->num_cells);
-				tmp = prepare_call(q, CALL_SKIP, p1, q->st.curr_frame, 1);
-				num_cells = p1->num_cells;
-			} else {
-				cell p1[1+c->num_cells];
-				make_instr(p1+0, new_atom(q->pl, "$portray"), NULL, 1, c->num_cells);
-				dup_cells_by_ref(p1+1, c, c_ctx, c->num_cells);
-				tmp = prepare_call(q, CALL_SKIP, p1, q->st.curr_frame, 1);
-				num_cells = p1->num_cells;
+			predicate *pr = find_predicate(q->st.m, &pc);
+
+			if (pr && pr->cnt) {
+				if (str) {
+					cell p1[1+1+c->num_cells];
+					make_instr(p1+0, new_atom(q->pl, "$portray"), NULL, 2, 1+c->num_cells);
+					p1[1] = *str;
+					dup_cells_by_ref(p1+2, c, c_ctx, c->num_cells);
+					tmp = prepare_call(q, CALL_SKIP, p1, q->st.curr_frame, 1);
+					num_cells = p1->num_cells;
+				} else {
+					cell p1[1+c->num_cells];
+					make_instr(p1+0, new_atom(q->pl, "$portray"), NULL, 1, c->num_cells);
+					dup_cells_by_ref(p1+1, c, c_ctx, c->num_cells);
+					tmp = prepare_call(q, CALL_SKIP, p1, q->st.curr_frame, 1);
+					num_cells = p1->num_cells;
+				}
+
+				make_end(tmp+num_cells);
+				query *q2 = query_create_subquery(q, tmp);
+				start(q2);
+				query_destroy(q2);
+				clear_write_options(q);
+				break;
 			}
 
-			make_end(tmp+num_cells);
-			query *q2 = query_create_subquery(q, tmp);
-			start(q2);
-			query_destroy(q2);
-			clear_write_options(q);
+			if (!str) {
+				int n = q->pl->current_output;
+				stream *str = &q->pl->streams[n];
+				q->quoted = 1;
+				q->numbervars = true;
+				print_term_to_stream(q, str, c, c_ctx, 1);
+				q->numbervars = false;
+				q->quoted = 0;
+
+				if (isatty(fileno(str->fp)))
+					fflush(str->fp);
+			} else {
+				int n = get_stream(q, str);
+				stream *str = &q->pl->streams[n];
+				q->quoted = 1;
+				q->numbervars = true;
+				print_term_to_stream(q, str, c, c_ctx, 1);
+				q->numbervars = false;
+				q->quoted = 0;
+			}
+
 			break;
 		}
 
