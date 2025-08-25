@@ -1912,23 +1912,25 @@ query *query_create(module *m)
 
 query *query_create_subquery(query *q, cell *instr)
 {
-	query *task = query_create(q->st.m);
-	if (!task) return NULL;
-	task->parent = q;
-	task->st.fp = 1;
-	task->top = q->top;
+	query *subq = query_create(q->st.m);
+	if (!subq) return NULL;
+	subq->parent = q;
+	subq->st.fp = 1;
+	subq->top = q->top;
 
-	cell *tmp = prepare_call(task, false, instr, q->st.curr_frame, 1);
+	// TODO: clone environment for current frame
+
+	cell *tmp = prepare_call(subq, false, instr, q->st.curr_frame, 1);
 	pl_idx num_cells = tmp->num_cells;
 	make_end(tmp+num_cells);
-	task->st.instr = tmp;
+	subq->st.instr = tmp;
 
 	frame *fsrc = GET_FRAME(q->st.curr_frame);
-	frame *fdst = task->frames;
+	frame *fdst = subq->frames;
 	fdst->initial_slots = fdst->actual_slots = fsrc->actual_slots;
 	fdst->dbgen = ++q->pl->dbgen;
-	task->st.sp = fdst->actual_slots;
-	return task;
+	subq->st.sp = fdst->actual_slots;
+	return subq;
 }
 
 query *query_create_task(query *q, cell *instr)
