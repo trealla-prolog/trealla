@@ -142,20 +142,6 @@ static bool bif_sys_unifiable_3(query *q)
 	return unify(q, p3, p3_ctx, l, q->st.curr_frame);
 }
 
-bool bif_iso_unify_2(query *q)
-{
-	GET_FIRST_ARG(p1,any);
-	GET_NEXT_ARG(p2,any);
-	return unify(q, p1, p1_ctx, p2, p2_ctx);
-}
-
-bool bif_sys_undo_1(query *q)
-{
-	GET_FIRST_RAW_ARG(p1,var);
-	undo_var(q, p1, p1_ctx);
-	return true;
-}
-
 static bool bif_iso_notunifiable_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -174,6 +160,20 @@ static bool bif_iso_notunifiable_2(query *q)
 	make_call(q, tmp+num_cells);
 	checked(push_succeed_on_retry_with_barrier(q, 0));
 	q->st.instr = tmp;
+	return true;
+}
+
+bool bif_iso_unify_2(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,any);
+	return unify(q, p1, p1_ctx, p2, p2_ctx);
+}
+
+bool bif_sys_undo_1(query *q)
+{
+	GET_FIRST_RAW_ARG(p1,var);
+	undo_var(q, p1, p1_ctx);
 	return true;
 }
 

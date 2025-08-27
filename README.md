@@ -372,7 +372,7 @@ Non-standard predicates
 	partial_string/3            # partial_string(+string,-String,-Var)
 	if/3, (*->)/2               # soft-cut
 	call_det/2					# call_det(+call,?boolean)
-	term_attvars/2              # term_attvars(+term,-Vs)
+	term_attributed_variables/2 # term_attributed_variables(+term,-Vs)
 	copy_term_nat/2             # doesn't copy attrs
 	copy_term/3                 # copy_term(+term1,-term2,-Goals)
 	unifiable/3                 # unifiable(+term1,+term2,-Goals)
