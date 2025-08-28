@@ -393,7 +393,7 @@ Non-standard predicates
 	time/1
 	inf/0
 	nan/0
-	\uXXXX and \UXXXXXXXX 		# Unicode escapes for JSON)
+	\uXXXX and \UXXXXXXXX 		# Unicode escapes (for JSON)
 	gcd/2
 	uuid/1                      # uuid(-string)
 	load_files/[1,2]

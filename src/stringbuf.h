@@ -141,7 +141,7 @@ typedef struct {
 	*pr##_buf.dst = '\0'; 										\
 }
 
-#define SB_cstr(pr) pr##_buf.buf ? pr##_buf.buf : ""
+#define SB_cstr(pr) (const char*) pr##_buf.buf ? pr##_buf.buf : ""
 #define SB_strcmp(pr,s) strcmp(pr##_buf.buf?pr##_buf.buf:"", s)
 
 #define SB_free(pr) {											\
