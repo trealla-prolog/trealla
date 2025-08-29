@@ -251,6 +251,7 @@ static bool check_trail(query *q)
 	if (q->st.tp < q->trails_size)
 		return true;
 
+	q->realloc_trails++;
 	pl_idx new_trailssize = alloc_grow(q, (void**)&q->trails, sizeof(trail), q->st.tp, q->trails_size*3/2, false);
 
 	if (!new_trailssize) {

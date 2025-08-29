@@ -695,6 +695,7 @@ struct query_ {
 	uint64_t step, qid, tmo_msecs, chgen, cycle_error;
 	uint64_t get_started, autofail_n, yield_at;
 	uint64_t cpu_started, time_cpu_last_started, future;
+	unsigned realloc_frames, realloc_choices, realloc_slots, realloc_trails;
 	unsigned max_depth, max_eval_depth, print_idx, tab_idx, dump_var_num;
 	unsigned varno, tab0_varno, curr_engine, curr_chan, my_chan;
 	unsigned s_cnt, retries;

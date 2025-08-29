@@ -3180,25 +3180,35 @@ bool bif_statistics_0(query *q)
 		"Goals %"PRIu64", "
 		"Matches %"PRIu64","
 		"(succeeded %"PRIu64").\n"
+
 		"Max frames %u, "
 		"choices %u, "
 		"trails %u, "
 		"slots %u, "
 		"heap %u, "
 		"deref %u.\n"
+
+		"Realloc frames %u, "
+		"choices %u, "
+		"trails %u, "
+		"slots %u.\n"
+
 		"Active frames %u, "
 		"choices %u, "
 		"trails %u, "
 		"slots %u, "
 		"heap %u.\n"
+
 		"Backtracks %"PRIu64", "
 		"Retries %"PRIu64", "
 		"TCOs:%"PRIu64", "
 		"Frame recovs:%"PRIu64", "
 		"Queue: %u\n",
+
 		q->total_inferences, q->total_matches, q->total_matched,
 		q->hw_frames, q->hw_choices, q->hw_trails, q->hw_slots,
 		q->hw_heap_num, q->hw_deref,
+		q->realloc_frames, q->realloc_choices, q->realloc_trails, q->realloc_slots,
 		q->st.fp, q->cp, q->st.tp, q->st.sp,
 		q->st.heap_num,
 		q->total_backtracks, q->total_retries, q->total_tcos, q->total_recovs,
