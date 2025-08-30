@@ -326,10 +326,6 @@ engine_post(E, T, R) :-
 current_engine(E) :-
 	stream_property(E, engine(true)).
 
-:- help(samsort(+list,?list), [iso(false)]).
-
-samsort(L, R) :- msort(L, R).
-
 :- help(atomic_list_concat(+list,+atomic), [iso(false)]).
 
 atomic_list_concat(L, Atom) :- atomic_list_concat(L, '', Atom).
