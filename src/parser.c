@@ -757,7 +757,7 @@ static bool directives(parser *p, cell *d)
 		ptr->help2 = dst;
 		ptr->iso = iso;
 		ptr->via_directive = true;
-		sl_set(p->pl->help, ptr->name, ptr);
+		sl_app(p->pl->help, ptr->name, ptr);
 
 		if (ptr->iso)
 			push_property(p->m, ptr->name, ptr->arity, "iso");

@@ -13,7 +13,8 @@ skiplist *sl_create(
 	);
 
 bool sl_get(skiplist *l, const void *k, const void **v);
-bool sl_set(skiplist *l, const void *k, const void *v);
+bool sl_set(skiplist *l, const void *k, const void *v);		// at head
+bool sl_app(skiplist *l, const void *k, const void *v);		// at tail
 bool sl_rem(skiplist *l, const void *k, const void *v);
 bool sl_del(skiplist *l, const void *k);
 

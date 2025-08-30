@@ -16,7 +16,7 @@ static bool accum_var(query *q, const cell *c, pl_idx c_ctx)
 		return true;
 	}
 
-	sl_set(q->vars, e, (void*)(size_t)q->tab_idx);
+	sl_app(q->vars, e, (void*)(size_t)q->tab_idx);
 
 	if (!q->pl->tabs) {
 		q->pl->tabs_size = 4000;

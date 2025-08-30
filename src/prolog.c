@@ -89,7 +89,7 @@ static pl_idx add_to_global_atoms(const char *name)
 	memcpy(g_global_atoms + offset, name, len+1);
 	s_global_atoms_offset += len + 1;
 	const char *key = strdup(name);
-	sl_set(g_symtab, key, (void*)(size_t)offset);
+	sl_app(g_symtab, key, (void*)(size_t)offset);
 	return (pl_idx)offset;
 }
 
@@ -418,111 +418,111 @@ builtins *get_fn_ptr(void *fn)
 void load_builtins(prolog *pl)
 {
 	for (const builtins *ptr = g_atts_bifs; ptr->name; ptr++) {
-		sl_set(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		sl_set(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_bboard_bifs; ptr->name; ptr++) {
-		sl_set(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		sl_set(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_csv_bifs; ptr->name; ptr++) {
-		sl_set(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		sl_set(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_database_bifs; ptr->name; ptr++) {
-		sl_set(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		sl_set(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_evaluable_bifs; ptr->name; ptr++) {
-		sl_set(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		sl_set(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_ffi_bifs; ptr->name; ptr++) {
-		sl_set(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		sl_set(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_format_bifs; ptr->name; ptr++) {
-		sl_set(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		sl_set(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_iso_bifs; ptr->name; ptr++) {
-		sl_set(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		sl_set(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_maps_bifs; ptr->name; ptr++) {
-		sl_set(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		sl_set(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_os_bifs; ptr->name; ptr++) {
-		sl_set(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		sl_set(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_other_bifs; ptr->name; ptr++) {
-		sl_set(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		sl_set(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_control_bifs; ptr->name; ptr++) {
-		sl_set(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		sl_set(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_posix_bifs; ptr->name; ptr++) {
-		sl_set(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		sl_set(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_sort_bifs; ptr->name; ptr++) {
-		sl_set(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		sl_set(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_sregex_bifs; ptr->name; ptr++) {
-		sl_set(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		sl_set(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_streams_bifs; ptr->name; ptr++) {
-		sl_set(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		sl_set(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_tasks_bifs; ptr->name; ptr++) {
-		sl_set(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		sl_set(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 
 	for (const builtins *ptr = g_threads_bifs; ptr->name; ptr++) {
-		sl_set(pl->biftab, ptr->name, ptr);
+		sl_app(pl->biftab, ptr->name, ptr);
 		if (ptr->name[0] == '$') continue;
-		sl_set(pl->help, ptr->name, ptr);
+		sl_app(pl->help, ptr->name, ptr);
 	}
 }
 
@@ -731,21 +731,21 @@ prolog *pl_create()
 	CHECK_SENTINEL(pl->streams[0].alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
 	CHECK_SENTINEL(pl->streams[0].filename = strdup("stdin"), NULL);
 	CHECK_SENTINEL(pl->streams[0].mode = strdup("read"), NULL);
-	sl_set(pl->streams[0].alias, strdup("user_input"), NULL);
+	sl_app(pl->streams[0].alias, strdup("user_input"), NULL);
 	pl->streams[0].eof_action = eof_action_reset;
 
 	pl->streams[1].fp = stdout;
 	CHECK_SENTINEL(pl->streams[1].alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
 	CHECK_SENTINEL(pl->streams[1].filename = strdup("stdout"), NULL);
 	CHECK_SENTINEL(pl->streams[1].mode = strdup("append"), NULL);
-	sl_set(pl->streams[1].alias, strdup("user_output"), NULL);
+	sl_app(pl->streams[1].alias, strdup("user_output"), NULL);
 	pl->streams[1].eof_action = eof_action_reset;
 
 	pl->streams[2].fp = stderr;
 	CHECK_SENTINEL(pl->streams[2].alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
 	CHECK_SENTINEL(pl->streams[2].filename = strdup("stderr"), NULL);
 	CHECK_SENTINEL(pl->streams[2].mode = strdup("append"), NULL);
-	sl_set(pl->streams[2].alias, strdup("user_error"), NULL);
+	sl_app(pl->streams[2].alias, strdup("user_error"), NULL);
 	pl->streams[2].eof_action = eof_action_reset;
 
 	pl->streams[3].ignore = true;

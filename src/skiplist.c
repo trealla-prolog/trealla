@@ -171,6 +171,44 @@ bool sl_set(skiplist *l, const void *key, const void *val)
 	int k;
 
 	for (k = l->level - 1; k >= 0; k--) {
+		while ((q = p->forward[k]) && (l->cmpkey(q->key, key, l->p, l) < 0))
+			p = q;
+
+		update[k] = p;
+	}
+
+	k = random_level(&l->seed);
+
+	if (k >= l->level) {
+		l->level++;
+		k = l->level - 1;
+		update[k] = l->header;
+	}
+
+	q = new_node_of_level(k + 1);
+	if (!q) return false;
+	q->key = (void *)key;
+	q->val = (void*)val;
+
+	for (; k >= 0; k--) {
+		p = update[k];
+		q->forward[k] = p->forward[k];
+		p->forward[k] = q;
+	}
+
+	l->count++;
+	return true;
+}
+
+bool sl_app(skiplist *l, const void *key, const void *val)
+{
+	if (!l || l->is_destroyed)
+		return false;
+
+	slnode_t *update[MAX_LEVELS], *p = l->header, *q = NULL;
+	int k;
+
+	for (k = l->level - 1; k >= 0; k--) {
 		while ((q = p->forward[k]) && (l->cmpkey(q->key, key, l->p, l) <= 0))
 			p = q;
 

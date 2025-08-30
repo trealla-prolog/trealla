@@ -1001,7 +1001,7 @@ static bool bif_popen_4(query *q)
 				} else if (!CMP_STRING_TO_CSTR(q, name, "current_error")) {
 					q->pl->current_error = n;
 				} else {
-					sl_set(str->alias, DUP_STRING(q, name), NULL);
+					sl_app(str->alias, DUP_STRING(q, name), NULL);
 #if 0
 					cell tmp;
 					make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
@@ -1517,7 +1517,7 @@ static bool bif_iso_open_4(query *q)
 			} else if (!CMP_STRING_TO_CSTR(q, name, "current_error")) {
 				q->pl->current_error = n;
 			} else {
-				sl_set(str->alias, DUP_STRING(q, name), NULL);
+				sl_app(str->alias, DUP_STRING(q, name), NULL);
 #if 0
 				cell tmp;
 				make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
@@ -1724,17 +1724,17 @@ static bool stream_close(query *q, int n)
 
 	if (sl_get(str->alias, "user_input", NULL)) {
 		stream *str2 = &q->pl->streams[0];
-		sl_set(str2->alias, strdup("user_input"), NULL);
+		sl_app(str2->alias, strdup("user_input"), NULL);
 	}
 
 	if (sl_get(str->alias, "user_output", NULL)) {
 		stream *str2 = &q->pl->streams[1];
-		sl_set(str2->alias, strdup("user_output"), NULL);
+		sl_app(str2->alias, strdup("user_output"), NULL);
 	}
 
 	if (sl_get(str->alias, "user_error", NULL)) {
 		stream *str2 = &q->pl->streams[2];
-		sl_set(str2->alias, strdup("user_error"), NULL);
+		sl_app(str2->alias, strdup("user_error"), NULL);
 	}
 
 	if (!str->socket && !str->is_mutex && !str->is_queue)
@@ -6200,7 +6200,7 @@ static bool bif_server_3(query *q)
 
 	stream *str = &q->pl->streams[n];
 	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
-	sl_set(str->alias, strdup(hostname), NULL);
+	sl_app(str->alias, strdup(hostname), NULL);
 	checked(str->filename = DUP_STRING(q, p1));
 	checked(str->mode = strdup("update"));
 	str->nodelay = nodelay;
@@ -6249,7 +6249,7 @@ static bool bif_accept_2(query *q)
 	}
 
 	stream *str2 = &q->pl->streams[n];
-	sl_set(str2->alias, strdup(str->filename), NULL);
+	sl_app(str2->alias, strdup(str->filename), NULL);
 	checked(str2->filename = strdup(str->filename));
 	checked(str2->mode = strdup("update"));
 	str2->socket = true;
@@ -6691,7 +6691,7 @@ static bool bif_client_5(query *q)
 
 	stream *str = &q->pl->streams[n];
 	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
-	sl_set(str->alias, DUP_STRING(q, p1), NULL);
+	sl_app(str->alias, DUP_STRING(q, p1), NULL);
 	checked(str->filename = DUP_STRING(q, p1));
 	checked(str->mode = strdup("update"));
 	str->socket = true;
@@ -7286,7 +7286,7 @@ static bool bif_set_stream_2(query *q)
 				sl_del(str2->alias, C_STR(q, name));
 			}
 
-			sl_set(str->alias, DUP_STRING(q, name), NULL);
+			sl_app(str->alias, DUP_STRING(q, name), NULL);
 		}
 
 		return true;
@@ -7349,7 +7349,7 @@ static bool bif_alias_2(query *q)
 
 		stream *str = &q->pl->streams[n];
 		if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
-		sl_set(str->alias, DUP_STRING(q, p2), NULL);
+		sl_app(str->alias, DUP_STRING(q, p2), NULL);
 		str->is_alias = true;
 		str->handle = (void*)(size_t)get_smalluint(p1);
 		return true;

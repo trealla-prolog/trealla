@@ -71,7 +71,7 @@ static bool bif_bb_b_put_2(query *q)
 		return false;
 
 	prolog_lock(q->pl);
-	sl_set(q->pl->keyval, key, val);
+	sl_app(q->pl->keyval, key, val);
 	prolog_unlock(q->pl);
 
 	return true;
@@ -128,7 +128,7 @@ static bool bif_bb_put_2(query *q)
 	prolog_lock(q->pl);
 	sl_del(q->pl->keyval, key1);
 	sl_del(q->pl->keyval, key2);
-	sl_set(q->pl->keyval, key2, val);
+	sl_app(q->pl->keyval, key2, val);
 	prolog_unlock(q->pl);
 
 	return true;
@@ -336,7 +336,7 @@ static bool bif_bb_update_3(query *q)
 	checked(value);
 	dup_cells(value, tmp, tmp->num_cells);
 	sl_del(q->pl->keyval, key);
-	sl_set(q->pl->keyval, key, value);
+	sl_app(q->pl->keyval, key, value);
 
 	prolog_unlock(q->pl);
 

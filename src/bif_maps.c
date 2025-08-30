@@ -44,7 +44,7 @@ static bool bif_map_create_2(query *q)
 			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 
-			sl_set(str->alias, DUP_STRING(q, name), NULL);
+			sl_app(str->alias, DUP_STRING(q, name), NULL);
 			cell tmp;
 			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
 
@@ -121,7 +121,7 @@ static bool bif_map_set_3(query *q)
 	}
 
 	checked(val);
-	sl_set(str->keyval, key, val);
+	sl_app(str->keyval, key, val);
 	return true;
 }
 
@@ -356,7 +356,7 @@ static bool bif_engine_create_4(query *q)
 			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 
-			sl_set(str->alias, DUP_STRING(q, name), NULL);
+			sl_app(str->alias, DUP_STRING(q, name), NULL);
 			cell tmp;
 			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
 
@@ -380,7 +380,7 @@ static bool bif_engine_create_4(query *q)
 		if (get_named_stream(q->pl, C_STR(q, p3), C_STRLEN(q, p3)) >= 0)
 			return throw_error(q, q->st.instr, q->st.curr_frame, "permission_error", "open,source_sink");
 
-		sl_set(str->alias, DUP_STRING(q, p3), NULL);
+		sl_app(str->alias, DUP_STRING(q, p3), NULL);
 	} else if (!is_alias) {
 		cell tmp2;
 		make_int(&tmp2, n);

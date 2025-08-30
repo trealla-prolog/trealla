@@ -176,7 +176,7 @@ void thread_initialize(prolog *pl)
 	ensure(n >= 0);
 	thread *t = &pl->threads[n];
 	if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
-	sl_set(t->alias, strdup("main"), NULL);
+	sl_app(t->alias, strdup("main"), NULL);
 	t->is_detached = true;
 }
 
@@ -594,7 +594,7 @@ static bool bif_pl_thread_3(query *q)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 			}
 
-			sl_set(t->alias, DUP_STRING(q, name), NULL);
+			sl_app(t->alias, DUP_STRING(q, name), NULL);
 		} else {
 			t->is_active = false;
 			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
@@ -723,7 +723,7 @@ static bool bif_thread_create_3(query *q)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 			}
 
-			sl_set(t->alias, DUP_STRING(q, name), NULL);
+			sl_app(t->alias, DUP_STRING(q, name), NULL);
 			cell tmp;
 			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
 
@@ -1361,7 +1361,7 @@ static bool bif_message_queue_create_2(query *q)
 	if (is_atom(p1)) {
 		thread *t = &q->pl->threads[n];
 		if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
-		sl_set(t->alias, DUP_STRING(q, p1), NULL);
+		sl_app(t->alias, DUP_STRING(q, p1), NULL);
 	}
 
 	thread *t = &q->pl->threads[n];
@@ -1398,7 +1398,7 @@ static bool bif_message_queue_create_2(query *q)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 			}
 
-			sl_set(t->alias, DUP_STRING(q, name), NULL);
+			sl_app(t->alias, DUP_STRING(q, name), NULL);
 			cell tmp;
 			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
 
@@ -1702,7 +1702,7 @@ static bool bif_mutex_create_2(query *q)
 	if (is_atom(p1)) {
 		thread *t = &q->pl->threads[n];
 		if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
-		sl_set(t->alias, DUP_STRING(q, p1), NULL);
+		sl_app(t->alias, DUP_STRING(q, p1), NULL);
 	}
 
 	thread *t = &q->pl->threads[n];
@@ -1739,7 +1739,7 @@ static bool bif_mutex_create_2(query *q)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 			}
 
-			sl_set(t->alias, DUP_STRING(q, name), NULL);
+			sl_app(t->alias, DUP_STRING(q, name), NULL);
 			cell tmp;
 			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
 
