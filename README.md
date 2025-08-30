@@ -420,12 +420,6 @@ Non-standard predicates
 	call_with_time_limit/2		# SWI-compatible
 	time_out/3					# SICStus-compatible
 
-	bb_b_put/2					# bb_b_put(:atom, +term)
-	bb_put/2					# bb_put(:atom, +term)
-	bb_get/2					# bb_get(:atom, ?term)
-	bb_update/3					# bb_update(:atom, ?term, ?term)
-	bb_delete/2					# bb_delete(:atom, ?term)
-
 	posix_strftime/3			# posix_strftime(+format,-string,+tm(NNN,...))
 	posix_strptime/3			# posix_strptime(+format,+string,-tm(NNN,...))
 	posix_mktime/2				# posix_mktime(+tm(NNN,...),-seconds)
@@ -436,15 +430,6 @@ Non-standard predicates
 	posix_getpid/1				# posix_pid(-pid)
 	posix_getppid/1				# posix_ppid(-pid)
 	posix_fork/1				# posix_fork(-pid)
-
-	nb_setval(K,V)
-	nb_getval(K,V)
-	nb_delete(K)
-	nb_current(K,V)
-
-	b_setval(K,V)
-	b_getval(K,V)
-	b_delete(K)
 
 	call_nth/2
 	offset/2
@@ -590,6 +575,16 @@ Definite Clause Grammars
 Uses Ulrich Neumerkel's standard reference library.
 
 	:- use_module(library(dcgs)).
+
+
+Blackboard functions
+====================
+
+	bb_b_put/2					# bb_b_put(:atom, +term)
+	bb_put/2					# bb_put(:atom, +term)
+	bb_get/2					# bb_get(:atom, ?term)
+	bb_update/3					# bb_update(:atom, ?term, ?term)
+	bb_delete/2					# bb_delete(:atom, ?term)
 
 
 Crypto functions
