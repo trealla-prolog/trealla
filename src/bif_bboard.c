@@ -71,7 +71,7 @@ static bool bif_bb_b_put_2(query *q)
 		return false;
 
 	prolog_lock(q->pl);
-	sl_app(q->pl->keyval, key, val);
+	sl_set(q->pl->keyval, key, val);
 	prolog_unlock(q->pl);
 
 	return true;
