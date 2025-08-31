@@ -401,23 +401,6 @@ static void abolish_predicate(predicate *pr)
 	}
 }
 
-void purge_predicate(predicate *pr)
-{
-	rule *r;
-
-	while ((r = list_pop_front(&pr->dirty)) != NULL) {
-		predicate_delink(pr, r);
-		clear_clause(&r->cl);
-		free(r);
-	}
-
-	if (!pr->cnt) {
-		sl_destroy(pr->idx2);
-		sl_destroy(pr->idx1);
-		pr->idx1 = pr->idx2 = NULL;
-	}
-}
-
 static void destroy_predicate(module *m, predicate *pr)
 {
 	sl_del(m->index, &pr->key);

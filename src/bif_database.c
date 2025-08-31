@@ -271,8 +271,15 @@ static bool bif_iso_retractall_1(query *q)
 		retry_choice(q);
 	}
 
-	if (!pr->refcnt)
-		purge_predicate(pr);
+	if (pr->idx1 && !pr->refcnt) {
+		predicate_purge_dirty_list(pr);
+
+		if (!pr->cnt) {
+			sl_destroy(pr->idx2);
+			sl_destroy(pr->idx1);
+			pr->idx1 = pr->idx2 = NULL;
+		}
+	}
 
 	prolog_unlock(q->pl);
 	return true;

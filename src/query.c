@@ -482,13 +482,10 @@ static void leave_predicate(query *q, predicate *pr)
 	if (!list_count(&pr->dirty))
 		return;
 
-	module_lock(pr->m);
-
-	if (pr->is_abolished) {
-		purge_predicate(pr);
-		module_unlock(pr->m);
+	if (pr->is_abolished)
 		return;
-	}
+
+	module_lock(pr->m);
 
 	// Just because this predicate is no longer in use doesn't
 	// mean there are no shared references to terms contained
