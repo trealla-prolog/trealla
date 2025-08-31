@@ -271,7 +271,7 @@ static bool bif_iso_retractall_1(query *q)
 		retry_choice(q);
 	}
 
-	if (pr->idx1 && !pr->refcnt) {
+	if (!pr->refcnt) {
 		predicate_purge_dirty_list(pr);
 
 		if (!pr->cnt) {
@@ -296,7 +296,7 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 	for (rule *r = pr->head; r; r = r->next)
 		retract_from_db(r->owner->m, r);
 
-	if (pr->idx1 && !pr->refcnt) {
+	if (!pr->refcnt) {
 		predicate_purge_dirty_list(pr);
 	} else {
 		rule *r;
