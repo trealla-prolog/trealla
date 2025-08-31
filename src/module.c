@@ -1961,7 +1961,7 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 		return;
 
 	if (!pr->idx1) {
-		unsigned INDEX_THRESHHOLD = 500;
+		unsigned INDEX_THRESHHOLD = 150;
 
 		if (pr->cnt < INDEX_THRESHHOLD)
 			return;
