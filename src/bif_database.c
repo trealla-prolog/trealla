@@ -271,6 +271,9 @@ static bool bif_iso_retractall_1(query *q)
 		retry_choice(q);
 	}
 
+	if (!pr->refcnt)
+		purge_predicate(pr);
+
 	prolog_unlock(q->pl);
 	return true;
 }

@@ -485,14 +485,7 @@ static void leave_predicate(query *q, predicate *pr)
 	module_lock(pr->m);
 
 	if (pr->is_abolished) {
-		rule *r;
-
-		while ((r = list_pop_front(&pr->dirty)) != NULL) {
-			predicate_delink(pr, r);
-			clear_clause(&r->cl);
-			free(r);
-		}
-
+		purge_predicate(pr);
 		module_unlock(pr->m);
 		return;
 	}

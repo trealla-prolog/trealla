@@ -27,6 +27,7 @@ predicate *find_functor(module *m, const char *name, unsigned arity);
 predicate *find_predicate(module *m, cell *c);
 predicate *search_predicate(module *m, cell *c, bool *prebuilt);
 predicate *create_predicate(module *m, cell *c, bool *created);
+void purge_predicate(predicate *pr);
 bool find_goal_expansion(module *m, cell *c);
 bool search_goal_expansion(module *m, cell *c);
 void create_goal_expansion(module *m, cell *c);
