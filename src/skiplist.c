@@ -91,7 +91,6 @@ void sl_destroy(skiplist *l)
 	if (!l)
 		return;
 
-	printf("*** sl_destroy=%u\n", l->count);
 	slnode_t *p, *q;
 	p = l->header;
 	q = p->forward[0];
