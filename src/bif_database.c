@@ -258,6 +258,9 @@ static bool bif_iso_retractall_1(query *q)
 		return true;
 	}
 
+	if (!pr->cnt)
+		return true;
+
 	prolog_lock(q->pl);
 
 	while (do_retract(q, p1, p1_ctx, DO_RETRACTALL)) {
