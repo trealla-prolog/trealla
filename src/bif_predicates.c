@@ -1870,8 +1870,8 @@ static bool do_copy_term(query *q, bool copy_attrs)
 {
 	GET_FIRST_RAW_ARG(p1x,any);
 	GET_NEXT_RAW_ARG(p2x,any);
-	q->dump_var_num = is_var(p1x) ? p1x->var_num : -1;
-	q->dump_var_ctx = is_var(p1x) ? p1x_ctx : -1;
+	q->dump_var_num = is_var(p1x) ? p1x->var_num : (unsigned)-1;
+	q->dump_var_ctx = is_var(p1x) ? p1x_ctx : (unsigned)-1;
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 
