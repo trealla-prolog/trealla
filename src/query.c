@@ -486,13 +486,6 @@ static void leave_predicate(query *q, predicate *pr)
 		return;
 
 	module_lock(pr->m);
-
-	// Just because this predicate is no longer in use doesn't
-	// mean there are no shared references to terms contained
-	// within. So move items on the predicate dirty-list to the
-	// query dirty-list. They will be freed up at end of the query.
-	// FIXME: this is a memory drain.
-
 	rule *r;
 
 	while ((r = list_pop_front(&pr->dirty)) != NULL) {
@@ -500,25 +493,28 @@ static void leave_predicate(query *q, predicate *pr)
 
 		if (pr->idx1 && pr->cnt) {
 			cell *c = get_head(r->cl.cells);
+			sl_rem(pr->idx1, c, r);
 
-			if (pr->key.arity > 1) {
+			if (pr->idx2 && (pr->key.arity > 1)) {
 				cell *arg1 = FIRST_ARG(c);
 				cell *arg2 = NEXT_ARG(arg1);
 				sl_rem(pr->idx2, arg2, r);
 			}
+		}
 
-			sl_rem(pr->idx1, c, r);
+		// Just because this predicate is no longer in use doesn't
+		// mean there are no shared references to terms contained
+		// within. So move items on the predicate dirty-list to the
+		// query dirty-list. They will be freed up at end of the query.
+		// FIXME: this is a memory drain, should a retracted term be
+		// copied to the heap?.
 
-			if (true) {
-				r->cl.is_deleted = true;
-				list_push_back(&q->dirty, r);
-			} else {
-				clear_clause(&r->cl);
-				free(r);
-			}
-		} else {
+		if (true) {
 			r->cl.is_deleted = true;
 			list_push_back(&q->dirty, r);
+		} else {
+			clear_clause(&r->cl);
+			free(r);
 		}
 	}
 
