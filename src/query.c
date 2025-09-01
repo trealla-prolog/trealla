@@ -1212,12 +1212,6 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 		idx = pr->idx2;
 	}
 
-#define DEBUGIDX 0
-
-#if DEBUGIDX
-	DUMP_TERM("search, term = ", key, key_ctx);
-#endif
-
 	q->st.dbe = NULL;
 	sliter *iter;
 
@@ -1233,10 +1227,6 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 	const rule *r;
 
 	while (sl_next_key(iter, (void*)&r)) {
-#if DEBUGIDX
-		DUMP_TERM("   got, key = ", r->cl.cells, q->st.curr_frame);
-#endif
-
 		if (!tmp_idx) {
 			tmp_idx = sl_create(NULL, NULL, NULL);
 			sl_set_tmp(tmp_idx);
@@ -1249,8 +1239,6 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 
 	if (!tmp_idx)
 		return false;
-
-	//sl_dump(tmp_idx, dump_id, q);
 
 	iter = sl_first(tmp_idx);
 
