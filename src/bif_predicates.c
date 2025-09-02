@@ -5646,7 +5646,7 @@ static bool bif_between_3(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
 
 	if (is_bigint(p2))
-		return throw_error(q, p2, p1_ctx, "domain_error", "small_integer_range");
+		return throw_error(q, p2, p2_ctx, "domain_error", "small_integer_range");
 
 	if (is_bigint(p3))
 		return throw_error(q, p3, p3_ctx, "domain_error", "small_integer_range");
