@@ -171,7 +171,9 @@ static bool bif_iso_sort_2(query *q)
 	bool status = false;
 	cell *l = nodesort(q, p1, p1_ctx, true, false, &status);
 	if (!l) return status;
-	return unify(q, p2, p2_ctx, l, p1_ctx);
+	GET_FIRST_ARG(p1x,list_or_nil);
+	GET_NEXT_ARG(p2x,list_or_nil_or_var);
+	return unify(q, p2x, p2x_ctx, l, p1x_ctx);
 }
 
 static bool bif_iso_msort_2(query *q)
@@ -211,7 +213,9 @@ static bool bif_iso_msort_2(query *q)
 	bool status = false;
 	cell *l = nodesort(q, p1, p1_ctx, false, false, &status);
 	if (!l) return status;
-	return unify(q, p2, p2_ctx, l, p1_ctx);
+	GET_FIRST_ARG(p1x,list_or_nil);
+	GET_NEXT_ARG(p2x,list_or_nil_or_var);
+	return unify(q, p2x, p2x_ctx, l, p1x_ctx);
 }
 
 static bool bif_iso_keysort_2(query *q)
@@ -250,7 +254,9 @@ static bool bif_iso_keysort_2(query *q)
 	bool status = false;
 	cell *l = nodesort(q, p1, p1_ctx, false, true, &status);
 	if (!l) return status;
-	return unify(q, p2, p2_ctx, l, p1_ctx);
+	GET_FIRST_ARG(p1x,list_or_nil);
+	GET_NEXT_ARG(p2x,list_or_nil_or_var);
+	return unify(q, p2x, p2x_ctx, l, p1x_ctx);
 }
 
 static cell *nodesort4(query *q, cell *p1, pl_idx p1_ctx, bool dedup, bool ascending, int arg, bool *status)
@@ -387,7 +393,11 @@ static bool bif_sort_4(query *q)
 	bool status = false;
 	cell *l = nodesort4(q, p3, p3_ctx, dedup, ascending, arg, &status);
 	if (!l) return status;
-	return unify(q, p4, p4_ctx, l, q->st.curr_frame);
+	GET_FIRST_ARG(p1x,list_or_nil);
+	GET_NEXT_ARG(p2x,list_or_nil_or_var);
+	GET_NEXT_ARG(p3x,list_or_nil);
+	GET_NEXT_ARG(p4x,list_or_nil_or_var);
+	return unify(q, p4x, p4x_ctx, l, q->st.curr_frame);
 }
 
 builtins g_sort_bifs[] =
