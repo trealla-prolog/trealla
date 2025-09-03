@@ -465,11 +465,11 @@ static void enter_predicate(query *q, predicate *pr)
 
 static void leave_predicate(query *q, predicate *pr)
 {
-	sl_done(q->st.iter);
-	q->st.iter = NULL;
-
 	if (!pr)
 		return;
+
+	sl_done(q->st.iter);
+	q->st.iter = NULL;
 
 	if (!pr->is_dynamic || !pr->refcnt)
 		return;
@@ -477,13 +477,13 @@ static void leave_predicate(query *q, predicate *pr)
 	if (--pr->refcnt != 0)
 		return;
 
-	// Predicate is no longer being used
-
 	if (!list_count(&pr->dirty))
 		return;
 
 	if (pr->is_abolished)
 		return;
+
+	// Predicate is no longer being used
 
 	module_lock(pr->m);
 	rule *r;
