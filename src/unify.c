@@ -578,18 +578,6 @@ static const struct dispatch g_disp[] =
 
 static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, unsigned depth)
 {
-	if ((q->is_cyclic1 || q->is_cyclic2)) {
-		if (depth > 12) {
-			//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
-			q->cycle_error++;
-			return true;
-		}
-	} else if (depth > 30) {
-		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
-		q->cycle_error++;
-		return true;
-	}
-
 	if (is_var(p1) && is_var(p2)) {
 		if (p2_ctx > p1_ctx)
 			set_var(q, p2, p2_ctx, p1, p1_ctx);
@@ -634,6 +622,18 @@ static bool unify_internal(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 			return unify_string_to_list(q, p2, p2_ctx, p1, p1_ctx, depth);
 
 		return false;
+	}
+
+	if ((q->is_cyclic1 || q->is_cyclic2)) {
+		if (depth > 12) {
+			//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+			q->cycle_error++;
+			return true;
+		}
+	} else if (depth > 30) {
+		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		q->cycle_error++;
+		return true;
 	}
 
 	return g_disp[p1->tag].fn(q, p1, p1_ctx, p2, p2_ctx, depth);
