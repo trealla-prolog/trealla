@@ -296,6 +296,7 @@ static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx
 			&& !is_temporary(c) && !is_void(c)
 			) {
 			q->no_recov = true;
+			q->total_no_recovs++;
 		}
 	} else if (is_compound(v)) {
 		make_indirect(&e->c, v, v_ctx);
@@ -304,6 +305,7 @@ static void set_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx
 			&& !is_ground(v)
 			){
 			q->no_recov = true;
+			q->total_no_recovs++;
 		}
 	} else {
 		e->c = *v;

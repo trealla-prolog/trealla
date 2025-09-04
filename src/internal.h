@@ -691,7 +691,7 @@ struct query_ {
 	char tmpbuf[256];
 	bool ignores[MAX_IGNORES];
 	uint64_t total_goals, total_backtracks, total_retries, total_matches, total_inferences;
-	uint64_t total_tcos, total_recovs, total_matched;
+	uint64_t total_tcos, total_recovs, total_matched, total_no_recovs;
 	uint64_t step, qid, tmo_msecs, chgen, cycle_error;
 	uint64_t get_started, autofail_n, yield_at;
 	uint64_t cpu_started, time_cpu_last_started, future;
