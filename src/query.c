@@ -443,11 +443,8 @@ int create_vars(query *q, unsigned cnt)
 		q->st.sp += cnt2;
 	}
 
-	for (unsigned i = 0; i < cnt; i++) {
-		slot *e = get_slot(q, f, f->actual_slots + i);
-		memset(e, 0, sizeof(slot));
-	}
-
+	slot *e = get_slot(q, f, f->actual_slots);
+	memset(e, 0, sizeof(slot)*cnt);
 	q->st.sp += cnt;
 	f->actual_slots += cnt;
 	return var_num;
