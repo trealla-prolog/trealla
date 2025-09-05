@@ -1786,13 +1786,13 @@ void query_destroy(query *q)
 
 	q->done = true;
 
-	for (heap_page *a = q->heap_pages; a;) {
+	for (page *a = q->heap_pages; a;) {
 		cell *c = a->cells;
 
 		for (pl_idx i = 0; i < a->idx; i++, c++)
 			unshare_cell(c);
 
-		heap_page *save = a;
+		page *save = a;
 		a = a->next;
 		free(save->cells);
 		free(save);

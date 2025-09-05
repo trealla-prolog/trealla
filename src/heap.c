@@ -342,14 +342,14 @@ cell *copy_term_to_tmp(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
 // The heap is used for data allocations and a realloc() can't be
 // done as it will invalidate existing pointers. Build any compounds
 // first on the tmp heap, then allocate in one go here and copy in.
-// When more space is need allocate a new heap_page and keep them in the
-// heap_page list. Backtracking will garbage collect and free as needed.
+// When more space is need allocate a new page and keep them in the
+// page list. Backtracking will garbage collect and free as needed.
 // Need to incr refcnt on heap cells.
 
 cell *alloc_on_heap(query *q, unsigned num_cells)
 {
 	if (!q->heap_pages) {
-		heap_page *a = calloc(1, sizeof(heap_page));
+		page *a = calloc(1, sizeof(page));
 		if (!a) return NULL;
 		a->next = q->heap_pages;
 		unsigned n = MAX_OF(q->heap_size, num_cells);
@@ -360,7 +360,7 @@ cell *alloc_on_heap(query *q, unsigned num_cells)
 	}
 
 	if ((q->st.hp + num_cells) >= q->heap_pages->page_size) {
-		heap_page *a = calloc(1, sizeof(heap_page));
+		page *a = calloc(1, sizeof(page));
 		if (!a) return NULL;
 		a->next = q->heap_pages;
 		unsigned n = MAX_OF(q->heap_size, num_cells);
@@ -383,9 +383,9 @@ cell *alloc_on_heap(query *q, unsigned num_cells)
 void trim_heap(query *q)
 {
 	// q->heap_pages is a push-down stack and points to the
-	// most recent heap_page of heap allocations...
+	// most recent page of heap allocations...
 
-	for (heap_page *a = q->heap_pages; a;) {
+	for (page *a = q->heap_pages; a;) {
 		if (a->num <= q->st.heap_num)
 			break;
 
@@ -394,7 +394,7 @@ void trim_heap(query *q)
 		for (pl_idx i = 0; i < a->idx; i++, c++)
 			unshare_cell(c);
 
-		heap_page *save = a;
+		page *save = a;
 		q->heap_pages = a = a->next;
 		free(save->cells);
 		free(save);
