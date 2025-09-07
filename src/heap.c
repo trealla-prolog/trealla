@@ -636,6 +636,8 @@ cell *alloc_queuen(query *q, unsigned qnum, const cell *c)
 	return dst;
 }
 
+// Reserve possible slots in the environment...
+
 slot *alloc_env(query *q, unsigned num_slots)
 {
 	if (!q->env_pages) {
@@ -664,10 +666,15 @@ slot *alloc_env(query *q, unsigned num_slots)
 	if (q->st.env_num > q->hw_env_num)
 		q->hw_env_num = q->st.env_num;
 
-	slot *e = q->env_pages->slots + q->st.ep;
+	return q->env_pages->slots + q->st.ep;
+}
+
+// Claim the actual number used...
+
+void push_env(query *q, unsigned num_slots)
+{
 	q->st.ep += num_slots;
 	q->env_pages->idx = q->st.ep;
-	return e;
 }
 
 void trim_env(query *q)
