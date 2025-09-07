@@ -98,7 +98,7 @@ static bool bif_posix_strptime_3(query *q)
 	if (strptime(C_STR(q, p2), C_STR(q, p1), &tm) == NULL)
 		return false;
 
-	cell *tmp = alloc_on_heap(q, 10);
+	cell *tmp = alloc_heap(q, 10);
 	make_instr(tmp, g_tm_s, NULL, 9, 0);
 	pl_idx num_cells = 1;
 	make_int(tmp+num_cells++, tm.tm_sec);
@@ -154,7 +154,7 @@ static bool bif_posix_gmtime_2(query *q)
 	if (gmtime_r(&t, &tm) == NULL)
 		return 0;
 
-	cell *tmp = alloc_on_heap(q, 10);
+	cell *tmp = alloc_heap(q, 10);
 	make_instr(tmp, g_tm_s, NULL, 9, 0);
 	pl_idx num_cells = 1;
 	make_int(tmp+num_cells++, tm.tm_sec);
@@ -181,7 +181,7 @@ static bool bif_posix_localtime_2(query *q)
 	if (localtime_r(&t, &tm) == NULL)
 		return 0;
 
-	cell *tmp = alloc_on_heap(q, 10);
+	cell *tmp = alloc_heap(q, 10);
 	make_instr(tmp, g_tm_s, NULL, 9, 0);
 	pl_idx num_cells = 1;
 	make_int(tmp+num_cells++, tm.tm_sec);

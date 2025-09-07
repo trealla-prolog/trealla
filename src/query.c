@@ -274,7 +274,7 @@ void make_call_redo(query *q, cell *tmp)
 cell *prepare_call(query *q, bool noskip, cell *p1, pl_idx p1_ctx, unsigned extras)
 {
 	unsigned num_cells = p1->num_cells + extras;
-	cell *tmp = alloc_on_heap(q, num_cells);
+	cell *tmp = alloc_heap(q, num_cells);
 	if (!tmp) return NULL;
 	q->noskip = noskip;
 	dup_cells_by_ref(tmp, p1, p1_ctx, p1->num_cells);
@@ -1122,7 +1122,7 @@ bool has_next_key(query *q)
 static bool expand_meta_predicate(query *q, predicate *pr)
 {
 	unsigned arity = q->st.key->arity;
-	cell *tmp = alloc_on_heap(q, q->st.key->num_cells*3);	// alloc max possible
+	cell *tmp = alloc_heap(q, q->st.key->num_cells*3);	// alloc max possible
 	checked(tmp);
 	cell *save_tmp = tmp;
 	tmp += copy_cells(tmp, q->st.key, 1);

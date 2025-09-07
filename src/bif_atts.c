@@ -60,7 +60,7 @@ static bool do_put_atts(query *q, cell *attr, pl_idx attr_ctx, bool is_minus)
 	// Add this attribute value...
 
 	if (!is_minus) {
-		cell *tmp = alloc_on_tmp(q, 1+1);
+		cell *tmp = alloc_tmp(q, 1+1);
 		checked(tmp);
 		make_atom(tmp, g_dot_s);
 		tmp->arity = 2;
@@ -493,7 +493,7 @@ bool do_post_unify_hook(query *q, bool is_builtin)
 	q->run_hook = false;
 	q->undo_lo_tp = q->before_hook_tp;
 	q->undo_hi_tp = q->st.tp;
-	cell *tmp = alloc_on_heap(q, 3);
+	cell *tmp = alloc_heap(q, 3);
 	checked(tmp);
 	make_instr(tmp+0, g_true_s, bif_iso_true_0, 0, 0);
 	make_instr(tmp+1, g_post_unify_hook_s, NULL, 0, 0);

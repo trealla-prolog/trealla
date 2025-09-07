@@ -310,7 +310,7 @@ static bool bif_send_1(query *q)
 		share_cell(c2);
 	}
 
-	checked(alloc_on_queuen(dstq, 0, c));
+	checked(alloc_queuen(dstq, 0, c));
 	q->yielded = true;
 	return true;
 }
@@ -327,7 +327,7 @@ static bool bif_recv_1(query *q)
 		if (unify(q, p1, p1_ctx, c, q->st.curr_frame))
 			return true;
 
-		checked(alloc_on_queuen(q, 0, c));
+		checked(alloc_queuen(q, 0, c));
 	}
 
 	return false;
