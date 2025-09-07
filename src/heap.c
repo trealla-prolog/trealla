@@ -639,7 +639,7 @@ cell *alloc_on_queuen(query *q, unsigned qnum, const cell *c)
 	return dst;
 }
 
-slot *alloc_chunk(query *q, unsigned num_slots)
+slot *alloc_env(query *q, unsigned num_slots)
 {
 	if (!q->env_pages) {
 		page *a = calloc(1, sizeof(page));
