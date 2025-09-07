@@ -445,7 +445,7 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 
 		while (m) {
 			checked(push_choice(q), release_lock(&t->guard));
-			check_slot(q, MAX_ARITY);
+			checked(alloc_env(q, MAX_ARITY));
 			try_me(q, MAX_ARITY);
 			cell *tmp = copy_term_to_heap(q, m->c, q->st.fp, false);	// Copy into thread
 			checked(tmp, release_lock(&t->guard));
@@ -842,7 +842,7 @@ void do_signal(query *q, void *thread_ptr)
 
 	msg *m = list_pop_front(&t->signals);
 	release_lock(&t->guard);
-	check_slot(q, MAX_ARITY);
+	alloc_env(q, MAX_ARITY);
 	try_me(q, MAX_ARITY);
 	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.fp, 0);
 	cell *c = copy_term_to_heap(q, m->c, q->st.fp, false);	// Copy into thread
@@ -894,7 +894,7 @@ static bool bif_thread_join_2(query *q)
 		return throw_error(q, p1, p1_ctx, "system_error", "join,not_thread");
 
 	if (t->exit_code) {
-		check_slot(q, MAX_ARITY);
+		checked(alloc_env(q, MAX_ARITY));
 		try_me(q, MAX_ARITY);
 		cell *tmp = copy_term_to_heap(q, t->exit_code, q->st.fp, false);
 		t->exit_code = NULL;
@@ -2151,7 +2151,7 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_idx p1_ct
 		m = list_pop_front(&t->queue);
 
 	checked(push_choice(q));
-	check_slot(q, MAX_ARITY);
+	checked(alloc_env(q, MAX_ARITY));
 	try_me(q, MAX_ARITY);
 	cell *c = m->c;
 	cell *tmp = clone_term_to_heap(q, c, q->st.fp);

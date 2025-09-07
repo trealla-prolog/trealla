@@ -32,7 +32,6 @@ char *url_encode(const char *src, int len, char *dstbuf);
 char *url_decode(const char *src, char *dstbuf);
 bool query_redo(query *q);
 bool has_next_key(query *q);
-bool check_slot(query *q, unsigned cnt);
 void cut(query *q);
 bool execute(query *q, cell *cells, unsigned num_vars);
 void undo_me(query *q);

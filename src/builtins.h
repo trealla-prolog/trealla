@@ -140,8 +140,8 @@ inline static cell *take_queuen(query *q)
 inline static slot *get_slot(const query *q, const frame *f, unsigned var_num)
 {
 	return var_num < f->initial_slots
-		? q->slots + f->base + var_num
-		: q->slots + f->op + (var_num - f->initial_slots);
+		? f->base + var_num
+		: f->op + (var_num - f->initial_slots);
 }
 
 inline static cell *deref(query *q, cell *c, pl_idx c_ctx)

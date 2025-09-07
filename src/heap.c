@@ -238,7 +238,7 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 			c->var_ctx = to_ctx;
 		} else {
 			const frame *f = GET_FRAME(c->var_ctx);
-			const size_t slot_nbr = (f->base * 100) + c->var_num;
+			const size_t slot_nbr = (size_t)f->base + c->var_num;
 			int var_num;
 
 			if ((var_num = accum_slot(q, slot_nbr, q->varno)) == -1) {
@@ -671,8 +671,9 @@ slot *alloc_env(query *q, unsigned num_slots)
 
 // Claim the actual number used...
 
-void push_env(query *q, unsigned num_slots)
+void commit_env(query *q, unsigned num_slots)
 {
+	slot *e = q->env_pages->slots + q->st.ep;
 	q->st.ep += num_slots;
 	q->env_pages->idx = q->st.ep;
 }

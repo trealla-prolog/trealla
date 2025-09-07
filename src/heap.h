@@ -39,5 +39,6 @@ cell *end_list(query *q);
 cell *init_tmp_heap(query *q);
 
 slot *alloc_env(query *q, unsigned num_slots);
-void push_env(query *q, unsigned num_slots);
+inline static slot *get_env(query *q) { return q->env_pages->slots + q->st.ep; }
+void commit_env(query *q, unsigned num_slots);
 void trim_env(query *q);

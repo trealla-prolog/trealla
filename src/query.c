@@ -112,11 +112,11 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 	q->step++;
 	SB(pr);
 
-	SB_sprintf(pr, "[%u:%s:%"PRIu64":f%u:fp%u:cp%u:sp%u:hp%u:tp%u] ",
+	SB_sprintf(pr, "[%u:%s:%"PRIu64":f%u:fp%u:cp%u:ep%u:hp%u:tp%u] ",
 		q->my_chan,
 		q->st.m->name,
 		q->step,
-		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.tp
+		q->st.curr_frame, q->st.fp, q->cp, q->st.ep, q->st.hp, q->st.tp
 		);
 
 	SB_sprintf(pr, "%s ",
@@ -178,13 +178,6 @@ void check_pressure(query *q)
 #endif
 		q->frames_size = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.fp, q->st.fp*5/4, false);
 	}
-
-	if (q->slots_size > (INITIAL_NBR_SLOTS*PRESSURE_FACTOR)) {
-#if TRACE_MEM
-		printf("*** q->st.sp=%u, q->slots_size=%u\n", (unsigned)q->st.sp, (unsigned)q->slots_size);
-#endif
-		q->slots_size = alloc_grow(q, (void**)&q->slots, sizeof(slot), q->st.sp, q->st.sp*5/4, false);
-	}
 #endif
 }
 
@@ -213,42 +206,24 @@ static bool check_frame(query *q)
 	if (q->st.fp > q->hw_frames)
 		q->hw_frames = q->st.fp;
 
-	if (q->st.fp < q->frames_size)
-		return true;
+	if (q->st.fp < q->frames_size) {
+		if (!alloc_env(q, MAX_ARITY))
+			return false;
+	}
 
 	q->realloc_frames++;
 	pl_idx new_framessize = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.fp, q->frames_size*5/4, false);
 
 	if (!new_framessize) {
 		q->oom = q->error = true;
-		return false;
+		return NULL;
 	}
 
 	q->frames_size = new_framessize;
-	return true;
-}
 
-bool check_slot(query *q, unsigned cnt)
-{
-	cnt += 1024;	// Why??
-
-	pl_idx num = q->st.sp + cnt;
-
-	if (q->st.sp > q->hw_slots)
-		q->hw_slots = q->st.sp;
-
-	if (num < q->slots_size)
-		return true;
-
-	q->realloc_slots++;
-	pl_idx new_slotssize = alloc_grow(q, (void**)&q->slots, sizeof(slot), num, num*5/4, false);
-
-	if (!new_slotssize) {
-		q->oom = q->error = true;
+	if (!alloc_env(q, MAX_ARITY))
 		return false;
-	}
 
-	q->slots_size = new_slotssize;
 	return true;
 }
 
@@ -417,12 +392,8 @@ int create_vars(query *q, unsigned cnt)
 		return -1;
 	}
 
-	if (!check_slot(q, cnt)) {
-		q->error = true;
-		return -1;
-	}
-
 	unsigned var_num = f->actual_slots;
+#if 0
 
 	if (!f->op && ((f->base + f->initial_slots) == q->st.sp)) {
 		f->initial_slots += cnt;
@@ -447,6 +418,7 @@ int create_vars(query *q, unsigned cnt)
 	memset(e, 0, sizeof(slot)*cnt);
 	q->st.sp += cnt;
 	f->actual_slots += cnt;
+#endif
 	return var_num;
 }
 
@@ -549,15 +521,7 @@ static void trim_trail(query *q)
 
 static void trim_frame(query *q, const frame *f)
 {
-	for (unsigned i = 0; i < f->actual_slots; i++) {
-		slot *e = get_slot(q, f, i);
-		cell *c = &e->c;
-		unshare_cell(c);
-		c->tag = TAG_EMPTY;
-		c->val_attrs = NULL;
-	}
-
-	q->st.sp -= f->actual_slots;
+	trim_env(q);
 	q->st.fp--;
 }
 
@@ -585,9 +549,8 @@ void try_me(query *q, unsigned num_vars)
 {
 	frame *f = GET_NEW_FRAME();
 	f->initial_slots = f->actual_slots = num_vars;
-	f->base = q->st.sp;
-	slot *e = get_slot(q, f, 0);
-	memset(e, 0, sizeof(slot)*num_vars);
+	f->base = get_env(q);
+	memset(f->base, 0, sizeof(slot)*num_vars);
 	q->total_matches++;
 }
 
@@ -609,12 +572,14 @@ static void push_frame(query *q)
 		f->instr = q->st.instr;
 	}
 
+	commit_env(q, f->initial_slots);
 	f->op = 0;
 	f->no_recov = q->no_recov;
 	f->chgen = ++q->chgen;
+	f->ep = q->st.ep;
+	f->env_num = q->st.env_num;
 	f->hp = q->st.hp;
 	f->heap_num = q->st.heap_num;
-	q->st.sp += f->actual_slots;
 	q->st.curr_frame = q->st.fp++;
 }
 
@@ -640,9 +605,10 @@ static void reuse_frame(query *q, unsigned num_vars)
 
 	f->initial_slots = f->actual_slots = num_vars;
 	f->no_recov = false;
-	q->st.sp = f->base + f->actual_slots;
 	q->st.dbe->tcos++;
 	q->total_tcos++;
+	q->st.ep = f->ep;
+	q->st.env_num = f->env_num;
 	q->st.hp = f->hp;
 	q->st.heap_num = f->heap_num;
 	trim_heap(q);
@@ -751,7 +717,7 @@ void stash_frame(query *q, const clause *cl, bool last_match)
 		f->instr = NULL;
 		f->chgen = chgen;
 		f->op = 0;
-		q->st.sp += num_vars;
+		//q->st.sp += num_vars;
 		q->st.fp++;
 	}
 
@@ -1301,7 +1267,6 @@ bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 		return false;
 	}
 
-	checked(check_slot(q, MAX_ARITY));
 	checked(check_frame(q));
 	checked(push_choice(q));
 	const frame *f = GET_FRAME(q->st.curr_frame);
@@ -1412,7 +1377,6 @@ bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract
 		return false;
 	}
 
-	checked(check_slot(q, MAX_ARITY));
 	checked(check_frame(q));
 	checked(push_choice(q));
 	const frame *f = GET_FRAME(q->st.curr_frame);
@@ -1494,7 +1458,6 @@ bool match_head(query *q)
 		return false;
 	}
 
-	checked(check_slot(q, MAX_ARITY));
 	checked(check_frame(q));
 	checked(push_choice(q));
 	const frame *f = GET_CURR_FRAME();
@@ -1745,7 +1708,6 @@ bool execute(query *q, cell *cells, unsigned num_vars)
 	q->retry = q->halt = q->error = q->abort = false;
 	q->pl->did_dump_vars = false;
 	q->st.instr = cells;
-	q->st.sp = num_vars;
 	q->is_redo = false;
 
 	// There is an initial frame (fp=0), so this
@@ -1761,6 +1723,8 @@ bool execute(query *q, cell *cells, unsigned num_vars)
 	frame *f = q->frames;
 	f->initial_slots = f->actual_slots = num_vars;
 	f->dbgen = ++q->pl->dbgen;
+	f->base = alloc_env(q, num_vars);
+	commit_env(q, num_vars);
 	return start(q);
 }
 
@@ -1798,11 +1762,16 @@ void query_destroy(query *q)
 		free(save);
 	}
 
-	slot *e = q->slots;
+	for (page *a = q->env_pages; a;) {
+		slot *e = a->slots;
 
-	for (pl_idx i = 0; i < q->st.sp; i++, e++) {
-		cell *c = &e->c;
-		unshare_cell(c);
+		for (pl_idx i = 0; i < a->idx; i++, e++)
+			unshare_cell(&e->c);
+
+		page *save = a;
+		a = a->next;
+		free(save->slots);
+		free(save);
 	}
 
 	for (int i = 0; i < MAX_QUEUES; i++) {
@@ -1825,7 +1794,6 @@ void query_destroy(query *q)
 	parser_destroy(q->p);
 	free(q->trails);
 	free(q->choices);
-	free(q->slots);
 	free(q->frames);
 	free(q->tmp_heap);
 	q->pl->q_cnt--;
@@ -1861,16 +1829,15 @@ query *query_create(module *m)
 
 	q->frames_size = INITIAL_NBR_FRAMES;
 	q->choices_size = INITIAL_NBR_CHOICES;
-	q->slots_size = INITIAL_NBR_SLOTS;
 	q->trails_size = INITIAL_NBR_TRAILS;
 
 	ensure(q->frames = calloc(q->frames_size, sizeof(frame)), NULL);
 	ensure(q->choices = calloc(q->choices_size, sizeof(choice)), NULL);
-	ensure(q->slots = calloc(q->slots_size, sizeof(slot)), NULL);
 	ensure(q->trails = calloc(q->trails_size, sizeof(trail)), NULL);
 
 	// Allocate these later as needed...
 
+	q->env_size = INITIAL_NBR_HEAP_CELLS;
 	q->heap_size = INITIAL_NBR_HEAP_CELLS;
 	q->tmph_size = INITIAL_NBR_CELLS;
 
@@ -1901,7 +1868,7 @@ query *query_create_subquery(query *q, cell *instr)
 	frame *fdst = subq->frames;
 	fdst->initial_slots = fdst->actual_slots = fsrc->actual_slots;
 	fdst->dbgen = ++q->pl->dbgen;
-	subq->st.sp = fdst->actual_slots;
+	//subq->st.sp = fdst->actual_slots;
 	return subq;
 }
 

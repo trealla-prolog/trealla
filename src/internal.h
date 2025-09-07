@@ -513,15 +513,16 @@ struct slot_ {
 // Where *prev* is the previous frame
 // Where *initial_slots* is the number allocated
 // Where *actual_slots* is the number allocated+created
-// Where *base* is the offset to first slot in use
-// Where *op* is the offset to first overflow slot in use
+// Where *base* is the initial slot
+// Where *op* is the initial slot
 // Where *chgen* is the choice generation that created this frame
 
 struct frame_ {
 	cell *instr;
 	module *m;
+	slot *base, *op;
 	uint64_t dbgen, chgen;
-	pl_idx prev, base, hp, heap_num, ep, env_num, op, op_num;
+	pl_idx prev, hp, heap_num, ep, env_num;
 	unsigned initial_slots, actual_slots;
 	bool no_recov:1;
 };
@@ -546,14 +547,15 @@ struct run_state_ {
 	};
 
 	uint64_t timer_started;
-	pl_idx curr_frame, fp, cp, tp, sp, hp, heap_num, ep, env_num;
+	pl_idx curr_frame, fp, cp, tp, hp, heap_num, ep, env_num;
 	uint8_t qnum;
 };
 
 struct choice_ {
 	run_state st;
+	slot *base, *op;
 	uint64_t gen, chgen, dbgen;
-	pl_idx base, op, initial_slots, actual_slots, skip;
+	pl_idx initial_slots, actual_slots, skip;
 	bool catchme_retry:1;
 	bool catchme_exception:1;
 	bool barrier:1;
@@ -675,7 +677,6 @@ struct query_ {
 	prolog *pl;
 	parser *top, *p;
 	frame *frames;
-	slot *slots;
 	choice *choices;
 	trail *trails;
 	cell *tmp_heap, *last_arg, *variable_names, *ball, *cont, *suspect;
@@ -698,12 +699,12 @@ struct query_ {
 	uint64_t step, qid, tmo_msecs, chgen, cycle_error;
 	uint64_t get_started, autofail_n, yield_at;
 	uint64_t cpu_started, time_cpu_last_started, future;
-	unsigned realloc_frames, realloc_choices, realloc_slots, realloc_trails;
+	unsigned realloc_frames, realloc_choices, realloc_trails;
 	unsigned max_depth, max_eval_depth, print_idx, tab_idx, dump_var_num;
 	unsigned varno, tab0_varno, curr_engine, curr_chan, my_chan;
 	unsigned s_cnt, retries;
 	pl_idx tmphp, latest_ctx, popp, variable_names_ctx, dump_var_ctx;
-	pl_idx frames_size, slots_size, trails_size, choices_size;
+	pl_idx frames_size, trails_size, choices_size;
 	pl_idx hw_choices, hw_frames, hw_slots, hw_trails, hw_heap_num, hw_env_num, hw_deref;
 	pl_idx cp, before_hook_tp, qcnt[MAX_QUEUES], ball_ctx, cont_ctx;
 	pl_idx heap_size, env_size, tmph_size, total_heaps, total_heapsize;
