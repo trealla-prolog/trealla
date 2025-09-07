@@ -679,6 +679,12 @@ void commit_env(query *q, unsigned num_slots)
 
 bool extend_env(query *q, unsigned num_slots)
 {
+	if (q->st.env_num != q->env_pages->num)
+		return false;
+
+	if (q->st.ep != q->env_pages->idx)
+		return false;
+
 	if ((q->st.ep + num_slots) > q->env_pages->page_size)
 		return false;
 
