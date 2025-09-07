@@ -419,13 +419,13 @@ int create_vars(query *q, unsigned cnt)
 	f->actual_slots += cnt;
 #else
 	if (!f->op && extend_env(q, cnt)) {
-		printf("*** extend %u by %u\n", q->st.curr_frame, cnt);
+		printf("*** extend f%u by %u\n", q->st.curr_frame, cnt);
 		f->initial_slots += cnt;
 		slot *e = get_slot(q, f, f->actual_slots);
 		memset(e, 0, sizeof(slot)*cnt);
 		f->actual_slots += cnt;
 	} else {
-		printf("*** extend2 %u by %u\n", q->st.curr_frame, cnt);
+		printf("*** extend2 f%u by %u\n", q->st.curr_frame, cnt);
 		abort();
 	}
 #endif
