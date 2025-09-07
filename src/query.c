@@ -418,11 +418,12 @@ int create_vars(query *q, unsigned cnt)
 	f->actual_slots += cnt;
 #else
 	if (!f->op
-		&& (q->st.env_num = q->env_pages->num)	// same page
+		&& (q->st.env_num == q->env_pages->num)	// same page
 		&& (q->st.ep == q->env_pages->idx)
 		&& extend_env(q, cnt)) {
 		f->initial_slots += cnt;
 	} else {
+		printf("*** here\n");
 		abort();
 	}
 #endif
