@@ -584,10 +584,10 @@ void undo_me(query *q)
 void try_me(query *q, unsigned num_vars)
 {
 	frame *f = GET_NEW_FRAME();
-	f->initial_slots = f->actual_slots = num_vars;
-	f->base = q->st.sp;
 	slot *e = get_slot(q, f, 0);
 	memset(e, 0, sizeof(slot)*num_vars);
+	f->initial_slots = f->actual_slots = num_vars;
+	f->base = q->st.sp;
 	q->total_matches++;
 }
 
