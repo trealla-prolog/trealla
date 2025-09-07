@@ -663,7 +663,6 @@ slot *alloc_env(query *q, unsigned num_slots)
 		q->st.ep = 0;
 	}
 
-
 	if (q->st.env_num > q->hw_env_num)
 		q->hw_env_num = q->st.env_num;
 
@@ -678,6 +677,11 @@ void commit_env(query *q, unsigned num_slots)
 	slot *e = q->env_pages->slots + q->st.ep;
 	q->st.ep += num_slots;
 	q->env_pages->idx = q->st.ep;
+}
+
+bool can_extend_env(query *q, unsigned num_slots)
+{
+	return (q->st.ep + num_slots) < q->env_pages->page_size;
 }
 
 void trim_env(query *q)

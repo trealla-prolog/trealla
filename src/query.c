@@ -393,7 +393,6 @@ int create_vars(query *q, unsigned cnt)
 
 	unsigned var_num = f->actual_slots;
 #if 0
-
 	if (!f->op && ((f->base + f->initial_slots) == q->st.sp)) {
 		f->initial_slots += cnt;
 	} else if (!f->op) {
@@ -417,6 +416,9 @@ int create_vars(query *q, unsigned cnt)
 	memset(e, 0, sizeof(slot)*cnt);
 	q->st.sp += cnt;
 	f->actual_slots += cnt;
+#else
+	if (!f->op && (f->base == q->env_pages->slots)) {
+	}
 #endif
 	return var_num;
 }
