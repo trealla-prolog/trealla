@@ -673,3 +673,32 @@ slot *alloc_env(query *q, unsigned num_slots)
 	return e;
 }
 
+void trim_env(query *q)
+{
+	for (page *a = q->env_pages; a;) {
+		if (a->num <= q->st.env_num)
+			break;
+
+		slot *e = a->slots;
+
+		for (pl_idx i = 0; i < a->idx; i++, e++)
+			unshare_cell(&e->c);
+
+		page *save = a;
+		q->env_pages = a = a->next;
+		free(save->slots);
+		free(save);
+	}
+
+	if (!q->env_pages)
+		return;
+
+	while (q->env_pages->idx > q->st.ep) {
+		slot *e = q->env_pages->slots + --q->env_pages->idx;
+		cell *c = &e->c;
+		unshare_cell(c);
+		c->tag = TAG_EMPTY;
+		c->val_attrs = NULL;
+	}
+}
+

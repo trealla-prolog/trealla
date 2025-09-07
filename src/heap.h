@@ -39,3 +39,4 @@ cell *end_list(query *q);
 cell *init_tmp_heap(query *q);
 
 slot *alloc_env(query *q, unsigned num_slots);
+void trim_env(query *q);
