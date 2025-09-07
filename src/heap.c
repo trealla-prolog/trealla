@@ -382,9 +382,6 @@ cell *alloc_heap(query *q, unsigned num_cells)
 
 void trim_heap(query *q)
 {
-	// q->heap_pages is a push-down stack and points to the
-	// most recent page of heap allocations...
-
 	for (page *a = q->heap_pages; a;) {
 		if (a->num <= q->st.heap_num)
 			break;
