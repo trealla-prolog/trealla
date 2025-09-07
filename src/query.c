@@ -209,6 +209,8 @@ static bool check_frame(query *q)
 	if (q->st.fp < q->frames_size) {
 		if (!alloc_env(q, MAX_ARITY))
 			return false;
+
+		return true;
 	}
 
 	q->realloc_frames++;
@@ -521,7 +523,6 @@ static void trim_trail(query *q)
 
 static void trim_frame(query *q, const frame *f)
 {
-	trim_env(q);
 	q->st.fp--;
 }
 
@@ -612,6 +613,7 @@ static void reuse_frame(query *q, unsigned num_vars)
 	q->st.hp = f->hp;
 	q->st.heap_num = f->heap_num;
 	trim_heap(q);
+	trim_env(q);
 }
 
 static bool commit_any_choices(const query *q, const frame *f)
@@ -758,6 +760,7 @@ int retry_choice(query *q)
 			q->noretry = false;
 
 		trim_heap(q);
+		trim_env(q);
 
 		if (ch->succeed_on_retry) {
 			q->st.instr += ch->skip;
@@ -768,6 +771,7 @@ int retry_choice(query *q)
 	}
 
 	trim_heap(q);
+	trim_env(q);
 	return 0;
 }
 
@@ -940,6 +944,7 @@ static bool resume_frame(query *q)
 		q->st.heap_num = f->heap_num;
 		trim_heap(q);
 		trim_frame(q, f);
+		trim_env(q);
 	}
 
 	q->st.instr = f->instr;
@@ -1724,6 +1729,10 @@ bool execute(query *q, cell *cells, unsigned num_vars)
 	f->initial_slots = f->actual_slots = num_vars;
 	f->dbgen = ++q->pl->dbgen;
 	f->base = alloc_env(q, num_vars);
+
+	if (!f->base)
+		return false;
+
 	commit_env(q, num_vars);
 	return start(q);
 }

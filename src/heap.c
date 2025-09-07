@@ -663,6 +663,7 @@ slot *alloc_env(query *q, unsigned num_slots)
 		q->st.ep = 0;
 	}
 
+
 	if (q->st.env_num > q->hw_env_num)
 		q->hw_env_num = q->st.env_num;
 
@@ -673,6 +674,7 @@ slot *alloc_env(query *q, unsigned num_slots)
 
 void commit_env(query *q, unsigned num_slots)
 {
+	//printf("*** commit env_num=%u, ep=%u, num_slots=%u\n", q->st.env_num, q->st.ep, num_slots);
 	slot *e = q->env_pages->slots + q->st.ep;
 	q->st.ep += num_slots;
 	q->env_pages->idx = q->st.ep;
