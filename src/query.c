@@ -419,6 +419,9 @@ int create_vars(query *q, unsigned cnt)
 #else
 	if (!f->op && extend_env(q, cnt)) {
 		f->initial_slots += cnt;
+		slot *e = get_slot(q, f, f->actual_slots);
+		memset(e, 0, sizeof(slot)*cnt);
+		f->actual_slots += cnt;
 	} else {
 		printf("*** here\n");
 		abort();
