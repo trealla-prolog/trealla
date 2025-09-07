@@ -794,7 +794,7 @@ static bool bif_thread_create_3(query *q)
 	checked(t->q);
 	t->q->thread_ptr = t;
 	t->q->my_chan = n;
-	cell *tmp2 = alloc_on_heap(t->q, 1+goal->num_cells+1);
+	cell *tmp2 = alloc_heap(t->q, 1+goal->num_cells+1);
 	checked(tmp2);
 	pl_idx num_cells = 0;
 	make_instr(tmp2+num_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, goal->num_cells+1);
@@ -807,7 +807,7 @@ static bool bif_thread_create_3(query *q)
 		cell *goal = clone_term_to_tmp(q, p4, p4_ctx);
 		checked(goal);
 		t->at_exit_num_vars = rebase_term(q, goal, 0);
-		cell *tmp2 = alloc_on_heap(q, 1+goal->num_cells+1);
+		cell *tmp2 = alloc_heap(q, 1+goal->num_cells+1);
 		checked(tmp2);
 		pl_idx num_cells = 0;
 		make_instr(tmp2+num_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, goal->num_cells+1);
@@ -1072,7 +1072,7 @@ static bool bif_thread_exit_1(query *q)
 	cell *tmp_p1 = clone_term_to_tmp(q, p1, p1_ctx);
 	checked(tmp_p1);
 	rebase_term(q, tmp_p1, 0);
-	cell *tmp = alloc_on_heap(q, 1+tmp_p1->num_cells);
+	cell *tmp = alloc_heap(q, 1+tmp_p1->num_cells);
 	checked(tmp);
 	make_instr(tmp, new_atom(q->pl, "exited"), NULL, 1, tmp_p1->num_cells);
 	dup_cells(tmp+1, tmp_p1, tmp_p1->num_cells);
@@ -1120,7 +1120,7 @@ static bool do_thread_property_pin_both(query *q)
 
 		const char *alias = sl_key(iter);
 		sl_done(iter);
-		cell *tmp = alloc_on_heap(q, 2);
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		make_cstring(tmp+1, alias);
 
@@ -1131,13 +1131,13 @@ static bool do_thread_property_pin_both(query *q)
 
 		return true;
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "detached")) {
-		cell *tmp = alloc_on_heap(q, 2);
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "detached"), NULL, 1, 1);
 		make_atom(tmp+1, t->is_detached?g_true_s:g_false_s);
 		return unify(q, c, c_ctx, tmp, q->st.curr_frame);
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "status")) {
 		if (t->is_exception) {
-			cell *tmp = alloc_on_heap(q, 2+t->ball->num_cells);
+			cell *tmp = alloc_heap(q, 2+t->ball->num_cells);
 			make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1+t->ball->num_cells);
 			make_instr(tmp+1, new_atom(q->pl, "exception"), NULL, 1, t->ball->num_cells);
 			dup_cells(tmp+2, t->ball, t->ball->num_cells);
@@ -1145,13 +1145,13 @@ static bool do_thread_property_pin_both(query *q)
 		}
 
 		if (!t->is_finished) {
-			cell *tmp = alloc_on_heap(q, 2);
+			cell *tmp = alloc_heap(q, 2);
 			make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
 			make_atom(tmp+1, new_atom(q->pl, "running"));
 			return unify(q, c, c_ctx, tmp, q->st.curr_frame);
 		}
 
-		cell *tmp = alloc_on_heap(q, 2);
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
 		make_atom(tmp+1, t->exit_code?g_false_s:g_true_s);
 		return unify(q, c, c_ctx, tmp, q->st.curr_frame);
@@ -1234,7 +1234,7 @@ static bool do_thread_property_pin_id(query *q)
 
 		const char *alias = sl_key(iter);
 		sl_done(iter);
-		cell *tmp = alloc_on_heap(q, 2);
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		checked(create_vars(q, 1) != -1);
 		make_cstring(tmp+1, alias);
@@ -1247,13 +1247,13 @@ static bool do_thread_property_pin_id(query *q)
 		return true;
 	} else if (i == 1) {
 		checked(push_choice(q));
-		cell *tmp = alloc_on_heap(q, 2);
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "detached"), NULL, 1, 1);
 		make_atom(tmp+1, t->is_detached?g_true_s:g_false_s);
 		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 	} else {
 		if (t->is_exception) {
-			cell *tmp = alloc_on_heap(q, 2+t->ball->num_cells);
+			cell *tmp = alloc_heap(q, 2+t->ball->num_cells);
 			make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1+t->ball->num_cells);
 			make_instr(tmp+1, new_atom(q->pl, "exception"), NULL, 1, t->ball->num_cells);
 			dup_cells(tmp+2, t->ball, t->ball->num_cells);
@@ -1261,13 +1261,13 @@ static bool do_thread_property_pin_id(query *q)
 		}
 
 		if (!t->is_finished) {
-			cell *tmp = alloc_on_heap(q, 2);
+			cell *tmp = alloc_heap(q, 2);
 			make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
 			make_atom(tmp+1, new_atom(q->pl, "running"));
 			return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
 		}
 
-		cell *tmp = alloc_on_heap(q, 2);
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
 		make_atom(tmp+1, t->exit_code?g_false_s:g_true_s);
 		return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
@@ -1491,7 +1491,7 @@ static bool do_message_queue_property_pin_both(query *q)
 
 		const char *alias = sl_key(iter);
 		sl_done(iter);
-		cell *tmp = alloc_on_heap(q, 2);
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		make_cstring(tmp+1, alias);
 
@@ -1510,7 +1510,7 @@ static bool do_message_queue_property_pin_both(query *q)
 		}
 
 		sl_done(iter);
-		cell *tmp = alloc_on_heap(q, 2);
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "size"), NULL, 1, 1);
 		make_int(tmp+1, queue_size(q->pl, n));
 
@@ -1598,7 +1598,7 @@ static bool do_message_queue_property_pin_id(query *q)
 
 		const char *alias = sl_key(iter);
 		sl_done(iter);
-		cell *tmp = alloc_on_heap(q, 2);
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		checked(create_vars(q, 1) != -1);
 		make_cstring(tmp+1, alias);
@@ -1611,7 +1611,7 @@ static bool do_message_queue_property_pin_id(query *q)
 		return true;
 	}
 
-	cell *tmp = alloc_on_heap(q, 2);
+	cell *tmp = alloc_heap(q, 2);
 	make_instr(tmp, new_atom(q->pl, "size"), NULL, 1, 1);
 	make_int(tmp+1, queue_size(q->pl, n));
 	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
@@ -1880,7 +1880,7 @@ static bool do_mutex_property_pin_both(query *q)
 
 		const char *alias = sl_key(iter);
 		sl_done(iter);
-		cell *tmp = alloc_on_heap(q, 2);
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		make_cstring(tmp+1, alias);
 
@@ -1892,13 +1892,13 @@ static bool do_mutex_property_pin_both(query *q)
 		return true;
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "status")) {
 		if (t->num_locks == 0) {
-			cell *tmp = alloc_on_heap(q, 2);
+			cell *tmp = alloc_heap(q, 2);
 			make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
 			make_atom(tmp+1, new_atom(q->pl, "unlocked"));
 			return unify(q, c, c_ctx, tmp, q->st.curr_frame);
 		}
 
-		cell *tmp = alloc_on_heap(q, 4);
+		cell *tmp = alloc_heap(q, 4);
 		make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 3);
 		make_instr(tmp+1, new_atom(q->pl, "locked"), NULL, 2, 2);
 		make_int(tmp+2, t->locked_by);
@@ -1985,7 +1985,7 @@ static bool do_mutex_property_pin_id(query *q)
 
 		const char *alias = sl_key(iter);
 		sl_done(iter);
-		cell *tmp = alloc_on_heap(q, 2);
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		checked(create_vars(q, 1) != -1);
 		make_cstring(tmp+1, alias);
@@ -2001,14 +2001,14 @@ static bool do_mutex_property_pin_id(query *q)
 	cell *tmp;
 
 	if (t->num_locks != 0) {
-		tmp = alloc_on_heap(q, 4);
+		tmp = alloc_heap(q, 4);
 		make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 3);
 		make_instr(tmp+1, new_atom(q->pl, "locked"), NULL, 2, 2);
 		make_int(tmp+2, t->locked_by);
 		tmp[2].flags |= FLAG_INT_THREAD;
 		make_int(tmp+3, t->num_locks);
 	} else {
-		tmp = alloc_on_heap(q, 2);
+		tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
 		make_atom(tmp+1, new_atom(q->pl, "unlocked"));
 	}
