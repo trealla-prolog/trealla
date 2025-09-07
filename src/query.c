@@ -206,12 +206,13 @@ static bool check_frame(query *q)
 	if (q->st.fp > q->hw_frames)
 		q->hw_frames = q->st.fp;
 
-	if (q->st.fp < q->frames_size) {
-		if (!alloc_env(q, MAX_ARITY))
-			return false;
-
-		return true;
+	if (!alloc_env(q, MAX_ARITY)) {
+		q->oom = q->error = true;
+		return false;
 	}
+
+	if (q->st.fp < q->frames_size)
+		return true;
 
 	q->realloc_frames++;
 	pl_idx new_framessize = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.fp, q->frames_size*5/4, false);
@@ -222,10 +223,6 @@ static bool check_frame(query *q)
 	}
 
 	q->frames_size = new_framessize;
-
-	if (!alloc_env(q, MAX_ARITY))
-		return false;
-
 	return true;
 }
 
@@ -1730,8 +1727,10 @@ bool execute(query *q, cell *cells, unsigned num_vars)
 	f->dbgen = ++q->pl->dbgen;
 	f->base = alloc_env(q, num_vars);
 
-	if (!f->base)
+	if (!f->base) {
+		q->oom = q->error = true;
 		return false;
+	}
 
 	commit_env(q, num_vars);
 	return start(q);
