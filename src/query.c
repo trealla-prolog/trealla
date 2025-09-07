@@ -417,7 +417,13 @@ int create_vars(query *q, unsigned cnt)
 	q->st.sp += cnt;
 	f->actual_slots += cnt;
 #else
-	if (!f->op && (f->base == q->env_pages->slots)) {
+	if (!f->op
+		&& (q->st.env_num = q->env_pages->num)	// same page
+		&& (q->st.ep == q->env_pages->idx)
+		&& extend_env(q, cnt)) {
+		f->initial_slots += cnt;
+	} else {
+		abort();
 	}
 #endif
 	return var_num;

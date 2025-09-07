@@ -673,15 +673,17 @@ slot *alloc_env(query *q, unsigned num_slots)
 
 void commit_env(query *q, unsigned num_slots)
 {
-	//printf("*** commit env_num=%u, ep=%u, num_slots=%u\n", q->st.env_num, q->st.ep, num_slots);
-	slot *e = q->env_pages->slots + q->st.ep;
 	q->st.ep += num_slots;
 	q->env_pages->idx = q->st.ep;
 }
 
-bool can_extend_env(query *q, unsigned num_slots)
+bool extend_env(query *q, unsigned num_slots)
 {
-	return (q->st.ep + num_slots) < q->env_pages->page_size;
+	if ((q->st.ep + num_slots) > q->env_pages->page_size)
+		return false;
+
+	commit_env(q, num_slots);
+	return true;
 }
 
 void trim_env(query *q)
