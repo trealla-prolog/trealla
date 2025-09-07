@@ -521,7 +521,7 @@ struct frame_ {
 	cell *instr;
 	module *m;
 	uint64_t dbgen, chgen;
-	pl_idx prev, base, op, hp, heap_num;
+	pl_idx prev, base, op, hp, heap_num, ep, env_num;
 	unsigned initial_slots, actual_slots;
 	bool no_recov:1;
 };
@@ -546,7 +546,7 @@ struct run_state_ {
 	};
 
 	uint64_t timer_started;
-	pl_idx curr_frame, fp, hp, cp, tp, sp, heap_num;
+	pl_idx curr_frame, fp, cp, tp, sp, hp, heap_num, ep, env_num;
 	uint8_t qnum;
 };
 
@@ -680,7 +680,7 @@ struct query_ {
 	trail *trails;
 	cell *tmp_heap, *last_arg, *variable_names, *ball, *cont, *suspect;
 	cell *queue[MAX_QUEUES], *tmpq[MAX_QUEUES];
-	page *heap_pages;
+	page *heap_pages, *env_pages;
 	slot *save_e;
 	query *tasks;
 	skiplist *vars;
@@ -704,9 +704,9 @@ struct query_ {
 	unsigned s_cnt, retries;
 	pl_idx tmphp, latest_ctx, popp, variable_names_ctx, dump_var_ctx;
 	pl_idx frames_size, slots_size, trails_size, choices_size;
-	pl_idx hw_choices, hw_frames, hw_slots, hw_trails, hw_heap_num, hw_deref;
+	pl_idx hw_choices, hw_frames, hw_slots, hw_trails, hw_heap_num, hw_env_num, hw_deref;
 	pl_idx cp, before_hook_tp, qcnt[MAX_QUEUES], ball_ctx, cont_ctx;
-	pl_idx heap_size, tmph_size, total_heaps, total_heapsize;
+	pl_idx heap_size, env_size, tmph_size, total_heaps, total_heapsize;
 	pl_idx undo_lo_tp, undo_hi_tp;
 	pl_idx q_size[MAX_QUEUES], tmpq_size[MAX_QUEUES], qp[MAX_QUEUES];
 	prolog_flags flags;

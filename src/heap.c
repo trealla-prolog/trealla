@@ -639,3 +639,37 @@ cell *alloc_on_queuen(query *q, unsigned qnum, const cell *c)
 	return dst;
 }
 
+slot *alloc_chunk(query *q, unsigned num_slots)
+{
+	if (!q->env_pages) {
+		page *a = calloc(1, sizeof(page));
+		if (!a) return NULL;
+		a->next = q->env_pages;
+		unsigned n = MAX_OF(q->env_size, num_slots);
+		a->slots = calloc(a->page_size=n, sizeof(slot));
+		if (!a->slots) { free(a); return NULL; }
+		a->num = ++q->st.env_num;
+		q->env_pages = a;
+	}
+
+	if ((q->st.ep + num_slots) >= q->env_pages->page_size) {
+		page *a = calloc(1, sizeof(page));
+		if (!a) return NULL;
+		a->next = q->env_pages;
+		unsigned n = MAX_OF(q->env_size, num_slots);
+		a->slots = calloc(a->page_size=n, sizeof(slot));
+		if (!a->slots) { free(a); return NULL; }
+		a->num = ++q->st.env_num;
+		q->env_pages = a;
+		q->st.ep = 0;
+	}
+
+	if (q->st.env_num > q->hw_env_num)
+		q->hw_env_num = q->st.env_num;
+
+	slot *e = q->env_pages->slots + q->st.ep;
+	q->st.ep += num_slots;
+	q->env_pages->idx = q->st.ep;
+	return e;
+}
+
