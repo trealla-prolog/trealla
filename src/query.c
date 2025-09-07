@@ -1846,7 +1846,7 @@ query *query_create(module *m)
 
 	// Allocate these later as needed...
 
-	q->env_size = INITIAL_NBR_HEAP_CELLS;
+	q->env_size = INITIAL_NBR_SLOTS;
 	q->heap_size = INITIAL_NBR_HEAP_CELLS;
 	q->tmph_size = INITIAL_NBR_CELLS;
 

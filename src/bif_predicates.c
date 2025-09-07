@@ -3194,9 +3194,7 @@ bool bif_statistics_0(query *q)
 
 		"Active frames %u, "
 		"choices %u, "
-		"trails %u, "
-		"env %u, "
-		"heap %u.\n"
+		"trails %u.\n"
 
 		"Backtracks %"PRIu64", "
 		"Retries %"PRIu64", "
@@ -3210,7 +3208,6 @@ bool bif_statistics_0(query *q)
 		q->hw_env_num, q->hw_heap_num, q->hw_deref,
 		q->realloc_frames, q->realloc_choices, q->realloc_trails,
 		q->st.fp, q->cp, q->st.tp,
-		q->st.env_num, q->st.heap_num,
 		q->total_backtracks, q->total_retries, q->total_tcos, q->total_recovs, q->total_no_recovs,
 		(unsigned)q->qcnt[q->st.qnum]
 		);
