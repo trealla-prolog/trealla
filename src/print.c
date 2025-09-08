@@ -854,7 +854,7 @@ static bool print_interned(query *q, cell *c, pl_idx c_ctx, bool running, unsign
 		if (is_string(c) && q->double_quotes) dq = quote = 1;
 		if (q->quoted < 0) quote = 0;
 		if ((c->arity == 1) && is_interned(c) && !strcmp(src, "{}")) braces = 1;
-		cell *c1 = c->arity ? deref(q, FIRST_ARG(c), c_ctx) : NULL;
+		cell *c1 = c->arity && running ? deref(q, FIRST_ARG(c), c_ctx) : NULL;
 
 		if (running && is_interned(c) && c->arity
 			&& q->numbervars && (c->val_off == g_sys_var_s) && c1

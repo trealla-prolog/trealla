@@ -1737,13 +1737,6 @@ bool execute(query *q, cell *cells, unsigned num_vars)
 	frame *f = q->frames;
 	f->initial_slots = f->actual_slots = num_vars;
 	f->dbgen = ++q->pl->dbgen;
-	f->base = alloc_env(q, num_vars);
-
-	if (!f->base) {
-		q->oom = q->error = true;
-		return false;
-	}
-
 	commit_env(q, num_vars);
 	return start(q);
 }
@@ -1866,7 +1859,7 @@ query *query_create(module *m)
 
 	frame *f = GET_CURR_FRAME();
 	f->prev = (pl_idx)-1;
-
+	f->base = alloc_env(q, MAX_VARS);
 	clear_write_options(q);
 	return q;
 }
