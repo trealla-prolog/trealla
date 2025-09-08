@@ -559,10 +559,19 @@ void try_me(query *q, unsigned num_vars)
 {
 	frame *f = GET_NEW_FRAME();
 	f->initial_slots = f->actual_slots = num_vars;
+<<<<<<< HEAD
 	f->base = get_env(q);
 
 	if (num_vars)
 		memset(f->base, 0, sizeof(slot)*num_vars);
+=======
+	f->base = q->st.sp;
+
+	if (num_vars) {
+		slot *e = get_slot(q, f, 0);
+		memset(e, 0, sizeof(slot)*num_vars);
+	}
+>>>>>>> main
 
 	q->total_matches++;
 }
