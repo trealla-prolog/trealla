@@ -740,7 +740,6 @@ void stash_frame(query *q, const clause *cl, bool last_match)
 	unsigned num_vars = cl->num_vars;
 
 	if (last_match) {
-		Trace(q, get_head(q->st.dbe->cl.cells), q->st.curr_frame, EXIT);
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
 	} else {
