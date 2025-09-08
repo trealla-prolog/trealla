@@ -141,7 +141,7 @@ inline static slot *get_slot(const query *q, const frame *f, unsigned var_num)
 {
 #if 0
 	// Currently create_vars can't create more slots than in 'initial_slots' so
-	// how is var_num greater here?
+	// how is var_num >= here?
 
 	if ((var_num >= f->initial_slots)
 		&& (var_num >= f->actual_slots)) {
