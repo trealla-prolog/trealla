@@ -139,12 +139,14 @@ inline static cell *take_queuen(query *q)
 
 inline static slot *get_slot(const query *q, const frame *f, unsigned var_num)
 {
+#if 0
 	if (var_num >= f->initial_slots) {
-		printf("*** f=%u, var_num=%u, f->initial_slots=%u, f->actual_slots=%u\n",
-			(unsigned)(f - q->frames), var_num, f->initial_slots, f->actual_slots);
+		printf("*** f=%u, var_num=%u, f->initial_slots=%u, f->actual_slots=%u, f->base=%p\n",
+			(unsigned)(f - q->frames), var_num, f->initial_slots, f->actual_slots, f->base);
 	}
+#endif
 
-	return var_num < f->initial_slots
+	return var_num <= f->initial_slots
 		? f->base + var_num
 		: f->op + (var_num - f->initial_slots);
 }
