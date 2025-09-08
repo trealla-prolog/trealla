@@ -729,12 +729,13 @@ void stash_frame(query *q, const clause *cl, bool last_match)
 	}
 
 	if (num_vars) {
-		frame *f = GET_FRAME(q->st.fp);
+		frame *f = GET_NEW_FRAME();
 		f->prev = q->st.curr_frame;
 		f->instr = NULL;
 		f->chgen = chgen;
+		f->base = alloc_env(q, num_vars);
+		commit_env(q, num_vars);
 		f->op = 0;
-		//q->st.sp += num_vars;
 		q->st.fp++;
 	}
 

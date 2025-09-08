@@ -139,11 +139,12 @@ inline static cell *take_queuen(query *q)
 
 inline static slot *get_slot(const query *q, const frame *f, unsigned var_num)
 {
-#if 1
+#if 0
 	// Currently create_vars can't create more slots than in 'initial_slots' so
 	// how is var_num greater here?
 
-	if (var_num >= f->initial_slots) {
+	if ((var_num >= f->initial_slots)
+		&& (var_num >= f->actual_slots)) {
 		printf("*** f=%u, var_num=%u, f->initial_slots=%u, f->actual_slots=%u, f->base=%p\n",
 			(unsigned)(f - q->frames), var_num, f->initial_slots, f->actual_slots, f->base);
 	}
