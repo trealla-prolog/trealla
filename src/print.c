@@ -538,8 +538,7 @@ static bool dump_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 		l_ctx = running ? q->latest_ctx : 0;
 	}
 
-	c = deref(q, c, c_ctx);
-	c_ctx = q->latest_ctx;
+	if (running) { c = deref(q, c, c_ctx); c_ctx = q->latest_ctx; }
 
 	if (q->do_dump_vars && is_cyclic_term(q, c, c_ctx)) {
 		SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[q->dump_var_num]));

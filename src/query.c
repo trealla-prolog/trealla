@@ -607,13 +607,16 @@ static void reuse_frame(query *q, unsigned num_vars)
 		drop_choice(q);
 
 	frame *f = GET_CURR_FRAME();
-	const frame *newf = GET_FRAME(q->st.fp);
-	const slot *from = get_slot(q, newf, 0);
-	slot *to = get_slot(q, f, 0);
 
-	for (pl_idx i = 0; i < num_vars; i++) {
-		unshare_cell(&to->c);
-		to++->c = from++->c;
+	if (num_vars) {
+		const frame *newf = GET_FRAME(q->st.fp);
+		const slot *from = get_slot(q, newf, 0);
+		slot *to = get_slot(q, f, 0);
+
+		for (pl_idx i = 0; i < num_vars; i++) {
+			unshare_cell(&to->c);
+			to++->c = from++->c;
+		}
 	}
 
 	f->initial_slots = f->actual_slots = num_vars;
@@ -752,8 +755,8 @@ int retry_choice(query *q)
 		f->initial_slots = ch->initial_slots;
 		f->actual_slots = ch->actual_slots;
 		f->no_recov = ch->no_recov;
-		f->op = ch->op;
 		f->base = ch->base;
+		f->op = ch->op;
 
 		if (ch->reset)
 			continue;
