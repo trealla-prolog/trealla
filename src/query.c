@@ -728,7 +728,7 @@ void stash_frame(query *q, bool last_match)
 
 	frame *f = GET_NEW_FRAME();
 
-	if (f->initial_slots || true) {
+	if (f->initial_slots) {
 		f->prev = q->st.curr_frame;
 		f->instr = NULL;
 		f->chgen = chgen;
