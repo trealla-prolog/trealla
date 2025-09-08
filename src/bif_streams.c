@@ -906,7 +906,7 @@ static bool bif_iso_stream_property_2(query *q)
 	clause *cl = &q->st.dbe->cl;
 	GET_FIRST_ARG(pstrx,any);
 	pstrx->flags |= FLAG_INT_STREAM;
-	stash_frame(q, cl, false);
+	stash_frame(q, false);
 	return true;
 }
 

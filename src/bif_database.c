@@ -92,7 +92,7 @@ static bool bif_clause_3(query *q)
 				last_match = true;
 			}
 
-			stash_frame(q, cl, last_match);
+			stash_frame(q, last_match);
 			return true;
 		}
 
@@ -164,7 +164,7 @@ static bool bif_iso_clause_2(query *q)
 
 		if (ok) {
 			bool last_match = !has_next_key(q);
-			stash_frame(q, cl, last_match);
+			stash_frame(q, last_match);
 			return true;
 		}
 
@@ -222,7 +222,7 @@ bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 	db_log(q, r, LOG_ERASE);
 	retract_from_db(r->owner->m, r);
 	bool last_match = (is_retract == DO_RETRACT) && !has_next_key(q);
-	stash_frame(q, &r->cl, last_match);
+	stash_frame(q, last_match);
 	return true;
 }
 

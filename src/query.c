@@ -713,10 +713,9 @@ static void commit_frame(query *q)
 	q->st.iter = NULL;
 }
 
-void stash_frame(query *q, const clause *cl, bool last_match)
+void stash_frame(query *q, bool last_match)
 {
 	pl_idx chgen = ++q->chgen;
-	unsigned num_vars = cl->num_vars;
 
 	if (last_match) {
 		leave_predicate(q, q->st.pr);
@@ -727,12 +726,13 @@ void stash_frame(query *q, const clause *cl, bool last_match)
 		ch->gen = chgen;
 	}
 
-	if (num_vars) {
-		frame *f = GET_NEW_FRAME();
+	frame *f = GET_NEW_FRAME();
+
+	if (f->initial_slots || true) {
 		f->prev = q->st.curr_frame;
 		f->instr = NULL;
 		f->chgen = chgen;
-		commit_env(q, num_vars);
+		commit_env(q, f->initial_slots);
 		f->op = 0;
 		q->st.fp++;
 	}
