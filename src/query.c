@@ -719,7 +719,6 @@ void stash_frame(query *q, const clause *cl, bool last_match)
 	unsigned num_vars = cl->num_vars;
 
 	if (last_match) {
-		Trace(q, get_head(q->st.dbe->cl.cells), q->st.curr_frame, EXIT);
 		leave_predicate(q, q->st.pr);
 		drop_choice(q);
 	} else {
@@ -731,9 +730,9 @@ void stash_frame(query *q, const clause *cl, bool last_match)
 	if (num_vars) {
 		frame *f = GET_NEW_FRAME();
 		f->prev = q->st.curr_frame;
+		f->initial_slots = f->actual_slots = num_vars;
 		f->instr = NULL;
 		f->chgen = chgen;
-		f->base = alloc_env(q, num_vars);
 		commit_env(q, num_vars);
 		f->op = 0;
 		q->st.fp++;
