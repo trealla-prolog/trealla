@@ -150,7 +150,7 @@ inline static slot *get_slot(const query *q, const frame *f, unsigned var_num)
 	}
 #endif
 
-	return var_num <= f->initial_slots
+	return var_num < f->initial_slots
 		? f->base + var_num
 		: f->op + (var_num - f->initial_slots);
 }
