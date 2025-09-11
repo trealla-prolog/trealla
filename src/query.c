@@ -418,11 +418,8 @@ int create_vars(query *q, unsigned cnt)
 	q->st.sp += cnt;
 	f->actual_slots += cnt;
 #else
-	printf("*** f->op=%p, q->st.ep=%u, q->st.env_num=%u, q->env_pages->num=%u, q->env_pages->idx=%u, cnt=%u, f->initial_slots=%u, f->actual_slots=%u\n",
-		f->op, q->st.ep, q->st.env_num, q->env_pages->num, q->env_pages->idx, cnt, f->initial_slots, f->actual_slots);
-
 	if (!f->op && extend_env(q, cnt)) {
-		printf("*** extend f%u by %u\n", q->st.curr_frame, cnt);
+		//printf("*** extend f%u by %u\n", q->st.curr_frame, cnt);
 		f->initial_slots += cnt;
 		slot *e = get_slot(q, f, f->actual_slots);
 		memset(e, 0, sizeof(slot)*cnt);
@@ -431,9 +428,6 @@ int create_vars(query *q, unsigned cnt)
 		printf("*** extend2 f%u by %u\n", q->st.curr_frame, cnt);
 		abort();
 	}
-
-	printf("*** f->op=%p, q->st.ep=%u, q->st.env_num=%u, q->env_pages->num=%u, q->env_pages->idx=%u, cnt=%u, f->initial_slots=%u, f->actual_slots=%u\n",
-		f->op, q->st.ep, q->st.env_num, q->env_pages->num, q->env_pages->idx, cnt, f->initial_slots, f->actual_slots);
 #endif
 
 	return var_num;
