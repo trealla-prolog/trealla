@@ -1501,7 +1501,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 	if (!is_chars_list && running && possible_chars
 		&& (scan_is_chars_list2(q, c, c_ctx, false, &has_var, &is_partial, &v) > 0))
-		is_chars_list += q->st.m->flags.double_quote_chars && scan_is_chars_list(q, c, c_ctx, false);
+		is_chars_list += q->st.m->flags.double_quote_chars && scan_is_chars_list2(q, c, c_ctx, false, &has_var, &is_partial, &v);
 
 	if (is_chars_list) {
 		cell *l = c;
@@ -1555,8 +1555,8 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 			SB_strcat(q->sb, "||");
 			if (is_op(l)) SB_putchar(q->sb, '(');
 			if (q->cycle_error) {
-				if (!dump_variable(q, c, c_ctx, 1))
-					print_variable(q, c, c_ctx, 1);
+				if (!dump_variable(q, v?v:c, c_ctx, !v))
+					print_variable(q, v?v:c, c_ctx, !v);
 			} else
 				print_term_to_buf_(q, l, 0, running, 0, depth+1, depth+1, NULL);
 			if (is_op(l)) SB_putchar(q->sb, ')');

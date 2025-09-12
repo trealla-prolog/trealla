@@ -336,12 +336,14 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 
 		if (e) e->vgen = save_vgen;
 		l = LIST_TAIL(l);
+		cell *lsave = l;
 
 		both = 0;
 		DEREF_VAR(any2, both, save_vgen, e, e->vgen, l, l_ctx, q->vgen);
 
 		if (both) {
 			*is_partial = true;
+			save_l = lsave;
 			break;
 		}
 	}
@@ -361,9 +363,10 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 	if (is_var(l)) {
 		*has_var = *is_partial = true;
 		if (cptr) *cptr = l;
-	} else if ((is_interned(l) || is_string(l) || is_number(l)) && !is_nil(l))
+	} else if ((is_interned(l) || is_string(l) || is_number(l)) && !is_nil(l)) {
 		*is_partial = true;
-	else if (!is_interned(l) || !is_nil(l))
+		if (cptr) *cptr = save_l;
+	} else if (!is_interned(l) || !is_nil(l))
 		is_chars_list = 0;
 
 	return is_chars_list;
