@@ -1,6 +1,6 @@
 :-initialization(main).
 
-:- dynamic foo/1.
+:- dynamic(foo/1).
 
 test :-
     clause(foo(_), Body),

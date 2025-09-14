@@ -396,10 +396,10 @@ foldl_([H1|T1], [H2|T2], [H3|T3], G, V0, V) :-
 :- help(foldl(:callable,+list,+var,-var), [iso(false)]).
 :- help(foldl(:callable,+list,+list,+var,-var), [iso(false)]).
 :- help(foldl(:callable,+list,+list,+list,+var,-var), [iso(false)]).
-:- meta_predicate foldl(3, ?, ?, ?).
-:- meta_predicate foldl(4, ?, ?, ?, ?).
-:- meta_predicate foldl(5, ?, ?, ?, ?, ?).
-:- meta_predicate foldl(6, ?, ?, ?, ?, ?, ?).
+:- meta_predicate(foldl(3, ?, ?, ?)).
+:- meta_predicate(foldl(4, ?, ?, ?, ?)).
+:- meta_predicate(foldl(5, ?, ?, ?, ?, ?)).
+:- meta_predicate(foldl(6, ?, ?, ?, ?, ?, ?)).
 
 
 include(G, L, Included) :-
