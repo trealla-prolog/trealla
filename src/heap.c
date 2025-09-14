@@ -238,13 +238,15 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 			c->var_ctx = to_ctx;
 		} else {
 			const frame *f = GET_FRAME(c->var_ctx);
-			const slot *e = get_slot(q, f, c->var_num);
+			const size_t slot_nbr = (f->base * 100) + c->var_num;
 			int var_num;
 
-			if ((var_num = accum_slot(q, (size_t)e, q->varno)) == -1) {
+			if ((var_num = accum_slot(q, slot_nbr, q->varno)) == -1) {
 				var_num = q->varno++;
 				create_vars(q, 1);
 			}
+
+			const slot *e = get_slot(q, f, c->var_num);	// After create_vars
 
 			if (!q->tab_idx) {
 				q->tab0_varno = var_num;
