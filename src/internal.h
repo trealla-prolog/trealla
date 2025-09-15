@@ -530,7 +530,7 @@ struct run_state_ {
 	predicate *pr;
 	cell *instr;
 	rule *dbe;
-	sliter *iter, *f_iter;
+	sliter *iter, *tmp_iter;
 	module *m;
 
 	union {

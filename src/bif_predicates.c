@@ -2065,12 +2065,12 @@ static bool bif_iso_current_rule_1(query *q)
 static bool search_functor(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
 {
 	if (!q->retry)
-		q->st.f_iter = sl_first(q->st.m->index);
+		q->st.tmp_iter = sl_first(q->st.m->index);
 
 	checked(push_choice(q));
 	predicate *pr = NULL;
 
-	while (sl_next(q->st.f_iter, (void*)&pr)) {
+	while (sl_next(q->st.tmp_iter, (void*)&pr)) {
 		const char *src = C_STR(q, &pr->key);
 
 		if (src[0] == '$')
@@ -2089,7 +2089,7 @@ static bool search_functor(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		}
 	}
 
-	sl_done(q->st.f_iter);
+	sl_done(q->st.tmp_iter);
 	drop_choice(q);
 	return false;
 }
