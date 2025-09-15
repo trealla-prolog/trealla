@@ -518,7 +518,7 @@ static bool dump_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 		const frame *f = GET_FRAME(running ? v_ctx : 0);
 		pl_idx slot_nbr = running ?
 			((pl_idx)(get_slot(q, f, v->var_num)-q->slots))
-			: (pl_idx)c->var_num;
+			: (pl_idx)v->var_num;
 
 		if (is_var(v) && (v->var_num == c->var_num) && (v_ctx == c_ctx)) {
 			if (0 && !strcmp(C_STR(q, name), "_")) {
