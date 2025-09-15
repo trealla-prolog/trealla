@@ -652,7 +652,7 @@ static void reuse_frame(query *q, unsigned num_vars)
 		drop_choice(q);
 
 	frame *f = GET_CURR_FRAME();
-	const frame *newf = GET_FRAME(q->st.fp);
+	const frame *newf = GET_NEW_FRAME();
 	const slot *from = get_slot(q, newf, 0);
 	slot *to = get_slot(q, f, 0);
 
