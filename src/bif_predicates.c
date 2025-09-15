@@ -5674,14 +5674,11 @@ static bool bif_between_3(query *q)
 		return unify(q, p3, p3_ctx, p1, p1_ctx);
 	}
 
-	int64_t cnt = q->st.cnt;
 	cell tmp;
-	make_int(&tmp, ++cnt);
+	make_int(&tmp, ++q->st.cnt);
 
-	if (cnt != get_smallint(p2)) {
-		q->st.cnt = cnt;
+	if (q->st.cnt != get_smallint(p2))
 		checked(push_choice(q));
-	}
 
 	return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
 }
