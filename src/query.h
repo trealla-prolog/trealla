@@ -28,11 +28,13 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 bool do_yield(query *q, int msecs);
 void do_yield_at(query *q, unsigned int time_in_ms);
 
+bool check_slot(query *q, unsigned cnt);
+bool check_trail(query *q);
+
 char *url_encode(const char *src, int len, char *dstbuf);
 char *url_decode(const char *src, char *dstbuf);
 bool query_redo(query *q);
 bool has_next_key(query *q);
-bool check_slot(query *q, unsigned cnt);
 void cut(query *q);
 bool execute(query *q, cell *cells, unsigned num_vars);
 void undo_me(query *q);

@@ -21,7 +21,7 @@ static int accum_slot(const query *q, size_t slot_nbr, unsigned var_num)
 	return -1;
 }
 
-size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, size_t max_elements, bool zeroit)
+size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, size_t max_elements)
 {
 	//assert(min_elements <= max_elements);
 
@@ -43,9 +43,6 @@ size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, 
 		q->oom = true;
 		return 0;
 	}
-
-	if (zeroit)
-		memset(mem + (min_elements * elem_size), 0, (elements - min_elements) * elem_size);
 
 	*addr = mem;
 	return elements;
@@ -71,7 +68,7 @@ cell *alloc_tmp(query *q, unsigned num_cells)
 	pl_idx new_size = q->tmphp + num_cells;
 
 	if (new_size >= q->tmph_size) {
-		size_t elements = alloc_grow(q, (void**)&q->tmp_heap, sizeof(cell), new_size, new_size*5/4, true);
+		size_t elements = alloc_grow(q, (void**)&q->tmp_heap, sizeof(cell), new_size, new_size*5/4);
 		if (!elements) return NULL;
 		q->tmph_size = elements;
 	}
