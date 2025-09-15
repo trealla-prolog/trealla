@@ -1503,7 +1503,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 		&& (scan_is_chars_list2(q, c, c_ctx, false, &has_var, &is_partial, &v) > 0))
 		is_chars_list += q->st.m->flags.double_quote_chars && scan_is_chars_list2(q, c, c_ctx, false, &has_var, &is_partial, &v);
 
-	if (is_chars_list && q->pl->opt) {
+	if (is_chars_list) {
 		cell *l = c;
 		pl_idx l_ctx = c_ctx;
 		SB_sprintf(q->sb, "%s", "\"");
