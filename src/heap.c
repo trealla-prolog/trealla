@@ -238,6 +238,8 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 			c->var_ctx = to_ctx;
 		} else {
 			const frame *f = GET_FRAME(c->var_ctx);
+			const slot *e = get_slot(q, f, c->var_num);
+			cell *attrs = e->c.val_attrs;
 			const size_t slot_nbr = (c->var_ctx * 100) + c->var_num;
 			int var_num;
 
@@ -245,8 +247,6 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 				var_num = q->varno++;
 				create_vars(q, 1);
 			}
-
-			const slot *e = get_slot(q, f, c->var_num);	// After create_vars
 
 			if (!q->tab_idx) {
 				q->tab0_varno = var_num;
@@ -256,11 +256,11 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 			c->var_num = var_num;
 			c->var_ctx = q->st.curr_frame;
 
-			if (copy_attrs && e->c.val_attrs) {
+			if (copy_attrs && attrs) {
 				cell *save_tmp_heap = q->tmp_heap;
 				pl_idx save_tmp_hp = q->tmphp;
 				q->tmp_heap = NULL;
-				cell *tmp = copy_term_to_heap(q, e->c.val_attrs, q->st.curr_frame, false);
+				cell *tmp = copy_term_to_heap(q, attrs, q->st.curr_frame, false);
 				checked(tmp);
 				c->tmp_attrs = malloc(sizeof(cell)*tmp->num_cells);
 				copy_cells(c->tmp_attrs, tmp, tmp->num_cells);
