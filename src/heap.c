@@ -14,10 +14,10 @@ static int accum_slot(const query *q, size_t slot_nbr, unsigned var_num)
 {
 	const void *vnbr;
 
-	if (sl_get(q->vars, (void*)(size_t)slot_nbr, &vnbr))
+	if (sl_get(q->vars, (void*)slot_nbr, &vnbr))
 		return (unsigned)(size_t)vnbr;
 
-	sl_app(q->vars, (void*)(size_t)slot_nbr, (void*)(size_t)var_num);
+	sl_app(q->vars, (void*)slot_nbr, (void*)(size_t)var_num);
 	return -1;
 }
 
