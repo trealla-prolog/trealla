@@ -1914,6 +1914,9 @@ static rule *assert_begin(module *m, unsigned num_vars, cell *p1, bool consultin
 	if (m->prebuilt)
 		pr->is_builtin = true;
 
+	if (num_vars > pr->max_vars)
+		pr->max_vars = num_vars;
+
 	size_t dbe_size = sizeof(rule) + (sizeof(cell) * (p1->num_cells+1));
 	rule *r = calloc(1, dbe_size);
 	ensure(r);

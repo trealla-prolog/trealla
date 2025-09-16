@@ -446,6 +446,7 @@ struct predicate_ {
 	list dirty;
 	cell key;
 	pl_refcnt refcnt, cnt, db_id;
+	unsigned max_vars;
 	bool is_reload:1;
 	bool is_builtin:1;
 	bool is_public:1;
