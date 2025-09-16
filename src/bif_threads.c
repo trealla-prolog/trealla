@@ -381,6 +381,7 @@ static bool do_send_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bo
 
 static bool bif_pl_send_2(query *q)
 {
+	check_slot(q, MAX_ARITY);
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.curr_frame, 1);
 	GET_FIRST_ARG(p1,thread);
 	GET_NEXT_ARG(p2,any);
@@ -391,6 +392,7 @@ static bool bif_pl_send_2(query *q)
 
 static bool bif_thread_send_message_2(query *q)
 {
+	check_slot(q, MAX_ARITY);
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.curr_frame, 1);
 	GET_FIRST_ARG(p1,queue);
 	GET_NEXT_ARG(p2,any);
@@ -445,7 +447,6 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 
 		while (m) {
 			checked(push_choice(q), release_lock(&t->guard));
-			check_slot(q, MAX_ARITY);
 			try_me(q, MAX_ARITY);
 			cell *tmp = copy_term_to_heap(q, m->c, q->st.fp, false);	// Copy into thread
 			checked(tmp, release_lock(&t->guard));
@@ -484,6 +485,7 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 
 static bool bif_thread_get_message_2(query *q)
 {
+	check_slot(q, MAX_ARITY);
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.curr_frame, 1);
 	GET_FIRST_ARG(p1,queue);
 	int n = get_thread(q, p1);
@@ -500,6 +502,7 @@ static bool bif_thread_get_message_2(query *q)
 
 static bool bif_thread_peek_message_2(query *q)
 {
+	check_slot(q, MAX_ARITY);
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.curr_frame, 1);
 	GET_FIRST_ARG(p1,queue);
 	int n = get_thread(q, p1);
@@ -842,7 +845,6 @@ void do_signal(query *q, void *thread_ptr)
 
 	msg *m = list_pop_front(&t->signals);
 	release_lock(&t->guard);
-	check_slot(q, MAX_ARITY);
 	try_me(q, MAX_ARITY);
 	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.fp, 0);
 	cell *c = copy_term_to_heap(q, m->c, q->st.fp, false);	// Copy into thread
@@ -894,7 +896,6 @@ static bool bif_thread_join_2(query *q)
 		return throw_error(q, p1, p1_ctx, "system_error", "join,not_thread");
 
 	if (t->exit_code) {
-		check_slot(q, MAX_ARITY);
 		try_me(q, MAX_ARITY);
 		cell *tmp = copy_term_to_heap(q, t->exit_code, q->st.fp, false);
 		t->exit_code = NULL;
@@ -2151,7 +2152,6 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_idx p1_ct
 		m = list_pop_front(&t->queue);
 
 	checked(push_choice(q));
-	check_slot(q, MAX_ARITY);
 	try_me(q, MAX_ARITY);
 	cell *c = m->c;
 	cell *tmp = clone_term_to_heap(q, c, q->st.fp);
@@ -2170,6 +2170,7 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_idx p1_ct
 
 static bool bif_pl_recv_2(query *q)
 {
+	check_slot(q, MAX_ARITY);
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.curr_frame, 1);
 	GET_FIRST_ARG(p1,integer_or_var);
 	GET_NEXT_ARG(p2,any);
