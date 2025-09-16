@@ -108,15 +108,15 @@ static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
 		box = q->retry?REDO:CALL;
 
 	const char *src = C_STR(q, c);
-
+	const frame *f = GET_CURR_FRAME();
 	q->step++;
 	SB(pr);
 
-	SB_sprintf(pr, "[%u:%s:%"PRIu64":f%u:fp%u:cp%u:sp%u:hp%u:tp%u] ",
+	SB_sprintf(pr, "[%u:%s:%"PRIu64":f%u(%u):fp%u:cp%u:sp%u:hp%u:tp%u] ",
 		q->my_chan,
 		q->st.m->name,
 		q->step,
-		q->st.curr_frame, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.tp
+		q->st.curr_frame, f->max_vars, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.tp
 		);
 
 	SB_sprintf(pr, "%s ",
@@ -210,6 +210,9 @@ static bool check_choice(query *q)
 
 static bool check_frame(query *q, unsigned max_vars)
 {
+	frame *f = GET_NEW_FRAME();
+	f->max_vars = max_vars;
+
 	if (q->st.fp > q->hw_frames)
 		q->hw_frames = q->st.fp;
 
@@ -225,8 +228,6 @@ static bool check_frame(query *q, unsigned max_vars)
 	}
 
 	q->frames_size = new_framessize;
-	frame *f = GET_NEW_FRAME();
-	f->max_vars = max_vars;
 	return true;
 }
 
