@@ -79,7 +79,7 @@ inline static void make_indirect(cell *tmp, cell *v, pl_idx v_ctx)
 	tmp->arity = 0;
 	tmp->flags = 0;
 	tmp->val_ptr = v;
-	tmp->var_ctx = v_ctx;
+	tmp->val_ctx = v_ctx;
 }
 
 extern const char *g_solo;

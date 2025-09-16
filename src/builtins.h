@@ -148,7 +148,7 @@ inline static cell *deref(query *q, cell *c, pl_idx c_ctx)
 {
 	if (!is_var(c)) {
 		if (is_indirect(c)) {
-			q->latest_ctx = c->var_ctx;
+			q->latest_ctx = c->val_ctx;
 			return c->val_ptr;
 		}
 
@@ -179,7 +179,7 @@ inline static cell *deref(query *q, cell *c, pl_idx c_ctx)
 		q->hw_deref = derefs;
 
 	if (is_indirect(&e->c)) {
-		q->latest_ctx = e->c.var_ctx;
+		q->latest_ctx = e->c.val_ctx;
 		return e->c.val_ptr;
 	}
 
