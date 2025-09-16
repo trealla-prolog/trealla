@@ -391,11 +391,12 @@ struct cell_ {
 		};
 
 		struct {
-			cell *val_ptr;				// used with TAG_INDIRECT
-		};
+			union {
+				cell *val_ptr;			// used with TAG_INDIRECT
+				cell *val_attrs;		// used with TAG_EMPTY in slot
+			};
 
-		struct {
-			cell *val_attrs;			// used with TAG_EMPTY in slot
+			pl_idx val_ctx;				// used TAG_INDIRECT / TAG_EMPTY
 		};
 
 		struct {
