@@ -645,6 +645,7 @@ struct page_ {
 	page *next;
 	union {
 		cell *cells;
+		frame *frames;
 		slot *slots;
 	};
 	pl_idx idx, page_size;
