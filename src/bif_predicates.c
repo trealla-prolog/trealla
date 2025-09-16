@@ -1868,10 +1868,10 @@ static bool bif_term_singletons_2(query *q)
 
 static bool do_copy_term(query *q, bool copy_attrs)
 {
-	GET_FIRST_RAW_ARG(p1x,any);
-	GET_NEXT_RAW_ARG(p2x,any);
-	q->dump_var_num = is_var(p1x) ? p1x->var_num : (unsigned)-1;
-	q->dump_var_ctx = is_var(p1x) ? p1x_ctx : (unsigned)-1;
+	GET_FIRST_RAW_ARG(p1r,any);
+	GET_NEXT_RAW_ARG(p2r,any);
+	q->dump_var_num = is_var(p1r) ? p1r->var_num : (unsigned)-1;
+	q->dump_var_ctx = is_var(p1r) ? p1r_ctx : (unsigned)-1;
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 
@@ -1880,18 +1880,20 @@ static bool do_copy_term(query *q, bool copy_attrs)
 
 	cell *tmp;
 
-	if (is_var(p1x) && is_var(p2x))
-		tmp = copy_term_to_heap_with_replacement(q, p1, p1_ctx, copy_attrs, p1x, p1x_ctx, p2x, p2x_ctx);
+	if (is_var(p1r) && is_var(p2r))
+		tmp = copy_term_to_heap_with_replacement(q, p1, p1_ctx, copy_attrs, p1r, p1r_ctx, p2r, p2r_ctx);
 	else
 		tmp = copy_term_to_heap(q, p1, p1_ctx, copy_attrs);
 
 	q->dump_var_num = -1;
 	q->dump_var_ctx = -1;
+	checked(tmp);
 
 	// Reget as slots may have reallocated...
 
-	checked(tmp);
-	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+	GET_FIRST_ARG(p1x,any);
+	GET_NEXT_ARG(p2x,any);
+	return unify(q, p2x, p2x_ctx, tmp, q->st.curr_frame);
 }
 
 static bool bif_iso_copy_term_2(query *q)
