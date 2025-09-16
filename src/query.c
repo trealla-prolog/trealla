@@ -622,28 +622,28 @@ void try_me(query *q, unsigned num_vars)
 
 static void push_frame(query *q)
 {
-	frame *f = GET_NEW_FRAME();
-	const frame *curr_f = GET_CURR_FRAME();
+	const frame *fold = GET_CURR_FRAME();
+	frame *fnew = GET_NEW_FRAME();
 	const cell *next_cell = q->st.instr + q->st.instr->num_cells;
 
 	// Avoid long chains of useless returns...
 
 	if (q->pl->opt && is_end(next_cell) && !next_cell->ret_instr
-		&& (curr_f->prev != (pl_idx)-1)
+		&& (fold->prev != (pl_idx)-1)
 		) {
-		f->prev = curr_f->prev;
-		f->instr = curr_f->instr;
+		fnew->prev = fold->prev;
+		fnew->instr = fold->instr;
 	} else {
-		f->prev = q->st.curr_frame;
-		f->instr = q->st.instr;
+		fnew->prev = q->st.curr_frame;
+		fnew->instr = q->st.instr;
 	}
 
-	f->op = 0;
-	f->no_recov = q->no_recov;
-	f->chgen = ++q->chgen;
-	f->hp = q->st.hp;
-	f->heap_num = q->st.heap_num;
-	q->st.sp += f->actual_slots;
+	fnew->op = 0;
+	fnew->no_recov = q->no_recov;
+	fnew->chgen = ++q->chgen;
+	fnew->hp = q->st.hp;
+	fnew->heap_num = q->st.heap_num;
+	q->st.sp += fnew->actual_slots;
 	q->st.curr_frame = q->st.fp++;
 }
 
@@ -657,23 +657,23 @@ static void reuse_frame(query *q, unsigned num_vars)
 	if (c_next->val_off == g_sys_drop_barrier_s)
 		drop_choice(q);
 
-	frame *f = GET_CURR_FRAME();
-	const frame *newf = GET_NEW_FRAME();
-	const slot *from = get_slot(q, newf, 0);
-	slot *to = get_slot(q, f, 0);
+	frame *fold = GET_CURR_FRAME();
+	const frame *fnew = GET_NEW_FRAME();
+	const slot *from = get_slot(q, fnew, 0);
+	slot *to = get_slot(q, fold, 0);
 
 	for (pl_idx i = 0; i < num_vars; i++) {
 		unshare_cell(&to->c);
 		to++->c = from++->c;
 	}
 
-	f->initial_slots = f->actual_slots = num_vars;
-	f->no_recov = false;
-	q->st.sp = f->base + f->actual_slots;
+	fold->initial_slots = fold->actual_slots = num_vars;
+	fold->no_recov = false;
+	q->st.sp = fold->base + fold->actual_slots;
 	q->st.dbe->tcos++;
 	q->total_tcos++;
-	q->st.hp = f->hp;
-	q->st.heap_num = f->heap_num;
+	q->st.hp = fold->hp;
+	q->st.heap_num = fold->heap_num;
 	trim_heap(q);
 }
 
