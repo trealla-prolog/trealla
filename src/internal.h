@@ -397,7 +397,7 @@ struct cell_ {
 			};
 
 			pl_idx dummy1;
-			pl_idx val_ctx;				// used TAG_INDIRECT / TAG_EMPTY
+			pl_idx val_ctx;				// used TAG_INDIRECT
 		};
 
 		struct {
