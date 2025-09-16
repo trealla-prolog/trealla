@@ -383,11 +383,7 @@ struct cell_ {
 			};
 
 			pl_idx var_num;				// used with TAG_VAR
-
-			union {
-				uint32_t val_off;		// used with TAG_VAR & TAG_INTERNED
-				pl_idx var_ctx;			// used with TAG_VAR & FLAG_VAR_REF
-			};
+			uint32_t val_off;		// used with TAG_VAR & TAG_INTERNED
 		};
 
 		struct {
@@ -397,7 +393,7 @@ struct cell_ {
 			};
 
 			pl_idx dummy1;
-			pl_idx val_ctx;				// used TAG_INDIRECT
+			pl_idx val_ctx;				// used TAG_INDIRECT / TAG_VAR
 		};
 
 		struct {
@@ -502,7 +498,7 @@ typedef struct {
 
 struct trail_ {
 	cell *attrs;
-	pl_idx var_ctx, var_num;
+	pl_idx val_ctx, var_num;
 };
 
 // Where *c* is the (possibly) instantiated cell in the current frame
@@ -1003,7 +999,7 @@ inline static pl_idx copy_cells_by_ref(cell *dst, const cell *src, pl_idx src_ct
 
 		if (is_var(dst) && !is_ref(dst)) {
 			dst->flags |= FLAG_VAR_REF;
-			dst->var_ctx = src_ctx;
+			dst->val_ctx = src_ctx;
 		}
 	}
 
@@ -1028,7 +1024,7 @@ inline static pl_idx dup_cells_by_ref(cell *dst, const cell *src, pl_idx src_ctx
 
 		if (is_var(dst) && !is_ref(dst)) {
 			dst->flags |= FLAG_VAR_REF;
-			dst->var_ctx = src_ctx;
+			dst->val_ctx = src_ctx;
 		}
 	}
 

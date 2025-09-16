@@ -157,19 +157,19 @@ inline static cell *deref(query *q, cell *c, pl_idx c_ctx)
 	}
 
 	if (is_ref(c))
-		c_ctx = c->var_ctx;
+		c_ctx = c->val_ctx;
 
 	const frame *f = GET_FRAME(c_ctx);
 	slot *e = get_slot(q, f, c->var_num);
 	unsigned derefs = 1;
 
 	while (is_var(&e->c)) {
-		c_ctx = e->c.var_ctx;
+		c_ctx = e->c.val_ctx;
 		c = &e->c;
 		derefs++;
 
 		if (is_ref(c))
-			c_ctx = c->var_ctx;
+			c_ctx = c->val_ctx;
 
 		f = GET_FRAME(c_ctx);
 		e = get_slot(q, f, c->var_num);
@@ -245,7 +245,7 @@ inline static cell *get_first_raw_arg(query *q)
 	q->last_arg = q->st.instr + 1;
 
 	if (is_ref(q->last_arg))
-		q->latest_ctx = q->last_arg->var_ctx;
+		q->latest_ctx = q->last_arg->val_ctx;
 	else
 		q->latest_ctx = q->st.curr_frame;
 
@@ -257,7 +257,7 @@ inline static cell *get_first_raw_arg0(query *q, cell *p0)
 	q->last_arg = p0 + 1;
 
 	if (is_ref(q->last_arg))
-		q->latest_ctx = q->last_arg->var_ctx;
+		q->latest_ctx = q->last_arg->val_ctx;
 	else
 		q->latest_ctx = q->st.curr_frame;
 
@@ -275,7 +275,7 @@ inline static cell *get_next_raw_arg(query *q)
 	q->last_arg += q->last_arg->num_cells;
 
 	if (is_ref(q->last_arg))
-		q->latest_ctx = q->last_arg->var_ctx;
+		q->latest_ctx = q->last_arg->val_ctx;
 	else
 		q->latest_ctx = q->st.curr_frame;
 
@@ -290,7 +290,7 @@ inline static cell *get_raw_arg(query *q, int n)
 		c += c->num_cells;
 
 	if (is_ref(c))
-		q->latest_ctx = c->var_ctx;
+		q->latest_ctx = c->val_ctx;
 	else
 		q->latest_ctx = q->st.curr_frame;
 
@@ -314,7 +314,7 @@ inline static cell *get_raw_arg(query *q, int n)
 		any = true;													\
 																	\
 		if (is_ref(cc))												\
-			tmp_cc_ctx = cc->var_ctx;								\
+			tmp_cc_ctx = cc->val_ctx;								\
 																	\
 		const frame *f = GET_FRAME(tmp_cc_ctx);						\
 		ee = get_slot(q, f, cc->var_num);								\
@@ -337,7 +337,7 @@ inline static cell *get_raw_arg(query *q, int n)
 		any = true;													\
 																	\
 		if (is_ref(cc))												\
-			tmp_cc_ctx = cc->var_ctx;								\
+			tmp_cc_ctx = cc->val_ctx;								\
 																	\
 		const frame *f = GET_FRAME(tmp_cc_ctx);						\
 		ee = get_slot(q, f, cc->var_num);								\
@@ -356,7 +356,7 @@ inline static cell *get_raw_arg(query *q, int n)
 #define RESTORE_VAR(cc, cc_ctx, p, p_ctx, qvgen)					\
 	if (is_var(cc)) {												\
 		if (is_ref(cc))												\
-			cc_ctx = cc->var_ctx;									\
+			cc_ctx = cc->val_ctx;									\
 																	\
 		const frame *f = GET_FRAME(cc_ctx);							\
 		slot *e = get_slot(q, f, cc->var_num);							\
@@ -368,7 +368,7 @@ inline static cell *get_raw_arg(query *q, int n)
 #define RESTORE_VAR2(cc, cc_ctx, p, p_ctx, qvgen)					\
 	if (is_var(cc)) {												\
 		if (is_ref(cc))												\
-			cc_ctx = cc->var_ctx;									\
+			cc_ctx = cc->val_ctx;									\
 																	\
 		const frame *f = GET_FRAME(cc_ctx);							\
 		slot *e = get_slot(q, f, cc->var_num);							\
@@ -380,7 +380,7 @@ inline static cell *get_raw_arg(query *q, int n)
 #define RESTORE_VAR_CHECKED(any, cc, cc_ctx, p, p_ctx, qvgen)		\
 	if (is_var(cc)) {												\
 		if (is_ref(cc))												\
-			cc_ctx = cc->var_ctx;									\
+			cc_ctx = cc->val_ctx;									\
 																	\
 		const frame *f = GET_FRAME(cc_ctx);							\
 		slot *e = get_slot(q, f, cc->var_num);							\

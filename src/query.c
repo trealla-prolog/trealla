@@ -570,7 +570,7 @@ static void trim_trail(query *q)
 	while (q->st.tp > tp) {
 		const trail *tr = q->trails + q->st.tp - 1;
 
-		if (tr->var_ctx != q->st.curr_frame)
+		if (tr->val_ctx != q->st.curr_frame)
 			break;
 
 		q->st.tp--;
@@ -598,7 +598,7 @@ void undo_me(query *q)
 
 	while (q->st.tp > ch->st.tp) {
 		const trail *tr = q->trails + --q->st.tp;
-		const frame *f = GET_FRAME(tr->var_ctx);
+		const frame *f = GET_FRAME(tr->val_ctx);
 		slot *e = get_slot(q, f, tr->var_num);
 		cell *c = &e->c;
 		unshare_cell(c);

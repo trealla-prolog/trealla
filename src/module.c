@@ -1780,7 +1780,7 @@ bool module_dump_term(module* m, cell *p1)
 			printf(", local=%d, temp=%d, anon=%d", is_local(tmp), is_temporary(tmp), is_anon(tmp));
 
 		if (is_ref(tmp))
-			printf(", slot=%u, ctx=%u", tmp->var_num, tmp->var_ctx);
+			printf(", slot=%u, ctx=%u", tmp->var_num, tmp->val_ctx);
 		else if (is_var(tmp))
 			printf(", slot=%u, %s", tmp->var_num, C_STR(q, tmp));
 

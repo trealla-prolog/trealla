@@ -2124,7 +2124,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 		if (is_empty(&e->c))
 			continue;
 
-		cell *c = deref(q, &e->c, e->c.var_ctx);
+		cell *c = deref(q, &e->c, e->c.val_ctx);
 		q->varnames = true;
 		q->max_depth = -1;
 		src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);

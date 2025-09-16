@@ -251,7 +251,7 @@ void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs)
 	}
 
 	trail *tr = q->trails + q->st.tp++;
-	tr->var_ctx = c_ctx;
+	tr->val_ctx = c_ctx;
 	tr->var_num = c_var_nbr;
 	tr->attrs = attrs;
 }

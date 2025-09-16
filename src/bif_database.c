@@ -927,12 +927,12 @@ static bool do_dump_term(query *q, cell *p1x, pl_idx p1x_ctx, cell *p1, pl_idx p
 				is_anon(tmp)?1:0);
 
 		if (is_ref(tmp))
-			printf(", slot=%u, ctx=%u", tmp->var_num, tmp->var_ctx);
+			printf(", slot=%u, ctx=%u", tmp->var_num, tmp->val_ctx);
 		else if (is_var(tmp))
 			printf(", slot=%u, %s", tmp->var_num, C_STR(q, tmp));
 
 		if (is_var(tmp) && deref) {
-			const frame *f = GET_FRAME(is_ref(tmp)?tmp->var_ctx:p1_ctx);
+			const frame *f = GET_FRAME(is_ref(tmp)?tmp->val_ctx:p1_ctx);
 			slot *e = get_slot(q, f, tmp->var_num);
 
 			if (e->c.val_attrs && 0) {

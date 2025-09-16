@@ -118,9 +118,9 @@ static bool bif_sys_unifiable_3(query *q)
 
 	while (save_tp < q->st.tp) {
 		const trail *tr = q->trails + save_tp;
-		const frame *f = GET_FRAME(tr->var_ctx);
+		const frame *f = GET_FRAME(tr->val_ctx);
 		slot *e = get_slot(q, f, tr->var_num);
-		cell *c = deref(q, &e->c, e->c.var_ctx);
+		cell *c = deref(q, &e->c, e->c.val_ctx);
 		pl_idx c_ctx = q->latest_ctx;
 		cell *tmp = malloc(sizeof(cell)*(2+c->num_cells));
 		checked(tmp);
@@ -1322,7 +1322,7 @@ static bool do_atom_concat_3(query *q)
 		GET_NEXT_ARG(p2,var);
 		GET_NEXT_ARG(p3,atom);
 
-		if ((p1->var_ctx == p2->var_ctx) && (p1->var_num == p2->var_num))
+		if ((p1->val_ctx == p2->val_ctx) && (p1->var_num == p2->var_num))
 			return do_atom_concat_equal_3(q);
 
 		cell tmp;
@@ -1976,7 +1976,7 @@ static bool bif_iso_functor_3(query *q)
 			tmp[i].tag = TAG_VAR;
 			tmp[i].num_cells = 1;
 			tmp[i].var_num = var_num++;
-			tmp[i].var_ctx = q->st.curr_frame;
+			tmp[i].val_ctx = q->st.curr_frame;
 			tmp[i].flags = FLAG_VAR_REF | FLAG_VAR_ANON;
 		}
 
