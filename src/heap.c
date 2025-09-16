@@ -218,6 +218,7 @@ cell *append_to_tmp(query *q, cell *p1, pl_idx p1_ctx)
 static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_idx from_ctx, const cell *to, pl_idx to_ctx)
 {
 	unsigned num_cells = c->num_cells;
+	unsigned cnt = 0;
 
 	for (unsigned i = 0; i < num_cells; i++, c++) {
 		if (!is_ref(c))
@@ -239,7 +240,7 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 
 			if ((var_num = accum_slot(q, slot_nbr, q->varno)) == -1) {
 				var_num = q->varno++;
-				create_vars(q, 1);
+				cnt++;
 			}
 
 			if (!q->tab_idx) {
@@ -264,6 +265,9 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_i
 			}
 		}
 	}
+
+	if (cnt)
+		create_vars(q, cnt);
 
 	return true;
 }
