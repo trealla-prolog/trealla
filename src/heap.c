@@ -333,13 +333,6 @@ cell *copy_term_to_tmp(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
 	return copy_term_to_tmp_with_replacement(q, p1, p1_ctx, copy_attrs, NULL, 0, NULL, 0);
 }
 
-// The heap is used for data allocations and a realloc() can't be
-// done as it will invalidate existing pointers. Build any compounds
-// first on the tmp heap, then allocate in one go here and copy in.
-// When more space is need allocate a new page and keep them in the
-// page list. Backtracking will garbage collect and free as needed.
-// Need to incr refcnt on heap cells.
-
 cell *alloc_heap(query *q, unsigned num_cells)
 {
 	if (!q->heap_pages) {
@@ -606,8 +599,6 @@ cell *end_structure(query *q)
 
 	return tmp;
 }
-
-// Queues are another beast
 
 cell *alloc_queuen(query *q, unsigned qnum, const cell *c)
 {
