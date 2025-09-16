@@ -383,7 +383,7 @@ struct cell_ {
 			};
 
 			pl_idx var_num;				// used with TAG_VAR
-			uint32_t val_off;		// used with TAG_VAR & TAG_INTERNED
+			uint32_t val_off;			// used with TAG_VAR & TAG_INTERNED
 		};
 
 		struct {
@@ -393,7 +393,7 @@ struct cell_ {
 			};
 
 			pl_idx dummy1;
-			pl_idx val_ctx;				// used TAG_INDIRECT / TAG_VAR
+			pl_idx val_ctx;				// used TAG_INDIRECT / TAG_VAR & FLAG_VAR_REF
 		};
 
 		struct {
