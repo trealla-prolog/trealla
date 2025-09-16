@@ -211,14 +211,15 @@ static bool check_choice(query *q)
 static bool check_frame(query *q, unsigned max_vars)
 {
 	checked(check_slot(q, max_vars));
-	frame *f = GET_NEW_FRAME();
-	f->max_vars = max_vars;
 
 	if (q->st.fp > q->hw_frames)
 		q->hw_frames = q->st.fp;
 
-	if (q->st.fp < q->frames_size)
+	if (q->st.fp < q->frames_size) {
+		frame *f = GET_NEW_FRAME();
+		f->max_vars = max_vars;
 		return true;
+	}
 
 	q->realloc_frames++;
 	pl_idx new_framessize = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.fp, q->frames_size*5/4);
@@ -229,6 +230,8 @@ static bool check_frame(query *q, unsigned max_vars)
 	}
 
 	q->frames_size = new_framessize;
+	frame *f = GET_NEW_FRAME();
+	f->max_vars = max_vars;
 	return true;
 }
 
