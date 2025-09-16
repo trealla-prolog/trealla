@@ -210,6 +210,7 @@ static bool check_choice(query *q)
 
 static bool check_frame(query *q, unsigned max_vars)
 {
+	checked(check_slot(q, max_vars));
 	frame *f = GET_NEW_FRAME();
 	f->max_vars = max_vars;
 
@@ -1325,7 +1326,6 @@ bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 		return false;
 	}
 
-	checked(check_slot(q, MAX_ARITY));
 	checked(check_frame(q, q->st.pr->max_vars));
 	checked(push_choice(q));
 	const frame *f = GET_FRAME(q->st.curr_frame);
@@ -1436,7 +1436,6 @@ bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract
 		return false;
 	}
 
-	checked(check_slot(q, MAX_ARITY));
 	checked(check_frame(q, q->st.pr->max_vars));
 	checked(push_choice(q));
 	const frame *f = GET_FRAME(q->st.curr_frame);
@@ -1518,7 +1517,6 @@ bool match_head(query *q)
 		return false;
 	}
 
-	checked(check_slot(q, MAX_ARITY));
 	checked(check_frame(q, q->st.pr->max_vars));
 	checked(push_choice(q));
 	const frame *f = GET_CURR_FRAME();
