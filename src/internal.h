@@ -396,6 +396,7 @@ struct cell_ {
 				cell *val_attrs;		// used with TAG_EMPTY in slot
 			};
 
+			pl_idx dummy1;
 			pl_idx val_ctx;				// used TAG_INDIRECT / TAG_EMPTY
 		};
 
