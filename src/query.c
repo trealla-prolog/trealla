@@ -1331,7 +1331,7 @@ bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 
 	checked(check_frame(q, q->st.pr->max_vars));
 	checked(push_choice(q));
-	const frame *f = GET_FRAME(q->st.curr_frame);
+	const frame *f = GET_CURR_FRAME();
 	cell *p1_body = deref(q, get_logical_body(p1), p1_ctx);
 	cell *orig_p1 = p1;
 
@@ -1441,7 +1441,7 @@ bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract
 
 	checked(check_frame(q, q->st.pr->max_vars));
 	checked(push_choice(q));
-	const frame *f = GET_FRAME(q->st.curr_frame);
+	const frame *f = GET_CURR_FRAME();
 
 	for (; q->st.dbe; q->st.dbe = q->st.dbe->next) {
 		if (!can_view(q, f->dbgen, q->st.dbe))
