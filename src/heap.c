@@ -23,8 +23,6 @@ static int accum_slot(const query *q, size_t slot_nbr, unsigned var_num)
 
 size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, size_t max_elements)
 {
-	//assert(min_elements <= max_elements);
-
 	if (min_elements > max_elements)
 		max_elements = min_elements;
 
@@ -35,7 +33,6 @@ size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, 
 		mem = realloc(*addr, elem_size * elements);
 		if (mem) break;
 		elements = min_elements + (elements - min_elements) / 2;
-		//message("memory pressure reduce %lu to %lu", max_elements, elements);
 	}
 	 while (elements > min_elements);
 
