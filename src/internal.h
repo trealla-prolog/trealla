@@ -380,20 +380,16 @@ struct cell_ {
 				predicate *match;		// used with TAG_INTERNED
 				builtins *bif_ptr;		// used with TAG_INTERNED
 				cell *tmp_attrs;		// used with TAG_VAR in copy_term
-			};
-
-			pl_idx var_num;				// used with TAG_VAR
-			uint32_t val_off;			// used with TAG_VAR & TAG_INTERNED
-		};
-
-		struct {
-			union {
 				cell *val_ptr;			// used with TAG_INDIRECT
 				cell *val_attrs;		// used with TAG_EMPTY in slot
 			};
 
-			pl_idx dummy1;
-			pl_idx val_ctx;				// used TAG_INDIRECT / TAG_VAR & FLAG_VAR_REF
+			pl_idx var_num;				// used with TAG_VAR
+
+			union {
+				uint32_t val_off;		// used with TAG_INTERNED / TAG_VAR -FLAG_VAR_REF
+				pl_idx val_ctx;			// used with TAG_INDIRECT / TAG_VAR +FLAG_VAR_REF
+			};
 		};
 
 		struct {
