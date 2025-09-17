@@ -213,7 +213,7 @@ static void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn,
 	uint8_t arg_types[MAX_FFI_ARGS], ret_type = 0;
 	LIST_HANDLER(l);
 	cell *l = p3;
-	pl_idx l_ctx = p3_ctx;
+	pl_ctx l_ctx = p3_ctx;
 	int idx = 0;
 
 	while (is_iso_list(l) && (idx < MAX_FFI_ARGS)) {
@@ -315,7 +315,7 @@ static void register_ffi(prolog *pl, const char *name, unsigned arity, void *fn,
 	return true;
 }
 
-bool do_register_struct(module *m, query *q, void *handle, const char *symbol, cell *l, pl_idx l_ctx, const char *ret)
+bool do_register_struct(module *m, query *q, void *handle, const char *symbol, cell *l, pl_ctx l_ctx, const char *ret)
 {
 	uint8_t arg_types[MAX_FFI_ARGS];
 	const char *arg_names[MAX_FFI_ARGS];
@@ -435,7 +435,7 @@ bool do_register_struct(module *m, query *q, void *handle, const char *symbol, c
 	return true;
 }
 
-bool do_register_predicate(module *m, query *q, void *handle, const char *symbol, cell *l, pl_idx l_ctx, const char *ret)
+bool do_register_predicate(module *m, query *q, void *handle, const char *symbol, cell *l, pl_ctx l_ctx, const char *ret)
 {
 	void *func = dlsym(handle, symbol);
 	if (!func) return false;
@@ -646,7 +646,7 @@ bool wrap_ffi_function(query *q, builtins *ptr)
 	START_FUNCTION(q);
 	GET_FIRST_ARG(p1, any);
 	cell *c = p1;
-	pl_idx c_ctx = p1_ctx;
+	pl_ctx c_ctx = p1_ctx;
 
 	ffi_cif cif = {0};
 	ffi_type *arg_types[MAX_FFI_ARGS];
@@ -1049,7 +1049,7 @@ static bool handle_struct1(query *q, foreign_struct *sptr, nested_elements *nest
 	return true;
 }
 
-static void handle_struct2(query *q, nested_elements *nested, unsigned *pdepth, unsigned cnt, uint8_t *bytes, size_t *boff, cell *h, pl_idx h_ctx, void **arg_values, unsigned *p_pos)
+static void handle_struct2(query *q, nested_elements *nested, unsigned *pdepth, unsigned cnt, uint8_t *bytes, size_t *boff, cell *h, pl_ctx h_ctx, void **arg_values, unsigned *p_pos)
 {
 	size_t bytes_offset = *boff, depth = *pdepth++;
 	unsigned pos = *p_pos;
@@ -1109,7 +1109,7 @@ static void handle_struct2(query *q, nested_elements *nested, unsigned *pdepth, 
 		bytes_offset += sizeof(void*);
 	} else {
 		cell *l = h;
-		pl_idx l_ctx = h_ctx;
+		pl_ctx l_ctx = h_ctx;
 		int cnt = 0;
 		LIST_HANDLER(l);
 		size_t bytes_offset_start = bytes_offset;
@@ -1117,7 +1117,7 @@ static void handle_struct2(query *q, nested_elements *nested, unsigned *pdepth, 
 		while (is_iso_list(l)) {
 			cell *h = LIST_HEAD(l);
 			h = deref(q, h, l_ctx);
-			pl_idx h_ctx = q->latest_ctx;
+			pl_ctx h_ctx = q->latest_ctx;
 
 			if (cnt > 0) {
 				handle_struct2(q, nested, pdepth, cnt, bytes, &bytes_offset, h, h_ctx, arg_values, &pos);
@@ -1140,7 +1140,7 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 {
 	GET_FIRST_ARG(p1, any);
 	cell *c = p1;
-	pl_idx c_ctx = p1_ctx;
+	pl_ctx c_ctx = p1_ctx;
 
 	nested_elements nested[MAX_FFI_ARGS] = {0};
 	ffi_type *arg_types[MAX_FFI_ARGS] = {0};
@@ -1303,7 +1303,7 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 			arg_types[i] = &ffi_type_pointer;
 		else if (ptr->types[i] == FFI_TAG_STRUCT) {
 			cell *l = c;
-			pl_idx l_ctx = c_ctx;
+			pl_ctx l_ctx = c_ctx;
 			const char *name = "invalid";
 			LIST_HANDLER(l);
 
@@ -1490,7 +1490,7 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 			pos++;
 		} else if (ptr->types[i] == FFI_TAG_STRUCT) {
 			cell *l = c;
-			pl_idx l_ctx = c_ctx;
+			pl_ctx l_ctx = c_ctx;
 			int cnt = 0;
 			LIST_HANDLER(l);
 			size_t bytes_offset_start = bytes_offset;
@@ -1498,7 +1498,7 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 			while (is_iso_list(l)) {
 				cell *h = LIST_HEAD(l);
 				h = deref(q, h, l_ctx);
-				pl_idx h_ctx = q->latest_ctx;
+				pl_ctx h_ctx = q->latest_ctx;
 
 				if (cnt > 0) {
 					handle_struct2(q, nested, &pdepth, cnt, bytes, &bytes_offset, h, h_ctx, arg_values, &pos);

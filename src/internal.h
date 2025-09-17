@@ -26,6 +26,7 @@ typedef double pl_flt;
 typedef intmax_t pl_int;
 typedef uintmax_t pl_uint;
 typedef uint32_t pl_idx;
+typedef uint32_t pl_ctx;
 
 #define PL_INT_MAX INTMAX_MAX
 #define PL_INT_MIN INTMAX_MIN
@@ -388,7 +389,7 @@ struct cell_ {
 
 			union {
 				uint32_t val_off;		// used with TAG_INTERNED / TAG_VAR -FLAG_VAR_REF
-				pl_idx val_ctx;			// used with TAG_INDIRECT / TAG_VAR +FLAG_VAR_REF
+				pl_ctx val_ctx;			// used with TAG_INDIRECT / TAG_VAR +FLAG_VAR_REF
 			};
 		};
 
@@ -494,7 +495,8 @@ typedef struct {
 
 struct trail_ {
 	cell *attrs;
-	pl_idx val_ctx, var_num;
+	pl_ctx val_ctx;
+	pl_idx var_num;
 };
 
 // Where *c* is the (possibly) instantiated cell in the current frame
@@ -516,7 +518,8 @@ struct frame_ {
 	cell *instr;
 	module *m;
 	uint64_t dbgen, chgen;
-	pl_idx prev, base, op, hp, heap_num;
+	pl_ctx prev;
+	pl_idx base, op, hp, heap_num;
 	unsigned initial_slots, actual_slots, max_vars;
 	bool no_recov:1;
 };
@@ -531,7 +534,7 @@ struct run_state_ {
 	union {
 		struct {
 			cell *key;
-			pl_idx key_ctx;
+			pl_ctx key_ctx;
 			bool karg1_is_ground:1, karg2_is_ground:1, karg3_is_ground:1,
 			karg1_is_atomic:1, karg2_is_atomic:1, karg3_is_atomic:1;
 		};
@@ -541,7 +544,8 @@ struct run_state_ {
 	};
 
 	uint64_t timer_started;
-	pl_idx curr_frame, fp, hp, cp, tp, sp, heap_num;
+	pl_ctx curr_frame;
+	pl_idx fp, hp, cp, tp, sp, heap_num;
 	uint8_t qnum;
 };
 
@@ -698,10 +702,11 @@ struct query_ {
 	unsigned max_depth, max_eval_depth, print_idx, tab_idx, dump_var_num;
 	unsigned varno, tab0_varno, curr_engine, curr_chan, my_chan;
 	unsigned s_cnt, retries;
-	pl_idx tmphp, latest_ctx, popp, variable_names_ctx, dump_var_ctx;
+	pl_ctx latest_ctx, popp, variable_names_ctx, dump_var_ctx, ball_ctx, cont_ctx;
+	pl_idx tmphp;
 	pl_idx frames_size, slots_size, trails_size, choices_size;
 	pl_idx hw_choices, hw_frames, hw_slots, hw_trails, hw_heap_num, hw_deref;
-	pl_idx cp, before_hook_tp, qcnt[MAX_QUEUES], ball_ctx, cont_ctx;
+	pl_idx cp, before_hook_tp, qcnt[MAX_QUEUES];
 	pl_idx heap_size, tmph_size, total_heaps, total_heapsize;
 	pl_idx undo_lo_tp, undo_hi_tp;
 	pl_idx q_size[MAX_QUEUES], tmpq_size[MAX_QUEUES], qp[MAX_QUEUES];
@@ -858,7 +863,8 @@ struct module_ {
 };
 
 typedef struct {
-	pl_idx ctx, val_off;
+	pl_ctx ctx;
+	pl_idx val_off;
 	unsigned var_num, cnt;
 	bool is_anon;
 } var_item;
@@ -988,7 +994,7 @@ inline static pl_idx copy_cells(cell *dst, const cell *src, pl_idx num_cells)
 	return num_cells;
 }
 
-inline static pl_idx copy_cells_by_ref(cell *dst, const cell *src, pl_idx src_ctx, pl_idx num_cells)
+inline static pl_idx copy_cells_by_ref(cell *dst, const cell *src, pl_ctx src_ctx, pl_idx num_cells)
 {
 	for (pl_idx i = 0; i < num_cells; i++, src++, dst++) {
 		*dst = *src;
@@ -1012,7 +1018,7 @@ inline static pl_idx dup_cells(cell *dst, const cell *src, pl_idx num_cells)
 	return num_cells;
 }
 
-inline static pl_idx dup_cells_by_ref(cell *dst, const cell *src, pl_idx src_ctx, pl_idx num_cells)
+inline static pl_idx dup_cells_by_ref(cell *dst, const cell *src, pl_ctx src_ctx, pl_idx num_cells)
 {
 	for (pl_idx i = 0; i < num_cells; i++, src++, dst++) {
 		*dst = *src;

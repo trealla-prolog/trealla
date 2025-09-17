@@ -195,7 +195,7 @@ void thread_deinitialize(prolog *pl)
 
 static bool is_thread_or_alias(query *q, cell *c)
 {
-	pl_idx c_ctx = 0;
+	pl_ctx c_ctx = 0;
 
 	if (is_var(c))
 		return throw_error(q, c, c_ctx, "instantiation_error", "thread_or_alias");
@@ -215,7 +215,7 @@ static bool is_thread_or_alias(query *q, cell *c)
 
 static bool is_mutex_or_alias(query *q, cell *c)
 {
-	pl_idx c_ctx = 0;
+	pl_ctx c_ctx = 0;
 
 	if (is_var(c))
 		return throw_error(q, c, c_ctx, "instantiation_error", "mutex_or_alias");
@@ -235,7 +235,7 @@ static bool is_mutex_or_alias(query *q, cell *c)
 
 static bool is_queue_or_alias(query *q, cell *c)
 {
-	pl_idx c_ctx = 0;
+	pl_ctx c_ctx = 0;
 
 	if (is_var(c))
 		return throw_error(q, c, c_ctx, "instantiation_error", "queue_or_alias");
@@ -360,7 +360,7 @@ static cell *queue_to_chan(prolog *pl, unsigned chan, const cell *c, unsigned fr
 	return m->c;
 }
 
-static bool do_send_message(query *q, unsigned chan, cell *p1, pl_idx p1_ctx, bool is_signal)
+static bool do_send_message(query *q, unsigned chan, cell *p1, pl_ctx p1_ctx, bool is_signal)
 {
 	thread *t = &q->pl->threads[chan];
 
@@ -574,7 +574,7 @@ static bool bif_pl_thread_3(query *q)
 	while (is_list(p3)) {
 		cell *h = LIST_HEAD(p3);
 		cell *c = deref(q, h, p3_ctx);
-		pl_idx c_ctx = q->latest_ctx;
+		pl_ctx c_ctx = q->latest_ctx;
 
 		if (is_var(c))
 			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
@@ -694,14 +694,14 @@ static bool bif_thread_create_3(query *q)
 	thread *t = &q->pl->threads[n];
 	if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	cell *p4 = NULL;	// at_exit option
-	pl_idx p4_ctx = 0;
+	pl_ctx p4_ctx = 0;
 	bool is_detached = false, is_alias = false;
 	LIST_HANDLER(p3);
 
 	while (is_list(p3)) {
 		cell *h = LIST_HEAD(p3);
 		cell *c = deref(q, h, p3_ctx);
-		pl_idx c_ctx = q->latest_ctx;
+		pl_ctx c_ctx = q->latest_ctx;
 
 		if (is_var(c)) {
 			t->is_active = false;
@@ -1113,7 +1113,7 @@ static bool do_thread_property_pin_both(query *q)
 		return throw_error(q, p2, p2_ctx, "domain_error", "thread_property");
 
 	cell *c = deref(q, p2, p2_ctx);
-	pl_idx c_ctx = q->latest_ctx;
+	pl_ctx c_ctx = q->latest_ctx;
 
 	if (!CMP_STRING_TO_CSTR(q, p2, "alias")) {
 		sliter *iter = sl_first(t->alias);
@@ -1377,7 +1377,7 @@ static bool bif_message_queue_create_2(query *q)
 	while (is_list(p2)) {
 		cell *h = LIST_HEAD(p2);
 		cell *c = deref(q, h, p2_ctx);
-		pl_idx c_ctx = q->latest_ctx;
+		pl_ctx c_ctx = q->latest_ctx;
 
 		if (is_var(c)) {
 			t->is_active = false;
@@ -1484,7 +1484,7 @@ static bool do_message_queue_property_pin_both(query *q)
 		return throw_error(q, p2, p2_ctx, "domain_error", "queue_property");
 
 	cell *c = deref(q, p2, p2_ctx);
-	pl_idx c_ctx = q->latest_ctx;
+	pl_ctx c_ctx = q->latest_ctx;
 
 	if (!CMP_STRING_TO_CSTR(q, p2, "alias")) {
 		sliter *iter = sl_first(t->alias);
@@ -1718,7 +1718,7 @@ static bool bif_mutex_create_2(query *q)
 	while (is_list(p2)) {
 		cell *h = LIST_HEAD(p2);
 		cell *c = deref(q, h, p2_ctx);
-		pl_idx c_ctx = q->latest_ctx;
+		pl_ctx c_ctx = q->latest_ctx;
 
 		if (is_var(c)) {
 			t->is_active = false;
@@ -1873,7 +1873,7 @@ static bool do_mutex_property_pin_both(query *q)
 		return throw_error(q, p2, p2_ctx, "domain_error", "mutex_property");
 
 	cell *c = deref(q, p2, p2_ctx);
-	pl_idx c_ctx = q->latest_ctx;
+	pl_ctx c_ctx = q->latest_ctx;
 
 	if (!CMP_STRING_TO_CSTR(q, p2, "alias")) {
 		sliter *iter = sl_first(t->alias);
@@ -2124,7 +2124,7 @@ static bool bif_pl_thread_set_priority_2(query *q)
 	return true;
 }
 
-static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_idx p1_ctx, bool is_peek)
+static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_ctx p1_ctx, bool is_peek)
 {
 	thread *t = &q->pl->threads[q->pl->my_chan];
 

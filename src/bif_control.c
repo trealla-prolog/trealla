@@ -63,7 +63,7 @@ static bool bif_sys_cleanup_if_det_1(query *q)
 	drop_choice(q);
 	ch->fail_on_retry = true;
 	cell *c = deref(q, ch->st.instr, ch->st.curr_frame);
-	pl_idx c_ctx = q->latest_ctx;
+	pl_ctx c_ctx = q->latest_ctx;
 	c = deref(q, FIRST_ARG(c), c_ctx);
 	c_ctx = q->latest_ctx;
 	do_cleanup(q, c, c_ctx);
@@ -105,7 +105,7 @@ bool call_check(query *q, cell *p1, bool *status, bool calln)
 	return true;
 }
 
-bool bif_call_0(query *q, cell *p1, pl_idx p1_ctx)
+bool bif_call_0(query *q, cell *p1, pl_ctx p1_ctx)
 {
 	if (!is_callable(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "callable");
@@ -847,7 +847,7 @@ static bool find_exception_handler(query *q, char *ball)
 	}
 
 	cell *e = parse_to_heap(q, ball);
-	pl_idx e_ctx = q->st.curr_frame;
+	pl_ctx e_ctx = q->st.curr_frame;
 	q->did_unhandled_exception = true;
 
 	if (!strcmp(C_STR(q, e+1), "$aborted")) {
@@ -912,7 +912,7 @@ static bool bif_iso_throw_1(query *q)
 	return bif_iso_catch_3(q);
 }
 
-bool throw_error3(query *q, cell *c, pl_idx c_ctx, const char *err_type, const char *expected, cell *goal)
+bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const char *expected, cell *goal)
 {
 	if (/*g_tpl_interrupt ||*/ q->halt || q->pl->halt)
 		return false;
@@ -1176,7 +1176,7 @@ bool throw_error3(query *q, cell *c, pl_idx c_ctx, const char *err_type, const c
 	return false;
 }
 
-bool throw_error2(query *q, cell *c, pl_idx c_ctx, const char *err_type, const char *expected, cell *goal)
+bool throw_error2(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const char *expected, cell *goal)
 {
 	cell tmp;
 	tmp = goal[1];
@@ -1184,7 +1184,7 @@ bool throw_error2(query *q, cell *c, pl_idx c_ctx, const char *err_type, const c
 	return throw_error3(q, c, c_ctx, err_type, expected, &tmp);
 }
 
-bool throw_error(query *q, cell *c, pl_idx c_ctx, const char *err_type, const char *expected)
+bool throw_error(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const char *expected)
 {
 	if ((q->st.m->flags.syntax_error == UNK_FAIL) && !strcmp(err_type, "syntax_error"))
 		return false;

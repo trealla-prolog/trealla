@@ -69,8 +69,8 @@ bool wrap_ffi_predicate(query *q, builtins *bif_ptr);
 		filename = DUP_STRING(q, p1); \
 }
 
-bool call_builtin(query *q, cell *c, pl_idx c_ctx);
-bool call_userfun(query *q, cell *c, pl_idx c_ctx);
+bool call_builtin(query *q, cell *c, pl_ctx c_ctx);
+bool call_userfun(query *q, cell *c, pl_ctx c_ctx);
 
 #define eval(q,c)														\
 	is_evaluable(c) || is_builtin(c) ? (call_builtin(q,c,c##_ctx), q->accum) : \
@@ -144,7 +144,7 @@ inline static slot *get_slot(const query *q, const frame *f, unsigned var_num)
 		: q->slots + f->op + (var_num - f->initial_slots);
 }
 
-inline static cell *deref(query *q, cell *c, pl_idx c_ctx)
+inline static cell *deref(query *q, cell *c, pl_ctx c_ctx)
 {
 	if (!is_var(c)) {
 		if (is_indirect(c)) {
@@ -196,36 +196,36 @@ inline static cell *deref(query *q, cell *c, pl_idx c_ctx)
 
 #define GET_RAW_ARG(n,p) \
 	cell *p = get_raw_arg(q,n); \
-	pl_idx p##_ctx = q->latest_ctx
+	pl_ctx p##_ctx = q->latest_ctx
 
 #define GET_FIRST_ARG(p,vt) \
 	cell *p = get_first_arg(q); \
-	pl_idx p##_ctx = q->latest_ctx; \
+	pl_ctx p##_ctx = q->latest_ctx; \
 	if (!is_##vt(p)) { return q->did_throw ? false : throw_error(q, p, p##_ctx, "type_error", #vt); }
 
 #define GET_FIRST_ARG0(p,vt,p0) \
 	cell *p = get_first_arg0(q,p0); \
-	pl_idx p##_ctx = q->latest_ctx; \
+	pl_ctx p##_ctx = q->latest_ctx; \
 	if (!is_##vt(p)) { return q->did_throw ? false : throw_error(q, p, p##_ctx, "type_error", #vt); }
 
 #define GET_FIRST_RAW_ARG(p,vt) \
 	cell *p = get_first_raw_arg(q); \
-	pl_idx p##_ctx = q->latest_ctx; \
+	pl_ctx p##_ctx = q->latest_ctx; \
 	if (!is_##vt(p)) { return q->did_throw ? false : throw_error(q, p, p##_ctx, "type_error", #vt); }
 
 #define GET_FIRST_RAW_ARG0(p,vt,p0) \
 	cell *p = get_first_raw_arg0(q,p0); \
-	pl_idx p##_ctx = q->latest_ctx; \
+	pl_ctx p##_ctx = q->latest_ctx; \
 	if (!is_##vt(p)) { return q->did_throw ? false : throw_error(q, p, p##_ctx, "type_error", #vt); }
 
 #define GET_NEXT_ARG(p,vt) \
 	cell *p = get_next_arg(q); \
-	pl_idx p##_ctx = q->latest_ctx; \
+	pl_ctx p##_ctx = q->latest_ctx; \
 	if (!is_##vt(p)) { return q->did_throw ? false : throw_error(q, p, p##_ctx, "type_error", #vt); }
 
 #define GET_NEXT_RAW_ARG(p,vt) \
 	cell *p = get_next_raw_arg(q); \
-	pl_idx p##_ctx = q->latest_ctx; \
+	pl_ctx p##_ctx = q->latest_ctx; \
 	if (!is_##vt(p)) { return q->did_throw ? false : throw_error(q, p, p##_ctx, "type_error", #vt); }
 
 inline static cell *get_first_arg(query *q)
@@ -310,7 +310,7 @@ inline static cell *get_raw_arg(query *q, int n)
 
 #define DEREF_CHECKED(any, both, svg, ee, evgen, cc, cc_ctx, qvgen)	\
 	if (is_var(cc)) {												\
-		pl_idx tmp_cc_ctx = cc_ctx;									\
+		pl_ctx tmp_cc_ctx = cc_ctx;									\
 		any = true;													\
 																	\
 		if (is_ref(cc))												\
@@ -333,7 +333,7 @@ inline static cell *get_raw_arg(query *q, int n)
 
 #define DEREF_VAR(any, both, svg, ee, evgen, cc, cc_ctx, qvgen)		\
 	if (is_var(cc)) {												\
-		pl_idx tmp_cc_ctx = cc_ctx;									\
+		pl_ctx tmp_cc_ctx = cc_ctx;									\
 		any = true;													\
 																	\
 		if (is_ref(cc))												\
@@ -434,7 +434,7 @@ bool bif_sre_matchp_4(query *q);
 bool bif_sre_match_4(query *q);
 bool bif_sre_substp_4(query *q);
 bool bif_sre_subst_4(query *q);
-bool bif_call_0(query *q, cell *p1, pl_idx p1_ctx);
+bool bif_call_0(query *q, cell *p1, pl_ctx p1_ctx);
 bool bif_statistics_0(query *q);
 bool bif_sys_module_1(query *q);
 bool bif_sys_undo_1(query *q);

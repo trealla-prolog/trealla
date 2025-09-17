@@ -64,7 +64,7 @@ static int format_integer(char *dst, cell *c, int grouping, int sep, int decimal
 
 typedef struct {
 	cell *p;
-	pl_idx p_ctx;
+	pl_ctx p_ctx;
 	const char *srcbuf;
 	const char *src;
 	size_t srclen;
@@ -98,7 +98,7 @@ static int get_next_char(query *q, list_reader_t *fmt)
 	return ch;
 }
 
-static cell *get_next_cell(query *q, list_reader_t *fmt, bool *is_var, pl_idx *ctx)
+static cell *get_next_cell(query *q, list_reader_t *fmt, bool *is_var, pl_ctx *ctx)
 {
 	*is_var = false;
 
@@ -149,7 +149,7 @@ static bool is_more_data(query *q, list_reader_t *fmt)
 	tmpbuf_free -= len;										\
 }
 
-bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx)
+bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx)
 {
 	list_reader_t fmt1 = {0}, fmt2 = {0};
 	list_reader_t save_fmt1 = {0}, save_fmt2 = {0};
@@ -187,7 +187,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 		}
 
 		ch = get_next_char(q, &fmt1);
-		pl_idx c_ctx = p2_ctx;
+		pl_ctx c_ctx = p2_ctx;
 
 		if (ch == '*') {
 			bool is_var;
@@ -678,7 +678,7 @@ bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cel
 
 	if (fmt2.p) {
 		cell *save_l = fmt2.p;
-		pl_idx save_l_ctx = fmt2.p_ctx, c_ctx;
+		pl_ctx save_l_ctx = fmt2.p_ctx, c_ctx;
 		bool is_var;
 		cell *c = get_next_cell(q, &fmt2, &is_var, &c_ctx);
 

@@ -26,7 +26,7 @@ static bool bif_map_create_2(query *q)
 	while (is_list(p4)) {
 		cell *h = LIST_HEAD(p4);
 		cell *c = deref(q, h, p4_ctx);
-		pl_idx c_ctx = q->latest_ctx;
+		pl_ctx c_ctx = q->latest_ctx;
 
 		if (is_var(c))
 			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
@@ -338,7 +338,7 @@ static bool bif_engine_create_4(query *q)
 	while (is_list(p4)) {
 		cell *h = LIST_HEAD(p4);
 		cell *c = deref(q, h, p4_ctx);
-		pl_idx c_ctx = q->latest_ctx;
+		pl_ctx c_ctx = q->latest_ctx;
 
 		if (is_var(c))
 			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");

@@ -2,9 +2,9 @@
 
 #include "query.h"
 
-typedef struct { lnode hdr; cell *c; pl_idx c_ctx; slot *e; uint32_t save_vgen; } snode;
+typedef struct { lnode hdr; cell *c; pl_ctx c_ctx; slot *e; uint32_t save_vgen; } snode;
 
-static bool accum_var(query *q, const cell *c, pl_idx c_ctx)
+static bool accum_var(query *q, const cell *c, pl_ctx c_ctx)
 {
 	const frame *f = GET_FRAME(c_ctx);
 	const slot *e = get_slot(q, f, c->var_num);
@@ -39,17 +39,17 @@ static bool accum_var(query *q, const cell *c, pl_idx c_ctx)
 	return false;
 }
 
-static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth);
+static void collect_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth);
 
-static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
+static void collect_var_lists(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 {
 	cell *l = p1;
-	pl_idx l_ctx = p1_ctx;
+	pl_ctx l_ctx = p1_ctx;
 	bool any1 = false, any2 = false;
 
 	while (is_iso_list(l)) {
 		cell *h = l + 1;
-		pl_idx h_ctx = l_ctx;
+		pl_ctx h_ctx = l_ctx;
 		slot *e = NULL;
 		uint32_t save_vgen;
 		int both = 0;
@@ -79,7 +79,7 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 		while (is_iso_list(l)) {
 			l = l + 1; l += l->num_cells;
 			cell *c = l;
-			pl_idx c_ctx = l_ctx;
+			pl_ctx c_ctx = l_ctx;
 			RESTORE_VAR(c, c_ctx, l, l_ctx, q->vgen);
 		}
 	}
@@ -87,7 +87,7 @@ static void collect_var_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 	collect_vars_internal(q, l, l_ctx, depth+1);
 }
 
-static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
+static void collect_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 {
 	if (is_var(p1)) {
 		if (!(p1->flags & FLAG_VAR_CYCLIC))
@@ -110,7 +110,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 
 	while (arity--) {
 		cell *c = p1;
-		pl_idx c_ctx = p1_ctx;
+		pl_ctx c_ctx = p1_ctx;
 		slot *e = NULL;
 		uint32_t save_vgen;
 		int both = 0;
@@ -125,7 +125,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 	}
 }
 
-void collect_vars(query *q, cell *p1, pl_idx p1_ctx)
+void collect_vars(query *q, cell *p1, pl_ctx p1_ctx)
 {
 	if (++q->vgen == 0) q->vgen = 1;
 	q->tab_idx = 0;
@@ -135,17 +135,17 @@ void collect_vars(query *q, cell *p1, pl_idx p1_ctx)
 	q->vars = NULL;
 }
 
-static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth);
+static bool has_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth);
 
-static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
+static bool has_vars_lists(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 {
 	cell *l = p1;
-	pl_idx l_ctx = p1_ctx;
+	pl_ctx l_ctx = p1_ctx;
 	bool any1 = false, any2 = false;
 
 	while (is_iso_list(l)) {
 		cell *h = l + 1;
-		pl_idx h_ctx = l_ctx;
+		pl_ctx h_ctx = l_ctx;
 		slot *e = NULL;
 		uint32_t save_vgen;
 		int both = 0;
@@ -174,7 +174,7 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 		while (is_iso_list(l)) {
 			l = l + 1; l += l->num_cells;
 			cell *c = l;
-			pl_idx c_ctx = l_ctx;
+			pl_ctx c_ctx = l_ctx;
 			RESTORE_VAR(c, c_ctx, l, l_ctx, q->vgen);
 		}
 	}
@@ -182,7 +182,7 @@ static bool has_vars_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 	return has_vars_internal(q, l, l_ctx, depth+1);
 }
 
-static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
+static bool has_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 {
 	if (is_var(p1))
 		return true;
@@ -199,7 +199,7 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 
 	while (arity--) {
 		cell *c = p1;
-		pl_idx c_ctx = p1_ctx;
+		pl_ctx c_ctx = p1_ctx;
 		slot *e = NULL;
 		uint32_t save_vgen = 0;
 		int both = 0;
@@ -217,23 +217,23 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 	return false;
 }
 
-bool has_vars(query *q, cell *p1, pl_idx p1_ctx)
+bool has_vars(query *q, cell *p1, pl_ctx p1_ctx)
 {
 	if (++q->vgen == 0) q->vgen = 1;
 	return has_vars_internal(q, p1, p1_ctx, 0);
 }
 
-static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth);
+static bool is_cyclic_term_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth);
 
-static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
+static bool is_cyclic_term_lists(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 {
 	cell *l = p1;
-	pl_idx l_ctx = p1_ctx;
+	pl_ctx l_ctx = p1_ctx;
 	bool any1 = false, any2 = false;
 
 	while (is_iso_list(l)) {
 		cell *h = l + 1;
-		pl_idx h_ctx = l_ctx;
+		pl_ctx h_ctx = l_ctx;
 		slot *e = NULL;
 		uint32_t save_vgen;
 		int both = 0;
@@ -264,7 +264,7 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 		while (is_iso_list(l)) {
 			l = l + 1; l += l->num_cells;
 			cell *c = l;
-			pl_idx c_ctx = l_ctx;
+			pl_ctx c_ctx = l_ctx;
 			RESTORE_VAR(c, c_ctx, l, l_ctx, q->vgen);
 		}
 	}
@@ -272,7 +272,7 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_idx p1_ctx, unsigned dep
 	return is_cyclic_term_internal(q, l, l_ctx, depth+1);
 }
 
-static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
+static bool is_cyclic_term_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 {
 	if (!is_compound(p1) || is_ground(p1))
 		return false;
@@ -286,7 +286,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned 
 
 	while (arity--) {
 		cell *c = p1;
-		pl_idx c_ctx = p1_ctx;
+		pl_ctx c_ctx = p1_ctx;
 		slot *e = NULL;
 		uint32_t save_vgen;
 		int both = 0;
@@ -306,18 +306,18 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned 
 	return false;
 }
 
-bool is_cyclic_term(query *q, cell *p1, pl_idx p1_ctx)
+bool is_cyclic_term(query *q, cell *p1, pl_ctx p1_ctx)
 {
 	if (++q->vgen == 0) q->vgen = 1;
 	return is_cyclic_term_internal(q, p1, p1_ctx, 0);
 }
 
-bool is_acyclic_term(query *q, cell *p1, pl_idx p1_ctx)
+bool is_acyclic_term(query *q, cell *p1, pl_ctx p1_ctx)
 {
 	return !is_cyclic_term(q, p1, p1_ctx);
 }
 
-inline static cell *term_next(query *q, cell *c, pl_idx *c_ctx, bool *done)
+inline static cell *term_next(query *q, cell *c, pl_ctx *c_ctx, bool *done)
 {
 	if (!is_iso_list(c)) {
 		*done = true;
@@ -333,7 +333,7 @@ inline static cell *term_next(query *q, cell *c, pl_idx *c_ctx, bool *done)
 
 // This uses Brent's algorithm...
 
-cell *skip_max_list(query *q, cell *head, pl_idx *head_ctx, pl_int max, pl_int *skip, cell *tmp)
+cell *skip_max_list(query *q, cell *head, pl_ctx *head_ctx, pl_int max, pl_int *skip, cell *tmp)
 {
 	if (!head)
 		return NULL;
@@ -377,7 +377,7 @@ LOOP:
 	// Handle ISO lists...
 
 	slow = head;
-	pl_idx slow_ctx = *head_ctx, fast_ctx = *head_ctx;
+	pl_ctx slow_ctx = *head_ctx, fast_ctx = *head_ctx;
 	bool done = false;
 	cell *fast = term_next(q, head, &fast_ctx, &done);
 	pl_int length = 1, cnt = 0;
@@ -452,10 +452,10 @@ LOOP:
 	return slow;
 }
 
-bool check_list(query *q, cell *p1, pl_idx p1_ctx, bool *is_partial, pl_int *skip_)
+bool check_list(query *q, cell *p1, pl_ctx p1_ctx, bool *is_partial, pl_int *skip_)
 {
 	pl_int skip = 0, max = 1000000000;
-	pl_idx c_ctx = p1_ctx;
+	pl_ctx c_ctx = p1_ctx;
 	cell tmp = {0};
 
 	cell *c = skip_max_list(q, p1, &c_ctx, max, &skip, &tmp);

@@ -629,7 +629,7 @@ static bool do_stream_property(query *q)
 	stream *str = &q->pl->streams[n];
 	cell *c = p1 + 1;
 	c = deref(q, c, p1_ctx);
-	pl_idx c_ctx = q->latest_ctx;
+	pl_ctx c_ctx = q->latest_ctx;
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "file_name")) {
 		cell tmp;
@@ -922,7 +922,7 @@ void convert_path(char *filename)
 	}
 }
 
-bool valid_list(query *q, cell *c, pl_idx c_ctx)
+bool valid_list(query *q, cell *c, pl_ctx c_ctx)
 {
 	while (is_iso_list(c)) {
 		c = c + 1;
@@ -1110,7 +1110,7 @@ static bool bif_process_create_3(query *q)
 		assert(args < MAX_ARGS);
 		cell *h = LIST_HEAD(p2);
 		cell *c = deref(q, h, p2_ctx);
-		pl_idx c_ctx = q->latest_ctx;
+		pl_ctx c_ctx = q->latest_ctx;
 
 		if (!is_atom(c))
 			return throw_error(q, c, c_ctx, "domain_error", "args");
@@ -1127,18 +1127,18 @@ static bool bif_process_create_3(query *q)
     posix_spawnattr_t attrp;
     posix_spawnattr_init(&attrp);
     cell *ppid = NULL;
-    pl_idx ppid_ctx = 0;
+    pl_ctx ppid_ctx = 0;
 	LIST_HANDLER(p3);
 
 	while (is_iso_list(p3)) {
 		cell *h = LIST_HEAD(p3);
 		cell *c = deref(q, h, p3_ctx);
-		pl_idx c_ctx = q->latest_ctx;
+		pl_ctx c_ctx = q->latest_ctx;
 
 		if (is_compound(c) && (c->arity == 1)) {
 			cell *name = c + 1;
 			name = deref(q, name, c_ctx);
-			pl_idx name_ctx = q->latest_ctx;
+			pl_ctx name_ctx = q->latest_ctx;
 
 			if (!CMP_STRING_TO_CSTR(q, c, "process") || !CMP_STRING_TO_CSTR(q, c, "pid")) {
 				ppid = name;
@@ -1215,7 +1215,7 @@ static bool bif_process_create_3(query *q)
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdin") && !CMP_STRING_TO_CSTR(q, name, "pipe")
 				&& is_compound(name) && (name->arity == 1) && is_var(name+1)) {
 				cell *ns = deref(q, name+1, name_ctx);
-				pl_idx ns_ctx = q->latest_ctx;
+				pl_ctx ns_ctx = q->latest_ctx;
 				int n = new_stream(q->pl);
 				int fds[2];
 				if (pipe(fds)) return false;
@@ -1239,7 +1239,7 @@ static bool bif_process_create_3(query *q)
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdout") && !CMP_STRING_TO_CSTR(q, name, "pipe")
 				&& is_compound(name) && (name->arity == 1) && is_var(name+1)) {
 				cell *ns = deref(q, name+1, name_ctx);
-				pl_idx ns_ctx = q->latest_ctx;
+				pl_ctx ns_ctx = q->latest_ctx;
 				int n = new_stream(q->pl);
 				int fds[2];
 				if (pipe(fds)) return false;
@@ -1263,7 +1263,7 @@ static bool bif_process_create_3(query *q)
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stderr") && !CMP_STRING_TO_CSTR(q, name, "pipe")
 				&& is_compound(name) && (name->arity == 1) && is_var(name+1)) {
 				cell *ns = deref(q, name+1, name_ctx);
-				pl_idx ns_ctx = q->latest_ctx;
+				pl_ctx ns_ctx = q->latest_ctx;
 				int n = new_stream(q->pl);
 				int fds[2];
 				if (pipe(fds)) return false;
@@ -1469,7 +1469,7 @@ static bool bif_iso_open_4(query *q)
 
 #if USE_MMAP
 	cell *mmap_var = NULL;
-	pl_idx mmap_ctx = 0;
+	pl_ctx mmap_ctx = 0;
 #endif
 
 	bool bom_specified = false, use_bom = false, is_alias = false;
@@ -1478,7 +1478,7 @@ static bool bif_iso_open_4(query *q)
 	while (is_list(p4)) {
 		cell *h = LIST_HEAD(p4);
 		cell *c = deref(q, h, p4_ctx);
-		pl_idx c_ctx = q->latest_ctx;
+		pl_ctx c_ctx = q->latest_ctx;
 
 		if (is_var(c))
 			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
@@ -1964,7 +1964,7 @@ static bool bif_iso_read_2(query *q)
 	return do_read_term(q, str, p1, p1_ctx, make_nil(), q->st.curr_frame, NULL);
 }
 
-static bool parse_read_params(query *q, stream *str, cell *c, pl_idx c_ctx, cell **vars, pl_idx *vars_ctx, cell **varnames, pl_idx *varnames_ctx, cell **sings, pl_idx *sings_ctx)
+static bool parse_read_params(query *q, stream *str, cell *c, pl_ctx c_ctx, cell **vars, pl_ctx *vars_ctx, cell **varnames, pl_ctx *varnames_ctx, cell **sings, pl_ctx *sings_ctx)
 {
 	parser *p = str->p;
 
@@ -1974,7 +1974,7 @@ static bool parse_read_params(query *q, stream *str, cell *c, pl_idx c_ctx, cell
 	}
 
 	cell *c1 = deref(q, FIRST_ARG(c), c_ctx);
-	pl_idx c1_ctx = q->latest_ctx;
+	pl_ctx c1_ctx = q->latest_ctx;
 
 	if (!CMP_STRING_TO_CSTR(q, c, "character_escapes")) {
 		if (is_interned(c1))
@@ -2033,7 +2033,7 @@ static bool parse_read_params(query *q, stream *str, cell *c, pl_idx c_ctx, cell
 	return true;
 }
 
-bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, char *src)
+bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, char *src)
 {
 	if (!str->p) {
 		str->p = parser_create(q->st.m);
@@ -2047,16 +2047,16 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 	str->p->do_read_term = true;
 	str->p->one_shot = true;
 	cell *vars = NULL, *varnames = NULL, *sings = NULL;
-	pl_idx vars_ctx = 0, varnames_ctx = 0, sings_ctx = 0;
+	pl_ctx vars_ctx = 0, varnames_ctx = 0, sings_ctx = 0;
 	cell *p21 = p2;
-	pl_idx p21_ctx = p2_ctx;
+	pl_ctx p21_ctx = p2_ctx;
 
 	LIST_HANDLER(p21);
 
 	while (is_list(p21)) {
 		cell *h = LIST_HEAD(p21);
 		h = deref(q, h, p21_ctx);
-		pl_idx h_ctx = q->latest_ctx;
+		pl_ctx h_ctx = q->latest_ctx;
 
 		if (is_var(h))
 			return throw_error(q, p2, p2_ctx, "instantiation_error", "read_option");
@@ -2134,13 +2134,13 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 						return false;
 
 				cell *p22 = p2;
-				pl_idx p22_ctx = p2_ctx;
+				pl_ctx p22_ctx = p2_ctx;
 				LIST_HANDLER(p22);
 
 				while (is_list(p22)) {
 					cell *h = LIST_HEAD(p22);
 					h = deref(q, h, p22_ctx);
-					pl_idx h_ctx = q->latest_ctx;
+					pl_ctx h_ctx = q->latest_ctx;
 
 					if (is_var(h))
 						return throw_error(q, p2, p2_ctx, "instantiation_error", "read_option");
@@ -2148,7 +2148,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 					if (!CMP_STRING_TO_CSTR(q, h, "positions") && (h->arity == 2)) {
 						cell *p = h+1;
 						p = deref(q, p, h_ctx);
-						pl_idx p_ctx = q->latest_ctx;
+						pl_ctx p_ctx = q->latest_ctx;
 						cell tmp;
 						make_int(&tmp, str->p->pos_start);
 						unify(q, p, p_ctx, &tmp, q->st.curr_frame);
@@ -2160,7 +2160,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 					} else if (!CMP_STRING_TO_CSTR(q, h, "line_counts") && (h->arity == 2)) {
 						cell *p = h+1;
 						p = deref(q, p, h_ctx);
-						pl_idx p_ctx = q->latest_ctx;
+						pl_ctx p_ctx = q->latest_ctx;
 						cell tmp;
 						make_int(&tmp, str->p->line_num_start);
 						unify(q, p, p_ctx, &tmp, q->st.curr_frame);
@@ -2221,13 +2221,13 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 	str->p->do_read_term = false;
 
 	cell *p22 = p2;
-	pl_idx p22_ctx = p2_ctx;
+	pl_ctx p22_ctx = p2_ctx;
 	LIST_HANDLER(p22);
 
 	while (is_list(p22)) {
 		cell *h = LIST_HEAD(p22);
 		h = deref(q, h, p22_ctx);
-		pl_idx h_ctx = q->latest_ctx;
+		pl_ctx h_ctx = q->latest_ctx;
 
 		if (is_var(h))
 			return throw_error(q, p2, p2_ctx, "instantiation_error", "read_option");
@@ -2235,7 +2235,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 		if (!CMP_STRING_TO_CSTR(q, h, "positions") && (h->arity == 2)) {
 			cell *p = h+1;
 			p = deref(q, p, h_ctx);
-			pl_idx p_ctx = q->latest_ctx;
+			pl_ctx p_ctx = q->latest_ctx;
 			cell tmp;
 			make_int(&tmp, str->p->pos_start);
 
@@ -2252,7 +2252,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_i
 		} else if (!CMP_STRING_TO_CSTR(q, h, "line_counts") && (h->arity == 2)) {
 			cell *p = h+1;
 			p = deref(q, p, h_ctx);
-			pl_idx p_ctx = q->latest_ctx;
+			pl_ctx p_ctx = q->latest_ctx;
 			cell tmp;
 			make_int(&tmp, str->p->line_num_start);
 
@@ -2628,7 +2628,7 @@ static bool bif_iso_write_canonical_2(query *q)
 	return !ferror(str->fp);
 }
 
-bool parse_write_params(query *q, cell *c, pl_idx c_ctx, cell **vnames, pl_idx *vnames_ctx)
+bool parse_write_params(query *q, cell *c, pl_ctx c_ctx, cell **vnames, pl_ctx *vnames_ctx)
 {
 	if (is_var(c)) {
 		throw_error(q, c, c_ctx, "instantiation_error", "write_option");
@@ -2641,7 +2641,7 @@ bool parse_write_params(query *q, cell *c, pl_idx c_ctx, cell **vnames, pl_idx *
 	}
 
 	cell *c1 = deref(q, FIRST_ARG(c), c_ctx);
-	pl_idx c1_ctx = q->latest_ctx;
+	pl_ctx c1_ctx = q->latest_ctx;
 
 	if (!CMP_STRING_TO_CSTR(q, c, "max_depth")) {
 		if (is_var(c1)) {
@@ -2775,13 +2775,13 @@ bool parse_write_params(query *q, cell *c, pl_idx c_ctx, cell **vnames, pl_idx *
 		}
 
 		cell *c1_orig = c1;
-		pl_idx c1_orig_ctx = c1_ctx;
+		pl_ctx c1_orig_ctx = c1_ctx;
 		bool any1 = false, any2 = false;
 		LIST_HANDLER(c1);
 
 		while (is_list(c1)) {
 			cell *h = LIST_HEAD(c1);
-			pl_idx h_ctx = c1_ctx;
+			pl_ctx h_ctx = c1_ctx;
 
 			slot *e = NULL;
 			uint32_t save_vgen = 0;
@@ -2871,13 +2871,13 @@ static bool bif_iso_write_term_2(query *q)
 	q->flags = q->st.m->flags;
 	q->numbervars = false;
 	cell *p2_orig = p2, *vnames = NULL;
-	pl_idx p2_orig_ctx = p2_ctx, vnames_ctx = 0;
+	pl_ctx p2_orig_ctx = p2_ctx, vnames_ctx = 0;
 	LIST_HANDLER(p2);
 
 	while (is_list(p2)) {
 		cell *h = LIST_HEAD(p2);
 		h = deref(q, h, p2_ctx);
-		pl_idx h_ctx = q->latest_ctx;
+		pl_ctx h_ctx = q->latest_ctx;
 
 		if (!parse_write_params(q, h, h_ctx, &vnames, &vnames_ctx)) {
 			clear_write_options(q);
@@ -2901,7 +2901,7 @@ static bool bif_iso_write_term_2(query *q)
 
 	if (q->portrayed) {
 		cell *c = p1;
-		pl_idx c_ctx = p1_ctx;
+		pl_ctx c_ctx = p1_ctx;
 		cell p1[1+c->num_cells];
 		make_instr(p1+0, new_atom(q->pl, "$portray"), NULL, 1, c->num_cells);
 		dup_cells_by_ref(p1+1, c, c_ctx, c->num_cells);
@@ -2955,13 +2955,13 @@ static bool bif_iso_write_term_3(query *q)
 	q->flags = q->st.m->flags;
 	q->numbervars = false;
 	cell *p2_orig = p2, *vnames = NULL;
-	pl_idx p2_orig_ctx = p2_ctx, vnames_ctx;
+	pl_ctx p2_orig_ctx = p2_ctx, vnames_ctx;
 	LIST_HANDLER(p2);
 
 	while (is_list(p2)) {
 		cell *h = LIST_HEAD(p2);
 		h = deref(q, h, p2_ctx);
-		pl_idx h_ctx = q->latest_ctx;
+		pl_ctx h_ctx = q->latest_ctx;
 
 		if (!parse_write_params(q, h, h_ctx, &vnames, &vnames_ctx)) {
 			clear_write_options(q);
@@ -2985,7 +2985,7 @@ static bool bif_iso_write_term_3(query *q)
 
 	if (q->portrayed) {
 		cell *c = p1;
-		pl_idx c_ctx = p1_ctx;
+		pl_ctx c_ctx = p1_ctx;
 		cell p1[1+1+c->num_cells];
 		make_instr(p1+0, new_atom(q->pl, "$portray"), NULL, 2, 1+c->num_cells);
 		p1[1] = *pstr;
@@ -4358,14 +4358,14 @@ static bool bif_write_term_to_atom_3(query *q)
 	GET_NEXT_ARG(p_term,any);
 	GET_NEXT_ARG(p2,list_or_nil);
 	cell *vnames = NULL;
-	pl_idx vnames_ctx = 0;
+	pl_ctx vnames_ctx = 0;
 	q->flags = q->st.m->flags;
 	LIST_HANDLER(p2);
 
 	while (is_list(p2)) {
 		cell *h = LIST_HEAD(p2);
 		h = deref(q, h, p2_ctx);
-		pl_idx h_ctx = q->latest_ctx;
+		pl_ctx h_ctx = q->latest_ctx;
 		parse_write_params(q, h, h_ctx, &vnames, &vnames_ctx);
 		p2 = LIST_TAIL(p2);
 		p2 = deref(q, p2, p2_ctx);
@@ -4390,14 +4390,14 @@ static bool bif_write_term_to_chars_3(query *q)
 	GET_NEXT_ARG(p2,list_or_nil);
 	GET_NEXT_ARG(p_chars,atom_or_var);
 	cell *vnames = NULL;
-	pl_idx vnames_ctx = 0;
+	pl_ctx vnames_ctx = 0;
 	q->flags = q->st.m->flags;
 	LIST_HANDLER(p2);
 
 	while (is_list(p2)) {
 		cell *h = LIST_HEAD(p2);
 		h = deref(q, h, p2_ctx);
-		pl_idx h_ctx = q->latest_ctx;
+		pl_ctx h_ctx = q->latest_ctx;
 		parse_write_params(q, h, h_ctx, &vnames, &vnames_ctx);
 		p2 = LIST_TAIL(p2);
 		p2 = deref(q, p2, p2_ctx);
@@ -4422,14 +4422,14 @@ static bool bif_write_canonical_to_chars_3(query *q)
 	GET_NEXT_ARG(p_term,any);
 	GET_NEXT_ARG(p2,list_or_nil);
 	cell *vnames = NULL;
-	pl_idx vnames_ctx = 0;
+	pl_ctx vnames_ctx = 0;
 	q->flags = q->st.m->flags;
 	LIST_HANDLER(p2);
 
 	while (is_list(p2)) {
 		cell *h = LIST_HEAD(p2);
 		h = deref(q, h, p2_ctx);
-		pl_idx h_ctx = q->latest_ctx;
+		pl_ctx h_ctx = q->latest_ctx;
 		parse_write_params(q, h, h_ctx, &vnames, &vnames_ctx);
 		p2 = LIST_TAIL(p2);
 		p2 = deref(q, p2, p2_ctx);
@@ -4771,7 +4771,7 @@ static bool bif_read_file_to_string_3(query *q)
 	return ok;
 }
 
-bool do_load_file(query *q, cell *p1, pl_idx p1_ctx)
+bool do_load_file(query *q, cell *p1, pl_ctx p1_ctx)
 {
 	if (is_atom(p1)) {
 		char *src = DUP_STRING(q, p1);
@@ -4818,7 +4818,7 @@ bool do_load_file(query *q, cell *p1, pl_idx p1_ctx)
 	return true;
 }
 
-static bool do_unload_file(query *q, cell *p1, pl_idx p1_ctx)
+static bool do_unload_file(query *q, cell *p1, pl_ctx p1_ctx)
 {
 	if (is_atom(p1)) {
 		char *src = DUP_STRING(q, p1);
@@ -4864,7 +4864,7 @@ static bool bif_load_files_2(query *q)
 	while (is_list(p1)) {
 		cell *h = LIST_HEAD(p1);
 		cell *c = deref(q, h, p1_ctx);
-		pl_idx c_ctx = q->latest_ctx;
+		pl_ctx c_ctx = q->latest_ctx;
 
 		if (!do_load_file(q, c, c_ctx))
 			return false;
@@ -4889,7 +4889,7 @@ static bool bif_unload_files_1(query *q)
 	while (is_list(p1)) {
 		cell *h = LIST_HEAD(p1);
 		cell *c = deref(q, h, p1_ctx);
-		pl_idx c_ctx = q->latest_ctx;
+		pl_ctx c_ctx = q->latest_ctx;
 
 		if (!do_unload_file(q, c, c_ctx))
 			return false;
@@ -5060,7 +5060,7 @@ static bool bif_getfile_2(query *q)
 	return true;
 }
 
-static bool get_terminator(query *q, cell *l, pl_idx l_ctx)
+static bool get_terminator(query *q, cell *l, pl_ctx l_ctx)
 {
 	bool terminator = false;
 	LIST_HANDLER(l);
@@ -5068,7 +5068,7 @@ static bool get_terminator(query *q, cell *l, pl_idx l_ctx)
 	while (is_iso_list(l)) {
 		cell *h = LIST_HEAD(l);
 		h = deref(q, h, l_ctx);
-		pl_idx h_ctx = q->latest_ctx;
+		pl_ctx h_ctx = q->latest_ctx;
 
 		if (is_compound(h)) {
 			if (!CMP_STRING_TO_CSTR(q, h, "terminator")) {
@@ -6283,7 +6283,7 @@ static bool bif_accept_2(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
-static bool do_parse_parts(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, bool full)
+static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, bool full)
 {
 	char protocol[256], host[1024], path[8192], search[8192], fragment[8192];
 	protocol[0] = host[0] = path[0] = search[0] = fragment[0] = '\0';
@@ -6293,7 +6293,7 @@ static bool do_parse_parts(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 	while (is_iso_list(p2)) {
 		cell *h = LIST_HEAD(p2);
 		h = deref(q, h, p2_ctx);
-		pl_idx h_ctx = q->latest_ctx;
+		pl_ctx h_ctx = q->latest_ctx;
 
 		if (!strcmp(C_STR(q, h), "protocol")) {
 			if (!is_atom(h+1))
@@ -6318,7 +6318,7 @@ static bool do_parse_parts(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 		} else if (!strcmp(C_STR(q, h), "search")) {
 			cell *h1 = h + 1;
 			h1 = deref(q, h1, h_ctx);
-			pl_idx h1_ctx = q->latest_ctx;
+			pl_ctx h1_ctx = q->latest_ctx;
 
 			if (!is_iso_list(h1))
 				return throw_error(q, h1, h_ctx, "type_error", "list");
@@ -6403,7 +6403,7 @@ static bool do_parse_parts(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p
 	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
 }
 
-static bool do_parse_url(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, bool full)
+static bool do_parse_url(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, bool full)
 {
 	const char *src = C_STR(q, p1);
 	char protocol[256], host[1024], path[8192], search[8192], fragment[8192];

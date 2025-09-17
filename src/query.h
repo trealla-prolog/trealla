@@ -23,8 +23,8 @@ bool push_fail_on_retry_with_barrier(query *q);
 bool push_reset_handler(query *q);
 bool push_catcher(query *q, enum q_retry type);
 
-bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract);
-bool do_read_term(query *q, stream *str, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx, char *src);
+bool do_retract(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract);
+bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, char *src);
 bool do_yield(query *q, int msecs);
 void do_yield_at(query *q, unsigned int time_in_ms);
 
@@ -41,8 +41,8 @@ void undo_me(query *q);
 int retry_choice(query *q);
 void assign_vars(parser *p, unsigned start, bool rebase);
 bool start(query *q);
-bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract);
-bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type retract);
+bool match_rule(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract);
+bool match_clause(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type retract);
 void try_me(query *q, unsigned vars);
 void call_attrs(query *q, cell *attrs);
 void stash_frame(query *q, const clause *cl, bool last_match);
@@ -51,61 +51,61 @@ void dump_vars(query *q, bool partial);
 int check_interrupt(query *q);
 bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n);
 void check_pressure(query *q);
-cell *prepare_call(query *q, bool noskip, cell *p1, pl_idx p1_ctx, unsigned extras);
+cell *prepare_call(query *q, bool noskip, cell *p1, pl_ctx p1_ctx, unsigned extras);
 bool call_check(query *q, cell *tmp2, bool *status, bool calln);
 bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n);
 bool match_head(query *q);
 bool check_frame(query *q, unsigned max_vars);
 
-bool throw_error(query *q, cell *c, pl_idx c_ctx, const char *err_type, const char *expected);
-bool throw_error3(query *q, cell *c, pl_idx c_ctx, const char *err_type, const char *expected, cell *goal);
-bool throw_error2(query *q, cell *c, pl_idx c_ctx, const char *err_type, const char *expected, cell *goal);
+bool throw_error(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const char *expected);
+bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const char *expected, cell *goal);
+bool throw_error2(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const char *expected, cell *goal);
 
-size_t scan_is_chars_list2(query *q, cell *l, pl_idx l_ctx, bool allow_codes, bool *has_var, bool *is_partial, cell **);
-size_t scan_is_chars_list(query *q, cell *l, pl_idx l_ctx, bool allow_codes);
-char *chars_list_to_string(query *q, cell *p_chars, pl_idx p_chars_ctx);
-cell *string_to_chars_list(query *q, cell *p, pl_idx p_ctx);
+size_t scan_is_chars_list2(query *q, cell *l, pl_ctx l_ctx, bool allow_codes, bool *has_var, bool *is_partial, cell **);
+size_t scan_is_chars_list(query *q, cell *l, pl_ctx l_ctx, bool allow_codes);
+char *chars_list_to_string(query *q, cell *p_chars, pl_ctx p_chars_ctx);
+cell *string_to_chars_list(query *q, cell *p, pl_ctx p_ctx);
 
 int create_vars(query *q, unsigned cnt);
-cell *skip_max_list(query *q, cell *head, pl_idx *head_ctx, pl_int max, pl_int *skip, cell *tmp);
-bool is_cyclic_term(query *q, cell *p1, pl_idx p1_ctx);
-bool is_acyclic_term(query *q, cell *p1, pl_idx p1_ctx);
-bool do_format(query *q, cell *str, pl_idx str_ctx, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx);
+cell *skip_max_list(query *q, cell *head, pl_ctx *head_ctx, pl_int max, pl_int *skip, cell *tmp);
+bool is_cyclic_term(query *q, cell *p1, pl_ctx p1_ctx);
+bool is_acyclic_term(query *q, cell *p1, pl_ctx p1_ctx);
+bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx);
 size_t slicecpy(char *dst, size_t dstlen, const char *src, size_t len);
 int new_stream(prolog *pl);
 int get_stream(query *q, cell *p1);
 int get_named_stream(prolog *pl, const char *name, size_t len);
-void do_cleanup(query *q, cell *p1, pl_idx c_ctx);
+void do_cleanup(query *q, cell *p1, pl_ctx c_ctx);
 bool drop_barrier(query *q, pl_idx cp);
-void collect_vars(query *q, cell *p1, pl_idx p1_ctx);
-bool check_list(query *q, cell *p1, pl_idx p1_ctx, bool *is_partial, pl_int *skip);
-bool parse_write_params(query *q, cell *c, pl_idx c_ctx, cell **vnames, pl_idx *vnames_ctx);
-bool has_vars(query *q, cell *p1, pl_idx p1_ctx);
-void add_trail(query *q, pl_idx c_ctx, unsigned c_var_nbr, cell *attrs);
-void reset_var(query *q, const cell *c, pl_idx c_ctx, cell *v, pl_idx v_ctx);
-void undo_var(query *q, const cell *c, pl_idx c_ctx);
-bool valid_list(query *q, cell *c, pl_idx c_ctx);
+void collect_vars(query *q, cell *p1, pl_ctx p1_ctx);
+bool check_list(query *q, cell *p1, pl_ctx p1_ctx, bool *is_partial, pl_int *skip);
+bool parse_write_params(query *q, cell *c, pl_ctx c_ctx, cell **vnames, pl_ctx *vnames_ctx);
+bool has_vars(query *q, cell *p1, pl_ctx p1_ctx);
+void add_trail(query *q, pl_ctx c_ctx, unsigned c_var_nbr, cell *attrs);
+void reset_var(query *q, const cell *c, pl_ctx c_ctx, cell *v, pl_ctx v_ctx);
+void undo_var(query *q, const cell *c, pl_ctx c_ctx);
+bool valid_list(query *q, cell *c, pl_ctx c_ctx);
 void make_call(query *q, cell *tmp);
 void make_call_redo(query *q, cell *tmp);
 bool do_post_unify_hook(query *q, bool is_builtin);
 bool any_attributed(query *q);
-bool do_load_file(query *q, cell *p1, pl_idx p1_ctx);
+bool do_load_file(query *q, cell *p1, pl_ctx p1_ctx);
 
 #if USE_THREADS
 bool do_signal(query *q, void *thread_ptr);
 #endif
 
-int compare(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx);
-bool unify(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx);
+int compare(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx);
+bool unify(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx);
 
-bool print_term(query *q, FILE *fp, cell *c, pl_idx c_ctx, int running);
-bool print_term_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int running);
-char *print_term_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running);
+bool print_term(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running);
+bool print_term_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int running);
+char *print_term_to_strbuf(query *q, cell *c, pl_ctx c_ctx, int running);
 void clear_write_options(query *q);
 
-bool print_canonical(query *q, FILE *fp, cell *c, pl_idx c_ctx, int running);
-char *print_canonical_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running);
-bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int running);
+bool print_canonical(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running);
+char *print_canonical_to_strbuf(query *q, cell *c, pl_ctx c_ctx, int running);
+bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int running);
 
 void dump_term(query *q, const char *s, const cell *c);
 
@@ -141,7 +141,7 @@ bool bif_sre_matchp_4(query *q);
 bool bif_sre_match_4(query *q);
 bool bif_sre_substp_4(query *q);
 bool bif_sre_subst_4(query *q);
-bool bif_call_0(query *q, cell *p1, pl_idx p1_ctx);
+bool bif_call_0(query *q, cell *p1, pl_ctx p1_ctx);
 bool bif_statistics_0(query *q);
 bool bif_sys_module_1(query *q);
 bool bif_sys_undo_1(query *q);

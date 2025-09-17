@@ -17,10 +17,10 @@ typedef struct visit_ visit;
 struct visit_ {
 	visit *next;
 	cell *c;
-	pl_idx c_ctx;
+	pl_ctx c_ctx;
 };
 
-static bool has_visited(visit *visited, cell *c, pl_idx c_ctx)
+static bool has_visited(visit *visited, cell *c, pl_ctx c_ctx)
 {
 	while (visited) {
 		if ((visited->c == c) && (visited->c_ctx == c_ctx))
@@ -41,7 +41,7 @@ static void clear_visited(visit *visited, visit *save_visited)
 	}
 }
 
-cell *string_to_chars_list(query *q, cell *p, pl_idx p_ctx)
+cell *string_to_chars_list(query *q, cell *p, pl_ctx p_ctx)
 {
 	LIST_HANDLER(p);
 	init_tmp_heap(q);
@@ -55,7 +55,7 @@ cell *string_to_chars_list(query *q, cell *p, pl_idx p_ctx)
 	return end_list(q);
 }
 
-char *chars_list_to_string(query *q, cell *p_chars, pl_idx p_chars_ctx)
+char *chars_list_to_string(query *q, cell *p_chars, pl_ctx p_chars_ctx)
 {
 	LIST_HANDLER(p_chars);
 	SB(pr);
@@ -454,7 +454,7 @@ static const char *get_slot_name(query *q, pl_idx slot_nbr, bool listing)
 	return varformat(q->tmpbuf, i, listing);
 }
 
-static void print_variable(query *q, cell *c, pl_idx c_ctx, bool running)
+static void print_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 {
 	const frame *f = GET_FRAME(running ? c_ctx : 0);
 	pl_idx slot_nbr = running ?
@@ -498,13 +498,13 @@ static void print_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 #endif
 }
 
-static bool dump_variable(query *q, cell *c, pl_idx c_ctx, bool running)
+static bool dump_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 {
 	if (!q->variable_names)
 		return false;
 
 	cell *l = q->variable_names;
-	pl_idx l_ctx = q->variable_names_ctx;
+	pl_ctx l_ctx = q->variable_names_ctx;
 	LIST_HANDLER(l);
 
 	while (is_iso_list(l)) {
@@ -513,7 +513,7 @@ static bool dump_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 		pl_idx h_ctx = running ? q->latest_ctx : 0;
 		cell *name = running ? deref(q, h+1, h_ctx) : h+1;
 		cell *v = running ? deref(q, h+2, h_ctx) : h+2;
-		pl_idx v_ctx = running ? q->latest_ctx : 0;
+		pl_ctx v_ctx = running ? q->latest_ctx : 0;
 
 		const frame *f = GET_FRAME(running ? v_ctx : 0);
 		pl_idx slot_nbr = running ?
@@ -550,7 +550,7 @@ static bool dump_variable(query *q, cell *c, pl_idx c_ctx, bool running)
 	return false;
 }
 
-static void print_string_canonical(query *q, cell *c, pl_idx c_ctx, int running, bool cons, unsigned depth)
+static void print_string_canonical(query *q, cell *c, pl_ctx c_ctx, int running, bool cons, unsigned depth)
 {
 	unsigned cnt = 1;
 	LIST_HANDLER(c);
@@ -585,7 +585,7 @@ static void print_string_canonical(query *q, cell *c, pl_idx c_ctx, int running,
 	}
 }
 
-static void print_string_list(query *q, cell *c, pl_idx c_ctx, int running, bool cons, unsigned depth)
+static void print_string_list(query *q, cell *c, pl_ctx c_ctx, int running, bool cons, unsigned depth)
 {
 	LIST_HANDLER(c);
 	if (!cons) { SB_sprintf(q->sb, "%s", "["); }
@@ -614,9 +614,9 @@ static void print_string_list(query *q, cell *c, pl_idx c_ctx, int running, bool
 	if (!cons) { SB_sprintf(q->sb, "%s", "]"); }
 }
 
-static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int cons, unsigned print_depth, unsigned depth, visit *);
+static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int cons, unsigned print_depth, unsigned depth, visit *);
 
-static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool cons, unsigned print_depth, unsigned depth, visit *visited)
+static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool cons, unsigned print_depth, unsigned depth, visit *visited)
 {
 	visit *save_visited = visited;
 	pl_idx orig_c_ctx = c_ctx;
@@ -641,7 +641,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 		}
 
 		cell *head = c + 1;
-		pl_idx head_ctx = c_ctx;
+		pl_ctx head_ctx = c_ctx;
 		cell *save_head = head;
 		if (running) head  = deref(q, head, head_ctx);
 		if (running) head_ctx = q->latest_ctx;
@@ -708,7 +708,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 #endif
 
 			cell v = *(c+1);
-			pl_idx v_ctx = c_ctx;
+			pl_ctx v_ctx = c_ctx;
 
 			if ((q->portray_vars || q->do_dump_vars) && (orig_c_ctx == 0) && q->is_dump_vars) {
 				if (q->do_dump_vars) {
@@ -817,7 +817,7 @@ static void print_iso_list(query *q, cell *c, pl_idx c_ctx, int running, bool co
 	clear_visited(visited, save_visited);
 }
 
-static bool print_interned(query *q, cell *c, pl_idx c_ctx, bool running, unsigned depth, visit *visited)
+static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsigned depth, visit *visited)
 {
 	// ATOM / COMPOUND
 
@@ -1343,7 +1343,7 @@ static bool print_interned(query *q, cell *c, pl_idx c_ctx, bool running, unsign
 	return true;
 }
 
-static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int cons, unsigned print_depth, unsigned depth, visit *visited)
+static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int cons, unsigned print_depth, unsigned depth, visit *visited)
 {
 	if (depth > g_max_depth) {
 		//printf("*** OOPS %u, %s %d\n", depth, __FILE__, __LINE__);
@@ -1505,7 +1505,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 
 	if (is_chars_list) {
 		cell *l = c;
-		pl_idx l_ctx = c_ctx;
+		pl_ctx l_ctx = c_ctx;
 		SB_sprintf(q->sb, "%s", "\"");
 		unsigned cnt = 0;
 		LIST_HANDLER(l);
@@ -1586,7 +1586,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_idx c_ctx, int running, int
 	return print_interned(q, c, c_ctx, running, depth, visited);
 }
 
-static bool print_term_to_buf(query *q, cell *c, pl_idx c_ctx, int running, int cons)
+static bool print_term_to_buf(query *q, cell *c, pl_ctx c_ctx, int running, int cons)
 {
 	visit me;
 	me.next = NULL;
@@ -1595,7 +1595,7 @@ static bool print_term_to_buf(query *q, cell *c, pl_idx c_ctx, int running, int 
 	return print_term_to_buf_(q, c, c_ctx, running, cons, 0, 0, &me);
 }
 
-char *print_canonical_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running)
+char *print_canonical_to_strbuf(query *q, cell *c, pl_ctx c_ctx, int running)
 {
 	q->ignore_ops = true;
 	q->quoted = 1;
@@ -1612,7 +1612,7 @@ char *print_canonical_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running)
 	return buf;
 }
 
-bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int running)
+bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int running)
 {
 	q->ignore_ops = true;
 	q->quoted = 1;
@@ -1643,7 +1643,7 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int
 	return true;
 }
 
-bool print_canonical(query *q, FILE *fp, cell *c, pl_idx c_ctx, int running)
+bool print_canonical(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 {
 	q->ignore_ops = true;
 	q->quoted = 1;
@@ -1674,7 +1674,7 @@ bool print_canonical(query *q, FILE *fp, cell *c, pl_idx c_ctx, int running)
 	return true;
 }
 
-char *print_term_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running)
+char *print_term_to_strbuf(query *q, cell *c, pl_ctx c_ctx, int running)
 {
 	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
@@ -1688,7 +1688,7 @@ char *print_term_to_strbuf(query *q, cell *c, pl_idx c_ctx, int running)
 	return buf;
 }
 
-bool print_term_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int running)
+bool print_term_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int running)
 {
 	q->did_quote = false;
 	q->last_thing = WAS_SPACE;
@@ -1715,7 +1715,7 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_idx c_ctx, int runn
 	return true;
 }
 
-bool print_term(query *q, FILE *fp, cell *c, pl_idx c_ctx, int running)
+bool print_term(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 {
 	q->did_quote = false;
 	q->last_thing = WAS_SPACE;

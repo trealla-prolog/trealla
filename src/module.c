@@ -2492,7 +2492,7 @@ module *load_file(module *m, const char *filename, bool including, bool init)
 static void module_save_fp(module *m, FILE *fp, int canonical, int dq)
 {
 	(void) dq;
-	pl_idx ctx = 0;
+	pl_ctx ctx = 0;
 	query q = (query){0};
 	q.pl = m->pl;
 	q.st.m = m;

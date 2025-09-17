@@ -259,7 +259,7 @@ static mp_result mp_rat_divx(mp_rat a, mp_rat b, mp_rat q)
 	return mp_rat_div(a, b, q);
 }
 
-bool call_builtin(query *q, cell *c, pl_idx c_ctx)
+bool call_builtin(query *q, cell *c, pl_ctx c_ctx)
 {
 	cell *save = q->st.instr;
 	pl_idx save_ctx = q->st.curr_frame;
@@ -290,7 +290,7 @@ bool call_builtin(query *q, cell *c, pl_idx c_ctx)
 	return true;
 }
 
-bool call_userfun(query *q, cell *c, pl_idx c_ctx)
+bool call_userfun(query *q, cell *c, pl_ctx c_ctx)
 {
 	return throw_error(q, c, c_ctx, "type_error", "evaluable");
 }

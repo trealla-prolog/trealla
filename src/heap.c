@@ -81,7 +81,7 @@ cell *alloc_tmp(query *q, unsigned num_cells)
 // Note: convert vars to refs
 // Note: doesn't increment ref counts
 
-static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
+static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 {
 	if (depth >= g_max_depth) {
 		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
@@ -107,13 +107,13 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_idx p1_ctx, unsig
 
 	if (is_iso_list(p1)) {
 		cell *save_p1 = p1;
-		pl_idx save_p1_ctx = p1_ctx;
+		pl_ctx save_p1_ctx = p1_ctx;
 		bool any1 = false, any2 = false;
 
 		while (is_iso_list(p1)) {
 			slot *e = NULL;
 			cell *h = p1 + 1;
-			pl_idx h_ctx = p1_ctx;
+			pl_ctx h_ctx = p1_ctx;
 			uint32_t save_vgen = 0;
 			int both = 0;
 			if (deep_copy(h)) DEREF_CHECKED(any1, both, save_vgen, e, e->vgen, h, h_ctx, q->vgen);
@@ -124,7 +124,7 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_idx p1_ctx, unsig
 
 			p1 = p1 + 1; p1 += p1->num_cells;
 			cell *t = p1;
-			pl_idx t_ctx = p1_ctx;
+			pl_ctx t_ctx = p1_ctx;
 
 			if (is_var(t) && (t->var_num == q->dump_var_num) && (t_ctx == q->dump_var_ctx)) {
 				q->cycle_error = true;
@@ -157,7 +157,7 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_idx p1_ctx, unsig
 			while (is_iso_list(p1) && !q->cycle_error) {
 				p1 = p1 + 1; p1 += p1->num_cells;
 				cell *c = p1;
-				pl_idx c_ctx = p1_ctx;
+				pl_ctx c_ctx = p1_ctx;
 				RESTORE_VAR(c, c_ctx, p1, p1_ctx, q->vgen);
 			}
 		}
@@ -177,7 +177,7 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_idx p1_ctx, unsig
 	while (arity--) {
 		slot *e = NULL;
 		cell *c = p1;
-		pl_idx c_ctx = p1_ctx;
+		pl_ctx c_ctx = p1_ctx;
 		uint32_t save_vgen = 0;
 		bool any = false;
 		int both = 0;
@@ -198,7 +198,7 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_idx p1_ctx, unsig
 	return tmp;
 }
 
-cell *clone_term_to_tmp(query *q, cell *p1, pl_idx p1_ctx)
+cell *clone_term_to_tmp(query *q, cell *p1, pl_ctx p1_ctx)
 {
 	if (++q->vgen == 0) q->vgen = 1;
 	q->has_vars = false;
@@ -207,7 +207,7 @@ cell *clone_term_to_tmp(query *q, cell *p1, pl_idx p1_ctx)
 	return rec;
 }
 
-cell *append_to_tmp(query *q, cell *p1, pl_idx p1_ctx)
+cell *append_to_tmp(query *q, cell *p1, pl_ctx p1_ctx)
 {
 	cell *tmp = alloc_tmp(q, p1->num_cells);
 	if (!tmp) return NULL;
@@ -215,7 +215,7 @@ cell *append_to_tmp(query *q, cell *p1, pl_idx p1_ctx)
 	return tmp;
 }
 
-static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_idx from_ctx, const cell *to, pl_idx to_ctx)
+static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_ctx from_ctx, const cell *to, pl_ctx to_ctx)
 {
 	unsigned num_cells = c->num_cells;
 	unsigned cnt = 0;
@@ -301,10 +301,10 @@ unsigned rebase_term(query *q, cell *c, unsigned start_nbr)
 	return q->varno;
 }
 
-static cell *copy_term_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs, cell *from, pl_idx from_ctx, cell *to, pl_idx to_ctx)
+static cell *copy_term_to_tmp_with_replacement(query *q, cell *p1, pl_ctx p1_ctx, bool copy_attrs, cell *from, pl_ctx from_ctx, cell *to, pl_ctx to_ctx)
 {
 	cell *c = deref(q, p1, p1_ctx);
-	pl_idx c_ctx = q->latest_ctx;
+	pl_ctx c_ctx = q->latest_ctx;
 
 	cell *tmp = clone_term_to_tmp(q, c, c_ctx);
 
@@ -331,7 +331,7 @@ static cell *copy_term_to_tmp_with_replacement(query *q, cell *p1, pl_idx p1_ctx
 	return ok ? tmp : NULL;
 }
 
-cell *copy_term_to_tmp(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
+cell *copy_term_to_tmp(query *q, cell *p1, pl_ctx p1_ctx, bool copy_attrs)
 {
 	q->has_vars = false;
 	return copy_term_to_tmp_with_replacement(q, p1, p1_ctx, copy_attrs, NULL, 0, NULL, 0);
@@ -399,7 +399,7 @@ void trim_heap(query *q)
 	}
 }
 
-cell *clone_term_to_heap(query *q, cell *p1, pl_idx p1_ctx)
+cell *clone_term_to_heap(query *q, cell *p1, pl_ctx p1_ctx)
 {
 	if (!init_tmp_heap(q))
 		return NULL;
@@ -413,7 +413,7 @@ cell *clone_term_to_heap(query *q, cell *p1, pl_idx p1_ctx)
 	return tmp;
 }
 
-cell *copy_term_to_heap(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
+cell *copy_term_to_heap(query *q, cell *p1, pl_ctx p1_ctx, bool copy_attrs)
 {
 	if (!init_tmp_heap(q))
 		return NULL;
@@ -446,7 +446,7 @@ cell *copy_term_to_heap(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs)
 	return tmp2;
 }
 
-cell *copy_term_to_heap_with_replacement(query *q, cell *p1, pl_idx p1_ctx, bool copy_attrs, cell *from, pl_idx from_ctx, cell *to, pl_idx to_ctx)
+cell *copy_term_to_heap_with_replacement(query *q, cell *p1, pl_ctx p1_ctx, bool copy_attrs, cell *from, pl_ctx from_ctx, cell *to, pl_ctx to_ctx)
 {
 	if (!init_tmp_heap(q))
 		return NULL;

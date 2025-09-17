@@ -11,7 +11,7 @@
 #include "prolog.h"
 #include "query.h"
 
-static bool module_context(query *q, cell **p1, pl_idx p1_ctx)
+static bool module_context(query *q, cell **p1, pl_ctx p1_ctx)
 {
 	if (!is_var(*p1)) {
 		if ((*p1)->val_off == g_colon_s) {
@@ -194,7 +194,7 @@ static void predicate_purge_dirty_list(predicate *pr)
 #endif
 }
 
-bool do_retract(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
+bool do_retract(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 {
 	if (!q->retry) {
 		cell *head = deref(q, get_head(p1), p1_ctx);
@@ -878,7 +878,7 @@ static bool bif_sys_retract_on_backtrack_1(query *q)
 	return unify(q, &c, q->st.curr_frame, &v, q->st.curr_frame);
 }
 
-static bool do_dump_term(query *q, cell *p1x, pl_idx p1x_ctx, cell *p1, pl_idx p1_ctx, bool deref, int depth)
+static bool do_dump_term(query *q, cell *p1x, pl_ctx p1x_ctx, cell *p1, pl_ctx p1_ctx, bool deref, int depth)
 {
 	if (!depth) {
 		const frame *f = GET_CURR_FRAME();

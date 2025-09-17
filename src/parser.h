@@ -40,8 +40,8 @@ cell *get_logical_body(cell *c);
 
 #if USE_FFI
 void *do_dlopen(const char *filename, int flag);
-bool do_register_predicate(module *m, query *q, void *handle, const char *symbol, cell *l, pl_idx l_ctx, const char *ret);
-bool do_register_struct(module *m, query *q, void *handle, const char *symbol, cell *l, pl_idx l_ctx, const char *ret);
+bool do_register_predicate(module *m, query *q, void *handle, const char *symbol, cell *l, pl_ctx l_ctx, const char *ret);
+bool do_register_struct(module *m, query *q, void *handle, const char *symbol, cell *l, pl_ctx l_ctx, const char *ret);
 int do_dlclose(void *handle);
 #endif
 
@@ -72,7 +72,7 @@ inline static void make_ref(cell *tmp, unsigned var_num, pl_idx ctx)
 	tmp->val_attrs = NULL;
 }
 
-inline static void make_indirect(cell *tmp, cell *v, pl_idx v_ctx)
+inline static void make_indirect(cell *tmp, cell *v, pl_ctx v_ctx)
 {
 	tmp->tag = TAG_INDIRECT;
 	tmp->num_cells = 1;

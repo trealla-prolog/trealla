@@ -732,7 +732,7 @@ static bool directives(parser *p, cell *d)
 			p2 = LIST_TAIL(p2);
 		}
 
-		pl_idx p1_ctx = 0;
+		pl_ctx p1_ctx = 0;
 		query q = (query){0};
 		q.pl = p->pl;
 		q.st.m = p->m;

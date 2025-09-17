@@ -4,7 +4,7 @@
 #include "module.h"
 #include "query.h"
 
-bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *p2, pl_idx p2_ctx)
+bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *p2, pl_ctx p2_ctx)
 {
 	bool quoted = false, was_quoted = false, first = true, was_sep = false;
 	unsigned chars = 0, args = 0;
@@ -369,14 +369,14 @@ bool bif_parse_csv_file_2(query *q)
 	return true;
 }
 
-static bool do_write_csv_line(query *q, parser* p, csv *params, cell *l, pl_idx l_ctx)
+static bool do_write_csv_line(query *q, parser* p, csv *params, cell *l, pl_ctx l_ctx)
 {
 	LIST_HANDLER(l);
 
 	while (is_list(l)) {
 		cell *h = LIST_HEAD(l);
 		h = deref(q,h,l_ctx);
-		pl_idx h_ctx = q->latest_ctx;
+		pl_ctx h_ctx = q->latest_ctx;
 
 		char *dst = print_term_to_strbuf(q, h, h_ctx, 1);
 		size_t len = strlen(dst);
@@ -464,7 +464,7 @@ bool bif_write_csv_file_3(query *q)
 	while (is_list(p2)) {
 		cell *h = LIST_HEAD(p2);
 		h = deref(q,h,p2_ctx);
-		pl_idx h_ctx = q->latest_ctx;
+		pl_ctx h_ctx = q->latest_ctx;
 
 		if (!is_list_or_nil(h))
 			return throw_error(q, h, h_ctx, "type_error", "list");

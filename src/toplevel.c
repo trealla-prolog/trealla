@@ -11,7 +11,7 @@ static void show_goals(query *q, int num)
 {
 	frame *f = GET_CURR_FRAME();
 	cell *c = q->st.instr;
-	pl_idx c_ctx = q->st.curr_frame;
+	pl_ctx c_ctx = q->st.curr_frame;
 
 	while (c && num--) {
 		printf(" [%llu] ", (long long unsigned)c_ctx);
@@ -23,7 +23,7 @@ static void show_goals(query *q, int num)
 		q->quoted = false;
 		printf("\n");
 
-		if (f->prev == (pl_idx)-1)
+		if (f->prev == (pl_ctx)-1)
 			break;
 
 		c = f->instr;
@@ -259,7 +259,7 @@ typedef struct item_ item;
 
 struct item_ {
 	cell *c;
-	pl_idx c_ctx;
+	pl_ctx c_ctx;
 	int num;
 	item *next;
 };
@@ -275,7 +275,7 @@ static void	clear_results()
 	}
 }
 
-static void add_result(int num, cell *c, pl_idx c_ctx)
+static void add_result(int num, cell *c, pl_ctx c_ctx)
 {
 	item *ptr = malloc(sizeof(item));
 	ensure(ptr);
@@ -286,7 +286,7 @@ static void add_result(int num, cell *c, pl_idx c_ctx)
 	g_items = ptr;
 }
 
-static int check_duplicate_result(query *q, int num, cell *c, pl_idx c_ctx)
+static int check_duplicate_result(query *q, int num, cell *c, pl_ctx c_ctx)
 {
 	return -1;
 
@@ -398,7 +398,7 @@ void dump_vars(query *q, bool partial)
 			continue;
 
 		cell *c = deref(q, &e->c, 0);
-		pl_idx c_ctx = q->latest_ctx;
+		pl_ctx c_ctx = q->latest_ctx;
 
 		if (is_var(c) && is_anon(c))
 			continue;

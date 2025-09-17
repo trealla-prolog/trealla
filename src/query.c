@@ -64,7 +64,7 @@ void dump_term(query *q, const char *s, const cell *c)
 	}
 }
 
-static void trace_call(query *q, cell *c, pl_idx c_ctx, box_t box)
+static void trace_call(query *q, cell *c, pl_ctx c_ctx, box_t box)
 {
 	if (!c || is_empty(c))
 		return;
@@ -300,7 +300,7 @@ void make_call_redo(query *q, cell *tmp)
 	tmp->mid = q->st.m->id;				// ... current-module
 }
 
-cell *prepare_call(query *q, bool noskip, cell *p1, pl_idx p1_ctx, unsigned extras)
+cell *prepare_call(query *q, bool noskip, cell *p1, pl_ctx p1_ctx, unsigned extras)
 {
 	unsigned num_cells = p1->num_cells + extras;
 	cell *tmp = alloc_heap(q, num_cells);
@@ -318,18 +318,18 @@ const char *dump_id(const void *k, const void *v, const void *p)
 	return tmpbuf;
 }
 
-static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool allow_codes, bool *has_var, bool *is_partial, cell **cptr)
+static size_t scan_is_chars_list_internal(query *q, cell *l, pl_ctx l_ctx, bool allow_codes, bool *has_var, bool *is_partial, cell **cptr)
 {
 	*is_partial = *has_var = false;
 	size_t is_chars_list = 0;
 	cell *save_l = l;
-	pl_idx save_l_ctx = l_ctx;
+	pl_ctx save_l_ctx = l_ctx;
 	bool any1 = false, any2 = false;
 	LIST_HANDLER(l);
 
 	while (is_list(l) && (q->st.m->flags.double_quote_chars || allow_codes)) {
 		cell *h = LIST_HEAD(l);
-		pl_idx h_ctx = l_ctx;
+		pl_ctx h_ctx = l_ctx;
 		slot *e = NULL;
 		uint32_t save_vgen = 0;
 		int both = 0;
@@ -379,7 +379,7 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 
 	if (any2 && !*is_partial) {
 		cell *l2 = save_l;
-		pl_idx l2_ctx = save_l_ctx;
+		pl_ctx l2_ctx = save_l_ctx;
 		LIST_HANDLER(l2);
 
 		while (is_list(l2) && (q->st.m->flags.double_quote_chars || allow_codes)) {
@@ -401,13 +401,13 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_idx l_ctx, bool 
 	return is_chars_list;
 }
 
-size_t scan_is_chars_list2(query *q, cell *l, pl_idx l_ctx, bool allow_codes, bool *has_var, bool *is_partial, cell **cptr)
+size_t scan_is_chars_list2(query *q, cell *l, pl_ctx l_ctx, bool allow_codes, bool *has_var, bool *is_partial, cell **cptr)
 {
 	if (++q->vgen == 0) q->vgen = 1;
 	return scan_is_chars_list_internal(q, l, l_ctx, allow_codes, has_var, is_partial, cptr);
 }
 
-size_t scan_is_chars_list(query *q, cell *l, pl_idx l_ctx, bool allow_codes)
+size_t scan_is_chars_list(query *q, cell *l, pl_ctx l_ctx, bool allow_codes)
 {
 	bool has_var, is_partial;
 	return scan_is_chars_list2(q, l, l_ctx, allow_codes, &has_var, &is_partial, NULL);
@@ -630,7 +630,7 @@ static void push_frame(query *q)
 	// Avoid long chains of useless returns...
 
 	if (q->pl->opt && is_end(next_cell) && !next_cell->ret_instr
-		&& (fold->prev != (pl_idx)-1)
+		&& (fold->prev != (pl_ctx)-1)
 		) {
 		fnew->prev = fold->prev;
 		fnew->instr = fold->instr;
@@ -959,7 +959,7 @@ void cut(query *q)
 
 		if (ch->register_cleanup && !ch->fail_on_retry) {
 			cell *c = FIRST_ARG(ch->st.instr);
-			pl_idx c_ctx = ch->st.curr_frame;
+			pl_ctx c_ctx = ch->st.curr_frame;
 			c = deref(q, c, c_ctx);
 			c_ctx = q->latest_ctx;
 			do_cleanup(q, c, c_ctx);
@@ -983,7 +983,7 @@ static bool resume_frame(query *q)
 {
 	const frame *f = GET_CURR_FRAME();
 
-	if (f->prev == (pl_idx)-1)
+	if (f->prev == (pl_ctx)-1)
 		return false;
 
 #if 0
@@ -1183,7 +1183,7 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 	return true;
 }
 
-static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
+static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 {
 	q->st.iter = NULL;
 	q->st.karg1_is_ground = q->st.karg2_is_ground = q->st.karg3_is_ground = false;
@@ -1279,11 +1279,11 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_idx key_ctx)
 
 // Match HEAD :- BODY.
 
-bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
+bool match_rule(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 {
 	if (!q->retry) {
 		cell *c = deref(q, get_head(p1), p1_ctx);
-		pl_idx c_ctx = q->latest_ctx;
+		pl_ctx c_ctx = q->latest_ctx;
 		predicate *pr = NULL;
 
 		if (is_interned(c))
@@ -1359,7 +1359,7 @@ bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 
 			if (needs_true) {
 				p1_body = deref(q, p1_body, p1_ctx);
-				pl_idx p1_body_ctx = q->latest_ctx;
+				pl_ctx p1_body_ctx = q->latest_ctx;
 				cell tmp;
 				make_instr(&tmp, g_true_s, bif_iso_true_0, 0, 0);
 				ok = unify(q, p1_body, p1_body_ctx, &tmp, q->st.curr_frame);
@@ -1380,11 +1380,11 @@ bool match_rule(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
 // Match HEAD.
 // Match HEAD :- true.
 
-bool match_clause(query *q, cell *p1, pl_idx p1_ctx, enum clause_type is_retract)
+bool match_clause(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 {
 	if (!q->retry) {
 		cell *c = p1;
-		pl_idx c_ctx = p1_ctx;
+		pl_ctx c_ctx = p1_ctx;
 		predicate *pr = NULL;
 
 		if (is_interned(c))
@@ -1474,7 +1474,7 @@ bool match_head(query *q)
 {
 	if (!q->retry) {
 		cell *c = q->st.instr;
-		pl_idx c_ctx = q->st.curr_frame;
+		pl_ctx c_ctx = q->st.curr_frame;
 		predicate *pr = NULL;
 
 		if (is_interned(c))
@@ -1564,7 +1564,7 @@ static bool any_outstanding_choices(query *q)
 	return q->cp > 0;
 }
 
-void do_cleanup(query *q, cell *c, pl_idx c_ctx)
+void do_cleanup(query *q, cell *c, pl_ctx c_ctx)
 {
 	cell *tmp = prepare_call(q, CALL_NOSKIP, c, c_ctx, 4);
 	ensure(tmp);
@@ -1576,7 +1576,7 @@ void do_cleanup(query *q, cell *c, pl_idx c_ctx)
 	q->st.instr = tmp;
 }
 
-static bool consultall(query *q, cell *l, pl_idx l_ctx)
+static bool consultall(query *q, cell *l, pl_ctx l_ctx)
 {
 	if (is_string(l)) {
 		do_load_file(q, l, l_ctx);
@@ -1591,7 +1591,7 @@ static bool consultall(query *q, cell *l, pl_idx l_ctx)
 	while (is_list(l)) {
 		cell *h = LIST_HEAD(l);
 		h = deref(q, h, l_ctx);
-		pl_idx h_ctx = q->latest_ctx;
+		pl_ctx h_ctx = q->latest_ctx;
 
 		if (is_iso_list(h)) {
 			if (consultall(q, h, h_ctx) != true)
@@ -1639,7 +1639,7 @@ bool start(query *q)
 
 		if (!is_callable(q->st.instr)) {
 			cell *p1 = deref(q, q->st.instr, q->st.curr_frame);
-			pl_idx p1_ctx = q->latest_ctx;
+			pl_ctx p1_ctx = q->latest_ctx;
 
 			if (!bif_call_0(q, p1, p1_ctx)) {
 				if (is_var(p1))
@@ -1651,7 +1651,7 @@ bool start(query *q)
 
 		Trace(q, q->st.instr, q->st.curr_frame, CALL);
 		cell *save_cell = q->st.instr;
-		pl_idx save_ctx = q->st.curr_frame;
+		pl_ctx save_ctx = q->st.curr_frame;
 		q->cycle_error = q->did_throw = false;
 		q->total_goals++;
 
@@ -1904,7 +1904,7 @@ query *query_create(module *m)
 		q->q_size[i] = INITIAL_NBR_QUEUE_CELLS;
 
 	frame *f = GET_CURR_FRAME();
-	f->prev = (pl_idx)-1;
+	f->prev = (pl_ctx)-1;
 
 	clear_write_options(q);
 	return q;
