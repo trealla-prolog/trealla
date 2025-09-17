@@ -447,6 +447,7 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 
 		while (m) {
 			checked(push_choice(q), release_lock(&t->guard));
+			checked(check_frame(q, MAX_ARITY));
 			try_me(q, MAX_ARITY);
 			cell *tmp = copy_term_to_heap(q, m->c, q->st.fp, false);	// Copy into thread
 			checked(tmp, release_lock(&t->guard));
@@ -833,18 +834,19 @@ static bool bif_thread_create_3(query *q)
 	return true;
 }
 
-void do_signal(query *q, void *thread_ptr)
+bool do_signal(query *q, void *thread_ptr)
 {
 	thread *t = (thread*)thread_ptr;
 	acquire_lock(&t->guard);
 
 	if (!list_count(&t->signals)) {
 		release_lock(&t->guard);
-		return;
+		return false;
 	}
 
 	msg *m = list_pop_front(&t->signals);
 	release_lock(&t->guard);
+	checked(check_frame(q, MAX_ARITY));
 	try_me(q, MAX_ARITY);
 	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.fp, 0);
 	cell *c = copy_term_to_heap(q, m->c, q->st.fp, false);	// Copy into thread
@@ -855,6 +857,7 @@ void do_signal(query *q, void *thread_ptr)
 	pl_idx num_cells = c->num_cells;
 	make_call(q, tmp+num_cells);
 	q->st.instr = tmp;
+	return true;
 }
 
 static bool bif_thread_signal_2(query *q)
@@ -896,6 +899,7 @@ static bool bif_thread_join_2(query *q)
 		return throw_error(q, p1, p1_ctx, "system_error", "join,not_thread");
 
 	if (t->exit_code) {
+		checked(check_frame(q, MAX_ARITY));
 		try_me(q, MAX_ARITY);
 		cell *tmp = copy_term_to_heap(q, t->exit_code, q->st.fp, false);
 		t->exit_code = NULL;
@@ -2152,6 +2156,7 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_idx p1_ct
 		m = list_pop_front(&t->queue);
 
 	checked(push_choice(q));
+	checked(check_frame(q, MAX_ARITY));
 	try_me(q, MAX_ARITY);
 	cell *c = m->c;
 	cell *tmp = clone_term_to_heap(q, c, q->st.fp);

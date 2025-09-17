@@ -208,7 +208,7 @@ static bool check_choice(query *q)
 	return true;
 }
 
-static bool check_frame(query *q, unsigned max_vars)
+bool check_frame(query *q, unsigned max_vars)
 {
 	checked(check_slot(q, max_vars));
 
@@ -218,6 +218,7 @@ static bool check_frame(query *q, unsigned max_vars)
 	if (q->st.fp < q->frames_size) {
 		frame *f = GET_NEW_FRAME();
 		f->max_vars = max_vars;
+		f->base = q->st.sp;
 		return true;
 	}
 
@@ -232,6 +233,7 @@ static bool check_frame(query *q, unsigned max_vars)
 	q->frames_size = new_framessize;
 	frame *f = GET_NEW_FRAME();
 	f->max_vars = max_vars;
+	f->base = q->st.sp;
 	return true;
 }
 
@@ -611,7 +613,6 @@ void try_me(query *q, unsigned num_vars)
 {
 	frame *f = GET_NEW_FRAME();
 	f->initial_slots = f->actual_slots = num_vars;
-	f->base = q->st.sp;
 	q->total_matches++;
 
 	if (num_vars) {

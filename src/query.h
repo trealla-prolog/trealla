@@ -55,6 +55,7 @@ cell *prepare_call(query *q, bool noskip, cell *p1, pl_idx p1_ctx, unsigned extr
 bool call_check(query *q, cell *tmp2, bool *status, bool calln);
 bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n);
 bool match_head(query *q);
+bool check_frame(query *q, unsigned max_vars);
 
 bool throw_error(query *q, cell *c, pl_idx c_ctx, const char *err_type, const char *expected);
 bool throw_error3(query *q, cell *c, pl_idx c_ctx, const char *err_type, const char *expected, cell *goal);
@@ -91,7 +92,7 @@ bool any_attributed(query *q);
 bool do_load_file(query *q, cell *p1, pl_idx p1_ctx);
 
 #if USE_THREADS
-void do_signal(query *q, void *thread_ptr);
+bool do_signal(query *q, void *thread_ptr);
 #endif
 
 int compare(query *q, cell *p1, pl_idx p1_ctx, cell *p2, pl_idx p2_ctx);

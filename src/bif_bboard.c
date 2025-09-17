@@ -190,6 +190,7 @@ static bool bif_bb_get_2(query *q)
 
 	prolog_unlock(q->pl);
 
+	checked(check_frame(q, MAX_ARITY));
 	try_me(q, MAX_ARITY);
 	cell *tmp = copy_term_to_heap(q, (cell*)val, q->st.fp, true);
 	checked(tmp);
@@ -250,6 +251,7 @@ static bool bif_bb_delete_2(query *q)
 		return false;
 	}
 
+	checked(check_frame(q, MAX_ARITY));
 	try_me(q, MAX_ARITY);
 	cell *tmp = copy_term_to_heap(q, (cell*)val, q->st.fp, true);
 	checked(tmp, prolog_unlock(q->pl));
@@ -325,6 +327,7 @@ static bool bif_bb_update_3(query *q)
 		return false;
 	}
 
+	checked(check_frame(q, MAX_ARITY));
 	try_me(q, MAX_ARITY);
 	q->noderef = true;
 	cell *tmp = copy_term_to_heap(q, (cell*)val, q->st.fp, true);
