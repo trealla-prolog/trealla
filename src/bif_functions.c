@@ -262,7 +262,7 @@ static mp_result mp_rat_divx(mp_rat a, mp_rat b, mp_rat q)
 bool call_builtin(query *q, cell *c, pl_ctx c_ctx)
 {
 	cell *save = q->st.instr;
-	pl_idx save_ctx = q->st.curr_frame;
+	pl_ctx save_ctx = q->st.curr_frame;
 	bool save_calc = q->eval;
 	q->st.instr = c;
 	q->st.curr_frame = c_ctx;

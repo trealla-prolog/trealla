@@ -700,7 +700,7 @@ static bool bif_string_codes_2(query *q)
 
 	if (!is_var(p2) && !is_codes(p2)) {
 		cell *save_p2 = p2;
-		pl_idx save_p2_ctx = p2_ctx;
+		pl_ctx save_p2_ctx = p2_ctx;
 		LIST_HANDLER(p2);
 
 		while (is_list(p2)) {

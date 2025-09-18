@@ -510,7 +510,7 @@ static bool dump_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 	while (is_iso_list(l)) {
 		cell *h = LIST_HEAD(l);
 		h = running ? deref(q, h, l_ctx) : h;
-		pl_idx h_ctx = running ? q->latest_ctx : 0;
+		pl_ctx h_ctx = running ? q->latest_ctx : 0;
 		cell *name = running ? deref(q, h+1, h_ctx) : h+1;
 		cell *v = running ? deref(q, h+2, h_ctx) : h+2;
 		pl_ctx v_ctx = running ? q->latest_ctx : 0;
@@ -619,13 +619,13 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool cons, unsigned print_depth, unsigned depth, visit *visited)
 {
 	visit *save_visited = visited;
-	pl_idx orig_c_ctx = c_ctx;
+	pl_ctx orig_c_ctx = c_ctx;
 	unsigned print_list = 0;
 
 	while (is_iso_list(c)) {
 		CHECK_INTERRUPT();
 		cell *save_c = c;
-		pl_idx save_c_ctx = c_ctx;
+		pl_ctx save_c_ctx = c_ctx;
 
 		if (q->max_depth && (print_list >= q->max_depth)) {
 			SB_ungetchar(q->sb);
@@ -681,9 +681,9 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 			possible_chars = true;
 
 		cell *tail = c + 1; tail += tail->num_cells;
-		pl_idx tail_ctx = c_ctx;
+		pl_ctx tail_ctx = c_ctx;
 		cell *save_tail = tail;
-		pl_idx save_tail_ctx = tail_ctx;
+		pl_ctx save_tail_ctx = tail_ctx;
 		if (running) tail = deref(q, tail, tail_ctx);
 		if (running) tail_ctx = q->latest_ctx;
 
@@ -921,7 +921,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 
 			for (c++; arity--; c += c->num_cells) {
 				cell *tmp = c;
-				pl_idx tmp_ctx = c_ctx;
+				pl_ctx tmp_ctx = c_ctx;
 				if (running) tmp = deref(q, tmp, tmp_ctx);
 				if (running) tmp_ctx = q->latest_ctx;
 
@@ -992,7 +992,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 	if (is_op_postfix) {
 		cell *lhs = c + 1;
 		cell *save_lhs = lhs;
-		pl_idx lhs_ctx = c_ctx;
+		pl_ctx lhs_ctx = c_ctx;
 		if (running) lhs = deref(q, lhs, lhs_ctx);
 		if (running) lhs_ctx = q->latest_ctx;
 		unsigned lhs_specifier = false;
@@ -1022,7 +1022,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 			me.next = visited;
 			me.c = lhs;
 			me.c_ctx = lhs_ctx;
-			pl_idx lhs_ctx = running ? q->latest_ctx : 0;
+			pl_ctx lhs_ctx = running ? q->latest_ctx : 0;
 
 			if (parens) { SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
 			print_term_to_buf_(q, lhs, lhs_ctx, running, 0, 0, depth+1, &me);
@@ -1066,7 +1066,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 
 		cell *rhs = c + 1;
 		cell *save_rhs = rhs;
-		pl_idx rhs_ctx = c_ctx;
+		pl_ctx rhs_ctx = c_ctx;
 		const char *rhs_src = C_STR(q, rhs);
 		if (running) rhs = deref(q, rhs, rhs_ctx);
 		if (running) rhs_ctx = q->latest_ctx;
@@ -1158,10 +1158,10 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 
 	cell *lhs = c + 1;
 	cell *save_lhs = lhs;
-	pl_idx lhs_ctx = c_ctx;
+	pl_ctx lhs_ctx = c_ctx;
 	cell *rhs = lhs + lhs->num_cells;
 	cell *save_rhs = rhs;
-	pl_idx rhs_ctx = c_ctx;
+	pl_ctx rhs_ctx = c_ctx;
 	const char *lhs_src = C_STR(q, lhs);
 	const char *rhs_src = C_STR(q, rhs);
 	if (running) lhs = deref(q, lhs, lhs_ctx);
@@ -1520,7 +1520,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 			}
 
 			cell *h = LIST_HEAD(l);
-			pl_idx h_ctx = l_ctx;
+			pl_ctx h_ctx = l_ctx;
 			slot *e = NULL;
 			uint32_t save_vgen = 0;
 			int both = 0;
