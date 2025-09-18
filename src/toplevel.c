@@ -23,7 +23,7 @@ static void show_goals(query *q, int num)
 		q->quoted = false;
 		printf("\n");
 
-		if (f->prev == (pl_ctx)-1)
+		if (f->prev == CTX_NUL)
 			break;
 
 		c = f->instr;

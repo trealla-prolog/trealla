@@ -630,7 +630,7 @@ static void push_frame(query *q)
 	// Avoid long chains of useless returns...
 
 	if (q->pl->opt && is_end(next_cell) && !next_cell->ret_instr
-		&& (fold->prev != (pl_ctx)-1)
+		&& (fold->prev != CTX_NUL)
 		) {
 		fnew->prev = fold->prev;
 		fnew->instr = fold->instr;
@@ -983,7 +983,7 @@ static bool resume_frame(query *q)
 {
 	const frame *f = GET_CURR_FRAME();
 
-	if (f->prev == (pl_ctx)-1)
+	if (f->prev == CTX_NUL)
 		return false;
 
 #if 0
@@ -1904,7 +1904,7 @@ query *query_create(module *m)
 		q->q_size[i] = INITIAL_NBR_QUEUE_CELLS;
 
 	frame *f = GET_CURR_FRAME();
-	f->prev = (pl_ctx)-1;
+	f->prev = CTX_NUL;
 
 	clear_write_options(q);
 	return q;
