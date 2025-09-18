@@ -715,8 +715,8 @@ static void commit_frame(query *q)
 		&& last_match
 		&& (q->st.fp == (q->st.curr_frame + 1))		// At top of frame stack
 		) {
-		bool tail_call = is_tail_call(q->st.instr);
-		bool tail_recursive = tail_call && is_recursive_call(q->st.instr);
+		//bool tail_call = is_tail_call(q->st.instr);
+		bool tail_recursive = /*tail_call &&*/ is_recursive_call(q->st.instr);
 		bool slots_ok = f->initial_slots <= cl->num_vars;
 		bool choices = commit_any_choices(q, f);
 		tco = slots_ok && tail_recursive && !choices;
