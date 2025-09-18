@@ -648,7 +648,7 @@ static void push_frame(query *q)
 	q->st.curr_frame = q->st.fp++;
 }
 
-// Note: TCO's clause may not be the caller clause... hence passing
+// Note: TCO's clause might not be the caller clause... hence passing
 // num_vars. Currently restricted to the same predicate though.
 
 static void reuse_frame(query *q, unsigned num_vars)
