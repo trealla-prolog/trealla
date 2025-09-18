@@ -266,8 +266,10 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_c
 		}
 	}
 
-	if (cnt)
-		create_vars(q, cnt);
+	if (cnt) {
+		if (create_vars(q, cnt) < 0)
+			return false;
+	}
 
 	return true;
 }
@@ -305,7 +307,6 @@ static cell *copy_term_to_tmp_with_replacement(query *q, cell *p1, pl_ctx p1_ctx
 {
 	cell *c = deref(q, p1, p1_ctx);
 	pl_ctx c_ctx = q->latest_ctx;
-
 	cell *tmp = clone_term_to_tmp(q, c, c_ctx);
 
 	if (!tmp)
