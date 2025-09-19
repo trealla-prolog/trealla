@@ -665,7 +665,7 @@ static void reuse_frame(query *q, unsigned num_vars)
 
 	for (pl_idx i = 0; i < num_vars; i++) {
 		unshare_cell(&to->c);
-		to++->c = from++->c;
+		*to++ = *from++;
 	}
 
 	fold->initial_slots = fold->actual_slots = num_vars;
