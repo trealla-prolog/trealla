@@ -234,7 +234,7 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_c
 		} else {
 			const frame *f = GET_FRAME(c->val_ctx);
 			const slot *e = get_slot(q, f, c->var_num);
-			cell *attrs = e->c.val_attrs;
+			cell *attrs = is_attr(&e->c) ? e->c.val_attrs : NULL;
 			const size_t slot_nbr = (c->val_ctx * 100) + c->var_num;
 			int var_num;
 
