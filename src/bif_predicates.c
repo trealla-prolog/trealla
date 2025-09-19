@@ -1626,7 +1626,8 @@ static bool bif_iso_univ_2(query *q)
 	}
 
 	if (is_var(p1)) {
-		cell *p22 = p2 + 1;
+		cell *p22 = p2;
+		if (is_iso_list(p2)) p22++;
 		p22 = deref(q, p22, p2_ctx);
 
 		if (is_var(p22))
