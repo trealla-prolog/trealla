@@ -260,7 +260,7 @@ static void set_var(query *q, const cell *c, pl_ctx c_ctx, cell *v, pl_ctx v_ctx
 {
 	const frame *f = GET_FRAME(c_ctx);
 	slot *e = get_slot(q, f, c->var_num);
-	cell *c_attrs = is_empty(&e->c) ? e->c.val_attrs : NULL;
+	cell *c_attrs = e->c.val_attrs;
 
 	if (is_managed(v) || (c_ctx != q->st.fp))
 		add_trail(q, c_ctx, c->var_num, c_attrs);
