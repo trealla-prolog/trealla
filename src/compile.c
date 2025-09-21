@@ -307,9 +307,13 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 #if 0
 	if (!is_builtin(*src)) {
-		make_instr((*dst)++, g_sys_match_s, bif_sys_match_1, 1, (*src)->num_cells);
-		copy_term(dst, src);
-		return;
+		predicate *pr2 = search_predicate(pr->m,  *src, false);
+
+		if (pr2 && !pr2->is_dynamic) {
+			make_instr((*dst)++, g_sys_match_s, bif_sys_match_1, 1, (*src)->num_cells);
+			copy_term(dst, src);
+			return;
+		}
 	}
 #endif
 

@@ -157,7 +157,7 @@ static bool bif_iso_call_n(query *q)
 	checked(append_to_tmp(q, p1, p1_ctx));
 
 	while (args++ < xarity) {
-		GET_NEXT_RAW_ARG(p2,any);
+		GET_NEXT_ARG(p2,any);
 		checked(append_to_tmp(q, p2, p2_ctx));
 		arity++;
 	}

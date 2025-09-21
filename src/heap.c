@@ -224,9 +224,7 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_c
 		if (!is_ref(c))
 			continue;
 
-		c->flags |= FLAG_VAR_ANON;
 		c->flags |= FLAG_VAR_LOCAL;
-		c->flags |= FLAG_VAR_VOID;
 
 		if (from && (c->var_num == from->var_num) && (c->val_ctx == from_ctx)) {
 			c->var_num = to->var_num;
