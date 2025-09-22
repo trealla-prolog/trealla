@@ -158,15 +158,12 @@ int main(int ac, char *av[], char * envp[])
 #ifndef __wasi__
 	struct rlimit rl;
 	getrlimit(RLIMIT_STACK, &rl);
-	rl.rlim_cur = 32 * 1024 * 1024;
+	rl.rlim_cur = 2 * 1024 * 1024;
 
 	if (setrlimit(RLIMIT_STACK, &rl) != 0) {
-		rl.rlim_cur = 16 * 1024 * 1024;
+		rl.rlim_cur = 1 * 1024 * 1024;
 		if (setrlimit(RLIMIT_STACK, &rl) != 0) {
-			rl.rlim_cur = 1 * 1024 * 1024;
-			if (setrlimit(RLIMIT_STACK, &rl) == 0) {
-				printf("Warning: can't set new stack limit\n");
-			}
+			printf("Warning: can't set new stack limit\n");
 		}
 	}
 #endif
