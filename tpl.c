@@ -22,6 +22,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #ifndef __wasi__
+#include <sys/resource.h>
 #include <sys/wait.h>
 #endif
 #define msleep(ms)                                                     \
