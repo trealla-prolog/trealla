@@ -89,6 +89,11 @@ static void collect_var_lists(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 
 static void collect_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 {
+	if (depth > g_max_depth) {
+		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
+		return;
+	}
+
 	if (is_var(p1)) {
 		if (!(p1->flags & FLAG_VAR_CYCLIC))
 			accum_var(q, p1, p1_ctx);

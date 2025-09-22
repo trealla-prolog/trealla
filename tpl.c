@@ -22,7 +22,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #ifndef __wasi__
-#include <sys/resource.h>
 #include <sys/wait.h>
 #endif
 #define msleep(ms)                                                     \
@@ -153,19 +152,6 @@ int main(int ac, char *av[])
 #else
 int main(int ac, char *av[], char * envp[])
 {
-#endif
-
-#ifndef __wasi__
-	struct rlimit rl;
-	getrlimit(RLIMIT_STACK, &rl);
-	rl.rlim_cur = 2 * 1024 * 1024;
-
-	if (setrlimit(RLIMIT_STACK, &rl) != 0) {
-		rl.rlim_cur = 1 * 1024 * 1024;
-		if (setrlimit(RLIMIT_STACK, &rl) != 0) {
-			printf("Warning: can't set new stack limit\n");
-		}
-	}
 #endif
 
 	srand(time(NULL));
