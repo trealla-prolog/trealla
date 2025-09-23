@@ -41,7 +41,7 @@ static bool accum_var(query *q, const cell *c, pl_ctx c_ctx)
 
 static void collect_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth);
 
-static void collect_var_lists(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
+static void collect_vars_lists(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 {
 	cell *l = p1;
 	pl_ctx l_ctx = p1_ctx;
@@ -105,7 +105,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned de
 		return;
 
 	if (is_iso_list(p1)) {
-		collect_var_lists(q, p1, p1_ctx, depth+1);
+		collect_vars_lists(q, p1, p1_ctx, depth+1);
 		return;
 	}
 
