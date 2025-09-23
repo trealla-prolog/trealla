@@ -183,8 +183,9 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 				n = malloc(sizeof(snode));
 				n->c = c;
 				n->c_ctx = c_ctx;
-				list_push_front(&stack, n);
-			}
+				list_push_back(&stack, n);
+			} else
+				if (e) e->vgen = save_vgen;
 
 			p1 += p1->num_cells;
 		}
