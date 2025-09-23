@@ -87,6 +87,7 @@ static void collect_vars_lists(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth
 	collect_vars_internal(q, l, l_ctx, depth+1);
 }
 
+#if 1
 static void collect_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 {
 	if (depth > g_max_depth) {
@@ -129,6 +130,67 @@ static void collect_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned de
 		p1 += p1->num_cells;
 	}
 }
+#else
+static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
+{
+	if (is_var(p1)) {
+		if (!(p1->flags & FLAG_VAR_CYCLIC))
+			accum_var(q, p1, p1_ctx);
+
+		return;
+	}
+
+	if (!is_compound(p1) || is_ground(p1))
+		return;
+
+	if (is_iso_list(p1)) {
+		collect_vars_lists(q, p1, p1_ctx, depth+1);
+		return;
+	}
+
+	// Transform recursion into stack iteration...
+
+	list stack = {0};
+	snode *n = malloc(sizeof(snode));
+	n->c = p1;
+	n->c_ctx = p1_ctx;
+	list_push_back(&stack, n);
+
+	while ((n = (snode*)list_pop_front(&stack)) != NULL) {
+		cell *p1 = n->c;
+		pl_idx p1_ctx = n->c_ctx;
+		free(n);
+
+		if (!is_compound(p1) || is_iso_list(p1)) {
+			collect_vars_internal(q, p1, p1_ctx, depth+1);
+			continue;
+		}
+
+		bool any = false;
+		unsigned arity = p1->arity;
+		p1++;
+
+		while (arity--) {
+			cell *c = p1;
+			pl_idx c_ctx = p1_ctx;
+			slot *e = NULL;
+			uint32_t save_vgen = 0;
+			int both = 0;
+
+			DEREF_VAR(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
+
+			if (!both) {
+				n = malloc(sizeof(snode));
+				n->c = c;
+				n->c_ctx = c_ctx;
+				list_push_front(&stack, n);
+			}
+
+			p1 += p1->num_cells;
+		}
+	}
+}
+#endif
 
 void collect_vars(query *q, cell *p1, pl_ctx p1_ctx)
 {
