@@ -1742,6 +1742,10 @@ static cell *do_term_variables(query *q, cell *p1, pl_ctx p1_ctx)
 	frame *f = GET_CURR_FRAME();
 	q->varno = f->actual_slots;
 	collect_vars(q, p1, p1_ctx);
+
+	if (q->oom)
+		return NULL;
+
 	const unsigned cnt = q->tab_idx;
 	if (!init_tmp_heap(q)) return NULL;
 	cell *tmp = alloc_tmp(q, (cnt*2)+1);
@@ -1789,7 +1793,10 @@ static bool bif_iso_term_variables_2(query *q)
 		return unify(q, p2, p2_ctx, make_nil(), q->st.curr_frame);
 
 	cell *tmp = do_term_variables(q, p1, p1_ctx);
-	checked(tmp);
+
+	if (!tmp)
+		return throw_error(q, p1, p1_ctx, "resource_error", "stack");
+
 	cell *tmp2 = alloc_heap(q, tmp->num_cells);
 	checked(tmp2);
 	dup_cells(tmp2, tmp, tmp->num_cells);
