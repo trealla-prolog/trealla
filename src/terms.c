@@ -394,7 +394,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned 
 		free(n);
 
 		if (is_iso_list(p1)) {
-			if (is_cyclic_term_internal(q, p1, p1_ctx, depth+1)) {
+			if (is_cyclic_term_lists(q, p1, p1_ctx, depth+1)) {
 				while ((n = (snode*)list_pop_front(&stack)) != NULL)
 					free(n);
 
