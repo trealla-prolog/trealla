@@ -123,9 +123,9 @@ static bool collect_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned de
 		if (!both) {
 			if (!collect_vars_internal(q, c, c_ctx, depth+1))
 				return false;
-		} else if (e)
-			e->vgen = save_vgen;
+		}
 
+		if (e) e->vgen = save_vgen;
 		p1 += p1->num_cells;
 	}
 
