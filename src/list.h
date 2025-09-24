@@ -13,9 +13,10 @@ typedef struct {
 } list;
 
 void list_init(list *l);
-void list_push_front(list *l, void *n);
-void list_push_back(list *l, void *n);
-void *list_remove(list *l, void *n);
+void list_push_front(list *l, void *new);
+void list_push_back(list *l, void *new);
+void list_insert_after(list *l, void *old, void *new);
+void *list_remove(list *l, void *old);
 void *list_pop_front(list *l);
 void *list_pop_back(list *l);
 

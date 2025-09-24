@@ -35,6 +35,20 @@ void list_push_back(list *l, void *n_)
     l->cnt++;
 }
 
+void list_insert_after(list *l, void *o_, void *n_)
+{
+	lnode *o = o_;
+	lnode *n = n_;
+	n->prev = o;
+	n->next = o->next;
+	o->next = n;
+
+	if (l->back == o)
+		l->back = n;
+
+    l->cnt++;
+}
+
 void *list_pop_front(list *l)
 {
     if (!l->front)
