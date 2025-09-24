@@ -417,8 +417,12 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned 
 
 			DEREF_VAR(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
 
-			if (both)
+			if (both) {
+				while ((n = (snode*)list_pop_front(&stack)) != NULL)
+					free(n);
+
 				return true;
+			}
 
 			if (is_compound(c) && !is_ground(c)) {
 				n = malloc(sizeof(snode));
