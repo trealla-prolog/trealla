@@ -215,6 +215,11 @@ inline static void drop_choice(query *q)
 	--q->cp;
 }
 
+inline static pl_idx get_slot_nbr(const query *q, const frame *f, unsigned var_num)
+{
+	return get_slot(q, f, var_num) - q->slots;
+}
+
 #ifdef _WIN32
 typedef intptr_t ssize_t;
 extern ssize_t getline(char **lineptr, size_t *n, FILE *stream);

@@ -454,11 +454,6 @@ static const char *get_slot_name(query *q, pl_idx slot_nbr, bool listing)
 	return varformat(q->tmpbuf, i, listing);
 }
 
-static pl_idx get_slot_nbr(const query *q, const frame *f, unsigned var_num)
-{
-	return get_slot(q, f, var_num) - q->slots;
-}
-
 static void print_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 {
 	const frame *f = GET_FRAME(running ? c_ctx : 0);
