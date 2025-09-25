@@ -458,7 +458,7 @@ static void print_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 {
 	const frame *f = GET_FRAME(running ? c_ctx : 0);
 	pl_idx slot_nbr = running ?
-		get_slot_nbr(q, f, c->var_num)
+		((c_ctx * 100) + c->var_num)
 		: c->var_num;
 
 	if (q->varnames && !is_anon(c) && running && !q->cycle_error && (c_ctx == 0)) {
@@ -517,7 +517,7 @@ static bool dump_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 
 		const frame *f = GET_FRAME(running ? v_ctx : 0);
 		pl_idx slot_nbr = running ?
-			get_slot_nbr(q, f, v->var_num)
+			((v_ctx * 100) + v->var_num)
 			: v->var_num;
 
 		if (is_var(v) && (v->var_num == c->var_num) && (v_ctx == c_ctx)) {
