@@ -337,7 +337,6 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_ctx p1_ctx, unsigned dep
 	return is_cyclic_term_internal(q, l, l_ctx, depth+1);
 }
 
-#if 1
 static bool is_cyclic_term_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 {
 	if (!is_compound(p1) || is_ground(p1))
@@ -371,74 +370,6 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned 
 
 	return false;
 }
-#else
-static bool is_cyclic_term_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
-{
-	if (!is_compound(p1) || is_ground(p1))
-		return false;
-
-	if (is_iso_list(p1))
-		return is_cyclic_term_lists(q, p1, p1_ctx, depth);
-
-	// Transform recursion into stack iteration...
-
-	list stack = {0};
-	snode *n = malloc(sizeof(snode));
-	n->c = p1;
-	n->c_ctx = p1_ctx;
-	list_push_back(&stack, n);
-
-	while ((n = (snode*)list_pop_front(&stack)) != NULL) {
-		cell *p1 = n->c;
-		pl_idx p1_ctx = n->c_ctx;
-		free(n);
-
-		if (is_iso_list(p1)) {
-			if (is_cyclic_term_lists(q, p1, p1_ctx, depth+1)) {
-				while ((n = (snode*)list_pop_front(&stack)) != NULL)
-					free(n);
-
-				return true;
-			}
-
-			continue;
-		}
-
-		bool any = false;
-		unsigned arity = p1->arity;
-		p1++;
-
-		while (arity--) {
-			cell *c = p1;
-			pl_idx c_ctx = p1_ctx;
-			slot *e = NULL;
-			uint32_t save_vgen = 0;
-			int both = 0;
-
-			DEREF_VAR(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
-
-			if (both) {
-				while ((n = (snode*)list_pop_front(&stack)) != NULL)
-					free(n);
-
-				return true;
-			}
-
-			if (is_compound(c) && !is_ground(c)) {
-				n = malloc(sizeof(snode));
-				n->c = c;
-				n->c_ctx = c_ctx;
-				list_push_back(&stack, n);
-			} else if (e)
-				e->vgen = save_vgen;
-
-			p1 += p1->num_cells;
-		}
-	}
-
-	return false;
-}
-#endif
 
 bool is_cyclic_term(query *q, cell *p1, pl_ctx p1_ctx)
 {
