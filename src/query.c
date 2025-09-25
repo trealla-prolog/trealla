@@ -590,7 +590,7 @@ static void trim_frame(query *q, const frame *f)
 	}
 
 	q->st.sp -= f->actual_slots;
-	q->st.fp--;
+	q->st.fp = q->st.curr_frame;
 }
 
 void undo_me(query *q)
@@ -640,13 +640,15 @@ static void push_frame(query *q)
 		fnew->instr = q->st.instr;
 	}
 
+	fnew->frame_size = 1;
 	fnew->op = 0;
 	fnew->no_recov = q->no_recov;
 	fnew->chgen = ++q->chgen;
 	fnew->hp = q->st.hp;
 	fnew->heap_num = q->st.heap_num;
 	q->st.sp += fnew->actual_slots;
-	q->st.curr_frame = q->st.fp++;
+	q->st.curr_frame = q->st.fp;
+	q->st.fp += fnew->frame_size;
 }
 
 // Note: TCO's clause might not be the caller clause... hence passing
@@ -714,7 +716,7 @@ static void commit_frame(query *q)
 
 	if (!q->no_recov
 		&& last_match
-		&& (q->st.fp == (q->st.curr_frame + 1))		// At top of frame stack
+		&& (q->st.fp == (q->st.curr_frame + f->frame_size))		// Top frame
 		) {
 		bool tail_recursive = is_recursive_call(q->st.instr);
 		bool slots_ok = f->initial_slots <= cl->num_vars;
@@ -779,9 +781,10 @@ void stash_frame(query *q, const clause *cl, bool last_match)
 		f->prev = q->st.curr_frame;
 		f->instr = NULL;
 		f->chgen = chgen;
+		f->frame_size = 1;
 		f->op = 0;
 		q->st.sp += num_vars;
-		q->st.fp++;
+		q->st.fp += f->frame_size;
 	}
 
 	q->st.iter = NULL;
@@ -995,7 +998,7 @@ static bool resume_frame(query *q)
 
 	if (q->pl->opt
 		&& !f->no_recov
-		&& (q->st.fp == (q->st.curr_frame + 1))
+		&& (q->st.fp == (q->st.curr_frame + f->frame_size))		// Top frame
 		&& !resume_any_choices(q, f)
 		) {
 		q->total_recovs++;
