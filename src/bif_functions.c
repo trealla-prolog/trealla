@@ -879,11 +879,11 @@ static bool bif_iso_truncate_1(query *q)
 #endif
 			q->accum.tag = TAG_INT;
 	} else if (is_var(&p1)) {
-		return throw_error(q, &p1, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
-	} else if (is_smallint(&p1)) {
-		return throw_error(q, &p1, q->st.curr_frame, "type_error", "float");
+		return throw_error(q, p1_tmp, q->st.curr_frame, "instantiation_error", "not_sufficiently_instantiated");
+	} else if (is_integer(&p1)) {
+		return throw_error(q, p1_tmp, q->st.curr_frame, "type_error", "float");
 	} else {
-		return throw_error(q, &p1, q->st.curr_frame, "type_error", "evaluable");
+		return throw_error(q, p1_tmp, q->st.curr_frame, "type_error", "evaluable");
 	}
 
 	return true;
