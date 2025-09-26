@@ -212,26 +212,7 @@ bool check_frame(query *q, unsigned max_vars)
 {
 	checked(check_slot(q, max_vars));
 
-	if (q->st.fp > q->hw_frames)
-		q->hw_frames = q->st.fp;
-
-	if (q->st.fp < q->frames_size) {
-		frame *f = GET_NEW_FRAME();
-		f->max_vars = max_vars;
-		f->base = q->st.sp;
-		return true;
-	}
-
-	q->realloc_frames++;
-	pl_idx new_framessize = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.fp, q->frames_size*5/4);
-
-	if (!new_framessize) {
-		q->oom = q->error = true;
-		return false;
-	}
-
-	q->frames_size = new_framessize;
-	frame *f = GET_NEW_FRAME();
+	frame *f = alloc_frame(q, max_vars);
 	f->max_vars = max_vars;
 	f->base = q->st.sp;
 	return true;
