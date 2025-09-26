@@ -1762,6 +1762,7 @@ bool execute(query *q, cell *cells, unsigned num_vars)
 	q->cp = 0;
 	q->is_redo = false;
 
+	check_slot(q, num_vars);
 	alloc_frame(q, num_vars);
 	try_me(q, num_vars);
 	q->st.fp = 1;
