@@ -39,3 +39,4 @@ cell *end_list(query *q);
 cell *init_tmp_heap(query *q);
 
 frame *alloc_frame(query *q, unsigned num_vars);
+void trim_frames(query *q);

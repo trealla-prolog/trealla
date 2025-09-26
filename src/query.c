@@ -211,7 +211,6 @@ static bool check_choice(query *q)
 bool check_frame(query *q, unsigned max_vars)
 {
 	checked(check_slot(q, max_vars));
-
 	frame *f = alloc_frame(q, max_vars);
 	f->max_vars = max_vars;
 	f->base = q->st.sp;
@@ -805,6 +804,7 @@ int retry_choice(query *q)
 			q->noretry = false;
 
 		trim_heap(q);
+		trim_frames(q);
 
 		if (ch->succeed_on_retry) {
 			q->st.instr += ch->skip;
@@ -815,6 +815,7 @@ int retry_choice(query *q)
 	}
 
 	trim_heap(q);
+	trim_frames(q);
 	return 0;
 }
 
@@ -991,6 +992,7 @@ static bool resume_frame(query *q)
 
 	q->st.instr = f->instr;
 	q->st.curr_frame = f->prev;
+	trim_frames(q);
 	f = GET_CURR_FRAME();
 	q->st.m = f->m;
 	return true;
@@ -1756,19 +1758,14 @@ bool execute(query *q, cell *cells, unsigned num_vars)
 	q->pl->did_dump_vars = false;
 	q->st.instr = cells;
 	q->st.sp = num_vars;
+	q->st.fp = 0;
+	q->cp = 0;
 	q->is_redo = false;
 
-	// There is an initial frame (fp=0), so this
-	// to the next available frame...
-
+	alloc_frame(q, num_vars);
 	q->st.fp = 1;
-
-	// There may not be a choicepoint, so this points to the
-	// next available choicepoint
-
-	q->cp = 0;
-
-	frame *f = q->frames;
+	frame *f = GET_CURR_FRAME();
+	f->prev = CTX_NUL;
 	f->initial_slots = f->actual_slots = num_vars;
 	f->dbgen = ++q->pl->dbgen;
 	return start(q);
@@ -1898,9 +1895,6 @@ query *query_create(module *m)
 
 	for (int i = 0; i < MAX_QUEUES; i++)
 		q->q_size[i] = INITIAL_NBR_QUEUE_CELLS;
-
-	frame *f = GET_CURR_FRAME();
-	f->prev = CTX_NUL;
 
 	clear_write_options(q);
 	return q;

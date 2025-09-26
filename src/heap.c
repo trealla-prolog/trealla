@@ -615,7 +615,7 @@ cell *alloc_queuen(query *q, unsigned qnum, const cell *c)
 
 frame *alloc_frame(query *q, unsigned num_vars)
 {
-	if (!q->frame_pages || ((q->st.fp + 1) >= q->frame_pages->page_size))  {
+	if (!q->frame_pages || (q->st.fp >= q->frame_pages->page_size))  {
 		page *a = calloc(1, sizeof(page));
 		if (!a) return NULL;
 		a->next = q->frame_pages;
@@ -633,5 +633,30 @@ frame *alloc_frame(query *q, unsigned num_vars)
 	frame *f = q->frame_pages->frames + q->st.fp;
 	q->frame_pages->idx = q->st.fp;
 	return f;
+}
+
+void trim_frames(query *q)
+{
+	for (page *a = q->frame_pages; a;) {
+		if (a->num <= q->st.frame_num)
+			break;
+
+		frame *f = a->frames;
+
+		for (pl_idx i = 0; i < a->idx; i++, f++)
+			;
+
+		page *save = a;
+		q->frame_pages = a = a->next;
+		free(save->frames);
+		free(save);
+	}
+
+	if (!q->frame_pages)
+		return;
+
+	while (q->frame_pages->idx > q->st.fp) {
+		frame *f = q->frame_pages->frames + --q->frame_pages->idx;
+	}
 }
 
