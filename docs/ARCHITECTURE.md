@@ -13,7 +13,7 @@ Interned
         +----------+---------+----------+---------+
     0   |   tag    |  arity  |       flags        |    CELL 1
         +----------+---------+----------+---------+
-    4   |                 nbr_cells               |
+    4   |                 num_cells               |
         +----------+---------+----------+---------+
     8   |                                         |
         |               - UNUSED -                |
@@ -27,7 +27,7 @@ Interned
 
 Where *tag* is TAG_INTERNED.
 Where *arity* is always 0.
-Where *nbr_cells* is always 1.
+Where *num_cells* is always 1.
 Where *val_off* is a byte-offset into the symbol table.
 
 Two interned cells will unify if their *val_off* is the same.
@@ -41,7 +41,7 @@ Var
         +----------+---------+----------+---------+
     0   |   tag    |  arity  |       flags        |    CELL 1
         +----------+---------+----------+---------+
-    4   |                 nbr_cells               |
+    4   |                 num_cells               |
         +----------+---------+----------+---------+
     8   |                                         |
         |               - UNUSED -                |
@@ -56,7 +56,7 @@ Var
 Where *tag* is TAG_VAR.
 Where *arity* is always 0.
 Where *flags* is 0.
-Where *nbr_cells* is always 1.
+Where *num_cells* is always 1.
 Where *val_off* is a byte_offset into the symbol table.
 Where *var_nbr* is the index into the current context
 
@@ -73,7 +73,7 @@ Ref
         +----------+---------+----------+---------+
     0   |   tag    |  arity  |       flags        |    CELL 1
         +----------+---------+----------+---------+
-    4   |                 nbr_cells               |
+    4   |                 num_cells               |
         +----------+---------+----------+---------+
     8   |                                         |
         |               - UNUSED -                |
@@ -88,7 +88,7 @@ Ref
 Where *tag* is TAG_VAR.
 Where *arity* is always 0.
 Where *flags* is FLAG_REF
-Where *nbr_cells* is always 1.
+Where *num_cells* is always 1.
 Where *var_ctx* is the context (or environment)
 Where *var_nbr* is the index into the specified context
 
@@ -103,7 +103,7 @@ Integer
         +----------+---------+----------+---------+
     0   |   tag    |  arity  |       flags        |    CELL 1
         +----------+---------+----------+---------+
-    4   |                 nbr_cells               |
+    4   |                 num_cells               |
         +----------+---------+----------+---------+
     8   |                                         |
         +                 val_int                 +
@@ -117,7 +117,7 @@ Integer
 
 Where *tag* is TAG_RATIONAL.
 Where *arity* is always 0.
-Where *nbr_cells* is always 1.
+Where *num_cells* is always 1.
 Where *val_int* is a signed 64-bit integer.
 
 
@@ -128,7 +128,7 @@ Bigint
         +----------+---------+----------+---------+
     0   |   tag    |  arity  |       flags        |    CELL 1
         +----------+---------+----------+---------+
-    4   |                 nbr_cells               |
+    4   |                 num_cells               |
         +----------+---------+----------+---------+
     8   |                                         |
         +               val_bigint                +
@@ -142,7 +142,7 @@ Bigint
 
 Where *tag* is TAG_RATIONAL.
 Where *arity* is always 0.
-Where *nbr_cells* is always 1.
+Where *num_cells* is always 1.
 Where *val_bigint* is a pointer.
 
 
@@ -153,7 +153,7 @@ Double
         +----------+---------+----------+---------+
     0   |   tag    |  arity  |       flags        |    CELL 1
         +----------+---------+----------+---------+
-    4   |                 nbr_cells               |
+    4   |                 num_cells               |
         +----------+---------+----------+---------+
     8   |                                         |
         +                val_float                +
@@ -167,7 +167,7 @@ Double
 
 Where *tag* is TAG_DOUBLE.
 Where *arity* is always 0
-Where *nbr_cells* is always 1.
+Where *num_cells* is always 1.
 Where *val_real* is a floating point *double*.
 
 
@@ -180,7 +180,7 @@ A small string < 16 bytes.
         +----------+---------+----------+---------+
     0   |   tag    |  arity  |       flags        |    CELL 1
         +----------+---------+----------+---------+
-    4   |                 nbr_cells               |
+    4   |                 num_cells               |
         +----------+---------+----------+---------+
     8   |  chr_len |                              |
         +----------+                              +
@@ -194,7 +194,7 @@ A small string < 16 bytes.
 
 Where *tag* is TAG_CSTRING.
 Where *arity* is always 0.
-Where *nbr_cells* is always 1.
+Where *num_cells* is always 1.
 Where *chr_len* is the number of bytes (0-14) in *val_chr*.
 Where *val_chr* is up to 14 bytes of UTF-8 chars, NULL-terminated.
 
@@ -208,7 +208,7 @@ Static BLOB
         +----------+---------+----------+---------+
     0   |   tag    |  arity  |       flags        |    CELL 1
         +----------+---------+----------+---------+
-    4   |                 nbr_cells               |
+    4   |                 num_cells               |
         +----------+---------+----------+---------+
     8   |                                         |
         +                 val_str                 +
@@ -223,7 +223,7 @@ Static BLOB
 Where *tag* is TAG_CSTRING.
 Where *arity* is always 0.
 Where *flags* is FLAG_BLOB | FLAG2_STATIC.
-Where *nbr_cells* is always 1.
+Where *num_cells* is always 1.
 Where *val_str* is a pointer to a slice of UTF-8 chars.
 Where *len_str* is the length of the slice in bytes.
 
@@ -241,7 +241,7 @@ A ref-counted string buffer.
         +----------+---------+----------+---------+
     0   |   tag    |  arity  |       flags        |    CELL 1
         +----------+---------+----------+---------+
-    4   |                 nbr_cells               |
+    4   |                 num_cells               |
         +----------+---------+----------+---------+
     8   |                                         |
         +               val_strbuf                +
@@ -256,7 +256,7 @@ A ref-counted string buffer.
 Where *tag* is TAG_CSTRING.
 Where *arity* is always 0.
 Where *flags* is FLAG_BLOB.
-Where *nbr_cells* is always 1.
+Where *num_cells* is always 1.
 Where *val_strbuf* is a pointer to a strbuf object.
 Where *strbuf_off* is the byte offset into a slice of a strbuf.
 Where *strbuf_len* is the length of the slice.
@@ -281,7 +281,7 @@ Compound
         +----------+---------+----------+---------+
     0   |   tag    |  arity  |       flags        |    CELL 1
         +----------+---------+----------+---------+
-    4   |                 nbr_cells               |
+    4   |                 num_cells               |
         +----------+---------+----------+---------+
     8   |                                         |
         +               - UNUSED -                +
@@ -296,9 +296,9 @@ Compound
 
 Where *tag* is TAG_LITERAL.
 Where *arity* is > 0.
-Where *nbr_cells* is > 1 and includes the args.
+Where *num_cells* is > 1 and includes the args.
 Where *val_off* is a byte-offset into the symbol table of the functor name.
-Where args are the following cells (see *nbr_cells*).
+Where args are the following cells (see *num_cells*).
 
 The first cell is the functor, the args follow based on arity. Compounds
 can be nested to arbirary depth.
@@ -313,7 +313,7 @@ A list is just a special instance of a compound.
         +----------+---------+----------+---------+
     0   |   tag    |  arity  |       flags        |    CELL 1
         +----------+---------+----------+---------+
-    4   |                 nbr_cells               |
+    4   |                 num_cells               |
         +----------+---------+----------+---------+
     8   |                                         |
         +               - UNUSED -                +
@@ -328,9 +328,9 @@ A list is just a special instance of a compound.
 
 Where *tag* is TAG_LITERAL.
 Where *arity* is always 2.
-Where *nbr_cells* is > 1 and includes head & tail args.
+Where *num_cells* is > 1 and includes head & tail args.
 Where *val_off* is a byte-offset into the symbol table to the functor name '.'.
-Where args are the following cells (see *nbr_cells*).
+Where args are the following cells (see *num_cells*).
 Where the tail arg is usually a list.
 Where the final tail arg is usually the atom *[]*.
 
