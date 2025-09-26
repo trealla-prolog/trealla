@@ -47,7 +47,7 @@
 	if (errno == ENOMEM)										\
 		return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \
 	if (mp_int_compare_value(&q->tmp_irat.den, 1)) { \
-		q->accum.tag = TAG_RAT;										\
+		q->accum.tag = TAG_RATIONAL;										\
 		q->accum.val_bigint = malloc(sizeof(bigint));				\
 		if (errno == ENOMEM)										\
 			return throw_error(q, &p1, q->st.curr_frame, "resource_error", "memory"); \

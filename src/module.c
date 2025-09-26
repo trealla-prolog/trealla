@@ -1761,7 +1761,7 @@ bool module_dump_term(module* m, cell *p1)
 				tmp->tag == TAG_CSTR ? "cstr" :
 				tmp->tag == TAG_INT ? "integer" :
 				tmp->tag == TAG_FLOAT ? "float" :
-				tmp->tag == TAG_RAT ? "rational" :
+				tmp->tag == TAG_RATIONAL ? "rational" :
 				tmp->tag == TAG_INDIRECT ? "indirect" :
 				tmp->tag == TAG_BLOB ? "blob" :
 				tmp->tag == TAG_DBID ? "dbid" :

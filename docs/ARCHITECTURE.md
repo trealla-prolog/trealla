@@ -59,6 +59,7 @@ Where *flags* is 0.
 Where *num_cells* is always 1.
 Where *val_off* is a byte_offset into the symbol table.
 Where *var_nbr* is the index into the current context
+and refers to a *slot*.
 
 A variable will usually only be found in asserted database rules.
 Such a variable, when matched, will have an implied context. For
@@ -79,7 +80,7 @@ Ref
         |               - UNUSED -                |
    12   |                                         |
         +----------+---------+----------+---------+
-   16   |                 var_ctx                 |
+   16   |                 val_ctx                 |
         +----------+---------+----------+---------+
    20   |       var_nbr      |      - UNUSED -    |
         +----------+---------+----------+---------+
@@ -87,9 +88,9 @@ Ref
 
 Where *tag* is TAG_VAR.
 Where *arity* is always 0.
-Where *flags* is FLAG_REF
+Where *flags* is FLAG_VAR_REF
 Where *num_cells* is always 1.
-Where *var_ctx* is the context (or environment)
+Where *val_ctx* is the context (actually a *frame* number)
 Where *var_nbr* is the index into the specified context
 
 A reference is a variable with an explicit context. They are
@@ -115,7 +116,7 @@ Integer
         +----------+---------+----------+---------+
 ```
 
-Where *tag* is TAG_RATIONAL.
+Where *tag* is TAG_INT.
 Where *arity* is always 0.
 Where *num_cells* is always 1.
 Where *val_int* is a signed 64-bit integer.
