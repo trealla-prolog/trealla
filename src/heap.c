@@ -613,3 +613,25 @@ cell *alloc_queuen(query *q, unsigned qnum, const cell *c)
 	return dst;
 }
 
+frame *alloc_frame(query *q, unsigned num_vars)
+{
+	if (!q->frame_pages || ((q->st.fp + 1) >= q->frame_pages->page_size))  {
+		page *a = calloc(1, sizeof(page));
+		if (!a) return NULL;
+		a->next = q->frame_pages;
+		unsigned n = q->heap_size;
+		a->frames = calloc(a->page_size=n, sizeof(frame));
+		if (!a->frames) { free(a); return NULL; }
+		a->num = ++q->st.frame_num;
+		q->frame_pages = a;
+		q->st.fp = 0;
+	}
+
+	if (q->st.frame_num > q->hw_frame_num)
+		q->hw_frame_num = q->st.frame_num;
+
+	frame *f = q->frame_pages->frames + q->st.fp;
+	q->frame_pages->idx = q->st.fp;
+	return f;
+}
+

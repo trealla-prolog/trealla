@@ -522,7 +522,7 @@ struct frame_ {
 	module *m;
 	uint64_t dbgen, chgen;
 	pl_ctx prev;
-	pl_idx base, op, hp, heap_num, frame_size;
+	pl_idx base, op, hp, heap_num, frame_num, frame_size;
 	unsigned initial_slots, actual_slots, max_vars;
 	bool no_recov:1;
 };
@@ -548,7 +548,7 @@ struct run_state_ {
 
 	uint64_t timer_started;
 	pl_ctx curr_frame;
-	pl_idx fp, hp, cp, tp, sp, heap_num;
+	pl_idx fp, hp, cp, tp, sp, heap_num, frame_num;
 	uint8_t qnum;
 };
 
@@ -682,7 +682,7 @@ struct query_ {
 	trail *trails;
 	cell *tmp_heap, *last_arg, *variable_names, *ball, *cont, *suspect;
 	cell *queue[MAX_QUEUES], *tmpq[MAX_QUEUES];
-	page *heap_pages;
+	page *heap_pages, *frame_pages;
 	slot *save_e;
 	query *tasks;
 	skiplist *vars;
@@ -707,7 +707,7 @@ struct query_ {
 	pl_ctx latest_ctx, popp, variable_names_ctx, dump_var_ctx, ball_ctx, cont_ctx;
 	pl_idx tmphp;
 	pl_idx frames_size, slots_size, trails_size, choices_size;
-	pl_idx hw_choices, hw_frames, hw_slots, hw_trails, hw_heap_num, hw_deref;
+	pl_idx hw_choices, hw_frames, hw_slots, hw_trails, hw_heap_num, hw_deref, hw_frame_num;
 	pl_idx cp, before_hook_tp, qcnt[MAX_QUEUES];
 	pl_idx heap_size, tmph_size, total_heaps, total_heapsize;
 	pl_idx undo_lo_tp, undo_hi_tp;

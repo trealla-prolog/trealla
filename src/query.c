@@ -1827,6 +1827,18 @@ void query_destroy(query *q)
 		free(save);
 	}
 
+	for (page *a = q->frame_pages; a;) {
+		frame *f = a->frames;
+
+		for (pl_idx i = 0; i < a->idx; i++, f++)
+			;
+
+		page *save = a;
+		a = a->next;
+		free(save->frames);
+		free(save);
+	}
+
 	slot *e = q->slots;
 
 	for (pl_idx i = 0; i < q->st.sp; i++, e++) {
