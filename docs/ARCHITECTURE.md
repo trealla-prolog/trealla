@@ -351,8 +351,8 @@ frame. It also contains a count of the number of variables that make up
 the frame. If a frame expands (creates new variables) the slots *may*
 become discontiguous if it's not the top frame.
 
-The frame plus it's slots constitute a working context for a set of
-goals. Choices can back-track to a given context.
+The frame plus it's slots constitute a working context (or *environment*)
+for a set of goals. Choices can back-track to a given context.
 
 Since only index numbers are used to refer to frames (a *ctx* number)
 the frame space can be easily resized.
@@ -379,7 +379,7 @@ pointers (if any) may need to be refreshed after creating new variables
 (eg. in length/2, copy_term/2 etc) as possibly the slot space was
 reallocated.
 
-A collection of slots constitute an environment and belong to a frame.
+A collection of slots constitute an *environment* and belong to a frame.
 
 
 Choices
@@ -402,12 +402,8 @@ One of the most important properties of a choice point is the choice
 generation signifiying when it was created. A cut will drop choice
 points with a generation more recent than the frame it originated in.
 
-A barrier temporarily updates the frame choice generation to create
-a pseudo frame to block cuts, this is used by call/n and friends. When
-a barrier is dropped the frame choice generation is restored to its
-prior value.
-
-Catchers are another ball game.
+A barrier temporarily creates a choice to block cuts, this is used by
+call/n and friends. When a barrier is dropped the choice is dropped.
 
 
 Trail
