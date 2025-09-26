@@ -118,6 +118,7 @@ Integer
 
 Where *tag* is TAG_INT.
 Where *arity* is always 0.
+Where *flags* is 0.
 Where *num_cells* is always 1.
 Where *val_int* is a signed 64-bit integer.
 
@@ -141,8 +142,9 @@ Bigint
         +----------+---------+----------+---------+
 ```
 
-Where *tag* is TAG_RATIONAL.
+Where *tag* is TAG_INT.
 Where *arity* is always 0.
+Where *flags* is FLAG_INT_BIG.
 Where *num_cells* is always 1.
 Where *val_bigint* is a pointer.
 
@@ -168,6 +170,7 @@ Double
 
 Where *tag* is TAG_DOUBLE.
 Where *arity* is always 0
+Where *flags* is 0.
 Where *num_cells* is always 1.
 Where *val_real* is a floating point *double*.
 
@@ -195,6 +198,7 @@ A small string < 16 bytes.
 
 Where *tag* is TAG_CSTRING.
 Where *arity* is always 0.
+Where *flags* is 0.
 Where *num_cells* is always 1.
 Where *chr_len* is the number of bytes (0-14) in *val_chr*.
 Where *val_chr* is up to 14 bytes of UTF-8 chars, NULL-terminated.
@@ -297,6 +301,7 @@ Compound
 
 Where *tag* is TAG_LITERAL.
 Where *arity* is > 0.
+Where *flags* is 0.
 Where *num_cells* is > 1 and includes the args.
 Where *val_off* is a byte-offset into the symbol table of the functor name.
 Where args are the following cells (see *num_cells*).
@@ -329,6 +334,7 @@ A list is just a special instance of a compound.
 
 Where *tag* is TAG_LITERAL.
 Where *arity* is always 2.
+Where *flags* is 0.
 Where *num_cells* is > 1 and includes head & tail args.
 Where *val_off* is a byte-offset into the symbol table to the functor name '.'.
 Where args are the following cells (see *num_cells*).
