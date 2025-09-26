@@ -1763,11 +1763,14 @@ bool execute(query *q, cell *cells, unsigned num_vars)
 	q->is_redo = false;
 
 	alloc_frame(q, num_vars);
+	try_me(q, num_vars);
 	q->st.fp = 1;
 	frame *f = GET_CURR_FRAME();
 	f->prev = CTX_NUL;
+	f->op = 0;
 	f->initial_slots = f->actual_slots = num_vars;
 	f->dbgen = ++q->pl->dbgen;
+	q->st.fp = 1;
 	return start(q);
 }
 
