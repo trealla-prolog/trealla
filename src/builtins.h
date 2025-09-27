@@ -76,6 +76,7 @@ bool call_userfun(query *q, cell *c, pl_ctx c_ctx);
 	is_evaluable(c) || is_builtin(c) ? (call_builtin(q,c,c##_ctx), q->accum) : \
 	is_callable(c) ? (call_userfun(q, c, c##_ctx), q->accum) : *c;		\
 	q->accum.flags = 0;													\
+	q->accum.num_cells = 1;											\
 	if (q->did_throw)													\
 		return true; 												\
 	if (is_var(c))													\
