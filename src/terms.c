@@ -87,7 +87,7 @@ static void collect_vars_lists(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth
 	collect_vars_internal(q, l, l_ctx, depth+1);
 }
 
-static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
+static void collect_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 {
 	if (is_var(p1)) {
 		if (!(p1->flags & FLAG_VAR_CYCLIC))
@@ -114,7 +114,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 
 	while ((n = (snode*)list_pop_front(&stack)) != NULL) {
 		cell *p1 = n->c;
-		pl_idx p1_ctx = n->c_ctx;
+		pl_ctx p1_ctx = n->c_ctx;
 		free(n);
 
 		if (!is_compound(p1) || is_iso_list(p1)) {
@@ -129,7 +129,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 
 		while (arity--) {
 			cell *c = p1;
-			pl_idx c_ctx = p1_ctx;
+			pl_ctx c_ctx = p1_ctx;
 			slot *e = NULL;
 			uint32_t save_vgen;
 			int both = 0;
@@ -212,7 +212,7 @@ static bool has_vars_lists(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 	return has_vars_internal(q, l, l_ctx, depth+1);
 }
 
-static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
+static bool has_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 {
 	if (is_var(p1))
 		return true;
@@ -233,7 +233,7 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 
 	while ((n = (snode*)list_pop_front(&stack)) != NULL) {
 		cell *p1 = n->c;
-		pl_idx p1_ctx = n->c_ctx;
+		pl_ctx p1_ctx = n->c_ctx;
 		free(n);
 
 		if (!is_compound(p1) || is_iso_list(p1)) {
@@ -253,7 +253,7 @@ static bool has_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 
 		while (arity--) {
 			cell *c = p1;
-			pl_idx c_ctx = p1_ctx;
+			pl_ctx c_ctx = p1_ctx;
 			slot *e = NULL;
 			uint32_t save_vgen = 0;
 			int both = 0;

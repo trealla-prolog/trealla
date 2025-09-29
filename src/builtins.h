@@ -134,9 +134,9 @@ inline static cell *take_queuen(query *q)
 #define GET_CURR_CHOICE() GET_CHOICE(q->cp-1)
 #define GET_PREV_CHOICE() GET_CHOICE(q->cp-2)
 
-#define GET_FRAME(i) (q->frame_pages->frames+(i))
+#define GET_FRAME(ctx) (ctx)
 #define GET_CURR_FRAME() GET_FRAME(q->st.cur_ctx)
-#define GET_NEW_FRAME() GET_FRAME(q->st.new_fp)
+#define GET_NEW_FRAME() GET_FRAME(q->frame_pages->frames + q->st.new_fp)
 
 inline static slot *get_slot(const query *q, const frame *f, unsigned var_num)
 {

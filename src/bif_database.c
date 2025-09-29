@@ -57,7 +57,7 @@ static bool bif_clause_3(query *q)
 			cl = &r->cl;
 			cell *head = get_head(cl->cells);
 
-			if (!unify(q, p1, p1_ctx, head, q->st.new_fp))
+			if (!unify(q, p1, p1_ctx, head, GET_NEW_FRAME()))
 				break;
 		} else {
 			if (match_clause(q, p1, p1_ctx, DO_CLAUSE) != true)
@@ -76,7 +76,7 @@ static bool bif_clause_3(query *q)
 		bool ok;
 
 		if (body)
-			ok = unify(q, p2, p2_ctx, body, q->st.new_fp);
+			ok = unify(q, p2, p2_ctx, body, GET_NEW_FRAME());
 		else {
 			cell tmp;
 			make_instr(&tmp, g_true_s, bif_iso_true_0, 0, 0);
@@ -155,7 +155,7 @@ static bool bif_iso_clause_2(query *q)
 		bool ok;
 
 		if (body)
-			ok = unify(q, p2, p2_ctx, body, q->st.new_fp);
+			ok = unify(q, p2, p2_ctx, body, GET_NEW_FRAME());
 		else {
 			cell tmp;
 			make_instr(&tmp, g_true_s, bif_iso_true_0, 0, 0);
@@ -882,7 +882,7 @@ static bool do_dump_term(query *q, cell *p1x, pl_ctx p1x_ctx, cell *p1, pl_ctx p
 {
 	if (!depth) {
 		const frame *f = GET_CURR_FRAME();
-		printf("f=%u, f->initial_slots=%u, f->actual_slots=%u\n", q->st.cur_ctx, f->initial_slots, f->actual_slots);
+		printf("f=%p, f->initial_slots=%u, f->actual_slots=%u\n", q->st.cur_ctx, f->initial_slots, f->actual_slots);
 	}
 
 	cell *tmp = p1;
@@ -927,7 +927,7 @@ static bool do_dump_term(query *q, cell *p1x, pl_ctx p1x_ctx, cell *p1, pl_ctx p
 				is_anon(tmp)?1:0);
 
 		if (is_ref(tmp))
-			printf(", slot=%u, ctx=%u", tmp->var_num, tmp->val_ctx);
+			printf(", slot=%u, ctx=%p", tmp->var_num, tmp->val_ctx);
 		else if (is_var(tmp))
 			printf(", slot=%u, %s", tmp->var_num, C_STR(q, tmp));
 

@@ -192,7 +192,7 @@ static bool bif_bb_get_2(query *q)
 
 	checked(check_frame(q, MAX_ARITY));
 	try_me(q, MAX_ARITY);
-	cell *tmp = copy_term_to_heap(q, (cell*)val, q->st.new_fp, true);
+	cell *tmp = copy_term_to_heap(q, (cell*)val, GET_NEW_FRAME(), true);
 	checked(tmp);
 	GET_FIRST_ARG(p1x,nonvar);
 	GET_NEXT_ARG(p2,any);
@@ -253,7 +253,7 @@ static bool bif_bb_delete_2(query *q)
 
 	checked(check_frame(q, MAX_ARITY));
 	try_me(q, MAX_ARITY);
-	cell *tmp = copy_term_to_heap(q, (cell*)val, q->st.new_fp, true);
+	cell *tmp = copy_term_to_heap(q, (cell*)val, GET_NEW_FRAME(), true);
 	checked(tmp, prolog_unlock(q->pl));
 	GET_FIRST_ARG(p1x,nonvar);
 	GET_NEXT_ARG(p2,any);
@@ -330,7 +330,7 @@ static bool bif_bb_update_3(query *q)
 	checked(check_frame(q, MAX_ARITY));
 	try_me(q, MAX_ARITY);
 	q->noderef = true;
-	cell *tmp = copy_term_to_heap(q, (cell*)val, q->st.new_fp, true);
+	cell *tmp = copy_term_to_heap(q, (cell*)val, GET_NEW_FRAME(), true);
 	q->noderef = false;
 	checked(tmp, prolog_unlock(q->pl));
 	GET_FIRST_ARG(p1x,nonvar);

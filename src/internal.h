@@ -26,7 +26,7 @@ typedef double pl_flt;
 typedef intmax_t pl_int;
 typedef uintmax_t pl_uint;
 typedef uint32_t pl_idx;
-typedef uint32_t pl_ctx;
+typedef struct frame_ *pl_ctx;
 
 #define PL_INT_MAX INTMAX_MAX
 #define PL_INT_MIN INTMAX_MIN
@@ -55,7 +55,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 // Sentinel Value
 #define ERR_IDX (~(pl_idx)0)
 #define IDX_MAX (ERR_IDX-1)
-#define CTX_NUL (ERR_IDX-1)
+#define CTX_NUL NULL
 
 #define MAX_SMALL_STRING ((sizeof(void*)*2)-1)
 #define MAX_VAR_POOL_SIZE 16000

@@ -112,7 +112,7 @@ static void trace_call(query *q, cell *c, pl_ctx c_ctx, box_t box)
 	q->step++;
 	SB(pr);
 
-	SB_sprintf(pr, "[%u:%s:%"PRIu64":f%u:fp%u:cp%u:sp%u:hp%u:tp%u] ",
+	SB_sprintf(pr, "[%u:%s:%"PRIu64":f%p:fp%u:cp%u:sp%u:hp%u:tp%u] ",
 		q->my_chan,
 		q->st.m->name,
 		q->step,
@@ -570,7 +570,7 @@ static void trim_frame(query *q, const frame *f)
 	}
 
 	q->st.sp -= f->actual_slots;
-	q->st.new_fp = q->st.cur_ctx;
+	q->st.new_fp--;		// ????
 }
 
 void undo_me(query *q)
@@ -627,7 +627,7 @@ static void push_frame(query *q)
 	fnew->hp = q->st.hp;
 	fnew->heap_num = q->st.heap_num;
 	q->st.sp += fnew->actual_slots;
-	q->st.cur_ctx = q->st.new_fp;
+	q->st.cur_ctx = GET_NEW_FRAME();
 	q->st.new_fp += fnew->frame_size;
 }
 
@@ -696,7 +696,7 @@ static void commit_frame(query *q)
 
 	if (!q->no_recov
 		&& last_match
-		&& (q->st.new_fp == (q->st.cur_ctx + f->frame_size))		// Top frame
+		&& (GET_NEW_FRAME() == (q->st.cur_ctx + f->frame_size))		// Top frame
 		) {
 		bool tail_recursive = is_recursive_call(q->st.instr);
 		bool slots_ok = f->initial_slots <= cl->num_vars;
@@ -757,7 +757,7 @@ void stash_frame(query *q, const clause *cl, bool last_match)
 	}
 
 	if (num_vars) {
-		frame *f = GET_FRAME(q->st.new_fp);
+		frame *f = GET_NEW_FRAME();
 		f->prev = q->st.cur_ctx;
 		f->instr = NULL;
 		f->chgen = chgen;
@@ -980,7 +980,7 @@ static bool resume_frame(query *q)
 
 	if (q->pl->opt
 		&& !f->no_recov
-		&& (q->st.new_fp == (q->st.cur_ctx + f->frame_size))		// Top frame
+		&& (GET_NEW_FRAME() == (q->st.cur_ctx + f->frame_size))		// Top frame
 		&& !resume_any_choices(q, f)
 		) {
 		q->total_recovs++;
@@ -1340,7 +1340,7 @@ bool match_rule(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 
 		try_me(q, cl->num_vars);
 
-		if (unify(q, p1, p1_ctx, c, q->st.new_fp)) {
+		if (unify(q, p1, p1_ctx, c, GET_NEW_FRAME())) {
 			int ok;
 
 			if (needs_true) {
@@ -1445,7 +1445,7 @@ bool match_clause(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract
 
 		try_me(q, cl->num_vars);
 
-		if (unify(q, p1, p1_ctx, head, q->st.new_fp))
+		if (unify(q, p1, p1_ctx, head, GET_NEW_FRAME()))
 			return true;
 
 		undo_me(q);
@@ -1520,7 +1520,7 @@ bool match_head(query *q)
 		try_me(q, cl->num_vars);
 		q->st.dbe->attempted++;
 
-		if (unify(q, q->st.key, q->st.key_ctx, head, q->st.new_fp)) {
+		if (unify(q, q->st.key, q->st.key_ctx, head, GET_NEW_FRAME())) {
 			if (q->error)
 				break;
 
@@ -1875,7 +1875,7 @@ query *query_create(module *m)
 	q->max_depth = m->pl->def_max_depth;
 	q->vgen = 1;
 	q->dump_var_num = -1;
-	q->dump_var_ctx = -1;
+	q->dump_var_ctx = NULL;
 
 	mp_int_init(&q->tmp_ival);
 	mp_rat_init(&q->tmp_irat);

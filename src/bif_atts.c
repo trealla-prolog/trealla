@@ -255,6 +255,7 @@ static bool check_occurs(unsigned var_num, pl_ctx val_ctx, cell *c, pl_ctx c_ctx
 
 bool any_attributed(query *q)
 {
+#if 0
 	for (unsigned j = 0; j < q->st.new_fp; j++) {
 		const frame *f = GET_FRAME(j);
 
@@ -286,6 +287,7 @@ bool any_attributed(query *q)
 			return true;
 		}
 	}
+#endif
 
 	return false;
 }

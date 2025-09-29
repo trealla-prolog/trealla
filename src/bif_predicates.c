@@ -1872,7 +1872,7 @@ static bool do_copy_term(query *q, bool copy_attrs)
 	GET_FIRST_RAW_ARG(p1r,any);
 	GET_NEXT_RAW_ARG(p2r,any);
 	q->dump_var_num = is_var(p1r) ? p1r->var_num : (unsigned)-1;
-	q->dump_var_ctx = is_var(p1r) ? p1r_ctx : (unsigned)-1;
+	q->dump_var_ctx = is_var(p1r) ? p1r_ctx : q->st.cur_ctx;
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 
@@ -1881,7 +1881,7 @@ static bool do_copy_term(query *q, bool copy_attrs)
 
 	cell *tmp = copy_term_to_heap_with_replacement(q, p1, p1_ctx, copy_attrs, p1r, p1r_ctx, p2r, p2r_ctx);
 	q->dump_var_num = -1;
-	q->dump_var_ctx = -1;
+	q->dump_var_ctx = q->st.cur_ctx;
 	checked(tmp);
 
 	// Reget as slots may have reallocated...
