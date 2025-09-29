@@ -67,7 +67,7 @@ static bool bif_clause_3(query *q)
 			uuid_to_buf(&q->st.dbe->u, tmpbuf, sizeof(tmpbuf));
 			cell tmp;
 			make_cstring(&tmp, tmpbuf);
-			unify(q, p3, p3_ctx, &tmp, q->st.cur_fp);
+			unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx);
 			unshare_cell(&tmp);
 			cl = &q->st.dbe->cl;
 		}
@@ -80,7 +80,7 @@ static bool bif_clause_3(query *q)
 		else {
 			cell tmp;
 			make_instr(&tmp, g_true_s, bif_iso_true_0, 0, 0);
-			ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_fp);
+			ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 		}
 
 		if (ok) {
@@ -120,13 +120,13 @@ static void db_log(query *q, rule *r, enum log_type l)
 
 	switch(l) {
 	case LOG_ASSERTA:
-		dst = print_term_to_strbuf(q, r->cl.cells, q->st.cur_fp, 1);
+		dst = print_term_to_strbuf(q, r->cl.cells, q->st.cur_ctx, 1);
 		uuid_to_buf(&r->u, tmpbuf, sizeof(tmpbuf));
 		fprintf(fp, "%s:'$a_'((%s),'%s').\n", q->st.m->name, dst, tmpbuf);
 		free(dst);
 		break;
 	case LOG_ASSERTZ:
-		dst = print_term_to_strbuf(q, r->cl.cells, q->st.cur_fp, 1);
+		dst = print_term_to_strbuf(q, r->cl.cells, q->st.cur_ctx, 1);
 		uuid_to_buf(&r->u, tmpbuf, sizeof(tmpbuf));
 		fprintf(fp, "%s:'$z_'((%s),'%s').\n", q->st.m->name, dst, tmpbuf);
 		free(dst);
@@ -159,7 +159,7 @@ static bool bif_iso_clause_2(query *q)
 		else {
 			cell tmp;
 			make_instr(&tmp, g_true_s, bif_iso_true_0, 0, 0);
-			ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_fp);
+			ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 		}
 
 		if (ok) {
@@ -294,7 +294,7 @@ bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard)
 	if (!pr) return true;
 
 	if (!pr->is_dynamic)
-		return throw_error(q, c_orig, q->st.cur_fp, "permission_error", "modify,static_procedure");
+		return throw_error(q, c_orig, q->st.cur_ctx, "permission_error", "modify,static_procedure");
 
 	for (rule *r = pr->head; r; r = r->next)
 		retract_from_db(r->owner->m, r);
@@ -386,16 +386,16 @@ static bool bif_iso_asserta_1(query *q)
 	cell *head = get_head(tmp);
 
 	if (is_var(head))
-		return throw_error(q, head, q->st.cur_fp, "instantiation_error", "args_not_sufficiently_instantiated");
+		return throw_error(q, head, q->st.cur_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 
 	if (!is_interned(head) && !is_cstring(head))
-		return throw_error(q, head, q->st.cur_fp, "type_error", "callable");
+		return throw_error(q, head, q->st.cur_ctx, "type_error", "callable");
 
 	bool found = false;
 
 	if (get_builtin_term(q->st.m, head, &found, NULL), found) {
 		if (!GET_OP(head)) {
-			return throw_error(q, head, q->st.cur_fp, "permission_error", "modify,static_procedure");
+			return throw_error(q, head, q->st.cur_ctx, "permission_error", "modify,static_procedure");
 		}
 	}
 
@@ -403,7 +403,7 @@ static bool bif_iso_asserta_1(query *q)
 
 	if (body && ((tmp2 = check_body_callable(body)) != NULL)) {
 		prolog_unlock(q->pl);
-		return throw_error(q, tmp2, q->st.cur_fp, "type_error", "callable");
+		return throw_error(q, tmp2, q->st.cur_ctx, "type_error", "callable");
 	}
 
 	pl_idx num_cells = tmp->num_cells;
@@ -428,8 +428,8 @@ static bool bif_iso_asserta_1(query *q)
 	parser_destroy(p);
 
 	if (!r) {
-		h = copy_term_to_heap(q, h, q->st.cur_fp, false);
-		return throw_error(q, h, q->st.cur_fp, "permission_error", "modify,static_procedure");
+		h = copy_term_to_heap(q, h, q->st.cur_ctx, false);
+		return throw_error(q, h, q->st.cur_ctx, "permission_error", "modify,static_procedure");
 	}
 
 	db_log(q, r, LOG_ASSERTA);
@@ -445,23 +445,23 @@ static bool bif_iso_assertz_1(query *q)
 	cell *head = get_head(tmp);
 
 	if (is_var(head))
-		return throw_error(q, head, q->st.cur_fp, "instantiation_error", "args_not_sufficiently_instantiated");
+		return throw_error(q, head, q->st.cur_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 
 	if (!is_interned(head) && !is_cstring(head))
-		return throw_error(q, head, q->st.cur_fp, "type_error", "callable");
+		return throw_error(q, head, q->st.cur_ctx, "type_error", "callable");
 
 	bool found = false, evaluable = false;
 
 	if (get_builtin_term(q->st.m, head, &found, &evaluable), found && !evaluable) {
 		if (!GET_OP(head)) {
-			return throw_error(q, head, q->st.cur_fp, "permission_error", "modify,static_procedure");
+			return throw_error(q, head, q->st.cur_ctx, "permission_error", "modify,static_procedure");
 		}
 	}
 
 	cell *tmp2, *body = get_body(tmp);
 
 	if (body && ((tmp2 = check_body_callable(body)) != NULL)) {
-		return throw_error(q, tmp2, q->st.cur_fp, "type_error", "callable");
+		return throw_error(q, tmp2, q->st.cur_ctx, "type_error", "callable");
 	}
 
 	pl_idx num_cells = tmp->num_cells;
@@ -486,8 +486,8 @@ static bool bif_iso_assertz_1(query *q)
 	parser_destroy(p);
 
 	if (!r) {
-		h = copy_term_to_heap(q, h, q->st.cur_fp, false);
-		return throw_error(q, h, q->st.cur_fp, "permission_error", "modify,static_procedure");
+		h = copy_term_to_heap(q, h, q->st.cur_ctx, false);
+		return throw_error(q, h, q->st.cur_ctx, "permission_error", "modify,static_procedure");
 	}
 
 	db_log(q, r, LOG_ASSERTZ);
@@ -552,8 +552,8 @@ static bool do_asserta_2(query *q)
 	parser_destroy(p);
 
 	if (!r) {
-		h = copy_term_to_heap(q, h, q->st.cur_fp, false);
-		return throw_error(q, h, q->st.cur_fp, "permission_error", "modify,static_procedure");
+		h = copy_term_to_heap(q, h, q->st.cur_ctx, false);
+		return throw_error(q, h, q->st.cur_ctx, "permission_error", "modify,static_procedure");
 	}
 
 	if (!is_var(p2)) {
@@ -566,7 +566,7 @@ static bool do_asserta_2(query *q)
 		uuid_to_buf(&r->u, tmpbuf, sizeof(tmpbuf));
 		cell tmp2;
 		make_cstring(&tmp2, tmpbuf);
-		unify(q, p2, p2_ctx, &tmp2, q->st.cur_fp);
+		unify(q, p2, p2_ctx, &tmp2, q->st.cur_ctx);
 		unshare_cell(&tmp2);
 	}
 
@@ -646,8 +646,8 @@ static bool do_assertz_2(query *q)
 	parser_destroy(p);
 
 	if (!r) {
-		h = copy_term_to_heap(q, h, q->st.cur_fp, false);
-		return throw_error(q, h, q->st.cur_fp, "permission_error", "modify,static_procedure");
+		h = copy_term_to_heap(q, h, q->st.cur_ctx, false);
+		return throw_error(q, h, q->st.cur_ctx, "permission_error", "modify,static_procedure");
 	}
 
 	if (!is_var(p2)) {
@@ -660,7 +660,7 @@ static bool do_assertz_2(query *q)
 		uuid_to_buf(&r->u, tmpbuf, sizeof(tmpbuf));
 		cell tmp2;
 		make_cstring(&tmp2, tmpbuf);
-		unify(q, p2, p2_ctx, &tmp2, q->st.cur_fp);
+		unify(q, p2, p2_ctx, &tmp2, q->st.cur_ctx);
 		unshare_cell(&tmp2);
 	}
 
@@ -844,7 +844,7 @@ static bool bif_instance_2(query *q)
 	uuid_from_buf(C_STR(q, p1), &u);
 	rule *r = find_in_db(q->st.m, &u);
 	checked(r);
-	return unify(q, p2, p2_ctx, r->cl.cells, q->st.cur_fp);
+	return unify(q, p2, p2_ctx, r->cl.cells, q->st.cur_ctx);
 }
 
 static bool bif_sys_clause_2(query *q)
@@ -873,16 +873,16 @@ static bool bif_sys_retract_on_backtrack_1(query *q)
 	b->ptr2 = (void*)strdup(C_STR(q, p1));
 	checked(b->ptr2);
 	cell c, v;
-	make_ref(&c, var_num, q->st.cur_fp);
+	make_ref(&c, var_num, q->st.cur_ctx);
 	make_dbref(&v, b);
-	return unify(q, &c, q->st.cur_fp, &v, q->st.cur_fp);
+	return unify(q, &c, q->st.cur_ctx, &v, q->st.cur_ctx);
 }
 
 static bool do_dump_term(query *q, cell *p1x, pl_ctx p1x_ctx, cell *p1, pl_ctx p1_ctx, bool deref, int depth)
 {
 	if (!depth) {
 		const frame *f = GET_CURR_FRAME();
-		printf("f=%u, f->initial_slots=%u, f->actual_slots=%u\n", q->st.cur_fp, f->initial_slots, f->actual_slots);
+		printf("f=%u, f->initial_slots=%u, f->actual_slots=%u\n", q->st.cur_ctx, f->initial_slots, f->actual_slots);
 	}
 
 	cell *tmp = p1;
@@ -937,7 +937,7 @@ static bool do_dump_term(query *q, cell *p1x, pl_ctx p1x_ctx, cell *p1, pl_ctx p
 
 			if (e->c.val_attrs && 0) {
 				printf("\n");
-				do_dump_term(q, p1x, p1x_ctx, e->c.val_attrs, q->st.cur_fp, deref, depth+1);
+				do_dump_term(q, p1x, p1x_ctx, e->c.val_attrs, q->st.cur_ctx, deref, depth+1);
 				continue;
 			}
 		}
