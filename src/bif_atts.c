@@ -32,7 +32,7 @@ static bool bif_attribute_3(query *q)
 	if (!found) return false;
 	cell tmp;
 	make_atom(&tmp, new_atom(q->pl, m_name));
-	return unify(q, p1, p1_ctx, &tmp, q->st.cur_frame);
+	return unify(q, p1, p1_ctx, &tmp, q->st.cur_fp);
 }
 
 static bool do_put_atts(query *q, cell *attr, pl_ctx attr_ctx, bool is_minus)
@@ -186,7 +186,7 @@ static bool bif_get_atts_2(query *q)
 		if (is_nil(l))
 			return false;
 
-		return unify(q, p2, p2_ctx, l, q->st.cur_frame);
+		return unify(q, p2, p2_ctx, l, q->st.cur_fp);
 	}
 
 	cell *attr = p2;
@@ -255,7 +255,7 @@ static bool check_occurs(unsigned var_num, pl_ctx val_ctx, cell *c, pl_ctx c_ctx
 
 bool any_attributed(query *q)
 {
-	for (unsigned j = 0; j < q->st.fp; j++) {
+	for (unsigned j = 0; j < q->st.new_fp; j++) {
 		const frame *f = GET_FRAME(j);
 
 		for (unsigned i = 0; i < f->actual_slots; i++) {
@@ -295,7 +295,7 @@ static bool bif_sys_mark_start_1(query * q)
 	GET_FIRST_ARG(p1,var);
 	cell mark;
 	make_uint(&mark, q->st.tp);
-	unify(q, p1, p1_ctx, &mark, q->st.cur_frame);
+	unify(q, p1, p1_ctx, &mark, q->st.cur_fp);
 	return true;
 }
 
@@ -426,7 +426,7 @@ static bool bif_sys_undo_trail_2(query *q)
 	GET_NEXT_ARG(p2,var);
 
 	if (q->undo_hi_tp == q->undo_lo_tp) {
-		unify(q, p1, p1_ctx, make_nil(), q->st.cur_frame);
+		unify(q, p1, p1_ctx, make_nil(), q->st.cur_fp);
 		return true;
 	}
 
@@ -466,10 +466,10 @@ static bool bif_sys_undo_trail_2(query *q)
 
 	cell *tmp = end_list(q);
 	checked(tmp, free(save));
-	unify(q, p1, p1_ctx, tmp, q->st.cur_frame);
+	unify(q, p1, p1_ctx, tmp, q->st.cur_fp);
 	cell tmp2;
 	make_blob(&tmp2, &save->b);
-	unify(q, p2, p2_ctx, &tmp2, q->st.cur_frame);
+	unify(q, p2, p2_ctx, &tmp2, q->st.cur_fp);
 	return true;
 }
 

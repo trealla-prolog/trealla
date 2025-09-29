@@ -76,7 +76,7 @@ cell *alloc_tmp(query *q, unsigned num_cells)
 }
 
 #define deep_copy(c) \
-	(!q->noderef || (is_ref(c) && (c->val_ctx <= q->st.cur_frame) && !is_anon(c)))
+	(!q->noderef || (is_ref(c) && (c->val_ctx <= q->st.cur_fp) && !is_anon(c)))
 
 // Note: convert vars to refs
 // Note: doesn't increment ref counts
@@ -247,13 +247,13 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_c
 			}
 
 			c->var_num = var_num;
-			c->val_ctx = q->st.cur_frame;
+			c->val_ctx = q->st.cur_fp;
 
 			if (copy_attrs && attrs) {
 				cell *save_tmp_heap = q->tmp_heap;
 				pl_idx save_tmp_hp = q->tmphp;
 				q->tmp_heap = NULL;
-				cell *tmp = copy_term_to_heap(q, attrs, q->st.cur_frame, false);
+				cell *tmp = copy_term_to_heap(q, attrs, q->st.cur_fp, false);
 				checked(tmp);
 				c->tmp_attrs = malloc(sizeof(cell)*tmp->num_cells);
 				copy_cells(c->tmp_attrs, tmp, tmp->num_cells);
@@ -454,7 +454,7 @@ cell *copy_term_to_heap_with_replacement(query *q, cell *p1, pl_ctx p1_ctx, bool
 		if (is_var(c) && c->tmp_attrs) {
 			const frame *f = GET_FRAME(c->val_ctx);
 			slot *e = get_slot(q, f, c->var_num);
-			e->c.val_attrs = clone_term_to_heap(q, c->tmp_attrs, q->st.cur_frame);
+			e->c.val_attrs = clone_term_to_heap(q, c->tmp_attrs, q->st.cur_fp);
 			free(c->tmp_attrs);
 			c->tmp_attrs = NULL;
 		}
@@ -615,7 +615,7 @@ cell *alloc_queuen(query *q, unsigned qnum, const cell *c)
 
 frame *alloc_frame(query *q, unsigned num_vars)
 {
-	if (!q->frame_pages || (q->st.fp >= q->frame_pages->page_size))  {
+	if (!q->frame_pages || (q->st.new_fp >= q->frame_pages->page_size))  {
 		page *a = calloc(1, sizeof(page));
 		if (!a) return NULL;
 		a->next = q->frame_pages;
@@ -624,14 +624,14 @@ frame *alloc_frame(query *q, unsigned num_vars)
 		if (!a->frames) { free(a); return NULL; }
 		a->num = ++q->st.frame_num;
 		q->frame_pages = a;
-		q->st.fp = 0;
+		q->st.new_fp = 0;
 	}
 
 	if (q->st.frame_num > q->hw_frame_num)
 		q->hw_frame_num = q->st.frame_num;
 
-	frame *f = q->frame_pages->frames + q->st.fp;
-	q->frame_pages->idx = q->st.fp;
+	frame *f = q->frame_pages->frames + q->st.new_fp;
+	q->frame_pages->idx = q->st.new_fp;
 	return f;
 }
 
@@ -655,7 +655,7 @@ void trim_frames(query *q)
 	if (!q->frame_pages)
 		return;
 
-	while (q->frame_pages->idx > q->st.fp) {
+	while (q->frame_pages->idx > q->st.new_fp) {
 		frame *f = q->frame_pages->frames + --q->frame_pages->idx;
 	}
 }

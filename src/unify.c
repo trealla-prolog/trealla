@@ -262,7 +262,7 @@ static void set_var(query *q, const cell *c, pl_ctx c_ctx, cell *v, pl_ctx v_ctx
 	slot *e = get_slot(q, f, c->var_num);
 	cell *c_attrs = e->c.val_attrs;
 
-	if (is_managed(v) || (c_ctx != q->st.fp))
+	if (is_managed(v) || (c_ctx != q->st.new_fp))
 		add_trail(q, c_ctx, c->var_num, c_attrs);
 
 	if (c_attrs)
@@ -271,8 +271,8 @@ static void set_var(query *q, const cell *c, pl_ctx c_ctx, cell *v, pl_ctx v_ctx
 	if (is_var(v)) {
 		make_ref(&e->c, v->var_num, v_ctx);
 
-		if ((c_ctx == q->st.fp)
-			//&& (v_ctx >= q->st.cur_frame)
+		if ((c_ctx == q->st.new_fp)
+			//&& (v_ctx >= q->st.cur_fp)
 			&& !is_temporary(c) && !is_void(c)
 			) {
 			q->no_recov = true;
@@ -281,7 +281,7 @@ static void set_var(query *q, const cell *c, pl_ctx c_ctx, cell *v, pl_ctx v_ctx
 	} else if (is_compound(v)) {
 		make_indirect(&e->c, v, v_ctx);
 
-		if ((v_ctx >= q->st.cur_frame)
+		if ((v_ctx >= q->st.cur_fp)
 			&& !is_ground(v)
 			){
 			q->no_recov = true;
