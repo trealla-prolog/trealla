@@ -3205,7 +3205,7 @@ bool bif_statistics_0(query *q)
 
 		q->total_inferences, q->total_matches, q->total_matched,
 		q->hw_frames, q->hw_choices, q->hw_trails, q->hw_slots,
-		q->hw_heap_num, q->hw_deref,
+		q->hw_frame_num, q->hw_deref,
 		q->realloc_frames, q->realloc_choices, q->realloc_trails, q->realloc_slots,
 		q->st.new_fp, q->cp, q->st.tp, q->st.sp,
 		q->st.heap_num,
