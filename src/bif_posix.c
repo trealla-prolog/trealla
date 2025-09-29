@@ -44,7 +44,7 @@ static bool bif_posix_strftime_3(query *q)
 	if (length == 0) {
 		cell tmp;
 		make_atom(&tmp, g_empty_s);
-		return unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+		return unify(q, p3, p3_ctx, &tmp, q->st.cur_frame);
 	}
 
 	struct tm tm = {0};
@@ -76,7 +76,7 @@ static bool bif_posix_strftime_3(query *q)
 			cell tmp;
 			make_string(&tmp, buffer);
 			free(buffer);
-			bool ok = unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+			bool ok = unify(q, p3, p3_ctx, &tmp, q->st.cur_frame);
 			unshare_cell(&tmp);
 			return ok;
 		}
@@ -111,7 +111,7 @@ static bool bif_posix_strptime_3(query *q)
 	make_int(tmp+num_cells++, tm.tm_yday);
 	make_int(tmp+num_cells++, tm.tm_isdst);
 
-	return unify(q, p3, p3_ctx, tmp, q->st.curr_frame);
+	return unify(q, p3, p3_ctx, tmp, q->st.cur_frame);
 }
 #endif
 
@@ -140,7 +140,7 @@ static bool bif_posix_mktime_2(query *q)
 	time_t now = mktime(&tm);
 	cell tmp;
 	make_int(&tmp, now);
-	return unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	return unify(q, p2, p2_ctx, &tmp, q->st.cur_frame);
 }
 
 static bool bif_posix_gmtime_2(query *q)
@@ -167,7 +167,7 @@ static bool bif_posix_gmtime_2(query *q)
 	make_int(tmp+num_cells++, tm.tm_yday);
 	make_int(tmp+num_cells++, tm.tm_isdst);
 
-	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+	return unify(q, p2, p2_ctx, tmp, q->st.cur_frame);
 }
 
 static bool bif_posix_localtime_2(query *q)
@@ -194,7 +194,7 @@ static bool bif_posix_localtime_2(query *q)
 	make_int(tmp+num_cells++, tm.tm_yday);
 	make_int(tmp+num_cells++, tm.tm_isdst);
 
-	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+	return unify(q, p2, p2_ctx, tmp, q->st.cur_frame);
 }
 
 static bool bif_posix_ctime_2(query *q)
@@ -205,7 +205,7 @@ static bool bif_posix_ctime_2(query *q)
 	char tmpbuf[256];
 	cell tmp;
 	make_cstring(&tmp, ctime_r(&when, tmpbuf));
-	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_frame);
 	unshare_cell(&tmp);
 	return ok;
 }
@@ -215,7 +215,7 @@ static bool bif_posix_time_1(query *q)
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
 	make_int(&tmp, time(NULL));
-	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+	return unify(q, p1, p1_ctx, &tmp, q->st.cur_frame);
 }
 
 static bool bif_posix_getpid_1(query *q)
@@ -227,7 +227,7 @@ static bool bif_posix_getpid_1(query *q)
 #else
 	make_int(&tmp, -1);
 #endif
-	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+	return unify(q, p1, p1_ctx, &tmp, q->st.cur_frame);
 }
 
 static bool bif_posix_getppid_1(query *q)
@@ -239,7 +239,7 @@ static bool bif_posix_getppid_1(query *q)
 #else
 	make_int(&tmp, -1);
 #endif
-	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+	return unify(q, p1, p1_ctx, &tmp, q->st.cur_frame);
 }
 
 static bool bif_posix_fork_1(query *q)
@@ -253,7 +253,7 @@ static bool bif_posix_fork_1(query *q)
 #else
 	make_int(&tmp, -1);
 #endif
-	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+	return unify(q, p1, p1_ctx, &tmp, q->st.cur_frame);
 }
 
 builtins g_posix_bifs[] =

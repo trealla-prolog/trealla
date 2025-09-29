@@ -234,7 +234,7 @@ static bool bif_yield_0(query *q)
 static bool bif_call_task_n(query *q)
 {
 	pl_idx save_hp = q->st.hp;
-	cell *p0 = clone_term_to_heap(q, q->st.instr, q->st.curr_frame);
+	cell *p0 = clone_term_to_heap(q, q->st.instr, q->st.cur_frame);
 	GET_FIRST_RAW_ARG0(p1,callable,p0);
 	checked(init_tmp_heap(q));
 	checked(clone_term_to_tmp(q, p1, p1_ctx));
@@ -259,7 +259,7 @@ static bool bif_call_task_n(query *q)
 	}
 
 	q->st.hp = save_hp;
-	cell *tmp = prepare_call(q, CALL_SKIP, tmp2, q->st.curr_frame, 0);
+	cell *tmp = prepare_call(q, CALL_SKIP, tmp2, q->st.cur_frame, 0);
 	query *task = query_create_task(q, tmp);
 	task->yielded = task->spawned = true;
 	push_task(q, task);
@@ -324,7 +324,7 @@ static bool bif_recv_1(query *q)
 		cell *c = pop_queue(q);
 		if (!c) break;
 
-		if (unify(q, p1, p1_ctx, c, q->st.curr_frame))
+		if (unify(q, p1, p1_ctx, c, q->st.cur_frame))
 			return true;
 
 		checked(alloc_queuen(q, 0, c));

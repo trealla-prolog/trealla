@@ -61,13 +61,13 @@ static bool bif_bb_b_put_2(query *q)
 	checked(var_num != -1);
 
 	cell c, v;
-	make_ref(&c, var_num, q->st.curr_frame);
+	make_ref(&c, var_num, q->st.cur_frame);
 	blob *b = calloc(1, sizeof(blob));
 	b->ptr = (void*)m;
 	b->ptr2 = (void*)strdup(key);
 	make_kvref(&v, b);
 
-	if (!unify(q, &c, q->st.curr_frame, &v, q->st.curr_frame))
+	if (!unify(q, &c, q->st.cur_frame, &v, q->st.cur_frame))
 		return false;
 
 	prolog_lock(q->pl);
@@ -197,10 +197,10 @@ static bool bif_bb_get_2(query *q)
 	GET_FIRST_ARG(p1x,nonvar);
 	GET_NEXT_ARG(p2,any);
 
-	if (DO_DUMP) DUMP_TERM2("bb_get", tmpbuf, tmp, q->st.curr_frame, 1);
+	if (DO_DUMP) DUMP_TERM2("bb_get", tmpbuf, tmp, q->st.cur_frame, 1);
 
 	if (is_var(p2) && is_var(tmp)) {
-		const frame *f = GET_FRAME(q->st.curr_frame);
+		const frame *f = GET_FRAME(q->st.cur_frame);
 		const slot *e = get_slot(q, f, tmp->var_num);
 		const frame *f2 = GET_FRAME(p2_ctx);
 		slot *e2 = get_slot(q, f2, p2->var_num);
@@ -208,7 +208,7 @@ static bool bif_bb_get_2(query *q)
 		return true;
 	}
 
-	return unify(q, p2, p2_ctx, tmp, q->st.curr_frame);
+	return unify(q, p2, p2_ctx, tmp, q->st.cur_frame);
 }
 
 static bool bif_bb_delete_2(query *q)
@@ -258,10 +258,10 @@ static bool bif_bb_delete_2(query *q)
 	GET_FIRST_ARG(p1x,nonvar);
 	GET_NEXT_ARG(p2,any);
 
-	if (DO_DUMP) DUMP_TERM2("bb_delete", tmpbuf, tmp, q->st.curr_frame, 1);
+	if (DO_DUMP) DUMP_TERM2("bb_delete", tmpbuf, tmp, q->st.cur_frame, 1);
 
 	if (is_var(p2) && is_var(tmp)) {
-		const frame *f = GET_FRAME(q->st.curr_frame);
+		const frame *f = GET_FRAME(q->st.cur_frame);
 		const slot *e = get_slot(q, f, tmp->var_num);
 		const frame *f2 = GET_FRAME(p2_ctx);
 		slot *e2 = get_slot(q, f2, p2->var_num);
@@ -271,7 +271,7 @@ static bool bif_bb_delete_2(query *q)
 		return ok;
 	}
 
-	if (!unify(q, p2, p2_ctx, tmp, q->st.curr_frame)) {
+	if (!unify(q, p2, p2_ctx, tmp, q->st.cur_frame)) {
 		prolog_unlock(q->pl);
 		return false;
 	}
@@ -339,7 +339,7 @@ static bool bif_bb_update_3(query *q)
 
 	if (DO_DUMP) DUMP_TERM2("bb_update", tmpbuf, p2, p2_ctx, 1);
 
-	if (!unify(q, p2, p2_ctx, tmp, q->st.curr_frame)) {
+	if (!unify(q, p2, p2_ctx, tmp, q->st.cur_frame)) {
 		prolog_unlock(q->pl);
 		return false;
 	}
