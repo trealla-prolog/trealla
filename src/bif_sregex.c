@@ -23,7 +23,7 @@ bool bif_sre_compile_2(query *q)
 	tmp.val_blob->ptr = (void*)reg;
 	tmp.val_blob->ptr2 = (void*)buf;
 	tmp.val_blob->refcnt = 1;
-	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_frame);
 	unshare_cell(&tmp);
 	return ok;
 }
@@ -45,7 +45,7 @@ bool bif_sre_matchp_4(query *q)
 	else
 		make_slice(q, &tmp, p2, off, len);
 
-	bool ok = unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+	bool ok = unify(q, p3, p3_ctx, &tmp, q->st.cur_frame);
 	unshare_cell(&tmp);
 	if (!ok) return false;
 
@@ -54,7 +54,7 @@ bool bif_sre_matchp_4(query *q)
 	else
 		make_slice(q, &tmp, p2, off + len, C_STRLEN(q, p2)-(off+len));
 
-	ok = unify(q, p4, p4_ctx, &tmp, q->st.curr_frame);
+	ok = unify(q, p4, p4_ctx, &tmp, q->st.cur_frame);
 	unshare_cell(&tmp);
 	return ok;
 }
@@ -76,7 +76,7 @@ bool bif_sre_match_4(query *q)
 	else
 		make_slice(q, &tmp, p2, off, len);
 
-	bool ok = unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+	bool ok = unify(q, p3, p3_ctx, &tmp, q->st.cur_frame);
 	unshare_cell(&tmp);
 	if (!ok) return false;
 
@@ -85,7 +85,7 @@ bool bif_sre_match_4(query *q)
 	else
 		make_slice(q, &tmp, p2, off + len, C_STRLEN(q, p2)-(off+len));
 
-	ok = unify(q, p4, p4_ctx, &tmp, q->st.curr_frame);
+	ok = unify(q, p4, p4_ctx, &tmp, q->st.cur_frame);
 	unshare_cell(&tmp);
 	return ok;
 }
@@ -107,7 +107,7 @@ bool bif_sre_substp_4(query *q)
 	else
 		make_slice(q, &tmp, p2, 0, off);
 
-	bool ok = unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+	bool ok = unify(q, p3, p3_ctx, &tmp, q->st.cur_frame);
 	unshare_cell(&tmp);
 	if (!ok) return false;
 
@@ -116,7 +116,7 @@ bool bif_sre_substp_4(query *q)
 	else
 		make_slice(q, &tmp, p2, off + len, C_STRLEN(q, p2)-(off+len));
 
-	ok = unify(q, p4, p4_ctx, &tmp, q->st.curr_frame);
+	ok = unify(q, p4, p4_ctx, &tmp, q->st.cur_frame);
 	unshare_cell(&tmp);
 	return ok;
 }
@@ -138,7 +138,7 @@ bool bif_sre_subst_4(query *q)
 	else
 		make_slice(q, &tmp, p2, 0, off);
 
-	bool ok = unify(q, p3, p3_ctx, &tmp, q->st.curr_frame);
+	bool ok = unify(q, p3, p3_ctx, &tmp, q->st.cur_frame);
 	unshare_cell(&tmp);
 	if (!ok) return false;
 
@@ -147,7 +147,7 @@ bool bif_sre_subst_4(query *q)
 	else
 		make_slice(q, &tmp, p2, off + len, C_STRLEN(q, p2)-(off+len));
 
-	ok = unify(q, p4, p4_ctx, &tmp, q->st.curr_frame);
+	ok = unify(q, p4, p4_ctx, &tmp, q->st.cur_frame);
 	unshare_cell(&tmp);
 	return ok;
 }

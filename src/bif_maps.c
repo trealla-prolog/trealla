@@ -48,7 +48,7 @@ static bool bif_map_create_2(query *q)
 			cell tmp;
 			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
 
-			if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
+			if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_frame))
 				return false;
 
 			is_alias = true;
@@ -73,7 +73,7 @@ static bool bif_map_create_2(query *q)
 		make_int(&tmp, n);
 		tmp.flags |= FLAG_INT_STREAM | FLAG_INT_MAP;
 
-		if (!unify(q, p1, p1_ctx, &tmp, q->st.curr_frame))
+		if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_frame))
 			return false;
 	}
 
@@ -184,7 +184,7 @@ static bool bif_map_get_3(query *q)
 		make_cstring(&tmp, val);
 
 	if (key != tmpbuf) free(key);
-	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.curr_frame);
+	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_frame);
 	unshare_cell(&tmp);
 	return ok;
 }
@@ -288,7 +288,7 @@ static bool bif_map_list_2(query *q)
 
 	cell *tmp = end_list(q);
 	sl_done(iter);
-	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
+	return unify(q, p1, p1_ctx, tmp, q->st.cur_frame);
 }
 
 static bool bif_map_count_2(query *q)
@@ -303,7 +303,7 @@ static bool bif_map_count_2(query *q)
 	GET_NEXT_ARG(p1,var);
 	cell tmp;
 	make_int(&tmp, sl_count(str->keyval));
-	return unify(q, p1, p1_ctx, &tmp, q->st.curr_frame);
+	return unify(q, p1, p1_ctx, &tmp, q->st.cur_frame);
 }
 
 static bool bif_map_close_1(query *q)
@@ -328,7 +328,7 @@ static bool bif_engine_create_4(query *q)
 	int n = new_stream(q->pl);
 
 	if (n < 0)
-		return throw_error(q, q->st.instr, q->st.curr_frame, "resource_error", "too_many_streams");
+		return throw_error(q, q->st.instr, q->st.cur_frame, "resource_error", "too_many_streams");
 
 	stream *str = &q->pl->streams[n];
 	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
@@ -360,7 +360,7 @@ static bool bif_engine_create_4(query *q)
 			cell tmp;
 			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
 
-			if (!unify(q, p3, p3_ctx, &tmp, q->st.curr_frame))
+			if (!unify(q, p3, p3_ctx, &tmp, q->st.cur_frame))
 				return false;
 
 			is_alias = true;
@@ -378,14 +378,14 @@ static bool bif_engine_create_4(query *q)
 
 	if (is_atom(p3)) {
 		if (get_named_stream(q->pl, C_STR(q, p3), C_STRLEN(q, p3)) >= 0)
-			return throw_error(q, q->st.instr, q->st.curr_frame, "permission_error", "open,source_sink");
+			return throw_error(q, q->st.instr, q->st.cur_frame, "permission_error", "open,source_sink");
 
 		sl_app(str->alias, DUP_STRING(q, p3), NULL);
 	} else if (!is_alias) {
 		cell tmp2;
 		make_int(&tmp2, n);
 		tmp2.flags |= FLAG_INT_STREAM | FLAG_INT_MAP;
-		unify(q, p3, p3_ctx, &tmp2, q->st.curr_frame);
+		unify(q, p3, p3_ctx, &tmp2, q->st.cur_frame);
 	}
 
 	str->first_time = str->is_engine = true;
@@ -396,8 +396,8 @@ static bool bif_engine_create_4(query *q)
 	str->engine->is_engine = true;
 	str->engine->trace = q->trace;
 
-	cell *p0 = copy_term_to_heap(q, q->st.instr, q->st.curr_frame, false);
-	unify(q, q->st.instr, q->st.curr_frame, p0, q->st.curr_frame);
+	cell *p0 = copy_term_to_heap(q, q->st.instr, q->st.cur_frame, false);
+	unify(q, q->st.instr, q->st.cur_frame, p0, q->st.cur_frame);
 	checked(p0);
 
 	q = str->engine;		// Operating in engine now
@@ -434,7 +434,7 @@ static bool bif_engine_next_2(query *q)
 	if (str->curr_yield) {
 		cell *tmp = copy_term_to_heap(q, str->curr_yield, 0, false);
 		str->curr_yield = NULL;
-		return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
+		return unify(q, p1, p1_ctx, tmp, q->st.cur_frame);
 	}
 
 	if (!was_first_time) {
@@ -443,7 +443,7 @@ static bool bif_engine_next_2(query *q)
 	}
 
 	cell *tmp = copy_term_to_heap(str->engine, str->pattern, 0, false);
-	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
+	return unify(q, p1, p1_ctx, tmp, q->st.cur_frame);
 }
 
 static bool bif_engine_yield_1(query *q)
@@ -451,7 +451,7 @@ static bool bif_engine_yield_1(query *q)
 	GET_FIRST_ARG(p1,any);
 
 	if (!q->is_engine)
-		return throw_error(q, q->st.instr, q->st.curr_frame, "permission_error", "not_an_engine");
+		return throw_error(q, q->st.instr, q->st.cur_frame, "permission_error", "not_an_engine");
 
 	stream *str = &q->pl->streams[q->curr_engine];
 
@@ -483,16 +483,16 @@ static bool bif_engine_fetch_1(query *q)
 	GET_FIRST_ARG(p1,any);
 
 	if (!q->is_engine)
-		return throw_error(q, q->st.instr, q->st.curr_frame, "existence_error", "not_an_engine");
+		return throw_error(q, q->st.instr, q->st.cur_frame, "existence_error", "not_an_engine");
 
 	stream *str = &q->pl->streams[q->curr_engine];
 
 	if (!str->curr_yield)
-		return throw_error(q, q->st.instr, q->st.curr_frame, "existence_error", "no_data");
+		return throw_error(q, q->st.instr, q->st.cur_frame, "existence_error", "no_data");
 
 	cell *tmp = copy_term_to_heap(q, str->curr_yield, 0, false);
 	str->curr_yield = NULL;
-	return unify(q, p1, p1_ctx, tmp, q->st.curr_frame);
+	return unify(q, p1, p1_ctx, tmp, q->st.cur_frame);
 }
 
 static bool bif_engine_self_1(query *q)
@@ -505,7 +505,7 @@ static bool bif_engine_self_1(query *q)
 	cell tmp2;
 	make_int(&tmp2, q->curr_engine);
 	tmp2.flags |= FLAG_INT_STREAM | FLAG_INT_MAP;
-	return unify(q, p1, p1_ctx, &tmp2, q->st.curr_frame);
+	return unify(q, p1, p1_ctx, &tmp2, q->st.cur_frame);
 }
 
 static bool bif_is_engine_1(query *q)
