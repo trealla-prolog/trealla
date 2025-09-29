@@ -11,7 +11,7 @@ static void show_goals(query *q, int num)
 {
 	frame *f = GET_CURR_FRAME();
 	cell *c = q->st.instr;
-	pl_ctx c_ctx = q->st.cur_fp;
+	pl_ctx c_ctx = q->st.cur_ctx;
 
 	while (c && num--) {
 		printf(" [%llu] ", (long long unsigned)c_ctx);
@@ -39,7 +39,7 @@ int check_interrupt(query *q)
 		g_tpl_interrupt = 0;
 		signal(SIGINT, &sigfn);
 
-		if (!throw_error(q, q->st.instr, q->st.cur_fp, "time_limit_exceeded", "timed_out"))
+		if (!throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out"))
 			q->retry = true;
 
 		return 0;
@@ -501,7 +501,7 @@ void dump_vars(query *q, bool partial)
 		cell p1[2];
 		make_instr(p1+0, new_atom(q->pl, "dump_attvars"), NULL, 1, 1);
 		make_atom(p1+1, any ? g_true_s : g_false_s);
-		cell *tmp = prepare_call(q, CALL_SKIP, p1, q->st.cur_fp, 1);
+		cell *tmp = prepare_call(q, CALL_SKIP, p1, q->st.cur_ctx, 1);
 		pl_idx num_cells = 2;
 		make_end(tmp+num_cells);
 		q->st.instr = tmp;
