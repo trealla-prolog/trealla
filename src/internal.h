@@ -335,7 +335,7 @@ typedef struct builtins_ builtins;
 // basically what a Term is. A compound is a variable length array of
 // cells, the length specified by 'num_cells' field in the 1st cell.
 // A cell is a tagged union.
-// The size should be 24 bytes... (1 + 2) * 8
+// The size should be 32 bytes... (1 + 3) * 8
 
 struct cell_ {
 
@@ -350,7 +350,7 @@ struct cell_ {
 		uint32_t mid;				// used with TAG_EMPTY so not counted
 	};
 
-	// 2 * 8 = 16 bytes.
+	// 3 * 8 = 16 bytes.
 
 	union {
 
@@ -389,11 +389,8 @@ struct cell_ {
 			};
 
 			pl_idx var_num;				// used with TAG_VAR
-
-			union {
-				uint32_t val_off;		// used with TAG_INTERNED / TAG_VAR -FLAG_VAR_REF
-				pl_ctx val_ctx;			// used with TAG_INDIRECT / TAG_VAR +FLAG_VAR_REF
-			};
+			uint32_t val_off;		// used with TAG_INTERNED / TAG_VAR -FLAG_VAR_REF
+			pl_ctx val_ctx;			// used with TAG_INDIRECT / TAG_VAR +FLAG_VAR_REF
 		};
 
 		struct {

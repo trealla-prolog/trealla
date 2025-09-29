@@ -1766,12 +1766,12 @@ bool execute(query *q, cell *cells, unsigned num_vars)
 	alloc_frame(q, num_vars);
 	try_me(q, num_vars);
 	q->st.new_fp = 1;
+	q->st.cur_ctx = q->frame_pages->frames;
 	frame *f = GET_CURR_FRAME();
 	f->prev = CTX_NUL;
 	f->op = 0;
 	f->initial_slots = f->actual_slots = num_vars;
 	f->dbgen = ++q->pl->dbgen;
-	q->st.new_fp = 1;
 	return start(q);
 }
 

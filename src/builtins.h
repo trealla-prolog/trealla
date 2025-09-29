@@ -158,7 +158,7 @@ inline static cell *deref(query *q, cell *c, pl_ctx c_ctx)
 	}
 
 	if (is_ref(c))
-		c_ctx = c->val_ctx;
+		c_ctx = c->val_ctx ? c->val_ctx : GET_CURR_FRAME();
 
 	const frame *f = GET_FRAME(c_ctx);
 	slot *e = get_slot(q, f, c->var_num);
@@ -315,7 +315,7 @@ inline static cell *get_raw_arg(query *q, int n)
 		any = true;													\
 																	\
 		if (is_ref(cc))												\
-			tmp_cc_ctx = cc->val_ctx;								\
+			tmp_cc_ctx = cc->val_ctx ? cc->val_ctx : GET_CURR_FRAME();	\
 																	\
 		const frame *f = GET_FRAME(tmp_cc_ctx);						\
 		ee = get_slot(q, f, cc->var_num);								\
@@ -338,7 +338,7 @@ inline static cell *get_raw_arg(query *q, int n)
 		any = true;													\
 																	\
 		if (is_ref(cc))												\
-			tmp_cc_ctx = cc->val_ctx;								\
+			tmp_cc_ctx = cc->val_ctx ? cc->val_ctx : GET_CURR_FRAME();	\
 																	\
 		const frame *f = GET_FRAME(tmp_cc_ctx);						\
 		ee = get_slot(q, f, cc->var_num);								\
@@ -357,7 +357,7 @@ inline static cell *get_raw_arg(query *q, int n)
 #define RESTORE_VAR(cc, cc_ctx, p, p_ctx, qvgen)					\
 	if (is_var(cc)) {												\
 		if (is_ref(cc))												\
-			cc_ctx = cc->val_ctx;									\
+			cc_ctx = cc->val_ctx ? cc->val_ctx : GET_CURR_FRAME();	\
 																	\
 		const frame *f = GET_FRAME(cc_ctx);							\
 		slot *e = get_slot(q, f, cc->var_num);							\
@@ -369,7 +369,7 @@ inline static cell *get_raw_arg(query *q, int n)
 #define RESTORE_VAR2(cc, cc_ctx, p, p_ctx, qvgen)					\
 	if (is_var(cc)) {												\
 		if (is_ref(cc))												\
-			cc_ctx = cc->val_ctx;									\
+			cc_ctx = cc->val_ctx ? cc->val_ctx : GET_CURR_FRAME();	\
 																	\
 		const frame *f = GET_FRAME(cc_ctx);							\
 		slot *e = get_slot(q, f, cc->var_num);							\
@@ -381,7 +381,7 @@ inline static cell *get_raw_arg(query *q, int n)
 #define RESTORE_VAR_CHECKED(any, cc, cc_ctx, p, p_ctx, qvgen)		\
 	if (is_var(cc)) {												\
 		if (is_ref(cc))												\
-			cc_ctx = cc->val_ctx;									\
+			cc_ctx = cc->val_ctx ? cc->val_ctx : GET_CURR_FRAME();	\
 																	\
 		const frame *f = GET_FRAME(cc_ctx);							\
 		slot *e = get_slot(q, f, cc->var_num);							\
