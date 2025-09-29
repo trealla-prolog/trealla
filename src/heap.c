@@ -338,7 +338,7 @@ cell *copy_term_to_tmp(query *q, cell *p1, pl_ctx p1_ctx, bool copy_attrs)
 
 cell *alloc_heap(query *q, unsigned num_cells)
 {
-	size_t page_size = q->heap_pages ? q->heap_pages->page_size * 2 : q->frames_size;
+	size_t page_size = q->heap_pages ? q->heap_pages->page_size * 2 : q->heap_size;
 
 	if (!q->heap_pages || ((q->st.hp + num_cells) >= q->heap_pages->page_size))  {
 		page *a = calloc(1, sizeof(page));
