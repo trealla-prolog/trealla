@@ -97,9 +97,9 @@ bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *
 				cell tmp;
 				int vnbr = create_vars(q, 1);
 				checked(vnbr != -1);
-				make_ref(&tmp, vnbr, q->st.cur_frame);
+				make_ref(&tmp, vnbr, q->st.cur_fp);
 				checked(make_stringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
-				unify(q, &tmpc, q->st.cur_frame, &tmp, q->st.cur_frame);
+				unify(q, &tmpc, q->st.cur_fp, &tmp, q->st.cur_fp);
 				unshare_cell(&tmpc);
 			} else
 				make_atom(&tmpc, g_nil_s);
@@ -107,9 +107,9 @@ bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *
 			cell tmp;
 			int vnbr = create_vars(q, 1);
 			checked(vnbr != -1);
-			make_ref(&tmp, vnbr, q->st.cur_frame);
+			make_ref(&tmp, vnbr, q->st.cur_fp);
 			checked(make_cstringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
-			unify(q, &tmpc, q->st.cur_frame, &tmp, q->st.cur_frame);
+			unify(q, &tmpc, q->st.cur_fp, &tmp, q->st.cur_fp);
 			unshare_cell(&tmpc);
 		}
 
@@ -146,9 +146,9 @@ bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *
 				cell tmp;
 				int vnbr = create_vars(q, 1);
 				checked(vnbr != -1);
-				make_ref(&tmp, vnbr, q->st.cur_frame);
+				make_ref(&tmp, vnbr, q->st.cur_fp);
 				checked(make_stringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
-				unify(q, &tmpc, q->st.cur_frame, &tmp, q->st.cur_frame);
+				unify(q, &tmpc, q->st.cur_fp, &tmp, q->st.cur_fp);
 				unshare_cell(&tmpc);
 			} else
 				make_atom(&tmpc, g_nil_s);
@@ -156,9 +156,9 @@ bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *
 			cell tmp;
 			int vnbr = create_vars(q, 1);
 			checked(vnbr != -1);
-			make_ref(&tmp, vnbr, q->st.cur_frame);
+			make_ref(&tmp, vnbr, q->st.cur_fp);
 			checked(make_cstringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
-			unify(q, &tmpc, q->st.cur_frame, &tmp, q->st.cur_frame);
+			unify(q, &tmpc, q->st.cur_fp, &tmp, q->st.cur_fp);
 			unshare_cell(&tmpc);
 		}
 
@@ -184,24 +184,24 @@ bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *
 	if ((params->arity > 0) && (args != params->arity)) {
 		cell tmp;
 		make_int(&tmp, params->arity);
-		return throw_error(q, &tmp, q->st.cur_frame, "domain_error", "row_arity");
+		return throw_error(q, &tmp, q->st.cur_fp, "domain_error", "row_arity");
 	}
 
 	cell *l = params->functor ? end_structure(q) : end_list(q);
 	checked(l);
 
 	if (p2)
-		return unify(q, p2, p2_ctx, l, q->st.cur_frame);
+		return unify(q, p2, p2_ctx, l, q->st.cur_fp);
 
 	bool found = false, evaluable = false;
 
 	if (get_builtin_term(q->st.m, l, &found, &evaluable), found && !evaluable) {
 		if (!GET_OP(l))
-			return throw_error(q, l, q->st.cur_frame, "permission_error", "modify,static_procedure");
+			return throw_error(q, l, q->st.cur_fp, "permission_error", "modify,static_procedure");
 	}
 
 	if (!assertz_to_db(q->st.m, 0, l, false))
-		return throw_error(q, l, q->st.cur_frame, "permission_error", "modify_static_procedure");
+		return throw_error(q, l, q->st.cur_fp, "permission_error", "modify_static_procedure");
 
 	return true;
 }

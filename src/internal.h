@@ -547,8 +547,7 @@ struct run_state_ {
 	};
 
 	uint64_t timer_started;
-	pl_ctx cur_frame;
-	pl_idx fp, hp, cp, tp, sp, heap_num;
+	pl_idx cur_fp, new_fp, hp, cp, tp, sp, heap_num;
 	uint8_t qnum;
 };
 
