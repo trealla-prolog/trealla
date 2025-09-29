@@ -342,7 +342,8 @@ cell *alloc_heap(query *q, unsigned num_cells)
 		page *a = calloc(1, sizeof(page));
 		if (!a) return NULL;
 		a->next = q->heap_pages;
-		unsigned n = MAX_OF(q->heap_size, num_cells);
+		unsigned n = MAX_OF(a?a->page_size:q->heap_size, num_cells);
+		if (a) n *= 2;
 		a->cells = calloc(a->page_size=n, sizeof(cell));
 		if (!a->cells) { free(a); return NULL; }
 		a->num = ++q->st.heap_num;
