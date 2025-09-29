@@ -29,10 +29,10 @@ static void msleep(int ms)
 
 static const unsigned INITIAL_NBR_QUEUE_CELLS = 1000;
 static const unsigned INITIAL_NBR_HEAP_CELLS = 1000;
+static const unsigned INITIAL_NBR_FRAMES = 1000;
 static const unsigned INITIAL_NBR_SLOTS = 1000;
 static const unsigned INITIAL_NBR_TRAILS = 1000;
-static const unsigned INITIAL_NBR_CHOICES = 100;
-static const unsigned INITIAL_NBR_FRAMES = 100;
+static const unsigned INITIAL_NBR_CHOICES = 1000;
 static const unsigned INITIAL_NBR_CELLS = 100;
 
 int g_tpl_interrupt = 0;
@@ -170,13 +170,6 @@ void check_pressure(query *q)
 		printf("*** q->st.cp=%u, q->choices_size=%u\n", (unsigned)q->cp, (unsigned)q->choices_size);
 #endif
 		q->choices_size = alloc_grow(q, (void**)&q->choices, sizeof(choice), q->cp, q->cp*5/4);
-	}
-
-	if (q->frames_size > (INITIAL_NBR_FRAMES*PRESSURE_FACTOR)) {
-#if TRACE_MEM
-		printf("*** q->st.new_fp=%u, q->frames_size=%u\n", (unsigned)q->st.new_fp, (unsigned)q->frames_size);
-#endif
-		q->frames_size = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.new_fp, q->st.new_fp*5/4);
 	}
 
 	if (q->slots_size > (INITIAL_NBR_SLOTS*PRESSURE_FACTOR)) {
@@ -1849,7 +1842,6 @@ void query_destroy(query *q)
 	free(q->trails);
 	free(q->choices);
 	free(q->slots);
-	free(q->frames);
 	free(q->tmp_heap);
 	q->pl->q_cnt--;
 	free(q);
@@ -1887,7 +1879,6 @@ query *query_create(module *m)
 	q->slots_size = INITIAL_NBR_SLOTS;
 	q->trails_size = INITIAL_NBR_TRAILS;
 
-	ensure(q->frames = calloc(q->frames_size, sizeof(frame)), NULL);
 	ensure(q->choices = calloc(q->choices_size, sizeof(choice)), NULL);
 	ensure(q->slots = calloc(q->slots_size, sizeof(slot)), NULL);
 	ensure(q->trails = calloc(q->trails_size, sizeof(trail)), NULL);

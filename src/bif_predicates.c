@@ -3178,7 +3178,7 @@ bool bif_statistics_0(query *q)
 		"Matches %"PRIu64","
 		"(succeeded %"PRIu64").\n"
 
-		"Max frames %u, "
+		"Max frames %u/%u, "
 		"choices %u, "
 		"trails %u, "
 		"slots %u, "
@@ -3204,7 +3204,7 @@ bool bif_statistics_0(query *q)
 		"Queue: %u\n",
 
 		q->total_inferences, q->total_matches, q->total_matched,
-		q->hw_frames, q->hw_choices, q->hw_trails, q->hw_slots,
+		q->hw_frames, q->hw_frame_num, q->hw_choices, q->hw_trails, q->hw_slots,
 		q->hw_frame_num, q->hw_deref,
 		q->realloc_frames, q->realloc_choices, q->realloc_trails, q->realloc_slots,
 		q->st.new_fp, q->cp, q->st.tp, q->st.sp,

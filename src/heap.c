@@ -619,7 +619,7 @@ frame *alloc_frame(query *q, unsigned num_vars)
 		page *a = calloc(1, sizeof(page));
 		if (!a) return NULL;
 		a->next = q->frame_pages;
-		unsigned n = q->heap_size;
+		unsigned n = q->frames_size;
 		a->frames = calloc(a->page_size=n, sizeof(frame));
 		if (!a->frames) { free(a); return NULL; }
 		a->num = ++q->st.frame_num;
@@ -627,8 +627,12 @@ frame *alloc_frame(query *q, unsigned num_vars)
 		q->st.new_fp = 0;
 	}
 
-	if (q->st.frame_num > q->hw_frame_num)
+	if (q->st.frame_num >= q->hw_frame_num) {
 		q->hw_frame_num = q->st.frame_num;
+
+		if (q->st.new_fp > q->hw_frames)
+			q->hw_frames = q->st.new_fp;
+	}
 
 	frame *f = q->frame_pages->frames + q->st.new_fp;
 	q->frame_pages->idx = q->st.new_fp;
