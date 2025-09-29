@@ -61,7 +61,7 @@ void make_struct(cell *tmp, pl_idx offset, unsigned arity, pl_idx extra_cells);
 	} \
 }
 
-inline static void make_ref(cell *tmp, unsigned var_num, pl_idx ctx)
+inline static void make_ref(cell *tmp, unsigned var_num, pl_ctx ctx)
 {
 	tmp->tag = TAG_VAR;
 	tmp->num_cells = 1;
