@@ -338,12 +338,13 @@ cell *copy_term_to_tmp(query *q, cell *p1, pl_ctx p1_ctx, bool copy_attrs)
 
 cell *alloc_heap(query *q, unsigned num_cells)
 {
+	size_t page_size = q->heap_pages ? q->heap_pages->page_size * 2 : q->frames_size;
+
 	if (!q->heap_pages || ((q->st.hp + num_cells) >= q->heap_pages->page_size))  {
 		page *a = calloc(1, sizeof(page));
 		if (!a) return NULL;
 		a->next = q->heap_pages;
-		unsigned n = MAX_OF(a?a->page_size:q->heap_size, num_cells);
-		if (a) n *= 2;
+		unsigned n = MAX_OF(page_size, num_cells);
 		a->cells = calloc(a->page_size=n, sizeof(cell));
 		if (!a->cells) { free(a); return NULL; }
 		a->num = ++q->st.heap_num;
