@@ -338,11 +338,13 @@ cell *copy_term_to_tmp(query *q, cell *p1, pl_ctx p1_ctx, bool copy_attrs)
 
 cell *alloc_heap(query *q, unsigned num_cells)
 {
+	size_t page_size = q->heap_pages ? q->heap_pages->page_size * 2 : q->heap_size;
+
 	if (!q->heap_pages || ((q->st.hp + num_cells) >= q->heap_pages->page_size))  {
 		page *a = calloc(1, sizeof(page));
 		if (!a) return NULL;
 		a->next = q->heap_pages;
-		unsigned n = MAX_OF(q->heap_size, num_cells);
+		unsigned n = MAX_OF(page_size, num_cells);
 		a->cells = calloc(a->page_size=n, sizeof(cell));
 		if (!a->cells) { free(a); return NULL; }
 		a->num = ++q->st.heap_num;
@@ -615,6 +617,8 @@ cell *alloc_queuen(query *q, unsigned qnum, const cell *c)
 
 frame *alloc_frame(query *q, unsigned num_vars)
 {
+	size_t page_size = q->heap_pages ? q->heap_pages->page_size * 2 : q->frames_size;
+
 	if (!q->frame_pages || (q->st.new_fp >= q->frame_pages->page_size))  {
 		page *a = calloc(1, sizeof(page));
 		if (!a) return NULL;
