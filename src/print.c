@@ -461,7 +461,7 @@ static void print_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 		(pl_idx)(get_actual_slot_num(q, f, c->var_num))
 		: c->var_num;
 
-	if (q->varnames && !is_anon(c) && running && !q->cycle_error && (c_ctx == 0)) {
+	if (q->varnames && !is_anon(c) && running && !q->cycle_error && (c_ctx == get_first_frame(q))) {
 		if (q->varnames && q->top->vartab.off[c->var_num]) {
 			SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num]));
 		} else {
