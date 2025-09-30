@@ -251,6 +251,7 @@ bool check_frame(query *q, unsigned max_vars)
 	frame *f = alloc_frame(q, max_vars);
 	f->max_vars = max_vars;
 	f->base = q->st.sp;
+	f->op = 0;
 	return true;
 }
 
@@ -620,7 +621,7 @@ static void push_frame(query *q)
 	fnew->hp = q->st.hp;
 	fnew->heap_num = q->st.heap_num;
 	q->st.sp += fnew->actual_slots;
-	q->st.cur_ctx = GET_NEW_FRAME();
+	q->st.cur_ctx = fnew;
 	q->st.new_fp += fnew->frame_size;
 }
 
@@ -1759,13 +1760,11 @@ bool execute(query *q, cell *cells, unsigned num_vars)
 	alloc_frame(q, num_vars);
 	try_me(q, num_vars);
 	q->st.new_fp = 1;
-	q->st.cur_ctx = q->frame_pages->frames;
+	q->latest_ctx = q->st.cur_ctx = q->frame_pages->frames;
 	frame *f = GET_CURR_FRAME();
 	f->prev = CTX_NUL;
-	f->op = 0;
-	f->initial_slots = f->actual_slots = num_vars;
+	f->initial_slots = f->actual_slots = f->max_vars = num_vars;
 	f->dbgen = ++q->pl->dbgen;
-	q->latest_ctx = q->st.cur_ctx;
 	return start(q);
 }
 
