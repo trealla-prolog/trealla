@@ -347,7 +347,7 @@ static bool bif_sys_list_attributed_2(query *q)
 
 	cell *l = end_list(q);
 	checked(l);
-	return unify(q, p2, p2_ctx, l, 0);
+	return unify(q, p2, p2_ctx, l, q->st.cur_ctx);
 }
 
 static bool bif_sys_attributed_var_1(query *q)
