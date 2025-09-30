@@ -341,7 +341,7 @@ void dump_vars(query *q, bool partial)
 		return;
 
 	parser *p = q->top;
-	const frame *f = GET_FRAME(0);
+	const frame *f = get_first_frame(q);
 	q->is_dump_vars = true;
 	q->tab_idx = 0;
 	bool any = false;

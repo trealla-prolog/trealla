@@ -1783,6 +1783,23 @@ static void query_purge_dirty_list(query *q)
 		printf("*** query_purge_dirty_list %u\n", cnt);
 }
 
+frame *get_first_frame(query *q)
+{
+	if (!q->frame_pages)
+		return NULL;
+
+	page *frame_pages = q->frame_pages;
+
+	while (frame_pages) {
+		if (!frame_pages->next)
+			return frame_pages->frames;
+
+		frame_pages = frame_pages->next;
+	}
+
+	return NULL;
+}
+
 void query_destroy(query *q)
 {
 	if (!q)
