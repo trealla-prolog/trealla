@@ -1923,23 +1923,23 @@ query *query_create_subquery(query *q, cell *instr)
 	subq->st.new_fp = 1;
 	subq->top = q->top;
 
-	cell *tmp = prepare_call(subq, false, instr, q->st.cur_ctx, 1);
-	pl_idx num_cells = tmp->num_cells;
-	make_end(tmp+num_cells);
-	subq->st.instr = tmp;
-
 	frame *fsrc = GET_FRAME(q->st.cur_ctx);
 	frame *fdst = subq->frames;
 	fdst->initial_slots = fdst->actual_slots = fsrc->actual_slots;
 	fdst->dbgen = ++q->pl->dbgen;
-	subq->st.sp = fdst->actual_slots;
 
 	unsigned num_vars = fdst->initial_slots;
-	check_slot(q, num_vars);
-	alloc_frame(q, num_vars);
-	try_me(q, num_vars);
-	q->st.new_fp = 1;
-	q->st.cur_ctx = q->frame_pages->frames;
+	check_slot(subq, num_vars);
+	alloc_frame(subq, num_vars);
+	try_me(subq, num_vars);
+	subq->st.new_fp = 1;
+	subq->st.cur_ctx = subq->frame_pages->frames;
+	subq->st.sp = fdst->actual_slots;
+
+	cell *tmp = prepare_call(subq, false, instr, subq->st.cur_ctx, 1);
+	pl_idx num_cells = tmp->num_cells;
+	make_end(tmp+num_cells);
+	subq->st.instr = tmp;
 
 	return subq;
 }

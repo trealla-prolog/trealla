@@ -2067,7 +2067,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	q->st.new_fp = 1;
 	q->st.cur_ctx = q->frame_pages->frames;
 
-	char *dst = print_canonical_to_strbuf(q, goal, 0, 0);
+	char *dst = print_canonical_to_strbuf(q, goal, q->st.cur_ctx, 0);
 	q->varnames = false;
 	SB(s);
 	SB_sprintf(s, "goal_expansion((%s),_TermOut), !.", dst);
