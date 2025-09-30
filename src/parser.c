@@ -1862,7 +1862,7 @@ static bool dcg_expansion(parser *p)
 
 	cell *arg1 = tmp + 1;
 	cell *arg2 = arg1 + arg1->num_cells;
-	c = deref(q, arg2, 0);
+	c = deref(q, arg2, get_first_frame(q));
 	q->max_depth = -1;
 	char *src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
 
@@ -1946,7 +1946,7 @@ static bool term_expansion(parser *p)
 
 	cell *arg1 = tmp + 1;
 	cell *arg2 = arg1 + arg1->num_cells;
-	c = deref(q, arg2, 0);
+	c = deref(q, arg2, get_first_frame(q));
 	q->max_depth = -1;
 	char *src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
 
