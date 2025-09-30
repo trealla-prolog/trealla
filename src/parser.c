@@ -1984,48 +1984,6 @@ static bool term_expansion(parser *p)
 	return term_expansion(p);
 }
 
-static void expand_meta_predicate(parser *p, predicate *pr, cell *goal)
-{
-	unsigned arity = goal->arity;
-
-	for (cell *k = goal+1, *m = pr->meta_args+1; arity--; k += k->num_cells, m += m->num_cells) {
-		cell tmpbuf[2];
-
-		if (is_interned(k) && (k->val_off == g_call_s))
-			continue;
-		else if ((k->arity == 2) && (k->val_off == g_colon_s) && is_atom(FIRST_ARG(k)))
-			continue;
-		else if (!is_interned(k) || is_iso_list(k))
-			continue;
-		else if (is_interned(m) && (m->val_off == g_colon_s)) {
-			make_instr(tmpbuf+0, g_colon_s, bif_iso_qualify_2, 2, 1+k->num_cells);
-			SET_OP(tmpbuf+0, OP_XFY);;
-			make_atom(tmpbuf+1, new_atom(p->pl, p->m->name));
-		} else if (is_smallint(m) && is_positive(m) && (get_smallint(m) <= 9)) {
-			make_instr(tmpbuf+0, g_colon_s, bif_iso_qualify_2, 2, 1+k->num_cells);
-			SET_OP(tmpbuf+0, OP_XFY);
-			make_atom(tmpbuf+1, new_atom(p->pl, p->m->name));
-		} else
-			continue;
-
-		// get some space...
-
-		unsigned new_cells = 2, k_idx = k - p->cl->cells;
-		unsigned trailing = (p->cl->cidx - k_idx) + 1;
-		make_room(p, new_cells);
-
-		// shift up...
-
-		memmove(k+new_cells, k, sizeof(cell)*trailing);
-
-		// paste the new goal...
-
-		memcpy(k, tmpbuf, sizeof(cell)*new_cells);
-		p->cl->cidx += new_cells;
-		goal->num_cells += new_cells;
-	}
-}
-
 static cell *goal_expansion(parser *p, cell *goal)
 {
 	if (p->error || p->internal || !is_interned(goal) || !is_callable(goal))
@@ -2196,6 +2154,48 @@ static cell *goal_expansion(parser *p, cell *goal)
 	query_destroy(q);
 
 	return goal;
+}
+
+static void expand_meta_predicate(parser *p, predicate *pr, cell *goal)
+{
+	unsigned arity = goal->arity;
+
+	for (cell *k = goal+1, *m = pr->meta_args+1; arity--; k += k->num_cells, m += m->num_cells) {
+		cell tmpbuf[2];
+
+		if (is_interned(k) && (k->val_off == g_call_s))
+			continue;
+		else if ((k->arity == 2) && (k->val_off == g_colon_s) && is_atom(FIRST_ARG(k)))
+			continue;
+		else if (!is_interned(k) || is_iso_list(k))
+			continue;
+		else if (is_interned(m) && (m->val_off == g_colon_s)) {
+			make_instr(tmpbuf+0, g_colon_s, bif_iso_qualify_2, 2, 1+k->num_cells);
+			SET_OP(tmpbuf+0, OP_XFY);;
+			make_atom(tmpbuf+1, new_atom(p->pl, p->m->name));
+		} else if (is_smallint(m) && is_positive(m) && (get_smallint(m) <= 9)) {
+			make_instr(tmpbuf+0, g_colon_s, bif_iso_qualify_2, 2, 1+k->num_cells);
+			SET_OP(tmpbuf+0, OP_XFY);
+			make_atom(tmpbuf+1, new_atom(p->pl, p->m->name));
+		} else
+			continue;
+
+		// get some space...
+
+		unsigned new_cells = 2, k_idx = k - p->cl->cells;
+		unsigned trailing = (p->cl->cidx - k_idx) + 1;
+		make_room(p, new_cells);
+
+		// shift up...
+
+		memmove(k+new_cells, k, sizeof(cell)*trailing);
+
+		// paste the new goal...
+
+		memcpy(k, tmpbuf, sizeof(cell)*new_cells);
+		p->cl->cidx += new_cells;
+		goal->num_cells += new_cells;
+	}
 }
 
 static bool is_meta_arg(predicate *pr, cell *c, unsigned arg, int *extra)
