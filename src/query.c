@@ -1933,6 +1933,14 @@ query *query_create_subquery(query *q, cell *instr)
 	fdst->initial_slots = fdst->actual_slots = fsrc->actual_slots;
 	fdst->dbgen = ++q->pl->dbgen;
 	subq->st.sp = fdst->actual_slots;
+
+	unsigned num_vars = fdst->initial_slots;
+	check_slot(q, num_vars);
+	alloc_frame(q, num_vars);
+	try_me(q, num_vars);
+	q->st.new_fp = 1;
+	q->st.cur_ctx = q->frame_pages->frames;
+
 	return subq;
 }
 
