@@ -456,7 +456,7 @@ static const char *get_slot_name(query *q, pl_idx slot_nbr, bool listing)
 
 static void print_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 {
-	const frame *f = GET_FRAME(running ? c_ctx : 0);
+	const frame *f = running ? GET_FRAME(c_ctx) : get_first_frame(q);
 	pl_idx slot_nbr = running ?
 		(pl_idx)(get_actual_slot_num(q, f, c->var_num))
 		: c->var_num;
@@ -515,7 +515,7 @@ static bool dump_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 		cell *v = running ? deref(q, h+2, h_ctx) : h+2;
 		pl_ctx v_ctx = running ? q->latest_ctx : 0;
 
-		const frame *f = GET_FRAME(running ? v_ctx : 0);
+		const frame *f = running ? GET_FRAME(v_ctx) : get_first_frame(q);
 		pl_idx slot_nbr = running ?
 			(pl_idx)(get_actual_slot_num(q, f, v->var_num))
 			: v->var_num;
