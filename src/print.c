@@ -1022,7 +1022,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 			me.next = visited;
 			me.c = lhs;
 			me.c_ctx = lhs_ctx;
-			pl_ctx lhs_ctx = running ? q->latest_ctx : 0;
+			pl_ctx lhs_ctx = running ? q->latest_ctx : get_first_frame(q);
 
 			if (parens) { SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
 			print_term_to_buf_(q, lhs, lhs_ctx, running, 0, 0, depth+1, &me);
