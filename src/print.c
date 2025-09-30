@@ -1174,7 +1174,6 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 
 	// Print LHS..
 
-
 	unsigned lhs_specifier = 0;
 	unsigned lhs_pri_1 = is_interned(lhs) ? match_op(q->st.m, C_STR(q, lhs), &lhs_specifier, lhs->arity) : 0;
 	unsigned lhs_pri_2 = is_interned(lhs) && !lhs->arity ? search_op(q->st.m, C_STR(q, lhs), &lhs_specifier, true) : 0;
