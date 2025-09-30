@@ -470,7 +470,7 @@ static void print_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 	} else if (q->portray_vars || (q->is_dump_vars && q->cycle_error)) {
 		SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars));
 	} else if (q->is_dump_vars) {
-		if ((c_ctx == 0) && (c->var_num < q->top->num_vars)) {
+		if ((c_ctx == get_first_frame(q)) && (c->var_num < q->top->num_vars)) {
 			SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num]));
 		} else {
 			SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars));
@@ -710,7 +710,7 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 			cell v = *(c+1);
 			pl_ctx v_ctx = c_ctx;
 
-			if ((q->portray_vars || q->do_dump_vars) && (orig_c_ctx == 0) && q->is_dump_vars) {
+			if ((q->portray_vars || q->do_dump_vars) && (orig_c_ctx == get_first_frame(q)) && q->is_dump_vars) {
 				if (q->do_dump_vars) {
 					if (!dump_variable(q, save_tail, tail_ctx, running))
 						print_variable(q, save_tail, save_tail_ctx, running);
@@ -933,7 +933,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 				} else if (q->is_dump_vars && has_visited(visited, tmp, tmp_ctx)) {
 					tmp = c;
 					tmp_ctx = c_ctx;
-					if (c_ctx == 0) { SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num])); }
+					if (c_ctx == get_first_frame(q)) { SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num])); }
 					else { SB_sprintf(q->sb, "%s", !is_ref(tmp) ? "..." : "_"); }
 					if (arity) {SB_sprintf(q->sb, "%s", ","); }
 					q->last_thing = WAS_OTHER;
