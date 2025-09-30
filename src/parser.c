@@ -2109,7 +2109,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 		q->ignores[i] = true;
 
 	p->cl->num_vars = p2->cl->num_vars;
-	frame *f = GET_FRAME(0);
+	frame *f = get_first_frame(q);
 	char *src = NULL;
 
 	for (unsigned i = 0; i < p2->cl->num_vars; i++) {
