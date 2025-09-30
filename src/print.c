@@ -1162,12 +1162,12 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 	cell *rhs = lhs + lhs->num_cells;
 	cell *save_rhs = rhs;
 	pl_ctx rhs_ctx = c_ctx;
-	const char *lhs_src = C_STR(q, lhs);
-	const char *rhs_src = C_STR(q, rhs);
 	if (running) lhs = deref(q, lhs, lhs_ctx);
 	if (running) lhs_ctx = q->latest_ctx;
 	if (running) rhs = deref(q, rhs, rhs_ctx);
 	if (running) rhs_ctx = q->latest_ctx;
+	const char *lhs_src = C_STR(q, lhs);
+	const char *rhs_src = C_STR(q, rhs);
 
 	int quote = q->quoted && has_spaces(src, src_len);
 	if (op_needs_quoting(q->st.m, src, src_len)) quote = 1;
