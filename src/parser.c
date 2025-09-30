@@ -2059,6 +2059,14 @@ static cell *goal_expansion(parser *p, cell *goal)
 	q->trace = false;
 	q->varnames = true;
 	q->max_depth = -1;
+
+	unsigned num_vars = MAX_ARITY;
+	check_slot(q, num_vars);
+	alloc_frame(q, num_vars);
+	try_me(q, num_vars);
+	q->st.new_fp = 1;
+	q->st.cur_ctx = q->frame_pages->frames;
+
 	char *dst = print_canonical_to_strbuf(q, goal, 0, 0);
 	q->varnames = false;
 	SB(s);

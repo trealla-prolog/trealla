@@ -1785,6 +1785,8 @@ static void query_purge_dirty_list(query *q)
 
 frame *get_first_frame(query *q)
 {
+	assert(q->frame_pages);
+
 	if (!q->frame_pages)
 		return NULL;
 
