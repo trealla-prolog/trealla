@@ -510,10 +510,10 @@ static bool dump_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 	while (is_iso_list(l)) {
 		cell *h = LIST_HEAD(l);
 		h = running ? deref(q, h, l_ctx) : h;
-		pl_ctx h_ctx = running ? q->latest_ctx : 0;
+		pl_ctx h_ctx = q->latest_ctx ? q->latest_ctx : get_first_frame(q);
 		cell *name = running ? deref(q, h+1, h_ctx) : h+1;
 		cell *v = running ? deref(q, h+2, h_ctx) : h+2;
-		pl_ctx v_ctx = running ? q->latest_ctx : 0;
+		pl_ctx v_ctx = q->latest_ctx ? q->latest_ctx : get_first_frame(q);
 
 		const frame *f = running ? GET_FRAME(v_ctx) : get_first_frame(q);
 		pl_idx slot_nbr = running ?
@@ -535,7 +535,7 @@ static bool dump_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 
 		l = LIST_TAIL(l);
 		l = running ? deref(q, l, l_ctx) : l;
-		l_ctx = running ? q->latest_ctx : 0;
+		l_ctx = q->latest_ctx ? q->latest_ctx : get_first_frame(q);
 	}
 
 	c = deref(q, c, c_ctx);

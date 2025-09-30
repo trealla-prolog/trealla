@@ -1765,6 +1765,7 @@ bool execute(query *q, cell *cells, unsigned num_vars)
 	f->op = 0;
 	f->initial_slots = f->actual_slots = num_vars;
 	f->dbgen = ++q->pl->dbgen;
+	q->latest_ctx = q->st.cur_ctx;
 	return start(q);
 }
 
