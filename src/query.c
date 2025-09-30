@@ -201,15 +201,6 @@ static bool check_choice(query *q)
 	return true;
 }
 
-bool check_frame(query *q, unsigned max_vars)
-{
-	checked(check_slot(q, max_vars));
-	frame *f = alloc_frame(q, max_vars);
-	f->max_vars = max_vars;
-	f->base = q->st.sp;
-	return true;
-}
-
 bool check_slot(query *q, unsigned cnt)
 {
 	cnt += 1024;	// Why??
@@ -251,6 +242,15 @@ bool check_trail(query *q)
 	}
 
 	q->trails_size = new_trailssize;
+	return true;
+}
+
+bool check_frame(query *q, unsigned max_vars)
+{
+	checked(check_slot(q, max_vars));
+	frame *f = alloc_frame(q, max_vars);
+	f->max_vars = max_vars;
+	f->base = q->st.sp;
 	return true;
 }
 
