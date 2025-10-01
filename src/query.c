@@ -564,7 +564,7 @@ static void trim_frame(query *q, const frame *f)
 	}
 
 	q->st.sp -= f->actual_slots;
-	q->st.new_fp--;		// ????
+	//q->st.new_fp--;		// ????
 }
 
 void undo_me(query *q)
