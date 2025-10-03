@@ -339,13 +339,15 @@ static bool is_cyclic_term_lists(query *q, cell *p1, pl_ctx p1_ctx, unsigned dep
 
 static bool is_cyclic_term_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 {
+	if (depth >= g_max_depth)
+		return true;
+
 	if (!is_compound(p1) || is_ground(p1))
 		return false;
 
 	if (is_iso_list(p1))
 		return is_cyclic_term_lists(q, p1, p1_ctx, depth);
 
-	bool any = false;
 	unsigned arity = p1->arity;
 	p1++;
 
@@ -354,6 +356,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned 
 		pl_ctx c_ctx = p1_ctx;
 		slot *e = NULL;
 		uint32_t save_vgen;
+		bool any = false;
 		int both = 0;
 
 		DEREF_VAR(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
