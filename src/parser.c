@@ -2106,6 +2106,14 @@ static cell *goal_expansion(parser *p, cell *goal)
 	p2->srcptr = src;
 	tokenize(p2, false, false);
 
+	if (is_var(p2->cl->cells)) {
+		if (!p2->do_read_term)
+			fprintf(stderr, "Error: instantiation error, goal_expansion/2, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+
+		p2->error_desc = "instantiation_error";
+		p2->error = true;
+	}
+
 	if (p2->error) {
 		parser_destroy(p2);
 		query_destroy(q);
