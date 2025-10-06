@@ -95,7 +95,11 @@ bool call_check(query *q, cell *p1, bool *status, bool calln)
 	}
 
 	if ((p1->arity == 2) && is_builtin(p1)
-		&& ((p1->val_off == g_conjunction_s) || (p1->val_off == g_disjunction_s))
+		&& ((p1->val_off == g_conjunction_s)
+			|| (p1->val_off == g_disjunction_s)
+			|| (p1->val_off == g_if_then_s)
+			|| (p1->val_off == g_soft_cut_s)
+			)
 		&& (p1 = check_body_callable(p1)) != NULL) {
 		*status = throw_error(q, save_p1, q->st.cur_ctx, "type_error", "callable");
 		return false;
