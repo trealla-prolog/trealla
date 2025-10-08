@@ -130,6 +130,7 @@ static void trace_call(query *q, cell *c, pl_ctx c_ctx, box_t box)
 	int save_depth = q->max_depth;
 	q->max_depth = 10;
 	q->quoted = true;
+	q->double_quotes = true;
 	char *dst = print_term_to_strbuf(q, c, c_ctx, -1);
 	SB_strcat(pr, dst);
 	free(dst);
