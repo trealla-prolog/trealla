@@ -135,6 +135,7 @@ static void trace_call(query *q, cell *c, pl_ctx c_ctx, box_t box)
 	SB_strcat(pr, dst);
 	free(dst);
 	q->quoted = false;
+	q->double_quotes = false;
 	SB_sprintf(pr, "%s", "\n");
 	src = SB_cstr(pr);
 	size_t srclen = srclen = SB_strlen(pr);
