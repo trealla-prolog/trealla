@@ -46,10 +46,16 @@ cell *list_head(cell *l, cell *tmp)
 		tmp->val_int = peek_char_utf8(src);
 	} else {
 		size_t char_len = len_char_utf8(src);
-		tmp->tag = TAG_CSTR;
-		memcpy(tmp->val_chr, src, char_len);
-		tmp->val_chr[char_len] = '\0';
-		tmp->chr_len = char_len;
+
+		if (char_len <= MAX_SMALL_STRING) {
+			tmp->tag = TAG_CSTR;
+			memcpy(tmp->val_chr, src, char_len);
+			tmp->val_chr[char_len] = '\0';
+			tmp->chr_len = char_len;
+		} else {
+			tmp->tag = TAG_INTERNED;
+			tmp->val_off = g_nil_s;
+		}
 	}
 
 	return tmp;
