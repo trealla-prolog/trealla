@@ -4320,6 +4320,15 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			break;
 		}
 
+		if (is_consing && IS_INFIX(specifier) && (priority >= 1000)) {
+			if (!p->do_read_term)
+				fprintf(stderr, "Error: syntax error, near '%s', expected, %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_num);
+
+			p->error_desc = "operator_expected";
+			p->error = true;
+			break;
+		}
+
 		if ((!p->is_op || IS_PREFIX(specifier)) && !is_func && !last_op) {
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: syntax error, near '%s', operator expected, %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_num);
