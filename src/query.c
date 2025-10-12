@@ -607,7 +607,6 @@ void undo_me(query *q)
 		cell *c = &e->c;
 		unshare_cell(c);
 		c->tag = TAG_EMPTY;
-		c->flags = 0;
 		c->val_attrs = tr->attrs;
 	}
 }
@@ -618,9 +617,11 @@ void try_me(query *q, unsigned num_vars)
 	f->initial_slots = f->actual_slots = num_vars;
 	q->total_matches++;
 
-	if (num_vars) {
-		slot *e = get_slot(q, f, 0);
-		memset(e, 0, sizeof(slot)*num_vars);
+	for (unsigned i = 0; i < num_vars; i++) {
+		slot *e = get_slot(q, f, i);
+		cell *c = &e->c;
+		c->tag = TAG_EMPTY;
+		c->val_attrs = NULL;
 	}
 }
 
