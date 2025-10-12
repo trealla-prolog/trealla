@@ -666,12 +666,12 @@ static void reuse_frame(query *q, unsigned num_vars)
 
 	frame *fold = GET_CURR_FRAME();
 	const frame *fnew = GET_NEW_FRAME();
-	const slot *from = get_slot(q, fnew, 0);
-	slot *to = get_slot(q, fold, 0);
 
 	for (pl_idx i = 0; i < num_vars; i++) {
+		const slot *from = get_slot(q, fnew, i);
+		slot *to = get_slot(q, fold, i);
 		unshare_cell(&to->c);
-		*to++ = *from++;
+		*to = *from;
 	}
 
 	fold->initial_slots = fold->actual_slots = num_vars;
