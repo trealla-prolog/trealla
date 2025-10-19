@@ -665,17 +665,17 @@ static void reuse_frame(query *q, unsigned num_vars)
 		drop_choice(q);
 
 	frame *fold = GET_CURR_FRAME();
-	const frame *fnew = GET_NEW_FRAME();
-	const slot *from = get_slot(q, fnew, 0);
-	slot *to = get_slot(q, fold, 0);
-
-	for (pl_idx i = 0; i < num_vars; i++) {
-		unshare_cell(&to->c);
-		*to++ = *from++;					// Slots are contiguous
-	}
-
 	fold->initial_slots = fold->actual_slots = num_vars;
 	fold->no_recov = false;
+	const frame *fnew = GET_NEW_FRAME();
+
+	for (pl_idx i = 0; i < num_vars; i++) {
+		const slot *from = get_slot(q, fnew, i);
+		slot *to = get_slot(q, fold, i);
+		unshare_cell(&to->c);
+		*to = *from;
+	}
+
 	q->st.sp = fold->base + fold->actual_slots;
 	q->st.dbe->tcos++;
 	q->total_tcos++;
