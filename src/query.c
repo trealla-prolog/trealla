@@ -655,7 +655,7 @@ static void push_frame(query *q)
 }
 
 // Note: TCO's clause might not be the caller clause... hence passing
-// num_vars. Currently restricted to the same predicate though.
+// num_vars. Currently restricted to the same predicate though (still?).
 
 static void reuse_frame(query *q, unsigned num_vars)
 {
@@ -671,7 +671,7 @@ static void reuse_frame(query *q, unsigned num_vars)
 
 	for (pl_idx i = 0; i < num_vars; i++) {
 		unshare_cell(&to->c);
-		*to++ = *from++;
+		*to++ = *from++;					// Slots are contiguous
 	}
 
 	fold->initial_slots = fold->actual_slots = num_vars;
