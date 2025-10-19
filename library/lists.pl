@@ -124,85 +124,119 @@ intersection([_|T], Y, Z) :- intersection(T, Y, Z).
 
 :- help(intersection(+list,+list,-list), [iso(false), desc('The intersection of two sets to produce a third.')]).
 
-nth1_orig(N, Es, E) :-
-	can_be(integer, N),
-	can_be(list_or_partial_list, Es),
-	(   integer(N) ->
-		must_be(N, not_less_than_zero, nth1/3, _),
-		N1 is N - 1,
-		nth0_index(N1, Es, E)
-	;   nth0_search(N1, Es, E),
-		N is N1 + 1
-	).
-
-nth0_orig(N, Es, E) :-
-	can_be(integer, N),
-	can_be(list_or_partial_list, Es),
-	(   integer(N) ->
-		must_be(N, not_less_than_zero, nth0/3, _),
-		nth0_index(N, Es, E)
-	;   nth0_search(N, Es, E)
-	).
-
-nth0_index(0, [E|_], E) :- !.
-nth0_index(N, [_|Es], E) :-
-	N > 0,
-	N1 is N - 1,
-	nth0_index(N1, Es, E).
-
-nth0_search(N, Es, E) :-
-	nth0_search(0, N, Es, E).
-
-nth0_search(N, N, [E|_], E).
-nth0_search(N0, N, [_|Es], E) :-
-	N1 is N0 + 1,
-	nth0_search(N1, N, Es, E).
-
-nth1(N, Es0, E) :-
-	nonvar(N),
-	N > 0,
-	N1 is N - 1,
-	'$skip_max_list'(N1, N1, Es0, Es),
-	!,
-	Es = [E|_].
-nth1(N, Es, E) :-
-	nth1_orig(N, Es, E).
-
-:- help(nth1(?integer,?term,?term), [iso(false), desc('Indexed element (from 1) into list.')]).
-
+%% nth0(?N, ?Ls, ?E).
+%
+% Succeeds if in the N position of the list Ls, we found the element E. The elements start counting from zero.
+%
+% ```
+% ?- nth0(2, [1,2,3,4], 3).
+%    true.
+% ```
 nth0(N, Es0, E) :-
-	nonvar(N),
-	'$skip_max_list'(N, N, Es0, Es),
-	!,
-	Es = [E|_].
-nth0(N, Es, E) :-
-	nth0_orig(N, Es, E).
+   nonvar(N),
+   '$skip_max_list'(Skip, N, Es0,Es1),
+   !,
+   (  Skip == N
+   -> Es1 = [E|_]
+   ;  ( var(Es1) ; Es1 = [_|_] ) % a partial or infinite list
+   -> R is N-Skip,
+      skipn(R,Es1,Es2),
+      Es2 = [E|_]
+   ).
+nth0(N, Es0, E) :-
+   can_be(not_less_than_zero, N),
+   Es0 = [E0|Es1],
+   nth0_el(0,N, E0,E, Es1).
+
+skipn(N0, Es0,Es) :-
+   N0>0,
+   N1 is N0-1,
+   Es0 = [_|Es1],
+   skipn(N1, Es1,Es).
+skipn(0, Es,Es).
+
+nth0_el(N0,N, E0,E, Es0) :-
+   Es0 == [],
+   !, % indexing
+   N0 = N,
+   E0 = E.
+nth0_el(N,N, E,E, _).
+nth0_el(N0,N, _,E, [E0|Es0]) :-
+   N1 is N0+1,
+   nth0_el(N1,N, E0,E, Es0).
+
+%% nth1(?N, ?Ls, ?E).
+%
+% Succeeds if in the N position of the list Ls, we found the element E. The elements start counting from one.
+%
+% ```
+% ?- nth1(2, [1,2,3,4], 2).
+%    true.
+% ```
+nth1(N, Es0, E) :-
+   N \== 0,
+   nth0(N, [_|Es0], E),
+   N \== 0.
+
+skipn(N0, Es0,Es, Xs0,Xs) :-
+   N0>0,
+   N1 is N0-1,
+   Es0 = [E|Es1],
+   Xs0 = [E|Xs1],
+   skipn(N1, Es1,Es, Xs1,Xs).
+skipn(0, Es,Es, Xs,Xs).
+
+%% nth0(?N, ?Ls, ?E, ?Rs).
+%
+% Succeeds if in the N position of the list Ls, we found the element E and the rest of the list is Rs. The elements start counting from zero.
+%
+% ```
+% ?- nth0(2, [1,2,3,4], 3, [1,2,4]).
+%    true.
+% ```
+nth0(N, Es0, E, Es) :-
+   integer(N),
+   N >= 0,
+   !,
+   skipn(N, Es0,Es1, Es,Es2),
+   Es1 = [E|Es2].
+nth0(N, Es0, E, Es) :-
+   can_be(not_less_than_zero, N),
+   Es0 = [E0|Es1],
+   nth0_elx(0,N, E0,E, Es1, Es).
+
+nth0_elx(N0,N, E0,E, Es0, Es) :-
+   Es0 == [],
+   !,
+   N0 = N,
+   E0 = E,
+   Es0 = Es.
+nth0_elx(N,N, E,E, Es, Es).
+nth0_elx(N0,N, E0,E, [E1|Es0], [E0|Es]) :-
+   N1 is N0+1,
+   nth0_elx(N1,N, E1,E, Es0, Es).
+
+% p.p.8.5
+
+%% nth1(?N, ?Ls, ?E, ?Rs).
+%
+% Succeeds if in the N position of the list Ls, we found the element E and the rest of the list is Rs. The elements start counting from one.
+%
+% ```
+% ?- nth1(2, [1,2,3,4], 2, [1,3,4]).
+%    true.
+% ```
+nth1(N, Es0, E, Es) :-
+   N \== 0,
+   nth0(N, [_|Es0], E, [_|Es]),
+   N \== 0.
+
+
 
 :- help(nth0(?integer,?term,?term), [iso(false), desc('Indexed element (from 0) into list.')]).
-
-nth1(Nth, List, Element, Rest) :-
-	nth(Element, List, 1, Nth, Rest).
-
-:- help(nth1(?integer,+term,?term,?term), [iso(false)]).
-
-nth0(Nth, List, Element, Rest) :-
-	nth(Element, List, 0, Nth, Rest).
-
 :- help(nth0(?integer,?term,?term,?term), [iso(false), desc('Indexed element (from 0) into list with remainder.')]).
-
-nth(Element, List, Acc, Nth, Rest) :-
-	(	integer(Nth),
-		Nth >= Acc,
-		nth_aux(NthElement, List, Acc, Nth, Rest) ->
-		Element = NthElement
-	;	var(Nth),
-		nth_aux(Element, List, Acc, Nth, Rest)
-	).
-
-nth_aux(Element, [Element| Rest], Position, Position, Rest).
-nth_aux(Element, [Head| Tail], Position0, Position, [Head| Rest]) :-
-	Position1 is Position0 + 1,
-	nth_aux(Element, Tail, Position1, Position, Rest).
+:- help(nth1(?integer,?term,?term), [iso(false), desc('Indexed element (from 1) into list.')]).
+:- help(nth1(?integer,+term,?term,?term), [iso(false), desc('Indexed element (from 1) into list with remainder.')]).
 
 last([H|T], Last) :- last_(T, H, Last).
 
