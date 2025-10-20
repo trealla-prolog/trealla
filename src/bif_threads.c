@@ -1207,10 +1207,7 @@ static bool do_thread_property_pin_property(query *q)
 	cell tmp;
 	make_int(&tmp, q->st.v1);
 	tmp.flags |= FLAG_INT_THREAD;
-
-	if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx))
-		return false;
-
+	unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	return do_thread_property_pin_both(q);
 }
 
@@ -1322,10 +1319,7 @@ static bool do_thread_property_wild(query *q)
 	cell tmp;
 	make_int(&tmp, q->st.v1);
 	tmp.flags |= FLAG_INT_THREAD;
-
-	if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx))
-		return false;
-
+	unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	return do_thread_property_pin_id(q);
 }
 
@@ -1571,10 +1565,7 @@ static bool do_message_queue_property_pin_property(query *q)
 	cell tmp;
 	make_int(&tmp, q->st.v1);
 	tmp.flags |= FLAG_INT_THREAD;
-
-	if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx))
-		return false;
-
+	unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	return do_message_queue_property_pin_both(q);
 }
 
@@ -1665,10 +1656,7 @@ static bool do_message_queue_property_wild(query *q)
 	cell tmp;
 	make_int(&tmp, q->st.v1);
 	tmp.flags |= FLAG_INT_THREAD;
-
-	if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx))
-		return false;
-
+	unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	return do_message_queue_property_pin_id(q);
 }
 
@@ -1957,10 +1945,7 @@ static bool do_mutex_property_pin_property(query *q)
 	cell tmp;
 	make_int(&tmp, q->st.v1);
 	tmp.flags |= FLAG_INT_THREAD;
-
-	if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx))
-		return false;
-
+	unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	return do_mutex_property_pin_both(q);
 }
 
@@ -2064,10 +2049,7 @@ static bool do_mutex_property_wild(query *q)
 	cell tmp;
 	make_int(&tmp, q->st.v1);
 	tmp.flags |= FLAG_INT_THREAD;
-
-	if (!unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx))
-		return false;
-
+	unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	return do_mutex_property_pin_id(q);
 }
 
