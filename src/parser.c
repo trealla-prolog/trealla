@@ -2595,6 +2595,15 @@ void read_integer(parser *p, mp_int v2, int base, const char **srcptr)
 		}
 	}
 
+	if (spaces) {
+		if (!p->do_read_term)
+			fprintf(stderr, "Error: syntax error, illegal character, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+
+		*srcptr = src;
+		p->error = true;
+		return;
+	}
+
 	if ((base != 16) && !isdigit(src[-1]))
 		src--;
 	else if ((base == 16) && !isxdigit(src[-1]))
