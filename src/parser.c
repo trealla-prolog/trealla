@@ -587,7 +587,7 @@ static bool goal_run(parser *p, cell *goal)
 		return false;
 
 	query *q = query_create(p->m);
-	execute(q, goal, MAX_ARITY);
+	execute(q, goal, p->cl->num_vars);
 
 	if (q->retry != QUERY_OK) {
 		query_destroy(q);
