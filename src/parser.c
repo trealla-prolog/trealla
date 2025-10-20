@@ -2589,6 +2589,9 @@ void read_integer(parser *p, mp_int v2, int base, const char **srcptr)
 			src++;
 		}
 
+		if (*src == '\n')
+			break;
+
 		if ((last_ch == '_') && iswspace(*src)) {
 			p->srcptr = (char*)src;
 			src = eat_space(p);
