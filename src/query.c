@@ -615,7 +615,6 @@ void try_me(query *q, unsigned num_vars)
 {
 	frame *f = GET_NEW_FRAME();
 	f->initial_slots = f->actual_slots = num_vars;
-	f->no_recov = false;
 	q->total_matches++;
 
 	for (unsigned i = 0; i < num_vars; i++) {
