@@ -1231,6 +1231,7 @@ static bool do_thread_property_pin_id(query *q)
 
 		if (!sl_next(iter, NULL)) {
 			sl_done(iter);
+			drop_choice(q);
 			return false;
 		}
 
@@ -1589,6 +1590,7 @@ static bool do_message_queue_property_pin_id(query *q)
 
 		if (!sl_next(iter, NULL)) {
 			sl_done(iter);
+			drop_choice(q);
 			return false;
 		}
 
@@ -1970,6 +1972,7 @@ static bool do_mutex_property_pin_id(query *q)
 
 		if (!sl_next(iter, NULL)) {
 			sl_done(iter);
+			drop_choice(q);
 			return false;
 		}
 
