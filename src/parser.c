@@ -2554,7 +2554,7 @@ static int get_escape(parser *p, const char **_src, bool *error, bool number)
 void read_integer(parser *p, mp_int v2, int base, const char **srcptr)
 {
 	const char *src = *srcptr;
-	p->spaces = 0;
+	int spaces = 0;
 
 	while (*src) {
 		if ((base == 2) && !isbdigit(*src))
@@ -2569,7 +2569,7 @@ void read_integer(parser *p, mp_int v2, int base, const char **srcptr)
 		if ((base == 16) && !isxdigit(*src))
 			break;
 
-		if (p->spaces > 1) {
+		if (spaces > 1) {
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: syntax error, illegal character, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -2578,19 +2578,19 @@ void read_integer(parser *p, mp_int v2, int base, const char **srcptr)
 			return;
 		}
 
-		p->spaces = 0;
+		spaces = 0;
 		SB_putchar(p->token, *src);
 		src++;
 
 		int last_ch = *src;
 
 		while (*src == '_') {
-			p->spaces++;
+			spaces++;
 			src++;
 		}
 
-		if (*src == '\n')
-			break;
+		//if (*src == '\n')
+		//	break;
 
 		if ((last_ch == '_') && iswspace(*src)) {
 			p->srcptr = (char*)src;

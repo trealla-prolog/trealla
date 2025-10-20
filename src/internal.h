@@ -788,7 +788,7 @@ struct parser_ {
 	prolog_flags flags;
 	char *save_line, *srcptr, *error_desc;
 	size_t token_size, n_line, pos_start;
-	unsigned line_num, line_num_start, spaces;
+	unsigned line_num, line_num_start;
 	unsigned depth, read_term_slots, num_vars;
 	unsigned nesting_parens, nesting_braces, nesting_brackets;
 	int quote_char, entered;
