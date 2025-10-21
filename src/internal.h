@@ -346,15 +346,13 @@ struct cell_ {
 	uint16_t flags;
 
 	union {
-		uint32_t num_cells;			// number of cells
-		uint32_t mid;				// used with TAG_EMPTY so not counted
+		uint32_t num_cells;				// number of cells
+		uint32_t mid;					// used with TAG_EMPTY
 	};
 
 	// 2 * 8 = 16 bytes.
 
 	union {
-
-		// Proper types...
 
 		pl_uint val_uint;
 		pl_int val_int;
