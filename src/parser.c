@@ -2589,7 +2589,7 @@ void read_integer(parser *p, mp_int v2, int base, const char **srcptr)
 			src++;
 		}
 
-		if ((last_ch == '_') && iswspace(*src)) {
+		if ((last_ch == '_') && (iswspace(*src) || (*src == '%'))) {
 			p->srcptr = (char*)src;
 			src = eat_space(p);
 		}
