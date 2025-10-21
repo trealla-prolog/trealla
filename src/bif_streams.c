@@ -975,7 +975,8 @@ static bool bif_popen_4(query *q)
 	checked(str->filename = strdup(filename));
 	checked(str->mode = DUP_STRING(q, p2));
 	bool binary = false;
-	uint8_t eof_action = eof_action_eof_code, is_alias = false;
+	uint8_t eof_action = eof_action_eof_code;
+	bool is_alias = false;
 	LIST_HANDLER(p4);
 
 	while (is_list(p4)) {
