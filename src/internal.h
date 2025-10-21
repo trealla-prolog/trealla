@@ -386,7 +386,7 @@ struct cell_ {
 				cell *val_attrs;		// used with TAG_EMPTY in slot
 			};
 
-			pl_idx var_num;				// used with TAG_VAR
+			uint32_t var_num;			// used with TAG_VAR
 
 			union {
 				uint32_t val_off;		// used with TAG_INTERNED / TAG_VAR -FLAG_VAR_REF
@@ -497,7 +497,7 @@ typedef struct {
 struct trail_ {
 	cell *attrs;
 	pl_ctx val_ctx;
-	pl_idx var_num;
+	uint32_t var_num;
 };
 
 // Where *c* is the (possibly) instantiated cell in the current frame
