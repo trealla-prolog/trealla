@@ -2934,30 +2934,6 @@ inline static bool is_matching_pair(int ch, int next_ch, int lh, int rh)
 	return (ch == lh) && (next_ch == rh);
 }
 
-// FIXME
-
-static bool valid_float(const char *src)
-{
-	if (*src == '.')
-		return false;
-
-	if (*src == '-')
-		src++;
-
-	while (isdigit(*src))
-		src++;
-
-	if (*src != '.')
-		return false;
-
-	src++;
-
-	if (!isdigit(*src))
-		return false;
-
-	return true;
-}
-
 char *eat_space(parser *p)
 {
 	if (!*p->srcptr)
@@ -3195,48 +3171,6 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 	if ((*src != '-') && parse_number(p, &src, neg)) {
 		if (neg) p->cl->cidx--;
 		SB_strcatn(p->token, tmpptr, src-tmpptr);
-		const char *dst = SB_cstr(p->token);
-
-		if ((dst[0] != '0') && (dst[1] != 'x')) {
-			char tmp[strlen(dst)+1];
-			char *tmpdst = tmp;
-			const char *tmpsrc = dst;
-			bool comment = false;
-
-			while ((*tmpdst++ = *tmpsrc) != 0) {
-				if (*tmpsrc == '%')
-					break;
-
-				if (!comment && (tmpsrc[0] == '/') && (tmpsrc[1] == '*')) {
-					comment = true;
-					tmpsrc += 2;
-					tmpdst--;
-				}
-
-				if (comment && (tmpsrc[0] == '*') && (tmpsrc[1] == '/')) {
-					comment = false;
-					tmpsrc += 2;
-					tmpdst--;
-				}
-
-				if (comment)
-					tmpdst--;
-
-				tmpsrc++;
-			}
-
-			if ((strchr(dst, '.') || strchr(tmp, 'e') || strchr(tmp, 'E')) && !strchr(dst, '\'')) {
-				if (!valid_float(SB_cstr(p->token))) {
-					if (!p->do_read_term)
-						fprintf(stderr, "Error: syntax error, float, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
-
-					p->error_desc = "float";
-					p->error = true;
-					return false;
-				}
-			}
-		}
-
 		p->srcptr = (char*)src;
 		int ch = peek_char_utf8(src);
 
