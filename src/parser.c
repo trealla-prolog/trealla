@@ -3201,10 +3201,26 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 			char tmp[strlen(dst)+1];
 			char *tmpdst = tmp;
 			const char *tmpsrc = dst;
+			bool comment = false;
 
 			while ((*tmpdst++ = *tmpsrc) != 0) {
 				if (*tmpsrc == '%')
 					break;
+
+				if (!comment && (tmpsrc[0] == '/') && (tmpsrc[1] == '*')) {
+					comment = true;
+					tmpsrc += 2;
+					tmpdst--;
+				}
+
+				if (comment && (tmpsrc[0] == '*') && (tmpsrc[1] == '/')) {
+					comment = false;
+					tmpsrc += 2;
+					tmpdst--;
+				}
+
+				if (comment)
+					tmpdst--;
 
 				tmpsrc++;
 			}
