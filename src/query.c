@@ -661,6 +661,8 @@ static void reuse_frame(query *q, unsigned num_vars)
 {
 	cell *c_next = q->st.instr + q->st.instr->num_cells;
 
+	// This is if the last call was actually call/n
+
 	if (c_next->val_off == g_sys_drop_barrier_s)
 		drop_choice(q);
 
