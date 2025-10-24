@@ -168,7 +168,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_call_s) && ((*src)->arity == 1) && !is_var(c)) {
+	if (((*src)->val_off == g_call_s) && ((*src)->arity == 1)) {
 		unsigned var_num = cl->num_vars++;
 		*src += 1;
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
@@ -204,7 +204,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_once_s) && ((*src)->arity == 1) && !is_var(c)) {
+	if (((*src)->val_off == g_once_s) && ((*src)->arity == 1)) {
 		unsigned var_num = cl->num_vars++;
 		*src += 1;
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
@@ -218,7 +218,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_ignore_s) && ((*src)->arity == 1) && !is_var(c)) {
+	if (((*src)->val_off == g_ignore_s) && ((*src)->arity == 1)) {
 		unsigned var_num = cl->num_vars++;
 		*src += 1;
 		cell *save_dst = *dst;
@@ -236,7 +236,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_negation_s) && ((*src)->arity == 1) && !is_var(c)) {
+	if (((*src)->val_off == g_negation_s) && ((*src)->arity == 1)) {
 		unsigned var_num = cl->num_vars++;
 		*src += 1;
 		cell *save_dst = *dst;
