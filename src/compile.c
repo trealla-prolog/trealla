@@ -48,7 +48,6 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 	// T1 -> T2 ; T3
 
 	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)
-		&& !is_var(c)
 		&& is_callable(c) && c->bif_ptr && (c->arity == 2)
 		&& (c->bif_ptr->fn == bif_iso_if_then_2)) {
 		*src += 2;
@@ -75,7 +74,6 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 	// T1 *-> T2 ; T3
 
 	if (((*src)->val_off == g_disjunction_s) && ((*src)->arity == 2)
-		&& !is_var(c)
 		&& is_callable(c) && c->bif_ptr && (c->arity == 2)
 		&& (c->bif_ptr->fn == bif_soft_if_then_2)) {
 		*src += 2;
@@ -120,7 +118,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 	// T1 -> T2
 
-	if (((*src)->val_off == g_if_then_s) && ((*src)->arity == 2) && !is_var(c)) {
+	if (((*src)->val_off == g_if_then_s) && ((*src)->arity == 2)) {
 		unsigned var_num = cl->num_vars++;
 		*src += 1;
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
@@ -135,7 +133,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 	// T1 *-> T2
 
-	if (((*src)->val_off == g_soft_cut_s) && ((*src)->arity == 2) && !is_var(c)) {
+	if (((*src)->val_off == g_soft_cut_s) && ((*src)->arity == 2)) {
 		unsigned var_num = cl->num_vars++;
 		*src += 1;
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
@@ -147,7 +145,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_if_s) && ((*src)->arity == 3) && !is_var(c)) {
+	if (((*src)->val_off == g_if_s) && ((*src)->arity == 3)) {
 		*src += 1;
 		unsigned var_num = cl->num_vars++;
 		cell *save_dst1 = *dst;
@@ -253,7 +251,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_reset_s) && ((*src)->arity == 3) && !is_var(c)) {
+	if (((*src)->val_off == g_reset_s) && ((*src)->arity == 3)) {
 		unsigned var_num = cl->num_vars++;
 		*src += 1;
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
@@ -289,8 +287,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_colon_s) && ((*src)->arity == 2) && !is_var((c))
-		) {
+	if (((*src)->val_off == g_colon_s) && ((*src)->arity == 2) && !is_var((c))) {
 		unsigned var_num1 = cl->num_vars++;
 		*src += 1;
 		make_instr((*dst)++, g_sys_module_s, bif_sys_module_1, 1, 1);
