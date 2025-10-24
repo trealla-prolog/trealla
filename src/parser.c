@@ -2273,7 +2273,9 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 				if ((c->val_off != g_neck_s))
 					lhs = goal_expansion(p, lhs);
 
-				lhs = term_to_body_conversion(p, lhs);
+				if (!is_head)
+					lhs = term_to_body_conversion(p, lhs);
+
 				lhs->arity -= extra;
 			}
 
