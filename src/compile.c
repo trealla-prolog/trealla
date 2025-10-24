@@ -251,6 +251,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
+#if 0
 	if (((*src)->val_off == g_reset_s) && ((*src)->arity == 3)) {
 		unsigned var_num = cl->num_vars++;
 		*src += 1;
@@ -265,6 +266,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_atom((*dst)++, g_none_s);
 		return;
 	}
+#endif
 
 	if (((*src)->val_off == g_notunify_s) && ((*src)->arity == 2)) {
 		unsigned var_num = cl->num_vars++;
