@@ -2089,6 +2089,9 @@ static cell *goal_expansion(parser *p, cell *goal)
 			continue;
 
 		cell *c = deref(q, &e->c, e->c.val_ctx);
+
+		// Copy into orig query?
+
 		q->varnames = true;
 		q->max_depth = -1;
 		src = print_canonical_to_strbuf(q, c, q->latest_ctx, 1);
@@ -2254,7 +2257,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 {
 	//printf("*** %s/%u, p->is_command=%d\n", C_STR(p, c), c->arity, p->is_command);
 	pl_idx c_idx = c - p->cl->cells;
-	bool is_head = (c_idx == 0) && !p->is_command;
+	bool is_head = (c_idx == 0) /*&& !p->is_command */;
 
 	if (is_xfx(c) || is_xfy(c)) {
 		if ((c->val_off == g_conjunction_s)
@@ -3760,7 +3763,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 				process_clause(p->m, p->cl, NULL);
 
-				if (!p->one_shot || p->is_command)
+				if (!p->one_shot /*|| p->is_command*/)
 					term_to_body(p);
 
 				if ((p->is_consulting /*|| p->is_command*/) && !p->skip) {
@@ -4402,7 +4405,7 @@ bool run(parser *p, const char *prolog_src, bool dump, query **subq, unsigned in
 		p->line_num_start = 0;
 		p->line_num = 1;
 		p->one_shot = true;
-		p->is_command = true;
+		//p->is_command = true;
 		p->is_consulting = false;
 		tokenize(p, false, false);
 

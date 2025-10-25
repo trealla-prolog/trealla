@@ -784,6 +784,7 @@ struct parser_ {
 	cell v;
 	stringbuf token_buf;
 	prolog_flags flags;
+	query *q;
 	char *save_line, *srcptr, *error_desc;
 	size_t token_size, n_line, pos_start;
 	unsigned line_num, line_num_start;
