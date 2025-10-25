@@ -2253,7 +2253,7 @@ static cell *insert_call_here(parser *p, cell *c, cell *p1)
 static cell *term_to_body_conversion(parser *p, cell *c)
 {
 	pl_idx c_idx = c - p->cl->cells;
-	bool is_head = c_idx == 0;
+	bool is_head = (c_idx == 0) && !p->is_command;
 
 	if (is_xfx(c) || is_xfy(c)) {
 		if ((c->val_off == g_conjunction_s)
