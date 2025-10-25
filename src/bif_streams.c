@@ -2110,7 +2110,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 			if (str->p->srcptr && (*str->p->srcptr == '\n'))
 				str->p->line_num++;
 
-			if (str->p->no_fp || getline(&str->p->save_line, &str->p->n_line, str->fp) == -1) {
+			if (str->fp && (str->p->no_fp || getline(&str->p->save_line, &str->p->n_line, str->fp) == -1)) {
 				if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 					clearerr(str->fp);
 					return do_yield(q, 1);
