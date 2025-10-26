@@ -4305,6 +4305,7 @@ static bool bif_read_term_from_chars_3(query *q)
 		strcat(src, ".");
 
 	bool ok = do_read_term(q, str, p_term, p_term_ctx, p_opts, p_opts_ctx, NULL);
+	parser_reset(str->p);
 	parser_destroy(str->p);
 	free(save_src);
 
