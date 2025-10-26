@@ -4040,7 +4040,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			continue;
 		}
 
-		if (!p->is_quoted /*&& is_consing*/ && p->start_term && !SB_strcmp(p->token, "|")) {
+		if (!p->is_quoted /*&& is_consing*/ && (p->start_term || last_op) && !SB_strcmp(p->token, "|")) {
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: syntax error, parsing '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_num);
 
