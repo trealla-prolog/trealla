@@ -3992,7 +3992,8 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 		if (!p->quote_char &&
 			((is_arg_processing && !SB_strcmp(p->token, ",")) ||
-			(is_consing && !p->was_consing && !p->start_term && (!SB_strcmp(p->token, ",") || !SB_strcmp(p->token, "|")))
+			(is_consing && !p->was_consing && !p->start_term
+				&& (!SB_strcmp(p->token, ",") || !SB_strcmp(p->token, "|")))
 			)) {
 			if ((arg_idx == p->cl->cidx) || !p->cl->cidx) {
 				if (!p->do_read_term)
@@ -4039,9 +4040,9 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			continue;
 		}
 
-		if (!p->is_quoted && is_consing && p->start_term && !SB_strcmp(p->token, "|")) {
+		if (!p->is_quoted /*&& is_consing*/ && p->start_term && !SB_strcmp(p->token, "|")) {
 			if (!p->do_read_term)
-				fprintf(stderr, "Error: syntax error, parsing list '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_num);
+				fprintf(stderr, "Error: syntax error, parsing '%s', %s:%d\n", p->save_line?p->save_line:"", get_loaded(p->m, p->m->filename), p->line_num);
 
 			p->error_desc = "list";
 			p->error = true;
