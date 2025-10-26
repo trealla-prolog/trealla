@@ -87,12 +87,10 @@ static void collect_vars_lists(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth
 	collect_vars_internal(q, l, l_ctx, depth+1);
 }
 
-static void collect_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
+static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
-	if (is_var(p1)) {
-		if (!(p1->flags & FLAG_VAR_CYCLIC))
-			accum_var(q, p1, p1_ctx);
-
+	if (is_var(p1) && !(p1->flags & FLAG_VAR_CYCLIC)) {
+		accum_var(q, p1, p1_ctx);
 		return;
 	}
 
@@ -104,54 +102,26 @@ static void collect_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned de
 		return;
 	}
 
-	// Transform recursion into stack iteration...
+	bool any = false;
+	unsigned arity = p1->arity;
+	p1++;
 
-	list stack = {0};
-	snode *n = malloc(sizeof(snode));
-	n->c = p1;
-	n->c_ctx = p1_ctx;
-	list_push_back(&stack, n);
+	while (arity--) {
+		cell *c = p1;
+		pl_idx c_ctx = p1_ctx;
+		slot *e = NULL;
+		uint32_t save_vgen = 0;
+		int both = 0;
 
-	while ((n = (snode*)list_pop_front(&stack)) != NULL) {
-		cell *p1 = n->c;
-		pl_ctx p1_ctx = n->c_ctx;
-		free(n);
+		DEREF_VAR(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
 
-		if (!is_compound(p1) || is_iso_list(p1)) {
-			collect_vars_internal(q, p1, p1_ctx, depth+1);
-			continue;
-		}
+		if (!both && is_var(c) && !(c->flags & FLAG_VAR_CYCLIC))
+			accum_var(q, c, c_ctx);
+		else if (!both)
+			collect_vars_internal(q, c, c_ctx, depth+1);
 
-		snode *last = NULL;
-		bool any = false;
-		unsigned arity = p1->arity;
-		p1++;
-
-		while (arity--) {
-			cell *c = p1;
-			pl_ctx c_ctx = p1_ctx;
-			slot *e = NULL;
-			uint32_t save_vgen;
-			int both = 0;
-
-			DEREF_VAR(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
-
-			if (!both || is_var(c)) {
-				n = malloc(sizeof(snode));
-				n->c = c;
-				n->c_ctx = c_ctx;
-
-				if (!last)
-					list_push_front(&stack, n);
-				else
-					list_insert_after(&stack, last, n);
-
-				last = n;
-			} else
-				if (e) e->vgen = save_vgen;
-
-			p1 += p1->num_cells;
-		}
+		if (e) e->vgen = save_vgen;
+		p1 += p1->num_cells;
 	}
 }
 
