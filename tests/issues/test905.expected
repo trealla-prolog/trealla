@@ -1,1 +1,1 @@
-   Warning: Initialization goal exception: error(existence_error(procedure,read_from_chars/2),read_from_chars/2).
+   Warning: Initialization goal exception: error(syntax_error(read_term),read_term_from_chars/3).

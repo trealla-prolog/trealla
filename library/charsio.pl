@@ -2,8 +2,7 @@
 	char_type/2,
 	get_line_to_chars/3,
 	get_single_char/1,
-	get_n_chars/3,
-	read_from_chars/2
+	get_n_chars/3
 	]).
 
 get_single_char(C) :-
@@ -21,11 +20,6 @@ get_n_chars(Stream, N, Cs) :-
 		bread(Stream, N, Cs0),
 		Cs0 = Cs
 	).
-
-read_from_chars(Cs, T) :-
-    read_term_from_chars(Cs, T, []).
-
-:- help(read_from_chars(+chars,?term), [iso(false)]).
 
 fabricate_var_name(VarType, VarName, N) :-
     char_code('A', AC),

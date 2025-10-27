@@ -17,6 +17,11 @@ writeln(S, T) :- write(S, T), nl.		% SWI
 
 :- help(predicate_property(+callable,+term), [iso(true)]).
 
+read_from_chars(Cs, T) :-
+    read_term_from_chars(Cs, T, []).
+
+:- help(read_from_chars(+chars,?term), [iso(false)]).
+
 predicate_property(P, A) :-
 	nonvar(P), atom(A), !,
 	must_be(P, callable, predicate_property/2, _),

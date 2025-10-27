@@ -4186,20 +4186,13 @@ static bool bif_sys_read_term_from_chars_4(query *q)
 		return throw_error(q, p_chars, p_chars_ctx, "type_error", "character");
 	}
 
-	str->p = parser_create(q->st.m);
-	str->p->flags = q->st.m->flags;
-	str->p->fp = str->fp;
-	parser_reset(str->p);
-	str->p->srcptr = src;
-
 	if (!src || !*src) {
-		parser_destroy(str->p);
 		cell tmp;
 		make_atom(&tmp, g_eof_s);
 		return unify(q, p_term, p_term_ctx, &tmp, q->st.cur_ctx);
 	}
 
-	bool ok = do_read_term(q, str, p_term, p_term_ctx, p_opts, p_opts_ctx, NULL);
+	bool ok = do_read_term(q, str, p_term, p_term_ctx, p_opts, p_opts_ctx, src);
 
 	if (ok != true) {
 		if (!is_string(p_chars))
@@ -4231,8 +4224,6 @@ static bool bif_sys_read_term_from_chars_4(query *q)
 	} else {
 		make_atom(&tmp, g_nil_s);
 	}
-
-	parser_destroy(str->p);
 
 	if (!is_string(p_chars))
 		free(src);
@@ -4281,21 +4272,6 @@ static bool bif_read_term_from_chars_3(query *q)
 		return throw_error(q, p_chars, p_chars_ctx, "type_error", "character");
 	}
 
-	str->p = parser_create(q->st.m);
-	str->p->flags = q->st.m->flags;
-	str->p->fp = str->fp;
-	parser_reset(str->p);
-	char *save_src = src;
-	str->p->srcptr = src;
-
-	if (!src || !*src) {
-		parser_destroy(str->p);
-		free(save_src);
-		cell tmp;
-		make_atom(&tmp, g_eof_s);
-		return unify(q, p_term, p_term_ctx, &tmp, q->st.cur_ctx);
-	}
-
 	const char *end_ptr = src + strlen(src) - 1;
 
 	while (isspace(*end_ptr) && (end_ptr != src))
@@ -4304,14 +4280,8 @@ static bool bif_read_term_from_chars_3(query *q)
 	if (src[strlen(src)-1] != '.')
 		strcat(src, ".");
 
-	bool ok = do_read_term(q, str, p_term, p_term_ctx, p_opts, p_opts_ctx, NULL);
-	parser_reset(str->p);
-	parser_destroy(str->p);
-	free(save_src);
-
-	if (ok != true)
-		return false;
-
+	bool ok = do_read_term(q, str, p_term, p_term_ctx, p_opts, p_opts_ctx, src);
+	free(src);
 	return ok;
 }
 
@@ -4349,7 +4319,6 @@ static bool bif_read_term_from_atom_3(query *q)
 		strcat(src, ".");
 
 	bool ok = do_read_term(q, str, p_term, p_term_ctx, p_opts, p_opts_ctx, src);
-	parser_destroy(str->p);
 	free(src);
 	return ok;
 }
