@@ -358,8 +358,7 @@ void parser_reset(parser *p)
 	p->last_neg = p->no_fp = p->reuse= p->in_body = false;
 	p->is_number_chars = false;
 
-	SB_init(p->token);
-	memset(&p->vartab, 0, sizeof(p->vartab));
+	SB_free(p->token);
 	p->nesting_parens = p->nesting_brackets = p->nesting_braces = 0;
 	p->num_vars = 0;
 	p->start_term = true;
