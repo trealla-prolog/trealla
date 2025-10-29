@@ -2923,6 +2923,11 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 	*srcptr = s;
 	ch = peek_char_utf8(s);
 
+	while (iswspace(ch)) {
+		s++;
+		ch = peek_char_utf8(s);
+	}
+
 	if (ch == '(') {
 		if (!p->do_read_term)
 			fprintf(stderr, "Error: syntax error, parsing number, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
@@ -3057,11 +3062,20 @@ static bool check_space_before_function(parser *p, int ch, const char *src)
 	if (iswspace(ch) && (SB_strcmp(p->token, ".") || p->is_quoted)) {
 		p->srcptr = (char*)src;
 		//src = eat_space(p);
+		bool nl = false;
 
 		while (iswblank(*src))
 			src++;
 
-		if (!src || !*src) {
+		while (*src == '\n') {
+			nl = true;
+			src++;
+		}
+
+		while (iswblank(*src))
+			src++;
+
+		if ((!src || !*src) && !nl) {
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: syntax error, incomplete statement, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -3594,6 +3608,10 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 	p->is_op = search_op(p->m, SB_cstr(p->token), NULL, false);
 	p->srcptr = (char*)src;
+	ch = peek_char_utf8(src);
+
+	if (!p->is_op && !check_space_before_function(p, ch, p->srcptr))
+		return false;
 
 	if (*src) {
 		while (iswspace(*src))
