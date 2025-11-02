@@ -3279,7 +3279,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					src = eat_space(p);
 					ch = *src;
 
-					if (iswalnum(ch) || (ch == '_')
+					if (iswalnum(ch) || (ch == '_') || (ch == '!')
 						|| (ch == '(') || ch == ')'
 						|| (ch == '[') || ch == ']'
 						|| (ch == '{') || ch == '}'
@@ -3328,6 +3328,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 								&& (ch != '[') && (ch != ']')
 								&& (ch != '{') && (ch != '}')
 								&& (ch != '-') && (ch != '+')
+								&& (ch != '!')
 								&& !depth
 								)
 								break;
