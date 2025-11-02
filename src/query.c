@@ -622,6 +622,7 @@ void try_me(query *q, unsigned num_vars)
 		cell *c = &e->c;
 		c->tag = TAG_EMPTY;
 		c->val_attrs = NULL;
+		e->vgen = e->vgen2 = 0;
 	}
 }
 

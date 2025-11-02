@@ -473,7 +473,7 @@ static bool unify_structs(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2
 		pl_ctx c1_ctx = p1_ctx, c2_ctx = p2_ctx;
 		cell *c1 = p1, *c2 = p2;
 		slot *e1 = NULL, *e2 = NULL;
-		uint32_t save_vgen, save_vgen2;
+		uint32_t save_vgen = 0, save_vgen2 = 0;
 		bool any = false;
 		int both = 0;
 
