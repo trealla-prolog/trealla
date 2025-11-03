@@ -385,6 +385,7 @@ void trim_heap(query *q)
 		cell *c = q->heap_pages->cells + --q->heap_pages->idx;
 		unshare_cell(c);
 		c->tag = TAG_EMPTY;
+		c->flags = 0;
 		c->val_attrs = NULL;
 	}
 }

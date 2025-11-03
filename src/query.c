@@ -606,6 +606,7 @@ void undo_me(query *q)
 		cell *c = &e->c;
 		unshare_cell(c);
 		c->tag = TAG_EMPTY;
+		c->flags = 0;
 		c->val_attrs = tr->attrs;
 		e->vgen = e->vgen2 = 0;
 	}
