@@ -587,8 +587,7 @@ static void trim_frame(query *q, const frame *f)
 		slot *e = get_slot(q, f, i);
 		cell *c = &e->c;
 		unshare_cell(c);
-		c->tag = TAG_EMPTY;
-		c->val_attrs = NULL;
+		memset(e, 0, sizeof(slot));
 	}
 
 	q->st.sp -= f->actual_slots;
@@ -608,6 +607,7 @@ void undo_me(query *q)
 		unshare_cell(c);
 		c->tag = TAG_EMPTY;
 		c->val_attrs = tr->attrs;
+		e->vgen = e->vgen2 = 0;
 	}
 }
 
@@ -619,10 +619,7 @@ void try_me(query *q, unsigned num_vars)
 
 	for (unsigned i = 0; i < num_vars; i++) {
 		slot *e = get_slot(q, f, i);
-		cell *c = &e->c;
-		c->tag = TAG_EMPTY;
-		c->val_attrs = NULL;
-		e->vgen = e->vgen2 = 0;
+		memset(e, 0, sizeof(slot));
 	}
 }
 
