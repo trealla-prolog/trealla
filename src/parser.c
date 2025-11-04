@@ -3255,7 +3255,11 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					p->quote_char = 0;
 					break;
 				} else if (ch == p->quote_char) {
-#if 1 // Double-bar
+					if (p->flags.double_quote_atom) {
+						p->quote_char = 0;
+						break;
+					}
+
 					const char *save_src = src;
 					p->srcptr = (char*)src;
 					src = eat_space(p);
@@ -3378,10 +3382,6 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					}
 					src++;
 					continue;
-#else
-					p->quote_char = 0;
-					break;
-#endif
 				}
 
 				if (ch < ' ') {
