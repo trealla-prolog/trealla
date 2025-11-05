@@ -363,7 +363,6 @@ void parser_reset(parser *p)
 	p->num_vars = 0;
 	p->start_term = true;
 	p->error = false;
-	p->dq_consing = 0;
 	p->error_desc = NULL;
 	p->cl->cidx = 0;
 	p->flags = p->m->flags;
@@ -3130,46 +3129,6 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 	p->v.num_cells = 1;
 	p->quote_char = 0;
 	p->was_string = p->is_string = p->is_quoted = p->is_var = p->is_op = p->is_symbol = false;
-
-	if (p->dq_consing && (*src == '"') && (src[1] == '"')) {
-		src++;
-	} else if (p->dq_consing && (*src == '"')) {
-		SB_strcat(p->token, "]");
-		p->srcptr = (char*)++src;
-		p->dq_consing = 0;
-		return true;
-	}
-
-	if (p->dq_consing < 0) {
-		SB_strcat(p->token, ",");
-		p->dq_consing = 1;
-		return true;
-	}
-
-	if (p->dq_consing) {
-		int ch = get_char_utf8(&src);
-
-		if ((ch == '\\') && p->flags.character_escapes) {
-			ch = get_escape(p, &src, &p->error, false);
-
-			if (p->error) {
-				if (!p->do_read_term)
-					fprintf(stderr, "Error: syntax error, illegal character escape <<%s>>, %s:%d\n", p->srcptr, get_loaded(p->m, p->m->filename), p->line_num);
-
-				p->error_desc = "illegal_character_escape";
-				p->error = true;
-				return false;
-			}
-		}
-
-		SB_sprintf(p->token, "%u", ch);
-		p->srcptr = (char*)src;
-		set_smallint(&p->v, ch);
-		p->v.tag = TAG_INT;
-		p->dq_consing = -1;
-		return true;
-	}
-
 	src = eat_space(p);
 
 	if (!src || !*src) {
@@ -3219,21 +3178,9 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 		p->quote_char = *src++;
 		p->is_quoted = true;
 
-		if ((p->quote_char == '"') && p->flags.double_quote_codes) {
-			SB_strcpy(p->token, "[");
-
-			if ((*src == '"') && (src[1] != '"')) {
-				SB_strcat(p->token, "]");
-				p->srcptr = (char*)++src;
-				return true;
-			}
-
-			p->dq_consing = 1;
-			p->quote_char = 0;
-			p->srcptr = (char*)src;
-			return true;
-		} else if ((p->quote_char == '"') && p->flags.double_quote_chars)
+		if ((p->quote_char == '"') && !p->flags.double_quote_atom) {
 			p->is_string = true;
+		}
 
 		for (;;) {
 			int ch = 0;
@@ -3284,9 +3231,9 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					ch = *src;
 
 					if (iswalnum(ch) || (ch == '_') || (ch == '!')
-						|| (ch == '(') || ch == ')'
-						|| (ch == '[') || ch == ']'
-						|| (ch == '{') || ch == '}'
+						|| (ch == '(') || (ch == ')')
+						|| (ch == '[') || (ch == ']')
+						|| (ch == '{') || (ch == '}')
 						|| (ch == '-')
 						) {
 						src = (char*)src;
@@ -3303,18 +3250,26 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 								if (any)
 									SB_putchar(p->token, ',');
 
-								SB_putchar(p->token, '\'');
+								if (p->flags.double_quote_chars) {
+									SB_putchar(p->token, '\'');
+								}
 
 								char *ptr = strchr(g_escapes, ch);
 
-								if (ptr) {
+								if (ptr && p->flags.double_quote_chars) {
 									size_t n = ptr - g_escapes;
 									SB_putchar(p->token, '\\');
 									SB_putchar(p->token, g_anti_escapes[n]);
-								} else
+								} else if (p->flags.double_quote_codes) {
+									SB_sprintf(p->token, "%u", ch);
+								} else {
 									SB_putchar(p->token, ch);
+								}
 
-								SB_putchar(p->token, '\'');
+								if (p->flags.double_quote_chars) {
+									SB_putchar(p->token, '\'');
+								}
+
 								any = true;
 							}
 
@@ -3380,6 +3335,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 						p->quote_char = 0;
 						break;
 					}
+
 					src++;
 					continue;
 				}
@@ -3415,9 +3371,6 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 				}
 
 				SB_putchar(p->token, ch);
-
-				if (!*src)
-					break;
 			}
 
 			if (p->quote_char && p->fp) {
@@ -4385,6 +4338,9 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 				c->val_chr[toklen] = '\0';
 				c->chr_len = toklen;
 			} else {
+				if (p->is_string && p->flags.double_quote_codes)
+					c->flags |= FLAG_CSTR_CODES;
+
 				if (p->is_string) {
 					c->flags |= FLAG_CSTR_STRING;
 					c->arity = 2;

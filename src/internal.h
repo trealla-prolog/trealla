@@ -791,7 +791,6 @@ struct parser_ {
 	unsigned depth, read_term_slots, num_vars;
 	unsigned nesting_parens, nesting_braces, nesting_brackets;
 	int quote_char, entered;
-	int8_t dq_consing;
 	bool error, if_depth[MAX_IF_DEPTH];
 	bool was_consing:1;
 	bool was_string:1;
