@@ -1483,7 +1483,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 
 	// STRING
 
-	if (is_string(c) && !q->double_quotes) {
+	if (is_string(c) && (!q->double_quotes || q->st.m->flags.double_quote_codes)) {
 		print_string_list(q, c, c_ctx, running, cons > 0, depth+1);
 		q->last_thing = WAS_OTHER;
 		return true;
