@@ -2684,7 +2684,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 		s2++;
 		p->v.tag = TAG_INT;
-		set_smallint(&p->v, v);
+		set_smallint(&p->v, neg ? -v : v);
 		*srcptr = s2;
 		return true;
 	}
@@ -2771,8 +2771,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 		}
 
 		p->v.tag = TAG_INT;
-		set_smallint(&p->v, v);
-		if (neg) set_smallint(&p->v, -get_smallint(&p->v));
+		set_smallint(&p->v, neg ? -v : v);
 		*srcptr = s;
 		return true;
 	}
@@ -2795,8 +2794,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 			if (neg) p->v.val_bigint->ival.sign = MP_NEG;
 			p->v.flags |= FLAG_INT_BIG | FLAG_MANAGED;
 		} else {
-			set_smallint(&p->v, val);
-			if (neg) p->v.val_int = -p->v.val_int;
+			set_smallint(&p->v, neg ? -val : val);
 			mp_int_clear(&v2);
 		}
 
@@ -2818,8 +2816,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 			if (neg) p->v.val_bigint->ival.sign = MP_NEG;
 			p->v.flags |= FLAG_INT_BIG | FLAG_MANAGED;
 		} else {
-			set_smallint(&p->v, val);
-			if (neg) p->v.val_int = -p->v.val_int;
+			set_smallint(&p->v, neg ? -val : val);
 			mp_int_clear(&v2);
 		}
 
@@ -2841,8 +2838,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 			if (neg) p->v.val_bigint->ival.sign = MP_NEG;
 			p->v.flags |= FLAG_INT_BIG | FLAG_MANAGED;
 		} else {
-			set_smallint(&p->v, val);
-			if (neg) p->v.val_int = -p->v.val_int;
+			set_smallint(&p->v, neg ? -val : val);
 			mp_int_clear(&v2);
 		}
 
@@ -2907,8 +2903,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 		if (neg) p->v.val_bigint->ival.sign = MP_NEG;
 		p->v.flags |= FLAG_INT_BIG | FLAG_MANAGED;
 	} else {
-		set_smallint(&p->v, val);
-		if (neg) p->v.val_int = -p->v.val_int;
+		set_smallint(&p->v, neg ? -val : val);
 	}
 
 	mp_int_clear(&v2);
