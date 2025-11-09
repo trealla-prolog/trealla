@@ -166,19 +166,6 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_call_s) && ((*src)->arity == 1)) {
-		unsigned var_num = cl->num_vars++;
-		*src += 1;
-		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
-		make_var((*dst)++, g_anon_s, var_num);
-		make_instr((*dst)++, g_sys_call_check_s, bif_sys_call_check_1, 1, (*src)->num_cells);
-		*dst += copy_cells(*dst, *src, (*src)->num_cells);
-		compile_term(pr, cl, dst, src);								// Arg1
-		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-		make_var((*dst)++, g_anon_s, var_num);
-		return;
-	}
-
 	if (((*src)->val_off == g_call_s) && ((*src)->arity > 1) && !is_var(c)) {
 		unsigned var_num = cl->num_vars++;
 		unsigned arity = (*src)->arity - 1;
@@ -197,6 +184,19 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		save_dst->num_cells = *dst - save_dst;
 		calln_check(pr->m, save_dst);
 		*dst += copy_cells(*dst, save_dst, save_dst->num_cells);
+		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
+		make_var((*dst)++, g_anon_s, var_num);
+		return;
+	}
+
+	if (((*src)->val_off == g_call_s) && ((*src)->arity == 1)) {
+		unsigned var_num = cl->num_vars++;
+		*src += 1;
+		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
+		make_var((*dst)++, g_anon_s, var_num);
+		make_instr((*dst)++, g_sys_call_check_s, bif_sys_call_check_1, 1, (*src)->num_cells);
+		*dst += copy_cells(*dst, *src, (*src)->num_cells);
+		compile_term(pr, cl, dst, src);								// Arg1
 		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_var((*dst)++, g_anon_s, var_num);
 		return;
