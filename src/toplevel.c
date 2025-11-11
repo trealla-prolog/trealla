@@ -432,7 +432,7 @@ void dump_vars(query *q, bool partial)
 		want_space = false;
 
 		if (is_compound(c)) {
-			unsigned pri = search_op(q->st.m, C_STR(q, c), NULL, c->arity);
+			unsigned pri = match_op(q->st.m, C_STR(q, c), NULL, c->arity);
 
 			if (pri >= 700)
 				parens = true;
@@ -442,7 +442,7 @@ void dump_vars(query *q, bool partial)
 			&& !is_string(c)
 			//&& C_STRLEN(q, c)
 			&& !is_nil(c)) {
-			if (search_op(q->st.m, C_STR(q, c), NULL, false)
+			if (match_op(q->st.m, C_STR(q, c), NULL, false)
 				//&& !needs_quoting(q->st.m, C_STR(q, c), C_STRLEN(q, c))
 				)
 				parens = true;

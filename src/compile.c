@@ -26,7 +26,7 @@ static void calln_check(module *m, cell *p1)
 			const char *functor = C_STR(m, p1);
 			unsigned specifier;
 
-			if (search_op(m, functor, &specifier, false))
+			if (match_op(m, functor, &specifier, false))
 				SET_OP(p1, specifier);
 		}
 	} else {

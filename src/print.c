@@ -171,7 +171,7 @@ static bool op_needs_quoting(module *m, const char *src, int srclen)
 	if (iswupper(ch) || iswdigit(ch) || (ch == '_'))
 		return true;
 
-	if (search_op(m, src, NULL, false))
+	if (match_op(m, src, NULL, false))
 		return strchr(src, ' ')
 			|| strchr(src, '\'')
 			|| strchr(src, '\"')
@@ -1093,8 +1093,8 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 		//if (my_priority && (rhs_pri == my_priority) && strcmp(src, "-") && strcmp(src, "+")) parens = true;
 		if (!strcmp(src, "-") && (rhs_pri == my_priority) && (rhs->arity > 1)) parens = true;
 		if ((c->val_off == g_minus_s) && is_number(rhs) && !is_negative(rhs)) parens = true;
-		if ((c->val_off == g_minus_s) && search_op(q->st.m, C_STR(q, rhs), NULL, true) && !rhs->arity) parens = true;
-		if ((c->val_off == g_plus_s) && search_op(q->st.m, C_STR(q, rhs), NULL, true) && !rhs->arity) parens = true;
+		if ((c->val_off == g_minus_s) && match_op(q->st.m, C_STR(q, rhs), NULL, true) && !rhs->arity) parens = true;
+		if ((c->val_off == g_plus_s) && match_op(q->st.m, C_STR(q, rhs), NULL, true) && !rhs->arity) parens = true;
 
 		if (!strcmp(src, "?-") || !strcmp(src, ":-")) space = 1;
 
@@ -1176,7 +1176,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 
 	unsigned lhs_specifier = 0;
 	unsigned lhs_pri_1 = is_interned(lhs) ? match_op(q->st.m, C_STR(q, lhs), &lhs_specifier, lhs->arity) : 0;
-	unsigned lhs_pri_2 = is_interned(lhs) && !lhs->arity ? search_op(q->st.m, C_STR(q, lhs), &lhs_specifier, true) : 0;
+	unsigned lhs_pri_2 = is_interned(lhs) && !lhs->arity ? match_op(q->st.m, C_STR(q, lhs), &lhs_specifier, true) : 0;
 	bool lhs_postfix = (lhs->arity == 1) && IS_POSTFIX(lhs_specifier);
 
 	bool lhs_parens = lhs_pri_1 >= my_priority;
@@ -1285,7 +1285,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 	// Print RHS..
 
 	unsigned rhs_pri_1 = is_interned(rhs) ? match_op(q->st.m, C_STR(q, rhs), NULL, rhs->arity) : 0;
-	unsigned rhs_pri_2 = is_interned(rhs) && !rhs->arity ? search_op(q->st.m, C_STR(q, rhs), NULL, true) : 0;
+	unsigned rhs_pri_2 = is_interned(rhs) && !rhs->arity ? match_op(q->st.m, C_STR(q, rhs), NULL, true) : 0;
 	bool rhs_parens = rhs_pri_1 >= my_priority;
 	space = is_number(rhs) && is_negative(rhs);
 

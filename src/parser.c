@@ -2699,7 +2699,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 	}
 
 	if ((s[0] == '0') && (s[1] == '\'') && !((s[2] == '\\') && (s[3] == '\n'))
-		&& (!search_op(p->m, "", NULL, false) || ((s[2] == '\'') && (s[3] == '\'')))) {
+		&& (!match_op(p->m, "", NULL, false) || ((s[2] == '\'') && (s[3] == '\'')))) {
 		if (!s[2] || (s[2] == '\n')) {
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: syntax error, parsing number, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
@@ -2751,7 +2751,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 		} else if ((*s == '\'') && s[1] == '\'') {
 			s++;
 			v = *s++;
-		} else if ((*s == '\'') && p->flags.strict_iso && search_op(p->m, "", NULL, false)) {
+		} else if ((*s == '\'') && p->flags.strict_iso && match_op(p->m, "", NULL, false)) {
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: syntax error, parsing number, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -3402,7 +3402,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 			{
 				if (SB_strlen(p->token) && contains_null(SB_cstr(p->token), SB_strlen(p->token))) {
 					p->quote_char = -1;
-				} else if (search_op(p->m, SB_cstr(p->token), NULL, false)) {
+				} else if (match_op(p->m, SB_cstr(p->token), NULL, false)) {
 					p->is_op = true;
 
 					if (!SB_strcmp(p->token, ","))
@@ -3461,7 +3461,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 		if ((!p->flags.var_prefix && !p->flags.json && iswupper(ch_start)) || (ch_start == '_')) {
 			if (!p->is_number_chars) p->is_var = true;
-		} else if (search_op(p->m, SB_cstr(p->token), NULL, false)) {
+		} else if (match_op(p->m, SB_cstr(p->token), NULL, false)) {
 			if (!p->is_number_chars) p->is_op = true;
 		}
 
@@ -3485,7 +3485,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 		if (!src || !*src) {
 			SB_putchar(p->token, ch);
-			p->is_op = search_op(p->m, SB_cstr(p->token), NULL, false);
+			p->is_op = match_op(p->m, SB_cstr(p->token), NULL, false);
 			p->srcptr = (char*)src;
 			return true;
 		}
@@ -3554,7 +3554,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 	}
 	 while (ch);
 
-	p->is_op = search_op(p->m, SB_cstr(p->token), NULL, false);
+	p->is_op = match_op(p->m, SB_cstr(p->token), NULL, false);
 	p->srcptr = (char*)src;
 	ch = peek_char_utf8(src);
 
@@ -3908,7 +3908,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			&& SB_strcmp(p->token, "|")
  			&& SB_strcmp(p->token, ",")
  			) {
-			unsigned priority = search_op(p->m, SB_cstr(p->token), NULL, false);
+			unsigned priority = match_op(p->m, SB_cstr(p->token), NULL, false);
 
 			if (!last_op && (priority > 999)) {
 				if (!p->do_read_term)
@@ -4163,10 +4163,8 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			int ch = peek_char_utf8(src);
 			bool blah = !iswalpha(ch) && (ch != '_') && (ch != '(') && priority;
 
-			if (!blah) {
-				bool prefer_unifix = last_op || blah;
-				priority = search_op(p->m, SB_cstr(p->token), &specifier, prefer_unifix);
-			}
+			if (!blah)
+				priority = search_op(p->m, SB_cstr(p->token), &specifier, last_op);
 		}
 
 		if (!SB_strcmp(p->token, "!") &&

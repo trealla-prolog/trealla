@@ -1700,7 +1700,7 @@ static bool bif_iso_univ_2(query *q)
 
 		unsigned specifier;
 
-		if (search_op(q->st.m, C_STR(q, tmp), &specifier, arity == 1)) {
+		if (match_op(q->st.m, C_STR(q, tmp), &specifier, arity == 1)) {
 			if ((arity == 2) && IS_INFIX(specifier))
 				SET_OP(tmp, specifier);
 			else if ((arity == 1) && IS_POSTFIX(specifier))
