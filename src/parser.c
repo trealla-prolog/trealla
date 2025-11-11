@@ -4156,15 +4156,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 				break;
 			}
 
-			if (!last_op) priority = get_op(p->m, SB_cstr(p->token), specifier=OP_XF);
-			if (!priority && !last_op) priority = get_op(p->m, SB_cstr(p->token), specifier=OP_YF);
-			if (!priority) specifier = 0;
-			const char *src = eat_space(p);
-			int ch = peek_char_utf8(src);
-			bool blah = !iswalpha(ch) && (ch != '_') && (ch != '(') && priority;
-
-			if (!blah)
-				priority = search_op(p->m, SB_cstr(p->token), &specifier, last_op);
+			priority = search_op(p->m, SB_cstr(p->token), &specifier, last_op);
 		}
 
 		if (!SB_strcmp(p->token, "!") &&
