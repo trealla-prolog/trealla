@@ -1388,6 +1388,9 @@ unsigned search_op(module *m, const char *name, unsigned *specifier, bool prefer
 			return priority;
 	}
 
+	if (specifier)
+		*specifier = 0;
+
 	return 0;
 }
 
@@ -1491,6 +1494,9 @@ unsigned match_op(module *m, const char *name, unsigned *specifier, unsigned ari
 		if (priority)
 			return priority;
 	}
+
+	if (specifier)
+		*specifier = 0;
 
 	return 0;
 }
