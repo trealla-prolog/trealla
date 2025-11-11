@@ -1646,7 +1646,7 @@ static void process_cell(module *m, clause *cl, cell *c, predicate *parent, int 
 	if ((c->arity == 2)
 		&& !GET_OP(c)
 		&& (c->val_off != g_braces_s)
-		&& search_op(m, C_STR(m, c), &specifier, false)) {
+		&& match_op(m, C_STR(m, c), &specifier, false)) {
 		if (IS_INFIX(specifier))
 			SET_OP(c, specifier);
 	}
