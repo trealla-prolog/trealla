@@ -6588,7 +6588,7 @@ static bool bif_client_5(query *q)
 	int udp = 0, nodelay = 1, nonblock = 0, ssl = 0, domain = 0, level = 0;
 	hostname[0] = path[0] = '\0';
 	unsigned port = 80;
-	char *filename;
+	char *filename = NULL;
 
 	if (is_atom(p1))
 		filename = DUP_STRING(q, p1);
