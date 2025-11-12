@@ -50,7 +50,6 @@ static bool do_put_atts(query *q, cell *attr, pl_ctx attr_ctx, bool is_minus)
 		attr++;
 
 	add_trail(q, p1_ctx, p1->var_num, c->val_attrs);
-	c->flags |= FLAG_VAR_ATTR;
 	unsigned a_arity = attr->arity;
 	bool found;
 	const char *m_name = find_attribute(q, attr, a_arity, &found);

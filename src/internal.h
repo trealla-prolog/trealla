@@ -114,7 +114,6 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_local(c) ((c)->flags & FLAG_VAR_LOCAL)
 #define is_void(c) ((c)->flags & FLAG_VAR_VOID)
 #define is_global(c) ((c)->flags & FLAG_VAR_GLOBAL)
-#define is_attr(c) ((c)->flags & FLAG_VAR_ATTR)
 #define is_ground(c) ((c)->flags & FLAG_INTERNED_GROUND)
 #define is_ref(c) (is_var(c) && ((c)->flags & FLAG_VAR_REF))
 #define is_op(c) ((c)->flags & 0xE000) ? true : false
@@ -263,7 +262,6 @@ enum {
 	FLAG_VAR_TEMPORARY=1<<4,
 	FLAG_VAR_LOCAL=1<<5,
 	FLAG_VAR_VOID=1<<6,
-	FLAG_VAR_ATTR=1<<7,
 
 	FLAG_HANDLE_DLL=1<<0,
 	FLAG_HANDLE_FUNC=1<<1,
