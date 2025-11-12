@@ -1239,6 +1239,7 @@ bool set_op(module *m, const char *name, unsigned specifier, unsigned priority)
 		ptr->priority = priority;
 		ptr->specifier = specifier;
 		sl_done(iter);
+		m->user_ops = true;
 		return true;
 	}
 
@@ -1265,6 +1266,7 @@ bool set_op(module *m, const char *name, unsigned specifier, unsigned priority)
 		ptr->priority = priority;
 		ptr->specifier = specifier;
 		sl_done(iter);
+		m->user_ops = true;
 		return true;
 	}
 
