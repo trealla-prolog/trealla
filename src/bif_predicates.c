@@ -2662,7 +2662,7 @@ static bool do_op(query *q, cell *p3, pl_ctx p3_ctx)
 		return throw_error(q, p3, p3_ctx, "permission_error", "modify,operator");
 
 	unsigned tmp_optype = 0;
-	unsigned tmp_pri = search_op(q->st.m, C_STR(q, p3), &tmp_optype, p3->arity);
+	unsigned tmp_pri = search_op(q->st.m, C_STR(q, p3), &tmp_optype, false);
 
 	if (IS_INFIX(specifier) && IS_POSTFIX(tmp_optype) && (true || q->st.m->flags.strict_iso))
 		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator");
