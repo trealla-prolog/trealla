@@ -488,7 +488,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 			char *name = DUP_STRING(p, h);
 
 			unsigned tmp_optype = 0;
-			unsigned tmp_pri = match_op(p->m, name, &tmp_optype, p3->arity);
+			unsigned tmp_pri = search_op(p->m, name, &tmp_optype, p3->arity);
 
 			if (IS_INFIX(specifier) && IS_POSTFIX(tmp_optype) && (true || p->m->flags.strict_iso)) {
 				if (!p->do_read_term)
@@ -533,7 +533,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 	if (is_atom(p3) && !is_nil(p3)) {
 		char *name = DUP_STRING(p, p3);
 		unsigned tmp_optype = 0;
-		unsigned tmp_pri = match_op(p->m, name, &tmp_optype, p3->arity);
+		unsigned tmp_pri = search_op(p->m, name, &tmp_optype, p3->arity);
 
 		if (IS_INFIX(specifier) && IS_POSTFIX(tmp_optype) && (true || p->m->flags.strict_iso)) {
 			if (!p->do_read_term)
@@ -2699,7 +2699,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 	}
 
 	if ((s[0] == '0') && (s[1] == '\'') && !((s[2] == '\\') && (s[3] == '\n'))
-		&& (!match_op(p->m, "", NULL, false) || ((s[2] == '\'') && (s[3] == '\'')))) {
+		&& (!search_op(p->m, "", NULL, false) || ((s[2] == '\'') && (s[3] == '\'')))) {
 		if (!s[2] || (s[2] == '\n')) {
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: syntax error, parsing number, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
@@ -2751,7 +2751,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 		} else if ((*s == '\'') && s[1] == '\'') {
 			s++;
 			v = *s++;
-		} else if ((*s == '\'') && p->flags.strict_iso && match_op(p->m, "", NULL, false)) {
+		} else if ((*s == '\'') && p->flags.strict_iso && search_op(p->m, "", NULL, false)) {
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: syntax error, parsing number, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -3402,7 +3402,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 			{
 				if (SB_strlen(p->token) && contains_null(SB_cstr(p->token), SB_strlen(p->token))) {
 					p->quote_char = -1;
-				} else if (match_op(p->m, SB_cstr(p->token), NULL, false)) {
+				} else if (search_op(p->m, SB_cstr(p->token), NULL, false)) {
 					p->is_op = true;
 
 					if (!SB_strcmp(p->token, ","))
@@ -3461,7 +3461,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 		if ((!p->flags.var_prefix && !p->flags.json && iswupper(ch_start)) || (ch_start == '_')) {
 			if (!p->is_number_chars) p->is_var = true;
-		} else if (match_op(p->m, SB_cstr(p->token), NULL, false)) {
+		} else if (search_op(p->m, SB_cstr(p->token), NULL, false)) {
 			if (!p->is_number_chars) p->is_op = true;
 		}
 
@@ -3485,7 +3485,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 		if (!src || !*src) {
 			SB_putchar(p->token, ch);
-			p->is_op = match_op(p->m, SB_cstr(p->token), NULL, false);
+			p->is_op = search_op(p->m, SB_cstr(p->token), NULL, false);
 			p->srcptr = (char*)src;
 			return true;
 		}
@@ -3554,7 +3554,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 	}
 	 while (ch);
 
-	p->is_op = match_op(p->m, SB_cstr(p->token), NULL, false);
+	p->is_op = search_op(p->m, SB_cstr(p->token), NULL, false);
 	p->srcptr = (char*)src;
 	ch = peek_char_utf8(src);
 
@@ -3908,7 +3908,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			&& SB_strcmp(p->token, "|")
  			&& SB_strcmp(p->token, ",")
  			) {
-			unsigned priority = match_op(p->m, SB_cstr(p->token), NULL, false);
+			unsigned priority = search_op(p->m, SB_cstr(p->token), NULL, false);
 
 			if (!last_op && (priority > 999)) {
 				if (!p->do_read_term)

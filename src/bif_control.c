@@ -86,7 +86,7 @@ bool call_check(query *q, cell *p1, bool *status, bool calln)
 				const char *functor = C_STR(q, p1);
 				unsigned specifier;
 
-				if (match_op(q->st.m, functor, &specifier, false))
+				if (search_op(q->st.m, functor, &specifier, false))
 					SET_OP(p1, specifier);
 			}
 		} else {
@@ -971,7 +971,7 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 
 	bool is_builtin = false, evaluable = false;
 	get_builtin_term(q->st.m, c, &is_builtin, &evaluable);
-	bool is_op = match_op(q->st.m, C_STR(q, c), NULL, true) > 0;
+	bool is_op = search_op(q->st.m, C_STR(q, c), NULL, true) > 0;
 
 	cell *tmp;
 
