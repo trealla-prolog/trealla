@@ -90,9 +90,6 @@ current_prolog_flag(P, A) :-
 argv(L) :- current_prolog_flag(argv, L).
 raw_argv(L) :- current_prolog_flag(raw_argv, L).
 
-copy_term(X, Y) :-
-	'$copy_term'(X, Y).
-
 '$post_unify_hook' :-
 	'$undo_trail'(Vars, State),
 	process_vars_(Vars, [], Goals),
@@ -173,6 +170,9 @@ keysort(A, B) :-
 
 sort(A, B, C, D) :-
 	'$sort'(A, B, C, D).
+
+copy_term(X, Y) :-
+	'$copy_term'(X, Y).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
