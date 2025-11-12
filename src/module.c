@@ -1214,7 +1214,7 @@ static const char *dump_key(const void *k, const void *v, const void *p)
 }
 #endif
 
-bool set_op(module *m, const char *name, unsigned specifier, unsigned priority)
+static bool set_op_internal(module *m, const char *name, unsigned specifier, unsigned priority)
 {
 	sliter *iter = sl_find_key(m->ops, name);
 	op_table *ptr;
@@ -1278,6 +1278,22 @@ bool set_op(module *m, const char *name, unsigned specifier, unsigned priority)
 	tmp->specifier = specifier;
 	m->user_ops = true;
 	sl_app(m->ops, tmp->name, tmp);
+	return true;
+}
+
+bool set_op(module *m, const char *name, unsigned specifier, unsigned priority)
+{
+	set_op_internal(m, name, specifier, priority);
+
+	for (unsigned i = 0; i < m->idx_used; i++) {
+		module *tmp_m = m->used[i];
+
+		if ((m == tmp_m) || !tmp_m->user_ops)
+			continue;
+
+		set_op_internal(tmp_m, name, specifier, priority);
+	}
+
 	return true;
 }
 
