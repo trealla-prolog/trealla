@@ -274,13 +274,6 @@ static void keyval_free(const void *key, const void *val, const void *p)
 	free((void*)key);
 	cell *c = (cell*)val;
 	unshare_cells(c, c->num_cells);
-	pl_idx num_cells = c->num_cells;
-
-	for (pl_idx i = 0; i < num_cells; i++, c++) {
-		if (is_var(c) && c->tmp_attrs)
-			free(c->tmp_attrs);
-	}
-
 	free((void*)val);
 }
 

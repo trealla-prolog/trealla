@@ -425,10 +425,7 @@ cell *copy_term_to_heap(query *q, cell *p1, pl_ctx p1_ctx, bool copy_attrs)
 		if (is_var(c) && c->tmp_attrs) {
 			const frame *f = GET_FRAME(c->val_ctx);
 			slot *e = get_slot(q, f, c->var_num);
-			cell *tmp3 = alloc_heap(q, c->tmp_attrs->num_cells);
-			if (!tmp3) return NULL;
-			dup_cells(tmp3, c->tmp_attrs, c->tmp_attrs->num_cells);
-			e->c.val_attrs = tmp3;
+			e->c.val_attrs = clone_term_to_heap(q, c->tmp_attrs, q->st.cur_ctx);
 			free(c->tmp_attrs);
 			c->tmp_attrs = NULL;
 		}
