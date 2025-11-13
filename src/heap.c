@@ -215,7 +215,7 @@ cell *append_to_tmp(query *q, cell *p1, pl_ctx p1_ctx)
 	return tmp;
 }
 
-static bool copy_vars(query *q, cell *c, bool copy_attrs, const cell *from, pl_ctx from_ctx, const cell *to, pl_ctx to_ctx)
+static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx from_ctx, cell *to, pl_ctx to_ctx)
 {
 	unsigned num_cells = c->num_cells;
 	unsigned cnt = 0;
