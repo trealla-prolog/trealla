@@ -94,8 +94,10 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 	if (!tmp) return NULL;
 	copy_cells(tmp, p1, 1);
 
-	if (is_var(p1))
+	if (is_var(p1)) {
+		p1->tmp_attrs = NULL;
 		q->has_vars = true;
+	}
 
 	if (is_var(tmp) && !is_ref(tmp) && !q->noderef) {
 		tmp->flags |= FLAG_VAR_REF;
