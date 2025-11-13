@@ -255,8 +255,7 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx fro
 				q->tmp_heap = NULL;
 				cell *tmp = copy_term_to_heap_with_replacement(q, attrs, q->st.cur_ctx, false, from, from_ctx, to, to_ctx);
 				checked(tmp);
-				c->tmp_attrs = malloc(sizeof(cell)*tmp->num_cells);
-				copy_cells(c->tmp_attrs, tmp, tmp->num_cells);
+				c->tmp_attrs = tmp;
 				free(q->tmp_heap);
 				q->tmp_heap = save_tmp_heap;
 				q->tmphp = save_tmp_hp;
@@ -426,7 +425,6 @@ cell *copy_term_to_heap(query *q, cell *p1, pl_ctx p1_ctx, bool copy_attrs)
 			const frame *f = GET_FRAME(c->val_ctx);
 			slot *e = get_slot(q, f, c->var_num);
 			e->c.val_attrs = clone_term_to_heap(q, c->tmp_attrs, q->st.cur_ctx);
-			free(c->tmp_attrs);
 			c->tmp_attrs = NULL;
 		}
 	}
@@ -455,7 +453,6 @@ cell *copy_term_to_heap_with_replacement(query *q, cell *p1, pl_ctx p1_ctx, bool
 			const frame *f = GET_FRAME(c->val_ctx);
 			slot *e = get_slot(q, f, c->var_num);
 			e->c.val_attrs = clone_term_to_heap(q, c->tmp_attrs, q->st.cur_ctx);
-			free(c->tmp_attrs);
 			c->tmp_attrs = NULL;
 		}
 	}
