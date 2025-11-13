@@ -2,5 +2,6 @@
 
 main :-
 	term_singletons(a(_A,_B,_A), L),
-	write(L), nl.
+	length(L, 1),
+	write(ok), nl.
 
