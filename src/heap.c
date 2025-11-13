@@ -253,7 +253,7 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx fro
 				cell *save_tmp_heap = q->tmp_heap;
 				pl_idx save_tmp_hp = q->tmphp;
 				q->tmp_heap = NULL;
-				cell *tmp = copy_term_to_heap_with_replacement(q, attrs, q->st.cur_ctx, false, from, from_ctx, to, to_ctx);
+				cell *tmp = copy_term_to_heap_with_replacement(q, attrs, q->st.cur_ctx, true, from, from_ctx, to, to_ctx);
 				checked(tmp);
 				c->tmp_attrs = tmp;
 				free(q->tmp_heap);
@@ -536,7 +536,7 @@ cell *end_list_unsafe(query *q)
 
 	tmp = alloc_heap(q, num_cells);
 	if (!tmp) return NULL;
-	copy_cells(tmp, get_tmp_heap(q, 0), num_cells);		// unsafe
+	copy_cells(tmp, get_tmp_heap(q, 0), num_cells);
 	tmp->num_cells = num_cells;
 	fix_list(tmp);
 	return tmp;
