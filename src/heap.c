@@ -94,10 +94,8 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 	if (!tmp) return NULL;
 	copy_cells(tmp, p1, 1);
 
-	if (is_var(p1)) {
-		p1->tmp_attrs = NULL;
+	if (is_var(p1))
 		q->has_vars = true;
-	}
 
 	if (is_var(tmp) && !is_ref(tmp) && !q->noderef) {
 		tmp->flags |= FLAG_VAR_REF;
@@ -241,6 +239,9 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx fro
 			if ((var_num = accum_slot(q, slot_nbr, q->varno)) == -1) {
 				var_num = q->varno++;
 				cnt++;
+
+				if (create_vars(q, 1) < 0)
+					return false;
 			}
 
 			if (!q->tab_idx) {
@@ -255,7 +256,7 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx fro
 				cell *save_tmp_heap = q->tmp_heap;
 				pl_idx save_tmp_hp = q->tmphp;
 				q->tmp_heap = NULL;
-				cell *tmp = copy_term_to_heap_with_replacement(q, attrs, q->st.cur_ctx, false, from, from_ctx, to, to_ctx);
+				cell *tmp = copy_term_to_heap_with_replacement(q, attrs, q->st.cur_ctx, true, from, from_ctx, to, to_ctx);
 				checked(tmp);
 				c->tmp_attrs = tmp;
 				free(q->tmp_heap);
@@ -263,11 +264,6 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx fro
 				q->tmphp = save_tmp_hp;
 			}
 		}
-	}
-
-	if (cnt) {
-		if (create_vars(q, cnt) < 0)
-			return false;
 	}
 
 	return true;
