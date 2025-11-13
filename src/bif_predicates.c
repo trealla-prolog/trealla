@@ -1827,10 +1827,6 @@ static cell *do_term_singletons(query *q, cell *p1, pl_ctx p1_ctx)
 			tmp[idx].num_cells = ((cnt2-done)*2)+1;
 			idx++;
 			make_ref(tmp+idx, q->pl->tabs[i].var_num, q->pl->tabs[i].ctx);
-
-			if (q->pl->tabs[i].is_anon)
-				tmp[idx].flags |= FLAG_VAR_ANON;
-
 			idx++;
 			done++;
 		}
