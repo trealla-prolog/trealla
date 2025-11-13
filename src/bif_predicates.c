@@ -1805,7 +1805,7 @@ static cell *do_term_singletons(query *q, cell *p1, pl_ctx p1_ctx)
 	unsigned cnt2 = 0;
 
 	for (unsigned i = 0; i < cnt; i++) {
-		if (q->pl->tabs[i].is_anon)
+		if (q->pl->tabs[i].cnt != 1)
 			continue;
 
 		cnt2++;
@@ -1819,7 +1819,7 @@ static cell *do_term_singletons(query *q, cell *p1, pl_ctx p1_ctx)
 		unsigned idx = 0;
 
 		for (unsigned i = 0, done = 0; i < cnt; i++) {
-			if (q->pl->tabs[i].is_anon)
+			if (q->pl->tabs[i].cnt != 1)
 				continue;
 
 			make_atom(tmp+idx, g_dot_s);
