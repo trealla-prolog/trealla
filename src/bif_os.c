@@ -252,6 +252,18 @@ static bool bif_get_time_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 
+static bool bif_wall_time_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	pl_int us = get_time_in_usec();
+	double secs = us / 1000 / 1000;
+	double v = us - (secs * 1000 * 1000);
+	double frac = v / 1000 / 1000;
+	cell tmp;
+	make_float(&tmp, secs + frac);
+	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
+}
+
 static bool bif_cpu_time_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
@@ -259,14 +271,6 @@ static bool bif_cpu_time_1(query *q)
 	cell tmp;
 	make_float(&tmp, (pl_flt)v);
 	return unify (q, p1, p1_ctx, &tmp, q->st.cur_ctx);
-}
-
-static bool bif_wall_time_1(query *q)
-{
-	GET_FIRST_ARG(p1,var);
-	cell tmp;
-	make_int(&tmp, time(NULL));
-	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 
 static bool bif_date_time_7(query *q)
