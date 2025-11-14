@@ -338,6 +338,7 @@ static cell *copy_term_to_tmp_with_replacement(query *q, cell *p1, pl_ctx p1_ctx
 			slot *e = get_slot(q, f, c->var_num);
 			e->c.val_attrs = c->tmp_attrs;
 			c->tmp_attrs = NULL;
+			add_trail(q, c->val_ctx, c->var_num, NULL);
 		}
 	}
 
@@ -441,6 +442,7 @@ cell *copy_term_to_heap(query *q, cell *p1, pl_ctx p1_ctx, bool copy_attrs)
 			slot *e = get_slot(q, f, c->var_num);
 			e->c.val_attrs = c->tmp_attrs;
 			c->tmp_attrs = NULL;
+			add_trail(q, c->val_ctx, c->var_num, NULL);
 		}
 	}
 
