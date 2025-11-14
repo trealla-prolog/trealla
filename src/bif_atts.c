@@ -330,9 +330,9 @@ static bool bif_sys_list_attributed_2(query *q)
 		for (unsigned k = 0; k < q->tab_idx; k++) {
 			const frame *f = GET_FRAME(q->pl->tabs[k].ctx);
 			slot *e = get_slot(q, f, q->pl->tabs[k].var_num);
-			cell *v = &e->c;
+			cell *c = deref(q, &e->c, e->c.val_ctx);
 
-			if (!v->val_attrs)
+			if (!c->val_attrs)
 				continue;
 
 			//if (!q->pl->tabs[k].ctx)
