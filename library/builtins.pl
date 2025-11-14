@@ -162,17 +162,27 @@ collect_goals_([V|T], GsIn, GsOut) :-
 sort(A, B) :-
 	'$sort'(A, B).
 
+:- help(sort(+term,?term), [iso(true)]).
+
 msort(A, B) :-
 	'$msort'(A, B).
+
+:- help(msort(+term,?term), [iso(true)]).
 
 keysort(A, B) :-
 	'$keysort'(A, B).
 
+:- help(keysort(+term,?term), [iso(true)]).
+
 sort(A, B, C, D) :-
 	'$sort'(A, B, C, D).
 
+:- help(sort(+term,+atom,+list,?term), [iso(false)]).
+
 copy_term(X, Y) :-
 	'$copy_term'(X, Y).
+
+:- help(copy_term(+term,?term), [iso(true)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
