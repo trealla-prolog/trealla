@@ -1,3 +1,4 @@
+:- use_module(library(pio)).
 :- use_module(library(http)).
 
 %writeln(T) :- writeq(T), nl.

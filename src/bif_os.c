@@ -231,21 +231,15 @@ static bool bif_now_0(query *q)
 	return true;
 }
 
-static bool bif_now_1(query *q)
-{
-	GET_FIRST_ARG(p1,var);
-	pl_int secs = get_time_in_usec() / 1000 / 1000;
-	cell tmp;
-	make_int(&tmp, secs);
-	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
-}
-
 static bool bif_get_time_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
-	double v = ((double)get_time_in_usec()-q->get_started) / 1000 / 1000;
+	pl_int us = get_time_in_usec();
+	double secs = us / 1000 / 1000;
+	double v = us - (secs * 1000 * 1000);
+	double frac = v / 1000 / 1000;
 	cell tmp;
-	make_float(&tmp, (double)v);
+	make_float(&tmp, secs + frac);
 	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 
@@ -561,9 +555,8 @@ builtins g_os_bifs[] =
 	{"unsetenv", 1, bif_unsetenv_1, "+atom", false, false, BLAH},
 	{"sleep", 1, bif_sleep_1, "+number", false, false, BLAH},
 	{"now", 0, bif_now_0, NULL, false, false, BLAH},
-	{"now", 1, bif_now_1, "-integer", false, false, BLAH},
 	{"time", 1, bif_time_1, ":callable", false, false, BLAH},
-	{"get_time", 1, bif_get_time_1, "-integer", false, false, BLAH},
+	{"get_time", 1, bif_get_time_1, "-float", false, false, BLAH},
 	{"cpu_time", 1, bif_cpu_time_1, "-integer", false, false, BLAH},
 	{"wall_time", 1, bif_wall_time_1, "-integer", false, false, BLAH},
 	{"date_time", 6, bif_date_time_6, "-integer,-integer,-integer,-integer,-integer,-integer", false, false, BLAH},
