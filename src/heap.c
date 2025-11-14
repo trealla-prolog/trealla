@@ -232,7 +232,7 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx fro
 		} else {
 			const frame *f = GET_FRAME(c->val_ctx);
 			const slot *e = get_slot(q, f, c->var_num);
-			cell *attrs = e->c.val_attrs;
+			cell *attrs = c->tmp_attrs ? c->tmp_attrs : e->c.val_attrs;
 			const size_t slot_nbr = get_ordered_slot_num(q, f, c->var_num);
 			int var_num;
 
@@ -256,11 +256,15 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx fro
 				cell *save_tmp_heap = q->tmp_heap;
 				pl_idx save_tmp_hp = q->tmphp;
 				q->tmp_heap = NULL;
-				cell *tmp =
-					from ?copy_term_to_heap_with_replacement(q, attrs, q->st.cur_ctx, true, from, from_ctx, to, to_ctx)
-					:copy_term_to_heap(q, attrs, q->st.cur_ctx, true);
-				checked(tmp);
-				c->tmp_attrs = tmp;
+
+				if (!c->tmp_attrs) {
+					cell *tmp =
+						from ?copy_term_to_heap_with_replacement(q, attrs, q->st.cur_ctx, true, from, from_ctx, to, to_ctx)
+						:copy_term_to_heap(q, attrs, q->st.cur_ctx, true);
+					checked(tmp);
+					c->tmp_attrs = tmp;
+				}
+
 				free(q->tmp_heap);
 				q->tmp_heap = save_tmp_heap;
 				q->tmphp = save_tmp_hp;
@@ -324,6 +328,17 @@ static cell *copy_term_to_tmp_with_replacement(query *q, cell *p1, pl_ctx p1_ctx
 	if (created) {
 		sl_destroy(q->vars);
 		q->vars = NULL;
+	}
+
+	c = tmp;
+
+	for (pl_idx i = 0; i < tmp->num_cells; i++, c++) {
+		if (is_var(c) && c->tmp_attrs) {
+			const frame *f = GET_FRAME(c->val_ctx);
+			slot *e = get_slot(q, f, c->var_num);
+			e->c.val_attrs = c->tmp_attrs;
+			c->tmp_attrs = NULL;
+		}
 	}
 
 	return ok ? tmp : NULL;

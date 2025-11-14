@@ -2612,6 +2612,18 @@ bool bif_sys_queue_1(query *q)
 	checked(init_tmp_heap(q), q->st.qnum--);
 	cell *tmp = clone_term_to_tmp(q, p1, p1_ctx);
 	checked(tmp, q->st.qnum--);
+	cell *c = tmp;
+
+	for (unsigned i = 0; i < tmp->num_cells; i++, c++) {
+		if (!is_ref(c))
+			continue;
+
+		const frame *f = GET_FRAME(c->val_ctx);
+		const slot *e = get_slot(q, f, c->var_num);
+		cell *attrs = e->c.val_attrs;
+		c->tmp_attrs = attrs;
+	}
+
 	checked(alloc_queuen(q, q->st.qnum, tmp), q->st.qnum--);
 	return true;
 }
