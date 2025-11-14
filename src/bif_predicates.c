@@ -77,7 +77,7 @@ static bool bif_iso_findall_3(query *q)
 		checked(tmp, free(solns));
 		make_instr(tmp, g_dot_s, NULL, 2, 0);
 		q->noderef = true;
-		tmp = copy_term_to_tmp(q, c, q->st.cur_ctx, false);
+		tmp = copy_term_to_tmp(q, c, q->st.cur_ctx, true);
 		q->noderef = false;
 		checked(tmp, free(solns));
 	}
