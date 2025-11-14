@@ -468,6 +468,7 @@ Non-standard predicates
 	msb/1                       # function returning the most significant bit of a positive integer (count from zero)
 	log10/1                     # function returning log10 of arg
 	now/0                       # function returning C-time in secs as integer
+	now/1                       # now(-integer) C-time in secs
 	get_time/1                  # get_time(-float) C-time in secs
 	wall_time/1                 #    same as get_time/1
 	cpu_time/1                  # cpu_time(-float) elapsed CPU time in secs
