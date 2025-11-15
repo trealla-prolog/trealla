@@ -480,7 +480,6 @@ Non-standard predicates
 	split/4                     # split(+string,+sep,?left,?right)
 	shell/1
 	shell/2
-	wall_time/1
 	date_time/6
 	date_time/7
 	loadfile/2                  # loadfile(+filename,-string)
