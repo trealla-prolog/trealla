@@ -289,15 +289,6 @@ bool any_attributed(query *q)
 	return false;
 }
 
-static bool bif_sys_mark_start_1(query * q)
-{
-	GET_FIRST_ARG(p1,var);
-	cell mark;
-	make_uint(&mark, q->st.tp);
-	unify(q, p1, p1_ctx, &mark, q->st.cur_ctx);
-	return true;
-}
-
 static bool bif_sys_list_attributed_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
@@ -484,6 +475,15 @@ static bool bif_sys_redo_trail_1(query * q)
 		e->c = save->e[j].c;
 	}
 
+	return true;
+}
+
+static bool bif_sys_mark_start_1(query * q)
+{
+	GET_FIRST_ARG(p1,var);
+	cell mark;
+	make_uint(&mark, q->st.tp);
+	unify(q, p1, p1_ctx, &mark, q->st.cur_ctx);
 	return true;
 }
 
