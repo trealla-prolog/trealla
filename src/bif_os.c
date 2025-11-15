@@ -255,19 +255,19 @@ static bool bif_get_time_1(query *q)
 static bool bif_wall_time_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
-	pl_int us = get_time_in_usec();
+	pl_int us = get_time_in_usec() - q->get_started;
 	double secs = us / 1000 / 1000;
 	double v = us - (secs * 1000 * 1000);
 	double frac = v / 1000 / 1000;
 	cell tmp;
 	make_float(&tmp, secs + frac);
-	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
+	return unify (q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 
 static bool bif_cpu_time_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
-	double v = ((double)cpu_time_in_usec()-q->cpu_started) / 1000 / 1000;
+	double v = ((double)cpu_time_in_usec() - q->cpu_started) / 1000 / 1000;
 	cell tmp;
 	make_float(&tmp, (pl_flt)v);
 	return unify (q, p1, p1_ctx, &tmp, q->st.cur_ctx);

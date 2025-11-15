@@ -467,10 +467,10 @@ Non-standard predicates
 	lsb/1                       # function returning the least significant bit of a positive integer (count from zero)
 	msb/1                       # function returning the most significant bit of a positive integer (count from zero)
 	log10/1                     # function returning log10 of arg
-	now/0                       # function returning C-time in secs as integer
-	now/1                       # now(-integer) C-time in secs
-	get_time/1                  # get_time(-float) C-time in secs
-	wall_time/1                 #    same as get_time/1
+	now/0                       # function returning Unix epoch in whole secs
+	now/1                       # now(-integer) Unix epoch in whole secs
+	get_time/1                  # get_time(-float) Unix epoch in secs
+	wall_time/1                 # wall_time(-float) elapsed clock time in secs
 	cpu_time/1                  # cpu_time(-float) elapsed CPU time in secs
 
 	current_key/1
