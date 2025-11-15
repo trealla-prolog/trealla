@@ -225,33 +225,6 @@ static bool bif_get_atts_2(query *q)
 	return is_minus ? true : false;
 }
 
-#if 0
-static bool check_occurs(unsigned var_num, pl_ctx val_ctx, cell *c, pl_ctx c_ctx)
-{
-	bool any = false;
-
-	for (unsigned num_cells = c->num_cells; num_cells--; c++) {
-		if (!is_var(c))
-			continue;
-
-		pl_ctx ctx = c_ctx;
-
-		if (is_ref(c))
-			ctx = c->val_ctx;
-
-		if (var_num != c->var_num)
-			continue;
-
-		if (val_ctx != ctx)
-			continue;
-
-		any = true;
-	}
-
-	return !any;
-}
-#endif
-
 bool any_attributed(query *q)
 {
 	for (unsigned j = 0; j < q->st.new_fp; j++) {
