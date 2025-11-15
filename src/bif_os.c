@@ -216,8 +216,8 @@ static bool bif_sleep_1(query *q)
 
 	while ((ms > 0) && !q->halt) {
 		CHECK_INTERRUPT();
-		msleep(ms > 10 ? 10 : ms);
-		ms -= 10;
+		msleep(100);
+		ms -= 100;
 	}
 
 	return true;
