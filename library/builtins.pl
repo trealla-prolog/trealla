@@ -159,6 +159,29 @@ collect_goals_([V|T], GsIn, GsOut) :-
 	collect_goals_(V, Ls, GsIn, GsOut2),
 	collect_goals_(T, GsOut2, GsOut).
 
+% Debugging...
+
+print_goals_(_, []).
+print_goals_(Any, [Goal|Goals]) :-
+	(Any -> write(', ') ; true),
+	write(Goal),
+	(Goals == [] -> true ;	write(', ')),
+	print_goals_(false, Goals).
+
+dump_attvars_([], []).
+dump_attvars_([Var|Vars], [Gs|Rest]) :-
+	term_attributed_variables(Var, Vs),
+	collect_goals_(Vs, [], Gs),
+	dump_attvars_(Vars, Rest).
+
+dump_attvars(Any) :-
+	'$list_attributed'(0, Vs0),
+	sort(Vs0, Vs),
+	dump_attvars_(Vs, Gs0),
+	flatten(Gs0, Gs1),
+	sort(Gs1, Gs),
+	print_goals_(Any, Gs).
+
 sort(A, B) :-
 	'$sort'(A, B).
 
@@ -565,29 +588,6 @@ current_op(A, B, C) :-
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Debugging...
-
-print_goals_(_, []).
-print_goals_(Any, [Goal|Goals]) :-
-	(Any -> write(', ') ; true),
-	write(Goal),
-	(Goals == [] -> true ;	write(', ')),
-	print_goals_(false, Goals).
-
-dump_attvars_([], []).
-dump_attvars_([Var|Vars], [Gs|Rest]) :-
-	term_attributed_variables(Var, Vs),
-	collect_goals_(Vs, [], Gs),
-	dump_attvars_(Vars, Rest).
-
-dump_attvars(Any) :-
-	'$list_attributed'(0, Vs0),
-	sort(Vs0, Vs),
-	dump_attvars_(Vs, Gs0),
-	flatten(Gs0, Gs1),
-	sort(Gs1, Gs),
-	print_goals_(Any, Gs).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
