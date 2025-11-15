@@ -1239,7 +1239,7 @@ static bool do_thread_property_pin_id(query *q)
 		sl_done(iter);
 		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
-		checked(create_vars(q, 1) != -1);
+		//checked(create_vars(q, 1) != -1);
 		make_cstring(tmp+1, alias);
 
 		if (!unify(q, p2, p2_ctx, tmp, q->st.cur_ctx)) {
@@ -1598,7 +1598,7 @@ static bool do_message_queue_property_pin_id(query *q)
 		sl_done(iter);
 		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
-		checked(create_vars(q, 1) != -1);
+		//checked(create_vars(q, 1) != -1);
 		make_cstring(tmp+1, alias);
 
 		if (!unify(q, p2, p2_ctx, tmp, q->st.cur_ctx)) {
@@ -1980,7 +1980,7 @@ static bool do_mutex_property_pin_id(query *q)
 		sl_done(iter);
 		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
-		checked(create_vars(q, 1) != -1);
+		//checked(create_vars(q, 1) != -1);
 		make_cstring(tmp+1, alias);
 
 		if (!unify(q, p2, p2_ctx, tmp, q->st.cur_ctx)) {
