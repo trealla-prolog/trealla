@@ -206,7 +206,7 @@ compile:
 	$(CC) $(CFLAGS) -o main.o -c main.c
 	$(CC) $(CFLAGS) -DUSE_MAIN=1 -o src/library.o -c src/library.c
 	$(CC) $(CFLAGS) -o tpl $(OBJECTS) main.o $(OPT) $(LDFLAGS)
-	rm -f src/library.o
+	rm -f main.pl main.c main.o src/library.o
 
 test:
 	./tests/run.sh
