@@ -198,6 +198,16 @@ wasm: tpl.wasm
 	$(WASMOPT) --enable-bulk-memory tpl.wasm -o tpl-opt.wasm -O4
 	mv tpl-opt.wasm tpl.wasm
 
+compile:
+	echo '#include <stddef.h>' > main.c
+	cp $(main) main.pl
+	xxd -i main.pl >> main.c
+	rm -f src/library.o
+	$(CC) $(CFLAGS) -o main.o -c main.c
+	$(CC) $(CFLAGS) -DUSE_MAIN=1 -o src/library.o -c src/library.c
+	$(CC) $(CFLAGS) -o tpl $(OBJECTS) main.o $(OPT) $(LDFLAGS)
+	rm -f src/library.o
+
 test:
 	./tests/run.sh
 

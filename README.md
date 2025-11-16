@@ -1275,6 +1275,28 @@ engines. Uses co-operative tasks.
 	engine_destroy/1
 
 
+Compile to standalone		##EXPERIMENTAL##
+=====================
+
+```
+	✗ cat samples/main.pl
+```
+
+```prolog
+	:- initialization(main).
+
+	main :-
+			writeln('Hello, world!'),
+			halt.
+```
+
+```
+	✗ make compile main=samples/main.pl
+	✗ ./tpl
+	Hello, world!
+```
+
+
 Profile
 =======
 

@@ -79,6 +79,11 @@ extern unsigned int library_aggregate_pl_len;
 extern unsigned char library_time_pl[];
 extern unsigned int library_time_pl_len;
 
+#ifdef USE_MAIN
+extern unsigned char main_pl[];
+extern unsigned int main_pl_len;
+#endif
+
 library g_libs[] = {
 	 {"abnf", library_abnf_pl, &library_abnf_pl_len},
 	 {"aggregate", library_aggregate_pl, &library_aggregate_pl_len},
@@ -119,6 +124,10 @@ library g_libs[] = {
 	 {"ugraphs", library_ugraphs_pl, &library_ugraphs_pl_len},
 	 {"uuid", library_uuid_pl, &library_uuid_pl_len},
 	 {"when", library_when_pl, &library_when_pl_len},
+
+#ifdef USE_MAIN
+	 {"main", main_pl, &main_pl_len},
+#endif
 
 	 {0}
 };
