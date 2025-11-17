@@ -3228,7 +3228,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					src = eat_space(p);
 					ch = peek_char_utf8(src);
 
-					if (iswalnum(ch) || (ch == '_') || (ch == '!')
+					if (iswalnum(ch) || (ch == '_') || (ch == '!') || (ch == '-')
 						|| (ch == '(') || (ch == ')')
 						|| (ch == '[') || (ch == ']')
 						|| (ch == '{') || (ch == '}')
