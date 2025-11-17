@@ -3233,6 +3233,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 						|| (ch == '[') || (ch == ']')
 						|| (ch == '{') || (ch == '}')
 						|| (ch == '.')
+						|| (ch == '\'')
 						) {
 						src = (char*)src;
 						p->quote_char = 0;
@@ -3276,6 +3277,9 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 							SB_putchar(p->token, '(');
 						}
 
+						if (*src == '\'')
+							src++;
+
 						int depth = 0;
 
 						while ((ch = peek_char_utf8(src)) != 0) {
@@ -3286,10 +3290,16 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 								&& (ch != '{') && (ch != '}')
 								&& (ch != '-') && (ch != '+')
 								&& (ch != '!')
+								&& (ch != '\'')
 								&& (ch != '.')
 								&& !depth
 								)
 								break;
+
+							if (ch == '\'') {
+								src++;
+								continue;
+							}
 
 							if ((ch == '(') || (ch == '[') || (ch == '{'))
 								depth++;
@@ -3303,7 +3313,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 							get_char_utf8(&src);
 							SB_putchar(p->token, ch);
 
-							if (!depth && ((ch == ')') || (ch == ']') || (ch == '}')))
+							if (!depth && ((ch == ')') || (ch == ']') || (ch == '}') || (ch == '}')))
 								break;
 						}
 
@@ -3315,7 +3325,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 						free(save_src);
 						save_src = strdup(SB_cstr(p->token));
-						//printf("*** p->token=%s\n", save_src);
+						printf("*** p->token=%s\n", save_src);
 						SB_init(p->token);
 						p->srcptr = save_src;
 						p->no_fp = 1;
