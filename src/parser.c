@@ -3221,6 +3221,9 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					}
 
 					src++;
+
+					// Double bar
+
 					p->srcptr = (char*)src;
 					src = eat_space(p);
 					ch = *src;
