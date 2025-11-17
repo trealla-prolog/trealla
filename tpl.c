@@ -10,7 +10,10 @@
 #include <unistd.h>
 
 #include "trealla.h"
+#include "builtins.h"
 #include "history.h"
+#include "library.h"
+#include "module.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -174,7 +177,7 @@ int main(int ac, char *av[], char * envp[])
 	int version = 0, daemon = 0;
 	bool no_res = false, quiet = false;
 	const char *restore_file = NULL;
-	void *pl = pl_create();
+	prolog *pl = pl_create();
 
 	if (!pl) {
 		fprintf(stderr, "Failed to create the prolog system: %s\n", strerror(errno));
@@ -287,6 +290,25 @@ int main(int ac, char *av[], char * envp[])
 				pl_destroy(pl);
 				return 1;
 			}
+		}
+	}
+
+	for (library *lib = g_libs; lib->name; lib++) {
+		if (!strcmp(lib->name, "main")) {
+			no_res = true;
+			do_lib = do_goal = 0;
+			size_t len = *lib->len;
+			char *src = malloc(len+1);
+			check_error(src, pl_destroy(pl));
+			memcpy(src, lib->start, len);
+			src[len] = '\0';
+			SB(s1);
+			SB_sprintf(s1, "library/%s", lib->name);
+			module *m = load_text(pl->user_m, src, SB_cstr(s1));
+			m->prebuilt = true;
+			SB_free(s1);
+			free(src);
+			check_error(m, pl_destroy(pl));
 		}
 	}
 
