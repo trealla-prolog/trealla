@@ -3228,12 +3228,11 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					src = eat_space(p);
 					ch = peek_char_utf8(src);
 
-					if (iswalnum(ch) || (ch == '_') || (ch == '!') || (ch == '-')
+					if (iswalnum(ch) || (ch == '_') || (ch == '!') || (ch == '-') || (ch == '.')
 						|| (ch == '(') || (ch == ')')
 						|| (ch == '[') || (ch == ']')
 						|| (ch == '{') || (ch == '}')
-						|| (ch == '.')
-						|| (ch == '\'')
+						|| (ch == '\'')|| (ch == '"')
 						) {
 						src = (char*)src;
 						p->quote_char = 0;
@@ -3277,8 +3276,25 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 							SB_putchar(p->token, '(');
 						}
 
-						if (*src == '\'')
+						if ((*src == '\'') || (*src == '"')) {
+							int qch = *src;
+							SB_putchar(p->token, *src);
 							src++;
+
+							while ((ch = get_char_utf8(&src)) != 0) {
+								SB_putchar(p->token, ch);
+								if (ch == qch) {
+									break;
+								}
+							}
+						}
+
+						if (*src == '.') {
+							SB_putchar(p->token, '\'');
+							SB_putchar(p->token, *src);
+							SB_putchar(p->token, '\'');
+							src++;
+						}
 
 						int depth = 0;
 
@@ -3289,14 +3305,14 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 								&& (ch != '[') && (ch != ']')
 								&& (ch != '{') && (ch != '}')
 								&& (ch != '-') && (ch != '+')
+								&& (ch != '\'') && (ch != '"')
 								&& (ch != '!')
-								&& (ch != '\'')
-								&& (ch != '.')
 								&& !depth
 								)
 								break;
 
-							if (ch == '\'') {
+							if ((ch == '\'') || (ch == '"')) {
+								SB_putchar(p->token, ch);
 								src++;
 								continue;
 							}
@@ -3313,7 +3329,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 							get_char_utf8(&src);
 							SB_putchar(p->token, ch);
 
-							if (!depth && ((ch == ')') || (ch == ']') || (ch == '}') || (ch == '}')))
+							if (!depth && ((ch == ')') || (ch == ']') || (ch == '}')))
 								break;
 						}
 
