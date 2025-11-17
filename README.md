@@ -373,8 +373,9 @@ Non-standard predicates
 	if/3, (*->)/2               # soft-cut
 	call_det/2					# call_det(+call,?boolean)
 	term_attributed_variables/2 # term_attributed_variables(+term,-Vs)
-	copy_term_nat/2             # doesn't copy attrs
-	copy_term/3                 # copy_term(+term1,-term2,-Goals)
+	duplicate_term/2            # does copy attrs
+	copy_term_nat/2             # doesn't copy attrs (same as copy_term/2)
+	copy_term/3                 # copy_term(+term1,-term2,-Goals) (use duplicate_term/2)
 	unifiable/3                 # unifiable(+term1,+term2,-Goals)
 	?=/2                        # ?=(+term1,+term2)
 	term_expansion/2
