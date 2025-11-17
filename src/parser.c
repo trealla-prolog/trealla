@@ -3325,7 +3325,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 						free(save_src);
 						save_src = strdup(SB_cstr(p->token));
-						printf("*** p->token=%s\n", save_src);
+						//printf("*** p->token=%s\n", save_src);
 						SB_init(p->token);
 						p->srcptr = save_src;
 						p->no_fp = 1;
