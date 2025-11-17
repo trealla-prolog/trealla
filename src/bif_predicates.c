@@ -6174,7 +6174,7 @@ builtins g_iso_bifs[] =
 	{"arg", 3, bif_iso_arg_3, "+integer,+term,?term", true, false, BLAH},
 	{"functor", 3, bif_iso_functor_3, "?term,?atom,?integer", true, false, BLAH},
 	{"$duplicate_term", 2, bif_iso_duplicate_term_2, "+term,?term", true, false, BLAH},
-	{"$copy_term", 2, bif_iso_copy_term_2, "+term,?term", true, false, BLAH},
+	{"copy_term", 2, bif_iso_copy_term_2, "+term,?term", true, false, BLAH},
 	{"copy_term_nat", 2, bif_iso_copy_term_nat_2, "+term,?term", false, false, BLAH},
 	{"term_variables", 2, bif_iso_term_variables_2, "+term,-list", true, false, BLAH},
 	{"atom_length", 2, bif_iso_atom_length_2, "?list,?integer", true, false, BLAH},

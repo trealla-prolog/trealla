@@ -4,5 +4,5 @@
 main :-
 	freeze(X,Z=2),
 	freeze(Z,writeln(here)),
-	copy_term(X,Y),
+	duplicate_term(X,Y),
 	Y=1.

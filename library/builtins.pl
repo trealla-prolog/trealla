@@ -202,11 +202,6 @@ sort(A, B, C, D) :-
 
 :- help(sort(+term,+atom,+list,?term), [iso(false)]).
 
-copy_term(X, Y) :-
-	'$copy_term'(X, Y).
-
-:- help(copy_term(+term,?term), [iso(true)]).
-
 duplicate_term(X, Y) :-
 	'$duplicate_term'(X, Y).
 
