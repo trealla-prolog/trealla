@@ -2,4 +2,4 @@
 
 main :-
 	L=("a"||.),
-	write(L), nl.
+	writeq(L), nl.
