@@ -611,7 +611,6 @@ struct stream_ {
 	bool is_alias:1;
 };
 
-typedef struct msg_ msg;
 typedef struct thread_ thread;
 
 struct thread_ {
