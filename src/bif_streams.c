@@ -7306,6 +7306,7 @@ static bool bif_portray_clause_1(query *q)
 	q->portray_vars = true;
 	q->print_idx = 0;
 	q->double_quotes = true;
+	q->max_depth = 0;
 	print_term(q, str->fp, p1, p1_ctx, 1);
 	fputc('.', str->fp);
 	fputc('\n', str->fp);
@@ -7324,11 +7325,13 @@ static bool bif_portray_clause_2(query *q)
 	q->quoted = 1;
 	q->portray_vars = true;
 	q->print_idx = 0;
+	q->max_depth = 0;
 	print_term(q, str->fp, p1, p1_ctx, 1);
 	fputc('.', str->fp);
 	fputc('\n', str->fp);
 	q->quoted = 0;
 	q->portray_vars = false;
+	clear_write_options(q);
 	return true;
 }
 
