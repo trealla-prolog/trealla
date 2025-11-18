@@ -1592,6 +1592,14 @@ static bool bif_iso_open_4(query *q)
 			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 	}
 
+	struct stat st = {0};
+	stat(str->filename, &st);
+
+	if (!S_ISREG(st.st_mode) && !bom_specified) {
+		bom_specified = true;
+		use_bom = false;
+	}
+
 	str->repo = repo;
 	str->binary = binary;
 	str->eof_action = eof_action;
