@@ -138,7 +138,7 @@ call_residue_vars(G, Ls) :-
 :- help(copy_term(+term,?term,-list), [iso(false)]).
 
 copy_term(Term, Copy, Gs) :-
-	duplicate_term(Term, Copy),
+	duplicate_term_(Term, Copy),
 	term_attributed_variables(Copy, Vs),
 	collect_goals_(Vs, [], Gs).
 
@@ -202,10 +202,8 @@ sort(A, B, C, D) :-
 
 :- help(sort(+term,+atom,+list,?term), [iso(false)]).
 
-duplicate_term(X, Y) :-
+duplicate_term_(X, Y) :-
 	'$duplicate_term'(X, Y).
-
-:- help(duplicate_term(+term,?term), [iso(false)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
