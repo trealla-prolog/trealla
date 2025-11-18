@@ -130,31 +130,3 @@ not(_).
 term_variables(P1, P2, P3) :-
 	term_variables(P1, P4),
 	append(P4, P3, P2).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-
-bb_put(Key, Value) :-
-	copy_term(Value, NewValue, Gs),
-	'$bb_put'(Key, NewValue-Gs).
-
-bb_b_put(Key, Value) :-
-	copy_term(Value, NewValue, Gs),
-	'$bb_b_put'(Key, NewValue-Gs).
-
-bb_get(Key, OldValue) :-
-	'$bb_get'(Key, OldValue-Gs),
-	maplist(call, Gs).
-
-bb_update(Key, OldValue, Value) :-
-	copy_term(Value, _, Gs),
-	'$bb_update'(Key, OldValue-OldGs, Value-Gs),
-	maplist(call, OldGs).
-
-bb_delete(Key, OldValue) :-
-	'$bb_delete'(Key, OldValue-OldGs),
-	maplist(call, OldGs).
-
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-

@@ -51,7 +51,7 @@ static bool bif_bb_b_put_2(query *q)
 
 	char *key = strdup(tmpbuf);
 	checked(init_tmp_heap(q));
-	cell *tmp = copy_term_to_tmp(q, p2, p2_ctx, true);
+	cell *tmp = copy_term_to_tmp(q, p2, p2_ctx, false);
 	pl_idx num_cells = tmp->num_cells;
 	cell *val = malloc(sizeof(cell)*num_cells);
 	checked(val);
@@ -119,7 +119,7 @@ static bool bif_bb_put_2(query *q)
 
 	char *key2 = strdup(tmpbuf2);
 	checked(init_tmp_heap(q));
-	cell *tmp = copy_term_to_tmp(q, p2, p2_ctx, true);
+	cell *tmp = copy_term_to_tmp(q, p2, p2_ctx, false);
 	pl_idx num_cells = tmp->num_cells;
 	cell *val = malloc(sizeof(cell)*num_cells);
 	checked(val);
@@ -192,7 +192,7 @@ static bool bif_bb_get_2(query *q)
 
 	checked(check_frame(q, MAX_ARITY));
 	try_me(q, MAX_ARITY);
-	cell *tmp = copy_term_to_heap(q, (cell*)val, q->st.new_fp, true);
+	cell *tmp = copy_term_to_heap(q, (cell*)val, q->st.new_fp, false);
 	checked(tmp);
 	GET_FIRST_ARG(p1x,nonvar);
 	GET_NEXT_ARG(p2,any);
@@ -253,7 +253,7 @@ static bool bif_bb_delete_2(query *q)
 
 	checked(check_frame(q, MAX_ARITY));
 	try_me(q, MAX_ARITY);
-	cell *tmp = copy_term_to_heap(q, (cell*)val, q->st.new_fp, true);
+	cell *tmp = copy_term_to_heap(q, (cell*)val, q->st.new_fp, false);
 	checked(tmp, prolog_unlock(q->pl));
 	GET_FIRST_ARG(p1x,nonvar);
 	GET_NEXT_ARG(p2,any);
@@ -330,7 +330,7 @@ static bool bif_bb_update_3(query *q)
 	checked(check_frame(q, MAX_ARITY));
 	try_me(q, MAX_ARITY);
 	q->noderef = true;
-	cell *tmp = copy_term_to_heap(q, (cell*)val, q->st.new_fp, true);
+	cell *tmp = copy_term_to_heap(q, (cell*)val, q->st.new_fp, false);
 	q->noderef = false;
 	checked(tmp, prolog_unlock(q->pl));
 	GET_FIRST_ARG(p1x,nonvar);
@@ -345,7 +345,7 @@ static bool bif_bb_update_3(query *q)
 	}
 
 	key = strdup(tmpbuf);
-	tmp = copy_term_to_heap(q, p3, p3_ctx, true);
+	tmp = copy_term_to_heap(q, p3, p3_ctx, false);
 	cell *value = malloc(sizeof(cell)*tmp->num_cells);
 	checked(value);
 	dup_cells(value, tmp, tmp->num_cells);
@@ -362,12 +362,12 @@ static bool bif_bb_update_3(query *q)
 
 builtins g_bboard_bifs[] =
 {
-	{"$bb_b_put", 2, bif_bb_b_put_2, ":atom,+term", false, false, BLAH},
-	{"$bb_put", 2, bif_bb_put_2, ":atom,+term", false, false, BLAH},
-	{"$bb_get", 2, bif_bb_get_2, ":atom,?term", false, false, BLAH},
+	{"bb_b_put", 2, bif_bb_b_put_2, ":atom,+term", false, false, BLAH},
+	{"bb_put", 2, bif_bb_put_2, ":atom,+term", false, false, BLAH},
+	{"bb_get", 2, bif_bb_get_2, ":atom,?term", false, false, BLAH},
 
-	{"$bb_update", 3, bif_bb_update_3, ":atom,?term,?term", false, false, BLAH},
-	{"$bb_delete", 2, bif_bb_delete_2, ":atom,?term", false, false, BLAH},
+	{"bb_update", 3, bif_bb_update_3, ":atom,?term,?term", false, false, BLAH},
+	{"bb_delete", 2, bif_bb_delete_2, ":atom,?term", false, false, BLAH},
 
 	{0}
 };
