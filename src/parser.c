@@ -3299,6 +3299,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 							}
 						}
 
+						bool parens = false;
 						int depth = 0;
 
 						while ((ch = peek_char_utf8(src)) != 0) {
@@ -3323,8 +3324,10 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 							if ((ch == '(') || (ch == '[') || (ch == '{'))
 								depth++;
 
-							if ((ch == ')') || (ch == ']') || (ch == '}'))
+							if ((ch == ')') || (ch == ']') || (ch == '}')) {
+								parens = true;
 								depth--;
+							}
 
 							if (depth < 0)
 								break;
@@ -3340,6 +3343,28 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 							SB_putchar(p->token, ']');
 						} else {
 							SB_putchar(p->token, ')');
+						}
+
+						const char *s = SB_cstr(p->token);
+
+						if (strstr(s, "|.]") && !parens) {
+							if (!p->do_read_term)
+								fprintf(stderr, "Error: syntax error, operand expected, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+
+							p->error_desc = "operand_expected";
+							p->error = true;
+							p->srcptr = (char*)src;
+							return false;
+						}
+
+						if (!strcmp(s, "(.)") && !parens) {
+							if (!p->do_read_term)
+								fprintf(stderr, "Error: syntax error, operand expected, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+
+							p->error_desc = "operand_expected";
+							p->error = true;
+							p->srcptr = (char*)src;
+							return false;
 						}
 
 						free(save_src);
@@ -3447,7 +3472,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 			if (!src || !*src || !ch) {
 				if (!p->do_read_term)
-					fprintf(stderr, "Error: syntax error, unterminated quoted atom, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+					fprintf(stderr, "Error: syntax error, unexpected term %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "unterminated_quoted_atom";
 				p->error = true;
