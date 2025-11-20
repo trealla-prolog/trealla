@@ -14,6 +14,16 @@
 static const unsigned INITIAL_NBR_CELLS = 1000;
 const char *g_solo = "!(){}[]|,;`'\"";
 
+static bool is_graphic(int ch)
+{
+	return (ch == '#') || (ch == '$') || (ch == '&')
+		|| (ch == '*') || (ch == '+') || (ch == '-')
+		|| (ch == '.') || (ch == '/') || (ch == ':')
+		|| (ch == '<') || (ch == '=') || (ch == '>')
+		|| (ch == '?') || (ch == '@') || (ch == '^')
+		|| (ch == '~');
+}
+
 char *slicedup(const char *s, size_t n)
 {
 	char *ptr = malloc(n+1);
@@ -3228,7 +3238,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					src = eat_space(p);
 					ch = peek_char_utf8(src);
 
-					if (iswalnum(ch) || (ch == '_') || (ch == '!') || (ch == '-') || (ch == '.')
+					if (iswalnum(ch) || is_graphic(ch) || (ch == '_') || (ch == '!') || (ch == '-')
 						|| (ch == '(') || (ch == ')')
 						|| (ch == '[') || (ch == ']')
 						|| (ch == '{') || (ch == '}')
@@ -3289,18 +3299,11 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 							}
 						}
 
-						if (*src == '.') {
-							SB_putchar(p->token, '\'');
-							SB_putchar(p->token, *src);
-							SB_putchar(p->token, '\'');
-							src++;
-						}
-
 						int depth = 0;
 
 						while ((ch = peek_char_utf8(src)) != 0) {
 							if (!iswalnum(ch) && (ch != '_')
-								&& !iswspace(ch)
+								&& !is_graphic(ch)
 								&& (ch != '(') && (ch != ')')
 								&& (ch != '[') && (ch != ']')
 								&& (ch != '{') && (ch != '}')
