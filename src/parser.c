@@ -3237,6 +3237,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					p->srcptr = (char*)src;
 					src = eat_space(p);
 					ch = peek_char_utf8(src);
+					bool is_atom = false;
 
 					if (iswalnum(ch) || is_graphic(ch) || (ch == '_') || (ch == '!') || (ch == '-')
 						|| (ch == '(') || (ch == ')')
@@ -3244,6 +3245,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 						|| (ch == '{') || (ch == '}')
 						|| (ch == '\'')|| (ch == '"')
 						) {
+						is_atom = true;
 						src = (char*)src;
 						p->quote_char = 0;
 						char *save_src = strdup(SB_cstr(p->token));
@@ -3314,6 +3316,16 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 								&& !depth
 								)
 								break;
+
+							if ((ch == '.') && is_atom) {
+								if (!p->do_read_term)
+									fprintf(stderr, "Error: syntax error, operand expected, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+
+								p->error_desc = "operand_expected";
+								p->error = true;
+								p->srcptr = (char*)src;
+								return false;
+							}
 
 							if ((ch == '\'') || (ch == '"')) {
 								SB_putchar(p->token, ch);
