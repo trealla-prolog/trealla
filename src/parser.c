@@ -3245,7 +3245,9 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 						|| (ch == '{') || (ch == '}')
 						|| (ch == '\'')|| (ch == '"')
 						) {
-						is_atom = true;
+						if (iswalnum(ch) || (ch == '_'))
+							is_atom = true;
+
 						src = (char*)src;
 						p->quote_char = 0;
 						char *save_src = strdup(SB_cstr(p->token));
