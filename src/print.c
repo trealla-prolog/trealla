@@ -1558,7 +1558,8 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 					print_variable(q, v?v:c, c_ctx, !v);
 			} else
 				print_term_to_buf_(q, l, 0, running, 0, depth+1, depth+1, NULL);
-			if (is_op(l)) SB_putchar(q->sb, ')');
+			if (is_op(l)) { SB_putchar(q->sb, ')'); }
+			else if (q->last_thing) SB_putchar(q->sb, ' ');
 		}
 
 		q->last_thing = WAS_OTHER;
