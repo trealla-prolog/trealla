@@ -3319,15 +3319,8 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 								)
 								break;
 
-							if ((ch == '.') && is_atom) {
-								if (!p->do_read_term)
-									fprintf(stderr, "Error: syntax error, operand expected, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
-
-								p->error_desc = "operand_expected";
-								p->error = true;
-								p->srcptr = (char*)src;
-								return false;
-							}
+							if ((ch == '.') && is_atom)
+								break;
 
 							if ((ch == '\'') || (ch == '"')) {
 								SB_putchar(p->token, ch);
