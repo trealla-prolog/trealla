@@ -3243,7 +3243,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					p->srcptr = (char*)src;
 					src = eat_space(p);
 					ch = peek_char_utf8(src);
-					bool is_atom = false, last_bar = false;
+					bool is_atom = false, is_num = false, last_bar = false;
 
 					if (iswalnum(ch) || is_graphic(ch) || (ch == '_') || (ch == '!') || (ch == '-')
 						|| (ch == '(') || (ch == ')')
@@ -3253,6 +3253,9 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 						) {
 						if (iswalpha(ch) || (ch == '_'))
 							is_atom = true;
+
+						else if (isnumber(ch))
+							is_num = true;
 
 						src = (char*)src;
 						p->quote_char = 0;
@@ -3373,6 +3376,10 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 							if ((ch == '.') && is_atom)
 								break;
+
+							if ((ch == '.') && is_num && !isnumber(src[1])) {
+								break;
+							}
 
 							if ((ch == '\'') || (ch == '"')) {
 								SB_putchar(p->token, ch);

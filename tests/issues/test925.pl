@@ -18,4 +18,6 @@ main :-
 	L8= "abc"||"def"||"ghi",
 	write_term(stdout,L8,[double_quotes(true)]), nl,
 	L9= ""||""||""||"",
-	write_term(stdout,L9,[double_quotes(true)]), nl.
+	write_term(stdout,L9,[double_quotes(true)]), nl,
+	L10= ""||1.23,
+	write_term(stdout,L10,[double_quotes(true)]), nl.
