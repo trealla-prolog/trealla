@@ -3290,6 +3290,8 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 							SB_putchar(p->token, '(');
 						}
 
+						bool quoted = false;
+
 						if ((*src == '\'') || (*src == '"')) {
 							int qch = *src;
 							SB_putchar(p->token, *src);
@@ -3301,6 +3303,8 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 									break;
 								}
 							}
+
+							quoted = true;
 						}
 
 						bool parens = false;
@@ -3317,6 +3321,9 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 								&& (ch != '!')
 								&& !depth
 								)
+								break;
+
+							if (quoted)
 								break;
 
 							if ((ch == '.') && is_atom)
