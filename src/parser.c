@@ -3304,6 +3304,11 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 							}
 						} else if (!multi_bar) {
 							SB_putchar(p->token, '(');
+						} else {
+							if (*src != '"') {
+								last_bar = true;
+								SB_putchar(p->token, '|');
+							}
 						}
 
 						bool quoted = false;

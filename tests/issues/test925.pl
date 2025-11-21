@@ -20,4 +20,6 @@ main :-
 	L9= ""||""||""||"",
 	write_term(stdout,L9,[double_quotes(true)]), nl,
 	L10= ""||1.23,
-	write_term(stdout,L10,[double_quotes(true)]), nl.
+	write_term(stdout,L10,[double_quotes(true)]), nl,
+	L11= "a"||"b"||1.23,
+	write_term(stdout,L11,[double_quotes(true)]), nl.
