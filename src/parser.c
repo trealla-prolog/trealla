@@ -3251,7 +3251,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 						|| (ch == '{') || (ch == '}')
 						|| (ch == '\'')|| (ch == '"')
 						) {
-						if (iswalnum(ch) || (ch == '_'))
+						if (iswalpha(ch) || (ch == '_'))
 							is_atom = true;
 
 						src = (char*)src;
