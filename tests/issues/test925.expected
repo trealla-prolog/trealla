@@ -3,3 +3,5 @@
 '.'
 [a|'b c']
 "ab c"
+"abcdef"
+"def"

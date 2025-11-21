@@ -3237,7 +3237,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					p->srcptr = (char*)src;
 					src = eat_space(p);
 					ch = peek_char_utf8(src);
-					bool is_atom = false;
+					bool is_atom = false, last_bar = false;
 
 					if (iswalnum(ch) || is_graphic(ch) || (ch == '_') || (ch == '!') || (ch == '-')
 						|| (ch == '(') || (ch == ')')
@@ -3285,25 +3285,60 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 								any = true;
 							}
 
-							SB_putchar(p->token, '|');
+							if (*src != '"') {
+								last_bar = true;
+								SB_putchar(p->token, '|');
+							}
 						} else {
 							SB_putchar(p->token, '(');
 						}
 
 						bool quoted = false;
 
-						if ((*src == '\'') || (*src == '"')) {
+						if ((*src == '"') && strlen(save_src)) {
 							int qch = *src;
-							SB_putchar(p->token, *src);
 							src++;
 
 							while ((ch = get_char_utf8(&src)) != 0) {
-								SB_putchar(p->token, ch);
-								if (ch == qch) {
+								if (ch == qch)
 									break;
+
+								if (!last_bar && strlen(save_src)) {
+									SB_putchar(p->token, ',');
 								}
+
+								last_bar = false;
+								SB_putchar(p->token, '\'');
+								SB_putchar(p->token, ch);
+								SB_putchar(p->token, '\'');
 							}
 
+							quoted = true;
+						} else if (*src == '"') {
+							int qch = *src;
+							src++;
+							SB_putchar(p->token, '"');
+
+							while ((ch = get_char_utf8(&src)) != 0) {
+								if (ch == qch)
+									break;
+								SB_putchar(p->token, ch);
+							}
+
+							SB_putchar(p->token, '"');
+							quoted = true;
+						} else if (*src == '\'') {
+							int qch = *src;
+							src++;
+							SB_putchar(p->token, '\'');
+
+							while ((ch = get_char_utf8(&src)) != 0) {
+								if (ch == qch)
+									break;
+								SB_putchar(p->token, ch);
+							}
+
+							SB_putchar(p->token, '\'');
 							quoted = true;
 						}
 
