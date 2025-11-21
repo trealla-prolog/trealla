@@ -15,4 +15,3 @@ main :-
 	write_term(stdout,L6,[double_quotes(true)]), nl,
 	L7= ""||"def",
 	write_term(stdout,L7,[double_quotes(true)]), nl.
-
