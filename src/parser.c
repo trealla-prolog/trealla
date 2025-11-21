@@ -3398,6 +3398,9 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 								break;
 						}
 
+						p->srcptr = (char*)src;
+						src = eat_space(p);
+
 						if (*src == '|') {
 							multi_bar = true;
 							goto DOUBLE_LOOP;
