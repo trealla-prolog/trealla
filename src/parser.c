@@ -3382,7 +3382,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 							if ((ch == '.') && is_atom)
 								break;
 
-							if ((ch == '.') && is_num && !isnumber(src[1])) {
+							if ((ch == '.') && is_num && !isdigit(src[1])) {
 								break;
 							}
 
