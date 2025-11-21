@@ -3212,9 +3212,15 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 						break;
 					}
 
+					// Check for double bar
+
+					bool multi_bar = false;
 					const char *save_src = src;
 					p->srcptr = (char*)src;
 					src = eat_space(p);
+
+LOOP:
+
 					if (*src != '|') {
 						p->quote_char = 0;
 						break;
@@ -3251,11 +3257,15 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 						src = (char*)src;
 						p->quote_char = 0;
 						char *save_src = strdup(SB_cstr(p->token));
-						SB_init(p->token);
 
-						if (strlen(save_src)) {
+						if (!multi_bar)
+							SB_init(p->token);
+
+						if (strlen(save_src) && !multi_bar) {
 							const char *src2 = save_src;
-							SB_putchar(p->token, '[');
+							if (!multi_bar)
+								SB_putchar(p->token, '[');
+
 							bool any = false;
 
 							while ((ch = get_char_utf8(&src2)) != 0) {
@@ -3289,7 +3299,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 								last_bar = true;
 								SB_putchar(p->token, '|');
 							}
-						} else {
+						} else if (!multi_bar) {
 							SB_putchar(p->token, '(');
 						}
 
@@ -3388,6 +3398,11 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 								break;
 						}
 
+						if (*src == '|') {
+							multi_bar = true;
+							goto LOOP;
+						}
+
 						if (strlen(save_src)) {
 							SB_putchar(p->token, ']');
 						} else {
@@ -3419,6 +3434,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 						free(save_src);
 						save_src = strdup(SB_cstr(p->token));
 						//printf("*** p->token=%s\n", save_src);
+
 						SB_init(p->token);
 						p->srcptr = save_src;
 						p->no_fp = 1;
@@ -3426,8 +3442,10 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 						p->no_fp = 0;
 						free(save_src);
 						//printf("*** src=%s\n", src);
+
 						p->srcptr = (char*)src;
 						p->was_consing = true;
+
 						SB_init(p->token);
 						p->is_quoted = false;
 						p->was_partial = true;
