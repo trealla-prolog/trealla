@@ -3254,7 +3254,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 						if (iswalpha(ch) || (ch == '_'))
 							is_atom = true;
 
-						else if (isnumber(ch))
+						else if (isdigit(ch))
 							is_num = true;
 
 						src = (char*)src;
