@@ -16,4 +16,6 @@ main :-
 	L7= ""||"def",
 	write_term(stdout,L7,[double_quotes(true)]), nl,
 	L8= "abc"||"def"||"ghi",
-	write_term(stdout,L8,[double_quotes(true)]), nl.
+	write_term(stdout,L8,[double_quotes(true)]), nl,
+	L9= ""||""||""||"",
+	write_term(stdout,L9,[double_quotes(true)]), nl.

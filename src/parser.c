@@ -3406,13 +3406,15 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 							goto DOUBLE_LOOP;
 						}
 
-						if (strlen(save_src)) {
+						const char *s = SB_cstr(p->token);
+
+						if (strlen(save_src) && (s[0] == '[')) {
 							SB_putchar(p->token, ']');
 						} else {
 							SB_putchar(p->token, ')');
 						}
 
-						const char *s = SB_cstr(p->token);
+						s = SB_cstr(p->token);
 
 						if (strstr(s, "|.]") && !parens) {
 							if (!p->do_read_term)
