@@ -2637,7 +2637,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 	if (*s == '.')
 		return false;
 
-	LOOP:
+	PARSE_LOOP:
 
 	if ((*s == '.') && isdigit(s[1])) {
 		if (!p->do_read_term)
@@ -2741,7 +2741,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 				}
 
 				s++;
-				goto LOOP;
+				goto PARSE_LOOP;
 			}
 
 			int save_ch = s[0];
@@ -3219,7 +3219,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					p->srcptr = (char*)src;
 					src = eat_space(p);
 
-LOOP:
+					DOUBLE_LOOP:
 
 					if (*src != '|') {
 						p->quote_char = 0;
@@ -3400,7 +3400,7 @@ LOOP:
 
 						if (*src == '|') {
 							multi_bar = true;
-							goto LOOP;
+							goto DOUBLE_LOOP;
 						}
 
 						if (strlen(save_src)) {
