@@ -3462,10 +3462,9 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 						p->srcptr = (char*)src;
 						p->was_consing = true;
-
-						SB_init(p->token);
 						p->is_quoted = false;
 						p->was_partial = true;
+						SB_init(p->token);
 						break;
 					} else if (*src != '"') {
 						src = (char*)save_src;
