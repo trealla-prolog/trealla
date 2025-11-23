@@ -3406,7 +3406,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 							get_char_utf8(&src);
 							SB_putchar(p->token, ch);
 
-							if (!depth && ((ch == ')') || (ch == ']') || (ch == '}')))
+							if (!depth && ((ch == ')') || (ch == ']') || (ch == '}') || (ch == '!')))
 								break;
 						}
 
