@@ -6799,7 +6799,7 @@ static bool bif_sys_get_n_chars_3(query *q)
 	if (is_bigint(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
 
-	unsigned len = get_smalluint(p1);
+	int len = get_smallint(p1);
 
 	if (len < 0)
 		return throw_error(q, p1, p1_ctx, "domain_error", "greater_or_equal_zero");
