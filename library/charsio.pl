@@ -17,7 +17,7 @@ get_n_chars(Stream, N, Cs) :-
 		peek_char(_),
 		Cs = []
 	;
-		bread(Stream, N, Cs0),
+		'$bread'(Stream, N, Cs0),
 		Cs0 = Cs
 	).
 

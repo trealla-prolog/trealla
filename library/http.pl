@@ -27,7 +27,7 @@ read_chunks(S, Tmp, Data) :-
 	hex_chars(Len, Line),
 	Len > 0,
 	!,
-	bread(S, Len, Tmp2),
+	'$bread'(S, Len, Tmp2),
 	getline(S, _),
 	(	Tmp = "" ->
 		Tmp3 = Tmp2
@@ -39,7 +39,7 @@ read_chunks(_, Data, Data).
 read_body(S, Hdrs, Data) :-
 	d_get(Hdrs, "content-length", V),
 	number_chars(Len, V),
-	bread(S, Len, Data).
+	'$bread'(S, Len, Data).
 
 % Open with options...
 
@@ -81,7 +81,7 @@ process(Url, S, Opts) :-
 	;	Clen = ''
 	),
 	format(S, "~s /~s HTTP/~d.~d\r~nHost: ~s\r~nConnection: close\r~n~a~a\r~n", [UMethod,Path,Major,Minor,Host,Ctype,Clen]),
-	(nonvar(DataLen) -> bwrite(S, PostData) ; true),
+	(nonvar(DataLen) -> '$bwrite'(S, PostData) ; true),
 	read_response(S, Code),
 	findall(Hdr, read_header(S, Hdr), Hdrs),
 	ignore(memberchk(status_code2(Code), OptList)),

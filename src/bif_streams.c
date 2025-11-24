@@ -6745,7 +6745,7 @@ static bool bif_client_5(query *q)
 	return unify(q, p4, p4_ctx, &tmp2, q->st.cur_ctx);
 }
 
-static bool bif_bread_3(query *q)
+static bool bif_sys_bread_3(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
 	GET_NEXT_ARG(p1,integer_or_var);
@@ -6871,7 +6871,7 @@ static bool bif_bread_3(query *q)
 	return ok;
 }
 
-static bool bif_bflush_1(query *q)
+static bool bif_sys_bflush_1(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
 	int n = get_stream(q, pstr);
@@ -6883,7 +6883,7 @@ static bool bif_bflush_1(query *q)
 	return true;
 }
 
-static bool bif_bwrite_2(query *q)
+static bool bif_sys_bwrite_2(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
 	GET_NEXT_ARG(p1,atom);
@@ -7516,9 +7516,6 @@ builtins g_streams_bifs[] =
 	{"client", 5, bif_client_5, "+source_sink,-atom,-atom,-atom,+list", false, false, BLAH},
 	{"server", 3, bif_server_3, "+source_sink,--stream,+list", false, false, BLAH},
 	{"accept", 2, bif_accept_2, "+stream,--stream", false, false, BLAH},
-	{"bread", 3, bif_bread_3, "+stream,+integer,-string", false, false, BLAH},
-	{"bflush", 1, bif_bflush_1, "+stream", false, false, BLAH},
-	{"bwrite", 2, bif_bwrite_2, "+stream,-string", false, false, BLAH},
 
 	{"alias", 2, bif_alias_2, "+blob,+atom", false, false, BLAH},
 
@@ -7530,6 +7527,9 @@ builtins g_streams_bifs[] =
 	{"$capture_error_to_chars", 1, bif_sys_capture_error_to_chars_1, "-string", false, false, BLAH},
 	{"$capture_error_to_atom", 1, bif_sys_capture_error_to_atom_1, "-atom", false, false, BLAH},
 	{"$readline", 2, bif_sys_readline_2, "+string,-string", false, false, BLAH},
+	{"$bread", 3, bif_sys_bread_3, "+stream,+integer,-string", false, false, BLAH},
+	{"$bflush", 1, bif_sys_bflush_1, "+stream", false, false, BLAH},
+	{"$bwrite", 2, bif_sys_bwrite_2, "+stream,-string", false, false, BLAH},
 
 	{"$gsl_vector_write", 2, bif_sys_gsl_vector_write_2, "+integer,+stream", false, false, BLAH},
 	{"$gsl_vector_alloc", 2, bif_sys_gsl_vector_alloc_2, "+stream,-integer", false, false, BLAH},
