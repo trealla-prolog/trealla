@@ -6813,6 +6813,10 @@ static bool bif_sys_get_n_chars_3(query *q)
 	while (len--) {
 		int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
 		str->ungetch = 0;
+
+		if (feof(str->fp))
+			break;
+
 		dst += put_char_utf8(dst, ch);
 	}
 
