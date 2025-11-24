@@ -6745,7 +6745,7 @@ static bool bif_client_5(query *q)
 	return unify(q, p4, p4_ctx, &tmp2, q->st.cur_ctx);
 }
 
-static bool bif_sys_get_n_chars_3(query *q)
+static bool bif_sys_get_chars_3(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
 	GET_NEXT_ARG(p1,integer_or_var);
@@ -7612,7 +7612,7 @@ builtins g_streams_bifs[] =
 	{"$capture_error_to_chars", 1, bif_sys_capture_error_to_chars_1, "-string", false, false, BLAH},
 	{"$capture_error_to_atom", 1, bif_sys_capture_error_to_atom_1, "-atom", false, false, BLAH},
 	{"$readline", 2, bif_sys_readline_2, "+string,-string", false, false, BLAH},
-	{"$get_n_chars", 3, bif_sys_get_n_chars_3, "+stream,+integer,-string", false, false, BLAH},
+	{"$get_chars", 3, bif_sys_get_chars_3, "+stream,+integer,-string", false, false, BLAH},
 	{"$bread", 3, bif_sys_bread_3, "+stream,+integer,-string", false, false, BLAH},
 	{"$bflush", 1, bif_sys_bflush_1, "+stream", false, false, BLAH},
 	{"$bwrite", 2, bif_sys_bwrite_2, "+stream,-string", false, false, BLAH},
