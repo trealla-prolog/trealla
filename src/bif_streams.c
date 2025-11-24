@@ -6745,6 +6745,45 @@ static bool bif_client_5(query *q)
 	return unify(q, p4, p4_ctx, &tmp2, q->st.cur_ctx);
 }
 
+static bool bif_sys_get_n_chars_3(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	GET_NEXT_ARG(p1,integer);
+	GET_NEXT_ARG(p2,var);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+
+	if (is_bigint(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
+
+	unsigned len = get_smalluint(p1);
+	cell tmp;
+
+	if (len < 0)
+		return throw_error(q, p1, p1_ctx, "domain_error", "greater_or_equal_zero");
+
+	if (len == 0) {
+		make_atom(&tmp, g_nil_s);
+		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
+	}
+
+	char *data = malloc(n*6+1);
+	checked(data);
+	char *dst = data;
+
+	while (len--) {
+		int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
+		str->ungetch = 0;
+		dst += put_char_utf8(dst, ch);
+	}
+
+	make_stringn(&tmp, data, dst-data);
+	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
+	unshare_cell(&tmp);
+	free(data);
+	return ok;
+}
+
 static bool bif_sys_bread_3(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
@@ -7527,6 +7566,7 @@ builtins g_streams_bifs[] =
 	{"$capture_error_to_chars", 1, bif_sys_capture_error_to_chars_1, "-string", false, false, BLAH},
 	{"$capture_error_to_atom", 1, bif_sys_capture_error_to_atom_1, "-atom", false, false, BLAH},
 	{"$readline", 2, bif_sys_readline_2, "+string,-string", false, false, BLAH},
+	{"$get_n_chars", 3, bif_sys_get_n_chars_3, "+stream,+integer,-string", false, false, BLAH},
 	{"$bread", 3, bif_sys_bread_3, "+stream,+integer,-string", false, false, BLAH},
 	{"$bflush", 1, bif_sys_bflush_1, "+stream", false, false, BLAH},
 	{"$bwrite", 2, bif_sys_bwrite_2, "+stream,-string", false, false, BLAH},

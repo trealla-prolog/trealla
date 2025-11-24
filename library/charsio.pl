@@ -13,12 +13,11 @@ get_line_to_chars(Stream, Cs0, Cs) :-
     partial_string(Line,Cs0,Cs).
 
 get_n_chars(Stream, N, Cs) :-
-	( N == 0 ->
-		peek_char(_),
-		Cs = []
+	can_be(integer, N),
+	(   var(N) ->
+		'$bread'(Stream, N, Cs)
 	;
-		'$bread'(Stream, N, Cs0),
-		Cs0 = Cs
+		'$get_n_chars'(Stream, N, Cs)
 	).
 
 fabricate_var_name(VarType, VarName, N) :-
