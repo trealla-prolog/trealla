@@ -6764,8 +6764,10 @@ static bool bif_sys_get_chars_3(query *q)
 		for (;;) {
 			int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
 
-			if (feof(str->fp))
+			if (feof(str->fp)) {
+				clearerr(str->fp);
 				break;
+			}
 
 			str->ungetch = 0;
 
@@ -6802,14 +6804,14 @@ static bool bif_sys_get_chars_3(query *q)
 	int len = get_smallint(p1);
 
 	if (len < 0)
-		return throw_error(q, p1, p1_ctx, "domain_error", "greater_or_equal_zero");
+		return false;
 
 	if (len == 0) {
 		make_atom(&tmp, g_nil_s);
 		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	}
 
-	char *data = malloc(n*6+1);
+	char *data = malloc(len*MAX_BYTES_PER_CODEPOINT+1);
 	checked(data);
 	char *dst = data;
 
@@ -6817,8 +6819,10 @@ static bool bif_sys_get_chars_3(query *q)
 		int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
 		str->ungetch = 0;
 
-		if (feof(str->fp))
+		if (feof(str->fp)) {
+			clearerr(str->fp);
 			break;
+		}
 
 		dst += put_char_utf8(dst, ch);
 	}
