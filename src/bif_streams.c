@@ -6748,16 +6748,55 @@ static bool bif_client_5(query *q)
 static bool bif_sys_get_n_chars_3(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
-	GET_NEXT_ARG(p1,integer);
+	GET_NEXT_ARG(p1,integer_or_var);
 	GET_NEXT_ARG(p2,var);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
+	cell tmp;
+
+	if (is_var(p1)) {
+		size_t n_size = 1024;
+		char *data = malloc(n_size+1);
+		checked(data);
+		char *dst = data;
+		unsigned len = 0;
+
+		for (;;) {
+			int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
+
+			if (feof(str->fp))
+				break;
+
+			str->ungetch = 0;
+			dst += put_char_utf8(dst, ch);
+			len++;
+
+			if ((size_t)(dst - data) >= n_size) {
+				n_size = n_size * 2 + 1;
+				data = realloc(data, n_size);
+				checked(data);
+			}
+		}
+
+		make_uint(&tmp, len);
+		bool ok = unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
+
+		if (!ok) {
+			free(data);
+			return false;
+		}
+
+		make_stringn(&tmp, data, dst-data);
+		ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
+		unshare_cell(&tmp);
+		free(data);
+		return ok;
+	}
 
 	if (is_bigint(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
 
 	unsigned len = get_smalluint(p1);
-	cell tmp;
 
 	if (len < 0)
 		return throw_error(q, p1, p1_ctx, "domain_error", "greater_or_equal_zero");
