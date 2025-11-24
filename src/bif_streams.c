@@ -6768,14 +6768,17 @@ static bool bif_sys_get_n_chars_3(query *q)
 				break;
 
 			str->ungetch = 0;
-			dst += put_char_utf8(dst, ch);
-			len++;
 
 			if ((size_t)(dst - data) >= n_size) {
+				size_t off = dst - data;
 				n_size = n_size * 2 + 1;
 				data = realloc(data, n_size);
 				checked(data);
+				dst = data + off;
 			}
+
+			dst += put_char_utf8(dst, ch);
+			len++;
 		}
 
 		make_uint(&tmp, len);
