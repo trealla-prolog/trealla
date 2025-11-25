@@ -416,7 +416,9 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			break;
 
 		case 'e':
-		case 'E':
+		case 'E': {
+			cell p1 = eval(q, c);
+			c = &p1;
 			if (!is_float(c) && !is_smallint(c)) {
 				free(tmpbuf);
 				return throw_error(q, c, q->st.cur_ctx, "type_error", "float");
@@ -440,9 +442,11 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			}
 
 			break;
-
+		}
 		case 'g':
-		case 'G':
+		case 'G': {
+			cell p1 = eval(q, c);
+			c = &p1;
 			if (!is_float(c) && !is_smallint(c)) {
 				free(tmpbuf);
 				return throw_error(q, c, q->st.cur_ctx, "type_error", "float");
@@ -466,8 +470,10 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			}
 
 			break;
-
-		case 'f':
+		}
+		case 'f': {
+			cell p1 = eval(q, c);
+			c = &p1;
 			if (!is_float(c) && !is_smallint(c)) {
 				free(tmpbuf);
 				return throw_error(q, c, q->st.cur_ctx, "type_error", "float");
@@ -483,8 +489,11 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 				len = snprintf(dst, len, "%f", is_float(c) ? get_float(c) : get_smallint(c));
 
 			break;
+		}
+		case 'I': {
+			cell p1 = eval(q, c);
+			c = &p1;
 
-		case 'I':
 			if (!is_integer(c)) {
 				free(tmpbuf);
 				return throw_error(q, c, q->st.cur_ctx, "type_error", "integer");
@@ -496,33 +505,38 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			CHECK_BUF(len*2+1);
 			len = format_integer(dst, c, noargval?3:argval, '_', 0, 10);
 			break;
+		}
+		case 'd': {
+			cell p1 = eval(q, c);
+			c = &p1;
 
-		case 'd':
 			if (!is_integer(c)) {
 				free(tmpbuf);
 				return throw_error(q, c, q->st.cur_ctx, "type_error", "integer");
 			}
 
-			tmpbuf2 = print_term_to_strbuf(q, c, 0, 0);
+			char *tmpbuf2 = print_term_to_strbuf(q, c, 0, 0);
 			len = strlen(tmpbuf2);
 			free(tmpbuf2);
 			CHECK_BUF(len*2+1);
 			len = format_integer(dst, c, 0, ',', noargval?0:argval, 10);
 			break;
-
-		case 'D':
+		}
+		case 'D': {
+			cell p1 = eval(q, c);
+			c = &p1;
 			if (!is_integer(c)) {
 				free(tmpbuf);
 				return throw_error(q, c, q->st.cur_ctx, "type_error", "integer");
 			}
 
-			tmpbuf2 = print_term_to_strbuf(q, c, 0, 0);
+			char *tmpbuf2 = print_term_to_strbuf(q, c, 0, 0);
 			len = strlen(tmpbuf2);
 			free(tmpbuf2);
 			CHECK_BUF(len*2+1);
 			len = format_integer(dst, c, 3, ',', noargval?0:argval, 10);
 			break;
-
+		}
 		case 'r':
 			if (!noargval && ((argval < 2) || (argval > 36))) {
 				free(tmpbuf);
@@ -534,7 +548,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 				return throw_error(q, c, q->st.cur_ctx, "type_error", "integer");
 			}
 
-			tmpbuf2 = print_term_to_strbuf(q, c, 0, 0);
+			char *tmpbuf2 = print_term_to_strbuf(q, c, 0, 0);
 			len = strlen(tmpbuf2);
 			free(tmpbuf2);
 			CHECK_BUF(len*10);
