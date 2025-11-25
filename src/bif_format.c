@@ -745,6 +745,69 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			break;
 		}
 
+		case 'W':
+		{
+			int saveq = q->quoted;
+			q->numbervars = true;
+			q->double_quotes = true;
+
+			if (argval)
+				q->max_depth = argval;
+
+			pl_ctx c2_ctx;
+			cell *c2 = get_next_cell(q, &fmt2, &is_var, &c2_ctx);
+
+			if (!c2)
+				return throw_error(q, c, c_ctx, "domain_error", "empty_list1");
+
+			q->flags = q->st.m->flags;
+			q->numbervars = false;
+			cell *vnames = NULL;
+			pl_ctx vnames_ctx;
+			LIST_HANDLER(c2);
+
+			while (is_iso_list(c2)) {
+				cell *h = LIST_HEAD(c2);
+				h = deref(q, h, c2_ctx);
+				pl_ctx h_ctx = q->latest_ctx;
+
+				if (!parse_write_params(q, h, h_ctx, &vnames, &vnames_ctx)) {
+					clear_write_options(q);
+					return true;
+				}
+
+				c2 = LIST_TAIL(c2);
+				c2 = deref(q, c2, c2_ctx);
+				c2_ctx = q->latest_ctx;
+			}
+
+			if (is_var(c2)) {
+				clear_write_options(q);
+				return throw_error(q, c2, c2_ctx, "instantiation_error", "write_option");
+			}
+
+			if (!is_nil(c2)) {
+				clear_write_options(q);
+				return throw_error(q, c2, c2_ctx, "type_error", "list");
+			}
+
+
+			char *tmpbuf2 = print_term_to_strbuf(q, c, c_ctx, 1);
+
+			if (q->cycle_error) {
+				free(tmpbuf);
+				return throw_error(q, c, q->st.cur_ctx, "resource_error", "cyclic");
+			}
+
+			len = strlen(tmpbuf2);
+			CHECK_BUF(len);
+			strcpy(dst, tmpbuf2);
+			free(tmpbuf2);
+			clear_write_options(q);
+			q->quoted = saveq;
+			break;
+		}
+
 		default:
 			free(tmpbuf);
 			return throw_error(q, c, q->st.cur_ctx, "existence_error", "format_character");
