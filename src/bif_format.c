@@ -201,6 +201,9 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			if (is_var)
 				return throw_error(q, p2, p2_ctx, "instantiation_error", "atom");
 
+			if (is_negative(c))
+				return throw_error(q, p2, p2_ctx, "domain_error", "positive");
+
 			cell p1 = eval(q, c);
 			c = &p1;
 
