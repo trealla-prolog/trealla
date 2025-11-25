@@ -323,7 +323,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 		}
 
 		if (ch == '+') {
-			if (!tabs)
+			if (!tabs && 0)
 				continue;
 
 			if (!redo) {
