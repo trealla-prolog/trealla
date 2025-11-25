@@ -496,6 +496,8 @@ bool check_list(query *q, cell *p1, pl_ctx p1_ctx, bool *is_partial, pl_int *ski
 	pl_ctx c_ctx = p1_ctx;
 	cell tmp = {0};
 
+	if (is_partial)
+		*is_partial = false;
 	cell *c = skip_max_list(q, p1, &c_ctx, max, &skip, &tmp);
 	unshare_cell(&tmp);
 
@@ -508,9 +510,6 @@ bool check_list(query *q, cell *p1, pl_ctx p1_ctx, bool *is_partial, pl_int *ski
 	if (is_var(c)) {
 		if (is_partial)
 			*is_partial = true;
-	} else {
-		if (is_partial)
-			*is_partial = false;
 	}
 
 	return false;

@@ -172,6 +172,11 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 	save_fmt1 = fmt1;
 	save_fmt2 = fmt2;
 
+	bool is_partial = false;
+
+	if (p2 && !check_list(q, p2, p2_ctx, &is_partial, NULL) && is_partial)
+		return throw_error(q, p2, p2_ctx, "instantiation_error", "atom");
+
 	while (is_more_data(q, &fmt1)) {
 		int argval = 0, noargval = 1, argval_specified = 0;
 		int pos = dst - tmpbuf + 1;
@@ -377,6 +382,10 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 		switch(ch) {
 		case 's':
 			if (is_nil(c)) {
+			} else if (is_var(c)) {
+				return throw_error(q, c, c_ctx, "instantiation_error", "atom");
+			} else if (is_number(c)) {
+				return throw_error(q, c, c_ctx, "type_error", "atom");
 			} else if (is_atom(c)) {
 				int len = noargval ? (int)C_STRLEN_UTF8(c) : MIN_OF(argval, (int)C_STRLEN_UTF8(c));
 				const char *src = C_STR(q, c);
@@ -754,6 +763,9 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 		cell *c = get_next_cell(q, &fmt2, &is_var, &c_ctx);
 
 		if (is_var)
+			return throw_error(q, p2, p2_ctx, "instantiation_error", "atom");
+
+		if (c && !is_list(c))
 			return throw_error(q, p2, p2_ctx, "instantiation_error", "atom");
 
 		if (c)
