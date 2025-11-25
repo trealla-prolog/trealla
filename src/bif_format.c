@@ -196,6 +196,19 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			if (is_var)
 				return throw_error(q, p2, p2_ctx, "instantiation_error", "atom");
 
+			cell p1 = eval(q, c);
+			c = &p1;
+
+			if (is_float(c)) {
+				free(tmpbuf);
+				return throw_error(q, c, q->st.cur_ctx, "type_error", "integer");
+			}
+
+			if (!is_integer(c)) {
+				free(tmpbuf);
+				return throw_error(q, c, q->st.cur_ctx, "type_error", "evaluable");
+			}
+
 			noargval = 0;
 
 			if (!c || !is_integer(c)) {
