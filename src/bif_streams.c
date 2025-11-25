@@ -6756,7 +6756,7 @@ static bool bif_sys_get_chars_3(query *q)
 
 	if (is_var(p1)) {
 		size_t n_size = 1024;
-		char *data = malloc(n_size+1);
+		char *data = malloc(n_size);
 		checked(data);
 		char *dst = data;
 		unsigned len = 0;
@@ -6770,11 +6770,10 @@ static bool bif_sys_get_chars_3(query *q)
 			}
 
 			str->ungetch = 0;
+			size_t off = dst - data;
 
-			if ((size_t)(dst - data) >= n_size) {
-				size_t off = dst - data;
-				n_size = n_size * 2 + 1;
-				data = realloc(data, n_size);
+			if ((off + MAX_BYTES_PER_CODEPOINT) >= n_size) {
+				data = realloc(data, n_size*=2);
 				checked(data);
 				dst = data + off;
 			}
