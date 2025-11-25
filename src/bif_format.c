@@ -412,10 +412,18 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 
 			break;
 
-		case 'c':
-			if (!is_integer(c)) {
+		case 'c': {
+			cell p1 = eval(q, c);
+			c = &p1;
+
+			if (is_float(c)) {
 				free(tmpbuf);
 				return throw_error(q, c, q->st.cur_ctx, "type_error", "integer");
+			}
+
+			if (!is_integer(c)) {
+				free(tmpbuf);
+				return throw_error(q, c, q->st.cur_ctx, "type_error", "evaluable");
 			}
 
 			while (argval-- > 1) {
@@ -427,7 +435,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			dst += put_char_utf8(dst, (int)get_smallint(c));
 			len = 0;
 			break;
-
+		}
 		case 'e':
 		case 'E': {
 			cell p1 = eval(q, c);
