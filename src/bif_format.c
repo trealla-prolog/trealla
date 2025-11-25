@@ -323,9 +323,6 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 		}
 
 		if (ch == '+') {
-			if (!tabs && 0)
-				continue;
-
 			if (!redo) {
 				int at = last_at = argval ? (last_at+argval) : 8;
 
