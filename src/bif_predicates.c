@@ -1880,7 +1880,7 @@ static bool do_copy_term(query *q, bool copy_attrs)
 	q->dump_var_ctx = -1;
 	checked(tmp);
 
-	// Reget as slots may have reallocated...
+	// Reget as slots may have reallocated if copy_attrs=true...
 
 	GET_FIRST_ARG(p1x,any);
 	GET_NEXT_ARG(p2x,any);
