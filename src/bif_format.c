@@ -368,9 +368,6 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 		if (!c)
 			return throw_error(q, make_nil(), p2_ctx, "domain_error", "non_empty_list");
 
-		if (is_iso_list(c) && !check_list(q, c, c_ctx, &is_partial, NULL) && is_partial)
-			return throw_error(q, c, c_ctx, "instantiation_error", "atom");
-
 		if (ch == 'i')
 			continue;
 
@@ -384,6 +381,9 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 
 		switch(ch) {
 		case 's':
+			if (is_iso_list(c) && !check_list(q, c, c_ctx, &is_partial, NULL) && is_partial)
+				return throw_error(q, c, c_ctx, "instantiation_error", "atom");
+
 			if (is_nil(c)) {
 			} else if (is_var(c)) {
 				return throw_error(q, c, c_ctx, "instantiation_error", "atom");
