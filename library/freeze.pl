@@ -44,14 +44,15 @@ attribute_goals(Var) -->
 
 :- use_module(library(lists)).
 
+:- help(freeze(-var,+goal), [iso(false)]).
 :- help(frozen(+var,-goal), [iso(false), deprecated(true)]).
 
-frozen(Var, Goal) :-
-	copy_term_(Term, Term2, Gs),
+frozen(X, Goal) :-
+	copy_term_(X, X2, Gs),
 	( Gs = [] ->
 		Goal = true
 	;
-		Term = Term2,
+		X = X2,
 		flatten(Gs, Gs2),
 		list_to_conjunction(Gs2, Fresh),
 		Fresh = Goal
