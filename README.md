@@ -356,8 +356,8 @@ Non-standard predicates
 	gensym/2					# gensym(+atom,-atom)
 	reset_gensym/1				# reset_gensym(+atom)
 
-	call_residue_vars/2
-	expand_term/2               # expand_term(+rule,-Term)
+	call_residue_vars/2			# call_residue_vars(+goal,-list)
+	expand_term/2               # expand_term(+rule,-term)
 	sub_string/5				# sub_string(+string,?before,?len,?after,?substring)
 	atomic_concat/3             # atomic_concat(+atom,+list,-list)
 	atomic_list_concat/2	    # atomic_list_concat(L,Atom)
@@ -374,7 +374,6 @@ Non-standard predicates
 	call_det/2					# call_det(+call,?boolean)
 	term_attributed_variables/2 # term_attributed_variables(+term,-Vs)
 	copy_term_nat/2             # doesn't copy attrs (same as copy_term/2)
-	copy_term/3                 # copy_term(+term1,-term2,-Goals)
 	unifiable/3                 # unifiable(+term1,+term2,-Goals)
 	?=/2                        # ?=(+term1,+term2)
 	term_expansion/2

@@ -44,8 +44,10 @@ attribute_goals(Var) -->
 
 :- use_module(library(lists)).
 
-frozen(Term, Goal) :-
-	copy_term(Term, Term2, Gs),
+:- help(frozen(+var,-goal), [iso(false), deprecated(true)]).
+
+frozen(Var, Goal) :-
+	copy_term_(Term, Term2, Gs),
 	( Gs = [] ->
 		Goal = true
 	;

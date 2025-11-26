@@ -499,7 +499,7 @@ void dump_vars(query *q, bool partial)
 
 	if (any_atts) {
 		cell p1[2];
-		make_instr(p1+0, new_atom(q->pl, "dump_attvars"), NULL, 1, 1);
+		make_instr(p1+0, new_atom(q->pl, "dump_attvars_"), NULL, 1, 1);
 		make_atom(p1+1, any ? g_true_s : g_false_s);
 		cell *tmp = prepare_call(q, CALL_SKIP, p1, q->st.cur_ctx, 1);
 		pl_idx num_cells = 2;
