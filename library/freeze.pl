@@ -45,7 +45,7 @@ attribute_goals(Var) -->
 :- use_module(library(lists)).
 
 :- help(freeze(-var,+goal), [iso(false)]).
-:- help(frozen(+var,-goal), [iso(false), deprecated(true)]).
+:- help(frozen(+var,-goal), [iso(false)]).
 
 frozen(X, Goal) :-
 	var(X), get_atts(X, Atts) ->
