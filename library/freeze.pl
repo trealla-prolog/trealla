@@ -48,14 +48,16 @@ attribute_goals(Var) -->
 :- help(frozen(+var,-goal), [iso(false), deprecated(true)]).
 
 frozen(X, Goal) :-
-	get_atts(X, Atts),
-	term_attributed_variables_(X, Vs),
-	collect_goals_(Vs, [], Gs),
-	put_atts(X, Atts),
-	( Gs = [] ->
-		Goal = true
-	;
-		flatten(Gs, Gs2),
-		list_to_conjunction(Gs2, Fresh),
-		Fresh = Goal
-	).
+	var(X), get_atts(X, Atts) ->
+	(
+		term_attributed_variables_(X, Vs),
+		collect_goals_(Vs, [], Gs),
+		put_atts(X, Atts),
+		( Gs = [] ->
+			Goal = true
+		;
+			flatten(Gs, Gs2),
+			list_to_conjunction(Gs2, Fresh),
+			Fresh = Goal
+		)
+	) ; Goal = true.
