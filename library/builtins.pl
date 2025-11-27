@@ -133,6 +133,14 @@ call_residue_vars(G, Ls) :-
 	'$list_attributed'(Mark, Ls0),
 	sort(Ls0, Ls).
 
+duplicate_term_(Term, Copy) :-
+	'$duplicate_term'(Term, Copy).
+
+copy_term(Term, Copy, Gs) :-
+	duplicate_term_(Term, Copy),
+	term_attributed_variables_(Copy, Vs),
+	collect_goals_(Vs, [], Gs).
+
 collect_goals_(_, [], GsIn, GsIn).
 collect_goals_(V, [H|T], GsIn, GsOut) :-
 	nonvar(H),
