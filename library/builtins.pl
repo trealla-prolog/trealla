@@ -154,7 +154,7 @@ collect_goals_([V|T], GsIn, GsOut) :-
 
 print_goals_(_, []).
 print_goals_(Any, [Goal|Goals]) :-
-	(Any -> write(', ') ; true),
+	(Any -> write(',\n   ') ; true),
 	write(Goal),
 	(Goals == [] -> true ;	write(', ')),
 	print_goals_(false, Goals).
