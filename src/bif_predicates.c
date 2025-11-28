@@ -5647,6 +5647,43 @@ static bool bif_sys_countall_2(query *q)
 	return true;
 }
 
+bool bif_sys_list_iterate_3(query *q)
+{
+	GET_FIRST_ARG(p1,iso_list);
+	GET_NEXT_ARG(p2,var);
+	GET_NEXT_ARG(p3,var);
+	LIST_HANDLER(p1);
+	cell *h, *t;
+	pl_idx h_ctx = q->st.cur_ctx, t_ctx = q->st.cur_ctx;
+
+	if (!q->retry) {
+		h = LIST_HEAD(p1);
+		h = deref(q, h, p1_ctx);
+		h_ctx = q->latest_ctx;
+		t = LIST_TAIL(p1);
+		t = deref(q, t, p1_ctx);
+		t_ctx = q->latest_ctx;
+	} else {
+		cell tmp;
+		h = list_head(q->st.c2, &tmp);
+		t = list_tail(q->st.c2, &tmp);
+	}
+
+	q->st.c1 = h;
+	q->st.c2 = t;
+
+	if (!is_nil(t))
+	checked(push_choice(q));
+
+	if (!unify(q, p3, p3_ctx, t, t_ctx))
+		return false;
+
+	if (!unify(q, p2, p2_ctx, h, h_ctx))
+		return false;
+
+	return true;
+}
+
 static bool bif_between_3(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
@@ -6294,6 +6331,7 @@ builtins g_other_bifs[] =
 	{"$undo", 2, bif_sys_undo_1, "+var", true, false, BLAH},
 	{"$create_var", 1, bif_sys_create_var_1, "-var", false, false, BLAH},
 	{"$make_string", 2, bif_sys_make_string_2, "+list,-string", false, false, BLAH},
+	{"$list_iterate", 3, bif_sys_list_iterate_3, "+list,-term,-list", false, false, BLAH},
 
 	{0}
 };
