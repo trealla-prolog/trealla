@@ -52,6 +52,7 @@ static bool bif_bb_b_put_2(query *q)
 	char *key = strdup(tmpbuf);
 	checked(init_tmp_heap(q));
 	cell *tmp = copy_term_to_tmp(q, p2, p2_ctx, false);
+	checked(tmp);
 	pl_idx num_cells = tmp->num_cells;
 	cell *val = malloc(sizeof(cell)*num_cells);
 	checked(val);
@@ -120,6 +121,7 @@ static bool bif_bb_put_2(query *q)
 	char *key2 = strdup(tmpbuf2);
 	checked(init_tmp_heap(q));
 	cell *tmp = copy_term_to_tmp(q, p2, p2_ctx, false);
+	checked(tmp);
 	pl_idx num_cells = tmp->num_cells;
 	cell *val = malloc(sizeof(cell)*num_cells);
 	checked(val);
@@ -251,7 +253,7 @@ static bool bif_bb_delete_2(query *q)
 		return false;
 	}
 
-	checked(check_frame(q, MAX_ARITY));
+	checked(check_frame(q, MAX_ARITY), prolog_unlock(q->pl));
 	try_me(q, MAX_ARITY);
 	cell *tmp = copy_term_to_heap(q, (cell*)val, q->st.new_fp, false);
 	checked(tmp, prolog_unlock(q->pl));
@@ -327,7 +329,7 @@ static bool bif_bb_update_3(query *q)
 		return false;
 	}
 
-	checked(check_frame(q, MAX_ARITY));
+	checked(check_frame(q, MAX_ARITY), prolog_unlock(q->pl));
 	try_me(q, MAX_ARITY);
 	q->noderef = true;
 	cell *tmp = copy_term_to_heap(q, (cell*)val, q->st.new_fp, false);
@@ -346,8 +348,9 @@ static bool bif_bb_update_3(query *q)
 
 	key = strdup(tmpbuf);
 	tmp = copy_term_to_heap(q, p3, p3_ctx, false);
+	checked(tmp, prolog_unlock(q->pl));
 	cell *value = malloc(sizeof(cell)*tmp->num_cells);
-	checked(value);
+	checked(value, prolog_unlock(q->pl));
 	dup_cells(value, tmp, tmp->num_cells);
 
 	while (sl_del(q->pl->keyval, key))
