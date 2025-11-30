@@ -147,6 +147,7 @@ bool bif_sys_module_1(query *q);
 bool bif_sys_undo_1(query *q);
 bool bif_sys_create_var_1(query *q);
 bool bif_sys_match_1(query *q);
+bool bif_sys_list_iterate_3(query *q);
 
 void save_db(FILE *fp, query *q, int logging);
 char *uuid_to_buf(const uuid *u, char *buf, size_t buflen);
