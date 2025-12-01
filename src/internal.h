@@ -539,7 +539,7 @@ struct run_state_ {
 		};
 		struct { uint64_t uv1, uv2; };
 		struct { int64_t v1, v2; };
-		struct { cell *c1, *c2; };
+		struct { cell *c; pl_ctx c_ctx; };
 		int64_t cnt;
 	};
 
