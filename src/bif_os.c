@@ -409,7 +409,9 @@ static bool bif_sys_elapsed_0(query *q)
 	q->st.timer_started = now;
 	uint64_t elapsed = now - started;
 	double lips = (1.0 / ((double)elapsed/1000/1000)) * q->total_inferences;
-	fprintf(stderr, "%% Time elapsed %.3fs, %llu Inferences, %.3f MLips\n", (double)elapsed/1000/1000, (unsigned long long)q->total_inferences, lips/1000/1000);
+	char tmpbuf[80];
+	sprint_int(tmpbuf, sizeof(tmpbuf), q->total_inferences, 10);
+	fprintf(stderr, "%% Time elapsed %.3fs, %s Inferences, %.3f MLips\n", (double)elapsed/1000/1000, tmpbuf, lips/1000/1000);
 	if (q->is_redo) fprintf(stdout, "  ");
 	q->total_inferences = 0;
 	return true;
