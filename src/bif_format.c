@@ -7,7 +7,7 @@
 #include "prolog.h"
 #include "query.h"
 
-static int format_integer(char *dst, cell *c, int grouping, int sep, int decimals, int radix)
+int format_integer(char *dst, cell *c, int grouping, int sep, int decimals, int radix)
 {
 	char *tmpbuf1 = NULL, *tmpbuf2 = NULL;
 	char xtmpbuf1[256], xtmpbuf2[256];

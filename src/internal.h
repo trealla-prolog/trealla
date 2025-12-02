@@ -1047,6 +1047,7 @@ uint64_t get_time_in_usec(void);
 uint64_t cpu_time_in_usec(void);
 char *relative_to(const char *basefile, const char *relfile);
 size_t sprint_int(char *dst, size_t size, pl_int n, int base);
+int format_integer(char *dst, cell *c, int grouping, int sep, int decimals, int radix);
 const char *dump_key(const void *k, const void *v, const void *p);
 
 extern unsigned g_max_depth;
