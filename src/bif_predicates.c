@@ -5312,6 +5312,13 @@ static bool bif_multifile_1(query *q)
 	return true;
 }
 
+static bool bif_meta_predicate_1(query *q)
+{
+	GET_FIRST_ARG(p1,compound);
+	set_meta_predicate_in_db(q->st.m, p1);
+	return true;
+}
+
 static bool bif_prolog_load_context_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -6210,6 +6217,7 @@ builtins g_other_bifs[] =
 	{"module_info", 2, bif_module_info_2, "+atom,-list", false, false, BLAH},
 	{"source_info", 2, bif_source_info_2, "+predicate_indicator,-list", false, false, BLAH},
 	{"multifile", 1, bif_multifile_1, "+term", false, false, BLAH},
+	{"meta_predicate", 1, bif_meta_predicate_1, "+term", false, false, BLAH},
 
 	{"help", 2, bif_help_2, "+predicate_indicator,+atom", false, false, BLAH},
 	{"help", 1, bif_help_1, "+predicate_indicator", false, false, BLAH},
