@@ -731,6 +731,8 @@ logb(M, E) :-
 
 :- use_module(library(gensym)).
 
+:- meta_predicate(xmaplist(1, ?)).
+
 goal_expansion(xmaplist(G, L), Goal) :-
 	gensym(maplist_, U),
 	Goal =.. [U, L, G],
