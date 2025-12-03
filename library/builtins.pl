@@ -729,6 +729,8 @@ scalb(M, E, R) :-
 logb(M, E) :-
    E is floor(log(M)/log(2)).
 
+:- use_module(library(gensym)).
+
 goal_expansion(xmaplist(G, L), Goal) :-
 	gensym(maplist_, U),
 	Goal =.. [U, L, G],
