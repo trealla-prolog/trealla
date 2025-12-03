@@ -729,3 +729,11 @@ scalb(M, E, R) :-
 logb(M, E) :-
    E is floor(log(M)/log(2)).
 
+goal_expansion(xmaplist(G, L), Goal) :-
+	gensym(maplist_, U),
+	Goal =.. [U, L, G],
+	G1 =.. [U, [], G],
+	assertz(G1),
+	G2a =.. [U, [E|T], G],
+	G2b =.. [U, T, G],
+	assertz((G2a :- call(G,E), G2b)).
