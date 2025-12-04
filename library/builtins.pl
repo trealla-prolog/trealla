@@ -732,13 +732,15 @@ logb(M, E) :-
 :- use_module(library(gensym)).
 
 goal_expansion(maplist(G, L), Goal) :-
+	nonvar(G), !,
 	gensym(maplist_, U),
-	Goal =.. [U, L, G],
-	G1 =.. [U, [], _G],
+	Goal =.. [U, L],
+	G1 =.. [U, []],
 	assertz(G1),
-	G2a =.. [U, [E|T], _G],
-	G2b =.. [U, T, _G],
+	G2a =.. [U, [E|T]],
+	G2b =.. [U, T],
 	assertz((G2a :- call(G,E), G2b)),
-	G3 =.. [U, -, 1],
-	meta_predicate(G3),
+	%G3 =.. [U, -, 1],
+	%meta_predicate(G3),
 	true.
+goal_expansion(G, G).
