@@ -652,7 +652,6 @@ tasklist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], [E6|T6], [E7|T7], G) :-
 	call_task(G, E1, E2, E3, E4, E5, E6, E7),
 	tasklist_(T1, T2, T3, T4, T5, T6, T7, G).
 
-/*
 :- meta_predicate(tasklist(1, ?)).
 :- meta_predicate(tasklist(2, ?, ?)).
 :- meta_predicate(tasklist(3, ?, ?, ?)).
@@ -660,7 +659,6 @@ tasklist_([E1|T1], [E2|T2], [E3|T3], [E4|T4], [E5|T5], [E6|T6], [E7|T7], G) :-
 :- meta_predicate(tasklist(5, ?, ?, ?, ?, ?)).
 :- meta_predicate(tasklist(6, ?, ?, ?, ?, ?, ?)).
 :- meta_predicate(tasklist(7, ?, ?, ?, ?, ?, ?, ?)).
-*/
 
 :- help(tasklist(:callable,+list), [iso(false)]).
 :- help(tasklist(:callable,+list,+list), [iso(false)]).
