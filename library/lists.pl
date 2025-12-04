@@ -502,33 +502,33 @@ user:goal_expansion(maplist(G, L1), Goal) :-
 	true.
 user:goal_expansion(maplist(G, L1), maplist(G, L1)).
 
-goal_expansion(maplist(G, L1, L2), Goal) :-
+user:goal_expansion(maplist(G, L1, L2), Goal) :-
 	nonvar(G), !,
 	gensym(maplist_, U),
 	Goal =.. [U, L1, L2],
 	G1 =.. [U, [], []],
-	assertz(G1),
+	user:assertz(G1),
 	G2a =.. [U, [E1|T1], [E2|T2]],
 	G2b =.. [U, T1, T2],
-	assertz((G2a :- call(G, E1, E2), G2b)),
+	user:assertz((G2a :- call(G, E1, E2), G2b)),
 	%G3 =.. [U, -, 1],
 	%meta_predicate(G3),
 	true.
-goal_expansion(maplist(G, L1, L2), maplist(G, L1, L2)).
+user:goal_expansion(maplist(G, L1, L2), maplist(G, L1, L2)).
 
-goal_expansion(maplist(G, L1, L2, L3), Goal) :-
+user:goal_expansion(maplist(G, L1, L2, L3), Goal) :-
 	nonvar(G), !,
 	gensym(maplist_, U),
 	Goal =.. [U, L1, L2, L3],
 	G1 =.. [U, [], [], []],
-	assertz(G1),
+	user:assertz(G1),
 	G2a =.. [U, [E1|T1], [E2|T2], [E3|T3]],
 	G2b =.. [U, T1, T2, T3],
-	assertz((G2a :- call(G, E1, E2, E3), G2b)),
+	user:assertz((G2a :- call(G, E1, E2, E3), G2b)),
 	%G3 =.. [U, -, 1],
 	%meta_predicate(G3),
 	true.
-goal_expansion(maplist(G, L1, L2, L3), maplist(G, L1, L2, L3)).
+user:goal_expansion(maplist(G, L1, L2, L3), maplist(G, L1, L2, L3)).
 
 maplist(G, L) :-
 	maplist_(L, G).
