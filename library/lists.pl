@@ -486,19 +486,21 @@ perm_(List, [First|Perm]) :-
 
 :- help(permutation(?list,?list), [iso(false)]).
 
-goal_expansion(maplist(G, L1), Goal) :-
+:- use_module(library(gensym)).
+
+user:goal_expansion(maplist(G, L1), Goal) :-
 	nonvar(G), !,
 	gensym(maplist_, U),
 	Goal =.. [U, L1],
 	G1 =.. [U, []],
-	assertz(G1),
+	user:assertz(G1),
 	G2a =.. [U, [E|T]],
 	G2b =.. [U, T],
-	assertz((G2a :- call(G, E), G2b)),
+	user:assertz((G2a :- call(G, E), G2b)),
 	%G3 =.. [U, -, 1],
 	%meta_predicate(G3),
 	true.
-goal_expansion(maplist(G, L1), maplist(G, L1)).
+user:goal_expansion(maplist(G, L1), maplist(G, L1)).
 
 goal_expansion(maplist(G, L1, L2), Goal) :-
 	nonvar(G), !,
