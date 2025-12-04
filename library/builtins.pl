@@ -731,7 +731,7 @@ logb(M, E) :-
 
 :- use_module(library(gensym)).
 
-goal_expansion(xmaplist(G, L), Goal) :-
+goal_expansion(maplist(G, L), Goal) :-
 	gensym(maplist_, U),
 	Goal =.. [U, L, G],
 	G1 =.. [U, [], _G],
