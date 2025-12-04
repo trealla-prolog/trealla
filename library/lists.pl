@@ -494,9 +494,9 @@ user:goal_expansion(maplist(G, L1), Goal) :-
 	Goal =.. [U, L1],
 	G1 =.. [U, []],
 	user:assertz(G1),
-	G2a =.. [U, [E|T]],
-	G2b =.. [U, T],
-	user:assertz((G2a :- call(G, E), G2b)),
+	G2a =.. [U, [E1|T1]],
+	G2b =.. [U, T1],
+	user:assertz((G2a :- call(G, E1), G2b)),
 	true.
 user:goal_expansion(maplist(G, L1), maplist(G, L1)).
 
