@@ -229,8 +229,6 @@ static bool has_spaces(const char *src, int srclen)
 
 char *formatted(const char *src, int srclen, bool dq, bool json)
 {
-	extern const char *g_escapes;
-	extern const char *g_anti_escapes;
 	SB(sb);
 
 	while (srclen > 0) {

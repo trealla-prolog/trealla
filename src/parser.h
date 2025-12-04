@@ -2,6 +2,9 @@
 
 #include "internal.h"
 
+const char *g_escapes;
+const char *g_anti_escapes;
+
 parser *parser_create(module *m);
 void parser_destroy(parser *p);
 
