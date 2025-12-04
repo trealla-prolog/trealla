@@ -729,18 +729,3 @@ scalb(M, E, R) :-
 logb(M, E) :-
    E is floor(log(M)/log(2)).
 
-:- use_module(library(gensym)).
-
-goal_expansion(maplist(G, L), Goal) :-
-	nonvar(G), !,
-	gensym(maplist_, U),
-	Goal =.. [U, L],
-	G1 =.. [U, []],
-	assertz(G1),
-	G2a =.. [U, [E|T]],
-	G2b =.. [U, T],
-	assertz((G2a :- call(G,E), G2b)),
-	%G3 =.. [U, -, 1],
-	%meta_predicate(G3),
-	true.
-goal_expansion(maplist(G, L), maplist(G, L)).
