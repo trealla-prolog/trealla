@@ -743,4 +743,4 @@ goal_expansion(maplist(G, L), Goal) :-
 	%G3 =.. [U, -, 1],
 	%meta_predicate(G3),
 	true.
-goal_expansion(G, G).
+goal_expansion(maplist(G, L), maplist(G, L)).
