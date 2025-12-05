@@ -492,6 +492,7 @@ void dump_vars(query *q, bool partial)
 
 	// Print residual goals of attributed variables...
 
+	partial_clear_write_options(q);
 	q->variable_names = vlist;
 	q->variable_names_ctx = 0;
 	q->print_idx = 0;
