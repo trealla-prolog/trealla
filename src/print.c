@@ -229,8 +229,6 @@ static bool has_spaces(const char *src, int srclen)
 
 char *formatted(const char *src, int srclen, bool dq, bool json)
 {
-	extern const char *g_escapes;
-	extern const char *g_anti_escapes;
 	SB(sb);
 
 	while (srclen > 0) {
@@ -1742,9 +1740,8 @@ bool print_term(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 	return true;
 }
 
-void clear_write_options(query *q)
+void partial_clear_write_options(query *q)
 {
-	q->print_idx = 0;
 	q->max_depth = q->pl->def_max_depth;
 	q->quoted = 0;
 	q->nl = q->fullstop = q->varnames = q->ignore_ops = false;
@@ -1753,5 +1750,11 @@ void clear_write_options(query *q)
 	q->last_thing = WAS_OTHER;
 	q->variable_names = NULL;
 	q->cycle_error = false;
+}
+
+void clear_write_options(query *q)
+{
+	partial_clear_write_options(q);
+	q->print_idx = 0;
 	memset(q->ignores, 0, sizeof(q->ignores));
 }

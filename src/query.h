@@ -102,6 +102,7 @@ bool print_term(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running);
 bool print_term_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int running);
 char *print_term_to_strbuf(query *q, cell *c, pl_ctx c_ctx, int running);
 void clear_write_options(query *q);
+void partial_clear_write_options(query *q);
 
 bool print_canonical(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running);
 char *print_canonical_to_strbuf(query *q, cell *c, pl_ctx c_ctx, int running);
