@@ -337,20 +337,6 @@ is_set(Set) :-
   .
 :- help(is_set(+list), [iso(false), desc('Is it a set.')]).
 
-%% length(?Xs, ?N).
-%
-% Relates a list to its length (number of elements). It can be used to count the elements of a current list or
-% to create a list full of free variables with N length.
-%
-% ```
-% ?- length("abc", 3).
-%    true.
-% ?- length("abc", N).
-%    N = 3.
-% ?- length(Xs, 3).
-%    Xs = [_A,_B,_C].
-% ```
-
 length(Xs0, N) :-
    '$skip_max_list'(M, N, Xs0,Xs),
    !,
