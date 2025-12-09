@@ -3251,6 +3251,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					if (*src != '"') {
 						p->double_bar = true;
 						p->quote_char = 0;
+						p->srcptr = (char*)src;
 						break;
 					}
 
