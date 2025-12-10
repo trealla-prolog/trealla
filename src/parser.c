@@ -3147,7 +3147,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 	if (p->double_bar) {
 		p->double_bar = false;
 		p->is_op = true;
-		SB_strcpy(p->token, "||");
+		SB_strcpy(p->token, DOUBLE_BAR);
 		return true;
 	}
 
