@@ -1728,15 +1728,6 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			return false;
 		}
 
-		if (is_prefix(rhs) && !rhs->arity && (rhs->priority > c->priority)) {
-			if (!p->do_read_term)
-				fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
-
-			p->error_desc = "operator_clash";
-			p->error = true;
-			return false;
-		}
-
 		cell save = *c;
 
 		if (is_postfix(c)) {
