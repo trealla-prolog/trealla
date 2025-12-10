@@ -1582,7 +1582,10 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 
 // Reduce a vector of cells in token order to a parse tree. This is
 // done in two passes: first find the lowest priority un-applied
-// operator then apply args to that operator.
+// operator then apply args to that operator. This works by swapping
+// in place the args eg. 'arg1 op arg2' becomes 'op arg1 arg2' in
+// the resultant vector. This is done for the complete vector to
+// build a term representing a clause.
 
 static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 {
