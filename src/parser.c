@@ -3144,7 +3144,7 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 	if (p->double_bar) {
 		p->double_bar = false;
 		p->is_op = true;
-		SB_strcpy(p->token, "$||");
+		SB_strcpy(p->token, "||");
 		return true;
 	}
 
@@ -3591,7 +3591,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			continue;
 		}
 
-#if 1
+#if 0
 		int ch = peek_char_utf8(SB_cstr(p->token));
 		fprintf(stderr,
 			"Debug: '%s' (%d) line_num=%d, symbol=%d, quoted=%d, tag=%u, op=%d, lastop=%d, string=%d\n",
@@ -4153,7 +4153,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			break;
 		}
 
-		if ((p->was_string || p->is_string) && is_func) {
+		if ((p->was_string || p->is_string) && is_func && !p->double_bar) {
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: syntax error, near \"%s\", expected atom, %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_num);
 
