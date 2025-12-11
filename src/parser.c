@@ -1646,7 +1646,6 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			printf("*** OP2 last=%u/start=%u '%s' type=%u, specifier=%u, pri=%u, last_op=%d, is_op=%d\n", last_idx, start_idx, C_STR(p, c), c->tag, GET_OP(c), c->priority, last_op, IS_OP(c));
 #endif
 
-		c->tag = TAG_INTERNED;
 		c->arity = 1;
 
 		// Prefix...
