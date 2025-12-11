@@ -2503,6 +2503,7 @@ static bool bif_iso_write_1(query *q)
 		return throw_error(q, &tmp, q->st.cur_ctx, "permission_error", "output,binary_stream");
 	}
 
+	q->double_quotes = true;
 	q->numbervars = true;
 	print_term_to_stream(q, str, p1, p1_ctx, 1);
 	q->numbervars = false;
@@ -2529,6 +2530,7 @@ static bool bif_iso_write_2(query *q)
 		return throw_error(q, &tmp, q->st.cur_ctx, "permission_error", "output,binary_stream");
 	}
 
+	q->double_quotes = true;
 	q->numbervars = true;
 	print_term_to_stream(q, str, p1, p1_ctx, 1);
 	q->numbervars = false;
@@ -2553,6 +2555,7 @@ static bool bif_iso_writeq_1(query *q)
 		return throw_error(q, &tmp, q->st.cur_ctx, "permission_error", "output,binary_stream");
 	}
 
+	q->double_quotes = true;
 	q->quoted = 1;
 	q->numbervars = true;
 	print_term_to_stream(q, str, p1, p1_ctx, 1);
@@ -2581,6 +2584,7 @@ static bool bif_iso_writeq_2(query *q)
 		return throw_error(q, &tmp, q->st.cur_ctx, "permission_error", "output,binary_stream");
 	}
 
+	q->double_quotes = true;
 	q->quoted = 1;
 	q->numbervars = true;
 	print_term_to_stream(q, str, p1, p1_ctx, 1);
@@ -2877,6 +2881,7 @@ static bool bif_iso_write_term_2(query *q)
 		return throw_error(q, &tmp, q->st.cur_ctx, "permission_error", "output,binary_stream");
 	}
 
+	q->double_quotes = true;
 	q->flags = q->st.m->flags;
 	q->numbervars = false;
 	cell *p2_orig = p2, *vnames = NULL;
@@ -2961,6 +2966,7 @@ static bool bif_iso_write_term_3(query *q)
 		return throw_error(q, &tmp, q->st.cur_ctx, "permission_error", "output,binary_stream");
 	}
 
+	q->double_quotes = true;
 	q->flags = q->st.m->flags;
 	q->numbervars = false;
 	cell *p2_orig = p2, *vnames = NULL;
