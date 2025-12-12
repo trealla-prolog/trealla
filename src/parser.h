@@ -2,7 +2,7 @@
 
 #include "internal.h"
 
-#define DOUBLE_BAR "||"
+#define DOUBLE_BAR "$||"
 
 extern const char *g_escapes;
 extern const char *g_anti_escapes;
