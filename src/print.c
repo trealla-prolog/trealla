@@ -41,7 +41,7 @@ static void clear_visited(visit *visited, visit *save_visited)
 	}
 }
 
-cell *string_to_chars_list(query *q, cell *p, pl_ctx p_ctx)
+cell *string_to_chars_list(query *q, cell *p)
 {
 	LIST_HANDLER(p);
 	init_tmp_heap(q);

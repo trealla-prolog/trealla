@@ -163,10 +163,10 @@ static bool bif_iso_sort_2(query *q)
 		return false;
 
 	if (is_string(p1))
-		p1 = string_to_chars_list(q, p1, p1_ctx);
+		p1 = string_to_chars_list(q, p1);
 
 	if (is_string(p2))
-		p2 = string_to_chars_list(q, p2, p2_ctx);
+		p2 = string_to_chars_list(q, p2);
 
 	bool status = false;
 	cell *l = nodesort(q, p1, p1_ctx, true, false, &status);
@@ -205,10 +205,10 @@ static bool bif_iso_msort_2(query *q)
 		return false;
 
 	if (is_string(p1))
-		p1 = string_to_chars_list(q, p1, p1_ctx);
+		p1 = string_to_chars_list(q, p1);
 
 	if (is_string(p2))
-		p2 = string_to_chars_list(q, p2, p2_ctx);
+		p2 = string_to_chars_list(q, p2);
 
 	bool status = false;
 	cell *l = nodesort(q, p1, p1_ctx, false, false, &status);
