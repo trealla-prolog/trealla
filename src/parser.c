@@ -1610,7 +1610,7 @@ static void replace_double_bar(parser *p, pl_idx i, pl_idx last_idx)
 
 	unsigned tot_cells = lhs->num_cells+c->num_cells+rhs->num_cells;
 	unsigned extra_cells = tmp->num_cells - tot_cells;
-	printf("*** tot_cells = %u, extra_cells = %u\n", tot_cells, extra_cells);
+	//printf("*** tot_cells = %u, extra_cells = %u\n", tot_cells, extra_cells);
 
 	make_room(p, extra_cells);
 	c = p->cl->cells + i;
@@ -1618,7 +1618,7 @@ static void replace_double_bar(parser *p, pl_idx i, pl_idx last_idx)
 	rhs = c + 1;
 
 	cell *end = rhs + rhs->num_cells;
-	memmove(end+extra_cells, end, extra_cells*sizeof(cell));
+	memmove(end+extra_cells, end, (p->cl->cidx - (end - p->cl->cells))*sizeof(cell));
 	memmove(lhs, tmp, tmp->num_cells*sizeof(cell));
 
 	p->cl->cidx += extra_cells;
@@ -1812,12 +1812,10 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 
 		// Infix...
 
-#if 1
 		if (c->val_off == g_double_bar_s) {
 			replace_double_bar(p, i, last_idx);
 			break;
 		}
-#endif
 
 		if (is_infix(rhs) && !rhs->arity) {
 			if (!p->do_read_term)
