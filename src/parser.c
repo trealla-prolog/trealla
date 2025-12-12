@@ -684,6 +684,9 @@ static bool directives(parser *p, cell *d)
 	if (strcmp(C_STR(p, d), ":-"))
 		return false;
 
+	if (d->arity != 1)
+		return false;
+
 	cell *c = d + 1;
 
 	if (!is_interned(c))
@@ -691,14 +694,13 @@ static bool directives(parser *p, cell *d)
 
 	const char *dirname = C_STR(p, c);
 
-	if (d->arity != 1)
-		return false;
-
 	if (is_list(c)) {
 		printf("WARNING: directive to load '%s' not allowed\n", C_STR(p, c+1));
 		p->error = true;
 		return false;
 	}
+
+	cell *arg = c + 1;
 
 	d->val_off = new_atom(p->pl, "$directive");
 	CLR_OP(d);
@@ -778,11 +780,6 @@ static bool directives(parser *p, cell *d)
 			push_property(p->m, ptr->name, ptr->arity, "iso");
 
 		push_template(p->m, ptr->name, ptr->arity, ptr);
-		return true;
-	}
-
-	if (!strcmp(dirname, "det") && (c->arity == 1)) {
-		printf("WARNING: %s\n", dirname);
 		return true;
 	}
 
@@ -1116,104 +1113,108 @@ static bool directives(parser *p, cell *d)
 		return true;
 	}
 
-	LIST_HANDLER(p1);
+	if (is_iso_list(p1)) {
+		LIST_HANDLER(p1);
 
-	while (is_list(p1)) {
-		cell *h = LIST_HEAD(p1);
+		while (is_list(p1)) {
+			cell *h = LIST_HEAD(p1);
 
-		if (is_interned(h) && (!strcmp(C_STR(p, h), "/") || !strcmp(C_STR(p, h), "//")) && (h->arity == 2)) {
-			cell *c_name = h + 1;
+			if (is_interned(h) && (!strcmp(C_STR(p, h), "/") || !strcmp(C_STR(p, h), "//")) && (h->arity == 2)) {
+				cell *c_name = h + 1;
 
-			if (is_var(c_name)) {
-				if (((!p->do_read_term)) && !p->pl->quiet)
-					fprintf(stderr, "Error: uninstantiated: %s/%d\n", dirname, c->arity);
-
-				p->error = true;
-				return true;
-			}
-
-			if (!is_atom(c_name)) {
-				fprintf(stderr, "Error: predicate-indicator %s, %s:%d\n", p->m->name, get_loaded(p->m, p->m->filename), p->line_num);
-				p->error = true;
-				return true;
-			}
-
-			cell *c_arity = h + 2;
-
-			if (!is_integer(c_arity)) {
-				fprintf(stderr, "Error: predicate-indicator %s, %s:%d\n", p->m->name, get_loaded(p->m, p->m->filename), p->line_num);
-				p->error = true;
-				return true;
-			}
-
-			unsigned arity = get_smallint(c_arity);
-
-			if (!strcmp(C_STR(p, h), "//"))
-				arity += 2;
-
-			cell tmp = *c_name;
-			tmp.arity = arity;
-
-			if (!strcmp(dirname, "dynamic")) {
-				predicate * pr = find_predicate(p->m, &tmp);
-
-				if (pr && !pr->is_dynamic && pr->head) {
-					if (!p->do_read_term)
-						fprintf(stderr, "Error: no permission to modify static predicate %s:%s/%u, %s:%d\n", p->m->name, C_STR(p->m, c_name), arity, get_loaded(p->m, p->m->filename), p->line_num);
+				if (is_var(c_name)) {
+					if (((!p->do_read_term)) && !p->pl->quiet)
+						fprintf(stderr, "Error: uninstantiated: %s/%d\n", dirname, c->arity);
 
 					p->error = true;
 					return true;
 				}
 
-				set_dynamic_in_db(p->m, C_STR(p, c_name), arity);
-				p->error = p->m->error;
-			} else if (!strcmp(dirname, "encoding")) {
-			} else if (!strcmp(dirname, "public")) {
-			} else if (!strcmp(dirname, "export")) {
-			} else if (!strcmp(dirname, "discontiguous")) {
-				set_discontiguous_in_db(p->m, C_STR(p, c_name), arity);
-				p->error = p->m->error;
-			} else if (!strcmp(dirname, "multifile")) {
-				const char *src = C_STR(p, c_name);
+				if (!is_atom(c_name)) {
+					fprintf(stderr, "Error: predicate-indicator %s, %s:%d\n", p->m->name, get_loaded(p->m, p->m->filename), p->line_num);
+					p->error = true;
+					return true;
+				}
 
-				if (strcmp(src, ":")) {
-					set_multifile_in_db(p->m, src, arity);
-					p->error = p->m->error;
-				} else {
-					// multifile(:(mod,/(name,arity)))
-					cell *c_mod = c_name + 1;				// FIXME: verify
-					cell *c_slash = c_name + 2;				// FIXME: verify
-					cell *c_functor = c_slash + 1;			// FIXME: verify
-					cell *c_arity = c_slash + 2;			// FIXME: verify
-					const char *mod = C_STR(p, c_mod);
-					const char *name = C_STR(p, c_functor);
-					arity = get_smalluint(c_arity);
+				cell *c_arity = h + 2;
 
-					if (!strcmp(C_STR(p, c_slash), "//"))
-						arity += 2;
+				if (!is_integer(c_arity)) {
+					fprintf(stderr, "Error: predicate-indicator %s, %s:%d\n", p->m->name, get_loaded(p->m, p->m->filename), p->line_num);
+					p->error = true;
+					return true;
+				}
 
-					if (!is_multifile_in_db(p->pl, mod, name, arity)) {
+				unsigned arity = get_smallint(c_arity);
+
+				if (!strcmp(C_STR(p, h), "//"))
+					arity += 2;
+
+				cell tmp = *c_name;
+				tmp.arity = arity;
+
+				if (!strcmp(dirname, "dynamic")) {
+					predicate * pr = find_predicate(p->m, &tmp);
+
+					if (pr && !pr->is_dynamic && pr->head) {
 						if (!p->do_read_term)
-							fprintf(stderr, "Error: not multifile %s:%s/%u\n", mod, name, arity);
+							fprintf(stderr, "Error: no permission to modify static predicate %s:%s/%u, %s:%d\n", p->m->name, C_STR(p->m, c_name), arity, get_loaded(p->m, p->m->filename), p->line_num);
 
 						p->error = true;
 						return true;
 					}
+
+					set_dynamic_in_db(p->m, C_STR(p, c_name), arity);
+					p->error = p->m->error;
+				} else if (!strcmp(dirname, "encoding")) {
+				} else if (!strcmp(dirname, "public")) {
+				} else if (!strcmp(dirname, "export")) {
+				} else if (!strcmp(dirname, "discontiguous")) {
+					set_discontiguous_in_db(p->m, C_STR(p, c_name), arity);
+					p->error = p->m->error;
+				} else if (!strcmp(dirname, "multifile")) {
+					const char *src = C_STR(p, c_name);
+
+					if (strcmp(src, ":")) {
+						set_multifile_in_db(p->m, src, arity);
+						p->error = p->m->error;
+					} else {
+						// multifile(:(mod,/(name,arity)))
+						cell *c_mod = c_name + 1;				// FIXME: verify
+						cell *c_slash = c_name + 2;				// FIXME: verify
+						cell *c_functor = c_slash + 1;			// FIXME: verify
+						cell *c_arity = c_slash + 2;			// FIXME: verify
+						const char *mod = C_STR(p, c_mod);
+						const char *name = C_STR(p, c_functor);
+						arity = get_smalluint(c_arity);
+
+						if (!strcmp(C_STR(p, c_slash), "//"))
+							arity += 2;
+
+						if (!is_multifile_in_db(p->pl, mod, name, arity)) {
+							if (!p->do_read_term)
+								fprintf(stderr, "Error: not multifile %s:%s/%u\n", mod, name, arity);
+
+							p->error = true;
+							return true;
+						}
+					}
+				} else {
+					if (((!p->do_read_term)) && !p->pl->quiet)
+						fprintf(stderr, "Error: unknown directive: %s/%d\n", dirname, c->arity);
+
+					p->error = true;
+					return true;
 				}
-			} else {
-				if (((!p->do_read_term)) && !p->pl->quiet)
-					fprintf(stderr, "Error: unknown directive: %s/%d\n", dirname, c->arity);
-
-				p->error = true;
-				return true;
 			}
-		}
 
-		p1 = LIST_TAIL(p1);
+			p1 = LIST_TAIL(p1);
+		}
 	}
 
+#if 0
 	if (is_nil(p1))
 		return true;
+#endif
 
 	if (is_var(p1)) {
 		if (((!p->do_read_term)) && !p->pl->quiet)
@@ -1322,12 +1323,25 @@ static bool directives(parser *p, cell *d)
 			p1 += 1;
 		else {
 			if (((!p->do_read_term)) && !p->pl->quiet)
-				fprintf(stderr, "Error: unknown directive2: %s/%d\n", dirname, c->arity);
+				fprintf(stderr, "Warning: unknown directive: %s/%d\n", dirname, c->arity);
 
-			p->error = true;
 			return true;
 			p1 += 1;
 		}
+	}
+
+	if (!strcmp(dirname, "meta_predicate") && (c->arity == 1))
+		return true;
+
+	if (!strcmp(dirname, "dynamic") && (c->arity == 1))
+		return true;
+
+	if (!strcmp(dirname, "discontiguous") && (c->arity == 1))
+		return true;
+
+	if (((!p->do_read_term)) && !p->pl->quiet) {
+		fprintf(stderr, "Warning: unknown directive: %s/%d\n", dirname, c->arity);
+		return true;
 	}
 
 	return true;
