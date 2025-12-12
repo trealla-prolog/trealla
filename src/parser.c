@@ -14,7 +14,7 @@
 static const unsigned INITIAL_NBR_CELLS = 1000;
 const char *g_solo = "!(){}[]|,;`'\"";
 
-static bool is_graphic(int ch)
+bool is_graphic(int ch)
 {
 	return (ch == '#') || (ch == '$') || (ch == '&')
 		|| (ch == '*') || (ch == '+') || (ch == '-')
@@ -1580,9 +1580,58 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 	c->num_cells = 1;
 }
 
+// We have 'lhs || rhs', so:
+// Build lhs (a string) into a new list
+// append rhs as the new list tail
+// replace 'lhs || rhs' with new list
+
+static void replace_double_bar(parser *p, pl_idx i, pl_idx last_idx)
+{
+	cell *c = p->cl->cells + i;
+	cell *lhs = p->cl->cells + last_idx;
+	cell *rhs = c + 1;
+
+	// Build lhs into a list and append rhs + nil
+
+	char *src = C_STR(p, lhs);
+	query *q = query_create(p->m);
+	cell *l = string_to_chars_list(q, lhs);
+	unshare_cells(lhs, lhs->num_cells);
+	cell *tmp = calloc((l->num_cells-1)+rhs->num_cells+1, sizeof(cell));
+	cell *tmp2 = tmp;
+	tmp2 += copy_cells(tmp, l, l->num_cells-1);
+	tmp->num_cells -= 1;
+	tmp2 += dup_cells(tmp2, rhs, rhs->num_cells);
+	tmp->num_cells += rhs->num_cells;
+	*tmp2 = *make_nil();
+	tmp->num_cells += 1;
+
+	// Make room then copy
+
+	unsigned tot_cells = lhs->num_cells+c->num_cells+rhs->num_cells;
+	unsigned extra_cells = tmp->num_cells - tot_cells;
+	//printf("*** tot_cells = %u, extra_cells = %u\n", tot_cells, extra_cells);
+
+	make_room(p, extra_cells);
+	c = p->cl->cells + i;
+	lhs = p->cl->cells + last_idx;
+	rhs = c + 1;
+
+	cell *end = rhs + rhs->num_cells;
+	memmove(end+extra_cells, end, (p->cl->cidx - (end - p->cl->cells))*sizeof(cell));
+	memmove(lhs, tmp, tmp->num_cells*sizeof(cell));
+
+	p->cl->cidx += extra_cells;
+	free(tmp);
+	query_destroy(q);
+}
+
 // Reduce a vector of cells in token order to a parse tree. This is
 // done in two passes: first find the lowest priority un-applied
-// operator then apply args to that operator.
+// operator then apply args to that operator. This works by swapping
+// in place the args eg. 'arg1 op arg2' becomes 'op arg1 arg2' in
+// the resultant vector. This is done as long as necessary for the
+// complete vector to build a term representing a clause.
 
 static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 {
@@ -1762,6 +1811,11 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 		}
 
 		// Infix...
+
+		if (c->val_off == g_double_bar_s) {
+			replace_double_bar(p, i, last_idx);
+			break;
+		}
 
 		if (is_infix(rhs) && !rhs->arity) {
 			if (!p->do_read_term)
@@ -3127,6 +3181,8 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 	const char *src = p->srcptr;
 
+TRY_AGAIN:
+
 	SB_init(p->token);
 	p->v.tag = TAG_INTERNED;
 	p->v.flags = 0;
@@ -3138,6 +3194,13 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 	if (!src || !*src) {
 		p->srcptr = (char*)src;
 		return false;
+	}
+
+	if (p->double_bar) {
+		p->double_bar = false;
+		p->is_op = true;
+		SB_strcpy(p->token, DOUBLE_BAR);
+		return true;
 	}
 
 	// Numbers...
@@ -3218,8 +3281,6 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					p->srcptr = (char*)src;
 					src = eat_space(p);
 
-					DOUBLE_LOOP:
-
 					if (*src != '|') {
 						p->quote_char = 0;
 						break;
@@ -3241,233 +3302,20 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 					p->srcptr = (char*)src;
 					src = eat_space(p);
-					ch = peek_char_utf8(src);
-					bool is_atom = false, is_num = false, last_bar = false;
 
-					if (iswalnum(ch) || is_graphic(ch) || (ch == '_') || (ch == '!') || (ch == '-')
-						|| (ch == '(') || (ch == ')')
-						|| (ch == '[') || (ch == ']')
-						|| (ch == '{') || (ch == '}')
-						|| (ch == '\'')|| (ch == '"')
-						) {
-						if (iswalpha(ch) || (ch == '_'))
-							is_atom = true;
+					if (*src != '"') {
+						// Where the string is empty it's
+						// just ignored:
 
-						else if (isdigit(ch))
-							is_num = true;
+						if (!SB_strlen(p->token)) {
+							p->quote_char = 0;
+							p->is_quoted = true;
+							goto TRY_AGAIN;
+						}
 
-						src = (char*)src;
+						p->double_bar = true;
 						p->quote_char = 0;
-						char *save_src = strdup(SB_cstr(p->token));
-
-						if (!multi_bar)
-							SB_init(p->token);
-
-						if (strlen(save_src) && !multi_bar) {
-							const char *src2 = save_src;
-							if (!multi_bar)
-								SB_putchar(p->token, '[');
-
-							bool any = false;
-
-							while ((ch = get_char_utf8(&src2)) != 0) {
-								if (any)
-									SB_putchar(p->token, ',');
-
-								if (p->flags.double_quote_chars) {
-									SB_putchar(p->token, '\'');
-								}
-
-								char *ptr = strchr(g_escapes, ch);
-
-								if (ptr && p->flags.double_quote_chars) {
-									size_t n = ptr - g_escapes;
-									SB_putchar(p->token, '\\');
-									SB_putchar(p->token, g_anti_escapes[n]);
-								} else if (p->flags.double_quote_codes) {
-									SB_sprintf(p->token, "%u", ch);
-								} else {
-									SB_putchar(p->token, ch);
-								}
-
-								if (p->flags.double_quote_chars) {
-									SB_putchar(p->token, '\'');
-								}
-
-								any = true;
-							}
-
-							if (*src != '"') {
-								last_bar = true;
-								SB_putchar(p->token, '|');
-							}
-						} else if (!multi_bar) {
-							SB_putchar(p->token, '(');
-						} else {
-							if (*src != '"') {
-								last_bar = true;
-								SB_putchar(p->token, '|');
-							}
-						}
-
-						bool quoted = false;
-
-						if ((*src == '"') && strlen(save_src)) {
-							int qch = *src;
-							src++;
-
-							while ((ch = get_char_utf8(&src)) != 0) {
-								if (ch == qch)
-									break;
-
-								if (!last_bar && strlen(save_src)) {
-									SB_putchar(p->token, ',');
-								}
-
-								last_bar = false;
-								SB_putchar(p->token, '\'');
-								SB_putchar(p->token, ch);
-								SB_putchar(p->token, '\'');
-							}
-
-							quoted = true;
-						} else if (*src == '"') {
-							int qch = *src;
-							src++;
-							SB_putchar(p->token, '"');
-
-							while ((ch = get_char_utf8(&src)) != 0) {
-								if (ch == qch)
-									break;
-								SB_putchar(p->token, ch);
-							}
-
-							SB_putchar(p->token, '"');
-							quoted = true;
-						} else if (*src == '\'') {
-							int qch = *src;
-							src++;
-							SB_putchar(p->token, '\'');
-
-							while ((ch = get_char_utf8(&src)) != 0) {
-								if (ch == qch)
-									break;
-								SB_putchar(p->token, ch);
-							}
-
-							SB_putchar(p->token, '\'');
-							quoted = true;
-						}
-
-						bool parens = false;
-						int depth = 0;
-
-						while ((ch = peek_char_utf8(src)) != 0) {
-							if (!iswalnum(ch) && (ch != '_')
-								&& !is_graphic(ch)
-								&& (ch != '(') && (ch != ')')
-								&& (ch != '[') && (ch != ']')
-								&& (ch != '{') && (ch != '}')
-								&& (ch != '-') && (ch != '+')
-								&& (ch != '\'') && (ch != '"')
-								&& (ch != '!')
-								&& !depth
-								)
-								break;
-
-							if (quoted)
-								break;
-
-							if ((ch == '.') && is_atom)
-								break;
-
-							if ((ch == '.') && is_num && !isdigit(src[1])) {
-								break;
-							}
-
-							if ((ch == '\'') || (ch == '"')) {
-								SB_putchar(p->token, ch);
-								src++;
-								continue;
-							}
-
-							if ((ch == '(') || (ch == '[') || (ch == '{'))
-								depth++;
-
-							if ((ch == ')') || (ch == ']') || (ch == '}')) {
-								parens = true;
-								depth--;
-							}
-
-							if (depth < 0)
-								break;
-
-							get_char_utf8(&src);
-							SB_putchar(p->token, ch);
-
-							if (!depth && ((ch == ')') || (ch == ']') || (ch == '}') || (ch == '!')))
-								break;
-						}
-
 						p->srcptr = (char*)src;
-						src = eat_space(p);
-
-						if (*src == '|') {
-							multi_bar = true;
-							goto DOUBLE_LOOP;
-						}
-
-						const char *s = SB_cstr(p->token);
-
-						if (strlen(save_src) && (s[0] == '[')) {
-							SB_putchar(p->token, ']');
-						} else {
-							SB_putchar(p->token, ')');
-						}
-
-						s = SB_cstr(p->token);
-
-						if (strstr(s, "|.]") && !parens) {
-							if (!p->do_read_term)
-								fprintf(stderr, "Error: syntax error, operand expected, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
-
-							p->error_desc = "operand_expected";
-							p->error = true;
-							p->srcptr = (char*)src;
-							return false;
-						}
-
-						if (!strcmp(s, "(.)") && !parens) {
-							if (!p->do_read_term)
-								fprintf(stderr, "Error: syntax error, operand expected, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
-
-							p->error_desc = "operand_expected";
-							p->error = true;
-							p->srcptr = (char*)src;
-							return false;
-						}
-
-						free(save_src);
-						save_src = strdup(SB_cstr(p->token));
-						//printf("*** p->token=%s\n", save_src);
-
-						SB_init(p->token);
-						p->srcptr = save_src;
-						p->no_fp = 1;
-						tokenize(p, true, true);
-						p->no_fp = 0;
-						free(save_src);
-						//printf("*** src=%s\n", src);
-
-						p->srcptr = (char*)src;
-						p->was_consing = true;
-						p->is_quoted = false;
-						p->was_partial = true;
-						SB_init(p->token);
-						break;
-					} else if (*src != '"') {
-						src = (char*)save_src;
-						p->quote_char = 0;
 						break;
 					}
 
@@ -4369,7 +4217,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			break;
 		}
 
-		if ((p->was_string || p->is_string) && is_func) {
+		if ((p->was_string || p->is_string) && is_func && !p->double_bar) {
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: syntax error, near \"%s\", expected atom, %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_num);
 

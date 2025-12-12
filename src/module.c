@@ -89,6 +89,8 @@ static const op_table g_ops[] =
 	{"@", OP_FY, 100},			// used in mode declarations
 	{":", OP_FY, 100},			// used in mode declarations
 
+	{DOUBLE_BAR, OP_XFY, 1},
+
 	//{"$", OP_FX, 1},
 
 	{0,0,0}
