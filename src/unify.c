@@ -2,8 +2,6 @@
 
 #include "query.h"
 
-typedef struct { lnode hdr; cell *c1, *c2; pl_ctx c1_ctx, c2_ctx; } snode;
-
 static int compare_internal(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, unsigned depth);
 
 static int compare_lists(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, unsigned depth)
