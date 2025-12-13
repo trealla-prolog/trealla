@@ -623,7 +623,7 @@ static bool conditionals(parser *p, cell *d)
 
 	const char *dirname = C_STR(p, c);
 
-	if (!strcmp(dirname, "if") && (c->arity == 1) && !p->m->ifs_done[p->m->if_depth] && !p->m->ifs_blocked[p->m->if_depth]) {
+	if (!strcmp(dirname, "if") && (c->arity == 1) && !p->m->ifs_blocked[p->m->if_depth]) {
 		bool ok = goal_run(p, FIRST_ARG(c));
 		p->m->ifs_blocked[++p->m->if_depth] = !ok;
 		p->m->ifs_done[p->m->if_depth] = ok;
