@@ -341,8 +341,14 @@ append(F) :- open(F, append, S), set_output(S).
 :- help(print(+term), [iso(false)]).
 :- help(print(+stream,+term), [iso(false)]).
 
-print(T) :- current_output(S), format(S, "~p", [T]).
-print(S, T) :- format(S, "~p", [T]).
+print(T) :- current_output(S), format(S, "~s", [T]).
+print(S, T) :- format(S, "~s", [T]).
+
+:- help(println(+term), [iso(false)]).
+:- help(println(+stream,+term), [iso(false)]).
+
+println(T) :- current_output(S), format(S, "~s~n", [T]).
+println(S, T) :- format(S, "~s~n", [T]).
 
 :- help(open(+atom,+atom,--stream), [iso(true)]).
 
