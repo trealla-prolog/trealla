@@ -1732,6 +1732,11 @@ bool print_term(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 			return false;
 		}
 
+		if (ferror(fp)) {
+			SB_free(q->sb);
+			return throw_error(q, q->st.instr,q->st.cur_ctx, "system_error", "output,closed_stream");
+		}
+
 		len -= nbytes;
 		src += nbytes;
 	}
