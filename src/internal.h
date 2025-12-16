@@ -588,7 +588,7 @@ struct stream_ {
 	};
 
 	size_t data_len, alloc_nbytes;
-	int ungetch, srclen, chan;
+	int ungetch, srclen, chan, n;
 	unsigned rows, cols;
 	uint8_t level, eof_action;
 	bool ignore:1;

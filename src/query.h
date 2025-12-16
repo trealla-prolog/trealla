@@ -90,6 +90,7 @@ void make_call_redo(query *q, cell *tmp);
 bool do_post_unify_hook(query *q, bool is_builtin);
 bool any_attributed(query *q);
 bool do_load_file(query *q, cell *p1, pl_ctx p1_ctx);
+bool stream_close(query *q, int n);
 
 #if USE_THREADS
 bool do_signal(query *q, void *thread_ptr);

@@ -1633,6 +1633,12 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int
 			return false;
 		}
 
+		if (ferror(str->fp)) {
+			SB_free(q->sb);
+			stream_close(q, str->n);
+			return throw_error(q, q->st.instr,q->st.cur_ctx, "system_error", "output,closed_stream");
+		}
+
 		len -= nbytes;
 		src += nbytes;
 	}
@@ -1662,6 +1668,11 @@ bool print_canonical(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 			q->error = true;
 			SB_free(q->sb);
 			return false;
+		}
+
+		if (ferror(fp)) {
+			SB_free(q->sb);
+			return throw_error(q, q->st.instr,q->st.cur_ctx, "system_error", "output,closed_stream");
 		}
 
 		len -= nbytes;
@@ -1703,6 +1714,12 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int runn
 			q->error = true;
 			SB_free(q->sb);
 			return false;
+		}
+
+		if (ferror(str->fp)) {
+			SB_free(q->sb);
+			stream_close(q, str->n);
+			return throw_error(q, q->st.instr,q->st.cur_ctx, "system_error", "output,closed_stream");
 		}
 
 		len -= nbytes;

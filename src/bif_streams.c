@@ -490,6 +490,7 @@ int new_stream(prolog *pl)
 		stream *str = &pl->streams[n];
 
 		if (!str->fp && !str->ignore) {
+			str->n = n;
 			prolog_unlock(pl);
 			return n;
 		}
@@ -1711,7 +1712,7 @@ static bool bif_iso_open_4(query *q)
 	return true;
 }
 
-static bool stream_close(query *q, int n)
+bool stream_close(query *q, int n)
 {
 	stream *str = &q->pl->streams[n];
 	parser_destroy(str->p);
