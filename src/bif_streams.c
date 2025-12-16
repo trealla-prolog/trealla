@@ -2724,6 +2724,18 @@ bool parse_write_params(query *q, cell *c, pl_ctx c_ctx, cell **vnames, pl_ctx *
 		}
 
 		q->quoted = !CMP_STRING_TO_CSTR(q, c1, "true");
+	} else if (!CMP_STRING_TO_CSTR(q, c, "double_quotes")) {
+		if (is_var(c1)) {
+			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
+			return false;
+		}
+
+		if (!is_interned(c1) || (CMP_STRING_TO_CSTR(q, c1, "true") && CMP_STRING_TO_CSTR(q, c1, "false"))) {
+			throw_error(q, c, c_ctx, "domain_error", "write_option");
+			return false;
+		}
+
+		q->double_quotes = !CMP_STRING_TO_CSTR(q, c1, "true");
 	} else if (!CMP_STRING_TO_CSTR(q, c, "varnames")) {
 		if (is_var(c1)) {
 			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
@@ -2760,18 +2772,6 @@ bool parse_write_params(query *q, cell *c, pl_ctx c_ctx, cell **vnames, pl_ctx *
 		}
 
 		q->numbervars = !CMP_STRING_TO_CSTR(q, c1, "true");
-	} else if (!CMP_STRING_TO_CSTR(q, c, "double_quotes")) {
-		if (is_var(c1)) {
-			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
-			return false;
-		}
-
-		if (!is_interned(c1) || (CMP_STRING_TO_CSTR(q, c1, "true") && CMP_STRING_TO_CSTR(q, c1, "false"))) {
-			throw_error(q, c, c_ctx, "domain_error", "write_option");
-			return false;
-		}
-
-		q->double_quotes = !CMP_STRING_TO_CSTR(q, c1, "true");
 	} else if (!CMP_STRING_TO_CSTR(q, c, "variable_names")) {
 		if (is_var(c1)) {
 			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
