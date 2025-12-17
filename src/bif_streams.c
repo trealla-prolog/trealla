@@ -1644,6 +1644,9 @@ static bool bif_iso_open_4(query *q)
 			return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 	}
 
+	if (!S_ISREG(st.st_mode))
+		setvbuf(str->fp, NULL, _IONBF, 0);
+
 #if USE_MMAP
 	size_t offset = 0;
 #endif
@@ -7404,9 +7407,8 @@ static bool bif_portray_clause_1(query *q)
 	q->print_idx = 0;
 	q->double_quotes = true;
 	q->max_depth = 0;
+	q->fullstop = q->nl = true;
 	print_term(q, str->fp, p1, p1_ctx, 1);
-	fputc('.', str->fp);
-	fputc('\n', str->fp);
 	q->quoted = 0;
 	q->portray_vars = false;
 	clear_write_options(q);
@@ -7423,9 +7425,8 @@ static bool bif_portray_clause_2(query *q)
 	q->portray_vars = true;
 	q->print_idx = 0;
 	q->max_depth = 0;
+	q->fullstop = q->nl = true;
 	print_term(q, str->fp, p1, p1_ctx, 1);
-	fputc('.', str->fp);
-	fputc('\n', str->fp);
 	q->quoted = 0;
 	q->portray_vars = false;
 	clear_write_options(q);

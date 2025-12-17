@@ -1736,6 +1736,7 @@ bool print_term(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 	q->last_thing = WAS_SPACE;
 	SB_init(q->sb);
 	print_term_to_buf(q, c, c_ctx, running, false);
+	if (q->fullstop) SB_putchar(q->sb, '.');
 	if (q->nl) SB_putchar(q->sb, '\n');
 	const char *src = SB_cstr(q->sb);
 	ssize_t len = SB_strlen(q->sb);
