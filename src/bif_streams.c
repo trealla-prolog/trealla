@@ -1644,7 +1644,7 @@ static bool bif_iso_open_4(query *q)
 			return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 	}
 
-	if (!S_ISREG(st.st_mode))
+	if (S_ISFIFO(st.st_mode))
 		setvbuf(str->fp, NULL, _IONBF, 0);
 
 #if USE_MMAP
