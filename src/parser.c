@@ -1339,6 +1339,9 @@ static bool directives(parser *p, cell *d)
 	if (!strcmp(dirname, "discontiguous") && (c->arity == 1))
 		return true;
 
+	if (!strcmp(dirname, "multifile") && (c->arity == 1))
+		return true;
+
 	if (((!p->do_read_term)) && !p->pl->quiet) {
 		fprintf(stderr, "Warning: unknown directive: %s/%d\n", dirname, c->arity);
 		return true;
