@@ -256,6 +256,8 @@ list_sum(Xs, Sum) :-
 sum_list(Xs, Sum) :-
 	list_sum_(Xs, 0, Sum).
 
+:- help(sum_list(+list,?integer), [iso(false), deprecated(true), desc('Add all values of a list.')]).
+
 list_sum_([], Sum0, Sum) :-
 	Sum = Sum0.
 list_sum_([H|T], Sum0, Sum) :-
@@ -263,7 +265,6 @@ list_sum_([H|T], Sum0, Sum) :-
 	list_sum_(T, Sum1, Sum).
 
 :- help(list_sum(+list,?integer), [iso(false), desc('Add all values of a list.')]).
-:- help(sum_list(+list,?integer), [iso(false), desc('Add all values of a list.')]).
 
 list_max([H|T], Max) :-
 	list_max_(T, H, Max).
@@ -273,6 +274,8 @@ max_list([H|T], Max) :-
 	list_max_(T, H, Max).
 max_list([], _) :- fail.
 
+:- help(max_list(+list,?integer), [iso(false), deprecated(true), desc('Highest value in list.')]).
+
 list_max_([], Max0, Max) :-
 	Max = Max0.
 list_max_([H|T], Max0, Max) :-
@@ -280,7 +283,6 @@ list_max_([H|T], Max0, Max) :-
 	list_max_(T, Max1, Max).
 
 :- help(list_max(+list,?integer), [iso(false), desc('Highest value in list.')]).
-:- help(max_list(+list,?integer), [iso(false), desc('Highest value in list.')]).
 
 list_min([H|T], Min) :-
 	list_min_(T, H, Min).
@@ -290,6 +292,8 @@ min_list([H|T], Min) :-
 	list_min_(T, H, Min).
 min_list([], _) :- fail.
 
+:- help(min_list(+list,?integer), [iso(false), deprecated(true), desc('Lowest value in list.')]).
+
 list_min_([], Min0, Min) :-
 	Min = Min0.
 list_min_([H|T], Min0, Min) :-
@@ -297,7 +301,6 @@ list_min_([H|T], Min0, Min) :-
 	list_min_(T, Min1, Min).
 
 :- help(list_min(+list,?integer), [iso(false), desc('Lowest value in list.')]).
-:- help(min_list(+list,?integer), [iso(false), desc('Lowest value in list.')]).
 
 list_to_set(Ls0, Ls) :-
 		maplist(with_var, Ls0, LVs0),
@@ -333,20 +336,6 @@ is_set(Set) :-
 	length(Sorted, Len)
   .
 :- help(is_set(+list), [iso(false), desc('Is it a set.')]).
-
-%% length(?Xs, ?N).
-%
-% Relates a list to its length (number of elements). It can be used to count the elements of a current list or
-% to create a list full of free variables with N length.
-%
-% ```
-% ?- length("abc", 3).
-%    true.
-% ?- length("abc", N).
-%    N = 3.
-% ?- length(Xs, 3).
-%    Xs = [_A,_B,_C].
-% ```
 
 length(Xs0, N) :-
    '$skip_max_list'(M, N, Xs0,Xs),

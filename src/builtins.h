@@ -366,32 +366,6 @@ inline static cell *get_raw_arg(query *q, int n)
 		p_ctx = q->latest_ctx;										\
 	}
 
-#define RESTORE_VAR2(cc, cc_ctx, p, p_ctx, qvgen)					\
-	if (is_var(cc)) {												\
-		if (is_ref(cc))												\
-			cc_ctx = cc->val_ctx;									\
-																	\
-		const frame *f = GET_FRAME(cc_ctx);							\
-		slot *e = get_slot(q, f, cc->var_num);							\
-		e->vgen2 = 0;												\
-		p = deref(q, cc, cc_ctx);									\
-		p_ctx = q->latest_ctx;										\
-	}
-
-#define RESTORE_VAR_CHECKED(any, cc, cc_ctx, p, p_ctx, qvgen)		\
-	if (is_var(cc)) {												\
-		if (is_ref(cc))												\
-			cc_ctx = cc->val_ctx;									\
-																	\
-		const frame *f = GET_FRAME(cc_ctx);							\
-		slot *e = get_slot(q, f, cc->var_num);							\
-		if (e->vgen == qvgen) any = true;							\
-		e->vgen = 0;												\
-		p = deref(q, cc, cc_ctx);									\
-		p_ctx = q->latest_ctx;										\
-	}
-
-
 #define START_FUNCTION(q) { \
 	errno = 0; \
 	if (!q->eval) { \

@@ -64,7 +64,7 @@ bool throw_error2(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 size_t scan_is_chars_list2(query *q, cell *l, pl_ctx l_ctx, bool allow_codes, bool *has_var, bool *is_partial, cell **);
 size_t scan_is_chars_list(query *q, cell *l, pl_ctx l_ctx, bool allow_codes);
 char *chars_list_to_string(query *q, cell *p_chars, pl_ctx p_chars_ctx);
-cell *string_to_chars_list(query *q, cell *p, pl_ctx p_ctx);
+cell *string_to_chars_list(query *q, cell *p);
 
 int create_vars(query *q, unsigned cnt);
 cell *skip_max_list(query *q, cell *head, pl_ctx *head_ctx, pl_int max, pl_int *skip, cell *tmp);
@@ -90,6 +90,7 @@ void make_call_redo(query *q, cell *tmp);
 bool do_post_unify_hook(query *q, bool is_builtin);
 bool any_attributed(query *q);
 bool do_load_file(query *q, cell *p1, pl_ctx p1_ctx);
+bool stream_close(query *q, int n);
 
 #if USE_THREADS
 bool do_signal(query *q, void *thread_ptr);

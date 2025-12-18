@@ -490,6 +490,7 @@ int new_stream(prolog *pl)
 		stream *str = &pl->streams[n];
 
 		if (!str->fp && !str->ignore) {
+			str->n = n;
 			prolog_unlock(pl);
 			return n;
 		}
@@ -1643,6 +1644,9 @@ static bool bif_iso_open_4(query *q)
 			return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 	}
 
+	if (S_ISFIFO(st.st_mode))
+		setvbuf(str->fp, NULL, _IONBF, 0);
+
 #if USE_MMAP
 	size_t offset = 0;
 #endif
@@ -1711,7 +1715,7 @@ static bool bif_iso_open_4(query *q)
 	return true;
 }
 
-static bool stream_close(query *q, int n)
+bool stream_close(query *q, int n)
 {
 	stream *str = &q->pl->streams[n];
 	parser_destroy(str->p);
@@ -2724,6 +2728,18 @@ bool parse_write_params(query *q, cell *c, pl_ctx c_ctx, cell **vnames, pl_ctx *
 		}
 
 		q->quoted = !CMP_STRING_TO_CSTR(q, c1, "true");
+	} else if (!CMP_STRING_TO_CSTR(q, c, "double_quotes")) {
+		if (is_var(c1)) {
+			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
+			return false;
+		}
+
+		if (!is_interned(c1) || (CMP_STRING_TO_CSTR(q, c1, "true") && CMP_STRING_TO_CSTR(q, c1, "false"))) {
+			throw_error(q, c, c_ctx, "domain_error", "write_option");
+			return false;
+		}
+
+		q->double_quotes = !CMP_STRING_TO_CSTR(q, c1, "true");
 	} else if (!CMP_STRING_TO_CSTR(q, c, "varnames")) {
 		if (is_var(c1)) {
 			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
@@ -2760,18 +2776,6 @@ bool parse_write_params(query *q, cell *c, pl_ctx c_ctx, cell **vnames, pl_ctx *
 		}
 
 		q->numbervars = !CMP_STRING_TO_CSTR(q, c1, "true");
-	} else if (!CMP_STRING_TO_CSTR(q, c, "double_quotes")) {
-		if (is_var(c1)) {
-			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
-			return false;
-		}
-
-		if (!is_interned(c1) || (CMP_STRING_TO_CSTR(q, c1, "true") && CMP_STRING_TO_CSTR(q, c1, "false"))) {
-			throw_error(q, c, c_ctx, "domain_error", "write_option");
-			return false;
-		}
-
-		q->double_quotes = !CMP_STRING_TO_CSTR(q, c1, "true");
 	} else if (!CMP_STRING_TO_CSTR(q, c, "variable_names")) {
 		if (is_var(c1)) {
 			throw_error(q, c1, c_ctx, "instantiation_error", "write_option");
@@ -7403,9 +7407,8 @@ static bool bif_portray_clause_1(query *q)
 	q->print_idx = 0;
 	q->double_quotes = true;
 	q->max_depth = 0;
+	q->fullstop = q->nl = true;
 	print_term(q, str->fp, p1, p1_ctx, 1);
-	fputc('.', str->fp);
-	fputc('\n', str->fp);
 	q->quoted = 0;
 	q->portray_vars = false;
 	clear_write_options(q);
@@ -7422,9 +7425,8 @@ static bool bif_portray_clause_2(query *q)
 	q->portray_vars = true;
 	q->print_idx = 0;
 	q->max_depth = 0;
+	q->fullstop = q->nl = true;
 	print_term(q, str->fp, p1, p1_ctx, 1);
-	fputc('.', str->fp);
-	fputc('\n', str->fp);
 	q->quoted = 0;
 	q->portray_vars = false;
 	clear_write_options(q);
