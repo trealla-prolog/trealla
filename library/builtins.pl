@@ -168,10 +168,9 @@ print_goals_(Any, [Goal|Goals]) :-
 	print_goals_(false, Goals).
 
 dump_attvars_([], []).
-dump_attvars_([Var|Vars], [Gs|Rest]) :-
-	term_attributed_variables_(Var, Vs),
-	collect_goals_(Vs, [], Gs),
-	dump_attvars_(Vars, Rest).
+dump_attvars_(Vars, Gs) :-
+	term_attributed_variables_(Vars, Vs),
+	collect_goals_(Vs, [], Gs).
 
 dump_attvars_(Any) :-
 	'$list_attributed'(0, Vs0),
