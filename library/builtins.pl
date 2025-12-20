@@ -149,12 +149,16 @@ collect_goals_(V, [H|T], GsIn, GsOut) :-
 	!,
 	(Goal0 = [H2] -> Goal = H2 ; Goal = Goal0),
 	collect_goals_(V, T, [Goal|GsIn], GsOut).
+/*
 collect_goals_(V, [H|T], GsIn, GsOut) :-
 	nonvar(H),
 	H =.. [F, _],
 	attribute(M, F, 1),
 	Goal = M:put_atts(V, H),
 	collect_goals_(V, T, [Goal|GsIn], GsOut).
+*/
+collect_goals_(V, [_|T], GsIn, GsOut) :-
+	collect_goals_(V, T, GsIn, GsOut).
 
 collect_goals_([], GsIn, GsIn).
 collect_goals_([V|T], GsIn, GsOut) :-
