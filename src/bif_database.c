@@ -421,7 +421,7 @@ static bool bif_iso_asserta_1(query *q)
 	cell *h = get_head(p->cl->cells);
 
 	prolog_lock(q->pl);
-	rule *r = asserta_to_db(q->st.m, p->cl->num_vars, p->cl->cells, 0);
+	rule *r = asserta_to_db(q->st.m, p->cl->num_vars, p->cl->cells, false);
 	prolog_unlock(q->pl);
 
 	p->cl->cidx = 0;
@@ -436,7 +436,7 @@ static bool bif_iso_asserta_1(query *q)
 	return true;
 }
 
-static bool bif_iso_assertz_1(query *q)
+static bool do_assertz_1(query *q, bool consulting)
 {
 	GET_FIRST_ARG(p1,callable);
 	checked(init_tmp_heap(q));
@@ -479,7 +479,7 @@ static bool bif_iso_assertz_1(query *q)
 	cell *h = get_head(p->cl->cells);
 
 	prolog_lock(q->pl);
-	rule *r = assertz_to_db(q->st.m, p->cl->num_vars, p->cl->cells, false);
+	rule *r = assertz_to_db(q->st.m, p->cl->num_vars, p->cl->cells, consulting);
 	prolog_unlock(q->pl);
 
 	p->cl->cidx = 0;
@@ -492,6 +492,16 @@ static bool bif_iso_assertz_1(query *q)
 
 	db_log(q, r, LOG_ASSERTZ);
 	return true;
+}
+
+static bool bif_iso_assertz_1(query *q)
+{
+	return do_assertz_1(q, false);
+}
+
+static bool bif_sys_assertz_1(query *q)
+{
+	return do_assertz_1(q, true);
 }
 
 static bool do_asserta_2(query *q)
@@ -545,7 +555,7 @@ static bool do_asserta_2(query *q)
 	cell *h = get_head(p->cl->cells);
 
 	prolog_lock(q->pl);
-	rule *r = asserta_to_db(q->st.m, p->cl->num_vars, p->cl->cells, 0);
+	rule *r = asserta_to_db(q->st.m, p->cl->num_vars, p->cl->cells, false);
 	prolog_unlock(q->pl);
 
 	p->cl->cidx = 0;
@@ -1202,10 +1212,10 @@ builtins g_database_bifs[] =
 	{"$xlisting", 1, bif_sys_xlisting_1, "+predicate_indicator", false, false, BLAH},
 	{"$dlisting", 1, bif_sys_dlisting_1, "+predicate_indicator", false, false, BLAH},
 	{"$dump_term", 2, bif_sys_dump_term_2, "+term,+bool", false, false, BLAH},
-
 	{"$clause", 2, bif_sys_clause_2, "?term,?term", false, false, BLAH},
 	{"$clause", 3, bif_sys_clause_3, "?term,?term,-string", false, false, BLAH},
 	{"$retract_on_backtrack", 1, bif_sys_retract_on_backtrack_1, "+string", false, false, BLAH},
+	{"$assertz", 1, bif_sys_assertz_1, "+term", true, false, BLAH},
 
 	{"$a_", 2, bif_sys_asserta_2, "+term,+atom", true, false, BLAH},
 	{"$z_", 2, bif_sys_assertz_2, "+term,+atom", true, false, BLAH},
