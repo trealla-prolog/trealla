@@ -149,6 +149,14 @@ collect_goals_(V, [H|T], GsIn, GsOut) :-
 	!,
 	(Goal0 = [H2] -> Goal = H2 ; Goal = Goal0),
 	collect_goals_(V, T, [Goal|GsIn], GsOut).
+/*
+collect_goals_(V, [H|T], GsIn, GsOut) :-
+	nonvar(H),
+	H =.. [F, _],
+	attribute(M, F, 1),
+	Goal = M:put_atts(V, H),
+	collect_goals_(V, T, [Goal|GsIn], GsOut).
+*/
 collect_goals_(V, [_|T], GsIn, GsOut) :-
 	collect_goals_(V, T, GsIn, GsOut).
 
@@ -168,10 +176,8 @@ print_goals_(Any, [Goal|Goals]) :-
 	print_goals_(false, Goals).
 
 dump_attvars_([], []).
-dump_attvars_([Var|Vars], [Gs|Rest]) :-
-	term_attributed_variables_(Var, Vs),
-	collect_goals_(Vs, [], Gs),
-	dump_attvars_(Vars, Rest).
+dump_attvars_(Vars, Gs) :-
+	collect_goals_(Vars, [], Gs).
 
 dump_attvars_(Any) :-
 	'$list_attributed'(0, Vs0),
