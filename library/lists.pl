@@ -480,11 +480,11 @@ perm_(List, [First|Perm]) :-
 user:goal_expansion(maplist(G, L1), Goal) :-
 	nonvar(G), !,
 	gensym(maplist_, U),
-	Goal =.. [U, L1],
-	G1 =.. [U, []],
+	Goal =.. [U,L1],
+	G1 =.. [U,[]],
 	user:assertz(G1),
-	G2a =.. [U, [E1|T1]],
-	G2b =.. [U, T1],
+	G2a =.. [U,[E1|T1]],
+	G2b =.. [U,T1],
 	user:assertz((G2a :- call(G, E1), G2b)),
 	true.
 user:goal_expansion(maplist(G, L1), maplist(G, L1)).
@@ -492,11 +492,11 @@ user:goal_expansion(maplist(G, L1), maplist(G, L1)).
 user:goal_expansion(maplist(G, L1, L2), Goal) :-
 	nonvar(G), !,
 	gensym(maplist_, U),
-	Goal =.. [U, L1, L2],
-	G1 =.. [U, [], []],
+	Goal =.. [U,L1,L2],
+	G1 =.. [U,[],[]],
 	user:assertz(G1),
-	G2a =.. [U, [E1|T1], [E2|T2]],
-	G2b =.. [U, T1, T2],
+	G2a =.. [U,[E1|T1],[E2|T2]],
+	G2b =.. [U,T1,T2],
 	user:assertz((G2a :- call(G, E1, E2), G2b)),
 	true.
 user:goal_expansion(maplist(G, L1, L2), maplist(G, L1, L2)).
