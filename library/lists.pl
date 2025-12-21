@@ -479,7 +479,7 @@ perm_(List, [First|Perm]) :-
 
 user:goal_expansion(maplist(G, L1), Goal) :-
 	nonvar(G), !,
-	G =.. [_|Args],
+	term_variables(G, Args),
 	gensym(maplist_, U),
 	Goal =.. [U,Args,L1],
 	G1 =.. [U,Args,[]],
@@ -492,7 +492,7 @@ user:goal_expansion(maplist(G, L1), maplist(G, L1)).
 
 user:goal_expansion(maplist(G, L1, L2), Goal) :-
 	nonvar(G), !,
-	G =.. [_|Args],
+	term_variables(G, Args),
 	gensym(maplist_, U),
 	Goal =.. [U,Args,L1,L2],
 	G1 =.. [U,Args,[],[]],
