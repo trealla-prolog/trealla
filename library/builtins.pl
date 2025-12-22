@@ -761,3 +761,9 @@ goal_expansion(maplist(G, L1, L2), Goal) :-
 	true.
 goal_expansion(maplist(G, L1, L2), maplist(G, L1, L2)).
 
+goal_expansion(call_det(G, Det), Goal) :-
+	nonvar(G),
+	!,
+	Goal = ('$get_level'(L1), call(G), '$get_level'(L2), (L1 = L2 -> Det = true; Det = false)),
+	true.
+goal_expansion(call_det(G, V), call_det(G, V)).
