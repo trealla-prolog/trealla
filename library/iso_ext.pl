@@ -80,8 +80,8 @@ variant(X,Y) :-
 		subsumes_term(Y,XC)
 	).
 
-:- help(call_det(:callable,?boolean), [iso(false)]).
 :- meta_predicate(call_det(0,?)).
+:- help(call_det(:callable,?boolean), [iso(false)]).
 
 call_det(G, Det) :-
 	'$get_level'(L1),
