@@ -100,6 +100,7 @@
                  fd_sup/2,
                  fd_size/2,
                  fd_dom/2,
+                 do_queue/2,
 
                  % for use in predicates from library(reif)
                  clpz_t/2,
@@ -7799,7 +7800,7 @@ verify_attributes(Var, Other, Gs) :-
                 ),
                 domain_contains(Dom, Other),
                 phrase(trigger_props(Ps), [Q], [_]),
-                Gs = [phrase(do_queue, [Q], _)]
+                Gs = [phrase(clpz:do_queue, [Q], _)]
             ;   (   get_atts(Other, clpz(clpz_attr(_,_,_,OD,OPs,_))) ->
                     domains_intersection(OD, Dom, Dom1),
                     append_propagators(Ps, OPs, Ps1),
@@ -7807,7 +7808,7 @@ verify_attributes(Var, Other, Gs) :-
                     variables_same_queue([Var,Other]),
                     phrase((fd_put(Other,Dom1,Ps1),
                             trigger_props(Ps1)), [Q0], _),
-                    Gs = [phrase(do_queue, [Q0], _)]
+                    Gs = [phrase(clpz:do_queue, [Q0], _)]
                 ;   put_atts(Other, clpz(CLPZ)),
                     Gs = []
                 )
