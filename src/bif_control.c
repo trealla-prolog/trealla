@@ -254,17 +254,6 @@ static bool bif_iso_once_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 
-	if ((is_builtin(p1) && (p1->arity == 2)) || !p1->arity) {
-		checked(init_tmp_heap(q));
-		p1 = clone_term_to_tmp(q, p1, p1_ctx);
-		checked(p1);
-		p1_ctx = q->st.cur_ctx;
-		bool status;
-
-		if (!call_check(q, p1, &status, false))
-			return status;
-	}
-
 	if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
 		cell *cm = p1 + 1;
 		cm = deref(q, cm, p1_ctx);
@@ -285,6 +274,17 @@ static bool bif_iso_once_1(query *q)
 			return throw_error(q, p1, p1_ctx, "type_error", "callable");
 	}
 
+	if ((is_builtin(p1) && (p1->arity == 2)) || !p1->arity) {
+		checked(init_tmp_heap(q));
+		p1 = clone_term_to_tmp(q, p1, p1_ctx);
+		checked(p1);
+		p1_ctx = q->st.cur_ctx;
+		bool status;
+
+		if (!call_check(q, p1, &status, false))
+			return status;
+	}
+
 	cell *tmp = prepare_call(q, CALL_NOSKIP, p1, p1_ctx, 4);
 	checked(tmp);
 	tmp->flags &= ~FLAG_INTERNED_TAIL_CALL;
@@ -294,6 +294,10 @@ static bool bif_iso_once_1(query *q)
 	make_uint(tmp+num_cells++, q->cp);
 	make_call(q, tmp+num_cells);
 	checked(push_fail_on_retry_with_barrier(q));
+
+	if (is_tail_call(q->st.instr))
+		tmp->flags |= FLAG_INTERNED_TAIL_CALL;
+
 	q->st.instr = tmp;
 	return true;
 }
@@ -1214,8 +1218,8 @@ builtins g_control_bifs[] =
 	{"call", 6, bif_iso_call_n, ":callable,?term,?term,?term,?term,?term", true, false, BLAH},
 	{"call", 7, bif_iso_call_n, ":callable,?term,?term,?term,?term,?term,?term", true, false, BLAH},
 	{"call", 8, bif_iso_call_n, ":callable,?term,?term,?term,?term,?term,?term,?term", true, false, BLAH},
-	{"throw", 1, bif_iso_throw_1, "+term", true, false, BLAH},
 	{"once", 1, bif_iso_once_1, ":callable", true, false, BLAH},
+	{"throw", 1, bif_iso_throw_1, "+term", true, false, BLAH},
 	{"catch", 3, bif_iso_catch_3, ":callable,?term,:callable", true, false, BLAH},
 
 	{"*->", 2, bif_soft_if_then_2, ":callable,:callable", false, false, BLAH},

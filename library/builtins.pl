@@ -94,7 +94,13 @@ raw_argv(L) :- current_prolog_flag(raw_argv, L).
 	'$undo_trail'(Vars, State),
 	process_vars_(Vars, [], Goals),
 	'$redo_trail'(State),
-	maplist(once, Goals).
+	xmaplist_(Goals).
+
+xmaplist_([]).
+xmaplist_([E|T]) :-
+	once(E),
+	xmaplist_(T).
+
 
 process_vars_([], Goals, Goals).
 process_vars_([Var-Val|Vars], SoFar, Goals) :-
