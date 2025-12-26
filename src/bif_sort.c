@@ -297,7 +297,7 @@ static cell *nodesort4(query *q, cell *p1, pl_ctx p1_ctx, bool dedup, bool ascen
 	)
 	mergesort(base, cnt, sizeof(basepair), (void*)nodecmp_);
 #else
-	qsort(base, cnt, sizeof(basepair), (void*)nodecmp_);
+	qsort(base, cnt, sizeof(basepair), (void*)nodecmp);
 #endif
 
 	int vnbr = create_vars(q, vars);
@@ -393,8 +393,8 @@ static bool bif_sort_4(query *q)
 	bool status = false;
 	cell *l = nodesort4(q, p3, p3_ctx, dedup, ascending, arg, &status);
 	if (!l) return status;
-	GET_FIRST_ARG(p1x,list_or_nil);
-	GET_NEXT_ARG(p2x,list_or_nil_or_var);
+	GET_FIRST_ARG(p1x,integer);
+	GET_NEXT_ARG(p2x,atom);
 	GET_NEXT_ARG(p3x,list_or_nil);
 	GET_NEXT_ARG(p4x,list_or_nil_or_var);
 	return unify(q, p4x, p4x_ctx, l, q->st.cur_ctx);
