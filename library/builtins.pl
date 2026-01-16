@@ -231,7 +231,7 @@ bagof(T, G, L) :-
 	(var(L) -> true; must_be(L, list_or_partial_list, bagof/3, _)),
 	acyclic_term(G),
 	sys_globals_kernel_(T^G, W, H),
-	findall(W-T, H, J),
+	findall(W-[+T], H, J),
 	sys_same_vars_(J, _),
 	keysort(J, K),
 	sys_enum_runs_(K, W, L).
@@ -251,7 +251,7 @@ setof(T, G, L) :-
 	(var(L) -> true; must_be(L, list_or_partial_list, setof/3, _)),
 	acyclic_term(G),
 	sys_globals_kernel_(T^G, W, H),
-	findall(W-T, H, J),
+	findall(W-[+T], H, J),
 	sys_same_vars_(J, _),
 	sort(J, K),
 	sys_enum_runs_(K, W, L).
@@ -263,12 +263,12 @@ sys_same_vars_([K-_|L], V) :-
 sys_same_vars_([], _).
 
 % sys_enum_runs_(+Pairs, +Term, -List)
-sys_enum_runs_([K-V|L], W, Q) :-
+sys_enum_runs_([K-[+V]|L], W, Q) :-
 	sys_key_run_(L, K, R, H),
 	(K = W, Q = [V|R], (H = [], !; true); sys_enum_runs_(H, W, Q)).
 
 % sys_key_run_(+Pairs, +Term, -List, -Pairs)
-sys_key_run_([K-V|L], J, [V|R], H) :- K == J, !,
+sys_key_run_([K-[+V]|L], J, [V|R], H) :- K == J, !,
 	sys_key_run_(L, J, R, H).
 sys_key_run_(L, _, [], L).
 
