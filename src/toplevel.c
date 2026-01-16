@@ -344,7 +344,6 @@ void dump_vars(query *q, bool partial)
 	const frame *f = GET_FRAME(0);
 	q->is_dump_vars = true;
 	q->tab_idx = 0;
-	bool any = false;
 	clear_write_options(q);
 
 	// Build the ignore list for var name clashes....
@@ -377,7 +376,7 @@ void dump_vars(query *q, bool partial)
 	// dump them out...
 
 	cell *vlist = end_list(q);
-	bool want_space = false;
+	bool want_space = false, any = false, anons = false;
 	q->variable_names = vlist;
 	q->variable_names_ctx = 0;
 	q->print_idx = 0;
@@ -386,8 +385,10 @@ void dump_vars(query *q, bool partial)
 		if (!strcmp(GET_POOL(q, p->vartab.off[i]), "__G_"))
 			continue;
 
-		if (!strcmp(GET_POOL(q, p->vartab.off[i]), "_"))
+		if (!strcmp(GET_POOL(q, p->vartab.off[i]), "_")) {
+			anons = true;
 			continue;
+		}
 
 		if (q->pl->quiet && GET_POOL(q, p->vartab.off[i])[0] == '_')
 			continue;
@@ -481,7 +482,7 @@ void dump_vars(query *q, bool partial)
 		any = true;
 	}
 
-	bool any_atts = any_attributed(q);
+	bool any_atts = any && any_attributed(q);
 
 	if (any && any_atts)
 		fprintf(stdout, "%s", "");
