@@ -4826,7 +4826,10 @@ static bool bif_sys_evaluable_property_2(query *q)
 		return throw_error(q, p2, p2_ctx, "domain_error", "evaluable_property");
 
 	if (get_builtin_term(q->st.m, p1, &found, &evaluable), found) {
-		if (!evaluable)
+		if (!evaluable
+			&& CMP_STRING_TO_CSTR(q, p1, "integer")	// both evaluable & predicate
+			&& CMP_STRING_TO_CSTR(q, p1, "float")	// both evaluable & predicate
+			)
 			return false;
 
 		make_atom(&tmp, new_atom(q->pl, "built_in"));
