@@ -1,7 +1,14 @@
+# Installation paths
+PREFIX ?= /usr/local
+BINDIR ?= $(PREFIX)/bin
+LIBDIR ?= $(PREFIX)/share/trealla
+MANDIR ?= $(PREFIX)/share/man
+
 GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
 COMPILER_IS_GCC := $(shell $(CC) --version | grep -E -o 'g?cc')
 
 CFLAGS = -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' \
+	-DDEFAULT_LIBRARY_PATH='"$(LIBDIR)/library"' \
 	-O3 $(OPT) -D_GNU_SOURCE \
 	-Wall -Wextra \
 	-Wno-unused-but-set-variable \
@@ -167,9 +174,9 @@ endif
 
 OBJECTS = $(SRCOBJECTS) $(LIBOBJECTS)
 
-library/%.c: library/%.pl
+library/%.c: library/%.pl util/bin2c
 	echo '#include <stddef.h>' > $@
-	xxd -i $^ >> $@
+	./util/bin2c $< >> $@
 
 all: tpl
 
@@ -177,6 +184,10 @@ tpl: $(OBJECTS) Makefile README.md LICENSE
 	rm src/version.o
 	$(CC) $(CFLAGS) -o src/version.o -c src/version.c
 	$(CC) $(CFLAGS) -o tpl $(OBJECTS) $(OPT) $(LDFLAGS)
+
+util/bin2c: util/bin2c.c
+	$(CC) -o util/bin2c util/bin2c.c
+
 
 profile:
 	$(MAKE) 'OPT=$(OPT) -O0 -pg -DDEBUG'
@@ -187,8 +198,23 @@ debug:
 release:
 	$(MAKE) 'OPT=$(OPT) -DNDEBUG'
 
-install:
-	ln -s $(PWD)/tpl ~/bin/tpl
+install: all
+	mkdir -p $(DESTDIR)$(BINDIR)
+	mkdir -p $(DESTDIR)$(LIBDIR)
+	mkdir -p $(DESTDIR)$(MANDIR)/man1
+	cp tpl $(DESTDIR)$(BINDIR)/tpl
+	cp -r library $(DESTDIR)$(LIBDIR)/
+	cp man/trealla.1 $(DESTDIR)$(MANDIR)/man1/trealla.1
+	chmod 755 $(DESTDIR)$(BINDIR)/tpl
+	chmod 644 $(DESTDIR)$(MANDIR)/man1/trealla.1
+
+uninstall:
+	rm -f $(DESTDIR)$(BINDIR)/tpl
+	rm -f $(DESTDIR)$(MANDIR)/man1/trealla.1
+	rm -rf $(DESTDIR)$(LIBDIR)
+
+install-strip: install
+	strip $(DESTDIR)$(BINDIR)/tpl
 
 tpl.wasm:
 	$(MAKE) WASI=1 'OPT=$(OPT) -DNDEBUG'
@@ -197,10 +223,10 @@ wasm: tpl.wasm
 	$(WASMOPT) --enable-bulk-memory tpl.wasm -o tpl-opt.wasm -O4
 	mv tpl-opt.wasm tpl.wasm
 
-compile:
+compile: util/bin2c
 	echo '#include <stddef.h>' > main.c
 	cp $(main) main.pl
-	xxd -i main.pl >> main.c
+	./util/bin2c main.pl >> main.c
 	rm -f src/library.o
 	$(CC) $(CFLAGS) -o main.o -c main.c
 	$(CC) $(CFLAGS) -DUSE_MAIN=1 -o src/library.o -c src/library.c
@@ -221,7 +247,7 @@ clean:
 		src/*.o src/imath/*.o src/isocline/src/*.o src/sre/*.o \
 		library/*.o library/*.c *.o samples/*.o samples/*.so \
 		vgcore.* *.core core core.* *.exe gmon.* \
-		samples/*.xwam
+		samples/*.xwam util/bin2c
 	rm -f *.itf *.po *.xwam samples/*.itf samples/*.po
 
 # from [gcc|clang] -MM src/*.c src/imath/*.c src/isocline/src/*.c src/sre/*.c

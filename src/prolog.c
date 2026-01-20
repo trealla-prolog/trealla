@@ -704,6 +704,9 @@ prolog *pl_create()
 		g_init(pl);
 
 	if (!g_tpl_lib) {
+#ifdef DEFAULT_LIBRARY_PATH
+		g_tpl_lib = strdup(DEFAULT_LIBRARY_PATH);
+#else
 		g_tpl_lib = realpath(g_argv0, NULL);
 
 		if (g_tpl_lib) {
@@ -717,6 +720,7 @@ prolog *pl_create()
 			strcat(g_tpl_lib, "/library");
 		} else
 			g_tpl_lib = strdup("../library");
+#endif
 	}
 
 	CHECK_SENTINEL(pl->keyval = sl_create((void*)fake_strcmp, (void*)keyval_free, NULL), NULL);
