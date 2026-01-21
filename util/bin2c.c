@@ -20,8 +20,9 @@ int main(int argc, char *argv[]) {
     }
 
     // Sanitize var_name: replace non-alnum characters with '_'
+    long i;
 
-    for (int i = 0; var_name[i] != '\0'; i++) {
+    for (i = 0; var_name[i] != '\0'; i++) {
         char c = var_name[i];
         if (!((c >= 'a' && c <= 'z') ||
               (c >= 'A' && c <= 'Z') ||
@@ -44,7 +45,7 @@ int main(int argc, char *argv[]) {
     fseek(fp, 0, SEEK_SET);
 
     unsigned long long count = 0;
-    for (long i = 0; i < size; i++) {
+    for (i = 0; i < size; i++) {
         int c = fgetc(fp);
         if (count > 0) {
             printf(",");
