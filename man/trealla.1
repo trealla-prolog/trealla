@@ -1,0 +1,104 @@
+." Man page for trealla(1)
+.TH trealla 1 "January 2026" "Trealla Prolog" "User Commands"
+
+.SH NAME
+trealla, tpl \- A compact, efficient Prolog interpreter
+
+.SH SYNOPSIS
+.B tpl
+[\fIoptions\fR] [\fIfiles\fR] [\fB--\fR \fIargs\fR]
+
+.SH DESCRIPTION
+.B Trealla Prolog
+is a compact, efficient Prolog interpreter with ISO Prolog aspirations. It can be used to run Prolog scripts or as an interactive Read-Eval-Print Loop (REPL).
+
+It supports unbounded integers and rationals, UTF-8 atoms, and provides a rich standard library, including an FFI (Foreign Function Interface), concurrency, and database access.
+
+.SH OPTIONS
+.TP
+\fB-O0, --noopt\fR
+Disable optimization.
+.TP
+\fB-f\fR \fIfile\fR
+Load specified \fIfile\fR. The \fI~/.tplrc\fR file is not loaded.
+.TP
+\fB-l\fR \fIfile\fR
+Load specified \fIfile\fR. The \fI~/.tplrc\fR file is loaded.
+.TP
+\fB-g\fR \fIgoal\fR
+Query specified \fIgoal\fR. This option is only used once.
+.TP
+\fB--library\fR \fIpath\fR
+Set an alternative library path, overriding the TPL_LIBRARY_PATH environment variable.
+.TP
+\fB-t, --trace\fR
+Enable trace mode.
+.TP
+\fB-q, --quiet\fR
+Quiet mode, suppresses the startup banner.
+.TP
+\fB-v, --version\fR
+Display Trealla version.
+.TP
+\fB-h, --help\fR
+Display the help message.
+.TP
+\fB-d, --daemonize\fR
+Run the process as a daemon.
+.TP
+\fB-w, --watchdog\fR
+Create a watchdog process.
+.TP
+\fB--autofail\fR
+Cause toplevel queries to fail automatically after the first solution.
+.TP
+\fB--consult\fR
+Consult (load) Prolog source from standard input (STDIN).
+
+.SH FILES
+.TP
+\fI~/.tplrc\fR
+User startup file. It is consulted when the REPL starts unless the \fB-f\fR option is used.
+
+.SH ENVIRONMENT
+.TP
+\fBTPL_LIBRARY_PATH\fR
+Can be used to set the path where Trealla looks for its library files.
+
+.SH EXIT STATUS
+.B tpl
+exits with a status of 0 on success and with a non-zero value if an error occurs. The \fBhalt/1\fR predicate can be used to exit with a specific status code.
+
+.SH EXAMPLES
+.PP
+Start the interactive REPL:
+.RS
+.EX
+$ tpl
+?- write('Hello, World!'), nl.
+Hello, World!
+true.
+?- halt.
+.EE
+.RE
+.PP
+Run a script file:
+.RS
+.EX
+$ tpl my_script.pl
+.EE
+.RE
+.PP
+Execute a query from the command line and exit:
+.RS
+.EX
+$ tpl -g "member(3, [1,2,3]), halt."
+.EE
+.RE
+
+.SH AUTHOR
+Written by Andrew Davison and contributors.
+Project page: https://github.com/trealla-prolog/trealla
+
+.SH SEE ALSO
+swi-prolog(1), gprolog(1)

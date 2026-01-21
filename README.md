@@ -130,7 +130,7 @@ Written in plain-old C99.
 On Debian-like systems, you will need to install (if not alread( the following
 packages to set up a build environment:
 
-	sudo apt install build-essential git libreadline-dev libffi-dev libssl-dev xxd
+	sudo apt install build-essential git libreadline-dev libffi-dev libssl-dev
 
 Then...
 
@@ -177,15 +177,7 @@ and there should be no errors, Further (if valgrind is installed)...
 Should show no memory out-of-bounds, null-pointer, use after free
 or memory leaks (there may a few spurious errors).
 
-On *BSD* systems use *gmake* to build and do
 
-	pkg install xxd
-
-or
-
-	pkg install editors/vim   # if necessary
-
-to get the *xxd* utility.
 
 On macOS:
 

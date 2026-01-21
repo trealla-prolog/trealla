@@ -17,3 +17,4 @@ tpl
 *#
 *.gcda
 faultinject*
+util/bin2c
