@@ -178,9 +178,9 @@ library/%.c: library/%.pl util/bin2c
 	echo '#include <stddef.h>' > $@
 	./util/bin2c $< >> $@
 
-all: tpl util/bin2c
+all: tpl
 
-tpl: $(OBJECTS) Makefile README.md LICENSE
+tpl: $(OBJECTS) Makefile README.md LICENSE util/bin2c
 	rm src/version.o
 	$(CC) $(CFLAGS) -o src/version.o -c src/version.c
 	$(CC) $(CFLAGS) -o tpl $(OBJECTS) $(OPT) $(LDFLAGS)
