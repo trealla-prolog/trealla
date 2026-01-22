@@ -180,7 +180,7 @@ library/%.c: library/%.pl util/bin2c
 	echo '#include <stddef.h>' > $@
 	./util/bin2c $< >> $@
 
-all: tpl
+all: tpl util/bin2c
 
 tpl: $(OBJECTS) Makefile README.md LICENSE
 	rm src/version.o
