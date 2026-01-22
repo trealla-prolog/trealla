@@ -45,10 +45,15 @@ static int nodecmp(const void *ptr1, const void *ptr2)
 		return ok < 0 ? 1 : ok > 0 ? -1 : 0;
 }
 
+#if (defined __APPLE__ || defined __MACH__ || defined __DARWIN__	\
+	|| defined __FreeBSD__ || defined __DragonFly__ 				\
+	|| defined __NetBSD__  || defined __OpenBSD__ 					\
+	)
 static int nodecmp_(const void *ptr1, const void *ptr2, const void *data)
 {
 	return nodecmp(ptr1, ptr2);
 }
+#endif
 
 static cell *nodesort(query *q, cell *p1, pl_ctx p1_ctx, bool dedup, bool keysort, bool *status)
 {
