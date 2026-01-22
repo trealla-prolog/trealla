@@ -187,7 +187,7 @@ tpl: $(OBJECTS) Makefile README.md LICENSE
 	$(CC) $(CFLAGS) -o src/version.o -c src/version.c
 	$(CC) $(CFLAGS) -o tpl $(OBJECTS) $(OPT) $(LDFLAGS)
 
-util/bin2c: util/bin2c.c
+util/bin2c: util/bin2c.o
 	$(HOST_CC) -o util/bin2c util/bin2c.c
 
 
@@ -249,10 +249,12 @@ clean:
 		src/*.o src/imath/*.o src/isocline/src/*.o src/sre/*.o \
 		library/*.o library/*.c *.o samples/*.o samples/*.so \
 		vgcore.* *.core core core.* *.exe gmon.* \
-		samples/*.xwam util/bin2c
+		samples/*.xwam util/*.o util/bin2c
 	rm -f *.itf *.po *.xwam samples/*.itf samples/*.po
 
 # from [gcc|clang] -MM src/*.c src/imath/*.c src/isocline/src/*.c src/sre/*.c
+
+util/bin2c.o: util/bin2c.c
 
 src/base64.o: src/base64.c src/base64.h
 src/bif_atts.o: src/bif_atts.c src/threads.h src/heap.h src/internal.h src/trealla.h \
