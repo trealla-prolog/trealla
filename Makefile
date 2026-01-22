@@ -186,7 +186,7 @@ tpl: $(OBJECTS) Makefile README.md LICENSE
 	$(CC) $(CFLAGS) -o tpl $(OBJECTS) $(OPT) $(LDFLAGS)
 
 util/bin2c: util/bin2c.o
-	$(CC) -o util/bin2c util/bin2c.o
+	$(CC) $(CFLAGS) -o util/bin2c util/bin2c.o $(OPT) $(LDFLAGS)
 
 
 profile:
