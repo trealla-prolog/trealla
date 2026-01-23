@@ -188,7 +188,7 @@ tpl: $(OBJECTS) Makefile README.md LICENSE
 	$(CC) $(CFLAGS) -o tpl $(OBJECTS) $(OPT) $(LDFLAGS)
 
 util/bin2c: util/bin2c.c
-	$(HOST_CC) -o util/bin2c util/bin2c.c
+	$(HOST_CC) -o util/bin2c -std=c99 util/bin2c.c
 
 
 profile:
