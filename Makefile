@@ -4,6 +4,8 @@ BINDIR ?= $(PREFIX)/bin
 LIBDIR ?= $(PREFIX)/share/trealla
 MANDIR ?= $(PREFIX)/share/man
 
+HOST_CC ?= cc
+
 GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
 COMPILER_IS_GCC := $(shell $(CC) --version | grep -E -o 'g?cc')
 
@@ -180,13 +182,13 @@ library/%.c: library/%.pl util/bin2c
 
 all: tpl
 
-tpl: $(OBJECTS) Makefile README.md LICENSE util/bin2c
+tpl: $(OBJECTS) Makefile README.md LICENSE
 	rm src/version.o
 	$(CC) $(CFLAGS) -o src/version.o -c src/version.c
 	$(CC) $(CFLAGS) -o tpl $(OBJECTS) $(OPT) $(LDFLAGS)
 
-util/bin2c: util/bin2c.o
-	$(CC) $(CFLAGS) -o util/bin2c util/bin2c.o $(OPT) $(LDFLAGS)
+util/bin2c: util/bin2c.c
+	$(HOST_CC) -o util/bin2c util/bin2c.c
 
 
 profile:
@@ -216,7 +218,7 @@ uninstall:
 install-strip: install
 	strip $(DESTDIR)$(BINDIR)/tpl
 
-tpl.wasm: util/bin2c
+tpl.wasm:
 	$(MAKE) WASI=1 'OPT=$(OPT) -DNDEBUG'
 
 wasm: tpl.wasm
@@ -247,12 +249,10 @@ clean:
 		src/*.o src/imath/*.o src/isocline/src/*.o src/sre/*.o \
 		library/*.o library/*.c *.o samples/*.o samples/*.so \
 		vgcore.* *.core core core.* *.exe gmon.* \
-		samples/*.xwam util/*.o util/bin2c
+		samples/*.xwam util/bin2c
 	rm -f *.itf *.po *.xwam samples/*.itf samples/*.po
 
 # from [gcc|clang] -MM src/*.c src/imath/*.c src/isocline/src/*.c src/sre/*.c
-
-util/bin2c.o: util/bin2c.c
 
 src/base64.o: src/base64.c src/base64.h
 src/bif_atts.o: src/bif_atts.c src/threads.h src/heap.h src/internal.h src/trealla.h \
