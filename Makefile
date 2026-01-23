@@ -4,8 +4,6 @@ BINDIR ?= $(PREFIX)/bin
 LIBDIR ?= $(PREFIX)/share/trealla
 MANDIR ?= $(PREFIX)/share/man
 
-HOST_CC ?= cc
-
 GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
 COMPILER_IS_GCC := $(shell $(CC) --version | grep -E -o 'g?cc')
 
@@ -188,7 +186,7 @@ tpl: $(OBJECTS) Makefile README.md LICENSE
 	$(CC) $(CFLAGS) -o tpl $(OBJECTS) $(OPT) $(LDFLAGS)
 
 util/bin2c: util/bin2c.c
-	$(HOST_CC) -o util/bin2c util/bin2c.c
+	$(CC) -std=c99 -o util/bin2c util/bin2c.c
 
 
 profile:
