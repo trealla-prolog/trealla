@@ -216,7 +216,7 @@ uninstall:
 install-strip: install
 	strip $(DESTDIR)$(BINDIR)/tpl
 
-tpl.wasm:
+tpl.wasm: util/bin2c
 	$(MAKE) WASI=1 'OPT=$(OPT) -DNDEBUG'
 
 wasm: tpl.wasm
