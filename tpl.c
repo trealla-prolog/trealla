@@ -387,7 +387,16 @@ int main(int ac, char *av[], char * envp[])
 				break;
 			}
 
-			line[strlen(line)-1] = '\0';
+			size_t len = strlen(line);
+
+			while (len && iswspace(line[len-1]))
+				len--;
+
+			if (len && (line[len-1] != '.')) {
+				fprintf(stderr, "Error: error(syntax_error(unterminated),read_term/3)\n");
+				pl_destroy(pl);
+				return 1;
+			}
 		}
 
 		const char *src = line;
