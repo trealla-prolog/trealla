@@ -341,7 +341,7 @@ int main(int ac, char *av[], char * envp[])
 		return halt_code;
 	}
 
-	if (version)
+	if (version || isatty(0))
 		printf("Trealla Prolog (c) Infradig 2020, %s\n", g_version);
 
 	if (version == 2) {
