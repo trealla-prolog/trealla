@@ -1224,6 +1224,7 @@ static bool bif_process_create_3(query *q)
 				posix_spawn_file_actions_adddup2(&file_actions, fds[0], 0);
 				q->pl->streams[n].fp = fdopen(fds[1], "w");
 				q->pl->streams[n].pipe = true;
+				checked(q->pl->streams[n].mode = strdup("write"));
 				cell tmp;
 				make_int(&tmp, n);
 				tmp.flags |= FLAG_INT_STREAM;
@@ -1248,6 +1249,7 @@ static bool bif_process_create_3(query *q)
 				posix_spawn_file_actions_adddup2(&file_actions, fds[1], 1);
 				q->pl->streams[n].fp = fdopen(fds[0], "r");
 				q->pl->streams[n].pipe = true;
+				checked(q->pl->streams[n].mode = strdup("read"));
 				cell tmp;
 				make_int(&tmp, n);
 				tmp.flags |= FLAG_INT_STREAM;
@@ -1272,6 +1274,7 @@ static bool bif_process_create_3(query *q)
 				posix_spawn_file_actions_adddup2(&file_actions, fds[1], 2);
 				q->pl->streams[n].fp = fdopen(fds[0], "r");
 				q->pl->streams[n].pipe = true;
+				checked(q->pl->streams[n].mode = strdup("read"));
 				cell tmp;
 				make_int(&tmp, n);
 				tmp.flags |= FLAG_INT_STREAM;
