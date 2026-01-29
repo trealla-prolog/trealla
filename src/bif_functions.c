@@ -1704,9 +1704,6 @@ static bool bif_iso_powi_2(query *q)
 			return true;
 		}
 
-		if (p2.val_int > (INT32_MAX/2))
-			return throw_error(q, &p2, q->st.cur_ctx, "resource_error", "memory");
-
 		if (mp_int_expt_value(p1.val_int, p2.val_int, &q->tmp_ival) != MP_OK)
 			return throw_error(q, &p1, q->st.cur_ctx, "resource_error", "memory");
 
