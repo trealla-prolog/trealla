@@ -27,7 +27,7 @@ bool is_graphic(int ch)
 char *slicedup(const char *s, size_t n)
 {
 	char *ptr = malloc(n+1);
-	ensure (ptr);
+	ENSURE (ptr);
 	memcpy(ptr, s, n);
 	ptr[n] = '\0';
 	return ptr;
@@ -342,7 +342,7 @@ static bool make_room(parser *p, unsigned num)
 		pl_idx num_cells = (p->cl->num_allocated_cells + num) * 3 / 2;
 
 		clause *cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*num_cells));
-		ensure(cl);
+		ENSURE(cl);
 		p->cl = cl;
 		p->cl->num_allocated_cells = num_cells;
 	}
@@ -395,12 +395,12 @@ void parser_destroy(parser *p)
 parser *parser_create(module *m)
 {
 	parser *p = calloc(1, sizeof(parser));
-	ensure(p);
+	ENSURE(p);
 	p->pl = m->pl;
 	p->m = m;
 	pl_idx num_cells = INITIAL_NBR_CELLS;
 	p->cl = calloc(1, sizeof(clause)+(sizeof(cell)*num_cells));
-	ensure(p->cl, free(p));
+	ENSURE(p->cl, free(p));
 	p->cl->num_allocated_cells = num_cells;
 	p->start_term = true;
 	p->flags = m->flags;
@@ -431,7 +431,7 @@ static void consultall(parser *p, cell *l)
 char *relative_to(const char *basefile, const char *relfile)
 {
 	char *tmpbuf = malloc(strlen(basefile) + strlen(relfile) + 256);
-	ensure(tmpbuf);
+	ENSURE(tmpbuf);
 	char *ptr = tmpbuf;
 
 	if (!strncmp(relfile, "../", 3) || !strchr(relfile, '/')) {
@@ -754,7 +754,7 @@ static bool directives(parser *p, cell *d)
 		q.st.m = p->m;
 		char *dst = print_term_to_strbuf(&q, p1, p1_ctx, 0);
 		builtins *ptr = calloc(1, sizeof(builtins));
-		ensure(ptr);
+		ENSURE(ptr);
 		ptr->name = strdup(C_STR(p, p1));
 		ptr->arity = p1->arity;
 		ptr->m = p->m;
@@ -1592,7 +1592,7 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 	}
 
 	cell *c = make_a_cell(p);
-	ensure(c);
+	ENSURE(c);
 	c->tag = TAG_END;
 	c->num_cells = 1;
 }
@@ -2868,7 +2868,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 		if (mp_int_to_int(&v2, &val) == MP_RANGE) {
 			p->v.val_bigint = malloc(sizeof(bigint));
-			ensure(p->v.val_bigint);
+			ENSURE(p->v.val_bigint);
 			p->v.val_bigint->refcnt = 1;
 			mp_int_init_copy(&p->v.val_bigint->ival, &v2);
 			if (neg) p->v.val_bigint->ival.sign = MP_NEG;
@@ -2890,7 +2890,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 		if (mp_int_to_int(&v2, &val) == MP_RANGE) {
 			p->v.val_bigint = malloc(sizeof(bigint));
-			ensure(p->v.val_bigint);
+			ENSURE(p->v.val_bigint);
 			p->v.val_bigint->refcnt = 1;
 			mp_int_init_copy(&p->v.val_bigint->ival, &v2);
 			if (neg) p->v.val_bigint->ival.sign = MP_NEG;
@@ -2912,7 +2912,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 		if (mp_int_to_int(&v2, &val) == MP_RANGE) {
 			p->v.val_bigint = malloc(sizeof(bigint));
-			ensure(p->v.val_bigint);
+			ENSURE(p->v.val_bigint);
 			p->v.val_bigint->refcnt = 1;
 			mp_int_init_copy(&p->v.val_bigint->ival, &v2);
 			if (neg) p->v.val_bigint->ival.sign = MP_NEG;
@@ -2977,7 +2977,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 
 	if (mp_int_to_int(&v2, &val) == MP_RANGE) {
 		p->v.val_bigint = malloc(sizeof(bigint));
-		ensure(p->v.val_bigint);
+		ENSURE(p->v.val_bigint);
 		p->v.val_bigint->refcnt = 1;
 		mp_int_init_copy(&p->v.val_bigint->ival, &v2);
 		if (neg) p->v.val_bigint->ival.sign = MP_NEG;
@@ -3859,7 +3859,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 		if (!p->quote_char && !SB_strcmp(p->token, "{")) {
 			save_idx = p->cl->cidx;
 			cell *c = make_interned(p, g_braces_s);
-			ensure(c);
+			ENSURE(c);
 			c->arity = 1;
 			p->start_term = true;
 			p->nesting_braces++;
@@ -4317,7 +4317,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 			if (!p->is_number_chars) {
 				c->val_off = new_atom(p->pl, SB_cstr(p->token));
-				ensure(c->val_off != ERR_IDX);
+				ENSURE(c->val_off != ERR_IDX);
 			}
 		} else {
 			c->tag = TAG_CSTR;

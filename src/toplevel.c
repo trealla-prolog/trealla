@@ -278,7 +278,7 @@ static void	clear_results()
 static void add_result(int num, cell *c, pl_ctx c_ctx)
 {
 	item *ptr = malloc(sizeof(item));
-	ensure(ptr);
+	ENSURE(ptr);
 	ptr->c = c;
 	ptr->c_ctx = c_ctx;
 	ptr->num = num;

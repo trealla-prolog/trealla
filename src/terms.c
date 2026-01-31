@@ -129,7 +129,7 @@ void collect_vars(query *q, cell *p1, pl_ctx p1_ctx)
 {
 	if (++q->vgen == 0) q->vgen = 1;
 	q->tab_idx = 0;
-	ensure(q->vars = sl_create(NULL, NULL, NULL));
+	ENSURE(q->vars = sl_create(NULL, NULL, NULL));
 	collect_vars_internal(q, p1, p1_ctx, 0);
 	sl_destroy(q->vars);
 	q->vars = NULL;
