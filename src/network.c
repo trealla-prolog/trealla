@@ -425,7 +425,7 @@ int net_getline(char **lineptr, size_t *n, stream *str)
 	if (str->ssl) {
 		if (!*lineptr) {
 			*lineptr = malloc(*n=1024);
-			ensure(*lineptr);
+			ENSURE(*lineptr);
 		}
 
 		char *dst = *lineptr;
@@ -452,7 +452,7 @@ int net_getline(char **lineptr, size_t *n, stream *str)
 					size_t savelen = dst - *lineptr;
 					*n *= 2;
 					*lineptr = realloc(*lineptr, *n);
-					ensure(*lineptr);
+					ENSURE(*lineptr);
 					dst = *lineptr + savelen;
 					dstlen = *n - savelen;
 				}

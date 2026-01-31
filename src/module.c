@@ -131,7 +131,7 @@ static const char *set_known(module *m, const char *filename)
 	}
 
 	ptr = malloc(sizeof(loaded_file));
-	ensure(ptr);
+	ENSURE(ptr);
 	ptr->next = m->loaded_files;
 	ptr->orig_filename = strdup(filename);
 	ptr->filename = strdup(filename);
@@ -155,7 +155,7 @@ static const char *set_loaded(module *m, const char *filename, const char *orig_
 	}
 
 	ptr = malloc(sizeof(loaded_file));
-	ensure(ptr);
+	ENSURE(ptr);
 	ptr->next = m->loaded_files;
 	ptr->orig_filename = strdup(orig_filename);
 	ptr->filename = strdup(filename);
@@ -365,7 +365,7 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 	}
 
 	predicate *pr = calloc(1, sizeof(predicate));
-	ensure(pr);
+	ENSURE(pr);
 	list_push_back(&m->predicates, pr);
 
 	if (created)
@@ -476,7 +476,7 @@ void create_goal_expansion(module *m, cell *c)
 		return;
 
 	pi *g = calloc(1, sizeof(pi));
-	ensure(g);
+	ENSURE(g);
 	g->prev = m->gex_tail;
 
 	if (m->gex_tail)
@@ -788,7 +788,7 @@ void set_discontiguous_in_db(module *m, const char *name, unsigned arity)
 	cell tmp = (cell){0};
 	tmp.tag = TAG_INTERNED;
 	tmp.val_off = new_atom(m->pl, name);
-	ensure(tmp.val_off != ERR_IDX);
+	ENSURE(tmp.val_off != ERR_IDX);
 	tmp.arity = arity;
 	predicate *pr = find_predicate(m, &tmp);
 	if (!pr) pr = create_predicate(m, &tmp, NULL);
@@ -805,7 +805,7 @@ void set_multifile_in_db(module *m, const char *name, pl_idx arity)
 	cell tmp = (cell){0};
 	tmp.tag = TAG_INTERNED;
 	tmp.val_off = new_atom(m->pl, name);
-	ensure(tmp.val_off != ERR_IDX);
+	ENSURE(tmp.val_off != ERR_IDX);
 	tmp.arity = arity;
 	predicate *pr = find_predicate(m, &tmp);
 	if (!pr) pr = create_predicate(m, &tmp, NULL);
@@ -822,7 +822,7 @@ void set_dynamic_in_db(module *m, const char *name, unsigned arity)
 	cell tmp = (cell){0};
 	tmp.tag = TAG_INTERNED;
 	tmp.val_off = new_atom(m->pl, name);
-	ensure(tmp.val_off != ERR_IDX);
+	ENSURE(tmp.val_off != ERR_IDX);
 	tmp.arity = arity;
 	predicate *pr = find_predicate(m, &tmp);
 	if (!pr) pr = create_predicate(m, &tmp, NULL);
@@ -841,7 +841,7 @@ void set_meta_predicate_in_db(module *m, cell *c)
 	cell tmp = (cell){0};
 	tmp.tag = TAG_INTERNED;
 	tmp.val_off = new_atom(m->pl, name);
-	ensure(tmp.val_off != ERR_IDX);
+	ENSURE(tmp.val_off != ERR_IDX);
 	tmp.arity = arity;
 	predicate *pr = find_predicate(m, &tmp);
 	if (!pr) pr = create_predicate(m, &tmp, NULL);
@@ -946,7 +946,7 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 				continue;
 
 			char *src = malloc(*lib->len+1);
-			ensure(src);
+			ENSURE(src);
 			memcpy(src, lib->start, *lib->len);
 			src[*lib->len] = '\0';
 			SB(s1);
@@ -978,7 +978,7 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 			continue;
 
 		char *src = malloc(*lib->len+1);
-		ensure(src);
+		ENSURE(src);
 		memcpy(src, lib->start, *lib->len);
 		src[*lib->len] = '\0';
 		SB(s1);
@@ -1274,7 +1274,7 @@ static bool set_op_internal(module *m, const char *name, unsigned specifier, uns
 
 	sl_done(iter);
 	op_table *tmp = malloc(sizeof(op_table));
-	ensure(tmp);
+	ENSURE(tmp);
 	tmp->name = set_known(m, name);
 	tmp->priority = priority;
 	tmp->specifier = specifier;
@@ -1945,7 +1945,7 @@ static rule *assert_begin(module *m, unsigned num_vars, cell *p1, bool consultin
 
 	size_t dbe_size = sizeof(rule) + (sizeof(cell) * (p1->num_cells+1));
 	rule *r = calloc(1, dbe_size);
-	ensure(r);
+	ENSURE(r);
 	copy_cells(r->cl.cells, p1, p1->num_cells);
 	r->cl.cells[p1->num_cells] = (cell){0};
 	r->cl.cells[p1->num_cells].tag = TAG_END;
@@ -1979,11 +1979,11 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 			return;
 
 		pr->idx1 = sl_create(index_cmpkey, NULL, m);
-		ensure(pr->idx1);
+		ENSURE(pr->idx1);
 
 		if (pr->key.arity > 1) {
 			pr->idx2 = sl_create(index_cmpkey, NULL, m);
-			ensure(pr->idx2);
+			ENSURE(pr->idx2);
 		}
 
 		for (rule *cl2 = pr->head; cl2; cl2 = cl2->next) {
@@ -2206,7 +2206,7 @@ bool unload_file(module *m, const char *filename)
 {
 	size_t len = strlen(filename);
 	char *tmpbuf = malloc(len + 20);
-	ensure(tmpbuf);
+	ENSURE(tmpbuf);
 	memcpy(tmpbuf, filename, len+1);
 
 	if (tmpbuf[0] == '~') {
@@ -2214,7 +2214,7 @@ bool unload_file(module *m, const char *filename)
 
 		if (ptr) {
 			tmpbuf = realloc(tmpbuf, strlen(ptr) + 10 + strlen(filename) + 20);
-			ensure(tmpbuf);
+			ENSURE(tmpbuf);
 			strcpy(tmpbuf, ptr);
 			strcat(tmpbuf, filename+1);
 			convert_path(tmpbuf);
@@ -2482,7 +2482,7 @@ module *load_file(module *m, const char *filename, bool including, bool init)
 
 	if ((st.st_mode & S_IFMT) == S_IFDIR) {
 		char *tmpbuf = malloc(strlen(orig_filename)+20);
-		ensure(tmpbuf);
+		ENSURE(tmpbuf);
 		strcpy(tmpbuf, orig_filename);
 		strcat(tmpbuf, ".pl");
 		m = load_file(m, tmpbuf, including, init);
@@ -2604,7 +2604,7 @@ void module_duplicate(prolog *pl, module *m, const char *name, unsigned arity)
 module *module_create(prolog *pl, const char *name)
 {
 	module *m = calloc(1, sizeof(module));
-	ensure(m);
+	ENSURE(m);
 
 	m->pl = pl;
 	m->filename = set_known(m, name);
@@ -2622,7 +2622,7 @@ module *module_create(prolog *pl, const char *name)
 	if (strcmp(name, "system")) {
 		for (const op_table *ptr = g_ops; ptr->name; ptr++) {
 			op_table *tmp = malloc(sizeof(op_table));
-			ensure(tmp);
+			ENSURE(tmp);
 			memcpy(tmp, ptr, sizeof(op_table));
 			sl_app(m->defops, tmp->name, tmp);
 		}

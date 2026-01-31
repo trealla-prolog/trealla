@@ -74,7 +74,7 @@ LOOP:
 	if (cmd) {
 		size_t n = strlen(cmd) + strlen(line);
 		cmd = realloc(cmd, n+1);
-		ensure(cmd);
+		ENSURE(cmd);
 		strcat(cmd, line);
 	} else {
 		cmd = strdup(line);
@@ -108,7 +108,7 @@ LOOP:
 
 		if (ch == 0) {
 			cmd = realloc(cmd, strlen(cmd)+1+1);
-			ensure(cmd);
+			ENSURE(cmd);
 			strcat(cmd, "\n");
 			prompt = "";
 			goto LOOP;
@@ -332,7 +332,7 @@ LOOP:
 	if (cmd) {
 		size_t n = strlen(cmd) + strlen(line);
 		cmd = realloc(cmd, n+1);
-		ensure(cmd);
+		ENSURE(cmd);
 		strcat(cmd, line);
 	} else {
 		cmd = strdup(line);
@@ -357,7 +357,7 @@ LOOP:
 
 		if (ch == 0) {
 			cmd = realloc(cmd, strlen(cmd)+1+1);
-			ensure(cmd);
+			ENSURE(cmd);
 			strcat(cmd, "\n");
 			prompt = "";
 			goto LOOP;

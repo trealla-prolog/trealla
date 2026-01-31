@@ -173,7 +173,7 @@ static int new_thread(prolog *pl)
 void thread_initialize(prolog *pl)
 {
 	int n = new_thread(pl);
-	ensure(n >= 0);
+	ENSURE(n >= 0);
 	thread *t = &pl->threads[n];
 	if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	sl_app(t->alias, strdup("main"), NULL);
@@ -540,7 +540,7 @@ static void do_unlock_all(prolog *pl)
 static void *start_routine_thread(thread *t)
 {
 	prolog *pl = pl_create();
-	ensure(pl);
+	ENSURE(pl);
 	pl->my_chan = t->chan;
 	pl_consult(pl, t->filename);
 	t->is_active = false;
@@ -853,7 +853,7 @@ bool do_signal(query *q, void *thread_ptr)
 	unshare_cells(c, c->num_cells);
 	free(m);
 	cell *tmp = prepare_call(q, CALL_NOSKIP, c, q->st.cur_ctx, 1);
-	ensure(tmp);
+	ENSURE(tmp);
 	pl_idx num_cells = c->num_cells;
 	make_call(q, tmp+num_cells);
 	q->st.instr = tmp;

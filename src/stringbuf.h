@@ -19,7 +19,7 @@ typedef struct {
 #define SB_alloc(pr,len) stringbuf pr##_buf; 					\
 	pr##_buf.buf_size = len;									\
 	pr##_buf.buf = malloc((len)+1);								\
-	ensure(pr##_buf.buf);										\
+	ENSURE(pr##_buf.buf);										\
 	pr##_buf.dst = pr##_buf.buf;								\
 	*pr##_buf.dst = '\0';
 
@@ -36,7 +36,7 @@ typedef struct {
 			if (pr##_buf.buf) 									\
 				memcpy(pr##_buf.buf, pr##_buf.tmpbuf, offset+1);\
 		}														\
-		ensure(pr##_buf.buf);									\
+		ENSURE(pr##_buf.buf);									\
 		pr##_buf.dst = pr##_buf.buf + offset;					\
 	}															\
 }

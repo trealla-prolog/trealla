@@ -1572,7 +1572,7 @@ static bool any_outstanding_choices(query *q)
 void do_cleanup(query *q, cell *c, pl_ctx c_ctx)
 {
 	cell *tmp = prepare_call(q, CALL_NOSKIP, c, c_ctx, 4);
-	ensure(tmp);
+	ENSURE(tmp);
 	pl_idx num_cells = c->num_cells;
 	make_instr(tmp+num_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
@@ -1867,7 +1867,7 @@ query *query_create(module *m)
 {
 	static pl_atomic uint64_t g_query_id = 0;
 	query *q = calloc(1, sizeof(query));
-	ensure(q);
+	ENSURE(q);
 	q->p = parser_create(m);
 	q->flags.occurs_check = false;
 	q->qid = g_query_id++;
@@ -1895,10 +1895,10 @@ query *query_create(module *m)
 	q->slots_size = INITIAL_NBR_SLOTS;
 	q->trails_size = INITIAL_NBR_TRAILS;
 
-	ensure(q->frames = calloc(q->frames_size, sizeof(frame)), NULL);
-	ensure(q->choices = calloc(q->choices_size, sizeof(choice)), NULL);
-	ensure(q->slots = calloc(q->slots_size, sizeof(slot)), NULL);
-	ensure(q->trails = calloc(q->trails_size, sizeof(trail)), NULL);
+	ENSURE(q->frames = calloc(q->frames_size, sizeof(frame)), NULL);
+	ENSURE(q->choices = calloc(q->choices_size, sizeof(choice)), NULL);
+	ENSURE(q->slots = calloc(q->slots_size, sizeof(slot)), NULL);
+	ENSURE(q->trails = calloc(q->trails_size, sizeof(trail)), NULL);
 
 	// Allocate these later as needed...
 
