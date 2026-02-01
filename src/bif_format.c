@@ -143,7 +143,7 @@ static bool is_more_data(query *q, list_reader_t *fmt)
 		size_t save_offset = dst - tmpbuf;					\
 		tmpbuf_size += n;									\
 		tmpbuf = realloc(tmpbuf, (tmpbuf_size*=2));			\
-		checked(tmpbuf);							\
+		CHECKED(tmpbuf);							\
 		dst = tmpbuf + save_offset;							\
 		tmpbuf_free = tmpbuf_size - save_offset;			\
 	}                                                       \
@@ -164,7 +164,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 
 	size_t tmpbuf_size = 1024*8;
 	char *tmpbuf = malloc(tmpbuf_size);
-	checked(tmpbuf);
+	CHECKED(tmpbuf);
 	char *dst = tmpbuf;
 	*dst = '\0';
 	size_t tmpbuf_free = tmpbuf_size;
@@ -866,7 +866,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 	} else if (is_compound(str) && !CMP_STRING_TO_CSTR(q, str, "atom")) {
 		cell *c = deref(q, str+1, str_ctx);
 		cell tmp;
-		checked(make_cstringn(&tmp, tmpbuf, len), free(tmpbuf));
+		CHECKED(make_cstringn(&tmp, tmpbuf, len), free(tmpbuf));
 		unify(q, c, q->latest_ctx, &tmp, q->st.cur_ctx);
 		unshare_cell(&tmp);
 	} else if (is_compound(str)) {
@@ -874,7 +874,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 		cell tmp;
 
 		if (strlen(tmpbuf))
-			checked(make_stringn(&tmp, tmpbuf, len), free(tmpbuf));
+			CHECKED(make_stringn(&tmp, tmpbuf, len), free(tmpbuf));
 		else
 			make_atom(&tmp, g_nil_s);
 

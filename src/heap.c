@@ -261,7 +261,7 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx fro
 					cell *tmp =
 						from ?copy_term_to_heap_with_replacement(q, attrs, q->st.cur_ctx, false, from, from_ctx, to, to_ctx)
 						:copy_term_to_heap(q, attrs, q->st.cur_ctx, false);
-					checked(tmp);
+					CHECKED(tmp);
 					c->tmp_attrs = tmp;
 				}
 

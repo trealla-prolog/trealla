@@ -303,7 +303,7 @@ inline static cell *get_raw_arg(query *q, int n)
 
 #define check_error(expr, ...) CHECK_SENTINEL(expr, 0, __VA_ARGS__; return 0)
 
-#define checked(expr, ...) \
+#define CHECKED(expr, ...) \
 	CHECK_SENTINEL(expr, 0, __VA_ARGS__; \
 	return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory"))
 
