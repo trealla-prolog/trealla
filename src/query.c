@@ -211,7 +211,7 @@ static bool check_choice(query *q)
 
 bool check_frame(query *q, unsigned max_vars)
 {
-	checked(check_slot(q, max_vars));
+	CHECKED(check_slot(q, max_vars));
 
 	if (q->st.new_fp > q->hw_frames)
 		q->hw_frames = q->st.new_fp;
@@ -841,7 +841,7 @@ int retry_choice(query *q)
 
 bool push_choice(query *q)
 {
-	checked(check_choice(q));
+	CHECKED(check_choice(q));
 	const frame *f = GET_CURR_FRAME();
 	choice *ch = GET_CHOICE(q->cp++);
 	ch->skip = 0;
@@ -868,7 +868,7 @@ bool push_choice(query *q)
 
 bool push_succeed_on_retry(query *q, pl_idx skip)
 {
-	checked(push_choice(q));
+	CHECKED(push_choice(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->succeed_on_retry = true;
 	ch->skip = skip;
@@ -880,7 +880,7 @@ bool push_succeed_on_retry(query *q, pl_idx skip)
 
 bool push_barrier(query *q)
 {
-	checked(push_choice(q));
+	CHECKED(push_choice(q));
 	choice *ch = GET_CURR_CHOICE();
 	frame *f = GET_CURR_FRAME();
 	ch->gen = f->chgen = ++q->chgen;
@@ -892,7 +892,7 @@ bool push_succeed_on_retry_with_barrier(query *q, pl_idx skip)
 {
 	frame *f = GET_CURR_FRAME();
 	f->no_recov = true;				// FIXME: memory waste
-	checked(push_barrier(q));
+	CHECKED(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->succeed_on_retry = true;
 	ch->skip = skip;
@@ -901,7 +901,7 @@ bool push_succeed_on_retry_with_barrier(query *q, pl_idx skip)
 
 bool push_fail_on_retry_with_barrier(query *q)
 {
-	checked(push_barrier(q));
+	CHECKED(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->fail_on_retry = true;
 	return true;
@@ -909,7 +909,7 @@ bool push_fail_on_retry_with_barrier(query *q)
 
 bool push_reset_handler(query *q)
 {
-	checked(push_fail_on_retry_with_barrier(q));
+	CHECKED(push_fail_on_retry_with_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 	ch->reset = true;
 	return true;
@@ -917,7 +917,7 @@ bool push_reset_handler(query *q)
 
 bool push_catcher(query *q, enum q_retry retry)
 {
-	checked(push_barrier(q));
+	CHECKED(push_barrier(q));
 	choice *ch = GET_CURR_CHOICE();
 
 	if (retry == QUERY_RETRY)
@@ -1157,7 +1157,7 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 {
 	unsigned arity = q->st.key->arity;
 	cell *tmp = alloc_heap(q, q->st.key->num_cells*3);	// alloc max possible
-	checked(tmp);
+	CHECKED(tmp);
 	cell *save_tmp = tmp;
 	tmp += copy_cells(tmp, q->st.key, 1);
 
@@ -1218,7 +1218,7 @@ static bool find_key(query *q, predicate *pr, cell *key, pl_ctx key_ctx)
 		key = q->st.key;
 		key_ctx = q->st.cur_ctx;
 	} else {
-		checked(init_tmp_heap(q));
+		CHECKED(init_tmp_heap(q));
 		key = clone_term_to_tmp(q, key, key_ctx);
 		key_ctx = q->st.cur_ctx;
 	}
@@ -1335,8 +1335,8 @@ bool match_rule(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 		return false;
 	}
 
-	checked(check_frame(q, q->st.pr->max_vars));
-	checked(push_choice(q));
+	CHECKED(check_frame(q, q->st.pr->max_vars));
+	CHECKED(push_choice(q));
 	const frame *f = GET_CURR_FRAME();
 	cell *p1_body = deref(q, get_logical_body(p1), p1_ctx);
 	cell *orig_p1 = p1;
@@ -1445,8 +1445,8 @@ bool match_clause(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract
 		return false;
 	}
 
-	checked(check_frame(q, q->st.pr->max_vars));
-	checked(push_choice(q));
+	CHECKED(check_frame(q, q->st.pr->max_vars));
+	CHECKED(push_choice(q));
 	const frame *f = GET_CURR_FRAME();
 
 	for (; q->st.dbe; q->st.dbe = q->st.dbe->next) {
@@ -1526,8 +1526,8 @@ bool match_head(query *q)
 		return false;
 	}
 
-	checked(check_frame(q, q->st.pr->max_vars));
-	checked(push_choice(q));
+	CHECKED(check_frame(q, q->st.pr->max_vars));
+	CHECKED(push_choice(q));
 	const frame *f = GET_CURR_FRAME();
 
 	for (; q->st.dbe; next_key(q)) {

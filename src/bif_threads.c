@@ -367,11 +367,11 @@ static bool do_send_message(query *q, unsigned chan, cell *p1, pl_ctx p1_ctx, bo
 	if (t->is_mutex_only)
 		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
 
-	checked(init_tmp_heap(q));
+	CHECKED(init_tmp_heap(q));
 	cell *c = clone_term_to_tmp(q, p1, p1_ctx);
-	checked(c);
+	CHECKED(c);
 	rebase_term(q, c, 0);
-	checked(queue_to_chan(q->pl, chan, c, q->my_chan, is_signal));
+	CHECKED(queue_to_chan(q->pl, chan, c, q->my_chan, is_signal));
 
 	if (is_thread_only(t))
 		resume_thread(t);
@@ -446,11 +446,11 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 		msg *m = list_front(&t->queue);
 
 		while (m) {
-			checked(push_choice(q), release_lock(&t->guard));
-			checked(check_frame(q, MAX_ARITY));
+			CHECKED(push_choice(q), release_lock(&t->guard));
+			CHECKED(check_frame(q, MAX_ARITY));
 			try_me(q, MAX_ARITY);
 			cell *tmp = copy_term_to_heap(q, m->c, q->st.new_fp, false);	// Copy into thread
-			checked(tmp, release_lock(&t->guard));
+			CHECKED(tmp, release_lock(&t->guard));
 			GET_FIRST_ARG(p1,queue);
 			GET_NEXT_ARG(p2,any);
 
@@ -790,16 +790,16 @@ static bool bif_thread_create_3(query *q)
 	}
 
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-	checked(init_tmp_heap(q));
+	CHECKED(init_tmp_heap(q));
 	cell *goal = clone_term_to_tmp(q, p1, p1_ctx);
-	checked(goal);
+	CHECKED(goal);
 	t->num_vars = rebase_term(q, goal, 0);
 	t->q = query_create(q->st.m);
-	checked(t->q);
+	CHECKED(t->q);
 	t->q->thread_ptr = t;
 	t->q->my_chan = n;
 	cell *tmp2 = alloc_heap(t->q, 1+goal->num_cells+1);
-	checked(tmp2);
+	CHECKED(tmp2);
 	pl_idx num_cells = 0;
 	make_instr(tmp2+num_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, goal->num_cells+1);
 	num_cells += dup_cells(tmp2+num_cells, goal, goal->num_cells);
@@ -807,19 +807,19 @@ static bool bif_thread_create_3(query *q)
 	t->goal = tmp2;
 
 	if (p4) {
-		checked(init_tmp_heap(q));
+		CHECKED(init_tmp_heap(q));
 		cell *goal = clone_term_to_tmp(q, p4, p4_ctx);
-		checked(goal);
+		CHECKED(goal);
 		t->at_exit_num_vars = rebase_term(q, goal, 0);
 		cell *tmp2 = alloc_heap(q, 1+goal->num_cells+1);
-		checked(tmp2);
+		CHECKED(tmp2);
 		pl_idx num_cells = 0;
 		make_instr(tmp2+num_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, goal->num_cells+1);
 		num_cells += dup_cells(tmp2+num_cells, goal, goal->num_cells);
 		make_instr(tmp2+num_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 		THREAD_DEBUG DUMP_TERM("at_exit", tmp2, q->st.cur_ctx, 0);
 		t->at_exit = clone_term_to_heap(t->q, tmp2, 0);	// Copy into thread
-		checked(t->at_exit);
+		CHECKED(t->at_exit);
 	}
 
     pthread_attr_t sa;
@@ -846,7 +846,7 @@ bool do_signal(query *q, void *thread_ptr)
 
 	msg *m = list_pop_front(&t->signals);
 	release_lock(&t->guard);
-	checked(check_frame(q, MAX_ARITY));
+	CHECKED(check_frame(q, MAX_ARITY));
 	try_me(q, MAX_ARITY);
 	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.new_fp, 0);
 	cell *c = copy_term_to_heap(q, m->c, q->st.new_fp, false);	// Copy into thread
@@ -899,7 +899,7 @@ static bool bif_thread_join_2(query *q)
 		return throw_error(q, p1, p1_ctx, "system_error", "join,not_thread");
 
 	if (t->exit_code) {
-		checked(check_frame(q, MAX_ARITY));
+		CHECKED(check_frame(q, MAX_ARITY));
 		try_me(q, MAX_ARITY);
 		cell *tmp = copy_term_to_heap(q, t->exit_code, q->st.new_fp, false);
 		t->exit_code = NULL;
@@ -1073,12 +1073,12 @@ static bool bif_thread_exit_1(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
 	GET_FIRST_ARG(p1,nonvar);
-	checked(init_tmp_heap(q));
+	CHECKED(init_tmp_heap(q));
 	cell *tmp_p1 = clone_term_to_tmp(q, p1, p1_ctx);
-	checked(tmp_p1);
+	CHECKED(tmp_p1);
 	rebase_term(q, tmp_p1, 0);
 	cell *tmp = alloc_heap(q, 1+tmp_p1->num_cells);
-	checked(tmp);
+	CHECKED(tmp);
 	make_instr(tmp, new_atom(q->pl, "exited"), NULL, 1, tmp_p1->num_cells);
 	dup_cells(tmp+1, tmp_p1, tmp_p1->num_cells);
 
@@ -1202,7 +1202,7 @@ static bool do_thread_property_pin_property(query *q)
 	}
 
 	if (i != MAX_THREADS)
-		checked(push_choice(q));
+		CHECKED(push_choice(q));
 
 	cell tmp;
 	make_int(&tmp, q->st.v1);
@@ -1226,7 +1226,7 @@ static bool do_thread_property_pin_id(query *q)
 		q->st.v2 = 0;
 
 	if (i == 0) {
-		checked(push_choice(q));
+		CHECKED(push_choice(q));
 		sliter *iter = sl_first(t->alias);
 
 		if (!sl_next(iter, NULL)) {
@@ -1248,7 +1248,7 @@ static bool do_thread_property_pin_id(query *q)
 
 		return true;
 	} else if (i == 1) {
-		checked(push_choice(q));
+		CHECKED(push_choice(q));
 		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "detached"), NULL, 1, 1);
 		make_atom(tmp+1, t->is_detached?g_true_s:g_false_s);
@@ -1314,7 +1314,7 @@ static bool do_thread_property_wild(query *q)
 	}
 
 	if (i != MAX_THREADS)
-		checked(push_choice(q));
+		CHECKED(push_choice(q));
 
 	cell tmp;
 	make_int(&tmp, q->st.v1);
@@ -1560,7 +1560,7 @@ static bool do_message_queue_property_pin_property(query *q)
 	}
 
 	if (i != MAX_THREADS)
-		checked(push_choice(q));
+		CHECKED(push_choice(q));
 
 	cell tmp;
 	make_int(&tmp, q->st.v1);
@@ -1584,7 +1584,7 @@ static bool do_message_queue_property_pin_id(query *q)
 		q->st.v2 = 0;
 
 	if (i == 0) {
-		checked(push_choice(q));
+		CHECKED(push_choice(q));
 		sliter *iter = sl_first(t->alias);
 
 		if (!sl_next(iter, NULL)) {
@@ -1651,7 +1651,7 @@ static bool do_message_queue_property_wild(query *q)
 	}
 
 	if (i != MAX_THREADS)
-		checked(push_choice(q));
+		CHECKED(push_choice(q));
 
 	cell tmp;
 	make_int(&tmp, q->st.v1);
@@ -1940,7 +1940,7 @@ static bool do_mutex_property_pin_property(query *q)
 	}
 
 	if (i != MAX_THREADS)
-		checked(push_choice(q));
+		CHECKED(push_choice(q));
 
 	cell tmp;
 	make_int(&tmp, q->st.v1);
@@ -1964,7 +1964,7 @@ static bool do_mutex_property_pin_id(query *q)
 		q->st.v2 = 0;
 
 	if (i == 0) {
-		checked(push_choice(q));
+		CHECKED(push_choice(q));
 
 		sliter *iter = sl_first(t->alias);
 
@@ -2044,7 +2044,7 @@ static bool do_mutex_property_wild(query *q)
 	}
 
 	if (i != MAX_THREADS)
-		checked(push_choice(q));
+		CHECKED(push_choice(q));
 
 	cell tmp;
 	make_int(&tmp, q->st.v1);
@@ -2137,12 +2137,12 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_ctx p1_ct
 	else
 		m = list_pop_front(&t->queue);
 
-	checked(push_choice(q));
-	checked(check_frame(q, MAX_ARITY));
+	CHECKED(push_choice(q));
+	CHECKED(check_frame(q, MAX_ARITY));
 	try_me(q, MAX_ARITY);
 	cell *c = m->c;
 	cell *tmp = clone_term_to_heap(q, c, q->st.new_fp);
-	checked(tmp, release_lock(&t->guard));
+	CHECKED(tmp, release_lock(&t->guard));
 	release_lock(&t->guard);
 	q->curr_chan = m->from_chan;
 

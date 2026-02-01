@@ -1415,7 +1415,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 		int radix = 10;
 		size_t len = mp_int_string_len(&c->val_bigint->irat.num, radix) - 1;
 		char *dst2 = malloc(len+1);
-		checked(dst2);
+		CHECKED(dst2);
 		mp_int_to_string(&c->val_bigint->irat.num, radix, dst2, len+1);
 		SB_sprintf(q->sb, "%s", dst2);
 		free(dst2);
@@ -1435,7 +1435,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 		int radix = 10;
 		size_t len = mp_int_string_len(&c->val_bigint->ival, radix) - 1;
 		char *dst2 = malloc(len+1);
-		checked(dst2);
+		CHECKED(dst2);
 		mp_int_to_string(&c->val_bigint->ival, radix, dst2, len+1);
 		SB_sprintf(q->sb, "%s", dst2);
 		free(dst2);

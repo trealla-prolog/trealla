@@ -96,9 +96,9 @@ bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *
 			if (SB_strlen(pr)) {
 				cell tmp;
 				int vnbr = create_vars(q, 1);
-				checked(vnbr != -1);
+				CHECKED(vnbr != -1);
 				make_ref(&tmp, vnbr, q->st.cur_ctx);
-				checked(make_stringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
+				CHECKED(make_stringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
 				unify(q, &tmpc, q->st.cur_ctx, &tmp, q->st.cur_ctx);
 				unshare_cell(&tmpc);
 			} else
@@ -106,9 +106,9 @@ bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *
 		} else {
 			cell tmp;
 			int vnbr = create_vars(q, 1);
-			checked(vnbr != -1);
+			CHECKED(vnbr != -1);
 			make_ref(&tmp, vnbr, q->st.cur_ctx);
-			checked(make_cstringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
+			CHECKED(make_cstringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
 			unify(q, &tmpc, q->st.cur_ctx, &tmp, q->st.cur_ctx);
 			unshare_cell(&tmpc);
 		}
@@ -145,9 +145,9 @@ bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *
 			if (SB_strlen(pr)) {
 				cell tmp;
 				int vnbr = create_vars(q, 1);
-				checked(vnbr != -1);
+				CHECKED(vnbr != -1);
 				make_ref(&tmp, vnbr, q->st.cur_ctx);
-				checked(make_stringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
+				CHECKED(make_stringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
 				unify(q, &tmpc, q->st.cur_ctx, &tmp, q->st.cur_ctx);
 				unshare_cell(&tmpc);
 			} else
@@ -155,9 +155,9 @@ bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *
 		} else {
 			cell tmp;
 			int vnbr = create_vars(q, 1);
-			checked(vnbr != -1);
+			CHECKED(vnbr != -1);
 			make_ref(&tmp, vnbr, q->st.cur_ctx);
-			checked(make_cstringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
+			CHECKED(make_cstringn(&tmpc, SB_cstr(pr), SB_strlen(pr)));
 			unify(q, &tmpc, q->st.cur_ctx, &tmp, q->st.cur_ctx);
 			unshare_cell(&tmpc);
 		}
@@ -188,7 +188,7 @@ bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *
 	}
 
 	cell *l = params->functor ? end_structure(q) : end_list(q);
-	checked(l);
+	CHECKED(l);
 
 	if (p2)
 		return unify(q, p2, p2_ctx, l, q->st.cur_ctx);
