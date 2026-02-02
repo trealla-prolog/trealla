@@ -76,7 +76,6 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 
 // Primary type...
 
-#define is_empty(c) ((c)->tag == TAG_EMPTY)
 #define is_var(c) ((c)->tag == TAG_VAR)
 #define is_interned(c) ((c)->tag == TAG_INTERNED)
 #define is_cstring(c) ((c)->tag == TAG_CSTR)
@@ -1078,3 +1077,6 @@ inline static void predicate_delink(predicate *pr, rule *r)
 
 #define ENSURE(cond, ...) if (!(cond)) { printf("Error: no memory %s %d\n", __FILE__, __LINE__); abort(); }
 
+inline static bool is_empty(const cell *c) {
+	return c->tag == TAG_EMPTY;
+}
