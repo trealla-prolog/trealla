@@ -444,7 +444,7 @@ Non-standard predicates
 	absolute_file_name/[2,3]	# expand(Bool) & relative_to(file) options
 	is_absolute_file_name/1
 	access_file/2
-	set_stream/2				# only supports alias/1 property
+	set_stream/2				# only supports alias/1 & type/1 property
 	alias/2						# alias(?integer,+atom)
 
 	string_upper/2

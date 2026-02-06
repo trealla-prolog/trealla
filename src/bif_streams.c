@@ -7397,6 +7397,22 @@ static bool bif_set_stream_2(query *q)
 		return true;
 	}
 
+	if (!CMP_STRING_TO_CSTR(q, p1, "type")) {
+		if (is_var(name))
+			return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+
+		if (!is_atom(name))
+			return throw_error(q, p1, p1_ctx, "domain_error", "stream_property");
+
+		if (!CMP_STRING_TO_CSTR(q, name, "binary")) {
+			str->binary = true;
+		} else if (!CMP_STRING_TO_CSTR(q, name, "text")) {
+			str->binary = false;
+		}
+
+		return true;
+	}
+
 	return false;
 }
 

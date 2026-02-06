@@ -39,10 +39,15 @@ socket_client_open(Addr, Stream, Options) :-
     ;
        throw(error(type_error(socket_address, Addr), socket_client_open/3))
     ),
-    builtins:parse_stream_options(Options,
-                                  [Alias, EOFAction, Reposition, Type],
-                                  socket_client_open/3),
-    '$socket_client_open'(Address, Port, Stream, Alias, EOFAction, Reposition, Type).
+
+    %builtins:parse_stream_options(Options,
+    %                              [Alias, EOFAction, Reposition, Type],
+    %                              socket_client_open/3),
+    %'$socket_client_open'(Address, Port, Stream, Alias, EOFAction, Reposition, Type).
+
+	client(Addr, _, _, Stream, []),
+	memberchk(type(Type), Options) -> set_stream(Stream, type(Type)) ; true,
+	memberchk(alias(Alias), Options) -> set_stream(Stream, alias(Alias)) ; true.
 
 %% socket_server_open(+Addr, -ServerSocket).
 %
