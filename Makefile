@@ -161,6 +161,7 @@ LIBOBJECTS +=  \
 	library/reif.o \
 	library/si.o \
 	library/sqlite3.o \
+	library/sockets.o \
 	library/time.o \
 	library/ugraphs.o \
 	library/uuid.o \
