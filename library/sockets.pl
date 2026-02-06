@@ -68,7 +68,7 @@ socket_server_open(Addr, ServerSocket) :-
 socket_server_accept(ServerSocket, Client, Stream, Options) :-
     must_be(var, Client),
     must_be(var, Stream),
-    accept(ServerSocket, Stream),
+    accept(ServerSocket, Stream).
 
 %% socket_server_close(+ServerSocket).
 %
