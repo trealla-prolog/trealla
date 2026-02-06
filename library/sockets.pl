@@ -80,4 +80,4 @@ socket_server_close(ServerSocket) :-
 %
 % Returns the current hostname of the computer in which Scryer Prolog is executing right now
 current_hostname(HostName) :-
-    '$current_hostname'(HostName).
+	HostName = dummy.
