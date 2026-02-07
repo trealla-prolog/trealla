@@ -7410,7 +7410,7 @@ static bool bif_set_stream_2(query *q)
 		return true;
 	}
 
-	return false;
+	return true;
 }
 
 static bool bif_portray_clause_1(query *q)
