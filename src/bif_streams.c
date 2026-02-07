@@ -6229,12 +6229,12 @@ static bool bif_server_3(query *q)
 	sl_app(str->alias, strdup(hostname), NULL);
 	CHECKED(str->filename = DUP_STRING(q, p1));
 	CHECKED(str->mode = strdup("update"));
+	str->socket = true;
 	str->nodelay = nodelay;
 	str->udp = udp;
-	str->fp = fdopen(fd, "r+");
 	str->ssl = ssl;
 	str->level = level;
-	str->sslptr = NULL;
+	str->fp = fdopen(fd, "r");
 
 	if (str->fp == NULL) {
 		close(fd);
