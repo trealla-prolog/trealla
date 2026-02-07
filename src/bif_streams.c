@@ -6116,7 +6116,7 @@ static bool bif_server_3(query *q)
 	GET_NEXT_ARG(p3,list_or_nil);
 	char hostname[1024], path[4096];
 	char *keyfile = "privkey.pem", *certfile = "fullchain.pem";
-	int udp = 0, nodelay = 1, nonblock = 0, ssl = 0, domain = 0, level = 0;
+	int udp = 0, nodelay = 1, ssl = 0, domain = 0, level = 0;
 	unsigned port = 80;
 	snprintf(hostname, sizeof(hostname), "localhost");
 	path[0] = '\0';
@@ -6208,7 +6208,6 @@ static bool bif_server_3(query *q)
 	const char *url = filename;
 	parse_host(url, hostname, path, &port, &ssl, &domain);
 	free(filename);
-	nonblock = q->is_task;
 
 	int fd = net_server(hostname, port, udp, ssl?keyfile:NULL, ssl?certfile:NULL);
 
@@ -6228,7 +6227,6 @@ static bool bif_server_3(query *q)
 	CHECKED(str->filename = DUP_STRING(q, p1));
 	CHECKED(str->mode = strdup("update"));
 	str->nodelay = nodelay;
-	str->nonblock = nonblock;
 	str->udp = udp;
 	str->fp = fdopen(fd, "r+");
 	str->ssl = ssl;
@@ -6278,7 +6276,6 @@ static bool bif_accept_2(query *q)
 	CHECKED(str2->mode = strdup("update"));
 	str2->socket = true;
 	str2->nodelay = str->nodelay;
-	str2->nonblock = str->nonblock;
 	str2->udp = str->udp;
 	str2->ssl = str->ssl;
 	str2->fp = fdopen(fd, "r+");
@@ -6297,7 +6294,7 @@ static bool bif_accept_2(query *q)
 		}
 	}
 
-	if (!str->ssl)
+	if (!str->ssl && q->is_task)
 		net_set_nonblocking(str2);
 
 	CHECKED(push_choice(q));
@@ -6607,7 +6604,7 @@ static bool bif_client_5(query *q)
 	GET_NEXT_ARG(p5,list_or_nil);
 	char hostname[1024], path[1024*4];
 	char *certfile = NULL;
-	int udp = 0, nodelay = 1, nonblock = 0, ssl = 0, domain = 0, level = 0;
+	int udp = 0, nodelay = 1, ssl = 0, domain = 0, level = 0;
 	hostname[0] = path[0] = '\0';
 	unsigned port = 80;
 	char *filename = NULL;
@@ -6681,7 +6678,6 @@ static bool bif_client_5(query *q)
 	const char *url = filename;
 	parse_host(url, hostname, path, &port, &ssl, &domain);
 	free(filename);
-	nonblock = q->is_task;
 
 	while (is_list(p5)) {
 		cell *h = LIST_HEAD(p5);
@@ -6720,7 +6716,6 @@ static bool bif_client_5(query *q)
 	CHECKED(str->mode = strdup("update"));
 	str->socket = true;
 	str->nodelay = nodelay;
-	str->nonblock = nonblock;
 	str->udp = udp;
 	str->ssl = ssl;
 	str->level = level;
@@ -6743,7 +6738,7 @@ static bool bif_client_5(query *q)
 		CHECKED(str->sslptr, close(fd));
 	}
 
-	if (nonblock && !str->ssl)
+	if (!str->ssl && q->is_task)
 		net_set_nonblocking(str);
 
 	cell tmp;

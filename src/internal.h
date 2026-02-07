@@ -598,7 +598,6 @@ struct stream_ {
 	bool did_getc:1;
 	bool socket:1;
 	bool nodelay:1;
-	bool nonblock:1;
 	bool udp:1;
 	bool ssl:1;
 	bool pipe:1;
