@@ -3556,7 +3556,7 @@ static bool bif_iso_get_byte_2(query *q)
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,in_byte_or_var);
 
-	if (strcmp(str->mode, "read"))
+	if (strcmp(str->mode, "read") && strcmp(str->mode, "update"))
 		return throw_error(q, pstr, q->st.cur_ctx, "permission_error", "input,stream");
 
 	if (!str->binary) {
@@ -7361,11 +7361,79 @@ static bool bif_set_stream_2(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,any);
-	cell *name = p1 + 1;
-	name = deref(q, name, p1_ctx);
 
 	if (!is_structure(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "stream_property");
+
+	if (is_iso_list(p1)) {
+		LIST_HANDLER(p1);
+
+		while (is_iso_list(p1)) {
+			cell *h = LIST_HEAD(p1);
+			cell *c = deref(q, h, p1_ctx);
+			pl_ctx c_ctx = q->latest_ctx;
+			cell *name = c + 1;
+			name = deref(q, name, c_ctx);
+
+			if (is_var(c))
+				return throw_error(q, c, c_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+
+			if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
+				if (is_var(name))
+					return throw_error(q, name, c_ctx, "instantiation_error", "stream_option");
+
+				if (!is_atom(name))
+					return throw_error(q, c, c_ctx, "domain_error", "stream_property");
+
+				if (!CMP_STRING_TO_CSTR(q, name, "current_input")) {
+					q->pl->current_input = n;
+				} else if (!CMP_STRING_TO_CSTR(q, name, "current_output")) {
+					q->pl->current_output = n;
+				} else if (!CMP_STRING_TO_CSTR(q, name, "current_error")) {
+					q->pl->current_error = n;
+				} else {
+					int n2 = get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name));
+
+					if (n2 >= 0) {
+						stream *str2 = &q->pl->streams[n2];
+						sl_del(str2->alias, C_STR(q, name));
+					}
+
+					sl_app(str->alias, DUP_STRING(q, name), NULL);
+				}
+
+				return true;
+			}
+
+			if (!CMP_STRING_TO_CSTR(q, c, "type")) {
+				if (is_var(name))
+					return throw_error(q, name, c_ctx, "instantiation_error", "stream_option");
+
+				if (!is_atom(name))
+					return throw_error(q, c, c_ctx, "domain_error", "stream_property");
+
+				if (!CMP_STRING_TO_CSTR(q, name, "binary")) {
+					str->binary = true;
+				} else if (!CMP_STRING_TO_CSTR(q, name, "text")) {
+					str->binary = false;
+				}
+
+				return true;
+			}
+
+			p1 = LIST_TAIL(p1);
+			p1 = deref(q, p1, p1_ctx);
+			p1_ctx = q->latest_ctx;
+
+			if (is_var(p1))
+				return throw_error(q, p1, p1_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+		}
+
+		return true;
+	}
+
+	cell *name = p1 + 1;
+	name = deref(q, name, p1_ctx);
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "alias")) {
 		if (is_var(name))
