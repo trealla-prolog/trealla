@@ -1048,15 +1048,37 @@ inline static bool is_lt(const cell *c, pl_int n) {
 	return get_smallint(c) < n;
 }
 
-#define is_zero(c) (is_bigint(c) ?							\
-	mp_int_compare_zero(&(c)->val_bigint->ival) == 0 :		\
-	is_smallint(c) ? get_smallint(c) == 0 :					\
-	is_float(c) ? get_float(c) == 0.0 : false)
+inline static bool is_zero(const cell *c) {
+    if (is_bigint(c)) {
+        return mp_int_compare_zero(&c->val_bigint->ival) == 0;
+    }
+    
+    if (is_smallint(c)) {
+        return get_smallint(c) == 0;
+    }
+    
+    if (is_float(c)) {
+        return get_float(c) == 0.0;
+    }
+    
+    return false;
+}
 
-#define is_negative(c) (is_bigint(c) ?						\
-	(c)->val_bigint->ival.sign == MP_NEG :					\
-	is_smallint(c) ? get_smallint(c) < 0 :					\
-	is_float(c) ? get_float(c) < 0.0 : false)
+inline static bool is_negative(const cell *c) {
+    if (is_bigint(c)) {
+        return c->val_bigint->ival.sign == MP_NEG;
+    }
+    
+    if (is_smallint(c)) {
+        return get_smallint(c) < 0;
+    }
+    
+    if (is_float(c)) {
+        return get_float(c) < 0.0;
+    }
+    
+    return false;
+}
 
 #define is_positive(c) (is_bigint(c) ?						\
 	mp_int_compare_zero(&(c)->val_bigint->ival) > 0 :		\
