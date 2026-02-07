@@ -1,9 +1,3 @@
-/**
-Predicates for handling network sockets, both as a server and as a client.
-As a server, you should open a socket an call `socket_server_accept/4` to get a stream for each connection.
-As a client, you should just open a socket and you will receive a stream.
-In both cases, with a stream, you can use the usual predicates to read and write to the stream.
-*/
 :- module(sockets, [socket_client_open/3,
                     socket_server_open/3,
                     socket_server_accept/4,
@@ -42,6 +36,8 @@ socket_client_open(Addr, Stream, Options) :-
 	client(Addr, _, _, Stream, []),
 	set_stream(Stream, Options).
 
+
+
 %% socket_server_open(+Addr, -ServerSocket, +Options).
 %
 % Open a server socket, returning a ServerSocket. Use that ServerSocket to accept incoming connections in
@@ -54,6 +50,8 @@ socket_server_open(Addr, ServerSocket, Options) :-
     ; Port = Addr
     ),
     server(Port, ServerSocket, Options).
+
+
 
 %% socket_server_accept(+ServerSocket, -Client, -Stream, +Options).
 %
@@ -76,11 +74,15 @@ socket_server_accept(ServerSocket, Client, Stream, Options) :-
 	writeln([here2a2,Stream]),
 	set_stream(Stream, Options).
 
+
+
 %% socket_server_close(+ServerSocket).
 %
 % Stops listening on that ServerSocket. It's recommended to always close a ServerSocket once it's no longer needed
 socket_server_close(ServerSocket) :-
     close(ServerSocket).
+
+
 
 %% current_hostname(-HostName).
 %
