@@ -1048,13 +1048,6 @@ inline static bool is_lt(const cell *c, pl_int n) {
 	return get_smallint(c) < n;
 }
 
-#define get_list_head(c) ((c) + 1)
-#define get_list_tail(c) (get_list_head(c) + get_list_head(c)->num_cells)
-
-#define neg_bigint(c) (c)->val_bigint->ival.sign = MP_NEG
-#define neg_smallint(c) (c)->val_int = -llabs((c)->val_int)
-#define neg_float(c) (c)->val_float = -fabs((c)->val_float)
-
 #define is_zero(c) (is_bigint(c) ?							\
 	mp_int_compare_zero(&(c)->val_bigint->ival) == 0 :		\
 	is_smallint(c) ? get_smallint(c) == 0 :					\
@@ -1075,8 +1068,6 @@ inline static bool is_lt(const cell *c, pl_int n) {
 	is_smallint(c) ? get_smallint(c) >= 0 :					\
 	is_float(c) ? get_float(c) >= 0.0 : false)
 
-#define share_cell(c) if (is_managed(c)) share_cell_(c)
-
 inline static void share_cell_(const cell *c)
 {
 	if (is_strbuf(c))
@@ -1093,9 +1084,13 @@ inline static void share_cell_(const cell *c)
 		c->val_blob->refcnt++;
 }
 
-#define unshare_cell(c) if (is_managed(c)) unshare_cell_(c)
+inline static void share_cell(const cell *c) {
+	if (is_managed(c)) {
+		share_cell_(c);
+        }
+}
 
-inline static void unshare_cell_(cell *c)
+inline static void unshare_cell_(cell * c)
 {
 	if (is_strbuf(c)) {
 		if (--c->val_strb->refcnt == 0) {
@@ -1139,6 +1134,13 @@ inline static void unshare_cell_(cell *c)
 			free(c->val_blob);
 			c->tag = TAG_EMPTY;
 		}
+	}
+}
+
+inline static void unshare_cell(cell *c)
+{
+	if (is_managed(c)) {
+		unshare_cell_(c);
 	}
 }
 
