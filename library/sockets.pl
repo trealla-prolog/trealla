@@ -24,7 +24,6 @@ socket_client_open(Addr0, Stream, Options) :-
     ;
        true
     ),
-    format("client(Addr0: ~w, Options: ~w)~n", [Addr0, Options]),
     Addr0 = inet(Address,Port),
     must_be(var, Stream),
     must_be(list, Options),

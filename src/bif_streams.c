@@ -6205,7 +6205,6 @@ static bool bif_server_3(query *q)
 	free(filename);
 	printf("*** net_server host=%s, port=%d\n", hostname, port);
 	int fd = net_server(hostname, port, udp, ssl?keyfile:NULL, ssl?certfile:NULL);
-	printf("*** net_server host=%s, port=%d, fd=%d\n", hostname, port, fd);
 
 	if (fd == -1)
 		return throw_error(q, p1, p1_ctx, "existence_error", "server_failed");
@@ -6223,6 +6222,8 @@ static bool bif_server_3(query *q)
 		make_int(&tmp, port);
 		unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	}
+
+	printf("*** net_server host=%s, port=%d, fd=%d\n", hostname, port, fd);
 
 	stream *str = &q->pl->streams[n];
 	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
@@ -6616,10 +6617,11 @@ static bool bif_client_5(query *q)
 	else if (!is_list(p1)) {
 		char host[1024];
 		snprintf(host, sizeof(host), "%s:%d", C_STR(q, deref(q, p1+1, p1_ctx)), (int)get_smallint(deref(q, p1+2, p1_ctx)));
+		port = (int)get_smallint(deref(q, p1+2, p1_ctx));
 		filename = strdup(host);
 	}
 
-	if (is_list(p1)) {
+	if (is_iso_list(p1)) {
 		size_t len = scan_is_chars_list(q, p1, p1_ctx, true);
 
 		if (!len)
