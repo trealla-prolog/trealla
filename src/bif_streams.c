@@ -6240,7 +6240,7 @@ static bool bif_server_3(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
 
-	if (!str->ssl)
+	if (!str->ssl && q->is_task)
 		net_set_nonblocking(str);
 
 	cell tmp;
