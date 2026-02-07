@@ -17,6 +17,7 @@ and using a plain old Makefile.
 	Concurrency via tasks / linda / futures / engines (generators)
 	Pre-emptive multi-threading
 	Blackboarding primitives
+	Sockets library
 	...
 	FFIs for GNU Scientific Library (GSL), SQLite, Raylib
 	Delimited continuations ##EXPERIMENTAL##
