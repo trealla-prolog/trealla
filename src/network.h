@@ -18,3 +18,5 @@ extern int net_peekc(stream *str);
 extern int net_getc(stream *str);
 extern size_t net_write(const void *ptr, size_t nbytes, stream *str);
 extern int net_close(stream *str);
+
+extern int get_local_port(int clientSock);

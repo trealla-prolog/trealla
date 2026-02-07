@@ -49,6 +49,19 @@ static SSL_CTX *g_ctx = NULL;
 #include <unistd.h>
 #endif
 
+
+int get_local_port(int clientSock) {
+    struct sockaddr_in sin;
+    socklen_t addrlen = sizeof(sin);
+
+    if (getsockname(clientSock, (struct sockaddr *)&sin, &addrlen) == 0) {
+         int local_port = ntohs(sin.sin_port);
+         return local_port;
+	}
+
+    return -1;
+}
+
 int net_domain_connect(const char *name, bool udp)
 {
 #if !defined(_WIN32) && !defined(__wasi__)

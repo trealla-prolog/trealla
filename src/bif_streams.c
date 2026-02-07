@@ -6123,13 +6123,8 @@ static bool bif_server_3(query *q)
 	char *filename = NULL;
 
 	if (is_var(p1)) {
-		// FIXME: dummy port
 		port = 0;
-		filename = strdup(":1");
-
-		cell tmp;
-		make_int(&tmp, 1);
-		unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
+		filename = strdup(":0");
 	} else if (is_atom(p1))
 		filename = DUP_STRING(q, p1);
 	else if (!is_iso_list(p1))
@@ -6208,7 +6203,6 @@ static bool bif_server_3(query *q)
 	const char *url = filename;
 	parse_host(url, hostname, path, &port, &ssl, &domain);
 	free(filename);
-
 	int fd = net_server(hostname, port, udp, ssl?keyfile:NULL, ssl?certfile:NULL);
 
 	if (fd == -1)
@@ -6219,6 +6213,14 @@ static bool bif_server_3(query *q)
 	if (n < 0) {
 		close(fd);
 		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
+	}
+
+	if (port == 0) {
+		port = get_local_port(fd);
+        //printf("Socket's local port: %d\n", port);
+		cell tmp;
+		make_int(&tmp, port);
+		unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	}
 
 	stream *str = &q->pl->streams[n];
