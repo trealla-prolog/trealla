@@ -51,6 +51,7 @@ static SSL_CTX *g_ctx = NULL;
 
 
 int get_local_port(int clientSock) {
+#if !defined(__wasi__)
     struct sockaddr_in sin;
     socklen_t addrlen = sizeof(sin);
 
@@ -58,6 +59,7 @@ int get_local_port(int clientSock) {
          int local_port = ntohs(sin.sin_port);
          return local_port;
 	}
+#endif
 
     return -1;
 }
