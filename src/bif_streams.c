@@ -6301,10 +6301,11 @@ static bool bif_accept_2(query *q)
 		}
 	}
 
-	if (!str->ssl && q->is_task)
+	if (!str->ssl && q->is_task) {
 		net_set_nonblocking(str2);
+		CHECKED(push_choice(q));
+	}
 
-	CHECKED(push_choice(q));
 	cell tmp;
 	make_int(&tmp, n);
 	tmp.flags |= FLAG_INT_STREAM;
