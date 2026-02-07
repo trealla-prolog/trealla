@@ -51,7 +51,7 @@ static SSL_CTX *g_ctx = NULL;
 
 
 int get_local_port(int clientSock) {
-#if !defined(__wasi__)
+#if !defined(_WIN32) && !defined(__wasi__)
     struct sockaddr_in sin;
     socklen_t addrlen = sizeof(sin);
 
