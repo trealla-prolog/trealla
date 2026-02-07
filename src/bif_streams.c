@@ -885,7 +885,7 @@ static bool bif_iso_stream_property_2(query *q)
 
 			stream *str = &q->pl->streams[i];
 
-			if (!str->socket && !str->is_mutex && !str->is_queue)
+			if (!str->is_mutex && !str->is_queue)
 				add_stream_properties(q, i);
 		}
 	}
