@@ -6611,10 +6611,13 @@ static bool bif_client_5(query *q)
 
 	if (is_atom(p1))
 		filename = DUP_STRING(q, p1);
-	else if (!is_iso_list(p1))
-		return throw_error(q, p1, p1_ctx, "domain_error", "source_sink");
+	else if (!is_list(p1)) {
+		char host[1024];
+		snprintf(host, sizeof(host), "%s:%d", C_STR(q, deref(q, p1+1, p1_ctx)), (int)get_smallint(deref(q, p1+2, p1_ctx)));
+		filename = strdup(host);
+	}
 
-	if (is_iso_list(p1)) {
+	if (is_list(p1)) {
 		size_t len = scan_is_chars_list(q, p1, p1_ctx, true);
 
 		if (!len)
@@ -6625,7 +6628,7 @@ static bool bif_client_5(query *q)
 
 	LIST_HANDLER(p5);
 
-	while (is_list(p5)) {
+	while (is_iso_list(p5)) {
 		cell *h = LIST_HEAD(p5);
 		cell *c = deref(q, h, p5_ctx);
 
@@ -6679,25 +6682,9 @@ static bool bif_client_5(query *q)
 	parse_host(url, hostname, path, &port, &ssl, &domain);
 	free(filename);
 
-	while (is_list(p5)) {
-		cell *h = LIST_HEAD(p5);
-		cell *c = deref(q, h, p5_ctx);
-
-		if (is_compound(c) && (c->arity == 1)) {
-			if (!CMP_STRING_TO_CSTR(q, c, "host")) {
-				c = c + 1;
-
-				//if (is_atom(c))
-				//	;//udp = !CMP_STRING_TO_CSTR(q, c, "true") ? 1 : 0;
-			}
-		}
-
-		p5 = LIST_TAIL(p5);
-		p5 = deref(q, p5, p5_ctx);
-		p5_ctx = q->latest_ctx;
-	}
-
+	printf("*** net_connect host=%s, port=%d\n", hostname, port);
 	int fd = net_connect(hostname, port, udp, nodelay);
+	printf("*** ~net_connect host=%s, port=%d, fd=%d\n", hostname, port, fd);
 
 	if (fd == -1)
 		return throw_error(q, p1, p1_ctx, "resource_error", "could_not_connect");
