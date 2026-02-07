@@ -6217,7 +6217,6 @@ static bool bif_server_3(query *q)
 
 	if (port == 0) {
 		port = get_local_port(fd);
-		printf("*** parsed hostname=%s, port=%d\n", hostname, port);
 		cell tmp;
 		make_int(&tmp, port);
 		unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
@@ -6255,7 +6254,6 @@ static bool bif_accept_2(query *q)
 	GET_NEXT_ARG(p1,var);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
-
 	int fd = net_accept(str);
 
 	if (fd == -1) {

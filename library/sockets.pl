@@ -18,12 +18,13 @@
 %  * `type(+Type)`: Type can be `text` or `binary`. Defines the type of the stream, if it's optimized for plain text
 %    or just binary
 %
-socket_client_open(Addr, Stream, Options) :-
-    (  var(Addr) ->
+socket_client_open(Addr0, Stream, Options) :-
+    (  var(Addr0) ->
        throw(error(instantiation_error, socket_client_open/3))
     ;
        true
     ),
+    Addr0 = inet(Address,Port),
     must_be(var, Stream),
     must_be(list, Options),
     (  Addr = Address:Port,
@@ -33,7 +34,9 @@ socket_client_open(Addr, Stream, Options) :-
     ;
        throw(error(type_error(socket_address, Addr), socket_client_open/3))
     ),
+    format("client(Addr:~w, Options:~w)~n", [Addr, Options]),
 	client(Addr, _, _, Stream, []),
+    format("... server(Addr:~w, Stream:~w) done~n", [Addr, Stream]),
 	set_stream(Stream, Options).
 
 
@@ -43,13 +46,16 @@ socket_client_open(Addr, Stream, Options) :-
 % Open a server socket, returning a ServerSocket. Use that ServerSocket to accept incoming connections in
 % `socket_server_accept/4`. Addr must satisfy `Addr = Address:Port`. Depending on the operating system
 % configuration, some ports might be reserved for superusers.
-socket_server_open(Addr, ServerSocket, Options) :-
+socket_server_open(Addr0, ServerSocket, Options) :-
     must_be(var, ServerSocket),
-    ( integer(Addr) ->
-		( number_codes(Addr, Codes), atom_codes(Port0, Codes), atom_concat(':', Port0, Port) )
-    ; Port = Addr
+    ( integer(Addr0) ->
+		( number_codes(Addr0, Codes), atom_codes(Addr1, Codes), atom_concat(':', Addr1, Addr) )
+    ; Addr = Addr0
     ),
-    server(Port, ServerSocket, Options).
+    format("server(Addr:~w, Socket:~w, Options:~w)~n", [Addr, ServerSocket, Options]),
+    server(Addr, ServerSocket, Options),
+    format("... server(Addr:~w, Socket:~w) done~n", [Addr, ServerSocket]),
+    true.
 
 
 
@@ -69,9 +75,9 @@ socket_server_open(Addr, ServerSocket, Options) :-
 socket_server_accept(ServerSocket, Client, Stream, Options) :-
     must_be(var, Client),
     must_be(var, Stream),
-	writeln(['accept: ',ServerSocket]),
+    format("accept(Socket:~w, Options:~w)~n", [ServerSocket, Options]),
     accept(ServerSocket, Stream),
-	writeln(['... accepted ',Stream]),
+    format("... accept(Socket:~w, Stream:~w) done~n", [ServerSocket, Stream]),
 	set_stream(Stream, Options).
 
 
