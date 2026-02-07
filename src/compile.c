@@ -27,7 +27,7 @@ static void calln_check(module *m, cell *p1)
 			unsigned specifier;
 
 			if (match_op(m, functor, &specifier, false))
-				SET_OP(p1, specifier);
+				set_operator(p1, specifier);
 		}
 	} else {
 		p1->flags &= ~FLAG_INTERNED_BUILTIN;
@@ -277,7 +277,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_uint((*dst)++, 0);										// Dummy value
 		cell *save_dst1 = *dst;
 		make_instr((*dst), g_unify_s, bif_iso_unify_2, 2, 0);
-		SET_OP(*dst, OP_XFX); (*dst)++;
+		set_operator(*dst, OP_XFX); (*dst)++;
 		copy_term(dst, src);										// Arg1
 		copy_term(dst, src);										// Arg2
 		save_dst1->num_cells = *dst - save_dst1;					// Real value

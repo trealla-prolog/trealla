@@ -1,4 +1,3 @@
-#include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -87,7 +86,7 @@ bool call_check(query *q, cell *p1, bool *status, bool calln)
 				unsigned specifier;
 
 				if (search_op(q->st.m, functor, &specifier, false))
-					SET_OP(p1, specifier);
+					set_operator(p1, specifier);
 			}
 		} else {
 			p1->flags &= ~FLAG_INTERNED_BUILTIN;
@@ -999,7 +998,7 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		dup_cells_by_ref(tmp+num_cells, c, c_ctx, c->num_cells);
 		num_cells += c->num_cells;
 		make_instr(tmp+num_cells, g_slash_s, NULL, 2, 2);
-		SET_OP(tmp+num_cells, OP_YFX); num_cells++;
+		set_operator(tmp+num_cells, OP_YFX); num_cells++;
 		make_atom(tmp+num_cells++, new_atom(q->pl, functor));
 		make_int(tmp+num_cells, !is_string(goal)?goal->arity:0);
 	} else if (!strcmp(err_type, "type_error") && !strcmp(expected, "evaluable")) {
@@ -1011,14 +1010,14 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		make_instr(tmp+num_cells++, new_atom(q->pl, err_type), NULL, 2, 4);
 		make_cstring(tmp+num_cells++, expected);
 		make_instr(tmp+num_cells, g_slash_s, NULL, 2, 2);
-		SET_OP(tmp+num_cells, OP_YFX); num_cells++;
+		set_operator(tmp+num_cells, OP_YFX); num_cells++;
 		tmp[num_cells] = *c;
 		share_cell(c);
-		if (is_callable(c)) { tmp[num_cells].arity = 0; tmp[num_cells].num_cells = 1; CLR_OP(tmp+num_cells); }
+		if (is_callable(c)) { tmp[num_cells].arity = 0; tmp[num_cells].num_cells = 1; clr_operator(tmp+num_cells); }
 		num_cells++;
 		make_int(tmp+num_cells++, c->arity);
 		make_instr(tmp+num_cells, g_slash_s, NULL, 2, 2);
-		SET_OP(tmp+num_cells, OP_YFX); num_cells++;
+		set_operator(tmp+num_cells, OP_YFX); num_cells++;
 		make_atom(tmp+num_cells++, new_atom(q->pl, functor));
 		make_int(tmp+num_cells, !is_string(goal)?goal->arity:0);
 	} else if (!strcmp(err_type, "permission_error") && is_compound(c) && CMP_STRING_TO_CSTR(q, c, "/") && is_var(FIRST_ARG(c))) {
@@ -1048,14 +1047,14 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		}
 
 		make_instr(tmp+num_cells, g_slash_s, NULL, 2, 2);
-		SET_OP(tmp+num_cells, OP_YFX); num_cells++;
+		set_operator(tmp+num_cells, OP_YFX); num_cells++;
 		tmp[num_cells] = *c;
 		share_cell(c);
-		if (is_callable(c)) { tmp[num_cells].arity = 0; tmp[num_cells].num_cells = 1; CLR_OP(tmp+num_cells); }
+		if (is_callable(c)) { tmp[num_cells].arity = 0; tmp[num_cells].num_cells = 1; clr_operator(tmp+num_cells); }
 		num_cells++;
 		make_int(tmp+num_cells++, c->arity);
 		make_instr(tmp+num_cells, g_slash_s, NULL, 2, 2);
-		SET_OP(tmp+num_cells, OP_YFX); num_cells++;
+		set_operator(tmp+num_cells, OP_YFX); num_cells++;
 		make_atom(tmp+num_cells++, new_atom(q->pl, functor));
 		make_int(tmp+num_cells, !is_string(goal)?goal->arity:0);
 	} else if (!strcmp(err_type, "permission_error") && (is_builtin || (is_op && c->arity)) && !is_abolish) {
@@ -1085,14 +1084,14 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		}
 
 		make_instr(tmp+num_cells, g_slash_s, NULL, 2, 2);
-		SET_OP(tmp+num_cells, OP_YFX); num_cells++;
+		set_operator(tmp+num_cells, OP_YFX); num_cells++;
 		tmp[num_cells] = *c;
 		share_cell(c);
-		if (is_callable(c)) { tmp[num_cells].arity = 0; tmp[num_cells].num_cells = 1; CLR_OP(tmp+num_cells); }
+		if (is_callable(c)) { tmp[num_cells].arity = 0; tmp[num_cells].num_cells = 1; clr_operator(tmp+num_cells); }
 		num_cells++;
 		make_int(tmp+num_cells++, c->arity);
 		make_instr(tmp+num_cells, g_slash_s, NULL, 2, 2);
-		SET_OP(tmp+num_cells, OP_YFX); num_cells++;
+		set_operator(tmp+num_cells, OP_YFX); num_cells++;
 		make_atom(tmp+num_cells++, new_atom(q->pl, functor));
 		make_int(tmp+num_cells, !is_string(goal)?goal->arity:0);
 	} else if (!strcmp(err_type, "instantiation_error")) {
@@ -1103,7 +1102,7 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		make_instr(tmp+num_cells++, g_error_s, NULL, 2, 4);
 		make_cstring(tmp+num_cells++,  err_type);
 		make_instr(tmp+num_cells, g_slash_s, NULL, 2, 2);
-		SET_OP(tmp+num_cells, OP_YFX); num_cells++;
+		set_operator(tmp+num_cells, OP_YFX); num_cells++;
 		make_atom(tmp+num_cells++, new_atom(q->pl, functor));
 		make_int(tmp+num_cells, !is_string(goal)?goal->arity:0);
 	} else if (!strcmp(err_type, "existence_error") && !strcmp(expected, "procedure") && is_callable(c)) {
@@ -1115,11 +1114,11 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		make_instr(tmp+num_cells++, new_atom(q->pl, err_type), NULL, 2, 4);
 		make_cstring(tmp+num_cells++, expected);
 		make_instr(tmp+num_cells, g_slash_s, NULL, 2, 2);
-		SET_OP(tmp+num_cells, OP_YFX); num_cells++;
+		set_operator(tmp+num_cells, OP_YFX); num_cells++;
 		make_cstring(tmp+num_cells++, C_STR(q, c));
 		make_int(tmp+num_cells++, c->arity);
 		make_instr(tmp+num_cells, g_slash_s, NULL, 2, 2);
-		SET_OP(tmp+num_cells, OP_YFX); num_cells++;
+		set_operator(tmp+num_cells, OP_YFX); num_cells++;
 		make_atom(tmp+num_cells++, new_atom(q->pl, functor));
 		make_int(tmp+num_cells, !is_string(goal)?goal->arity:0);
 	} else if (!strcmp(err_type, "representation_error")
@@ -1134,7 +1133,7 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		make_instr(tmp+num_cells++, new_atom(q->pl, err_type), NULL, 1, 1);
 		make_cstring(tmp+num_cells++, expected);
 		make_instr(tmp+num_cells, g_slash_s, NULL, 2, 2);
-		SET_OP(tmp+num_cells, OP_YFX); num_cells++;
+		set_operator(tmp+num_cells, OP_YFX); num_cells++;
 		make_atom(tmp+num_cells++, new_atom(q->pl, functor));
 		make_int(tmp+num_cells, !is_string(goal)?goal->arity:0);
 	} else {
@@ -1165,7 +1164,7 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 
 		num_cells += dup_cells_by_ref(tmp+num_cells, c, c_ctx, c->num_cells);
 		make_instr(tmp+num_cells, g_slash_s, NULL, 2, 2);
-		SET_OP(tmp+num_cells, OP_YFX); num_cells++;
+		set_operator(tmp+num_cells, OP_YFX); num_cells++;
 		make_atom(tmp+num_cells++, new_atom(q->pl, functor));
 		make_int(tmp+num_cells, !is_string(goal)?goal->arity:0);
 	}

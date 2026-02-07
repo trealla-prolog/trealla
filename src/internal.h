@@ -185,40 +185,6 @@ enum {
 	FLAG_END=1<<13						// DO NOT USE
 };
 
-// The OP types are stored in the high 3 bits of the flag (13-15)
-// and only used during parsing
-
-#define	OP_FX 1
-#define	OP_FY 2
-#define	OP_XF 3
-#define	OP_YF 4
-#define	OP_YFX 5
-#define	OP_XFX 6
-#define	OP_XFY 7
-
-#define IS_PREFIX(op) (((op) == OP_FX) || ((op) == OP_FY))
-#define IS_POSTFIX(op) (((op) == OP_XF) || ((op) == OP_YF))
-#define IS_INFIX(op) (((op) == OP_XFX) || ((op) == OP_XFY) || ((op) == OP_YFX))
-#define IS_XF(op) ((op) == OP_XF)
-#define IS_YF(op) ((op) == OP_YF)
-
-#define is_prefix(c) IS_PREFIX(GET_OP(c))
-#define is_postfix(c) IS_POSTFIX(GET_OP(c))
-#define is_infix(c) IS_INFIX(GET_OP(c))
-
-#define is_fx(c) (GET_OP(c) == OP_FX)
-#define is_fy(c) (GET_OP(c) == OP_FY)
-#define is_xf(c) (GET_OP(c) == OP_XF)
-#define is_yf(c) (GET_OP(c) == OP_YF)
-#define is_yfx(c) (GET_OP(c) == OP_YFX)
-#define is_xfx(c) (GET_OP(c) == OP_XFX)
-#define is_xfy(c) (GET_OP(c) == OP_XFY)
-
-#define SET_OP(c,op) (CLR_OP(c), (c)->flags |= (((uint16_t)(op)) << 13))
-#define CLR_OP(c) ((c)->flags &= ~((uint16_t)(0xF) << 13))
-#define GET_OP(c) (((c)->flags >> 13) & 0xF)
-#define IS_OP(c) (GET_OP(c) != 0)
-
 typedef struct module_ module;
 typedef struct query_ query;
 typedef struct predicate_ predicate;
@@ -819,6 +785,94 @@ extern pl_idx g_call_s, g_braces_s, g_plus_s, g_minus_s, g_post_unify_hook_s;
 extern bool do_erase(module *m, const char *str);
 
 extern unsigned g_cpu_count;
+
+// The OP types are stored in the high 3 bits of the flag (13-15)
+// and only used during parsing
+
+#define	OP_FX 1
+#define	OP_FY 2
+#define	OP_XF 3
+#define	OP_YF 4
+#define	OP_YFX 5
+#define	OP_XFX 6
+#define	OP_XFY 7
+
+inline static bool is_prefix(unsigned int op) {
+    return op == OP_FX || op == OP_FY;
+}
+
+inline bool is_postfix(unsigned int op) {
+    return op == OP_XF || op == OP_YF;
+}
+
+inline static bool is_infix(unsigned int op) {
+    return op == OP_XFX || op == OP_XFY || op == OP_YFX;
+}
+
+inline static bool is_xf_op(unsigned int op) {
+    return op == OP_XF;
+}
+
+inline static bool is_yf_op(unsigned int op) {
+    return op == OP_YF;
+}
+
+inline static void clr_operator(cell *c) {
+    c->flags &= ~(0xF << 13);
+}
+
+inline static void set_operator(cell *c, uint16_t op) {
+    clr_operator(c);
+    c->flags |= (op << 13);
+}
+
+inline static unsigned int get_operator(const cell *c) {
+    return (c->flags >> 13) & 0xF;
+}
+
+inline static bool is_operator(const cell *c) {
+    return get_operator(c) != 0;
+}
+
+inline static bool is_prefix_op(const cell *c) {
+    return is_prefix(get_operator(c));
+}
+
+inline static bool is_postfix_op(const cell *c) {
+    return is_postfix(get_operator(c));
+}
+
+inline static bool is_infix_op(const cell *c) {
+    return is_infix(get_operator(c));
+}
+
+inline static bool is_fx(const cell *c) {
+    return get_operator(c) == OP_FX;
+}
+
+inline static bool is_fy(const cell *c) {
+    return get_operator(c) == OP_FY;
+}
+
+inline static bool is_xf(const cell *c) {
+    return get_operator(c) == OP_XF;
+}
+
+inline static bool is_yf(const cell *c) {
+    return get_operator(c) == OP_YF;
+}
+
+inline static bool is_yfx(const cell *c) {
+    return get_operator(c) == OP_YFX;
+}
+
+inline static bool is_xfx(const cell *c) {
+    return get_operator(c) == OP_XFX;
+}
+
+inline static bool is_xfy(const cell *c) {
+    return get_operator(c) == OP_XFY;
+}
 
 // Primary type...
 

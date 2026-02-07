@@ -3,7 +3,6 @@
 #include <dirent.h>
 #include <errno.h>
 #include <float.h>
-#include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -2370,7 +2369,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 				tmp[idx++].num_cells = ((cnt-done)*4)+1;
 				cell v;
 				make_instr(&v, g_unify_s, bif_iso_unify_2, 2, 2);
-				SET_OP(&v,OP_XFX);
+				set_operator(&v,OP_XFX);
 				tmp[idx++] = v;
 				make_atom(&v, q->pl->tabs[i].val_off);
 				tmp[idx++] = v;
@@ -2428,7 +2427,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 				tmp[idx++].num_cells = ((cnt-done)*4)+1;
 				cell v;
 				make_instr(&v, g_unify_s, bif_iso_unify_2, 2, 2);
-				SET_OP(&v,OP_XFX);
+				set_operator(&v,OP_XFX);
 				tmp[idx++] = v;
 				make_atom(&v, q->pl->tabs[i].val_off);
 				tmp[idx++] = v;
@@ -6461,7 +6460,7 @@ static bool do_parse_url(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_
 				*dst2 = '\0';
 			} else if (*src2 == '&') {
 				make_instr(tmp, new_atom(q->pl, "="), NULL, 2, 2);
-				SET_OP(tmp, OP_YFX);
+				set_operator(tmp, OP_YFX);
 
 				len = strlen(key);
 				dstbuf = malloc(len+1);
@@ -6493,7 +6492,7 @@ static bool do_parse_url(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_
 		}
 
 		make_instr(tmp, new_atom(q->pl, "="), NULL, 2, 2);
-		SET_OP(tmp, OP_YFX);
+		set_operator(tmp, OP_YFX);
 
 		len = strlen(key);
 		dstbuf = malloc(len+1);

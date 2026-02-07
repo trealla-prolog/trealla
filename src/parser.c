@@ -500,7 +500,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 			unsigned tmp_optype = 0;
 			unsigned tmp_pri = search_op(p->m, name, &tmp_optype, p3->arity);
 
-			if (IS_INFIX(specifier) && IS_POSTFIX(tmp_optype) && (true || p->m->flags.strict_iso)) {
+			if (is_infix(specifier) && is_postfix(tmp_optype) && (true || p->m->flags.strict_iso)) {
 				if (!p->do_read_term)
 					fprintf(stderr, "Error: permission error set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -508,7 +508,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 				return;
 			}
 
-			if (IS_POSTFIX(specifier) && IS_INFIX(tmp_optype) && (true || p->m->flags.strict_iso)) {
+			if (is_postfix(specifier) && is_infix(tmp_optype) && (true || p->m->flags.strict_iso)) {
 				if (!p->do_read_term)
 					fprintf(stderr, "Error: permission error set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -545,7 +545,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 		unsigned tmp_optype = 0;
 		unsigned tmp_pri = search_op(p->m, name, &tmp_optype, p3->arity);
 
-		if (IS_INFIX(specifier) && IS_POSTFIX(tmp_optype) && (true || p->m->flags.strict_iso)) {
+		if (is_infix(specifier) && is_postfix(tmp_optype) && (true || p->m->flags.strict_iso)) {
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: permission error set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -553,7 +553,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 			return;
 		}
 
-		if (IS_POSTFIX(specifier) && IS_INFIX(tmp_optype) && (true || p->m->flags.strict_iso)) {
+		if (is_postfix(specifier) && is_infix(tmp_optype) && (true || p->m->flags.strict_iso)) {
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: permission error set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -703,7 +703,7 @@ static bool directives(parser *p, cell *d)
 	cell *arg = c + 1;
 
 	d->val_off = new_atom(p->pl, "$directive");
-	CLR_OP(d);
+	clr_operator(d);
 
 	if (!strcmp(dirname, "initialization") && (c->arity == 1)) {
 		p->m->run_init = true;
@@ -1665,7 +1665,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 
 #if 0
 		if (!p->is_consulting)
-			printf("*** OP1 start=%u '%s' type=%u, specifier=%u, pri=%u, last_op=%d, is_op=%d\n", start_idx, C_STR(p, c), c->tag, GET_OP(c), c->priority, last_op, IS_OP(c));
+			printf("*** OP1 start=%u '%s' type=%u, specifier=%u, pri=%u, last_op=%d, is_op=%d\n", start_idx, C_STR(p, c), c->tag, get_operator(c), c->priority, last_op, is_operator(c));
 #endif
 
 		if ((i == start_idx) && (i == end_idx)) {
@@ -1706,7 +1706,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 
 #if 0
 		if (!p->is_consulting)
-			printf("*** OP2 last=%u/start=%u '%s' type=%u, specifier=%u, pri=%u, last_op=%d, is_op=%d\n", last_idx, start_idx, C_STR(p, c), c->tag, GET_OP(c), c->priority, last_op, IS_OP(c));
+			printf("*** OP2 last=%u/start=%u '%s' type=%u, specifier=%u, pri=%u, last_op=%d, is_op=%d\n", last_idx, start_idx, C_STR(p, c), c->tag, get_operator(c), c->priority, last_op, is_operator(c));
 #endif
 
 		c->arity = 1;
@@ -1738,10 +1738,10 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			}
 		}
 
-		if (is_prefix(c)) {
+		if (is_prefix_op(c)) {
 			cell *rhs = c + 1;
 
-			if (is_infix(rhs) && !rhs->arity && (rhs->priority > c->priority)) {
+			if (is_infix_op(rhs) && !rhs->arity && (rhs->priority > c->priority)) {
 				if (!p->do_read_term)
 					fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -1750,7 +1750,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 				return false;
 			}
 
-			if (is_prefix(rhs) && !rhs->arity && (rhs->priority > c->priority)) {
+			if (is_prefix_op(rhs) && !rhs->arity && (rhs->priority > c->priority)) {
 				if (!p->do_read_term)
 					fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -1760,7 +1760,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			}
 		}
 
-		if (is_prefix(c)) {
+		if (is_prefix_op(c)) {
 			const cell *rhs = c + 1;
 			pl_idx off = (pl_idx)(rhs - p->cl->cells);
 
@@ -1790,7 +1790,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			return false;
 		}
 
-		if (is_prefix(rhs) && !rhs->arity && (rhs->priority > c->priority)) {
+		if (is_prefix_op(rhs) && !rhs->arity && (rhs->priority > c->priority)) {
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -1801,7 +1801,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 
 		cell save = *c;
 
-		if (is_postfix(c)) {
+		if (is_postfix_op(c)) {
 			pl_idx off = last_idx;
 
 			if (off > end_idx) {
@@ -1834,7 +1834,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			break;
 		}
 
-		if (is_infix(rhs) && !rhs->arity) {
+		if (is_infix_op(rhs) && !rhs->arity) {
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -1859,7 +1859,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 
 		cell *lhs = p->cl->cells + last_idx;
 
-		if (is_infix(lhs) && !lhs->arity) {
+		if (is_infix_op(lhs) && !lhs->arity) {
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: syntax error, operator clash, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -2266,11 +2266,11 @@ static void expand_meta_predicate(parser *p, predicate *pr, cell *goal)
 			continue;
 		else if (is_interned(m) && (m->val_off == g_colon_s)) {
 			make_instr(tmpbuf+0, g_colon_s, bif_iso_qualify_2, 2, 1+k->num_cells);
-			SET_OP(tmpbuf+0, OP_XFY);;
+			set_operator(tmpbuf+0, OP_XFY);;
 			make_atom(tmpbuf+1, new_atom(p->pl, p->m->name));
 		} else if (is_smallint(m) && is_positive(m) && (get_smallint(m) <= 9)) {
 			make_instr(tmpbuf+0, g_colon_s, bif_iso_qualify_2, 2, 1+k->num_cells);
-			SET_OP(tmpbuf+0, OP_XFY);
+			set_operator(tmpbuf+0, OP_XFY);
 			make_atom(tmpbuf+1, new_atom(p->pl, p->m->name));
 		} else
 			continue;
@@ -2376,7 +2376,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 
 			c->num_cells = 1 + lhs->num_cells + rhs->num_cells;
 		}
-	} else if (is_prefix(c)) {
+	} else if (is_prefix_op(c)) {
 		if (c->val_off == g_neck_s) {
 			cell *rhs = c + 1;
 
@@ -4174,7 +4174,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 		}
 
 		if (priority && (last_op || last_bar)
-			&& !IS_POSTFIX(specifier)) {
+			&& !is_postfix(specifier)) {
 			char *s = eat_space(p);
 
 			if (!s || !*s) {
@@ -4188,7 +4188,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 			int nextch = *s;
 
-			if (IS_PREFIX(specifier) && p->is_symbol && last_prefix)
+			if (is_prefix(specifier) && p->is_symbol && last_prefix)
 				;
 			else if ((nextch == ',')
 				|| (nextch == ';')
@@ -4204,12 +4204,12 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			}
 		}
 
-		if (priority && IS_POSTFIX(specifier) && is_arg_processing && last_op && !last_postfix) {
+		if (priority && is_postfix(specifier) && is_arg_processing && last_op && !last_postfix) {
 			specifier = 0;
 			priority = 0;
 		}
 
-		if (priority && IS_INFIX(specifier) && last_op && !last_postfix) {
+		if (priority && is_infix(specifier) && last_op && !last_postfix) {
 			specifier = 0;
 			priority = 0;
 		}
@@ -4258,7 +4258,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			break;
 		}
 
-		if (is_consing && IS_INFIX(specifier) && (priority >= 1000)) {
+		if (is_consing && is_infix(specifier) && (priority >= 1000)) {
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: syntax error, near '%s', expected, %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -4267,7 +4267,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			break;
 		}
 
-		if ((!p->is_op || IS_PREFIX(specifier)) && !is_func && !last_op) {
+		if ((!p->is_op || is_prefix(specifier)) && !is_func && !last_op) {
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: syntax error, near '%s', operator expected, %s:%d\n", SB_cstr(p->token), get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -4277,15 +4277,15 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 		}
 
 		last_op = SB_strcmp(p->token, ")") && priority;
-		last_postfix = IS_POSTFIX(specifier);
-		last_prefix = last_op && IS_PREFIX(specifier);
+		last_postfix = is_postfix(specifier);
+		last_prefix = last_op && is_prefix(specifier);
 
 		p->start_term = false;
 		cell *c = make_a_cell(p);
 		c->num_cells = 1;
 		c->tag = p->v.tag;
 		c->flags = p->v.flags;
-		SET_OP(c,specifier);
+		set_operator(c,specifier);
 		c->priority = priority;
 		bool found = false;
 		last_num = is_number(c);

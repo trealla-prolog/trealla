@@ -1,5 +1,4 @@
 #include <ctype.h>
-#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -125,7 +124,7 @@ static bool bif_sys_unifiable_3(query *q)
 		cell *tmp = malloc(sizeof(cell)*(2+c->num_cells));
 		CHECKED(tmp);
 		make_instr(tmp, g_unify_s, bif_iso_unify_2, 2, 1+c->num_cells);
-		SET_OP(tmp, OP_XFX);
+		set_operator(tmp, OP_XFX);
 		cell v;
 		make_ref(&v, tr->var_num, q->st.cur_ctx);
 		tmp[1] = v;
@@ -148,7 +147,7 @@ static bool bif_iso_notunifiable_2(query *q)
 	GET_NEXT_ARG(p2,any);
 	cell tmp2;
 	make_instr(&tmp2, g_unify_s, bif_iso_unify_2, 2, 0);
-	SET_OP(&tmp2, OP_XFX);
+	set_operator(&tmp2, OP_XFX);
 	cell *tmp = prepare_call(q, CALL_NOSKIP, &tmp2, q->st.cur_ctx, p1->num_cells+p2->num_cells+4);
 	pl_idx num_cells = 0;
 	tmp[num_cells++].num_cells += p1->num_cells+p2->num_cells;
@@ -1610,7 +1609,7 @@ static bool bif_iso_univ_2(query *q)
 		cell tmp2 = *p1;
 		tmp2.num_cells = 1;
 		tmp2.arity = 0;
-		CLR_OP(&tmp2);
+		clr_operator(&tmp2);
 		allocate_list(q, &tmp2);
 		unsigned arity = p1->arity;
 		p1++;
@@ -1701,12 +1700,12 @@ static bool bif_iso_univ_2(query *q)
 		unsigned specifier;
 
 		if (search_op(q->st.m, C_STR(q, tmp), &specifier, arity == 1)) {
-			if ((arity == 2) && IS_INFIX(specifier))
-				SET_OP(tmp, specifier);
-			else if ((arity == 1) && IS_POSTFIX(specifier))
-				SET_OP(tmp, specifier);
-			else if ((arity == 1) && IS_PREFIX(specifier))
-				SET_OP(tmp, specifier);
+			if ((arity == 2) && is_infix(specifier))
+				set_operator(tmp, specifier);
+			else if ((arity == 1) && is_postfix(specifier))
+				set_operator(tmp, specifier);
+			else if ((arity == 1) && is_prefix(specifier))
+				set_operator(tmp, specifier);
 		}
 
 		return unify(q, p1, p1_ctx, tmp, q->st.cur_ctx);
@@ -1722,7 +1721,7 @@ static bool bif_iso_univ_2(query *q)
 		tmp.bif_ptr = NULL;
 	}
 
-	CLR_OP(&tmp);
+	clr_operator(&tmp);
 	allocate_list(q, &tmp);
 	unsigned arity = p1->arity;
 	p1++;
@@ -1990,7 +1989,7 @@ static bool bif_iso_functor_3(query *q)
 	tmp.num_cells = 1;
 	tmp.arity = 0;
 	tmp.flags = 0;
-	CLR_OP(&tmp);
+	clr_operator(&tmp);
 
 	if (is_string(p1)) {
 		tmp.tag = TAG_INTERNED;
@@ -2120,7 +2119,7 @@ static bool bif_iso_current_predicate_1(query *q)
 		make_instr(tmp, g_slash_s, NULL, 2, 2);
 		tmp[1] = *p1;
 		tmp[2] = *p2;
-		SET_OP(tmp, OP_YFX);
+		set_operator(tmp, OP_YFX);
 		return ok && unify(q, p_pi, p_pi_ctx, tmp, q->st.cur_ctx);
 	}
 
@@ -2385,7 +2384,7 @@ static bool answer_write_options_error(query *q, cell *c)
 	make_instr(tmp, g_plus_s, bif_iso_add_2, 2, 1+c->num_cells);
 	make_atom(tmp+1, new_atom(q->pl, "answer_write_options"));
 	dup_cells(tmp+2, c, c->num_cells);
-	SET_OP(tmp, OP_YFX);
+	set_operator(tmp, OP_YFX);
 	return throw_error(q, tmp, q->st.cur_ctx, "domain_error", "flag_value");
 }
 
@@ -2396,7 +2395,7 @@ static bool flag_value_error(query *q, cell *p1, cell *p2)
 	make_instr(tmp, g_plus_s, bif_iso_add_2, 2, 1+p2->num_cells);
 	make_atom(tmp+1, p1->val_off);
 	dup_cells(tmp+2, p2, p2->num_cells);
-	SET_OP(tmp, OP_YFX);
+	set_operator(tmp, OP_YFX);
 	return throw_error(q, tmp, q->st.cur_ctx, "domain_error", "flag_value");
 }
 
@@ -2660,7 +2659,7 @@ static bool do_op(query *q, cell *p3, pl_ctx p3_ctx)
 	else
 		return throw_error(q, p2, p2_ctx, "domain_error", "operator_specifier");
 
-	if (pri && !CMP_STRING_TO_CSTR(q, p3, "|") && (!IS_INFIX(specifier) || (pri < 1001)))
+	if (pri && !CMP_STRING_TO_CSTR(q, p3, "|") && (!is_infix(specifier) || (pri < 1001)))
 		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator");
 
 	if (true /*q->st.m->flags.strict_iso*/) {
@@ -2677,16 +2676,16 @@ static bool do_op(query *q, cell *p3, pl_ctx p3_ctx)
 	unsigned tmp_optype = 0;
 	unsigned tmp_pri = search_op(q->st.m, C_STR(q, p3), &tmp_optype, false);
 
-	if (IS_INFIX(specifier) && IS_POSTFIX(tmp_optype) && (true || q->st.m->flags.strict_iso))
+	if (is_infix(specifier) && is_postfix(tmp_optype) && (true || q->st.m->flags.strict_iso))
 		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator");
 
 	if (!tmp_pri && !pri)
 		return true;
 
-	if (IS_POSTFIX(specifier) && (IS_INFIX(tmp_optype)/* || tmp_pri*/) && (true || q->st.m->flags.strict_iso))
+	if (is_postfix(specifier) && (is_infix(tmp_optype)/* || tmp_pri*/) && (true || q->st.m->flags.strict_iso))
 		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator");
 
-	if (IS_POSTFIX(specifier) && IS_INFIX(tmp_optype) && (true || q->st.m->flags.strict_iso))
+	if (is_postfix(specifier) && is_infix(tmp_optype) && (true || q->st.m->flags.strict_iso))
 		return throw_error(q, p3, p3_ctx, "permission_error", "create,operator");
 
 	if (!set_op(q->st.m, C_STR(q, p3), specifier, pri))
@@ -2767,7 +2766,7 @@ static bool bif_module_info_2(query *q)
 
 		cell tmp[3];
 		make_instr(tmp+0, g_slash_s, NULL, 2, 2);
-		SET_OP(tmp, OP_YFX);
+		set_operator(tmp, OP_YFX);
 		make_atom(tmp+1, pr->key.val_off);
 		make_int(tmp+2, pr->key.arity);
 		append_list(q, tmp);

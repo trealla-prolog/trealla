@@ -419,7 +419,7 @@ static bool bif_sys_undo_trail_2(query *q)
 
 		cell tmp[3];
 		make_instr(tmp, g_minus_s, NULL, 2, 2);
-		SET_OP(tmp, OP_YFX);
+		set_operator(tmp, OP_YFX);
 		tmp[1] = lhs;
 		tmp[2] = rhs;
 		append_list(q, tmp);

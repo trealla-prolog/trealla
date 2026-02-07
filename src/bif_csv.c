@@ -196,7 +196,7 @@ bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *
 	bool found = false, evaluable = false;
 
 	if (get_builtin_term(q->st.m, l, &found, &evaluable), found && !evaluable) {
-		if (!GET_OP(l))
+		if (!get_operator(l))
 			return throw_error(q, l, q->st.cur_ctx, "permission_error", "modify,static_procedure");
 	}
 

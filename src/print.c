@@ -797,7 +797,7 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 				visited = me;
 				unsigned specifier = 0;
 				unsigned priority = match_op(q->st.m, C_STR(q, tail), &specifier, tail->arity);
-				bool parens = (is_infix(tail) || is_prefix(tail)) && (priority >= 1000);
+				bool parens = (is_infix_op(tail) || is_prefix_op(tail)) && (priority >= 1000);
 				if (parens) { SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
 				print_term_to_buf_(q, tail, tail_ctx, running, true, depth+1, depth+1, visited);
 				if (parens) { SB_sprintf(q->sb, "%s", ")"); }
@@ -825,8 +825,8 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 	unsigned my_priority = match_op(q->st.m, src, &my_specifier, c->arity);
 
 	if (!my_priority
-		|| ((IS_PREFIX(my_specifier) || IS_POSTFIX(my_specifier)) && (c->arity != 1))
-		|| (IS_INFIX(my_specifier) && (c->arity != 2))
+		|| ((is_prefix(my_specifier) || is_postfix(my_specifier)) && (c->arity != 1))
+		|| (is_infix(my_specifier) && (c->arity != 2))
 		) {
 		my_priority = 0;
 	}
@@ -836,7 +836,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 
 	if (!is_operator && !is_var(c) && (c->arity == 1)
 		&& (pri = match_op(q->st.m, src, &spec, c->arity))) {
-		if (IS_PREFIX(spec)) {
+		if (is_prefix(spec)) {
 			is_operator = true;
 			my_specifier = spec;
 			my_priority = pri;
@@ -980,9 +980,9 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 
 	// OP
 
-	bool is_op_infix = is_operator && IS_INFIX(my_specifier);
-	bool is_op_prefix = is_operator && IS_PREFIX(my_specifier);
-	bool is_op_postfix = is_operator && IS_POSTFIX(my_specifier);
+	bool is_op_infix = is_operator && is_infix(my_specifier);
+	bool is_op_prefix = is_operator && is_prefix(my_specifier);
+	bool is_op_postfix = is_operator && is_postfix(my_specifier);
 	bool is_op_yfx = is_op_infix && (my_specifier == OP_YFX);
 	bool is_op_xfy = is_op_infix && (my_specifier == OP_XFY);
 	size_t srclen = src_len;
@@ -995,9 +995,9 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 		if (running) lhs_ctx = q->latest_ctx;
 		unsigned lhs_specifier = false;
 		unsigned lhs_pri = is_interned(lhs) ? match_op(q->st.m, C_STR(q, lhs), &lhs_specifier, lhs->arity) : 0;
-		bool is_lhs_postfix = IS_POSTFIX(lhs_specifier);
-		bool is_lhs_xf = IS_XF(lhs_specifier);
-		bool is_lhs_yf = IS_YF(lhs_specifier);
+		bool is_lhs_postfix = is_postfix(lhs_specifier);
+		bool is_lhs_xf = is_xf(lhs_specifier);
+		bool is_lhs_yf = is_yf(lhs_specifier);
 		bool is_op_lhs = lhs_pri;
 		bool parens = is_lhs_xf;
 		bool space = (c->val_off == g_minus_s) && (is_number(lhs) || is_op_lhs);
@@ -1085,7 +1085,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 
 		bool parens = false;
 		if ((!strcmp(src, ":-") || !strcmp(src, "?-")) && (rhs_pri >= my_priority)) parens = true;
-		if (!strcmp(src, "+") && (is_infix(rhs) || is_postfix(rhs))) parens = true;
+		if (!strcmp(src, "+") && (is_infix_op(rhs) || is_postfix_op(rhs))) parens = true;
 		if (rhs_pri > my_priority) parens = true;
 		if ((rhs_pri > 0) && !rhs->arity) parens = true;
 		//if (my_priority && (rhs_pri == my_priority) && strcmp(src, "-") && strcmp(src, "+")) parens = true;
@@ -1175,7 +1175,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 	unsigned lhs_specifier = 0;
 	unsigned lhs_pri_1 = is_interned(lhs) ? match_op(q->st.m, C_STR(q, lhs), &lhs_specifier, lhs->arity) : 0;
 	unsigned lhs_pri_2 = is_interned(lhs) && !lhs->arity ? match_op(q->st.m, C_STR(q, lhs), &lhs_specifier, true) : 0;
-	bool lhs_postfix = (lhs->arity == 1) && IS_POSTFIX(lhs_specifier);
+	bool lhs_postfix = (lhs->arity == 1) && is_postfix(lhs_specifier);
 
 	bool lhs_parens = lhs_pri_1 >= my_priority;
 	//if (lhs_postfix) lhs_parens = true;
@@ -1287,7 +1287,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 	bool rhs_parens = rhs_pri_1 >= my_priority;
 	space = is_number(rhs) && is_negative(rhs);
 
-	if (!rhs_parens && is_prefix(rhs) && strcmp(src, "|"))
+	if (!rhs_parens && is_prefix_op(rhs) && strcmp(src, "|"))
 		space = true;
 
 	bool rhs_is_symbol = is_interned(rhs) && !rhs->arity

@@ -282,7 +282,7 @@ static bool bif_map_list_2(query *q)
 		make_instr(tmp2+0, g_colon_s, NULL, 2, 2);
 		tmp2[1] = tmpk;
 		tmp2[2] = tmpv;
-		SET_OP(tmp2, OP_YFX);
+		set_operator(tmp2, OP_YFX);
 		append_list(q, tmp2);
 	}
 
