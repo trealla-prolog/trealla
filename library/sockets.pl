@@ -88,4 +88,4 @@ socket_server_close(ServerSocket) :-
 %
 % Returns the current hostname of the computer in which Scryer Prolog is executing right now
 current_host(HostName) :-
-	HostName = dummy.
+	HostName = localhost. % FIXME:
