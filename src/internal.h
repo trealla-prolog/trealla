@@ -1068,8 +1068,7 @@ inline static bool is_lt(const cell *c, pl_int n) {
 	is_smallint(c) ? get_smallint(c) >= 0 :					\
 	is_float(c) ? get_float(c) >= 0.0 : false)
 
-inline static void share_cell_(const cell *c)
-{
+inline static void share_cell_(const cell *c) {
 	if (is_strbuf(c))
 		c->val_strb->refcnt++;
 	else if (is_bigint(c))
