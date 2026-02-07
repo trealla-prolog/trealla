@@ -6111,7 +6111,7 @@ static void parse_host(const char *src, char hostname[1024], char path[4096], un
 
 static bool bif_server_3(query *q)
 {
-	GET_FIRST_ARG(p1,source_sink);
+	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,var);
 	GET_NEXT_ARG(p3,list_or_nil);
 	char hostname[1024], path[4096];
@@ -6120,14 +6120,19 @@ static bool bif_server_3(query *q)
 	unsigned port = 80;
 	snprintf(hostname, sizeof(hostname), "localhost");
 	path[0] = '\0';
-	char *filename;
+	char *filename = NULL;
 
-	if (is_atom(p1))
+	if (is_var(p1)) {
+		port = 0;
+		filename = strdup(":1");
+		cell tmp;
+		make_int(&tmp, 1);
+		unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
+	} else if (is_atom(p1))
 		filename = DUP_STRING(q, p1);
 	else if (!is_iso_list(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "source_sink");
-
-	if (is_iso_list(p1)) {
+	else {
 		size_t len = scan_is_chars_list(q, p1, p1_ctx, true);
 
 		if (!len)

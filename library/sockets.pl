@@ -5,7 +5,7 @@ As a client, you should just open a socket and you will receive a stream.
 In both cases, with a stream, you can use the usual predicates to read and write to the stream.
 */
 :- module(sockets, [socket_client_open/3,
-                    socket_server_open/2,
+                    socket_server_open/3,
                     socket_server_accept/4,
                     socket_server_close/1,
                     current_host/1]).
@@ -42,15 +42,18 @@ socket_client_open(Addr, Stream, Options) :-
 	client(Addr, _, _, Stream, []),
 	set_stream(Stream, Options).
 
-%% socket_server_open(+Addr, -ServerSocket).
+%% socket_server_open(+Addr, -ServerSocket, +Options).
 %
 % Open a server socket, returning a ServerSocket. Use that ServerSocket to accept incoming connections in
 % `socket_server_accept/4`. Addr must satisfy `Addr = Address:Port`. Depending on the operating system
 % configuration, some ports might be reserved for superusers.
-socket_server_open(Addr, ServerSocket) :-
+socket_server_open(Addr, ServerSocket, Options) :-
     must_be(var, ServerSocket),
-    Options = [],
-    server(Addr, ServerSocket, Options).
+    ( integer(Addr) ->
+		( number_codes(Addr, Codes), atom_codes(Port0, Codes), atom_concat(':', Port0, Port) )
+    ; Port = Addr
+    ),
+    server(Port, ServerSocket, Options).
 
 %% socket_server_accept(+ServerSocket, -Client, -Stream, +Options).
 %
@@ -68,7 +71,8 @@ socket_server_open(Addr, ServerSocket) :-
 socket_server_accept(ServerSocket, Client, Stream, Options) :-
     must_be(var, Client),
     must_be(var, Stream),
-    accept(ServerSocket, Stream).
+    accept(ServerSocket, Stream),
+	set_stream(Stream, Options).
 
 %% socket_server_close(+ServerSocket).
 %
