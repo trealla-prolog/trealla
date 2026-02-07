@@ -69,9 +69,9 @@ socket_server_open(Addr, ServerSocket, Options) :-
 socket_server_accept(ServerSocket, Client, Stream, Options) :-
     must_be(var, Client),
     must_be(var, Stream),
-	writeln([here2a1,ServerSocket]),
+	writeln(['accept: ',ServerSocket]),
     accept(ServerSocket, Stream),
-	writeln([here2a2,Stream]),
+	writeln(['... accepted ',Stream]),
 	set_stream(Stream, Options).
 
 

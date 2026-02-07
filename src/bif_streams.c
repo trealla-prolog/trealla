@@ -6217,7 +6217,7 @@ static bool bif_server_3(query *q)
 
 	if (port == 0) {
 		port = get_local_port(fd);
-        //printf("Socket's local port: %d\n", port);
+		printf("*** parsed hostname=%s, port=%d\n", hostname, port);
 		cell tmp;
 		make_int(&tmp, port);
 		unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
