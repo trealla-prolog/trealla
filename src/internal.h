@@ -1080,15 +1080,37 @@ inline static bool is_negative(const cell *c) {
     return false;
 }
 
-#define is_positive(c) (is_bigint(c) ?						\
-	mp_int_compare_zero(&(c)->val_bigint->ival) > 0 :		\
-	is_smallint(c) ? get_smallint(c) > 0 :					\
-	is_float(c) ? get_float(c) > 0.0 : false)
+inline static bool is_positive(const cell *c) {
+    if (is_bigint(c)) {
+        return mp_int_compare_zero(&c->val_bigint->ival) > 0;
+    }
+    
+    if (is_smallint(c)) {
+        return get_smallint(c) > 0;
+    }
+    
+    if (is_float(c)) {
+        return get_float(c) > 0.0;
+    }
+    
+    return false;
+}
 
-#define is_not_less_than_zero(c) (is_bigint(c) ?			\
-	mp_int_compare_zero(&(c)->val_bigint->ival) >= 0 :		\
-	is_smallint(c) ? get_smallint(c) >= 0 :					\
-	is_float(c) ? get_float(c) >= 0.0 : false)
+inline static bool is_not_less_than_zero(const cell *c) {
+    if (is_bigint(c)) {
+        return mp_int_compare_zero(&c->val_bigint->ival) >= 0;
+    }
+    
+    if (is_smallint(c)) {
+        return get_smallint(c) >= 0;
+    }
+    
+    if (is_float(c)) {
+        return get_float(c) >= 0.0;
+    }
+    
+    return false;
+}
 
 inline static void share_cell_(const cell *c) {
 	if (is_strbuf(c))
