@@ -822,6 +822,10 @@ extern unsigned g_cpu_count;
 
 // Primary type...
 
+inline static bool is_empty(const cell *c) {
+	return c->tag == TAG_EMPTY;
+}
+
 inline static bool is_var(const cell *c) {
 	return c->tag == TAG_VAR;
 }
@@ -1283,7 +1287,3 @@ inline static void predicate_delink(predicate *pr, rule *r)
 }
 
 #define ENSURE(cond, ...) if (!(cond)) { printf("Error: no memory %s %d\n", __FILE__, __LINE__); abort(); }
-
-inline static bool is_empty(const cell *c) {
-	return c->tag == TAG_EMPTY;
-}
