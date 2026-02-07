@@ -6123,8 +6123,10 @@ static bool bif_server_3(query *q)
 	char *filename = NULL;
 
 	if (is_var(p1)) {
+		// FIXME: dummy port
 		port = 0;
 		filename = strdup(":1");
+
 		cell tmp;
 		make_int(&tmp, 1);
 		unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
