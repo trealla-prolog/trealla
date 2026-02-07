@@ -74,98 +74,6 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define MAX_OF(a,b) (a) > (b) ? (a) : (b)
 #define MIN_OF(a,b) (a) < (b) ? (a) : (b)
 
-// Primary type...
-
-#define is_var(c) ((c)->tag == TAG_VAR)
-#define is_interned(c) ((c)->tag == TAG_INTERNED)
-#define is_cstring(c) ((c)->tag == TAG_CSTR)
-#define is_integer(c) ((c)->tag == TAG_INT)
-#define is_float(c) ((c)->tag == TAG_FLOAT)
-#define is_rational(c) ((c)->tag == TAG_RATIONAL)
-#define is_indirect(c) ((c)->tag == TAG_INDIRECT)
-#define is_dbid(c) ((c)->tag == TAG_DBID)
-#define is_kvid(c) ((c)->tag == TAG_KVID)
-#define is_blob(c) ((c)->tag == TAG_BLOB)
-#define is_end(c) ((c)->tag == TAG_END)
-
-// Derived type...
-
-#define is_iso_atom(c) ((is_interned(c) || is_cstring(c)) && !(c)->arity)
-#define is_iso_list(c) (is_interned(c) && ((c)->arity == 2) && ((c)->val_off == g_dot_s))
-#define is_smallint(c) (is_integer(c) && !((c)->flags & FLAG_INT_BIG))
-#define is_bigint(c) (is_integer(c) && ((c)->flags & FLAG_INT_BIG))
-#define is_boolean(c) ((is_interned(c) && !(c)->arity && (((c)->val_off == g_true_s) || ((c)->val_off == g_false_s))))
-#define is_atom(c) ((is_interned(c) && !(c)->arity) || is_cstring(c))
-#define is_string(c) (is_cstring(c) && ((c)->flags & FLAG_CSTR_STRING))
-#define is_codes(c) (is_string(c) && ((c)->flags & FLAG_CSTR_CODES))
-#define is_managed(c) ((c)->flags & FLAG_MANAGED)
-#define is_cstr_blob(c) (is_cstring(c) && ((c)->flags & FLAG_CSTR_BLOB))
-#define is_slice(c) (is_cstr_blob(c) && ((c)->flags & FLAG_CSTR_SLICE))
-#define is_strbuf(c) (is_cstr_blob(c) && !((c)->flags & FLAG_CSTR_SLICE))
-#define is_list(c) (is_iso_list(c) || is_string(c))
-#define is_nil(c) (is_interned(c) && !(c)->arity && ((c)->val_off == g_nil_s))
-#define is_anon(c) ((c)->flags & FLAG_VAR_ANON)
-#define is_builtin(c) (is_interned(c) && (c)->flags & FLAG_INTERNED_BUILTIN)
-#define is_evaluable(c) (is_interned(c) && ((c)->flags & FLAG_INTERNED_EVALUABLE))
-#define is_tail_call(c) ((c)->flags & FLAG_INTERNED_TAIL_CALL)
-#define is_recursive_call(c) ((c)->flags & FLAG_INTERNED_RECURSIVE_CALL)
-#define is_temporary(c) ((c)->flags & FLAG_VAR_TEMPORARY)
-#define is_local(c) ((c)->flags & FLAG_VAR_LOCAL)
-#define is_void(c) ((c)->flags & FLAG_VAR_VOID)
-#define is_global(c) ((c)->flags & FLAG_VAR_GLOBAL)
-#define is_ground(c) ((c)->flags & FLAG_INTERNED_GROUND)
-#define is_ref(c) (is_var(c) && ((c)->flags & FLAG_VAR_REF))
-#define is_op(c) ((c)->flags & 0xE000) ? true : false
-#define is_callable(c) (is_interned(c) || (is_cstring(c) && !is_string(c)))
-#define is_compound(c) (is_interned(c) && (c)->arity)
-#define is_structure(c) (is_compound(c) || is_string(c))
-#define is_number(c) (is_integer(c) || is_float(c) || is_rational(c))
-#define is_atomic(c) (is_atom(c) || is_number(c))
-#define is_iso_atomic(c) (is_iso_atom(c) || is_number(c))
-#define is_nonvar(c) !is_var(c)
-
-#define is_gt(c,n) (get_smallint(c) > (n))
-#define is_ge(c,n) (get_smallint(c) >= (n))
-#define is_eq(c,n) (get_smallint(c) == (n))
-#define is_ne(c,n) (get_smallint(c) != (n))
-#define is_le(c,n) (get_smallint(c) <= (n))
-#define is_lt(c,n) (get_smallint(c) < (n))
-
-#define get_list_head(c) ((c) + 1)
-#define get_list_tail(c) (get_list_head(c) + get_list_head(c)->num_cells)
-
-#define get_float(c) (c)->val_float
-#define set_float(c,v) (c)->val_float = (v)
-#define get_smallint(c) (c)->val_int
-#define set_smallint(c,v) (c)->val_int = (v)
-#define get_smalluint(c) (c)->val_uint
-#define set_smalluint(c,v) (c)->val_uint = (v)
-
-#define neg_bigint(c) (c)->val_bigint->ival.sign = MP_NEG
-#define neg_smallint(c) (c)->val_int = -llabs((c)->val_int)
-#define neg_float(c) (c)->val_float = -fabs((c)->val_float)
-
-#define is_zero(c) (is_bigint(c) ?							\
-	mp_int_compare_zero(&(c)->val_bigint->ival) == 0 :		\
-	is_smallint(c) ? get_smallint(c) == 0 :					\
-	is_float(c) ? get_float(c) == 0.0 : false)
-
-#define is_negative(c) (is_bigint(c) ?						\
-	(c)->val_bigint->ival.sign == MP_NEG :					\
-	is_smallint(c) ? get_smallint(c) < 0 :					\
-	is_float(c) ? get_float(c) < 0.0 : false)
-
-#define is_positive(c) (is_bigint(c) ?						\
-	mp_int_compare_zero(&(c)->val_bigint->ival) > 0 :		\
-	is_smallint(c) ? get_smallint(c) > 0 :					\
-	is_float(c) ? get_float(c) > 0.0 : false)
-
-#define is_not_less_than_zero(c) (is_bigint(c) ?			\
-	mp_int_compare_zero(&(c)->val_bigint->ival) >= 0 :		\
-	is_smallint(c) ? get_smallint(c) >= 0 :					\
-	is_float(c) ? get_float(c) >= 0.0 : false)
-
-
 extern char *g_global_atoms;
 
 typedef pl_atomic int64_t pl_refcnt;
@@ -911,6 +819,129 @@ extern pl_idx g_call_s, g_braces_s, g_plus_s, g_minus_s, g_post_unify_hook_s;
 extern bool do_erase(module *m, const char *str);
 
 extern unsigned g_cpu_count;
+
+// Primary type...
+
+inline static bool is_var(const cell *c) {
+	return c->tag == TAG_VAR;
+}
+
+inline static bool is_interned(const cell *c) {
+	return c->tag == TAG_INTERNED;
+}
+
+inline static bool is_cstring(const cell *c) {
+	return c->tag == TAG_CSTR;
+}
+
+inline static bool is_integer(const cell *c) {
+	return c->tag == TAG_INT;
+}
+
+inline static bool is_float(const cell *c) {
+	return c->tag == TAG_FLOAT;
+}
+
+inline static bool is_rational(const cell *c) {
+	return c->tag == TAG_RATIONAL;
+}
+
+inline static bool is_indirect(const cell *c) {
+	return c->tag == TAG_INDIRECT;
+}
+
+inline static bool is_dbid(const cell *c) {
+	return c->tag == TAG_DBID;
+}
+
+inline static bool is_kvid(const cell *c) {
+	return c->tag == TAG_KVID;
+}
+
+inline static bool is_blob(const cell *c) {
+	return c->tag == TAG_BLOB;
+}
+
+inline static bool is_end(const cell *c) {
+	return c->tag == TAG_END;
+}
+
+// Derived type...
+
+#define is_iso_atom(c) ((is_interned(c) || is_cstring(c)) && !(c)->arity)
+#define is_iso_list(c) (is_interned(c) && ((c)->arity == 2) && ((c)->val_off == g_dot_s))
+#define is_smallint(c) (is_integer(c) && !((c)->flags & FLAG_INT_BIG))
+#define is_bigint(c) (is_integer(c) && ((c)->flags & FLAG_INT_BIG))
+#define is_boolean(c) ((is_interned(c) && !(c)->arity && (((c)->val_off == g_true_s) || ((c)->val_off == g_false_s))))
+#define is_atom(c) ((is_interned(c) && !(c)->arity) || is_cstring(c))
+#define is_string(c) (is_cstring(c) && ((c)->flags & FLAG_CSTR_STRING))
+#define is_codes(c) (is_string(c) && ((c)->flags & FLAG_CSTR_CODES))
+#define is_managed(c) ((c)->flags & FLAG_MANAGED)
+#define is_cstr_blob(c) (is_cstring(c) && ((c)->flags & FLAG_CSTR_BLOB))
+#define is_slice(c) (is_cstr_blob(c) && ((c)->flags & FLAG_CSTR_SLICE))
+#define is_strbuf(c) (is_cstr_blob(c) && !((c)->flags & FLAG_CSTR_SLICE))
+#define is_list(c) (is_iso_list(c) || is_string(c))
+#define is_nil(c) (is_interned(c) && !(c)->arity && ((c)->val_off == g_nil_s))
+#define is_anon(c) ((c)->flags & FLAG_VAR_ANON)
+#define is_builtin(c) (is_interned(c) && (c)->flags & FLAG_INTERNED_BUILTIN)
+#define is_evaluable(c) (is_interned(c) && ((c)->flags & FLAG_INTERNED_EVALUABLE))
+#define is_tail_call(c) ((c)->flags & FLAG_INTERNED_TAIL_CALL)
+#define is_recursive_call(c) ((c)->flags & FLAG_INTERNED_RECURSIVE_CALL)
+#define is_temporary(c) ((c)->flags & FLAG_VAR_TEMPORARY)
+#define is_local(c) ((c)->flags & FLAG_VAR_LOCAL)
+#define is_void(c) ((c)->flags & FLAG_VAR_VOID)
+#define is_global(c) ((c)->flags & FLAG_VAR_GLOBAL)
+#define is_ground(c) ((c)->flags & FLAG_INTERNED_GROUND)
+#define is_ref(c) (is_var(c) && ((c)->flags & FLAG_VAR_REF))
+#define is_op(c) ((c)->flags & 0xE000) ? true : false
+#define is_callable(c) (is_interned(c) || (is_cstring(c) && !is_string(c)))
+#define is_compound(c) (is_interned(c) && (c)->arity)
+#define is_structure(c) (is_compound(c) || is_string(c))
+#define is_number(c) (is_integer(c) || is_float(c) || is_rational(c))
+#define is_atomic(c) (is_atom(c) || is_number(c))
+#define is_iso_atomic(c) (is_iso_atom(c) || is_number(c))
+#define is_nonvar(c) !is_var(c)
+
+#define is_gt(c,n) (get_smallint(c) > (n))
+#define is_ge(c,n) (get_smallint(c) >= (n))
+#define is_eq(c,n) (get_smallint(c) == (n))
+#define is_ne(c,n) (get_smallint(c) != (n))
+#define is_le(c,n) (get_smallint(c) <= (n))
+#define is_lt(c,n) (get_smallint(c) < (n))
+
+#define get_list_head(c) ((c) + 1)
+#define get_list_tail(c) (get_list_head(c) + get_list_head(c)->num_cells)
+
+#define get_float(c) (c)->val_float
+#define set_float(c,v) (c)->val_float = (v)
+#define get_smallint(c) (c)->val_int
+#define set_smallint(c,v) (c)->val_int = (v)
+#define get_smalluint(c) (c)->val_uint
+#define set_smalluint(c,v) (c)->val_uint = (v)
+
+#define neg_bigint(c) (c)->val_bigint->ival.sign = MP_NEG
+#define neg_smallint(c) (c)->val_int = -llabs((c)->val_int)
+#define neg_float(c) (c)->val_float = -fabs((c)->val_float)
+
+#define is_zero(c) (is_bigint(c) ?							\
+	mp_int_compare_zero(&(c)->val_bigint->ival) == 0 :		\
+	is_smallint(c) ? get_smallint(c) == 0 :					\
+	is_float(c) ? get_float(c) == 0.0 : false)
+
+#define is_negative(c) (is_bigint(c) ?						\
+	(c)->val_bigint->ival.sign == MP_NEG :					\
+	is_smallint(c) ? get_smallint(c) < 0 :					\
+	is_float(c) ? get_float(c) < 0.0 : false)
+
+#define is_positive(c) (is_bigint(c) ?						\
+	mp_int_compare_zero(&(c)->val_bigint->ival) > 0 :		\
+	is_smallint(c) ? get_smallint(c) > 0 :					\
+	is_float(c) ? get_float(c) > 0.0 : false)
+
+#define is_not_less_than_zero(c) (is_bigint(c) ?			\
+	mp_int_compare_zero(&(c)->val_bigint->ival) >= 0 :		\
+	is_smallint(c) ? get_smallint(c) >= 0 :					\
+	is_float(c) ? get_float(c) >= 0.0 : false)
 
 #define share_cell(c) if (is_managed(c)) share_cell_(c)
 
