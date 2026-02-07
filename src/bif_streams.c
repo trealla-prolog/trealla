@@ -6203,7 +6203,6 @@ static bool bif_server_3(query *q)
 	const char *url = filename;
 	parse_host(url, hostname, path, &port, &ssl, &domain);
 	free(filename);
-	printf("*** net_server host=%s, port=%d\n", hostname, port);
 	int fd = net_server(hostname, port, udp, ssl?keyfile:NULL, ssl?certfile:NULL);
 
 	if (fd == -1)
@@ -6223,7 +6222,7 @@ static bool bif_server_3(query *q)
 		unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	}
 
-	printf("*** net_server host=%s, port=%d, fd=%d\n", hostname, port, fd);
+	//printf("*** net_server host=%s, port=%d, fd=%d\n", hostname, port, fd);
 
 	stream *str = &q->pl->streams[n];
 	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
@@ -6257,7 +6256,12 @@ static bool bif_accept_2(query *q)
 	GET_NEXT_ARG(p1,var);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
+
+	//printf("*** net_accept, fd=%d\n", fileno(str->fp));
+
 	int fd = net_accept(str);
+
+	//printf("*** ~net_accept, fd=%d\n", fd);
 
 	if (fd == -1) {
 		if (q->is_task)
@@ -6616,7 +6620,7 @@ static bool bif_client_5(query *q)
 		filename = DUP_STRING(q, p1);
 	else if (!is_list(p1)) {
 		char host[1024];
-		snprintf(host, sizeof(host), "%s:%d", C_STR(q, deref(q, p1+1, p1_ctx)), (int)get_smallint(deref(q, p1+2, p1_ctx)));
+		snprintf(host, sizeof(host), "%s", C_STR(q, deref(q, p1+1, p1_ctx)));
 		port = (int)get_smallint(deref(q, p1+2, p1_ctx));
 		filename = strdup(host);
 	}
