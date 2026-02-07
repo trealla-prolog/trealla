@@ -1,7 +1,8 @@
 Trealla Prolog
 ==============
 
-A compact, efficient Prolog interpreter with ISO Prolog aspirations.
+A compact, efficient ISO Prolog interpreter. Written in plain old C
+and using a plain old Makefile.
 
 	MIT licensed
 	Integers & Rationals are unbounded
