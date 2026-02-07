@@ -1000,22 +1000,56 @@ inline static bool is_nonvar(const cell *c) {
 	return !is_var(c);
 }
 
-#define is_gt(c,n) (get_smallint(c) > (n))
-#define is_ge(c,n) (get_smallint(c) >= (n))
-#define is_eq(c,n) (get_smallint(c) == (n))
-#define is_ne(c,n) (get_smallint(c) != (n))
-#define is_le(c,n) (get_smallint(c) <= (n))
-#define is_lt(c,n) (get_smallint(c) < (n))
+inline static pl_flt get_float(const cell *c) {
+	return c->val_float;
+}
+
+inline static void set_float(cell *c, pl_flt v) {
+	c->val_float = v;
+}
+
+inline static pl_int get_smallint(const cell *c) {
+	return c->val_int;
+}
+
+inline static void set_smallint(cell *c, pl_int v) {
+	c->val_int = v;
+}
+
+inline static pl_uint get_smalluint(const cell *c) {
+	return c->val_uint;
+}
+
+inline static void set_smalluint(cell *c, pl_uint v) {
+	c->val_uint = v;
+}
+
+inline static bool is_gt(const cell *c, pl_int n) {
+	return get_smallint(c) > n;
+}
+
+inline static bool is_ge(const cell *c, pl_int n) {
+	return get_smallint(c) >= n;
+}
+
+inline static bool is_eq(const cell *c, pl_int n) {
+	return get_smallint(c) == n;
+}
+
+inline static bool is_ne(const cell *c, pl_int n) {
+	return get_smallint(c) != n;
+}
+
+inline static bool is_le(const cell *c, pl_int n) {
+	return get_smallint(c) <= n;
+}
+
+inline static bool is_lt(const cell *c, pl_int n) {
+	return get_smallint(c) < n;
+}
 
 #define get_list_head(c) ((c) + 1)
 #define get_list_tail(c) (get_list_head(c) + get_list_head(c)->num_cells)
-
-#define get_float(c) (c)->val_float
-#define set_float(c,v) (c)->val_float = (v)
-#define get_smallint(c) (c)->val_int
-#define set_smallint(c,v) (c)->val_int = (v)
-#define get_smalluint(c) (c)->val_uint
-#define set_smalluint(c,v) (c)->val_uint = (v)
 
 #define neg_bigint(c) (c)->val_bigint->ival.sign = MP_NEG
 #define neg_smallint(c) (c)->val_int = -llabs((c)->val_int)
