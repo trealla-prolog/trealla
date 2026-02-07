@@ -36,7 +36,7 @@ socket_client_open(Addr0, Stream, Options) :-
     ),
     format("client(Addr: ~w, Options: ~w)~n", [Addr, Options]),
 	client(Addr, _, _, Stream, []),
-    format("... ~client(Addr: ~w, Stream: ~w) done~n", [Addr, Stream]),
+    format("... client(Addr: ~w, Stream: ~w) done~n", [Addr, Stream]),
 	set_stream(Stream, Options).
 
 
@@ -54,7 +54,7 @@ socket_server_open(Addr0, ServerSocket, Options) :-
     ),
     format("server(Addr: ~w, ServerSocket: ~w, Options: ~w)~n", [Addr, ServerSocket, Options]),
     server(Addr, ServerSocket, Options),
-    format("... ~server(Addr: ~w, ServerSocket: ~w) done~n", [Addr, ServerSocket]),
+    format("... server(Addr: ~w, ServerSocket: ~w) done~n", [Addr, ServerSocket]),
     true.
 
 
@@ -77,7 +77,7 @@ socket_server_accept(ServerSocket, Client, Stream, Options) :-
     must_be(var, Stream),
     format("accept(ServerSocket: ~w, Options: ~w)~n", [ServerSocket, Options]),
     accept(ServerSocket, Stream),
-    format("... ~accept(ServerSocket: ~w, Stream: ~w) done~n", [ServerSocket, Stream]),
+    format("... accept(ServerSocket: ~w, Stream: ~w) done~n", [ServerSocket, Stream]),
 	set_stream(Stream, Options).
 
 

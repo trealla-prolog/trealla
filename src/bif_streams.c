@@ -6690,9 +6690,9 @@ static bool bif_client_5(query *q)
 	parse_host(url, hostname, path, &port, &ssl, &domain);
 	free(filename);
 
-	printf("*** net_connect host=%s, port=%d\n", hostname, port);
+	//printf("*** net_connect host=%s, port=%d\n", hostname, port);
 	int fd = net_connect(hostname, port, udp, nodelay);
-	printf("*** ~net_connect host=%s, port=%d, fd=%d\n", hostname, port, fd);
+	//printf("*** ~net_connect host=%s, port=%d, fd=%d\n", hostname, port, fd);
 
 	if (fd == -1)
 		return throw_error(q, p1, p1_ctx, "resource_error", "could_not_connect");
