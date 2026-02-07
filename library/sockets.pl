@@ -8,7 +8,7 @@ In both cases, with a stream, you can use the usual predicates to read and write
                     socket_server_open/2,
                     socket_server_accept/4,
                     socket_server_close/1,
-                    current_hostname/1]).
+                    current_host/1]).
 
 :- use_module(library(error)).
 
@@ -79,5 +79,5 @@ socket_server_close(ServerSocket) :-
 %% current_hostname(-HostName).
 %
 % Returns the current hostname of the computer in which Scryer Prolog is executing right now
-current_hostname(HostName) :-
+current_host(HostName) :-
 	HostName = dummy.
