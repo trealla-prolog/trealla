@@ -6203,7 +6203,9 @@ static bool bif_server_3(query *q)
 	const char *url = filename;
 	parse_host(url, hostname, path, &port, &ssl, &domain);
 	free(filename);
+	printf("*** net_server host=%s, port=%d\n", hostname, port);
 	int fd = net_server(hostname, port, udp, ssl?keyfile:NULL, ssl?certfile:NULL);
+	printf("*** net_server host=%s, port=%d, fd=%d\n", hostname, port, fd);
 
 	if (fd == -1)
 		return throw_error(q, p1, p1_ctx, "existence_error", "server_failed");
