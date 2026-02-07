@@ -25,6 +25,7 @@ static SSL_CTX *g_ctx = NULL;
 #include "query.h"
 
 #ifdef _WIN32
+#include <winsock.h>
 #include <winsock2.h>
 #include <windows.h>
 //#define close closesocket
@@ -51,7 +52,7 @@ static SSL_CTX *g_ctx = NULL;
 
 
 int get_local_port(int clientSock) {
-#if !defined(_WIN32) && !defined(__wasi__)
+#if !defined(__wasi__)
     struct sockaddr_in sin;
     socklen_t addrlen = sizeof(sin);
 
