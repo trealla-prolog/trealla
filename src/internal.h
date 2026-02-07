@@ -868,39 +868,137 @@ inline static bool is_end(const cell *c) {
 
 // Derived type...
 
-#define is_iso_atom(c) ((is_interned(c) || is_cstring(c)) && !(c)->arity)
-#define is_iso_list(c) (is_interned(c) && ((c)->arity == 2) && ((c)->val_off == g_dot_s))
-#define is_smallint(c) (is_integer(c) && !((c)->flags & FLAG_INT_BIG))
-#define is_bigint(c) (is_integer(c) && ((c)->flags & FLAG_INT_BIG))
-#define is_boolean(c) ((is_interned(c) && !(c)->arity && (((c)->val_off == g_true_s) || ((c)->val_off == g_false_s))))
-#define is_atom(c) ((is_interned(c) && !(c)->arity) || is_cstring(c))
-#define is_string(c) (is_cstring(c) && ((c)->flags & FLAG_CSTR_STRING))
-#define is_codes(c) (is_string(c) && ((c)->flags & FLAG_CSTR_CODES))
-#define is_managed(c) ((c)->flags & FLAG_MANAGED)
-#define is_cstr_blob(c) (is_cstring(c) && ((c)->flags & FLAG_CSTR_BLOB))
-#define is_slice(c) (is_cstr_blob(c) && ((c)->flags & FLAG_CSTR_SLICE))
-#define is_strbuf(c) (is_cstr_blob(c) && !((c)->flags & FLAG_CSTR_SLICE))
-#define is_list(c) (is_iso_list(c) || is_string(c))
-#define is_nil(c) (is_interned(c) && !(c)->arity && ((c)->val_off == g_nil_s))
-#define is_anon(c) ((c)->flags & FLAG_VAR_ANON)
-#define is_builtin(c) (is_interned(c) && (c)->flags & FLAG_INTERNED_BUILTIN)
-#define is_evaluable(c) (is_interned(c) && ((c)->flags & FLAG_INTERNED_EVALUABLE))
-#define is_tail_call(c) ((c)->flags & FLAG_INTERNED_TAIL_CALL)
-#define is_recursive_call(c) ((c)->flags & FLAG_INTERNED_RECURSIVE_CALL)
-#define is_temporary(c) ((c)->flags & FLAG_VAR_TEMPORARY)
-#define is_local(c) ((c)->flags & FLAG_VAR_LOCAL)
-#define is_void(c) ((c)->flags & FLAG_VAR_VOID)
-#define is_global(c) ((c)->flags & FLAG_VAR_GLOBAL)
-#define is_ground(c) ((c)->flags & FLAG_INTERNED_GROUND)
-#define is_ref(c) (is_var(c) && ((c)->flags & FLAG_VAR_REF))
-#define is_op(c) ((c)->flags & 0xE000) ? true : false
-#define is_callable(c) (is_interned(c) || (is_cstring(c) && !is_string(c)))
-#define is_compound(c) (is_interned(c) && (c)->arity)
-#define is_structure(c) (is_compound(c) || is_string(c))
-#define is_number(c) (is_integer(c) || is_float(c) || is_rational(c))
-#define is_atomic(c) (is_atom(c) || is_number(c))
-#define is_iso_atomic(c) (is_iso_atom(c) || is_number(c))
-#define is_nonvar(c) !is_var(c)
+inline static bool is_iso_atom(const cell *c) {
+	return (is_interned(c) || is_cstring(c)) && !c->arity;
+}
+
+inline static bool is_iso_list(const cell *c) {
+	return (is_interned(c) && c->arity == 2) && c->val_off == g_dot_s;
+}
+
+inline static bool is_smallint(const cell *c) {
+	return is_integer(c) && !(c->flags & FLAG_INT_BIG);
+}
+
+inline static bool is_bigint(const cell *c) {
+	return is_integer(c) && (c->flags & FLAG_INT_BIG);
+}
+
+inline static bool is_boolean(const cell *c) {
+	return ((is_interned(c) && !c->arity && ((c->val_off == g_true_s) || (c->val_off == g_false_s))));
+}
+
+inline static bool is_atom(const cell *c) {
+	return (is_interned(c) && !c->arity) || is_cstring(c);
+}
+
+inline static bool is_string(const cell *c) {
+	return (is_cstring(c) && (c->flags & FLAG_CSTR_STRING));
+}
+
+inline static bool is_codes(const cell *c) {
+	return (is_string(c) && (c->flags & FLAG_CSTR_CODES));
+}
+
+inline static bool is_managed(const cell *c) {
+	return (c->flags & FLAG_MANAGED);
+}
+
+inline static bool is_cstr_blob(const cell *c) {
+	return (is_cstring(c) && (c->flags & FLAG_CSTR_BLOB));
+}
+
+inline static bool is_slice(const cell *c) {
+	return (is_cstr_blob(c) && (c->flags & FLAG_CSTR_SLICE));
+}
+
+inline static bool is_strbuf(const cell *c) {
+	return (is_cstr_blob(c) && !(c->flags & FLAG_CSTR_SLICE));
+}
+
+inline static bool is_list(const cell *c) {
+	return (is_iso_list(c) || is_string(c));
+}
+
+inline static bool is_nil(const cell *c) {
+	return (is_interned(c) && !c->arity && (c->val_off == g_nil_s));
+}
+
+inline static bool is_anon(const cell *c) {
+	return (c->flags & FLAG_VAR_ANON);
+}
+
+inline static bool is_builtin(const cell *c) {
+	return (is_interned(c) && c->flags & FLAG_INTERNED_BUILTIN);
+}
+
+inline static bool is_evaluable(const cell *c) {
+	return (is_interned(c) && (c->flags & FLAG_INTERNED_EVALUABLE));
+}
+
+inline static bool is_tail_call(const cell *c) {
+	return (c->flags & FLAG_INTERNED_TAIL_CALL);
+}
+
+inline static bool is_recursive_call(const cell *c) {
+	return (c->flags & FLAG_INTERNED_RECURSIVE_CALL);
+}
+
+inline static bool is_temporary(const cell *c) {
+	return (c->flags & FLAG_VAR_TEMPORARY);
+}
+
+inline static bool is_local(const cell *c) {
+	return (c->flags & FLAG_VAR_LOCAL);
+}
+
+inline static bool is_void(const cell *c) {
+	return (c->flags & FLAG_VAR_VOID);
+}
+
+inline static bool is_global(const cell *c) {
+	return (c->flags & FLAG_VAR_GLOBAL);
+}
+
+inline static bool is_ground(const cell *c) {
+	return (c->flags & FLAG_INTERNED_GROUND);
+}
+
+inline static bool is_ref(const cell *c) {
+	return (is_var(c) && (c->flags & FLAG_VAR_REF));
+}
+
+inline static bool is_op(const cell *c) {
+	return (c->flags & 0xE000) ? true : false;
+}
+
+inline static bool is_callable(const cell *c) {
+	return (is_interned(c) || (is_cstring(c) && !is_string(c)));
+}
+
+inline static bool is_compound(const cell *c) {
+	return (is_interned(c) && c->arity);
+}
+
+inline static bool is_structure(const cell *c) {
+	return (is_compound(c) || is_string(c));
+}
+
+inline static bool is_number(const cell *c) {
+	return (is_integer(c) || is_float(c) || is_rational(c));
+}
+
+inline static bool is_atomic(const cell *c) {
+	return (is_atom(c) || is_number(c));
+}
+
+inline static bool is_iso_atomic(const cell *c) {
+	return (is_iso_atom(c) || is_number(c));
+}
+
+inline static bool is_nonvar(const cell *c) {
+	return !is_var(c);
+}
 
 #define is_gt(c,n) (get_smallint(c) > (n))
 #define is_ge(c,n) (get_smallint(c) >= (n))

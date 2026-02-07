@@ -831,13 +831,13 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 		my_priority = 0;
 	}
 
-	bool is_op = my_priority;
+	bool is_operator = my_priority;
 	unsigned pri = 0, spec = 0;
 
-	if (!is_op && !is_var(c) && (c->arity == 1)
+	if (!is_operator && !is_var(c) && (c->arity == 1)
 		&& (pri = match_op(q->st.m, src, &spec, c->arity))) {
 		if (IS_PREFIX(spec)) {
-			is_op = true;
+			is_operator = true;
 			my_specifier = spec;
 			my_priority = pri;
 		}
@@ -845,7 +845,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 
 	// CANONICAL
 
-	if (q->ignore_ops || !is_op || !c->arity) {
+	if (q->ignore_ops || !is_operator || !c->arity) {
 		bool is_needs_quoting = needs_quoting(q->st.m, src, src_len);
 		int quote = ((running <= 0) || q->quoted) && !is_var(c) && is_needs_quoting;
 		int dq = 0, braces = 0;
@@ -980,9 +980,9 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 
 	// OP
 
-	bool is_op_infix = is_op && IS_INFIX(my_specifier);
-	bool is_op_prefix = is_op && IS_PREFIX(my_specifier);
-	bool is_op_postfix = is_op && IS_POSTFIX(my_specifier);
+	bool is_op_infix = is_operator && IS_INFIX(my_specifier);
+	bool is_op_prefix = is_operator && IS_PREFIX(my_specifier);
+	bool is_op_postfix = is_operator && IS_POSTFIX(my_specifier);
 	bool is_op_yfx = is_op_infix && (my_specifier == OP_YFX);
 	bool is_op_xfy = is_op_infix && (my_specifier == OP_XFY);
 	size_t srclen = src_len;
