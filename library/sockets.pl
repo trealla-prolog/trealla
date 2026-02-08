@@ -93,6 +93,6 @@ socket_server_close(ServerSocket) :-
 
 %% current_hostname(-HostName).
 %
-% Returns the current hostname of the computer in which Scryer Prolog is executing right now
+% Returns the current hostname of the computer in which Trealla Prolog is executing right now
 current_host(HostName) :-
-	HostName = localhost. % FIXME:
+	'$current_host'(HostName).

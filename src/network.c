@@ -64,6 +64,19 @@ int get_local_port(int clientSock) {
     return -1;
 }
 
+const char *get_local_hostname(char *hostname_buffer, size_t buffer_size) {
+#if !defined(_WIN32) && !defined(__wasi__)
+    if (gethostname(hostname_buffer, buffer_size) == -1) {
+        perror("gethostname error");
+        exit(EXIT_FAILURE);
+    }
+    hostname_buffer[buffer_size - 1] = '\0';
+    return hostname_buffer;
+#else
+	return NULL;
+#endif
+}
+
 int net_domain_connect(const char *name, bool udp)
 {
 #if !defined(_WIN32) && !defined(__wasi__)

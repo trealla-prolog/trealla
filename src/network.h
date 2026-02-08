@@ -20,3 +20,4 @@ extern size_t net_write(const void *ptr, size_t nbytes, stream *str);
 extern int net_close(stream *str);
 
 extern int get_local_port(int clientSock);
+extern const char *get_local_hostname(char *hostname_buffer, size_t buffer_size);

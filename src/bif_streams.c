@@ -6976,6 +6976,16 @@ static bool bif_sys_bflush_1(query *q)
 	return true;
 }
 
+static bool bif_sys_current_host_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	char buffer[256];
+	const char *host = get_local_hostname(buffer, sizeof(buffer));
+	cell tmp;
+	make_cstring(&tmp, host);
+	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
+}
+
 static bool bif_sys_bwrite_2(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
@@ -7706,6 +7716,7 @@ builtins g_streams_bifs[] =
 	{"$bread", 3, bif_sys_bread_3, "+stream,+integer,-string", false, false, BLAH},
 	{"$bflush", 1, bif_sys_bflush_1, "+stream", false, false, BLAH},
 	{"$bwrite", 2, bif_sys_bwrite_2, "+stream,-string", false, false, BLAH},
+	{"$current_host", 1, bif_sys_current_host_1, "-atom", false, false, BLAH},
 
 	{"$gsl_vector_write", 2, bif_sys_gsl_vector_write_2, "+integer,+stream", false, false, BLAH},
 	{"$gsl_vector_alloc", 2, bif_sys_gsl_vector_alloc_2, "+stream,-integer", false, false, BLAH},
