@@ -3280,7 +3280,7 @@ static bool bif_iso_get_char_2(query *q)
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,in_character_or_var);
 
-	if (strcmp(str->mode, "read"))
+	if (strcmp(str->mode, "read") && strcmp(str->mode, "update"))
 		return throw_error(q, pstr, q->st.cur_ctx, "permission_error", "input,stream");
 
 	if (str->binary) {
@@ -3641,7 +3641,7 @@ static bool bif_unget_char_2(query *q)
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,in_character);
 
-	if (strcmp(str->mode, "read"))
+	if (strcmp(str->mode, "read") && strcmp(str->mode, "update"))
 		return throw_error(q, pstr, q->st.cur_ctx, "permission_error", "input,stream");
 
 	if (str->binary) {
@@ -3745,7 +3745,7 @@ static bool bif_unget_byte_2(query *q)
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,in_byte);
 
-	if (strcmp(str->mode, "read"))
+	if (strcmp(str->mode, "read") && strcmp(str->mode, "update"))
 		return throw_error(q, pstr, q->st.cur_ctx, "permission_error", "input,stream");
 
 	if (!str->binary) {
@@ -7373,9 +7373,6 @@ static bool bif_set_stream_2(query *q)
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,any);
 
-	if (!is_structure(p1))
-		return throw_error(q, p1, p1_ctx, "domain_error", "stream_property");
-
 	if (is_iso_list(p1)) {
 		LIST_HANDLER(p1);
 
@@ -7442,6 +7439,9 @@ static bool bif_set_stream_2(query *q)
 
 		return true;
 	}
+
+	if (!is_structure(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "stream_property");
 
 	cell *name = p1 + 1;
 	name = deref(q, name, p1_ctx);
