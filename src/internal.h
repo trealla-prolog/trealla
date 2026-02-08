@@ -74,98 +74,6 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define MAX_OF(a,b) (a) > (b) ? (a) : (b)
 #define MIN_OF(a,b) (a) < (b) ? (a) : (b)
 
-// Primary type...
-
-#define is_var(c) ((c)->tag == TAG_VAR)
-#define is_interned(c) ((c)->tag == TAG_INTERNED)
-#define is_cstring(c) ((c)->tag == TAG_CSTR)
-#define is_integer(c) ((c)->tag == TAG_INT)
-#define is_float(c) ((c)->tag == TAG_FLOAT)
-#define is_rational(c) ((c)->tag == TAG_RATIONAL)
-#define is_indirect(c) ((c)->tag == TAG_INDIRECT)
-#define is_dbid(c) ((c)->tag == TAG_DBID)
-#define is_kvid(c) ((c)->tag == TAG_KVID)
-#define is_blob(c) ((c)->tag == TAG_BLOB)
-#define is_end(c) ((c)->tag == TAG_END)
-
-// Derived type...
-
-#define is_iso_atom(c) ((is_interned(c) || is_cstring(c)) && !(c)->arity)
-#define is_iso_list(c) (is_interned(c) && ((c)->arity == 2) && ((c)->val_off == g_dot_s))
-#define is_smallint(c) (is_integer(c) && !((c)->flags & FLAG_INT_BIG))
-#define is_bigint(c) (is_integer(c) && ((c)->flags & FLAG_INT_BIG))
-#define is_boolean(c) ((is_interned(c) && !(c)->arity && (((c)->val_off == g_true_s) || ((c)->val_off == g_false_s))))
-#define is_atom(c) ((is_interned(c) && !(c)->arity) || is_cstring(c))
-#define is_string(c) (is_cstring(c) && ((c)->flags & FLAG_CSTR_STRING))
-#define is_codes(c) (is_string(c) && ((c)->flags & FLAG_CSTR_CODES))
-#define is_managed(c) ((c)->flags & FLAG_MANAGED)
-#define is_cstr_blob(c) (is_cstring(c) && ((c)->flags & FLAG_CSTR_BLOB))
-#define is_slice(c) (is_cstr_blob(c) && ((c)->flags & FLAG_CSTR_SLICE))
-#define is_strbuf(c) (is_cstr_blob(c) && !((c)->flags & FLAG_CSTR_SLICE))
-#define is_list(c) (is_iso_list(c) || is_string(c))
-#define is_nil(c) (is_interned(c) && !(c)->arity && ((c)->val_off == g_nil_s))
-#define is_anon(c) ((c)->flags & FLAG_VAR_ANON)
-#define is_builtin(c) (is_interned(c) && (c)->flags & FLAG_INTERNED_BUILTIN)
-#define is_evaluable(c) (is_interned(c) && ((c)->flags & FLAG_INTERNED_EVALUABLE))
-#define is_tail_call(c) ((c)->flags & FLAG_INTERNED_TAIL_CALL)
-#define is_recursive_call(c) ((c)->flags & FLAG_INTERNED_RECURSIVE_CALL)
-#define is_temporary(c) ((c)->flags & FLAG_VAR_TEMPORARY)
-#define is_local(c) ((c)->flags & FLAG_VAR_LOCAL)
-#define is_void(c) ((c)->flags & FLAG_VAR_VOID)
-#define is_global(c) ((c)->flags & FLAG_VAR_GLOBAL)
-#define is_ground(c) ((c)->flags & FLAG_INTERNED_GROUND)
-#define is_ref(c) (is_var(c) && ((c)->flags & FLAG_VAR_REF))
-#define is_op(c) ((c)->flags & 0xE000) ? true : false
-#define is_callable(c) (is_interned(c) || (is_cstring(c) && !is_string(c)))
-#define is_compound(c) (is_interned(c) && (c)->arity)
-#define is_structure(c) (is_compound(c) || is_string(c))
-#define is_number(c) (is_integer(c) || is_float(c) || is_rational(c))
-#define is_atomic(c) (is_atom(c) || is_number(c))
-#define is_iso_atomic(c) (is_iso_atom(c) || is_number(c))
-#define is_nonvar(c) !is_var(c)
-
-#define is_gt(c,n) (get_smallint(c) > (n))
-#define is_ge(c,n) (get_smallint(c) >= (n))
-#define is_eq(c,n) (get_smallint(c) == (n))
-#define is_ne(c,n) (get_smallint(c) != (n))
-#define is_le(c,n) (get_smallint(c) <= (n))
-#define is_lt(c,n) (get_smallint(c) < (n))
-
-#define get_list_head(c) ((c) + 1)
-#define get_list_tail(c) (get_list_head(c) + get_list_head(c)->num_cells)
-
-#define get_float(c) (c)->val_float
-#define set_float(c,v) (c)->val_float = (v)
-#define get_smallint(c) (c)->val_int
-#define set_smallint(c,v) (c)->val_int = (v)
-#define get_smalluint(c) (c)->val_uint
-#define set_smalluint(c,v) (c)->val_uint = (v)
-
-#define neg_bigint(c) (c)->val_bigint->ival.sign = MP_NEG
-#define neg_smallint(c) (c)->val_int = -llabs((c)->val_int)
-#define neg_float(c) (c)->val_float = -fabs((c)->val_float)
-
-#define is_zero(c) (is_bigint(c) ?							\
-	mp_int_compare_zero(&(c)->val_bigint->ival) == 0 :		\
-	is_smallint(c) ? get_smallint(c) == 0 :					\
-	is_float(c) ? get_float(c) == 0.0 : false)
-
-#define is_negative(c) (is_bigint(c) ?						\
-	(c)->val_bigint->ival.sign == MP_NEG :					\
-	is_smallint(c) ? get_smallint(c) < 0 :					\
-	is_float(c) ? get_float(c) < 0.0 : false)
-
-#define is_positive(c) (is_bigint(c) ?						\
-	mp_int_compare_zero(&(c)->val_bigint->ival) > 0 :		\
-	is_smallint(c) ? get_smallint(c) > 0 :					\
-	is_float(c) ? get_float(c) > 0.0 : false)
-
-#define is_not_less_than_zero(c) (is_bigint(c) ?			\
-	mp_int_compare_zero(&(c)->val_bigint->ival) >= 0 :		\
-	is_smallint(c) ? get_smallint(c) >= 0 :					\
-	is_float(c) ? get_float(c) >= 0.0 : false)
-
-
 extern char *g_global_atoms;
 
 typedef pl_atomic int64_t pl_refcnt;
@@ -276,40 +184,6 @@ enum {
 	FLAG_MANAGED=1<<12,					// any ref-counted object
 	FLAG_END=1<<13						// DO NOT USE
 };
-
-// The OP types are stored in the high 3 bits of the flag (13-15)
-// and only used during parsing
-
-#define	OP_FX 1
-#define	OP_FY 2
-#define	OP_XF 3
-#define	OP_YF 4
-#define	OP_YFX 5
-#define	OP_XFX 6
-#define	OP_XFY 7
-
-#define IS_PREFIX(op) (((op) == OP_FX) || ((op) == OP_FY))
-#define IS_POSTFIX(op) (((op) == OP_XF) || ((op) == OP_YF))
-#define IS_INFIX(op) (((op) == OP_XFX) || ((op) == OP_XFY) || ((op) == OP_YFX))
-#define IS_XF(op) ((op) == OP_XF)
-#define IS_YF(op) ((op) == OP_YF)
-
-#define is_prefix(c) IS_PREFIX(GET_OP(c))
-#define is_postfix(c) IS_POSTFIX(GET_OP(c))
-#define is_infix(c) IS_INFIX(GET_OP(c))
-
-#define is_fx(c) (GET_OP(c) == OP_FX)
-#define is_fy(c) (GET_OP(c) == OP_FY)
-#define is_xf(c) (GET_OP(c) == OP_XF)
-#define is_yf(c) (GET_OP(c) == OP_YF)
-#define is_yfx(c) (GET_OP(c) == OP_YFX)
-#define is_xfx(c) (GET_OP(c) == OP_XFX)
-#define is_xfy(c) (GET_OP(c) == OP_XFY)
-
-#define SET_OP(c,op) (CLR_OP(c), (c)->flags |= (((uint16_t)(op)) << 13))
-#define CLR_OP(c) ((c)->flags &= ~((uint16_t)(0xF) << 13))
-#define GET_OP(c) (((c)->flags >> 13) & 0xF)
-#define IS_OP(c) (GET_OP(c) != 0)
 
 typedef struct module_ module;
 typedef struct query_ query;
@@ -912,10 +786,391 @@ extern bool do_erase(module *m, const char *str);
 
 extern unsigned g_cpu_count;
 
-#define share_cell(c) if (is_managed(c)) share_cell_(c)
+// The OP types are stored in the high 3 bits of the flag (13-15)
+// and only used during parsing
 
-inline static void share_cell_(const cell *c)
-{
+#define	OP_FX 1
+#define	OP_FY 2
+#define	OP_XF 3
+#define	OP_YF 4
+#define	OP_YFX 5
+#define	OP_XFX 6
+#define	OP_XFY 7
+
+inline static bool is_prefix(unsigned int op) {
+    return op == OP_FX || op == OP_FY;
+}
+
+inline bool is_postfix(unsigned int op) {
+    return op == OP_XF || op == OP_YF;
+}
+
+inline static bool is_infix(unsigned int op) {
+    return op == OP_XFX || op == OP_XFY || op == OP_YFX;
+}
+
+inline static bool is_xf_op(unsigned int op) {
+    return op == OP_XF;
+}
+
+inline static bool is_yf_op(unsigned int op) {
+    return op == OP_YF;
+}
+
+inline static void clr_operator(cell *c) {
+    c->flags &= ~(0xF << 13);
+}
+
+inline static void set_operator(cell *c, uint16_t op) {
+    clr_operator(c);
+    c->flags |= (op << 13);
+}
+
+inline static unsigned int get_operator(const cell *c) {
+    return (c->flags >> 13) & 0xF;
+}
+
+inline static bool is_operator(const cell *c) {
+    return get_operator(c) != 0;
+}
+
+inline static bool is_prefix_op(const cell *c) {
+    return is_prefix(get_operator(c));
+}
+
+inline static bool is_postfix_op(const cell *c) {
+    return is_postfix(get_operator(c));
+}
+
+inline static bool is_infix_op(const cell *c) {
+    return is_infix(get_operator(c));
+}
+
+inline static bool is_fx(const cell *c) {
+    return get_operator(c) == OP_FX;
+}
+
+inline static bool is_fy(const cell *c) {
+    return get_operator(c) == OP_FY;
+}
+
+inline static bool is_xf(const cell *c) {
+    return get_operator(c) == OP_XF;
+}
+
+inline static bool is_yf(const cell *c) {
+    return get_operator(c) == OP_YF;
+}
+
+inline static bool is_yfx(const cell *c) {
+    return get_operator(c) == OP_YFX;
+}
+
+inline static bool is_xfx(const cell *c) {
+    return get_operator(c) == OP_XFX;
+}
+
+inline static bool is_xfy(const cell *c) {
+    return get_operator(c) == OP_XFY;
+}
+
+// Primary type...
+
+inline static bool is_empty(const cell *c) {
+	return c->tag == TAG_EMPTY;
+}
+
+inline static bool is_var(const cell *c) {
+	return c->tag == TAG_VAR;
+}
+
+inline static bool is_interned(const cell *c) {
+	return c->tag == TAG_INTERNED;
+}
+
+inline static bool is_cstring(const cell *c) {
+	return c->tag == TAG_CSTR;
+}
+
+inline static bool is_integer(const cell *c) {
+	return c->tag == TAG_INT;
+}
+
+inline static bool is_float(const cell *c) {
+	return c->tag == TAG_FLOAT;
+}
+
+inline static bool is_rational(const cell *c) {
+	return c->tag == TAG_RATIONAL;
+}
+
+inline static bool is_indirect(const cell *c) {
+	return c->tag == TAG_INDIRECT;
+}
+
+inline static bool is_dbid(const cell *c) {
+	return c->tag == TAG_DBID;
+}
+
+inline static bool is_kvid(const cell *c) {
+	return c->tag == TAG_KVID;
+}
+
+inline static bool is_blob(const cell *c) {
+	return c->tag == TAG_BLOB;
+}
+
+inline static bool is_end(const cell *c) {
+	return c->tag == TAG_END;
+}
+
+// Derived type...
+
+inline static bool is_iso_atom(const cell *c) {
+	return (is_interned(c) || is_cstring(c)) && !c->arity;
+}
+
+inline static bool is_iso_list(const cell *c) {
+	return (is_interned(c) && c->arity == 2) && c->val_off == g_dot_s;
+}
+
+inline static bool is_smallint(const cell *c) {
+	return is_integer(c) && !(c->flags & FLAG_INT_BIG);
+}
+
+inline static bool is_bigint(const cell *c) {
+	return is_integer(c) && (c->flags & FLAG_INT_BIG);
+}
+
+inline static bool is_boolean(const cell *c) {
+	return ((is_interned(c) && !c->arity && ((c->val_off == g_true_s) || (c->val_off == g_false_s))));
+}
+
+inline static bool is_atom(const cell *c) {
+	return (is_interned(c) && !c->arity) || is_cstring(c);
+}
+
+inline static bool is_string(const cell *c) {
+	return (is_cstring(c) && (c->flags & FLAG_CSTR_STRING));
+}
+
+inline static bool is_codes(const cell *c) {
+	return (is_string(c) && (c->flags & FLAG_CSTR_CODES));
+}
+
+inline static bool is_managed(const cell *c) {
+	return (c->flags & FLAG_MANAGED);
+}
+
+inline static bool is_cstr_blob(const cell *c) {
+	return (is_cstring(c) && (c->flags & FLAG_CSTR_BLOB));
+}
+
+inline static bool is_slice(const cell *c) {
+	return (is_cstr_blob(c) && (c->flags & FLAG_CSTR_SLICE));
+}
+
+inline static bool is_strbuf(const cell *c) {
+	return (is_cstr_blob(c) && !(c->flags & FLAG_CSTR_SLICE));
+}
+
+inline static bool is_list(const cell *c) {
+	return (is_iso_list(c) || is_string(c));
+}
+
+inline static bool is_nil(const cell *c) {
+	return (is_interned(c) && !c->arity && (c->val_off == g_nil_s));
+}
+
+inline static bool is_anon(const cell *c) {
+	return (c->flags & FLAG_VAR_ANON);
+}
+
+inline static bool is_builtin(const cell *c) {
+	return (is_interned(c) && c->flags & FLAG_INTERNED_BUILTIN);
+}
+
+inline static bool is_evaluable(const cell *c) {
+	return (is_interned(c) && (c->flags & FLAG_INTERNED_EVALUABLE));
+}
+
+inline static bool is_tail_call(const cell *c) {
+	return (c->flags & FLAG_INTERNED_TAIL_CALL);
+}
+
+inline static bool is_recursive_call(const cell *c) {
+	return (c->flags & FLAG_INTERNED_RECURSIVE_CALL);
+}
+
+inline static bool is_temporary(const cell *c) {
+	return (c->flags & FLAG_VAR_TEMPORARY);
+}
+
+inline static bool is_local(const cell *c) {
+	return (c->flags & FLAG_VAR_LOCAL);
+}
+
+inline static bool is_void(const cell *c) {
+	return (c->flags & FLAG_VAR_VOID);
+}
+
+inline static bool is_global(const cell *c) {
+	return (c->flags & FLAG_VAR_GLOBAL);
+}
+
+inline static bool is_ground(const cell *c) {
+	return (c->flags & FLAG_INTERNED_GROUND);
+}
+
+inline static bool is_ref(const cell *c) {
+	return (is_var(c) && (c->flags & FLAG_VAR_REF));
+}
+
+inline static bool is_op(const cell *c) {
+	return (c->flags & 0xE000) ? true : false;
+}
+
+inline static bool is_callable(const cell *c) {
+	return (is_interned(c) || (is_cstring(c) && !is_string(c)));
+}
+
+inline static bool is_compound(const cell *c) {
+	return (is_interned(c) && c->arity);
+}
+
+inline static bool is_structure(const cell *c) {
+	return (is_compound(c) || is_string(c));
+}
+
+inline static bool is_number(const cell *c) {
+	return (is_integer(c) || is_float(c) || is_rational(c));
+}
+
+inline static bool is_atomic(const cell *c) {
+	return (is_atom(c) || is_number(c));
+}
+
+inline static bool is_iso_atomic(const cell *c) {
+	return (is_iso_atom(c) || is_number(c));
+}
+
+inline static bool is_nonvar(const cell *c) {
+	return !is_var(c);
+}
+
+inline static pl_flt get_float(const cell *c) {
+	return c->val_float;
+}
+
+inline static void set_float(cell *c, pl_flt v) {
+	c->val_float = v;
+}
+
+inline static pl_int get_smallint(const cell *c) {
+	return c->val_int;
+}
+
+inline static void set_smallint(cell *c, pl_int v) {
+	c->val_int = v;
+}
+
+inline static pl_uint get_smalluint(const cell *c) {
+	return c->val_uint;
+}
+
+inline static void set_smalluint(cell *c, pl_uint v) {
+	c->val_uint = v;
+}
+
+inline static bool is_gt(const cell *c, pl_int n) {
+	return get_smallint(c) > n;
+}
+
+inline static bool is_ge(const cell *c, pl_int n) {
+	return get_smallint(c) >= n;
+}
+
+inline static bool is_eq(const cell *c, pl_int n) {
+	return get_smallint(c) == n;
+}
+
+inline static bool is_ne(const cell *c, pl_int n) {
+	return get_smallint(c) != n;
+}
+
+inline static bool is_le(const cell *c, pl_int n) {
+	return get_smallint(c) <= n;
+}
+
+inline static bool is_lt(const cell *c, pl_int n) {
+	return get_smallint(c) < n;
+}
+
+inline static bool is_zero(const cell *c) {
+    if (is_bigint(c)) {
+        return mp_int_compare_zero(&c->val_bigint->ival) == 0;
+    }
+    
+    if (is_smallint(c)) {
+        return get_smallint(c) == 0;
+    }
+    
+    if (is_float(c)) {
+        return get_float(c) == 0.0;
+    }
+    
+    return false;
+}
+
+inline static bool is_negative(const cell *c) {
+    if (is_bigint(c)) {
+        return c->val_bigint->ival.sign == MP_NEG;
+    }
+    
+    if (is_smallint(c)) {
+        return get_smallint(c) < 0;
+    }
+    
+    if (is_float(c)) {
+        return get_float(c) < 0.0;
+    }
+    
+    return false;
+}
+
+inline static bool is_positive(const cell *c) {
+    if (is_bigint(c)) {
+        return mp_int_compare_zero(&c->val_bigint->ival) > 0;
+    }
+    
+    if (is_smallint(c)) {
+        return get_smallint(c) > 0;
+    }
+    
+    if (is_float(c)) {
+        return get_float(c) > 0.0;
+    }
+    
+    return false;
+}
+
+inline static bool is_not_less_than_zero(const cell *c) {
+    if (is_bigint(c)) {
+        return mp_int_compare_zero(&c->val_bigint->ival) >= 0;
+    }
+    
+    if (is_smallint(c)) {
+        return get_smallint(c) >= 0;
+    }
+    
+    if (is_float(c)) {
+        return get_float(c) >= 0.0;
+    }
+    
+    return false;
+}
+
+inline static void share_cell_(const cell *c) {
 	if (is_strbuf(c))
 		c->val_strb->refcnt++;
 	else if (is_bigint(c))
@@ -930,9 +1185,13 @@ inline static void share_cell_(const cell *c)
 		c->val_blob->refcnt++;
 }
 
-#define unshare_cell(c) if (is_managed(c)) unshare_cell_(c)
+inline static void share_cell(const cell *c) {
+	if (is_managed(c)) {
+		share_cell_(c);
+        }
+}
 
-inline static void unshare_cell_(cell *c)
+inline static void unshare_cell_(cell * c)
 {
 	if (is_strbuf(c)) {
 		if (--c->val_strb->refcnt == 0) {
@@ -976,6 +1235,13 @@ inline static void unshare_cell_(cell *c)
 			free(c->val_blob);
 			c->tag = TAG_EMPTY;
 		}
+	}
+}
+
+inline static void unshare_cell(cell *c)
+{
+	if (is_managed(c)) {
+		unshare_cell_(c);
 	}
 }
 
@@ -1075,7 +1341,3 @@ inline static void predicate_delink(predicate *pr, rule *r)
 }
 
 #define ENSURE(cond, ...) if (!(cond)) { printf("Error: no memory %s %d\n", __FILE__, __LINE__); abort(); }
-
-inline static bool is_empty(const cell *c) {
-	return c->tag == TAG_EMPTY;
-}

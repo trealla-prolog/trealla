@@ -1,10 +1,8 @@
-#include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
 
-#include "history.h"
 #include "library.h"
 #include "module.h"
 #include "parser.h"
@@ -1222,10 +1220,10 @@ static bool set_op_internal(module *m, const char *name, unsigned specifier, uns
 	op_table *ptr;
 
 	while (sl_next_key(iter, (void**)&ptr)) {
-		if (IS_INFIX(ptr->specifier) != IS_INFIX(specifier))
+		if (is_infix(ptr->specifier) != is_infix(specifier))
 			continue;
 
-		if (IS_POSTFIX(ptr->specifier) != IS_POSTFIX(specifier))
+		if (is_postfix(ptr->specifier) != is_postfix(specifier))
 			continue;
 
 		if (!ptr->priority)
@@ -1249,10 +1247,10 @@ static bool set_op_internal(module *m, const char *name, unsigned specifier, uns
 	iter = sl_find_key(m->defops, name);
 
 	while (sl_next_key(iter, (void**)&ptr)) {
-		if (IS_INFIX(ptr->specifier) != IS_INFIX(specifier))
+		if (is_infix(ptr->specifier) != is_infix(specifier))
 			continue;
 
-		if (IS_POSTFIX(ptr->specifier) != IS_POSTFIX(specifier))
+		if (is_postfix(ptr->specifier) != is_postfix(specifier))
 			continue;
 
 		if (!ptr->priority)
@@ -1308,7 +1306,7 @@ static unsigned search_op_internal(const module *m, const char *name, unsigned *
 		if (!ptr->priority)
 			continue;
 
-		if (!IS_INFIX(ptr->specifier))
+		if (!is_infix(ptr->specifier))
 			continue;
 
 		if (prefer_unifix)
@@ -1327,7 +1325,7 @@ static unsigned search_op_internal(const module *m, const char *name, unsigned *
 		if (!ptr->priority)
 			continue;
 
-		if (!IS_INFIX(ptr->specifier))
+		if (!is_infix(ptr->specifier))
 			continue;
 
 		if (prefer_unifix)
@@ -1346,10 +1344,10 @@ static unsigned search_op_internal(const module *m, const char *name, unsigned *
 		if (!ptr->priority)
 			continue;
 
-		if (IS_INFIX(ptr->specifier))
+		if (is_infix(ptr->specifier))
 			continue;
 
-		if (prefer_unifix && !IS_PREFIX(ptr->specifier) && !IS_POSTFIX(ptr->specifier))
+		if (prefer_unifix && !is_prefix(ptr->specifier) && !is_postfix(ptr->specifier))
 			continue;
 
 		if (specifier) *specifier = ptr->specifier;
@@ -1365,10 +1363,10 @@ static unsigned search_op_internal(const module *m, const char *name, unsigned *
 		if (!ptr->priority)
 			continue;
 
-		if (IS_INFIX(ptr->specifier))
+		if (is_infix(ptr->specifier))
 			continue;
 
-		if (prefer_unifix && !IS_PREFIX(ptr->specifier) && !IS_POSTFIX(ptr->specifier))
+		if (prefer_unifix && !is_prefix(ptr->specifier) && !is_postfix(ptr->specifier))
 			continue;
 
 		if (specifier) *specifier = ptr->specifier;
@@ -1423,10 +1421,10 @@ static unsigned match_op_internal(const module *m, const char *name, unsigned *s
 		if (!ptr->priority)
 			continue;
 
-		if ((arity == 2) && !IS_INFIX(ptr->specifier))
+		if ((arity == 2) && !is_infix(ptr->specifier))
 			continue;
 
-		if ((arity == 1) && IS_INFIX(ptr->specifier))
+		if ((arity == 1) && is_infix(ptr->specifier))
 			continue;
 
 		if (specifier) *specifier = ptr->specifier;
@@ -1442,10 +1440,10 @@ static unsigned match_op_internal(const module *m, const char *name, unsigned *s
 		if (!ptr->priority)
 			continue;
 
-		if ((arity == 2) && !IS_INFIX(ptr->specifier))
+		if ((arity == 2) && !is_infix(ptr->specifier))
 			continue;
 
-		if ((arity == 1) && IS_INFIX(ptr->specifier))
+		if ((arity == 1) && is_infix(ptr->specifier))
 			continue;
 
 		if (specifier) *specifier = ptr->specifier;
@@ -1461,10 +1459,10 @@ static unsigned match_op_internal(const module *m, const char *name, unsigned *s
 		if (!ptr->priority)
 			continue;
 
-		if ((arity == 2) && !IS_INFIX(ptr->specifier))
+		if ((arity == 2) && !is_infix(ptr->specifier))
 			continue;
 
-		if ((arity == 1) && IS_INFIX(ptr->specifier))
+		if ((arity == 1) && is_infix(ptr->specifier))
 			continue;
 
 		if (specifier) *specifier = ptr->specifier;
@@ -1480,10 +1478,10 @@ static unsigned match_op_internal(const module *m, const char *name, unsigned *s
 		if (!ptr->priority)
 			continue;
 
-		if ((arity == 2) && !IS_INFIX(ptr->specifier))
+		if ((arity == 2) && !is_infix(ptr->specifier))
 			continue;
 
-		if ((arity == 1) && IS_INFIX(ptr->specifier))
+		if ((arity == 1) && is_infix(ptr->specifier))
 			continue;
 
 		if (specifier) *specifier = ptr->specifier;
@@ -1664,11 +1662,11 @@ static void process_cell(module *m, clause *cl, cell *c, predicate *parent, int 
 	unsigned specifier;
 
 	if ((c->arity == 2)
-		&& !GET_OP(c)
+		&& !get_operator(c)
 		&& (c->val_off != g_braces_s)
 		&& search_op(m, C_STR(m, c), &specifier, false)) {
-		if (IS_INFIX(specifier))
-			SET_OP(c, specifier);
+		if (is_infix(specifier))
+			set_operator(c, specifier);
 	}
 
 	bool found = false, evaluable = false;
@@ -1851,7 +1849,7 @@ static rule *assert_begin(module *m, unsigned num_vars, cell *p1, bool consultin
 			move_cells(p1+1, head, head_num_cells);
 			cell *new_body = p1 + 1 + head_num_cells;
 			make_instr(new_body, g_colon_s, bif_iso_qualify_2, 2, 1+body->num_cells);
-			SET_OP(new_body, OP_XFY);
+			set_operator(new_body, OP_XFY);
 			make_atom(new_body+1, new_atom(m->pl, save_m->name));
 			is_dirty = true;
 			//module_dump_term(save_m, p1);

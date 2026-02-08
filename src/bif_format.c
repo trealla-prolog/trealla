@@ -99,16 +99,16 @@ static int get_next_char(query *q, list_reader_t *fmt)
 	return ch;
 }
 
-static cell *get_next_cell(query *q, list_reader_t *fmt, bool *is_var, pl_ctx *ctx)
+static cell *get_next_cell(query *q, list_reader_t *fmt, bool *is_variable, pl_ctx *ctx)
 {
-	*is_var = false;
+	*is_variable = false;
 
 	if (fmt->src)
 		return NULL;
 
 	if (!is_list(fmt->p)) {
 		if (is_var(fmt->p))
-			*is_var = true;
+			*is_variable = true;
 
 		return NULL;
 	}
@@ -196,10 +196,10 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 		pl_ctx c_ctx = p2_ctx;
 
 		if (ch == '*') {
-			bool is_var;
-			cell *c = get_next_cell(q, &fmt2, &is_var, &c_ctx);
+			bool is_variable;
+			cell *c = get_next_cell(q, &fmt2, &is_variable, &c_ctx);
 
-			if (is_var)
+			if (is_variable)
 				return throw_error(q, p2, p2_ctx, "instantiation_error", "atom");
 
 			if (is_negative(c))
@@ -360,10 +360,10 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 		if (!p2 || !is_list(p2))
 			return throw_error(q, make_nil(), q->st.cur_ctx, "domain_error", "non_empty_list");
 
-		bool is_var;
-		cell *c = get_next_cell(q, &fmt2, &is_var, &c_ctx);
+		bool is_variable;
+		cell *c = get_next_cell(q, &fmt2, &is_variable, &c_ctx);
 
-		if (is_var)
+		if (is_variable)
 			return throw_error(q, p2, p2_ctx, "instantiation_error", "atom");
 
 		if (!c)
@@ -759,7 +759,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 				q->max_depth = argval;
 
 			pl_ctx c2_ctx;
-			cell *c2 = get_next_cell(q, &fmt2, &is_var, &c2_ctx);
+			cell *c2 = get_next_cell(q, &fmt2, &is_variable, &c2_ctx);
 
 			if (!c2)
 				return throw_error(q, c, c_ctx, "domain_error", "empty_list1");

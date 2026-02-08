@@ -1,5 +1,3 @@
-#include <ctype.h>
-#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -369,7 +367,7 @@ static bool bif_iso_abolish_1(query *q)
 	cell tmp;
 	tmp = *p1_name;
 	tmp.arity = get_smallint(p1_arity);
-	CLR_OP(&tmp);
+	clr_operator(&tmp);
 
 	prolog_lock(q->pl);
 	bool ok = do_abolish(q, p1, &tmp, true);
@@ -394,7 +392,7 @@ static bool bif_iso_asserta_1(query *q)
 	bool found = false;
 
 	if (get_builtin_term(q->st.m, head, &found, NULL), found) {
-		if (!GET_OP(head)) {
+		if (!get_operator(head)) {
 			return throw_error(q, head, q->st.cur_ctx, "permission_error", "modify,static_procedure");
 		}
 	}
@@ -453,7 +451,7 @@ static bool do_assertz_1(query *q, bool consulting)
 	bool found = false, evaluable = false;
 
 	if (get_builtin_term(q->st.m, head, &found, &evaluable), found && !evaluable) {
-		if (!GET_OP(head)) {
+		if (!get_operator(head)) {
 			return throw_error(q, head, q->st.cur_ctx, "permission_error", "modify,static_procedure");
 		}
 	}
@@ -515,7 +513,7 @@ static bool do_asserta_2(query *q)
 	bool found = false;
 
 	if (get_builtin_term(q->st.m, head, &found, NULL), found) {
-		if (!GET_OP(head)) {
+		if (!get_operator(head)) {
 			return throw_error(q, head, q->latest_ctx, "permission_error", "modify,static_procedure");
 		}
 	}
@@ -609,7 +607,7 @@ static bool do_assertz_2(query *q)
 	bool found = false;
 
 	if (get_builtin_term(q->st.m, head, &found, NULL), found) {
-		if (!GET_OP(head)) {
+		if (!get_operator(head)) {
 			return throw_error(q, head, q->latest_ctx, "permission_error", "modify,static_procedure");
 		}
 	}
@@ -826,7 +824,7 @@ static bool bif_abolish_2(query *q)
 	cell tmp;
 	tmp = *p1_name;
 	tmp.arity = get_smallint(p1_arity);
-	CLR_OP(&tmp);
+	clr_operator(&tmp);
 
 	bool ok = do_abolish(q, p1, &tmp, true);
 	return ok;
