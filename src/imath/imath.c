@@ -2923,6 +2923,7 @@ mp_result mp_int_xor(mp_int a, mp_int b, mp_int c) {
   return MP_OK;
 }
 
+#if 1
 mp_result mp_int_and(mp_int a, mp_int b, mp_int c) {
   assert(a != NULL && b != NULL && c != NULL);
 
@@ -2952,6 +2953,59 @@ mp_result mp_int_and(mp_int a, mp_int b, mp_int c) {
   c->sign = a->sign;
   return MP_OK;
 }
+#else
+#define MP_MASK ((((mp_word)1)<<((mp_word)MP_DIGIT_BIT))-((mp_word)1))
+
+mp_result mp_int_and(mp_int a, mp_int b, mp_int c) {
+  assert(a != NULL && b != NULL && c != NULL);
+
+   unsigned used = MAX(a->used, b->used) + 1, i;
+   mp_word ac = 1, bc = 1, cc = 1;
+   bool neg = (a->sign == b->sign) && (a->sign == MP_NEG);
+
+   mp_size ua = MP_USED(a);
+   mp_size ub = MP_USED(b);
+   mp_size min = MIN(ua, ub);
+   if (!s_pad(c, min + 1)) return MP_MEMORY;
+
+   for (i = 0; i < used; i++) {
+      mp_digit x, y;
+
+      if (a->sign == MP_NEG) {
+         ac += (i >= a->used) ? 0 : (~a->digits[i] & MP_MASK);
+         x = ac & MP_MASK;
+         ac >>= MP_DIGIT_BIT;
+      } else {
+         x = (i >= a->used) ? 0uL : a->digits[i];
+      }
+
+      if (b->sign == MP_NEG) {
+         bc += (i >= b->used) ? MP_MASK : (~b->digits[i] & MP_MASK);
+         y = bc & MP_MASK;
+         bc >>= MP_DIGIT_BIT;
+      } else {
+         y = (i >= b->used) ? 0uL : b->digits[i];
+      }
+
+      c->digits[i] = x & y;
+
+      if (neg) {
+         cc += ~c->digits[i] & MP_MASK;
+         c->digits[i] = cc & MP_MASK;
+         cc >>= MP_DIGIT_BIT;
+      }
+   }
+
+  /* Drop those leading zeros */
+  while (min && c->digits[--min] == 0)
+	  used--;
+
+   c->used = used ? used : 1;
+   c->sign = (neg ? MP_NEG : MP_ZPOS);
+
+  return MP_OK;
+}
+#endif
 
 mp_result mp_int_popcount(mp_int z, mp_usmall *out) {
 	assert(z != NULL);
