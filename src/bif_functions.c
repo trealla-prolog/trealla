@@ -2373,8 +2373,9 @@ static bool bif_iso_shl_2(query *q)
 	} else if (is_smallint(&p1) && is_smallint(&p2)) {
 		q->accum.val_int = p1.val_int << p2.val_int;
 
-		if ((p1.val_int) >= INT32_MAX ||
-			(p1.val_int) <= INT32_MIN) {
+		if ((p1.val_int >= INT32_MAX) ||
+			(p1.val_int <= INT32_MIN) ||
+			(p2.val_int >= 32)) {
 		} else {
 			q->accum.tag = TAG_INT;
 			return true;
