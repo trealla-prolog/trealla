@@ -1583,7 +1583,7 @@ static bool bif_iso_pow_2(query *q)
 	CLEANUP cell p2 = eval(q, p2_tmp);
 
 	if (is_smallint(&p1) && is_bigint(&p2)) {
-		pl_int tmp;
+		mp_small tmp;
 		mp_int_to_int(&p2.val_bigint->ival, &tmp);
 		q->accum.val_float = pow((pl_flt)p1.val_int, (pl_flt)tmp);
 		if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.cur_ctx, "evaluation_error", "float_overflow");
