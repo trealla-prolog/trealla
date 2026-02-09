@@ -2845,30 +2845,6 @@ static mp_digit s_uxor(mp_digit *da, mp_digit *db, mp_digit *dc, mp_size size_a,
   return (mp_digit)w;
 }
 
-#if 0
-static mp_digit s_uand(mp_digit *da, mp_digit *db, mp_digit *dc, mp_size size_a,
-                       mp_size size_b) {
-  mp_size pos;
-  mp_word w = 0;
-
-  /* Insure that da is the longer of the two to simplify later code */
-  if (size_b > size_a) {
-    SWAP(mp_digit *, da, db);
-    SWAP(mp_size, size_a, size_b);
-  }
-
-  /* And corresponding digits until the shorter number runs out */
-  for (pos = 0; pos < size_b; ++pos, ++da, ++db, ++dc) {
-    w = w + ((mp_word)*da & (mp_word)*db);
-    *dc = LOWER_HALF(w);
-    w = UPPER_HALF(w);
-  }
-
-  /* Return carry out */
-  return (mp_digit)w;
-}
-#endif
-
 mp_result mp_int_or(mp_int a, mp_int b, mp_int c) {
   assert(a != NULL && b != NULL && c != NULL);
 
@@ -2925,37 +2901,6 @@ mp_result mp_int_xor(mp_int a, mp_int b, mp_int c) {
   return MP_OK;
 }
 
-#if 0
-mp_result mp_int_and(mp_int a, mp_int b, mp_int c) {
-  assert(a != NULL && b != NULL && c != NULL);
-
-  if (MP_SIGN(a) != MP_SIGN(b))
-	return MP_BADARG;
-
-  mp_size ua = MP_USED(a);
-  mp_size ub = MP_USED(b);
-  mp_size min = MIN(ua, ub);
-  if (!s_pad(c, min + 1)) return MP_MEMORY;
-
-  mp_digit carry = s_uand(MP_DIGITS(a), MP_DIGITS(b), MP_DIGITS(c), ua, ub);
-  mp_size uc = min;
-
-  if (carry) {
-    if (!s_pad(c, min + 1)) return MP_MEMORY;
-
-    c->digits[min] = carry;
-    ++uc;
-  }
-
-  /* Drop those leading zeros */
-  while (min && c->digits[--min] == 0)
-	  uc--;
-
-  c->used = uc ? uc : 1;
-  c->sign = a->sign;
-  return MP_OK;
-}
-#else
 #define MP_MASK ((((mp_word)1)<<((mp_word)MP_DIGIT_BIT))-((mp_word)1))
 
 mp_result mp_int_and(mp_int a, mp_int b, mp_int c) {
@@ -3001,7 +2946,6 @@ mp_result mp_int_and(mp_int a, mp_int b, mp_int c) {
 
   return MP_OK;
 }
-#endif
 
 mp_result mp_int_popcount(mp_int z, mp_usmall *out) {
 	assert(z != NULL);
