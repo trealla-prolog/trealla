@@ -632,8 +632,10 @@ static bool bif_iso_atom_codes_2(query *q)
 				val = get_smallint(head);
 			}
 
-			if (val < 0)
+			if ((val < 0) || (val > MAX_CODEPOINT)) {
+				SB_free(pr);
 				return throw_error(q, head, q->latest_ctx, "representation_error", "character_code");
+			}
 
 			char ch[10];
 			int len;
@@ -750,8 +752,10 @@ static bool bif_string_codes_2(query *q)
 				val = get_smallint(head);
 			}
 
-			if (val < 0)
+			if ((val < 0) || (val > MAX_CODEPOINT)) {
+				SB_free(pr);
 				return throw_error(q, head, q->latest_ctx, "representation_error", "character_code");
+			}
 
 			char ch[10];
 			int len;
@@ -1073,7 +1077,7 @@ static bool bif_iso_number_codes_2(query *q)
 				val = get_smallint(head);
 			}
 
-			if (val < 0) {
+			if ((val < 0) || (val > MAX_CODEPOINT)) {
 				SB_free(pr);
 				return throw_error(q, head, q->latest_ctx, "representation_error", "character_code");
 			}

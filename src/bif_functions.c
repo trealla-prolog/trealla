@@ -309,6 +309,16 @@ static bool bif_iso_is_2(query *q)
 	if (is_float(&p2) && isnan(p2.val_float))
 		return throw_error(q, &p2, q->st.cur_ctx, "evaluation_error", "undefined");
 
+	pl_int val;
+
+	if (is_bigint(&p2)) {
+		mp_small tmp;
+		if (mp_int_to_int(&p2.val_bigint->ival, &tmp) != MP_RANGE) {
+			unshare_cell(&p2);
+			make_int(&p2, tmp);
+		}
+	}
+
 	bool ok = unify(q, p1, p1_ctx, &p2, q->st.cur_ctx);
 	clr_accum(&q->accum);
 	return ok;
