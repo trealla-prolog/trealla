@@ -740,7 +740,15 @@ static bool bif_string_codes_2(query *q)
 		while (is_list(p2)) {
 			cell *head = LIST_HEAD(p2);
 			head = deref(q, head, p2_ctx);
-			pl_int val = get_smallint(head);
+			pl_int val;
+
+			if (is_bigint(head)) {
+				mp_small tmp;
+				mp_int_to_int(&head->val_bigint->ival, &tmp);
+				val = tmp;
+			} else {
+				val = get_smallint(head);
+			}
 
 			if (val < 0)
 				return throw_error(q, head, q->latest_ctx, "representation_error", "character_code");
@@ -1055,7 +1063,15 @@ static bool bif_iso_number_codes_2(query *q)
 		while (is_list(p2)) {
 			cell *head = LIST_HEAD(p2);
 			head = deref(q, head, p2_ctx);
-			int val = get_smallint(head);
+			pl_int val;
+
+			if (is_bigint(head)) {
+				mp_small tmp;
+				mp_int_to_int(&head->val_bigint->ival, &tmp);
+				val = tmp;
+			} else {
+				val = get_smallint(head);
+			}
 
 			if (val < 0) {
 				SB_free(pr);
