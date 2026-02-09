@@ -2845,6 +2845,7 @@ static mp_digit s_uxor(mp_digit *da, mp_digit *db, mp_digit *dc, mp_size size_a,
   return (mp_digit)w;
 }
 
+#if 0
 static mp_digit s_uand(mp_digit *da, mp_digit *db, mp_digit *dc, mp_size size_a,
                        mp_size size_b) {
   mp_size pos;
@@ -2866,6 +2867,7 @@ static mp_digit s_uand(mp_digit *da, mp_digit *db, mp_digit *dc, mp_size size_a,
   /* Return carry out */
   return (mp_digit)w;
 }
+#endif
 
 mp_result mp_int_or(mp_int a, mp_int b, mp_int c) {
   assert(a != NULL && b != NULL && c != NULL);
@@ -2923,7 +2925,7 @@ mp_result mp_int_xor(mp_int a, mp_int b, mp_int c) {
   return MP_OK;
 }
 
-#if 1
+#if 0
 mp_result mp_int_and(mp_int a, mp_int b, mp_int c) {
   assert(a != NULL && b != NULL && c != NULL);
 
@@ -2959,20 +2961,17 @@ mp_result mp_int_and(mp_int a, mp_int b, mp_int c) {
 mp_result mp_int_and(mp_int a, mp_int b, mp_int c) {
   assert(a != NULL && b != NULL && c != NULL);
 
-   unsigned used = MAX(a->used, b->used) + 1, i;
    mp_word ac = 1, bc = 1, cc = 1;
    bool neg = (a->sign == b->sign) && (a->sign == MP_NEG);
 
-   mp_size ua = MP_USED(a);
-   mp_size ub = MP_USED(b);
-   mp_size min = MIN(ua, ub);
-   if (!s_pad(c, min + 1)) return MP_MEMORY;
+   mp_size used = MAX(MP_USED(a), MP_USED(b)) + 1, i;
+   if (!s_pad(c, used)) return MP_MEMORY;
 
    for (i = 0; i < used; i++) {
       mp_digit x, y;
 
       if (a->sign == MP_NEG) {
-         ac += (i >= a->used) ? 0 : (~a->digits[i] & MP_MASK);
+         ac += (i >= a->used) ? MP_MASK : (~a->digits[i] & MP_MASK);
          x = ac & MP_MASK;
          ac >>= MP_DIGIT_BIT;
       } else {
@@ -2996,11 +2995,8 @@ mp_result mp_int_and(mp_int a, mp_int b, mp_int c) {
       }
    }
 
-  /* Drop those leading zeros */
-  while (min && c->digits[--min] == 0)
-	  used--;
-
-   c->used = used ? used : 1;
+   CLAMP(c);
+   c->used = used;
    c->sign = (neg ? MP_NEG : MP_ZPOS);
 
   return MP_OK;
