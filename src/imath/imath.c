@@ -2784,124 +2784,95 @@ static mp_result s_tobin(mp_int z, unsigned char *buf, int *limpos, int pad) {
   return (uz == 0) ? MP_OK : MP_TRUNC;
 }
 
-/* Here there be dragons */
-
-static mp_digit s_uor(mp_digit *da, mp_digit *db, mp_digit *dc, mp_size size_a,
-                       mp_size size_b) {
-  mp_size pos;
-  mp_word w = 0;
-
-  /* Insure that da is the longer of the two to simplify later code */
-  if (size_b > size_a) {
-    SWAP(mp_digit *, da, db);
-    SWAP(mp_size, size_a, size_b);
-  }
-
-  /* Or corresponding digits until the shorter number runs out */
-  for (pos = 0; pos < size_b; ++pos, ++da, ++db, ++dc) {
-    w = w + ((mp_word)*da | (mp_word)*db);
-    *dc = LOWER_HALF(w);
-    w = UPPER_HALF(w);
-  }
-
-  for (/* */; pos < size_a; ++pos, ++da, ++dc) {
-    w = w | *da;
-
-    *dc = LOWER_HALF(w);
-    w = UPPER_HALF(w);
-  }
-
-  /* Return carry out */
-  return (mp_digit)w;
-}
-
-static mp_digit s_uxor(mp_digit *da, mp_digit *db, mp_digit *dc, mp_size size_a,
-                       mp_size size_b) {
-  mp_size pos;
-  mp_word w = 0;
-
-  /* Insure that da is the longer of the two to simplify later code */
-  if (size_b > size_a) {
-    SWAP(mp_digit *, da, db);
-    SWAP(mp_size, size_a, size_b);
-  }
-
-  /* Xor corresponding digits until the shorter number runs out */
-  for (pos = 0; pos < size_b; ++pos, ++da, ++db, ++dc) {
-    w = w + ((mp_word)*da ^ (mp_word)*db);
-    *dc = LOWER_HALF(w);
-    w = UPPER_HALF(w);
-  }
-
-  /* Propagate carries as far as necessary */
-  for (/* */; pos < size_a; ++pos, ++da, ++dc) {
-    w = w ^ *da;
-
-    *dc = LOWER_HALF(w);
-    w = UPPER_HALF(w);
-  }
-
-  /* Return carry out */
-  return (mp_digit)w;
-}
+#define MP_MASK ((((mp_word)1)<<((mp_word)MP_DIGIT_BIT))-((mp_word)1))
 
 mp_result mp_int_or(mp_int a, mp_int b, mp_int c) {
   assert(a != NULL && b != NULL && c != NULL);
 
-  if (MP_SIGN(a) != MP_SIGN(b))
-	return MP_BADARG;
+   mp_word ac = 1, bc = 1, cc = 1;
+   bool neg = (a->sign != b->sign);
 
-  mp_size ua = MP_USED(a);
-  mp_size ub = MP_USED(b);
-  mp_size max = MAX(ua, ub);
-  if (!s_pad(c, max)) return MP_MEMORY;
+   mp_size used = MAX(MP_USED(a), MP_USED(b)) + 1, i;
+   if (!s_pad(c, used)) return MP_MEMORY;
 
-  mp_digit carry = s_uor(MP_DIGITS(a), MP_DIGITS(b), MP_DIGITS(c), ua, ub);
-  mp_size uc = max;
+   for (i = 0; i < used; i++) {
+      mp_digit x, y;
 
-  if (carry) {
-    if (!s_pad(c, max + 1)) return MP_MEMORY;
+      if (a->sign == MP_NEG) {
+         ac += (i >= a->used) ? MP_MASK : (~a->digits[i] & MP_MASK);
+         x = ac & MP_MASK;
+         ac >>= MP_DIGIT_BIT;
+      } else {
+         x = (i >= a->used) ? 0uL : a->digits[i];
+      }
 
-    c->digits[max] = carry;
-    ++uc;
-  }
+      if (b->sign == MP_NEG) {
+         bc += (i >= b->used) ? MP_MASK : (~b->digits[i] & MP_MASK);
+         y = bc & MP_MASK;
+         bc >>= MP_DIGIT_BIT;
+      } else {
+         y = (i >= b->used) ? 0uL : b->digits[i];
+      }
 
-  c->used = uc;
-  c->sign = a->sign;
+      c->digits[i] = x | y;
+
+      if (neg) {
+         cc += ~c->digits[i] & MP_MASK;
+         c->digits[i] = cc & MP_MASK;
+         cc >>= MP_DIGIT_BIT;
+      }
+   }
+
+   c->used = used;
+   c->sign = (neg ? MP_NEG : MP_ZPOS);
+  CLAMP(c);
+
   return MP_OK;
 }
 
 mp_result mp_int_xor(mp_int a, mp_int b, mp_int c) {
   assert(a != NULL && b != NULL && c != NULL);
 
-  if (MP_SIGN(a) != MP_SIGN(b))
-	return MP_BADARG;
+   mp_word ac = 1, bc = 1, cc = 1;
+   bool neg = (a->sign != b->sign);
 
-  mp_size ua = MP_USED(a);
-  mp_size ub = MP_USED(b);
-  mp_size max = MAX(ua, ub);
-  if (!s_pad(c, max)) return MP_MEMORY;
+   mp_size used = MAX(MP_USED(a), MP_USED(b)) + 1, i;
+   if (!s_pad(c, used)) return MP_MEMORY;
 
-  mp_digit carry = s_uxor(MP_DIGITS(a), MP_DIGITS(b), MP_DIGITS(c), ua, ub);
-  mp_size uc = max;
+   for (i = 0; i < used; i++) {
+      mp_digit x, y;
 
-  if (carry) {
-    if (!s_pad(c, max + 1)) return MP_MEMORY;
+      if (a->sign == MP_NEG) {
+         ac += (i >= a->used) ? MP_MASK : (~a->digits[i] & MP_MASK);
+         x = ac & MP_MASK;
+         ac >>= MP_DIGIT_BIT;
+      } else {
+         x = (i >= a->used) ? 0uL : a->digits[i];
+      }
 
-    c->digits[max] = carry;
-    ++uc;
-  }
+      if (b->sign == MP_NEG) {
+         bc += (i >= b->used) ? MP_MASK : (~b->digits[i] & MP_MASK);
+         y = bc & MP_MASK;
+         bc >>= MP_DIGIT_BIT;
+      } else {
+         y = (i >= b->used) ? 0uL : b->digits[i];
+      }
 
-  /* Drop those leading zeros */
-  while (max && (c->digits[--max] == 0))
-	  uc--;
+      c->digits[i] = x ^ y;
 
-  c->used = uc ? uc : 1;
-  c->sign = a->sign;
+      if (neg) {
+         cc += ~c->digits[i] & MP_MASK;
+         c->digits[i] = cc & MP_MASK;
+         cc >>= MP_DIGIT_BIT;
+      }
+   }
+
+   c->used = used;
+   c->sign = (neg ? MP_NEG : MP_ZPOS);
+  CLAMP(c);
+
   return MP_OK;
 }
-
-#define MP_MASK ((((mp_word)1)<<((mp_word)MP_DIGIT_BIT))-((mp_word)1))
 
 mp_result mp_int_and(mp_int a, mp_int b, mp_int c) {
   assert(a != NULL && b != NULL && c != NULL);
