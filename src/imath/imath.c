@@ -2964,7 +2964,7 @@ mp_result mp_int_and(mp_int a, mp_int b, mp_int c) {
    mp_word ac = 1, bc = 1, cc = 1;
    bool neg = (a->sign == b->sign) && (a->sign == MP_NEG);
 
-   mp_size used = MAX(MP_USED(a), MP_USED(b)) + 1, i;
+   mp_size used = MIN(MP_USED(a), MP_USED(b)) + 1, i;
    if (!s_pad(c, used)) return MP_MEMORY;
 
    for (i = 0; i < used; i++) {
@@ -2995,9 +2995,9 @@ mp_result mp_int_and(mp_int a, mp_int b, mp_int c) {
       }
    }
 
-   CLAMP(c);
    c->used = used;
    c->sign = (neg ? MP_NEG : MP_ZPOS);
+  CLAMP(c);
 
   return MP_OK;
 }
