@@ -1582,7 +1582,13 @@ static bool bif_iso_pow_2(query *q)
 	CLEANUP cell p1 = eval(q, p1_tmp);
 	CLEANUP cell p2 = eval(q, p2_tmp);
 
-	if (is_bigint(&p1) && is_smallint(&p2)) {
+	if (is_smallint(&p1) && is_bigint(&p2)) {
+		pl_int tmp;
+		mp_int_to_int(&p2.val_bigint->ival, &tmp);
+		q->accum.val_float = pow((pl_flt)p1.val_int, (pl_flt)tmp);
+		if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.cur_ctx, "evaluation_error", "float_overflow");
+		q->accum.tag = TAG_FLOAT;
+	} else if (is_bigint(&p1) && is_smallint(&p2)) {
 		if ((mp_int_compare_zero(&p1.val_bigint->ival) == 0) && (p2.val_int < 0))
 			return throw_error(q, &p1, q->st.cur_ctx, "evaluation_error", "undefined");
 
@@ -1590,9 +1596,7 @@ static bool bif_iso_pow_2(query *q)
 		if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.cur_ctx, "evaluation_error", "float_overflow");
 		q->accum.tag = TAG_FLOAT;
 		return true;
-	}
-
-	if (is_smallint(&p1) && is_smallint(&p2)) {
+	} else if (is_smallint(&p1) && is_smallint(&p2)) {
 		if ((p1.val_int == 0) && (p2.val_int < 0))
 			return throw_error(q, &p2, q->st.cur_ctx, "evaluation_error", "undefined");
 
