@@ -666,9 +666,9 @@ static bool bif_iso_atom_codes_2(query *q)
 
 	cell tmp;
 
-	if (is_iso_atom(p1) || !is_codes(p1))
-		make_string(&tmp, C_STR(q, p1));
-	else {
+	if (is_iso_atom(p1) || !is_codes(p1)) {
+		make_stringn(&tmp, C_STR(q, p1), C_STRLEN(q, p1));
+	} else {
 		tmp = *p1;
 		share_cell(&tmp);
 	}
@@ -786,9 +786,9 @@ static bool bif_string_codes_2(query *q)
 
 	cell tmp;
 
-	if (is_iso_atom(p1) || !is_codes(p1))
-		make_string(&tmp, C_STR(q, p1));
-	else {
+	if (is_iso_atom(p1) || !is_codes(p1)) {
+		make_stringn(&tmp, C_STR(q, p1), C_STRLEN(q, p1));
+	} else {
 		tmp = *p1;
 		share_cell(&tmp);
 	}

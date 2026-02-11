@@ -1527,7 +1527,12 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 				if (e) e->vgen = save_vgen;
 			}
 
-			if (is_smallint(h) && !both) {
+			if (!both && (c->flags & FLAG_CSTR_CODES) && (h->val_uint < ' ')) {
+				char tmpbuf[2];
+				tmpbuf[0] = h->val_uint;
+				tmpbuf[1] = 0;
+				SB_strcat_and_free(q->sb, formatted(tmpbuf, 1, true, q->json));
+			} else if (is_smallint(h) && !both) {
 				SB_putchar(q->sb, h->val_uint);
 			} else {
 				SB_strcat_and_free(q->sb, formatted(C_STR(q, h), C_STRLEN(q, h), true, q->json));
