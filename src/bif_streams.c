@@ -1753,7 +1753,7 @@ bool stream_close(query *q, int n)
 		sl_app(str2->alias, strdup("user_error"), NULL);
 	}
 
-	if (!str->socket && !str->is_mutex && !str->is_queue)
+	if (/*!str->socket &&*/ !str->is_mutex && !str->is_queue)
 		del_stream_properties(q, n);
 
 	bool ok = true;
@@ -2486,7 +2486,7 @@ static bool bif_iso_read_term_3(query *q)
 	GET_NEXT_ARG(p1,any);
 	GET_NEXT_ARG(p2,list_or_nil);
 
-	if (strcmp(str->mode, "read"))
+	if (strcmp(str->mode, "read") && strcmp(str->mode, "update"))
 		return throw_error(q, pstr, q->st.cur_ctx, "permission_error", "input,stream");
 
 	if (str->binary) {
