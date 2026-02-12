@@ -595,12 +595,12 @@ struct stream_ {
 	bool repo:1;
 	bool binary:1;
 	bool did_getc:1;
-	bool socket:1;
 	bool nodelay:1;
 	bool udp:1;
 	bool ssl:1;
 	bool pipe:1;
 	bool first_time:1;
+	bool is_socket:1;
 	bool is_map:1;
 	bool is_memory:1;
 	bool is_engine:1;

@@ -487,6 +487,13 @@ int new_stream(prolog *pl)
 		if (str->fp)
 			continue;
 
+		str->is_socket = false;
+		str->is_alias = false;
+		str->is_engine = false;
+		str->is_map = false;
+		str->is_memory = false;
+		str->is_mutex = false;
+		str->is_queue = false;
 		str->n = i;
 		prolog_unlock(pl);
 		return i;
@@ -560,7 +567,7 @@ static void add_stream_properties(query *q, int n)
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, type(%s)).\n", n, str->binary ? "binary" : "text");
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, line_count(%d)).\n", n, str->p ? str->p->line_num : 1);
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, position(%llu)).\n", n, (unsigned long long)(pos != -1 ? pos : 0));
-		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, reposition(%s)).\n", n, (n < 3) || str->socket ? "false" : "true");
+		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, reposition(%s)).\n", n, (n < 3) || str->is_socket ? "false" : "true");
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, end_of_stream(%s)).\n", n, str->at_end_of_file ? "past" : at_end_of_file ? "at" : "not");
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, eof_action(%s)).\n", n, str->eof_action == eof_action_eof_code ? "eof_code" : str->eof_action == eof_action_error ? "error" : str->eof_action == eof_action_reset ? "reset" : "none");
 
@@ -731,7 +738,7 @@ static bool do_stream_property(query *q)
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "reposition")) {
 		cell tmp;
-		make_cstring(&tmp, str->socket || (n <= 2) ? "false" : str->repo ? "true" : "false");
+		make_cstring(&tmp, str->is_socket || (n <= 2) ? "false" : str->repo ? "true" : "false");
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
 		unshare_cell(&tmp);
 		return ok;
@@ -968,7 +975,7 @@ static bool bif_popen_4(query *q)
 
 	stream *str = &q->pl->streams[n];
 	str->pipe = true;
-	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
+	CHECKED(str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL));
 	CHECKED(str->filename = strdup(filename));
 	CHECKED(str->mode = DUP_STRING(q, p2));
 	bool binary = false;
@@ -1462,7 +1469,7 @@ static bool bif_iso_open_4(query *q)
 	convert_path(filename);
 	stream *str = &q->pl->streams[n];
 	CHECKED(str->filename = strdup(filename));
-	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
+	CHECKED(str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL));
 	CHECKED(str->mode = DUP_STRING(q, p2));
 	bool binary = false, repo = true;
 	uint8_t eof_action = eof_action_eof_code;
@@ -1766,7 +1773,6 @@ bool stream_close(query *q, int n)
 	sl_destroy(str->alias);
 	str->alias = NULL;
 	str->fp = NULL;
-	//str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	free(str->mode);
 	str->mode = NULL;
 	free(str->filename);
@@ -1832,7 +1838,7 @@ static bool bif_iso_at_end_of_stream_0(query *q)
 	if (!str->ungetch && isatty(fileno(str->fp)))
 		return false;
 
-	if (!str->socket) {
+	if (!str->is_socket) {
 		int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
 		str->ungetch = ch;
 	}
@@ -1865,7 +1871,7 @@ static bool bif_iso_at_end_of_stream_1(query *q)
 	if (!str->ungetch && isatty(fileno(str->fp)))
 		return false;
 
-	if (!str->socket) {
+	if (!str->is_socket) {
 		int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
 		str->ungetch = ch;
 	}
@@ -4150,7 +4156,7 @@ static bool bif_iso_set_stream_position_2(query *q)
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,any);
 
-	if (str->socket || (n <= 2) || !str->repo)
+	if (str->is_socket || (n <= 2) || !str->repo)
 		return throw_error(q, p1, p1_ctx, "permission_error", "reposition,stream");
 
 	if (!is_smallint(p1))
@@ -6225,11 +6231,11 @@ static bool bif_server_3(query *q)
 	//printf("*** net_server host=%s, port=%d, fd=%d\n", hostname, port, fd);
 
 	stream *str = &q->pl->streams[n];
-	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
+	CHECKED(str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL));
 	sl_app(str->alias, strdup(hostname), NULL);
 	CHECKED(str->filename = DUP_STRING(q, p1));
 	CHECKED(str->mode = strdup("update"));
-	str->socket = true;
+	str->is_socket = true;
 	str->nodelay = nodelay;
 	str->udp = udp;
 	str->ssl = ssl;
@@ -6281,7 +6287,7 @@ static bool bif_accept_2(query *q)
 	sl_app(str2->alias, strdup(str->filename), NULL);
 	CHECKED(str2->filename = strdup(str->filename));
 	CHECKED(str2->mode = strdup("update"));
-	str2->socket = true;
+	str2->is_socket = true;
 	str2->nodelay = str->nodelay;
 	str2->udp = str->udp;
 	str2->ssl = str->ssl;
@@ -6706,11 +6712,11 @@ static bool bif_client_5(query *q)
 	}
 
 	stream *str = &q->pl->streams[n];
-	if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
+	CHECKED(str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL));
 	sl_app(str->alias, DUP_STRING(q, p1), NULL);
 	CHECKED(str->filename = DUP_STRING(q, p1));
 	CHECKED(str->mode = strdup("update"));
-	str->socket = true;
+	str->is_socket = true;
 	str->nodelay = nodelay;
 	str->udp = udp;
 	str->ssl = ssl;
@@ -7546,7 +7552,7 @@ static bool bif_alias_2(query *q)
 			return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
 
 		stream *str = &q->pl->streams[n];
-		if (!str->alias) str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
+		CHECKED(str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL));
 		sl_app(str->alias, DUP_STRING(q, p2), NULL);
 		str->is_alias = true;
 		str->handle = (void*)(size_t)get_smalluint(p1);
