@@ -746,8 +746,6 @@ prolog *pl_create()
 	sl_app(pl->streams[2].alias, strdup("user_error"), NULL);
 	pl->streams[2].eof_action = eof_action_reset;
 
-	pl->streams[3].ignore = true;
-
 #if USE_THREADS
 	thread_initialize(pl);
 #endif
