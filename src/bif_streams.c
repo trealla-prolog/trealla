@@ -4575,7 +4575,7 @@ static bool bif_edin_seen_0(query *q)
 	int n = q->pl->current_input;
 	stream *str = &q->pl->streams[n];
 
-	if (n <= 2)
+	if (n < 3)
 		return true;
 
 	if ((str->fp != stdin)
