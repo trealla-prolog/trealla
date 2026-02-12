@@ -590,7 +590,6 @@ struct stream_ {
 	int ungetch, srclen, chan, n;
 	unsigned rows, cols;
 	uint8_t level, eof_action;
-	bool ignore:1;
 	bool at_end_of_file:1;
 	bool bom:1;
 	bool repo:1;
@@ -879,7 +878,7 @@ struct prolog_ {
 	FILE *logfp;
 	lock guard;
 	size_t tabs_size;
-	uint64_t s_last, s_cnt, seed, str_cnt, thr_cnt;
+	uint64_t s_last, s_cnt, seed, thr_cnt;
 	pl_refcnt q_cnt, dbgen;
 	unsigned next_mod_id, def_max_depth, my_chan;
 	unsigned current_input, current_output, current_error;

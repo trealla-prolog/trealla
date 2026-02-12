@@ -433,7 +433,7 @@ int get_named_stream(prolog *pl, const char *name, size_t len)
 	for (int i = 0; i < MAX_STREAMS; i++) {
 		stream *str = &pl->streams[i];
 
-		if (!str->fp || str->ignore || !str->alias)
+		if (!str->fp || !str->alias)
 			continue;
 
 		if (sl_get(str->alias, name, NULL)) {
@@ -481,18 +481,13 @@ int new_stream(prolog *pl)
 {
 	prolog_lock(pl);
 
-	for (int i = 0; i < MAX_STREAMS; i++) {
-		unsigned n = i;
+	for (int i = 4; i < MAX_STREAMS; i++) {
+		stream *str = &pl->streams[i];
 
-		if (n < 4)
-			continue;
-
-		stream *str = &pl->streams[n];
-
-		if (!str->fp && !str->ignore) {
-			str->n = n;
+		if (!str->fp) {
+			str->n = i;
 			prolog_unlock(pl);
-			return n;
+			return i;
 		}
 	}
 
