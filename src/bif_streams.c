@@ -433,7 +433,7 @@ int get_named_stream(prolog *pl, const char *name, size_t len)
 	for (int i = 0; i < MAX_STREAMS; i++) {
 		stream *str = &pl->streams[i];
 
-		if (!str->fp || !str->alias)
+		if (!str->fp || str->ignore || !str->alias)
 			continue;
 
 		if (sl_get(str->alias, name, NULL)) {
@@ -482,15 +482,17 @@ int new_stream(prolog *pl)
 	prolog_lock(pl);
 
 	for (int i = 0; i < MAX_STREAMS; i++) {
-		if (i < 3)
+		unsigned n = i;
+
+		if (n < 4)
 			continue;
 
-		stream *str = &pl->streams[i];
+		stream *str = &pl->streams[n];
 
-		if (!str->fp) {
-			str->n = i;
+		if (!str->fp && !str->ignore) {
+			str->n = n;
 			prolog_unlock(pl);
-			return i;
+			return n;
 		}
 	}
 
@@ -1751,7 +1753,7 @@ bool stream_close(query *q, int n)
 		sl_app(str2->alias, strdup("user_error"), NULL);
 	}
 
-	if (!str->is_mutex && !str->is_queue)
+	if (/*!str->socket &&*/ !str->is_mutex && !str->is_queue)
 		del_stream_properties(q, n);
 
 	bool ok = true;
