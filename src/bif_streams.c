@@ -487,6 +487,7 @@ int new_stream(prolog *pl)
 		if (str->fp)
 			continue;
 
+		str->is_pipe = false;
 		str->is_socket = false;
 		str->is_alias = false;
 		str->is_engine = false;
@@ -974,7 +975,7 @@ static bool bif_popen_4(query *q)
 	convert_path(filename);
 
 	stream *str = &q->pl->streams[n];
-	str->pipe = true;
+	str->is_pipe = true;
 	CHECKED(str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL));
 	CHECKED(str->filename = strdup(filename));
 	CHECKED(str->mode = DUP_STRING(q, p2));
@@ -1226,7 +1227,7 @@ static bool bif_process_create_3(query *q)
 				if (pipe(fds)) return false;
 				posix_spawn_file_actions_adddup2(&file_actions, fds[0], 0);
 				q->pl->streams[n].fp = fdopen(fds[1], "w");
-				q->pl->streams[n].pipe = true;
+				q->pl->streams[n].is_pipe = true;
 				CHECKED(q->pl->streams[n].mode = strdup("write"));
 				cell tmp;
 				make_int(&tmp, n);
@@ -1251,7 +1252,7 @@ static bool bif_process_create_3(query *q)
 				if (pipe(fds)) return false;
 				posix_spawn_file_actions_adddup2(&file_actions, fds[1], 1);
 				q->pl->streams[n].fp = fdopen(fds[0], "r");
-				q->pl->streams[n].pipe = true;
+				q->pl->streams[n].is_pipe = true;
 				CHECKED(q->pl->streams[n].mode = strdup("read"));
 				cell tmp;
 				make_int(&tmp, n);
@@ -1276,7 +1277,7 @@ static bool bif_process_create_3(query *q)
 				if (pipe(fds)) return false;
 				posix_spawn_file_actions_adddup2(&file_actions, fds[1], 2);
 				q->pl->streams[n].fp = fdopen(fds[0], "r");
-				q->pl->streams[n].pipe = true;
+				q->pl->streams[n].is_pipe = true;
 				CHECKED(q->pl->streams[n].mode = strdup("read"));
 				cell tmp;
 				make_int(&tmp, n);

@@ -598,8 +598,8 @@ struct stream_ {
 	bool nodelay:1;
 	bool udp:1;
 	bool ssl:1;
-	bool pipe:1;
 	bool first_time:1;
+	bool is_pipe:1;
 	bool is_socket:1;
 	bool is_map:1;
 	bool is_memory:1;
