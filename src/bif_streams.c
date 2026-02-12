@@ -521,10 +521,10 @@ static void add_stream_properties(query *q, int n)
 	char tmpbuf[1024*8];
 	char *dst = tmpbuf;
 	*dst = '\0';
-	off_t pos = !str->is_map && !str->is_engine && !str->is_queue && !str->is_mutex ? ftello(str->fp) : 0;
+	off_t pos = !str->is_socket && !str->is_map && !str->is_engine && !str->is_queue && !str->is_mutex ? ftello(str->fp) : 0;
 	bool at_end_of_file = false;
 
-	if (!str->at_end_of_file && (n > 2) && !str->is_engine && !str->is_map && !str->is_queue && !str->is_mutex && !str->p) {
+	if (!str->at_end_of_file && (n > 2) && !str->is_socket && !str->is_engine && !str->is_map && !str->is_queue && !str->is_mutex && !str->p) {
 #if 0
 		if (str->p) {
 			if (str->p->srcptr && *str->p->srcptr) {
