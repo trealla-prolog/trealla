@@ -1640,7 +1640,7 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int
 
 		if (ferror(str->fp)) {
 			SB_free(q->sb);
-			stream_close(q, str->n);
+			stream_close(q, str->idx);
 			return throw_error(q, q->st.instr,q->st.cur_ctx, "existence_error", "stream");
 		}
 
@@ -1723,7 +1723,7 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int runn
 
 		if (ferror(str->fp)) {
 			SB_free(q->sb);
-			stream_close(q, str->n);
+			stream_close(q, str->idx);
 			return throw_error(q, q->st.instr,q->st.cur_ctx, "existence_error", "stream");
 		}
 

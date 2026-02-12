@@ -495,7 +495,7 @@ int new_stream(prolog *pl)
 		str->is_memory = false;
 		str->is_mutex = false;
 		str->is_queue = false;
-		str->n = i;
+		str->idx = i;
 		prolog_unlock(pl);
 		return i;
 	}
