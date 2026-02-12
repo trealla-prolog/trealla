@@ -517,7 +517,7 @@ int net_close(stream *str)
 	int ok = 0;
 
 #ifdef pclose
-	if (str->pipe)
+	if (str->is_pipe)
 		ok = pclose(str->fp);
 	else
 #else
