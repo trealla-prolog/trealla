@@ -481,14 +481,15 @@ int new_stream(prolog *pl)
 {
 	prolog_lock(pl);
 
-	for (int i = 4; i < MAX_STREAMS; i++) {
+	for (int i = 3; i < MAX_STREAMS; i++) {
 		stream *str = &pl->streams[i];
 
-		if (!str->fp) {
-			str->n = i;
-			prolog_unlock(pl);
-			return i;
-		}
+		if (str->fp)
+			continue;
+
+		str->n = i;
+		prolog_unlock(pl);
+		return i;
 	}
 
 	prolog_unlock(pl);
