@@ -1749,7 +1749,7 @@ bool stream_close(query *q, int n)
 		sl_app(str2->alias, strdup("user_error"), NULL);
 	}
 
-	if (/*!str->socket &&*/ !str->is_mutex && !str->is_queue)
+	if (!str->is_mutex && !str->is_queue)
 		del_stream_properties(q, n);
 
 	bool ok = true;
