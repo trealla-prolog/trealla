@@ -482,7 +482,7 @@ int new_stream(prolog *pl)
 	prolog_lock(pl);
 
 	for (int i = 0; i < MAX_STREAMS; i++) {
-		if (i < 4)
+		if (i < 3)
 			continue;
 
 		stream *str = &pl->streams[i];
