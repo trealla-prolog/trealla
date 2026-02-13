@@ -950,6 +950,10 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 	if (!strcmp(expected, "smallint"))
 		expected = "integer";
 
+	cell tmpc = {0}, *instr = q->st.instr ? q->st.instr : &tmpc;
+	if (!c) c = &tmpc;
+	if (!goal) goal = &tmpc;
+
 	if (!is_var(c) || q->cycle_error) {
 		char *tmpbuf = DUP_STRING(q, goal);
 		snprintf(functor, sizeof(functor), "%s", tmpbuf);
@@ -967,10 +971,10 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 
 	bool is_abolish = false;
 
-	if (!strcmp(C_STR(q, q->st.instr), "abolish"))
+	if (!strcmp(C_STR(q, instr), "abolish"))
 		is_abolish = true;
 
-	if (!strcmp(C_STR(q, q->st.instr), "$call_check"))
+	if (!strcmp(C_STR(q, instr), "$call_check"))
 		strcpy(functor, "call");
 
 	bool is_builtin = false, evaluable = false;
