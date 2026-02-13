@@ -945,7 +945,6 @@ static bool bif_thread_join_2(query *q)
 
 static void do_cancel(thread *t)
 {
-	msleep(100);
 	acquire_lock(&t->guard);
 
 	sl_destroy(t->alias);
@@ -2193,8 +2192,8 @@ static bool bif_pl_recv_2(query *q)
 
 void thread_cancel_all(prolog *pl)
 {
-	for (int i = 0; (i < 10) && pl->q_cnt; i++)
-		msleep(100);
+	for (int i = 0; (i < 1000) && pl->q_cnt; i++)
+		msleep(1);
 
 	if (!pl->q_cnt)
 		return;
