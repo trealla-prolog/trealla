@@ -1865,7 +1865,7 @@ static bool bif_iso_flush_output_0(query *q)
 	stream *str = &q->pl->streams[n];
 	int err = fflush(str->fp);
 
-	if (err == EOF)
+	if ((err == EOF) && !str->is_socket)
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
 
 	return !ferror(str->fp);
@@ -1882,7 +1882,7 @@ static bool bif_iso_flush_output_1(query *q)
 
 	int err = fflush(str->fp);
 
-	if (err == EOF)
+	if ((err == EOF) && !str->is_socket)
 		return throw_error(q, pstr, pstr_ctx, "io_error", strerror(errno));
 
 	return !ferror(str->fp);
@@ -1899,7 +1899,7 @@ static bool bif_iso_nl_0(query *q)
 	fputc('\n', str->fp);
 	int err = fflush(str->fp);
 
-	if (err == EOF)
+	if ((err == EOF) && !str->is_socket)
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
 
 	return !ferror(str->fp);
@@ -1920,7 +1920,7 @@ static bool bif_iso_nl_1(query *q)
 	fputc('\n', str->fp);
 	int err = fflush(str->fp);
 
-	if (err == EOF)
+	if ((err == EOF) && !str->is_socket)
 		return throw_error(q, pstr, pstr_ctx, "io_error", strerror(errno));
 
 	return !ferror(str->fp);
