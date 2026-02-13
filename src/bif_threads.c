@@ -2195,6 +2195,8 @@ void thread_cancel_all(prolog *pl)
 {
 	msleep(100);
 
+	printf("Warning: %d outstanding application threads\n", (int)pl->q_cnt);
+
 	for (unsigned i = 1; i < MAX_THREADS; i++) {
 		thread *t = &pl->threads[i];
 
