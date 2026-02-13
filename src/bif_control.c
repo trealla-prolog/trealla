@@ -1038,7 +1038,7 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		else {
 			char tmpbuf[1024*8];
 			strcpy(tmpbuf, expected);
-			const char *ptr = tmpbuf;
+			char *ptr = tmpbuf;
 			char *ptr2 = strchr(ptr, ',');
 			if (*ptr2) *ptr2++ = '\0';
 
@@ -1075,7 +1075,7 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		else {
 			char tmpbuf[1024*8];
 			strcpy(tmpbuf, expected);
-			const char *ptr = tmpbuf;
+			char *ptr = tmpbuf;
 			char *ptr2 = strchr(ptr, ',');
 			if (*ptr2) *ptr2++ = '\0';
 
@@ -1154,7 +1154,7 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		} else {
 			char tmpbuf[1024*8];
 			strcpy(tmpbuf, expected);
-			const char *ptr = tmpbuf;
+			char *ptr = tmpbuf;
 			char *ptr2 = strchr(ptr, ',');
 			if (*ptr2) *ptr2++ = '\0';
 
