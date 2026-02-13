@@ -945,38 +945,50 @@ static bool bif_thread_join_2(query *q)
 
 static void do_cancel(thread *t)
 {
+	msleep(100);
 	acquire_lock(&t->guard);
-
-#if defined(__ANDROID__)
-   pthread_kill(t->id, 0);
-#else
-   pthread_cancel(t->id);
-#endif
 
 	sl_destroy(t->alias);
 	t->alias = NULL;
-	query_destroy(t->q);
 	t->is_active = false;
 	msg *m;
+	query *q = t->q;
+	pthread_t id = t->id;
+
+	if (list_count(&t->queue)) printf("*** queue...\n");
 
 	while ((m = list_pop_front(&t->queue)) != NULL) {
+		DUMP_TERM("***", m->c, q->st.cur_ctx, 0);
 		unshare_cells(m->c, m->c->num_cells);
 		free(m);
 	}
 
+	if (list_count(&t->signals)) printf("*** signals...\n");
+
 	while ((m = list_pop_front(&t->signals)) != NULL) {
+		DUMP_TERM("***", m->c, q->st.cur_ctx, 0);
 		unshare_cells(m->c, m->c->num_cells);
 		free(m);
 	}
 
 	if (t->ball) {
+		printf("*** ball...\n");
+		DUMP_TERM("***", t->ball, q->st.cur_ctx, 0);
 		unshare_cells(t->ball, t->ball->num_cells);
 		free(t->ball);
 		t->ball = NULL;
 	}
 
+	query_destroy(t->q);
 	t->q = NULL;
+	t->id = 0;
 	release_lock(&t->guard);
+
+#if defined(__ANDROID__)
+	pthread_kill(id, 0);
+#else
+	pthread_cancel(id);
+#endif
 }
 
 static bool bif_thread_cancel_1(query *q)
@@ -2181,7 +2193,9 @@ static bool bif_pl_recv_2(query *q)
 
 void thread_cancel_all(prolog *pl)
 {
-	for (unsigned i = 0; i < MAX_THREADS; i++) {
+	msleep(100);
+
+	for (unsigned i = 1; i < MAX_THREADS; i++) {
 		thread *t = &pl->threads[i];
 
 		if (!is_thread_only(t) || !t->is_active)
