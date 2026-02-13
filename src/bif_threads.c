@@ -2193,11 +2193,15 @@ static bool bif_pl_recv_2(query *q)
 
 void thread_cancel_all(prolog *pl)
 {
-	msleep(100);
+	for (int i = 0; (i < 10) && pl->q_cnt; i++)
+		msleep(100);
+
+	if (!pl->q_cnt)
+		return;
 
 	printf("Warning: %d outstanding application threads\n", (int)pl->q_cnt);
 
-	for (unsigned i = 1; i < MAX_THREADS; i++) {
+	for (unsigned i = 0; i < MAX_THREADS; i++) {
 		thread *t = &pl->threads[i];
 
 		if (!is_thread_only(t) || !t->is_active)
