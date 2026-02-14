@@ -23,7 +23,7 @@ void init_lock(lock *l)
 
 void deinit_lock(lock *l)
 {
-    pthread_mutex_destroy(&l->mutex);
+	pthread_mutex_destroy(&l->mutex);
 }
 
 bool try_lock(lock *l)
@@ -387,7 +387,9 @@ static bool bif_pl_send_2(query *q)
 	GET_NEXT_ARG(p2,any);
 	int n = get_thread(q, p1);
 	if (n < 0) return true;
-	return do_send_message(q, n, p2, p2_ctx, false);
+	bool ok = do_send_message(q, n, p2, p2_ctx, false);
+	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
+	return ok;
 }
 
 static bool bif_thread_send_message_2(query *q)
@@ -398,7 +400,9 @@ static bool bif_thread_send_message_2(query *q)
 	GET_NEXT_ARG(p2,any);
 	int n = get_thread(q, p1);
 	if (n < 0) return true;
-	return do_send_message(q, n, p2, p2_ctx, false);
+	bool ok = do_send_message(q, n, p2, p2_ctx, false);
+	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
+	return ok;
 }
 
 static thread *get_self(prolog *pl)
@@ -873,8 +877,10 @@ static bool bif_thread_signal_2(query *q)
 	if (!is_thread_only(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "signal,not_thread");
 
-	if (!do_send_message(q, n, p2, p2_ctx, true))
+	if (!do_send_message(q, n, p2, p2_ctx, true)) {
+		THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
 		return false;
+	}
 
 	if (t->q)
 		t->q->thread_signal++;
@@ -947,7 +953,6 @@ static bool bif_thread_join_2(query *q)
 static void do_cancel(thread *t)
 {
 	acquire_lock(&t->guard);
-
 	sl_destroy(t->alias);
 	t->alias = NULL;
 	t->is_active = false;
@@ -1007,6 +1012,7 @@ static bool bif_thread_cancel_1(query *q)
 		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,not_thread");
 
 	do_cancel(t);
+	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
 }
 
@@ -1031,6 +1037,7 @@ static bool bif_thread_detach_1(query *q)
 	if (t->is_active)
 		pthread_detach(t->id);
 
+	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
 }
 
@@ -1056,6 +1063,7 @@ static bool bif_thread_self_1(query *q)
 		}
 	}
 
+	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
 	return false;
 }
 
@@ -1065,6 +1073,7 @@ static bool bif_thread_sleep_1(query *q)
 	GET_FIRST_ARG(p1,number);
 	int ms = (int)((is_float(p1) ? get_float(p1) : get_smallint(p1)) * 1000);
 	msleep(ms);
+	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
 }
 
@@ -1078,6 +1087,7 @@ static bool bif_thread_yield_0(query *q)
 	msleep(0);
 #endif
 
+	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
 }
 
@@ -1106,10 +1116,12 @@ static bool bif_thread_exit_1(query *q)
 			t->exit_code = tmp;
 			q->halt_code = 0;
 			q->halt = t->q->error = true;
+			THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
 			return true;
 		}
 	}
 
+	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
 	return false;
 }
 
@@ -1832,6 +1844,7 @@ static bool bif_mutex_lock_1(query *q)
 	acquire_lock(&t->guard);
 	t->locked_by = me->chan;
 	t->num_locks++;
+	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
 }
 
@@ -1851,6 +1864,7 @@ static bool bif_mutex_unlock_1(query *q)
 		t->locked_by = -1;
 
 	release_lock(&t->guard);
+	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
 }
 
@@ -1858,6 +1872,7 @@ static bool bif_mutex_unlock_all_0(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
 	do_unlock_all(q->pl);
+	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
 }
 
