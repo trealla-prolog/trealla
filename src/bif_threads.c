@@ -545,6 +545,7 @@ static void *start_routine_thread(thread *t)
 	pl_consult(pl, t->filename);
 	t->is_active = false;
 	t->is_finished = false;
+	t->q = NULL;
     return 0;
 }
 
@@ -876,7 +877,7 @@ static bool bif_thread_signal_2(query *q)
 		return false;
 
 	if (t->q)
-		t->q->thread_signal = true;
+		t->q->thread_signal++;
 
 	resume_thread(t);
 	return true;

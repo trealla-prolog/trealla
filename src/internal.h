@@ -705,13 +705,13 @@ struct query_ {
 	pl_idx q_size[MAX_QUEUES], tmpq_size[MAX_QUEUES], qp[MAX_QUEUES];
 	prolog_flags flags;
 	enum q_retry retry;
+	pl_refcnt thread_signal;
 	int is_cyclic1, is_cyclic2;
 	uint32_t vgen;
 	int8_t halt_code;
 	int8_t quoted;
 	enum { WAS_OTHER, WAS_SPACE, WAS_COMMA, WAS_SYMBOL } last_thing;
 	bool oom:1;
-	bool thread_signal:1;
 	bool done:1;
 	bool noskip:1;
 	bool parens:1;

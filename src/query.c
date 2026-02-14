@@ -1629,7 +1629,7 @@ bool start(query *q)
 
 #if USE_THREADS
 		if (q->thread_signal) {
-			q->thread_signal = false;
+			q->thread_signal--;
 			do_signal(q, q->thread_ptr);
 		}
 #endif
