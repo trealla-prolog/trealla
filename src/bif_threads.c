@@ -207,7 +207,7 @@ static bool is_thread_or_alias(query *q, cell *c)
 
 	thread *t = &q->pl->threads[n];
 
-	if (!t->is_active)
+	if (!t->is_active || t->is_mutex_only || t->is_queue_only)
 		return throw_error(q, c, c_ctx, "existence_error", "thread_or_alias");
 
 	return true;
@@ -227,7 +227,7 @@ static bool is_mutex_or_alias(query *q, cell *c)
 
 	thread *t = &q->pl->threads[n];
 
-	if (!t->is_active)
+	if (!t->is_active || t->is_queue_only)
 		return throw_error(q, c, c_ctx, "existence_error", "mutex_or_alias");
 
 	return true;
@@ -247,7 +247,7 @@ static bool is_queue_or_alias(query *q, cell *c)
 
 	thread *t = &q->pl->threads[n];
 
-	if (!t->is_active)
+	if (!t->is_active || t->is_mutex_only)
 		return throw_error(q, c, c_ctx, "existence_error", "queue_or_alias");
 
 	return true;
