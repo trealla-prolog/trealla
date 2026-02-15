@@ -4149,6 +4149,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 				break;
 			}
 
+#if 0
 			int nextch = *s;
 			bool noneg = (!SB_strcmp(p->token, "-") || !SB_strcmp(p->token, "+")) && (nextch == '='); // Hack
 
@@ -4160,6 +4161,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 				p->error = true;
 				break;
 			}
+#endif
 
 			priority = search_op(p->m, SB_cstr(p->token), &specifier, last_op);
 		}
