@@ -464,7 +464,7 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 			GET_FIRST_ARG(p1,queue);
 			GET_NEXT_ARG(p2,any);
 
-			if (unify(q, p2, p2_ctx, tmp, q->st.cur_ctx)) {
+			if (unify(q, p2, p2_ctx, tmp, q->st.new_fp)) {
 				q->curr_chan = m->from_chan;
 
 				if (!is_peek)
