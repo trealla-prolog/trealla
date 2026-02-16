@@ -6,6 +6,8 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 
+#include <sched.h>
+
 #include "module.h"
 #include "parser.h"
 #include "prolog.h"
@@ -1079,15 +1081,7 @@ static bool bif_thread_sleep_1(query *q)
 static bool bif_thread_yield_0(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-
-#if defined(__APPLE__)
-	pthread_yield_np();
-#elif !defined(_WIN32)
-	pthread_yield();
-#else
-	msleep(0);
-#endif
-
+	sched_yield();
 	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
 }
