@@ -1,5 +1,7 @@
 #pragma once
 
+#include <inttypes.h>
+
 // This is an intrusive list & as such the *lnode*
 // header must be used as the first field of any struct.
 
