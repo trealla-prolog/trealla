@@ -338,9 +338,7 @@ static void resume_thread(thread *t)
 static unsigned queue_size(prolog *pl, unsigned chan)
 {
 	thread *t = &pl->threads[chan];
-	acquire_lock(&t->guard);
 	unsigned cnt = list_count(&t->queue);
-	release_lock(&t->guard);
 	return cnt;
 }
 
