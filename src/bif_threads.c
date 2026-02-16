@@ -61,7 +61,7 @@ static void msleep(int ms)
 	nanosleep(&tv, &tv);
 }
 
-#define is_thread_only(t) (!(t)->is_queue_only && !(t)->is_mutex_only)
+#define is_threaded(t) (!(t)->is_queue_only && !(t)->is_mutex_only)
 
 typedef struct msg_ {
 	lnode hdr;						// must be first
@@ -148,8 +148,6 @@ static int new_thread(prolog *pl)
 		thread *t = &pl->threads[n];
 
 		if (!t->is_active) {
-			t->is_active = true;
-			prolog_unlock(pl);
 
 			if (!t->is_init) {
 				pthread_cond_init(&t->cond, NULL);
@@ -168,6 +166,8 @@ static int new_thread(prolog *pl)
 			t->is_exception = false;
 			t->at_exit = NULL;
 			t->goal = NULL;
+			t->is_active = true;
+			prolog_unlock(pl);
 			return n;
 		}
 	}
@@ -378,7 +378,7 @@ static bool do_send_message(query *q, unsigned chan, cell *p1, pl_ctx p1_ctx, bo
 	rebase_term(q, c, 0);
 	CHECKED(queue_to_chan(q->pl, chan, c, q->my_chan, is_signal));
 
-	if (is_thread_only(t))
+	if (is_threaded(t))
 		resume_thread(t);
 
 	return true;
@@ -624,10 +624,14 @@ static bool bif_pl_thread_3(query *q)
 
 	t->filename = filename;
 
-    pthread_attr_t sa;
-    pthread_attr_init(&sa);
-    pthread_attr_setdetachstate(&sa, PTHREAD_CREATE_DETACHED);
-    pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread, (void*)t);
+	pthread_attr_t sa;
+	pthread_attr_init(&sa);
+	pthread_attr_setdetachstate(&sa, PTHREAD_CREATE_DETACHED);
+
+	if (pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread, (void*)t) != 0) {
+		t->is_active = false;
+		return false;
+	}
 
 	cell tmp;
 	make_int(&tmp, n);
@@ -832,15 +836,19 @@ static bool bif_thread_create_3(query *q)
 		CHECKED(t->at_exit);
 	}
 
-    pthread_attr_t sa;
-    pthread_attr_init(&sa);
+	pthread_attr_t sa;
+	pthread_attr_init(&sa);
 
-    if (is_detached) {
+	if (is_detached) {
 		pthread_attr_setdetachstate(&sa, PTHREAD_CREATE_DETACHED);
 		t->is_detached = true;
 	}
 
-    pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread_create, (void*)t);
+	if (pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread_create, (void*)t) != 0) {
+		t->is_active = false;
+		return false;
+	}
+
 	return true;
 }
 
@@ -879,7 +887,7 @@ static bool bif_thread_signal_2(query *q)
 	if (n < 0) return true;
 	thread *t = &q->pl->threads[n];
 
-	if (!is_thread_only(t))
+	if (!is_threaded(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "signal,not_thread");
 
 	if (!do_send_message(q, n, p2, p2_ctx, true)) {
@@ -902,7 +910,7 @@ static bool bif_thread_join_2(query *q)
 	if (n < 0) return true;
 	thread *t = &q->pl->threads[n];
 
-	if (!is_thread_only(t))
+	if (!is_threaded(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "join,not_thread");
 
 	void *retval;
@@ -1013,7 +1021,7 @@ static bool bif_thread_cancel_1(query *q)
 
 	thread *t = &q->pl->threads[n];
 
-	if (!is_thread_only(t))
+	if (!is_threaded(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "cancel,not_thread");
 
 	do_cancel(t);
@@ -1033,7 +1041,7 @@ static bool bif_thread_detach_1(query *q)
 
 	thread *t = &q->pl->threads[n];
 
-	if (!is_thread_only(t))
+	if (!is_threaded(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "detach,not_thread");
 
 	t->q->halt_code = 0;
@@ -2208,7 +2216,7 @@ void thread_cancel_all(prolog *pl)
 	for (unsigned i = 0; i < MAX_THREADS; i++) {
 		thread *t = &pl->threads[i];
 
-		if (!is_thread_only(t) || !t->is_active)
+		if (!is_threaded(t) || !t->is_active)
 			continue;
 
 		do_cancel(t);
