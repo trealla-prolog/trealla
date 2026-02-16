@@ -1080,10 +1080,12 @@ static bool bif_thread_yield_0(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
 
-#if __APPLE__
+#if defined(__APPLE__)
 	pthread_yield_np();
-#else
+#elif !defined(_WIN32)
 	pthread_yield();
+#else
+	msleep(0);
 #endif
 
 	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
