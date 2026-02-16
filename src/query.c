@@ -593,6 +593,19 @@ static void trim_frame(query *q, const frame *f)
 	q->st.new_fp = q->st.cur_ctx;
 }
 
+void add_trail(query *q, pl_ctx c_ctx, unsigned c_var_nbr, cell *attrs)
+{
+	if (!check_trail(q)) {
+		q->error = false;
+		return;
+	}
+
+	trail *tr = q->trails + q->st.tp++;
+	tr->val_ctx = c_ctx;
+	tr->var_num = c_var_nbr;
+	tr->attrs = attrs;
+}
+
 void undo_me(query *q)
 {
 	q->total_retries++;
