@@ -67,6 +67,7 @@ typedef struct msg_ {
 	cell c[];
 } msg;
 
+//#define THREAD_DEBUG if (1) fprintf(stderr, "*** %lld ", (long long)time(NULL));
 #define THREAD_DEBUG if (0)
 
 #define is_thread(c) is_thread_or_alias(q, c)
@@ -167,6 +168,7 @@ static int new_thread(prolog *pl)
 	}
 
 	prolog_unlock(pl);
+	assert(0);
 	return -1;
 }
 
@@ -448,6 +450,7 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 		}
 
 		msg *m = list_front(&t->queue);
+		assert(m);
 
 		while (m) {
 			CHECKED(push_choice(q), release_lock(&t->guard));
@@ -634,7 +637,9 @@ static bool bif_pl_thread_3(query *q)
 
 static void *start_routine_thread_create(thread *t)
 {
+	//printf("*** create %d\n", t->chan);
 	execute(t->q, t->goal, t->num_vars);
+	//printf("*** ~create %d\n", t->chan);
 	t->is_exception = t->q->did_unhandled_exception;
 
 	if (t->is_exception) {
@@ -799,7 +804,7 @@ static bool bif_thread_create_3(query *q)
 	cell *goal = clone_term_to_tmp(q, p1, p1_ctx);
 	CHECKED(goal);
 	t->num_vars = rebase_term(q, goal, 0);
-	t->q = query_create(q->st.m);
+	t->q = query_create_threaded(q->st.m);
 	CHECKED(t->q);
 	t->q->thread_ptr = t;
 	t->q->my_chan = n;
@@ -836,6 +841,7 @@ static bool bif_thread_create_3(query *q)
 	}
 
     pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread_create, (void*)t);
+    msleep(0);
 	return true;
 }
 
@@ -986,7 +992,7 @@ static void do_cancel(thread *t)
 
 	query_destroy(t->q);
 	t->q = NULL;
-	t->id = 0;
+	//t->id = 0;
 	release_lock(&t->guard);
 
 #if defined(__ANDROID__)
@@ -1045,24 +1051,18 @@ static bool bif_thread_self_1(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
 	GET_FIRST_ARG(p1,var);
-	pthread_t id = pthread_self();
+	thread *t = get_self(q->pl);
 
-	for (unsigned i = 0; i < MAX_THREADS; i++) {
-		thread *t = &q->pl->threads[i];
-
-		if (!t->is_active || t->is_queue_only || t->is_mutex_only)
-			continue;
-
-		if (t->id == id) {
-			cell tmp;
-			make_int(&tmp, (int)i);
-			tmp.flags |= FLAG_INT_THREAD;
-			bool ok = unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
-			THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-			return ok;
-		}
+	if (t != NULL) {
+		cell tmp;
+		make_int(&tmp, (int)t->chan);
+		tmp.flags |= FLAG_INT_THREAD;
+		bool ok = unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
+		THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
+		return true;
 	}
 
+	//printf("*** no thead_self\n");
 	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
 	return false;
 }
@@ -1103,24 +1103,17 @@ static bool bif_thread_exit_1(query *q)
 	CHECKED(tmp);
 	make_instr(tmp, new_atom(q->pl, "exited"), NULL, 1, tmp_p1->num_cells);
 	dup_cells(tmp+1, tmp_p1, tmp_p1->num_cells);
+	thread * t = get_self(q->pl);
 
-	pthread_t tid = pthread_self();
-
-	for (unsigned i = 0; i < MAX_THREADS; i++) {
-		thread *t = &q->pl->threads[i];
-
-		if (!t->is_active || t->is_queue_only || t->is_mutex_only)
-			continue;
-
-		if (t->id == tid) {
-			t->exit_code = tmp;
-			q->halt_code = 0;
-			q->halt = t->q->error = true;
-			THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
-			return true;
-		}
+	if (t != NULL) {
+		t->exit_code = tmp;
+		q->halt_code = 0;
+		q->halt = t->q->error = true;
+		THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
+		return true;
 	}
 
+	printf("*** no thead_exit\n");
 	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
 	return false;
 }
@@ -1828,6 +1821,7 @@ static bool bif_mutex_trylock_1(query *q)
 		return false;
 
 	thread *me = get_self(q->pl);
+	assert(me);
 	t->locked_by = me->chan;
 	t->num_locks++;
 	return true;
@@ -1841,6 +1835,7 @@ static bool bif_mutex_lock_1(query *q)
 	if (n < 0) return true;
 	thread *t = &q->pl->threads[n];
 	thread *me = get_self(q->pl);
+	assert(me);
 	acquire_lock(&t->guard);
 	t->locked_by = me->chan;
 	t->num_locks++;
@@ -1856,6 +1851,7 @@ static bool bif_mutex_unlock_1(query *q)
 	if (n < 0) return true;
 	thread *t = &q->pl->threads[n];
 	thread *me = get_self(q->pl);
+	assert(me);
 
 	if (t->locked_by != me->chan)
 		return throw_error(q, p1, p1_ctx, "permission_error", "mutex_unlock,not_locked_by_me");
