@@ -7,6 +7,14 @@ void list_init(list *l)
 	l->cnt = 0;
 }
 
+unsigned long long list_count(list *l) { return l->cnt; }
+unsigned long long listx_count(listx *l) { return l->cnt; }
+
+void *list_front(list *l) { return l->front; }
+void *list_back(list *l) { return l->back; }
+void *list_prev(void *n) { return ((lnode*)n)->prev; }
+void *list_next(void *n) { return ((lnode*)n)->next; }
+
 void list_push_front(list *l, void *n_)
 {
 	lnode *n = n_;
