@@ -67,8 +67,11 @@ typedef struct msg_ {
 	cell c[];
 } msg;
 
-//#define THREAD_DEBUG if (1) fprintf(stderr, "*** %lld ", (long long)time(NULL));
+#if 0
+#define THREAD_DEBUG if (1) fprintf(stderr, "*** %lld ", (long long)time(NULL));
+#else
 #define THREAD_DEBUG if (0)
+#endif
 
 #define is_thread(c) is_thread_or_alias(q, c)
 #define is_mutex(c) is_mutex_or_alias(q, c)
