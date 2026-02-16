@@ -3,13 +3,22 @@
 // This is an intrusive list & as such the *lnode*
 // header must be used as the first field of any struct.
 
+#if (__STDC_VERSION__ >= 201112L) && USE_THREADS
+#include <stdatomic.h>
+#define list_atomic _Atomic
+#else
+#define list_atomic volatile
+#endif
+
+typedef list_atomic int64_t list_refcnt;
+
 typedef struct lnode_ {
 	struct lnode_ *prev, *next;
 } lnode;
 
 typedef struct {
 	lnode *front, *back;
-	unsigned long long cnt;
+	list_refcnt cnt;
 } list;
 
 void list_init(list *l);

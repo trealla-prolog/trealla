@@ -38,6 +38,8 @@ typedef uint32_t pl_ctx;
 #define pl_atomic volatile
 #endif
 
+typedef pl_atomic int64_t pl_refcnt;
+
 #include "list.h"
 #include "skiplist.h"
 #include "stringbuf.h"
@@ -167,8 +169,6 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 
 
 extern char *g_global_atoms;
-
-typedef pl_atomic int64_t pl_refcnt;
 
 typedef struct {
 	pl_refcnt refcnt;
