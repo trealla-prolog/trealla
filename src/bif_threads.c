@@ -441,11 +441,8 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 			if (is_peek)
 				return false;
 
-			uint64_t cnt = 0;
-
 			do {
-				suspend_thread(t, cnt < 100 ? 0 : cnt < 1000 ? 1 : cnt < 10000 ? 10 : 10);
-				cnt++;
+				suspend_thread(t, 10000);
 			}
 			 while (!list_count(&t->queue) && !q->halt);
 
@@ -844,7 +841,6 @@ static bool bif_thread_create_3(query *q)
 	}
 
     pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread_create, (void*)t);
-    msleep(0);
 	return true;
 }
 
@@ -1084,10 +1080,10 @@ static bool bif_thread_yield_0(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
 
-#if 0
-	pthread_yield();
+#if __APPLE__
+	pthread_yield_np();
 #else
-	msleep(0);
+	pthread_yield();
 #endif
 
 	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
