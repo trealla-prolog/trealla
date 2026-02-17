@@ -2654,7 +2654,6 @@ bool bif_sys_queue_1(query *q)
 		const frame *f = GET_FRAME(c->val_ctx);
 		const slot *e = get_slot(q, f, c->var_num);
 		cell *attrs = e->c.val_attrs;
-		c->tmp_attrs = attrs;
 	}
 
 	CHECKED(alloc_queuen(q, q->st.qnum, tmp), q->st.qnum--);
