@@ -1876,7 +1876,7 @@ void query_destroy(query *q)
 	free(q);
 }
 
-static query *query_create_(module *m, bool is_threaded)
+static query *query_create_(module *m, bool is_small)
 {
 	static pl_atomic uint64_t g_query_id = 0;
 	query *q = calloc(1, sizeof(query));
@@ -1905,10 +1905,10 @@ static query *query_create_(module *m, bool is_threaded)
 
 	// Allocate these now...
 
-	q->frames_size = !is_threaded ? INITIAL_NBR_FRAMES : INITIAL_NBR_FRAMES / 10;
-	q->choices_size = !is_threaded ? INITIAL_NBR_CHOICES : INITIAL_NBR_FRAMES / 10;
-	q->slots_size = !is_threaded ? INITIAL_NBR_SLOTS : INITIAL_NBR_SLOTS / 10;
-	q->trails_size = !is_threaded ? INITIAL_NBR_TRAILS : INITIAL_NBR_TRAILS / 10;
+	q->frames_size = !is_small ? INITIAL_NBR_FRAMES : INITIAL_NBR_FRAMES / 10;
+	q->choices_size = !is_small ? INITIAL_NBR_CHOICES : INITIAL_NBR_FRAMES / 10;
+	q->slots_size = !is_small ? INITIAL_NBR_SLOTS : INITIAL_NBR_SLOTS / 10;
+	q->trails_size = !is_small ? INITIAL_NBR_TRAILS : INITIAL_NBR_TRAILS / 10;
 
 	ENSURE(q->frames = calloc(q->frames_size, sizeof(frame)), NULL);
 	ENSURE(q->choices = calloc(q->choices_size, sizeof(choice)), NULL);
@@ -1917,11 +1917,11 @@ static query *query_create_(module *m, bool is_threaded)
 
 	// Allocate these later as needed...
 
-	q->heap_size = !is_threaded ? INITIAL_NBR_HEAP_CELLS : INITIAL_NBR_HEAP_CELLS / 10;
+	q->heap_size = !is_small ? INITIAL_NBR_HEAP_CELLS : INITIAL_NBR_HEAP_CELLS / 10;
 	q->tmph_size = INITIAL_NBR_CELLS;
 
 	for (int i = 0; i < MAX_QUEUES; i++)
-		q->q_size[i] = !is_threaded ? INITIAL_NBR_QUEUE_CELLS : INITIAL_NBR_QUEUE_CELLS / 10;
+		q->q_size[i] = !is_small ? INITIAL_NBR_QUEUE_CELLS : INITIAL_NBR_QUEUE_CELLS / 10;
 
 	frame *f = GET_CURR_FRAME();
 	f->prev = CTX_NUL;
@@ -1942,7 +1942,7 @@ query *query_create_threaded(module *m)
 
 query *query_create_subquery(query *q, cell *instr)
 {
-	query *subq = query_create(q->st.m);
+	query *subq = query_create_(q->st.m, 0);
 	if (!subq) return NULL;
 	subq->parent = q;
 	subq->st.new_fp = 1;
