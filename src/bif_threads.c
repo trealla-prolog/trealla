@@ -857,7 +857,7 @@ bool do_signal(query *q, void *thread_ptr)
 	thread *t = (thread*)thread_ptr;
 	acquire_lock(&t->guard);
 
-	if (!list_count(&t->signals)) {
+	if (!t->is_active || !list_count(&t->signals)) {
 		release_lock(&t->guard);
 		return false;
 	}
