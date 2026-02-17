@@ -442,7 +442,10 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 				return false;
 
 			do {
-				suspend_thread(t, 10000);
+				suspend_thread(t, 1);
+
+				if (q->thread_signal)
+					return false;
 			}
 			 while (!list_count(&t->queue) && !q->halt);
 
@@ -864,10 +867,8 @@ bool do_signal(query *q, void *thread_ptr)
 
 	msg *m = list_pop_front(&t->signals);
 	release_lock(&t->guard);
-	CHECKED(check_frame(q, MAX_ARITY));
-	try_me(q, MAX_ARITY);
-	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.new_fp, 0);
-	cell *c = copy_term_to_heap(q, m->c, q->st.new_fp, false);	// Copy into thread
+	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.cur_ctx, 0);
+	cell *c = clone_term_to_heap(q, m->c, q->st.cur_ctx);	// Copy into thread
 	unshare_cells(c, c->num_cells);
 	free(m);
 	cell *tmp = prepare_call(q, CALL_NOSKIP, c, q->st.cur_ctx, 1);
@@ -919,9 +920,7 @@ static bool bif_thread_join_2(query *q)
 		return throw_error(q, p1, p1_ctx, "system_error", "join,not_thread");
 
 	if (t->exit_code) {
-		CHECKED(check_frame(q, MAX_ARITY));
-		try_me(q, MAX_ARITY);
-		cell *tmp = copy_term_to_heap(q, t->exit_code, q->st.new_fp, false);
+		cell *tmp = clone_term_to_heap(q, t->exit_code, q->st.cur_ctx);
 		t->exit_code = NULL;
 		GET_FIRST_ARG(p1,thread);
 		GET_NEXT_ARG(p2,any);
@@ -2145,11 +2144,11 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_ctx p1_ct
 		if (is_peek)
 			return false;
 
-		uint64_t cnt = 0;
-
 		do {
-			suspend_thread(t, cnt < 100 ? 0 : cnt < 1000 ? 1 : cnt < 10000 ? 10 : 10);
-			cnt++;
+			suspend_thread(t, 1);
+
+			if (q->thread_signal)
+				return false;
 		}
 		 while (!list_count(&t->queue) && !q->halt);
 	}
@@ -2176,7 +2175,7 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_ctx p1_ct
 	}
 
 	drop_choice(q);
-	return unify(q, p1, p1_ctx, tmp, q->st.cur_ctx);
+	return unify(q, p1, p1_ctx, tmp, q->st.new_fp);
 }
 
 static bool bif_pl_recv_2(query *q)
