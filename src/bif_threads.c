@@ -442,8 +442,11 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 			if (is_peek)
 				return false;
 
+			unsigned cnt = 0;
+
 			do {
-				suspend_thread(t, 10);
+				//suspend_thread(t, 10);
+				sched_yield();
 
 				if (q->thread_signal)
 					return false;
