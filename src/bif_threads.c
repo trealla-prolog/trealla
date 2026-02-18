@@ -318,7 +318,7 @@ static bool check_queue_or_alias(query *q, cell *c)
 }
 
 
-static void suspend_thread(thread *t, int ms)
+void suspend_thread(thread *t, int ms)
 {
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
@@ -442,7 +442,8 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 				return false;
 
 			do {
-				suspend_thread(t, 1);
+				//suspend_thread(t, 1);
+				msleep(1);
 
 				if (q->thread_signal)
 					return false;
@@ -488,6 +489,9 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 		release_lock(&t->guard);
 
 		if (is_peek)
+			break;
+
+		if (q->thread_signal)
 			break;
 	}
 
@@ -2145,7 +2149,8 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_ctx p1_ct
 			return false;
 
 		do {
-			suspend_thread(t, 1);
+			//suspend_thread(t, 1);
+			msleep(1);
 
 			if (q->thread_signal)
 				return false;
