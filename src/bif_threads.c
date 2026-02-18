@@ -150,8 +150,8 @@ static int new_thread(prolog *pl)
 		if (!t->is_active) {
 
 			if (!t->is_init) {
-				pthread_cond_init(&t->cond, NULL);
-				pthread_mutex_init(&t->mutex, NULL);
+				assert(pthread_cond_init(&t->cond, NULL) == 0);
+				assert(pthread_mutex_init(&t->mutex, NULL) == 0);
 				init_lock(&t->guard);
 				t->is_init = true;
 			}
@@ -325,15 +325,25 @@ void suspend_thread(thread *t, int ms)
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_nsec += 1000 * 1000 * ms;
 	pthread_mutex_lock(&t->mutex);
-	pthread_cond_timedwait(&t->cond, &t->mutex, &ts);
+	int err;
+
+	if ((err = pthread_cond_timedwait(&t->cond, &t->mutex, &ts)) != 0) {
+#if 0
+		if (err == EINVAL)
+			printf("*** suspend %d EINVAL %d\n", t->chan, err);
+		else if (err != ETIMEDOUT)
+			printf("*** suspen error %d\n", err);
+#endif
+	}
+
 	pthread_mutex_unlock(&t->mutex);
 }
 
 static void resume_thread(thread *t)
 {
-    pthread_mutex_lock(&t->mutex);
-    pthread_cond_broadcast(&t->cond);
-    pthread_mutex_unlock(&t->mutex);
+	pthread_mutex_lock(&t->mutex);
+	pthread_cond_broadcast(&t->cond);
+	pthread_mutex_unlock(&t->mutex);
 }
 
 static unsigned queue_size(prolog *pl, unsigned chan)
@@ -432,6 +442,7 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 {
 	GET_FIRST_ARG(pq,queue);
 	thread *t = &q->pl->threads[chan];
+	thread *me = get_self(q->pl);
 
 	while (!q->halt) {
 		acquire_lock(&t->guard);
@@ -445,8 +456,7 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 			unsigned cnt = 0;
 
 			do {
-				//suspend_thread(t, 10);
-				sched_yield();
+				suspend_thread(me, 10);
 
 				if (q->thread_signal)
 					return false;
