@@ -151,6 +151,7 @@ static int new_thread(prolog *pl)
 
 			if (!t->is_init) {
 				pthread_cond_init(&t->cond, NULL);
+				pthread_mutex_init(&t->mutex, NULL);
 				init_lock(&t->guard);
 				t->is_init = true;
 			}
@@ -442,8 +443,7 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 				return false;
 
 			do {
-				//suspend_thread(t, 1);
-				msleep(1);
+				suspend_thread(t, 10);
 
 				if (q->thread_signal)
 					return false;
@@ -2149,8 +2149,7 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_ctx p1_ct
 			return false;
 
 		do {
-			//suspend_thread(t, 1);
-			msleep(1);
+			suspend_thread(t, 10);
 
 			if (q->thread_signal)
 				return false;
