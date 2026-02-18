@@ -459,7 +459,7 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 				suspend_thread(me, 10);
 
 				if (q->thread_signal)
-					return false;
+					continue;
 			}
 			 while (!list_count(&t->queue) && !q->halt);
 
