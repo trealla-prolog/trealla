@@ -1082,7 +1082,7 @@ static bool bif_thread_self_1(query *q)
 		tmp.flags |= FLAG_INT_THREAD;
 		bool ok = unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 		THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
-		return true;
+		return ok;
 	}
 
 	//printf("*** no thead_self\n");
