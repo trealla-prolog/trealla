@@ -378,8 +378,8 @@ static bool do_send_message(query *q, unsigned chan, cell *p1, pl_ctx p1_ctx, bo
 	rebase_term(q, c, 0);
 	CHECKED(queue_to_chan(q->pl, chan, c, q->my_chan, is_signal));
 
-	if (is_threaded(t))
-		resume_thread(t);
+	//if (is_threaded(t))
+	//	resume_thread(t);
 
 	return true;
 }
