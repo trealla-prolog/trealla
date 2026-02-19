@@ -378,10 +378,7 @@ static bool do_send_message(query *q, unsigned chan, cell *p1, pl_ctx p1_ctx, bo
 	CHECKED(c);
 	rebase_term(q, c, 0);
 	CHECKED(queue_to_chan(q->pl, chan, c, q->my_chan, is_signal));
-
-	if (is_threaded(t))
-		resume_thread(t);
-
+	resume_thread(t);
 	return true;
 }
 
@@ -432,7 +429,6 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 {
 	GET_FIRST_ARG(pq,queue);
 	thread *t = &q->pl->threads[chan];
-	thread *me = get_self(q->pl);
 
 	while (!q->halt) {
 		acquire_lock(&t->guard);
@@ -446,7 +442,7 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 			unsigned cnt = 0;
 
 			do {
-				suspend_thread(me, 10);
+				suspend_thread(t, 10);
 			}
 			 while (!list_count(&t->queue) && !q->halt);
 
