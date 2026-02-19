@@ -325,17 +325,7 @@ void suspend_thread(thread *t, int ms)
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_nsec += 1000 * 1000 * ms;
 	pthread_mutex_lock(&t->mutex);
-	int err;
-
-	if ((err = pthread_cond_timedwait(&t->cond, &t->mutex, &ts)) != 0) {
-#if 0
-		if (err == EINVAL)
-			printf("*** suspend %d EINVAL %d\n", t->chan, err);
-		else if (err != ETIMEDOUT)
-			printf("*** suspen error %d\n", err);
-#endif
-	}
-
+	pthread_cond_timedwait(&t->cond, &t->mutex, &ts);
 	pthread_mutex_unlock(&t->mutex);
 }
 
@@ -457,9 +447,6 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 
 			do {
 				suspend_thread(me, 10);
-
-				if (q->thread_signal)
-					continue;
 			}
 			 while (!list_count(&t->queue) && !q->halt);
 
@@ -2163,9 +2150,6 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_ctx p1_ct
 
 		do {
 			suspend_thread(t, 10);
-
-			if (q->thread_signal)
-				return false;
 		}
 		 while (!list_count(&t->queue) && !q->halt);
 	}
