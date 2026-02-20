@@ -815,6 +815,11 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 	clear_visited(visited, save_visited);
 }
 
+static const char *find_match(query *q, cell *v, pl_ctx v_ctx)
+{
+	return "...";
+}
+
 static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsigned depth, visit *visited)
 {
 	// ATOM / COMPOUND
@@ -927,7 +932,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 					tmp = c;
 					tmp_ctx = c_ctx;
 					if (c_ctx == 0) { SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num])); }
-					else { SB_sprintf(q->sb, "%s", !is_ref(tmp) ? "..." : "..."); }
+					else { SB_sprintf(q->sb, "%s", !is_ref(tmp) ? "..." : find_match(q, tmp, tmp_ctx)); }
 					if (arity) {SB_sprintf(q->sb, "%s", ","); }
 					q->last_thing = WAS_OTHER;
 					continue;
