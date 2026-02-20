@@ -923,7 +923,12 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 				if (running) tmp = deref(q, tmp, tmp_ctx);
 				if (running) tmp_ctx = q->latest_ctx;
 
-				if (q->is_dump_vars && has_visited(visited, tmp, tmp_ctx)) {
+				if (q->do_dump_vars && is_var(c) && is_cyclic_term(q, tmp, c_ctx)) {
+					print_variable(q, c, c_ctx, 0);
+					if (arity) {SB_sprintf(q->sb, "%s", ","); }
+					q->last_thing = WAS_OTHER;
+					continue;
+				} else if (q->is_dump_vars && has_visited(visited, tmp, tmp_ctx)) {
 					tmp = c;
 					tmp_ctx = c_ctx;
 					if (c_ctx == 0) { SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num])); }
