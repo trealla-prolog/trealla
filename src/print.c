@@ -817,6 +817,15 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 
 static const char *find_match(query *q, cell *v, pl_ctx v_ctx)
 {
+	const frame *f = GET_FRAME(0);
+
+	for (unsigned i = 0; i < q->top->vartab.num_vars; i++) {
+		slot *e = get_slot(q, f, i);
+
+		if (is_empty(&e->c))
+			continue;
+	}
+
 	return "...";
 }
 
