@@ -824,6 +824,11 @@ static const char *find_match(query *q, cell *v, pl_ctx v_ctx)
 
 		if (is_empty(&e->c))
 			continue;
+
+		cell *c = deref(q, &e->c, 0);
+		pl_ctx c_ctx = q->latest_ctx;
+
+		//return "$$$";
 	}
 
 	return "...";
