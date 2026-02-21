@@ -953,7 +953,15 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 				}
 
 				if (q->max_depth && ((depth+!braces) >= q->max_depth)) {
-					SB_sprintf(q->sb, "%s", "...");
+					if (q->variable_names && is_var(c)) {
+						q->dump_var_num = c->var_num;
+						dump_variable(q, c, c_ctx, 0);
+					} else if (is_var(c)) {
+						SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num]));
+					} else {
+						SB_sprintf(q->sb, "%s", "...");
+					}
+
 					q->last_thing = WAS_SYMBOL;
 
 					if (arity) {
