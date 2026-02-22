@@ -508,10 +508,10 @@ static bool dump_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 	while (is_iso_list(l)) {
 		cell *h = LIST_HEAD(l);
 		h = running ? deref(q, h, l_ctx) : h;
-		pl_ctx h_ctx = running ? q->latest_ctx : 0;
+		pl_ctx h_ctx = running ? q->latest_ctx : l_ctx;
 		cell *name = running ? deref(q, h+1, h_ctx) : h+1;
-		cell *v = running ? deref(q, h+2, h_ctx) : h+2;
-		pl_ctx v_ctx = running ? q->latest_ctx : 0;
+		cell *v = 0 && running ? deref(q, h+2, h_ctx) : h+2;
+		pl_ctx v_ctx = 0 && running ? q->latest_ctx : l_ctx;
 
 		const frame *f = GET_FRAME(running ? v_ctx : 0);
 		pl_idx slot_nbr = running ?
@@ -955,7 +955,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 				if (q->max_depth && ((depth+!braces) >= q->max_depth)) {
 					if (q->variable_names && is_var(c)) {
 						q->dump_var_num = c->var_num;
-						dump_variable(q, c, c_ctx, 0);
+						dump_variable(q, c, c_ctx, true);
 					} else if (is_var(c)) {
 						SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num]));
 					} else {
