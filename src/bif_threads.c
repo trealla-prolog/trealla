@@ -972,25 +972,27 @@ static void do_cancel(thread *t)
 	query *q = t->q;
 	pthread_t id = t->id;
 
-	if (list_count(&t->queue)) printf("*** queue...\n");
+	if (t->goal) DUMP_TERM("***", t->goal, 0, true);
+
+	if (list_count(&t->queue)) fprintf(stderr, "*** queue...\n");
 
 	while ((m = list_pop_front(&t->queue)) != NULL) {
-		DUMP_TERM("***", m->c, q->st.cur_ctx, 0);
+		DUMP_TERM("***", m->c, 0, true);
 		unshare_cells(m->c, m->c->num_cells);
 		free(m);
 	}
 
-	if (list_count(&t->signals)) printf("*** signals...\n");
+	if (list_count(&t->signals)) fprintf(stderr, "*** signals...\n");
 
 	while ((m = list_pop_front(&t->signals)) != NULL) {
-		DUMP_TERM("***", m->c, q->st.cur_ctx, 0);
+		DUMP_TERM("***", m->c, 0, true);
 		unshare_cells(m->c, m->c->num_cells);
 		free(m);
 	}
 
 	if (t->ball) {
-		printf("*** ball...\n");
-		DUMP_TERM("***", t->ball, q->st.cur_ctx, 0);
+		fprintf(stderr, "*** ball...\n");
+		DUMP_TERM("***", t->ball, 0, true);
 		unshare_cells(t->ball, t->ball->num_cells);
 		free(t->ball);
 		t->ball = NULL;
@@ -2215,8 +2217,6 @@ void thread_cancel_all(prolog *pl)
 		if (!is_threaded(t) || !t->is_active)
 			continue;
 
-		query *q = t->q;
-		if (t->goal) DUMP_TERM("***", t->goal, 0, true);
 		do_cancel(t);
 	}
 }
