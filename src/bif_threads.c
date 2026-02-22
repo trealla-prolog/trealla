@@ -2207,7 +2207,7 @@ void thread_cancel_all(prolog *pl)
 	if (!pl->q_cnt)
 		return;
 
-	printf("Warning: %d outstanding application threads\n", (int)pl->q_cnt);
+	printf("Warning: %d outstanding application threads...\n", (int)pl->q_cnt);
 
 	for (unsigned i = 0; i < MAX_THREADS; i++) {
 		thread *t = &pl->threads[i];
@@ -2215,6 +2215,8 @@ void thread_cancel_all(prolog *pl)
 		if (!is_threaded(t) || !t->is_active)
 			continue;
 
+		query *q = t->q;
+		if (t->goal) DUMP_TERM("***", t->goal, 0, true);
 		do_cancel(t);
 	}
 }
