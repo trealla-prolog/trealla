@@ -439,6 +439,12 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 			if (is_peek)
 				return false;
 
+			if (list_count(&t->signals)) {
+				do_signal(t->q, t);
+				start(t->q);
+				continue;
+			}
+
 			unsigned cnt = 0;
 
 			do {
@@ -2151,6 +2157,12 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_ctx p1_ct
 
 		if (is_peek)
 			return false;
+
+		if (list_count(&t->signals)) {
+			do_signal(t->q, t);
+			start(t->q);
+			continue;
+		}
 
 		do {
 			suspend_thread(t, 10);
