@@ -956,6 +956,14 @@ static bool bif_thread_join_2(query *q)
 		t->ball = NULL;
 	}
 
+	if (t->at_exit) {
+		printf("*** at_exit...\n");
+		DUMP_TERM("***", t->at_exit, q->st.cur_ctx, 0);
+		unshare_cells(t->at_exit, t->ball->num_cells);
+		free(t->at_exit);
+		t->at_exit = NULL;
+	}
+
 	t->is_active = false;
 	release_lock(&t->guard);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
