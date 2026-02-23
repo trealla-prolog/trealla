@@ -972,27 +972,25 @@ static void do_cancel(thread *t)
 	query *q = t->q;
 	pthread_t id = t->id;
 
-	if (t->goal) DUMP_TERM("***", t->goal, 0, true);
-
-	if (list_count(&t->queue)) fprintf(stderr, "*** queue...\n");
+	if (list_count(&t->queue)) printf("*** queue...\n");
 
 	while ((m = list_pop_front(&t->queue)) != NULL) {
-		DUMP_TERM("***", m->c, 0, true);
+		DUMP_TERM("***", m->c, q->st.cur_ctx, 0);
 		unshare_cells(m->c, m->c->num_cells);
 		free(m);
 	}
 
-	if (list_count(&t->signals)) fprintf(stderr, "*** signals...\n");
+	if (list_count(&t->signals)) printf("*** signals...\n");
 
 	while ((m = list_pop_front(&t->signals)) != NULL) {
-		DUMP_TERM("***", m->c, 0, true);
+		DUMP_TERM("***", m->c, q->st.cur_ctx, 0);
 		unshare_cells(m->c, m->c->num_cells);
 		free(m);
 	}
 
 	if (t->ball) {
-		fprintf(stderr, "*** ball...\n");
-		DUMP_TERM("***", t->ball, 0, true);
+		printf("*** ball...\n");
+		DUMP_TERM("***", t->ball, q->st.cur_ctx, 0);
 		unshare_cells(t->ball, t->ball->num_cells);
 		free(t->ball);
 		t->ball = NULL;
@@ -2203,19 +2201,13 @@ static bool bif_pl_recv_2(query *q)
 
 void thread_cancel_all(prolog *pl)
 {
-	for (unsigned i = 0; i < MAX_THREADS; i++) {
-		thread *t = &pl->threads[i];
-
-		if (!is_threaded(t) || !t->is_active)
-			continue;
-
-		msleep(10);
-	}
+	for (int i = 0; (i < 1000) && pl->q_cnt; i++)
+		msleep(1);
 
 	if (!pl->q_cnt)
 		return;
 
-	printf("Warning: %d outstanding application threads...\n", (int)pl->q_cnt);
+	printf("Warning: %d outstanding application threads\n", (int)pl->q_cnt);
 
 	for (unsigned i = 0; i < MAX_THREADS; i++) {
 		thread *t = &pl->threads[i];
