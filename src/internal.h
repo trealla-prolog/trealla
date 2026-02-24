@@ -62,9 +62,9 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define MAX_SMALL_STRING ((sizeof(void*)*2)-1)
 #define MAX_VAR_POOL_SIZE 16000
 #define MAX_ARITY UINT8_MAX
-#define MAX_IF_DEPTH 255
+#define MAX_IF_DEPTH 256
 #define MAX_VARS 1024
-#define MAX_QUEUES 255
+#define MAX_QUEUES 256
 #define MAX_MODULES 1024
 #define MAX_IGNORES 64000
 #define MAX_STREAMS 1024
@@ -543,9 +543,8 @@ struct run_state_ {
 	};
 
 	uint64_t timer_started;
+	pl_idx new_fp, hp, cp, tp, sp, heap_num, qnum;
 	pl_ctx cur_ctx;
-	pl_idx new_fp, hp, cp, tp, sp, heap_num;
-	uint8_t qnum;
 };
 
 struct choice_ {
