@@ -529,12 +529,6 @@ static bool dump_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 
 			q->last_thing = WAS_OTHER;
 			return true;
-#if 0
-		} else if (running && is_var(v) && !q->is_dump_vars && q->do_dump_vars) {
-			SB_sprintf(q->sb, "%s", C_STR(q, name));
-			q->last_thing = WAS_OTHER;
-			return true;
-#endif
 		}
 
 		l = LIST_TAIL(l);
