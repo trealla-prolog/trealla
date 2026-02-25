@@ -513,20 +513,8 @@ static bool dump_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 		cell *v = 0 && running ? deref(q, h+2, h_ctx) : h+2;
 		pl_ctx v_ctx = 0 && running ? q->latest_ctx : l_ctx;
 
-		const frame *f = GET_FRAME(running ? v_ctx : 0);
-		pl_idx slot_nbr = running ?
-			(pl_idx)(get_actual_slot_num(q, f, v->var_num))
-			: v->var_num;
-
 		if (is_var(v) && (v->var_num == c->var_num) && (v_ctx == c_ctx)) {
-			if (0 && !strcmp(C_STR(q, name), "_")) {
-				print_variable(q, v, v_ctx, running);
-			} else if (q->is_dump_vars && !strcmp(C_STR(q, name), "_")) {
-				SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars));
-			} else {
-				SB_sprintf(q->sb, "%s", C_STR(q, name));
-			}
-
+			SB_sprintf(q->sb, "%s", C_STR(q, name));
 			q->last_thing = WAS_OTHER;
 			return true;
 		}

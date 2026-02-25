@@ -1,0 +1,2 @@
+   error(existence_error(source_sink,"-q.pl"),open/4).
+   error(existence_error(procedure,between/3),between/3).
