@@ -529,6 +529,10 @@ static bool dump_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 
 			q->last_thing = WAS_OTHER;
 			return true;
+		} else if (running && is_var(v) && !q->is_dump_vars && q->do_dump_vars) {
+			SB_sprintf(q->sb, "%s", C_STR(q, name));
+			q->last_thing = WAS_OTHER;
+			return true;
 		}
 
 		l = LIST_TAIL(l);
@@ -955,7 +959,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 				if (q->max_depth && ((depth+!braces) >= q->max_depth)) {
 					if (q->variable_names && is_var(c)) {
 						q->dump_var_num = c->var_num;
-						dump_variable(q, c, c_ctx, true);
+						dump_variable(q, c, c_ctx, running);
 					} else if (is_var(c)) {
 						SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num]));
 					} else {
