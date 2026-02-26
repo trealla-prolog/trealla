@@ -929,8 +929,9 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 				pl_ctx tmp_ctx = c_ctx;
 				if (running) tmp = deref(q, tmp, tmp_ctx);
 				if (running) tmp_ctx = q->latest_ctx;
+				bool is_cyclic = has_visited(visited, tmp, tmp_ctx);
 
-				if (q->is_dump_vars && has_visited(visited, tmp, tmp_ctx)) {
+				if (q->is_dump_vars && is_cyclic) {
 					tmp = c;
 					tmp_ctx = c_ctx;
 					if (c_ctx == 0) { SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num])); }
@@ -942,7 +943,6 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 
 				if (q->max_depth && ((depth+!braces) >= q->max_depth)) {
 					if (q->variable_names && is_var(c)) {
-						q->dump_var_num = c->var_num;
 						if (!dump_variable(q, c, c_ctx, running))
 							print_variable(q, c, c_ctx, running);
 					} else if (is_var(c)) {

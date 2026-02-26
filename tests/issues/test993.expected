@@ -1,2 +1,6 @@
-   error(existence_error(source_sink,"-q.pl"),open/4).
-   error(existence_error(procedure,between/3),between/3).
+0:f(f(_7))
+... : ...
+2:f(...)
+3:f(f(_7))
+4:f(f(_7))
+5:f(f(_7))
