@@ -2870,7 +2870,7 @@ static bool bif_iso_write_term_2(query *q)
 	pl_ctx p2_orig_ctx = p2_ctx, vnames_ctx = 0;
 	LIST_HANDLER(p2);
 
-	while (is_list(p2)) {
+	while (is_iso_list(p2)) {
 		cell *h = LIST_HEAD(p2);
 		h = deref(q, h, p2_ctx);
 		pl_ctx h_ctx = q->latest_ctx;
@@ -2954,7 +2954,7 @@ static bool bif_iso_write_term_3(query *q)
 	pl_ctx p2_orig_ctx = p2_ctx, vnames_ctx;
 	LIST_HANDLER(p2);
 
-	while (is_list(p2)) {
+	while (is_iso_list(p2)) {
 		cell *h = LIST_HEAD(p2);
 		h = deref(q, h, p2_ctx);
 		pl_ctx h_ctx = q->latest_ctx;
@@ -4359,7 +4359,7 @@ static bool bif_write_term_to_atom_3(query *q)
 	q->flags = q->st.m->flags;
 	LIST_HANDLER(p2);
 
-	while (is_list(p2)) {
+	while (is_iso_list(p2)) {
 		cell *h = LIST_HEAD(p2);
 		h = deref(q, h, p2_ctx);
 		pl_ctx h_ctx = q->latest_ctx;
@@ -4391,7 +4391,7 @@ static bool bif_write_term_to_chars_3(query *q)
 	q->flags = q->st.m->flags;
 	LIST_HANDLER(p2);
 
-	while (is_list(p2)) {
+	while (is_iso_list(p2)) {
 		cell *h = LIST_HEAD(p2);
 		h = deref(q, h, p2_ctx);
 		pl_ctx h_ctx = q->latest_ctx;
