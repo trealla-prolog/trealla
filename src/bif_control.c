@@ -1201,6 +1201,7 @@ bool throw_error(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const ch
 	if ((q->st.m->flags.syntax_error == UNK_FAIL) && !strcmp(err_type, "syntax_error"))
 		return false;
 
+	q->max_depth = 10;
 	return throw_error3(q, c, c_ctx, err_type, expected, q->st.instr);
 }
 
