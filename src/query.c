@@ -536,8 +536,8 @@ static void leave_predicate(query *q, predicate *pr)
 		// mean there are no shared references to terms contained
 		// within. So move items on the predicate dirty-list to the
 		// query dirty-list. They will be freed up at end of the query.
-		// FIXME: this is a memory drain, should a retracted term be
-		// copied to the heap?.
+		//
+		// FIXME: this is a memory drain
 
 		if (true) {
 			r->cl.is_deleted = true;
