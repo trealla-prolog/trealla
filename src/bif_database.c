@@ -262,10 +262,12 @@ static bool bif_iso_retractall_1(query *q)
 		return true;
 
 	prolog_lock(q->pl);
+	q->in_retractall = true;
 
 	while (do_retract(q, p1, p1_ctx, DO_RETRACTALL)) {
 		if (q->did_throw) {
 			prolog_unlock(q->pl);
+			q->in_retractall = false;
 			return true;
 		}
 
@@ -273,6 +275,8 @@ static bool bif_iso_retractall_1(query *q)
 		q->total_backtracks++;
 		retry_choice(q);
 	}
+
+	q->in_retractall = false;
 
 	if (!pr->refcnt) {
 		predicate_purge_dirty_list(pr);
