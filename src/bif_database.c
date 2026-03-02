@@ -154,9 +154,9 @@ static bool bif_iso_clause_2(query *q)
 		cell *body = get_body(cl->cells);
 		bool ok;
 
-		if (body)
+		if (body) {
 			ok = unify(q, p2, p2_ctx, body, q->st.new_fp);
-		else {
+		} else {
 			cell tmp;
 			make_instr(&tmp, g_true_s, bif_iso_true_0, 0, 0);
 			ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
@@ -285,6 +285,8 @@ static bool bif_iso_retractall_1(query *q)
 			sl_destroy(pr->idx2);
 			sl_destroy(pr->idx1);
 			pr->idx1 = pr->idx2 = NULL;
+			pr->is_processed = false;
+			pr->head = pr->tail = NULL;
 		}
 	}
 
@@ -374,7 +376,6 @@ static bool bif_iso_abolish_1(query *q)
 	tmp = *p1_name;
 	tmp.arity = get_smallint(p1_arity);
 	CLR_OP(&tmp);
-
 	prolog_lock(q->pl);
 	bool ok = do_abolish(q, p1, &tmp, true);
 	prolog_unlock(q->pl);
