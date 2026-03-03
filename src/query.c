@@ -539,12 +539,12 @@ static void leave_predicate(query *q, predicate *pr)
 		//
 		// FIXME: this is a memory drain
 
-		if (!q->in_retractall || r->cl.num_vars) {
-			r->cl.is_deleted = true;
-			list_push_back(&q->dirty, r);
-		} else {
+		if (q->in_retractall) {
 			clear_clause(&r->cl);
 			free(r);
+		} else {
+			r->cl.is_deleted = true;
+			list_push_back(&q->dirty, r);
 		}
 	}
 
