@@ -493,7 +493,7 @@ static void enter_predicate(query *q, predicate *pr)
 		pr->refcnt++;
 }
 
-static void leave_predicate(query *q, predicate *pr)
+static void leave_predicate(query *q, predicate *pr, bool is_final)
 {
 	if (!pr)
 		return;
@@ -539,7 +539,7 @@ static void leave_predicate(query *q, predicate *pr)
 		//
 		// FIXME: this is a memory drain
 
-		if (q->in_retractall) {
+		if (q->in_retractall && !r->cl.num_vars) {
 			clear_clause(&r->cl);
 			free(r);
 		} else {
@@ -763,7 +763,7 @@ static void commit_frame(query *q)
 	}
 
 	if (last_match) {
-		leave_predicate(q, q->st.pr);
+		leave_predicate(q, q->st.pr, false);
 		drop_choice(q);
 		trim_trail(q);
 	} else {
@@ -783,7 +783,7 @@ void stash_frame(query *q, const clause *cl, bool last_match)
 	unsigned num_vars = cl->num_vars;
 
 	if (last_match) {
-		leave_predicate(q, q->st.pr);
+		leave_predicate(q, q->st.pr, false);
 		drop_choice(q);
 	} else {
 		choice *ch = GET_CURR_CHOICE();
@@ -826,12 +826,12 @@ int retry_choice(query *q)
 			continue;
 
 		if (ch->catchme_exception || ch->fail_on_retry) {
-			leave_predicate(q, ch->st.pr);
+			leave_predicate(q, ch->st.pr, true);
 			continue;
 		}
 
 		if (!ch->register_cleanup && q->noretry) {
-			leave_predicate(q, ch->st.pr);
+			leave_predicate(q, ch->st.pr, true);
 			continue;
 		}
 
@@ -972,7 +972,7 @@ void cut(query *q)
 				break;
 		}
 
-		leave_predicate(q, ch->st.pr);
+		leave_predicate(q, ch->st.pr, false);
 		drop_choice(q);
 
 		if (ch->register_cleanup && !ch->fail_on_retry) {
@@ -1344,7 +1344,7 @@ bool match_rule(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 	}
 
 	if (!q->st.dbe) {
-		leave_predicate(q, q->st.pr);
+		leave_predicate(q, q->st.pr, false);
 		return false;
 	}
 
@@ -1390,7 +1390,7 @@ bool match_rule(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 		undo_me(q);
 	}
 
-	leave_predicate(q, q->st.pr);
+	leave_predicate(q, q->st.pr, true);
 	drop_choice(q);
 	return false;
 }
@@ -1454,7 +1454,7 @@ bool match_clause(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract
 	}
 
 	if (!q->st.dbe) {
-		leave_predicate(q, q->st.pr);
+		leave_predicate(q, q->st.pr, false);
 		return false;
 	}
 
@@ -1483,7 +1483,7 @@ bool match_clause(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract
 		undo_me(q);
 	}
 
-	leave_predicate(q, q->st.pr);
+	leave_predicate(q, q->st.pr, true);
 	drop_choice(q);
 	return false;
 }
@@ -1535,7 +1535,7 @@ bool match_head(query *q)
 		next_key(q);
 
 	if (!q->st.dbe) {
-		leave_predicate(q, q->st.pr);
+		leave_predicate(q, q->st.pr, false);
 		return false;
 	}
 
@@ -1563,7 +1563,7 @@ bool match_head(query *q)
 		undo_me(q);
 	}
 
-	leave_predicate(q, q->st.pr);
+	leave_predicate(q, q->st.pr, true);
 	drop_choice(q);
 	return false;
 }

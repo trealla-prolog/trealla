@@ -266,8 +266,8 @@ static bool bif_iso_retractall_1(query *q)
 
 	while (do_retract(q, p1, p1_ctx, DO_RETRACTALL)) {
 		if (q->did_throw) {
-			prolog_unlock(q->pl);
 			q->in_retractall = false;
+			prolog_unlock(q->pl);
 			return true;
 		}
 
@@ -277,19 +277,8 @@ static bool bif_iso_retractall_1(query *q)
 	}
 
 	q->in_retractall = false;
-
-	if (!pr->refcnt) {
-		predicate_purge_dirty_list(pr);
-
-		if (!pr->cnt) {
-			sl_destroy(pr->idx2);
-			sl_destroy(pr->idx1);
-			pr->idx1 = pr->idx2 = NULL;
-			pr->is_processed = false;
-			pr->head = pr->tail = NULL;
-		}
-	}
-
+	pr->is_processed = false;
+	pr->head = pr->tail = NULL;
 	prolog_unlock(q->pl);
 	return true;
 }
