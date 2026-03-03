@@ -222,7 +222,9 @@ bool do_retract(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 	db_log(q, r, LOG_ERASE);
 	retract_from_db(r->owner->m, r);
 	bool last_match = (is_retract == DO_RETRACT) && !has_next_key(q);
+	q->in_retract = true;
 	stash_frame(q, &r->cl, last_match);
+	q->in_retract = false;
 	return true;
 }
 
@@ -278,7 +280,6 @@ static bool bif_iso_retractall_1(query *q)
 
 	q->in_retractall = false;
 	pr->is_processed = false;
-	pr->head = pr->tail = NULL;
 	prolog_unlock(q->pl);
 	return true;
 }

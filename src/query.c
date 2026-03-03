@@ -515,6 +515,9 @@ static void leave_predicate(query *q, predicate *pr, bool is_final)
 
 	// Predicate is no longer being used
 
+	//printf("*** leave %u, %s/%u, in_retractall=%d, is_final=%d, retry=%d\n",
+	//	(unsigned)list_count(&pr->dirty), C_STR(q, &pr->key), pr->key.arity, q->in_retractall, is_final, q->retry);
+
 	module_lock(pr->m);
 	rule *r;
 
@@ -536,10 +539,8 @@ static void leave_predicate(query *q, predicate *pr, bool is_final)
 		// mean there are no shared references to terms contained
 		// within. So move items on the predicate dirty-list to the
 		// query dirty-list. They will be freed up at end of the query.
-		//
-		// FIXME: this is a memory drain
 
-		if (q->in_retractall && !r->cl.num_vars) {
+		if ((q->in_retractall || q->in_retract) && (q->retry == QUERY_RETRY) && !r->cl.num_vars) {
 			clear_clause(&r->cl);
 			free(r);
 		} else {
@@ -783,7 +784,7 @@ void stash_frame(query *q, const clause *cl, bool last_match)
 	unsigned num_vars = cl->num_vars;
 
 	if (last_match) {
-		leave_predicate(q, q->st.pr, false);
+		leave_predicate(q, q->st.pr, true);
 		drop_choice(q);
 	} else {
 		choice *ch = GET_CURR_CHOICE();
@@ -803,6 +804,21 @@ void stash_frame(query *q, const clause *cl, bool last_match)
 	}
 
 	q->st.iter = NULL;
+}
+
+static void query_purge_dirty_list(query *q)
+{
+	unsigned cnt = 0;
+	rule *r;
+
+	while ((r = list_pop_front(&q->dirty)) != NULL) {
+		clear_clause(&r->cl);
+		free(r);
+		cnt++;
+	}
+
+	if (cnt && 0)
+		printf("*** query_purge_dirty_list %u\n", cnt);
 }
 
 int retry_choice(query *q)
@@ -1344,7 +1360,7 @@ bool match_rule(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 	}
 
 	if (!q->st.dbe) {
-		leave_predicate(q, q->st.pr, false);
+		leave_predicate(q, q->st.pr, true);
 		return false;
 	}
 
@@ -1454,7 +1470,7 @@ bool match_clause(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract
 	}
 
 	if (!q->st.dbe) {
-		leave_predicate(q, q->st.pr, false);
+		leave_predicate(q, q->st.pr, true);
 		return false;
 	}
 
@@ -1535,7 +1551,7 @@ bool match_head(query *q)
 		next_key(q);
 
 	if (!q->st.dbe) {
-		leave_predicate(q, q->st.pr, false);
+		leave_predicate(q, q->st.pr, true);
 		return false;
 	}
 
@@ -1806,21 +1822,6 @@ bool execute(query *q, cell *cells, unsigned num_vars)
 	f->initial_slots = f->actual_slots = num_vars;
 	f->dbgen = ++q->pl->dbgen;
 	return start(q);
-}
-
-static void query_purge_dirty_list(query *q)
-{
-	unsigned cnt = 0;
-	rule *r;
-
-	while ((r = list_pop_front(&q->dirty)) != NULL) {
-		clear_clause(&r->cl);
-		free(r);
-		cnt++;
-	}
-
-	if (cnt && 0)
-		printf("*** query_purge_dirty_list %u\n", cnt);
 }
 
 void query_destroy(query *q)
