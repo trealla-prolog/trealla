@@ -10,7 +10,7 @@ run :-
 run.
 
 run1 :-
-	writeln('run1...'),
+	writeln('retractall...'),
 	between(1,10,I),
 		write(I), nl,
 		test1,
@@ -25,7 +25,7 @@ test1 :-
 	retractall(f(_)).
 
 run2 :-
-	writeln('run2...'),
+	writeln('abolish...'),
 	between(1,10,I),
 		write(I), nl,
 		test2,
@@ -40,7 +40,7 @@ test2 :-
 	abolish(f/1).
 
 run3 :-
-	writeln('run3...'),
+	writeln('retract...'),
 	between(1,10,I),
 		write(I), nl,
 		test3,
