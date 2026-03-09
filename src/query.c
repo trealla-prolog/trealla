@@ -540,10 +540,18 @@ static void leave_predicate(query *q, predicate *pr, bool is_final)
 		// within. So move items on the predicate dirty-list to the
 		// query dirty-list. They will be freed up at end of the query.
 
-		if ((q->in_retractall || q->in_retract)
+		if (q->in_retractall
 			&& (q->retry == QUERY_RETRY)
 			&& !q->no_recov
-			&& !r->cl.num_vars && q->pl->opt) {
+			&& !r->cl.num_vars
+			&& q->pl->opt) {
+			clear_clause(&r->cl);
+			free(r);
+		} else if (q->in_retract
+			&& (q->retry == QUERY_RETRY)
+			&& !q->no_recov
+			&& !r->cl.num_vars
+			&& q->pl->opt) {
 			clear_clause(&r->cl);
 			free(r);
 		} else {
