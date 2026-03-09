@@ -1,14 +1,3 @@
-run :-
-	run1,
-	fail.
-run :-
-	run2,
-	fail.
-run :-
-	run3,
-	fail.
-run.
-
 run1 :-
 	writeln('retractall...'),
 	between(1,10,I),
@@ -49,7 +38,7 @@ run3.
 
 test3 :-
 	between(1,1000000,I),
-		assertz(f(I)),
+		assertz(f(g(I))),
 		fail.
 test3 :-
 	retract(f(_)),
