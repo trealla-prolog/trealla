@@ -543,6 +543,7 @@ static void leave_predicate(query *q, predicate *pr, bool is_final)
 		if ((q->in_retractall || q->in_retract)
 			&& (q->retry == QUERY_RETRY)
 			&& !q->no_recov
+			&& !r->cl.num_vars
 			&& q->pl->opt) {
 			clear_clause(&r->cl);
 			free(r);
