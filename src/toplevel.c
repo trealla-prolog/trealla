@@ -482,7 +482,7 @@ void dump_vars(query *q, bool partial)
 		any = true;
 	}
 
-	bool any_atts = any && any_attributed(q);
+	bool any_atts = /*any &&*/ any_attributed(q);
 
 	if (any && any_atts)
 		fprintf(stdout, "%s", "");
