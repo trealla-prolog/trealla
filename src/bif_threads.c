@@ -445,8 +445,6 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 				continue;
 			}
 
-			unsigned cnt = 0;
-
 			do {
 				suspend_thread(t, 10);
 			}
