@@ -374,10 +374,10 @@ static bool do_send_message(query *q, unsigned chan, cell *p1, pl_ctx p1_ctx, bo
 		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
 
 	CHECKED(init_tmp_heap(q));
-	cell *c = clone_term_to_tmp(q, p1, p1_ctx);
-	CHECKED(c);
-	rebase_term(q, c, 0);
-	CHECKED(queue_to_chan(q->pl, chan, c, q->my_chan, is_signal));
+	cell *tmp = clone_term_to_tmp(q, p1, p1_ctx);
+	CHECKED(tmp);
+	rebase_term(q, tmp, 0);
+	CHECKED(queue_to_chan(q->pl, chan, tmp, q->my_chan, is_signal));
 	resume_thread(t);
 	return true;
 }
@@ -809,34 +809,34 @@ static bool bif_thread_create_3(query *q)
 
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	CHECKED(init_tmp_heap(q));
-	cell *goal = clone_term_to_tmp(q, p1, p1_ctx);
-	CHECKED(goal);
-	t->num_vars = rebase_term(q, goal, 0);
+	cell *tmp = clone_term_to_tmp(q, p1, p1_ctx);
+	CHECKED(tmp);
+	t->num_vars = rebase_term(q, tmp, 0);
 	t->q = query_create_threaded(q->st.m);
 	CHECKED(t->q);
 	t->q->thread_ptr = t;
 	t->q->my_chan = n;
-	cell *tmp2 = alloc_heap(t->q, 1+goal->num_cells+1);
+	cell *tmp2 = alloc_heap(t->q, 1+tmp->num_cells+1);
 	CHECKED(tmp2);
 	pl_idx num_cells = 0;
-	make_instr(tmp2+num_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, goal->num_cells+1);
-	num_cells += dup_cells(tmp2+num_cells, goal, goal->num_cells);
+	make_instr(tmp2+num_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, tmp->num_cells+1);
+	num_cells += dup_cells(tmp2+num_cells, tmp, tmp->num_cells);
 	make_instr(tmp2+num_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 	t->goal = tmp2;
 
 	if (p4) {
 		CHECKED(init_tmp_heap(q));
-		cell *goal = clone_term_to_tmp(q, p4, p4_ctx);
-		CHECKED(goal);
-		t->at_exit_num_vars = rebase_term(q, goal, 0);
-		cell *tmp2 = alloc_heap(q, 1+goal->num_cells+1);
+		cell *tmp = clone_term_to_tmp(q, p4, p4_ctx);
+		CHECKED(tmp);
+		t->at_exit_num_vars = rebase_term(q, tmp, 0);
+		cell *tmp2 = alloc_heap(q, 1+tmp->num_cells+1);
 		CHECKED(tmp2);
 		pl_idx num_cells = 0;
-		make_instr(tmp2+num_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, goal->num_cells+1);
-		num_cells += dup_cells(tmp2+num_cells, goal, goal->num_cells);
+		make_instr(tmp2+num_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, tmp->num_cells+1);
+		num_cells += dup_cells(tmp2+num_cells, tmp, tmp->num_cells);
 		make_instr(tmp2+num_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 		THREAD_DEBUG DUMP_TERM("at_exit", tmp2, q->st.cur_ctx, 0);
-		t->at_exit = clone_term_to_heap(t->q, tmp2, 0);	// Copy into thread
+		t->at_exit = clone_term_to_heap(t->q, tmp2, 0);
 		CHECKED(t->at_exit);
 	}
 
@@ -869,14 +869,15 @@ bool do_signal(query *q, void *thread_ptr)
 	msg *m = list_pop_front(&t->signals);
 	release_lock(&t->guard);
 	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.cur_ctx, 0);
-	cell *c = clone_term_to_heap(q, m->c, q->st.cur_ctx);	// Copy into thread
-	unshare_cells(c, c->num_cells);
+	cell *tmp = clone_term_to_heap(q, m->c, q->st.cur_ctx);	// Copy into thread
+	CHECKED(tmp);
+	unshare_cells(tmp, tmp->num_cells);
 	free(m);
-	cell *tmp = prepare_call(q, CALL_NOSKIP, c, q->st.cur_ctx, 1);
-	ENSURE(tmp);
-	pl_idx num_cells = c->num_cells;
-	make_call(q, tmp+num_cells);
-	q->st.instr = tmp;
+	cell *tmp2 = prepare_call(q, CALL_NOSKIP, tmp, q->st.cur_ctx, 1);
+	ENSURE(tmp2);
+	pl_idx num_cells = tmp->num_cells;
+	make_call(q, tmp2+num_cells);
+	q->st.instr = tmp2;
 	return true;
 }
 
@@ -1105,17 +1106,17 @@ static bool bif_thread_exit_1(query *q)
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
 	GET_FIRST_ARG(p1,nonvar);
 	CHECKED(init_tmp_heap(q));
-	cell *tmp_p1 = clone_term_to_tmp(q, p1, p1_ctx);
-	CHECKED(tmp_p1);
-	rebase_term(q, tmp_p1, 0);
-	cell *tmp = alloc_heap(q, 1+tmp_p1->num_cells);
+	cell *tmp = clone_term_to_tmp(q, p1, p1_ctx);
 	CHECKED(tmp);
-	make_instr(tmp, new_atom(q->pl, "exited"), NULL, 1, tmp_p1->num_cells);
-	dup_cells(tmp+1, tmp_p1, tmp_p1->num_cells);
+	rebase_term(q, tmp, 0);
+	cell *tmp2 = alloc_heap(q, 1+tmp->num_cells);
+	CHECKED(tmp2);
+	make_instr(tmp2, new_atom(q->pl, "exited"), NULL, 1, tmp->num_cells);
+	dup_cells(tmp2+1, tmp, tmp->num_cells);
 	thread * t = get_self(q->pl);
 
 	if (t != NULL) {
-		t->exit_code = tmp;
+		t->exit_code = tmp2;
 		q->halt_code = 0;
 		q->halt = t->q->error = true;
 		THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
