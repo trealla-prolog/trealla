@@ -782,10 +782,9 @@ static void commit_frame(query *q)
 	q->st.iter = NULL;
 }
 
-void stash_frame(query *q, const clause *cl, bool last_match)
+void stash_frame(query *q, unsigned num_vars, bool last_match)
 {
 	pl_idx chgen = ++q->chgen;
-	unsigned num_vars = cl->num_vars;
 
 	if (last_match) {
 		leave_predicate(q, q->st.pr, true);

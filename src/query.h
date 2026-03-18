@@ -46,7 +46,7 @@ bool match_rule(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract);
 bool match_clause(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type retract);
 void try_me(query *q, unsigned vars);
 void call_attrs(query *q, cell *attrs);
-void stash_frame(query *q, const clause *cl, bool last_match);
+void stash_frame(query *q, unsigned num_vars, bool last_match);
 bool check_redo(query *q);
 void dump_vars(query *q, bool partial);
 int check_interrupt(query *q);
