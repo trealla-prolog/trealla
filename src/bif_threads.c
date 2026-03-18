@@ -454,9 +454,9 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 
 		msg *m = list_front(&t->queue);
 		assert(m);
+		CHECKED(push_choice(q), release_lock(&t->guard));
 
 		while (m) {
-			CHECKED(push_choice(q), release_lock(&t->guard));
 			try_me(q, MAX_ARITY);
 			cell *tmp = copy_term_to_heap(q, m->c, q->st.new_fp, false);	// Copy into thread
 			CHECKED(tmp, release_lock(&t->guard));
@@ -480,10 +480,11 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 				return true;
 			}
 
-			retry_choice(q);
+			undo_me(q);
 			m = list_next(m);
 		}
 
+		drop_choice(q);
 		release_lock(&t->guard);
 
 		if (is_peek)
