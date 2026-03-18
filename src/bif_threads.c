@@ -2176,8 +2176,7 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_ctx p1_ct
 	CHECKED(check_frame(q, MAX_ARITY));
 	CHECKED(push_choice(q));
 	try_me(q, MAX_ARITY);
-	cell *c = m->c;
-	cell *tmp = copy_term_to_heap(q, c, q->st.new_fp, false);
+	cell *tmp = copy_term_to_heap(q, m->c, q->st.new_fp, false);
 	CHECKED(tmp, release_lock(&t->guard));
 	release_lock(&t->guard);
 	q->curr_chan = m->from_chan;
@@ -2222,7 +2221,7 @@ void thread_cancel_all(prolog *pl)
 	if (!pl->q_cnt)
 		return;
 
-	printf("Warning: %d outstanding application threads\n", (int)pl->q_cnt);
+	//printf("Warning: %d outstanding application threads\n", (int)pl->q_cnt);
 
 	for (unsigned i = 0; i < MAX_THREADS; i++) {
 		thread *t = &pl->threads[i];
