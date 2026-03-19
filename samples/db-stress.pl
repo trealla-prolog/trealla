@@ -44,3 +44,28 @@ test3 :-
 	retract(f(_)),
 	fail.
 test3.
+
+run4 :-
+	writeln('retract...'),
+	between(1,10,I),
+		write(I), nl,
+		test4,
+		fail.
+run4.
+
+test4 :-
+	between(1,1000000,I),
+		assertz(f(g(I))),
+		fail.
+test4 :-
+	do_retract(1000000),
+	fail.
+test4.
+
+do_retract(0) :-
+	!.
+do_retract(I) :-
+	retract(f(g(I))),
+	I2 is I - 1,
+	do_retract(I2).
+
