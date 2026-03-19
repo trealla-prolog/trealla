@@ -389,6 +389,8 @@ void parser_destroy(parser *p)
 		free(p->cl);
 	}
 
+	p->save_line = NULL;
+	p->cl = NULL;
 	free(p);
 }
 
