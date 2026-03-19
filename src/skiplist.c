@@ -167,7 +167,7 @@ bool sl_set(skiplist *l, const void *key, const void *val)
 	if (!l || l->is_destroyed)
 		return false;
 
-	slnode_t *update[MAX_LEVELS], *p = l->header, *q = NULL;
+	slnode_t *update[MAX_LEVELS+1], *p = l->header, *q = NULL;
 	int k;
 
 	for (k = l->level - 1; k >= 0; k--) {
@@ -205,7 +205,7 @@ bool sl_app(skiplist *l, const void *key, const void *val)
 	if (!l || l->is_destroyed)
 		return false;
 
-	slnode_t *update[MAX_LEVELS], *p = l->header, *q = NULL;
+	slnode_t *update[MAX_LEVELS+1], *p = l->header, *q = NULL;
 	int k;
 
 	for (k = l->level - 1; k >= 0; k--) {
@@ -243,7 +243,7 @@ bool sl_rem(skiplist *l, const void *key, const void *val)
 	if (!l || l->is_destroyed)
 		return false;
 
-	slnode_t *update[MAX_LEVELS], *p = l->header, *q = NULL;
+	slnode_t *update[MAX_LEVELS+1], *p = l->header, *q = NULL;
 	int k;
 
 	for (k = l->level; k >= 0; k--) {
@@ -292,7 +292,7 @@ bool sl_del(skiplist *l, const void *key)
 	if (!l || l->is_destroyed)
 		return false;
 
-	slnode_t *update[MAX_LEVELS], *p = l->header, *q = NULL;
+	slnode_t *update[MAX_LEVELS+1], *p = l->header, *q = NULL;
 	int k;
 
 	for (k = l->level; k >= 0; k--) {
