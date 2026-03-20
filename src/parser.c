@@ -3326,7 +3326,7 @@ TRY_AGAIN:
 						// Where the string is empty it's
 						// just ignored:
 
-						if (!SB_strlen(p->token)) {
+						if (!SB_strlen(p->token) && 0) {
 							p->quote_char = 0;
 							p->is_quoted = true;
 							goto TRY_AGAIN;
