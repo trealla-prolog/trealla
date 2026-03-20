@@ -177,6 +177,16 @@ int main(int ac, char *av[], char * envp[])
 	int version = 0, daemon = 0;
 	bool no_res = false, quiet = false;
 	const char *restore_file = NULL;
+
+	for (i = 1; i < ac; i++) {
+		if (!strcmp(av[i], "--library")) {
+			if (++i < ac) {
+				g_tpl_lib = strdup(av[i]);
+				convert_path(g_tpl_lib);
+			}
+		}
+	}
+
 	prolog *pl = pl_create();
 
 	if (!pl) {

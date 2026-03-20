@@ -1,5 +1,6 @@
 #include "library.h"
 
+#ifdef EMBED
 extern unsigned char library_builtins_pl[];
 extern unsigned int library_builtins_pl_len;
 extern unsigned char library_lists_pl[];
@@ -131,3 +132,9 @@ library g_libs[] = {
 
 	 {0}
 };
+#else
+library g_libs[] = {
+	 {0}
+};
+#endif
+
