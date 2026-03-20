@@ -832,17 +832,13 @@ prolog *pl_create()
 			module *m = load_file(pl->user_m, SB_cstr(s1), false, true);
 
 			if (!m || m->error) {
-				// Only builtins is absolutely required for now
-				if (!strcmp(bootstrap[i], "builtins")) {
-					fprintf(stderr, "Error: could not find library(%s) at %s\n", bootstrap[i], SB_cstr(s1));
-					SB_free(s1);
-					pl_destroy(pl);
-					return NULL;
-				}
-			} else {
-				m->prebuilt = true;
+				fprintf(stderr, "Error: could not find library(%s) at %s\n", bootstrap[i], SB_cstr(s1));
+				SB_free(s1);
+				pl_destroy(pl);
+				return NULL;
 			}
 
+			m->prebuilt = true;
 			SB_free(s1);
 		}
 	}
