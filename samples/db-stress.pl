@@ -41,7 +41,7 @@ test3 :-
 		assertz(f(g(I))),
 		fail.
 test3 :-
-	retract(f(_)),
+	retract(f(g(_))),
 	fail.
 test3.
 
