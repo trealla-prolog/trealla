@@ -265,6 +265,7 @@ static void set_var(query *q, const cell *c, pl_ctx c_ctx, cell *v, pl_ctx v_ctx
 		}
 	} else if (is_compound(v)) {
 		make_indirect(&e->c, v, v_ctx);
+		q->no_recov_compound = true;
 
 		if ((v_ctx >= q->st.cur_ctx)
 			&& !is_ground(v)
@@ -608,7 +609,7 @@ static bool unify_internal(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 bool unify(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx)
 {
 	q->is_cyclic1 = q->is_cyclic2 = false;
-	q->has_vars = q->no_recov = false;
+	q->has_vars = q->no_recov = q->no_recov_compound = false;
 	q->before_hook_tp = q->st.tp;
 	if (++q->vgen == 0) q->vgen = 1;
 	bool ok;

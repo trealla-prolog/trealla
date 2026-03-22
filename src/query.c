@@ -778,6 +778,9 @@ static void commit_frame(query *q)
 	if (tco && q->pl->opt) {
 		Trace(q, get_head(save_dbe->cl.cells), q->st.cur_ctx, EXIT);
 		reuse_frame(q, cl->num_vars);
+
+		if (!q->no_recov_compound)
+			query_purge_dirty_list(q);
 	} else {
 		push_frame(q);
 	}
