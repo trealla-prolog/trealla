@@ -535,16 +535,19 @@ static void leave_predicate(query *q, predicate *pr, bool is_final)
 			}
 		}
 
-		// Just because this predicate is no longer in use doesn't
+		// Just because this clause is no longer in use doesn't
 		// mean there are no shared references to terms contained
-		// within. So move items on the predicate dirty-list to the
-		// query dirty-list. They will be freed up at end of the query.
+		// within. So may have to move to the query dirty-list where
+		// they will be freed up at end of the query...
 
 		if ((q->in_retractall || q->in_retract)
 			&& (q->retry == QUERY_RETRY)
 			&& !q->no_recov
 			&& !r->cl.num_vars
 			&& q->pl->opt) {
+			clear_clause(&r->cl);
+			free(r);
+		} else if (q->in_retract && !q->no_recov_compound) {
 			clear_clause(&r->cl);
 			free(r);
 		} else {
@@ -778,9 +781,6 @@ static void commit_frame(query *q)
 	if (tco && q->pl->opt) {
 		Trace(q, get_head(save_dbe->cl.cells), q->st.cur_ctx, EXIT);
 		reuse_frame(q, cl->num_vars);
-
-		if (!q->no_recov_compound)
-			query_purge_dirty_list(q);
 	} else {
 		push_frame(q);
 	}
