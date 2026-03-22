@@ -562,6 +562,21 @@ static void leave_predicate(query *q, predicate *pr, bool is_final)
 	module_unlock(pr->m);
 }
 
+static void query_purge_dirty_list(query *q)
+{
+	unsigned cnt = 0;
+	rule *r;
+
+	while ((r = list_pop_front(&q->dirty)) != NULL) {
+		clear_clause(&r->cl);
+		free(r);
+		cnt++;
+	}
+
+	if (cnt && 0)
+		printf("*** query_purge_dirty_list %u\n", cnt);
+}
+
 static void trim_trail(query *q)
 {
 	if (q->undo_hi_tp)
@@ -807,21 +822,6 @@ void stash_frame(query *q, unsigned num_vars, bool last_match)
 	}
 
 	q->st.iter = NULL;
-}
-
-static void query_purge_dirty_list(query *q)
-{
-	unsigned cnt = 0;
-	rule *r;
-
-	while ((r = list_pop_front(&q->dirty)) != NULL) {
-		clear_clause(&r->cl);
-		free(r);
-		cnt++;
-	}
-
-	if (cnt && 0)
-		printf("*** query_purge_dirty_list %u\n", cnt);
 }
 
 int retry_choice(query *q)
