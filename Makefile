@@ -1,7 +1,8 @@
 preset    ?= linux-debug
 main      ?=
-cmake     ?= cmake
 ctest     ?= ctest
+cmake     ?= cmake
+generator ?= "Unix Makefiles"
 
 build_dir := build/$(preset)
 bin       := $(build_dir)/tpl
@@ -21,16 +22,16 @@ info:
 	@echo "main (opt)  = $(main)"
 
 configure:
-	$(cmake) --preset $(preset)
+	$(cmake) -G $(generator) --preset $(preset)
 
 configure-compile:
-	$(cmake) --preset $(preset) -DMAIN_PL="$(main)"
+	$(cmake) -G $(generator) --preset $(preset) -DMAIN_PL="$(main)"
 
 build:
 	$(cmake) --build --preset $(preset)
 
 rebuild:
-	$(cmake) --preset $(preset)
+	$(cmake) -G $(generator) --preset $(preset)
 	$(cmake) --build --preset $(preset)
 
 run:
@@ -49,7 +50,7 @@ leaks:
 	./tests/run_valgrind_leaks.sh
 
 compile:
-	$(cmake) --preset $(preset) -DMAIN_PL="$(main)"
+	$(cmake) -G $(generator) --preset $(preset) -DMAIN_PL="$(main)"
 	$(cmake) --build --preset $(preset)
 
 run-compile:
