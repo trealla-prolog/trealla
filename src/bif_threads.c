@@ -39,22 +39,22 @@ bool try_lock(lock *l)
 	return pthread_mutex_trylock(&l->mutex) == 0;
 }
 
-bool acquire_lock(lock *l)
+void acquire_lock(lock *l)
 {
-	return pthread_mutex_lock(&l->mutex) == 0;
+	assert(!pthread_mutex_lock(&l->mutex));
 }
 
-bool release_lock(lock *l)
+void release_lock(lock *l)
 {
-	return pthread_mutex_unlock(&l->mutex) == 0;
+	pthread_mutex_unlock(&l->mutex);
 }
 
 #else
 
 void init_lock(lock *l) {}
 void deinit_lock(lock *l) {}
-bool acquire_lock(lock *l) { return true; }
-bool release_lock(lock *l) { return true; }
+void acquire_lock(lock *l) {}
+void release_lock(lock *l) {}
 
 #endif
 

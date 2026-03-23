@@ -16,5 +16,5 @@ typedef struct {
 
 void init_lock(lock *l);
 void deinit_lock(lock *l);
-bool acquire_lock(lock *l);
-bool release_lock(lock *l);
+void acquire_lock(lock *l);
+void release_lock(lock *l);

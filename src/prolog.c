@@ -95,7 +95,7 @@ static pl_idx add_to_global_atoms(const char *name)
 
 pl_idx new_atom(prolog *pl, const char *name)
 {
-	assert(acquire_lock(&g_symtab_guard));
+	acquire_lock(&g_symtab_guard);
 	const void *val;
 
 	if (sl_get(g_symtab, name, &val)) {
