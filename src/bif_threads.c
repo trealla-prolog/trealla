@@ -26,12 +26,12 @@ void init_lock(lock *l)
 	pthread_mutexattr_t attr;
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-	pthread_mutex_init(&l->mutex, &attr);
+	assert(!pthread_mutex_init(&l->mutex, &attr));
 }
 
 void deinit_lock(lock *l)
 {
-	pthread_mutex_destroy(&l->mutex);
+	assert(!pthread_mutex_destroy(&l->mutex));
 }
 
 bool try_lock(lock *l)
@@ -39,22 +39,22 @@ bool try_lock(lock *l)
 	return pthread_mutex_trylock(&l->mutex) == 0;
 }
 
-void acquire_lock(lock *l)
+bool acquire_lock(lock *l)
 {
-	pthread_mutex_lock(&l->mutex);
+	return pthread_mutex_lock(&l->mutex) == 0;
 }
 
-void release_lock(lock *l)
+bool release_lock(lock *l)
 {
-    pthread_mutex_unlock(&l->mutex);
+	return pthread_mutex_unlock(&l->mutex) == 0;
 }
 
 #else
 
 void init_lock(lock *l) {}
 void deinit_lock(lock *l) {}
-void acquire_lock(lock *l) {}
-void release_lock(lock *l) {}
+bool acquire_lock(lock *l) { return true; }
+bool release_lock(lock *l) { return true; }
 
 #endif
 
