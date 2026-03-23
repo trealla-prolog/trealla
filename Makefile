@@ -50,7 +50,7 @@ leaks:
 
 compile:
 	$(cmake) --preset $(preset) -DMAIN_PL="$(main)"
-	$(cmake) --build --preset $(preset) --target compile_main
+	$(cmake) --build --preset $(preset)
 
 run-compile:
 	$(build_dir)/compile_main $(ARGS)
