@@ -64,7 +64,7 @@ inline static builtins *get_builtin_term(module *m, cell *c, bool *found, bool *
 
 inline static void module_lock(module *m)
 {
-	assert(acquire_lock(&m->guard));
+	acquire_lock(&m->guard);
 }
 
 inline static void module_unlock(module *m)
