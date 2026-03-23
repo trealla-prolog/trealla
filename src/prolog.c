@@ -95,7 +95,7 @@ static pl_idx add_to_global_atoms(const char *name)
 
 pl_idx new_atom(prolog *pl, const char *name)
 {
-	acquire_lock(&g_symtab_guard);
+	assert(acquire_lock(&g_symtab_guard));
 	const void *val;
 
 	if (sl_get(g_symtab, name, &val)) {
@@ -744,6 +744,8 @@ prolog *pl_create()
 	sl_app(pl->streams[2].alias, strdup("user_error"), NULL);
 	pl->streams[2].eof_action = eof_action_reset;
 
+	init_lock(&pl->guard);
+
 #if USE_THREADS
 	thread_initialize(pl);
 #endif
@@ -771,7 +773,6 @@ prolog *pl_create()
 		return NULL;
 	}
 
-	init_lock(&pl->guard);
 	pl->user_m->flags.strict_iso = false;
 	pl->m = pl->user_m;
 

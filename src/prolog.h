@@ -18,7 +18,7 @@ bool is_closed_stream(prolog *pl, cell *p1);
 
 inline static void prolog_lock(prolog *pl)
 {
-	acquire_lock(&pl->guard);
+	assert(acquire_lock(&pl->guard));
 }
 
 inline static void prolog_unlock(prolog *pl)

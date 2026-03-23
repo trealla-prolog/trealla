@@ -31,7 +31,7 @@ void init_lock(lock *l)
 
 void deinit_lock(lock *l)
 {
-	assert(!pthread_mutex_destroy(&l->mutex));
+	pthread_mutex_destroy(&l->mutex);
 }
 
 bool try_lock(lock *l)
@@ -150,8 +150,8 @@ static int new_thread(prolog *pl)
 		if (!t->is_active) {
 
 			if (!t->is_init) {
-				assert(pthread_cond_init(&t->cond, NULL) == 0);
-				assert(pthread_mutex_init(&t->mutex, NULL) == 0);
+				pthread_cond_init(&t->cond, NULL);
+				pthread_mutex_init(&t->mutex, NULL);
 				init_lock(&t->guard);
 				t->is_init = true;
 			}
