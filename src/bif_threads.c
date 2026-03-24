@@ -5,7 +5,6 @@
 #include <string.h>
 #include <sys/time.h>
 #include <sys/stat.h>
-
 #include <sched.h>
 
 #include "module.h"
