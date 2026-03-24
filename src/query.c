@@ -535,16 +535,19 @@ static void leave_predicate(query *q, predicate *pr, bool is_final)
 			}
 		}
 
-		// Just because this predicate is no longer in use doesn't
+		// Just because this clause is no longer in use doesn't
 		// mean there are no shared references to terms contained
-		// within. So move items on the predicate dirty-list to the
-		// query dirty-list. They will be freed up at end of the query.
+		// within. So may have to move to the query dirty-list where
+		// they will be freed up at end of the query...
 
 		if ((q->in_retractall || q->in_retract)
 			&& (q->retry == QUERY_RETRY)
 			&& !q->no_recov
 			&& !r->cl.num_vars
 			&& q->pl->opt) {
+			clear_clause(&r->cl);
+			free(r);
+		} else if (q->in_retract && !q->no_recov_compound) {
 			clear_clause(&r->cl);
 			free(r);
 		} else {
@@ -560,6 +563,21 @@ static void leave_predicate(query *q, predicate *pr, bool is_final)
 	}
 
 	module_unlock(pr->m);
+}
+
+static void query_purge_dirty_list(query *q)
+{
+	unsigned cnt = 0;
+	rule *r;
+
+	while ((r = list_pop_front(&q->dirty)) != NULL) {
+		clear_clause(&r->cl);
+		free(r);
+		cnt++;
+	}
+
+	if (cnt && 0)
+		printf("*** query_purge_dirty_list %u\n", cnt);
 }
 
 static void trim_trail(query *q)
@@ -771,6 +789,7 @@ static void commit_frame(query *q)
 		leave_predicate(q, q->st.pr, false);
 		drop_choice(q);
 		trim_trail(q);
+
 	} else {
 		choice *ch = GET_CURR_CHOICE();
 		ch->st.dbe = q->st.dbe;
@@ -807,21 +826,6 @@ void stash_frame(query *q, unsigned num_vars, bool last_match)
 	}
 
 	q->st.iter = NULL;
-}
-
-static void query_purge_dirty_list(query *q)
-{
-	unsigned cnt = 0;
-	rule *r;
-
-	while ((r = list_pop_front(&q->dirty)) != NULL) {
-		clear_clause(&r->cl);
-		free(r);
-		cnt++;
-	}
-
-	if (cnt && 0)
-		printf("*** query_purge_dirty_list %u\n", cnt);
 }
 
 int retry_choice(query *q)
