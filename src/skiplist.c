@@ -348,7 +348,7 @@ sliter *sl_first(skiplist *l)
 
 		if (!l->iters) {
 			iter = malloc(sizeof(sliter));
-			if (!iter) return NULL;
+			if (!iter) { release_lock(&l->guard); return NULL; }
 		} else {
 			iter = l->iters;
 			l->iters = iter->next;
@@ -429,7 +429,7 @@ sliter *sl_find_key(skiplist *l, const void *key)
 
 		if (!l->iters) {
 			iter = malloc(sizeof(sliter));
-			if (!iter) return NULL;
+			if (!iter) { release_lock(&l->guard); return NULL; }
 		} else {
 			iter = l->iters;
 			l->iters = iter->next;
