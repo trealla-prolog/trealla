@@ -547,7 +547,7 @@ static void do_unlock_all(prolog *pl)
 		if (!t->is_active)
 			continue;
 
-		if (t != me)
+		if (t->locked_by != me->chan)
 			continue;
 
 		release_lock(&t->guard);
