@@ -59,10 +59,7 @@ int check_interrupt(query *q)
 
 		fflush(stdout);
 		int ch = history_getch();
-#ifndef __wasi__
 		printf("%c\n", ch);
-#endif
-
 		if (ch == 'h') {
 			printf("Action:\n"
 				"\tENTER,.     abort        - abort current query\n"
@@ -103,7 +100,6 @@ int check_interrupt(query *q)
 			break;
 		}
 
-#ifndef __wasi__
 		if ((ch == '\n') || (ch == 'a') || (ch == '.')) {
 			//printf(";  ... .\n");
 			printf("  ... .\n");
@@ -113,7 +109,6 @@ int check_interrupt(query *q)
 			q->noretry = true;
 			break;
 		}
-#endif
 
 		if (ch == 'e') {
 			if (!q->run_init)
@@ -186,9 +181,6 @@ bool check_redo(query *q)
 			continue;
 		}
 
-#ifdef __wasi__
-	printf(" ");
-#endif
 
 		if ((ch == 'a') || (ch == 'f') || isdigit(ch)) {
 			printf(" ");
@@ -210,12 +202,7 @@ bool check_redo(query *q)
 			break;
 		}
 
-#ifndef __wasi__
 		if ((ch == '\n') || (ch == '.')) {
-#else
-		// WASI always sends buffered input with a linebreak, so use '.' instead
-		if (ch == '.') {
-#endif
 			//printf(";  ... .\n");
 			printf("  ... .\n");
 			q->is_redo = true;

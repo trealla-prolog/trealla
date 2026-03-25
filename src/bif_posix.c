@@ -212,11 +212,7 @@ static bool bif_posix_getpid_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
-#ifndef __wasi__
 	make_int(&tmp, getpid());
-#else
-	make_int(&tmp, -1);
-#endif
 	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 

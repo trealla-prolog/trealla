@@ -51,7 +51,7 @@ int history_getch(void)
 static char g_filename[1024];
 
 
-#if !USE_ISOCLINE && !defined(__wasi__)
+#if !USE_ISOCLINE
 char *history_readline_eol(prolog *pl, const char *prompt, char eol)
 {
 	char *cmd = NULL;
@@ -309,7 +309,7 @@ void history_save(void)
 }
 #endif
 
-#if USE_ISOCLINE && !defined(__wasi__)
+#if USE_ISOCLINE
 char *history_readline_eol(prolog *pl, const char *prompt, char eol)
 {
 	char *cmd = NULL;
@@ -372,30 +372,6 @@ void history_load(const char *filename)
 	ic_set_default_highlighter(NULL, NULL);
 
 	ic_set_prompt_marker("", "");
-}
-
-void history_save(void)
-{
-}
-#endif
-
-#ifdef __wasi__
-char *history_readline_eol(prolog *pl, const char *prompt, char eol)
-{
-	fprintf(stdout, "%s", prompt);
-	fflush(stdout);
-
-	size_t len = 0;
-	char *line = NULL;
-
-	if (getline(&line, &len, stdin) <= 0)
-		return NULL;
-
-	return line;
-}
-
-void history_load(const char *filename)
-{
 }
 
 void history_save(void)

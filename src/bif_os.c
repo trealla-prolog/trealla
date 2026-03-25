@@ -41,7 +41,6 @@ uint64_t get_time_in_usec(void)
 	return (uint64_t)(now.tv_sec * 1000 * 1000) + (now.tv_nsec / 1000);
 }
 
-#ifndef __wasi__
 static bool bif_shell_1(query *q)
 {
 	GET_FIRST_ARG(p1,source_sink);
@@ -68,17 +67,6 @@ static bool bif_shell_2(query *q)
 	make_int(&tmp, status);
 	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 }
-#else
-static bool bif_shell_1(query *q)
-{
-	return false;
-}
-
-static bool bif_shell_2(query *q)
-{
-	return false;
-}
-#endif
 
 static bool bif_getenv_2(query *q)
 {
