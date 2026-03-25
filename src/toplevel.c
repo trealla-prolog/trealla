@@ -34,7 +34,6 @@ static void show_goals(query *q, int num)
 
 int check_interrupt(query *q)
 {
-#ifndef _WIN32
 	if (g_tpl_interrupt == SIGALRM) {
 		g_tpl_interrupt = 0;
 		signal(SIGINT, &sigfn);
@@ -44,7 +43,6 @@ int check_interrupt(query *q)
 
 		return 0;
 	}
-#endif
 
 	if (!q || !q->top || !q->top->interactive) {
 		q->halt = true;

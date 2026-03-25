@@ -11,11 +11,6 @@
 #include "prolog.h"
 #include "query.h"
 
-#ifdef _WIN32
-#include <windows.h>
-#define msleep Sleep
-#define localtime_r(p1,p2) localtime(p1)
-#else
 static void msleep(int ms)
 {
 	struct timespec tv = {0};
@@ -23,15 +18,10 @@ static void msleep(int ms)
 	tv.tv_nsec = ((ms) % 1000) * 1000 * 1000;
 	nanosleep(&tv, &tv);
 }
-#endif
 
 bool do_yield(query *q, int msecs)
 {
-#ifdef __wasi__
-	if (!q->is_task && !q->pl->is_query)
-#else
 	if (!q->is_task)
-#endif
 		return true;
 
 	q->yield_at = 0;
@@ -44,11 +34,7 @@ bool do_yield(query *q, int msecs)
 
 bool do_yield_then(query *q, bool status)
 {
-#ifdef __wasi__
-	if (!q->is_task && !q->pl->is_query)
-#else
 	if (!q->is_task)
-#endif
 		return true;
 
 	q->yield_at = 0;

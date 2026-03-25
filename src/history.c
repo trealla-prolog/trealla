@@ -9,22 +9,17 @@
 #include "isocline/include/isocline.h"
 #endif
 
-#if defined(USE_EDITLINE) && !defined(__wasi__)
+#if defined(USE_EDITLINE)
 #include <histedit.h>
 #include <editline/readline.h>
-#if defined __NetBSD__
-#include <editline/history.h>
-#endif
 #endif
 
-#if !defined(USE_ISOCLINE) && !defined(USE_EDITLINE) && !defined(__wasi__)
+#if !defined(USE_ISOCLINE) && !defined(USE_EDITLINE)
 #include <readline/readline.h>
 #include <readline/history.h>
 #endif
 
-#if !defined(_WIN32) && !defined(__wasi__)
 #include <termios.h>
-#endif
 
 #include "internal.h"
 #include "history.h"
@@ -32,7 +27,6 @@
 
 int history_getch_fd(int fd)
 {
-#if !defined(_WIN32) && !defined(__wasi__)
 	struct termios oldattr, newattr;
 
 	if (tcgetattr(fd, &oldattr) != 0)
@@ -43,12 +37,9 @@ int history_getch_fd(int fd)
 
 	if (tcsetattr(fd, TCSANOW, &newattr) != 0)
 		return -1;
-#endif
 	int ch = fgetc_utf8(stdin);
-#if !defined(_WIN32) && !defined(__wasi__)
 	if (tcsetattr(fd, TCSANOW, &oldattr) != 0)
 		return -1;
-#endif
 	return ch;
 }
 

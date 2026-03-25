@@ -1211,10 +1211,6 @@ static bool directives(parser *p, cell *d)
 		}
 	}
 
-#if 0
-	if (is_nil(p1))
-		return true;
-#endif
 
 	if (is_var(p1)) {
 		if (((!p->do_read_term)) && !p->pl->quiet)
@@ -1663,10 +1659,6 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			continue;
 		}
 
-#if 0
-		if (!p->is_consulting)
-			printf("*** OP1 start=%u '%s' type=%u, specifier=%u, pri=%u, last_op=%d, is_op=%d\n", start_idx, C_STR(p, c), c->tag, GET_OP(c), c->priority, last_op, IS_OP(c));
-#endif
 
 		if ((i == start_idx) && (i == end_idx)) {
 			c->priority = 0;
@@ -1704,10 +1696,6 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 			continue;
 		}
 
-#if 0
-		if (!p->is_consulting)
-			printf("*** OP2 last=%u/start=%u '%s' type=%u, specifier=%u, pri=%u, last_op=%d, is_op=%d\n", last_idx, start_idx, C_STR(p, c), c->tag, GET_OP(c), c->priority, last_op, IS_OP(c));
-#endif
 
 		c->arity = 1;
 
@@ -2592,13 +2580,6 @@ static int get_escape(parser *p, const char **_src, bool *error, bool number)
 			ch = get_hex(&src, 4, error);
 			unicode = true;
 
-#if 0
-			if (((unsigned)ch > 0xd800) && (src[0] == '\\') && (src[1] == 'u')) {
-				src += 2;
-				int ch2 = get_hex(&src, 4, error);
-				ch = (((unsigned)ch - 0xd800) * 0x400) + ((unsigned)ch2 - 0xdc00) + 0x10000;
-			}
-#endif
 		} else {
 			src--;
 			ch = get_octal(&src);
@@ -3448,14 +3429,8 @@ TRY_AGAIN:
 	int ch = peek_char_utf8(src);
 
 	if (iswalpha(ch)
-#ifdef __APPLE__
-		|| iswideogram(ch)
-#endif
 		|| (ch == '_')) {
 		while (iswalnum(ch)
-#ifdef __APPLE__
-			|| iswideogram(ch)
-#endif
 			|| (ch == '_')) {
 			get_char_utf8(&src);
 			SB_putchar(p->token, ch);
@@ -3672,12 +3647,6 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 			continue;
 		}
 
-#if 0
-		int ch = peek_char_utf8(SB_cstr(p->token));
-		fprintf(stderr,
-			"Debug: '%s' (%d) line_num=%d, symbol=%d, quoted=%d, tag=%u, op=%d, lastop=%d, string=%d\n",
-			SB_cstr(p->token), ch, p->line_num, p->is_symbol, p->quote_char, p->v.tag, p->is_op, last_op, p->is_string);
-#endif
 
 		if (!p->quote_char
 			&& !SB_strcmp(p->token, ".")

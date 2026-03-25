@@ -11,10 +11,6 @@
 #include "prolog.h"
 #include "query.h"
 
-#if USE_OPENSSL
-#include "openssl/sha.h"
-#include "openssl/hmac.h"
-#endif
 
 static pl_idx queue_used(const query *q) { return q->qp[0]; }
 static cell *get_queue(query *q) { return q->queue[0]; }
@@ -1958,12 +1954,10 @@ static bool bif_iso_functor_3(query *q)
 		if (!is_interned(p2)) {
 			tmp[0].val_off = new_atom(q->pl, C_STR(q, p2));
 
-#if 1
 			if (tmp[0].val_off == ERR_IDX) {
 				q->oom = true;
 				return false;
 			}
-#endif
 
 			checked(tmp[0].val_off != ERR_IDX);
 		} else
@@ -2221,25 +2215,10 @@ static bool bif_sys_current_prolog_flag_2(query *q)
 		cell tmp;
 		make_atom(&tmp, q->pl->global_bb ? g_true_s : g_false_s);
 		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
-#if USE_THREADS
-	} else if (!CMP_STRING_TO_CSTR(q, p1, "threads")) {
-		cell tmp;
-		make_atom(&tmp, g_true_s);
-		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
-	} else if (!CMP_STRING_TO_CSTR(q, p1, "max_threads")) {
-		cell tmp;
-		make_int(&tmp, MAX_ACTUAL_THREADS);
-		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
-	} else if (!CMP_STRING_TO_CSTR(q, p1, "hardware_threads")) {
-		cell tmp;
-		make_int(&tmp, 4);
-		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
-#else
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "threads")) {
 		cell tmp;
 		make_atom(&tmp, g_false_s);
 		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
-#endif
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "unix")) {
 		cell tmp;
 		make_atom(&tmp, g_true_s);
@@ -2559,10 +2538,6 @@ static bool bif_iso_set_prolog_flag_2(query *q)
 		|| !CMP_STRING_TO_CSTR(q, p1, "encoding")
 		|| !CMP_STRING_TO_CSTR(q, p1, "unix")
 		|| !CMP_STRING_TO_CSTR(q, p1, "threads")
-#if USE_THREADS
-		|| !CMP_STRING_TO_CSTR(q, p1, "hardware_threads")
-		|| !CMP_STRING_TO_CSTR(q, p1, "max_threads")
-#endif
 		|| !CMP_STRING_TO_CSTR(q, p1, "verbose")
 		|| !CMP_STRING_TO_CSTR(q, p1, "integer_rounding_function")
 		|| !CMP_STRING_TO_CSTR(q, p1, "dialect")
@@ -3957,130 +3932,6 @@ static bool bif_crypto_n_random_bytes_2(query *q)
 	return unify(q, p2, p2_ctx, l, q->st.cur_ctx);
 }
 
-#if USE_OPENSSL
-static bool bif_crypto_data_hash_3(query *q)
-{
-	GET_FIRST_ARG(p1,atom);
-	GET_NEXT_ARG(p2,atom_or_var);
-	GET_NEXT_ARG(p3,list_or_nil);
-	enum {is_sha256, is_sha384, is_sha512} algo;
-	algo = is_sha256;
-	char *key = NULL;
-	int keylen = 0;
-	LIST_HANDLER(p3);
-
-	while (is_list(p3)) {
-		cell *h = LIST_HEAD(p3);
-		h = deref(q, h, p3_ctx);
-		pl_ctx h_ctx = q->latest_ctx;
-
-		if (is_compound(h) && (h->arity == 1)) {
-			cell *arg = h+1;
-			arg = deref(q, arg, h_ctx);
-			pl_ctx arg_ctx = q->latest_ctx;
-
-			if (!CMP_STRING_TO_CSTR(q, h, "algorithm")) {
-				if (is_var(arg)) {
-					cell tmp;
-					make_atom(&tmp, new_atom(q->pl, "sha256"));
-					unify(q, arg, arg_ctx, &tmp, q->st.cur_ctx);
-					algo = is_sha256;
-				} else if (!CMP_STRING_TO_CSTR(q, arg, "sha256")) {
-					algo = is_sha256;
-				} else if (!CMP_STRING_TO_CSTR(q, arg, "sha384")) {
-					algo = is_sha384;
-				} else if (!CMP_STRING_TO_CSTR(q, arg, "sha512")) {
-					algo = is_sha512;
-				} else
-					return throw_error(q, arg, arg_ctx, "domain_error", "algorithm");
-			} else if (!CMP_STRING_TO_CSTR(q, h, "hmac") && is_iso_list(arg)
-				&& (scan_is_chars_list(q, arg, 0, true)) > 0) {
-				key = chars_list_to_string(q, arg, 0);
-			} else
-				return throw_error(q, h, h_ctx, "domain_error", "hash_option");
-		} else
-			return throw_error(q, h, h_ctx, "domain_error", "hash_option");
-
-		p3 = LIST_TAIL(p3);
-		p3 = deref(q, p3, p3_ctx);
-		p3_ctx = q->latest_ctx;
-	}
-
-	char tmpbuf[512];
-	char *dst = tmpbuf;
-	*dst = '\0';
-	size_t buflen = sizeof(tmpbuf);
-
-	if (key && (algo == is_sha256)) {
-		unsigned char digest[SHA256_DIGEST_LENGTH];
-		unsigned digest_len = 0;
-		HMAC(EVP_sha256(), key, keylen, (unsigned char*)C_STR(q, p1), C_STRLEN(q, p1), digest, &digest_len);
-
-		for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-			size_t len = snprintf(dst, buflen, "%02x", digest[i]);
-			dst += len;
-			buflen -= len;
-		}
-	} else if (key && (algo == is_sha384)) {
-		unsigned char digest[SHA384_DIGEST_LENGTH];
-		unsigned digest_len = 0;
-		HMAC(EVP_sha384(), key, keylen, (unsigned char*)C_STR(q, p1), C_STRLEN(q, p1), digest, &digest_len);
-
-		for (int i = 0; i < SHA384_DIGEST_LENGTH; i++) {
-			size_t len = snprintf(dst, buflen, "%02x", digest[i]);
-			dst += len;
-			buflen -= len;
-		}
-	} else if (key && (algo == is_sha512)) {
-		unsigned char digest[SHA512_DIGEST_LENGTH];
-		unsigned digest_len = 0;
-		HMAC(EVP_sha512(), key, keylen, (unsigned char*)C_STR(q, p1), C_STRLEN(q, p1), digest, &digest_len);
-
-		for (int i = 0; i < SHA512_DIGEST_LENGTH; i++) {
-			size_t len = snprintf(dst, buflen, "%02x", digest[i]);
-			dst += len;
-			buflen -= len;
-		}
-	} else if (algo == is_sha256) {
-		unsigned char digest[SHA256_DIGEST_LENGTH];
-		SHA256((unsigned char*)C_STR(q, p1), C_STRLEN(q, p1), digest);
-
-		for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-			size_t len = snprintf(dst, buflen, "%02x", digest[i]);
-			dst += len;
-			buflen -= len;
-		}
-	} else if (algo == is_sha384) {
-		unsigned char digest[SHA384_DIGEST_LENGTH];
-		SHA384((unsigned char*)C_STR(q, p1), C_STRLEN(q, p1), digest);
-
-		for (int i = 0; i < SHA384_DIGEST_LENGTH; i++) {
-			size_t len = snprintf(dst, buflen, "%02x", digest[i]);
-			dst += len;
-			buflen -= len;
-		}
-	} else if (algo == is_sha512) {
-		unsigned char digest[SHA512_DIGEST_LENGTH];
-		SHA512((unsigned char*)C_STR(q, p1), C_STRLEN(q, p1), digest);
-
-		for (int i = 0; i < SHA512_DIGEST_LENGTH; i++) {
-			size_t len = snprintf(dst, buflen, "%02x", digest[i]);
-			dst += len;
-			buflen -= len;
-		}
-	}
-
-	if (key)
-		free(key);
-
-	cell tmp;
-	make_string(&tmp, tmpbuf);
-	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
-	unshare_cell(&tmp);
-	return ok;
-}
-#endif
-
 static int do_b64encode_2(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx)
 {
 	const char *str = C_STR(q, p1);
@@ -5350,13 +5201,6 @@ static bool bif_strip_module_3(query *q)
 		return unify(q, p3, p3_ctx, ct, ct_ctx);
 	}
 
-#if 0
-	cell tmp;
-	make_atom(&tmp, new_atom(q->pl, q->st.m->name));
-
-	if (!unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx))
-		return false;
-#endif
 
 	return unify(q, p3, p3_ctx, p1, p1_ctx);
 }
@@ -5819,10 +5663,6 @@ static void load_properties(module *m)
 	format_property(m, tmpbuf, sizeof(tmpbuf), "bb_update", 3, "meta_predicate(bb_update(:,?,?))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "bb_delete", 2, "meta_predicate(bb_delete(:,?))", false); SB_strcat(pr, tmpbuf);
 
-#if USE_THREADS
-	format_property(m, tmpbuf, sizeof(tmpbuf), "thread_create", 3, "meta_predicate(thread_create(0,-,?))", false); SB_strcat(pr, tmpbuf);
-	format_property(m, tmpbuf, sizeof(tmpbuf), "thread_signal", 2, "meta_predicate(thread_signal(+,0))", false); SB_strcat(pr, tmpbuf);
-#endif
 
 	for (int i = 2; i <= 7; i++) {
 		char metabuf[1024];
@@ -6050,13 +5890,7 @@ static void load_flags(query *q)
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "unknown", m->flags.unknown == UNK_ERROR?"error":m->flags.unknown == UNK_WARNING?"warning":m->flags.unknown == UNK_CHANGEABLE?"changeable":"fail");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "encoding", "'UTF-8'");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "unix", "true");
-#if USE_THREADS
-	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "threads", "true");
-	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "hardware_threads", 4);
-	SB_sprintf(pr, "'$current_prolog_flag'(%s, %u).\n", "max_threads", MAX_ACTUAL_THREADS);
-#else
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "threads", "false");
-#endif
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "global_bb", q->pl->global_bb?"true":"false");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "verbose", q->pl->quiet?"false":"true");
 	SB_sprintf(pr, "'$current_prolog_flag'(%s, %s).\n", "dialect", "trealla");
@@ -6268,10 +6102,6 @@ builtins g_other_bifs[] =
 	{"must_be", 2, bif_must_be_2, "+atom,+term", false, false, BLAH},
 	{"can_be", 4, bif_can_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"can_be", 2, bif_can_be_2, "+atom,+term,", false, false, BLAH},
-
-#if USE_OPENSSL
-	{"crypto_data_hash", 3, bif_crypto_data_hash_3, "?string,?string,?list", false, false, BLAH},
-#endif
 
 	{"$clone_term", 2, bif_sys_clone_term_2, "+term,?term", false, false, BLAH},
 	{"$module", 1, bif_sys_module_1, "?atom", false, false, BLAH},

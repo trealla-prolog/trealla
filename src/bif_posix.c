@@ -14,16 +14,8 @@
 #include "prolog.h"
 #include "query.h"
 
-#ifndef _WIN32
 #include <signal.h>
 #include <unistd.h>
-#endif
-
-#ifdef _WIN32
-#define ctime_r(p1,p2) ctime(p1)
-#define gmtime_r(p1,p2) gmtime(p1)
-#define localtime_r(p1,p2) localtime(p1)
-#endif
 
 static bool bif_posix_strftime_3(query *q)
 {
@@ -86,7 +78,6 @@ static bool bif_posix_strftime_3(query *q)
 	return false;
 }
 
-#ifndef _WIN32
 static bool bif_posix_strptime_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -113,7 +104,6 @@ static bool bif_posix_strptime_3(query *q)
 
 	return unify(q, p3, p3_ctx, tmp, q->st.cur_ctx);
 }
-#endif
 
 static bool bif_posix_mktime_2(query *q)
 {
@@ -234,11 +224,9 @@ static bool bif_posix_getppid_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
-#if !defined(_WIN32) && !defined(__wasi__)
+
 	make_int(&tmp, getppid());
-#else
-	make_int(&tmp, -1);
-#endif
+
 	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 
@@ -246,22 +234,17 @@ static bool bif_posix_fork_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
-#if !defined(_WIN32) && !defined(__wasi__)
 	signal(SIGCHLD, SIG_IGN);
 	int pid = fork();
 	make_int(&tmp, pid);
-#else
-	make_int(&tmp, -1);
-#endif
+
 	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 
 builtins g_posix_bifs[] =
 {
     {"posix_strftime", 3, bif_posix_strftime_3, "+atom,-atom,+compound", false, false, BLAH},
-#ifndef _WIN32
     {"posix_strptime", 3, bif_posix_strptime_3, "+atom,+atom,-compound", false, false, BLAH},
-#endif
 	{"posix_gmtime", 2, bif_posix_gmtime_2, "+integer,-compound", false, false, BLAH},
 	{"posix_localtime", 2, bif_posix_localtime_2, "+integer,-compound", false, false, BLAH},
 	{"posix_mktime", 2, bif_posix_mktime_2, "+compound,-integer", false, false, BLAH},

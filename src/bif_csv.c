@@ -362,9 +362,6 @@ bool bif_parse_csv_file_2(query *q)
 	fclose(p->fp);
 	parser_destroy(p);
 
-#if 0
-	printf("%% Parsed %u lines\n", line_num);
-#endif
 
 	return true;
 }

@@ -92,9 +92,6 @@ bool any_attributed(query *q);
 bool do_load_file(query *q, cell *p1, pl_ctx p1_ctx);
 bool stream_close(query *q, int n);
 
-#if USE_THREADS
-bool do_signal(query *q, void *thread_ptr);
-#endif
 
 int compare(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx);
 bool unify(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx);
@@ -162,10 +159,6 @@ builtins *get_fn_ptr(void *fn);
 
 #define FEOF(str) feof(str->fp) && !str->ungetch
 
-#ifdef _WIN32
-#include <io.h>
-#endif
-
 #define DUMP_TERM(s,c,c_ctx,running) { \
 	q->nl = true; q->quoted = true; \
 	print_term(q, stderr, c, c_ctx, running); \
@@ -227,9 +220,3 @@ inline static pl_idx get_actual_slot_num(const query *q, const frame *f, unsigne
 {
 	return get_slot(q, f, var_num) - q->slots;
 }
-
-
-#ifdef _WIN32
-typedef intptr_t ssize_t;
-extern ssize_t getline(char **lineptr, size_t *n, FILE *stream);
-#endif

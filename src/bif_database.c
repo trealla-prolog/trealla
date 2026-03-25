@@ -188,10 +188,6 @@ static void predicate_purge_dirty_list(predicate *pr)
 		cnt++;
 	}
 
-#if 0
-	if (cnt)
-		printf("*** predicate_purge_dirty_list %u\n", cnt);
-#endif
 }
 
 bool do_retract(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)

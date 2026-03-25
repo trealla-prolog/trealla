@@ -80,27 +80,7 @@ typedef struct nested_elements {
 #if USE_FFI
 void *do_dlopen(const char *filename, int flag)
 {
-#if __APPLE__
-	char *filename2 = malloc((strlen(filename)-2)+5+1);
-	const char *ptr = strstr(filename, ".so");
-
-	if (ptr) {
-		const char *src = filename;
-		char *dst = filename2;
-
-		while (src != ptr)
-			*dst++ = *src++;
-
-		strcpy(dst, ".dylib");
-		dst += strlen(".dylib");
-		src += strlen(".so");
-
-		while (*src)
-			*dst++ = *src++;
-	}
-#else
 	char *filename2 = strdup(filename);
-#endif
 
 	void *handle = dlopen(filename2, !flag ? RTLD_LAZY | RTLD_GLOBAL : flag);
 	free(filename2);
@@ -1524,40 +1504,6 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 
 	//printf("*** args=%u\n", pos);
 
-#if 0
-	ffi_type **t = arg_types;
-	int i = 0, jpos = 0;
-	printf("*** ");
-
-	while (t[i]) {
-		pos = jpos;
-		printf(" [%d]", i);
-		if (t[i] == &ffi_type_uint8) printf("   uint8=%u", *(uint8_t*)arg_values[pos]);
-		else if (t[i] == &ffi_type_sint) printf("   sint=%d", *(int*)arg_values[pos]);
-		else if (t[i] == &ffi_type_float) printf("   float=%f", *(float*)arg_values[pos]);
-		else if (t[i]->type == FFI_TYPE_STRUCT) {
-			printf("   struct ==>");
-
-			ffi_type **t2 = t[i]->elements;
-
-			int j = 0;
-
-			while (t2[j]) {
-				printf(" [%d]", j);
-				if (t2[j]->type == FFI_TYPE_UINT8) printf("   uint8"/*, *(uint8_t*)arg_values[pos] */);
-				else if (t2[j]->type == FFI_TYPE_INT) printf("   sint"/*, *(int*)arg_values[pos] */);
-				else if (t2[j]->type == FFI_TYPE_FLOAT) printf("   float"/*, *(float*)arg_values[pos] */);
-				pos++;
-				j++;
-			}
-		}
-
-		jpos++;
-		i++;
-	}
-
-	printf("\n");
-#endif
 
 	// Can pre-compile the return type... NO!
 

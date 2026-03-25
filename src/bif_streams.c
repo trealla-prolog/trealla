@@ -12,22 +12,16 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-#ifndef _WIN32
 #include <unistd.h>
-#endif
 
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 #include <spawn.h>
 #include <sys/wait.h>
-#endif
 
-#ifndef _WIN32
 #ifndef USE_MMAP
 #define USE_MMAP 1
 #endif
 #if USE_MMAP
 #include <sys/mman.h>
-#endif
 #endif
 
 #include "history.h"
@@ -40,388 +34,7 @@
 #define MAX_ARGS 128
 #define PROMPT ""
 
-#ifdef _WIN32
-#define mkdir(p1,p2) mkdir(p1)
-#endif
-
-#ifdef _WIN32
-#define NEWLINE_MODE "dos"
-#else
 #define NEWLINE_MODE "posix"
-#endif
-
-#ifdef __wasi__
-#include <limits.h>
-#include <unistd.h>
-
-/*
-	realpath implementation borrowed from musl
-	realpath is excluded from WASI because it doesn't have the concept of absolute paths
-	(apparently)
-
-	musl as a whole is licensed under the following standard MIT license:
-
-	----------------------------------------------------------------------
-	Copyright © 2005-2020 Rich Felker, et al.
-
-	Permission is hereby granted, free of charge, to any person obtaining
-	a copy of this software and associated documentation files (the
-	"Software"), to deal in the Software without restriction, including
-	without limitation the rights to use, copy, modify, merge, publish,
-	distribute, sublicense, and/or sell copies of the Software, and to
-	permit persons to whom the Software is furnished to do so, subject to
-	the following conditions:
-
-	The above copyright notice and this permission notice shall be
-	included in all copies or substantial portions of the Software.
-
-	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-	EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-	MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-	CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-	TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-	----------------------------------------------------------------------
-*/
-
-static size_t slash_len(const char *s)
-{
-	const char *s0 = s;
-	while (*s == '/') s++;
-	return s-s0;
-}
-
-
-
-char *realpath(const char *restrict filename, char *restrict resolved)
-{
-	char stack[PATH_MAX+1];
-	char output[PATH_MAX];
-	size_t p, q, l, l0, cnt=0, nup=0;
-	int check_dir=0;
-
-	if (!filename) {
-		errno = EINVAL;
-		return 0;
-	}
-	l = strnlen(filename, sizeof stack);
-	if (!l) {
-		errno = ENOENT;
-		return 0;
-	}
-	if (l >= PATH_MAX) goto toolong;
-	p = sizeof stack - l - 1;
-	q = 0;
-	memcpy(stack+p, filename, l+1);
-
-	/* Main loop. Each iteration pops the next part from stack of
-	 * remaining path components and consumes any slashes that follow.
-	 * If not a link, it's moved to output; if a link, contents are
-	 * pushed to the stack. */
-restart:
-	for (; ; p+=slash_len(stack+p)) {
-		/* If stack starts with /, the whole component is / or //
-		 * and the output state must be reset. */
-		if (stack[p] == '/') {
-			check_dir=0;
-			nup=0;
-			q=0;
-			output[q++] = '/';
-			p++;
-			/* Initial // is special. */
-			if (stack[p] == '/' && stack[p+1] != '/')
-				output[q++] = '/';
-			continue;
-		}
-
-		char *z = strchrnul(stack+p, '/');
-		l0 = l = z-(stack+p);
-
-		if (!l && !check_dir) break;
-
-		/* Skip any . component but preserve check_dir status. */
-		if (l==1 && stack[p]=='.') {
-			p += l;
-			continue;
-		}
-
-		/* Copy next component onto output at least temporarily, to
-		 * call readlink, but wait to advance output position until
-		 * determining it's not a link. */
-		if (q && output[q-1] != '/') {
-			if (!p) goto toolong;
-			stack[--p] = '/';
-			l++;
-		}
-		if (q+l >= PATH_MAX) goto toolong;
-		memcpy(output+q, stack+p, l);
-		output[q+l] = 0;
-		p += l;
-
-		int up = 0;
-		if (l0==2 && stack[p-2]=='.' && stack[p-1]=='.') {
-			up = 1;
-			/* Any non-.. path components we could cancel start
-			 * after nup repetitions of the 3-byte string "../";
-			 * if there are none, accumulate .. components to
-			 * later apply to cwd, if needed. */
-			if (q <= 3*nup) {
-				nup++;
-				q += l;
-				continue;
-			}
-			/* When previous components are already known to be
-			 * directories, processing .. can skip readlink. */
-			if (!check_dir) goto skip_readlink;
-		}
-		ssize_t k = readlink(output, stack, p);
-		if (k==(ssize_t)p) goto toolong;
-		if (!k) {
-			errno = ENOENT;
-			return 0;
-		}
-		if (k<0) {
-			if (errno != EINVAL) return 0;
-skip_readlink:
-			check_dir = 0;
-			if (up) {
-				while(q && output[q-1]!='/') q--;
-				if (q>1 && (q>2 || output[0]!='/')) q--;
-				continue;
-			}
-			if (l0) q += l;
-			check_dir = stack[p];
-			continue;
-		}
-		if (++cnt == SYMLOOP_MAX) {
-			errno = ELOOP;
-			return 0;
-		}
-
-		/* If link contents end in /, strip any slashes already on
-		 * stack to avoid /->// or //->/// or spurious toolong. */
-		if (stack[k-1]=='/') while (stack[p]=='/') p++;
-		p -= k;
-		memmove(stack+p, stack, k);
-
-		/* Skip the stack advancement in case we have a new
-		 * absolute base path. */
-		goto restart;
-	}
-
- 	output[q] = 0;
-
-	if (output[0] != '/') {
-		if (!getcwd(stack, sizeof stack)) return 0;
-		l = strlen(stack);
-		/* Cancel any initial .. components. */
-		p = 0;
-		while (nup--) {
-			while(l>1 && stack[l-1]!='/') l--;
-			if (l>1) l--;
-			p += 2;
-			if (p<q) p++;
-		}
-		if (q-p && stack[l-1]!='/') stack[l++] = '/';
-		if (l + (q-p) + 1 >= PATH_MAX) goto toolong;
-		memmove(output + l, output + p, q - p + 1);
-		memcpy(output, stack, l);
-		q = l + q-p;
-	}
-
-	struct stat st = {0};
-	if (resolved) {
-		if (stat(resolved, &st) == -1) return NULL;
-		return memcpy(resolved, output, q+1);
-	}
-	if (stat(output, &st) == -1) return NULL;
-	return strdup(output);
-
-toolong:
-	errno = ENAMETOOLONG;
-	return 0;
-}
-/* end of code borrowed from musl */
-#endif
-
-#ifdef _WIN32
-#include <windows.h>
-
-char *realpath(const char *path, char resolved_path[PATH_MAX])
-{
-  char *return_path = 0;
-
-  if (path) //Else EINVAL
-  {
-    if (resolved_path)
-    {
-      return_path = resolved_path;
-    }
-    else
-    {
-      //Non standard extension that glibc uses
-      return_path = malloc(PATH_MAX);
-    }
-
-    if (return_path) //Else EINVAL
-    {
-      //This is a Win32 API function similar to what realpath() is supposed to do
-      size_t size = GetFullPathNameA(path, PATH_MAX, return_path, 0);
-
-      //GetFullPathNameA() returns a size larger than buffer if buffer is too small
-      if (size > PATH_MAX)
-      {
-        if (return_path != resolved_path) //Malloc'd buffer - Unstandard extension retry
-        {
-          size_t new_size;
-
-          free(return_path);
-          return_path = malloc(size);
-
-          if (return_path)
-          {
-            new_size = GetFullPathNameA(path, size, return_path, 0); //Try again
-
-            if (new_size > size) //If it's still too large, we have a problem, don't try again
-            {
-              free(return_path);
-              return_path = 0;
-              errno = ENAMETOOLONG;
-            }
-            else
-            {
-              size = new_size;
-            }
-          }
-          else
-          {
-            //I wasn't sure what to return here, but the standard does say to return EINVAL
-            //if resolved_path is null, and in this case we couldn't malloc large enough buffer
-            errno = EINVAL;
-          }
-        }
-        else //resolved_path buffer isn't big enough
-        {
-          return_path = 0;
-          errno = ENAMETOOLONG;
-        }
-      }
-
-      //GetFullPathNameA() returns 0 if some path resolve problem occured
-      if (!size)
-      {
-        if (return_path != resolved_path) //Malloc'd buffer
-        {
-          free(return_path);
-        }
-
-        return_path = 0;
-
-        //Convert MS errors into standard errors
-        switch (GetLastError())
-        {
-          case ERROR_FILE_NOT_FOUND:
-            errno = ENOENT;
-            break;
-
-          case ERROR_PATH_NOT_FOUND: case ERROR_INVALID_DRIVE:
-            errno = ENOTDIR;
-            break;
-
-          case ERROR_ACCESS_DENIED:
-            errno = EACCES;
-            break;
-
-          default: //Unknown Error
-            errno = EIO;
-            break;
-        }
-      }
-
-      //If we get to here with a valid return_path, we're still doing good
-      if (return_path)
-      {
-        struct stat stat_buffer;
-
-        //Make sure path exists, stat() returns 0 on success
-        if (stat(return_path, &stat_buffer))
-        {
-          if (return_path != resolved_path)
-          {
-            free(return_path);
-          }
-
-          return_path = 0;
-          //stat() will set the correct errno for us
-        }
-        //else we succeeded!
-      }
-    }
-    else
-    {
-      errno = EINVAL;
-    }
-  }
-  else
-  {
-    errno = EINVAL;
-  }
-
-  return return_path;
-}
-#endif
-
-#ifdef _WIN32
-ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
-    size_t pos;
-    int c;
-
-    if (lineptr == NULL || stream == NULL || n == NULL) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    c = getc(stream);
-    if (c == EOF) {
-        return -1;
-    }
-
-    if (*lineptr == NULL) {
-        *lineptr = malloc(128);
- 		check_error(*lineptr);
-       if (*lineptr == NULL) {
-            return -1;
-        }
-        *n = 128;
-    }
-
-    pos = 0;
-    while(c != EOF) {
-        if (pos + 1 >= *n) {
-            size_t new_size = *n + (*n >> 2);
-            if (new_size < 128) {
-                new_size = 128;
-            }
-            char *new_ptr = realloc(*lineptr, new_size);
-            if (new_ptr == NULL) {
-                return -1;
-            }
-            *n = new_size;
-            *lineptr = new_ptr;
-        }
-
-        ((unsigned char *)(*lineptr))[pos ++] = c;
-        if (c == '\n') {
-            break;
-        }
-        c = getc(stream);
-    }
-
-    (*lineptr)[pos] = '\0';
-    return pos;
-}
-#endif
 
 // FIXME: this is too slow. There should be one overall
 // alias map, not one per stream.
@@ -521,13 +134,6 @@ static void add_stream_properties(query *q, int n)
 	bool at_end_of_file = false;
 
 	if (!str->at_end_of_file && (n > 2) && !str->is_engine && !str->is_map && !str->is_queue && !str->is_mutex && !str->p) {
-#if 0
-		if (str->p) {
-			if (str->p->srcptr && *str->p->srcptr) {
-				str->ungetch = get_char_utf8((const char**)&str->p->srcptr);
-			}
-		}
-#endif
 
 		int ch = str->ungetch ? str->ungetch : net_getc(str);
 
@@ -938,7 +544,6 @@ bool valid_list(query *q, cell *c, pl_ctx c_ctx)
 	return true;
 }
 
-#if !defined(_WIN32) && !defined(__wasi__)
 static bool bif_popen_4(query *q)
 {
 	GET_FIRST_ARG(p1,source_sink);
@@ -1004,15 +609,6 @@ static bool bif_popen_4(query *q)
 					q->pl->current_error = n;
 				} else {
 					sl_app(str->alias, DUP_STRING(q, name), NULL);
-#if 0
-					cell tmp;
-					make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
-
-					if (!unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx))
-						return false;
-
-					is_alias = true;
-#endif
 				}
 			} else if (!CMP_STRING_TO_CSTR(q, c, "type")) {
 				if (is_atom(name) && !CMP_STRING_TO_CSTR(q, name, "binary")) {
@@ -1069,11 +665,9 @@ static bool bif_popen_4(query *q)
 
 	return true;
 }
-#endif
 
 extern char **g_envp;
 
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 static bool bif_process_create_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -1368,60 +962,6 @@ static bool bif_process_kill_1(query *q)
 	kill(pid, SIGKILL);
 	return true;
 }
-#endif
-
-#ifdef _WIN32
-#include <windows.h>
-#include <io.h>
-
-/* macro definitions extracted from git/git-compat-util.h */
-#define PROT_READ  1
-#define PROT_WRITE 2
-#define MAP_FAILED ((void*)-1)
-
-/* macro definitions extracted from /usr/include/bits/mman.h */
-#define MAP_SHARED	0x01		/* Share changes.  */
-#define MAP_PRIVATE	0x02		/* Changes are private.  */
-
-static void *mmap(void *start, size_t length, int prot, int flags, int fd, off_t offset)
-{
-	size_t len;
-	struct stat st;
-	uint64_t o = offset;
-	uint32_t l = o & 0xFFFFFFFF;
-	uint32_t h = (o >> 32) & 0xFFFFFFFF;
-
-	if (!fstat(fd, &st))
-		len = (size_t) st.st_size;
-	else {
-		fprintf(stderr, "ERROR: mmap could not determine filesize");
-		return NULL;
-	}
-
-	if ((length + offset) > len)
-		length = len - offset;
-
-	if (!(flags & MAP_PRIVATE)) {
-		fprintf(stderr, "ERROR: Invalid usage of mmap");
-		return NULL;
-	}
-
-	HANDLE hmap = CreateFileMapping((HANDLE)_get_osfhandle(fd), 0, PAGE_WRITECOPY, 0, 0, 0);
-
-	if (!hmap) {
-		fprintf(stderr, "ERROR: CreateFileMapping failed");
-		return NULL;
-	}
-
-	void *temp = MapViewOfFileEx(hmap, FILE_MAP_COPY, h, l, length, start);
-
-	if (!CloseHandle(hmap))
-		fprintf(stderr, "Unable to close file mapping handle\n");
-
-	return temp ? temp : MAP_FAILED;
-}
-#endif
-
 
 static bool bif_iso_open_4(query *q)
 {
@@ -1520,15 +1060,6 @@ static bool bif_iso_open_4(query *q)
 				q->pl->current_error = n;
 			} else {
 				sl_app(str->alias, DUP_STRING(q, name), NULL);
-#if 0
-				cell tmp;
-				make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
-
-				if (!unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx))
-					return false;
-
-				is_alias = true;
-#endif
 			}
 		} else if (!CMP_STRING_TO_CSTR(q, c, "type")) {
 			if (is_var(name))
@@ -2111,12 +1642,6 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 	}
 
 	for (;;) {
-#if 0
-		if (isatty(fileno(str->fp)) && !src) {
-			fprintf(str->fp, "%s", PROMPT);
-			fflush(str->fp);
-		}
-#endif
 
 		if (!src && (!str->p->srcptr || !*str->p->srcptr || (*str->p->srcptr == '\n'))) {
 			if (str->p->srcptr && (*str->p->srcptr == '\n'))
@@ -2827,14 +2352,6 @@ bool parse_write_params(query *q, cell *c, pl_ctx c_ctx, cell **vnames, pl_ctx *
 					return false;
 				}
 
-#if 0
-				cell *h2 = deref(q, h+2, h_ctx);
-
-				if (!is_var(h2)) {
-					throw_error(q, c, c_ctx, "domain_error", "write_option");
-					return false;
-				}
-#endif
 			}
 
 			c1 = LIST_TAIL(c1);
@@ -5285,18 +4802,12 @@ static char *fixup(const char *srcptr)
 			dst -= 2;
 
 			while ((dst != tmpbuf) && ((*dst != '/') && (*dst != '\\')
-#ifdef _WIN32
-				&& (*dst != ':')
-#endif
 				))
 				dst--;
 
 			src += 2;
 			dst++;
 		} else if ((src[0] == '.') && ((src[1] == '/') || (src[1] == '\\')
-#ifdef _WIN32
-				|| (src[1] == ':')
-#endif
 			))
 			src += 1;
 		else
@@ -5407,9 +4918,6 @@ static bool bif_absolute_file_name_3(query *q)
 			checked(tmpbuf);
 
 			if ((*s != '/') && (*s != '\\')
-#ifdef _WIN32
-				&& (s[1] != ':')
-#endif
 				) {
 				size_t buflen = strlen(tmpbuf)+1+strlen(s)+1;
 				char *tmp = malloc(buflen);
@@ -7632,17 +7140,13 @@ builtins g_streams_bifs[] =
 	{"$gsl_matrix_read", 2, bif_sys_gsl_matrix_read_2, "+integer,+stream", false, false, BLAH},
 	{"$gsl_matrix_size", 3, bif_sys_gsl_matrix_size_3, "+integer,-integer,-integer", false, false, BLAH},
 
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 	{"process_create", 3, bif_process_create_3, "+atom,+list,+list", false, false, BLAH},
 	{"process_wait", 2, bif_process_wait_2, "+integer,-integer", false, false, BLAH},
 	{"process_wait", 1, bif_process_wait_1, "+integer", false, false, BLAH},
 	{"process_kill", 2, bif_process_kill_2, "+integer,+integer", false, false, BLAH},
 	{"process_kill", 1, bif_process_kill_1, "+integer", false, false, BLAH},
-#endif
 
-#if !defined(_WIN32) && !defined(__wasi__)
 	{"popen", 4, bif_popen_4, "+source_sink,+atom,--stream,+list", false, false, BLAH},
-#endif
 
 	{0}
 };

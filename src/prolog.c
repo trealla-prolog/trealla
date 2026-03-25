@@ -3,9 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifndef _WIN32
 #include <unistd.h>
-#endif
 
 #include "library.h"
 #include "module.h"
@@ -13,9 +11,7 @@
 #include "prolog.h"
 #include "query.h"
 
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 #include <sys/resource.h>
-#endif
 
 void convert_path(char *filename);
 
@@ -618,11 +614,9 @@ static bool g_init(prolog *pl)
 		convert_path(g_tpl_lib);
 	}
 
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 	struct rlimit rlp;
 	getrlimit(RLIMIT_STACK, &rlp);
 	g_max_depth = rlp.rlim_cur / 1024;
-#endif
 
 	return error;
 }
@@ -630,13 +624,6 @@ static bool g_init(prolog *pl)
 void pl_destroy(prolog *pl)
 {
 	if (!pl) return;
-
-#if USE_THREADS
-	if (pl->q_cnt)
-		thread_cancel_all(pl);
-
-	thread_deinitialize(pl);
-#endif
 
 	if (pl->logfp)
 		fclose(pl->logfp);
@@ -744,9 +731,6 @@ prolog *pl_create()
 
 	pl->streams[3].ignore = true;
 
-#if USE_THREADS
-	thread_initialize(pl);
-#endif
 
 	pl->help = sl_create((void*)fake_strcmp, (void*)ptrfree, NULL);
 	pl->fortab = sl_create((void*)fake_strcmp, NULL, NULL);

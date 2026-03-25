@@ -124,10 +124,6 @@ bool sl_is_find(skiplist *l) { return l ? l->is_find : true; }
 size_t sl_count(const skiplist *l) { return l ? l->count : 0; }
 void sl_set_tmp(skiplist *l) { l->is_tmp_list = true; }
 
-#ifdef _WIN32
-#define rand_r(p1) rand()
-#endif
-
 #define frand(seedp) (((double)rand_r(seedp)) / RAND_MAX)
 
 static int random_level(unsigned *seedp)

@@ -91,14 +91,8 @@ static cell *nodesort(query *q, cell *p1, pl_ctx p1_ctx, bool dedup, bool keysor
 		idx++;
 	}
 
-#if (defined __APPLE__ || defined __MACH__ || defined __DARWIN__	\
-	|| defined __FreeBSD__ || defined __DragonFly__ 				\
-	|| defined __NetBSD__  || defined __OpenBSD__ 					\
-	)
-	mergesort(base, cnt, sizeof(basepair), (void*)nodecmp_);
-#else
+
 	qsort(base, cnt, sizeof(basepair), (void*)nodecmp);
-#endif
 
 	int vnbr = create_vars(q, vars);
 
@@ -291,14 +285,7 @@ static cell *nodesort4(query *q, cell *p1, pl_ctx p1_ctx, bool dedup, bool ascen
 		idx++;
 	}
 
-#if (defined __APPLE__ || defined __MACH__ || defined __DARWIN__	\
-	|| defined __FreeBSD__ || defined __DragonFly__ 				\
-	|| defined __NetBSD__  || defined __OpenBSD__ 					\
-	)
-	mergesort(base, cnt, sizeof(basepair), (void*)nodecmp_);
-#else
 	qsort(base, cnt, sizeof(basepair), (void*)nodecmp_);
-#endif
 
 	int vnbr = create_vars(q, vars);
 

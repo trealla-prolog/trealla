@@ -10,10 +10,6 @@
 #include "prolog.h"
 #include "query.h"
 
-#ifdef _WIN32
-#include <windows.h>
-#define msleep Sleep
-#else
 static void msleep(int ms)
 {
 	struct timespec tv = {0};
@@ -21,7 +17,6 @@ static void msleep(int ms)
 	tv.tv_nsec = ((ms) % 1000) * 1000 * 1000;
 	nanosleep(&tv, &tv);
 }
-#endif
 
 #define Trace(p1,p2,p3,p4) if (q->trace /*&& !consulting*/) trace_call(p1,p2,p3,p4)
 
@@ -95,14 +90,6 @@ static void trace_call(query *q, cell *c, pl_ctx c_ctx, box_t box)
 		return;
 #endif
 
-#if 0
-	if (!is_builtin(c)) {
-		predicate *pr = find_predicate(q->st.m, c);
-
-		if (pr && !pr->is_public)
-			return;
-	}
-#endif
 
 	if (box == CALL)
 		box = q->retry?REDO:CALL;
@@ -707,15 +694,6 @@ static void commit_frame(query *q)
 	bool last_match = is_det || cl->is_first_cut || !has_next_key(q);
 	bool tco = false;
 
-#if 0
-	if (last_match) {
-		fprintf(stderr, "*** q->no_recov=%d, last_match=%d %s/%u, q->st.cur_ctx=%u,q->st.new_fp=%u\n",
-			q->no_recov, last_match,
-			C_STR(q, q->st.key), q->st.key->arity,
-			q->st.cur_ctx, q->st.new_fp
-			);
-	}
-#endif
 
 	if (!q->no_recov
 		&& last_match
@@ -725,19 +703,6 @@ static void commit_frame(query *q)
 		bool slots_ok = f->initial_slots <= cl->num_vars;
 		bool choices = commit_any_choices(q, f);
 		tco = slots_ok && tail_recursive && !choices;
-
-#if 0
-		cell *head = get_head(cl->cells);
-
-		fprintf(stderr,
-			"*** %s/%u tco=%d,q->no_recov=%d,last_match=%d,is_det=%d,"
-			"tail_recursive=%d,slots_ok=%d,choices=%d,"
-			"cl->num_vars=%u,f->initial_slots=%u/%u\n",
-			C_STR(q, head), head->arity,
-			tco, q->no_recov, last_match, is_det,
-			tail_recursive, slots_ok, choices,
-			cl->num_vars, f->initial_slots, f->actual_slots);
-#endif
 	}
 
 	if (!q->st.dbe->owner->is_builtin)
@@ -992,11 +957,6 @@ static bool resume_frame(query *q)
 	if (f->prev == CTX_NUL)
 		return false;
 
-#if 0
-	printf("*** q->st.cur_ctx=%d, f->no_recov=%d, any_choices=%d\n",
-		(unsigned)q->st.cur_ctx,
-		(unsigned)f->no_recov, (unsigned)resume_any_choices(q, f));
-#endif
 	Trace(q, get_head(f->instr), q->st.cur_ctx, EXIT);
 
 	if (q->pl->opt
@@ -1627,13 +1587,6 @@ bool start(query *q)
 				default: continue;
 			}
 		}
-
-#if USE_THREADS
-		if (q->thread_signal) {
-			q->thread_signal = false;
-			do_signal(q, q->thread_ptr);
-		}
-#endif
 
 		if (q->retry) {
 			switch (retry_choice(q)) {

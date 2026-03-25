@@ -9,18 +9,6 @@
 #include <stdbool.h>
 #include <inttypes.h>
 
-#ifndef USE_OPENSSL
-#define USE_OPENSSL 0
-#endif
-
-#ifndef USE_THREADS
-#define USE_THREADS 0
-#endif
-
-#if USE_THREADS
-#include <pthread.h>
-#include <unistd.h>
-#endif
 
 typedef double pl_flt;
 typedef intmax_t pl_int;
@@ -31,12 +19,7 @@ typedef uint32_t pl_ctx;
 #define PL_INT_MAX INTMAX_MAX
 #define PL_INT_MIN INTMAX_MIN
 
-#if (__STDC_VERSION__ >= 201112L) && USE_THREADS
-#include <stdatomic.h>
-#define pl_atomic _Atomic
-#else
 #define pl_atomic volatile
-#endif
 
 #include "list.h"
 #include "skiplist.h"
@@ -47,10 +30,6 @@ typedef uint32_t pl_ctx;
 
 #include "imath/imath.h"
 #include "imath/imrat.h"
-
-#if defined(_WIN32) || defined(__wasi__)
-char *realpath(const char *path, char resolved_path[PATH_MAX]);
-#endif
 
 // Sentinel Value
 #define ERR_IDX (~(pl_idx)0)
@@ -621,11 +600,6 @@ struct thread_ {
 	skiplist *alias;
 	cell *goal, *exit_code, *at_exit, *ball;
 	list signals, queue;
-#if USE_THREADS
-    pthread_t id;
-    pthread_cond_t cond;
-    pthread_mutex_t mutex;
-#endif
 	unsigned num_vars, at_exit_num_vars, num_locks;
 	int chan, locked_by;
 	lock guard;

@@ -251,22 +251,6 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-#if 0
-	if (((*src)->val_off == g_reset_s) && ((*src)->arity == 3)) {
-		unsigned var_num = cl->num_vars++;
-		*src += 1;
-		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
-		make_var((*dst)++, g_anon_s, var_num);
-		compile_term(pr, cl, dst, src);								// Arg1
-		make_instr((*dst)++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-		make_var((*dst)++, g_anon_s, var_num);
-		*src += (*src)->num_cells;									// Arg2
-		make_instr((*dst)++, g_sys_set_if_var_s, bif_sys_set_if_var_2, 2, (*src)->num_cells+1);
-		compile_term(pr, cl, dst, src);								// Arg3
-		make_atom((*dst)++, g_none_s);
-		return;
-	}
-#endif
 
 	if (((*src)->val_off == g_notunify_s) && ((*src)->arity == 2)) {
 		unsigned var_num = cl->num_vars++;
@@ -304,17 +288,6 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-#if 0
-	if (!is_builtin(*src)) {
-		predicate *pr2 = search_predicate(pr->m,  *src, false);
-
-		if (pr2 && !pr2->is_dynamic) {
-			make_instr((*dst)++, g_sys_match_s, bif_sys_match_1, 1, (*src)->num_cells);
-			copy_term(dst, src);
-			return;
-		}
-	}
-#endif
 
 	copy_term(dst, src);
 }

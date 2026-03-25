@@ -135,9 +135,6 @@ bool needs_quoting(module *m, const char *src, int srclen)
 		cnt++;
 
 		if (iswalnum(ch)
-#ifdef __APPLE__
-			|| iswideogram(ch)
-#endif
 			|| (ch == '_')
 			)
 			alphas++;
@@ -483,17 +480,6 @@ static void print_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 		SB_sprintf(q->sb, "_%u", (unsigned)slot_nbr);
 	}
 
-#if 0
-	if (is_global(c)) {
-		SB_sprintf(q->sb, "%s", "g");
-	} else if (is_void(c)) {
-		SB_sprintf(q->sb, "%s", "v");
-	} else if (is_local(c)) {
-		SB_sprintf(q->sb, "%s", "l");
-	} else if (is_temporary(c)) {
-		SB_sprintf(q->sb, "%s", "t");
-	}
-#endif
 }
 
 static bool dump_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
@@ -697,13 +683,6 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 			) {
 			SB_sprintf(q->sb, "%s", "|");
 
-#if 0
-			if (is_var(c+1)) printf("*** c+1 = %u/%u\n", (c+1)->var_num, c_ctx);
-			if (is_var(tail)) printf("*** tail = %u/%u\n", tail->var_num, tail_ctx);
-			if (is_var(save_tail)) printf("*** save_tail = %u/%u\n", save_tail->var_num, save_tail_ctx);
-			if (is_var(save_c)) printf("*** save_c = %u/%u\n", save_c->var_num, save_c_ctx);
-			if (is_var(orig_c)) printf("*** orig_c = %u/%u\n", orig_c->var_num, orig_c_ctx);
-#endif
 
 			cell v = *(c+1);
 			pl_ctx v_ctx = c_ctx;
