@@ -3,6 +3,9 @@ main      ?=
 ctest     ?= ctest
 cmake     ?= cmake
 generator ?= "Unix Makefiles"
+memory_logging ?= OFF
+
+cmake_configure_options := -G $(generator) --preset $(preset) -DTPL_MEMORY_LOGGING=$(memory_logging)
 
 build_dir := build/$(preset)
 bin       := $(build_dir)/tpl
@@ -22,10 +25,10 @@ info:
 	@echo "main (opt)  = $(main)"
 
 configure:
-	$(cmake) -G $(generator) --preset $(preset)
+	$(cmake) $(cmake_configure_options)
 
 configure-compile:
-	$(cmake) -G $(generator) --preset $(preset) -DMAIN_PL="$(main)"
+	$(cmake) $(cmake_configure_options) -DMAIN_PL="$(main)"
 
 build:
 	$(cmake) --build --preset $(preset) -- -j$(nproc)

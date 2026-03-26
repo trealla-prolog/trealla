@@ -1,5 +1,7 @@
 #pragma once
 
+#include "internal.h"
+
 #define CALL_SKIP false
 #define CALL_NOSKIP true
 

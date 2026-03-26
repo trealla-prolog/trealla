@@ -1,3 +1,5 @@
+option(TPL_MEMORY_LOGGING "Enable memory allocation logging and stats" OFF)
+
 option(TPL_USE_EDITLINE  "Use editline" OFF)
 option(TPL_USE_READLINE  "Use readline (default on non-WASI if no other editor is selected)" ON)
 

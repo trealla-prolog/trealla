@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include "memory.h"
 
 double foo(double x, int64_t y)
 {
@@ -17,7 +18,7 @@ int bar(double x, int64_t y, double *result)
 
 char *baz(const char *x, const char *y)
 {
-	char *s = malloc(strlen(x) + strlen(y) + 1);
+	char *s = PL4BM_MALLOC_IMPL(strlen(x) + strlen(y) + 1);
 	strcpy(s, x);
 	strcat(s, y);
 	return s;

@@ -626,4 +626,3 @@ cell *alloc_queuen(query *q, unsigned qnum, const cell *c)
 	q->qcnt[qnum]++;
 	return dst;
 }
-

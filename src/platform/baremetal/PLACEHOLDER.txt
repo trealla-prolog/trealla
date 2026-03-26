@@ -1,0 +1,3 @@
+General bare metal things that are the same on each board go here.
+
+Honestly I am not 100% sure what this entails, maybe this dir doesnt make any sense?

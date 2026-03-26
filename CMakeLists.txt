@@ -18,9 +18,13 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
+set(TPL_PLATFORM "linux" CACHE STRING "Target platform backend")
+set_property(CACHE TPL_PLATFORM PROPERTY STRINGS linux baremetal)
+
 add_compile_definitions(
   _GNU_SOURCE
   VERSION="${TPL_GIT_VERSION}"
+  TARGET="${TPL_PLATFORM}"
 )
 
 add_compile_options(
@@ -30,13 +34,20 @@ add_compile_options(
   -Wno-unused-variable
 )
 
-include_directories("${CMAKE_SOURCE_DIR}/src")
-include_directories("/usr/local/include")
-link_directories("/usr/local/lib")
+separate_arguments(_TPL_EXTRA_CFLAGS UNIX_COMMAND "${TPL_EXTRA_CFLAGS}")
+separate_arguments(_TPL_EXTRA_LDFLAGS UNIX_COMMAND "${TPL_EXTRA_LDFLAGS}")
 
 set(TPL_SRC
-  tpl.c
-  src/base64.c
+  src/compile.c
+  src/heap.c
+  src/module.c
+  src/parser.c
+  src/print.c
+  src/prolog.c
+  src/query.c
+  src/terms.c
+  src/unify.c
+  src/version.c
   src/bif_atts.c
   src/bif_bboard.c
   src/bif_control.c
@@ -54,49 +65,85 @@ set(TPL_SRC
   src/bif_streams.c
   src/bif_tasks.c
   src/bif_threads.c
-  src/compile.c
-  src/heap.c
+  src/base64.c
+  src/list.c
+  src/skiplist.c
+  src/utf8.c
   src/history.c
   src/library.c
-  src/list.c
-  src/module.c
   src/network.c
-  src/parser.c
-  src/print.c
-  src/prolog.c
-  src/query.c
-  src/skiplist.c
-  src/terms.c
   src/toplevel.c
-  src/unify.c
-  src/utf8.c
-  src/version.c
+)
+
+set(TPL_VENDOR_SRC
   src/imath/imath.c
   src/imath/imrat.c
   src/sre/re.c
 )
 
-if(TPL_USE_ISOCLINE)
-  list(APPEND TPL_SRC src/isocline/src/isocline.c)
+set(TPL_PLATFORM_COMMON_SRC
+	src/platform/common/memory_stats.c
+)
+
+if(TPL_PLATFORM STREQUAL "linux")
+	set(TPL_PLATFORM_SRC
+		src/platform/linux/memory_linux.c
+	)
+	set(TPL_PLATFORM_DEFINE TPL_PLATFORM_LINUX)
+elseif(TPL_PLATFORM STREQUAL "baremetal")
+	set(TPL_PLATFORM_SRC
+		# src/platform/baremetal/...
+	)
+	set(TPL_PLATFORM_DEFINE TPL_PLATFORM_BAREMETAL)
+	#TODO: Board specific implementations
+else()
+	message(FATAL_ERROR("Unsupported TPL_PLATFORM='${TPL_PLATFORM}'"))
 endif()
 
-
-separate_arguments(_TPL_EXTRA_CFLAGS UNIX_COMMAND "${TPL_EXTRA_CFLAGS}")
-separate_arguments(_TPL_EXTRA_LDFLAGS UNIX_COMMAND "${TPL_EXTRA_LDFLAGS}")
-
-add_executable(tpl
+add_library(tpl_core OBJECT
   ${TPL_SRC}
+  ${TPL_VENDOR_SRC}
+  ${TPL_PLATFORM_COMMON_SRC}
+  ${TPL_PLATFORM_SRC}
   ${TPL_LIBRARY_GEN_C}
 )
 
-target_include_directories(tpl PRIVATE
-  "${CMAKE_SOURCE_DIR}/src"
-  "${CMAKE_BINARY_DIR}/generated"
+target_compile_definitions(tpl_core PRIVATE ${TPL_PLATFORM_DEFINE})
+
+# I would prefer to only have src/ and src/platform/api as include directories
+# and then reference e.g. with include "core/polog.c", but that would mean having
+# to go through all sources and updating imports.
+set(TPL_INCLUDE_DIRS
+	"${CMAKE_SOURCE_DIR}/src"
+	"${CMAKE_SOURCE_DIR}/src/platform"
+	"${CMAKE_SOURCE_DIR}/src/platform/api"
+	"${CMAKE_SOURCE_DIR}/generated"
 )
 
-target_compile_options(tpl PRIVATE ${_TPL_EXTRA_CFLAGS})
-target_link_options(tpl PRIVATE ${_TPL_EXTRA_LDFLAGS})
+target_include_directories(tpl_core PRIVATE ${TPL_INCLUDE_DIRS})
+
+target_compile_options(tpl_core PRIVATE
+	${_TPL_EXTRA_CFLAGS}
+	-fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=
+)
+target_link_options(tpl_core PRIVATE ${_TPL_EXTRA_LDFLAGS})
+
+if(TPL_MEMORY_LOGGING)
+  target_compile_definitions(tpl_core PRIVATE TPL_MEMORY_LOGGING)
+endif()
+
+add_executable(tpl
+	tpl.c
+	$<TARGET_OBJECTS:tpl_core>
+)
+
+if(TPL_MEMORY_LOGGING)
+  target_compile_definitions(tpl PRIVATE TPL_MEMORY_LOGGING)
+endif()
+
 target_link_libraries(tpl PRIVATE ${TPL_LINK_LIBS})
+target_include_directories(tpl PRIVATE ${TPL_INCLUDE_DIRS})
+
 
 set(MAIN_C "${CMAKE_BINARY_DIR}/generated/main.c")
 
