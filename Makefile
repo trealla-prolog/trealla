@@ -28,11 +28,9 @@ configure-compile:
 	$(cmake) -G $(generator) --preset $(preset) -DMAIN_PL="$(main)"
 
 build:
-	$(cmake) --build --preset $(preset)
+	$(cmake) --build --preset $(preset) -- -j$(nproc)
 
-rebuild:
-	$(cmake) -G $(generator) --preset $(preset)
-	$(cmake) --build --preset $(preset)
+rebuild: clean configure build
 
 run:
 	$(bin) $(ARGS)
@@ -49,12 +47,7 @@ check:
 leaks:
 	./tests/run_valgrind_leaks.sh
 
-compile:
-	$(cmake) -G $(generator) --preset $(preset) -DMAIN_PL="$(main)"
-	$(cmake) --build --preset $(preset)
-
-run-compile:
-	$(build_dir)/compile_main $(ARGS)
+compile: configure build
 
 clean:
 	rm -rf "$(build_dir)"
