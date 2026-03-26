@@ -69,3 +69,41 @@ reapply_atts_([], _).
 reapply_atts_([X|Tail], [Atts|Tail2]) :-
 	put_atts(X, Atts),
 	reapply_atts_(Tail, Tail2).
+
+list_to_conjunction(List0, T) :-
+	reverse(List0, List),
+	toconjunction_(List, true, T).
+
+toconjunction_([], In, In).
+toconjunction_([H|T], true, Out) :- !,
+	Out2 = H,
+	toconjunction_(T, Out2, Out).
+toconjunction_([H|T], In, Out) :-
+	Out2 = (H, In),
+	toconjunction_(T, Out2, Out).
+
+conjunction_to_list(T, List) :-
+	tolist_(T, List).
+
+tolist_((T1,T2), [T1|Rest]) :- !,
+	tolist_(T2, Rest).
+tolist_(T, [T|[]]).
+
+:- help(list_to_conjunction(?list,?list), [iso(false), desc('Does as it says.')]).
+
+flatten(List, FlatList) :-
+	flatten_(List, [], FlatList0),
+	!,
+	FlatList = FlatList0.
+
+flatten_(Var, Tl, [Var|Tl]) :-
+	var(Var),
+	!.
+flatten_([], Tl, Tl) :- !.
+flatten_([Hd|Tl], Tail, List) :-
+	!,
+	flatten_(Hd, FlatHeadTail, List),
+	flatten_(Tl, Tail, FlatHeadTail).
+flatten_(NonList, Tl, [NonList|Tl]).
+
+:- help(flatten(?list,?list), [iso(false), desc('Does as it says.')]).
