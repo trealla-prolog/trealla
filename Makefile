@@ -4,6 +4,8 @@ BINDIR ?= $(PREFIX)/bin
 LIBDIR ?= $(PREFIX)/share/trealla
 MANDIR ?= $(PREFIX)/share/man
 
+EMBED ?= 1
+
 HOST_CC ?= cc
 
 GIT_VERSION := "$(shell git describe --abbrev=4 --dirty --always --tags)"
@@ -16,6 +18,11 @@ CFLAGS = -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' \
 	-Wno-unused-but-set-variable \
 	-Wno-unused-parameter \
 	-Wno-unused-variable
+
+ifeq ($(EMBED), 1)
+CFLAGS += -DEMBED=1
+endif
+
 LDFLAGS = -L/usr/local/lib -lm
 
 ifdef HOMEBREW_PREFIX
@@ -126,6 +133,9 @@ SRCOBJECTS = tpl.o \
 	src/utf8.o \
 	src/version.o
 
+LIBOBJECTS =
+
+ifeq ($(EMBED), 1)
 LIBOBJECTS +=  \
 	library/abnf.o \
 	library/aggregate.o \
@@ -166,6 +176,7 @@ LIBOBJECTS +=  \
 	library/ugraphs.o \
 	library/uuid.o \
 	library/when.o
+endif
 
 SRCOBJECTS += src/imath/imath.o
 SRCOBJECTS += src/imath/imrat.o

@@ -803,23 +803,44 @@ prolog *pl_create()
 
 	// Load some common libraries...
 
-	for (library *lib = g_libs; lib->name; lib++) {
-		if (!strcmp(lib->name, "builtins")
-			|| !strcmp(lib->name, "iso_ext")		// Common
-			|| !strcmp(lib->name, "dif")			// ???
-			) {
-			size_t len = *lib->len;
-			char *src = malloc(len+1);
-			check_error(src, pl_destroy(pl));
-			memcpy(src, lib->start, len);
-			src[len] = '\0';
+	const char *bootstrap[] = {"builtins", "iso_ext", "dif", NULL};
+
+	for (int i = 0; bootstrap[i]; i++) {
+		bool found = false;
+
+		for (library *lib = g_libs; lib->name; lib++) {
+			if (!strcmp(lib->name, bootstrap[i])) {
+				size_t len = *lib->len;
+				char *src = malloc(len+1);
+				check_error(src, pl_destroy(pl));
+				memcpy(src, lib->start, len);
+				src[len] = '\0';
+				SB(s1);
+				SB_sprintf(s1, "library/%s", lib->name);
+				module *m = load_text(pl->user_m, src, SB_cstr(s1));
+				m->prebuilt = true;
+				SB_free(s1);
+				free(src);
+				check_error(m, pl_destroy(pl));
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
 			SB(s1);
-			SB_sprintf(s1, "library/%s", lib->name);
-			module *m = load_text(pl->user_m, src, SB_cstr(s1));
+			SB_sprintf(s1, "%s/%s.pl", g_tpl_lib, bootstrap[i]);
+			module *m = load_file(pl->user_m, SB_cstr(s1), false, true);
+
+			if (!m || m->error) {
+				fprintf(stderr, "Error: could not find library(%s) at %s\n", bootstrap[i], SB_cstr(s1));
+				SB_free(s1);
+				pl_destroy(pl);
+				return NULL;
+			}
+
 			m->prebuilt = true;
 			SB_free(s1);
-			free(src);
-			check_error(m, pl_destroy(pl));
 		}
 	}
 
