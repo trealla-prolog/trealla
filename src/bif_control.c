@@ -789,18 +789,6 @@ bool bif_sys_succeed_on_retry_2(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 
-bool bif_sys_match_1(query *q)
-{
-	GET_FIRST_ARG(p1,callable);
-	q->st.instr = p1;
-	q->noskip = true;
-
-	if (!match_head(q))
-		return false;
-
-	return true;
-}
-
 static cell *parse_to_heap(query *q, const char *src)
 {
 	SB(s);
@@ -1245,7 +1233,6 @@ builtins g_control_bifs[] =
 	{"$fail_on_retry", 1, bif_sys_fail_on_retry_1, "-integer", false, false, BLAH},
 	{"$succeed_on_retry", 1, bif_sys_succeed_on_retry_1, "+integer", false, false, BLAH},
 	{"$succeed_on_retry", 2, bif_sys_succeed_on_retry_2, "-integer,+integer", false, false, BLAH},
-	{"$match", 1, bif_sys_match_1, "+callable", false, false, BLAH},
 
 	{0}
 };
