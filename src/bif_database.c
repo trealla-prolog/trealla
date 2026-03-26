@@ -358,7 +358,6 @@ static bool bif_iso_abolish_1(query *q)
 	bool found = false;
 
 	if (get_builtin(q->pl, C_STR(q, p1_name), C_STRLEN(q, p1_name), get_smallint(p1_arity), &found, NULL), found) {
-		prolog_unlock(q->pl);
 		return throw_error(q, p1, p1_ctx, "permission_error", "modify,static_procedure");
 	}
 
@@ -397,7 +396,6 @@ static bool bif_iso_asserta_1(query *q)
 	cell *tmp2, *body = get_body(tmp);
 
 	if (body && ((tmp2 = check_body_callable(body)) != NULL)) {
-		prolog_unlock(q->pl);
 		return throw_error(q, tmp2, q->st.cur_ctx, "type_error", "callable");
 	}
 
@@ -406,7 +404,7 @@ static bool bif_iso_asserta_1(query *q)
 
 	if (num_cells > p->cl->num_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
-		CHECKED(p->cl, prolog_unlock(q->pl));
+		CHECKED(p->cl);
 		p->cl->num_allocated_cells = num_cells;
 	}
 
@@ -464,7 +462,7 @@ static bool do_assertz_1(query *q, bool consulting)
 
 	if (num_cells > p->cl->num_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
-		CHECKED(p->cl, prolog_unlock(q->pl));
+		CHECKED(p->cl);
 		p->cl->num_allocated_cells = num_cells;
 	}
 
@@ -540,7 +538,7 @@ static bool do_asserta_2(query *q)
 
 	if (num_cells > p->cl->num_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
-		CHECKED(p->cl, prolog_unlock(q->pl));
+		CHECKED(p->cl);
 		p->cl->num_allocated_cells = num_cells;
 	}
 
@@ -634,7 +632,7 @@ static bool do_assertz_2(query *q)
 
 	if (num_cells > p->cl->num_allocated_cells) {
 		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
-		CHECKED(p->cl, prolog_unlock(q->pl));
+		CHECKED(p->cl);
 		p->cl->num_allocated_cells = num_cells;
 	}
 

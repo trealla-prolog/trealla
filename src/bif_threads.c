@@ -5,7 +5,6 @@
 #include <string.h>
 #include <sys/time.h>
 #include <sys/stat.h>
-
 #include <sched.h>
 
 #include "module.h"
@@ -547,7 +546,7 @@ static void do_unlock_all(prolog *pl)
 		if (!t->is_active)
 			continue;
 
-		if (t != me)
+		if (t->locked_by != me->chan)
 			continue;
 
 		release_lock(&t->guard);

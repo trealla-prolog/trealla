@@ -149,7 +149,6 @@ bool bif_statistics_0(query *q);
 bool bif_sys_module_1(query *q);
 bool bif_sys_undo_1(query *q);
 bool bif_sys_create_var_1(query *q);
-bool bif_sys_match_1(query *q);
 bool bif_sys_list_iterate_3(query *q);
 
 void save_db(FILE *fp, query *q, int logging);
