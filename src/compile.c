@@ -306,7 +306,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 #if 0
 	if (!is_builtin(*src)) {
-		predicate *pr2 = search_predicate(pr->m,  *src, false);
+		predicate *pr2 = search_predicate(pr->m,  *src, NULL);
 
 		if (pr2 && !pr2->is_dynamic) {
 		}
