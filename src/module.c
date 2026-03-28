@@ -311,7 +311,6 @@ predicate *search_predicate(module *m, cell *c)
 	if (pr)
 		return pr;
 
-#if 1
 	for (unsigned i = 0; i < m->idx_used; i++) {
 		module *tmp_m = m->used[i];
 
@@ -325,7 +324,6 @@ predicate *search_predicate(module *m, cell *c)
 		if (pr)
 			return pr;
 	}
-#endif
 
 	if (m->pl->user_m) {
 		pr = find_predicate(m->pl->user_m, c);
