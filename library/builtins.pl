@@ -172,6 +172,23 @@ collect_goals_([V|T], GsIn, GsOut) :-
 	collect_goals_(V, Ls, GsIn, GsOut2),
 	collect_goals_(T, GsOut2, GsOut).
 
+flatten(List, FlatList) :-
+	flatten_(List, [], FlatList0),
+	!,
+	FlatList = FlatList0.
+
+flatten_(Var, Tl, [Var|Tl]) :-
+	var(Var),
+	!.
+flatten_([], Tl, Tl) :- !.
+flatten_([Hd|Tl], Tail, List) :-
+	!,
+	flatten_(Hd, FlatHeadTail, List),
+	flatten_(Tl, Tail, FlatHeadTail).
+flatten_(NonList, Tl, [NonList|Tl]).
+
+:- help(flatten(?list,?list), [iso(false), desc('Does as it says.')]).
+
 % Debugging...
 
 print_goals_(_, []).

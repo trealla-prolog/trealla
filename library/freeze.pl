@@ -90,20 +90,3 @@ tolist_((T1,T2), [T1|Rest]) :- !,
 tolist_(T, [T|[]]).
 
 :- help(list_to_conjunction(?list,?list), [iso(false), desc('Does as it says.')]).
-
-flatten(List, FlatList) :-
-	flatten_(List, [], FlatList0),
-	!,
-	FlatList = FlatList0.
-
-flatten_(Var, Tl, [Var|Tl]) :-
-	var(Var),
-	!.
-flatten_([], Tl, Tl) :- !.
-flatten_([Hd|Tl], Tail, List) :-
-	!,
-	flatten_(Hd, FlatHeadTail, List),
-	flatten_(Tl, Tail, FlatHeadTail).
-flatten_(NonList, Tl, [NonList|Tl]).
-
-:- help(flatten(?list,?list), [iso(false), desc('Does as it says.')]).
