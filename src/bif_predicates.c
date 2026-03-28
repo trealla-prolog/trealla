@@ -2077,7 +2077,7 @@ static bool bif_iso_current_rule_1(query *q)
 	tmp.val_off = new_atom(q->pl, functor);
 	tmp.arity = arity;
 
-	if (search_predicate(q->st.m, &tmp, NULL))
+	if (search_predicate(q->st.m, &tmp))
 		return true;
 
 	bool found = false;
@@ -2182,7 +2182,7 @@ static bool bif_iso_current_predicate_1(query *q)
 	predicate *pr;
 
 	if (q->st.m == q->pl->user_m)
-		pr = search_predicate(q->st.m, &tmp, NULL);
+		pr = search_predicate(q->st.m, &tmp);
 	else
 		pr = find_predicate(q->st.m, &tmp);
 

@@ -25,7 +25,7 @@ unsigned get_op(module *m, const char *name, unsigned specifier);
 bool set_op(module *m, const char *name, unsigned specifier, unsigned priority);
 predicate *find_functor(module *m, const char *name, unsigned arity);
 predicate *find_predicate(module *m, cell *c);
-predicate *search_predicate(module *m, cell *c, bool *prebuilt);
+predicate *search_predicate(module *m, cell *c);
 predicate *create_predicate(module *m, cell *c, bool *created);
 bool find_goal_expansion(module *m, cell *c);
 bool search_goal_expansion(module *m, cell *c);

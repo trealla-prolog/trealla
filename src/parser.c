@@ -2090,7 +2090,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	if (!CMP_STRING_TO_CSTR(p, goal, "phrase") && !p->is_consulting)
 		return goal;
 
-	//if (search_predicate(p->m, goal, NULL))
+	//if (search_predicate(p->m, goal))
 	//	return goal;
 
 	if (p->pl->in_goal_expansion) {

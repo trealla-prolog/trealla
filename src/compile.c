@@ -17,7 +17,7 @@ static void calln_check(module *m, cell *p1)
 {
 	bool found = false;
 
-	if ((p1->match = search_predicate(m, p1, NULL)) != NULL) {
+	if ((p1->match = search_predicate(m, p1)) != NULL) {
 		p1->flags &= ~FLAG_INTERNED_BUILTIN;
 	} else if ((p1->bif_ptr = get_builtin_term(m, p1, &found, NULL)), found) {
 		p1->flags |= FLAG_INTERNED_BUILTIN;
@@ -306,7 +306,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 #if 0
 	if (!is_builtin(*src)) {
-		predicate *pr2 = search_predicate(pr->m,  *src, NULL);
+		predicate *pr2 = search_predicate(pr->m,  *src);
 
 		if (pr2 && !pr2->is_dynamic) {
 		}
