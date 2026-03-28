@@ -311,7 +311,7 @@ predicate *search_predicate(module *m, cell *c)
 	if (pr)
 		return pr;
 
-#if 0
+#if 1
 	for (unsigned i = 0; i < m->idx_used; i++) {
 		module *tmp_m = m->used[i];
 

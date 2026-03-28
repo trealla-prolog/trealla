@@ -77,7 +77,7 @@ bool call_check(query *q, cell *p1, bool *status, bool calln)
 	if (calln || !p1->arity) {
 		bool found = false;
 
-		if ((p1->match = search_predicate(q->st.m, p1, NULL)) != NULL) {
+		if ((p1->match = search_predicate(q->st.m, p1)) != NULL) {
 			p1->flags &= ~FLAG_INTERNED_BUILTIN;
 		} else if ((p1->bif_ptr = get_builtin_term(q->st.m, p1, &found, NULL)), found) {
 			p1->flags |= FLAG_INTERNED_BUILTIN;
