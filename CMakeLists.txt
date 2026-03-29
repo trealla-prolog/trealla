@@ -14,6 +14,8 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
 
+set(COMPILE_DIAGNOSTICS_FORMAT "text" CACHE STRING  "Format of diagnositcs")
+
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(WARNING "No build or configuration type defined, defaulting to 'Release'")
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
@@ -141,8 +143,8 @@ target_compile_options(tpl PRIVATE
     ${_tpl_extra_cflags}
 
 	# for parsing logs
-	-fdiagnostics-format=json-file
-	-fno-diagnostics-color
+	-fdiagnostics-format=${COMPILE_DIAGNOSTICS_FORMAT}
+	-fdiagnostics-color=auto
 
 )
 

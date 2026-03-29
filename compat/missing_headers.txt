@@ -30,3 +30,4 @@ sys/ioctl.h
 sys/mman.h
 sys/socket.h
 sys/un.h
+gnu/stubs-32.h

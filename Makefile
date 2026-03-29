@@ -53,8 +53,15 @@ clean-all:
 	rm -rf build
 
 generate-header-stubs: clean-all
-	cmake --preset arm-none-eabi-compile
+	rm build/arm-none-eabi-compile -rf
+	cmake --preset arm-none-eabi-compile -DCOMPILE_DIAGNOSTICS_FORMAT=text
 	./tools/gen-compat-stubs cmake --build --preset arm-none-eabi-compile -- -k -j$(nproc)
+
+generate-report:
+	rm build/arm-none-eabi-compile -rf
+	cmake --preset arm-none-eabi-compile -DCOMPILE_DIAGNOSTICS_FORMAT=json-file
+	cmake --build --preset arm-none-eabi-compile -- -k -j1 || true
+	./tools/create-report build/arm-none-eabi-compile
 
 linux-debug:
 	$(MAKE) rebuild preset=linux-debug
@@ -69,6 +76,7 @@ compile-commands:
 	@test -f "$(build_dir)/compile_commands.json" && \
 	  echo "$(build_dir)/compile_commands.json" || \
 	  (echo "missing: $(build_dir)/compile_commands.json (configure first)" && exit 1)
+
 
 cache:
 	$(cmake) -LA -N "$(build_dir)" | sort
