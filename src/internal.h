@@ -457,7 +457,6 @@ struct predicate_ {
 	bool is_dirty:1;
 };
 
-#define BLAH1 false, false, {0}, {0}, 0, NULL, NULL, NULL, NULL, NULL
 #define BLAH false, false, {0}, {0}, 0, NULL, NULL, NULL, NULL, NULL, NULL
 
 #define MAX_FFI_ARGS 64
