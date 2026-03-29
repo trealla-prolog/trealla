@@ -7,7 +7,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(Options)
 include(Version)
 include(CodegenLibraryPl)
-# include(Dependencies)
+include(Dependencies)
 include(Testing)
 
 set(CMAKE_C_STANDARD 99)
