@@ -1,21 +1,30 @@
 ---
+layout: default
+title: "Diagnostics 1"
+permalink: /reports/2026-03-29_18-31-19/diagnostics/
 id: 1
-title: Porting Diagnostics 1
 type: diagnostics
-generated_at: 2026-03-29_17-20-13
-source_directory: build/arm-none-eabi-compile
-normalized_json: ./normalized.json
-report: ./report.md
-diagnostics: ./diagnostics.md
+generated_at: "2026-03-29_18-31-19"
+source_directory: "build/arm-none-eabi-compile"
+normalized_json: "/reports/2026-03-29_18-31-19/normalized.json"
+parent_index: "/reports/"
+report_page: "/reports/2026-03-29_18-31-19/report/"
+counts:
+    total: 9878
+    errors: 5068
+    warnings: 1260
+    notes: 3550
 ---
 
-# Porting Diagnostics 1
+# Diagnostics 1
 
 > Auto-generated. Do not edit manually.
 
-- Corresponding report: [report.md](./report.md)
+- Corresponding report: [report.md]({% link reports/2026-03-29_18-31-19/report.md %})
+- Reports index: [reports index]({% link reports/index.md %})
 - Source directory: `build/arm-none-eabi-compile`
-- Generated at: `2026-03-29_17-20-13`
+- Generated at: `2026-03-29_18-31-19`
+- Normalized JSON: [normalized.json]({% link /reports/2026-03-29_18-31-19/normalized.json %})
 
 # Diagnostics grouped by file
 

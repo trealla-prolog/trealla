@@ -1,3 +1,33 @@
+You are an AI assistant with access to a complete “context file” containing files in this project.  Each file is included in its entirety, separated by headers of the form:
+
+```
+-------- ./path/to/file.ext --------
+<file contents>
+```
+
+**Guidelines for using the context file:**
+
+1. **Always consult the context first.**
+
+   * Before you generate any solution, recommendation, or code snippet, search the context for relevant definitions, functions, types, and comments.
+   * If you find the answer already implemented, quote or reference the exact file and section (using the header marker) rather than reinventing it.
+
+2. **Maintain consistency with existing code.**
+
+   * Match the project’s coding style, naming conventions, and error‐handling patterns.
+   * When extending or modifying code, ensure your changes slot cleanly into the existing files.
+
+3. **Handle missing information gracefully.**
+
+   * If the context does not contain the needed logic or data, clearly state that you did not find it in the provided files.
+   * Offer to propose a new implementation or request additional context.
+
+4. **Be precise and concise.**
+
+   * Provide minimal explanations that directly address the user’s request.
+   * Include exact file paths and line comments when referring back to context snippets.
+
+Whenever you receive a question or task, begin by locating the relevant section in the context file. Only after confirming whether the solution exists should you write or modify code.
 -------- tools/create-report --------
 ```
 #!/usr/bin/env bash
@@ -12,7 +42,7 @@ fatal() {
 }
 
 INPUT_DIRECTORY=${1:?usage: $0 <build-dir-with-json-logs> [out-dir]}
-OUT_BASE_DIR="${2:-reports}"
+OUT_BASE_DIR="${2:-docs/reports}"
 
 shopt -s nullglob
 json_files=("${INPUT_DIRECTORY}"/*.gcc.json)
@@ -96,6 +126,17 @@ fi
 } >"$REPORT_MD" || fatal "failed to create md report"
 
 {
+    echo "---"
+    echo "id: $id"
+	echo "title: Porting Diagnostics $id"
+    echo "type: diagnostics"
+    echo "generated_at: $timestamp"
+    echo "source_directory: $INPUT_DIRECTORY"
+    echo "normalized_json: ./normalized.json"
+    echo "report: ./report.md"
+    echo "diagnostics: ./diagnostics.md"
+    echo "---"
+    echo
 	echo "# Porting Diagnostics $id"
 	echo
     echo "> Auto-generated. Do not edit manually."
@@ -443,4 +484,138 @@ def md_anchor:
   | gsub("[^a-z0-9._/-]+"; "-")
   | gsub("^-+"; "")
   | gsub("-+$"; "");
+```
+-------- tools/gen-compat-stubs --------
+```
+#!/usr/bin/env bash
+
+COMPAT_DIR="${COMPAT_DIR:-compat}"
+HEADERS_LOG="${HEADERS_LOG:-${COMPAT_DIR}/missing_headers.txt}"
+MODE="${MODE:-warning}"
+FORCE="${FORCE:-false}"
+MAX_ITERATIONS="${MAX_ITERATIONS:-50}"
+
+mkdir -p "$COMPAT_DIR"
+mkdir -p "$(dirname "$HEADERS_LOG")"
+
+fatal() {
+    echo "[FATAL] $*" >&2
+    exit 1
+}
+log() {
+    echo "[INFO] $*" >&2
+}
+
+warn() {
+    echo "[WARN] $*" >&2
+}
+
+fatal() {
+    echo "[FATAL] $*" >&2
+    exit 1
+}
+
+extract_headers() {
+    grep -oE 'fatal error: [^:]+: No such file or directory' |
+        sed -E 's/^fatal error: ([^:]+): No such file or directory$/\1/' |
+        sort -u
+}
+
+macro_name() {
+    local header="$1"
+    printf '%s' "$header" | tr '/.-' '___' | tr '[:lower:]' '[:upper:]'
+}
+
+write_stub() {
+    local header="$1"
+    local out="$COMPAT_DIR/$header"
+    local macro="$(macro_name "$header")"
+
+    mkdir -p "$(dirname "$out")"
+
+    if [[ -e "$out" && "$FORCE" != "true" ]]; then
+        return 0
+    fi
+
+    {
+        echo "/* Auto-generated compat stub."
+        echo " * Missing during cross-compile audit: <$header>"
+        echo " * DO NOT use as real implementation."
+        echo " */"
+        echo "#pragma once"
+        echo ""
+        echo "#define TPL_MISSING_HEADER__${macro}"
+
+        case "$MODE" in
+        error)
+            echo "#error \"Missing compat stub hit: <$header>\""
+            ;;
+        warning)
+            echo "#warning \"Using generated compat stub for <$header>\""
+            ;;
+        empty) ;;
+        *)
+            echo "Unknown MODE='$MODE' (expected: warning|error|empty)" >&2
+            exit 1
+            ;;
+        esac
+        echo
+    } >"$out"
+
+    printf '%s\n' "$out"
+}
+
+if [[ -n "$COMPILE_COMMAND" ]]; then
+    fatal "Usage: $0 <compile-command> [args...]" >2
+fi
+
+iteration=1
+
+while ((iteration <= MAX_ITERATIONS)); do
+    log "Iteration $iteration: running compile command: $*"
+
+    tmp_stderr="$(mktemp)"
+    trap 'rm -f "$tmp_stderr"' EXIT
+
+    "$@" 1>/dev/null 2> "$tmp_stderr"
+
+    mapfile -t HEADERS < <(extract_headers < "$tmp_stderr")
+
+    if (( ${#HEADERS[@]} == 0 )); then
+        log "Iteration $iteration: no missing headers found, stopping"
+        exit 0
+    fi
+
+    printf '%s\n' "${HEADERS[@]}" >>"$HEADERS_LOG"
+
+    log "Iteration $iteration: found ${#HEADERS[@]} unique missing headers." >&2
+    log "Iteration $iteration: wrote header list to $HEADERS_LOG" >&2
+
+    rm -f "$tmp_stderr"
+    trap - EXIT
+
+    created=0
+
+    for header in "${HEADERS[@]}"; do
+        if out="$(write_stub "$header")"; then
+            log "Iteration $iteration: created stub: $out"
+            ((created += 1))
+        else
+            log "Iteration $iteration: stub already exists: $COMPAT_DIR/$header"
+        fi
+    done
+
+    log "Iteration $iteration: created $created new stub(s)"
+
+    if (( created == 0 )); then
+        warn "Iteration $iteration: missing headers still exist, but no new stubs were created"
+        warn "Stopping to avoid an infinite loop"
+        exit 1
+    fi
+
+    ((iteration += 1))
+done
+
+fatal "Reached MAX_ITERATIONS=$MAX_ITERATIONS without converging"
+
 ```
