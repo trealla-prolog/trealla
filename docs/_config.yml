@@ -3,4 +3,6 @@ description: Build diagnostics reports used while porting trealla for embedded s
 
 url: "https://prolog4embedded.github.io"
 baseurl: "/trealla"
-
+remote_theme: pages-themes/minimal@v0.2.0
+plugins:
+    - jekyll-remote-theme

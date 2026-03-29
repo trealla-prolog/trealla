@@ -38,8 +38,6 @@ mkdir -p "$OUT_DIR"
 NORMALIZED_JSON="$OUT_DIR/normalized.json"
 REPORT_MD="$OUT_DIR/report.md"
 DIAGNOSTICS_MD="$OUT_DIR/diagnostics.md"
-REPORTS_INDEX_MD="$REPORTS_DIR/index.md"
-SITE_INDEX_MD="$DOCS_DIR/index.md"
 
 ROOT_DIR="$(pwd)"
 
@@ -116,11 +114,11 @@ EOF
     echo
     echo "> Auto-generated. Do not edit manually."
     echo
-    echo "- Corresponding diagnostics: [diagnostics.md]({% link $diagnostics_document %})"
-    echo "- Reports index: [reports index]({% link $reports_index_document %})"
+    echo "- Corresponding diagnostics: [diagnostics.md]({{ '$diagnostics_permalink' | relative_url }})"
+    echo "- Reports index: [reports index]({{ '$reports_index_permalink' | relative_url }})"
     echo "- Source directory: \`$INPUT_DIRECTORY\`"
     echo "- Generated at: \`$timestamp\`"
-    echo "- Normalized JSON: [normalized.json]({% link $normalized_json_url %})"
+    echo "- Normalized JSON: [normalized.json]({{ '$normalized_json_url' | relative_url }})"
     echo
 
     echo "## Overview"
@@ -161,11 +159,11 @@ EOF
     echo
     echo "> Auto-generated. Do not edit manually."
     echo
-    echo "- Corresponding report: [report.md]({% link $report_document %})"
-    echo "- Reports index: [reports index]({% link $reports_index_document %})"
+    echo "- Corresponding report: [report.md]({{ '$report_permalink' | relative_url }})"
+    echo "- Reports index: [reports index]({{ '$reports_index_permalink' | relative_url }})"
     echo "- Source directory: \`$INPUT_DIRECTORY\`"
     echo "- Generated at: \`$timestamp\`"
-    echo "- Normalized JSON: [normalized.json]({% link $normalized_json_url %})"
+    echo "- Normalized JSON: [normalized.json]({{ '$normalized_json_url' | relative_url }})"
     echo
 
     jq-with-lib -r -f tools/jq/report-diagnostics-by-file.jq "$NORMALIZED_JSON" \
@@ -175,11 +173,11 @@ EOF
 
 
 if command -v prettier >/dev/null 2>&1; then
-    prettier -w "$REPORT_MD" "$DIAGNOSTICS_MD" "$REPORTS_INDEX_MD" "$SITE_INDEX_MD"
+    prettier -w "$REPORT_MD" "$DIAGNOSTICS_MD"
 elif command -v npx >/dev/null 2>&1; then
-    npx prettier -w "$REPORT_MD" "$DIAGNOSTICS_MD" "$REPORTS_INDEX_MD" "$SITE_INDEX_MD"
+    npx prettier -w "$REPORT_MD" "$DIAGNOSTICS_MD"
 elif command -v bunx >/dev/null 2>&1; then
-    bunx prettier -w "$REPORT_MD" "$DIAGNOSTICS_MD" "$REPORTS_INDEX_MD" "$SITE_INDEX_MD"
+    bunx prettier -w "$REPORT_MD" "$DIAGNOSTICS_MD"
 else
     echo "Unable to format markdown files, can't find prettier/npx/bunx"
 fi
@@ -192,6 +190,4 @@ echo "Wrote:"
 echo "  $NORMALIZED_JSON"
 echo "  $REPORT_MD"
 echo "  $DIAGNOSTICS_MD"
-echo "  $REPORTS_INDEX_MD"
-echo "  $SITE_INDEX_MD"
 echo "  $LATEST_LINK -> $OUT_DIR"

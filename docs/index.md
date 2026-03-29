@@ -6,5 +6,5 @@ permalink: /
 
 # Porting Diagnostics
 
-- [Latest report]({% link reports/latest/report.md %})
-- [Latest diagnostics]({% link reports/latest/diagnostics.md %})
+- [Latest report]({{ 'reports/latest/report.md' | relative_url }})
+- [Latest diagnostics]({{ 'reports/latest/diagnostics.md' | relative_url}})

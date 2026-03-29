@@ -1,14 +1,14 @@
 ---
 layout: default
 title: "Report 1"
-permalink: /reports/2026-03-29_18-31-19/report/
+permalink: /reports/2026-03-29_18-52-15/report/
 id: 1
 type: report
-generated_at: "2026-03-29_18-31-19"
+generated_at: "2026-03-29_18-52-15"
 source_directory: "build/arm-none-eabi-compile"
-normalized_json: "/reports/2026-03-29_18-31-19/normalized.json"
+normalized_json: "/reports/2026-03-29_18-52-15/normalized.json"
 parent_index: "/reports/"
-diagnostics_permalink: "/reports/2026-03-29_18-31-19/diagnostics/"
+diagnostics_permalink: "/reports/2026-03-29_18-52-15/diagnostics/"
 counts:
     total: 9878
     errors: 5068
@@ -20,11 +20,11 @@ counts:
 
 > Auto-generated. Do not edit manually.
 
-- Corresponding diagnostics: [diagnostics.md]({% link reports/2026-03-29_18-31-19/diagnostics.md %})
-- Reports index: [reports index]({% link reports/index.md %})
+- Corresponding diagnostics: [diagnostics.md]({{ '/reports/2026-03-29_18-52-15/diagnostics/' | relative_url }})
+- Reports index: [reports index]({{ '/reports/' | relative_url }})
 - Source directory: `build/arm-none-eabi-compile`
-- Generated at: `2026-03-29_18-31-19`
-- Normalized JSON: [normalized.json]({% link /reports/2026-03-29_18-31-19/normalized.json %})
+- Generated at: `2026-03-29_18-52-15`
+- Normalized JSON: [normalized.json]({{ '/reports/2026-03-29_18-52-15/normalized.json' | relative_url }})
 
 ## Overview
 
