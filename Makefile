@@ -11,13 +11,6 @@ cmake_configure_options := -G $(generator) --preset $(preset) -DTPL_MEMORY_LOGGI
 build_dir := build/$(preset)
 bin       := $(build_dir)/tpl
 
-.PHONY: default help info \
-        configure configure-compile build rebuild \
-        run test test-sh check leaks \
-        compile run-compile \
-        clean clean-all \
-        debug release cross baremetal \
-        compile-commands cache
 
 info:
 	@echo "preset     = $(preset)"
@@ -59,14 +52,15 @@ clean:
 clean-all:
 	rm -rf build
 
+generate-header-stubs: clean-all
+	cmake --preset arm-none-eabi-compile
+	./tools/gen-compat-stubs cmake --build --preset arm-none-eabi-compile -- -k -j$(nproc)
+
 linux-debug:
 	$(MAKE) rebuild preset=linux-debug
 
 linux-release:
 	$(MAKE) rebuild preset=linux-release
-
-cross:
-	$(MAKE) rebuild preset=cross-generic
 
 baremetal:
 	$(MAKE) rebuild preset=baremetal-arm-none-eabi
@@ -78,3 +72,12 @@ compile-commands:
 
 cache:
 	$(cmake) -LA -N "$(build_dir)" | sort
+
+.PHONY: default help info \
+        configure configure-compile build rebuild \
+        run test test-sh check leaks \
+        compile run-compile \
+        clean clean-all \
+        debug release cross baremetal \
+        compile-commands cache \
+		generate-header-stubs

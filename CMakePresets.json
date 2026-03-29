@@ -70,6 +70,7 @@
 	  "inherits": ["base", "base-debug"],
 	  "cacheVariables": {
 		"CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/arm-none-eabi.cmake",
+		"TPL_USE_COMPAT_STUB_HEADERS": "ON",
 		"TPL_BACKEND": "baremetal",
 		"TPL_BAREMETAL_CPU": "cortex-m4"
 	  }

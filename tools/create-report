@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+
+jq-with-lib() {
+    jq -L tools/jq "$@"
+}
+
+fatal() {
+    echo "[FATAL] $@" >&2
+    exit 1
+}
+
+INPUT_DIRECTORY=${1:?usage: $0 <build-dir-with-json-logs> [out-dir]}
+OUT_BASE_DIR="${2:-docs/reports}"
+
+shopt -s nullglob
+json_files=("${INPUT_DIRECTORY}"/*.gcc.json)
+shopt -u nullglob
+
+if ((${#json_files[@]} == 0)); then
+    echo "error: no *.gcc.json files found in '${INPUT_DIRECTORY}'" >&2
+    exit 1
+fi
+
+build_log="$(mktemp)"
+trap 'rm -f "$build_log"' EXIT
+
+jq -s 'map(if type == "array" then . else [.] end) | add' \
+    "${json_files[@]}" \
+    >"$build_log" || fatal "failed to combine gcc logs"
+
+timestamp="$(date +%Y-%m-%d_%H-%M-%S)"
+OUT_DIR="${OUT_BASE_DIR}/${timestamp}"
+mkdir -p "$OUT_DIR"
+
+NORMALIZED_JSON="$OUT_DIR/normalized.json"
+REPORT_MD="$OUT_DIR/report.md"
+DIAGNOSTICS_MD="$OUT_DIR/diagnostics.md"
+
+ROOT_DIR="$(pwd)"
+
+jq-with-lib \
+    --arg input_dir "$INPUT_DIRECTORY" \
+    --arg input_file "$build_log" \
+    --arg generated_at "$timestamp" \
+    --arg root "$ROOT_DIR" \
+    -f tools/jq/normalize.jq \
+    "$build_log" >"$NORMALIZED_JSON" || fatal "failed to normalize json"
+
+report_count=$(
+  find "$OUT_BASE_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null \
+      | wc -l
+)
+
+if [[ -z "${report_count:-}" ]]; then
+  id=1
+else
+  id=$((report_count))
+fi
+
+{
+    echo "# Porting Diagnostics Report $id"
+    echo
+    echo "> Auto-generated. Do not edit manually."
+    echo
+	echo "- Corresponding diagnostics: [diagnostics.md](./diagnostics.md)"
+    echo "- Source directory: \`$INPUT_DIRECTORY\`"
+    echo "- Generated at: \`$timestamp\`"
+    echo
+
+    echo "## Overview"
+    echo
+    jq-with-lib -r -f tools/jq/report-overview.jq "$NORMALIZED_JSON" || fatal "failed to create overview section"
+
+    echo
+    echo "## Top diagnostics"
+    echo
+    jq-with-lib -r -f tools/jq/report-top-diagnostics.jq "$NORMALIZED_JSON" || fatal "failed to create top-diagnostics section"
+
+    echo
+    echo "## Top files with errors"
+    echo
+    jq-with-lib -r -f tools/jq/report-top-error-files.jq "$NORMALIZED_JSON" || fatal "failed to create top-files section"
+
+    echo
+    echo "## Compat stubs used"
+    echo
+    jq-with-lib -r -f tools/jq/report-compat-stubs.jq "$NORMALIZED_JSON" || fatal "failed to create compat-stubs section"
+
+    echo
+    echo "## First 100 unique errors"
+    echo
+    jq-with-lib -r -f tools/jq/report-unique-errors.jq "$NORMALIZED_JSON" || fatal "failed to create first-100 section"
+
+} >"$REPORT_MD" || fatal "failed to create md report"
+
+{
+    echo "---"
+    echo "id: $id"
+	echo "title: Porting Diagnostics $id"
+    echo "type: diagnostics"
+    echo "generated_at: $timestamp"
+    echo "source_directory: $INPUT_DIRECTORY"
+    echo "normalized_json: ./normalized.json"
+    echo "report: ./report.md"
+    echo "diagnostics: ./diagnostics.md"
+    echo "---"
+    echo
+	echo "# Porting Diagnostics $id"
+	echo
+    echo "> Auto-generated. Do not edit manually."
+    echo
+	echo "- Corresponding report: [report.md](./report.md)"
+    echo "- Source directory: \`$INPUT_DIRECTORY\`"
+    echo "- Generated at: \`$timestamp\`"
+	echo
+
+	jq-with-lib -r -f tools/jq/report-diagnostics-by-file.jq "$NORMALIZED_JSON" || fatal "failed to create diagnostics"
+
+} >"$DIAGNOSTICS_MD" || fatal "failed to create md diagnostics"
+
+if command -v prettier >/dev/null 2>&1; then
+    echo "Formatting report using 'prettier -w $REPORT_MD"
+    prettier -w "$REPORT_MD"
+    prettier -w "$DIAGNOSTICS_MD"
+elif command -v npx >/dev/null 2>&1; then
+    echo "Formatting using 'npx prettier -w $REPORT_MD"
+    npx prettier -w "$REPORT_MD"
+    npx prettier -w "$DIAGNOSTICS_MD"
+elif command -v bunx >/dev/null 2>&1; then
+    echo "Formatting using 'npx prettier -w $REPORT_MD"
+    bunx prettier -w "$REPORT_MD"
+    bunx prettier -w "$DIAGNOSTICS_MD"
+else
+    echo "Unable to format report, can't find 'prettier', 'npx' or 'bunx' commands"
+fi
+
+LATEST_LINK="${OUT_BASE_DIR}/latest"
+
+ln -sfn "$(realpath --relative-to="$OUT_BASE_DIR" "$OUT_DIR")" "$LATEST_LINK" \
+  || fatal "failed to update latest symlink"
+
+echo "Wrote:"
+echo "  $NORMALIZED_JSON"
+echo "  $REPORT_MD"
+echo "  $LATEST_LINK -> $OUT_DIR"

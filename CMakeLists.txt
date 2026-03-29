@@ -15,16 +15,16 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-	message(WARNING "No build or configuration type defined, defaulting to 'Release'")
+    message(WARNING "No build or configuration type defined, defaulting to 'Release'")
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Generic")
-	message(DEBUG "Detected 'Generic' system name, defaulting to baremetal backend")
-	set(_tpl_backend_default "baremetal")
+    message(DEBUG "Detected 'Generic' system name, defaulting to baremetal backend")
+    set(_tpl_backend_default "baremetal")
 else()
-	message(DEBUG "Defaulting to linux backend")
-	set(_tpl_backend_default "linux")
+    message(DEBUG "Defaulting to linux backend")
+    set(_tpl_backend_default "linux")
 endif()
 
 
@@ -84,15 +84,15 @@ set(TPL_PLATFORM_COMMON_SRC
 )
 
 set(TPL_LINUX_SRC
-	src/platform/linux/memory_linux.c
+    src/platform/linux/memory_linux.c
 )
 
 set(TPL_BAREMETAL_SRC
-	src/platform/baremetal/memory_baremetal.c
+    src/platform/baremetal/memory_baremetal.c
 )
 
 set(TPL_ALL_SRC
-	${TPL_CORE_SRC}
+    ${TPL_CORE_SRC}
   ${TPL_VENDOR_SRC}
   ${TPL_PLATFORM_COMMON_SRC}
   ${TPL_LIBRARY_GEN_C}
@@ -106,13 +106,13 @@ set(TPL_INCLUDE_DIRS
 )
 
 if(TPL_BACKEND STREQUAL "linux")
-	list(APPEND TPL_ALL_SCR ${TPL_LINUX_SRC})
-	set(TPL_BACKEND_DEFINE TPL_BACKEND_LINUX)
+    list(APPEND TPL_ALL_SCR ${TPL_LINUX_SRC})
+    set(TPL_BACKEND_DEFINE TPL_BACKEND_LINUX)
 elseif(TPL_BACKEND STREQUAL "baremetal")
-	list(APPEND TPL_ALL_SCR ${TPL_BAREMETAL_SRC})
-	set(TPL_BACKEND_DEFINE TPL_BACKEND_BAREMETAL)
+    list(APPEND TPL_ALL_SCR ${TPL_BAREMETAL_SRC})
+    set(TPL_BACKEND_DEFINE TPL_BACKEND_BAREMETAL)
 else()
-	message(FATAL_ERROR "Unsupported TPL_BACKEND='${TPL_BACKEND}'")
+    message(FATAL_ERROR "Unsupported TPL_BACKEND='${TPL_BACKEND}'")
 endif()
 
 add_executable(tpl ${TPL_ALL_SRC})
@@ -120,11 +120,11 @@ add_executable(tpl ${TPL_ALL_SRC})
 target_include_directories(tpl PRIVATE ${TPL_INCLUDE_DIRS})
 
 target_compile_definitions(tpl
-	PRIVATE
-	_GNU_SOURCE
-	VERSION="${TPL_GIT_VERSION}"
-	BACKEND="${TPL_BACKEND}"
-	${TPL_PLATFORM_DEFINE}
+    PRIVATE
+    _GNU_SOURCE
+    VERSION="${TPL_GIT_VERSION}"
+    BACKEND="${TPL_BACKEND}"
+    ${TPL_PLATFORM_DEFINE}
 )
 
 if(TPL_MEMORY_LOGGING)
@@ -132,35 +132,48 @@ if(TPL_MEMORY_LOGGING)
 endif()
 
 target_compile_options(tpl PRIVATE
-	-Wall
-	-Wextra
-	-Wno-unused-but-set-variable
-	-Wno-unused-parameter
-	-Wno-unused-variable
-	-fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=
-	${_tpl_extra_cflags}
+    -Wall
+    -Wextra
+    -Wno-unused-but-set-variable
+    -Wno-unused-parameter
+    -Wno-unused-variable
+    -fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=
+    ${_tpl_extra_cflags}
+
+	# for parsing logs
+	-fdiagnostics-format=json-file
+	-fno-diagnostics-color
+
 )
 
 target_link_options(tpl PRIVATE ${_tpl_extra_ldflags})
 target_link_libraries(tpl PRIVATE ${TPL_LINK_LIBS})
 
+if(TPL_USE_COMPAT_STUB_HEADERS)
+    message(WARNING "Using compat stubs")
+    target_include_directories(tpl PRIVATE
+      "${CMAKE_SOURCE_DIR}/compat"
+      ${TPL_INCLUDE_DIRS}
+)
+endif()
+
 if(TPL_BACKEND STREQUAL "baremetal")
-	if(TPL_ENTRY)
-		target_sources(tpl PRIVATE "${TPL_ENTRY}")
-	else()
-		message(WARNING "Selected baremetal backend but no entry source is defined.")
-	endif()
+    if(TPL_ENTRY)
+        target_sources(tpl PRIVATE "${TPL_ENTRY}")
+    else()
+        message(WARNING "Selected baremetal backend but no entry source is defined.")
+    endif()
 
-	target_link_options(tpl PRIVATE
-		-Wl,-Map=${CMAKE_BINARY_DIR}/tpl.map
-	)
+    target_link_options(tpl PRIVATE
+        -Wl,-Map=${CMAKE_BINARY_DIR}/tpl.map
+    )
 
-	if(TPL_LINKER_SCRIPT)
-		target_link_options(tpl PRIVATE
-			-T${TPL_LINKER_SCRIPT}
-		)
-	else()
-		message(WARNING "Selected baremetal backend but no linker script is defined.")
-	endif()
+    if(TPL_LINKER_SCRIPT)
+        target_link_options(tpl PRIVATE
+            -T${TPL_LINKER_SCRIPT}
+        )
+    else()
+        message(WARNING "Selected baremetal backend but no linker script is defined.")
+    endif()
 endif()
 
