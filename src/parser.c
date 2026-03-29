@@ -209,7 +209,9 @@ cell *make_nil(void)
 		.val_off = 0
 	};
 
-	tmp.val_off = g_nil_s;
+	if (!tmp.val_off)
+		tmp.val_off = g_nil_s;
+
 	return &tmp;
 }
 
@@ -4112,7 +4114,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 			if (entered != '{') {
 				if (!p->do_read_term)
-					printf("Error: syntax error, mismatched parens/brackets/braces, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
+					fprintf(stderr, "Error: syntax error, mismatched parens/brackets/braces, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
 				p->error_desc = "mismatched_parens_or_brackets_or_braces";
 				p->error = true;
