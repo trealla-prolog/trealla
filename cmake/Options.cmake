@@ -1,11 +1,11 @@
 option(TPL_MEMORY_LOGGING "Enable memory allocation logging and stats" OFF)
 
 option(TPL_USE_EDITLINE  "Use editline" OFF)
-option(TPL_USE_READLINE  "Use readline (default on non-WASI if no other editor is selected)" ON)
+option(TPL_USE_READLINE  "Use readline (default on non-WASI if no other editor is selected)" OFF)
 
-option(TPL_USE_FFI       "Enable libffi" ON)
-option(TPL_USE_OPENSSL   "Enable OpenSSL" ON)
-option(TPL_USE_THREADS   "Enable threads" ON)
+option(TPL_USE_FFI       "Enable libffi" OFF)
+option(TPL_USE_OPENSSL   "Enable OpenSSL" OFF)
+option(TPL_USE_THREADS   "Enable threads" OFF)
 
 option(TPL_LTO           "Enable link-time optimization (IPO/LTO)" OFF)
 

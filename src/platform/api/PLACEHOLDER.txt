@@ -1,2 +1,0 @@
-Abstraction API (headers) go here, which are then implemented (with .c files) for each
-target.

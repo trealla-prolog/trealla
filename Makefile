@@ -1,4 +1,5 @@
-preset    ?= linux-debug
+# preset    ?= arm-none-eabi
+preset ?= linux-debug
 main      ?=
 ctest     ?= ctest
 cmake     ?= cmake
