@@ -1,6 +1,6 @@
 include(CheckLibraryExists)
 check_library_exists(m sin "" LIBM_EXISTS)
-if(LIBM_EXISTS)
+if(LIBM_EXISTS AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
   list(APPEND TPL_LINK_LIBS m)
 endif()
 
