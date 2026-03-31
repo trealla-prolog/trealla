@@ -115,7 +115,7 @@ static void trace_call(query *q, cell *c, pl_ctx c_ctx, box_t box)
 		q->my_chan,
 		q->st.m->name,
 		q->step,
-		q->st.cur_ctx, q->st.new_fp, q->cp, q->st.sp, q->st.hp, q->st.tp
+		q->st.cur_ctx, q->st.new_ctx, q->cp, q->st.sp, q->st.hp, q->st.tp
 		);
 
 	SB_sprintf(pr, "%s ",
@@ -175,9 +175,9 @@ void check_pressure(query *q)
 
 	if (q->frames_size > (INITIAL_NBR_FRAMES*PRESSURE_FACTOR)) {
 #if TRACE_MEM
-		printf("*** q->st.new_fp=%u, q->frames_size=%u\n", (unsigned)q->st.new_fp, (unsigned)q->frames_size);
+		printf("*** q->st.new_ctx=%u, q->frames_size=%u\n", (unsigned)q->st.new_ctx, (unsigned)q->frames_size);
 #endif
-		q->frames_size = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.new_fp, q->st.new_fp*5/4);
+		q->frames_size = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.new_ctx, q->st.new_ctx*5/4);
 	}
 
 	if (q->slots_size > (INITIAL_NBR_SLOTS*PRESSURE_FACTOR)) {
@@ -213,10 +213,10 @@ bool check_frame(query *q, unsigned max_vars)
 {
 	CHECKED(check_slot(q, max_vars));
 
-	if (q->st.new_fp > q->hw_frames)
-		q->hw_frames = q->st.new_fp;
+	if (q->st.new_ctx > q->hw_frames)
+		q->hw_frames = q->st.new_ctx;
 
-	if (q->st.new_fp < q->frames_size) {
+	if (q->st.new_ctx < q->frames_size) {
 		frame *f = GET_NEW_FRAME();
 		f->max_vars = max_vars;
 		f->base = q->st.sp;
@@ -224,7 +224,7 @@ bool check_frame(query *q, unsigned max_vars)
 	}
 
 	q->realloc_frames++;
-	pl_idx new_framessize = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.new_fp, q->frames_size*5/4);
+	pl_idx new_framessize = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.new_ctx, q->frames_size*5/4);
 
 	if (!new_framessize) {
 		q->oom = q->error = true;
@@ -613,7 +613,7 @@ static void trim_frame(query *q, const frame *f)
 	}
 
 	q->st.sp -= f->actual_slots;
-	q->st.new_fp = q->st.cur_ctx;
+	q->st.new_ctx = q->st.cur_ctx;
 }
 
 void add_trail(query *q, pl_ctx c_ctx, unsigned c_var_nbr, cell *attrs)
@@ -683,8 +683,8 @@ static void push_frame(query *q)
 	fnew->hp = q->st.hp;
 	fnew->heap_num = q->st.heap_num;
 	q->st.sp += fnew->actual_slots;
-	q->st.cur_ctx = q->st.new_fp;
-	q->st.new_fp += fnew->frame_size;
+	q->st.cur_ctx = q->st.new_ctx;
+	q->st.new_ctx += fnew->frame_size;
 }
 
 // Note: TCO's clause might not be the caller clause... hence passing
@@ -744,17 +744,17 @@ static void commit_frame(query *q)
 
 #if 0
 	if (last_match) {
-		fprintf(stderr, "*** q->no_recov=%d, last_match=%d %s/%u, q->st.cur_ctx=%u,q->st.new_fp=%u\n",
+		fprintf(stderr, "*** q->no_recov=%d, last_match=%d %s/%u, q->st.cur_ctx=%u,q->st.new_ctx=%u\n",
 			q->no_recov, last_match,
 			C_STR(q, q->st.key), q->st.key->arity,
-			q->st.cur_ctx, q->st.new_fp
+			q->st.cur_ctx, q->st.new_ctx
 			);
 	}
 #endif
 
 	if (!q->no_recov
 		&& last_match
-		&& (q->st.new_fp == (q->st.cur_ctx + f->frame_size))		// Top frame
+		&& (q->st.new_ctx == (q->st.cur_ctx + f->frame_size))		// Top frame
 		) {
 		bool tail_recursive = is_recursive_call(q->st.instr);
 		bool slots_ok = f->initial_slots <= cl->num_vars;
@@ -815,14 +815,14 @@ void stash_frame(query *q, unsigned num_vars, bool last_match)
 	}
 
 	if (num_vars) {
-		frame *f = GET_FRAME(q->st.new_fp);
+		frame *f = GET_FRAME(q->st.new_ctx);
 		f->prev = q->st.cur_ctx;
 		f->instr = NULL;
 		f->chgen = chgen;
 		f->frame_size = 1;
 		f->op = 0;
 		q->st.sp += num_vars;
-		q->st.new_fp += f->frame_size;
+		q->st.new_ctx += f->frame_size;
 	}
 
 	q->st.iter = NULL;
@@ -1036,7 +1036,7 @@ static bool resume_frame(query *q)
 
 	if (q->pl->opt
 		&& !f->no_recov
-		&& (q->st.new_fp == (q->st.cur_ctx + f->frame_size))		// Top frame
+		&& (q->st.new_ctx == (q->st.cur_ctx + f->frame_size))		// Top frame
 		&& !resume_any_choices(q, f)
 		) {
 		q->total_recovs++;
@@ -1395,7 +1395,7 @@ bool match_rule(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 
 		try_me(q, cl->num_vars);
 
-		if (unify(q, p1, p1_ctx, c, q->st.new_fp)) {
+		if (unify(q, p1, p1_ctx, c, q->st.new_ctx)) {
 			int ok;
 
 			if (needs_true) {
@@ -1500,7 +1500,7 @@ bool match_clause(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract
 
 		try_me(q, cl->num_vars);
 
-		if (unify(q, p1, p1_ctx, head, q->st.new_fp))
+		if (unify(q, p1, p1_ctx, head, q->st.new_ctx))
 			return true;
 
 		undo_me(q);
@@ -1575,7 +1575,7 @@ bool match_head(query *q)
 		try_me(q, cl->num_vars);
 		q->st.dbe->attempted++;
 
-		if (unify(q, q->st.key, q->st.key_ctx, head, q->st.new_fp)) {
+		if (unify(q, q->st.key, q->st.key_ctx, head, q->st.new_ctx)) {
 			if (q->error)
 				break;
 
@@ -1818,7 +1818,7 @@ bool execute(query *q, cell *cells, unsigned num_vars)
 	// There is an initial frame (fp=0), so this
 	// to the next available frame...
 
-	q->st.new_fp = 1;
+	q->st.new_ctx = 1;
 
 	// There may not be a choicepoint, so this points to the
 	// next available choicepoint
@@ -1953,7 +1953,7 @@ query *query_create_subquery(query *q, cell *instr)
 	query *subq = query_create_(q->st.m, 0);
 	if (!subq) return NULL;
 	subq->parent = q;
-	subq->st.new_fp = 1;
+	subq->st.new_ctx = 1;
 	subq->top = q->top;
 
 	cell *tmp = prepare_call(subq, false, instr, q->st.cur_ctx, 1);

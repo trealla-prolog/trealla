@@ -542,7 +542,7 @@ struct run_state_ {
 	};
 
 	uint64_t timer_started;
-	pl_idx new_fp, hp, cp, tp, sp, heap_num, qnum;
+	pl_idx new_ctx, hp, cp, tp, sp, heap_num, qnum;
 	pl_ctx cur_ctx;
 };
 

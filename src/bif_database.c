@@ -57,7 +57,7 @@ static bool bif_clause_3(query *q)
 			cl = &r->cl;
 			cell *head = get_head(cl->cells);
 
-			if (!unify(q, p1, p1_ctx, head, q->st.new_fp))
+			if (!unify(q, p1, p1_ctx, head, q->st.new_ctx))
 				break;
 		} else {
 			if (match_clause(q, p1, p1_ctx, DO_CLAUSE) != true)
@@ -76,7 +76,7 @@ static bool bif_clause_3(query *q)
 		bool ok;
 
 		if (body)
-			ok = unify(q, p2, p2_ctx, body, q->st.new_fp);
+			ok = unify(q, p2, p2_ctx, body, q->st.new_ctx);
 		else {
 			cell tmp;
 			make_instr(&tmp, g_true_s, bif_iso_true_0, 0, 0);
@@ -155,7 +155,7 @@ static bool bif_iso_clause_2(query *q)
 		bool ok;
 
 		if (body) {
-			ok = unify(q, p2, p2_ctx, body, q->st.new_fp);
+			ok = unify(q, p2, p2_ctx, body, q->st.new_ctx);
 		} else {
 			cell tmp;
 			make_instr(&tmp, g_true_s, bif_iso_true_0, 0, 0);

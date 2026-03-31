@@ -227,7 +227,7 @@ static bool bif_get_atts_2(query *q)
 
 bool any_attributed(query *q)
 {
-	for (unsigned j = 0; j < q->st.new_fp; j++) {
+	for (unsigned j = 0; j < q->st.new_ctx; j++) {
 		const frame *f = GET_FRAME(j);
 
 		for (unsigned i = 0; i < f->actual_slots; i++) {

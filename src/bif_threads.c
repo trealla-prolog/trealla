@@ -460,12 +460,12 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 
 		while (m) {
 			try_me(q, MAX_ARITY);
-			cell *tmp = copy_term_to_heap(q, m->c, q->st.new_fp, false);	// Copy into thread
+			cell *tmp = copy_term_to_heap(q, m->c, q->st.new_ctx, false);	// Copy into thread
 			CHECKED(tmp, release_lock(&t->guard));
 			GET_FIRST_ARG(p1,queue);
 			GET_NEXT_ARG(p2,any);
 
-			if (unify(q, p2, p2_ctx, tmp, q->st.new_fp)) {
+			if (unify(q, p2, p2_ctx, tmp, q->st.new_ctx)) {
 				q->curr_chan = m->from_chan;
 
 				if (!is_peek)
@@ -2186,7 +2186,7 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_ctx p1_ct
 	CHECKED(check_frame(q, MAX_ARITY));
 	CHECKED(push_choice(q));
 	try_me(q, MAX_ARITY);
-	cell *tmp = copy_term_to_heap(q, m->c, q->st.new_fp, false);
+	cell *tmp = copy_term_to_heap(q, m->c, q->st.new_ctx, false);
 	CHECKED(tmp, release_lock(&t->guard));
 	release_lock(&t->guard);
 	q->curr_chan = m->from_chan;
@@ -2197,7 +2197,7 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_ctx p1_ct
 	}
 
 	drop_choice(q);
-	return unify(q, p1, p1_ctx, tmp, q->st.new_fp);
+	return unify(q, p1, p1_ctx, tmp, q->st.new_ctx);
 }
 
 static bool bif_pl_recv_2(query *q)
