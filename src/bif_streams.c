@@ -6105,6 +6105,21 @@ static bool bif_server_3(query *q)
 	if (is_var(p1)) {
 		port = 0;
 		filename = strdup(":0");
+	} else if (is_compound(p1) && (p1->arity == 2)) {
+		cell *p11 = deref(q, p1+1, p1_ctx);
+		cell *p12 = deref(q, p1+2, p1_ctx);
+		char tmpbuf[1024];
+
+		if (is_atom(p11) && is_smallint(p12))
+			snprintf(tmpbuf, sizeof(tmpbuf), "%s:%u", C_STR(q, p11), (unsigned)get_smalluint(p12));
+		else if (is_atom(p11) && is_var(p12)) {
+			p1 = deref(q, p12, p1_ctx);
+			p1_ctx = q->latest_ctx;
+			snprintf(tmpbuf, sizeof(tmpbuf), "%s:%u", C_STR(q, p11), port=0);
+		} else
+			return throw_error(q, p1, p1_ctx, "domain_error", "source_sink");
+
+		filename = strdup(tmpbuf);
 	} else if (is_atom(p1))
 		filename = DUP_STRING(q, p1);
 	else if (!is_iso_list(p1))
