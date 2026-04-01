@@ -76,7 +76,7 @@ cell *alloc_tmp(query *q, unsigned num_cells)
 }
 
 #define deep_copy(c) \
-	(!q->noderef || (is_ref(c) && (c->val_ctx <= q->st.cur_ctx) && !is_anon(c)))
+	(!q->noderef || (is_ref(c) && (c->val_ctx <= q->st.curr_fp) && !is_anon(c)))
 
 // Note: convert vars to refs
 // Note: doesn't increment ref counts
@@ -250,7 +250,7 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx fro
 			}
 
 			c->var_num = var_num;
-			c->val_ctx = q->st.cur_ctx;
+			c->val_ctx = q->st.curr_fp;
 
 			if (copy_attrs && attrs) {
 				cell *save_tmp_heap = q->tmp_heap;
@@ -259,8 +259,8 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx fro
 
 				if (!c->tmp_attrs) {
 					cell *tmp =
-						from ?copy_term_to_heap_with_replacement(q, attrs, q->st.cur_ctx, false, from, from_ctx, to, to_ctx)
-						:copy_term_to_heap(q, attrs, q->st.cur_ctx, false);
+						from ?copy_term_to_heap_with_replacement(q, attrs, q->st.curr_fp, false, from, from_ctx, to, to_ctx)
+						:copy_term_to_heap(q, attrs, q->st.curr_fp, false);
 					CHECKED(tmp);
 					c->tmp_attrs = tmp;
 				}
