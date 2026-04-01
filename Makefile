@@ -250,12 +250,6 @@ compile: util/bin2c
 test:
 	./tests/run.sh
 
-check:
-	./tests/run_valgrind.sh
-
-leaks:
-	./tests/run_valgrind_leaks.sh
-
 clean:
 	rm -f tpl tpl.wasm \
 		src/*.o src/imath/*.o src/isocline/src/*.o src/sre/*.o \

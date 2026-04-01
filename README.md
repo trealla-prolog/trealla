@@ -171,10 +171,9 @@ Optionally...
 
 	make test
 
-and there should be no errors, Further (if valgrind is installed)...
+and there should be no errors, Further:
 
-	make check 			# or, more extensively
-	make leaks
+	make clean && make debug && make test
 
 Should show no memory out-of-bounds, null-pointer, use after free
 or memory leaks (there may a few spurious errors).
