@@ -547,7 +547,10 @@ static void leave_predicate(query *q, predicate *pr, bool is_final)
 			&& q->pl->opt) {
 			clear_clause(&r->cl);
 			free(r);
-		} else if (q->in_retract && !q->no_recov_compound) {
+		} else if (q->in_retract
+			&& !q->no_recov_compound
+			&& !r->cl.num_vars
+			&& q->pl->opt) {
 			clear_clause(&r->cl);
 			free(r);
 		} else {
