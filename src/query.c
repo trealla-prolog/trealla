@@ -541,8 +541,6 @@ static void leave_predicate(query *q, predicate *pr, bool is_final)
 		// they will be freed up at end of the query...
 
 		if ((q->in_retractall && !pr->cnt)
-			&& (q->retry == QUERY_RETRY)
-			&& !q->no_recov
 			&& !r->cl.num_vars
 			&& q->pl->opt) {
 			clear_clause(&r->cl);
