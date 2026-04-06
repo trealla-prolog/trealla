@@ -2441,6 +2441,10 @@ static bool bif_iso_neg_1(query *q)
 	if (is_smallint(&p1)) {
 		q->accum.val_int = ~p1.val_int;
 		q->accum.tag = TAG_INT;
+	} else if (is_bigint(&p1)) {
+		mp_int_add_value(&p1.val_bigint->ival, 1, &q->tmp_ival);
+		mp_int_neg(&q->tmp_ival, &q->tmp_ival);
+		SET_ACCUM();
 	} else if (is_var(&p1)) {
 		return throw_error(q, &p1, q->st.curr_fp, "instantiation_error", "not_sufficiently_instantiated");
 	} else {
