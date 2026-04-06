@@ -6294,7 +6294,7 @@ builtins g_other_bifs[] =
 	{"crypto_n_random_bytes", 2, bif_crypto_n_random_bytes_2, "+integer,-codes", false, false, BLAH},
 	{"cyclic_term", 1, bif_cyclic_term_1, "+term", false, false, BLAH},
 	{"load_text", 2, bif_load_text_2, "+string,+list", false, false, BLAH},
-	{"between", 3, bif_between_3, "+integer,+integer,-integer", false, false, BLAH},
+	{"between", 3, bif_between_3, "+integer,+integer,?integer", false, false, BLAH},
 	{"numlist", 3, bif_numlist_3, "+integer,+integer,-list", false, false, BLAH},
 
 	{"must_be", 4, bif_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
