@@ -44,9 +44,9 @@ Usage
 where options can be:
 
 	-O0, --noopt       - no optimization
-	-f file            - load file (*~/.tplrc* not loaded)
-	-l file            - load file (*~/.tplrc* loaded)
-	file               - load file (*~/.tplrc* loaded)
+	-f                 - *.tplrc* not loaded
+	-l file            - load file
+	file               - load file
 	-g goal            - query goal (only used once)
 	--library path     - alt to TPL_LIBRARY_PATH env var
 	-t, --trace        - trace

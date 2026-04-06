@@ -358,8 +358,9 @@ int main(int ac, char *av[], char * envp[])
 		fprintf(stdout, "Usage:\n");
 		fprintf(stdout, "  tpl [options] [files] [-- args]\n");
 		fprintf(stdout, "Options:\n");
-		fprintf(stdout, "  -f file\t\t- load file (~/.tplrc not loaded)\n");
-		fprintf(stdout, "  -l file\t\t- load file (~/.tplrc) loaded\n");
+		fprintf(stdout, "  -f\t\t\t- ~/.tplrc not loaded\n");
+		fprintf(stdout, "  -l file\t\t- load file\n");
+		fprintf(stdout, "  file\t\t\t- load file\n");
 		fprintf(stdout, "  -g goal\t\t- query goal (only used once)\n");
 		fprintf(stdout, "  --library path\t- alt to TPL_LIBRARY_PATH env variable\n");
 		fprintf(stdout, "  -v, --version\t\t- print version info and exit\n");
