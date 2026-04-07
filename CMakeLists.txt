@@ -4,18 +4,6 @@ project(tpl LANGUAGES C)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
-include(Options)
-include(Version)
-include(CodegenLibraryPl)
-include(Dependencies)
-include(Testing)
-
-set(CMAKE_C_STANDARD 99)
-set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_C_EXTENSIONS ON)
-
-set(COMPILE_DIAGNOSTICS_FORMAT "text" CACHE STRING  "Format of diagnositcs")
-
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(WARNING "No build or configuration type defined, defaulting to 'Release'")
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
@@ -32,6 +20,22 @@ endif()
 
 set(TPL_BACKEND "${_tpl_backend_default}" CACHE STRING "Runtime backend")
 set_property(CACHE TPL_BACKEND PROPERTY STRINGS linux baremetal)
+
+include(Options)
+include(Version)
+include(Testing)
+
+if(${TPL_BACKEND} STREQUAL "linux")
+	include(CodegenLibraryPl)
+	include(Dependencies)
+endif()
+
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS ON)
+
+set(COMPILE_DIAGNOSTICS_FORMAT "text" CACHE STRING  "Format of diagnositcs")
+
 
 separate_arguments(_tpl_extra_cflags UNIX_COMMAND "${TPL_EXTRA_CFLAGS}")
 separate_arguments(_tpl_extra_ldflags UNIX_COMMAND "${TPL_EXTRA_LDFLAGS}")
@@ -108,11 +112,13 @@ set(TPL_INCLUDE_DIRS
 )
 
 if(TPL_BACKEND STREQUAL "linux")
-    list(APPEND TPL_ALL_SCR ${TPL_LINUX_SRC})
+	list(APPEND TPL_ALL_SRC ${TPL_LINUX_SRC})
     set(TPL_BACKEND_DEFINE TPL_BACKEND_LINUX)
+	set(TPL_STDINC_FLAG "")
 elseif(TPL_BACKEND STREQUAL "baremetal")
-    list(APPEND TPL_ALL_SCR ${TPL_BAREMETAL_SRC})
+	list(APPEND TPL_ALL_SRC ${TPL_BAREMETAL_SRC})
     set(TPL_BACKEND_DEFINE TPL_BACKEND_BAREMETAL)
+	set(TPL_STDINC_FLAG "-nostdinc")
 else()
     message(FATAL_ERROR "Unsupported TPL_BACKEND='${TPL_BACKEND}'")
 endif()
@@ -126,7 +132,7 @@ target_compile_definitions(tpl
     _GNU_SOURCE
     VERSION="${TPL_GIT_VERSION}"
     BACKEND="${TPL_BACKEND}"
-    ${TPL_PLATFORM_DEFINE}
+	${TPL_BACKEND_DEFINE}
 )
 
 if(TPL_MEMORY_LOGGING)
@@ -141,6 +147,7 @@ target_compile_options(tpl PRIVATE
     -Wno-unused-variable
     -fmacro-prefix-map=${CMAKE_SOURCE_DIR}/=
     ${_tpl_extra_cflags}
+	${TPL_STDINC_FLAG}
 
 	# for parsing logs
 	-fdiagnostics-format=${COMPILE_DIAGNOSTICS_FORMAT}
