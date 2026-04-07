@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-#include "memory_stats.h"
+#include "common/memory_stats.h"
 
 void *pl4bm_malloc_linux(size_t size, const char *file, const char *func,
                          int line) {

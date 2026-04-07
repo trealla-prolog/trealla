@@ -7,7 +7,8 @@
 #include <time.h>
 
 #include "trealla.h"
-#include "memory_stats.h"
+#include "common/memory_stats.h"
+#include "builtins.h"
 
 #define msleep(ms)                                                             \
   {                                                                            \

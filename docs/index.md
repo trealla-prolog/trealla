@@ -1,4 +1,9 @@
 ---
-title: Test
+layout: default
+title: "Porting Diagnostics"
+permalink: /
 ---
-# Test
+
+# Porting Diagnostics
+
+- [Reports]({{ 'reports/' | relative_url }})

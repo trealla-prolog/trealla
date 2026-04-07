@@ -1,11 +1,11 @@
 #pragma once
 
-#if defined(TPL_PLATFORM_LINUX)
+#if defined(TPL_BACKEND_LINUX)
   #include "linux/memory_linux.h"
-#elif defined(TPL_PLATFORM_BAREMETAL)
+#elif defined(TPL_BACKEND_BAREMETAL)
   #include "memory_baremetal.h"
 #else
-  #error "No memory backend selected. Define exactly one TPL_PLATFORM_* compile definition."
+  #error "No memory backend selected. Define exactly one TPL_BACKEND_* compile definition."
 #endif
 
 #ifndef PL4BM_MALLOC_IMPL

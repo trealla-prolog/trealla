@@ -9,7 +9,7 @@
 		{
 			"name": "base",
 			"hidden": true,
-			"generator": "Ninja",
+			"generator": "Unix Makefiles",
 			"binaryDir": "${sourceDir}/build/${presetName}",
 			"cacheVariables": {
 				"CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
@@ -19,77 +19,112 @@
 			"name": "base-debug",
 			"hidden": true,
 			"inherits": "base",
-			"cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Debug"
+			}
 		},
 		{
 			"name": "base-release",
 			"hidden": true,
 			"inherits": "base",
-			"cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Release"
+			}
 		},
 		{
 			"name": "base-minsizerel",
 			"hidden": true,
 			"inherits": "base",
-			"cacheVariables": { "CMAKE_BUILD_TYPE": "MinSizeRel" }
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "MinSizeRel"
+			}
 		},
 
 		{
 			"name": "linux-debug",
 			"displayName": "Linux Debug",
-			"inherits": "base-debug"
+			"inherits": "base-debug",
+			"cacheVariables": {
+				"TPL_BACKEND": "linux"
+			}
 		},
 		{
 			"name": "linux-release",
 			"displayName": "Linux Release",
-			"inherits": "base-release"
+			"inherits": "base-release",
+			"cacheVariables": {
+				"TPL_BACKEND": "linux"
+			}
 		},
 		{
 			"name": "linux-minsizerel",
 			"displayName": "Linux MinSizeRel",
-			"inherits": "base-minsizerel"
-		},
-
-		{
-			"name": "toolchain-cross-generic",
-			"hidden": true,
-			"inherits": "base",
+			"inherits": "base-minsizerel",
 			"cacheVariables": {
-				"CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/generic-cross.cmake"
+				"TPL_BACKEND": "linux"
 			}
 		},
-
 		{
-			"name": "toolchain-arm-none-eabi",
+			"name": "arm-none-eabi-compile",
+			"displayName": "arm-non-eabi without linker script or entry",
+			"inherits": ["base", "base-debug"],
+			"cacheVariables": {
+				"CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/arm-none-eabi.cmake",
+				"TPL_USE_COMPAT_STUB_HEADERS": "ON",
+				"TPL_BACKEND": "baremetal",
+				"TPL_BAREMETAL_CPU": "cortex-m4"
+			}
+		},
+		{
+			"name": "arm-none-eabi-base",
 			"hidden": true,
 			"inherits": "base",
 			"cacheVariables": {
 				"CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/arm-none-eabi.cmake",
+				"TPL_BACKEND": "baremetal",
 				"TPL_BAREMETAL_CPU": "cortex-m4",
 				"TPL_BAREMETAL_FPU": "fpv4-sp-d16",
 				"TPL_BAREMETAL_FLOAT_ABI": "hard",
-				"TPL_LINKER_SCRIPT": "${sourceDir}/ldscripts/placeholder.ld"
+				"TPL_LINKER_SCRIPT": "${sourceDir}/boards/dummy/linker_script.ld",
+				"TPL_ENTRY": "${sourceDir}/boards/dummy/entry.S"
 			}
 		},
-
 		{
-			"name": "cross-generic",
-			"displayName": "Crosscompile Generic Placeholder (Release)",
-			"inherits": ["toolchain-cross-generic", "base-release"]
+			"name": "arm-none-eabi-debug",
+			"displayName": "arm-none-eabi Debug",
+			"inherits": ["arm-none-eabi-base", "base-debug"]
 		},
-
 		{
-			"name": "arm-none-eabi",
-			"displayName": "arm-none-eabi Placeholder (Release)",
-			"inherits": ["toolchain-arm-none-eabi", "base-release"]
+			"name": "arm-none-eabi-release",
+			"displayName": "arm-none-eabi Release",
+			"inherits": ["arm-none-eabi-base", "base-release"]
 		}
 	],
 	"buildPresets": [
-		{ "name": "linux-debug", "configurePreset": "linux-debug" },
-		{ "name": "linux-release", "configurePreset": "linux-release" },
-		{ "name": "linux-minsizerel", "configurePreset": "linux-minsizerel" },
-		{ "name": "cross-generic", "configurePreset": "cross-generic" },
-		{ "name": "arm-none-eabi", "configurePreset": "arm-none-eabi" }
+		{
+			"name": "linux-debug",
+			"configurePreset": "linux-debug"
+		},
+		{
+			"name": "linux-release",
+			"configurePreset": "linux-release"
+		},
+		{
+			"name": "linux-minsizerel",
+			"configurePreset": "linux-minsizerel"
+		},
+		{
+			"name": "arm-none-eabi-compile",
+			"configurePreset": "arm-none-eabi-compile"
+		},
+		{
+			"name": "arm-none-eabi-debug",
+			"configurePreset": "arm-none-eabi-debug"
+		},
+		{
+			"name": "arm-none-eabi-release",
+			"configurePreset": "arm-none-eabi-release"
+		}
 	],
 	"testPresets": [
 		{

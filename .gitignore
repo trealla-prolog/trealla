@@ -1,5 +1,6 @@
 library/*.c
 stuff
+core
 tpl
 *.db
 *.a
@@ -19,3 +20,5 @@ faultinject*
 
 build/
 .cache/
+
+_site
