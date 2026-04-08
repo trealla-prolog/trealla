@@ -106,7 +106,6 @@ library g_libs[] = {
 	 {"iso_ext", library_iso_ext_pl, &library_iso_ext_pl_len},
 	 {"json", library_json_pl, &library_json_pl_len},
 	 {"lambda", library_lambda_pl, &library_lambda_pl_len},
-	 {"linda", library_linda_pl, &library_linda_pl_len},
 	 {"lists", library_lists_pl, &library_lists_pl_len},
 	 {"ordsets", library_ordsets_pl, &library_ordsets_pl_len},
 	 {"pairs", library_pairs_pl, &library_pairs_pl_len},

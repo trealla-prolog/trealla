@@ -159,7 +159,6 @@ LIBOBJECTS +=  \
 	library/iso_ext.o \
 	library/json.o \
 	library/lambda.o \
-	library/linda.o \
 	library/lists.o \
 	library/ordsets.o \
 	library/pairs.o \

@@ -1,5 +1,5 @@
 :- initialization(main).
-:- use_module(library(linda)).
+:- use_module(linda).
 
 main :-
 	now(Seed),
@@ -20,7 +20,7 @@ producer(_) :-
 		sleep(Secs),
 		fail.
 producer(_) :-
-	forall(rd_noblock({msg:_}), sleep(0.001)),
+	forall(rd({msg:_}), sleep(0.001)),
 	end_wait.
 
 consumer(N) :-
