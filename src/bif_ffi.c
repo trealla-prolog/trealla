@@ -81,10 +81,11 @@ typedef struct nested_elements {
 void *do_dlopen(const char *filename, int flag)
 {
 #if __APPLE__
-	char *filename2 = malloc((strlen(filename)-2)+5+1);
 	const char *ptr = strstr(filename, ".so");
+	char *filename2;
 
 	if (ptr) {
+		filename2 = malloc((strlen(filename)-2)+5+1);
 		const char *src = filename;
 		char *dst = filename2;
 
@@ -97,7 +98,10 @@ void *do_dlopen(const char *filename, int flag)
 
 		while (*src)
 			*dst++ = *src++;
-	}
+
+		*dst = '\0';
+	} else
+		filename2 = strdup(filename);
 #else
 	char *filename2 = strdup(filename);
 #endif
