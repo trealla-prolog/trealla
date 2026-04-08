@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+INPUT=${1:?usage: $0 <normalized.json> [output.json]}
+OUTPUT=${2:-out/report-summary.json}
+
+mkdir -p "$(dirname "$OUTPUT")"
+jq -f tools/jq/summary.jq "$INPUT" > "$OUTPUT"
+echo "Wrote $OUTPUT"
