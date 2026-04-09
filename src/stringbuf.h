@@ -136,7 +136,7 @@ typedef struct {
 }
 
 #define SB_putchar(pr,ch) {										\
-	SB_check(pr, 6);											\
+	SB_check(pr, MAX_BYTES_PER_CODEPOINT+1);											\
 	pr##_buf.dst += put_char_utf8(pr##_buf.dst, ch);			\
 	*pr##_buf.dst = '\0'; 										\
 }

@@ -278,7 +278,7 @@ static bool bif_iso_char_code_2(query *q)
 		return throw_error(q, p2, p2_ctx, "representation_error", "character_code");
 
 	if (is_var(p1)) {
-		char tmpbuf[256];
+		char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 		int n = put_char_utf8(tmpbuf, get_smallint(p2));
 		cell tmp;
 		make_smalln(&tmp, tmpbuf, n);
@@ -636,7 +636,7 @@ static bool bif_iso_atom_codes_2(query *q)
 				return throw_error(q, head, q->latest_ctx, "representation_error", "character_code");
 			}
 
-			char ch[10];
+			char ch[MAX_BYTES_PER_CODEPOINT+1];
 			int len;
 
 			if (!val) {
@@ -756,7 +756,7 @@ static bool bif_string_codes_2(query *q)
 				return throw_error(q, head, q->latest_ctx, "representation_error", "character_code");
 			}
 
-			char ch[10];
+			char ch[MAX_BYTES_PER_CODEPOINT+1];
 			int len;
 
 			if (!val) {
@@ -901,7 +901,7 @@ static bool bif_hex_bytes_2(query *q)
 			int ch;
 			if (n1 < 10) ch = '0' + n1;
 			else { n1 -= 10; ch = 'a' + n1; }
-			char tmpbuf[10];
+			char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 			put_char_utf8(tmpbuf, ch);
 			cell tmp;
 			make_cstring(&tmp, tmpbuf);
@@ -4931,7 +4931,7 @@ static bool bif_char_type_2(query *q)
 	else if (!CMP_STRING_TO_CSTR(q, p2, "lower") && p2->arity) {
 		cell *arg21 = deref(q, p2+1, p2_ctx);
 		pl_ctx arg21_ctx = q->latest_ctx;
-		char tmpbuf[20];
+		char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 		put_char_utf8(tmpbuf, tolower(ch));
 		cell tmp;
 		make_string(&tmp, tmpbuf);
@@ -4941,7 +4941,7 @@ static bool bif_char_type_2(query *q)
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "upper") && p2->arity) {
 		cell *arg21 = deref(q, p2+1, p2_ctx);
 		pl_ctx arg21_ctx = q->latest_ctx;
-		char tmpbuf[20];
+		char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 		put_char_utf8(tmpbuf, toupper(ch));
 		cell tmp;
 		make_string(&tmp, tmpbuf);

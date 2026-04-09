@@ -1649,7 +1649,7 @@ static bool bif_iso_open_4(query *q)
 			fseek(str->fp, 0, SEEK_SET);
 	} else if (!strcmp(str->mode, "write") && !str->binary && use_bom) {
 		int ch = 0xFEFF;
-		char tmpbuf[10];
+		char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 		put_char_utf8(tmpbuf, ch);
 		net_write(tmpbuf, strlen(tmpbuf), str);
 		str->bom = true;
@@ -3037,7 +3037,7 @@ static bool bif_iso_put_char_1(query *q)
 
 	const char *src = C_STR(q, p1);
 	int ch = get_char_utf8(&src);
-	char tmpbuf[80];
+	char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 	put_char_utf8(tmpbuf, ch);
 	net_write(tmpbuf, strlen(tmpbuf), str);
 	return !ferror(str->fp);
@@ -3065,7 +3065,7 @@ static bool bif_iso_put_char_2(query *q)
 
 	const char *src = C_STR(q, p1);
 	int ch = get_char_utf8(&src);
-	char tmpbuf[80];
+	char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 	put_char_utf8(tmpbuf, ch);
 	net_write(tmpbuf, strlen(tmpbuf), str);
 	return !ferror(str->fp);
@@ -3093,7 +3093,7 @@ static bool bif_iso_put_code_1(query *q)
 		return throw_error(q, p1, p1_ctx, "representation_error", "character_code");
 
 	int ch = (int)get_smallint(p1);
-	char tmpbuf[80];
+	char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 	put_char_utf8(tmpbuf, ch);
 	net_write(tmpbuf, strlen(tmpbuf), str);
 	return !ferror(str->fp);
@@ -3125,7 +3125,7 @@ static bool bif_iso_put_code_2(query *q)
 		return throw_error(q, p1, p1_ctx, "representation_error", "character_code");
 
 	int ch = (int)get_smallint(p1);
-	char tmpbuf[80];
+	char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 	put_char_utf8(tmpbuf, ch);
 	net_write(tmpbuf, strlen(tmpbuf), str);
 	return !ferror(str->fp);
@@ -3250,7 +3250,7 @@ static bool bif_iso_get_char_1(query *q)
 			str->p->line_num++;
 	}
 
-	char tmpbuf[80];
+	char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 	n = put_char_utf8(tmpbuf, ch);
 	cell tmp;
 	make_smalln(&tmp, tmpbuf, n);
@@ -3323,7 +3323,7 @@ static bool bif_iso_get_char_2(query *q)
 			str->p->line_num++;
 	}
 
-	char tmpbuf[80];
+	char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 	n = put_char_utf8(tmpbuf, ch);
 	cell tmp;
 	make_smalln(&tmp, tmpbuf, n);
@@ -3788,7 +3788,7 @@ static bool bif_iso_peek_char_1(query *q)
 	}
 
 	str->ungetch = ch;
-	char tmpbuf[80];
+	char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 	n = put_char_utf8(tmpbuf, ch);
 	cell tmp;
 	make_smalln(&tmp, tmpbuf, n);
@@ -3840,7 +3840,7 @@ static bool bif_iso_peek_char_2(query *q)
 	}
 
 	str->ungetch = ch;
-	char tmpbuf[80];
+	char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 	n = put_char_utf8(tmpbuf, ch);
 	cell tmp;
 	make_smalln(&tmp, tmpbuf, n);

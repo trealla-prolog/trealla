@@ -556,7 +556,7 @@ static bool bif_get_unbuffered_char_1(query *q)
 		return unify(q, p1, p1_ctx, &tmp, q->st.curr_fp);
 	}
 
-	char tmpbuf[80];
+	char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 	n = put_char_utf8(tmpbuf, ch);
 	cell tmp;
 	make_smalln(&tmp, tmpbuf, n);

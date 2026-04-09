@@ -350,7 +350,7 @@ static size_t scan_is_chars_list_internal(query *q, cell *l, pl_ctx l_ctx, bool 
 
 		if (is_integer(h)) {
 			int ch = get_smallint(h);
-			char tmp[20];
+			char tmp[MAX_BYTES_PER_CODEPOINT+1];
 			put_char_utf8(tmp, ch);
 			size_t len = len_char_utf8(tmp);
 			is_chars_list += len;
