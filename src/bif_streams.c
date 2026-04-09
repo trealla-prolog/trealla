@@ -2494,7 +2494,7 @@ static bool bif_iso_write_1(query *q)
 	print_term_to_stream(q, str, p1, p1_ctx, 1);
 	q->numbervars = false;
 
-	if (isatty(fileno(str->fp)))
+	//if (isatty(fileno(str->fp)))
 		fflush(str->fp);
 
 	return !ferror(str->fp);
@@ -2520,10 +2520,8 @@ static bool bif_iso_write_2(query *q)
 	print_term_to_stream(q, str, p1, p1_ctx, 1);
 	q->numbervars = false;
 
-	if (isatty(fileno(str->fp))) {
-		if (fflush(str->fp))
-			return false;
-	}
+	//if (isatty(fileno(str->fp)))
+		fflush(str->fp);
 
 	return !ferror(str->fp);
 }
@@ -2546,7 +2544,7 @@ static bool bif_iso_writeq_1(query *q)
 	q->numbervars = false;
 	q->quoted = 0;
 
-	if (isatty(fileno(str->fp)))
+	//if (isatty(fileno(str->fp)))
 		fflush(str->fp);
 
 	return !ferror(str->fp);
@@ -2574,7 +2572,7 @@ static bool bif_iso_writeq_2(query *q)
 	q->numbervars = false;
 	q->quoted = 0;
 
-	if (isatty(fileno(str->fp)))
+	//if (isatty(fileno(str->fp)))
 		fflush(str->fp);
 
 	return !ferror(str->fp);
@@ -2594,7 +2592,7 @@ static bool bif_iso_write_canonical_1(query *q)
 
 	print_canonical(q, str->fp, p1, p1_ctx, 1);
 
-	if (isatty(fileno(str->fp)))
+	//if (isatty(fileno(str->fp)))
 		fflush(str->fp);
 
 	return !ferror(str->fp);
@@ -2618,7 +2616,7 @@ static bool bif_iso_write_canonical_2(query *q)
 
 	print_canonical(q, str->fp, p1, p1_ctx, 1);
 
-	if (isatty(fileno(str->fp)))
+	//if (isatty(fileno(str->fp)))
 		fflush(str->fp);
 
 	return !ferror(str->fp);
@@ -2924,7 +2922,7 @@ static bool bif_iso_write_term_2(query *q)
 
 	if (q->nl) {
 		net_write("\n", 1, str);
-		//fflush(str->fp);
+		fflush(str->fp);
 	}
 
 	clear_write_options(q);
@@ -3010,7 +3008,7 @@ static bool bif_iso_write_term_3(query *q)
 
 	if (q->nl) {
 		net_write("\n", 1, str);
-		//fflush(str->fp);
+		fflush(str->fp);
 	}
 
 	clear_write_options(q);
