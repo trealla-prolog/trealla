@@ -159,9 +159,12 @@ int get_char_utf8(const char **_src)
 {
 	const unsigned char *src = (const unsigned char *)*_src;
 	int expect = 1;
-	unsigned int n = 0;
+	unsigned int n = 0, cnt = 0;
 
 	while (expect--) {
+		if (cnt++ > MAX_BYTES_PER_CODEPOINT)
+			return EOF;
+
 		unsigned char ch = *src++;
 
 		if ((ch & 0b11111100) == 0b11111100) {
@@ -197,9 +200,12 @@ int xgetc_utf8(void* p0, void *p1)
 {
 	int(*fn)(void*) = p0;
 	unsigned int n = 0;
-	int expect = 1;
+	int expect = 1, cnt = 0;
 
 	while (expect--) {
+		if (cnt++ > MAX_BYTES_PER_CODEPOINT)
+			return EOF;
+
 		int _ch = fn(p1);
 
 		if (_ch == EOF)
