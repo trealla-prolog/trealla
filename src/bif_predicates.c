@@ -1928,7 +1928,6 @@ static bool bif_iso_copy_term_nat_2(query *q)
 	return do_copy_term(q, false);
 }
 
-
 static bool bif_sys_clone_term_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
