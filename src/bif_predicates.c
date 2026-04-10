@@ -1903,7 +1903,7 @@ static bool do_copy_term(query *q, bool copy_attrs)
 
 	cell *tmp;
 
-	if (is_var(p1r))
+	if (is_var(p1r) && is_var(p2r))
 		tmp = copy_term_to_heap_with_replacement(q, p1, p1_ctx, copy_attrs, p1r, p1r_ctx, p2r, p2r_ctx);
 	else
 		tmp = copy_term_to_heap(q, p1, p1_ctx, copy_attrs);
