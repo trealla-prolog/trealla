@@ -10,17 +10,6 @@ struct heap_save {
 	pl_idx size, hp;
 };
 
-static int accum_slot(const query *q, size_t slot_nbr, unsigned var_num)
-{
-	const void *vnbr;
-
-	if (sl_get(q->vars, (void*)slot_nbr, &vnbr))
-		return (unsigned)(size_t)vnbr;
-
-	sl_app(q->vars, (void*)slot_nbr, (void*)(size_t)var_num);
-	return -1;
-}
-
 size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, size_t max_elements)
 {
 	if (min_elements > max_elements)
@@ -213,6 +202,17 @@ cell *append_to_tmp(query *q, cell *p1, pl_ctx p1_ctx)
 	if (!tmp) return NULL;
 	copy_cells_by_ref(tmp, p1, p1_ctx, p1->num_cells);
 	return tmp;
+}
+
+static int accum_slot(const query *q, size_t slot_nbr, unsigned var_num)
+{
+	const void *vnbr;
+
+	if (sl_get(q->vars, (void*)slot_nbr, &vnbr))
+		return (unsigned)(size_t)vnbr;
+
+	sl_app(q->vars, (void*)slot_nbr, (void*)(size_t)var_num);
+	return -1;
 }
 
 static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx from_ctx, cell *to, pl_ctx to_ctx)
