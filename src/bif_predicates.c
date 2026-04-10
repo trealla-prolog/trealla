@@ -1901,7 +1901,13 @@ static bool do_copy_term(query *q, bool copy_attrs)
 	if (is_atomic(p1) || is_atomic(p2))
 		return unify(q, p1, p1_ctx, p2, p2_ctx);
 
-	cell *tmp = copy_term_to_heap_with_replacement(q, p1, p1_ctx, copy_attrs, p1r, p1r_ctx, p2r, p2r_ctx);
+	cell *tmp;
+
+	if (is_var(p1r))
+		tmp = copy_term_to_heap_with_replacement(q, p1, p1_ctx, copy_attrs, p1r, p1r_ctx, p2r, p2r_ctx);
+	else
+		tmp = copy_term_to_heap(q, p1, p1_ctx, copy_attrs);
+
 	q->dump_var_num = -1;
 	q->dump_var_ctx = -1;
 	CHECKED(tmp);
