@@ -932,10 +932,8 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 				bool is_cyclic = has_visited(visited, tmp, tmp_ctx);
 
 				if (q->is_dump_vars && is_cyclic) {
-					tmp = c;
-					tmp_ctx = c_ctx;
 					if (c_ctx == 0) { SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num])); }
-					else { SB_sprintf(q->sb, "%s", !is_ref(tmp) ? "..." : find_match(q, tmp, tmp_ctx)); }
+					else { SB_sprintf(q->sb, "%s", find_match(q, c, c_ctx)); }
 					if (arity) {SB_sprintf(q->sb, "%s", ","); }
 					q->last_thing = WAS_OTHER;
 					continue;
