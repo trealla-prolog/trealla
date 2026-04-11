@@ -2737,7 +2737,12 @@ static pl_flt rnd(query *q)
 
 	if (q->pl->rnd_first_time) {
 		q->pl->rnd_first_time = false;
+
+#if !defined(_WIN32) && !defined(__wasi__)
 		q->pl->rnd_seed = clock() + getpid();
+#else
+		q->pl->rnd_seed = clock();
+#endif
 
 		for (int i = 0; i < 3; i++)
 			rnd(q);
