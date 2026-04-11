@@ -92,7 +92,10 @@ static bool bif_clause_3(query *q)
 				last_match = true;
 			}
 
-			stash_frame(q, cl->num_vars, last_match);
+
+			if (last_match)
+				leave_predicate(q, q->st.pr, true);
+
 			return true;
 		}
 

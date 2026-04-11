@@ -493,7 +493,7 @@ static void enter_predicate(query *q, predicate *pr)
 		pr->refcnt++;
 }
 
-static void leave_predicate(query *q, predicate *pr, bool is_final)
+void leave_predicate(query *q, predicate *pr, bool is_final)
 {
 	if (!pr)
 		return;
