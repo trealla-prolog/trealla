@@ -2729,16 +2729,45 @@ static bool bif_log10_1(query *q)
 	return true;
 }
 
-static double rnd(query *q)
+#define random_M 0x7FFFFFFFL
+
+static pl_flt rnd(query *q)
 {
-	return (double)random() / (double)LONG_MAX;
+	prolog_lock(q->pl);
+
+	if (q->pl->rnd_first_time) {
+		q->pl->rnd_first_time = false;
+
+#if !defined(__wasi__)
+		q->pl->rnd_seed = clock() + getpid();
+#else
+		q->pl->rnd_seed = clock();
+#endif
+
+		for (int i = 0; i < 3; i++)
+			rnd(q);
+	}
+
+	q->pl->rnd_seed = ((q->pl->rnd_seed * 2743) + 5923) & random_M;
+	pl_flt val = ((pl_flt)q->pl->rnd_seed / (pl_flt)random_M);
+	prolog_unlock(q->pl);
+	return val;
 }
 
 static bool bif_set_seed_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
-	srandom(p1->val_uint);
+	q->pl->rnd_first_time = false;
+	q->pl->rnd_seed = p1->val_int;
 	return true;
+}
+
+static bool bif_get_seed_1(query *q)
+{
+	GET_FIRST_ARG(p1,var);
+	cell tmp;
+	make_int(&tmp, q->pl->rnd_seed);
+	return unify(q, p1, p1_ctx, &tmp, q->st.curr_fp);
 }
 
 static bool bif_random_between_3(query *q)
@@ -2936,6 +2965,7 @@ builtins g_evaluable_bifs[] =
 	{"setrand", 1, bif_set_seed_1, "+integer", false, false, BLAH},
 	{"srandom", 1, bif_set_seed_1, "+integer", false, false, BLAH},
 	{"set_seed", 1, bif_set_seed_1, "+integer", false, false, BLAH},
+	{"get_seed", 1, bif_get_seed_1, "-integer", false, false, BLAH},
 	{"rand", 1, bif_rand_1, "?integer", false, false, BLAH},
 	{"random", 1, bif_random_1, "?integer", false, false, BLAH},
 	{"random_between", 3, bif_random_between_3, "?integer,?integer,-integer", false, false, BLAH},
