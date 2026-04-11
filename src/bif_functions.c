@@ -2740,6 +2740,8 @@ static pl_flt rnd(query *q)
 
 #if !defined(_WIN32) && !defined(__wasi__)
 		q->pl->rnd_seed = clock() + getpid();
+#elif defined(_WIN32)
+		q->pl->rnd_seed = clock() + _getpid();
 #else
 		q->pl->rnd_seed = clock();
 #endif
