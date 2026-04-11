@@ -215,7 +215,8 @@ inline static cell *get_body(cell *c)
 
 inline static void drop_choice(query *q)
 {
-	--q->cp;
+	if (q->cp)
+		--q->cp;
 }
 
 inline static pl_idx get_ordered_slot_num(const query *q, const frame *f, unsigned var_num)

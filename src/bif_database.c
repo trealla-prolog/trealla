@@ -87,7 +87,6 @@ static bool bif_clause_3(query *q)
 			bool last_match;
 
 			if (is_var(p3)) {
-				CHECKED(push_choice(q)); 		// dummy because stash_frame will drop_choice
 				last_match = !has_next_key(q);
 			} else {
 				last_match = true;
