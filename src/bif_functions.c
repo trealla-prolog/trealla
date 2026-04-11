@@ -2737,7 +2737,7 @@ static pl_flt rnd(query *q)
 
 	if (q->pl->rnd_first_time) {
 		q->pl->rnd_first_time = false;
-		q->pl->rnd_seed = clock();
+		q->pl->rnd_seed = clock() + getpid();
 
 		for (int i = 0; i < 3; i++)
 			rnd(q);
