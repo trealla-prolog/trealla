@@ -1509,7 +1509,7 @@ void uuid_gen(prolog *pl, uuid *u)
 	if (!pl->seed)
 		pl->seed = (uint64_t)time(0) & MASK_FINAL;
 
-	uint64_t now = get_time_in_usec();
+	uint64_t now = wall_time_in_usec();
 	compare_and_zero(now, &pl->s_last, &pl->s_cnt);
 	u->u1 = now;
 	u->u2 = pl->s_cnt++;
@@ -3282,7 +3282,7 @@ static bool bif_statistics_2(query *q)
 	}
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "wall") && is_var(p2)) {
-		uint64_t now = get_time_in_usec();
+		uint64_t now = wall_time_in_usec();
 		cell tmp;
 		make_uint(&tmp, now/1000);
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_fp);

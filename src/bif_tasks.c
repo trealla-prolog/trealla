@@ -36,7 +36,7 @@ bool do_yield(query *q, int msecs)
 
 	q->yield_at = 0;
 	q->yielded = true;
-	q->tmo_msecs = get_time_in_usec() / 1000;
+	q->tmo_msecs = wall_time_in_usec() / 1000;
 	q->tmo_msecs += msecs > 0 ? msecs : 1;
 	CHECKED(push_choice(q));
 	return false;
@@ -53,7 +53,7 @@ bool do_yield_then(query *q, bool status)
 
 	q->yield_at = 0;
 	q->yielded = true;
-	q->tmo_msecs = get_time_in_usec() / 1000 + 1;
+	q->tmo_msecs = wall_time_in_usec() / 1000 + 1;
 	// Push a choice point with the same result as the goal we hijacked
 	// With that we can continue as if the yield didn't happen
 	CHECKED(push_choice(q));
@@ -69,7 +69,7 @@ bool do_yield_then(query *q, bool status)
 
 void do_yield_at(query *q, unsigned int time_in_ms)
 {
-	q->yield_at = get_time_in_usec() / 1000;
+	q->yield_at = wall_time_in_usec() / 1000;
 	q->yield_at += time_in_ms > 0 ? time_in_ms : 1;
 }
 
@@ -123,7 +123,7 @@ static bool bif_wait_0(query *q)
 {
 	while (q->tasks && !q->end_wait) {
 		CHECK_INTERRUPT();
-		uint64_t now = get_time_in_usec() / 1000;
+		uint64_t now = wall_time_in_usec() / 1000;
 		query *task = q->tasks;
 		unsigned spawn_cnt = 0;
 		bool did_something = false;
@@ -171,7 +171,7 @@ static bool bif_await_0(query *q)
 {
 	while (q->tasks) {
 		CHECK_INTERRUPT();
-		pl_uint now = get_time_in_usec() / 1000;
+		pl_uint now = wall_time_in_usec() / 1000;
 		query *task = q->tasks;
 		unsigned spawn_cnt = 0;
 		bool did_something = false;

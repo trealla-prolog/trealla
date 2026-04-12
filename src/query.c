@@ -1728,7 +1728,7 @@ bool start(query *q)
 					check_pressure(q);
 
 				if (q->yield_at && !q->run_hook) {
-					uint64_t now = get_time_in_usec() / 1000;
+					uint64_t now = wall_time_in_usec() / 1000;
 
 					if (now > q->yield_at)  {
 						do_yield_then(q, status);
@@ -1903,7 +1903,7 @@ static query *query_create_(module *m, bool is_small)
 	q->st.m = m;
 	q->trace = m->pl->trace;
 	q->flags = m->flags;
-	q->get_started = get_time_in_usec();
+	q->get_started = wall_time_in_usec();
 	q->time_cpu_last_started = q->cpu_started = cpu_time_in_usec();
 	q->ops_dirty = true;
 	q->double_quotes = false;

@@ -541,7 +541,7 @@ struct run_state_ {
 		int64_t cnt;
 	};
 
-	uint64_t timer_started;
+	uint64_t timer_started, wall_started;
 	pl_idx fp, hp, cp, tp, sp, heap_num, qnum;
 	pl_ctx curr_fp;
 };
@@ -1040,7 +1040,7 @@ enum clause_type { DO_CLAUSE, DO_RETRACT, DO_RETRACTALL };
 char *formatted(const char *src, int srclen, bool dq, bool json);
 char *slicedup(const char *s, size_t n);
 int slicecmp(const char *s1, size_t len1, const char *s2, size_t len2);
-uint64_t get_time_in_usec(void);
+uint64_t wall_time_in_usec(void);
 uint64_t cpu_time_in_usec(void);
 char *relative_to(const char *basefile, const char *relfile);
 size_t sprint_int(char *dst, size_t size, pl_int n, int base);
