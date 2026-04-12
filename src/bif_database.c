@@ -53,12 +53,16 @@ static bool bif_clause_3(query *q)
 			if (!r || (!u.u1 && !u.u2))
 				break;
 
+			CHECKED(push_choice(q));
+
 			q->st.dbe = r;
 			cl = &r->cl;
 			cell *head = get_head(cl->cells);
 
-			if (!unify(q, p1, p1_ctx, head, q->st.fp))
+			if (!unify(q, p1, p1_ctx, head, q->st.fp)) {
+				drop_choice(q);
 				break;
+			}
 		} else {
 			if (match_clause(q, p1, p1_ctx, DO_CLAUSE) != true)
 				break;
@@ -92,10 +96,7 @@ static bool bif_clause_3(query *q)
 				last_match = true;
 			}
 
-
-			if (last_match)
-				leave_predicate(q, q->st.pr, true);
-
+			stash_frame(q, cl->num_vars, last_match);
 			return true;
 		}
 
