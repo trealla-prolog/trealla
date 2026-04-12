@@ -398,7 +398,6 @@ static bool bif_busy_1(query *q)
 static bool bif_sys_timer_0(query *q)
 {
 	q->st.timer_started = cpu_time_in_usec();
-	q->st.wall_started = wall_time_in_usec();
 	q->total_inferences = 0;
 	return true;
 }
@@ -407,19 +406,15 @@ static bool bif_sys_elapsed_0(query *q)
 {
 	q->total_inferences--;
 	uint64_t timer_now = cpu_time_in_usec();
-	uint64_t wall_now = wall_time_in_usec();
 	uint64_t timer_started = q->st.timer_started;
-	uint64_t wall_started = q->st.wall_started;
 	q->st.timer_started = timer_now;
-	q->st.wall_started = wall_now;
 	uint64_t timer_elapsed = timer_now - timer_started;
-	uint64_t wall_elapsed = wall_now - wall_started;
 	double lips = (1.0 / ((double)timer_elapsed/1000/1000)) * q->total_inferences;
 	char tmpbuf[80];
 	cell tmp;
 	make_int(&tmp, q->total_inferences);
 	format_integer(tmpbuf, &tmp, 3, '_', 0, 10);
-	fprintf(stderr, "%% CPU elapsed %.3fs (in %.3fs), %s inferences, %.3f MLips\n", (double)timer_elapsed/1000/1000, (double)wall_elapsed/1000/1000, tmpbuf, lips/1000/1000);
+	fprintf(stderr, "%% CPU elapsed %.3fs, %s inferences, %.3f MLips\n", (double)timer_elapsed/1000/1000, tmpbuf, lips/1000/1000);
 	if (q->is_redo) fprintf(stdout, "  ");
 	q->total_inferences = 0;
 	return true;

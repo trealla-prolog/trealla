@@ -541,7 +541,7 @@ struct run_state_ {
 		int64_t cnt;
 	};
 
-	uint64_t timer_started, wall_started;
+	uint64_t timer_started;
 	pl_idx fp, hp, cp, tp, sp, heap_num, qnum;
 	pl_ctx curr_fp;
 };
