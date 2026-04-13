@@ -408,9 +408,9 @@ static bool bif_sys_elapsed_0(query *q)
 	uint64_t cpu_now = cpu_time_in_usec();
 	uint64_t cpu_elapsed = cpu_now - q->st.cpu_time;
 	double lips = (1.0 / ((double)cpu_elapsed/1000/1000)) * q->total_inferences;
-	char tmpbuf[80];
 	cell tmp;
 	make_int(&tmp, q->total_inferences);
+	char tmpbuf[80];
 	format_integer(tmpbuf, &tmp, 3, '_', 0, 10);
 	fprintf(stderr, "%% CPU elapsed %.3fs, %s inferences, %.3f MLips\n", (double)cpu_elapsed/1000/1000, tmpbuf, lips/1000/1000);
 	if (q->is_redo) fprintf(stdout, "  ");
