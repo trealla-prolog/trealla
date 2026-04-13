@@ -1904,7 +1904,7 @@ static query *query_create_(module *m, bool is_small)
 	q->trace = m->pl->trace;
 	q->flags = m->flags;
 	q->get_started = wall_time_in_usec();
-	q->time_cpu_last_started = q->cpu_started = cpu_time_in_usec();
+	q->time_cpu_last_started = q->cpu_time = cpu_time_in_usec();
 	q->ops_dirty = true;
 	q->double_quotes = false;
 	q->max_depth = m->pl->def_max_depth;

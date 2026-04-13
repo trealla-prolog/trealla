@@ -267,7 +267,7 @@ static bool bif_wall_time_1(query *q)
 static bool bif_cpu_time_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
-	double v = ((double)cpu_time_in_usec() - q->cpu_started) / 1000 / 1000;
+	double v = ((double)cpu_time_in_usec() - q->cpu_time) / 1000 / 1000;
 	cell tmp;
 	make_float(&tmp, (pl_flt)v);
 	return unify (q, p1, p1_ctx, &tmp, q->st.curr_fp);
@@ -397,7 +397,7 @@ static bool bif_busy_1(query *q)
 
 static bool bif_sys_timer_0(query *q)
 {
-	q->st.timer_started = cpu_time_in_usec();
+	q->st.cpu_time = cpu_time_in_usec();
 	q->total_inferences = 0;
 	return true;
 }
@@ -405,18 +405,17 @@ static bool bif_sys_timer_0(query *q)
 static bool bif_sys_elapsed_0(query *q)
 {
 	q->total_inferences--;
-	uint64_t timer_now = cpu_time_in_usec();
-	uint64_t timer_started = q->st.timer_started;
-	q->st.timer_started = timer_now;
-	uint64_t timer_elapsed = timer_now - timer_started;
-	double lips = (1.0 / ((double)timer_elapsed/1000/1000)) * q->total_inferences;
+	uint64_t cpu_now = cpu_time_in_usec();
+	uint64_t cpu_elapsed = cpu_now - q->st.cpu_time;
+	double lips = (1.0 / ((double)cpu_elapsed/1000/1000)) * q->total_inferences;
 	char tmpbuf[80];
 	cell tmp;
 	make_int(&tmp, q->total_inferences);
 	format_integer(tmpbuf, &tmp, 3, '_', 0, 10);
-	fprintf(stderr, "%% CPU elapsed %.3fs, %s inferences, %.3f MLips\n", (double)timer_elapsed/1000/1000, tmpbuf, lips/1000/1000);
+	fprintf(stderr, "%% CPU elapsed %.3fs, %s inferences, %.3f MLips\n", (double)cpu_elapsed/1000/1000, tmpbuf, lips/1000/1000);
 	if (q->is_redo) fprintf(stdout, "  ");
 	q->total_inferences = 0;
+	q->st.cpu_time = cpu_now;
 	return true;
 }
 

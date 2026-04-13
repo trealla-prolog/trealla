@@ -757,7 +757,7 @@ bool bif_sys_drop_barrier_1(query *q)
 
 	if (q->cp) {
 		const choice *ch = GET_CURR_CHOICE();
-		q->st.timer_started = ch->st.timer_started;
+		q->st.cpu_time = ch->st.cpu_time;
 	}
 
 	return true;

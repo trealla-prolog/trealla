@@ -3265,7 +3265,7 @@ static bool bif_statistics_2(query *q)
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "cputime") && is_var(p2)) {
 		uint64_t now = cpu_time_in_usec();
-		double elapsed = now - q->cpu_started;
+		double elapsed = now - q->cpu_time;
 		cell tmp;
 		make_float(&tmp, elapsed/1000/1000);
 		return unify(q, p2, p2_ctx, &tmp, q->st.curr_fp);
@@ -3290,7 +3290,7 @@ static bool bif_statistics_2(query *q)
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "runtime")) {
 		uint64_t now = cpu_time_in_usec();
-		double elapsed = now - q->cpu_started;
+		double elapsed = now - q->cpu_time;
 		cell tmp;
 		make_int(&tmp, elapsed/1000);
 		allocate_list(q, &tmp);
