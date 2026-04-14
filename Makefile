@@ -74,6 +74,7 @@ endif
 ifndef EDITLINE
 ifndef READLINE
 ifndef WASI
+ifndef WIN
 CFLAGS += -DUSE_EDITLINE=1
 LDFLAGS += -ledit
 endif
