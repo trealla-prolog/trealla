@@ -216,7 +216,6 @@ tpl: $(OBJECTS) Makefile README.md LICENSE
 util/bin2c: util/bin2c.c
 	$(HOST_CC) -o util/bin2c util/bin2c.c
 
-
 profile:
 	$(MAKE) 'OPT=$(OPT) -O0 -pg -DDEBUG'
 
