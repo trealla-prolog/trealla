@@ -132,7 +132,7 @@ Written in plain-old C99.
 On Debian-like systems, you will need to install (if not alread( the following
 packages to set up a build environment:
 
-	sudo apt install build-essential git libreadline-dev libffi-dev libssl-dev
+	sudo apt install build-essential git libedit-dev libffi-dev libssl-dev
 
 Then...
 
@@ -150,8 +150,8 @@ To build without pre-emptive multi-threading support:
 
 	make NOTHREADS=1
 
-To build (as a last resort) with the included ISOCLINE sources (default is to use GNU Readline,
-except Windows):
+To build (as a last resort) with the included ISOCLINE sources (default is to use EDITLINE,
+except with WASI & Windows):
 
 	make ISOCLINE=1
 
@@ -171,7 +171,7 @@ Optionally...
 
 	make test
 
-and there should be no errors, Further:
+and there should be no errors, Further to test with address sanitizer:
 
 	make clean && make debug && make test
 
@@ -179,12 +179,12 @@ Should show no memory out-of-bounds, null-pointer, use after free
 or memory leaks (there may a few spurious errors).
 
 
-
 On macOS:
 
-	brew install libffi openssl coreutils readline
+	brew install libffi openssl coreutils
 
-and it's important to use the `brew` version of `readline`.
+By default `editline` is used on `'nix` systems, however if using
+readline instead (make READLINE=1) install the BREW version of readline.
 
 
 Unbounded integers (Bigints) and Rationals

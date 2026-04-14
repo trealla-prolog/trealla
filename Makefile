@@ -26,8 +26,8 @@ endif
 LDFLAGS = -L/usr/local/lib -lm
 
 ifdef HOMEBREW_PREFIX
-LDFLAGS += -L$(HOMEBREW_PREFIX)/opt/libffi/lib -L$(HOMEBREW_PREFIX)/opt/openssl@3/lib -L$(HOMEBREW_PREFIX)/opt/readline/lib
-CFLAGS += -I$(HOMEBREW_PREFIX)/opt/libffi/include -I$(HOMEBREW_PREFIX)/opt/openssl@3/include -I$(HOMEBREW_PREFIX)/opt/readline/include
+LDFLAGS += -L$(HOMEBREW_PREFIX)/opt/libffi/lib -L$(HOMEBREW_PREFIX)/opt/openssl@3/lib
+CFLAGS += -I$(HOMEBREW_PREFIX)/opt/libffi/include -I$(HOMEBREW_PREFIX)/opt/openssl@3/include
 endif
 
 ifdef WASI
@@ -55,13 +55,27 @@ endif
 
 ifdef ISOCLINE
 CFLAGS += -DUSE_ISOCLINE=1
-else
+endif
+
+ifdef READLINE
+CFLAGS += -DUSE_READLINE=1 -I$(HOMEBREW_PREFIX)/opt/readline/include
+LDFLAGS += -lreadline -L$(HOMEBREW_PREFIX)/opt/readline/lib
+endif
+
 ifdef EDITLINE
 CFLAGS += -DUSE_EDITLINE=1
 LDFLAGS += -ledit
-else
-ifndef WASI
-LDFLAGS += -lreadline
+endif
+
+ifdef WASI
+CFLAGS += -DUSE_ISOCLINE=1
+endif
+
+ifndef EDITLINE
+ifndef READLINE
+ifndef WASM
+CFLAGS += -DUSE_EDITLINE=1
+LDFLAGS += -ledit
 endif
 endif
 endif
