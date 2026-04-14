@@ -25,7 +25,7 @@
         - name: Install deps (Linux)
           run: |
             sudo apt-get update
-            sudo apt-get install libreadline-dev xxd libffi-dev libssl-dev
+            sudo apt-get install libreadline-dev libedit-dev xxd libffi-dev libssl-dev
           if: matrix.os == 'ubuntu-latest'
         - name: Install deps (macOS)
           run: |
