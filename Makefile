@@ -80,6 +80,7 @@ LDFLAGS += -ledit
 endif
 endif
 endif
+endif
 
 ifndef NOFFI
 CFLAGS += -DUSE_FFI=1 -I/usr/local/opt/libffi/include

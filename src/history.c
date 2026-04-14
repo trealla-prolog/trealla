@@ -12,7 +12,7 @@
 #define USE_EDITLINE
 #endif
 
-#if defined(USE_ISOCLINE)
+#if defined(USE_ISOCLINE) || defined(_WIN32) && defined(__wasi__)
 #include "isocline/include/isocline.h"
 #endif
 
