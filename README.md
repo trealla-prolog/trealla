@@ -183,7 +183,7 @@ On macOS:
 
 	brew install libffi openssl coreutils
 
-By default `editline` is used on `'nix` systems, however if using
+By default `editline` is used on `'nix` systems, however if using GNU
 readline instead (make READLINE=1) install the BREW version of readline.
 
 
