@@ -73,7 +73,7 @@ endif
 
 ifndef EDITLINE
 ifndef READLINE
-ifndef WASM
+ifndef WASI
 CFLAGS += -DUSE_EDITLINE=1
 LDFLAGS += -ledit
 endif

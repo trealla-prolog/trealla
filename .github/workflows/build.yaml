@@ -25,12 +25,12 @@
         - name: Install deps (Linux)
           run: |
             sudo apt-get update
-            sudo apt-get install libreadline-dev libedit-dev xxd libffi-dev libssl-dev
+            sudo apt-get install libedit-dev xxd libffi-dev libssl-dev
           if: matrix.os == 'ubuntu-latest'
         - name: Install deps (macOS)
           run: |
             brew update
-            brew install readline vim libffi openssl make coreutils bash
+            brew install vim libffi openssl make coreutils bash
             echo "$(brew --prefix)/opt/make/libexec/gnubin" >> $GITHUB_PATH
           if: matrix.os == 'macos-latest'
         - name: Fetch tags
