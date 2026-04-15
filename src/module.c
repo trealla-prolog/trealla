@@ -2206,7 +2206,6 @@ bool unload_file(module *m, const char *filename)
 			ENSURE(tmpbuf);
 			strcpy(tmpbuf, ptr);
 			strcat(tmpbuf, filename+1);
-			convert_path(tmpbuf);
 		}
 	}
 
@@ -2397,7 +2396,6 @@ module *load_file(module *m, const char *filename, bool including, bool init)
 			check_error(tmpbuf);
 			strcpy(tmpbuf, ptr);
 			strcat(tmpbuf, filename+1);
-			convert_path(tmpbuf);
 		}
 	}
 

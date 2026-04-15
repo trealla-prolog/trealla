@@ -891,18 +891,6 @@ static bool bif_iso_stream_property_2(query *q)
 	return true;
 }
 
-void convert_path(char *filename)
-{
-	char *src = filename;
-
-	while (*src) {
-		if (*src == '\\')
-			*src = '/';
-
-		src++;
-	}
-}
-
 bool valid_list(query *q, cell *c, pl_ctx c_ctx)
 {
 	while (is_iso_list(c)) {
@@ -947,8 +935,6 @@ static bool bif_popen_4(query *q)
 		src = chars_list_to_string(q, p1, p1_ctx);
 		filename = src;
 	}
-
-	convert_path(filename);
 
 	stream *str = &q->pl->streams[n];
 	str->is_pipe = true;
@@ -1077,7 +1063,6 @@ static bool bif_process_create_3(query *q)
 		filename = src;
 	}
 
-	convert_path(filename);
     int args = 0, envs = 0;
     char *arguments[MAX_ARGS] = {NULL};
     char *environments[MAX_ARGS] = {NULL};
@@ -1443,7 +1428,6 @@ static bool bif_iso_open_4(query *q)
 		filename = src = chars_list_to_string(q, p1, p1_ctx);
 	}
 
-	convert_path(filename);
 	stream *str = &q->pl->streams[n];
 	CHECKED(str->filename = strdup(filename));
 	CHECKED(str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL));
@@ -4687,8 +4671,6 @@ static bool bif_read_file_to_string_3(query *q)
 	} else
 		filename = src = DUP_STRING(q, p1);
 
-	convert_path(filename);
-
 	bool bom_specified = false, use_bom = false, is_binary = false;
 	LIST_HANDLER(p3);
 
@@ -4779,7 +4761,6 @@ bool do_load_file(query *q, cell *p1, pl_ctx p1_ctx)
 	if (is_atom(p1)) {
 		char *src = DUP_STRING(q, p1);
 		char *filename = relative_to(q->st.m->filename, src);
-		convert_path(filename);
 		unload_file(q->st.m, filename);
 		free(src);
 
@@ -4808,7 +4789,6 @@ bool do_load_file(query *q, cell *p1, pl_ctx p1_ctx)
 	char *src = DUP_STRING(q, file);
 	char *filename = relative_to(q->st.m->filename, src);
 	free(src);
-	convert_path(filename);
 	unload_file(tmp_m, filename);
 
 	if (!load_file(tmp_m, filename, false, true)) {
@@ -4827,7 +4807,6 @@ static bool do_unload_file(query *q, cell *p1, pl_ctx p1_ctx)
 		char *src = DUP_STRING(q, p1);
 		char *filename = relative_to(q->st.m->filename, src);
 		free(src);
-		convert_path(filename);
 		unload_file(q->st.m, filename);
 		free(filename);
 		return true;
@@ -4848,7 +4827,6 @@ static bool do_unload_file(query *q, cell *p1, pl_ctx p1_ctx)
 	char *src = DUP_STRING(q, file);
 	char *filename = relative_to(q->st.m->filename, src);
 	free(src);
-	convert_path(filename);
 	unload_file(q->st.m, filename);
 	free(filename);
 	return true;
@@ -4931,7 +4909,6 @@ static bool bif_savefile_2(query *q)
 	} else
 		filename = DUP_STRING(q, p1);
 
-	convert_path(filename);
 	FILE *fp = fopen(filename, "wb");
 	CHECKED(fp);
 	fwrite(C_STR(q, p2), 1, C_STRLEN(q, p2), fp);
@@ -4956,7 +4933,6 @@ static bool bif_loadfile_2(query *q)
 	} else
 		filename = DUP_STRING(q, p1);
 
-	convert_path(filename);
 	FILE *fp = fopen(filename, "rb");
 	free(filename);
 
@@ -5019,7 +4995,6 @@ static bool bif_getfile_2(query *q)
 	} else
 		filename = DUP_STRING(q, p1);
 
-	convert_path(filename);
 	FILE *fp = fopen(filename, "r");
 	free(filename);
 
@@ -5109,7 +5084,6 @@ static bool bif_getfile_3(query *q)
 	} else
 		filename = DUP_STRING(q, p1);
 
-	convert_path(filename);
 	FILE *fp = fopen(filename, "r");
 	free(filename);
 
@@ -5329,7 +5303,6 @@ static bool bif_absolute_file_name_3(query *q)
 	} else
 		filename = DUP_STRING(q, p1);
 
-	convert_path(filename);
 	LIST_HANDLER(p_opts);
 
 	while (is_list(p_opts)) {
@@ -5380,7 +5353,6 @@ static bool bif_absolute_file_name_3(query *q)
 		tmpbuf = malloc(buflen);
 		CHECKED(tmpbuf);
 		snprintf(tmpbuf, buflen, "%s/%s", ptr, s);
-		convert_path(tmpbuf);
 		char *tmpbuf2;
 
 		if ((tmpbuf2 = realpath(tmpbuf, NULL)) == NULL) {
@@ -5404,7 +5376,6 @@ static bool bif_absolute_file_name_3(query *q)
 				char *tmp = malloc(buflen);
 				CHECKED(tmp, free(tmpbuf));
 				snprintf(tmp, buflen, "%s/%s", tmpbuf, s);
-				convert_path(tmp);
 				free(tmpbuf);
 				tmpbuf = fixup(tmp);
 				CHECKED(tmpbuf);
@@ -5593,7 +5564,6 @@ static bool bif_access_file_2(query *q)
 		return throw_error(q, p2, p2_ctx, "domain_error", "mode");
 	}
 
-	convert_path(filename);
 	struct stat st = {0};
 	int status = stat(filename, &st);
 
@@ -5627,7 +5597,6 @@ static bool bif_exists_file_1(query *q)
 	} else
 		filename = DUP_STRING(q, p1);
 
-	convert_path(filename);
 	struct stat st = {0};
 
 	if (stat(filename, &st)) {
@@ -5666,7 +5635,6 @@ static bool bif_directory_files_2(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "directory");
 	}
 
-	convert_path(filename);
 	DIR *dirp = opendir(filename);
 
 	if (!dirp) {
@@ -5715,7 +5683,6 @@ static bool bif_delete_file_1(query *q)
 	} else
 		filename = DUP_STRING(q, p1);
 
-	convert_path(filename);
 	struct stat st = {0};
 
 	if (stat(filename, &st)) {
@@ -5756,8 +5723,6 @@ static bool bif_rename_file_2(query *q)
 	} else
 		filename2 = DUP_STRING(q, p2);
 
-	convert_path(filename1);
-	convert_path(filename2);
 	struct stat st = {0};
 
 	if (stat(filename1, &st)) {
@@ -5800,8 +5765,6 @@ static bool bif_copy_file_2(query *q)
 	} else
 		filename2 = DUP_STRING(q, p2);
 
-	convert_path(filename1);
-	convert_path(filename2);
 	FILE *fp1 = fopen(filename1, "rb");
 
 	if (!fp1) {
@@ -5858,7 +5821,6 @@ static bool bif_time_file_2(query *q)
 	} else
 		filename = DUP_STRING(q, p1);
 
-	convert_path(filename);
 	struct stat st = {0};
 
 	if (stat(filename, &st)) {
@@ -5888,7 +5850,6 @@ static bool bif_size_file_2(query *q)
 	} else
 		filename = DUP_STRING(q, p1);
 
-	convert_path(filename);
 	struct stat st = {0};
 
 	if (stat(filename, &st)) {
@@ -5917,7 +5878,6 @@ static bool bif_exists_directory_1(query *q)
 	} else
 		filename = DUP_STRING(q, p1);
 
-	convert_path(filename);
 	struct stat st = {0};
 
 	if (stat(filename, &st)) {
@@ -5948,7 +5908,6 @@ static bool bif_make_directory_1(query *q)
 	} else
 		filename = DUP_STRING(q, p1);
 
-	convert_path(filename);
 	struct stat st = {0};
 
 	if (!stat(filename, &st)) {
@@ -5980,7 +5939,6 @@ static bool bif_make_directory_path_1(query *q)
 	} else
 		filename = DUP_STRING(q, p1);
 
-	convert_path(filename);
 	struct stat st = {0};
 
 	for (char *ptr = filename+1; *ptr; ptr++) {
@@ -6019,7 +5977,6 @@ static bool bif_working_directory_2(query *q)
 	char tmpbuf[PATH_MAX], tmpbuf2[PATH_MAX];
 	char *oldpath = getcwd(tmpbuf, sizeof(tmpbuf));
 	snprintf(tmpbuf2, sizeof(tmpbuf2), "%s/", oldpath);
-	convert_path(tmpbuf2);
 	oldpath = tmpbuf2;
 	cell tmp;
 	make_string(&tmp, oldpath);
@@ -6062,7 +6019,6 @@ static bool bif_chdir_1(query *q)
 	} else
 		filename = DUP_STRING(q, p1);
 
-	convert_path(filename);
 	bool ok = !chdir(filename);
 	free(filename);
 	return ok;

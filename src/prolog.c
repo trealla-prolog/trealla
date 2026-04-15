@@ -17,7 +17,6 @@
 #include <sys/resource.h>
 #endif
 
-void convert_path(char *filename);
 
 static lock g_symtab_guard;
 static skiplist *g_symtab = NULL;
@@ -613,10 +612,8 @@ static bool g_init(prolog *pl)
 
 	char *ptr = getenv("TPL_LIBRARY_PATH");
 
-	if (ptr) {
+	if (ptr)
 		g_tpl_lib = strdup(ptr);
-		convert_path(g_tpl_lib);
-	}
 
 #if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 	struct rlimit rlp;

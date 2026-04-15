@@ -171,7 +171,6 @@ int main(int ac, char *av[], char * envp[])
 
 	char histfile[1024];
 	snprintf(histfile, sizeof(histfile), "%s/%s", homedir, ".tpl_history");
-	convert_path(histfile);
 	//bool did_load = false;
 	int i, do_goal = 0, do_lib = 0, do_log = 0, do_restore = 0;
 	int version = 0, daemon = 0;
@@ -182,7 +181,6 @@ int main(int ac, char *av[], char * envp[])
 		if (!strcmp(av[i], "--library")) {
 			if (++i < ac) {
 				g_tpl_lib = strdup(av[i]);
-				convert_path(g_tpl_lib);
 			}
 		}
 	}
@@ -279,7 +277,6 @@ int main(int ac, char *av[], char * envp[])
 			continue;
 		} else if (do_lib) {
 			g_tpl_lib = strdup(av[i]);
-			convert_path(g_tpl_lib);
 			do_lib = 0;
 		} else if (do_goal) {
 			do_goal = 0;

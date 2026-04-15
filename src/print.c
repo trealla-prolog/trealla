@@ -94,7 +94,7 @@ bool needs_quoting(module *m, const char *src, int srclen)
 
 	if (!strcmp(src, "{}") || !strcmp(src, "[]")
 		|| !strcmp(src, "!") || !strcmp(src, ";")
-		|| !strcmp(src, "\\")	// ???????
+		|| !strcmp(src, "\\")
 		)
 		return false;
 

@@ -583,7 +583,6 @@ static bool bif_pl_thread_3(query *q)
 	GET_NEXT_ARG(p2,atom);
 	GET_NEXT_ARG(p3,list_or_nil);
 	char *filename = DUP_STRING(q, p2);
-	convert_path(filename);
 	struct stat st = {0};
 
 	if (stat(filename, &st)) {
