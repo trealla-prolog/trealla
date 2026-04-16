@@ -559,6 +559,22 @@ static bool bif_rational_1(query *q)
 	return is_rational(p1) || is_integer(p1);
 }
 
+static bool bif_sys_rationalize_2(query *q)
+{
+	GET_FIRST_ARG(p1,compound);
+	GET_NEXT_ARG(p2,var);
+	pl_int n = get_smallint(deref(q, p1+1, p1_ctx));
+	pl_int d = get_smallint(deref(q, p1+2, p1_ctx));
+	q->accum.tag = TAG_RATIONAL;
+	q->accum.val_bigint = malloc(sizeof(bigint));
+	if (errno == ENOMEM)
+		return throw_error(q, p1, q->st.curr_fp, "resource_error", "memory");
+	q->accum.flags = FLAG_INT_BIG | FLAG_MANAGED;
+	mp_rat_set_value(&q->accum.val_bigint->irat, n, d);
+	q->accum.val_bigint->refcnt = 0;
+	return unify(q, p2, p2_ctx, &q->accum, q->st.curr_fp);
+}
+
 static bool bif_rdiv_2(query *q)
 {
 	START_FUNCTION(q);
@@ -3040,6 +3056,7 @@ builtins g_evaluable_bifs[] =
 	{"denominator", 1, bif_denominator_1, "+rational,-integer", false, true, BLAH},
 	{"rational", 1, bif_rational_1, "+term", false, false, BLAH},
 	{"rdiv", 2, bif_rdiv_2, "+integer,+integer,-rational", false, true, BLAH},
+	{"$rationalize", 2, bif_sys_rationalize_2, "+term,-rational", false, false, BLAH},
 
 	{"divmod", 4, bif_divmod_4, "+integer,+integer,?integer,?integer", false, false, BLAH},
 	{"log", 2, bif_log_2, "+number,+number,-float", false, true, BLAH},
