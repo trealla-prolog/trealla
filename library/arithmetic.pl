@@ -28,6 +28,8 @@ popcount(I, N) :-
 
 :- help(popcount(+integer,?integer), [iso(false)]).
 
+number_to_rational(F, F) :-
+	integer(F), !.
 number_to_rational(F, R) :- F < 0, !,
    H is -F,
    number_to_rational(H, R0),
@@ -40,7 +42,6 @@ number_to_rational(F, R) :-
    rat_iter_(W rdiv U, D rdiv 1, 1 rdiv 0, F, R0),
    R is R0.
 
-% rat_start(+Number, -Integer, -Integer)
 rat_start_(F, V, W) :-
    parts_(F, M, E),
    (E < 0 ->
