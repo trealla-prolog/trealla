@@ -590,6 +590,11 @@ static bool bif_rdiv_2(query *q)
 	} else if (is_rational(&p1) && is_smallint(&p2)) {
 		if (mp_int_mul_value(&p1.val_bigint->irat.den, p2.val_int, &q->tmp_irat.den) == MP_MEMORY)
 			return throw_error(q, &p1, q->st.curr_fp, "resource_error", "memory");
+	} else if (is_bigint(&p1) && is_rational(&p2)) {
+		if (mp_int_mul(&p2.val_bigint->irat.den, &p1.val_bigint->ival, &q->tmp_irat.num) == MP_MEMORY)
+			return throw_error(q, &p1, q->st.curr_fp, "resource_error", "memory");
+		if (mp_int_init_copy(&q->tmp_irat.den, &p2.val_bigint->irat.num) == MP_MEMORY)
+			return throw_error(q, &p1, q->st.curr_fp, "resource_error", "memory");
 	} else if (is_bigint(&p1) && is_bigint(&p2)) {
 		if (mp_int_init_copy(&q->tmp_irat.num, &p1.val_bigint->ival) == MP_MEMORY)
 			return throw_error(q, &p1, q->st.curr_fp, "resource_error", "memory");
