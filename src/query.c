@@ -1946,17 +1946,17 @@ static query *query_create_(module *m, bool is_small)
 
 query *query_create(module *m)
 {
-	return query_create_(m, 0);
+	return query_create_(m, false);
 }
 
 query *query_create_threaded(module *m)
 {
-	return query_create_(m, 1);
+	return query_create_(m, false);
 }
 
 query *query_create_subquery(query *q, cell *instr)
 {
-	query *subq = query_create_(q->st.m, 0);
+	query *subq = query_create_(q->st.m, false);
 	if (!subq) return NULL;
 	subq->parent = q;
 	subq->st.fp = 1;
