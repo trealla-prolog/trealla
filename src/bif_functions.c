@@ -2522,6 +2522,9 @@ static bool bif_iso_compare_ge_2(query *q)
 		int ok = mp_rat_compare(&tmp, &p2.val_bigint->irat) op 0; \
 		mp_rat_clear(&tmp); \
 		return ok; \
+	} else if (is_bigint(&p1) && is_float(&p2)) { \
+		pl_flt f1 = BIGINT_TO_DOUBLE(&p1.val_bigint->ival); \
+		return f1 op p2.val_float; \
 	} else if (is_rational(&p1) && is_rational(&p2)) { \
 		return mp_rat_compare(&p1.val_bigint->irat, &p2.val_bigint->irat) op 0; \
 	} else if (is_rational(&p1) && is_bigint(&p2)) { \
@@ -2534,9 +2537,9 @@ static bool bif_iso_compare_ge_2(query *q)
 	} else if (is_rational(&p1) && is_smallint(&p2)) \
 		return mp_rat_compare_value(&p1.val_bigint->irat, p2.val_int, 1) op 0; \
 	else if (is_rational(&p1) && is_float(&p2)) { \
-		pl_flt f1 = BIGINT_TO_DOUBLE(&p1.val_bigint->ival); \
+		pl_flt f1 = RATIONAL_TO_DOUBLE(&p1.val_bigint->irat); \
 		if (isinf(f1)) return throw_error(q, &p1, q->st.curr_fp, "evaluation_error", "float_overflow"); \
-		return p2.val_float op f1; \
+		return f1 op p2.val_float; \
 	} else if (is_float(&p1) && is_smallint(&p2)) \
 		return p1.val_float op p2.val_int; \
 	else if (is_float(&p1) && is_float(&p2)) \
