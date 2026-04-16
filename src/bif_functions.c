@@ -2978,6 +2978,7 @@ builtins g_evaluable_bifs[] =
 	{"rand", 1, bif_rand_1, "?integer", false, false, BLAH},
 	{"random", 1, bif_random_1, "?integer", false, false, BLAH},
 	{"random_between", 3, bif_random_between_3, "?integer,?integer,-integer", false, false, BLAH},
+	{"rational", 1, bif_rational_1, "+term", false, false, BLAH},
 
 	// Functions...
 
@@ -3038,7 +3039,6 @@ builtins g_evaluable_bifs[] =
 
 	{"numerator", 1, bif_numerator_1, "+rational,-integer", false, true, BLAH},
 	{"denominator", 1, bif_denominator_1, "+rational,-integer", false, true, BLAH},
-	{"rational", 1, bif_rational_1, "+term", false, false, BLAH},
 	{"rdiv", 2, bif_rdiv_2, "+integer,+integer,-rational", false, true, BLAH},
 
 	{"divmod", 4, bif_divmod_4, "+integer,+integer,?integer,?integer", false, false, BLAH},

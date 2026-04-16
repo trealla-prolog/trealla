@@ -446,12 +446,6 @@ deconsult(Files) :- unload_files(Files).
 
 atom_number(A, N) :- atom_codes(A,Codes), number_codes(N, Codes).
 
-:- help(rational_numerator_denominator(+rational,-integer,-integer), [iso(false)]).
-
-rational_numerator_denominator(R, N, D) :-
-	N is numerator(R),
-	D is denominator(R).
-
 '$skip_list'(Skip, Xs0, Xs) :- '$skip_max_list'(Skip,_, Xs0, Xs).
 
 :- help(term_hash(+term,+list,-integer), [iso(false)]).
