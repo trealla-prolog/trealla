@@ -570,7 +570,7 @@ static bool bif_rdiv_2(query *q)
 	if (!is_integer(&p1) && !is_rational(&p1))
 		return throw_error(q, &p1, q->st.curr_fp, "type_error", "integer");
 
-	if (!is_integer(&p1) && !is_rational(&p1))
+	if (!is_integer(&p2) && !is_rational(&p2))
 		return throw_error(q, &p2, q->st.curr_fp, "type_error", "integer");
 
 	if (is_zero(&p2))
