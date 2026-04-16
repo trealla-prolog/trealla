@@ -30,7 +30,8 @@ popcount(I, N) :-
 
 number_to_rational(F, R) :- F < 0, !,
    H is -F,
-   number_to_rational(H, A rdiv B),
+   number_to_rational(H, R0),
+   rational_numerator_denominator(R0, A, B),
    C is -A,
    R is C rdiv B.
 number_to_rational(F, R) :-
