@@ -1844,6 +1844,14 @@ static bool bif_iso_divide_2(query *q)
 			return throw_error(q, &q->accum, q->st.curr_fp, "evaluation_error", "float_overflow");
 
 		q->accum.tag = TAG_FLOAT;
+	} else if (is_rational(&p1) && is_smallint(&p2)) {
+		q->accum.val_float = RATIONAL_TO_DOUBLE(&p1.val_bigint->irat);
+		q->accum.val_float /= p2.val_int;
+
+		if (isinf(q->accum.val_float))
+			return throw_error(q, &q->accum, q->st.curr_fp, "evaluation_error", "float_overflow");
+
+		q->accum.tag = TAG_FLOAT;
 	} else if (is_float(&p1) && is_float(&p2)) {
 		if (p2.val_float == 0.0)
 			return throw_error(q, &p1, q->st.curr_fp, "evaluation_error", "zero_divisor");
