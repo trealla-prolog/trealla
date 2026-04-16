@@ -46,6 +46,7 @@
 #define SET_RAT_ACCUM2() {											\
 	if (errno == ENOMEM)										\
 		return throw_error(q, &p1, q->st.curr_fp, "resource_error", "memory"); \
+	mp_rat_reduce(&q->tmp_irat);	\
 	if (mp_int_compare_value(&q->tmp_irat.den, 1)) { \
 		q->accum.tag = TAG_RATIONAL;										\
 		q->accum.val_bigint = malloc(sizeof(bigint));				\
@@ -604,9 +605,17 @@ static bool bif_rdiv_2(query *q)
 			return throw_error(q, &p1, q->st.curr_fp, "resource_error", "memory");
 		if (mp_int_init_copy(&q->tmp_irat.den, &p2.val_bigint->ival) == MP_MEMORY)
 			return throw_error(q, &p1, q->st.curr_fp, "resource_error", "memory");
-	} else if (is_smallint(&p1)) {
+		mp_rat_reduce(&q->tmp_irat);
+	} else if (is_smallint(&p1) && is_rational(&p2)) {
+		if (mp_int_mul_value(&p2.val_bigint->irat.den, p1.val_int, &q->tmp_irat.num) == MP_MEMORY)
+			return throw_error(q, &p1, q->st.curr_fp, "resource_error", "memory");
+		if (mp_int_init_copy(&q->tmp_irat.den, &p2.val_bigint->irat.num) == MP_MEMORY)
+			return throw_error(q, &p1, q->st.curr_fp, "resource_error", "memory");
+	} else if (is_smallint(&p1) && is_smallint(&p2)) {
 		if (mp_rat_set_value(&q->tmp_irat, p1.val_int, p2.val_int) == MP_MEMORY)
 			return throw_error(q, &p1, q->st.curr_fp, "resource_error", "memory");
+	} else {
+		return throw_error(q, &p2, q->st.curr_fp, "type_error", "integer");
 	}
 
 	SET_RAT_ACCUM2();
