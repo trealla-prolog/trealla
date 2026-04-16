@@ -33,14 +33,16 @@ popcount(I, N) :-
  * If X is a number then the function returns an approximate rational number.
  */
 % number_to_rational(+Number, -Rational)
-number_to_rational(F, C rdiv B) :- F < 0, !,
+number_to_rational(F, R) :- F < 0, !,
    H is -F,
    number_to_rational(H, A rdiv B),
-   C is -A.
+   C is -A,
+   R is C rdiv B.
 number_to_rational(F, R) :-
    rat_start2(F, V, W),
    divmod(V, W, D, U),
-   rat_iter2(W rdiv U, D rdiv 1, 1 rdiv 0, F, R).
+   rat_iter2(W rdiv U, D rdiv 1, 1 rdiv 0, F, R0),
+   R is R0.
 
 % rat_start2(+Number, -Integer, -Integer)
 rat_start2(F, V, W) :-
