@@ -126,8 +126,6 @@ static void trace_call(query *q, cell *c, pl_ctx c_ctx, box_t box)
 		box == FAIL ? "FAIL":
 		"????");
 
-	int save_depth = q->max_depth;
-	q->max_depth = 10;
 	q->quoted = true;
 	q->double_quotes = true;
 	char *dst = print_term_to_strbuf(q, c, c_ctx, -1);
@@ -142,7 +140,6 @@ static void trace_call(query *q, cell *c, pl_ctx c_ctx, box_t box)
 	stream *str = &q->pl->streams[n];
 	net_write(src, srclen, str);
 	SB_free(pr);
-	q->max_depth = save_depth;
 	if (++q->vgen == 0) q->vgen = 1;
 
 	if (q->creep) {
