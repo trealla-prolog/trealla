@@ -567,7 +567,7 @@ static bool bif_rdiv_2(query *q)
 	CLEANUP cell p1 = eval(q, p1_tmp);
 	CLEANUP cell p2 = eval(q, p2_tmp);
 
-	if (!is_integer(&p1))
+	if (!is_integer(&p1) && !is_rational(&p1))
 		return throw_error(q, &p1, q->st.curr_fp, "type_error", "integer");
 
 	if (!is_integer(&p2))
@@ -586,10 +586,8 @@ static bool bif_rdiv_2(query *q)
 			return throw_error(q, &p1, q->st.curr_fp, "resource_error", "memory");
 		if (mp_int_set_value(&q->tmp_irat.num, 1) == MP_MEMORY)
 			return throw_error(q, &p1, q->st.curr_fp, "resource_error", "memory");
-	} else if (is_rational(&p1)) {
+	} else if (is_rational(&p1) && is_smallint(&p2)) {
 		if (mp_int_mul_value(&p1.val_bigint->irat.den, p2.val_int, &q->tmp_irat.den) == MP_MEMORY)
-			return throw_error(q, &p1, q->st.curr_fp, "resource_error", "memory");
-		if (mp_int_set_value(&q->tmp_irat.num, 1) == MP_MEMORY)
 			return throw_error(q, &p1, q->st.curr_fp, "resource_error", "memory");
 	} else if (is_bigint(&p1) && is_bigint(&p2)) {
 		if (mp_int_init_copy(&q->tmp_irat.num, &p1.val_bigint->ival) == MP_MEMORY)
