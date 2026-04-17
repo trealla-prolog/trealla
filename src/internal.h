@@ -612,14 +612,14 @@ struct thread_ {
 	prolog *pl;
 	query *q;
 	skiplist *alias;
-	cell *goal, *exit_code, *at_exit, *ball;
+	cell *goal, *exit_code, *at_exit_goal, *ball;
 	list signals, queue;
 #if USE_THREADS
     pthread_t id;
     pthread_cond_t cond;
     pthread_mutex_t mutex;
 #endif
-	unsigned num_vars, at_exit_num_vars, num_locks;
+	unsigned num_vars, at_exit_goal_num_vars, num_locks;
 	int chan, locked_by;
 	lock guard;
 	pl_atomic bool is_active;

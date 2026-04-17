@@ -167,7 +167,7 @@ static int new_thread(prolog *pl)
 			t->is_active = true;
 			t->locked_by = -1;
 			t->num_locks = 0;
-			t->at_exit = NULL;
+			t->at_exit_goal = NULL;
 			t->goal = NULL;
 			t->ball = NULL;
 			prolog_unlock(pl);
@@ -677,10 +677,12 @@ static void *start_routine_thread_create(thread *t)
 		//DUMP_TERM("*** ", t->ball, 0, 0);
 	}
 
-	if (t->at_exit) {
-		//printf("*** at exit, %u\n", t->chan);
-		execute(t->q, t->at_exit, t->at_exit_num_vars);
-		t->at_exit = NULL;
+	if (t->at_exit_goal) {
+		//printf("*** at_exit...\n");
+		//query *q = t->q;
+		//DUMP_TERM("***", t->at_exit_goal, q->st.curr_fp, 0);
+		execute(t->q, t->at_exit_goal, t->at_exit_goal_num_vars);
+		t->at_exit_goal = NULL;
 	}
 
 	t->is_finished = true;
@@ -847,7 +849,7 @@ static bool bif_thread_create_3(query *q)
 		CHECKED(init_tmp_heap(q));
 		cell *tmp = clone_term_to_tmp(q, exit_goal, exit_goal_ctx);
 		CHECKED(tmp);
-		t->at_exit_num_vars = rebase_term(q, tmp, 0);
+		t->at_exit_goal_num_vars = rebase_term(q, tmp, 0);
 		cell *tmp2 = alloc_heap(q, 1+tmp->num_cells+1);
 		CHECKED(tmp2);
 		pl_idx num_cells = 0;
@@ -855,8 +857,8 @@ static bool bif_thread_create_3(query *q)
 		num_cells += dup_cells(tmp2+num_cells, tmp, tmp->num_cells);
 		make_instr(tmp2+num_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 		THREAD_DEBUG DUMP_TERM("at_exit", tmp2, q->st.curr_fp, 0);
-		t->at_exit = copy_term_to_heap(t->q, tmp2, 0, false);
-		CHECKED(t->at_exit);
+		t->at_exit_goal = copy_term_to_heap(t->q, tmp2, 0, false);
+		CHECKED(t->at_exit_goal);
 	}
 
 	pthread_attr_t sa;
@@ -989,12 +991,11 @@ static bool bif_thread_join_2(query *q)
 		t->ball = NULL;
 	}
 
-	if (t->at_exit) {
+	if (t->at_exit_goal) {
 		printf("*** at_exit...\n");
-		DUMP_TERM("***", t->at_exit, q->st.curr_fp, 0);
-		unshare_cells(t->at_exit, t->ball->num_cells);
-		free(t->at_exit);
-		t->at_exit = NULL;
+		DUMP_TERM("***", t->at_exit_goal, q->st.curr_fp, 0);
+		unshare_cells(t->at_exit_goal, t->at_exit_goal->num_cells);
+		t->at_exit_goal = NULL;
 	}
 
 	t->is_active = false;
