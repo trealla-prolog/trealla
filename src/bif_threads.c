@@ -730,8 +730,8 @@ static bool bif_thread_create_3(query *q)
 
 	thread *t = &q->pl->threads[n];
 	if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
-	cell *p4 = NULL;	// at_exit option
-	pl_ctx p4_ctx = 0;
+	cell *exit_goal = NULL;	// at_exit option
+	pl_ctx exit_goal_ctx = 0;
 	bool is_detached = false, is_alias = false;
 	LIST_HANDLER(p3);
 
@@ -785,8 +785,8 @@ static bool bif_thread_create_3(query *q)
 				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 			}
 
-			p4 = name;
-			p4_ctx = q->latest_ctx;
+			exit_goal = name;
+			exit_goal_ctx = q->latest_ctx;
 		} else if (!CMP_STRING_TO_CSTR(q, c, "detached")) {
 			if (is_var(name)) {
 				t->is_active = false;
@@ -843,9 +843,9 @@ static bool bif_thread_create_3(query *q)
 	make_instr(tmp2+num_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 	t->goal = tmp2;
 
-	if (p4) {
+	if (exit_goal) {
 		CHECKED(init_tmp_heap(q));
-		cell *tmp = clone_term_to_tmp(q, p4, p4_ctx);
+		cell *tmp = clone_term_to_tmp(q, exit_goal, exit_goal_ctx);
 		CHECKED(tmp);
 		t->at_exit_num_vars = rebase_term(q, tmp, 0);
 		cell *tmp2 = alloc_heap(q, 1+tmp->num_cells+1);
