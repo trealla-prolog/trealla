@@ -947,8 +947,10 @@ static bool bif_thread_join_2(query *q)
 
 	void *retval;
 
-	if (pthread_join((pthread_t)t->id, &retval))
-		return throw_error(q, p1, p1_ctx, "system_error", "join,not_thread");
+	if (pthread_join((pthread_t)t->id, &retval)) {
+		t->is_active = false;
+		return true;
+	}
 
 	if (t->exit_code) {
 		cell *tmp = copy_term_to_heap(q, t->exit_code, q->st.curr_fp, false);
