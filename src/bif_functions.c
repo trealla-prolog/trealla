@@ -147,6 +147,17 @@ static void clr_accum(cell *p)
 			if (isinf(q->accum.val_float)) return throw_error(q, &q->accum, q->st.curr_fp, "evaluation_error", "float_overflow"); \
 			q->accum.tag = TAG_FLOAT; \
 			q->accum.flags = 0; \
+		} else if (is_rational(&p2)) { \
+			mpq_t tmp; \
+			mp_int_init_copy(&tmp.num, &p1.val_bigint->ival); \
+			if (errno == ENOMEM)										\
+				return throw_error(q, &p1, q->st.curr_fp, "resource_error", "memory"); \
+			mp_int_init_value(&tmp.den, 1); \
+			mp_rat_##op2(&p2.val_bigint->irat, &tmp, &q->tmp_irat); \
+			if (errno == ENOMEM)										\
+				return throw_error(q, &p2, q->st.curr_fp, "resource_error", "memory"); \
+			mp_rat_clear(&tmp); \
+			SET_RAT_ACCUM2(); \
 		} \
 	} else if (is_bigint(&p2)) { \
 		if (is_smallint(&p1)) { \
