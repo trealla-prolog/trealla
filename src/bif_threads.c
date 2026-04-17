@@ -650,7 +650,7 @@ static bool bif_pl_thread_3(query *q)
 
 	if (pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread, (void*)t) != 0) {
 		t->is_active = false;
-		return false;
+		return throw_error(q, p2, p2_ctx, "system_error", "pthread_create");
 	}
 
 	cell tmp;
@@ -852,7 +852,7 @@ static bool bif_thread_create_3(query *q)
 		num_cells += dup_cells(tmp2+num_cells, tmp, tmp->num_cells);
 		make_instr(tmp2+num_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 		THREAD_DEBUG DUMP_TERM("at_exit", tmp2, q->st.curr_fp, 0);
-		t->at_exit = clone_term_to_heap(t->q, tmp2, 0);
+		t->at_exit = copy_term_to_heap(t->q, tmp2, 0, false);
 		CHECKED(t->at_exit);
 	}
 
@@ -866,7 +866,7 @@ static bool bif_thread_create_3(query *q)
 
 	if (pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread_create, (void*)t) != 0) {
 		t->is_active = false;
-		return false;
+		return throw_error(q, p1, p1_ctx, "system_error", "pthread_create");
 	}
 
 	return true;
@@ -885,7 +885,7 @@ bool do_signal(query *q, void *thread_ptr)
 	msg *m = list_pop_front(&t->signals);
 	release_lock(&t->guard);
 	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.curr_fp, 0);
-	cell *tmp = clone_term_to_heap(q, m->c, q->st.curr_fp);	// Copy into thread
+	cell *tmp = copy_term_to_heap(q, m->c, q->st.curr_fp, false);	// Copy into thread
 	CHECKED(tmp);
 	unshare_cells(tmp, tmp->num_cells);
 	free(m);
@@ -948,7 +948,7 @@ static bool bif_thread_join_2(query *q)
 		return throw_error(q, p1, p1_ctx, "system_error", "join,not_thread");
 
 	if (t->exit_code) {
-		cell *tmp = clone_term_to_heap(q, t->exit_code, q->st.curr_fp);
+		cell *tmp = copy_term_to_heap(q, t->exit_code, q->st.curr_fp, false);
 		t->exit_code = NULL;
 		GET_FIRST_ARG(p1,thread);
 		GET_NEXT_ARG(p2,any);
