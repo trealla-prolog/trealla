@@ -158,15 +158,18 @@ static int new_thread(prolog *pl)
 			t->id = pthread_self();
 			t->pl = pl;
 			t->chan = n;
+			t->is_detached = false;
 			t->is_queue_only = false;
 			t->is_mutex_only = false;
 			t->is_finished = false;
+			t->is_exception = false;
+			t->is_finished = false;
+			t->is_active = true;
 			t->locked_by = -1;
 			t->num_locks = 0;
-			t->is_exception = false;
 			t->at_exit = NULL;
 			t->goal = NULL;
-			t->is_active = true;
+			t->ball = NULL;
 			prolog_unlock(pl);
 			return n;
 		}

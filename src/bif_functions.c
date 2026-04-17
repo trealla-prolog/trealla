@@ -2781,7 +2781,7 @@ static pl_flt rnd(query *q)
 	prolog_lock(q->pl);
 
 	if (q->pl->rnd_first_time) {
-		q->pl->rnd_first_time = false;
+		q->pl->rnd_first_time = 0;
 
 #if !defined(__wasi__)
 		q->pl->rnd_seed = clock() | getpid() << 4;
@@ -2793,8 +2793,8 @@ static pl_flt rnd(query *q)
 			rnd(q);
 	}
 
-	q->pl->rnd_seed = ((q->pl->rnd_seed * 2743) + 5923) & random_M;
-	pl_flt val = ((pl_flt)q->pl->rnd_seed / (pl_flt)random_M);
+	pl_uint seed = q->pl->rnd_seed = ((q->pl->rnd_seed * 2743) + 5923) & random_M;
+	pl_flt val = ((pl_flt)seed / (pl_flt)random_M);
 	prolog_unlock(q->pl);
 	return val;
 }
@@ -2802,8 +2802,10 @@ static pl_flt rnd(query *q)
 static bool bif_set_seed_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
-	q->pl->rnd_first_time = false;
+	prolog_lock(q->pl);
 	q->pl->rnd_seed = p1->val_int;
+	q->pl->rnd_first_time = 0;
+	prolog_unlock(q->pl);
 	return true;
 }
 

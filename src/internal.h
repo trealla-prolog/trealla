@@ -883,7 +883,7 @@ struct prolog_ {
 	unsigned current_input, current_output, current_error;
 	pl_uint rnd_seed;
 	int8_t halt_code, opt;
-	bool rnd_first_time:1;
+	pl_refcnt rnd_first_time;
 	bool def_quoted:1;
 	bool def_double_quotes:1;
 	bool is_redo:1;
