@@ -885,8 +885,9 @@ bool do_signal(query *q, void *thread_ptr)
 {
 	thread *t = (thread*)thread_ptr;
 	acquire_lock(&t->guard);
+	assert(t->is_active);
 
-	if (!t->is_active || !list_count(&t->signals)) {
+	if (!list_count(&t->signals)) {
 		release_lock(&t->guard);
 		return false;
 	}
@@ -960,6 +961,8 @@ static bool bif_thread_join_2(query *q)
 
 	if (t->exit_code) {
 		cell *tmp = copy_term_to_heap(q, t->exit_code, q->st.curr_fp, false);
+		unshare_cells(t->exit_code, t->exit_code->num_cells);
+		free(t->exit_code);
 		t->exit_code = NULL;
 		GET_FIRST_ARG(p1,thread);
 		GET_NEXT_ARG(p2,any);
@@ -1154,7 +1157,7 @@ static bool bif_thread_exit_1(query *q)
 	cell *tmp = clone_term_to_tmp(q, p1, p1_ctx);
 	CHECKED(tmp);
 	rebase_term(q, tmp, 0);
-	cell *tmp2 = alloc_heap(q, 1+tmp->num_cells);
+	cell *tmp2 = calloc(1+tmp->num_cells, sizeof(cell));
 	CHECKED(tmp2);
 	make_instr(tmp2, new_atom(q->pl, "exited"), NULL, 1, tmp->num_cells);
 	dup_cells(tmp2+1, tmp, tmp->num_cells);
@@ -1168,6 +1171,7 @@ static bool bif_thread_exit_1(query *q)
 		return true;
 	}
 
+	assert(0);
 	printf("*** no thead_exit\n");
 	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.curr_fp, 1);
 	return false;
