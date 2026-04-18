@@ -345,14 +345,14 @@ static unsigned queue_size(prolog *pl, unsigned chan)
 	return cnt;
 }
 
-static cell *queue_to_chan(prolog *pl, unsigned chan, const cell *c, unsigned from_chan, bool is_signal)
+static bool queue_to_chan(prolog *pl, unsigned chan, const cell *c, unsigned from_chan, bool is_signal)
 {
 	//printf("*** send to chan=%u, num_cells=%u\n", chan, c->num_cells);
 	thread *t = &pl->threads[chan];
 	msg *m = malloc(sizeof(msg) + (sizeof(cell)*c->num_cells));
 
 	if (!m)
-		return NULL;
+		return false;
 
 	m->from_chan = from_chan;
 	dup_cells(m->c, c, c->num_cells);
@@ -365,7 +365,7 @@ static cell *queue_to_chan(prolog *pl, unsigned chan, const cell *c, unsigned fr
 	}
 
 	release_lock(&t->guard);
-	return m->c;
+	return true;
 }
 
 static bool do_send_message(query *q, unsigned chan, cell *p1, pl_ctx p1_ctx, bool is_signal)
