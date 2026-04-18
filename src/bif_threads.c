@@ -2337,7 +2337,7 @@ void thread_cancel_all(prolog *pl)
 	for (unsigned i = 0; i < MAX_THREADS; i++) {
 		thread *t = &pl->threads[i];
 
-		if (!is_threaded(t) || !t->is_active || t->is_detached)
+		if (!is_threaded(t) || !t->is_active)
 			continue;
 
 		msleep(10);
