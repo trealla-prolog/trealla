@@ -667,6 +667,9 @@ static void *start_routine_thread_create(thread *t)
 	//printf("*** create %d\n", t->chan);
 	execute(t->q, t->goal, t->num_vars);
 	t->is_exception = t->q->did_unhandled_exception;
+	unshare_cells(t->goal, t->goal->num_cells);
+	free(t->goal);
+	t->goal = NULL;
 
 	if (t->is_exception) {
 		//printf("*** exception, %u\n", t->chan);
@@ -841,7 +844,7 @@ static bool bif_thread_create_3(query *q)
 	CHECKED(t->q);
 	t->q->thread_ptr = t;
 	t->q->my_chan = n;
-	cell *tmp2 = alloc_heap(t->q, 1+tmp->num_cells+1);
+	cell *tmp2 = calloc(1+tmp->num_cells+1, sizeof(cell));
 	CHECKED(tmp2);
 	pl_idx num_cells = 0;
 	make_instr(tmp2+num_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, tmp->num_cells+1);
