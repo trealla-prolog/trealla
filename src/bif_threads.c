@@ -349,7 +349,7 @@ static cell *queue_to_chan(prolog *pl, unsigned chan, const cell *c, unsigned fr
 {
 	//printf("*** send to chan=%u, num_cells=%u\n", chan, c->num_cells);
 	thread *t = &pl->threads[chan];
-	msg *m = calloc(1, sizeof(msg) + (sizeof(cell)*c->num_cells));
+	msg *m = malloc(sizeof(msg) + (sizeof(cell)*c->num_cells));
 
 	if (!m)
 		return NULL;
@@ -671,7 +671,7 @@ static void *start_routine_thread_create(thread *t)
 
 	if (t->is_exception) {
 		//printf("*** exception, %u\n", t->chan);
-		t->ball = calloc(1, (sizeof(cell)*(t->q->ball->num_cells)));
+		t->ball = calloc(t->q->ball->num_cells, sizeof(cell));
 		dup_cells(t->ball, t->q->ball, t->q->ball->num_cells);
 		//query *q = t->q;
 		//DUMP_TERM("*** ", t->ball, 0, 0);
@@ -682,6 +682,8 @@ static void *start_routine_thread_create(thread *t)
 		//query *q = t->q;
 		//DUMP_TERM("***", t->at_exit_goal, q->st.curr_fp, 0);
 		execute(t->q, t->at_exit_goal, t->at_exit_goal_num_vars);
+		unshare_cells(t->at_exit_goal, t->at_exit_goal->num_cells);
+		free(t->at_exit_goal);
 		t->at_exit_goal = NULL;
 	}
 
@@ -857,8 +859,10 @@ static bool bif_thread_create_3(query *q)
 		num_cells += dup_cells(tmp2+num_cells, tmp, tmp->num_cells);
 		make_instr(tmp2+num_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 		THREAD_DEBUG DUMP_TERM("at_exit", tmp2, q->st.curr_fp, 0);
-		t->at_exit_goal = copy_term_to_heap(t->q, tmp2, 0, false);
+		//t->at_exit_goal = copy_term_to_heap(t->q, tmp2, 0, false);
+		t->at_exit_goal = calloc(tmp2->num_cells, sizeof(cell));
 		CHECKED(t->at_exit_goal);
+		dup_cells(t->at_exit_goal, tmp2, tmp2->num_cells);
 	}
 
 	pthread_attr_t sa;
@@ -995,6 +999,7 @@ static bool bif_thread_join_2(query *q)
 		printf("*** at_exit...\n");
 		DUMP_TERM("***", t->at_exit_goal, q->st.curr_fp, 0);
 		unshare_cells(t->at_exit_goal, t->at_exit_goal->num_cells);
+		free(t->at_exit_goal);
 		t->at_exit_goal = NULL;
 	}
 
