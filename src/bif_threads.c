@@ -666,7 +666,6 @@ static void *start_routine_thread_create(thread *t)
 {
 	//printf("*** create %d\n", t->chan);
 	execute(t->q, t->goal, t->num_vars);
-	//printf("*** ~create %d\n", t->chan);
 	t->is_exception = t->q->did_unhandled_exception;
 
 	if (t->is_exception) {
@@ -690,8 +689,10 @@ static void *start_routine_thread_create(thread *t)
 	t->is_finished = true;
 	do_unlock_all(t->pl);
 
-	if (!t->is_detached)
+	if (!t->is_detached) {
+		//printf("*** ~create %d\n", t->chan);
 		return 0;
+	}
 
 	sl_destroy(t->alias);
 	t->alias = NULL;
@@ -718,6 +719,7 @@ static void *start_routine_thread_create(thread *t)
 
 	t->is_active = false;
 	release_lock(&t->guard);
+	//printf("*** ~create %d\n", t->chan);
     return 0;
 }
 
@@ -734,7 +736,7 @@ static bool bif_thread_create_3(query *q)
 
 	thread *t = &q->pl->threads[n];
 	if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
-	cell *exit_goal = NULL;	// at_exit option
+	cell *exit_goal = NULL;
 	pl_ctx exit_goal_ctx = 0;
 	bool is_detached = false, is_alias = false;
 	LIST_HANDLER(p3);
@@ -2332,8 +2334,8 @@ static bool bif_pl_recv_2(query *q)
 
 void thread_cancel_all(prolog *pl)
 {
-	for (int i = 0; (i < 1000) && pl->q_cnt; i++)
-		msleep(1);
+	//for (int i = 0; (i < 1000) && pl->q_cnt; i++)
+	//	msleep(1);
 
 	if (!pl->q_cnt)
 		return;
@@ -2343,7 +2345,7 @@ void thread_cancel_all(prolog *pl)
 	for (unsigned i = 0; i < MAX_THREADS; i++) {
 		thread *t = &pl->threads[i];
 
-		if (!is_threaded(t) || !t->is_active)
+		if (!is_threaded(t) || !t->is_active || t->is_detached)
 			continue;
 
 		do_cancel(t);
