@@ -142,7 +142,7 @@ int net_connect(const char *hostname, unsigned port, bool udp, bool nodelay)
 	hints.ai_socktype = udp ? SOCK_DGRAM : SOCK_STREAM;
 	hints.ai_flags = hostname ? 0 : AI_PASSIVE;
 	char svc[20];
-	sprintf(svc, "%u", port);
+	snprintf(svc, sizeof(svc), "%u", port);
 
 	if ((status = getaddrinfo(hostname, svc, &hints, &result)) != 0)
 		return -1;
@@ -195,7 +195,7 @@ int net_server(const char *hostname, unsigned port, bool udp, const char *keyfil
 	hints.ai_socktype = udp ? SOCK_DGRAM : SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 	char svc[20];
-	sprintf(svc, "%u", port);
+	snprintf(svc, sizeof(svc), "%u", port);
 
 	if ((status = getaddrinfo(NULL, svc, &hints, &result)) != 0) {
 		perror("getaddrinfo");

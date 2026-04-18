@@ -17,7 +17,8 @@ CFLAGS = -Isrc -I/usr/local/include -DVERSION='$(GIT_VERSION)' \
 	-Wall -Wextra \
 	-Wno-unused-but-set-variable \
 	-Wno-unused-parameter \
-	-Wno-unused-variable
+	-Wno-unused-variable     \
+	-Wno-unused-function
 
 ifeq ($(EMBED), 1)
 CFLAGS += -DEMBED=1
@@ -220,7 +221,8 @@ profile:
 	$(MAKE) 'OPT=$(OPT) -O0 -pg -DDEBUG'
 
 debug:
-	$(MAKE) 'OPT=$(OPT) -fsanitize=address -O0 -g3 -DDEBUG'
+	#$(MAKE) 'OPT=$(OPT) -fsanitize=undefined,integer,address -O0 -g3 -DDEBUG'
+	$(MAKE) 'OPT=$(OPT) -fsanitize=undefined,address -O0 -g3 -DDEBUG'
 
 release:
 	$(MAKE) 'OPT=$(OPT) -DNDEBUG'

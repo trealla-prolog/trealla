@@ -6285,12 +6285,12 @@ static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 			if (!is_atom(h+1))
 				return throw_error(q, h+1, p2_ctx, "type_error", "atom");
 
-			sprintf(protocol, "%s", C_STR(q, h+1));
+			snprintf(protocol, sizeof(protocol), "%s", C_STR(q, h+1));
 		} else if (!strcmp(C_STR(q, h), "host")) {
 			if (!is_atom(h+1))
 				return throw_error(q, h+1, p2_ctx, "type_error", "atom");
 
-			sprintf(host, "%s", C_STR(q, h+1));
+			snprintf(host, sizeof(host), "%s", C_STR(q, h+1));
 		} else if (!strcmp(C_STR(q, h), "port")) {
 			if (!is_smallint(h+1))
 				return throw_error(q, h+1, p2_ctx, "type_error", "integer");
@@ -6300,7 +6300,7 @@ static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 			if (!is_atom(h+1))
 				return throw_error(q, h+1, p2_ctx, "type_error", "atom");
 
-			sprintf(path, "%s", C_STR(q, h+1));
+			snprintf(path, sizeof(path), "%s", C_STR(q, h+1));
 		} else if (!strcmp(C_STR(q, h), "search")) {
 			cell *h1 = h + 1;
 			h1 = deref(q, h1, h_ctx);
@@ -6328,16 +6328,16 @@ static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 				size_t len1 = C_STRLEN(q, c+1);
 				char *dstbuf1 = malloc(len1+1);
 				CHECKED(dstbuf1);
-				url_encode(C_STR(q, c+1), len1, dstbuf1);
-				dst += sprintf(dst, "%s", dstbuf1);
+				url_encode(C_STR(q, c+1), len1, dstbuf1, len1+1);
+				dst += snprintf(dst, sizeof(search), "%s", dstbuf1);
 				free(dstbuf1);
 
 				if (is_atom(c+2)) {
 					size_t len2 = C_STRLEN(q, c+2);
 					char *dstbuf2 = malloc(len2+1);
 					CHECKED(dstbuf2);
-					url_encode(C_STR(q, c+2), len2, dstbuf2);
-					dst += sprintf(dst, "=%s", dstbuf2);
+					url_encode(C_STR(q, c+2), len2, dstbuf2, len2+1);
+					dst += snprintf(dst, sizeof(search), "=%s", dstbuf2);
 					free(dstbuf2);
 				} else if (is_smallint(c+2)) {
 					char tmpbuf[256];
@@ -6345,8 +6345,8 @@ static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 					size_t len2 = strlen(tmpbuf);
 					char *dstbuf2 = malloc(len2+1);
 					CHECKED(dstbuf2);
-					url_encode(tmpbuf, len2, dstbuf2);
-					dst += sprintf(dst, "=%s", dstbuf2);
+					url_encode(tmpbuf, len2, dstbuf2, len2+1);
+					dst += snprintf(dst, sizeof(search), "=%s", dstbuf2);
 					free(dstbuf2);
 				} else {
 					char tmpbuf[256];
@@ -6354,8 +6354,8 @@ static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 					size_t len2 = strlen(tmpbuf);
 					char *dstbuf2 = malloc(len2+1);
 					CHECKED(dstbuf2);
-					url_encode(tmpbuf, len2, dstbuf2);
-					dst += sprintf(dst, "=%s", dstbuf2);
+					url_encode(tmpbuf, len2, dstbuf2, len2+1);
+					dst += snprintf(dst, sizeof(search), "=%s", dstbuf2);
 					free(dstbuf2);
 				}
 
@@ -6364,13 +6364,13 @@ static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 				h1_ctx = q->latest_ctx;
 
 				if (!is_nil(h1))
-					dst += sprintf(dst, "&");
+					dst += snprintf(dst, sizeof(search), "&");
 			}
 		} else if (!strcmp(C_STR(q, h), "fragment")) {
 			if (!is_atom(h+1))
 				return throw_error(q, h+1, p2_ctx, "type_error", "atom");
 
-			sprintf(fragment, "%s", C_STR(q, h+1));
+			snprintf(fragment, sizeof(fragment), "%s", C_STR(q, h+1));
 		}
 
 		p2 = LIST_TAIL(p2);

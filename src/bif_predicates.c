@@ -4173,7 +4173,7 @@ static bool bif_base64_3(query *q)
 	return throw_error(q, p1, p1_ctx, "instantiation_error", "atom");
 }
 
-char *url_encode(const char *src, int len, char *dstbuf)
+char *url_encode(const char *src, int len, char *dstbuf, size_t dstlen)
 {
 	char *dst = dstbuf;
 
@@ -4185,7 +4185,7 @@ char *url_encode(const char *src, int len, char *dstbuf)
 			src++;
 		} else if (!isalnum(*src) && (*src != '-') && (*src != '_') && (*src != '.') && (*src != '~')) {
 			const unsigned char* src2 = (unsigned char*)src;
-			dst += sprintf(dst, "%%%02X", *src2);
+			dst += snprintf(dst, dstlen, "%%%02X", *src2);
 			src++;
 		} else
 			*dst++ = *src++;
@@ -4225,7 +4225,7 @@ static bool do_urlencode_2(query *q)
 	size_t len = C_STRLEN(q, p1);
 	char *dstbuf = malloc((len*3)+1);	// URL's can increase length x3
 	CHECKED(dstbuf);
-	url_encode(str, len, dstbuf);
+	url_encode(str, len, dstbuf, (len*3)+1);
 	cell tmp;
 
 	if (is_string(p1))

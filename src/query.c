@@ -312,7 +312,7 @@ const char *dump_id(const void *k, const void *v, const void *p)
 {
 	uint64_t id = (uint64_t)(size_t)k;
 	static char tmpbuf[1024];
-	sprintf(tmpbuf, "%"PRIu64"", id);
+	snprintf(tmpbuf, sizeof(tmpbuf), "%"PRIu64"", id);
 	return tmpbuf;
 }
 

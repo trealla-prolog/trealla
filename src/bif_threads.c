@@ -263,7 +263,6 @@ static bool is_queue_or_alias(query *q, cell *c)
 	return true;
 }
 
-#if 0
 static bool check_thread_or_alias_object(query *q, cell *c)
 {
 	if (is_var(c))
@@ -276,7 +275,6 @@ static bool check_thread_or_alias_object(query *q, cell *c)
 
 	return true;
 }
-#endif
 
 static bool check_thread_or_alias(query *q, cell *c)
 {

@@ -363,18 +363,18 @@ size_t sprint_int(char *dst, size_t dstlen, pl_int n, int base)
 	return dst - save_dst;
 }
 
-static void format_double(double num, char *res) {
-	sprintf(res,"%.16g", num);
+static void format_double(double num, char *res, size_t reslen) {
+	snprintf(res, reslen, "%.16g", num);
 
 	if (strtod(res, NULL) != num)
-		sprintf(res, "%.17g", num);
+		snprintf(res, reslen, "%.17g", num);
 }
 
 // Make sure we have a trailing dot if needed...
 
-static void reformat_float(query *q, char *tmpbuf, pl_flt v)
+static void reformat_float(query *q, char *tmpbuf, size_t tmplen, pl_flt v)
 {
-	format_double(v, tmpbuf);
+	format_double(v, tmpbuf, tmplen);
 	char tmpbuf2[256];
 	strcpy(tmpbuf2, tmpbuf);
 	const char *src = tmpbuf2;
@@ -400,7 +400,7 @@ static void reformat_float(query *q, char *tmpbuf, pl_flt v)
 	*dst = '\0';
 }
 
-static const char *varformat2(char *tmpbuf, size_t tmpbuf_len, cell *c, unsigned nv_start)
+static const char *varformat2(char *tmpbuf, size_t tmplen, cell *c, unsigned nv_start)
 {
 	mpz_t tmp;
 
@@ -412,21 +412,21 @@ static const char *varformat2(char *tmpbuf, size_t tmpbuf_len, cell *c, unsigned
 	mp_small num;
 	mp_int_mod_value(&tmp, 26, &num);
 	char *dst = tmpbuf;
-	dst += sprintf(dst, "%c", 'A'+(unsigned)(num));
+	dst += snprintf(dst, tmplen, "%c", 'A'+(unsigned)(num));
 	mp_int_div_value(&tmp, 26, &tmp, NULL);
 
 	if (mp_int_compare_zero(&tmp) > 0)
-		dst += mp_int_to_string(&tmp, 10, dst, tmpbuf_len);
+		dst += mp_int_to_string(&tmp, 10, dst, tmplen);
 
 	mp_int_clear(&tmp);
 	return tmpbuf;
 }
 
-static const char *varformat(char *tmpbuf, unsigned long long num, bool listing)
+static const char *varformat(char *tmpbuf, size_t tmplen, unsigned long long num, bool listing)
 {
 	char *dst = tmpbuf;
-	dst += sprintf(dst, "%s%c", listing?"":"_", 'A'+(unsigned)(num%26));
-	if ((num/26) > 0) dst += sprintf(dst, "%"PRIu64"", (int64_t)(num/26));
+	dst += snprintf(dst, tmplen, "%s%c", listing?"":"_", 'A'+(unsigned)(num%26));
+	if ((num/26) > 0) dst += snprintf(dst, tmplen, "%"PRIu64"", (int64_t)(num/26));
 	return tmpbuf;
 }
 
@@ -434,7 +434,7 @@ static const char *get_slot_name(query *q, pl_idx slot_nbr, bool listing)
 {
 	for (unsigned i = 0; i < q->print_idx; i++) {
 		if (q->pl->tab1[i] == slot_nbr) {
-			return varformat(q->tmpbuf, q->pl->tab2[i], listing);
+			return varformat(q->tmpbuf, sizeof(q->tmpbuf), q->pl->tab2[i], listing);
 		}
 	}
 
@@ -449,7 +449,7 @@ static const char *get_slot_name(query *q, pl_idx slot_nbr, bool listing)
 	}
 
 	q->pl->tab2[i] = j;
-	return varformat(q->tmpbuf, i, listing);
+	return varformat(q->tmpbuf, sizeof(q->tmpbuf), i, listing);
 }
 
 static void print_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
@@ -1472,9 +1472,9 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 		char tmpbuf[256];
 
 		if (!q->json && !isnan(c->val_float) && !isinf(c->val_float))
-			reformat_float(q, tmpbuf, c->val_float);
+			reformat_float(q, tmpbuf, sizeof(tmpbuf), c->val_float);
 		else
-			sprintf(tmpbuf, "%.*g", 17, get_float(c));
+			snprintf(tmpbuf, sizeof(tmpbuf), "%.*g", 17, get_float(c));
 
 		SB_sprintf(q->sb, "%s", tmpbuf);
 		q->last_thing = WAS_OTHER;

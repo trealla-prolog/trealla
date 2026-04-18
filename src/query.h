@@ -32,7 +32,7 @@ void do_yield_at(query *q, unsigned int time_in_ms);
 bool check_slot(query *q, unsigned cnt);
 bool check_trail(query *q);
 
-char *url_encode(const char *src, int len, char *dstbuf);
+char *url_encode(const char *src, int len, char *dstbuf, size_t dstlen);
 char *url_decode(const char *src, char *dstbuf);
 bool query_redo(query *q);
 bool has_next_key(query *q);

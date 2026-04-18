@@ -125,7 +125,7 @@ typedef struct {
 #define SB_sprintf(pr,fmt,...) {								\
 	size_t len = snprintf(NULL, 0, fmt, __VA_ARGS__);			\
 	SB_check(pr, len);											\
-	sprintf(pr##_buf.dst, fmt, __VA_ARGS__);					\
+	snprintf(pr##_buf.dst, (pr##_buf.buf_size-(pr##_buf.dst-pr##_buf.buf))+1, fmt, __VA_ARGS__);\
 	pr##_buf.dst += len;										\
 	*pr##_buf.dst = '\0';										\
 }

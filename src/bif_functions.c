@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "module.h"
 #include "prolog.h"
@@ -2423,14 +2424,17 @@ static bool bif_iso_shl_2(query *q)
 		mp_int_mul_pow2(&p1.val_bigint->ival, p2.val_int, &q->tmp_ival);
 		SET_ACCUM();
 	} else if (is_smallint(&p1) && is_smallint(&p2)) {
-		q->accum.val_int = p1.val_int << p2.val_int;
+		if (p2.val_int < 64) {
 
-		if ((p1.val_int >= INT32_MAX) ||
-			(p1.val_int <= INT32_MIN) ||
-			(p2.val_int >= 32)) {
-		} else {
-			q->accum.tag = TAG_INT;
-			return true;
+			q->accum.val_int = p1.val_int << p2.val_int;
+
+			if ((p1.val_int >= INT32_MAX) ||
+				(p1.val_int <= INT32_MIN) ||
+				(p2.val_int >= 32)) {
+			} else {
+				q->accum.tag = TAG_INT;
+				return true;
+			}
 		}
 
 		mpz_t tmp;
