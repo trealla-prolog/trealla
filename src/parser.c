@@ -1415,7 +1415,9 @@ static pl_idx get_varno(parser *p, const char *src, bool in_body, unsigned depth
 	else
 		p->vartab.in_head[i]++;
 
-	p->vartab.depth[i] = depth - nesting_offset;
+	if (depth > p->vartab.depth[i])
+		p->vartab.depth[i] = depth - nesting_offset;
+
 	p->vartab.num_vars++;
 	return i;
 }
