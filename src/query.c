@@ -1194,7 +1194,7 @@ bool has_next_key(query *q)
 
 static bool expand_meta_predicate(query *q, predicate *pr)
 {
-	unsigned arity = q->st.key->arity;
+	int arity = q->st.key->arity;
 	cell *tmp = alloc_heap(q, q->st.key->num_cells*3);	// alloc max possible
 	CHECKED(tmp);
 	cell *save_tmp = tmp;

@@ -160,7 +160,7 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 		return tmp;
 	}
 
-	unsigned arity = p1->arity;
+	int arity = p1->arity;
 	p1++;
 
 	while (arity--) {

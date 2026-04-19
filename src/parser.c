@@ -2430,7 +2430,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 		}
 
 		cell *arg = c + 1;
-		unsigned arity = c->arity, i = 0;
+		int arity = c->arity, i = 0;
 
 		while (arity--) {
 			int extra = 0;

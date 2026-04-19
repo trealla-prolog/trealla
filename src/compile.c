@@ -168,7 +168,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 
 	if (((*src)->val_off == g_call_s) && ((*src)->arity > 1) && !is_var(c)) {
 		unsigned var_num = cl->num_vars++;
-		unsigned arity = (*src)->arity - 1;
+		int arity = (*src)->arity - 1;
 		unsigned save_num_cells = (*src)->num_cells;
 		*src += 1;
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);

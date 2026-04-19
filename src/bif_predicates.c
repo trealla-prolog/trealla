@@ -1638,7 +1638,7 @@ static bool bif_iso_univ_2(query *q)
 		tmp2.arity = 0;
 		CLR_OP(&tmp2);
 		allocate_list(q, &tmp2);
-		unsigned arity = p1->arity;
+		int arity = p1->arity;
 		p1++;
 
 		while (arity--) {
@@ -1661,7 +1661,7 @@ static bool bif_iso_univ_2(query *q)
 
 		cell *tmp;
 		CHECKED(init_tmp_heap(q));
-		unsigned arity = 0;
+		int arity = 0;
 		cell *save_p2 = p2;
 		cell *l = p2;
 		pl_ctx l_ctx = p2_ctx;
@@ -1750,7 +1750,7 @@ static bool bif_iso_univ_2(query *q)
 
 	CLR_OP(&tmp);
 	allocate_list(q, &tmp);
-	unsigned arity = p1->arity;
+	int arity = p1->arity;
 	p1++;
 
 	while (arity--) {

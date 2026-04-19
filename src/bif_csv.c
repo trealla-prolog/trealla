@@ -225,7 +225,7 @@ bool bif_parse_csv_line_3(query *q)
 	bool trim = false, numbers = false, use_strings = is_string(p1), do_assert = false;
 	const char *functor = NULL;
 	int sep = ',', quote = '"';
-	unsigned arity = 0;
+	int arity = 0;
 	LIST_HANDLER(p3);
 
 	while (is_list(p3)) {
@@ -275,7 +275,7 @@ bool bif_parse_csv_file_2(query *q)
 	bool header = false, comments = false;
 	const char *functor = NULL;
 	int sep = ',', quote = '"', comment = '#';
-	unsigned arity = 0;
+	int arity = 0;
 	LIST_HANDLER(p3);
 	const char *ext = strrchr(C_STR(q, p1), '.');
 	parser *p = parser_create(q->st.m);
@@ -409,7 +409,7 @@ bool bif_write_csv_file_3(query *q)
 	bool header = false, comments = false, append = false;
 	const char *functor = NULL;
 	int sep = ',', quote = '"', comment = '#';
-	unsigned arity = 0;
+	int arity = 0;
 	LIST_HANDLER(p3);
 	const char *ext = strrchr(C_STR(q, p1), '.');
 	parser *p = parser_create(q->st.m);

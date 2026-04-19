@@ -156,7 +156,7 @@ static bool bif_iso_call_n(query *q)
 			return throw_error(q, p1, p1_ctx, "type_error", "callable");
 	}
 
-	unsigned arity = p1->arity, args = 1, xarity = q->st.instr->arity;
+	int arity = p1->arity, args = 1, xarity = q->st.instr->arity;
 	CHECKED(init_tmp_heap(q));
 	CHECKED(append_to_tmp(q, p1, p1_ctx));
 

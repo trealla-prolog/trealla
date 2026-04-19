@@ -1024,7 +1024,7 @@ static bool bif_listing_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	pl_idx name = p1->val_off;
-	unsigned arity = -1;
+	int arity = -1;
 
 	if (p1->val_off == g_colon_s) {
 		p1 = p1 + 1;
@@ -1075,7 +1075,7 @@ static bool bif_sys_xlisting_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	pl_idx name = p1->val_off;
-	unsigned arity = -1;
+	int arity = -1;
 
 	if (p1->val_off == g_colon_s) {
 		p1 = p1 + 1;
@@ -1138,7 +1138,7 @@ static bool bif_sys_dlisting_1(query *q)
 {
 	GET_FIRST_ARG(p1,callable);
 	pl_idx name = p1->val_off;
-	unsigned arity = -1;
+	int arity = -1;
 
 	if (p1->val_off == g_colon_s) {
 		p1 = p1 + 1;

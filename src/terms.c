@@ -103,7 +103,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 	}
 
 	bool any = false;
-	unsigned arity = p1->arity;
+	int arity = p1->arity;
 	p1++;
 
 	while (arity--) {
@@ -218,7 +218,7 @@ static bool has_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 		}
 
 		bool any = false;
-		unsigned arity = p1->arity;
+		int arity = p1->arity;
 		p1++;
 
 		while (arity--) {
@@ -318,7 +318,7 @@ static bool is_cyclic_term_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned 
 	if (is_iso_list(p1))
 		return is_cyclic_term_lists(q, p1, p1_ctx, depth);
 
-	unsigned arity = p1->arity;
+	int arity = p1->arity;
 	p1++;
 
 	while (arity--) {

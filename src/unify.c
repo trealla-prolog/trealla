@@ -452,7 +452,7 @@ static bool unify_structs(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2
 	if (p1->val_off != p2->val_off)
 		return false;
 
-	unsigned arity = p1->arity;
+	int arity = p1->arity;
 	p1++; p2++;
 
 	while (arity--) {
