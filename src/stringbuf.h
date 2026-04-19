@@ -29,10 +29,10 @@ typedef struct {
 		size_t offset = SB_strlen(pr);							\
 		if (pr##_buf.buf != pr##_buf.tmpbuf) {					\
 			pr##_buf.buf = realloc(pr##_buf.buf, 				\
-				(pr##_buf.buf_size += ((len)-rem)) + 256 + 1);	\
+				(pr##_buf.buf_size += ((ssize_t)(len)-rem)) + 256 + 1);	\
 		} else {												\
 			pr##_buf.buf = malloc((pr##_buf.buf_size += 		\
-				((len)-rem)) + 256 + 1); 						\
+				((ssize_t)(len)-rem)) + 256 + 1); 						\
 			if (pr##_buf.buf) 									\
 				memcpy(pr##_buf.buf, pr##_buf.tmpbuf, offset+1);\
 		}														\
