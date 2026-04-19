@@ -1878,7 +1878,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 		}
 
 		save.num_cells += lhs->num_cells;
-		pl_idx cells_to_move = lhs->num_cells;
+		int cells_to_move = lhs->num_cells;
 		lhs = c - 1;
 
 		while (cells_to_move--)
@@ -2262,7 +2262,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 static void expand_meta_predicate(parser *p, predicate *pr, cell *goal)
 {
-	unsigned arity = goal->arity;
+	int arity = goal->arity;
 
 	for (cell *k = goal+1, *m = pr->meta_args+1; arity--; k += k->num_cells, m += m->num_cells) {
 		cell tmpbuf[2];
@@ -2328,7 +2328,7 @@ static cell *insert_call_here(parser *p, cell *c, cell *p1)
 	make_room(p, 1);
 
 	cell *last = p->cl->cells + (p->cl->cidx - 1);
-	pl_idx cells_to_move = p->cl->cidx - p1_idx;
+	int cells_to_move = p->cl->cidx - p1_idx;
 	cell *dst = last + 1;
 
 	while (cells_to_move--)

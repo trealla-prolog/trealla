@@ -538,7 +538,7 @@ static bool dump_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 
 static void print_string_canonical(query *q, cell *c, pl_ctx c_ctx, int running, bool cons, unsigned depth)
 {
-	unsigned cnt = 1;
+	int cnt = 1;
 	LIST_HANDLER(c);
 
 	SB_sprintf(q->sb, "%s", "'.'(");
@@ -919,7 +919,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 		q->did_quote = !braces&&quote;
 
 		if (is_compound(c) && !is_string(c)) {
-			pl_idx arity = c->arity;
+			int arity = c->arity;
 			SB_sprintf(q->sb, "%s", braces&&!q->ignore_ops?"{":"(");
 			q->last_thing = WAS_OTHER;
 			q->parens = true;

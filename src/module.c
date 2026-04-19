@@ -879,7 +879,7 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 		if (!is_interned(p1)) return false;
 		snprintf(dstbuf, sizeof(dstbuf), "%s", g_tpl_lib);
 		name = C_STR(curr_m, p1);
-		unsigned cnt = 1;
+		int cnt = 1;
 
 		while ((p1->arity == 2) && !strcmp(name, "/")) {
 			cnt++;
