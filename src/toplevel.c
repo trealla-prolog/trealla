@@ -97,7 +97,7 @@ int check_interrupt(query *q)
 
 		if (isdigit(ch)) {
 			q->fail_on_retry = true;
-			q->autofail_n = isdigit(ch) ? (unsigned)ch - '0' : UINT_MAX;
+			q->autofail_n = isdigit(ch) ? (unsigned)ch - '0' : INT_MAX;
 			break;
 		}
 
@@ -199,7 +199,7 @@ bool check_redo(query *q)
 			q->retry = QUERY_RETRY;
 			q->pl->did_dump_vars = false;
 			q->fail_on_retry = true;
-			q->autofail_n = isdigit(ch) ? (unsigned)ch - '0' : ch == 'f' ? 5-(q->retries%5) : UINT_MAX;
+			q->autofail_n = isdigit(ch) ? (unsigned)ch - '0' : ch == 'f' ? 5-(q->retries%5) : INT_MAX;
 			break;
 		}
 
@@ -229,7 +229,7 @@ bool check_redo(query *q)
 
 		if (isdigit(ch)) {
 			q->fail_on_retry = true;
-			q->autofail_n = isdigit(ch) ? (unsigned)ch - '0' : UINT_MAX;
+			q->autofail_n = isdigit(ch) ? (unsigned)ch - '0' : INT_MAX;
 			break;
 		}
 

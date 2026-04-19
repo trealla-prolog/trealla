@@ -224,7 +224,6 @@ profile:
 
 debug:
 	$(MAKE) 'OPT=$(OPT) -fsanitize=undefined,integer,address -O0 -g3 -DDEBUG'
-	#$(MAKE) 'OPT=$(OPT) -fsanitize=undefined,address -O0 -g3 -DDEBUG'
 
 release:
 	$(MAKE) 'OPT=$(OPT) -DNDEBUG'

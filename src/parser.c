@@ -1824,7 +1824,7 @@ static bool reduce(parser *p, pl_idx start_idx, bool last_op)
 
 			cell *lhs = p->cl->cells + last_idx;
 			save.num_cells += lhs->num_cells;
-			pl_idx cells_to_move = lhs->num_cells;
+			int cells_to_move = lhs->num_cells;
 			cell *save_c = lhs;
 			const cell *src = c - 1;
 			cell *dst = c;
