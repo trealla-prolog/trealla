@@ -1381,7 +1381,7 @@ static pl_idx get_varno(parser *p, const char *src, bool in_body, unsigned depth
 {
 	int anon = !strcmp(src, "_");
 	size_t offset = 0;
-	unsigned i = 0, nesting_offset = p->is_consulting ? 0 : 2;
+	unsigned i = 0, nesting_offset = p->is_consulting ? 0 : 1;
 
 	while (p->vartab.pool[offset]) {
 		if (!strcmp(p->vartab.pool+offset, src) && !anon) {
