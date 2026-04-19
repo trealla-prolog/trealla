@@ -24,8 +24,8 @@ typedef struct {
 	*pr##_buf.dst = '\0';
 
 #define SB_check(pr,len) {										\
-	size_t rem = pr##_buf.buf_size - SB_strlen(pr);				\
-	if ((size_t)((len)+1) >= rem) {								\
+	ssize_t rem = pr##_buf.buf_size - SB_strlen(pr);				\
+	if ((ssize_t)((len)+1) >= rem) {								\
 		size_t offset = SB_strlen(pr);							\
 		if (pr##_buf.buf != pr##_buf.tmpbuf) {					\
 			pr##_buf.buf = realloc(pr##_buf.buf, 				\

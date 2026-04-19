@@ -364,7 +364,7 @@ typedef struct {
 
 static void set_occurs(unsigned var_num, pl_ctx val_ctx, cell *c, pl_ctx c_ctx)
 {
-	for (unsigned num_cells = c->num_cells; num_cells--; c++) {
+	for (int num_cells = c->num_cells; num_cells--; c++) {
 		if (!is_var(c))
 			continue;
 

@@ -964,21 +964,22 @@ static bool bif_listing_0(query *q)
 	return true;
 }
 
-static bool save_name(FILE *fp, query *q, pl_idx name, unsigned arity, bool alt, bool dump)
+static bool save_name(FILE *fp, query *q, pl_idx name, unsigned pr_arity, bool alt, bool dump)
 {
 	module *m = q->st.dbe ? q->st.dbe->owner->m : q->st.m;
 	q->listing = true;
 	bool any = false;
+	int arity = pr_arity;
 
 	for (predicate *pr = list_front(&m->predicates);
 		pr; pr = list_next(pr)) {
-		if (pr->is_builtin && (arity == -1U))
+		if (pr->is_builtin && (arity == -1))
 			continue;
 
 		if (name != pr->key.val_off)
 			continue;
 
-		if ((arity != pr->key.arity) && (arity != -1U))
+		if ((arity != pr->key.arity) && (arity != -1))
 			continue;
 
 		any = true;
