@@ -2435,7 +2435,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 		while (arity--) {
 			int extra = 0;
 			bool meta = pr ? is_meta_arg(pr, c, i, &extra) : false;
-			c->num_cells -= arg->num_cells;
+			int save_num_cells = arg->num_cells;
 			arg->arity += extra;
 
 			if (meta)
@@ -2445,7 +2445,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 				arg = term_to_body_conversion(p, arg);
 
 			arg->arity -= extra;
-			c->num_cells += arg->num_cells;
+			c->num_cells += arg->num_cells - save_num_cells;
 			arg += arg->num_cells;
 			i++;
 		}
