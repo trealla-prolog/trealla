@@ -223,12 +223,11 @@ bool bif_iso_call_1(query *q)
 
 	if ((is_builtin(p1) && (p1->arity == 2)) || !p1->arity) {
 		CHECKED(init_tmp_heap(q));
-		p1 = clone_term_to_tmp(q, p1, p1_ctx);
-		CHECKED(p1);
-		p1_ctx = q->st.curr_fp;
+		cell *p1c = clone_term_to_tmp(q, p1, p1_ctx);
+		CHECKED(p1c);
 		bool status;
 
-		if (!call_check(q, p1, &status, false))
+		if (!call_check(q, p1c, &status, false))
 			return status;
 	}
 
@@ -276,12 +275,11 @@ static bool bif_iso_once_1(query *q)
 
 	if ((is_builtin(p1) && (p1->arity == 2)) || !p1->arity) {
 		CHECKED(init_tmp_heap(q));
-		p1 = clone_term_to_tmp(q, p1, p1_ctx);
-		CHECKED(p1);
-		p1_ctx = q->st.curr_fp;
+		cell *p1c = clone_term_to_tmp(q, p1, p1_ctx);
+		CHECKED(p1c);
 		bool status;
 
-		if (!call_check(q, p1, &status, false))
+		if (!call_check(q, p1c, &status, false))
 			return status;
 	}
 
