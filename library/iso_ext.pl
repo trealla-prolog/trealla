@@ -1,11 +1,11 @@
 :- help(subsumes_term(+term,+term), [iso(true)]).
 
-subsumes_term(G, S) :-
+subsumes_term(General, Specific) :-
 	\+ \+ (
-	 term_variables(S, V1),
-	 G = S,
-	 term_variables(V1, V2),
-	 V2 == V1
+		term_variables(Specific, SVs1),
+		unify_with_occurs_check(General, Specific),
+		term_variables(SVs1, SVs2),
+		SVs1 == SVs2
 	).
 
 :- meta_predicate(countall(0,?)).
