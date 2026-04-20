@@ -392,10 +392,8 @@ static bool bif_iso_atom_chars_2(query *q)
 		while (is_list(p2)) {
 			cell *head = LIST_HEAD(p2);
 			head = deref(q, head, p2_ctx);
-
 			const char *src = C_STR(q, head);
 			SB_strcatn(pr, src, len_char_utf8(src));
-
 			cell *tail = LIST_TAIL(p2);
 			p2 = deref(q, tail, p2_ctx);
 			p2_ctx = q->latest_ctx;
