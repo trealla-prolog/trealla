@@ -307,39 +307,39 @@ inline static cell *get_raw_arg(query *q, int n)
 
 // This one leaves original state if a cycle detected...
 
-#define DEREF_CHECKED(any, both, svg, ee, evgen, cc, cc_ctx, qvgen)	\
-	if (is_var(cc)) {												\
-		pl_ctx tmp_cc_ctx = cc_ctx;									\
+#define DEREF_CHECKED(any, both, svg, e, evgen, c, c_ctx, qvgen)	\
+	if (is_var(c)) {												\
+		pl_ctx tmp_c_ctx = c_ctx;									\
 		any = true;													\
 																	\
-		if (is_ref(cc))												\
-			tmp_cc_ctx = cc->val_ctx;								\
+		if (is_ref(c))												\
+			tmp_c_ctx = c->val_ctx;									\
 																	\
-		const frame *f = GET_FRAME(tmp_cc_ctx);						\
-		ee = get_slot(q, f, cc->var_num);								\
+		const frame *f = GET_FRAME(tmp_c_ctx);						\
+		e = get_slot(q, f, c->var_num);								\
 		svg = evgen;												\
 																	\
 		if (evgen == qvgen) {										\
 			both++;													\
 		} else {													\
-			cc = deref(q, cc, tmp_cc_ctx);							\
-			cc_ctx = q->latest_ctx;									\
+			c = deref(q, c, tmp_c_ctx);								\
+			c_ctx = q->latest_ctx;									\
 			evgen = qvgen;											\
 		}															\
 	}
 
 // This one always derefs...
 
-#define DEREF_VAR(any, both, svg, ee, evgen, cc, cc_ctx, qvgen)		\
-	if (is_var(cc)) {												\
-		pl_ctx tmp_cc_ctx = cc_ctx;									\
+#define DEREF_VAR(any, both, svg, e, evgen, c, c_ctx, qvgen)		\
+	if (is_var(c)) {												\
+		pl_ctx tmp_c_ctx = c_ctx;									\
 		any = true;													\
 																	\
-		if (is_ref(cc))												\
-			tmp_cc_ctx = cc->val_ctx;								\
+		if (is_ref(c))												\
+			tmp_c_ctx = c->val_ctx;									\
 																	\
-		const frame *f = GET_FRAME(tmp_cc_ctx);						\
-		ee = get_slot(q, f, cc->var_num);								\
+		const frame *f = GET_FRAME(tmp_c_ctx);						\
+		e = get_slot(q, f, c->var_num);								\
 		svg = evgen;												\
 																	\
 		if (evgen == qvgen) {										\
@@ -348,19 +348,19 @@ inline static cell *get_raw_arg(query *q, int n)
 			evgen = qvgen;											\
 		}															\
 																	\
-		cc = deref(q, cc, tmp_cc_ctx);								\
-		cc_ctx = q->latest_ctx;										\
+		c = deref(q, c, tmp_c_ctx);									\
+		c_ctx = q->latest_ctx;										\
 	}
 
-#define RESTORE_VAR(cc, cc_ctx, p, p_ctx, qvgen)					\
-	if (is_var(cc)) {												\
-		if (is_ref(cc))												\
-			cc_ctx = cc->val_ctx;									\
+#define RESTORE_VAR(c, c_ctx, p, p_ctx, qvgen)						\
+	if (is_var(c)) {												\
+		if (is_ref(c))												\
+			c_ctx = c->val_ctx;										\
 																	\
-		const frame *f = GET_FRAME(cc_ctx);							\
-		slot *e = get_slot(q, f, cc->var_num);							\
+		const frame *f = GET_FRAME(c_ctx);							\
+		slot *e = get_slot(q, f, c->var_num);						\
 		e->vgen = 0;												\
-		p = deref(q, cc, cc_ctx);									\
+		p = deref(q, c, c_ctx);										\
 		p_ctx = q->latest_ctx;										\
 	}
 
