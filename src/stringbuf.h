@@ -13,39 +13,35 @@ typedef struct {
 	size_t buf_size;
 } stringbuf;
 
-#define SB(pr) stringbuf pr##_buf;								\
-	SB_init(pr);
-
-#define SB_alloc(pr,len) stringbuf pr##_buf; 					\
-	pr##_buf.buf_size = len;									\
-	pr##_buf.buf = malloc((len)+1);								\
-	ENSURE(pr##_buf.buf);										\
-	pr##_buf.dst = pr##_buf.buf;								\
-	*pr##_buf.dst = '\0';
-
-#define SB_check(pr,len) {										\
-	ssize_t rem = pr##_buf.buf_size - SB_strlen(pr);				\
-	if ((ssize_t)((len)+1) >= rem) {								\
-		size_t offset = SB_strlen(pr);							\
-		if (pr##_buf.buf != pr##_buf.tmpbuf) {					\
-			pr##_buf.buf = realloc(pr##_buf.buf, 				\
-				(pr##_buf.buf_size += ((ssize_t)(len)-rem)) + 256 + 1);	\
-		} else {												\
-			pr##_buf.buf = malloc((pr##_buf.buf_size += 		\
-				((ssize_t)(len)-rem)) + 256 + 1); 						\
-			if (pr##_buf.buf) 									\
-				memcpy(pr##_buf.buf, pr##_buf.tmpbuf, offset+1);\
-		}														\
-		ENSURE(pr##_buf.buf);									\
-		pr##_buf.dst = pr##_buf.buf + offset;					\
-	}															\
-}
+#define SB(pr) stringbuf pr##_buf; SB_init(pr);
 
 #define SB_init(pr) {											\
 	pr##_buf.buf_size = sizeof(pr##_buf.tmpbuf);				\
 	pr##_buf.buf = pr##_buf.tmpbuf;								\
 	pr##_buf.dst = pr##_buf.buf;								\
 	if (pr##_buf.buf) pr##_buf.dst[0] = '\0';					\
+}
+
+#define SB_alloc(pr,len) stringbuf pr##_buf; 					\
+	pr##_buf.buf_size = len;									\
+	pr##_buf.buf = malloc((len)+1024+1);								\
+	ENSURE(pr##_buf.buf);										\
+	pr##_buf.dst = pr##_buf.buf;								\
+	*pr##_buf.dst = '\0';
+
+#define SB_check(pr,len) {												\
+	if ((pr##_buf.dst + (len)) >= (pr##_buf.buf + pr##_buf.buf_size)) {	\
+		size_t offset = SB_strlen(pr);									\
+		if (pr##_buf.buf != pr##_buf.tmpbuf) {							\
+			pr##_buf.buf = realloc(pr##_buf.buf, pr##_buf.buf_size += (len + 1024));	\
+			ENSURE(pr##_buf.buf);										\
+		} else {														\
+			pr##_buf.buf = malloc(pr##_buf.buf_size += (len + 1024));	\
+			ENSURE(pr##_buf.buf);										\
+			memcpy(pr##_buf.buf, pr##_buf.tmpbuf, offset+1);			\
+		}																\
+		pr##_buf.dst = pr##_buf.buf + offset;							\
+	}																	\
 }
 
 #define SB_strlen(pr) (pr##_buf.dst - pr##_buf.buf)
