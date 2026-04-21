@@ -2904,12 +2904,11 @@ static bool bif_iso_write_term_2(query *q)
 	if (q->fullstop)
 		net_write(".", 1, str);
 
-	if (q->nl) {
+	if (q->nl)
 		net_write("\n", 1, str);
 
-		if (fflush(str->fp))
-			return throw_error(q, q->st.instr, q->st.curr_fp, "io_error", strerror(errno));
-	}
+	if (fflush(str->fp))
+		return throw_error(q, q->st.instr, q->st.curr_fp, "io_error", strerror(errno));
 
 	clear_write_options(q);
 	return !ferror(str->fp);
@@ -2992,12 +2991,11 @@ static bool bif_iso_write_term_3(query *q)
 	if (q->fullstop)
 		net_write(".", 1, str);
 
-	if (q->nl) {
+	if (q->nl)
 		net_write("\n", 1, str);
 
-		if (fflush(str->fp))
-			return throw_error(q, q->st.instr, q->st.curr_fp, "io_error", strerror(errno));
-	}
+	if (fflush(str->fp))
+		return throw_error(q, q->st.instr, q->st.curr_fp, "io_error", strerror(errno));
 
 	clear_write_options(q);
 	return !ferror(str->fp);
