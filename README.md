@@ -175,7 +175,7 @@ and there should be no errors, Further to test with address sanitizer:
 
 	make clean && make debug && make test
 
-or  more thoroughly:
+or  more thoroughly (on MacOS):
 
 	make clean && make sanitize CC=clang && make test
 
