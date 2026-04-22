@@ -191,15 +191,13 @@ By default `editline` is used on `'nix` systems, however if using GNU
 readline instead (make READLINE=1) install the BREW version of readline.
 
 
-Unbounded integers (Bigints) and Rationals
-==========================================
+Building with MUSL
+==================
 
-For unbounded arithmetic Trealla uses a modified fork of the
-[imath](https://github.com/infradig/imath)
-library, which is partially included in the source. Note, unbounded
-integers (aka. bigints) are for arithmetic purposes only and will give a
-type_error when used in places not expected. The *imath* library has a bug
-whereby printing large numbers becomes exponentially slower (100K+ digits).
+On Ubuntu:
+
+	sudo apt install musl-tools
+	make CC=musl-gcc OPT=-static
 
 
 WebAssembly (WASI)
@@ -267,6 +265,18 @@ would not be where it is today without help from these people:
 	- [Jos De Roo](https://github.com/josd)
 	- [Ulrich Neumerkel](https://github.com/uwn)
 	- [Guregu](https://github.com/guregu)
+
+
+Unbounded integers (Bigints) and Rationals
+==========================================
+
+For unbounded arithmetic Trealla uses a modified fork of the
+[imath](https://github.com/infradig/imath)
+library, which is partially included in the source. Note, unbounded
+integers (aka. bigints) are for arithmetic purposes only and will give a
+type_error when used in places not expected. The *imath* library has a bug
+whereby printing large numbers becomes exponentially slower (100K+ digits).
+
 
 Strings
 =======
