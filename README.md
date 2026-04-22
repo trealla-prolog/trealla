@@ -175,6 +175,10 @@ and there should be no errors, Further to test with address sanitizer:
 
 	make clean && make debug && make test
 
+or  more thoroughly:
+
+	make clean && make sanitize CC=clang && make test
+
 Should show no memory out-of-bounds, null-pointer, use after free
 or memory leaks (there may a few spurious errors).
 

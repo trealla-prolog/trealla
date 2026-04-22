@@ -223,11 +223,10 @@ profile:
 	$(MAKE) 'OPT=$(OPT) -O0 -pg -DDEBUG'
 
 debug:
-ifeq ($(COMPILER_IS_GCC),gcc)
 	$(MAKE) 'OPT=$(OPT) -fsanitize=undefined,address -O0 -g3 -DDEBUG'
-else
+
+sanitize:
 	$(MAKE) 'OPT=$(OPT) -fsanitize=undefined,integer,address -O0 -g3 -DDEBUG'
-endif
 
 release:
 	$(MAKE) 'OPT=$(OPT) -DNDEBUG'
