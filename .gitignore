@@ -20,5 +20,7 @@ faultinject*
 
 build/
 .cache/
+.preset
+compile_commands.json
 
 _site

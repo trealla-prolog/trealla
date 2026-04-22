@@ -10,7 +10,7 @@ fatal() {
 }
 
 INPUT_DIRECTORY=${1:?usage: $0 <build-dir-with-json-logs> [out-dir]}
-DOCS_DIR="${2:-docs}"
+DOCS_DIR="docs"
 REPORTS_DIR="$DOCS_DIR/reports"
 
 shopt -s nullglob
@@ -72,6 +72,20 @@ diagnostics_document="reports/$timestamp/diagnostics.md"
 reports_index_permalink="/reports/"
 reports_index_document="reports/index.md"
 normalized_json_url="/reports/$timestamp/normalized.json"
+
+if [ "$2" = "--preview" ]; then
+	{
+		echo "## Overview"
+		echo
+		jq-with-lib -r -f tools/jq/report-overview.jq "$NORMALIZED_JSON" || fatal "failed to create overview section"
+
+
+		echo "## Top diagnostics"
+		echo
+		jq-with-lib -r -f tools/jq/report-top-diagnostics-short.jq "$NORMALIZED_JSON" || fatal "failed to create top-diagnostics section"
+	} | glow
+	exit 0
+fi
 
 write_front_matter() {
     local title="$1"

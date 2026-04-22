@@ -1,103 +1,26 @@
 {
-	"version": 6,
-	"cmakeMinimumRequired": {
-		"major": 3,
-		"minor": 25,
-		"patch": 0
-	},
+	"version": 7,
+	"include": [
+		"cmake/presets/base.json",
+		"boards/generic/CMakePresets.json",
+		"boards/mps3-an524/CMakePresets.json",
+		"boards/teensy41/CMakePresets.json"
+	],
 	"configurePresets": [
-		{
-			"name": "base",
-			"hidden": true,
-			"generator": "Unix Makefiles",
-			"binaryDir": "${sourceDir}/build/${presetName}",
-			"cacheVariables": {
-				"CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
-			}
-		},
-		{
-			"name": "base-debug",
-			"hidden": true,
-			"inherits": "base",
-			"cacheVariables": {
-				"CMAKE_BUILD_TYPE": "Debug"
-			}
-		},
-		{
-			"name": "base-release",
-			"hidden": true,
-			"inherits": "base",
-			"cacheVariables": {
-				"CMAKE_BUILD_TYPE": "Release"
-			}
-		},
-		{
-			"name": "base-minsizerel",
-			"hidden": true,
-			"inherits": "base",
-			"cacheVariables": {
-				"CMAKE_BUILD_TYPE": "MinSizeRel"
-			}
-		},
-
 		{
 			"name": "linux-debug",
 			"displayName": "Linux Debug",
-			"inherits": "base-debug",
-			"cacheVariables": {
-				"TPL_BACKEND": "linux"
-			}
+			"inherits": "base-debug"
 		},
 		{
 			"name": "linux-release",
 			"displayName": "Linux Release",
-			"inherits": "base-release",
-			"cacheVariables": {
-				"TPL_BACKEND": "linux"
-			}
+			"inherits": "base-release"
 		},
 		{
 			"name": "linux-minsizerel",
 			"displayName": "Linux MinSizeRel",
-			"inherits": "base-minsizerel",
-			"cacheVariables": {
-				"TPL_BACKEND": "linux"
-			}
-		},
-		{
-			"name": "arm-none-eabi-compile",
-			"displayName": "arm-non-eabi without linker script or entry",
-			"inherits": ["base", "base-debug"],
-			"cacheVariables": {
-				"CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/arm-none-eabi.cmake",
-				"TPL_USE_COMPAT_STUB_HEADERS": "ON",
-				"TPL_BACKEND": "baremetal",
-				"TPL_BAREMETAL_CPU": "cortex-m4"
-			}
-		},
-		{
-			"name": "arm-none-eabi-base",
-			"hidden": true,
-			"inherits": "base",
-			"cacheVariables": {
-				"CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/arm-none-eabi.cmake",
-				"TPL_BACKEND": "baremetal",
-				"TPL_BAREMETAL_CPU": "cortex-m4",
-				"TPL_BAREMETAL_FPU": "fpv4-sp-d16",
-				"TPL_BAREMETAL_FLOAT_ABI": "hard",
-				"TPL_LINKER_SCRIPT": "${sourceDir}/boards/dummy/linker_script.ld",
-				"TPL_ENTRY": "${sourceDir}/boards/dummy/entry.S"
-			}
-		},
-		{
-			"name": "arm-none-eabi-debug",
-			"displayName": "arm-none-eabi Debug",
-			"inherits": ["arm-none-eabi-base", "base-debug"]
-		},
-		{
-			"name": "arm-none-eabi-release",
-			"displayName": "arm-none-eabi Release",
-			"inherits": ["arm-none-eabi-base", "base-release"]
+			"inherits": "base-minsizerel"
 		}
 	],
 	"buildPresets": [
@@ -112,18 +35,6 @@
 		{
 			"name": "linux-minsizerel",
 			"configurePreset": "linux-minsizerel"
-		},
-		{
-			"name": "arm-none-eabi-compile",
-			"configurePreset": "arm-none-eabi-compile"
-		},
-		{
-			"name": "arm-none-eabi-debug",
-			"configurePreset": "arm-none-eabi-debug"
-		},
-		{
-			"name": "arm-none-eabi-release",
-			"configurePreset": "arm-none-eabi-release"
 		}
 	],
 	"testPresets": [

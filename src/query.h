@@ -1,13 +1,13 @@
 #pragma once
 
-#include "parser.h"
 #include "builtins.h"
+#include "parser.h"
 
 typedef struct {
-	int sep, quote;
-	unsigned arity;
-	bool trim, numbers, use_strings;
-	const char *functor;
+    int sep, quote;
+    unsigned arity;
+    bool trim, numbers, use_strings;
+    const char *functor;
 } csv;
 
 query *query_create(module *m);
@@ -24,7 +24,8 @@ bool push_reset_handler(query *q);
 bool push_catcher(query *q, enum q_retry type);
 
 bool do_retract(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract);
-bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, char *src);
+bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx,
+                  char *src);
 bool do_yield(query *q, int msecs);
 void do_yield_at(query *q, unsigned int time_in_ms);
 
@@ -58,10 +59,13 @@ bool match_head(query *q);
 bool check_frame(query *q, unsigned max_vars);
 
 bool throw_error(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const char *expected);
-bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const char *expected, cell *goal);
-bool throw_error2(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const char *expected, cell *goal);
+bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const char *expected,
+                  cell *goal);
+bool throw_error2(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const char *expected,
+                  cell *goal);
 
-size_t scan_is_chars_list2(query *q, cell *l, pl_ctx l_ctx, bool allow_codes, bool *has_var, bool *is_partial, cell **);
+size_t scan_is_chars_list2(query *q, cell *l, pl_ctx l_ctx, bool allow_codes, bool *has_var,
+                           bool *is_partial, cell **);
 size_t scan_is_chars_list(query *q, cell *l, pl_ctx l_ctx, bool allow_codes);
 char *chars_list_to_string(query *q, cell *p_chars, pl_ctx p_chars_ctx);
 cell *string_to_chars_list(query *q, cell *p);
@@ -70,7 +74,8 @@ int create_vars(query *q, unsigned cnt);
 cell *skip_max_list(query *q, cell *head, pl_ctx *head_ctx, pl_int max, pl_int *skip, cell *tmp);
 bool is_cyclic_term(query *q, cell *p1, pl_ctx p1_ctx);
 bool is_acyclic_term(query *q, cell *p1, pl_ctx p1_ctx);
-bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx);
+bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cell *p2,
+               pl_ctx p2_ctx);
 size_t slicecpy(char *dst, size_t dstlen, const char *src, size_t len);
 int new_stream(prolog *pl);
 int get_stream(query *q, cell *p1);
@@ -91,7 +96,6 @@ bool do_post_unify_hook(query *q, bool is_builtin);
 bool any_attributed(query *q);
 bool do_load_file(query *q, cell *p1, pl_ctx p1_ctx);
 bool stream_close(query *q, int n);
-
 
 int compare(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx);
 bool unify(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx);
@@ -152,71 +156,74 @@ void save_db(FILE *fp, query *q, int logging);
 char *uuid_to_buf(const uuid *u, char *buf, size_t buflen);
 bool do_abolish(query *q, cell *c_orig, cell *c_pi, bool hard);
 
-enum log_type { LOG_ASSERTA=1, LOG_ASSERTZ=2, LOG_ERASE=3 };
+enum log_type { LOG_ASSERTA = 1, LOG_ASSERTZ = 2, LOG_ERASE = 3 };
 
 int uuid_from_buf(const char *s, uuid *u);
-builtins *get_fn_ptr(void *fn);
+const builtins *get_fn_ptr(void *fn);
 
 #define FEOF(str) feof(str->fp) && !str->ungetch
 
-#define DUMP_TERM(s,c,c_ctx,running) { \
-	q->nl = true; q->quoted = true; \
-	print_term(q, stderr, c, c_ctx, running); \
-	q->nl = false; q->quoted = false; \
-}
+#define DUMP_TERM(s, c, c_ctx, running)                                                            \
+    {                                                                                              \
+        q->nl = true;                                                                              \
+        q->quoted = true;                                                                          \
+        print_term(q, stderr, c, c_ctx, running);                                                  \
+        q->nl = false;                                                                             \
+        q->quoted = false;                                                                         \
+    }
 
-#define CHECK_INTERRUPT() \
-	if (g_tpl_interrupt) { \
-		if (check_interrupt(q)) \
-			break; \
-	}
+#define CHECK_INTERRUPT()                                                                          \
+    if (g_tpl_interrupt) {                                                                         \
+        if (check_interrupt(q))                                                                    \
+            break;                                                                                 \
+    }
 
 inline static bool make_cstring(cell *d, const char *s)
 {
-	return make_cstringn(d, s, strlen(s));
+    return make_cstringn(d, s, strlen(s));
 }
 
 inline static bool make_string(cell *d, const char *s)
 {
-	return make_stringn(d, s, strlen(s));
+    return make_stringn(d, s, strlen(s));
 }
 
 inline static bool is_a_rule(const cell *c)
 {
-	return is_interned(c) && (c->arity == 2) && (c->val_off == g_neck_s);
+    return is_interned(c) && (c->arity == 2) && (c->val_off == g_neck_s);
 }
 
 inline static cell *get_head(cell *c)
 {
-	return is_a_rule(c) ? c + 1 : c;
+    return is_a_rule(c) ? c + 1 : c;
 }
 
 inline static cell *get_body(cell *c)
 {
-	if (is_a_rule(c)) {
-		cell *h = c + 1;
-		cell *b = h + h->num_cells;
+    if (is_a_rule(c)) {
+        cell *h = c + 1;
+        cell *b = h + h->num_cells;
 
-		if (is_end(b))
-			return NULL;
+        if (is_end(b))
+            return NULL;
 
-		return b;
-	}
+        return b;
+    }
 
-	return NULL;
+    return NULL;
 }
 
 inline static void drop_choice(query *q)
 {
-	--q->cp;
+    --q->cp;
 }
 
 inline static pl_idx get_ordered_slot_num(const query *q, const frame *f, unsigned var_num)
 {
-	return ((f - q->frames) * 100) + var_num;
+    return ((f - q->frames) * 100) + var_num;
 }
 
 inline static pl_idx get_actual_slot_num(const query *q, const frame *f, unsigned var_num)
 {
-	return get_slot(q, f, var_num) - q->slots;
+    return get_slot(q, f, var_num) - q->slots;
 }

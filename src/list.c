@@ -1,15 +1,15 @@
-#include <stdlib.h>
 #include "list.h"
+#include <stdlib.h>
 
 void list_init(list *l)
 {
-	l->front = l->back = 0;
-	l->cnt = 0;
+    l->front = l->back = 0;
+    l->cnt = 0;
 }
 
 void list_push_front(list *l, void *n_)
 {
-	lnode *n = n_;
+    lnode *n = n_;
     n->prev = 0;
 
     if ((n->next = l->front) == 0)
@@ -23,7 +23,7 @@ void list_push_front(list *l, void *n_)
 
 void list_push_back(list *l, void *n_)
 {
-	lnode *n = n_;
+    lnode *n = n_;
     n->next = 0;
 
     if ((n->prev = l->back) == 0)
@@ -37,14 +37,14 @@ void list_push_back(list *l, void *n_)
 
 void list_insert_after(list *l, void *o_, void *n_)
 {
-	lnode *o = o_;
-	lnode *n = n_;
-	n->prev = o;
-	n->next = o->next;
-	o->next = n;
+    lnode *o = o_;
+    lnode *n = n_;
+    n->prev = o;
+    n->next = o->next;
+    o->next = n;
 
-	if (l->back == o)
-		l->back = n;
+    if (l->back == o)
+        l->back = n;
 
     l->cnt++;
 }
@@ -85,7 +85,7 @@ void *list_pop_back(list *l)
 
 void *list_remove(list *l, void *n_)
 {
-	lnode *n = n_;
+    lnode *n = n_;
 
     if (l->front == n)
         l->front = n->next;
@@ -104,14 +104,14 @@ void *list_remove(list *l, void *n_)
 
 void listx_init(listx *l)
 {
-	l->front = l->back = 0;
-	l->cnt = 0;
+    l->front = l->back = 0;
+    l->cnt = 0;
 }
 
 void listx_push_front(listx *l, void *e)
 {
-	lxnode *n = malloc(sizeof(lxnode));
-	n->entry = e;
+    lxnode *n = malloc(sizeof(lxnode));
+    n->entry = e;
     n->prev = 0;
 
     if ((n->next = l->front) == 0)
@@ -125,8 +125,8 @@ void listx_push_front(listx *l, void *e)
 
 void listx_push_back(listx *l, void *e)
 {
-	lxnode *n = malloc(sizeof(lxnode));
-	n->entry = e;
+    lxnode *n = malloc(sizeof(lxnode));
+    n->entry = e;
     n->next = 0;
 
     if ((n->prev = l->back) == 0)

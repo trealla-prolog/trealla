@@ -1,0 +1,42 @@
+name: Lint
+
+on:
+    push:
+    pull_request:
+
+jobs:
+    format-check:
+        name: Check formatting
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Install deps
+              run: sudo apt-get update && sudo apt-get install -y clang-format cmake libreadline-dev xxd
+
+            - name: Fetch tags
+              run: git fetch --tags --force origin
+
+            - name: Configure CMake
+              run: cmake --preset linux-debug
+
+            - name: Check formatting
+              run: cmake --build --preset linux-debug --target format-check
+
+    lint:
+        name: Static analysis
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Install deps
+              run: sudo apt-get update && sudo apt-get install -y cppcheck cmake libreadline-dev xxd
+
+            - name: Fetch tags
+              run: git fetch --tags --force origin
+
+            - name: Configure CMake
+              run: cmake --preset linux-debug
+
+            - name: Run cppcheck
+              run: cmake --build --preset linux-debug --target lint

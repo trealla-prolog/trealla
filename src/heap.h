@@ -5,7 +5,8 @@
 #define CALL_SKIP false
 #define CALL_NOSKIP true
 
-size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, size_t max_elements);
+size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements,
+                  size_t max_elements);
 
 cell *alloc_tmp(query *q, unsigned num_cells);
 cell *append_to_tmp(query *q, cell *p1, pl_ctx p1_ctx);
@@ -13,13 +14,14 @@ cell *clone_term_to_tmp(query *q, cell *p1, pl_ctx p1_ctx);
 cell *copy_term_to_tmp(query *q, cell *p1, pl_ctx p1_ctx, bool copy_attrs);
 
 #define get_tmp_heap_start(q) (q)->tmp_heap
-#define get_tmp_heap(q,i) ((q)->tmp_heap + (i))
+#define get_tmp_heap(q, i) ((q)->tmp_heap + (i))
 #define tmp_heap_used(q) (q)->tmphp
 
 cell *alloc_heap(query *q, unsigned num_cells);
 cell *clone_term_to_heap(query *q, cell *p1, pl_ctx p1_ctx);
 cell *copy_term_to_heap(query *q, cell *p1, pl_ctx p1_ctx, bool copy_attrs);
-cell *copy_term_to_heap_with_replacement(query *q, cell *p1, pl_ctx p1_ctx, bool copy_attrs, cell *from, pl_ctx from_ctx, cell *to, pl_ctx to_ctx);
+cell *copy_term_to_heap_with_replacement(query *q, cell *p1, pl_ctx p1_ctx, bool copy_attrs,
+                                         cell *from, pl_ctx from_ctx, cell *to, pl_ctx to_ctx);
 void trim_heap(query *q);
 
 cell *alloc_queuen(query *q, unsigned qnum, const cell *c);

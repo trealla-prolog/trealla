@@ -2,7 +2,8 @@
 
 #include "internal.h"
 
-builtins *get_builtin(prolog *pl, const char *name, size_t len, unsigned arity, bool *found, bool *evaluable);
+builtins *get_builtin(prolog *pl, const char *name, size_t len, unsigned arity, bool *found,
+                      bool *evaluable);
 builtins *get_help(prolog *pl, const char *name, unsigned arity, bool *found, bool *evaluable);
 module *find_module(prolog *pl, const char *name);
 pl_idx new_atom(prolog *pl, const char *name);
@@ -18,12 +19,12 @@ bool is_closed_stream(prolog *pl, cell *p1);
 
 inline static void prolog_lock(prolog *pl)
 {
-	acquire_lock(&pl->guard);
+    acquire_lock(&pl->guard);
 }
 
 inline static void prolog_unlock(prolog *pl)
 {
-	release_lock(&pl->guard);
+    release_lock(&pl->guard);
 }
 
 #define MAX_PIDS 64
@@ -54,24 +55,23 @@ extern void convert_path(char *filename);
 
 extern void sigfn(int s);
 
-extern builtins g_atts_bifs[];
-extern builtins g_bboard_bifs[];
-extern builtins g_database_bifs[];
-extern builtins g_csv_bifs[];
-extern builtins g_evaluable_bifs[];
-extern builtins g_format_bifs[];
-extern builtins g_ffi_bifs[];
-extern builtins g_iso_bifs[];
-extern builtins g_maps_bifs[];
-extern builtins g_os_bifs[];
-extern builtins g_other_bifs[];
-extern builtins g_control_bifs[];
-extern builtins g_posix_bifs[];
-extern builtins g_sort_bifs[];
-extern builtins g_sregex_bifs[];
-extern builtins g_streams_bifs[];
-extern builtins g_tasks_bifs[];
-extern builtins g_threads_bifs[];
+extern const builtins g_atts_bifs[];
+extern const builtins g_bboard_bifs[];
+// extern const builtins g_database_bifs[];
+// extern const builtins g_csv_bifs[];
+extern const builtins g_evaluable_bifs[];
+extern const builtins g_format_bifs[];
+// extern builtins g_ffi_bifs[];
+extern const builtins g_iso_bifs[];
+extern const builtins g_maps_bifs[];
+// extern builtins g_os_bifs[];
+extern const builtins g_other_bifs[];
+extern const builtins g_control_bifs[];
+// extern builtins g_posix_bifs[];
+extern const builtins g_sort_bifs[];
+// extern const builtins g_sregex_bifs[];
+// extern builtins g_streams_bifs[];
+// extern builtins g_tasks_bifs[];
+// extern builtins g_threads_bifs[];
 
 extern void keyfree(const void *key, const void *val, const void *p);
-

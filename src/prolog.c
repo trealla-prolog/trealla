@@ -1,6 +1,6 @@
 #include <ctype.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <unistd.h>
@@ -46,767 +46,846 @@ char *g_global_atoms = NULL;
 char *g_tpl_lib = NULL;
 int g_ac = 0, g_avc = 1, g_argvc = 0;
 char **g_av = NULL, **g_argv = NULL, *g_argv0 = NULL;
-unsigned g_max_depth = 6000;			// default recursion limit (Linux)
-unsigned g_cpu_count = 4;				// FIXME: query system
+unsigned g_max_depth = 6000; // default recursion limit (Linux)
+unsigned g_cpu_count = 4;    // FIXME: query system
 
 bool is_multifile_in_db(prolog *pl, const char *mod, const char *name, unsigned arity)
 {
-	module *m = find_module(pl, mod);
-	if (!m) return false;
+    module *m = find_module(pl, mod);
+    if (!m)
+        return false;
 
-	cell tmp = (cell){0};
-	tmp.tag = TAG_INTERNED;
-	tmp.val_off = new_atom(m->pl, name);
-	if (tmp.val_off == ERR_IDX) return false;
-	tmp.arity = arity;
-	predicate *pr = find_predicate(m, &tmp);
-	if (!pr) return false;
-	return pr->is_multifile ? true : false;
+    cell tmp = (cell){0};
+    tmp.tag = TAG_INTERNED;
+    tmp.val_off = new_atom(m->pl, name);
+    if (tmp.val_off == ERR_IDX)
+        return false;
+    tmp.arity = arity;
+    predicate *pr = find_predicate(m, &tmp);
+    if (!pr)
+        return false;
+    return pr->is_multifile ? true : false;
 }
 
 static pl_idx add_to_global_atoms(const char *name)
 {
-	size_t offset = s_global_atoms_offset, len = strlen(name);
+    size_t offset = s_global_atoms_offset, len = strlen(name);
 
-	while ((offset+len+1+1) >= s_global_atoms_size) {
-		size_t nbytes = (size_t)s_global_atoms_size * 3 / 2;
-		void *tmp = realloc(g_global_atoms, nbytes);
-		if (!tmp) return ERR_IDX;
-		g_global_atoms = tmp;
-		memset(g_global_atoms + s_global_atoms_size, 0, nbytes - s_global_atoms_size);
-		s_global_atoms_size = nbytes;
-	}
+    while ((offset + len + 1 + 1) >= s_global_atoms_size) {
+        size_t nbytes = (size_t)s_global_atoms_size * 3 / 2;
+        void *tmp = realloc(g_global_atoms, nbytes);
+        if (!tmp)
+            return ERR_IDX;
+        g_global_atoms = tmp;
+        memset(g_global_atoms + s_global_atoms_size, 0, nbytes - s_global_atoms_size);
+        s_global_atoms_size = nbytes;
+    }
 
-	const size_t s_lim = 1024*1024*1024;
+    const size_t s_lim = 1024 * 1024 * 1024;
 
-	if ((offset + len + 1) >= s_lim)
-		return ERR_IDX;
+    if ((offset + len + 1) >= s_lim)
+        return ERR_IDX;
 
-	memcpy(g_global_atoms + offset, name, len+1);
-	s_global_atoms_offset += len + 1;
-	const char *key = strdup(name);
-	sl_app(g_symtab, key, (void*)(size_t)offset);
-	return (pl_idx)offset;
+    memcpy(g_global_atoms + offset, name, len + 1);
+    s_global_atoms_offset += len + 1;
+    const char *key = strdup(name);
+    sl_app(g_symtab, key, (void *)(size_t)offset);
+    return (pl_idx)offset;
 }
 
 pl_idx new_atom(prolog *pl, const char *name)
 {
-	acquire_lock(&g_symtab_guard);
-	const void *val;
+    acquire_lock(&g_symtab_guard);
+    const void *val;
 
-	if (sl_get(g_symtab, name, &val)) {
-		release_lock(&g_symtab_guard);
-		return (pl_idx)(size_t)val;
-	}
+    if (sl_get(g_symtab, name, &val)) {
+        release_lock(&g_symtab_guard);
+        return (pl_idx)(size_t)val;
+    }
 
-	pl_idx off = add_to_global_atoms(name);
-	release_lock(&g_symtab_guard);
-	return off;
+    pl_idx off = add_to_global_atoms(name);
+    release_lock(&g_symtab_guard);
+    return off;
 }
 
 module *find_module(prolog *pl, const char *name)
 {
-	for (module *m = list_front(&pl->modules);
-		m; m = list_next(m)) {
-		if (!strcmp(m->name, name)) {
-			if (m->orig)
-				return m->orig;
-			else
-				return m;
-		}
-	}
+    for (module *m = list_front(&pl->modules); m; m = list_next(m)) {
+        if (!strcmp(m->name, name)) {
+            if (m->orig)
+                return m->orig;
+            else
+                return m;
+        }
+    }
 
-	return NULL;
+    return NULL;
 }
 
-bool get_halt(prolog *pl) { return pl->halt; }
-bool get_error(prolog *pl) { return pl->error; }
-bool get_status(prolog *pl) { return pl->status; }
-bool get_redo(prolog *pl) { return pl->is_redo; }
-bool did_dump_vars(prolog *pl) { return pl->did_dump_vars; }
-int get_halt_code(prolog *pl) { return pl->halt_code; }
+bool get_halt(prolog *pl)
+{
+    return pl->halt;
+}
+bool get_error(prolog *pl)
+{
+    return pl->error;
+}
+bool get_status(prolog *pl)
+{
+    return pl->status;
+}
+bool get_redo(prolog *pl)
+{
+    return pl->is_redo;
+}
+bool did_dump_vars(prolog *pl)
+{
+    return pl->did_dump_vars;
+}
+int get_halt_code(prolog *pl)
+{
+    return pl->halt_code;
+}
 
-void set_trace(prolog *pl) { pl->trace = true; }
-void set_autofail(prolog *pl) { pl->autofail = true; }
-void set_quiet(prolog *pl) { pl->quiet = true; }
-void set_opt(prolog *pl, int level) { pl->opt = level; }
+void set_trace(prolog *pl)
+{
+    pl->trace = true;
+}
+void set_autofail(prolog *pl)
+{
+    pl->autofail = true;
+}
+void set_quiet(prolog *pl)
+{
+    pl->quiet = true;
+}
+void set_opt(prolog *pl, int level)
+{
+    pl->opt = level;
+}
 
-bool pl_isatty(prolog* pl) { return isatty(fileno(pl->streams[0].fp)); }
-FILE *pl_stdin(prolog *pl) { return pl->streams[0].fp; }
+bool pl_isatty(prolog *pl)
+{
+    return isatty(fileno(pl->streams[0].fp));
+}
+FILE *pl_stdin(prolog *pl)
+{
+    return pl->streams[0].fp;
+}
 
 bool pl_eval(prolog *pl, const char *s, bool interactive)
 {
-	if (!*s)
-		return false;
+    if (!*s)
+        return false;
 
-	pl->p = parser_create(pl->m);
-	if (!pl->p) return false;
+    pl->p = parser_create(pl->m);
+    if (!pl->p)
+        return false;
 
-	if (interactive && isatty(fileno(stdin)))
-		pl->p->fp = stdin;
+    if (interactive && isatty(fileno(stdin)))
+        pl->p->fp = stdin;
 
-	pl->p->interactive = interactive;
-	pl->p->is_command = true;
-	bool ok = run(pl->p, s, true, NULL, 0);
-	if (get_status(pl)) pl->m = pl->p->m;
-	parser_destroy(pl->p);
-	pl->p = NULL;
-	return ok;
+    pl->p->interactive = interactive;
+    pl->p->is_command = true;
+    bool ok = run(pl->p, s, true, NULL, 0);
+    if (get_status(pl))
+        pl->m = pl->p->m;
+    parser_destroy(pl->p);
+    pl->p = NULL;
+    return ok;
 }
 
 bool pl_query(prolog *pl, const char *s, pl_sub_query **subq, unsigned int yield_time_in_ms)
 {
-	if (!pl || !*s || !subq)
-		return false;
+    if (!pl || !*s || !subq)
+        return false;
 
-	pl->p = parser_create(pl->m);
-	if (!pl->p) return false;
-	pl->p->is_command = true;
-	pl->is_query = true;
-	bool ok = run(pl->p, s, true, (query**)subq, yield_time_in_ms);
-	if (get_status(pl)) pl->m = pl->p->m;
-	parser_destroy(pl->p);
-	pl->p = NULL;
-	return ok;
+    pl->p = parser_create(pl->m);
+    if (!pl->p)
+        return false;
+    pl->p->is_command = true;
+    pl->is_query = true;
+    bool ok = run(pl->p, s, true, (query **)subq, yield_time_in_ms);
+    if (get_status(pl))
+        pl->m = pl->p->m;
+    parser_destroy(pl->p);
+    pl->p = NULL;
+    return ok;
 }
 
 bool pl_redo(pl_sub_query *subq)
 {
-	if (!subq)
-		return false;
+    if (!subq)
+        return false;
 
-	query *q = (query*)subq;
+    query *q = (query *)subq;
 
-	if (query_redo(q))
-		return true;
+    if (query_redo(q))
+        return true;
 
-	query_destroy(q);
-	return false;
+    query_destroy(q);
+    return false;
 }
 
 bool pl_yield_at(pl_sub_query *subq, unsigned int time_in_ms)
 {
-	if (!subq)
-		return false;
+    if (!subq)
+        return false;
 
-	query *q = (query*)subq;
-	do_yield_at(q, time_in_ms);
-	return true;
+    query *q = (query *)subq;
+    do_yield_at(q, time_in_ms);
+    return true;
 }
 
 bool pl_did_yield(pl_sub_query *subq)
 {
-	if (!subq)
-		return false;
+    if (!subq)
+        return false;
 
-	query *q = (query*)subq;
-	return q->yielded;
+    query *q = (query *)subq;
+    return q->yielded;
 }
 
 bool pl_done(pl_sub_query *subq)
 {
-	if (!subq)
-		return false;
+    if (!subq)
+        return false;
 
-	query *q = (query*)subq;
-	query_destroy(q);
-	return true;
+    query *q = (query *)subq;
+    query_destroy(q);
+    return true;
 }
 
 bool pl_consult_fp(prolog *pl, FILE *fp, const char *filename)
 {
-	return load_fp(pl->user_m, fp, filename, false, true) != NULL;
+    return load_fp(pl->user_m, fp, filename, false, true) != NULL;
 }
 
 bool pl_consult(prolog *pl, const char *filename)
 {
-	return load_file(pl->user_m, filename, false, true);
+    return load_file(pl->user_m, filename, false, true);
+}
+
+bool pl_consult_text(prolog *pl, const char *text)
+{
+    return load_text(pl->user_m, text, "<string>") != NULL;
 }
 
 bool pl_logging(prolog *pl, const char *filename)
 {
-	pl->logfp = fopen(filename, "a");
-	return pl->logfp ? true : false;
+    pl->logfp = fopen(filename, "a");
+    return pl->logfp ? true : false;
 }
 
 bool pl_restore(prolog *pl, const char *filename)
 {
-	return restore_log(pl->user_m, filename);
+    return restore_log(pl->user_m, filename);
 }
 
 static void g_destroy()
 {
-	sl_destroy(g_symtab);
-	free(g_global_atoms);
-	free(g_tpl_lib);
-	deinit_lock(&g_symtab_guard);
+    sl_destroy(g_symtab);
+    free(g_global_atoms);
+    free(g_tpl_lib);
+    deinit_lock(&g_symtab_guard);
 }
 
 void ptrfree(const void *key, const void *val, const void *p)
 {
-	builtins *ptr = (void*)val;
+    builtins *ptr = (void *)val;
 
-	if (ptr->via_directive) {
-		if (ptr->help2) free((void*)ptr->help2);
-		if (ptr->desc) free((void*)ptr->desc);
-		if (ptr->name) free((void*)ptr->name);
-		free((void*)ptr);
-	}
+    if (ptr->via_directive) {
+        if (ptr->help2)
+            free((void *)ptr->help2);
+        if (ptr->desc)
+            free((void *)ptr->desc);
+        if (ptr->name)
+            free((void *)ptr->name);
+        free((void *)ptr);
+    }
 }
 
 void keyfree(const void *key, const void *val, const void *p)
 {
-	free((void*)key);
+    free((void *)key);
 }
 
 void fake_free(const void *key, const void *val, const void *p)
 {
-	free((void*)key);
-	free((void*)val);
+    free((void *)key);
+    free((void *)val);
 }
 
 static void keyval_free(const void *key, const void *val, const void *p)
 {
-	free((void*)key);
-	cell *c = (cell*)val;
-	unshare_cells(c, c->num_cells);
-	free((void*)val);
+    free((void *)key);
+    cell *c = (cell *)val;
+    unshare_cells(c, c->num_cells);
+    free((void *)val);
 }
 
 builtins *get_help(prolog *pl, const char *name, unsigned arity, bool *found, bool *evaluable)
 {
-	sliter *iter = sl_find_key(pl->help, name);
-	builtins *ptr;
+    sliter *iter = sl_find_key(pl->help, name);
+    builtins *ptr;
 
-	while (sl_next_key(iter, (void**)&ptr)) {
-		if (ptr->arity == arity) {
-			if (found) *found = true;
-			if (evaluable) *evaluable = ptr->evaluable;
-			sl_done(iter);
-			return ptr;
-		}
-	}
+    while (sl_next_key(iter, (void **)&ptr)) {
+        if (ptr->arity == arity) {
+            if (found)
+                *found = true;
+            if (evaluable)
+                *evaluable = ptr->evaluable;
+            sl_done(iter);
+            return ptr;
+        }
+    }
 
-	if (found) *found = false;
-	if (evaluable) *evaluable = false;
-	sl_done(iter);
-	return NULL;
+    if (found)
+        *found = false;
+    if (evaluable)
+        *evaluable = false;
+    sl_done(iter);
+    return NULL;
 }
 
-builtins *get_builtin(prolog *pl, const char *name, size_t len, unsigned arity, bool *found, bool *evaluable)
+builtins *get_builtin(prolog *pl, const char *name, size_t len, unsigned arity, bool *found,
+                      bool *evaluable)
 {
-	// TODO: use 'len' in comparison
-	sliter *iter = sl_find_key(pl->biftab, name);
-	builtins *ptr;
+    // TODO: use 'len' in comparison
+    sliter *iter = sl_find_key(pl->biftab, name);
+    builtins *ptr;
 
-	while (sl_next_key(iter, (void**)&ptr)) {
-		if (ptr->arity == arity) {
-			if (found) *found = true;
-			if (evaluable) *evaluable = ptr->evaluable;
-			sl_done(iter);
-			return ptr;
-		}
-	}
+    while (sl_next_key(iter, (void **)&ptr)) {
+        if (ptr->arity == arity) {
+            if (found)
+                *found = true;
+            if (evaluable)
+                *evaluable = ptr->evaluable;
+            sl_done(iter);
+            return ptr;
+        }
+    }
 
-	if (found) *found = false;
-	if (evaluable) *evaluable = false;
-	sl_done(iter);
-	return NULL;
+    if (found)
+        *found = false;
+    if (evaluable)
+        *evaluable = false;
+    sl_done(iter);
+    return NULL;
 }
 
-builtins *get_fn_ptr(void *fn)
+const builtins *get_fn_ptr(void *fn)
 {
-	for (builtins *ptr = g_iso_bifs; ptr->name; ptr++) {
-		if (ptr->fn == fn)
-			return ptr;
-	}
+    for (const builtins *ptr = g_iso_bifs; ptr->name; ptr++) {
+        if (ptr->fn == fn)
+            return ptr;
+    }
 
-	for (builtins *ptr = g_evaluable_bifs; ptr->name; ptr++) {
-		if (ptr->fn == fn)
-			return ptr;
-	}
+    for (const builtins *ptr = g_evaluable_bifs; ptr->name; ptr++) {
+        if (ptr->fn == fn)
+            return ptr;
+    }
 
-	for (builtins *ptr = g_os_bifs; ptr->name; ptr++) {
-		if (ptr->fn == fn)
-			return ptr;
-	}
+    // for (builtins *ptr = g_os_bifs; ptr->name; ptr++) {
+    //     if (ptr->fn == fn)
+    //         return ptr;
+    // }
 
-	for (builtins *ptr = g_other_bifs; ptr->name; ptr++) {
-		if (ptr->fn == fn)
-			return ptr;
-	}
+    for (const builtins *ptr = g_other_bifs; ptr->name; ptr++) {
+        if (ptr->fn == fn)
+            return ptr;
+    }
 
-	for (builtins *ptr = g_control_bifs; ptr->name; ptr++) {
-		if (ptr->fn == fn)
-			return ptr;
-	}
+    for (const builtins *ptr = g_control_bifs; ptr->name; ptr++) {
+        if (ptr->fn == fn)
+            return ptr;
+    }
 
-	for (builtins *ptr = g_atts_bifs; ptr->name; ptr++) {
-		if (ptr->fn == fn)
-			return ptr;
-	}
+    for (const builtins *ptr = g_atts_bifs; ptr->name; ptr++) {
+        if (ptr->fn == fn)
+            return ptr;
+    }
 
-	for (builtins *ptr = g_bboard_bifs; ptr->name; ptr++) {
-		if (ptr->fn == fn)
-			return ptr;
-	}
+    for (const builtins *ptr = g_bboard_bifs; ptr->name; ptr++) {
+        if (ptr->fn == fn)
+            return ptr;
+    }
 
-	for (builtins *ptr = g_database_bifs; ptr->name; ptr++) {
-		if (ptr->fn == fn)
-			return ptr;
-	}
+    // for (builtins *ptr = g_database_bifs; ptr->name; ptr++) {
+    //     if (ptr->fn == fn)
+    //         return ptr;
+    // }
+    //
+    // for (builtins *ptr = g_csv_bifs; ptr->name; ptr++) {
+    //     if (ptr->fn == fn)
+    //         return ptr;
+    // }
 
-	for (builtins *ptr = g_csv_bifs; ptr->name; ptr++) {
-		if (ptr->fn == fn)
-			return ptr;
-	}
+    // for (builtins *ptr = g_sregex_bifs; ptr->name; ptr++) {
+    //     if (ptr->fn == fn)
+    //         return ptr;
+    // }
 
-	for (builtins *ptr = g_sregex_bifs; ptr->name; ptr++) {
-		if (ptr->fn == fn)
-			return ptr;
-	}
+    for (const builtins *ptr = g_sort_bifs; ptr->name; ptr++) {
+        if (ptr->fn == fn)
+            return ptr;
+    }
 
-	for (builtins *ptr = g_sort_bifs; ptr->name; ptr++) {
-		if (ptr->fn == fn)
-			return ptr;
-	}
+    // for (builtins *ptr = g_tasks_bifs; ptr->name; ptr++) {
+    //     if (ptr->fn == fn)
+    //         return ptr;
+    // }
 
-	for (builtins *ptr = g_tasks_bifs; ptr->name; ptr++) {
-		if (ptr->fn == fn)
-			return ptr;
-	}
+    // for (builtins *ptr = g_threads_bifs; ptr->name; ptr++) {
+    //     if (ptr->fn == fn)
+    //         return ptr;
+    // }
+    //
+    // for (builtins *ptr = g_streams_bifs; ptr->name; ptr++) {
+    //     if (ptr->fn == fn)
+    //         return ptr;
+    // }
 
-	for (builtins *ptr = g_threads_bifs; ptr->name; ptr++) {
-		if (ptr->fn == fn)
-			return ptr;
-	}
+    for (const builtins *ptr = g_maps_bifs; ptr->name; ptr++) {
+        if (ptr->fn == fn)
+            return ptr;
+    }
 
-	for (builtins *ptr = g_streams_bifs; ptr->name; ptr++) {
-		if (ptr->fn == fn)
-			return ptr;
-	}
+    // for (builtins *ptr = g_ffi_bifs; ptr->name; ptr++) {
+    //     if (ptr->fn == fn)
+    //         return ptr;
+    // }
+    //
+    // for (builtins *ptr = g_posix_bifs; ptr->name; ptr++) {
+    //     if (ptr->fn == fn)
+    //         return ptr;
+    // }
 
-	for (builtins *ptr = g_maps_bifs; ptr->name; ptr++) {
-		if (ptr->fn == fn)
-			return ptr;
-	}
-
-	for (builtins *ptr = g_ffi_bifs; ptr->name; ptr++) {
-		if (ptr->fn == fn)
-			return ptr;
-	}
-
-	for (builtins *ptr = g_posix_bifs; ptr->name; ptr++) {
-		if (ptr->fn == fn)
-			return ptr;
-	}
-
-	return NULL;
+    return NULL;
 }
 
 void load_builtins(prolog *pl)
 {
-	for (const builtins *ptr = g_atts_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
+    for (const builtins *ptr = g_atts_bifs; ptr->name; ptr++) {
+        sl_app(pl->biftab, ptr->name, ptr);
+        if (ptr->name[0] == '$')
+            continue;
+        sl_app(pl->help, ptr->name, ptr);
+    }
 
-	for (const builtins *ptr = g_bboard_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
+    for (const builtins *ptr = g_bboard_bifs; ptr->name; ptr++) {
+        sl_app(pl->biftab, ptr->name, ptr);
+        if (ptr->name[0] == '$')
+            continue;
+        sl_app(pl->help, ptr->name, ptr);
+    }
 
-	for (const builtins *ptr = g_csv_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
+    // for (const builtins *ptr = g_csv_bifs; ptr->name; ptr++) {
+    //     sl_app(pl->biftab, ptr->name, ptr);
+    //     if (ptr->name[0] == '$')
+    //         continue;
+    //     sl_app(pl->help, ptr->name, ptr);
+    // }
+    //
+    // for (const builtins *ptr = g_database_bifs; ptr->name; ptr++) {
+    //     sl_app(pl->biftab, ptr->name, ptr);
+    //     if (ptr->name[0] == '$')
+    //         continue;
+    //     sl_app(pl->help, ptr->name, ptr);
+    // }
 
-	for (const builtins *ptr = g_database_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
+    for (const builtins *ptr = g_evaluable_bifs; ptr->name; ptr++) {
+        sl_app(pl->biftab, ptr->name, ptr);
+        if (ptr->name[0] == '$')
+            continue;
+        sl_app(pl->help, ptr->name, ptr);
+    }
 
-	for (const builtins *ptr = g_evaluable_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
+    // for (const builtins *ptr = g_ffi_bifs; ptr->name; ptr++) {
+    //     sl_app(pl->biftab, ptr->name, ptr);
+    //     if (ptr->name[0] == '$')
+    //         continue;
+    //     sl_app(pl->help, ptr->name, ptr);
+    // }
 
-	for (const builtins *ptr = g_ffi_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
+    for (const builtins *ptr = g_format_bifs; ptr->name; ptr++) {
+        sl_app(pl->biftab, ptr->name, ptr);
+        if (ptr->name[0] == '$')
+            continue;
+        sl_app(pl->help, ptr->name, ptr);
+    }
 
-	for (const builtins *ptr = g_format_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
+    for (const builtins *ptr = g_iso_bifs; ptr->name; ptr++) {
+        sl_app(pl->biftab, ptr->name, ptr);
+        if (ptr->name[0] == '$')
+            continue;
+        sl_app(pl->help, ptr->name, ptr);
+    }
 
-	for (const builtins *ptr = g_iso_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
+    for (const builtins *ptr = g_maps_bifs; ptr->name; ptr++) {
+        sl_app(pl->biftab, ptr->name, ptr);
+        if (ptr->name[0] == '$')
+            continue;
+        sl_app(pl->help, ptr->name, ptr);
+    }
 
-	for (const builtins *ptr = g_maps_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
+    // for (const builtins *ptr = g_os_bifs; ptr->name; ptr++) {
+    //     sl_app(pl->biftab, ptr->name, ptr);
+    //     if (ptr->name[0] == '$')
+    //         continue;
+    //     sl_app(pl->help, ptr->name, ptr);
+    // }
 
-	for (const builtins *ptr = g_os_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
+    for (const builtins *ptr = g_other_bifs; ptr->name; ptr++) {
+        sl_app(pl->biftab, ptr->name, ptr);
+        if (ptr->name[0] == '$')
+            continue;
+        sl_app(pl->help, ptr->name, ptr);
+    }
 
-	for (const builtins *ptr = g_other_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
+    for (const builtins *ptr = g_control_bifs; ptr->name; ptr++) {
+        sl_app(pl->biftab, ptr->name, ptr);
+        if (ptr->name[0] == '$')
+            continue;
+        sl_app(pl->help, ptr->name, ptr);
+    }
 
-	for (const builtins *ptr = g_control_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
+    // for (const builtins *ptr = g_posix_bifs; ptr->name; ptr++) {
+    //     sl_app(pl->biftab, ptr->name, ptr);
+    //     if (ptr->name[0] == '$')
+    //         continue;
+    //     sl_app(pl->help, ptr->name, ptr);
+    // }
 
-	for (const builtins *ptr = g_posix_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
+    for (const builtins *ptr = g_sort_bifs; ptr->name; ptr++) {
+        sl_app(pl->biftab, ptr->name, ptr);
+        if (ptr->name[0] == '$')
+            continue;
+        sl_app(pl->help, ptr->name, ptr);
+    }
 
-	for (const builtins *ptr = g_sort_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
-
-	for (const builtins *ptr = g_sregex_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
-
-	for (const builtins *ptr = g_streams_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
-
-	for (const builtins *ptr = g_tasks_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
-
-	for (const builtins *ptr = g_threads_bifs; ptr->name; ptr++) {
-		sl_app(pl->biftab, ptr->name, ptr);
-		if (ptr->name[0] == '$') continue;
-		sl_app(pl->help, ptr->name, ptr);
-	}
+    // for (const builtins *ptr = g_sregex_bifs; ptr->name; ptr++) {
+    //     sl_app(pl->biftab, ptr->name, ptr);
+    //     if (ptr->name[0] == '$')
+    //         continue;
+    //     sl_app(pl->help, ptr->name, ptr);
+    // }
+    //
+    // for (const builtins *ptr = g_streams_bifs; ptr->name; ptr++) {
+    //     sl_app(pl->biftab, ptr->name, ptr);
+    //     if (ptr->name[0] == '$')
+    //         continue;
+    //     sl_app(pl->help, ptr->name, ptr);
+    // }
+    //
+    // for (const builtins *ptr = g_tasks_bifs; ptr->name; ptr++) {
+    //     sl_app(pl->biftab, ptr->name, ptr);
+    //     if (ptr->name[0] == '$')
+    //         continue;
+    //     sl_app(pl->help, ptr->name, ptr);
+    // }
+    //
+    // for (const builtins *ptr = g_threads_bifs; ptr->name; ptr++) {
+    //     sl_app(pl->biftab, ptr->name, ptr);
+    //     if (ptr->name[0] == '$')
+    //         continue;
+    //     sl_app(pl->help, ptr->name, ptr);
+    // }
 }
 
 static bool g_init(prolog *pl)
 {
-	bool error = false;
+    bool error = false;
 
-	init_lock(&g_symtab_guard);
-	g_global_atoms = calloc(s_global_atoms_size, 1);
-	s_global_atoms_offset = 0;
+    init_lock(&g_symtab_guard);
+    g_global_atoms = calloc(s_global_atoms_size, 1);
+    s_global_atoms_offset = 0;
 
-	CHECK_SENTINEL(g_symtab = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
-	CHECK_SENTINEL(g_dummy_s = new_atom(pl, "dummy"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_match_s = new_atom(pl, "$match"), ERR_IDX);
-	CHECK_SENTINEL(g_false_s = new_atom(pl, "false"), ERR_IDX);
-	CHECK_SENTINEL(g_true_s = new_atom(pl, "true"), ERR_IDX);
-	CHECK_SENTINEL(g_at_s = new_atom(pl, "@"), ERR_IDX);
-	CHECK_SENTINEL(g_conjunction_s = new_atom(pl, ","), ERR_IDX);
-	CHECK_SENTINEL(g_disjunction_s = new_atom(pl, ";"), ERR_IDX);
-	CHECK_SENTINEL(g_if_then_s = new_atom(pl, "->"), ERR_IDX);
-	CHECK_SENTINEL(g_soft_cut_s = new_atom(pl, "*->"), ERR_IDX);
-	CHECK_SENTINEL(g_negation_s = new_atom(pl, "\\+"), ERR_IDX);
-	CHECK_SENTINEL(g_dot_s = new_atom(pl, "."), ERR_IDX);
-	CHECK_SENTINEL(g_plus_s = new_atom(pl, "+"), ERR_IDX);
-	CHECK_SENTINEL(g_minus_s = new_atom(pl, "-"), ERR_IDX);
-	CHECK_SENTINEL(g_empty_s = new_atom(pl, ""), ERR_IDX);
-	CHECK_SENTINEL(g_anon_s = new_atom(pl, "_"), ERR_IDX);
-	CHECK_SENTINEL(g_dcg_s = new_atom(pl, "-->"), ERR_IDX);
-	CHECK_SENTINEL(g_maplist_s = new_atom(pl, "maplist"), ERR_IDX);
-	CHECK_SENTINEL(g_call_s = new_atom(pl, "call"), ERR_IDX);
-	CHECK_SENTINEL(g_catch_s = new_atom(pl, "catch"), ERR_IDX);
-	CHECK_SENTINEL(g_member_s = new_atom(pl, "member"), ERR_IDX);
-	CHECK_SENTINEL(g_memberchk_s = new_atom(pl, "memberchk"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_counter_s = new_atom(pl, "$counter"), ERR_IDX);
-	CHECK_SENTINEL(g_braces_s = new_atom(pl, "braces"), ERR_IDX);
-	CHECK_SENTINEL(g_unify_s = new_atom(pl, "="), ERR_IDX);
-	CHECK_SENTINEL(g_notunify_s = new_atom(pl, "\\="), ERR_IDX);
-	CHECK_SENTINEL(g_on_s = new_atom(pl, "on"), ERR_IDX);
-	CHECK_SENTINEL(g_off_s = new_atom(pl, "off"), ERR_IDX);
-	CHECK_SENTINEL(g_cut_s = new_atom(pl, "!"), ERR_IDX);
-	CHECK_SENTINEL(g_nil_s = new_atom(pl, "[]"), ERR_IDX);
-	CHECK_SENTINEL(g_braces_s = new_atom(pl, "{}"), ERR_IDX);
-	CHECK_SENTINEL(g_fail_s = new_atom(pl, "fail"), ERR_IDX);
-	CHECK_SENTINEL(g_neck_s = new_atom(pl, ":-"), ERR_IDX);
-	CHECK_SENTINEL(g_eof_s = new_atom(pl, "end_of_file"), ERR_IDX);
-	CHECK_SENTINEL(g_lt_s = new_atom(pl, "<"), ERR_IDX);
-	CHECK_SENTINEL(g_gt_s = new_atom(pl, ">"), ERR_IDX);
-	CHECK_SENTINEL(g_eq_s = new_atom(pl, "="), ERR_IDX);
-	CHECK_SENTINEL(g_sys_reunify_s = new_atom(pl, "$reunify"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_undo_s = new_atom(pl, "$undo"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_jump_if_nil_s = new_atom(pl, "$jump_if_nil"), ERR_IDX);
-	CHECK_SENTINEL(g_once_s = new_atom(pl, "once"), ERR_IDX);
-	CHECK_SENTINEL(g_throw_s = new_atom(pl, "throw"), ERR_IDX);
-	CHECK_SENTINEL(g_error_s = new_atom(pl, "error"), ERR_IDX);
-	CHECK_SENTINEL(g_slash_s = new_atom(pl, "/"), ERR_IDX);
-	CHECK_SENTINEL(g_goal_expansion_s = new_atom(pl, "goal_expansion"), ERR_IDX);
-	CHECK_SENTINEL(g_term_expansion_s = new_atom(pl, "term_expansion"), ERR_IDX);
-	CHECK_SENTINEL(g_tm_s = new_atom(pl, "tm"), ERR_IDX);
-	CHECK_SENTINEL(g_float_s = new_atom(pl, "float"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_elapsed_s = new_atom(pl, "$elapsed"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_queue_s = new_atom(pl, "$queue"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_var_s = new_atom(pl, "$VAR"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_stream_property_s = new_atom(pl, "$stream_property"), ERR_IDX);
-	CHECK_SENTINEL(g_post_unify_hook_s = new_atom(pl, "$post_unify_hook"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_record_key_s = new_atom(pl, "$record_key"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_ne_s = new_atom(pl, "$ne"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_incr_s = new_atom(pl, "$incr"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_block_catcher_s = new_atom(pl, "$block_catcher"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_drop_barrier_s = new_atom(pl, "$drop_barrier"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_cleanup_if_det_s = new_atom(pl, "$cleanup_if_det"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_cut_if_det_s = new_atom(pl, "$cut_if_det"), ERR_IDX);
-	CHECK_SENTINEL(g_as_s = new_atom(pl, "as"), ERR_IDX);
-	CHECK_SENTINEL(g_colon_s = new_atom(pl, ":"), ERR_IDX);
-	CHECK_SENTINEL(g_caret_s = new_atom(pl, "^"), ERR_IDX);
-	CHECK_SENTINEL(g_none_s = new_atom(pl, "none"), ERR_IDX);
-	CHECK_SENTINEL(g_cont_s = new_atom(pl, "cont"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_set_if_var_s = new_atom(pl, "$set_if_var"), ERR_IDX);
-	CHECK_SENTINEL(g_is_s = new_atom(pl, "is"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_succeed_on_retry_s = new_atom(pl, "$succeed_on_retry"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_fail_on_retry_s = new_atom(pl, "$fail_on_retry"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_call_check_s = new_atom(pl, "$call_check"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_reset_handler_s = new_atom(pl, "$reset_handler"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_get_level_s = new_atom(pl, "$get_level"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_jump_s = new_atom(pl, "$jump"), ERR_IDX);
-	CHECK_SENTINEL(g_reset_s = new_atom(pl, "reset"), ERR_IDX);
-	CHECK_SENTINEL(g_ignore_s = new_atom(pl, "ignore"), ERR_IDX);
-	CHECK_SENTINEL(g_if_s = new_atom(pl, "if"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_call_s = new_atom(pl, "$call"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_cut_s = new_atom(pl, "$cut"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_module_s = new_atom(pl, "$module"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_loop_s = new_atom(pl, "$LOOP:"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_end_s = new_atom(pl, "$:END"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_create_var_s = new_atom(pl, "$create_var"), ERR_IDX);
-	CHECK_SENTINEL(g_double_bar_s = new_atom(pl, DOUBLE_BAR), ERR_IDX);
+    CHECK_SENTINEL(g_symtab = sl_create((void *)fake_strcmp, (void *)keyfree, NULL), NULL);
+    CHECK_SENTINEL(g_dummy_s = new_atom(pl, "dummy"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_match_s = new_atom(pl, "$match"), ERR_IDX);
+    CHECK_SENTINEL(g_false_s = new_atom(pl, "false"), ERR_IDX);
+    CHECK_SENTINEL(g_true_s = new_atom(pl, "true"), ERR_IDX);
+    CHECK_SENTINEL(g_at_s = new_atom(pl, "@"), ERR_IDX);
+    CHECK_SENTINEL(g_conjunction_s = new_atom(pl, ","), ERR_IDX);
+    CHECK_SENTINEL(g_disjunction_s = new_atom(pl, ";"), ERR_IDX);
+    CHECK_SENTINEL(g_if_then_s = new_atom(pl, "->"), ERR_IDX);
+    CHECK_SENTINEL(g_soft_cut_s = new_atom(pl, "*->"), ERR_IDX);
+    CHECK_SENTINEL(g_negation_s = new_atom(pl, "\\+"), ERR_IDX);
+    CHECK_SENTINEL(g_dot_s = new_atom(pl, "."), ERR_IDX);
+    CHECK_SENTINEL(g_plus_s = new_atom(pl, "+"), ERR_IDX);
+    CHECK_SENTINEL(g_minus_s = new_atom(pl, "-"), ERR_IDX);
+    CHECK_SENTINEL(g_empty_s = new_atom(pl, ""), ERR_IDX);
+    CHECK_SENTINEL(g_anon_s = new_atom(pl, "_"), ERR_IDX);
+    CHECK_SENTINEL(g_dcg_s = new_atom(pl, "-->"), ERR_IDX);
+    CHECK_SENTINEL(g_maplist_s = new_atom(pl, "maplist"), ERR_IDX);
+    CHECK_SENTINEL(g_call_s = new_atom(pl, "call"), ERR_IDX);
+    CHECK_SENTINEL(g_catch_s = new_atom(pl, "catch"), ERR_IDX);
+    CHECK_SENTINEL(g_member_s = new_atom(pl, "member"), ERR_IDX);
+    CHECK_SENTINEL(g_memberchk_s = new_atom(pl, "memberchk"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_counter_s = new_atom(pl, "$counter"), ERR_IDX);
+    CHECK_SENTINEL(g_braces_s = new_atom(pl, "braces"), ERR_IDX);
+    CHECK_SENTINEL(g_unify_s = new_atom(pl, "="), ERR_IDX);
+    CHECK_SENTINEL(g_notunify_s = new_atom(pl, "\\="), ERR_IDX);
+    CHECK_SENTINEL(g_on_s = new_atom(pl, "on"), ERR_IDX);
+    CHECK_SENTINEL(g_off_s = new_atom(pl, "off"), ERR_IDX);
+    CHECK_SENTINEL(g_cut_s = new_atom(pl, "!"), ERR_IDX);
+    CHECK_SENTINEL(g_nil_s = new_atom(pl, "[]"), ERR_IDX);
+    CHECK_SENTINEL(g_braces_s = new_atom(pl, "{}"), ERR_IDX);
+    CHECK_SENTINEL(g_fail_s = new_atom(pl, "fail"), ERR_IDX);
+    CHECK_SENTINEL(g_neck_s = new_atom(pl, ":-"), ERR_IDX);
+    CHECK_SENTINEL(g_eof_s = new_atom(pl, "end_of_file"), ERR_IDX);
+    CHECK_SENTINEL(g_lt_s = new_atom(pl, "<"), ERR_IDX);
+    CHECK_SENTINEL(g_gt_s = new_atom(pl, ">"), ERR_IDX);
+    CHECK_SENTINEL(g_eq_s = new_atom(pl, "="), ERR_IDX);
+    CHECK_SENTINEL(g_sys_reunify_s = new_atom(pl, "$reunify"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_undo_s = new_atom(pl, "$undo"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_jump_if_nil_s = new_atom(pl, "$jump_if_nil"), ERR_IDX);
+    CHECK_SENTINEL(g_once_s = new_atom(pl, "once"), ERR_IDX);
+    CHECK_SENTINEL(g_throw_s = new_atom(pl, "throw"), ERR_IDX);
+    CHECK_SENTINEL(g_error_s = new_atom(pl, "error"), ERR_IDX);
+    CHECK_SENTINEL(g_slash_s = new_atom(pl, "/"), ERR_IDX);
+    CHECK_SENTINEL(g_goal_expansion_s = new_atom(pl, "goal_expansion"), ERR_IDX);
+    CHECK_SENTINEL(g_term_expansion_s = new_atom(pl, "term_expansion"), ERR_IDX);
+    CHECK_SENTINEL(g_tm_s = new_atom(pl, "tm"), ERR_IDX);
+    CHECK_SENTINEL(g_float_s = new_atom(pl, "float"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_elapsed_s = new_atom(pl, "$elapsed"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_queue_s = new_atom(pl, "$queue"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_var_s = new_atom(pl, "$VAR"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_stream_property_s = new_atom(pl, "$stream_property"), ERR_IDX);
+    CHECK_SENTINEL(g_post_unify_hook_s = new_atom(pl, "$post_unify_hook"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_record_key_s = new_atom(pl, "$record_key"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_ne_s = new_atom(pl, "$ne"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_incr_s = new_atom(pl, "$incr"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_block_catcher_s = new_atom(pl, "$block_catcher"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_drop_barrier_s = new_atom(pl, "$drop_barrier"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_cleanup_if_det_s = new_atom(pl, "$cleanup_if_det"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_cut_if_det_s = new_atom(pl, "$cut_if_det"), ERR_IDX);
+    CHECK_SENTINEL(g_as_s = new_atom(pl, "as"), ERR_IDX);
+    CHECK_SENTINEL(g_colon_s = new_atom(pl, ":"), ERR_IDX);
+    CHECK_SENTINEL(g_caret_s = new_atom(pl, "^"), ERR_IDX);
+    CHECK_SENTINEL(g_none_s = new_atom(pl, "none"), ERR_IDX);
+    CHECK_SENTINEL(g_cont_s = new_atom(pl, "cont"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_set_if_var_s = new_atom(pl, "$set_if_var"), ERR_IDX);
+    CHECK_SENTINEL(g_is_s = new_atom(pl, "is"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_succeed_on_retry_s = new_atom(pl, "$succeed_on_retry"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_fail_on_retry_s = new_atom(pl, "$fail_on_retry"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_call_check_s = new_atom(pl, "$call_check"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_reset_handler_s = new_atom(pl, "$reset_handler"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_get_level_s = new_atom(pl, "$get_level"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_jump_s = new_atom(pl, "$jump"), ERR_IDX);
+    CHECK_SENTINEL(g_reset_s = new_atom(pl, "reset"), ERR_IDX);
+    CHECK_SENTINEL(g_ignore_s = new_atom(pl, "ignore"), ERR_IDX);
+    CHECK_SENTINEL(g_if_s = new_atom(pl, "if"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_call_s = new_atom(pl, "$call"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_cut_s = new_atom(pl, "$cut"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_module_s = new_atom(pl, "$module"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_loop_s = new_atom(pl, "$LOOP:"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_end_s = new_atom(pl, "$:END"), ERR_IDX);
+    CHECK_SENTINEL(g_sys_create_var_s = new_atom(pl, "$create_var"), ERR_IDX);
+    CHECK_SENTINEL(g_double_bar_s = new_atom(pl, DOUBLE_BAR), ERR_IDX);
 
-	char *ptr = getenv("TPL_LIBRARY_PATH");
+    char *ptr = getenv("TPL_LIBRARY_PATH");
 
-	if (ptr) {
-		g_tpl_lib = strdup(ptr);
-		convert_path(g_tpl_lib);
-	}
+    if (ptr) {
+        g_tpl_lib = strdup(ptr);
+        convert_path(g_tpl_lib);
+    }
 
-	struct rlimit rlp;
-	getrlimit(RLIMIT_STACK, &rlp);
-	g_max_depth = rlp.rlim_cur / 1024;
+    struct rlimit rlp;
+    getrlimit(RLIMIT_STACK, &rlp);
+    if (rlp.rlim_cur > 0)
+        g_max_depth = rlp.rlim_cur / 1024;
 
-	return error;
+    return error;
 }
 
 void pl_destroy(prolog *pl)
 {
-	if (!pl) return;
+    if (!pl)
+        return;
 
-	if (pl->logfp)
-		fclose(pl->logfp);
+    if (pl->logfp)
+        fclose(pl->logfp);
 
-	module_destroy(pl->system_m);
-	module_destroy(pl->user_m);
-	sl_destroy(pl->biftab);
-	module *m;
+    module_destroy(pl->system_m);
+    module_destroy(pl->user_m);
+    sl_destroy(pl->biftab);
+    module *m;
 
-	while ((m = list_front(&pl->modules)) != NULL)
-		module_destroy(m);
+    while ((m = list_front(&pl->modules)) != NULL)
+        module_destroy(m);
 
-	sl_destroy(pl->fortab);
-	sl_destroy(pl->keyval);
-	sl_destroy(pl->help);
-	free(pl->tabs);
+    sl_destroy(pl->fortab);
+    sl_destroy(pl->keyval);
+    sl_destroy(pl->help);
+    free(pl->tabs);
 
-	for (int i = 0; i < MAX_STREAMS; i++) {
-		stream *str = &pl->streams[i];
+    for (int i = 0; i < MAX_STREAMS; i++) {
+        stream *str = &pl->streams[i];
 
-		if (str->fp) {
-			if ((str->fp != stdin)
-				&& (str->fp != stdout)
-				&& (str->fp != stderr)
-			) {
-				if (str->is_alias)
-					;
-				else if (str->is_map)
-					sl_destroy(str->keyval);
-				else if (str->is_engine)
-					query_destroy(str->engine);
-				else if (str->is_queue || str->is_mutex)
-					;
-				else if (str->fp && (i > 2))
-					fclose(str->fp);
-			}
+        if (str->fp) {
+            if ((str->fp != stdin) && (str->fp != stdout) && (str->fp != stderr)) {
+                if (str->is_alias)
+                    ;
+                else if (str->is_map)
+                    sl_destroy(str->keyval);
+                else if (str->is_engine)
+                    query_destroy(str->engine);
+                else if (str->is_queue || str->is_mutex)
+                    ;
+                else if (str->fp && (i > 2))
+                    fclose(str->fp);
+            }
 
-			parser_destroy(str->p);
-			sl_destroy(str->alias);
-			free(str->filename);
-			free(str->mode);
-			free(str->data);
-		}
-	}
+            parser_destroy(str->p);
+            sl_destroy(str->alias);
+            free(str->filename);
+            free(str->mode);
+            free(str->data);
+        }
+    }
 
-	parser_destroy(pl->p);
+    parser_destroy(pl->p);
 
-	if (!--g_tpl_count)
-		g_destroy();
+    if (!--g_tpl_count)
+        g_destroy();
 
-	free(pl);
+    free(pl);
 }
 
 prolog *pl_create()
 {
-	//printf("*** sizeof(cell) = %u bytes\n", (unsigned)sizeof(cell));
-	//assert(sizeof(cell) == 24);
+    // printf("*** sizeof(cell) = %u bytes\n", (unsigned)sizeof(cell));
+    // assert(sizeof(cell) == 24);
 
-	prolog *pl = calloc(1, sizeof(prolog));
-	if (!pl) return NULL;
-	bool error = false;
-	pl->opt = 1;
+    prolog *pl = calloc(1, sizeof(prolog));
+    if (!pl)
+        return NULL;
+    bool error = false;
+    pl->opt = 1;
 
-	if (!g_tpl_count++)
-		g_init(pl);
+    if (!g_tpl_count++)
+        g_init(pl);
 
-	if (!g_tpl_lib) {
-		g_tpl_lib = realpath(g_argv0, NULL);
+    if (!g_tpl_lib) {
+        g_tpl_lib = realpath(g_argv0, NULL);
 
-		if (g_tpl_lib) {
-			char *src = g_tpl_lib + strlen(g_tpl_lib) - 1;
+        if (g_tpl_lib) {
+            char *src = g_tpl_lib + strlen(g_tpl_lib) - 1;
 
-			while ((src != g_tpl_lib) && (*src != '/'))
-				src--;
+            while ((src != g_tpl_lib) && (*src != '/'))
+                src--;
 
-			*src = '\0';
-			g_tpl_lib = realloc(g_tpl_lib, strlen(g_tpl_lib)+40);
-			strcat(g_tpl_lib, "/library");
-		} else
-			g_tpl_lib = strdup("../library");
-	}
+            *src = '\0';
+            g_tpl_lib = realloc(g_tpl_lib, strlen(g_tpl_lib) + 40);
+            strcat(g_tpl_lib, "/library");
+        } else
+            g_tpl_lib = strdup("../library");
+    }
 
-	CHECK_SENTINEL(pl->keyval = sl_create((void*)fake_strcmp, (void*)keyval_free, NULL), NULL);
+    CHECK_SENTINEL(pl->keyval = sl_create((void *)fake_strcmp, (void *)keyval_free, NULL), NULL);
 
-	pl->streams[0].fp = stdin;
-	CHECK_SENTINEL(pl->streams[0].alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
-	CHECK_SENTINEL(pl->streams[0].filename = strdup("stdin"), NULL);
-	CHECK_SENTINEL(pl->streams[0].mode = strdup("read"), NULL);
-	sl_app(pl->streams[0].alias, strdup("user_input"), NULL);
-	pl->streams[0].eof_action = eof_action_reset;
+    pl->streams[0].fp = stdin;
+    CHECK_SENTINEL(pl->streams[0].alias = sl_create((void *)fake_strcmp, (void *)keyfree, NULL),
+                   NULL);
+    CHECK_SENTINEL(pl->streams[0].filename = strdup("stdin"), NULL);
+    CHECK_SENTINEL(pl->streams[0].mode = strdup("read"), NULL);
+    sl_app(pl->streams[0].alias, strdup("user_input"), NULL);
+    pl->streams[0].eof_action = eof_action_reset;
 
-	pl->streams[1].fp = stdout;
-	CHECK_SENTINEL(pl->streams[1].alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
-	CHECK_SENTINEL(pl->streams[1].filename = strdup("stdout"), NULL);
-	CHECK_SENTINEL(pl->streams[1].mode = strdup("append"), NULL);
-	sl_app(pl->streams[1].alias, strdup("user_output"), NULL);
-	pl->streams[1].eof_action = eof_action_reset;
+    pl->streams[1].fp = stdout;
+    CHECK_SENTINEL(pl->streams[1].alias = sl_create((void *)fake_strcmp, (void *)keyfree, NULL),
+                   NULL);
+    CHECK_SENTINEL(pl->streams[1].filename = strdup("stdout"), NULL);
+    CHECK_SENTINEL(pl->streams[1].mode = strdup("append"), NULL);
+    sl_app(pl->streams[1].alias, strdup("user_output"), NULL);
+    pl->streams[1].eof_action = eof_action_reset;
 
-	pl->streams[2].fp = stderr;
-	CHECK_SENTINEL(pl->streams[2].alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
-	CHECK_SENTINEL(pl->streams[2].filename = strdup("stderr"), NULL);
-	CHECK_SENTINEL(pl->streams[2].mode = strdup("append"), NULL);
-	sl_app(pl->streams[2].alias, strdup("user_error"), NULL);
-	pl->streams[2].eof_action = eof_action_reset;
+    pl->streams[2].fp = stderr;
+    CHECK_SENTINEL(pl->streams[2].alias = sl_create((void *)fake_strcmp, (void *)keyfree, NULL),
+                   NULL);
+    CHECK_SENTINEL(pl->streams[2].filename = strdup("stderr"), NULL);
+    CHECK_SENTINEL(pl->streams[2].mode = strdup("append"), NULL);
+    sl_app(pl->streams[2].alias, strdup("user_error"), NULL);
+    pl->streams[2].eof_action = eof_action_reset;
 
-	pl->streams[3].ignore = true;
+    pl->streams[3].ignore = true;
 
+    pl->help = sl_create((void *)fake_strcmp, (void *)ptrfree, NULL);
+    pl->fortab = sl_create((void *)fake_strcmp, NULL, NULL);
+    pl->biftab = sl_create((void *)fake_strcmp, NULL, NULL);
 
-	pl->help = sl_create((void*)fake_strcmp, (void*)ptrfree, NULL);
-	pl->fortab = sl_create((void*)fake_strcmp, NULL, NULL);
-	pl->biftab = sl_create((void*)fake_strcmp, NULL, NULL);
+    if (pl->biftab)
+        load_builtins(pl);
 
-	if (pl->biftab)
-		load_builtins(pl);
+    // printf("Library: %s\n", g_tpl_lib);
 
-	//printf("Library: %s\n", g_tpl_lib);
+    pl->system_m = module_create(pl, "system");
 
-	pl->system_m = module_create(pl, "system");
+    if (!pl->system_m || pl->system_m->error) {
+        pl_destroy(pl);
+        return NULL;
+    }
 
-	if (!pl->system_m || pl->system_m->error) {
-		pl_destroy(pl);
-		return NULL;
-	}
+    pl->user_m = module_create(pl, "user");
 
-	pl->user_m = module_create(pl, "user");
+    if (!pl->user_m || pl->user_m->error) {
+        pl_destroy(pl);
+        return NULL;
+    }
 
-	if (!pl->user_m || pl->user_m->error) {
-		pl_destroy(pl);
-		return NULL;
-	}
+    init_lock(&pl->guard);
+    pl->user_m->flags.strict_iso = false;
+    pl->m = pl->user_m;
 
-	init_lock(&pl->guard);
-	pl->user_m->flags.strict_iso = false;
-	pl->m = pl->user_m;
+    pl->current_input = 0;  // STDIN
+    pl->current_output = 1; // STDOUT
+    pl->current_error = 2;  // STDERR
+    pl->def_max_depth = 100;
+    pl->def_quoted = true;
+    pl->def_double_quotes = true;
+    pl->rnd_first_time = true;
+    pl->global_bb = true; // Fow now, as tabling seems to need it
 
-	pl->current_input = 0;		// STDIN
-	pl->current_output = 1;		// STDOUT
-	pl->current_error = 2;		// STDERR
-	pl->def_max_depth = 100;
-	pl->def_quoted = true;
-	pl->def_double_quotes = true;
-	pl->rnd_first_time = true;
-	pl->global_bb = true;		// Fow now, as tabling seems to need it
+    // In user space...
 
-	// In user space...
+    set_discontiguous_in_db(pl->user_m, "$predicate_property", 3);
+    set_multifile_in_db(pl->user_m, "$predicate_property", 3);
+    set_multifile_in_db(pl->user_m, "portray", 1);
 
-	set_discontiguous_in_db(pl->user_m, "$predicate_property", 3);
-	set_multifile_in_db(pl->user_m, "$predicate_property", 3);
-	set_multifile_in_db(pl->user_m, "portray", 1);
+    set_dynamic_in_db(pl->user_m, "$op", 3);
+    set_dynamic_in_db(pl->user_m, "$predicate_property", 3);
+    set_dynamic_in_db(pl->user_m, "$current_prolog_flag", 2);
+    set_dynamic_in_db(pl->user_m, "$stream_property", 2);
+    set_dynamic_in_db(pl->user_m, "$directive", 1);
+    set_dynamic_in_db(pl->user_m, "portray", 1);
 
-	set_dynamic_in_db(pl->user_m, "$op", 3);
-	set_dynamic_in_db(pl->user_m, "$predicate_property", 3);
-	set_dynamic_in_db(pl->user_m, "$current_prolog_flag", 2);
-	set_dynamic_in_db(pl->user_m, "$stream_property", 2);
-	set_dynamic_in_db(pl->user_m, "$directive", 1);
-	set_dynamic_in_db(pl->user_m, "portray", 1);
+    pl->user_m->prebuilt = true;
+    const char *save_filename = pl->user_m->filename;
 
-	pl->user_m->prebuilt = true;
-	const char *save_filename = pl->user_m->filename;
+    // Load some common libraries...
 
-	// Load some common libraries...
+    for (library *lib = g_libs; lib->name; lib++) {
+        if (!strcmp(lib->name, "builtins") || !strcmp(lib->name, "iso_ext") // Common
+            || !strcmp(lib->name, "dif")                                    // ???
+        ) {
+            size_t len = *lib->len;
+            char *src = malloc(len + 1);
+            check_error(src, pl_destroy(pl));
+            memcpy(src, lib->start, len);
+            src[len] = '\0';
+            SB(s1);
+            SB_sprintf(s1, "library/%s", lib->name);
+            module *m = load_text(pl->user_m, src, SB_cstr(s1));
+            m->prebuilt = true;
+            SB_free(s1);
+            free(src);
+            check_error(m, pl_destroy(pl));
+        }
+    }
 
-	for (library *lib = g_libs; lib->name; lib++) {
-		if (!strcmp(lib->name, "builtins")
-			|| !strcmp(lib->name, "iso_ext")		// Common
-			|| !strcmp(lib->name, "dif")			// ???
-			) {
-			size_t len = *lib->len;
-			char *src = malloc(len+1);
-			check_error(src, pl_destroy(pl));
-			memcpy(src, lib->start, len);
-			src[len] = '\0';
-			SB(s1);
-			SB_sprintf(s1, "library/%s", lib->name);
-			module *m = load_text(pl->user_m, src, SB_cstr(s1));
-			m->prebuilt = true;
-			SB_free(s1);
-			free(src);
-			check_error(m, pl_destroy(pl));
-		}
-	}
-
-	pl->user_m->filename = save_filename;
-	pl->user_m->prebuilt = false;
-	return pl;
+    pl->user_m->filename = save_filename;
+    pl->user_m->prebuilt = false;
+    return pl;
 }

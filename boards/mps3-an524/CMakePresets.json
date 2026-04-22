@@ -1,0 +1,48 @@
+{
+	"version": 7,
+	"include": [
+		"../../cmake/presets/base.json"
+	],
+	"configurePresets": [
+		{
+			"name": "qemu-mps3-an524-picolibc-base",
+			"hidden": true,
+			"inherits": "base",
+			"cacheVariables": {
+				"CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/arm-none-eabi-picolibc.cmake",
+				"TPL_BAREMETAL_CPU": "cortex-m33",
+				"TPL_PICOLIBC_CROSS_FILE": "${sourceDir}/boards/mps3-an524/picolibc-cross.txt",
+				"TPL_LINKER_SCRIPT": "${sourceDir}/boards/mps3-an524/linker_script.ld",
+				"TPL_USE_SEMIHOST": "ON",
+				"TPL_BOARD_TIME_SRC": "${sourceDir}/boards/mps3-an524/time.c",
+				"TPL_EMBEDDED_LIBRARIES": "builtins;lists;error;iso_ext;dcgs"
+			}
+		},
+		{
+			"name": "qemu-mps3-an524-picolibc-debug",
+			"displayName": "QEMU mps3-an524 picolibc Debug",
+			"inherits": [
+				"qemu-mps3-an524-picolibc-base",
+				"base-debug"
+			]
+		},
+		{
+			"name": "qemu-mps3-an524-picolibc-release",
+			"displayName": "QEMU mps3-an524 picolibc Release",
+			"inherits": [
+				"qemu-mps3-an524-picolibc-base",
+				"base-release"
+			]
+		}
+	],
+	"buildPresets": [
+		{
+			"name": "qemu-mps3-an524-picolibc-debug",
+			"configurePreset": "qemu-mps3-an524-picolibc-debug"
+		},
+		{
+			"name": "qemu-mps3-an524-picolibc-release",
+			"configurePreset": "qemu-mps3-an524-picolibc-release"
+		}
+	]
+}

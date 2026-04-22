@@ -1,2 +1,0 @@
-Board specific implementations (e.g. direct register access) go here, with
-each board having it's own directory. Maybe also linker scripts here?

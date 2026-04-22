@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+if ! command -v clang-format &>/dev/null; then
+    echo "pre-commit: clang-format not found, skipping"
+    exit 0
+fi
+
+staged=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(c|h)$' | grep -vE '(imath|sre)/' || true)
+
+[ -z "$staged" ] && exit 0
+
+echo "$staged" | xargs clang-format -i
+echo "$staged" | xargs git add

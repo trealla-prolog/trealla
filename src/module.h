@@ -7,7 +7,7 @@ int index_cmpkey(const void *ptr1, const void *ptr2, const void *param, void *l)
 module *module_create(prolog *pl, const char *name);
 void module_duplicate(prolog *pl, module *m, const char *name, unsigned arity);
 void module_destroy(module *m);
-bool module_dump_term(module* m, cell *p1);
+bool module_dump_term(module *m, cell *p1);
 
 bool restore_log(module *m, const char *filename);
 bool save_file(module *m, const char *filename);
@@ -33,9 +33,12 @@ void create_goal_expansion(module *m, cell *c);
 bool needs_quoting(module *m, const char *src, int srclen);
 void process_clause(module *m, clause *cl, predicate *parent);
 void process_module(module *m);
-builtins *get_module_help(module *m, const char *name, unsigned arity, bool *found, bool *evaluable);
-void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const char *type, bool function);
-void format_template(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity, const builtins *ptr, bool function, bool alt);
+builtins *get_module_help(module *m, const char *name, unsigned arity, bool *found,
+                          bool *evaluable);
+void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity,
+                     const char *type, bool function);
+void format_template(module *m, char *tmpbuf, size_t buflen, const char *name, unsigned arity,
+                     const builtins *ptr, bool function, bool alt);
 void push_property(module *m, const char *name, unsigned arity, const char *type);
 void push_template(module *m, const char *name, unsigned arity, const builtins *ptr);
 void retract_from_db(module *m, rule *r);
@@ -59,15 +62,15 @@ bool do_use_foreign_module(module *m, cell *p);
 
 inline static builtins *get_builtin_term(module *m, cell *c, bool *found, bool *evaluable)
 {
-	return get_builtin(m->pl, C_STR(m, c), C_STRLEN(m, c), c->arity, found, evaluable);
+    return get_builtin(m->pl, C_STR(m, c), C_STRLEN(m, c), c->arity, found, evaluable);
 }
 
 inline static void module_lock(module *m)
 {
-	acquire_lock(&m->guard);
+    acquire_lock(&m->guard);
 }
 
 inline static void module_unlock(module *m)
 {
-	release_lock(&m->guard);
+    release_lock(&m->guard);
 }

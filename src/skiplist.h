@@ -1,20 +1,17 @@
 #pragma once
 
-#include <string.h>
 #include <stdbool.h>
+#include <string.h>
 
 typedef struct skiplist_ skiplist;
 typedef struct sliter_ sliter;
 
-skiplist *sl_create(
-	int (*cmpkey)(const void *k1, const void *k2, const void *p, void *l),
-	void (*delkey)(void *k, void *v, const void *p),
-	const void *p
-	);
+skiplist *sl_create(int (*cmpkey)(const void *k1, const void *k2, const void *p, void *l),
+                    void (*delkey)(void *k, void *v, const void *p), const void *p);
 
 bool sl_get(skiplist *l, const void *k, const void **v);
-bool sl_set(skiplist *l, const void *k, const void *v);		// at head
-bool sl_app(skiplist *l, const void *k, const void *v);		// at tail
+bool sl_set(skiplist *l, const void *k, const void *v); // at head
+bool sl_app(skiplist *l, const void *k, const void *v); // at tail
 bool sl_rem(skiplist *l, const void *k, const void *v);
 bool sl_del(skiplist *l, const void *k);
 

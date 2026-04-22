@@ -9,4 +9,3 @@ typedef struct {
 } library;
 
 extern library g_libs[];
-

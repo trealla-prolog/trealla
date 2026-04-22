@@ -1,0 +1,47 @@
+{
+	"version": 7,
+	"include": [
+		"../../cmake/presets/base.json"
+	],
+	"configurePresets": [
+		{
+			"name": "arm-none-eabi-nolibc-generic",
+			"displayName": "arm-none-eabi no-libc generic",
+			"inherits": [
+				"base",
+				"base-debug"
+			],
+			"cacheVariables": {
+				"CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/arm-none-eabi-nolibc.cmake",
+				"TPL_BAREMETAL_CPU": "cortex-m4",
+				"TPL_LINKER_SCRIPT": "${sourceDir}/boards/generic/linker_script.ld"
+			}
+		},
+		{
+			"name": "arm-none-eabi-picolibc-generic",
+			"displayName": "arm-none-eabi picolibc generic",
+			"inherits": [
+				"base",
+				"base-debug"
+			],
+			"cacheVariables": {
+				"CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/arm-none-eabi-picolibc.cmake",
+				"TPL_BAREMETAL_CPU": "cortex-m4",
+				"TPL_PICOLIBC_CROSS_FILE": "${sourceDir}/boards/generic/picolibc-cross.txt",
+				"TPL_LINKER_SCRIPT": "${sourceDir}/boards/generic/linker_script.ld",
+				"TPL_ENTRY": "${sourceDir}/boards/generic/entry.S",
+				"TPL_USE_SEMIHOST": "ON"
+			}
+		}
+	],
+	"buildPresets": [
+		{
+			"name": "arm-none-eabi-nolibc-generic",
+			"configurePreset": "arm-none-eabi-nolibc-generic"
+		},
+		{
+			"name": "arm-none-eabi-picolibc-generic",
+			"configurePreset": "arm-none-eabi-picolibc-generic"
+		}
+	]
+}
