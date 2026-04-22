@@ -2000,7 +2000,7 @@ static bool term_expansion(parser *p)
 		return false;
 
 	if (p->cl->cells->val_off == g_dcg_s)
-		return dcg_expansion(p);
+		dcg_expansion(p);
 
 	module *m = p->m;
 	predicate *pr = find_functor(m, "term_expansion", 2);
