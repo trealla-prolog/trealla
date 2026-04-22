@@ -23,7 +23,7 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #if defined(__linux__)
-#include <linux/kd.h>
+//#include <linux/kd.h>
 #endif
 #endif
 
