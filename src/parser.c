@@ -2015,8 +2015,8 @@ static bool term_expansion(parser *p)
 
 	cell *h = get_head(p->cl->cells);
 
-	//if (h->val_off == g_term_expansion_s)
-	//	return false;
+	if (h->val_off == g_term_expansion_s)
+		return false;
 
 	if (h->val_off == g_colon_s)
 		return false;
