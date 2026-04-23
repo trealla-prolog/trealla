@@ -2082,7 +2082,7 @@ static bool term_expansion(parser *p)
 	p2->cl = NULL;
 
 	parser_destroy(p2);
-	//DUMP_TERM("old", c, 0, 1);
+	//DUMP_TERM("old", get_head(p->cl->cells), 0, 1);
 	query_destroy(q);
 
 	return term_expansion(p);
@@ -3780,26 +3780,55 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 				if (p->is_consulting && !p->skip) {
 					// Term expansion can return a list...
 
-					cell *p1 = p->cl->cells;
-					LIST_HANDLER(p1);
+					cell *c = p->cl->cells;
+					LIST_HANDLER(c);
 					bool tail = false;
 
-					while (is_iso_list(p1)) {
-						cell *h = LIST_HEAD(p1);
+					while (is_iso_list(c)) {
+						cell *h = LIST_HEAD(c);
 
-						if (!process_term(p, h))
+#if 0
+						parser *p2 = parser_create(p->m);
+						check_error(p2);
+						p2->cl = calloc(1, sizeof(clause) + h->num_cells + 1);
+						dup_cells(p2->cl->cells, h, h->num_cells);
+						p2->cl->num_allocated_cells = h->num_cells;
+						p2->cl->cidx = h->num_cells;
+						p2->cl->num_vars = p->cl->num_vars;
+						term_expansion(p2);
+						cell *c2 = p2->cl->cells;
+
+						if (!process_term(p2, c2)) {
+							parser_destroy(p2);
 							return 0;
+						}
 
-						if (p->already_loaded_error)
+						if (p2->already_loaded_error) {
+							parser_destroy(p2);
 							return 0;
+						}
 
-						p1 = LIST_TAIL(p1);
+						p2->cl = NULL;
+						parser_destroy(p2);
+#else
+						cell *c2 = p->cl->cells;
 
-						if (is_nil(p1) || is_var(p1))
+						if (!process_term(p, h)) {
+							return 0;
+						}
+
+						if (p->already_loaded_error) {
+							return 0;
+						}
+#endif
+
+						c = LIST_TAIL(c);
+
+						if (is_nil(c) || is_var(c))
 							tail = true;
 					}
 
-					if (!tail && !process_term(p, p1)) {
+					if (!tail && !process_term(p, c)) {
 						p->error = true;
 						return 0;
 					}
