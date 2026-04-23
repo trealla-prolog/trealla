@@ -1935,6 +1935,8 @@ static bool analyze(parser *p, pl_idx start_idx, bool last_op)
 	return !p->error;
 }
 
+static bool term_expansion(parser *p);
+
 static bool dcg_expansion(parser *p)
 {
 	query *q = query_create(p->m);
@@ -1991,6 +1993,8 @@ static bool dcg_expansion(parser *p)
 	p->num_vars = p2->num_vars;
 	p2->cl = NULL;
 	parser_destroy(p2);
+
+	//term_expansion(p);
 	return true;
 }
 
@@ -1999,7 +2003,7 @@ static bool term_expansion(parser *p)
 	if (p->error || p->internal || !is_interned(p->cl->cells))
 		return false;
 
-	if (p->cl->cells->val_off == g_dcg_s)
+	if ((p->cl->cells->val_off == g_dcg_s) && (p->cl->cells->arity == 2))
 		dcg_expansion(p);
 
 	module *m = p->m;
@@ -2015,7 +2019,7 @@ static bool term_expansion(parser *p)
 
 	cell *h = get_head(p->cl->cells);
 
-	if (h->val_off == g_term_expansion_s)
+	if ((h->val_off == g_term_expansion_s) && (h->arity == 2))
 		return false;
 
 	if (h->val_off == g_colon_s)
