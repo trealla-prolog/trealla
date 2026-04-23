@@ -2020,7 +2020,7 @@ static bool term_expansion(parser *p)
 	if (!pr || !pr->head)
 		return false;
 
-	cell *h = get_head(p->cl->cells);
+	cell *h = get_head(c);
 
 	//if (h->val_off == g_term_expansion_s)
 	//	return false;
@@ -2057,7 +2057,6 @@ static bool term_expansion(parser *p)
 		return false;
 	}
 
-	h = get_head(c);
 	//fprintf(stderr, "+++ term_expansion %s/%u ==> ", C_STR(p, h), h->arity);
 
 	strcat(src, ".");
@@ -2083,7 +2082,7 @@ static bool term_expansion(parser *p)
 	p2->cl = NULL;
 
 	parser_destroy(p2);
-	//DUMP_TERM("old", c, 0, 0);
+	//DUMP_TERM("old", c, 0, 1);
 	query_destroy(q);
 
 	return term_expansion(p);
