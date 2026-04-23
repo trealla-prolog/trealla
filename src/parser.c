@@ -1994,7 +1994,6 @@ static bool dcg_expansion(parser *p)
 	p2->cl = NULL;
 	parser_destroy(p2);
 
-	//term_expansion(p);
 	return true;
 }
 
@@ -2003,8 +2002,9 @@ static bool term_expansion(parser *p)
 	if (p->error || p->internal || !is_interned(p->cl->cells))
 		return false;
 
-	if ((p->cl->cells->val_off == g_dcg_s) && (p->cl->cells->arity == 2))
-		dcg_expansion(p);
+	if ((p->cl->cells->val_off == g_dcg_s) && (p->cl->cells->arity == 2)) {
+		dcg_expansion(p); // FIXME: need to term_expand & may be a list?
+	}
 
 	module *m = p->m;
 	predicate *pr = find_functor(m, "term_expansion", 2);
@@ -2019,8 +2019,8 @@ static bool term_expansion(parser *p)
 
 	cell *h = get_head(p->cl->cells);
 
-	if ((h->val_off == g_term_expansion_s) && (h->arity == 2))
-		return false;
+	//if (h->val_off == g_term_expansion_s)
+	//	return false;
 
 	if (h->val_off == g_colon_s)
 		return false;
@@ -2055,6 +2055,9 @@ static bool term_expansion(parser *p)
 		return false;
 	}
 
+	h = get_head(p->cl->cells);
+	//fprintf(stderr, "+++ term_expansion %s/%u ==> ", C_STR(p, h), h->arity);
+
 	strcat(src, ".");
 	parser *p2 = parser_create(p->m);
 	check_error(p2);
@@ -2078,6 +2081,7 @@ static bool term_expansion(parser *p)
 	p2->cl = NULL;
 
 	parser_destroy(p2);
+	//DUMP_TERM("old", p->cl->cells, 0, 0);
 	query_destroy(q);
 
 	return term_expansion(p);
