@@ -1945,7 +1945,7 @@ static bool dcg_expansion(parser *p)
 	q->trace = false;
 	cell *c = p->cl->cells;
 	cell *tmp = alloc_heap(q, 1+c->num_cells+1+1);
-	make_instr(tmp, new_atom(p->pl, "dcg_translate"), NULL, 2, c->num_cells+1);
+	make_instr(tmp, g_dcg_translate_s, NULL, 2, c->num_cells+1);
 	dup_cells(tmp+1, p->cl->cells, c->num_cells);
 	make_ref(tmp+1+c->num_cells, p->cl->num_vars, 0);
 	make_end(tmp+1+c->num_cells+1);
@@ -2031,7 +2031,7 @@ static bool term_expansion(parser *p)
 	cell *c = p->cl->cells;
 	cell *tmp = alloc_heap(q, 1+c->num_cells+2);
 	unsigned num_cells = 0;
-	make_instr(tmp+num_cells++, new_atom(p->pl, "term_expansion"), NULL, 2, c->num_cells+1);
+	make_instr(tmp+num_cells++, g_term_expansion_s, NULL, 2, c->num_cells+1);
 	dup_cells(tmp+num_cells, p->cl->cells, c->num_cells);
 	num_cells += c->num_cells;
 	make_ref(tmp+num_cells++, p->cl->num_vars, 0);

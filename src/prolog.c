@@ -31,7 +31,7 @@ pl_idx g_plus_s, g_minus_s, g_once_s, g_post_unify_hook_s, g_sys_record_key_s;
 pl_idx g_conjunction_s, g_disjunction_s, g_at_s, g_sys_ne_s, g_sys_incr_s;
 pl_idx g_dcg_s, g_throw_s, g_sys_block_catcher_s, g_sys_drop_barrier_s;
 pl_idx g_if_then_s, g_soft_cut_s, g_negation_s, g_none_s;
-pl_idx g_error_s, g_slash_s, g_sys_cleanup_if_det_s;
+pl_idx g_error_s, g_slash_s, g_sys_cleanup_if_det_s, g_dcg_translate_s;
 pl_idx g_goal_expansion_s, g_term_expansion_s, g_tm_s, g_float_s;
 pl_idx g_sys_cut_if_det_s, g_as_s, g_colon_s, g_member_s;
 pl_idx g_caret_s, g_sys_counter_s, g_catch_s, g_memberchk_s;
@@ -543,6 +543,7 @@ static bool g_init(prolog *pl)
 	CHECK_SENTINEL(g_empty_s = new_atom(pl, ""), ERR_IDX);
 	CHECK_SENTINEL(g_anon_s = new_atom(pl, "_"), ERR_IDX);
 	CHECK_SENTINEL(g_dcg_s = new_atom(pl, "-->"), ERR_IDX);
+	CHECK_SENTINEL(g_dcg_translate_s = new_atom(pl, "dcg_translate"), ERR_IDX);
 	CHECK_SENTINEL(g_maplist_s = new_atom(pl, "maplist"), ERR_IDX);
 	CHECK_SENTINEL(g_call_s = new_atom(pl, "call"), ERR_IDX);
 	CHECK_SENTINEL(g_catch_s = new_atom(pl, "catch"), ERR_IDX);
@@ -572,6 +573,7 @@ static bool g_init(prolog *pl)
 	CHECK_SENTINEL(g_slash_s = new_atom(pl, "/"), ERR_IDX);
 	CHECK_SENTINEL(g_goal_expansion_s = new_atom(pl, "goal_expansion"), ERR_IDX);
 	CHECK_SENTINEL(g_term_expansion_s = new_atom(pl, "term_expansion"), ERR_IDX);
+	CHECK_SENTINEL(g_dcg_translate_s = new_atom(pl, "dcg_translate"), ERR_IDX);
 	CHECK_SENTINEL(g_tm_s = new_atom(pl, "tm"), ERR_IDX);
 	CHECK_SENTINEL(g_float_s = new_atom(pl, "float"), ERR_IDX);
 	CHECK_SENTINEL(g_sys_elapsed_s = new_atom(pl, "$elapsed"), ERR_IDX);
