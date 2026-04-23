@@ -3694,8 +3694,6 @@ bool expand_term(parser *p, cell *c)
 			if (!expand_term(p2, p2->cl->cells))
 				return false;
 		} else {
-			//assert(!is_list(p2->cl->cells));
-
 			cell *c2 = p2->cl->cells;
 
 			if (!process_term(p2, c2)) {
