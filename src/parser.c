@@ -3673,6 +3673,59 @@ static bool process_term(parser *p, cell *p1)
 	return true;
 }
 
+bool expand_term(parser *p, cell *c)
+{
+	LIST_HANDLER(c);
+	bool tail = false;
+
+	while (is_iso_list(c)) {
+		cell *h = LIST_HEAD(c);
+
+		parser *p2 = parser_create(p->m);
+		check_error(p2);
+		p2->cl = calloc(1, sizeof(clause) + (sizeof(cell)*h->num_cells) + 1);
+		dup_cells(p2->cl->cells, h, h->num_cells);
+		p2->cl->num_allocated_cells = h->num_cells;
+		p2->cl->cidx = h->num_cells;
+		p2->cl->num_vars = p->cl->num_vars;
+		term_expansion(p2); // FIXME: What if it has returned a new list?
+
+		if (is_iso_list(p2->cl->cells)) {
+			if (!expand_term(p2, p2->cl->cells))
+				return false;
+		} else {
+			//assert(!is_list(p2->cl->cells));
+
+			cell *c2 = p2->cl->cells;
+
+			if (!process_term(p2, c2)) {
+				parser_destroy(p2);
+				return 0;
+			}
+
+			if (p2->already_loaded_error) {
+				parser_destroy(p2);
+				return 0;
+			}
+
+			p2->cl = NULL;
+			parser_destroy(p2);
+		}
+
+		c = LIST_TAIL(c);
+
+		if (is_nil(c) || is_var(c))
+			tail = true;
+	}
+
+	if (!tail && !process_term(p, c)) {
+		p->error = true;
+		return false;
+	}
+
+	return true;
+}
+
 unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 {
 	pl_idx arg_idx = p->cl->cidx, save_idx = 0;
@@ -3778,60 +3831,10 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 				}
 
 				if (p->is_consulting && !p->skip) {
-					// Term expansion can return a list...
-
 					cell *c = p->cl->cells;
-					LIST_HANDLER(c);
-					bool tail = false;
 
-					while (is_iso_list(c)) {
-						cell *h = LIST_HEAD(c);
-
-#if 1
-						parser *p2 = parser_create(p->m);
-						check_error(p2);
-						p2->cl = calloc(1, sizeof(clause) + (sizeof(cell)*h->num_cells) + 1);
-						dup_cells(p2->cl->cells, h, h->num_cells);
-						p2->cl->num_allocated_cells = h->num_cells;
-						p2->cl->cidx = h->num_cells;
-						p2->cl->num_vars = p->cl->num_vars;
-						term_expansion(p2);
-						cell *c2 = p2->cl->cells;
-
-						if (!process_term(p2, c2)) {
-							parser_destroy(p2);
-							return 0;
-						}
-
-						if (p2->already_loaded_error) {
-							parser_destroy(p2);
-							return 0;
-						}
-
-						p2->cl = NULL;
-						parser_destroy(p2);
-#else
-						cell *c2 = p->cl->cells;
-
-						if (!process_term(p, h)) {
-							return 0;
-						}
-
-						if (p->already_loaded_error) {
-							return 0;
-						}
-#endif
-
-						c = LIST_TAIL(c);
-
-						if (is_nil(c) || is_var(c))
-							tail = true;
-					}
-
-					if (!tail && !process_term(p, c)) {
-						p->error = true;
+					if (!expand_term(p, c))
 						return 0;
-					}
 
 					if (p->already_loaded_error)
 						return 0;
