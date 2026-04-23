@@ -3787,10 +3787,10 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 					while (is_iso_list(c)) {
 						cell *h = LIST_HEAD(c);
 
-#if 0
+#if 1
 						parser *p2 = parser_create(p->m);
 						check_error(p2);
-						p2->cl = calloc(1, sizeof(clause) + h->num_cells + 1);
+						p2->cl = calloc(1, sizeof(clause) + (sizeof(cell)*h->num_cells) + 1);
 						dup_cells(p2->cl->cells, h, h->num_cells);
 						p2->cl->num_allocated_cells = h->num_cells;
 						p2->cl->cidx = h->num_cells;
