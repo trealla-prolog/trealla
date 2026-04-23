@@ -2002,10 +2002,13 @@ static bool term_expansion(parser *p)
 	if (p->error || p->internal || !is_interned(p->cl->cells))
 		return false;
 
-	if ((p->cl->cells->val_off == g_dcg_s) && (p->cl->cells->arity == 2)) {
+	cell *c = p->cl->cells;
+
+	if ((c->val_off == g_dcg_s) && (c->arity == 2)) {
 		dcg_expansion(p); // FIXME: need to term_expand & may be a list?
 	}
 
+	c = p->cl->cells;
 	module *m = p->m;
 	predicate *pr = find_functor(m, "term_expansion", 2);
 
@@ -2028,11 +2031,10 @@ static bool term_expansion(parser *p)
 	query *q = query_create(m);
 	check_error(q);
 	q->trace = false;
-	cell *c = p->cl->cells;
 	cell *tmp = alloc_heap(q, 1+c->num_cells+2);
 	unsigned num_cells = 0;
 	make_instr(tmp+num_cells++, g_term_expansion_s, NULL, 2, c->num_cells+1);
-	dup_cells(tmp+num_cells, p->cl->cells, c->num_cells);
+	dup_cells(tmp+num_cells, c, c->num_cells);
 	num_cells += c->num_cells;
 	make_ref(tmp+num_cells++, p->cl->num_vars, 0);
 	make_end(tmp+num_cells);
@@ -2055,7 +2057,7 @@ static bool term_expansion(parser *p)
 		return false;
 	}
 
-	h = get_head(p->cl->cells);
+	h = get_head(c);
 	//fprintf(stderr, "+++ term_expansion %s/%u ==> ", C_STR(p, h), h->arity);
 
 	strcat(src, ".");
@@ -2081,7 +2083,7 @@ static bool term_expansion(parser *p)
 	p2->cl = NULL;
 
 	parser_destroy(p2);
-	//DUMP_TERM("old", p->cl->cells, 0, 0);
+	//DUMP_TERM("old", c, 0, 0);
 	query_destroy(q);
 
 	return term_expansion(p);
