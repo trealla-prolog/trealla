@@ -197,7 +197,7 @@ Building with MUSL
 On Ubuntu:
 
 	sudo apt install musl-tools
-	make CC=musl-gcc OPT=-static
+	make CC=musl-gcc OPT=-static NOFFI=1 NOSSL=1 ISOCLINE=1
 
 
 WebAssembly (WASI)
