@@ -160,22 +160,22 @@ inline static cell *deref(query *q, cell *c, pl_ctx c_ctx)
 
 	const frame *f = GET_FRAME(c_ctx);
 	slot *e = get_slot(q, f, c->var_num);
-	unsigned derefs = 1;
 
 	while (is_var(&e->c)) {
 		c_ctx = e->c.val_ctx;
 		c = &e->c;
-		derefs++;
 
 		if (is_ref(c))
 			c_ctx = c->val_ctx;
 
 		f = GET_FRAME(c_ctx);
-		e = get_slot(q, f, c->var_num);
-	}
+		slot *e2 = get_slot(q, f, c->var_num);
 
-	if (derefs > q->hw_deref)
-		q->hw_deref = derefs;
+		if (e == e2)
+			break;
+
+		e = e2;
+	}
 
 	if (is_indirect(&e->c)) {
 		q->latest_ctx = e->c.val_ctx;

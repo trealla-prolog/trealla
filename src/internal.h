@@ -697,7 +697,7 @@ struct query_ {
 	pl_ctx latest_ctx, variable_names_ctx, dump_var_ctx, ball_ctx, cont_ctx;
 	pl_idx tmphp;
 	pl_idx frames_size, slots_size, trails_size, choices_size;
-	pl_idx hw_choices, hw_frames, hw_slots, hw_trails, hw_heap_num, hw_deref;
+	pl_idx hw_choices, hw_frames, hw_slots, hw_trails, hw_heap_num;
 	pl_idx cp, before_hook_tp, qcnt[MAX_QUEUES];
 	pl_idx heap_size, tmph_size, total_heaps, total_heapsize;
 	pl_idx undo_lo_tp, undo_hi_tp;

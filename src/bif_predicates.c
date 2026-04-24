@@ -3223,8 +3223,7 @@ bool bif_statistics_0(query *q)
 		"choices %u, "
 		"trails %u, "
 		"slots %u, "
-		"heap %u, "
-		"deref %u.\n"
+		"heap %u.\n"
 
 		"Realloc frames %u, "
 		"choices %u, "
@@ -3246,7 +3245,7 @@ bool bif_statistics_0(query *q)
 
 		q->total_inferences, q->total_matches, q->total_matched,
 		q->hw_frames, q->hw_choices, q->hw_trails, q->hw_slots,
-		q->hw_heap_num, q->hw_deref,
+		q->hw_heap_num,
 		q->realloc_frames, q->realloc_choices, q->realloc_trails, q->realloc_slots,
 		q->st.fp, q->cp, q->st.tp, q->st.sp,
 		q->st.heap_num,
