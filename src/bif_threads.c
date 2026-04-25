@@ -466,7 +466,6 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 		}
 
 		msg *m = list_front(&t->queue);
-		assert(m);
 		CHECKED(push_choice(q), release_lock(&t->guard));
 
 		while (m) {
