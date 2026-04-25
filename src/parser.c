@@ -3218,6 +3218,8 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 
 	const char *src = p->srcptr;
 
+TRY_AGAIN:
+
 	SB_init(p->token);
 	p->v.tag = TAG_INTERNED;
 	p->v.flags = 0;
@@ -3339,11 +3341,13 @@ bool get_token(parser *p, bool last_op, bool was_postfix)
 					src = eat_space(p);
 
 					if (*src != '"') {
-						if ((src[0] == '[') && (src[1] == ']')) {
+						// Where the string is empty it's
+						// just ignored:
+
+						if (!SB_strlen(p->token) && 0) {
 							p->quote_char = 0;
-							p->is_string = true;
-							src += 2;
-							break;
+							p->is_quoted = true;
+							goto TRY_AGAIN;
 						}
 
 						p->double_bar = true;

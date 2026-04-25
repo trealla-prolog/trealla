@@ -1501,7 +1501,6 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 
 	int is_chars_list = is_string(c) && q->double_quotes;
 	bool possible_chars = false, has_var = false, is_partial = false;
-	bool is_chars_list2 = false;
 	cell *v = NULL;
 
 	if (is_interned(c) && (C_STRLEN_UTF8(c) == 1) && !q->ignore_ops && q->double_quotes)
@@ -1509,9 +1508,9 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 
 	if (!is_chars_list && running && possible_chars
 		&& (scan_is_chars_list2(q, c, c_ctx, false, &has_var, &is_partial, &v) > 0))
-		is_chars_list2 = q->st.m->flags.double_quote_chars && scan_is_chars_list2(q, c, c_ctx, false, &has_var, &is_partial, &v);
+		is_chars_list += q->st.m->flags.double_quote_chars && scan_is_chars_list2(q, c, c_ctx, false, &has_var, &is_partial, &v);
 
-	if (is_chars_list || (is_chars_list2 && is_partial)) {
+	if (is_chars_list) {
 		cell *l = c;
 		pl_ctx l_ctx = c_ctx;
 		SB_sprintf(q->sb, "%s", "\"");
