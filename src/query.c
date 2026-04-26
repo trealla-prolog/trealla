@@ -156,36 +156,33 @@ void check_pressure(query *q)
 		q->tmph_size = 1000;
 	}
 
-	if (q->trails_size > (INITIAL_NBR_TRAILS*PRESSURE_FACTOR)) {
 #if TRACE_MEM
-		printf("*** q->st.tp=%u, q->trails_size=%u\n", (unsigned)q->st.tp, (unsigned)q->trails_size);
+	printf("*** q->st.tp=%u, q->trails_size=%u\n", (unsigned)q->st.tp, (unsigned)q->trails_size);
 #endif
-		size_t new_size = q->st.tp > INITIAL_NBR_TRAILS ? q->st.tp * 2 : INITIAL_NBR_TRAILS;
-		q->trails_size = alloc_grow(q, (void**)&q->trails, sizeof(trail), q->st.tp+1, new_size);
+	if (q->st.tp < (q->trails_size / 2)) {
+		unsigned new_size = q->st.tp < INITIAL_NBR_TRAILS ? INITIAL_NBR_TRAILS : q->st.tp + 1;
+		q->trails_size = alloc_grow(q, (void**)&q->trails, sizeof(trail), new_size, new_size*2);
 	}
-
-	if (q->choices_size > (INITIAL_NBR_CHOICES*PRESSURE_FACTOR)) {
 #if TRACE_MEM
-		printf("*** q->st.cp=%u, q->choices_size=%u\n", (unsigned)q->cp, (unsigned)q->choices_size);
+	printf("*** q->st.cp=%u, q->choices_size=%u\n", (unsigned)q->cp, (unsigned)q->choices_size);
 #endif
-		size_t new_size = q->cp > INITIAL_NBR_CHOICES ? q->cp * 2 : INITIAL_NBR_CHOICES;
-		q->choices_size = alloc_grow(q, (void**)&q->choices, sizeof(choice), q->cp+1, new_size);
+	if (q->cp < (q->choices_size / 2)) {
+		unsigned new_size = q->cp < INITIAL_NBR_CHOICES ? INITIAL_NBR_CHOICES : q->cp + 1;
+		q->choices_size = alloc_grow(q, (void**)&q->choices, sizeof(choice), new_size, new_size*2);
 	}
-
-	if (q->frames_size > (INITIAL_NBR_FRAMES*PRESSURE_FACTOR)) {
 #if TRACE_MEM
-		printf("*** q->st.fp=%u, q->frames_size=%u\n", (unsigned)q->st.fp, (unsigned)q->frames_size);
+	printf("*** q->st.fp=%u, q->frames_size=%u\n", (unsigned)q->st.fp, (unsigned)q->frames_size);
 #endif
-		size_t new_size = q->st.fp > INITIAL_NBR_FRAMES ? q->st.fp * 2 : INITIAL_NBR_FRAMES;
-		q->frames_size = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.fp+1, new_size);
+	if (q->st.fp < (q->frames_size / 2)) {
+		unsigned new_size = q->st.fp < INITIAL_NBR_FRAMES ? INITIAL_NBR_FRAMES : q->st.fp + 1;
+		q->frames_size = alloc_grow(q, (void**)&q->frames, sizeof(frame), new_size, new_size*2);
 	}
-
-	if (q->slots_size > (INITIAL_NBR_SLOTS*PRESSURE_FACTOR)) {
 #if TRACE_MEM
-		printf("*** q->st.sp=%u, q->slots_size=%u\n", (unsigned)q->st.sp, (unsigned)q->slots_size);
+	printf("*** q->st.sp=%u, q->slots_size=%u\n", (unsigned)q->st.sp, (unsigned)q->slots_size);
 #endif
-		size_t new_size = q->st.sp > INITIAL_NBR_SLOTS ? q->st.sp * 2 : INITIAL_NBR_SLOTS;
-		q->slots_size = alloc_grow(q, (void**)&q->slots, sizeof(slot), q->st.sp+1, new_size);
+	if (q->st.sp < (q->slots_size / 2)) {
+		unsigned new_size = q->st.sp < INITIAL_NBR_SLOTS ? INITIAL_NBR_SLOTS : q->st.sp + 1;
+		q->slots_size = alloc_grow(q, (void**)&q->slots, sizeof(slot), new_size, new_size*2);
 	}
 #endif
 }
