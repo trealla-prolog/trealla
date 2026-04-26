@@ -257,7 +257,7 @@ static void set_var(query *q, const cell *c, pl_ctx c_ctx, cell *v, pl_ctx v_ctx
 		make_ref(&e->c, v->var_num, v_ctx);
 
 		if ((c_ctx == q->st.fp)
-			//&& (v_ctx >= q->st.curr_fp)
+			//&& (v_ctx >= q->st.curr_ctx)
 			&& !is_temporary(c) && !is_void(c)
 			) {
 			q->no_recov = true;
@@ -267,7 +267,7 @@ static void set_var(query *q, const cell *c, pl_ctx c_ctx, cell *v, pl_ctx v_ctx
 		make_indirect(&e->c, v, v_ctx);
 		q->no_recov_compound = true;
 
-		if ((v_ctx >= q->st.curr_fp)
+		if ((v_ctx >= q->st.curr_ctx)
 			&& !is_ground(v)
 			){
 			q->no_recov = true;

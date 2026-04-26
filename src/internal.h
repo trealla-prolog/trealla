@@ -543,7 +543,7 @@ struct run_state_ {
 
 	uint64_t cpu_time;
 	pl_idx fp, hp, cp, tp, sp, heap_num, qnum;
-	pl_ctx curr_fp;
+	pl_ctx curr_ctx;
 };
 
 struct choice_ {
