@@ -1651,7 +1651,7 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int
 		if (ferror(str->fp)) {
 			SB_free(q->sb);
 			stream_close(q, str->idx);
-			return throw_error(q, q->st.instr,q->st.curr_ctx, "existence_error", "stream");
+			return throw_error(q, q->st.instr,q->st.cur_ctx, "existence_error", "stream");
 		}
 
 		len -= nbytes;
@@ -1687,7 +1687,7 @@ bool print_canonical(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 
 		if (ferror(fp)) {
 			SB_free(q->sb);
-			return throw_error(q, q->st.instr,q->st.curr_ctx, "existence_error", "stream");
+			return throw_error(q, q->st.instr,q->st.cur_ctx, "existence_error", "stream");
 		}
 
 		len -= nbytes;
@@ -1734,7 +1734,7 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int runn
 		if (ferror(str->fp)) {
 			SB_free(q->sb);
 			stream_close(q, str->idx);
-			return throw_error(q, q->st.instr,q->st.curr_ctx, "existence_error", "stream");
+			return throw_error(q, q->st.instr,q->st.cur_ctx, "existence_error", "stream");
 		}
 
 		len -= nbytes;
@@ -1767,7 +1767,7 @@ bool print_term(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 
 		if (ferror(fp)) {
 			SB_free(q->sb);
-			return throw_error(q, q->st.instr,q->st.curr_ctx, "existence_error", "stream");
+			return throw_error(q, q->st.instr,q->st.cur_ctx, "existence_error", "stream");
 		}
 
 		len -= nbytes;

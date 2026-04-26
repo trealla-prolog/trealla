@@ -865,11 +865,11 @@ static bool is_check_directive(const cell *c)
 	return false;
 }
 
-static bool do_use_module(module *curr_m, cell *c, module **mptr)
+static bool do_use_module(module *cur_m, cell *c, module **mptr)
 {
 	*mptr = NULL;
 	cell *p1 = c + 1;
-	const char *name = C_STR(curr_m, p1);
+	const char *name = C_STR(cur_m, p1);
 	char dstbuf[1024*4];
 	bool is_library = false;
 
@@ -878,7 +878,7 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 		p1 = p1 + 1;
 		if (!is_interned(p1)) return false;
 		snprintf(dstbuf, sizeof(dstbuf), "%s", g_tpl_lib);
-		name = C_STR(curr_m, p1);
+		name = C_STR(cur_m, p1);
 		int cnt = 1;
 
 		while ((p1->arity == 2) && !strcmp(name, "/")) {
@@ -887,7 +887,7 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 		}
 
 		while (cnt-- && is_interned(p1) && !p1->arity && (p1->val_off != g_nil_s)) {
-			name = C_STR(curr_m, p1);
+			name = C_STR(cur_m, p1);
 			strcat(dstbuf, "/");
 			strcat(dstbuf, name);
 			p1++;
@@ -895,19 +895,19 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 
 		module *m;
 
-		if ((m = find_module(curr_m->pl, name)) != NULL) {
-			if (m != curr_m) {
+		if ((m = find_module(cur_m->pl, name)) != NULL) {
+			if (m != cur_m) {
 				bool found = false;
 
-				for (unsigned i = 0; i < curr_m->idx_used; i++) {
-					if (curr_m->used[i] == m) {
+				for (unsigned i = 0; i < cur_m->idx_used; i++) {
+					if (cur_m->used[i] == m) {
 						found = true;
 						break;
 					}
 				}
 
 				if (!found)
-					curr_m->used[curr_m->idx_used++] = m;
+					cur_m->used[cur_m->idx_used++] = m;
 			}
 
 			*mptr = m;
@@ -940,12 +940,12 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 			src[*lib->len] = '\0';
 			SB(s1);
 			SB_sprintf(s1, "library%c%s", '/', lib->name);
-			m = load_text(curr_m, src, SB_cstr(s1));
+			m = load_text(cur_m, src, SB_cstr(s1));
 			SB_free(s1);
 			free(src);
 
-			if (m != curr_m)
-				curr_m->used[curr_m->idx_used++] = m;
+			if (m != cur_m)
+				cur_m->used[cur_m->idx_used++] = m;
 
 			*mptr = m;
 			return !m->error;
@@ -954,9 +954,9 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 
 	module *m;
 
-	if ((m = find_module(curr_m->pl, name)) != NULL) {
-		if (m != curr_m)
-			curr_m->used[curr_m->idx_used++] = m;
+	if ((m = find_module(cur_m->pl, name)) != NULL) {
+		if (m != cur_m)
+			cur_m->used[cur_m->idx_used++] = m;
 
 		*mptr = m;
 		return true;
@@ -972,20 +972,20 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 		src[*lib->len] = '\0';
 		SB(s1);
 		SB_sprintf(s1, "library/%s", lib->name);
-		m = load_text(curr_m, src, SB_cstr(s1));
+		m = load_text(cur_m, src, SB_cstr(s1));
 		SB_free(s1);
 		free(src);
 
-		if (m != curr_m)
-			curr_m->used[curr_m->idx_used++] = m;
+		if (m != cur_m)
+			cur_m->used[cur_m->idx_used++] = m;
 
 		*mptr = m;
 		return !m->error;
 	}
 
-	char *filename = relative_to(curr_m->filename, is_library?dstbuf:name);
+	char *filename = relative_to(cur_m->filename, is_library?dstbuf:name);
 
-	if (!(m = load_file(curr_m, filename, false, true))) {
+	if (!(m = load_file(cur_m, filename, false, true))) {
 		fprintf(stderr, "Warning: module file not found: %s\n", filename);
 		free(filename);
 		return false;
@@ -993,36 +993,36 @@ static bool do_use_module(module *curr_m, cell *c, module **mptr)
 
 	free(filename);
 
-	if (m != curr_m)
-		curr_m->used[curr_m->idx_used++] = m;
+	if (m != cur_m)
+		cur_m->used[cur_m->idx_used++] = m;
 
 	*mptr = m;
 	return !m->error;
 }
 
-static bool do_import_predicate(module *curr_m, module *m, predicate *pr, cell *as)
+static bool do_import_predicate(module *cur_m, module *m, predicate *pr, cell *as)
 {
 	predicate *tmp_pr;
 
-	if (((tmp_pr = find_predicate(curr_m, as)) != NULL)
-		&& (curr_m != pr->m)
+	if (((tmp_pr = find_predicate(cur_m, as)) != NULL)
+		&& (cur_m != pr->m)
 		&& !pr->m->prebuilt
 		&& 0
 		) {
-		fprintf(stderr, "Error: permission to import failed: %s:%s/%u from %s, see %s\n", curr_m->name, C_STR(curr_m, as), as->arity, pr->m->name, get_loaded(m, tmp_pr->filename));
+		fprintf(stderr, "Error: permission to import failed: %s:%s/%u from %s, see %s\n", cur_m->name, C_STR(cur_m, as), as->arity, pr->m->name, get_loaded(m, tmp_pr->filename));
 		m->error = true;
 		return false;
 	}
 
-	clear_property(curr_m, C_STR(m, &pr->key), pr->key.arity);
-	predicate *pr2 = create_predicate(curr_m, as, NULL);
+	clear_property(cur_m, C_STR(m, &pr->key), pr->key.arity);
+	predicate *pr2 = create_predicate(cur_m, as, NULL);
 	pr2->alias = pr;
 	char tmpbuf[1024];
 	snprintf(tmpbuf, sizeof(tmpbuf), "imported_from(%s)", m->name);
-	push_property(curr_m, C_STR(m, &pr->key), pr->key.arity, tmpbuf);
+	push_property(cur_m, C_STR(m, &pr->key), pr->key.arity, tmpbuf);
 
 	if (pr->is_dynamic)
-		push_property(curr_m, C_STR(m, as), as->arity, "dynamic");
+		push_property(cur_m, C_STR(m, as), as->arity, "dynamic");
 
 	if (!pr->meta_args)
 		return true;
@@ -1038,20 +1038,20 @@ static bool do_import_predicate(module *curr_m, module *m, predicate *pr, cell *
 		if (is_smallint(key)) {
 			SB_sprintf(pr, "%d", (int)get_smallint(key));
 		} else {
-			SB_strcat(pr, C_STR(curr_m, key));
+			SB_strcat(pr, C_STR(cur_m, key));
 		}
 	}
 
 	SB_strcat(pr, "))");
-	push_property(curr_m, C_STR(m, as), as->arity, SB_cstr(pr));
+	push_property(cur_m, C_STR(m, as), as->arity, SB_cstr(pr));
 	return true;
 }
 
-bool do_use_module_1(module *curr_m, cell *c)
+bool do_use_module_1(module *cur_m, cell *c)
 {
 	module *m;
 
-	if (!do_use_module(curr_m, c, &m))
+	if (!do_use_module(cur_m, c, &m))
 		return false;
 
 	if (!m)
@@ -1062,18 +1062,18 @@ bool do_use_module_1(module *curr_m, cell *c)
 		if (!pr->is_public)
 			continue;
 
-		if (!do_import_predicate(curr_m, m, pr, &pr->key))
+		if (!do_import_predicate(cur_m, m, pr, &pr->key))
 			return false;
 	}
 
 	return true;
 }
 
-bool do_use_module_2(module *curr_m, cell *c)
+bool do_use_module_2(module *cur_m, cell *c)
 {
 	module *m;
 
-	if (!do_use_module(curr_m, c, &m))
+	if (!do_use_module(cur_m, c, &m))
 		return false;
 
 	if (!m)
@@ -1099,7 +1099,7 @@ bool do_use_module_2(module *curr_m, cell *c)
 				predicate *pr = find_predicate(m, &tmp);
 				if (!pr) return false;
 				tmp.val_off = rhs->val_off;
-				do_import_predicate(curr_m, m, pr, &tmp);
+				do_import_predicate(cur_m, m, pr, &tmp);
 			} else if (is_structure(lhs) && (lhs->arity == 2)
 				&& (lhs->val_off == g_slash_s)
 				&& is_structure(lhs) && (lhs->arity == rhs->arity)) {
@@ -1108,7 +1108,7 @@ bool do_use_module_2(module *curr_m, cell *c)
 				predicate *pr = find_predicate(m, &tmp);
 				if (!pr) return false;
 				tmp.val_off = (rhs+1)->val_off;
-				do_import_predicate(curr_m, m, pr, &tmp);
+				do_import_predicate(cur_m, m, pr, &tmp);
 			}
 		} else {
 			cell *lhs = head;
@@ -1119,7 +1119,7 @@ bool do_use_module_2(module *curr_m, cell *c)
 				tmp.arity = get_smalluint(lhs+2);
 				predicate *pr = find_predicate(m, &tmp);
 				if (!pr) return false;
-				do_import_predicate(curr_m, m, pr, &pr->key);
+				do_import_predicate(cur_m, m, pr, &pr->key);
 			}
 		}
 

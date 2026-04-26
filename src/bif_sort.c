@@ -123,8 +123,8 @@ static cell *nodesort(query *q, cell *p1, pl_ctx p1_ctx, bool dedup, bool keysor
 		cell tmp;
 
 		if (is_compound(c)) {
-			make_ref(&tmp, vnbr++, q->st.curr_ctx);
-			unify(q, c, c_ctx, &tmp, q->st.curr_ctx);
+			make_ref(&tmp, vnbr++, q->st.cur_ctx);
+			unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
 			c = &tmp;
 		}
 
@@ -156,7 +156,7 @@ static bool bif_iso_sort_2(query *q)
 		return throw_error(q, p2, p2_ctx, "type_error", "list");
 
 	if (is_nil(p1))
-		return unify(q, p2, p2_ctx, make_nil(), q->st.curr_ctx);
+		return unify(q, p2, p2_ctx, make_nil(), q->st.cur_ctx);
 
 	if (!is_list_or_nil(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "list");
@@ -198,7 +198,7 @@ static bool bif_iso_msort_2(query *q)
 		return throw_error(q, p2, p2_ctx, "type_error", "list");
 
 	if (is_nil(p1))
-		return unify(q, p2, p2_ctx, make_nil(), q->st.curr_ctx);
+		return unify(q, p2, p2_ctx, make_nil(), q->st.cur_ctx);
 
 	if (!is_list_or_nil(p1))
 		return throw_error(q, p1, p1_ctx, "type_error", "list");
@@ -251,7 +251,7 @@ static bool bif_iso_keysort_2(query *q)
 	}
 
 	if (is_nil(p1))
-		return unify(q, p2, p2_ctx, make_nil(), q->st.curr_ctx);
+		return unify(q, p2, p2_ctx, make_nil(), q->st.cur_ctx);
 
 	if (skip1 && skip2 && (skip2 > skip1))
 		return false;
@@ -323,8 +323,8 @@ static cell *nodesort4(query *q, cell *p1, pl_ctx p1_ctx, bool dedup, bool ascen
 		cell tmp;
 
 		if (is_compound(c)) {
-			make_ref(&tmp, vnbr++, q->st.curr_ctx);
-			unify(q, c, c_ctx, &tmp, q->st.curr_ctx);
+			make_ref(&tmp, vnbr++, q->st.cur_ctx);
+			unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
 			c = &tmp;
 		}
 
@@ -390,7 +390,7 @@ static bool bif_sort_4(query *q)
 	}
 
 	if (is_nil(p3))
-		return unify(q, p4, p4_ctx, make_nil(), q->st.curr_ctx);
+		return unify(q, p4, p4_ctx, make_nil(), q->st.cur_ctx);
 
 	if (skip1 && skip2 && (skip2 > skip1))
 		return false;
@@ -402,7 +402,7 @@ static bool bif_sort_4(query *q)
 	GET_NEXT_ARG(p2x,atom);
 	GET_NEXT_ARG(p3x,list_or_nil);
 	GET_NEXT_ARG(p4x,list_or_nil_or_var);
-	return unify(q, p4x, p4x_ctx, l, q->st.curr_ctx);
+	return unify(q, p4x, p4x_ctx, l, q->st.cur_ctx);
 }
 
 builtins g_sort_bifs[] =

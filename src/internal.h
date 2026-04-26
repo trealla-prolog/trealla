@@ -543,7 +543,7 @@ struct run_state_ {
 
 	uint64_t cpu_time;
 	pl_idx fp, hp, cp, tp, sp, heap_num, qnum;
-	pl_ctx curr_ctx;
+	pl_ctx cur_ctx;
 };
 
 struct choice_ {
@@ -580,7 +580,7 @@ struct stream_ {
 	union {
 		char srcbuf[STREAM_BUFLEN];
 		struct {
-			cell *pattern, *curr_yield;
+			cell *pattern, *cur_yield;
 		};
 	};
 
@@ -691,7 +691,7 @@ struct query_ {
 	uint64_t cpu_time, time_cpu_last_started, future;
 	unsigned realloc_frames, realloc_choices, realloc_slots, realloc_trails;
 	unsigned max_depth, max_eval_depth, print_idx, tab_idx, dump_var_num;
-	unsigned varno, tab0_varno, curr_engine, curr_chan, my_chan;
+	unsigned varno, tab0_varno, cur_engine, cur_chan, my_chan;
 	unsigned s_cnt, retries, popp;
 	int autofail_n;
 	pl_ctx latest_ctx, variable_names_ctx, dump_var_ctx, ball_ctx, cont_ctx;
