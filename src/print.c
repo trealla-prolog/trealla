@@ -734,6 +734,8 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 				SB_sprintf(q->sb, ",'%s'", tmp_src);
 			} else if (strlen(tmp_src) == 1) {
 				SB_sprintf(q->sb, ",%s", tmp_src);
+			} else if (needs_quoting(q->st.m, tmp_src, strlen(tmp_src))) {
+				SB_sprintf(q->sb, "|\"%s\"", formatted(tmp_src, strlen(tmp_src), true, false));
 			} else {
 				SB_sprintf(q->sb, "|\"%s\"", tmp_src);
 			}
