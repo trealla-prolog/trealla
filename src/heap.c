@@ -30,6 +30,8 @@ size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, 
 		return 0;
 	}
 
+	unsigned mbs = (unsigned)(elem_size*elements)/1024/1024;
+	//if (mbs > 100) printf("*** mem = %u MB\n", mbs);
 	*addr = mem;
 	return elements;
 }
