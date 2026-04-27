@@ -30,8 +30,10 @@ size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, 
 		return 0;
 	}
 
-	unsigned mbs = (unsigned)(elem_size*elements)/1024/1024;
-	//if (mbs > 100) printf("*** mem = %u MB\n", mbs);
+	//unsigned mbs = (unsigned)(elem_size*elements)/1024/1024;
+	//if (mbs > 10) printf("*** mem = %u MB\n", mbs);
+	//assert(mbs < 100);
+
 	*addr = mem;
 	return elements;
 }
@@ -619,6 +621,10 @@ cell *alloc_queuen(query *q, unsigned qnum, const cell *c)
 		size_t n = q->q_size[qnum] + q->q_size[qnum] / 2;
 		void *ptr = realloc(q->queue[qnum], sizeof(cell)*n);
 		if (!ptr) return NULL;
+
+		//unsigned mbs = (unsigned)(sizeof(cell)*n)/1024/1024;
+		//if (mbs > 10) printf("*** queue = %u MB\n", mbs);
+
 		q->queue[qnum] = ptr;
 		q->q_size[qnum] = n;
 	}
