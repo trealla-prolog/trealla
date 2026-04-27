@@ -348,10 +348,7 @@ static bool queue_to_chan(prolog *pl, unsigned chan, const cell *c, unsigned fro
 	//printf("*** send to chan=%u, num_cells=%u\n", chan, c->num_cells);
 	thread *t = &pl->threads[chan];
 	msg *m = malloc(sizeof(msg) + (sizeof(cell)*c->num_cells));
-
-	if (!m)
-		return false;
-
+	check_error(m);
 	m->from_chan = from_chan;
 	dup_cells(m->c, c, c->num_cells);
 	acquire_lock(&t->guard);
