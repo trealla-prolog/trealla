@@ -105,9 +105,8 @@ void *list_remove(list *l, void *n_)
     else
         n->next->prev = n->prev;
 
-    lnode *save = n->next;
     l->cnt--;
-    return save;
+    return n->next;
 }
 
 void listx_init(listx *l)

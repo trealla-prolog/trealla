@@ -3687,8 +3687,10 @@ bool expand_term(parser *p, cell *c)
 		term_expansion(p2); // FIXME: What if it has returned a new list?
 
 		if (is_iso_list(p2->cl->cells)) {
-			if (!expand_term(p2, p2->cl->cells))
+			if (!expand_term(p2, p2->cl->cells)) {
+				parser_destroy(p2);
 				return false;
+			}
 		} else {
 			cell *c2 = p2->cl->cells;
 
@@ -3703,9 +3705,9 @@ bool expand_term(parser *p, cell *c)
 			}
 
 			p2->cl = NULL;
-			parser_destroy(p2);
 		}
 
+		parser_destroy(p2);
 		c = LIST_TAIL(c);
 
 		if (is_nil(c) || is_var(c))
