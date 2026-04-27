@@ -1962,9 +1962,9 @@ static void assert_commit(module *m, rule *r, predicate *pr, bool append)
 		return;
 
 	if (!pr->idx1) {
-		unsigned INDEX_THRESHHOLD = 500;
+		unsigned INDEX_THRESHOLD = 500;
 
-		if (pr->cnt < INDEX_THRESHHOLD)
+		if (pr->cnt < INDEX_THRESHOLD)
 			return;
 
 		pr->idx1 = sl_create(index_cmpkey, NULL, m);
