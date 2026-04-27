@@ -3684,7 +3684,7 @@ bool expand_term(parser *p, cell *c)
 		p2->cl->num_allocated_cells = h->num_cells;
 		p2->cl->cidx = h->num_cells;
 		p2->cl->num_vars = p->cl->num_vars;
-		term_expansion(p2); // FIXME: What if it has returned a new list?
+		term_expansion(p2);
 
 		if (is_iso_list(p2->cl->cells)) {
 			if (!expand_term(p2, p2->cl->cells)) {
