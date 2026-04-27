@@ -593,7 +593,6 @@ static bool bif_pl_thread_3(query *q)
 		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_threads");
 
 	thread *t = &q->pl->threads[n];
-	if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	LIST_HANDLER(p3);
 
 	while (is_list(p3)) {
@@ -623,6 +622,7 @@ static bool bif_pl_thread_3(query *q)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 			}
 
+			if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 			sl_app(t->alias, DUP_STRING(q, name), NULL);
 		} else {
 			t->is_active = false;
@@ -732,7 +732,6 @@ static bool bif_thread_create_3(query *q)
 		return throw_error(q, p2, p2_ctx, "resource_error", "too_many_threads");
 
 	thread *t = &q->pl->threads[n];
-	if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	cell *exit_goal = NULL;
 	pl_ctx exit_goal_ctx = 0;
 	bool is_detached = false, is_alias = false;
@@ -767,6 +766,7 @@ static bool bif_thread_create_3(query *q)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 			}
 
+			if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 			sl_app(t->alias, DUP_STRING(q, name), NULL);
 			cell tmp;
 			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
@@ -874,6 +874,9 @@ static bool bif_thread_create_3(query *q)
 
 	if (pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread_create, (void*)t) != 0) {
 		t->is_active = false;
+		free(t->goal);
+		free(t->at_exit_goal);
+		query_destroy(t->q);
 		return throw_error(q, p1, p1_ctx, "system_error", "pthread_create");
 	}
 
@@ -1449,7 +1452,6 @@ static bool bif_message_queue_create_2(query *q)
 	}
 
 	thread *t = &q->pl->threads[n];
-	if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	bool is_alias = false;
 	LIST_HANDLER(p2);
 
@@ -1482,6 +1484,7 @@ static bool bif_message_queue_create_2(query *q)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 			}
 
+			if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 			sl_app(t->alias, DUP_STRING(q, name), NULL);
 			cell tmp;
 			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
@@ -1799,7 +1802,6 @@ static bool bif_mutex_create_2(query *q)
 	}
 
 	thread *t = &q->pl->threads[n];
-	if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	bool is_alias = false;
 	LIST_HANDLER(p2);
 
@@ -1832,6 +1834,7 @@ static bool bif_mutex_create_2(query *q)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 			}
 
+			if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 			sl_app(t->alias, DUP_STRING(q, name), NULL);
 			cell tmp;
 			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));

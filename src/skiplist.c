@@ -66,13 +66,7 @@ skiplist *sl_create(int (*cmpkey)(const void*, const void*, const void*, void *)
 		return NULL;
 	}
 
-#ifdef NDEBUG
 	l->seed = (unsigned)(size_t)(l + clock());
-#else
-	static unsigned seed = 0xdeadbeef;
-	l->seed = ++seed;
-#endif
-
 	l->level = 1;
 
 	for (int i = 0; i < MAX_LEVELS; i++)
