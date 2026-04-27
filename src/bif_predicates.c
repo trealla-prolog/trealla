@@ -3240,8 +3240,7 @@ bool bif_statistics_0(query *q)
 		"Retries %"PRIu64", "
 		"TCOs:%"PRIu64", "
 		"Frame recovs:%"PRIu64", "
-		"Frame norecovs:%"PRIu64", "
-		"Queue: %u\n",
+		"Frame norecovs:%"PRIu64"\n",
 
 		q->total_inferences, q->total_matches, q->total_matched,
 		q->hw_frames, q->hw_choices, q->hw_trails, q->hw_slots,
@@ -3249,8 +3248,7 @@ bool bif_statistics_0(query *q)
 		q->realloc_frames, q->realloc_choices, q->realloc_trails, q->realloc_slots,
 		q->st.fp, q->cp, q->st.tp, q->st.sp,
 		q->st.heap_num,
-		q->total_backtracks, q->total_retries, q->total_tcos, q->total_recovs, q->total_no_recovs,
-		(unsigned)q->qcnt[q->st.qnum]
+		q->total_backtracks, q->total_retries, q->total_tcos, q->total_recovs, q->total_no_recovs
 		);
 	return true;
 }
