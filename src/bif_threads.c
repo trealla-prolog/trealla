@@ -170,6 +170,8 @@ static int new_thread(prolog *pl)
 			t->at_exit_goal = NULL;
 			t->goal = NULL;
 			t->ball = NULL;
+			t->alias = NULL;
+			t->q = NULL;
 			prolog_unlock(pl);
 			return n;
 		}
@@ -877,6 +879,7 @@ static bool bif_thread_create_3(query *q)
 		free(t->goal);
 		free(t->at_exit_goal);
 		query_destroy(t->q);
+		t->q = NULL;
 		return throw_error(q, p1, p1_ctx, "system_error", "pthread_create");
 	}
 
