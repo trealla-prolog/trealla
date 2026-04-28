@@ -900,11 +900,11 @@ static bool bif_iso_throw_1(query *q)
 	clear_write_options(q);
 
 	if (!find_exception_handler(q, ball)) {
-		free(ball);
+		TPL_free(ball);
 		return false;
 	}
 
-	free(ball);
+	TPL_free(ball);
 	return bif_iso_catch_3(q);
 }
 
@@ -946,7 +946,7 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		char *tmpbuf = DUP_STRING(q, goal);
 		snprintf(functor, sizeof(functor), "%s", tmpbuf);
 		functor[sizeof(functor)-1] = '\0';
-		free(tmpbuf);
+		TPL_free(tmpbuf);
 	}
 
 	int extra = 0;
@@ -1168,11 +1168,11 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 	clear_write_options(q);
 
 	if (find_exception_handler(q, ball)) {
-		free(ball);
+		TPL_free(ball);
 		return bif_iso_catch_3(q);
 	}
 
-	free(ball);
+	TPL_free(ball);
 	return false;
 }
 

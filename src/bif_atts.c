@@ -399,7 +399,7 @@ static bool bif_sys_undo_trail_2(query *q)
 	save->b.ptr = save->b.ptr2 = NULL;
 	save->lo_tp = q->undo_lo_tp;
 	save->hi_tp = q->undo_hi_tp;
-	CHECKED(init_tmp_heap(q), free(save));
+	CHECKED(init_tmp_heap(q), TPL_free(save));
 
 	for (pl_idx i = q->undo_lo_tp, j = 0; i < q->undo_hi_tp; i++, j++) {
 		const trail *tr = q->trails + i;
@@ -428,7 +428,7 @@ static bool bif_sys_undo_trail_2(query *q)
 	}
 
 	cell *tmp = end_list(q);
-	CHECKED(tmp, free(save));
+	CHECKED(tmp, TPL_free(save));
 	unify(q, p1, p1_ctx, tmp, q->st.cur_ctx);
 	cell tmp2;
 	make_blob(&tmp2, &save->b);

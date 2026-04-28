@@ -204,12 +204,12 @@ static bool has_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 	while ((n = (snode*)list_pop_front(&stack)) != NULL) {
 		cell *p1 = n->c;
 		pl_ctx p1_ctx = n->c_ctx;
-		free(n);
+		TPL_free(n);
 
 		if (!is_compound(p1) || is_iso_list(p1)) {
 			if (has_vars_internal(q, p1, p1_ctx, depth+1)) {
 				while ((n = (snode*)list_pop_front(&stack)) != NULL)
-					free(n);
+					TPL_free(n);
 
 				return true;
 			}
@@ -232,7 +232,7 @@ static bool has_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 
 			if (is_var(c)) {
 				while ((n = (snode*)list_pop_front(&stack)) != NULL)
-					free(n);
+					TPL_free(n);
 
 				return true;
 			}

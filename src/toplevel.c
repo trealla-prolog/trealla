@@ -271,7 +271,7 @@ static void	clear_results()
 	while (g_items) {
 		item *save = g_items;
 		g_items = g_items->next;
-		free(save);
+		TPL_free(save);
 	}
 }
 

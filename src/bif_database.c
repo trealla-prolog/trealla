@@ -127,13 +127,13 @@ static void db_log(query *q, rule *r, enum log_type l)
 		dst = print_term_to_strbuf(q, r->cl.cells, q->st.cur_ctx, 1);
 		uuid_to_buf(&r->u, tmpbuf, sizeof(tmpbuf));
 		fprintf(fp, "%s:'$a_'((%s),'%s').\n", q->st.m->name, dst, tmpbuf);
-		free(dst);
+		TPL_free(dst);
 		break;
 	case LOG_ASSERTZ:
 		dst = print_term_to_strbuf(q, r->cl.cells, q->st.cur_ctx, 1);
 		uuid_to_buf(&r->u, tmpbuf, sizeof(tmpbuf));
 		fprintf(fp, "%s:'$z_'((%s),'%s').\n", q->st.m->name, dst, tmpbuf);
-		free(dst);
+		TPL_free(dst);
 		break;
 	case LOG_ERASE:
 		uuid_to_buf(&r->u, tmpbuf, sizeof(tmpbuf));
@@ -188,7 +188,7 @@ static void predicate_purge_dirty_list(predicate *pr)
 	while ((r = list_pop_front(&pr->dirty)) != NULL) {
 		predicate_delink(pr, r);
 		clear_clause(&r->cl);
-		free(r);
+		TPL_free(r);
 		cnt++;
 	}
 

@@ -70,19 +70,19 @@ static bool bif_iso_findall_3(query *q)
 
 	// Now grab matching solutions with fresh variables for each...
 
-	CHECKED(init_tmp_heap(q), free(solns));
+	CHECKED(init_tmp_heap(q), TPL_free(solns));
 
 	for (cell *c = solns; num_cells; num_cells -= c->num_cells, c += c->num_cells) {
 		cell *tmp = alloc_tmp(q, 1);
-		CHECKED(tmp, free(solns));
+		CHECKED(tmp, TPL_free(solns));
 		make_instr(tmp, g_dot_s, NULL, 2, 0);
 		q->noderef = true;
 		tmp = copy_term_to_tmp(q, c, q->st.cur_ctx, false);
 		q->noderef = false;
-		CHECKED(tmp, free(solns));
+		CHECKED(tmp, TPL_free(solns));
 	}
 
-	free(solns);
+	TPL_free(solns);
 	cell *l = end_list(q);
 	CHECKED(l);
 	return unify(q, p3, p3_ctx, l, q->st.cur_ctx);
@@ -131,7 +131,7 @@ static bool bif_sys_unifiable_3(query *q)
 		tmp[1] = v;
 		dup_cells_by_ref(tmp+2, c, c_ctx, c->num_cells);
 		append_list(q, tmp);
-		free(tmp);
+		TPL_free(tmp);
 		save_tp++;
 	}
 
@@ -553,7 +553,7 @@ static bool bif_iso_number_chars_2(query *q)
 	q->quoted = 0;
 	cell tmp;
 	make_string(&tmp, buf);
-	free(buf);
+	TPL_free(buf);
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
@@ -1125,7 +1125,7 @@ static bool bif_iso_number_codes_2(query *q)
 	cell tmp;
 	make_string(&tmp, buf);
 	tmp.flags |= FLAG_CSTR_CODES;
-	free(buf);
+	TPL_free(buf);
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
@@ -4096,7 +4096,7 @@ static bool bif_crypto_data_hash_3(query *q)
 	}
 
 	if (key)
-		free(key);
+		TPL_free(key);
 
 	cell tmp;
 	make_string(&tmp, tmpbuf);
@@ -4115,7 +4115,7 @@ static int do_b64encode_2(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2
 	b64_encode(str, len, &dstbuf, 0, 0);
 	cell tmp;
 	make_string(&tmp, dstbuf);
-	free(dstbuf);
+	TPL_free(dstbuf);
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
@@ -4130,7 +4130,7 @@ static int do_b64decode_2(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2
 	b64_decode(str, len, &dstbuf);
 	cell tmp;
 	make_string(&tmp, dstbuf);
-	free(dstbuf);
+	TPL_free(dstbuf);
 	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
@@ -4228,7 +4228,7 @@ static bool do_urlencode_2(query *q)
 	else
 		make_cstring(&tmp, dstbuf);
 
-	free(dstbuf);
+	TPL_free(dstbuf);
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
@@ -4250,7 +4250,7 @@ static bool do_urldecode_2(query *q)
 	else
 		make_cstring(&tmp, dstbuf);
 
-	free(dstbuf);
+	TPL_free(dstbuf);
 	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
@@ -4288,7 +4288,7 @@ static bool bif_atom_lower_2(query *q)
 	*dst = '\0';
 	cell tmp;
 	make_cstringn(&tmp, tmps, C_STRLEN(q, p1));
-	free(tmps);
+	TPL_free(tmps);
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
@@ -4313,7 +4313,7 @@ static bool bif_atom_upper_2(query *q)
 	*dst = '\0';
 	cell tmp;
 	make_cstringn(&tmp, tmps, C_STRLEN(q, p1));
-	free(tmps);
+	TPL_free(tmps);
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
@@ -4338,7 +4338,7 @@ static bool bif_string_lower_2(query *q)
 	*dst = '\0';
 	cell tmp;
 	make_stringn(&tmp, tmps, C_STRLEN(q, p1));
-	free(tmps);
+	TPL_free(tmps);
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
@@ -4363,7 +4363,7 @@ static bool bif_string_upper_2(query *q)
 	*dst = '\0';
 	cell tmp;
 	make_stringn(&tmp, tmps, C_STRLEN(q, p1));
-	free(tmps);
+	TPL_free(tmps);
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
@@ -4407,7 +4407,7 @@ static bool bif_term_hash_2(query *q)
 	} else {
 		char *tmpbuf = print_term_to_strbuf(q, p1, p1_ctx, 1);
 		make_int(&tmp, jenkins_one_at_a_time_hash(tmpbuf, strlen(tmpbuf)));
-		free(tmpbuf);
+		TPL_free(tmpbuf);
 	}
 
 	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
@@ -4438,7 +4438,7 @@ static bool bif_hex_chars_2(query *q)
 
 		cell tmp;
 		make_string(&tmp, dst);
-		if (dst != tmpbuf) free(dst);
+		if (dst != tmpbuf) TPL_free(dst);
 		bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 		unshare_cell(&tmp);
 		return ok;
@@ -4448,7 +4448,7 @@ static bool bif_hex_chars_2(query *q)
 	mpz_t v2;
 	mp_int_init(&v2);
 	mp_int_read_cstring(&v2, 16, (char*)src, NULL);
-	free(src);
+	TPL_free(src);
 	mp_small val;
 	cell tmp = {0};
 
@@ -4492,7 +4492,7 @@ static bool bif_octal_chars_2(query *q)
 
 		cell tmp;
 		make_string(&tmp, dst);
-		if (dst != tmpbuf) free(dst);
+		if (dst != tmpbuf) TPL_free(dst);
 		bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 		unshare_cell(&tmp);
 		return ok;
@@ -4502,7 +4502,7 @@ static bool bif_octal_chars_2(query *q)
 	mpz_t v2;
 	mp_int_init(&v2);
 	mp_int_read_cstring(&v2, 8, (char*)src, NULL);
-	free(src);
+	TPL_free(src);
 	mp_small val;
 	cell tmp = {0};
 
@@ -4553,8 +4553,8 @@ static bool bif_atomic_concat_3(query *q)
 	SB(pr);
 	SB_strcat(pr, src1);
 	SB_strcat(pr, src2);
-	free(src1);
-	free(src2);
+	TPL_free(src1);
+	TPL_free(src2);
 	cell tmp;
 	make_cstringn(&tmp, SB_cstr(pr), SB_strlen(pr));
 	SB_free(pr);
@@ -4585,7 +4585,7 @@ static bool bif_atomic_list_concat_3(query *q)
 		char *dst = print_term_to_strbuf(q, h, q->latest_ctx, 1);
 		q->parens = false;
 		SB_strcat(pr, dst);
-		free(dst);
+		TPL_free(dst);
 
 		p1 = LIST_TAIL(p1);
 		p1 = deref(q, p1, p1_ctx);
@@ -4596,7 +4596,7 @@ static bool bif_atomic_list_concat_3(query *q)
 			dst = print_term_to_strbuf(q, p2, p2_ctx, 1);
 			q->parens = false;
 			SB_strcat(pr, dst);
-			free(dst);
+			TPL_free(dst);
 		}
 	}
 
@@ -5535,7 +5535,7 @@ bool bif_sys_make_string_2(query *q)
 	make_stringn(&tmp, src, len);
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
-	free(src);
+	TPL_free(src);
 	return ok;
 }
 
@@ -5594,7 +5594,7 @@ static bool bif_sys_integer_in_radix_3(query *q)
 		char *dst = TPL_malloc(len+1);
 		mp_int_to_string(&p1->val_bigint->ival, radix, dst, len+1);
 		make_string(&tmp, dst);
-		free(dst);
+		TPL_free(dst);
 	} else {
 		char tmpbuf[256];
 		sprint_int(tmpbuf, sizeof(tmpbuf), get_smallint(p1), radix);
@@ -5736,7 +5736,7 @@ void format_property(module *m, char *tmpbuf, size_t buflen, const char *name, u
 	if (needs_quoting(m, name, strlen(name))) {
 		char *dst2 = formatted(name, strlen(name), false, false);
 		dst += snprintf(dst, buflen-(dst-tmpbuf), "'$predicate_property'(%s, '%s'", function?"function":"predicate", dst2);
-		free(dst2);
+		TPL_free(dst2);
 	} else
 		dst += snprintf(dst, buflen-(dst-tmpbuf), "'$predicate_property'(%s, %s", function?"function":"predicate", name);
 
@@ -5772,7 +5772,7 @@ void format_template(module *m, char *tmpbuf, size_t buflen, const char *name, u
 	if (quote) {
 		char *dst2 = formatted(name, strlen(name), false, false);
 		dst += snprintf(dst, buflen-(dst-tmpbuf), "'$predicate_property'(%s, '%s'", function?"function":"predicate", dst2);
-		free(dst2);
+		TPL_free(dst2);
 	} else
 		dst += snprintf(dst, buflen-(dst-tmpbuf), "'$predicate_property'(%s, %s", function?"function":"predicate", name);
 
@@ -6139,7 +6139,7 @@ static void load_ops(query *q)
 		if (quote) {
 			char *dst2 = formatted(ptr->name, strlen(ptr->name), false, false);
 			snprintf(name, sizeof(name), "%s", dst2);
-			free(dst2);
+			TPL_free(dst2);
 		} else
 			snprintf(name, sizeof(name), "%s", ptr->name);
 
@@ -6177,7 +6177,7 @@ static void load_ops(query *q)
 
 		char *dst2 = formatted(ptr->name, strlen(ptr->name), false, false);
 		SB_sprintf(pr, "'$op'('%s', %s, %u).\n", dst2, specifier, ptr->priority);
-		free(dst2);
+		TPL_free(dst2);
 	}
 
 	sl_done(iter);

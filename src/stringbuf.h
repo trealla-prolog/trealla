@@ -89,7 +89,7 @@ typedef struct {
 	char *s2 = (s);												\
 	if (s2) {													\
 		SB_strcpy(pr, s2);										\
-		free(s2);												\
+		TPL_free(s2);												\
 	}															\
 }
 
@@ -106,7 +106,7 @@ typedef struct {
 	char *s2 = (s);												\
 	if (s2) {													\
 		SB_strcat(pr, s2);										\
-		free(s2);												\
+		TPL_free(s2);												\
 	}															\
 }
 
@@ -142,6 +142,6 @@ typedef struct {
 
 #define SB_free(pr) {											\
 	if (pr##_buf.buf != pr##_buf.tmpbuf)						\
-		free(pr##_buf.buf);										\
+		TPL_free(pr##_buf.buf);										\
 	SB_init(pr);												\
 }

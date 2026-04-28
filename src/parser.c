@@ -332,7 +332,7 @@ void unshare_cells(cell *src, pl_idx num_cells)
 void clear_clause(clause *cl)
 {
 	unshare_cells(cl->cells, cl->cidx);
-	free(cl->alt);
+	TPL_free(cl->alt);
 	cl->alt = NULL;
 	cl->num_vars = 0;
 	cl->cidx = 0;
@@ -384,16 +384,16 @@ void parser_destroy(parser *p)
 {
 	if (!p) return;
 	SB_free(p->token);
-	free(p->save_line);
+	TPL_free(p->save_line);
 
 	if (p->cl) {
 		clear_clause(p->cl);
-		free(p->cl);
+		TPL_free(p->cl);
 	}
 
 	p->save_line = NULL;
 	p->cl = NULL;
-	free(p);
+	TPL_free(p);
 }
 
 parser *parser_create(module *m)
@@ -404,7 +404,7 @@ parser *parser_create(module *m)
 	p->m = m;
 	pl_idx num_cells = INITIAL_NBR_CELLS;
 	p->cl = TPL_calloc(1, sizeof(clause)+(sizeof(cell)*num_cells));
-	ENSURE(p->cl, free(p));
+	ENSURE(p->cl, TPL_free(p));
 	p->cl->num_allocated_cells = num_cells;
 	p->start_term = true;
 	p->flags = m->flags;
@@ -488,11 +488,11 @@ static void do_op(parser *p, cell *c, bool make_public)
 		if (!p->do_read_term)
 			fprintf(stderr, "Error: unknown op spec tag, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
-		free(spec);
+		TPL_free(spec);
 		return;
 	}
 
-	free(spec);
+	TPL_free(spec);
 	LIST_HANDLER(p3);
 
 	while (is_list(p3)) {
@@ -508,7 +508,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 				if (!p->do_read_term)
 					fprintf(stderr, "Error: permission error set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
-				free(name);
+				TPL_free(name);
 				return;
 			}
 
@@ -516,7 +516,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 				if (!p->do_read_term)
 					fprintf(stderr, "Error: permission error set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
-				free(name);
+				TPL_free(name);
 				return;
 			}
 
@@ -524,7 +524,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 				if (!p->do_read_term)
 					fprintf(stderr, "Error: could not set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
-				free(name);
+				TPL_free(name);
 				continue;
 			}
 
@@ -533,12 +533,12 @@ static void do_op(parser *p, cell *c, bool make_public)
 					if (!p->do_read_term)
 						fprintf(stderr, "Error: could not set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
-					free(name);
+					TPL_free(name);
 					continue;
 				}
 			}
 
-			free(name);
+			TPL_free(name);
 		}
 
 		p3 = LIST_TAIL(p3);
@@ -553,7 +553,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: permission error set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
-			free(name);
+			TPL_free(name);
 			return;
 		}
 
@@ -561,7 +561,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: permission error set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
-			free(name);
+			TPL_free(name);
 			return;
 		}
 
@@ -569,7 +569,7 @@ static void do_op(parser *p, cell *c, bool make_public)
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: could not set op, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
-			free(name);
+			TPL_free(name);
 			return;
 		}
 
@@ -578,12 +578,12 @@ static void do_op(parser *p, cell *c, bool make_public)
 				if (!p->do_read_term)
 					fprintf(stderr, "Error: could not set op, %s:%u\n", get_loaded(p->m, p->m->filename), p->line_num);
 
-				free(name);
+				TPL_free(name);
 				return;
 			}
 		}
 
-		free(name);
+		TPL_free(name);
 	}
 }
 
@@ -797,14 +797,14 @@ static bool directives(parser *p, cell *d)
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: not found: %s:%d\n", filename, p->line_num);
 
-			free(filename);
+			TPL_free(filename);
 			p->line_num = save_line_nbr;
 			p->error = true;
 			return true;
 		}
 
 		set_parent(p->m, p->m->actual_filename, p->m->filename);
-		free(filename);
+		TPL_free(filename);
 		p->line_num = save_line_nbr;
 		return true;
 	}
@@ -819,13 +819,13 @@ static bool directives(parser *p, cell *d)
 			if (!p->do_read_term)
 				fprintf(stderr, "Error: not found: %s:%d\n", filename, p->line_num);
 
-			free(filename);
+			TPL_free(filename);
 			p->line_num = save_line_nbr;
 			p->error = true;
 			return true;
 		}
 
-		free(filename);
+		TPL_free(filename);
 		p->line_num = save_line_nbr;
 		return true;
 	}
@@ -1649,7 +1649,7 @@ static void replace_double_bar(parser *p, pl_idx i, pl_idx last_idx)
 		memmove(lhs, tmp, tmp->num_cells*sizeof(cell));
 
 		p->cl->cidx += extra_cells;
-		free(tmp);
+		TPL_free(tmp);
 		query_destroy(q);
 	}
 }
@@ -1985,10 +1985,10 @@ static bool dcg_expansion(parser *p)
 	}
 
 	process_clause(p2->m, p2->cl, NULL);
-	free(src);
+	TPL_free(src);
 
 	clear_clause(p->cl);
-	free(p->cl);
+	TPL_free(p->cl);
 	p->cl = p2->cl;					// Take the completed clause
 	p->num_vars = p2->num_vars;
 	p2->cl = NULL;
@@ -2073,10 +2073,10 @@ static bool term_expansion(parser *p)
 	}
 
 	process_clause(p2->m, p2->cl, NULL);
-	free(src);
+	TPL_free(src);
 
 	clear_clause(p->cl);
-	free(p->cl);
+	TPL_free(p->cl);
 	p->cl = p2->cl;					// Take the completed clause
 	p->num_vars = p2->num_vars;
 	p2->cl = NULL;
@@ -2125,7 +2125,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	q->varnames = false;
 	SB(s);
 	SB_sprintf(s, "goal_expansion((%s),_TermOut), !.", dst);
-	free(dst);
+	TPL_free(dst);
 
 	//DUMP_TERM("old", p->cl->cells, 0, 0);
 
@@ -2202,7 +2202,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 		parser_destroy(p2);
 		query_destroy(q);
 		p->error = true;
-		free(src);
+		TPL_free(src);
 		return goal;
 	}
 
@@ -2225,12 +2225,12 @@ static cell *goal_expansion(parser *p, cell *goal)
 		parser_destroy(p2);
 		query_destroy(q);
 		p->error = true;
-		free(src);
+		TPL_free(src);
 		return goal;
 	}
 
 	process_clause(p2->m, p2->cl, NULL);
-	free(src);
+	TPL_free(src);
 
 	// Push the updated vartab back...
 
@@ -4489,7 +4489,7 @@ bool run(parser *p, const char *prolog_src, bool dump, query **subq, unsigned in
 
 	stream *str = &p->pl->streams[0];
 	fflush(str->fp);
-	free(str->data);
+	TPL_free(str->data);
 	str->data = NULL;
 	str->data_len = 0;
 	str->srclen = 0;

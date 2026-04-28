@@ -130,7 +130,7 @@ static void trace_call(query *q, cell *c, pl_ctx c_ctx, box_t box)
 	q->double_quotes = true;
 	char *dst = print_term_to_strbuf(q, c, c_ctx, -1);
 	SB_strcat(pr, dst);
-	free(dst);
+	TPL_free(dst);
 	q->quoted = false;
 	q->double_quotes = false;
 	SB_sprintf(pr, "%s", "\n");
@@ -151,7 +151,7 @@ void check_pressure(query *q)
 {
 #if REDUCE_PRESSURE
 	if (q->tmp_heap && (q->tmph_size > 4000)) {
-		free(q->tmp_heap);
+		TPL_free(q->tmp_heap);
 		q->tmp_heap = NULL;
 		q->tmph_size = 1000;
 	}
@@ -542,18 +542,18 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 			&& !r->cl.num_vars
 			&& q->pl->opt) {
 			clear_clause(&r->cl);
-			free(r);
+			TPL_free(r);
 		} else if (q->in_retract && (q->retry == QUERY_RETRY)
 			&& !r->cl.num_vars
 			&& q->pl->opt) {
 			clear_clause(&r->cl);
-			free(r);
+			TPL_free(r);
 		} else if (q->in_retract
 			&& !q->no_recov_compound
 			&& !r->cl.num_vars
 			&& q->pl->opt) {
 			clear_clause(&r->cl);
-			free(r);
+			TPL_free(r);
 		} else {
 			r->cl.is_deleted = true;
 			list_push_back(&q->dirty, r);
@@ -576,7 +576,7 @@ static void query_purge_dirty_list(query *q)
 
 	while ((r = list_pop_front(&q->dirty)) != NULL) {
 		clear_clause(&r->cl);
-		free(r);
+		TPL_free(r);
 		cnt++;
 	}
 
@@ -1850,8 +1850,8 @@ void query_destroy(query *q)
 
 		page *save = a;
 		a = a->next;
-		free(save->cells);
-		free(save);
+		TPL_free(save->cells);
+		TPL_free(save);
 	}
 
 	slot *e = q->slots;
@@ -1866,7 +1866,7 @@ void query_destroy(query *q)
 		for (pl_idx j = 0; j < q->qp[i]; j++, c++)
 			unshare_cell(c);
 
-		free(q->queue[i]);
+		TPL_free(q->queue[i]);
 	}
 
 	while (q->tasks) {
@@ -1879,13 +1879,13 @@ void query_destroy(query *q)
 	mp_rat_clear(&q->tmp_irat);
 	query_purge_dirty_list(q);
 	parser_destroy(q->p);
-	free(q->trails);
-	free(q->choices);
-	free(q->slots);
-	free(q->frames);
-	free(q->tmp_heap);
+	TPL_free(q->trails);
+	TPL_free(q->choices);
+	TPL_free(q->slots);
+	TPL_free(q->frames);
+	TPL_free(q->tmp_heap);
 	q->pl->q_cnt--;
-	free(q);
+	TPL_free(q);
 }
 
 static query *query_create_(module *m, bool is_small)

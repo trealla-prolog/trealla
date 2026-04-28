@@ -346,7 +346,7 @@ bool bif_parse_csv_file_2(query *q)
 
 		if (!do_parse_csv_line(q, p, &params, line, NULL, 0)) {
 			//fprintf(stderr, "Error: line %u\n", line_num);
-			free(p->save_line);
+			TPL_free(p->save_line);
 			p->save_line = NULL;
 			fclose(p->fp);
 			p->fp = NULL;
@@ -358,7 +358,7 @@ bool bif_parse_csv_file_2(query *q)
 		q->st.hp = save_hp;
 	}
 
-	free(p->save_line);
+	TPL_free(p->save_line);
 	fclose(p->fp);
 	parser_destroy(p);
 
@@ -386,7 +386,7 @@ static bool do_write_csv_line(query *q, parser* p, csv *params, cell *l, pl_ctx 
 			return false;
 		}
 
-		free(dst);
+		TPL_free(dst);
 
 		l = LIST_TAIL(l);
 		l = deref(q,l,l_ctx);

@@ -272,7 +272,7 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx fro
 					c->tmp_attrs = tmp;
 				}
 
-				free(q->tmp_heap);
+				TPL_free(q->tmp_heap);
 				q->tmp_heap = save_tmp_heap;
 				q->tmphp = save_tmp_hp;
 			}
@@ -374,7 +374,7 @@ cell *alloc_heap(query *q, unsigned num_cells)
 		a->next = q->heap_pages;
 		unsigned n = MAX_OF(page_size, num_cells);
 		a->cells = TPL_calloc(a->page_size=n, sizeof(cell));
-		if (!a->cells) { free(a); return NULL; }
+		if (!a->cells) { TPL_free(a); return NULL; }
 		a->num = ++q->st.heap_num;
 		q->heap_pages = a;
 		q->st.hp = 0;
@@ -402,8 +402,8 @@ void trim_heap(query *q)
 
 		page *save = a;
 		q->heap_pages = a = a->next;
-		free(save->cells);
-		free(save);
+		TPL_free(save->cells);
+		TPL_free(save);
 	}
 
 	if (!q->heap_pages)
@@ -611,7 +611,7 @@ cell *end_structure(query *q)
 	tmp->num_cells = num_cells;
 
 	if (q->tmp_heap && (q->tmph_size > 1000)) {
-		free(q->tmp_heap);
+		TPL_free(q->tmp_heap);
 		q->tmp_heap = NULL;
 		q->tmph_size = 1000;
 	}

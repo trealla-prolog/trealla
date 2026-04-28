@@ -238,8 +238,8 @@ bool pl_restore(prolog *pl, const char *filename)
 static void g_destroy()
 {
 	sl_destroy(g_symtab);
-	free(g_global_atoms);
-	free(g_tpl_lib);
+	TPL_free(g_global_atoms);
+	TPL_free(g_tpl_lib);
 	deinit_lock(&g_symtab_guard);
 }
 
@@ -248,30 +248,30 @@ void ptrfree(const void *key, const void *val, const void *p)
 	builtins *ptr = (void*)val;
 
 	if (ptr->via_directive) {
-		if (ptr->help2) free((void*)ptr->help2);
-		if (ptr->desc) free((void*)ptr->desc);
-		if (ptr->name) free((void*)ptr->name);
-		free((void*)ptr);
+		if (ptr->help2) TPL_free((void*)ptr->help2);
+		if (ptr->desc) TPL_free((void*)ptr->desc);
+		if (ptr->name) TPL_free((void*)ptr->name);
+		TPL_free((void*)ptr);
 	}
 }
 
 void keyfree(const void *key, const void *val, const void *p)
 {
-	free((void*)key);
+	TPL_free((void*)key);
 }
 
 void fake_free(const void *key, const void *val, const void *p)
 {
-	free((void*)key);
-	free((void*)val);
+	TPL_free((void*)key);
+	TPL_free((void*)val);
 }
 
 static void keyval_free(const void *key, const void *val, const void *p)
 {
-	free((void*)key);
+	TPL_free((void*)key);
 	cell *c = (cell*)val;
 	unshare_cells(c, c->num_cells);
-	free((void*)val);
+	TPL_free((void*)val);
 }
 
 builtins *get_help(prolog *pl, const char *name, unsigned arity, bool *found, bool *evaluable)
@@ -649,7 +649,7 @@ void pl_destroy(prolog *pl)
 	sl_destroy(pl->fortab);
 	sl_destroy(pl->keyval);
 	sl_destroy(pl->help);
-	free(pl->tabs);
+	TPL_free(pl->tabs);
 
 	for (int i = 0; i < MAX_STREAMS; i++) {
 		stream *str = &pl->streams[i];
@@ -671,9 +671,9 @@ void pl_destroy(prolog *pl)
 
 			parser_destroy(str->p);
 			sl_destroy(str->alias);
-			free(str->filename);
-			free(str->mode);
-			free(str->data);
+			TPL_free(str->filename);
+			TPL_free(str->mode);
+			TPL_free(str->data);
 		}
 	}
 
@@ -682,7 +682,7 @@ void pl_destroy(prolog *pl)
 	if (!--g_tpl_count)
 		g_destroy();
 
-	free(pl);
+	TPL_free(pl);
 }
 
 prolog *pl_create()
@@ -821,7 +821,7 @@ prolog *pl_create()
 				module *m = load_text(pl->user_m, src, SB_cstr(s1));
 				m->prebuilt = true;
 				SB_free(s1);
-				free(src);
+				TPL_free(src);
 				check_error(m, pl_destroy(pl));
 				found = true;
 				break;

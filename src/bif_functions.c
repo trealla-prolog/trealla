@@ -77,10 +77,10 @@ static void clr_accum(cell *p)
 {
 	if (is_bigint(p) && p->val_bigint && !p->val_bigint->refcnt) {
 		mp_int_clear(&p->val_bigint->ival);
-		free(p->val_bigint);
+		TPL_free(p->val_bigint);
 	} else if (is_rational(p) && p->val_bigint && !p->val_bigint->refcnt) {
 		mp_rat_clear(&p->val_bigint->irat);
-		free(p->val_bigint);
+		TPL_free(p->val_bigint);
 	}
 
 	p->tag = TAG_INT;

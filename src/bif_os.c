@@ -126,7 +126,7 @@ static bool bif_shell_1(query *q)
 	char *filename;
 	GET_SOURCE_SINK(p1, p1_ctx, filename);
 	int status = system(filename);
-	free(filename);
+	TPL_free(filename);
 
 	if (status == 0)
 		return true;
@@ -141,7 +141,7 @@ static bool bif_shell_2(query *q)
 	char *filename;
 	GET_SOURCE_SINK(p1, p1_ctx, filename);
 	int status = system(filename);
-	free(filename);
+	TPL_free(filename);
 	cell tmp;
 	make_int(&tmp, status);
 	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
@@ -165,7 +165,7 @@ static bool bif_getenv_2(query *q)
 	char *filename;
 	GET_SOURCE_SINK(p1, p1_ctx, filename);
 	const char *value = getenv(filename);
-	free(filename);
+	TPL_free(filename);
 
 	if (!value)
 		return false;
@@ -190,8 +190,8 @@ static bool bif_setenv_2(query *q)
 	GET_SOURCE_SINK(p1, p1_ctx, filename);
 	GET_SOURCE_SINK(p2, p2_ctx, filename2);
 	setenv(filename, filename2, 1);
-	free(filename2);
-	free(filename);
+	TPL_free(filename2);
+	TPL_free(filename);
 	return true;
 }
 
@@ -201,7 +201,7 @@ static bool bif_unsetenv_1(query *q)
 	char *filename;
 	GET_SOURCE_SINK(p1, p1_ctx, filename);
 	unsetenv(filename);
-	free(filename);
+	TPL_free(filename);
 	return true;
 }
 
@@ -681,7 +681,7 @@ static bool bif_popen_4(query *q)
 	else
 		return throw_error(q, p2, p2_ctx, "domain_error", "io_mode");
 
-	free(src);
+	TPL_free(src);
 
 	if (!str->fp) {
 		if ((errno == EACCES) || (strcmp(str->mode, "read") && (errno == EROFS)))
@@ -927,13 +927,13 @@ static bool bif_process_create_3(query *q)
 	int ok = posix_spawnp(&pid, C_STR(q, p1), &file_actions, &attrp, (char * const*)arguments, (char * const*)environments);
 	posix_spawn_file_actions_destroy(&file_actions);
 	posix_spawnattr_destroy(&attrp);
-	free(src);
+	TPL_free(src);
 
 	for (int i = 0; i < args; i++)
-		free(arguments[i]);
+		TPL_free(arguments[i]);
 
 	for (int i = 0; i < envs; i++)
-		free(environments[i]);
+		TPL_free(environments[i]);
 
 	if (ok != 0)
 		return throw_error(q, p1, p1_ctx, "system_error", "posix_spawnp");

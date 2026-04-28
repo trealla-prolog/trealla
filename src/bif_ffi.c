@@ -109,7 +109,7 @@ void *do_dlopen(const char *filename, int flag)
 #endif
 
 	void *handle = dlopen(filename2, !flag ? RTLD_LAZY | RTLD_GLOBAL : flag);
-	free(filename2);
+	TPL_free(filename2);
 	return handle;
 }
 
@@ -1833,7 +1833,7 @@ bool wrap_ffi_predicate(query *q, builtins *ptr)
 		if (ok != true) return ok;
 	} else if (ptr->ret_type == FFI_TAG_C_STR) {
 		CHECKED(make_cstring(&tmp, r.val_ffi_pointer));
-		free(r.val_ffi_pointer);
+		TPL_free(r.val_ffi_pointer);
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
 		if (ok != true) return ok;
 	} else if (ptr->ret_type == FFI_TAG_C_CSTR) {

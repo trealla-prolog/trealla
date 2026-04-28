@@ -37,7 +37,7 @@ static void clear_visited(visit *visited, visit *save_visited)
 	while (visited != save_visited) {
 		visit *tmp = visited;
 		visited = visited->next;
-		free(tmp);
+		TPL_free(tmp);
 	}
 }
 
@@ -740,7 +740,7 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 				SB_sprintf(q->sb, "|\"%s\"", tmp_src);
 			}
 
-			free(tmp_src);
+			TPL_free(tmp_src);
 			print_list++;
 		} else if (is_string(tail) && !q->double_quotes) {
 			SB_sprintf(q->sb, "%s", ",");
@@ -1430,13 +1430,13 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 		CHECKED(dst2);
 		mp_int_to_string(&c->val_bigint->irat.num, radix, dst2, len+1);
 		SB_sprintf(q->sb, "%s", dst2);
-		free(dst2);
+		TPL_free(dst2);
 		SB_sprintf(q->sb, "%s", " rdiv ");
 		len = mp_int_string_len(&c->val_bigint->irat.den, radix) - 1;
 		dst2 = TPL_malloc(len+1);
 		mp_int_to_string(&c->val_bigint->irat.den, radix, dst2, len+1);
 		SB_sprintf(q->sb, "%s", dst2);
-		free(dst2);
+		TPL_free(dst2);
 		q->last_thing = WAS_OTHER;
 		return true;
 	}
@@ -1450,7 +1450,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 		CHECKED(dst2);
 		mp_int_to_string(&c->val_bigint->ival, radix, dst2, len+1);
 		SB_sprintf(q->sb, "%s", dst2);
-		free(dst2);
+		TPL_free(dst2);
 		q->last_thing = WAS_OTHER;
 		return true;
 	}

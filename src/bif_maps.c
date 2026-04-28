@@ -116,7 +116,7 @@ static bool bif_map_set_3(query *q)
 	} else if (is_atom(p2))
 		val = DUP_STRING(q, p2);
 	else {
-		free(key);
+		TPL_free(key);
 		return throw_error(q, p2, p2_ctx, "type_error", "integer");
 	}
 
@@ -151,7 +151,7 @@ static bool bif_map_get_3(query *q)
 	char *val = NULL;
 
 	if (!sl_get(str->keyval, key, (void*)&val)) {
-		if (key != tmpbuf) free(key);
+		if (key != tmpbuf) TPL_free(key);
 		return false;
 	}
 
@@ -183,7 +183,7 @@ static bool bif_map_get_3(query *q)
 	} else
 		make_cstring(&tmp, val);
 
-	if (key != tmpbuf) free(key);
+	if (key != tmpbuf) TPL_free(key);
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;

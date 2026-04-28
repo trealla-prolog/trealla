@@ -52,7 +52,7 @@
 	----------------------------------------------------------------------
 	Copyright © 2005-2020 Rich Felker, et al.
 
-	Permission is hereby granted, free of charge, to any person obtaining
+	Permission is hereby granted, TPL_free of charge, to any person obtaining
 	a copy of this software and associated documentation files (the
 	"Software"), to deal in the Software without restriction, including
 	without limitation the rights to use, copy, modify, merge, publish,
@@ -264,7 +264,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
         {
           size_t new_size;
 
-          free(return_path);
+          TPL_free(return_path);
           return_path = TPL_malloc(size);
 
           if (return_path)
@@ -273,7 +273,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
 
             if (new_size > size) //If it's still too large, we have a problem, don't try again
             {
-              free(return_path);
+              TPL_free(return_path);
               return_path = 0;
               errno = ENAMETOOLONG;
             }
@@ -301,7 +301,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
       {
         if (return_path != resolved_path) //Malloc'd buffer
         {
-          free(return_path);
+          TPL_free(return_path);
         }
 
         return_path = 0;
@@ -337,7 +337,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
         {
           if (return_path != resolved_path)
           {
-            free(return_path);
+            TPL_free(return_path);
           }
 
           return_path = 0;
@@ -538,7 +538,7 @@ static void add_stream_properties(query *q, int n)
 		const char *alias = sl_key(iter);
 		char *dst2 = formatted(alias, strlen(alias), false, false);
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, alias('%s')).\n", n, dst2);
-		free(dst2);
+		TPL_free(dst2);
 	}
 
 	sl_done(iter);
@@ -546,7 +546,7 @@ static void add_stream_properties(query *q, int n)
 	if (!str->is_engine && !str->is_map) {
 		char *dst2 = formatted(str->filename, strlen(str->filename), false, false);
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, file_name('%s')).\n", n, dst2);
-		free(dst2);
+		TPL_free(dst2);
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, file_no(%u)).\n", n, fileno(str->fp));
 
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, file(%llu)).\n", n, (unsigned long long)(size_t)str->fp);
@@ -990,7 +990,7 @@ static bool bif_iso_open_4(query *q)
 	CHECKED(str->mode = DUP_STRING(q, p2));
 	bool binary = false, repo = true;
 	uint8_t eof_action = eof_action_eof_code;
-	free(src);
+	TPL_free(src);
 
 #if USE_MMAP
 	cell *mmap_var = NULL;
@@ -1287,11 +1287,11 @@ bool stream_close(query *q, int n)
 	sl_destroy(str->alias);
 	str->alias = NULL;
 	str->fp = NULL;
-	free(str->mode);
+	TPL_free(str->mode);
 	str->mode = NULL;
-	free(str->filename);
+	TPL_free(str->filename);
 	str->filename = NULL;
-	free(str->data);
+	TPL_free(str->data);
 	str->data = NULL;
 	str->at_end_of_file = true;
 
@@ -3742,7 +3742,7 @@ static bool bif_sys_read_term_from_chars_4(query *q)
 
 	if (ok != true) {
 		if (!is_string(p_chars))
-			free(src);
+			TPL_free(src);
 
 		parser_destroy(str->p);
 		str->p = NULL;
@@ -3774,7 +3774,7 @@ static bool bif_sys_read_term_from_chars_4(query *q)
 	parser_destroy(str->p);
 
 	if (!is_string(p_chars))
-		free(src);
+		TPL_free(src);
 
 	unify(q, p_rest, p_rest_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
@@ -3829,7 +3829,7 @@ static bool bif_read_term_from_chars_3(query *q)
 
 	if (!src || !*src) {
 		parser_destroy(str->p);
-		free(save_src);
+		TPL_free(save_src);
 		cell tmp;
 		make_atom(&tmp, g_eof_s);
 		return unify(q, p_term, p_term_ctx, &tmp, q->st.cur_ctx);
@@ -3846,7 +3846,7 @@ static bool bif_read_term_from_chars_3(query *q)
 	bool ok = do_read_term(q, str, p_term, p_term_ctx, p_opts, p_opts_ctx, NULL);
 	parser_reset(str->p);
 	parser_destroy(str->p);
-	free(save_src);
+	TPL_free(save_src);
 
 	if (ok != true)
 		return false;
@@ -3889,7 +3889,7 @@ static bool bif_read_term_from_atom_3(query *q)
 
 	bool ok = do_read_term(q, str, p_term, p_term_ctx, p_opts, p_opts_ctx, src);
 	parser_destroy(str->p);
-	free(src);
+	TPL_free(src);
 	return ok;
 }
 
@@ -3919,7 +3919,7 @@ static bool bif_write_term_to_atom_3(query *q)
 	clear_write_options(q);
 	cell tmp;
 	make_cstring(&tmp, dst);
-	free(dst);
+	TPL_free(dst);
 	bool ok = unify(q, p_chars, p_chars_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
@@ -3951,7 +3951,7 @@ static bool bif_write_term_to_chars_3(query *q)
 	clear_write_options(q);
 	cell tmp;
 	make_string(&tmp, dst);
-	free(dst);
+	TPL_free(dst);
 	bool ok = unify(q, p_chars, p_chars_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
@@ -3981,7 +3981,7 @@ static bool bif_write_canonical_to_chars_3(query *q)
 	clear_write_options(q);
 	cell tmp;
 	make_string(&tmp, dst);
-	free(dst);
+	TPL_free(dst);
 	bool ok = unify(q, p_chars, p_chars_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
@@ -4101,8 +4101,8 @@ static bool bif_edin_seen_0(query *q)
 		fclose(str->fp);
 
 	sl_destroy(str->alias);
-	free(str->filename);
-	free(str->mode);
+	TPL_free(str->filename);
+	TPL_free(str->mode);
 	memset(str, 0, sizeof(stream));
 	q->pl->current_input = 0;
 	return true;
@@ -4122,8 +4122,8 @@ static bool bif_edin_told_0(query *q)
 		fclose(str->fp);
 
 	sl_destroy(str->alias);
-	free(str->filename);
-	free(str->mode);
+	TPL_free(str->filename);
+	TPL_free(str->mode);
 	memset(str, 0, sizeof(stream));
 	q->pl->current_output = 0;
 	return true;
@@ -4174,7 +4174,7 @@ static bool bif_read_line_to_string_2(query *q)
 	}
 
 	if (net_getline(&line, &len, str) == -1) {
-		free(line);
+		TPL_free(line);
 
 		if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 			clearerr(str->fp);
@@ -4200,7 +4200,7 @@ static bool bif_read_line_to_string_2(query *q)
 
 	cell tmp;
 	make_string(&tmp, line);
-	free(line);
+	TPL_free(line);
 	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
@@ -4266,7 +4266,7 @@ static bool bif_read_file_to_string_3(query *q)
 	}
 
 	FILE *fp = fopen(filename, is_binary?"rb":"r");
-	free(src);
+	TPL_free(src);
 
 	if (!fp)
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_file");
@@ -4295,7 +4295,7 @@ static bool bif_read_file_to_string_3(query *q)
 	CHECKED(s, fclose(fp));
 
 	if (fread(s, 1, len, fp) != (size_t)len) {
-		free(s);
+		TPL_free(s);
 		fclose(fp);
 		return throw_error(q, p1, p1_ctx, "domain_error", "cannot_read");
 	}
@@ -4306,7 +4306,7 @@ static bool bif_read_file_to_string_3(query *q)
 	make_stringn(&tmp, s, len);
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
-	free(s);
+	TPL_free(s);
 	return ok;
 }
 
@@ -4316,14 +4316,14 @@ bool do_load_file(query *q, cell *p1, pl_ctx p1_ctx)
 		char *src = DUP_STRING(q, p1);
 		char *filename = relative_to(q->st.m->filename, src);
 		unload_file(q->st.m, filename);
-		free(src);
+		TPL_free(src);
 
 		if (!load_file(q->st.m, filename, false, true)) {
-			free(filename);
+			TPL_free(filename);
 			return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 		}
 
-		free(filename);
+		TPL_free(filename);
 		return true;
 	}
 
@@ -4342,16 +4342,16 @@ bool do_load_file(query *q, cell *p1, pl_ctx p1_ctx)
 	module *tmp_m = module_create(q->pl, C_STR(q, mod));
 	char *src = DUP_STRING(q, file);
 	char *filename = relative_to(q->st.m->filename, src);
-	free(src);
+	TPL_free(src);
 	unload_file(tmp_m, filename);
 
 	if (!load_file(tmp_m, filename, false, true)) {
 		module_destroy(tmp_m);
-		free(filename);
+		TPL_free(filename);
 		return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 	}
 
-	free(filename);
+	TPL_free(filename);
 	return true;
 }
 
@@ -4360,9 +4360,9 @@ static bool do_unload_file(query *q, cell *p1, pl_ctx p1_ctx)
 	if (is_atom(p1)) {
 		char *src = DUP_STRING(q, p1);
 		char *filename = relative_to(q->st.m->filename, src);
-		free(src);
+		TPL_free(src);
 		unload_file(q->st.m, filename);
-		free(filename);
+		TPL_free(filename);
 		return true;
 	}
 
@@ -4380,9 +4380,9 @@ static bool do_unload_file(query *q, cell *p1, pl_ctx p1_ctx)
 
 	char *src = DUP_STRING(q, file);
 	char *filename = relative_to(q->st.m->filename, src);
-	free(src);
+	TPL_free(src);
 	unload_file(q->st.m, filename);
-	free(filename);
+	TPL_free(filename);
 	return true;
 }
 
@@ -4467,7 +4467,7 @@ static bool bif_savefile_2(query *q)
 	CHECKED(fp);
 	fwrite(C_STR(q, p2), 1, C_STRLEN(q, p2), fp);
 	fclose(fp);
-	free(filename);
+	TPL_free(filename);
 	return true;
 }
 
@@ -4488,7 +4488,7 @@ static bool bif_loadfile_2(query *q)
 		filename = DUP_STRING(q, p1);
 
 	FILE *fp = fopen(filename, "rb");
-	free(filename);
+	TPL_free(filename);
 
 	if (!fp)
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_file");
@@ -4513,7 +4513,7 @@ static bool bif_loadfile_2(query *q)
 	CHECKED(s, fclose(fp));
 
 	if (fread(s, 1, len, fp) != (size_t)len) {
-		free(s);
+		TPL_free(s);
 		fclose(fp);
 		return throw_error(q, p1, p1_ctx, "domain_error", "cannot_read");
 	}
@@ -4529,7 +4529,7 @@ static bool bif_loadfile_2(query *q)
 
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
-	free(s);
+	TPL_free(s);
 	return ok;
 }
 
@@ -4550,7 +4550,7 @@ static bool bif_getfile_2(query *q)
 		filename = DUP_STRING(q, p1);
 
 	FILE *fp = fopen(filename, "r");
-	free(filename);
+	TPL_free(filename);
 
 	if (!fp)
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_file");
@@ -4584,7 +4584,7 @@ static bool bif_getfile_2(query *q)
 		append_list(q, &tmp);
 	}
 
-	free(line);
+	TPL_free(line);
 	fclose(fp);
 	cell *l = end_list(q);
 	CHECKED(l);
@@ -4639,7 +4639,7 @@ static bool bif_getfile_3(query *q)
 		filename = DUP_STRING(q, p1);
 
 	FILE *fp = fopen(filename, "r");
-	free(filename);
+	TPL_free(filename);
 
 	if (!fp)
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_file");
@@ -4675,7 +4675,7 @@ static bool bif_getfile_3(query *q)
 		append_list(q, &tmp);
 	}
 
-	free(line);
+	TPL_free(line);
 	fclose(fp);
 	cell *l = end_list(q);
 	CHECKED(l);
@@ -4710,7 +4710,7 @@ static bool bif_getlines_1(query *q)
 		append_list(q, &tmp);
 	}
 
-	free(line);
+	TPL_free(line);
 	cell *l = end_list(q);
 	CHECKED(l);
 	unify(q, p1, p1_ctx, l, q->st.cur_ctx);
@@ -4745,7 +4745,7 @@ static bool bif_getlines_2(query *q)
 		append_list(q, &tmp);
 	}
 
-	free(line);
+	TPL_free(line);
 	cell *l = end_list(q);
 	CHECKED(l);
 	unify(q, p1, p1_ctx, l, q->st.cur_ctx);
@@ -4784,7 +4784,7 @@ static bool bif_getlines_3(query *q)
 		append_list(q, &tmp);
 	}
 
-	free(line);
+	TPL_free(line);
 	cell *l = end_list(q);
 	CHECKED(l);
 	unify(q, p1, p1_ctx, l, q->st.cur_ctx);
@@ -4849,7 +4849,7 @@ static bool bif_absolute_file_name_3(query *q)
 		size_t len = scan_is_chars_list(q, p1, p1_ctx, true);
 
 		if (!len) {
-			free(here);
+			TPL_free(here);
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 		}
 
@@ -4898,8 +4898,8 @@ static bool bif_absolute_file_name_3(query *q)
 		char *ptr = getenv(envbuf);
 
 		if (!ptr) {
-			free(here);
-			free(filename);
+			TPL_free(here);
+			TPL_free(filename);
 			return throw_error(q, p1, p1_ctx, "existence_error", "environment_variable");
 		}
 
@@ -4911,7 +4911,7 @@ static bool bif_absolute_file_name_3(query *q)
 
 		if ((tmpbuf2 = realpath(tmpbuf, NULL)) == NULL) {
 		} else {
-			free(tmpbuf);
+			TPL_free(tmpbuf);
 			tmpbuf = tmpbuf2;
 		}
 	} else {
@@ -4928,14 +4928,14 @@ static bool bif_absolute_file_name_3(query *q)
 				) {
 				size_t buflen = strlen(tmpbuf)+1+strlen(s)+1;
 				char *tmp = TPL_malloc(buflen);
-				CHECKED(tmp, free(tmpbuf));
+				CHECKED(tmp, TPL_free(tmpbuf));
 				snprintf(tmp, buflen, "%s/%s", tmpbuf, s);
-				free(tmpbuf);
+				TPL_free(tmpbuf);
 				tmpbuf = fixup(tmp);
 				CHECKED(tmpbuf);
-				free(tmp);
+				TPL_free(tmp);
 			} else {
-				free(tmpbuf);
+				TPL_free(tmpbuf);
 				tmpbuf = fixup(s);
 				CHECKED(tmpbuf);
 			}
@@ -4943,10 +4943,10 @@ static bool bif_absolute_file_name_3(query *q)
 	}
 
 	if (cwd != here)
-		free(cwd);
+		TPL_free(cwd);
 
-	free(filename);
-	free(here);
+	TPL_free(filename);
+	TPL_free(here);
 	cell tmp;
 
 	if (is_string(p1))
@@ -4954,7 +4954,7 @@ static bool bif_absolute_file_name_3(query *q)
 	else
 		make_cstring(&tmp, tmpbuf);
 
-	free(tmpbuf);
+	TPL_free(tmpbuf);
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
@@ -4974,7 +4974,7 @@ static bool bif_getline_1(query *q)
 	}
 
 	if (net_getline(&line, &len, str) == -1) {
-		free(line);
+		TPL_free(line);
 		return false;
 	}
 
@@ -4992,7 +4992,7 @@ static bool bif_getline_1(query *q)
 
 	cell tmp;
 	make_string(&tmp, line);
-	free(line);
+	TPL_free(line);
 	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
@@ -5013,7 +5013,7 @@ static bool bif_getline_2(query *q)
 	}
 
 	if (net_getline(&line, &len, str) == -1) {
-		free(line);
+		TPL_free(line);
 
 		if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 			clearerr(str->fp);
@@ -5033,7 +5033,7 @@ static bool bif_getline_2(query *q)
 
 	cell tmp;
 	make_string(&tmp, line);
-	free(line);
+	TPL_free(line);
 	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
@@ -5056,7 +5056,7 @@ static bool bif_getline_3(query *q)
 	}
 
 	if (net_getline(&line, &len, str) == -1) {
-		free(line);
+		TPL_free(line);
 
 		if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 			clearerr(str->fp);
@@ -5078,7 +5078,7 @@ static bool bif_getline_3(query *q)
 
 	cell tmp;
 	make_string(&tmp, line);
-	free(line);
+	TPL_free(line);
 	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
 	return ok;
@@ -5111,10 +5111,10 @@ static bool bif_access_file_2(query *q)
 	else if (!CMP_STRING_TO_CSTR(q, p2, "execute"))
 		amode = X_OK;
 	else if (!CMP_STRING_TO_CSTR(q, p2, "none")) {
-		free(filename);
+		TPL_free(filename);
 		return true;
 	} else {
-		free(filename);
+		TPL_free(filename);
 		return throw_error(q, p2, p2_ctx, "domain_error", "mode");
 	}
 
@@ -5122,17 +5122,17 @@ static bool bif_access_file_2(query *q)
 	int status = stat(filename, &st);
 
 	if (status && (!CMP_STRING_TO_CSTR(q, p2, "read") || !CMP_STRING_TO_CSTR(q, p2, "exist") || !CMP_STRING_TO_CSTR(q, p2, "execute") || !CMP_STRING_TO_CSTR(q, p2, "none"))) {
-		free(filename);
+		TPL_free(filename);
 		return false;
 	}
 
 	if (status && (!CMP_STRING_TO_CSTR(q, p2, "write") || !CMP_STRING_TO_CSTR(q, p2, "append"))) {
-		free(filename);
+		TPL_free(filename);
 		return true;
 	}
 
 	int ok = !access(filename, amode);
-	free(filename);
+	TPL_free(filename);
 	return ok;
 }
 
@@ -5154,11 +5154,11 @@ static bool bif_exists_file_1(query *q)
 	struct stat st = {0};
 
 	if (stat(filename, &st)) {
-		free(filename);
+		TPL_free(filename);
 		return false;
 	}
 
-	free(filename);
+	TPL_free(filename);
 
 	if ((st.st_mode & S_IFMT) != S_IFREG)
 		return false;
@@ -5185,14 +5185,14 @@ static bool bif_directory_files_2(query *q)
 	struct stat st = {0};
 
 	if (stat(filename, &st)) {
-		free(filename);
+		TPL_free(filename);
 		return throw_error(q, p1, p1_ctx, "existence_error", "directory");
 	}
 
 	DIR *dirp = opendir(filename);
 
 	if (!dirp) {
-		free(filename);
+		TPL_free(filename);
 		return throw_error(q, p1, p1_ctx, "existence_error", "directory");
 	}
 
@@ -5216,7 +5216,7 @@ static bool bif_directory_files_2(query *q)
 	}
 
 	closedir(dirp);
-	free(filename);
+	TPL_free(filename);
 	cell *l = end_list(q);
 	bool ok = unify(q, p2, p2_ctx, l, q->st.cur_ctx);
 	return ok;
@@ -5240,12 +5240,12 @@ static bool bif_delete_file_1(query *q)
 	struct stat st = {0};
 
 	if (stat(filename, &st)) {
-		free(filename);
+		TPL_free(filename);
 		return throw_error(q, p1, p1_ctx, "existence_error", "file");
 	}
 
 	remove(filename);
-	free(filename);
+	TPL_free(filename);
 	return true;
 }
 
@@ -5269,7 +5269,7 @@ static bool bif_rename_file_2(query *q)
 		size_t len = scan_is_chars_list(q, p2, p2_ctx, true);
 
 		if (!len) {
-			free(filename1);
+			TPL_free(filename1);
 			return throw_error(q, p2, p2_ctx, "type_error", "atom");
 		}
 
@@ -5280,14 +5280,14 @@ static bool bif_rename_file_2(query *q)
 	struct stat st = {0};
 
 	if (stat(filename1, &st)) {
-		free(filename1);
-		free(filename2);
+		TPL_free(filename1);
+		TPL_free(filename2);
 		return throw_error(q, p1, p1_ctx, "existence_error", "file");
 	}
 
 	bool ok = !rename(filename1, filename2);
-	free(filename1);
-	free(filename2);
+	TPL_free(filename1);
+	TPL_free(filename2);
 	return ok ? true : false;
 }
 
@@ -5311,7 +5311,7 @@ static bool bif_copy_file_2(query *q)
 		size_t len = scan_is_chars_list(q, p2, p2_ctx, true);
 
 		if (!len) {
-			free(filename1);
+			TPL_free(filename1);
 			return throw_error(q, p2, p2_ctx, "type_error", "atom");
 		}
 
@@ -5322,21 +5322,21 @@ static bool bif_copy_file_2(query *q)
 	FILE *fp1 = fopen(filename1, "rb");
 
 	if (!fp1) {
-		free(filename1);
-		free(filename2);
+		TPL_free(filename1);
+		TPL_free(filename2);
 		return throw_error(q, p1, p1_ctx, "existence_error", "file");
 	}
 
-	free(filename1);
+	TPL_free(filename1);
 	FILE *fp2 = fopen(filename2, "wb");
 
 	if (!fp2) {
 		fclose(fp1);
-		free(filename2);
+		TPL_free(filename2);
 		return throw_error(q, p2, p2_ctx, "permission_error", "file");
 	}
 
-	free(filename2);
+	TPL_free(filename2);
 	char buffer[1024];
 	size_t n;
 
@@ -5378,11 +5378,11 @@ static bool bif_time_file_2(query *q)
 	struct stat st = {0};
 
 	if (stat(filename, &st)) {
-		free(filename);
+		TPL_free(filename);
 		return throw_error(q, p1, p1_ctx, "existence_error", "file");
 	}
 
-	free(filename);
+	TPL_free(filename);
 	cell tmp;
 	make_float(&tmp, st.st_mtime);
 	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
@@ -5407,11 +5407,11 @@ static bool bif_size_file_2(query *q)
 	struct stat st = {0};
 
 	if (stat(filename, &st)) {
-		free(filename);
+		TPL_free(filename);
 		return throw_error(q, p1, p1_ctx, "existence_error", "file");
 	}
 
-	free(filename);
+	TPL_free(filename);
 	cell tmp;
 	make_int(&tmp, st.st_size);
 	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
@@ -5435,11 +5435,11 @@ static bool bif_exists_directory_1(query *q)
 	struct stat st = {0};
 
 	if (stat(filename, &st)) {
-		free(filename);
+		TPL_free(filename);
 		return false;
 	}
 
-	free(filename);
+	TPL_free(filename);
 
 	if ((st.st_mode & S_IFMT) != S_IFDIR)
 		return false;
@@ -5465,16 +5465,16 @@ static bool bif_make_directory_1(query *q)
 	struct stat st = {0};
 
 	if (!stat(filename, &st)) {
-		free(filename);
+		TPL_free(filename);
 		return throw_error(q, p1, p1_ctx, "existence_error", "file");
 	}
 
 	if (mkdir(filename, 0777)) {
-		free(filename);
+		TPL_free(filename);
 		return throw_error(q, p1, p1_ctx, "permission_error", "file");
 	}
 
-	free(filename);
+	TPL_free(filename);
 	return true;
 }
 
@@ -5501,7 +5501,7 @@ static bool bif_make_directory_path_1(query *q)
 
 			if (stat(filename, &st)) {
 				if (mkdir(filename, 0777)) {
-					free(filename);
+					TPL_free(filename);
 					return throw_error(q, p1, p1_ctx, "permission_error", "directory");
 				}
 			}
@@ -5511,16 +5511,16 @@ static bool bif_make_directory_path_1(query *q)
 	}
 
 	if (!stat(filename, &st)) {
-		free(filename);
+		TPL_free(filename);
 		return true;
 	}
 
 	if (mkdir(filename, 0777)) {
-		free(filename);
+		TPL_free(filename);
 		return throw_error(q, p1, p1_ctx, "permission_error", "directory");
 	}
 
-	free(filename);
+	TPL_free(filename);
 	return true;
 }
 
@@ -5555,7 +5555,7 @@ static bool bif_working_directory_2(query *q)
 			return throw_error(q, p_new, p_new_ctx, "existence_error", "path");
 		}
 
-		free(filename);
+		TPL_free(filename);
 	}
 
 	bool ok = unify(q, p_old, p_old_ctx, &tmp, q->st.cur_ctx);
@@ -5574,7 +5574,7 @@ static bool bif_chdir_1(query *q)
 		filename = DUP_STRING(q, p1);
 
 	bool ok = !chdir(filename);
-	free(filename);
+	TPL_free(filename);
 	return ok;
 }
 
@@ -5713,7 +5713,7 @@ static bool bif_server_3(query *q)
 
 	const char *url = filename;
 	parse_host(url, hostname, path, &port, &ssl, &domain);
-	free(filename);
+	TPL_free(filename);
 	int fd = net_server(hostname, port, udp, ssl?keyfile:NULL, ssl?certfile:NULL);
 
 	if (fd == -1)
@@ -5884,7 +5884,7 @@ static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 				CHECKED(dstbuf1);
 				url_encode(C_STR(q, c+1), len1, dstbuf1, len1+1);
 				dst += snprintf(dst, sizeof(search), "%s", dstbuf1);
-				free(dstbuf1);
+				TPL_free(dstbuf1);
 
 				if (is_atom(c+2)) {
 					size_t len2 = C_STRLEN(q, c+2);
@@ -5892,7 +5892,7 @@ static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 					CHECKED(dstbuf2);
 					url_encode(C_STR(q, c+2), len2, dstbuf2, len2+1);
 					dst += snprintf(dst, sizeof(search), "=%s", dstbuf2);
-					free(dstbuf2);
+					TPL_free(dstbuf2);
 				} else if (is_smallint(c+2)) {
 					char tmpbuf[256];
 					snprintf(tmpbuf, sizeof(tmpbuf), "%lld", (long long)get_smallint(c+2));
@@ -5901,7 +5901,7 @@ static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 					CHECKED(dstbuf2);
 					url_encode(tmpbuf, len2, dstbuf2, len2+1);
 					dst += snprintf(dst, sizeof(search), "=%s", dstbuf2);
-					free(dstbuf2);
+					TPL_free(dstbuf2);
 				} else {
 					char tmpbuf[256];
 					snprintf(tmpbuf, sizeof(tmpbuf), "%.17g", get_float(c+2));
@@ -5910,7 +5910,7 @@ static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 					CHECKED(dstbuf2);
 					url_encode(tmpbuf, len2, dstbuf2, len2+1);
 					dst += snprintf(dst, sizeof(search), "=%s", dstbuf2);
-					free(dstbuf2);
+					TPL_free(dstbuf2);
 				}
 
 				h1 = LIST_TAIL(h1);
@@ -5980,14 +5980,14 @@ static bool do_parse_url(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_
 				CHECKED(dstbuf);
 				url_decode(key, dstbuf);
 				make_cstring(tmp+1, dstbuf);
-				free(dstbuf);
+				TPL_free(dstbuf);
 
 				len = strlen(search2);
 				dstbuf = TPL_malloc(len+1);
 				CHECKED(dstbuf);
 				url_decode(search2, dstbuf);
 				make_cstring(tmp+2, dstbuf);
-				free(dstbuf);
+				TPL_free(dstbuf);
 
 				if (first) {
 					allocate_list(q, tmp);
@@ -6012,14 +6012,14 @@ static bool do_parse_url(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_
 		CHECKED(dstbuf);
 		url_decode(key, dstbuf);
 		make_cstring(tmp+1, dstbuf);
-		free(dstbuf);
+		TPL_free(dstbuf);
 
 		len = strlen(search2);
 		dstbuf = TPL_malloc(len+1);
 		CHECKED(dstbuf);
 		url_decode(search2, dstbuf);
 		make_cstring(tmp+2, dstbuf);
-		free(dstbuf);
+		TPL_free(dstbuf);
 		append_list(q, tmp);
 
 		cell *l = end_list(q);
@@ -6068,7 +6068,7 @@ static bool do_parse_url(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_
 		make_instr(tmp, new_atom(q->pl, "path"), NULL, 1, 1);
 		make_cstring(tmp+1, path);
 		append_list(q, tmp);
-		free(dstbuf);
+		TPL_free(dstbuf);
 	}
 
 	if (fragment[0]) {
@@ -6080,7 +6080,7 @@ static bool do_parse_url(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_
 		make_instr(tmp, new_atom(q->pl, "fragment"), NULL, 1, 1);
 		make_cstring(tmp+1, fragment);
 		append_list(q, tmp);
-		free(dstbuf);
+		TPL_free(dstbuf);
 	}
 
 	return unify(q, p2, p2_ctx, end_list(q), q->st.cur_ctx);
@@ -6200,7 +6200,7 @@ static bool bif_client_5(query *q)
 
 	const char *url = filename;
 	parse_host(url, hostname, path, &port, &ssl, &domain);
-	free(filename);
+	TPL_free(filename);
 
 	//printf("*** net_connect host=%s, port=%d\n", hostname, port);
 	int fd = net_connect(hostname, port, udp, nodelay);
@@ -6230,8 +6230,8 @@ static bool bif_client_5(query *q)
 
 	if (!str->filename || !str->mode) {
 		sl_destroy(str->alias);
-		free(str->filename);
-		free(str->mode);
+		TPL_free(str->filename);
+		TPL_free(str->mode);
 		return false;
 	}
 
@@ -6302,14 +6302,14 @@ static bool bif_sys_get_chars_3(query *q)
 		bool ok = unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 
 		if (!ok) {
-			free(data);
+			TPL_free(data);
 			return false;
 		}
 
 		make_stringn(&tmp, data, dst-data);
 		ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 		unshare_cell(&tmp);
-		free(data);
+		TPL_free(data);
 		return ok;
 	}
 
@@ -6345,7 +6345,7 @@ static bool bif_sys_get_chars_3(query *q)
 	make_stringn(&tmp, data, dst-data);
 	bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	unshare_cell(&tmp);
-	free(data);
+	TPL_free(data);
 	return ok;
 }
 
@@ -6385,7 +6385,7 @@ static bool bif_sys_bread_3(query *q)
 
 			if (feof(str->fp)) {
 				clearerr(str->fp);
-				free(str->data);
+				TPL_free(str->data);
 				str->data = NULL;
 				return false;
 			}
@@ -6400,7 +6400,7 @@ static bool bif_sys_bread_3(query *q)
 		make_stringn(&tmp, str->data, str->data_len);
 		bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 		unshare_cell(&tmp);
-		free(str->data);
+		TPL_free(str->data);
 		str->data = NULL;
 		return ok;
 	}
@@ -6426,7 +6426,7 @@ static bool bif_sys_bread_3(query *q)
 		make_stringn(&tmp, str->data, nbytes);
 		bool ok = unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 		unshare_cell(&tmp);
-		free(str->data);
+		TPL_free(str->data);
 		str->data = NULL;
 		return ok;
 	}
@@ -6470,7 +6470,7 @@ static bool bif_sys_bread_3(query *q)
 
 	bool ok = unify(q, p2, p2_ctx, &tmp2, q->st.cur_ctx);
 	unshare_cell(&tmp2);
-	free(str->data);
+	TPL_free(str->data);
 	str->data = NULL;
 	return ok;
 }
@@ -6481,7 +6481,7 @@ static bool bif_sys_bflush_1(query *q)
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	fflush(str->fp);
-	free(str->data);
+	TPL_free(str->data);
 	str->data = NULL;
 	str->data_len = 0;
 	return true;
@@ -6534,7 +6534,7 @@ static bool bif_sys_readline_2(query *q)
 	if (!s) return false;
 	cell tmp;
 	make_string(&tmp, s);
-	free(s);
+	TPL_free(s);
 	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 }
 
@@ -6551,7 +6551,7 @@ static bool bif_sys_put_chars_1(query *q)
 	} else if ((scan_is_chars_list(q, p1, p1_ctx, true)) > 0) {
 		char *src = chars_list_to_string(q, p1, p1_ctx);
 		net_write(src, strlen(src), str);
-		free(src);
+		TPL_free(src);
 	} else if (is_nil(p1)) {
 		;
 	} else
@@ -6574,7 +6574,7 @@ static bool bif_sys_put_chars_2(query *q)
 	} else if ((scan_is_chars_list(q, p1, p1_ctx, true)) > 0) {
 		char *src = chars_list_to_string(q, p1, p1_ctx);
 		net_write(src, strlen(src), str);
-		free(src);
+		TPL_free(src);
 	} else if (is_nil(p1)) {
 		;
 	} else

@@ -179,7 +179,7 @@ or  more thoroughly (on MacOS):
 
 	make clean && make sanitize CC=clang && make test
 
-Should show no memory out-of-bounds, null-pointer, use after free
+Should show no memory out-of-bounds, null-pointer, use after TPL_free
 or memory leaks (there may a few spurious errors).
 
 

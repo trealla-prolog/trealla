@@ -92,7 +92,7 @@ void do_yield_at(query *q, unsigned int time_in_ms);
 
 inline static void init_queuen(query *q)
 {
-	free(q->queue[q->st.qnum]);
+	TPL_free(q->queue[q->st.qnum]);
 	q->queue[q->st.qnum] = NULL;
 	q->qp[q->st.qnum] = 0;
 	q->qcnt[q->st.qnum] = 0;

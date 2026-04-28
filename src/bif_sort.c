@@ -85,7 +85,7 @@ static cell *nodesort(query *q, cell *p1, pl_ctx p1_ctx, bool dedup, bool keysor
 		if (keysort) {
 			if (!is_compound(h) || strcmp(C_STR(q, h), "-")) {
 				*status = throw_error(q, h, h_ctx, "type_error", "pair");
-				free(base);
+				TPL_free(base);
 				return NULL;
 			}
 		}
@@ -108,7 +108,7 @@ static cell *nodesort(query *q, cell *p1, pl_ctx p1_ctx, bool dedup, bool keysor
 	int vnbr = create_vars(q, vars);
 
 	if (vnbr < 0) {
-		free(base);
+		TPL_free(base);
 		return NULL;
 	}
 
@@ -135,7 +135,7 @@ static cell *nodesort(query *q, cell *p1, pl_ctx p1_ctx, bool dedup, bool keysor
 	}
 
 	cell *l = end_list(q);
-	free(base);
+	TPL_free(base);
 	return l;
 }
 
@@ -308,7 +308,7 @@ static cell *nodesort4(query *q, cell *p1, pl_ctx p1_ctx, bool dedup, bool ascen
 	int vnbr = create_vars(q, vars);
 
 	if (vnbr < 0) {
-		free(base);
+		TPL_free(base);
 		return NULL;
 	}
 
@@ -335,7 +335,7 @@ static cell *nodesort4(query *q, cell *p1, pl_ctx p1_ctx, bool dedup, bool ascen
 	}
 
 	cell *l = end_list(q);
-	free(base);
+	TPL_free(base);
 	return l;
 }
 

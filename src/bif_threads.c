@@ -484,7 +484,7 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 
 				if (!is_peek) {
 					unshare_cells(m->c, m->c->num_cells);
-					free(m);
+					TPL_free(m);
 				}
 
 				drop_choice(q);
@@ -585,7 +585,7 @@ static bool bif_pl_thread_3(query *q)
 	struct stat st = {0};
 
 	if (stat(filename, &st)) {
-		free(filename);
+		TPL_free(filename);
 		return throw_error(q, p2, p2_ctx, "existence_error", "file");
 	}
 
@@ -664,7 +664,7 @@ static void *start_routine_thread_create(thread *t)
 	execute(t->q, t->goal, t->num_vars);
 	t->is_exception = t->q->did_unhandled_exception;
 	unshare_cells(t->goal, t->goal->num_cells);
-	free(t->goal);
+	TPL_free(t->goal);
 	t->goal = NULL;
 
 	if (t->is_exception) {
@@ -681,7 +681,7 @@ static void *start_routine_thread_create(thread *t)
 		//DUMP_TERM("***", t->at_exit_goal, q->st.cur_ctx, 0);
 		execute(t->q, t->at_exit_goal, t->at_exit_goal_num_vars);
 		unshare_cells(t->at_exit_goal, t->at_exit_goal->num_cells);
-		free(t->at_exit_goal);
+		TPL_free(t->at_exit_goal);
 		t->at_exit_goal = NULL;
 	}
 
@@ -702,17 +702,17 @@ static void *start_routine_thread_create(thread *t)
 
 	while ((m = list_pop_front(&t->queue)) != NULL) {
 		unshare_cells(m->c, m->c->num_cells);
-		free(m);
+		TPL_free(m);
 	}
 
 	while ((m = list_pop_front(&t->signals)) != NULL) {
 		unshare_cells(m->c, m->c->num_cells);
-		free(m);
+		TPL_free(m);
 	}
 
 	if (t->ball) {
 		unshare_cells(t->ball, t->ball->num_cells);
-		free(t->ball);
+		TPL_free(t->ball);
 		t->ball = NULL;
 	}
 
@@ -876,8 +876,8 @@ static bool bif_thread_create_3(query *q)
 
 	if (pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread_create, (void*)t) != 0) {
 		t->is_active = false;
-		free(t->goal);
-		free(t->at_exit_goal);
+		TPL_free(t->goal);
+		TPL_free(t->at_exit_goal);
 		query_destroy(t->q);
 		t->q = NULL;
 		return throw_error(q, p1, p1_ctx, "system_error", "pthread_create");
@@ -903,7 +903,7 @@ bool do_signal(query *q, void *thread_ptr)
 	cell *tmp = copy_term_to_heap(q, m->c, q->st.cur_ctx, false);	// Copy into thread
 	CHECKED(tmp);
 	unshare_cells(tmp, tmp->num_cells);
-	free(m);
+	TPL_free(m);
 	cell *tmp2 = prepare_call(q, CALL_NOSKIP, tmp, q->st.cur_ctx, 1);
 	ENSURE(tmp2);
 	pl_idx num_cells = tmp->num_cells;
@@ -968,7 +968,7 @@ static bool bif_thread_join_2(query *q)
 		cell *tmp = copy_term_to_heap(q, t->exit_code, q->st.cur_ctx, false);
 		CHECKED(tmp);
 		unshare_cells(t->exit_code, t->exit_code->num_cells);
-		free(t->exit_code);
+		TPL_free(t->exit_code);
 		t->exit_code = NULL;
 		GET_FIRST_ARG(p1,thread);
 		GET_NEXT_ARG(p2,any);
@@ -990,17 +990,17 @@ static bool bif_thread_join_2(query *q)
 
 	while ((m = list_pop_front(&t->queue)) != NULL) {
 		unshare_cells(m->c, m->c->num_cells);
-		free(m);
+		TPL_free(m);
 	}
 
 	while ((m = list_pop_front(&t->signals)) != NULL) {
 		unshare_cells(m->c, m->c->num_cells);
-		free(m);
+		TPL_free(m);
 	}
 
 	if (t->ball) {
 		unshare_cells(t->ball, t->ball->num_cells);
-		free(t->ball);
+		TPL_free(t->ball);
 		t->ball = NULL;
 	}
 
@@ -1008,7 +1008,7 @@ static bool bif_thread_join_2(query *q)
 		printf("*** at_exit...\n");
 		DUMP_TERM("***", t->at_exit_goal, q->st.cur_ctx, 0);
 		unshare_cells(t->at_exit_goal, t->at_exit_goal->num_cells);
-		free(t->at_exit_goal);
+		TPL_free(t->at_exit_goal);
 		t->at_exit_goal = NULL;
 	}
 
@@ -1033,7 +1033,7 @@ static void do_cancel(thread *t)
 	while ((m = list_pop_front(&t->queue)) != NULL) {
 		DUMP_TERM("***", m->c, q->st.cur_ctx, 0);
 		unshare_cells(m->c, m->c->num_cells);
-		free(m);
+		TPL_free(m);
 	}
 
 	if (list_count(&t->signals)) printf("*** signals...\n");
@@ -1041,14 +1041,14 @@ static void do_cancel(thread *t)
 	while ((m = list_pop_front(&t->signals)) != NULL) {
 		DUMP_TERM("***", m->c, q->st.cur_ctx, 0);
 		unshare_cells(m->c, m->c->num_cells);
-		free(m);
+		TPL_free(m);
 	}
 
 	if (t->ball) {
 		printf("*** ball...\n");
 		DUMP_TERM("***", t->ball, q->st.cur_ctx, 0);
 		unshare_cells(t->ball, t->ball->num_cells);
-		free(t->ball);
+		TPL_free(t->ball);
 		t->ball = NULL;
 	}
 
@@ -1552,7 +1552,7 @@ static bool bif_message_queue_destroy_1(query *q)
 
 	while ((m = list_pop_front(&t->queue)) != NULL) {
 		unshare_cells(m->c, m->c->num_cells);
-		free(m);
+		TPL_free(m);
 	}
 
 	sl_destroy(t->alias);
@@ -2306,7 +2306,7 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_ctx p1_ct
 
 	if (!is_peek) {
 		unshare_cells(m->c, m->c->num_cells);
-		free(m);
+		TPL_free(m);
 	}
 
 	drop_choice(q);

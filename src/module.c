@@ -243,9 +243,9 @@ static void clear_loaded(const module *m)
 	while (ptr) {
 		loaded_file *save = ptr;
 		ptr = ptr->next;
-		if (save->orig_filename) free(save->orig_filename);
-		if (save->filename) free(save->filename);
-		free(save);
+		if (save->orig_filename) TPL_free(save->orig_filename);
+		if (save->filename) TPL_free(save->filename);
+		TPL_free(save);
 	}
 }
 
@@ -268,7 +268,7 @@ void make(module *m)
 
 				unload_file(m, parent_filename);
 				load_file(m, parent_filename, false, true);
-				free(parent_filename);
+				TPL_free(parent_filename);
 			}
 		}
 
@@ -376,7 +376,7 @@ static void abolish_predicate(predicate *pr)
 		rule *tmp = pr->head;
 		pr->head = pr->head->next;
 		clear_clause(&tmp->cl);
-		free(tmp);
+		TPL_free(tmp);
 		pr->cnt--;
 	}
 
@@ -387,7 +387,7 @@ static void abolish_predicate(predicate *pr)
 
 	if (pr->meta_args) {
 		unshare_cells(pr->meta_args, pr->meta_args->num_cells);
-		free(pr->meta_args);
+		TPL_free(pr->meta_args);
 		pr->meta_args = NULL;
 	}
 }
@@ -400,7 +400,7 @@ static void destroy_predicate(module *m, predicate *pr)
 		rule *tmp = pr->head;
 		pr->head = pr->head->next;
 		clear_clause(&tmp->cl);
-		free(tmp);
+		TPL_free(tmp);
 	}
 
 	pr->head = pr->tail = NULL;
@@ -409,11 +409,11 @@ static void destroy_predicate(module *m, predicate *pr)
 
 	if (pr->meta_args) {
 		unshare_cells(pr->meta_args, pr->meta_args->num_cells);
-		free(pr->meta_args);
+		TPL_free(pr->meta_args);
 	}
 
 	list_remove(&m->predicates, pr);
-	free(pr);
+	TPL_free(pr);
 }
 
 bool find_goal_expansion(module *m, cell *c)
@@ -697,7 +697,7 @@ static void purge_properties(predicate *pr)
 				pr->tail = save->next;
 
 			clear_clause(&save->cl);
-			free(save);
+			TPL_free(save);
 		}
 	}
 }
@@ -755,7 +755,7 @@ void clear_property(module *m, const char *name, unsigned arity)
 
 			sl_rem(pr->idx1, c, save);
 			clear_clause(&save->cl);
-			free(save);
+			TPL_free(save);
 		}
 	}
 }
@@ -842,12 +842,12 @@ void set_meta_predicate_in_db(module *m, cell *c)
 		char *dst = print_canonical_to_strbuf(&q, c, 0, 0);
 		char tmpbuf[1024];
 		snprintf(tmpbuf, sizeof(tmpbuf), "meta_predicate(%s)", dst);
-		free(dst);
+		TPL_free(dst);
 		push_property(m, name, arity, tmpbuf);
 
 		if (pr->meta_args) {
 			unshare_cells(pr->meta_args, pr->meta_args->num_cells);
-			free(pr->meta_args);
+			TPL_free(pr->meta_args);
 		}
 
 		pr->is_meta_predicate = true;
@@ -942,7 +942,7 @@ static bool do_use_module(module *cur_m, cell *c, module **mptr)
 			SB_sprintf(s1, "library%c%s", '/', lib->name);
 			m = load_text(cur_m, src, SB_cstr(s1));
 			SB_free(s1);
-			free(src);
+			TPL_free(src);
 
 			if (m != cur_m)
 				cur_m->used[cur_m->idx_used++] = m;
@@ -974,7 +974,7 @@ static bool do_use_module(module *cur_m, cell *c, module **mptr)
 		SB_sprintf(s1, "library/%s", lib->name);
 		m = load_text(cur_m, src, SB_cstr(s1));
 		SB_free(s1);
-		free(src);
+		TPL_free(src);
 
 		if (m != cur_m)
 			cur_m->used[cur_m->idx_used++] = m;
@@ -987,11 +987,11 @@ static bool do_use_module(module *cur_m, cell *c, module **mptr)
 
 	if (!(m = load_file(cur_m, filename, false, true))) {
 		fprintf(stderr, "Warning: module file not found: %s\n", filename);
-		free(filename);
+		TPL_free(filename);
 		return false;
 	}
 
-	free(filename);
+	TPL_free(filename);
 
 	if (m != cur_m)
 		cur_m->used[cur_m->idx_used++] = m;
@@ -1582,7 +1582,7 @@ static bool check_not_multifile(module *m, predicate *pr, rule *r)
 				rule *tmp = pr->head;
 				pr->head = pr->head->next;
 				clear_clause(&tmp->cl);
-				free(tmp);
+				TPL_free(tmp);
 			}
 
 			pr->head = pr->tail = NULL;
@@ -1594,7 +1594,7 @@ static bool check_not_multifile(module *m, predicate *pr, rule *r)
 			sl_destroy(pr->idx2);
 			sl_destroy(pr->idx1);
 			pr->idx2 = pr->idx1 = NULL;
-			free(r);
+			TPL_free(r);
 			return false;
 		}
 	}
@@ -2217,17 +2217,17 @@ bool unload_file(module *m, const char *filename)
 		strcat(tmpbuf, ".pl");
 
 		if (!(realbuf = realpath(tmpbuf, NULL))) {
-			free(savebuf);
-			free(tmpbuf);
+			TPL_free(savebuf);
+			TPL_free(tmpbuf);
 			return false;
 		}
 	}
 
-	free(savebuf);
-	free(tmpbuf);
+	TPL_free(savebuf);
+	TPL_free(tmpbuf);
 	filename = realbuf;
 	bool ok = unload_realfile(m, filename);
-	free(realbuf);
+	TPL_free(realbuf);
 	return ok;
 }
 
@@ -2318,7 +2318,7 @@ bool restore_log(module *m, const char *filename)
 		size_t n = 0;
 
 		if (getline(&line, &n, fp) < 0) {
-			free(line);
+			TPL_free(line);
 			break;
 		}
 
@@ -2450,8 +2450,8 @@ module *load_file(module *m, const char *filename, bool including, bool init)
 		}
 	}
 
-	free(savebuf);
-	free(tmpbuf);
+	TPL_free(savebuf);
+	TPL_free(tmpbuf);
 
 	if (!realbuf)
 		return NULL;
@@ -2460,7 +2460,7 @@ module *load_file(module *m, const char *filename, bool including, bool init)
 		set_unloaded(m, realbuf);
 
 	else if (is_loaded(m, realbuf)) {
-		free(realbuf);
+		TPL_free(realbuf);
 		return m;
 	}
 
@@ -2473,8 +2473,8 @@ module *load_file(module *m, const char *filename, bool including, bool init)
 		strcpy(tmpbuf, orig_filename);
 		strcat(tmpbuf, ".pl");
 		m = load_file(m, tmpbuf, including, init);
-		free(tmpbuf);
-		free(realbuf);
+		TPL_free(tmpbuf);
+		TPL_free(realbuf);
 		return m;
 	}
 
@@ -2482,7 +2482,7 @@ module *load_file(module *m, const char *filename, bool including, bool init)
 	FILE *fp = fopen(filename, "r");
 
 	if (!fp) {
-		free(realbuf);
+		TPL_free(realbuf);
 		return NULL;
 	}
 
@@ -2498,7 +2498,7 @@ module *load_file(module *m, const char *filename, bool including, bool init)
 	clearerr(fp);
 	module *save_m = load_fp(m, fp, filename, including, init);
 	fclose(fp);
-	free(realbuf);
+	TPL_free(realbuf);
 	return save_m;
 }
 
@@ -2549,14 +2549,14 @@ void module_destroy(module *m)
 	op_table *opptr;
 
 	while (sl_next(iter, (void**)&opptr))
-		free(opptr);
+		TPL_free(opptr);
 
 	sl_done(iter);
 	sl_destroy(m->defops);
 	iter = sl_first(m->ops);
 
 	while (sl_next(iter, (void**)&opptr))
-		free(opptr);
+		TPL_free(opptr);
 
 	sl_done(iter);
 	sl_destroy(m->ops);
@@ -2568,7 +2568,7 @@ void module_destroy(module *m)
 	while (m->gex_head) {
 		pi *save = m->gex_head;
 		m->gex_head = m->gex_head->next;
-		free(save);
+		TPL_free(save);
 	}
 
 	if (m->fp)
@@ -2578,7 +2578,7 @@ void module_destroy(module *m)
 	parser_destroy(m->p);
 	clear_loaded(m);
 	list_remove(&m->pl->modules, m);
-	free(m);
+	TPL_free(m);
 }
 
 void module_duplicate(prolog *pl, module *m, const char *name, unsigned arity)

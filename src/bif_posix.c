@@ -75,14 +75,14 @@ static bool bif_posix_strftime_3(query *q)
 		if (strftime(buffer, length, format, &tm) > 0) {
 			cell tmp;
 			make_string(&tmp, buffer);
-			free(buffer);
+			TPL_free(buffer);
 			bool ok = unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx);
 			unshare_cell(&tmp);
 			return ok;
 		}
 	}
 
-	free(buffer);
+	TPL_free(buffer);
 	return false;
 }
 
