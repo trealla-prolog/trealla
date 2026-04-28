@@ -20,11 +20,11 @@ int format_integer(char *dst, cell *c, int grouping, int sep, int decimals, int 
 		tmpbuf2 = xtmpbuf2;
 	} else {
 		size_t len = mp_int_string_len(&c->val_bigint->ival, radix) - 1;
-		tmpbuf1 = malloc(len+1);
+		tmpbuf1 = TPL_malloc(len+1);
 		check_error(tmpbuf1);
 		mp_int_to_string(&c->val_bigint->ival, radix, tmpbuf1, len+1);
 		len *= 2;
-		tmpbuf2 = malloc(len+1);
+		tmpbuf2 = TPL_malloc(len+1);
 		check_error(tmpbuf2);
 	}
 
@@ -142,7 +142,7 @@ static bool is_more_data(query *q, list_reader_t *fmt)
 	if (n >= tmpbuf_free) {									\
 		size_t save_offset = dst - tmpbuf;					\
 		tmpbuf_size += n;									\
-		tmpbuf = realloc(tmpbuf, (tmpbuf_size*=2));			\
+		tmpbuf = TPL_realloc(tmpbuf, (tmpbuf_size*=2));			\
 		CHECKED(tmpbuf);							\
 		dst = tmpbuf + save_offset;							\
 		tmpbuf_free = tmpbuf_size - save_offset;			\
@@ -163,7 +163,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 	fmt2.p_ctx = p2_ctx;
 
 	size_t tmpbuf_size = 1024*8;
-	char *tmpbuf = malloc(tmpbuf_size);
+	char *tmpbuf = TPL_malloc(tmpbuf_size);
 	CHECKED(tmpbuf);
 	char *dst = tmpbuf;
 	*dst = '\0';
@@ -175,14 +175,15 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 
 	bool is_partial = false;
 
-	if (p2 && !check_list(q, p2, p2_ctx, &is_partial, NULL) && is_partial)
+	if (p2 && !check_list(q, p2, p2_ctx, &is_partial, NULL) && is_partial) {
+		free(tmpbuf);
 		return throw_error(q, p2, p2_ctx, "instantiation_error", "atom");
+	}
 
 	while (is_more_data(q, &fmt1)) {
 		int argval = 0, noargval = 1, argval_specified = 0;
 		int pos = dst - tmpbuf + 1;
 		list_reader_t tmp_fmt1 = fmt1, tmp_fmt2 = fmt2;
-
 		int ch = get_next_char(q, &fmt1);
 
 		if (ch != '~') {
@@ -199,11 +200,15 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			bool is_var;
 			cell *c = get_next_cell(q, &fmt2, &is_var, &c_ctx);
 
-			if (is_var)
+			if (is_var) {
+				free(tmpbuf);
 				return throw_error(q, p2, p2_ctx, "instantiation_error", "atom");
+			}
 
-			if (is_negative(c))
+			if (is_negative(c)) {
+				free(tmpbuf);
 				return throw_error(q, p2, p2_ctx, "domain_error", "positive");
+			}
 
 			cell p1 = eval(q, c);
 			c = &p1;
@@ -357,17 +362,23 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			continue;
 		}
 
-		if (!p2 || !is_list(p2))
+		if (!p2 || !is_list(p2)) {
+			free(tmpbuf);
 			return throw_error(q, make_nil(), q->st.cur_ctx, "domain_error", "non_empty_list");
+		}
 
 		bool is_var;
 		cell *c = get_next_cell(q, &fmt2, &is_var, &c_ctx);
 
-		if (is_var)
+		if (is_var) {
+			free(tmpbuf);
 			return throw_error(q, p2, p2_ctx, "instantiation_error", "atom");
+		}
 
-		if (!c)
+		if (!c) {
+			free(tmpbuf);
 			return throw_error(q, make_nil(), p2_ctx, "domain_error", "non_empty_list");
+		}
 
 		if (ch == 'i')
 			continue;
@@ -761,8 +772,10 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			pl_ctx c2_ctx;
 			cell *c2 = get_next_cell(q, &fmt2, &is_var, &c2_ctx);
 
-			if (!c2)
+			if (!c2) {
+				free(tmpbuf);
 				return throw_error(q, c, c_ctx, "domain_error", "empty_list1");
+			}
 
 			q->flags = q->st.m->flags;
 			q->numbervars = false;
@@ -786,11 +799,13 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			}
 
 			if (is_var(c2)) {
+				free(tmpbuf);
 				clear_write_options(q);
 				return throw_error(q, c2, c2_ctx, "instantiation_error", "write_option");
 			}
 
 			if (!is_nil(c2)) {
+				free(tmpbuf);
 				clear_write_options(q);
 				return throw_error(q, c2, c2_ctx, "type_error", "list");
 			}
@@ -799,6 +814,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			char *tmpbuf2 = print_term_to_strbuf(q, c, c_ctx, 1);
 
 			if (q->cycle_error) {
+				free(tmpbuf2);
 				free(tmpbuf);
 				return throw_error(q, c, q->st.cur_ctx, "resource_error", "cyclic");
 			}
@@ -829,11 +845,15 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 		bool is_var;
 		cell *c = get_next_cell(q, &fmt2, &is_var, &c_ctx);
 
-		if (is_var)
+		if (is_var) {
+			free(tmpbuf);
 			return throw_error(q, p2, p2_ctx, "instantiation_error", "atom");
+		}
 
-		if (c)
+		if (c) {
+			free(tmpbuf);
 			return throw_error(q, save_l, save_l_ctx, "domain_error", "empty_list");
+		}
 	}
 
 	if (str == NULL) {

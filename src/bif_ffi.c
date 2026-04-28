@@ -87,7 +87,7 @@ void *do_dlopen(const char *filename, int flag)
 	char *filename2;
 
 	if (ptr) {
-		filename2 = malloc((strlen(filename)-2)+5+1);
+		filename2 = TPL_malloc((strlen(filename)-2)+5+1);
 		const char *src = filename;
 		char *dst = filename2;
 
@@ -2027,7 +2027,7 @@ static bool bif_sys_struct_to_pointer_2(query *q)
 	}
 
 	size_t len = dst - tmpbuf;
-	char *ptr = malloc(len);
+	char *ptr = TPL_malloc(len);
 	memcpy(ptr, tmpbuf, len);
 
 	cell tmp;

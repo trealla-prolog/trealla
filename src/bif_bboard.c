@@ -54,7 +54,7 @@ static bool bif_bb_b_put_2(query *q)
 	cell *tmp = copy_term_to_tmp(q, p2, p2_ctx, false);
 	CHECKED(tmp);
 	pl_idx num_cells = tmp->num_cells;
-	cell *val = malloc(sizeof(cell)*num_cells);
+	cell *val = TPL_malloc(sizeof(cell)*num_cells);
 	CHECKED(val);
 	dup_cells(val, tmp, tmp->num_cells);
 
@@ -63,7 +63,7 @@ static bool bif_bb_b_put_2(query *q)
 
 	cell c, v;
 	make_ref(&c, var_num, q->st.cur_ctx);
-	blob *b = calloc(1, sizeof(blob));
+	blob *b = TPL_calloc(1, sizeof(blob));
 	b->ptr = (void*)m;
 	b->ptr2 = (void*)strdup(key);
 	make_kvref(&v, b);
@@ -123,7 +123,7 @@ static bool bif_bb_put_2(query *q)
 	cell *tmp = copy_term_to_tmp(q, p2, p2_ctx, false);
 	CHECKED(tmp);
 	pl_idx num_cells = tmp->num_cells;
-	cell *val = malloc(sizeof(cell)*num_cells);
+	cell *val = TPL_malloc(sizeof(cell)*num_cells);
 	CHECKED(val);
 	dup_cells(val, tmp, tmp->num_cells);
 
@@ -349,7 +349,7 @@ static bool bif_bb_update_3(query *q)
 	key = strdup(tmpbuf);
 	tmp = copy_term_to_heap(q, p3, p3_ctx, false);
 	CHECKED(tmp, prolog_unlock(q->pl));
-	cell *value = malloc(sizeof(cell)*tmp->num_cells);
+	cell *value = TPL_malloc(sizeof(cell)*tmp->num_cells);
 	CHECKED(value, prolog_unlock(q->pl));
 	dup_cells(value, tmp, tmp->num_cells);
 

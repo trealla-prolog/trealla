@@ -19,7 +19,7 @@ size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, 
 	void *mem;
 
 	do {
-		mem = realloc(*addr, elem_size * elements);
+		mem = TPL_realloc(*addr, elem_size * elements);
 		if (mem) break;
 		elements = min_elements + (elements - min_elements) / 2;
 	}
@@ -41,7 +41,7 @@ size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, 
 cell *init_tmp_heap(query *q)
 {
 	if (!q->tmp_heap) {
-		q->tmp_heap = malloc(q->tmph_size * sizeof(cell));
+		q->tmp_heap = TPL_malloc(q->tmph_size * sizeof(cell));
 		if (!q->tmp_heap) return NULL;
 	}
 
@@ -50,7 +50,7 @@ cell *init_tmp_heap(query *q)
 }
 
 // The tmp heap is used for temporary allocations (a scratch-pad)
-// for work in progress. As such it can survive a realloc() call.
+// for work in progress. As such it can survive a TPL_realloc() call.
 // No need to incr refcnt on tmp heap cells.
 
 cell *alloc_tmp(query *q, unsigned num_cells)
@@ -366,14 +366,14 @@ cell *copy_term_to_tmp(query *q, cell *p1, pl_ctx p1_ctx, bool copy_attrs)
 
 cell *alloc_heap(query *q, unsigned num_cells)
 {
-	size_t page_size = q->heap_pages ? q->heap_pages->page_size * 2 : q->heap_size;
+	size_t page_size = q->heap_pages ? q->heap_pages->page_size*5/4 : q->heap_size;
 
 	if (!q->heap_pages || ((q->st.hp + num_cells) >= q->heap_pages->page_size))  {
-		page *a = calloc(1, sizeof(page));
+		page *a = TPL_calloc(1, sizeof(page));
 		if (!a) return NULL;
 		a->next = q->heap_pages;
 		unsigned n = MAX_OF(page_size, num_cells);
-		a->cells = calloc(a->page_size=n, sizeof(cell));
+		a->cells = TPL_calloc(a->page_size=n, sizeof(cell));
 		if (!a->cells) { free(a); return NULL; }
 		a->num = ++q->st.heap_num;
 		q->heap_pages = a;
@@ -622,13 +622,13 @@ cell *end_structure(query *q)
 cell *alloc_queuen(query *q, unsigned qnum, const cell *c)
 {
 	if (!q->queue[qnum]) {
-		q->queue[qnum] = malloc(sizeof(cell)*q->q_size[qnum]);
+		q->queue[qnum] = TPL_malloc(sizeof(cell)*q->q_size[qnum]);
 		if (!q->queue[qnum]) return NULL;
 	}
 
 	while ((q->qp[qnum]+c->num_cells) >= q->q_size[qnum]) {
 		size_t n = q->q_size[qnum] + q->q_size[qnum] / 2;
-		void *ptr = realloc(q->queue[qnum], sizeof(cell)*n);
+		void *ptr = TPL_realloc(q->queue[qnum], sizeof(cell)*n);
 		if (!ptr) return NULL;
 
 		//unsigned mbs = (unsigned)(sizeof(cell)*n)/1024/1024;

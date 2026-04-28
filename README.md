@@ -917,7 +917,7 @@ Assuming the following C-code in *samples/foo.c*:
 
 	char *baz(const char *x, const char *y)
 	{
-		char *s = malloc(strlen(x) + strlen(y) + 1);
+		char *s = TPL_malloc(strlen(x) + strlen(y) + 1);
 		strcpy(s, x);
 		strcat(s, y);
 		return s;

@@ -122,7 +122,7 @@ static bool bif_sys_unifiable_3(query *q)
 		slot *e = get_slot(q, f, tr->var_num);
 		cell *c = deref(q, &e->c, e->c.val_ctx);
 		pl_ctx c_ctx = q->latest_ctx;
-		cell *tmp = malloc(sizeof(cell)*(2+c->num_cells));
+		cell *tmp = TPL_malloc(sizeof(cell)*(2+c->num_cells));
 		CHECKED(tmp);
 		make_instr(tmp, g_unify_s, bif_iso_unify_2, 2, 1+c->num_cells);
 		SET_OP(tmp, OP_XFX);
@@ -4110,7 +4110,7 @@ static int do_b64encode_2(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2
 {
 	const char *str = C_STR(q, p1);
 	size_t len = C_STRLEN(q, p1);
-	char *dstbuf = malloc((len*3)+1);	// BASE64 can increase length x3
+	char *dstbuf = TPL_malloc((len*3)+1);	// BASE64 can increase length x3
 	CHECKED(dstbuf);
 	b64_encode(str, len, &dstbuf, 0, 0);
 	cell tmp;
@@ -4125,7 +4125,7 @@ static int do_b64decode_2(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2
 {
 	const char *str = C_STR(q, p2);
 	size_t len = C_STRLEN(q, p2);
-	char *dstbuf = malloc(len+1);
+	char *dstbuf = TPL_malloc(len+1);
 	CHECKED(dstbuf);
 	b64_decode(str, len, &dstbuf);
 	cell tmp;
@@ -4218,7 +4218,7 @@ static bool do_urlencode_2(query *q)
 	GET_NEXT_ARG(p2,var);
 	const char *str = C_STR(q, p1);
 	size_t len = C_STRLEN(q, p1);
-	char *dstbuf = malloc((len*3)+1);	// URL's can increase length x3
+	char *dstbuf = TPL_malloc((len*3)+1);	// URL's can increase length x3
 	CHECKED(dstbuf);
 	url_encode(str, len, dstbuf, (len*3)+1);
 	cell tmp;
@@ -4240,7 +4240,7 @@ static bool do_urldecode_2(query *q)
 	GET_NEXT_ARG(p2,atom);
 	const char *str = C_STR(q, p2);
 	size_t len = C_STRLEN(q, p2);
-	char *dstbuf = malloc(len+1);
+	char *dstbuf = TPL_malloc(len+1);
 	CHECKED(dstbuf);
 	url_decode(str, dstbuf);
 	cell tmp;
@@ -4275,7 +4275,7 @@ static bool bif_atom_lower_2(query *q)
 	GET_NEXT_ARG(p2,iso_atom_or_var);
 	const char *src = C_STR(q, p1);
 	size_t len = substrlen_utf8(src, C_STRLEN(q, p1));
-	char *tmps = malloc((len*MAX_BYTES_PER_CODEPOINT)+1);
+	char *tmps = TPL_malloc((len*MAX_BYTES_PER_CODEPOINT)+1);
 	CHECKED(tmps);
 	char *dst = tmps;
 
@@ -4300,7 +4300,7 @@ static bool bif_atom_upper_2(query *q)
 	GET_NEXT_ARG(p2,iso_atom_or_var);
 	const char *src = C_STR(q, p1);
 	size_t len = substrlen_utf8(src, C_STRLEN(q, p1));
-	char *tmps = malloc((len*MAX_BYTES_PER_CODEPOINT)+1);
+	char *tmps = TPL_malloc((len*MAX_BYTES_PER_CODEPOINT)+1);
 	CHECKED(tmps);
 	char *dst = tmps;
 
@@ -4325,7 +4325,7 @@ static bool bif_string_lower_2(query *q)
 	GET_NEXT_ARG(p2,atom_or_var);
 	const char *src = C_STR(q, p1);
 	size_t len = substrlen_utf8(src, C_STRLEN(q, p1));
-	char *tmps = malloc((len*MAX_BYTES_PER_CODEPOINT)+1);
+	char *tmps = TPL_malloc((len*MAX_BYTES_PER_CODEPOINT)+1);
 	CHECKED(tmps);
 	char *dst = tmps;
 
@@ -4350,7 +4350,7 @@ static bool bif_string_upper_2(query *q)
 	GET_NEXT_ARG(p2,atom_or_var);
 	const char *src = C_STR(q, p1);
 	size_t len = substrlen_utf8(src, C_STRLEN(q, p1));
-	char *tmps = malloc((len*MAX_BYTES_PER_CODEPOINT)+1);
+	char *tmps = TPL_malloc((len*MAX_BYTES_PER_CODEPOINT)+1);
 	CHECKED(tmps);
 	char *dst = tmps;
 
@@ -4429,7 +4429,7 @@ static bool bif_hex_chars_2(query *q)
 
 		if (is_bigint(p1)) {
 			size_t len = mp_int_string_len(&p1->val_bigint->ival, 16) -1;
-			dst = malloc(len+10);
+			dst = TPL_malloc(len+10);
 			CHECKED(dst);
 			mp_int_to_string(&p1->val_bigint->ival, 16, dst, len+1);
 		} else {
@@ -4454,7 +4454,7 @@ static bool bif_hex_chars_2(query *q)
 
 	if (mp_int_to_int(&v2, &val) == MP_RANGE) {
 		tmp.tag = TAG_INT;
-		tmp.val_bigint = malloc(sizeof(bigint));
+		tmp.val_bigint = TPL_malloc(sizeof(bigint));
 		CHECKED(tmp.val_bigint);
 		tmp.val_bigint->refcnt = 1;
 		mp_int_init_copy(&tmp.val_bigint->ival, &v2);
@@ -4483,7 +4483,7 @@ static bool bif_octal_chars_2(query *q)
 
 		if (is_bigint(p1)) {
 			size_t len = mp_int_string_len(&p1->val_bigint->ival, 8) -1;
-			dst = malloc(len+10);
+			dst = TPL_malloc(len+10);
 			CHECKED(dst);
 			mp_int_to_string(&p1->val_bigint->ival, 8, dst, len+1);
 		} else {
@@ -4508,7 +4508,7 @@ static bool bif_octal_chars_2(query *q)
 
 	if (mp_int_to_int(&v2, &val) == MP_RANGE) {
 		tmp.tag = TAG_INT;
-		tmp.val_bigint = malloc(sizeof(bigint));
+		tmp.val_bigint = TPL_malloc(sizeof(bigint));
 		CHECKED(tmp.val_bigint);
 		tmp.val_bigint->refcnt = 1;
 		mp_int_init_copy(&tmp.val_bigint->ival, &v2);
@@ -5591,7 +5591,7 @@ static bool bif_sys_integer_in_radix_3(query *q)
 
 	if (is_bigint(p1)) {
 		size_t len = mp_int_string_len(&p1->val_bigint->ival, radix) - 1;
-		char *dst = malloc(len+1);
+		char *dst = TPL_malloc(len+1);
 		mp_int_to_string(&p1->val_bigint->ival, radix, dst, len+1);
 		make_string(&tmp, dst);
 		free(dst);

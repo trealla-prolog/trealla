@@ -16,7 +16,7 @@
 	if (errno == ENOMEM)										\
 		return throw_error(q, &p1, q->st.cur_ctx, "resource_error", "memory"); \
 	q->accum.tag = TAG_INT;										\
-	q->accum.val_bigint = malloc(sizeof(bigint));				\
+	q->accum.val_bigint = TPL_malloc(sizeof(bigint));				\
 	if (errno == ENOMEM)										\
 		return throw_error(q, &p1, q->st.cur_ctx, "resource_error", "memory"); \
 	if (mp_int_init_copy(&q->accum.val_bigint->ival, &q->tmp_ival) == MP_MEMORY) {\
@@ -32,7 +32,7 @@
 	if (errno == ENOMEM)										\
 		return throw_error(q, p1, q->st.cur_ctx, "resource_error", "memory"); \
 	q->accum.tag = TAG_INT;										\
-	q->accum.val_bigint = malloc(sizeof(bigint));				\
+	q->accum.val_bigint = TPL_malloc(sizeof(bigint));				\
 	if (errno == ENOMEM)										\
 		return throw_error(q, p1, q->st.cur_ctx, "resource_error", "memory"); \
 	if (mp_int_init_copy(&q->accum.val_bigint->ival, &q->tmp_ival) == MP_MEMORY) {\
@@ -50,7 +50,7 @@
 	mp_rat_reduce(&q->tmp_irat);	\
 	if (mp_int_compare_value(&q->tmp_irat.den, 1)) { \
 		q->accum.tag = TAG_RATIONAL;										\
-		q->accum.val_bigint = malloc(sizeof(bigint));				\
+		q->accum.val_bigint = TPL_malloc(sizeof(bigint));				\
 		if (errno == ENOMEM)										\
 			return throw_error(q, &p1, q->st.cur_ctx, "resource_error", "memory"); \
 		if (mp_rat_init_copy(&q->accum.val_bigint->irat, &q->tmp_irat) == MP_MEMORY) {\
@@ -60,7 +60,7 @@
 		q->accum.val_bigint->refcnt = 0;							\
 	} else { \
 		q->accum.tag = TAG_INT;										\
-		q->accum.val_bigint = malloc(sizeof(bigint));				\
+		q->accum.val_bigint = TPL_malloc(sizeof(bigint));				\
 		if (errno == ENOMEM)										\
 			return throw_error(q, &p1, q->st.cur_ctx, "resource_error", "memory"); \
 		if (mp_int_init_copy(&q->accum.val_bigint->ival, &q->tmp_irat.num) == MP_MEMORY) {\
@@ -538,7 +538,7 @@ static bool bif_numerator_1(query *q)
 	}
 
 	q->accum.tag = TAG_INT;
-	q->accum.val_bigint = malloc(sizeof(bigint));
+	q->accum.val_bigint = TPL_malloc(sizeof(bigint));
 	if (errno == ENOMEM)
 		return throw_error(q, &p1, q->st.cur_ctx, "resource_error", "memory");
 	mp_int_init_copy(&q->accum.val_bigint->ival, &p1.val_bigint->irat.num);
@@ -566,7 +566,7 @@ static bool bif_denominator_1(query *q)
 	}
 
 	q->accum.tag = TAG_INT;
-	q->accum.val_bigint = malloc(sizeof(bigint));
+	q->accum.val_bigint = TPL_malloc(sizeof(bigint));
 	if (errno == ENOMEM)
 		return throw_error(q, &p1, q->st.cur_ctx, "resource_error", "memory");
 	mp_int_init_copy(&q->accum.val_bigint->ival, &p1.val_bigint->irat.den);

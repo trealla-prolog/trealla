@@ -37,22 +37,3 @@ void *list_back(list *l);
 void *list_prev(void *n);
 void *list_next(void *n);
 
-// This is an external list
-
-typedef struct lxnode_ {
-	struct lxnode_ *prev, *next;
-	void *entry;
-} lxnode;
-
-typedef struct {
-	lxnode *front, *back;
-	unsigned long long cnt;
-} listx;
-
-void listx_init(listx *l);
-void listx_push_front(listx *l, void *e);
-void listx_push_back(listx *l, void *e);
-void *listx_pop_front(listx *l);
-void *listx_pop_back(listx *l);
-
-unsigned long long listx_count(listx *l);

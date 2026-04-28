@@ -249,7 +249,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
     else
     {
       //Non standard extension that glibc uses
-      return_path = malloc(PATH_MAX);
+      return_path = TPL_malloc(PATH_MAX);
     }
 
     if (return_path) //Else EINVAL
@@ -265,7 +265,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
           size_t new_size;
 
           free(return_path);
-          return_path = malloc(size);
+          return_path = TPL_malloc(size);
 
           if (return_path)
           {
@@ -285,7 +285,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
           else
           {
             //I wasn't sure what to return here, but the standard does say to return EINVAL
-            //if resolved_path is null, and in this case we couldn't malloc large enough buffer
+            //if resolved_path is null, and in this case we couldn't TPL_malloc large enough buffer
             errno = EINVAL;
           }
         }
@@ -376,7 +376,7 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
     }
 
     if (*lineptr == NULL) {
-        *lineptr = malloc(128);
+        *lineptr = TPL_malloc(128);
  		check_error(*lineptr);
        if (*lineptr == NULL) {
             return -1;
@@ -391,7 +391,7 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
             if (new_size < 128) {
                 new_size = 128;
             }
-            char *new_ptr = realloc(*lineptr, new_size);
+            char *new_ptr = TPL_realloc(*lineptr, new_size);
             if (new_ptr == NULL) {
                 return -1;
             }
@@ -3802,7 +3802,7 @@ static bool bif_read_term_from_chars_3(query *q)
 			return throw_error(q, p_chars, p_chars_ctx, "type_error", "character");
 	} else if (is_string(p_chars)) {
 		len = C_STRLEN(q, p_chars);
-		src = malloc(len+1+1);		// +1 is to allow adding a '.'
+		src = TPL_malloc(len+1+1);		// +1 is to allow adding a '.'
 		CHECKED(src);
 		memcpy(src, C_STR(q, p_chars), len);
 		src[len] = '\0';
@@ -3867,7 +3867,7 @@ static bool bif_read_term_from_atom_3(query *q)
 
 	if (is_atom(p_chars)) {
 		len = C_STRLEN(q, p_chars);
-		src = malloc(len+1+1);	// final +1 is for look-ahead
+		src = TPL_malloc(len+1+1);	// final +1 is for look-ahead
 		CHECKED(src);
 		memcpy(src, C_STR(q, p_chars), len);
 		src[len] = '\0';
@@ -4291,7 +4291,7 @@ static bool bif_read_file_to_string_3(query *q)
 	}
 
 	size_t len = st.st_size - offset;
-	char *s = malloc(len+1);
+	char *s = TPL_malloc(len+1);
 	CHECKED(s, fclose(fp));
 
 	if (fread(s, 1, len, fp) != (size_t)len) {
@@ -4509,7 +4509,7 @@ static bool bif_loadfile_2(query *q)
 	}
 
 	size_t len = st.st_size - offset;
-	char *s = malloc(len+1);
+	char *s = TPL_malloc(len+1);
 	CHECKED(s, fclose(fp));
 
 	if (fread(s, 1, len, fp) != (size_t)len) {
@@ -4904,7 +4904,7 @@ static bool bif_absolute_file_name_3(query *q)
 		}
 
 		size_t buflen = strlen(ptr)+1+strlen(s)+1;
-		tmpbuf = malloc(buflen);
+		tmpbuf = TPL_malloc(buflen);
 		CHECKED(tmpbuf);
 		snprintf(tmpbuf, buflen, "%s/%s", ptr, s);
 		char *tmpbuf2;
@@ -4927,7 +4927,7 @@ static bool bif_absolute_file_name_3(query *q)
 #endif
 				) {
 				size_t buflen = strlen(tmpbuf)+1+strlen(s)+1;
-				char *tmp = malloc(buflen);
+				char *tmp = TPL_malloc(buflen);
 				CHECKED(tmp, free(tmpbuf));
 				snprintf(tmp, buflen, "%s/%s", tmpbuf, s);
 				free(tmpbuf);
@@ -5880,7 +5880,7 @@ static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 					return throw_error(q, c+2, h1_ctx, "type_error", "atom");
 
 				size_t len1 = C_STRLEN(q, c+1);
-				char *dstbuf1 = malloc(len1+1);
+				char *dstbuf1 = TPL_malloc(len1+1);
 				CHECKED(dstbuf1);
 				url_encode(C_STR(q, c+1), len1, dstbuf1, len1+1);
 				dst += snprintf(dst, sizeof(search), "%s", dstbuf1);
@@ -5888,7 +5888,7 @@ static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 
 				if (is_atom(c+2)) {
 					size_t len2 = C_STRLEN(q, c+2);
-					char *dstbuf2 = malloc(len2+1);
+					char *dstbuf2 = TPL_malloc(len2+1);
 					CHECKED(dstbuf2);
 					url_encode(C_STR(q, c+2), len2, dstbuf2, len2+1);
 					dst += snprintf(dst, sizeof(search), "=%s", dstbuf2);
@@ -5897,7 +5897,7 @@ static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 					char tmpbuf[256];
 					snprintf(tmpbuf, sizeof(tmpbuf), "%lld", (long long)get_smallint(c+2));
 					size_t len2 = strlen(tmpbuf);
-					char *dstbuf2 = malloc(len2+1);
+					char *dstbuf2 = TPL_malloc(len2+1);
 					CHECKED(dstbuf2);
 					url_encode(tmpbuf, len2, dstbuf2, len2+1);
 					dst += snprintf(dst, sizeof(search), "=%s", dstbuf2);
@@ -5906,7 +5906,7 @@ static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 					char tmpbuf[256];
 					snprintf(tmpbuf, sizeof(tmpbuf), "%.17g", get_float(c+2));
 					size_t len2 = strlen(tmpbuf);
-					char *dstbuf2 = malloc(len2+1);
+					char *dstbuf2 = TPL_malloc(len2+1);
 					CHECKED(dstbuf2);
 					url_encode(tmpbuf, len2, dstbuf2, len2+1);
 					dst += snprintf(dst, sizeof(search), "=%s", dstbuf2);
@@ -5976,14 +5976,14 @@ static bool do_parse_url(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_
 				SET_OP(tmp, OP_YFX);
 
 				len = strlen(key);
-				dstbuf = malloc(len+1);
+				dstbuf = TPL_malloc(len+1);
 				CHECKED(dstbuf);
 				url_decode(key, dstbuf);
 				make_cstring(tmp+1, dstbuf);
 				free(dstbuf);
 
 				len = strlen(search2);
-				dstbuf = malloc(len+1);
+				dstbuf = TPL_malloc(len+1);
 				CHECKED(dstbuf);
 				url_decode(search2, dstbuf);
 				make_cstring(tmp+2, dstbuf);
@@ -6008,14 +6008,14 @@ static bool do_parse_url(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_
 		SET_OP(tmp, OP_YFX);
 
 		len = strlen(key);
-		dstbuf = malloc(len+1);
+		dstbuf = TPL_malloc(len+1);
 		CHECKED(dstbuf);
 		url_decode(key, dstbuf);
 		make_cstring(tmp+1, dstbuf);
 		free(dstbuf);
 
 		len = strlen(search2);
-		dstbuf = malloc(len+1);
+		dstbuf = TPL_malloc(len+1);
 		CHECKED(dstbuf);
 		url_decode(search2, dstbuf);
 		make_cstring(tmp+2, dstbuf);
@@ -6061,7 +6061,7 @@ static bool do_parse_url(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_
 
 	if (path[0]) {
 		len = strlen(path);
-		dstbuf = malloc(len+1);
+		dstbuf = TPL_malloc(len+1);
 		CHECKED(dstbuf);
 		url_decode(path, dstbuf);
 		src = dstbuf;
@@ -6073,7 +6073,7 @@ static bool do_parse_url(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_
 
 	if (fragment[0]) {
 		len = strlen(fragment);
-		dstbuf = malloc(len+1);
+		dstbuf = TPL_malloc(len+1);
 		CHECKED(dstbuf);
 		url_decode(path, dstbuf);
 		src = dstbuf;
@@ -6272,7 +6272,7 @@ static bool bif_sys_get_chars_3(query *q)
 
 	if (is_var(p1)) {
 		size_t n_size = 1024;
-		char *data = malloc(n_size);
+		char *data = TPL_malloc(n_size);
 		CHECKED(data);
 		char *dst = data;
 		unsigned len = 0;
@@ -6289,7 +6289,7 @@ static bool bif_sys_get_chars_3(query *q)
 			size_t off = dst - data;
 
 			if ((off + MAX_BYTES_PER_CODEPOINT) >= n_size) {
-				data = realloc(data, n_size*=2);
+				data = TPL_realloc(data, n_size*=2);
 				CHECKED(data);
 				dst = data + off;
 			}
@@ -6326,7 +6326,7 @@ static bool bif_sys_get_chars_3(query *q)
 		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	}
 
-	char *data = malloc(len*MAX_BYTES_PER_CODEPOINT+1);
+	char *data = TPL_malloc(len*MAX_BYTES_PER_CODEPOINT+1);
 	CHECKED(data);
 	char *dst = data;
 
@@ -6363,7 +6363,7 @@ static bool bif_sys_bread_3(query *q)
 
 	if (is_integer(p1) && is_positive(p1)) {
 		if (!str->data) {
-			str->data = malloc(get_smallint(p1)+1);
+			str->data = TPL_malloc(get_smallint(p1)+1);
 			CHECKED(str->data);
 			str->data_len = 0;
 		}
@@ -6407,7 +6407,7 @@ static bool bif_sys_bread_3(query *q)
 
 	if (is_integer(p1)) {
 		if (!str->data) {
-			str->data = malloc((str->alloc_nbytes=1024)+1);
+			str->data = TPL_malloc((str->alloc_nbytes=1024)+1);
 			CHECKED(str->data);
 			str->data_len = 0;
 		}
@@ -6420,7 +6420,7 @@ static bool bif_sys_bread_3(query *q)
 
 		size_t nbytes = net_read(str->data, str->alloc_nbytes, str);
 		str->data[nbytes] = '\0';
-		str->data = realloc(str->data, nbytes+1);
+		str->data = TPL_realloc(str->data, nbytes+1);
 		CHECKED(str->data);
 		cell tmp;
 		make_stringn(&tmp, str->data, nbytes);
@@ -6432,7 +6432,7 @@ static bool bif_sys_bread_3(query *q)
 	}
 
 	if (!str->data) {
-		str->data = malloc((str->alloc_nbytes=1024)+1);
+		str->data = TPL_malloc((str->alloc_nbytes=1024)+1);
 		CHECKED(str->data);
 		str->data_len = 0;
 	}
@@ -6453,7 +6453,7 @@ static bool bif_sys_bread_3(query *q)
 			break;
 
 		if (str->alloc_nbytes == str->data_len) {
-			str->data = realloc(str->data, (str->alloc_nbytes*=2)+1);
+			str->data = TPL_realloc(str->data, (str->alloc_nbytes*=2)+1);
 			CHECKED(str->data);
 		}
 	}

@@ -64,7 +64,7 @@ static cell *nodesort(query *q, cell *p1, pl_ctx p1_ctx, bool dedup, bool keysor
 	skip_max_list(q, p1, &tmp_ctx, max, &skip, &tmp);
 	unshare_cell(&tmp);
 	size_t cnt = skip;
-	basepair *base = malloc(sizeof(basepair)*cnt);
+	basepair *base = TPL_malloc(sizeof(basepair)*cnt);
 	check_error(base);
 	LIST_HANDLER(p1);
 	size_t idx = 0, vars = 0;
@@ -273,7 +273,7 @@ static cell *nodesort4(query *q, cell *p1, pl_ctx p1_ctx, bool dedup, bool ascen
 	skip_max_list(q, p1, &tmp_ctx, max, &skip, &tmp);
 	unshare_cell(&tmp);
 	size_t cnt = skip;
-	basepair *base = malloc(sizeof(basepair)*cnt);
+	basepair *base = TPL_malloc(sizeof(basepair)*cnt);
 	check_error(base);
 	LIST_HANDLER(p1);
 	size_t idx = 0, vars = 0;

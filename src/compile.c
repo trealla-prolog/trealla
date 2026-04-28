@@ -322,10 +322,10 @@ void compile_clause(predicate *pr, clause *cl, cell *body)
 		return;
 
 	pl_idx num_cells = cl->cidx - (body - cl->cells);
-	cl->alt = malloc(sizeof(cell)*num_cells*100+1024); // FIXME
+	cl->alt = TPL_malloc(sizeof(cell)*num_cells*100+1024); // FIXME
 	cell *dst = cl->alt, *src = body;
 	compile_term(pr, cl, &dst, &src);
 	assert(src->tag == TAG_END);
 	dst += copy_cells(dst, src, 1);
-	cl->alt = realloc(cl->alt, sizeof(cell)*((dst-cl->alt)));
+	cl->alt = TPL_realloc(cl->alt, sizeof(cell)*((dst-cl->alt)));
 }

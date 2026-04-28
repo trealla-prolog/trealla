@@ -8,7 +8,6 @@ void list_init(list *l)
 }
 
 unsigned long long list_count(list *l) { return l->cnt; }
-unsigned long long listx_count(listx *l) { return l->cnt; }
 
 void *list_front(list *l) { return l->front; }
 void *list_back(list *l) { return l->back; }
@@ -107,78 +106,4 @@ void *list_remove(list *l, void *n_)
 
     l->cnt--;
     return n->next;
-}
-
-void listx_init(listx *l)
-{
-	l->front = l->back = 0;
-	l->cnt = 0;
-}
-
-void listx_push_front(listx *l, void *e)
-{
-	lxnode *n = malloc(sizeof(lxnode));
-	n->entry = e;
-    n->prev = 0;
-
-    if ((n->next = l->front) == 0)
-        l->back = n;
-    else
-        l->front->prev = n;
-
-    l->front = n;
-    l->cnt++;
-}
-
-void listx_push_back(listx *l, void *e)
-{
-	lxnode *n = malloc(sizeof(lxnode));
-	n->entry = e;
-    n->next = 0;
-
-    if ((n->prev = l->back) == 0)
-        l->front = n;
-    else
-        l->back->next = n;
-
-    l->back = n;
-    l->cnt++;
-}
-
-void *listx_pop_front(listx *l)
-{
-    if (!l->front)
-        return 0;
-
-    lxnode *n = l->front;
-    void *e = n->entry;
-    l->front = l->front->next;
-
-    if (l->front)
-        l->front->prev = 0;
-    else
-        l->back = 0;
-
-    l->cnt--;
-    free(n);
-    return e;
-}
-
-void *listx_pop_back(listx *l)
-{
-    if (!l->back)
-        return 0;
-
-    lxnode *n = l->back;
-    void *e = n->entry;
-    l->back = l->back->prev;
-
-    if (l->back)
-        l->back->next = 0;
-    else
-        l->front = 0;
-
-    l->cnt--;
-    free(n);
-    return e;
 }

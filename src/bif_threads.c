@@ -349,7 +349,7 @@ static bool queue_to_chan(prolog *pl, unsigned chan, const cell *c, unsigned fro
 {
 	//printf("*** send to chan=%u, num_cells=%u\n", chan, c->num_cells);
 	thread *t = &pl->threads[chan];
-	msg *m = malloc(sizeof(msg) + (sizeof(cell)*c->num_cells));
+	msg *m = TPL_malloc(sizeof(msg) + (sizeof(cell)*c->num_cells));
 	check_error(m);
 	m->from_chan = from_chan;
 	dup_cells(m->c, c, c->num_cells);
@@ -669,7 +669,7 @@ static void *start_routine_thread_create(thread *t)
 
 	if (t->is_exception) {
 		//printf("*** exception, %u\n", t->chan);
-		t->ball = calloc(t->q->ball->num_cells, sizeof(cell));
+		t->ball = TPL_calloc(t->q->ball->num_cells, sizeof(cell));
 		dup_cells(t->ball, t->q->ball, t->q->ball->num_cells);
 		//query *q = t->q;
 		//DUMP_TERM("*** ", t->ball, 0, 0);
@@ -840,7 +840,7 @@ static bool bif_thread_create_3(query *q)
 	CHECKED(t->q);
 	t->q->thread_ptr = t;
 	t->q->my_chan = n;
-	cell *tmp2 = calloc(1+tmp->num_cells+1, sizeof(cell));
+	cell *tmp2 = TPL_calloc(1+tmp->num_cells+1, sizeof(cell));
 	CHECKED(tmp2);
 	pl_idx num_cells = 0;
 	make_instr(tmp2+num_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, tmp->num_cells+1);
@@ -861,7 +861,7 @@ static bool bif_thread_create_3(query *q)
 		make_instr(tmp2+num_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 		THREAD_DEBUG DUMP_TERM("at_exit", tmp2, q->st.cur_ctx, 0);
 		//t->at_exit_goal = copy_term_to_heap(t->q, tmp2, 0, false);
-		t->at_exit_goal = calloc(tmp2->num_cells, sizeof(cell));
+		t->at_exit_goal = TPL_calloc(tmp2->num_cells, sizeof(cell));
 		CHECKED(t->at_exit_goal);
 		dup_cells(t->at_exit_goal, tmp2, tmp2->num_cells);
 	}
@@ -1163,7 +1163,7 @@ static bool bif_thread_exit_1(query *q)
 	cell *tmp = clone_term_to_tmp(q, p1, p1_ctx);
 	CHECKED(tmp);
 	rebase_term(q, tmp, 0);
-	cell *tmp2 = calloc(1+tmp->num_cells, sizeof(cell));
+	cell *tmp2 = TPL_calloc(1+tmp->num_cells, sizeof(cell));
 	CHECKED(tmp2);
 	make_instr(tmp2, new_atom(q->pl, "exited"), NULL, 1, tmp->num_cells);
 	dup_cells(tmp2+1, tmp, tmp->num_cells);

@@ -26,7 +26,7 @@ bool is_graphic(int ch)
 
 char *slicedup(const char *s, size_t n)
 {
-	char *ptr = malloc(n+1);
+	char *ptr = TPL_malloc(n+1);
 	ENSURE (ptr);
 	memcpy(ptr, s, n);
 	ptr[n] = '\0';
@@ -143,7 +143,7 @@ size_t slicecpy(char *dst, size_t dstlen, const char *src, size_t len)
 
 static void *make_string_internal(cell *c, const char *s, size_t n, size_t off)
 {
-	strbuf *strb = malloc(sizeof(strbuf) + n + 1);
+	strbuf *strb = TPL_malloc(sizeof(strbuf) + n + 1);
 	if (!strb) return NULL;
 	memcpy(strb->cstr, s, n);
 	strb->cstr[n] = 0;
@@ -343,7 +343,7 @@ static bool make_room(parser *p, unsigned num)
 	if ((p->cl->cidx+num) >= p->cl->num_allocated_cells) {
 		pl_idx num_cells = (p->cl->num_allocated_cells + num) * 3 / 2;
 
-		clause *cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*num_cells));
+		clause *cl = TPL_realloc(p->cl, sizeof(clause)+(sizeof(cell)*num_cells));
 		ENSURE(cl);
 		p->cl = cl;
 		p->cl->num_allocated_cells = num_cells;
@@ -398,12 +398,12 @@ void parser_destroy(parser *p)
 
 parser *parser_create(module *m)
 {
-	parser *p = calloc(1, sizeof(parser));
+	parser *p = TPL_calloc(1, sizeof(parser));
 	ENSURE(p);
 	p->pl = m->pl;
 	p->m = m;
 	pl_idx num_cells = INITIAL_NBR_CELLS;
-	p->cl = calloc(1, sizeof(clause)+(sizeof(cell)*num_cells));
+	p->cl = TPL_calloc(1, sizeof(clause)+(sizeof(cell)*num_cells));
 	ENSURE(p->cl, free(p));
 	p->cl->num_allocated_cells = num_cells;
 	p->start_term = true;
@@ -434,7 +434,7 @@ static void consultall(parser *p, cell *l)
 
 char *relative_to(const char *basefile, const char *relfile)
 {
-	char *tmpbuf = malloc(strlen(basefile) + strlen(relfile) + 256);
+	char *tmpbuf = TPL_malloc(strlen(basefile) + strlen(relfile) + 256);
 	ENSURE(tmpbuf);
 	char *ptr = tmpbuf;
 
@@ -757,7 +757,7 @@ static bool directives(parser *p, cell *d)
 		q.pl = p->pl;
 		q.st.m = p->m;
 		char *dst = print_term_to_strbuf(&q, p1, p1_ctx, 0);
-		builtins *ptr = calloc(1, sizeof(builtins));
+		builtins *ptr = TPL_calloc(1, sizeof(builtins));
 		ENSURE(ptr);
 		ptr->name = strdup(C_STR(p, p1));
 		ptr->arity = p1->arity;
@@ -1624,7 +1624,7 @@ static void replace_double_bar(parser *p, pl_idx i, pl_idx last_idx)
 		query *q = query_create(p->m);
 		cell *l = string_to_chars_list(q, lhs);
 		unshare_cells(lhs, lhs->num_cells);
-		cell *tmp = calloc((l->num_cells-1)+rhs->num_cells+1, sizeof(cell));
+		cell *tmp = TPL_calloc((l->num_cells-1)+rhs->num_cells+1, sizeof(cell));
 		cell *tmp2 = tmp;
 		tmp2 += copy_cells(tmp, l, l->num_cells-1);
 		tmp->num_cells -= 1;
@@ -2887,7 +2887,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 		read_integer(p, &v2, 2, &s);
 
 		if (mp_int_to_int(&v2, &val) == MP_RANGE) {
-			p->v.val_bigint = malloc(sizeof(bigint));
+			p->v.val_bigint = TPL_malloc(sizeof(bigint));
 			ENSURE(p->v.val_bigint);
 			p->v.val_bigint->refcnt = 1;
 			mp_int_init_copy(&p->v.val_bigint->ival, &v2);
@@ -2909,7 +2909,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 		read_integer(p, &v2, 8, &s);
 
 		if (mp_int_to_int(&v2, &val) == MP_RANGE) {
-			p->v.val_bigint = malloc(sizeof(bigint));
+			p->v.val_bigint = TPL_malloc(sizeof(bigint));
 			ENSURE(p->v.val_bigint);
 			p->v.val_bigint->refcnt = 1;
 			mp_int_init_copy(&p->v.val_bigint->ival, &v2);
@@ -2931,7 +2931,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 		read_integer(p, &v2, 16, &s);
 
 		if (mp_int_to_int(&v2, &val) == MP_RANGE) {
-			p->v.val_bigint = malloc(sizeof(bigint));
+			p->v.val_bigint = TPL_malloc(sizeof(bigint));
 			ENSURE(p->v.val_bigint);
 			p->v.val_bigint->refcnt = 1;
 			mp_int_init_copy(&p->v.val_bigint->ival, &v2);
@@ -2996,7 +2996,7 @@ static bool parse_number(parser *p, const char **srcptr, bool neg)
 	}
 
 	if (mp_int_to_int(&v2, &val) == MP_RANGE) {
-		p->v.val_bigint = malloc(sizeof(bigint));
+		p->v.val_bigint = TPL_malloc(sizeof(bigint));
 		ENSURE(p->v.val_bigint);
 		p->v.val_bigint->refcnt = 1;
 		mp_int_init_copy(&p->v.val_bigint->ival, &v2);
@@ -3679,7 +3679,7 @@ bool expand_term(parser *p, cell *c)
 
 		parser *p2 = parser_create(p->m);
 		check_error(p2);
-		p2->cl = calloc(1, sizeof(clause) + (sizeof(cell)*h->num_cells) + 1);
+		p2->cl = TPL_calloc(1, sizeof(clause) + (sizeof(cell)*h->num_cells) + 1);
 		dup_cells(p2->cl->cells, h, h->num_cells);
 		p2->cl->num_allocated_cells = h->num_cells;
 		p2->cl->cidx = h->num_cells;

@@ -19,14 +19,14 @@ static bool accum_var(query *q, const cell *c, pl_ctx c_ctx)
 	sl_app(q->vars, e, (void*)(size_t)q->tab_idx);
 
 	if (!q->pl->tabs) {
-		q->pl->tabs_size = 4000;
-		q->pl->tabs = malloc(sizeof(var_item)*q->pl->tabs_size);
+		q->pl->tabs_size = MAX_ARITY;
+		q->pl->tabs = TPL_malloc(sizeof(var_item)*q->pl->tabs_size);
 		check_error(!q->pl->tabs);
 	}
 
 	if (q->tab_idx == q->pl->tabs_size) {
 		q->pl->tabs_size *= 2;
-		q->pl->tabs = realloc(q->pl->tabs, sizeof(var_item)*q->pl->tabs_size);
+		q->pl->tabs = TPL_realloc(q->pl->tabs, sizeof(var_item)*q->pl->tabs_size);
 		check_error(!q->pl->tabs);
 	}
 
@@ -196,7 +196,7 @@ static bool has_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 	// Transform recursion into stack iteration...
 
 	list stack = {0};
-	snode *n = malloc(sizeof(snode));
+	snode *n = TPL_malloc(sizeof(snode));
 	n->c = p1;
 	n->c_ctx = p1_ctx;
 	list_push_back(&stack, n);
@@ -238,7 +238,7 @@ static bool has_vars_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 			}
 
 			if (!both && is_compound(c) && !is_ground(c)) {
-				n = malloc(sizeof(snode));
+				n = TPL_malloc(sizeof(snode));
 				n->c = c;
 				n->c_ctx = c_ctx;
 				list_push_back(&stack, n);

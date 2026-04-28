@@ -407,7 +407,7 @@ static bool bif_iso_asserta_1(query *q)
 	parser *p = parser_create(q->st.m);
 
 	if (num_cells > p->cl->num_allocated_cells) {
-		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
+		p->cl = TPL_realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
 		CHECKED(p->cl);
 		p->cl->num_allocated_cells = num_cells;
 	}
@@ -465,7 +465,7 @@ static bool do_assertz_1(query *q, bool consulting)
 	parser *p = parser_create(q->st.m);
 
 	if (num_cells > p->cl->num_allocated_cells) {
-		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
+		p->cl = TPL_realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
 		CHECKED(p->cl);
 		p->cl->num_allocated_cells = num_cells;
 	}
@@ -541,7 +541,7 @@ static bool do_asserta_2(query *q)
 	parser *p = parser_create(q->st.m);
 
 	if (num_cells > p->cl->num_allocated_cells) {
-		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
+		p->cl = TPL_realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
 		CHECKED(p->cl);
 		p->cl->num_allocated_cells = num_cells;
 	}
@@ -635,7 +635,7 @@ static bool do_assertz_2(query *q)
 	parser *p = parser_create(q->st.m);
 
 	if (num_cells > p->cl->num_allocated_cells) {
-		p->cl = realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
+		p->cl = TPL_realloc(p->cl, sizeof(clause)+(sizeof(cell)*(num_cells+1)));
 		CHECKED(p->cl);
 		p->cl->num_allocated_cells = num_cells;
 	}
@@ -875,7 +875,7 @@ static bool bif_sys_retract_on_backtrack_1(query *q)
 	GET_FIRST_ARG(p1,atom);
 	int var_num = create_vars(q, 1);
 	CHECKED(var_num != -1);
-	blob *b = calloc(1, sizeof(blob));
+	blob *b = TPL_calloc(1, sizeof(blob));
 	b->ptr = (void*)q->st.m;
 	b->ptr2 = (void*)strdup(C_STR(q, p1));
 	CHECKED(b->ptr2);

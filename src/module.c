@@ -130,7 +130,7 @@ static const char *set_known(module *m, const char *filename)
 		ptr = ptr->next;
 	}
 
-	ptr = malloc(sizeof(loaded_file));
+	ptr = TPL_malloc(sizeof(loaded_file));
 	ENSURE(ptr);
 	ptr->next = m->loaded_files;
 	ptr->orig_filename = strdup(filename);
@@ -154,7 +154,7 @@ static const char *set_loaded(module *m, const char *filename, const char *orig_
 		ptr = ptr->next;
 	}
 
-	ptr = malloc(sizeof(loaded_file));
+	ptr = TPL_malloc(sizeof(loaded_file));
 	ENSURE(ptr);
 	ptr->next = m->loaded_files;
 	ptr->orig_filename = strdup(orig_filename);
@@ -353,7 +353,7 @@ predicate *create_predicate(module *m, cell *c, bool *created)
 		return NULL;
 	}
 
-	predicate *pr = calloc(1, sizeof(predicate));
+	predicate *pr = TPL_calloc(1, sizeof(predicate));
 	ENSURE(pr);
 	list_push_back(&m->predicates, pr);
 
@@ -464,7 +464,7 @@ void create_goal_expansion(module *m, cell *c)
 	if (find_goal_expansion(m, c))
 		return;
 
-	pi *g = calloc(1, sizeof(pi));
+	pi *g = TPL_calloc(1, sizeof(pi));
 	ENSURE(g);
 	g->prev = m->gex_tail;
 
@@ -851,7 +851,7 @@ void set_meta_predicate_in_db(module *m, cell *c)
 		}
 
 		pr->is_meta_predicate = true;
-		pr->meta_args = malloc(sizeof(cell)*c->num_cells);
+		pr->meta_args = TPL_malloc(sizeof(cell)*c->num_cells);
 		dup_cells(pr->meta_args, c, c->num_cells);
 	} else if (!pr)
 		m->error = true;
@@ -934,7 +934,7 @@ static bool do_use_module(module *cur_m, cell *c, module **mptr)
 			if (strcmp(lib->name, name))
 				continue;
 
-			char *src = malloc(*lib->len+1);
+			char *src = TPL_malloc(*lib->len+1);
 			ENSURE(src);
 			memcpy(src, lib->start, *lib->len);
 			src[*lib->len] = '\0';
@@ -966,7 +966,7 @@ static bool do_use_module(module *cur_m, cell *c, module **mptr)
 		if (strcmp(lib->name, name))
 			continue;
 
-		char *src = malloc(*lib->len+1);
+		char *src = TPL_malloc(*lib->len+1);
 		ENSURE(src);
 		memcpy(src, lib->start, *lib->len);
 		src[*lib->len] = '\0';
@@ -1262,7 +1262,7 @@ static bool set_op_internal(module *m, const char *name, unsigned specifier, uns
 	}
 
 	sl_done(iter);
-	op_table *tmp = malloc(sizeof(op_table));
+	op_table *tmp = TPL_malloc(sizeof(op_table));
 	ENSURE(tmp);
 	tmp->name = set_known(m, name);
 	tmp->priority = priority;
@@ -1933,7 +1933,7 @@ static rule *assert_begin(module *m, unsigned num_vars, cell *p1, bool consultin
 		pr->max_vars = num_vars;
 
 	size_t dbe_size = sizeof(rule) + (sizeof(cell) * (p1->num_cells+1));
-	rule *r = calloc(1, dbe_size);
+	rule *r = TPL_calloc(1, dbe_size);
 	ENSURE(r);
 	copy_cells(r->cl.cells, p1, p1->num_cells);
 	r->cl.cells[p1->num_cells] = (cell){0};
@@ -2194,7 +2194,7 @@ static bool unload_realfile(module *m, const char *filename)
 bool unload_file(module *m, const char *filename)
 {
 	size_t len = strlen(filename);
-	char *tmpbuf = malloc(len + 20);
+	char *tmpbuf = TPL_malloc(len + 20);
 	ENSURE(tmpbuf);
 	memcpy(tmpbuf, filename, len+1);
 
@@ -2202,7 +2202,7 @@ bool unload_file(module *m, const char *filename)
 		const char *ptr = getenv("HOME");
 
 		if (ptr) {
-			tmpbuf = realloc(tmpbuf, strlen(ptr) + 10 + strlen(filename) + 20);
+			tmpbuf = TPL_realloc(tmpbuf, strlen(ptr) + 10 + strlen(filename) + 20);
 			ENSURE(tmpbuf);
 			strcpy(tmpbuf, ptr);
 			strcat(tmpbuf, filename+1);
@@ -2384,7 +2384,7 @@ module *load_file(module *m, const char *filename, bool including, bool init)
 	}
 
 	size_t len = strlen(filename);
-	char *tmpbuf = malloc(len + 20);
+	char *tmpbuf = TPL_malloc(len + 20);
 	check_error(tmpbuf);
 	memcpy(tmpbuf, filename, len+1);
 
@@ -2392,7 +2392,7 @@ module *load_file(module *m, const char *filename, bool including, bool init)
 		const char *ptr = getenv("HOME");
 
 		if (ptr) {
-			tmpbuf = realloc(tmpbuf, strlen(ptr) + 10 + strlen(filename) + 20);
+			tmpbuf = TPL_realloc(tmpbuf, strlen(ptr) + 10 + strlen(filename) + 20);
 			check_error(tmpbuf);
 			strcpy(tmpbuf, ptr);
 			strcat(tmpbuf, filename+1);
@@ -2468,7 +2468,7 @@ module *load_file(module *m, const char *filename, bool including, bool init)
 	stat(filename, &st);
 
 	if ((st.st_mode & S_IFMT) == S_IFDIR) {
-		char *tmpbuf = malloc(strlen(orig_filename)+20);
+		char *tmpbuf = TPL_malloc(strlen(orig_filename)+20);
 		ENSURE(tmpbuf);
 		strcpy(tmpbuf, orig_filename);
 		strcat(tmpbuf, ".pl");
@@ -2590,7 +2590,7 @@ void module_duplicate(prolog *pl, module *m, const char *name, unsigned arity)
 
 module *module_create(prolog *pl, const char *name)
 {
-	module *m = calloc(1, sizeof(module));
+	module *m = TPL_calloc(1, sizeof(module));
 	ENSURE(m);
 
 	m->pl = pl;
@@ -2608,7 +2608,7 @@ module *module_create(prolog *pl, const char *name)
 
 	if (strcmp(name, "system")) {
 		for (const op_table *ptr = g_ops; ptr->name; ptr++) {
-			op_table *tmp = malloc(sizeof(op_table));
+			op_table *tmp = TPL_malloc(sizeof(op_table));
 			ENSURE(tmp);
 			memcpy(tmp, ptr, sizeof(op_table));
 			sl_app(m->defops, tmp->name, tmp);

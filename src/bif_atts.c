@@ -394,7 +394,7 @@ static bool bif_sys_undo_trail_2(query *q)
 	}
 
 	pl_idx slots = q->undo_hi_tp - q->undo_lo_tp;
-	bind_state *save = malloc(sizeof(bind_state)+(sizeof(slot)*slots));
+	bind_state *save = TPL_malloc(sizeof(bind_state)+(sizeof(slot)*slots));
 	CHECKED(save);
 	save->b.ptr = save->b.ptr2 = NULL;
 	save->lo_tp = q->undo_lo_tp;

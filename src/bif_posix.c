@@ -67,7 +67,7 @@ static bool bif_posix_strftime_3(query *q)
 	while (++tries <= max_tries) {
 		// make enough space for some long formats, e.g. `%c'
 		length = 128 + length * 2;
-		buffer = realloc(buffer, length);
+		buffer = TPL_realloc(buffer, length);
 
 		// FIXME: `0' returned by strftime() does not always indicate
 		// an error, seems there is no easy way to check that.

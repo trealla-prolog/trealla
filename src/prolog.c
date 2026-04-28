@@ -73,7 +73,7 @@ static pl_idx add_to_global_atoms(const char *name)
 
 	while ((offset+len+1+1) >= s_global_atoms_size) {
 		size_t nbytes = (size_t)s_global_atoms_size * 3 / 2;
-		void *tmp = realloc(g_global_atoms, nbytes);
+		void *tmp = TPL_realloc(g_global_atoms, nbytes);
 		if (!tmp) return ERR_IDX;
 		g_global_atoms = tmp;
 		memset(g_global_atoms + s_global_atoms_size, 0, nbytes - s_global_atoms_size);
@@ -81,9 +81,7 @@ static pl_idx add_to_global_atoms(const char *name)
 	}
 
 	const size_t s_lim = 1024*1024*1024;
-
-	if ((offset + len + 1) >= s_lim)
-		return ERR_IDX;
+	assert((offset + len + 1) < s_lim);
 
 	memcpy(g_global_atoms + offset, name, len+1);
 	s_global_atoms_offset += len + 1;
@@ -523,7 +521,7 @@ static bool g_init(prolog *pl)
 	bool error = false;
 
 	init_lock(&g_symtab_guard);
-	g_global_atoms = calloc(s_global_atoms_size, 1);
+	g_global_atoms = TPL_calloc(s_global_atoms_size, 1);
 	s_global_atoms_offset = 0;
 
 	CHECK_SENTINEL(g_symtab = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);
@@ -692,7 +690,7 @@ prolog *pl_create()
 	//printf("*** sizeof(cell) = %u bytes\n", (unsigned)sizeof(cell));
 	//assert(sizeof(cell) == 24);
 
-	prolog *pl = calloc(1, sizeof(prolog));
+	prolog *pl = TPL_calloc(1, sizeof(prolog));
 	if (!pl) return NULL;
 	bool error = false;
 	pl->opt = 1;
@@ -713,7 +711,7 @@ prolog *pl_create()
 				src--;
 
 			*src = '\0';
-			g_tpl_lib = realloc(g_tpl_lib, strlen(g_tpl_lib)+40);
+			g_tpl_lib = TPL_realloc(g_tpl_lib, strlen(g_tpl_lib)+40);
 			strcat(g_tpl_lib, "/library");
 		} else
 			g_tpl_lib = strdup("../library");
@@ -814,7 +812,7 @@ prolog *pl_create()
 		for (library *lib = g_libs; lib->name; lib++) {
 			if (!strcmp(lib->name, bootstrap[i])) {
 				size_t len = *lib->len;
-				char *src = malloc(len+1);
+				char *src = TPL_malloc(len+1);
 				check_error(src, pl_destroy(pl));
 				memcpy(src, lib->start, len);
 				src[len] = '\0';

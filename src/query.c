@@ -1196,7 +1196,7 @@ bool has_next_key(query *q)
 static bool expand_meta_predicate(query *q, predicate *pr)
 {
 	int arity = q->st.key->arity;
-	cell *tmp = alloc_heap(q, q->st.key->num_cells*3);	// alloc max possible
+	cell *tmp = alloc_heap(q, q->st.key->num_cells*3);	// TPL_alloc max possible
 	CHECKED(tmp);
 	cell *save_tmp = tmp;
 	tmp += copy_cells(tmp, q->st.key, 1);
@@ -1891,7 +1891,7 @@ void query_destroy(query *q)
 static query *query_create_(module *m, bool is_small)
 {
 	static pl_atomic uint64_t g_query_id = 0;
-	query *q = calloc(1, sizeof(query));
+	query *q = TPL_calloc(1, sizeof(query));
 	ENSURE(q);
 	q->p = parser_create(m);
 	q->flags.occurs_check = false;
@@ -1922,10 +1922,10 @@ static query *query_create_(module *m, bool is_small)
 	q->slots_size = !is_small ? INITIAL_NBR_SLOTS : INITIAL_NBR_SLOTS / 4;
 	q->trails_size = !is_small ? INITIAL_NBR_TRAILS : INITIAL_NBR_TRAILS / 4;
 
-	ENSURE(q->frames = calloc(q->frames_size, sizeof(frame)), NULL);
-	ENSURE(q->choices = calloc(q->choices_size, sizeof(choice)), NULL);
-	ENSURE(q->slots = calloc(q->slots_size, sizeof(slot)), NULL);
-	ENSURE(q->trails = calloc(q->trails_size, sizeof(trail)), NULL);
+	ENSURE(q->frames = TPL_calloc(q->frames_size, sizeof(frame)), NULL);
+	ENSURE(q->choices = TPL_calloc(q->choices_size, sizeof(choice)), NULL);
+	ENSURE(q->slots = TPL_calloc(q->slots_size, sizeof(slot)), NULL);
+	ENSURE(q->trails = TPL_calloc(q->trails_size, sizeof(trail)), NULL);
 
 	// Allocate these later as needed...
 
