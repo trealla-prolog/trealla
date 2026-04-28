@@ -1497,7 +1497,7 @@ bool match_clause(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract
 		cell *head = get_head(cl->cells);
 		const cell *body = get_logical_body(cl->cells);
 
-		// Retract(HEAD) should ignore rules (and directives)
+		// retract(HEAD) should ignore rules (and directives)
 
 		if ((is_retract == DO_RETRACT) && body)
 			continue;
