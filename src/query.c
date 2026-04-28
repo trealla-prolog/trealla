@@ -703,23 +703,23 @@ static void reuse_frame(query *q, unsigned num_vars)
 	if (c_next->val_off == g_sys_drop_barrier_s)
 		drop_choice(q);
 
-	frame *fold = GET_CURR_FRAME();
-	fold->initial_slots = fold->actual_slots = num_vars;
-	fold->no_recov = false;
-	const frame *fnew = GET_NEW_FRAME();
+	frame *f_old = GET_CURR_FRAME();
+	f_old->initial_slots = f_old->actual_slots = num_vars;
+	f_old->no_recov = false;
+	const frame *f_new = GET_NEW_FRAME();
 
 	for (pl_idx i = 0; i < num_vars; i++) {
-		const slot *from = get_slot(q, fnew, i);
-		slot *to = get_slot(q, fold, i);
+		const slot *from = get_slot(q, f_new, i);
+		slot *to = get_slot(q, f_old, i);
 		unshare_cell(&to->c);
 		*to = *from;
 	}
 
-	q->st.sp = fold->base + fold->actual_slots;
+	q->st.sp = f_old->base + f_old->actual_slots;
 	q->st.dbe->tcos++;
 	q->total_tcos++;
-	q->st.hp = fold->hp;
-	q->st.heap_num = fold->heap_num;
+	q->st.hp = f_old->hp;
+	q->st.heap_num = f_old->heap_num;
 	trim_heap(q);
 }
 
