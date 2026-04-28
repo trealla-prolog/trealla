@@ -961,11 +961,12 @@ static bool bif_thread_join_2(query *q)
 
 	if (pthread_join((pthread_t)t->id, &retval)) {
 		t->is_active = false;
-		return true;
+		return throw_error(q, p1, p1_ctx, "domain_error", "not_joinable");
 	}
 
 	if (t->exit_code) {
 		cell *tmp = copy_term_to_heap(q, t->exit_code, q->st.cur_ctx, false);
+		CHECKED(tmp);
 		unshare_cells(t->exit_code, t->exit_code->num_cells);
 		free(t->exit_code);
 		t->exit_code = NULL;
