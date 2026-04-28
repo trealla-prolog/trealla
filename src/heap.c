@@ -208,12 +208,15 @@ cell *append_to_tmp(query *q, cell *p1, pl_ctx p1_ctx)
 	return tmp;
 }
 
-static int accum_slot(const query *q, size_t slot_nbr, unsigned var_num)
+static int accum_slot(query *q, size_t slot_nbr, unsigned var_num)
 {
 	const void *vnbr;
 
-	if (sl_get(q->vars, (void*)slot_nbr, &vnbr))
+	if (q->vars && sl_get(q->vars, (void*)slot_nbr, &vnbr))
 		return (unsigned)(size_t)vnbr;
+
+	if (!q->vars)
+		q->vars = sl_create(NULL, NULL, NULL);
 
 	sl_app(q->vars, (void*)slot_nbr, (void*)(size_t)var_num);
 	return -1;
@@ -281,17 +284,21 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx fro
 
 unsigned rebase_term(query *q, cell *c, unsigned start_nbr)
 {
-	q->vars = sl_create(NULL, NULL, NULL);
+	q->vars = NULL;
 	q->varno = start_nbr;
 	q->tab_idx = 0;
 
 	if (!copy_vars(q, c, true, NULL, 0, NULL, 0)) {
-		sl_destroy(q->vars);
+		if (q->vars)
+			sl_destroy(q->vars);
+
 		q->vars = NULL;
 		return start_nbr;
 	}
 
-	sl_destroy(q->vars);
+	if (q->vars)
+		sl_destroy(q->vars);
+
 	q->vars = NULL;
 
 	// Turn refs back into vars to recontextualize
@@ -320,7 +327,7 @@ static cell *copy_term_to_tmp_with_replacement(query *q, cell *p1, pl_ctx p1_ctx
 	bool created = false;
 
 	if (!q->vars) {
-		q->vars = sl_create(NULL, NULL, NULL);
+		//q->vars = sl_create(NULL, NULL, NULL);
 		created = true;
 		const frame *f = GET_CURR_FRAME();
 		q->varno = f->actual_slots;
@@ -330,7 +337,9 @@ static cell *copy_term_to_tmp_with_replacement(query *q, cell *p1, pl_ctx p1_ctx
 	bool ok = copy_vars(q, tmp, copy_attrs, from, from_ctx, to, to_ctx);
 
 	if (created) {
-		sl_destroy(q->vars);
+		if (q->vars)
+			sl_destroy(q->vars);
+
 		q->vars = NULL;
 	}
 
