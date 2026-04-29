@@ -755,7 +755,6 @@ struct query_ {
 	bool end_wait:1;
 	bool did_unhandled_exception:1;
 	bool access_private:1;
-	bool in_retractall:1;
 	bool in_retract:1;
 };
 

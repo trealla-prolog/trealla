@@ -533,14 +533,7 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 			}
 		}
 
-		if (q->in_retractall
-			&& !r->cl.num_vars
-			&& q->pl->opt) {
-			clear_clause(&r->cl);
-			TPL_free(r);
-		} else if (q->in_retract
-			&& !r->cl.num_vars
-			&& q->pl->opt) {
+		if (q->in_retract && !r->cl.num_vars && q->pl->opt) {
 			clear_clause(&r->cl);
 			TPL_free(r);
 		} else {

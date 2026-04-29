@@ -298,11 +298,11 @@ static bool bif_iso_retractall_1(query *q)
 		return true;
 
 	prolog_lock(q->pl);
-	q->in_retractall = true;
+	q->in_retract = true;
 
 	while (do_retract(q, p1, p1_ctx, DO_RETRACTALL)) {
 		if (q->did_throw) {
-			q->in_retractall = false;
+			q->in_retract = false;
 			prolog_unlock(q->pl);
 			return true;
 		}
@@ -312,7 +312,7 @@ static bool bif_iso_retractall_1(query *q)
 		retry_choice(q);
 	}
 
-	q->in_retractall = false;
+	q->in_retract = false;
 	pr->is_processed = false;
 	prolog_unlock(q->pl);
 	return true;
