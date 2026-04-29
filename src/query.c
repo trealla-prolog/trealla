@@ -533,7 +533,7 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 			}
 		}
 
-		if (q->in_retractall && !pr->cnt
+		if (q->in_retractall
 			&& !r->cl.num_vars
 			&& q->pl->opt) {
 			clear_clause(&r->cl);
