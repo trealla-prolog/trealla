@@ -533,11 +533,6 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 			}
 		}
 
-		// Just because this clause is no longer in use doesn't
-		// mean there are no shared references to terms contained
-		// within. So may have to move to the query dirty-list where
-		// they will be freed up at end of the query...
-
 		if (q->in_retractall && !pr->cnt
 			&& !r->cl.num_vars
 			&& q->pl->opt) {
