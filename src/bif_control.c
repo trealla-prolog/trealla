@@ -855,7 +855,7 @@ static bool find_exception_handler(query *q, char *ball)
 	} else {
 		q->ball = clone_term_to_heap(q, e, e_ctx);
 		q->ball_ctx = q->st.cur_ctx;
-		rebase_term(q, q->ball, 0);
+		rebase_term(q, q->ball, 0, false);
 	}
 
 	if (!q->thread_ptr) {

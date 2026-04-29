@@ -239,7 +239,7 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx fro
 		} else {
 			const frame *f = GET_FRAME(c->val_ctx);
 			const slot *e = get_slot(q, f, c->var_num);
-			cell *attrs = c->tmp_attrs ? c->tmp_attrs : e->c.val_attrs;
+			cell *attrs = copy_attrs && c->tmp_attrs ? c->tmp_attrs : e->c.val_attrs;
 			const size_t slot_nbr = get_ordered_slot_num(q, f, c->var_num);
 			int var_num;
 
@@ -282,13 +282,13 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx fro
 	return true;
 }
 
-unsigned rebase_term(query *q, cell *c, unsigned start_nbr)
+unsigned rebase_term(query *q, cell *c, unsigned start_nbr, bool copy_attrs)
 {
 	q->vars = NULL;
 	q->varno = start_nbr;
 	q->tab_idx = 0;
 
-	if (!copy_vars(q, c, true, NULL, 0, NULL, 0)) {
+	if (!copy_vars(q, c, copy_attrs, NULL, 0, NULL, 0)) {
 		if (q->vars)
 			sl_destroy(q->vars);
 
@@ -346,7 +346,7 @@ static cell *copy_term_to_tmp_with_replacement(query *q, cell *p1, pl_ctx p1_ctx
 	c = tmp;
 
 	for (pl_idx i = 0; i < tmp->num_cells; i++, c++) {
-		if (is_var(c) && c->tmp_attrs) {
+		if (is_var(c) && copy_attrs && c->tmp_attrs) {
 			const frame *f = GET_FRAME(c->val_ctx);
 			slot *e = get_slot(q, f, c->var_num);
 			e->c.val_attrs = c->tmp_attrs;
@@ -449,7 +449,7 @@ cell *copy_term_to_heap_with_replacement(query *q, cell *p1, pl_ctx p1_ctx, bool
 	cell *c = tmp2;
 
 	for (pl_idx i = 0; i < tmp2->num_cells; i++, c++) {
-		if (is_var(c) && c->tmp_attrs) {
+		if (is_var(c) && copy_attrs && c->tmp_attrs) {
 			const frame *f = GET_FRAME(c->val_ctx);
 			slot *e = get_slot(q, f, c->var_num);
 			e->c.val_attrs = c->tmp_attrs;
@@ -478,7 +478,7 @@ cell *copy_term_to_heap(query *q, cell *p1, pl_ctx p1_ctx, bool copy_attrs)
 	cell *c = tmp2;
 
 	for (pl_idx i = 0; i < tmp2->num_cells; i++, c++) {
-		if (is_var(c) && c->tmp_attrs) {
+		if (is_var(c) && copy_attrs && c->tmp_attrs) {
 			const frame *f = GET_FRAME(c->val_ctx);
 			slot *e = get_slot(q, f, c->var_num);
 			e->c.val_attrs = c->tmp_attrs;
