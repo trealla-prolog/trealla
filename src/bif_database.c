@@ -61,7 +61,7 @@ static bool bif_clause_3(query *q)
 			cl = &r->cl;
 			cell *head = get_head(cl->cells);
 
-			if (!unify(q, p1, p1_ctx, head, q->st.fp)) {
+			if (!unify(q, p1, p1_ctx, head, q->st.fp)) {	// FIXME: cur_ctx
 				drop_choice(q);
 				break;
 			}

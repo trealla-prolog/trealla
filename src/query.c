@@ -804,33 +804,6 @@ static void commit_frame(query *q)
 	q->st.iter = NULL;
 }
 
-void stash_frame(query *q, unsigned num_vars, bool last_match)
-{
-	pl_idx chgen = ++q->chgen;
-
-	if (last_match) {
-		leave_predicate(q, q->st.pr, true);
-		drop_choice(q);
-	} else {
-		choice *ch = GET_CURR_CHOICE();
-		ch->st.dbe = q->st.dbe;
-		ch->gen = chgen;
-	}
-
-	if (num_vars) {
-		frame *f = GET_FRAME(q->st.fp);
-		f->prev = q->st.cur_ctx;
-		f->instr = NULL;
-		f->chgen = chgen;
-		f->frame_size = 1;
-		f->op = 0;
-		q->st.sp += num_vars;
-		q->st.fp += f->frame_size;
-	}
-
-	q->st.iter = NULL;
-}
-
 int retry_choice(query *q)
 {
 	while (q->cp) {

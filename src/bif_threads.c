@@ -488,11 +488,6 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 				}
 
 				drop_choice(q);
-
-#if 0
-				frame *f = GET_NEW_FRAME();
-				stash_frame(q, f->actual_slots, false);
-#endif
 				return true;
 			}
 
