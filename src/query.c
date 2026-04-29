@@ -1389,8 +1389,7 @@ bool match_rule(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 		p1 = orig_p1;
 
 		cell *tmp = alloc_heap(q, c->num_cells);
-		dup_cells(tmp, c, c->num_cells);
-		convert_to_refs(tmp, q->st.cur_ctx, c->num_cells);
+		dup_cells_by_ref(tmp, c, q->st.cur_ctx, c->num_cells);
 		rebase_term(q, tmp, f->actual_slots);
 		c = tmp;
 		cell *head = get_head(c);
@@ -1505,8 +1504,7 @@ bool match_clause(query *q, cell *p1, pl_ctx p1_ctx, cell **ret_body, enum claus
 
 		CHECKED(push_choice(q));
 		cell *tmp = alloc_heap(q, c->num_cells);
-		dup_cells(tmp, c, c->num_cells);
-		convert_to_refs(tmp, q->st.cur_ctx, c->num_cells);
+		dup_cells_by_ref(tmp, c, q->st.cur_ctx, c->num_cells);
 		rebase_term(q, tmp, f->actual_slots);
 		cell *head = get_head(tmp);
 		body = get_body(tmp);

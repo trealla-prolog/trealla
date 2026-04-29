@@ -80,8 +80,7 @@ static bool bif_clause_3(query *q)
 
 		cell *c = cl->cells;
 		cell *tmp = alloc_heap(q, c->num_cells);
-		dup_cells(tmp, c, c->num_cells);
-		convert_to_refs(tmp, q->st.cur_ctx, c->num_cells);
+		dup_cells_by_ref(tmp, c, q->st.cur_ctx, c->num_cells);
 		rebase_term(q, tmp, f->actual_slots);
 		cell *body = get_body(tmp);
 		bool ok;
