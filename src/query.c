@@ -549,7 +549,6 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 			clear_clause(&r->cl);
 			TPL_free(r);
 		} else if (q->in_retract
-			&& !q->no_recov_compound
 			&& !r->cl.num_vars
 			&& q->pl->opt) {
 			clear_clause(&r->cl);
@@ -1375,8 +1374,6 @@ bool match_rule(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 		return false;
 	}
 
-	CHECKED(check_frame(q, q->st.pr->max_vars));
-	CHECKED(push_choice(q));
 	const frame *f = GET_CURR_FRAME();
 	cell *p1_body = deref(q, get_logical_body(p1), p1_ctx);
 	cell *orig_p1 = p1;
@@ -1385,21 +1382,27 @@ bool match_rule(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 		if (!can_view(q, f->dbgen, q->st.dbe))
 			continue;
 
+		CHECKED(push_choice(q));
 		clause *cl = &q->st.dbe->cl;
 		cell *c = cl->cells;
 		bool needs_true = false;
 		p1 = orig_p1;
+
+		cell *tmp = alloc_heap(q, c->num_cells);
+		dup_cells(tmp, c, c->num_cells);
+		create_vars(q, cl->num_vars);
+		rebase_term(q, c, f->actual_slots);
+		c = tmp;
+		cell *head = get_head(c);
 		const cell *c_body = get_logical_body(c);
 
 		if (p1_body && is_var(p1_body) && !c_body) {
 			p1 = deref(q, get_head(p1), p1_ctx);
-			c = get_head(c);
+			c = get_head(tmp);
 			needs_true = true;
 		}
 
-		try_me(q, cl->num_vars);
-
-		if (unify(q, p1, p1_ctx, c, q->st.fp)) {
+		if (unify(q, p1, p1_ctx, c, q->st.cur_ctx)) {
 			int ok;
 
 			if (needs_true) {
@@ -1414,7 +1417,7 @@ bool match_rule(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 			return ok;
 		}
 
-		undo_me(q);
+		retry_choice(q);
 	}
 
 	leave_predicate(q, q->st.pr, true);
@@ -1425,7 +1428,7 @@ bool match_rule(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 // Match HEAD.
 // Match HEAD :- true.
 
-bool match_clause(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
+bool match_clause(query *q, cell *p1, pl_ctx p1_ctx, cell **ret_body, enum clause_type is_retract)
 {
 	if (!q->retry) {
 		cell *c = p1;
@@ -1485,8 +1488,6 @@ bool match_clause(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract
 		return false;
 	}
 
-	CHECKED(check_frame(q, q->st.pr->max_vars));
-	CHECKED(push_choice(q));
 	const frame *f = GET_CURR_FRAME();
 
 	for (; q->st.dbe; q->st.dbe = q->st.dbe->next) {
@@ -1494,24 +1495,33 @@ bool match_clause(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract
 			continue;
 
 		clause *cl = &q->st.dbe->cl;
-		cell *head = get_head(cl->cells);
-		const cell *body = get_logical_body(cl->cells);
+		cell *c = cl->cells;
+		cell *body = get_logical_body(c);
 
 		// retract(HEAD) should ignore rules (and directives)
 
 		if ((is_retract == DO_RETRACT) && body)
 			continue;
 
-		try_me(q, cl->num_vars);
+		CHECKED(push_choice(q));
+		cell *tmp = alloc_heap(q, c->num_cells);
+		dup_cells(tmp, c, c->num_cells);
+		create_vars(q, cl->num_vars);
+		rebase_term(q, tmp, f->actual_slots);
+		cell *head = get_head(tmp);
+		body = get_body(tmp);
 
-		if (unify(q, p1, p1_ctx, head, q->st.fp))
+		if (unify(q, p1, p1_ctx, head, q->st.cur_ctx)) {
+			if (ret_body)
+				*ret_body = body;
+
 			return true;
+		}
 
-		undo_me(q);
+		retry_choice(q);
 	}
 
 	leave_predicate(q, q->st.pr, true);
-	drop_choice(q);
 	return false;
 }
 

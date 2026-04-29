@@ -64,7 +64,7 @@ static bool bif_clause_3(query *q)
 				break;
 			}
 		} else {
-			if (match_clause(q, p1, p1_ctx, DO_CLAUSE) != true)
+			if (match_clause(q, p1, p1_ctx, NULL, DO_CLAUSE) != true)
 				break;
 
 			char tmpbuf[128];
@@ -96,7 +96,6 @@ static bool bif_clause_3(query *q)
 				last_match = true;
 			}
 
-			stash_frame(q, cl->num_vars, last_match);
 			return true;
 		}
 
@@ -152,14 +151,23 @@ static bool bif_iso_clause_2(query *q)
 	if (!module_context(q, &p1, p1_ctx))
 		return false;
 
-	while (match_clause(q, p1, p1_ctx, DO_CLAUSE)) {
+	cell *body;
+
+	while (match_clause(q, p1, p1_ctx, &body, DO_CLAUSE)) {
 		if (q->did_throw) return true;
-		clause *cl = &q->st.dbe->cl;
-		cell *body = get_body(cl->cells);
 		bool ok;
 
+#if 1
+		if (is_var(p2)) {
+			const frame *f = GET_FRAME(p2_ctx);
+			slot *e = get_slot(q, f, p2->var_num);
+			cell *p2_attrs = e->c.val_attrs;
+			if (p2_attrs) printf("*** attrs2 var_num=%u, var_ctx=%u\n", p2->var_num, p2_ctx);
+		}
+#endif
+
 		if (body) {
-			ok = unify(q, p2, p2_ctx, body, q->st.fp);
+			ok = unify(q, p2, p2_ctx, body, q->st.cur_ctx);
 		} else {
 			cell tmp;
 			make_instr(&tmp, g_true_s, bif_iso_true_0, 0, 0);
@@ -168,7 +176,12 @@ static bool bif_iso_clause_2(query *q)
 
 		if (ok) {
 			bool last_match = !has_next_key(q);
-			stash_frame(q, cl->num_vars, last_match);
+
+			if (last_match) {
+				leave_predicate(q, q->st.pr, true);
+				drop_choice(q);
+			}
+
 			return true;
 		}
 
@@ -216,7 +229,7 @@ bool do_retract(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 		match = match_rule(q, p1, p1_ctx, is_retract);
 	} else {
 		p1 = get_head(p1);
-		match = match_clause(q, p1, p1_ctx, is_retract);
+		match = match_clause(q, p1, p1_ctx, NULL, is_retract);
 	}
 
 	if (!match || q->did_throw)
@@ -226,9 +239,14 @@ bool do_retract(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 	db_log(q, r, LOG_ERASE);
 	retract_from_db(r->owner->m, r);
 	bool last_match = (is_retract == DO_RETRACT) && !has_next_key(q);
-	q->in_retract = true;
-	stash_frame(q, r->cl.num_vars, last_match);
-	q->in_retract = false;
+
+	if (last_match) {
+		q->in_retract = true;
+		leave_predicate(q, q->st.pr, true);
+		q->in_retract = false;
+		drop_choice(q);
+	}
+
 	return true;
 }
 

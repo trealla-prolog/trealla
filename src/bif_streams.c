@@ -863,7 +863,7 @@ static bool bif_iso_stream_property_2(query *q)
 	CHECKED(tmp);
 	tmp->val_off = g_sys_stream_property_s;
 
-	if (match_clause(q, tmp, q->st.cur_ctx, DO_CLAUSE) != true) {
+	if (match_clause(q, tmp, q->st.cur_ctx, NULL, DO_CLAUSE) != true) {
 		clear_streams_properties(q);
 
 		if (is_callable(p1) && !strstr(s_properties, C_STR(q, p1)))
@@ -872,10 +872,8 @@ static bool bif_iso_stream_property_2(query *q)
 		return false;
 	}
 
-	clause *cl = &q->st.dbe->cl;
 	GET_FIRST_ARG(pstrx,any);
 	pstrx->flags |= FLAG_INT_STREAM;
-	stash_frame(q, cl->num_vars, false);
 	return true;
 }
 
