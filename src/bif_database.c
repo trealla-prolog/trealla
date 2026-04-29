@@ -240,8 +240,8 @@ bool do_retract(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 	if (is_a_rule(p1) && get_logical_body(p1)) {
 		match = match_rule(q, p1, p1_ctx, is_retract);
 	} else {
-		p1 = get_head(p1);
-		match = match_clause(q, p1, p1_ctx, NULL, is_retract);
+		cell *head = get_head(p1);
+		match = match_clause(q, head, p1_ctx, NULL, is_retract);
 	}
 
 	if (!match || q->did_throw)
