@@ -282,6 +282,18 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx fro
 	return true;
 }
 
+void convert_to_refs(cell *c, pl_ctx c_ctx, unsigned num_cells)
+{
+	while (num_cells--) {
+		if (is_var(c) && !is_ref(c)) {
+			c->flags |= FLAG_VAR_REF;
+			c->val_ctx = c_ctx;
+		}
+
+		c++;
+	}
+}
+
 unsigned rebase_term(query *q, cell *c, unsigned start_nbr)
 {
 	q->vars = NULL;

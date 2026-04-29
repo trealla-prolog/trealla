@@ -24,6 +24,7 @@ cell *alloc_queuen(query *q, unsigned qnum, const cell *c);
 
 void fix_list(cell *c);
 unsigned rebase_term(query *q, cell *c, unsigned start_nbr);
+void convert_to_refs(cell *c, pl_ctx c_ctx, unsigned num_cells);
 
 // These allocate on the heap...
 
