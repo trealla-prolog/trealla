@@ -42,6 +42,8 @@ static bool bif_clause_3(query *q)
 	if (is_var(p1) && is_var(p2) && is_var(p3))
 		return throw_error(q, p3, p3_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 
+	const frame *f = GET_CURR_FRAME();
+
 	for (;;) {
 		clause *cl;
 
@@ -76,11 +78,16 @@ static bool bif_clause_3(query *q)
 			cl = &q->st.dbe->cl;
 		}
 
-		cell *body = get_body(cl->cells);
+		cell *c = cl->cells;
+		cell *tmp = alloc_heap(q, c->num_cells);
+		dup_cells(tmp, c, c->num_cells);
+		convert_to_refs(tmp, q->st.cur_ctx, c->num_cells);
+		rebase_term(q, tmp, f->actual_slots);
+		cell *body = get_body(tmp);
 		bool ok;
 
 		if (body)
-			ok = unify(q, p2, p2_ctx, body, q->st.fp);
+			ok = unify(q, p2, p2_ctx, body, q->st.cur_ctx);
 		else {
 			cell tmp;
 			make_instr(&tmp, g_true_s, bif_iso_true_0, 0, 0);
@@ -94,6 +101,11 @@ static bool bif_clause_3(query *q)
 				last_match = !has_next_key(q);
 			} else {
 				last_match = true;
+			}
+
+			if (last_match) {
+				leave_predicate(q, q->st.pr, true);
+				drop_choice(q);
 			}
 
 			return true;
