@@ -7,7 +7,7 @@
 		last/2, same_length/2, transpose/2,
 		sum_list/2, max_list/2, min_list/2,	% SWI
 		list_sum/2, list_max/2, list_min/2,	% Modern
-		list_to_set/2, length/2, reverse/2,
+		list_to_set/2, reverse/2,
 		exclude/3, include/3, permutation/2,
 		foldl/4, foldl/5, foldl/6,
 		maplist/2, maplist/3, maplist/4, maplist/5, maplist/6, maplist/7, maplist/8,
@@ -297,46 +297,6 @@ is_set(Set) :-
 	length(Sorted, Len)
   .
 :- help(is_set(+list), [iso(false), desc('Is it a set.')]).
-
-length(Xs0, N) :-
-   '$skip_max_list'(M, N, Xs0,Xs),
-   !,
-   (  Xs == [] -> N = M
-   ;  nonvar(Xs) -> var(N), Xs = [_|_], resource_error(finite_memory,length/2)
-   ;  nonvar(N) -> R is N-M, length_rundown(Xs, R)
-   ;  N == Xs -> failingvarskip(Xs), resource_error(finite_memory,length/2)
-   ;  length_addendum(Xs, N, M)
-   ).
-length(_, N) :-
-   integer(N), !,
-   domain_error(not_less_than_zero, N, length/2).
-length(_, N) :-
-   type_error(integer, N, length/2).
-
-length_rundown(Xs, 0) :- !, Xs = [].
-length_rundown(Vs, N) :-
-    '$unattributed_var'(Vs), % unconstrained
-    !,
-    '$det_length_rundown'(Vs, N).
-length_rundown([_|Xs], N) :- % force unification
-    N1 is N-1,
-    length(Xs, N1). % maybe some new info on Xs
-
-failingvarskip(Xs) :-
-    '$unattributed_var'(Xs), % unconstrained
-    !.
-failingvarskip([_|Xs0]) :- % force unification
-    '$skip_max_list'(_, _, Xs0,Xs),
-    (  nonvar(Xs) -> Xs = [_|_]
-	 ;  failingvarskip(Xs)
-    ).
-
-length_addendum([], N, N).
-length_addendum([_|Xs], N, M) :-
-    M1 is M + 1,
-    length_addendum(Xs, N, M1).
-
-:- help(length(?term,?integer), [iso(false), desc('Number of elements in list.')]).
 
 list_first_rest([L|Ls], L, Ls).
 
