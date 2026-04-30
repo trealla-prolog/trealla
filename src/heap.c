@@ -293,13 +293,13 @@ unsigned rebase_term(query *q, cell *c, unsigned start_nbr, bool copy_attrs)
 			sl_destroy(q->vars);
 
 		q->vars = NULL;
-		return start_nbr;
+		return q->varno;
 	}
 
-	if (q->vars)
+	if (q->vars) {
 		sl_destroy(q->vars);
-
-	q->vars = NULL;
+		q->vars = NULL;
+	}
 
 	// Turn refs back into vars to recontextualize
 
