@@ -56,7 +56,6 @@ static bool bif_clause_3(query *q)
 				break;
 
 			CHECKED(push_choice(q));
-
 			q->st.dbe = r;
 			cl = &r->cl;
 			cell *c = cl->cells;
@@ -173,15 +172,6 @@ static bool bif_iso_clause_2(query *q)
 	while (match_clause(q, p1, p1_ctx, &body, DO_CLAUSE)) {
 		if (q->did_throw) return true;
 		bool ok;
-
-#if 1
-		if (is_var(p2)) {
-			const frame *f = GET_FRAME(p2_ctx);
-			slot *e = get_slot(q, f, p2->var_num);
-			cell *p2_attrs = e->c.val_attrs;
-			if (p2_attrs) printf("*** attrs2 var_num=%u, var_ctx=%u\n", p2->var_num, p2_ctx);
-		}
-#endif
 
 		if (body) {
 			ok = unify(q, p2, p2_ctx, body, q->st.cur_ctx);
