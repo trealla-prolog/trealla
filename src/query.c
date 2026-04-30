@@ -1456,7 +1456,7 @@ bool match_clause(query *q, cell *p1, pl_ctx p1_ctx, cell **ret_body, enum claus
 
 		// retract(HEAD) should ignore rules (and directives)
 
-		if ((is_retract == DO_RETRACT) && body)	// FIXME: and retractall as well?
+		if ((is_retract == DO_RETRACT) && body)
 			continue;
 
 		CHECKED(push_choice(q));
