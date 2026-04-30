@@ -1,6 +1,6 @@
 :- module(lists, [
 		member/2,
-		select/3,
+		select/3, selectchk/3,
 		append/2, append/3,
 		subtract/3, union/3, intersection/3, is_set/1,
 		nth1/3, nth0/3, nth1/4, nth0/4,
