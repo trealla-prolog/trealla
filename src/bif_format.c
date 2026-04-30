@@ -15,7 +15,13 @@ int format_integer(char *dst, cell *c, int grouping, int sep, int decimals, int 
 
 	if (is_smallint(c)) {
 		pl_int v = get_smallint(c);
-		sprint_int(xtmpbuf1, sizeof(xtmpbuf1), v, radix);
+
+		if (v < 0) {
+			xtmpbuf1[0] = '-';
+			sprint_int(xtmpbuf1+1, sizeof(xtmpbuf1)-1, llabs(v), radix);
+		} else
+			sprint_int(xtmpbuf1, sizeof(xtmpbuf1), v, radix);
+
 		tmpbuf1 = xtmpbuf1;
 		tmpbuf2 = xtmpbuf2;
 	} else {
