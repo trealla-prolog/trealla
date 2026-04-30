@@ -59,9 +59,14 @@ static bool bif_clause_3(query *q)
 
 			q->st.dbe = r;
 			cl = &r->cl;
-			cell *head = get_head(cl->cells);
+			cell *c = cl->cells;
+			cell *tmp = alloc_heap(q, c->num_cells);
+			CHECKED(tmp);
+			dup_cells_by_ref(tmp, c, q->st.cur_ctx, c->num_cells);
+			rebase_term(q, tmp, f->actual_slots, false);
+			cell *head = get_head(tmp);
 
-			if (!unify(q, p1, p1_ctx, head, q->st.fp)) {	// FIXME: cur_ctx
+			if (!unify(q, p1, p1_ctx, head, q->st.cur_ctx)) {
 				drop_choice(q);
 				break;
 			}
