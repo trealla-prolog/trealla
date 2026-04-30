@@ -1,6 +1,6 @@
 :- module(lists, [
-		member/2, memberchk/2,
-		select/3, selectchk/3,
+		member/2,
+		select/3,
 		append/2, append/3,
 		subtract/3, union/3, intersection/3, is_set/1,
 		nth1/3, nth0/3, nth1/4, nth0/4,
@@ -36,14 +36,6 @@ append([], R, R).
 append([X|L], R, [X|S]) :- append(L, R, S).
 
 :- help(append(?term,?term,?term), [iso(false), desc('The concatenation of two lists to make a third.')]).
-
-memberchk(E, List) :-
-	'$memberchk'(E, List, Tail),
-	(   nonvar(Tail) ->  true
-	;   Tail = [_|_], memberchk(E, Tail)
-	).
-
-:- help(memberchk(?term,?term), [iso(false), desc('Is element a member of the list.')]).
 
 member(El, [H|T]) :-
 	member_(T, El, H).

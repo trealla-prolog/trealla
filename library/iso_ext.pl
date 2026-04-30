@@ -170,3 +170,11 @@ length_addendum([_|Xs], N, M) :-
     length_addendum(Xs, N, M1).
 
 :- help(length(?term,?integer), [iso(false), desc('Number of elements in list.')]).
+
+memberchk(E, List) :-
+	'$memberchk'(E, List, Tail),
+	(   nonvar(Tail) ->  true
+	;   Tail = [_|_], memberchk(E, Tail)
+	).
+
+:- help(memberchk(?term,?term), [iso(false), desc('Is element a member of the list.')]).
