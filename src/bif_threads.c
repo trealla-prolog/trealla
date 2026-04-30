@@ -375,7 +375,7 @@ static bool do_send_message(query *q, unsigned chan, cell *p1, pl_ctx p1_ctx, bo
 	CHECKED(init_tmp_heap(q));
 	cell *tmp = clone_term_to_tmp(q, p1, p1_ctx);
 	CHECKED(tmp);
-	rebase_term(q, tmp, 0);
+	rebase_term(q, tmp, 0, false);
 	CHECKED(queue_to_chan(q->pl, chan, tmp, q->my_chan, is_signal));
 	resume_thread(t);
 	return true;
@@ -488,11 +488,6 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 				}
 
 				drop_choice(q);
-
-#if 0
-				frame *f = GET_NEW_FRAME();
-				stash_frame(q, f->actual_slots, false);
-#endif
 				return true;
 			}
 
@@ -835,7 +830,7 @@ static bool bif_thread_create_3(query *q)
 	CHECKED(init_tmp_heap(q));
 	cell *tmp = clone_term_to_tmp(q, p1, p1_ctx);
 	CHECKED(tmp);
-	t->num_vars = rebase_term(q, tmp, 0);
+	t->num_vars = rebase_term(q, tmp, 0, false);
 	t->q = query_create_threaded(q->st.m);
 	CHECKED(t->q);
 	t->q->thread_ptr = t;
@@ -852,7 +847,7 @@ static bool bif_thread_create_3(query *q)
 		CHECKED(init_tmp_heap(q));
 		cell *tmp = clone_term_to_tmp(q, exit_goal, exit_goal_ctx);
 		CHECKED(tmp);
-		t->at_exit_goal_num_vars = rebase_term(q, tmp, 0);
+		t->at_exit_goal_num_vars = rebase_term(q, tmp, 0, false);
 		cell *tmp2 = alloc_heap(q, 1+tmp->num_cells+1);
 		CHECKED(tmp2);
 		pl_idx num_cells = 0;
@@ -1162,7 +1157,7 @@ static bool bif_thread_exit_1(query *q)
 	CHECKED(init_tmp_heap(q));
 	cell *tmp = clone_term_to_tmp(q, p1, p1_ctx);
 	CHECKED(tmp);
-	rebase_term(q, tmp, 0);
+	rebase_term(q, tmp, 0, false);
 	cell *tmp2 = TPL_calloc(1+tmp->num_cells, sizeof(cell));
 	CHECKED(tmp2);
 	make_instr(tmp2, new_atom(q->pl, "exited"), NULL, 1, tmp->num_cells);

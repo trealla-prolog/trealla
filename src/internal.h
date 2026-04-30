@@ -725,7 +725,6 @@ struct query_ {
 	bool portray_vars:1;
 	bool status:1;
 	bool no_recov:1;
-	bool no_recov_compound:1;
 	bool has_vars:1;
 	bool error:1;
 	bool did_throw:1;
@@ -756,7 +755,6 @@ struct query_ {
 	bool end_wait:1;
 	bool did_unhandled_exception:1;
 	bool access_private:1;
-	bool in_retractall:1;
 	bool in_retract:1;
 };
 

@@ -23,7 +23,7 @@ void trim_heap(query *q);
 cell *alloc_queuen(query *q, unsigned qnum, const cell *c);
 
 void fix_list(cell *c);
-unsigned rebase_term(query *q, cell *c, unsigned start_nbr);
+unsigned rebase_term(query *q, cell *c, unsigned start_nbr, bool copy_attrs);
 
 // These allocate on the heap...
 
