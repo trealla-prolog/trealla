@@ -238,7 +238,7 @@ bool check_frame(query *q, unsigned max_vars)
 
 bool check_slot(query *q, unsigned cnt)
 {
-	cnt += 1024;	// Why??
+	cnt += 2;	// Allow some extra
 
 	pl_idx num = q->st.sp + cnt;
 
