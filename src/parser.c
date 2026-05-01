@@ -2356,6 +2356,7 @@ static cell *insert_call_here(parser *p, cell *c, cell *p1)
 static cell *term_to_body_conversion(parser *p, cell *c)
 {
 	//printf("*** term_to_body_conversion %s/%u, p->is_command=%d\n", C_STR(p, c), c->arity, p->is_command);
+
 	pl_idx c_idx = c - p->cl->cells;
 	bool is_head = (c_idx == 0) /*&& !p->is_command */;
 
