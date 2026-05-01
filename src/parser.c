@@ -2090,6 +2090,8 @@ static bool term_expansion(parser *p)
 
 static cell *goal_expansion(parser *p, cell *goal)
 {
+	//printf("*** goal_expansion %s/%u, p->is_command=%d\n", C_STR(p, goal), goal->arity, p->is_command);
+
 	if (p->error || p->internal || !is_interned(goal) || !is_callable(goal))
 		return goal;
 
@@ -2353,7 +2355,7 @@ static cell *insert_call_here(parser *p, cell *c, cell *p1)
 
 static cell *term_to_body_conversion(parser *p, cell *c)
 {
-	//printf("*** %s/%u, p->is_command=%d\n", C_STR(p, c), c->arity, p->is_command);
+	//printf("*** term_to_body_conversion %s/%u, p->is_command=%d\n", C_STR(p, c), c->arity, p->is_command);
 	pl_idx c_idx = c - p->cl->cells;
 	bool is_head = (c_idx == 0) /*&& !p->is_command */;
 
