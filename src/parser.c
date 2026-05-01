@@ -4423,7 +4423,7 @@ bool run(parser *p, const char *prolog_src, bool dump, query **subq, unsigned in
 		p->line_num_start = 0;
 		p->line_num = 1;
 		p->one_shot = true;
-		//p->is_command = true;
+		p->is_command = true;
 		p->is_consulting = false;
 		tokenize(p, false, false);
 

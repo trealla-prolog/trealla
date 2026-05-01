@@ -147,7 +147,6 @@ bool pl_eval(prolog *pl, const char *s, bool interactive)
 		pl->p->fp = stdin;
 
 	pl->p->interactive = interactive;
-	pl->p->is_command = true;
 	bool ok = run(pl->p, s, true, NULL, 0);
 	if (get_status(pl)) pl->m = pl->p->m;
 	parser_destroy(pl->p);
@@ -162,7 +161,6 @@ bool pl_query(prolog *pl, const char *s, pl_sub_query **subq, unsigned int yield
 
 	pl->p = parser_create(pl->m);
 	if (!pl->p) return false;
-	pl->p->is_command = true;
 	pl->is_query = true;
 	bool ok = run(pl->p, s, true, (query**)subq, yield_time_in_ms);
 	if (get_status(pl)) pl->m = pl->p->m;
