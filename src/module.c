@@ -426,7 +426,7 @@ bool find_goal_expansion(module *m, cell *c)
 			return true;
 	}
 
-	return NULL;
+	return false;
 }
 
 bool search_goal_expansion(module *m, cell *c)
