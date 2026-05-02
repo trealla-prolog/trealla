@@ -432,7 +432,7 @@ static thread *get_self(prolog *pl)
 	return NULL;
 }
 
-static bool do_match_message(query *q, unsigned chan, bool is_peek)
+static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeout)
 {
 	GET_FIRST_ARG(pq,queue);
 	thread *t = &q->pl->threads[chan];
@@ -519,7 +519,69 @@ static bool bif_thread_get_message_2(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
 	}
 
-	bool ok = do_match_message(q, n, false);
+	bool ok = do_match_message(q, n, false, -1.0);
+	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
+	return ok;
+}
+
+static bool bif_thread_get_message_3(query *q)
+{
+	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
+	GET_FIRST_ARG(p1,queue);
+	int n = get_thread(q, p1);
+
+	if (n < 0) {
+		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
+		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+	}
+
+	GET_NEXT_ARG(p2,any);
+	GET_NEXT_ARG(p3,list_or_nil);
+	LIST_HANDLER(p3);
+	cell *p3_orig = p3;
+	pl_ctx p3_orig_ctx = p3_ctx;
+	double timeout = -1.0;
+
+	while (is_iso_list(p3)) {
+		cell *h = LIST_HEAD(p3);
+		h = deref(q, h, p3_ctx);
+		pl_ctx h_ctx = q->latest_ctx;
+
+		if (!is_interned(h) || !is_compound(h)) {
+			throw_error(q, h, h_ctx, "domain_error", "read_option");
+			return false;
+		}
+
+		if (!CMP_STRING_TO_CSTR(q, h, "timeout")) {
+			cell *c1 = deref(q, FIRST_ARG(h), h_ctx);
+			pl_ctx c1_ctx = q->latest_ctx;
+
+			if (!is_float(c1)) {
+				throw_error(q, c1, h_ctx, "instantiation_error", "read_option");
+				return false;
+			}
+
+			timeout = get_float(c1);
+		} else {
+			throw_error(q, h, h_ctx, "domain_error", "read_option");
+			return false;
+		}
+
+		p3 = LIST_TAIL(p3);
+		p3 = deref(q, p3, p3_ctx);
+		p3_ctx = q->latest_ctx;
+	}
+
+	if (is_var(p3)) {
+		clear_write_options(q);
+		return throw_error(q, p3_orig, p3_orig_ctx, "instantiation_error", "get_option");
+	}
+
+	if (!is_nil(p3)) {
+		return throw_error(q, p3_orig, p3_orig_ctx, "type_error", "list");
+	}
+
+	bool ok = do_match_message(q, n, false, timeout);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	return ok;
 }
@@ -535,7 +597,7 @@ static bool bif_thread_peek_message_2(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
 	}
 
-	bool ok = do_match_message(q, n, true);
+	bool ok = do_match_message(q, n, true, -1.0);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	return ok;
 }
@@ -2368,6 +2430,7 @@ builtins g_threads_bifs[] =
 	{"thread_sleep", 1, bif_thread_sleep_1, "+integer", false, false, BLAH},
 	{"thread_yield", 0, bif_thread_yield_0, "", false, false, BLAH},
 	{"thread_send_message", 2, bif_thread_send_message_2, "+queue,+term", false, false, BLAH},
+	{"thread_get_message", 3, bif_thread_get_message_3, "+queue,?term,+list", false, false, BLAH},
 	{"thread_get_message", 2, bif_thread_get_message_2, "+queue,?term", false, false, BLAH},
 	{"thread_peek_message", 2, bif_thread_peek_message_2, "+queue,?term", false, false, BLAH},
 	{"thread_property", 2, bif_thread_property_2, "?thread,?term", false, false, BLAH},
