@@ -2270,7 +2270,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 	parser_destroy(p2);
 	query_destroy(q);
 
-	return goal;
+	return goal_expansion(p, goal);
 }
 
 static void expand_meta_predicate(parser *p, predicate *pr, cell *goal)
