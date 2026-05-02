@@ -2430,7 +2430,6 @@ builtins g_threads_bifs[] =
 	{"thread_sleep", 1, bif_thread_sleep_1, "+integer", false, false, BLAH},
 	{"thread_yield", 0, bif_thread_yield_0, "", false, false, BLAH},
 	{"thread_send_message", 2, bif_thread_send_message_2, "+queue,+term", false, false, BLAH},
-	{"thread_get_message", 3, bif_thread_get_message_3, "+queue,?term,+list", false, false, BLAH},
 	{"thread_get_message", 2, bif_thread_get_message_2, "+queue,?term", false, false, BLAH},
 	{"thread_peek_message", 2, bif_thread_peek_message_2, "+queue,?term", false, false, BLAH},
 	{"thread_property", 2, bif_thread_property_2, "?thread,?term", false, false, BLAH},
@@ -2446,6 +2445,11 @@ builtins g_threads_bifs[] =
 	{"message_queue_create", 2, bif_message_queue_create_2, "-queue,+list", false, false, BLAH},
 	{"message_queue_destroy", 1, bif_message_queue_destroy_1, "+queue", false, false, BLAH},
 	{"message_queue_property", 2, bif_message_queue_property_2, "?queue,?term", false, false, BLAH},
+
+	// SWI-compatible...
+
+	{"thread_get_message", 3, bif_thread_get_message_3, "+queue,?term,+list", false, false, BLAH},
+
 #endif
 
 	{0}
