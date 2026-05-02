@@ -1542,6 +1542,10 @@ bool match_head(query *q)
 
 		clause *cl = &q->st.dbe->cl;
 		cell *head = get_head(cl->cells);
+
+		if (cl->num_vars > q->st.pr->max_vars)
+			CHECKED(check_slot(q, cl->num_vars));
+
 		try_me(q, cl->num_vars);
 		q->st.dbe->attempted++;
 
