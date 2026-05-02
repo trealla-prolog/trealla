@@ -2358,7 +2358,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 	//printf("*** term_to_body_conversion %s/%u, p->is_command=%d\n", C_STR(p, c), c->arity, p->is_command);
 
 	pl_idx c_idx = c - p->cl->cells;
-	bool is_head = (c_idx == 0) /*&& !p->is_command */;
+	bool is_head = c_idx == 0;
 
 	if (is_xfx(c) || is_xfy(c)) {
 		if ((c->val_off == g_conjunction_s)
@@ -3795,7 +3795,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 
 				if (p->error) return 0;
 
-				if ((p->is_consulting /*|| p->is_command*/) && !p->skip && check_body_callable(p->cl->cells)) {
+				if (p->is_consulting && !p->skip && check_body_callable(p->cl->cells)) {
 					if (!p->do_read_term)
 						printf("Error: type error, not callable, %s:%d\n", get_loaded(p->m, p->m->filename), p->line_num);
 
@@ -3809,7 +3809,7 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 				if (!p->one_shot /*|| p->is_command*/)
 					term_to_body(p);
 
-				if ((p->is_consulting /*|| p->is_command*/) && !p->skip) {
+				if (p->is_consulting && !p->skip) {
 					term_expansion(p);
 					cell *p1 = p->cl->cells;
 
