@@ -730,6 +730,7 @@ static void *start_routine_thread_create(thread *t)
 	unshare_cells(t->goal, t->goal->num_cells);
 	TPL_free(t->goal);
 	t->goal = NULL;
+	t->is_finished = true;
 
 	if (t->is_exception && !t->q->abort) {
 		//printf("*** exception, %u\n", t->chan);
@@ -749,7 +750,6 @@ static void *start_routine_thread_create(thread *t)
 		t->at_exit_goal = NULL;
 	}
 
-	t->is_finished = true;
 	do_unlock_all(t->pl);
 
 	if (!t->is_detached) {
