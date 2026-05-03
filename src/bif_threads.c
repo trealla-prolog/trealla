@@ -441,7 +441,7 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 	pl_int started_ms = wall_time_in_usec() / 1000;
 	pl_int ms = timeout * 1000;
 
-	while (!q->halt) {
+	while (!q->halt && !q->abort) {
 		acquire_lock(&t->guard);
 
 		if (!list_count(&t->queue)) {
@@ -459,9 +459,9 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 			do {
 				suspend_thread(t, 10);
 			}
-			 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt);
+			 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && !q->abort);
 
-			if (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt) {
+			if (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && !q->abort) {
 				pl_int elapsed_ms = (wall_time_in_usec()/1000) - started_ms;
 
 				if ((ms >= 0) && (elapsed_ms > ms))
@@ -731,7 +731,9 @@ static void *start_routine_thread_create(thread *t)
 	TPL_free(t->goal);
 	t->goal = NULL;
 
-	if (!t->q->abort && t->is_exception) {
+	assert(t->q);
+
+	if (t->is_exception && !t->q->abort) {
 		//printf("*** exception, %u\n", t->chan);
 		t->ball = TPL_calloc(t->q->ball->num_cells, sizeof(cell));
 		dup_cells(t->ball, t->q->ball, t->q->ball->num_cells);
@@ -739,7 +741,7 @@ static void *start_routine_thread_create(thread *t)
 		//DUMP_TERM("*** ", t->ball, 0, 0);
 	}
 
-	if (t->at_exit_goal) {
+	if (t->at_exit_goal && !t->q->abort) {
 		//printf("*** at_exit...\n");
 		//query *q = t->q;
 		//DUMP_TERM("***", t->at_exit_goal, q->st.cur_ctx, 0);
@@ -1069,8 +1071,6 @@ static bool bif_thread_join_2(query *q)
 	}
 
 	if (t->at_exit_goal) {
-		printf("*** at_exit...\n");
-		DUMP_TERM("***", t->at_exit_goal, q->st.cur_ctx, 0);
 		unshare_cells(t->at_exit_goal, t->at_exit_goal->num_cells);
 		TPL_free(t->at_exit_goal);
 		t->at_exit_goal = NULL;

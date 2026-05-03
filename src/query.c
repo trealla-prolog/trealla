@@ -1877,7 +1877,6 @@ static query *query_create_(module *m, bool is_small)
 	q->vgen = 1;
 	q->dump_var_num = -1;
 	q->dump_var_ctx = -1;
-	q->flags.occurs_check = false;
 	q->double_quotes = false;
 
 	//if (is_threaded) q->trace = 1;
