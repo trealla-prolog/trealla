@@ -1505,9 +1505,7 @@ static bool bif_thread_property_2(query *q)
 
 static bool bif_is_thread_1(query *q)
 {
-	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
 	GET_FIRST_ARG(p1,nonvar);
-	GET_NEXT_ARG(p2,any);
 
 	if (is_nonvar(p1) && !check_thread(p1))
 		return false;
