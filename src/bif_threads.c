@@ -731,8 +731,6 @@ static void *start_routine_thread_create(thread *t)
 	TPL_free(t->goal);
 	t->goal = NULL;
 
-	assert(t->q);
-
 	if (t->is_exception && !t->q->abort) {
 		//printf("*** exception, %u\n", t->chan);
 		t->ball = TPL_calloc(t->q->ball->num_cells, sizeof(cell));
