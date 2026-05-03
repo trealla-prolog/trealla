@@ -964,18 +964,11 @@ bool do_signal(query *q, void *thread_ptr)
 	msg *m = list_pop_front(&t->signals);
 	release_lock(&t->guard);
 	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.cur_ctx, 0);
-
-#if 0
-	cell *tmp = copy_term_to_heap(q, m->c, q->st.cur_ctx, false);	// Copy into thread
-	CHECKED(tmp);
-#else
 	cell *tmp = alloc_heap(q, m->c->num_cells);
 	CHECKED(tmp);
 	dup_cells_by_ref(tmp, m->c, q->st.cur_ctx, m->c->num_cells);
 	const frame *f = GET_CURR_FRAME();
 	rebase_term(q, tmp, f->actual_slots, false);
-#endif
-
 	unshare_cells(m->c, m->c->num_cells);
 	TPL_free(m);
 	cell *tmp2 = prepare_call(q, CALL_NOSKIP, tmp, q->st.cur_ctx, 1);
