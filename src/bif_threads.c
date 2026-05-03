@@ -438,6 +438,8 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 	thread *t = &q->pl->threads[chan];
 	CHECKED(check_slot(q, MAX_ARITY));
 	CHECKED(check_frame(q, MAX_ARITY));
+	pl_int started_ms = wall_time_in_usec() / 1000;
+	pl_int ms = timeout * 1000;
 
 	while (!q->halt) {
 		acquire_lock(&t->guard);
@@ -454,12 +456,17 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 			if (is_peek)
 				return false;
 
-			uint64_t cnt = 0;
-
 			do {
 				suspend_thread(t, 10);
 			}
-			 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && (cnt++ < 1000));
+			 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt);
+
+			if (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt) {
+				pl_int elapsed_ms = (wall_time_in_usec()/1000) - started_ms;
+
+				if ((ms >= 0) && (elapsed_ms > ms))
+					return false;
+			}
 
 			continue;
 		}
@@ -597,7 +604,7 @@ static bool bif_thread_peek_message_2(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
 	}
 
-	bool ok = do_match_message(q, n, true, -1.0);
+	bool ok = do_match_message(q, n, true, 0.0);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	return ok;
 }
@@ -2410,11 +2417,8 @@ void thread_cancel_all(prolog *pl)
 builtins g_threads_bifs[] =
 {
 #if USE_THREADS
-	{"thread", 3, bif_pl_thread_3, "-thread,+atom,+list", false, false, BLAH},
-	{"pl_thread_pin_cpu", 2, bif_pl_thread_pin_cpu_2, "+thread,+integer", false, false, BLAH},
-	{"pl_thread_set_priority", 2, bif_pl_thread_set_priority_2, "+thread,+integer", false, false, BLAH},
-	{"pl_msg_send", 2, bif_pl_send_2, "+thread,+term", false, false, BLAH},
-	{"pl_msg_recv", 2, bif_pl_recv_2, "-thread,?term", false, false, BLAH},
+
+	// ISO standard (defunct)...
 
 	{"thread_create", 3, bif_thread_create_3, ":callable,-thread,+list", false, false, BLAH},
 
@@ -2449,6 +2453,14 @@ builtins g_threads_bifs[] =
 	// SWI-compatible...
 
 	{"thread_get_message", 3, bif_thread_get_message_3, "+queue,?term,+list", false, false, BLAH},
+
+	// Other non-standard...
+
+	{"thread", 3, bif_pl_thread_3, "-thread,+atom,+list", false, false, BLAH},
+	{"pl_thread_pin_cpu", 2, bif_pl_thread_pin_cpu_2, "+thread,+integer", false, false, BLAH},
+	{"pl_thread_set_priority", 2, bif_pl_thread_set_priority_2, "+thread,+integer", false, false, BLAH},
+	{"pl_msg_send", 2, bif_pl_send_2, "+thread,+term", false, false, BLAH},
+	{"pl_msg_recv", 2, bif_pl_recv_2, "-thread,?term", false, false, BLAH},
 
 #endif
 
