@@ -927,6 +927,7 @@ static bool do_use_module(module *cur_m, cell *c, module **mptr)
 		    || !strcmp(name, "apply")
 		    || !strcmp(name, "cont")
 		    || !strcmp(name, "os")
+		    || !strcmp(name, "option")
 		    )
 			return true;
 
