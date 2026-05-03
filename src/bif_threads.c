@@ -1506,11 +1506,7 @@ static bool bif_thread_property_2(query *q)
 static bool bif_is_thread_1(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
-
-	if (is_nonvar(p1) && !check_thread(p1))
-		return false;
-
-	return true;
+	return check_thread(p1);
 }
 
 static bool bif_message_queue_create_2(query *q)
