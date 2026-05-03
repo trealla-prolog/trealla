@@ -1171,9 +1171,6 @@ static bool bif_thread_detach_1(query *q)
 	if (!is_threaded(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "detach,not_thread");
 
-	t->q->halt_code = 0;
-	t->q->halt = t->q->error = true;
-
 	if (t->is_active)
 		pthread_detach(t->id);
 
