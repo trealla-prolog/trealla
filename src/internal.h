@@ -734,6 +734,7 @@ struct query_ {
 	bool yield_after:1;
 	bool yielded:1;
 	bool is_task:1;
+	bool is_thread:1;
 	bool json:1;
 	bool nl:1;
 	bool fullstop:1;
