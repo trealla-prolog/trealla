@@ -441,7 +441,7 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 	pl_int started_ms = wall_time_in_usec() / 1000;
 	pl_int ms = timeout * 1000;
 
-	while (!q->halt) {
+	while (!q->halt && !q->abort) {
 		acquire_lock(&t->guard);
 
 		if (!list_count(&t->queue)) {
@@ -459,9 +459,9 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 			do {
 				suspend_thread(t, 10);
 			}
-			 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt);
+			 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && !q->abort);
 
-			if (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt) {
+			if (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && !q->abort) {
 				pl_int elapsed_ms = (wall_time_in_usec()/1000) - started_ms;
 
 				if ((ms >= 0) && (elapsed_ms > ms))
@@ -2327,7 +2327,7 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_ctx p1_ct
 {
 	thread *t = &q->pl->threads[q->pl->my_chan];
 
-	while (!q->halt) {
+	while (!q->halt && !q->abort) {
 		acquire_lock(&t->guard);
 
 		if (list_count(&t->queue))
@@ -2344,13 +2344,14 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_ctx p1_ct
 		if (is_peek)
 			return false;
 
-		uint64_t cnt = 0;
-
 		do {
 			suspend_thread(t, 10);
 		}
-		 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && (cnt++ < 1000));
+		 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && !q->abort);
 	}
+
+	if (q->halt || q->abort)
+		return false;
 
 	msg *m;
 

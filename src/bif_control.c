@@ -850,7 +850,7 @@ static bool find_exception_handler(query *q, char *ball)
 		fprintf(stdout, "%% Execution aborted\n");
 		q->pl->did_dump_vars = true;
 		q->ball = NULL;
-		q->error = true;
+		q->abort = true;
 		return false;
 	} else {
 		q->ball = clone_term_to_heap(q, e, e_ctx);
