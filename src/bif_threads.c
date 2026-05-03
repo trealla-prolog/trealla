@@ -1503,6 +1503,18 @@ static bool bif_thread_property_2(query *q)
 	return ok;
 }
 
+static bool bif_is_thread_1(query *q)
+{
+	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
+	GET_FIRST_ARG(p1,nonvar);
+	GET_NEXT_ARG(p2,any);
+
+	if (is_nonvar(p1) && !check_thread(p1))
+		return false;
+
+	return true;
+}
+
 static bool bif_message_queue_create_2(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
@@ -2461,6 +2473,8 @@ builtins g_threads_bifs[] =
 	{"pl_thread_set_priority", 2, bif_pl_thread_set_priority_2, "+thread,+integer", false, false, BLAH},
 	{"pl_msg_send", 2, bif_pl_send_2, "+thread,+term", false, false, BLAH},
 	{"pl_msg_recv", 2, bif_pl_recv_2, "-thread,?term", false, false, BLAH},
+
+	{"is_thread", 1, bif_is_thread_1, "+term", false, false, BLAH},
 
 #endif
 
