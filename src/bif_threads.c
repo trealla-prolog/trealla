@@ -966,12 +966,11 @@ bool do_signal(query *q, void *thread_ptr)
 	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.cur_ctx, 0);
 	cell *tmp = copy_term_to_heap(q, m->c, q->st.cur_ctx, false);	// Copy into thread
 	CHECKED(tmp);
-	unshare_cells(tmp, tmp->num_cells);
+	unshare_cells(m->c, m->c->num_cells);
 	TPL_free(m);
 	cell *tmp2 = prepare_call(q, CALL_NOSKIP, tmp, q->st.cur_ctx, 1);
 	ENSURE(tmp2);
-	pl_idx num_cells = tmp->num_cells;
-	make_call(q, tmp2+num_cells);
+	make_call(q, tmp2+tmp->num_cells);
 	q->st.instr = tmp2;
 	return true;
 }
@@ -998,9 +997,7 @@ static bool bif_thread_signal_2(query *q)
 		return false;
 	}
 
-	if (t->q)
-		t->q->thread_signal++;
-
+	t->q->thread_signal++;
 	resume_thread(t);
 	return true;
 }
