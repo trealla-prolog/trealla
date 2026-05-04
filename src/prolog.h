@@ -61,6 +61,8 @@ extern builtins g_format_bifs[];
 extern builtins g_ffi_bifs[];
 extern builtins g_iso_bifs[];
 extern builtins g_maps_bifs[];
+extern builtins g_net_bifs[];
+extern builtins g_net_bifs[];
 extern builtins g_os_bifs[];
 extern builtins g_other_bifs[];
 extern builtins g_control_bifs[];
