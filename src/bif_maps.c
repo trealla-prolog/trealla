@@ -397,8 +397,8 @@ static bool bif_engine_create_4(query *q)
 	str->engine->trace = q->trace;
 
 	cell *p0 = copy_term_to_heap(q, q->st.instr, q->st.cur_ctx, false);
-	unify(q, q->st.instr, q->st.cur_ctx, p0, q->st.cur_ctx);
 	CHECKED(p0);
+	unify(q, q->st.instr, q->st.cur_ctx, p0, q->st.cur_ctx);
 
 	q = str->engine;		// Operating in engine now
 
@@ -406,8 +406,7 @@ static bool bif_engine_create_4(query *q)
 	GET_NEXT_ARG(xp2,callable);
 
 	cell *tmp = prepare_call(q, CALL_NOSKIP, xp2, xp2_ctx, 1);
-	pl_idx num_cells = xp2->num_cells;
-	make_call(q, tmp+num_cells);
+	make_call(q, tmp+xp2->num_cells);
 	CHECKED(push_barrier(q));
 	q->st.instr = tmp;
 	str->pattern = clone_term_to_heap(q, xp1, xp1_ctx);
