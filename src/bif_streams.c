@@ -7208,14 +7208,14 @@ builtins g_streams_bifs[] =
 	{"write_canonical_to_chars", 3, bif_write_canonical_to_chars_3, "?string,?term,+list", false, false, BLAH},
 	{"read_line_to_string", 2, bif_read_line_to_string_2, "+stream,-string", false, false, BLAH},
 	{"read_file_to_string", 3, bif_read_file_to_string_3, "+source_sink,-string,+options", false, false, BLAH},
+	{"alias", 2, bif_alias_2, "+blob,+atom", false, false, BLAH},
 
 	{"http_location", 2, bif_http_location_2, "?list,?atom", false, false, BLAH},
 	{"parse_url", 2, bif_parse_url_2, "?atom,?list", false, false, BLAH},
 	{"client", 5, bif_client_5, "+source_sink,-atom,-atom,-atom,+list", false, false, BLAH},
 	{"server", 3, bif_server_3, "+source_sink,--stream,+list", false, false, BLAH},
 	{"accept", 2, bif_accept_2, "+stream,--stream", false, false, BLAH},
-
-	{"alias", 2, bif_alias_2, "+blob,+atom", false, false, BLAH},
+	{"$current_host", 1, bif_sys_current_host_1, "-atom", false, false, BLAH},
 
 	{"$stream_to_file", 2, bif_sys_stream_to_file_2, "+stream,-integer", false, false, BLAH},
 	{"$capture_output", 0, bif_sys_capture_output_0, NULL, false, false, BLAH},
@@ -7229,7 +7229,6 @@ builtins g_streams_bifs[] =
 	{"$bread", 3, bif_sys_bread_3, "+stream,+integer,-string", false, false, BLAH},
 	{"$bflush", 1, bif_sys_bflush_1, "+stream", false, false, BLAH},
 	{"$bwrite", 2, bif_sys_bwrite_2, "+stream,-string", false, false, BLAH},
-	{"$current_host", 1, bif_sys_current_host_1, "-atom", false, false, BLAH},
 
 	{"$gsl_vector_write", 2, bif_sys_gsl_vector_write_2, "+integer,+stream", false, false, BLAH},
 	{"$gsl_vector_alloc", 2, bif_sys_gsl_vector_alloc_2, "+stream,-integer", false, false, BLAH},
