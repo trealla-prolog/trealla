@@ -757,24 +757,24 @@ A server *Goal* takes a single arg, the connection stream.
 Networking					##EXPERIMENTAL##
 ==========
 
-	http_location/2         # http_location(?list,?url)
-	parse_url/2             # parse_url(?url,?list)
+	'$http_location'/2         # '$http_location'(?list,?url)
+	'$parse_url'/2             # '$parse_url'(?url,?list)
 
 ```console
 	$ tpl
-	?- parse_url('http://www.xyz.org:81/hello?msg=Hello+World%21&foo=bar#xyz',P).
+	?- '$parse_url'('http://www.xyz.org:81/hello?msg=Hello+World%21&foo=bar#xyz',P).
 	   P = [search([msg='Hello World!',foo=bar]),protocol(http),host('www.xyz.org'),port(81),path('/hello'),fragment(xyz)].
-	?- parse_url(U,[search([msg='Hello World!',foo=bar]),protocol(http),host('www.xyz.org'),port(81),path('/hello'),fragment(xyz)]).
+	?- '$parse_url'(U,[search([msg='Hello World!',foo=bar]),protocol(http),host('www.xyz.org'),port(81),path('/hello'),fragment(xyz)]).
 	   U = 'http://www.xyz.org:81/hello?msg=Hello+World%21&foo=bar#xyz'.
 	?-
 ```
 
-	server/2                # server(+host,-stream)
-	server/3                # server(+host,-stream,+list)
-	accept/2                # accept(+stream,-stream)
-	client/2                # client(+url,-stream)
-	client/4                # client(+url,-host,-path,-stream)
-	client/5                # client(+url,-host,-path,-stream,+list)
+	'$server'/2                # '$server'(+host,-stream)
+	'$server'/3                # '$server'(+host,-stream,+list)
+	'$accept'/2                # '$accept'(+stream,-stream)
+	'$client'/2                # '$client'(+url,-stream)
+	'$client'/4                # '$client'(+url,-host,-path,-stream)
+	'$client'/5                # '$client'(+url,-host,-path,-stream,+list)
 
 The options list can include *udp(bool)* (default is false),
 *nodelay(bool)* (default is true), *ssl(bool)* (default is false)

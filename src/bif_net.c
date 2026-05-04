@@ -44,7 +44,7 @@ static void parse_host(const char *src, char hostname[1024], char path[4096], un
 		memmove(path, path+1, strlen(path+1)+1);
 }
 
-static bool bif_server_3(query *q)
+static bool bif_sys_server_3(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,var);
@@ -201,7 +201,7 @@ static bool bif_server_3(query *q)
 	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 }
 
-static bool bif_accept_2(query *q)
+static bool bif_sys_accept_2(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
 	GET_NEXT_ARG(p1,var);
@@ -528,7 +528,7 @@ static bool do_parse_url(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_
 	return unify(q, p2, p2_ctx, end_list(q), q->st.cur_ctx);
 }
 
-static bool bif_parse_url_2(query *q)
+static bool bif_sys_parse_url_2(query *q)
 {
 	GET_FIRST_ARG(p1,atom_or_var);
 	GET_NEXT_ARG(p2,iso_list_or_var);
@@ -542,7 +542,7 @@ static bool bif_parse_url_2(query *q)
 		return do_parse_parts(q, p1, p1_ctx, p2, p2_ctx, true);
 }
 
-static bool bif_http_location_2(query *q)
+static bool bif_sys_http_location_2(query *q)
 {
 	GET_FIRST_ARG(p1,iso_list_or_var);
 	GET_NEXT_ARG(p2,atom_or_var);
@@ -556,7 +556,7 @@ static bool bif_http_location_2(query *q)
 		return do_parse_parts(q, p2, p2_ctx, p1, p1_ctx, false);
 }
 
-static bool bif_client_5(query *q)
+static bool bif_sys_client_5(query *q)
 {
 	GET_FIRST_ARG(p1,source_sink);
 	GET_NEXT_ARG(p2,var);
@@ -716,11 +716,11 @@ static bool bif_sys_current_host_1(query *q)
 
 builtins g_net_bifs[] =
 {
-	{"http_location", 2, bif_http_location_2, "?list,?atom", false, false, BLAH},
-	{"parse_url", 2, bif_parse_url_2, "?atom,?list", false, false, BLAH},
-	{"client", 5, bif_client_5, "+source_sink,-atom,-atom,-atom,+list", false, false, BLAH},
-	{"server", 3, bif_server_3, "+source_sink,--stream,+list", false, false, BLAH},
-	{"accept", 2, bif_accept_2, "+stream,--stream", false, false, BLAH},
+	{"$http_location", 2, bif_sys_http_location_2, "?list,?atom", false, false, BLAH},
+	{"$parse_url", 2, bif_sys_parse_url_2, "?atom,?list", false, false, BLAH},
+	{"$client", 5, bif_sys_client_5, "+source_sink,-atom,-atom,-atom,+list", false, false, BLAH},
+	{"$server", 3, bif_sys_server_3, "+source_sink,--stream,+list", false, false, BLAH},
+	{"$accept", 2, bif_sys_accept_2, "+stream,--stream", false, false, BLAH},
 	{"$current_host", 1, bif_sys_current_host_1, "-atom", false, false, BLAH},
 
 	{0}

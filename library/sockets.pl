@@ -8,7 +8,7 @@
 
 %% socket_client_open(+Addr, -Stream, +Options).
 %
-% Open a socket to a server, returning a stream. Addr must satisfy `Addr = Address:Port`.
+% Open a socket to a '$server', returning a stream. Addr must satisfy `Addr = Address:Port`.
 %
 % The following options are available:
 %
@@ -34,16 +34,16 @@ socket_client_open(Addr0, Stream, Options) :-
     ;
        throw(error(type_error(socket_address, Addr), socket_client_open/3))
     ),
-    %format("client(Addr: ~w, Options: ~w)~n", [Addr, Options]),
-	client(Addr, _, _, Stream, []),
-    %format("... client(Addr: ~w, Stream: ~w) done~n", [Addr, Stream]),
+    %format("'$client'(Addr: ~w, Options: ~w)~n", [Addr, Options]),
+	'$client'(Addr, _, _, Stream, []),
+    %format("... '$client'(Addr: ~w, Stream: ~w) done~n", [Addr, Stream]),
 	set_stream(Stream, Options).
 
 
 
 %% socket_server_open(+Addr, -ServerSocket, +Options).
 %
-% Open a server socket, returning a ServerSocket. Use that ServerSocket to accept incoming connections in
+% Open a '$server' socket, returning a ServerSocket. Use that ServerSocket to '$accept' incoming connections in
 % `socket_server_accept/4`. Addr must satisfy `Addr = Address:Port`. Depending on the operating system
 % configuration, some ports might be reserved for superusers.
 socket_server_open(Addr0, ServerSocket, Options) :-
@@ -52,9 +52,9 @@ socket_server_open(Addr0, ServerSocket, Options) :-
 		( number_codes(Addr0, Codes), atom_codes(Addr1, Codes), atom_concat(':', Addr1, Addr) )
     ; Addr = Addr0
     ),
-    %format("server(Addr: ~w, ServerSocket: ~w, Options: ~w)~n", [Addr, ServerSocket, Options]),
-    server(Addr, ServerSocket, Options),
-    %format("... server(Addr: ~w, ServerSocket: ~w) done~n", [Addr, ServerSocket]),
+    %format("'$server'(Addr: ~w, ServerSocket: ~w, Options: ~w)~n", [Addr, ServerSocket, Options]),
+    '$server'(Addr, ServerSocket, Options),
+    %format("... '$server'(Addr: ~w, ServerSocket: ~w) done~n", [Addr, ServerSocket]),
     true.
 
 
@@ -75,9 +75,9 @@ socket_server_open(Addr0, ServerSocket, Options) :-
 socket_server_accept(ServerSocket, Client, Stream, Options) :-
     must_be(var, Client),
     must_be(var, Stream),
-    %format("accept(ServerSocket: ~w, Options: ~w)~n", [ServerSocket, Options]),
-    accept(ServerSocket, Stream),
-    %format("... accept(ServerSocket: ~w, Stream: ~w) done~n", [ServerSocket, Stream]),
+    %format("'$accept'(ServerSocket: ~w, Options: ~w)~n", [ServerSocket, Options]),
+    '$accept'(ServerSocket, Stream),
+    %format("... '$accept'(ServerSocket: ~w, Stream: ~w) done~n", [ServerSocket, Stream]),
     Client = Stream,
 	set_stream(Stream, Options).
 

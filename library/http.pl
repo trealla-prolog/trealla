@@ -53,7 +53,7 @@ http_open(UrlList, S, Opts) :-
 	memberchk(path(Path), UrlList),
 	(memberchk(method(Method), OptList) -> true ; Method = get),
 	(memberchk(version(Major-Minor), OptList) -> true ; (Major = 1, Minor = 1)),
-	client(Host, _Host, _Path, S, OptList),
+	'$client'(Host, _Host, _Path, S, OptList),
 	string_upper(Method, UMethod),
 	format(S, '~s /~s HTTP/~d.~d\r~nHost: ~s\r~nConnection: keep-alive\r~n\r~n', [UMethod,Path,Major,Minor,Host]),
 	read_response(S, Code),
@@ -71,7 +71,7 @@ process(Url, S, Opts) :-
 	(memberchk(post(PostData), OptList) -> Method2 = post ; Method2 = get),
 	(memberchk(method(Method), OptList) -> true ; Method = Method2),
 	(memberchk(version(Major-Minor), OptList) -> true ; (Major = 1, Minor = 1)),
-	client(Url, Host, Path, S, OptList),
+	'$client'(Url, Host, Path, S, OptList),
 	string_upper(Method, UMethod),
 	(	memberchk(header("content-type", Ct), OptList) -> format(atom(Ctype), "Content-Type: ~w\r~n",[Ct])
 	;	Ctype = ''
@@ -137,7 +137,7 @@ http_server(Goal, Opts) :-
 	(	integer(Port) -> format(atom(Host), ':~d', Port)
 	;	format(atom(Host), '~w', Port)
 	),
-	server(Host, S, []),
-	accept(S, S2),
+	'$server'(Host, S, []),
+	'$accept'(S, S2),
 		fork,
 		call(Goal, S2).
