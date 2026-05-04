@@ -392,6 +392,7 @@ static bool bif_engine_create_4(query *q)
 	str->cur_yield = NULL;
 
 	str->engine = query_create(q->st.m);
+	CHECKED(str->engine);
 	str->engine->cur_engine = n;
 	str->engine->is_engine = true;
 	str->engine->trace = q->trace;
@@ -400,16 +401,19 @@ static bool bif_engine_create_4(query *q)
 	CHECKED(p0);
 	unify(q, q->st.instr, q->st.cur_ctx, p0, q->st.cur_ctx);
 
+	query *save_q = q;
 	q = str->engine;		// Operating in engine now
 
 	GET_FIRST_ARG0(xp1,any,p0);
 	GET_NEXT_ARG(xp2,callable);
 
 	cell *tmp = prepare_call(q, CALL_NOSKIP, xp2, xp2_ctx, 1);
-	make_call(q, tmp+xp2->num_cells);
+	CHECKED(tmp);
+	make_call(save_q, tmp+xp2->num_cells);
 	CHECKED(push_barrier(q));
 	q->st.instr = tmp;
 	str->pattern = clone_term_to_heap(q, xp1, xp1_ctx);
+	CHECKED(str->pattern);
 	return true;
 }
 
