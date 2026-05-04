@@ -1864,7 +1864,6 @@ static query *query_create_(module *m, bool is_small)
 	query *q = TPL_calloc(1, sizeof(query));
 	ENSURE(q);
 	q->p = parser_create(m);
-	q->flags.occurs_check = false;
 	q->qid = g_query_id++;
 	q->pl = m->pl;
 	q->pl->q_cnt++;
@@ -1874,11 +1873,11 @@ static query *query_create_(module *m, bool is_small)
 	q->get_started = wall_time_in_usec();
 	q->time_cpu_last_started = q->cpu_time = cpu_time_in_usec();
 	q->ops_dirty = true;
-	q->double_quotes = false;
 	q->max_depth = m->pl->def_max_depth;
 	q->vgen = 1;
 	q->dump_var_num = -1;
 	q->dump_var_ctx = -1;
+	q->double_quotes = false;
 
 	//if (is_threaded) q->trace = 1;
 
@@ -1919,7 +1918,9 @@ query *query_create(module *m)
 
 query *query_create_threaded(module *m)
 {
-	return query_create_(m, true);
+	query *t = query_create_(m, true);
+	t->is_thread = true;
+	return t;
 }
 
 query *query_create_subquery(query *q, cell *instr)
@@ -1945,8 +1946,8 @@ query *query_create_subquery(query *q, cell *instr)
 
 query *query_create_task(query *q, cell *instr)
 {
-	query *task = query_create_subquery(q, instr);
-	if (!task) return NULL;
-	task->is_task = true;
-	return task;
+	query *t = query_create_subquery(q, instr);
+	if (!t) return NULL;
+	t->is_task = true;
+	return t;
 }

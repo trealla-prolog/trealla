@@ -982,9 +982,7 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 
 			SB_sprintf(q->sb, "%s", braces&&!q->ignore_ops?"}":")");
 			q->parens = false;
-		}
-
-		if (q->last_thing != WAS_SYMBOL)
+		} else if (q->last_thing != WAS_SYMBOL)
 			q->last_thing = WAS_OTHER;
 
 		return true;

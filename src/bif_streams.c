@@ -5652,52 +5652,53 @@ static bool bif_server_3(query *q)
 	while (is_list(p3)) {
 		cell *h = LIST_HEAD(p3);
 		cell *c = deref(q, h, p3_ctx);
+		pl_ctx c_ctx = q->latest_ctx;
 
 		if (is_compound(c) && (c->arity == 1)) {
 			if (!CMP_STRING_TO_CSTR(q, c, "udp")) {
-				c = c + 1;
+				c = deref(q, c + 1, c_ctx);
 
 				if (is_atom(c))
 					udp = !CMP_STRING_TO_CSTR(q, c, "true") ? 1 : 0;
 			} else if (!CMP_STRING_TO_CSTR(q, c, "nodelay")) {
-				c = c + 1;
+				c = deref(q, c + 1, c_ctx);
 
 				if (is_atom(c))
 					nodelay = !CMP_STRING_TO_CSTR(q, c, "true") ? 1 : 0;
 			} else if (!CMP_STRING_TO_CSTR(q, c, "ssl")) {
-				c = c + 1;
+				c = deref(q, c + 1, c_ctx);
 
 				if (is_atom(c))
 					ssl = !CMP_STRING_TO_CSTR(q, c, "true") ? 1 : 0;
 			} else if (!CMP_STRING_TO_CSTR(q, c, "keyfile")) {
-				c = c + 1;
+				c = deref(q, c + 1, c_ctx);
 
 				if (is_atom(c))
 					keyfile = C_STR(q, c);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "certfile")) {
-				c = c + 1;
+				c = deref(q, c + 1, c_ctx);
 
 				if (is_atom(c))
 					certfile = C_STR(q, c);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "hostname")) {
-				c = c + 1;
+				c = deref(q, c + 1, c_ctx);
 
 				if (is_atom(c))
 					slicecpy(hostname, sizeof(hostname), C_STR(q, c), C_STRLEN(q, c));
 			} else if (!CMP_STRING_TO_CSTR(q, c, "scheme")) {
-				c = c + 1;
+				c = deref(q, c + 1, c_ctx);
 
 				if (is_atom(c)) {
 					ssl = !CMP_STRING_TO_CSTR(q, c, "https") ? 1 : 0;
 					port = 443;
 				}
 			} else if (!CMP_STRING_TO_CSTR(q, c, "port")) {
-				c = c + 1;
+				c = deref(q, c + 1, c_ctx);
 
 				if (is_integer(c))
 					port = get_smallint(c);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "level")) {
-				c = c + 1;
+				c = deref(q, c + 1, c_ctx);
 
 				if (is_integer(c))
 					level = (int)get_smallint(c);
@@ -5832,27 +5833,29 @@ static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 		cell *h = LIST_HEAD(p2);
 		h = deref(q, h, p2_ctx);
 		pl_ctx h_ctx = q->latest_ctx;
+		cell *c = deref(q, h+1, h_ctx);
+		pl_ctx c_ctx = q->latest_ctx;
 
 		if (!strcmp(C_STR(q, h), "protocol")) {
-			if (!is_atom(h+1))
-				return throw_error(q, h+1, p2_ctx, "type_error", "atom");
+			if (!is_atom(c))
+				return throw_error(q, c, c_ctx, "type_error", "atom");
 
-			snprintf(protocol, sizeof(protocol), "%s", C_STR(q, h+1));
+			snprintf(protocol, sizeof(protocol), "%s", C_STR(q, c));
 		} else if (!strcmp(C_STR(q, h), "host")) {
-			if (!is_atom(h+1))
-				return throw_error(q, h+1, p2_ctx, "type_error", "atom");
+			if (!is_atom(c))
+				return throw_error(q, c, c_ctx, "type_error", "atom");
 
-			snprintf(host, sizeof(host), "%s", C_STR(q, h+1));
+			snprintf(host, sizeof(host), "%s", C_STR(q, c));
 		} else if (!strcmp(C_STR(q, h), "port")) {
-			if (!is_smallint(h+1))
-				return throw_error(q, h+1, p2_ctx, "type_error", "integer");
+			if (!is_smallint(c))
+				return throw_error(q, c, c_ctx, "type_error", "integer");
 
-			port = get_smallint(h+1);
+			port = get_smallint(c);
 		} else if (!strcmp(C_STR(q, h), "path")) {
-			if (!is_atom(h+1))
-				return throw_error(q, h+1, p2_ctx, "type_error", "atom");
+			if (!is_atom(c))
+				return throw_error(q, c, c_ctx, "type_error", "atom");
 
-			snprintf(path, sizeof(path), "%s", C_STR(q, h+1));
+			snprintf(path, sizeof(path), "%s", C_STR(q, c));
 		} else if (!strcmp(C_STR(q, h), "search")) {
 			cell *h1 = h + 1;
 			h1 = deref(q, h1, h_ctx);
@@ -5919,10 +5922,10 @@ static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 					dst += snprintf(dst, sizeof(search), "&");
 			}
 		} else if (!strcmp(C_STR(q, h), "fragment")) {
-			if (!is_atom(h+1))
-				return throw_error(q, h+1, p2_ctx, "type_error", "atom");
+			if (!is_atom(c))
+				return throw_error(q, c, c_ctx, "type_error", "atom");
 
-			snprintf(fragment, sizeof(fragment), "%s", C_STR(q, h+1));
+			snprintf(fragment, sizeof(fragment), "%s", C_STR(q, c));
 		}
 
 		p2 = LIST_TAIL(p2);
@@ -6149,42 +6152,43 @@ static bool bif_client_5(query *q)
 	while (is_iso_list(p5)) {
 		cell *h = LIST_HEAD(p5);
 		cell *c = deref(q, h, p5_ctx);
+		pl_ctx c_ctx = q->latest_ctx;
 
 		if (is_compound(c) && (c->arity == 1)) {
 			if (!CMP_STRING_TO_CSTR(q, c, "udp")) {
-				c = c + 1;
+				c = deref(q, c + 1, c_ctx);
 
 				if (is_atom(c))
 					udp = !CMP_STRING_TO_CSTR(q, c, "true") ? 1 : 0;
 			} else if (!CMP_STRING_TO_CSTR(q, c, "nodelay")) {
-				c = c + 1;
+				c = deref(q, c + 1, c_ctx);
 
 				if (is_atom(c))
 					nodelay = !CMP_STRING_TO_CSTR(q, c, "true") ? 1 : 0;
 			} else if (!CMP_STRING_TO_CSTR(q, c, "ssl")) {
-				c = c + 1;
+				c = deref(q, c + 1, c_ctx);
 
 				if (is_atom(c))
 					ssl = !CMP_STRING_TO_CSTR(q, c, "true") ? 1 : 0;
 			} else if (!CMP_STRING_TO_CSTR(q, c, "certfile")) {
-				c = c + 1;
+				c = deref(q, c + 1, c_ctx);
 
 				if (is_atom(c))
 					certfile = C_STR(q, c);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "scheme")) {
-				c = c + 1;
+				c = deref(q, c + 1, c_ctx);
 
 				if (is_atom(c)) {
 					ssl = !CMP_STRING_TO_CSTR(q, c, "https") ? 1 : 0;
 					if (ssl) port = 443;
 				}
 			} else if (!CMP_STRING_TO_CSTR(q, c, "port")) {
-				c = c + 1;
+				c = deref(q, c + 1, c_ctx);
 
 				if (is_integer(c))
 					port = (int)get_smallint(c);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "level")) {
-				c = c + 1;
+				c = deref(q, c + 1, c_ctx);
 
 				if (is_integer(c))
 					level = (int)get_smallint(c);

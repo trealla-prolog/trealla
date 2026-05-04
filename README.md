@@ -500,6 +500,7 @@ Non-standard predicates
 	read_line_to_string/2		# removes terminator
 	read_file_to_string/3
 	replace/4                   # replace(+string,+old,+new,-string)
+	option/2-3					# SWI-compatible (library(option)
 
 	open(stream(Str),...)       # with open/4 reopen a stream
 	open(F,M,S,[mmap(Ls)])      # with open/4 mmap() the file to Ls

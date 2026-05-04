@@ -847,10 +847,12 @@ static bool find_exception_handler(query *q, char *ball)
 	q->did_unhandled_exception = true;
 
 	if (!strcmp(C_STR(q, e+1), "$aborted")) {
-		fprintf(stdout, "%% Execution aborted\n");
+		if (!q->is_thread && !q->is_task)
+			fprintf(stdout, "%% Execution aborted\n");
+
 		q->pl->did_dump_vars = true;
 		q->ball = NULL;
-		q->error = true;
+		q->abort = true;
 		return false;
 	} else {
 		q->ball = clone_term_to_heap(q, e, e_ctx);

@@ -384,7 +384,7 @@ static bool do_send_message(query *q, unsigned chan, cell *p1, pl_ctx p1_ctx, bo
 static bool bif_pl_send_2(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,thread);
+	GET_FIRST_ARG(p1,nonvar);
 	GET_NEXT_ARG(p2,any);
 	int n = get_thread(q, p1);
 
@@ -432,14 +432,16 @@ static thread *get_self(prolog *pl)
 	return NULL;
 }
 
-static bool do_match_message(query *q, unsigned chan, bool is_peek)
+static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeout)
 {
 	GET_FIRST_ARG(pq,queue);
 	thread *t = &q->pl->threads[chan];
 	CHECKED(check_slot(q, MAX_ARITY));
 	CHECKED(check_frame(q, MAX_ARITY));
+	pl_int started_ms = wall_time_in_usec() / 1000;
+	pl_int ms = timeout * 1000;
 
-	while (!q->halt) {
+	while (!q->halt && !q->abort) {
 		acquire_lock(&t->guard);
 
 		if (!list_count(&t->queue)) {
@@ -454,12 +456,17 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek)
 			if (is_peek)
 				return false;
 
-			uint64_t cnt = 0;
-
 			do {
 				suspend_thread(t, 10);
 			}
-			 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && (cnt++ < 1000));
+			 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && !q->abort);
+
+			if (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && !q->abort) {
+				pl_int elapsed_ms = (wall_time_in_usec()/1000) - started_ms;
+
+				if ((ms >= 0) && (elapsed_ms > ms))
+					return false;
+			}
 
 			continue;
 		}
@@ -519,7 +526,69 @@ static bool bif_thread_get_message_2(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
 	}
 
-	bool ok = do_match_message(q, n, false);
+	bool ok = do_match_message(q, n, false, -1.0);
+	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
+	return ok;
+}
+
+static bool bif_thread_get_message_3(query *q)
+{
+	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
+	GET_FIRST_ARG(p1,queue);
+	int n = get_thread(q, p1);
+
+	if (n < 0) {
+		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
+		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+	}
+
+	GET_NEXT_ARG(p2,any);
+	GET_NEXT_ARG(p3,list_or_nil);
+	LIST_HANDLER(p3);
+	cell *p3_orig = p3;
+	pl_ctx p3_orig_ctx = p3_ctx;
+	double timeout = -1.0;
+
+	while (is_iso_list(p3)) {
+		cell *h = LIST_HEAD(p3);
+		h = deref(q, h, p3_ctx);
+		pl_ctx h_ctx = q->latest_ctx;
+
+		if (!is_interned(h) || !is_compound(h)) {
+			throw_error(q, h, h_ctx, "domain_error", "read_option");
+			return false;
+		}
+
+		if (!CMP_STRING_TO_CSTR(q, h, "timeout")) {
+			cell *c1 = deref(q, FIRST_ARG(h), h_ctx);
+			pl_ctx c1_ctx = q->latest_ctx;
+
+			if (!is_float(c1)) {
+				throw_error(q, c1, h_ctx, "instantiation_error", "read_option");
+				return false;
+			}
+
+			timeout = get_float(c1);
+		} else {
+			throw_error(q, h, h_ctx, "domain_error", "read_option");
+			return false;
+		}
+
+		p3 = LIST_TAIL(p3);
+		p3 = deref(q, p3, p3_ctx);
+		p3_ctx = q->latest_ctx;
+	}
+
+	if (is_var(p3)) {
+		clear_write_options(q);
+		return throw_error(q, p3_orig, p3_orig_ctx, "instantiation_error", "get_option");
+	}
+
+	if (!is_nil(p3)) {
+		return throw_error(q, p3_orig, p3_orig_ctx, "type_error", "list");
+	}
+
+	bool ok = do_match_message(q, n, false, timeout);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	return ok;
 }
@@ -535,7 +604,7 @@ static bool bif_thread_peek_message_2(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
 	}
 
-	bool ok = do_match_message(q, n, true);
+	bool ok = do_match_message(q, n, true, 0.0);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	return ok;
 }
@@ -661,8 +730,9 @@ static void *start_routine_thread_create(thread *t)
 	unshare_cells(t->goal, t->goal->num_cells);
 	TPL_free(t->goal);
 	t->goal = NULL;
+	t->is_finished = true;
 
-	if (t->is_exception) {
+	if (t->is_exception && !t->q->abort) {
 		//printf("*** exception, %u\n", t->chan);
 		t->ball = TPL_calloc(t->q->ball->num_cells, sizeof(cell));
 		dup_cells(t->ball, t->q->ball, t->q->ball->num_cells);
@@ -670,7 +740,7 @@ static void *start_routine_thread_create(thread *t)
 		//DUMP_TERM("*** ", t->ball, 0, 0);
 	}
 
-	if (t->at_exit_goal) {
+	if (t->at_exit_goal && !t->q->abort) {
 		//printf("*** at_exit...\n");
 		//query *q = t->q;
 		//DUMP_TERM("***", t->at_exit_goal, q->st.cur_ctx, 0);
@@ -680,7 +750,6 @@ static void *start_routine_thread_create(thread *t)
 		t->at_exit_goal = NULL;
 	}
 
-	t->is_finished = true;
 	do_unlock_all(t->pl);
 
 	if (!t->is_detached) {
@@ -855,7 +924,6 @@ static bool bif_thread_create_3(query *q)
 		num_cells += dup_cells(tmp2+num_cells, tmp, tmp->num_cells);
 		make_instr(tmp2+num_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 		THREAD_DEBUG DUMP_TERM("at_exit", tmp2, q->st.cur_ctx, 0);
-		//t->at_exit_goal = copy_term_to_heap(t->q, tmp2, 0, false);
 		t->at_exit_goal = TPL_calloc(tmp2->num_cells, sizeof(cell));
 		CHECKED(t->at_exit_goal);
 		dup_cells(t->at_exit_goal, tmp2, tmp2->num_cells);
@@ -895,14 +963,16 @@ bool do_signal(query *q, void *thread_ptr)
 	msg *m = list_pop_front(&t->signals);
 	release_lock(&t->guard);
 	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.cur_ctx, 0);
-	cell *tmp = copy_term_to_heap(q, m->c, q->st.cur_ctx, false);	// Copy into thread
+	cell *tmp = alloc_heap(q, m->c->num_cells);
 	CHECKED(tmp);
-	unshare_cells(tmp, tmp->num_cells);
+	dup_cells_by_ref(tmp, m->c, q->st.cur_ctx, m->c->num_cells);
+	const frame *f = GET_CURR_FRAME();
+	rebase_term(q, tmp, f->actual_slots, false);
+	unshare_cells(m->c, m->c->num_cells);
 	TPL_free(m);
 	cell *tmp2 = prepare_call(q, CALL_NOSKIP, tmp, q->st.cur_ctx, 1);
 	ENSURE(tmp2);
-	pl_idx num_cells = tmp->num_cells;
-	make_call(q, tmp2+num_cells);
+	make_call(q, tmp2+tmp->num_cells);
 	q->st.instr = tmp2;
 	return true;
 }
@@ -910,7 +980,7 @@ bool do_signal(query *q, void *thread_ptr)
 static bool bif_thread_signal_2(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,thread);
+	GET_FIRST_ARG(p1,nonvar);
 	GET_NEXT_ARG(p2,callable);
 	int n = get_thread(q, p1);
 
@@ -929,9 +999,7 @@ static bool bif_thread_signal_2(query *q)
 		return false;
 	}
 
-	if (t->q)
-		t->q->thread_signal++;
-
+	t->q->thread_signal++;
 	resume_thread(t);
 	return true;
 }
@@ -939,7 +1007,7 @@ static bool bif_thread_signal_2(query *q)
 static bool bif_thread_join_2(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,thread);
+	GET_FIRST_ARG(p1,nonvar);
 	int n = get_thread(q, p1);
 
 	if (n < 0) {
@@ -965,11 +1033,11 @@ static bool bif_thread_join_2(query *q)
 		unshare_cells(t->exit_code, t->exit_code->num_cells);
 		TPL_free(t->exit_code);
 		t->exit_code = NULL;
-		GET_FIRST_ARG(p1,thread);
+		GET_FIRST_ARG(p1,nonvar);
 		GET_NEXT_ARG(p2,any);
 		unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
 	} else {
-		GET_FIRST_ARG(p1,thread);
+		GET_FIRST_ARG(p1,nonvar);
 		GET_NEXT_ARG(p2,any);
 		cell tmp;
 		make_instr(&tmp, g_true_s, bif_iso_true_0, 0, 0);
@@ -1000,8 +1068,6 @@ static bool bif_thread_join_2(query *q)
 	}
 
 	if (t->at_exit_goal) {
-		printf("*** at_exit...\n");
-		DUMP_TERM("***", t->at_exit_goal, q->st.cur_ctx, 0);
 		unshare_cells(t->at_exit_goal, t->at_exit_goal->num_cells);
 		TPL_free(t->at_exit_goal);
 		t->at_exit_goal = NULL;
@@ -1062,7 +1128,7 @@ static void do_cancel(thread *t)
 static bool bif_thread_cancel_1(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,thread);
+	GET_FIRST_ARG(p1,nonvar);
 	int n = get_thread(q, p1);
 
 	if (n == 0)
@@ -1086,7 +1152,7 @@ static bool bif_thread_cancel_1(query *q)
 static bool bif_thread_detach_1(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,thread);
+	GET_FIRST_ARG(p1,nonvar);
 	int n = get_thread(q, p1);
 
 	if (n == 0)
@@ -1101,9 +1167,6 @@ static bool bif_thread_detach_1(query *q)
 
 	if (!is_threaded(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "detach,not_thread");
-
-	t->q->halt_code = 0;
-	t->q->halt = t->q->error = true;
 
 	if (t->is_active)
 		pthread_detach(t->id);
@@ -1180,7 +1243,7 @@ static bool bif_thread_exit_1(query *q)
 
 static bool do_thread_property_pin_both(query *q)
 {
-	GET_FIRST_ARG(p1,thread);
+	GET_FIRST_ARG(p1,nonvar);
 	GET_NEXT_ARG(p2,nonvar);
 	int n = get_thread(q, p1);
 
@@ -1295,7 +1358,7 @@ static bool do_thread_property_pin_property(query *q)
 
 static bool do_thread_property_pin_id(query *q)
 {
-	GET_FIRST_ARG(p1,thread);
+	GET_FIRST_ARG(p1,nonvar);
 	GET_NEXT_ARG(p2,any);
 	int n = get_thread(q, p1);
 
@@ -1432,6 +1495,12 @@ static bool bif_thread_property_2(query *q)
 
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	return ok;
+}
+
+static bool bif_is_thread_1(query *q)
+{
+	GET_FIRST_ARG(p1,nonvar);
+	return check_thread(p1);
 }
 
 static bool bif_message_queue_create_2(query *q)
@@ -2215,7 +2284,7 @@ static bool bif_mutex_property_2(query *q)
 static bool bif_pl_thread_pin_cpu_2(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,thread);
+	GET_FIRST_ARG(p1,nonvar);
 	GET_NEXT_ARG(p2,integer);
 	int n = get_thread(q, p1);
 
@@ -2236,7 +2305,7 @@ static bool bif_pl_thread_pin_cpu_2(query *q)
 static bool bif_pl_thread_set_priority_2(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,thread);
+	GET_FIRST_ARG(p1,nonvar);
 	GET_NEXT_ARG(p2,integer);
 	int n = get_thread(q, p1);
 
@@ -2348,11 +2417,8 @@ void thread_cancel_all(prolog *pl)
 builtins g_threads_bifs[] =
 {
 #if USE_THREADS
-	{"thread", 3, bif_pl_thread_3, "-thread,+atom,+list", false, false, BLAH},
-	{"pl_thread_pin_cpu", 2, bif_pl_thread_pin_cpu_2, "+thread,+integer", false, false, BLAH},
-	{"pl_thread_set_priority", 2, bif_pl_thread_set_priority_2, "+thread,+integer", false, false, BLAH},
-	{"pl_msg_send", 2, bif_pl_send_2, "+thread,+term", false, false, BLAH},
-	{"pl_msg_recv", 2, bif_pl_recv_2, "-thread,?term", false, false, BLAH},
+
+	// ISO standard (defunct)...
 
 	{"thread_create", 3, bif_thread_create_3, ":callable,-thread,+list", false, false, BLAH},
 
@@ -2383,6 +2449,21 @@ builtins g_threads_bifs[] =
 	{"message_queue_create", 2, bif_message_queue_create_2, "-queue,+list", false, false, BLAH},
 	{"message_queue_destroy", 1, bif_message_queue_destroy_1, "+queue", false, false, BLAH},
 	{"message_queue_property", 2, bif_message_queue_property_2, "?queue,?term", false, false, BLAH},
+
+	// SWI-compatible...
+
+	{"thread_get_message", 3, bif_thread_get_message_3, "+queue,?term,+list", false, false, BLAH},
+
+	// Other non-standard...
+
+	{"thread", 3, bif_pl_thread_3, "-thread,+atom,+list", false, false, BLAH},
+	{"pl_thread_pin_cpu", 2, bif_pl_thread_pin_cpu_2, "+thread,+integer", false, false, BLAH},
+	{"pl_thread_set_priority", 2, bif_pl_thread_set_priority_2, "+thread,+integer", false, false, BLAH},
+	{"pl_msg_send", 2, bif_pl_send_2, "+thread,+term", false, false, BLAH},
+	{"pl_msg_recv", 2, bif_pl_recv_2, "-thread,?term", false, false, BLAH},
+
+	{"is_thread", 1, bif_is_thread_1, "+term", false, false, BLAH},
+
 #endif
 
 	{0}

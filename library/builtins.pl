@@ -722,3 +722,14 @@ goal_expansion(call_det(G, Det), Goal) :-
 	Goal = ('$get_level'(L1), call(G), '$get_level'(L2), (L1 = L2 -> Det = true; Det = false)),
 	true.
 goal_expansion(call_det(G, V), call_det(G, V)).
+
+% SWI-compatible library(option)
+
+option(Opt, Options, _Default) :-
+    memberchk(Opt, Options), !.
+option(Opt, _, Default) :-
+    functor(Opt, _, 1),
+    arg(1, Opt, Default).
+
+option(Opt, Options) :-
+    memberchk(Opt, Options).
