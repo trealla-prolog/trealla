@@ -1276,6 +1276,27 @@ engines. Uses co-operative tasks.
 	current_engine/1
 	engine_destroy/1
 
+For example:
+```
+	✗ cat find.pl
+	find_at_most(N, Template, Goal, List) :-
+		engine_create(Template, Goal, Engine),
+		collect_at_most(N, Engine, List0),
+		engine_destroy(Engine),
+		List = List0.
+
+	collect_at_most(N, Engine, [X| Xs]) :-
+		N > 0,
+		engine_next(Engine, X),
+		!,
+		M is N - 1,
+		collect_at_most(M, Engine, Xs).
+	collect_at_most(_, _, []).
+	✗ tpl -q find.pl
+	?- find_at_most(5, I, between(1,1000,I), Sols).
+	   Sols = [1,2,3,4,5].
+	?- ^D%
+```
 
 Compile to standalone		##EXPERIMENTAL##
 =====================
