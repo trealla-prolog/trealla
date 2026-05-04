@@ -16,6 +16,30 @@
 #include "openssl/hmac.h"
 #endif
 
+static bool bif_sys_list_1(query *q);
+
+static bool bif_findnsols_ge_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,integer);
+
+	if (is_bigint(p1))
+		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
+
+	if (is_bigint(p2))
+		return throw_error(q, p2, p2_ctx, "domain_error", "small_integer_range");
+
+	pl_int num = get_smallint(p1);
+
+	if (num < get_smallint(p2)) {
+		set_smallint(p1, num+1);
+		return false;
+	}
+
+	set_smallint(p1, 1);
+	return true;
+}
+
 static bool bif_findnsols_4(query *q)
 {
 	GET_FIRST_ARG(p0,integer);
@@ -47,12 +71,16 @@ static bool bif_findnsols_4(query *q)
 		if (q->st.qnum == MAX_QUEUES)
 			return throw_error(q, p2, p2_ctx, "resource_error", "max_queues");
 
-		cell *tmp = prepare_call(q, CALL_NOSKIP, tmp2, p2_ctx, 1+p1->num_cells+2);
+		cell *tmp = prepare_call(q, CALL_NOSKIP, tmp2, p2_ctx, 1+p1->num_cells+3+2+1);
 		CHECKED(tmp, drop_queuen(q));
 		pl_idx num_cells = tmp2->num_cells;
 		make_instr(tmp+num_cells++, g_sys_queue_s, bif_sys_queue_1, 1, p1->num_cells);
 		num_cells += dup_cells_by_ref(tmp+num_cells, p1, p1_ctx, p1->num_cells);
-		make_instr(tmp+num_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
+		make_instr(tmp+num_cells++, g_gt_s, bif_findnsols_ge_2, 2, 2);
+		make_int(tmp+num_cells++, 1);
+		make_int(tmp+num_cells++, nsols);
+		make_instr(tmp+num_cells++, g_dummy_s, bif_sys_list_1, 1, 1);
+		make_ref(tmp+num_cells++, p3->var_num, p3_ctx);
 		make_call(q, tmp+num_cells);
 		CHECKED(push_barrier(q), drop_queuen(q));
 		q->st.instr = tmp;
@@ -2707,7 +2735,7 @@ static cell *convert_to_list(query *q, cell *c, pl_idx num_cells)
 static bool bif_sys_list_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
-	cell *l = convert_to_list(q, q->queue[0], q->qp[0]);
+	cell *l = convert_to_list(q, q->queue[q->st.qnum], q->qp[q->st.qnum]);
 	return unify(q, p1, p1_ctx, l, q->st.cur_ctx);
 }
 
@@ -6403,6 +6431,7 @@ builtins g_other_bifs[] =
 	{"$jump_if_nil", 2, bif_sys_jump_if_nil_2, "+term,+integer", false, false, BLAH},
 	{"$lt", 2, bif_sys_lt_2, NULL, false, false, BLAH},
 	{"$gt", 2, bif_sys_gt_2, NULL, false, false, BLAH},
+	{"$ge", 2, bif_findnsols_ge_2, NULL, false, false, BLAH},
 	{"$ne", 2, bif_sys_ne_2, NULL, false, false, BLAH},
 	{"$undo", 2, bif_sys_undo_1, "+var", true, false, BLAH},
 	{"$create_var", 1, bif_sys_create_var_1, "-var", false, false, BLAH},
