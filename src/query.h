@@ -87,6 +87,7 @@ void undo_var(query *q, const cell *c, pl_ctx c_ctx);
 bool valid_list(query *q, cell *c, pl_ctx c_ctx);
 void make_call(query *q, cell *tmp);
 void make_call_redo(query *q, cell *tmp);
+void make_call_engine(query *q, cell *tmp, cell* c);
 bool do_post_unify_hook(query *q, bool is_builtin);
 bool any_attributed(query *q);
 bool do_load_file(query *q, cell *p1, pl_ctx p1_ctx);

@@ -401,7 +401,6 @@ static bool bif_engine_create_4(query *q)
 	CHECKED(p0);
 	unify(q, q->st.instr, q->st.cur_ctx, p0, q->st.cur_ctx);
 
-	query *save_q = q;
 	q = str->engine;		// Operating in engine now
 
 	GET_FIRST_ARG0(xp1,any,p0);
@@ -409,7 +408,7 @@ static bool bif_engine_create_4(query *q)
 
 	cell *tmp = prepare_call(q, CALL_NOSKIP, xp2, xp2_ctx, 1);
 	CHECKED(tmp);
-	make_call(save_q, tmp+xp2->num_cells);
+	make_call_engine(q, tmp+xp2->num_cells, tmp);
 	CHECKED(push_barrier(q));
 	q->st.instr = tmp;
 	str->pattern = clone_term_to_heap(q, xp1, xp1_ctx);

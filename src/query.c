@@ -280,6 +280,15 @@ bool check_trail(query *q)
 	return true;
 }
 
+void make_call_engine(query *q, cell *tmp, cell *c)
+{
+	make_end(tmp);
+	const frame *f = GET_CURR_FRAME();
+	tmp->ret_instr = c + c->num_cells;	// save next as the return instruction
+	tmp->chgen = f->chgen;				// ... choice-generation
+	tmp->mid = q->st.m->id;				// ... current-module
+}
+
 void make_call(query *q, cell *tmp)
 {
 	make_end(tmp);
