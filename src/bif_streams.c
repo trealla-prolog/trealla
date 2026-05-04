@@ -5833,27 +5833,29 @@ static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 		cell *h = LIST_HEAD(p2);
 		h = deref(q, h, p2_ctx);
 		pl_ctx h_ctx = q->latest_ctx;
+		cell *c = deref(q, h+1, h_ctx);
+		pl_ctx c_ctx = q->latest_ctx;
 
 		if (!strcmp(C_STR(q, h), "protocol")) {
-			if (!is_atom(h+1))
-				return throw_error(q, h+1, p2_ctx, "type_error", "atom");
+			if (!is_atom(c))
+				return throw_error(q, c, c_ctx, "type_error", "atom");
 
-			snprintf(protocol, sizeof(protocol), "%s", C_STR(q, h+1));
+			snprintf(protocol, sizeof(protocol), "%s", C_STR(q, c));
 		} else if (!strcmp(C_STR(q, h), "host")) {
-			if (!is_atom(h+1))
-				return throw_error(q, h+1, p2_ctx, "type_error", "atom");
+			if (!is_atom(c))
+				return throw_error(q, c, c_ctx, "type_error", "atom");
 
-			snprintf(host, sizeof(host), "%s", C_STR(q, h+1));
+			snprintf(host, sizeof(host), "%s", C_STR(q, c));
 		} else if (!strcmp(C_STR(q, h), "port")) {
-			if (!is_smallint(h+1))
-				return throw_error(q, h+1, p2_ctx, "type_error", "integer");
+			if (!is_smallint(c))
+				return throw_error(q, c, c_ctx, "type_error", "integer");
 
-			port = get_smallint(h+1);
+			port = get_smallint(c);
 		} else if (!strcmp(C_STR(q, h), "path")) {
-			if (!is_atom(h+1))
-				return throw_error(q, h+1, p2_ctx, "type_error", "atom");
+			if (!is_atom(c))
+				return throw_error(q, c, c_ctx, "type_error", "atom");
 
-			snprintf(path, sizeof(path), "%s", C_STR(q, h+1));
+			snprintf(path, sizeof(path), "%s", C_STR(q, c));
 		} else if (!strcmp(C_STR(q, h), "search")) {
 			cell *h1 = h + 1;
 			h1 = deref(q, h1, h_ctx);
@@ -5920,10 +5922,10 @@ static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 					dst += snprintf(dst, sizeof(search), "&");
 			}
 		} else if (!strcmp(C_STR(q, h), "fragment")) {
-			if (!is_atom(h+1))
-				return throw_error(q, h+1, p2_ctx, "type_error", "atom");
+			if (!is_atom(c))
+				return throw_error(q, c, c_ctx, "type_error", "atom");
 
-			snprintf(fragment, sizeof(fragment), "%s", C_STR(q, h+1));
+			snprintf(fragment, sizeof(fragment), "%s", C_STR(q, c));
 		}
 
 		p2 = LIST_TAIL(p2);
