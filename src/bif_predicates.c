@@ -16,9 +16,6 @@
 #include "openssl/hmac.h"
 #endif
 
-static pl_idx queue_used(const query *q) { return q->qp[0]; }
-static cell *get_queue(query *q) { return q->queue[0]; }
-
 static bool bif_iso_findall_3(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -2636,7 +2633,7 @@ static cell *convert_to_list(query *q, cell *c, pl_idx num_cells)
 static bool bif_sys_list_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
-	cell *l = convert_to_list(q, get_queue(q), queue_used(q));
+	cell *l = convert_to_list(q, q->queue[0], q->qp[0]);
 	return unify(q, p1, p1_ctx, l, q->st.cur_ctx);
 }
 
