@@ -545,7 +545,7 @@ builtins g_maps_bifs[] =
 	{"map_count", 2, bif_map_count_2, "+stream,-integer", false, false, BLAH},
 	{"map_close", 1, bif_map_close_1, "+stream", false, false, BLAH},
 
-	{"engine_create", 4, bif_engine_create_4, "+term,:callable,?stream,+list", false, false, BLAH},
+	{"$engine_create", 4, bif_engine_create_4, "+term,:callable,?stream,+list", false, false, BLAH},
 	{"engine_next", 2, bif_engine_next_2, "+stream,-term", false, false, BLAH},
 	{"is_engine", 1, bif_is_engine_1, "+term", false, false, BLAH},
 	{"engine_self", 1, bif_engine_self_1, "--stream", false, false, BLAH},

@@ -378,10 +378,13 @@ print(S, T) :- format(S, "~p", [T]).
 open(F, M, S) :- open(F, M, S, []).
 
 :- meta_predicate(engine_create(?,0,?)).
+:- meta_predicate(engine_create(?,0,?,?)).
 
-engine_create(T, G, S) :- engine_create(T, G, S, []).
+engine_create(T, G, S) :- '$engine_create'(T, G, S, []).
+engine_create(T, G, S, L) :- '$engine_create'(T, G, S, L).
 
 :- help(engine_create(+term,+callable,?stream), [iso(false)]).
+:- help(engine_create(+term,+callable,?stream,+list), [iso(false)]).
 
 engine_post(E, T, R) :-
 	engine_post(E, T),
