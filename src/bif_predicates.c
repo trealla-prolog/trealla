@@ -22,8 +22,9 @@ static bool bif_findnsols_4(query *q)
 	GET_NEXT_ARG(p1,any);
 	GET_NEXT_ARG(p2,callable);
 	GET_NEXT_ARG(p3,list_or_nil_or_var);
+	int nsols = get_smallint(p0);
 
-	if (get_smallint(p0) < 0)
+	if (nsols < 0)
 		return throw_error(q, p0, p0_ctx, "domain_error", "not_less_than_zero");
 
 	if (!q->retry) {
