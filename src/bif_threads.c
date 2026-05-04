@@ -924,7 +924,6 @@ static bool bif_thread_create_3(query *q)
 		num_cells += dup_cells(tmp2+num_cells, tmp, tmp->num_cells);
 		make_instr(tmp2+num_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 		THREAD_DEBUG DUMP_TERM("at_exit", tmp2, q->st.cur_ctx, 0);
-		//t->at_exit_goal = copy_term_to_heap(t->q, tmp2, 0, false);
 		t->at_exit_goal = TPL_calloc(tmp2->num_cells, sizeof(cell));
 		CHECKED(t->at_exit_goal);
 		dup_cells(t->at_exit_goal, tmp2, tmp2->num_cells);
