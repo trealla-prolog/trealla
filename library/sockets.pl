@@ -8,7 +8,7 @@
 
 %% socket_client_open(+Addr, -Stream, +Options).
 %
-% Open a socket to a '$server', returning a stream. Addr must satisfy `Addr = Address:Port`.
+% Open a socket to a server, returning a stream. Addr must satisfy `Addr = Address:Port`.
 %
 % The following options are available:
 %
@@ -43,7 +43,7 @@ socket_client_open(Addr0, Stream, Options) :-
 
 %% socket_server_open(+Addr, -ServerSocket, +Options).
 %
-% Open a '$server' socket, returning a ServerSocket. Use that ServerSocket to '$accept' incoming connections in
+% Open a server socket, returning a ServerSocket. Use that ServerSocket to accept incoming connections in
 % `socket_server_accept/4`. Addr must satisfy `Addr = Address:Port`. Depending on the operating system
 % configuration, some ports might be reserved for superusers.
 socket_server_open(Addr0, ServerSocket, Options) :-
