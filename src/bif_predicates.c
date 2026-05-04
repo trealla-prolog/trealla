@@ -2736,6 +2736,8 @@ static bool bif_sys_list_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell *l = convert_to_list(q, q->queue[q->st.qnum], q->qp[q->st.qnum]);
+	CHECKED(l);
+	drop_queuen(q);
 	return unify(q, p1, p1_ctx, l, q->st.cur_ctx);
 }
 
