@@ -42,7 +42,7 @@ pl_idx g_reset_s, g_sys_get_level_s, g_sys_jump_s, g_if_s;
 pl_idx g_sys_call_s, g_sys_cut_s, g_notunify_s, g_sys_module_s;
 pl_idx g_sys_reunify_s, g_sys_undo_s, g_sys_jump_if_nil_s;
 pl_idx g_sys_loop_s, g_sys_end_s, g_sys_create_var_s;
-pl_idx g_sys_match_s, g_double_bar_s;
+pl_idx g_sys_match_s, g_double_bar_s, g_sys_list_s, g_ge_s;
 pl_idx g_dummy_s;
 
 char *g_global_atoms = NULL;
@@ -559,6 +559,7 @@ static bool g_init(prolog *pl)
 	CHECK_SENTINEL(g_eof_s = new_atom(pl, "end_of_file"), ERR_IDX);
 	CHECK_SENTINEL(g_lt_s = new_atom(pl, "<"), ERR_IDX);
 	CHECK_SENTINEL(g_gt_s = new_atom(pl, ">"), ERR_IDX);
+	CHECK_SENTINEL(g_ge_s = new_atom(pl, ">="), ERR_IDX);
 	CHECK_SENTINEL(g_eq_s = new_atom(pl, "="), ERR_IDX);
 	CHECK_SENTINEL(g_sys_reunify_s = new_atom(pl, "$reunify"), ERR_IDX);
 	CHECK_SENTINEL(g_sys_undo_s = new_atom(pl, "$undo"), ERR_IDX);
@@ -606,6 +607,7 @@ static bool g_init(prolog *pl)
 	CHECK_SENTINEL(g_sys_loop_s = new_atom(pl, "$LOOP:"), ERR_IDX);
 	CHECK_SENTINEL(g_sys_end_s = new_atom(pl, "$:END"), ERR_IDX);
 	CHECK_SENTINEL(g_sys_create_var_s = new_atom(pl, "$create_var"), ERR_IDX);
+	CHECK_SENTINEL(g_sys_list_s = new_atom(pl, "$list"), ERR_IDX);
 	CHECK_SENTINEL(g_double_bar_s = new_atom(pl, DOUBLE_BAR), ERR_IDX);
 
 	char *ptr = getenv("TPL_LIBRARY_PATH");

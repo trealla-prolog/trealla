@@ -76,10 +76,10 @@ static bool bif_findnsols_4(query *q)
 		pl_idx num_cells = tmp2->num_cells;
 		make_instr(tmp+num_cells++, g_sys_queue_s, bif_sys_queue_1, 1, p1->num_cells);
 		num_cells += dup_cells_by_ref(tmp+num_cells, p1, p1_ctx, p1->num_cells);
-		make_instr(tmp+num_cells++, g_gt_s, bif_findnsols_ge_2, 2, 2);
+		make_instr(tmp+num_cells++, g_ge_s, bif_findnsols_ge_2, 2, 2);
 		make_int(tmp+num_cells++, 1);
 		make_int(tmp+num_cells++, nsols);
-		make_instr(tmp+num_cells++, g_dummy_s, bif_sys_list_1, 1, 1);
+		make_instr(tmp+num_cells++, g_sys_list_s, bif_sys_list_1, 1, 1);
 		make_ref(tmp+num_cells++, p3->var_num, p3_ctx);
 		make_call(q, tmp+num_cells);
 		CHECKED(push_barrier(q), drop_queuen(q));
