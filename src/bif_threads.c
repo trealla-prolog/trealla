@@ -563,12 +563,12 @@ static bool bif_thread_get_message_3(query *q)
 			cell *c1 = deref(q, FIRST_ARG(h), h_ctx);
 			pl_ctx c1_ctx = q->latest_ctx;
 
-			if (!is_float(c1)) {
-				throw_error(q, c1, h_ctx, "instantiation_error", "read_option");
+			if (!is_integer(c1)) {
+				throw_error(q, c1, h_ctx, "type_error", "read_option");
 				return false;
 			}
 
-			timeout = get_float(c1);
+			timeout = is_float(c1) ? get_float(c1) : get_smallint(c1);
 		} else {
 			throw_error(q, h, h_ctx, "domain_error", "read_option");
 			return false;
