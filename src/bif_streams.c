@@ -4795,7 +4795,7 @@ static bool bif_getlines_3(query *q)
 		int len = strlen(line);
 
 		if (empty) {
-			if (!len || (line[len-1] == '\n')) {
+			if (!len || (line[len-1] == '\n'))
 				break;
 		}
 
