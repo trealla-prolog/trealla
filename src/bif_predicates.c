@@ -16,6 +16,79 @@
 #include "openssl/hmac.h"
 #endif
 
+static bool bif_findnsols_4(query *q)
+{
+	GET_FIRST_ARG(p0,integer);
+	GET_NEXT_ARG(p1,any);
+	GET_NEXT_ARG(p2,callable);
+	GET_NEXT_ARG(p3,list_or_nil_or_var);
+
+	if (get_smallint(p0) < 0)
+		return throw_error(q, p0, p0_ctx, "domain_error", "not_less_than_zero");
+
+	if (!q->retry) {
+		bool is_partial = false;
+
+		// This checks for a valid list (it allows for partial but acyclic lists)...
+
+		if (is_iso_list(p3) && !check_list(q, p3, p3_ctx, &is_partial, NULL) && !is_partial)
+			return throw_error(q, p3, p3_ctx, "type_error", "list");
+
+		CHECKED(init_tmp_heap(q));
+		cell *tmp2 = clone_term_to_tmp(q, p2, p2_ctx);
+		CHECKED(tmp2);
+
+		if (check_body_callable(tmp2))
+			return throw_error(q, p2, p2_ctx, "type_error", "callable");
+
+		grab_queuen(q);
+
+		if (q->st.qnum == MAX_QUEUES)
+			return throw_error(q, p2, p2_ctx, "resource_error", "max_queues");
+
+		cell *tmp = prepare_call(q, CALL_NOSKIP, tmp2, p2_ctx, 1+p1->num_cells+2);
+		CHECKED(tmp, drop_queuen(q));
+		pl_idx num_cells = tmp2->num_cells;
+		make_instr(tmp+num_cells++, g_sys_queue_s, bif_sys_queue_1, 1, p1->num_cells);
+		num_cells += dup_cells_by_ref(tmp+num_cells, p1, p1_ctx, p1->num_cells);
+		make_instr(tmp+num_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
+		make_call(q, tmp+num_cells);
+		CHECKED(push_barrier(q), drop_queuen(q));
+		q->st.instr = tmp;
+		return true;
+	}
+
+	if (!queuen_used(q)) {
+		drop_queuen(q);
+		return unify(q, p3, p3_ctx, make_nil(), q->st.cur_ctx);
+	}
+
+	// Retry takes the queue
+
+	pl_idx num_cells = queuen_used(q);
+	cell *solns = take_queuen(q);
+	drop_queuen(q);
+
+	// Now grab matching solutions with fresh variables for each...
+
+	CHECKED(init_tmp_heap(q), TPL_free(solns));
+
+	for (cell *c = solns; num_cells; num_cells -= c->num_cells, c += c->num_cells) {
+		cell *tmp = alloc_tmp(q, 1);
+		CHECKED(tmp, TPL_free(solns));
+		make_instr(tmp, g_dot_s, NULL, 2, 0);
+		q->noderef = true;
+		tmp = copy_term_to_tmp(q, c, q->st.cur_ctx, false);
+		q->noderef = false;
+		CHECKED(tmp, TPL_free(solns));
+	}
+
+	TPL_free(solns);
+	cell *l = end_list(q);
+	CHECKED(l);
+	return unify(q, p3, p3_ctx, l, q->st.cur_ctx);
+}
+
 static bool bif_iso_findall_3(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -5822,6 +5895,7 @@ static void load_properties(module *m)
 	format_property(m, tmpbuf, sizeof(tmpbuf), "call", 1, "meta_predicate(call(0))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "task", 1, "meta_predicate(task(0))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "findall", 3, "meta_predicate(findall(?,0,-))", false); SB_strcat(pr, tmpbuf);
+	format_property(m, tmpbuf, sizeof(tmpbuf), "findnsols", 4, "meta_predicate(findnsols(?,?,0,-))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "|", 2, "meta_predicate(((:)|(+)))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "time", 1, "meta_predicate(time(0))", false); SB_strcat(pr, tmpbuf);
 	format_property(m, tmpbuf, sizeof(tmpbuf), "call_nth", 2, "meta_predicate(call_nth(0,?))", false); SB_strcat(pr, tmpbuf);
@@ -6246,6 +6320,7 @@ builtins g_other_bifs[] =
 	{"source_info", 2, bif_source_info_2, "+predicate_indicator,-list", false, false, BLAH},
 	{"multifile", 1, bif_multifile_1, "+term", false, false, BLAH},
 	{"meta_predicate", 1, bif_meta_predicate_1, "+term", false, false, BLAH},
+	{"findnsols", 4, bif_findnsols_4, "+integer,+term,:callable,-list", false, false, BLAH},
 
 	{"help", 2, bif_help_2, "+predicate_indicator,+atom", false, false, BLAH},
 	{"help", 1, bif_help_1, "+predicate_indicator", false, false, BLAH},
