@@ -4618,6 +4618,34 @@ static bool get_terminator(query *q, cell *l, pl_ctx l_ctx)
 	return terminator;
 }
 
+static bool get_empty(query *q, cell *l, pl_ctx l_ctx)
+{
+	bool empty = false;
+	LIST_HANDLER(l);
+
+	while (is_iso_list(l)) {
+		cell *h = LIST_HEAD(l);
+		h = deref(q, h, l_ctx);
+		pl_ctx h_ctx = q->latest_ctx;
+
+		if (is_compound(h)) {
+			if (!CMP_STRING_TO_CSTR(q, h, "empty")) {
+				h = h + 1;
+				h = deref(q, h, h_ctx);
+
+				if (is_atom(h))
+					empty = !CMP_STRING_TO_CSTR(q, h, "true");
+			}
+		}
+
+		l = LIST_TAIL(l);
+		l = deref(q, l, l_ctx);
+		l_ctx = q->latest_ctx;
+	}
+
+	return empty;
+}
+
 static bool bif_getfile_3(query *q)
 {
 	GET_FIRST_ARG(p1,source_sink);
@@ -4760,10 +4788,16 @@ static bool bif_getlines_3(query *q)
 	char *line = NULL;
 	size_t len = 0;
 	bool terminator = get_terminator(q, p2, p2_ctx);
+	bool empty = get_empty(q, p2, p2_ctx);
 	CHECKED(init_tmp_heap(q));
 
 	while (getline(&line, &len, str->fp) != -1) {
 		int len = strlen(line);
+
+		if (empty) {
+			if (!len || (line[len-1] == '\n')) {
+				break;
+		}
 
 		if (!terminator) {
 			if (len && (line[len-1] == '\n')) {

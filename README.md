@@ -511,6 +511,11 @@ Non-standard predicates
 
 	term_variables/3
 
+Where `getlines/3` supports `terminator(+Bool)` to keep the line
+terminator or not (default). Also `empty(+Bool)` to end with the first
+empty line or not (default), this can be useful for loading a list
+of headers in an HTTP response.
+
 Note: consult/1 and load_files/2 support lists of files as args. Also
 support loading into modules eg. *consult(MOD:FILE-SPEC)*.
 
