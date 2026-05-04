@@ -439,7 +439,7 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 	CHECKED(check_slot(q, MAX_ARITY));
 	CHECKED(check_frame(q, MAX_ARITY));
 	pl_int started_ms = wall_time_in_usec() / 1000;
-	pl_int ms = timeout * 1000;
+	pl_int tmo_ms = timeout * 1000;
 
 	while (!q->halt && !q->abort) {
 		acquire_lock(&t->guard);
@@ -456,16 +456,19 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 			if (is_peek)
 				return false;
 
+			unsigned cnt = 0;
+
 			do {
 				suspend_thread(t, 10);
 			}
-			 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && !q->abort);
+			 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && !q->abort && (cnt++ < 1000));
 
 			if (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && !q->abort) {
 				pl_int elapsed_ms = (wall_time_in_usec()/1000) - started_ms;
 
-				if ((ms >= 0) && (elapsed_ms > ms))
+				if ((tmo_ms >= 0) && (elapsed_ms > tmo_ms)) {
 					return false;
+				}
 			}
 
 			continue;
@@ -563,7 +566,7 @@ static bool bif_thread_get_message_3(query *q)
 			cell *c1 = deref(q, FIRST_ARG(h), h_ctx);
 			pl_ctx c1_ctx = q->latest_ctx;
 
-			if (!is_integer(c1)) {
+			if (!is_number(c1)) {
 				throw_error(q, c1, h_ctx, "type_error", "read_option");
 				return false;
 			}
