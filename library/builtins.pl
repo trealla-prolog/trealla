@@ -723,6 +723,8 @@ goal_expansion(call_det(G, Det), Goal) :-
 	true.
 goal_expansion(call_det(G, V), call_det(G, V)).
 
+% SWI-compatible library(option)
+
 option(Opt, Options, _Default) :-
     memberchk(Opt, Options), !.
 option(Opt, _, Default) :-
