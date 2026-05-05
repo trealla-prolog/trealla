@@ -5,7 +5,6 @@
 
 #include "module.h"
 #include "network.h"
-#include "prolog.h"
 #include "query.h"
 
 int format_integer(char *dst, cell *c, int grouping, int sep, int decimals, int radix)

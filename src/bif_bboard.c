@@ -2,7 +2,6 @@
 #include <stdio.h>
 
 #include "module.h"
-#include "prolog.h"
 #include "query.h"
 
 #define is_smallatomic(c) (is_atom(c) || is_smallint(c))

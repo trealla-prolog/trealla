@@ -2,12 +2,9 @@
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
-#include <float.h>
-#include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
 #include <sys/stat.h>
 
 #ifndef _WIN32
@@ -22,8 +19,6 @@
 #include "history.h"
 #include "module.h"
 #include "network.h"
-#include "parser.h"
-#include "prolog.h"
 #include "query.h"
 
 #define PROMPT ""

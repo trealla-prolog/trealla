@@ -9,7 +9,6 @@
 
 #include "module.h"
 #include "parser.h"
-#include "prolog.h"
 #include "query.h"
 
 #if USE_THREADS

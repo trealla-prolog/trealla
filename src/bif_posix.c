@@ -1,16 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
 #include <ctype.h>
-#include <math.h>
-#include <float.h>
 #include <errno.h>
-#include <signal.h>
 
-#include "trealla.h"
-#include "internal.h"
-#include "heap.h"
 #include "prolog.h"
 #include "query.h"
 

@@ -3,12 +3,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/time.h>
-#include <sys/stat.h>
 
 #include "module.h"
-#include "parser.h"
-#include "prolog.h"
 #include "query.h"
 
 static bool module_context(query *q, cell **p1, pl_ctx p1_ctx)

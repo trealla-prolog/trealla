@@ -8,7 +8,6 @@
 #include "base64.h"
 #include "module.h"
 #include "parser.h"
-#include "prolog.h"
 #include "query.h"
 
 #if USE_OPENSSL

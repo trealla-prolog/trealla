@@ -7,8 +7,6 @@
 #include <sys/stat.h>
 
 #include "module.h"
-#include "parser.h"
-#include "prolog.h"
 #include "query.h"
 
 #ifdef _WIN32

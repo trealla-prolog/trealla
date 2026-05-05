@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
-#include <sys/stat.h>
 
 #if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 #include <spawn.h>
@@ -16,7 +15,6 @@
 #include "history.h"
 #include "module.h"
 #include "parser.h"
-#include "prolog.h"
 #include "query.h"
 
 #ifdef _WIN32

@@ -9,7 +9,6 @@
 #include <unistd.h>
 
 #include "module.h"
-#include "prolog.h"
 #include "query.h"
 
 #define SET_ACCUM() {											\

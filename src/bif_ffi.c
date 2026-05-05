@@ -9,7 +9,6 @@
 #endif
 
 #include "module.h"
-#include "prolog.h"
 #include "query.h"
 
 #define MAX_FFI 1000

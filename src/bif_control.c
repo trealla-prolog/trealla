@@ -1,11 +1,8 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 
 #include "module.h"
-#include "parser.h"
-#include "prolog.h"
 #include "query.h"
 
 bool bif_iso_true_0(query *q)

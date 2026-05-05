@@ -1,11 +1,7 @@
 #include <ctype.h>
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 
 #include "module.h"
-#include "parser.h"
-#include "prolog.h"
 #include "query.h"
 
 static const char *find_attribute(query *q, cell *attr, unsigned arity, bool *found)
