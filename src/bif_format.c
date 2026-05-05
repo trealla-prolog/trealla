@@ -24,10 +24,10 @@ int format_integer(char *dst, cell *c, int grouping, int sep, int decimals, int 
 		tmpbuf1 = xtmpbuf1;
 		tmpbuf2 = xtmpbuf2;
 	} else {
-		size_t len = mp_int_string_len(&c->val_bigint->ival, radix) - 1;
+		size_t len = mp_int_string_len(&c->val_bigint->ival, abs(radix)) - 1;
 		tmpbuf1 = TPL_malloc(len+1);
 		check_error(tmpbuf1);
-		mp_int_to_string(&c->val_bigint->ival, radix, tmpbuf1, len+1);
+		mp_int_to_string(&c->val_bigint->ival, abs(radix), tmpbuf1, len+1);
 		len *= 2;
 		tmpbuf2 = TPL_malloc(len+1);
 		check_error(tmpbuf2);
