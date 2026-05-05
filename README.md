@@ -792,7 +792,7 @@ one concatenated file (keyfile+certfiles) is supplied, use
 Optional schemes 'unix://', 'http://' (the default) and 'https://'
 can be provided in the client URL.
 
-With *bread/3* the 'len' arg can be an integer > 0 meaning return that
+With *'$bread'/3* the 'len' arg can be an integer > 0 meaning return that
 many bytes, = 0 meaning return whatever is there (if non-blocking) or
 a var meaning return all bytes until end end of file,
 
