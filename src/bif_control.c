@@ -520,6 +520,8 @@ static bool bif_sys_block_catcher_1(query *q)
 	return true;
 }
 
+static bool bif_sys_abort_0(query *q);
+
 static bool bif_iso_catch_3(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -531,7 +533,8 @@ static bool bif_iso_catch_3(query *q)
 
 	// Second time through? Try the recover goal...
 
-	if (q->retry == QUERY_EXCEPTION) {
+	if ((q->retry == QUERY_EXCEPTION) || (q->retry == QUERY_ABORT)) {
+		unsigned is_abort = q->retry == QUERY_ABORT;
 		check_pressure(q);
 		q->error = false;
 		GET_NEXT_ARG(p2,any);
@@ -539,13 +542,14 @@ static bool bif_iso_catch_3(query *q)
 		q->retry = QUERY_OK;
 		cell tmp2;
 		make_instr(&tmp2, g_call_s, bif_iso_call_1, 1, 0);
-		cell *tmp = prepare_call(q, CALL_NOSKIP, &tmp2, p3_ctx, p3->num_cells+3);
+		cell *tmp = prepare_call(q, CALL_NOSKIP, &tmp2, p3_ctx, p3->num_cells+3+ is_abort);
 		CHECKED(tmp);
 		tmp->num_cells += p3->num_cells;
 		pl_idx num_cells = 1;
 		num_cells += dup_cells_by_ref(tmp+num_cells, p3, p3_ctx, p3->num_cells);
 		make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
 		make_uint(tmp+num_cells++, q->cp);
+		if (is_abort) make_instr(tmp+num_cells++, g_sys_abort_s, bif_sys_abort_0, 0, 0);
 		make_call(q, tmp+num_cells);
 		CHECKED(push_catcher(q, QUERY_EXCEPTION));
 		q->st.instr = tmp;
@@ -828,10 +832,14 @@ static bool find_exception_handler(query *q, char *ball)
 		q->ball = parse_to_heap(q, ball);
 		CHECKED(q->ball);
 		q->ball_ctx = q->st.cur_ctx;
-		q->retry = QUERY_EXCEPTION;
 
-		if (!strcmp(C_STR(q, q->ball+1), "unwind"))
+		if (!strcmp(C_STR(q, q->ball+1), "$abort")) {
 			break;
+		} else if (!strcmp(C_STR(q, q->ball+1), "unwind")) {
+			q->retry = QUERY_ABORT;
+		} else {
+			q->retry = QUERY_EXCEPTION;
+		}
 
 		if (!bif_iso_catch_3(q)) {
 			q->ball = NULL;
@@ -846,7 +854,7 @@ static bool find_exception_handler(query *q, char *ball)
 	pl_ctx e_ctx = q->st.cur_ctx;
 	q->did_unhandled_exception = true;
 
-	if (!strcmp(C_STR(q, e+1), "unwind")) {
+	if (!strcmp(C_STR(q, e+1), "unwind") || !strcmp(C_STR(q, e+1), "$abort")) {
 		if (!q->is_thread && !q->is_task)
 			fprintf(stdout, "%% Execution aborted\n");
 
@@ -1208,6 +1216,16 @@ bool throw_error(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const ch
 	return throw_error3(q, c, c_ctx, err_type, expected, q->st.instr);
 }
 
+static bool bif_abort_0(query *q)
+{
+	return throw_error(q, q->st.instr, q->st.cur_ctx, "unwind", "abort");
+}
+
+static bool bif_sys_abort_0(query *q)
+{
+	return throw_error(q, q->st.instr, q->st.cur_ctx, "$abort", "abort");
+}
+
 builtins g_control_bifs[] =
 {
 	{"true", 0, bif_iso_true_0, NULL, true, false, BLAH},
@@ -1235,6 +1253,7 @@ builtins g_control_bifs[] =
 	{"ignore", 1, bif_ignore_1, ":callable", false, false, BLAH},
 	{"reset", 3, bif_reset_3, ":callable,?term,-term", false, false, BLAH},
 	{"shift", 1, bif_shift_1, "+term", false, false, BLAH},
+	{"abort", 0, bif_abort_0, NULL, false, false, BLAH},
 
 	{"$cut", 1, bif_sys_cut_1, "+integer", false, false, BLAH},
 	{"$block_catcher", 1, bif_sys_block_catcher_1, NULL, false, false, BLAH},
@@ -1248,6 +1267,7 @@ builtins g_control_bifs[] =
 	{"$fail_on_retry", 1, bif_sys_fail_on_retry_1, "-integer", false, false, BLAH},
 	{"$succeed_on_retry", 1, bif_sys_succeed_on_retry_1, "+integer", false, false, BLAH},
 	{"$succeed_on_retry", 2, bif_sys_succeed_on_retry_2, "-integer,+integer", false, false, BLAH},
+	{"$abort", 0, bif_sys_abort_0, NULL, false, false, BLAH},
 
 	{0}
 };

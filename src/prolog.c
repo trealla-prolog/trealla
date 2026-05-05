@@ -43,6 +43,7 @@ pl_idx g_sys_call_s, g_sys_cut_s, g_notunify_s, g_sys_module_s;
 pl_idx g_sys_reunify_s, g_sys_undo_s, g_sys_jump_if_nil_s;
 pl_idx g_sys_loop_s, g_sys_end_s, g_sys_create_var_s;
 pl_idx g_sys_match_s, g_double_bar_s, g_sys_list_s, g_ge_s;
+pl_idx g_sys_abort_s;
 pl_idx g_dummy_s;
 
 char *g_global_atoms = NULL;
@@ -619,6 +620,7 @@ static bool g_init(prolog *pl)
 	CHECK_SENTINEL(g_sys_end_s = new_atom(pl, "$:END"), ERR_IDX);
 	CHECK_SENTINEL(g_sys_create_var_s = new_atom(pl, "$create_var"), ERR_IDX);
 	CHECK_SENTINEL(g_sys_list_s = new_atom(pl, "$list"), ERR_IDX);
+	CHECK_SENTINEL(g_sys_abort_s = new_atom(pl, "$abort"), ERR_IDX);
 	CHECK_SENTINEL(g_double_bar_s = new_atom(pl, DOUBLE_BAR), ERR_IDX);
 
 	char *ptr = getenv("TPL_LIBRARY_PATH");

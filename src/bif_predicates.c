@@ -5706,11 +5706,6 @@ static bool bif_sys_integer_in_radix_3(query *q)
 	return ok;
 }
 
-static bool bif_abort_0(query *q)
-{
-	return throw_error(q, q->st.instr, q->st.cur_ctx, "unwind", "abort");
-}
-
 bool bif_sys_reset_handler_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
@@ -6369,7 +6364,6 @@ builtins g_other_bifs[] =
 	{"module_help", 2, bif_module_help_2, "+atom,+predicate_indicator", false, false, BLAH},
 	{"module_help", 1, bif_module_help_1, "+atom", false, false, BLAH},
 
-	{"abort", 0, bif_abort_0, NULL, false, false, BLAH},
 	{"string_codes", 2, bif_string_codes_2, "+string,-list", false, false, BLAH},
 	{"term_singletons", 2, bif_term_singletons_2, "+term,-list", false, false, BLAH},
 	{"string", 1, bif_string_1, "+term", false, false, BLAH},
