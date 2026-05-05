@@ -331,7 +331,7 @@ size_t sprint_int(char *dst, size_t dstlen, pl_int n, int base)
 		else
 			dst++;
 
-		// NOTE: according to the man heap_pages:
+		// NOTE: according to the man pages:
 		//
 		//		"Trying to take the absolute value of
 		// 		the most negative integer is not defined."
