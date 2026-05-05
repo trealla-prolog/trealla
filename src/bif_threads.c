@@ -368,7 +368,7 @@ static bool do_send_message(query *q, unsigned chan, cell *c, pl_ctx c_ctx, bool
 {
 	thread *t = &q->pl->threads[chan];
 
-	if (t->is_mutex_only || t->is_finished)
+	if (t->is_mutex_only /*|| t->is_finished*/)
 		return false;
 
 	CHECKED(init_tmp_heap(q));
