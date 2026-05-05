@@ -369,7 +369,7 @@ static bool do_send_message(query *q, unsigned chan, cell *p1, pl_ctx p1_ctx, bo
 	thread *t = &q->pl->threads[chan];
 
 	if (t->is_mutex_only)
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 
 	CHECKED(init_tmp_heap(q));
 	cell *tmp = clone_term_to_tmp(q, p1, p1_ctx);
@@ -378,6 +378,23 @@ static bool do_send_message(query *q, unsigned chan, cell *p1, pl_ctx p1_ctx, bo
 	CHECKED(queue_to_chan(q->pl, chan, tmp, q->my_chan, is_signal));
 	resume_thread(t);
 	return true;
+}
+
+static bool bif_thread_send_message_2(query *q)
+{
+	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
+	GET_FIRST_ARG(p1,any);
+	GET_NEXT_ARG(p2,any);
+	int n = get_thread(q, p1);
+
+	if ((n < 0) || !is_queue(p1)) {
+		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
+	}
+
+	bool ok = do_send_message(q, n, p2, p2_ctx, false);
+	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
+	return ok;
 }
 
 static bool bif_pl_send_2(query *q)
@@ -389,24 +406,7 @@ static bool bif_pl_send_2(query *q)
 
 	if (n < 0) {
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
-	}
-
-	bool ok = do_send_message(q, n, p2, p2_ctx, false);
-	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-	return ok;
-}
-
-static bool bif_thread_send_message_2(query *q)
-{
-	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,queue);
-	GET_NEXT_ARG(p2,any);
-	int n = get_thread(q, p1);
-
-	if (n < 0) {
-		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 	}
 
 	bool ok = do_send_message(q, n, p2, p2_ctx, false);
@@ -516,12 +516,12 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 static bool bif_thread_get_message_2(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,queue);
+	GET_FIRST_ARG(p1,any);
 	int n = get_thread(q, p1);
 
-	if (n < 0) {
+	if ((n < 0) || !is_queue(p1)) {
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 	}
 
 	bool ok = do_match_message(q, n, false, -1.0);
@@ -532,12 +532,12 @@ static bool bif_thread_get_message_2(query *q)
 static bool bif_thread_get_message_3(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,queue);
+	GET_FIRST_ARG(p1,any);
 	int n = get_thread(q, p1);
 
-	if (n < 0) {
+	if ((n < 0) || !is_queue(p1)) {
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 	}
 
 	GET_NEXT_ARG(p2,any);
@@ -594,12 +594,12 @@ static bool bif_thread_get_message_3(query *q)
 static bool bif_thread_peek_message_2(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,queue);
+	GET_FIRST_ARG(p1,any);
 	int n = get_thread(q, p1);
 
-	if (n < 0) {
+	if ((n < 0) || !is_queue(p1)) {
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 	}
 
 	bool ok = do_match_message(q, n, true, 0.0);
@@ -984,7 +984,7 @@ static bool bif_thread_signal_2(query *q)
 
 	if (n < 0) {
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 	}
 
 	thread *t = &q->pl->threads[n];
@@ -1010,7 +1010,7 @@ static bool bif_thread_join_2(query *q)
 
 	if (n < 0) {
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 	}
 
 	thread *t = &q->pl->threads[n];
@@ -1134,7 +1134,7 @@ static bool bif_thread_cancel_1(query *q)
 
 	if (n < 0) {
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 	}
 
 	thread *t = &q->pl->threads[n];
@@ -1158,7 +1158,7 @@ static bool bif_thread_detach_1(query *q)
 
 	if (n < 0) {
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 	}
 
 	thread *t = &q->pl->threads[n];
@@ -1247,7 +1247,7 @@ static bool do_thread_property_pin_both(query *q)
 
 	if (n < 0) {
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 	}
 
 	thread *t = &q->pl->threads[n];
@@ -1362,7 +1362,7 @@ static bool do_thread_property_pin_id(query *q)
 
 	if (n < 0) {
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 	}
 
 	thread *t = &q->pl->threads[n];
@@ -1596,12 +1596,12 @@ static bool bif_message_queue_create_2(query *q)
 static bool bif_message_queue_destroy_1(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,queue);
+	GET_FIRST_ARG(p1,any);
 	int n = get_thread(q, p1);
 
 	if (n < 0) {
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 	}
 
 	thread *t = &q->pl->threads[n];
@@ -1627,13 +1627,13 @@ static bool bif_message_queue_destroy_1(query *q)
 
 static bool do_message_queue_property_pin_both(query *q)
 {
-	GET_FIRST_ARG(p1,queue);
+	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,nonvar);
 	int n = get_thread(q, p1);
 
-	if (n < 0) {
+	if ((n < 0) || !is_queue(p1)) {
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 	}
 
 	thread *t = &q->pl->threads[n];
@@ -1735,13 +1735,13 @@ static bool do_message_queue_property_pin_property(query *q)
 
 static bool do_message_queue_property_pin_id(query *q)
 {
-	GET_FIRST_ARG(p1,queue);
+	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 	int n = get_thread(q, p1);
 
-	if (n < 0) {
+	if ((n < 0) || !is_queue(p1)) {
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 	}
 
 	thread *t = &q->pl->threads[n];
@@ -1946,12 +1946,12 @@ static bool bif_mutex_create_2(query *q)
 static bool bif_mutex_destroy_1(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,mutex);
+	GET_FIRST_ARG(p1,any);
 	int n = get_thread(q, p1);
 
 	if (n < 0) {
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 	}
 
 	thread *t = &q->pl->threads[n];
@@ -1969,12 +1969,12 @@ static bool bif_mutex_destroy_1(query *q)
 static bool bif_mutex_trylock_1(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,mutex);
+	GET_FIRST_ARG(p1,any);
 	int n = get_thread(q, p1);
 
-	if (n < 0) {
+	if ((n < 0) || !is_mutex(p1)) {
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 	}
 
 	thread *t = &q->pl->threads[n];
@@ -1992,12 +1992,12 @@ static bool bif_mutex_trylock_1(query *q)
 static bool bif_mutex_lock_1(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,mutex);
+	GET_FIRST_ARG(p1,any);
 	int n = get_thread(q, p1);
 
-	if (n < 0) {
+	if ((n < 0) || !is_mutex(p1)) {
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 	}
 
 	thread *t = &q->pl->threads[n];
@@ -2013,12 +2013,12 @@ static bool bif_mutex_lock_1(query *q)
 static bool bif_mutex_unlock_1(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,mutex);
+	GET_FIRST_ARG(p1,any);
 	int n = get_thread(q, p1);
 
-	if (n < 0) {
+	if ((n < 0) || !is_mutex(p1)) {
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 	}
 
 	thread *t = &q->pl->threads[n];
@@ -2046,13 +2046,13 @@ static bool bif_mutex_unlock_all_0(query *q)
 
 static bool do_mutex_property_pin_both(query *q)
 {
-	GET_FIRST_ARG(p1,mutex);
+	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,nonvar);
 	int n = get_thread(q, p1);
 
-	if (n < 0) {
+	if ((n < 0) || !is_mutex(p1)) {
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 	}
 
 	thread *t = &q->pl->threads[n];
@@ -2151,13 +2151,13 @@ static bool do_mutex_property_pin_property(query *q)
 
 static bool do_mutex_property_pin_id(query *q)
 {
-	GET_FIRST_ARG(p1,mutex);
+	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
 	int n = get_thread(q, p1);
 
-	if (n < 0) {
+	if ((n < 0) || !is_mutex(p1)) {
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 	}
 
 	thread *t = &q->pl->threads[n];
@@ -2288,7 +2288,7 @@ static bool bif_pl_thread_pin_cpu_2(query *q)
 
 	if (n < 0) {
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 	}
 
 	thread *t = &q->pl->threads[n];
@@ -2309,7 +2309,7 @@ static bool bif_pl_thread_set_priority_2(query *q)
 
 	if (n < 0) {
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread_or_queue");
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 	}
 
 	thread *t = &q->pl->threads[n];
@@ -2387,7 +2387,7 @@ static bool bif_pl_recv_2(query *q)
 		from_chan = get_thread(q, p1);
 
 		if (from_chan < 0)
-			return throw_error(q, p1, p1_ctx, "domain_error", "no_such_thread");
+			return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
 	}
 
 	if (!do_recv_message(q, from_chan, p2, p2_ctx, false))
