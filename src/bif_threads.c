@@ -364,15 +364,15 @@ static bool queue_to_chan(prolog *pl, unsigned chan, const cell *c, unsigned fro
 	return true;
 }
 
-static bool do_send_message(query *q, unsigned chan, cell *p1, pl_ctx p1_ctx, bool is_signal)
+static bool do_send_message(query *q, unsigned chan, cell *c, pl_ctx c_ctx, bool is_signal)
 {
 	thread *t = &q->pl->threads[chan];
 
-	if (t->is_mutex_only)
-		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
+	if (t->is_mutex_only || t->is_finished)
+		return false;
 
 	CHECKED(init_tmp_heap(q));
-	cell *tmp = clone_term_to_tmp(q, p1, p1_ctx);
+	cell *tmp = clone_term_to_tmp(q, c, c_ctx);
 	CHECKED(tmp);
 	rebase_term(q, tmp, 0, false);
 	CHECKED(queue_to_chan(q->pl, chan, tmp, q->my_chan, is_signal));
@@ -393,6 +393,10 @@ static bool bif_thread_send_message_2(query *q)
 	}
 
 	bool ok = do_send_message(q, n, p2, p2_ctx, false);
+
+	if (!ok)
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
+
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	return ok;
 }
@@ -410,6 +414,10 @@ static bool bif_pl_send_2(query *q)
 	}
 
 	bool ok = do_send_message(q, n, p2, p2_ctx, false);
+
+	if (!ok)
+		return throw_error(q, p1, p1_ctx, "domain_error", "nonexistent");
+
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	return ok;
 }
@@ -1087,7 +1095,7 @@ static void do_cancel(thread *t)
 	query *q = t->q;
 	pthread_t id = t->id;
 
-	if (list_count(&t->queue)) printf("*** queue...\n");
+	//if (list_count(&t->queue)) printf("*** queue...\n");
 
 	while ((m = list_pop_front(&t->queue)) != NULL) {
 		DUMP_TERM("***", m->c, q->st.cur_ctx, 0);
@@ -1095,7 +1103,7 @@ static void do_cancel(thread *t)
 		TPL_free(m);
 	}
 
-	if (list_count(&t->signals)) printf("*** signals...\n");
+	//if (list_count(&t->signals)) printf("*** signals...\n");
 
 	while ((m = list_pop_front(&t->signals)) != NULL) {
 		DUMP_TERM("***", m->c, q->st.cur_ctx, 0);
