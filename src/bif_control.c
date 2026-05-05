@@ -830,6 +830,9 @@ static bool find_exception_handler(query *q, char *ball)
 		q->ball_ctx = q->st.cur_ctx;
 		q->retry = QUERY_EXCEPTION;
 
+		if (!strcmp(C_STR(q, q->ball+1), "unwind"))
+			break;
+
 		if (!bif_iso_catch_3(q)) {
 			q->ball = NULL;
 			continue;
@@ -843,7 +846,7 @@ static bool find_exception_handler(query *q, char *ball)
 	pl_ctx e_ctx = q->st.cur_ctx;
 	q->did_unhandled_exception = true;
 
-	if (!strcmp(C_STR(q, e+1), "$aborted")) {
+	if (!strcmp(C_STR(q, e+1), "unwind")) {
 		if (!q->is_thread && !q->is_task)
 			fprintf(stdout, "%% Execution aborted\n");
 
@@ -979,6 +982,19 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		make_instr(tmp+num_cells++, g_error_s, NULL, 2, 2);
 		make_cstring(tmp+num_cells++, err_type);
 		make_cstring(tmp+num_cells, expected);
+	} else if (!strcmp(err_type, "unwind")) {
+		//printf("error(%s(%s),(%s)/%u).\n", err_type, C_STR(q, c), functor, goal->arity);
+		tmp = alloc_heap(q, 6+(c->num_cells-1));
+		CHECKED(tmp);
+		pl_idx num_cells = 0;
+		make_instr(tmp+num_cells++, g_error_s, NULL, 2, 5+(c->num_cells-1));
+		make_instr(tmp+num_cells++, new_atom(q->pl, err_type), NULL, 1, 1+(c->num_cells-1));
+		dup_cells_by_ref(tmp+num_cells, c, c_ctx, c->num_cells);
+		num_cells += c->num_cells;
+		make_instr(tmp+num_cells, g_slash_s, NULL, 2, 2);
+		SET_OP(tmp+num_cells, OP_YFX); num_cells++;
+		make_atom(tmp+num_cells++, new_atom(q->pl, functor));
+		make_int(tmp+num_cells, !is_string(goal)?goal->arity:0);
 	} else if (!strcmp(err_type, "type_error") && !strcmp(expected, "var")) {
 		err_type = "uninstantiation_error";
 		//printf("error(%s(%s),(%s)/%u).\n", err_type, C_STR(q, c), functor, goal->arity);

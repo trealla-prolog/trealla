@@ -5708,7 +5708,7 @@ static bool bif_sys_integer_in_radix_3(query *q)
 
 static bool bif_abort_0(query *q)
 {
-	return throw_error(q, q->st.instr, q->st.cur_ctx, "$aborted", "abort_error");
+	return throw_error(q, q->st.instr, q->st.cur_ctx, "unwind", "abort");
 }
 
 bool bif_sys_reset_handler_1(query *q)
