@@ -472,7 +472,7 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 					return false;
 				}
 
-				suspend_thread(t, 1);
+				suspend_thread(t, 10);
 			}
 			 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && !q->abort && (cnt++ < 1000));
 
