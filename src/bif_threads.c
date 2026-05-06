@@ -468,7 +468,7 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 			do {
 				pl_int elapsed_ms = (wall_time_in_usec()/1000) - started_ms;
 
-				if ((tmo_ms >= 0) && (elapsed_ms > tmo_ms)) {
+				if ((tmo_ms >= 0) && (elapsed_ms >= tmo_ms)) {
 					return false;
 				}
 
