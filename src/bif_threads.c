@@ -443,8 +443,6 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 {
 	GET_FIRST_ARG(pq,queue);
 	thread *t = &q->pl->threads[chan];
-	CHECKED(check_slot(q, MAX_ARITY));
-	CHECKED(check_frame(q, MAX_ARITY));
 	pl_int started_ms = wall_time_in_usec() / 1000;
 	pl_int tmo_ms = timeout * 1000;
 
@@ -481,15 +479,18 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 
 		msg *m = list_front(&t->queue);
 		CHECKED(push_choice(q), release_lock(&t->guard));
+		const frame *f = GET_CURR_FRAME();
 
 		while (m) {
-			try_me(q, MAX_ARITY);
-			cell *tmp = copy_term_to_heap(q, m->c, q->st.fp, false);	// Copy into thread
+			cell *tmp = alloc_heap(q, m->c->num_cells);
 			CHECKED(tmp, release_lock(&t->guard));
+			dup_cells_by_ref(tmp, m->c, q->st.cur_ctx, m->c->num_cells);
+			rebase_term(q, tmp, f->actual_slots, false);
+
 			GET_FIRST_ARG(p1,queue);
 			GET_NEXT_ARG(p2,any);
 
-			if (unify(q, p2, p2_ctx, tmp, q->st.fp)) {
+			if (unify(q, p2, p2_ctx, tmp, q->st.cur_ctx)) {
 				q->cur_chan = m->from_chan;
 
 				if (!is_peek)
@@ -2433,12 +2434,12 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_ctx p1_ct
 	else
 		m = list_pop_front(&t->queue);
 
-	CHECKED(check_slot(q, MAX_ARITY));
-	CHECKED(check_frame(q, MAX_ARITY));
 	CHECKED(push_choice(q));
-	try_me(q, MAX_ARITY);
-	cell *tmp = copy_term_to_heap(q, m->c, q->st.fp, false);
+	const frame *f = GET_CURR_FRAME();
+	cell *tmp = alloc_heap(q, m->c->num_cells);
 	CHECKED(tmp, release_lock(&t->guard));
+	dup_cells_by_ref(tmp, m->c, q->st.cur_ctx, m->c->num_cells);
+	rebase_term(q, tmp, f->actual_slots, false);
 	release_lock(&t->guard);
 	q->cur_chan = m->from_chan;
 
@@ -2448,7 +2449,7 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_ctx p1_ct
 	}
 
 	drop_choice(q);
-	return unify(q, p1, p1_ctx, tmp, q->st.fp);
+	return unify(q, p1, p1_ctx, tmp, q->st.cur_ctx);
 }
 
 static bool bif_pl_recv_2(query *q)
