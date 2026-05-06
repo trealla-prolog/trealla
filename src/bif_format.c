@@ -187,7 +187,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 
 	while (is_more_data(q, &fmt1)) {
 		int argval = 0, noargval = 1, argval_specified = 0;
-		int pos = dst - tmpbuf + 1;
+		int pos = strlen_utf8(tmpbuf) + 1;
 		list_reader_t tmp_fmt1 = fmt1, tmp_fmt2 = fmt2;
 		int ch = get_next_char(q, &fmt1);
 
