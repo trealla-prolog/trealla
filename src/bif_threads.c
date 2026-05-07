@@ -349,7 +349,7 @@ static bool queue_to_chan(prolog *pl, unsigned chan, const cell *c, unsigned fro
 	//printf("*** send to chan=%u, num_cells=%u\n", chan, c->num_cells);
 	thread *t = &pl->threads[chan];
 	msg *m = TPL_malloc(sizeof(msg) + (sizeof(cell)*c->num_cells));
-	check_error(m);
+	if (!m) return false;
 	m->from_chan = from_chan;
 	dup_cells(m->c, c, c->num_cells);
 	acquire_lock(&t->guard);
@@ -367,10 +367,6 @@ static bool queue_to_chan(prolog *pl, unsigned chan, const cell *c, unsigned fro
 static bool do_send_message(query *q, unsigned chan, cell *c, pl_ctx c_ctx, bool is_signal)
 {
 	thread *t = &q->pl->threads[chan];
-
-	if (t->is_mutex_only)
-		return false;
-
 	CHECKED(init_tmp_heap(q));
 	cell *tmp = clone_term_to_tmp(q, c, c_ctx);
 	CHECKED(tmp);
@@ -392,13 +388,11 @@ static bool bif_thread_send_message_2(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	bool ok = do_send_message(q, n, p2, p2_ctx, false);
-
-	if (!ok)
-		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
+	if (!do_send_message(q, n, p2, p2_ctx, false))
+		return false;
 
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-	return ok;
+	return true;
 }
 
 static bool bif_pl_send_2(query *q)
@@ -413,13 +407,11 @@ static bool bif_pl_send_2(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	bool ok = do_send_message(q, n, p2, p2_ctx, false);
-
-	if (!ok)
-		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
+	if (!do_send_message(q, n, p2, p2_ctx, false))
+		return false;
 
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-	return ok;
+	return true;
 }
 
 static thread *get_self(prolog *pl)
