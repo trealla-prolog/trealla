@@ -3700,15 +3700,13 @@ bool expand_term(parser *p, cell *c)
 
 			if (!process_term(p2, c2)) {
 				parser_destroy(p2);
-				return 0;
+				return false;
 			}
 
 			if (p2->already_loaded_error) {
 				parser_destroy(p2);
-				return 0;
+				return false;
 			}
-
-			p2->cl = NULL;
 		}
 
 		parser_destroy(p2);
