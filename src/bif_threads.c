@@ -1037,8 +1037,11 @@ static bool bif_thread_join_2(query *q)
 	}
 
 	if (t->exit_code) {
-		cell *tmp = copy_term_to_heap(q, t->exit_code, q->st.cur_ctx, false);
+		const frame *f = GET_CURR_FRAME();
+		cell *tmp = alloc_heap(q, t->exit_code->num_cells);
 		CHECKED(tmp);
+		dup_cells_by_ref(tmp, t->exit_code, q->st.cur_ctx, t->exit_code->num_cells);
+		rebase_term(q, tmp, f->actual_slots, false);
 		unshare_cells(t->exit_code, t->exit_code->num_cells);
 		TPL_free(t->exit_code);
 		t->exit_code = NULL;
