@@ -55,10 +55,8 @@ static bool bif_clause_3(query *q)
 			q->st.dbe = r;
 			cl = &r->cl;
 			cell *c = cl->cells;
-			cell *tmp = alloc_heap(q, c->num_cells);
+			cell *tmp = import_term_to_heap(q, c, q->st.cur_ctx);
 			CHECKED(tmp);
-			dup_cells_by_ref(tmp, c, q->st.cur_ctx, c->num_cells);
-			rebase_term(q, tmp, f->actual_slots, false);
 			cell *head = get_head(tmp);
 
 			if (!unify(q, p1, p1_ctx, head, q->st.cur_ctx)) {
@@ -79,10 +77,8 @@ static bool bif_clause_3(query *q)
 		}
 
 		cell *c = cl->cells;
-		cell *tmp = alloc_heap(q, c->num_cells);
+		cell *tmp = import_term_to_heap(q, c, q->st.cur_ctx);
 		CHECKED(tmp);
-		dup_cells_by_ref(tmp, c, q->st.cur_ctx, c->num_cells);
-		rebase_term(q, tmp, f->actual_slots, false);
 		cell *body = get_body(tmp);
 		bool ok;
 
