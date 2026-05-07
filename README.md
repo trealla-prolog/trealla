@@ -172,16 +172,16 @@ Optionally...
 
 	make test
 
-and there should be no errors, Further to test with address sanitizer:
+and there should be no errors, Further to test with `valgrind`:
 
-	make clean && make debug && make test
+	make clean && make debug && make valgrind
 
 or  more thoroughly (on MacOS):
 
-	make clean && make sanitize CC=clang && make test
+	make clean && make sanitize && make test
 
-Should show no memory out-of-bounds, null-pointer, use after TPL_free
-or memory leaks (there may a few spurious errors).
+Should ideally show no memory out-of-bounds, null-pointer, use after
+free or memory leaks (there may a few spurious errors).
 
 
 On macOS:
