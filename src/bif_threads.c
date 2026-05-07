@@ -482,11 +482,8 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 		const frame *f = GET_CURR_FRAME();
 
 		while (m) {
-			cell *tmp = alloc_heap(q, m->c->num_cells);
+			cell *tmp = import_term_to_heap(q, m->c, q->st.cur_ctx);
 			CHECKED(tmp, release_lock(&t->guard));
-			dup_cells_by_ref(tmp, m->c, q->st.cur_ctx, m->c->num_cells);
-			rebase_term(q, tmp, f->actual_slots, false);
-
 			GET_FIRST_ARG(p1,queue);
 			GET_NEXT_ARG(p2,any);
 
@@ -972,12 +969,8 @@ bool do_signal(query *q, void *thread_ptr)
 	msg *m = list_pop_front(&t->signals);
 	release_lock(&t->guard);
 	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.cur_ctx, 0);
-	cell *tmp = alloc_heap(q, m->c->num_cells);
+	cell *tmp = import_term_to_heap(q, m->c, q->st.cur_ctx);
 	CHECKED(tmp);
-	dup_cells_by_ref(tmp, m->c, q->st.cur_ctx, m->c->num_cells);
-	const frame *f = GET_CURR_FRAME();
-	rebase_term(q, tmp, f->actual_slots, false);
-	unshare_cells(m->c, m->c->num_cells);
 	TPL_free(m);
 	cell *tmp2 = prepare_call(q, CALL_NOSKIP, tmp, q->st.cur_ctx, 1);
 	ENSURE(tmp2);
@@ -1038,10 +1031,8 @@ static bool bif_thread_join_2(query *q)
 
 	if (t->exit_code) {
 		const frame *f = GET_CURR_FRAME();
-		cell *tmp = alloc_heap(q, t->exit_code->num_cells);
+		cell *tmp = import_term_to_heap(q, t->exit_code, q->st.cur_ctx);
 		CHECKED(tmp);
-		dup_cells_by_ref(tmp, t->exit_code, q->st.cur_ctx, t->exit_code->num_cells);
-		rebase_term(q, tmp, f->actual_slots, false);
 		unshare_cells(t->exit_code, t->exit_code->num_cells);
 		TPL_free(t->exit_code);
 		t->exit_code = NULL;
@@ -2440,10 +2431,8 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_ctx p1_ct
 
 	CHECKED(push_choice(q));
 	const frame *f = GET_CURR_FRAME();
-	cell *tmp = alloc_heap(q, m->c->num_cells);
+	cell *tmp = import_term_to_heap(q, m->c, q->st.cur_ctx);
 	CHECKED(tmp, release_lock(&t->guard));
-	dup_cells_by_ref(tmp, m->c, q->st.cur_ctx, m->c->num_cells);
-	rebase_term(q, tmp, f->actual_slots, false);
 	release_lock(&t->guard);
 	q->cur_chan = m->from_chan;
 
