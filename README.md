@@ -11,6 +11,7 @@ and using a plain old Makefile.
 	Strings & slices are super-efficient (especially with mmap'd files)
 	REPL with history
 	Runs on Linux, Android, BSD, macOS, and WebAssembly (WASI) & Go
+	Windows build is of indeterminate state and is unsupported
 	API for calling from C (or by using WASM from Go & JS)
 	Foreign function interface (FFI) for calling out to user code
 	Access SQLITE databases using builtin module (uses FFI)
