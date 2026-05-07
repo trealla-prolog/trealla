@@ -1156,6 +1156,7 @@ static void do_cancel(thread *t)
 	acquire_lock(&t->guard);
 	sl_destroy(t->alias);
 	t->alias = NULL;
+	t->is_finished = false;
 	t->is_active = false;
 	msg *m;
 	query *q = t->q;

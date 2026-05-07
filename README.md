@@ -1019,29 +1019,22 @@ Start independent (shared state) Prolog queries as dedicated POSIX
 threads and communicate via message queues. Note: the database *is*
 shared. These predicates conform to the *ISO Prolog multithreading
 support* standards proposal (ISO/IEC DTR 13211–5:2007), now lapsed.
+Note: a thread is also a queue and a mutex. Note this is an expired
+ISO standards proposal but is commonly supported.
 
-	thread_create/3		# thread_create(:callable,-thread,+options)
-	thread_create/2		# thread_create(:callable,-thread)
-	thread_signal/2		# thread_signal(+thread,:callable)
-	thread_join/2		# thread_join(+thread,-term)
-	thread_cancel/1		# thread_cancel(+thread)
-	thread_detach/1		# thread_detach(+thread)
-	thread_self/1		# thread_self(-thread)
-	thread_exit/1		# thread_exit(+term)
-	thread_sleep/1		# thread_sleep(+integer)
-	thread_yield/0		# thread_yield
-	thread_property/2	# thread_property(+thread,+term)
-	thread_property/1	# thread_property(+term)
+	thread_create/3				# thread_create(:callable,-thread,+opts)
+	thread_create/2				# thread_create(:callable,-thread)
+	thread_signal/2				# thread_signal(+thread,:callable)
+	thread_join/2				# thread_join(+thread,-term)
+	thread_cancel/1				# thread_cancel(+thread)
+	thread_detach/1				# thread_detach(+thread)
+	thread_self/1				# thread_self(-thread)
+	thread_exit/1				# thread_exit(+term)
+	thread_sleep/1				# thread_sleep(+integer)
+	thread_yield/0				# thread_yield
+	thread_property/2			# thread_property(+thread,+term)
+	thread_property/1			# thread_property(+term)
 
-Where 'options' can be *alias(+atom)*, *at_exit(:term)* and/or *detached(+boolean)*
-(the default is *NOT* detached, ie. joinable).
-
-Create a stand-alone message queue...
-
-	message_queue_create/2		# message_queue_create(-queue,+options)
-	message_queue_create/1		# message_queue_create(-queue)
-	message_queue_destroy/1		# message_queue_destroy(+queue)
-	message_queue_property/2	# message_queue_property(+queue,+term)
 	thread_send_message/2		# thread_send_message(+queue,+term)
 	thread_send_message/1		# thread_send_message(+term)
 	thread_get_message/2		# thread_get_message(+queue,?term)
@@ -1049,11 +1042,32 @@ Create a stand-alone message queue...
 	thread_peek_message/2		# thread_peek_message(+queue,?term)
 	thread_peek_message/1		# thread_peek_message(?term)
 
-Where 'options' can be *alias(+atom)*.
+Where 'opts' can be *alias(+atom)*, *at_exit(:term)* and/or *detached(+boolean)*
+(the default is *NOT* detached, ie. joinable).
+Note: `thread_cancel/1` is dangerous and should be avoided, it does
+not exist in some other Prologs and does not rightly belong in any standards
+proposal.
+
+These are non-standard but SWI-compatible:
+
+	thread_join/1				# thread_join(+thread)
+	thread_get_message/3		# thread_get_message(+queue,?term,+opts)
+
+Where 'opts' can be *timeout(+float)* to specify a timeout in seconds.
+
+Create a stand-alone message queue.
+Note: a queue is also a mutex.
+
+	message_queue_create/2		# message_queue_create(-queue,+opts)
+	message_queue_create/1		# message_queue_create(-queue)
+	message_queue_destroy/1		# message_queue_destroy(+queue)
+	message_queue_property/2	# message_queue_property(+queue,+term)
+
+Where 'opts' can be *alias(+atom)*.
 
 Create a stand-alone mutex...
 
-	mutex_create/2				# mutex_create(-mutex,+options)
+	mutex_create/2				# mutex_create(-mutex,+opts)
 	mutex_create/1				# mutex_create(-mutex)
 	mutex_destroy/1				# mutex_destroy(+mutex)
 	mutex_property/2			# mutex_property(+mutex,+term)
@@ -1064,7 +1078,7 @@ Create a stand-alone mutex...
 	mutex_unlock/1				# mutex_unlock(+mutex)
 	mutex_unlock_all/0			# mutex_unlock_all
 
-Where 'options' can be *alias(+atom)*. Use of mutexes other than
+Where 'opts' can be *alias(+atom)*. Use of mutexes other than
 *with_mutex/2* should generally be avoided.
 
 For example...
