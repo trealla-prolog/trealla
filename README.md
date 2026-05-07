@@ -172,7 +172,9 @@ Optionally...
 
 	make test
 
-and there should be no errors, Further to test with `valgrind`:
+and there should be no errors.
+
+Further to test with `valgrind` (on Linux):
 
 	make clean && make debug && make valgrind
 
