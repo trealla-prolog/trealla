@@ -296,11 +296,6 @@ inline static cell *get_raw_arg(query *q, int n)
 	return c;
 }
 
-#define CHECK_SENTINEL(expr, err_sentinel, ...) CHECK_SENTINEL_((expr), err_sentinel, ## __VA_ARGS__, error=true)
-#define CHECK_SENTINEL_(expr, err_sentinel, on_error, ...) do { if((expr) == err_sentinel){on_error;}} while (0)
-
-#define check_error(expr, ...) CHECK_SENTINEL(expr, 0, __VA_ARGS__; return 0)
-
 #define CHECKED(expr, ...) \
 	CHECK_SENTINEL(expr, 0, __VA_ARGS__; \
 	return throw_error(q, q->st.instr, q->st.cur_ctx, "resource_error", "memory"))
