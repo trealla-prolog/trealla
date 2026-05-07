@@ -3683,6 +3683,7 @@ bool expand_term(parser *p, cell *c)
 		parser *p2 = parser_create(p->m);
 		check_error(p2);
 		p2->cl = TPL_calloc(1, sizeof(clause) + (sizeof(cell)*h->num_cells) + 1);
+		check_error(p2->cl);
 		dup_cells(p2->cl->cells, h, h->num_cells);
 		p2->cl->num_allocated_cells = h->num_cells;
 		p2->cl->cidx = h->num_cells;
