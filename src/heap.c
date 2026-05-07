@@ -644,3 +644,14 @@ cell *alloc_queuen(query *q, unsigned qnum, const cell *c)
 	return dst;
 }
 
+
+cell *import_term_to_heap(query *q, cell *c, pl_ctx c_ctx)
+{
+	const frame *f = GET_CURR_FRAME();
+	cell *tmp = alloc_heap(q, c->num_cells);
+	if (!tmp) return NULL;
+	dup_cells_by_ref(tmp, c, q->st.cur_ctx, c->num_cells);
+	rebase_term(q, tmp, f->actual_slots, false);
+	return tmp;
+}
+
