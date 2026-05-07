@@ -224,7 +224,7 @@ profile:
 	$(MAKE) 'OPT=$(OPT) -O0 -pg -DDEBUG'
 
 debug:
-	$(MAKE) 'OPT=$(OPT) -fsanitize=undefined,address -O0 -g -DDEBUG'
+	$(MAKE) 'OPT=$(OPT) -O0 -g -DDEBUG'
 
 sanitize:
 	$(MAKE) 'OPT=$(OPT) -fsanitize=undefined,integer,address -O0 -g -DDEBUG'
@@ -269,6 +269,9 @@ compile: util/bin2c
 
 test:
 	./tests/run.sh
+
+valgrind:
+	./tests/run_valgrind.sh
 
 clean:
 	rm -f tpl tpl.wasm \
