@@ -14,7 +14,7 @@
 #if USE_THREADS
 
 #if 0
-#define THREAD_DEBUG if (1) fprintf(stderr, "*** %lld ", (long long)time(NULL));
+#define THREAD_DEBUG if (1) fprintf(stderr, "*** %lld h%u/p%u ", (long long)time(NULL), q->st.hp, q->st.heap_num);
 #else
 #define THREAD_DEBUG if (0)
 #endif
@@ -907,7 +907,7 @@ static bool bif_thread_create_3(query *q)
 	pl_idx num_cells = 0;
 	make_instr(tmp2+num_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, tmp->num_cells+1);
 	num_cells += dup_cells(tmp2+num_cells, tmp, tmp->num_cells);
-	make_instr(tmp2+num_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
+	make_instr(tmp2+num_cells++, new_atom(q->pl, "abort"), bif_iso_halt_0, 0, 0);
 	t->goal = tmp2;
 
 	if (exit_goal) {
@@ -920,7 +920,7 @@ static bool bif_thread_create_3(query *q)
 		pl_idx num_cells = 0;
 		make_instr(tmp2+num_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, tmp->num_cells+1);
 		num_cells += dup_cells(tmp2+num_cells, tmp, tmp->num_cells);
-		make_instr(tmp2+num_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
+		make_instr(tmp2+num_cells++, new_atom(q->pl, "abort"), bif_iso_halt_0, 0, 0);
 		THREAD_DEBUG DUMP_TERM("at_exit", tmp2, q->st.cur_ctx, 0);
 		t->at_exit_goal = TPL_calloc(tmp2->num_cells, sizeof(cell));
 		CHECKED(t->at_exit_goal);
