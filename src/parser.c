@@ -3679,7 +3679,6 @@ bool expand_term(parser *p, cell *c)
 
 	while (is_iso_list(c)) {
 		cell *h = LIST_HEAD(c);
-
 		parser *p2 = parser_create(p->m);
 		check_error(p2);
 		p2->cl = TPL_calloc(1, sizeof(clause) + (sizeof(cell)*h->num_cells) + 1);
