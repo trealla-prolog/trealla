@@ -2828,7 +2828,7 @@ static bool bif_random_integer_0(query *q)
 {
 	START_FUNCTION(q);
 	q->accum.tag = TAG_INT;
-	q->accum.val_int = rnd(q) * ((int64_t)RAND_MAX+1);
+	q->accum.val_int = rand_r(&q->rand_seed);
 	return true;
 }
 
