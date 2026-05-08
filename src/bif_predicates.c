@@ -3580,6 +3580,12 @@ static bool bif_is_list_or_partial_list_1(query *q)
 	return is_partial;
 }
 
+static bool bif_is_bigint_1(query *q)
+{
+	GET_FIRST_ARG(p1,any);
+	return is_bigint(p1);
+}
+
 static bool bif_load_text_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
@@ -6375,6 +6381,7 @@ builtins g_other_bifs[] =
 	{"is_list_or_partial_list", 1, bif_is_list_or_partial_list_1, "+term", false, false, BLAH},
 	{"is_partial_list", 1, bif_is_partial_list_1, "+term", false, false, BLAH},
 	{"is_list", 1, bif_is_list_1, "+term", false, false, BLAH},
+	{"is_bigint", 1, bif_is_bigint_1, "+term", false, false, BLAH},
 	{"list", 1, bif_is_list_1, "+term", false, false, BLAH},
 	{"term_hash", 2, bif_term_hash_2, "+term,?integer", false, false, BLAH},
 	{"base64", 3, bif_base64_3, "?string,?string,+list", false, false, BLAH},
