@@ -4469,20 +4469,20 @@ static bool bif_string_upper_2(query *q)
 	return ok;
 }
 
-static pl_idx jenkins_one_at_a_time_hash(const char *key, size_t len)
+#define FNV_OFFSET_64 0xCBF29CE484222325ULL
+#define FNV_PRIME_64  0x100000001B3ULL
+
+static uint64_t fnv1a_64(const void* data, size_t size)
 {
-	pl_idx hash = 0;
+    const unsigned char* bytes = (const unsigned char*)data;
+    uint64_t hash = FNV_OFFSET_64;
 
-	while (len-- > 0) {
-		hash += *key++;
-		hash += (hash << 10);
-		hash ^= (hash >> 6);
-	}
+    for (size_t i = 0; i < size; i++) {
+        hash ^= bytes[i];
+        hash *= FNV_PRIME_64;
+    }
 
-	hash += (hash << 3);
-	hash ^= (hash >> 11);
-	hash += (hash << 15);
-	return hash;
+    return hash;
 }
 
 static bool bif_term_hash_2(query *q)
@@ -4501,12 +4501,12 @@ static bool bif_term_hash_2(query *q)
 	if (is_smallint(p1)) {
 		char tmpbuf[256];
 		snprintf(tmpbuf, sizeof(tmpbuf), "%"PRId64"", (int64_t)get_smallint(p1));
-		make_int(&tmp, jenkins_one_at_a_time_hash(tmpbuf, strlen(tmpbuf)));
+		make_int(&tmp, fnv1a_64(tmpbuf, strlen(tmpbuf)));
 	} else if (is_atom(p1)) {
-		make_int(&tmp, jenkins_one_at_a_time_hash(C_STR(q, p1), C_STRLEN(q, p1)));
+		make_int(&tmp, fnv1a_64(C_STR(q, p1), C_STRLEN(q, p1)));
 	} else {
 		char *tmpbuf = print_term_to_strbuf(q, p1, p1_ctx, 1);
-		make_int(&tmp, jenkins_one_at_a_time_hash(tmpbuf, strlen(tmpbuf)));
+		make_int(&tmp, fnv1a_64(tmpbuf, strlen(tmpbuf)));
 		TPL_free(tmpbuf);
 	}
 
