@@ -470,10 +470,10 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 		}
 
 		msg *m = list_front(&t->queue);
-		CHECKED(push_choice(q), release_lock(&t->guard));
 		const frame *f = GET_CURR_FRAME();
 
 		while (m) {
+			CHECKED(push_choice(q), release_lock(&t->guard));
 			cell *tmp = import_term_to_heap(q, m->c, q->st.cur_ctx);
 			CHECKED(tmp, release_lock(&t->guard));
 			GET_FIRST_ARG(p1,queue);
@@ -496,11 +496,10 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 				return true;
 			}
 
-			undo_me(q);
+			retry_choice(q);
 			m = list_next(m);
 		}
 
-		drop_choice(q);
 		release_lock(&t->guard);
 
 		if (is_peek)
