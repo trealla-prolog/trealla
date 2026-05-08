@@ -692,7 +692,7 @@ struct query_ {
 	unsigned realloc_frames, realloc_choices, realloc_slots, realloc_trails;
 	unsigned max_depth, max_eval_depth, print_idx, tab_idx, dump_var_num;
 	unsigned varno, tab0_varno, cur_engine, cur_chan, my_chan;
-	unsigned s_cnt, retries, popp;
+	unsigned s_cnt, retries, popp, rand_seed;
 	int autofail_n;
 	pl_ctx latest_ctx, variable_names_ctx, dump_var_ctx, ball_ctx, cont_ctx;
 	pl_idx tmphp;
@@ -881,7 +881,6 @@ struct prolog_ {
 	pl_refcnt q_cnt, dbgen;
 	unsigned next_mod_id, def_max_depth, my_chan;
 	unsigned current_input, current_output, current_error;
-	pl_uint rnd_seed;
 	int8_t halt_code, opt;
 	pl_refcnt rnd_first_time;
 	bool def_quoted:1;

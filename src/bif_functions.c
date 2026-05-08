@@ -2777,38 +2777,17 @@ static bool bif_log10_1(query *q)
 	return true;
 }
 
-#define random_M 0x7FFFFFFFL
-
 static pl_flt rnd(query *q)
 {
-	prolog_lock(q->pl);
-
-	if (q->pl->rnd_first_time) {
-		q->pl->rnd_first_time = 0;
-
-#if !defined(__wasi__)
-		q->pl->rnd_seed = clock() | getpid() << 4;
-#else
-		q->pl->rnd_seed = clock() << 4;
-#endif
-
-		for (int i = 0; i < 3; i++)
-			rnd(q);
-	}
-
-	pl_uint seed = q->pl->rnd_seed = ((q->pl->rnd_seed * 2743) + 5923) & random_M;
-	pl_flt val = ((pl_flt)seed / (pl_flt)random_M);
-	prolog_unlock(q->pl);
+	pl_flt val = (pl_flt)rand_r(&q->rand_seed) / (pl_flt)RAND_MAX;
 	return val;
 }
 
 static bool bif_set_seed_1(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
-	prolog_lock(q->pl);
-	q->pl->rnd_seed = p1->val_int;
-	q->pl->rnd_first_time = 0;
-	prolog_unlock(q->pl);
+	q->rand_seed = (unsigned)p1->val_uint;
+	srand(q->rand_seed);
 	return true;
 }
 
@@ -2816,7 +2795,7 @@ static bool bif_get_seed_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
-	make_int(&tmp, q->pl->rnd_seed);
+	make_uint(&tmp, q->rand_seed);
 	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 

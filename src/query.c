@@ -1884,6 +1884,12 @@ static query *query_create_(module *m, bool is_small)
 	q->dump_var_ctx = -1;
 	q->double_quotes = false;
 
+#ifndef __wasi__
+	q->rand_seed = getpid() + g_query_id;
+#else
+	q->rand_seed = clock() + g_query_id;
+#endif
+
 	//if (is_threaded) q->trace = 1;
 
 	mp_int_init(&q->tmp_ival);
