@@ -1616,6 +1616,7 @@ char *print_canonical_to_strbuf(query *q, cell *c, pl_ctx c_ctx, int running)
 	q->did_quote = false;
 	SB_init(q->sb);
 	print_term_to_buf(q, c, c_ctx, running, false);
+	if (q->fullstop)  SB_putchar(q->sb, '.')
 	if (q->nl) SB_putchar(q->sb, '\n');
 	q->ignore_ops = false;
 	q->quoted = 0;
@@ -1633,22 +1634,26 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int
 	q->did_quote = false;
 	SB_init(q->sb);
 	print_term_to_buf(q, c, c_ctx, running, false);
+	if (q->fullstop)  SB_putchar(q->sb, '.')
 	if (q->nl) SB_putchar(q->sb, '\n');
 	q->ignore_ops = false;
 	q->quoted = 0;
 	const char *src = SB_cstr(q->sb);
 	ssize_t len = SB_strlen(q->sb);
+	flockfile(str->fp);
 
 	while (len) {
 		size_t nbytes = net_write(src, len, str);
 
 		if (feof(str->fp)) {
+			funlockfile(str->fp);
 			q->error = true;
 			SB_free(q->sb);
 			return false;
 		}
 
 		if (ferror(str->fp)) {
+			funlockfile(str->fp);
 			SB_free(q->sb);
 			stream_close(q, str->idx);
 			return throw_error(q, q->st.instr,q->st.cur_ctx, "existence_error", "stream");
@@ -1658,6 +1663,7 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int
 		src += nbytes;
 	}
 
+	funlockfile(str->fp);
 	SB_free(q->sb);
 	return true;
 }
@@ -1670,6 +1676,7 @@ bool print_canonical(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 	q->did_quote = false;
 	SB_init(q->sb);
 	print_term_to_buf(q, c, c_ctx, running, false);
+	if (q->fullstop)  SB_putchar(q->sb, '.')
 	if (q->nl) SB_putchar(q->sb, '\n');
 	q->ignore_ops = false;
 	q->quoted = 0;
@@ -1718,20 +1725,24 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int runn
 	q->last_thing = WAS_SPACE;
 	SB_init(q->sb);
 	print_term_to_buf(q, c, c_ctx, running, false);
+	if (q->fullstop)  SB_putchar(q->sb, '.')
 	if (q->nl) SB_putchar(q->sb, '\n');
 	const char *src = SB_cstr(q->sb);
 	ssize_t len = SB_strlen(q->sb);
+	flockfile(str->fp);
 
 	while (len) {
 		size_t nbytes = net_write(src, len, str);
 
 		if (feof(str->fp)) {
+			funlockfile(str->fp);
 			q->error = true;
 			SB_free(q->sb);
 			return false;
 		}
 
 		if (ferror(str->fp)) {
+			funlockfile(str->fp);
 			SB_free(q->sb);
 			stream_close(q, str->idx);
 			return throw_error(q, q->st.instr,q->st.cur_ctx, "existence_error", "stream");
@@ -1741,6 +1752,7 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int runn
 		src += nbytes;
 	}
 
+	funlockfile(str->fp);
 	SB_free(q->sb);
 	return true;
 }

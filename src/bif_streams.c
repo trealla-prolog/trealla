@@ -2027,8 +2027,10 @@ static bool bif_iso_write_1(query *q)
 	print_term_to_stream(q, str, p1, p1_ctx, 1);
 	q->numbervars = false;
 
-	if (fflush(str->fp))
-		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+	if (isatty(fileno(str->fp))) {
+		if (fflush(str->fp))
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+	}
 
 	return !ferror(str->fp);
 }
@@ -2053,8 +2055,10 @@ static bool bif_iso_write_2(query *q)
 	print_term_to_stream(q, str, p1, p1_ctx, 1);
 	q->numbervars = false;
 
-	if (fflush(str->fp))
-		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+	if (isatty(fileno(str->fp))) {
+		if (fflush(str->fp))
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+	}
 
 	return !ferror(str->fp);
 }
@@ -2077,8 +2081,10 @@ static bool bif_iso_writeq_1(query *q)
 	q->numbervars = false;
 	q->quoted = 0;
 
-	if (fflush(str->fp))
-		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+	if (isatty(fileno(str->fp))) {
+		if (fflush(str->fp))
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+	}
 
 	return !ferror(str->fp);
 }
@@ -2105,8 +2111,10 @@ static bool bif_iso_writeq_2(query *q)
 	q->numbervars = false;
 	q->quoted = 0;
 
-	if (fflush(str->fp))
-		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+	if (isatty(fileno(str->fp))) {
+		if (fflush(str->fp))
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+	}
 
 	return !ferror(str->fp);
 }
@@ -2125,8 +2133,10 @@ static bool bif_iso_write_canonical_1(query *q)
 
 	print_canonical(q, str->fp, p1, p1_ctx, 1);
 
-	if (fflush(str->fp))
-		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+	if (isatty(fileno(str->fp))) {
+		if (fflush(str->fp))
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+	}
 
 	return !ferror(str->fp);
 }
@@ -2149,8 +2159,10 @@ static bool bif_iso_write_canonical_2(query *q)
 
 	print_canonical(q, str->fp, p1, p1_ctx, 1);
 
-	if (fflush(str->fp))
-		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+	if (isatty(fileno(str->fp))) {
+		if (fflush(str->fp))
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+	}
 
 	return !ferror(str->fp);
 }
@@ -2450,14 +2462,10 @@ static bool bif_iso_write_term_2(query *q)
 	else
 		print_term_to_stream(q, str, p1, p1_ctx, 1);
 
-	if (q->fullstop)
-		net_write(".", 1, str);
-
-	if (q->nl)
-		net_write("\n", 1, str);
-
-	if (fflush(str->fp))
-		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+	if (isatty(fileno(str->fp))) {
+		if (fflush(str->fp))
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+	}
 
 	clear_write_options(q);
 	return !ferror(str->fp);
@@ -2537,14 +2545,10 @@ static bool bif_iso_write_term_3(query *q)
 	else
 		print_term_to_stream(q, str, p1, p1_ctx, 1);
 
-	if (q->fullstop)
-		net_write(".", 1, str);
-
-	if (q->nl)
-		net_write("\n", 1, str);
-
-	if (fflush(str->fp))
-		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+	if (isatty(fileno(str->fp))) {
+		if (fflush(str->fp))
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+	}
 
 	clear_write_options(q);
 	return !ferror(str->fp);
