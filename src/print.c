@@ -12,7 +12,7 @@
 #include "parser.h"
 #include "query.h"
 
-#ifdef __wasi__
+#if defined(__wasi__) || defined(_WIN32)
 #define flockfile(fp)
 #define funlockfile(fp)
 #endif
