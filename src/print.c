@@ -12,6 +12,11 @@
 #include "parser.h"
 #include "query.h"
 
+#ifdef __wasi__
+#define flockfile(fp)
+#define funlockfile(fp)
+#endif
+
 typedef struct visit_ visit;
 
 struct visit_ {
