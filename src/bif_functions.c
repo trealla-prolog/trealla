@@ -2779,8 +2779,7 @@ static bool bif_log10_1(query *q)
 
 static pl_flt rnd(query *q)
 {
-	pl_flt val = (pl_flt)rand_r(&q->rand_seed) / (pl_flt)RAND_MAX;
-	return val;
+	return (pl_flt)rand_r(&q->rand_seed) / (pl_flt)RAND_MAX;
 }
 
 static bool bif_set_seed_1(query *q)
