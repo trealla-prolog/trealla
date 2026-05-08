@@ -872,8 +872,11 @@ static bool bif_thread_create_3(query *q)
 		make_int(&tmp, n);
 		tmp.flags |= FLAG_INT_THREAD;
 
-		if (!unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx))
+		if (!unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx)) {
+			t->is_finished = false;
+			t->is_active = false;
 			return false;
+		}
 	}
 
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
@@ -924,6 +927,8 @@ static bool bif_thread_create_3(query *q)
 		TPL_free(t->at_exit_goal);
 		query_destroy(t->q);
 		t->q = NULL;
+		sl_destroy(t->alias);
+		t->alias = NULL;
 		return throw_error(q, p1, p1_ctx, "system_error", "pthread_create");
 	}
 
