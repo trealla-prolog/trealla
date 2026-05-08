@@ -342,8 +342,10 @@ static bool bif_iso_is_2(query *q)
 	if (is_bigint(&p2)) {
 		mp_small tmp;
 		if (mp_int_to_int(&p2.val_bigint->ival, &tmp) != MP_RANGE) {
-			unshare_cell(&p2);
-			make_int(&p2, tmp);
+			if (tmp != PL_INT_MIN) {
+				unshare_cell(&p2);
+				make_int(&p2, tmp);
+			}
 		}
 	}
 
