@@ -1461,9 +1461,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 	// SMALL INTEGER
 
 	if (is_smallint(c)) {
-		char tmpbuf[256];
-		sprint_int(tmpbuf, sizeof(tmpbuf), get_smallint(c), 10);
-		SB_sprintf(q->sb, "%s", tmpbuf);
+		SB_sprintf(q->sb, "%lld", (long long)c->val_int);
 		q->last_thing = WAS_OTHER;
 		return true;
 	}
