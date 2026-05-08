@@ -872,10 +872,8 @@ static bool bif_thread_create_3(query *q)
 		make_int(&tmp, n);
 		tmp.flags |= FLAG_INT_THREAD;
 
-		if (!unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx)) {
-			t->is_active = false;
+		if (!unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx))
 			return false;
-		}
 	}
 
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
@@ -2452,7 +2450,6 @@ builtins g_threads_bifs[] =
 	// ISO standard...
 
 	{"thread_create", 3, bif_thread_create_3, ":callable,-thread,+list", false, false, BLAH},
-
 	{"thread_detach", 1, bif_thread_detach_1, "+thread", false, false, BLAH},
 	{"thread_signal", 2, bif_thread_signal_2, "+thread,:callable", false, false, BLAH},
 	{"thread_join", 2, bif_thread_join_2, "+thread,-term", false, false, BLAH},
