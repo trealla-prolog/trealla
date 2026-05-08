@@ -2,19 +2,17 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <sched.h>
 
 #include "module.h"
-#include "parser.h"
 #include "query.h"
 
 #if USE_THREADS
 
 #if 0
-#define THREAD_DEBUG if (1) fprintf(stderr, "*** %lld h%u/p%u ", (long long)time(NULL), q->st.hp, q->st.heap_num);
+#define THREAD_DEBUG if (1) fprintf(stderr, "*** %lld ", (long long)time(NULL));
 #else
 #define THREAD_DEBUG if (0)
 #endif
@@ -24,7 +22,7 @@ void init_lock(lock *l)
 	pthread_mutexattr_t attr;
 	pthread_mutexattr_init(&attr);
 	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-	assert(!pthread_mutex_init(&l->mutex, &attr));
+	pthread_mutex_init(&l->mutex, &attr);
 }
 
 void deinit_lock(lock *l)
@@ -39,7 +37,7 @@ bool try_lock(lock *l)
 
 void acquire_lock(lock *l)
 {
-	assert(!pthread_mutex_lock(&l->mutex));
+	pthread_mutex_lock(&l->mutex);
 }
 
 void release_lock(lock *l)
@@ -152,18 +150,17 @@ static int new_thread(prolog *pl)
 				pthread_mutex_init(&t->mutex, NULL);
 				init_lock(&t->guard);
 				t->is_init = true;
+				t->id = pthread_self();
+				t->pl = pl;
+				t->chan = n;
 			}
 
-			t->id = pthread_self();
-			t->pl = pl;
-			t->chan = n;
 			t->is_detached = false;
 			t->is_queue_only = false;
 			t->is_mutex_only = false;
 			t->is_finished = false;
 			t->is_exception = false;
 			t->is_finished = false;
-			t->is_active = true;
 			t->locked_by = -1;
 			t->num_locks = 0;
 			t->at_exit_goal = NULL;
@@ -171,13 +168,13 @@ static int new_thread(prolog *pl)
 			t->ball = NULL;
 			t->alias = NULL;
 			t->q = NULL;
+			t->is_active = true;
 			prolog_unlock(pl);
 			return n;
 		}
 	}
 
 	prolog_unlock(pl);
-	assert(0);
 	return -1;
 }
 
@@ -346,7 +343,6 @@ static unsigned queue_size(prolog *pl, unsigned chan)
 
 static bool queue_to_chan(prolog *pl, unsigned chan, const cell *c, unsigned from_chan, bool is_signal)
 {
-	//printf("*** send to chan=%u, num_cells=%u\n", chan, c->num_cells);
 	thread *t = &pl->threads[chan];
 	msg *m = TPL_malloc(sizeof(msg) + (sizeof(cell)*c->num_cells));
 	if (!m) return false;
@@ -464,7 +460,7 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 
 				suspend_thread(t, tmo_ms > 0 ? tmo_ms : 10);
 			}
-			 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && !q->abort && (cnt++ < 1000));
+			 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && !q->abort && (cnt++ < 100));
 
 			continue;
 		}
@@ -721,7 +717,6 @@ static bool bif_pl_thread_3(query *q)
 
 static void *start_routine_thread_create(thread *t)
 {
-	//printf("*** create %d\n", t->chan);
 	execute(t->q, t->goal, t->num_vars);
 	t->is_exception = t->q->did_unhandled_exception;
 	unshare_cells(t->goal, t->goal->num_cells);
@@ -730,17 +725,11 @@ static void *start_routine_thread_create(thread *t)
 	t->is_finished = true;
 
 	if (t->is_exception && !t->q->abort) {
-		//printf("*** exception, %u\n", t->chan);
 		t->ball = TPL_calloc(t->q->ball->num_cells, sizeof(cell));
 		dup_cells(t->ball, t->q->ball, t->q->ball->num_cells);
-		//query *q = t->q;
-		//DUMP_TERM("*** ", t->ball, 0, 0);
 	}
 
 	if (t->at_exit_goal && !t->q->abort) {
-		//printf("*** at_exit...\n");
-		//query *q = t->q;
-		//DUMP_TERM("***", t->at_exit_goal, q->st.cur_ctx, 0);
 		execute(t->q, t->at_exit_goal, t->at_exit_goal_num_vars);
 		unshare_cells(t->at_exit_goal, t->at_exit_goal->num_cells);
 		TPL_free(t->at_exit_goal);
@@ -749,10 +738,8 @@ static void *start_routine_thread_create(thread *t)
 
 	do_unlock_all(t->pl);
 
-	if (!t->is_detached) {
-		//printf("*** ~create %d\n", t->chan);
+	if (!t->is_detached)
 		return 0;
-	}
 
 	sl_destroy(t->alias);
 	t->alias = NULL;
@@ -779,7 +766,6 @@ static void *start_routine_thread_create(thread *t)
 
 	t->is_active = false;
 	release_lock(&t->guard);
-	//printf("*** ~create %d\n", t->chan);
     return 0;
 }
 
@@ -950,7 +936,6 @@ bool do_signal(query *q, void *thread_ptr)
 {
 	thread *t = (thread*)thread_ptr;
 	acquire_lock(&t->guard);
-	assert(t->is_active);
 
 	if (!list_count(&t->signals)) {
 		release_lock(&t->guard);
@@ -1147,25 +1132,18 @@ static void do_cancel(thread *t)
 	query *q = t->q;
 	pthread_t id = t->id;
 
-	//if (list_count(&t->queue)) printf("*** queue...\n");
-
 	while ((m = list_pop_front(&t->queue)) != NULL) {
 		DUMP_TERM("***", m->c, q->st.cur_ctx, 0);
 		unshare_cells(m->c, m->c->num_cells);
 		TPL_free(m);
 	}
 
-	//if (list_count(&t->signals)) printf("*** signals...\n");
-
 	while ((m = list_pop_front(&t->signals)) != NULL) {
-		DUMP_TERM("***", m->c, q->st.cur_ctx, 0);
 		unshare_cells(m->c, m->c->num_cells);
 		TPL_free(m);
 	}
 
 	if (t->ball) {
-		printf("*** ball...\n");
-		DUMP_TERM("***", t->ball, q->st.cur_ctx, 0);
 		unshare_cells(t->ball, t->ball->num_cells);
 		TPL_free(t->ball);
 		t->ball = NULL;
@@ -1248,7 +1226,6 @@ static bool bif_thread_self_1(query *q)
 		return ok;
 	}
 
-	//printf("*** no thead_self\n");
 	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
 	return false;
 }
@@ -1293,8 +1270,6 @@ static bool bif_thread_exit_1(query *q)
 		return true;
 	}
 
-	assert(0);
-	printf("*** no thead_exit\n");
 	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
 	return false;
 }
@@ -2043,7 +2018,6 @@ static bool bif_mutex_trylock_1(query *q)
 		return false;
 
 	thread *me = get_self(q->pl);
-	assert(me);
 	t->locked_by = me->chan;
 	t->num_locks++;
 	return true;
@@ -2062,7 +2036,6 @@ static bool bif_mutex_lock_1(query *q)
 
 	thread *t = &q->pl->threads[n];
 	thread *me = get_self(q->pl);
-	assert(me);
 	acquire_lock(&t->guard);
 	t->locked_by = me->chan;
 	t->num_locks++;
@@ -2083,7 +2056,6 @@ static bool bif_mutex_unlock_1(query *q)
 
 	thread *t = &q->pl->threads[n];
 	thread *me = get_self(q->pl);
-	assert(me);
 
 	if (t->locked_by != me->chan)
 		return throw_error(q, p1, p1_ctx, "permission_error", "mutex_unlock,not_locked_by_me");
@@ -2407,7 +2379,7 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_ctx p1_ct
 		do {
 			suspend_thread(t, 10);
 		}
-		 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && !q->abort && (cnt++ < 1000));
+		 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && !q->abort && (cnt++ < 100));
 	}
 
 	if (q->halt || q->abort)
@@ -2477,13 +2449,9 @@ builtins g_threads_bifs[] =
 {
 #if USE_THREADS
 
-	// ISO standard (defunct)...
+	// ISO standard...
 
 	{"thread_create", 3, bif_thread_create_3, ":callable,-thread,+list", false, false, BLAH},
-
-#if !defined(__ANDROID__)
-	{"thread_cancel", 1, bif_thread_cancel_1, "+thread", false, false, BLAH},
-#endif
 
 	{"thread_detach", 1, bif_thread_detach_1, "+thread", false, false, BLAH},
 	{"thread_signal", 2, bif_thread_signal_2, "+thread,:callable", false, false, BLAH},
@@ -2496,6 +2464,10 @@ builtins g_threads_bifs[] =
 	{"thread_get_message", 2, bif_thread_get_message_2, "+queue,?term", false, false, BLAH},
 	{"thread_peek_message", 2, bif_thread_peek_message_2, "+queue,?term", false, false, BLAH},
 	{"thread_property", 2, bif_thread_property_2, "?thread,?term", false, false, BLAH},
+
+#if !defined(__ANDROID__)
+	{"thread_cancel", 1, bif_thread_cancel_1, "+thread", false, false, BLAH},
+#endif
 
 	{"mutex_create", 2, bif_mutex_create_2, "-mutex,+list", false, false, BLAH},
 	{"mutex_destroy", 1, bif_mutex_destroy_1, "+mutex", false, false, BLAH},
