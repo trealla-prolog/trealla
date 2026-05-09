@@ -150,11 +150,11 @@ static int new_thread(prolog *pl)
 				pthread_mutex_init(&t->mutex, NULL);
 				init_lock(&t->guard);
 				t->is_init = true;
-				t->id = pthread_self();
 				t->pl = pl;
 				t->chan = n;
 			}
 
+			t->id = pthread_self();
 			t->is_detached = false;
 			t->is_queue_only = false;
 			t->is_mutex_only = false;
@@ -625,6 +625,7 @@ static void *start_routine_thread(thread *t)
 {
 	prolog *pl = pl_create();
 	ENSURE(pl);
+	t->id = pthread_self();
 	pl->my_chan = t->chan;
 	pl_consult(pl, t->filename);
 	t->is_active = false;
@@ -717,6 +718,7 @@ static bool bif_pl_thread_3(query *q)
 
 static void *start_routine_thread_create(thread *t)
 {
+	t->id = pthread_self();
 	execute(t->q, t->goal, t->num_vars);
 	t->is_exception = t->q->did_unhandled_exception;
 	unshare_cells(t->goal, t->goal->num_cells);
