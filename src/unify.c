@@ -108,6 +108,34 @@ static int compare_internal(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx 
 	if (is_var(p2))
 		return 1;
 
+	if (is_bigint(p1) && is_bigint(p2))
+		return mp_int_compare(&p1->val_bigint->ival, &p2->val_bigint->ival);
+
+	if (is_bigint(p1) && is_smallint(p2))
+		return mp_int_compare_value(&p1->val_bigint->ival, p2->val_int);
+
+	if (is_bigint(p1) && is_float(p2))
+		return 1;
+
+	if (is_bigint(p1))
+		return 1;
+
+	if (is_smallint(p1) && is_rational(p2))
+		return -mp_rat_compare_value(&p2->val_bigint->irat, p1->val_int, 1);
+
+	if (is_smallint(p1) && is_bigint(p2))
+		return -mp_int_compare_value(&p2->val_bigint->ival, p1->val_int);
+
+	if (is_smallint(p1)) {
+		if (is_smallint(p2))
+			return p1->val_int < p2->val_int ? -1 : p1->val_int > p2->val_int ? 1 : 0;
+
+		if (is_float(p2))
+			return 1;
+
+		return -1;
+	}
+
 	if (is_rational(p1) && is_rational(p2))
 		return mp_rat_compare(&p1->val_bigint->irat, &p2->val_bigint->irat);
 
@@ -133,34 +161,6 @@ static int compare_internal(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx 
 		int ok = mp_rat_compare(&p2->val_bigint->irat, &tmp);
 		mp_rat_clear(&tmp);
 		return ok;
-	}
-
-	if (is_bigint(p1) && is_bigint(p2))
-		return mp_int_compare(&p1->val_bigint->ival, &p2->val_bigint->ival);
-
-	if (is_bigint(p1) && is_smallint(p2))
-		return mp_int_compare_value(&p1->val_bigint->ival, p2->val_int);
-
-	if (is_bigint(p1) && is_float(p2))
-		return 1;
-
-	if (is_bigint(p2))
-		return 1;
-
-	if (is_smallint(p1) && is_rational(p2))
-		return -mp_rat_compare_value(&p2->val_bigint->irat, p1->val_int, 1);
-
-	if (is_smallint(p1) && is_bigint(p2))
-		return -mp_int_compare_value(&p2->val_bigint->ival, p1->val_int);
-
-	if (is_smallint(p1)) {
-		if (is_smallint(p2))
-			return p1->val_int < p2->val_int ? -1 : p1->val_int > p2->val_int ? 1 : 0;
-
-		if (is_float(p2))
-			return 1;
-
-		return -1;
 	}
 
 	if (is_float(p1)) {

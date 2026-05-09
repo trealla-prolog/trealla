@@ -109,7 +109,7 @@ static void clr_accum(cell *p)
 		(v2) <= INT32_MIN)
 #endif
 
-#define DO_OP2(op,op2,p1,p2) \
+#define DO_OP(op,op2,p1,p2) \
 	if (is_smallint(&p1) && is_smallint(&p2)) { \
 		ON_OVERFLOW(op, p1.val_int, p2.val_int) { \
 			mpz_t tmp; \
@@ -663,7 +663,7 @@ bool bif_iso_add_2(query *q)
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 	CLEANUP cell p2 = eval(q, p2_tmp);
-	DO_OP2(+, add, p1, p2);
+	DO_OP(+, add, p1, p2);
 	return true;
 }
 
@@ -674,7 +674,7 @@ static bool bif_iso_sub_2(query *q)
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 	CLEANUP cell p2 = eval(q, p2_tmp);
-	DO_OP2(-, sub, p1, p2);
+	DO_OP(-, sub, p1, p2);
 	return true;
 }
 
@@ -685,7 +685,7 @@ static bool bif_iso_mul_2(query *q)
 	GET_NEXT_ARG(p2_tmp,any);
 	CLEANUP cell p1 = eval(q, p1_tmp);
 	CLEANUP cell p2 = eval(q, p2_tmp);
-	DO_OP2(*, mul, p1, p2);
+	DO_OP(*, mul, p1, p2);
 	return true;
 }
 
@@ -1942,7 +1942,7 @@ static bool bif_iso_divint_2(query *q)
 		if (is_smallint(&p2) && get_smallint(&p2) == 0)
 			return throw_error(q, &p1, q->st.cur_ctx, "evaluation_error", "zero_divisor");
 
-		DO_OP2(/, divx, p1, p2);
+		DO_OP(/, divx, p1, p2);
 	} else if (is_var(&p1) || is_var(&p2)) {
 		return throw_error(q, &p1, q->st.cur_ctx, "instantiation_error", "not_sufficiently_instantiated");
 	} else if (!is_integer(&p1)) {
