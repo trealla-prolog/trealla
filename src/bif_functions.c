@@ -2997,6 +2997,9 @@ builtins g_evaluable_bifs[] =
 	{"is", 2, bif_iso_is_2, "?number,+number", true, false, BLAH},
 	{"float", 1, bif_iso_float_1, "+number", true, false, BLAH},
 	{"integer", 1, bif_iso_integer_1, "+number", true, false, BLAH},
+
+	// ...non-ISO...
+
 	{"setrand", 1, bif_set_seed_1, "+integer", false, false, BLAH},
 	{"srandom", 1, bif_set_seed_1, "+integer", false, false, BLAH},
 	{"set_seed", 1, bif_set_seed_1, "+integer", false, false, BLAH},
@@ -3044,16 +3047,6 @@ builtins g_evaluable_bifs[] =
 	{"acos", 1, bif_iso_acos_1, "+number,-float", true, true, BLAH},
 	{"atan", 1, bif_iso_atan_1, "+number,-float", true, true, BLAH},
 
-	{"sinh", 1, bif_sinh_1, "+number,-float", false, true, BLAH},
-	{"cosh", 1, bif_cosh_1, "+number,-float", false, true, BLAH},
-	{"tanh", 1, bif_tanh_1, "+number,-float", false, true, BLAH},
-	{"asinh", 1, bif_asinh_1, "+number,-float", false, true, BLAH},
-	{"acosh", 1, bif_acosh_1, "+number,-float", false, true, BLAH},
-	{"atanh", 1, bif_atanh_1, "+number,-float", false, true, BLAH},
-
-	{"erf", 1, bif_erf_1, "+number,-float", false, true, BLAH},
-	{"erfc", 1, bif_erfc_1, "+number,-float", false, true, BLAH},
-
 	{"atan2", 2, bif_iso_atan2_2, "+number,+number,-float", true, true, BLAH},
 	{"copysign", 2, bif_iso_copysign_2, "+number,-number", false, true, BLAH},
 	{"truncate", 1, bif_iso_truncate_1, "+float,-integer", true, true, BLAH},
@@ -3063,6 +3056,17 @@ builtins g_evaluable_bifs[] =
 	{"float_integer_part", 1, bif_iso_float_integer_part_1, "+float,-integer", true, true, BLAH},
 	{"float_fractional_part", 1, bif_iso_float_fractional_part_1, "+float,-float", true, true, BLAH},
 
+	// ...non-ISO...
+
+	{"sinh", 1, bif_sinh_1, "+number,-float", false, true, BLAH},
+	{"cosh", 1, bif_cosh_1, "+number,-float", false, true, BLAH},
+	{"tanh", 1, bif_tanh_1, "+number,-float", false, true, BLAH},
+	{"asinh", 1, bif_asinh_1, "+number,-float", false, true, BLAH},
+	{"acosh", 1, bif_acosh_1, "+number,-float", false, true, BLAH},
+	{"atanh", 1, bif_atanh_1, "+number,-float", false, true, BLAH},
+
+	{"erf", 1, bif_erf_1, "+number,-float", false, true, BLAH},
+	{"erfc", 1, bif_erfc_1, "+number,-float", false, true, BLAH},
 	{"numerator", 1, bif_numerator_1, "+rational,-integer", false, true, BLAH},
 	{"denominator", 1, bif_denominator_1, "+rational,-integer", false, true, BLAH},
 	{"rdiv", 2, bif_rdiv_2, "+integer,+integer,-rational", false, true, BLAH},
