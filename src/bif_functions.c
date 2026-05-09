@@ -2510,48 +2510,42 @@ static bool bif_iso_compare_eq_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
-	int res = compare(q, p1, p1_ctx, p2, p2_ctx);
-	return res == 0;
+	return compare(q, p1, p1_ctx, p2, p2_ctx) == 0;
 }
 
 static bool bif_iso_compare_ne_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
-	int res = compare(q, p1, p1_ctx, p2, p2_ctx);
-	return res != 0;
+	return compare(q, p1, p1_ctx, p2, p2_ctx) != 0;
 }
 
 static bool bif_iso_compare_lt_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
-	int res = compare(q, p1, p1_ctx, p2, p2_ctx);
-	return res < 0;
+	return compare(q, p1, p1_ctx, p2, p2_ctx) < 0;
 }
 
 static bool bif_iso_compare_le_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
-	int res = compare(q, p1, p1_ctx, p2, p2_ctx);
-	return res <= 0;
+	return compare(q, p1, p1_ctx, p2, p2_ctx) <= 0;
 }
 
 static bool bif_iso_compare_gt_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
-	int res = compare(q, p1, p1_ctx, p2, p2_ctx);
-	return res > 0;
+	return compare(q, p1, p1_ctx, p2, p2_ctx) > 0;
 }
 
 static bool bif_iso_compare_ge_2(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	GET_NEXT_ARG(p2,any);
-	int res = compare(q, p1, p1_ctx, p2, p2_ctx);
-	return res >= 0;
+	return compare(q, p1, p1_ctx, p2, p2_ctx) >= 0;
 }
 
 #define COMPARE_OP(op,p1,p2) \
