@@ -4,8 +4,6 @@
 #include "module.h"
 #include "query.h"
 
-#define is_smallatomic(c) (is_atom(c) || is_smallint(c))
-
 #define DO_DUMP 0
 
 #define DUMP_TERM2(s,k,c,c_ctx,running) { \
@@ -31,7 +29,7 @@ static bool bif_bb_b_put_2(query *q)
 		cell *p1_m = p1 + 1;
 		p1 = p1_m + p1_m->num_cells;
 
-		if (!is_atom(p1_m) || !is_smallatomic(p1))
+		if (!is_atom(p1_m) || !is_smallint_or_atom(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 		m = find_module(q->pl, C_STR(q, p1_m));
@@ -93,7 +91,7 @@ static bool bif_bb_put_2(query *q)
 		cell *p1_m = p1 + 1;
 		p1 = p1_m + p1_m->num_cells;
 
-		if (!is_atom(p1_m) || !is_smallatomic(p1))
+		if (!is_atom(p1_m) || !is_smallint_or_atom(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 		m = find_module(q->pl, C_STR(q, p1_m));
@@ -155,7 +153,7 @@ static bool bif_bb_get_2(query *q)
 		cell *p1_m = p1 + 1;
 		p1 = p1_m + p1_m->num_cells;
 
-		if (!is_atom(p1_m) || !is_smallatomic(p1))
+		if (!is_atom(p1_m) || !is_smallint_or_atom(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 		m = find_module(q->pl, C_STR(q, p1_m));
@@ -224,7 +222,7 @@ static bool bif_bb_delete_2(query *q)
 		cell *p1_m = p1 + 1;
 		p1 = p1_m + p1_m->num_cells;
 
-		if (!is_atom(p1_m) || !is_smallatomic(p1))
+		if (!is_atom(p1_m) || !is_smallint_or_atom(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 		m = find_module(q->pl, C_STR(q, p1_m));
@@ -298,7 +296,7 @@ static bool bif_bb_update_3(query *q)
 		cell *p1_m = p1 + 1;
 		p1 = p1_m + p1_m->num_cells;
 
-		if (!is_atom(p1_m) || !is_smallatomic(p1))
+		if (!is_atom(p1_m) || !is_smallint_or_atom(p1))
 			return throw_error(q, p1, p1_ctx, "type_error", "atom");
 
 		m = find_module(q->pl, C_STR(q, p1_m));
