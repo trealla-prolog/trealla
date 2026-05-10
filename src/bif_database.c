@@ -513,7 +513,7 @@ static bool bif_iso_assertz_1(query *q)
 	return do_assertz_1(q, false);
 }
 
-static bool bif_sys_assertz_1(query *q)
+static bool bif_sys_assertz_static_1(query *q)
 {
 	return do_assertz_1(q, true);
 }
@@ -1230,7 +1230,7 @@ builtins g_database_bifs[] =
 	{"$clause", 2, bif_sys_clause_2, "?term,?term", false, false, BLAH},
 	{"$clause", 3, bif_sys_clause_3, "?term,?term,-string", false, false, BLAH},
 	{"$retract_on_backtrack", 1, bif_sys_retract_on_backtrack_1, "+string", false, false, BLAH},
-	{"$assertz", 1, bif_sys_assertz_1, "+term", true, false, BLAH},
+	{"$assertz_static", 1, bif_sys_assertz_static_1, "+term", true, false, BLAH},
 
 	{"$a_", 2, bif_sys_asserta_2, "+term,+atom", true, false, BLAH},
 	{"$z_", 2, bif_sys_assertz_2, "+term,+atom", true, false, BLAH},

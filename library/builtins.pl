@@ -699,10 +699,10 @@ goal_expansion(maplist(G, L1), Goal) :-
 	gensym:gensym(maplist_, U),
 	Goal =.. [U,Args,L1],
 	G1 =.. [U,Args,[]],
-	user:'$assertz'(G1),							% not dynamic
+	user:'$assertz_static'(G1),
 	G2a =.. [U,Args,[E1|T1]],
 	G2b =.. [U,Args,T1],
-	user:'$assertz'((G2a :- call(G, E1), G2b)),		% not dynamic
+	user:'$assertz_static'((G2a :- call(G, E1), G2b)),
 	true.
 goal_expansion(maplist(G, L1), maplist(G, L1)).
 
@@ -712,10 +712,10 @@ goal_expansion(maplist(G, L1, L2), Goal) :-
 	gensym:gensym(maplist_, U),
 	Goal =.. [U,Args,L1,L2],
 	G1 =.. [U,Args,[],[]],
-	user:'$assertz'(G1),							% not dynamic
+	user:'$assertz_static'(G1),
 	G2a =.. [U,Args,[E1|T1],[E2|T2]],
 	G2b =.. [U,Args,T1,T2],
-	user:'$assertz'((G2a :- call(G, E1, E2), G2b)),	% not dynamic
+	user:'$assertz_static'((G2a :- call(G, E1, E2), G2b)),
 	true.
 goal_expansion(maplist(G, L1, L2), maplist(G, L1, L2)).
 
