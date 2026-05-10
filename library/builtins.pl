@@ -12,8 +12,8 @@ dcg_translate(TermIn, Term) :-
 :- help(writeln(+term), [iso(false),deprecated(true)]).
 :- help(writeln(+stream,+term), [iso(false),deprecated(true)]).
 
-writeln(T) :- write_term(stdout,T,[nl(true)]).		% SWI
-writeln(S, T) :- write_term(S,T,[nl(true)]).		% SWI
+writeln(T) :- write_term(stdout,T,[nl(true)]).		% SWI-compatible
+writeln(S, T) :- write_term(S,T,[nl(true)]).		% SWI-compatible
 
 :- help(predicate_property(+callable,+term), [iso(true)]).
 
