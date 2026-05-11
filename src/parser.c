@@ -951,9 +951,6 @@ static bool directives(parser *p, cell *d)
 			module *tmp_m;
 
 			if ((tmp_m = find_module(p->pl, name)) != NULL) {
-				//if (!p->do_read_term)
-				//	fprintf(stderr, "Error: module already loaded: %s, %s:%d\n", name, get_loaded(p->m, p->m->filename), p->line_num);
-				//
 				p->already_loaded_error = true;
 				p->m = tmp_m;
 				return true;
