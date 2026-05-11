@@ -500,11 +500,10 @@ Non-standard predicates
 	getlines/1                  # getlines(-strings)
 	getlines/2                  # getlines(+stream,-strings)
 	getlines/3                  # getlines(+stream,-strings,+opts)
-	read_line_to_codes/2	   	# removes terminator
-	read_line_to_string/2		# removes terminator
-	read_file_to_string/3
-	replace/4                   # replace(+string,+old,+new,-string)
-	option/2-3					# SWI-compatible (see library(option))
+
+	read_line_to_codes/2	   	# SWI-compaible
+	read_line_to_string/2		# SWI-compaible
+	read_file_to_string/3		# SWI-compaible
 
 	open(stream(Str),...)       # with open/4 reopen a stream
 	open(F,M,S,[mmap(Ls)])      # with open/4 mmap() the file to Ls
@@ -512,7 +511,9 @@ Non-standard predicates
 	reset/3						# parser_reset(:goal,?ball,-cont)
 	shift/1						# shift(+ball)
 
+	option/2-3					# SWI-compatible (see library(option))
 	term_variables/3
+	replace/4                   # replace(+string,+old,+new,-string)
 
 Where `getlines/3` supports `terminator(+Bool)` to keep the line
 terminator or not (default). Also `empty(+Bool)` to end with the first
