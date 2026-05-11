@@ -999,7 +999,7 @@ static bool resume_frame(query *q)
 		(unsigned)q->st.cur_ctx,
 		(unsigned)f->no_recov, (unsigned)resume_any_choices(q, f));
 #endif
-	Trace(q, get_head(f->instr), q->st.cur_ctx, EXIT);
+	Trace(q, get_head(f->instr), f->prev, EXIT);
 
 	if (q->pl->opt
 		&& !f->no_recov
