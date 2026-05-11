@@ -4203,6 +4203,54 @@ static bool bif_read_line_to_string_2(query *q)
 	return ok;
 }
 
+static bool bif_read_line_to_codes_2(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	GET_NEXT_ARG(p1,any);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+	char *line = NULL;
+	size_t len = 0;
+
+	if (isatty(fileno(str->fp))) {
+		fprintf(str->fp, "%s", PROMPT);
+		fflush(str->fp);
+	}
+
+	if (net_getline(&line, &len, str) == -1) {
+		TPL_free(line);
+
+		if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
+			clearerr(str->fp);
+			return do_yield(q, 1);
+		}
+
+		cell tmp;
+		make_atom(&tmp, g_eof_s);
+		return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
+	}
+
+	len = strlen(line);
+
+	if (len && (line[len-1] == '\n')) {
+		line[len-1] = '\0';
+		len--;
+	}
+
+	if (len && (line[len-1] == '\r')) {
+		line[len-1] = '\0';
+		len--;
+	}
+
+	cell tmp;
+	make_string(&tmp, line);
+	tmp.flags |= FLAG_CSTR_CODES;
+	TPL_free(line);
+	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
+	unshare_cell(&tmp);
+	return ok;
+}
+
 static bool bif_read_file_to_string_3(query *q)
 {
 	GET_FIRST_ARG(p1,source_sink);
@@ -6545,6 +6593,8 @@ builtins g_streams_bifs[] =
 	{"read_line_to_string", 2, bif_read_line_to_string_2, "+stream,-string", false, false, BLAH},
 	{"read_file_to_string", 3, bif_read_file_to_string_3, "+source_sink,-string,+options", false, false, BLAH},
 	{"alias", 2, bif_alias_2, "+blob,+atom", false, false, BLAH},
+
+	{"read_line_to_codes", 2, bif_read_line_to_codes_2, "+stream,-list", false, false, BLAH},
 
 	{"$stream_to_file", 2, bif_sys_stream_to_file_2, "+stream,-integer", false, false, BLAH},
 	{"$capture_output", 0, bif_sys_capture_output_0, NULL, false, false, BLAH},

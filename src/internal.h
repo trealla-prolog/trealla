@@ -516,7 +516,7 @@ struct frame_ {
 	module *m;
 	uint64_t dbgen, chgen;
 	uint32_t heap_num, initial_slots, actual_slots, max_vars;
-	pl_idx base, op, hp, frame_size;
+	pl_idx base, op, hp;
 	pl_ctx prev;
 	bool no_recov:1;
 };
