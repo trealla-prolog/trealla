@@ -6590,11 +6590,10 @@ builtins g_streams_bifs[] =
 	{"write_canonical_to_atom", 3, bif_write_canonical_to_chars_3, "?atom,?term,+list", false, false, BLAH},
 	{"write_term_to_chars", 3, bif_write_term_to_chars_3, "?term,+list,?string", false, false, BLAH},
 	{"write_canonical_to_chars", 3, bif_write_canonical_to_chars_3, "?string,?term,+list", false, false, BLAH},
+	{"read_line_to_codes", 2, bif_read_line_to_codes_2, "+stream,-list", false, false, BLAH},
 	{"read_line_to_string", 2, bif_read_line_to_string_2, "+stream,-string", false, false, BLAH},
 	{"read_file_to_string", 3, bif_read_file_to_string_3, "+source_sink,-string,+options", false, false, BLAH},
 	{"alias", 2, bif_alias_2, "+blob,+atom", false, false, BLAH},
-
-	{"read_line_to_codes", 2, bif_read_line_to_codes_2, "+stream,-list", false, false, BLAH},
 
 	{"$stream_to_file", 2, bif_sys_stream_to_file_2, "+stream,-integer", false, false, BLAH},
 	{"$capture_output", 0, bif_sys_capture_output_0, NULL, false, false, BLAH},

@@ -502,6 +502,7 @@ Non-standard predicates
 	getlines/3                  # getlines(+stream,-strings,+opts)
 
 	read_line_to_codes/2	   	# SWI-compaible
+	read_line_to_codes/3	   	# SWI-compaible
 	read_line_to_string/2		# SWI-compaible
 	read_file_to_string/3		# SWI-compaible
 
