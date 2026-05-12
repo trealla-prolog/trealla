@@ -1003,18 +1003,6 @@ static bool do_use_module(module *cur_m, cell *c, module **mptr)
 
 static bool do_import_predicate(module *cur_m, module *m, predicate *pr, cell *as)
 {
-	predicate *tmp_pr;
-
-	if (((tmp_pr = find_predicate(cur_m, as)) != NULL)
-		&& (cur_m != pr->m)
-		&& !pr->m->prebuilt
-		&& 0
-		) {
-		fprintf(stderr, "Error: permission to import failed: %s:%s/%u from %s, see %s\n", cur_m->name, C_STR(cur_m, as), as->arity, pr->m->name, get_loaded(m, tmp_pr->filename));
-		m->error = true;
-		return false;
-	}
-
 	clear_property(cur_m, C_STR(m, &pr->key), pr->key.arity);
 	predicate *pr2 = create_predicate(cur_m, as, NULL);
 	pr2->alias = pr;
