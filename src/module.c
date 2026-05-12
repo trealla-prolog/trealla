@@ -1004,8 +1004,10 @@ static bool do_use_module(module *cur_m, cell *c, module **mptr)
 static bool do_import_predicate(module *cur_m, module *m, predicate *pr, cell *as)
 {
 	clear_property(cur_m, C_STR(m, &pr->key), pr->key.arity);
-	predicate *pr2 = create_predicate(cur_m, as, NULL);
-	pr2->alias = pr;
+	predicate *pr2 = find_predicate(cur_m, as);
+	//if (pr2) printf("*** %s:%s/%u => %s\n", cur_m->name, C_STR(q,&pr2->key), pr2->key.arity, m->name);
+	if (!pr2) pr2 = create_predicate(cur_m, as, NULL);
+	pr2->alias = pr->alias ? pr->alias : pr;
 	char tmpbuf[1024];
 	snprintf(tmpbuf, sizeof(tmpbuf), "imported_from(%s)", m->name);
 	push_property(cur_m, C_STR(m, &pr->key), pr->key.arity, tmpbuf);
