@@ -181,7 +181,7 @@ static int new_thread(prolog *pl)
 void thread_initialize(prolog *pl)
 {
 	int n = new_thread(pl);
-	ENSURE(n >= 0);
+	ENSURE(n == 0);
 	thread *t = &pl->threads[n];
 	if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
 	sl_app(t->alias, strdup("main"), NULL);
@@ -1213,17 +1213,20 @@ static bool bif_thread_self_1(query *q)
 	GET_FIRST_ARG(p1,var);
 	thread *t = get_self(q->pl);
 
-	if (t != NULL) {
-		cell tmp;
-		make_int(&tmp, (int)t->chan);
-		tmp.flags |= FLAG_INT_THREAD;
-		bool ok = unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
+	if (!t) {
 		THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
-		return ok;
+		return false;
 	}
 
+	if (t->chan == 0)
+		t->q = q;
+
+	cell tmp;
+	make_int(&tmp, (int)t->chan);
+	tmp.flags |= FLAG_INT_THREAD;
+	bool ok = unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
-	return false;
+	return ok;
 }
 
 static bool bif_thread_sleep_1(query *q)

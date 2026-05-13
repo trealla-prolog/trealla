@@ -1866,7 +1866,7 @@ void query_destroy(query *q)
 	TPL_free(q);
 }
 
-static query *query_create_(module *m, bool is_small)
+static query *query_create_(module *m, bool is_toplevel)
 {
 	static pl_atomic uint64_t g_query_id = 0;
 	query *q = TPL_calloc(1, sizeof(query));
@@ -1900,10 +1900,10 @@ static query *query_create_(module *m, bool is_small)
 
 	// Allocate these now...
 
-	q->frames_size = !is_small ? INITIAL_NBR_FRAMES : INITIAL_NBR_FRAMES / 4;
-	q->choices_size = !is_small ? INITIAL_NBR_CHOICES : INITIAL_NBR_FRAMES / 4;
-	q->slots_size = !is_small ? INITIAL_NBR_SLOTS : INITIAL_NBR_SLOTS / 4;
-	q->trails_size = !is_small ? INITIAL_NBR_TRAILS : INITIAL_NBR_TRAILS / 4;
+	q->frames_size = is_toplevel ? INITIAL_NBR_FRAMES : INITIAL_NBR_FRAMES / 4;
+	q->choices_size = is_toplevel ? INITIAL_NBR_CHOICES : INITIAL_NBR_FRAMES / 4;
+	q->slots_size = is_toplevel ? INITIAL_NBR_SLOTS : INITIAL_NBR_SLOTS / 4;
+	q->trails_size = is_toplevel ? INITIAL_NBR_TRAILS : INITIAL_NBR_TRAILS / 4;
 
 	ENSURE(q->frames = TPL_calloc(q->frames_size, sizeof(frame)), NULL);
 	ENSURE(q->choices = TPL_calloc(q->choices_size, sizeof(choice)), NULL);
@@ -1912,11 +1912,11 @@ static query *query_create_(module *m, bool is_small)
 
 	// Allocate these later as needed...
 
-	q->heap_size = !is_small ? INITIAL_NBR_HEAP_CELLS : INITIAL_NBR_HEAP_CELLS / 4;
+	q->heap_size = is_toplevel ? INITIAL_NBR_HEAP_CELLS : INITIAL_NBR_HEAP_CELLS / 4;
 	q->tmph_size = INITIAL_NBR_CELLS;
 
 	for (int i = 0; i < MAX_QUEUES; i++)
-		q->q_size[i] = !is_small ? INITIAL_NBR_QUEUE_CELLS : INITIAL_NBR_QUEUE_CELLS / 4;
+		q->q_size[i] = is_toplevel ? INITIAL_NBR_QUEUE_CELLS : INITIAL_NBR_QUEUE_CELLS / 4;
 
 	frame *f = GET_CURR_FRAME();
 	f->prev = CTX_NUL;
@@ -1927,12 +1927,12 @@ static query *query_create_(module *m, bool is_small)
 
 query *query_create(module *m)
 {
-	return query_create_(m, false);
+	return query_create_(m, true);
 }
 
 query *query_create_threaded(module *m)
 {
-	query *t = query_create_(m, true);
+	query *t = query_create_(m, false);
 	t->is_thread = true;
 	return t;
 }
