@@ -897,20 +897,13 @@ static bool bif_thread_create_3(query *q)
 	t->goal = tmp2;
 
 	if (exit_goal) {
-		CHECKED(init_tmp_heap(q));
-		cell *tmp = clone_term_to_tmp(q, exit_goal, exit_goal_ctx);
+		cell *tmp = import_term_to_heap(q, exit_goal, exit_goal_ctx);
 		CHECKED(tmp);
-		t->at_exit_goal_num_vars = rebase_term(q, tmp, 0, false);
-		cell *tmp2 = alloc_heap(q, 1+tmp->num_cells+1);
-		CHECKED(tmp2);
-		pl_idx num_cells = 0;
-		make_instr(tmp2+num_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, tmp->num_cells+1);
-		num_cells += dup_cells(tmp2+num_cells, tmp, tmp->num_cells);
-		make_instr(tmp2+num_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
-		THREAD_DEBUG DUMP_TERM("at_exit", tmp2, q->st.cur_ctx, 0);
-		t->at_exit_goal = TPL_calloc(tmp2->num_cells, sizeof(cell));
+		t->at_exit_goal_num_vars = MAX_ARITY;
+		THREAD_DEBUG DUMP_TERM("at_exit", tmp, q->st.cur_ctx, 0);
+		t->at_exit_goal = TPL_calloc(tmp->num_cells, sizeof(cell));
 		CHECKED(t->at_exit_goal);
-		dup_cells(t->at_exit_goal, tmp2, tmp2->num_cells);
+		dup_cells(t->at_exit_goal, tmp, tmp->num_cells);
 	}
 
 	pthread_attr_t sa;
