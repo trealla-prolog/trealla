@@ -1642,9 +1642,11 @@ bool start(query *q)
 		}
 
 #if USE_THREADS
-		if (q->thread_signal) {
-			q->thread_signal--;
-			do_signal(q, q->thread_ptr);
+		if (q->thread_ptr) {
+			thread *t = q->thread_ptr;
+
+			if (list_count(&t->signals))
+				do_signal(q, t);
 		}
 #endif
 

@@ -437,14 +437,15 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 	while (!q->halt && !q->abort) {
 		acquire_lock(&t->guard);
 
+		if (list_count(&t->signals)) {
+			release_lock(&t->guard);
+			do_signal(t->q, t);
+			start(t->q);
+			continue;
+		}
+
 		if (!list_count(&t->queue)) {
 			release_lock(&t->guard);
-
-			if (list_count(&t->signals)) {
-				do_signal(t->q, t);
-				start(t->q);
-				continue;
-			}
 
 			if (is_peek)
 				return false;
@@ -499,9 +500,6 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 		release_lock(&t->guard);
 
 		if (is_peek)
-			break;
-
-		if (q->thread_signal)
 			break;
 	}
 
@@ -982,7 +980,6 @@ static bool bif_thread_signal_2(query *q)
 		return false;
 	}
 
-	t->q->thread_signal++;
 	resume_thread(t);
 	return true;
 }

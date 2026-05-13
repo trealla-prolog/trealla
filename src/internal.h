@@ -619,9 +619,9 @@ struct thread_ {
     pthread_cond_t cond;
     pthread_mutex_t mutex;
 #endif
+	lock guard;
 	unsigned num_vars, at_exit_goal_num_vars, num_locks;
 	int chan, locked_by;
-	lock guard;
 	pl_atomic bool is_active;
 	bool is_init:1;
 	bool is_finished:1;
@@ -675,7 +675,7 @@ struct query_ {
 	slot *save_e;
 	query *tasks;
 	skiplist *vars;
-	void *thread_ptr;
+	thread *thread_ptr;
 	list dirty;
 	cell accum;
 	mpz_t tmp_ival;
@@ -704,7 +704,6 @@ struct query_ {
 	pl_idx q_size[MAX_QUEUES], tmpq_size[MAX_QUEUES], qp[MAX_QUEUES];
 	prolog_flags flags;
 	enum q_retry retry;
-	pl_refcnt thread_signal;
 	int is_cyclic1, is_cyclic2;
 	uint32_t vgen;
 	int8_t halt_code;
