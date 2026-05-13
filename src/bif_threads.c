@@ -935,55 +935,6 @@ static bool bif_thread_create_3(query *q)
 	return true;
 }
 
-bool do_signal(query *q, void *thread_ptr)
-{
-	thread *t = (thread*)thread_ptr;
-	acquire_lock(&t->guard);
-
-	if (!list_count(&t->signals)) {
-		release_lock(&t->guard);
-		return false;
-	}
-
-	msg *m = list_pop_front(&t->signals);
-	release_lock(&t->guard);
-	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.cur_ctx, 0);
-	cell *tmp = import_term_to_heap(q, m->c, q->st.cur_ctx);
-	CHECKED(tmp);
-	TPL_free(m);
-	cell *tmp2 = prepare_call(q, CALL_NOSKIP, tmp, q->st.cur_ctx, 1);
-	ENSURE(tmp2);
-	make_call(q, tmp2+tmp->num_cells);
-	q->st.instr = tmp2;
-	return true;
-}
-
-static bool bif_thread_signal_2(query *q)
-{
-	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,nonvar);
-	GET_NEXT_ARG(p2,callable);
-	int n = get_thread(q, p1);
-
-	if (n < 0) {
-		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
-	}
-
-	thread *t = &q->pl->threads[n];
-
-	if (!is_threaded(t))
-		return throw_error(q, p1, p1_ctx, "permission_error", "signal,not_thread");
-
-	if (!do_send_message(q, n, p2, p2_ctx, true)) {
-		THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
-		return false;
-	}
-
-	resume_thread(t);
-	return true;
-}
-
 static bool bif_thread_join_2(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
@@ -1120,6 +1071,55 @@ static bool bif_thread_join_1(query *q)
 
 	release_lock(&t->guard);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
+	return true;
+}
+
+bool do_signal(query *q, void *thread_ptr)
+{
+	thread *t = (thread*)thread_ptr;
+	acquire_lock(&t->guard);
+
+	if (!list_count(&t->signals)) {
+		release_lock(&t->guard);
+		return false;
+	}
+
+	msg *m = list_pop_front(&t->signals);
+	release_lock(&t->guard);
+	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.cur_ctx, 0);
+	cell *tmp = import_term_to_heap(q, m->c, q->st.cur_ctx);
+	CHECKED(tmp);
+	TPL_free(m);
+	cell *tmp2 = prepare_call(q, CALL_NOSKIP, tmp, q->st.cur_ctx, 1);
+	ENSURE(tmp2);
+	make_call(q, tmp2+tmp->num_cells);
+	q->st.instr = tmp2;
+	return true;
+}
+
+static bool bif_thread_signal_2(query *q)
+{
+	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
+	GET_FIRST_ARG(p1,nonvar);
+	GET_NEXT_ARG(p2,callable);
+	int n = get_thread(q, p1);
+
+	if (n < 0) {
+		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
+		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
+	}
+
+	thread *t = &q->pl->threads[n];
+
+	if (!is_threaded(t))
+		return throw_error(q, p1, p1_ctx, "permission_error", "signal,not_thread");
+
+	if (!do_send_message(q, n, p2, p2_ctx, true)) {
+		THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
+		return false;
+	}
+
+	resume_thread(t);
 	return true;
 }
 
