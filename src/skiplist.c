@@ -401,8 +401,7 @@ sliter *sl_find_key(skiplist *l, const void *key)
 	if (!l || l->is_destroyed)
 		return NULL;
 
-	slnode_t *p, *q = 0;
-	p = l->header;
+	slnode_t *p = l->header, *q = NULL;
 	l->wild_card = false;
 	l->is_find = true;
 
@@ -411,7 +410,7 @@ sliter *sl_find_key(skiplist *l, const void *key)
 			p = q;
 	}
 
-	if (!(q = p->forward[0]))
+	if (!p || !(q = p->forward[0]))
 		return false;
 
 	sliter *iter;
