@@ -1645,8 +1645,10 @@ bool start(query *q)
 		if (q->thread_ptr) {
 			thread *t = q->thread_ptr;
 
-			if (list_count(&t->signals))
+			if (list_count(&t->signals)) {
 				do_signal(q, t);
+				proceed(q);
+			}
 		}
 #endif
 

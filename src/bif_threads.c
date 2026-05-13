@@ -1083,8 +1083,9 @@ bool do_signal(query *q, void *thread_ptr)
 	cell *c = import_term_to_heap(q, m->c, q->st.cur_ctx);
 	CHECKED(c);
 	TPL_free(m);
-	cell *tmp = prepare_call(q, CALL_NOSKIP, c, q->st.cur_ctx, 1);
+	cell *tmp = prepare_call(q, CALL_NOSKIP, c, q->st.cur_ctx, 2);
 	ENSURE(tmp);
+	make_instr(tmp+c->num_cells+1, g_true_s, bif_iso_true_0, 0, 0);
 	make_call(q, tmp+c->num_cells);
 	q->st.instr = tmp;
 	return true;
