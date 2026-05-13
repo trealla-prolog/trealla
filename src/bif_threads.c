@@ -781,8 +781,8 @@ static bool bif_thread_create_3(query *q)
 		return throw_error(q, p2, p2_ctx, "resource_error", "too_many_threads");
 
 	thread *t = &q->pl->threads[n];
-	cell *exit_goal = NULL;
-	pl_ctx exit_goal_ctx = 0;
+	cell *at_exit_goal = NULL;
+	pl_ctx at_exit_goal_ctx = 0;
 	bool is_detached = false, is_alias = false;
 	LIST_HANDLER(p3);
 
@@ -835,11 +835,11 @@ static bool bif_thread_create_3(query *q)
 
 			if (!is_callable(name)) {
 				t->is_active = false;
-				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
+				return throw_error(q, name, name_ctx, "type_error", "callable");
 			}
 
-			exit_goal = name;
-			exit_goal_ctx = name_ctx;
+			at_exit_goal = name;
+			at_exit_goal_ctx = name_ctx;
 		} else if (!CMP_STRING_TO_CSTR(q, c, "detached")) {
 			if (is_var(name)) {
 				t->is_active = false;
@@ -897,8 +897,8 @@ static bool bif_thread_create_3(query *q)
 	make_instr(tmp2+num_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
 	t->goal = tmp2;
 
-	if (exit_goal) {
-		cell *tmp = import_term_to_heap(q, exit_goal, exit_goal_ctx);
+	if (at_exit_goal) {
+		cell *tmp = import_term_to_heap(q, at_exit_goal, at_exit_goal_ctx);
 		CHECKED(tmp);
 		t->at_exit_goal_num_vars = MAX_ARITY;
 		THREAD_DEBUG DUMP_TERM("at_exit", tmp, q->st.cur_ctx, 0);
