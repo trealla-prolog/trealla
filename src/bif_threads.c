@@ -1080,13 +1080,13 @@ bool do_signal(query *q, void *thread_ptr)
 	msg *m = list_pop_front(&t->signals);
 	release_lock(&t->guard);
 	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.cur_ctx, 0);
-	cell *tmp = import_term_to_heap(q, m->c, q->st.cur_ctx);
-	CHECKED(tmp);
+	cell *c = import_term_to_heap(q, m->c, q->st.cur_ctx);
+	CHECKED(c);
 	TPL_free(m);
-	cell *tmp2 = prepare_call(q, CALL_NOSKIP, tmp, q->st.cur_ctx, 1);
-	ENSURE(tmp2);
-	make_call(q, tmp2+tmp->num_cells);
-	q->st.instr = tmp2;
+	cell *tmp = prepare_call(q, CALL_NOSKIP, c, q->st.cur_ctx, 1);
+	ENSURE(tmp);
+	make_call(q, tmp+c->num_cells);
+	q->st.instr = tmp;
 	return true;
 }
 
