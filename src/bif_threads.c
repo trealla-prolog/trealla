@@ -1218,8 +1218,10 @@ static bool bif_thread_self_1(query *q)
 		return false;
 	}
 
-	if (t->chan == 0)
+	if (t->chan == 0) {
 		t->q = q;
+		q->thread_ptr = t;
+	}
 
 	cell tmp;
 	make_int(&tmp, (int)t->chan);
