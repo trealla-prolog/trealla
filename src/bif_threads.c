@@ -780,9 +780,6 @@ static bool bif_thread_create_3(query *q)
 	if (n < 0)
 		return throw_error(q, p2, p2_ctx, "resource_error", "too_many_threads");
 
-	p3 = clone_term_to_heap(q, p3, p3_ctx);
-	p3_ctx = q->st.cur_ctx;
-
 	thread *t = &q->pl->threads[n];
 	cell *exit_goal = NULL;
 	pl_ctx exit_goal_ctx = 0;
