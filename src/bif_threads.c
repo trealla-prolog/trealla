@@ -741,11 +741,12 @@ static void *start_routine_thread_create(thread *t)
 	if (!t->is_detached)
 		return 0;
 
+	acquire_lock(&t->guard);
+	t->is_active = false;
 	sl_destroy(t->alias);
 	t->alias = NULL;
 	query_destroy(t->q);
 	t->q = NULL;
-	acquire_lock(&t->guard);
 	msg *m;
 
 	while ((m = list_pop_front(&t->queue)) != NULL) {
@@ -764,7 +765,6 @@ static void *start_routine_thread_create(thread *t)
 		t->ball = NULL;
 	}
 
-	t->is_active = false;
 	release_lock(&t->guard);
     return 0;
 }
@@ -1026,6 +1026,7 @@ static bool bif_thread_join_2(query *q)
 	}
 
 	acquire_lock(&t->guard);
+	t->is_active = false;
 	sl_destroy(t->alias);
 	t->alias = NULL;
 	query_destroy(t->q);
@@ -1054,7 +1055,6 @@ static bool bif_thread_join_2(query *q)
 		t->at_exit_goal = NULL;
 	}
 
-	t->is_active = false;
 	release_lock(&t->guard);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
@@ -1089,6 +1089,7 @@ static bool bif_thread_join_1(query *q)
 	}
 
 	acquire_lock(&t->guard);
+	t->is_active = false;
 	sl_destroy(t->alias);
 	t->alias = NULL;
 	query_destroy(t->q);
@@ -1117,7 +1118,6 @@ static bool bif_thread_join_1(query *q)
 		t->at_exit_goal = NULL;
 	}
 
-	t->is_active = false;
 	release_lock(&t->guard);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
