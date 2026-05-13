@@ -780,6 +780,9 @@ static bool bif_thread_create_3(query *q)
 	if (n < 0)
 		return throw_error(q, p2, p2_ctx, "resource_error", "too_many_threads");
 
+	p3 = clone_term_to_heap(q, p3, p3_ctx);
+	p3_ctx = q->st.cur_ctx;
+
 	thread *t = &q->pl->threads[n];
 	cell *exit_goal = NULL;
 	pl_ctx exit_goal_ctx = 0;
@@ -798,6 +801,7 @@ static bool bif_thread_create_3(query *q)
 
 		cell *name = c + 1;
 		name = deref(q, name, c_ctx);
+		pl_ctx name_ctx = q->latest_ctx;
 
 		if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
 			if (is_var(name)) {
@@ -838,7 +842,7 @@ static bool bif_thread_create_3(query *q)
 			}
 
 			exit_goal = name;
-			exit_goal_ctx = q->latest_ctx;
+			exit_goal_ctx = name_ctx;
 		} else if (!CMP_STRING_TO_CSTR(q, c, "detached")) {
 			if (is_var(name)) {
 				t->is_active = false;
