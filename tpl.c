@@ -58,14 +58,13 @@ static int daemonize(int argc, char *argv[])
 			watchdog = 1;
 #endif
 		} else if (!strncmp(argv[i], "--cd=", 5))
-			strcpy(path, argv[i] + 5);
+			snprintf(path, sizeof(path), "%s", argv[i] + 5);
 	}
 
 #ifdef _WIN32
 	char cmd[1024], args[1024 * 8];
 	args[0] = 0;
-	strcpy(cmd, argv[0]);
-	strcat(cmd, ".exe");
+	snprintf(cmd, sizeof(cmd), "%s.exe", argv[0]);
 
 	for (int i = 0; i < argc; i++) {
 		if (!strcmp(argv[i], "-d") || !strcmp(argv[i], "--daemon"))
