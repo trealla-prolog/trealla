@@ -14,7 +14,6 @@ test_receiver :-
 	test_receiver.
 
 test_sender(0,To) :-
-	sleep(1),
 	writeln('Sending halt signal'),
 	thread_signal(To,halt).
 test_sender(N,To) :-
