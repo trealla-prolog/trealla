@@ -69,7 +69,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define MAX_IGNORES 64000
 #define MAX_STREAMS 1024
 #define MAX_THREADS 2048
-#define MAX_ACTUAL_THREADS 256	// Does nothing
+#define MAX_ACTUAL_THREADS MAX_THREADS
 
 #define STREAM_BUFLEN 1024
 

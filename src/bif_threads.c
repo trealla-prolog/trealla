@@ -901,7 +901,6 @@ static bool bif_thread_create_3(query *q)
 		cell *tmp = clone_term_to_tmp(q, at_exit_goal, at_exit_goal_ctx);
 		CHECKED(tmp);
 		t->at_exit_goal_num_vars = rebase_term(q, tmp, 0, false);
-		THREAD_DEBUG DUMP_TERM("at_exit", tmp, q->st.cur_ctx, 0);
 		t->at_exit_goal = TPL_calloc(tmp->num_cells, sizeof(cell));
 		CHECKED(t->at_exit_goal);
 		dup_cells(t->at_exit_goal, tmp, tmp->num_cells);
@@ -1126,11 +1125,9 @@ static void do_cancel(thread *t)
 	t->is_finished = false;
 	t->is_active = false;
 	msg *m;
-	query *q = t->q;
 	pthread_t id = t->id;
 
 	while ((m = list_pop_front(&t->queue)) != NULL) {
-		DUMP_TERM("***", m->c, q->st.cur_ctx, 0);
 		unshare_cells(m->c, m->c->num_cells);
 		TPL_free(m);
 	}
@@ -1262,18 +1259,12 @@ static bool bif_thread_exit_1(query *q)
 	CHECKED(tmp2);
 	make_instr(tmp2, new_atom(q->pl, "exited"), NULL, 1, tmp->num_cells);
 	dup_cells(tmp2+1, tmp, tmp->num_cells);
-	thread * t = get_self(q->pl);
-
-	if (t != NULL) {
-		t->exit_code = tmp2;
-		q->halt_code = 0;
-		q->halt = t->q->error = true;
-		THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
-		return true;
-	}
-
+	thread *t = get_self(q->pl);
+	t->exit_code = tmp2;
+	q->halt_code = 0;
+	q->halt = t->q->error = true;
 	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
-	return false;
+	return true;
 }
 
 static bool do_thread_property_pin_both(query *q)
@@ -2435,13 +2426,14 @@ static bool bif_pl_recv_2(query *q)
 
 void thread_cancel_all(prolog *pl)
 {
+	msleep(10);
+
 	for (unsigned i = 0; i < MAX_THREADS; i++) {
 		thread *t = &pl->threads[i];
 
 		if (!is_threaded(t) || !t->is_active || t->is_detached)
 			continue;
 
-		msleep(10);
 		do_cancel(t);
 	}
 }
