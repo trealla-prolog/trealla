@@ -898,7 +898,8 @@ static bool bif_thread_create_3(query *q)
 	t->goal = tmp2;
 
 	if (at_exit_goal) {
-		cell *tmp = import_term_to_heap(q, at_exit_goal, at_exit_goal_ctx);
+		CHECKED(init_tmp_heap(q));
+		cell *tmp = clone_term_to_tmp(q, at_exit_goal, at_exit_goal_ctx);
 		CHECKED(tmp);
 		t->at_exit_goal_num_vars = MAX_ARITY;
 		THREAD_DEBUG DUMP_TERM("at_exit", tmp, q->st.cur_ctx, 0);
