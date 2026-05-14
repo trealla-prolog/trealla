@@ -380,12 +380,14 @@ static bool bif_thread_send_message_2(query *q)
 	int n = get_thread(q, p1);
 
 	if ((n < 0) || !is_queue(p1)) {
+		printf("*** oops\n");
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
 
-	if (!do_send_message(q, n, p2, p2_ctx, false))
+	if (!do_send_message(q, n, p2, p2_ctx, false)) {
 		return false;
+	}
 
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
