@@ -719,16 +719,18 @@ static void *start_routine_thread_create(thread *t)
 {
 	t->id = pthread_self();
 	execute(t->q, t->goal, t->num_vars);
-	t->is_exception = t->q->did_unhandled_exception;
 	unshare_cells(t->goal, t->goal->num_cells);
 	TPL_free(t->goal);
 	t->goal = NULL;
 	t->is_finished = true;
 
-	if (t->is_exception && !t->q->abort) {
-		t->ball = TPL_calloc(t->q->ball->num_cells, sizeof(cell));
-		dup_cells(t->ball, t->q->ball, t->q->ball->num_cells);
+	if (t->q->did_unhandled_exception && !t->q->abort) {
+		cell *tmp = TPL_calloc(t->q->ball->num_cells, sizeof(cell));
+		dup_cells(tmp, t->q->ball, t->q->ball->num_cells);
+		t->ball = tmp;
 	}
+
+	t->is_exception = t->q->did_unhandled_exception;
 
 	if (t->at_exit_goal && !t->q->abort) {
 		execute(t->q, t->at_exit_goal, t->at_exit_goal_num_vars);
