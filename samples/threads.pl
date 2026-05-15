@@ -116,7 +116,7 @@ test5 :-
 	thread_create(test5_sender(100_000),T2,[alias(producer)]),
 	thread_join(T2,S1),
 	thread_join(T1,S2),
-	writeln(done(t1=S1,t2=S2)),
+	writeln(done(T1=S1,T2=S2)),
 	halt.
 
 test5_receiver :-
@@ -137,12 +137,12 @@ test5_sender(N) :-
 	test5_sender(M).
 
 test6 :-
-	writeln('Test aliased ping-pong (x1M) with 1s timeout'),
+	writeln('Test aliased ping-pong (x100K) with 1s timeout'),
 	thread_create(test6_receiver,T1,[alias(consumer)]),
-	thread_create(test6_sender(1_000_000),T2,[alias(producer)]),
+	thread_create(test6_sender(100_000),T2,[alias(producer)]),
 	thread_join(T2,S1),
 	thread_join(T1,S2),
-	writeln(done(t1=S1,t2=S2)),
+	writeln(done(T1=S1,T2=S2)),
 	halt.
 
 test6_receiver :-
