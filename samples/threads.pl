@@ -59,7 +59,7 @@ test3_receiver :-
 	thread_self(Me),
 	thread_get_message(Me,Msg),
 	write(got(Msg)), write('\r'),
-	(Msg == (nl,shutdown) -> halt ; true),
+	(Msg == shutdown -> halt ; true),
 	Msg = msg(_I,From),
 	thread_send_message(From,Msg),
 	test3_receiver.
@@ -94,7 +94,7 @@ test4_receiver :-
 	thread_self(Me),
 	thread_get_message(Me,Msg),
 	write(got(Msg)), write('   \r'),
-	(Msg == (nl,shutdown) -> halt ; true),
+	(Msg == shutdown -> halt ; true),
 	Msg = msg(_I,From),
 	thread_send_message(From,Msg),
 	test4_receiver.
@@ -109,4 +109,30 @@ test4_sender(N,To) :-
 	thread_get_message(Me,msg(N,Me)),
 	M is N-1,
 	test4_sender(M,To).
+
+test5 :-
+	writeln('Test aliased ping-pong (x1M) with shutdown message'),
+	thread_create(test5_receiver,T1,[alias(consumer)]),
+	thread_create(test5_sender(1_000_000),T2,[alias(producer)]),
+	thread_join(T2,S1),
+	thread_join(T1,S2),
+	writeln(done(t1=S1,t2=S2)),
+	halt.
+
+test5_receiver :-
+	thread_get_message(receiver,Msg),
+	write(got(Msg)), write('\r'),
+	(Msg == shutdown -> halt ; true),
+	thread_send_message(producer,Msg),
+	test5_receiver.
+
+test5_sender(0) :-
+	writeln('\rSending halt shutdown message'),
+	thread_send_message(consumer,shutdown),
+	halt.
+test5_sender(N) :-
+	thread_send_message(consumer,msg(N)),
+	thread_get_message(producer,msg(N)),
+	M is N-1,
+	test5_sender(M).
 
