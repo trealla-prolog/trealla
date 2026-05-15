@@ -408,7 +408,7 @@ Non-standard predicates
 	split_string/4				# SWI-compatible
 	module/1
 	line_count/2
-	atom_number/2
+	atom_number/2				# SWI-compaible
 	cfor/3						# cfor(+evaluable,+evaluable,-var)
 	repeat/1					# repeat(+integer)
 	make/0

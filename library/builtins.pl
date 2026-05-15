@@ -445,9 +445,16 @@ deconsult(Files) :- unload_files(Files).
 
 ?=(X, Y) :- \+ unifiable(X, Y, [_|_]).
 
-:- help(atom_number(+atom,-number), [iso(false)]).
+:- help(atom_number(?atom,?number), [iso(false)]).
 
-atom_number(A, N) :- atom_codes(A,Codes), number_codes(N, Codes).
+atom_number(A, N) :-
+	atom(A),
+	atom_codes(A,Codes), number_codes(N, Codes),
+	!.
+atom_number(A, N) :-
+	number(N),
+	number_codes(N,Codes), atom_codes(A, Codes).
+
 
 '$skip_list'(Skip, Xs0, Xs) :- '$skip_max_list'(Skip,_, Xs0, Xs).
 
