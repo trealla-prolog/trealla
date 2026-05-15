@@ -1138,8 +1138,10 @@ static bool bif_thread_detach_1(query *q)
 	if (!is_threaded(t))
 		return throw_error(q, p1, p1_ctx, "permission_error", "detach,not_thread");
 
-	if (t->is_active)
+	if (t->is_active) {
+		t->is_detached = true;
 		pthread_detach(t->id);
+	}
 
 	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
