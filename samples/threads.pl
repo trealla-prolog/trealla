@@ -2,7 +2,7 @@ test :-
 	test1,test2,test3,test4,test5,test6.
 
 test1 :-
-	writeln('\nTest simple sender/receiver (x1K) with signal to abort'),
+	writeln('\nTest simple sender/receiver (x1K) with signal to exit'),
 	thread_create(test1_receiver,T1,[]),
 	thread_create(test1_sender(1_000,T1),T2,[]),
 	thread_join(T2,S1),
@@ -17,17 +17,17 @@ test1_receiver :-
 
 test1_sender(0,To) :-
 	sleep(1),
-	writeln('Sending halt signal'),
-	thread_signal(To,abort).
+	writeln('Sending exit signal'),
+	thread_signal(To,thread_exit(To)).
 test1_sender(N,To) :-
 	thread_send_message(To,N),
 	M is N-1,
 	test1_sender(M,To).
 
 test2 :-
-	writeln('\nTest simple sender/receiver (x100) with shutdown message'),
+	writeln('\nTest simple sender/receiver (x100K) with shutdown message'),
 	thread_create(test2_receiver,T1,[]),
-	thread_create(test2_sender(100,T1),T2,[]),
+	thread_create(test2_sender(100_000,T1),T2,[]),
 	thread_join(T2,S1),
 	thread_join(T1,S2),
 	writeln(done(T1=S1,T2=S2)).
@@ -36,7 +36,7 @@ test2_receiver :-
 	thread_self(Me),
 	thread_get_message(Me,Msg),
 	write(got(Msg)),write('\r'),
-	(Msg == shutdown -> (nl,abort) ; test2_receiver).
+	(Msg == shutdown -> (nl,thread_exit(Me)) ; test2_receiver).
 
 test2_sender(0,To) :-
 	writeln('\rSending shutdown message'),
@@ -58,7 +58,7 @@ test3_receiver :-
 	thread_self(Me),
 	thread_get_message(Me,Msg),
 	write(got(Msg)), write('      \r'),
-	(Msg == shutdown -> abort ; true),
+	(Msg == shutdown -> thread_exit(Me) ; true),
 	Msg = msg(_I,From),
 	thread_send_message(From,Msg),
 	test3_receiver.
@@ -92,7 +92,7 @@ test4_receiver :-
 	thread_self(Me),
 	thread_get_message(Me,Msg),
 	write(got(Msg)), write('      \r'),
-	(Msg == shutdown -> abort ; true),
+	(Msg == shutdown -> thread_exit(Me) ; true),
 	Msg = msg(_I,From),
 	thread_send_message(From,Msg),
 	test4_receiver.
@@ -118,7 +118,7 @@ test5 :-
 test5_receiver :-
 	thread_get_message(consumer,Msg),
 	write(got(Msg)), write('      \r'),
-	(Msg == shutdown -> abort ; true),
+	(Msg == shutdown -> thread_exit(consumer) ; true),
 	thread_send_message(producer,Msg),
 	test5_receiver.
 
@@ -147,8 +147,7 @@ test6_receiver :-
 test6_receiver :-
 	writeln('\rTimeout!      ').
 
-test6_sender(0) :-
-	abort.
+test6_sender(0).
 test6_sender(N) :-
 	thread_send_message(consumer,msg(N)),
 	thread_get_message(producer,msg(N)),
