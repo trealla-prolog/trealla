@@ -234,10 +234,10 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-#if 1
+#if 0
 	// bm-ping-pong.pl has a problem here.
 
-	if (((*src)->val_off == g_negation_s) && ((*src)->arity == 1) && !is_var(c)) {
+	if (((*src)->val_off == g_negation_s) && ((*src)->arity == 1)) {
 		unsigned var_num = cl->num_vars++;
 		*src += 1;
 		cell *save_dst = *dst;
