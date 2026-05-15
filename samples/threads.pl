@@ -20,7 +20,7 @@ test1_receiver :-
 test1_sender(0,To) :-
 	sleep(1),
 	writeln('Sending exit signal'),
-	thread_signal(To,thread_exit(To)).
+	thread_signal(To,thread_exit(exit)).
 test1_sender(N,To) :-
 	thread_send_message(To,N),
 	M is N-1,
@@ -38,7 +38,7 @@ test2_receiver :-
 	thread_self(Me),
 	thread_get_message(Me,Msg),
 	write(got(Msg)),write('          \r'),
-	(Msg == shutdown -> (nl,thread_exit(Me)) ; test2_receiver).
+	(Msg == shutdown -> (nl,thread_exit(exit)) ; test2_receiver).
 
 test2_sender(0,To) :-
 	writeln('\rSending shutdown message'),
@@ -60,7 +60,7 @@ test3_receiver :-
 	thread_self(Me),
 	thread_get_message(Me,Msg),
 	write(got(Msg)), write('      \r'),
-	(Msg == shutdown -> thread_exit(Me) ; true),
+	(Msg == shutdown -> thread_exit(exit) ; true),
 	Msg = msg(_I,From),
 	thread_send_message(From,Msg),
 	test3_receiver.
@@ -94,7 +94,7 @@ test4_receiver :-
 	thread_self(Me),
 	thread_get_message(Me,Msg),
 	write(got(Msg)), write('      \r'),
-	(Msg == shutdown -> thread_exit(Me) ; true),
+	(Msg == shutdown -> thread_exit(exit) ; true),
 	Msg = msg(_I,From),
 	thread_send_message(From,Msg),
 	test4_receiver.
@@ -120,7 +120,7 @@ test5 :-
 test5_receiver :-
 	thread_get_message(consumer,Msg),
 	write(got(Msg)), write('      \r'),
-	(Msg == shutdown -> thread_exit(consumer) ; true),
+	(Msg == shutdown -> thread_exit(exit) ; true),
 	thread_send_message(producer,Msg),
 	test5_receiver.
 
@@ -170,7 +170,7 @@ test7_receiver :-
 	thread_self(Me),
 	thread_get_message(Me,Msg),
 	write(got(Msg)), write('      \r'),
-	(Msg == shutdown -> thread_exit(Me) ; true),
+	(Msg == shutdown -> thread_exit(exit) ; true),
 	thread_send_message(producer,Msg),
 	test7_receiver.
 
@@ -200,7 +200,7 @@ test8_receiver :-
 	thread_self(Me),
 	thread_get_message(Me,Msg),
 	write(got(Msg)),write('     \r'),
-	(Msg == shutdown -> (nl,thread_exit(Me)) ; test8_receiver).
+	(Msg == shutdown -> (nl,thread_exit(exit)) ; test8_receiver).
 
 test8_sender(0,To1,To2) :-
 	writeln('\rSending shutdown message'),

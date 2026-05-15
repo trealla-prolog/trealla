@@ -723,6 +723,7 @@ static void *start_routine_thread_create(thread *t)
 	unshare_cells(t->goal, t->goal->num_cells);
 	TPL_free(t->goal);
 	t->goal = NULL;
+	t->is_finished = true;
 
 	if (t->is_exception && !t->q->abort) {
 		t->ball = TPL_calloc(t->q->ball->num_cells, sizeof(cell));
@@ -737,7 +738,6 @@ static void *start_routine_thread_create(thread *t)
 	}
 
 	do_unlock_all(t->pl);
-	t->is_finished = true;
 
 	if (!t->is_detached)
 		return 0;
@@ -1252,6 +1252,11 @@ static bool bif_thread_exit_1(query *q)
 {
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
 	GET_FIRST_ARG(p1,nonvar);
+	thread *t = get_self(q->pl);
+
+	//if (t->is_finished)
+	//	return throw_error(q, p1, p1_ctx, "permission_error", "fished,thread");
+
 	CHECKED(init_tmp_heap(q));
 	cell *tmp = clone_term_to_tmp(q, p1, p1_ctx);
 	CHECKED(tmp);
@@ -1260,7 +1265,6 @@ static bool bif_thread_exit_1(query *q)
 	CHECKED(tmp2);
 	make_instr(tmp2, new_atom(q->pl, "exited"), NULL, 1, tmp->num_cells);
 	dup_cells(tmp2+1, tmp, tmp->num_cells);
-	thread *t = get_self(q->pl);
 	t->exit_code = tmp2;
 	q->halt_code = 0;
 	q->halt = t->q->error = true;
