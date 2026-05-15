@@ -47,7 +47,7 @@ test2_sender(N,To) :-
 	test2_sender(M,To).
 
 test3 :-
-	writeln('Test simple ping-pong with shutdown message'),
+	writeln('Test simple ping-pong (x1M) with shutdown message'),
 	thread_create(test3_receiver,T1,[]),
 	thread_create(test3_sender(1_000_000,T1),T2,[]),
 	thread_join(T2,S1),
