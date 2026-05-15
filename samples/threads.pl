@@ -81,8 +81,14 @@ test4 :-
 	thread_create(test4_sender(100_000,T1),T2,[at_exit(assertz(t(T2)))]),
 	thread_join(T2,S1),
 	thread_join(T1,S2),
-	retract(t(T)),writeln(t(T)),fail;
-	(writeln(done(t1=S1,t2=S2)),halt).
+	test4_exit_status,
+	(writeln(done(T1=S1,T2=S2)),halt).
+
+test4_exit_status :-
+	retract(t(T)),
+	writeln(at_exit(T)),
+	fail.
+test4_exit_status.
 
 test4_receiver :-
 	thread_self(Me),
