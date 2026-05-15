@@ -234,6 +234,9 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
+#if 0
+	// bm-ping-pong.pl has a problem here.
+
 	if (((*src)->val_off == g_negation_s) && ((*src)->arity == 1)) {
 		unsigned var_num = cl->num_vars++;
 		*src += 1;
@@ -250,6 +253,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_instr((*dst)++, g_true_s, bif_iso_true_0, 0, 0);		// Landing
 		return;
 	}
+#endif
 
 #if 0
 	if (((*src)->val_off == g_reset_s) && ((*src)->arity == 3)) {
