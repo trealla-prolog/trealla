@@ -725,7 +725,7 @@ static void *start_routine_thread_create(thread *t)
 	t->is_finished = true;
 
 	if (t->q->did_unhandled_exception && !t->q->abort) {
-		cell *tmp = TPL_calloc(t->q->ball->num_cells, sizeof(cell));
+		cell *tmp = TPL_calloc(t->q->ball->num_cells+1, sizeof(cell));
 		dup_cells(tmp, t->q->ball, t->q->ball->num_cells);
 		t->ball = tmp;
 	}
@@ -891,7 +891,7 @@ static bool bif_thread_create_3(query *q)
 	CHECKED(t->q);
 	t->q->thread_ptr = t;
 	t->q->my_chan = n;
-	cell *tmp2 = TPL_calloc(1+tmp->num_cells+1, sizeof(cell));
+	cell *tmp2 = TPL_calloc(1+tmp->num_cells+1+1, sizeof(cell));
 	CHECKED(tmp2);
 	pl_idx num_cells = 0;
 	make_instr(tmp2+num_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, tmp->num_cells+1);
@@ -904,7 +904,7 @@ static bool bif_thread_create_3(query *q)
 		cell *tmp = clone_term_to_tmp(q, at_exit_goal, at_exit_goal_ctx);
 		CHECKED(tmp);
 		t->at_exit_goal_num_vars = rebase_term(q, tmp, 0, false);
-		t->at_exit_goal = TPL_calloc(tmp->num_cells, sizeof(cell));
+		t->at_exit_goal = TPL_calloc(tmp->num_cells+1, sizeof(cell));
 		CHECKED(t->at_exit_goal);
 		dup_cells(t->at_exit_goal, tmp, tmp->num_cells);
 	}
@@ -1202,7 +1202,7 @@ static bool bif_thread_exit_1(query *q)
 	cell *tmp = clone_term_to_tmp(q, p1, p1_ctx);
 	CHECKED(tmp);
 	rebase_term(q, tmp, 0, false);
-	cell *tmp2 = TPL_calloc(1+tmp->num_cells, sizeof(cell));
+	cell *tmp2 = TPL_calloc(1+tmp->num_cells+1, sizeof(cell));
 	CHECKED(tmp2);
 	make_instr(tmp2, new_atom(q->pl, "exited"), NULL, 1, tmp->num_cells);
 	dup_cells(tmp2+1, tmp, tmp->num_cells);
