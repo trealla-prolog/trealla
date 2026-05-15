@@ -106,9 +106,9 @@ test4_sender(N,To) :-
 	test4_sender(M,To).
 
 test5 :-
-	writeln('\nTest5 aliased ping-pong (x100K) with shutdown message'),
+	writeln('\nTest5 aliased ping-pong (x1M) with shutdown message'),
 	thread_create(test5_receiver,T1,[alias(consumer)]),
-	thread_create(test5_sender(100_000),T2,[alias(producer)]),
+	thread_create(test5_sender(1_000_000),T2,[alias(producer)]),
 	thread_join(T2,S2),
 	thread_join(T1,S1),
 	writeln(done(T1=S1,T2=S2)).
