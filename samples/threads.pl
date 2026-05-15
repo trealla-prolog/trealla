@@ -77,7 +77,7 @@ test3_sender(N,To) :-
 
 test4 :-
 	writeln('Test as above (x100K) but with at_exit(Goal)'),
-	thread_create(test4_receiver,T1,[at_exit(assertz(t(T1)))]),
+	thread_create(test4_receiver,T1,[at_exit(asserta(t(T1)))]),
 	thread_create(test4_sender(100_000,T1),T2,[at_exit(assertz(t(T2)))]),
 	thread_join(T2,S1),
 	thread_join(T1,S2),
