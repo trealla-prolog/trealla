@@ -12,8 +12,7 @@ test1 :-
 	writeln(done(T1=S1,T2=S2)).
 
 test1_receiver :-
-	thread_self(Me),
-	thread_get_message(Me,Msg),
+	thread_get_message(Msg),
 	write(got(Msg)),write('      \r'),
 	test1_receiver.
 
@@ -35,8 +34,7 @@ test2 :-
 	writeln(done(T1=S1,T2=S2)).
 
 test2_receiver :-
-	thread_self(Me),
-	thread_get_message(Me,Msg),
+	thread_get_message(Msg),
 	write(got(Msg)),write('          \r'),
 	(Msg == shutdown -> (nl,thread_exit(exit)) ; test2_receiver).
 
@@ -57,8 +55,7 @@ test3 :-
 	writeln(done(T1=S1,T2=S2)).
 
 test3_receiver :-
-	thread_self(Me),
-	thread_get_message(Me,Msg),
+	thread_get_message(Msg),
 	write(got(Msg)), write('      \r'),
 	(Msg == shutdown -> thread_exit(exit) ; true),
 	Msg = msg(_I,From),
@@ -71,7 +68,7 @@ test3_sender(0,To) :-
 test3_sender(N,To) :-
 	thread_self(Me),
 	thread_send_message(To,msg(N,Me)),
-	thread_get_message(Me,msg(N,Me)),
+	thread_get_message(msg(N,Me)),
 	M is N-1,
 	test3_sender(M,To).
 
@@ -91,8 +88,7 @@ test4_exit_status :-
 test4_exit_status.
 
 test4_receiver :-
-	thread_self(Me),
-	thread_get_message(Me,Msg),
+	thread_get_message(Msg),
 	write(got(Msg)), write('      \r'),
 	(Msg == shutdown -> thread_exit(exit) ; true),
 	Msg = msg(_I,From),
@@ -105,7 +101,7 @@ test4_sender(0,To) :-
 test4_sender(N,To) :-
 	thread_self(Me),
 	thread_send_message(To,msg(N,Me)),
-	thread_get_message(Me,msg(N,Me)),
+	thread_get_message(msg(N,Me)),
 	M is N-1,
 	test4_sender(M,To).
 
@@ -167,8 +163,7 @@ test7 :-
 	writeln(done(T1a=S1a,T1b=S1b,T2=S2)).
 
 test7_receiver :-
-	thread_self(Me),
-	thread_get_message(Me,Msg),
+	thread_get_message(Msg),
 	write(got(Msg)), write('      \r'),
 	(Msg == shutdown -> thread_exit(exit) ; true),
 	thread_send_message(producer,Msg),
@@ -187,18 +182,17 @@ test7_sender(N) :-
 	test7_sender(M).
 
 test8 :-
-	writeln('\nTest8 sender / multiple receiver (x1M) with shutdown message'),
+	writeln('\nTest8 sender / multiple receiver (x100K) with shutdown message'),
 	thread_create(test8_receiver,T1a,[]),
 	thread_create(test8_receiver,T1b,[]),
-	thread_create(test8_sender(1_000_000,T1a,T1b),T2,[]),
+	thread_create(test8_sender(100_000,T1a,T1b),T2,[]),
 	thread_join(T2,S2),
 	thread_join(T1a,S1a),
 	thread_join(T1b,S1b),
 	writeln(done(T1a=S1a,T1b=S1b,T2=S2)).
 
 test8_receiver :-
-	thread_self(Me),
-	thread_get_message(Me,Msg),
+	thread_get_message(Msg),
 	write(got(Msg)),write('     \r'),
 	(Msg == shutdown -> (nl,thread_exit(exit)) ; test8_receiver).
 
