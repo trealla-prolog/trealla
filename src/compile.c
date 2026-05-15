@@ -234,7 +234,8 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_negation_s) && ((*src)->arity == 1) && (c->val_off != g_negation_s)) {
+	if (((*src)->val_off == g_negation_s) && ((*src)->arity == 1) && (c->arity != 1)
+	) {
 		unsigned var_num = cl->num_vars++;
 		*src += 1;
 		cell *save_dst = *dst;
