@@ -160,7 +160,6 @@ static int new_thread(prolog *pl)
 			t->is_mutex_only = false;
 			t->is_finished = false;
 			t->is_exception = false;
-			t->is_finished = false;
 			t->locked_by = -1;
 			t->num_locks = 0;
 			t->at_exit_goal = NULL;
@@ -724,7 +723,6 @@ static void *start_routine_thread_create(thread *t)
 	unshare_cells(t->goal, t->goal->num_cells);
 	TPL_free(t->goal);
 	t->goal = NULL;
-	t->is_finished = true;
 
 	if (t->is_exception && !t->q->abort) {
 		t->ball = TPL_calloc(t->q->ball->num_cells, sizeof(cell));
@@ -739,12 +737,12 @@ static void *start_routine_thread_create(thread *t)
 	}
 
 	do_unlock_all(t->pl);
+	t->is_finished = true;
 
 	if (!t->is_detached)
 		return 0;
 
 	acquire_lock(&t->guard);
-	t->is_active = false;
 	sl_destroy(t->alias);
 	t->alias = NULL;
 	query_destroy(t->q);
@@ -767,6 +765,7 @@ static void *start_routine_thread_create(thread *t)
 		t->ball = NULL;
 	}
 
+	t->is_active = false;
 	release_lock(&t->guard);
     return 0;
 }

@@ -1,5 +1,5 @@
 test1 :-
-	writeln('Test simple sender/receiver with signal to abort'),
+	writeln('Test simple sender/receiver (x1K) with signal to abort'),
 	thread_create(test1_receiver,T1,[]),
 	thread_create(test1_sender(1_000,T1),T2,[]),
 	thread_join(T2,S1),
@@ -23,9 +23,9 @@ test1_sender(N,To) :-
 	test1_sender(M,To).
 
 test2 :-
-	writeln('Test simple sender/receiver with shutdown message'),
+	writeln('Test simple sender/receiver (x100) with shutdown message'),
 	thread_create(test2_receiver,T1,[]),
-	thread_create(test2_sender(100_000,T1),T2,[]),
+	thread_create(test2_sender(100,T1),T2,[]),
 	thread_join(T2,S1),
 	thread_join(T1,S2),
 	writeln(done(t1=S1,t2=S2)),
@@ -38,7 +38,7 @@ test2_receiver :-
 	(Msg == shutdown -> (nl,halt) ; test2_receiver).
 
 test2_sender(0,To) :-
-	writeln('\rSending halt signal'),
+	writeln('\rSending halt shutdown message'),
 	thread_send_message(To,shutdown),
 	halt.
 test2_sender(N,To) :-
@@ -65,7 +65,7 @@ test3_receiver :-
 	test3_receiver.
 
 test3_sender(0,To) :-
-	writeln('\rSending halt signal              '),
+	writeln('\rSending halt shutdown message'),
 	thread_send_message(To,shutdown),
 	halt.
 test3_sender(N,To) :-
@@ -76,7 +76,7 @@ test3_sender(N,To) :-
 	test3_sender(M,To).
 
 test4 :-
-	writeln('Test as above but with at_exit(Goal)'),
+	writeln('Test as above (x100K) but with at_exit(Goal)'),
 	thread_create(test4_receiver,T1,[at_exit(assertz(t(T1)))]),
 	thread_create(test4_sender(100_000,T1),T2,[at_exit(assertz(t(T2)))]),
 	thread_join(T2,S1),
@@ -100,7 +100,7 @@ test4_receiver :-
 	test4_receiver.
 
 test4_sender(0,To) :-
-	writeln('\rSending halt signal            '),
+	writeln('\rSending halt shutdown message'),
 	thread_send_message(To,shutdown),
 	halt.
 test4_sender(N,To) :-
