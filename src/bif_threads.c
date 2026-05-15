@@ -1005,69 +1005,6 @@ static bool bif_thread_join_2(query *q)
 	return true;
 }
 
-static bool bif_thread_join_1(query *q)
-{
-	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
-	GET_FIRST_ARG(p1,nonvar);
-	int n = get_thread(q, p1);
-
-	if (n < 0) {
-		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
-	}
-
-	thread *t = &q->pl->threads[n];
-
-	if (!is_threaded(t))
-		return throw_error(q, p1, p1_ctx, "permission_error", "join,not_thread");
-
-	void *retval;
-
-	if (pthread_join((pthread_t)t->id, &retval)) {
-		t->is_active = false;
-		return throw_error(q, p1, p1_ctx, "domain_error", "not_joinable");
-	}
-
-	if (t->exit_code) {
-		TPL_free(t->exit_code);
-		t->exit_code = NULL;
-	}
-
-	acquire_lock(&t->guard);
-	t->is_active = false;
-	sl_destroy(t->alias);
-	t->alias = NULL;
-	query_destroy(t->q);
-	t->q = NULL;
-	msg *m;
-
-	while ((m = list_pop_front(&t->queue)) != NULL) {
-		unshare_cells(m->c, m->c->num_cells);
-		TPL_free(m);
-	}
-
-	while ((m = list_pop_front(&t->signals)) != NULL) {
-		unshare_cells(m->c, m->c->num_cells);
-		TPL_free(m);
-	}
-
-	if (t->ball) {
-		unshare_cells(t->ball, t->ball->num_cells);
-		TPL_free(t->ball);
-		t->ball = NULL;
-	}
-
-	if (t->at_exit_goal) {
-		unshare_cells(t->at_exit_goal, t->at_exit_goal->num_cells);
-		TPL_free(t->at_exit_goal);
-		t->at_exit_goal = NULL;
-	}
-
-	release_lock(&t->guard);
-	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
-	return true;
-}
-
 bool do_signal(query *q, void *thread_ptr)
 {
 	thread *t = (thread*)thread_ptr;
@@ -2482,7 +2419,6 @@ builtins g_threads_bifs[] =
 	// SWI-compatible...
 
 	{"thread_get_message", 3, bif_thread_get_message_3, "+queue,?term,+list", false, false, BLAH},
-	{"thread_join", 1, bif_thread_join_1, "+thread", false, false, BLAH},
 	{"is_thread", 1, bif_is_thread_1, "+term", false, false, BLAH},
 
 	// Other non-standard...

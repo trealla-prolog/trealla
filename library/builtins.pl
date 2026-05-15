@@ -523,6 +523,9 @@ with_mutex(Id, Goal) :-
 thread_create(Goal, Id) :-
 	thread_create(Goal, Id, []).
 
+thread_join(Id) :-
+	thread_join(Id, []).
+
 thread_send_message(Term) :-
 	thread_self(Id),
 	thread_send_message(Id, Term).
