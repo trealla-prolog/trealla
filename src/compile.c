@@ -234,10 +234,10 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-#if 0
+#if 1
 	// bm-ping-pong.pl has a problem here.
 
-	if (((*src)->val_off == g_negation_s) && ((*src)->arity == 1)) {
+	if (((*src)->val_off == g_negation_s) && ((*src)->arity == 1) && !is_var(c)) {
 		unsigned var_num = cl->num_vars++;
 		*src += 1;
 		cell *save_dst = *dst;
@@ -255,7 +255,8 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 	}
 #endif
 
-	if (((*src)->val_off == g_reset_s) && ((*src)->arity == 3) && !is_var(c)) {
+#if 0
+	if (((*src)->val_off == g_reset_s) && ((*src)->arity == 3)) {
 		unsigned var_num = cl->num_vars++;
 		*src += 1;
 		make_instr((*dst)++, g_sys_fail_on_retry_s, bif_sys_fail_on_retry_1, 1, 1);
@@ -269,6 +270,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_atom((*dst)++, g_none_s);
 		return;
 	}
+#endif
 
 	if (((*src)->val_off == g_notunify_s) && ((*src)->arity == 2)) {
 		unsigned var_num = cl->num_vars++;
@@ -291,7 +293,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		return;
 	}
 
-	if (((*src)->val_off == g_colon_s) && ((*src)->arity == 2) && !is_var(c)) {
+	if (((*src)->val_off == g_colon_s) && ((*src)->arity == 2) && !is_var((c))) {
 		unsigned var_num1 = cl->num_vars++;
 		*src += 1;
 		make_instr((*dst)++, g_sys_module_s, bif_sys_module_1, 1, 1);
