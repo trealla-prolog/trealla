@@ -2479,6 +2479,7 @@ builtins g_threads_bifs[] =
 
 	{"thread_get_message", 3, bif_thread_get_message_3, "+queue,?term,+list", false, false, BLAH},
 	{"thread_join", 1, bif_thread_join_1, "+thread", false, false, BLAH},
+	{"is_thread", 1, bif_is_thread_1, "+term", false, false, BLAH},
 
 	// Other non-standard...
 
@@ -2487,8 +2488,6 @@ builtins g_threads_bifs[] =
 	{"pl_thread_set_priority", 2, bif_pl_thread_set_priority_2, "+thread,+integer", false, false, BLAH},
 	{"pl_msg_send", 2, bif_pl_send_2, "+thread,+term", false, false, BLAH},
 	{"pl_msg_recv", 2, bif_pl_recv_2, "-thread,?term", false, false, BLAH},
-
-	{"is_thread", 1, bif_is_thread_1, "+term", false, false, BLAH},
 
 #endif
 
