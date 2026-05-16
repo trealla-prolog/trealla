@@ -170,7 +170,8 @@ void thread_initialize(prolog *pl)
 	int n = new_thread(pl);
 	ENSURE(n == 0);
 	thread *t = &pl->threads[n];
-	sl_app(pl->alias, "main", t);
+	t->alias = strdup("main");
+	sl_app(pl->alias, t->alias, t);
 	t->is_detached = true;
 }
 
