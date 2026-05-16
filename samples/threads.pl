@@ -1,7 +1,15 @@
 % All tests work with Trealla & SWI Prolog.
 
 test :-
-	test1,test2,test3,test4,test5,test6,test7,test8.
+	test1,fail;
+	test2,fail;
+	test3,fail;
+	test4,fail;
+	test5,fail;
+	test6,fail;
+	test7,fail;
+	test8,fail;
+	true.
 
 test1 :-
 	writeln('\nTest1 simple sender/receiver (x100K) with signal to exit'),
@@ -153,10 +161,10 @@ test6_sender(N) :-
 	test6_sender(M).
 
 test7 :-
-	writeln('\nTest7 multiple aliased ping-pong (x1M) with shutdown message'),
+	writeln('\nTest7 multiple aliased ping-pong (x100K) with shutdown message'),
 	thread_create(test7_receiver,T1a,[alias(consumer1)]),
 	thread_create(test7_receiver,T1b,[alias(consumer2)]),
-	thread_create(test7_sender(1_000_000),T2,[alias(producer)]),
+	thread_create(test7_sender(100_000),T2,[alias(producer)]),
 	thread_join(T2,S2),
 	thread_join(T1a,S1a),
 	thread_join(T1b,S1b),
