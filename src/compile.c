@@ -235,7 +235,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 	}
 
 	if (((*src)->val_off == g_negation_s) && ((*src)->arity == 1)
-		&& (c->arity != 1)											// Hack
+		&& ((c->val_off != g_negation_s) || (c->arity != 1))		// Hack
 	) {
 		unsigned var_num = cl->num_vars++;
 		*src += 1;
