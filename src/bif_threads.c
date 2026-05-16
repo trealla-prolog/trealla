@@ -1594,7 +1594,7 @@ static bool do_message_queue_property_pin_both(query *q)
 	pl_ctx c_ctx = q->latest_ctx;
 
 	if (!CMP_STRING_TO_CSTR(q, p2, "alias")) {
-		cell tmp[2];
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		make_cstring(tmp+1, t->alias);
 
