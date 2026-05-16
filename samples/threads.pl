@@ -58,7 +58,7 @@ test3_receiver :-
 	thread_get_message(Msg),
 	write(got(Msg)), write('      \r'),
 	(Msg == shutdown -> thread_exit(exit) ; true),
-	Msg = msg(_I,From),
+	Msg = msg(_,From),
 	thread_send_message(From,Msg),
 	test3_receiver.
 
