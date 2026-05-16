@@ -682,7 +682,7 @@ struct query_ {
 	mpq_t tmp_irat;
 	run_state st;
 	stringbuf sb_buf;
-	char tmpbuf[1024];
+	char tmpbuf[256];
 	bool ignores[MAX_IGNORES];
 	uint64_t total_goals, total_backtracks, total_retries, total_matches, total_inferences;
 	uint64_t total_tcos, total_recovs, total_matched, total_no_recovs;
