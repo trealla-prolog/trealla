@@ -609,9 +609,9 @@ typedef struct thread_ thread;
 
 struct thread_ {
 	const char *filename;
+	char *alias;
 	prolog *pl;
 	query *q;
-	skiplist *alias;
 	cell *goal, *exit_code, *at_exit_goal, *ball;
 	list signals, queue;
 #if USE_THREADS
@@ -872,7 +872,7 @@ struct prolog_ {
 	module *system_m, *user_m, *m, *dcgs;
 	var_item *tabs;
 	parser *p;
-	skiplist *biftab, *keyval, *help, *fortab;
+	skiplist *biftab, *keyval, *help, *fortab, *alias;
 	FILE *logfp;
 	lock guard;
 	size_t tabs_size;

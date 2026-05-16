@@ -662,6 +662,7 @@ void pl_destroy(prolog *pl)
 	sl_destroy(pl->fortab);
 	sl_destroy(pl->keyval);
 	sl_destroy(pl->help);
+	sl_destroy(pl->alias);
 	TPL_free(pl->tabs);
 
 	for (int i = 0; i < MAX_STREAMS; i++) {
@@ -763,6 +764,7 @@ prolog *pl_create()
 	pl->help = sl_create((void*)fake_strcmp, (void*)ptrfree, NULL);
 	pl->fortab = sl_create((void*)fake_strcmp, NULL, NULL);
 	pl->biftab = sl_create((void*)fake_strcmp, NULL, NULL);
+	pl->alias = sl_create((void*)fake_strcmp, NULL, NULL);
 
 	if (pl->biftab)
 		load_builtins(pl);

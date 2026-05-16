@@ -87,23 +87,11 @@ typedef struct msg_ {
 static int get_named_thread(prolog *pl, const char *name, size_t len)
 {
 	prolog_lock(pl);
+	thread *t = NULL;
 
-	for (int i = 0; i < MAX_THREADS; i++) {
-		thread *t = &pl->threads[i];
-
-		if (!t->is_active || !t->alias)
-			continue;
-
-		if (sl_get(t->alias, name, NULL)) {
-			prolog_unlock(pl);
-			return i;
-		}
-
-		if (t->filename && (strlen(t->filename) == len)
-			&& !strncmp(t->filename, name, len)) {
-			prolog_unlock(pl);
-			return i;
-		}
+	if (sl_get(pl->alias, name, (const void**)&t)) {
+		prolog_unlock(pl);
+		return t->chan;
 	}
 
 	prolog_unlock(pl);
@@ -182,8 +170,7 @@ void thread_initialize(prolog *pl)
 	int n = new_thread(pl);
 	ENSURE(n == 0);
 	thread *t = &pl->threads[n];
-	if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
-	sl_app(t->alias, strdup("main"), NULL);
+	sl_app(pl->alias, "main", t);
 	t->is_detached = true;
 }
 
@@ -192,11 +179,13 @@ void thread_deinitialize(prolog *pl)
 	for (int i = 0; i < MAX_THREADS; i++) {
 		thread *t = &pl->threads[i];
 
-		if (!t->is_init)
+		if (!t->is_init || !t->is_active)
 			continue;
 
-		sl_destroy(t->alias);
+		sl_del(pl->alias, t->alias);
+		TPL_free(t->alias);
 		t->alias = NULL;
+		t->is_active = false;
 	}
 }
 
@@ -681,8 +670,8 @@ static bool bif_pl_thread_3(query *q)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 			}
 
-			if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
-			sl_app(t->alias, DUP_STRING(q, name), NULL);
+			t->alias = DUP_STRING(q, name);
+			sl_app(q->pl->alias, t->alias, t);
 		} else {
 			t->is_active = false;
 			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
@@ -745,7 +734,8 @@ static void *start_routine_thread_create(thread *t)
 		return 0;
 
 	acquire_lock(&t->guard);
-	sl_destroy(t->alias);
+	sl_del(t->pl->alias, t->alias);
+	TPL_free(t->alias);
 	t->alias = NULL;
 	query_destroy(t->q);
 	t->q = NULL;
@@ -818,8 +808,8 @@ static bool bif_thread_create_3(query *q)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 			}
 
-			if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
-			sl_app(t->alias, DUP_STRING(q, name), NULL);
+			t->alias = DUP_STRING(q, name);
+			sl_app(q->pl->alias, t->alias, t);
 			cell tmp;
 			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
 
@@ -923,7 +913,8 @@ static bool bif_thread_create_3(query *q)
 		TPL_free(t->at_exit_goal);
 		query_destroy(t->q);
 		t->q = NULL;
-		sl_destroy(t->alias);
+		sl_del(q->pl->alias, t->alias);
+		TPL_free(t->alias);
 		t->alias = NULL;
 		return throw_error(q, p1, p1_ctx, "system_error", "pthread_create");
 	}
@@ -974,7 +965,8 @@ static bool bif_thread_join_2(query *q)
 
 	acquire_lock(&t->guard);
 	t->is_active = false;
-	sl_destroy(t->alias);
+	sl_del(q->pl->alias, t->alias);
+	TPL_free(t->alias);
 	t->alias = NULL;
 	query_destroy(t->q);
 	t->q = NULL;
@@ -1060,7 +1052,8 @@ static bool bif_thread_signal_2(query *q)
 static void do_cancel(thread *t)
 {
 	acquire_lock(&t->guard);
-	sl_destroy(t->alias);
+	sl_del(t->pl->alias, t->alias);
+	TPL_free(t->alias);
 	t->alias = NULL;
 	t->is_finished = false;
 	t->is_active = false;
@@ -1233,18 +1226,9 @@ static bool do_thread_property_pin_both(query *q)
 	pl_ctx c_ctx = q->latest_ctx;
 
 	if (!CMP_STRING_TO_CSTR(q, p2, "alias")) {
-		sliter *iter = sl_first(t->alias);
-
-		if (!sl_next(iter, NULL)) {
-			sl_done(iter);
-			return false;
-		}
-
-		const char *alias = sl_key(iter);
-		sl_done(iter);
 		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
-		make_cstring(tmp+1, alias);
+		make_cstring(tmp+1, t->alias);
 
 		if (!unify(q, c, c_ctx, tmp, q->st.cur_ctx)) {
 			unshare_cell(tmp+1);
@@ -1349,19 +1333,9 @@ static bool do_thread_property_pin_id(query *q)
 
 	if (i == 0) {
 		CHECKED(push_choice(q));
-		sliter *iter = sl_first(t->alias);
-
-		if (!sl_next(iter, NULL)) {
-			sl_done(iter);
-			drop_choice(q);
-			return false;
-		}
-
-		const char *alias = sl_key(iter);
-		sl_done(iter);
 		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
-		make_cstring(tmp+1, alias);
+		make_cstring(tmp+1, t->alias);
 
 		if (!unify(q, p2, p2_ctx, tmp, q->st.cur_ctx)) {
 			unshare_cell(tmp+1);
@@ -1487,8 +1461,8 @@ static bool bif_message_queue_create_2(query *q)
 
 	if (is_atom(p1)) {
 		thread *t = &q->pl->threads[n];
-		if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
-		sl_app(t->alias, DUP_STRING(q, p1), NULL);
+		t->alias = DUP_STRING(q, p1);
+		sl_app(q->pl->alias, t->alias, t);
 	}
 
 	thread *t = &q->pl->threads[n];
@@ -1524,8 +1498,8 @@ static bool bif_message_queue_create_2(query *q)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 			}
 
-			if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
-			sl_app(t->alias, DUP_STRING(q, name), NULL);
+			t->alias = DUP_STRING(q, name);
+			sl_app(q->pl->alias, t->alias, t);
 			cell tmp;
 			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
 
@@ -1591,7 +1565,8 @@ static bool bif_message_queue_destroy_1(query *q)
 		TPL_free(m);
 	}
 
-	sl_destroy(t->alias);
+	sl_del(q->pl->alias, t->alias);
+	TPL_free(t->alias);
 	t->alias = NULL;
 	t->is_active = false;
 	release_lock(&t->guard);
@@ -1619,18 +1594,9 @@ static bool do_message_queue_property_pin_both(query *q)
 	pl_ctx c_ctx = q->latest_ctx;
 
 	if (!CMP_STRING_TO_CSTR(q, p2, "alias")) {
-		sliter *iter = sl_first(t->alias);
-
-		if (!sl_next(iter, NULL)) {
-			sl_done(iter);
-			return false;
-		}
-
-		const char *alias = sl_key(iter);
-		sl_done(iter);
-		cell *tmp = alloc_heap(q, 2);
+		cell tmp[2];
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
-		make_cstring(tmp+1, alias);
+		make_cstring(tmp+1, t->alias);
 
 		if (!unify(q, c, c_ctx, tmp, q->st.cur_ctx)) {
 			unshare_cell(tmp+1);
@@ -1639,14 +1605,6 @@ static bool do_message_queue_property_pin_both(query *q)
 
 		return true;
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "size")) {
-		sliter *iter = sl_first(t->alias);
-
-		if (!sl_next(iter, NULL)) {
-			sl_done(iter);
-			return false;
-		}
-
-		sl_done(iter);
 		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "size"), NULL, 1, 1);
 		make_int(tmp+1, queue_size(q->pl, n));
@@ -1728,19 +1686,9 @@ static bool do_message_queue_property_pin_id(query *q)
 
 	if (i == 0) {
 		CHECKED(push_choice(q));
-		sliter *iter = sl_first(t->alias);
-
-		if (!sl_next(iter, NULL)) {
-			sl_done(iter);
-			drop_choice(q);
-			return false;
-		}
-
-		const char *alias = sl_key(iter);
-		sl_done(iter);
 		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
-		make_cstring(tmp+1, alias);
+		make_cstring(tmp+1, t->alias);
 
 		if (!unify(q, p2, p2_ctx, tmp, q->st.cur_ctx)) {
 			unshare_cell(tmp+1);
@@ -1837,8 +1785,8 @@ static bool bif_mutex_create_2(query *q)
 
 	if (is_atom(p1)) {
 		thread *t = &q->pl->threads[n];
-		if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
-		sl_app(t->alias, DUP_STRING(q, p1), NULL);
+		t->alias = DUP_STRING(q, p1);
+		sl_app(q->pl->alias, t->alias, t);
 	}
 
 	thread *t = &q->pl->threads[n];
@@ -1874,8 +1822,8 @@ static bool bif_mutex_create_2(query *q)
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 			}
 
-			if (!t->alias) t->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL);
-			sl_app(t->alias, DUP_STRING(q, name), NULL);
+			t->alias = DUP_STRING(q, name);
+			sl_app(q->pl->alias, t->alias, t);
 			cell tmp;
 			make_atom(&tmp, new_atom(q->pl, C_STR(q, name)));
 
@@ -1933,7 +1881,8 @@ static bool bif_mutex_destroy_1(query *q)
 	if (!t->is_mutex_only)
 		return throw_error(q, p1, p1_ctx, "permission_error", "destroy,not_mutex");
 
-	sl_destroy(t->alias);
+	sl_del(q->pl->alias, t->alias);
+	TPL_free(t->alias);
 	t->alias = NULL;
 	t->is_active = false;
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
@@ -2035,18 +1984,9 @@ static bool do_mutex_property_pin_both(query *q)
 	pl_ctx c_ctx = q->latest_ctx;
 
 	if (!CMP_STRING_TO_CSTR(q, p2, "alias")) {
-		sliter *iter = sl_first(t->alias);
-
-		if (!sl_next(iter, NULL)) {
-			sl_done(iter);
-			return false;
-		}
-
-		const char *alias = sl_key(iter);
-		sl_done(iter);
 		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
-		make_cstring(tmp+1, alias);
+		make_cstring(tmp+1, t->alias);
 
 		if (!unify(q, c, c_ctx, tmp, q->st.cur_ctx)) {
 			unshare_cell(tmp+1);
@@ -2141,20 +2081,9 @@ static bool do_mutex_property_pin_id(query *q)
 
 	if (i == 0) {
 		CHECKED(push_choice(q));
-
-		sliter *iter = sl_first(t->alias);
-
-		if (!sl_next(iter, NULL)) {
-			sl_done(iter);
-			drop_choice(q);
-			return false;
-		}
-
-		const char *alias = sl_key(iter);
-		sl_done(iter);
 		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
-		make_cstring(tmp+1, alias);
+		make_cstring(tmp+1, t->alias);
 
 		if (!unify(q, p2, p2_ctx, tmp, q->st.cur_ctx)) {
 			unshare_cell(tmp+1);
