@@ -430,8 +430,15 @@ static const char *varformat2(char *tmpbuf, size_t tmplen, cell *c, unsigned nv_
 static const char *varformat(char *tmpbuf, size_t tmplen, unsigned long long num, bool listing)
 {
 	char *dst = tmpbuf;
+
+#if __APPLE__
 	dst += snprintf(dst, tmplen, "%s%c", listing?"":"_", 'A'+(unsigned)(num%26));
 	if ((num/26) > 0) dst += snprintf(dst, tmplen, "%"PRIu64"", (int64_t)(num/26));
+#else
+	dst += sprintf(dst, "%s%c", listing?"":"_", 'A'+(unsigned)(num%26));
+	if ((num/26) > 0) dst += sprintf(dst, "%"PRIu64"", (int64_t)(num/26));
+#endif
+
 	return tmpbuf;
 }
 
