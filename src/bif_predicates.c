@@ -4478,17 +4478,18 @@ static bool bif_string_upper_2(query *q)
 #define FNV_OFFSET_64 0xCBF29CE484222325ULL
 #define FNV_PRIME_64  0x100000001B3ULL
 
+__attribute__((no_sanitize("unsigned-integer-overflow")))
 static uint64_t fnv1a_64(const void* data, size_t size)
 {
-    const unsigned char* bytes = (const unsigned char*)data;
-    uint64_t hash = FNV_OFFSET_64;
+	const unsigned char* bytes = (const unsigned char*)data;
+	unsigned long long hash = FNV_OFFSET_64;
 
-    for (size_t i = 0; i < size; i++) {
-        hash ^= bytes[i];
-        hash *= FNV_PRIME_64;
-    }
+	for (size_t i = 0; i < size; i++) {
+		hash ^= bytes[i];
+		hash *= FNV_PRIME_64;
+	}
 
-    return hash;
+	return hash;
 }
 
 static bool bif_term_hash_2(query *q)
