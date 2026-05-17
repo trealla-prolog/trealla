@@ -536,7 +536,7 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 			cell *c = get_head(r->cl.cells);
 			sl_rem(pr->idx1, c, r);
 
-			if (pr->idx2 && (pr->key.arity > 1)) {
+			if (pr->idx2) {
 				cell *arg1 = FIRST_ARG(c);
 				cell *arg2 = NEXT_ARG(arg1);
 				sl_rem(pr->idx2, arg2, r);
