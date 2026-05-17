@@ -311,7 +311,7 @@ void make_call_redo(query *q, cell *tmp)
 
 cell *prepare_call(query *q, bool noskip, cell *p1, pl_ctx p1_ctx, unsigned extras)
 {
-	unsigned num_cells = p1->num_cells + extras + 1;
+	unsigned num_cells = p1->num_cells + extras;
 	cell *tmp = alloc_heap(q, num_cells);
 	if (!tmp) return NULL;
 	q->noskip = noskip;
