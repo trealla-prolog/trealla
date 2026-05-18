@@ -253,7 +253,7 @@ static bool bif_iso_notunifiable_2(query *q)
 	num_cells += dup_cells_by_ref(tmp+num_cells, p1, p1_ctx, p1->num_cells);
 	num_cells += dup_cells_by_ref(tmp+num_cells, p2, p2_ctx, p2->num_cells);
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+num_cells++, q->cp);
+	make_uint(tmp+num_cells++, q->st.cp);
 	make_instr(tmp+num_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
 	make_call(q, tmp+num_cells);
 	CHECKED(push_succeed_on_retry_with_barrier(q, 0));
@@ -3346,7 +3346,7 @@ bool bif_statistics_0(query *q)
 		q->hw_frames, q->hw_choices, q->hw_trails, q->hw_slots,
 		q->hw_heap_num,
 		q->realloc_frames, q->realloc_choices, q->realloc_trails, q->realloc_slots,
-		q->st.fp, q->cp, q->st.tp, q->st.sp,
+		q->st.fp, q->st.cp, q->st.tp, q->st.sp,
 		q->st.heap_num,
 		q->total_backtracks, q->total_retries, q->total_tcos, q->total_recovs, q->total_no_recovs
 		);
@@ -3360,7 +3360,7 @@ static bool bif_statistics_2(query *q)
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "cputime") && is_var(p2)) {
 		uint64_t now = cpu_time_in_usec();
-		double elapsed = now - q->cpu_time;
+		double elapsed = now - q->st.cpu_time;
 		cell tmp;
 		make_float(&tmp, elapsed/1000/1000);
 		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
@@ -3385,7 +3385,7 @@ static bool bif_statistics_2(query *q)
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "runtime")) {
 		uint64_t now = cpu_time_in_usec();
-		double elapsed = now - q->cpu_time;
+		double elapsed = now - q->st.cpu_time;
 		cell tmp;
 		make_int(&tmp, elapsed/1000);
 		allocate_list(q, &tmp);
@@ -3406,7 +3406,7 @@ static bool bif_statistics_2(query *q)
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "choices") && is_var(p2)) {
 		cell tmp;
-		make_int(&tmp, q->cp);
+		make_int(&tmp, q->st.cp);
 		return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 	}
 
@@ -5234,7 +5234,7 @@ static bool bif_call_nth_2(query *q)
 		tmp[num_cells++].num_cells = 1;
 		make_int(tmp+num_cells++, 0);
 		make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-		make_uint(tmp+num_cells++, q->cp);
+		make_uint(tmp+num_cells++, q->st.cp);
 		make_call(q, tmp+num_cells);
 		CHECKED(push_fail_on_retry_with_barrier(q));
 		q->st.instr = tmp;
@@ -5248,7 +5248,7 @@ static bool bif_call_nth_2(query *q)
 	make_int(tmp+num_cells++, get_smallint(p2));
 	make_instr(tmp+num_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+num_cells++, q->cp);
+	make_uint(tmp+num_cells++, q->st.cp);
 	make_call(q, tmp+num_cells);
 	CHECKED(push_fail_on_retry_with_barrier(q));
 	q->st.instr = tmp;
@@ -5366,7 +5366,7 @@ bool bif_iso_qualify_2(query *q)
 	num_cells += p2->num_cells;
 	make_instr(tmp+num_cells++, g_true_s, bif_iso_true_0, 0, 0); // see query fact matching
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+num_cells++, q->cp);
+	make_uint(tmp+num_cells++, q->st.cp);
 	make_call(q, tmp+num_cells);
 	CHECKED(push_fail_on_retry_with_barrier(q));
 	q->st.instr = tmp;
@@ -5717,7 +5717,7 @@ bool bif_sys_reset_handler_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
-	make_uint(&tmp, (pl_uint)q->cp);
+	make_uint(&tmp, (pl_uint)q->st.cp);
 	CHECKED(push_reset_handler(q));
 	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }

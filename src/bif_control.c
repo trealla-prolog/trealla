@@ -45,7 +45,7 @@ static bool bif_sys_cleanup_if_det_1(query *q)
 	GET_FIRST_RAW_ARG(p1,integer)
 	choice *ch = GET_CURR_CHOICE();
 
-	if ((q->cp-1) != get_smalluint(p1))
+	if ((q->st.cp-1) != get_smalluint(p1))
 		return true;
 
 	drop_choice(q);
@@ -122,7 +122,7 @@ bool bif_call_0(query *q, cell *p1, pl_ctx p1_ctx)
 	CHECKED(tmp);
 	pl_idx num_cells = p1->num_cells;
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+num_cells++, q->cp);
+	make_uint(tmp+num_cells++, q->st.cp);
 	make_call(q, tmp+num_cells);
 	CHECKED(push_fail_on_retry_with_barrier(q));
 	q->st.instr = tmp;
@@ -183,7 +183,7 @@ static bool bif_iso_call_n(query *q)
 	tmp->flags &= ~FLAG_INTERNED_TAIL_CALL;
 	pl_idx num_cells = tmp2->num_cells;
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+num_cells++, q->cp);
+	make_uint(tmp+num_cells++, q->st.cp);
 	make_call(q, tmp+num_cells);
 	CHECKED(push_fail_on_retry_with_barrier(q));
 
@@ -234,7 +234,7 @@ bool bif_iso_call_1(query *q)
 	tmp->flags &= ~FLAG_INTERNED_TAIL_CALL;
 	pl_idx num_cells = p1->num_cells;
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+num_cells++, q->cp);
+	make_uint(tmp+num_cells++, q->st.cp);
 	make_call(q, tmp+num_cells);
 	CHECKED(push_fail_on_retry_with_barrier(q));
 
@@ -288,7 +288,7 @@ static bool bif_iso_once_1(query *q)
 	pl_idx num_cells = p1->num_cells;
 	make_instr(tmp+num_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+num_cells++, q->cp);
+	make_uint(tmp+num_cells++, q->st.cp);
 	make_call(q, tmp+num_cells);
 	CHECKED(push_fail_on_retry_with_barrier(q));
 
@@ -342,7 +342,7 @@ static bool bif_ignore_1(query *q)
 	pl_idx num_cells = p1->num_cells;
 	make_instr(tmp+num_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+num_cells++, q->cp);
+	make_uint(tmp+num_cells++, q->st.cp);
 	make_call(q, tmp+num_cells);
 	CHECKED(push_succeed_on_retry_with_barrier(q, 0));
 	q->st.instr = tmp;
@@ -360,7 +360,7 @@ bool bif_iso_if_then_2(query *q)
 	pl_idx num_cells = p1->num_cells;
 	make_instr(tmp+num_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+num_cells++, q->cp);
+	make_uint(tmp+num_cells++, q->st.cp);
 	num_cells += dup_cells_by_ref(tmp+num_cells, p2, p2_ctx, p2->num_cells);
 	make_instr(tmp+num_cells++, g_true_s, bif_iso_true_0, 0, 0); // Why???
 	make_call(q, tmp+num_cells);
@@ -379,7 +379,7 @@ bool bif_soft_if_then_2(query *q)
 	CHECKED(tmp);
 	pl_idx num_cells = p1->num_cells;
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+num_cells++, q->cp);
+	make_uint(tmp+num_cells++, q->st.cp);
 	num_cells += dup_cells_by_ref(tmp+num_cells, p2, p2_ctx, p2->num_cells);
 	make_instr(tmp+num_cells++, g_true_s, bif_iso_true_0, 0, 0); // Why???
 	make_call(q, tmp+num_cells);
@@ -397,7 +397,7 @@ static bool do_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 	pl_idx num_cells = p1->num_cells;
 	make_instr(tmp+num_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+num_cells++, q->cp);
+	make_uint(tmp+num_cells++, q->st.cp);
 	num_cells += dup_cells_by_ref(tmp+num_cells, p2, q->st.cur_ctx, p2->num_cells);
 	make_instr(tmp+num_cells++, g_true_s, bif_iso_true_0, 0, 0); // Why???
 	make_call(q, tmp+num_cells);
@@ -414,9 +414,9 @@ static bool do_soft_if_then_else(query *q, cell *p1, cell *p2, cell *p3)
 	CHECKED(tmp);
 	pl_idx num_cells = p1->num_cells;
 	make_instr(tmp+num_cells++, g_sys_cut_s, bif_sys_cut_1, 1, 1);
-	make_uint(tmp+num_cells++, q->cp);
+	make_uint(tmp+num_cells++, q->st.cp);
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+num_cells++, q->cp);
+	make_uint(tmp+num_cells++, q->st.cp);
 	num_cells += dup_cells_by_ref(tmp+num_cells, p2, q->st.cur_ctx, p2->num_cells);
 	make_instr(tmp+num_cells++, g_true_s, bif_iso_true_0, 0, 0); // Why???
 	make_call(q, tmp+num_cells);
@@ -490,7 +490,7 @@ static bool bif_iso_negation_1(query *q)
 	pl_idx num_cells = p1->num_cells;
 	make_instr(tmp+num_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+num_cells++, q->cp);
+	make_uint(tmp+num_cells++, q->st.cp);
 	make_instr(tmp+num_cells++, g_fail_s, bif_iso_fail_0, 0, 0);
 	make_call(q, tmp+num_cells);
 	CHECKED(push_succeed_on_retry_with_barrier(q, 0));
@@ -548,7 +548,7 @@ static bool bif_iso_catch_3(query *q)
 		pl_idx num_cells = 1;
 		num_cells += dup_cells_by_ref(tmp+num_cells, p3, p3_ctx, p3->num_cells);
 		make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-		make_uint(tmp+num_cells++, q->cp);
+		make_uint(tmp+num_cells++, q->st.cp);
 		if (is_abort) make_instr(tmp+num_cells++, g_sys_abort_s, bif_sys_abort_0, 0, 0);
 		make_call(q, tmp+num_cells);
 		CHECKED(push_catcher(q, QUERY_EXCEPTION));
@@ -569,7 +569,7 @@ static bool bif_iso_catch_3(query *q)
 	pl_idx num_cells = 1;
 	num_cells += dup_cells_by_ref(tmp+num_cells, p1, p1_ctx, p1->num_cells);
 	make_instr(tmp+num_cells++, g_sys_block_catcher_s, bif_sys_block_catcher_1, 1, 1);
-	make_uint(tmp+num_cells++, q->cp);
+	make_uint(tmp+num_cells++, q->st.cp);
 	make_call(q, tmp+num_cells);
 	CHECKED(push_catcher(q, QUERY_RETRY));
 	q->st.instr = tmp;
@@ -597,7 +597,7 @@ static bool bif_reset_3(query *q)
 	CHECKED(tmp);
 	pl_idx num_cells = p1->num_cells;
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+num_cells++, q->cp);
+	make_uint(tmp+num_cells++, q->st.cp);
 	make_instr(tmp+num_cells++, g_sys_set_if_var_s, bif_sys_set_if_var_2, 2, p3->num_cells+1);
 	num_cells += dup_cells_by_ref(tmp+num_cells, p3, p3_ctx, p3->num_cells);
 	make_atom(tmp+num_cells++, g_none_s);
@@ -609,7 +609,7 @@ static bool bif_reset_3(query *q)
 
 static bool find_reset_handler(query *q)
 {
-	if (!q->cp)
+	if (!q->st.cp)
 		return false;
 
 	choice *ch = GET_CURR_CHOICE();
@@ -683,7 +683,7 @@ bool bif_sys_call_cleanup_3(query *q)
 		CHECKED(tmp);
 		pl_idx num_cells = p3->num_cells;
 		make_instr(tmp+num_cells++, g_sys_cleanup_if_det_s, bif_sys_cleanup_if_det_1, 1, 1);
-		make_uint(tmp+num_cells++, q->cp);
+		make_uint(tmp+num_cells++, q->st.cp);
 		make_call(q, tmp+num_cells);
 		CHECKED(push_catcher(q, QUERY_EXCEPTION));
 		q->st.instr = tmp;
@@ -699,7 +699,7 @@ bool bif_sys_call_cleanup_3(query *q)
 	CHECKED(tmp);
 	pl_idx num_cells = p1->num_cells;
 	make_instr(tmp+num_cells++, g_sys_cleanup_if_det_s, bif_sys_cleanup_if_det_1, 1, 1);
-	make_uint(tmp+num_cells++, q->cp);
+	make_uint(tmp+num_cells++, q->st.cp);
 	make_call(q, tmp+num_cells);
 	CHECKED(push_catcher(q, QUERY_RETRY));
 	q->st.instr = tmp;
@@ -746,7 +746,7 @@ bool bif_sys_get_level_1(query *q)
 {
 	GET_FIRST_ARG(p1,any);
 	cell tmp;
-	make_int(&tmp, q->cp);
+	make_int(&tmp, q->st.cp);
 	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 
@@ -756,7 +756,7 @@ bool bif_sys_drop_barrier_1(query *q)
 	q->total_inferences--;
 	drop_barrier(q, get_smalluint(p1));
 
-	if (q->cp) {
+	if (q->st.cp) {
 		const choice *ch = GET_CURR_CHOICE();
 		q->st.cpu_time = ch->st.cpu_time;
 	}
@@ -768,7 +768,7 @@ bool bif_sys_fail_on_retry_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
 	cell tmp;
-	make_uint(&tmp, (pl_uint)q->cp);
+	make_uint(&tmp, (pl_uint)q->st.cp);
 	CHECKED(push_fail_on_retry_with_barrier(q));
 	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
@@ -785,7 +785,7 @@ bool bif_sys_succeed_on_retry_2(query *q)
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,integer);
 	cell tmp;
-	make_uint(&tmp, (pl_uint)q->cp);
+	make_uint(&tmp, (pl_uint)q->st.cp);
 	CHECKED(push_succeed_on_retry_with_barrier(q, get_smalluint(p2)));
 	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
@@ -821,7 +821,7 @@ static cell *parse_to_heap(query *q, const char *src)
 static bool find_exception_handler(query *q, char *ball)
 {
 	while (retry_choice(q)) {
-		const choice *ch = GET_CHOICE(q->cp);
+		const choice *ch = GET_CHOICE(q->st.cp);
 
 		if (ch->block_catcher)
 			continue;

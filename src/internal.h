@@ -698,7 +698,7 @@ struct query_ {
 	pl_idx tmphp;
 	pl_idx frames_size, slots_size, trails_size, choices_size;
 	pl_idx hw_choices, hw_frames, hw_slots, hw_trails, hw_heap_num;
-	pl_idx cp, before_hook_tp, qcnt[MAX_QUEUES];
+	pl_idx before_hook_tp, qcnt[MAX_QUEUES];
 	pl_idx heap_size, tmph_size, total_heaps, total_heapsize;
 	pl_idx undo_lo_tp, undo_hi_tp;
 	pl_idx q_size[MAX_QUEUES], tmpq_size[MAX_QUEUES], qp[MAX_QUEUES];

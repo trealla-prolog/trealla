@@ -137,7 +137,7 @@ bool check_redo(query *q)
 
 	q->retries++;
 
-	if (q->do_dump_vars && q->cp) {
+	if (q->do_dump_vars && q->st.cp) {
 		dump_vars(q, true);
 
 		if (!q->pl->did_dump_vars) {
@@ -153,7 +153,7 @@ bool check_redo(query *q)
 	fflush(stdout);
 
 	if (q->pl->is_query)
-		return q->cp;
+		return q->st.cp;
 
 	if (q->pl->autofail || (q->fail_on_retry && (q->autofail_n > 1))) {
 		q->autofail_n--;
@@ -326,7 +326,7 @@ static int varunformat(const char *s)
 
 bool query_redo(query *q)
 {
-	if (!q->cp)
+	if (!q->st.cp)
 		return false;
 
 	q->is_redo = true;

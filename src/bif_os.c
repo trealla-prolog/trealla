@@ -274,7 +274,7 @@ static bool bif_wall_time_1(query *q)
 static bool bif_cpu_time_1(query *q)
 {
 	GET_FIRST_ARG(p1,var);
-	double v = ((double)cpu_time_in_usec() - q->cpu_time) / 1000 / 1000;
+	double v = ((double)cpu_time_in_usec() - q->st.cpu_time) / 1000 / 1000;
 	cell tmp;
 	make_float(&tmp, (pl_flt)v);
 	return unify (q, p1, p1_ctx, &tmp, q->st.cur_ctx);
@@ -439,7 +439,7 @@ static bool bif_time_1(query *q)
 	pl_idx num_cells = p1->num_cells;
 	make_instr(tmp+num_cells++, g_sys_elapsed_s, bif_sys_elapsed_0, 0, 0);
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+num_cells++, q->cp);
+	make_uint(tmp+num_cells++, q->st.cp);
 	make_call(q, tmp+num_cells);
 	CHECKED(push_barrier(q));
 	q->st.instr = tmp;

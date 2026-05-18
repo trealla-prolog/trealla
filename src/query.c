@@ -116,7 +116,7 @@ static void trace_call(query *q, cell *c, pl_ctx c_ctx, box_t box)
 		q->my_chan,
 		q->st.m->name,
 		q->step,
-		q->st.cur_ctx, q->st.fp, q->cp, q->st.sp, q->st.hp, q->st.tp
+		q->st.cur_ctx, q->st.fp, q->st.cp, q->st.sp, q->st.hp, q->st.tp
 		);
 
 	SB_sprintf(pr, "%s ",
@@ -165,10 +165,10 @@ void check_pressure(query *q)
 		q->trails_size = alloc_grow(q, (void**)&q->trails, sizeof(trail), new_size, new_size*2);
 	}
 #if TRACE_MEM
-	printf("*** q->st.cp=%u, q->choices_size=%u\n", (unsigned)q->cp, (unsigned)q->choices_size);
+	printf("*** q->st.cp=%u, q->choices_size=%u\n", (unsigned)q->st.cp, (unsigned)q->choices_size);
 #endif
-	if (q->cp < (q->choices_size / 2)) {
-		unsigned new_size = q->cp < INITIAL_NBR_CHOICES ? INITIAL_NBR_CHOICES : q->cp + 1;
+	if (q->st.cp < (q->choices_size / 2)) {
+		unsigned new_size = q->st.cp < INITIAL_NBR_CHOICES ? INITIAL_NBR_CHOICES : q->st.cp + 1;
 		q->choices_size = alloc_grow(q, (void**)&q->choices, sizeof(choice), new_size, new_size*2);
 	}
 #if TRACE_MEM
@@ -190,14 +190,14 @@ void check_pressure(query *q)
 
 static bool check_choice(query *q)
 {
-	if (q->cp > q->hw_choices)
-		q->hw_choices = q->cp;
+	if (q->st.cp > q->hw_choices)
+		q->hw_choices = q->st.cp;
 
-	if (q->cp < q->choices_size)
+	if (q->st.cp < q->choices_size)
 		return true;
 
 	q->realloc_choices++;
-	pl_idx new_choicessize = alloc_grow(q, (void**)&q->choices, sizeof(choice), q->cp+1, q->choices_size*2);
+	pl_idx new_choicessize = alloc_grow(q, (void**)&q->choices, sizeof(choice), q->st.cp+1, q->choices_size*2);
 
 	if (!new_choicessize) {
 		q->oom = q->error = true;
@@ -583,7 +583,7 @@ static void trim_trail(query *q)
 
 	pl_idx tp;
 
-	if (q->cp)  {
+	if (q->st.cp)  {
 		const choice *ch = GET_CURR_CHOICE();
 		tp = ch->st.tp;
 	} else
@@ -716,7 +716,7 @@ static void reuse_frame(query *q, unsigned num_vars)
 
 static bool commit_any_choices(const query *q, const frame *f)
 {
-	if (q->cp == 1)							// Skip in-progress choice
+	if (q->st.cp == 1)							// Skip in-progress choice
 		return false;
 
 	const choice *ch = GET_PREV_CHOICE();	// Skip in-progress choice
@@ -798,9 +798,9 @@ static void commit_frame(query *q)
 
 int retry_choice(query *q)
 {
-	while (q->cp) {
+	while (q->st.cp) {
 		undo_me(q);
-		pl_idx cur_choice = --q->cp;
+		pl_idx cur_choice = --q->st.cp;
 		const choice *ch = GET_CHOICE(cur_choice);
 		q->st = ch->st;
 
@@ -847,9 +847,10 @@ bool push_choice(query *q)
 {
 	CHECKED(check_choice(q));
 	const frame *f = GET_CURR_FRAME();
-	choice *ch = GET_CHOICE(q->cp++);
+	choice *ch = GET_CHOICE(q->st.cp);
 	ch->skip = 0;
 	ch->st = q->st;
+	q->st.cp++;
 
 	// Keep a record of the frame state, we need to restore
 	// it on retry. On cut we commit to it.
@@ -936,7 +937,7 @@ bool push_catcher(query *q, enum q_retry retry)
 
 bool drop_barrier(query *q, pl_idx cp)
 {
-	if ((q->cp-1) != cp)
+	if ((q->st.cp-1) != cp)
 		return false;
 
 	const choice *ch = GET_CURR_CHOICE();
@@ -950,7 +951,7 @@ void cut(query *q)
 {
 	const frame *f = GET_CURR_FRAME();
 
-	while (q->cp) {
+	while (q->st.cp) {
 		const choice *ch = GET_CURR_CHOICE();
 
 		// A normal cut can't break out of a barrier...
@@ -979,7 +980,7 @@ void cut(query *q)
 
 static bool resume_any_choices(const query *q, const frame *f)
 {
-	if (!q->cp)
+	if (!q->st.cp)
 		return false;
 
 	const choice *ch = GET_CURR_CHOICE();
@@ -1572,16 +1573,16 @@ bool match_head(query *q)
 
 static bool any_outstanding_choices(query *q)
 {
-	while (q->cp) {
+	while (q->st.cp) {
 		const choice *ch = GET_CURR_CHOICE();
 
 		if (!ch->barrier)
 			break;
 
-		q->cp--;
+		q->st.cp--;
 	}
 
-	return q->cp > 0;
+	return q->st.cp > 0;
 }
 
 void do_cleanup(query *q, cell *c, pl_ctx c_ctx)
@@ -1591,7 +1592,7 @@ void do_cleanup(query *q, cell *c, pl_ctx c_ctx)
 	pl_idx num_cells = c->num_cells;
 	make_instr(tmp+num_cells++, g_cut_s, bif_iso_cut_0, 0, 0);
 	make_instr(tmp+num_cells++, g_sys_drop_barrier_s, bif_sys_drop_barrier_1, 1, 1);
-	make_uint(tmp+num_cells++, q->cp);
+	make_uint(tmp+num_cells++, q->st.cp);
 	make_call(q, tmp+num_cells);
 	q->st.instr = tmp;
 }
@@ -1803,11 +1804,6 @@ bool execute(query *q, cell *cells, unsigned num_vars)
 
 	q->st.fp = 1;
 
-	// There may not be a choicepoint, so this points to the
-	// next available choicepoint
-
-	q->cp = 0;
-
 	frame *f = q->frames;
 	f->initial_slots = f->actual_slots = num_vars;
 	f->dbgen = ++q->pl->dbgen;
@@ -1880,7 +1876,7 @@ static query *query_create_(module *m, bool is_toplevel)
 	q->trace = m->pl->trace;
 	q->flags = m->flags;
 	q->get_started = wall_time_in_usec();
-	q->time_cpu_last_started = q->cpu_time = cpu_time_in_usec();
+	q->time_cpu_last_started = q->st.cpu_time = cpu_time_in_usec();
 	q->ops_dirty = true;
 	q->max_depth = m->pl->def_max_depth;
 	q->vgen = 1;

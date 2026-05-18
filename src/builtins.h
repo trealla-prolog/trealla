@@ -129,8 +129,8 @@ inline static cell *take_queuen(query *q)
 }
 
 #define GET_CHOICE(i) (q->choices+(i))
-#define GET_CURR_CHOICE() GET_CHOICE(q->cp-1)
-#define GET_PREV_CHOICE() GET_CHOICE(q->cp-2)
+#define GET_CURR_CHOICE() GET_CHOICE(q->st.cp-1)
+#define GET_PREV_CHOICE() GET_CHOICE(q->st.cp-2)
 
 #define GET_FRAME(i) (q->frames+(i))
 #define GET_CURR_FRAME() GET_FRAME(q->st.cur_ctx)
