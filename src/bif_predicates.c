@@ -121,7 +121,7 @@ static bool bif_findnsols_4(query *q)
 			make_int(tmp+num_cells++, 1);
 			make_int(tmp+num_cells++, nsols);
 		} else {
-			GET_FIRST_RAW_ARG(p0r,any);
+			GET_FIRST_RAW_ARG(p0r,var);
 			tmp = prepare_call(q, CALL_NOSKIP, tmp2, p2_ctx, 1+p1->num_cells+3+2+1);
 			CHECKED(tmp, drop_queuen(q));
 			num_cells = tmp2->num_cells;
