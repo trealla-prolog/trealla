@@ -41,11 +41,18 @@ static bool bif_findnsols_ge_2(query *q)
 
 static bool bif_findnsols_4(query *q)
 {
-	GET_FIRST_ARG(p0,integer);
+	GET_FIRST_ARG(p0,any);
 	GET_NEXT_ARG(p1,any);
 	GET_NEXT_ARG(p2,callable);
 	GET_NEXT_ARG(p3,list_or_nil_or_var);
-	int nsols = get_smallint(p0);
+	int nsols = 0;
+
+	if (is_integer(p0)) {
+		nsols = get_smallint(p0);
+	} else if (is_compound(p0) && (p0->arity == 1) && (p0->val_off == g_count_s) && is_smallint(p0+1)) {
+		nsols = get_smallint(p0+1);
+	} else
+		return throw_error(q, p0, p0_ctx, "type_error", "integer");
 
 	if (nsols < 0)
 		return throw_error(q, p0, p0_ctx, "domain_error", "not_less_than_zero");

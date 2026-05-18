@@ -43,7 +43,7 @@ pl_idx g_sys_call_s, g_sys_cut_s, g_notunify_s, g_sys_module_s;
 pl_idx g_sys_reunify_s, g_sys_undo_s, g_sys_jump_if_nil_s;
 pl_idx g_sys_loop_s, g_sys_end_s, g_sys_create_var_s;
 pl_idx g_sys_match_s, g_double_bar_s, g_sys_list_s, g_ge_s;
-pl_idx g_sys_abort_s;
+pl_idx g_sys_abort_s, g_count_s;
 pl_idx g_dummy_s;
 
 char *g_global_atoms = NULL;
@@ -613,6 +613,7 @@ static bool g_init(prolog *pl)
 	CHECK_SENTINEL(g_reset_s = new_atom(pl, "reset"), ERR_IDX);
 	CHECK_SENTINEL(g_ignore_s = new_atom(pl, "ignore"), ERR_IDX);
 	CHECK_SENTINEL(g_if_s = new_atom(pl, "if"), ERR_IDX);
+	CHECK_SENTINEL(g_count_s = new_atom(pl, "count"), ERR_IDX);
 	CHECK_SENTINEL(g_sys_call_s = new_atom(pl, "$call"), ERR_IDX);
 	CHECK_SENTINEL(g_sys_cut_s = new_atom(pl, "$cut"), ERR_IDX);
 	CHECK_SENTINEL(g_sys_module_s = new_atom(pl, "$module"), ERR_IDX);
