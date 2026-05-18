@@ -15,12 +15,37 @@
 #include "openssl/hmac.h"
 #endif
 
+static bool bif_nb_setarg_3(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,compound);
+	GET_NEXT_ARG(p3,integer);
+
+	int arg_nbr = get_smallint(p1);
+
+	if ((arg_nbr == 0) || (arg_nbr > p2->arity))
+		return false;
+
+	p2 = p2 + 1;
+
+	for (int i = 1; i <= arg_nbr; i++) {
+		if (i == arg_nbr) {
+			*p2 = *p3;
+			return true;
+		}
+
+		p2 += p2->num_cells;
+	}
+
+	return true;
+}
+
 static bool bif_sys_list_1(query *q);
 
 static bool bif_findnsols_ge_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
-	GET_NEXT_ARG(p2,integer);
+	GET_NEXT_ARG(p2,any);
 
 	if (is_bigint(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
@@ -28,9 +53,15 @@ static bool bif_findnsols_ge_2(query *q)
 	if (is_bigint(p2))
 		return throw_error(q, p2, p2_ctx, "domain_error", "small_integer_range");
 
-	pl_int num = get_smallint(p1);
+	int num = get_smallint(p1), count;
 
-	if (num < get_smallint(p2)) {
+	if (is_integer(p2)) {
+		count = get_smallint(p2);
+	} else {
+		count = get_smallint(p2+1);
+	}
+
+	if (num < count) {
 		set_smallint(p1, num+1);
 		return false;
 	}
@@ -77,14 +108,30 @@ static bool bif_findnsols_4(query *q)
 		if (q->st.qnum == MAX_QUEUES)
 			return throw_error(q, p2, p2_ctx, "resource_error", "max_queues");
 
-		cell *tmp = prepare_call(q, CALL_NOSKIP, tmp2, p2_ctx, 1+p1->num_cells+3+2+1);
-		CHECKED(tmp, drop_queuen(q));
-		pl_idx num_cells = tmp2->num_cells;
-		make_instr(tmp+num_cells++, g_sys_queue_s, bif_sys_queue_1, 1, p1->num_cells);
-		num_cells += dup_cells_by_ref(tmp+num_cells, p1, p1_ctx, p1->num_cells);
-		make_instr(tmp+num_cells++, g_ge_s, bif_findnsols_ge_2, 2, 2);
-		make_int(tmp+num_cells++, 1);
-		make_int(tmp+num_cells++, nsols);
+		cell *tmp;
+		pl_idx num_cells;
+
+		if (is_integer(p0)) {
+			tmp = prepare_call(q, CALL_NOSKIP, tmp2, p2_ctx, 1+p1->num_cells+3+2+1);
+			CHECKED(tmp, drop_queuen(q));
+			num_cells = tmp2->num_cells;
+			make_instr(tmp+num_cells++, g_sys_queue_s, bif_sys_queue_1, 1, p1->num_cells);
+			num_cells += dup_cells_by_ref(tmp+num_cells, p1, p1_ctx, p1->num_cells);
+			make_instr(tmp+num_cells++, g_ge_s, bif_findnsols_ge_2, 2, 2);
+			make_int(tmp+num_cells++, 1);
+			make_int(tmp+num_cells++, nsols);
+		} else {
+			GET_FIRST_RAW_ARG(p0r,any);
+			tmp = prepare_call(q, CALL_NOSKIP, tmp2, p2_ctx, 1+p1->num_cells+3+2+1);
+			CHECKED(tmp, drop_queuen(q));
+			num_cells = tmp2->num_cells;
+			make_instr(tmp+num_cells++, g_sys_queue_s, bif_sys_queue_1, 1, p1->num_cells);
+			num_cells += dup_cells_by_ref(tmp+num_cells, p1, p1_ctx, p1->num_cells);
+			make_instr(tmp+num_cells++, g_ge_s, bif_findnsols_ge_2, 2, 2);
+			make_int(tmp+num_cells++, 1);
+			make_ref(tmp+num_cells++, p0r->var_num, p0r->val_ctx);
+		}
+
 		make_instr(tmp+num_cells++, g_sys_list_s, bif_sys_list_1, 1, 1);
 		make_ref(tmp+num_cells++, p3->var_num, p3_ctx);
 		make_call(q, tmp+num_cells);
@@ -1668,7 +1715,7 @@ static bool bif_iso_arg_3(query *q)
 	if (is_bigint(p1))
 		return false;
 
-	pl_int arg_nbr = get_smallint(p1);
+	int arg_nbr = get_smallint(p1);
 
 	if ((arg_nbr == 0) || (arg_nbr > p2->arity))
 		return false;
@@ -6415,6 +6462,7 @@ builtins g_other_bifs[] =
 	{"load_text", 2, bif_load_text_2, "+string,+list", false, false, BLAH},
 	{"between", 3, bif_between_3, "+integer,+integer,?integer", false, false, BLAH},
 	{"numlist", 3, bif_numlist_3, "+integer,+integer,-list", false, false, BLAH},
+	{"nb_setarg", 3, bif_nb_setarg_3, "+integer,+term,+integer", false, false, BLAH},
 
 	{"must_be", 4, bif_must_be_4, "+term,+atom,+term,?any", false, false, BLAH},
 	{"must_be", 2, bif_must_be_2, "+atom,+term", false, false, BLAH},
