@@ -813,8 +813,8 @@ static void print_iso_list_canonical(query *q, cell *c, pl_ctx c_ctx, int runnin
 
 	while (is_list(c)) {
 		cell *head = LIST_HEAD(c);
-		head = deref(q, head, c_ctx);
-		pl_ctx head_ctx = q->latest_ctx;
+		if (running) head = deref(q, head, c_ctx);
+		pl_ctx head_ctx = running ? q->latest_ctx : c_ctx;
 		bool special_op = false;
 
 		if (is_interned(head)) {
@@ -831,8 +831,8 @@ static void print_iso_list_canonical(query *q, cell *c, pl_ctx c_ctx, int runnin
 		if (parens) { SB_sprintf(q->sb, "%s", ")"); }
 
 		c = LIST_TAIL(c);
-		c = deref(q, c, c_ctx);
-		c_ctx = q->latest_ctx;
+		if (running) c = deref(q, c, c_ctx);
+		c_ctx = running ? q->latest_ctx : c_ctx;
 
 		if (!is_list(c)) {
 			SB_sprintf(q->sb, "%s", ",[]");
