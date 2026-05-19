@@ -424,7 +424,9 @@ Non-standard predicates
 	with_output_to(string(Cs), Goal)	# SWI-compatible
 	with_output_to(atom(Atom), Goal)	# SWI-compatible
 
-	findnsols/4					# SWI-compatible (but no count/1)
+	findnsols/4					# SWI-compatible
+	nb_setarg/3					# SWI-compatible (only with small integer values)
+
 	call_with_time_limit/2		# SWI-compatible
 	time_out/3					# SICStus-compatible
 
