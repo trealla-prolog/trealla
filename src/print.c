@@ -644,10 +644,7 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 		if (running) head_ctx = q->latest_ctx;
 		int parens = 0;
 
-		if (q->do_dump_vars && is_var(save_head) && 0 && is_cyclic_term(q, head, c_ctx)) {
-			print_variable(q, save_head, c_ctx, 0);
-			q->last_thing = WAS_OTHER;
-		} else if (has_visited(visited, head, head_ctx)) {
+		if (has_visited(visited, head, head_ctx)) {
 			if ((q->portray_vars || q->do_dump_vars) && ((unsigned)q->dump_var_num != (unsigned)-1)) {
 				SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[q->dump_var_num]));
 			} else {
@@ -805,6 +802,50 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 	}
 
 	clear_visited(visited, save_visited);
+}
+
+static void print_iso_list_canonical(query *q, cell *c, pl_ctx c_ctx, int running, bool cons, unsigned depth)
+{
+	int cnt = 1;
+	LIST_HANDLER(c);
+
+	SB_sprintf(q->sb, "%s", "'.'(");
+
+	while (is_list(c)) {
+		cell *head = LIST_HEAD(c);
+		head = deref(q, head, c_ctx);
+		pl_ctx head_ctx = q->latest_ctx;
+		bool special_op = false;
+
+		if (is_interned(head)) {
+			unsigned specifier = 0;
+			unsigned priority = match_op(q->st.m, C_STR(q, head), &specifier, head->arity);
+			special_op = (priority >= 1000);
+		}
+
+		bool parens = is_compound(head) && special_op;
+		if (parens) {  SB_sprintf(q->sb, "%s", "("); q->last_thing = WAS_OTHER; }
+		q->parens = parens;
+		print_term_to_buf_(q, head, head_ctx, running, -1, 0, depth+1, NULL);
+		q->parens = false;
+		if (parens) { SB_sprintf(q->sb, "%s", ")"); }
+
+		c = LIST_TAIL(c);
+		c = deref(q, c, c_ctx);
+		c_ctx = q->latest_ctx;
+
+		if (!is_list(c)) {
+			SB_sprintf(q->sb, "%s", ",[]");
+			break;
+		}
+
+		SB_sprintf(q->sb, "%s", ",'.'(");
+		cnt++;
+	}
+
+	while (cnt--) {
+		SB_sprintf(q->sb, "%s", ")");
+	}
 }
 
 static const char *find_match(query *q, cell *v, pl_ctx v_ctx)
@@ -1583,6 +1624,12 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 
 	if (is_iso_list(c) && !q->ignore_ops) {
 		print_iso_list(q, c, c_ctx, running, cons > 0, print_depth+1, depth+1, visited);
+		q->last_thing = WAS_OTHER;
+		return true;
+	}
+
+	if (is_iso_list(c) && q->ignore_ops) {
+		print_iso_list_canonical(q, c, c_ctx, running, cons > 0, depth+1);
 		q->last_thing = WAS_OTHER;
 		return true;
 	}
