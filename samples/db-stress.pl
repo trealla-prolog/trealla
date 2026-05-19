@@ -71,3 +71,21 @@ do_retract(I) :-
 	I2 is I - 1,
 	do_retract(I2).
 
+run5 :-
+	writeln('clause...'),
+	between(1,100,I),
+		write(I), nl,
+		test5,
+		retractall(f(_)),
+		fail.
+run5.
+
+test5 :-
+	between(1,1000000,I),
+		assertz(f(g(I))),
+		fail.
+test5 :-
+	clause(f(g(_)),_),
+	fail.
+test5.
+
