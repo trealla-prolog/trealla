@@ -806,6 +806,8 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 
 static void print_iso_list_canonical(query *q, cell *c, pl_ctx c_ctx, int running, bool cons, unsigned depth, unsigned print_depth)
 {
+	cell *save_c = c;
+	pl_ctx save_ctx = c_ctx;
 	unsigned print_list = 0;
 	int cnt = 1;
 	LIST_HANDLER(c);
@@ -816,7 +818,6 @@ static void print_iso_list_canonical(query *q, cell *c, pl_ctx c_ctx, int runnin
 		CHECK_INTERRUPT();
 
 		if (q->max_depth && (print_list++ >= q->max_depth)) {
-			SB_ungetchar(q->sb);
 			SB_sprintf(q->sb, "%s", ",...");
 			q->last_thing = WAS_OTHER;
 			break;
@@ -847,6 +848,12 @@ static void print_iso_list_canonical(query *q, cell *c, pl_ctx c_ctx, int runnin
 		if (!is_list(c)) {
 			SB_sprintf(q->sb, "%s", ",");
 			print_term_to_buf_(q, c, c_ctx, running, -1, 0, depth+1, NULL);
+			break;
+		}
+
+		if ((c == save_c) && (c_ctx == save_ctx)) {
+			SB_sprintf(q->sb, "%s", ",...");
+			q->last_thing = WAS_OTHER;
 			break;
 		}
 
