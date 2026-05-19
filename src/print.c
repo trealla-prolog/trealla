@@ -644,10 +644,7 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 		if (running) head_ctx = q->latest_ctx;
 		int parens = 0;
 
-		if (q->do_dump_vars && is_var(save_head) && 0 && is_cyclic_term(q, head, c_ctx)) {
-			print_variable(q, save_head, c_ctx, 0);
-			q->last_thing = WAS_OTHER;
-		} else if (has_visited(visited, head, head_ctx)) {
+		if (has_visited(visited, head, head_ctx)) {
 			if ((q->portray_vars || q->do_dump_vars) && ((unsigned)q->dump_var_num != (unsigned)-1)) {
 				SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[q->dump_var_num]));
 			} else {
