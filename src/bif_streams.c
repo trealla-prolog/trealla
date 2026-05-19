@@ -29,12 +29,6 @@
 #define mkdir(p1,p2) mkdir(p1)
 #endif
 
-#ifdef _WIN32
-#define NEWLINE_MODE "dos"
-#else
-#define NEWLINE_MODE "posix"
-#endif
-
 #ifdef __wasi__
 #include <limits.h>
 #include <unistd.h>
@@ -565,7 +559,7 @@ static void add_stream_properties(query *q, int n)
 		else
 			dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, output).\n", n);
 
-		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, newline(%s)).\n", n, NEWLINE_MODE);
+		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, newline(%s)).\n", n, "posix");
 	}
 
 	if (str->is_engine)
@@ -662,7 +656,7 @@ static bool do_stream_property(query *q)
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "mode")) {
 		cell tmp;
-		make_cstring(&tmp, str->mode);
+		make_atom(&tmp, new_atom(q->pl, str->mode));
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
 		unshare_cell(&tmp);
 		return ok;
@@ -670,7 +664,7 @@ static bool do_stream_property(query *q)
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "engine")) {
 		cell tmp;
-		make_cstring(&tmp, str->is_engine?"true":"false");
+		make_atom(&tmp, new_atom(q->pl, str->is_engine?"true":"false"));
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
 		unshare_cell(&tmp);
 		return ok;
@@ -678,7 +672,7 @@ static bool do_stream_property(query *q)
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "skiplist")) {
 		cell tmp;
-		make_cstring(&tmp, str->is_map?"true":"false");
+		make_atom(&tmp, new_atom(q->pl, str->is_map?"true":"false"));
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
 		unshare_cell(&tmp);
 		return ok;
@@ -686,7 +680,7 @@ static bool do_stream_property(query *q)
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "bom") && !str->binary) {
 		cell tmp;
-		make_cstring(&tmp, str->bom?"true":"false");
+		make_atom(&tmp, new_atom(q->pl, str->bom?"true":"false"));
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
 		unshare_cell(&tmp);
 		return ok;
@@ -694,7 +688,7 @@ static bool do_stream_property(query *q)
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "type")) {
 		cell tmp;
-		make_cstring(&tmp, str->binary ? "binary" : "text");
+		make_atom(&tmp, new_atom(q->pl, str->binary?"true":"false"));
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
 		unshare_cell(&tmp);
 		return ok;
@@ -702,7 +696,7 @@ static bool do_stream_property(query *q)
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "reposition")) {
 		cell tmp;
-		make_cstring(&tmp, str->is_socket || (n <= 2) ? "false" : str->repo ? "true" : "false");
+		make_atom(&tmp, new_atom(q->pl, str->is_socket || (n <= 2) ? "false" : str->repo ? "true" : "false"));
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
 		unshare_cell(&tmp);
 		return ok;
@@ -710,7 +704,7 @@ static bool do_stream_property(query *q)
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "encoding") && !str->binary) {
 		cell tmp;
-		make_cstring(&tmp, "UTF-8");
+		make_atom(&tmp, new_atom(q->pl, "UTF-8"));
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
 		unshare_cell(&tmp);
 		return ok;
@@ -718,7 +712,7 @@ static bool do_stream_property(query *q)
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "newline")) {
 		cell tmp;
-		make_cstring(&tmp, NEWLINE_MODE);
+		make_atom(&tmp, new_atom(q->pl, "posix"));
 		bool ok = unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
 		unshare_cell(&tmp);
 		return ok;
