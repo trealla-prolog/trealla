@@ -132,8 +132,7 @@ static bool bif_findnsols_4(query *q)
 			num_cells += dup_cells_by_ref(tmp+num_cells, p1, p1_ctx, p1->num_cells);
 			make_instr(tmp+num_cells++, g_ge_s, bif_findnsols_ge_2, 2, 3);
 			make_int(tmp+num_cells++, 1);
-			tmp[num_cells++] = p0[0];
-			tmp[num_cells++] = p0[1];
+			num_cells += dup_cells_by_ref(tmp+num_cells, p0, p0_ctx, p0->num_cells);
 		}
 
 		make_instr(tmp+num_cells++, g_sys_list_s, bif_sys_list_1, 1, 1);
