@@ -1,8 +1,17 @@
+run :-
+	run1, fail;
+	run2, fail;
+	run3, fail;
+	run4, fail;
+	run5, fail;
+	run6, fail;
+	true.
+
 writeln(P) :- write(P), nl.
 
 run1 :-
-	writeln('retractall...'),
-	between(1,100,I),
+	writeln('1. retractall...'),
+	between(1,5,I),
 		write(I), nl,
 		test1,
 		fail.
@@ -16,8 +25,8 @@ test1 :-
 	retractall(f(_)).
 
 run2 :-
-	writeln('abolish...'),
-	between(1,100,I),
+	writeln('2. abolish...'),
+	between(1,5,I),
 		write(I), nl,
 		test2,
 		fail.
@@ -31,8 +40,8 @@ test2 :-
 	abolish(f/1).
 
 run3 :-
-	writeln('retract...'),
-	between(1,100,I),
+	writeln('3. retract...'),
+	between(1,5,I),
 		write(I), nl,
 		test3,
 		fail.
@@ -48,8 +57,8 @@ test3 :-
 test3.
 
 run4 :-
-	writeln('retract...'),
-	between(1,100,I),
+	writeln('4. retract...'),
+	between(1,5,I),
 		write(I), nl,
 		test4,
 		fail.
@@ -72,8 +81,8 @@ do_retract(I) :-
 	do_retract(I2).
 
 run5 :-
-	writeln('clause...'),
-	between(1,100,I),
+	writeln('5. clause...'),
+	between(1,5,I),
 		write(I), nl,
 		test5,
 		retractall(f(_)),
@@ -88,4 +97,22 @@ test5 :-
 	clause(f(g(_)),_),
 	fail.
 test5.
+
+run6 :-
+	writeln('6. match...'),
+	between(1,5,I),
+		write(I), nl,
+		test6,
+		retractall(f(_)),
+		fail.
+run6.
+
+test6 :-
+	between(1,1000000,I),
+		assertz(f(g(I))),
+		fail.
+test6 :-
+	f(g(_)),
+	fail.
+test6.
 
