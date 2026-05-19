@@ -77,10 +77,14 @@ static bool bif_findnsols_4(query *q)
 	GET_NEXT_ARG(p2,callable);
 	GET_NEXT_ARG(p3,list_or_nil_or_var);
 	int nsols = 0;
+	cell *p01 = NULL;
+
+	if (is_compound(p0) && (p0->arity == 1) && (p0->val_off == g_count_s))
+		p01 = deref(q, p0+1, p0_ctx);
 
 	if (is_smallint(p0)) {
 		nsols = get_smallint(p0);
-	} else if (is_compound(p0) && (p0->arity == 1) && (p0->val_off == g_count_s) && is_smallint(p0+1)) {
+	} else if (is_compound(p0) && (p0->arity == 1) && (p0->val_off == g_count_s) && is_smallint(p01)) {
 		nsols = get_smallint(p0+1);
 	} else
 		return throw_error(q, p0, p0_ctx, "type_error", "integer");
@@ -110,6 +114,7 @@ static bool bif_findnsols_4(query *q)
 
 		cell *tmp;
 		pl_idx num_cells;
+		GET_FIRST_RAW_ARG(p0r,any);
 
 		if (is_integer(p0)) {
 			tmp = prepare_call(q, CALL_NOSKIP, tmp2, p2_ctx, 1+p1->num_cells+3+2+1);
@@ -120,8 +125,7 @@ static bool bif_findnsols_4(query *q)
 			make_instr(tmp+num_cells++, g_ge_s, bif_findnsols_ge_2, 2, 2);
 			make_int(tmp+num_cells++, 1);
 			make_int(tmp+num_cells++, nsols);
-		} else {
-			GET_FIRST_RAW_ARG(p0r,any);
+		} else if (is_var(p0r)) {
 			tmp = prepare_call(q, CALL_NOSKIP, tmp2, p2_ctx, 1+p1->num_cells+3+2+1);
 			CHECKED(tmp, drop_queuen(q));
 			num_cells = tmp2->num_cells;
@@ -130,6 +134,16 @@ static bool bif_findnsols_4(query *q)
 			make_instr(tmp+num_cells++, g_ge_s, bif_findnsols_ge_2, 2, 2);
 			make_int(tmp+num_cells++, 1);
 			make_ref(tmp+num_cells++, p0r->var_num, p0r->val_ctx);
+		} else {
+			tmp = prepare_call(q, CALL_NOSKIP, tmp2, p2_ctx, 1+p1->num_cells+3+3+1);
+			CHECKED(tmp, drop_queuen(q));
+			num_cells = tmp2->num_cells;
+			make_instr(tmp+num_cells++, g_sys_queue_s, bif_sys_queue_1, 1, p1->num_cells);
+			num_cells += dup_cells_by_ref(tmp+num_cells, p1, p1_ctx, p1->num_cells);
+			make_instr(tmp+num_cells++, g_ge_s, bif_findnsols_ge_2, 2, 3);
+			make_int(tmp+num_cells++, 1);
+			tmp[num_cells++] = p0[0];
+			tmp[num_cells++] = p0[1];
 		}
 
 		make_instr(tmp+num_cells++, g_sys_list_s, bif_sys_list_1, 1, 1);
@@ -142,7 +156,7 @@ static bool bif_findnsols_4(query *q)
 
 	if (!queuen_used(q)) {
 		drop_queuen(q);
-		return unify(q, p3, p3_ctx, make_nil(), q->st.cur_ctx);
+		return false;
 	}
 
 	// Retry takes the queue
