@@ -817,9 +817,8 @@ static void print_iso_list_canonical(query *q, cell *c, pl_ctx c_ctx, int runnin
 
 		if (q->max_depth && (print_list++ >= q->max_depth)) {
 			SB_ungetchar(q->sb);
-			SB_sprintf(q->sb, "%s", "|...]");
+			SB_sprintf(q->sb, "%s", ",...");
 			q->last_thing = WAS_OTHER;
-			//q->cycle_error = true;
 			break;
 		}
 
