@@ -804,14 +804,25 @@ static void print_iso_list(query *q, cell *c, pl_ctx c_ctx, int running, bool co
 	clear_visited(visited, save_visited);
 }
 
-static void print_iso_list_canonical(query *q, cell *c, pl_ctx c_ctx, int running, bool cons, unsigned depth)
+static void print_iso_list_canonical(query *q, cell *c, pl_ctx c_ctx, int running, bool cons, unsigned depth, unsigned print_depth)
 {
+	unsigned print_list = 0;
 	int cnt = 1;
 	LIST_HANDLER(c);
 
 	SB_sprintf(q->sb, "%s", "'.'(");
 
 	while (is_list(c)) {
+		CHECK_INTERRUPT();
+
+		if (q->max_depth && (print_list++ >= q->max_depth)) {
+			SB_ungetchar(q->sb);
+			SB_sprintf(q->sb, "%s", "|...]");
+			q->last_thing = WAS_OTHER;
+			//q->cycle_error = true;
+			break;
+		}
+
 		cell *head = LIST_HEAD(c);
 		if (running) head = deref(q, head, c_ctx);
 		pl_ctx head_ctx = running ? q->latest_ctx : c_ctx;
@@ -1630,7 +1641,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 	}
 
 	if (is_iso_list(c) && q->ignore_ops) {
-		print_iso_list_canonical(q, c, c_ctx, running, cons > 0, depth+1);
+		print_iso_list_canonical(q, c, c_ctx, running, cons > 0, depth+1, depth+1);
 		q->last_thing = WAS_OTHER;
 		return true;
 	}
