@@ -114,7 +114,6 @@ static bool bif_findnsols_4(query *q)
 
 		cell *tmp;
 		pl_idx num_cells;
-		GET_FIRST_RAW_ARG(p0r,any);
 
 		if (is_integer(p0)) {
 			tmp = prepare_call(q, CALL_NOSKIP, tmp2, p2_ctx, 1+p1->num_cells+3+2+1);
@@ -125,15 +124,6 @@ static bool bif_findnsols_4(query *q)
 			make_instr(tmp+num_cells++, g_ge_s, bif_findnsols_ge_2, 2, 2);
 			make_int(tmp+num_cells++, 1);
 			make_int(tmp+num_cells++, nsols);
-		} else if (is_var(p0r)) {
-			tmp = prepare_call(q, CALL_NOSKIP, tmp2, p2_ctx, 1+p1->num_cells+3+2+1);
-			CHECKED(tmp, drop_queuen(q));
-			num_cells = tmp2->num_cells;
-			make_instr(tmp+num_cells++, g_sys_queue_s, bif_sys_queue_1, 1, p1->num_cells);
-			num_cells += dup_cells_by_ref(tmp+num_cells, p1, p1_ctx, p1->num_cells);
-			make_instr(tmp+num_cells++, g_ge_s, bif_findnsols_ge_2, 2, 2);
-			make_int(tmp+num_cells++, 1);
-			make_ref(tmp+num_cells++, p0r->var_num, p0r->val_ctx);
 		} else {
 			tmp = prepare_call(q, CALL_NOSKIP, tmp2, p2_ctx, 1+p1->num_cells+3+3+1);
 			CHECKED(tmp, drop_queuen(q));
