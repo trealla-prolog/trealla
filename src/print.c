@@ -835,7 +835,8 @@ static void print_iso_list_canonical(query *q, cell *c, pl_ctx c_ctx, int runnin
 		c_ctx = running ? q->latest_ctx : c_ctx;
 
 		if (!is_list(c)) {
-			SB_sprintf(q->sb, "%s", ",[]");
+			SB_sprintf(q->sb, "%s", ",");
+			print_term_to_buf_(q, c, c_ctx, running, -1, 0, depth+1, NULL);
 			break;
 		}
 
