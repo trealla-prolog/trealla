@@ -676,7 +676,7 @@ static void push_frame(query *q)
 	fnew->no_recov = q->no_recov;
 	fnew->chgen = ++q->chgen;
 	fnew->hp = q->st.hp;
-	fnew->heap_num = q->st.heap_num;
+	fnew->hp_num = q->st.hp_num;
 	q->st.sp += fnew->actual_slots;
 	q->st.cur_ctx = q->st.fp;
 	q->st.fp++;
@@ -710,7 +710,7 @@ static void reuse_frame(query *q, unsigned num_vars)
 	q->st.dbe->tcos++;
 	q->total_tcos++;
 	q->st.hp = f_old->hp;
-	q->st.heap_num = f_old->heap_num;
+	q->st.hp_num = f_old->hp_num;
 	trim_heap(q);
 }
 
@@ -1010,7 +1010,7 @@ static bool resume_frame(query *q)
 		) {
 		q->total_recovs++;
 		q->st.hp = f->hp;
-		q->st.heap_num = f->heap_num;
+		q->st.hp_num = f->hp_num;
 		trim_heap(q);
 		trim_frame(q, f);
 	}

@@ -380,13 +380,13 @@ cell *alloc_heap(query *q, unsigned num_cells)
 		//if (mbs > 10) printf("*** mem = %llu MB\n", (unsigned long long)mbs);
 		//assert(mbs < 100);
 
-		a->num = ++q->st.heap_num;
+		a->num = ++q->st.hp_num;
 		q->heap_pages = a;
 		q->st.hp = 0;
 	}
 
-	if (q->st.heap_num > q->hw_heap_num)
-		q->hw_heap_num = q->st.heap_num;
+	if (q->st.hp_num > q->hw_heap_num)
+		q->hw_heap_num = q->st.hp_num;
 
 	cell *c = q->heap_pages->cells + q->st.hp;
 	q->st.hp += num_cells;
@@ -397,7 +397,7 @@ cell *alloc_heap(query *q, unsigned num_cells)
 void trim_heap(query *q)
 {
 	for (page *a = q->heap_pages; a;) {
-		if (a->num <= q->st.heap_num)
+		if (a->num <= q->st.hp_num)
 			break;
 
 		cell *c = a->cells;

@@ -3405,7 +3405,7 @@ bool bif_statistics_0(query *q)
 		q->hw_heap_num,
 		q->realloc_frames, q->realloc_choices, q->realloc_trails, q->realloc_slots,
 		q->st.fp, q->st.cp, q->st.tp, q->st.sp,
-		q->st.heap_num,
+		q->st.hp_num,
 		q->total_backtracks, q->total_retries, q->total_tcos, q->total_recovs, q->total_no_recovs
 		);
 	return true;

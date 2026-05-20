@@ -515,7 +515,7 @@ struct frame_ {
 	cell *instr;
 	module *m;
 	uint64_t dbgen, chgen;
-	uint32_t heap_num, initial_slots, actual_slots, max_vars;
+	uint32_t hp_num, initial_slots, actual_slots, max_vars;
 	pl_idx base, op, hp;
 	pl_ctx prev;
 	bool no_recov:1;
@@ -542,7 +542,7 @@ struct run_state_ {
 	};
 
 	uint64_t cpu_time;
-	pl_idx fp, hp, cp, tp, sp, heap_num, qnum;
+	pl_idx fp, hp, cp, tp, sp, hp_num, qnum;
 	pl_ctx cur_ctx;
 };
 
