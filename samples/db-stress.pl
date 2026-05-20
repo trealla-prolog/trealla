@@ -5,13 +5,14 @@ run :-
 	run4, fail;
 	run5, fail;
 	run6, fail;
+	listing(f/1),
 	true.
 
 writeln(P) :- write(P), nl.
 
 run1 :-
 	writeln('1. retractall...'),
-	between(1,5,I),
+	between(1,50,I),
 		write(I), nl,
 		test1,
 		fail.
@@ -26,7 +27,7 @@ test1 :-
 
 run2 :-
 	writeln('2. abolish...'),
-	between(1,5,I),
+	between(1,50,I),
 		write(I), nl,
 		test2,
 		fail.
@@ -41,7 +42,7 @@ test2 :-
 
 run3 :-
 	writeln('3. retract...'),
-	between(1,5,I),
+	between(1,50,I),
 		write(I), nl,
 		test3,
 		fail.
@@ -52,13 +53,13 @@ test3 :-
 		assertz(f(g(I))),
 		fail.
 test3 :-
-	retract(f(g(_))),
+	retract(f(_)),
 	fail.
 test3.
 
 run4 :-
 	writeln('4. retract...'),
-	between(1,5,I),
+	between(1,50,I),
 		write(I), nl,
 		test4,
 		fail.
@@ -82,7 +83,7 @@ do_retract(I) :-
 
 run5 :-
 	writeln('5. clause...'),
-	between(1,5,I),
+	between(1,50,I),
 		write(I), nl,
 		test5,
 		retractall(f(_)),
@@ -94,13 +95,13 @@ test5 :-
 		assertz(f(g(I))),
 		fail.
 test5 :-
-	clause(f(g(_)),_),
+	clause(f(_),_),
 	fail.
 test5.
 
 run6 :-
 	writeln('6. match...'),
-	between(1,5,I),
+	between(1,50,I),
 		write(I), nl,
 		test6,
 		retractall(f(_)),
@@ -112,7 +113,7 @@ test6 :-
 		assertz(f(g(I))),
 		fail.
 test6 :-
-	f(g(_)),
+	f(_),
 	fail.
 test6.
 
