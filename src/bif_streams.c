@@ -657,65 +657,49 @@ static bool do_stream_property(query *q)
 	if (!CMP_STRING_TO_CSTR(q, p1, "mode")) {
 		cell tmp;
 		make_atom(&tmp, new_atom(q->pl, str->mode));
-		bool ok = unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
-		unshare_cell(&tmp);
-		return ok;
+		return unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
 	}
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "engine")) {
 		cell tmp;
 		make_atom(&tmp, new_atom(q->pl, str->is_engine?"true":"false"));
-		bool ok = unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
-		unshare_cell(&tmp);
-		return ok;
+		return unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
 	}
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "skiplist")) {
 		cell tmp;
 		make_atom(&tmp, new_atom(q->pl, str->is_map?"true":"false"));
-		bool ok = unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
-		unshare_cell(&tmp);
-		return ok;
+		return unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
 	}
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "bom") && !str->binary) {
 		cell tmp;
 		make_atom(&tmp, new_atom(q->pl, str->bom?"true":"false"));
-		bool ok = unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
-		unshare_cell(&tmp);
-		return ok;
+		return unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
 	}
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "type")) {
 		cell tmp;
-		make_atom(&tmp, new_atom(q->pl, str->binary?"true":"false"));
-		bool ok = unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
-		unshare_cell(&tmp);
-		return ok;
+		make_atom(&tmp, new_atom(q->pl, str->binary?"binary":"text"));
+		return unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
 	}
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "reposition")) {
 		cell tmp;
 		make_atom(&tmp, new_atom(q->pl, str->is_socket || (n <= 2) ? "false" : str->repo ? "true" : "false"));
-		bool ok = unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
-		unshare_cell(&tmp);
-		return ok;
+		return unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
 	}
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "encoding") && !str->binary) {
 		cell tmp;
 		make_atom(&tmp, new_atom(q->pl, "UTF-8"));
-		bool ok = unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
-		unshare_cell(&tmp);
-		return ok;
+		return unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
 	}
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "newline")) {
 		cell tmp;
 		make_atom(&tmp, new_atom(q->pl, "posix"));
-		bool ok = unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
-		unshare_cell(&tmp);
-		return ok;
+		return unify(q, c, c_ctx, &tmp, q->st.cur_ctx);
 	}
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "input"))
