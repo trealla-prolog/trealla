@@ -656,28 +656,28 @@ void try_me(query *q, unsigned num_vars)
 
 static void push_frame(query *q)
 {
-	const frame *fold = GET_CURR_FRAME();
-	frame *fnew = GET_NEW_FRAME();
+	const frame *f_cur = GET_CURR_FRAME();
+	frame *f_new = GET_NEW_FRAME();
 	const cell *next_cell = q->st.instr + q->st.instr->num_cells;
 
 	// Avoid long chains of useless returns...
 
 	if (q->pl->opt && is_end(next_cell) && !next_cell->ret_instr
-		&& (fold->prev != CTX_NUL)
+		&& (f_cur->prev != CTX_NUL)
 		) {
-		fnew->prev = fold->prev;
-		fnew->instr = fold->instr;
+		f_new->prev = f_cur->prev;
+		f_new->instr = f_cur->instr;
 	} else {
-		fnew->prev = q->st.cur_ctx;
-		fnew->instr = q->st.instr;
+		f_new->prev = q->st.cur_ctx;
+		f_new->instr = q->st.instr;
 	}
 
-	fnew->op = 0;
-	fnew->no_recov = q->no_recov;
-	fnew->chgen = ++q->chgen;
-	fnew->hp = q->st.hp;
-	fnew->hp_num = q->st.hp_num;
-	q->st.sp += fnew->actual_slots;
+	f_new->op = 0;
+	f_new->no_recov = q->no_recov;
+	f_new->chgen = ++q->chgen;
+	f_new->hp = q->st.hp;
+	f_new->hp_num = q->st.hp_num;
+	q->st.sp += f_new->actual_slots;
 	q->st.cur_ctx = q->st.fp;
 	q->st.fp++;
 }
@@ -694,23 +694,25 @@ static void reuse_frame(query *q, unsigned num_vars)
 	if (c_next->val_off == g_sys_drop_barrier_s)
 		drop_choice(q);
 
-	frame *f_old = GET_CURR_FRAME();
-	f_old->initial_slots = f_old->actual_slots = num_vars;
-	f_old->no_recov = false;
+	// Copy slots from the new frame to the current frame...
+
 	const frame *f_new = GET_NEW_FRAME();
+	frame *f_cur = GET_CURR_FRAME();
+	f_cur->initial_slots = f_cur->actual_slots = num_vars;
+	f_cur->no_recov = false;
 
 	for (pl_idx i = 0; i < num_vars; i++) {
 		const slot *from = get_slot(q, f_new, i);
-		slot *to = get_slot(q, f_old, i);
+		slot *to = get_slot(q, f_cur, i);
 		unshare_cell(&to->c);
 		*to = *from;
 	}
 
-	q->st.sp = f_old->base + f_old->actual_slots;
+	q->st.sp = f_cur->base + f_cur->actual_slots;
 	q->st.dbe->tcos++;
 	q->total_tcos++;
-	q->st.hp = f_old->hp;
-	q->st.hp_num = f_old->hp_num;
+	q->st.hp = f_cur->hp;
+	q->st.hp_num = f_cur->hp_num;
 	trim_heap(q);
 }
 
