@@ -278,7 +278,7 @@ void make(module *m)
 	m->make = false;
 }
 
- predicate *find_predicate(module *m, cell *c)
+predicate *find_predicate(module *m, cell *c)
 {
 	cell tmp = *c;
 	tmp.tag = TAG_INTERNED;
