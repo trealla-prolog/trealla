@@ -17,6 +17,14 @@
 #define THREAD_DEBUG if (0)
 #endif
 
+static void msleep(int ms)
+{
+	struct timespec tv = {0};
+	tv.tv_sec = (ms) / 1000;
+	tv.tv_nsec = ((ms) % 1000) * 1000 * 1000;
+	nanosleep(&tv, &tv);
+}
+
 void init_lock(lock *l)
 {
 	pthread_mutexattr_t attr;
@@ -37,7 +45,13 @@ bool try_lock(lock *l)
 
 void acquire_lock(lock *l)
 {
+#if 0
 	pthread_mutex_lock(&l->mutex);
+#else
+	// TODO: why?
+	while (!try_lock(l))
+		sched_yield();
+#endif
 }
 
 void release_lock(lock *l)
@@ -55,14 +69,6 @@ void release_lock(lock *l) {}
 #endif
 
 #if USE_THREADS
-static void msleep(int ms)
-{
-	struct timespec tv = {0};
-	tv.tv_sec = (ms) / 1000;
-	tv.tv_nsec = ((ms) % 1000) * 1000 * 1000;
-	nanosleep(&tv, &tv);
-}
-
 #define is_threaded(t) (!(t)->is_queue_only && !(t)->is_mutex_only)
 
 typedef struct msg_ {
