@@ -95,15 +95,6 @@ static void trace_call(query *q, cell *c, pl_ctx c_ctx, box_t box)
 		return;
 #endif
 
-#if 0
-	if (!is_builtin(c)) {
-		predicate *pr = find_predicate(q->st.m, c);
-
-		if (pr && !pr->is_public)
-			return;
-	}
-#endif
-
 	if (box == CALL)
 		box = q->retry?REDO:CALL;
 
