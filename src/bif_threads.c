@@ -718,7 +718,7 @@ static void *start_routine_thread_create(thread *t)
 	t->goal = NULL;
 	t->is_finished = true;
 
-	if (t->q->did_unhandled_exception && !t->q->abort) {
+	if (t->q->did_unhandled_exception) {
 		cell *tmp = TPL_calloc(t->q->ball->num_cells+1, sizeof(cell));
 		dup_cells(tmp, t->q->ball, t->q->ball->num_cells);
 		t->ball = tmp;
@@ -726,7 +726,7 @@ static void *start_routine_thread_create(thread *t)
 
 	t->is_exception = t->q->did_unhandled_exception;
 
-	if (t->at_exit_goal && !t->q->abort) {
+	if (t->at_exit_goal) {
 		execute(t->q, t->at_exit_goal, t->at_exit_goal_num_vars);
 		unshare_cells(t->at_exit_goal, t->at_exit_goal->num_cells);
 		TPL_free(t->at_exit_goal);
