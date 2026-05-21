@@ -7,7 +7,7 @@ void list_init(list *l)
 	l->cnt = 0;
 }
 
-unsigned long long list_count(list *l) { return l->cnt; }
+int64_t list_count(list *l) { return l->cnt; }
 
 void *list_front(list *l) { return l->front; }
 void *list_back(list *l) { return l->back; }

@@ -31,7 +31,7 @@ void *list_remove(list *l, void *old);
 void *list_pop_front(list *l);
 void *list_pop_back(list *l);
 
-unsigned long long list_count(list *l);
+int64_t list_count(list *l);
 void *list_front(list *l);
 void *list_back(list *l);
 void *list_prev(void *n);
