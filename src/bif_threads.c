@@ -441,8 +441,6 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 			if (is_peek)
 				return false;
 
-			int cnt = 0;
-
 			do {
 				pl_int elapsed_ms = (wall_time_in_usec()/1000) - started_ms;
 
@@ -452,7 +450,7 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 
 				suspend_thread(t, tmo_ms > 0 ? tmo_ms : 100);
 			}
-			 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && !q->abort && (cnt++ < 1000));
+			 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && !q->abort);
 
 			continue;
 		}
@@ -2243,12 +2241,10 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_ctx p1_ct
 		if (is_peek)
 			return false;
 
-		int cnt = 0;
-
 		do {
 			suspend_thread(t, 10);
 		}
-		 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && !q->abort && (cnt++ < 100));
+		 while (!list_count(&t->queue) && !list_count(&t->signals) && !q->halt && !q->abort);
 	}
 
 	if (q->halt || q->abort)
