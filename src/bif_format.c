@@ -881,6 +881,9 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			len -= tmpbuf_free;
 			tmpsrc += tmpbuf_free;
 		}
+
+		if (fflush(str->fp))
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
 	} else if (is_compound(str)
 		&& ((CMP_STRING_TO_CSTR(q, str, "atom")
 		&& CMP_STRING_TO_CSTR(q, str, "chars")
@@ -925,6 +928,9 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			len -= tmpbuf_free;
 			tmpsrc += tmpbuf_free;
 		}
+
+		if (fflush(str->fp))
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
 	} else {
 		TPL_free(tmpbuf);
 		return throw_error(q, str, str_ctx, "domain_error", "stream_or_alias");
