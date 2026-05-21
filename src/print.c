@@ -1747,17 +1747,20 @@ bool print_canonical(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 	q->quoted = 0;
 	const char *src = SB_cstr(q->sb);
 	ssize_t len = SB_strlen(q->sb);
+	flockfile(fp);
 
 	while (len) {
 		size_t nbytes = fwrite(src, 1, len, fp);
 
 		if (feof(fp)) {
+			funlockfile(fp);
 			q->error = true;
 			SB_free(q->sb);
 			return false;
 		}
 
 		if (ferror(fp)) {
+			funlockfile(fp);
 			SB_free(q->sb);
 			return throw_error(q, q->st.instr,q->st.cur_ctx, "existence_error", "stream");
 		}
@@ -1766,6 +1769,7 @@ bool print_canonical(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 		src += nbytes;
 	}
 
+	funlockfile(fp);
 	SB_free(q->sb);
 	return true;
 }
@@ -1777,6 +1781,8 @@ char *print_term_to_strbuf(query *q, cell *c, pl_ctx c_ctx, int running)
 	//q->last_thing_was_space = true;
 	SB_init(q->sb);
 	print_term_to_buf(q, c, c_ctx, running, false);
+	if (q->fullstop)  SB_putchar(q->sb, '.')
+	if (q->nl) SB_putchar(q->sb, '\n');
 	char *buf = TPL_malloc(SB_strlen(q->sb)+1+1); // dcg_expansion needs this extra char space
 	if (!buf) return NULL;
 	strcpy(buf, SB_cstr(q->sb));
@@ -1832,17 +1838,20 @@ bool print_term(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 	if (q->nl) SB_putchar(q->sb, '\n');
 	const char *src = SB_cstr(q->sb);
 	ssize_t len = SB_strlen(q->sb);
+	flockfile(fp);
 
 	while (len) {
 		size_t nbytes = fwrite(src, 1, len, fp);
 
 		if (feof(fp)) {
+			funlockfile(fp);
 			q->error = true;
 			SB_free(q->sb);
 			return false;
 		}
 
 		if (ferror(fp)) {
+			funlockfile(fp);
 			SB_free(q->sb);
 			return throw_error(q, q->st.instr,q->st.cur_ctx, "existence_error", "stream");
 		}
@@ -1851,6 +1860,7 @@ bool print_term(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 		src += nbytes;
 	}
 
+	funlockfile(fp);
 	SB_free(q->sb);
 	return true;
 }
