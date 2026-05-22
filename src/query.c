@@ -519,6 +519,7 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 
 	module_lock(pr->m);
 	rule *r;
+	const frame *f = GET_CURR_FRAME();
 
 	while ((r = list_pop_front(&pr->dirty)) != NULL) {
 		predicate_delink(pr, r);
@@ -534,7 +535,7 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 			}
 		}
 
-		if (q->in_retract && !r->cl.num_vars && q->pl->opt) {
+		if (q->in_retract && !r->cl.num_vars && !f->no_recov && q->pl->opt) {
 			clear_clause(&r->cl);
 			TPL_free(r);
 		} else {
