@@ -55,9 +55,7 @@ static bool bif_clause_3(query *q)
 			q->st.dbe = r;
 			cl = &r->cl;
 			cell *c = cl->cells;
-			cell *tmp = import_term_to_heap(q, c, q->st.cur_ctx);
-			CHECKED(tmp);
-			cell *head = get_head(tmp);
+			cell *head = get_head(c);
 
 			if (!unify(q, p1, p1_ctx, head, q->st.cur_ctx)) {
 				drop_choice(q);
@@ -77,9 +75,7 @@ static bool bif_clause_3(query *q)
 		}
 
 		cell *c = cl->cells;
-		cell *tmp = import_term_to_heap(q, c, q->st.cur_ctx);
-		CHECKED(tmp);
-		cell *body = get_body(tmp);
+		cell *body = get_body(c);
 		bool ok;
 
 		if (body)
