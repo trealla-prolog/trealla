@@ -175,6 +175,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 	size_t tmpbuf_free = tmpbuf_size;
 	bool redo = false, start_of_line = true;
 	int tab_at = 1, tabs = 0, diff = 0, last_at = 0, tab_char = ' ';
+	int remainder = 0, tabs_seen = 0;
 	save_fmt1 = fmt1;
 	save_fmt2 = fmt2;
 
@@ -284,8 +285,10 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 				tabs++;
 			} else if (redo) {
 				tab_char = argval ? argval : ' ';
+				tabs_seen++;
+				int n = diff + (tabs_seen > tabs - remainder ? 1 : 0);
 
-				for (int i = 0; i < diff; i++) {
+				for (int i = 0; i < n; i++) {
 					CHECK_BUF(MAX_BYTES_PER_CODEPOINT);
 					dst += put_char_utf8(dst, tab_char);
 				}
@@ -323,7 +326,10 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 					fmt1 = save_fmt1;
 					fmt2 = save_fmt2;
 					dst = tmpbuf + tab_at - 1;
-					diff = ((at - pos) + 1) / tabs;
+					int total = (at - pos) + 1;
+					diff = total / tabs;
+					remainder = total - (diff * tabs);
+					tabs_seen = 0;
 				}
 			} else {
 				tabs = 0;
@@ -350,7 +356,10 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 					fmt1 = save_fmt1;
 					fmt2 = save_fmt2;
 					dst = tmpbuf + tab_at - 1;
-					diff = ((at - pos) + 1) / tabs;
+					int total = (at - pos) + 1;
+					diff = total / tabs;
+					remainder = total - (diff * tabs);
+					tabs_seen = 0;
 				}
 			} else {
 				tabs = 0;
