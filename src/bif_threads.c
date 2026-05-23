@@ -45,13 +45,7 @@ bool try_lock(lock *l)
 
 void acquire_lock(lock *l)
 {
-#if 0
 	pthread_mutex_lock(&l->mutex);
-#else
-	// TODO: why?
-	while (!try_lock(l))
-		sched_yield();
-#endif
 }
 
 void release_lock(lock *l)
