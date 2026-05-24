@@ -384,11 +384,7 @@ static bool bif_sys_undo_trail_2(query *q)
 	GET_FIRST_ARG(p1,var);
 	GET_NEXT_ARG(p2,var);
 
-	if (q->undo_hi_tp == q->undo_lo_tp) {
-		unify(q, p1, p1_ctx, make_nil(), q->st.cur_ctx);
-		return true;
-	}
-
+	assert(q->undo_hi_tp > q->undo_lo_tp);
 	pl_idx slots = q->undo_hi_tp - q->undo_lo_tp;
 	bind_state *save = TPL_malloc(sizeof(bind_state)+(sizeof(slot)*slots));
 	CHECKED(save);
@@ -461,6 +457,7 @@ bool do_post_unify_hook(query *q, bool is_builtin)
 	q->run_hook = false;
 	q->undo_lo_tp = q->before_hook_tp;
 	q->undo_hi_tp = q->st.tp;
+	//printf("*** post_unify_hook lo=%u, hi=%u\n", q->undo_lo_tp, q->undo_hi_tp);
 	cell *tmp = alloc_heap(q, 3);
 	CHECKED(tmp);
 	make_instr(tmp+0, g_true_s, bif_iso_true_0, 0, 0);

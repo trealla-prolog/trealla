@@ -620,12 +620,16 @@ bool unify(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx)
 		ok = unify_internal(q, p1, p1_ctx, p2, p2_ctx, 0);
 
 	if (q->cycle_error) {
-		if (q->flags.occurs_check == OCCURS_CHECK_ERROR)
+		if (q->flags.occurs_check == OCCURS_CHECK_ERROR) {
+			q->run_hook = false;
 			return throw_error(q, p2, p2_ctx, "representation_error", "term");
+		}
 	}
 
-	if (!ok)
+	if (!ok) {
+		q->run_hook = false;
 		return false;
+	}
 
 	if (q->no_recov) {
 		frame *f = GET_CURR_FRAME();
