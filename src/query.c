@@ -181,9 +181,6 @@ void check_pressure(query *q)
 
 static bool check_choice(query *q)
 {
-	if (q->st.cp > q->hw_choices)
-		q->hw_choices = q->st.cp;
-
 	if (q->st.cp < q->choices_size)
 		return true;
 
@@ -202,9 +199,6 @@ static bool check_choice(query *q)
 bool check_frame(query *q, unsigned max_vars)
 {
 	CHECKED(check_slot(q, max_vars));
-
-	if (q->st.fp > q->hw_frames)
-		q->hw_frames = q->st.fp;
 
 	if (q->st.fp < q->frames_size) {
 		frame *f = GET_NEW_FRAME();
@@ -234,9 +228,6 @@ bool check_slot(query *q, unsigned cnt)
 
 	pl_idx num = q->st.sp + cnt;
 
-	if (q->st.sp > q->hw_slots)
-		q->hw_slots = q->st.sp;
-
 	if (num < q->slots_size)
 		return true;
 
@@ -254,9 +245,6 @@ bool check_slot(query *q, unsigned cnt)
 
 bool check_trail(query *q)
 {
-	if (q->st.tp > q->hw_trails)
-		q->hw_trails = q->st.tp;
-
 	if (q->st.tp < q->trails_size)
 		return true;
 

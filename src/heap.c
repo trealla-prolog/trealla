@@ -385,9 +385,6 @@ cell *alloc_heap(query *q, unsigned num_cells)
 		q->st.hp = 0;
 	}
 
-	if (q->st.hp_num > q->hw_heap_num)
-		q->hw_heap_num = q->st.hp_num;
-
 	cell *c = q->heap_pages->cells + q->st.hp;
 	q->st.hp += num_cells;
 	q->heap_pages->idx = q->st.hp;
