@@ -11,7 +11,7 @@ test(Database, Query) :-
 	sqlite3_close(Connection, _).
 
 run2 :-
-	test2('samples/sqlite3.db', 'INSERT INTO companys VALUES(7,\'Josepth\',47,\'Vanuatu\',15000.0)').
+	test2('samples/sqlite3.db', 'INSERT INTO company VALUES(7,\'Josepth\',47,\'Vanuatu\',15000.0)').
 
 test2(Database, Query) :-
 	sqlite_flag('SQLITE_OK', SQLITE_OK),
