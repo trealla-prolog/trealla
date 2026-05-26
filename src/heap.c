@@ -30,10 +30,6 @@ size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, 
 		return 0;
 	}
 
-	//unsigned mbs = (unsigned)(elem_size*elements)/1024/1024;
-	//if (mbs > 10) printf("*** mem = %u MB\n", mbs);
-	//assert(mbs < 100);
-
 	*addr = mem;
 	return elements;
 }
@@ -327,7 +323,6 @@ static cell *copy_term_to_tmp_with_replacement(query *q, cell *p1, pl_ctx p1_ctx
 	bool created = false;
 
 	if (!q->vars) {
-		//q->vars = sl_create(NULL, NULL, NULL);
 		created = true;
 		const frame *f = GET_CURR_FRAME();
 		q->varno = f->actual_slots;
@@ -375,11 +370,6 @@ cell *alloc_heap(query *q, unsigned num_cells)
 		unsigned n = MAX_OF(page_size, num_cells);
 		a->cells = TPL_calloc(a->page_size=n, sizeof(cell));
 		if (!a->cells) { TPL_free(a); return NULL; }
-
-		//size_t mbs = (size_t)(a->page_size * sizeof(cell))/1024/1024;
-		//if (mbs > 10) printf("*** mem = %llu MB\n", (unsigned long long)mbs);
-		//assert(mbs < 100);
-
 		a->num = ++q->st.hp_num;
 		q->heap_pages = a;
 		q->st.hp = 0;
@@ -632,10 +622,6 @@ cell *alloc_queuen(query *q, unsigned qnum, const cell *c)
 		size_t n = q->q_size[qnum] + q->q_size[qnum] / 2;
 		void *ptr = TPL_realloc(q->queue[qnum], sizeof(cell)*n);
 		if (!ptr) return NULL;
-
-		//unsigned mbs = (unsigned)(sizeof(cell)*n)/1024/1024;
-		//if (mbs > 10) printf("*** queue = %u MB\n", mbs);
-
 		q->queue[qnum] = ptr;
 		q->q_size[qnum] = n;
 	}
