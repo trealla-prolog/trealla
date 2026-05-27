@@ -612,8 +612,7 @@ void undo_me(query *q)
 		slot *e = get_slot(q, f, tr->var_num);
 		cell *c = &e->c;
 		unshare_cell(c);
-		c->tag = TAG_EMPTY;
-		c->flags = 0;
+		memset(e, 0, sizeof(slot));
 		c->val_attrs = tr->attrs;
 	}
 }
