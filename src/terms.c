@@ -21,13 +21,17 @@ static bool accum_var(query *q, const cell *c, pl_ctx c_ctx)
 	if (!q->tabs) {
 		q->tabs_size = MAX_ARITY;
 		q->tabs = TPL_malloc(sizeof(var_item)*q->tabs_size);
-		check_error(!q->tabs);
+
+		if (!q->tabs)
+			return false;
 	}
 
 	if (q->tab_idx == q->tabs_size) {
 		q->tabs_size *= 2;
 		q->tabs = TPL_realloc(q->tabs, sizeof(var_item)*q->tabs_size);
-		check_error(!q->tabs);
+
+		if (!q->tabs)
+			return false;
 	}
 
 	q->tabs[q->tab_idx].val_off = c->val_off;
@@ -128,8 +132,9 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 void collect_vars(query *q, cell *p1, pl_ctx p1_ctx)
 {
 	if (++q->vgen == 0) q->vgen = 1;
-	printf("*** collect_vars %p\n", q);
 	q->tab_idx = 0;
+	TPL_free(q->tabs);
+	q->tabs = NULL;
 	ENSURE(q->vars = sl_create(NULL, NULL, NULL));
 	collect_vars_internal(q, p1, p1_ctx, 0);
 	sl_destroy(q->vars);
