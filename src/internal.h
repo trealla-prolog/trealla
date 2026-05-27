@@ -658,6 +658,13 @@ struct prolog_flags_ {
 	bool var_prefix:1;
 };
 
+typedef struct {
+	pl_ctx ctx;
+	pl_idx val_off;
+	unsigned var_num, cnt;
+	bool is_anon;
+} var_item;
+
 struct query_ {
 	lnode hdr;							// must be first
 	query *prev, *next, *parent;
@@ -852,13 +859,6 @@ struct module_ {
 	bool make:1;
 	bool run_init:1;
 };
-
-typedef struct {
-	pl_ctx ctx;
-	pl_idx val_off;
-	unsigned var_num, cnt;
-	bool is_anon;
-} var_item;
 
 struct prolog_ {
 	stream streams[MAX_STREAMS];
