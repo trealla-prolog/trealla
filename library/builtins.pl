@@ -110,14 +110,29 @@ process_vars_([Var-Val|Vars], SoFar, Goals) :-
 	;	process_vars_(Vars, SoFar, Goals)
 	).
 
-process_var_([], _, _, Goals, Goals).
-process_var_([Att|Atts], Var, Val, SoFar, Goals) :-
+process_var_(Atts, Var, Val, SoFar, Goals) :-
+	% A variable may carry several attributes owned by the same module
+	% (e.g. clpb/clpb_hash). verify_attributes/3 is a per-module hook, so
+	% it must be called once per distinct module, not once per attribute.
+	atts_modules_(Atts, Ms0),
+	sort(Ms0, Ms),
+	process_modules_(Ms, Var, Val, SoFar, Goals).
+
+atts_modules_([], []).
+atts_modules_([Att|Atts], Ms) :-
 	functor(Att, F, A),
-	attribute(M, F, A),
+	(	attribute(M, F, A) ->
+		Ms = [M|Ms0]
+	;	Ms = Ms0
+	),
+	atts_modules_(Atts, Ms0).
+
+process_modules_([], _, _, Goals, Goals).
+process_modules_([M|Ms], Var, Val, SoFar, Goals) :-
 	M:verify_attributes(Var, Val, NewGoals0),
 	modularize(NewGoals0, M, [], NewGoals),
 	append(SoFar, NewGoals, MoreGoals),
-	process_var_(Atts, Var, Val, MoreGoals, Goals).
+	process_modules_(Ms, Var, Val, MoreGoals, Goals).
 
 modularize([], _, Goals, Goals).
 modularize([H|T], M, SoFar, Goals) :-
