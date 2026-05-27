@@ -664,7 +664,6 @@ void pl_destroy(prolog *pl)
 	sl_destroy(pl->keyval);
 	sl_destroy(pl->help);
 	sl_destroy(pl->alias);
-	TPL_free(pl->tabs);
 
 	for (int i = 0; i < MAX_STREAMS; i++) {
 		stream *str = &pl->streams[i];

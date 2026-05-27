@@ -12,29 +12,29 @@ static bool accum_var(query *q, const cell *c, pl_ctx c_ctx)
 
 	if (sl_get(q->vars, e, &v)) {
 		size_t idx = (size_t)v;
-		q->pl->tabs[idx].cnt++;
+		q->tabs[idx].cnt++;
 		return true;
 	}
 
 	sl_app(q->vars, e, (void*)(size_t)q->tab_idx);
 
-	if (!q->pl->tabs) {
-		q->pl->tabs_size = MAX_ARITY;
-		q->pl->tabs = TPL_malloc(sizeof(var_item)*q->pl->tabs_size);
-		check_error(!q->pl->tabs);
+	if (!q->tabs) {
+		q->tabs_size = MAX_ARITY;
+		q->tabs = TPL_malloc(sizeof(var_item)*q->tabs_size);
+		check_error(!q->tabs);
 	}
 
-	if (q->tab_idx == q->pl->tabs_size) {
-		q->pl->tabs_size *= 2;
-		q->pl->tabs = TPL_realloc(q->pl->tabs, sizeof(var_item)*q->pl->tabs_size);
-		check_error(!q->pl->tabs);
+	if (q->tab_idx == q->tabs_size) {
+		q->tabs_size *= 2;
+		q->tabs = TPL_realloc(q->tabs, sizeof(var_item)*q->tabs_size);
+		check_error(!q->tabs);
 	}
 
-	q->pl->tabs[q->tab_idx].val_off = c->val_off;
-	q->pl->tabs[q->tab_idx].var_num = c->var_num;
-	q->pl->tabs[q->tab_idx].ctx = c_ctx;
-	q->pl->tabs[q->tab_idx].is_anon = is_anon(c) ? true : false;
-	q->pl->tabs[q->tab_idx].cnt = 1;
+	q->tabs[q->tab_idx].val_off = c->val_off;
+	q->tabs[q->tab_idx].var_num = c->var_num;
+	q->tabs[q->tab_idx].ctx = c_ctx;
+	q->tabs[q->tab_idx].is_anon = is_anon(c) ? true : false;
+	q->tabs[q->tab_idx].cnt = 1;
 	q->tab_idx++;
 	return false;
 }
@@ -128,6 +128,7 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 void collect_vars(query *q, cell *p1, pl_ctx p1_ctx)
 {
 	if (++q->vgen == 0) q->vgen = 1;
+	printf("*** collect_vars %p\n", q);
 	q->tab_idx = 0;
 	ENSURE(q->vars = sl_create(NULL, NULL, NULL));
 	collect_vars_internal(q, p1, p1_ctx, 0);

@@ -288,18 +288,18 @@ static bool bif_sys_list_attributed_2(query *q)
 		collect_vars(q, c->val_attrs, c_ctx);
 
 		for (unsigned k = 0; k < q->tab_idx; k++) {
-			const frame *f = GET_FRAME(q->pl->tabs[k].ctx);
-			slot *e = get_slot(q, f, q->pl->tabs[k].var_num);
+			const frame *f = GET_FRAME(q->tabs[k].ctx);
+			slot *e = get_slot(q, f, q->tabs[k].var_num);
 			cell *c = deref(q, &e->c, e->c.val_ctx);
 
 			if (!c->val_attrs)
 				continue;
 
-			//if (!q->pl->tabs[k].ctx)
+			//if (!q->tabs[k].ctx)
 			//	continue;
 
 			cell tmp;
-			make_ref(&tmp, q->pl->tabs[k].var_num, q->pl->tabs[k].ctx);
+			make_ref(&tmp, q->tabs[k].var_num, q->tabs[k].ctx);
 			append_list(q, &tmp);
 		}
 	}

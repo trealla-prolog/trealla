@@ -1935,9 +1935,9 @@ static cell *do_term_variables(query *q, cell *p1, pl_ctx p1_ctx)
 			tmp[idx].arity = 2;
 			tmp[idx].num_cells = ((cnt-done)*2)+1;
 			idx++;
-			make_ref(tmp+idx, q->pl->tabs[i].var_num, q->pl->tabs[i].ctx);
+			make_ref(tmp+idx, q->tabs[i].var_num, q->tabs[i].ctx);
 
-			if (q->pl->tabs[i].is_anon)
+			if (q->tabs[i].is_anon)
 				tmp[idx].flags |= FLAG_VAR_ANON;
 
 			idx++;
@@ -1985,7 +1985,7 @@ static cell *do_term_singletons(query *q, cell *p1, pl_ctx p1_ctx)
 	unsigned cnt2 = 0;
 
 	for (unsigned i = 0; i < cnt; i++) {
-		if (q->pl->tabs[i].cnt != 1)
+		if (q->tabs[i].cnt != 1)
 			continue;
 
 		cnt2++;
@@ -1999,14 +1999,14 @@ static cell *do_term_singletons(query *q, cell *p1, pl_ctx p1_ctx)
 		unsigned idx = 0;
 
 		for (unsigned i = 0, done = 0; i < cnt; i++) {
-			if (q->pl->tabs[i].cnt != 1)
+			if (q->tabs[i].cnt != 1)
 				continue;
 
 			make_atom(tmp+idx, g_dot_s);
 			tmp[idx].arity = 2;
 			tmp[idx].num_cells = ((cnt2-done)*2)+1;
 			idx++;
-			make_ref(tmp+idx, q->pl->tabs[i].var_num, q->pl->tabs[i].ctx);
+			make_ref(tmp+idx, q->tabs[i].var_num, q->tabs[i].ctx);
 			idx++;
 			done++;
 		}

@@ -682,6 +682,8 @@ struct query_ {
 	query *tasks;
 	skiplist *vars;
 	thread *thread_ptr;
+	var_item *tabs;
+	size_t tabs_size;
 	list dirty;
 	cell accum;
 	mpz_t tmp_ival;
@@ -867,12 +869,10 @@ struct prolog_ {
 	struct { pl_idx tab1[MAX_IGNORES], tab2[MAX_IGNORES]; };
 	list modules;
 	module *system_m, *user_m, *m, *dcgs;
-	var_item *tabs;
 	parser *p;
 	skiplist *biftab, *keyval, *help, *fortab, *alias;
 	FILE *logfp;
 	lock guard;
-	size_t tabs_size;
 	uint64_t s_last, s_cnt, seed, thr_cnt;
 	pl_refcnt q_cnt, dbgen;
 	unsigned next_mod_id, def_max_depth, my_chan;

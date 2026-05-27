@@ -1815,7 +1815,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 				tmp[idx].arity = 2;
 				tmp[idx++].num_cells = ((cnt-done)*2)+1;
 				cell v;
-				make_ref(&v, q->pl->tabs[i].var_num, q->st.cur_ctx);
+				make_ref(&v, q->tabs[i].var_num, q->st.cur_ctx);
 				tmp[idx++] = v;
 				done++;
 			}
@@ -1843,7 +1843,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 		unsigned idx = 0;
 
 		for (unsigned i = 0; i < q->tab_idx; i++) {
-			if (q->pl->tabs[i].is_anon)
+			if (q->tabs[i].is_anon)
 				continue;
 
 			cnt++;
@@ -1855,7 +1855,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 			unsigned done = 0;
 
 			for (unsigned i = 0; i < q->tab_idx; i++) {
-				if (q->pl->tabs[i].is_anon)
+				if (q->tabs[i].is_anon)
 					continue;
 
 				make_atom(tmp+idx, g_dot_s);
@@ -1865,9 +1865,9 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 				make_instr(&v, g_unify_s, bif_iso_unify_2, 2, 2);
 				SET_OP(&v,OP_XFX);
 				tmp[idx++] = v;
-				make_atom(&v, q->pl->tabs[i].val_off);
+				make_atom(&v, q->tabs[i].val_off);
 				tmp[idx++] = v;
-				make_ref(&v, q->pl->tabs[i].var_num, q->st.cur_ctx);
+				make_ref(&v, q->tabs[i].var_num, q->st.cur_ctx);
 				tmp[idx++] = v;
 				done++;
 			}
@@ -1895,10 +1895,10 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 		unsigned idx = 0;
 
 		for (unsigned i = 0; i < q->tab_idx; i++) {
-			if (q->pl->tabs[i].cnt != 1)
+			if (q->tabs[i].cnt != 1)
 				continue;
 
-			if (varnames && (q->pl->tabs[i].is_anon))
+			if (varnames && (q->tabs[i].is_anon))
 				continue;
 
 			cnt++;
@@ -1910,10 +1910,10 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 			unsigned done = 0;
 
 			for (unsigned i = 0; i < q->tab_idx; i++) {
-				if (q->pl->tabs[i].cnt != 1)
+				if (q->tabs[i].cnt != 1)
 					continue;
 
-				if (varnames && (q->pl->tabs[i].is_anon))
+				if (varnames && (q->tabs[i].is_anon))
 					continue;
 
 				make_atom(tmp+idx, g_dot_s);
@@ -1923,9 +1923,9 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 				make_instr(&v, g_unify_s, bif_iso_unify_2, 2, 2);
 				SET_OP(&v,OP_XFX);
 				tmp[idx++] = v;
-				make_atom(&v, q->pl->tabs[i].val_off);
+				make_atom(&v, q->tabs[i].val_off);
 				tmp[idx++] = v;
-				make_ref(&v, q->pl->tabs[i].var_num, q->st.cur_ctx);
+				make_ref(&v, q->tabs[i].var_num, q->st.cur_ctx);
 				tmp[idx++] = v;
 				done++;
 			}
