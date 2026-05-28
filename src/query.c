@@ -778,7 +778,12 @@ int retry_choice(query *q)
 	while (q->st.cp) {
 		undo_me(q);
 		const choice *ch = GET_CURR_CHOICE();
-		drop_choice(q);
+		q->st.cp--;
+		undo_item *u;
+
+		while ((u = list_pop_back(&q->undo)) != NULL)
+			sl_del(q->pl->keyval, u->key);
+
 		q->st = ch->st;
 
 		frame *f = GET_CURR_FRAME();
@@ -818,6 +823,28 @@ int retry_choice(query *q)
 
 	trim_heap(q);
 	return 0;
+}
+
+void drop_choice(query *q)
+{
+	if (!q->st.cp)
+		return;
+
+	choice *ch = GET_CURR_CHOICE();
+	list *undo;
+
+	if (q->st.cp > 1) {
+		choice *ch_prev = GET_PREV_CHOICE();
+		undo = &ch_prev->undo;
+	} else
+		undo = &q->undo;
+
+	undo_item *u;
+
+	while ((u = list_pop_front(&ch->undo)) != NULL)
+		list_push_back(undo, u);
+
+	--q->st.cp;
 }
 
 bool push_choice(query *q)
@@ -941,21 +968,6 @@ void cut(query *q)
 			if (ch->gen < f->chgen)
 				break;
 		}
-
-		// Move any undo items to previous choice (or to query)...
-
-		list *undo;
-
-		if (q->st.cp > 1) {
-			choice *ch_prev = GET_PREV_CHOICE();
-			undo = &ch_prev->undo;
-		} else
-			undo = &q->undo;
-
-		undo_item *u;
-
-		while ((u = list_pop_front(&ch->undo)) != NULL)
-			list_push_back(undo, u);
 
 		// Done...
 
