@@ -546,8 +546,14 @@ struct run_state_ {
 	pl_ctx cur_ctx;
 };
 
+typedef struct {
+	lnode hdr;							// must be first
+	char *key;							// must be freed
+} undo_item;
+
 struct choice_ {
 	run_state st;
+	list undo;
 	uint64_t gen, chgen, dbgen;
 	pl_idx base, op, initial_slots, actual_slots, skip;
 	bool catchme_retry:1;
@@ -684,7 +690,7 @@ struct query_ {
 	thread *thread_ptr;
 	var_item *tabs;
 	size_t tabs_size;
-	list dirty;
+	list dirty, undo;
 	cell accum;
 	mpz_t tmp_ival;
 	mpq_t tmp_irat;

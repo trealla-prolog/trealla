@@ -46,7 +46,6 @@ static bool bif_bb_b_put_2(query *q)
 
 	if (DO_DUMP) DUMP_TERM2("bb_b_put", tmpbuf, p2, p2_ctx, 1);
 
-	char *key = strdup(tmpbuf);
 	CHECKED(init_tmp_heap(q));
 	cell *tmp = copy_term_to_tmp(q, p2, p2_ctx, false);
 	CHECKED(tmp);
@@ -55,18 +54,19 @@ static bool bif_bb_b_put_2(query *q)
 	CHECKED(val);
 	dup_cells(val, tmp, tmp->num_cells);
 
-	int var_num = create_vars(q, 1);
-	CHECKED(var_num != -1);
+	undo_item *u = TPL_malloc(sizeof(undo_item));
+	CHECKED(u);
+	char *key = strdup(tmpbuf);
+	u->key = key;
+	list *undo;
 
-	cell c, v;
-	make_ref(&c, var_num, q->st.cur_ctx);
-	blob *b = TPL_calloc(1, sizeof(blob));
-	b->ptr = (void*)m;
-	b->ptr2 = (void*)strdup(key);
-	make_kvref(&v, b);
+	if (q->st.cp) {
+		choice *ch = GET_CURR_CHOICE();
+		undo = &ch->undo;
+	} else
+		undo = &q->undo;
 
-	if (!unify(q, &c, q->st.cur_ctx, &v, q->st.cur_ctx))
-		return false;
+	list_push_back(undo, u);
 
 	prolog_lock(q->pl);
 	sl_set(q->pl->keyval, key, val);

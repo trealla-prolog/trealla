@@ -23,7 +23,6 @@ typedef struct {
 	list_refcnt cnt;
 } list;
 
-void list_init(list *l);
 void list_push_front(list *l, void *new);
 void list_push_back(list *l, void *new);
 void list_insert_after(list *l, void *old, void *new);
@@ -31,9 +30,12 @@ void *list_remove(list *l, void *old);
 void *list_pop_front(list *l);
 void *list_pop_back(list *l);
 
-int64_t list_count(list *l);
 void *list_front(list *l);
 void *list_back(list *l);
 void *list_prev(void *n);
 void *list_next(void *n);
+
+inline static void list_init(list *l) { l->front = l->back = 0; l->cnt = 0; }
+
+inline static int64_t list_count(list *l) { return l->cnt; }
 

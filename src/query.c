@@ -832,6 +832,7 @@ bool push_choice(query *q)
 	// Keep a record of the frame state, we need to restore
 	// it on retry. On cut we commit to it.
 
+	list_init(&ch->undo);
 	ch->dbgen = f->dbgen;
 	ch->chgen = ch->gen = f->chgen;
 	ch->initial_slots = f->initial_slots;
