@@ -777,8 +777,8 @@ int retry_choice(query *q)
 {
 	while (q->st.cp) {
 		undo_me(q);
-		pl_idx cur_choice = --q->st.cp;
-		const choice *ch = GET_CHOICE(cur_choice);
+		const choice *ch = GET_CURR_CHOICE();
+		drop_choice(q);
 		q->st = ch->st;
 
 		frame *f = GET_CURR_FRAME();
