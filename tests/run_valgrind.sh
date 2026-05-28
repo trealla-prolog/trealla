@@ -12,7 +12,8 @@ trap "rm -f $TMP" EXIT
 failed_count=0
 succeeded_count=0
 
-for source in tests/tests/* tests/issues*/*
+for source in tests/tests/* tests/issues*/* tests/slow/*
+
 do
 	case "$source" in
 		*.pl)

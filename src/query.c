@@ -981,6 +981,7 @@ static bool resume_frame(query *q)
 	Trace(q, get_head(f->instr), f->prev, EXIT);
 
 	if (q->pl->opt
+		&& q->st.m->opt
 		&& !f->no_recov
 		&& (q->st.fp == (q->st.cur_ctx + 1))
 		&& !resume_any_choices(q, f)
