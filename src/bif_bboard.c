@@ -179,11 +179,11 @@ static bool bif_bb_get_2(query *q)
 		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d:b", m->name, (int)get_smallint(p1));
 
 	const char *key = tmpbuf;
-	const void *val;
+	cell *val;
 
 	prolog_lock(q->pl);
 
-	if (!sl_get(q->pl->keyval, key, &val)) {
+	if (!sl_get(q->pl->keyval, key, (void*)&val)) {
 		if (is_atom(p1))
 			snprintf(tmpbuf, sizeof(tmpbuf), "%s:%s", m->name, C_STR(q, p1));
 		else
@@ -191,14 +191,16 @@ static bool bif_bb_get_2(query *q)
 
 		key = tmpbuf;
 
-		if (!sl_get(q->pl->keyval, key, &val)) {
+		if (!sl_get(q->pl->keyval, key, (void*)&val)) {
 			prolog_unlock(q->pl);
 			return false;
 		}
 	}
 
 	prolog_unlock(q->pl);
-	cell *tmp = import_term_to_heap(q, (cell*)val, q->st.cur_ctx);
+	cell *tmp = val->flags & FLAG_LIVE ?
+		bb_import_term_to_heap(q, val, q->st.cur_ctx) :
+		import_term_to_heap(q, val, q->st.cur_ctx);
 	CHECKED(tmp);
 	GET_FIRST_ARG(p1x,nonvar);
 	GET_NEXT_ARG(p2,any);
