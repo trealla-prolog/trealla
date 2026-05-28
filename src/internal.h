@@ -548,7 +548,7 @@ struct run_state_ {
 
 typedef struct {
 	lnode hdr;							// must be first
-	char *key;							// must be freed
+	char *key;
 } undo_item;
 
 struct choice_ {

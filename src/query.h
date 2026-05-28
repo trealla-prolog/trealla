@@ -216,8 +216,16 @@ inline static cell *get_body(cell *c)
 
 inline static void drop_choice(query *q)
 {
-	if (q->st.cp)
-		--q->st.cp;
+	if (!q->st.cp)
+		return;
+
+	choice *ch = GET_CURR_CHOICE();
+	undo_item *u;
+
+	while ((u = list_pop_back(&ch->undo)) != NULL)
+		sl_del(q->pl->keyval, u->key);
+
+	--q->st.cp;
 }
 
 inline static pl_idx get_ordered_slot_num(const query *q, const frame *f, unsigned var_num)

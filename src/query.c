@@ -1829,6 +1829,11 @@ void query_destroy(query *q)
 		q->tasks = task;
 	}
 
+	undo_item *u;
+
+	while ((u = list_pop_back(&q->undo)) != NULL)
+		sl_del(q->pl->keyval, u->key);
+
 	mp_int_clear(&q->tmp_ival);
 	mp_rat_clear(&q->tmp_irat);
 	query_purge_dirty_list(q);
