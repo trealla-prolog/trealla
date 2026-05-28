@@ -19,11 +19,12 @@ and using a plain old Makefile.
 	Pre-emptive multi-threading
 	Blackboarding primitives
 	Sockets library
+	CLP(Z)
 	...
-	FFIs for GNU Scientific Library (GSL), SQLite, Raylib
+	FFIs for GNU Scientific Library (GSL), SQLite, Raylib ##EXPERIMENTAL##
 	Delimited continuations ##EXPERIMENTAL##
 	Rational trees ##EXPERIMENTAL##
-	CLP(Z)
+	CLP(B) ##EXPERIMENTAL##
 
 
 Available from: [https://github.com/trealla-prolog/trealla](https://github.com/trealla-prolog/trealla).
