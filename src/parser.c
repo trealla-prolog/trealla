@@ -970,9 +970,6 @@ static bool directives(parser *p, cell *d)
 				p->m->used[p->m->idx_used++] = tmp_m;
 
 			p->m = tmp_m;
-
-			if (!strcmp(name, "clpb"))
-				p->m->opt = 0;
 		}
 
 		if (c->arity == 1)
