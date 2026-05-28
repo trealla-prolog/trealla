@@ -273,6 +273,7 @@ enum {
 	FLAG_INTERNED_EVALUABLE=1<<3,
 	FLAG_INTERNED_GROUND=1<<4,
 
+	FLAG_LIVE=1<<11,					// used by bb_b_put/2
 	FLAG_MANAGED=1<<12,					// any ref-counted object
 	FLAG_END=1<<13						// DO NOT USE
 };

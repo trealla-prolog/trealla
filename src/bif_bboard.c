@@ -47,12 +47,13 @@ static bool bif_bb_b_put_2(query *q)
 	if (DO_DUMP) DUMP_TERM2("bb_b_put", tmpbuf, p2, p2_ctx, 1);
 
 	CHECKED(init_tmp_heap(q));
-	cell *tmp = copy_term_to_tmp(q, p2, p2_ctx, false);
+	cell *tmp = clone_term_to_tmp(q, p2, p2_ctx);
 	CHECKED(tmp);
 	pl_idx num_cells = tmp->num_cells;
 	cell *val = TPL_malloc(sizeof(cell)*num_cells);
 	CHECKED(val);
 	dup_cells(val, tmp, tmp->num_cells);
+	val->flags |= FLAG_LIVE;
 
 	undo_item *u = TPL_malloc(sizeof(undo_item));
 	CHECKED(u);
@@ -136,6 +137,15 @@ static bool bif_bb_put_2(query *q)
 	prolog_unlock(q->pl);
 
 	return true;
+}
+
+static cell *bb_import_term_to_heap(query *q, cell *c, pl_ctx c_ctx)
+{
+	const frame *f = GET_CURR_FRAME();
+	cell *tmp = alloc_heap(q, c->num_cells);
+	if (!tmp) return NULL;
+	dup_cells_by_ref(tmp, c, c_ctx, c->num_cells);
+	return tmp;
 }
 
 static bool bif_bb_get_2(query *q)
