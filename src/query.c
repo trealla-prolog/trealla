@@ -777,11 +777,11 @@ int retry_choice(query *q)
 {
 	while (q->st.cp) {
 		undo_me(q);
-		const choice *ch = GET_CURR_CHOICE();
+		choice *ch = GET_CURR_CHOICE();
 		q->st.cp--;
 		undo_item *u;
 
-		while ((u = list_pop_back(&q->undo)) != NULL)
+		while ((u = list_pop_back(&ch->undo)) != NULL)
 			sl_del(q->pl->keyval, u->key);
 
 		q->st = ch->st;
