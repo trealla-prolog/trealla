@@ -2590,7 +2590,6 @@ module *module_create(prolog *pl, const char *name)
 	m->flags.character_escapes = true;
 	m->flags.occurs_check = false;
 	m->error = false;
-	m->opt = true;
 	m->id = ++pl->next_mod_id;
 	m->defops = sl_create((void*)fake_strcmp, NULL, NULL);
 	pl->modmap[m->id] = m;

@@ -867,7 +867,6 @@ struct module_ {
 	bool wild_goal_expansion:1;
 	bool make:1;
 	bool run_init:1;
-	bool opt:1;
 };
 
 struct prolog_ {
