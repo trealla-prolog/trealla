@@ -954,10 +954,8 @@ void cut(query *q)
 
 		undo_item *u;
 
-		while ((u = list_pop_front(&ch->undo)) != NULL) {
-			printf("*** cut one\n");
+		while ((u = list_pop_front(&ch->undo)) != NULL)
 			list_push_back(undo, u);
-		}
 
 		// Done...
 
@@ -1850,10 +1848,8 @@ void query_destroy(query *q)
 
 	undo_item *u;
 
-	while ((u = list_pop_back(&q->undo)) != NULL) {
-		printf("*** ~query one\n");
+	while ((u = list_pop_back(&q->undo)) != NULL)
 		sl_del(q->pl->keyval, u->key);
-	}
 
 	mp_int_clear(&q->tmp_ival);
 	mp_rat_clear(&q->tmp_irat);
