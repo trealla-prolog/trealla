@@ -760,3 +760,7 @@ option(Opt, _, Default) :-
 
 option(Opt, Options) :-
     memberchk(Opt, Options).
+
+findnsols(P1,P2,P3,P4) :-
+	copy_term(f(P2,P3),f(P2b,P3b)),
+	'$findnsols'(P1,P2b,P3b,P4).

@@ -6406,7 +6406,7 @@ builtins g_other_bifs[] =
 	{"source_info", 2, bif_source_info_2, "+predicate_indicator,-list", false, false, BLAH},
 	{"multifile", 1, bif_multifile_1, "+term", false, false, BLAH},
 	{"meta_predicate", 1, bif_meta_predicate_1, "+term", false, false, BLAH},
-	{"findnsols", 4, bif_findnsols_4, "+integer,+term,:callable,-list", false, false, BLAH},
+	{"$findnsols", 4, bif_findnsols_4, "+integer,+term,:callable,-list", false, false, BLAH},
 
 	{"help", 2, bif_help_2, "+predicate_indicator,+atom", false, false, BLAH},
 	{"help", 1, bif_help_1, "+predicate_indicator", false, false, BLAH},
