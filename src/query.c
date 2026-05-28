@@ -777,8 +777,8 @@ int retry_choice(query *q)
 {
 	while (q->st.cp) {
 		undo_me(q);
-		pl_idx cur_choice = --q->st.cp;
-		const choice *ch = GET_CHOICE(cur_choice);
+		const choice *ch = GET_CURR_CHOICE();
+		drop_choice(q);
 		q->st = ch->st;
 
 		frame *f = GET_CURR_FRAME();
@@ -930,7 +930,7 @@ void cut(query *q)
 	const frame *f = GET_CURR_FRAME();
 
 	while (q->st.cp) {
-		const choice *ch = GET_CURR_CHOICE();
+		choice *ch = GET_CURR_CHOICE();
 
 		// A normal cut can't break out of a barrier...
 
@@ -941,6 +941,25 @@ void cut(query *q)
 			if (ch->gen < f->chgen)
 				break;
 		}
+
+		// Move any undo items to previous choice (or to query)...
+
+		list *undo;
+
+		if (q->st.cp > 1) {
+			choice *ch_prev = GET_PREV_CHOICE();
+			undo = &ch_prev->undo;
+		} else
+			undo = &q->undo;
+
+		undo_item *u;
+
+		while ((u = list_pop_front(&ch->undo)) != NULL) {
+			printf("*** cut one\n");
+			list_push_back(undo, u);
+		}
+
+		// Done...
 
 		leave_predicate(q, ch->st.pr, false);
 		drop_choice(q);
@@ -1831,8 +1850,10 @@ void query_destroy(query *q)
 
 	undo_item *u;
 
-	while ((u = list_pop_back(&q->undo)) != NULL)
+	while ((u = list_pop_back(&q->undo)) != NULL) {
+		printf("*** ~query one\n");
 		sl_del(q->pl->keyval, u->key);
+	}
 
 	mp_int_clear(&q->tmp_ival);
 	mp_rat_clear(&q->tmp_irat);
