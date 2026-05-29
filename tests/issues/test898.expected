@@ -1,1 +1,1 @@
-error(type_error(callable,(true->false,1)),call/1)
+error(type_error(callable,1),call/1)
