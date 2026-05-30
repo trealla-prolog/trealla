@@ -136,7 +136,12 @@ process_modules_([M|Ms], Var, Val, SoFar, Goals) :-
 
 modularize([], _, Goals, Goals).
 modularize([H|T], M, SoFar, Goals) :-
-	modularize(T, M, [M:H|SoFar], Goals).
+	functor(H, F, _),
+	(F = ',' ->
+		modularize(T, M, [H|SoFar], Goals)
+	;
+		modularize(T, M, [M:H|SoFar], Goals)
+	).
 
 term_attvars_([], VsIn, VsIn).
 term_attvars_([H|T], VsIn, VsOut) :-
