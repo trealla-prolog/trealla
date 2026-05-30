@@ -718,12 +718,13 @@ sre_subst_all_(Reg, TextIn, Subst, L0, L) :-
 
 goal_expansion(maplist(G, L1), Goal) :-
 	nonvar(G), !,
+	term_variables(G, Args),
 	gensym:gensym(maplist_, U),
-	Goal =.. [U,L1],
-	G1 =.. [U,[]],
+	Goal =.. [U,L1,Args],
+	G1 =.. [U,[],Args],
 	user:'$assertz_static'(G1),
-	G2a =.. [U,[E1|T1]],
-	G2b =.. [U,T1],
+	G2a =.. [U,[E1|T1],Args],
+	G2b =.. [U,T1,Args],
 	user:'$assertz_static'((G2a :- call(G, E1), G2b)),
 	true.
 goal_expansion(maplist(G, L1), maplist(G, L1)).
