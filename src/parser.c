@@ -2087,8 +2087,6 @@ static bool term_expansion(parser *p)
 
 static cell *goal_expansion(parser *p, cell *goal)
 {
-	//printf("*** goal_expansion %s/%u, p->is_command=%d\n", C_STR(p, goal), goal->arity, p->is_command);
-
 	if (p->error || p->internal || !is_interned(goal) || !is_callable(goal))
 		return goal;
 
@@ -2114,6 +2112,8 @@ static cell *goal_expansion(parser *p, cell *goal)
 		//printf("??? goal_expansion %s/%u\n", C_STR(p, goal), goal->arity);
 		return goal;
 	}
+
+	//printf("*** [%s] goal_expansion %s/%u, p->is_command=%d\n", p->m->name, C_STR(p, goal), goal->arity, p->is_command);
 
 	query *q = query_create(p->m);
 	check_error(q);
@@ -2158,13 +2158,14 @@ static cell *goal_expansion(parser *p, cell *goal)
 	execute(q, p2->cl->cells, p2->cl->num_vars);
 	SB_free(s);
 	p->pl->in_goal_expansion = false;
-	//printf("-- goal_expansion %s/%u\n", C_STR(p, goal), goal->arity);
 
 	if (q->retry != QUERY_OK) {
 		parser_destroy(p2);
 		query_destroy(q);
 		return goal;
 	}
+
+	//printf("-- goal_expansion %s/%u\n", C_STR(p, goal), goal->arity);
 
 	for (unsigned i = 0; i < p->cl->num_vars; i++)
 		q->ignores[i] = true;
