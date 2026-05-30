@@ -1182,7 +1182,7 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 			;
 		else if (!is_interned(k0) || is_iso_list(k0))
 			;
-		else if (is_interned(k0) && ((k0->val_off == g_call_s) || (k0->val_off == g_once_s)))
+		else if (is_interned(k0) && ((k0->val_off == g_call_s) || (k0->val_off == g_once_s) || (k0->val_off == g_ignore_s)))
 			;
 		else if (is_interned(m) && (m->val_off == g_colon_s)) {
 			make_instr(tmp, g_colon_s, bif_iso_qualify_2, 2, 1+k->num_cells);
