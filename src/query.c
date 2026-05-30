@@ -1168,7 +1168,7 @@ bool has_next_key(query *q)
 static bool expand_meta_predicate(query *q, predicate *pr)
 {
 	int arity = q->st.key->arity;
-	cell *tmp = alloc_heap(q, q->st.key->num_cells*3);	// TPL_alloc max possible
+	cell *tmp = alloc_heap(q, q->st.key->num_cells*3);	// allocate max possible
 	CHECKED(tmp);
 	cell *save_tmp = tmp;
 	tmp += copy_cells(tmp, q->st.key, 1);
@@ -1181,6 +1181,8 @@ static bool expand_meta_predicate(query *q, predicate *pr)
 		if ((k0->arity == 2) && (k0->val_off == g_colon_s) && is_atom(FIRST_ARG(k0)))
 			;
 		else if (!is_interned(k0) || is_iso_list(k0))
+			;
+		else if (is_interned(k0) && ((k0->val_off == g_call_s) || (k0->val_off == g_once_s)))
 			;
 		else if (is_interned(m) && (m->val_off == g_colon_s)) {
 			make_instr(tmp, g_colon_s, bif_iso_qualify_2, 2, 1+k->num_cells);
