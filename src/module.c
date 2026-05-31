@@ -311,17 +311,6 @@ predicate *search_predicate(module *m, cell *c)
 	if (pr)
 		return pr;
 
-#if 0
-	for (unsigned i = 0; i < m->idx_used; i++) {
-		module *tmp_m = m->used[i];
-
-		pr = find_predicate(tmp_m, c);
-
-		if (pr)
-			return pr;
-	}
-#endif
-
 	if (m->pl->user_m) {
 		pr = find_predicate(m->pl->user_m, c);
 
@@ -2622,15 +2611,15 @@ module *module_create(prolog *pl, const char *name)
 		return m;
 	}
 
-	set_discontiguous_in_db(m, "term_expansion", 2);
-	set_discontiguous_in_db(m, "goal_expansion", 2);
+	//set_discontiguous_in_db(m, "term_expansion", 2);
+	//set_discontiguous_in_db(m, "goal_expansion", 2);
 
-	set_multifile_in_db(m, "term_expansion", 2);
-	set_multifile_in_db(m, "goal_expansion", 2);
+	//set_multifile_in_db(m, "term_expansion", 2);
+	//set_multifile_in_db(m, "goal_expansion", 2);
 	set_multifile_in_db(m, "$directive", 1);
 
-	set_dynamic_in_db(m, "term_expansion", 2);
-	set_dynamic_in_db(m, "goal_expansion", 2);
+	//set_dynamic_in_db(m, "term_expansion", 2);
+	//set_dynamic_in_db(m, "goal_expansion", 2);
 	set_dynamic_in_db(m, "$directive", 1);
 
 	init_lock(&m->guard);
