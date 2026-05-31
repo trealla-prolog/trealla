@@ -103,8 +103,7 @@ static bool do_put_atts(query *q, cell *attr, pl_ctx attr_ctx, bool is_minus)
 	CHECKED(l);
 
 	if (is_nil(l)) {
-		e->c.flags = 0;
-		e->c.val_attrs = NULL;
+		memset(e, 0, sizeof(slot));
 		return true;
 	}
 
@@ -415,7 +414,7 @@ static bool bif_sys_undo_trail_2(query *q)
 		tmp[1] = lhs;
 		tmp[2] = rhs;
 		append_list(q, tmp);
-		init_cell(&e->c);
+		memset(e, 0, sizeof(slot));
 		e->c.val_attrs = tr->attrs;
 	}
 

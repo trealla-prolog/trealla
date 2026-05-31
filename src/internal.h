@@ -1057,15 +1057,6 @@ inline static int fake_strcmp(const void *ptr1, const void *ptr2, const void *pa
 	return strcmp(ptr1, ptr2);
 }
 
-inline static void init_cell(cell *c)
-{
-	c->tag = TAG_EMPTY;
-	c->flags = 0;
-	c->num_cells = 0;
-	c->arity = 0;
-	c->val_attrs = NULL;
-}
-
 inline static void predicate_delink(predicate *pr, rule *r)
 {
 	if (r->prev) r->prev->next = r->next;
