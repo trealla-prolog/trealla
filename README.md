@@ -17,14 +17,14 @@ and using a plain old Makefile.
 	Access SQLITE databases using builtin module (uses FFI)
 	Concurrency via tasks / linda / futures / engines (generators)
 	Pre-emptive multi-threading
-	Blackboarding primitives
+	Attributed variables: freeze/2 dif/2, when/2
+	Constraint libraries: CLP(B), CLP(Z)
+	Blackboarding primitives: bb_put, bb_b_put/2, bb_get/2
 	Sockets library
-	CLP(Z)
 	...
 	FFIs for GNU Scientific Library (GSL), SQLite, Raylib ##EXPERIMENTAL##
 	Delimited continuations ##EXPERIMENTAL##
 	Rational trees ##EXPERIMENTAL##
-	CLP(B) ##EXPERIMENTAL##
 
 
 Available from: [https://github.com/trealla-prolog/trealla](https://github.com/trealla-prolog/trealla).
@@ -406,10 +406,10 @@ Non-standard predicates
 	gcd/2
 	uuid/1                      # uuid(-string)
 	load_files/[1,2]
-	split_string/4				# SWI-compatible
+	split_string/4				# SWI compatible
 	module/1
 	line_count/2
-	atom_number/2				# SWI-compaible
+	atom_number/2				# SWI compatible
 	cfor/3						# cfor(+evaluable,+evaluable,-var)
 	repeat/1					# repeat(+integer)
 	make/0
@@ -421,15 +421,15 @@ Non-standard predicates
 	denominator/1				# evaluable
 	rational/1
 
-	with_output_to(chars(Cs), Goal)		# SWI-compatible
-	with_output_to(string(Cs), Goal)	# SWI-compatible
-	with_output_to(atom(Atom), Goal)	# SWI-compatible
+	with_output_to(chars(Cs), Goal)		# SWI compatible
+	with_output_to(string(Cs), Goal)	# SWI compatible
+	with_output_to(atom(Atom), Goal)	# SWI compatible
 
-	findnsols/4					# SWI-compatible
-	nb_setarg/3					# SWI-compatible (only with small integer values)
+	findnsols/4					# SWI compatible
+	nb_setarg/3					# SWI compatible (only with small integer values)
 
-	call_with_time_limit/2		# SWI-compatible
-	time_out/3					# SICStus-compatible
+	call_with_time_limit/2		# SWI compatible
+	time_out/3					# SICStus compatible
 
 	posix_strftime/3			# posix_strftime(+format,-string,+tm(NNN,...))
 	posix_strptime/3			# posix_strptime(+format,+string,-tm(NNN,...))
@@ -473,7 +473,7 @@ Non-standard predicates
 	atom_upper/2
 	atom_lower/2
 
-	divmod/4                    # SWI-compatible
+	divmod/4                    # SWI compatible
 	popcount/1                  # function returning number of 1 bits
 	lsb/1                       # function returning the least significant bit of a positive integer (count from zero)
 	msb/1                       # function returning the most significant bit of a positive integer (count from zero)
@@ -515,7 +515,7 @@ Non-standard predicates
 	reset/3						# parser_reset(:goal,?ball,-cont)
 	shift/1						# shift(+ball)
 
-	option/2-3					# SWI-compatible (see library(option))
+	option/2-3					# SWI compatible (see library(option))
 	term_variables/3
 	replace/4                   # replace(+string,+old,+new,-string)
 
@@ -544,7 +544,7 @@ tpl -g "popen('ps -a',read,S,[]),getlines(S,Ls),close(S),maplist(println,Ls),hal
 	31647 pts/0    00:00:00 ps
 ```
 
-For general *POSIX* process creation use these *SWI-compatible* calls...
+For general *POSIX* process creation use these *SWI compatible* calls...
 
 	process_create/3			# process_create(+cmd,+args,+opts)
 	process_wait/2				# process_wait(+pid,+opts)
@@ -596,11 +596,17 @@ Uses Ulrich Neumerkel's standard reference library.
 Blackboard functions
 ====================
 
-	bb_b_put/2					# bb_b_put(:atom, +term)
+The blackboard is global among threads. The following are SWI
+compatible:
+
 	bb_put/2					# bb_put(:atom, +term)
 	bb_get/2					# bb_get(:atom, ?term)
 	bb_update/3					# bb_update(:atom, ?term, ?term)
 	bb_delete/2					# bb_delete(:atom, ?term)
+
+The following is undone on backtracking and is a Scryer extension:
+
+	bb_b_put/2					# bb_b_put(:atom, +term)
 
 
 Crypto functions
@@ -1056,7 +1062,7 @@ Note: `thread_cancel/1` is dangerous and should be avoided, it does
 not exist in some other Prologs and does not rightly belong in any standards
 proposal.
 
-These are non-standard but SWI-compatible:
+These are non-standard but SWI compatible:
 
 	thread_join/1				# thread_join(+thread)
 	thread_get_message/3		# thread_get_message(+queue,?term,+opts)
