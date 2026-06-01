@@ -59,6 +59,7 @@ static bool bif_bb_b_put_2(query *q)
 	CHECKED(u);
 	char *key = strdup(tmpbuf);
 	u->key = key;
+	u->is_bboard = true;
 	list *undo;
 
 	if (q->st.cp) {

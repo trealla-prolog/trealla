@@ -781,8 +781,10 @@ int retry_choice(query *q)
 		q->st.cp--;
 		undo_item *u;
 
-		while ((u = list_pop_back(&ch->undo)) != NULL)
-			sl_del(q->pl->keyval, u->key);
+		while ((u = list_pop_back(&ch->undo)) != NULL) {
+			if (u->is_bboard)
+				sl_del(q->pl->keyval, u->key);
+		}
 
 		q->st = ch->st;
 
@@ -841,8 +843,10 @@ void drop_choice(query *q)
 
 	undo_item *u;
 
-	while ((u = list_pop_front(&ch->undo)) != NULL)
-		list_push_back(undo, u);
+	while ((u = list_pop_front(&ch->undo)) != NULL) {
+		if (u->is_bboard)
+			list_push_back(undo, u);
+	}
 
 	--q->st.cp;
 }
@@ -1861,8 +1865,10 @@ void query_destroy(query *q)
 
 	undo_item *u;
 
-	while ((u = list_pop_back(&q->undo)) != NULL)
-		sl_del(q->pl->keyval, u->key);
+	while ((u = list_pop_back(&q->undo)) != NULL) {
+		if (u->is_bboard)
+			sl_del(q->pl->keyval, u->key);
+	}
 
 	mp_int_clear(&q->tmp_ival);
 	mp_rat_clear(&q->tmp_irat);
