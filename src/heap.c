@@ -530,13 +530,13 @@ cell *end_list(query *q)
 	tmp->num_cells = 1;
 	tmp->val_off = g_nil_s;
 	tmp->arity = tmp->flags = 0;
-	pl_idx num_cells = tmp_heap_used(q);
 
 	if (is_nil(get_tmp_heap(q, 0))) {
 		init_tmp_heap(q);
 		return make_nil();
 	}
 
+	pl_idx num_cells = tmp_heap_used(q);
 	tmp = alloc_heap(q, num_cells);
 	if (!tmp) return NULL;
 	dup_cells(tmp, get_tmp_heap(q, 0), num_cells);
@@ -554,11 +554,37 @@ cell *end_list_unsafe(query *q)
 	tmp->num_cells = 1;
 	tmp->val_off = g_nil_s;
 	tmp->arity = tmp->flags = 0;
-	pl_idx num_cells = tmp_heap_used(q);
 
+	if (is_nil(get_tmp_heap(q, 0))) {
+		init_tmp_heap(q);
+		return make_nil();
+	}
+	pl_idx num_cells = tmp_heap_used(q);
 	tmp = alloc_heap(q, num_cells);
 	if (!tmp) return NULL;
 	copy_cells(tmp, get_tmp_heap(q, 0), num_cells);
+	tmp->num_cells = num_cells;
+	fix_list(tmp);
+	init_tmp_heap(q);
+	return tmp;
+}
+
+cell *end_list_on_tmp(query *q)
+{
+	cell *tmp = alloc_tmp(q, 1);
+	if (!tmp) return NULL;
+	tmp->tag = TAG_INTERNED;
+	tmp->num_cells = 1;
+	tmp->val_off = g_nil_s;
+	tmp->arity = tmp->flags = 0;
+
+	if (is_nil(get_tmp_heap(q, 0))) {
+		init_tmp_heap(q);
+		return make_nil();
+	}
+
+	pl_idx num_cells = tmp_heap_used(q);
+	tmp = get_tmp_heap(q, 0);
 	tmp->num_cells = num_cells;
 	fix_list(tmp);
 	return tmp;
