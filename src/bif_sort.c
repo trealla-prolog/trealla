@@ -134,7 +134,7 @@ static cell *nodesort(query *q, cell *p1, pl_ctx p1_ctx, bool dedup, bool keysor
 			append_list(q, c);
 	}
 
-	cell *l = end_list_heap(q);
+	cell *l = end_list(q);
 	TPL_free(base);
 	return l;
 }
@@ -334,7 +334,7 @@ static cell *nodesort4(query *q, cell *p1, pl_ctx p1_ctx, bool dedup, bool ascen
 			append_list(q, c);
 	}
 
-	cell *l = end_list_heap(q);
+	cell *l = end_list(q);
 	TPL_free(base);
 	return l;
 }

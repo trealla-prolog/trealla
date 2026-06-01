@@ -286,7 +286,7 @@ static bool bif_map_list_2(query *q)
 		append_list(q, tmp2);
 	}
 
-	cell *tmp = end_list_heap(q);
+	cell *tmp = end_list(q);
 	sl_done(iter);
 	return unify(q, p1, p1_ctx, tmp, q->st.cur_ctx);
 }

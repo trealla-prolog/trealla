@@ -456,7 +456,7 @@ static bool do_parse_url(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_
 		TPL_free(dstbuf);
 		append_list(q, tmp);
 
-		cell *l = end_list_heap(q);
+		cell *l = end_list(q);
 		cell *tmp2 = alloc_heap(q, 1 + l->num_cells);
 		make_instr(tmp2, new_atom(q->pl, "search"), NULL, 1, l->num_cells);
 		dup_cells(tmp2+1, l, l->num_cells);
@@ -517,7 +517,7 @@ static bool do_parse_url(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_
 		TPL_free(dstbuf);
 	}
 
-	return unify(q, p2, p2_ctx, end_list_heap(q), q->st.cur_ctx);
+	return unify(q, p2, p2_ctx, end_list(q), q->st.cur_ctx);
 }
 
 static bool bif_sys_parse_url_2(query *q)

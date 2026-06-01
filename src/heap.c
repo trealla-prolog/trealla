@@ -517,7 +517,7 @@ cell *append_list(query *q, const cell *c)
 	return save;
 }
 
-cell *end_list_heap(query *q)
+cell *end_list(query *q)
 {
 	cell *tmp = alloc_tmp(q, 1);
 	if (!tmp) return NULL;
@@ -541,7 +541,7 @@ cell *end_list_heap(query *q)
 	return tmp;
 }
 
-cell *end_list_heap_unsafe(query *q)
+cell *end_list_unsafe(query *q)
 {
 	cell *tmp = alloc_tmp(q, 1);
 	if (!tmp) return NULL;
