@@ -99,6 +99,7 @@ static bool do_put_atts(query *q, cell *attr, pl_ctx attr_ctx, bool is_minus)
 		}
 	}
 
+	pl_idx hp = q->st.hp, hp_num = q->st.hp_num;
 	cell *l = end_list(q);
 	CHECKED(l);
 
@@ -110,11 +111,14 @@ static bool do_put_atts(query *q, cell *attr, pl_ctx attr_ctx, bool is_minus)
 	cell *tmp = TPL_malloc(sizeof(cell)*l->num_cells);
 	dup_cells(tmp, l, l->num_cells);
 	l = tmp;
+	q->st.hp = hp;
+	q->st.hp_num = hp_num;
+	trim_heap(q);
 
 	undo_item *u = TPL_calloc(1, sizeof(undo_item));
 	CHECKED(u);
 	u->c = l;
-	u->is_bboard = true;
+	u->is_attr = true;
 	list *undo;
 
 	if (q->st.cp) {
