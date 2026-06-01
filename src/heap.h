@@ -36,6 +36,5 @@ cell *allocate_list(query *q, const cell *c);
 cell *append_list(query *q, const cell *c);
 cell *end_list_unsafe(query *q);
 cell *end_list(query *q);
-cell *end_list_on_tmp(query *q);
 
 cell *init_tmp_heap(query *q);

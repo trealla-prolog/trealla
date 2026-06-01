@@ -568,27 +568,6 @@ cell *end_list_unsafe(query *q)
 	return tmp;
 }
 
-cell *end_list_on_tmp(query *q)
-{
-	cell *tmp = alloc_tmp(q, 1);
-	if (!tmp) return NULL;
-	tmp->tag = TAG_INTERNED;
-	tmp->num_cells = 1;
-	tmp->val_off = g_nil_s;
-	tmp->arity = tmp->flags = 0;
-
-	if (is_nil(get_tmp_heap(q, 0))) {
-		init_tmp_heap(q);
-		return make_nil();
-	}
-
-	pl_idx num_cells = tmp_heap_used(q);
-	tmp = get_tmp_heap(q, 0);
-	tmp->num_cells = num_cells;
-	fix_list(tmp);
-	return tmp;
-}
-
 // Defer check until end_list()
 
 cell *allocate_structure(query *q, const char *functor, const cell *c)
