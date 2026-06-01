@@ -406,7 +406,6 @@ Non-standard predicates
 	gcd/2
 	uuid/1                      # uuid(-string)
 	load_files/[1,2]
-	split_string/4				# *SWI-Prolog* compatible
 	module/1
 	line_count/2
 	atom_number/2				# *SWI-Prolog* compatible
@@ -425,28 +424,22 @@ Non-standard predicates
 	with_output_to(string(Cs), Goal)	# *SWI-Prolog* compatible
 	with_output_to(atom(Atom), Goal)	# *SWI-Prolog* compatible
 
+	divmod/4                    # *SWI-Prolog* compatible
+	read_line_to_codes/2	   	# *SWI-Prolog* compatible
+	read_line_to_codes/3	   	# *SWI-Prolog* compatible
+	read_line_to_string/2		# *SWI-Prolog* compatible
+	read_file_to_string/3		# *SWI-Prolog* compatible
+	split_string/4				# *SWI-Prolog* compatible
+	option/2-3					# *SWI-Prolog* compatible (see library(option))
 	findnsols/4					# *SWI-Prolog* compatible
 	nb_setarg/3					# *SWI-Prolog* compatible (only with small integer values)
 	writeln/1					# *SWI-Prolog* compatible
 	writeln/2					# *SWI-Prolog* compatible
-
+	call_nth/2					# *SWI-Prolog* compatible
+	offset/2					# *SWI-Prolog* compatible
+	limit/2						# *SWI-Prolog* compatible
 	call_with_time_limit/2		# *SWI-Prolog* compatible
-	time_out/3					# *SICStus* compatible
-
-	posix_strftime/3			# posix_strftime(+format,-string,+tm(NNN,...))
-	posix_strptime/3			# posix_strptime(+format,+string,-tm(NNN,...))
-	posix_mktime/2				# posix_mktime(+tm(NNN,...),-seconds)
-	posix_gmtime/2				# posix_gmtime(+seconds,-tm(NNN,...))
-	posix_localtime/2			# posix_localtime(+seconds,-tm(NNN,...))
-	posix_ctime/2				# posix_time(+seconds,-atom)
-	posix_time/1				# posix_time(-seconds)
-	posix_getpid/1				# posix_pid(-pid)
-	posix_getppid/1				# posix_ppid(-pid)
-	posix_fork/1				# posix_fork(-pid)
-
-	call_nth/2
-	offset/2
-	limit/2
+	time_out/3					# *SICStus Prolog* compatible
 
 	getenv/2
 	setenv/2
@@ -475,7 +468,6 @@ Non-standard predicates
 	atom_upper/2
 	atom_lower/2
 
-	divmod/4                    # *SWI-Prolog* compatible
 	popcount/1                  # function returning number of 1 bits
 	lsb/1                       # function returning the least significant bit of a positive integer (count from zero)
 	msb/1                       # function returning the most significant bit of a positive integer (count from zero)
@@ -485,6 +477,18 @@ Non-standard predicates
 	get_time/1                  # get_time(-float) Unix epoch in secs
 	wall_time/1                 # wall_time(-float) elapsed clock time in secs
 	cpu_time/1                  # cpu_time(-float) elapsed CPU time in secs
+
+	posix_strftime/3			# posix_strftime(+format,-string,+tm(NNN,...))
+	posix_strptime/3			# posix_strptime(+format,+string,-tm(NNN,...))
+	posix_mktime/2				# posix_mktime(+tm(NNN,...),-seconds)
+	posix_gmtime/2				# posix_gmtime(+seconds,-tm(NNN,...))
+	posix_localtime/2			# posix_localtime(+seconds,-tm(NNN,...))
+	posix_ctime/2				# posix_time(+seconds,-atom)
+	posix_time/1				# posix_time(-seconds)
+	posix_getpid/1				# posix_pid(-pid)
+	posix_getppid/1				# posix_ppid(-pid)
+	posix_fork/1				# posix_fork(-pid)
+
 
 	current_key/1
 	string_concat/3				# string_concat(+string,+string,?string)
@@ -506,18 +510,12 @@ Non-standard predicates
 	getlines/2                  # getlines(+stream,-strings)
 	getlines/3                  # getlines(+stream,-strings,+opts)
 
-	read_line_to_codes/2	   	# SWI-compaible
-	read_line_to_codes/3	   	# SWI-compaible
-	read_line_to_string/2		# SWI-compaible
-	read_file_to_string/3		# SWI-compaible
-
 	open(stream(Str),...)       # with open/4 reopen a stream
 	open(F,M,S,[mmap(Ls)])      # with open/4 mmap() the file to Ls
 
 	reset/3						# parser_reset(:goal,?ball,-cont)
 	shift/1						# shift(+ball)
 
-	option/2-3					# *SWI-Prolog* compatible (see library(option))
 	term_variables/3
 	replace/4                   # replace(+string,+old,+new,-string)
 
