@@ -427,6 +427,8 @@ Non-standard predicates
 
 	findnsols/4					# *SWI-Prolog* compatible
 	nb_setarg/3					# *SWI-Prolog* compatible (only with small integer values)
+	writeln/1					# *SWI-Prolog* compatible
+	writeln/2					# *SWI-Prolog* compatible
 
 	call_with_time_limit/2		# *SWI-Prolog* compatible
 	time_out/3					# *SICStus* compatible
@@ -1344,7 +1346,7 @@ Compile to standalone		##EXPERIMENTAL##
 	:- initialization(main).
 
 	main :-
-			writeln('Hello, world!'),
+			write('Hello, world!'), nl,
 			halt.
 ```
 
