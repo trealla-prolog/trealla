@@ -843,10 +843,8 @@ void drop_choice(query *q)
 
 	undo_item *u;
 
-	while ((u = list_pop_front(&ch->undo)) != NULL) {
-		if (u->is_bboard)
-			list_push_back(undo, u);
-	}
+	while ((u = list_pop_front(&ch->undo)) != NULL)
+		list_push_back(undo, u);
 
 	--q->st.cp;
 }
