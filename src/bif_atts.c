@@ -107,6 +107,23 @@ static bool do_put_atts(query *q, cell *attr, pl_ctx attr_ctx, bool is_minus)
 		return true;
 	}
 
+	cell *tmp = TPL_malloc(sizeof(cell)*l->num_cells);
+	dup_cells(tmp, l, l->num_cells);
+	l = tmp;
+
+	undo_item *u = TPL_calloc(1, sizeof(undo_item));
+	CHECKED(u);
+	u->c = l;
+	u->is_bboard = true;
+	list *undo;
+
+	if (q->st.cp) {
+		choice *ch = GET_CURR_CHOICE();
+		undo = &ch->undo;
+	} else
+		undo = &q->undo;
+
+	list_push_back(undo, u);
 	e->c.val_attrs = l;
 	return true;
 }

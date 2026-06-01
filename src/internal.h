@@ -549,8 +549,13 @@ struct run_state_ {
 
 typedef struct {
 	lnode hdr;							// must be first
-	char *key;
+	union {
+		char *key;
+		cell *c;
+	};
+
 	bool is_bboard:1;
+	bool is_attr:1;
 } undo_item;
 
 struct choice_ {

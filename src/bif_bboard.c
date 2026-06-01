@@ -55,7 +55,7 @@ static bool bif_bb_b_put_2(query *q)
 	dup_cells(val, tmp, tmp->num_cells);
 	val->flags |= FLAG_LIVE;
 
-	undo_item *u = TPL_malloc(sizeof(undo_item));
+	undo_item *u = TPL_calloc(1, sizeof(undo_item));
 	CHECKED(u);
 	char *key = strdup(tmpbuf);
 	u->key = key;
