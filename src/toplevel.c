@@ -375,7 +375,7 @@ void dump_vars(query *q, bool partial)
 	// Now go through the variables (slots actually) and
 	// dump them out...
 
-	cell *vlist = end_list(q);
+	cell *vlist = end_list_heap(q);
 	bool want_space = false, any = false, anons = false;
 	q->variable_names = vlist;
 	q->variable_names_ctx = 0;

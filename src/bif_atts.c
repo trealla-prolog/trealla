@@ -99,7 +99,7 @@ static bool do_put_atts(query *q, cell *attr, pl_ctx attr_ctx, bool is_minus)
 		}
 	}
 
-	cell *l = end_list(q);
+	cell *l = end_list_heap(q);
 	CHECKED(l);
 
 	if (is_nil(l)) {
@@ -174,7 +174,7 @@ static bool bif_get_atts_2(query *q)
 			l_ctx = q->latest_ctx;
 		}
 
-		l = end_list(q);
+		l = end_list_heap(q);
 		CHECKED(l);
 
 		if (is_nil(l))
@@ -303,7 +303,7 @@ static bool bif_sys_list_attributed_2(query *q)
 		}
 	}
 
-	cell *l = end_list(q);
+	cell *l = end_list_heap(q);
 	CHECKED(l);
 	return unify(q, p2, p2_ctx, l, q->st.cur_ctx);
 }
@@ -337,7 +337,7 @@ static bool bif_sys_attributed_var_1(query *q)
 		l_ctx = q->latest_ctx;
 	}
 
-	l = end_list(q);
+	l = end_list_heap(q);
 	CHECKED(l);
 
 	if (is_nil(l))
@@ -418,7 +418,7 @@ static bool bif_sys_undo_trail_2(query *q)
 		e->c.val_attrs = tr->attrs;
 	}
 
-	cell *tmp = end_list(q);
+	cell *tmp = end_list_heap(q);
 	CHECKED(tmp, TPL_free(save));
 	unify(q, p1, p1_ctx, tmp, q->st.cur_ctx);
 	cell tmp2;

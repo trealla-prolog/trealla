@@ -57,7 +57,7 @@ cell *string_to_chars_list(query *q, cell *p)
 		p = LIST_TAIL(p);
 	}
 
-	return end_list(q);
+	return end_list_heap(q);
 }
 
 char *chars_list_to_string(query *q, cell *p_chars, pl_ctx p_chars_ctx)

@@ -170,7 +170,7 @@ static bool bif_findnsols_4(query *q)
 	}
 
 	TPL_free(solns);
-	cell *l = end_list(q);
+	cell *l = end_list_heap(q);
 	CHECKED(l);
 	return unify(q, p3, p3_ctx, l, q->st.cur_ctx);
 }
@@ -239,7 +239,7 @@ static bool bif_iso_findall_3(query *q)
 	}
 
 	TPL_free(solns);
-	cell *l = end_list(q);
+	cell *l = end_list_heap(q);
 	CHECKED(l);
 	return unify(q, p3, p3_ctx, l, q->st.cur_ctx);
 }
@@ -294,7 +294,7 @@ static bool bif_sys_unifiable_3(query *q)
 	undo_me(q);
 	drop_choice(q);
 
-	cell *l = end_list(q);
+	cell *l = end_list_heap(q);
 	return unify(q, p3, p3_ctx, l, q->st.cur_ctx);
 }
 
@@ -579,7 +579,7 @@ static bool bif_iso_atom_chars_2(query *q)
 		append_list(q, &tmp2);
 	}
 
-	cell *l = end_list(q);
+	cell *l = end_list_heap(q);
 	CHECKED(l);
 	return unify(q, p2, p2_ctx, l, q->st.cur_ctx);
 }
@@ -1144,7 +1144,7 @@ static bool bif_hex_bytes_2(query *q)
 	if (!is_nil(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "hex_encoding");
 
-	cell *l = end_list(q);
+	cell *l = end_list_heap(q);
 	CHECKED(l);
 	return unify(q, p2, p2_ctx, l, q->st.cur_ctx);
 }
@@ -1781,7 +1781,7 @@ static bool bif_iso_univ_2(query *q)
 		append_list(q, h);
 		cell *t = LIST_TAIL(p1);
 		append_list(q, t);
-		cell *l = end_list(q);
+		cell *l = end_list_heap(q);
 		CHECKED(l);
 		return unify(q, p2, p2_ctx, l, p1_ctx);
 	}
@@ -1800,7 +1800,7 @@ static bool bif_iso_univ_2(query *q)
 			p1 += p1->num_cells;
 		}
 
-		cell *l = end_list(q);
+		cell *l = end_list_heap(q);
 		CHECKED(l);
 		return unify(q, p2, p2_ctx, l, p1_ctx);
 	}
@@ -1912,7 +1912,7 @@ static bool bif_iso_univ_2(query *q)
 		p1 += p1->num_cells;
 	}
 
-	cell *l = end_list(q);
+	cell *l = end_list_heap(q);
 	CHECKED(l);
 	return unify(q, p2, p2_ctx, l, p1_ctx);
 }
@@ -2388,7 +2388,7 @@ static bool bif_sys_current_prolog_flag_2(query *q)
 		make_instr(tmp+0, new_atom(q->pl, "double_quotes"), NULL, 1, 1);
 		make_atom(tmp+1, q->pl->def_double_quotes?g_true_s:g_false_s);
 		append_list(q, tmp);
-		return unify(q, p2, p2_ctx, end_list(q), q->st.cur_ctx);
+		return unify(q, p2, p2_ctx, end_list_heap(q), q->st.cur_ctx);
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "char_conversion")) {
 		cell tmp;
 
@@ -2532,7 +2532,7 @@ static bool bif_sys_current_prolog_flag_2(query *q)
 			append_list(q, &tmp);
 		}
 
-		cell *l = end_list(q);
+		cell *l = end_list_heap(q);
 		CHECKED(l);
 		return unify(q, p2, p2_ctx, l, q->st.cur_ctx);
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "raw_argv")) {
@@ -2546,7 +2546,7 @@ static bool bif_sys_current_prolog_flag_2(query *q)
 			append_list(q, &tmp);
 		}
 
-		cell *l = end_list(q);
+		cell *l = end_list_heap(q);
 		CHECKED(l);
 		return unify(q, p2, p2_ctx, l, q->st.cur_ctx);
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "unknown")) {
@@ -2783,10 +2783,10 @@ static cell *convert_to_list(query *q, cell *c, pl_idx num_cells)
 	}
 
 	// This function is only ever called on a queue which
-	// already has a safe_copy done, so the end_list below
+	// already has a safe_copy done, so the end_list_heap below
 	// can do an unsafe copy.
 
-	return end_list_unsafe(q);
+	return end_list_heap_unsafe(q);
 }
 
 static bool bif_sys_list_1(query *q)
@@ -2959,7 +2959,7 @@ static bool bif_module_info_2(query *q)
 		append_list(q, tmp);
 	}
 
-	cell *l = end_list(q);
+	cell *l = end_list_heap(q);
 	CHECKED(l);
 	return unify(q, p2, p2_ctx, l, q->st.cur_ctx);
 }
@@ -3011,7 +3011,7 @@ static bool bif_source_info_2(query *q)
 		append_list(q, tmp);
 	}
 
-	cell *l = end_list(q);
+	cell *l = end_list_heap(q);
 	CHECKED(l);
 	return unify(q, p2, p2_ctx, l, q->st.cur_ctx);
 }
@@ -3437,7 +3437,7 @@ static bool bif_statistics_2(query *q)
 		q->time_cpu_last_started = now;
 		make_uint(&tmp, elapsed/1000);
 		append_list(q, &tmp);
-		cell *l = end_list(q);
+		cell *l = end_list_heap(q);
 		CHECKED(l);
 		return unify(q, p2, p2_ctx, l, q->st.cur_ctx);
 	}
@@ -3518,7 +3518,7 @@ static bool bif_split_string_4(query *q)
 			append_list(q, &tmp);
 	}
 
-	l = end_list(q);
+	l = end_list_heap(q);
 	CHECKED(l);
 	return unify(q, p4, p4_ctx, l, q->st.cur_ctx);
 }
@@ -4127,7 +4127,7 @@ static bool bif_crypto_n_random_bytes_2(query *q)
 		append_list(q, &tmp);
 	}
 
-	cell *l = end_list(q);
+	cell *l = end_list_heap(q);
 	CHECKED(l);
 	return unify(q, p2, p2_ctx, l, q->st.cur_ctx);
 }
@@ -5368,7 +5368,7 @@ static bool bif_numlist_3(query *q)
 		l->flags |= FLAG_INTERNED_GROUND;
 	}
 
-	cell *l = end_list(q);
+	cell *l = end_list_heap(q);
 	CHECKED(l);
 	l->flags |= FLAG_INTERNED_GROUND;
 	return unify(q, p3, p3_ctx, l, q->st.cur_ctx);
@@ -5583,7 +5583,7 @@ static bool bif_sys_modules_1(query *q)
 		append_list(q, &tmp);
 	}
 
-	cell *l = end_list(q);
+	cell *l = end_list_heap(q);
 	CHECKED(l);
 	return unify(q, p1, p1_ctx, l, q->st.cur_ctx);
 }

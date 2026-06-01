@@ -493,7 +493,7 @@ void fix_list(cell *c)
 	}
 }
 
-// Defer check until end_list()
+// Defer check until end_list_heap()
 
 cell *allocate_list(query *q, const cell *c)
 {
@@ -504,7 +504,7 @@ cell *allocate_list(query *q, const cell *c)
 	return get_tmp_heap(q, 0);
 }
 
-// Defer check until end_list()
+// Defer check until end_list_heap()
 
 cell *append_list(query *q, const cell *c)
 {
@@ -521,7 +521,7 @@ cell *append_list(query *q, const cell *c)
 	return save;
 }
 
-cell *end_list(query *q)
+cell *end_list_heap(query *q)
 {
 	cell *tmp = alloc_tmp(q, 1);
 	if (!tmp) return NULL;
@@ -545,7 +545,7 @@ cell *end_list(query *q)
 	return tmp;
 }
 
-cell *end_list_unsafe(query *q)
+cell *end_list_heap_unsafe(query *q)
 {
 	cell *tmp = alloc_tmp(q, 1);
 	if (!tmp) return NULL;
@@ -568,7 +568,7 @@ cell *end_list_unsafe(query *q)
 	return tmp;
 }
 
-// Defer check until end_list()
+// Defer check until end_list_heap()
 
 cell *allocate_structure(query *q, const char *functor, const cell *c)
 {
@@ -586,7 +586,7 @@ cell *allocate_structure(query *q, const char *functor, const cell *c)
 	return get_tmp_heap(q, 0);
 }
 
-// Defer check until end_list()
+// Defer check until end_list_heap()
 
 cell *append_structure(query *q, const cell *c)
 {
