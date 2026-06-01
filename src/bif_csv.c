@@ -187,7 +187,7 @@ bool do_parse_csv_line(query *q, parser *p, csv *params, const char *src, cell *
 		return throw_error(q, &tmp, q->st.cur_ctx, "domain_error", "row_arity");
 	}
 
-	cell *l = params->functor ? end_structure(q) : end_list_heap(q);
+	cell *l = params->functor ? end_structure_heap(q) : end_list_heap(q);
 	CHECKED(l);
 
 	if (p2)

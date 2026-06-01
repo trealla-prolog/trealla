@@ -30,7 +30,7 @@ unsigned rebase_term(query *q, cell *c, unsigned start_nbr, bool copy_attrs);
 
 cell *allocate_structure(query *q, const char *functor, const cell *c);
 cell *append_structure(query *q, const cell *c);
-cell *end_structure(query *q);
+cell *end_structure_heap(query *q);
 
 cell *allocate_list(query *q, const cell *c);
 cell *append_list(query *q, const cell *c);
