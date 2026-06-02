@@ -19,6 +19,9 @@ size_t alloc_grow(query *q, void **addr, size_t elem_size, size_t min_elements, 
 	void *mem;
 
 	do {
+		if ((elem_size * elements) > (1024LL*1024*1024*8))
+			break;
+
 		mem = TPL_realloc(*addr, elem_size * elements);
 		if (mem) break;
 		elements = min_elements + (elements - min_elements) / 2;
