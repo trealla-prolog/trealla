@@ -86,7 +86,6 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define is_rational(c) ((c)->tag == TAG_RATIONAL)
 #define is_indirect(c) ((c)->tag == TAG_INDIRECT)
 #define is_dbid(c) ((c)->tag == TAG_DBID)
-#define is_kvid(c) ((c)->tag == TAG_KVID)
 #define is_blob(c) ((c)->tag == TAG_BLOB)
 #define is_end(c) ((c)->tag == TAG_END)
 
@@ -237,8 +236,7 @@ enum {
 	TAG_INDIRECT=7,
 	TAG_BLOB=8,
 	TAG_DBID=9,
-	TAG_KVID=10,
-	TAG_END=11
+	TAG_END=10
 };
 
 enum {
@@ -932,8 +930,6 @@ inline static void share_cell_(const cell *c)
 		c->val_blob->refcnt++;
 	else if (is_dbid(c))
 		c->val_blob->refcnt++;
-	else if (is_kvid(c))
-		c->val_blob->refcnt++;
 }
 
 #define unshare_cell(c) if (is_managed(c)) unshare_cell_(c)
@@ -969,15 +965,6 @@ inline static void unshare_cell_(cell *c)
 			module *m = (module*)c->val_blob->ptr;
 			const char *ref = (char*)c->val_blob->ptr2;
 			do_erase(m, ref);
-			TPL_free(c->val_blob->ptr2);
-			TPL_free(c->val_blob);
-			c->tag = TAG_EMPTY;
-		}
-	} else if (is_kvid(c)) {
-		if (--c->val_blob->refcnt == 0) {
-			module *m = (module*)c->val_blob->ptr;
-			const char *ref = (char*)c->val_blob->ptr2;
-			sl_del(m->pl->keyval, ref);
 			TPL_free(c->val_blob->ptr2);
 			TPL_free(c->val_blob);
 			c->tag = TAG_EMPTY;

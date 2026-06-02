@@ -926,7 +926,6 @@ static bool do_dump_term(query *q, cell *p1x, pl_ctx p1x_ctx, cell *p1, pl_ctx p
 				tmp->tag == TAG_INDIRECT ? "indirect" :
 				tmp->tag == TAG_BLOB ? "blob" :
 				tmp->tag == TAG_DBID ? "dbid" :
-				tmp->tag == TAG_KVID ? "kvid" :
 				"other"
 			),
 			tmp->num_cells, tmp->arity);
