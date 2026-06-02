@@ -782,6 +782,8 @@ int retry_choice(query *q)
 		while ((u = list_pop_back(&ch->undo)) != NULL) {
 			if (u->is_bboard)
 				sl_del(q->pl->keyval, u->key);
+
+			TPL_free(u);
 		}
 
 		q->st = ch->st;
@@ -1864,6 +1866,8 @@ void query_destroy(query *q)
 	while ((u = list_pop_back(&q->undo)) != NULL) {
 		if (u->is_bboard)
 			sl_del(q->pl->keyval, u->key);
+
+		TPL_free(u);
 	}
 
 	mp_int_clear(&q->tmp_ival);
