@@ -809,6 +809,8 @@ int retry_choice(query *q)
 				unshare_cells(u->c, u->c->num_cells);
 				TPL_free(u->c);
 			}
+
+			TPL_free(u);
 		}
 
 		q->st = ch->st;
