@@ -109,6 +109,7 @@ static bool do_put_atts(query *q, cell *attr, pl_ctx attr_ctx, bool is_minus)
 	}
 
 	cell *tmp = TPL_malloc(sizeof(cell)*l->num_cells);
+	CHECKED(tmp);
 	dup_cells(tmp, l, l->num_cells);
 	l = tmp;
 	q->st.hp = hp;
