@@ -215,6 +215,8 @@ inline static cell *get_body(cell *c)
 	return NULL;
 }
 
+bool undo_on_backtrack(query *q, void *v, bool is_bboard);
+
 inline static pl_idx get_ordered_slot_num(const query *q, const frame *f, unsigned var_num)
 {
 	return ((f - q->frames) * 100) + var_num;

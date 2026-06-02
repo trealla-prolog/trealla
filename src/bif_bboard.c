@@ -54,21 +54,9 @@ static bool bif_bb_b_put_2(query *q)
 	CHECKED(val);
 	dup_cells(val, tmp, tmp->num_cells);
 	val->flags |= FLAG_LIVE;
-
-	undo_item *u = TPL_calloc(1, sizeof(undo_item));
-	CHECKED(u);
 	char *key = strdup(tmpbuf);
-	u->key = key;
-	u->is_bboard = true;
-	list *undo;
-
-	if (q->st.cp) {
-		choice *ch = GET_CURR_CHOICE();
-		undo = &ch->undo;
-	} else
-		undo = &q->undo;
-
-	list_push_back(undo, u);
+	CHECKED(key);
+	CHECKED(undo_on_backtrack(q, key, true));
 
 	prolog_lock(q->pl);
 	sl_set(q->pl->keyval, key, val);

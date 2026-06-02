@@ -256,6 +256,29 @@ bool check_trail(query *q)
 	return true;
 }
 
+bool undo_on_backtrack(query *q, void *v, bool is_bboard)
+{
+	undo_item *u = TPL_calloc(1, sizeof(undo_item));
+	if (!u) return false;
+	u->c = v;
+
+	if (is_bboard)
+		u->is_bboard = true;
+	else
+		u->is_cells = true;
+
+	list *undo;
+
+	if (q->st.cp) {
+		choice *ch = GET_CURR_CHOICE();
+		undo = &ch->undo;
+	} else
+		undo = &q->undo;
+
+	list_push_back(undo, u);
+	return true;
+}
+
 void make_call_engine(query *q, cell *tmp, cell *c)
 {
 	make_end(tmp);
@@ -782,7 +805,7 @@ int retry_choice(query *q)
 		while ((u = list_pop_back(&ch->undo)) != NULL) {
 			if (u->is_bboard)
 				sl_del(q->pl->keyval, u->key);
-			else if (u->is_attr) {
+			else {
 				unshare_cells(u->c, u->c->num_cells);
 				TPL_free(u->c);
 			}
@@ -1868,7 +1891,7 @@ void query_destroy(query *q)
 	while ((u = list_pop_back(&q->undo)) != NULL) {
 		if (u->is_bboard)
 			sl_del(q->pl->keyval, u->key);
-		else if (u->is_attr) {
+		else {
 			unshare_cells(u->c, u->c->num_cells);
 			TPL_free(u->c);
 		}

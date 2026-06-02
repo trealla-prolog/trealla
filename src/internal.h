@@ -555,7 +555,7 @@ typedef struct {
 	};
 
 	bool is_bboard:1;
-	bool is_attr:1;
+	bool is_cells:1;
 } undo_item;
 
 struct choice_ {
