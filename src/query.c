@@ -1897,6 +1897,8 @@ void query_destroy(query *q)
 			unshare_cells(u->c, u->c->num_cells);
 			TPL_free(u->c);
 		}
+
+		TPL_free(u);
 	}
 
 	mp_int_clear(&q->tmp_ival);
