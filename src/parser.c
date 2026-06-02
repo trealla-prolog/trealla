@@ -296,16 +296,6 @@ void make_blob(cell *tmp, void *ptr)
 	tmp->val_blob->refcnt = 0;
 }
 
-void make_dbref(cell *tmp, void *ptr)
-{
-	*tmp = (cell){0};
-	tmp->tag = TAG_DBID;
-	tmp->flags = FLAG_MANAGED;
-	tmp->num_cells = 1;
-	tmp->val_blob = ptr;
-	tmp->val_blob->refcnt = 0;
-}
-
 void share_cells(cell *src, pl_idx num_cells)
 {
 	for (pl_idx i = 0; i < num_cells; i++, src++)
@@ -317,7 +307,6 @@ void unshare_cells(cell *src, pl_idx num_cells)
 	for (pl_idx i = 0; i < num_cells; i++, src++)
 		unshare_cell(src);
 }
-
 
 void clear_clause(clause *cl)
 {

@@ -883,21 +883,6 @@ static bool bif_sys_clause_3(query *q)
 	return ok;
 }
 
-static bool bif_sys_retract_on_backtrack_1(query *q)
-{
-	GET_FIRST_ARG(p1,atom);
-	int var_num = create_vars(q, 1);
-	CHECKED(var_num != -1);
-	blob *b = TPL_calloc(1, sizeof(blob));
-	b->ptr = (void*)q->st.m;
-	b->ptr2 = (void*)strdup(C_STR(q, p1));
-	CHECKED(b->ptr2);
-	cell c, v;
-	make_ref(&c, var_num, q->st.cur_ctx);
-	make_dbref(&v, b);
-	return unify(q, &c, q->st.cur_ctx, &v, q->st.cur_ctx);
-}
-
 static bool do_dump_term(query *q, cell *p1x, pl_ctx p1x_ctx, cell *p1, pl_ctx p1_ctx, bool deref, int depth)
 {
 	if (!depth) {
@@ -925,7 +910,6 @@ static bool do_dump_term(query *q, cell *p1x, pl_ctx p1x_ctx, cell *p1, pl_ctx p
 				tmp->tag == TAG_RATIONAL ? "rational" :
 				tmp->tag == TAG_INDIRECT ? "indirect" :
 				tmp->tag == TAG_BLOB ? "blob" :
-				tmp->tag == TAG_DBID ? "dbid" :
 				"other"
 			),
 			tmp->num_cells, tmp->arity);
@@ -1224,7 +1208,6 @@ builtins g_database_bifs[] =
 	{"$dump_term", 2, bif_sys_dump_term_2, "+term,+bool", false, false, BLAH},
 	{"$clause", 2, bif_sys_clause_2, "?term,?term", false, false, BLAH},
 	{"$clause", 3, bif_sys_clause_3, "?term,?term,-string", false, false, BLAH},
-	{"$retract_on_backtrack", 1, bif_sys_retract_on_backtrack_1, "+string", false, false, BLAH},
 	{"$assertz_static", 1, bif_sys_assertz_static_1, "+term", true, false, BLAH},
 
 	{"$a_", 2, bif_sys_asserta_2, "+term,+atom", true, false, BLAH},
