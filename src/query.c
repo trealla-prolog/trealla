@@ -99,15 +99,16 @@ static void trace_call(query *q, cell *c, pl_ctx c_ctx, box_t box)
 		box = q->retry?REDO:CALL;
 
 	const char *src = C_STR(q, c);
-
+	frame *f = GET_CURR_FRAME();
 	q->step++;
 	SB(pr);
 
-	SB_sprintf(pr, "[%u:%s:%"PRIu64":f%u:fp%u:cp%u:sp%u:hp%u:tp%u] ",
+	SB_sprintf(pr, "[%u:%s:%"PRIu64":f%u:fp%u:cp%u:sp%u:hp%u:tp%u:nor%d] ",
 		q->my_chan,
 		q->st.m->name,
 		q->step,
-		q->st.cur_ctx, q->st.fp, q->st.cp, q->st.sp, q->st.hp, q->st.tp
+		q->st.cur_ctx, q->st.fp, q->st.cp, q->st.sp, q->st.hp, q->st.tp,
+		f->no_recov
 		);
 
 	SB_sprintf(pr, "%s ",
