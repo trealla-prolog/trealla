@@ -265,14 +265,6 @@ void fake_free(const void *key, const void *val, const void *p)
 	TPL_free((void*)val);
 }
 
-static void keyval_free(const void *key, const void *val, const void *p)
-{
-	TPL_free((void*)key);
-	cell *c = (cell*)val;
-	unshare_cells(c, c->num_cells);
-	TPL_free((void*)val);
-}
-
 builtins *get_help(prolog *pl, const char *name, unsigned arity, bool *found, bool *evaluable)
 {
 	sliter *iter = sl_find_key(pl->help, name);
@@ -661,7 +653,6 @@ void pl_destroy(prolog *pl)
 		module_destroy(m);
 
 	sl_destroy(pl->fortab);
-	sl_destroy(pl->keyval);
 	sl_destroy(pl->help);
 	sl_destroy(pl->alias);
 
@@ -731,8 +722,6 @@ prolog *pl_create()
 			g_tpl_lib = strdup("../library");
 #endif
 	}
-
-	CHECK_SENTINEL(pl->keyval = sl_create((void*)fake_strcmp, (void*)keyval_free, NULL), NULL);
 
 	pl->streams[0].fp = stdin;
 	CHECK_SENTINEL(pl->streams[0].alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL), NULL);

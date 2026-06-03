@@ -2550,6 +2550,7 @@ void module_destroy(module *m)
 		fclose(m->fp);
 
 	sl_destroy(m->index);
+	sl_destroy(m->keyval);
 	parser_destroy(m->p);
 	clear_loaded(m);
 	list_remove(&m->pl->modules, m);
@@ -2561,6 +2562,14 @@ void module_duplicate(prolog *pl, module *m, const char *name, unsigned arity)
 	module *tmp_m = module_create(pl, name);
 	tmp_m->orig = m;
 	tmp_m->arity = arity;
+}
+
+static void keyval_free(const void *key, const void *val, const void *p)
+{
+	TPL_free((void*)key);
+	cell *c = (cell*)val;
+	unshare_cells(c, c->num_cells);
+	TPL_free((void*)val);
 }
 
 module *module_create(prolog *pl, const char *name)
@@ -2579,6 +2588,7 @@ module *module_create(prolog *pl, const char *name)
 	m->error = false;
 	m->id = ++pl->next_mod_id;
 	m->defops = sl_create((void*)fake_strcmp, NULL, NULL);
+	m->keyval = sl_create((void*)fake_strcmp, (void*)keyval_free, NULL);
 	pl->modmap[m->id] = m;
 
 	if (strcmp(name, "system")) {

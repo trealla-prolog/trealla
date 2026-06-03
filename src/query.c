@@ -260,6 +260,7 @@ bool undo_on_backtrack(query *q, void *v, bool is_bboard)
 {
 	undo_item *u = TPL_calloc(1, sizeof(undo_item));
 	if (!u) return false;
+	u->m = q->st.m;
 	u->c = v;
 
 	if (is_bboard)
@@ -804,7 +805,7 @@ int retry_choice(query *q)
 
 		while ((u = list_pop_back(&ch->undo)) != NULL) {
 			if (u->is_bboard)
-				sl_del(q->pl->keyval, u->key);
+				sl_del(u->m->keyval, u->key);
 			else {
 				unshare_cells(u->c, u->c->num_cells);
 				TPL_free(u->c);
@@ -1892,7 +1893,7 @@ void query_destroy(query *q)
 
 	while ((u = list_pop_back(&q->undo)) != NULL) {
 		if (u->is_bboard)
-			sl_del(q->pl->keyval, u->key);
+			sl_del(u->m->keyval, u->key);
 		else {
 			unshare_cells(u->c, u->c->num_cells);
 			TPL_free(u->c);

@@ -545,6 +545,7 @@ struct run_state_ {
 
 typedef struct {
 	lnode hdr;							// must be first
+	module *m;
 	union {
 		char *key;
 		cell *c;
@@ -850,7 +851,7 @@ struct module_ {
 	parser *p;
 	FILE *fp;
 	const char *filename, *name, *actual_filename;
-	skiplist *index, *ops, *defops;
+	skiplist *index, *ops, *defops, *keyval;
 	loaded_file *loaded_files;
 	lock guard;
 	list predicates;
@@ -879,7 +880,7 @@ struct prolog_ {
 	list modules;
 	module *system_m, *user_m, *m, *dcgs;
 	parser *p;
-	skiplist *biftab, *keyval, *help, *fortab, *alias;
+	skiplist *biftab, *help, *fortab, *alias;
 	FILE *logfp;
 	lock guard;
 	uint64_t s_last, s_cnt, seed, thr_cnt;

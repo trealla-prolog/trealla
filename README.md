@@ -596,7 +596,8 @@ Uses Ulrich Neumerkel's standard reference library.
 Blackboard functions
 ====================
 
-The blackboard is global among threads. The following are SWI
+The blackboard is module specific and shared among threads. The
+following are *SICStus Prolog* & *SWI-Prolog* (if `expects_dialect(sicstus)`)
 compatible:
 
 	bb_put/2					# bb_put(:atom, +term)
