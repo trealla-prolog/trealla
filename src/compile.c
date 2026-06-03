@@ -311,7 +311,7 @@ static void compile_term(predicate *pr, clause *cl, cell **dst, cell **src)
 		make_instr((*dst)++, g_sys_module_s, bif_sys_module_1, 1, (*src)->num_cells);
 		copy_term(dst, src);										// Arg1
 
-		if (is_builtin(*src)) {
+		if (is_builtin(*src) && is_op(*src)) {
 			make_instr((*dst)++, g_sys_call_check_s, bif_sys_call_check_1, 1, (*src)->num_cells);
 			*dst += copy_cells(*dst, *src, (*src)->num_cells);		// Arg2
 		}
