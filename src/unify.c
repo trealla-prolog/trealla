@@ -271,6 +271,7 @@ static void set_var(query *q, const cell *c, pl_ctx c_ctx, cell *v, pl_ctx v_ctx
 			&& !is_ground(v)
 			){
 			q->no_recov = true;
+			q->no_recov2 = true;
 			q->total_no_recovs++;
 		}
 	} else {
@@ -609,7 +610,7 @@ static bool unify_internal(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 bool unify(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx)
 {
 	q->is_cyclic1 = q->is_cyclic2 = false;
-	q->has_vars = q->no_recov = false;
+	q->has_vars = q->no_recov = false, q->no_recov2 = false;
 	q->run_hook = false;
 	q->before_hook_tp = q->st.tp;
 	if (++q->vgen == 0) q->vgen = 1;
@@ -632,7 +633,7 @@ bool unify(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx)
 		return false;
 	}
 
-	if (q->no_recov) {
+	if (q->no_recov2) {
 		frame *f = GET_CURR_FRAME();
 		f->no_recov = true;
 	}

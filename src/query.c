@@ -103,7 +103,7 @@ static void trace_call(query *q, cell *c, pl_ctx c_ctx, box_t box)
 	q->step++;
 	SB(pr);
 
-	SB_sprintf(pr, "[%u:%s:%"PRIu64":f%u:fp%u:cp%u:sp%u:hp%u:tp%u:nor%d] ",
+	SB_sprintf(pr, "[%u:%s:%"PRIu64":f%u:fp%u:cp%u:sp%u:hp%u:tp%u:nr%d] ",
 		q->my_chan,
 		q->st.m->name,
 		q->step,
