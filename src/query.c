@@ -27,12 +27,12 @@ static void msleep(int ms)
 
 #define DEBUG_MATCH if (0)
 
-static const unsigned INITIAL_NBR_QUEUE_CELLS = 1000;
-static const unsigned INITIAL_NBR_HEAP_CELLS = 1000;
+static const unsigned INITIAL_NBR_QUEUE_CELLS = 100;
+static const unsigned INITIAL_NBR_HEAP_CELLS = 100;
 static const unsigned INITIAL_NBR_SLOTS = 1000;
 static const unsigned INITIAL_NBR_TRAILS = 1000;
-static const unsigned INITIAL_NBR_CHOICES = 1000;
-static const unsigned INITIAL_NBR_FRAMES = 1000;
+static const unsigned INITIAL_NBR_CHOICES = 100;
+static const unsigned INITIAL_NBR_FRAMES = 100;
 static const unsigned INITIAL_NBR_CELLS = 100;
 
 int g_tpl_interrupt = 0;
@@ -1950,10 +1950,10 @@ static query *query_create_(module *m, bool is_toplevel)
 
 	// Allocate these now...
 
-	q->frames_size = is_toplevel ? INITIAL_NBR_FRAMES : INITIAL_NBR_FRAMES / 4;
-	q->choices_size = is_toplevel ? INITIAL_NBR_CHOICES : INITIAL_NBR_FRAMES / 4;
-	q->slots_size = is_toplevel ? INITIAL_NBR_SLOTS : INITIAL_NBR_SLOTS / 4;
-	q->trails_size = is_toplevel ? INITIAL_NBR_TRAILS : INITIAL_NBR_TRAILS / 4;
+	q->frames_size = INITIAL_NBR_FRAMES;
+	q->choices_size = INITIAL_NBR_CHOICES;
+	q->slots_size = INITIAL_NBR_SLOTS;
+	q->trails_size = INITIAL_NBR_TRAILS;
 
 	ENSURE(q->frames = TPL_calloc(q->frames_size, sizeof(frame)), NULL);
 	ENSURE(q->choices = TPL_calloc(q->choices_size, sizeof(choice)), NULL);
@@ -1962,11 +1962,11 @@ static query *query_create_(module *m, bool is_toplevel)
 
 	// Allocate these later as needed...
 
-	q->heap_size = is_toplevel ? INITIAL_NBR_HEAP_CELLS : INITIAL_NBR_HEAP_CELLS / 4;
+	q->heap_size = INITIAL_NBR_HEAP_CELLS;
 	q->tmph_size = INITIAL_NBR_CELLS;
 
 	for (int i = 0; i < MAX_QUEUES; i++)
-		q->q_size[i] = is_toplevel ? INITIAL_NBR_QUEUE_CELLS : INITIAL_NBR_QUEUE_CELLS / 4;
+		q->q_size[i] = INITIAL_NBR_QUEUE_CELLS;
 
 	frame *f = GET_CURR_FRAME();
 	f->prev = CTX_NUL;
