@@ -633,10 +633,5 @@ bool unify(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx)
 		return false;
 	}
 
-	if (q->no_recov2) {
-		frame *f = GET_CURR_FRAME();
-		f->no_recov = true;
-	}
-
 	return true;
 }
