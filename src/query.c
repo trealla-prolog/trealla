@@ -823,7 +823,6 @@ int retry_choice(query *q)
 		f->chgen = ch->chgen;
 		f->initial_slots = ch->initial_slots;
 		f->actual_slots = ch->actual_slots;
-		f->no_recov = ch->no_recov;
 		f->op = ch->op;
 		f->base = ch->base;
 
@@ -896,7 +895,6 @@ bool push_choice(query *q)
 	ch->chgen = ch->gen = f->chgen;
 	ch->initial_slots = f->initial_slots;
 	ch->actual_slots = f->actual_slots;
-	ch->no_recov = f->no_recov;
 	ch->op = f->op;
 	ch->base = f->base;
 
