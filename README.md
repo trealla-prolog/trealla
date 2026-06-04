@@ -59,6 +59,7 @@ where options can be:
 	-w, --watchdog     - create watchdog
 	--autofail         - autofail queries at the toplevel
 	--consult          - consult from STDIN
+	--nolimit          - no memory limit
 
 For example:
 
