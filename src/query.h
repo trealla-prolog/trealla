@@ -56,6 +56,7 @@ bool call_check(query *q, cell *tmp2, bool *status, bool calln);
 bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n);
 bool match_head(query *q);
 bool check_frame(query *q, unsigned max_vars);
+bool undo_on_backtrack(query *q, void *v, bool is_bboard);
 
 bool throw_error(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const char *expected);
 bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const char *expected, cell *goal);
@@ -214,8 +215,6 @@ inline static cell *get_body(cell *c)
 
 	return NULL;
 }
-
-bool undo_on_backtrack(query *q, void *v, bool is_bboard);
 
 inline static pl_idx get_ordered_slot_num(const query *q, const frame *f, unsigned var_num)
 {
