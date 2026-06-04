@@ -131,7 +131,7 @@ static bool bif_bb_put_2(query *q)
 static cell *bb_import_term_to_heap(query *q, cell *c, pl_ctx c_ctx)
 {
 	const frame *f = GET_CURR_FRAME();
-	cell *tmp = alloc_heap(q, c->num_cells);
+	cell *tmp = alloc_backtracking(q, c->num_cells);
 	if (!tmp) return NULL;
 	dup_cells_by_ref(tmp, c, c_ctx, c->num_cells);
 	return tmp;
@@ -189,7 +189,7 @@ static bool bif_bb_get_2(query *q)
 	prolog_unlock(q->pl);
 	cell *tmp = val->flags & FLAG_LIVE ?
 		bb_import_term_to_heap(q, val, q->st.cur_ctx) :
-		import_term_to_heap(q, val, q->st.cur_ctx);
+		import_term_to_backtracking(q, val, q->st.cur_ctx);
 	CHECKED(tmp);
 	GET_FIRST_ARG(p1x,nonvar);
 	GET_NEXT_ARG(p2,any);
@@ -248,7 +248,7 @@ static bool bif_bb_delete_2(query *q)
 		return false;
 	}
 
-	cell *tmp = import_term_to_heap(q, (cell*)val, q->st.cur_ctx);
+	cell *tmp = import_term_to_backtracking(q, (cell*)val, q->st.cur_ctx);
 	CHECKED(tmp, prolog_unlock(q->pl));
 	GET_FIRST_ARG(p1x,nonvar);
 	GET_NEXT_ARG(p2,any);
@@ -323,7 +323,7 @@ static bool bif_bb_update_3(query *q)
 	}
 
 	q->noderef = true;
-	cell *tmp = import_term_to_heap(q, (cell*)val, q->st.cur_ctx);
+	cell *tmp = import_term_to_backtracking(q, (cell*)val, q->st.cur_ctx);
 	q->noderef = false;
 	CHECKED(tmp, prolog_unlock(q->pl));
 	GET_FIRST_ARG(p1x,nonvar);
@@ -338,7 +338,7 @@ static bool bif_bb_update_3(query *q)
 	}
 
 	key = strdup(tmpbuf);
-	tmp = copy_term_to_heap(q, p3, p3_ctx, false);
+	tmp = copy_term_to_backtracking(q, p3, p3_ctx, false);
 	CHECKED(tmp, prolog_unlock(q->pl));
 	cell *value = TPL_malloc(sizeof(cell)*tmp->num_cells);
 	CHECKED(value, prolog_unlock(q->pl));

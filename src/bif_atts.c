@@ -466,7 +466,7 @@ bool do_post_unify_hook(query *q, bool is_builtin)
 	q->undo_lo_tp = q->before_hook_tp;
 	q->undo_hi_tp = q->st.tp;
 	//printf("*** post_unify_hook lo=%u, hi=%u\n", q->undo_lo_tp, q->undo_hi_tp);
-	cell *tmp = alloc_heap(q, 3);
+	cell *tmp = alloc_backtracking(q, 3);
 	CHECKED(tmp);
 	make_instr(tmp+0, g_true_s, bif_iso_true_0, 0, 0);
 	make_instr(tmp+1, g_post_unify_hook_s, NULL, 0, 0);

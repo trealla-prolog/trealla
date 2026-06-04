@@ -232,7 +232,7 @@ static bool bif_yield_0(query *q)
 static bool bif_call_task_n(query *q)
 {
 	pl_idx save_hp = q->st.hp;
-	cell *p0 = clone_term_to_heap(q, q->st.instr, q->st.cur_ctx);
+	cell *p0 = clone_term_to_backtracking(q, q->st.instr, q->st.cur_ctx);
 	GET_FIRST_RAW_ARG0(p1,callable,p0);
 	CHECKED(init_tmp_heap(q));
 	CHECKED(clone_term_to_tmp(q, p1, p1_ctx));

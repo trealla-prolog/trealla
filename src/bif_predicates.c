@@ -1863,7 +1863,7 @@ static bool bif_iso_univ_2(query *q)
 		if (arity > MAX_ARITY)
 			return throw_error(q, tmp2, q->st.cur_ctx, "representation_error", "max_arity");
 
-		CHECKED(tmp = alloc_heap(q, num_cells));
+		CHECKED(tmp = alloc_backtracking(q, num_cells));
 		dup_cells(tmp, tmp2, num_cells);
 		tmp->num_cells = num_cells;
 		tmp->arity = arity;
@@ -1970,7 +1970,7 @@ static bool bif_iso_term_variables_2(query *q)
 
 	cell *tmp = do_term_variables(q, p1, p1_ctx);
 	CHECKED(tmp);
-	cell *tmp2 = alloc_heap(q, tmp->num_cells);
+	cell *tmp2 = alloc_backtracking(q, tmp->num_cells);
 	CHECKED(tmp2);
 	dup_cells(tmp2, tmp, tmp->num_cells);
 	return unify(q, p2, p2_ctx, tmp2, q->st.cur_ctx);
@@ -2037,7 +2037,7 @@ static bool bif_term_singletons_2(query *q)
 
 	cell *tmp = do_term_singletons(q, p1, p1_ctx);
 	CHECKED(tmp);
-	cell *tmp2 = alloc_heap(q, tmp->num_cells);
+	cell *tmp2 = alloc_backtracking(q, tmp->num_cells);
 	CHECKED(tmp2);
 	dup_cells(tmp2, tmp, tmp->num_cells);
 	return unify(q, p2, p2_ctx, tmp2, q->st.cur_ctx);
@@ -2058,9 +2058,9 @@ static bool do_copy_term(query *q, bool copy_attrs)
 	cell *tmp;
 
 	if (is_var(p1r) && is_var(p2r))
-		tmp = copy_term_to_heap_with_replacement(q, p1, p1_ctx, copy_attrs, p1r, p1r_ctx, p2r, p2r_ctx);
+		tmp = copy_term_to_backtracking_with_replacement(q, p1, p1_ctx, copy_attrs, p1r, p1r_ctx, p2r, p2r_ctx);
 	else
-		tmp = copy_term_to_heap(q, p1, p1_ctx, copy_attrs);
+		tmp = copy_term_to_backtracking(q, p1, p1_ctx, copy_attrs);
 
 	q->dump_var_num = -1;
 	q->dump_var_ctx = -1;
@@ -2096,7 +2096,7 @@ static bool bif_sys_clone_term_2(query *q)
 	if (is_atomic(p1) || is_atomic(p2))
 		return unify(q, p1, p1_ctx, p2, p2_ctx);
 
-	cell *tmp = clone_term_to_heap(q, p1, p1_ctx);
+	cell *tmp = clone_term_to_backtracking(q, p1, p1_ctx);
 	CHECKED(tmp);
 	return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
 }
@@ -2133,7 +2133,7 @@ static bool bif_iso_functor_3(query *q)
 		CHECKED(var_num != -1);
 		GET_FIRST_ARG(p1,any);
 		GET_NEXT_ARG(p2,any);
-		cell *tmp = alloc_heap(q, 1+arity);
+		cell *tmp = alloc_backtracking(q, 1+arity);
 		CHECKED(tmp);
 		*tmp = (cell){0};
 		tmp[0].tag = TAG_INTERNED;
@@ -2301,7 +2301,7 @@ static bool bif_iso_current_predicate_1(query *q)
 			return throw_error(q, p1, p1_ctx, "resource_error", "stack");
 		GET_FIRST_ARG(p_pi,any);
 		bool ok = search_functor(q, p1, p1_ctx, p2, p2_ctx) ? true : false;
-		cell *tmp = alloc_heap(q, 3);
+		cell *tmp = alloc_backtracking(q, 3);
 		make_instr(tmp, g_slash_s, NULL, 2, 2);
 		tmp[1] = *p1;
 		tmp[2] = *p2;
@@ -2504,7 +2504,7 @@ static bool bif_sys_current_prolog_flag_2(query *q)
 	} else if (!CMP_STRING_TO_CSTR(q, p1, "version_data")) {
 		unsigned v1 = 0, v2 = 0, v3 = 0;
 		sscanf(g_version, "v%u.%u.%u", &v1, &v2, &v3);
-		cell *tmp = alloc_heap(q, 5);
+		cell *tmp = alloc_backtracking(q, 5);
 		CHECKED(tmp);
 		make_atom(&tmp[0], new_atom(q->pl, "trealla"));
 		make_int(&tmp[1], v1);
@@ -2565,7 +2565,7 @@ static bool bif_sys_current_prolog_flag_2(query *q)
 
 static bool answer_write_options_error(query *q, cell *c)
 {
-	cell *tmp = alloc_heap(q, 2+c->num_cells);
+	cell *tmp = alloc_backtracking(q, 2+c->num_cells);
 	CHECKED(tmp);
 	make_instr(tmp, g_plus_s, bif_iso_add_2, 2, 1+c->num_cells);
 	make_atom(tmp+1, new_atom(q->pl, "answer_write_options"));
@@ -2576,7 +2576,7 @@ static bool answer_write_options_error(query *q, cell *c)
 
 static bool flag_value_error(query *q, cell *p1, cell *p2)
 {
-	cell *tmp = alloc_heap(q, 2+p2->num_cells);
+	cell *tmp = alloc_backtracking(q, 2+p2->num_cells);
 	CHECKED(tmp);
 	make_instr(tmp, g_plus_s, bif_iso_add_2, 2, 1+p2->num_cells);
 	make_atom(tmp+1, p1->val_off);
@@ -5613,7 +5613,7 @@ static bool bif_sys_det_length_rundown_2(query *q)
 	unsigned n = get_smalluint(p2);
 	int var_num = create_vars(q, n);
 	CHECKED(var_num != -1);
-	cell *l = alloc_heap(q, n*2+1);
+	cell *l = alloc_backtracking(q, n*2+1);
 	CHECKED(l);
 	cell *save_l = l;
 
