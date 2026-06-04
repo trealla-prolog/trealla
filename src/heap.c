@@ -373,7 +373,7 @@ cell *alloc_heap(query *q, unsigned num_cells)
 		unsigned n = MAX_OF(page_size, num_cells);
 		a->cells = TPL_calloc(a->page_size=n, sizeof(cell));
 		if (!a->cells) { TPL_free(a); return NULL; }
-		a->num = ++q->st.hp_num;
+		a->num = q->st.hp_num++;
 		q->heap_pages = a;
 		q->st.hp = 0;
 	}
