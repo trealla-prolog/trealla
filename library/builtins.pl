@@ -2,6 +2,39 @@
 :- use_module(library(error)).
 :- use_module(library(lists)).
 
+goal_expansion(maplist(G, L1), Goal) :-
+	nonvar(G), !,
+	term_variables(G, Args),
+	gensym:gensym(maplist_, U),
+	Goal =.. [U,L1,Args],
+	G1 =.. [U,[],Args],
+	'$assertz_static'(G1),
+	G2a =.. [U,[E1|T1],Args],
+	G2b =.. [U,T1,Args],
+	'$assertz_static'((G2a :- call(G, E1), G2b)),
+	true.
+goal_expansion(maplist(G, L1), maplist(G, L1)).
+
+goal_expansion(maplist(G, L1, L2), Goal) :-
+	nonvar(G), !,
+	term_variables(G, Args),
+	gensym:gensym(maplist_, U),
+	Goal =.. [U,L1,L2,Args],
+	G1 =.. [U,[],[],Args],
+	'$assertz_static'(G1),
+	G2a =.. [U,[E1|T1],[E2|T2],Args],
+	G2b =.. [U,T1,T2,Args],
+	'$assertz_static'((G2a :- call(G, E1, E2), G2b)),
+	true.
+goal_expansion(maplist(G, L1, L2), maplist(G, L1, L2)).
+
+goal_expansion(call_det(G, Det), Goal) :-
+	nonvar(G),
+	!,
+	Goal = ('$get_level'(L1), call(G), '$get_level'(L2), (L1 = L2 -> Det = true; Det = false)),
+	true.
+goal_expansion(call_det(G, V), call_det(G, V)).
+
 expand_term((H --> B), Out) :-
 	dcg_translate((H --> B), Out), !.
 
@@ -716,39 +749,6 @@ sre_subst_all_(Reg, TextIn, Subst, L0, L) :-
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-goal_expansion(maplist(G, L1), Goal) :-
-	nonvar(G), !,
-	term_variables(G, Args),
-	gensym:gensym(maplist_, U),
-	Goal =.. [U,L1,Args],
-	G1 =.. [U,[],Args],
-	'$assertz_static'(G1),
-	G2a =.. [U,[E1|T1],Args],
-	G2b =.. [U,T1,Args],
-	'$assertz_static'((G2a :- call(G, E1), G2b)),
-	true.
-goal_expansion(maplist(G, L1), maplist(G, L1)).
-
-goal_expansion(maplist(G, L1, L2), Goal) :-
-	nonvar(G), !,
-	term_variables(G, Args),
-	gensym:gensym(maplist_, U),
-	Goal =.. [U,L1,L2,Args],
-	G1 =.. [U,[],[],Args],
-	'$assertz_static'(G1),
-	G2a =.. [U,[E1|T1],[E2|T2],Args],
-	G2b =.. [U,T1,T2,Args],
-	'$assertz_static'((G2a :- call(G, E1, E2), G2b)),
-	true.
-goal_expansion(maplist(G, L1, L2), maplist(G, L1, L2)).
-
-goal_expansion(call_det(G, Det), Goal) :-
-	nonvar(G),
-	!,
-	Goal = ('$get_level'(L1), call(G), '$get_level'(L2), (L1 = L2 -> Det = true; Det = false)),
-	true.
-goal_expansion(call_det(G, V), call_det(G, V)).
 
 % SWI-compatible library(option)
 
