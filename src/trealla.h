@@ -34,6 +34,7 @@ void set_trace(prolog*);
 void set_autofail(prolog*);
 void set_quiet(prolog*);
 void set_opt(prolog*, int onoff);
+void set_limit(prolog*, int onoff);
 
 void convert_path(char *filename);
 

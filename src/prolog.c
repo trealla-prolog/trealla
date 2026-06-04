@@ -132,6 +132,7 @@ void set_trace(prolog *pl) { pl->trace = true; }
 void set_autofail(prolog *pl) { pl->autofail = true; }
 void set_quiet(prolog *pl) { pl->quiet = true; }
 void set_opt(prolog *pl, int level) { pl->opt = level; }
+void set_limit(prolog *pl, int level) { pl->limit = level; }
 
 bool pl_isatty(prolog* pl) { return isatty(fileno(pl->streams[0].fp)); }
 FILE *pl_stdin(prolog *pl) { return pl->streams[0].fp; }
@@ -776,7 +777,7 @@ prolog *pl_create()
 
 	pl->user_m->flags.strict_iso = false;
 	pl->m = pl->user_m;
-
+	pl->limit = 1;
 	pl->current_input = 0;		// STDIN
 	pl->current_output = 1;		// STDOUT
 	pl->current_error = 2;		// STDERR

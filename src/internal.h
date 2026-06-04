@@ -888,7 +888,7 @@ struct prolog_ {
 	pl_refcnt q_cnt, dbgen;
 	unsigned next_mod_id, def_max_depth, my_chan;
 	unsigned current_input, current_output, current_error;
-	int8_t halt_code, opt;
+	int8_t halt_code, opt, limit;
 	pl_refcnt rnd_first_time;
 	bool def_quoted:1;
 	bool def_double_quotes:1;
