@@ -259,14 +259,14 @@ bool check_trail(query *q)
 	return true;
 }
 
-bool undo_on_backtrack(query *q, void *v, bool is_bboard)
+bool undo_on_backtrack(query *q, void *v, enum undo_item type)
 {
 	undo_item *u = TPL_calloc(1, sizeof(undo_item));
 	if (!u) return false;
 	u->m = q->st.m;
 	u->c = v;
 
-	if (is_bboard)
+	if (type == UNDO_BBOARD)
 		u->is_bboard = true;
 	else
 		u->is_cells = true;

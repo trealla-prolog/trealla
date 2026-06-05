@@ -56,7 +56,7 @@ static bool bif_bb_b_put_2(query *q)
 	val->flags |= FLAG_LIVE;
 	char *key = strdup(tmpbuf);
 	CHECKED(key);
-	CHECKED(undo_on_backtrack(q, key, true));
+	CHECKED(undo_on_backtrack(q, key, UNDO_BBOARD));
 
 	prolog_lock(q->pl);
 	sl_set(q->st.m->keyval, key, val);

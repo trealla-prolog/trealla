@@ -115,7 +115,7 @@ static bool do_put_atts(query *q, cell *attr, pl_ctx attr_ctx, bool is_minus)
 	q->st.hp = hp;
 	q->st.hp_num = hp_num;
 	trim_heap(q);
-	CHECKED(undo_on_backtrack(q, l, false));
+	CHECKED(undo_on_backtrack(q, l, UNDO_CELLS));
 	e->c.val_attrs = l;
 	return true;
 }
