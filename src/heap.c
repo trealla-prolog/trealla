@@ -657,8 +657,13 @@ cell *import_term_to_backtracking(query *q, cell *c, pl_ctx c_ctx)
 
 cell *alloc_backtracking(query *q, unsigned num_cells)
 {
+#if 0
 	cell *c = TPL_malloc(sizeof(cell)*num_cells);
 	if (!c) return NULL;
 	undo_on_backtrack(q, c, false);
+#else
+	cell *c = alloc_pages(q, num_cells);
+	if (!c) return NULL;
+#endif
 	return c;
 }
