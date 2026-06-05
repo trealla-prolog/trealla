@@ -713,7 +713,6 @@ static void reuse_frame(query *q, unsigned num_vars)
 	q->total_tcos++;
 	q->st.hp = f_cur->hp;
 	q->st.hp_num = f_cur->hp_num;
-	trim_pages(q);
 }
 
 static bool commit_any_choices(const query *q, const frame *f)
@@ -1049,7 +1048,6 @@ static bool resume_frame(query *q)
 		q->total_recovs++;
 		q->st.hp = f->hp;
 		q->st.hp_num = f->hp_num;
-		trim_pages(q);
 		trim_frame(q, f);
 	}
 
