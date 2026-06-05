@@ -265,8 +265,8 @@ static bool copy_vars(query *q, cell *c, bool copy_attrs, cell *from, pl_ctx fro
 
 				if (!c->tmp_attrs) {
 					cell *tmp =
-						from ?copy_term_to_backtracking_with_replacement(q, attrs, q->st.cur_ctx, false, from, from_ctx, to, to_ctx)
-						:copy_term_to_backtracking(q, attrs, q->st.cur_ctx, false);
+						from ?copy_term_to_heap_with_replacement(q, attrs, q->st.cur_ctx, false, from, from_ctx, to, to_ctx)
+						:copy_term_to_heap(q, attrs, q->st.cur_ctx, false);
 					CHECKED(tmp);
 					c->tmp_attrs = tmp;
 				}
@@ -362,7 +362,7 @@ cell *copy_term_to_tmp(query *q, cell *p1, pl_ctx p1_ctx, bool copy_attrs)
 	return copy_term_to_tmp_with_replacement(q, p1, p1_ctx, copy_attrs, NULL, 0, NULL, 0);
 }
 
-static cell *alloc_pages(query *q, unsigned num_cells)
+cell *alloc_heap(query *q, unsigned num_cells)
 {
 	size_t page_size = q->heap_pages ? q->heap_pages->page_size*2 : q->heap_size;
 
@@ -384,7 +384,7 @@ static cell *alloc_pages(query *q, unsigned num_cells)
 	return c;
 }
 
-void trim_pages(query *q)
+void trim_heap(query *q)
 {
 	for (page *a = q->heap_pages; a;) {
 		if (a->num <= q->st.hp_num)
@@ -412,7 +412,7 @@ void trim_pages(query *q)
 	}
 }
 
-cell *clone_term_to_backtracking(query *q, cell *p1, pl_ctx p1_ctx)
+cell *clone_term_to_heap(query *q, cell *p1, pl_ctx p1_ctx)
 {
 	if (!init_tmp_heap(q))
 		return NULL;
@@ -420,34 +420,20 @@ cell *clone_term_to_backtracking(query *q, cell *p1, pl_ctx p1_ctx)
 	q->has_vars = false;
 	p1 = clone_term_to_tmp(q, p1, p1_ctx);
 	if (!p1) return p1;
-	cell *tmp = alloc_backtracking(q, p1->num_cells);
+	cell *tmp = alloc_heap(q, p1->num_cells);
 	if (!tmp) return NULL;
 	dup_cells(tmp, p1, p1->num_cells);
 	return tmp;
 }
 
-cell *clone_term_to_pages(query *q, cell *p1, pl_ctx p1_ctx)
-{
-	if (!init_tmp_heap(q))
-		return NULL;
-
-	q->has_vars = false;
-	p1 = clone_term_to_tmp(q, p1, p1_ctx);
-	if (!p1) return p1;
-	cell *tmp = alloc_pages(q, p1->num_cells);
-	if (!tmp) return NULL;
-	dup_cells(tmp, p1, p1->num_cells);
-	return tmp;
-}
-
-cell *copy_term_to_backtracking_with_replacement(query *q, cell *p1, pl_ctx p1_ctx, bool copy_attrs, cell *from, pl_ctx from_ctx, cell *to, pl_ctx to_ctx)
+cell *copy_term_to_heap_with_replacement(query *q, cell *p1, pl_ctx p1_ctx, bool copy_attrs, cell *from, pl_ctx from_ctx, cell *to, pl_ctx to_ctx)
 {
 	if (!init_tmp_heap(q))
 		return NULL;
 
 	cell *tmp = copy_term_to_tmp_with_replacement(q, p1, p1_ctx, copy_attrs, is_var(from)?from:NULL, from_ctx, is_var(to)?to:NULL, to_ctx);
 	if (!tmp) return tmp;
-	cell *tmp2 = alloc_backtracking(q, tmp->num_cells);
+	cell *tmp2 = alloc_heap(q, tmp->num_cells);
 	if (!tmp2) return NULL;
 	dup_cells(tmp2, tmp, tmp->num_cells);
 
@@ -468,7 +454,7 @@ cell *copy_term_to_backtracking_with_replacement(query *q, cell *p1, pl_ctx p1_c
 	return tmp2;
 }
 
-cell *copy_term_to_backtracking(query *q, cell *p1, pl_ctx p1_ctx, bool copy_attrs)
+cell *copy_term_to_heap(query *q, cell *p1, pl_ctx p1_ctx, bool copy_attrs)
 {
 	if (!init_tmp_heap(q))
 		return NULL;
@@ -476,7 +462,7 @@ cell *copy_term_to_backtracking(query *q, cell *p1, pl_ctx p1_ctx, bool copy_att
 	q->has_vars = false;
 	cell *tmp = copy_term_to_tmp_with_replacement(q, p1, p1_ctx, copy_attrs, NULL, 0, NULL, 0);
 	if (!tmp) return tmp;
-	cell *tmp2 = alloc_backtracking(q, tmp->num_cells);
+	cell *tmp2 = alloc_heap(q, tmp->num_cells);
 	if (!tmp2) return NULL;
 	dup_cells(tmp2, tmp, tmp->num_cells);
 
@@ -549,7 +535,7 @@ cell *end_list(query *q)
 	}
 
 	pl_idx num_cells = tmp_heap_used(q);
-	tmp = alloc_backtracking(q, num_cells);
+	tmp = alloc_heap(q, num_cells);
 	if (!tmp) return NULL;
 	dup_cells(tmp, get_tmp_heap(q, 0), num_cells);
 	tmp->num_cells = num_cells;
@@ -572,7 +558,7 @@ cell *end_list_unsafe(query *q)
 		return make_nil();
 	}
 	pl_idx num_cells = tmp_heap_used(q);
-	tmp = alloc_backtracking(q, num_cells);
+	tmp = alloc_heap(q, num_cells);
 	if (!tmp) return NULL;
 	copy_cells(tmp, get_tmp_heap(q, 0), num_cells);
 	tmp->num_cells = num_cells;
@@ -610,7 +596,7 @@ cell *append_structure(query *q, const cell *c)
 cell *end_structure_heap(query *q)
 {
 	pl_idx num_cells = tmp_heap_used(q);
-	cell *tmp = alloc_backtracking(q, num_cells);
+	cell *tmp = alloc_heap(q, num_cells);
 	if (!tmp) return NULL;
 	dup_cells(tmp, get_tmp_heap(q, 0), num_cells);
 	tmp->num_cells = num_cells;
@@ -645,25 +631,12 @@ cell *alloc_queuen(query *q, unsigned qnum, const cell *c)
 	return dst;
 }
 
-cell *import_term_to_backtracking(query *q, cell *c, pl_ctx c_ctx)
+cell *import_term_to_heap(query *q, cell *c, pl_ctx c_ctx)
 {
 	const frame *f = GET_CURR_FRAME();
-	cell *tmp = alloc_backtracking(q, c->num_cells);
+	cell *tmp = alloc_heap(q, c->num_cells);
 	if (!tmp) return NULL;
 	dup_cells_by_ref(tmp, c, c_ctx, c->num_cells);
 	rebase_term(q, tmp, f->actual_slots, false);
 	return tmp;
-}
-
-cell *alloc_backtracking(query *q, unsigned num_cells)
-{
-#if 0
-	cell *c = TPL_malloc(sizeof(cell)*num_cells);
-	if (!c) return NULL;
-	undo_on_backtrack(q, c, false);
-#else
-	cell *c = alloc_pages(q, num_cells);
-	if (!c) return NULL;
-#endif
-	return c;
 }

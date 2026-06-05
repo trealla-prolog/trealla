@@ -654,7 +654,7 @@ static bool bif_shift_1(query *q)
 	q->ball = p1;
 	q->ball_ctx = p1_ctx;
 	cell *next = q->st.instr + q->st.instr->num_cells;
-	cell *tmp2 = alloc_backtracking(q, 1+next->num_cells);
+	cell *tmp2 = alloc_heap(q, 1+next->num_cells);
 	make_instr(tmp2, g_cont_s, NULL, 1, next->num_cells);
 	dup_cells_by_ref(tmp2+1, next, q->st.cur_ctx, next->num_cells);
 	q->cont = tmp2;
@@ -668,7 +668,7 @@ bool bif_sys_call_cleanup_3(query *q)
 
 	if (q->retry && q->ball) {
 		GET_NEXT_ARG(p2,any);
-		cell *tmp = clone_term_to_backtracking(q, q->ball, q->ball_ctx);
+		cell *tmp = clone_term_to_heap(q, q->ball, q->ball_ctx);
 		CHECKED(tmp);
 		return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
 	}
@@ -813,7 +813,7 @@ static cell *parse_to_heap(query *q, const char *src)
 	}
 
 
-	cell *tmp = clone_term_to_pages(q, p2->cl->cells, q->st.cur_ctx);
+	cell *tmp = clone_term_to_heap(q, p2->cl->cells, q->st.cur_ctx);
 	if (!tmp) return NULL;
 	check_error(tmp, parser_destroy(p2));
 	parser_destroy(p2);
@@ -865,7 +865,7 @@ static bool find_exception_handler(query *q, char *ball)
 		q->abort = true;
 		return false;
 	} else {
-		q->ball = clone_term_to_pages(q, e, e_ctx);
+		q->ball = clone_term_to_heap(q, e, e_ctx);
 		CHECKED(q->ball);
 		q->ball_ctx = q->st.cur_ctx;
 		rebase_term(q, q->ball, 0, false);
@@ -987,7 +987,7 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 	if (is_var(c) && !q->cycle_error) {
 		err_type = "instantiation_error";
 		//printf("error(%s,%s).\n", err_type, expected);
-		tmp = alloc_backtracking(q, 3);
+		tmp = alloc_heap(q, 3);
 		CHECKED(tmp);
 		pl_idx num_cells = 0;
 		make_instr(tmp+num_cells++, g_error_s, NULL, 2, 2);
@@ -995,7 +995,7 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		make_cstring(tmp+num_cells, expected);
 	} else if (!strcmp(err_type, "unwind")) {
 		//printf("error(%s(%s),(%s)/%u).\n", err_type, C_STR(q, c), functor, goal->arity);
-		tmp = alloc_backtracking(q, 6+(c->num_cells-1));
+		tmp = alloc_heap(q, 6+(c->num_cells-1));
 		CHECKED(tmp);
 		pl_idx num_cells = 0;
 		make_instr(tmp+num_cells++, g_error_s, NULL, 2, 5+(c->num_cells-1));
@@ -1009,7 +1009,7 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 	} else if (!strcmp(err_type, "type_error") && !strcmp(expected, "var")) {
 		err_type = "uninstantiation_error";
 		//printf("error(%s(%s),(%s)/%u).\n", err_type, C_STR(q, c), functor, goal->arity);
-		tmp = alloc_backtracking(q, 6+(c->num_cells-1));
+		tmp = alloc_heap(q, 6+(c->num_cells-1));
 		CHECKED(tmp);
 		pl_idx num_cells = 0;
 		make_instr(tmp+num_cells++, g_error_s, NULL, 2, 5+(c->num_cells-1));
@@ -1022,7 +1022,7 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		make_int(tmp+num_cells, !is_string(goal)?goal->arity:0);
 	} else if (!strcmp(err_type, "type_error") && !strcmp(expected, "evaluable")) {
 		//printf("error(%s(%s,(%s)/%u),(%s)/%u).\n", err_type, expected, C_STR(q, c), c->arity, functor, goal->arity);
-		tmp = alloc_backtracking(q, 9);
+		tmp = alloc_heap(q, 9);
 		CHECKED(tmp);
 		pl_idx num_cells = 0;
 		make_instr(tmp+num_cells++, g_error_s, NULL, 2, 8);
@@ -1041,7 +1041,7 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		make_int(tmp+num_cells, !is_string(goal)?goal->arity:0);
 	} else if (!strcmp(err_type, "permission_error") && is_compound(c) && CMP_STRING_TO_CSTR(q, c, "/") && is_var(FIRST_ARG(c))) {
 		//printf("error(%s(%s,(%s)/%u),(%s)/%u).\n", err_type, expected, tmpbuf, c->arity, functor, goal->arity);
-		tmp = alloc_backtracking(q, 9+extra);
+		tmp = alloc_heap(q, 9+extra);
 		CHECKED(tmp);
 		pl_idx num_cells = 0;
 		make_instr(tmp+num_cells++, g_error_s, NULL, 2, 8+extra);
@@ -1078,7 +1078,7 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		make_int(tmp+num_cells, !is_string(goal)?goal->arity:0);
 	} else if (!strcmp(err_type, "permission_error") && (is_builtin || (is_op && c->arity)) && !is_abolish) {
 		//printf("error(%s(%s,(%s)/%u),(%s)/%u).\n", err_type, expected, tmpbuf, c->arity, functor, goal->arity);
-		tmp = alloc_backtracking(q, 9+extra);
+		tmp = alloc_heap(q, 9+extra);
 		CHECKED(tmp);
 		pl_idx num_cells = 0;
 		make_instr(tmp+num_cells++, g_error_s, NULL, 2, 8+extra);
@@ -1115,7 +1115,7 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		make_int(tmp+num_cells, !is_string(goal)?goal->arity:0);
 	} else if (!strcmp(err_type, "instantiation_error")) {
 		//printf("error(%s,(%s)/%u).\n", err_type, functor, goal->arity);
-		tmp = alloc_backtracking(q, 5);
+		tmp = alloc_heap(q, 5);
 		CHECKED(tmp);
 		pl_idx num_cells = 0;
 		make_instr(tmp+num_cells++, g_error_s, NULL, 2, 4);
@@ -1126,7 +1126,7 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		make_int(tmp+num_cells, !is_string(goal)?goal->arity:0);
 	} else if (!strcmp(err_type, "existence_error") && !strcmp(expected, "procedure") && is_callable(c)) {
 		//printf("error(%s(%s,(%s)/%u),(%s)/%u).\n", err_type, expected, tmpbuf, c->arity, functor, goal->arity);
-		tmp = alloc_backtracking(q, 9);
+		tmp = alloc_heap(q, 9);
 		CHECKED(tmp);
 		pl_idx num_cells = 0;
 		make_instr(tmp+num_cells++, g_error_s, NULL, 2, 8);
@@ -1145,7 +1145,7 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		|| !strcmp(err_type, "syntax_error")
 		|| !strcmp(err_type, "resource_error")) {
 		//printf("error(%s(%s),(%s)/%u).\n", err_type, expected, functor, goal->arity);
-		tmp = alloc_backtracking(q, 6);
+		tmp = alloc_heap(q, 6);
 		CHECKED(tmp);
 		pl_idx num_cells = 0;
 		make_instr(tmp+num_cells++, g_error_s, NULL, 2, 5);
@@ -1157,7 +1157,7 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		make_int(tmp+num_cells, !is_string(goal)?goal->arity:0);
 	} else {
 		//printf("error(%s(%s,(%s)),(%s)/%u).\n", err_type, expected, C_STR(q, c), functor, goal->arity);
-		tmp = alloc_backtracking(q, 7+(c->num_cells-1)+extra);
+		tmp = alloc_heap(q, 7+(c->num_cells-1)+extra);
 		CHECKED(tmp);
 		pl_idx num_cells = 0;
 		make_instr(tmp+num_cells++, g_error_s, NULL, 2, 6+(c->num_cells-1)+extra);

@@ -14,10 +14,7 @@ cell *copy_term_to_tmp(query *q, cell *c, pl_ctx c_ctx, bool copy_attrs);
 #define get_tmp_heap(q,i) ((q)->tmp_heap + (i))
 #define tmp_heap_used(q) (q)->tmphp
 
-// Only used now by exceptions...
-
-cell *clone_term_to_pages(query *q, cell *c, pl_ctx c_ctx);
-void trim_pages(query *q);
+void trim_heap(query *q);
 
 cell *alloc_queuen(query *q, unsigned qnum, const cell *c);
 
@@ -39,9 +36,9 @@ cell *init_tmp_heap(query *q);
 
 // These are malloc'd spaces that get freed on backtracking...
 
-cell *alloc_backtracking(query *q, unsigned num_cells);
-cell *clone_term_to_backtracking(query *q, cell *c, pl_ctx c_ctx);
-cell *copy_term_to_backtracking(query *q, cell *c, pl_ctx c_ctx, bool copy_attrs);
-cell *copy_term_to_backtracking_with_replacement(query *q, cell *c, pl_ctx c_ctx, bool copy_attrs, cell *from, pl_ctx from_ctx, cell *to, pl_ctx to_ctx);
-cell *import_term_to_backtracking(query *q, cell *c, pl_ctx c_ctx);
+cell *alloc_heap(query *q, unsigned num_cells);
+cell *clone_term_to_heap(query *q, cell *c, pl_ctx c_ctx);
+cell *copy_term_to_heap(query *q, cell *c, pl_ctx c_ctx, bool copy_attrs);
+cell *copy_term_to_heap_with_replacement(query *q, cell *c, pl_ctx c_ctx, bool copy_attrs, cell *from, pl_ctx from_ctx, cell *to, pl_ctx to_ctx);
+cell *import_term_to_heap(query *q, cell *c, pl_ctx c_ctx);
 

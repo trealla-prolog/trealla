@@ -438,7 +438,7 @@ static bool bif_iso_asserta_1(query *q)
 	parser_destroy(p);
 
 	if (!r) {
-		h = copy_term_to_backtracking(q, h, q->st.cur_ctx, false);
+		h = copy_term_to_heap(q, h, q->st.cur_ctx, false);
 		return throw_error(q, h, q->st.cur_ctx, "permission_error", "modify,static_procedure");
 	}
 
@@ -496,7 +496,7 @@ static bool do_assertz_1(query *q, bool consulting)
 	parser_destroy(p);
 
 	if (!r) {
-		h = copy_term_to_backtracking(q, h, q->st.cur_ctx, false);
+		h = copy_term_to_heap(q, h, q->st.cur_ctx, false);
 		return throw_error(q, h, q->st.cur_ctx, "permission_error", "modify,static_procedure");
 	}
 
@@ -572,7 +572,7 @@ static bool do_asserta_2(query *q)
 	parser_destroy(p);
 
 	if (!r) {
-		h = copy_term_to_backtracking(q, h, q->st.cur_ctx, false);
+		h = copy_term_to_heap(q, h, q->st.cur_ctx, false);
 		return throw_error(q, h, q->st.cur_ctx, "permission_error", "modify,static_procedure");
 	}
 
@@ -666,7 +666,7 @@ static bool do_assertz_2(query *q)
 	parser_destroy(p);
 
 	if (!r) {
-		h = copy_term_to_backtracking(q, h, q->st.cur_ctx, false);
+		h = copy_term_to_heap(q, h, q->st.cur_ctx, false);
 		return throw_error(q, h, q->st.cur_ctx, "permission_error", "modify,static_procedure");
 	}
 

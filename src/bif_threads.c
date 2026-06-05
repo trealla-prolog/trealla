@@ -460,7 +460,7 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 
 		while (m) {
 			CHECKED(push_choice(q), release_lock(&t->guard));
-			cell *tmp = import_term_to_backtracking(q, m->c, q->st.cur_ctx);
+			cell *tmp = import_term_to_heap(q, m->c, q->st.cur_ctx);
 			CHECKED(tmp, release_lock(&t->guard));
 			GET_FIRST_ARG(p1,queue);
 			GET_NEXT_ARG(p2,any);
@@ -946,7 +946,7 @@ static bool bif_thread_join_2(query *q)
 
 	if (t->exit_code) {
 		const frame *f = GET_CURR_FRAME();
-		cell *tmp = import_term_to_backtracking(q, t->exit_code, q->st.cur_ctx);
+		cell *tmp = import_term_to_heap(q, t->exit_code, q->st.cur_ctx);
 		CHECKED(tmp);
 		unshare_cells(t->exit_code, t->exit_code->num_cells);
 		TPL_free(t->exit_code);
@@ -1011,7 +1011,7 @@ bool do_signal(query *q, void *thread_ptr)
 	msg *m = list_pop_front(&t->signals);
 	release_lock(&t->guard);
 	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.cur_ctx, 0);
-	cell *c = import_term_to_backtracking(q, m->c, q->st.cur_ctx);
+	cell *c = import_term_to_heap(q, m->c, q->st.cur_ctx);
 	CHECKED(c);
 	TPL_free(m);
 	cell *tmp = prepare_call(q, CALL_NOSKIP, c, q->st.cur_ctx, 2);
@@ -1225,7 +1225,7 @@ static bool do_thread_property_pin_both(query *q)
 	pl_ctx c_ctx = q->latest_ctx;
 
 	if (!CMP_STRING_TO_CSTR(q, p2, "alias")) {
-		cell *tmp = alloc_backtracking(q, 2);
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		make_cstring(tmp+1, t->alias);
 
@@ -1236,13 +1236,13 @@ static bool do_thread_property_pin_both(query *q)
 
 		return true;
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "detached")) {
-		cell *tmp = alloc_backtracking(q, 2);
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "detached"), NULL, 1, 1);
 		make_atom(tmp+1, t->is_detached?g_true_s:g_false_s);
 		return unify(q, c, c_ctx, tmp, q->st.cur_ctx);
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "status")) {
 		if (t->is_exception) {
-			cell *tmp = alloc_backtracking(q, 2+t->ball->num_cells);
+			cell *tmp = alloc_heap(q, 2+t->ball->num_cells);
 			make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1+t->ball->num_cells);
 			make_instr(tmp+1, new_atom(q->pl, "exception"), NULL, 1, t->ball->num_cells);
 			dup_cells(tmp+2, t->ball, t->ball->num_cells);
@@ -1250,13 +1250,13 @@ static bool do_thread_property_pin_both(query *q)
 		}
 
 		if (!t->is_finished) {
-			cell *tmp = alloc_backtracking(q, 2);
+			cell *tmp = alloc_heap(q, 2);
 			make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
 			make_atom(tmp+1, new_atom(q->pl, "running"));
 			return unify(q, c, c_ctx, tmp, q->st.cur_ctx);
 		}
 
-		cell *tmp = alloc_backtracking(q, 2);
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
 		make_atom(tmp+1, t->exit_code?g_false_s:g_true_s);
 		return unify(q, c, c_ctx, tmp, q->st.cur_ctx);
@@ -1332,7 +1332,7 @@ static bool do_thread_property_pin_id(query *q)
 
 	if (i == 0) {
 		CHECKED(push_choice(q));
-		cell *tmp = alloc_backtracking(q, 2);
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		make_cstring(tmp+1, t->alias);
 
@@ -1344,13 +1344,13 @@ static bool do_thread_property_pin_id(query *q)
 		return true;
 	} else if (i == 1) {
 		CHECKED(push_choice(q));
-		cell *tmp = alloc_backtracking(q, 2);
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "detached"), NULL, 1, 1);
 		make_atom(tmp+1, t->is_detached?g_true_s:g_false_s);
 		return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
 	} else {
 		if (t->is_exception) {
-			cell *tmp = alloc_backtracking(q, 2+t->ball->num_cells);
+			cell *tmp = alloc_heap(q, 2+t->ball->num_cells);
 			make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1+t->ball->num_cells);
 			make_instr(tmp+1, new_atom(q->pl, "exception"), NULL, 1, t->ball->num_cells);
 			dup_cells(tmp+2, t->ball, t->ball->num_cells);
@@ -1358,13 +1358,13 @@ static bool do_thread_property_pin_id(query *q)
 		}
 
 		if (!t->is_finished) {
-			cell *tmp = alloc_backtracking(q, 2);
+			cell *tmp = alloc_heap(q, 2);
 			make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
 			make_atom(tmp+1, new_atom(q->pl, "running"));
 			return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
 		}
 
-		cell *tmp = alloc_backtracking(q, 2);
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
 		make_atom(tmp+1, t->exit_code?g_false_s:g_true_s);
 		return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
@@ -1593,7 +1593,7 @@ static bool do_message_queue_property_pin_both(query *q)
 	pl_ctx c_ctx = q->latest_ctx;
 
 	if (!CMP_STRING_TO_CSTR(q, p2, "alias")) {
-		cell *tmp = alloc_backtracking(q, 2);
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		make_cstring(tmp+1, t->alias);
 
@@ -1604,7 +1604,7 @@ static bool do_message_queue_property_pin_both(query *q)
 
 		return true;
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "size")) {
-		cell *tmp = alloc_backtracking(q, 2);
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "size"), NULL, 1, 1);
 		make_int(tmp+1, queue_size(q->pl, n));
 
@@ -1685,7 +1685,7 @@ static bool do_message_queue_property_pin_id(query *q)
 
 	if (i == 0) {
 		CHECKED(push_choice(q));
-		cell *tmp = alloc_backtracking(q, 2);
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		make_cstring(tmp+1, t->alias);
 
@@ -1697,7 +1697,7 @@ static bool do_message_queue_property_pin_id(query *q)
 		return true;
 	}
 
-	cell *tmp = alloc_backtracking(q, 2);
+	cell *tmp = alloc_heap(q, 2);
 	make_instr(tmp, new_atom(q->pl, "size"), NULL, 1, 1);
 	make_int(tmp+1, queue_size(q->pl, n));
 	return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
@@ -1983,7 +1983,7 @@ static bool do_mutex_property_pin_both(query *q)
 	pl_ctx c_ctx = q->latest_ctx;
 
 	if (!CMP_STRING_TO_CSTR(q, p2, "alias")) {
-		cell *tmp = alloc_backtracking(q, 2);
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		make_cstring(tmp+1, t->alias);
 
@@ -1995,13 +1995,13 @@ static bool do_mutex_property_pin_both(query *q)
 		return true;
 	} else if (!CMP_STRING_TO_CSTR(q, p2, "status")) {
 		if (t->num_locks == 0) {
-			cell *tmp = alloc_backtracking(q, 2);
+			cell *tmp = alloc_heap(q, 2);
 			make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
 			make_atom(tmp+1, new_atom(q->pl, "unlocked"));
 			return unify(q, c, c_ctx, tmp, q->st.cur_ctx);
 		}
 
-		cell *tmp = alloc_backtracking(q, 4);
+		cell *tmp = alloc_heap(q, 4);
 		make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 3);
 		make_instr(tmp+1, new_atom(q->pl, "locked"), NULL, 2, 2);
 		make_int(tmp+2, t->locked_by);
@@ -2080,7 +2080,7 @@ static bool do_mutex_property_pin_id(query *q)
 
 	if (i == 0) {
 		CHECKED(push_choice(q));
-		cell *tmp = alloc_backtracking(q, 2);
+		cell *tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "alias"), NULL, 1, 1);
 		make_cstring(tmp+1, t->alias);
 
@@ -2095,14 +2095,14 @@ static bool do_mutex_property_pin_id(query *q)
 	cell *tmp;
 
 	if (t->num_locks != 0) {
-		tmp = alloc_backtracking(q, 4);
+		tmp = alloc_heap(q, 4);
 		make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 3);
 		make_instr(tmp+1, new_atom(q->pl, "locked"), NULL, 2, 2);
 		make_int(tmp+2, t->locked_by);
 		tmp[2].flags |= FLAG_INT_THREAD;
 		make_int(tmp+3, t->num_locks);
 	} else {
-		tmp = alloc_backtracking(q, 2);
+		tmp = alloc_heap(q, 2);
 		make_instr(tmp, new_atom(q->pl, "status"), NULL, 1, 1);
 		make_atom(tmp+1, new_atom(q->pl, "unlocked"));
 	}
@@ -2259,7 +2259,7 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_ctx p1_ct
 
 	CHECKED(push_choice(q));
 	const frame *f = GET_CURR_FRAME();
-	cell *tmp = import_term_to_backtracking(q, m->c, q->st.cur_ctx);
+	cell *tmp = import_term_to_heap(q, m->c, q->st.cur_ctx);
 	CHECKED(tmp, release_lock(&t->guard));
 	release_lock(&t->guard);
 	q->cur_chan = m->from_chan;

@@ -457,7 +457,7 @@ static bool do_parse_url(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_
 		append_list(q, tmp);
 
 		cell *l = end_list(q);
-		cell *tmp2 = alloc_backtracking(q, 1 + l->num_cells);
+		cell *tmp2 = alloc_heap(q, 1 + l->num_cells);
 		make_instr(tmp2, new_atom(q->pl, "search"), NULL, 1, l->num_cells);
 		dup_cells(tmp2+1, l, l->num_cells);
 		allocate_list(q, tmp2);

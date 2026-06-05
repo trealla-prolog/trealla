@@ -397,7 +397,7 @@ static bool bif_engine_create_4(query *q)
 	str->engine->is_engine = true;
 	str->engine->trace = q->trace;
 
-	cell *p0 = copy_term_to_backtracking(q, q->st.instr, q->st.cur_ctx, false);
+	cell *p0 = copy_term_to_heap(q, q->st.instr, q->st.cur_ctx, false);
 	CHECKED(p0);
 	unify(q, q->st.instr, q->st.cur_ctx, p0, q->st.cur_ctx);
 
@@ -412,7 +412,7 @@ static bool bif_engine_create_4(query *q)
 	make_call_engine(q, tmp+xp2->num_cells, save_q->st.instr);
 	CHECKED(push_barrier(q));
 	q->st.instr = tmp;
-	str->pattern = clone_term_to_backtracking(q, xp1, xp1_ctx);
+	str->pattern = clone_term_to_heap(q, xp1, xp1_ctx);
 	CHECKED(str->pattern);
 	return true;
 }
@@ -435,7 +435,7 @@ static bool bif_engine_next_2(query *q)
 	}
 
 	if (str->cur_yield) {
-		cell *tmp = copy_term_to_backtracking(q, str->cur_yield, 0, false);
+		cell *tmp = copy_term_to_heap(q, str->cur_yield, 0, false);
 		str->cur_yield = NULL;
 		return unify(q, p1, p1_ctx, tmp, q->st.cur_ctx);
 	}
@@ -445,7 +445,7 @@ static bool bif_engine_next_2(query *q)
 			return false;
 	}
 
-	cell *tmp = copy_term_to_backtracking(str->engine, str->pattern, 0, false);
+	cell *tmp = copy_term_to_heap(str->engine, str->pattern, 0, false);
 	return unify(q, p1, p1_ctx, tmp, q->st.cur_ctx);
 }
 
@@ -463,7 +463,7 @@ static bool bif_engine_yield_1(query *q)
 	else if (q->retry)
 		return true;
 
-	str->cur_yield = clone_term_to_backtracking(q, p1, p1_ctx);
+	str->cur_yield = clone_term_to_heap(q, p1, p1_ctx);
 	return do_yield(q, 0);
 }
 
@@ -477,7 +477,7 @@ static bool bif_engine_post_2(query *q)
 	if (!str->is_engine)
 		return throw_error(q, pstr, pstr_ctx, "existence_error", "not_an_engine");
 
-	str->cur_yield = clone_term_to_backtracking(q, p1, p1_ctx);
+	str->cur_yield = clone_term_to_heap(q, p1, p1_ctx);
 	return true;
 }
 
@@ -493,7 +493,7 @@ static bool bif_engine_fetch_1(query *q)
 	if (!str->cur_yield)
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "existence_error", "no_data");
 
-	cell *tmp = copy_term_to_backtracking(q, str->cur_yield, 0, false);
+	cell *tmp = copy_term_to_heap(q, str->cur_yield, 0, false);
 	str->cur_yield = NULL;
 	return unify(q, p1, p1_ctx, tmp, q->st.cur_ctx);
 }
