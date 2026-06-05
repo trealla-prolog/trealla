@@ -546,7 +546,7 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 			}
 		}
 
-		if (q->in_retract && !r->cl.num_vars && !f->no_recov && q->pl->opt) {
+		if (q->in_retract && !r->cl.num_vars && q->pl->opt) {
 			clear_clause(&r->cl);
 			TPL_free(r);
 		} else {
@@ -1051,7 +1051,6 @@ static bool resume_frame(query *q)
 		q->total_recovs++;
 		q->st.hp = f->hp;
 		q->st.hp_num = f->hp_num;
-		trim_heap(q);
 		trim_frame(q, f);
 	}
 
