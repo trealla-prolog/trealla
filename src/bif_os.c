@@ -583,7 +583,7 @@ static bool bif_popen_4(query *q)
 	if (n < 0)
 		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
 
-	char *filename;
+	char *filename = NULL;
 
 	if (is_atom(p1))
 		filename = src = DUP_STRING(q, p1);
