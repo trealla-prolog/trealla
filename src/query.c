@@ -1393,7 +1393,7 @@ bool match_rule(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 		bool needs_true = false;
 		p1 = orig_p1;
 
-		cell *tmp = import_term_to_heap(q, c, q->st.cur_ctx);
+		cell *tmp = import_term(q, c, q->st.cur_ctx);
 		CHECKED(tmp);
 		c = tmp;
 		cell *head = get_head(c);
@@ -1507,7 +1507,7 @@ bool match_clause(query *q, cell *p1, pl_ctx p1_ctx, cell **ret_body, enum claus
 			continue;
 
 		CHECKED(push_choice(q));
-		cell *tmp = import_term_to_heap(q, c, q->st.cur_ctx);
+		cell *tmp = import_term(q, c, q->st.cur_ctx);
 		CHECKED(tmp);
 		cell *head = get_head(tmp);
 		body = get_body(tmp);

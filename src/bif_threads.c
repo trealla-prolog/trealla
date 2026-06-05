@@ -460,7 +460,7 @@ static bool do_match_message(query *q, unsigned chan, bool is_peek, double timeo
 
 		while (m) {
 			CHECKED(push_choice(q), release_lock(&t->guard));
-			cell *tmp = import_term_to_heap(q, m->c, q->st.cur_ctx);
+			cell *tmp = import_term(q, m->c, q->st.cur_ctx);
 			CHECKED(tmp, release_lock(&t->guard));
 			GET_FIRST_ARG(p1,queue);
 			GET_NEXT_ARG(p2,any);
@@ -946,7 +946,7 @@ static bool bif_thread_join_2(query *q)
 
 	if (t->exit_code) {
 		const frame *f = GET_CURR_FRAME();
-		cell *tmp = import_term_to_heap(q, t->exit_code, q->st.cur_ctx);
+		cell *tmp = import_term(q, t->exit_code, q->st.cur_ctx);
 		CHECKED(tmp);
 		unshare_cells(t->exit_code, t->exit_code->num_cells);
 		TPL_free(t->exit_code);
@@ -1011,7 +1011,7 @@ bool do_signal(query *q, void *thread_ptr)
 	msg *m = list_pop_front(&t->signals);
 	release_lock(&t->guard);
 	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.cur_ctx, 0);
-	cell *c = import_term_to_heap(q, m->c, q->st.cur_ctx);
+	cell *c = import_term(q, m->c, q->st.cur_ctx);
 	CHECKED(c);
 	TPL_free(m);
 	cell *tmp = prepare_call(q, CALL_NOSKIP, c, q->st.cur_ctx, 2);
@@ -2259,7 +2259,7 @@ static bool do_recv_message(query *q, unsigned from_chan, cell *p1, pl_ctx p1_ct
 
 	CHECKED(push_choice(q));
 	const frame *f = GET_CURR_FRAME();
-	cell *tmp = import_term_to_heap(q, m->c, q->st.cur_ctx);
+	cell *tmp = import_term(q, m->c, q->st.cur_ctx);
 	CHECKED(tmp, release_lock(&t->guard));
 	release_lock(&t->guard);
 	q->cur_chan = m->from_chan;

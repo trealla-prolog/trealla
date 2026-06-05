@@ -40,5 +40,5 @@ cell *alloc_heap(query *q, unsigned num_cells);
 cell *clone_term_to_heap(query *q, cell *c, pl_ctx c_ctx);
 cell *copy_term_to_heap(query *q, cell *c, pl_ctx c_ctx, bool copy_attrs);
 cell *copy_term_to_heap_with_replacement(query *q, cell *c, pl_ctx c_ctx, bool copy_attrs, cell *from, pl_ctx from_ctx, cell *to, pl_ctx to_ctx);
-cell *import_term_to_heap(query *q, cell *c, pl_ctx c_ctx);
+cell *import_term(query *q, cell *c, pl_ctx c_ctx);
 

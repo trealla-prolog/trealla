@@ -189,7 +189,7 @@ static bool bif_bb_get_2(query *q)
 	prolog_unlock(q->pl);
 	cell *tmp = val->flags & FLAG_LIVE ?
 		bb_import_term_to_heap(q, val, q->st.cur_ctx) :
-		import_term_to_heap(q, val, q->st.cur_ctx);
+		import_term(q, val, q->st.cur_ctx);
 	CHECKED(tmp);
 	GET_FIRST_ARG(p1x,nonvar);
 	GET_NEXT_ARG(p2,any);
@@ -248,7 +248,7 @@ static bool bif_bb_delete_2(query *q)
 		return false;
 	}
 
-	cell *tmp = import_term_to_heap(q, (cell*)val, q->st.cur_ctx);
+	cell *tmp = import_term(q, (cell*)val, q->st.cur_ctx);
 	CHECKED(tmp, prolog_unlock(q->pl));
 	GET_FIRST_ARG(p1x,nonvar);
 	GET_NEXT_ARG(p2,any);
@@ -323,7 +323,7 @@ static bool bif_bb_update_3(query *q)
 	}
 
 	q->noderef = true;
-	cell *tmp = import_term_to_heap(q, (cell*)val, q->st.cur_ctx);
+	cell *tmp = import_term(q, (cell*)val, q->st.cur_ctx);
 	q->noderef = false;
 	CHECKED(tmp, prolog_unlock(q->pl));
 	GET_FIRST_ARG(p1x,nonvar);
