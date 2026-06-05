@@ -712,7 +712,7 @@ static void reuse_frame(query *q, unsigned num_vars)
 	q->total_tcos++;
 	q->st.hp = f_cur->hp;
 	q->st.hp_num = f_cur->hp_num;
-	trim_heap(q);
+	trim_pages(q);
 }
 
 static bool commit_any_choices(const query *q, const frame *f)
@@ -842,7 +842,7 @@ int retry_choice(query *q)
 		if (ch->register_cleanup && q->noretry)
 			q->noretry = false;
 
-		trim_heap(q);
+		trim_pages(q);
 
 		if (ch->succeed_on_retry) {
 			q->st.instr += ch->skip;
@@ -852,7 +852,7 @@ int retry_choice(query *q)
 		return 1;
 	}
 
-	trim_heap(q);
+	trim_pages(q);
 	return 0;
 }
 
@@ -1048,7 +1048,7 @@ static bool resume_frame(query *q)
 		q->total_recovs++;
 		q->st.hp = f->hp;
 		q->st.hp_num = f->hp_num;
-		trim_heap(q);
+		trim_pages(q);
 		trim_frame(q, f);
 	}
 

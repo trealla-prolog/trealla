@@ -384,7 +384,7 @@ static cell *alloc_pages(query *q, unsigned num_cells)
 	return c;
 }
 
-void trim_heap(query *q)
+void trim_pages(query *q)
 {
 	for (page *a = q->heap_pages; a;) {
 		if (a->num <= q->st.hp_num)
@@ -426,7 +426,7 @@ cell *clone_term_to_backtracking(query *q, cell *p1, pl_ctx p1_ctx)
 	return tmp;
 }
 
-cell *clone_term_to_heap(query *q, cell *p1, pl_ctx p1_ctx)
+cell *clone_term_to_pages(query *q, cell *p1, pl_ctx p1_ctx)
 {
 	if (!init_tmp_heap(q))
 		return NULL;

@@ -16,8 +16,8 @@ cell *copy_term_to_tmp(query *q, cell *c, pl_ctx c_ctx, bool copy_attrs);
 
 // Only used now by exceptions...
 
-cell *clone_term_to_heap(query *q, cell *c, pl_ctx c_ctx);
-void trim_heap(query *q);
+cell *clone_term_to_pages(query *q, cell *c, pl_ctx c_ctx);
+void trim_pages(query *q);
 
 cell *alloc_queuen(query *q, unsigned qnum, const cell *c);
 

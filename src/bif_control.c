@@ -813,7 +813,7 @@ static cell *parse_to_heap(query *q, const char *src)
 	}
 
 
-	cell *tmp = clone_term_to_heap(q, p2->cl->cells, q->st.cur_ctx);
+	cell *tmp = clone_term_to_pages(q, p2->cl->cells, q->st.cur_ctx);
 	if (!tmp) return NULL;
 	check_error(tmp, parser_destroy(p2));
 	parser_destroy(p2);
@@ -865,7 +865,7 @@ static bool find_exception_handler(query *q, char *ball)
 		q->abort = true;
 		return false;
 	} else {
-		q->ball = clone_term_to_heap(q, e, e_ctx);
+		q->ball = clone_term_to_pages(q, e, e_ctx);
 		CHECKED(q->ball);
 		q->ball_ctx = q->st.cur_ctx;
 		rebase_term(q, q->ball, 0, false);
