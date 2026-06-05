@@ -3381,7 +3381,7 @@ bool bif_statistics_0(query *q)
 		"choices %u, "
 		"trails %u, "
 		"slots %u, "
-		"heap %u.\n"
+		"heap %u/%u.\n"
 
 		"Backtracks %"PRIu64", "
 		"Retries %"PRIu64", "
@@ -3391,7 +3391,7 @@ bool bif_statistics_0(query *q)
 
 		q->total_inferences, q->total_matches, q->total_matched,
 		q->st.fp, q->st.cp, q->st.tp, q->st.sp,
-		q->st.hp_num,
+		q->st.hp, q->st.hp_num,
 		q->total_backtracks, q->total_retries, q->total_tcos, q->total_recovs, q->total_no_recovs
 		);
 	return true;
