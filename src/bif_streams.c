@@ -578,7 +578,7 @@ static void add_stream_properties(query *q, int n)
 
 static bool del_stream_properties(query *q, int n)
 {
-	cell *tmp = alloc_heap(q, 3);
+	cell *tmp = alloc_backtracking(q, 3);
 	CHECKED(tmp);
 	make_atom(tmp+0, g_sys_stream_property_s);
 	make_int(tmp+1, n);
@@ -1825,7 +1825,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 			tmp[0].num_cells = idx;
 
 			cell *save = tmp;
-			tmp = alloc_heap(q, idx);
+			tmp = alloc_backtracking(q, idx);
 			CHECKED(tmp);
 			dup_cells(tmp, save, idx);
 			tmp->num_cells = idx;
@@ -1877,7 +1877,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 			tmp[0].num_cells = idx;
 
 			cell *save = tmp;
-			tmp = alloc_heap(q, idx);
+			tmp = alloc_backtracking(q, idx);
 			CHECKED(tmp);
 			dup_cells(tmp, save, idx);
 			tmp->num_cells = idx;
@@ -1935,7 +1935,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 			tmp[0].num_cells = idx;
 
 			cell *save = tmp;
-			tmp = alloc_heap(q, idx);
+			tmp = alloc_backtracking(q, idx);
 			CHECKED(tmp);
 			dup_cells(tmp, save, idx);
 			tmp->num_cells = idx;
@@ -1947,7 +1947,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 		}
 	}
 
-	cell *tmp = alloc_heap(q, str->p->cl->cidx-1);
+	cell *tmp = alloc_backtracking(q, str->p->cl->cidx-1);
 	CHECKED(tmp);
 	dup_cells(tmp, str->p->cl->cells, str->p->cl->cidx-1);
 	bool ok = unify(q, p1, p1_ctx, tmp, q->st.cur_ctx);

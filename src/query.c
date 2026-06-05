@@ -103,13 +103,13 @@ static void trace_call(query *q, cell *c, pl_ctx c_ctx, box_t box)
 	q->step++;
 	SB(pr);
 
-	SB_sprintf(pr, "[%u:%s:%"PRIu64":f%u:fp%u:cp%u:sp%u:hp%u/%u:tp%u:nr%d] ",
+	SB_sprintf(pr, "[%u:%s:%"PRIu64":f%u:fp%u:cp%u:sp%u:tp%u:hp%u/%u:nr%d] ",
 		q->my_chan,
 		q->st.m->name,
 		q->step,
 		q->st.cur_ctx, q->st.fp, q->st.cp, q->st.sp,
-		q->st.hp, q->st.hp_num,
 		q->st.tp,
+		q->st.hp, q->st.hp_num,
 		f->no_recov
 		);
 
@@ -156,28 +156,28 @@ void check_pressure(query *q)
 #endif
 	if (q->st.tp < (q->trails_size / 2)) {
 		unsigned new_size = q->st.tp < INITIAL_NBR_TRAILS ? INITIAL_NBR_TRAILS : q->st.tp + 1;
-		q->trails_size = alloc_grow(q, (void**)&q->trails, sizeof(trail), new_size, new_size*2);
+		q->trails_size = alloc_grow(q, (void**)&q->trails, sizeof(trail), new_size, new_size*3/2);
 	}
 #if TRACE_MEM
 	printf("*** q->st.cp=%u, q->choices_size=%u\n", (unsigned)q->st.cp, (unsigned)q->choices_size);
 #endif
 	if (q->st.cp < (q->choices_size / 2)) {
 		unsigned new_size = q->st.cp < INITIAL_NBR_CHOICES ? INITIAL_NBR_CHOICES : q->st.cp + 1;
-		q->choices_size = alloc_grow(q, (void**)&q->choices, sizeof(choice), new_size, new_size*2);
+		q->choices_size = alloc_grow(q, (void**)&q->choices, sizeof(choice), new_size, new_size*3/2);
 	}
 #if TRACE_MEM
 	printf("*** q->st.fp=%u, q->frames_size=%u\n", (unsigned)q->st.fp, (unsigned)q->frames_size);
 #endif
 	if (q->st.fp < (q->frames_size / 2)) {
 		unsigned new_size = q->st.fp < INITIAL_NBR_FRAMES ? INITIAL_NBR_FRAMES : q->st.fp + 1;
-		q->frames_size = alloc_grow(q, (void**)&q->frames, sizeof(frame), new_size, new_size*2);
+		q->frames_size = alloc_grow(q, (void**)&q->frames, sizeof(frame), new_size, new_size*3/2);
 	}
 #if TRACE_MEM
 	printf("*** q->st.sp=%u, q->slots_size=%u\n", (unsigned)q->st.sp, (unsigned)q->slots_size);
 #endif
 	if (q->st.sp < (q->slots_size / 2)) {
 		unsigned new_size = q->st.sp < INITIAL_NBR_SLOTS ? INITIAL_NBR_SLOTS : q->st.sp + 1;
-		q->slots_size = alloc_grow(q, (void**)&q->slots, sizeof(slot), new_size, new_size*2);
+		q->slots_size = alloc_grow(q, (void**)&q->slots, sizeof(slot), new_size, new_size*3/2);
 	}
 #endif
 }
@@ -187,7 +187,7 @@ static bool check_choice(query *q)
 	if (q->st.cp < q->choices_size)
 		return true;
 
-	pl_idx new_choicessize = alloc_grow(q, (void**)&q->choices, sizeof(choice), q->st.cp+1, q->choices_size*2);
+	pl_idx new_choicessize = alloc_grow(q, (void**)&q->choices, sizeof(choice), q->st.cp+1, q->choices_size*3/2);
 
 	if (!new_choicessize) {
 		q->oom = q->error = true;
@@ -209,7 +209,7 @@ bool check_frame(query *q, unsigned max_vars)
 		return true;
 	}
 
-	pl_idx new_framessize = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.fp+1, q->frames_size*2);
+	pl_idx new_framessize = alloc_grow(q, (void**)&q->frames, sizeof(frame), q->st.fp+1, q->frames_size*3/2);
 
 	if (!new_framessize) {
 		q->oom = q->error = true;
@@ -232,7 +232,7 @@ bool check_slot(query *q, unsigned cnt)
 	if (num < q->slots_size)
 		return true;
 
-	pl_idx new_slotssize = alloc_grow(q, (void**)&q->slots, sizeof(slot), num+1, num*2);
+	pl_idx new_slotssize = alloc_grow(q, (void**)&q->slots, sizeof(slot), num+1, num*3/2);
 
 	if (!new_slotssize) {
 		q->oom = q->error = true;
@@ -248,7 +248,7 @@ bool check_trail(query *q)
 	if (q->st.tp < q->trails_size)
 		return true;
 
-	pl_idx new_trailssize = alloc_grow(q, (void**)&q->trails, sizeof(trail), q->st.tp+1, q->trails_size*2);
+	pl_idx new_trailssize = alloc_grow(q, (void**)&q->trails, sizeof(trail), q->st.tp+1, q->trails_size*3/2);
 
 	if (!new_trailssize) {
 		q->oom = q->error = true;
@@ -314,7 +314,7 @@ void make_call_redo(query *q, cell *tmp)
 cell *prepare_call(query *q, bool noskip, cell *p1, pl_ctx p1_ctx, unsigned extras)
 {
 	unsigned num_cells = p1->num_cells + extras;
-	cell *tmp = alloc_heap(q, num_cells);
+	cell *tmp = alloc_backtracking(q, num_cells);
 	if (!tmp) return NULL;
 	q->noskip = noskip;
 	dup_cells_by_ref(tmp, p1, p1_ctx, p1->num_cells);
@@ -713,7 +713,6 @@ static void reuse_frame(query *q, unsigned num_vars)
 	q->total_tcos++;
 	q->st.hp = f_cur->hp;
 	q->st.hp_num = f_cur->hp_num;
-	trim_heap(q);
 }
 
 static bool commit_any_choices(const query *q, const frame *f)
@@ -824,7 +823,6 @@ int retry_choice(query *q)
 		f->chgen = ch->chgen;
 		f->initial_slots = ch->initial_slots;
 		f->actual_slots = ch->actual_slots;
-		f->no_recov = ch->no_recov;
 		f->op = ch->op;
 		f->base = ch->base;
 
@@ -844,7 +842,7 @@ int retry_choice(query *q)
 		if (ch->register_cleanup && q->noretry)
 			q->noretry = false;
 
-		trim_heap(q);
+		trim_pages(q);
 
 		if (ch->succeed_on_retry) {
 			q->st.instr += ch->skip;
@@ -854,7 +852,7 @@ int retry_choice(query *q)
 		return 1;
 	}
 
-	trim_heap(q);
+	trim_pages(q);
 	return 0;
 }
 
@@ -897,7 +895,6 @@ bool push_choice(query *q)
 	ch->chgen = ch->gen = f->chgen;
 	ch->initial_slots = f->initial_slots;
 	ch->actual_slots = f->actual_slots;
-	ch->no_recov = f->no_recov;
 	ch->op = f->op;
 	ch->base = f->base;
 
@@ -1200,7 +1197,7 @@ bool has_next_key(query *q)
 static bool expand_meta_predicate(query *q, predicate *pr)
 {
 	int arity = q->st.key->arity;
-	cell *tmp = alloc_heap(q, q->st.key->num_cells*3);	// allocate max possible
+	cell *tmp = alloc_backtracking(q, q->st.key->num_cells*3);	// allocate max possible
 	CHECKED(tmp);
 	cell *save_tmp = tmp;
 	tmp += copy_cells(tmp, q->st.key, 1);
@@ -1395,7 +1392,7 @@ bool match_rule(query *q, cell *p1, pl_ctx p1_ctx, enum clause_type is_retract)
 		bool needs_true = false;
 		p1 = orig_p1;
 
-		cell *tmp = import_term_to_heap(q, c, q->st.cur_ctx);
+		cell *tmp = import_term_to_backtracking(q, c, q->st.cur_ctx);
 		CHECKED(tmp);
 		c = tmp;
 		cell *head = get_head(c);
@@ -1509,7 +1506,7 @@ bool match_clause(query *q, cell *p1, pl_ctx p1_ctx, cell **ret_body, enum claus
 			continue;
 
 		CHECKED(push_choice(q));
-		cell *tmp = import_term_to_heap(q, c, q->st.cur_ctx);
+		cell *tmp = import_term_to_backtracking(q, c, q->st.cur_ctx);
 		CHECKED(tmp);
 		cell *head = get_head(tmp);
 		body = get_body(tmp);
