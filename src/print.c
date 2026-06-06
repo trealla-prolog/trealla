@@ -586,9 +586,18 @@ static void print_string_list(query *q, cell *c, pl_ctx c_ctx, int running, bool
 {
 	LIST_HANDLER(c);
 	if (!cons) { SB_sprintf(q->sb, "%s", "["); }
+	unsigned print_list = 0;
 
 	while (is_list(c)) {
 		cell *h = LIST_HEAD(c);
+
+		if (q->max_depth && (print_list >= q->max_depth)) {
+			SB_ungetchar(q->sb);
+			SB_sprintf(q->sb, "%s", "|...");
+			q->last_thing = WAS_OTHER;
+			//q->cycle_error = true;
+			break;
+		}
 
 		if (is_number(h)) {
 			SB_sprintf(q->sb, "%d", (int)h->val_int);
@@ -606,6 +615,7 @@ static void print_string_list(query *q, cell *c, pl_ctx c_ctx, int running, bool
 			break;
 
 		SB_sprintf(q->sb, "%s", ",");
+		print_list++;
 	}
 
 	if (!cons) { SB_sprintf(q->sb, "%s", "]"); }
