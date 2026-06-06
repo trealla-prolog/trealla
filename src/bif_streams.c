@@ -1132,7 +1132,9 @@ static bool bif_iso_open_4(query *q)
 	}
 
 	if (!str->fp) {
-		if ((errno == EACCES) || (strcmp(str->mode, "read") && (errno == EROFS)))
+		if ((errno == EACCES) || (strcmp(str->mode, "read")
+			&& ((errno == EROFS) || (errno == EISDIR))
+			))
 			return throw_error(q, p1, p1_ctx, "permission_error", "open,source_sink");
 		//else if ((strcmp(str->mode, "read") && (errno == EISDIR)))
 		//	return throw_error(q, p1, p1_ctx, "permission_error", "open,isadir");
