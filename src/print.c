@@ -1586,12 +1586,13 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 		unsigned cnt = 0;
 		LIST_HANDLER(l);
 		bool closing_quote = true;
-		bool any = false;
+		bool any = false, done = false;
 
 		while (is_list(l)) {
 			if (q->max_depth && (cnt++ >= q->max_depth)) {
 				SB_sprintf(q->sb, "%s", "\"||... ");
 				closing_quote = false;
+				done = true;
 				break;
 			}
 
@@ -1632,7 +1633,7 @@ static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int
 
 		if (closing_quote) SB_sprintf(q->sb, "%s", "\"");
 
-		if (is_partial) {
+		if (is_partial && !done) {
 			SB_strcat(q->sb, "||");
 			if (is_op(l)) SB_putchar(q->sb, '(');
 			if (q->cycle_error) {
