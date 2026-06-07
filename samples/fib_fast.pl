@@ -2,7 +2,7 @@ fib(0,0) :- !.
 fib(A,B) :-
     fib_(A,0,1,B).
 
-fib_(1,_,A,A).
+fib_(1,_,A,A) :- !.
 fib_(A,B,C,D) :-
     A > 1,
     E is A-1,
