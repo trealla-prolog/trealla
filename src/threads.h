@@ -8,6 +8,7 @@
 
 typedef struct {
     pthread_mutex_t mutex;
+    unsigned tid;
 } lock;
 #else
 typedef struct {

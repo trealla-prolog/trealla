@@ -45,7 +45,26 @@ bool try_lock(lock *l)
 
 void acquire_lock(lock *l)
 {
+	unsigned cnt = 0, last_secs = 0;
+
+#if 1
+	while (pthread_mutex_trylock(&l->mutex)) {
+		msleep(1);
+		unsigned secs = cnt / 1000;
+
+		if (secs > last_secs)
+			printf("*** busy %us [%u]\n", secs, l->tid);
+
+		if (secs > 30) {
+			break;
+		}
+
+		last_secs = secs;
+		cnt++;
+	}
+#else
 	pthread_mutex_lock(&l->mutex);
+#endif
 }
 
 void release_lock(lock *l)
@@ -137,6 +156,7 @@ static int new_thread(prolog *pl)
 				pthread_cond_init(&t->cond, NULL);
 				pthread_mutex_init(&t->mutex, NULL);
 				init_lock(&t->guard);
+				t->guard.tid = n;
 				t->is_init = true;
 				t->pl = pl;
 				t->chan = n;
@@ -756,8 +776,8 @@ static void *start_routine_thread_create(thread *t)
 		t->ball = NULL;
 	}
 
-	t->is_active = false;
 	release_lock(&t->guard);
+	t->is_active = false;
     return 0;
 }
 
@@ -963,7 +983,6 @@ static bool bif_thread_join_2(query *q)
 	}
 
 	acquire_lock(&t->guard);
-	t->is_active = false;
 	sl_del(q->pl->alias, t->alias);
 	TPL_free(t->alias);
 	t->alias = NULL;
@@ -994,6 +1013,7 @@ static bool bif_thread_join_2(query *q)
 	}
 
 	release_lock(&t->guard);
+	t->is_active = false;
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
 }
@@ -1055,7 +1075,6 @@ static void do_cancel(thread *t)
 	TPL_free(t->alias);
 	t->alias = NULL;
 	t->is_finished = false;
-	t->is_active = false;
 	msg *m;
 	pthread_t id = t->id;
 
@@ -1085,6 +1104,7 @@ static void do_cancel(thread *t)
 #else
 	pthread_cancel(id);
 #endif
+	t->is_active = false;
 }
 
 static bool bif_thread_cancel_1(query *q)
