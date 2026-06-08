@@ -231,16 +231,34 @@ static bool bif_yield_0(query *q)
 
 static bool bif_call_task_n(query *q)
 {
-	pl_idx save_hp = q->st.hp;
-	cell *p0 = clone_term_to_heap(q, q->st.instr, q->st.cur_ctx);
-	GET_FIRST_RAW_ARG0(p1,callable,p0);
-	CHECKED(init_tmp_heap(q));
-	CHECKED(clone_term_to_tmp(q, p1, p1_ctx));
-	unsigned arity = p1->arity;
-	unsigned args = 1;
+	GET_FIRST_ARG(p1,callable);
 
-	while (args++ < q->st.instr->arity) {
-		GET_NEXT_RAW_ARG(p2,any);
+	if ((p1->val_off == g_colon_s) && (p1->arity == 2)) {
+		cell *cm = p1 + 1;
+		cm = deref(q, cm, p1_ctx);
+
+		if (!is_atom(cm) && !is_var(cm))
+			return throw_error(q, cm, p1_ctx, "type_error", "callable");
+
+		if (!is_var(cm)) {
+			module *m = find_module(q->pl, C_STR(q, cm));
+			if (m) q->st.m = m;
+		}
+
+		p1 += 2;
+		p1 = deref(q, p1, p1_ctx);
+		p1_ctx = q->latest_ctx;
+
+		if (!is_callable(p1))
+			return throw_error(q, p1, p1_ctx, "type_error", "callable");
+	}
+
+	int arity = p1->arity, args = 1, xarity = q->st.instr->arity;
+	CHECKED(init_tmp_heap(q));
+	CHECKED(append_to_tmp(q, p1, p1_ctx));
+
+	while (args++ < xarity) {
+		GET_NEXT_ARG(p2,any);
 		CHECKED(append_to_tmp(q, p2, p2_ctx));
 		arity++;
 	}
@@ -248,15 +266,18 @@ static bool bif_call_task_n(query *q)
 	cell *tmp2 = get_tmp_heap(q, 0);
 	tmp2->num_cells = tmp_heap_used(q);
 	tmp2->arity = arity;
-	bool found = false;
 
-	if ((tmp2->match = search_predicate(q->st.m, tmp2)) != NULL) {
-		tmp2->flags &= ~FLAG_INTERNED_BUILTIN;
-	} else if ((tmp2->bif_ptr = get_builtin_term(q->st.m, tmp2, &found, NULL)), found) {
-		tmp2->flags |= FLAG_INTERNED_BUILTIN;
+	if (is_cstring(tmp2)) {
+		share_cell(tmp2);
+		convert_to_literal(q->st.m, tmp2);
 	}
 
-	q->st.hp = save_hp;
+	tmp2->match = NULL;
+	bool status;
+
+	if (!call_check(q, tmp2, &status, true))
+		return status;
+
 	cell *tmp = prepare_call(q, CALL_SKIP, tmp2, q->st.cur_ctx, 0);
 	query *task = query_create_task(q, tmp);
 	task->yielded = task->spawned = true;
