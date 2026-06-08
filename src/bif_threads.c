@@ -45,26 +45,7 @@ bool try_lock(lock *l)
 
 void acquire_lock(lock *l)
 {
-	unsigned cnt = 0, last_secs = 0;
-
-#if 1
-	while (pthread_mutex_trylock(&l->mutex)) {
-		msleep(1);
-		unsigned secs = cnt / 1000;
-
-		if (secs > last_secs)
-			printf("*** busy %us [%u]\n", secs, l->tid);
-
-		if (secs > 30) {
-			break;
-		}
-
-		last_secs = secs;
-		cnt++;
-	}
-#else
 	pthread_mutex_lock(&l->mutex);
-#endif
 }
 
 void release_lock(lock *l)
