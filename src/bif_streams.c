@@ -1278,14 +1278,14 @@ bool stream_close(query *q, int n)
 
 bool bif_iso_close_1(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	return stream_close(q, n);
 }
 
 static bool bif_iso_close_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	GET_NEXT_ARG(p1,list_or_nil);
 	LIST_HANDLER(p1);
 
@@ -1343,7 +1343,7 @@ static bool bif_iso_at_end_of_stream_0(query *q)
 
 static bool bif_iso_at_end_of_stream_1(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
@@ -1388,7 +1388,7 @@ static bool bif_iso_flush_output_0(query *q)
 
 static bool bif_iso_flush_output_1(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
@@ -1422,7 +1422,7 @@ static bool bif_iso_nl_0(query *q)
 
 static bool bif_iso_nl_1(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
@@ -1458,7 +1458,7 @@ static bool bif_iso_read_1(query *q)
 
 static bool bif_iso_read_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,any);
@@ -1975,7 +1975,7 @@ static bool bif_iso_read_term_2(query *q)
 
 static bool bif_iso_read_term_3(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,any);
@@ -2019,7 +2019,7 @@ static bool bif_iso_write_1(query *q)
 
 static bool bif_iso_write_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,any);
@@ -2073,7 +2073,7 @@ static bool bif_iso_writeq_1(query *q)
 
 static bool bif_iso_writeq_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,any);
@@ -2125,7 +2125,7 @@ static bool bif_iso_write_canonical_1(query *q)
 
 static bool bif_iso_write_canonical_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,any);
@@ -2455,7 +2455,7 @@ static bool bif_iso_write_term_2(query *q)
 
 static bool bif_iso_write_term_3(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,any);
@@ -2562,7 +2562,7 @@ static bool bif_iso_put_char_1(query *q)
 
 static bool bif_iso_put_char_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,character);
@@ -2618,7 +2618,7 @@ static bool bif_iso_put_code_1(query *q)
 
 static bool bif_iso_put_code_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,integer);
@@ -2678,7 +2678,7 @@ static bool bif_iso_put_byte_1(query *q)
 
 static bool bif_iso_put_byte_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,byte);
@@ -2776,7 +2776,7 @@ static bool bif_iso_get_char_1(query *q)
 
 static bool bif_iso_get_char_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,in_character_or_var);
@@ -2921,7 +2921,7 @@ static bool bif_iso_get_code_1(query *q)
 
 static bool bif_iso_get_code_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,integer_or_var);
@@ -3054,7 +3054,7 @@ static bool bif_iso_get_byte_1(query *q)
 
 static bool bif_iso_get_byte_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,in_byte_or_var);
@@ -3139,7 +3139,7 @@ static bool bif_unget_char_1(query *q)
 
 static bool bif_unget_char_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,in_character);
@@ -3197,7 +3197,7 @@ static bool bif_unget_code_1(query *q)
 
 static bool bif_unget_code_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,integer);
@@ -3243,7 +3243,7 @@ static bool bif_unget_byte_1(query *q)
 
 static bool bif_unget_byte_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,in_byte);
@@ -3314,7 +3314,7 @@ static bool bif_iso_peek_char_1(query *q)
 
 static bool bif_iso_peek_char_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,in_character_or_var);
@@ -3418,7 +3418,7 @@ static bool bif_iso_peek_code_1(query *q)
 
 static bool bif_iso_peek_code_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,integer_or_var);
@@ -3519,7 +3519,7 @@ static bool bif_iso_peek_byte_1(query *q)
 
 static bool bif_iso_peek_byte_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,in_byte_or_var);
@@ -3622,7 +3622,7 @@ static bool bif_iso_current_error_1(query *q)
 
 static bool bif_iso_set_input_1(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
@@ -3635,7 +3635,7 @@ static bool bif_iso_set_input_1(query *q)
 
 static bool bif_iso_set_output_1(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 
@@ -3648,7 +3648,7 @@ static bool bif_iso_set_output_1(query *q)
 
 static bool bif_iso_set_stream_position_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,any);
@@ -4000,7 +4000,7 @@ static bool bif_edin_redo_1(query *q)
 
 static bool bif_edin_redo_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,integer);
@@ -4050,7 +4050,7 @@ static bool bif_edin_tab_1(query *q)
 
 static bool bif_edin_tab_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	GET_FIRST_ARG(p1_tmp,any);
 	cell p1 = eval(q, p1_tmp);
 
@@ -4140,7 +4140,7 @@ static bool bif_edin_telling_1(query *q)
 
 static bool bif_read_line_to_string_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	GET_NEXT_ARG(p1,any);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
@@ -4187,7 +4187,7 @@ static bool bif_read_line_to_string_2(query *q)
 
 static bool bif_read_line_to_codes_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	GET_NEXT_ARG(p1,any);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
@@ -4774,7 +4774,7 @@ static bool bif_getlines_1(query *q)
 
 static bool bif_getlines_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	GET_NEXT_ARG(p1,var);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
@@ -4809,7 +4809,7 @@ static bool bif_getlines_2(query *q)
 
 static bool bif_getlines_3(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	GET_NEXT_ARG(p1,var);
 	GET_NEXT_ARG(p2,list_or_nil);
 	int n = get_stream(q, pstr);
@@ -5061,7 +5061,7 @@ static bool bif_getline_1(query *q)
 
 static bool bif_getline_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	GET_NEXT_ARG(p1,any);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
@@ -5102,7 +5102,7 @@ static bool bif_getline_2(query *q)
 
 static bool bif_getline_3(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	GET_NEXT_ARG(p1,any);
 	GET_NEXT_ARG(p2,list_or_nil);
 	int n = get_stream(q, pstr);
@@ -5641,7 +5641,7 @@ static bool bif_chdir_1(query *q)
 
 static bool bif_sys_get_chars_3(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	GET_NEXT_ARG(p1,integer_or_var);
 	GET_NEXT_ARG(p2,var);
 	int n = get_stream(q, pstr);
@@ -5729,7 +5729,7 @@ static bool bif_sys_get_chars_3(query *q)
 
 static bool bif_sys_bread_3(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	GET_NEXT_ARG(p1,integer_or_var);
 	GET_NEXT_ARG(p2,var);
 	int n = get_stream(q, pstr);
@@ -5855,7 +5855,7 @@ static bool bif_sys_bread_3(query *q)
 
 static bool bif_sys_bflush_1(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	fflush(str->fp);
@@ -5867,7 +5867,7 @@ static bool bif_sys_bflush_1(query *q)
 
 static bool bif_sys_bwrite_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	GET_NEXT_ARG(p1,atom);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
@@ -5930,7 +5930,7 @@ static bool bif_sys_put_chars_1(query *q)
 
 static bool bif_sys_put_chars_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,list_or_nil);
@@ -6247,7 +6247,7 @@ static bool bif_sys_gsl_matrix_size_3(query *q)
 
 static bool bif_set_stream_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,any);
@@ -6391,7 +6391,7 @@ static bool bif_portray_clause_1(query *q)
 
 static bool bif_portray_clause_2(query *q)
 {
-	GET_FIRST_ARG(pstr,stream);
+	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,any);

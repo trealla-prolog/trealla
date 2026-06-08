@@ -941,10 +941,18 @@ bool throw_error3(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const c
 		&& ((ptr = strstr(tmpbuf, "_or")) != NULL))
 		*ptr = '\0';
 
-	if (!strcmp(err_type, "type_error") && !strcmp(expected, "stream"))
-		err_type = "existence_error";
+	if (!strcmp(err_type, "type_error") && (!strcmp(expected, "stream") || !strcmp(expected, "stream_or_alias"))) {
+		if (is_atom(c)) {
+			err_type = "existence_error";
+			expected = tmpbuf;
+		} else if (is_smallint(c) && (c->flags & FLAG_INT_STREAM)) {
+			err_type = "existence_error";
+			expected = tmpbuf;
+		} else
+			err_type = "domain_error";
+	} else
+		expected = tmpbuf;
 
-	expected = tmpbuf;
 	char functor[1024];
 	functor[0] = '\0';
 

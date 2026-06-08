@@ -33,6 +33,7 @@ bool wrap_ffi_predicate(query *q, builtins *bif_ptr);
 #define is_smallint_or_var(c) (is_smallint(c) || is_var(c))
 #define is_smallint_or_atom(c) (is_smallint(c) || is_atom(c))
 #define is_stream(c) (get_stream(q,c) >= 0)
+#define is_stream_or_alias(c) (get_stream(q,c) >= 0)
 #define is_stream_or_var(c) (is_stream(c) || is_var(c))
 #define is_stream_or_compound(c) (is_stream(c) || is_compound(c))
 #define is_list_or_atom(c) (is_atom(c) || is_iso_list(c))
