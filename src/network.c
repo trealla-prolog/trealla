@@ -30,13 +30,13 @@ static SSL_CTX *g_ctx = NULL;
 //#define close closesocket
 //#define ioctl ioctlsocket
 #ifdef errno
-#undef errno
+//#undef errno
 #endif
-#define errno WSAGetLastError()
+//#define errno WSAGetLastError()
 #ifdef EWOULDBLOCK
 #undef EWOULDBLOCK
 #endif
-#define EWOULDBLOCK WSAEWOULDBLOCK
+//#define EWOULDBLOCK WSAEWOULDBLOCK
 #else
 #ifndef __wasi__
 #include <netdb.h>
