@@ -99,7 +99,7 @@ findall(T, G, B, Tail) :-
 	append(B0, Tail, B), !.
 
 :- meta_predicate(call_with_time_limit(+,0)).
-:- help(call_with_time_limit(+millisecs,:callable), [iso(false)]).
+:- help(call_with_time_limit(+float,:callable), [iso(false)]).
 
 call_with_time_limit(Time, Goal) :-
 	Time0 is truncate(Time * 1000),
