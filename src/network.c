@@ -555,6 +555,9 @@ int net_close(stream *str)
 	else
 #else
 	{
+		if (str->is_socket)
+			shutdown(fileno(str->fp), SHUT_RDWR);
+
 		ok = fclose(str->fp);
 
 		if (str->is_memory) {
