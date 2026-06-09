@@ -550,13 +550,16 @@ int net_close(stream *str)
 	int ok = 0;
 
 #ifdef pclose
-	if (str->is_pipe)
+	if (str->is_pipe) {
 		ok = pclose(str->fp);
-	else
+		str->is_pipe = false;
+	} else
 #else
 	{
-		if (str->is_socket)
+		if (str->is_socket) {
 			shutdown(fileno(str->fp), SHUT_RDWR);
+			str->is_socket = false;
+		}
 
 		ok = fclose(str->fp);
 
