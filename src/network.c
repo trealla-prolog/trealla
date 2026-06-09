@@ -389,6 +389,9 @@ int net_peekc(stream *str)
 		if (SSL_read((SSL*)str->sslptr, ptr, len) == 0)
 			return EOF;
 
+		if (errno == EINTR)
+			return EOF;
+
 		return ptr[0];
 	}
 #endif
@@ -422,6 +425,9 @@ int net_getc(stream *str)
 		if (SSL_read((SSL*)str->sslptr, ptr, len) == 0)
 			return EOF;
 
+		if (errno == EINTR)
+			return EOF;
+
 		return ptr[0];
 	}
 #endif
@@ -449,7 +455,12 @@ size_t net_read(void *ptr, size_t len, stream *str)
 		if (dst != ptr)
 			return dst - (char*)ptr;
 
-		return SSL_read((SSL*)str->sslptr, ptr, len);
+		int ok = SSL_read((SSL*)str->sslptr, ptr, len);
+
+		if (errno == EINTR)
+			return EOF;
+
+		return ok;
 	}
 #endif
 
@@ -477,6 +488,9 @@ int net_getline(char **lineptr, size_t *n, stream *str)
 		while (!done) {
 			if (str->srclen <= 0) {
 				int rlen = SSL_read((SSL*)str->sslptr, str->srcbuf, STREAM_BUFLEN);
+
+				if (errno == EINTR)
+					return EOF;
 
 				if (rlen <= 0)
 					return -1;
