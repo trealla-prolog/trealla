@@ -949,7 +949,7 @@ static bool bif_thread_join_2(query *q)
 		const frame *f = GET_CURR_FRAME();
 		cell *tmp = import_term(q, t->exit_code, q->st.cur_ctx);
 		CHECKED(tmp);
-		//unshare_cells(t->exit_code, t->exit_code->num_cells);
+		unshare_cells(t->exit_code, t->exit_code->num_cells);
 		TPL_free(t->exit_code);
 		t->exit_code = NULL;
 		GET_FIRST_ARG(p1,nonvar);
