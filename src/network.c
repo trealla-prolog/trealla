@@ -394,6 +394,10 @@ int net_peekc(stream *str)
 #endif
 
 	int ch = fgetc(str->fp);
+
+	if (errno == EINTR)
+		return EOF;
+
 	ungetc(ch, str->fp);
 	return ch;
 }

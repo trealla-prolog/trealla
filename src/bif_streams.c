@@ -3301,6 +3301,8 @@ static bool bif_iso_peek_char_1(query *q)
 		return do_yield(q, 1);
 	}
 
+	if (errno == EINTR)
+		return false;
 
 	if (FEOF(str)) {
 		str->did_getc = false;
@@ -3348,6 +3350,9 @@ static bool bif_iso_peek_char_2(query *q)
 	}
 
 	int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
+
+	if (errno == EINTR)
+		return false;
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
