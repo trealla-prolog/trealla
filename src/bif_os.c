@@ -224,6 +224,10 @@ static bool bif_sleep_1(query *q)
 	while ((ms > 0) && !q->halt) {
 		CHECK_INTERRUPT();
 		msleep(100);
+
+		if (errno == EINTR)
+			return false;
+
 		ms -= 100;
 	}
 
