@@ -757,8 +757,8 @@ static void *start_routine_thread_create(thread *t)
 		t->ball = NULL;
 	}
 
-	release_lock(&t->guard);
 	t->is_active = false;
+	release_lock(&t->guard);
     return 0;
 }
 
@@ -993,8 +993,8 @@ static bool bif_thread_join_2(query *q)
 		t->at_exit_goal = NULL;
 	}
 
-	release_lock(&t->guard);
 	t->is_active = false;
+	release_lock(&t->guard);
 	THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
 }
