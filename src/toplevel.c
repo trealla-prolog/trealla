@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 #include <signal.h>
 
 #include "history.h"
@@ -34,6 +35,7 @@ static void show_goals(query *q, int num)
 
 int check_interrupt(query *q)
 {
+#ifndef __wasi__
 #ifndef _WIN32
 	if (g_tpl_interrupt == SIGALRM) {
 		g_tpl_interrupt = 0;
@@ -50,6 +52,7 @@ int check_interrupt(query *q)
 
 		return 0;
 	}
+#endif
 #endif
 
 	if (!q || !q->top || !q->top->interactive) {
