@@ -230,7 +230,11 @@ int main(int ac, char *av[], char * envp[])
 	} else {
 		signal(SIGINT, &sigfn);
 #ifndef _WIN32
-		signal(SIGALRM, &sigfn);
+		struct sigaction sa;
+		sa.sa_handler = &sigfn;
+		sigemptyset(&sa.sa_mask);
+		sa.sa_flags = 0;
+		sigaction(SIGALRM, &sa, NULL);
 #endif
 	}
 #endif
