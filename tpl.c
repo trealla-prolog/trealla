@@ -40,10 +40,6 @@ void sigfn(int s)
 {
 	g_tpl_interrupt = s;
 	signal(SIGINT, &sigfn);
-
-#ifndef _WIN32
-	signal(SIGALRM, &sigfn);
-#endif
 }
 
 #ifndef __wasi__
