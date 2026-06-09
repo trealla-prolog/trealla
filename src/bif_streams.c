@@ -1596,6 +1596,9 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 			str->p->srcptr = "";
 		} else
 			str->p->srcptr = str->p->save_line;
+
+		if (errno == EINTR)
+			return false;
 	}
 
 	if (str->p->srcptr) {
@@ -1625,6 +1628,9 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 					clearerr(str->fp);
 					return do_yield(q, 1);
 				}
+
+				if (errno == EINTR)
+					return false;
 
 				str->p->srcptr = "";
 				str->at_end_of_file = str->eof_action != eof_action_reset;
@@ -4165,6 +4171,10 @@ static bool bif_read_line_to_string_2(query *q)
 		return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	}
 
+
+	if (errno == EINTR)
+		return false;
+
 	len = strlen(line);
 
 	if (len && (line[len-1] == '\n')) {
@@ -4211,6 +4221,10 @@ static bool bif_read_line_to_codes_2(query *q)
 		make_atom(&tmp, g_eof_s);
 		return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	}
+
+
+	if (errno == EINTR)
+		return false;
 
 	len = strlen(line);
 
@@ -5039,6 +5053,9 @@ static bool bif_getline_1(query *q)
 		return false;
 	}
 
+	if (errno == EINTR)
+		return false;
+
 	len = strlen(line);
 
 	if (len && (line[len-1] == '\n')) {
@@ -5084,6 +5101,9 @@ static bool bif_getline_2(query *q)
 		return false;
 	}
 
+	if (errno == EINTR)
+		return false;
+
 	len = strlen(line);
 
 	if (line[strlen(line)-1] == '\n')
@@ -5126,6 +5146,9 @@ static bool bif_getline_3(query *q)
 
 		return false;
 	}
+
+	if (errno == EINTR)
+		return false;
 
 	len = strlen(line);
 
@@ -5755,6 +5778,10 @@ static bool bif_sys_bread_3(query *q)
 		for (;;) {
 			len = get_smallint(p1) - str->data_len;
 			size_t nbytes = net_read(str->data+str->data_len, len, str);
+
+			if (errno == EINTR)
+				return false;
+
 			str->data_len += nbytes;
 			str->data[str->data_len] = '\0';
 
