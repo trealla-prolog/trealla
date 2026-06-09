@@ -1078,6 +1078,7 @@ static void do_cancel(thread *t)
 	query_destroy(t->q);
 	t->q = NULL;
 	//t->id = 0;
+	t->is_active = false;
 	release_lock(&t->guard);
 
 #if defined(__ANDROID__)
@@ -1085,7 +1086,6 @@ static void do_cancel(thread *t)
 #else
 	pthread_cancel(id);
 #endif
-	t->is_active = false;
 }
 
 static bool bif_thread_cancel_1(query *q)
