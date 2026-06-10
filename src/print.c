@@ -1691,7 +1691,9 @@ char *print_canonical_to_strbuf(query *q, cell *c, pl_ctx c_ctx, int running)
 	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
 	SB_init(q->sb);
+	prolog_lock(q->pl);
 	print_term_to_buf(q, c, c_ctx, running, false);
+	prolog_unlock(q->pl);
 	if (q->fullstop)  SB_putchar(q->sb, '.')
 	if (q->nl) SB_putchar(q->sb, '\n');
 	q->ignore_ops = false;
@@ -1709,7 +1711,9 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int
 	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
 	SB_init(q->sb);
+	prolog_lock(q->pl);
 	print_term_to_buf(q, c, c_ctx, running, false);
+	prolog_unlock(q->pl);
 	if (q->fullstop)  SB_putchar(q->sb, '.')
 	if (q->nl) SB_putchar(q->sb, '\n');
 	q->ignore_ops = false;
@@ -1751,7 +1755,9 @@ bool print_canonical(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 	q->last_thing = WAS_OTHER;
 	q->did_quote = false;
 	SB_init(q->sb);
+	prolog_lock(q->pl);
 	print_term_to_buf(q, c, c_ctx, running, false);
+	prolog_unlock(q->pl);
 	if (q->fullstop)  SB_putchar(q->sb, '.')
 	if (q->nl) SB_putchar(q->sb, '\n');
 	q->ignore_ops = false;
@@ -1791,7 +1797,9 @@ char *print_term_to_strbuf(query *q, cell *c, pl_ctx c_ctx, int running)
 	q->did_quote = false;
 	//q->last_thing_was_space = true;
 	SB_init(q->sb);
+	prolog_lock(q->pl);
 	print_term_to_buf(q, c, c_ctx, running, false);
+	prolog_unlock(q->pl);
 	if (q->fullstop)  SB_putchar(q->sb, '.')
 	if (q->nl) SB_putchar(q->sb, '\n');
 	char *buf = TPL_malloc(SB_strlen(q->sb)+1+1); // dcg_expansion needs this extra char space
@@ -1806,7 +1814,9 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int runn
 	q->did_quote = false;
 	q->last_thing = WAS_SPACE;
 	SB_init(q->sb);
+	prolog_lock(q->pl);
 	print_term_to_buf(q, c, c_ctx, running, false);
+	prolog_unlock(q->pl);
 	if (q->fullstop)  SB_putchar(q->sb, '.')
 	if (q->nl) SB_putchar(q->sb, '\n');
 	const char *src = SB_cstr(q->sb);
@@ -1844,7 +1854,9 @@ bool print_term(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 	q->did_quote = false;
 	q->last_thing = WAS_SPACE;
 	SB_init(q->sb);
+	prolog_lock(q->pl);
 	print_term_to_buf(q, c, c_ctx, running, false);
+	prolog_unlock(q->pl);
 	if (q->fullstop) SB_putchar(q->sb, '.');
 	if (q->nl) SB_putchar(q->sb, '\n');
 	const char *src = SB_cstr(q->sb);
