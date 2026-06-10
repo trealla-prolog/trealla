@@ -66,7 +66,8 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define MAX_VARS 1024
 #define MAX_QUEUES 256
 #define MAX_MODULES 1024
-#define MAX_IGNORES 64000
+#define MAX_IGNORES (1024*8)
+#define MAX_TABS 64000
 #define MAX_STREAMS 1024
 #define MAX_THREADS 2048
 #define MAX_ACTUAL_THREADS MAX_THREADS
@@ -875,7 +876,7 @@ struct prolog_ {
 	stream streams[MAX_STREAMS];
 	thread threads[MAX_THREADS];
 	module *modmap[MAX_MODULES];
-	struct { pl_idx tab1[MAX_IGNORES], tab2[MAX_IGNORES]; };
+	struct { pl_idx tab1[MAX_TABS], tab2[MAX_TABS]; };
 	list modules;
 	module *system_m, *user_m, *m, *dcgs;
 	parser *p;
