@@ -445,13 +445,13 @@ static const char *varformat(char *tmpbuf, size_t tmplen, unsigned long long num
 static const char *get_slot_name(query *q, pl_idx slot_nbr, bool listing)
 {
 	for (unsigned i = 0; i < q->print_idx; i++) {
-		if (q->pl->tab1[i] == slot_nbr) {
-			return varformat(q->tmpbuf, sizeof(q->tmpbuf), q->pl->tab2[i], listing);
+		if (q->tab1[i] == slot_nbr) {
+			return varformat(q->tmpbuf, sizeof(q->tmpbuf), q->tab2[i], listing);
 		}
 	}
 
 	unsigned j, i = q->print_idx++;
-	q->pl->tab1[i] = slot_nbr;
+	q->tab1[i] = slot_nbr;
 
 	for (j = 0; j < MAX_IGNORES; j++) {
 		if (!q->ignores[j]) {
@@ -460,7 +460,7 @@ static const char *get_slot_name(query *q, pl_idx slot_nbr, bool listing)
 		}
 	}
 
-	q->pl->tab2[i] = j;
+	q->tab2[i] = j;
 	return varformat(q->tmpbuf, sizeof(q->tmpbuf), i, listing);
 }
 
