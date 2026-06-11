@@ -442,11 +442,11 @@ static const char *varformat(char *tmpbuf, size_t tmplen, unsigned long long num
 	return tmpbuf;
 }
 
-static const char *get_slot_name(query *q, pl_idx slot_nbr, bool listing)
+static const char *get_slot_name(query *q, pl_idx slot_nbr, bool listing, char tmpbuf[256])
 {
 	for (unsigned i = 0; i < q->print_idx; i++) {
 		if (q->pl->tab1[i] == slot_nbr) {
-			return varformat(q->tmpbuf, sizeof(q->tmpbuf), q->pl->tab2[i], listing);
+			return varformat(tmpbuf, 256, q->pl->tab2[i], listing);
 		}
 	}
 
@@ -461,7 +461,7 @@ static const char *get_slot_name(query *q, pl_idx slot_nbr, bool listing)
 	}
 
 	q->pl->tab2[i] = j;
-	return varformat(q->tmpbuf, sizeof(q->tmpbuf), i, listing);
+	return varformat(tmpbuf, 256, i, listing);
 }
 
 static void print_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
@@ -471,24 +471,26 @@ static void print_variable(query *q, cell *c, pl_ctx c_ctx, bool running)
 		(pl_idx)(get_actual_slot_num(q, f, c->var_num))
 		: c->var_num;
 
+	char tmpbuf[256];
+
 	if (q->varnames && !is_anon(c) && running && !q->cycle_error && (c_ctx == 0)) {
 		if (q->varnames && q->top->vartab.off[c->var_num]) {
 			SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num]));
 		} else {
-			SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars));
+			SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars, tmpbuf));
 		}
 	} else if (q->portray_vars || (q->is_dump_vars && q->cycle_error)) {
-		SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars));
+		SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars, tmpbuf));
 	} else if (q->is_dump_vars) {
 		if ((c_ctx == 0) && (c->var_num < q->top->num_vars)) {
 			SB_sprintf(q->sb, "%s", GET_POOL(q, q->top->vartab.off[c->var_num]));
 		} else {
-			SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars));
+			SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars, tmpbuf));
 		}
 	} else if (q->listing && is_anon(c)) {
 		SB_sprintf(q->sb, "%s", C_STR(q, c));
 	} else if (q->listing) {
-		SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars));
+		SB_sprintf(q->sb, "%s", get_slot_name(q, slot_nbr, q->listing||q->portray_vars, tmpbuf));
 	} else if (!running && !is_ref(c)) {
 		SB_sprintf(q->sb, "%s", C_STR(q, c));
 	} else {
@@ -937,7 +939,8 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 		if (running && is_interned(c) && c->arity
 			&& q->numbervars && (c->val_off == g_sys_var_s) && c1
 			&& is_integer(c1) && (get_smallint(c1) >= 0)) {
-			SB_sprintf(q->sb, "%s", varformat2(q->tmpbuf, sizeof(q->tmpbuf), c1, 0));
+			char tmpbuf[256];
+			SB_sprintf(q->sb, "%s", varformat2(tmpbuf, sizeof(tmpbuf), c1, 0));
 			q->last_thing = WAS_OTHER;
 			return true;
 		}
