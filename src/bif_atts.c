@@ -330,7 +330,7 @@ static bool bif_sys_attributed_var_1(query *q)
 
 	cell *l = c->val_attrs;
 	pl_ctx l_ctx = c_ctx;
-	init_tmp_heap(q);
+	bool any = false;
 	LIST_HANDLER(l);
 
 	while (is_iso_list(l)) {
@@ -338,21 +338,17 @@ static bool bif_sys_attributed_var_1(query *q)
 		h = deref(q, h, l_ctx);
 		cell *h1 = deref(q, h+1, l_ctx);
 
-		if (!is_nil(h1))
-			append_list(q, h1);
+		if (!is_nil(h1)) {
+			any = true;
+			break;
+		}
 
 		l = LIST_TAIL(l);
 		l = deref(q, l, l_ctx);
 		l_ctx = q->latest_ctx;
 	}
 
-	l = end_list(q);
-	CHECKED(l);
-
-	if (is_nil(l))
-		return false;
-
-	return true;
+	return any;
 }
 
 static bool bif_sys_unattributed_var_1(query *q)

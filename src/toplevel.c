@@ -355,11 +355,6 @@ void dump_vars(query *q, bool partial)
 	q->tab_idx = 0;
 	clear_write_options(q);
 
-	// Build the ignore list for var name clashes....
-
-	for (unsigned i = 0; i < MAX_IGNORES; i++)
-		q->ignores[i] = false;
-
 	for (unsigned i = 0; i < p->num_vars; i++) {
 		int j;
 

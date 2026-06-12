@@ -2146,6 +2146,8 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 	//printf("-- goal_expansion %s/%u\n", C_STR(p, goal), goal->arity);
 
+	clear_write_options(q);
+
 	for (unsigned i = 0; i < p->cl->num_vars; i++)
 		q->ignores[i] = true;
 

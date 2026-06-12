@@ -724,10 +724,7 @@ void save_db(FILE *fp, query *q, int logging)
 			if (logging)
 				fprintf(fp, "'$z_'(");
 
-			for (unsigned i = 0; i < MAX_IGNORES; i++)
-				q->ignores[i] = false;
-
-			q->print_idx = 0;
+			clear_write_options(q);
 			print_term(q, fp, r->cl.cells, 0, 0);
 
 			if (logging) {
@@ -984,10 +981,7 @@ static bool save_name(FILE *fp, query *q, pl_idx name, unsigned pr_arity, bool a
 			if (r->dbgen_retracted)
 				continue;
 
-			for (unsigned i = 0; i < MAX_IGNORES; i++)
-				q->ignores[i] = false;
-
-			q->print_idx = 0;
+			clear_write_options(q);
 
 			if (alt) {
 				print_term(q, fp, get_head(r->cl.cells), 0, 0);
