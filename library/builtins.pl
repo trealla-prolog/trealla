@@ -753,13 +753,13 @@ sre_subst_all_(Reg, TextIn, Subst, L0, L) :-
 % SWI-compatible library(option)
 
 option(Opt, Options, _Default) :-
-    memberchk(Opt, Options), !.
+	memberchk(Opt, Options), !.
 option(Opt, _, Default) :-
-    functor(Opt, _, 1),
-    arg(1, Opt, Default).
+	functor(Opt, _, 1),
+	arg(1, Opt, Default).
 
 option(Opt, Options) :-
-    memberchk(Opt, Options).
+	memberchk(Opt, Options).
 
 findnsols(P1,P2,P3,P4) :-
 	copy_term(f(P2,P3),f(P2b,P3b)),

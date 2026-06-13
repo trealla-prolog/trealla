@@ -5640,9 +5640,9 @@ static bool bif_sys_memberchk_3(query *q)
 	GET_NEXT_ARG(p2,list_or_nil_or_var);
 	GET_NEXT_ARG(p3,var);
 	LIST_HANDLER(p2);
-	CHECKED(push_choice(q));
 
 	while (is_list(p2)) {
+		CHECKED(push_choice(q));
 		cell *h = LIST_HEAD(p2);
 		h = deref(q, h, p2_ctx);
 		pl_ctx h_ctx = q->latest_ctx;
@@ -5653,15 +5653,11 @@ static bool bif_sys_memberchk_3(query *q)
 			return true;
 		}
 
-		if (!is_string(p2))
-			undo_me(q);
-
+		retry_choice(q);
 		p2 = LIST_TAIL(p2);
 		p2 = deref(q, p2, p2_ctx);
 		p2_ctx = q->latest_ctx;
 	}
-
-	drop_choice(q);
 
 	if (is_nil(p2))
 		return false;

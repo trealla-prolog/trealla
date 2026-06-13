@@ -82,8 +82,10 @@ int net_domain_connect(const char *name, bool udp)
 #if !defined(_WIN32) && !defined(__wasi__)
 	int fd = socket(AF_UNIX, udp?SOCK_DGRAM:SOCK_STREAM, 0);
 
-	if (fd == -1)
-	   return -1;
+	if (fd == -1) {
+		perror("socket");
+		return -1;
+   }
 
 	struct sockaddr_un addr;
 	memset(&addr, 0, sizeof(struct sockaddr_un));
@@ -91,6 +93,7 @@ int net_domain_connect(const char *name, bool udp)
     strncpy(addr.sun_path, name, sizeof(addr.sun_path) - 1);
 
 	if (connect(fd, (struct sockaddr *) &addr, sizeof(struct sockaddr_un)) == -1) {
+		//perror("connect");
 		close(fd);
 		return -1;
 	}
@@ -108,8 +111,10 @@ int net_domain_server(const char *name, bool udp)
     memset(&server_sockaddr, 0, sizeof(struct sockaddr_un));
     int fd = socket(AF_UNIX, udp?SOCK_DGRAM:SOCK_STREAM, 0);
 
-    if (fd == -1)
+    if (fd == -1) {
+		perror("socket");
 		return -1;
+	}
 
     server_sockaddr.sun_family = AF_UNIX;
     strcpy(server_sockaddr.sun_path, name);
@@ -117,6 +122,7 @@ int net_domain_server(const char *name, bool udp)
     int rc = bind(fd, (struct sockaddr *) &server_sockaddr, sizeof(server_sockaddr));
 
     if (rc == -1) {
+		//perror("bind");
 		close(fd);
 		return -1;
 	}
@@ -124,7 +130,10 @@ int net_domain_server(const char *name, bool udp)
 	if (udp)
 		return fd;
 
-	listen(fd, -1);
+	if (listen(fd, -1)) {
+		perror("listen");
+	}
+
 	return fd;
 #else
 	return -1;
@@ -150,8 +159,10 @@ int net_connect(const char *hostname, unsigned port, bool udp, bool nodelay)
 	for (rp = result; rp != NULL; rp = rp->ai_next) {
 		fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
 
-		if (fd == -1)
-		   continue;
+		if (fd == -1) {
+			perror("socket");
+			continue;
+		}
 
 		int flag = 1;
 		setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&flag, sizeof(flag));
@@ -161,13 +172,16 @@ int net_connect(const char *hostname, unsigned port, bool udp, bool nodelay)
 		if (connect(fd, rp->ai_addr, rp->ai_addrlen) != -1)
 			break;
 
+		//perror("connect");
 		close(fd);
 	}
 
 	freeaddrinfo(result);
 
-	if (rp == NULL)
+	if (rp == NULL) {
+		//perror("freeaddrinfo");
 		return -1;
+	}
 
 	struct linger l;
 	l.l_onoff = 0;
@@ -198,24 +212,27 @@ int net_server(const char *hostname, unsigned port, bool udp, const char *keyfil
 	snprintf(svc, sizeof(svc), "%u", port);
 
 	if ((status = getaddrinfo(NULL, svc, &hints, &result)) != 0) {
-		perror("getaddrinfo");
+		//perror("getaddrinfo");
 		return -1;
 	}
 
 	for (rp = result; rp != NULL; rp = rp->ai_next) {
 		fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
 
-		if (fd == -1)
-		   continue;
+		if (fd == -1) {
+			perror("socket");
+			continue;
+		}
 
 		int flag = 1;
 		setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&flag, sizeof(flag));
-		int flag2 = 1;
-		setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, (char *)&flag2, sizeof(flag2));
+		flag = 1;
+		setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, (char *)&flag, sizeof(flag));
 
 		if (bind(fd, rp->ai_addr, rp->ai_addrlen) == 0)
 			break;
 
+		perror("bind");
 		close(fd);
 	}
 
@@ -257,7 +274,10 @@ int net_server(const char *hostname, unsigned port, bool udp, const char *keyfil
 	(void) certfile;
 #endif
 
-	listen(fd, -1);
+	if (listen(fd, -1)) {
+		perror("listen");
+	}
+
 	return fd;
 #else
 	return -1;
@@ -271,8 +291,10 @@ int net_accept(stream *str)
 	socklen_t len = 0;
 	int fd = accept(fileno(str->fp), (struct sockaddr*)&addr, &len);
 
-	if ((fd == -1) && ((errno == EWOULDBLOCK) || (errno == EAGAIN)))
+	if ((fd == -1) && ((errno == EWOULDBLOCK) || (errno == EAGAIN))) {
+		perror("accept");
 		return -1;
+	}
 
 	struct linger l;
 	l.l_onoff = 0;
