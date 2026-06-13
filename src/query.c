@@ -644,7 +644,7 @@ void undo_me(query *q)
 	}
 }
 
-void try_me(query *q, unsigned num_vars)
+static void try_me(query *q, unsigned num_vars)
 {
 	frame *f = GET_NEW_FRAME();
 	f->initial_slots = f->actual_slots = num_vars;
