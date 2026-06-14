@@ -906,7 +906,7 @@ static bool bif_iso_throw_1(query *q)
 {
 	GET_FIRST_ARG(p1,nonvar);
 	q->parens = q->numbervars = true;
-	q->is_dump_vars = true;
+	//q->is_dump_vars = true;
 	q->quoted = true;
 	char *ball = print_term_to_strbuf(q, p1, p1_ctx, 1);
 	CHECKED(ball);

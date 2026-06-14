@@ -489,7 +489,7 @@ size_t net_read(void *ptr, size_t len, stream *str)
 	int ok = fread(ptr, 1, len, str->fp);
 
 	if (errno == EINTR)
-		ok = -1;
+		ok = EOF;
 
 	return ok;
 }
@@ -550,7 +550,7 @@ int net_getline(char **lineptr, size_t *n, stream *str)
 	int ok = getline(lineptr, n, str->fp);
 
 	if (errno == EINTR)
-		ok = -1;
+		ok = EOF;
 
 	return ok;
 }
