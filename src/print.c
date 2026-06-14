@@ -1728,13 +1728,6 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int
 	while (len) {
 		size_t nbytes = net_write(src, len, str);
 
-		if (feof(str->fp)) {
-			funlockfile(str->fp);
-			q->error = true;
-			SB_free(q->sb);
-			return false;
-		}
-
 		if (ferror(str->fp)) {
 			funlockfile(str->fp);
 			SB_free(q->sb);
@@ -1771,13 +1764,6 @@ bool print_canonical(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 
 	while (len) {
 		size_t nbytes = fwrite(src, 1, len, fp);
-
-		if (feof(fp)) {
-			funlockfile(fp);
-			q->error = true;
-			SB_free(q->sb);
-			return false;
-		}
 
 		if (ferror(fp)) {
 			funlockfile(fp);
@@ -1829,13 +1815,6 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int runn
 	while (len) {
 		size_t nbytes = net_write(src, len, str);
 
-		if (feof(str->fp)) {
-			funlockfile(str->fp);
-			q->error = true;
-			SB_free(q->sb);
-			return false;
-		}
-
 		if (ferror(str->fp)) {
 			funlockfile(str->fp);
 			SB_free(q->sb);
@@ -1868,13 +1847,6 @@ bool print_term(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 
 	while (len) {
 		size_t nbytes = fwrite(src, 1, len, fp);
-
-		if (feof(fp)) {
-			funlockfile(fp);
-			q->error = true;
-			SB_free(q->sb);
-			return false;
-		}
 
 		if (ferror(fp)) {
 			funlockfile(fp);
