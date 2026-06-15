@@ -569,26 +569,22 @@ int net_close(stream *str)
 	}
 #endif
 
-	int ok = 0;
+	int ok = 1;
 
 #ifdef pclose
 	if (str->is_pipe) {
 		ok = pclose(str->fp);
-		str->is_pipe = false;
 	} else
 #else
 	{
-		if (str->is_socket) {
+		if (str->is_socket)
 			shutdown(fileno(str->fp), SHUT_RDWR);
-			str->is_socket = false;
-		}
 
-		ok = fclose(str->fp);
+		if (!str->is_memory)
+			ok = fclose(str->fp);
 
-		if (str->is_memory) {
+		if (str->is_memory)
 			SB_free(str->sb);
-			str->is_memory = false;
-		}
 	}
 #endif
 
