@@ -730,6 +730,8 @@ void clear_property(module *m, const char *name, unsigned arity)
 			retract_from_db(m, save);
 		else {
 			predicate_delink(pr, save);
+
+#if 0
 			cell *c = get_head(save->cl.cells);
 
 			if (pr->key.arity > 1) {
@@ -739,6 +741,10 @@ void clear_property(module *m, const char *name, unsigned arity)
 			}
 
 			sl_rem(pr->idx1, c, save);
+#else
+			pr->idx1 = pr->idx2 = NULL;
+#endif
+
 			clear_clause(&save->cl);
 			TPL_free(save);
 		}
