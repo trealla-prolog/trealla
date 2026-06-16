@@ -40,16 +40,6 @@ void sigfn(int s)
 {
 	g_tpl_interrupt = s;
 	//printf("*** signal\n");
-
-#ifndef _WIN32
-	struct sigaction sa;
-	sa.sa_handler = &sigfn;
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = 0;
-	sigaction(SIGINT, &sa, NULL);
-#else
-	signal(SIGINT, &sigfn);
-#endif
 }
 
 #ifndef __wasi__

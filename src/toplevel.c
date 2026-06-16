@@ -39,13 +39,6 @@ int check_interrupt(query *q)
 #ifndef _WIN32
 	if (g_tpl_interrupt == SIGALRM) {
 		g_tpl_interrupt = 0;
-#ifndef _WIN32
-		struct sigaction sa;
-		sa.sa_handler = &sigfn;
-		sigemptyset(&sa.sa_mask);
-		sa.sa_flags = 0;
-		sigaction(SIGALRM, &sa, NULL);
-#endif
 
 		if (!throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out"))
 			q->retry = true;
