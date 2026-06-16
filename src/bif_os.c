@@ -353,6 +353,8 @@ static bool bif_sys_alarm_1(query *q)
 	if (is_bigint(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "positive_integer");
 
+	g_tpl_interrupt = 0;
+
 	if (is_float(p1))
 		time0 = get_float(p1) * 1000;
 	else
@@ -368,7 +370,13 @@ static bool bif_sys_alarm_1(query *q)
 		return true;
 	}
 
-	int ms = time0;
+	struct sigaction sa = {0};
+    sa.sa_handler = sigfn;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0; // Notice we DO NOT use SA_RESTART
+    sigaction(SIGALRM, &sa, NULL);
+
+   	int ms = time0;
 	int secs = ms / 1000;
 	ms -= secs * 1000;
 
