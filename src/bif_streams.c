@@ -4063,6 +4063,7 @@ static bool bif_edin_tab_1(query *q)
 	for (int i = 0; i < get_smallint(&p1); i++)
 		fputc(' ', str->fp);
 
+	fflush(str->fp);
 	return !ferror(str->fp);
 }
 
@@ -4081,6 +4082,7 @@ static bool bif_edin_tab_2(query *q)
 	for (int i = 0; i < get_smallint(&p1); i++)
 		fputc(' ', str->fp);
 
+	fflush(str->fp);
 	return !ferror(str->fp);
 }
 
