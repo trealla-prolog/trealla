@@ -710,9 +710,9 @@ builtins g_net_bifs[] =
 {
 	{"$http_location", 2, bif_sys_http_location_2, "?list,?atom", false, false, BLAH},
 	{"$parse_url", 2, bif_sys_parse_url_2, "?atom,?list", false, false, BLAH},
-	{"$client", 5, bif_sys_client_5, "+source_sink,-atom,-atom,-atom,+list", false, false, BLAH},
 	{"$server", 3, bif_sys_server_3, "+source_sink,--stream,+list", false, false, BLAH},
 	{"$accept", 2, bif_sys_accept_2, "+stream,--stream", false, false, BLAH},
+	{"$client", 5, bif_sys_client_5, "+source_sink,-atom,-atom,-atom,+list", false, false, BLAH},
 	{"$current_host", 1, bif_sys_current_host_1, "-atom", false, false, BLAH},
 
 	{0}
