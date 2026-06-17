@@ -14,7 +14,8 @@ main1 :-
 	socket_server_accept(S, C, _, []),
 	read_term(C, hello, []),
 	write_term(C, world, [fullstop(true), nl(true)]),
-	close(C).
+	close(C),
+	close(S).
 
 main2 :-
 	socket_client_open(inet(localhost,8080), C, []),
