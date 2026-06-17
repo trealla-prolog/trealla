@@ -6297,6 +6297,9 @@ static bool bif_set_stream_2(query *q)
 	stream *str = &q->pl->streams[n];
 	GET_NEXT_ARG(p1,any);
 
+	if (is_nil(p1))
+		return true;
+
 	if (is_iso_list(p1)) {
 		LIST_HANDLER(p1);
 

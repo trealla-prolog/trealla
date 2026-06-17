@@ -684,7 +684,8 @@ static bool bif_sys_client_5(query *q)
 	cell tmp2;
 	make_int(&tmp2, n);
 	tmp2.flags |= FLAG_INT_STREAM;
-	return unify(q, p4, p4_ctx, &tmp2, q->st.cur_ctx);
+	unify(q, p4, p4_ctx, &tmp2, q->st.cur_ctx);
+	return true;
 }
 
 static bool bif_sys_current_host_1(query *q)
@@ -703,7 +704,7 @@ builtins g_net_bifs[] =
 	{"$parse_url", 2, bif_sys_parse_url_2, "?atom,?list", false, false, BLAH},
 	{"$server", 3, bif_sys_server_3, "+source_sink,--stream,+list", false, false, BLAH},
 	{"$accept", 2, bif_sys_accept_2, "+stream,--stream", false, false, BLAH},
-	{"$client", 5, bif_sys_client_5, "+source_sink,-atom,-atom,-atom,+list", false, false, BLAH},
+	{"$client", 5, bif_sys_client_5, "+source_sink,-atom,-atom,-stream,+list", false, false, BLAH},
 	{"$current_host", 1, bif_sys_current_host_1, "-atom", false, false, BLAH},
 
 	{0}
