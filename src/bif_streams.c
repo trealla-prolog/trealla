@@ -473,6 +473,10 @@ int new_stream(prolog *pl)
 		str->is_map = false;
 		str->is_memory = false;
 		str->idx = i;
+		str->bom = false;
+		str->repo = false;
+		str->binary = false;
+		str->at_end_of_file = false;
 		prolog_unlock(pl);
 		return i;
 	}
