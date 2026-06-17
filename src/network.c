@@ -387,8 +387,11 @@ size_t net_write(const void *ptr, size_t nbytes, stream *str)
 	if (str->is_memory) {
 		SB_fwrite(str->sb, ptr, nbytes);
 		return nbytes;
-	} else
-		return fwrite(ptr, 1, nbytes, str->fp);
+	} else {
+		size_t len = fwrite(ptr, 1, nbytes, str->fp);
+		fflush(str->fp);
+		return len;
+	}
 }
 
 int net_peekc(stream *str)
