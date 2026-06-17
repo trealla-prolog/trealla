@@ -165,8 +165,6 @@ static bool bif_sys_server_3(query *q)
 		unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 	}
 
-	//printf("*** net_server host=%s, port=%d, fd=%d\n", hostname, port, fd);
-
 	stream *str = &q->pl->streams[n];
 	CHECKED(str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL));
 	sl_app(str->alias, strdup(hostname), NULL);
@@ -199,12 +197,7 @@ static bool bif_sys_accept_2(query *q)
 	GET_NEXT_ARG(p1,var);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
-
-	//printf("*** net_accept, fd=%d\n", fileno(str->fp));
-
 	int fd = net_accept(str);
-
-	//printf("*** ~net_accept, fd=%d\n", fd);
 
 	if (fd == -1) {
 		if (q->is_task)
@@ -637,9 +630,7 @@ static bool bif_sys_client_5(query *q)
 	parse_host(url, hostname, path, &port, &ssl, &domain);
 	TPL_free(filename);
 
-	//printf("*** net_connect host=%s, port=%d\n", hostname, port);
 	int fd = net_connect(hostname, port, udp, nodelay);
-	//printf("*** ~net_connect host=%s, port=%d, fd=%d\n", hostname, port, fd);
 
 	if (fd == -1)
 		return throw_error(q, p1, p1_ctx, "resource_error", "could_not_connect");
