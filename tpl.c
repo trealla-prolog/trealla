@@ -39,7 +39,7 @@
 void sigfn(int s)
 {
 	g_tpl_interrupt = s;
-	//printf("*** signal\n");
+	//if (s == SIGALRM) printf("*** SIGALRM\n");
 }
 
 #ifndef __wasi__
