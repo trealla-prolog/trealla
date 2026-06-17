@@ -15,7 +15,6 @@
 %
 %  * `alias(+Alias)`: Set an alias to the stream
 %  * `eof_action(+Action)`: Defined what happens if the end of the stream is reached. Values: `error`, `eof_code` and `reset`.
-%  * `reposition(+Boolean)`: Specifies whether repositioning is required for the stream. `false` is the default.
 %  * `type(+Type)`: Type can be `text` or `binary`. Defines the type of the stream, if it's optimized for plain text
 %    or just binary
 %
@@ -43,7 +42,7 @@ socket_client_open(Addr0, Stream, Options) :-
 %% socket_server_open(+Addr, -ServerSocket, +Options).
 %
 % Open a server socket, returning a ServerSocket. Use that ServerSocket to accept incoming connections in
-% `socket_server_accept/4`. Addr must satisfy `Addr = Address:Port`. Depending on the operating system
+% `socket_server_accept/3`. Addr must satisfy `Addr = Address:Port`. Depending on the operating system
 % configuration, some ports might be reserved for superusers.
 socket_server_open(Addr0, ServerSocket, Options) :-
 	must_be(var, ServerSocket),
@@ -65,7 +64,6 @@ socket_server_open(Addr0, ServerSocket, Options) :-
 %
 %  * `alias(+Alias)`: Set an alias to the stream
 %  * `eof_action(+Action)`: Defined what happens if the end of the stream is reached. Values: `error`, `eof_code` and `reset`.
-%  * `reposition(+Boolean)`: Specifies whether repositioning is required for the stream. `false` is the default.
 %  * `type(+Type)`: Type can be `text` or `binary`. Defines the type of the stream, if it's optimized for plain text
 %    or just binary
 %
