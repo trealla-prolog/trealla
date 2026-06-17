@@ -19,10 +19,9 @@
 %    or just binary
 %
 socket_client_open(Addr0, Stream, Options) :-
-	(  var(Addr0) ->
-	throw(error(instantiation_error, socket_client_open/3))
-	;
-	true
+	( var(Addr0) ->
+		throw(error(instantiation_error, socket_client_open/3))
+	; true
 	),
 	Addr0 = inet(Address,Port),
 	must_be(var, Stream),
@@ -30,9 +29,8 @@ socket_client_open(Addr0, Stream, Options) :-
 	(  Addr = Address:Port,
 	atom(Address),
 	( atom(Port) ; integer(Port) ) ->
-	true
-	;
-	throw(error(type_error(socket_address, Addr), socket_client_open/3))
+		true
+	; throw(error(type_error(socket_address, Addr), socket_client_open/3))
 	),
 	'$client'(Addr, _, _, Stream, []),
 	set_stream(Stream, Options).
