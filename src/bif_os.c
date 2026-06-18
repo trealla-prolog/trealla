@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
 #include <sys/time.h>
 
 #if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
