@@ -463,24 +463,17 @@ static bool bif_sys_alarm_1(query *q)
     sa.sa_flags = 0; // Notice we DO NOT use SA_RESTART
     sigaction(SIGALRM, &sa, NULL);
 
-#ifdef __APPLE__
 	struct sigevent sevp;
 	sevp.sigev_notify = SIGEV_THREAD;
 	sevp.sigev_notify_function = timer_callback;
 	timer_entry *e = malloc(sizeof(timer_entry));
 	sevp.sigev_value.sival_ptr = e;
-#else
-	struct sigevent sevp;
-	sevp.sigev_notify = SIGEV_THREAD_ID;
-#endif
 
 	timer_t my_timer;
 	timer_create(CLOCK_REALTIME, &sevp, &my_timer);
 
-#ifdef __APPLE__
 	e->my_timer = my_timer;
 	e->thread_id = pthread_self();
-#endif
 
 	struct itimerspec value;
 	value.it_value.tv_sec = time0 / 1000;
