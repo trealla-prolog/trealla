@@ -480,7 +480,6 @@ static bool bif_sys_alarm_1(query *q)
     sigaction(SIGALRM, &sa, NULL);
 
 	struct itimerval it = {0};
-
 	unsigned idx = g_timers_idx++;
 	timer_t *my_timer;
 	struct sigevent sevp;
