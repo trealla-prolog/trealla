@@ -42,20 +42,20 @@ static void msleep(int ms)
 #include <dispatch/dispatch.h>
 
 // Emulated timer struct for macOS
-typedef struct emulated_timer {
+typedef struct timer {
 	dispatch_source_t timer_source;
 	struct sigevent evp;
 	int interval_ms;
-} emulated_timer_t;
+} timer_t;
 
 // Replacement for timer_create
-static int timer_create(clockid_t clockid, struct sigevent *sevp, emulated_timer_t **timerid)
+static int timer_create(clockid_t clockid, struct sigevent *sevp, timer_t **timerid)
 {
 	if (timerid == NULL) {
 		return -1;
 	}
 
-	emulated_timer_t *new_timer = malloc(sizeof(emulated_timer_t));
+	timer_t *new_timer = malloc(sizeof(timer_t));
 	if (!new_timer) {
 		return -1;
 	}
@@ -83,7 +83,7 @@ struct itimerspec {
 };
 
 // Replacement for timer_settime (disables/enables with struct itimerspec)
-static int timer_settime(emulated_timer_t *timerid, int flags, const struct itimerspec *new_value, struct itimerspec *old_value)
+static int timer_settime(timer_t *timerid, int flags, const struct itimerspec *new_value, struct itimerspec *old_value)
 {
 	if (!timerid || !new_value) {
 		return -1;
@@ -115,7 +115,7 @@ static int timer_settime(emulated_timer_t *timerid, int flags, const struct itim
 }
 
 // Replacement for timer_delete
-static int timer_delete(emulated_timer_t *timerid)
+static int timer_delete(timer_t *timerid)
 {
 	if (timerid) {
 		dispatch_source_cancel(timerid->timer_source);
@@ -466,20 +466,18 @@ static bool bif_sys_alarm_1(query *q)
 
 	struct itimerval it = {0};
 
-	emulated_timer_t *my_timer;
+	timer_t *my_timer;
 	struct sigevent sevp;
 	sevp.sigev_notify = SIGEV_THREAD;
 	sevp.sigev_notify_function = timer_callback;
 	sevp.sigev_value.sival_int = 42;
 
-	// Create the timer
 	timer_create(CLOCK_REALTIME, &sevp, &my_timer);
 
-	// Set timer to fire in 2 seconds, and every 1 second after that
 	struct itimerspec value;
 	value.it_value.tv_sec = time0 / 1000;
 	value.it_value.tv_nsec = time0 % 1000;
-	value.it_interval.tv_sec = 1;
+	value.it_interval.tv_sec = 0;
 	value.it_interval.tv_nsec = 0;
 
 	timer_settime(my_timer, 0, &value, NULL);
