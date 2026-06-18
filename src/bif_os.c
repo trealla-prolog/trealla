@@ -463,7 +463,6 @@ static bool bif_sys_alarm_1(query *q)
     sa.sa_flags = 0; // Notice we DO NOT use SA_RESTART
     sigaction(SIGALRM, &sa, NULL);
 
-	struct itimerval it = {0};
 	struct sigevent sevp;
 	sevp.sigev_notify = SIGEV_THREAD;
 	sevp.sigev_notify_function = timer_callback;
