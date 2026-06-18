@@ -457,6 +457,12 @@ static bool bif_sys_alarm_1(query *q)
 	if (time0 < 0)
 		return throw_error(q, p1, p1_ctx, "domain_error", "positive_integer");
 
+	struct itimerval it = {0};
+
+	if (time0 == 0) {
+		return true;
+	}
+
 	struct sigaction sa = {0};
     sa.sa_handler = sigfn;
     sigemptyset(&sa.sa_mask);
