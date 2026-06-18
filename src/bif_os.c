@@ -494,7 +494,7 @@ static bool bif_sys_alarm_1(query *q)
 
 	struct itimerspec value;
 	value.it_value.tv_sec = time0 / 1000;
-	value.it_value.tv_nsec = time0 % 1000;
+	value.it_value.tv_nsec = (time0 % 1000) * 1000;
 	value.it_interval.tv_sec = 0;
 	value.it_interval.tv_nsec = 0;
 
