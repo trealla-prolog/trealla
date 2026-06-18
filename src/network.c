@@ -388,9 +388,7 @@ size_t net_write(const void *ptr, size_t nbytes, stream *str)
 		SB_fwrite(str->sb, ptr, nbytes);
 		return nbytes;
 	} else {
-		size_t len = fwrite(ptr, 1, nbytes, str->fp);
-		fflush(str->fp);
-		return len;
+		return fwrite(ptr, 1, nbytes, str->fp);
 	}
 }
 
