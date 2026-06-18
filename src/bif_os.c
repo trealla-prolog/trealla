@@ -477,8 +477,10 @@ static bool bif_sys_alarm_1(query *q)
 	timer_t my_timer;
 	timer_create(CLOCK_REALTIME, &sevp, &my_timer);
 
+#ifdef __APPLE__
 	e->my_timer = my_timer;
 	e->thread_id = pthread_self();
+#endif
 
 	struct itimerspec value;
 	value.it_value.tv_sec = time0 / 1000;
