@@ -429,7 +429,7 @@ typedef struct  {
 } timer_entry;
 
 static skiplist *g_timers = NULL;
-lock g_timers_lock;
+extern lock g_timers_lock;
 
 static void timer_callback(union sigval sv)
 {
