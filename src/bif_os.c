@@ -36,6 +36,90 @@ static void msleep(int ms)
 
 #define MAX_ARGS 128
 
+#ifdef __AAPLE__
+#include <dispatch/dispatch.h>
+
+// Emulated timer struct for macOS
+typedef struct emulated_timer {
+	dispatch_source_t timer_source;
+	struct sigevent evp;
+	int interval_ms;
+} emulated_timer_t;
+
+// Replacement for timer_create
+static int timer_create(clockid_t clockid, struct sigevent *sevp, emulated_timer_t **timerid)
+{
+	if (timerid == NULL) {
+		return -1;
+	}
+
+	emulated_timer_t *new_timer = malloc(sizeof(emulated_timer_t));
+	if (!new_timer) {
+		return -1;
+	}
+
+	if (sevp != NULL) {
+		new_timer->evp = *sevp;
+	} else {
+		new_timer->evp.sigev_notify = SIGEV_SIGNAL;
+		new_timer->evp.sigev_signo = SIGALRM;
+	}
+
+	// Create a dispatch queue for the timer
+	dispatch_queue_t queue = dispatch_queue_create("com.timer.queue", DISPATCH_QUEUE_SERIAL);
+
+	// Create the GCD timer source
+	new_timer->timer_source = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
+
+	*timerid = new_timer;
+	return 0;
+}
+
+// Replacement for timer_settime (disables/enables with struct itimerspec)
+static int timer_settime(emulated_timer_t *timerid, int flags, const struct itimerspec *new_value, struct itimerspec *old_value)
+{
+	if (!timerid || !new_value) {
+		return -1;
+	}
+
+	// Calculate start time and interval in nanoseconds
+	uint64_t start_nsec = (new_value->it_value.tv_sec * NSEC_PER_SEC) + new_value->it_value.tv_nsec;
+	uint64_t interval_nsec = (new_value->it_interval.tv_sec * NSEC_PER_SEC) + new_value->it_interval.tv_nsec;
+
+	dispatch_time_t start_time = dispatch_time(DISPATCH_TIME_NOW, start_nsec);
+
+	// Arm the dispatch timer
+	dispatch_source_set_timer(timerid->timer_source, start_time, interval_nsec, 0);
+
+	// Set the event handler
+	dispatch_source_set_event_handler(timerid->timer_source, ^{
+		if (timerid->evp.sigev_notify == SIGEV_SIGNAL) {
+			// Emulate signal sending by raising the specified signal
+			raise(timerid->evp.sigev_signo);
+		} else if (timerid->evp.sigev_notify == SIGEV_THREAD) {
+			// Emulate POSIX thread notification by calling the specified function
+			timerid->evp.sigev_notify_function(timerid->evp.sigev_value);
+		}
+	});
+
+	// Start the timer (dispatch sources start suspended)
+	dispatch_resume(timerid->timer_source);
+	return 0;
+}
+
+// Replacement for timer_delete
+static int timer_delete(emulated_timer_t *timerid)
+{
+	if (timerid) {
+		dispatch_source_cancel(timerid->timer_source);
+		dispatch_release(timerid->timer_source);
+		free(timerid);
+	}
+	return 0;
+}
+
+#endif
+
 #ifdef _WIN32
 
 #define MS_PER_SEC      1000ULL     // MS = milliseconds
@@ -92,8 +176,8 @@ static int my_clock_gettime(clockid_t type, struct timespec *tp)
 	else if (type == CLOCK_REALTIME)
 		return clock_gettime_realtime(tp);
 
-    errno = ENOTSUP;
-    return -1;
+	errno = ENOTSUP;
+	return -1;
 }
 #else
 #define my_clock_gettime clock_gettime
@@ -371,10 +455,10 @@ static bool bif_sys_alarm_1(query *q)
 	}
 
 	struct sigaction sa = {0};
-    sa.sa_handler = sigfn;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = 0; // Notice we DO NOT use SA_RESTART
-    sigaction(SIGALRM, &sa, NULL);
+	sa.sa_handler = sigfn;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0; // Notice we DO NOT use SA_RESTART
+	sigaction(SIGALRM, &sa, NULL);
 
    	int ms = time0;
 	int secs = ms / 1000;
@@ -739,9 +823,9 @@ static bool bif_process_create_3(query *q)
 		filename = src;
 	}
 
-    int args = 0, envs = 0;
-    char *arguments[MAX_ARGS] = {NULL};
-    char *environments[MAX_ARGS] = {NULL};
+	int args = 0, envs = 0;
+	char *arguments[MAX_ARGS] = {NULL};
+	char *environments[MAX_ARGS] = {NULL};
 	arguments[args++] = strdup(filename);
 
 	for (int i = 0; g_envp[i] != NULL; i++)
@@ -765,12 +849,12 @@ static bool bif_process_create_3(query *q)
 	}
 
 	arguments[args] = NULL;
-    posix_spawn_file_actions_t file_actions;
-    posix_spawn_file_actions_init(&file_actions);
-    posix_spawnattr_t attrp;
-    posix_spawnattr_init(&attrp);
-    cell *ppid = NULL;
-    pl_ctx ppid_ctx = 0;
+	posix_spawn_file_actions_t file_actions;
+	posix_spawn_file_actions_init(&file_actions);
+	posix_spawnattr_t attrp;
+	posix_spawnattr_init(&attrp);
+	cell *ppid = NULL;
+	pl_ctx ppid_ctx = 0;
 	LIST_HANDLER(p3);
 
 	while (is_iso_list(p3)) {
