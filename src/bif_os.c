@@ -449,6 +449,7 @@ static void timer_callback(union sigval sv)
 	if (!sl_get(g_timers, (void*)(size_t)idx, (void*)&e))
 		return;
 
+	sl_del(g_timers, (void*)(size_t)idx);
 	timer_t *my_timer = e->my_timer;
 	pthread_t thread_id = e->thread_id;
 	pthread_kill(thread_id, SIGALRM);
