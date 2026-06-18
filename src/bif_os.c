@@ -428,22 +428,9 @@ typedef struct  {
 	pthread_t thread_id;
 } timer_entry;
 
-static skiplist *g_timers = NULL;
-extern lock g_timers_lock;
-
 static void timer_callback(union sigval sv)
 {
-	int idx = sv.sival_int;
-	timer_entry *e;
-	acquire_lock(&g_timers_lock);
-
-	if (!sl_get(g_timers, (void*)(size_t)idx, (void*)&e)) {
-		release_lock(&g_timers_lock);
-		return;
-	}
-
-	sl_del(g_timers, (void*)(size_t)idx);
-	release_lock(&g_timers_lock);
+	timer_entry *e = sv.sival_ptr;
 	pthread_kill(e->thread_id, SIGALRM);
 	timer_delete(e->my_timer);
 	TPL_free(e);
@@ -470,37 +457,24 @@ static bool bif_sys_alarm_1(query *q)
 	if (time0 < 0)
 		return throw_error(q, p1, p1_ctx, "domain_error", "positive_integer");
 
-	acquire_lock(&g_timers_lock);
-
-	if (!g_timers)
-		g_timers = sl_create(NULL, NULL, NULL);
-
-	release_lock(&g_timers_lock);
-
 	struct sigaction sa = {0};
     sa.sa_handler = sigfn;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = 0; // Notice we DO NOT use SA_RESTART
     sigaction(SIGALRM, &sa, NULL);
 
-	static pl_atomic int g_idx = 0;
-	unsigned idx = g_idx++;
 	struct itimerval it = {0};
 	struct sigevent sevp;
 	sevp.sigev_notify = SIGEV_THREAD;
 	sevp.sigev_notify_function = timer_callback;
-	sevp.sigev_value.sival_int = idx;
+	timer_entry *e = malloc(sizeof(timer_entry));
+	sevp.sigev_value.sival_ptr = e;
 
 	timer_t my_timer;
 	timer_create(CLOCK_REALTIME, &sevp, &my_timer);
 
-	timer_entry *e = malloc(sizeof(timer_entry));
 	e->my_timer = my_timer;
 	e->thread_id = pthread_self();
-
-	acquire_lock(&g_timers_lock);
-	sl_set(g_timers, (void*)(size_t)idx, e);
-	release_lock(&g_timers_lock);
 
 	struct itimerspec value;
 	value.it_value.tv_sec = time0 / 1000;

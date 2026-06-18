@@ -66,8 +66,6 @@ extern builtins g_threads_bifs[];
 
 extern void keyfree(const void *key, const void *val, const void *p);
 
-extern lock g_timers_lock;
-
 inline static void prolog_lock(prolog *pl)
 {
 	acquire_lock(&pl->guard);
