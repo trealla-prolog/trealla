@@ -2753,6 +2753,9 @@ static bool bif_iso_get_char_1(query *q)
 
 	int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
 
+	if (errno == EINTR)
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
+
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
 		return do_yield(q, 1);

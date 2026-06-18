@@ -1,7 +1,7 @@
-:- initialization(main2).
+:- initialization(main1).
 
 main1 :-
-	thread_create(catch(call_with_time_limit(1.0, run1), _, true), T1, []),
+	thread_create(catch(call_with_time_limit(3.0, run1), _, true), T1, []),
 	thread_join(T1),
 	writeln('done1').
 
