@@ -486,7 +486,6 @@ static bool bif_sys_alarm_1(query *q)
 	sevp.sigev_notify = SIGEV_THREAD;
 	sevp.sigev_notify_function = timer_callback;
 	sevp.sigev_value.sival_int = idx;
-
 	timer_create(CLOCK_REALTIME, &sevp, &my_timer);
 
 	g_timers[idx].my_timer = my_timer;
@@ -497,7 +496,6 @@ static bool bif_sys_alarm_1(query *q)
 	value.it_value.tv_nsec = (time0 % 1000) * 1000;
 	value.it_interval.tv_sec = 0;
 	value.it_interval.tv_nsec = 0;
-
 	timer_settime(my_timer, 0, &value, NULL);
 	return true;
 #endif
