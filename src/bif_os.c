@@ -122,6 +122,7 @@ static int timer_delete(timer_t *timerid)
 		dispatch_release(timerid->timer_source);
 		free(timerid);
 	}
+
 	return 0;
 }
 
