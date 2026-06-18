@@ -48,31 +48,25 @@ typedef struct timer {
 } timer_t;
 
 // Replacement for timer_create
-static int timer_create(clockid_t clockid, struct sigevent *sevp, timer_t **timerid)
+static int timer_create(clockid_t clockid, struct sigevent *sevp, timer_t *timerid)
 {
 	if (timerid == NULL) {
 		return -1;
 	}
 
-	timer_t *new_timer = malloc(sizeof(timer_t));
-	if (!new_timer) {
-		return -1;
-	}
-
 	if (sevp != NULL) {
-		new_timer->evp = *sevp;
+		timerid->evp = *sevp;
 	} else {
-		new_timer->evp.sigev_notify = SIGEV_SIGNAL;
-		new_timer->evp.sigev_signo = SIGALRM;
+		timerid->evp.sigev_notify = SIGEV_SIGNAL;
+		timerid->evp.sigev_signo = SIGALRM;
 	}
 
 	// Create a dispatch queue for the timer
 	dispatch_queue_t queue = dispatch_queue_create("com.timer.queue", DISPATCH_QUEUE_SERIAL);
 
 	// Create the GCD timer source
-	new_timer->timer_source = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
+	timerid->timer_source = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
 
-	*timerid = new_timer;
 	return 0;
 }
 
@@ -82,9 +76,9 @@ struct itimerspec {
 };
 
 // Replacement for timer_settime (disables/enables with struct itimerspec)
-static int timer_settime(timer_t *timerid, int flags, const struct itimerspec *new_value, struct itimerspec *old_value)
+static int timer_settime(timer_t timerid, int flags, const struct itimerspec *new_value, struct itimerspec *old_value)
 {
-	if (!timerid || !new_value) {
+	if (!new_value) {
 		return -1;
 	}
 
@@ -95,33 +89,29 @@ static int timer_settime(timer_t *timerid, int flags, const struct itimerspec *n
 	dispatch_time_t start_time = dispatch_time(DISPATCH_TIME_NOW, start_nsec);
 
 	// Arm the dispatch timer
-	dispatch_source_set_timer(timerid->timer_source, start_time, interval_nsec, 0);
+	dispatch_source_set_timer(timerid.timer_source, start_time, interval_nsec, 0);
 
 	// Set the event handler
-	dispatch_source_set_event_handler(timerid->timer_source, ^{
-		if (timerid->evp.sigev_notify == SIGEV_SIGNAL) {
+	dispatch_source_set_event_handler(timerid.timer_source, ^{
+		if (timerid.evp.sigev_notify == SIGEV_SIGNAL) {
 			// Emulate signal sending by raising the specified signal
-			raise(timerid->evp.sigev_signo);
-		} else if (timerid->evp.sigev_notify == SIGEV_THREAD) {
+			raise(timerid.evp.sigev_signo);
+		} else if (timerid.evp.sigev_notify == SIGEV_THREAD) {
 			// Emulate POSIX thread notification by calling the specified function
-			timerid->evp.sigev_notify_function(timerid->evp.sigev_value);
+			timerid.evp.sigev_notify_function(timerid.evp.sigev_value);
 		}
 	});
 
 	// Start the timer (dispatch sources start suspended)
-	dispatch_resume(timerid->timer_source);
+	dispatch_resume(timerid.timer_source);
 	return 0;
 }
 
 // Replacement for timer_delete
-static int timer_delete(timer_t *timerid)
+static int timer_delete(timer_t timerid)
 {
-	if (timerid) {
-		dispatch_source_cancel(timerid->timer_source);
-		dispatch_release(timerid->timer_source);
-		free(timerid);
-	}
-
+	dispatch_source_cancel(timerid.timer_source);
+	dispatch_release(timerid.timer_source);
 	return 0;
 }
 
@@ -434,7 +424,7 @@ static bool bif_date_time_6(query *q)
 }
 
 typedef struct  {
-	timer_t *my_timer;
+	timer_t my_timer;
 	pthread_t thread_id;
 } timer_entry;
 
@@ -454,10 +444,8 @@ static void timer_callback(union sigval sv)
 
 	sl_del(g_timers, (void*)(size_t)idx);
 	release_lock(&g_timers_lock);
-	timer_t *my_timer = e->my_timer;
-	pthread_t thread_id = e->thread_id;
-	pthread_kill(thread_id, SIGALRM);
-	timer_delete(my_timer);
+	pthread_kill(e->thread_id, SIGALRM);
+	timer_delete(e->my_timer);
 	TPL_free(e);
 }
 
@@ -498,11 +486,12 @@ static bool bif_sys_alarm_1(query *q)
 	static pl_atomic int g_idx = 0;
 	unsigned idx = g_idx++;
 	struct itimerval it = {0};
-	timer_t *my_timer;
 	struct sigevent sevp;
 	sevp.sigev_notify = SIGEV_THREAD;
 	sevp.sigev_notify_function = timer_callback;
 	sevp.sigev_value.sival_int = idx;
+
+	timer_t my_timer;
 	timer_create(CLOCK_REALTIME, &sevp, &my_timer);
 
 	timer_entry *e = malloc(sizeof(timer_entry));
