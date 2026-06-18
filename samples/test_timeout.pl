@@ -1,4 +1,4 @@
-:- initialization(main1).
+:- initialization(main2).
 
 main1 :-
 	thread_create(catch(call_with_time_limit(1.0, run1), _, true), T1, []),
