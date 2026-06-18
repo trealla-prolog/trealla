@@ -27,6 +27,12 @@ endif
 
 LDFLAGS = -L/usr/local/lib -lm
 
+UNAME_S := $(shell uname -s)
+
+ifeq ($(UNAME_S), FreeBSD)
+LDFLAGS += -lrt
+endif
+
 ifdef HOMEBREW_PREFIX
 LDFLAGS += -L$(HOMEBREW_PREFIX)/opt/libffi/lib -L$(HOMEBREW_PREFIX)/opt/openssl@3/lib
 CFLAGS += -I$(HOMEBREW_PREFIX)/opt/libffi/include -I$(HOMEBREW_PREFIX)/opt/openssl@3/include
