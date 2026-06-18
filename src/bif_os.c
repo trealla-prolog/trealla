@@ -440,13 +440,11 @@ static struct {
 	pthread_t thread_id;
 	} g_timers[MAX_TIMERS] = {0};
 
-static unsigned g_timers_idx = 0;
+static pl_atomic unsigned g_timers_idx = 0;
 
 static void timer_callback(union sigval sv)
 {
 	unsigned idx = sv.sival_int;
-	printf("Timer callback executed! Value: %d, Me: %lld\n", idx, (long long)g_timers[idx].thread_id);
-
 	// Clean up
 	timer_t *my_timer = g_timers[idx].my_timer;
 	pthread_t thread_id = g_timers[idx].thread_id;
@@ -475,20 +473,25 @@ static bool bif_sys_alarm_1(query *q)
 	if (time0 < 0)
 		return throw_error(q, p1, p1_ctx, "domain_error", "positive_integer");
 
+	struct sigaction sa = {0};
+    sa.sa_handler = sigfn;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0; // Notice we DO NOT use SA_RESTART
+    sigaction(SIGALRM, &sa, NULL);
+
 	struct itimerval it = {0};
 
+	unsigned idx = g_timers_idx++;
 	timer_t *my_timer;
 	struct sigevent sevp;
 	sevp.sigev_notify = SIGEV_THREAD;
 	sevp.sigev_notify_function = timer_callback;
-	sevp.sigev_value.sival_int = g_timers_idx;
+	sevp.sigev_value.sival_int = idx;
 
 	timer_create(CLOCK_REALTIME, &sevp, &my_timer);
 
-	g_timers[g_timers_idx].my_timer = my_timer;
-	g_timers[g_timers_idx].thread_id = pthread_self();
-	printf("Timer created Value: %u, Me: %lld\n", g_timers_idx, (long long)g_timers[g_timers_idx].thread_id);
-	g_timers_idx++;
+	g_timers[idx].my_timer = my_timer;
+	g_timers[idx].thread_id = pthread_self();
 
 	struct itimerspec value;
 	value.it_value.tv_sec = time0 / 1000;
