@@ -434,14 +434,24 @@ static bool bif_date_time_6(query *q)
 	return true;
 }
 
+#define MAX_TIMERS 256
+static struct {
+	timer_t *my_timer;
+	pthread_t thread_id;
+	} g_timers[MAX_TIMERS] = {0};
+
+static unsigned g_timers_idx = 0;
+
 static void timer_callback(union sigval sv)
 {
-	printf("Timer callback executed! Value: %d\n", sv.sival_int);
-	pthread_t me = pthread_self();
-	pthread_kill(me, SIGALRM);
+	unsigned idx = sv.sival_int;
+	printf("Timer callback executed! Value: %d, Me: %lld\n", idx, (long long)g_timers[idx].thread_id);
 
 	// Clean up
-	//timer_delete(my_timer);
+	timer_t *my_timer = g_timers[idx].my_timer;
+	pthread_t thread_id = g_timers[idx].thread_id;
+	pthread_kill(thread_id, SIGALRM);
+	timer_delete(my_timer);
 }
 
 static bool bif_sys_alarm_1(query *q)
@@ -471,9 +481,14 @@ static bool bif_sys_alarm_1(query *q)
 	struct sigevent sevp;
 	sevp.sigev_notify = SIGEV_THREAD;
 	sevp.sigev_notify_function = timer_callback;
-	sevp.sigev_value.sival_int = 42;
+	sevp.sigev_value.sival_int = g_timers_idx;
 
 	timer_create(CLOCK_REALTIME, &sevp, &my_timer);
+
+	g_timers[g_timers_idx].my_timer = my_timer;
+	g_timers[g_timers_idx].thread_id = pthread_self();
+	printf("Timer created Value: %u, Me: %lld\n", g_timers_idx, (long long)g_timers[g_timers_idx].thread_id);
+	g_timers_idx++;
 
 	struct itimerspec value;
 	value.it_value.tv_sec = time0 / 1000;
