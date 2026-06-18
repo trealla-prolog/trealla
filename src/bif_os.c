@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include <sys/time.h>
 
 #if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
@@ -36,7 +37,8 @@ static void msleep(int ms)
 
 #define MAX_ARGS 128
 
-#ifdef __AAPLE__
+#ifdef __APPLE__
+
 #include <dispatch/dispatch.h>
 
 // Emulated timer struct for macOS
@@ -74,6 +76,11 @@ static int timer_create(clockid_t clockid, struct sigevent *sevp, emulated_timer
 	*timerid = new_timer;
 	return 0;
 }
+
+struct itimerspec {
+	struct timespec it_interval;  // Period for periodic timer
+	struct timespec it_value;     // Initial expiration
+};
 
 // Replacement for timer_settime (disables/enables with struct itimerspec)
 static int timer_settime(emulated_timer_t *timerid, int flags, const struct itimerspec *new_value, struct itimerspec *old_value)
@@ -426,6 +433,16 @@ static bool bif_date_time_6(query *q)
 	return true;
 }
 
+static void timer_callback(union sigval sv)
+{
+	printf("Timer callback executed! Value: %d\n", sv.sival_int);
+	pthread_t me = pthread_self();
+	pthread_kill(me, SIGALRM);
+
+	// Clean up
+	//timer_delete(my_timer);
+}
+
 static bool bif_sys_alarm_1(query *q)
 {
 #if defined(_WIN32) || !defined(ITIMER_REAL)
@@ -449,24 +466,23 @@ static bool bif_sys_alarm_1(query *q)
 
 	struct itimerval it = {0};
 
-	if (time0 == 0) {
-		setitimer(ITIMER_REAL, &it, NULL);
-		return true;
-	}
+	emulated_timer_t *my_timer;
+	struct sigevent sevp;
+	sevp.sigev_notify = SIGEV_THREAD;
+	sevp.sigev_notify_function = timer_callback;
+	sevp.sigev_value.sival_int = 42;
 
-	struct sigaction sa = {0};
-	sa.sa_handler = sigfn;
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = 0; // Notice we DO NOT use SA_RESTART
-	sigaction(SIGALRM, &sa, NULL);
+	// Create the timer
+	timer_create(CLOCK_REALTIME, &sevp, &my_timer);
 
-   	int ms = time0;
-	int secs = ms / 1000;
-	ms -= secs * 1000;
+	// Set timer to fire in 2 seconds, and every 1 second after that
+	struct itimerspec value;
+	value.it_value.tv_sec = time0 / 1000;
+	value.it_value.tv_nsec = time0 % 1000;
+	value.it_interval.tv_sec = 1;
+	value.it_interval.tv_nsec = 0;
 
-	it.it_value.tv_sec = secs;
-	it.it_value.tv_usec = ms * 1000;
-	setitimer(ITIMER_REAL, &it, NULL);
+	timer_settime(my_timer, 0, &value, NULL);
 	return true;
 #endif
 }
