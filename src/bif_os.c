@@ -471,12 +471,14 @@ static bool bif_sys_alarm_2(query *q)
 	sevp.sigev_value.sival_ptr = e;
 	//printf("*** create\n");
 
+#ifdef __APPLE__
 	prolog_lock(q->pl);
 
 	if (!queue)
 		queue = dispatch_queue_create("com.timer.queue", DISPATCH_QUEUE_SERIAL);
 
 	prolog_unlock(q->pl);
+#endif
 
 	timer_t my_timer;
 	timer_create(CLOCK_REALTIME, &sevp, &my_timer);
