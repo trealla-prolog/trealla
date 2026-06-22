@@ -423,30 +423,22 @@ static bool bif_date_time_6(query *q)
 	return true;
 }
 
-#if defined(_WIN32) || !defined(ITIMER_REAL)
-#else
+#if defined(_WIN32) || defined(__wasi__)
 typedef struct  {
 	timer_t my_timer;
 	pthread_t thread_id;
 } timer_entry;
-#endif
 
 static void timer_callback(union sigval sv)
 {
-#if defined(_WIN32) || !defined(ITIMER_REAL)
-#else
 	timer_entry *e = sv.sival_ptr;
 	pthread_kill(e->thread_id, SIGALRM);
 	timer_delete(e->my_timer);
 	memset(e, 0, sizeof(timer_entry));
-#endif
 }
 
 static bool bif_sys_alarm_2(query *q)
 {
-#if defined(_WIN32) || !defined(ITIMER_REAL)
-	return false;
-#else
 	GET_FIRST_ARG(p1,number);
 	GET_NEXT_ARG(p2,integer_or_var);
 	int time0 = 0;
@@ -503,8 +495,8 @@ static bool bif_sys_alarm_2(query *q)
 	cell tmp;
 	make_ptr(&tmp, e);
 	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
-#endif
 }
+#endif
 
 static bool bif_busy_1(query *q)
 {
@@ -1165,7 +1157,9 @@ builtins g_os_bifs[] =
 	{"popen", 4, bif_popen_4, "+source_sink,+atom,--stream,+list", false, false, BLAH},
 #endif
 
+#if defined(_WIN32) || defined(__wasi__)
 	{"$alarm", 2, bif_sys_alarm_2, "+integer,-integer", false, false, BLAH},
+#endif
 	{"$timer", 0, bif_sys_timer_0, NULL, false, false, BLAH},
 	{"$elapsed", 0, bif_sys_elapsed_0, NULL, false, false, BLAH},
 
