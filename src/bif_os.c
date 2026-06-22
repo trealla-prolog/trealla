@@ -475,7 +475,7 @@ static bool bif_sys_alarm_2(query *q)
 	prolog_lock(q->pl);
 
 	if (!queue)
-		queue = dispatch_queue_create("com.timer.queue", DISPATCH_QUEUE_SERIAL);
+		queue = dispatch_queue_create("com.timer.trealla.queue", DISPATCH_QUEUE_SERIAL);
 
 	prolog_unlock(q->pl);
 #endif
