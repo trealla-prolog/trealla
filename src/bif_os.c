@@ -448,6 +448,9 @@ static bool bif_sys_alarm_2(query *q)
 		//printf("*** cancel\n");
 		timer_entry *e = get_voidptr(p2);
 
+		if (!e)
+			return true;
+
 		if (e->thread_id) {
 			//printf("*** delete\n");
 			timer_delete(e->my_timer);
