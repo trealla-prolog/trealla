@@ -423,7 +423,7 @@ static bool bif_date_time_6(query *q)
 	return true;
 }
 
-#if defined(_WIN32) || defined(__wasi__)
+#if !defined(_WIN32) && !defined(__wasi__)
 typedef struct  {
 	timer_t my_timer;
 	pthread_t thread_id;
@@ -1157,7 +1157,7 @@ builtins g_os_bifs[] =
 	{"popen", 4, bif_popen_4, "+source_sink,+atom,--stream,+list", false, false, BLAH},
 #endif
 
-#if defined(_WIN32) || defined(__wasi__)
+#if !defined(_WIN32) && !defined(__wasi__)
 	{"$alarm", 2, bif_sys_alarm_2, "+integer,-integer", false, false, BLAH},
 #endif
 	{"$timer", 0, bif_sys_timer_0, NULL, false, false, BLAH},
