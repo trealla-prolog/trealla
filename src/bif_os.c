@@ -433,15 +433,17 @@ static void timer_callback(union sigval sv)
 	timer_entry *e = sv.sival_ptr;
 	pthread_kill(e->thread_id, SIGALRM);
 	timer_delete(e->my_timer);
-	TPL_free(e);
+	memset(e, 0, sizeof(timer_entry));
+	//TPL_free(e);
 }
 
-static bool bif_sys_alarm_1(query *q)
+static bool bif_sys_alarm_2(query *q)
 {
 #if defined(_WIN32) || !defined(ITIMER_REAL)
 	return false;
 #else
 	GET_FIRST_ARG(p1,number);
+	GET_NEXT_ARG(p2,integer_or_var);
 	int time0 = 0;
 
 	if (is_bigint(p1))
@@ -460,6 +462,12 @@ static bool bif_sys_alarm_1(query *q)
 	struct itimerval it = {0};
 
 	if (time0 == 0) {
+		timer_entry *e = get_voidptr(p2);
+
+		if (e->thread_id) {
+			timer_delete(e->my_timer);
+			TPL_free(e);
+		}
 		return true;
 	}
 
@@ -487,7 +495,9 @@ static bool bif_sys_alarm_1(query *q)
 	value.it_interval.tv_sec = 0;
 	value.it_interval.tv_nsec = 0;
 	timer_settime(my_timer, 0, &value, NULL);
-	return true;
+	cell tmp;
+	make_ptr(&tmp, e);
+	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 #endif
 }
 
@@ -1150,7 +1160,7 @@ builtins g_os_bifs[] =
 	{"popen", 4, bif_popen_4, "+source_sink,+atom,--stream,+list", false, false, BLAH},
 #endif
 
-	{"$alarm", 1, bif_sys_alarm_1, "+integer", false, false, BLAH},
+	{"$alarm", 2, bif_sys_alarm_2, "+integer,-integer", false, false, BLAH},
 	{"$timer", 0, bif_sys_timer_0, NULL, false, false, BLAH},
 	{"$elapsed", 0, bif_sys_elapsed_0, NULL, false, false, BLAH},
 
