@@ -423,10 +423,13 @@ static bool bif_date_time_6(query *q)
 	return true;
 }
 
+#if defined(_WIN32) || !defined(ITIMER_REAL)
+#else
 typedef struct  {
 	timer_t my_timer;
 	pthread_t thread_id;
 } timer_entry;
+#endif
 
 static void timer_callback(union sigval sv)
 {
