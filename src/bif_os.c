@@ -72,15 +72,13 @@ struct itimerspec {
 
 static int timer_settime(timer_t timerid, int flags, const struct itimerspec *new_value, struct itimerspec *old_value)
 {
-	if (!new_value) {
+	if (!new_value)
 		return -1;
-	}
 
 	uint64_t start_nsec = (new_value->it_value.tv_sec * NSEC_PER_SEC) + new_value->it_value.tv_nsec;
 	uint64_t interval_nsec = (new_value->it_interval.tv_sec * NSEC_PER_SEC) + new_value->it_interval.tv_nsec;
 
 	dispatch_time_t start_time = dispatch_time(DISPATCH_TIME_NOW, start_nsec);
-
 	dispatch_source_set_timer(timerid.timer_source, start_time, interval_nsec, 0);
 
 	dispatch_source_set_event_handler(timerid.timer_source, ^{
@@ -423,7 +421,6 @@ static void timer_callback(union sigval sv)
 	timer_delete(e->my_timer);
 	memset(e, 0, sizeof(timer_entry));
 	//printf("*** callback\n");
-	TPL_free(e);
 }
 
 static bool bif_sys_alarm_2(query *q)
@@ -454,8 +451,10 @@ static bool bif_sys_alarm_2(query *q)
 		if (e->thread_id) {
 			//printf("*** delete\n");
 			timer_delete(e->my_timer);
-			TPL_free(e);
 		}
+
+		//printf("*** free\n");
+		TPL_free(e);
 		return true;
 	}
 
