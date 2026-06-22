@@ -141,6 +141,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #define set_smallint(c,v) (c)->val_int = (v)
 #define get_smalluint(c) (c)->val_uint
 #define set_smalluint(c,v) (c)->val_uint = (v)
+#define get_voidptr(c) (c)->val_voidptr
 
 #define neg_bigint(c) (c)->val_bigint->ival.sign = MP_NEG
 #define neg_smallint(c) (c)->val_int = -llabs((c)->val_int)
@@ -349,6 +350,7 @@ struct cell_ {
 
 	union {
 
+		void *val_voidptr;
 		pl_uint val_uint;
 		pl_int val_int;
 		pl_flt val_float;

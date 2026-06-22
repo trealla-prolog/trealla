@@ -1604,7 +1604,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 			str->p->srcptr = str->p->save_line;
 
 		if (errno == EINTR)
-			return false;
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 	}
 
 	if (str->p->srcptr) {
@@ -1636,7 +1636,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 				}
 
 				if (errno == EINTR)
-					return false;
+					return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 
 				str->p->srcptr = "";
 				str->at_end_of_file = str->eof_action != eof_action_reset;
@@ -2753,6 +2753,9 @@ static bool bif_iso_get_char_1(query *q)
 
 	int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
 
+	if (errno == EINTR)
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
+
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
 		return do_yield(q, 1);
@@ -2826,6 +2829,9 @@ static bool bif_iso_get_char_2(query *q)
 
 	int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
 
+	if (errno == EINTR)
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
+
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
 		return do_yield(q, 1);
@@ -2898,6 +2904,9 @@ static bool bif_iso_get_code_1(query *q)
 	}
 
 	int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
+
+	if (errno == EINTR)
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
@@ -2974,6 +2983,9 @@ static bool bif_iso_get_code_2(query *q)
 	}
 
 	int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
+
+	if (errno == EINTR)
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
@@ -3304,6 +3316,9 @@ static bool bif_iso_peek_char_1(query *q)
 
 	int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
 
+	if (errno == EINTR)
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
+
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
 		return do_yield(q, 1);
@@ -3360,7 +3375,7 @@ static bool bif_iso_peek_char_2(query *q)
 	int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
 
 	if (errno == EINTR)
-		return false;
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
@@ -3415,6 +3430,9 @@ static bool bif_iso_peek_code_1(query *q)
 	}
 
 	int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
+
+	if (errno == EINTR)
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
@@ -3471,6 +3489,9 @@ static bool bif_iso_peek_code_2(query *q)
 	}
 
 	int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
+
+	if (errno == EINTR)
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
@@ -5699,6 +5720,9 @@ static bool bif_sys_get_chars_3(query *q)
 		for (;;) {
 			int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
 
+			if (errno == EINTR)
+				return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
+
 			if (feof(str->fp)) {
 				clearerr(str->fp);
 				break;
@@ -5752,6 +5776,9 @@ static bool bif_sys_get_chars_3(query *q)
 	while (len--) {
 		int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
 		str->ungetch = 0;
+
+		if (errno == EINTR)
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 
 		if (feof(str->fp)) {
 			clearerr(str->fp);

@@ -36,6 +36,87 @@ static void msleep(int ms)
 
 #define MAX_ARGS 128
 
+#ifdef __APPLE__
+
+#include <dispatch/dispatch.h>
+
+// Emulated timer struct for macOS
+typedef struct timer {
+	dispatch_source_t timer_source;
+	struct sigevent evp;
+	int interval_ms;
+} timer_t;
+
+// Replacement for timer_create
+static int timer_create(clockid_t clockid, struct sigevent *sevp, timer_t *timerid)
+{
+	if (timerid == NULL) {
+		return -1;
+	}
+
+	if (sevp != NULL) {
+		timerid->evp = *sevp;
+	} else {
+		timerid->evp.sigev_notify = SIGEV_SIGNAL;
+		timerid->evp.sigev_signo = SIGALRM;
+	}
+
+	// Create a dispatch queue for the timer
+	dispatch_queue_t queue = dispatch_queue_create("com.timer.queue", DISPATCH_QUEUE_SERIAL);
+
+	// Create the GCD timer source
+	timerid->timer_source = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
+
+	return 0;
+}
+
+struct itimerspec {
+	struct timespec it_interval;  // Period for periodic timer
+	struct timespec it_value;     // Initial expiration
+};
+
+// Replacement for timer_settime (disables/enables with struct itimerspec)
+static int timer_settime(timer_t timerid, int flags, const struct itimerspec *new_value, struct itimerspec *old_value)
+{
+	if (!new_value) {
+		return -1;
+	}
+
+	// Calculate start time and interval in nanoseconds
+	uint64_t start_nsec = (new_value->it_value.tv_sec * NSEC_PER_SEC) + new_value->it_value.tv_nsec;
+	uint64_t interval_nsec = (new_value->it_interval.tv_sec * NSEC_PER_SEC) + new_value->it_interval.tv_nsec;
+
+	dispatch_time_t start_time = dispatch_time(DISPATCH_TIME_NOW, start_nsec);
+
+	// Arm the dispatch timer
+	dispatch_source_set_timer(timerid.timer_source, start_time, interval_nsec, 0);
+
+	// Set the event handler
+	dispatch_source_set_event_handler(timerid.timer_source, ^{
+		if (timerid.evp.sigev_notify == SIGEV_SIGNAL) {
+			// Emulate signal sending by raising the specified signal
+			raise(timerid.evp.sigev_signo);
+		} else if (timerid.evp.sigev_notify == SIGEV_THREAD) {
+			// Emulate POSIX thread notification by calling the specified function
+			timerid.evp.sigev_notify_function(timerid.evp.sigev_value);
+		}
+	});
+
+	// Start the timer (dispatch sources start suspended)
+	dispatch_resume(timerid.timer_source);
+	return 0;
+}
+
+// Replacement for timer_delete
+static int timer_delete(timer_t timerid)
+{
+	dispatch_source_cancel(timerid.timer_source);
+	dispatch_release(timerid.timer_source);
+	return 0;
+}
+
+#endif
+
 #ifdef _WIN32
 
 #define MS_PER_SEC      1000ULL     // MS = milliseconds
@@ -92,8 +173,8 @@ static int my_clock_gettime(clockid_t type, struct timespec *tp)
 	else if (type == CLOCK_REALTIME)
 		return clock_gettime_realtime(tp);
 
-    errno = ENOTSUP;
-    return -1;
+	errno = ENOTSUP;
+	return -1;
 }
 #else
 #define my_clock_gettime clock_gettime
@@ -342,12 +423,27 @@ static bool bif_date_time_6(query *q)
 	return true;
 }
 
-static bool bif_sys_alarm_1(query *q)
+typedef struct  {
+	timer_t my_timer;
+	pthread_t thread_id;
+} timer_entry;
+
+static void timer_callback(union sigval sv)
+{
+	timer_entry *e = sv.sival_ptr;
+	pthread_kill(e->thread_id, SIGALRM);
+	timer_delete(e->my_timer);
+	memset(e, 0, sizeof(timer_entry));
+	//TPL_free(e);
+}
+
+static bool bif_sys_alarm_2(query *q)
 {
 #if defined(_WIN32) || !defined(ITIMER_REAL)
 	return false;
 #else
 	GET_FIRST_ARG(p1,number);
+	GET_NEXT_ARG(p2,integer_or_var);
 	int time0 = 0;
 
 	if (is_bigint(p1))
@@ -366,7 +462,12 @@ static bool bif_sys_alarm_1(query *q)
 	struct itimerval it = {0};
 
 	if (time0 == 0) {
-		setitimer(ITIMER_REAL, &it, NULL);
+		timer_entry *e = get_voidptr(p2);
+
+		if (e->thread_id) {
+			timer_delete(e->my_timer);
+			TPL_free(e);
+		}
 		return true;
 	}
 
@@ -376,14 +477,27 @@ static bool bif_sys_alarm_1(query *q)
     sa.sa_flags = 0; // Notice we DO NOT use SA_RESTART
     sigaction(SIGALRM, &sa, NULL);
 
-   	int ms = time0;
-	int secs = ms / 1000;
-	ms -= secs * 1000;
+	struct sigevent sevp = {0};
+	sevp.sigev_notify = SIGEV_THREAD;
+	sevp.sigev_notify_function = timer_callback;
+	timer_entry *e = malloc(sizeof(timer_entry));
+	sevp.sigev_value.sival_ptr = e;
 
-	it.it_value.tv_sec = secs;
-	it.it_value.tv_usec = ms * 1000;
-	setitimer(ITIMER_REAL, &it, NULL);
-	return true;
+	timer_t my_timer;
+	timer_create(CLOCK_REALTIME, &sevp, &my_timer);
+
+	e->my_timer = my_timer;
+	e->thread_id = pthread_self();
+
+	struct itimerspec value = {0};
+	value.it_value.tv_sec = time0 / 1000;
+	value.it_value.tv_nsec = (time0 % 1000) * 1000;
+	value.it_interval.tv_sec = 0;
+	value.it_interval.tv_nsec = 0;
+	timer_settime(my_timer, 0, &value, NULL);
+	cell tmp;
+	make_ptr(&tmp, e);
+	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 #endif
 }
 
@@ -739,9 +853,9 @@ static bool bif_process_create_3(query *q)
 		filename = src;
 	}
 
-    int args = 0, envs = 0;
-    char *arguments[MAX_ARGS] = {NULL};
-    char *environments[MAX_ARGS] = {NULL};
+	int args = 0, envs = 0;
+	char *arguments[MAX_ARGS] = {NULL};
+	char *environments[MAX_ARGS] = {NULL};
 	arguments[args++] = strdup(filename);
 
 	for (int i = 0; g_envp[i] != NULL; i++)
@@ -765,12 +879,12 @@ static bool bif_process_create_3(query *q)
 	}
 
 	arguments[args] = NULL;
-    posix_spawn_file_actions_t file_actions;
-    posix_spawn_file_actions_init(&file_actions);
-    posix_spawnattr_t attrp;
-    posix_spawnattr_init(&attrp);
-    cell *ppid = NULL;
-    pl_ctx ppid_ctx = 0;
+	posix_spawn_file_actions_t file_actions;
+	posix_spawn_file_actions_init(&file_actions);
+	posix_spawnattr_t attrp;
+	posix_spawnattr_init(&attrp);
+	cell *ppid = NULL;
+	pl_ctx ppid_ctx = 0;
 	LIST_HANDLER(p3);
 
 	while (is_iso_list(p3)) {
@@ -1046,7 +1160,7 @@ builtins g_os_bifs[] =
 	{"popen", 4, bif_popen_4, "+source_sink,+atom,--stream,+list", false, false, BLAH},
 #endif
 
-	{"$alarm", 1, bif_sys_alarm_1, "+integer", false, false, BLAH},
+	{"$alarm", 2, bif_sys_alarm_2, "+integer,-integer", false, false, BLAH},
 	{"$timer", 0, bif_sys_timer_0, NULL, false, false, BLAH},
 	{"$elapsed", 0, bif_sys_elapsed_0, NULL, false, false, BLAH},
 

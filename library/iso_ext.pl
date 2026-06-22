@@ -103,20 +103,20 @@ findall(T, G, B, Tail) :-
 
 call_with_time_limit(Time, Goal) :-
 	Time0 is truncate(Time * 1000),
-	'$alarm'(Time0),
-	(	catch(once(Goal), E, ('$alarm'(0), throw(E))) ->
-		'$alarm'(0)
-	;	('$alarm'(0), fail)
+	'$alarm'(Time0, Timer),
+	(	catch(once(Goal), E, ('$alarm'(0, Timer), throw(E))) ->
+		'$alarm'(0, Timer)
+	;	('$alarm'(0, Timer), fail)
 	).
 
 :- meta_predicate(time_out(0,+,-)).
 :- help(time_out(:callable,+integer,?atom), [iso(false)]).
 
 time_out(Goal, Time, Result) :-
-	'$alarm'(Time),
-	(	catch(once(Goal), E, ('$alarm'(0), throw(E))) ->
-		('$alarm'(0), Result = success)
-	;	('$alarm'(0), fail)
+	'$alarm'(Time, Timer),
+	(	catch(once(Goal), E, ('$alarm'(0, Timer), throw(E))) ->
+		('$alarm'(0, Timer), Result = success)
+	;	('$alarm'(0, Timer), fail)
 	).
 
 :- help(not(:callable), [iso(false),deprecated(true)]).
