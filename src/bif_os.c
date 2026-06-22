@@ -47,12 +47,10 @@ typedef struct timer {
 	int interval_ms;
 } timer_t;
 
-// Replacement for timer_create
 static int timer_create(clockid_t clockid, struct sigevent *sevp, timer_t *timerid)
 {
-	if (timerid == NULL) {
+	if (timerid == NULL)
 		return -1;
-	}
 
 	if (sevp != NULL) {
 		timerid->evp = *sevp;
@@ -61,12 +59,12 @@ static int timer_create(clockid_t clockid, struct sigevent *sevp, timer_t *timer
 		timerid->evp.sigev_signo = SIGALRM;
 	}
 
-	// Create a dispatch queue for the timer
-	dispatch_queue_t queue = dispatch_queue_create("com.timer.queue", DISPATCH_QUEUE_SERIAL);
+	static dispatch_queue_t queue = NULL;
 
-	// Create the GCD timer source
+	if (!queue)
+		queue = dispatch_queue_create("com.timer.queue", DISPATCH_QUEUE_SERIAL);
+
 	timerid->timer_source = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
-
 	return 0;
 }
 
@@ -75,39 +73,31 @@ struct itimerspec {
 	struct timespec it_value;     // Initial expiration
 };
 
-// Replacement for timer_settime (disables/enables with struct itimerspec)
 static int timer_settime(timer_t timerid, int flags, const struct itimerspec *new_value, struct itimerspec *old_value)
 {
 	if (!new_value) {
 		return -1;
 	}
 
-	// Calculate start time and interval in nanoseconds
 	uint64_t start_nsec = (new_value->it_value.tv_sec * NSEC_PER_SEC) + new_value->it_value.tv_nsec;
 	uint64_t interval_nsec = (new_value->it_interval.tv_sec * NSEC_PER_SEC) + new_value->it_interval.tv_nsec;
 
 	dispatch_time_t start_time = dispatch_time(DISPATCH_TIME_NOW, start_nsec);
 
-	// Arm the dispatch timer
 	dispatch_source_set_timer(timerid.timer_source, start_time, interval_nsec, 0);
 
-	// Set the event handler
 	dispatch_source_set_event_handler(timerid.timer_source, ^{
 		if (timerid.evp.sigev_notify == SIGEV_SIGNAL) {
-			// Emulate signal sending by raising the specified signal
 			raise(timerid.evp.sigev_signo);
 		} else if (timerid.evp.sigev_notify == SIGEV_THREAD) {
-			// Emulate POSIX thread notification by calling the specified function
 			timerid.evp.sigev_notify_function(timerid.evp.sigev_value);
 		}
 	});
 
-	// Start the timer (dispatch sources start suspended)
 	dispatch_resume(timerid.timer_source);
 	return 0;
 }
 
-// Replacement for timer_delete
 static int timer_delete(timer_t timerid)
 {
 	dispatch_source_cancel(timerid.timer_source);
