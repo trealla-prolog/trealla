@@ -430,11 +430,13 @@ typedef struct  {
 
 static void timer_callback(union sigval sv)
 {
+#if defined(_WIN32) || !defined(ITIMER_REAL)
+#else
 	timer_entry *e = sv.sival_ptr;
 	pthread_kill(e->thread_id, SIGALRM);
 	timer_delete(e->my_timer);
 	memset(e, 0, sizeof(timer_entry));
-	//TPL_free(e);
+#endif
 }
 
 static bool bif_sys_alarm_2(query *q)
