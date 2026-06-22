@@ -435,6 +435,8 @@ static void timer_callback(union sigval sv)
 	pthread_kill(e->thread_id, SIGALRM);
 	timer_delete(e->my_timer);
 	memset(e, 0, sizeof(timer_entry));
+	//printf("*** callback\n");
+	TPL_free(e);
 }
 
 static bool bif_sys_alarm_2(query *q)
@@ -459,9 +461,11 @@ static bool bif_sys_alarm_2(query *q)
 	struct itimerval it = {0};
 
 	if (time0 == 0) {
+		//printf("*** cancel\n");
 		timer_entry *e = get_voidptr(p2);
 
 		if (e->thread_id) {
+			//printf("*** delete\n");
 			timer_delete(e->my_timer);
 			TPL_free(e);
 		}
@@ -479,6 +483,7 @@ static bool bif_sys_alarm_2(query *q)
 	sevp.sigev_notify_function = timer_callback;
 	timer_entry *e = malloc(sizeof(timer_entry));
 	sevp.sigev_value.sival_ptr = e;
+	//printf("*** create\n");
 
 	timer_t my_timer;
 	timer_create(CLOCK_REALTIME, &sevp, &my_timer);
