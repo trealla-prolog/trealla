@@ -26,25 +26,3 @@ main12 :-
 	close(C),
 	writeln(ok).
 
-main2 :-
-	thread_create(main21, T1, []),
-	thread_create(main22, T2, []),
-	thread_join(T1),
-	thread_join(T2),
-	writeln(done),
-	true.
-
-main21 :-
-	socket_server_open(':8080', S, []),
-	socket_server_accept(S, C, _, []),
-	catch(call_with_time_limit(1.0, read_term(C, _, [])), E, true),
-	write_term(C, E, [fullstop(true), nl(true)]),
-	close(C),
-	close(S).
-
-main22 :-
-	socket_client_open(inet(localhost,8080), C, []),
-	read_term(C, E, []),
-	close(C),
-	writeln(E).
-
