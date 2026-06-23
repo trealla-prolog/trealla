@@ -1,12 +1,13 @@
 :- use_module(library(sockets)).
 
-:- initialization(main2).
+:- initialization(main1).
 
 main1 :-
 	thread_create(main11, T1, []),
 	thread_create(main12, T2, []),
 	thread_join(T1),
 	thread_join(T2),
+	writeln(done),
 	true.
 
 main11 :-
@@ -34,7 +35,7 @@ main2 :-
 main21 :-
 	socket_server_open(':8080', S, []),
 	socket_server_accept(S, C, _, []),
-	catch(call_with_time_limit(1.0, read_term(C, hello, [])), E, true),
+	catch(call_with_time_limit(1.0, read_term(C, _, [])), E, true),
 	write_term(C, E, [fullstop(true), nl(true)]),
 	close(C),
 	close(S).
