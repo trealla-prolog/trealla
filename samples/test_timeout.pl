@@ -26,9 +26,8 @@ server :-
 	socket_server_accept(S, C, _, []),
 	writeln(server_delay),
 	sleep(2.0),
-	writeln([server_write,C]),
+	writeln([server_write,C,xyz]),
 	write_term(C, xyz, [fullstop(true), nl(true)]),
-	sleep(1.0),
 	writeln([server_close,C,S]),
 	close(C),
 	close(S).
