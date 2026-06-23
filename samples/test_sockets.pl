@@ -1,6 +1,6 @@
 :- use_module(library(sockets)).
 
-:- initialization(main2).
+:- initialization(main1).
 
 main1 :-
 	thread_create(main11, T1, []),
