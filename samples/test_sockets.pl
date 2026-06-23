@@ -15,7 +15,6 @@ main11 :-
 	socket_server_accept(S, C, _, []),
 	read_term(C, hello, []),
 	write_term(C, world, [fullstop(true), nl(true)]),
-	sleep(0.1),
 	close(C),
 	close(S).
 
