@@ -15,13 +15,15 @@ main11 :-
 	socket_server_accept(S, C, _, []),
 	read_term(C, hello, []),
 	write_term(C, world, [fullstop(true), nl(true)]),
+	sleep(0.1),
 	close(C),
 	close(S).
 
 main12 :-
 	socket_client_open(inet(localhost,8080), C, []),
 	write_term(C, hello, [fullstop(true), nl(true)]),
-	read_term(C, world, []),
+	read_term(C, T, []),
+	T = world,
 	close(C),
 	writeln(ok).
 
@@ -30,6 +32,7 @@ main2 :-
 	thread_create(main22, T2, []),
 	thread_join(T1),
 	thread_join(T2),
+	writeln(done),
 	true.
 
 main21 :-

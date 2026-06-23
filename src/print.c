@@ -1739,6 +1739,7 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int
 		src += nbytes;
 	}
 
+	if (q->nl) fflush(str->fp);
 	funlockfile(str->fp);
 	SB_free(q->sb);
 	return true;
@@ -1775,6 +1776,7 @@ bool print_canonical(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 		src += nbytes;
 	}
 
+	if (q->nl) fflush(fp);
 	funlockfile(fp);
 	SB_free(q->sb);
 	return true;
@@ -1826,6 +1828,7 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int runn
 		src += nbytes;
 	}
 
+	if (q->nl) fflush(str->fp);
 	funlockfile(str->fp);
 	SB_free(q->sb);
 	return true;
@@ -1858,6 +1861,7 @@ bool print_term(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 		src += nbytes;
 	}
 
+	if (q->nl) fflush(fp);
 	funlockfile(fp);
 	SB_free(q->sb);
 	return true;
