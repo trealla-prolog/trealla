@@ -77,7 +77,7 @@ const char *get_local_hostname(char *hostname_buffer, size_t buffer_size) {
 #endif
 }
 
-int net_domain_connect(const char *name, bool udp)
+int tpl_domain_connect(const char *name, bool udp)
 {
 #if !defined(_WIN32) && !defined(__wasi__)
 	int fd = socket(AF_UNIX, udp?SOCK_DGRAM:SOCK_STREAM, 0);
@@ -104,7 +104,7 @@ int net_domain_connect(const char *name, bool udp)
 #endif
 }
 
-int net_domain_server(const char *name, bool udp)
+int tpl_domain_server(const char *name, bool udp)
 {
 #if !defined(_WIN32) && !defined(__wasi__)
     struct sockaddr_un server_sockaddr;
@@ -140,7 +140,7 @@ int net_domain_server(const char *name, bool udp)
 #endif
 }
 
-int net_connect(const char *hostname, unsigned port, bool udp, bool nodelay)
+int tpl_connect(const char *hostname, unsigned port, bool udp, bool nodelay)
 {
 #if !defined(_WIN32) && !defined(__wasi__)
 	struct addrinfo hints, *result, *rp;
@@ -197,7 +197,7 @@ int net_connect(const char *hostname, unsigned port, bool udp, bool nodelay)
 #endif
 }
 
-int net_server(const char *hostname, unsigned port, bool udp, const char *keyfile, const char *certfile)
+int tpl_server(const char *hostname, unsigned port, bool udp, const char *keyfile, const char *certfile)
 {
 #if !defined(_WIN32) && !defined(__wasi__)
 	(void) hostname;
@@ -284,7 +284,7 @@ int net_server(const char *hostname, unsigned port, bool udp, const char *keyfil
 #endif
 }
 
-int net_accept(stream *str)
+int tpl_accept(stream *str)
 {
 #if !defined(_WIN32) && !defined(__wasi__)
 	struct sockaddr_in addr = {0};
@@ -310,7 +310,7 @@ int net_accept(stream *str)
 #endif
 }
 
-void net_set_nonblocking(stream *str)
+void tpl_set_nonblocking(stream *str)
 {
 #if !defined(_WIN32) && !defined(__wasi__)
 	unsigned long flag = 1;
@@ -318,7 +318,7 @@ void net_set_nonblocking(stream *str)
 #endif
 }
 
-void *net_enable_ssl(int fd, const char *hostname, bool is_server, int level, const char *certfile)
+void *tpl_enable_ssl(int fd, const char *hostname, bool is_server, int level, const char *certfile)
 {
 #if USE_OPENSSL
 	if (!g_ctx_use_cnt++) {
@@ -377,7 +377,7 @@ void *net_enable_ssl(int fd, const char *hostname, bool is_server, int level, co
 #endif
 }
 
-size_t net_write(const void *ptr, size_t nbytes, stream *str)
+size_t tpl_write(const void *ptr, size_t nbytes, stream *str)
 {
 #if USE_OPENSSL
 	if (str->ssl)
@@ -388,11 +388,16 @@ size_t net_write(const void *ptr, size_t nbytes, stream *str)
 		SB_fwrite(str->sb, ptr, nbytes);
 		return nbytes;
 	} else {
-		return fwrite(ptr, 1, nbytes, str->fp);
+		size_t len = fwrite(ptr, 1, nbytes, str->fp);
+
+		if (str->is_socket || str->is_pipe)
+			fflush(str->fp);
+
+		return len;
 	}
 }
 
-int net_peekc(stream *str)
+int tpl_peekc(stream *str)
 {
 #if USE_OPENSSL
 	if (str->ssl) {
@@ -428,7 +433,7 @@ int net_peekc(stream *str)
 	return ch;
 }
 
-int net_getc(stream *str)
+int tpl_getc(stream *str)
 {
 #if USE_OPENSSL
 	if (str->ssl) {
@@ -463,7 +468,7 @@ int net_getc(stream *str)
 	return ok;
 }
 
-size_t net_read(void *ptr, size_t len, stream *str)
+size_t tpl_read(void *ptr, size_t len, stream *str)
 {
 #if USE_OPENSSL
 	if (str->ssl) {
@@ -495,7 +500,7 @@ size_t net_read(void *ptr, size_t len, stream *str)
 	return ok;
 }
 
-int net_getline(char **lineptr, size_t *n, stream *str)
+int tpl_getline(char **lineptr, size_t *n, stream *str)
 {
 #if USE_OPENSSL
 	if (str->ssl) {
@@ -556,7 +561,7 @@ int net_getline(char **lineptr, size_t *n, stream *str)
 	return ok;
 }
 
-int net_close(stream *str)
+int tpl_close(stream *str)
 {
 #if USE_OPENSSL
 	if (str->ssl) {

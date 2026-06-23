@@ -133,7 +133,7 @@ static void trace_call(query *q, cell *c, pl_ctx c_ctx, box_t box)
 	size_t srclen = srclen = SB_strlen(pr);
 	int n = q->pl->current_error;
 	stream *str = &q->pl->streams[n];
-	net_write(src, srclen, str);
+	tpl_write(src, srclen, str);
 	SB_free(pr);
 	if (++q->vgen == 0) q->vgen = 1;
 

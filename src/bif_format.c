@@ -876,7 +876,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 		const char *tmpsrc = tmpbuf;
 
 		while (len) {
-			size_t tmpbuf_free = net_write(tmpsrc, len, str);
+			size_t tmpbuf_free = tpl_write(tmpsrc, len, str);
 
 			if (!tmpbuf_free) {
 				if (feof(str->fp) || ferror(str->fp)) {
@@ -923,7 +923,7 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 		const char *tmpsrc = tmpbuf;
 
 		while (len) {
-			size_t tmpbuf_free = net_write(tmpsrc, len, str);
+			size_t tmpbuf_free = tpl_write(tmpsrc, len, str);
 
 			if (!tmpbuf_free) {
 				if (feof(str->fp) || ferror(str->fp)) {

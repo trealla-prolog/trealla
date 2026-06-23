@@ -12,11 +12,6 @@
 #include "parser.h"
 #include "query.h"
 
-#if defined(__wasi__) || defined(_WIN32)
-#define flockfile(fp)
-#define funlockfile(fp)
-#endif
-
 typedef struct visit_ visit;
 
 struct visit_ {
@@ -1723,13 +1718,11 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int
 	q->quoted = 0;
 	const char *src = SB_cstr(q->sb);
 	ssize_t len = SB_strlen(q->sb);
-	flockfile(str->fp);
 
 	while (len) {
-		size_t nbytes = net_write(src, len, str);
+		size_t nbytes = tpl_write(src, len, str);
 
 		if (ferror(str->fp)) {
-			funlockfile(str->fp);
 			SB_free(q->sb);
 			stream_close(q, str->idx);
 			return throw_error(q, q->st.instr,q->st.cur_ctx, "existence_error", "stream");
@@ -1739,8 +1732,7 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int
 		src += nbytes;
 	}
 
-	if (q->nl) fflush(str->fp);
-	funlockfile(str->fp);
+	fflush(str->fp);
 	SB_free(q->sb);
 	return true;
 }
@@ -1761,13 +1753,11 @@ bool print_canonical(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 	q->quoted = 0;
 	const char *src = SB_cstr(q->sb);
 	ssize_t len = SB_strlen(q->sb);
-	flockfile(fp);
 
 	while (len) {
 		size_t nbytes = fwrite(src, 1, len, fp);
 
 		if (ferror(fp)) {
-			funlockfile(fp);
 			SB_free(q->sb);
 			return throw_error(q, q->st.instr,q->st.cur_ctx, "existence_error", "stream");
 		}
@@ -1776,8 +1766,7 @@ bool print_canonical(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 		src += nbytes;
 	}
 
-	if (q->nl) fflush(fp);
-	funlockfile(fp);
+	fflush(fp);
 	SB_free(q->sb);
 	return true;
 }
@@ -1812,13 +1801,11 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int runn
 	if (q->nl) SB_putchar(q->sb, '\n');
 	const char *src = SB_cstr(q->sb);
 	ssize_t len = SB_strlen(q->sb);
-	flockfile(str->fp);
 
 	while (len) {
-		size_t nbytes = net_write(src, len, str);
+		size_t nbytes = tpl_write(src, len, str);
 
 		if (ferror(str->fp)) {
-			funlockfile(str->fp);
 			SB_free(q->sb);
 			stream_close(q, str->idx);
 			return throw_error(q, q->st.instr,q->st.cur_ctx, "existence_error", "stream");
@@ -1828,8 +1815,7 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int runn
 		src += nbytes;
 	}
 
-	if (q->nl) fflush(str->fp);
-	funlockfile(str->fp);
+	fflush(str->fp);
 	SB_free(q->sb);
 	return true;
 }
@@ -1846,13 +1832,11 @@ bool print_term(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 	if (q->nl) SB_putchar(q->sb, '\n');
 	const char *src = SB_cstr(q->sb);
 	ssize_t len = SB_strlen(q->sb);
-	flockfile(fp);
 
 	while (len) {
 		size_t nbytes = fwrite(src, 1, len, fp);
 
 		if (ferror(fp)) {
-			funlockfile(fp);
 			SB_free(q->sb);
 			return throw_error(q, q->st.instr,q->st.cur_ctx, "existence_error", "stream");
 		}
@@ -1861,8 +1845,7 @@ bool print_term(query *q, FILE *fp, cell *c, pl_ctx c_ctx, int running)
 		src += nbytes;
 	}
 
-	if (q->nl) fflush(fp);
-	funlockfile(fp);
+	fflush(fp);
 	SB_free(q->sb);
 	return true;
 }

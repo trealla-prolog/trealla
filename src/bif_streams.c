@@ -514,7 +514,7 @@ static void add_stream_properties(query *q, int n)
 		}
 #endif
 
-		int ch = str->ungetch ? str->ungetch : net_getc(str);
+		int ch = str->ungetch ? str->ungetch : tpl_getc(str);
 
 		if (str->ungetch)
 			;
@@ -738,7 +738,7 @@ static bool do_stream_property(query *q)
 				}
 			}
 
-			int ch = str->ungetch ? str->ungetch : net_getc(str);
+			int ch = str->ungetch ? str->ungetch : tpl_getc(str);
 
 			if (str->ungetch)
 				;
@@ -1154,7 +1154,7 @@ static bool bif_iso_open_4(query *q)
 #endif
 
 	if (!strcmp(str->mode, "read") && !str->binary && (!bom_specified || use_bom)) {
-		int ch = xgetc_utf8(net_getc, str);
+		int ch = xgetc_utf8(tpl_getc, str);
 
 		if (feof(str->fp))
 			clearerr(str->fp);
@@ -1170,7 +1170,7 @@ static bool bif_iso_open_4(query *q)
 		int ch = 0xFEFF;
 		char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 		put_char_utf8(tmpbuf, ch);
-		net_write(tmpbuf, strlen(tmpbuf), str);
+		tpl_write(tmpbuf, strlen(tmpbuf), str);
 		str->bom = true;
 	}
 
@@ -1261,7 +1261,7 @@ bool stream_close(query *q, int n)
 	} else if (str->is_engine) {
 		query_destroy(str->engine);
 	} else
-		ok = !net_close(str);
+		ok = !tpl_close(str);
 
 	sl_destroy(str->alias);
 	str->alias = NULL;
@@ -1332,7 +1332,7 @@ static bool bif_iso_at_end_of_stream_0(query *q)
 		return false;
 
 	if (!str->is_socket) {
-		int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
+		int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
 		str->ungetch = ch;
 	}
 
@@ -1365,7 +1365,7 @@ static bool bif_iso_at_end_of_stream_1(query *q)
 		return false;
 
 	if (!str->is_socket) {
-		int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
+		int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
 		str->ungetch = ch;
 	}
 
@@ -1415,7 +1415,7 @@ static bool bif_iso_nl_0(query *q)
 	if (str->binary)
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "permission_error", "output,binary_stream");
 
-	fputc('\n', str->fp);
+	tpl_write("\n", 1, str);
 	int err = fflush(str->fp);
 
 	if ((err == EOF) && !str->is_socket)
@@ -1436,7 +1436,7 @@ static bool bif_iso_nl_1(query *q)
 	if (str->binary)
 		return throw_error(q, pstr, q->st.cur_ctx, "permission_error", "output,binary_stream");
 
-	fputc('\n', str->fp);
+	tpl_write("\n", 1, str);
 	int err = fflush(str->fp);
 
 	if ((err == EOF) && !str->is_socket)
@@ -2022,12 +2022,6 @@ static bool bif_iso_write_1(query *q)
 	q->numbervars = true;
 	print_term_to_stream(q, str, p1, p1_ctx, 1);
 	q->numbervars = false;
-
-	if (isatty(fileno(str->fp))) {
-		if (fflush(str->fp))
-			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
-	}
-
 	return !ferror(str->fp);
 }
 
@@ -2050,12 +2044,6 @@ static bool bif_iso_write_2(query *q)
 	q->numbervars = true;
 	print_term_to_stream(q, str, p1, p1_ctx, 1);
 	q->numbervars = false;
-
-	if (isatty(fileno(str->fp))) {
-		if (fflush(str->fp))
-			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
-	}
-
 	return !ferror(str->fp);
 }
 
@@ -2076,12 +2064,6 @@ static bool bif_iso_writeq_1(query *q)
 	print_term_to_stream(q, str, p1, p1_ctx, 1);
 	q->numbervars = false;
 	q->quoted = 0;
-
-	if (isatty(fileno(str->fp))) {
-		if (fflush(str->fp))
-			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
-	}
-
 	return !ferror(str->fp);
 }
 
@@ -2106,12 +2088,6 @@ static bool bif_iso_writeq_2(query *q)
 	print_term_to_stream(q, str, p1, p1_ctx, 1);
 	q->numbervars = false;
 	q->quoted = 0;
-
-	if (isatty(fileno(str->fp))) {
-		if (fflush(str->fp))
-			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
-	}
-
 	return !ferror(str->fp);
 }
 
@@ -2127,13 +2103,7 @@ static bool bif_iso_write_canonical_1(query *q)
 		return throw_error(q, &tmp, q->st.cur_ctx, "permission_error", "output,binary_stream");
 	}
 
-	print_canonical(q, str->fp, p1, p1_ctx, 1);
-
-	if (isatty(fileno(str->fp))) {
-		if (fflush(str->fp))
-			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
-	}
-
+	print_canonical_to_stream(q, str, p1, p1_ctx, 1);
 	return !ferror(str->fp);
 }
 
@@ -2153,13 +2123,7 @@ static bool bif_iso_write_canonical_2(query *q)
 		return throw_error(q, &tmp, q->st.cur_ctx, "permission_error", "output,binary_stream");
 	}
 
-	print_canonical(q, str->fp, p1, p1_ctx, 1);
-
-	if (isatty(fileno(str->fp))) {
-		if (fflush(str->fp))
-			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
-	}
-
+	print_canonical_to_stream(q, str, p1, p1_ctx, 1);
 	return !ferror(str->fp);
 }
 
@@ -2458,11 +2422,6 @@ static bool bif_iso_write_term_2(query *q)
 	else
 		print_term_to_stream(q, str, p1, p1_ctx, 1);
 
-	if (isatty(fileno(str->fp))) {
-		if (fflush(str->fp))
-			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
-	}
-
 	clear_write_options(q);
 	return !ferror(str->fp);
 }
@@ -2541,11 +2500,6 @@ static bool bif_iso_write_term_3(query *q)
 	else
 		print_term_to_stream(q, str, p1, p1_ctx, 1);
 
-	if (isatty(fileno(str->fp))) {
-		if (fflush(str->fp))
-			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
-	}
-
 	clear_write_options(q);
 	return !ferror(str->fp);
 }
@@ -2570,7 +2524,7 @@ static bool bif_iso_put_char_1(query *q)
 	int ch = get_char_utf8(&src);
 	char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 	put_char_utf8(tmpbuf, ch);
-	net_write(tmpbuf, strlen(tmpbuf), str);
+	tpl_write(tmpbuf, strlen(tmpbuf), str);
 	return !ferror(str->fp);
 }
 
@@ -2598,7 +2552,7 @@ static bool bif_iso_put_char_2(query *q)
 	int ch = get_char_utf8(&src);
 	char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 	put_char_utf8(tmpbuf, ch);
-	net_write(tmpbuf, strlen(tmpbuf), str);
+	tpl_write(tmpbuf, strlen(tmpbuf), str);
 	return !ferror(str->fp);
 }
 
@@ -2626,7 +2580,7 @@ static bool bif_iso_put_code_1(query *q)
 	int ch = (int)get_smallint(p1);
 	char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 	put_char_utf8(tmpbuf, ch);
-	net_write(tmpbuf, strlen(tmpbuf), str);
+	tpl_write(tmpbuf, strlen(tmpbuf), str);
 	return !ferror(str->fp);
 }
 
@@ -2658,7 +2612,7 @@ static bool bif_iso_put_code_2(query *q)
 	int ch = (int)get_smallint(p1);
 	char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 	put_char_utf8(tmpbuf, ch);
-	net_write(tmpbuf, strlen(tmpbuf), str);
+	tpl_write(tmpbuf, strlen(tmpbuf), str);
 	return !ferror(str->fp);
 }
 
@@ -2686,7 +2640,7 @@ static bool bif_iso_put_byte_1(query *q)
 	int ch = (int)get_smallint(p1);
 	char tmpbuf[80];
 	snprintf(tmpbuf, sizeof(tmpbuf), "%c", ch);
-	net_write(tmpbuf, 1, str);
+	tpl_write(tmpbuf, 1, str);
 	return !ferror(str->fp);
 }
 
@@ -2715,7 +2669,7 @@ static bool bif_iso_put_byte_2(query *q)
 	int ch = (int)get_smallint(p1);
 	char tmpbuf[80];
 	snprintf(tmpbuf, sizeof(tmpbuf), "%c", ch);
-	net_write(tmpbuf, 1, str);
+	tpl_write(tmpbuf, 1, str);
 	return !ferror(str->fp);
 }
 
@@ -2751,7 +2705,7 @@ static bool bif_iso_get_char_1(query *q)
 			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
 	}
 
-	int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
+	int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
 
 	if (errno == EINTR)
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
@@ -2827,7 +2781,7 @@ static bool bif_iso_get_char_2(query *q)
 			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
 	}
 
-	int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
+	int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
 
 	if (errno == EINTR)
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
@@ -2903,7 +2857,7 @@ static bool bif_iso_get_code_1(query *q)
 		fflush(str->fp);
 	}
 
-	int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
+	int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
 
 	if (errno == EINTR)
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
@@ -2982,7 +2936,7 @@ static bool bif_iso_get_code_2(query *q)
 		fflush(str->fp);
 	}
 
-	int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
+	int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
 
 	if (errno == EINTR)
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
@@ -3050,7 +3004,7 @@ static bool bif_iso_get_byte_1(query *q)
 		fflush(str->fp);
 	}
 
-	int ch = str->ungetch ? str->ungetch : net_getc(str);
+	int ch = str->ungetch ? str->ungetch : tpl_getc(str);
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
@@ -3112,7 +3066,7 @@ static bool bif_iso_get_byte_2(query *q)
 		fflush(str->fp);
 	}
 
-	int ch = str->ungetch ? str->ungetch : net_getc(str);
+	int ch = str->ungetch ? str->ungetch : tpl_getc(str);
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
@@ -3314,7 +3268,7 @@ static bool bif_iso_peek_char_1(query *q)
 		}
 	}
 
-	int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
+	int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
 
 	if (errno == EINTR)
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
@@ -3372,7 +3326,7 @@ static bool bif_iso_peek_char_2(query *q)
 		}
 	}
 
-	int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
+	int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
 
 	if (errno == EINTR)
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
@@ -3429,7 +3383,7 @@ static bool bif_iso_peek_code_1(query *q)
 		}
 	}
 
-	int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
+	int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
 
 	if (errno == EINTR)
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
@@ -3488,7 +3442,7 @@ static bool bif_iso_peek_code_2(query *q)
 		}
 	}
 
-	int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
+	int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
 
 	if (errno == EINTR)
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
@@ -3537,7 +3491,7 @@ static bool bif_iso_peek_byte_1(query *q)
 		}
 	}
 
-	int ch = str->ungetch ? str->ungetch : net_getc(str);
+	int ch = str->ungetch ? str->ungetch : tpl_getc(str);
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
@@ -3586,7 +3540,7 @@ static bool bif_iso_peek_byte_2(query *q)
 		}
 	}
 
-	int ch = str->ungetch ? str->ungetch : net_getc(str);
+	int ch = str->ungetch ? str->ungetch : tpl_getc(str);
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
@@ -4025,7 +3979,7 @@ static bool bif_edin_redo_1(query *q)
 
 	for (;;) {
 		str->did_getc = true;
-		int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
+		int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
 		str->ungetch = 0;
 
 		if (feof(str->fp)) {
@@ -4058,7 +4012,7 @@ static bool bif_edin_redo_2(query *q)
 
 	for (;;) {
 		str->did_getc = true;
-		int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
+		int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
 		str->ungetch = 0;
 
 		if (feof(str->fp)) {
@@ -4086,7 +4040,7 @@ static bool bif_edin_tab_1(query *q)
 	stream *str = &q->pl->streams[n];
 
 	for (int i = 0; i < get_smallint(&p1); i++)
-		fputc(' ', str->fp);
+		tpl_write(" ", 1, str);
 
 	fflush(str->fp);
 	return !ferror(str->fp);
@@ -4105,7 +4059,7 @@ static bool bif_edin_tab_2(query *q)
 	stream *str = &q->pl->streams[n];
 
 	for (int i = 0; i < get_smallint(&p1); i++)
-		fputc(' ', str->fp);
+		tpl_write(" ", 1, str);
 
 	fflush(str->fp);
 	return !ferror(str->fp);
@@ -4197,7 +4151,7 @@ static bool bif_read_line_to_string_2(query *q)
 		fflush(str->fp);
 	}
 
-	if (net_getline(&line, &len, str) == -1) {
+	if (tpl_getline(&line, &len, str) == -1) {
 		TPL_free(line);
 
 		if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
@@ -4248,7 +4202,7 @@ static bool bif_read_line_to_codes_2(query *q)
 		fflush(str->fp);
 	}
 
-	if (net_getline(&line, &len, str) == -1) {
+	if (tpl_getline(&line, &len, str) == -1) {
 		TPL_free(line);
 
 		if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
@@ -5087,7 +5041,7 @@ static bool bif_getline_1(query *q)
 		fflush(str->fp);
 	}
 
-	if (net_getline(&line, &len, str) == -1) {
+	if (tpl_getline(&line, &len, str) == -1) {
 		TPL_free(line);
 		return false;
 	}
@@ -5129,7 +5083,7 @@ static bool bif_getline_2(query *q)
 		fflush(str->fp);
 	}
 
-	if (net_getline(&line, &len, str) == -1) {
+	if (tpl_getline(&line, &len, str) == -1) {
 		TPL_free(line);
 
 		if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
@@ -5175,7 +5129,7 @@ static bool bif_getline_3(query *q)
 		fflush(str->fp);
 	}
 
-	if (net_getline(&line, &len, str) == -1) {
+	if (tpl_getline(&line, &len, str) == -1) {
 		TPL_free(line);
 
 		if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
@@ -5718,7 +5672,7 @@ static bool bif_sys_get_chars_3(query *q)
 		unsigned len = 0;
 
 		for (;;) {
-			int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
+			int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
 
 			if (errno == EINTR)
 				return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
@@ -5774,7 +5728,7 @@ static bool bif_sys_get_chars_3(query *q)
 	char *dst = data;
 
 	while (len--) {
-		int ch = str->ungetch ? str->ungetch : xgetc_utf8(net_getc, str);
+		int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
 		str->ungetch = 0;
 
 		if (errno == EINTR)
@@ -5822,7 +5776,7 @@ static bool bif_sys_bread_3(query *q)
 
 		for (;;) {
 			len = get_smallint(p1) - str->data_len;
-			size_t nbytes = net_read(str->data+str->data_len, len, str);
+			size_t nbytes = tpl_read(str->data+str->data_len, len, str);
 
 			if (errno == EINTR)
 				return false;
@@ -5868,7 +5822,7 @@ static bool bif_sys_bread_3(query *q)
 			str->ungetch = 0;
 		}
 
-		size_t nbytes = net_read(str->data, str->alloc_nbytes, str);
+		size_t nbytes = tpl_read(str->data, str->alloc_nbytes, str);
 		str->data[nbytes] = '\0';
 		str->data = TPL_realloc(str->data, nbytes+1);
 		CHECKED(str->data);
@@ -5895,7 +5849,7 @@ static bool bif_sys_bread_3(query *q)
 
 	for (;;) {
 		size_t len = str->alloc_nbytes - str->data_len;
-		size_t nbytes = net_read(str->data+str->data_len, len, str);
+		size_t nbytes = tpl_read(str->data+str->data_len, len, str);
 		str->data_len += nbytes;
 		str->data[str->data_len] = '\0';
 
@@ -5947,7 +5901,7 @@ static bool bif_sys_bwrite_2(query *q)
 	size_t len = C_STRLEN(q, p1);
 
 	while (len) {
-		size_t nbytes = net_write(src, len, str);
+		size_t nbytes = tpl_write(src, len, str);
 
 		if (!nbytes) {
 			if (feof(str->fp) || ferror(str->fp))
@@ -5987,10 +5941,10 @@ static bool bif_sys_put_chars_1(query *q)
 	if (is_cstring(p1)) {
 		const char *src = C_STR(q, p1);
 		size_t len = C_STRLEN(q, p1);
-		net_write(src, len, str);
+		tpl_write(src, len, str);
 	} else if ((scan_is_chars_list(q, p1, p1_ctx, true)) > 0) {
 		char *src = chars_list_to_string(q, p1, p1_ctx);
-		net_write(src, strlen(src), str);
+		tpl_write(src, strlen(src), str);
 		TPL_free(src);
 	} else if (is_nil(p1)) {
 		;
@@ -6010,10 +5964,10 @@ static bool bif_sys_put_chars_2(query *q)
 	if (is_cstring(p1)) {
 		const char *src = C_STR(q, p1);
 		size_t len = C_STRLEN(q, p1);
-		net_write(src, len, str);
+		tpl_write(src, len, str);
 	} else if ((scan_is_chars_list(q, p1, p1_ctx, true)) > 0) {
 		char *src = chars_list_to_string(q, p1, p1_ctx);
-		net_write(src, strlen(src), str);
+		tpl_write(src, strlen(src), str);
 		TPL_free(src);
 	} else if (is_nil(p1)) {
 		;
@@ -6457,7 +6411,7 @@ static bool bif_portray_clause_1(query *q)
 	q->double_quotes = true;
 	q->max_depth = 0;
 	q->fullstop = q->nl = true;
-	print_term(q, str->fp, p1, p1_ctx, 1);
+	print_term_to_stream(q, str, p1, p1_ctx, 1);
 	q->quoted = 0;
 	q->portray_vars = false;
 	clear_write_options(q);
@@ -6475,7 +6429,7 @@ static bool bif_portray_clause_2(query *q)
 	q->print_idx = 0;
 	q->max_depth = 0;
 	q->fullstop = q->nl = true;
-	print_term(q, str->fp, p1, p1_ctx, 1);
+	print_term_to_stream(q, str, p1, p1_ctx, 1);
 	q->quoted = 0;
 	q->portray_vars = false;
 	clear_write_options(q);

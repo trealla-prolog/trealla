@@ -146,7 +146,7 @@ static bool bif_sys_server_3(query *q)
 	const char *url = filename;
 	parse_host(url, hostname, path, &port, &ssl, &domain);
 	TPL_free(filename);
-	int fd = net_server(hostname, port, udp, ssl?keyfile:NULL, ssl?certfile:NULL);
+	int fd = tpl_server(hostname, port, udp, ssl?keyfile:NULL, ssl?certfile:NULL);
 
 	if (fd == -1)
 		return throw_error(q, p1, p1_ctx, "existence_error", "server_failed");
@@ -183,7 +183,7 @@ static bool bif_sys_server_3(query *q)
 	}
 
 	if (!str->ssl && q->is_task)
-		net_set_nonblocking(str);
+		tpl_set_nonblocking(str);
 
 	cell tmp;
 	make_int(&tmp, n);
@@ -197,7 +197,7 @@ static bool bif_sys_accept_2(query *q)
 	GET_NEXT_ARG(p1,var);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
-	int fd = net_accept(str);
+	int fd = tpl_accept(str);
 
 	if (fd == -1) {
 		if (q->is_task)
@@ -229,7 +229,7 @@ static bool bif_sys_accept_2(query *q)
 	}
 
 	if (str->ssl) {
-		str2->sslptr = net_enable_ssl(fd, str->filename, 1, str->level, NULL);
+		str2->sslptr = tpl_enable_ssl(fd, str->filename, 1, str->level, NULL);
 
 		if (!str2->sslptr) {
 			close(fd);
@@ -238,7 +238,7 @@ static bool bif_sys_accept_2(query *q)
 	}
 
 	if (!str->ssl && q->is_task) {
-		net_set_nonblocking(str2);
+		tpl_set_nonblocking(str2);
 		CHECKED(push_choice(q));
 	}
 
@@ -630,7 +630,7 @@ static bool bif_sys_client_5(query *q)
 	parse_host(url, hostname, path, &port, &ssl, &domain);
 	TPL_free(filename);
 
-	int fd = net_connect(hostname, port, udp, nodelay);
+	int fd = tpl_connect(hostname, port, udp, nodelay);
 
 	if (fd == -1)
 		return throw_error(q, p1, p1_ctx, "resource_error", "could_not_connect");
@@ -667,12 +667,12 @@ static bool bif_sys_client_5(query *q)
 	}
 
 	if (str->ssl) {
-		str->sslptr = net_enable_ssl(fd, hostname, 0, str->level, certfile);
+		str->sslptr = tpl_enable_ssl(fd, hostname, 0, str->level, certfile);
 		CHECKED(str->sslptr, close(fd));
 	}
 
 	if (!str->ssl && q->is_task)
-		net_set_nonblocking(str);
+		tpl_set_nonblocking(str);
 
 	cell tmp;
 	make_string(&tmp, hostname);
