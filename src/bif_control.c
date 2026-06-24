@@ -822,6 +822,8 @@ static cell *parse_to_heap(query *q, const char *src)
 
 static bool find_exception_handler(query *q, char *ball)
 {
+	errno = 0;
+
 	while (retry_choice(q)) {
 		const choice *ch = GET_CHOICE(q->st.cp);
 
