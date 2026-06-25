@@ -3006,6 +3006,9 @@ static bool bif_iso_get_byte_1(query *q)
 
 	int ch = str->ungetch ? str->ungetch : tpl_getc(str);
 
+	if (errno == EINTR)
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
+
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
 		return do_yield(q, 1);
@@ -3067,6 +3070,9 @@ static bool bif_iso_get_byte_2(query *q)
 	}
 
 	int ch = str->ungetch ? str->ungetch : tpl_getc(str);
+
+	if (errno == EINTR)
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
@@ -3277,9 +3283,6 @@ static bool bif_iso_peek_char_1(query *q)
 		clearerr(str->fp);
 		return do_yield(q, 1);
 	}
-
-	if (errno == EINTR)
-		return false;
 
 	if (FEOF(str)) {
 		str->did_getc = false;
@@ -3493,6 +3496,9 @@ static bool bif_iso_peek_byte_1(query *q)
 
 	int ch = str->ungetch ? str->ungetch : tpl_getc(str);
 
+	if (errno == EINTR)
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
+
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
 		return do_yield(q, 1);
@@ -3541,6 +3547,9 @@ static bool bif_iso_peek_byte_2(query *q)
 	}
 
 	int ch = str->ungetch ? str->ungetch : tpl_getc(str);
+
+	if (errno == EINTR)
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 
 	if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 		clearerr(str->fp);
@@ -3982,6 +3991,9 @@ static bool bif_edin_redo_1(query *q)
 		int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
 		str->ungetch = 0;
 
+		if (errno == EINTR)
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
+
 		if (feof(str->fp)) {
 			str->did_getc = false;
 			break;
@@ -4014,6 +4026,9 @@ static bool bif_edin_redo_2(query *q)
 		str->did_getc = true;
 		int ch = str->ungetch ? str->ungetch : xgetc_utf8(tpl_getc, str);
 		str->ungetch = 0;
+
+		if (errno == EINTR)
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 
 		if (feof(str->fp)) {
 			str->did_getc = false;
@@ -4166,7 +4181,7 @@ static bool bif_read_line_to_string_2(query *q)
 
 
 	if (errno == EINTR)
-		return false;
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 
 	len = strlen(line);
 
@@ -4217,7 +4232,7 @@ static bool bif_read_line_to_codes_2(query *q)
 
 
 	if (errno == EINTR)
-		return false;
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 
 	len = strlen(line);
 
@@ -5047,7 +5062,7 @@ static bool bif_getline_1(query *q)
 	}
 
 	if (errno == EINTR)
-		return false;
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 
 	len = strlen(line);
 
@@ -5095,7 +5110,7 @@ static bool bif_getline_2(query *q)
 	}
 
 	if (errno == EINTR)
-		return false;
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 
 	len = strlen(line);
 
@@ -5141,7 +5156,7 @@ static bool bif_getline_3(query *q)
 	}
 
 	if (errno == EINTR)
-		return false;
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 
 	len = strlen(line);
 
@@ -5779,7 +5794,7 @@ static bool bif_sys_bread_3(query *q)
 			size_t nbytes = tpl_read(str->data+str->data_len, len, str);
 
 			if (errno == EINTR)
-				return false;
+				return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 
 			str->data_len += nbytes;
 			str->data[str->data_len] = '\0';
