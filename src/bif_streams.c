@@ -2022,7 +2022,7 @@ static bool bif_iso_write_1(query *q)
 	q->numbervars = true;
 	print_term_to_stream(q, str, p1, p1_ctx, 1);
 	q->numbervars = false;
-	return !ferror(str->fp);
+	return true;
 }
 
 static bool bif_iso_write_2(query *q)
@@ -2044,7 +2044,7 @@ static bool bif_iso_write_2(query *q)
 	q->numbervars = true;
 	print_term_to_stream(q, str, p1, p1_ctx, 1);
 	q->numbervars = false;
-	return !ferror(str->fp);
+	return true;
 }
 
 static bool bif_iso_writeq_1(query *q)
@@ -2064,7 +2064,7 @@ static bool bif_iso_writeq_1(query *q)
 	print_term_to_stream(q, str, p1, p1_ctx, 1);
 	q->numbervars = false;
 	q->quoted = 0;
-	return !ferror(str->fp);
+	return true;
 }
 
 static bool bif_iso_writeq_2(query *q)
@@ -2088,7 +2088,7 @@ static bool bif_iso_writeq_2(query *q)
 	print_term_to_stream(q, str, p1, p1_ctx, 1);
 	q->numbervars = false;
 	q->quoted = 0;
-	return !ferror(str->fp);
+	return true;
 }
 
 static bool bif_iso_write_canonical_1(query *q)
@@ -2104,7 +2104,7 @@ static bool bif_iso_write_canonical_1(query *q)
 	}
 
 	print_canonical_to_stream(q, str, p1, p1_ctx, 1);
-	return !ferror(str->fp);
+	return true;
 }
 
 static bool bif_iso_write_canonical_2(query *q)
@@ -2124,7 +2124,7 @@ static bool bif_iso_write_canonical_2(query *q)
 	}
 
 	print_canonical_to_stream(q, str, p1, p1_ctx, 1);
-	return !ferror(str->fp);
+	return true;
 }
 
 bool parse_write_params(query *q, cell *c, pl_ctx c_ctx, cell **vnames, pl_ctx *vnames_ctx)
@@ -2423,7 +2423,7 @@ static bool bif_iso_write_term_2(query *q)
 		print_term_to_stream(q, str, p1, p1_ctx, 1);
 
 	clear_write_options(q);
-	return !ferror(str->fp);
+	return true;
 }
 
 static bool bif_iso_write_term_3(query *q)
@@ -2501,7 +2501,7 @@ static bool bif_iso_write_term_3(query *q)
 		print_term_to_stream(q, str, p1, p1_ctx, 1);
 
 	clear_write_options(q);
-	return !ferror(str->fp);
+	return true;
 }
 
 static bool bif_iso_put_char_1(query *q)
@@ -2525,7 +2525,7 @@ static bool bif_iso_put_char_1(query *q)
 	char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 	put_char_utf8(tmpbuf, ch);
 	tpl_write(tmpbuf, strlen(tmpbuf), str);
-	return !ferror(str->fp);
+	return true;;
 }
 
 static bool bif_iso_put_char_2(query *q)
@@ -2553,7 +2553,7 @@ static bool bif_iso_put_char_2(query *q)
 	char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 	put_char_utf8(tmpbuf, ch);
 	tpl_write(tmpbuf, strlen(tmpbuf), str);
-	return !ferror(str->fp);
+	return true;;
 }
 
 static bool bif_iso_put_code_1(query *q)
@@ -2581,7 +2581,7 @@ static bool bif_iso_put_code_1(query *q)
 	char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 	put_char_utf8(tmpbuf, ch);
 	tpl_write(tmpbuf, strlen(tmpbuf), str);
-	return !ferror(str->fp);
+	return true;;
 }
 
 static bool bif_iso_put_code_2(query *q)
@@ -2613,7 +2613,7 @@ static bool bif_iso_put_code_2(query *q)
 	char tmpbuf[MAX_BYTES_PER_CODEPOINT+1];
 	put_char_utf8(tmpbuf, ch);
 	tpl_write(tmpbuf, strlen(tmpbuf), str);
-	return !ferror(str->fp);
+	return true;;
 }
 
 static bool bif_iso_put_byte_1(query *q)
@@ -2641,7 +2641,7 @@ static bool bif_iso_put_byte_1(query *q)
 	char tmpbuf[80];
 	snprintf(tmpbuf, sizeof(tmpbuf), "%c", ch);
 	tpl_write(tmpbuf, 1, str);
-	return !ferror(str->fp);
+	return true;;
 }
 
 static bool bif_iso_put_byte_2(query *q)
@@ -2670,7 +2670,7 @@ static bool bif_iso_put_byte_2(query *q)
 	char tmpbuf[80];
 	snprintf(tmpbuf, sizeof(tmpbuf), "%c", ch);
 	tpl_write(tmpbuf, 1, str);
-	return !ferror(str->fp);
+	return true;;
 }
 
 static bool bif_iso_get_char_1(query *q)
@@ -4058,7 +4058,7 @@ static bool bif_edin_tab_1(query *q)
 		tpl_write(" ", 1, str);
 
 	fflush(str->fp);
-	return !ferror(str->fp);
+	return true;;
 }
 
 static bool bif_edin_tab_2(query *q)
@@ -4077,7 +4077,7 @@ static bool bif_edin_tab_2(query *q)
 		tpl_write(" ", 1, str);
 
 	fflush(str->fp);
-	return !ferror(str->fp);
+	return true;;
 }
 
 static bool bif_edin_seen_0(query *q)
@@ -5966,7 +5966,7 @@ static bool bif_sys_put_chars_1(query *q)
 	} else
 		return throw_error(q, p1, p1_ctx, "type_error", "cchars");
 
-	return !ferror(str->fp);
+	return true;;
 }
 
 static bool bif_sys_put_chars_2(query *q)
@@ -5989,7 +5989,7 @@ static bool bif_sys_put_chars_2(query *q)
 	} else
 		return throw_error(q, p1, p1_ctx, "type_error", "chars");
 
-	return !ferror(str->fp);
+	return true;;
 }
 
 static bool bif_sys_capture_output_0(query *q)
