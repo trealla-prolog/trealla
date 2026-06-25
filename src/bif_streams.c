@@ -351,57 +351,6 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
 }
 #endif
 
-#ifdef _WIN32
-ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
-    size_t pos;
-    int c;
-
-    if (lineptr == NULL || stream == NULL || n == NULL) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    c = getc(stream);
-    if (c == EOF) {
-        return -1;
-    }
-
-    if (*lineptr == NULL) {
-        *lineptr = TPL_malloc(128);
- 		check_error(*lineptr);
-       if (*lineptr == NULL) {
-            return -1;
-        }
-        *n = 128;
-    }
-
-    pos = 0;
-    while(c != EOF) {
-        if (pos + 1 >= *n) {
-            size_t new_size = *n + (*n >> 2);
-            if (new_size < 128) {
-                new_size = 128;
-            }
-            char *new_ptr = TPL_realloc(*lineptr, new_size);
-            if (new_ptr == NULL) {
-                return -1;
-            }
-            *n = new_size;
-            *lineptr = new_ptr;
-        }
-
-        ((unsigned char *)(*lineptr))[pos ++] = c;
-        if (c == '\n') {
-            break;
-        }
-        c = getc(stream);
-    }
-
-    (*lineptr)[pos] = '\0';
-    return pos;
-}
-#endif
-
 // FIXME: this is too slow. There should be one overall
 // alias map, not one per stream.
 
@@ -1593,7 +1542,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 		return throw_error(q, p2, p2_ctx, "type_error", "list");
 
 	if (!src && !str->p->srcptr && str->fp) {
-		if (str->p->no_fp || getline(&str->p->save_line, &str->p->n_line, str->fp) == -1) {
+		if (str->p->no_fp || tpl_getline(&str->p->save_line, &str->p->n_line, str) == -1) {
 			if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 				clearerr(str->fp);
 				return do_yield(q, 1);
@@ -1629,7 +1578,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 			if (str->p->srcptr && (*str->p->srcptr == '\n'))
 				str->p->line_num++;
 
-			if (str->fp && (str->p->no_fp || (getline(&str->p->save_line, &str->p->n_line, str->fp) == -1))) {
+			if (str->fp && (str->p->no_fp || (tpl_getline(&str->p->save_line, &str->p->n_line, str) == -1))) {
 				if (q->is_task && !feof(str->fp) && ferror(str->fp)) {
 					clearerr(str->fp);
 					return do_yield(q, 1);
@@ -4804,7 +4753,7 @@ static bool bif_getlines_2(query *q)
 	size_t len = 0;
 	CHECKED(init_tmp_heap(q));
 
-	while (getline(&line, &len, str->fp) != -1) {
+	while (tpl_getline(&line, &len, str) != -1) {
 		int len = strlen(line);
 
 		if (len && (line[len-1] == '\n')) {
@@ -4842,7 +4791,7 @@ static bool bif_getlines_3(query *q)
 	bool empty = get_empty(q, p2, p2_ctx);
 	CHECKED(init_tmp_heap(q));
 
-	while (getline(&line, &len, str->fp) != -1) {
+	while (tpl_getline(&line, &len, str) != -1) {
 		int len = strlen(line);
 
 		if (empty) {
