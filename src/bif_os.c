@@ -420,7 +420,6 @@ static void timer_callback(union sigval sv)
 	pthread_kill(e->thread_id, SIGALRM);
 	timer_delete(e->my_timer);
 	memset(e, 0, sizeof(timer_entry));
-	//printf("*** callback\n");
 }
 
 static bool bif_sys_alarm_2(query *q)
@@ -445,18 +444,14 @@ static bool bif_sys_alarm_2(query *q)
 	struct itimerval it = {0};
 
 	if (time0 == 0) {
-		//printf("*** cancel\n");
 		timer_entry *e = get_voidptr(p2);
 
 		if (!e)
 			return true;
 
-		if (e->thread_id) {
-			//printf("*** delete\n");
+		if (e->thread_id)
 			timer_delete(e->my_timer);
-		}
 
-		//printf("*** free\n");
 		TPL_free(e);
 		return true;
 	}
@@ -472,13 +467,12 @@ static bool bif_sys_alarm_2(query *q)
 	sevp.sigev_notify_function = timer_callback;
 	timer_entry *e = malloc(sizeof(timer_entry));
 	sevp.sigev_value.sival_ptr = e;
-	//printf("*** create\n");
 
 #ifdef __APPLE__
 	prolog_lock(q->pl);
 
 	if (!queue)
-		queue = dispatch_queue_create("com.timer.trealla.queue", DISPATCH_QUEUE_SERIAL);
+		queue = dispatch_queue_create("com.timer.trealla.queue", DISPATCH_QUEUE_CONCURRENT);
 
 	prolog_unlock(q->pl);
 #endif
