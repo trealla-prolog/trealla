@@ -500,57 +500,6 @@ size_t tpl_read(void *ptr, size_t len, stream *str)
 	return ok;
 }
 
-#ifdef _WIN32
-ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
-    size_t pos;
-    int c;
-
-    if (lineptr == NULL || stream == NULL || n == NULL) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    c = getc(stream);
-    if (c == EOF) {
-        return -1;
-    }
-
-    if (*lineptr == NULL) {
-        *lineptr = TPL_malloc(128);
- 		check_error(*lineptr);
-       if (*lineptr == NULL) {
-            return -1;
-        }
-        *n = 128;
-    }
-
-    pos = 0;
-    while(c != EOF) {
-        if (pos + 1 >= *n) {
-            size_t new_size = *n + (*n >> 2);
-            if (new_size < 128) {
-                new_size = 128;
-            }
-            char *new_ptr = TPL_realloc(*lineptr, new_size);
-            if (new_ptr == NULL) {
-                return -1;
-            }
-            *n = new_size;
-            *lineptr = new_ptr;
-        }
-
-        ((unsigned char *)(*lineptr))[pos ++] = c;
-        if (c == '\n') {
-            break;
-        }
-        c = getc(stream);
-    }
-
-    (*lineptr)[pos] = '\0';
-    return pos;
-}
-#endif
-
 int tpl_getline(char **lineptr, size_t *n, stream *str)
 {
 #if USE_OPENSSL

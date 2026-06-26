@@ -505,6 +505,7 @@ bool check_list(query *q, cell *p1, pl_ctx p1_ctx, bool *is_partial, pl_int *ski
 
 	if (is_partial)
 		*is_partial = false;
+
 	cell *c = skip_max_list(q, p1, &c_ctx, max, &skip, &tmp);
 	unshare_cell(&tmp);
 
