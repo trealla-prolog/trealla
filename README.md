@@ -779,6 +779,8 @@ A server *Goal* takes a single arg, the connection stream.
 Networking					##EXPERIMENTAL##
 ==========
 
+Probably not for general use. Use *library/sockets.pl* instead:
+
 	'$http_location'/2         # '$http_location'(?list,?url)
 	'$parse_url'/2             # '$parse_url'(?url,?list)
 
@@ -1200,70 +1202,6 @@ An example:
 	Job [www.google.com] 200 ==> www.google.com done
 	Finished
 	Time elapsed 0.33 secs
-```
-
-Linda Co-ordination Language			##EXPERIMENTAL##
-============================
-
-Implements a toy (local-only) version of Linda using tasks. See:
-[swi-prolog](https://www.swi-prolog.org/pldoc/man?section=tipc-linda-clients).
-
-	linda_eval/1                    # linda_eval(:goal)
-	out/1                           # out(+tuple)
-	in/1                            # in(?tuple)
-	rd/1                            # rd(?tuple)
-	inp/1                           # inp(?tuple)
-	rdp/1                           # rdp(?tuple)
-	bagof_in_noblock/3              # bagof_in_noblock(+term,+tuple,?list)
-	bagof_rd_noblock/3              # bagof_rd_noblock(+term,+tuple,?list)
-	wait/0
-	end_wait/0
-
-For example:
-
-```prolog
-	:- use_module(library(linda)).
-	:- initialization(main).
-
-	main :-
-		linda_eval(consumer('A')),
-		linda_eval(consumer('B')),
-		linda_eval(producer),
-		wait,
-		in(producer),               % verify it finished normally
-		writeq(done), nl,
-		halt.
-
-	producer :-
-		between(1, 10, I),
-			out({msg:I}),
-			sleep(0.25),
-			fail.
-	producer :-
-		forall(rdp({msg:_}), sleep(0.001)),
-		end_wait.
-
-	consumer(N) :-
-		in({msg:I}),
-		write(['consumer',N,'got=',I]), nl,
-		random(R),
-		sleep(R),
-		fail.
-```
-
-```console
-	$ tpl samples/test_linda.pl
-	[consumer,B,got=,1]
-	[consumer,B,got=,2]
-	[consumer,B,got=,3]
-	[consumer,A,got=,4]
-	[consumer,B,got=,5]
-	[consumer,A,got=,6]
-	[consumer,B,got=,7]
-	[consumer,A,got=,8]
-	[consumer,A,got=,9]
-	[consumer,B,got=,10]
-	done
 ```
 
 Concurrent Futures						##EXPERIMENTAL##
