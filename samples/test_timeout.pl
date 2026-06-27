@@ -1,4 +1,4 @@
-:- initialization(main4).
+:- initialization((main3,main4)).
 
 main1 :-
 	thread_create(catch(call_with_time_limit(3.0, run1), _, writeln(catch1)), T1, []),
