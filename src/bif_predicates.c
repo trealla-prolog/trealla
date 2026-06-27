@@ -4138,8 +4138,7 @@ static bool bif_crypto_data_hash_3(query *q)
 	GET_FIRST_ARG(p1,atom);
 	GET_NEXT_ARG(p2,atom_or_var);
 	GET_NEXT_ARG(p3,list_or_nil);
-	enum {is_sha256, is_sha384, is_sha512} algo;
-	algo = is_sha256;
+	enum {is_sha256, is_sha384, is_sha512} algo = is_sha256;
 	char *key = NULL;
 	int keylen = 0;
 	LIST_HANDLER(p3);
