@@ -1,4 +1,4 @@
-:- initialization(main3).
+:- initialization(main4).
 
 main1 :-
 	thread_create(catch(call_with_time_limit(3.0, run1), _, writeln(catch1)), T1, []),
@@ -21,10 +21,11 @@ run2(Msg) :-
 
 :- use_module(library(sockets)).
 
-server :-
+server3 :-
 	socket_server_open(':8080', S, []),
-	socket_server_accept(S, C, _, []),
 	writeln(server_delay),
+	socket_server_accept(S, C, _, []),
+	writeln(server_accepted),
 	sleep(2.0),
 	writeln([server_write,C,xyz]),
 	write_term(C, xyz, [fullstop(true), nl(true)]),
@@ -33,11 +34,34 @@ server :-
 	close(S).
 
 main3 :-
-	thread_create(server, T, []),
+	thread_create(server3, T, []),
 	sleep(0.1),
 	socket_client_open(inet(localhost,8080), C, []),
 	writeln([client_read,C]),
 	read_term(C, Term, []),
+	writeln([client_got,Term]),
+	writeln([client_close,C]),
+	close(C),
+	thread_join(T).
+
+server4 :-
+	socket_server_open(':8080', S, []),
+	writeln(server_delay),
+	socket_server_accept(S, C, _, [type(binary)]),
+	writeln(server_accepted),
+	sleep(2.0),
+	writeln([server_write,C,x]),
+	put_byte(C,x),
+	writeln([server_close,C,S]),
+	close(C),
+	close(S).
+
+main4 :-
+	thread_create(server4, T, []),
+	sleep(0.1),
+	socket_client_open(inet(localhost,8080), C, [type(binary)]),
+	writeln([client_read,C]),
+	get_byte(C, Term),
 	writeln([client_got,Term]),
 	writeln([client_close,C]),
 	close(C),
