@@ -46,7 +46,6 @@ client3 :-
 main3 :-
 	writeln(main3),
 	thread_create(server3, T1, []),
-	sleep(0.1),
 	thread_create(client3, T2, []),
 	thread_join(T1),
 	thread_join(T2).
@@ -76,7 +75,6 @@ client4 :-
 main4 :-
 	writeln(main4),
 	thread_create(server4, T1, []),
-	sleep(0.1),
 	thread_create(client4, T2, []),
 	thread_join(T1),
 	thread_join(T2).
