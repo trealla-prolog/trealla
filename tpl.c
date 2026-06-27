@@ -63,6 +63,7 @@ static int daemonize(int argc, char *argv[])
 
 #ifdef _WIN32
 	char cmd[1024], args[1024 * 8];
+	size_t args_len = 0;
 	args[0] = 0;
 	snprintf(cmd, sizeof(cmd), "%s.exe", argv[0]);
 
@@ -71,11 +72,9 @@ static int daemonize(int argc, char *argv[])
 			continue;
 
 		if (!args[0])
-			strcat(args, " ");
+			args_len += snprintf(args + args_len, sizeof(args) - args_len, " ");
 
-		strcat(args, "\"");
-		strcat(args, argv[i]);
-		strcat(args, "\"");
+		args_len += snprintf(args + args_len, sizeof(args) - args_len, "\"%s\"", argv[i]);
 	}
 
 	STARTUPINFO startInfo = {0};
