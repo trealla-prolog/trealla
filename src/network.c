@@ -397,42 +397,6 @@ size_t tpl_write(const void *ptr, size_t nbytes, stream *str)
 	}
 }
 
-int tpl_peekc(stream *str)
-{
-#if USE_OPENSSL
-	if (str->ssl) {
-		size_t len = 1;
-		char ptr[2];
-		char *dst = ptr;
-
-		while (len && str->srclen) {
-			*dst++ = *str->src++;
-			str->srclen--;
-			len--;
-		}
-
-		if (dst != ptr)
-			return ptr[0];
-
-		if (SSL_read((SSL*)str->sslptr, ptr, len) == 0)
-			return EOF;
-
-		if (errno == EINTR)
-			return EOF;
-
-		return ptr[0];
-	}
-#endif
-
-	int ch = fgetc(str->fp);
-
-	if (errno == EINTR)
-		return EOF;
-
-	ungetc(ch, str->fp);
-	return ch;
-}
-
 int tpl_getc(stream *str)
 {
 #if USE_OPENSSL
