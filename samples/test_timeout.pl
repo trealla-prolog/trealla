@@ -2,7 +2,7 @@
 
 main1 :-
 	writeln(main1),
-	thread_create(catch(call_with_time_limit(3.0, run1), _, writeln(catch1)), T1, []),
+	thread_create(catch(call_with_time_limit(1.0, run1), _, writeln(catch1)), T1, []),
 	thread_join(T1),
 	writeln('done1').
 
@@ -28,7 +28,7 @@ server3 :-
 	writeln(server_delay),
 	socket_server_accept(S, C, _, []),
 	writeln(server_accepted),
-	sleep(2.0),
+	sleep(1.0),
 	writeln([server_write,C,xyz]),
 	write_term(C, xyz, [fullstop(true), nl(true)]),
 	writeln([server_close,C,S]),
@@ -55,7 +55,7 @@ server4 :-
 	writeln(server_delay),
 	socket_server_accept(S, C, _, [type(binary)]),
 	writeln(server_accepted),
-	sleep(2.0),
+	sleep(1.0),
 	Term = 0'x,
 	writeln([server_write,C,Term]),
 	put_byte(C,Term),
