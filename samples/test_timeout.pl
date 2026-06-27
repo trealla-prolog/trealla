@@ -1,6 +1,7 @@
-:- initialization((main3,main4)).
+:- initialization((main1,main2,main3,main4)).
 
 main1 :-
+	writeln(main1),
 	thread_create(catch(call_with_time_limit(3.0, run1), _, writeln(catch1)), T1, []),
 	thread_join(T1),
 	writeln('done1').
@@ -9,6 +10,7 @@ run1 :-
 	get_char(_).
 
 main2 :-
+	writeln(main2),
 	thread_create(catch(call_with_time_limit(1.0, run2(here1)), _, writeln(catch1)), T1, []),
 	thread_create(catch(call_with_time_limit(2.0, run2(here2)), _, writeln(catch2)), T2, []),
 	thread_join(T1),
@@ -34,6 +36,7 @@ server3 :-
 	close(S).
 
 main3 :-
+	writeln(main3),
 	thread_create(server3, T, []),
 	sleep(0.1),
 	socket_client_open(inet(localhost,8080), C, []),
@@ -58,6 +61,7 @@ server4 :-
 	close(S).
 
 main4 :-
+	writeln(main4),
 	thread_create(server4, T, []),
 	sleep(0.1),
 	socket_client_open(inet(localhost,8080), C, [type(binary)]),
