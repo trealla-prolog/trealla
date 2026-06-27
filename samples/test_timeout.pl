@@ -58,7 +58,7 @@ server4 :-
 	sleep(1.0),
 	Term = 0'x,
 	writeln([server_write,C,Term]),
-	put_byte(C,Term),
+	put_byte(C, Term),
 	writeln([server_close,C,S]),
 	close(C),
 	close(S).
