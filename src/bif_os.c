@@ -47,8 +47,6 @@ typedef struct timer {
 	int interval_ms;
 } timer_t;
 
-static dispatch_queue_t queue = NULL;
-
 static int timer_create(clockid_t clockid, struct sigevent *sevp, timer_t *timerid)
 {
 	if (timerid == NULL)
@@ -61,7 +59,7 @@ static int timer_create(clockid_t clockid, struct sigevent *sevp, timer_t *timer
 		timerid->evp.sigev_signo = SIGALRM;
 	}
 
-	timerid->timer_source = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
+	timerid->timer_source = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0));
 	return 0;
 }
 
@@ -467,15 +465,6 @@ static bool bif_sys_alarm_2(query *q)
 	sevp.sigev_notify_function = timer_callback;
 	timer_entry *e = malloc(sizeof(timer_entry));
 	sevp.sigev_value.sival_ptr = e;
-
-#ifdef __APPLE__
-	prolog_lock(q->pl);
-
-	if (!queue)
-		queue = dispatch_queue_create("com.timer.trealla.queue", DISPATCH_QUEUE_CONCURRENT);
-
-	prolog_unlock(q->pl);
-#endif
 
 	timer_t my_timer;
 	timer_create(CLOCK_REALTIME, &sevp, &my_timer);
