@@ -50,8 +50,8 @@ server4 :-
 	socket_server_accept(S, C, _, [type(binary)]),
 	writeln(server_accepted),
 	sleep(2.0),
-	writeln([server_write,C,x]),
-	put_byte(C,x),
+	writeln([server_write,C,0'x]),
+	put_byte(C,0'x),
 	writeln([server_close,C,S]),
 	close(C),
 	close(S).
@@ -62,6 +62,7 @@ main4 :-
 	socket_client_open(inet(localhost,8080), C, [type(binary)]),
 	writeln([client_read,C]),
 	get_byte(C, Term),
+	Term = 0'x,
 	writeln([client_got,Term]),
 	writeln([client_close,C]),
 	close(C),
