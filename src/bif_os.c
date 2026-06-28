@@ -455,7 +455,7 @@ static bool bif_sys_alarm_2(query *q)
 	}
 
 	struct sigaction sa = {0};
-    sa.sa_handler = sigfn;
+    sa.sa_handler = g_sigfn;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = 0; // Notice we DO NOT use SA_RESTART
     sigaction(SIGALRM, &sa, NULL);

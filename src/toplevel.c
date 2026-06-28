@@ -54,7 +54,7 @@ int check_interrupt(query *q)
 	}
 
 	g_tpl_interrupt = 0;
-	signal(SIGINT, &sigfn);
+	signal(SIGINT, &g_sigfn);
 
 	for (;;) {
 		printf("\nAction or (h)elp: ");

@@ -41,7 +41,7 @@ extern pl_idx g_dummy_s;
 
 extern void convert_path(char *filename);
 
-extern void sigfn(int s);
+extern void g_sigfn(int s);
 
 extern builtins g_atts_bifs[];
 extern builtins g_bboard_bifs[];
