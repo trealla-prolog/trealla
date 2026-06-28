@@ -9,7 +9,7 @@
 
 %% socket_client_open(+Addr, -Stream, +Options).
 %
-% Open a socket to a server, returning a stream. Addr must satisfy `Addr = Address:Port`.
+% Open a socket to a server, returning a stream. Addr must satisfy `Addr = inet(Address,Port)`.
 %
 % The following options are available:
 %
