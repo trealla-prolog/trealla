@@ -36,7 +36,6 @@ static const unsigned INITIAL_NBR_FRAMES = 100;
 static const unsigned INITIAL_NBR_CELLS = 100;
 
 int g_tpl_interrupt = 0;
-void *g_tpl_alarm = 0;
 
 typedef enum { CALL, EXIT, REDO, NEXT, FAIL } box_t;
 
