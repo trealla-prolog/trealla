@@ -427,8 +427,6 @@ static void s_sigfn(int s)
 		thread *t = get_self(pl);
 
 		if (t) {
-			//printf("*** alarm %p\n", pthread_self());
-
 			if (t->q)
 				t->q->timedout = true;
 			else
