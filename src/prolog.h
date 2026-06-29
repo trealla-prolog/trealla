@@ -64,6 +64,11 @@ extern builtins g_streams_bifs[];
 extern builtins g_tasks_bifs[];
 extern builtins g_threads_bifs[];
 
+extern prolog *g_prologs[];
+extern pl_atomic int g_tpl_count;
+
+extern thread *get_self(prolog *pl);
+
 extern void keyfree(const void *key, const void *val, const void *p);
 
 inline static void prolog_lock(prolog *pl)

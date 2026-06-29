@@ -1,5 +1,4 @@
-%:- initialization((main1,main2,main3,main4,main5)).
-:- initialization(main6).
+:- initialization((main1,main2,main3,main4,main5,main6)).
 
 main1 :-
 	writeln(main1),
@@ -107,4 +106,3 @@ main6 :-
 	thread_create(run6(2.0, alarm2),T2,[]),
 	thread_join(T1),
 	thread_join(T2).
-

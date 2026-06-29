@@ -422,8 +422,25 @@ static void timer_callback(union sigval sv)
 
 static void s_sigfn(int s)
 {
-	g_tpl_interrupt = s;
-	g_tpl_alarm = pthread_self();
+	for (unsigned i = 0; i < g_tpl_count; i++) {
+		prolog *pl = g_prologs[i];
+		prolog_lock(pl);
+		thread *t = get_self(pl);
+
+		if (t) {
+			//printf("*** alarm %p\n", pthread_self());
+
+			if (t->q)
+				t->q->timedout = true;
+			else
+				g_tpl_interrupt = s;
+
+			prolog_unlock(pl);
+			break;
+		}
+
+		prolog_unlock(pl);
+	}
 }
 
 static bool bif_sys_alarm_2(query *q)
@@ -436,6 +453,7 @@ static bool bif_sys_alarm_2(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "positive_integer");
 
 	g_tpl_interrupt = 0;
+	g_tpl_alarm = 0;
 
 	if (is_float(p1))
 		time0 = get_float(p1) * 1000;

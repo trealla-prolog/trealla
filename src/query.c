@@ -1675,7 +1675,7 @@ bool start(query *q)
 	bool done = false;
 
 	while (!done && !q->error) {
-		if (g_tpl_interrupt) {
+		if (g_tpl_interrupt || q->timedout) {
 			switch (check_interrupt(q)) {
 				case 1: return true;
 				case -1: q->retry = true;

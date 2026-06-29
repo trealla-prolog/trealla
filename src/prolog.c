@@ -21,7 +21,11 @@
 static lock g_symtab_guard;
 static skiplist *g_symtab = NULL;
 static size_t s_global_atoms_size = 64000, s_global_atoms_offset = 0;
-static pl_atomic int g_tpl_count = 0;
+pl_atomic int g_tpl_count = 0;
+
+#define MAX_PROLOGS 64
+
+prolog *g_prologs[MAX_PROLOGS] = {0};
 
 pl_idx g_empty_s, g_dot_s, g_cut_s, g_nil_s, g_true_s, g_fail_s;
 pl_idx g_anon_s, g_neck_s, g_eof_s, g_lt_s, g_gt_s, g_eq_s, g_false_s;
@@ -700,6 +704,8 @@ prolog *pl_create()
 	if (!pl) return NULL;
 	bool error = false;
 	pl->opt = 1;
+
+	g_prologs[g_tpl_count] = pl;
 
 	if (!g_tpl_count++)
 		g_init(pl);

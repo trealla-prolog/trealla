@@ -402,7 +402,7 @@ static bool bif_pl_send_2(query *q)
 	return true;
 }
 
-static thread *get_self(prolog *pl)
+thread *get_self(prolog *pl)
 {
 	pthread_t tid = pthread_self();
 
@@ -886,7 +886,7 @@ static bool bif_thread_create_3(query *q)
 	pl_idx num_cells = 0;
 	make_instr(tmp2+num_cells++, g_conjunction_s, bif_iso_conjunction_2, 2, tmp->num_cells+1);
 	num_cells += dup_cells(tmp2+num_cells, tmp, tmp->num_cells);
-	make_instr(tmp2+num_cells++, new_atom(q->pl, "halt"), bif_iso_halt_0, 0, 0);
+	make_instr(tmp2+num_cells++, new_atom(q->pl, "true"), bif_iso_true_0, 0, 0);
 	t->goal = tmp2;
 
 	if (at_exit_goal) {
