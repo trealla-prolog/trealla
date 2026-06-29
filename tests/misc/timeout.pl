@@ -1,14 +1,5 @@
 :- initialization((main2,main5,main6,main7)).
 
-main1 :-
-	writeln('main1...'),
-	thread_create(catch(call_with_time_limit(0.1, run1), _, writeln(catch1)), T1, []),
-	thread_join(T1),
-	writeln('done1').
-
-run1 :-
-	get_char(_).
-
 main2 :-
 	writeln('main2...'),
 	thread_create(catch(call_with_time_limit(1.0, run2(here1)), _, writeln(catch1)), T1, []),
