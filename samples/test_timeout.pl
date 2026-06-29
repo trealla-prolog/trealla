@@ -1,5 +1,4 @@
-%:- initialization((main1,main2,main3,main4,main5)).
-:- initialization((main6)).
+:- initialization((main1,main2,main3,main4,main5)).
 
 main1 :-
 	writeln(main1),
