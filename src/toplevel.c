@@ -38,10 +38,11 @@ int check_interrupt(query *q)
 #ifndef __wasi__
 #ifndef _WIN32
 	if (q->timedout) {
+		q->timedout = false;
+
 		if (!throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out"))
 			q->retry = true;
 
-		q->timedout = false;
 		return 0;
 	}
 
