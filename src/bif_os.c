@@ -422,7 +422,7 @@ static void timer_callback(union sigval sv)
 
 static void s_sigfn(int s)
 {
-	for (unsigned i = 0; i < g_tpl_count; i++) {
+	for (int i = 0; i < g_tpl_count; i++) {
 		prolog *pl = g_prologs[i];
 		thread *t = get_self(pl);
 
