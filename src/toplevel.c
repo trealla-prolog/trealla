@@ -37,8 +37,18 @@ int check_interrupt(query *q)
 {
 #ifndef __wasi__
 #ifndef _WIN32
-	if (g_tpl_interrupt == SIGALRM) {
+	if ((g_tpl_interrupt == SIGALRM) && !g_tpl_alarm) {
 		g_tpl_interrupt = 0;
+
+		if (!throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out"))
+			q->retry = true;
+
+		return 0;
+	}
+
+	if ((g_tpl_interrupt == SIGALRM) && (g_tpl_alarm == pthread_self())) {
+		g_tpl_interrupt = 0;
+		g_tpl_alarm = 0;
 
 		if (!throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out"))
 			q->retry = true;

@@ -3,6 +3,8 @@
 #include "parser.h"
 #include "builtins.h"
 
+extern pthread_t g_tpl_alarm;
+
 typedef struct {
 	int sep, quote;
 	unsigned arity;

@@ -422,6 +422,8 @@ static void timer_callback(union sigval sv)
 
 static void s_sigfn(int s)
 {
+	g_tpl_interrupt = s;
+	g_tpl_alarm = pthread_self();
 }
 
 static bool bif_sys_alarm_2(query *q)
