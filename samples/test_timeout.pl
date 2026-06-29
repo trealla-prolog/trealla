@@ -1,4 +1,5 @@
-:- initialization((main1,main2,main3,main4)).
+%:- initialization((main1,main2,main3,main4,main5)).
+:- initialization((main6)).
 
 main1 :-
 	writeln(main1),
@@ -78,3 +79,32 @@ main4 :-
 	thread_create(client4, T2, []),
 	thread_join(T1),
 	thread_join(T2).
+
+run5(Secs,Msg) :-
+	catch(
+		call_with_time_limit(Secs, sleep(5.0)),
+		_,
+		writeln(Msg)
+	).
+
+main5 :-
+	writeln(main5),
+	thread_create(run5(1.0, alarm1),T1,[]),
+	thread_create(run5(2.0, alarm2),T2,[]),
+	thread_join(T1),
+	thread_join(T2).
+
+run6(Secs,Msg) :-
+	catch(
+		call_with_time_limit(Secs, (repeat,true,fail)),
+		_,
+		writeln(Msg)
+	).
+
+main6 :-
+	writeln(main6),
+	thread_create(run6(1.0, alarm1),T1,[]),
+	thread_create(run6(2.0, alarm2),T2,[]),
+	thread_join(T1),
+	thread_join(T2).
+
