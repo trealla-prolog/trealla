@@ -521,7 +521,7 @@ static bool bif_busy_1(query *q)
 	pl_uint started = wall_time_in_usec() / 1000;
 	pl_uint end = started + elapse;
 
-	while ((wall_time_in_usec() / 1000)  < end) {
+	while (((wall_time_in_usec() / 1000)  < end) && !q->halt && !q->pl->halt) {
 		CHECK_INTERRUPT();
 	}
 
