@@ -285,7 +285,7 @@ static bool bif_sleep_1(query *q)
 	if (q->is_task)
 		return do_yield(q, ms);
 
-	while ((ms > 0) && !q->halt) {
+	while ((ms > 0) && !q->halt && !q->pl->halt) {
 		CHECK_INTERRUPT();
 		msleep(1);
 
