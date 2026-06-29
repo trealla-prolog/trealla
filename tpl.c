@@ -39,7 +39,6 @@
 void g_sigfn(int s)
 {
 	g_tpl_interrupt = s;
-	//if (s == SIGALRM) printf("*** SIGALRM\n");
 }
 
 #ifndef __wasi__
