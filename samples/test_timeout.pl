@@ -1,8 +1,8 @@
-:- initialization((main1,main2,main3,main4,main5,main6)).
+:- initialization((main1,main2,main3,main4,main5,main6,main7)).
 
 main1 :-
-	writeln(main1),
-	thread_create(catch(call_with_time_limit(1.0, run1), _, writeln(catch1)), T1, []),
+	writeln('main1...'),
+	thread_create(catch(call_with_time_limit(0.1, run1), _, writeln(catch1)), T1, []),
 	thread_join(T1),
 	writeln('done1').
 
@@ -10,7 +10,7 @@ run1 :-
 	get_char(_).
 
 main2 :-
-	writeln(main2),
+	writeln('main2...'),
 	thread_create(catch(call_with_time_limit(1.0, run2(here1)), _, writeln(catch1)), T1, []),
 	thread_create(catch(call_with_time_limit(2.0, run2(here2)), _, writeln(catch2)), T2, []),
 	thread_join(T1),
@@ -44,7 +44,7 @@ client3 :-
 	close(C).
 
 main3 :-
-	writeln(main3),
+	writeln('main3...'),
 	thread_create(server3, T1, []),
 	thread_create(client3, T2, []),
 	thread_join(T1),
@@ -73,7 +73,7 @@ client4 :-
 	close(C).
 
 main4 :-
-	writeln(main4),
+	writeln('main4...'),
 	thread_create(server4, T1, []),
 	thread_create(client4, T2, []),
 	thread_join(T1),
@@ -81,28 +81,40 @@ main4 :-
 
 run5(Secs,Msg) :-
 	catch(
-		call_with_time_limit(Secs, sleep(5.0)),
+		call_with_time_limit(Secs, sleep(2.0)),
 		_,
 		writeln(Msg)
 	).
 
 main5 :-
-	writeln(main5),
-	thread_create(run5(1.0, alarm1),T1,[]),
-	thread_create(run5(2.0, alarm2),T2,[]),
+	writeln('main5...'),
+	thread_create(run5(0.5, alarm1),T1,[]),
+	thread_create(run5(1.0, alarm2),T2,[]),
 	thread_join(T1),
 	thread_join(T2).
 
 run6(Secs,Msg) :-
 	catch(
-		call_with_time_limit(Secs, (repeat,true,fail)),
+		call_with_time_limit(Secs, (repeat,fail)),
 		_,
 		writeln(Msg)
 	).
 
 main6 :-
-	writeln(main6),
-	thread_create(run6(1.0, alarm1),T1,[]),
-	thread_create(run6(2.0, alarm2),T2,[]),
+	writeln('main6...'),
+	thread_create(run6(0.5, alarm1),T1,[]),
+	thread_create(run6(1.0, alarm2),T2,[]),
 	thread_join(T1),
 	thread_join(T2).
+
+run7(Secs,Msg) :-
+	catch(
+		call_with_time_limit(Secs, (repeat,fail)),
+		_,
+		writeln(Msg)
+	).
+
+main7 :-
+	writeln('main7...'	),
+	thread_create((run7(0.1, alarm1), run7(0.1, alarm2)),T,[]),
+	thread_join(T).
