@@ -424,7 +424,6 @@ static void s_sigfn(int s)
 {
 	for (unsigned i = 0; i < g_tpl_count; i++) {
 		prolog *pl = g_prologs[i];
-		prolog_lock(pl);
 		thread *t = get_self(pl);
 
 		if (t) {
@@ -435,11 +434,8 @@ static void s_sigfn(int s)
 			else
 				g_tpl_interrupt = s;
 
-			prolog_unlock(pl);
 			break;
 		}
-
-		prolog_unlock(pl);
 	}
 }
 
