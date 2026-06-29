@@ -278,6 +278,9 @@ compile: util/bin2c
 test:
 	./tests/run.sh
 
+misc:
+	./tests/run_misc.sh
+
 valgrind:
 	./tests/run_valgrind.sh
 

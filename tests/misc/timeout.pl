@@ -1,4 +1,4 @@
-:- initialization((main1,main2,main5,main6,main7)).
+:- initialization((main2,main5,main6,main7)).
 
 main1 :-
 	writeln('main1...'),
@@ -19,7 +19,7 @@ main2 :-
 	writeln('\tdone2').
 
 run2(Msg) :-
-	repeat, writeln(Msg), sleep(0.25), fail.
+	repeat, sleep(0.25), fail.
 
 run5(Secs,Msg) :-
 	catch(
