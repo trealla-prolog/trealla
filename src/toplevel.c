@@ -45,6 +45,14 @@ int check_interrupt(query *q)
 
 		return 0;
 	}
+
+	if (q->timedout) {
+		if (!throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out"))
+			q->retry = true;
+
+		q->timedout = false;
+		return 0;
+	}
 #endif
 #endif
 
@@ -54,7 +62,7 @@ int check_interrupt(query *q)
 	}
 
 	g_tpl_interrupt = 0;
-	signal(SIGINT, &sigfn);
+	signal(SIGINT, &g_sigfn);
 
 	for (;;) {
 		printf("\nAction or (h)elp: ");

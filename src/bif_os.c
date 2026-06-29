@@ -290,7 +290,7 @@ static bool bif_sleep_1(query *q)
 		msleep(1);
 
 		if (errno == EINTR)
-			return false;
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 
 		ms -= 1;
 	}
@@ -420,6 +420,25 @@ static void timer_callback(union sigval sv)
 	memset(e, 0, sizeof(timer_entry));
 }
 
+static void s_sigfn(int s)
+{
+	for (unsigned i = 0; i < g_tpl_count; i++) {
+		prolog *pl = g_prologs[i];
+		thread *t = get_self(pl);
+
+		if (t) {
+			//printf("*** alarm %p\n", pthread_self());
+
+			if (t->q)
+				t->q->timedout = true;
+			else
+				g_tpl_interrupt = s;
+
+			break;
+		}
+	}
+}
+
 static bool bif_sys_alarm_2(query *q)
 {
 	GET_FIRST_ARG(p1,number);
@@ -455,7 +474,7 @@ static bool bif_sys_alarm_2(query *q)
 	}
 
 	struct sigaction sa = {0};
-    sa.sa_handler = sigfn;
+    sa.sa_handler = s_sigfn;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = 0; // Notice we DO NOT use SA_RESTART
     sigaction(SIGALRM, &sa, NULL);

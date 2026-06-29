@@ -41,7 +41,7 @@ extern pl_idx g_dummy_s;
 
 extern void convert_path(char *filename);
 
-extern void sigfn(int s);
+extern void g_sigfn(int s);
 
 extern builtins g_atts_bifs[];
 extern builtins g_bboard_bifs[];
@@ -63,6 +63,11 @@ extern builtins g_sregex_bifs[];
 extern builtins g_streams_bifs[];
 extern builtins g_tasks_bifs[];
 extern builtins g_threads_bifs[];
+
+extern prolog *g_prologs[];
+extern pl_atomic int g_tpl_count;
+
+extern thread *get_self(prolog *pl);
 
 extern void keyfree(const void *key, const void *val, const void *p);
 

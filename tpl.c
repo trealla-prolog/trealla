@@ -36,7 +36,7 @@
 }
 #endif
 
-void sigfn(int s)
+void g_sigfn(int s)
 {
 	g_tpl_interrupt = s;
 	//if (s == SIGALRM) printf("*** SIGALRM\n");
@@ -229,12 +229,12 @@ int main(int ac, char *av[], char * envp[])
 	} else {
 #ifndef _WIN32
 		struct sigaction sa;
-		sa.sa_handler = &sigfn;
+		sa.sa_handler = &g_sigfn;
 		sigemptyset(&sa.sa_mask);
 		sa.sa_flags = 0;
 		sigaction(SIGINT, &sa, NULL);
 #else
-		signal(SIGINT, &sigfn);
+		signal(SIGINT, &g_sigfn);
 #endif
 	}
 #endif

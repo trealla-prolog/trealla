@@ -402,7 +402,7 @@ static bool bif_pl_send_2(query *q)
 	return true;
 }
 
-static thread *get_self(prolog *pl)
+thread *get_self(prolog *pl)
 {
 	pthread_t tid = pthread_self();
 
