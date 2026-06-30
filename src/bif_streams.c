@@ -415,7 +415,7 @@ int new_stream(prolog *pl)
 		if (str->fp)
 			continue;
 
-		str->timeout = 0;
+		str->timeout_ms = 0;
 		str->is_pipe = false;
 		str->is_socket = false;
 		str->is_alias = false;
@@ -6310,9 +6310,9 @@ static bool bif_set_stream_2(query *q)
 					return throw_error(q, c, c_ctx, "domain_error", "stream_property");
 
 				if (is_float(name))
-					str->timeout = get_float(name);
+					str->timeout_ms = get_float(name) * 1000;
 				else
-					str->timeout = ((double)get_smallint(name)) / 1000;
+					str->timeout_ms = get_smallint(name) * 1000;
 			}
 
 			p1 = LIST_TAIL(p1);
@@ -6383,9 +6383,9 @@ static bool bif_set_stream_2(query *q)
 			return throw_error(q, p1, p1_ctx, "domain_error", "stream_property");
 
 		if (is_float(name))
-			str->timeout = get_float(name);
+			str->timeout_ms = get_float(name) * 1000;
 		else
-			str->timeout = ((double)get_smallint(name)) / 1000;
+			str->timeout_ms = get_smallint(name) * 1000;
 	}
 
 	return true;

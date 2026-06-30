@@ -596,7 +596,7 @@ struct stream_ {
 		};
 	};
 
-	double timeout;
+	unsigned timeout_ms;
 	size_t data_len, alloc_nbytes;
 	int ungetch, srclen, chan, idx;
 	unsigned rows, cols;

@@ -280,7 +280,7 @@ static bool bif_sleep_1(query *q)
 	if (is_bigint(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "small_integer_range");
 
-	int ms = (is_float(p1) ? (double)get_float(p1) : (double)get_smallint(p1)) * 1000;
+	int ms = (is_float(p1) ? get_float(p1) : get_smallint(p1)) * 1000;
 
 	if (q->is_task)
 		return do_yield(q, ms);
