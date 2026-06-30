@@ -101,9 +101,9 @@ findall(T, G, B, Tail) :-
 :- meta_predicate(call_with_time_limit(+,0)).
 :- help(call_with_time_limit(+float,:callable), [iso(false)]).
 
-call_with_time_limit(Time, Goal) :-
-	Time0 is truncate(Time * 1000),
-	'$alarm'(Time0, Timer),
+call_with_time_limit(Time0, Goal) :-
+	Time is truncate(Time0 * 1000),
+	'$alarm'(Time, Timer),
 	(	catch(once(Goal), E, ('$alarm'(0, Timer), throw(E))) ->
 		'$alarm'(0, Timer)
 	;	('$alarm'(0, Timer), fail)
