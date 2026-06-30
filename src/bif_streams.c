@@ -6312,7 +6312,7 @@ static bool bif_set_stream_2(query *q)
 				if (is_float(name))
 					str->timeout = get_float(name);
 				else
-					str->timeout = get_smallint(name) * 1000;
+					str->timeout = ((double)get_smallint(name)) / 1000;
 			}
 
 			p1 = LIST_TAIL(p1);
@@ -6385,7 +6385,7 @@ static bool bif_set_stream_2(query *q)
 		if (is_float(name))
 			str->timeout = get_float(name);
 		else
-			str->timeout = get_smallint(name) * 1000;
+			str->timeout = ((double)get_smallint(name)) / 1000;
 	}
 
 	return true;
