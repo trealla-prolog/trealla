@@ -4,6 +4,8 @@ main1 :-
 	writeln('main1...'),
 	thread_create(catch(call_with_time_limit(0.1, run1), _, writeln(catch1)), T1, []),
 	thread_join(T1),
+	thread_create(catch(call_with_time_limit(0.1, run1), _, writeln(catch2)), T2, []),
+	thread_join(T2),
 	writeln('done1').
 
 run1 :-
