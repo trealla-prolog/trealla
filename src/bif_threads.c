@@ -1169,7 +1169,17 @@ static bool bif_thread_sleep_1(query *q)
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
 	GET_FIRST_ARG(p1,number);
 	int ms = (int)((is_float(p1) ? get_float(p1) : get_smallint(p1)) * 1000);
-	msleep(ms);
+
+	while ((ms > 0) && !q->halt && !q->pl->halt) {
+		CHECK_INTERRUPT();
+		msleep(10);
+
+		if (errno == EINTR)
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
+
+		ms -= 10;
+	}
+
 	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
 	return true;
 }

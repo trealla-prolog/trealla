@@ -287,12 +287,12 @@ static bool bif_sleep_1(query *q)
 
 	while ((ms > 0) && !q->halt && !q->pl->halt) {
 		CHECK_INTERRUPT();
-		msleep(1);
+		msleep(10);
 
 		if (errno == EINTR)
 			return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 
-		ms -= 1;
+		ms -= 10;
 	}
 
 	return true;
