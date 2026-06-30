@@ -441,7 +441,7 @@ static bool bif_sys_alarm_2(query *q)
 {
 	GET_FIRST_ARG(p1,number);
 	GET_NEXT_ARG(p2,integer_or_var);
-	int time0 = 0;
+	int time_ms = 0;
 
 	if (is_bigint(p1))
 		return throw_error(q, p1, p1_ctx, "domain_error", "positive_integer");
@@ -449,20 +449,17 @@ static bool bif_sys_alarm_2(query *q)
 	g_tpl_interrupt = 0;
 
 	if (is_float(p1))
-		time0 = get_float(p1) * 1000;
+		time_ms = get_float(p1) * 1000;
 	else
-		time0 = get_smallint(p1);
+		time_ms = get_smallint(p1);
 
-	if (time0 < 0)
+	if (time_ms < 0)
 		return throw_error(q, p1, p1_ctx, "domain_error", "positive_integer");
 
 	struct itimerval it = {0};
 
-	if (time0 == 0) {
+	if (time_ms == 0) {
 		timer_entry *e = get_voidptr(p2);
-
-		if (!e)
-			return true;
 
 		if (e->thread_id)
 			timer_delete(e->my_timer);
@@ -491,8 +488,8 @@ static bool bif_sys_alarm_2(query *q)
 	e->thread_id = pthread_self();
 
 	struct itimerspec value = {0};
-	value.it_value.tv_sec = time0 / 1000;
-	value.it_value.tv_nsec = (time0 % 1000) * 1000;
+	value.it_value.tv_sec = time_ms / 1000;
+	value.it_value.tv_nsec = (time_ms % 1000) * 1000;
 	value.it_interval.tv_sec = 0;
 	value.it_interval.tv_nsec = 0;
 	timer_settime(my_timer, 0, &value, NULL);
