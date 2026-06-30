@@ -1110,6 +1110,7 @@ static bool bif_process_wait_3(query *q)
 		make_uint(tmp+1, code);
 	}
 
+	tmp->flags |= FLAG_INTERNED_GROUND;
 	return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
 }
 
@@ -1136,15 +1137,8 @@ static bool bif_process_wait_2(query *q)
 		make_uint(tmp+1, code);
 	}
 
+	tmp->flags |= FLAG_INTERNED_GROUND;
 	return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
-}
-
-static bool bif_process_wait_1(query *q)
-{
-	GET_FIRST_ARG(p1,integer);
-	int pid = get_smalluint(p1);
-	waitpid(pid, NULL, 0);
-	return true;
 }
 
 static bool bif_process_kill_2(query *q)
