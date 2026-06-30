@@ -1098,15 +1098,15 @@ static bool bif_process_wait_3(query *q)
 	if (ok != pid)
 		return false;
 
-	cell tmp[2];
+	cell *tmp = alloc_heap(q, 2);
 
 	if ( WIFSIGNALED(status)) {
 		int sig = WTERMSIG(status);
-		make_struct(tmp+0, g_killed_s, 1, 1);
+		make_instr(tmp+0, g_killed_s, NULL, 1, 1);
 		make_uint(tmp+1, sig);
 	} else {
 		int code = WEXITSTATUS(status);
-		make_struct(tmp+0, g_exit_s, 1, 1);
+		make_instr(tmp+0, g_exit_s, NULL, 1, 1);
 		make_uint(tmp+1, code);
 	}
 
@@ -1124,15 +1124,15 @@ static bool bif_process_wait_2(query *q)
 	if (ok != pid)
 		return false;
 
-	cell tmp[2];
+	cell *tmp = alloc_heap(q, 2);
 
 	if ( WIFSIGNALED(status)) {
 		int sig = WTERMSIG(status);
-		make_struct(tmp+0, g_killed_s, 1, 1);
+		make_instr(tmp+0, g_killed_s, NULL, 1, 1);
 		make_uint(tmp+1, sig);
 	} else {
 		int code = WEXITSTATUS(status);
-		make_struct(tmp+0, g_exit_s, 1, 1);
+		make_instr(tmp+0, g_exit_s, NULL, 1, 1);
 		make_uint(tmp+1, code);
 	}
 
