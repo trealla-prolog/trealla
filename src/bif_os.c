@@ -477,10 +477,11 @@ static bool bif_sys_alarm_2(query *q)
     sa.sa_flags = 0; // Notice we DO NOT use SA_RESTART
     sigaction(SIGALRM, &sa, NULL);
 
+	timer_entry *e = malloc(sizeof(timer_entry));
+
 	struct sigevent sevp = {0};
 	sevp.sigev_notify = SIGEV_THREAD;
 	sevp.sigev_notify_function = timer_callback;
-	timer_entry *e = malloc(sizeof(timer_entry));
 	sevp.sigev_value.sival_ptr = e;
 
 	timer_t my_timer;
@@ -495,6 +496,7 @@ static bool bif_sys_alarm_2(query *q)
 	value.it_interval.tv_sec = 0;
 	value.it_interval.tv_nsec = 0;
 	timer_settime(my_timer, 0, &value, NULL);
+
 	cell tmp;
 	make_ptr(&tmp, e);
 	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
