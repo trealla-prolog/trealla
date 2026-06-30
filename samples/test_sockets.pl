@@ -26,8 +26,6 @@ main12 :-
 	close(C),
 	writeln(ok).
 
-:- use_module(library(sockets)).
-
 server3 :-
 	socket_server_open(':8080', S, []),
 	writeln(server_delay),
