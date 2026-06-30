@@ -1923,8 +1923,10 @@ static query *query_create_(module *m, bool is_toplevel)
 	ENSURE(q);
 	q->p = parser_create(m);
 
-	if (!g_query_id)
+	if (!g_query_id) {
 		m->pl->threads[0].q = q;
+		m->pl->threads[0].is_active = true;
+	}
 
 	q->qid = g_query_id++;
 	q->pl = m->pl;
