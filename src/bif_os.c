@@ -1099,14 +1099,15 @@ static bool bif_process_wait_3(query *q)
 		return false;
 
 	cell *tmp = alloc_heap(q, 2);
+	CHECKED(tmp);
 
 	if ( WIFSIGNALED(status)) {
 		int sig = WTERMSIG(status);
-		make_instr(tmp+0, g_killed_s, NULL, 1, 1);
+		make_struct(tmp+0, g_killed_s, 1, 1);
 		make_uint(tmp+1, sig);
 	} else {
 		int code = WEXITSTATUS(status);
-		make_instr(tmp+0, g_exit_s, NULL, 1, 1);
+		make_struct(tmp+0, g_exit_s, 1, 1);
 		make_uint(tmp+1, code);
 	}
 
@@ -1121,19 +1122,27 @@ static bool bif_process_wait_2(query *q)
 	int status = 0, pid = get_smalluint(p1);
 	pid_t ok = waitpid(pid, &status, secs != -1 ? WNOHANG : 0);
 
+	//printf("*** ok = %u, pid=%u\n", ok, pid);
+
 	if (ok != pid)
 		return false;
 
 	cell *tmp = alloc_heap(q, 2);
+	CHECKED(tmp);
 
 	if ( WIFSIGNALED(status)) {
 		int sig = WTERMSIG(status);
-		make_instr(tmp+0, g_killed_s, NULL, 1, 1);
+		make_struct(tmp+0, g_killed_s, 1, 1);
 		make_uint(tmp+1, sig);
+		//if (sig == SIGTERM)
+		//	printf("*** sig=SIGTERM\n");
+		//else
+		//	printf("*** sig=%u\n", sig);
 	} else {
 		int code = WEXITSTATUS(status);
-		make_instr(tmp+0, g_exit_s, NULL, 1, 1);
+		make_struct(tmp+0, g_exit_s, 1, 1);
 		make_uint(tmp+1, code);
+		//printf("*** code=%u\n", code);
 	}
 
 	return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
