@@ -6303,6 +6303,9 @@ static bool bif_set_stream_2(query *q)
 			}
 
 			if (!CMP_STRING_TO_CSTR(q, c, "timeout")) {
+				if (is_var(name))
+					return throw_error(q, name, c_ctx, "instantiation_error", "stream_option");
+
 				if (!is_number(name))
 					return throw_error(q, c, c_ctx, "domain_error", "stream_property");
 
@@ -6373,6 +6376,9 @@ static bool bif_set_stream_2(query *q)
 	}
 
 	if (!CMP_STRING_TO_CSTR(q, p1, "timeout")) {
+		if (is_var(name))
+			return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
+
 		if (!is_number(name))
 			return throw_error(q, p1, p1_ctx, "domain_error", "stream_property");
 
