@@ -548,15 +548,15 @@ tpl -g "popen('ps -a',read,S,[]),getlines(S,Ls),close(S),maplist(println,Ls),hal
 For general *POSIX* process creation use these *SWI-Prolog* compatible calls...
 
 	process_create/3			# process_create(+cmd,+args,+opts)
-	process_wait/2				# process_wait(+pid,+opts)
-	process_wait/1				# process_wait(+pid)
-	process_kill/2				# process_kill(+pid,+sigint)
+	process_wait/3				# process_wait(+pid,-status,+opts)
+	process_wait/2				# process_wait(+pid,-status)
+	process_kill/2				# process_kill(+pid,+signal)
 	process_kill/1				# process_kill(+pid)
 
 For example...
 
 ```console
-	?- process_create('ls',['-l'],[process(Pid)]),process_wait(Pid).
+	?- process_create('ls',['-l'],[process(Pid)]),process_wait(Pid,_).
 	total 2552
 	   4 -rw-rw-r-- 1 andrew andrew    1813 Aug 25 10:18 ATTRIBUTION
 	   4 -rw-rw-r-- 1 andrew andrew    1093 Aug 25 10:18 LICENSE

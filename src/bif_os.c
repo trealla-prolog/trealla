@@ -963,7 +963,6 @@ static bool bif_process_create_3(query *q)
 					name = deref(q, name, name_ctx);
 					name_ctx = q->latest_ctx;
 				}
-
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdin") && !CMP_STRING_TO_CSTR(q, name, "std")) {
 				posix_spawn_file_actions_adddup2(&file_actions, q->pl->current_input, 0);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdin") && !CMP_STRING_TO_CSTR(q, name, "null")) {
@@ -983,12 +982,10 @@ static bool bif_process_create_3(query *q)
 				make_int(&tmp, n);
 				tmp.flags |= FLAG_INT_STREAM;
 				unify(q, ns, ns_ctx, &tmp, q->st.cur_ctx);
-
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdin") && !CMP_STRING_TO_CSTR(q, name, "stream")) {
 				cell *ns = deref(q, name, name_ctx);
 				int n = get_stream(q, ns);
 				posix_spawn_file_actions_adddup2(&file_actions, fileno(q->pl->streams[n].fp), 0);
-
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdout") && !CMP_STRING_TO_CSTR(q, name, "std")) {
 				posix_spawn_file_actions_adddup2(&file_actions, q->pl->current_output, 1);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdout") && !CMP_STRING_TO_CSTR(q, name, "null")) {
@@ -1008,12 +1005,10 @@ static bool bif_process_create_3(query *q)
 				make_int(&tmp, n);
 				tmp.flags |= FLAG_INT_STREAM;
 				unify(q, ns, ns_ctx, &tmp, q->st.cur_ctx);
-
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdout") && !CMP_STRING_TO_CSTR(q, name, "stream")) {
 				cell *ns = deref(q, name, name_ctx);
 				int n = get_stream(q, ns);
 				posix_spawn_file_actions_adddup2(&file_actions, fileno(q->pl->streams[n].fp), 1);
-
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stderr") && !CMP_STRING_TO_CSTR(q, name, "std")) {
 				posix_spawn_file_actions_adddup2(&file_actions, q->pl->current_error, 2);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stderr") && !CMP_STRING_TO_CSTR(q, name, "null")) {
@@ -1072,16 +1067,17 @@ static bool bif_process_create_3(query *q)
 	return true;
 }
 
-static bool bif_process_wait_2(query *q)
+static bool bif_process_wait_3(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
-	GET_NEXT_ARG(p2,list_or_nil);
-	LIST_HANDLER(p2);
+	GET_NEXT_ARG(p2,any);
+	GET_NEXT_ARG(p3,list_or_nil);
+	LIST_HANDLER(p3);
 	int secs = -1;
 
-	while (is_iso_list(p2)) {
-		cell *h = LIST_HEAD(p2);
-		cell *c = deref(q, h, p2_ctx);
+	while (is_iso_list(p3)) {
+		cell *h = LIST_HEAD(p3);
+		cell *c = deref(q, h, p3_ctx);
 
 		if (is_compound(c) && (c->arity == 1) && !CMP_STRING_TO_CSTR(q, c, "timeout")) {
 			if (is_integer(FIRST_ARG(c)))
@@ -1091,14 +1087,56 @@ static bool bif_process_wait_2(query *q)
 		} else
 			return throw_error(q, c, q->latest_ctx, "domain_error", "process_wait_option");
 
-		p2 = LIST_TAIL(p2);
-		p2 = deref(q, p2, p2_ctx);
-		p2_ctx = q->latest_ctx;
+		p3 = LIST_TAIL(p3);
+		p3 = deref(q, p3, p3_ctx);
+		p3_ctx = q->latest_ctx;
 	}
 
 	int status = 0, pid = get_smalluint(p1);
-	int ok = waitpid(pid, &status, secs != -1 ? WNOHANG : 0);
-	return ok == pid;
+	pid_t ok = waitpid(pid, &status, secs != -1 ? WNOHANG : 0);
+
+	if (ok != pid)
+		return false;
+
+	cell tmp[2];
+
+	if ( WIFSIGNALED(status)) {
+		int sig = WTERMSIG(status);
+		make_struct(tmp+0, g_killed_s, 1, 1);
+		make_uint(tmp+1, sig);
+	} else {
+		int code = WEXITSTATUS(status);
+		make_struct(tmp+0, g_exit_s, 1, 1);
+		make_uint(tmp+1, code);
+	}
+
+	return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
+}
+
+static bool bif_process_wait_2(query *q)
+{
+	GET_FIRST_ARG(p1,integer);
+	GET_NEXT_ARG(p2,any);
+	int secs = -1;
+	int status = 0, pid = get_smalluint(p1);
+	pid_t ok = waitpid(pid, &status, secs != -1 ? WNOHANG : 0);
+
+	if (ok != pid)
+		return false;
+
+	cell tmp[2];
+
+	if ( WIFSIGNALED(status)) {
+		int sig = WTERMSIG(status);
+		make_struct(tmp+0, g_killed_s, 1, 1);
+		make_uint(tmp+1, sig);
+	} else {
+		int code = WEXITSTATUS(status);
+		make_struct(tmp+0, g_exit_s, 1, 1);
+		make_uint(tmp+1, code);
+	}
+
+	return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
 }
 
 static bool bif_process_wait_1(query *q)
@@ -1149,8 +1187,8 @@ builtins g_os_bifs[] =
 
 #if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 	{"process_create", 3, bif_process_create_3, "+atom,+list,+list", false, false, BLAH},
-	{"process_wait", 2, bif_process_wait_2, "+integer,-integer", false, false, BLAH},
-	{"process_wait", 1, bif_process_wait_1, "+integer", false, false, BLAH},
+	{"process_wait", 3, bif_process_wait_3, "+integer,-term,+list", false, false, BLAH},
+	{"process_wait", 2, bif_process_wait_2, "+integer,-term", false, false, BLAH},
 	{"process_kill", 2, bif_process_kill_2, "+integer,+integer", false, false, BLAH},
 	{"process_kill", 1, bif_process_kill_1, "+integer", false, false, BLAH},
 #endif
