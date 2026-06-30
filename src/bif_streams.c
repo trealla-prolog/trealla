@@ -415,6 +415,7 @@ int new_stream(prolog *pl)
 		if (str->fp)
 			continue;
 
+		str->timeout = 0;
 		str->is_pipe = false;
 		str->is_socket = false;
 		str->is_alias = false;
@@ -6301,6 +6302,16 @@ static bool bif_set_stream_2(query *q)
 				return true;
 			}
 
+			if (!CMP_STRING_TO_CSTR(q, c, "timeout")) {
+				if (!is_number(name))
+					return throw_error(q, c, c_ctx, "domain_error", "stream_property");
+
+				if (is_float(name))
+					str->timeout = get_float(name);
+				else
+					str->timeout = get_smallint(name) * 1000;
+			}
+
 			p1 = LIST_TAIL(p1);
 			p1 = deref(q, p1, p1_ctx);
 			p1_ctx = q->latest_ctx;
@@ -6359,6 +6370,16 @@ static bool bif_set_stream_2(query *q)
 		}
 
 		return true;
+	}
+
+	if (!CMP_STRING_TO_CSTR(q, p1, "timeout")) {
+		if (!is_number(name))
+			return throw_error(q, p1, p1_ctx, "domain_error", "stream_property");
+
+		if (is_float(name))
+			str->timeout = get_float(name);
+		else
+			str->timeout = get_smallint(name) * 1000;
 	}
 
 	return true;
