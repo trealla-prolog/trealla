@@ -33,7 +33,6 @@ server3 :-
 	writeln(server_delay),
 	socket_server_accept(S, C, _, []),
 	writeln(server_accepted),
-	sleep(1.0),
 	writeln([server_write,C,xyz]),
 	write_term(C, xyz, [fullstop(true), nl(true)]),
 	writeln([server_close,C,S]),
@@ -60,7 +59,6 @@ server4 :-
 	writeln(server_delay),
 	socket_server_accept(S, C, _, [type(binary)]),
 	writeln(server_accepted),
-	sleep(1.0),
 	Term = 0'x,
 	writeln([server_write,C,Term]),
 	put_byte(C, Term),
@@ -83,4 +81,3 @@ main4 :-
 	thread_create(client4, T2, []),
 	thread_join(T1),
 	thread_join(T2).
-
