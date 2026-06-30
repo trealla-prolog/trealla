@@ -1922,6 +1922,10 @@ static query *query_create_(module *m, bool is_toplevel)
 	query *q = TPL_calloc(1, sizeof(query));
 	ENSURE(q);
 	q->p = parser_create(m);
+
+	if (!g_query_id)
+		m->pl->threads[0].q = q;
+
 	q->qid = g_query_id++;
 	q->pl = m->pl;
 	q->pl->q_cnt++;

@@ -79,4 +79,3 @@ main4 :-
 	thread_create(client4, T2, []),
 	thread_join(T1),
 	thread_join(T2).
-
