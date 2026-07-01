@@ -221,10 +221,17 @@ static bool bif_sys_accept_2(query *q)
 	str2->nodelay = str->nodelay;
 	str2->udp = str->udp;
 	str2->ssl = str->ssl;
-	str2->fp = fdopen(fd, "r+");
+	str2->fp_in = fdopen(fd, "r+");
 
-	if (str2->fp == NULL) {
+	if (str2->fp_in == NULL) {
 		close(fd);
+		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
+	}
+
+	str2->fp_out = str2->fp_in;//fdopen(fd, "r+");
+
+	if (str2->fp_out == NULL) {
+		fclose(str2->fp_in);
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
 
@@ -666,11 +673,10 @@ static bool bif_sys_client_5(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
 
-	str->fp_out = fdopen(fd, "r+");
+	str->fp_out = str->fp_in;//fdopen(fd, "r+");
 
 	if (str->fp_out == NULL) {
 		fclose(str->fp_in);
-		close(fd);
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
 
