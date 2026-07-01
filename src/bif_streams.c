@@ -1553,6 +1553,9 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 				return do_yield(q, 1);
 			}
 
+			if (errno == EINTR)
+				return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
+
 			str->p->srcptr = "";
 		} else
 			str->p->srcptr = str->p->save_line;
@@ -4134,6 +4137,9 @@ static bool bif_read_line_to_string_2(query *q)
 			return do_yield(q, 1);
 		}
 
+		if (errno == EINTR)
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
+
 		cell tmp;
 		make_atom(&tmp, g_eof_s);
 		return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
@@ -4184,6 +4190,9 @@ static bool bif_read_line_to_codes_2(query *q)
 			clearerr(str->fp);
 			return do_yield(q, 1);
 		}
+
+		if (errno == EINTR)
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 
 		cell tmp;
 		make_atom(&tmp, g_eof_s);
