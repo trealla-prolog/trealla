@@ -1218,7 +1218,6 @@ bool stream_close(query *q, int n)
 
 	sl_destroy(str->alias);
 	str->alias = NULL;
-	str->is_active = false;
 	str->fp = NULL;
 	TPL_free(str->mode);
 	str->mode = NULL;
@@ -1227,6 +1226,7 @@ bool stream_close(query *q, int n)
 	TPL_free(str->data);
 	str->data = NULL;
 	str->at_end_of_file = true;
+	str->is_active = false;
 
 	if (!ok)
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
