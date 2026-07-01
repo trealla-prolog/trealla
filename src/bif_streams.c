@@ -6529,7 +6529,7 @@ builtins g_streams_bifs[] =
 	{"set_input", 1, bif_iso_set_input_1, "+stream", true, false, BLAH},
 	{"set_output", 1, bif_iso_set_output_1, "+stream", true, false, BLAH},
 	{"set_error", 1, bif_iso_set_output_1, "+stream", true, false, BLAH},
-	{"stream_property", 2, bif_iso_stream_property_2, "+stream,+compound", true, false, BLAH},
+	{"stream_property", 2, bif_iso_stream_property_2, "+stream,-compound", true, false, BLAH},
 
 
 	// Edinburgh...

@@ -780,4 +780,4 @@ process_wait(Pid, Status) :-
 thread_join(Tid, Status) :-
 	'$thread_join'(Tid, Status).
 
-:- help(thread_join(+integer,-term), [iso(false)]).
+:- help(thread_join(+thread,-term), [iso(false)]).
