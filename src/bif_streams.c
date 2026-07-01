@@ -783,7 +783,9 @@ static bool bif_iso_stream_property_2(query *q)
 			if (!q->pl->streams[i].fp)
 				continue;
 
+			printf("*** here1\n");
 			add_stream_properties(q, i);
+			printf("*** here2\n");
 		}
 	}
 
