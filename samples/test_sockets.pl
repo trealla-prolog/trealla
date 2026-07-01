@@ -26,8 +26,7 @@ main12 :-
 	close(C),
 	writeln(ok).
 
-server3 :-
-	socket_server_open(':8080', S, []),
+server3(S) :-
 	writeln([server_delay,S]),
 	socket_server_accept(S, C, _, []),
 	writeln([server_accepted,S,C]),
@@ -48,13 +47,13 @@ client3 :-
 
 main3 :-
 	writeln('main3...'),
-	thread_create(server3, T1, []),
+	socket_server_open(':8080', S, []),
+	thread_create(server3(S), T1, []),
 	thread_create(client3, T2, []),
 	thread_join(T1),
 	thread_join(T2).
 
-server4 :-
-	socket_server_open(':8080', S, []),
+server4(S) :-
 	writeln(server_delay),
 	socket_server_accept(S, C, _, [type(binary)]),
 	writeln(server_accepted),
@@ -76,7 +75,8 @@ client4 :-
 
 main4 :-
 	writeln('main4...'),
-	thread_create(server4, T1, []),
+	socket_server_open(':8080', S, []),
+	thread_create(server4(S), T1, []),
 	thread_create(client4, T2, []),
 	thread_join(T1),
 	thread_join(T2).

@@ -1559,9 +1559,6 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 			str->p->srcptr = "";
 		} else
 			str->p->srcptr = str->p->save_line;
-
-		if (errno == EINTR)
-			return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 	}
 
 	if (str->p->srcptr) {
@@ -1578,13 +1575,6 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 	}
 
 	for (;;) {
-#if 0
-		if (isatty(fileno(str->fp)) && !src) {
-			fprintf(str->fp, "%s", PROMPT);
-			fflush(str->fp);
-		}
-#endif
-
 		if (!src && (!str->p->srcptr || !*str->p->srcptr || (*str->p->srcptr == '\n'))) {
 			if (str->p->srcptr && (*str->p->srcptr == '\n'))
 				str->p->line_num++;
