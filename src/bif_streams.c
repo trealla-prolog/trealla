@@ -456,7 +456,7 @@ static void add_stream_properties(query *q, int n)
 	off_t pos = !str->is_socket && !str->is_map && !str->is_engine ? ftello(str->fp) : 0;
 	bool at_end_of_file = false;
 
-	if (!str->at_end_of_file && (n > 2) && !str->is_socket && !str->is_engine && !str->is_map && !str->p && str->filename) {
+	if (!str->at_end_of_file && (n > 2) && !str->is_socket && !str->is_engine && !str->is_map && !str->is_pipe && !str->p && str->filename) {
 #if 0
 		if (str->p) {
 			if (str->p->srcptr && *str->p->srcptr) {
