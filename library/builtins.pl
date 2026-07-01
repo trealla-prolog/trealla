@@ -776,3 +776,8 @@ process_wait(Pid, Status) :-
 	'$process_wait'(Pid, Status).
 
 :- help(process_wait(+integer,-term), [iso(false)]).
+
+thread_join(Tid, Status) :-
+	'$thread_join'(Tid, Status).
+
+:- help(thread_join(+integer,-term), [iso(false)]).
