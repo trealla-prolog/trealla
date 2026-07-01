@@ -801,7 +801,7 @@ static bool bif_iso_stream_property_2(query *q)
 		return false;
 	}
 
-	GET_FIRST_ARG(pstrx,any);
+	GET_FIRST_ARG(pstrx,integer);
 	pstrx->flags |= FLAG_INT_STREAM;
 	return true;
 }
