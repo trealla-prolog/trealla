@@ -143,6 +143,7 @@ static int new_thread(prolog *pl)
 				t->chan = n;
 			}
 
+			t->is_active = true;
 			t->id = pthread_self();
 			t->is_detached = false;
 			t->is_queue_only = false;
@@ -156,7 +157,6 @@ static int new_thread(prolog *pl)
 			t->ball = NULL;
 			t->alias = NULL;
 			t->q = NULL;
-			t->is_active = true;
 			prolog_unlock(pl);
 			return n;
 		}
