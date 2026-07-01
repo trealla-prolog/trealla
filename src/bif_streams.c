@@ -4046,8 +4046,12 @@ static bool bif_edin_seen_0(query *q)
 
 	if ((str->fp != stdin)
 		&& (str->fp != stdout)
-		&& (str->fp != stderr))
-		fclose(str->fp);
+		&& (str->fp != stderr)) {
+		fclose(str->fp_in);
+
+		if (str->fp_out != str->fp_in)
+			fclose(str->fp_out);
+	}
 
 	sl_destroy(str->alias);
 	TPL_free(str->filename);
@@ -4067,8 +4071,12 @@ static bool bif_edin_told_0(query *q)
 
 	if ((str->fp != stdin)
 		&& (str->fp != stdout)
-		&& (str->fp != stderr))
-		fclose(str->fp);
+		&& (str->fp != stderr)) {
+		fclose(str->fp_in);
+
+		if (str->fp_out != str->fp_in)
+			fclose(str->fp_out);
+	}
 
 	sl_destroy(str->alias);
 	TPL_free(str->filename);

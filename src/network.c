@@ -166,7 +166,6 @@ int tpl_connect(const char *hostname, unsigned port, bool udp, bool nodelay)
 
 		int flag = 1;
 		setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&flag, sizeof(flag));
-		//flag = 1;
 		//setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, (char *)&flag, sizeof(flag));
 
 		if (connect(fd, rp->ai_addr, rp->ai_addrlen) != -1)
@@ -226,7 +225,6 @@ int tpl_server(const char *hostname, unsigned port, bool udp, const char *keyfil
 
 		int flag = 1;
 		setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&flag, sizeof(flag));
-		//flag = 1;
 		//setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, (char *)&flag, sizeof(flag));
 
 		if (bind(fd, rp->ai_addr, rp->ai_addrlen) == 0)
@@ -314,7 +312,8 @@ void tpl_set_nonblocking(stream *str)
 {
 #if !defined(_WIN32) && !defined(__wasi__)
 	unsigned long flag = 1;
-	ioctl(fileno(str->fp), FIONBIO, &flag);
+	ioctl(fileno(str->fp_in), FIONBIO, &flag);
+	ioctl(fileno(str->fp_out), FIONBIO, &flag);
 #endif
 }
 
