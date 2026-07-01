@@ -1,6 +1,6 @@
 :- use_module(library(sockets)).
 
-:- initialization((main1,main3,main4)).
+:- initialization((main1,main3,main4,main5)).
 
 main1 :-
 	thread_create(main11, T1, []),
@@ -84,8 +84,7 @@ main4 :-
 server5(S) :-
 	writeln(server_delay),
 	socket_server_accept(S, C, _, [type(binary)]),
-	writeln(server_accepted),
-	writeln([server_read,C]),
+	writeln([server_accepted,S,C]),
 	get_byte(C, Term),
 	writeln([server_got,Term]),
 	put_byte(C, Term),
@@ -93,14 +92,14 @@ server5(S) :-
 	close(S).
 
 client5s(C) :-
-	writeln([client_send,C]),
 	Term = 0'x,
+	writeln([client_send,C,Term]),
 	put_byte(C, Term).
 
 client5r(C) :-
 	writeln([client_recv,C]),
 	get_byte(C, Term),
-	writeln([client_recv,C,Term]).
+	writeln([client_got,C,Term]).
 
 main5 :-
 	writeln('main5...'),
@@ -109,9 +108,10 @@ main5 :-
 	thread_create(server5(S), T1, []),
 	socket_client_open(inet(localhost,8080), C, [type(binary)]),
 	writeln([client_opened,C]),
-	thread_create(client5recv(C), T2r, []),
-	thread_create(client5send(C), T2s, []),
-	thread_join(T1),
+	thread_create(client5s(C), T2s, []),
+	thread_create(client5r(C), T2r, []),
 	thread_join(T2s),
 	thread_join(T2r),
-	close(C).
+	thread_join(T1),
+	close(C),
+	writeln(done).
