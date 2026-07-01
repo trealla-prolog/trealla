@@ -228,7 +228,7 @@ static bool bif_sys_accept_2(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
 
-	str2->fp_out = str2->fp_in;//fdopen(fd, "r+");
+	str2->fp_out = fdopen(fd, "r+");
 
 	if (str2->fp_out == NULL) {
 		fclose(str2->fp_in);
@@ -673,7 +673,7 @@ static bool bif_sys_client_5(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
 
-	str->fp_out = str->fp_in;//fdopen(fd, "r+");
+	str->fp_out = fdopen(fd, "r+");
 
 	if (str->fp_out == NULL) {
 		fclose(str->fp_in);
