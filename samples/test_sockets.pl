@@ -80,3 +80,38 @@ main4 :-
 	thread_create(client4, T2, []),
 	thread_join(T1),
 	thread_join(T2).
+
+server5(S) :-
+	writeln(server_delay),
+	socket_server_accept(S, C, _, [type(binary)]),
+	writeln(server_accepted),
+	writeln([server_read,C]),
+	get_byte(C, Term),
+	writeln([server_got,Term]),
+	put_byte(C, Term),
+	close(C),
+	close(S).
+
+client5s(C) :-
+	writeln([client_send,C]),
+	Term = 0'x,
+	put_byte(C, Term).
+
+client5r(C) :-
+	writeln([client_recv,C]),
+	get_byte(C, Term),
+	writeln([client_recv,C,Term]).
+
+main5 :-
+	writeln('main5...'),
+	socket_server_open(':8080', S, []),
+	writeln([server_open,S]),
+	thread_create(server5(S), T1, []),
+	socket_client_open(inet(localhost,8080), C, [type(binary)]),
+	writeln([client_opened,C]),
+	thread_create(client5recv(C), T2r, []),
+	thread_create(client5send(C), T2s, []),
+	thread_join(T1),
+	thread_join(T2s),
+	thread_join(T2r),
+	close(C).
