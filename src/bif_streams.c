@@ -412,9 +412,10 @@ int new_stream(prolog *pl)
 	for (int i = 3; i < MAX_STREAMS; i++) {
 		stream *str = &pl->streams[i];
 
-		if (str->fp)
+		if (str->fp || str->is_active)
 			continue;
 
+		str->is_active = true;
 		str->timeout_ms = 0;
 		str->is_pipe = false;
 		str->is_socket = false;
@@ -1215,6 +1216,7 @@ bool stream_close(query *q, int n)
 
 	sl_destroy(str->alias);
 	str->alias = NULL;
+	str->is_active = false;
 	str->fp = NULL;
 	TPL_free(str->mode);
 	str->mode = NULL;
