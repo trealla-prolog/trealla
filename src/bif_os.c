@@ -805,7 +805,6 @@ static bool bif_popen_4(query *q)
 		return throw_error(q, p2, p2_ctx, "domain_error", "io_mode");
 
 	str->fp_out = str->fp_in;
-
 	TPL_free(src);
 
 	if (!str->fp) {
