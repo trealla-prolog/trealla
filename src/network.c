@@ -184,7 +184,7 @@ int tpl_connect(const char *hostname, unsigned port, bool udp, bool nodelay)
 
 	struct linger l;
 	l.l_onoff = 1;
-	l.l_linger = 5;
+	l.l_linger = 0;
 	setsockopt(fd, SOL_SOCKET, SO_LINGER, (char*)&l, sizeof(l));
 	int flag = 1;
 	setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (char*)&flag, sizeof(flag));
@@ -296,7 +296,7 @@ int tpl_accept(stream *str)
 
 	struct linger l;
 	l.l_onoff = 1;
-	l.l_linger = 5;
+	l.l_linger = 0;
 	setsockopt(fd, SOL_SOCKET, SO_LINGER, (char*)&l, sizeof(l));
 	int flag = 1;
 	setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (char*)&flag, sizeof(flag));
