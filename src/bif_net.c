@@ -226,17 +226,18 @@ static bool bif_sys_accept_2(query *q)
 
 	if (str2->fp_in == NULL) {
 		close(fd);
+		str->is_active = false;
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
 
 #ifndef __wasi__
 	int fd2 = dup(fd);
-
 	str2->fp_out = fdopen(fd2, "r+");
 
 	if (str2->fp_out == NULL) {
 		fclose(str2->fp_in);
 		close(fd2);
+		str->is_active = false;
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
 #else
@@ -248,6 +249,7 @@ static bool bif_sys_accept_2(query *q)
 
 		if (!str2->sslptr) {
 			close(fd);
+			str->is_active = false;
 			return false;
 		}
 	}
@@ -673,11 +675,13 @@ static bool bif_sys_client_5(query *q)
 		sl_destroy(str->alias);
 		TPL_free(str->filename);
 		TPL_free(str->mode);
+		str->is_active = false;
 		return false;
 	}
 
 	if (str->fp_in == NULL) {
 		close(fd);
+		str->is_active = false;
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
 
@@ -688,6 +692,7 @@ static bool bif_sys_client_5(query *q)
 	if (str->fp_out == NULL) {
 		fclose(str->fp_in);
 		close(fd2);
+		str->is_active = false;
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
 #else

@@ -415,7 +415,6 @@ int new_stream(prolog *pl)
 		if (str->is_active)
 			continue;
 
-		str->is_active = true;
 		str->timeout_ms = 0;
 		str->is_pipe = false;
 		str->is_socket = false;
@@ -429,6 +428,7 @@ int new_stream(prolog *pl)
 		str->binary = false;
 		str->at_end_of_file = false;
 		str->fp_in = str->fp_out = NULL;
+		str->is_active = true;
 		prolog_unlock(pl);
 		return i;
 	}
