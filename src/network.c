@@ -387,7 +387,7 @@ size_t tpl_write(const void *ptr, size_t nbytes, stream *str)
 		SB_fwrite(str->sb, ptr, nbytes);
 		return nbytes;
 	} else {
-		size_t len = fwrite(ptr, 1, nbytes, str->fp_out);
+		size_t len = fwrite(ptr, 1, nbytes, str->fp_out?str->fp_out:str->fp);
 
 		if (str->is_socket || str->is_pipe)
 			fflush(str->fp_out);
