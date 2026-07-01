@@ -613,7 +613,7 @@ int tpl_close(stream *str)
 	}
 #endif
 
-	str->is_active = false;
 	str->fp_in = str->fp_out = NULL;
+	str->is_active = false;
 	return ok;
 }
