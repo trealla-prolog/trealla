@@ -1110,7 +1110,6 @@ static bool bif_process_wait_3(query *q)
 		make_uint(tmp+1, code);
 	}
 
-	tmp->flags |= FLAG_INTERNED_GROUND;
 	return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
 }
 
@@ -1137,7 +1136,6 @@ static bool bif_process_wait_2(query *q)
 		make_uint(tmp+1, code);
 	}
 
-	tmp->flags |= FLAG_INTERNED_GROUND;
 	return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
 }
 
@@ -1181,8 +1179,8 @@ builtins g_os_bifs[] =
 
 #if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 	{"process_create", 3, bif_process_create_3, "+atom,+list,+list", false, false, BLAH},
-	{"process_wait", 3, bif_process_wait_3, "+integer,-term,+list", false, false, BLAH},
-	{"process_wait", 2, bif_process_wait_2, "+integer,-term", false, false, BLAH},
+	{"$process_wait", 3, bif_process_wait_3, "+integer,-term,+list", false, false, BLAH},
+	{"$process_wait", 2, bif_process_wait_2, "+integer,-term", false, false, BLAH},
 	{"process_kill", 2, bif_process_kill_2, "+integer,+integer", false, false, BLAH},
 	{"process_kill", 1, bif_process_kill_1, "+integer", false, false, BLAH},
 #endif

@@ -766,3 +766,13 @@ findnsols(P1,P2,P3,P4) :-
 	'$findnsols'(P1,P2b,P3b,P4).
 
 :- help(findnsols(+integer,+term,+callable,?list), [iso(false)]).
+
+process_wait(Pid, Status, Opts) :-
+	'$process_wait'(Pid, Status, Opts).
+
+:- help(process_wait(+integer,-term,?list), [iso(false)]).
+
+process_wait(Pid, Status) :-
+	'$process_wait'(Pid, Status).
+
+:- help(process_wait(+integer,-term), [iso(false)]).
