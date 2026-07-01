@@ -456,7 +456,7 @@ static void add_stream_properties(query *q, int n)
 	off_t pos = !str->is_socket && !str->is_map && !str->is_engine ? ftello(str->fp) : 0;
 	bool at_end_of_file = false;
 
-	if (!str->at_end_of_file && (n > 2) && !str->is_socket && !str->is_engine && !str->is_map && !str->p) {
+	if (!str->at_end_of_file && (n > 2) && !str->is_socket && !str->is_engine && !str->is_map && !str->p && str->filename) {
 #if 0
 		if (str->p) {
 			if (str->p->srcptr && *str->p->srcptr) {
@@ -490,9 +490,12 @@ static void add_stream_properties(query *q, int n)
 	sl_done(iter);
 
 	if (!str->is_engine && !str->is_map) {
-		char *dst2 = formatted(str->filename, strlen(str->filename), false, false);
-		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, file_name('%s')).\n", n, dst2);
-		TPL_free(dst2);
+		if (str->filename) {
+			char *dst2 = formatted(str->filename, strlen(str->filename), false, false);
+			dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, file_name('%s')).\n", n, dst2);
+			TPL_free(dst2);
+		}
+
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, file_no(%u)).\n", n, fileno(str->fp));
 
 		dst += snprintf(dst, sizeof(tmpbuf)-strlen(tmpbuf), "'$stream_property'(%d, file(%llu)).\n", n, (unsigned long long)(size_t)str->fp);
@@ -783,9 +786,7 @@ static bool bif_iso_stream_property_2(query *q)
 			if (!q->pl->streams[i].fp)
 				continue;
 
-			printf("*** here1\n");
 			add_stream_properties(q, i);
-			printf("*** here2\n");
 		}
 	}
 
