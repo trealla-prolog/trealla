@@ -919,6 +919,7 @@ static bool bif_thread_create_3(query *q)
 		return throw_error(q, p1, p1_ctx, "system_error", "pthread_create");
 	}
 
+	msleep(1);
 	return true;
 }
 
