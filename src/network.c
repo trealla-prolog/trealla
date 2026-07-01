@@ -165,9 +165,8 @@ int tpl_connect(const char *hostname, unsigned port, bool udp, bool nodelay)
 		}
 
 		int flag = 1;
-		setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&flag, sizeof(flag));
-		//flag = 1;
-		//setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, (char *)&flag, sizeof(flag));
+		setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag));
+		//setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &flag, sizeof(flag));
 
 		if (connect(fd, rp->ai_addr, rp->ai_addrlen) != -1)
 			break;
@@ -184,8 +183,8 @@ int tpl_connect(const char *hostname, unsigned port, bool udp, bool nodelay)
 	}
 
 	struct linger l;
-	l.l_onoff = 0;
-	l.l_linger = 1;
+	l.l_onoff = 1;
+	l.l_linger = 0;
 	setsockopt(fd, SOL_SOCKET, SO_LINGER, (char*)&l, sizeof(l));
 	int flag = 1;
 	setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (char*)&flag, sizeof(flag));
@@ -225,9 +224,8 @@ int tpl_server(const char *hostname, unsigned port, bool udp, const char *keyfil
 		}
 
 		int flag = 1;
-		setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&flag, sizeof(flag));
-		//flag = 1;
-		//setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, (char *)&flag, sizeof(flag));
+		setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag));
+		//setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &flag, sizeof(flag));
 
 		if (bind(fd, rp->ai_addr, rp->ai_addrlen) == 0)
 			break;
@@ -297,8 +295,8 @@ int tpl_accept(stream *str)
 	}
 
 	struct linger l;
-	l.l_onoff = 0;
-	l.l_linger = 1;
+	l.l_onoff = 1;
+	l.l_linger = 0;
 	setsockopt(fd, SOL_SOCKET, SO_LINGER, (char*)&l, sizeof(l));
 	int flag = 1;
 	setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (char*)&flag, sizeof(flag));
