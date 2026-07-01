@@ -229,7 +229,9 @@ static bool bif_sys_accept_2(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
 
+#ifndef __wasi__
 	int fd2 = dup(fd);
+
 	str2->fp_out = fdopen(fd2, "r+");
 
 	if (str2->fp_out == NULL) {
@@ -237,6 +239,9 @@ static bool bif_sys_accept_2(query *q)
 		close(fd2);
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
+#else
+	str2->fp_out = str2->fp_in;
+#endif
 
 	if (str->ssl) {
 		str2->sslptr = tpl_enable_ssl(fd, str->filename, 1, str->level, NULL);
@@ -676,6 +681,7 @@ static bool bif_sys_client_5(query *q)
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
 
+#ifndef __wasi__
 	int fd2 = dup(fd);
 	str->fp_out = fdopen(fd2, "r+");
 
@@ -684,6 +690,9 @@ static bool bif_sys_client_5(query *q)
 		close(fd2);
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
+#else
+	str->fp_out = str->fp_in;
+#endif
 
 	if (str->ssl) {
 		str->sslptr = tpl_enable_ssl(fd, hostname, 0, str->level, certfile);
