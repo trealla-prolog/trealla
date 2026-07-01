@@ -1564,6 +1564,9 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 	if (str->p->srcptr) {
 		char *src = (char*)eat_space(str->p);
 
+		if (errno == EINTR)
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
+
 		if (str->p->error)
 			return throw_error(q, q->st.instr, q->st.cur_ctx, "syntax_error", str->p->error_desc?str->p->error_desc:"read_term");
 
@@ -3687,6 +3690,9 @@ static bool bif_sys_read_term_from_chars_4(query *q)
 	}
 
 	char *rest = str->p->srcptr = eat_space(str->p);
+
+	if (errno == EINTR)
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 
 	if (str->p->error) {
 		parser_destroy(str->p);

@@ -3079,8 +3079,12 @@ char *eat_space(parser *p)
 				continue;
 			}
 
-			if (p->no_fp || getline(&p->save_line, &p->n_line, p->fp) == -1)
+			if (p->no_fp || getline(&p->save_line, &p->n_line, p->fp) == -1) {
+				if (errno == EINTR)
+					p->error = true;
+
 				return p->srcptr = "";
+			}
 
 			p->did_getline = true;
 			src = p->srcptr = p->save_line;
