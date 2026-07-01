@@ -783,7 +783,6 @@ static bool bif_iso_stream_property_2(query *q)
 			if (!q->pl->streams[i].fp)
 				continue;
 
-			stream *str = &q->pl->streams[i];
 			add_stream_properties(q, i);
 		}
 	}
