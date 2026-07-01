@@ -28,13 +28,14 @@ main12 :-
 
 server3 :-
 	socket_server_open(':8080', S, []),
-	writeln(server_delay),
+	writeln([server_delay,S]),
 	socket_server_accept(S, C, _, []),
-	writeln(server_accepted),
+	writeln([server_accepted,S,C]),
 	writeln([server_write,C,xyz]),
 	write_term(C, xyz, [fullstop(true), nl(true)]),
-	writeln([server_close,C,S]),
+	writeln([server_close,C]),
 	close(C),
+	writeln([server_close,S]),
 	close(S).
 
 client3 :-
