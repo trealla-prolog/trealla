@@ -412,7 +412,7 @@ int new_stream(prolog *pl)
 	for (int i = 3; i < MAX_STREAMS; i++) {
 		stream *str = &pl->streams[i];
 
-		if (str->fp || str->is_active)
+		if (str->is_active)
 			continue;
 
 		str->is_active = true;
@@ -428,6 +428,7 @@ int new_stream(prolog *pl)
 		str->repo = false;
 		str->binary = false;
 		str->at_end_of_file = false;
+		str->fp_in = str->fp_out = NULL;
 		prolog_unlock(pl);
 		return i;
 	}
@@ -1098,6 +1099,8 @@ static bool bif_iso_open_4(query *q)
 		else
 			return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 	}
+
+	str->fp_out = str->fp_in;
 
 	if (S_ISFIFO(st.st_mode))
 		setvbuf(str->fp, NULL, _IONBF, 0);

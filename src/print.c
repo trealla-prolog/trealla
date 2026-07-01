@@ -1722,7 +1722,7 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int
 	while (len) {
 		size_t nbytes = tpl_write(src, len, str);
 
-		if (ferror(str->fp)) {
+		if (ferror(str->fp_out)) {
 			SB_free(q->sb);
 			stream_close(q, str->idx);
 			return throw_error(q, q->st.instr,q->st.cur_ctx, "io_error", "stream");
@@ -1732,7 +1732,7 @@ bool print_canonical_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int
 		src += nbytes;
 	}
 
-	fflush(str->fp);
+	fflush(str->fp_out);
 	SB_free(q->sb);
 	return true;
 }
@@ -1805,7 +1805,7 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int runn
 	while (len) {
 		size_t nbytes = tpl_write(src, len, str);
 
-		if (ferror(str->fp)) {
+		if (ferror(str->fp_out)) {
 			SB_free(q->sb);
 			stream_close(q, str->idx);
 			return throw_error(q, q->st.instr,q->st.cur_ctx, "io_error", "stream");
@@ -1815,7 +1815,7 @@ bool print_term_to_stream(query *q, stream *str, cell *c, pl_ctx c_ctx, int runn
 		src += nbytes;
 	}
 
-	fflush(str->fp);
+	fflush(str->fp_out);
 	SB_free(q->sb);
 	return true;
 }

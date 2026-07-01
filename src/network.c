@@ -388,10 +388,10 @@ size_t tpl_write(const void *ptr, size_t nbytes, stream *str)
 		SB_fwrite(str->sb, ptr, nbytes);
 		return nbytes;
 	} else {
-		size_t len = fwrite(ptr, 1, nbytes, str->fp);
+		size_t len = fwrite(ptr, 1, nbytes, str->fp_out);
 
 		if (str->is_socket || str->is_pipe)
-			fflush(str->fp);
+			fflush(str->fp_out);
 
 		return len;
 	}
@@ -424,7 +424,7 @@ int tpl_getc(stream *str)
 	}
 #endif
 
-	int ok = fgetc(str->fp);
+	int ok = fgetc(str->fp_in);
 
 	if (errno == EINTR)
 		ok = EOF;
@@ -456,7 +456,7 @@ size_t tpl_read(void *ptr, size_t len, stream *str)
 	}
 #endif
 
-	int ok = fread(ptr, 1, len, str->fp);
+	int ok = fread(ptr, 1, len, str->fp_in);
 
 	if (errno == EINTR)
 		ok = EOF;
@@ -568,7 +568,7 @@ int tpl_getline(char **lineptr, size_t *n, stream *str)
 	}
 #endif
 
-	int ok = getline(lineptr, n, str->fp);
+	int ok = getline(lineptr, n, str->fp_in);
 
 	if (errno == EINTR)
 		ok = EOF;
@@ -599,10 +599,14 @@ int tpl_close(stream *str)
 #else
 	{
 		if (str->is_socket)
-			shutdown(fileno(str->fp), SHUT_RDWR);
+			shutdown(fileno(str->fp_in), SHUT_RDWR);
 
-		if (!str->is_memory)
-			ok = fclose(str->fp);
+		if (!str->is_memory) {
+			ok = fclose(str->fp_in);
+
+			if (str->fp_out != str->fp_in)
+				fclose(str->fp_out);
+		}
 
 		if (str->is_memory)
 			SB_free(str->sb);
@@ -610,6 +614,6 @@ int tpl_close(stream *str)
 #endif
 
 	str->is_active = false;
-	str->fp = NULL;
+	str->fp_in = str->fp_out = NULL;
 	return ok;
 }

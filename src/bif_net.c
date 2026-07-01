@@ -652,7 +652,7 @@ static bool bif_sys_client_5(query *q)
 	str->udp = udp;
 	str->ssl = ssl;
 	str->level = level;
-	str->fp = fdopen(fd, "r+");
+	str->fp_in = fdopen(fd, "r+");
 
 	if (!str->filename || !str->mode) {
 		sl_destroy(str->alias);
@@ -661,14 +661,22 @@ static bool bif_sys_client_5(query *q)
 		return false;
 	}
 
-	if (str->fp == NULL) {
+	if (str->fp_in == NULL) {
+		close(fd);
+		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
+	}
+
+	str->fp_out = fdopen(fd, "r+");
+
+	if (str->fp_out == NULL) {
+		fclose(str->fp_in);
 		close(fd);
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
 
 	if (str->ssl) {
 		str->sslptr = tpl_enable_ssl(fd, hostname, 0, str->level, certfile);
-		CHECKED(str->sslptr, close(fd));
+		CHECKED(str->sslptr);
 	}
 
 	if (!str->ssl && q->is_task)
