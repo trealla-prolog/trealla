@@ -1221,8 +1221,7 @@ bool stream_close(query *q, int n)
 
 	sl_destroy(str->alias);
 	str->alias = NULL;
-	str->fp_in = NULL;
-	str->fp_out = NULL;
+	str->fp_in = str->fp_out = NULL;
 	TPL_free(str->mode);
 	str->mode = NULL;
 	TPL_free(str->filename);
