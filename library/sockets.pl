@@ -9,7 +9,12 @@
 
 %% socket_client_open(+Addr, -Stream, +Options).
 %
-% Open a socket to a server, returning a stream. Addr must satisfy `Addr = inet(Address,Port)`.
+% Open a socket to a server, returning a stream. Addr must satisfy:
+%
+%    `Addr = inet(Address,Port)`.
+%    `Addr = unix(ath)`.
+%    `Addr = Address:Port`.
+%    `Addr = Port`.
 %
 % The following options are available:
 %
@@ -44,6 +49,21 @@ socket_client_open(Addr, Stream, Options) :-
 	must_be(var, Stream),
 	must_be(list, Options),
 	atom(Address),
+	(( atom(Port) ; integer(Port) ) ->
+		true
+	; throw(error(type_error(socket_address, Addr), socket_client_open/3))
+	),
+	'$client'(Addr, _, _, Stream, []),
+	set_stream(Stream, Options).
+
+socket_client_open(Addr, Stream, Options) :-
+	( var(Addr) ->
+		throw(error(instantiation_error, socket_client_open/3))
+	; true
+	),
+	Addr = Port,
+	must_be(var, Stream),
+	must_be(list, Options),
 	(( atom(Port) ; integer(Port) ) ->
 		true
 	; throw(error(type_error(socket_address, Addr), socket_client_open/3))
