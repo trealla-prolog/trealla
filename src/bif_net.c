@@ -190,7 +190,8 @@ static bool bif_sys_server_3(query *q)
 	cell tmp;
 	make_int(&tmp, n);
 	tmp.flags |= FLAG_INT_STREAM;
-	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
+	unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
+	return true;
 }
 
 static bool bif_sys_accept_2(query *q)
@@ -263,7 +264,8 @@ static bool bif_sys_accept_2(query *q)
 	cell tmp;
 	make_int(&tmp, n);
 	tmp.flags |= FLAG_INT_STREAM;
-	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
+	unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
+	return true;
 }
 
 static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_ctx, bool full)

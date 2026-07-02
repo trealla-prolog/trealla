@@ -1171,9 +1171,7 @@ static bool bif_iso_open_4(query *q)
 		cell tmp ;
 		make_int(&tmp, n);
 		tmp.flags |= FLAG_INT_STREAM;
-
-		if (!unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx))
-			return false;
+		unify(q, p3, p3_ctx, &tmp, q->st.cur_ctx);
 	}
 
 	return true;
