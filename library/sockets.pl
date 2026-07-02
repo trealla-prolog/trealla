@@ -91,15 +91,63 @@ socket_client_open(Addr, Stream, Options) :-
 %
 % Open a server socket, returning a ServerSocket. Use that ServerSocket to accept incoming connections in
 % `socket_server_accept/3`. Addr must satisfy `Addr = Address:Port`. Depending on the operating system
-% configuration, some ports might be reserved for superusers.
+% configuration, some ports might be reserved for superusers. Address must satisfy:
+%
+%    `Addr = unix(Path)`.
+%    `Addr = inet(Address,Port)`.
+%    `Addr = Address:Port`.
+%    `Addr = Port`.
+%
+socket_server_open(Addr0, ServerSocket, Options) :-
+	( var(Addr0) ->
+		throw(error(instantiation_error, socket_client_open/3))
+	; true
+	),
+	Addr0 = unix(Path), !,
+	must_be(var, ServerSocket),
+	must_be(list, Options),
+	atom(Path),
+	atom_concat('unix://', Path, Addr),
+	'$server'(Addr, ServerSocket, Options).
+
+socket_server_open(Addr0, ServerSocket, Options) :-
+	( var(Addr0) ->
+		throw(error(instantiation_error, socket_client_open/3))
+	; true
+	),
+	Addr0 = inet(Address,Port), !,
+	must_be(var, Stream),
+	must_be(list, Options),
+	(  Addr = Address:Port,
+	atom(Address),
+	( atom(Port) ; integer(Port) ) ->
+		true
+	; throw(error(type_error(socket_address, Addr), socket_client_open/3))
+	),
+	'$server'(Addr, ServerSocket, Options).
+
+socket_server_open(Addr, ServerSocket, Options) :-
+	( var(Addr) ->
+		throw(error(instantiation_error, socket_client_open/3))
+	; true
+	),
+	Addr = Address:Port,
+	must_be(var, Stream),
+	must_be(list, Options),
+	atom(Address),
+	(( atom(Port) ; integer(Port) ) ->
+		true
+	; throw(error(type_error(socket_address, Addr), socket_client_open/3))
+	),
+	'$server'(Addr, ServerSocket, Options).
+
 socket_server_open(Addr0, ServerSocket, Options) :-
 	must_be(var, ServerSocket),
 	( integer(Addr0) ->
 		( number_codes(Addr0, Codes), atom_codes(Addr1, Codes), atom_concat(':', Addr1, Addr) )
 	; Addr = Addr0
 	),
-	'$server'(Addr, ServerSocket, Options),
-	true.
+	'$server'(Addr, ServerSocket, Options).
 
 
 
