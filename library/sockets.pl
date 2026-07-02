@@ -11,18 +11,32 @@
 %
 % Open a socket to a server, returning a stream. Addr must satisfy:
 %
+%    `Addr = unix(Path)`.
 %    `Addr = inet(Address,Port)`.
-%    `Addr = unix(ath)`.
 %    `Addr = Address:Port`.
 %    `Addr = Port`.
 %
 % The following options are available:
 %
+%  * `udp(+Boolean)`: Socket is UDP (default is TCP)
 %  * `alias(+Alias)`: Set an alias to the stream
 %  * `eof_action(+Action)`: Defined what happens if the end of the stream is reached. Values: `error`, `eof_code` and `reset`.
 %  * `type(+Type)`: Type can be `text` or `binary`. Defines the type of the stream, if it's optimized for plain text
 %    or just binary
 %
+socket_client_open(Addr0, Stream, Options) :-
+	( var(Addr0) ->
+		throw(error(instantiation_error, socket_client_open/3))
+	; true
+	),
+	Addr0 = unix(Path), !,
+	must_be(var, Stream),
+	must_be(list, Options),
+	atom(Path),
+	atom_concat('unix://', Path, Addr),
+	'$client'(Addr, _, _, Stream, Options),
+	set_stream(Stream, Options).
+
 socket_client_open(Addr0, Stream, Options) :-
 	( var(Addr0) ->
 		throw(error(instantiation_error, socket_client_open/3))
@@ -37,7 +51,7 @@ socket_client_open(Addr0, Stream, Options) :-
 		true
 	; throw(error(type_error(socket_address, Addr), socket_client_open/3))
 	),
-	'$client'(Addr, _, _, Stream, []),
+	'$client'(Addr, _, _, Stream, Options),
 	set_stream(Stream, Options).
 
 socket_client_open(Addr, Stream, Options) :-
@@ -53,7 +67,7 @@ socket_client_open(Addr, Stream, Options) :-
 		true
 	; throw(error(type_error(socket_address, Addr), socket_client_open/3))
 	),
-	'$client'(Addr, _, _, Stream, []),
+	'$client'(Addr, _, _, Stream, Options),
 	set_stream(Stream, Options).
 
 socket_client_open(Addr, Stream, Options) :-
@@ -68,7 +82,7 @@ socket_client_open(Addr, Stream, Options) :-
 		true
 	; throw(error(type_error(socket_address, Addr), socket_client_open/3))
 	),
-	'$client'(Addr, _, _, Stream, []),
+	'$client'(Addr, _, _, Stream, Options),
 	set_stream(Stream, Options).
 
 
