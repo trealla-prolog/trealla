@@ -176,6 +176,7 @@ static bool bif_sys_server_3(query *q)
 	str->ssl = ssl;
 	str->level = level;
 	str->fp = fdopen(fd, "r");
+	str->fp_out = str->fp_in;
 
 	if (str->fp == NULL) {
 		close(fd);
@@ -221,18 +222,34 @@ static bool bif_sys_accept_2(query *q)
 	str2->nodelay = str->nodelay;
 	str2->udp = str->udp;
 	str2->ssl = str->ssl;
-	str2->fp = fdopen(fd, "r+");
+	str2->fp_in = fdopen(fd, "r+");
 
-	if (str2->fp == NULL) {
+	if (str2->fp_in == NULL) {
 		close(fd);
+		str->is_active = false;
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
+
+#ifndef __wasi__
+	int fd2 = dup(fd);
+	str2->fp_out = fdopen(fd2, "r+");
+
+	if (str2->fp_out == NULL) {
+		fclose(str2->fp_in);
+		close(fd2);
+		str->is_active = false;
+		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
+	}
+#else
+	str2->fp_out = str2->fp_in;
+#endif
 
 	if (str->ssl) {
 		str2->sslptr = tpl_enable_ssl(fd, str->filename, 1, str->level, NULL);
 
 		if (!str2->sslptr) {
 			close(fd);
+			str->is_active = false;
 			return false;
 		}
 	}
@@ -652,23 +669,39 @@ static bool bif_sys_client_5(query *q)
 	str->udp = udp;
 	str->ssl = ssl;
 	str->level = level;
-	str->fp = fdopen(fd, "r+");
+	str->fp_in = fdopen(fd, "r+");
 
 	if (!str->filename || !str->mode) {
 		sl_destroy(str->alias);
 		TPL_free(str->filename);
 		TPL_free(str->mode);
+		str->is_active = false;
 		return false;
 	}
 
-	if (str->fp == NULL) {
+	if (str->fp_in == NULL) {
 		close(fd);
+		str->is_active = false;
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
 
+#ifndef __wasi__
+	int fd2 = dup(fd);
+	str->fp_out = fdopen(fd2, "r+");
+
+	if (str->fp_out == NULL) {
+		fclose(str->fp_in);
+		close(fd2);
+		str->is_active = false;
+		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
+	}
+#else
+	str->fp_out = str->fp_in;
+#endif
+
 	if (str->ssl) {
 		str->sslptr = tpl_enable_ssl(fd, hostname, 0, str->level, certfile);
-		CHECKED(str->sslptr, close(fd));
+		CHECKED(str->sslptr);
 	}
 
 	if (!str->ssl && q->is_task)

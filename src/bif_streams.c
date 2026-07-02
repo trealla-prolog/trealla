@@ -412,10 +412,9 @@ int new_stream(prolog *pl)
 	for (int i = 3; i < MAX_STREAMS; i++) {
 		stream *str = &pl->streams[i];
 
-		if (str->fp || str->is_active)
+		if (str->is_active)
 			continue;
 
-		str->is_active = true;
 		str->timeout_ms = 0;
 		str->is_pipe = false;
 		str->is_socket = false;
@@ -428,6 +427,8 @@ int new_stream(prolog *pl)
 		str->repo = false;
 		str->binary = false;
 		str->at_end_of_file = false;
+		str->fp_in = str->fp_out = NULL;
+		str->is_active = true;
 		prolog_unlock(pl);
 		return i;
 	}
@@ -1099,6 +1100,8 @@ static bool bif_iso_open_4(query *q)
 			return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 	}
 
+	str->fp_out = str->fp_in;
+
 	if (S_ISFIFO(st.st_mode))
 		setvbuf(str->fp, NULL, _IONBF, 0);
 
@@ -1218,7 +1221,8 @@ bool stream_close(query *q, int n)
 
 	sl_destroy(str->alias);
 	str->alias = NULL;
-	str->fp = NULL;
+	str->fp_in = NULL;
+	str->fp_out = NULL;
 	TPL_free(str->mode);
 	str->mode = NULL;
 	TPL_free(str->filename);
@@ -4043,8 +4047,12 @@ static bool bif_edin_seen_0(query *q)
 
 	if ((str->fp != stdin)
 		&& (str->fp != stdout)
-		&& (str->fp != stderr))
-		fclose(str->fp);
+		&& (str->fp != stderr)) {
+		fclose(str->fp_in);
+
+		if (str->fp_out != str->fp_in)
+			fclose(str->fp_out);
+	}
 
 	sl_destroy(str->alias);
 	TPL_free(str->filename);
@@ -4064,8 +4072,12 @@ static bool bif_edin_told_0(query *q)
 
 	if ((str->fp != stdin)
 		&& (str->fp != stdout)
-		&& (str->fp != stderr))
-		fclose(str->fp);
+		&& (str->fp != stderr)) {
+		fclose(str->fp_in);
+
+		if (str->fp_out != str->fp_in)
+			fclose(str->fp_out);
+	}
 
 	sl_destroy(str->alias);
 	TPL_free(str->filename);

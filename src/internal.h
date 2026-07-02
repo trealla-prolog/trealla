@@ -578,11 +578,13 @@ enum { eof_action_eof_code, eof_action_error, eof_action_reset };
 struct stream_ {
 	union {
 		FILE *fp;
+		FILE *fp_in;
 		skiplist *keyval;
 		query *engine;
 		void *handle;
 	};
 
+	FILE *fp_out;
 	stringbuf sb_buf;
 	char *mode, *filename, *data, *src;
 	skiplist *alias;
