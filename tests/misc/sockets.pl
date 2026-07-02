@@ -11,7 +11,7 @@ main1 :-
 	true.
 
 main11 :-
-	socket_server_open(':8080', S, []),
+	socket_server_open(8080, S, []),
 	socket_server_accept(S, C, _, []),
 	read_term(C, hello, []),
 	write_term(C, world, [fullstop(true), nl(true)]),
@@ -48,7 +48,7 @@ client3 :-
 
 main3 :-
 	writeln('main3...'),
-	socket_server_open(':8080', S, []),
+	socket_server_open(8080, S, []),
 	thread_create(server3(S), T1, []),
 	thread_create(client3, T2, []),
 	thread_join(T1),
@@ -76,7 +76,7 @@ client4 :-
 
 main4 :-
 	writeln('main4...'),
-	socket_server_open(':8080', S, []),
+	socket_server_open(8080, S, []),
 	thread_create(server4(S), T1, []),
 	thread_create(client4, T2, []),
 	thread_join(T1),
