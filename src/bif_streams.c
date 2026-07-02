@@ -1074,8 +1074,10 @@ static bool bif_iso_open_4(query *q)
 			str->fp = fdopen(fd, str->binary?"ab":"a");
 		else if (!strcmp(str->mode, "update"))
 			str->fp = fdopen(fd, str->binary?"rb+":"r+");
-		else
+		else {
+			str->is_active = false;
 			return throw_error(q, p2, p2_ctx, "domain_error", "io_mode");
+		}
 	} else {
 		if (!strcmp(str->mode, "read"))
 			str->fp = fopen(str->filename, str->binary?"rb":"r");
@@ -1085,11 +1087,15 @@ static bool bif_iso_open_4(query *q)
 			str->fp = fopen(str->filename, str->binary?"ab":"a");
 		else if (!strcmp(str->mode, "update"))
 			str->fp = fopen(str->filename, str->binary?"rb+":"r+");
-		else
+		else {
+			str->is_active = false;
 			return throw_error(q, p2, p2_ctx, "domain_error", "io_mode");
+		}
 	}
 
 	if (!str->fp) {
+		str->is_active = false;
+
 		if ((errno == EACCES) || (strcmp(str->mode, "read")
 			&& ((errno == EROFS) || (errno == EISDIR))
 			))
@@ -1100,7 +1106,7 @@ static bool bif_iso_open_4(query *q)
 			return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 	}
 
-	str->fp_out = str->fp_in;
+	str->fp_out = str->fp;
 
 	if (S_ISFIFO(st.st_mode))
 		setvbuf(str->fp, NULL, _IONBF, 0);

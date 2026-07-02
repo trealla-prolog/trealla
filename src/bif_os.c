@@ -801,18 +801,23 @@ static bool bif_popen_4(query *q)
 		str->fp = popen(filename, binary?"rb":"r");
 	else if (!strcmp(str->mode, "write"))
 		str->fp = popen(filename, binary?"wb":"w");
-	else
+	else {
+		str->is_active = false;
 		return throw_error(q, p2, p2_ctx, "domain_error", "io_mode");
+	}
 
-	str->fp_out = str->fp_in;
 	TPL_free(src);
 
 	if (!str->fp) {
+		str->is_active = false;
+
 		if ((errno == EACCES) || (strcmp(str->mode, "read") && (errno == EROFS)))
 			return throw_error(q, p1, p1_ctx, "permission_error", "open,source_sink");
 		else
 			return throw_error(q, p1, p1_ctx, "existence_error", "source_sink");
 	}
+
+	str->fp_out = str->fp;
 
 	if (!is_alias) {
 		cell tmp;

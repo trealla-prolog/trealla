@@ -313,7 +313,6 @@ void tpl_set_nonblocking(stream *str)
 #if !defined(_WIN32) && !defined(__wasi__)
 	unsigned long flag = 1;
 	ioctl(fileno(str->fp_in), FIONBIO, &flag);
-	ioctl(fileno(str->fp_out), FIONBIO, &flag);
 #endif
 }
 

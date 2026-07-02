@@ -176,9 +176,10 @@ static bool bif_sys_server_3(query *q)
 	str->ssl = ssl;
 	str->level = level;
 	str->fp = fdopen(fd, "r");
-	str->fp_out = str->fp_in;
+	str->fp_out = str->fp;
 
 	if (str->fp == NULL) {
+		str->is_active = false;
 		close(fd);
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
@@ -222,11 +223,11 @@ static bool bif_sys_accept_2(query *q)
 	str2->nodelay = str->nodelay;
 	str2->udp = str->udp;
 	str2->ssl = str->ssl;
-	str2->fp_in = fdopen(fd, "r+");
+	str2->fp = fdopen(fd, "r+");
 
-	if (str2->fp_in == NULL) {
+	if (str2->fp == NULL) {
+		str2->is_active = false;
 		close(fd);
-		str->is_active = false;
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
 
@@ -235,13 +236,13 @@ static bool bif_sys_accept_2(query *q)
 	str2->fp_out = fdopen(fd2, "r+");
 
 	if (str2->fp_out == NULL) {
-		fclose(str2->fp_in);
 		close(fd2);
-		str->is_active = false;
+		fclose(str2->fp);
+		str2->is_active = false;
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
 #else
-	str2->fp_out = str2->fp_in;
+	str2->fp_out = str2->fp;
 #endif
 
 	if (str->ssl) {
@@ -249,7 +250,7 @@ static bool bif_sys_accept_2(query *q)
 
 		if (!str2->sslptr) {
 			close(fd);
-			str->is_active = false;
+			str2->is_active = false;
 			return false;
 		}
 	}
@@ -669,7 +670,7 @@ static bool bif_sys_client_5(query *q)
 	str->udp = udp;
 	str->ssl = ssl;
 	str->level = level;
-	str->fp_in = fdopen(fd, "r+");
+	str->fp = fdopen(fd, "r+");
 
 	if (!str->filename || !str->mode) {
 		sl_destroy(str->alias);
@@ -679,9 +680,9 @@ static bool bif_sys_client_5(query *q)
 		return false;
 	}
 
-	if (str->fp_in == NULL) {
-		close(fd);
+	if (str->fp == NULL) {
 		str->is_active = false;
+		close(fd);
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
 
@@ -690,13 +691,13 @@ static bool bif_sys_client_5(query *q)
 	str->fp_out = fdopen(fd2, "r+");
 
 	if (str->fp_out == NULL) {
-		fclose(str->fp_in);
 		close(fd2);
+		fclose(str->fp);
 		str->is_active = false;
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
 	}
 #else
-	str->fp_out = str->fp_in;
+	str->fp_out = str->fp;
 #endif
 
 	if (str->ssl) {
