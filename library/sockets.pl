@@ -19,6 +19,8 @@
 % The following options are available:
 %
 %  * `udp(+Boolean)`: Socket is UDP (default is TCP)
+%  * `ssl(+Boolean)`: Socket is SSL/TLS (default is normal) if TCP
+%  * `certfile(+Filename)`: Certificate file
 %  * `alias(+Alias)`: Set an alias to the stream
 %  * `eof_action(+Action)`: Defined what happens if the end of the stream is reached. Values: `error`, `eof_code` and `reset`.
 %  * `type(+Type)`: Type can be `text` or `binary`. Defines the type of the stream, if it's optimized for plain text
@@ -97,6 +99,13 @@ socket_client_open(Addr, Stream, Options) :-
 %    `Addr = inet(Address,Port)`.
 %    `Addr = Address:Port`.
 %    `Addr = Port`.
+%
+% The following options are available:
+%
+%  * `udp(+Boolean)`: Socket is UDP (default is TCP)
+%  * `ssl(+Boolean)`: Socket is SSL/TLS (default is normal) if TCP
+%  * `keyfile(+Filename)`: Key file
+%  * `certfile(+Filename)`: Certificate file
 %
 socket_server_open(Addr0, ServerSocket, Options) :-
 	( var(Addr0) ->
