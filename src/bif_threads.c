@@ -919,7 +919,6 @@ static bool bif_thread_create_3(query *q)
 		return throw_error(q, p1, p1_ctx, "system_error", "pthread_create");
 	}
 
-	msleep(1);
 	return true;
 }
 
@@ -1173,12 +1172,12 @@ static bool bif_thread_sleep_1(query *q)
 
 	while ((ms > 0) && !q->halt && !q->pl->halt) {
 		CHECK_INTERRUPT();
-		msleep(10);
+		msleep(1);
 
 		if (errno == EINTR)
 			return throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out");
 
-		ms -= 10;
+		ms -= 1;
 	}
 
 	THREAD_DEBUG DUMP_TERM(" -  ", q->st.instr, q->st.cur_ctx, 1);
