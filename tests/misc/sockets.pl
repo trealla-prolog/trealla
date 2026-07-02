@@ -19,7 +19,7 @@ main11 :-
 	close(S).
 
 main12 :-
-	socket_client_open(inet(localhost,8080), C, []),
+	socket_client_open(localhost:8080, C, []),
 	write_term(C, hello, [fullstop(true), nl(true)]),
 	read_term(C, T, []),
 	T = world,
@@ -39,7 +39,7 @@ server3(S) :-
 	close(S).
 
 client3 :-
-	socket_client_open(inet(localhost,8080), C, []),
+	socket_client_open(localhost:8080, C, []),
 	writeln([client_read,C]),
 	read_term(C, Term, []),
 	writeln([client_got,Term]),
@@ -66,7 +66,7 @@ server4(S) :-
 	close(S).
 
 client4 :-
-	socket_client_open(inet(localhost,8080), C, [type(binary)]),
+	socket_client_open(localhost:8080, C, [type(binary)]),
 	writeln([client_read,C]),
 	get_byte(C, Term),
 	Term = 0'x,

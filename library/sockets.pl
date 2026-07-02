@@ -23,12 +23,28 @@ socket_client_open(Addr0, Stream, Options) :-
 		throw(error(instantiation_error, socket_client_open/3))
 	; true
 	),
-	Addr0 = inet(Address,Port),
+	Addr0 = inet(Address,Port), !,
 	must_be(var, Stream),
 	must_be(list, Options),
 	(  Addr = Address:Port,
 	atom(Address),
 	( atom(Port) ; integer(Port) ) ->
+		true
+	; throw(error(type_error(socket_address, Addr), socket_client_open/3))
+	),
+	'$client'(Addr, _, _, Stream, []),
+	set_stream(Stream, Options).
+
+socket_client_open(Addr, Stream, Options) :-
+	( var(Addr) ->
+		throw(error(instantiation_error, socket_client_open/3))
+	; true
+	),
+	Addr = Address:Port,
+	must_be(var, Stream),
+	must_be(list, Options),
+	atom(Address),
+	(( atom(Port) ; integer(Port) ) ->
 		true
 	; throw(error(type_error(socket_address, Addr), socket_client_open/3))
 	),
