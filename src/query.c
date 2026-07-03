@@ -268,6 +268,8 @@ bool undo_on_backtrack(query *q, void *v, enum undo_item type)
 
 	if (type == UNDO_BBOARD)
 		u->is_bboard = true;
+	else if (type == UNDO_RULE)
+		u ->is_rule = true;
 	else
 		u->is_cells = true;
 
@@ -547,11 +549,10 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 		}
 
 		if (q->in_retract && !r->cl.num_vars && q->pl->opt) {
-			clear_clause(&r->cl);
-			TPL_free(r);
+			undo_on_backtrack(q, r, UNDO_RULE);
 		} else {
 			r->cl.is_deleted = true;
-			list_push_back(&q->dirty, r);
+			list_push_back(&q->dirty, r); // TODO: put it on choice undo
 		}
 	}
 
@@ -807,9 +808,12 @@ int retry_choice(query *q)
 		undo_item *u;
 
 		while ((u = list_pop_back(&ch->undo)) != NULL) {
-			if (u->is_bboard)
+			if (u->is_bboard) {
 				sl_del(u->m->keyval, u->key);
-			else {
+			} else if (u->is_rule) {
+				clear_clause(&u->r->cl);
+				TPL_free(u->r);
+			} else {
 				unshare_cells(u->c, u->c->num_cells);
 				TPL_free(u->c);
 			}

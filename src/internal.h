@@ -552,10 +552,12 @@ typedef struct {
 	union {
 		char *key;
 		cell *c;
+		rule *r;
 	};
 
 	bool is_bboard:1;
 	bool is_cells:1;
+	bool is_rule:1;
 } undo_item;
 
 struct choice_ {

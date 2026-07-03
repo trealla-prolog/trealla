@@ -56,7 +56,7 @@ bool make_slice(query *q, cell *d, const cell *orig, size_t off, size_t n);
 bool match_head(query *q);
 bool check_frame(query *q, unsigned max_vars);
 
-enum undo_item {UNDO_BBOARD, UNDO_CELLS};
+enum undo_item {UNDO_BBOARD, UNDO_CELLS, UNDO_RULE};
 bool undo_on_backtrack(query *q, void *v, enum undo_item type);
 
 bool throw_error(query *q, cell *c, pl_ctx c_ctx, const char *err_type, const char *expected);
