@@ -125,7 +125,7 @@ socket_server_open(Addr0, ServerSocket, Options) :-
 	; true
 	),
 	Addr0 = inet(Address,Port), !,
-	must_be(var, Stream),
+	must_be(var, ServerSocket),
 	must_be(list, Options),
 	(  Addr = Address:Port,
 	atom(Address),
@@ -141,7 +141,7 @@ socket_server_open(Addr, ServerSocket, Options) :-
 	; true
 	),
 	Addr = Address:Port,
-	must_be(var, Stream),
+	must_be(var, ServerSocket),
 	must_be(list, Options),
 	atom(Address),
 	(( atom(Port) ; integer(Port) ) ->
@@ -151,6 +151,10 @@ socket_server_open(Addr, ServerSocket, Options) :-
 	'$server'(Addr, ServerSocket, Options).
 
 socket_server_open(Addr0, ServerSocket, Options) :-
+	( var(Addr0) ->
+		throw(error(instantiation_error, socket_client_open/3))
+	; true
+	),
 	must_be(var, ServerSocket),
 	( integer(Addr0) ->
 		( number_codes(Addr0, Codes), atom_codes(Addr1, Codes), atom_concat(':', Addr1, Addr) )
