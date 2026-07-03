@@ -129,7 +129,7 @@ socket_server_open(Addr0, ServerSocket, Options) :-
 	must_be(list, Options),
 	(  Addr = Address:Port,
 	atom(Address),
-	( atom(Port) ; integer(Port) ) ->
+	( atom(Port) ; integer(Port) ; var(Port) ) ->
 		true
 	; throw(error(type_error(socket_address, Addr), socket_client_open/3))
 	),
@@ -144,7 +144,7 @@ socket_server_open(Addr, ServerSocket, Options) :-
 	must_be(var, ServerSocket),
 	must_be(list, Options),
 	atom(Address),
-	(( atom(Port) ; integer(Port) ) ->
+	(( atom(Port) ; integer(Port) ; var(Port) ) ->
 		true
 	; throw(error(type_error(socket_address, Addr), socket_client_open/3))
 	),
