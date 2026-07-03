@@ -3,6 +3,7 @@
 :- initialization((main1,main3,main4,main5)).
 
 main1 :-
+	writeln('main1...'),
 	thread_create(main11, T1, []),
 	thread_create(main12, T2, []),
 	thread_join(T1),
@@ -19,7 +20,7 @@ main11 :-
 	close(S).
 
 main12 :-
-	socket_client_open(inet(localhost,8080), C, []),
+	socket_client_open(localhost:8080, C, []),
 	write_term(C, hello, [fullstop(true), nl(true)]),
 	read_term(C, T, []),
 	T = world,
