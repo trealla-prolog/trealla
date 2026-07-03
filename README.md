@@ -796,9 +796,11 @@ Probably not for general use. Use *library/sockets.pl* instead:
 	'$server'/2                # '$server'(+host,-stream)
 	'$server'/3                # '$server'(+host,-stream,+list)
 	'$accept'/2                # '$accept'(+stream,-stream)
+	'$server_tls'/2            # '$server_tls'(+stream,+host)
 	'$client'/2                # '$client'(+url,-stream)
 	'$client'/4                # '$client'(+url,-host,-path,-stream)
 	'$client'/5                # '$client'(+url,-host,-path,-stream,+list)
+	'$client_tls'/2            # '$client_tls'(+stream,+host,+level,+sourcesink)
 
 The options list can include *udp(bool)* (default is false),
 *nodelay(bool)* (default is true), *ssl(bool)* (default is false)
