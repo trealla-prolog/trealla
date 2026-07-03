@@ -93,7 +93,20 @@ socket_client_open(Addr, Stream, Options) :-
 %
 % Open a server socket, returning a ServerSocket. Use that ServerSocket to accept incoming connections in
 % `socket_server_accept/3`. Addr must satisfy `Addr = Address:Port`. Depending on the operating system
-% configuration, some ports might be reserved for superusers.
+% configuration, some ports might be reserved for superusers. Address must satisfy:
+%
+%    `Addr = unix(Path)`.
+%    `Addr = inet(Address,Port)`.
+%    `Addr = Address:Port`.
+%    `Addr = Port`.
+%
+% The following options are available:
+%
+%  * `udp(+Boolean)`: Socket is UDP (default is TCP)
+%  * `ssl(+Boolean)`: Socket is SSL/TLS (default is normal) if TCP
+%  * `keyfile(+Filename)`: Key file
+%  * `certfile(+Filename)`: Certificate file
+%
 socket_server_open(Addr0, ServerSocket, Options) :-
 	var(Addr0), !,
 	Addr = Addr0,
