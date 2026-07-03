@@ -11,6 +11,7 @@ extern int tpl_domain_connect(const char *name, bool is_udp);
 extern int tpl_accept(stream *str);
 extern void tpl_set_nonblocking(stream *str);
 extern void *tpl_enable_ssl(int fd, const char *hostname, bool is_server, int level, const char *certfile);
+extern const char *tpl_servername(stream *str);
 extern size_t tpl_read(void *ptr, size_t len, stream *str);
 extern int tpl_getline(char **lineptr, size_t *n, stream *str);
 extern int tpl_getc(stream *str);
