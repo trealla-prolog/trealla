@@ -122,7 +122,7 @@ socket_server_open(Addr0, ServerSocket, Options) :-
 	'$server'(Addr, ServerSocket, Options).
 
 socket_server_open(Addr, ServerSocket, Options) :-
-	Addr = Address:Port,
+	Addr = Address:Port, !,
 	must_be(var, ServerSocket),
 	must_be(list, Options),
 	atom(Address),
