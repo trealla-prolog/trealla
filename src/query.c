@@ -548,11 +548,11 @@ void leave_predicate(query *q, predicate *pr, bool is_final)
 			}
 		}
 
-		if (q->in_retract && !r->cl.num_vars && q->pl->opt) {
+		if (q->in_retract && q->pl->opt) {
 			undo_on_backtrack(q, r, UNDO_RULE);
 		} else {
 			r->cl.is_deleted = true;
-			list_push_back(&q->dirty, r); // TODO: put it on choice undo
+			list_push_back(&q->dirty, r);
 		}
 	}
 
