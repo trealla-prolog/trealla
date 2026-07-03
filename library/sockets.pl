@@ -92,7 +92,7 @@ socket_client_open(Addr, Stream, Options) :-
 %% socket_server_open(+Addr, -ServerSocket, +Options).
 %
 % Open a server socket, returning a ServerSocket. Use that ServerSocket to accept incoming connections in
-% `socket_server_accept/3`. Addr must satisfy `Addr = Address:Port`. Depending on the operating system
+% `socket_server_accept/3`. Depending on the operating system
 % configuration, some ports might be reserved for superusers. Address must satisfy:
 %
 %    `Addr = unix(Path)`.
