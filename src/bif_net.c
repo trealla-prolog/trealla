@@ -247,7 +247,7 @@ static bool bif_sys_accept_2(query *q)
 #endif
 
 	if (str->ssl) {
-		str2->sslptr = tpl_enable_ssl(fd, str->filename, 1, str->level, NULL);
+		str2->sslptr = tpl_enable_ssl(fd, str->filename, true, str->level, NULL);
 
 		if (!str2->sslptr) {
 			close(fd);
@@ -703,7 +703,7 @@ static bool bif_sys_client_5(query *q)
 #endif
 
 	if (str->ssl) {
-		str->sslptr = tpl_enable_ssl(fd, hostname, 0, str->level, certfile);
+		str->sslptr = tpl_enable_ssl(fd, hostname, false, str->level, certfile);
 		CHECKED(str->sslptr);
 	}
 
@@ -724,14 +724,15 @@ static bool bif_sys_client_5(query *q)
 	return true;
 }
 
-static bool bif_sys_start_tls_2(query *q)
+static bool bif_sys_server_tls_2(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
-	GET_NEXT_ARG(p1,atom_or_var);
+	GET_NEXT_ARG(p1,atom);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
 	int fd = fileno(str->fp);
-	str->sslptr = tpl_enable_ssl(fd, NULL, true, 0, NULL);
+	const char *hostname = C_STR(q, p1);
+	str->sslptr = tpl_enable_ssl(fd, hostname, true, 0, NULL);
 	return str->sslptr;
 }
 
@@ -765,7 +766,7 @@ builtins g_net_bifs[] =
 	{"$server", 3, bif_sys_server_3, "+source_sink,--stream,+list", false, false, BLAH},
 	{"$accept", 2, bif_sys_accept_2, "+stream,--stream", false, false, BLAH},
 	{"$client", 5, bif_sys_client_5, "+source_sink,-atom,-atom,-stream,+list", false, false, BLAH},
-	{"$server_tls", 2, bif_sys_server_tls_2, "+stream,-atom", false, false, BLAH},
+	{"$server_tls", 2, bif_sys_server_tls_2, "+stream,+atom", false, false, BLAH},
 	{"$client_tls", 4, bif_sys_client_tls_4, "+stream,+atom,+integer,+source_sink", false, false, BLAH},
 	{"$current_host", 1, bif_sys_current_host_1, "-atom", false, false, BLAH},
 
