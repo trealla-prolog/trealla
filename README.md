@@ -800,7 +800,7 @@ Probably not for general use. Use *library/sockets.pl* instead:
 	'$client'/2                # '$client'(+url,-stream)
 	'$client'/4                # '$client'(+url,-host,-path,-stream)
 	'$client'/5                # '$client'(+url,-host,-path,-stream,+list)
-	'$client_tls'/2            # '$client_tls'(+stream,+host,+level,+sourcesink)
+	'$client_tls'/4            # '$client_tls'(+stream,+host,+level,+sourcesink)
 
 The options list can include *udp(bool)* (default is false),
 *nodelay(bool)* (default is true), *ssl(bool)* (default is false)
