@@ -378,7 +378,11 @@ void *tpl_enable_ssl(int fd, const char *hostname, bool is_server, int level, co
 const char *tpl_servername(stream *str)
 {
 #if !defined(_WIN32) && !defined(__wasi__)
+#if USE_OPENSSL
 	return SSL_get_servername(str->sslptr, TLSEXT_NAMETYPE_host_name);
+#else
+	return NULL;
+#endif
 #else
 	return NULL;
 #endif
