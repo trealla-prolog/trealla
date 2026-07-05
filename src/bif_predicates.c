@@ -5623,7 +5623,7 @@ static bool bif_sys_det_length_rundown_2(query *q)
 		l->arity = 2;
 		l->flags = 0;
 		l++;
-		make_var(l, g_anon_s, var_num++);
+		make_ref(l, var_num++, q->st.cur_ctx);
 		l->flags |= FLAG_VAR_ANON | FLAG_VAR_VOID;
 		l++;
 	}

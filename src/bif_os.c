@@ -406,7 +406,7 @@ static bool bif_date_time_6(query *q)
 	return true;
 }
 
-#if !defined(_WIN32) && !defined(__wasi__) && defined(THREADS)
+#if !defined(_WIN32) && !defined(__wasi__) && defined(USE_THREADS)
 typedef struct  {
 	timer_t my_timer;
 	pthread_t thread_id;
@@ -834,7 +834,7 @@ static bool bif_popen_4(query *q)
 
 extern char **g_envp;
 
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && defined(THREADS)
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && defined(USE_THREADS)
 static bool bif_process_create_3(query *q)
 {
 	GET_FIRST_ARG(p1,atom);
@@ -1183,7 +1183,7 @@ builtins g_os_bifs[] =
 	{"get_unbuffered_code", 1, bif_get_unbuffered_code_1, "?integer", false, false, BLAH},
 	{"get_unbuffered_char", 1, bif_get_unbuffered_char_1, "?character", false, false, BLAH},
 
-#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && defined(THREADS)
+#if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__) && defined(USE_THREADS)
 	{"process_create", 3, bif_process_create_3, "+atom,+list,+list", false, false, BLAH},
 	{"$process_wait", 3, bif_process_wait_3, "+integer,-term,+list", false, false, BLAH},
 	{"$process_wait", 2, bif_process_wait_2, "+integer,-term", false, false, BLAH},
