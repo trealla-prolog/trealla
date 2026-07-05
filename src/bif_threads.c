@@ -715,7 +715,7 @@ static void *start_routine_thread_create(thread *t)
 
 	if (t->q->did_unhandled_exception) {
 		cell *tmp = TPL_calloc(t->q->ball->num_cells+1, sizeof(cell));
-		dup_cells(tmp, t->q->ball, t->q->ball->num_cells);
+		dup_cells_by_ref(tmp, t->q->ball, t->q->ball_ctx, t->q->ball->num_cells);
 		t->ball = tmp;
 	}
 
