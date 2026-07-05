@@ -1122,7 +1122,7 @@ Prolog instances			##EXPERIMENTAL##
 Start independent (no shared state) Prolog instances as dedicated
 pre-emptive threads and communicate via message queues. Each thread
 has it's own message queue associated with it. Note: the database
-is *not* shared. For shared state consider using the blackboard.
+is *not* shared.
 
 	pl_thread/3				# pl_thread(-thread,+filename,+options)
 	pl_thread/2				# pl_thread(-thread,+filename)
