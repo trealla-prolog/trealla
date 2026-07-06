@@ -599,11 +599,11 @@ int tpl_close(stream *str)
 
 	int ok = 1;
 
-#ifdef pclose
+#if !defined(_WIN32) && !defined(__wasi__)
 	if (str->is_pipe) {
 		ok = pclose(str->fp);
 	} else
-#else
+#endif
 	{
 		if (!str->is_memory) {
 			if (str->is_socket) {
@@ -620,7 +620,6 @@ int tpl_close(stream *str)
 		if (str->is_memory)
 			SB_free(str->sb);
 	}
-#endif
 
 	return ok;
 }
