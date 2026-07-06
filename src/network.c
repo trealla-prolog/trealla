@@ -605,10 +605,12 @@ int tpl_close(stream *str)
 	} else
 #else
 	{
-		if (str->is_socket)
-			shutdown(fileno(str->fp_in), SHUT_RDWR);
-
 		if (!str->is_memory) {
+			if (str->is_socket) {
+				shutdown(fileno(str->fp_in), SHUT_RD);
+				shutdown(fileno(str->fp_out), SHUT_WR);
+			}
+
 			ok = fclose(str->fp_in);
 
 			if (str->fp_out != str->fp_in)
@@ -620,6 +622,5 @@ int tpl_close(stream *str)
 	}
 #endif
 
-	str->is_active = false;
 	return ok;
 }
