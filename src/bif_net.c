@@ -678,6 +678,8 @@ static bool bif_sys_client_5(query *q)
 	str->ssl = ssl;
 	str->level = level;
 	str->fp_in = fdopen(fd, "r");
+	str->port = port;
+	str->addr = strdup(hostname);
 
 	if (!str->filename || !str->mode) {
 		sl_destroy(str->alias);
