@@ -43,6 +43,7 @@ static SSL_CTX *g_ctx = NULL;
 #ifndef __wasi__
 #include <netdb.h>
 #endif
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sys/ioctl.h>
@@ -284,16 +285,26 @@ int tpl_server(const char *hostname, unsigned port, bool udp, const char *keyfil
 #endif
 }
 
-int tpl_accept(stream *str)
+int tpl_accept(stream *str, char **addr, int *port)
 {
 #if !defined(_WIN32) && !defined(__wasi__)
-	struct sockaddr_in addr = {0};
-	socklen_t len = 0;
-	int fd = accept(fileno(str->fp), (struct sockaddr*)&addr, &len);
+	struct sockaddr_in sa = {0};
+	socklen_t len = sizeof(sa);
+	int fd = accept(fileno(str->fp), (struct sockaddr*)&sa, &len);
 
 	if ((fd == -1) && ((errno == EWOULDBLOCK) || (errno == EAGAIN))) {
-		perror("accept");
 		return -1;
+	}
+
+	if (fd != -1) {
+		if (addr) {
+			char buf[INET_ADDRSTRLEN];
+			inet_ntop(AF_INET, &sa.sin_addr, buf, sizeof(buf));
+			*addr = strdup(buf);
+		}
+
+		if (port)
+			*port = ntohs(sa.sin_port);
 	}
 
 	struct linger l;
@@ -309,6 +320,7 @@ int tpl_accept(stream *str)
 	return -1;
 #endif
 }
+
 
 void tpl_set_nonblocking(stream *str)
 {

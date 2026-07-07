@@ -200,7 +200,9 @@ static bool bif_sys_accept_2(query *q)
 	GET_NEXT_ARG(p1,var);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
-	int fd = tpl_accept(str);
+	char *peer_addr = NULL;
+	int peer_port = 0;
+	int fd = tpl_accept(str, &peer_addr, &peer_port);
 
 	if (fd == -1) {
 		if (q->is_task)
@@ -213,6 +215,7 @@ static bool bif_sys_accept_2(query *q)
 
 	if (n < 0) {
 		close(fd);
+		free(peer_addr);
 		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_streams");
 	}
 
@@ -220,8 +223,8 @@ static bool bif_sys_accept_2(query *q)
 	sl_app(str2->alias, strdup(str->filename), NULL);
 	CHECKED(str2->filename = strdup(str->filename));
 	CHECKED(str2->mode = strdup("update"));
-	str2->addr = NULL;
-	str2->port = 0;
+	str2->addr = peer_addr;
+	str2->port = peer_port;
 	str2->is_socket = true;
 	str2->nodelay = str->nodelay;
 	str2->udp = str->udp;
@@ -775,6 +778,21 @@ static bool bif_sys_current_host_1(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 
+static bool bif_sys_peer_addr_3(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	GET_NEXT_ARG(p1,var);
+	GET_NEXT_ARG(p2,var);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+	cell tmp;
+	make_cstring(&tmp, str->addr);
+	unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
+	make_int(&tmp, str->port);
+	unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
+	return true;
+}
+
 builtins g_net_bifs[] =
 {
 	{"$http_location", 2, bif_sys_http_location_2, "?list,?atom", false, false, BLAH},
@@ -785,6 +803,7 @@ builtins g_net_bifs[] =
 	{"$server_tls", 2, bif_sys_server_tls_2, "+stream,-atom", false, false, BLAH},
 	{"$client_tls", 4, bif_sys_client_tls_4, "+stream,+atom,+integer,+source_sink", false, false, BLAH},
 	{"$current_host", 1, bif_sys_current_host_1, "-atom", false, false, BLAH},
+	{"$peer_addr", 3, bif_sys_peer_addr_3, "+stream,-atom,-integer", false, false, BLAH},
 
 	{0}
 };
