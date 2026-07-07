@@ -13,7 +13,7 @@ main1 :-
 
 main11 :-
 	socket_server_open(8080, S, []),
-	socket_server_accept(S, C, _, []),
+	socket_server_accept(S, _, C, []),
 	read_term(C, hello, []),
 	write_term(C, world, [fullstop(true), nl(true)]),
 	close(C),
@@ -29,7 +29,7 @@ main12 :-
 
 server3(S) :-
 	writeln([server_delay,S]),
-	socket_server_accept(S, C, _, []),
+	socket_server_accept(S, _, C, []),
 	writeln([server_accepted,S,C]),
 	writeln([server_write,C,xyz]),
 	write_term(C, xyz, [fullstop(true), nl(true)]),
@@ -56,7 +56,7 @@ main3 :-
 
 server4(S) :-
 	writeln(server_delay),
-	socket_server_accept(S, C, _, [type(binary)]),
+	socket_server_accept(S, _, C, [type(binary)]),
 	writeln(server_accepted),
 	Term = 0'x,
 	writeln([server_write,C,Term]),
@@ -83,7 +83,7 @@ main4 :-
 	thread_join(T2).
 
 server5(S) :-
-	socket_server_accept(S, C, _, [type(binary)]),
+	socket_server_accept(S, _, C, [type(binary)]),
 	get_byte(C, Term),
 	writeln([server_got,Term]),
 	put_byte(C, Term),
