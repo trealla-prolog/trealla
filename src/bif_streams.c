@@ -1230,6 +1230,8 @@ bool stream_close(query *q, int n)
 	str->mode = NULL;
 	TPL_free(str->filename);
 	str->filename = NULL;
+	TPL_free(str->addr);
+	str->addr = NULL;
 	TPL_free(str->data);
 	str->data = NULL;
 	str->at_end_of_file = true;
