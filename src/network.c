@@ -35,6 +35,8 @@ static SSL_CTX *g_ctx = NULL;
 //#define errno WSAGetLastError()
 #ifdef EWOULDBLOCK
 #undef EWOULDBLOCK
+#define SHUT_RD SD_RECEIVE
+#define SHUT_WR SD_SEND
 #endif
 //#define EWOULDBLOCK WSAEWOULDBLOCK
 #else
