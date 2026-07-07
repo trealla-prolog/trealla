@@ -609,8 +609,10 @@ int tpl_close(stream *str)
 	{
 		if (!str->is_memory) {
 			if (str->is_socket) {
+#if !defined(_WIN32) && !defined(__wasi__)
 				shutdown(fileno(str->fp_in), SHUT_RD);
 				shutdown(fileno(str->fp_out), SHUT_WR);
+#endif
 			}
 
 			ok = fclose(str->fp_in);
