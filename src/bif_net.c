@@ -220,6 +220,8 @@ static bool bif_sys_accept_2(query *q)
 	sl_app(str2->alias, strdup(str->filename), NULL);
 	CHECKED(str2->filename = strdup(str->filename));
 	CHECKED(str2->mode = strdup("update"));
+	str2->addr = NULL;
+	str2->port = 0;
 	str2->is_socket = true;
 	str2->nodelay = str->nodelay;
 	str2->udp = str->udp;
