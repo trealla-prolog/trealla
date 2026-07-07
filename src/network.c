@@ -132,7 +132,7 @@ int tpl_domain_server(const char *name, bool udp)
 	if (udp)
 		return fd;
 
-	if (listen(fd, -1)) {
+	if (listen(fd, SOMAXCONN)) {
 		perror("listen");
 	}
 
@@ -274,7 +274,7 @@ int tpl_server(const char *hostname, unsigned port, bool udp, const char *keyfil
 	(void) certfile;
 #endif
 
-	if (listen(fd, -1)) {
+	if (listen(fd, SOMAXCONN)) {
 		perror("listen");
 	}
 
