@@ -982,6 +982,7 @@ static bool bif_process_create_3(query *q)
 				if (pipe(fds)) return false;
 				posix_spawn_file_actions_adddup2(&file_actions, fds[0], 0);
 				q->pl->streams[n].fp = fdopen(fds[1], "w");
+				q->pl->streams[n].fp_out = q->pl->streams[n].fp;
 				q->pl->streams[n].is_pipe = true;
 				CHECKED(q->pl->streams[n].mode = strdup("write"));
 				cell tmp;
@@ -991,7 +992,7 @@ static bool bif_process_create_3(query *q)
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdin") && !CMP_STRING_TO_CSTR(q, name, "stream")) {
 				cell *ns = deref(q, name, name_ctx);
 				int n = get_stream(q, ns);
-				posix_spawn_file_actions_adddup2(&file_actions, fileno(q->pl->streams[n].fp), 0);
+				posix_spawn_file_actions_adddup2(&file_actions, fileno(q->pl->streams[n].fp_in), 0);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdout") && !CMP_STRING_TO_CSTR(q, name, "std")) {
 				posix_spawn_file_actions_adddup2(&file_actions, q->pl->current_output, 1);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdout") && !CMP_STRING_TO_CSTR(q, name, "null")) {
@@ -1005,6 +1006,7 @@ static bool bif_process_create_3(query *q)
 				if (pipe(fds)) return false;
 				posix_spawn_file_actions_adddup2(&file_actions, fds[1], 1);
 				q->pl->streams[n].fp = fdopen(fds[0], "r");
+				q->pl->streams[n].fp_out = q->pl->streams[n].fp;
 				q->pl->streams[n].is_pipe = true;
 				CHECKED(q->pl->streams[n].mode = strdup("read"));
 				cell tmp;
@@ -1014,7 +1016,7 @@ static bool bif_process_create_3(query *q)
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdout") && !CMP_STRING_TO_CSTR(q, name, "stream")) {
 				cell *ns = deref(q, name, name_ctx);
 				int n = get_stream(q, ns);
-				posix_spawn_file_actions_adddup2(&file_actions, fileno(q->pl->streams[n].fp), 1);
+				posix_spawn_file_actions_adddup2(&file_actions, fileno(q->pl->streams[n].fp_out), 1);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stderr") && !CMP_STRING_TO_CSTR(q, name, "std")) {
 				posix_spawn_file_actions_adddup2(&file_actions, q->pl->current_error, 2);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stderr") && !CMP_STRING_TO_CSTR(q, name, "null")) {
@@ -1028,6 +1030,7 @@ static bool bif_process_create_3(query *q)
 				if (pipe(fds)) return false;
 				posix_spawn_file_actions_adddup2(&file_actions, fds[1], 2);
 				q->pl->streams[n].fp = fdopen(fds[0], "r");
+				q->pl->streams[n].fp_out = q->pl->streams[n].fp;
 				q->pl->streams[n].is_pipe = true;
 				CHECKED(q->pl->streams[n].mode = strdup("read"));
 				cell tmp;
@@ -1037,8 +1040,9 @@ static bool bif_process_create_3(query *q)
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stderr") && !CMP_STRING_TO_CSTR(q, name, "stream")) {
 				cell *ns = deref(q, name, name_ctx);
 				int n = get_stream(q, ns);
-				posix_spawn_file_actions_adddup2(&file_actions, fileno(q->pl->streams[n].fp), 2);
-			}
+				posix_spawn_file_actions_adddup2(&file_actions, fileno(q->pl->streams[n].fp_out), 2);
+			} else
+				return throw_error(q, c, q->latest_ctx, "domain_error", "process_create_option");
 		} else
 			return throw_error(q, c, q->latest_ctx, "domain_error", "process_create_option");
 
