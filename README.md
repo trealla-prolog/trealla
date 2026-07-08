@@ -531,8 +531,8 @@ support loading into modules eg. *consult(MOD:FILE-SPEC)*.
 Use these *POSIX* system calls for interprocess creation and
 communication...
 
-	popen/3                     # popen(+cmd,+mode,-stream)
-	popen/4                     # popen(+cmd,+mode,-stream,+opts)
+	popen/3                     # popen(+cmd,+mode,--stream)
+	popen/4                     # popen(+cmd,+mode,--stream,+opts)
 
 For example...
 
@@ -776,7 +776,7 @@ HTTP 1.1
 A server *Goal* takes a single arg, the connection stream.
 
 
-Networking					##EXPERIMENTAL##
+Networking
 ==========
 
 Probably not for general use. Use *library/sockets.pl* instead:
@@ -793,12 +793,12 @@ Probably not for general use. Use *library/sockets.pl* instead:
 	?-
 ```
 
-	'$server'/2                # '$server'(+host,-stream)
-	'$server'/3                # '$server'(+host,-stream,+list)
-	'$accept'/2                # '$accept'(+stream,-stream)
-	'$client'/2                # '$client'(+url,-stream)
-	'$client'/4                # '$client'(+url,-host,-path,-stream)
-	'$client'/5                # '$client'(+url,-host,-path,-stream,+list)
+	'$server'/2                # '$server'(+host,--stream)
+	'$server'/3                # '$server'(+host,--stream,+list)
+	'$accept'/2                # '$accept'(+stream,--stream)
+	'$client'/2                # '$client'(+url,--stream)
+	'$client'/4                # '$client'(+url,-host,-path,--stream)
+	'$client'/5                # '$client'(+url,-host,-path,--stream,+list)
 
 	'$peer_addr'/3             # '$peer_addr(+stream,-atom,-port)
 
@@ -1046,8 +1046,8 @@ support* standards proposal (ISO/IEC DTR 13211–5:2007), now lapsed.
 Note: a thread is also a queue and a mutex. Note this is an expired
 ISO standards proposal but is commonly supported.
 
-	thread_create/3				# thread_create(:callable,-thread,+opts)
-	thread_create/2				# thread_create(:callable,-thread)
+	thread_create/3				# thread_create(:callable,--thread,+opts)
+	thread_create/2				# thread_create(:callable,--thread)
 	thread_signal/2				# thread_signal(+thread,:callable)
 	thread_join/2				# thread_join(+thread,-term)
 	thread_cancel/1				# thread_cancel(+thread)
@@ -1082,8 +1082,8 @@ Where 'opts' can be *timeout(+float)* to specify a timeout in seconds.
 Create a stand-alone message queue.
 Note: a queue is also a mutex.
 
-	message_queue_create/2		# message_queue_create(-queue,+opts)
-	message_queue_create/1		# message_queue_create(-queue)
+	message_queue_create/2		# message_queue_create(--queue,+opts)
+	message_queue_create/1		# message_queue_create(--queue)
 	message_queue_destroy/1		# message_queue_destroy(+queue)
 	message_queue_property/2	# message_queue_property(+queue,+term)
 
@@ -1091,8 +1091,8 @@ Where 'opts' can be *alias(+atom)*.
 
 Create a stand-alone mutex...
 
-	mutex_create/2				# mutex_create(-mutex,+opts)
-	mutex_create/1				# mutex_create(-mutex)
+	mutex_create/2				# mutex_create(--mutex,+opts)
+	mutex_create/1				# mutex_create(--mutex)
 	mutex_destroy/1				# mutex_destroy(+mutex)
 	mutex_property/2			# mutex_property(+mutex,+term)
 	with_mutex/2				# with_mutex(+mutex,:callable)
@@ -1117,7 +1117,7 @@ For example...
 	?-
 	```
 
-Prolog instances			##EXPERIMENTAL##
+Prolog instances
 ================
 
 Start independent (no shared state) Prolog instances as dedicated
@@ -1278,7 +1278,7 @@ For example:
 	?- ^D%
 ```
 
-Compile to standalone		##EXPERIMENTAL##
+Compile to standalone
 =====================
 
 ```

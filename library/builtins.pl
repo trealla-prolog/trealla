@@ -773,7 +773,7 @@ process_wait(Pid, Status, Opts) :-
 :- help(process_wait(+integer,-term,?list), [iso(false)]).
 
 process_wait(Pid, Status) :-
-	'$process_wait'(Pid, Status).
+	'$process_wait'(Pid, Status, []).
 
 :- help(process_wait(+integer,-term), [iso(false)]).
 

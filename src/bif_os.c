@@ -1123,32 +1123,6 @@ static bool bif_process_wait_3(query *q)
 	return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
 }
 
-static bool bif_process_wait_2(query *q)
-{
-	GET_FIRST_ARG(p1,integer);
-	GET_NEXT_ARG(p2,any);
-	int secs = -1;
-	int status = 0, pid = get_smalluint(p1);
-	pid_t ok = waitpid(pid, &status, secs != -1 ? WNOHANG : 0);
-
-	if (ok != pid)
-		return false;
-
-	cell *tmp = alloc_heap(q, 2);
-
-	if ( WIFSIGNALED(status)) {
-		int sig = WTERMSIG(status);
-		make_struct(tmp+0, g_killed_s, 1, 1);
-		make_uint(tmp+1, sig);
-	} else {
-		int code = WEXITSTATUS(status);
-		make_struct(tmp+0, g_exit_s, 1, 1);
-		make_uint(tmp+1, code);
-	}
-
-	return unify(q, p2, p2_ctx, tmp, q->st.cur_ctx);
-}
-
 static bool bif_process_kill_2(query *q)
 {
 	GET_FIRST_ARG(p1,integer);
@@ -1190,7 +1164,6 @@ builtins g_os_bifs[] =
 #if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 	{"process_create", 3, bif_process_create_3, "+atom,+list,+list", false, false, BLAH},
 	{"$process_wait", 3, bif_process_wait_3, "+integer,-term,+list", false, false, BLAH},
-	{"$process_wait", 2, bif_process_wait_2, "+integer,-term", false, false, BLAH},
 	{"process_kill", 2, bif_process_kill_2, "+integer,+integer", false, false, BLAH},
 	{"process_kill", 1, bif_process_kill_1, "+integer", false, false, BLAH},
 #endif

@@ -801,7 +801,7 @@ builtins g_net_bifs[] =
 	{"$parse_url", 2, bif_sys_parse_url_2, "?atom,?list", false, false, BLAH},
 	{"$server", 3, bif_sys_server_3, "+source_sink,--stream,+list", false, false, BLAH},
 	{"$accept", 2, bif_sys_accept_2, "+stream,--stream", false, false, BLAH},
-	{"$client", 5, bif_sys_client_5, "+source_sink,-atom,-atom,-stream,+list", false, false, BLAH},
+	{"$client", 5, bif_sys_client_5, "+source_sink,-atom,-atom,--stream,+list", false, false, BLAH},
 	{"$server_tls", 2, bif_sys_server_tls_2, "+stream,-atom", false, false, BLAH},
 	{"$client_tls", 4, bif_sys_client_tls_4, "+stream,+atom,+integer,+source_sink", false, false, BLAH},
 	{"$current_host", 1, bif_sys_current_host_1, "-atom", false, false, BLAH},
