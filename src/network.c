@@ -614,7 +614,7 @@ int tpl_close(stream *str)
 	int ok = 1;
 
 #if !defined(_WIN32) && !defined(__wasi__)
-	if (str->is_pipe) {
+	if (0 && str->is_pipe) {
 		ok = pclose(str->fp);
 	} else
 #endif

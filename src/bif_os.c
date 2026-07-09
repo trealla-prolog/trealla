@@ -890,6 +890,7 @@ static bool bif_process_create_3(query *q)
 	posix_spawnattr_init(&attrp);
 	cell *ppid = NULL;
 	pl_ctx ppid_ctx = 0;
+	int child_stdin_fd = -1, child_stdout_fd = -1, child_stderr_fd = -1;
 	LIST_HANDLER(p3);
 
 	while (is_iso_list(p3)) {
@@ -981,6 +982,7 @@ static bool bif_process_create_3(query *q)
 				int fds[2];
 				if (pipe(fds)) return false;
 				posix_spawn_file_actions_adddup2(&file_actions, fds[0], 0);
+				child_stdin_fd = fds[0];
 				q->pl->streams[n].fp = fdopen(fds[1], "w");
 				q->pl->streams[n].fp_out = q->pl->streams[n].fp;
 				q->pl->streams[n].is_pipe = true;
@@ -1005,6 +1007,7 @@ static bool bif_process_create_3(query *q)
 				int fds[2];
 				if (pipe(fds)) return false;
 				posix_spawn_file_actions_adddup2(&file_actions, fds[1], 1);
+				child_stdin_fd = fds[1];
 				q->pl->streams[n].fp = fdopen(fds[0], "r");
 				q->pl->streams[n].fp_out = q->pl->streams[n].fp;
 				q->pl->streams[n].is_pipe = true;
@@ -1029,6 +1032,7 @@ static bool bif_process_create_3(query *q)
 				int fds[2];
 				if (pipe(fds)) return false;
 				posix_spawn_file_actions_adddup2(&file_actions, fds[1], 2);
+				child_stdin_fd = fds[1];
 				q->pl->streams[n].fp = fdopen(fds[0], "r");
 				q->pl->streams[n].fp_out = q->pl->streams[n].fp;
 				q->pl->streams[n].is_pipe = true;
@@ -1056,6 +1060,10 @@ static bool bif_process_create_3(query *q)
 	posix_spawn_file_actions_destroy(&file_actions);
 	posix_spawnattr_destroy(&attrp);
 	TPL_free(src);
+
+	if (child_stdin_fd  != -1) close(child_stdin_fd);
+	if (child_stdout_fd != -1) close(child_stdout_fd);
+	if (child_stderr_fd != -1) close(child_stderr_fd);
 
 	for (int i = 0; i < args; i++)
 		TPL_free(arguments[i]);
