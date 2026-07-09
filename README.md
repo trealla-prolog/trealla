@@ -533,11 +533,12 @@ communication...
 
 	popen/3                     # popen(+cmd,+mode,--stream)
 	popen/4                     # popen(+cmd,+mode,--stream,+opts)
+	pclose/1                    # pclose(+stream)
 
 For example...
 
 ```console
-tpl -g "popen('ps -a',read,S,[]),getlines(S,Ls),close(S),maplist(println,Ls),halt"
+tpl -g "popen('ps -a',read,S,[]),getlines(S,Ls),pclose(S),maplist(println,Ls),halt"
 	PID   TTY      TIME     CMD
 	2806  tty2     00:00:00 gnome-session-b
 	31645 pts/0    00:00:00 tpl

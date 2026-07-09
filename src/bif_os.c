@@ -830,6 +830,15 @@ static bool bif_popen_4(query *q)
 
 	return true;
 }
+static bool bif_pclose_1(query *q)
+{
+	GET_FIRST_ARG(pstr,stream);
+	int n = get_stream(q, pstr);
+	stream *str = &q->pl->streams[n];
+	stream_close(q, n);
+	pclose(str->fp);
+	return true;
+}
 #endif
 
 extern char **g_envp;
@@ -1178,6 +1187,7 @@ builtins g_os_bifs[] =
 
 #if !defined(_WIN32) && !defined(__wasi__)
 	{"popen", 4, bif_popen_4, "+source_sink,+atom,--stream,+list", false, false, BLAH},
+	{"pclose", 1, bif_pclose_1, "+stream", false, false, BLAH},
 #endif
 
 #if !defined(_WIN32) && !defined(__wasi__)
