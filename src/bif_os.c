@@ -990,7 +990,7 @@ static bool bif_process_create_3(query *q)
 				tmp.flags |= FLAG_INT_STREAM;
 				unify(q, ns, ns_ctx, &tmp, q->st.cur_ctx);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdin") && !CMP_STRING_TO_CSTR(q, name, "stream")) {
-				cell *ns = deref(q, name, name_ctx);
+				cell *ns = deref(q, name+1, name_ctx);
 				int n = get_stream(q, ns);
 				posix_spawn_file_actions_adddup2(&file_actions, fileno(q->pl->streams[n].fp_in), 0);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdout") && !CMP_STRING_TO_CSTR(q, name, "std")) {
@@ -1014,7 +1014,7 @@ static bool bif_process_create_3(query *q)
 				tmp.flags |= FLAG_INT_STREAM;
 				unify(q, ns, ns_ctx, &tmp, q->st.cur_ctx);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stdout") && !CMP_STRING_TO_CSTR(q, name, "stream")) {
-				cell *ns = deref(q, name, name_ctx);
+				cell *ns = deref(q, name+1, name_ctx);
 				int n = get_stream(q, ns);
 				posix_spawn_file_actions_adddup2(&file_actions, fileno(q->pl->streams[n].fp_out), 1);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stderr") && !CMP_STRING_TO_CSTR(q, name, "std")) {
@@ -1038,7 +1038,7 @@ static bool bif_process_create_3(query *q)
 				tmp.flags |= FLAG_INT_STREAM;
 				unify(q, ns, ns_ctx, &tmp, q->st.cur_ctx);
 			} else if (!CMP_STRING_TO_CSTR(q, c, "stderr") && !CMP_STRING_TO_CSTR(q, name, "stream")) {
-				cell *ns = deref(q, name, name_ctx);
+				cell *ns = deref(q, name+1, name_ctx);
 				int n = get_stream(q, ns);
 				posix_spawn_file_actions_adddup2(&file_actions, fileno(q->pl->streams[n].fp_out), 2);
 			} else
