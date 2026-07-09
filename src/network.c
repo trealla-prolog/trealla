@@ -613,29 +613,22 @@ int tpl_close(stream *str)
 
 	int ok = 1;
 
+	if (!str->is_memory) {
+		if (str->is_socket) {
 #if !defined(_WIN32) && !defined(__wasi__)
-	if (0 && str->is_pipe) {
-		ok = pclose(str->fp);
-	} else
+			shutdown(fileno(str->fp_in), SHUT_RD);
+			shutdown(fileno(str->fp_out), SHUT_WR);
 #endif
-	{
-		if (!str->is_memory) {
-			if (str->is_socket) {
-#if !defined(_WIN32) && !defined(__wasi__)
-				shutdown(fileno(str->fp_in), SHUT_RD);
-				shutdown(fileno(str->fp_out), SHUT_WR);
-#endif
-			}
-
-			ok = fclose(str->fp_in);
-
-			if (str->fp_out != str->fp_in)
-				fclose(str->fp_out);
 		}
 
-		if (str->is_memory)
-			SB_free(str->sb);
+		ok = fclose(str->fp_in);
+
+		if (str->fp_out != str->fp_in)
+			fclose(str->fp_out);
 	}
+
+	if (str->is_memory)
+		SB_free(str->sb);
 
 	return ok;
 }
