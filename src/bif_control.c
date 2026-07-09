@@ -813,8 +813,9 @@ static cell *parse_to_heap(query *q, const char *src)
 	}
 
 
-	cell *tmp = clone_term_to_heap(q, p2->cl->cells, q->st.cur_ctx);
+	cell *tmp = alloc_heap(q, p2->cl->cells->num_cells);
 	if (!tmp) return NULL;
+	dup_cells(tmp, p2->cl->cells, p2->cl->cells->num_cells);
 	check_error(tmp, parser_destroy(p2));
 	parser_destroy(p2);
 	return tmp;
