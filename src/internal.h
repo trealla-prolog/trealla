@@ -616,6 +616,7 @@ struct stream_ {
 	bool ssl:1;
 	bool first_time:1;
 	bool is_pipe:1;
+	bool is_popen:1;
 	bool is_socket:1;
 	bool is_map:1;
 	bool is_memory:1;

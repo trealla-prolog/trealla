@@ -613,7 +613,7 @@ int tpl_close(stream *str)
 
 	int ok = 1;
 
-	if (!str->is_memory) {
+	if (!str->is_memory && !str->is_popen) {
 		if (str->is_socket) {
 #if !defined(_WIN32) && !defined(__wasi__)
 			shutdown(fileno(str->fp_in), SHUT_RD);

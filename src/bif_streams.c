@@ -417,6 +417,7 @@ int new_stream(prolog *pl)
 
 		str->timeout_ms = 0;
 		str->is_pipe = false;
+		str->is_popen = false;
 		str->is_socket = false;
 		str->is_alias = false;
 		str->is_engine = false;

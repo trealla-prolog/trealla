@@ -727,6 +727,7 @@ static bool bif_popen_4(query *q)
 
 	stream *str = &q->pl->streams[n];
 	str->is_pipe = true;
+	str->is_popen = true;
 	CHECKED(str->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL));
 	CHECKED(str->filename = strdup(filename));
 	CHECKED(str->mode = DUP_STRING(q, p2));
@@ -835,8 +836,12 @@ static bool bif_pclose_1(query *q)
 	GET_FIRST_ARG(pstr,stream);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
-	stream_close(q, n);
+
+	if (!str->is_pipe || !str->is_popen)
+		return throw_error(q, pstr, pstr_ctx, "domain_error", "popen");
+
 	pclose(str->fp);
+	stream_close(q, n);
 	return true;
 }
 #endif
