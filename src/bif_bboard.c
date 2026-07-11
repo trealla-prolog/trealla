@@ -239,16 +239,18 @@ static bool bif_bb_delete_2(query *q)
 		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d", m->name, (int)get_smallint(p1));
 
 	const char *key = tmpbuf;
-	const void *val;
+	cell *val;
 
 	prolog_lock(q->pl);
 
-	if (!sl_get(q->st.m->keyval, key, &val)) {
+	if (!sl_get(q->st.m->keyval, key, (void*)&val)) {
 		prolog_unlock(q->pl);
 		return false;
 	}
 
-	cell *tmp = import_term(q, (cell*)val, q->st.cur_ctx);
+	cell *tmp = val->flags & FLAG_LIVE ?
+		bb_import_term_to_heap(q, val, q->st.cur_ctx) :
+		import_term(q, val, q->st.cur_ctx);
 	CHECKED(tmp, prolog_unlock(q->pl));
 	GET_FIRST_ARG(p1x,nonvar);
 	GET_NEXT_ARG(p2,any);
@@ -313,17 +315,19 @@ static bool bif_bb_update_3(query *q)
 		snprintf(tmpbuf, sizeof(tmpbuf), "%s:%d", m->name, (int)get_smallint(p1));
 
 	char *key = tmpbuf;
-	const void *val;
+	cell *val;
 
 	prolog_lock(q->pl);
 
-	if (!sl_get(q->st.m->keyval, key, &val)) {
+	if (!sl_get(q->st.m->keyval, key, (void*)&val)) {
 		prolog_unlock(q->pl);
 		return false;
 	}
 
 	q->noderef = true;
-	cell *tmp = import_term(q, (cell*)val, q->st.cur_ctx);
+	cell *tmp = val->flags & FLAG_LIVE ?
+		bb_import_term_to_heap(q, val, q->st.cur_ctx) :
+		import_term(q, val, q->st.cur_ctx);
 	q->noderef = false;
 	CHECKED(tmp, prolog_unlock(q->pl));
 	GET_FIRST_ARG(p1x,nonvar);
