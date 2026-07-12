@@ -2064,6 +2064,55 @@ static bool term_expansion(parser *p)
 	return term_expansion(p);
 }
 
+static void fixup_expansion_var_collisions(cell *goal, unsigned num_vars_before, parser *p2)
+{
+	bool in_goal[MAX_VARS] = {0};
+
+	for (cell *c = goal, *end = goal + goal->num_cells; c < end; c++) {
+		if (is_var(c) && (c->var_num < MAX_VARS))
+			in_goal[c->var_num] = true;
+	}
+
+	pl_idx remap_from[MAX_VARS], remap_to[MAX_VARS];
+	unsigned nremaps = 0;
+
+	for (pl_idx i = 0; i < p2->cl->cidx; i++) {
+		cell *c = p2->cl->cells + i;
+
+		if (!is_var(c))
+			continue;
+
+		if (c->var_num >= num_vars_before)
+			continue;
+
+		if ((c->var_num < MAX_VARS) && in_goal[c->var_num])
+			continue;
+
+		unsigned found = nremaps;
+
+		for (unsigned j = 0; j < nremaps; j++) {
+			if (remap_from[j] == c->var_num) {
+				found = j;
+				break;
+			}
+		}
+
+		if (found == nremaps) {
+			if (nremaps >= MAX_VARS)
+				continue;
+
+			remap_from[nremaps] = c->var_num;
+			remap_to[nremaps] = (pl_idx)p2->cl->num_vars++;
+			nremaps++;
+		}
+
+		c->var_num = remap_to[found];
+
+		if (c->var_num < MAX_VARS)
+			p2->vartab.off[c->var_num] = 0;
+	}
+}
+
 static cell *goal_expansion(parser *p, cell *goal)
 {
 	if (p->error || p->internal || !is_interned(goal) || !is_callable(goal))
@@ -2114,6 +2163,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 	//printf("+++ goal_expansion %s/%u\n", C_STR(p, goal), goal->arity);
 	p->pl->in_goal_expansion = true;
+	const unsigned num_vars_before = p->cl->num_vars;
 	parser *p2 = parser_create(p->m);
 	check_error(p2, query_destroy(q));
 	q->top = p2;
@@ -2212,6 +2262,7 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 	process_clause(p2->m, p2->cl, NULL);
 	TPL_free(src);
+	fixup_expansion_var_collisions(goal, num_vars_before, p2);
 
 	// Push the updated vartab back...
 
