@@ -437,6 +437,7 @@ static void s_sigfn(int s)
 	}
 }
 
+#if USE_THREADS
 static bool bif_sys_alarm_2(query *q)
 {
 	GET_FIRST_ARG(p1,number);
@@ -498,6 +499,7 @@ static bool bif_sys_alarm_2(query *q)
 	make_ptr(&tmp, e);
 	return unify(q, p2, p2_ctx, &tmp, q->st.cur_ctx);
 }
+#endif
 #endif
 
 static bool bif_busy_1(query *q)
@@ -1196,7 +1198,9 @@ builtins g_os_bifs[] =
 #endif
 
 #if !defined(_WIN32) && !defined(__wasi__)
+#if USE_THREADS
 	{"$alarm", 2, bif_sys_alarm_2, "+integer,-integer", false, false, BLAH},
+#endif
 #endif
 	{"$timer", 0, bif_sys_timer_0, NULL, false, false, BLAH},
 	{"$elapsed", 0, bif_sys_elapsed_0, NULL, false, false, BLAH},
