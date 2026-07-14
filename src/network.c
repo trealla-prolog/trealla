@@ -447,8 +447,10 @@ int tpl_getc(stream *str)
 
 	int ok = fgetc(str->fp_in);
 
-	if (errno == EINTR)
+	if (errno == EINTR) {
+		clearerr(str->fp_in);
 		ok = EOF;
+	}
 
 	return ok;
 }
@@ -470,8 +472,10 @@ size_t tpl_read(void *ptr, size_t len, stream *str)
 
 		int ok = SSL_read((SSL*)str->sslptr, ptr, len);
 
-		if (errno == EINTR)
+		if (errno == EINTR) {
+			clearerr(str->fp_in);
 			return EOF;
+		}
 
 		return ok;
 	}
@@ -479,8 +483,10 @@ size_t tpl_read(void *ptr, size_t len, stream *str)
 
 	int ok = fread(ptr, 1, len, str->fp_in);
 
-	if (errno == EINTR)
+	if (errno == EINTR) {
+		clearerr(str->fp_in);
 		ok = EOF;
+	}
 
 	return ok;
 }
@@ -591,8 +597,10 @@ int tpl_getline(char **lineptr, size_t *n, stream *str)
 
 	int ok = getline(lineptr, n, str->fp_in);
 
-	if (errno == EINTR)
+	if (errno == EINTR) {
+		clearerr(str->fp_in);
 		ok = EOF;
+	}
 
 	return ok;
 }

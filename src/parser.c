@@ -3135,8 +3135,10 @@ char *eat_space(parser *p)
 			}
 
 			if (p->no_fp || getline(&p->save_line, &p->n_line, p->fp) == -1) {
-				if (errno == EINTR)
+				if (errno == EINTR) {
+					clearerr(p->fp);
 					p->error = true;
+				}
 
 				return p->srcptr = "";
 			}
