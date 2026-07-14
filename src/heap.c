@@ -165,6 +165,8 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 		return tmp;
 	}
 
+	// TODO: Transform recursion into stack iteration (as in terms.c)...
+
 	int arity = p1->arity;
 	p1++;
 
