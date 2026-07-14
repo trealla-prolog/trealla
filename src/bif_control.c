@@ -791,12 +791,6 @@ bool bif_sys_succeed_on_retry_2(query *q)
 }
 
 
-// Streams (and other objects with an internal-only representation) are
-// serialized by throw/1 as e.g. '$stream'(3). When the ball is re-parsed
-// here that becomes an ordinary '$stream'/1 compound, which no longer
-// unifies with a real stream cell in a catch/3 catcher. Collapse any such
-// compound back into a genuine stream cell so catch/3 works as in SWI.
-
 static pl_idx restore_streams_walk(query *q, const cell *src, cell *dst)
 {
 	if (is_compound(src) && (src->arity == 1) && !strcmp(C_STR(q, src), "$stream")) {

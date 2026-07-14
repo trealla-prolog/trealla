@@ -1346,12 +1346,12 @@ static bool bif_iso_flush_output_0(query *q)
 {
 	int n = q->pl->current_output;
 	stream *str = &q->pl->streams[n];
-	int err = fflush(str->fp);
+	int err = fflush(str->fp_out);
 
 	if ((err == EOF) && !str->is_socket)
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
 
-	return !ferror(str->fp);
+	return !ferror(str->fp_out);
 }
 
 static bool bif_iso_flush_output_1(query *q)
@@ -1363,12 +1363,12 @@ static bool bif_iso_flush_output_1(query *q)
 	if (!strcmp(str->mode, "read"))
 		return throw_error(q, pstr, q->st.cur_ctx, "permission_error", "output,stream");
 
-	int err = fflush(str->fp);
+	int err = fflush(str->fp_out);
 
 	if ((err == EOF) && !str->is_socket)
 		return throw_error(q, pstr, pstr_ctx, "io_error", strerror(errno));
 
-	return !ferror(str->fp);
+	return !ferror(str->fp_out);
 }
 
 static bool bif_iso_nl_0(query *q)
@@ -1380,12 +1380,12 @@ static bool bif_iso_nl_0(query *q)
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "permission_error", "output,binary_stream");
 
 	tpl_write("\n", 1, str);
-	int err = fflush(str->fp);
+	int err = fflush(str->fp_out);
 
 	if ((err == EOF) && !str->is_socket)
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
 
-	return !ferror(str->fp);
+	return !ferror(str->fp_out);
 }
 
 static bool bif_iso_nl_1(query *q)
@@ -1401,12 +1401,12 @@ static bool bif_iso_nl_1(query *q)
 		return throw_error(q, pstr, q->st.cur_ctx, "permission_error", "output,binary_stream");
 
 	tpl_write("\n", 1, str);
-	int err = fflush(str->fp);
+	int err = fflush(str->fp_out);
 
 	if ((err == EOF) && !str->is_socket)
 		return throw_error(q, pstr, pstr_ctx, "io_error", strerror(errno));
 
-	return !ferror(str->fp);
+	return !ferror(str->fp_out);
 }
 
 static bool bif_iso_read_1(query *q)
