@@ -1,0 +1,4 @@
+?- true.
+   true.
+?- fail.
+   false.
