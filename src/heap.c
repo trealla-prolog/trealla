@@ -75,11 +75,13 @@ cell *alloc_tmp(query *q, unsigned num_cells)
 
 static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 {
+#if 0
 	if (depth >= g_max_depth) {
 		printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		q->cycle_error = true;
 		return NULL;
 	}
+#endif
 
 	pl_idx save_idx = tmp_heap_used(q);
 	cell *tmp = alloc_tmp(q, 1);
