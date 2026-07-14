@@ -88,6 +88,8 @@ variant(X,Y) :-
 
 :-op(700,xfx,=@=).
 
+:- help('=@='(+term,+term), [iso(false)]).
+
 :- meta_predicate(call_det(0,?)).
 :- help(call_det(:callable,?boolean), [iso(false)]).
 
