@@ -455,7 +455,7 @@ static void add_stream_properties(query *q, int n)
 	char tmpbuf[1024*8];
 	char *dst = tmpbuf;
 	*dst = '\0';
-	off_t pos = !str->is_socket && !str->is_map && !str->is_engine ? ftello(str->fp) : 0;
+	off_t pos = !str->is_socket && !str->is_map && !str->is_engine ? ftello(str->fp_out) : 0;
 	bool at_end_of_file = false;
 
 	if (!str->at_end_of_file && (n > 2) && !str->is_socket && !str->is_engine && !str->is_map && !str->is_pipe && !str->p && str->filename) {
@@ -1503,8 +1503,8 @@ static bool parse_read_params(query *q, stream *str, cell *c, pl_ctx c_ctx, cell
 			throw_error(q, c, c_ctx, "domain_error", "read_option");
 			return false;
 		}
-	} else if (!CMP_STRING_TO_CSTR(q, c, "positions") && (c->arity == 2) && str->fp) {
-		p->pos_start = ftello(str->fp);
+	} else if (!CMP_STRING_TO_CSTR(q, c, "positions") && (c->arity == 2) && str->fp_out) {
+		p->pos_start = ftello(str->fp_out);
 	} else if (!CMP_STRING_TO_CSTR(q, c, "line_counts") && (c->arity == 2)) {
 	} else {
 		throw_error(q, c, c_ctx, "domain_error", "read_option");
@@ -2377,7 +2377,7 @@ static bool bif_iso_write_term_2(query *q)
 		start(q2);
 		query_destroy(q2);
 		clear_write_options(q);
-		return !ferror(str->fp);
+		return !ferror(str->fp_out);
 	}
 
 	q->variable_names = vnames;
@@ -2454,7 +2454,7 @@ static bool bif_iso_write_term_3(query *q)
 		start(q2);
 		query_destroy(q2);
 		clear_write_options(q);
-		return !ferror(str->fp);
+		return !ferror(str->fp_out);
 	}
 
 	q->latest_ctx = p1_ctx;
@@ -2667,7 +2667,7 @@ static bool bif_iso_get_char_1(query *q)
 	if (isatty(fileno(str->fp)) && !str->did_getc && !str->ungetch) {
 		fprintf(str->fp, "%s", PROMPT);
 
-		if (fflush(str->fp))
+		if (fflush(str->fp_out))
 			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
 	}
 
@@ -4056,7 +4056,7 @@ static bool bif_edin_tab_1(query *q)
 	for (int i = 0; i < get_smallint(&p1); i++)
 		tpl_write(" ", 1, str);
 
-	fflush(str->fp);
+	fflush(str->fp_out);
 	return true;
 }
 
@@ -4075,7 +4075,7 @@ static bool bif_edin_tab_2(query *q)
 	for (int i = 0; i < get_smallint(&p1); i++)
 		tpl_write(" ", 1, str);
 
-	fflush(str->fp);
+	fflush(str->fp_out);
 	return true;
 }
 
@@ -5932,7 +5932,7 @@ static bool bif_sys_bflush_1(query *q)
 	GET_FIRST_ARG(pstr,stream_or_alias);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
-	fflush(str->fp);
+	fflush(str->fp_out);
 	TPL_free(str->data);
 	str->data = NULL;
 	str->data_len = 0;
