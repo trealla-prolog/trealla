@@ -597,7 +597,7 @@ static bool unify_internal(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 			q->cycle_error++;
 			return true;
 		}
-	} else if (depth > 100) {
+	} else if (depth > MAX_VARS) {
 		//printf("*** OOPS %s %d\n", __FILE__, __LINE__);
 		q->cycle_error++;
 		return true;
