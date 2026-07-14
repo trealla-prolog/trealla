@@ -73,6 +73,15 @@ cell *alloc_tmp(query *q, unsigned num_cells)
 // Note: convert vars to refs
 // Note: doesn't increment ref counts
 
+// Used by clone_term_to_tmp_internal() to walk plain (non-list) compound
+// terms iteratively instead of recursing, one frame per unfinished compound.
+// 'e'/'save_vgen' belong to the *parent* argument slot that caused us to
+// descend into this node, and are restored once this node (and everything
+// beneath it) has been fully cloned - i.e. at the point the recursive call
+// would otherwise have returned.
+
+typedef struct { lnode hdr; cell *p1; pl_ctx p1_ctx; int arity; pl_idx save_idx; unsigned depth; slot *e; uint32_t save_vgen; } snode;
+
 static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth)
 {
 #if 0
@@ -165,33 +174,107 @@ static cell *clone_term_to_tmp_internal(query *q, cell *p1, pl_ctx p1_ctx, unsig
 		return tmp;
 	}
 
-	// TODO: Transform recursion into stack iteration (as in terms.c)...
+	// Transform recursion into stack iteration (as in terms.c)...
 
-	int arity = p1->arity;
-	p1++;
+	list stack = {0};
+	snode *n = TPL_malloc(sizeof(snode));
+	if (!n) return NULL;
+	n->arity = p1->arity;
+	n->p1 = p1 + 1;
+	n->p1_ctx = p1_ctx;
+	n->save_idx = save_idx;
+	n->depth = depth;
+	n->e = NULL;
+	n->save_vgen = 0;
+	list_push_back(&stack, n);
 
-	while (arity--) {
+	cell *result = NULL;
+
+	while ((n = (snode*)list_back(&stack)) != NULL) {
+		if (n->arity <= 0) {
+			// This node's arguments are all done, so finalize it. This is
+			// the point at which a recursive call would have returned.
+			tmp = get_tmp_heap(q, n->save_idx);
+			tmp->num_cells = tmp_heap_used(q) - n->save_idx;
+
+			if (!q->has_vars)
+				tmp->flags |= FLAG_INTERNED_GROUND;
+
+			result = tmp;
+			slot *pending_e = n->e;
+			uint32_t pending_vgen = n->save_vgen;
+
+			list_pop_back(&stack);
+			TPL_free(n);
+
+			if (pending_e)
+				pending_e->vgen = pending_vgen;
+
+			continue;
+		}
+
+		n->arity--;
 		slot *e = NULL;
-		cell *c = p1;
-		pl_ctx c_ctx = p1_ctx;
+		cell *c = n->p1;
+		pl_ctx c_ctx = n->p1_ctx;
 		uint32_t save_vgen = 0;
 		bool any = false;
 		int both = 0;
 		if (deep_copy(c)) DEREF_CHECKED(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
 		if (both) q->cycle_error = true;
-		cell *rec = clone_term_to_tmp_internal(q, c, c_ctx, depth+1);
-		if (!rec) return NULL;
-		if (e) e->vgen = save_vgen;
-		p1 += p1->num_cells;
+		n->p1 += n->p1->num_cells;
+
+		if (is_compound(c) && !is_iso_list(c)) {
+			// Instead of recursing, push a new frame and keep iterating.
+			// The (e, save_vgen) pair travels with the child frame and is
+			// restored once the child (its whole subtree) is finished.
+			pl_idx child_idx = tmp_heap_used(q);
+			cell *child = alloc_tmp(q, 1);
+
+			if (!child) {
+				while ((n = (snode*)list_pop_back(&stack)) != NULL)
+					TPL_free(n);
+
+				return NULL;
+			}
+
+			copy_cells(child, c, 1);
+
+			snode *cn = TPL_malloc(sizeof(snode));
+
+			if (!cn) {
+				while ((n = (snode*)list_pop_back(&stack)) != NULL)
+					TPL_free(n);
+
+				return NULL;
+			}
+
+			cn->arity = c->arity;
+			cn->p1 = c + 1;
+			cn->p1_ctx = c_ctx;
+			cn->save_idx = child_idx;
+			cn->depth = n->depth + 1;
+			cn->e = e;
+			cn->save_vgen = save_vgen;
+			list_push_back(&stack, cn);
+		} else {
+			// Atoms, variables and lists still recurse (lists have their
+			// own cycle-aware traversal above, and atoms/variables only
+			// ever recurse one level deep).
+			cell *rec = clone_term_to_tmp_internal(q, c, c_ctx, n->depth+1);
+
+			if (!rec) {
+				while ((n = (snode*)list_pop_back(&stack)) != NULL)
+					TPL_free(n);
+
+				return NULL;
+			}
+
+			if (e) e->vgen = save_vgen;
+		}
 	}
 
-	tmp = get_tmp_heap(q, save_idx);
-	tmp->num_cells = tmp_heap_used(q) - save_idx;
-
-	if (!q->has_vars)
-		tmp->flags |= FLAG_INTERNED_GROUND;
-
-	return tmp;
+	return result;
 }
 
 cell *clone_term_to_tmp(query *q, cell *p1, pl_ctx p1_ctx)
