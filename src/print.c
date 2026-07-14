@@ -1421,13 +1421,15 @@ static bool print_interned(query *q, cell *c, pl_ctx c_ctx, bool running, unsign
 
 static bool print_term_to_buf_(query *q, cell *c, pl_ctx c_ctx, int running, int cons, unsigned print_depth, unsigned depth, visit *visited)
 {
+#if 1
 	if (depth > g_max_depth) {
-		//printf("*** OOPS %u, %s %d\n", depth, __FILE__, __LINE__);
+		printf("*** OOPS %u, %s %d\n", depth, __FILE__, __LINE__);
 		SB_sprintf(q->sb, "%s", "...");
 		q->cycle_error = true;
 		q->last_thing = WAS_OTHER;
 		return false;
 	}
+#endif
 
 	// THREAD OBJECTS
 

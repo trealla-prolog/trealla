@@ -21,7 +21,7 @@ static int compare_lists(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_
 		DEREF_VAR(any1, both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
 
 		if (both != 2) {
-			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth);
+			int val = compare_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1);
 			if (val) return val;
 		}
 
@@ -417,7 +417,7 @@ static bool unify_lists(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_c
 		DEREF_VAR(any1, both, save_vgen2, e2, e2->vgen2, c2, c2_ctx, q->vgen);
 
 		if (both != 2) {
-			if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth))
+			if (!unify_internal(q, c1, c1_ctx, c2, c2_ctx, depth+1))
 				return false;
 		}
 
