@@ -664,6 +664,10 @@ static bool directives(parser *p, cell *d)
 		return false;
 	}
 
+	if (!strcmp(C_STR(p, d), "?-")) {
+		return false;
+	}
+
 	if (strcmp(C_STR(p, d), ":-"))
 		return false;
 
