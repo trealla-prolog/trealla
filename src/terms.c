@@ -91,6 +91,16 @@ static void collect_vars_lists(query *q, cell *p1, pl_ctx p1_ctx, unsigned depth
 	collect_vars_internal(q, l, l_ctx, depth+1);
 }
 
+typedef struct {
+	lnode hdr;
+	cell *p1;
+	pl_ctx p1_ctx;
+	int arity;
+	unsigned depth;
+	slot *e;
+	uint32_t save_vgen;
+} vnode;
+
 static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned depth)
 {
 	if (is_var(p1) && !(p1->flags & FLAG_VAR_CYCLIC)) {
@@ -106,26 +116,93 @@ static void collect_vars_internal(query *q, cell *p1, pl_idx p1_ctx, unsigned de
 		return;
 	}
 
-	bool any = false;
-	int arity = p1->arity;
-	p1++;
+	// Transform recursion into stack iteration (as in has_vars_internal):
+	//
+	// Unlike has_vars_internal() we must preserve the order in which
+	// variables are encountered, so we cannot use a plain FIFO/LIFO of
+	// pending nodes: a variable that is a direct argument would then be
+	// accumulated before the variables inside an earlier sibling that was
+	// only queued. Instead each frame walks one compound's arguments
+	// left-to-right and we descend into a child compound immediately, which
+	// reproduces the pre-order, depth-first, left-to-right walk of the
+	// recursion exactly. The (e, save_vgen) pair belongs to the parent
+	// arg-slot that caused us to descend and is restored once this subtree
+	// is fully collected - i.e. at the point the recursive call would have
+	// returned.
 
-	while (arity--) {
-		cell *c = p1;
-		pl_idx c_ctx = p1_ctx;
+	list stack = {0};
+	vnode *n = TPL_malloc(sizeof(vnode));
+	if (!n) return;
+	n->arity = p1->arity;
+	n->p1 = p1 + 1;
+	n->p1_ctx = p1_ctx;
+	n->depth = depth;
+	n->e = NULL;
+	n->save_vgen = 0;
+	list_push_back(&stack, n);
+
+	while ((n = (vnode*)list_back(&stack)) != NULL) {
+		if (n->arity <= 0) {
+			// This node's arguments are all done - the point at which the
+			// recursive call would have returned. Restore the parent
+			// arg-slot's vgen mark now that its subtree is complete.
+			slot *pending_e = n->e;
+			uint32_t pending_vgen = n->save_vgen;
+
+			list_pop_back(&stack);
+			TPL_free(n);
+
+			if (pending_e)
+				pending_e->vgen = pending_vgen;
+
+			continue;
+		}
+
+		n->arity--;
+		cell *c = n->p1;
+		pl_ctx c_ctx = n->p1_ctx;
 		slot *e = NULL;
 		uint32_t save_vgen = 0;
+		bool any = false;
 		int both = 0;
 
 		DEREF_VAR(any, both, save_vgen, e, e->vgen, c, c_ctx, q->vgen);
+		n->p1 += n->p1->num_cells;
 
-		if (!both && is_var(c) && !(c->flags & FLAG_VAR_CYCLIC))
+		if (both) {
+			if (e) e->vgen = save_vgen;
+			continue;
+		}
+
+		if (is_var(c) && !(c->flags & FLAG_VAR_CYCLIC)) {
 			accum_var(q, c, c_ctx);
-		else if (!both)
-			collect_vars_internal(q, c, c_ctx, depth+1);
+			if (e) e->vgen = save_vgen;
+		} else if (is_iso_list(c)) {
+			collect_vars_lists(q, c, c_ctx, n->depth+1);
+			if (e) e->vgen = save_vgen;
+		} else if (is_compound(c) && !is_ground(c)) {
+			// Descend iteratively instead of recursing; defer the vgen
+			// restore until this child's whole subtree is finished.
+			vnode *cn = TPL_malloc(sizeof(vnode));
 
-		if (e) e->vgen = save_vgen;
-		p1 += p1->num_cells;
+			if (!cn) {
+				while ((n = (vnode*)list_pop_back(&stack)) != NULL)
+					TPL_free(n);
+
+				return;
+			}
+
+			cn->arity = c->arity;
+			cn->p1 = c + 1;
+			cn->p1_ctx = c_ctx;
+			cn->depth = n->depth + 1;
+			cn->e = e;
+			cn->save_vgen = save_vgen;
+			list_push_back(&stack, cn);
+		} else {
+			// atom, number, ground compound or cyclic var: nothing to collect
+			if (e) e->vgen = save_vgen;
+		}
 	}
 }
 
