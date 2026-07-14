@@ -790,6 +790,59 @@ bool bif_sys_succeed_on_retry_2(query *q)
 	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 
+
+// Streams (and other objects with an internal-only representation) are
+// serialized by throw/1 as e.g. '$stream'(3). When the ball is re-parsed
+// here that becomes an ordinary '$stream'/1 compound, which no longer
+// unifies with a real stream cell in a catch/3 catcher. Collapse any such
+// compound back into a genuine stream cell so catch/3 works as in SWI.
+
+static pl_idx restore_streams_walk(query *q, const cell *src, cell *dst)
+{
+	if (is_compound(src) && (src->arity == 1) && !strcmp(C_STR(q, src), "$stream")) {
+		const cell *arg = src + 1;
+
+		if (is_smallint(arg)) {
+			make_int(dst, get_smallint(arg));
+			dst->flags |= FLAG_INT_STREAM;
+			return 1;
+		}
+	}
+
+	if (is_compound(src)) {
+		*dst = *src;
+		pl_idx cnt = 1;
+		const cell *p = src + 1;
+
+		for (unsigned i = 0; i < src->arity; i++) {
+			cnt += restore_streams_walk(q, p, dst + cnt);
+			p += p->num_cells;
+		}
+
+		dst->num_cells = cnt;
+		return cnt;
+	}
+
+	pl_idx nc = src->num_cells;
+
+	for (pl_idx i = 0; i < nc; i++)
+		dst[i] = src[i];
+
+	return nc;
+}
+
+static void restore_streams(query *q, cell *ball)
+{
+	if (!ball || !is_compound(ball))
+		return;
+
+	cell *buf = malloc(sizeof(cell) * ball->num_cells);
+	if (!buf) return;
+	pl_idx n = restore_streams_walk(q, ball, buf);
+	memcpy(ball, buf, sizeof(cell) * n);
+	free(buf);
+}
+
 static cell *parse_to_heap(query *q, const char *src)
 {
 	SB(s);
@@ -818,6 +871,7 @@ static cell *parse_to_heap(query *q, const char *src)
 	dup_cells(tmp, p2->cl->cells, p2->cl->cells->num_cells);
 	check_error(tmp, parser_destroy(p2));
 	parser_destroy(p2);
+	restore_streams(q, tmp);
 	return tmp;
 }
 
