@@ -80,6 +80,14 @@ variant(X,Y) :-
 		subsumes_term(Y,XC)
 	).
 
+'=@='(X,Y) :-
+	\+ \+ ( copy_term(X,XC),
+		subsumes_term(XC,Y),
+		subsumes_term(Y,XC)
+	).
+
+:-op(700,xfx,=@=).
+
 :- meta_predicate(call_det(0,?)).
 :- help(call_det(:callable,?boolean), [iso(false)]).
 
