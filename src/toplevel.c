@@ -46,7 +46,7 @@ int check_interrupt(query *q)
 		if (!throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out"))
 			q->retry = true;
 
-		return 0;
+		return 2;   // timeout handled: break C-level loops, WAM loop continues
 	}
 
 	if (g_tpl_interrupt == SIGALRM) {
@@ -55,7 +55,7 @@ int check_interrupt(query *q)
 		if (!throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out"))
 			q->retry = true;
 
-		return 0;
+		return 2;   // timeout handled: break C-level loops, WAM loop continues
 	}
 #endif
 #endif

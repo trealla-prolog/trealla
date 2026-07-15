@@ -506,7 +506,7 @@ static bool bif_sys_alarm_2(query *q)
 
 	struct itimerspec value = {0};
 	value.it_value.tv_sec = time_ms / 1000;
-	value.it_value.tv_nsec = (time_ms % 1000) * 1000;
+	value.it_value.tv_nsec = (time_ms % 1000) * 1000000;   // ms -> ns
 	value.it_interval.tv_sec = 0;
 	value.it_interval.tv_nsec = 0;
 	timer_settime(my_timer, 0, &value, NULL);
