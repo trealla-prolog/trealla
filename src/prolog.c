@@ -800,7 +800,7 @@ prolog *pl_create()
 	pl->def_quoted = true;
 	pl->def_double_quotes = true;
 	pl->rnd_first_time = 1;
-	pl->global_bb = true;		// Fow now, as tabling seems to need it
+	pl->global_bb = true;		// Tabling seems to need it
 
 	// In user space...
 
