@@ -642,6 +642,7 @@ struct thread_ {
 	unsigned num_vars, at_exit_goal_num_vars, num_locks;
 	int chan, locked_by;
 	pl_atomic bool is_active;
+	volatile int timedout;   // set by SIGALRM handler s_sigfn(); thread-lived
 	bool is_init:1;
 	bool is_finished:1;
 	bool is_detached:1;

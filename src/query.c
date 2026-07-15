@@ -1678,7 +1678,8 @@ bool start(query *q)
 	bool done = false;
 
 	while (!done && !q->error) {
-		if (g_tpl_interrupt || q->timedout) {
+		thread *self = q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
+		if (g_tpl_interrupt || q->timedout || self->timedout) {
 			switch (check_interrupt(q)) {
 				case 1: return true;
 				case -1: q->retry = true;
@@ -1906,6 +1907,7 @@ void query_destroy(query *q)
 		TPL_free(u);
 	}
 
+	// FIX: clear dangling main-thread query pointer used by s_sigfn()
 	if (q->pl->threads[0].q == q)
 		q->pl->threads[0].q = NULL;
 
@@ -1920,8 +1922,7 @@ void query_destroy(query *q)
 	TPL_free(q->tmp_heap);
 	TPL_free(q->tabs);
 	q->pl->q_cnt--;
-
-    TPL_free(q);
+	TPL_free(q);
 }
 
 static query *query_create_(module *m, bool is_toplevel)

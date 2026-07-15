@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
+#include <sys/syscall.h>
 
 #if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 #include <spawn.h>
@@ -422,16 +423,17 @@ static void timer_callback(union sigval sv)
 
 static void s_sigfn(int s)
 {
+	(void)s;
+
+	// Async-signal context: only touch the thread struct, which outlives
+	// individual queries. NEVER dereference t->q here: the query may already
+	// have been freed by the time a late SIGALRM is delivered.
 	for (int i = 0; i < g_tpl_count; i++) {
 		prolog *pl = g_prologs[i];
 		thread *t = get_self(pl);
 
 		if (t) {
-			if (t->q && t->q->thread_ptr == t)
-				t->q->timedout = true;
-			else
-				g_tpl_interrupt = s;
-
+			t->timedout = 1;
 			break;
 		}
 	}
@@ -448,6 +450,10 @@ static bool bif_sys_alarm_2(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "positive_integer");
 
 	g_tpl_interrupt = 0;
+
+	// Clear any stale timeout flag on this thread when arming/cancelling.
+	thread *self = q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
+	self->timedout = 0;
 
 	if (is_float(p1))
 		time_ms = get_float(p1) * 1000;
@@ -478,9 +484,19 @@ static bool bif_sys_alarm_2(query *q)
 	timer_entry *e = malloc(sizeof(timer_entry));
 
 	struct sigevent sevp = {0};
+#if defined(__linux__)
+	// Deliver SIGALRM straight to THIS thread via the kernel. No callback
+	// thread ever touches 'e', so there is no free-vs-use race on it.
+	sevp.sigev_notify = SIGEV_THREAD_ID;
+	sevp.sigev_signo = SIGALRM;
+	sevp._sigev_un._tid = syscall(SYS_gettid);   // no portable macro on this glibc
+#else
+	// Portable fallback (e.g. a macOS timer emulation must ensure the
+	// callback never accesses 'e' after the arming thread frees it).
 	sevp.sigev_notify = SIGEV_THREAD;
 	sevp.sigev_notify_function = timer_callback;
 	sevp.sigev_value.sival_ptr = e;
+#endif
 
 	timer_t my_timer;
 	timer_create(CLOCK_REALTIME, &sevp, &my_timer);
