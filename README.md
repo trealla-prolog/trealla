@@ -612,6 +612,9 @@ extension:
 
 	bb_b_put/2					# bb_b_put(:atom, +term)
 
+Note: attributes are preserved across bb_put/bb_get like Scryer
+and SWI Prologs (and SICStus?).
+
 
 Crypto functions
 ================
