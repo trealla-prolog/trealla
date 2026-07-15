@@ -2,6 +2,63 @@
 :- use_module(library(error)).
 :- use_module(library(lists)).
 
+% Blackboard predicates. The raw ops ('$bb_put_raw' etc) store a flat
+% copy of a term, dropping variable attributes. These wrappers use
+% copy_term/3 to residualize attribute goals, store them alongside the
+% term, and call them again on retrieval so attributes (eg. freeze/2,
+% dif/2, clp(Z) domains) survive the blackboard. Terms without
+% attributed variables take the raw path unchanged.
+
+bb_put(K, T) :-
+	term_variables(T, Vs),
+	(	'$bb_any_attributed'(Vs) ->
+		copy_term(T, T2, Gs),
+		(	Gs == [] ->
+			'$bb_put_raw'(K, T)
+		;	'$bb_put_raw'(K, '$bb_attv'(T2, Gs))
+		)
+	;	'$bb_put_raw'(K, T)
+	).
+
+bb_get(K, T) :-
+	'$bb_get_raw'(K, V),
+	'$bb_rehydrate'(V, T).
+
+bb_delete(K, T) :-
+	'$bb_get_raw'(K, V),
+	'$bb_rehydrate'(V, T),
+	'$bb_delete_raw'(K, _).
+
+bb_update(K, O, N) :-
+	'$bb_get_raw'(K, V),
+	'$bb_rehydrate'(V, O),
+	bb_put(K, N).
+
+'$bb_any_attributed'([V|Vs]) :-
+	(	'$attributed_var'(V) ->
+		true
+	;	'$bb_any_attributed'(Vs)
+	).
+
+'$bb_rehydrate'(V, T) :-
+	(	nonvar(V), V = '$bb_attv'(T2, Gs) ->
+		'$bb_call_goals'(Gs),
+		T = T2
+	;	T = V
+	).
+
+'$bb_call_goals'([]).
+'$bb_call_goals'([G|Gs]) :-
+	'$bb_call_goal'(G),
+	'$bb_call_goals'(Gs).
+
+% attribute_goals//1 may residualize a single goal or a list of goals
+
+'$bb_call_goal'([]) :- !.
+'$bb_call_goal'([G|Gs]) :- !, '$bb_call_goals'([G|Gs]).
+'$bb_call_goal'(G) :- call(G).
+
+
 goal_expansion(maplist(G, L1), Goal) :-
 	nonvar(G), !,
 	term_variables(G, Args),
