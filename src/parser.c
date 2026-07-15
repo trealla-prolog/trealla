@@ -346,7 +346,7 @@ void parser_reset(parser *p)
 	p->start_term = p->end_of_term = p->end_of_file = p->is_directive  = false;
 	p->is_command = p->is_comment = p->is_consulting = p->is_symbol = false;
 	p->is_string = p->is_quoted = p->is_var = p->is_op = p->skip = p->last_close = false;
-	p->last_neg = p->no_fp = p->reuse= p->in_body = false;
+	p->is_quad = p->last_neg = p->no_fp = p->reuse= p->in_body = false;
 	p->is_number_chars = false;
 
 	SB_free(p->token);
@@ -665,7 +665,8 @@ static bool directives(parser *p, cell *d)
 	}
 
 	if (!strcmp(C_STR(p, d), "?-")) {
-		return false;
+		p->is_quad = true;
+		return true;
 	}
 
 	if (strcmp(C_STR(p, d), ":-"))
@@ -3841,6 +3842,15 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 					p->error_desc = "callable";
 					p->error = true;
 					return 0;
+				}
+
+				if (p->is_quad) {
+					p->is_quad = false;
+					p->end_of_term = true;
+					last_op = true;
+					last_num = false;
+					p->cl->cidx = 0;
+					continue;
 				}
 
 				process_clause(p->m, p->cl, NULL);

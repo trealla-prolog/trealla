@@ -830,6 +830,7 @@ struct parser_ {
 	bool is_quoted:1;
 	bool is_var:1;
 	bool is_op:1;
+	bool is_quad:1;
 	bool skip:1;
 	bool last_close:1;
 	bool last_neg:1;
