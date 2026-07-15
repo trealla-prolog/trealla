@@ -1906,6 +1906,9 @@ void query_destroy(query *q)
 		TPL_free(u);
 	}
 
+	if (q->pl->threads[0].q == q)
+		q->pl->threads[0].q = NULL;
+
 	mp_int_clear(&q->tmp_ival);
 	mp_rat_clear(&q->tmp_irat);
 	query_purge_dirty_list(q);
@@ -1917,7 +1920,8 @@ void query_destroy(query *q)
 	TPL_free(q->tmp_heap);
 	TPL_free(q->tabs);
 	q->pl->q_cnt--;
-	TPL_free(q);
+
+    TPL_free(q);
 }
 
 static query *query_create_(module *m, bool is_toplevel)

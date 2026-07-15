@@ -427,7 +427,7 @@ static void s_sigfn(int s)
 		thread *t = get_self(pl);
 
 		if (t) {
-			if (t->q)
+			if (t->q && t->q->thread_ptr == t)
 				t->q->timedout = true;
 			else
 				g_tpl_interrupt = s;
