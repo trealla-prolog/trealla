@@ -6,7 +6,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
+
+#if defined(__linux__)
 #include <sys/syscall.h>
+#endif
 
 #if !defined(_WIN32) && !defined(__wasi__) && !defined(__ANDROID__)
 #include <spawn.h>
