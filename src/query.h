@@ -177,7 +177,7 @@ builtins *get_fn_ptr(void *fn);
 }
 
 #define CHECK_INTERRUPT() \
-	if (g_tpl_interrupt || (q)->timedout || \
+	if (g_tpl_interrupt || \
 		((q)->thread_ptr ? (q)->thread_ptr->timedout : (q)->pl->threads[0].timedout)) { \
 		if (check_interrupt(q)) \
 			break; \

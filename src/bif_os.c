@@ -463,8 +463,6 @@ static bool bif_sys_alarm_2(query *q)
 	if (time_ms < 0)
 		return throw_error(q, p1, p1_ctx, "domain_error", "positive_integer");
 
-	struct itimerval it = {0};
-
 	if (time_ms == 0) {
 		timer_entry *e = get_voidptr(p2);
 

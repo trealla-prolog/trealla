@@ -734,7 +734,6 @@ struct query_ {
 	int8_t halt_code;
 	int8_t quoted;
 	enum { WAS_OTHER, WAS_SPACE, WAS_COMMA, WAS_SYMBOL } last_thing;
-	volatile bool timedout;
 	bool oom:1;
 	bool done:1;
 	bool noskip:1;

@@ -39,8 +39,7 @@ int check_interrupt(query *q)
 #ifndef _WIN32
 	thread *self = q->thread_ptr ? q->thread_ptr : &q->pl->threads[0];
 
-	if (q->timedout || self->timedout) {
-		q->timedout = false;
+	if (self->timedout) {
 		self->timedout = 0;
 
 		if (!throw_error(q, q->st.instr, q->st.cur_ctx, "time_limit_exceeded", "timed_out"))
