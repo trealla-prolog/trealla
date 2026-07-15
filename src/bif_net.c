@@ -176,7 +176,7 @@ static bool bif_sys_server_3(query *q)
 	str->ssl = ssl;
 	str->level = level;
 	str->fp = fdopen(fd, "r");
-	str->fp_out = str->fp;
+	str->fp_out = str->fp_in = str->fp;
 
 	if (str->fp == NULL) {
 		str->is_active = false;
@@ -677,7 +677,7 @@ static bool bif_sys_client_5(query *q)
 	str->udp = udp;
 	str->ssl = ssl;
 	str->level = level;
-	str->fp_in = fdopen(fd, "r");
+	str->fp = str->fp_in = fdopen(fd, "r");
 	str->port = port;
 	str->addr = strdup(hostname);
 
