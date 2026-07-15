@@ -175,10 +175,10 @@ static bool bif_sys_server_3(query *q)
 	str->udp = udp;
 	str->ssl = ssl;
 	str->level = level;
-	str->fp = fdopen(fd, "r");
-	str->fp_out = str->fp_in = str->fp;
+	str->fp_in = fdopen(fd, "r");
+	str->fp_out = str->fp_in;
 
-	if (str->fp == NULL) {
+	if (str->fp_in == NULL) {
 		str->is_active = false;
 		close(fd);
 		return throw_error(q, p1, p1_ctx, "existence_error", "cannot_open_stream");
