@@ -65,6 +65,8 @@ extern unsigned char library_rbtrees_pl[];
 extern unsigned int library_rbtrees_pl_len;
 extern unsigned char library_reif_pl[];
 extern unsigned int library_reif_pl_len;
+extern unsigned char library_quads_pl[];
+extern unsigned int library_quads_pl_len;
 extern unsigned char library_debug_pl[];
 extern unsigned int library_debug_pl_len;
 extern unsigned char library_arithmetic_pl[];
@@ -116,6 +118,7 @@ library g_libs[] = {
 	 {"random", library_random_pl, &library_random_pl_len},
 	 {"raylib", library_raylib_pl, &library_raylib_pl_len},
 	 {"rbtrees", library_rbtrees_pl, &library_rbtrees_pl_len},
+	 {"quads", library_quads_pl, &library_quads_pl_len},
 	 {"reif", library_reif_pl, &library_reif_pl_len},
 	 {"si", library_si_pl, &library_si_pl_len},
 	 {"sqlite3", library_sqlite3_pl, &library_sqlite3_pl_len},

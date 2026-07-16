@@ -171,7 +171,7 @@ int main(int ac, char *av[], char * envp[])
 	//bool did_load = false;
 	int i, do_goal = 0, do_lib = 0, do_log = 0, do_restore = 0;
 	int version = 0, daemon = 0;
-	bool no_res = false, quiet = false;
+	bool no_res = false, quiet = false, do_quads = false;
 	const char *restore_file = NULL;
 
 	for (i = 1; i < ac; i++) {
@@ -214,6 +214,8 @@ int main(int ac, char *av[], char * envp[])
 			daemon = 1;
 		} else if (!strcmp(av[i], "--autofail")) {
 			set_autofail(pl);
+		} else if (!strcmp(av[i], "--quads")) {
+			do_quads = true;
 		} else if (!strcmp(av[i], "-f")) {
 			no_res = true;
 		}
@@ -337,6 +339,21 @@ int main(int ac, char *av[], char * envp[])
 		}
 	}
 
+	if (do_quads) {
+		bool ok = pl_eval(pl, "use_module(library(quads)), run_quads_halt", false);
+
+		if (get_halt(pl)) {
+			int halt_code = get_halt_code(pl);
+			pl_destroy(pl);
+			return halt_code;
+		}
+
+		if (!ok) {
+			pl_destroy(pl);
+			return 1;
+		}
+	}
+
 	if (goal) {
 		if (!pl_eval(pl, goal, false)) {
 			int halt_code = get_halt_code(pl);
@@ -371,6 +388,7 @@ int main(int ac, char *av[], char * envp[])
 		fprintf(stdout, "  -d, --daemon\t\t- daemonize\n");
 		fprintf(stdout, "  -w, --watchdog\t- create watchdog\n");
 		fprintf(stdout, "  --autofail\t\t- autofail queries\n");
+		fprintf(stdout, "  --quads\t\t- run embedded quad tests, exit nonzero on failure\n");
 		fprintf(stdout, "  --consult\t\t- consult from STDIN\n");
 		fprintf(stdout, "  --log file\t\t- enable log file\n");
 		fprintf(stdout, "  --nolimit\t\t- no memory limit\n");

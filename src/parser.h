@@ -12,6 +12,7 @@ void parser_destroy(parser *p);
 
 unsigned tokenize(parser *p, bool args, bool consing);
 void parser_reset(parser *p);
+void quad_reset(module *m);
 void term_to_body(parser *p);
 cell *check_body_callable(cell *c);
 bool run(parser *p, const char *src, bool dump, query **subq, unsigned int yield_time_in_ms);

@@ -194,6 +194,7 @@ LIBOBJECTS +=  \
 	library/random.o \
 	library/raylib.o \
 	library/rbtrees.o \
+	library/quads.o \
 	library/reif.o \
 	library/si.o \
 	library/sqlite3.o \

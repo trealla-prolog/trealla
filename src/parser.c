@@ -346,7 +346,7 @@ void parser_reset(parser *p)
 	p->start_term = p->end_of_term = p->end_of_file = p->is_directive  = false;
 	p->is_command = p->is_comment = p->is_consulting = p->is_symbol = false;
 	p->is_string = p->is_quoted = p->is_var = p->is_op = p->skip = p->last_close = false;
-	p->is_quad = p->last_neg = p->no_fp = p->reuse= p->in_body = false;
+	p->last_neg = p->no_fp = p->reuse= p->in_body = false;
 	p->is_number_chars = false;
 
 	SB_free(p->token);
@@ -651,6 +651,259 @@ static bool conditionals(parser *p, cell *d)
 	return false;
 }
 
+// Quads are queries using answer descriptions: a '?- Query.' term
+// followed by terms describing the expected toplevel answers. See
+// github.com/trealla-prolog/trealla issue #1063. Each quad is recorded
+// as a '$quad'(Query, VarNames, AnswerDescription, File, Line) fact
+// so that library(quads) can interpret them as tests at run time.
+// Nothing is executed at load time.
+
+void quad_reset(module *m)
+{
+	if (m->quad_query) {
+		cell *c = m->quad_query;
+		pl_idx num_cells = c->num_cells;
+
+		for (pl_idx i = 0; i < num_cells; i++, c++)
+			unshare_cell(c);
+
+		TPL_free(m->quad_query);
+		m->quad_query = NULL;
+	}
+
+	m->quad_num_vars = 0;
+	m->in_quad = false;
+}
+
+// The shape of a toplevel answer, per the grammar in issue #1063
+// plus the annotations used by existing quad suites (Flowlog).
+
+static bool is_answer_description(parser *p, const cell *c)
+{
+	if (!is_interned(c))
+		return false;
+
+	const char *name = C_STR(p, c);
+
+	if (c->arity == 0)
+		return !strcmp(name, "true") || !strcmp(name, "false")
+			|| !strcmp(name, "...") || !strcmp(name, "loops")
+			|| !strcmp(name, "instantiation_error")
+			|| !strcmp(name, "ad_infinitum")
+			|| !strcmp(name, "sto")
+			|| !strcmp(name, "unexpected");
+
+	if (c->arity == 2) {
+		if (!strcmp(name, "="))
+			return true;
+
+		if (!strcmp(name, ",") || !strcmp(name, ";") || !strcmp(name, "|")) {
+			const cell *lhs = c + 1;
+			const cell *rhs = lhs + lhs->num_cells;
+			return is_answer_description(p, lhs) && is_answer_description(p, rhs);
+		}
+
+		if (!strcmp(name, "error")
+			|| !strcmp(name, "type_error")
+			|| !strcmp(name, "domain_error"))
+			return true;
+	}
+
+	if (c->arity == 1)
+		return !strcmp(name, "throw")
+			|| !strcmp(name, "syntax_error")
+			|| !strcmp(name, "representation_error")
+			|| !strcmp(name, "resource_error")
+			|| !strcmp(name, "uninstantiation_error");
+
+	return false;
+}
+
+// Build and assert '$quad'(Query, VarNames, AnswerDescription, File, Line).
+// The query was read as one term and the answer description as another,
+// so their variables can only be related by name: VarNames is a list of
+// Name=Var pairs covering the named variables of both terms, and
+// library(quads) unifies same-named entries.
+
+static void quad_record(parser *p, cell *ad)
+{
+	module *m = p->m;
+	cell *q = m->quad_query;
+	pl_idx q_num_cells = q->num_cells;
+	pl_idx ad_num_cells = ad->num_cells;
+	unsigned q_num_vars = m->quad_num_vars;
+	unsigned ad_num_vars = p->cl->num_vars;
+	unsigned total_vars = q_num_vars + ad_num_vars;
+
+	// Collect the named variables of both terms (first occurrence
+	// each). Answer-description vars are renumbered +q_num_vars.
+
+	struct { unsigned var_num; pl_idx off; uint16_t flags; } *vt;
+	vt = TPL_malloc(sizeof(*vt) * (total_vars ? total_vars : 1));
+	if (!vt) { p->error = true; return; }
+	bool *seen = TPL_calloc(total_vars ? total_vars : 1, sizeof(bool));
+	if (!seen) { TPL_free(vt); p->error = true; return; }
+	unsigned num_named = 0;
+
+	for (int pass = 0; pass < 2; pass++) {
+		const cell *c = pass ? ad : q;
+		pl_idx num_cells = pass ? ad_num_cells : q_num_cells;
+		unsigned offset = pass ? q_num_vars : 0;
+
+		for (pl_idx i = 0; i < num_cells; i++, c++) {
+			if (!is_var(c))
+				continue;
+
+			unsigned var_num = c->var_num + offset;
+
+			if (seen[var_num] || is_anon(c) || !strcmp(C_STR(p, c), "_"))
+				continue;
+
+			seen[var_num] = true;
+			vt[num_named].var_num = var_num;
+			vt[num_named].off = c->val_off;
+			vt[num_named].flags = c->flags;
+			num_named++;
+		}
+	}
+
+	// '$quad'/5 + Query + VarNames list + AnswerDescription + File + Line
+
+	pl_idx vn_num_cells = (4 * num_named) + 1;
+	pl_idx total = 1 + q_num_cells + vn_num_cells + ad_num_cells + 1 + 1;
+	cell *tmp = TPL_calloc(total, sizeof(cell));
+
+	if (!tmp) {
+		TPL_free(vt);
+		TPL_free(seen);
+		p->error = true;
+		return;
+	}
+
+	cell *dst = tmp;
+	dst->tag = TAG_INTERNED;
+	dst->val_off = g_sys_quad_s;
+	dst->arity = 5;
+	dst->num_cells = total;
+	dst++;
+
+	dup_cells(dst, q, q_num_cells);
+	dst += q_num_cells;
+
+	for (unsigned i = 0; i < num_named; i++) {
+		dst->tag = TAG_INTERNED;			// list cell
+		dst->val_off = g_dot_s;
+		dst->arity = 2;
+		dst->num_cells = (4 * (num_named - i)) + 1;
+		dst++;
+		dst->tag = TAG_INTERNED;			// Name = Var
+		dst->val_off = g_eq_s;
+		dst->arity = 2;
+		dst->num_cells = 3;
+		dst++;
+		dst->tag = TAG_INTERNED;			// Name
+		dst->val_off = vt[i].off;
+		dst->num_cells = 1;
+		dst++;
+		dst->tag = TAG_VAR;					// Var
+		dst->var_num = vt[i].var_num;
+		dst->val_off = vt[i].off;
+		dst->flags = vt[i].flags;
+		dst->num_cells = 1;
+		dst++;
+	}
+
+	dst->tag = TAG_INTERNED;
+	dst->val_off = g_nil_s;
+	dst->num_cells = 1;
+	dst++;
+
+	dup_cells(dst, ad, ad_num_cells);
+
+	for (pl_idx i = 0; i < ad_num_cells; i++) {
+		if (is_var(dst+i))
+			(dst+i)->var_num += q_num_vars;
+	}
+
+	dst += ad_num_cells;
+
+	dst->tag = TAG_INTERNED;
+	dst->val_off = new_atom(p->pl, get_loaded(m, m->filename));
+	dst->num_cells = 1;
+	dst++;
+
+	dst->tag = TAG_INT;
+	set_smallint(dst, m->quad_line_num);
+	dst->num_cells = 1;
+
+	TPL_free(vt);
+	TPL_free(seen);
+
+	if (assertz_to_db(m, total_vars, tmp, true) == NULL) {
+		fprintf(stderr, "Warning: could not record quad, %s:%d\n", get_loaded(m, m->filename), m->quad_line_num);
+		cell *c = tmp;
+
+		for (pl_idx i = 0; i < total; i++, c++)
+			unshare_cell(c);
+	}
+
+	// On success the asserted copy takes over the cell references
+
+	TPL_free(tmp);
+}
+
+static bool quads(parser *p, cell *d)
+{
+	module *m = p->m;
+
+	if (p->internal || p->error)
+		return false;
+
+	if (!is_interned(d))
+		return false;
+
+	if ((d->val_off == g_quad_s) && (d->arity == 1)) {
+		if (m->quad_query)
+			fprintf(stderr, "Warning: quad query without answer description, %s:%d\n", get_loaded(m, m->filename), m->quad_line_num);
+
+		quad_reset(m);
+		cell *q = d + 1;
+		m->quad_query = TPL_malloc(sizeof(cell) * q->num_cells);
+
+		if (!m->quad_query) {
+			p->error = true;
+			return true;
+		}
+
+		dup_cells(m->quad_query, q, q->num_cells);
+		m->quad_num_vars = p->cl->num_vars;
+		m->quad_line_num = p->line_num_start ? p->line_num_start : p->line_num;
+		m->in_quad = true;
+		p->line_num_start = 0;
+		return true;
+	}
+
+	if (!m->in_quad)
+		return false;
+
+	if (!is_answer_description(p, d)) {
+		if (m->quad_query)
+			fprintf(stderr, "Warning: quad query without answer description, %s:%d\n", get_loaded(m, m->filename), m->quad_line_num);
+
+		quad_reset(m);
+		return false;
+	}
+
+	if (m->quad_query) {
+		quad_record(p, d);
+		quad_reset(m);
+		m->in_quad = true;		// keep consuming answer-shaped terms
+	}
+
+	p->line_num_start = 0;
+	return true;
+}
+
 static bool directives(parser *p, cell *d)
 {
 	p->skip = false;
@@ -662,11 +915,6 @@ static bool directives(parser *p, cell *d)
 		consultall(p, d);
 		p->skip = true;
 		return false;
-	}
-
-	if (!strcmp(C_STR(p, d), "?-")) {
-		p->is_quad = true;
-		return true;
 	}
 
 	if (strcmp(C_STR(p, d), ":-"))
@@ -1573,7 +1821,9 @@ void assign_vars(parser *p, unsigned start, bool rebase)
 			// && (p->vartab.name[i][strlen(p->vartab.name[i])-1] != '_')
 			&& (GET_POOL(p, p->vartab.off[i])[0] != '_')) {
 			if (!p->pl->quiet
-				&& !((cl->cells->val_off == g_neck_s) && cl->cells->arity == 1))
+				&& !((cl->cells->val_off == g_neck_s) && cl->cells->arity == 1)
+				&& !((cl->cells->val_off == g_quad_s) && cl->cells->arity == 1)
+				&& !p->m->in_quad)
 				fprintf(stderr, "Warning: singleton: %s, near %s:%d\n", GET_POOL(p, p->vartab.off[i]), get_loaded(p->m, p->m->filename), p->line_num);
 		}
 	}
@@ -3653,6 +3903,9 @@ static bool process_term(parser *p, cell *p1)
 	if (p->m->ifs_blocked[p->m->if_depth])
 		return true;
 
+	if (quads(p, p1))
+		return true;
+
 	// Note: we actually assert directives after processing
 	// so that they can be examined.
 
@@ -3844,15 +4097,6 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 					return 0;
 				}
 
-				if (p->is_quad) {
-					p->is_quad = false;
-					p->end_of_term = true;
-					last_op = true;
-					last_num = false;
-					p->cl->cidx = 0;
-					continue;
-				}
-
 				process_clause(p->m, p->cl, NULL);
 
 				if (!p->one_shot /*|| p->is_command*/)
@@ -3873,6 +4117,11 @@ unsigned tokenize(parser *p, bool is_arg_processing, bool is_consing)
 					if (!p1->arity && !strcmp(C_STR(p, p1), "end_of_file")) {
 						p->end_of_term = true;
 						p->end_of_file = true;
+
+						if (p->m->quad_query)
+							fprintf(stderr, "Warning: quad query without answer description, %s:%d\n", get_loaded(p->m, p->m->filename), p->m->quad_line_num);
+
+						quad_reset(p->m);
 						process_module(p->m);
 						return 0;
 					}

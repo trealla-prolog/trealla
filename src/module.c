@@ -2556,6 +2556,7 @@ void module_destroy(module *m)
 
 	sl_destroy(m->index);
 	sl_destroy(m->keyval);
+	quad_reset(m);
 	parser_destroy(m->p);
 	clear_loaded(m);
 	list_remove(&m->pl->modules, m);
