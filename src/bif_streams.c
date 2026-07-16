@@ -1351,7 +1351,12 @@ static bool bif_iso_flush_output_0(query *q)
 	if ((err == EOF) && !str->is_socket)
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
 
-	return !ferror(str->fp_out);
+	if (ferror(str->fp_out)) {	// FIX: output error must raise io_error, not fail
+		clearerr(str->fp_out);
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+	}
+
+	return true;
 }
 
 static bool bif_iso_flush_output_1(query *q)
@@ -1368,7 +1373,12 @@ static bool bif_iso_flush_output_1(query *q)
 	if ((err == EOF) && !str->is_socket)
 		return throw_error(q, pstr, pstr_ctx, "io_error", strerror(errno));
 
-	return !ferror(str->fp_out);
+	if (ferror(str->fp_out)) {	// FIX: output error must raise io_error, not fail
+		clearerr(str->fp_out);
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+	}
+
+	return true;
 }
 
 static bool bif_iso_nl_0(query *q)
@@ -1385,7 +1395,12 @@ static bool bif_iso_nl_0(query *q)
 	if ((err == EOF) && !str->is_socket)
 		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
 
-	return !ferror(str->fp_out);
+	if (ferror(str->fp_out)) {	// FIX: output error must raise io_error, not fail
+		clearerr(str->fp_out);
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+	}
+
+	return true;
 }
 
 static bool bif_iso_nl_1(query *q)
@@ -1406,7 +1421,12 @@ static bool bif_iso_nl_1(query *q)
 	if ((err == EOF) && !str->is_socket)
 		return throw_error(q, pstr, pstr_ctx, "io_error", strerror(errno));
 
-	return !ferror(str->fp_out);
+	if (ferror(str->fp_out)) {	// FIX: output error must raise io_error, not fail
+		clearerr(str->fp_out);
+		return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+	}
+
+	return true;
 }
 
 static bool bif_iso_read_1(query *q)
@@ -1574,6 +1594,7 @@ bool do_read_term(query *q, stream *str, cell *p1, pl_ctx p1_ctx, cell *p2, pl_c
 	}
 
 	if (str->p->srcptr) {
+		errno = 0;	// FIX: reset before parse read so a stale EINTR isn't misread
 		char *src = (char*)eat_space(str->p);
 
 		if (errno == EINTR) {
@@ -2377,7 +2398,12 @@ static bool bif_iso_write_term_2(query *q)
 		start(q2);
 		query_destroy(q2);
 		clear_write_options(q);
-		return !ferror(str->fp_out);
+		if (ferror(str->fp_out)) {	// FIX: output error must raise io_error, not fail
+			clearerr(str->fp_out);
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+		}
+
+		return true;
 	}
 
 	q->variable_names = vnames;
@@ -2454,7 +2480,12 @@ static bool bif_iso_write_term_3(query *q)
 		start(q2);
 		query_destroy(q2);
 		clear_write_options(q);
-		return !ferror(str->fp_out);
+		if (ferror(str->fp_out)) {	// FIX: output error must raise io_error, not fail
+			clearerr(str->fp_out);
+			return throw_error(q, q->st.instr, q->st.cur_ctx, "io_error", strerror(errno));
+		}
+
+		return true;
 	}
 
 	q->latest_ctx = p1_ctx;
@@ -3722,6 +3753,7 @@ static bool bif_sys_read_term_from_chars_4(query *q)
 		return false;
 	}
 
+	errno = 0;	// FIX: reset before parse read so a stale EINTR isn't misread
 	char *rest = str->p->srcptr = eat_space(str->p);
 
 	if (errno == EINTR) {

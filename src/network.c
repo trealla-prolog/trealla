@@ -427,6 +427,7 @@ size_t tpl_write(const void *ptr, size_t nbytes, stream *str)
 
 int tpl_getc(stream *str)
 {
+	errno = 0;	// FIX: reset so a stale EINTR from an earlier call isn't misread as an interrupt
 #if USE_OPENSSL
 	if (str->ssl) {
 		size_t len = 1;
@@ -472,6 +473,7 @@ int tpl_getc(stream *str)
 
 size_t tpl_read(void *ptr, size_t len, stream *str)
 {
+	errno = 0;	// FIX: reset so a stale EINTR from an earlier call isn't misread as an interrupt
 #if USE_OPENSSL
 	if (str->ssl) {
 		char *dst = ptr;
@@ -562,6 +564,7 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
 
 int tpl_getline(char **lineptr, size_t *n, stream *str)
 {
+	errno = 0;	// FIX: reset so a stale EINTR from an earlier call isn't misread as an interrupt
 #if USE_OPENSSL
 	if (str->ssl) {
 		if (!*lineptr) {
