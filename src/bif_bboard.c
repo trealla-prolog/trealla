@@ -362,16 +362,11 @@ builtins g_bboard_bifs[] =
 {
 	{"bb_b_put", 2, bif_bb_b_put_2, ":atom,+term", false, false, BLAH},
 
-	// Raw blackboard ops: store/retrieve a flat copy of a term,
-	// dropping any variable attributes. The public bb_put/bb_get/
-	// bb_update/bb_delete are defined in library/builtins.pl on top
-	// of these, preserving attributes via copy_term/3 residual goals.
+	{"$bb_put", 2, bif_bb_put_2, ":atom,+term", false, false, BLAH},
+	{"$bb_get", 2, bif_bb_get_2, ":atom,?term", false, false, BLAH},
 
-	{"$bb_put_raw", 2, bif_bb_put_2, ":atom,+term", false, false, BLAH},
-	{"$bb_get_raw", 2, bif_bb_get_2, ":atom,?term", false, false, BLAH},
-
-	{"$bb_update_raw", 3, bif_bb_update_3, ":atom,?term,?term", false, false, BLAH},
-	{"$bb_delete_raw", 2, bif_bb_delete_2, ":atom,?term", false, false, BLAH},
+	{"$bb_update", 3, bif_bb_update_3, ":atom,?term,?term", false, false, BLAH},
+	{"$bb_delete", 2, bif_bb_delete_2, ":atom,?term", false, false, BLAH},
 
 	{0}
 };
