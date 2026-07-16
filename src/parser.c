@@ -2210,7 +2210,7 @@ static bool dcg_expansion(parser *p)
 
 	if (p2->error) {
 		parser_destroy(p2);
-		query_destroy(q);
+		TPL_free(src);	// FIX: q already destroyed above (removed double query_destroy); free leaked src
 		p->error = true;
 		return false;
 	}
@@ -2299,6 +2299,7 @@ static bool term_expansion(parser *p)
 	if (p2->error) {
 		parser_destroy(p2);
 		query_destroy(q);
+		TPL_free(src);	// FIX: free leaked src
 		p->error = true;
 		return false;
 	}
