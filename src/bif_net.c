@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "network.h"
@@ -182,7 +183,7 @@ static bool bif_sys_server_3(query *q)
 	str->udp = udp;
 	str->ssl = ssl;
 	str->level = level;
-	str->fp_in = fdopen(fd, "r");
+	str->fp = str->fp_in = fdopen(fd, "r");	// FIX 11: also set fp so $server_tls's fileno(str->fp) works
 	str->fp_out = str->fp_in;
 
 	if (str->fp_in == NULL) {
@@ -227,6 +228,9 @@ static bool bif_sys_accept_2(query *q)
 	}
 
 	stream *str2 = &q->pl->streams[n];
+	// FIX 13: new_stream() does not allocate the alias skiplist; create it before
+	// sl_app() (matching bif_sys_server_3 / bif_sys_client_5).
+	CHECKED(str2->alias = sl_create((void*)fake_strcmp, (void*)keyfree, NULL));
 	sl_app(str2->alias, strdup(str->filename), NULL);
 	CHECKED(str2->filename = strdup(str->filename));
 	CHECKED(str2->mode = strdup("update"));
@@ -236,7 +240,7 @@ static bool bif_sys_accept_2(query *q)
 	str2->nodelay = str->nodelay;
 	str2->udp = str->udp;
 	str2->ssl = str->ssl;
-	str2->fp_in = fdopen(fd, "r");
+	str2->fp = str2->fp_in = fdopen(fd, "r");	// FIX 11: set fp as well
 
 	if (str2->fp_in == NULL) {
 		str2->is_active = false;
@@ -323,6 +327,8 @@ static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 				return throw_error(q, h1, h_ctx, "type_error", "list");
 
 			char *dst = search;
+			// FIX 3: remaining space from the moving cursor, not the constant buffer size.
+			#define SEARCH_LEFT() (sizeof(search) - (size_t)(dst - search))
 			LIST_HANDLER(h1);
 
 			while (is_iso_list(h1)) {
@@ -338,37 +344,38 @@ static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 				if (!is_atomic(c+2))
 					return throw_error(q, c+2, h1_ctx, "type_error", "atom");
 
+				// FIX 4: percent-encoding can triple length; allocate 3*len+1.
 				size_t len1 = C_STRLEN(q, c+1);
-				char *dstbuf1 = TPL_malloc(len1+1);
+				char *dstbuf1 = TPL_malloc(len1*3+1);
 				CHECKED(dstbuf1);
-				url_encode(C_STR(q, c+1), len1, dstbuf1, len1+1);
-				dst += snprintf(dst, sizeof(search), "%s", dstbuf1);
+				url_encode(C_STR(q, c+1), len1, dstbuf1, len1*3+1);
+				dst += snprintf(dst, SEARCH_LEFT(), "%s", dstbuf1);
 				TPL_free(dstbuf1);
 
 				if (is_atom(c+2)) {
 					size_t len2 = C_STRLEN(q, c+2);
-					char *dstbuf2 = TPL_malloc(len2+1);
+					char *dstbuf2 = TPL_malloc(len2*3+1);
 					CHECKED(dstbuf2);
-					url_encode(C_STR(q, c+2), len2, dstbuf2, len2+1);
-					dst += snprintf(dst, sizeof(search), "=%s", dstbuf2);
+					url_encode(C_STR(q, c+2), len2, dstbuf2, len2*3+1);
+					dst += snprintf(dst, SEARCH_LEFT(), "=%s", dstbuf2);
 					TPL_free(dstbuf2);
 				} else if (is_smallint(c+2)) {
 					char tmpbuf[256];
 					snprintf(tmpbuf, sizeof(tmpbuf), "%lld", (long long)get_smallint(c+2));
 					size_t len2 = strlen(tmpbuf);
-					char *dstbuf2 = TPL_malloc(len2+1);
+					char *dstbuf2 = TPL_malloc(len2*3+1);
 					CHECKED(dstbuf2);
-					url_encode(tmpbuf, len2, dstbuf2, len2+1);
-					dst += snprintf(dst, sizeof(search), "=%s", dstbuf2);
+					url_encode(tmpbuf, len2, dstbuf2, len2*3+1);
+					dst += snprintf(dst, SEARCH_LEFT(), "=%s", dstbuf2);
 					TPL_free(dstbuf2);
 				} else {
 					char tmpbuf[256];
 					snprintf(tmpbuf, sizeof(tmpbuf), "%.17g", get_float(c+2));
 					size_t len2 = strlen(tmpbuf);
-					char *dstbuf2 = TPL_malloc(len2+1);
+					char *dstbuf2 = TPL_malloc(len2*3+1);
 					CHECKED(dstbuf2);
-					url_encode(tmpbuf, len2, dstbuf2, len2+1);
-					dst += snprintf(dst, sizeof(search), "=%s", dstbuf2);
+					url_encode(tmpbuf, len2, dstbuf2, len2*3+1);
+					dst += snprintf(dst, SEARCH_LEFT(), "=%s", dstbuf2);
 					TPL_free(dstbuf2);
 				}
 
@@ -377,8 +384,9 @@ static bool do_parse_parts(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p
 				h1_ctx = q->latest_ctx;
 
 				if (!is_nil(h1))
-					dst += snprintf(dst, sizeof(search), "&");
+					dst += snprintf(dst, SEARCH_LEFT(), "&");
 			}
+			#undef SEARCH_LEFT
 		} else if (!strcmp(C_STR(q, h), "fragment")) {
 			if (!is_atom(c))
 				return throw_error(q, c, c_ctx, "type_error", "atom");
@@ -519,25 +527,26 @@ static bool do_parse_url(query *q, cell *p1, pl_ctx p1_ctx, cell *p2, pl_ctx p2_
 		strcpy(path, "/");
 
 	if (path[0]) {
+		// FIX 5: decode into dstbuf and actually emit the decoded value.
 		len = strlen(path);
 		dstbuf = TPL_malloc(len+1);
 		CHECKED(dstbuf);
 		url_decode(path, dstbuf);
-		src = dstbuf;
 		make_instr(tmp, new_atom(q->pl, "path"), NULL, 1, 1);
-		make_cstring(tmp+1, path);
+		make_cstring(tmp+1, dstbuf);
 		append_list(q, tmp);
 		TPL_free(dstbuf);
 	}
 
 	if (fragment[0]) {
+		// FIX 5: decode `fragment` (not `path`) into a fragment-sized buffer and
+		// emit the decoded value.
 		len = strlen(fragment);
 		dstbuf = TPL_malloc(len+1);
 		CHECKED(dstbuf);
-		url_decode(path, dstbuf);
-		src = dstbuf;
+		url_decode(fragment, dstbuf);
 		make_instr(tmp, new_atom(q->pl, "fragment"), NULL, 1, 1);
-		make_cstring(tmp+1, fragment);
+		make_cstring(tmp+1, dstbuf);
 		append_list(q, tmp);
 		TPL_free(dstbuf);
 	}
@@ -744,37 +753,37 @@ static bool bif_sys_server_tls_2(query *q)
 	GET_NEXT_ARG(p1,atom_or_var);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
-	int fd = fileno(str->fp);
+	int fd = fileno(str->fp_in);
 	str->sslptr = tpl_enable_ssl(fd, NULL, true, 0, NULL);
 
 	if (!str->sslptr)
-		return NULL;
+		return false;						// FIX 1: bool, not NULL
 
-	const char *hostname = tpl_servername(str->sslptr);
+	const char *hostname = tpl_servername(str);	// FIX 1: pass the stream, not the SSL*
 
 	if (!hostname)
 		return true;
 
 	cell tmp;
 	make_cstring(&tmp, hostname);
-
-	if (unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx))
-		return false;
-
-	return true;
+	// FIX 1: succeed iff the unify succeeds (was inverted).
+	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
 }
 
 static bool bif_sys_client_tls_4(query *q)
 {
 	GET_FIRST_ARG(pstr,stream);
 	GET_NEXT_ARG(p1,atom);
+	GET_NEXT_ARG(p2,integer);			// FIX 8: read the declared level arg
+	GET_NEXT_ARG(p3,atom_or_var);		// FIX 8: read the declared certfile arg
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
-	int fd = fileno(str->fp);
-	const char *hostname = C_STR(q, p1), *certfile = NULL;
-	int level = 0;
+	int fd = fileno(str->fp_in);
+	const char *hostname = C_STR(q, p1);
+	int level = (int)get_smallint(p2);
+	const char *certfile = is_atom(p3) ? C_STR(q, p3) : NULL;
 	str->sslptr = tpl_enable_ssl(fd, hostname, false, level, certfile);
-	return str->sslptr;
+	return str->sslptr != NULL;
 }
 
 static bool bif_sys_current_host_1(query *q)
@@ -782,6 +791,11 @@ static bool bif_sys_current_host_1(query *q)
 	GET_FIRST_ARG(p1,var);
 	char buffer[256];
 	const char *host = get_local_hostname(buffer, sizeof(buffer));
+
+	// FIX 12: host is NULL on non-POSIX or on gethostname() failure.
+	if (!host)
+		return throw_error(q, p1, p1_ctx, "resource_error", "hostname_unavailable");
+
 	cell tmp;
 	make_cstring(&tmp, host);
 	return unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
@@ -794,6 +808,11 @@ static bool bif_sys_peer_addr_3(query *q)
 	GET_NEXT_ARG(p2,var);
 	int n = get_stream(q, pstr);
 	stream *str = &q->pl->streams[n];
+
+	// FIX 12: addr is NULL for a listening/server stream.
+	if (!str->addr)
+		return false;
+
 	cell tmp;
 	make_cstring(&tmp, str->addr);
 	unify(q, p1, p1_ctx, &tmp, q->st.cur_ctx);
