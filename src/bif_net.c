@@ -26,8 +26,15 @@ static void parse_host(const char *src, char hostname[1024], char path[4096], un
 
 	if (*src == ':')
 		sscanf(src, ":%u/%4095s", port, path);
-	else
-		sscanf(src, "%1023[^/]%4095s", hostname, path);
+	else {
+		sscanf(src, "%1023[^/:]", hostname);
+		const char *rest = src + strlen(hostname);
+
+		if (*rest == ':')
+			sscanf(rest, ":%u%4095s", port, path);
+		else
+			sscanf(rest, "%4095s", path);
+	}
 
 	hostname[1023] = '\0';
 	path[4095] = '\0';
@@ -809,4 +816,3 @@ builtins g_net_bifs[] =
 
 	{0}
 };
-
