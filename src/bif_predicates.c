@@ -3636,11 +3636,14 @@ static bool bif_load_text_2(query *q)
 	GET_NEXT_ARG(p2,list_or_nil);
 	LIST_HANDLER(p2);
 	const char *src = NULL;
+	bool src_alloced = false;	// FIX: track owned buffer
 
 	if (is_cstring(p1)) {
 		src = C_STR(q, p1);
 	} else if (scan_is_chars_list(q, p1, p1_ctx, true) > 0) {
 		src = chars_list_to_string(q, p1, p1_ctx);
+		CHECKED(src);
+		src_alloced = true;	// FIX
 	} else if (is_nil(p1)) {
 		return false;
 	} else
@@ -3668,10 +3671,14 @@ static bool bif_load_text_2(query *q)
 					m = module_create(q->pl, name_s);
 					CHECKED(m);
 				}
-			} else
+			} else {
+				if (src_alloced) TPL_free((void*)src);	// FIX: free owned buffer
 				return throw_error(q, c, q->latest_ctx, "domain_error", "option");
-		} else
+			}
+		} else {
+			if (src_alloced) TPL_free((void*)src);	// FIX: free owned buffer
 			return throw_error(q, c, q->latest_ctx, "domain_error", "option");
+		}
 
 		p2 = LIST_TAIL(p2);
 		p2 = deref(q, p2, p2_ctx);
@@ -3679,6 +3686,7 @@ static bool bif_load_text_2(query *q)
 	}
 
 	load_text(m, src, q->st.m->filename);
+	if (src_alloced) TPL_free((void*)src);	// FIX: free owned buffer
 	return true;
 }
 

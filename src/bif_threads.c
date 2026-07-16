@@ -311,7 +311,10 @@ void suspend_thread(thread *t, int ms)
 {
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
-	ts.tv_nsec += 1000 * 1000 * ms;
+	// FIX: normalise tv_nsec into [0,1e9); otherwise pthread_cond_timedwait returns EINVAL and busy-waits
+	ts.tv_sec += ms / 1000;
+	ts.tv_nsec += (long)(ms % 1000) * 1000 * 1000;
+	if (ts.tv_nsec >= 1000000000L) { ts.tv_sec++; ts.tv_nsec -= 1000000000L; }
 	pthread_mutex_lock(&t->mutex);
 	pthread_cond_timedwait(&t->cond, &t->mutex, &ts);
 	pthread_mutex_unlock(&t->mutex);
@@ -370,7 +373,6 @@ static bool bif_thread_send_message_2(query *q)
 	int n = get_thread(q, p1);
 
 	if ((n < 0) || !is_queue(p1)) {
-		printf("*** oops\n");
 		THREAD_DEBUG DUMP_TERM(" - ", q->st.instr, q->st.cur_ctx, 1);
 		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 	}
@@ -595,6 +597,9 @@ static void do_unlock_all(prolog *pl)
 {
 	thread *me = get_self(pl);
 
+	if (!me)	// FIX: get_self() may return NULL; don't deref me->chan
+		return;
+
 	for (unsigned i = 0; i < MAX_THREADS; i++) {
 		thread *t = &pl->threads[i];
 
@@ -638,8 +643,10 @@ static bool bif_pl_thread_3(query *q)
 
 	int n = new_thread(q->pl);
 
-	if (n < 0)
+	if (n < 0) {
+		TPL_free(filename);	// FIX: free filename on error
 		return throw_error(q, p1, p1_ctx, "resource_error", "too_many_threads");
+	}
 
 	thread *t = &q->pl->threads[n];
 	LIST_HANDLER(p3);
@@ -649,8 +656,10 @@ static bool bif_pl_thread_3(query *q)
 		cell *c = deref(q, h, p3_ctx);
 		pl_ctx c_ctx = q->latest_ctx;
 
-		if (is_var(c))
+		if (is_var(c)) {
+			TPL_free(filename);	// FIX: free filename on error
 			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+		}
 
 		cell *name = c + 1;
 		name = deref(q, name, c_ctx);
@@ -658,16 +667,19 @@ static bool bif_pl_thread_3(query *q)
 		if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
 			if (is_var(name)) {
 				t->is_active = false;
+				TPL_free(filename);	// FIX: free filename on error
 				return throw_error(q, name, q->latest_ctx, "instantiation_error", "stream_option");
 			}
 
 			if (!is_atom(name)) {
-				t->is_active = true;
+				t->is_active = false;	// FIX: was true, leaving a zombie active slot
+				TPL_free(filename);	// FIX: free filename on error
 				return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 			}
 
 			if (get_named_thread(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0) {
 				t->is_active = false;
+				TPL_free(filename);	// FIX: free filename on error
 				return throw_error(q, c, c_ctx, "permission_error", "open,source_sink");
 			}
 
@@ -675,6 +687,7 @@ static bool bif_pl_thread_3(query *q)
 			sl_app(q->pl->alias, t->alias, t);
 		} else {
 			t->is_active = false;
+			TPL_free(filename);	// FIX: free filename on error
 			return throw_error(q, c, c_ctx, "domain_error", "stream_option");
 		}
 
@@ -684,6 +697,7 @@ static bool bif_pl_thread_3(query *q)
 
 		if (is_var(p3)) {
 			t->is_active = false;
+			TPL_free(filename);	// FIX: free filename on error
 			return throw_error(q, p3, p3_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
 		}
 	}
@@ -696,6 +710,7 @@ static bool bif_pl_thread_3(query *q)
 
 	if (pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread, (void*)t) != 0) {
 		t->is_active = false;
+		TPL_free((void*)t->filename); t->filename = NULL;	// FIX: free filename on error (cast: field is const char*)
 		return throw_error(q, p2, p2_ctx, "system_error", "pthread_create");
 	}
 
@@ -905,8 +920,9 @@ static bool bif_thread_create_3(query *q)
 
 	if (pthread_create((pthread_t*)&t->id, &sa, (void*)start_routine_thread_create, (void*)t) != 0) {
 		t->is_active = false;
-		TPL_free(t->goal);
-		TPL_free(t->at_exit_goal);
+		// FIX: release shared cell refs before freeing (goal/at_exit_goal hold dup'd cells)
+		if (t->goal) { unshare_cells(t->goal, t->goal->num_cells); TPL_free(t->goal); t->goal = NULL; }
+		if (t->at_exit_goal) { unshare_cells(t->at_exit_goal, t->at_exit_goal->num_cells); TPL_free(t->at_exit_goal); t->at_exit_goal = NULL; }
 		query_destroy(t->q);
 		t->q = NULL;
 		sl_del(q->pl->alias, t->alias);
@@ -1010,6 +1026,7 @@ bool do_signal(query *q, void *thread_ptr)
 	THREAD_DEBUG DUMP_TERM("do_signal", m->c, q->st.cur_ctx, 0);
 	cell *c = import_term(q, m->c, q->st.cur_ctx);
 	CHECKED(c);
+	unshare_cells(m->c, m->c->num_cells);	// FIX: release cell refs (was leaked)
 	TPL_free(m);
 	cell *tmp = prepare_call(q, CALL_NOSKIP, c, q->st.cur_ctx, 2);
 	ENSURE(tmp);
@@ -1193,6 +1210,9 @@ static bool bif_thread_exit_1(query *q)
 	THREAD_DEBUG DUMP_TERM("*** ", q->st.instr, q->st.cur_ctx, 1);
 	GET_FIRST_ARG(p1,nonvar);
 	thread *t = get_self(q->pl);
+
+	if (!t)	// FIX: guard NULL self (cf. thread_self/1)
+		return false;
 
 	//if (t->is_finished)
 	//	return throw_error(q, p1, p1_ctx, "permission_error", "fished,thread");
@@ -1912,6 +1932,12 @@ static bool bif_mutex_trylock_1(query *q)
 		return false;
 
 	thread *me = get_self(q->pl);
+
+	if (!me) {	// FIX: guard NULL self
+		release_lock(&t->guard);
+		return false;
+	}
+
 	t->locked_by = me->chan;
 	t->num_locks++;
 	return true;
@@ -1930,6 +1956,10 @@ static bool bif_mutex_lock_1(query *q)
 
 	thread *t = &q->pl->threads[n];
 	thread *me = get_self(q->pl);
+
+	if (!me)	// FIX: guard NULL self
+		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
+
 	acquire_lock(&t->guard);
 	t->locked_by = me->chan;
 	t->num_locks++;
@@ -1950,6 +1980,9 @@ static bool bif_mutex_unlock_1(query *q)
 
 	thread *t = &q->pl->threads[n];
 	thread *me = get_self(q->pl);
+
+	if (!me)	// FIX: guard NULL self
+		return throw_error(q, p1, p1_ctx, "existence_error", "thread_object");
 
 	if (t->locked_by != me->chan)
 		return throw_error(q, p1, p1_ctx, "permission_error", "mutex_unlock,not_locked_by_me");
