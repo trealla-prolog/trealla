@@ -41,7 +41,6 @@ pl_idx g_sys_cut_if_det_s, g_as_s, g_colon_s, g_member_s;
 pl_idx g_caret_s, g_sys_counter_s, g_catch_s, g_memberchk_s;
 pl_idx g_cont_s, g_sys_set_if_var_s, g_is_s, g_maplist_s;
 pl_idx g_sys_succeed_on_retry_s, g_sys_fail_on_retry_s;
-pl_idx g_quad_s, g_sys_quad_s;
 pl_idx g_sys_call_check_s, g_ignore_s, g_sys_reset_handler_s;
 pl_idx g_reset_s, g_sys_get_level_s, g_sys_jump_s, g_if_s;
 pl_idx g_sys_call_s, g_sys_cut_s, g_notunify_s, g_sys_module_s;
@@ -566,8 +565,6 @@ static bool g_init(prolog *pl)
 	CHECK_SENTINEL(g_braces_s = new_atom(pl, "{}"), ERR_IDX);
 	CHECK_SENTINEL(g_fail_s = new_atom(pl, "fail"), ERR_IDX);
 	CHECK_SENTINEL(g_neck_s = new_atom(pl, ":-"), ERR_IDX);
-	CHECK_SENTINEL(g_quad_s = new_atom(pl, "?-"), ERR_IDX);
-	CHECK_SENTINEL(g_sys_quad_s = new_atom(pl, "$quad"), ERR_IDX);
 	CHECK_SENTINEL(g_eof_s = new_atom(pl, "end_of_file"), ERR_IDX);
 	CHECK_SENTINEL(g_lt_s = new_atom(pl, "<"), ERR_IDX);
 	CHECK_SENTINEL(g_gt_s = new_atom(pl, ">"), ERR_IDX);

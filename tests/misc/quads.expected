@@ -1,4 +1,0 @@
-quads: FAILED tests/misc/quads.pl:51
-   ?- user:member(X,[1,2]).
-   expected: X=1;X=99
-quads: 12 run, 11 passed, 1 failed.
