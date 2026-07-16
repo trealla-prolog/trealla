@@ -67,8 +67,17 @@ cell *alloc_tmp(query *q, unsigned num_cells)
 	return c;
 }
 
+static inline bool ref_is_live(const query *q, const cell *c)
+{
+	if (c->val_ctx >= q->st.fp)
+		return false;
+
+	const frame *f = GET_FRAME(c->val_ctx);
+	return c->var_num < f->actual_slots;
+}
+
 #define deep_copy(c) \
-	(!q->noderef || (is_ref(c) && (c->val_ctx <= q->st.cur_ctx) && !is_anon(c)))
+ (!q->noderef || (is_ref(c) && (c->val_ctx <= q->st.cur_ctx) && ref_is_live(q, c) && !is_anon(c)))
 
 // Note: convert vars to refs
 // Note: doesn't increment ref counts
