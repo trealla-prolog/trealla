@@ -1576,7 +1576,7 @@ bool match_head(query *q)
 		// after a file reconsult removed its last clause) must be treated as
 		// an undefined procedure and honor the `unknown` flag, rather than
 		// silently failing.
-		if (!pr->head && !pr->is_dynamic && !pr->is_multifile && !pr->is_builtin) {
+		if (!pr->head && !pr->is_dynamic && !pr->is_multifile && !pr->is_discontiguous && !pr->is_builtin) {
 			if (!is_end(c) && !(is_interned(c) && !strcmp(C_STR(q, c), "initialization"))) {
 				if (q->st.m->flags.unknown == UNK_ERROR)
 					return throw_error(q, c, c_ctx, "existence_error", "procedure");
