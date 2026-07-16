@@ -186,7 +186,7 @@ int tpl_connect(const char *hostname, unsigned port, bool udp, bool nodelay)
 	}
 
 	struct linger l;
-	l.l_onoff = 1;
+	l.l_onoff = 0;
 	l.l_linger = 0;
 	setsockopt(fd, SOL_SOCKET, SO_LINGER, (char*)&l, sizeof(l));
 	int flag = 1;
@@ -308,7 +308,7 @@ int tpl_accept(stream *str, char **addr, int *port)
 	}
 
 	struct linger l;
-	l.l_onoff = 1;
+	l.l_onoff = 0;
 	l.l_linger = 0;
 	setsockopt(fd, SOL_SOCKET, SO_LINGER, (char*)&l, sizeof(l));
 	int flag = 1;
@@ -411,7 +411,7 @@ size_t tpl_write(const void *ptr, size_t nbytes, stream *str)
 	} else {
 		size_t len = fwrite(ptr, 1, nbytes, str->fp_out?str->fp_out:str->fp);
 
-		if (str->is_socket || str->is_pipe)
+		if (str->is_pipe)
 			fflush(str->fp_out);
 
 		return len;
@@ -444,6 +444,9 @@ int tpl_getc(stream *str)
 		return ptr[0];
 	}
 #endif
+
+	if (str->is_socket && str->fp_out)
+		fflush(str->fp_out);
 
 	int ok = fgetc(str->fp_in);
 
@@ -480,6 +483,9 @@ size_t tpl_read(void *ptr, size_t len, stream *str)
 		return ok;
 	}
 #endif
+
+	if (str->is_socket && str->fp_out)
+		fflush(str->fp_out);
 
 	int ok = fread(ptr, 1, len, str->fp_in);
 
@@ -595,6 +601,9 @@ int tpl_getline(char **lineptr, size_t *n, stream *str)
 	}
 #endif
 
+	if (str->is_socket && str->fp_out)
+		fflush(str->fp_out);
+
 	int ok = getline(lineptr, n, str->fp_in);
 
 	if (errno == EINTR) {
@@ -623,6 +632,7 @@ int tpl_close(stream *str)
 
 	if (!str->is_memory && !str->is_popen) {
 		if (str->is_socket) {
+			fflush(str->fp_out);
 #if !defined(_WIN32) && !defined(__wasi__)
 			shutdown(fileno(str->fp_in), SHUT_RD);
 			shutdown(fileno(str->fp_out), SHUT_WR);
