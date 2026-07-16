@@ -49,6 +49,7 @@ typedef struct timer {
 	dispatch_source_t timer_source;
 	struct sigevent evp;
 	int interval_ms;
+	pthread_t target_tid;	// FIX: thread that armed the timer
 } timer_t;
 
 static int timer_create(clockid_t clockid, struct sigevent *sevp, timer_t *timerid)
@@ -63,6 +64,7 @@ static int timer_create(clockid_t clockid, struct sigevent *sevp, timer_t *timer
 		timerid->evp.sigev_signo = SIGALRM;
 	}
 
+	timerid->target_tid = pthread_self();	// FIX: timer_create runs on the arming thread
 	timerid->timer_source = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0));
 	return 0;
 }
@@ -83,12 +85,14 @@ static int timer_settime(timer_t timerid, int flags, const struct itimerspec *ne
 	dispatch_time_t start_time = dispatch_time(DISPATCH_TIME_NOW, start_nsec);
 	dispatch_source_set_timer(timerid.timer_source, start_time, interval_nsec, 0);
 
+	// FIX: deliver the signal to the ARMING thread captured by value; never
+	// dereference 'e' from this GCD worker thread. Self-cancel (one-shot) so the
+	// arming thread's timer_delete is the sole releaser -- eliminates the
+	// double dispatch_release and the use-after-free/data-race on 'e'.
 	dispatch_source_set_event_handler(timerid.timer_source, ^{
-		if (timerid.evp.sigev_notify == SIGEV_SIGNAL) {
-			raise(timerid.evp.sigev_signo);
-		} else if (timerid.evp.sigev_notify == SIGEV_THREAD) {
-			timerid.evp.sigev_notify_function(timerid.evp.sigev_value);
-		}
+		int signo = timerid.evp.sigev_signo ? timerid.evp.sigev_signo : SIGALRM;
+		pthread_kill(timerid.target_tid, signo);
+		dispatch_source_cancel(timerid.timer_source);
 	});
 
 	dispatch_resume(timerid.timer_source);
@@ -482,7 +486,7 @@ static bool bif_sys_alarm_2(query *q)
     sa.sa_flags = 0; // Notice we DO NOT use SA_RESTART
     sigaction(SIGALRM, &sa, NULL);
 
-	timer_entry *e = malloc(sizeof(timer_entry));
+	timer_entry *e = TPL_malloc(sizeof(timer_entry));	// FIX: match TPL_free on the cancel path
 
 	struct sigevent sevp = {0};
 #if defined(__linux__)
@@ -759,16 +763,20 @@ static bool bif_popen_4(query *q)
 		cell *h = LIST_HEAD(p4);
 		cell *c = deref(q, h, p4_ctx);
 
-		if (is_var(c))
+		if (is_var(c)) {
+			TPL_free(src);	// FIX: free src on error
 			return throw_error(q, c, q->latest_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+		}
 
 		if (is_compound(c) && (c->arity == 1)) {
 			cell *name = c + 1;
 			name = deref(q, name, q->latest_ctx);
 
 
-			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0)
+			if (get_named_stream(q->pl, C_STR(q, name), C_STRLEN(q, name)) >= 0) {
+				TPL_free(src);	// FIX: free src on error
 				return throw_error(q, c, q->latest_ctx, "permission_error", "open,source_sink");
+			}
 
 			if (!CMP_STRING_TO_CSTR(q, c, "alias")) {
 				if (!CMP_STRING_TO_CSTR(q, name, "current_input")) {
@@ -803,15 +811,19 @@ static bool bif_popen_4(query *q)
 					eof_action = eof_action_reset;
 				}
 			}
-		} else
+		} else {
+			TPL_free(src);	// FIX: free src on error
 			return throw_error(q, c, q->latest_ctx, "domain_error", "stream_option");
+		}
 
 		p4 = LIST_TAIL(p4);
 		p4 = deref(q, p4, p4_ctx);
 		p4_ctx = q->latest_ctx;
 
-		if (is_var(p4))
+		if (is_var(p4)) {
+			TPL_free(src);	// FIX: free src on error
 			return throw_error(q, p4, p4_ctx, "instantiation_error", "args_not_sufficiently_instantiated");
+		}
 	}
 
 	str->binary = binary;
