@@ -1571,6 +1571,22 @@ bool match_head(query *q)
 			pr = pr->alias;
 		}
 
+		// A predicate that exists in the module but has no clauses and is
+		// neither dynamic nor multifile (e.g. a static predicate left empty
+		// after a file reconsult removed its last clause) must be treated as
+		// an undefined procedure and honor the `unknown` flag, rather than
+		// silently failing.
+		if (!pr->head && !pr->is_dynamic && !pr->is_multifile && !pr->is_builtin) {
+			if (!is_end(c) && !(is_interned(c) && !strcmp(C_STR(q, c), "initialization"))) {
+				if (q->st.m->flags.unknown == UNK_ERROR)
+					return throw_error(q, c, c_ctx, "existence_error", "procedure");
+				return false;
+			} else {
+				q->error = true;
+				return false;
+			}
+		}
+
 		find_key(q, pr, c, c_ctx);
 		enter_predicate(q, pr);
 	} else
