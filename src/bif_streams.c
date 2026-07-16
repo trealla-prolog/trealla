@@ -3859,6 +3859,13 @@ static bool bif_read_term_from_atom_3(query *q)
 	} else
 		return throw_error(q, p_chars, p_chars_ctx, "type_error", "atom");
 
+	if (!src || !*src) {	// FIX: guard empty input like sibling bif_read_term_from_chars_3
+		TPL_free(src);
+		cell tmp;
+		make_atom(&tmp, g_eof_s);
+		return unify(q, p_term, p_term_ctx, &tmp, q->st.cur_ctx);
+	}
+
 	const char *end_ptr = src + strlen(src) - 1;
 
 	while (isspace(*end_ptr) && (end_ptr != src))
@@ -4357,6 +4364,7 @@ static bool bif_read_file_to_string_3(query *q)
 	struct stat st = {0};
 
 	if (fstat(fileno(fp), &st)) {
+		fclose(fp);	// FIX: don't leak fp on fstat failure
 		return false;
 	}
 
@@ -4370,7 +4378,7 @@ static bool bif_read_file_to_string_3(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "cannot_read");
 	}
 
-	s[st.st_size] = '\0';
+	s[len] = '\0';	// FIX: buffer is (st_size-offset)+1; s[st.st_size] overruns by 'offset' bytes when a BOM is present
 	fclose(fp);
 	cell tmp;
 	make_stringn(&tmp, s, len);
@@ -4534,7 +4542,7 @@ static bool bif_savefile_2(query *q)
 		filename = DUP_STRING(q, p1);
 
 	FILE *fp = fopen(filename, "wb");
-	CHECKED(fp);
+	CHECKED(fp, TPL_free(filename));	// FIX: free filename if open fails
 	fwrite(C_STR(q, p2), 1, C_STRLEN(q, p2), fp);
 	fclose(fp);
 	TPL_free(filename);
@@ -4575,6 +4583,7 @@ static bool bif_loadfile_2(query *q)
 	struct stat st = {0};
 
 	if (fstat(fileno(fp), &st)) {
+		fclose(fp);	// FIX: don't leak fp on fstat failure
 		return false;
 	}
 
@@ -4588,7 +4597,7 @@ static bool bif_loadfile_2(query *q)
 		return throw_error(q, p1, p1_ctx, "domain_error", "cannot_read");
 	}
 
-	s[st.st_size] = '\0';
+	s[len] = '\0';	// FIX: buffer is (st_size-offset)+1; s[st.st_size] overruns by 'offset' bytes when a BOM is present
 	fclose(fp);
 	cell tmp;
 
@@ -4945,7 +4954,10 @@ static bool bif_absolute_file_name_3(query *q)
 	bool expand = false;
 	char *filename = NULL;
 	char cwdbuf[1024*4];
-	char *here = strdup(getcwd(cwdbuf, sizeof(cwdbuf)));
+	const char *cwd0 = getcwd(cwdbuf, sizeof(cwdbuf));	// FIX: getcwd may fail; don't strdup(NULL)
+	if (!cwd0)
+		return throw_error(q, p1, p1_ctx, "system_error", "getcwd");
+	char *here = strdup(cwd0);
 	CHECKED(here);
 	char *cwd = here;
 
@@ -5649,6 +5661,10 @@ static bool bif_working_directory_2(query *q)
 	GET_NEXT_ARG(p_new,atom_or_list_or_var);
 	char tmpbuf[PATH_MAX], tmpbuf2[PATH_MAX];
 	char *oldpath = getcwd(tmpbuf, sizeof(tmpbuf));
+
+	if (!oldpath)	// FIX: getcwd may fail
+		return throw_error(q, p_old, p_old_ctx, "system_error", "getcwd");
+
 	snprintf(tmpbuf2, sizeof(tmpbuf2), "%s/", oldpath);
 	oldpath = tmpbuf2;
 	cell tmp;
@@ -5670,6 +5686,7 @@ static bool bif_working_directory_2(query *q)
 			filename = DUP_STRING(q, p_new);
 
 		if (chdir(filename)) {
+			TPL_free(filename);	// FIX: free filename on chdir failure
 			unshare_cell(&tmp);
 			return throw_error(q, p_new, p_new_ctx, "existence_error", "path");
 		}
@@ -6705,4 +6722,3 @@ builtins g_streams_bifs[] =
 
 	{0}
 };
-
