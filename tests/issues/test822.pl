@@ -16,8 +16,10 @@ gr2(N,[_|Ls]) -->
   "",
   gr2(N,Ls).
 
-test1 :- phrase(gr1(1,[_]),Str), format("~q~n",[Str]).
-test2 :- phrase(gr2(1,[_]),Str), format("~q~n",[Str]).
+test1 :- phrase(gr1(1,[_]),Str),
+	write_term(Str, [double_quotes(true)]), nl.
+test2 :- phrase(gr2(1,[_]),Str),
+	write_term(Str, [double_quotes(true)]), nl.
 
 main :-
 	test1, test2.

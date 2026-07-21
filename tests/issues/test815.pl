@@ -2,8 +2,8 @@
 
 main :-
 	L="0"||_,
-	format("~q~n",[L]),
+	write_term(L, [double_quotes(true)]), nl,
 	L0="0"||abc,
-	format("~q~n",[L0]),
+	write_term(L0, [double_quotes(true)]), nl,
 	L1="0"||123,
-	format("~q~n",[L1]).
+	write_term(L1, [double_quotes(true)]), nl.

@@ -2,4 +2,4 @@
 
 main :-
 	L="0"||_,
-	format("~q~n",[L]).
+	write_term(L, [double_quotes(true)]), nl.
