@@ -1,10 +1,10 @@
-quads: FAILED tests/misc/quads.pl:96
+quads: FAILED tests/misc/quads.pl:97
    ?- user:member(X,[1,2]).
    expected: X=1;X=99
-quads: FAILED tests/misc/quads.pl:102
+quads: FAILED tests/misc/quads.pl:103
    ?- user:(X=1).
-   unexpected: X=1,unexpected
-quads: FAILED tests/misc/quads.pl:107
+   expected: X=1,unexpected
+quads: FAILED tests/misc/quads.pl:108
    ?- user:(X=f(Y,Z),Y=Z).
    expected: X=f(Y,Y)
 quads: 26 run, 23 passed, 3 failed.

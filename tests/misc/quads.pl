@@ -21,7 +21,7 @@ loop :- loop.
    X = 1, Y = 2.
 
 ?- atom_length(A, L).
-   error(instantiation_error, _).
+   instantiation_error.
 
 ?- atom_length(abc, L).
    L = 3.
@@ -38,7 +38,7 @@ loop :- loop.
 
 ?- catch(throw(ball), E, true).
    E = ball
-|  error(system_error, _).
+|  error(system_error, ...).
 
 ?- length(L, 2).
    L = [_,_].
@@ -52,7 +52,8 @@ loop :- loop.
    X = 2, unexpected.
 
 ?- member(X, [1,2,3]).
-   X = 4, unexpected.
+   X = 4, unexpected
+;  ... .
 
 ?- X = 1.
    X = 2, unexpected

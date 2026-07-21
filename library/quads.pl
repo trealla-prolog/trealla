@@ -98,50 +98,40 @@ run_list([q(Q, VNs, AD, File, Line)|T], M, P0, P, F0, F) :-
 % description term are first unified via the VarNames list.
 
 check_quad(M, Q, VNs, AD, File, Line) :-
-	strip_unexpected(AD, AD1, Unexpected),
-	alternatives(AD1, Alts),
-	(	(	Unexpected == true
-		->	\+ ( member(Alt, Alts), \+ \+ check_alternative(M, Q, VNs, Alt) )
-		;	member(Alt, Alts),
-			\+ \+ check_alternative(M, Q, VNs, Alt)
-		)
+	alternatives(AD, Alts),
+	(	member(Alt, Alts),
+		\+ \+ check_alternative(M, Q, VNs, Alt)
 	->	true
-	;	report_failure(M, Q, VNs, AD, File, Line, Unexpected),
+	;	report_failure(M, Q, VNs, AD, File, Line),
 		fail
 	).
 
-% An answer description may carry the annotation 'unexpected', meaning
-% the answer it describes must *not* occur (issue #1065). It is written
-% as a trailing conjunct, as in
+% An answer description may carry the annotation 'unexpected',
+% meaning the answer it describes must *not* occur. It attaches to a
+% single leaf answer, not to a disjunction, so
 %
-%     ?- X = 1.
-%        X = 2, unexpected.
+%     ?- foo(X).
+%        X = 1
+%     ;  X = 2, unexpected.
 %
-% so it is stripped wherever it appears and the sense of the whole
-% check is then inverted. A quad documenting a known bug therefore
+% asserts that the first answer is X = 1 and that, if there is a second
+% answer, it is not X = 2. A quad documenting a known bug therefore
 % fails while the bug is present and passes once it is fixed, which is
 % what lets a quad be filed verbatim as a bug report.
 
-strip_unexpected('|'(A, B), '|'(A1, B1), F) :- !,
-	strip_unexpected(A, A1, FA),
-	strip_unexpected(B, B1, FB),
-	( FA == true -> F = true ; F = FB ).
-strip_unexpected((A ; B), (A1 ; B1), F) :- !,
-	strip_unexpected(A, A1, FA),
-	strip_unexpected(B, B1, FB),
-	( FA == true -> F = true ; F = FB ).
-strip_unexpected(Sol, Sol1, F) :-
-	conj(Sol, Items),
-	drop_unexpected(Items, Kept, F),
-	rebuild_conj(Kept, Sol1).
+% Annotations may appear anywhere in the conjunction, most naturally
+% as a trailing conjunct, so they are removed wherever they occur.
 
-drop_unexpected([], [], false).
-drop_unexpected([I|T], Kept, F) :-
-	drop_unexpected(T, Kept0, F0),
-	(	( I == unexpected ; I == inattendue )
+drop_annotation([], _, [], false).
+drop_annotation([I|T], Ann, Kept, F) :-
+	drop_annotation(T, Ann, Kept0, F0),
+	(	annotation(I, Ann)
 	->	Kept = Kept0, F = true
 	;	Kept = [I|Kept0], F = F0
 	).
+
+annotation(I, unexpected) :- ( I == unexpected ; I == inattendue ), !.
+annotation(I, Ann) :- I == Ann.
 
 rebuild_conj([], true).
 rebuild_conj([I], I) :- !.
@@ -175,24 +165,34 @@ check_alternative(M, Q, VNs, Alt) :-
 
 check_solutions([], M, Q, VNs, N) :-
 	attempt(M, Q, VNs, N, none).
-check_solutions([Sol|T], M, Q, VNs, N) :-
-	conj(Sol, Items),
-	( Items = ['...'|_] ->
+check_solutions([Sol0|T], M, Q, VNs, N) :-
+	conj(Sol0, Items0),
+	drop_annotation(Items0, unexpected, Items, Unexpected),
+	drop_annotation(Items, sto, Items1, Sto),
+	rebuild_conj(Items1, Sol),
+	( Items1 = ['...'|_] ->
 		true							% any further answers accepted
-	; Items = [sto|_] ->
+	; Sto == true ->
 		true							% occurs-check dependent: skipped
-	; Items = [loops] ->
-		attempt(M, Q, VNs, N, loops)
-	; Items = [false] ->
+	; Items1 = [loops] ->
+		expect(Unexpected, M, Q, VNs, N, loops)
+	; Items1 = [false] ->
 		T == [],
-		attempt(M, Q, VNs, N, none)
+		expect(Unexpected, M, Q, VNs, N, none)
 	; expected_ball(Sol, Ball) ->
 		T == [],
-		attempt(M, Q, VNs, N, ball(Ball))
-	;	attempt(M, Q, VNs, N, solution(Items)),
+		expect(Unexpected, M, Q, VNs, N, ball(Ball))
+	;	expect(Unexpected, M, Q, VNs, N, solution(Items1)),
 		N1 is N + 1,
 		check_solutions(T, M, Q, VNs, N1)
 	).
+
+% An 'unexpected' answer must not be the one the query produces there.
+
+expect(true, M, Q, VNs, N, Expect) :- !,
+	\+ attempt(M, Q, VNs, N, Expect).
+expect(_, M, Q, VNs, N, Expect) :-
+	attempt(M, Q, VNs, N, Expect).
 
 % Request the Nth answer of Q and check the outcome. Every call is
 % bindings-transparent (\+ \+) and time-limited, so nonterminating
@@ -264,23 +264,47 @@ apply_equations([Item|T]) :-
 match_outcome(solution(_), matched).
 match_outcome(none, none).
 match_outcome(loops, loops).
-match_outcome(ball(B), ball(B0)) :- subsumes_term(B, B0).
+match_outcome(ball(B), ball(B0)) :- ball_matches(B, B0).
+
+% The described ball must be a variant of the one actually thrown,
+% except that '...' stands for an unspecified subterm. A variable in a
+% description denotes an actual variable, here as anywhere else, so
+%
+%     error(instantiation_error, _)
+%
+% requires the implementation-defined second argument to be unbound.
+% To leave it unspecified write error(instantiation_error, ...), or the
+% concise shorthand instantiation_error (#1068).
+
+ball_matches(P, _) :- P == '...', !.
+ball_matches(P, A) :- var(P), !, var(A).
+ball_matches(P, A) :- \+ compound(P), !, P == A.
+ball_matches(P, A) :-
+	compound(A),
+	P =.. [F|Ps],
+	A =.. [F|As],
+	ball_args(Ps, As).
+
+ball_args([], []).
+ball_args([P|Ps], [A|As]) :-
+	ball_matches(P, A),
+	ball_args(Ps, As).
 
 % Errors may be written in full or in the customary shorthand
 
 expected_ball(error(E, Impl), error(E, Impl)).
 expected_ball(throw(B), B).
-expected_ball(instantiation_error, error(instantiation_error, _)).
-expected_ball(type_error(T, C), error(type_error(T, C), _)).
-expected_ball(domain_error(D, C), error(domain_error(D, C), _)).
-expected_ball(existence_error(T, C), error(existence_error(T, C), _)).
-expected_ball(permission_error(O, T, C), error(permission_error(O, T, C), _)).
-expected_ball(evaluation_error(E), error(evaluation_error(E), _)).
-expected_ball(system_error, error(system_error, _)).
-expected_ball(syntax_error(E), error(syntax_error(E), _)).
-expected_ball(representation_error(R), error(representation_error(R), _)).
-expected_ball(resource_error(R), error(resource_error(R), _)).
-expected_ball(uninstantiation_error(C), error(uninstantiation_error(C), _)).
+expected_ball(instantiation_error, error(instantiation_error, '...')).
+expected_ball(type_error(T, C), error(type_error(T, C), '...')).
+expected_ball(domain_error(D, C), error(domain_error(D, C), '...')).
+expected_ball(existence_error(T, C), error(existence_error(T, C), '...')).
+expected_ball(permission_error(O, T, C), error(permission_error(O, T, C), '...')).
+expected_ball(evaluation_error(E), error(evaluation_error(E), '...')).
+expected_ball(system_error, error(system_error, '...')).
+expected_ball(syntax_error(E), error(syntax_error(E), '...')).
+expected_ball(representation_error(R), error(representation_error(R), '...')).
+expected_ball(resource_error(R), error(resource_error(R), '...')).
+expected_ball(uninstantiation_error(C), error(uninstantiation_error(C), '...')).
 
 timeout_ball(B) :-
 	nonvar(B),
@@ -288,12 +312,9 @@ timeout_ball(B) :-
 	nonvar(E),
 	functor(E, time_limit_exceeded, _).
 
-report_failure(M, Q, VNs, AD, File, Line, Unexpected) :-
+report_failure(M, Q, VNs, AD, File, Line) :-
 	link_names(VNs),
 	write('quads: FAILED '), write(File), write(':'), write(Line), nl,
 	write('   ?- '), write_term(M:Q, [variable_names(VNs), quoted(true)]), write('.'), nl,
-	(	Unexpected == true
-	->	write('   unexpected: ')
-	;	write('   expected: ')
-	),
+	write('   expected: '),
 	write_term(AD, [variable_names(VNs), quoted(true)]), nl.
