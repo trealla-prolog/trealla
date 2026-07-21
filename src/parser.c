@@ -566,6 +566,40 @@ static void do_op(parser *p, cell *c, bool make_public)
 	}
 }
 
+// One place to report a directive the loader could not make sense of.
+// The wording is kept as it was: some callers treat it as an error and
+// stop the load, others merely warn and carry on.
+
+static void report_unknown_directive(parser *p, const char *severity, const char *dirname, unsigned arity)
+{
+	if (p->do_read_term || p->pl->quiet)
+		return;
+
+	fflush(stdout);
+	fprintf(stderr, "%s: unknown directive: %s/%u\n", severity, dirname, arity);
+}
+
+// Runs a directive's goal, distinguishing a goal that raised from one
+// that merely failed so the two can be reported differently...
+
+static bool goal_run_reporting(parser *p, cell *goal, bool *raised)
+{
+	*raised = false;
+
+	if (p->error || p->internal || !is_interned(goal))
+		return false;
+
+	query *q = query_create(p->m);
+	execute(q, goal, p->cl->num_vars);
+	bool ok = (q->retry == QUERY_OK);
+
+	if (!ok)
+		*raised = q->did_throw || q->error;
+
+	query_destroy(q);
+	return ok;
+}
+
 static bool goal_run(parser *p, cell *goal)
 {
 	if (p->error || p->internal || !is_interned(goal))
@@ -952,6 +986,26 @@ static bool is_declaration(parser *p, cell *c)
 	return is_declaration_name(C_STR(p, c));
 }
 
+// Does this directive (or any conjunct of it) declare an
+// initialization goal? Those are recorded whole for the end-of-load
+// runner, so they are not split apart.
+
+static bool has_initialization(parser *p, cell *c)
+{
+	if (!is_interned(c))
+		return false;
+
+	if ((c->val_off == g_conjunction_s) && (c->arity == 2)) {
+		cell *lhs = c + 1;
+		cell *rhs = lhs + lhs->num_cells;
+		return has_initialization(p, lhs) || has_initialization(p, rhs);
+	}
+
+	return !strcmp(C_STR(p, c), "initialization") && (c->arity == 1);
+}
+
+static bool directive_term(parser *p, cell *c);
+
 static bool directives(parser *p, cell *d)
 {
 	p->skip = false;
@@ -989,6 +1043,32 @@ static bool directives(parser *p, cell *d)
 	d->val_off = new_atom(p->pl, "$directive");
 	CLR_OP(d);
 
+	return directive_term(p, c);
+}
+
+// Handles one directive. A conjunction of declarations is the same as
+// giving them separately, so ':- dynamic(a/1), dynamic(b/1).' recurses
+// into each conjunct rather than trying to read ',' as a declaration.
+// initialization/1 is excluded: its goal is recorded as a whole
+// '$directive'(initialization(G)) fact for the end-of-load runner to
+// retract, which a conjunction would not match.
+
+static bool directive_term(parser *p, cell *c)
+{
+	module *m = p->m;
+	const char *dirname = C_STR(p, c);
+
+	if ((c->val_off == g_conjunction_s) && (c->arity == 2)
+		&& is_declaration(p, c) && !has_initialization(p, c)) {
+		cell *lhs = c + 1;
+		cell *rhs = lhs + lhs->num_cells;
+
+		if (!directive_term(p, lhs) || p->error)
+			return false;
+
+		return directive_term(p, rhs);
+	}
+
 	if (!strcmp(dirname, "initialization") && (c->arity == 1)) {
 		p->m->run_init = true;
 		return false;
@@ -998,10 +1078,15 @@ static bool directives(parser *p, cell *d)
 	// in the load, rather than silently discarding it...
 
 	if (!is_declaration(p, c)) {
-		if (!goal_run(p, c) && !p->internal && !p->do_read_term && !p->pl->quiet) {
+		bool raised = false;
+
+		if (!goal_run_reporting(p, c, &raised)
+			&& !p->internal && !p->do_read_term && !p->pl->quiet) {
 			fflush(stdout);
-			fprintf(stderr, "Warning: directive failed: %s/%u, %s:%d\n",
-				dirname, (unsigned)c->arity, get_loaded(p->m, p->m->filename), p->line_num);
+			fprintf(stderr, "Warning: directive %s: %s/%u, %s:%d\n",
+				raised ? "raised an exception" : "failed",
+				dirname, (unsigned)c->arity,
+				get_loaded(p->m, p->m->filename), p->line_num);
 		}
 
 		return true;
@@ -1493,9 +1578,7 @@ static bool directives(parser *p, cell *d)
 						}
 					}
 				} else {
-					if (((!p->do_read_term)) && !p->pl->quiet)
-						fprintf(stderr, "Error: unknown directive: %s/%d\n", dirname, c->arity);
-
+					report_unknown_directive(p, "Error", dirname, c->arity);
 					p->error = true;
 					return true;
 				}
@@ -1518,7 +1601,14 @@ static bool directives(parser *p, cell *d)
 		return true;
 	}
 
-	while (is_interned(p1) && (p1->val_off != g_dot_s)) {
+	// Bound the walk by the extent of this directive. Without it the
+	// loop runs on into whatever cells happen to follow, which is how
+	// a conjunct came to be read as a predicate indicator of the
+	// conjunct before it...
+
+	const cell *c_end = c + c->num_cells;
+
+	while ((p1 < c_end) && is_interned(p1) && !is_nil(p1) && (p1->val_off != g_dot_s)) {
 		module *m = p->m;
 		cell *c_id = p1;
 
@@ -1594,9 +1684,7 @@ static bool directives(parser *p, cell *d)
 				set_dynamic_in_db(m, C_STR(p, c_name), arity);
 				p->error = m->error;
 			} else {
-				if (((!p->do_read_term)) && !p->pl->quiet)
-					fprintf(stderr, "Error: unknown directive: %s/%d\n", dirname, c->arity);
-
+				report_unknown_directive(p, "Error", dirname, c->arity);
 				p->error = true;
 				return true;
 			}
@@ -1616,11 +1704,8 @@ static bool directives(parser *p, cell *d)
 		} else if (!strcmp(C_STR(p, p1), ",") && (p1->arity == 2))
 			p1 += 1;
 		else {
-			if (((!p->do_read_term)) && !p->pl->quiet)
-				fprintf(stderr, "Warning: unknown directive: %s/%d\n", dirname, c->arity);
-
+			report_unknown_directive(p, "Warning", dirname, c->arity);
 			return true;
-			p1 += 1;
 		}
 	}
 
@@ -1636,11 +1721,7 @@ static bool directives(parser *p, cell *d)
 	if (!strcmp(dirname, "multifile") && (c->arity == 1))
 		return true;
 
-	if (((!p->do_read_term)) && !p->pl->quiet) {
-		fprintf(stderr, "Warning: unknown directive: %s/%d\n", dirname, c->arity);
-		return true;
-	}
-
+	report_unknown_directive(p, "Warning", dirname, c->arity);
 	return true;
 }
 
@@ -3968,8 +4049,11 @@ static bool process_term(parser *p, cell *p1)
 	if (quads(p, p1))
 		return true;
 
-	// Note: we actually assert directives after processing
-	// so that they can be examined.
+	// A directive that the loader has fully handled needs no clause in
+	// the database. The exception is initialization/1, which returns
+	// false here so that it is stored as '$directive'(initialization(G))
+	// for the end-of-load runner to retract and call; plain clauses
+	// return false too, and are stored as themselves.
 
 	directives(p, p1);
 
