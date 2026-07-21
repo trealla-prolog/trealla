@@ -2826,10 +2826,18 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			if (is_var(rhs))
 				c = insert_call_here(p, c, rhs);
 			else {
+				pl_idx lhs_idx = lhs - p->cl->cells;
 				rhs->arity += extra;
 				rhs = goal_expansion(p, rhs);
 				rhs = term_to_body_conversion(p, rhs);
 				rhs->arity -= extra;
+
+				// Both calls above can grow, and hence move, the
+				// clause. Re-derive the pointers into it; rhs is
+				// already the freshly returned one...
+
+				lhs = p->cl->cells + lhs_idx;
+				c = p->cl->cells + c_idx;
 			}
 
 			c->num_cells = 1 + lhs->num_cells + rhs->num_cells;
@@ -2844,6 +2852,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 			} else {
 				rhs = goal_expansion(p, rhs);
 				rhs = term_to_body_conversion(p, rhs);
+				c = p->cl->cells + c_idx;	// may have moved
 			}
 
 			c->num_cells = 1 + rhs->num_cells;
@@ -2852,6 +2861,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 
 			if (!is_var(rhs)) {
 				rhs = goal_expansion(p, rhs);
+				c = p->cl->cells + c_idx;	// may have moved
 				c->num_cells = 1 + rhs->num_cells;
 			}
 		}
@@ -2876,6 +2886,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 
 		if (meta) {
 			c = goal_expansion(p, c);
+			c_idx = c - p->cl->cells;
 		}
 
 		cell *arg = c + 1;
@@ -2894,6 +2905,7 @@ static cell *term_to_body_conversion(parser *p, cell *c)
 				arg = term_to_body_conversion(p, arg);
 
 			arg->arity -= extra;
+			c = p->cl->cells + c_idx;	// may have moved
 			c->num_cells += arg->num_cells - save_num_cells;
 			arg += arg->num_cells;
 			i++;

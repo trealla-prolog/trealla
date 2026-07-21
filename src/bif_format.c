@@ -748,7 +748,9 @@ bool do_format(query *q, cell *str, pl_ctx str_ctx, cell *p1, pl_ctx p1_ctx, cel
 			int saveq = q->quoted;
 			bool canonical = false, quoted = false;
 			q->numbervars = true;
-			q->double_quotes = true;
+
+			if (ch != 'q')
+				q->double_quotes = true;
 
 			if (ch == 'k') {
 				canonical = true;
