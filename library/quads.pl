@@ -40,8 +40,15 @@
       ;  ... .
 
   Alternative acceptable outcomes are separated by (|)/2.
-  The annotations sto and unexpected are recognised but such
-  (parts of) descriptions are currently skipped, not interpreted.
+
+  An answer description annotated with 'unexpected' describes an
+  answer that must *not* occur:
+
+      ?- X = 1.
+         X = 2, unexpected.
+
+  The annotation sto is recognised but such (parts of) descriptions
+  are currently skipped, not interpreted.
 */
 
 :- module(quads, [run_quads/0, run_quads/1, run_quads_halt/0]).
@@ -89,13 +96,55 @@ run_list([q(Q, VNs, AD, File, Line)|T], M, P0, P, F0, F) :-
 
 check_quad(M, Q, VNs, AD, File, Line) :-
 	link_names(VNs),
-	alternatives(AD, Alts),
-	(	member(Alt, Alts),
-		\+ \+ check_alternative(M, Q, Alt)
+	strip_unexpected(AD, AD1, Unexpected),
+	alternatives(AD1, Alts),
+	(	(	Unexpected == true
+		->	\+ ( member(Alt, Alts), \+ \+ check_alternative(M, Q, Alt) )
+		;	member(Alt, Alts),
+			\+ \+ check_alternative(M, Q, Alt)
+		)
 	->	true
-	;	report_failure(M, Q, VNs, AD, File, Line),
+	;	report_failure(M, Q, VNs, AD, File, Line, Unexpected),
 		fail
 	).
+
+% An answer description may carry the annotation 'unexpected', meaning
+% the answer it describes must *not* occur (issue #1065). It is written
+% as a trailing conjunct, as in
+%
+%     ?- X = 1.
+%        X = 2, unexpected.
+%
+% so it is stripped wherever it appears and the sense of the whole
+% check is then inverted. A quad documenting a known bug therefore
+% fails while the bug is present and passes once it is fixed, which is
+% what lets a quad be filed verbatim as a bug report.
+
+strip_unexpected('|'(A, B), '|'(A1, B1), F) :- !,
+	strip_unexpected(A, A1, FA),
+	strip_unexpected(B, B1, FB),
+	( FA == true -> F = true ; F = FB ).
+strip_unexpected((A ; B), (A1 ; B1), F) :- !,
+	strip_unexpected(A, A1, FA),
+	strip_unexpected(B, B1, FB),
+	( FA == true -> F = true ; F = FB ).
+strip_unexpected(Sol, Sol1, F) :-
+	conj(Sol, Items),
+	drop_unexpected(Items, Kept, F),
+	rebuild_conj(Kept, Sol1).
+
+drop_unexpected([], [], false).
+drop_unexpected([I|T], Kept, F) :-
+	drop_unexpected(T, Kept0, F0),
+	(	I == unexpected
+	->	Kept = Kept0, F = true
+	;	Kept = [I|Kept0], F = F0
+	).
+
+rebuild_conj([], true).
+rebuild_conj([I], I) :- !.
+rebuild_conj([I|T], (I , R)) :-
+	rebuild_conj(T, R).
 
 link_names([]).
 link_names([N=V|T]) :-
@@ -130,8 +179,6 @@ check_solutions([Sol|T], M, Q, N) :-
 		true							% any further answers accepted
 	; Items = [sto|_] ->
 		true							% occurs-check dependent: skipped
-	; Items = [unexpected|_] ->
-		true							% must-not-match: skipped
 	; Items = [loops] ->
 		attempt(M, Q, N, loops)
 	; Items = [false] ->
@@ -200,7 +247,11 @@ timeout_ball(B) :-
 	nonvar(E),
 	functor(E, time_limit_exceeded, _).
 
-report_failure(M, Q, VNs, AD, File, Line) :-
+report_failure(M, Q, VNs, AD, File, Line, Unexpected) :-
 	write('quads: FAILED '), write(File), write(':'), write(Line), nl,
 	write('   ?- '), write_term(M:Q, [variable_names(VNs), quoted(true)]), write('.'), nl,
-	write('   expected: '), write_term(AD, [variable_names(VNs), quoted(true)]), nl.
+	(	Unexpected == true
+	->	write('   unexpected: ')
+	;	write('   expected: ')
+	),
+	write_term(AD, [variable_names(VNs), quoted(true)]), nl.

@@ -46,11 +46,28 @@ loop :- loop.
 ?- loop.
    loops.
 
+% the 'unexpected' annotation: the described answer must not occur
+
+?- X = 1.
+   X = 2, unexpected.
+
+?- member(X, [1,2,3]).
+   X = 4, unexpected.
+
+?- X = 1.
+   X = 2, unexpected
+|  X = 3, unexpected.
+
 % a deliberately failing quad, to test reporting
 
 ?- member(X, [1,2]).
    X = 1
 ;  X = 99.
+
+% a deliberately failing 'unexpected' quad: this answer does occur
+
+?- X = 1.
+   X = 1, unexpected.
 
 main :-
 	use_module(library(quads)),
