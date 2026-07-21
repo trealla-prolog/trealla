@@ -58,6 +58,20 @@ loop :- loop.
    X = 2, unexpected
 |  X = 3, unexpected.
 
+% short forms of the ISO errors (issue #1066)
+
+?- undefined_pred_xyz(1).
+   existence_error(procedure, undefined_pred_xyz/1).
+
+?- assertz(atom_length(a,b)).
+   permission_error(modify, static_procedure, atom_length/2).
+
+?- X is 1//0.
+   evaluation_error(zero_divisor).
+
+?- atom_length(1, L).
+   type_error(atom, 1).
+
 % a deliberately failing quad, to test reporting
 
 ?- member(X, [1,2]).

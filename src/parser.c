@@ -689,6 +689,7 @@ static bool is_answer_description(parser *p, const cell *c)
 		return !strcmp(name, "true") || !strcmp(name, "false")
 			|| !strcmp(name, "...") || !strcmp(name, "loops")
 			|| !strcmp(name, "instantiation_error")
+			|| !strcmp(name, "system_error")
 			|| !strcmp(name, "ad_infinitum")
 			|| !strcmp(name, "sto")
 			|| !strcmp(name, "unexpected");
@@ -705,7 +706,8 @@ static bool is_answer_description(parser *p, const cell *c)
 
 		if (!strcmp(name, "error")
 			|| !strcmp(name, "type_error")
-			|| !strcmp(name, "domain_error"))
+			|| !strcmp(name, "domain_error")
+			|| !strcmp(name, "existence_error"))
 			return true;
 	}
 
@@ -714,7 +716,11 @@ static bool is_answer_description(parser *p, const cell *c)
 			|| !strcmp(name, "syntax_error")
 			|| !strcmp(name, "representation_error")
 			|| !strcmp(name, "resource_error")
+			|| !strcmp(name, "evaluation_error")
 			|| !strcmp(name, "uninstantiation_error");
+
+	if (c->arity == 3)
+		return !strcmp(name, "permission_error");
 
 	return false;
 }

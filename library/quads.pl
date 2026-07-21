@@ -236,6 +236,10 @@ expected_ball(throw(B), B).
 expected_ball(instantiation_error, error(instantiation_error, _)).
 expected_ball(type_error(T, C), error(type_error(T, C), _)).
 expected_ball(domain_error(D, C), error(domain_error(D, C), _)).
+expected_ball(existence_error(T, C), error(existence_error(T, C), _)).
+expected_ball(permission_error(O, T, C), error(permission_error(O, T, C), _)).
+expected_ball(evaluation_error(E), error(evaluation_error(E), _)).
+expected_ball(system_error, error(system_error, _)).
 expected_ball(syntax_error(E), error(syntax_error(E), _)).
 expected_ball(representation_error(R), error(representation_error(R), _)).
 expected_ball(resource_error(R), error(resource_error(R), _)).
