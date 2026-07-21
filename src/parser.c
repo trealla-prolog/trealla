@@ -904,6 +904,48 @@ static bool quads(parser *p, cell *d)
 	return true;
 }
 
+// A directive is a *declaration* if it tells the loader something about
+// how to read or organise the remaining terms. Anything else is, per ISO
+// 7.4.2, simply a goal to be executed at this point in the load.
+
+static bool is_declaration_name(const char *name)
+{
+	static const char *s_names[] = {
+		"attribute", "autoload", "create_prolog_flag", "discontiguous",
+		"dynamic", "elif", "else", "encoding", "endif", "ensure_loaded",
+		"export", "foreign_struct", "help", "if", "include", "info",
+		"initialization", "meta_predicate", "module", "multifile", "op",
+		"pragma", "public", "reexport", "set_prolog_flag",
+		"use_foreign_module", "use_module",
+		NULL
+	};
+
+	for (const char **n = s_names; *n; n++) {
+		if (!strcmp(*n, name))
+			return true;
+	}
+
+	return false;
+}
+
+// Note: a conjunction counts as a declaration only if every conjunct is
+// one, so that ':- dynamic(a/1), dynamic(b/1).' is still handled by the
+// loader while ':- write(hello), nl.' is run as an ordinary goal...
+
+static bool is_declaration(parser *p, cell *c)
+{
+	if (!is_interned(c))
+		return false;
+
+	if ((c->val_off == g_conjunction_s) && (c->arity == 2)) {
+		cell *lhs = c + 1;
+		cell *rhs = lhs + lhs->num_cells;
+		return is_declaration(p, lhs) && is_declaration(p, rhs);
+	}
+
+	return is_declaration_name(C_STR(p, c));
+}
+
 static bool directives(parser *p, cell *d)
 {
 	p->skip = false;
@@ -944,6 +986,19 @@ static bool directives(parser *p, cell *d)
 	if (!strcmp(dirname, "initialization") && (c->arity == 1)) {
 		p->m->run_init = true;
 		return false;
+	}
+
+	// Not a declaration? Then it's a goal: run it here, at its position
+	// in the load, rather than silently discarding it...
+
+	if (!is_declaration(p, c)) {
+		if (!goal_run(p, c) && !p->internal && !p->do_read_term && !p->pl->quiet) {
+			fflush(stdout);
+			fprintf(stderr, "Warning: directive failed: %s/%u, %s:%d\n",
+				dirname, (unsigned)c->arity, get_loaded(p->m, p->m->filename), p->line_num);
+		}
+
+		return true;
 	}
 
 	if (!strcmp(dirname, "info") && (c->arity == 1)) {
