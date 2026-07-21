@@ -34,15 +34,15 @@ static const op_table g_ops[] =
 
 	//{"public", OP_FX, 1150},
 	//{"discontiguous", OP_FX, 1150},
-	//{"multifile", OP_FX, 1150},
+	{"multifile", OP_FX, 1150},
 	//{"op", OP_FX, 1150},
-	//{"dynamic", OP_FX, 1150},
+	{"dynamic", OP_FX, 1150},
 	//{"initialization", OP_FX, 1150},
 	//{"set_prolog_flag", OP_FX, 1150},
 	//{"module", OP_FX, 1150},
 	//{"use_module", OP_FX, 1150},
 	//{"ensure_loaded", OP_FX, 1150},
-	//{"meta_predicate", OP_FX, 1150},
+	{"meta_predicate", OP_FX, 1150},
 
 	{"\\+", OP_FY, 900},
 	{"as", OP_XFX, 700},

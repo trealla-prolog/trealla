@@ -202,7 +202,8 @@ LIBOBJECTS +=  \
 	library/time.o \
 	library/ugraphs.o \
 	library/uuid.o \
-	library/when.o
+	library/when.o \
+	library/yall.o
 endif
 
 SRCOBJECTS += src/imath/imath.o
