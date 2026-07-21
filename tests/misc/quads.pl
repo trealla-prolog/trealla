@@ -72,6 +72,14 @@ loop :- loop.
 ?- atom_length(1, L).
    type_error(atom, 1).
 
+% an answer description must describe the answer completely (issue #1067)
+
+?- X = f(Y,Z), Y = Z.
+   X = f(Y,Y), Z = Y.
+
+?- X = 1, Y = 2.
+   X = 1, Y = 2.
+
 % a deliberately failing quad, to test reporting
 
 ?- member(X, [1,2]).
@@ -82,6 +90,11 @@ loop :- loop.
 
 ?- X = 1.
    X = 1, unexpected.
+
+% a deliberately failing quad: too general, says nothing about Z
+
+?- X = f(Y,Z), Y = Z.
+   X = f(Y,Y).
 
 main :-
 	use_module(library(quads)),

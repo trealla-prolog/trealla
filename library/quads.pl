@@ -95,13 +95,12 @@ run_list([q(Q, VNs, AD, File, Line)|T], M, P0, P, F0, F) :-
 % description term are first unified via the VarNames list.
 
 check_quad(M, Q, VNs, AD, File, Line) :-
-	link_names(VNs),
 	strip_unexpected(AD, AD1, Unexpected),
 	alternatives(AD1, Alts),
 	(	(	Unexpected == true
-		->	\+ ( member(Alt, Alts), \+ \+ check_alternative(M, Q, Alt) )
+		->	\+ ( member(Alt, Alts), \+ \+ check_alternative(M, Q, VNs, Alt) )
 		;	member(Alt, Alts),
-			\+ \+ check_alternative(M, Q, Alt)
+			\+ \+ check_alternative(M, Q, VNs, Alt)
 		)
 	->	true
 	;	report_failure(M, Q, VNs, AD, File, Line, Unexpected),
@@ -163,42 +162,42 @@ conj((A , B), [A|T]) :- !,
 	conj(B, T).
 conj(A, [A]).
 
-check_alternative(M, Q, Alt) :-
+check_alternative(M, Q, VNs, Alt) :-
 	solutions(Alt, Sols),
-	check_solutions(Sols, M, Q, 1).
+	check_solutions(Sols, M, Q, VNs, 1).
 
 % Walk the expected solutions, requesting the Nth answer of the
 % query for the Nth description. After the last description the
 % query must yield no further answer, unless '...' said otherwise.
 
-check_solutions([], M, Q, N) :-
-	attempt(M, Q, N, none).
-check_solutions([Sol|T], M, Q, N) :-
+check_solutions([], M, Q, VNs, N) :-
+	attempt(M, Q, VNs, N, none).
+check_solutions([Sol|T], M, Q, VNs, N) :-
 	conj(Sol, Items),
 	( Items = ['...'|_] ->
 		true							% any further answers accepted
 	; Items = [sto|_] ->
 		true							% occurs-check dependent: skipped
 	; Items = [loops] ->
-		attempt(M, Q, N, loops)
+		attempt(M, Q, VNs, N, loops)
 	; Items = [false] ->
 		T == [],
-		attempt(M, Q, N, none)
+		attempt(M, Q, VNs, N, none)
 	; expected_ball(Sol, Ball) ->
 		T == [],
-		attempt(M, Q, N, ball(Ball))
-	;	attempt(M, Q, N, solution(Items)),
+		attempt(M, Q, VNs, N, ball(Ball))
+	;	attempt(M, Q, VNs, N, solution(Items)),
 		N1 is N + 1,
-		check_solutions(T, M, Q, N1)
+		check_solutions(T, M, Q, VNs, N1)
 	).
 
 % Request the Nth answer of Q and check the outcome. Every call is
 % bindings-transparent (\+ \+) and time-limited, so nonterminating
 % queries are caught and nothing leaks between attempts.
 
-attempt(M, Q, N, Expect) :-
+attempt(M, Q, VNs, N, Expect) :-
 	catch(
-		( call_with_time_limit(1.0, \+ \+ (call_nth(M:Q, N), check_items(Expect))) ->
+		( call_with_time_limit(1.0, \+ \+ attempt_match(M, Q, VNs, N, Expect)) ->
 			Outcome = matched
 		;	( catch(call_with_time_limit(1.0, \+ \+ call_nth(M:Q, N)), _, fail) ->
 				Outcome = mismatched
@@ -210,24 +209,59 @@ attempt(M, Q, N, Expect) :-
 	),
 	match_outcome(Expect, Outcome).
 
-check_items(solution(Items)) :- !,
-	check_bindings(Items).
-check_items(_).
+% An answer description must describe the answer *completely*: the
+% bindings of the query's named variables have to be a variant of the
+% ones the description gives (issue #1067). Checking only the variables
+% a description happens to mention would accept
+%
+%     ?- X = f(Y,Z), Y = Z.
+%        X = f(Y,Y).
+%
+% which says nothing about Z. The query is solved in one copy and the
+% description applied to a second, so the two witnesses stay
+% independent and can be compared. Note that a variable in a binding
+% therefore denotes a variable in the answer, whereas one inside an
+% error term stays a wildcard, since errors are matched by
+% subsumes_term/2 in match_outcome/2 below.
+
+attempt_match(M, Q, VNs, N, solution(Items)) :- !,
+	witness(Q, VNs, W),
+	copy_term(Q-W, Q1-W1),
+	call_nth(M:Q1, N),
+	copy_term(qd(Q,W,VNs,Items), qd(_,W2,VNs2,Items2)),
+	link_names(VNs2),
+	apply_equations(Items2),
+	variant(W1, W2).
+attempt_match(M, Q, _, N, _) :-
+	call_nth(M:Q, N).
+
+% The named variables of the query: exactly the bindings a toplevel
+% would report. Anonymous variables are not recorded in VarNames.
+
+witness(Q, VNs, W) :-
+	term_variables(Q, QVs),
+	query_vars(VNs, QVs, W).
+
+query_vars([], _, []).
+query_vars([_=V|T], QVs, W) :-
+	(	var_member(V, QVs)
+	->	W = [V|W0]
+	;	W = W0
+	),
+	query_vars(T, QVs, W0).
+
+var_member(V, [X|Xs]) :-
+	( V == X -> true ; var_member(V, Xs) ).
+
+apply_equations([]).
+apply_equations([Item|T]) :-
+	( Item = (V = Val) -> V = Val ; true ),
+	apply_equations(T).
 
 match_outcome(solution(_), matched).
 match_outcome(none, none).
 match_outcome(loops, loops).
 match_outcome(ball(B), ball(B0)) :- subsumes_term(B, B0).
-
-check_bindings([]).
-check_bindings([Item|T]) :-
-	check_binding(Item),
-	check_bindings(T).
-
-check_binding(true) :- !.
-check_binding(V = T) :- !,
-	subsumes_term(T, V).
-check_binding(_).							% unknown annotation: accept
 
 % Errors may be written in full or in the customary shorthand
 
@@ -252,6 +286,7 @@ timeout_ball(B) :-
 	functor(E, time_limit_exceeded, _).
 
 report_failure(M, Q, VNs, AD, File, Line, Unexpected) :-
+	link_names(VNs),
 	write('quads: FAILED '), write(File), write(':'), write(Line), nl,
 	write('   ?- '), write_term(M:Q, [variable_names(VNs), quoted(true)]), write('.'), nl,
 	(	Unexpected == true
