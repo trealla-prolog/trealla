@@ -2606,7 +2606,13 @@ static cell *goal_expansion(parser *p, cell *goal)
 	for (unsigned i = 0; i < p->cl->num_vars; i++)
 		q->ignores[i] = true;
 
-	p->cl->num_vars = p2->cl->num_vars;
+	// Never let the variable count go backwards: the sub-parser may
+	// have fewer variables than the clause already has, and lowering
+	// the count makes the next expansion hand out a slot that is
+	// still in use, silently merging two distinct variables...
+
+	if (p2->cl->num_vars > p->cl->num_vars)
+		p->cl->num_vars = p2->cl->num_vars;
 	frame *f = GET_FRAME(0);
 	char *src = NULL;
 
@@ -2671,7 +2677,9 @@ static cell *goal_expansion(parser *p, cell *goal)
 
 	// Push the updated vartab back...
 
-	p->cl->num_vars = p2->cl->num_vars;
+	if (p2->cl->num_vars > p->cl->num_vars)
+		p->cl->num_vars = p2->cl->num_vars;
+
 	p->vartab = p2->vartab;
 
 	// snip the old goal...
